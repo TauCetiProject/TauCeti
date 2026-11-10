@@ -397,7 +397,7 @@ private theorem gaussDegree_eq_of_approx {x : RadiusRing p hv hϖ hϖ' hρ} {k l
       _ ≤ max ‖X - ι (teichmuller p ϖ ^ k * z)‖ ‖X - ι (teichmuller p ϖ ^ l * y)‖ :=
           IsUltrametricDist.norm_sub_le_max _ _
       _ < ‖X‖ := max_lt hz' hy'
-  have h := gaussDegree_eq_of_gaussValuation_sub_lt hv hρ.1 hρ.2 hlt
+  have h := gaussDegree_eq_of_gaussValuation_sub_lt hv hρ.2 hlt
   have := hv.isDomain
   rwa [← map_pow, ← map_pow, gaussDegree_teichmuller_mul hv hρ.2 (pow_ne_zero k hϖ),
     gaussDegree_teichmuller_mul hv hρ.2 (pow_ne_zero l hϖ), eq_comm] at h
@@ -503,7 +503,7 @@ theorem degree_mul {x y : RadiusRing p hv hϖ hϖ' hρ} (hx : x ≠ 0) (hy : y �
       exact mul_lt_mul_of_pos_right hz hY
   rw [degree_eq_gaussDegree p hv hϖ hϖ' hρ hzw, degree_eq_gaussDegree p hv hϖ hϖ' hρ hz,
     degree_eq_gaussDegree p hv hϖ hϖ' hρ hw,
-    gaussDegree_mul hv hρ.1 hρ.2 (ne_zero_of_norm_sub_lt p hv hϖ hϖ' hρ hz)
+    gaussDegree_mul hv hρ.2 (ne_zero_of_norm_sub_lt p hv hϖ hϖ' hρ hz)
       (ne_zero_of_norm_sub_lt p hv hϖ hϖ' hρ hw)]
 
 /-- Units of `A^r` have degree `0`. -/
@@ -811,7 +811,7 @@ private theorem degree_lt_of_nnnorm_sub_teichSum_lt {W : RadiusRing p hv hϖ hϖ
     exact lt_irrefl _ h
   rw [← degree_eq_of_norm_sub_lt p hv hϖ hϖ' hρ (by exact_mod_cast h), degree_algebraMap]
   rw [teichSum] at hH ⊢
-  exact gaussDegree_sum_range_teichmuller_mul_pow_lt hv hρ.1 hρ.2 hH
+  exact gaussDegree_sum_range_teichmuller_mul_pow_lt hv hρ.2 hH
 
 /-- **Kedlaya, Lemma 2.8.** For `x ≠ 0` there is `ε < 1` such that every `y ∈ A^r` can be
 written `y = z x + w` with `‖w‖ ≤ ‖y‖`, where `w` has smaller degree than `x` unless
