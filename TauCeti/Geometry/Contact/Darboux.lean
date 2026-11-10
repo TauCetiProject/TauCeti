@@ -24,9 +24,9 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 /-!
 # The contact Darboux theorem
 
-Let `α` be a one-form on an open subset of a finite-dimensional real normed space `V` which is a
-contact form at `x₀`: `α(x₀) ≠ 0` and `dα(x₀)` is nondegenerate on the hyperplane `ker α(x₀)`.
-**The contact Darboux theorem**
+Let `α` be a `C^(r+1)` one-form, with `r ≥ 1`, on an open subset of a finite-dimensional real
+normed space `V` which is a contact form at `x₀`: `α(x₀) ≠ 0` and `dα(x₀)` is nondegenerate on
+the hyperplane `ker α(x₀)`. **The contact Darboux theorem**
 (`TauCeti.exists_diffeomorph_eventually_mpullback_innerProductContactForm_eq_smul`) says that near
 `x₀` the hyperplane field `ker α` is the standard one: some `C^r` diffeomorphism `Φ` from `V` to
 `ℝⁿ × ℝⁿ × ℝ` with `Φ x₀ = 0` pulls the standard contact form `dz - Σᵢ pᵢ dqᵢ` back to a positive
@@ -35,8 +35,9 @@ sends `ker α` to the standard contact structure and preserves the coorientation
 
 The analytic input is the local contact form of Moser's argument, due to Gray
 (`TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_extDeriv_eq`):
-if `α₀` and `α₁` have the same value and exterior derivative at `x₀` and `α₀` is contact there,
-a `C^r` diffeomorphism `ψ` fixing `x₀` pulls `α₁` back to a positive multiple of `α₀` near `x₀`.
+if `α₀` and `α₁` are `C^(r+1)` one-forms, with `r ≥ 1`, on an open neighbourhood of `x₀` which
+have the same value and exterior derivative at `x₀`, and `α₀` is contact there, then a `C^r`
+diffeomorphism `ψ` fixing `x₀` pulls `α₁` back to a positive multiple of `α₀` near `x₀`.
 Along the straight-line family `α_t = (1 - t) α₀ + t α₁` one solves
 
 `α_t(Y_t) = 0`, `ι_{Y_t} dα_t + (α₁ - α₀) = -σ_t α_t`
