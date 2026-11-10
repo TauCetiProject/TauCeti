@@ -27,8 +27,8 @@ presheafed spaces of rings, whose stalk maps are isomorphisms
   `f x`.
 * `AlgebraicGeometry.PresheafedSpace.IsOpenImmersion.isSheaf_iff_of_range_eq`: the sources of two
   open immersions with the same range satisfy the sheaf condition together.
-* `AlgebraicGeometry.LocallyRingedSpace.range_iso_inv_ofRestrict`: changing the presentation of
-  a restricted locally ringed space by an isomorphism does not change its image.
+* `AlgebraicGeometry.LocallyRingedSpace.range_iso_inv_comp`: precomposing a morphism of locally
+  ringed spaces with an isomorphism does not change its image.
 * `AlgebraicGeometry.LocallyRingedSpace.IsOpenImmersion.isOpenImmersion_lift`: lifting an open
   immersion through an open immersion gives an open immersion.
 -/
@@ -82,13 +82,11 @@ end AlgebraicGeometry.PresheafedSpace
 
 namespace AlgebraicGeometry.LocallyRingedSpace
 
-/-- Changing the presentation of a restriction by an isomorphism preserves its image. -/
-theorem range_iso_inv_ofRestrict {X Y : LocallyRingedSpace.{u}} {U : TopCat.{u}}
-    {ι : U ⟶ X.toTopCat} (h : Topology.IsOpenEmbedding ι) (e : X.restrict h ≅ Y) :
-    Set.range (e.inv ≫ X.ofRestrict h).base = Set.range ι := by
+/-- Precomposing a morphism of locally ringed spaces with an isomorphism preserves its image. -/
+theorem range_iso_inv_comp {X Y Z : LocallyRingedSpace.{u}} (e : X ≅ Y) (g : X ⟶ Z) :
+    Set.range (e.inv ≫ g).base = Set.range g.base := by
   rw [comp_base, TopCat.coe_comp,
     (Function.LeftInverse.surjective (iso_hom_base_inv_base_apply e)).range_comp]
-  rfl
 
 /-- The lift of an open immersion through an open immersion is an open immersion. -/
 instance IsOpenImmersion.isOpenImmersion_lift {X Y Z : LocallyRingedSpace.{u}}

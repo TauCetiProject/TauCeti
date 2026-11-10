@@ -124,7 +124,7 @@ theorem isAffineOpen_iff (X : FormalScheme) (U : Opens X) :
     have : LocallyRingedSpace.IsOpenImmersion j := inferInstance
     refine ⟨A, inferInstance, inferInstance, inferInstance, inferInstance,
       e.inv ≫ j, inferInstance, ?_⟩
-    exact (LocallyRingedSpace.range_iso_inv_ofRestrict U.isOpenEmbedding e).trans
+    exact (LocallyRingedSpace.range_iso_inv_comp e j).trans
       Subtype.range_coe
 
 /-- Every formal spectrum is an affine formal open in itself. -/
@@ -135,7 +135,8 @@ theorem isAffineOpen_top_ofSpf (A : Type u) [CommRing A] [TopologicalSpace A]
     inferInstanceAs (LocallyRingedSpace.IsOpenImmersion (𝟙 (Spf A))), Set.range_id⟩
 
 /-- Every neighbourhood contains a formal-spectrum chart through the given point. -/
-theorem exists_spf_le (X : FormalScheme) (U : Opens X) (x : X) (hx : x ∈ U) :
+theorem exists_spf_mem_range_and_range_subset (X : FormalScheme) (U : Opens X)
+    (x : X) (hx : x ∈ U) :
     ∃ (A : Type u) (_ : CommRing A) (_ : TopologicalSpace A) (_ : IsTopologicalRing A)
       (_ : IsAdicRing A) (f : Spf A ⟶ X.toLocallyRingedSpace),
       LocallyRingedSpace.IsOpenImmersion f ∧ x ∈ Set.range f.base ∧
@@ -159,7 +160,7 @@ theorem isBasis_affineOpens (X : FormalScheme) :
     Opens.IsBasis {U : Opens X | X.IsAffineOpen U} := by
   rw [Opens.isBasis_iff_nbhd]
   intro U x hx
-  obtain ⟨A, _, _, _, _, f, hf, hx, hU⟩ := X.exists_spf_le U x hx
+  obtain ⟨A, _, _, _, _, f, hf, hx, hU⟩ := X.exists_spf_mem_range_and_range_subset U x hx
   exact ⟨⟨Set.range f.base, hf.base_open.isOpen_range⟩,
     ⟨A, inferInstance, inferInstance, inferInstance, inferInstance, f, hf, rfl⟩, hx, hU⟩
 
@@ -169,7 +170,8 @@ The carrier is exposed so the underlying restriction morphisms retain their type
 @[expose] noncomputable def restrict (X : FormalScheme) (U : Opens X) : FormalScheme where
   toLocallyRingedSpace := X.toLocallyRingedSpace.restrict U.isOpenEmbedding
   local_spf x := by
-    obtain ⟨A, _, _, _, _, f, hf, hx, hU⟩ := X.exists_spf_le U x.val x.property
+    obtain ⟨A, _, _, _, _, f, hf, hx, hU⟩ :=
+      X.exists_spf_mem_range_and_range_subset U x.val x.property
     have := hf
     let j := X.toLocallyRingedSpace.ofRestrict U.isOpenEmbedding
     have hj : LocallyRingedSpace.IsOpenImmersion j := inferInstance
@@ -282,7 +284,7 @@ the discrete topology. The carrier is exposed so its points and morphisms retain
       LocallyRingedSpace.IsOpenImmersion.ofRestrict _ _
     refine ⟨R, inferInstance, inferInstance, inferInstance, inferInstance,
       e'.inv ≫ j, inferInstance, ?_⟩
-    exact (LocallyRingedSpace.range_iso_inv_ofRestrict U.isOpenEmbedding e').ge
+    exact (LocallyRingedSpace.range_iso_inv_comp e' j).ge
       ⟨⟨x, U.2⟩, rfl⟩
 
 @[simp]
