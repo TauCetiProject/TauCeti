@@ -86,7 +86,6 @@ jobs:
           tools-repository: TauCetiProject/TauCetiTools
           tools-ref: 5d49641d46901054a68f78d900cbcb968b8538db
           project-directory: .
-      - name: Restore the project-owned Lake workflow test
       - name: Install the native checkout fixture sandbox
         run: |
           set -euo pipefail

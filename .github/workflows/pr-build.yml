@@ -1271,7 +1271,6 @@ jobs:
       - name: Prepare merge-group cache artifact metadata
         id: cache_stage
         if: ${{ env.IS_BATCH == 'true' && env.STAGE_LAKE_CACHE == '1' && steps.build.outcome == 'success' }}
-        env:
         run: |
           set -euo pipefail
           python3 gate/scripts/lake_cache_publish.py stage pr/.lake/publication-stage "$RUNNER_TEMP/lake-cache-staging"

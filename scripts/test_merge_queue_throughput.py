@@ -10,6 +10,17 @@ def workflow(name):
     return yaml.safe_load((ROOT / '.github/workflows' / name).read_text())
 
 class Throughput(unittest.TestCase):
+    def test_workflow_steps_have_an_action_and_mapping_environment(self):
+        for path in (ROOT / '.github/workflows').glob('*.yml'):
+            for job in workflow(path.name).get('jobs', {}).values():
+                if not isinstance(job, dict):
+                    continue
+                for step in job.get('steps', []):
+                    with self.subTest(workflow=path.name, step=step.get('name')):
+                        self.assertTrue('run' in step or 'uses' in step)
+                        if 'env' in step:
+                            self.assertIsInstance(step['env'], dict)
+
     def test_publication_is_native_and_secret_is_confined_to_upload(self):
         steps = workflow('publish-lake-cache.yml')['jobs']['publish']['steps']
         upload = next(s for s in steps if s.get('id') == 'upload')
