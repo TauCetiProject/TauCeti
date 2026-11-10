@@ -78,6 +78,7 @@ theorem euclideanQuadrantFaceProj_faceParam (i : Fin (m + 1)) (q : EuclideanSpac
   ext k
   simp
 
+@[simp]
 theorem euclideanQuadrantFaceParam_faceProj {i : Fin (m + 1)}
     {z : EuclideanSpace ℝ (Fin (m + 1))} (hz : z i = 0) :
     euclideanQuadrantFaceParam i (euclideanQuadrantFaceProj i z) = z := by
