@@ -70,6 +70,8 @@ points.
   `π` is surjective.
 * `TauCeti.Toric.eq_zero_of_mem_ker_facetTorusHom`: the kernel of `π` meets the coordinate
   subtorus of a lattice basis of normals trivially.
+* `TauCeti.Toric.IsIntegralLattice.isClosed_ker_facetTorusHom`: for an integral lattice, the
+  kernel of `π` is closed.
 
 ## References
 
@@ -234,6 +236,42 @@ theorem eq_zero_of_mem_ker_facetTorusHom (hi : IsIntegralLattice i) {s : Set ι}
   · rw [Pi.zero_apply, ← ht, hcoeff ⟨j, hj⟩, AddCircle.coe_eq_zero_iff]
     exact ⟨b.repr n ⟨j, hj⟩, by simp [mul_comm]⟩
   · exact hθs j hj
+
+/-! ### Closedness of the kernel -/
+
+section Closed
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {i : N →+ V}
+
+/-- For an integral lattice `i`, the rescaled lattice `p i(N)` is closed in `V`: it is discrete
+for `p ≠ 0`, and zero for `p = 0`. -/
+theorem IsIntegralLattice.isClosed_range_smul (hi : IsIntegralLattice i) (p : ℝ) :
+    IsClosed ((p • i).range : Set V) := by
+  rcases eq_or_ne p 0 with rfl | hp
+  · simp
+  have := hi.discreteTopology
+  have h : IsClosed (LinearMap.range i.toIntLinearMap : Set V) :=
+    (LinearMap.range i.toIntLinearMap).toAddSubgroup.isClosed_of_discreteTopology
+  have hrange : ((p • i).range : Set V) =
+      Homeomorph.smulOfNeZero p hp '' (LinearMap.range i.toIntLinearMap) := by
+    ext v
+    simp [eq_comm]
+  rw [hrange]
+  exact (Homeomorph.smulOfNeZero p hp).isClosedMap _ h
+
+/-- **The kernel torus is closed.** For an integral lattice `i`, the kernel of the homomorphism
+`(ℝ / pℤ)^ι → V / p i(N)` is a closed subgroup; for `p ≠ 0` it is therefore a compact subgroup of
+the torus `(ℝ / pℤ)^ι`. -/
+theorem IsIntegralLattice.isClosed_ker_facetTorusHom (hi : IsIntegralLattice i) (u : ι → N)
+    (p : ℝ) : IsClosed ((facetTorusHom i u p).ker : Set (ι → AddCircle p)) := by
+  have h0 : IsClosed ({0} : Set (V ⧸ (p • i).range)) := by
+    rw [← (QuotientAddGroup.isQuotientMap_mk _).isClosed_preimage]
+    convert hi.isClosed_range_smul p using 1
+    ext v
+    simp [QuotientAddGroup.eq_zero_iff]
+  exact h0.preimage (continuous_facetTorusHom i u p)
+
+end Closed
 
 /-! ### Delzant polytopes -/
 
