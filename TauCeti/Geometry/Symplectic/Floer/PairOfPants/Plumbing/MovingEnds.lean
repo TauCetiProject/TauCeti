@@ -142,10 +142,9 @@ theorem plumbedPerturbation_update_zero_eq_puncturedSpherePerturbation (hq : q �
   · -- On the inserted half the two inputs of the inserted pair of pants are pushed forward.
     obtain ⟨h₁, h₂⟩ := receiving_eq_zero_of_lt_re_endCoord hq hrq hr hL h (Hb r) (Hb inf) x
     rw [← puncturedSpherePerturbation_eq_pairOfPantsPerturbation, puncturedSpherePerturbation_def,
-      Fin.sum_univ_two, update_self, update_of_ne (show zero ≠ inf by decide),
-      update_of_ne (show one ≠ inf by decide), h₁, h₂]
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
-      negativePlanePerturbation_zero, add_zero,
+      Fin.sum_univ_two, update_self, h₁, h₂]
+    simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one, ne_eq,
+      reduceCtorEq, not_false_eq_true, update_of_ne, negativePlanePerturbation_zero, add_zero,
       ContinuousLinearMap.add_comp, inputEndPerturbation_sub_div_comp,
       mul_zero, mul_one, mul_neg, plumbingMap_apply]
   · -- On the receiving part the inputs of the inserted pair of pants vanish.
