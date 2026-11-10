@@ -425,8 +425,7 @@ theorem cubicUnitEliminationCertificate_sound (hmin : minpoly ℤ θ = X ^ 3 - X
     {u : (𝓞 K)ˣ} (hu : (u : 𝓞 K) = θ ^ 2 - θ) :
     Subgroup.closure {u} ⊔ torsion K = ⊤ := by
   exact UnitCandidateEliminationCertificate.sound
-    (cubicUnitEliminationCertificate hmin hgen hw hu) (units_rank_eq_one hmin hgen)
-    (by rw [finrank_eq_three hmin hgen]; exact Nat.prime_three) hw
+    (cubicUnitEliminationCertificate hmin hgen hw hu) (units_rank_eq_one hmin hgen) hw
     (lt_trans (by norm_num) (unit_value_mem_Ioo hmin hw hu).1)
 
 /-- The regulator is the logarithm of the value of the fundamental unit `θ² - θ` at the real

@@ -98,9 +98,28 @@ theorem no_unit_between_real {B : ℝ} (h : UnitCandidateEliminationCertificate 
 modulo torsion if every candidate below its absolute value has been eliminated. -/
 theorem sound {u : (𝓞 K)ˣ} {w : InfinitePlace K}
     (h : UnitCandidateEliminationCertificate K (w u))
-    (hr : rank K = 1) (hp : Nat.Prime (Module.finrank ℚ K)) (hw : w.IsReal) (hu : 1 < w u) :
-    Subgroup.closure {u} ⊔ torsion K = ⊤ :=
-  (generates_mod_torsion_iff_no_unit_between_real hr u w hw hu).mpr
+    (hr : rank K = 1) (hw : w.IsReal) (hu : 1 < w u) :
+    Subgroup.closure {u} ⊔ torsion K = ⊤ := by
+  -- two infinite places, one of them real, force `finrank ℚ K ∈ {2, 3}`, hence prime
+  have hp : Nat.Prime (Module.finrank ℚ K) := by
+    have hcard := card_eq_nrRealPlaces_add_nrComplexPlaces (K := K)
+    have hdeg := card_add_two_mul_card_eq_rank (K := K)
+    have hpos : 0 < nrRealPlaces K := Nat.pos_of_ne_zero fun h0 ↦ by
+      have := (nrRealPlaces_eq_zero_iff (K := K)).1 h0
+      exact (not_isReal_iff_isComplex.2 (this.isComplex w)) hw
+    have hpl : 0 < Fintype.card (InfinitePlace K) := Fintype.card_pos_iff.2 ⟨w⟩
+    have hr' : Fintype.card (InfinitePlace K) = 2 := by unfold rank at hr; omega
+    rw [← hdeg]
+    rcases Nat.lt_or_ge (nrComplexPlaces K) 1 with h0 | h1
+    · have hc : nrComplexPlaces K = 0 := by omega
+      have hrl : nrRealPlaces K = 2 := by omega
+      rw [hc, hrl]
+      exact Nat.prime_two
+    · have hc : nrComplexPlaces K = 1 := by omega
+      have hrl : nrRealPlaces K = 1 := by omega
+      rw [hc, hrl]
+      exact Nat.prime_three
+  exact (generates_mod_torsion_iff_no_unit_between_real hr u w hw hu).mpr
     (h.no_unit_between_real hr hp hw)
 
 end UnitCandidateEliminationCertificate
