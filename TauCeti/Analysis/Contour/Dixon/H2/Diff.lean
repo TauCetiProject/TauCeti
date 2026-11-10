@@ -64,23 +64,16 @@ private theorem h2_factor_mul_num_aestronglyMeasurable {g : ℝ → ℂ} (hg : C
   ((hg.mono Set.uIoc_subset_uIcc).aestronglyMeasurable measurableSet_uIoc).mul hnum
 
 /-- **The derivative of `dixonH2` in the point, off the curve.** If `γ` is continuous on
-`uIcc a b` and avoids `w` there, and the Cauchy integrand `f (γ ·) / (γ · - w) · deriv γ` is
-interval-integrable, then `fun w ↦ dixonH2 f γ a b w` has complex derivative
-`∫ t in a..b, f (γ t) / (γ t - w) ^ 2 * deriv γ t` at `w`. -/
+`uIcc a b` and avoids `w` there, then `fun w ↦ dixonH2 f γ a b w` has complex derivative
+`∫ t in a..b, f (γ t) / (γ t - w) ^ 2 * deriv γ t` at `w`. Integrability is not needed: the
+numerator `f (γ ·) * deriv γ` is integrable exactly when the Cauchy integrand is, and otherwise
+every integral involved vanishes. -/
 theorem hasDerivAt_dixonH2 (hγ_cont : ContinuousOn γ (uIcc a b))
-    (hoff : ∀ t ∈ uIcc a b, γ t ≠ w)
-    (h_cauchy_int : IntervalIntegrable (fun t ↦ f (γ t) / (γ t - w) * deriv γ t) volume a b) :
+    (hoff : ∀ t ∈ uIcc a b, γ t ≠ w) :
     HasDerivAt (dixonH2 f γ a b) (∫ t in a..b, f (γ t) / (γ t - w) ^ 2 * deriv γ t) w := by
   obtain ⟨ε, hε_pos, h_dist_lb⟩ := exists_ball_dist_curve_lower_bound hγ_cont hoff
   have avoid : ∀ w' ∈ Metric.ball w ε, ∀ t ∈ uIcc a b, γ t ≠ w' := fun w' hw' t ht ↦
     sub_ne_zero.mp (norm_pos_iff.mp (hε_pos.trans_le (h_dist_lb w' hw' t ht)))
-  -- Multiplying the Cauchy integrand by the continuous factor `γ · - w` recovers the numerator.
-  have h_factor_cont : ContinuousOn (fun t ↦ γ t - w) (uIcc a b) := hγ_cont.sub continuousOn_const
-  have h_num_int : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b :=
-    (intervalIntegrable_congr fun t ht ↦ by
-      have hne : γ t - w ≠ 0 := sub_ne_zero.mpr (hoff t (uIoc_subset_uIcc ht))
-      field_simp).mp (h_cauchy_int.continuousOn_mul h_factor_cont)
-  have hnum := (intervalIntegrable_iff.mp h_num_int).aestronglyMeasurable
   have h_eq : dixonH2 f γ a b = fun w' ↦ ∫ t in a..b, (γ t - w')⁻¹ * (f (γ t) * deriv γ t) := by
     funext w'
     rw [dixonH2_def]
@@ -88,6 +81,26 @@ theorem hasDerivAt_dixonH2 (hγ_cont : ContinuousOn γ (uIcc a b))
   have h_deriv : ∫ t in a..b, f (γ t) / (γ t - w) ^ 2 * deriv γ t =
       ∫ t in a..b, (γ t - w)⁻¹ ^ 2 * (f (γ t) * deriv γ t) :=
     intervalIntegral.integral_congr fun t _ ↦ by rw [div_eq_mul_inv, ← inv_pow]; ring
+  -- Without an integrable numerator every integral in sight is `0`.
+  by_cases h_num_int : IntervalIntegrable (fun t ↦ f (γ t) * deriv γ t) volume a b
+  swap
+  · have hnum_of : ∀ (g : ℝ → ℂ) (n : ℕ) (w' : ℂ),
+        (∀ t ∈ uIoc a b, (γ t - w') ^ n * g t = f (γ t) * deriv γ t) →
+        ¬ IntervalIntegrable g volume a b := fun g n w' hg hint ↦
+      h_num_int ((intervalIntegrable_congr hg).mp
+        (hint.continuousOn_mul ((hγ_cont.sub continuousOn_const).pow n)))
+    have h0 : ∫ t in a..b, f (γ t) / (γ t - w) ^ 2 * deriv γ t = 0 :=
+      intervalIntegral.integral_undef (hnum_of _ 2 w fun t ht ↦ by
+        have hne : γ t - w ≠ 0 := sub_ne_zero.mpr (hoff t (uIoc_subset_uIcc ht))
+        field_simp)
+    rw [h0]
+    refine (hasDerivAt_const w (0 : ℂ)).congr_of_eventuallyEq ?_
+    filter_upwards [Metric.ball_mem_nhds w hε_pos] with w' hw'
+    rw [h_eq]
+    exact intervalIntegral.integral_undef (hnum_of _ 1 w' fun t ht ↦ by
+      have hne : γ t - w' ≠ 0 := sub_ne_zero.mpr (avoid w' hw' t (uIoc_subset_uIcc ht))
+      field_simp)
+  have hnum := (intervalIntegrable_iff.mp h_num_int).aestronglyMeasurable
   rw [h_eq, h_deriv]
   refine (intervalIntegral.hasDerivAt_integral_of_dominated_loc_of_deriv_le (𝕜 := ℂ)
     (F := fun w' t ↦ (γ t - w')⁻¹ * (f (γ t) * deriv γ t))
