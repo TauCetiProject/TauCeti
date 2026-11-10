@@ -24,6 +24,7 @@ with the rescaled level `exp (-(t / ε))`.
 * `TauCeti.exp_neg_le_div_exp_sub_one`: `exp (-x) ≤ x / (exp x - 1)` for `0 < x`.
 * `TauCeti.div_exp_sub_one_le_one`: `x / (exp x - 1) ≤ 1` for `0 ≤ x`.
 * `TauCeti.exp_neg_le_rpow_iff`: `exp (-t) ≤ y ^ ε ↔ exp (-(t / ε)) ≤ y` for `0 ≤ y`, `0 < ε`.
+* `TauCeti.abs_exp_sub_one_le_mul_exp_abs`: `|exp t - 1| ≤ |t| exp |t|` for every real `t`.
 -/
 
 public section
@@ -62,5 +63,15 @@ theorem exp_neg_le_rpow_iff {y ε t : ℝ} (hy : 0 ≤ y) (hε : 0 < ε) :
   · simp [zero_rpow hε.ne', (exp_pos _).not_ge]
   rw [← le_log_iff_exp_le hy, ← le_log_iff_exp_le (rpow_pos_of_pos hy ε), log_rpow hy,
     ← neg_div, div_le_iff₀ hε, mul_comm]
+
+/-- `|exp t - 1| ≤ |t| exp |t|` for every real `t`, a global form of the mean value inequality for
+the exponential. -/
+theorem abs_exp_sub_one_le_mul_exp_abs (t : ℝ) : |exp t - 1| ≤ |t| * exp |t| := by
+  rcases le_or_gt 0 t with ht | ht
+  · rw [abs_of_nonneg ht, abs_of_nonneg (by linarith [add_one_le_exp t])]
+    have h1 : exp (-t) * exp t = 1 := by rw [← exp_add]; simp
+    nlinarith [add_one_le_exp (-t), exp_pos t]
+  · rw [abs_of_neg ht, abs_of_nonpos (by linarith [exp_lt_one_iff.mpr ht])]
+    nlinarith [add_one_le_exp t, one_le_exp (by linarith : (0 : ℝ) ≤ -t)]
 
 end TauCeti
