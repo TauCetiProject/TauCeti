@@ -222,6 +222,12 @@ theorem base_le_add (e : G.Ear H) : H ≤ e.add :=
 theorem toGraph_le_add (e : G.Ear H) : e.toGraph ≤ e.add :=
   e.compatible.right_le_union
 
+/-- Adjoining an ear is the compatible union of its base and traced graph. -/
+theorem add_eq_union (e : G.Ear H) : e.add = e.compatible.union := by
+  apply le_antisymm
+  · exact e.add_le_iff.2 ⟨e.compatible.left_le_union, e.compatible.right_le_union⟩
+  · exact e.compatible.union_le_iff.2 ⟨e.base_le_add, e.toGraph_le_add⟩
+
 /-- Every edge traversed by an ear belongs to the graph obtained by adjoining the ear. -/
 theorem edges_toWalk_subset_edgeSet_add (e : G.Ear H) {f : β}
     (hf : f ∈ e.toWalk.2.2.edges) : f ∈ E(e.add) := by

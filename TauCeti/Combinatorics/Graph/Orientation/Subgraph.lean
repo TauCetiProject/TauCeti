@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Orientation.Indegree
+public import TauCeti.Combinatorics.Graph.Orientation.Walk
 public import TauCeti.Combinatorics.Graph.Union
 
 /-!
@@ -83,6 +84,38 @@ theorem reverse_restrict (o : Orientation G) (h : H ≤ G) :
   ext_of_head fun _ ↦ Subtype.ext <| by simp
 
 end Restrict
+
+end Graph.Orientation
+
+namespace Graph.Walk
+
+variable {V : Type u} {E : Type v} {G H : Graph V E}
+
+/-- A walk in a subgraph follows the restricted orientation exactly when its image in the
+larger graph follows the original orientation. -/
+@[simp]
+theorem followsOrientation_mapLe_iff (h : H ≤ G) {x y : V} (p : H.Walk x y)
+    (o : G.Orientation) :
+    (p.mapLe h).FollowsOrientation o ↔ p.FollowsOrientation (o.restrict h) := by
+  induction p with
+  | nil => simp
+  | @cons x y z e he p ih =>
+      simp only [mapLe_cons, followsOrientation_cons, ih, Orientation.coe_restrict_tail,
+        Orientation.coe_restrict_head]
+
+/-- Restricting a walk to a subgraph and restricting its orientation preserve the property of
+following that orientation. -/
+theorem FollowsOrientation.transfer {x y : V} {o : G.Orientation} {p : G.Walk x y}
+    (hp : p.FollowsOrientation o) (h : H ≤ G) (hedges : ∀ e, e ∈ p.edges → e ∈ E(H)) :
+    (p.transfer h hedges).FollowsOrientation (o.restrict h) := by
+  apply (followsOrientation_mapLe_iff h (p.transfer h hedges) o).mp
+  simpa only [mapLe_transfer] using hp
+
+end Graph.Walk
+
+namespace Graph.Orientation
+
+variable {V : Type u} {E : Type v} {G H K : Graph V E}
 
 section Union
 

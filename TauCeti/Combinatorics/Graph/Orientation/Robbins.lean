@@ -39,74 +39,6 @@ namespace Graph
 
 variable {α : Type u} {β : Type v} {G H : Graph α β}
 
-namespace Walk
-
-/-- A walk in a subgraph follows the restricted orientation exactly when its image in the
-larger graph follows the original orientation. -/
-@[simp]
-theorem followsOrientation_mapLe_iff {H : Graph α β} (h : H ≤ G)
-    {x y : α} (p : H.Walk x y) (o : G.Orientation) :
-    (p.mapLe h).FollowsOrientation o ↔ p.FollowsOrientation (o.restrict h) := by
-  induction p with
-  | nil => simp
-  | @cons x y z e he p ih =>
-      simp only [mapLe_cons, followsOrientation_cons, ih, Orientation.coe_restrict_tail,
-        Orientation.coe_restrict_head]
-
-/-- Restricting a walk to a subgraph and restricting its orientation preserve the property of
-following that orientation. -/
-theorem FollowsOrientation.transfer {H : Graph α β} {x y : α} {o : G.Orientation}
-    {p : G.Walk x y} (hp : p.FollowsOrientation o) (h : H ≤ G)
-    (hedges : ∀ e, e ∈ p.edges → e ∈ E(H)) :
-    (p.transfer h hedges).FollowsOrientation (o.restrict h) := by
-  apply (followsOrientation_mapLe_iff h (p.transfer h hedges) o).mp
-  simpa only [mapLe_transfer] using hp
-
-/-- Orient a graph so that a trail is traversed from its start to its end. Edges outside the
-trail retain an arbitrary orientation. -/
-noncomputable def orientation : {x y : α} → (p : G.Walk x y) → p.edges.Nodup → G.Orientation
-  | _, _, .nil, _ => Orientation.ofEdgeEnds G
-  | _, _, .cons' x y z e h p, hp => by
-      classical
-      have hp' : (e :: p.edges).Nodup := by simpa only [edges_cons] using hp
-      exact Orientation.ofHead
-        (fun f ↦ if hf : f.1 = e then ⟨y, h.right_mem⟩
-          else (p.orientation (List.nodup_cons.1 hp').2).head f)
-        fun f ↦ by
-          split_ifs with hf
-          · subst hf
-            exact h.inc_right
-          · exact (p.orientation (List.nodup_cons.1 hp').2).head_inc f
-
-@[simp]
-theorem orientation_cons_head {x y z : α} (e : β) (h : G.IsLink e x y)
-    (p : G.Walk y z) (hp : (Walk.cons e h p).edges.Nodup) :
-    ((Walk.cons e h p).orientation hp).head ⟨e, h.edge_mem⟩ = ⟨y, h.right_mem⟩ := by
-  simp [orientation]
-
-@[simp]
-theorem orientation_cons_tail {x y z : α} (e : β) (h : G.IsLink e x y)
-    (p : G.Walk y z) (hp : (Walk.cons e h p).edges.Nodup) :
-    ((Walk.cons e h p).orientation hp).tail ⟨e, h.edge_mem⟩ = ⟨x, h.left_mem⟩ := by
-  apply Subtype.ext
-  apply (((Walk.cons e h p).orientation hp).isLink ⟨e, h.edge_mem⟩).left_unique
-  simpa using h
-
-/-- A trail follows the orientation obtained by directing its successive edges forward. -/
-theorem followsOrientation_orientation {x y : α} (p : G.Walk x y) (hp : p.edges.Nodup) :
-    p.FollowsOrientation (p.orientation hp) := by
-  induction p with
-  | nil => simp
-  | @cons x y z e h p ih =>
-      have hp' : (e :: p.edges).Nodup := by simpa only [edges_cons] using hp
-      have hpTail : p.edges.Nodup := (List.nodup_cons.1 hp').2
-      rw [followsOrientation_cons]
-      refine ⟨by simp, by simp, ih hpTail |>.congr fun f hf ↦ ?_⟩
-      have hne : f.1 ≠ e := fun hfe ↦ (List.nodup_cons.1 hp').1 (hfe ▸ hf)
-      simp [orientation, hne]
-
-end Walk
-
 namespace Ear
 
 /-- Orient the graph traced by an ear in the order of its underlying walk. -/
@@ -128,56 +60,40 @@ end Ear
 
 namespace Orientation
 
-/-- An edge of an adjoined ear outside the base belongs to the traced graph. -/
-private theorem mem_toGraph_of_notMem_base (ear : G.Ear H) {e : ear.add.edgeSet}
-    (he : e.1 ∉ E(H)) : e.1 ∈ E(ear.toGraph) := by
-  have heUnion : e.1 ∈ E(H) ∪ E(ear.toGraph) := by
-    simpa only [ear.edgeSet_add] using e.2
-  exact heUnion.resolve_left he
+private noncomputable def unionOfEq {K : Graph α β} (o₁ : H.Orientation)
+    {L : Graph α β} (o₂ : L.Orientation) (h : H.Compatible L) (hK : K = h.union) :
+    K.Orientation := by
+  rw [hK]
+  exact o₁.union o₂ h
 
-open Classical in
+private theorem restrict_unionOfEq_left {K L : Graph α β} (o₁ : H.Orientation)
+    (o₂ : L.Orientation) (h : H.Compatible L) (hK : K = h.union) (hH : H ≤ K) :
+    (unionOfEq o₁ o₂ h hK).restrict hH = o₁ := by
+  subst K
+  exact restrict_union_left
+
+private theorem restrict_unionOfEq_right {K L : Graph α β} (o₁ : H.Orientation)
+    (o₂ : L.Orientation) (h : H.Compatible L) (hK : K = h.union) (hL : L ≤ K)
+    (hE : Disjoint E(H) E(L)) : (unionOfEq o₁ o₂ h hK).restrict hL = o₂ := by
+  subst K
+  exact restrict_union_right hE
+
 /-- Extend an orientation over an adjoined ear by directing every new edge in the order of the
 ear's underlying walk. -/
-noncomputable def addEar (o : H.Orientation) (ear : G.Ear H) : ear.add.Orientation where
-  tail e := if he : e.1 ∈ E(H) then
-      ⟨o.tail ⟨e, he⟩, by
-        rw [ear.vertexSet_add]
-        exact Or.inl (o.tail ⟨e, he⟩).2⟩
-    else
-      ⟨ear.toGraphOrientation.tail ⟨e, mem_toGraph_of_notMem_base ear he⟩, by
-        rw [ear.vertexSet_add]
-        exact Or.inr (ear.toGraphOrientation.tail
-          ⟨e, mem_toGraph_of_notMem_base ear he⟩).2⟩
-  head e := if he : e.1 ∈ E(H) then
-      ⟨o.head ⟨e, he⟩, by
-        rw [ear.vertexSet_add]
-        exact Or.inl (o.head ⟨e, he⟩).2⟩
-    else
-      ⟨ear.toGraphOrientation.head ⟨e, mem_toGraph_of_notMem_base ear he⟩, by
-        rw [ear.vertexSet_add]
-        exact Or.inr (ear.toGraphOrientation.head
-          ⟨e, mem_toGraph_of_notMem_base ear he⟩).2⟩
-  isLink e := by
-    by_cases he : e.1 ∈ E(H)
-    · simpa [he] using (o.isLink ⟨e, he⟩).mono ear.base_le_add
-    · simpa [he] using (ear.toGraphOrientation.isLink
-        ⟨e, mem_toGraph_of_notMem_base ear he⟩).mono ear.toGraph_le_add
+noncomputable def addEar (o : H.Orientation) (ear : G.Ear H) : ear.add.Orientation :=
+  unionOfEq o ear.toGraphOrientation ear.compatible ear.add_eq_union
 
 @[simp]
 theorem restrict_addEar_base (o : H.Orientation) (ear : G.Ear H) :
     (o.addEar ear).restrict ear.base_le_add = o := by
-  apply ext_of_head
-  intro e
-  apply Subtype.ext
-  simp [addEar]
+  exact restrict_unionOfEq_left o ear.toGraphOrientation ear.compatible ear.add_eq_union
+    ear.base_le_add
 
 @[simp]
 theorem restrict_addEar_toGraph (o : H.Orientation) (ear : G.Ear H) :
     (o.addEar ear).restrict ear.toGraph_le_add = ear.toGraphOrientation := by
-  apply ext_of_head
-  intro e
-  apply Subtype.ext
-  simp [addEar, ear.disjoint_edgeSet_toGraph.notMem_of_mem_right e.2]
+  exact restrict_unionOfEq_right o ear.toGraphOrientation ear.compatible ear.add_eq_union
+    ear.toGraph_le_add ear.disjoint_edgeSet_toGraph
 
 /-- Directing an ear from its old start to its old end preserves strong connectivity. -/
 theorem isStronglyConnected_addEar (o : H.Orientation) (ear : G.Ear H)

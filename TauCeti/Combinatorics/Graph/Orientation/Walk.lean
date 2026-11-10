@@ -97,6 +97,49 @@ theorem FollowsOrientation.congr {o' : G.Orientation} {p : G.Walk x y}
       exact ⟨by simpa [htail] using hp.1, by simpa [hhead] using hp.2.1,
         ih hp.2.2 fun f hf ↦ h f (by simp [hf])⟩
 
+/-- Orient a graph so that a trail is traversed from its start to its end. Edges outside the
+trail retain an arbitrary orientation. -/
+noncomputable def orientation : {x y : α} → (p : G.Walk x y) → p.edges.Nodup → G.Orientation
+  | _, _, .nil, _ => Orientation.ofEdgeEnds G
+  | _, _, .cons' x y z e h p, hp => by
+      classical
+      have hp' : (e :: p.edges).Nodup := by simpa only [edges_cons] using hp
+      exact Orientation.ofHead
+        (fun f ↦ if hf : f.1 = e then ⟨y, h.right_mem⟩
+          else (p.orientation (List.nodup_cons.1 hp').2).head f)
+        fun f ↦ by
+          split_ifs with hf
+          · subst hf
+            exact h.inc_right
+          · exact (p.orientation (List.nodup_cons.1 hp').2).head_inc f
+
+@[simp]
+theorem orientation_cons_head {x y z : α} (e : β) (h : G.IsLink e x y)
+    (p : G.Walk y z) (hp : (Walk.cons e h p).edges.Nodup) :
+    ((Walk.cons e h p).orientation hp).head ⟨e, h.edge_mem⟩ = ⟨y, h.right_mem⟩ := by
+  simp [orientation]
+
+@[simp]
+theorem orientation_cons_tail {x y z : α} (e : β) (h : G.IsLink e x y)
+    (p : G.Walk y z) (hp : (Walk.cons e h p).edges.Nodup) :
+    ((Walk.cons e h p).orientation hp).tail ⟨e, h.edge_mem⟩ = ⟨x, h.left_mem⟩ := by
+  apply Subtype.ext
+  apply (((Walk.cons e h p).orientation hp).isLink ⟨e, h.edge_mem⟩).left_unique
+  simpa using h
+
+/-- A trail follows the orientation obtained by directing its successive edges forward. -/
+theorem followsOrientation_orientation {x y : α} (p : G.Walk x y) (hp : p.edges.Nodup) :
+    p.FollowsOrientation (p.orientation hp) := by
+  induction p with
+  | nil => simp
+  | @cons x y z e h p ih =>
+      have hp' : (e :: p.edges).Nodup := by simpa only [edges_cons] using hp
+      have hpTail : p.edges.Nodup := (List.nodup_cons.1 hp').2
+      rw [followsOrientation_cons]
+      refine ⟨by simp, by simp, ih hpTail |>.congr fun f hf ↦ ?_⟩
+      have hne : f.1 ≠ e := fun hfe ↦ (List.nodup_cons.1 hp').1 (hfe ▸ hf)
+      simp [orientation, hne]
+
 /-- A walk following an orientation, viewed as a directed walk on the actual vertices. -/
 def toOriented : {x y : α} → (p : G.Walk x y) → (hp : p.FollowsOrientation o) →
     (hx : x ∈ V(G)) → ArrowWalk o.Hom ⟨x, hx⟩ ⟨y, p.end_mem_vertexSet hx⟩
