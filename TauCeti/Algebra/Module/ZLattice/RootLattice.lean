@@ -98,9 +98,7 @@ theorem conductor_kroneckerChar_signedDiscr_realModel_typeARootLattice_two
       (((isEven_realModel_iff _ _).mpr (isEven_typeARootLattice 2)).signedDiscr_modEq_zero_or_one
         (by simp [finrank_carrier]))
       ((isIntegral_realModel _ _).signedDiscr_ne_zero)).conductor = 3 := by
-  refine (TauCeti.conductor_kroneckerChar_eq_natAbs_of_neg_of_prime _ _ ?_ ?_).trans ?_
-  · rw [signedDiscr_realModel_typeARootLattice_two]
-    norm_num
+  refine (TauCeti.conductor_kroneckerChar_eq_natAbs_of_prime _ _ ?_).trans ?_
   · rw [signedDiscr_realModel_typeARootLattice_two]
     exact Nat.prime_three
   · rw [signedDiscr_realModel_typeARootLattice_two]

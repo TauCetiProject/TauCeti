@@ -41,6 +41,8 @@ middle and back faces.  The unit is the class of the constant `0`-cocycle
   cochains on a singular simplex.
 * `TopCat.singularCup`: the cup product on singular cohomology, with `TopCat.singularCup_homologyπ`
   computing it on classes of cocycles and `TopCat.singularCup_naturality` its naturality.
+* `TopCat.singularCup_eq_homologyMap_singularCup`: the cup product along a coefficient morphism
+  `u` is the cup product along the identity followed by the coefficient change induced by `u`.
 * `TopCat.cupCochain_alexanderWhitneyDiagonal_assoc` and `TopCat.singularCup_assoc`:
   associativity of the cup product of cochains and on cohomology.
 * `TopCat.cupCochain_constCochain_left`, `TopCat.cupCochain_constCochain_right`,
@@ -229,6 +231,22 @@ lemma singularCup_naturality {X Y : TopCat.{w}} (f : X ⟶ Y) (k : Type*) [CommR
       TopCat.singularCohomologyMap f n (Y.singularCup k u μ p q n h α β) :=
   TauCeti.ChainComplex.cup_naturality _ μ _ _ _ _ (alexanderWhitneyDiagonal_naturality f u)
     p q n h α β
+
+/-- **The cup product changes coefficients along its coefficient morphism**: the cup product along
+`u : T ⟶ R ⊗ S` is the cup product along the identity of `R ⊗ S`, followed by the map
+`Hⁿ(X; R ⊗ S, P) ⟶ Hⁿ(X; T, P)` that precomposes cochains with the chain map induced by `u`. -/
+lemma singularCup_eq_homologyMap_singularCup (X : TopCat.{w}) (k : Type*) [CommRing k]
+    [Linear k C] [MonoidalLinear k C] (u : T ⟶ R ⊗ S) (μ : M ⊗ N ⟶ P) (p q n : ℕ)
+    (h : p + q = n) (a : X.singularCohomology R k M p) (b : X.singularCohomology S k N q) :
+    X.singularCup k u μ p q n h a b =
+      homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k P).map
+        (((SSet.chainComplexFunctor C).map u).app (toSSet.obj X)).op) n
+        (X.singularCup k (𝟙 (R ⊗ S)) μ p q n h a b) := by
+  have hD : X.alexanderWhitneyDiagonal u =
+      ((SSet.chainComplexFunctor C).map u).app _ ≫ X.alexanderWhitneyDiagonal (𝟙 (R ⊗ S)) := by
+    simp [TauCeti.alexanderWhitneyDiagonal_def]
+  rw [singularCup, singularCup, hD]
+  exact TauCeti.ChainComplex.cup_precomp _ _ _ p q n h a b
 
 section Laws
 

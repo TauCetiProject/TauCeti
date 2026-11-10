@@ -345,7 +345,10 @@ top point `2n - 1 - i`, so the matching is the fully nested `TauCeti.PlanarMatch
 def id (n : ℕ) : TLDiagram n n :=
   ⟨PlanarMatching.nested n, 0⟩
 
+/-- The matching of the identity diagram is the fully nested one. -/
 @[simp]
+theorem matching_id (n : ℕ) : (id n).matching = PlanarMatching.nested n := (rfl)
+
 theorem id_matching_val (n : ℕ) : (id n).matching.1.val = Fin.revPerm :=
   PlanarMatching.nested_val n
 

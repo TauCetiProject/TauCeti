@@ -61,7 +61,7 @@ theorem
     have hneg : -χ (presentedProPGen 2 2 _ 1) ∈ unitsPrincipal 2 2 :=
       (neg_mem_unitsPrincipal_iff_of_val_mul_one_add_eq_neg_one hv).2 (by norm_num; exact hα)
     obtain ⟨hdiv, hnot⟩ :=
-      neg_mem_unitsPrincipal_and_notMem_succ_of_mem_topologicalClosure_zpowers_two hg
+      neg_mem_unitsPrincipal_and_notMem_succ_of_mem_topologicalClosure_zpowers_two
         (neg_mem_unitsPrincipal_two_of_val_eq hw)
         (neg_notMem_unitsPrincipal_two_succ_of_val_eq hw) hmem
         (notMem_unitsPrincipal_two_of_neg_mem le_rfl hneg)
