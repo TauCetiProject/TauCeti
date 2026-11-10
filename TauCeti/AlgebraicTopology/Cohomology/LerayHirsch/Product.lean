@@ -224,16 +224,15 @@ private lemma lerayHirschProd_eq :
           (TopCat.singularCohomologyMap (snd X F) p (b p i))
           (TopCat.singularCohomologyMap (fst X F) q a') := by
     rw [singularCohomologyKunneth_ιTensorObj_tmul, TauCeti.singularCross_eq_singularCup,
-      ← singularCup_naturality, ← ConcreteCategory.comp_apply, ← ConcreteCategory.comp_apply,
-      ← singularCohomologyMap_comp, ← singularCohomologyMap_comp, braiding_hom_fst,
+      ← singularCup_naturality]
+    simp only [← ConcreteCategory.comp_apply, ← singularCohomologyMap_comp, braiding_hom_fst,
       braiding_hom_snd]
   -- Graded commutativity swaps the two factors at the cost of the sign `(-1)^(p q)`.
   have hu : 𝟙 _ ≫ (β_ (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k))).hom = 𝟙 _ := by
-    rw [Category.id_comp, braiding_tensorUnit_left, ← unitors_inv_equal, Iso.hom_inv_id]
+    simp [unitors_inv_equal]
   have hμ : (β_ (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k))).hom ≫
       (λ_ (𝟙_ (ModuleCat.{w} k))).hom = (λ_ (𝟙_ (ModuleCat.{w} k))).hom := by
-    rw [braiding_tensorUnit_left, ← unitors_inv_equal, Category.assoc, Iso.inv_hom_id,
-      Category.comp_id]
+    simp [unitors_inv_equal]
   have hcomm (a' : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :=
     (X ⊗ F).singularCup_gradedComm k hu hμ (by omega : q + p = n)
       (TopCat.singularCohomologyMap (fst X F) q a')
