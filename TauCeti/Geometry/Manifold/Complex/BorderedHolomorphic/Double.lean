@@ -27,8 +27,10 @@ When `e` belongs to the bordered holomorphic groupoid, the reflected chart chang
 holomorphic with holomorphic inverse, by the Schwarz reflection principle; it lies in
 `contDiffGroupoid ω 𝓘(ℂ)`, the groupoid of a Riemann surface without boundary. Reflection
 commutes with conjugation, restricts to `e` on the closed upper half-plane, and respects
-`OpenPartialHomeomorph.symm`, `OpenPartialHomeomorph.trans` and `OpenPartialHomeomorph.refl`, so
-it turns a bordered holomorphic atlas into a holomorphic atlas of the double.
+`OpenPartialHomeomorph.symm`, `OpenPartialHomeomorph.trans` (up to
+`OpenPartialHomeomorph.EqOnSource`) and `OpenPartialHomeomorph.refl`. These are the properties of
+chart changes needed to give the Schottky double a holomorphic atlas; the double itself is not
+constructed here.
 
 The translation `z ↦ z + 1` and the dilation `z ↦ 2z` reflect to the same maps of the plane. If
 the lower half were glued by `z ↦ -conj z` instead, the identity chart would become `z` on the
@@ -57,8 +59,8 @@ upper and `-z` on the lower half-plane, which is not complex differentiable at a
 
 ## References
 
-* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, 2nd ed., AMS
-  Colloquium Publications **52**, 2012, Section 2.4, for the Schottky double.
+* L. V. Ahlfors and L. Sario, *Riemann Surfaces*, Princeton University Press, 1960, Ch. II, for
+  the double of a bordered Riemann surface.
 -/
 
 public section
@@ -76,11 +78,11 @@ namespace ClosedUpperHalfPlane
 
 /-- The fold `z ↦ re z + |im z| i` of the plane onto the closed upper half-plane. It identifies
 `z` with `conj z` and is the identity on the closed upper half-plane. -/
-@[expose] def fold (z : ℂ) : ClosedUpperHalfPlane :=
+def fold (z : ℂ) : ClosedUpperHalfPlane :=
   ⟨(z.re : ℂ) + (|z.im| : ℝ) * I, by simp⟩
 
 theorem coe_fold (z : ℂ) : (fold z : ℂ) = (z.re : ℂ) + (|z.im| : ℝ) * I :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem re_fold (z : ℂ) : (fold z : ℂ).re = z.re := by
@@ -196,7 +198,7 @@ private theorem im_schwarzReflection_neg (he : PreservesRealAxis e) {z : ℂ}
 
 /-- Reflecting the inverse undoes reflecting the chart change on the preimage of the source under
 the fold. -/
-theorem schwarzReflection_symm_schwarzReflection (he : PreservesRealAxis e) {z : ℂ}
+private theorem schwarzReflection_symm_schwarzReflection (he : PreservesRealAxis e) {z : ℂ}
     (hz : fold z ∈ e.source) :
     schwarzReflection (closedUpperHalfPlaneModel ∘ e.symm ∘ closedUpperHalfPlaneModel.symm)
       (schwarzReflection (closedUpperHalfPlaneModel ∘ e ∘ closedUpperHalfPlaneModel.symm) z) =
@@ -232,7 +234,7 @@ private theorem im_model_comp_eq_zero (he : PreservesRealAxis e) {z : ℂ}
   simpa [hz', hz0] using (he _ hz).1 (by simp [hz0])
 
 /-- The reflected chart change is continuous on the preimage of the source under the fold. -/
-theorem continuousOn_schwarzReflection_fold_preimage (he : PreservesRealAxis e) :
+private theorem continuousOn_schwarzReflection_fold_preimage (he : PreservesRealAxis e) :
     ContinuousOn
       (schwarzReflection (closedUpperHalfPlaneModel ∘ e ∘ closedUpperHalfPlaneModel.symm))
       (fold ⁻¹' e.source) :=
@@ -243,7 +245,7 @@ theorem continuousOn_schwarzReflection_fold_preimage (he : PreservesRealAxis e) 
 that preserves the real axis by Schwarz reflection: it is `e` on the closed upper half-plane and
 `z ↦ conj (e (conj z))` on the lower half-plane. This is the chart change of the Schottky double
 glued along the real axis by `z ↦ conj z`. -/
-@[expose] def schwarzDouble (e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane)
+def schwarzDouble (e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane)
     (he : PreservesRealAxis e) : OpenPartialHomeomorph ℂ ℂ where
   toFun := schwarzReflection (closedUpperHalfPlaneModel ∘ e ∘ closedUpperHalfPlaneModel.symm)
   invFun := schwarzReflection (closedUpperHalfPlaneModel ∘ e.symm ∘ closedUpperHalfPlaneModel.symm)
@@ -265,19 +267,19 @@ variable (he : PreservesRealAxis e) (he' : PreservesRealAxis e')
 theorem coe_schwarzDouble :
     ⇑(schwarzDouble e he) =
       schwarzReflection (closedUpperHalfPlaneModel ∘ e ∘ closedUpperHalfPlaneModel.symm) :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem schwarzDouble_source : (schwarzDouble e he).source = fold ⁻¹' e.source :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem schwarzDouble_target : (schwarzDouble e he).target = fold ⁻¹' e.target :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem schwarzDouble_symm : (schwarzDouble e he).symm = schwarzDouble e.symm he.symm :=
-  rfl
+  (rfl)
 
 theorem schwarzDouble_apply_of_im_nonneg {z : ℂ} (hz : 0 ≤ z.im) :
     schwarzDouble e he z = e (fold z) :=
@@ -322,8 +324,8 @@ theorem schwarzDouble_trans : schwarzDouble (e.trans e') (he.trans he') ≈
   refine (OpenPartialHomeomorph.eqOnSource_iff _ _).2 ⟨?_, fun z hz ↦ ?_⟩
   · ext z
     simp
-  · change schwarzDouble (e.trans e') (he.trans he') z =
-      schwarzDouble e' he' (schwarzDouble e he z)
+  · simp only [OpenPartialHomeomorph.coe_toPartialEquiv,
+      OpenPartialHomeomorph.trans_apply]
     have hz' : fold z ∈ e.source := hz.1
     rcases le_or_gt 0 z.im with hnn | hneg
     · have hw : 0 ≤ (schwarzDouble e he z).im := by
