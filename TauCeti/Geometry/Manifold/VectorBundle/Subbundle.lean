@@ -348,8 +348,7 @@ theorem contMDiffVectorBundle [Fintype ι] [ContMDiffVectorBundle n F E IB]
     fun y hy ↦ (ContinuousLinearMap.restrictScalarsIsometry 𝕜' (ι → 𝕜') (ι → 𝕜') 𝕜 𝕜
       ).toContinuousLinearMap.contDiff.comp_contMDiffWithinAt (h y hy)
   simpa only [IsSubbundleFrameOn.trivialization_baseSet] using
-    hr.congr fun y hy ↦ (Bundle.Trivialization.restrictScalars_coordChangeL 𝕜 𝕜' _ _
-      (by simpa only [IsSubbundleFrameOn.trivialization_baseSet] using hy)).symm
+    hr.congr fun y _ ↦ (Bundle.Trivialization.restrictScalars_coordChangeL 𝕜 𝕜' _ _).symm
 
 /-- The canonical inclusion `(x, v) ↦ (x, ↑v)` of a subbundle given by `C^n` local frames into
 the total space of `E` is `C^n` over the ground field. -/
