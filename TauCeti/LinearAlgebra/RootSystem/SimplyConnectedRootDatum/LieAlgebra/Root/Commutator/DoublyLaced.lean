@@ -25,13 +25,20 @@ The proof specializes
 `TauCeti.UniversalEnvelopingAlgebra.commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq'`
 to the pinned Chevalley system, discharging its bracket hypotheses from the integral root datum.
 The all-root Kostant form preserves the same lattice, and its parametrized root subgroups agree
-with the native all-root maps.
+with the native all-root maps. The multiplication identity similarly specializes
+`TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupPoints_mul_of_lie_lie_eq'`.
+
+Outside type `G₂`, the double-chain corollaries discharge the non-root hypotheses of these
+formulas using the root-string bounds in `SimplyConnectedRootDatum/DoubleChain.lean`.
+They remove hypotheses from the existing doubly-laced commutator formula, rather than
+introducing a new rank-two configuration.
 
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 15, with the convention
   `⁅x, y⁆ = x y x⁻¹ y⁻¹`.
 * R. W. Carter, *Simple Groups of Lie Type*, Theorem 5.2.2.
+* J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 -/
 
 public section
@@ -78,6 +85,18 @@ private theorem doublyLaced_vanishing_brackets {α β γ δ : Fin t.numRoots}
     · have := (hind 2 2 (by rw [hδ, hγ] at hz; linear_combination hz)).1
       norm_num at this
 
+private theorem doublyLaced_iterated_bracket {α β γ δ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hδ : (t.simplyConnectedRootDatum ht).root δ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ) :
+    ⁅t.chevalleySystem ht α, ⁅t.chevalleySystem ht α, t.chevalleySystem ht β⁆⁆ =
+      (2 * (t.structureConstant ht α β * t.structureConstant ht α γ / 2)) •
+        t.chevalleySystem ht δ := by
+  rw [lie_chevalleySystem_eq_structureConstant_zsmul hγ, lie_zsmul,
+    lie_chevalleySystem_eq_structureConstant_zsmul hδ, smul_smul,
+    Int.mul_ediv_cancel' (two_dvd_structureConstant_mul_structureConstant hγ)]
+
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
 variable (M : AddSubgroup V)
@@ -87,6 +106,52 @@ variable (hnil : ∀ i, IsNilpotent
   (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))))
 
 attribute [local instance high] Algebra.toModule
+
+/-- Reordering root-subgroup elements with sum roots `α + β` and `2α + β`, when the
+further sums `3α + β` and `α + 2β` are not roots, uses the integral Chevalley coefficients. -/
+theorem chevalleyRootSubgroup_mul_of_add_eq_of_add_eq
+    {α β γ δ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hδ : (t.simplyConnectedRootDatum ht).root δ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
+    (hαδ : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root δ ∉
+      Set.range (t.simplyConnectedRootDatum ht).root)
+    (hβγ : (t.simplyConnectedRootDatum ht).root β + (t.simplyConnectedRootDatum ht).root γ ∉
+      Set.range (t.simplyConnectedRootDatum ht).root)
+    (A : CommAlgCat ℤ) (u v : A) :
+    chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u) *
+        chevalleyRootSubgroup ρ M hM hnil β A (.ofAdd v) =
+      chevalleyRootSubgroup ρ M hM hnil β A (.ofAdd v) *
+        chevalleyRootSubgroup ρ M hM hnil γ A
+          (.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
+        chevalleyRootSubgroup ρ M hM hnil δ A
+          (.ofAdd (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
+            (u ^ 2 * v))) *
+        chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u) := by
+  obtain ⟨hil, hjk, _⟩ := doublyLaced_vanishing_brackets hγ hδ hαδ hβγ
+  have hM' := kostantForm_chevalleySystem_smul_mem ρ M hM hnil
+  simp_rw [← kostantRootSubgroupParam_chevalleySystem ρ M hM hnil hM',
+    kostantRootSubgroupParam_apply]
+  have halg := Subsingleton.elim
+    (inferInstance : Algebra ℤ ((CategoryTheory.forget (CommAlgCat ℤ)).obj A))
+    (Ring.toIntAlgebra A)
+  dsimp only [inferInstance] at halg
+  rw [halg]
+  let : Algebra ℤ A := Ring.toIntAlgebra A
+  simpa only [MulEquiv.apply_symm_apply, toAdd_ofAdd] using
+    kostantRootSubgroupPoints_mul_of_lie_lie_eq' (t.chevalleySystem ht) (t.lieBasis ht).h ρ M hM'
+      (A := A)
+      (lie_chevalleySystem_eq_structureConstant_zsmul hγ)
+      (doublyLaced_iterated_bracket hγ hδ) hil hjk
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil δ)
+      ((@AdditiveGroup.gaPointsMulEquiv ℤ _ A _ (Ring.toIntAlgebra A)).symm
+        (Multiplicative.ofAdd u))
+      ((@AdditiveGroup.gaPointsMulEquiv ℤ _ A _ (Ring.toIntAlgebra A)).symm
+        (Multiplicative.ofAdd v))
 
 /-- The Chevalley commutator formula for the roots `α + β` and `2α + β`, with the native
 structure constants and the exact integral coefficient `N_{α,β} N_{α,α+β} / 2`. -/
@@ -111,12 +176,7 @@ theorem commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq
               (u ^ 2 * v))) := by
   obtain ⟨hil, hjk, hjl⟩ := doublyLaced_vanishing_brackets hγ hδ hαδ hβγ
   let e := t.chevalleySystem ht
-  let d := t.structureConstant ht α β * t.structureConstant ht α γ / 2
-  have hdiv : 2 * d = t.structureConstant ht α β * t.structureConstant ht α γ :=
-    Int.mul_ediv_cancel' (two_dvd_structureConstant_mul_structureConstant hγ)
-  have hiij : ⁅e α, ⁅e α, e β⁆⁆ = (2 * d) • e δ := by
-    rw [lie_chevalleySystem_eq_structureConstant_zsmul hγ, lie_zsmul,
-      lie_chevalleySystem_eq_structureConstant_zsmul hδ, smul_smul, hdiv]
+  have hiij := doublyLaced_iterated_bracket hγ hδ
   have hM' := kostantForm_chevalleySystem_smul_mem ρ M hM hnil
   simp_rw [← kostantRootSubgroupParam_chevalleySystem ρ M hM hnil hM',
     kostantRootSubgroupParam_apply]
@@ -138,6 +198,48 @@ theorem commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq
         (Multiplicative.ofAdd u))
       ((@AdditiveGroup.gaPointsMulEquiv ℤ _ A _ (Ring.toIntAlgebra A)).symm
         (Multiplicative.ofAdd v))
+
+/-- Outside `G₂`, the double chain itself supplies the non-root hypotheses of the
+root-subgroup reordering formula. -/
+theorem chevalleyRootSubgroup_mul_of_double_chain (h : t ≠ .G2)
+    {α β γ δ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hδ : (t.simplyConnectedRootDatum ht).root δ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
+    (A : CommAlgCat ℤ) (u v : A) :
+    chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u) *
+        chevalleyRootSubgroup ρ M hM hnil β A (.ofAdd v) =
+      chevalleyRootSubgroup ρ M hM hnil β A (.ofAdd v) *
+        chevalleyRootSubgroup ρ M hM hnil γ A
+          (.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
+        chevalleyRootSubgroup ρ M hM hnil δ A
+          (.ofAdd (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
+            (u ^ 2 * v))) *
+        chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u) :=
+  chevalleyRootSubgroup_mul_of_add_eq_of_add_eq ρ M hM hnil hγ hδ
+    (root_add_last_notMem_of_double_chain h hγ hδ).1
+    (root_initial_add_middle_notMem_of_double_chain h hγ hδ).1 A u v
+
+/-- Outside `G₂`, the double chain itself supplies the non-root hypotheses of the existing
+Chevalley element-commutator formula, over every commutative value ring. -/
+theorem commutatorElement_chevalleyRootSubgroup_of_double_chain (h : t ≠ .G2)
+    {α β γ δ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hδ : (t.simplyConnectedRootDatum ht).root δ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
+    (A : CommAlgCat ℤ) (u v : A) :
+    ⁅chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u),
+        chevalleyRootSubgroup ρ M hM hnil β A (.ofAdd v)⁆ =
+      chevalleyRootSubgroup ρ M hM hnil γ A
+        (.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
+      chevalleyRootSubgroup ρ M hM hnil δ A
+        (.ofAdd (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
+          (u ^ 2 * v))) :=
+  commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq ρ M hM hnil hγ hδ
+    (root_add_last_notMem_of_double_chain h hγ hδ).1
+    (root_initial_add_middle_notMem_of_double_chain h hγ hδ).1 A u v
 
 end
 

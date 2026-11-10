@@ -92,6 +92,25 @@ theorem pairings_of_double_chain {α β γ δ : Fin t.numRoots}
   · simpa using ((P).algebraMap_pairingIn ℤ α β).symm.trans
       (congrArg (algebraMap ℤ ℤ) hαβ)
 
+/-- Outside `G₂`, a vector whose coroot evaluation is outside the possible Cartan integers
+is neither a root nor zero. -/
+theorem notMem_range_root_and_ne_zero_of_coroot_notMem (α : Fin t.numRoots)
+    {x : Fin t.rank → ℤ} (hx : (P).coroot' α x ∉ ({-2, -1, 0, 1, 2} : Set ℤ)) :
+    x ∉ Set.range (P).root ∧ x ≠ 0 := by
+  constructor
+  · rintro ⟨ε, rfl⟩
+    let := t.isNotG2_rationalRootSystem ht h
+    have hb := RootPairing.IsNotG2.pairingIn_mem_zero_one_two
+      («P» := t.rationalRootSystem ht) ε α
+    have hp : (P).pairingIn ℤ ε α = (P).pairing ε α := by
+      simpa using (P).algebraMap_pairingIn ℤ ε α
+    apply hx
+    simpa only [pairingIn_rationalRootSystem, hp,
+      RootPairing.root_coroot'_eq_pairing] using hb
+  · intro hz
+    apply hx
+    simp [hz]
+
 /-- The sum `α + δ` of the root `α` and the last root `δ = 2α + β` of a double chain is
 neither a root nor zero. -/
 theorem root_add_last_notMem_of_double_chain {α β γ δ : Fin t.numRoots}
@@ -101,47 +120,23 @@ theorem root_add_last_notMem_of_double_chain {α β γ δ : Fin t.numRoots}
   have hp := (pairings_of_double_chain h hγ hδ).1
   have heval : (P).coroot' α ((P).root α + (P).root δ) = 4 := by
     simp [hδ, hγ, map_add, hp]
-  constructor
-  · rintro ⟨ε, hε⟩
-    let := t.isNotG2_rationalRootSystem ht h
-    have hb := RootPairing.IsNotG2.pairingIn_mem_zero_one_two
-      («P» := t.rationalRootSystem ht) ε α
-    have heq := congrArg ((P).coroot' α) hε
-    simp only [RootPairing.root_coroot'_eq_pairing, heval] at heq
-    simp only [pairingIn_rationalRootSystem] at hb
-    have heq' := (P).algebraMap_pairingIn ℤ ε α
-    norm_num [heq] at heq'
-    simp_all
-  · intro hz
-    simp [hz] at heval
+  exact notMem_range_root_and_ne_zero_of_coroot_notMem h α (by norm_num [heval])
 
 /-- The sum `β + γ` of the initial root `β` and the middle root `γ = α + β` of a double chain
 is neither a root nor zero. -/
-theorem root_add_middle_notMem_of_double_chain {α β γ δ : Fin t.numRoots}
+theorem root_initial_add_middle_notMem_of_double_chain {α β γ δ : Fin t.numRoots}
     (hγ : (P).root γ = (P).root α + (P).root β)
     (hδ : (P).root δ = (P).root α + (P).root γ) :
     (P).root β + (P).root γ ∉ Set.range (P).root ∧ (P).root β + (P).root γ ≠ 0 := by
   have hp := (pairings_of_double_chain h hγ hδ).2
   have heval : (P).coroot' β ((P).root β + (P).root γ) = 3 := by
     simp [hγ, map_add, hp]
-  constructor
-  · rintro ⟨ε, hε⟩
-    let := t.isNotG2_rationalRootSystem ht h
-    have hb := RootPairing.IsNotG2.pairingIn_mem_zero_one_two
-      («P» := t.rationalRootSystem ht) ε β
-    have heq := congrArg ((P).coroot' β) hε
-    simp only [RootPairing.root_coroot'_eq_pairing, heval] at heq
-    simp only [pairingIn_rationalRootSystem] at hb
-    have heq' := (P).algebraMap_pairingIn ℤ ε β
-    norm_num [heq] at heq'
-    simp_all
-  · intro hz
-    simp [hz] at heval
+  exact notMem_range_root_and_ne_zero_of_coroot_notMem h β (by norm_num [heval])
 
 omit h in
 /-- The sum of the roots `β` and `δ` in a double chain is twice the root `γ`, and hence is
 neither a root nor zero. This also holds in type `G₂`. -/
-theorem root_add_last_notMem_of_root_eq_add {α β γ δ : Fin t.numRoots}
+theorem root_initial_add_last_notMem_of_double_chain {α β γ δ : Fin t.numRoots}
     (hγ : (P).root γ = (P).root α + (P).root β)
     (hδ : (P).root δ = (P).root α + (P).root γ) :
     (P).root β + (P).root δ ∉ Set.range (P).root ∧ (P).root β + (P).root δ ≠ 0 := by
