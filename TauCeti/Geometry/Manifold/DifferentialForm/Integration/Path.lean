@@ -47,8 +47,8 @@ concatenation of curves (`TauCeti.pathIntegral_curveConcat`), is natural under p
 * `TauCeti.intervalIntegrable_apply_curveVelocity_of_contMDiffAt`: the integrand is interval
   integrable on `a..b` as soon as, at every point of `[[a, b]]`, the curve is `C¹` and the form
   is continuous at the point of the curve. Since `C¹` at a point is a condition on a neighbourhood
-  of that point, this uses regularity of the curve on a neighbourhood of `[[a, b]]` and of the
-  form on a neighbourhood of the arc; both are arbitrary away from them.
+  of that point, the curve has to be `C¹` near `[[a, b]]`, while the form only has to be
+  continuous at each point of the arc; both are arbitrary elsewhere.
 * `TauCeti.pathIntegral_mextDeriv_ofFunction` and `TauCeti.pathIntegral_mextDeriv`: the
   fundamental theorem of calculus for line integrals.
 * `TauCeti.pathIntegral_eq_zero_of_mem_exactForms`: exact `1`-forms integrate to zero around
