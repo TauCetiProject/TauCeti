@@ -133,6 +133,25 @@ protected theorem lift_mk {α : Sort*} (f : sphere (0 : PiLp 2 fun _ : Fin (n + 
     QuaternionicProjectiveSpace.lift n f h (mk n x) = f x :=
   (rfl)
 
+/-- The `0`th coordinate of a unit vector of `ℍ¹` is a unit quaternion. -/
+private theorem norm_apply_zero (v : sphere (0 : PiLp 2 fun _ : Fin 1 ↦ ℍ) 1) : ‖v.1 0‖ = 1 := by
+  have h := PiLp.norm_sq_eq_of_L2 (fun _ : Fin 1 ↦ ℍ) v.1
+  rw [mem_sphere_zero_iff_norm.1 v.2, Fin.sum_univ_one] at h
+  nlinarith [norm_nonneg (v.1 0)]
+
+/-- `HP⁰` is a point: two unit vectors `v`, `w` of `ℍ¹` differ by the unit quaternion
+`w₀⁻¹ v₀` on the right. -/
+instance instSubsingletonZero : Subsingleton (QuaternionicProjectiveSpace 0) := by
+  refine ⟨fun p p' ↦ ?_⟩
+  induction p using QuaternionicProjectiveSpace.inductionOn with | h v => ?_
+  induction p' using QuaternionicProjectiveSpace.inductionOn with | h w => ?_
+  have hw : w.1 0 ≠ 0 := norm_ne_zero_iff.1 ((norm_apply_zero w).trans_ne one_ne_zero)
+  refine (mk_eq_mk_iff 0 v w).2 ⟨⟨(w.1 0)⁻¹ * v.1 0, mem_sphere_zero_iff_norm.2 ?_⟩,
+    Subtype.ext (PiLp.ext fun i ↦ ?_)⟩
+  · rw [norm_mul, norm_inv, norm_apply_zero, norm_apply_zero, inv_one, one_mul]
+  · rw [Fin.fin_one_eq_zero i]
+    simp [hw]
+
 /-- The projection from the unit sphere onto quaternionic projective space is an open quotient
 map. -/
 theorem isOpenQuotientMap_mk : IsOpenQuotientMap (mk n) :=
