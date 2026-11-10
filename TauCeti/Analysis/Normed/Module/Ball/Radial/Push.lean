@@ -117,17 +117,17 @@ theorem norm_radialPush_le_one (t : I) (hy : ‖y‖ ≤ 1) : ‖radialPush r t 
     · rw [radialPush_of_norm_eq_zero hy0, norm_smul_of_nonneg (sub_nonneg.mpr t.2.2), hy0]
       simp
     · have hy0' : 0 < ‖y‖ := lt_of_le_of_ne (norm_nonneg y) hy0.symm
-      have hmin : min 1 (r / ‖y‖) = r / ‖y‖ :=
-        min_eq_right ((div_neg_of_neg_of_pos hr hy0').le.trans zero_le_one)
       have hpush : r⁻¹ • radialRetraction r y = ‖y‖⁻¹ • y := by
-        rw [radialRetraction_def, hmin, smul_smul, inv_mul_eq_div, div_div_cancel_left' hr.ne,
-          inv_eq_one_div]
+        rw [radialRetraction_of_le_norm (hr.le.trans (norm_nonneg y)), smul_smul]
+        congr 1
+        have := hr.ne
+        field_simp
       rw [radialPush, hpush]
       calc ‖(1 - (t : ℝ)) • y + (t : ℝ) • ‖y‖⁻¹ • y‖
           ≤ ‖(1 - (t : ℝ)) • y‖ + ‖(t : ℝ) • ‖y‖⁻¹ • y‖ := norm_add_le _ _
         _ = (1 - (t : ℝ)) * ‖y‖ + (t : ℝ) := by
           rw [norm_smul_of_nonneg (sub_nonneg.mpr t.2.2), norm_smul_of_nonneg t.2.1,
-            norm_smul_of_nonneg (inv_nonneg.mpr hy0'.le), inv_mul_cancel₀ hy0.symm.symm, mul_one]
+            norm_smul_of_nonneg (inv_nonneg.mpr hy0'.le), inv_mul_cancel₀ hy0, mul_one]
         _ ≤ 1 := by nlinarith [t.2.1, t.2.2]
 
 /-- `TauCeti.radialPush` fixes the unit sphere. -/
