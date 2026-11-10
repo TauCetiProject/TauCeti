@@ -112,14 +112,9 @@ theorem AnalyticAt.intervalIntegral_comp {f : E → F} {c : E} (hf : AnalyticAt 
     (hL1 : ∀ᵐ t, t ∈ Ι a b → ‖L t‖ ≤ 1) :
     AnalyticAt 𝕜 (fun z ↦ ∫ t in a..b, f (c + L t (z - c))) c := by
   by_cases hF : CompleteSpace F
-  · -- the two scalar actions commute on the rationals, hence on the reals by continuity
-    have : SMulCommClass 𝕜 ℝ F := ⟨fun s r x ↦ by
-      refine congrFun (Continuous.ext_on Rat.denseRange_cast
-        (f := fun r : ℝ ↦ s • r • x) (g := fun r : ℝ ↦ r • s • x) ?_ ?_ ?_) r
-      · exact (continuous_id.smul continuous_const).const_smul s
-      · exact continuous_id.smul continuous_const
-      · rintro _ ⟨q, rfl⟩
-        exact map_ratCast_smul (DistribSMul.toAddMonoidHom F s) ℝ ℝ q x⟩
+  · -- `s • _` is continuous and additive, hence real-linear, so the two scalar actions commute
+    have : SMulCommClass 𝕜 ℝ F :=
+      ⟨fun s r x ↦ map_real_smul (DistribSMul.toAddMonoidHom F s) (continuous_const_smul s) r x⟩
     obtain ⟨p, r, hp⟩ := hf
     exact (hp.intervalIntegral_comp hL hL1).analyticAt
   · simpa [intervalIntegral, integral_of_not_completeSpace hF] using analyticAt_const
