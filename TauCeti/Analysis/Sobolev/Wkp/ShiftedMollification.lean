@@ -62,7 +62,7 @@ private def shiftTest (phi : ContDiffBump (0 : E)) (h : E) {K : Set E} (hK : IsC
     (contDiff_smoothField phi _).comp (contDiff_id.add contDiff_const),
     HasCompactSupport.intro
       ((Homeomorph.addRight h).isCompact_preimage.2 (hK.add (isCompact_closedBall 0 phi.rOut)))
-      fun _ hx => smoothField_eq_zero phi (value k u) hu hx,
+      fun _ hx => smoothField_eq_zero_of_notMem_add_closedBall phi (value k u) hu hx,
     subset_univ _⟩
 
 private theorem shiftTest_apply (phi : ContDiffBump (0 : E)) (h : E) {K : Set E}
@@ -96,7 +96,7 @@ private theorem shifted_smoothField_eventuallyEq_zero {F : Type*} [NormedAddComm
     ((hK.add (isCompact_closedBall 0 phi.rOut)).isClosed.isOpen_compl).preimage
       (continuous_id.add continuous_const)
   filter_upwards [hopen.mem_nhds (notMem_add_closedBall_zero_of_disjoint hx)] with y hy
-  exact smoothField_eq_zero phi f hf hy
+  exact smoothField_eq_zero_of_notMem_add_closedBall phi f hf hy
 
 private theorem gradient_shifted_smoothField (phi : ContDiffBump (0 : E)) (h : E) {K : Set E}
     (hK : IsCompact K) (u : Wkp mu Omega p 1)
@@ -112,7 +112,7 @@ private theorem gradient_shifted_smoothField (phi : ContDiffBump (0 : E)) (h : E
     exact gradient_smoothField u phi (x + h) hx
   · rw [(shifted_smoothField_eventuallyEq_zero phi h hK (value 1 u) hu hx).gradient_eq,
       gradient_fun_const,
-      smoothField_eq_zero phi _
+      smoothField_eq_zero_of_notMem_add_closedBall phi _
         (iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen _ _
           hK.isClosed.isOpen_compl hu)
         (notMem_add_closedBall_zero_of_disjoint hx)]
@@ -133,7 +133,7 @@ private theorem fderiv_shifted_smoothField (phi : ContDiffBump (0 : E)) (h : E) 
         (iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen _ _
           hK.isClosed.isOpen_compl hlow) hx).fderiv_eq,
       fderiv_const_apply,
-      smoothField_eq_zero phi _
+      smoothField_eq_zero_of_notMem_add_closedBall phi _
         (iteratedGradient_ae_eq_zero_of_value_ae_eq_zero_of_isOpen _ _
           hK.isClosed.isOpen_compl hu)
         (notMem_add_closedBall_zero_of_disjoint hx)]

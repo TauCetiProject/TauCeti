@@ -29,8 +29,8 @@ normalized bump with the zero extension of a field in `Lᵖ(Ω)`. It is smooth o
 mollified weak gradient and weak Hessian (`TauCeti.Wkp.gradient_smoothField`,
 `TauCeti.Wkp.fderiv_gradient_smoothField_value`); and the mollification of a function agreeing
 with a continuous `v` stays close to `v` where `v` varies little
-(`TauCeti.Wkp.dist_smoothField_le`). `TauCeti.Wkp.smoothField_eq_zero` locates its support near
-the set off which the field vanishes.
+(`TauCeti.Wkp.dist_smoothField_le`). `TauCeti.Wkp.smoothField_eq_zero_of_notMem_add_closedBall`
+locates its support near the set off which the field vanishes.
 These are the inputs for passing estimates from smooth functions to strong `W^{2,p}` solutions.
 
 The classical argument is in L. C. Evans, *Partial Differential Equations*, §5.3.1.
@@ -224,7 +224,8 @@ theorem contDiff_smoothField {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ
 omit [Fact (1 ≤ p)] in
 /-- A mollified field vanishes at every point whose bump ball misses the set off which the field
 vanishes. -/
-theorem smoothField_eq_zero {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+theorem smoothField_eq_zero_of_notMem_add_closedBall {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F]
     (phi : ContDiffBump (0 : E)) {K : Set E} (f : Lp F p (mu.restrict Omega))
     (hf : ∀ᵐ x ∂mu.restrict Omega, x ∉ K → f x = 0) {y : E}
     (hy : y ∉ K + Metric.closedBall (0 : E) phi.rOut) :
