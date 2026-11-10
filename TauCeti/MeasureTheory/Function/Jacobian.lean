@@ -271,17 +271,19 @@ namespace ContinuousAffineMap
 
 open MeasureTheory
 
+variable {R V W : Type*} [Ring R] [AddCommGroup V] [Module R V] [TopologicalSpace V]
+  [AddCommGroup W] [Module R W] [TopologicalSpace W] [IsTopologicalAddGroup V]
+  [IsTopologicalAddGroup W]
+
+/-- A continuous affine map is its linear part followed by the translation by its value at `0`. -/
+theorem coe_eq_add_const_comp_contLinear (f : V →ᴬ[R] W) :
+    (f : V → W) = (fun y ↦ y + f 0) ∘ f.contLinear := by
+  funext x
+  simpa [add_comm] using congrFun f.decomp x
+
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {s : Set E}
-
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A continuous affine self-map is its linear part followed by the translation by its value
-at `0`. -/
-theorem coe_eq_add_const_comp_contLinear (T : E →ᴬ[ℝ] E) :
-    (T : E → E) = (fun y ↦ y + T 0) ∘ T.contLinear := by
-  funext x
-  simpa [add_comm] using congrFun T.toAffineMap.decomp x
 
 /-- A continuous affine self-map of a finite-dimensional real space whose linear part has
 determinant of absolute value `1` preserves an additive Haar measure. -/
