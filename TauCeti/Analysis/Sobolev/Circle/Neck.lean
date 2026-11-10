@@ -291,31 +291,67 @@ private theorem coeff_neckMode_apply (n : ℕ) (u : CircleSobolev s E) (k : ℤ)
 
 section Analytic
 
-variable [CompleteSpace E]
-
 private theorem hasSum_neckMode {y : ℂ} (hy : ‖y‖ < 1) :
     HasSum (fun n ↦ y ^ n • (neckMode n : CircleSobolev s E →L[ℂ] CircleSobolev s E))
       (neckTransfer y + neckMode 0) := by
-  have hsum : Summable fun n ↦ y ^ n • (neckMode n : CircleSobolev s E →L[ℂ] _) :=
-    Summable.of_norm_bounded (summable_geometric_of_lt_one (norm_nonneg y) hy) fun n ↦ by
+  have hsum : Summable fun n ↦ ‖y ^ n • (neckMode n : CircleSobolev s E →L[ℂ] _)‖ :=
+    Summable.of_nonneg_of_le (fun _ ↦ norm_nonneg _) (fun n ↦ by
       rw [norm_smul, norm_pow]
-      exact mul_le_of_le_one_right (by positivity) (norm_neckMode_le n)
-  convert hsum.hasSum using 1
-  refine ContinuousLinearMap.ext fun u ↦ CircleSobolev.ext <| funext fun k ↦ ?_
-  have h := (hsum.hasSum.mapL (ContinuousLinearMap.apply ℂ _ u)).mapL (coeffCLM k)
-  simp only [ContinuousLinearMap.apply_apply, smul_apply,
-    coeffCLM_apply, coeff_smul, Pi.smul_apply, coeff_neckMode_apply] at h
-  refine HasSum.unique ?_ h
-  have hf (n : ℕ) (hn : n ≠ (-k).toNat) :
-      (y ^ n • if k = -(n : ℤ) then u.coeff n else 0) = 0 := by
-    rw [ite_eq_right (by omega), smul_zero]
-  convert _root_.hasSum_single (-k).toNat hf using 1
-  rw [add_apply, coeff_add, Pi.add_apply, coeff_neckMode_apply, coeff_neckTransfer hy.le]
-  obtain ⟨m, rfl | rfl⟩ := Int.eq_nat_or_neg k <;> rcases eq_or_ne m 0 with rfl | hm
-  · simp
-  · simp [hm]
-  · simp
-  · simp [hm]
+      exact mul_le_of_le_one_right (by positivity) (norm_neckMode_le n))
+      (summable_geometric_of_lt_one (norm_nonneg y) hy)
+  rw [hasSum_iff_tendsto_nat_of_summable_norm hsum, tendsto_iff_norm_sub_tendsto_zero]
+  refine squeeze_zero (fun _ ↦ norm_nonneg _) (fun N ↦ ?_)
+    (tendsto_pow_atTop_nhds_zero_of_lt_one (norm_nonneg y) hy)
+  rw [norm_sub_rev]
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun u ↦ ?_
+  rw [← LinearIsometryEquiv.norm_map reflect u]
+  refine norm_le_of_forall_le (pow_nonneg (norm_nonneg y) N) fun k ↦ ?_
+  have hS : ((∑ i ∈ Finset.range N, y ^ i • (neckMode i : CircleSobolev s E →L[ℂ] _)) u).coeff k =
+      ∑ i ∈ Finset.range N, y ^ i • if k = -(i : ℤ) then u.coeff i else 0 := by
+    rw [← coeffCLM_apply, sum_apply, map_sum]
+    simp only [smul_apply, map_smul, coeffCLM_apply, coeff_neckMode_apply]
+  have hcoeff : ((neckTransfer y + neckMode 0 -
+      ∑ i ∈ Finset.range N, y ^ i • (neckMode i : CircleSobolev s E →L[ℂ] _) :
+        CircleSobolev s E →L[ℂ] CircleSobolev s E) u).coeff k =
+      if k ≤ 0 ∧ N ≤ (-k).toNat then y ^ (-k).toNat • u.coeff (-k).toNat else 0 := by
+    rw [sub_apply, add_apply, coeff_sub, coeff_add, Pi.sub_apply, Pi.add_apply, hS,
+      coeff_neckMode_apply]
+    by_cases hk : k ≤ 0
+    · obtain ⟨m, rfl⟩ : ∃ m : ℕ, k = -m := ⟨(-k).toNat, by omega⟩
+      have hsum : ∑ i ∈ Finset.range N, y ^ i • (if -(m : ℤ) = -(i : ℤ) then u.coeff i else 0) =
+          if m < N then y ^ m • u.coeff m else 0 := by
+        by_cases hm : m < N
+        · rw [ite_eq_left hm, Finset.sum_eq_single m]
+          · simp
+          · intro i _ hi
+            rw [ite_eq_right (by omega), smul_zero]
+          · exact fun h ↦ absurd (Finset.mem_range.2 hm) h
+        · rw [ite_eq_right hm]
+          refine Finset.sum_eq_zero fun i hi ↦ ?_
+          rw [ite_eq_right (by have := Finset.mem_range.1 hi; omega), smul_zero]
+      rw [hsum, coeff_neckTransfer hy.le]
+      rcases eq_or_ne m 0 with rfl | hm0
+      · by_cases hN : N = 0 <;> simp [hN, Nat.pos_of_ne_zero]
+      · by_cases hm : m < N
+        · simp [hm0, hm, not_le.2 hm, Nat.pos_of_ne_zero hm0]
+        · simp [hm0, hm, not_lt.1 hm]
+    · have hk' : 0 < k := not_le.1 hk
+      have hz : ∑ i ∈ Finset.range N, (if k = -(i : ℤ) then y ^ i • u.coeff i else 0) = 0 :=
+        Finset.sum_eq_zero fun i _ ↦ ite_eq_right (by omega)
+      simp [coeff_neckTransfer_of_nonneg u hk'.le, hz, hk'.ne', hk]
+  rw [hcoeff, coeff_reflect]
+  split_ifs with h
+  · obtain ⟨hk, hN⟩ := h
+    obtain ⟨m, rfl⟩ : ∃ m : ℕ, k = -m := ⟨(-k).toNat, by omega⟩
+    simp only [neg_neg, Int.toNat_natCast] at hN ⊢
+    rw [norm_smul, norm_pow, weight_neg_right]
+    calc weight s m * (‖y‖ ^ m * ‖u.coeff m‖) = ‖y‖ ^ m * (weight s m * ‖u.coeff m‖) := by ring
+      _ ≤ ‖y‖ ^ N * (weight s m * ‖u.coeff m‖) :=
+        mul_le_mul_of_nonneg_right (pow_le_pow_of_le_one (norm_nonneg y) hy.le hN)
+          (mul_nonneg (weight_nonneg s _) (norm_nonneg _))
+  · rw [norm_zero, mul_zero]
+    exact mul_nonneg (pow_nonneg (norm_nonneg y) N)
+      (mul_nonneg (weight_nonneg s _) (norm_nonneg _))
 
 private theorem hasFPowerSeriesOnBall_neckTransfer_add :
     HasFPowerSeriesOnBall
@@ -331,6 +367,7 @@ private theorem hasFPowerSeriesOnBall_neckTransfer_add :
     rw [← ENNReal.coe_one, eball_coe, NNReal.coe_one, mem_ball_zero_iff] at hy
     simpa only [zero_add, neckSeries_apply] using hasSum_neckMode hy
 
+variable [CompleteSpace E] in
 /-- **Holomorphy of the neck transfer.** The neck transfer depends holomorphically on the plumbing
 parameter `a` in the open unit disc, as a map to the bounded operators on `H^s`. -/
 theorem analyticOnNhd_neckTransfer :
