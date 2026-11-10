@@ -33,7 +33,8 @@ Mathlib's differentiation theorem along closed balls with moving centres.
 
 * `TauCeti.dyadicIndex`, `TauCeti.dyadicCube`, `TauCeti.dyadicCube_eq_pi`: dyadic cubes and the
   position of the cube of a given level containing a point.
-* `TauCeti.dyadicCube_nonempty`: dyadic cubes are nonempty.
+* `TauCeti.dyadicCube_nonempty`, `TauCeti.centre_mem_dyadicCube`: dyadic cubes are nonempty, and
+  contain their centres.
 * `TauCeti.dyadicIndex_add_one`, `TauCeti.dyadicCube_subset_dyadicCube`,
   `TauCeti.dyadicCube_subset_or_disjoint`, `TauCeti.disjoint_dyadicCube`: the nesting of the
   dyadic levels.
@@ -130,6 +131,14 @@ theorem dyadicCube_subset_dyadicCube (hjk : j ≤ k) (hx : x ∈ dyadicCube j m)
 theorem dyadicCube_nonempty (k : ℤ) (m : ι → ℤ) : (dyadicCube k m).Nonempty :=
   ⟨fun i => m i * 2 ^ k, funext fun i => by
     rw [dyadicIndex_apply, mul_div_cancel_right₀ _ (zpow_ne_zero k two_ne_zero), Int.floor_intCast]⟩
+
+/-- The centre `(m + 1/2) 2ᵏ` of a dyadic cube lies in it. -/
+theorem centre_mem_dyadicCube (k : ℤ) (m : ι → ℤ) :
+    (fun i => ((m i : ℝ) + 2⁻¹) * 2 ^ k) ∈ dyadicCube k m := by
+  rw [dyadicCube_eq_pi]
+  intro i _
+  have h := zpow_pos (two_pos : (0 : ℝ) < 2) k
+  constructor <;> nlinarith
 
 /-- Two dyadic cubes of the same level are disjoint if and only if they are distinct. -/
 @[simp]

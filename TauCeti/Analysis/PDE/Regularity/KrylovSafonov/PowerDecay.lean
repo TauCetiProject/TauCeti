@@ -8,8 +8,9 @@ module
 public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.MeasureEstimate
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.KrylovSafonov
 import Mathlib.Analysis.SpecialFunctions.Log.Base
-import TauCeti.Analysis.Calculus.SecondDerivative
-import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import TauCeti.Basic.ENNReal.Real
+import TauCeti.MeasureTheory.Measure.Lebesgue.DyadicCube.Euclidean
 
 /-!
 # Power decay of the superlevel sets of a supersolution
@@ -74,100 +75,7 @@ namespace TauCeti
 
 namespace PDE
 
-variable {ι : Type*} [Fintype ι]
-
-/-- Two points of a dyadic cube of level `k` are at Euclidean distance less than `2ᵏ √n`. -/
-private theorem dist_toLp_lt_of_mem_dyadicCube [Nonempty ι] {k : ℤ} {m : ι → ℤ} {y z : ι → ℝ}
-    (hy : y ∈ dyadicCube k m) (hz : z ∈ dyadicCube k m) :
-    dist (WithLp.toLp 2 y : EuclideanSpace ℝ ι) (WithLp.toLp 2 z) < 2 ^ k * √(Fintype.card ι) := by
-  rw [mul_comm]
-  exact PiLp.preimage_ofLp_ball_subset_ball (WithLp.toLp 2 z) _ (dist_lt_of_mem_dyadicCube hy hz)
-
-omit [Fintype ι] in
-/-- The centre of a dyadic cube lies in it. -/
-private theorem centre_mem_dyadicCube (k : ℤ) (m : ι → ℤ) :
-    (fun i ↦ ((m i : ℝ) + 2⁻¹) * 2 ^ k) ∈ dyadicCube k m := by
-  rw [dyadicCube_eq_pi]
-  intro i _
-  have h := zpow_pos (two_pos : (0 : ℝ) < 2) k
-  constructor <;> nlinarith
-
-/-- The Euclidean ball of radius `2ᵏ / 2` about the centre of a dyadic cube of level `k` lies in
-the cube. -/
-private theorem toLp_preimage_ball_subset_dyadicCube (k : ℤ) (m : ι → ℤ) :
-    WithLp.toLp 2 ⁻¹' ball (WithLp.toLp 2 fun i ↦ ((m i : ℝ) + 2⁻¹) * 2 ^ k :
-      EuclideanSpace ℝ ι) (2 ^ k / 2) ⊆ dyadicCube k m := fun _ hy ↦
-  ball_subset_dyadicCube k m (PiLp.ball_subset_preimage_ofLp_ball _ _ hy)
-
-/-- A dyadic subcube `Q` of level `k < k₀` of a dyadic cube `Q₀` of level `k₀`, with centres `w`
-and `z`, satisfies `B(w, 4 · 2ᵏ √n) ⊆ B(z, 4 · 2^k₀ √n)`, and every point of the parent of `Q` lies
-in `B(w, 2 · 2ᵏ √n)`. These are the balls on which the measure estimate is applied to `Q`. -/
-private theorem dist_centre_le_of_dyadicCube_subset [Nonempty ι] {k k₀ : ℤ} {m m' m₀ : ι → ℤ}
-    {y : ι → ℝ} (hk : k < k₀) (hQ : dyadicCube k m ⊆ dyadicCube k₀ m₀)
-    (hQP : dyadicCube k m ⊆ dyadicCube (k + 1) m') (hy : y ∈ dyadicCube (k + 1) m') :
-    4 * 2 ^ k * √(Fintype.card ι) + dist (WithLp.toLp 2 fun i ↦ ((m i : ℝ) + 2⁻¹) * 2 ^ k :
-        EuclideanSpace ℝ ι) (WithLp.toLp 2 fun i ↦ ((m₀ i : ℝ) + 2⁻¹) * 2 ^ k₀) ≤
-        4 * 2 ^ k₀ * √(Fintype.card ι) ∧
-      dist (WithLp.toLp 2 y : EuclideanSpace ℝ ι)
-        (WithLp.toLp 2 fun i ↦ ((m i : ℝ) + 2⁻¹) * 2 ^ k) < 2 * 2 ^ k * √(Fintype.card ι) := by
-  have hw := centre_mem_dyadicCube k m
-  have h2k : (2 : ℝ) ^ (k + 1) ≤ 2 ^ k₀ := zpow_le_zpow_right₀ one_le_two (by omega)
-  have hn := Real.sqrt_nonneg (Fintype.card ι)
-  have h₀ := dist_toLp_lt_of_mem_dyadicCube (hQ hw) (centre_mem_dyadicCube k₀ m₀)
-  have h₁ := dist_toLp_lt_of_mem_dyadicCube hy (hQP hw)
-  rw [zpow_add_one₀ two_ne_zero] at h2k h₁
-  constructor <;> nlinarith [mul_le_mul_of_nonneg_right h2k hn,
-    mul_nonneg (zpow_pos (two_pos : (0 : ℝ) < 2) k₀).le hn]
-
-/-- The part of a dyadic cube where `u ≥ t` is measurable, when `u` is continuous on a closed ball
-containing the cube. -/
-private theorem measurableSet_setOf_le_inter_dyadicCube {u : EuclideanSpace ℝ ι → ℝ}
-    {c : EuclideanSpace ℝ ι} {R : ℝ} (hcont : ContinuousOn u (closedBall c R)) {k : ℤ}
-    {m : ι → ℤ} (hQ : dyadicCube k m ⊆ WithLp.toLp 2 ⁻¹' closedBall c R) (t : ℝ) :
-    MeasurableSet ({y | t ≤ u (WithLp.toLp 2 y)} ∩ dyadicCube k m) := by
-  have hcl : IsClosed (WithLp.toLp 2 ⁻¹' closedBall c R ∩ (u ∘ WithLp.toLp 2) ⁻¹' Ici t) :=
-    ContinuousOn.preimage_isClosed_of_isClosed
-      (hcont.comp (PiLp.continuous_toLp 2 _).continuousOn (mapsTo_preimage _ _))
-      (isClosed_closedBall.preimage (PiLp.continuous_toLp 2 _)) isClosed_Ici
-  have heq : {y | t ≤ u (WithLp.toLp 2 y)} ∩ dyadicCube k m =
-      (WithLp.toLp 2 ⁻¹' closedBall c R ∩ (u ∘ WithLp.toLp 2) ⁻¹' Ici t) ∩ dyadicCube k m := by
-    ext y
-    exact ⟨fun h ↦ ⟨⟨hQ h.2, h.1⟩, h.2⟩, fun h ↦ ⟨h.1.2, h.2⟩⟩
-  rw [heq]
-  exact hcl.measurableSet.inter (measurableSet_dyadicCube k m)
-
-/-- If `a + b ≤ V` and `b ≥ ω V`, then `a ≤ (1 + ω)⁻¹ V`: the complement of a set filling an
-`ω` fraction of a set of measure `V` fills at most a `(1 + ω)⁻¹` fraction of it. -/
-private theorem le_ofReal_inv_add_mul_of_add_le {a b : ℝ≥0∞} {V ω : ℝ} (hV : 0 ≤ V) (hω : 0 ≤ ω)
-    (hb : ENNReal.ofReal (ω * V) ≤ b) (hab : a + b ≤ ENNReal.ofReal V) :
-    a ≤ ENNReal.ofReal (1 + ω)⁻¹ * ENNReal.ofReal V := by
-  have hδV : V - ω * V ≤ (1 + ω)⁻¹ * V := by
-    have h : (1 + ω)⁻¹ * V - (V - ω * V) = ω ^ 2 / (1 + ω) * V := by
-      field_simp
-      ring
-    nlinarith [mul_nonneg (div_nonneg (sq_nonneg ω) (by positivity : (0 : ℝ) ≤ 1 + ω)) hV]
-  calc a ≤ ENNReal.ofReal V - b :=
-        ENNReal.le_sub_of_add_le_right (ne_top_of_le_ne_top ENNReal.ofReal_ne_top
-          (le_add_self.trans hab)) hab
-    _ ≤ ENNReal.ofReal V - ENNReal.ofReal (ω * V) := tsub_le_tsub_left hb _
-    _ = ENNReal.ofReal (V - ω * V) := (ENNReal.ofReal_sub _ (by positivity)).symm
-    _ ≤ ENNReal.ofReal ((1 + ω)⁻¹ * V) := ENNReal.ofReal_le_ofReal hδV
-    _ = ENNReal.ofReal (1 + ω)⁻¹ * ENNReal.ofReal V := ENNReal.ofReal_mul (by positivity)
-
-variable [DecidableEq ι]
-
-/-- The operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ` commutes with multiplication by a constant. -/
-private theorem sum_mul_fderiv_fderiv_const_mul (A : Matrix ι ι ℝ) (u : EuclideanSpace ℝ ι → ℝ)
-    (r : ℝ) (x : EuclideanSpace ℝ ι) :
-    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun y ↦ r * u y) x
-        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
-      r * ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ u) x
-        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) := by
-  have h : (fun y ↦ r * u y) = r • u := rfl
-  simp only [h, fderiv_fderiv_const_smul, smul_apply, smul_eq_mul, Finset.mul_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ by ring
-
-variable [Nonempty ι]
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] [Nonempty ι]
 
 /-- **The measure estimate on a dyadic cube.** There are constants `M > 1`, `0 < δ < 1` and
 `ε₀ > 0`, depending only on the dimension and on `κ`, with the following property. Let `Q` be a
@@ -215,6 +123,10 @@ private theorem exists_volume_setOf_mul_le_inter_dyadicCube_le {κ : ℝ} (hκ :
     simp only [R]
     field_simp
     ring
+  -- The middle ball of the measure estimate on `B(c, R)` is `B(c, 2 · 2ᵏ √n)`.
+  have hτR : 1 / 2 * R = 2 * 2 ^ k * √(n : ℝ) := by
+    simp only [R]
+    ring
   obtain ⟨x₀, hx₀, hux₀⟩ := hx
   -- Dividing by `s ≥ 1` does not increase the `Lⁿ` norm of the positive part of `f`.
   have hfs : eLpNorm (fun x ↦ (s⁻¹ * f x)⁺) n (volume.restrict (ball c R)) ≤
@@ -235,8 +147,7 @@ private theorem exists_volume_setOf_mul_le_inter_dyadicCube_le {κ : ℝ} (hκ :
       rw [sum_mul_fderiv_fderiv_const_mul]
       exact mul_le_mul_of_nonneg_left (hsuper x (hball hx)) (by positivity))
     (hf.trans' (mul_le_mul' (ENNReal.ofReal_le_ofReal hRR₀) hfs))
-    ⟨x₀, by rwa [show 1 / 2 * R = 2 * 2 ^ k * √(n : ℝ) by ring],
-      by rw [inv_mul_le_iff₀ hs0]; linarith⟩
+    ⟨x₀, by rwa [hτR], by rw [inv_mul_le_iff₀ hs0]; linarith⟩
   rw [hθR] at key
   -- `Y`, where `u < M s`, is an open subset of the ball of radius `2ᵏ / 2`, which lies in `Q`.
   set Y := ball c (2 ^ k / 2) ∩ (fun x ↦ s⁻¹ * u x) ⁻¹' Iio M
@@ -309,7 +220,7 @@ theorem exists_volume_setOf_pow_le_inter_dyadicCube_le_pow_mul {κ : ℝ} (hκ :
   -- The superlevel sets `Aⱼ = {u ≥ Mʲ⁺¹} ∩ Q₀`, in the coordinates of `ι → ℝ`.
   set A : ℕ → Set (ι → ℝ) := fun j ↦ {y | M ^ (j + 1) ≤ u (WithLp.toLp 2 y)} ∩ Q₀
   have hA : ∀ j, MeasurableSet (A j) := fun j ↦
-    measurableSet_setOf_le_inter_dyadicCube hcont hQ₀ _
+    measurableSet_setOf_le_inter_dyadicCube isClosed_closedBall hcont hQ₀ _
   have hanti : Antitone A := fun i j hij ↦ inter_subset_inter_left _ fun y hy ↦
     (pow_le_pow_right₀ hM.le (by omega)).trans hy
   -- The measure estimate on `Q₀` itself starts the iteration.
@@ -330,7 +241,22 @@ theorem exists_volume_setOf_pow_le_inter_dyadicCube_le_pow_mul {κ : ℝ} (hκ :
     by_contra hP
     obtain ⟨y, hyP, hyA⟩ := not_subset.1 hP
     have huy : u (WithLp.toLp 2 y) ≤ M ^ (j + 1) := (not_le.1 fun h ↦ hyA ⟨h, hPQ₀ hyP⟩).le
-    obtain ⟨hdist, hy⟩ := dist_centre_le_of_dyadicCube_subset hk hQ hQP hyP
+    -- `B(w, 4 · 2ᵏ √n) ⊆ B(c, 4 · 2^k₀ √n)` for the centre `w` of the subcube, and `y` lies in
+    -- `B(w, 2 · 2ᵏ √n)`: these are the balls on which the measure estimate is applied.
+    have hw := centre_mem_dyadicCube k m
+    have h2k : (2 : ℝ) ^ (k + 1) ≤ 2 ^ k₀ := zpow_le_zpow_right₀ one_le_two (by omega)
+    have hn := Real.sqrt_nonneg (Fintype.card ι)
+    have h₀ := dist_toLp_lt_of_mem_dyadicCube (hQ hw) (centre_mem_dyadicCube k₀ m₀)
+    have h₁ := dist_toLp_lt_of_mem_dyadicCube hyP (hQP hw)
+    rw [zpow_add_one₀ two_ne_zero] at h2k h₁
+    have hdist : 4 * 2 ^ k * √(Fintype.card ι) + dist (WithLp.toLp 2 fun i ↦
+        ((m i : ℝ) + 2⁻¹) * 2 ^ k : EuclideanSpace ℝ ι) (WithLp.toLp 2 fun i ↦
+          ((m₀ i : ℝ) + 2⁻¹) * 2 ^ k₀) ≤ 4 * 2 ^ k₀ * √(Fintype.card ι) := by
+      nlinarith [mul_le_mul_of_nonneg_right h2k hn,
+        mul_nonneg (zpow_pos (two_pos : (0 : ℝ) < 2) k₀).le hn]
+    have hy : dist (WithLp.toLp 2 y : EuclideanSpace ℝ ι)
+        (WithLp.toLp 2 fun i ↦ ((m i : ℝ) + 2⁻¹) * 2 ^ k) < 2 * 2 ^ k * √(Fintype.card ι) := by
+      nlinarith [mul_le_mul_of_nonneg_right h2k hn]
     have hstep := H (s := M ^ (j + 1)) (one_le_pow₀ hM.le) (hdist.trans hR) ha hLam hcont hu
       hnonneg hsuper hf ⟨_, hy, huy⟩
     refine (hlt.trans_le ((measure_mono ?_).trans hstep)).false
