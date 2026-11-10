@@ -17,7 +17,8 @@ This file defines chartwise nullity for subsets of a charted manifold, without i
 measurable structure on the manifold itself.  The definition is independent of the choice of Haar
 measure on the model and has the usual subset and countable-union closure properties. On a
 manifold with a finite-dimensional model a null set has empty interior, so its complement is
-dense; this is how Sard's theorem produces regular values.
+dense; this is how Sard's theorem produces regular values. If the model is moreover nontrivial,
+every countable set is null.
 
 Nullity of an image `f '' s` under a map between manifolds can be checked on coordinate
 expressions (`TauCeti.isNullSet_image_of_forall_addHaar_image_extChartAt`): when the source is
@@ -91,6 +92,14 @@ theorem IsNullSet.biUnion {I : ModelWithCorners ℝ E H} [MeasurableSpace E] [hE
   have := ht.to_subtype
   rw [biUnion_eq_iUnion]
   exact IsNullSet.iUnion fun i ↦ hs i i.2
+
+/-- A countable subset of a manifold with a nontrivial finite-dimensional model is null. -/
+theorem _root_.Set.Countable.isNullSet {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E] {s : Set M} (hs : s.Countable) :
+    IsNullSet I s := by
+  rw [isNullSet_iff]
+  intro x μ _
+  exact ((hs.mono inter_subset_left).image _).measure_zero μ
 
 /-- On a manifold with a finite-dimensional model, a null set has empty interior. -/
 theorem IsNullSet.interior_eq_empty {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ E]
