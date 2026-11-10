@@ -210,28 +210,9 @@ private theorem continuousAt_starProjection_range_of_completeSpace {A : X → E 
     ((ContinuousLinearMap.isUnit_adjoint_comp_self_iff _).2 hy)
 
 omit [CompleteSpace V] in
-/-- The orthogonal projection onto the range of `A`, followed by the embedding into the completion
-of `V`, is the orthogonal projection onto the range of the embedded operator, precomposed with
-the embedding. -/
-private theorem starProjection_range_comp_toComplL (A : E →L[𝕜] V) (v : V) :
-    ((A.range.starProjection v : V) : UniformSpace.Completion V) =
-      ((UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := V)).toContinuousLinearMap
-        ∘L A).range.starProjection (v : UniformSpace.Completion V) := by
-  refine (Submodule.eq_starProjection_of_mem_of_inner_eq_zero ?_ ?_).symm
-  · obtain ⟨a, ha⟩ := A.range.starProjection_apply_mem v
-    exact ⟨a, congrArg (fun w : V ↦ (w : UniformSpace.Completion V)) (show A a = _ from ha)⟩
-  · rintro _ ⟨a, rfl⟩
-    change inner 𝕜 (((v : V) : UniformSpace.Completion V) -
-      ((A.range.starProjection v : V) : UniformSpace.Completion V))
-        ((A a : V) : UniformSpace.Completion V) = 0
-    rw [← UniformSpace.Completion.coe_sub, UniformSpace.Completion.inner_coe]
-    exact Submodule.starProjection_inner_eq_zero v _ ⟨a, rfl⟩
-
-omit [CompleteSpace V] in
 /-- Orthogonal projection onto the range depends continuously on an operator out of a
 finite-dimensional space at every injective operator. The parameter space is arbitrary. The
-inner product space `V` need not be complete: the projections are compared with those of the
-embedded operators into the completion. -/
+inner product space `V` need not be complete. -/
 theorem ContinuousAt.starProjection_range {A : X → E →L[𝕜] V} {x : X}
     (hA : ContinuousAt A x) (hinj : Injective (A x)) :
     ContinuousAt (fun y ↦ (A y).range.starProjection) x := by
@@ -243,14 +224,18 @@ theorem ContinuousAt.starProjection_range {A : X → E →L[𝕜] V} {x : X}
     (hι.injective.comp hinj)
   -- Compare the projections after embedding the target into the completion.
   have hΦ : Isometry (fun T : V →L[𝕜] V ↦ ι ∘L T) :=
-    AddMonoidHomClass.isometry_of_norm (ContinuousLinearMap.compL 𝕜 V V _ ι)
-      fun T ↦ (UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := V)).norm_toContinuousLinearMap_comp
+    (UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := V)).postcomp.isometry
   refine (hΦ.isEmbedding.isInducing.continuousAt_iff).mpr ?_
   have hcomp : ContinuousAt (fun y ↦ (ι ∘L A y).range.starProjection ∘L ι) x :=
     (hproj.clm_comp continuousAt_const)
   refine hcomp.congr_of_eventuallyEq (Eventually.of_forall fun y ↦ ?_)
   ext v
-  exact (starProjection_range_comp_toComplL (A y) v)
+  have hrange : (ι ∘L A y).range =
+      (A y).range.map (UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := V)).toLinearMap :=
+    LinearMap.range_comp _ _
+  refine ((UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := V)).map_starProjection
+    (A y).range v).trans ?_
+  simp only [hrange, ContinuousLinearMap.comp_apply, ι, LinearIsometry.coe_toContinuousLinearMap]
 
 end ContinuousAt
 
