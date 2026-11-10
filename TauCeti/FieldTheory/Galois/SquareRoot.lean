@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Equiv
 public import Mathlib.Algebra.Algebra.Tower
 public import Mathlib.Algebra.Group.Subgroup.Defs
+public import Mathlib.FieldTheory.Galois.Basic
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Defs
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.LinearAlgebra.Dimension.Finrank
@@ -15,6 +16,7 @@ public import Mathlib.SetTheory.Cardinal.Finite
 import TauCeti.Algebra.Algebra.Equiv
 import Mathlib.Algebra.Ring.Commute
 import Mathlib.Data.Fintype.Pi
+import Mathlib.FieldTheory.PurelyInseparable.PerfectClosure
 import TauCeti.FieldTheory.Galois.Basic
 import TauCeti.FieldTheory.Separable.PrimeDegree
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
@@ -36,6 +38,8 @@ generating a quadratic extension is negated by an automorphism.
 * `AlgEquiv.apply_eq_or_eq_neg_of_sq_eq`: `σ x = ± x` when `x ^ 2` comes from the base.
 * `TauCeti.exists_algEquiv_apply_eq_neg_of_sq_eq`: some automorphism negates a square root
   `y` generating a quadratic extension `K⟮y⟯ / K`.
+* `TauCeti.two_ne_zero_of_sq_eq`: a separable square root outside the base field
+  forces `2 ≠ 0` in the base field.
 * `Subgroup.card_le_two_pow_of_forall_apply_eq_self`: a subgroup in which only the identity fixes
   each of `n` square roots has at most `2ⁿ` elements.
 * `Subgroup.card_eq_four_of_exists_apply_eq_neg`: a finite subgroup of order at most four
@@ -83,6 +87,23 @@ theorem exists_algEquiv_apply_eq_neg_of_sq_eq {K L : Type*} [Field K] [Field L] 
   intro x hx
   obtain rfl := Set.mem_singleton_iff.mp hx
   exact h
+
+/-- A separable square root outside the base field forces the characteristic
+to differ from `2`: in characteristic `2`, separability of `α` gives `K⟮α⟯ = K⟮α ^ 2⟯`, and
+`α ^ 2` comes from `K`, so `α` would lie in `K`. -/
+theorem two_ne_zero_of_sq_eq {K L : Type*} [Field K] [Field L] [Algebra K L]
+    {c : K} {α : L} (hsep : IsSeparable K α) (hα : α ^ 2 = algebraMap K L c)
+    (hαK : α ∉ Set.range (algebraMap K L)) : (2 : K) ≠ 0 := by
+  intro h2
+  have : CharP K 2 := CharTwo.of_one_ne_zero_of_two_eq_zero one_ne_zero h2
+  have : ExpChar K 2 := ExpChar.prime Nat.prime_two
+  have h := IntermediateField.adjoin_simple_eq_adjoin_pow_expChar_of_isSeparable K L hsep 2
+  rw [hα] at h
+  refine hαK ?_
+  have hmem : α ∈ K⟮α⟯ := IntermediateField.mem_adjoin_simple_self K α
+  rw [h, IntermediateField.adjoin_simple_eq_bot_iff.mpr
+    (IntermediateField.mem_bot.mpr ⟨c, rfl⟩)] at hmem
+  exact IntermediateField.mem_bot.mp hmem
 
 end TauCeti
 
