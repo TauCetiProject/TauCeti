@@ -99,7 +99,7 @@ private theorem affineAtWorstNodalOfRelativeDimensionOne_of_baseChange_field
   -- The base change `X'` of `X` to `K` is at worst nodal over `Spec K`.
   let X' := pullback (X ↘ Spec (.of R)) (Spec.map (CommRingCat.ofHom (algebraMap R K)))
   let _ : X'.Over (Spec (.of K)) := ⟨pullback.snd _ _⟩
-  have hK := (atWorstNodalOfRelativeDimensionOne_iff_of_isAffine _ (Iso.refl _)).mp (h K)
+  have hK := (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _)).mp (h K)
   simp only [Iso.refl_hom, Category.comp_id] at hK
   -- The structure morphism `X' ↘ Spec K` of the base change is `pullback.snd` by construction.
   replace hK : AffineAtWorstNodalOfRelativeDimensionOne (X' ↘ Spec (.of K)) := hK
@@ -137,7 +137,7 @@ theorem AtWorstNodalOfRelativeDimensionOne.of_baseChange_field
     exact MorphismProperty.pullback_snd_pullback_snd (P := @AtWorstNodalOfRelativeDimensionOne)
       f _ _ _ (𝟙 _) (by simp) (h K (s ≫ Y.affineCover.f i))
   obtain ⟨R, rfl⟩ := hY
-  refine (atWorstNodalOfRelativeDimensionOne_iff_of_isAffine (R := R) f (Iso.refl _)).mpr ?_
+  refine (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec (R := R) f (Iso.refl _)).mpr ?_
   simp only [Iso.refl_hom, Category.comp_id]
   let _ : X.Over (Spec (.of R)) := ⟨f⟩
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := ‹SyntomicOfRelativeDimension 1 f›

@@ -23,10 +23,6 @@ A `C^(n+1)` map pulls a `C^n` fixed-coefficient differential form back to a `C^n
 The relative theorem uses derivatives within the source set, so it applies at boundary and
 corner points. No invertibility, finite dimensionality, or completeness is required.
 
-Pullback along a jointly `C^(n+1)` family of maps `f p : M → M'` gives a family of forms on `M`
-which is jointly `C^n` in the parameter and the point (`ContMDiffAt.mpullback_form_uncurry`); for
-`f p = Prod.mk p` these are the slices of a form on a product `P × M`.
-
 For smooth maps, `SmoothForm.mpullback` bundles this operation as a linear map on smooth forms.
 Its underlying rough form is the existing `TauCeti.mpullback`. Pullback along a smooth map with a
 smooth right inverse, such as a vector bundle projection, is injective. The diffeomorphisms of `M`
@@ -165,53 +161,6 @@ theorem _root_.ContMDiffAt.mpullback_form
     ContMDiffWithinAt.mpullbackWithin_form (s := univ) (t := univ)
       hω.contMDiffWithinAt hf.contMDiffWithinAt hmn (mapsTo_univ _ _) (mem_univ x)
       uniqueMDiffOn_univ
-
-/-- **Pullbacks along a family of maps depend jointly smoothly on the parameter.** Let
-`f : P → M → M'` be a family of maps which is jointly `C^n` at `q`, and let `ω` be a form which is
-`C^m` at `f q.1 q.2`, with `m + 1 ≤ n`. Then the pullbacks `f p^* ω` form a family of forms on `M`
-which is jointly `C^m` in `(p, x)` at `q`, as a map to the bundle of alternating maps on `TM`. For
-`f p = Prod.mk p` these are the slices `ι_p^* ω` of a form on `P × M`. -/
-theorem _root_.ContMDiffAt.mpullback_form_uncurry {EP HP P : Type*} [NormedAddCommGroup EP]
-    [NormedSpace ℝ EP] [TopologicalSpace HP] {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P]
-    [ChartedSpace HP P] [IsManifold IP 1 P] {f : P → M → M'} {q : P × M}
-    (hω : ContMDiffAt I' (I'.prod 𝓘(ℝ, E' [⋀^Fin k]→L[ℝ] F)) m
-      (fun y ↦ TotalSpace.mk' (E' [⋀^Fin k]→L[ℝ] F) y (ω y)) (f q.1 q.2))
-    (hf : ContMDiffAt (IP.prod I) I' n (Function.uncurry f) q) (hmn : m + 1 ≤ n) :
-    ContMDiffAt (IP.prod I) (I.prod 𝓘(ℝ, E [⋀^Fin k]→L[ℝ] F)) m
-      (fun q : P × M ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F)
-        (E := fun x : M ↦ TangentSpace I x [⋀^Fin k]→L[ℝ] Trivial M F x) q.2
-        (mpullback I I' (f q.1) ω q.2)) q := by
-  have hfm : ContMDiffAt (IP.prod I) I' m (Function.uncurry f) q :=
-    hf.of_le ((le_add_of_nonneg_right zero_le_one).trans hmn)
-  have hc := ((contMDiffAt_continuousAlternatingMap_bundle _).mp hω).2.comp q hfm
-  -- The derivatives of the maps `f q'.1` at the points `q'.2` are jointly `C^m` in coordinates.
-  have hf' : ContMDiffAt ((IP.prod I).prod I) I' n (Function.uncurry fun q' : P × M ↦ f q'.1)
-      (q, q.2) :=
-    hf.comp (q, q.2) ((contMDiff_fst.comp contMDiff_fst).prodMk contMDiff_snd).contMDiffAt
-  have hd := ContMDiffAt.mfderiv (fun q' : P × M ↦ f q'.1) Prod.snd hf' contMDiffAt_snd hmn
-  have hpre := ContinuousAlternatingMap.contDiff_compContinuousLinearMapCLM
-    (𝕜 := ℝ) (E := E) (F := E') (G := F) (ι := Fin k) m
-  apply (contMDiffAt_continuousAlternatingMap_bundle _).mpr
-  refine ⟨contMDiffAt_snd, ((hpre.comp_contMDiffAt hd).clm_apply hc).congr_of_eventuallyEq ?_⟩
-  have hmem : Function.uncurry f ⁻¹'
-      (trivializationAt E' (TangentSpace I') (f q.1 q.2)).baseSet ∈ 𝓝 q :=
-    hf.continuousAt.preimage_mem_nhds
-      ((trivializationAt E' (TangentSpace I') (f q.1 q.2)).open_baseSet.mem_nhds
-        (FiberBundle.mem_baseSet_trivializationAt' (f q.1 q.2)))
-  filter_upwards [hmem] with y hy
-  have h := ContinuousAlternatingMap.inCoordinates_compContinuousLinearMap
-    (F₁ := E) (F₂ := E') (F₃ := F) (x₀ := q.2) (z₀ := f q.1 q.2)
-    (ω (f y.1 y.2)) (mfderiv I I' (f y.1) y.2) hy
-  ext v
-  simpa only [ContinuousAlternatingMap.inCoordinates,
-    Bundle.Trivial.eq_trivialization M F (trivializationAt F (Trivial M F) q.2),
-    Bundle.Trivial.eq_trivialization M' F (trivializationAt F (Trivial M' F) (f q.1 q.2)),
-    Bundle.Trivial.continuousLinearMapAt_trivialization,
-    ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    ContinuousLinearMap.compContinuousAlternatingMap_coe, Function.comp_def,
-    ContinuousLinearMap.id_apply, inTangentCoordinates, id_eq, mpullback_apply,
-    ContinuousAlternatingMap.compContinuousLinearMapCLM_apply, Function.uncurry_def] using
-    congrArg (fun a ↦ a v) h
 
 /-- Let `f` be `C^n` at `x`, `m + 1 ≤ n`, and let `s` be a `C^n` local section of `f` through `x`
 over an open neighbourhood `U` of `f x`. Then a form is a `C^m` section near `f x` exactly when its

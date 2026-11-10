@@ -76,7 +76,7 @@ support is the affine image of the standardized support. -/
 private theorem support_stableMeasure_eq_image (hs : 0 < s) (m : ℝ) :
     (stableMeasure α β s m).support =
       (fun x ↦ m + (s : ℝ) * x) '' (stableMeasure α β 1 0).support := by
-  rw [← stableMeasure_one_zero_map_affine hs, support_map_affine (NNReal.coe_pos.2 hs).ne']
+  rw [← stableMeasure_one_zero_map_affine, support_map_affine (NNReal.coe_pos.2 hs).ne']
 
 /-- Full support of the standardized non-Gaussian law gives full support at every positive
 scale and location, and the Gaussian shape always has full support. -/
@@ -100,7 +100,7 @@ private theorem support_standardStableMeasure_of_abs_lt_one (hα : α ∈ Ioo 0 
     (hβ : |β| < 1) : (stableMeasure α β 1 0).support = univ := by
   obtain ⟨μ, hμ, -⟩ := existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ.le
     (by norm_num : (0 : ℝ) < 1)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ.le zero_lt_one
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β 1
   obtain ⟨a, ha⟩ := Measure.nonempty_support (IsProbabilityMeasure.ne_zero (μ : Measure ℝ))
   apply eq_univ_of_forall
   intro x
@@ -145,7 +145,7 @@ private theorem mem_support_standardStableMeasure_of_eventually (hα : α ∈ Io
   obtain ⟨a, ha, haS⟩ := Measure.nonempty_inter_support_of_pos hn
   have hya : y - a ∈ (stableCompensatedPoissonMeasure α β (r n)).support :=
     hsub (by simpa [Metric.mem_ball, Real.dist_eq, abs_sub_comm] using ha)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ (hr n)
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β (r n)
   have hmem := Measure.add_mem_support_conv haS hya
   rwa [hρ n, add_sub_cancel] at hmem
 
