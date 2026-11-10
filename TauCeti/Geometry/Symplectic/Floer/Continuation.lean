@@ -81,6 +81,9 @@ existence, compactness and counting of continuation cylinders are not treated he
 
 * `TauCeti.Floer.linearHomotopy_of_eq_zero`, `TauCeti.Floer.linearHomotopy_of_eq_one`: the
   linear homotopy is `H₀` where `β = 0` and `H₁` where `β = 1`.
+* `TauCeti.Floer.continuationHomotopy_eq_left_of_nonpos`,
+  `TauCeti.Floer.continuationHomotopy_eq_right_of_one_le`: the continuation homotopy is `H₀` for
+  `s ≤ 0` and `H₁` for `s ≥ 1`.
 * `TauCeti.Floer.fderiv_linearHomotopy_stdComplexLineReal`: the `s`-derivative of the linear
   homotopy with profile `β` is `β'(s) (H₁ - H₀)`.
 * `SymplecticForm.integral_floerEnergyDensity_linearHomotopy_le`,
@@ -189,6 +192,16 @@ theorem continuationHomotopy_of_nonpos {z : ℝ × ℝ} (hz : z.1 ≤ 0) (x : V)
 theorem continuationHomotopy_of_one_le {z : ℝ × ℝ} (hz : 1 ≤ z.1) (x : V) :
     continuationHomotopy H₀ H₁ z x = H₁ z.2 x :=
   linearHomotopy_of_eq_one (smoothTransition.one_of_one_le hz) x
+
+/-- At a parameter `s ≤ 0` the continuation homotopy is the time-dependent Hamiltonian `H₀`. -/
+theorem continuationHomotopy_eq_left_of_nonpos {s : ℝ} (hs : s ≤ 0) :
+    (fun t ↦ continuationHomotopy H₀ H₁ (s, t)) = H₀ :=
+  funext fun t ↦ funext (continuationHomotopy_of_nonpos (z := (s, t)) hs)
+
+/-- At a parameter `s ≥ 1` the continuation homotopy is the time-dependent Hamiltonian `H₁`. -/
+theorem continuationHomotopy_eq_right_of_one_le {s : ℝ} (hs : 1 ≤ s) :
+    (fun t ↦ continuationHomotopy H₀ H₁ (s, t)) = H₁ :=
+  funext fun t ↦ funext (continuationHomotopy_of_one_le (z := (s, t)) hs)
 
 /-- The continuation homotopy is a convex combination of `H₀` and `H₁`, so a common bound
 `|H₀|, |H₁| ≤ B` bounds it. -/
@@ -358,12 +371,8 @@ theorem integral_floerEnergyDensity_continuationHomotopy_le (ω : SymplecticForm
   have h := ω.integral_floerEnergyDensity_linearHomotopy_le hH₀ hH₁
     (smoothTransition.contDiff (n := 1)) smoothTransition.monotone hU hu
     (ha.trans (zero_le_one.trans hb)) hRU hper hhi fun z hz ↦ hh z.2 hz.2 (u z)
-  -- At the two ends the homotopy is `H₀` and `H₁`.
-  have hA : (fun t ↦ continuationHomotopy H₀ H₁ (a, t)) = H₀ :=
-    funext fun t ↦ funext (continuationHomotopy_of_nonpos (z := (a, t)) ha)
-  have hB : (fun t ↦ continuationHomotopy H₀ H₁ (b, t)) = H₁ :=
-    funext fun t ↦ funext (continuationHomotopy_of_one_le (z := (b, t)) hb)
-  rwa [← continuationHomotopy_eq_linearHomotopy, hA, hB, smoothTransition.zero_of_nonpos ha,
+  rwa [← continuationHomotopy_eq_linearHomotopy, continuationHomotopy_eq_left_of_nonpos ha,
+    continuationHomotopy_eq_right_of_one_le hb, smoothTransition.zero_of_nonpos ha,
     smoothTransition.one_of_one_le hb, sub_zero, one_mul] at h
 
 /-- **The action shift of a continuation cylinder over a rectangle.** Under the hypotheses of

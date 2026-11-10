@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.CylinderAction
-import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # Continuation cylinders in a manifold and the capped action
@@ -18,10 +17,11 @@ Hamiltonians. A continuation cylinder from `H₀` to `H₁` solves the Floer equ
 `H_{(s, t)} = H₀(t) + β(s) (H₁(t) - H₀(t))` (`TauCeti.Floer.linearHomotopy`) with a monotone
 `C¹` profile `β`, for instance the continuation homotopy (`TauCeti.Floer.continuationHomotopy`),
 whose profile increases from `0` on `s ≤ 0` to `1` on `s ≥ 1`. Its curvature is
-`R_K = ∂_s H = β'(s) (H₁ - H₀)(t)` (`TauCeti.SmoothTwoForm.hamiltonianCurvature_linearHomotopy`).
+`R_K = ∂_s H = β'(s) (H₁ - H₀)(t)` (`TauCeti.SmoothTwoForm.hamiltonianCurvature_zero_left` and
+`TauCeti.Floer.fderiv_linearHomotopy_stdComplexLineReal`).
 
 The energy identity for a family of Hamiltonians on a manifold target
-(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_zero_left_eq_cylinderAction_sub`)
+(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_eq_cylinderAction_sub_sub_integral`)
 measures the Floer energy of `u` over `[a, b] × [0, 1]`, corrected by the integrated curvature,
 against the capped action
 `A_H(γ, v) = ∫ v^* ω - ∫₀¹ H(t, γ(t)) dt` (`TauCeti.cylinderAction`). Write `γ_a = u(a, ·)` and
@@ -54,8 +54,6 @@ The existence, compactness and counting of continuation cylinders are not treate
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.hamiltonianCurvature_linearHomotopy`: the curvature of a linear homotopy
-  is `β'(s) (H₁ - H₀)(t)`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_linearHomotopy_le`: the
   energy bound of a linear homotopy in terms of capped actions.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.cylinderAction_le_cylinderAction_add_of_linearHomotopy`:
@@ -88,25 +86,6 @@ variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
   [IsManifold I (⊤ : ℕ∞) M] {ω : SmoothTwoForm I M} {H₀ H₁ : ℝ → M → ℝ} {u v : ℝ × ℝ → M}
   {a b : ℝ}
 
-/-- **The curvature of a linear homotopy.** The perturbation `K = H_{(s, t)} dt` of the linear
-homotopy `H = H₀ + β(s) (H₁ - H₀)` has curvature `β'(s) (H₁ - H₀)(t)`. -/
-theorem hamiltonianCurvature_linearHomotopy (ω : SmoothTwoForm I M) {β : ℝ → ℝ} {z : ℝ × ℝ}
-    {x : M} (hβ : DifferentiableAt ℝ β z.1) (hH₀ : DifferentiableAt ℝ (fun t ↦ H₀ t x) z.2)
-    (hH₁ : DifferentiableAt ℝ (fun t ↦ H₁ t x) z.2) :
-    ω.hamiltonianCurvature (fun _ _ ↦ 0) (linearHomotopy β H₀ H₁) z x =
-      deriv β z.1 * (H₁ z.2 x - H₀ z.2 x) := by
-  rw [hamiltonianCurvature_zero_left, fderiv_linearHomotopy_stdComplexLineReal hβ hH₀ hH₁]
-
-/-- **The curvature of the continuation homotopy.** The perturbation `K = H_{(s, t)} dt` of the
-continuation homotopy has curvature `β'(s) (H₁ - H₀)(t)` for the profile
-`β = Real.smoothTransition`. -/
-theorem hamiltonianCurvature_continuationHomotopy (ω : SmoothTwoForm I M) {z : ℝ × ℝ} {x : M}
-    (hH₀ : DifferentiableAt ℝ (fun t ↦ H₀ t x) z.2)
-    (hH₁ : DifferentiableAt ℝ (fun t ↦ H₁ t x) z.2) :
-    ω.hamiltonianCurvature (fun _ _ ↦ 0) (continuationHomotopy H₀ H₁) z x =
-      deriv smoothTransition z.1 * (H₁ z.2 x - H₀ z.2 x) := by
-  rw [hamiltonianCurvature_zero_left, fderiv_continuationHomotopy_stdComplexLineReal hH₀ hH₁]
-
 variable [FiniteDimensional ℝ E]
 
 /-- **The energy bound of a linear homotopy, with caps.** Let `ω` be a nondegenerate two-form on a
@@ -129,25 +108,9 @@ theorem IsNondegenerate.integral_floerEnergyDensity_linearHomotopy_le (hω : ω.
           (rectangleTrans (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) v) -
         cylinderAction ω.1 (fun t ↦ linearHomotopy β H₀ H₁ (b, t)) v +
         (β b - β a) * ∫ t in Icc 0 1, B t := by
-  rw [hω.integral_floerEnergyDensity_zero_left_eq_cylinderAction_sub
+  rw [hω.integral_floerEnergyDensity_eq_cylinderAction_sub_sub_integral
     (contMDiff_uncurry_linearHomotopy hβ hH₀ hH₁) hu hab hv hv₀]
-  -- It remains to bound `-∫ ∂_s H(u) = ∫ β'(s) (H₀ - H₁)(t, u)` by `(β(b) - β(a)) ∫ B`.
-  have hd {G : ℝ → M → ℝ} (hG : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) 1 (uncurry G)) (x : M) :
-      Differentiable ℝ fun t ↦ G t x :=
-    (contMDiff_iff_contDiff.mp (hG.comp (contMDiff_id.prodMk contMDiff_const))).differentiable
-      one_ne_zero
-  have hcurv (z : ℝ × ℝ) :
-      fderiv ℝ (fun w ↦ linearHomotopy β H₀ H₁ w (u z)) z stdComplexLineReal =
-        deriv β z.1 * (H₁ z.2 (u z) - H₀ z.2 (u z)) :=
-    fderiv_linearHomotopy_stdComplexLineReal (hβ.differentiable one_ne_zero z.1) (hd hH₀ _ _)
-      (hd hH₁ _ _)
-  simp only [hcurv]
-  have hp : Continuous fun z : ℝ × ℝ ↦ (z.2, u z) := continuous_snd.prodMk hu.continuous
-  have hle := neg_mul_setIntegral_le_setIntegral_deriv_mul
-    (f := fun z ↦ H₁ z.2 (u z) - H₀ z.2 (u z)) hβ hβm hab
-    ((hH₁.continuous.comp hp).sub (hH₀.continuous.comp hp)).continuousOn hB
-    fun z hz ↦ by linarith [hHB z hz]
-  linarith
+  linarith [neg_setIntegral_fderiv_linearHomotopy_le hH₀ hH₁ hβ hβm hu.continuous hab hB hHB]
 
 /-- **The capped action shift of a linear homotopy.** Under the hypotheses of
 `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_linearHomotopy_le`, if `u`
@@ -197,12 +160,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_continuationHomotopy_le
   have hE := hω.integral_floerEnergyDensity_linearHomotopy_le hH₀ hH₁
     (smoothTransition.contDiff (n := 1)) smoothTransition.monotone hu
     (ha.trans (zero_le_one.trans hb)) hv hv₀ hhi fun z hz ↦ hh z.2 hz.2 (u z)
-  -- At the two ends the homotopy is `H₀` and `H₁`.
-  have hA : (fun t ↦ continuationHomotopy H₀ H₁ (a, t)) = H₀ :=
-    funext fun t ↦ funext (continuationHomotopy_of_nonpos (z := (a, t)) ha)
-  have hB : (fun t ↦ continuationHomotopy H₀ H₁ (b, t)) = H₁ :=
-    funext fun t ↦ funext (continuationHomotopy_of_one_le (z := (b, t)) hb)
-  rwa [← continuationHomotopy_eq_linearHomotopy, hA, hB, smoothTransition.zero_of_nonpos ha,
+  rwa [← continuationHomotopy_eq_linearHomotopy, continuationHomotopy_eq_left_of_nonpos ha,
+    continuationHomotopy_eq_right_of_one_le hb, smoothTransition.zero_of_nonpos ha,
     smoothTransition.one_of_one_le hb, sub_zero, one_mul] at hE
 
 /-- **The capped action shift of a continuation cylinder.** Under the hypotheses of
