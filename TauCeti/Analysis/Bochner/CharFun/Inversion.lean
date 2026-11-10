@@ -138,6 +138,11 @@ theorem charFunDensity_of_not_integrable (h : ¬ Integrable (charFun μ))
   rw [charFunDensity_def, integral_undef ((integrable_cexp_mul_charFun_iff x).not.mpr h)]
   simp
 
+/-- The inversion density of a measure that is not finite vanishes, since its characteristic
+function does. -/
+theorem charFunDensity_of_not_isFiniteMeasure (hμ : ¬ IsFiniteMeasure μ) : charFunDensity μ = 0 :=
+  funext fun x ↦ by simp [charFunDensity_def, TauCeti.charFun_of_not_isFiniteMeasure hμ]
+
 /-- The inversion density is the real part of the inverse Fourier transform, in Mathlib's `2π`
 convention, of `v ↦ φ((-2π) • v)`: substitute `t = -2πv`. -/
 theorem charFunDensity_eq_re_fourierInv (μ : Measure ℝ) (x : ℝ) :
@@ -155,7 +160,7 @@ theorem charFunDensity_eq_re_fourierInv (μ : Measure ℝ) (x : ℝ) :
 theorem charFunDensity_nonneg (x : ℝ) : 0 ≤ charFunDensity μ x := by
   by_cases hμ : IsFiniteMeasure μ
   swap
-  · simp [charFunDensity_def, TauCeti.charFun_of_not_isFiniteMeasure hμ]
+  · simp [charFunDensity_of_not_isFiniteMeasure hμ]
   by_cases h : Integrable (charFun μ)
   · rw [charFunDensity_eq_re_fourierInv]
     exact TauCeti.fourierInv_re_nonneg_of_posSemidef _
@@ -167,8 +172,7 @@ theorem charFunDensity_nonneg (x : ℝ) : 0 ≤ charFunDensity μ x := by
 theorem continuous_charFunDensity : Continuous (charFunDensity μ) := by
   by_cases hμ : IsFiniteMeasure μ
   swap
-  · rw [show charFunDensity μ = fun _ ↦ 0 from funext fun x ↦ by
-      simp [charFunDensity_def, TauCeti.charFun_of_not_isFiniteMeasure hμ]]
+  · rw [charFunDensity_of_not_isFiniteMeasure hμ]
     exact continuous_const
   by_cases h : Integrable (charFun μ)
   · rw [funext (charFunDensity_eq_re_fourierInv μ)]

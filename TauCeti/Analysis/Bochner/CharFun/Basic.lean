@@ -28,6 +28,7 @@ variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
 omit [OpensMeasurableSpace E] [IsFiniteMeasure μ] in
 /-- The characteristic function of a measure that is not finite is zero: the kernel has norm `1`,
 so it is not integrable, and the Bochner integral of a non-integrable function is zero. -/
+@[simp]
 theorem charFun_of_not_isFiniteMeasure (hμ : ¬ IsFiniteMeasure μ) : charFun μ = 0 := by
   refine funext fun t => integral_undef fun h => hμ ?_
   have h1 : Integrable (fun _ : E => (1 : ℝ)) μ := by

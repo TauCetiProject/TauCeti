@@ -141,14 +141,19 @@ theorem posSemidef_charFun_neg_two_pi_smul_sub :
   simpa only [integral_fourierAtom_eq_charFun_neg_two_pi_smul] using
     posSemidef_fourierConventionCharFun_sub (ν := ν)
 
-/-- The Fourier-convention transform of a finite measure is continuous. -/
-theorem continuous_fourierConventionCharFun [IsFiniteMeasure ν] :
-    Continuous fun a : W => ∫ q, fourierAtom a q ∂ν :=
-  continuous_of_dominated (bound := fun _ ↦ 1)
-    (fun a ↦ (continuous_fourierAtom a).aestronglyMeasurable)
-    (fun a ↦ ae_of_all _ fun q ↦ (norm_fourierAtom a q).le)
-    (integrable_const _)
-    (ae_of_all _ fun q ↦ (continuous_and_isPositiveDefiniteSub_fourierAtom q).1)
+/-- The Fourier-convention transform of a measure is continuous: for a finite measure by
+dominated convergence, and for a measure that is not finite it vanishes. -/
+theorem continuous_fourierConventionCharFun :
+    Continuous fun a : W => ∫ q, fourierAtom a q ∂ν := by
+  by_cases hν : IsFiniteMeasure ν
+  · exact continuous_of_dominated (bound := fun _ ↦ 1)
+      (fun a ↦ (continuous_fourierAtom a).aestronglyMeasurable)
+      (fun a ↦ ae_of_all _ fun q ↦ (norm_fourierAtom a q).le)
+      (integrable_const _)
+      (ae_of_all _ fun q ↦ (continuous_and_isPositiveDefiniteSub_fourierAtom q).1)
+  · simp only [integral_fourierAtom_eq_charFun_neg_two_pi_smul, charFun_of_not_isFiniteMeasure hν,
+      Pi.zero_apply]
+    exact continuous_const
 
 section Convolution
 
