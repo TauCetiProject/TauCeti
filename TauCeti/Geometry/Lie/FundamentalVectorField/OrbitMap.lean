@@ -26,9 +26,10 @@ fundamental fields at `g • x`. Its image is the orbit tangent space
 `T_{g • x}(G • x) = {ξ_M(g • x)}`, and its kernel is the right translate of the isotropy algebra
 `𝔤_{g • x}`.
 
-Along an orbit the isotropy algebras are conjugate, `𝔤_{g • x} = Ad_g 𝔤_x`, and the orbit tangent
-spaces correspond under the differential of `y ↦ g • y`. So the **rank of the orbit map** is
-constant on `G`: for finite-dimensional `G`,
+Along an orbit the isotropy algebras are conjugate, `𝔤_{g • x} = Ad_g 𝔤_x`
+(`TauCeti.isotropy_fundamental_smul`), and the orbit tangent spaces correspond under the
+differential of `y ↦ g • y`. So the **rank of the orbit map** is constant on `G`: for
+finite-dimensional `G`,
 
 `rank d(h ↦ h • x)_g + dim 𝔤_x = dim 𝔤`.
 
@@ -40,7 +41,6 @@ an immersion, respectively a submersion.
 
 ## Main results
 
-* `TauCeti.isotropy_fundamental_smul`: `𝔤_{g • x} = Ad_g 𝔤_x`.
 * `TauCeti.orbitTangent_fundamental_smul`: `T_{g • x}(G • x) = d(y ↦ g • y)_x (T_x(G • x))`.
 * `TauCeti.range_mfderiv_smul_const`: the image of the differential of the orbit map at `g` is the
   orbit tangent space at `g • x`.
@@ -86,32 +86,6 @@ local instance contMDiffSMulOneOfInfty : ContMDiffSMul I I' 1 G M :=
   ContMDiffSMul.of_le (M := M) ENat.LEInfty.out
 
 /-! ### Conjugacy along an orbit -/
-
-/-- **The isotropy algebras along an orbit are conjugate**: `𝔤_{g • x} = Ad_g 𝔤_x`. -/
-theorem isotropy_fundamental_smul (g : G) (x : M) :
-    (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) =
-      ((InfinitesimalAction.fundamental I G I' M).isotropy x).map
-        (Lie.tangentAd (I := I) g : GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I G) := by
-  ext ξ
-  rw [LieSubalgebra.mem_map]
-  simp only [LieEquiv.coe_toLieHom, Lie.tangentAd_apply]
-  constructor
-  · -- `ξ = Ad_g (Ad_{g⁻¹} ξ)`, and `Ad_{g⁻¹} ξ` lies in the isotropy algebra of `x`.
-    intro hξ
-    have hAd := Lie.adjointContinuousLinearMap_adjointContinuousLinearMap_inv (I := I) g ξ
-    refine ⟨Lie.adjointContinuousLinearMap (I := I) g⁻¹ ξ, ?_, hAd⟩
-    rwa [← adjointContinuousLinearMap_mem_isotropy_smul_iff (g := g), hAd]
-  · rintro ⟨η, hη, rfl⟩
-    exact adjointContinuousLinearMap_mem_isotropy_smul_iff.mpr hη
-
-/-- The isotropy algebras along an orbit have the same dimension. -/
-@[simp]
-theorem finrank_isotropy_fundamental_smul (g : G) (x : M) :
-    Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).isotropy (g • x)) =
-      Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).isotropy x) := by
-  rw [isotropy_fundamental_smul]
-  exact (LieSubalgebra.equivMapOfInjective _ _
-    (Lie.tangentAd (I := I) g).injective).toLinearEquiv.finrank_eq.symm
 
 /-- **The orbit tangent spaces along an orbit correspond**: the differential of `y ↦ g • y` at `x`
 carries the orbit tangent space at `x` onto that at `g • x`. -/

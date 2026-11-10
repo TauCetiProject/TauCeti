@@ -51,8 +51,10 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
 * `TauCeti.mlieBracket_fundamentalVectorField`: `[ξ_M, η_M] = -⁅ξ, η⁆_M`, so `ξ ↦ ξ_M` is an
   antihomomorphism of Lie algebras.
 * `TauCeti.adjointContinuousLinearMap_mem_isotropy_smul_iff`: the isotropy algebras along an orbit
-  are conjugate, `Ad_g ξ ∈ 𝔤_{g • x}` exactly when `ξ ∈ 𝔤_x`; in particular they vanish
-  together (`TauCeti.isotropy_smul_eq_bot_iff`).
+  are conjugate, `Ad_g ξ ∈ 𝔤_{g • x}` exactly when `ξ ∈ 𝔤_x`, that is
+  `𝔤_{g • x} = Ad_g 𝔤_x` (`TauCeti.isotropy_fundamental_smul`); in particular they vanish
+  together (`TauCeti.isotropy_smul_eq_bot_iff`) and have the same dimension
+  (`TauCeti.finrank_isotropy_fundamental_smul`).
 
 ## References
 
@@ -502,6 +504,32 @@ theorem isotropy_smul_eq_bot_iff {g : G} {x : M} :
     rw [← hAd g⁻¹ ξ, inv_inv, this, map_zero]
   · have := h _ (adjointContinuousLinearMap_mem_isotropy_smul_iff.1 ((hAd g ξ).symm ▸ hξ))
     rw [← hAd g ξ, this, map_zero]
+
+/-- **The isotropy algebras along an orbit are conjugate**: `𝔤_{g • x} = Ad_g 𝔤_x`. -/
+theorem isotropy_fundamental_smul (g : G) (x : M) :
+    (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) =
+      ((InfinitesimalAction.fundamental I G I' M).isotropy x).map
+        (Lie.tangentAd (I := I) g : GroupLieAlgebra I G →ₗ⁅ℝ⁆ GroupLieAlgebra I G) := by
+  ext ξ
+  rw [LieSubalgebra.mem_map]
+  simp only [LieEquiv.coe_toLieHom, Lie.tangentAd_apply]
+  constructor
+  · -- `ξ = Ad_g (Ad_{g⁻¹} ξ)`, and `Ad_{g⁻¹} ξ` lies in the isotropy algebra of `x`.
+    intro hξ
+    have hAd := Lie.adjointContinuousLinearMap_adjointContinuousLinearMap_inv (I := I) g ξ
+    refine ⟨Lie.adjointContinuousLinearMap (I := I) g⁻¹ ξ, ?_, hAd⟩
+    rwa [← adjointContinuousLinearMap_mem_isotropy_smul_iff (g := g), hAd]
+  · rintro ⟨η, hη, rfl⟩
+    exact adjointContinuousLinearMap_mem_isotropy_smul_iff.mpr hη
+
+/-- The isotropy algebras along an orbit have the same dimension. -/
+@[simp]
+theorem finrank_isotropy_fundamental_smul (g : G) (x : M) :
+    Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).isotropy (g • x)) =
+      Module.finrank ℝ ((InfinitesimalAction.fundamental I G I' M).isotropy x) := by
+  rw [isotropy_fundamental_smul]
+  exact (LieSubalgebra.equivMapOfInjective _ _
+    (Lie.tangentAd (I := I) g).injective).toLinearEquiv.finrank_eq.symm
 
 end InfinitesimalAction
 
