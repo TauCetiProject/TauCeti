@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
-import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.Analysis.Calculus.ContDiff.FDerivApply
 import TauCeti.Analysis.Complex.Coordinates
 import TauCeti.Analysis.Sobolev.Leibniz
@@ -26,9 +25,10 @@ coefficients are the case `n = ∞`.
 
 The induction on `k` runs through the Leibniz rule `D(χ u) = χ Du + Dχ ⊗ u`, which needs `χ` only
 `C¹` (`TauCeti.HasWeakFDerivOn.contDiffOn_smul_of_ne_zero`); the two summands are coefficients
-of class `C^{n-1}` applied to maps of order `k`. For any measure on which `|χ| ≤ A` and
-`‖Dχ‖ ≤ B` almost everywhere, in particular Lebesgue measure restricted to a measurable set `K`,
-the derivative obeys `‖D(χ u)‖_{Lᵖ} ≤ A ‖Du‖_{Lᵖ} + B ‖u‖_{Lᵖ}`.
+of class `C^{n-1}` applied to maps of order `k`. For `1 ≤ p` and any measure on which `|χ| ≤ A`
+and `‖Dχ‖ ≤ B` almost everywhere, in particular Lebesgue measure restricted to a measurable set
+`K`, the derivative obeys `‖D(χ u)‖_{Lᵖ} ≤ A ‖Du‖_{Lᵖ} + B ‖u‖_{Lᵖ}`
+(`TauCeti.eLpNorm_smul_add_fderiv_smulRight_le`).
 
 A factor whose support is a closed subset of the interior of `U` does more: the product extends by
 zero to a local Sobolev map on the whole plane. This is the cutoff step that reduces local
@@ -45,8 +45,6 @@ open neighbourhood `Ω` of `U` provides this without a global extension.
 * `TauCeti.MemWkpLoc.hasWeakFDerivOn_contDiffOn_smul`: the Leibniz formula for the first weak
   derivative of `χ u`, for `χ` of class `C^n` with `k + 1 ≤ n`, with that derivative in the class
   of the preceding order.
-* `TauCeti.eLpNorm_smul_add_fderiv_smulRight_le`: the `Lᵖ` bound for that derivative in
-  terms of bounds on `χ` and `Dχ`.
 * `TauCeti.MemWkpLoc.contDiff_smul_of_tsupport_subset`: a cutoff supported inside `U` extends
   the product by zero to the whole plane.
 * `TauCeti.MemWkpLoc.contDiffOn_clm_apply`, `TauCeti.MemWkpLoc.contDiff_clm_apply`: a `C^n`
@@ -150,35 +148,6 @@ theorem MemWkpLoc.hasWeakFDerivOn_contDiffOn_smul {D : ℂ → ℂ →L[ℝ] F}
     (((hu.clm_comp _).contDiffOn_smul (hχ.fderiv_apply_of_isOpen Ω.isOpen hk 1) le_rfl hU).add
       ((hu.clm_comp _).contDiffOn_smul (hχ.fderiv_apply_of_isOpen Ω.isOpen hk Complex.I) le_rfl
         hU))
-
-/-- **Local bound for the Leibniz derivative.** Let `μ` be a measure on a finite-dimensional real
-normed space `E` and let `χ : E → ℝ` satisfy `|χ| ≤ A` and `‖Dχ‖ ≤ B` almost everywhere. Then the
-derivative `χ Du + Dχ ⊗ u` of `χ u` from `TauCeti.MemWkpLoc.hasWeakFDerivOn_contDiffOn_smul`
-satisfies `‖D(χ u)‖_{Lᵖ(μ)} ≤ A ‖Du‖_{Lᵖ(μ)} + B ‖u‖_{Lᵖ(μ)}` for `1 ≤ p`. The local bound on a
-measurable set `K` is the case `μ = volume.restrict K`. -/
-theorem eLpNorm_smul_add_fderiv_smulRight_le {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [OpensMeasurableSpace E]
-    {μ : Measure E} (hp : 1 ≤ p) {χ : E → ℝ} (hχ : AEStronglyMeasurable χ μ) {A B : NNReal}
-    (hA : ∀ᵐ z ∂μ, ‖χ z‖ ≤ A) (hB : ∀ᵐ z ∂μ, ‖fderiv ℝ χ z‖ ≤ B) {u : E → F}
-    {D : E → E →L[ℝ] F} (hD : AEStronglyMeasurable D μ) (hu : AEStronglyMeasurable u μ) :
-    eLpNorm (fun z => χ z • D z + (fderiv ℝ χ z).smulRight (u z)) p μ ≤
-      A * eLpNorm D p μ + B * eLpNorm u p μ := by
-  have hm : AEStronglyMeasurable (fun z => χ z • D z + (fderiv ℝ χ z).smulRight (u z)) μ :=
-    (hχ.smul hD).add ((ContinuousLinearMap.smulRightL ℝ E F).aestronglyMeasurable_comp₂
-      (measurable_fderiv ℝ χ).aestronglyMeasurable hu)
-  calc eLpNorm (fun z => χ z • D z + (fderiv ℝ χ z).smulRight (u z)) p μ
-      ≤ eLpNorm ((A : ℝ) • fun z => ‖D z‖) p μ + eLpNorm ((B : ℝ) • fun z => ‖u z‖) p μ := by
-        refine (eLpNorm_mono_ae_real hm ?_).trans (eLpNorm_add_le hp)
-        filter_upwards [hA, hB] with z hAz hBz
-        simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
-        refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
-        · rw [norm_smul]
-          exact mul_le_mul_of_nonneg_right hAz (norm_nonneg _)
-        · rw [ContinuousLinearMap.norm_smulRight_apply]
-          exact mul_le_mul_of_nonneg_right hBz (norm_nonneg _)
-    _ = A * eLpNorm D p μ + B * eLpNorm u p μ := by
-        rw [eLpNorm_const_smul, eLpNorm_const_smul, eLpNorm_norm, eLpNorm_norm] <;>
-          first | assumption | simp
 
 /-- **Cutoff localization.** Multiplying a local Sobolev map on `U` by a `C^n` factor, `k ≤ n`,
 whose support is a closed subset of the interior of `U` gives a local Sobolev map on the whole

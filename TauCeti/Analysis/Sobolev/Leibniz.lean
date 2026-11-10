@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Calculus.LineDeriv.Measurable
@@ -86,6 +87,9 @@ explicit, non-asymptotic formula is the point.
   is `C^n` on `Ω` with `n ≠ 0` (at least `C¹`), for an additive Haar measure.
 * `TauCeti.HasWeakLineDerivOn.exists_lp_lipschitzOnWith_smul`: a bounded Lipschitz factor keeps
   an `Lᵖ` weak derivative in `Lᵖ`.
+* `TauCeti.eLpNorm_smul_add_fderiv_smulRight_le`: for `1 ≤ p`, the `Lᵖ` bound
+  `‖ψ Du + Dψ ⊗ u‖_{Lᵖ} ≤ A ‖Du‖_{Lᵖ} + B ‖u‖_{Lᵖ}` when `|ψ| ≤ A` and `‖Dψ‖ ≤ B` almost
+  everywhere.
 * `TauCeti.HasWeakFDerivOn.contDiffOn_smul_gradient`,
   `TauCeti.HasWeakFDerivOn.contDiff_smul_gradient`: the form consumed by `TauCeti.W1p`, where a
   weak derivative of a scalar function is recorded by its Riesz representative and the rule reads
@@ -407,6 +411,42 @@ theorem HasWeakLineDerivOn.exists_lp_lipschitzOnWith_smul {p : ℝ≥0∞} {M : 
   exact ⟨hm.toLp _, (h.lipschitzOnWith_smul hψ).congr_ae_deriv hm.coeFn_toLp.symm⟩
 
 end Lipschitz
+
+section LpBound
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [OpensMeasurableSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {μ : Measure E} {p : ENNReal}
+
+/-- **`Lᵖ` bound for the Leibniz derivative.** Let `μ` be a measure on a finite-dimensional real
+normed space `E` and let `ψ : E → ℝ` satisfy `|ψ| ≤ A` and `‖Dψ‖ ≤ B` almost everywhere. Then the
+derivative `ψ Du + Dψ ⊗ u` of `ψ u` in `TauCeti.HasWeakFDerivOn.contDiffOn_smul` satisfies
+`‖D(ψ u)‖_{Lᵖ(μ)} ≤ A ‖Du‖_{Lᵖ(μ)} + B ‖u‖_{Lᵖ(μ)}` for `1 ≤ p`. The local bound on a measurable
+set `K` is the case `μ = volume.restrict K`. -/
+theorem eLpNorm_smul_add_fderiv_smulRight_le (hp : 1 ≤ p) {ψ : E → ℝ}
+    (hψ : AEStronglyMeasurable ψ μ) {A B : NNReal} (hA : ∀ᵐ z ∂μ, ‖ψ z‖ ≤ A)
+    (hB : ∀ᵐ z ∂μ, ‖fderiv ℝ ψ z‖ ≤ B) {u : E → F} {D : E → E →L[ℝ] F}
+    (hD : AEStronglyMeasurable D μ) (hu : AEStronglyMeasurable u μ) :
+    eLpNorm (fun z => ψ z • D z + (fderiv ℝ ψ z).smulRight (u z)) p μ ≤
+      A * eLpNorm D p μ + B * eLpNorm u p μ := by
+  have hm : AEStronglyMeasurable (fun z => ψ z • D z + (fderiv ℝ ψ z).smulRight (u z)) μ :=
+    (hψ.smul hD).add ((ContinuousLinearMap.smulRightL ℝ E F).aestronglyMeasurable_comp₂
+      (measurable_fderiv ℝ ψ).aestronglyMeasurable hu)
+  calc eLpNorm (fun z => ψ z • D z + (fderiv ℝ ψ z).smulRight (u z)) p μ
+      ≤ eLpNorm ((A : ℝ) • fun z => ‖D z‖) p μ + eLpNorm ((B : ℝ) • fun z => ‖u z‖) p μ := by
+        refine (eLpNorm_mono_ae_real hm ?_).trans (eLpNorm_add_le hp)
+        filter_upwards [hA, hB] with z hAz hBz
+        simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+        refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+        · rw [norm_smul]
+          exact mul_le_mul_of_nonneg_right hAz (norm_nonneg _)
+        · rw [ContinuousLinearMap.norm_smulRight_apply]
+          exact mul_le_mul_of_nonneg_right hBz (norm_nonneg _)
+    _ = A * eLpNorm D p μ + B * eLpNorm u p μ := by
+        rw [eLpNorm_const_smul, eLpNorm_const_smul, eLpNorm_norm, eLpNorm_norm] <;>
+          first | assumption | simp
+
+end LpBound
 
 section InnerProduct
 
