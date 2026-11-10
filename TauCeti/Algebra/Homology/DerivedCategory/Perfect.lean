@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.CochainComplex.Opcycles
 public import TauCeti.Algebra.Homology.DerivedCategory.ProjectiveResolution
+public import TauCeti.Algebra.Homology.Embedding.CochainComplex
 public import TauCeti.Algebra.Homology.HomologicalComplex.Projective.Cycles
 public import TauCeti.Algebra.Homology.DerivedCategory.Singularity.Basic
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
@@ -163,13 +164,7 @@ theorem exists_bounded_projective_of_projective_opcycles {K : CochainComplex C �
   have : QuasiIso (K.πTruncGE m) := (K.quasiIso_πTruncGE_iff m).2 inferInstance
   refine ⟨K.truncGE m, m, b, inferInstance, ?_, fun i ↦ ?_,
     ⟨(asIso (Q.map (K.πTruncGE m))).symm⟩⟩
-  · rw [CochainComplex.isStrictlyLE_iff]
-    intro i hi
-    obtain hi' | rfl | hi' := lt_trichotomy i m
-    · exact (K.truncGE m).isZero_of_isStrictlyGE m i hi'
-    · exact ((K.isZero_of_isStrictlyLE b i hi).of_epi (K.pOpcycles i)).of_iso
-        (K.truncGEXIsoOpcycles i)
-    · exact (K.isZero_of_isStrictlyLE b i hi).of_iso (K.truncGEXIso m i hi')
+  · exact CochainComplex.isStrictlyLE_truncGE K m b
   · obtain hi | rfl | hi := lt_trichotomy i m
     · exact Projective.of_iso ((K.truncGE m).isZero_of_isStrictlyGE m i hi).isoZero.symm
         inferInstance
