@@ -12,7 +12,7 @@ public import TauCeti.RepresentationTheory.Induction.Permutation
 /-!
 # Permutation representations in characteristic zero are classified by fixed-point counts
 
-Let `G` be a finite group acting on finite types `X` and `Y`, and let `k` be a field of
+Let `G` be a group acting on finite types `X` and `Y`, and let `k` be a field of
 characteristic zero. The character of the permutation representation `k[X]` at `g` is the number
 of points of `X` fixed by `g`, cast into `k` (`TauCeti.char_ofMulAction`), and over a field of
 characteristic zero a representation is determined by its character
@@ -47,7 +47,7 @@ an equivalence of representations is in particular a linear equivalence and `k[X
 * `TauCeti.natCard_fixedBy_eq_of_nonempty_equiv_ofMulAction`: equivalent permutation representations
   have equal fixed-point counts.
 * `TauCeti.nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq`: **the classification** —
-  over a field of characteristic zero, two permutation representations of a finite group are
+  over a field of characteristic zero, two permutation representations of a group on finite sets are
   equivalent exactly when the fixed-point counts of the underlying `G`-sets agree.
 * `TauCeti.natCard_eq_of_nonempty_equiv_ofMulAction`: the cardinalities agree, over any field.
 * `TauCeti.nonempty_iso_repOfMulAction_iff_forall_natCard_fixedBy_eq`: the same classification,
@@ -92,23 +92,41 @@ theorem natCard_fixedBy_eq_of_nonempty_equiv_ofMulAction [CharZero k]
   rw [char_ofMulAction, char_ofMulAction] at hchar
   exact Nat.cast_injective hchar
 
+omit [Finite G] in
 /-- **Permutation representations in characteristic zero are classified by fixed-point counts.**
-For a finite group `G` acting on finite types `X` and `Y` and a field `k` of characteristic zero,
+For a group `G` acting on finite types `X` and `Y` and a field `k` of characteristic zero,
 the permutation representations `k[X]` and `k[Y]` are equivalent exactly when `g` fixes as many
 points of `X` as of `Y`, for every `g : G`.
 
 The forward direction is `TauCeti.natCard_fixedBy_eq_of_nonempty_equiv_ofMulAction`; the backward
-one reads the fixed-point counts as the permutation characters and appeals to
-`Representation.nonempty_equiv_of_character_eq`. -/
+one factors the two actions through the finite group `Perm X × Perm Y`, reads the fixed-point
+counts as the permutation characters of the image of `G`, and appeals to
+`Representation.nonempty_equiv_of_character_eq` there. -/
 theorem nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq [CharZero k] :
     Nonempty ((ofMulAction k G X).Equiv (ofMulAction k G Y)) ↔
       ∀ g : G, Nat.card (fixedBy X g) = Nat.card (fixedBy Y g) := by
   refine ⟨fun h g ↦ natCard_fixedBy_eq_of_nonempty_equiv_ofMulAction k h g, fun h ↦ ?_⟩
-  refine Representation.nonempty_equiv_of_character_eq _ _ (funext fun g ↦ ?_)
-  rw [char_ofMulAction, char_ofMulAction]
-  exact congrArg Nat.cast (h g)
+  let f : G →* Equiv.Perm X × Equiv.Perm Y :=
+    (MulAction.toPermHom G X).prod (MulAction.toPermHom G Y)
+  let ρX : Representation k f.range (MonoidAlgebra k X) :=
+    (ofMulAction k (Equiv.Perm X) X).comp ((MonoidHom.fst _ _).comp f.range.subtype)
+  let ρY : Representation k f.range (MonoidAlgebra k Y) :=
+    (ofMulAction k (Equiv.Perm Y) Y).comp ((MonoidHom.snd _ _).comp f.range.subtype)
+  have hX : ∀ g, ofMulAction k G X g = ρX (f.rangeRestrict g) := fun g ↦
+    MonoidAlgebra.lhom_ext' fun x ↦ LinearMap.ext_ring (by simp [ρX, f])
+  have hY : ∀ g, ofMulAction k G Y g = ρY (f.rangeRestrict g) := fun g ↦
+    MonoidAlgebra.lhom_ext' fun x ↦ LinearMap.ext_ring (by simp [ρY, f])
+  obtain ⟨φ⟩ := Representation.nonempty_equiv_of_character_eq ρX ρY (funext fun q ↦ by
+    obtain ⟨g, rfl⟩ := f.rangeRestrict_surjective q
+    have hc : (ofMulAction k G X).character g = (ofMulAction k G Y).character g := by
+      rw [char_ofMulAction, char_ofMulAction]
+      exact congrArg Nat.cast (h g)
+    simpa [Representation.character, hX, hY] using hc)
+  refine ⟨.mk φ.toLinearEquiv fun g ↦ ?_⟩
+  rw [hX, hY]
+  exact φ.isIntertwining' _
 
-omit [Finite G] in
+omit [Finite G] [Finite X] [Finite Y] in
 /-- **Equivalent permutation representations come from `G`-sets of the same size.** This needs no
 assumption on the characteristic: an equivalence of representations is in particular a linear
 equivalence, and `k[X]` has dimension `#X` over any field. -/
@@ -116,15 +134,12 @@ theorem natCard_eq_of_nonempty_equiv_ofMulAction
     (h : Nonempty ((ofMulAction k G X).Equiv (ofMulAction k G Y))) :
     Nat.card X = Nat.card Y := by
   obtain ⟨φ⟩ := h
-  have _ : Fintype X := Fintype.ofFinite X
-  have _ : Fintype Y := Fintype.ofFinite Y
-  have hrank : Module.finrank k (MonoidAlgebra k X) = Module.finrank k (MonoidAlgebra k Y) :=
-    φ.toLinearEquiv.finrank_eq
-  rw [(MonoidAlgebra.coeffLinearEquiv k (S := k) (M := X)).finrank_eq,
-    (MonoidAlgebra.coeffLinearEquiv k (S := k) (M := Y)).finrank_eq, Module.finrank_finsupp_self,
-    Module.finrank_finsupp_self] at hrank
-  rwa [Nat.card_eq_fintype_card, Nat.card_eq_fintype_card]
+  have hrank := ((MonoidAlgebra.coeffLinearEquiv k (S := k) (M := X)).symm.trans
+    (φ.toLinearEquiv.trans (MonoidAlgebra.coeffLinearEquiv k (S := k) (M := Y)))).rank_eq
+  rw [rank_finsupp_self, rank_finsupp_self] at hrank
+  exact Nat.card_congr (Cardinal.eq.mp (Cardinal.lift_inj.mp hrank)).some
 
+omit [Finite G] in
 /-- **The classification in `Rep k G`.** The permutation representations of two finite `G`-sets are
 isomorphic as objects of `Rep k G`, over a field of characteristic zero, exactly when the
 fixed-point counts agree. This is
@@ -162,6 +177,7 @@ theorem nonempty_equiv_ind_trivial_iff_forall_natCard_fixedBy_eq [CharZero k] :
   exact ⟨fun ⟨φ⟩ ↦ ⟨((indTrivialEquiv k H).symm.trans φ).trans (indTrivialEquiv k K)⟩,
     fun ⟨φ⟩ ↦ ⟨((indTrivialEquiv k H).trans φ).trans (indTrivialEquiv k K).symm⟩⟩
 
+omit [Finite G] in
 /-- **Equivalently induced trivial representations force equal indices.** The coset space `G ⧸ H`
 has cardinality `H.index`, so this is
 `TauCeti.natCard_eq_of_nonempty_equiv_ofMulAction` on the coset spaces, read through
