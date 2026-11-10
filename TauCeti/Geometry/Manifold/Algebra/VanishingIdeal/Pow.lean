@@ -65,27 +65,30 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
 
-/-- A function in `I_x ^ (m + 1)` has a chart expression whose derivatives of order at most `m`
-vanish at the image of `x`. -/
-theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_pow {x : M}
-    (hx : I.IsInteriorPoint x) {m : ℕ} {f : C^∞⟮I, M; ℝ⟯}
-    (hf : f ∈ smoothVanishingIdeal I x ^ (m + 1)) {k : ℕ} (hk : k ≤ m) :
-    iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 := by
+omit [T2Space M] in
+/-- A function in `I_y ^ (m + 1)` has a chart expression whose derivatives of order at most `m`
+vanish at the image of `y`, in the extended chart at any point `x` whose source contains `y` and
+whose target contains the image of `y` in its interior. -/
+theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_pow {x y : M}
+    (hy : y ∈ (extChartAt I x).source) (hy' : extChartAt I x y ∈ interior (extChartAt I x).target)
+    {m : ℕ} {f : C^∞⟮I, M; ℝ⟯} (hf : f ∈ smoothVanishingIdeal I y ^ (m + 1)) {k : ℕ}
+    (hk : k ≤ m) :
+    iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x y) = 0 := by
   induction m generalizing f k with
   | zero =>
     obtain rfl : k = 0 := by omega
     rw [zero_add, pow_one, mem_smoothVanishingIdeal_iff] at hf
-    rw [← norm_eq_zero, norm_iteratedFDeriv_zero, Function.comp_apply, extChartAt_to_inv, hf,
-      norm_zero]
+    rw [← norm_eq_zero, norm_iteratedFDeriv_zero, Function.comp_apply,
+      (extChartAt I x).left_inv hy, hf, norm_zero]
   | succ m ih =>
     rw [pow_succ] at hf
     refine Submodule.mul_induction_on
       (C := fun r : C^∞⟮I, M; ℝ⟯ ↦ ∀ k ≤ m + 1,
-        iteratedFDeriv ℝ k ((r : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) = 0)
+        iteratedFDeriv ℝ k ((r : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x y) = 0)
       hf (fun u hu v hv k hk ↦ ?_) (fun u v hu hv k hk ↦ ?_) k hk
     · -- Orders of vanishing add: `u` vanishes to order `m + 1` and `v` to order `1`.
-      obtain ⟨gu, hgu, hu'⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx u
-      obtain ⟨gv, hgv, hv'⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx v
+      obtain ⟨gu, hgu, hu'⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hy' u
+      obtain ⟨gv, hgv, hv'⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hy' v
       have huv : ((u * v : C^∞⟮I, M; ℝ⟯) : M → ℝ) ∘ (extChartAt I x).symm =ᶠ[𝓝 _]
           fun y ↦ gu y * gv y := hu'.mul hv'
       rw [(huv.iteratedFDeriv ℝ k).eq_of_nhds]
@@ -95,9 +98,10 @@ theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_
         exact ih hu (by omega)
       · obtain rfl : i = 0 := by omega
         rw [← (hv'.iteratedFDeriv ℝ 0).eq_of_nhds, ← norm_eq_zero, norm_iteratedFDeriv_zero,
-          Function.comp_apply, extChartAt_to_inv, mem_smoothVanishingIdeal_iff.1 hv, norm_zero]
-    · obtain ⟨gu, hgu, hu'⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx u
-      obtain ⟨gv, hgv, hv'⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx v
+          Function.comp_apply, (extChartAt I x).left_inv hy, mem_smoothVanishingIdeal_iff.1 hv,
+          norm_zero]
+    · obtain ⟨gu, hgu, hu'⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hy' u
+      obtain ⟨gv, hgv, hv'⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hy' v
       have huv : ((u + v : C^∞⟮I, M; ℝ⟯) : M → ℝ) ∘ (extChartAt I x).symm =ᶠ[𝓝 _] gu + gv :=
         hu'.add hv'
       rw [(huv.iteratedFDeriv ℝ k).eq_of_nhds,
@@ -115,7 +119,8 @@ theorem mem_smoothVanishingIdeal_pow_succ_iff_of_isInteriorPoint {x : M}
     f ∈ smoothVanishingIdeal I x ^ (m + 1) ↔ ∀ k ≤ m,
       iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) = 0 :=
   ⟨fun hf _ hk ↦
-    iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_pow hx hf hk,
+    iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_pow
+      (mem_extChartAt_source x) ((ModelWithCorners.isInteriorPoint_iff (I := I)).mp hx) hf hk,
     mem_smoothVanishingIdeal_pow_succ_of_iteratedFDeriv_eq_zero hx⟩
 
 /-- **The powers of the vanishing ideal.** On a finite-dimensional Hausdorff boundaryless real
@@ -137,8 +142,9 @@ theorem quotient_mk_smoothVanishingIdeal_pow_succ_eq_iff {x : M} (hx : I.IsInter
         Ideal.Quotient.mk (smoothVanishingIdeal I x ^ (m + 1)) g ↔
       ∀ k ≤ m, iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) =
         iteratedFDeriv ℝ k ((g : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) := by
-  obtain ⟨u, hu, hfu⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx f
-  obtain ⟨v, hv, hgv⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx g
+  have hx' := (ModelWithCorners.isInteriorPoint_iff (I := I)).mp hx
+  obtain ⟨u, hu, hfu⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx' f
+  obtain ⟨v, hv, hgv⟩ := exists_contDiff_comp_extChartAt_symm_eventuallyEq hx' g
   have hsub : ((f - g : C^∞⟮I, M; ℝ⟯) : M → ℝ) ∘ (extChartAt I x).symm =ᶠ[𝓝 _] u - v :=
     hfu.sub hgv
   rw [Ideal.Quotient.eq, mem_smoothVanishingIdeal_pow_succ_iff_of_isInteriorPoint hx]
