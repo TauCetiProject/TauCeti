@@ -34,7 +34,7 @@ theorem lintegral_expNeg_mul_natCast_poissonMeasure (r : ℝ≥0) (c : ℝ≥0�
   rw [lintegral_ofReal_poissonMeasure (fun _ => by positivity) r
     (hasSum_pow_poissonMeasure r (ENNReal.expNeg c : ℝ))]
   have harg : (r : ℝ≥0∞) * (1 - (ENNReal.expNeg c : ℝ≥0∞)) =
-      ((r * (1 - ENNReal.expNeg c) : ℝ≥0) : ℝ≥0∞) := by push_cast; rfl
+      ((r * (1 - ENNReal.expNeg c) : ℝ≥0) : ℝ≥0∞) := by simp [ENNReal.coe_sub]
   rw [harg, ENNReal.expNeg_coe]
   congr 2
   push_cast [NNReal.coe_sub (ENNReal.expNeg_le_one c)]

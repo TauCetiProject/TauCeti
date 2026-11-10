@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.PointProcess.Poisson.Basic
 public import TauCeti.Probability.RandomMeasure.LaplaceFunctional
 import TauCeti.Probability.Distributions.Poisson.Laplace
+import TauCeti.Data.ENNReal.Inv
 import Mathlib.Probability.Independence.Integration
 
 /-!
@@ -153,22 +154,9 @@ theorem IsPoissonRandomMeasure.laplaceFunctional_eq_expNeg
       (top_unique (not_lt.mp hn))
   let g (n : ℕ) := (A n).indicator f
   have hg (n : ℕ) : Measurable (g n) := hf.indicator (hA n)
-  have hmono : Monotone g := fun _ _ hmn =>
-    Set.indicator_le_indicator_of_subset
-      (fun x hx => (ENNReal.inv_le_inv.mpr (by exact_mod_cast Nat.add_le_add_right hmn 1)).trans hx)
-      (fun _ => bot_le)
-  have hsup : (fun x => ⨆ n, g n x) = f := by
-    funext x
-    apply le_antisymm
-    · exact iSup_le fun n => Set.indicator_le_self (A n) f x
-    · by_cases hx : f x = 0
-      · simp [hx]
-      obtain ⟨n, hn⟩ := ENNReal.exists_inv_nat_lt hx
-      have hxn : x ∈ A n :=
-        (ENNReal.inv_le_inv.mpr (le_add_of_nonneg_right zero_le)).trans hn.le
-      exact le_iSup_of_le n (by simp [g, hxn])
-  rw [← hsup]
-  apply poisson_laplace_monotone h.measurable hg hmono
+  rw [← ENNReal.iSup_indicator_inv_natCast_add_one_le f]
+  apply poisson_laplace_monotone h.measurable hg
+    (ENNReal.monotone_indicator_inv_natCast_add_one_le f)
   intro n
   let : IsFiniteMeasure (Λ.restrict (A n)) := isFiniteMeasure_restrict.mpr (hfin n).ne
   have hn := poisson_laplace_finite (h.restrict (hA n)) hf
