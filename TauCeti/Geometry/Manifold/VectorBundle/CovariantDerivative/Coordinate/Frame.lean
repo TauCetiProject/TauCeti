@@ -81,6 +81,7 @@ theorem christoffelSymbol_comm (ht : cov.IsTorsionFree) (b : Basis ι 𝕜 E) (x
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [Fintype ι]
 
+omit [CompleteSpace E] in
 /-- **The Christoffel map of a torsion-free connection is symmetric.**  Read in the canonical
 tangent-bundle trivialization at `x₀`, the model-space Christoffel map of a torsion-free covariant
 derivative is a symmetric bilinear map. -/
@@ -90,6 +91,7 @@ theorem christoffelMap_comm (ht : cov.IsTorsionFree) (b : Basis ι 𝕜 E) (x₀
         (s := (trivializationAt E (TangentSpace I) x₀).baseSet)) x v w =
       christoffelMap b (cov.isCovariantDerivativeOn
         (s := (trivializationAt E (TangentSpace I) x₀).baseSet)) x w v := by
+  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
   have hbase : x ∈ (trivializationAt E (TangentSpace I) x₀).baseSet := by simpa using hx
   -- A continuous bilinear map is determined by its values on a pair of basis vectors.
   have hsymm : christoffelMap b (cov.isCovariantDerivativeOn
