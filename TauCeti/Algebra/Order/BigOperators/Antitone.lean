@@ -28,7 +28,7 @@ public section
 
 namespace Finset
 
-variable {R : Type*} [CommMonoidWithZero R] [Preorder R] [ZeroLEOneClass R] [PosMulMono R]
+variable {R : Type*} [CommMonoidWithZero R] [Preorder R] [PosMulMono R]
   {f : ℕ → R}
 
 /-- **Products along a count domination.** For a nonnegative antitone sequence `f`, let `s` and
@@ -74,9 +74,15 @@ theorem prod_le_prod_of_card_filter_lt_le (hf₀ : ∀ i, 0 ≤ f i) (hf : Antit
       · have hbt' : b ∉ {i ∈ t | i < k} := fun hm ↦ hbk (mem_filter.1 hm).2
         rwa [erase_eq_of_notMem hbt']
     rw [← mul_prod_erase s f has, ← mul_prod_erase t f hbt]
-    refine mul_le_mul (hf hba) (ih ?_ herase ?_) (prod_nonneg fun i _ ↦ hf₀ i) (hf₀ b)
-    · rw [card_erase_of_mem has, card_erase_of_mem hbt, hst]
-    · rw [card_erase_of_mem has, hn, Nat.add_sub_cancel]
+    have hcard : #(t.erase b) = n := by rw [card_erase_of_mem hbt, ← hst, hn, Nat.add_sub_cancel]
+    have hcards : #(s.erase a) = n := by rw [card_erase_of_mem has, hn, Nat.add_sub_cancel]
+    have hle := ih (hcards.trans hcard.symm) herase hcards
+    obtain rfl | hn0 := n.eq_zero_or_pos
+    · rw [card_eq_zero.1 hcards, card_eq_zero.1 hcard, prod_empty, mul_one, mul_one]
+      exact hf hba
+    · exact mul_le_mul (hf hba) hle
+        (prod_induction_nonempty _ (0 ≤ ·) (fun _ _ ha hb ↦ mul_nonneg ha hb)
+          (card_pos.1 (hcards ▸ hn0)) fun i _ ↦ hf₀ i) (hf₀ b)
 
 /-- For a nonnegative antitone sequence `f`, the product of `f` over a finite set `s` of indices
 is at most its product over the initial segment `range #s` of the same size. -/
@@ -102,6 +108,12 @@ theorem prod_le_prod_range_mul_of_not_subset (hf₀ : ∀ i, 0 ≤ f i) (hf : An
   rw [← mul_prod_erase s f hms, mul_comm]
   have herase := prod_le_prod_range_card hf₀ hf (s.erase m)
   rw [card_erase_of_mem hms, hs, Nat.add_sub_cancel] at herase
-  exact mul_le_mul herase (hf hm) (hf₀ m) (prod_nonneg fun i _ ↦ hf₀ i)
+  obtain rfl | hn := n.eq_zero_or_pos
+  · rw [card_eq_zero.1 (by rw [card_erase_of_mem hms, hs] : #(s.erase m) = 0), prod_empty,
+      range_zero, prod_empty, one_mul, one_mul]
+    exact hf hm
+  · exact mul_le_mul herase (hf hm) (hf₀ m)
+      (prod_induction_nonempty _ (0 ≤ ·) (fun _ _ ha hb ↦ mul_nonneg ha hb)
+        (nonempty_range_iff.2 hn.ne') fun i _ ↦ hf₀ i)
 
 end Finset
