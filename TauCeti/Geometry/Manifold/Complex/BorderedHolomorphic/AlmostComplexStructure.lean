@@ -16,8 +16,9 @@ whose transition maps lie in `TauCeti.borderedHolomorphicGroupoid`. Its tangent 
 and multiplication by `i` on them is a smooth almost complex structure
 `TauCeti.SmoothAlmostComplexStructure.ofBorderedHolomorphic M`, smooth up to the boundary.
 
-The point is that the real derivative of a member of the bordered holomorphic groupoid is complex
-linear also at real boundary points
+The point, proved in `TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.Basic`, is that the
+real derivative of a member of the bordered holomorphic groupoid is complex linear also at real
+boundary points
 (`TauCeti.ClosedUpperHalfPlane.fderivWithin_apply_smul_of_mem_borderedHolomorphicGroupoid`). At
 points of positive imaginary part the member is complex differentiable. Since the member is smooth
 up to the boundary, its derivative within the closed upper half-plane is continuous there, and a
@@ -54,83 +55,6 @@ open scoped Manifold ContDiff Topology
 noncomputable section
 
 namespace TauCeti
-
-namespace ClosedUpperHalfPlane
-
-/-- The real derivative, within the closed upper half-plane, of a member of the bordered
-holomorphic groupoid is complex linear at every point of its source, including the real boundary
-points. -/
-theorem fderivWithin_apply_smul_of_mem_borderedHolomorphicGroupoid
-    {e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane}
-    (he : e ∈ borderedHolomorphicGroupoid) {z : ℂ}
-    (hz : z ∈ closedUpperHalfPlaneModel.symm ⁻¹' e.source ∩ range closedUpperHalfPlaneModel)
-    (c v : ℂ) :
-    fderivWithin ℝ (closedUpperHalfPlaneModel ∘ e ∘ closedUpperHalfPlaneModel.symm)
-        (range closedUpperHalfPlaneModel) z (c • v) =
-      c • fderivWithin ℝ (closedUpperHalfPlaneModel ∘ e ∘ closedUpperHalfPlaneModel.symm)
-        (range closedUpperHalfPlaneModel) z v := by
-  set f := closedUpperHalfPlaneModel ∘ e ∘ closedUpperHalfPlaneModel.symm
-  set U := closedUpperHalfPlaneModel.symm ⁻¹' e.source
-  set S := U ∩ range closedUpperHalfPlaneModel
-  have hU : IsOpen U := e.open_source.preimage closedUpperHalfPlaneModel.continuous_symm
-  obtain ⟨⟨hc, -⟩, hd, -⟩ := mem_borderedHolomorphicGroupoid_iff.1 he
-  have hcd : ContDiffOn ℝ ∞ f S := hc
-  have hS : UniqueDiffOn ℝ S := closedUpperHalfPlaneModel.uniqueDiffOn_preimage e.open_source
-  -- The maps commuting with multiplication by `c` form a closed set.
-  let P : Set (ℂ →L[ℝ] ℂ) := {L | ∀ w, L (c • w) = c • L w}
-  have hP : IsClosed P := by
-    simp only [P, ofPred_forall]
-    exact isClosed_iInter fun w ↦
-      isClosed_eq (by fun_prop) (by fun_prop)
-  -- At points of positive imaginary part, the derivative is complex linear.
-  have hint : fderivWithin ℝ f S '' (U ∩ {w | 0 < w.im}) ⊆ P := by
-    rintro _ ⟨w, hw, rfl⟩ u
-    have hopen : IsOpen (U ∩ {w : ℂ | 0 < w.im}) :=
-      hU.inter (isOpen_lt continuous_const continuous_im)
-    have hSw : S ∈ 𝓝 w := mem_of_superset (hopen.mem_nhds hw) fun y hy ↦
-      ⟨hy.1, by simpa using le_of_lt hy.2⟩
-    have hdw : DifferentiableAt ℂ f w := hd.differentiableAt (hopen.mem_nhds hw)
-    rw [fderivWithin_of_mem_nhds hSw, hdw.fderiv_restrictScalars ℝ,
-      ContinuousLinearMap.coe_restrictScalars', map_smul]
-  -- Every point of the source is a limit of points of positive imaginary part.
-  have hcl : z ∈ closure (U ∩ {w | 0 < w.im}) :=
-    hU.inter_closure ⟨hz.1, by simpa using hz.2⟩
-  have hcont : ContinuousWithinAt (fderivWithin ℝ f S) (U ∩ {w | 0 < w.im}) z :=
-    ((hcd.continuousOn_fderivWithin hS (by simp)) z hz).mono fun y hy ↦
-      ⟨hy.1, by simpa using le_of_lt hy.2⟩
-  have hmem : fderivWithin ℝ f S z ∈ P :=
-    hP.closure_subset_iff.2 hint (hcont.mem_closure_image hcl)
-  have hfd : fderivWithin ℝ f (range closedUpperHalfPlaneModel) z = fderivWithin ℝ f S z := by
-    rw [show S = range closedUpperHalfPlaneModel ∩ U from inter_comm _ _,
-      fderivWithin_inter (hU.mem_nhds hz.1)]
-  rw [hfd]
-  exact hmem v
-
-variable {M : Type*} [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
-  [HasGroupoid M borderedHolomorphicGroupoid]
-
-/-- On a Riemann surface with boundary, the tangent coordinate changes are complex linear, also
-at boundary points. -/
-theorem tangentCoordChange_smul {x y z : M}
-    (h : z ∈ (chartAt ClosedUpperHalfPlane x).source ∩ (chartAt ClosedUpperHalfPlane y).source)
-    (c v : ℂ) :
-    tangentCoordChange closedUpperHalfPlaneModel x y z (c • v) =
-      c • tangentCoordChange closedUpperHalfPlaneModel x y z v := by
-  have he : (chartAt ClosedUpperHalfPlane x).symm.trans (chartAt ClosedUpperHalfPlane y) ∈
-      borderedHolomorphicGroupoid :=
-    HasGroupoid.compatible (chart_mem_atlas _ x) (chart_mem_atlas _ y)
-  have hz : extChartAt closedUpperHalfPlaneModel x z ∈
-      closedUpperHalfPlaneModel.symm ⁻¹'
-          ((chartAt ClosedUpperHalfPlane x).symm.trans (chartAt ClosedUpperHalfPlane y)).source ∩
-        range closedUpperHalfPlaneModel := by
-    refine ⟨?_, mem_range_self _⟩
-    simp only [mem_preimage, extChartAt, OpenPartialHomeomorph.extend_coe, Function.comp_apply,
-      ModelWithCorners.left_inv, OpenPartialHomeomorph.trans_source, mem_inter_iff,
-      OpenPartialHomeomorph.symm_source]
-    exact ⟨(chartAt _ x).map_source h.1, by simpa [(chartAt _ x).left_inv h.1] using h.2⟩
-  exact fderivWithin_apply_smul_of_mem_borderedHolomorphicGroupoid he hz c v
-
-end ClosedUpperHalfPlane
 
 namespace SmoothAlmostComplexStructure
 
