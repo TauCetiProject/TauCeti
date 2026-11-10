@@ -16,8 +16,8 @@ For an adjacency `s → t`, lying on a directed cycle is equivalent to reachabil
 back to `s`. Consequently, a digraph is strongly connected exactly when its underlying undirected
 simple graph is preconnected and every adjacency can be completed to a directed cycle.
 
-The connected form assumes a nonempty vertex type. The preconnected form also covers the empty
-digraph and so matches the convention for `Quiver.IsStronglyConnected`.
+The preconnected form also covers the empty digraph and so matches the convention for
+`Quiver.IsStronglyConnected`.
 
 The characterization follows J. Bang-Jensen and G. Gutin, *Digraphs: Theory, Algorithms and
 Applications*, 2nd ed., Springer, 2009, Section 5.3.
@@ -39,29 +39,14 @@ theorem liesOnCycle_adjHom_iff (h : D.Adj s t) :
     ArrowWalk.LiesOnCycle (Q := D.AdjHom) (PLift.up h) ↔ ReflTransGen D.Adj t s := by
   rw [ArrowWalk.liesOnCycle_iff_nonempty, nonempty_arrowWalk_iff_reflTransGen]
 
-/-- Weak connectivity of the adjacency arrow family is preconnectivity of the simple graph
-obtained by forgetting the directions of the digraph. -/
-theorem isStronglyConnected_symmetrify_adjHom_iff :
-    @Quiver.IsStronglyConnected (Quiver.Symmetrify V)
-        (@Quiver.symmetrifyQuiver V ⟨D.AdjHom⟩) ↔
-      D.toSimpleGraphInclusive.Preconnected := by
-  -- Expose the path quantifiers so the path-to-underlying-graph bridge rewrites each pair.
-  change (∀ v w : V,
-    Nonempty (@Quiver.Path (Quiver.Symmetrify V)
-      (@Quiver.symmetrifyQuiver V ⟨D.AdjHom⟩) v w)) ↔ _
-  refine forall_congr' fun v ↦ forall_congr' fun w ↦ ?_
-  rw [@TauCeti.Quiver.nonempty_path_symmetrify_iff_reachable V ⟨D.AdjHom⟩ v w,
-    underlyingGraph_adjHom]
-
 /-- A digraph is strongly connected exactly when its underlying undirected simple graph is
 preconnected and each of its adjacency arrows lies on a directed cycle. -/
 theorem isStronglyConnected_iff_preconnected_and_forall_liesOnCycle :
-    (∀ v w, ReflTransGen D.Adj v w) ↔
+    @Quiver.IsStronglyConnected V ⟨D.AdjHom⟩ ↔
       D.toSimpleGraphInclusive.Preconnected ∧
-        ∀ {v w} (h : D.Adj v w),
+        ∀ ⦃v w⦄ (h : D.Adj v w),
           ArrowWalk.LiesOnCycle (Q := D.AdjHom) (PLift.up h) := by
-  rw [← D.isStronglyConnected_iff,
-    TauCeti.isStronglyConnected_iff_isWeaklyConnected_and_forall_liesOnCycle,
+  rw [TauCeti.isStronglyConnected_iff_isWeaklyConnected_and_forall_liesOnCycle,
     isStronglyConnected_symmetrify_adjHom_iff]
   refine and_congr Iff.rfl ⟨fun h v w hv ↦ h ⟨hv⟩, fun h v w e ↦ ?_⟩
   simpa only [Subsingleton.elim e ⟨e.down⟩] using h e.down
@@ -70,31 +55,12 @@ theorem isStronglyConnected_iff_preconnected_and_forall_liesOnCycle :
 reach every other vertex exactly when the underlying undirected simple graph is preconnected and
 every adjacency `v → w` can be completed by a directed walk from `w` back to `v`. -/
 theorem isStronglyConnected_iff_preconnected_and_forall_adj_reflTransGen :
-    (∀ v w, ReflTransGen D.Adj v w) ↔
+    @Quiver.IsStronglyConnected V ⟨D.AdjHom⟩ ↔
       D.toSimpleGraphInclusive.Preconnected ∧
-        ∀ {v w}, D.Adj v w → ReflTransGen D.Adj w v := by
+        ∀ ⦃v w⦄, D.Adj v w → ReflTransGen D.Adj w v := by
   rw [isStronglyConnected_iff_preconnected_and_forall_liesOnCycle]
   refine and_congr Iff.rfl ⟨fun h v w hv ↦ ?_, fun h v w e ↦ ?_⟩
   · exact (liesOnCycle_adjHom_iff hv).1 (h hv)
   · exact (liesOnCycle_adjHom_iff e).2 (h e)
-
-/-- On a nonempty vertex type, a digraph is strongly connected exactly when its underlying
-undirected simple graph is connected and each adjacency arrow lies on a directed cycle. -/
-theorem isStronglyConnected_iff_connected_and_forall_liesOnCycle [Nonempty V] :
-    (∀ v w, ReflTransGen D.Adj v w) ↔
-      D.toSimpleGraphInclusive.Connected ∧
-        ∀ {v w} (h : D.Adj v w),
-          ArrowWalk.LiesOnCycle (Q := D.AdjHom) (PLift.up h) := by
-  rw [isStronglyConnected_iff_preconnected_and_forall_liesOnCycle]
-  exact and_congr ⟨fun h ↦ ⟨h⟩, fun h ↦ h.preconnected⟩ Iff.rfl
-
-/-- On a nonempty vertex type, a digraph is strongly connected exactly when its underlying
-undirected simple graph is connected and every adjacency can be completed to a directed cycle. -/
-theorem isStronglyConnected_iff_connected_and_forall_adj_reflTransGen [Nonempty V] :
-    (∀ v w, ReflTransGen D.Adj v w) ↔
-      D.toSimpleGraphInclusive.Connected ∧
-        ∀ {v w}, D.Adj v w → ReflTransGen D.Adj w v := by
-  rw [isStronglyConnected_iff_preconnected_and_forall_adj_reflTransGen]
-  exact and_congr ⟨fun h ↦ ⟨h⟩, fun h ↦ h.preconnected⟩ Iff.rfl
 
 end Digraph
