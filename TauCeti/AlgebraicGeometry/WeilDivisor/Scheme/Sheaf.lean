@@ -128,6 +128,7 @@ def sections (D : SchemeWeilDivisor X) (U : X.Opens) :
 /-- Membership in `SchemeWeilDivisor.sections`, unfolded: the condition is imposed one
 codimension-one point at a time, so it makes sense over an open subset not known to be
 nonempty. -/
+omit [∀ x : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (x : X))] in
 @[simp]
 lemma mem_sections {D : SchemeWeilDivisor X} {U : X.Opens}
     {s : Γ(Scheme.rationalFunctions X, U)} :
