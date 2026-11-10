@@ -128,7 +128,7 @@ The results below are stated for maps of `ℂ`, as in `Conformal/BoundaryCorresp
 * `TauCeti.subsingleton_or_exists_injective_path_clusterSetOn` — on a convex domain whose image has
   Jordan frontier, a boundary cluster set other than the whole frontier is a point or an arc.
 * `TauCeti.subsingleton_clusterSetOn_of_subset_closure_sdiff` — such a cluster set that is nowhere
-  dense in the frontier is a single point.
+  dense in the frontier is a point or empty; it is a single point for `w ∈ frontier U`.
 * `TauCeti.exists_continuousOn_closure_eqOn_of_forall_subset_closure_sdiff` — **a nowhere-density
   criterion for the Carathéodory extension**: if no boundary cluster set has interior in the Jordan
   frontier of the image, the map extends continuously to `closure U`.
@@ -441,10 +441,11 @@ theorem subsingleton_or_exists_injective_path_clusterSetOn (hUo : IsOpen U) (hUc
     (hUc.isConnected_clusterSetOn_of_isBounded hfd.continuousOn hfb
       (frontier_subset_closure hw)).isPreconnected hne
 
-/-- **A boundary cluster set that is nowhere dense in a Jordan image boundary is a single point.**
+/-- **A boundary cluster set that is nowhere dense in a Jordan image boundary is a point or empty.**
 If every value the conformal map clusters at over the boundary point `w` is adherent to the rest of
-`frontier (f '' U)`, then there is only one such value: the conclusion is that the cluster set is a
-subsingleton, and under these hypotheses it is nonempty, being a continuum by
+`frontier (f '' U)`, then there is at most one such value: the conclusion is that the cluster
+set is a subsingleton, possibly empty (off `frontier U` the cluster set may be empty). For
+`w ∈ frontier U` it is a single point, being a nonempty continuum by
 `Convex.isConnected_clusterSetOn_of_isBounded`.
 
 This is the nondegeneracy criterion
