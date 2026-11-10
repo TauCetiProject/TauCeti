@@ -270,11 +270,9 @@ theorem exists_contMDiffOn_normalMetricChange {k : ℕ∞ω} [IsManifold I (k + 
     exact hinv.comp_contMDiffWithinAt (hA s hs)
   · rw [hAC s hs, hC s hs, LinearEquiv.coe_coe]
   · beta_reduce
-    rw [← hv s hs, Ring.inverse_unit]
-    change e.symm s (((e.linearEquivAt ℝ s hs.2).symm ≪≫ₗ h.normalMetricChange hn g g' s ≪≫ₗ
-      e.linearEquivAt ℝ s hs.2).symm u) = _
-    simp only [LinearEquiv.trans_symm, LinearEquiv.symm_symm, LinearEquiv.trans_apply,
-      ← Trivialization.linearEquivAt_symm_apply (R := ℝ) e s hs.2, LinearEquiv.symm_apply_apply]
+    rw [LinearEquiv.eq_symm_apply, ← LinearEquiv.coe_coe, ← hC s hs, ← hAC s hs,
+      ← mul_apply_eq_comp, Ring.mul_inverse_cancel _ (hv s hs ▸ (v s hs).isUnit),
+      one_apply_eq_self]
 
 end Smooth
 
