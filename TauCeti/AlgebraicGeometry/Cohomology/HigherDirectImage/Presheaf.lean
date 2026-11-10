@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicGeometry.Modules.Sheaf
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.AcyclicResolution
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Sheafification
 import TauCeti.AlgebraicGeometry.Cohomology.Flasque
+import TauCeti.AlgebraicGeometry.Modules.Pushforward.Basic
 import TauCeti.CategoryTheory.Abelian.Injective.Resolution
 
 /-!
@@ -107,9 +108,15 @@ def higherDirectImagePresheafToPresheafIso (M : X.Modules) (n : ℕ) :
       (Scheme.Modules.pushforward f ⋙ Scheme.Modules.toPresheafOfModules Y) n) ≪≫
     (t.mapHomologicalComplexCompHomologyFunctorIso _ n).symm.app _ ≪≫
     (HomologicalComplex.homologyFunctor _ _ n).mapIso
-      -- The two complexes have the same terms and maps; the comparison changes only
-      -- the grouping of forgetting scalars and precomposition with inverse image.
-      ((Functor.mapHomologicalComplexCompIso (Iso.refl _) _).app P.cocomplex ≪≫
+      -- Forgetting scalars commutes with pushforward; the remaining steps only regroup
+      -- the composite functors.
+      ((Functor.mapHomologicalComplexCompIso
+          (F := Scheme.Modules.pushforward f ⋙ Scheme.Modules.toPresheafOfModules Y) (G := t)
+          (H := toSheaf X ⋙ sheafToPresheaf _ _ ⋙ W)
+          (pushforwardCompToPresheafIso f ≪≫
+            Functor.isoWhiskerRight
+              (SheafOfModules.toSheafCompSheafToPresheafIso X.ringCatSheaf).symm W ≪≫
+            Functor.associator _ _ _) _).app P.cocomplex ≪≫
         ((Functor.mapHomologicalComplexCompIso
           (Iso.refl (toSheaf X ⋙ sheafToPresheaf _ _ ⋙ W)) _).app P.cocomplex).symm ≪≫
         ((Functor.mapHomologicalComplexCompIso (Iso.refl _) _).app
