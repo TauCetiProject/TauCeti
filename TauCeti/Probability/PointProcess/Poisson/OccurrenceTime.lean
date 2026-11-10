@@ -26,14 +26,15 @@ finite Poisson counts on each tested window suffice for the threshold identity.
 These marginal laws are ingredients of the interarrival description; they do not
 assert independence of the gaps.
 
+The occurrence-time cumulative mass is a Poisson tail, equal to the regularized
+lower incomplete Gamma function, as in the scalar identities of
+`TauCeti.Probability.Distributions.Poisson.Tail` and
+`TauCeti.Probability.Distributions.Gamma.Cdf`.
+
 ## References
 
 * Günter Last and Mathew Penrose, *Lectures on the Poisson Process*, Cambridge
   University Press, 2018, Chapter 7.
-
-The proof uses the Poisson--Gamma cumulative-mass identity from
-`TauCeti.Probability.Distributions.Poisson.Tail` and
-`TauCeti.Probability.Distributions.Gamma.Cdf`.
 -/
 
 public section
@@ -59,13 +60,10 @@ theorem IsPoissonRandomMeasure.measureReal_occurrenceTime_le
       h.hasLaw (A := Iic s) measurableSet_Iic (by
         simp only [smul_apply, smul_eq_mul, nnvolume_Iic]
         finiteness)
-  have hfinite : ∀ᵐ ω ∂P, N ω (Iic (t + 1)) ≠ ∞ := by
-    apply ((hcount (t + 1)).ae_iff (p := fun x => x ≠ ∞)
-      (measurableSet_setOfPred.1 (measurableSet_singleton ∞).compl)).2
-    apply (ae_map_iff (μ := poissonMeasure (r * (t + 1)))
-      (f := (Nat.cast : ℕ → ℝ≥0∞)) Measurable.of_discrete.aemeasurable
-      (p := fun x => x ≠ ∞) (measurableSet_singleton ∞).compl).2
-    exact ae_of_all _ fun k => ENNReal.natCast_ne_top k
+  have hfinite : ∀ᵐ ω ∂P, N ω (Iic (t + 1)) ≠ ∞ :=
+    h.ae_ne_top measurableSet_Iic (by
+      simp only [smul_apply, smul_eq_mul, nnvolume_Iic]
+      finiteness)
   have hevent : {ω | (N ω).occurrenceTime n ≤ t} =ᵐ[P]
       {ω | (n + 1 : ℝ≥0∞) ≤ N ω (Iic t)} := by
     filter_upwards [hfinite] with ω hω
@@ -148,7 +146,7 @@ theorem IsPoissonRandomMeasure.hasLaw_toReal_occurrenceTime
 
 /-- The first occurrence of a positive-rate homogeneous Poisson random measure has
 the exponential law. -/
-theorem IsPoissonRandomMeasure.hasLaw_toReal_firstOccurrence
+theorem IsPoissonRandomMeasure.hasLaw_toReal_occurrenceTime_zero
     (h : IsPoissonRandomMeasure P N ((r : ℝ≥0∞) • nnvolume)) (hr : 0 < r) :
     HasLaw (fun ω => ((N ω).occurrenceTime 0).toReal) (expMeasure r) P := by
   simpa only [Nat.cast_zero, zero_add, expMeasure] using
