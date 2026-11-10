@@ -263,6 +263,7 @@ private theorem uniformContinuous_awayLift {u : A →+* B} (hu : Continuous u)
     Ideal.map_le_iff_le_comap.mpr fun a ha ↦ by simpa [IsLocalization.Away.lift_eq] using hn ha
   exact hle hx
 
+omit [IsTopologicalRing B] in
 /-- The **universal property of the completed localisation**: a continuous ring homomorphism
 `u : A → B` into a complete Hausdorff linearly topologised ring with `u f` a unit extends to a
 continuous ring homomorphism `A_{f} → B`. -/
@@ -308,8 +309,16 @@ theorem lift_comp_algebraMap (u : A →+* B) (hu : Continuous u) (hf : IsUnit (u
 uniquely through a continuous ring homomorphism `A_{f} → B`. -/
 theorem existsUnique_lift (u : A →+* B) (hu : Continuous u) (hf : IsUnit (u f)) :
     ∃! g : CompletedAway A f →+* B,
-      Continuous g ∧ g.comp (algebraMap A (CompletedAway A f)) = u :=
-  ⟨lift u hu hf, ⟨continuous_lift u hu hf, lift_comp_algebraMap u hu hf⟩,
+      Continuous g ∧ g.comp (algebraMap A (CompletedAway A f)) = u := by
+  -- A linearly topologised commutative ring with a topological additive group has continuous
+  -- multiplication.
+  have hl (x₀ : B) : Tendsto (fun x : B ↦ x₀ * x) (𝓝 0) (𝓝 0) :=
+    IsLinearTopology.tendsto_mul_zero_of_right (R := B) (f := 𝓝 0) (fun _ ↦ x₀) id tendsto_id
+  have : IsTopologicalRing B := IsTopologicalRing.of_addGroup_of_nhds_zero
+    (IsLinearTopology.tendsto_mul_zero_of_right (R := B) (f := 𝓝 0 ×ˢ 𝓝 0) Prod.fst Prod.snd
+      tendsto_snd)
+    hl fun x₀ ↦ (hl x₀).congr fun x ↦ mul_comm _ _
+  exact ⟨lift u hu hf, ⟨continuous_lift u hu hf, lift_comp_algebraMap u hu hf⟩,
     fun _ hg ↦ ringHom_ext A f hg.1 (continuous_lift u hu hf)
       (hg.2.trans (lift_comp_algebraMap u hu hf).symm)⟩
 
