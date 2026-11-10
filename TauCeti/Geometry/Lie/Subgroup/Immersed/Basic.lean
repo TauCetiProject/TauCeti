@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.Algebra.LieGroup
 public import Mathlib.Geometry.Manifold.Immersion
+public import Mathlib.Topology.Connected.TotallyDisconnected
 
 /-!
 # Immersed Lie subgroups
@@ -32,6 +33,9 @@ of left-invariant distributions.
 * `TauCeti.Lie.IsImmersedLieSubgroup`: existence of immersed-Lie-subgroup data.
 * `TauCeti.Lie.ImmersedLieSubgroupData.contMDiff_toHom`: the presenting homomorphism is smooth.
 * `TauCeti.Lie.ImmersedLieSubgroupData.injective_mfderiv_toHom`: its differential is injective.
+* `TauCeti.Lie.ImmersedLieSubgroupData.eq_bot_of_isTotallyDisconnected` and
+  `TauCeti.Lie.IsImmersedLieSubgroup.eq_bot_of_isTotallyDisconnected`: a totally disconnected
+  image of a connected immersed presentation is trivial.
 * `TauCeti.Lie.isImmersedLieSubgroup_top`: a connected Lie group is an immersed subgroup of itself.
 
 * `TauCeti.Lie.ImmersedLieSubgroupData.homOfLe`: the canonical algebraic factorization,
@@ -134,6 +138,22 @@ every point. -/
 theorem injective_mfderiv_toHom (d : ImmersedLieSubgroupData I K) (x : d.X) :
     Function.Injective (mfderiv d.I' I (d.toHom : d.X → G) x) :=
   d.isImmersion.mfderiv_injective (by simp) x
+
+/-- A totally disconnected subgroup admitting a connected immersed presentation is trivial. -/
+theorem eq_bot_of_isTotallyDisconnected {K : Subgroup G}
+    (d : TauCeti.Lie.ImmersedLieSubgroupData I K)
+    (hK : IsTotallyDisconnected (K : Set G)) : K = ⊥ := by
+  let _ : TopologicalSpace d.X := d.topologicalSpace
+  let _ : ConnectedSpace d.X := d.connectedSpace
+  have hr : Set.range d.toHom = (K : Set G) :=
+    congrArg (fun L : Subgroup G ↦ (L : Set G)) d.range_eq
+  have hp : IsPreconnected (K : Set G) := by
+    rw [← hr]
+    exact isPreconnected_range d.contMDiff_toHom.continuous
+  have hs : (K : Set G).Subsingleton := hK (K : Set G) (fun _ hx ↦ hx) hp
+  rw [Subgroup.eq_bot_iff_forall]
+  intro g hg
+  exact hs hg K.one_mem
 
 /-- The canonical algebraic factorization between presentations of included subgroups. -/
 noncomputable def homOfLe (d : ImmersedLieSubgroupData I K)
@@ -292,6 +312,12 @@ theorem isImmersedLieSubgroup_iff {K : Subgroup G} :
 theorem ImmersedLieSubgroupData.isImmersedLieSubgroup {K : Subgroup G}
     (d : ImmersedLieSubgroupData I K) : IsImmersedLieSubgroup (I := I) K :=
   ⟨d⟩
+
+/-- A totally disconnected immersed Lie subgroup is trivial. -/
+theorem IsImmersedLieSubgroup.eq_bot_of_isTotallyDisconnected {K : Subgroup G}
+    (h : IsImmersedLieSubgroup (I := I) K) (hK : IsTotallyDisconnected (K : Set G)) : K = ⊥ := by
+  obtain ⟨d⟩ := isImmersedLieSubgroup_iff.mp h
+  exact d.eq_bot_of_isTotallyDisconnected hK
 
 /-- A connected Lie group is an immersed Lie subgroup of itself via the identity homomorphism. -/
 @[simp 1100]
