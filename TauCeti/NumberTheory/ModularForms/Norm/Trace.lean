@@ -71,14 +71,15 @@ namespace TauCeti
 
 namespace SlashInvariantForm
 
-/-- Every coset factor of the zero form is zero: the factor is a slash translate of the form,
-and the slash action of a group element fixes `0`. -/
-lemma _root_.SlashInvariantForm.quotientFunc_eq_zero [SlashInvariantFormClass F 𝒢 k]
-    (hf : (⇑f : ℍ → ℂ) = 0) (q : 𝒬) : quotientFunc f q = 0 := by
+/-- A coset factor of the norm of a form vanishes exactly when the form does: the factor is a slash
+translate of the form, and the slash action of a group element fixes `0` and kills only `0`. -/
+@[simp]
+lemma quotientFunc_eq_zero_iff [SlashInvariantFormClass F 𝒢 k] {f : F} (q : 𝒬) :
+    _root_.SlashInvariantForm.quotientFunc f q = 0 ↔ (⇑f : ℍ → ℂ) = 0 := by
   induction q using Quotient.inductionOn with
   | h g =>
     rw [_root_.SlashInvariantForm.quotientFunc_mk]
-    exact (SlashAction.slash_eq_zero_iff k g.val⁻¹ (⇑f : ℍ → ℂ)).2 hf
+    exact SlashAction.slash_eq_zero_iff k g.val⁻¹ (⇑f : ℍ → ℂ)
 
 variable [ModularFormClass F 𝒢 k]
 
