@@ -128,6 +128,7 @@ private theorem gridExponential_step (hW : IsFilteredPreBrownianReal ℱ W P)
   refine ⟨heq ▸ integrable_mul_exp_of_indep_gaussian (ℱ.le _) hXm (hθ n) hY hind hlaw hXi
     (hK n), ?_⟩
   have hc := condExp_mul_exp_of_indep_gaussian (ℱ.le _) hXm (hθ n) hY hind hlaw hXi (hK n)
+  simp only [zero_mul, zero_add] at hc
   rw [heq] at hc
   filter_upwards [hc] with ω hω
   rw [hω, NNReal.coe_sub (hτ (Nat.le_succ n))]

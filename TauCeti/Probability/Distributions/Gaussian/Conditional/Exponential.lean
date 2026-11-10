@@ -12,7 +12,7 @@ import Mathlib.Probability.Independence.Integration
 /-!
 # Gaussian exponential moments with a random known coefficient
 
-If a centered Gaussian variable `Y` is independent of a sigma algebra `m`, a bounded
+If a Gaussian variable `Y` is independent of a sigma algebra `m`, a bounded
 `m`-measurable coefficient `a` may be frozen when computing its exponential moment.
 The results include an integrable `m`-measurable multiplier `X`. They give the one-step
 normalization and moment estimates for exponential likelihoods with predictable grid heights.
@@ -29,13 +29,13 @@ open scoped NNReal
 namespace TauCeti.Probability
 
 variable {Ω : Type*} {m mΩ : MeasurableSpace Ω} {P : Measure Ω}
-  {X a Y : Ω → ℝ} {v : ℝ≥0} {K : ℝ}
+  {X a Y : Ω → ℝ} {μ : ℝ} {v : ℝ≥0} {K : ℝ}
 
 /-- A bounded known coefficient in a Gaussian exponential can be multiplied by any
 integrable known variable without losing integrability. -/
 theorem integrable_mul_exp_of_indep_gaussian (hm : m ≤ mΩ) (hX : Measurable[m] X)
     (ha : Measurable[m] a) (hY : Measurable Y) (hind : Indep (.comap Y inferInstance) m P)
-    (hlaw : HasLaw Y (gaussianReal 0 v) P) (hXi : Integrable X P)
+    (hlaw : HasLaw Y (gaussianReal μ v) P) (hXi : Integrable X P)
     (haK : ∀ᵐ ω ∂P, |a ω| ≤ K) :
     Integrable (fun ω ↦ X ω * exp (a ω * Y ω)) P := by
   have hYi : Integrable (fun ω ↦ exp (K * |Y ω|)) P :=
@@ -56,19 +56,21 @@ theorem integrable_mul_exp_of_indep_gaussian (hm : m ≤ mΩ) (hX : Measurable[m
 
 /-- **Conditional Gaussian exponential moment with a known multiplier.** Both the
 coefficient and the multiplier are measurable in the conditioning sigma algebra, whereas
-`Y` is independent of it. The coefficient need only be bounded almost everywhere. -/
+`Y` is independent of it, with mean `μ` and variance `v`. The coefficient need only be
+bounded almost everywhere. -/
 theorem condExp_mul_exp_of_indep_gaussian (hm : m ≤ mΩ) (hX : Measurable[m] X)
     (ha : Measurable[m] a) (hY : Measurable Y) (hind : Indep (.comap Y inferInstance) m P)
-    (hlaw : HasLaw Y (gaussianReal 0 v) P) (hXi : Integrable X P)
+    (hlaw : HasLaw Y (gaussianReal μ v) P) (hXi : Integrable X P)
     (haK : ∀ᵐ ω ∂P, |a ω| ≤ K) :
     P[fun ω ↦ X ω * exp (a ω * Y ω) | m] =ᵐ[P]
-      fun ω ↦ X ω * exp ((v : ℝ) * a ω ^ 2 / 2) := by
+      fun ω ↦ X ω * exp (μ * a ω + (v : ℝ) * a ω ^ 2 / 2) := by
   have := hlaw.isProbabilityMeasure
   have h := condExp_comp_prodMk_ae_eq_integral_of_indep hm (hX.prodMk ha) hY hind
     (f := fun z : (ℝ × ℝ) × ℝ ↦ z.1.1 * exp (z.1.2 * z.2))
     (by fun_prop) (integrable_mul_exp_of_indep_gaussian hm hX ha hY hind hlaw hXi haK)
-  have hi (b : ℝ) : ∫ y, exp (b * y) ∂gaussianReal 0 v = exp ((v : ℝ) * b ^ 2 / 2) := by
-    simpa [mgf] using congrFun (mgf_fun_id_gaussianReal (μ := 0) (v := v)) b
+  have hi (b : ℝ) : ∫ y, exp (b * y) ∂gaussianReal μ v =
+      exp (μ * b + (v : ℝ) * b ^ 2 / 2) := by
+    simpa [mgf] using congrFun (mgf_fun_id_gaussianReal (μ := μ) (v := v)) b
   simpa only [hlaw.map_eq, integral_const_mul, hi] using h
 
 end TauCeti.Probability
