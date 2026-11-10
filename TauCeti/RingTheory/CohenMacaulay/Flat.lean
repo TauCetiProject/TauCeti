@@ -16,6 +16,7 @@ import Mathlib.RingTheory.PolynomialAlgebra
 import Mathlib.RingTheory.RegularLocalRing.Polynomial
 import Mathlib.RingTheory.TensorProduct.MvPolynomial
 import TauCeti.RingTheory.Depth.Flat
+import TauCeti.RingTheory.Flat.Noetherian
 import TauCeti.RingTheory.KrullDimension.Module
 import TauCeti.RingTheory.RegularLocalRing.CohenMacaulay
 
@@ -133,10 +134,7 @@ theorem isCohenMacaulay_localization_atPrime_of_flat (p : Ideal R) [p.IsPrime] (
   have : Module.FaithfullyFlat (Localization.AtPrime p) (Localization.AtPrime r) :=
     .of_flat_of_isLocalHom
   have : IsNoetherianRing (Localization.AtPrime p) :=
-    Submodule.IsNoetherian.of_isNoetherian_tensorProduct_of_faithfullyFlat
-      (R := Localization.AtPrime p) (A := Localization.AtPrime r)
-      (isNoetherian_of_linearEquiv (Algebra.TensorProduct.rid (Localization.AtPrime p)
-        (Localization.AtPrime r) (Localization.AtPrime r)).symm.toLinearEquiv)
+    IsNoetherianRing.of_faithfullyFlat (Localization.AtPrime r)
   refine (isCohenMacaulay_self_iff_of_flat (R := Localization.AtPrime p)).2 ⟨hp, ?_⟩
   -- The closed fibre of `R_p → S_r` is the local ring of `κ(p) ⊗[R] S` at `Q`.
   have hI : p.map (algebraMap R (Localization.AtPrime r)) =

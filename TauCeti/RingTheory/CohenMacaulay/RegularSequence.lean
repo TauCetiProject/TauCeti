@@ -15,6 +15,7 @@ import TauCeti.RingTheory.IntegralClosure.GoingDown
 import TauCeti.RingTheory.KrullDimension.Fiber
 import TauCeti.RingTheory.KrullDimension.Module
 import TauCeti.RingTheory.LocalRing.Quotient
+import TauCeti.RingTheory.QuotSMulTop
 
 /-!
 # Regular sequences in Cohen–Macaulay modules
@@ -129,15 +130,6 @@ theorem isSMulRegular_of_supportDim_quotSMulTop_lt (h : IsCohenMacaulay R M) {x 
   -- By unmixedness `dim R ⧸ p = dim M`, so the dimension does not drop.
   exact (h.ringKrullDim_quotient_eq_supportDim hp ▸ hle).not_gt hx
 
-omit [IsNoetherianRing R] [Small.{v} R] [Module.Finite R M] in
-/-- Modulo an element outside the maximal ideal of a local ring, every module is trivial. -/
-private theorem subsingleton_quotSMulTop_of_notMem_maximalIdeal {x : R} (hx : x ∉ maximalIdeal R) :
-    Subsingleton (QuotSMulTop x M) := by
-  obtain ⟨u, rfl⟩ := notMem_maximalIdeal.mp hx
-  refine Submodule.Quotient.subsingleton_iff.2 (eq_top_iff.2 fun m _ ↦ ?_)
-  have := Submodule.smul_mem_pointwise_smul ((↑u⁻¹ : R) • m) (u : R) (⊤ : Submodule R M) trivial
-  rwa [smul_smul, Units.mul_inv, one_smul] at this
-
 /-- For a nonzero finite Cohen–Macaulay module `M` over a Noetherian local ring, `x` is
 `M`-regular if and only if `dim M ⧸ x M < dim M`; for `x` in the maximal ideal the drop is then
 exactly one (`Module.supportDim_quotSMulTop_succ_eq_supportDim`). -/
@@ -146,7 +138,7 @@ theorem isSMulRegular_iff_supportDim_quotSMulTop_lt [Nontrivial M] (h : IsCohenM
   refine ⟨fun reg ↦ ?_, h.isSMulRegular_of_supportDim_quotSMulTop_lt⟩
   by_cases hx : x ∈ maximalIdeal R
   swap
-  · have := subsingleton_quotSMulTop_of_notMem_maximalIdeal (M := M) hx
+  · have := QuotSMulTop.subsingleton_of_isUnit (M := M) (notMem_maximalIdeal.mp hx)
     rw [supportDim_eq_bot_of_subsingleton]
     exact bot_lt_iff_ne_bot.2 (supportDim_ne_bot_of_nontrivial R M)
   obtain ⟨k, hk⟩ := exists_supportDim_eq_natCast (R := R) (M := M)
@@ -164,7 +156,7 @@ theorem quotSMulTop (h : IsCohenMacaulay R M) {x : R}
   by_cases hx : x ∈ maximalIdeal R
   · exact (isCohenMacaulay_quotSMulTop_iff (h.isSMulRegular_of_supportDim_quotSMulTop_lt hdim)
       hx).2 h
-  · have := subsingleton_quotSMulTop_of_notMem_maximalIdeal (M := M) hx
+  · have := QuotSMulTop.subsingleton_of_isUnit (M := M) (notMem_maximalIdeal.mp hx)
     exact isCohenMacaulay_of_subsingleton
 
 /-- **Regular sequences in a Cohen–Macaulay module.** For a nonzero finite Cohen–Macaulay module
