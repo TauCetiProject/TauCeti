@@ -114,31 +114,18 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo (hν : ν �
     ha.exists_lipschitzWith_eqOn_inter (T := H) hK (hΩU ▸ subset_rfl) hV hVU
   set Ω₁ : Opens (EuclideanSpace ℝ ι) := Omega ⊓ W
   have hΩ₁ : Ω₁ ≤ Omega := inf_le_left
-  have hle : mu.restrict Ω₁ ≤ mu.restrict Omega :=
-    Measure.restrict_mono (SetLike.coe_subset_coe.mpr hΩ₁) le_rfl
   have hWU' : (W : Set (EuclideanSpace ℝ ι)) ⊆ U := SetLike.coe_subset_coe.mpr hWU
   -- Near `U` the domain is the half-space, so `Ω ∩ W ⊆ H`.
   have hΩ₁H : Ω₁ ≤ H := fun x hx => by
     have hxU : x ∈ (Omega : Set (EuclideanSpace ℝ ι)) ∩ U := ⟨hx.1, hWU' hx.2⟩
     rw [hΩU] at hxU
     exact hxU.1
-  -- On `Ω ∩ W`, the restriction of `u` solves the equation with the principal coefficient `a'`.
+  -- On `Ω ∩ W`, the restriction of `u` solves the equation with the principal coefficient `a'`,
+  -- and the lower-order terms move to the right-hand side.
   set u₁ := W1p.restrictL hΩ₁ u
-  have hfU : MemLp f 2 (mu.restrict Ω₁) := (Lp.memLp f).mono_measure hle
-  have hu₁ : ∀ v : W1p0 mu Ω₁ 2, energyFormH1 a' b c u₁ (v : W1p mu Ω₁ 2) =
-      ∫ x in Ω₁, hfU.toLp f x * W1p.value (v : W1p mu Ω₁ 2) x ∂mu := by
-    intro v
-    have h := energyFormH1_restrictL_eq_setIntegral hΩ₁ hu v
-    rw [energyFormH1_def] at h ⊢
-    rw [setIntegral_congr_fun Ω₁.isOpen.measurableSet fun x hx => by
-      rw [haa' ⟨⟨hx.1, hWU' hx.2⟩, hx.2⟩], h]
-    refine integral_congr_ae ?_
-    filter_upwards [hfU.coeFn_toLp] with x hx
-    rw [hx]
-  -- The lower-order terms move to the right-hand side.
-  obtain ⟨g, hg⟩ := exists_forcing_energyFormH1_principal_eq
-    (memLp_energyIntegrand_of_continuous hM' hK'.continuous Ω₁)
-    (hb.mono_measure hle) (hc.mono_measure hle) hu₁
+  obtain ⟨g, hg⟩ := exists_forcing_restrictL_of_eqOn hΩ₁
+    (fun x hx => haa' ⟨⟨hx.1, hWU' hx.2⟩, hx.2⟩)
+    (memLp_energyIntegrand_of_continuous hM' hK'.continuous _) hb hc hu
   -- A cutoff equal to one near `closure V` and supported in `W`.
   obtain ⟨ψ, N, hψ, -, hψ1, hψc, hψs, hN, hψN, hgradN⟩ :=
     hV.exists_contDiff_cutoff_with_bounds W.isOpen hVW
@@ -179,15 +166,9 @@ theorem UniformlyEllipticOn.exists_lowerOrder_eq_restrictL_of_mapsTo (hν : ν �
     have hxV := hψ_V x (subset_closure hx.2)
     rw [h1, h3, indicator_of_mem (hΩVΩ₁ hx), hxV.1, hxV.2, one_smul, smul_zero, add_zero, h2]
   -- The global theorem on `H` gives the second derivatives.
-  refine W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn _ (EuclideanSpace.basisFun ι ℝ)
-    fun i j => ?_
-  obtain ⟨G, hG⟩ := ha'.exists_hasWeakLineDerivOn_gradient_of_mapsTo hν hH hK'.lipschitzOnWith hw
-    (EuclideanSpace.basisFun ι ℝ j) (EuclideanSpace.basisFun ι ℝ i)
-  have hGm : MemLp G 2 (mu.restrict (Omega ⊓ V)) :=
-    (Lp.memLp G).mono_measure (Measure.restrict_mono (SetLike.coe_subset_coe.mpr hΩV) le_rfl)
-  refine ⟨hGm.toLp G, ((hG.mono hΩV).congr_ae ?_).congr_ae_deriv hGm.coeFn_toLp.symm⟩
-  filter_upwards [hgradV] with x hx
-  rw [hx]
+  exact W1p.exists_lowerOrder_eq_of_gradient_eq_of_hasWeakLineDerivOn
+    (EuclideanSpace.basisFun ι ℝ) hΩV hgradV fun i j =>
+      ha'.exists_hasWeakLineDerivOn_gradient_of_mapsTo hν hH hK'.lipschitzOnWith hw _ _
 
 /-- **Local `H²` regularity near the boundary of a half-space.** Let `H = {x | c₀ < ⟪x, ν⟫}` with
 `ν ≠ 0`, and let `Ω` and `U` be open with `Ω ∩ U = H ∩ U`, so that `∂Ω ∩ U` is a piece of the

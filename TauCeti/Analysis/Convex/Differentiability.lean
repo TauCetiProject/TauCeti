@@ -58,6 +58,8 @@ semicontinuous at points of differentiability, again with no convexity assumptio
   differentiability in the effective domain is a subgradient.
 * `TauCeti.eventually_forall_mem_subdifferential_norm_sub_le` — near a point where `f` is finite
   nearby and differentiable, every subgradient is close to the gradient.
+* `ConvexOn.inner_gradient_sub_le` — a real convex function lies above its tangent plane at
+  any point of differentiability.
 * `TauCeti.hasGradientAt_toReal_of_continuousAt_subgradient` — a continuous local selection
   of subgradients is the gradient, without a convexity assumption.
 
@@ -286,3 +288,23 @@ theorem hasGradientAt_toReal_of_continuousAt_subgradient
 end InnerProduct
 
 end TauCeti
+
+
+open TauCeti in
+/-- A convex real-valued function lies above its tangent plane at a point of differentiability. -/
+theorem ConvexOn.inner_gradient_sub_le {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {u : E → ℝ} (hu : ConvexOn ℝ Set.univ u)
+    {x : E} (hd : DifferentiableAt ℝ u x) (y : E) :
+    inner ℝ (gradient u x) (y - x) ≤ u y - u x := by
+  have hepi : Convex ℝ {p : E × ℝ | (u p.1 : EReal) ≤ p.2} := by
+    simpa only [Set.mem_univ, ite_true] using convex_epigraph_ite (Ω := Set.univ) hu
+  have hd' : DifferentiableAt ℝ (fun z ↦ (u z : EReal).toReal) x := by
+    simpa only [EReal.toReal_coe] using hd
+  have hgrad := gradient_toReal_mem_subdifferential hepi (fun z ↦ EReal.coe_ne_bot (u z))
+    (EReal.coe_ne_top (u x)) hd'
+  have hmem : gradient u x ∈ subdifferential (innerₗ E) (fun z ↦ (u z : EReal)) x := by
+    simpa only [EReal.toReal_coe] using hgrad
+  have hs := (mem_subdifferential_coe_iff (innerₗ E) u).1 hmem y
+  simp only [innerₗ_apply_apply] at hs
+  rw [real_inner_comm (gradient u x) (y - x)] at hs
+  linarith only [hs]

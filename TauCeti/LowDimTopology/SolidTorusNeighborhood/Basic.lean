@@ -377,13 +377,10 @@ theorem isEmbedding_comp_boundaryInclusion (h : IsSolidTorusNeighborhood f Φ) :
   h.isEmbedding.comp SolidTorus.isEmbedding_boundaryInclusion
 
 /-- The boundary torus of the knot exterior is disjoint from the knot. -/
-theorem frontier_subset_compl_range [T2Space X] (h : IsSolidTorusNeighborhood f Φ) :
+theorem frontier_subset_compl_range (h : IsSolidTorusNeighborhood f Φ) :
     frontier (Φ '' {p | ‖(p.1 : ℂ)‖ < 1})ᶜ ⊆ (range f)ᶜ := by
-  rw [frontier_compl, h.frontier_image]
-  rintro _ ⟨q, rfl⟩
-  rw [mem_compl_iff, comp_apply, h.apply_mem_range_iff, ← norm_eq_zero,
-    SolidTorus.coe_boundaryInclusion_fst, Circle.norm_coe]
-  exact one_ne_zero
+  rw [frontier_compl, h.isOpen_image.frontier_eq]
+  exact fun x hx hxr => hx.2 (h.range_subset_image hxr)
 
 /-- The framing identifies the boundary torus with the frontier of the knot exterior,
 the complement of the image of the open solid torus. -/

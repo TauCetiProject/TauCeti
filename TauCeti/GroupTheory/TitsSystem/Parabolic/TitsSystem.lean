@@ -66,7 +66,7 @@ private theorem parabolicWeylHom_mk (n : T.subgroupN.subgroupOf (T.standardParab
   QuotientGroup.map_mk _ _ _ _ _
 
 private theorem parabolicWeylHom_injective : Function.Injective (T.parabolicWeylHom J) :=
-  TauCeti.QuotientGroup.map_injective_of_eq_comap _ _ (T.parabolicIntersection_eq_comap J)
+  (TauCeti.QuotientGroup.map_injective_iff _ _ _).mpr (T.parabolicIntersection_eq_comap J)
 
 private theorem range_parabolicWeylHom :
     (T.parabolicWeylHom J).range = Subgroup.closure (Subtype.val '' J) := by

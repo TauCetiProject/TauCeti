@@ -57,14 +57,14 @@ namespace CliffordAlgebra
 
 universe u v w
 
-variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
-  [FiniteDimensional K V] [Invertible (2 : K)]
+variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V] [Invertible (2 : K)]
 
 /-- For a nondegenerate quadratic space of positive dimension at most four, the even unitary
 carrier lies in the Lipschitz group. -/
 theorem evenUnitaryGroup_le_lipschitzGroup_of_finrank_le_four (Q : QuadraticForm K V)
     (hQ : Q.Nondegenerate) (hV0 : 0 < finrank K V) (hV : finrank K V ≤ 4) :
     evenUnitaryGroup Q ≤ lipschitzGroup Q := by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos hV0
   have : Nontrivial V := Module.nontrivial_of_finrank_pos hV0
   intro x hx
   refine mem_lipschitzGroup_of_involute_act_ι_mem_range_ι Q hQ hQ.exists_isUnit fun m => ?_

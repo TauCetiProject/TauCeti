@@ -99,6 +99,24 @@ theorem closedRegionBetween_congr {f f' g g' : α → ℝ} {s : Set α} (hf : Eq
   simp only [mem_closedRegionBetween]
   exact and_congr_right fun hx ↦ by rw [hf hx, hg hx]
 
+/-- The closed region between two ordered functions is the union of the open region and the two
+graphs. -/
+theorem closedRegionBetween_eq_union {f g : α → ℝ} {s : Set α} (h : ∀ x ∈ s, f x ≤ g x) :
+    closedRegionBetween f g s = s.graphOn f ∪ regionBetween f g s ∪ s.graphOn g := by
+  ext ⟨x, t⟩
+  simp only [mem_closedRegionBetween, mem_union, mem_graphOn, regionBetween, mem_ofPred_eq]
+  constructor
+  · rintro ⟨hx, h₁, h₂⟩
+    rcases h₁.eq_or_lt with h₁ | h₁
+    · exact .inl (.inl ⟨hx, h₁⟩)
+    rcases h₂.eq_or_lt with h₂ | h₂
+    · exact .inr ⟨hx, h₂.symm⟩
+    · exact .inl (.inr ⟨hx, h₁, h₂⟩)
+  · rintro ((⟨hx, rfl⟩ | ⟨hx, h₁, h₂⟩) | ⟨hx, rfl⟩)
+    · exact ⟨hx, le_rfl, h x hx⟩
+    · exact ⟨hx, h₁.le, h₂.le⟩
+    · exact ⟨hx, h x hx, le_rfl⟩
+
 /-- The closed region between two functions continuous on a closed set is closed. -/
 theorem isClosed_closedRegionBetween [TopologicalSpace α] {f g : α → ℝ} {s : Set α}
     (hs : IsClosed s) (hf : ContinuousOn f s) (hg : ContinuousOn g s) :

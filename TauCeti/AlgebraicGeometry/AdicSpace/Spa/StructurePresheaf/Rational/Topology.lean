@@ -140,7 +140,7 @@ theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat
     rw [Presieve.isSheafFor_iff_generate]
     exact TopCommRingCat.isSheafFor_of_isSheafFor_forget
       (F ⋙ TopCommRingCat.isCompleteSeparated.ι) (Sieve.generate (Presieve.ofArrows U fun i ↦
-        homOfLE ((le_iSup U i).trans_eq hcov)))
+        homOfLE ((le_iSup U i).trans_eq hcov))).arrows
       ((Presieve.isSheafFor_iff_generate _).mp
         (isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_of_laurentGluing P hC.toLaurentGluing hA
           hP hAplus hW hU hcov))

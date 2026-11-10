@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.LinearDisjoint
 public import Mathlib.LinearAlgebra.TensorProduct.Submodule
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
+public import TauCeti.LinearAlgebra.Isomorphisms
 public import TauCeti.RingTheory.Ideal.TensorProduct
 
 /-!
@@ -70,6 +71,8 @@ pseudouniformiser.
 * `TauCeti.Almost.BasicSetup.IsAlmostIso.lTensor` and
   `TauCeti.Almost.BasicSetup.IsAlmostIso.rTensor`: almost isomorphisms are stable under tensoring
   with any module.
+* `TauCeti.Almost.BasicSetup.IsAlmostIso.exists_comp_eq_smul_id`: an almost isomorphism `f` has,
+  for every `δ ∈ m`, a linear map `g` back with `f ∘ g = δ • id` and `g ∘ f = δ • id`.
 * `TauCeti.Almost.BasicSetup.flat_tilde_map`: `mW ⊗[W] mW ≅ W ⊗[V] m~` is flat, so basic setups
   base change (the isomorphism is `Ideal.baseChangeTensorSelfEquiv`, valid for every idempotent
   ideal); `TauCeti.Almost.BasicSetup.baseChange_away_eq_classical`: inverting an element of
@@ -146,6 +149,14 @@ theorem tildeMul_tmul (x y : S.ideal) : S.tildeMul (x ⊗ₜ y) = x * y :=
 @[simp]
 theorem range_tildeMul : LinearMap.range S.tildeMul = S.ideal :=
   (Submodule.mulMap_range S.ideal S.ideal).trans S.isIdempotentElem.eq
+
+/-- Induction principle for elements of `m`, using `m = m * m`: a property that holds for all
+products `a * b` with `a, b ∈ m` and is closed under addition holds on `m`. -/
+@[elab_as_elim]
+theorem mul_induction_on {p : V → Prop} {ε : V} (hε : ε ∈ S.ideal)
+    (mul : ∀ a ∈ S.ideal, ∀ b ∈ S.ideal, p (a * b)) (add : ∀ x y, p x → p y → p (x + y)) :
+    p ε :=
+  Submodule.mul_induction_on (C := p) (by rwa [S.isIdempotentElem.eq]) mul add
 
 /-- The multiplication map `m~ → m`, `x ⊗ y ↦ x * y`, which is surjective because `m * m = m`. -/
 noncomputable def tildeToIdeal : S.tilde →ₗ[V] S.ideal :=
@@ -499,6 +510,22 @@ theorem IsAlmostIso.rTensor {f : M →ₗ[V] N} (hf : S.IsAlmostIso f) (P : Type
   rw [isAlmostIso_iff_lTensor_bijective, this, LinearMap.coe_comp, LinearMap.coe_comp]
   refine (LinearEquiv.bijective _).comp (Function.Bijective.comp ?_ (LinearEquiv.bijective _))
   exact ((LinearEquiv.ofBijective _ hf.lTensor_bijective).rTensor P).bijective
+
+variable {S} in
+/-- An almost isomorphism is invertible up to every element of `m`: for `δ ∈ m` there is a
+linear map `g` in the opposite direction with `f ∘ g = δ • id` and `g ∘ f = δ • id`. -/
+theorem IsAlmostIso.exists_comp_eq_smul_id {f : M →ₗ[V] N} (hf : S.IsAlmostIso f) {δ : V}
+    (hδ : δ ∈ S.ideal) :
+    ∃ g : N →ₗ[V] M, f ∘ₗ g = δ • LinearMap.id ∧ g ∘ₗ f = δ • LinearMap.id := by
+  obtain ⟨hker, hcoker⟩ := isAlmostIso_iff.mp hf
+  refine S.mul_induction_on hδ (fun b hb c hc ↦ ?_) fun x y hx hy ↦ ?_
+  · obtain ⟨g, hfg, hgf⟩ := f.exists_comp_eq_lsmul_of_mem_annihilator
+      (isAlmostZero_iff_le_annihilator.mp hker hc) (isAlmostZero_iff_le_annihilator.mp hcoker hb)
+    exact ⟨g, by rw [hfg]; ext; simp, by rw [hgf]; ext; simp⟩
+  · obtain ⟨g₁, hg₁, hg₁'⟩ := hx
+    obtain ⟨g₂, hg₂, hg₂'⟩ := hy
+    exact ⟨g₁ + g₂, by rw [LinearMap.comp_add, hg₁, hg₂, add_smul],
+      by rw [LinearMap.add_comp, hg₁', hg₂', add_smul]⟩
 
 end IsAlmostIso
 

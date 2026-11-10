@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds
+
 /-!
 # Negative powers of the distance to a point, integrated along a segment
 
@@ -20,8 +22,10 @@ The geometric input is that on the segment from `w` to `z`, parametrized by `[0,
 distance to `p` is at least the length of the segment times the distance of the parameter to a
 fixed parameter `c`, namely the foot of the perpendicular from `p` clamped to `[0, 1]`; the
 Cauchy--Schwarz inequality is what makes the comparison work.  Both pieces of the parameter
-interval then compare with a power of the distance to `c`, whose integral Mathlib computes, and
-the singularity contributes only the finite constant `2 / (u + 1)`.
+interval then compare with a power of the distance to `c`, through the one-sided estimates
+`TauCeti.intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_right` and `..._left` of
+`TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds`, and the singularity contributes
+only the finite constant `2 / (u + 1)`.
 
 ## Main results
 
@@ -101,8 +105,8 @@ theorem integral_dist_rpow_segment_le {p : ℂ} {u : ℝ} (hu : -1 < u) (hu0 : u
   have hmeas : AEStronglyMeasurable (fun s : ℝ => dist (w + s • (z - w)) p ^ u) volume := by
     have hcontd : Continuous fun s : ℝ => dist (w + s • (z - w)) p := by fun_prop
     exact (hcontd.measurable.pow measurable_const).aestronglyMeasurable
+  have hnn : ∀ s : ℝ, 0 ≤ dist (w + s • (z - w)) p ^ u := fun s => Real.rpow_nonneg dist_nonneg _
   -- the segment meets `p` at the single parameter `c` at worst, so that parameter is discarded
-  have hne_ae : ∀ t : Set ℝ, ∀ᵐ s ∂(volume.restrict t), s ≠ c := fun t ↦ Measure.ae_ne _ c
   have hbnd : ∀ s ∈ Icc (0 : ℝ) 1, s ≠ c →
       dist (w + s • (z - w)) p ^ u ≤ ‖z - w‖ ^ u * |s - c| ^ u := by
     intro s hs hsne
@@ -111,64 +115,36 @@ theorem integral_dist_rpow_segment_le {p : ℂ} {u : ℝ} (hu : -1 < u) (hu0 : u
     calc dist (w + s • (z - w)) p ^ u ≤ (‖z - w‖ * |s - c|) ^ u :=
           Real.rpow_le_rpow_of_nonpos hpos (hclamp s hs) hu0
       _ = ‖z - w‖ ^ u * |s - c| ^ u := Real.mul_rpow (norm_nonneg _) (abs_nonneg _)
-  have hint2 : IntervalIntegrable
-      (fun s : ℝ => ‖z - w‖ ^ u * (s - c) ^ u) volume c 1 := by
-    have h := (intervalIntegral.intervalIntegrable_rpow' (a := 0) (b := 1 - c) hu).comp_sub_right c
-    simpa using h.const_mul (‖z - w‖ ^ u)
-  have hint1 : IntervalIntegrable
-      (fun s : ℝ => ‖z - w‖ ^ u * (c - s) ^ u) volume 0 c := by
-    have h := (intervalIntegral.intervalIntegrable_rpow' (a := 0) (b := c) hu).comp_sub_left c
-    simpa using (h.const_mul (‖z - w‖ ^ u)).symm
-  have hi2 : IntervalIntegrable (fun s : ℝ => dist (w + s • (z - w)) p ^ u) volume c 1 := by
-    refine hint2.mono_fun' hmeas.restrict ?_
-    filter_upwards [hne_ae (uIoc c 1), self_mem_ae_restrict measurableSet_uIoc] with s hsne hsmem
-    rw [uIoc_of_le hc.2] at hsmem
-    have hs01 : s ∈ Icc (0 : ℝ) 1 := ⟨hc.1.trans hsmem.1.le, hsmem.2⟩
-    have hb := hbnd s hs01 hsne
-    rw [abs_of_pos (sub_pos.mpr hsmem.1)] at hb
-    calc ‖dist (w + s • (z - w)) p ^ u‖ = dist (w + s • (z - w)) p ^ u :=
-          Real.norm_of_nonneg (Real.rpow_nonneg dist_nonneg _)
-      _ ≤ _ := hb
-  have hi1 : IntervalIntegrable (fun s : ℝ => dist (w + s • (z - w)) p ^ u) volume 0 c := by
-    refine hint1.mono_fun' hmeas.restrict ?_
-    filter_upwards [hne_ae (uIoc (0 : ℝ) c), self_mem_ae_restrict measurableSet_uIoc]
-      with s hsne hsmem
-    rw [uIoc_of_le hc.1] at hsmem
-    have hsc : s < c := lt_of_le_of_ne hsmem.2 hsne
-    have hs01 : s ∈ Icc (0 : ℝ) 1 := ⟨hsmem.1.le, hsmem.2.trans hc.2⟩
-    have hb := hbnd s hs01 hsne
-    rw [abs_of_neg (sub_neg.mpr hsc), neg_sub] at hb
-    calc ‖dist (w + s • (z - w)) p ^ u‖ = dist (w + s • (z - w)) p ^ u :=
-          Real.norm_of_nonneg (Real.rpow_nonneg dist_nonneg _)
-      _ ≤ _ := hb
   -- the piece to the right of the foot of the perpendicular
-  have hb2 : (∫ s in c..(1 : ℝ), dist (w + s • (z - w)) p ^ u)
-      ≤ ‖z - w‖ ^ u * ((1 - c) ^ (u + 1) / (u + 1)) := by
-    have hmono := intervalIntegral.integral_mono_ae_restrict hc.2 hi2 hint2 ?_
-    · refine hmono.trans_eq ?_
-      rw [intervalIntegral.integral_const_mul,
-        intervalIntegral.integral_comp_sub_right (fun x : ℝ => x ^ u) c, sub_self,
-        integral_rpow (Or.inl hu), Real.zero_rpow hu1.ne']
-      ring
-    · filter_upwards [hne_ae (Icc c 1), self_mem_ae_restrict (measurableSet_Icc (a := c) (b := 1))]
-        with s hsne hsmem
-      have hcs : c < s := lt_of_le_of_ne hsmem.1 (Ne.symm hsne)
-      have hb := hbnd s ⟨hc.1.trans hsmem.1, hsmem.2⟩ hsne
-      rwa [abs_of_pos (sub_pos.mpr hcs)] at hb
+  have hbr : ∀ᵐ s ∂volume.restrict (Ioc c 1), ‖dist (w + s • (z - w)) p ^ u‖ ≤
+      ‖z - w‖ ^ u * (s - c) ^ u := by
+    refine ae_restrict_of_forall_mem measurableSet_Ioc fun s hs => ?_
+    have hb := hbnd s ⟨hc.1.trans hs.1.le, hs.2⟩ hs.1.ne'
+    rw [Real.norm_of_nonneg (hnn s)]
+    rwa [abs_of_pos (sub_pos.mpr hs.1)] at hb
+  have hi2 := TauCeti.intervalIntegral.intervalIntegrable_of_norm_le_mul_sub_rpow_right
+    (f := fun s : ℝ => dist (w + s • (z - w)) p ^ u) (a := c) (b := 1) (K := ‖z - w‖ ^ u) hu
+    hc.2 hmeas.restrict hbr
+  have hb2 := (Real.le_norm_self _).trans
+    (TauCeti.intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_right
+      (f := fun s : ℝ => dist (w + s • (z - w)) p ^ u) (a := c) (b := 1) (K := ‖z - w‖ ^ u) hu
+      hc.2 hbr)
   -- the piece to the left of the foot of the perpendicular
-  have hb1 : (∫ s in (0 : ℝ)..c, dist (w + s • (z - w)) p ^ u)
-      ≤ ‖z - w‖ ^ u * (c ^ (u + 1) / (u + 1)) := by
-    have hmono := intervalIntegral.integral_mono_ae_restrict hc.1 hi1 hint1 ?_
-    · refine hmono.trans_eq ?_
-      rw [intervalIntegral.integral_const_mul,
-        intervalIntegral.integral_comp_sub_left (fun x : ℝ => x ^ u) c, sub_self, sub_zero,
-        integral_rpow (Or.inl hu), Real.zero_rpow hu1.ne']
-      ring
-    · filter_upwards [hne_ae (Icc 0 c), self_mem_ae_restrict (measurableSet_Icc (a := 0) (b := c))]
-        with s hsne hsmem
-      have hsc : s < c := lt_of_le_of_ne hsmem.2 hsne
-      have hb := hbnd s ⟨hsmem.1, hsmem.2.trans hc.2⟩ hsne
-      rwa [abs_of_neg (sub_neg.mpr hsc), neg_sub] at hb
+  have hbl : ∀ᵐ s ∂volume.restrict (Ioc 0 c), ‖dist (w + s • (z - w)) p ^ u‖ ≤
+      ‖z - w‖ ^ u * (c - s) ^ u := by
+    filter_upwards [Measure.ae_ne (volume.restrict (Ioc 0 c)) c,
+      self_mem_ae_restrict measurableSet_Ioc] with s hsne hs
+    have hb := hbnd s ⟨hs.1.le, hs.2.trans hc.2⟩ hsne
+    rw [Real.norm_of_nonneg (hnn s)]
+    rwa [abs_of_neg (sub_neg.mpr (lt_of_le_of_ne hs.2 hsne)), neg_sub] at hb
+  have hi1 := TauCeti.intervalIntegral.intervalIntegrable_of_norm_le_mul_sub_rpow_left
+    (f := fun s : ℝ => dist (w + s • (z - w)) p ^ u) (a := 0) (b := c) (K := ‖z - w‖ ^ u) hu
+    hc.1 hmeas.restrict hbl
+  have hb1 := (Real.le_norm_self _).trans
+    (TauCeti.intervalIntegral.norm_integral_le_of_norm_le_mul_sub_rpow_left
+      (f := fun s : ℝ => dist (w + s • (z - w)) p ^ u) (a := 0) (b := c) (K := ‖z - w‖ ^ u) hu
+      hc.1 hbl)
+  rw [sub_zero] at hb1
   have hsplit : (∫ s in (0 : ℝ)..1, dist (w + s • (z - w)) p ^ u)
       = (∫ s in (0 : ℝ)..c, dist (w + s • (z - w)) p ^ u)
         + ∫ s in c..(1 : ℝ), dist (w + s • (z - w)) p ^ u :=

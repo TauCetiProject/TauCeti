@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.LFunctions.Theta.Gaussian
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.MulVolume
+public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.TraceDual
 
 /-!
 # The theta inversion with one parameter per infinite place
@@ -30,6 +31,10 @@ against the Euclidean dual `L^∨ = mixedDual K L`. This is Neukirch's (3.6) on 
 with one parameter per infinite place. It holds for every full lattice, not only for ideal
 lattices, because the transformation law of the Mellin kernel of a partial zeta function is
 stated for lattices whose dual is identified with an ideal lattice only afterwards.
+
+That identification moves a lattice by `traceToEuclidean K`, which multiplies the absolute value
+at `w` by `mult w`; on the theta series this multiplies the parameter by `(mult w ^ 2)_w`
+(`latticeTheta_map_traceToEuclidean`).
 
 ## References
 
@@ -112,5 +117,22 @@ theorem latticeTheta_inv (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
     ← mixedInnerBilin_apply, map_zero, LinearMap.zero_apply, Complex.ofReal_zero, mul_zero,
     Complex.exp_zero, mul_one] at h
   rw [latticeTheta_def, h, tsum_mul_left, mul_assoc, latticeTheta_def]
+
+/-- `traceToEuclidean K` on the lattice variable multiplies the parameter of the archimedean
+Gaussian by `(mult w ^ 2)_w`. -/
+theorem latticeTheta_map_traceToEuclidean (L : Submodule ℤ (mixedSpace K))
+    (y : realSpace K) :
+    latticeTheta (L.map ((traceToEuclidean K).toLinearMap.restrictScalars ℤ)) y =
+      latticeTheta L ((fun w ↦ (mult w : ℝ) ^ 2) * y) := by
+  let e := Submodule.equivMapOfInjective ((traceToEuclidean K).toLinearMap.restrictScalars ℤ)
+    (traceToEuclidean K).injective L
+  rw [latticeTheta_def, latticeTheta_def, ← e.toEquiv.tsum_eq]
+  refine tsum_congr fun x ↦ ?_
+  have he : (e x : mixedSpace K) = traceToEuclidean K x :=
+    Submodule.coe_equivMapOfInjective_apply _ _ _ x
+  rw [LinearEquiv.coe_toEquiv, he]
+  simp only [archGaussian_apply, normAtPlace_traceToEuclidean, Pi.mul_apply]
+  congr 4 with w
+  ring
 
 end TauCeti.LFunctions

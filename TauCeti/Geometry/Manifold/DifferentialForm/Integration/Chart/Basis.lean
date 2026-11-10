@@ -26,11 +26,11 @@ open scoped Manifold
 
 namespace TauCeti.RoughForm
 
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [MeasurableSpace E] [BorelSpace E] [TopologicalSpace H]
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {k : ℕ}
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+omit [MeasurableSpace E] [BorelSpace E] in
 private def signedChartExpression (φ : RoughForm I M ℝ k) (α : M)
     (σ : {x : M // x ∈ (extChartAt I α).source} → ℤˣ) (y : E) : E [⋀^Fin k]→L[ℝ] ℝ := by
   classical
@@ -38,7 +38,7 @@ private def signedChartExpression (φ : RoughForm I M ℝ k) (α : M)
     (σ ⟨(extChartAt I α).symm y, (extChartAt I α).map_target hy⟩ : ℝ) • φ.inChartAt α y
   else 0
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+omit [MeasurableSpace E] [BorelSpace E] in
 private theorem signedChartExpression_apply (φ : RoughForm I M ℝ k) (α : M)
     (σ : {x : M // x ∈ (extChartAt I α).source} → ℤˣ)
     (b : Module.Basis (Fin k) ℝ E) (y : E) :

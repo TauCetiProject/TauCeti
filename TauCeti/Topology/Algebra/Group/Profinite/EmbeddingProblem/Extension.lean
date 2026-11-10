@@ -67,7 +67,8 @@ theorem _root_.GroupExtension.exists_splitting_continuous_of_isProjective
       (Topology.IsQuotientMap.of_surjective_continuous S.rightHom_surjective hrh)).isOpenMap hM hG
   obtain ⟨σ, hσ⟩ := hproj.exists_continuous_lift hE ⟨S.rightHom, hrh⟩ S.rightHom_surjective
     (ContinuousMonoidHom.id G)
-  obtain ⟨s, hs, -⟩ := S.exists_splitting_continuous_of_comp_eq_id hrh σ hσ
+  obtain ⟨s, hs, -⟩ := S.exists_splitting_continuous_of_comp_eq_id σ
+    (congrArg ContinuousMonoidHom.toMonoidHom hσ)
   exact ⟨s, hs⟩
 
 end Splitting

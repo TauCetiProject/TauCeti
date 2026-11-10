@@ -6,21 +6,28 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.MvPolynomial.Supported
-public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
+public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 import Mathlib.Algebra.MvPolynomial.Funext
-import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 
 /-!
-# Polynomials in the elementary symmetric functions are determined by their values
+# Identifying polynomials in the elementary symmetric functions
 
-By the fundamental theorem of symmetric polynomials, the elementary symmetric polynomials
-`e₁, …, eₙ` in `n` variables are algebraically independent. Over an infinite integral domain a
-polynomial is determined by its values, so a polynomial `P` in variables `X 1, …, X n` vanishes as
-soon as it vanishes at the elementary symmetric functions `e₁(p), …, eₙ(p)` of every family
-`p : Fin n → K`.
+Mathlib's fundamental theorem of symmetric polynomials, `MvPolynomial.esymmAlgHom_injective`,
+says that substituting the elementary symmetric polynomials `e₁, …, eₙ` of the variables of `σ`
+into polynomials in `n` variables is injective when `n ≤ card σ`. This file restates it with the
+elementary symmetric polynomials written as `Multiset.esymm` of the multiset of variables. In this
+form, an identity between polynomials in `e₁, …, eₙ` follows from the same identity between
+values at the elementary symmetric functions of a multiset of roots, specialized to the
+variables.
+
+Over an infinite integral domain a polynomial is moreover determined by its values, so a
+polynomial `P` in variables `X 1, …, X n` vanishes as soon as it vanishes at the elementary
+symmetric functions `e₁(p), …, eₙ(p)` of every family `p : Fin n → K`.
 
 ## Main results
 
+* `MvPolynomial.aeval_multiset_esymm_X_injective`: substituting the elementary symmetric
+  functions of the multiset of variables is injective.
 * `MvPolynomial.eq_zero_of_aeval_esymm_eq_zero`: a polynomial in the variables `X 1, …, X n` that
   vanishes at the elementary symmetric functions of every `n`-tuple is zero.
 -/
@@ -30,6 +37,17 @@ public section
 open Finset
 
 namespace MvPolynomial
+
+/-- **Fundamental theorem of symmetric polynomials**, root form: if `n ≤ card σ`, a polynomial in
+`n` variables is determined by its value at the elementary symmetric functions
+`e₁, …, eₙ` of the multiset of variables of `σ`. -/
+theorem aeval_multiset_esymm_X_injective (R : Type*) [CommRing R] {σ : Type*} [Fintype σ]
+    {n : ℕ} (hn : n ≤ Fintype.card σ) :
+    Function.Injective
+      (aeval (R := R) fun j : Fin n => (univ.val.map (X (R := R) (σ := σ))).esymm (j + 1)) := by
+  intro p q h
+  refine esymmAlgHom_injective R hn (Subtype.ext ?_)
+  simpa [esymmAlgHom_apply, esymm_eq_multiset_esymm] using h
 
 /-- A polynomial in the variables `X 1, …, X n` over an infinite domain vanishes as soon as it
 vanishes after substituting, for every `p : Fin n → K`, the elementary symmetric functions of the

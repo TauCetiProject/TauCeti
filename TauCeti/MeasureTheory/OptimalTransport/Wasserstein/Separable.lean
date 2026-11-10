@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.FiniteSupport
+import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
 # Separability of the finite-moment Wasserstein space
@@ -79,12 +80,8 @@ theorem separableSpace (hp_top : p ≠ ∞) :
     TopologicalSpace.SeparableSpace (WassersteinSpace p X) := by
   classical
   rcases isEmpty_or_nonempty X with hX | hX
-  · have hempty : IsEmpty (WassersteinSpace p X) := by
-      refine ⟨fun μ ↦ ?_⟩
-      have h : ((μ : ProbabilityMeasure X) : Measure X) univ = 1 := measure_univ
-      rw [Set.univ_eq_empty_iff.2 hX, measure_empty] at h
-      exact zero_ne_one h
-    exact ⟨∅, Set.countable_empty, fun μ ↦ (hempty.false μ).elim⟩
+  · have := hX
+    exact ⟨∅, Set.countable_empty, fun μ ↦ (isEmpty_of_isEmpty.false μ).elim⟩
   set u : ℕ → X := TopologicalSpace.denseSeq X
   have hu : DenseRange u := TopologicalSpace.denseRange_denseSeq X
   -- the countable family of laws with natural multiplicities on terms of the dense sequence
@@ -95,87 +92,26 @@ theorem separableSpace (hp_top : p ≠ ∞) :
       (ProbabilityMeasure.toMeasure_injective h), ?_⟩
   refine Metric.dense_iff.2 fun μ r hr ↦ ?_
   have hquarter : (0 : ℝ) < r / 4 := by linarith
-  have hquarter' : ENNReal.ofReal (r / 4) ≠ 0 := by
-    simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
-    exact hquarter
-  have hp1 : (1 : ℝ≥0∞) ≤ p := Fact.out
-  have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp1).ne'
-  -- step one: approximate by a law carried by a finite set
-  obtain ⟨s, ν₁, hν₁, hnull₁, -, hle₁⟩ :=
-    exists_ae_mem_finset_wassersteinEDist_le
-      (μ := ((μ : ProbabilityMeasure X) : Measure X)) hp1 hp_top μ.hasFiniteMoment hquarter'
-  -- step two: move its atoms onto terms of the dense sequence
-  have : IsProbabilityMeasure ν₁ := hν₁
-  obtain ⟨T, hT, hTu, hle₂⟩ :=
-    exists_map_range_wassersteinEDist_le measurable_edist hu hquarter ν₁ p
-  set ν₂ : Measure X := ν₁.map T with hν₂_def
-  have hν₂ : IsProbabilityMeasure ν₂ := inferInstanceAs (IsProbabilityMeasure (ν₁.map T))
-  have hnull₂ : ν₂ ((↑(s.image T) : Set X)ᶜ) = 0 := by
-    rw [hν₂_def, Measure.map_apply hT (s.image T).measurableSet.compl]
-    refine measure_mono_null (fun x hx ↦ ?_) hnull₁
-    simp only [Finset.coe_image, mem_preimage, mem_compl_iff, mem_image, Finset.mem_coe,
-      not_exists, not_and] at hx ⊢
-    exact fun hxs ↦ hx x hxs rfl
-  -- step three: round the weights to a common denominator
-  obtain ⟨m, hmpos, hle₃⟩ :=
-    exists_nat_weights_wassersteinEDist_le (ν := ν₂) measurable_edist hp0 hp_top hnull₂ hquarter'
-  set ν₃ : Measure X := (∑ x ∈ s.image T, (m x : ℝ≥0∞))⁻¹ •
-    ∑ x ∈ s.image T, (m x : ℝ≥0∞) • Measure.dirac x with hν₃_def
-  have hmsum : ∑ x ∈ s.image T, ((m x : ℕ) : ℝ≥0∞) = ((∑ x ∈ s.image T, m x : ℕ) : ℝ≥0∞) :=
-    (Nat.cast_sum _ _).symm
-  have hnull₃ : ν₃ ((↑(s.image T) : Set X)ᶜ) = 0 := by
-    have hzero : (∑ x ∈ s.image T, (m x : ℝ≥0∞) • Measure.dirac x)
-        ((↑(s.image T) : Set X)ᶜ) = 0 := by
-      rw [FunLike.coe_sum, Finset.sum_apply]
-      refine Finset.sum_eq_zero fun x hx ↦ ?_
-      rw [_root_.smul_apply, Measure.dirac_apply' _ (s.image T).measurableSet.compl,
-        Set.indicator_of_notMem (by simpa using hx), smul_zero]
-    rw [hν₃_def, _root_.smul_apply, hzero, smul_zero]
-  have hprob₃ : IsProbabilityMeasure ν₃ := by
-    refine ⟨?_⟩
-    have hmass : (∑ x ∈ s.image T, (m x : ℝ≥0∞) • Measure.dirac x) univ
-        = ((∑ x ∈ s.image T, m x : ℕ) : ℝ≥0∞) := by
-      rw [FunLike.coe_sum, Finset.sum_apply, ← hmsum]
-      exact Finset.sum_congr rfl fun x _ ↦ by simp
-    rw [hν₃_def, _root_.smul_apply, hmass, smul_eq_mul, hmsum,
-      ENNReal.inv_mul_cancel (Nat.cast_ne_zero.2 hmpos.ne') (ENNReal.natCast_ne_top _)]
-  obtain ⟨x₁, _⟩ : (s.image T).Nonempty := by
+  obtain ⟨S, m, hSu, hmpos, hle⟩ := exists_natWeights_wassersteinEDist_le hu Fact.out hp_top
+    μ.hasFiniteMoment hquarter
+  set ν₃ : Measure X := (∑ x ∈ S, (m x : ℝ≥0∞))⁻¹ •
+    ∑ x ∈ S, (m x : ℝ≥0∞) • Measure.dirac x with hν₃_def
+  have hprob₃ : IsProbabilityMeasure ν₃ := isProbabilityMeasure_natWeights hmpos
+  obtain ⟨x₁, _⟩ : S.Nonempty := by
     rw [Finset.nonempty_iff_ne_empty]
-    rintro he
-    rw [he] at hmpos
+    rintro rfl
     simp at hmpos
-  have hmom₃ : HasFiniteMoment p ν₃ := hasFiniteMoment_of_ae_mem_finset x₁ (mem_ae_iff.2 hnull₃)
+  have hmom₃ : HasFiniteMoment p ν₃ :=
+    hasFiniteMoment_of_ae_mem_finset x₁ (mem_ae_iff.2 (S.natWeights_compl_eq_zero m))
   -- the approximating law belongs to the countable family
   have hrange : ν₃ ∈ Set.range G := by
-    have hexists : ∀ x ∈ s.image T, ∃ i, u i = x := by
-      intro x hx
-      obtain ⟨y, _, rfl⟩ := Finset.mem_image.1 hx
-      exact hTu y
-    choose! i hi using hexists
-    have hinj : ∀ x ∈ s.image T, ∀ y ∈ s.image T, (i x, m x) = (i y, m y) → x = y := by
-      intro x hx y hy hxy
-      have hix : i x = i y := congrArg Prod.fst hxy
-      rw [← hi x hx, ← hi y hy, hix]
-    refine ⟨(s.image T).image fun x ↦ (i x, m x), ?_⟩
-    simp only [hG_def, hν₃_def]
-    rw [Finset.sum_image hinj, Finset.sum_image hinj]
-    exact congrArg₂ _ rfl (Finset.sum_congr rfl fun x hx ↦ by rw [hi x hx])
+    obtain ⟨t, ht⟩ := exists_finset_prod_natWeights_eq m hSu
+    exact ⟨t, ht⟩
   have hcoe : ((mk (⟨ν₃, hprob₃⟩ : ProbabilityMeasure X) hmom₃ : WassersteinSpace p X) :
       ProbabilityMeasure X) = ⟨ν₃, hprob₃⟩ := coe_mk _ _
   refine ⟨mk ⟨ν₃, hprob₃⟩ hmom₃, ?_, ?_⟩
   · rw [Metric.mem_ball, dist_comm, dist_def, hcoe]
-    have htri : wassersteinEDist p ((μ : ProbabilityMeasure X) : Measure X) ν₃ ≤
-        ENNReal.ofReal (3 * (r / 4)) := by
-      have h₁₃ : wassersteinEDist p ν₁ ν₃ ≤
-          ENNReal.ofReal (r / 4) + ENNReal.ofReal (r / 4) :=
-        (wassersteinEDist_triangle measurable_edist hp1 ν₁ ν₂ ν₃).trans (add_le_add hle₂ hle₃)
-      refine (wassersteinEDist_triangle measurable_edist hp1
-        ((μ : ProbabilityMeasure X) : Measure X) ν₁ ν₃).trans ?_
-      refine (add_le_add hle₁ h₁₃).trans_eq ?_
-      rw [← ENNReal.ofReal_add hquarter.le (by positivity),
-        ← ENNReal.ofReal_add hquarter.le (by positivity)]
-      ring_nf
-    refine lt_of_le_of_lt (ENNReal.toReal_le_of_le_ofReal (by positivity) htri) ?_
+    refine lt_of_le_of_lt (ENNReal.toReal_le_of_le_ofReal (by positivity) hle) ?_
     linarith
   · rw [Set.mem_preimage, hcoe]
     exact hrange

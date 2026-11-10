@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 import Mathlib.Analysis.InnerProductSpace.Calculus
+import TauCeti.Analysis.Normed.Module.Normalize
 
 /-!
 # Conformal boosts of a unit sphere
@@ -57,6 +58,9 @@ through `-v` without moving the point.
 * `TauCeti.contDiffAt_sphereBoost`: a boost is smooth jointly in the rapidity and the point.
 * `TauCeti.fderiv_sphereBoost_neg_self_apply`: at `-v`, the boost of rapidity `a` multiplies
   tangent vectors by `eᵃ`.
+* `LinearIsometry.fderiv_sphereBoost_log_apply_eq`: the boost toward `-y` of rapidity
+  `log (‖w‖ / ‖v‖)` carries `e v` at `e x` to `w`, for a linear isometry `e` with `e x = y`
+  rotating the direction of `v` to that of `w`.
 
 ## References
 
@@ -315,3 +319,28 @@ theorem fderiv_sphereBoost_neg_self_apply {v w : E} (hv : ‖v‖ = 1) (a : ℝ)
   exact h₁.unique (h₂.congr_of_eventuallyEq (Filter.Eventually.of_forall fun s => hline s))
 
 end TauCeti
+
+namespace LinearIsometry
+
+open TauCeti
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- Rotating the direction of `v` to that of `w` by a linear isometry `e` that moves the point `x`
+to `y`, the boost toward `-y` of rapidity `log (‖w‖ / ‖v‖)` then carries `e v` at `e x` to `w`. -/
+theorem fderiv_sphereBoost_log_apply_eq (e : E →ₗᵢ[ℝ] F) {x v : E} {y w : F} (hy : ‖-y‖ = 1)
+    (hv : v ≠ 0) (hw : w ≠ 0) (hex : e x = y) (hxv : ⟪x, v⟫ = 0)
+    (hev : e (‖v‖⁻¹ • v) = ‖w‖⁻¹ • w) :
+    fderiv ℝ (sphereBoost (-y) (Real.log (‖w‖ / ‖v‖))) (e x) (e v) = w := by
+  have hperp : ⟪e v, -y⟫ = 0 := by
+    rw [inner_neg_right, ← hex, LinearIsometry.inner_map_map, real_inner_comm, hxv,
+      neg_zero]
+  have hxy : e x = - -y := by rw [hex, neg_neg]
+  rw [hxy, fderiv_sphereBoost_neg_self_apply hy _ hperp, Real.exp_log (by positivity)]
+  rw [← LinearIsometry.norm_map e v]
+  refine TauCeti.norm_div_norm_smul_eq_of_inv_norm_smul_eq_normalize ?_
+  rw [LinearIsometry.norm_map]
+  simpa [NormedSpace.normalize, map_smul] using hev
+
+end LinearIsometry

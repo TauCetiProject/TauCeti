@@ -18,6 +18,8 @@ take both the `n`-torsion and the reduction mod `n` of a `ℤ`-module.
 
 ## Main results
 
+* `TauCeti.natCard_ker_nsmulAddMonoidHom_eq_natCard_torsionBy`: the kernel of multiplication
+  by `n` has the same order as the `n`-torsion submodule.
 * `TauCeti.subsingleton_torsionBy_int`: the `n`-torsion of a torsion-free abelian group is zero for
   `n ≠ 0`.
 * `TauCeti.finite_quotSMulTop_int`: `M ⧸ nM` is finite for `n ≠ 0` and `M` finitely generated.
@@ -34,6 +36,16 @@ open Function
 open scoped Pointwise
 
 namespace TauCeti
+
+/-- The kernel of multiplication by `n` on an abelian group has the same order as its
+`n`-torsion submodule. No finiteness or nonzero hypothesis is needed. -/
+theorem natCard_ker_nsmulAddMonoidHom_eq_natCard_torsionBy (M : Type*) [AddCommGroup M]
+    (n : ℕ) :
+    Nat.card (nsmulAddMonoidHom (α := M) n).ker =
+      Nat.card (Submodule.torsionBy ℤ M n) :=
+  Nat.card_congr (Equiv.subtypeEquivRight fun x ↦ by
+    rw [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, Submodule.mem_torsionBy_iff,
+      natCast_zsmul])
 
 variable (n : ℕ) [NeZero n] (M : Type*) [AddCommGroup M]
 
