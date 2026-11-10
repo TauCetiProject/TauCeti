@@ -53,7 +53,7 @@ theorem hessian_norm_sq_comp_of_eq_zero
   have h := fderiv_fderiv_norm_sq_sub_comp_apply (a := (0 : F)) hchart v w
   simp only [sub_zero, Function.comp_apply, extChartAt_to_inv, hzero, inner_zero_left,
     add_zero] at h
-  rw [criticalHessian_def, hfd.mvfderiv_eq_fderiv_comp_extChartAt_symm]
+  rw [criticalHessian_def, TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
   exact h
 
 end TauCeti.Manifold
