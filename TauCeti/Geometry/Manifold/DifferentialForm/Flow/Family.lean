@@ -309,7 +309,6 @@ private theorem hasDerivAt_mpullback_timeDependentFlowOf_mpullback_prodMk_suspen
       (mpullback I I (timeDependentFlowOf X s t)
         (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
           (mlieDerivForm (timeDependentSuspensionField X) α)) x) t := by
-  have hX₁ := hX.of_le (m := 1) one_le_two
   have hZ := contMDiff_timeDependentSuspensionField hX
   have hφ := contMDiff_timeDependentFlowOf hc (n := 2) (by norm_num) hX
   have hι (u : ℝ) : MDifferentiable I (𝓘(ℝ, ℝ).prod I) (Prod.mk u : M → ℝ × M) :=
@@ -399,7 +398,6 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smu
     mpullback I I (timeDependentFlowOf X s t) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α) x =
       Real.exp (∫ u in s..t, g (u, timeDependentFlowOf X s u x)) •
         mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk s) α x := by
-  have hX₁ := hX.of_le (m := 1) one_le_two
   -- The pullbacks at `x`, as alternating maps on the model space.
   set P : ℝ → E [⋀^Fin k]→L[ℝ] F := fun u ↦
     mpullback I I (timeDependentFlowOf X s u) (mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk u) α) x

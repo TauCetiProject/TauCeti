@@ -174,6 +174,7 @@ theorem timeDependentFlowOf_add_period_of_mem (hT : Periodic X T)
   simp only [add_sub_cancel_right, timeDependentFlowOf_self] at hmem heq
   exact ⟨hmem, heq⟩
 
+omit [CompleteSpace E] in
 /-- If the return map of a time-periodic field fixes `x`, so does its `k`-th iterate: the flow
 from `s` to `s + k T` is defined at `x` and fixes it. -/
 private theorem timeDependentFlowOf_nat_mul_of_isFixedPt (hT : Periodic X T)
@@ -182,7 +183,11 @@ private theorem timeDependentFlowOf_nat_mul_of_isFixedPt (hT : Periodic X T)
     ((s, s + k * T), x) ∈ timeDependentFlowDomain X ∧
       timeDependentFlowOf X s (s + k * T) x = x := by
   induction k with
-  | zero => simpa using mem_timeDependentFlowDomain_self hX s x
+  | zero =>
+    have h0 : ((s, s), x) ∈ timeDependentFlowDomain X := by
+      rw [mem_timeDependentFlowDomain, sub_self]
+      exact mem_flowDomain_zero_of_mem (mem_timeDependentFlowDomain.1 h)
+    simpa using h0
   | succ k ih =>
     -- The `(k + 1)`-st period is the first one translated by `k T`.
     obtain ⟨hmem, heq⟩ := timeDependentFlowOf_add_period_of_mem hX (hT.nat_mul k) h
@@ -194,6 +199,7 @@ private theorem timeDependentFlowOf_nat_mul_of_isFixedPt (hT : Periodic X T)
     rw [hk] at hmem' heq'
     exact ⟨hmem', heq'.symm⟩
 
+omit [CompleteSpace E] in
 /-- **A trajectory that returns to its start after a period exists for all time.** If `X` is
 `T`-periodic with `T ≠ 0`, and the flow from `s` to `s + T` is defined at `x` and fixes it, then
 the flow from `s` is defined at `x` at every time. -/
@@ -219,6 +225,7 @@ theorem mem_timeDependentFlowDomain_of_isFixedPt (hT : Periodic X T) (hT0 : T �
   · rw [abs_of_neg hT'] at hts
     exact hcon.out (hpos k).1 (hneg k) ⟨by linarith [hts.1], by linarith [hts.2]⟩
 
+omit [CompleteSpace E] in
 /-- **Periodic solutions are fixed points of the return map.** For a `T`-periodic field `X`, with
 `T ≠ 0`, evaluation at the initial time `s` identifies the `T`-periodic solutions of `X` with the
 fixed points of the return map `timeDependentFlowOf X s (s + T)` in its domain. The inverse sends a
@@ -251,6 +258,7 @@ def periodicSolutionsEquivFixedPoints (hT : Periodic X T) (hT0 : T ≠ 0) (s : �
       ⟨by linarith [min_le_right s t], by linarith [le_max_right s t]⟩
   right_inv x := Subtype.ext (timeDependentFlowOf_self X s x)
 
+omit [CompleteSpace E] in
 /-- The correspondence from periodic solutions to fixed points evaluates at the initial time. -/
 @[simp]
 theorem periodicSolutionsEquivFixedPoints_apply (hT : Periodic X T) (hT0 : T ≠ 0) (s : ℝ)
@@ -258,6 +266,7 @@ theorem periodicSolutionsEquivFixedPoints_apply (hT : Periodic X T) (hT0 : T ≠
     (periodicSolutionsEquivFixedPoints hX hT hT0 s γ : M) = γ.1 s :=
   (rfl)
 
+omit [CompleteSpace E] in
 /-- The periodic solution of a fixed point of the return map is its trajectory under the flow. -/
 @[simp]
 theorem periodicSolutionsEquivFixedPoints_symm_apply (hT : Periodic X T) (hT0 : T ≠ 0) (s : ℝ)

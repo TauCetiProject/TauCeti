@@ -93,7 +93,7 @@ theorem perturbedMFDeriv_timeDependentFlowOf (s : ℝ) {v : ℝ × ℝ → M} {z
         mfderiv 𝓘(ℝ, ℝ × ℝ) I v z := by
   have hτ : HasMFDerivAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ) Prod.snd z (ContinuousLinearMap.snd ℝ ℝ ℝ) :=
     hasMFDerivAt_iff_hasFDerivAt.2 (hasFDerivAt_snd)
-  have hw := hasMFDerivAt_timeDependentFlowOf_comp hc le_rfl hX hτ hv.hasMFDerivAt s
+  have hw := hasMFDerivAt_timeDependentFlowOf_comp hc hX hτ hv.hasMFDerivAt s
   refine ContinuousLinearMap.ext fun a ↦ ?_
   rw [perturbedMFDeriv_apply, hw.mfderiv]
   simp only [hamiltonianVectorField_const, Pi.zero_apply, smul_zero, sub_zero]

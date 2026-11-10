@@ -284,6 +284,12 @@ theorem exists_isMIntegralCurveOn_maximalIntegralCurve_eq
   obtain ⟨a, b, hγ⟩ := h.choose_spec
   exact ⟨_, a, b, hγ.1, hγ.2.1, hγ.2.2.1, hγ.2.2.2, dite_eq_left h⟩
 
+/-- Time zero belongs to the maximal interval of existence as soon as some time does. -/
+theorem zero_mem_maximalIntegralCurveInterval_of_mem
+    (h : t ∈ maximalIntegralCurveInterval v x) : (0 : ℝ) ∈ maximalIntegralCurveInterval v x := by
+  obtain ⟨γ, a, b, hγ, hγx, hγ0, -, -⟩ := exists_isMIntegralCurveOn_maximalIntegralCurve_eq h
+  exact hγ.subset_maximalIntegralCurveInterval hγ0 hγx hγ0
+
 /-- At the initial time, the maximal integral curve takes its prescribed initial value. -/
 @[simp]
 theorem maximalIntegralCurve_zero : maximalIntegralCurve v x 0 = x := by
