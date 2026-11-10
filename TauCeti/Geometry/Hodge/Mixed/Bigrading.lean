@@ -314,19 +314,62 @@ theorem ofIsHodgeBigrading_deligneSplittingFamily (mhs : MixedHodgeStructure h�
       mhs.F_top mhs.F_bot = mhs :=
   (rfl)
 
+/-- The Hodge filtration is separated as soon as its induced filtration is separated on every
+graded piece: a step that vanishes on the graded pieces of weight `≤ k` meets `W_k` trivially. -/
+private theorem exists_eq_bot_of_forall_gradedF_eq_bot (hWQ : Monotone WQ)
+    (hF_anti : Antitone F) (hW_top : ∃ k, WQ k = ⊤) (hW_bot : ∃ k, WQ k = ⊥)
+    (h : ∀ k, ∃ p, gradedF hℚ hℂ WQ hWQ F k p = ⊥) : ∃ p, F p = ⊥ := by
+  -- Where the induced filtration vanishes, `F p ⊓ W_k` is contained in `W_{k-1}`.
+  have key (k p : ℤ) (hp : gradedF hℚ hℂ WQ hWQ F k p = ⊥) :
+      F p ⊓ rationalToComplexSubmodule hℚ hℂ (WQ k) ≤
+        rationalToComplexSubmodule hℚ hℂ (WQ (k - 1)) := by
+    rintro y ⟨hyF, hyk⟩
+    have hx : (gradedComplexEquiv hℚ hℂ WQ hWQ k).symm (Submodule.Quotient.mk ⟨y, hyk⟩) ∈
+        gradedF hℚ hℂ WQ hWQ F k p := by
+      rw [mem_gradedF_iff]
+      exact ⟨⟨y, hyk⟩, hyF, by simp⟩
+    rw [hp, Submodule.mem_bot, LinearEquiv.symm_apply_eq, map_zero,
+      Submodule.Quotient.mk_eq_zero] at hx
+    exact hx
+  choose p hp using h
+  obtain ⟨k₀, hk₀⟩ := hW_bot
+  obtain ⟨k₁, hk₁⟩ := hW_top
+  have hk₁' : WQ (max k₀ k₁) = ⊤ := top_unique (hk₁ ▸ hWQ (le_max_right _ _))
+  obtain ⟨P, hP⟩ := ((Finset.Icc k₀ (max k₀ k₁)).image p).bddAbove
+  refine ⟨P, ?_⟩
+  have hbd (n : ℕ) (hn : k₀ + n ≤ max k₀ k₁) :
+      F P ⊓ rationalToComplexSubmodule hℚ hℂ (WQ (k₀ + n)) = ⊥ := by
+    induction n with
+    | zero => rw [Nat.cast_zero, add_zero, hk₀, rationalToComplexSubmodule_bot, inf_bot_eq]
+    | succ n ih =>
+      have hpP : p (k₀ + n + 1) ≤ P := hP (Finset.mem_coe.2 (Finset.mem_image_of_mem p
+        (Finset.mem_Icc.2 ⟨by omega, by push_cast at hn; omega⟩)))
+      have hz : gradedF hℚ hℂ WQ hWQ F (k₀ + n + 1) P = ⊥ :=
+        le_bot_iff.1 ((gradedF_antitone hℚ hℂ WQ hWQ F hF_anti _ hpP).trans (hp _).le)
+      have := key (k₀ + n + 1) P hz
+      rw [add_sub_cancel_right] at this
+      push_cast at hn ⊢
+      rw [← add_assoc]
+      exact eq_bot_iff.2 ((le_inf inf_le_left this).trans (ih (by omega)).le)
+  have := hbd (max k₀ k₁ - k₀).toNat (by omega)
+  rw [Int.toNat_of_nonneg (by omega), add_sub_cancel] at this
+  rwa [hk₁', rationalToComplexSubmodule_top, inf_top_eq] at this
+
 /-- **A pair of bounded filtrations is a mixed Hodge structure exactly when it admits a Hodge
 bigrading.** Precisely: the purity axiom holds for a bounded increasing rational weight filtration
-and a bounded decreasing Hodge filtration if and only if the two filtrations have a Hodge
-bigrading. -/
+and a decreasing Hodge filtration that is the whole space at some step if and only if the two
+filtrations have a Hodge bigrading. That the Hodge filtration is zero at some step follows from the
+purity axiom. -/
 theorem exists_isHodgeBigrading_iff (hWQ : Monotone WQ) (hW_top : ∃ k, WQ k = ⊤)
-    (hW_bot : ∃ k, WQ k = ⊥) (hF_anti : Antitone F) (hF_top : ∃ p, F p = ⊤)
-    (hF_bot : ∃ p, F p = ⊥) :
+    (hW_bot : ∃ k, WQ k = ⊥) (hF_anti : Antitone F) (hF_top : ∃ p, F p = ⊤) :
     (∃ I, IsHodgeBigrading hℚ hℂ WQ F I) ↔
       ∀ k, ∃ hs : HodgeStructure (isBaseChange_ratTensorMap ℂ (weightGradedRat WQ k)) k,
         hs.F = gradedF hℚ hℂ WQ hWQ F k :=
   ⟨fun ⟨_, h⟩ ↦ h.exists_hodgeStructure_F_eq_gradedF hF_top, fun hpure ↦
     ⟨_, isHodgeBigrading_deligneSplittingFamily ⟨WQ, hWQ, hW_top, hW_bot, F, hF_anti, hF_top,
-      hF_bot, hpure⟩⟩⟩
+      exists_eq_bot_of_forall_gradedF_eq_bot hWQ hF_anti hW_top hW_bot fun k ↦
+        let ⟨hs, hsF⟩ := hpure k
+        hsF ▸ hs.F_bot, hpure⟩⟩⟩
 
 end MixedHodgeStructure
 
