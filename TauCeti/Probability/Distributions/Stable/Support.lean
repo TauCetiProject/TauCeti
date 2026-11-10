@@ -81,11 +81,15 @@ theorem support_stableMeasure_zero_scale (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 
     (stableMeasure α β 0 m).support = {m} := by
   rw [stableMeasure_zero_scale hα hβ, Measure.support_dirac, closure_singleton]
 
-/-- A valid zero-scale stable law is singular with respect to Lebesgue measure. -/
-theorem mutuallySingular_stableMeasure_zero_scale (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1)
-    (m : ℝ) : stableMeasure α β 0 m ⟂ₘ volume := by
-  rw [stableMeasure_zero_scale hα hβ]
-  exact mutuallySingular_dirac m volume
+/-- Every zero-scale stable measure is singular with respect to Lebesgue measure. For invalid
+shape or skewness parameters, this is the singularity of the zero measure. -/
+theorem mutuallySingular_stableMeasure_zero_scale (m : ℝ) :
+    stableMeasure α β 0 m ⟂ₘ volume := by
+  by_cases h : α ∈ Ioc 0 2 ∧ |β| ≤ 1
+  · rw [stableMeasure_zero_scale h.1 h.2]
+    exact mutuallySingular_dirac m volume
+  · rw [stableMeasure_of_not_valid h]
+    exact Measure.MutuallySingular.zero_left
 
 /-! ### Reduction to the standardized law -/
 
