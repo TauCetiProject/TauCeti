@@ -59,7 +59,7 @@ This supplies a prerequisite for Deliverable A, Layer 1 of
   agree.
 * `TauCeti.contDiffAt_deriv_slice_left`: the partial derivative in the first variable of a
   `C^(n+1)` map is `C^n`.
-* `TauCeti.contDiffWithinAt_deriv_slice_left`: the same within a set with unique differentials.
+* `TauCeti.contDiffWithinAt_deriv_slice_left`: the same within a set.
 * `TauCeti.deriv_deriv_slice_left`: **symmetry of the mixed partial derivatives**, the derivative
   in the second variable of the partial derivative in the first variable is the mixed second
   derivative in the directions `(1, 0)` and `(0, 1)`.
@@ -463,37 +463,19 @@ theorem contDiffAt_deriv_slice_left {n : ℕ∞ω} {u : 𝕜 × E → F'} {a : �
     contDiffAt_const
 
 /-- **The parameter derivative loses one derivative, within a set.** If `G` is `C^n` on `ℝ × s` at
-`(t, u₀)` for a set `s` with unique differentials, then the parameter derivative
-`u ↦ ∂ᵣ G (r, u)` at `r = t` is `C^m` within `s` at `u₀`, for `m + 1 ≤ n`. -/
+`(t, u₀)`, then the parameter derivative `u ↦ ∂ᵣ G (r, u)` at `r = t` is `C^m` within `s` at `u₀`,
+for `m + 1 ≤ n`. -/
 theorem contDiffWithinAt_deriv_slice_left {m n : ℕ∞ω} {G : 𝕜 × E → F'} {s : Set E} {t : 𝕜}
-    {u₀ : E} (hG : ContDiffWithinAt 𝕜 n G (Set.univ ×ˢ s) (t, u₀)) (hsu : UniqueDiffOn 𝕜 s)
-    (hu₀ : u₀ ∈ s) (hmn : m + 1 ≤ n) :
+    {u₀ : E} (hG : ContDiffWithinAt 𝕜 n G (Set.univ ×ˢ s) (t, u₀)) (hu₀ : u₀ ∈ s)
+    (hmn : m + 1 ≤ n) :
     ContDiffWithinAt 𝕜 m (fun u ↦ _root_.deriv (fun r ↦ G (r, u)) t) s u₀ := by
-  set S : Set (𝕜 × E) := Set.univ ×ˢ s
-  have hSu : UniqueDiffOn 𝕜 S := uniqueDiffOn_univ.prod hsu
-  have hmem : (t, u₀) ∈ S := ⟨Set.mem_univ _, hu₀⟩
-  have hn1 : (1 : ℕ∞ω) ≤ n := le_trans le_add_self hmn
-  have hmaps : Set.MapsTo (fun u : E ↦ (t, u)) s S := fun u hu ↦ ⟨Set.mem_univ _, hu⟩
-  -- The parameter derivative is `u ↦ dG (t, u) (1, 0)`, which is `C^m`.
-  have hlift : ContDiffWithinAt 𝕜 m (fun u : E ↦ fderivWithin 𝕜 G S (t, u) (1, 0)) s u₀ :=
-    ((hG.fderivWithin_right hSu hmn hmem).clm_apply contDiffWithinAt_const).comp u₀
-      (contDiffWithinAt_const.prodMk contDiffWithinAt_id) hmaps
-  -- Near `u₀` in `s`, `G` is differentiable, so this is the parameter derivative.
-  have hnear : ∀ᶠ u in 𝓝[s] u₀, DifferentiableWithinAt 𝕜 G S (t, u) := by
-    have h := (hG.of_le hn1).eventually (by simp)
-    rw [Set.insert_eq_of_mem hmem] at h
-    have hlim : Tendsto (fun u : E ↦ (t, u)) (𝓝[s] u₀) (𝓝[S] (t, u₀)) :=
-      (continuousWithinAt_const.prodMk continuousWithinAt_id).tendsto_nhdsWithin hmaps
-    exact hlim.eventually (h.mono fun p hp ↦ hp.differentiableWithinAt one_ne_zero)
-  have hderiv : ∀ u ∈ s, DifferentiableWithinAt 𝕜 G S (t, u) →
-      _root_.deriv (fun r ↦ G (r, u)) t = fderivWithin 𝕜 G S (t, u) (1, 0) := fun u hu hd ↦ by
-    have h := hd.hasFDerivWithinAt.comp_hasDerivAt (f := fun r : 𝕜 ↦ (r, u)) t
-      (hasFDerivAt_prodMk_left t u).hasDerivAt
-      (Filter.Eventually.of_forall fun r ↦ ⟨Set.mem_univ _, hu⟩)
-    exact h.deriv
-  refine hlift.congr_of_eventuallyEq ?_ ?_
-  · filter_upwards [hnear, self_mem_nhdsWithin] with u hu hus using hderiv u hus hu
-  · exact hderiv _ hu₀ (hG.differentiableWithinAt (zero_lt_one.trans_le hn1).ne')
+  have h := ContDiffWithinAt.fderivWithin_apply (f := fun u r ↦ G (r, u)) (g := fun _ ↦ t)
+    (k := fun _ ↦ (1 : 𝕜)) (t := Set.univ)
+    (hG.comp (u₀, t) (contDiffWithinAt_snd.prodMk contDiffWithinAt_fst)
+      fun z hz ↦ Set.mk_mem_prod (Set.mem_univ z.2) hz.1)
+    contDiffWithinAt_const contDiffWithinAt_const uniqueDiffOn_univ hmn hu₀
+    fun _ _ ↦ Set.mem_univ _
+  simpa only [fderivWithin_univ, fderiv_apply_one_eq_deriv] using h
 
 /-- **Symmetry of the mixed partial derivatives.** Near a point where `u` is `C²` (`C^ω` over a
 field other than `ℝ` or `ℂ`), the derivative in the second variable of the partial derivative of

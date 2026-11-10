@@ -121,7 +121,7 @@ theorem contMDiffAt_deriv_of_contMDiffAt_uncurry
     rw [extChartAt_coe]
     exact mem_range_self _
   have hD' := contDiffWithinAt_deriv_slice_left (m := m)
-    (contDiffWithinAt_extChartAt_symm_of_contMDiffAt_uncurry hF) I.uniqueDiffOn (hrange x) hmn
+    (contDiffWithinAt_extChartAt_symm_of_contMDiffAt_uncurry hF) (hrange x) hmn
   exact contMDiffAt_iff_source.2 (contMDiffWithinAt_iff_contDiffWithinAt.2 hD')
 
 variable [IsManifold I 1 M]
