@@ -57,8 +57,8 @@ is `M a + b`, and `a(r, φ) = a(r, φ + 2π)`.
   action variables.
 * `TauCeti.SmoothTwoForm.IsSymplectic.angleMap_sum_smul`: changing the basis of periods by a matrix
   `P` changes the angles by `θ ↦ θ P`.
-* `TauCeti.SmoothTwoForm.IsSymplectic.exists_eq_mulVec_add_and_angleMap_eq`: action-angle data of a
-  Liouville integrable system are unique up to integral affine changes.
+* `TauCeti.SmoothTwoForm.IsSymplectic.exists_eq_mulVec_add_and_angleMap_eq`: along a fixed section,
+  action-angle data of a Liouville integrable system are unique up to integral affine changes.
 * `TauCeti.not_injOn_of_forall_exists_iff_polar`: the polar lattices on `(1, 2) × (0, 3π)` have no
   injective action variables.
 
@@ -139,16 +139,17 @@ theorem exists_generalLinearGroup_mulVec_eq_of_forall_exists_iff
 
 variable {D : Set (ι → ℝ)} {A A' : (ι → ℝ) → ι → ℝ}
 
+omit [DecidableEq ι] in
 /-- **Derivatives related by integer matrices force an integral affine relation.** Let `A` and `A'`
 be `C¹` maps on an open preconnected set `D`, with the derivative of `A` injective on `D`. If at
-each point `c ∈ D` the derivative of `A'` is `M_c` times that of `A` for some `M_c ∈ GL(ι, ℤ)`,
+each point `c ∈ D` the derivative of `A'` is `M_c` times that of `A` for some integer matrix `M_c`,
 then `M_c` does not depend on `c`, and `A' = M A + b` on `D` for some constant `b`. -/
 theorem exists_eq_mulVec_add_of_forall_exists_fderiv_eq (hDo : IsOpen D) (hD : IsPreconnected D)
     (hA : ContDiffOn ℝ 1 A D) (hA' : ContDiffOn ℝ 1 A' D)
     (hinj : ∀ c ∈ D, Injective (fderiv ℝ A c))
-    (hpt : ∀ c ∈ D, ∃ M : GL ι ℤ, ∀ w,
-      fderiv ℝ A' c w = (M : Matrix ι ι ℤ).map (↑) *ᵥ fderiv ℝ A c w) :
-    ∃ (M : GL ι ℤ) (b : ι → ℝ), ∀ c ∈ D, A' c = (M : Matrix ι ι ℤ).map (↑) *ᵥ A c + b := by
+    (hpt : ∀ c ∈ D, ∃ M : Matrix ι ι ℤ, ∀ w, fderiv ℝ A' c w = M.map (↑) *ᵥ fderiv ℝ A c w) :
+    ∃ (M : Matrix ι ι ℤ) (b : ι → ℝ), ∀ c ∈ D, A' c = M.map (↑) *ᵥ A c + b := by
+  classical
   rcases D.eq_empty_or_nonempty with rfl | ⟨c₀, hc₀⟩
   · exact ⟨1, 0, by simp⟩
   choose! M hM using hpt
@@ -165,22 +166,21 @@ theorem exists_eq_mulVec_add_of_forall_exists_fderiv_eq (hDo : IsOpen D) (hD : I
     rw [IsUnit.unit_spec] at hinv
     exact ((hA'.continuousOn_fderiv_of_isOpen hDo le_rfl) c hc).mul
       (hinv.comp_continuousWithinAt ((hA.continuousOn_fderiv_of_isOpen hDo le_rfl) c hc))
-  have hRM {c} (hc : c ∈ D) (w : ι → ℝ) : R c w = (M c : Matrix ι ι ℤ).map (↑) *ᵥ w := by
+  have hRM {c} (hc : c ∈ D) (w : ι → ℝ) : R c w = (M c).map (↑) *ᵥ w := by
     obtain ⟨u, rfl⟩ := hsurj hc w
     rw [← hM c hc, ← mul_apply_eq_comp, mul_assoc,
       Ring.inverse_mul_cancel _ (hunit hc), mul_one]
   -- The entries of `M c` are continuous and integral, hence constant on `D`.
   have hconst {c} (hc : c ∈ D) : M c = M c₀ := by
-    refine Units.ext (Matrix.ext fun i k ↦
-      hD.constant (f := fun c ↦ (M c : Matrix ι ι ℤ) i k) ?_ hc hc₀)
-    have hentry : EqOn (fun c ↦ ((M c : Matrix ι ι ℤ) i k : ℝ)) (fun c ↦ R c (Pi.single k 1) i)
+    refine Matrix.ext fun i k ↦ hD.constant (f := fun c ↦ M c i k) ?_ hc hc₀
+    have hentry : EqOn (fun c ↦ (M c i k : ℝ)) (fun c ↦ R c (Pi.single k 1) i)
         D := fun c hc ↦ by simp [hRM hc, mulVec_single]
     refine Int.isClosedEmbedding_coe_real.isInducing.continuousOn_iff.2 ?_
     exact ((continuous_apply i).comp_continuousOn (hR.clm_apply continuousOn_const)).congr hentry
   -- So `A' - M A` has zero derivative on `D`.
   set N : (ι → ℝ) →L[ℝ] (ι → ℝ) :=
-    LinearMap.toContinuousLinearMap (Matrix.toLin' ((M c₀ : Matrix ι ι ℤ).map (↑)))
-  have hN (w : ι → ℝ) : N w = (M c₀ : Matrix ι ι ℤ).map (↑) *ᵥ w := Matrix.toLin'_apply _ _
+    LinearMap.toContinuousLinearMap (Matrix.toLin' ((M c₀).map (↑)))
+  have hN (w : ι → ℝ) : N w = (M c₀).map (↑) *ᵥ w := Matrix.toLin'_apply _ _
   have hdA {c} (hc : c ∈ D) : DifferentiableAt ℝ A c :=
     (hA.differentiableOn one_ne_zero c hc).differentiableAt (hDo.mem_nhds hc)
   have hdA' {c} (hc : c ∈ D) : DifferentiableAt ℝ A' c :=
@@ -196,6 +196,15 @@ theorem exists_eq_mulVec_add_of_forall_exists_fderiv_eq (hDo : IsOpen D) (hD : I
   refine ⟨M c₀, A' c₀ - N (A c₀), fun c hc ↦ ?_⟩
   rw [← hN, ← hDo.is_const_of_fderiv_eq_zero hD hgd hg hc hc₀]
   abel
+
+/-- If `A' = M A + b` near `c`, then `DA'(c) = M DA(c)`. -/
+private theorem hasFDerivAt_of_eventually_eq_mulVec_add {M : Matrix ι ι ℝ} {b c : ι → ℝ}
+    (hA : DifferentiableAt ℝ A c) (h : ∀ᶠ c' in 𝓝 c, A' c' = M *ᵥ A c' + b) :
+    HasFDerivAt A' ((Matrix.toLin' M).toContinuousLinearMap.comp (fderiv ℝ A c)) c := by
+  refine (((Matrix.toLin' M).toContinuousLinearMap.hasFDerivAt.comp c
+    hA.hasFDerivAt).add_const b).congr_of_eventuallyEq ?_
+  filter_upwards [h] with c' hc'
+  simp [hc']
 
 /-! ### Action variables of a family of lattices -/
 
@@ -214,12 +223,31 @@ theorem exists_eq_mulVec_add_of_forall_mem_iff (hDo : IsOpen D) (hD : IsPreconne
     (hΛ' : ∀ c ∈ D, ∀ v, v ∈ Λ c ↔
       ∃ n : ι → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * fderiv ℝ (fun c ↦ A' c i) c w) :
     ∃ (M : GL ι ℤ) (b : ι → ℝ), ∀ c ∈ D, A' c = (M : Matrix ι ι ℤ).map (↑) *ᵥ A c + b := by
-  refine exists_eq_mulVec_add_of_forall_exists_fderiv_eq hDo hD hA hA' hinj fun c hc ↦ ?_
+  have hdA {c} (hc : c ∈ D) : DifferentiableAt ℝ A c :=
+    (hA.differentiableOn one_ne_zero c hc).differentiableAt (hDo.mem_nhds hc)
   -- At each point the two derivatives are bases of the same lattice.
-  have hdA := (hA.differentiableOn one_ne_zero c hc).differentiableAt (hDo.mem_nhds hc)
-  have hdA' := (hA'.differentiableOn one_ne_zero c hc).differentiableAt (hDo.mem_nhds hc)
-  refine exists_generalLinearGroup_mulVec_eq_of_forall_exists_iff _ _ (hinj c hc) fun v ↦ ?_
-  simpa [fderiv_apply hdA, fderiv_apply hdA'] using (hΛ c hc v).symm.trans (hΛ' c hc v)
+  have hpt {c} (hc : c ∈ D) : ∃ M : GL ι ℤ, ∀ w,
+      fderiv ℝ A' c w = (M : Matrix ι ι ℤ).map (↑) *ᵥ fderiv ℝ A c w := by
+    have hdA' := (hA'.differentiableOn one_ne_zero c hc).differentiableAt (hDo.mem_nhds hc)
+    refine exists_generalLinearGroup_mulVec_eq_of_forall_exists_iff _ _ (hinj c hc) fun v ↦ ?_
+    simpa [fderiv_apply (hdA hc), fderiv_apply hdA'] using (hΛ c hc v).symm.trans (hΛ' c hc v)
+  rcases D.eq_empty_or_nonempty with rfl | ⟨c₀, hc₀⟩
+  · exact ⟨1, 0, by simp⟩
+  obtain ⟨M, b, hMb⟩ := exists_eq_mulVec_add_of_forall_exists_fderiv_eq hDo hD hA hA' hinj
+    fun c hc ↦ (hpt hc).elim fun M hM ↦ ⟨M, hM⟩
+  -- The constant matrix `M` is the invertible matrix relating the derivatives at `c₀`.
+  obtain ⟨M₀, hM₀⟩ := hpt hc₀
+  have hd := hasFDerivAt_of_eventually_eq_mulVec_add (hdA hc₀)
+    (eventually_of_mem (hDo.mem_nhds hc₀) hMb)
+  have hsurj : Surjective (fderiv ℝ A c₀) :=
+    LinearMap.injective_iff_surjective (f := (fderiv ℝ A c₀ : (ι → ℝ) →ₗ[ℝ] (ι → ℝ))).1
+      (hinj c₀ hc₀)
+  have hMM₀ : M = M₀ := by
+    refine Matrix.map_injective (Int.cast_injective (α := ℝ))
+      (Matrix.toLin'.injective (LinearMap.ext fun u ↦ ?_))
+    obtain ⟨w, rfl⟩ := hsurj u
+    simp [← hM₀, hd.fderiv]
+  exact ⟨M₀, b, hMM₀ ▸ hMb⟩
 
 /-- **Integral affine changes of action variables are action variables.** If `A` are action
 variables for a family of lattices `Λ c` over an open set `D`, that is, `v ∈ Λ c` exactly when the
@@ -233,20 +261,15 @@ theorem forall_mem_iff_of_eq_mulVec_add (hDo : IsOpen D) (hA : DifferentiableOn 
       ∃ n : ι → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * fderiv ℝ (fun c ↦ A' c i) c w := by
   intro c hc v
   have hdA := (hA c hc).differentiableAt (hDo.mem_nhds hc)
-  set N : (ι → ℝ) →L[ℝ] (ι → ℝ) :=
-    LinearMap.toContinuousLinearMap (Matrix.toLin' ((M : Matrix ι ι ℤ).map (↑)))
-  have hN (w : ι → ℝ) : N w = (M : Matrix ι ι ℤ).map (↑) *ᵥ w := Matrix.toLin'_apply _ _
-  -- Near `c`, `A' = N ∘ A + b`, so `dA'ᵢ = ∑ₖ Mᵢₖ dAₖ`.
-  have hA'c : HasFDerivAt A' (N.comp (fderiv ℝ A c)) c := by
-    refine ((N.hasFDerivAt.comp c hdA.hasFDerivAt).add_const b).congr_of_eventuallyEq ?_
-    filter_upwards [hDo.mem_nhds hc] with c' hc'
-    simp [hA' c' hc', hN]
+  -- Near `c`, `A' = M A + b`, so `dA'ᵢ = ∑ₖ Mᵢₖ dAₖ`.
+  have hA'c := hasFDerivAt_of_eventually_eq_mulVec_add hdA (eventually_of_mem (hDo.mem_nhds hc) hA')
   -- Hence `∑ᵢ nᵢ dA'ᵢ = ∑ₖ (n M)ₖ dAₖ`.
   have hsum (n : ι → ℤ) (w : ι → ℝ) :
       ∑ i, (n i : ℝ) * fderiv ℝ (fun c ↦ A' c i) c w =
         ∑ k, ((n ᵥ* (M : Matrix ι ι ℤ)) k : ℝ) * fderiv ℝ (fun c ↦ A c k) c w := by
     simp only [fderiv_apply hA'c.differentiableAt, fderiv_apply hdA, hA'c.fderiv,
-      ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply, hN, mulVec, vecMul,
+      ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply,
+      LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply, mulVec, vecMul,
       dotProduct, Finset.mul_sum, Finset.sum_mul, Int.cast_sum, Int.cast_mul, Matrix.map_apply,
       mul_assoc]
     exact Finset.sum_comm
@@ -257,40 +280,6 @@ theorem forall_mem_iff_of_eq_mulVec_add (hDo : IsOpen D) (hA : DifferentiableOn 
     rw [hsum, vecMul_vecMul, ← Units.val_mul, inv_mul_cancel, Units.val_one, vecMul_one, hn]
   · rintro ⟨n, hn⟩
     exact ⟨n ᵥ* (M : Matrix ι ι ℤ), fun w ↦ by rw [hn, hsum]⟩
-
-omit [DecidableEq ι] in
-/-- Action variables whose derivatives are given by continuous periods are `C¹`. -/
-private theorem contDiffOn_of_hasFDerivAt (hDo : IsOpen D)
-    {p : ι → (ι → ℝ) → ι → ℝ} (hp : ∀ i, ContinuousOn (p i) D)
-    (hA : ∀ c ∈ D, ∀ i, HasFDerivAt (fun c ↦ A c i)
-      ((2 * π)⁻¹ • ∑ j, p i c j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c) :
-    ContDiffOn ℝ 1 A D := by
-  refine contDiffOn_pi.2 fun i ↦ ?_
-  rw [← zero_add 1, contDiffOn_succ_iff_fderiv_of_isOpen hDo]
-  refine ⟨fun c hc ↦ (hA c hc i).differentiableAt.differentiableWithinAt, by simp,
-    contDiffOn_zero.2 ?_⟩
-  refine ContinuousOn.congr ?_ fun c hc ↦ (hA c hc i).fderiv
-  exact (continuousOn_const (c := (2 * π)⁻¹)).smul (continuousOn_finsetSum _ fun j _ ↦
-    ((continuous_apply j).comp_continuousOn (hp i)).smul
-      (continuousOn_const (c := (proj j : (ι → ℝ) →L[ℝ] ℝ))))
-
-omit [DecidableEq ι] in
-/-- Action variables whose derivatives are given by linearly independent periods have injective
-derivative. -/
-private theorem injective_fderiv_of_hasFDerivAt {p : ι → (ι → ℝ) → ι → ℝ} {c : ι → ℝ}
-    (hli : LinearIndependent ℝ fun i ↦ p i c)
-    (hA : ∀ i, HasFDerivAt (fun c ↦ A c i)
-      ((2 * π)⁻¹ • ∑ j, p i c j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c) :
-    Injective (fderiv ℝ A c) := by
-  classical
-  have hL (w : ι → ℝ) : fderiv ℝ A c w = (2 * π)⁻¹ • (Matrix.of fun i j ↦ p i c j) *ᵥ w := by
-    rw [(hasFDerivAt_pi.2 hA).fderiv]
-    ext i
-    simp [mulVec, dotProduct, Finset.mul_sum]
-  have hP := Matrix.mulVec_injective_iff_isUnit.2 (Matrix.linearIndependent_row_iff_isUnit.1 hli)
-  intro w w' h
-  rw [hL, hL] at h
-  exact hP (smul_right_injective _ (by positivity) h)
 
 /-! ### Polar coordinates: action variables need not be injective -/
 
@@ -402,9 +391,9 @@ theorem angleMap_sum_smul (P : Matrix ι ι ℝ) (θ c : ι → ℝ) :
     exact Finset.sum_comm
   rw [angleMap_apply, angleMap_apply, hsum]
 
-/-- **Action-angle data are unique up to integral affine changes.** Let `s` be a section of `F`
-over an open preconnected set `D`. Let `λ⁽ⁱ⁾` and `λ'⁽ⁱ⁾` be two continuous families of vectors on
-`D`, the `λ⁽ⁱ⁾(c)` linearly independent, with action variables `A` and `A'`:
+/-- **Along a fixed section, action-angle data are unique up to integral affine changes.** Let `s`
+be a section of `F` over an open preconnected set `D`. Let `λ⁽ⁱ⁾` and `λ'⁽ⁱ⁾` be two continuous
+families of vectors on `D`, the `λ⁽ⁱ⁾(c)` linearly independent, with action variables `A` and `A'`:
 `dAᵢ = (2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ` and `dA'ᵢ = (2π)⁻¹ ∑ⱼ λ'⁽ⁱ⁾ⱼ dcⱼ`. Suppose both describe the period
 lattice: for every `c ∈ D`, `v` is a period of `s c` exactly when `v ⬝ᵥ dc = 2π ∑ᵢ nᵢ dAᵢ` for
 some integers `nᵢ`, and likewise for `A'`. Then there are `P ∈ GL(ι, ℤ)` and `b : ι → ℝ` such
@@ -429,28 +418,22 @@ theorem exists_eq_mulVec_add_and_angleMap_eq (hDo : IsOpen D) (hD : IsPreconnect
       ∀ θ, hσ.angleMap hF hcomm hc s p' (θ, c) =
         hσ.angleMap hF hcomm hc s p (θ ᵥ* (P : Matrix ι ι ℤ).map (↑), c) := by
   obtain ⟨P, b, hPb⟩ := exists_eq_mulVec_add_of_forall_mem_iff hDo hD
-    (contDiffOn_of_hasFDerivAt hDo hp hA)
-    (contDiffOn_of_hasFDerivAt hDo hp' hA')
-    (fun c hcD ↦ injective_fderiv_of_hasFDerivAt (hli c hcD) (hA c hcD)) hΛ hΛ'
+    ((contDiffOn_action_of_hasFDerivAt (n := 0) hDo (fun i ↦ contDiffOn_zero.2 (hp i)) hA).of_le
+      (by simp))
+    ((contDiffOn_action_of_hasFDerivAt (n := 0) hDo (fun i ↦ contDiffOn_zero.2 (hp' i))
+      hA').of_le (by simp))
+    (fun c hcD ↦ injective_fderiv_action_of_hasFDerivAt (hli c hcD) (hA c hcD)) hΛ hΛ'
   refine ⟨P, b, fun c hcD ↦ ⟨hPb c hcD, ?_⟩⟩
   -- Differentiating `A'ᵢ = ∑ₖ Pᵢₖ Aₖ + bᵢ` and comparing with `dA'ᵢ` gives the periods.
   have hper (i : ι) : p' i c = ∑ k, ((P : Matrix ι ι ℤ) i k : ℝ) • p k c := by
-    have hcomp : HasFDerivAt (fun c ↦ A' c i) (∑ k, ((P : Matrix ι ι ℤ) i k : ℝ) •
-        ((2 * π)⁻¹ • ∑ j, p k c j • (proj j : (ι → ℝ) →L[ℝ] ℝ))) c := by
-      refine ((HasFDerivAt.fun_sum fun k _ ↦ (hA c hcD k).const_smul
-        ((P : Matrix ι ι ℤ) i k : ℝ)).add_const (b i)).congr_of_eventuallyEq ?_
-      filter_upwards [hDo.mem_nhds hcD] with c' hc'
-      simp [hPb c' hc', mulVec, dotProduct]
+    have hd := (hasFDerivAt_pi.2 (hA' c hcD)).unique (hasFDerivAt_of_eventually_eq_mulVec_add
+      (hasFDerivAt_pi.2 (hA c hcD)).differentiableAt (eventually_of_mem (hDo.mem_nhds hcD) hPb))
+    rw [(hasFDerivAt_pi.2 (hA c hcD)).fderiv] at hd
     funext j
-    have h := congrArg (· (Pi.single j 1)) ((hA' c hcD i).unique hcomp)
-    simp only [FunLike.coe_smul, FunLike.coe_sum, Pi.smul_apply,
-      Finset.sum_apply, ContinuousLinearMap.proj_apply, Pi.single_apply, smul_eq_mul, mul_ite,
-      mul_one, mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true] at h
-    rw [Finset.sum_apply]
-    simp only [Pi.smul_apply, smul_eq_mul]
-    refine mul_left_cancel₀ (by positivity : (2 * π)⁻¹ ≠ 0) (h.trans ?_)
-    rw [Finset.mul_sum]
-    exact Finset.sum_congr rfl fun k _ ↦ by ring
+    have h : (2 * π)⁻¹ * p' i c j = (2 * π)⁻¹ * ∑ k, ((P : Matrix ι ι ℤ) i k : ℝ) * p k c j := by
+      simpa [Pi.single_apply, mulVec, dotProduct, Finset.mul_sum, mul_left_comm] using
+        congrFun (congrArg (· (Pi.single j 1)) hd) i
+    simpa using mul_left_cancel₀ (by positivity) h
   refine ⟨hper, fun θ ↦ ?_⟩
   rw [← hσ.angleMap_sum_smul hF hcomm hc, angleMap_apply, angleMap_apply]
   simp only [hper, Matrix.map_apply]
