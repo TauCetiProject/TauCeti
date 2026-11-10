@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
-public import Mathlib.RepresentationTheory.Invariants
 public import TauCeti.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Geometry.Manifold.Instances.Quotient
 public import TauCeti.RepresentationTheory.FunLeft
@@ -114,7 +113,9 @@ theorem coe_smoothFunctionRep_apply (g : G) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯
   simp
 
 /-- The invariant vectors of `TauCeti.smoothFunctionRep` are the `C^n` maps that are constant on
-the orbits of `G`. -/
+the orbits of `G`. It has `high` priority so that `simp` prefers it to the generic
+`Representation.mem_invariants`. -/
+@[simp high]
 theorem mem_invariants_smoothFunctionRep_iff {f : C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
     f ∈ (smoothFunctionRep 𝕜 I M F n G).invariants ↔ ∀ (g : G) (x : M), f (g • x) = f x := by
   rw [Representation.mem_invariants]
