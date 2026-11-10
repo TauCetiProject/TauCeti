@@ -383,12 +383,11 @@ theorem exists_contDiff_hasCompactSupport_sobolev_quotient_lt (hn : 2 < finrank 
           (2 / criticalExponent (finrank ℝ E)) < sphereYamabeConstant (finrank ℝ E) + ε := by
   obtain ⟨b, hb⟩ := hΩne
   obtain ⟨χ, hχ, hχrange, hχone, hχc, hχΩ⟩ :=
-    (isCompact_singleton (x := b)).exists_contDiff_cutoff hΩ (singleton_subset_iff.mpr hb)
+    (isCompact_singleton (x := b)).exists_contDiff_cutoff_eventuallyEq_one hΩ
+      (singleton_subset_iff.mpr hb)
   have hχrange' (x : E) : χ x ∈ Icc (0 : ℝ) 1 := hχrange (mem_range_self x)
   have hχle (x : E) : |χ x| ≤ 1 := abs_le.mpr ⟨by linarith [(hχrange' x).1], (hχrange' x).2⟩
-  have hχone' : χ =ᶠ[𝓝 b] fun _ ↦ 1 := by
-    filter_upwards [mem_interior_iff_mem_nhds.mp (hχone (mem_singleton b))] with x hx
-    exact hx
+  have hχone' : χ =ᶠ[𝓝 b] fun _ ↦ 1 := hχone b (mem_singleton b)
   have hm := tendsto_integral_cutoff_bubble_rpow_criticalExponent hn hχ.continuous.measurable hχle
     b hχone'
   have hq := tendsto_cutoff_bubble_sobolev_quotient hn (hχ.of_le (by simp)) hχc hχle b hχone'

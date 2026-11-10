@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Symplectic.Transvection
 public import Mathlib.LinearAlgebra.Projectivization.Action
+import TauCeti.LinearAlgebra.Matrix.Nondegenerate
 
 /-!
 # Transitivity of the symplectic group
@@ -62,7 +63,9 @@ theorem exists_symplecticTransvection_mul_mulVec_eq {x y : Fin (m + m) → K}
     ∃ (v w : Fin (m + m) → K) (a b : K),
       (((symplecticTransvection v a * symplecticTransvection w b : GLSymplecticFin m K) :
           GL (Fin (m + m)) K) : Matrix (Fin (m + m)) (Fin (m + m)) K) *ᵥ x = y := by
-  obtain ⟨z, hzx, hzy⟩ := exists_dotProduct_JFin_mulVec_ne_zero_pair hx hy
+  obtain ⟨z, hzx, hzy⟩ :=
+    (nondegenerate_JFin (m := m) (R := K)).separatingRight
+      |>.exists_not_ortho_and_not_ortho_of_ne_zero_of_ne_zero hx hy
   have hyz : y ⬝ᵥ (JFin m K *ᵥ z) ≠ 0 := by
     rw [dotProduct_JFin_mulVec_eq_neg z y]
     exact neg_ne_zero.mpr hzy

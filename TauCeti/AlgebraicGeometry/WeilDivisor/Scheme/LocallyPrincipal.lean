@@ -30,6 +30,9 @@ hypothesis under which that sheaf is built.
 * `SchemeWeilDivisor.IsLocallyPrincipal D` is the local-principality predicate;
 * `SchemeWeilDivisor.locallyPrincipalSubgroup X` is the subgroup of locally principal Weil
   divisors;
+* `SchemeWeilDivisor.inv_localEquation_mem_sections` and
+  `SchemeWeilDivisor.coeff_eq_of_sections_eq`: the inverse of a local equation is a section of
+  `𝒪_X(D)`, and locally principal divisors with the same sections have the same coefficients;
 * `SchemeWeilDivisor.principalSubgroup_le_locallyPrincipalSubgroup` records that principal
   divisors are locally principal;
 * `WeilDivisor.OrderSystem.LinearlyEquivalent.isLocallyPrincipal_iff` shows that local
@@ -172,6 +175,49 @@ def locallyPrincipalSubgroup (X : Scheme.{u}) [IsIntegral X] [IsLocallyNoetheria
 lemma mem_locallyPrincipalSubgroup {D : SchemeWeilDivisor X} :
     D ∈ locallyPrincipalSubgroup X ↔ IsLocallyPrincipal D :=
   (Iff.rfl)
+
+variable [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+
+/-- The inverse of a local equation for `D` on `U` is a section of `𝒪_X(D)` over `U`: its order
+at a codimension-one point of `U` is exactly `-D`. -/
+lemma inv_localEquation_mem_sections {D : SchemeWeilDivisor X} {U : X.Opens} [Nonempty U]
+    {f : Additive X.functionFieldˣ}
+    (hf : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → WeilDivisor.coeff D y = orderAt y f) :
+    (Scheme.rationalFunctionsEquiv U).symm
+        ((Additive.toMul f : X.functionFieldˣ) : X.functionField)⁻¹ ∈ sections D U := by
+  refine mem_sections.mpr fun y hy ↦ Or.inr ?_
+  rw [LinearEquiv.apply_symm_apply, Scheme.ord_inv, hf y hy, orderAt_apply]
+
+/-- Locally principal divisors with the same sections over every open subset have the same
+coefficient at every codimension-one point: local equations at the point give sections of each
+other's divisor sheaf, which compares the coefficients. -/
+lemma coeff_eq_of_sections_eq {F E : SchemeWeilDivisor X}
+    (hF : IsLocallyPrincipal F) (hE : IsLocallyPrincipal E)
+    (hsec : ∀ U : X.Opens, sections F U = sections E U) (y : CodimensionOnePoint X) :
+    WeilDivisor.coeff F y = WeilDivisor.coeff E y := by
+  obtain ⟨U₁, hy₁, h₁, hh₁⟩ := isLocallyPrincipal_iff.mp hF (y : X)
+  obtain ⟨U₂, hy₂, h₂, hh₂⟩ := isLocallyPrincipal_iff.mp hE (y : X)
+  have hyU : (y : X) ∈ (U₁ ⊓ U₂ : X.Opens) := ⟨hy₁, hy₂⟩
+  have : Nonempty (U₁ ⊓ U₂ : X.Opens) := ⟨⟨_, hyU⟩⟩
+  have m1 : (Scheme.rationalFunctionsEquiv (U₁ ⊓ U₂ : X.Opens)).symm
+      ((Additive.toMul h₁ : X.functionFieldˣ) : X.functionField)⁻¹ ∈
+        sections E (U₁ ⊓ U₂ : X.Opens) := by
+    rw [← hsec]
+    exact inv_localEquation_mem_sections fun z hz ↦ hh₁ z hz.1
+  have m2 : (Scheme.rationalFunctionsEquiv (U₁ ⊓ U₂ : X.Opens)).symm
+      ((Additive.toMul h₂ : X.functionFieldˣ) : X.functionField)⁻¹ ∈
+        sections F (U₁ ⊓ U₂ : X.Opens) := by
+    rw [hsec]
+    exact inv_localEquation_mem_sections fun z hz ↦ hh₂ z hz.2
+  have b1 := (mem_sections.mp m1 y hyU).resolve_left (by
+    simp only [LinearEquiv.apply_symm_apply, inv_eq_zero]
+    exact Units.ne_zero _)
+  have b2 := (mem_sections.mp m2 y hyU).resolve_left (by
+    simp only [LinearEquiv.apply_symm_apply, inv_eq_zero]
+    exact Units.ne_zero _)
+  rw [LinearEquiv.apply_symm_apply, Scheme.ord_inv, ← orderAt_apply, ← hh₁ y hy₁] at b1
+  rw [LinearEquiv.apply_symm_apply, Scheme.ord_inv, ← orderAt_apply, ← hh₂ y hy₂] at b2
+  omega
 
 end LocallyNoetherian
 

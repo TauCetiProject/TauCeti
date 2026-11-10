@@ -52,6 +52,10 @@ unitary group, and is not treated here.
 
 ## Main results
 
+* `TauCeti.Lie.matrixUnitaryEmbeddedLieSubgroupData`: the native matrix unitary subgroup data.
+* `TauCeti.Lie.matrixUnitaryChartedSpace`, `TauCeti.Lie.matrixUnitaryLieGroup`: its native
+  closed-subgroup charts and real Lie-group structure for arbitrary finite matrix indices.
+
 * `TauCeti.Lie.forall_lieExp_mem_unitarySubgroup_iff_mem_skewAdjoint`: in algebra coordinates, the
   abstract exponential line of `x` stays unitary exactly when `x` is skew-adjoint.
 * `TauCeti.Lie.unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_skewAdjoint`:
@@ -124,6 +128,9 @@ section Matrix
 
 -- Select the matrix topology underlying the operator norm used for the general linear Lie group,
 -- together with continuity of the conjugate transpose for it.
+-- Use the normed scalar instance's seminormed parent consistently in native matrix models.
+attribute [local instance] NormedAddCommGroup.toSeminormedAddCommGroup
+
 attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
 
 variable {n 𝕜 : Type*} [Fintype n] [DecidableEq n] [RCLike 𝕜]
@@ -148,6 +155,30 @@ theorem unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_so (A :
       A ∈ LieAlgebra.Orthogonal.so n ℝ :=
   (unitsLieAlgebraLieEquiv_symm_mem_lieSubalgebraOfSubgroup_iff_mem_skewAdjoint A).trans
     (Matrix.mem_so_iff_mem_skewAdjoint A).symm
+
+/-- The native closed-subgroup data of the unitary matrix group. -/
+def matrixUnitaryEmbeddedLieSubgroupData :
+    EmbeddedLieSubgroupData 𝓘(ℝ, Matrix n n 𝕜) (unitarySubgroup (GL n 𝕜))
+      (lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n 𝕜))
+      (unitarySubgroup (GL n 𝕜))).toSubmodule :=
+  EmbeddedLieSubgroupData.ofIsClosed (I := 𝓘(ℝ, Matrix n n 𝕜))
+    (TauCeti.isClosed_unitarySubgroup_units (Matrix n n 𝕜))
+
+variable (n 𝕜) in
+/-- The closed-subgroup charts on the unitary subgroup of `GL n 𝕜`, over `ℝ`. -/
+instance matrixUnitaryChartedSpace :
+    ChartedSpace (lieSubalgebraOfSubgroup
+      (I := 𝓘(ℝ, Matrix n n 𝕜)) (unitarySubgroup (GL n 𝕜))).toSubmodule
+      (unitarySubgroup (GL n 𝕜)) :=
+  (matrixUnitaryEmbeddedLieSubgroupData (n := n) (𝕜 := 𝕜)).chartedSpace
+
+variable (n 𝕜) in
+/-- The real Lie-group structure on the unitary subgroup of `GL n 𝕜`. -/
+instance matrixUnitaryLieGroup :
+    LieGroup 𝓘(ℝ, (lieSubalgebraOfSubgroup
+      (I := 𝓘(ℝ, Matrix n n 𝕜)) (unitarySubgroup (GL n 𝕜))).toSubmodule) ∞
+      (unitarySubgroup (GL n 𝕜)) :=
+  (matrixUnitaryEmbeddedLieSubgroupData (n := n) (𝕜 := 𝕜)).lieGroup
 
 end Matrix
 

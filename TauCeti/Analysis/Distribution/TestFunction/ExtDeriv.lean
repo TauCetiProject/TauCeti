@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Analysis.Distribution.TestFunction
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Normed.Module.Alternating.Uncurry.Fin
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
@@ -101,8 +102,7 @@ theorem extDerivCLM_comp_extDerivCLM :
 theorem tsupport_extDerivCLM_subset (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F)) :
     tsupport (extDerivCLM ω : E → E [⋀^Fin (k + 1)]→L[ℝ] F) ⊆ tsupport ω := by
   rw [coe_extDerivCLM]
-  exact (tsupport_comp_subset (map_zero (alternatizeUncurryFinCLM ℝ E F)) _).trans
-    (tsupport_fderiv_subset ℝ)
+  exact TauCeti.tsupport_extDeriv_subset
 
 /-- The exterior derivative of a test form extended from `Ω'` to a larger open set `Ω` is the
 extension of its exterior derivative. -/

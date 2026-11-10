@@ -32,7 +32,7 @@ open Filter Set
 
 namespace TauCeti
 
-variable {ι β γ : Type*} [TopologicalSpace β] [AddZeroClass β] [ContinuousAdd β]
+variable {ι β γ : Type*} [TopologicalSpace β] [AddZeroClass β]
   [UniformSpace γ] {l : Filter ι} {s : ι → ℝ} {T : Set β} {F : Set (ℝ × β)} {u v : ℝ × β → γ}
 
 /-- Let `u` be continuous on `F`, and let the translated window `[a + s_i, b + s_i] × T`
@@ -51,12 +51,14 @@ theorem tendstoUniformlyOn_Icc_prod_comp_add_and_continuousOn [l.NeBot] {a b : �
       (hv.mono (prod_mono (subset_univ _) le_rfl))
   have hcont : ∀ᶠ i in l, ContinuousOn (fun z ↦ u (z + (s i, 0))) (Icc a b ×ˢ T) := by
     filter_upwards [hW] with i hi
-    refine hu.comp (continuousOn_id.add continuousOn_const) fun z hz ↦ hi ?_
+    have hadd : Continuous fun z : ℝ × β ↦ z + (s i, 0) :=
+      ((continuous_fst.add (continuous_const (y := s i))).prodMk continuous_snd).congr fun z ↦ by
+        ext <;> simp
+    refine hu.comp hadd.continuousOn fun z hz ↦ hi ?_
     obtain ⟨⟨h₁, h₂⟩, h₃⟩ := hz
     exact ⟨⟨by simp [h₁], by simp [h₂]⟩, by simpa using h₃⟩
   exact ⟨hUC, hcont, hUC.continuousOn hcont.frequently⟩
 
-omit [ContinuousAdd β] in
 /-- If the translates `z ↦ u (z + (s_i, 0))` converge locally uniformly on the strip `ℝ × T` to
 `v`, and the values `u (r + s_i, t₀)` and `u (r + s_i, t₁)` at two points `t₀, t₁ ∈ T` eventually
 agree, then `v (r, t₀) = v (r, t₁)`. For instance, a boundary condition `u (s, 0) = u (s, 1)`

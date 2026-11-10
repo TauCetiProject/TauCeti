@@ -11,6 +11,7 @@ public import TauCeti.Geometry.Lie.Exponential.Basic
 public import TauCeti.Geometry.Manifold.Algebra.Monoid
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Monoid
+import TauCeti.Geometry.Manifold.VectorField.Related
 
 /-!
 # The Lie functor on smooth homomorphisms
@@ -93,94 +94,25 @@ private theorem mfderiv_monoidHom_mulInvariantVectorField
   rw [φ.toMonoidHom.groupLieAlgebraMap_apply I X]
   exact h
 
-private theorem tangent_comp_monoidHom
-    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (g : G)
-    (X : GroupLieAlgebra I G) (f : G' → ℝ) (hf : ContMDiff I' 𝓘(ℝ, ℝ) ∞ f) :
-    mvfderiv I' f (φ g) (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X) (φ g)) =
-      mvfderiv I (f ∘ φ) g (mulInvariantVectorField X g) := by
-  rw [← mfderiv_monoidHom_mulInvariantVectorField φ g X]
-  exact (mfderiv_comp_apply g
-    (hf.mdifferentiable (by simp)).mdifferentiableAt
-    (φ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt
-    (mulInvariantVectorField X g)).symm
-
 /-- The differential at the identity of a smooth homomorphism preserves the Lie bracket of the
 tangent Lie algebras. -/
 theorem ContMDiffMonoidMorphism.groupLieAlgebraMap_lie
-    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    [CompleteSpace E] [CompleteSpace E']
     (φ : ContMDiffMonoidMorphism I I' ∞ G G')
     (X Y : GroupLieAlgebra I G) :
     φ.toMonoidHom.groupLieAlgebraMap I I' ⁅X, Y⁆ =
       ⁅φ.toMonoidHom.groupLieAlgebraMap I I' X, φ.toMonoidHom.groupLieAlgebraMap I I' Y⁆ := by
-  let _ : T2Space G' := I'.t2Space_of_lieGroup ∞
-  apply tangentToPointDerivation_injective (I := I') (1 : G')
-  ext f
-  let F : C^∞⟮I', G'; ℝ⟯ := f
-  -- The separating point derivations evaluate by `mvfderiv`; expose those applications so the
-  -- bracket computation can use the public directional-derivative API.
-  change mvfderiv I' F 1 (φ.toMonoidHom.groupLieAlgebraMap I I' ⁅X, Y⁆) =
-    mvfderiv I' F 1
-      ⁅φ.toMonoidHom.groupLieAlgebraMap I I' X, φ.toMonoidHom.groupLieAlgebraMap I I' Y⁆
-  rw [GroupLieAlgebra.bracket_def (v := X) (w := Y)]
-  rw [GroupLieAlgebra.bracket_def
-    (v := φ.toMonoidHom.groupLieAlgebraMap I I' X) (w := φ.toMonoidHom.groupLieAlgebraMap I I' Y)]
-  have hsourceBracket :
-      mlieBracket I (mulInvariantVectorField X) (mulInvariantVectorField Y) 1 = ⁅X, Y⁆ :=
-    (GroupLieAlgebra.bracket_def X Y).symm
-  rw [hsourceBracket]
-  have htarget :
-      mlieBracket I' (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X))
-          (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y)) 1 =
-        mulInvariantVectorField
-          (mlieBracket I' (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X))
-            (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y)) 1) 1 := by
-    rw [mulInvariantVectorField_one]
-  rw [htarget]
-  have hsource := tangent_comp_monoidHom φ 1 ⁅X, Y⁆ F F.contMDiff
-  rw [map_one] at hsource
-  simp only [mulInvariantVectorField_one] at hsource
-  -- `hsource` still presents the target direction through its invariant field at one; expose its
-  -- canonical tangent representative before rewriting by the chain-rule equality.
-  change mvfderiv I' F 1 (φ.toMonoidHom.groupLieAlgebraMap I I' ⁅X, Y⁆) = _ at hsource
-  rw [hsource, ← hsourceBracket, mulInvariantVectorField_one]
-  rw [mvfderiv_mlieBracket
-    (f := (F : G' → ℝ) ∘ φ)
-    (V := mulInvariantVectorField X) (W := mulInvariantVectorField Y) (x := (1 : G))
-    (F.contMDiff.comp φ.contMDiff_toFun).contMDiffAt
-    (by simp)
-    ((contMDiff_mulInvariantVectorField_infty X).mdifferentiable (by simp)).mdifferentiableAt
-    ((contMDiff_mulInvariantVectorField_infty Y).mdifferentiable (by simp)).mdifferentiableAt]
-  rw [mvfderiv_mlieBracket
-    (f := (F : G' → ℝ))
-    (V := mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X))
-    (W := mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y)) (x := (1 : G'))
-    F.contMDiff.contMDiffAt
-    (by simp)
-    ((contMDiff_mulInvariantVectorField_infty
-      (φ.toMonoidHom.groupLieAlgebraMap I I' X)).mdifferentiable (by simp)).mdifferentiableAt
-    ((contMDiff_mulInvariantVectorField_infty
-      (φ.toMonoidHom.groupLieAlgebraMap I I' Y)).mdifferentiable (by simp)).mdifferentiableAt]
-  let FY : G' → ℝ := fun y ↦
-    mvfderiv I' F y (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y) y)
-  let FX : G' → ℝ := fun y ↦
-    mvfderiv I' F y (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X) y)
-  have hFY : ContMDiff I' 𝓘(ℝ, ℝ) ∞ FY :=
-    contMDiff_mvfderiv_mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y) F
-  have hFX : ContMDiff I' 𝓘(ℝ, ℝ) ∞ FX :=
-    contMDiff_mvfderiv_mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X) F
-  have hYfun : FY ∘ φ = fun y ↦
-      mvfderiv I (F ∘ φ) y (mulInvariantVectorField Y y) := by
-    funext g
-    exact tangent_comp_monoidHom φ g Y F F.contMDiff
-  have hXfun : FX ∘ φ = fun y ↦
-      mvfderiv I (F ∘ φ) y (mulInvariantVectorField X y) := by
-    funext g
-    exact tangent_comp_monoidHom φ g X F F.contMDiff
-  have houterY := tangent_comp_monoidHom φ 1 X FY hFY
-  have houterX := tangent_comp_monoidHom φ 1 Y FX hFX
-  rw [map_one, hYfun] at houterY
-  rw [map_one, hXfun] at houterX
-  exact congrArg₂ (· - ·) houterY.symm houterX.symm
+  have h := TauCeti.mfderiv_mlieBracket_of_eventually_related (I := I') (J := I) (n := ∞)
+    (f := ⇑φ) (y := (1 : G)) φ.contMDiff_toFun.contMDiffAt (by simp)
+    (mdifferentiableAt_mulInvariantVectorField X) (mdifferentiableAt_mulInvariantVectorField Y)
+    (mdifferentiableAt_mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X))
+    (mdifferentiableAt_mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y))
+    (Filter.Eventually.of_forall fun g => mfderiv_monoidHom_mulInvariantVectorField φ g X)
+    (Filter.Eventually.of_forall fun g => mfderiv_monoidHom_mulInvariantVectorField φ g Y)
+  rw [φ.toMonoidHom.groupLieAlgebraMap_apply I, GroupLieAlgebra.bracket_def X Y,
+    GroupLieAlgebra.bracket_def]
+  rw [map_one] at h
+  exact h
 
 /-- The Lie functor on morphisms: the differential at the identity of a smooth homomorphism. -/
 noncomputable def lieMap [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']

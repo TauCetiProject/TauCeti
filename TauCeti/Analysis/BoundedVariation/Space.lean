@@ -304,12 +304,13 @@ theorem toL1CLM_injective : Function.Injective (toL1CLM : BV μ Ω →L[ℝ] _) 
   toL1_injective
 
 private theorem variation_sub_limit_le {u : ℕ → BV μ Ω} {v : E →₁[μ.restrict Ω] ℝ}
-    (hv : Tendsto (fun n => (u n).toL1) atTop (𝓝 v)) (N M : ℕ) {C : ℝ} (hC : 0 ≤ C)
+    (hv : Tendsto (fun n => (u n).toL1) atTop (𝓝 v)) (N M : ℕ) {C : ℝ}
     (hbound : ∀ n ≥ N, ‖u n - u M‖ ≤ C) :
     totalVariationOn μ Ω (v - (u M).toL1 : E →₁[μ.restrict Ω] ℝ) ≤ ENNReal.ofReal C := by
   refine totalVariationOn_le_of_tendsto_L1 (hv.sub tendsto_const_nhds) (Eventually.frequently ?_)
   filter_upwards [eventually_ge_atTop N] with n hn
   rw [← toL1_sub]
+  have hC : 0 ≤ C := (norm_nonneg _).trans (hbound N le_rfl)
   apply (ENNReal.le_ofReal_iff_toReal_le (u n - u M).totalVariationOn_lt_top.ne hC).mpr
   exact (le_add_of_nonneg_left (norm_nonneg (u n - u M).toL1)).trans (hbound n hn)
 
@@ -322,7 +323,7 @@ instance instCompleteSpace : CompleteSpace (BV μ Ω) :=
     obtain ⟨v, hv⟩ := cauchySeq_tendsto_of_complete huL1
     obtain ⟨N₀, hN₀⟩ := Metric.cauchySeq_iff.mp hu 1 zero_lt_one
     have hvar : totalVariationOn μ Ω (v - (u N₀).toL1 : E →₁[μ.restrict Ω] ℝ) < ∞ :=
-      (variation_sub_limit_le hv N₀ N₀ zero_le_one fun n hn => by
+      (variation_sub_limit_le hv N₀ N₀ fun n hn => by
         simpa only [dist_eq_norm] using (hN₀ n hn N₀ le_rfl).le).trans_lt (by finiteness)
     have hvBV : MemBV μ Ω v := by
       apply memBV_iff.mpr
@@ -343,7 +344,7 @@ instance instCompleteSpace : CompleteSpace (BV μ Ω) :=
     have hsmall (n : ℕ) (hn : N ≤ n) : ‖f - u n‖ ≤ ε / 2 := by
       have hbound : ∀ m ≥ N, ‖u m - u n‖ ≤ ε / 4 := fun m hm => by
         simpa only [dist_eq_norm] using (hN m hm n hn).le
-      have hvar' := variation_sub_limit_le hv N n (by positivity : 0 ≤ ε / 4) hbound
+      have hvar' := variation_sub_limit_le hv N n hbound
       have hL1 : ‖v - (u n).toL1‖ ≤ ε / 4 := by
         apply le_of_tendsto ((hv.sub tendsto_const_nhds).norm)
         filter_upwards [eventually_ge_atTop N] with m hm

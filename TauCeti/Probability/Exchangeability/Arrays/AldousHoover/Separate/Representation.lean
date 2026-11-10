@@ -152,6 +152,33 @@ private theorem exists_map_cellCoding_visibleArray_eq [StandardBorelSpace α] [N
     ← Measure.map_map hread hcode, hGcode, Measure.map_map hread hHV]
   rfl
 
+/-- **The separate coding is the cell coding after the strip coding.** If a measurable map `W`
+of the global, row and column noise sends the noise to a law `ν` on the hidden block and strips,
+and the cell coding `G` fed by `ν` and independent cell noise has law `κ`, then any separate
+coding `F` that sorts the four noise families into `G`'s arguments has law `κ`. -/
+private theorem map_separateArray_eq_of_cellCoding
+    {G : ((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α) → I → α} (hG : Measurable (Function.uncurry G))
+    {W : (I × (ℕ → I) × (ℕ → I)) → (ℕ × ℕ → α) × (ℕ → ℕ → α) × (ℕ → ℕ → α)}
+    (hW : Measurable W) {ν : Measure ((ℕ × ℕ → α) × (ℕ → ℕ → α) × (ℕ → ℕ → α))}
+    {κ : Measure (ℕ × ℕ → α)}
+    (hWlaw : ((volume : Measure I).prod
+      ((Measure.infinitePi fun _ : ℕ => (volume : Measure I)).prod
+        (Measure.infinitePi fun _ : ℕ => (volume : Measure I)))).map W = ν)
+    (hGcode : (ν.prod (Measure.infinitePi fun _ : ℕ × ℕ => (volume : Measure I))).map
+      (fun (q : ((ℕ × ℕ → α) × (ℕ → ℕ → α) × (ℕ → ℕ → α)) × (ℕ × ℕ → I)) p =>
+        G ((q.1.1, q.1.2.1 p.1), q.1.2.2 p.2) (q.2 p)) = κ)
+    {F : I × I × I × I → α}
+    (hcode : (fun (u : NoiseIndex Axis (ℕ × ℕ) → I) (p : ℕ × ℕ) => separateArray F p u) =
+      (fun (q : ((ℕ × ℕ → α) × (ℕ → ℕ → α) × (ℕ → ℕ → α)) × (ℕ × ℕ → I)) (p : ℕ × ℕ) =>
+        G ((q.1.1, q.1.2.1 p.1), q.1.2.2 p.2) (q.2 p)) ∘
+        Prod.map W id ∘ splitSeparateNoise) :
+    (noiseMeasure Axis (ℕ × ℕ)).map (fun u p => separateArray F p u) = κ := by
+  have hΨ := measurable_stripCellCoding hG
+  rw [hcode, ← Measure.map_map hΨ ((hW.prodMap measurable_id).comp measurable_splitSeparateNoise),
+    ← Measure.map_map (hW.prodMap measurable_id) measurable_splitSeparateNoise,
+    map_splitSeparateNoise_noiseMeasure, ← Measure.map_prod_map _ _ hW measurable_id,
+    Measure.map_id, hWlaw, hGcode]
+
 /-- **The Aldous--Hoover representation of a separately exchangeable array.** Every separately
 exchangeable probability law `ρ` on arrays with values in a standard Borel space is the law of a
 measurable separate Aldous--Hoover coding: there is a measurable `F : I × I × I × I → α` with `ρ`
@@ -208,22 +235,12 @@ theorem SeparatelyExchangeable.exists_map_separateArray_eq [StandardBorelSpace �
     rw [← Measure.map_map hVc (hφ.prodMap measurable_id),
       ← Measure.map_prod_map _ _ hφ measurable_id, Measure.map_id,
       hφB, hrc]
-  -- Sorting the noise into its four families, the separate coding is the cell coding after `W`.
-  have hΨ := measurable_stripCellCoding hG
-  have hcode : (fun (u : NoiseIndex Axis (ℕ × ℕ) → I) (p : ℕ × ℕ) => separateArray
-      (fun t : I × I × I × I => G ((φ t.1, r (φ t.1) t.2.1), c (φ t.1) t.2.2.1) t.2.2.2) p u) =
-      (fun (q : ((ℕ × ℕ → α) × (ℕ → ℕ → α) × (ℕ → ℕ → α)) × (ℕ × ℕ → I)) (p : ℕ × ℕ) =>
-        G ((q.1.1, q.1.2.1 p.1), q.1.2.2 p.2) (q.2 p)) ∘
-        Prod.map W id ∘ splitSeparateNoise := by
-    funext u p
-    simp [separateArray_apply, W]
-  rw [hcode, ← Measure.map_map hΨ ((hW.prodMap measurable_id).comp measurable_splitSeparateNoise),
-    ← Measure.map_map (hW.prodMap measurable_id) measurable_splitSeparateNoise,
-    map_splitSeparateNoise_noiseMeasure, ← Measure.map_prod_map _ _ hW measurable_id,
-    Measure.map_id, hWlaw, hGcode]
   -- The array read along the odd indices has the law of the whole array.
-  exact (hρ.map_arrayBlock_eq (fun p => (measurable_pi_apply p).aemeasurable) hg hg).trans
-    Measure.map_id'
+  refine (map_separateArray_eq_of_cellCoding hG hW hWlaw hGcode ?_).trans
+    ((hρ.map_arrayBlock_eq (fun p => (measurable_pi_apply p).aemeasurable) hg hg).trans
+      Measure.map_id')
+  funext u p
+  simp [separateArray_apply, W]
 
 /-- **Separately exchangeable arrays are exactly the Aldous--Hoover codings in law.** An array
 process with a.e.-measurable entries in a standard Borel space, on a probability space, is

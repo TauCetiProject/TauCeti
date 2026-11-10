@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Logic.Equiv.Option
 public import TauCeti.RingTheory.KrullSchmidt.Exchange
 import Mathlib.RingTheory.LocalRing.RingHom.Basic
 
@@ -139,19 +140,9 @@ private theorem exists_equiv_linearEquiv_aux :
     (fun i ↦ have := hPloc i; (hPP' i).some.conjRingEquiv.isLocalRing) hQi hQs
     (fun j ↦ (hQind j).of_linearEquiv (hQQ' j).some.symm)
   -- Extend the matching by `i₀ ↦ j₀`.
-  refine ⟨(Equiv.optionSubtypeNe i₀).symm.trans
-    ((Equiv.optionCongr e').trans (Equiv.optionSubtypeNe j₀)), fun i ↦ ?_⟩
-  rcases eq_or_ne i i₀ with rfl | hi
-  · refine ⟨?_⟩
-    have hnone : ((Equiv.optionSubtypeNe i).symm.trans
-        ((Equiv.optionCongr e').trans (Equiv.optionSubtypeNe j₀))) i = j₀ := by
-      rw [Equiv.trans_apply, Equiv.trans_apply, Equiv.optionSubtypeNe_symm_self]
-      rfl
-    rw [hnone]
-    exact e₀
-  · rw [Equiv.trans_apply, Equiv.trans_apply, Equiv.optionSubtypeNe_symm_of_ne hi,
-      Equiv.optionCongr_apply, Option.map_some, Equiv.optionSubtypeNe_some]
-    exact ⟨(hPP' ⟨i, hi⟩).some ≪≫ₗ (he' ⟨i, hi⟩).some ≪≫ₗ (hQQ' (e' ⟨i, hi⟩)).some⟩
+  exact Equiv.exists_equiv_forall_of_equiv_subtype_ne
+    (R := fun i j ↦ Nonempty (P i ≃ₗ[A] Q j)) e' ⟨e₀⟩ fun i ↦
+    ⟨(hPP' i).some ≪≫ₗ (he' i).some ≪≫ₗ (hQQ' (e' i)).some⟩
 
 /-! ### The Krull-Schmidt theorem -/
 

@@ -78,6 +78,104 @@ private theorem coeff_logOf_eq_iteratedDeriv_of_deriv_eq (f : ℂ⟦X⟧)
       field_simp at hb ⊢
       exact hb
 
+/-- A zero-free analytic sum on a ball inside the disk of convergence has a holomorphic
+logarithm there: some `L` with `exp ∘ L` equal to the sum. -/
+private theorem exists_differentiableOn_exp_comp_ofScalarsSum_of_zeroFree (f : ℂ⟦X⟧)
+    {R : NNReal} (hRpos : 0 < R)
+    (hR : (R : ENNReal) ≤ (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).radius)
+    (hne : ∀ z : ℂ, ‖z‖ₑ < R →
+      FormalMultilinearSeries.ofScalarsSum (E := ℂ) (fun n ↦ coeff n f) z ≠ 0) :
+    ∃ L : ℂ → ℂ, DifferentiableOn ℂ L (Metric.ball 0 R) ∧
+      Set.EqOn (Complex.exp ∘ L)
+        (FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f) (Metric.ball 0 R) := by
+  have hRposE : (0 : ENNReal) < (R : ENNReal) := by exact_mod_cast hRpos
+  have hfr : 0 < (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).radius :=
+    hRposE.trans_le hR
+  have hFseries :=
+    ((FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).hasFPowerSeriesOnBall hfr).mono
+      hRposE hR
+  have hmem : ∀ w ∈ Metric.ball (0 : ℂ) R, ‖w‖ₑ < (R : ENNReal) := fun w hw ↦ by
+    rw [enorm_lt_coe]
+    exact NNReal.coe_lt_coe.mp (by simpa using Metric.mem_ball.mp hw)
+  have hFd : DifferentiableOn ℂ
+      (FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f) (Metric.ball 0 R) := by
+    intro w hw
+    have hw' : w ∈ Metric.eball (0 : ℂ) (R : ENNReal) := by
+      rw [Metric.mem_eball, edist_zero_right]
+      exact hmem w hw
+    exact (hFseries.analyticAt_of_mem hw').differentiableAt.differentiableWithinAt
+  have hFzero : (0 : ℂ) ∉
+      (FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f) '' Metric.ball 0 R := by
+    rintro ⟨w, hw, hw0⟩
+    exact hne w (hmem w hw) hw0
+  have hsc : IsSimplyConnected (Metric.ball (0 : ℂ) R) := by
+    have : ContractibleSpace (Metric.ball (0 : ℂ) R) := Metric.contractibleSpace_ball hRpos
+    exact SimplyConnectedSpace.ofContractible _
+  exact TauCeti.exists_differentiableOn_eqOn_exp_comp hsc Metric.isOpen_ball hFd hFzero
+
+/-- Normalising a holomorphic logarithm of the analytic sum of `f` at zero gives a logarithm `L₀`
+vanishing at zero whose derivative is the logarithmic derivative of the sum near zero. -/
+private theorem exists_normalized_log_ofScalarsSum (f : ℂ⟦X⟧) (hf0 : constantCoeff f = 1)
+    {R : NNReal} (hRpos : 0 < R) {L : ℂ → ℂ} (hLd : DifferentiableOn ℂ L (Metric.ball 0 R))
+    (hLexp : Set.EqOn (Complex.exp ∘ L)
+      (FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f) (Metric.ball 0 R)) :
+    ∃ L₀ : ℂ → ℂ, L₀ 0 = 0 ∧ DifferentiableOn ℂ L₀ (Metric.ball 0 R) ∧
+      Set.EqOn (Complex.exp ∘ L₀)
+        (FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f) (Metric.ball 0 R) ∧
+      deriv L₀ =ᶠ[𝓝 0]
+        _root_.logDeriv (FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f) := by
+  have hzeroBall : (0 : ℂ) ∈ Metric.ball 0 R := Metric.mem_ball_self hRpos
+  have hF0 : FormalMultilinearSeries.ofScalarsSum (E := ℂ) (fun n ↦ coeff n f) 0 = 1 := by
+    simpa [FormalMultilinearSeries.ofScalarsSum_zero, constantCoeff] using hf0
+  have hLexp0 : Complex.exp (L 0) = 1 := by
+    rw [← hF0]
+    exact hLexp hzeroBall
+  refine ⟨fun w ↦ L w - L 0, by simp, hLd.sub (differentiableOn_const (c := L 0)), ?_, ?_⟩
+  · intro w hw
+    simp only [Function.comp_apply, Complex.exp_sub, hLexp0, div_one]
+    exact hLexp hw
+  · filter_upwards [Metric.isOpen_ball.mem_nhds hzeroBall] with w hw
+    have hLdw : DifferentiableAt ℂ L w := (hLd w hw).differentiableAt
+      (Metric.isOpen_ball.mem_nhds hw)
+    rw [(hLdw.hasDerivAt.sub_const (L 0)).deriv]
+    exact TauCeti.deriv_eq_logDeriv_of_eqOn_exp_comp Metric.isOpen_ball hLd hLexp hw
+
+/-- If `L₀` is a holomorphic function on a disk vanishing at zero and with the logarithmic
+derivative of the sum of `f` as derivative near zero, then the formal logarithm of `f` is its
+Taylor series, which sums to `L₀ z` for every `z` in a smaller open disk. -/
+private theorem hasSum_coeff_logOf_mul_pow_of_deriv_eq (f : ℂ⟦X⟧) (hf0 : constantCoeff f = 1)
+    (hfr : 0 < (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).radius)
+    {R₁ R₂ : NNReal} (hR₂pos : 0 < R₂) (hR₁R₂ : (R₁ : ENNReal) < R₂) {L₀ : ℂ → ℂ}
+    (hL₀zero : L₀ 0 = 0) (hL₀d : DifferentiableOn ℂ L₀ (Metric.ball 0 R₂))
+    (hderiv : deriv L₀ =ᶠ[𝓝 0]
+      _root_.logDeriv (FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f))
+    {z : ℂ} (hzR₁ : ‖z‖ₑ < R₁) :
+    HasSum (fun n : ℕ ↦ coeff n (logOf f) * z ^ n) (L₀ z) := by
+  have hL₀a : AnalyticAt ℂ L₀ 0 := by
+    rw [Complex.analyticAt_iff_eventually_differentiableAt]
+    filter_upwards [Metric.isOpen_ball.mem_nhds (Metric.mem_ball_self hR₂pos)] with w hw
+    exact (hL₀d w hw).differentiableAt (Metric.isOpen_ball.mem_nhds hw)
+  have hformal : (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n (logOf f)) =
+      FormalMultilinearSeries.ofScalars ℂ (fun n ↦ iteratedDeriv n L₀ 0 / n.factorial) := by
+    congr 1
+    funext n
+    exact coeff_logOf_eq_iteratedDeriv_of_deriv_eq f hf0 hfr L₀ hL₀zero hderiv n
+  obtain ⟨r₀, hr₀⟩ := hL₀a.hasFPowerSeriesAt
+  rw [← hformal] at hr₀
+  have hR₁pos : 0 < R₁ := by
+    have : (0 : ENNReal) < (R₁ : ENNReal) := (bot_le : (0 : ENNReal) ≤ ‖z‖ₑ).trans_lt hzR₁
+    exact_mod_cast this
+  have hclosed : Metric.closedBall (0 : ℂ) R₁ ⊆ Metric.ball 0 R₂ := by
+    intro w hw
+    rw [Metric.mem_closedBall, dist_zero_right] at hw
+    rw [Metric.mem_ball, dist_zero_right]
+    exact hw.trans_lt (by exact_mod_cast hR₁R₂)
+  have hlogSeries := hr₀.exchange_radius ((hL₀d.mono hclosed).hasFPowerSeriesOnBall hR₁pos)
+  have hzBall : z ∈ Metric.eball (0 : ℂ) (R₁ : ENNReal) := by
+    rw [Metric.mem_eball, edist_zero_right]
+    exact hzR₁
+  simpa [mul_comm] using hlogSeries.hasSum hzBall
+
 /-- **The evaluated formal logarithm exponentiates to the original power series.** If a complex
 power series has constant coefficient one and is zero-free in a disk of convergence, then its
 formal logarithm converges throughout that disk and its exponential is the analytic sum of the
@@ -91,97 +189,22 @@ theorem exp_tsum_coeff_logOf_mul_pow_of_zeroFree (f : ℂ⟦X⟧)
     {z : ℂ} (hz : ‖z‖ₑ < r) :
     Complex.exp (∑' n : ℕ, coeff n (logOf f) * z ^ n) =
       FormalMultilinearSeries.ofScalarsSum (E := ℂ) (fun n ↦ coeff n f) z := by
-  let F := FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f
-  let G := _root_.logDeriv F
   -- Choose nested disks: the outer disk supports a logarithm, and the inner one supports
   -- its Taylor expansion at zero and contains the evaluation point.
   obtain ⟨R₂, hzR₂, hR₂r⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hz
   obtain ⟨R₁, hzR₁, hR₁R₂⟩ := ENNReal.lt_iff_exists_nnreal_btwn.mp hzR₂
   have hR₂pos : 0 < R₂ := by
-    have : (0 : ENNReal) < (R₂ : ENNReal) :=
-      (bot_le : (0 : ENNReal) ≤ ‖z‖ₑ).trans_lt hzR₂
+    have : (0 : ENNReal) < (R₂ : ENNReal) := (bot_le : (0 : ENNReal) ≤ ‖z‖ₑ).trans_lt hzR₂
     exact_mod_cast this
-  have hR₂posE : (0 : ENNReal) < (R₂ : ENNReal) := by exact_mod_cast hR₂pos
   have hfr : 0 < (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).radius :=
-    hR₂posE.trans (hR₂r.trans_le hr)
-  have hFseries :=
-    ((FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).hasFPowerSeriesOnBall hfr).mono
-      hR₂posE (hR₂r.le.trans hr)
-  have hFd : DifferentiableOn ℂ F (Metric.ball 0 R₂) := by
-    intro w hw
-    have hw' : w ∈ Metric.eball (0 : ℂ) (R₂ : ENNReal) := by
-      rw [Metric.mem_eball, edist_zero_right, enorm_lt_coe]
-      exact NNReal.coe_lt_coe.mp (by simpa using Metric.mem_ball.mp hw)
-    exact (hFseries.analyticAt_of_mem hw').differentiableAt.differentiableWithinAt
-  have hFzero : (0 : ℂ) ∉ F '' Metric.ball 0 R₂ := by
-    rintro ⟨w, hw, hw0⟩
-    apply hne w
-    · have hwR₂ : ‖w‖ₑ < (R₂ : ENNReal) := by
-        rw [enorm_lt_coe]
-        exact NNReal.coe_lt_coe.mp (by simpa using Metric.mem_ball.mp hw)
-      exact hwR₂.trans hR₂r
-    · exact hw0
-  have hsc : IsSimplyConnected (Metric.ball (0 : ℂ) R₂) := by
-    have : ContractibleSpace (Metric.ball (0 : ℂ) R₂) :=
-      Metric.contractibleSpace_ball hR₂pos
-    exact SimplyConnectedSpace.ofContractible _
-  obtain ⟨L, hLd, hLexp⟩ := TauCeti.exists_differentiableOn_eqOn_exp_comp
-    hsc Metric.isOpen_ball hFd hFzero
+    (by exact_mod_cast hR₂pos : (0 : ENNReal) < R₂).trans (hR₂r.trans_le hr)
+  obtain ⟨L, hLd, hLexp⟩ := exists_differentiableOn_exp_comp_ofScalarsSum_of_zeroFree f hR₂pos
+    (hR₂r.le.trans hr) fun w hw ↦ hne w (hw.trans hR₂r)
   -- Normalize the analytic logarithm at zero; this removes the integral multiple of 2πi.
-  let L₀ : ℂ → ℂ := fun w ↦ L w - L 0
-  have hzeroBall : (0 : ℂ) ∈ Metric.ball 0 R₂ := Metric.mem_ball_self hR₂pos
-  have hF0 : F 0 = 1 := by
-    simpa [F, FormalMultilinearSeries.ofScalarsSum_zero, constantCoeff] using hf0
-  have hLexp0 : Complex.exp (L 0) = 1 := by
-    rw [← hF0]
-    exact hLexp hzeroBall
-  have hL₀d : DifferentiableOn ℂ L₀ (Metric.ball 0 R₂) :=
-    hLd.sub (differentiableOn_const (c := L 0))
-  have hL₀exp : Set.EqOn (Complex.exp ∘ L₀) F (Metric.ball 0 R₂) := by
-    intro w hw
-    simp only [Function.comp_apply, L₀, Complex.exp_sub, hLexp0, div_one]
-    exact hLexp hw
-  have hderiv : deriv L₀ =ᶠ[𝓝 0] G := by
-    filter_upwards [Metric.isOpen_ball.mem_nhds hzeroBall] with w hw
-    have hLdw : DifferentiableAt ℂ L w := (hLd w hw).differentiableAt
-      (Metric.isOpen_ball.mem_nhds hw)
-    have hsub : deriv L₀ w = deriv L w := (hLdw.hasDerivAt.sub_const (L 0)).deriv
-    rw [hsub]
-    exact TauCeti.deriv_eq_logDeriv_of_eqOn_exp_comp Metric.isOpen_ball hLd hLexp hw
-  have hL₀a : AnalyticAt ℂ L₀ 0 := by
-    rw [Complex.analyticAt_iff_eventually_differentiableAt]
-    filter_upwards [Metric.isOpen_ball.mem_nhds hzeroBall] with w hw
-    exact (hL₀d w hw).differentiableAt (Metric.isOpen_ball.mem_nhds hw)
-  -- The coefficient lemma identifies this normalized logarithm with the formal log.
-  have hcoeff : (fun n ↦ coeff n (logOf f)) =
-      fun n ↦ iteratedDeriv n L₀ 0 / n.factorial := by
-    funext n
-    exact coeff_logOf_eq_iteratedDeriv_of_deriv_eq f hf0 hfr L₀ (by simp [L₀]) hderiv n
-  have hformal : (FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n (logOf f)) =
-      FormalMultilinearSeries.ofScalars ℂ
-        (fun n ↦ iteratedDeriv n L₀ 0 / n.factorial) := by
-    rw [hcoeff]
-  -- Exchange the Taylor radius with the inner disk, then evaluate the series at z.
-  have hTaylor := hL₀a.hasFPowerSeriesAt
-  rw [← hformal] at hTaylor
-  have hR₁pos : 0 < R₁ := by
-    have : (0 : ENNReal) < (R₁ : ENNReal) :=
-      (bot_le : (0 : ENNReal) ≤ ‖z‖ₑ).trans_lt hzR₁
-    exact_mod_cast this
-  have hclosed : Metric.closedBall (0 : ℂ) R₁ ⊆ Metric.ball 0 R₂ := by
-    intro w hw
-    rw [Metric.mem_closedBall, dist_zero_right] at hw
-    rw [Metric.mem_ball, dist_zero_right]
-    exact hw.trans_lt (by exact_mod_cast hR₁R₂)
-  have hR₁series := (hL₀d.mono hclosed).hasFPowerSeriesOnBall hR₁pos
-  obtain ⟨r₀, hr₀⟩ := hTaylor
-  have hlogSeries := hr₀.exchange_radius hR₁series
-  have hzBall : z ∈ Metric.eball (0 : ℂ) (R₁ : ENNReal) := by
-    rw [Metric.mem_eball, edist_zero_right]
-    exact hzR₁
-  have hsum : HasSum (fun n : ℕ ↦ coeff n (logOf f) * z ^ n) (L₀ z) := by
-    simpa [mul_comm] using hlogSeries.hasSum hzBall
-  rw [hsum.tsum_eq]
+  obtain ⟨L₀, hL₀zero, hL₀d, hL₀exp, hderiv⟩ :=
+    exists_normalized_log_ofScalarsSum f hf0 hR₂pos hLd hLexp
+  rw [(hasSum_coeff_logOf_mul_pow_of_deriv_eq f hf0 hfr hR₂pos hR₁R₂ hL₀zero hL₀d hderiv
+    hzR₁).tsum_eq]
   exact hL₀exp (by
     rw [Metric.mem_ball, dist_zero_right]
     exact_mod_cast hzR₂)

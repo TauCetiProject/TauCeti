@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Pi
+public import Mathlib.Algebra.BigOperators.Group.Finset.Piecewise
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
 
 /-!
@@ -51,6 +52,13 @@ theorem Finset.univ_prod_mulSingle_mulSingle [Fintype ι] [DecidableEq ι]
   refine Finset.prod_congr rfl fun i _ => ?_
   conv_rhs => rw [← Finset.univ_prod_mulSingle (f i), ← MonoidHom.mulSingle_apply, map_prod]
   simp only [MonoidHom.mulSingle_apply]
+
+/-- Summing one-hot vectors counts the occurrences of each label in the finite sample. -/
+theorem Finset.sum_pi_single_one_eq_card_filter {J : Type*} [DecidableEq ι]
+    (s : Finset J) (x : J → ι) :
+    ∑ j ∈ s, Pi.single (x j) (1 : ℕ) = fun i => (s.filter fun j => x j = i).card := by
+  ext i
+  simp [Finset.sum_apply, Pi.single_apply, eq_comm, Finset.card_filter]
 
 /-- The monomial with exponent vector `Pi.single i a` is the power `f i ^ a`. -/
 theorem Fintype.prod_pow_pi_single [Fintype ι] [DecidableEq ι] {M : Type*} [CommMonoid M]

@@ -110,7 +110,7 @@ theorem etale_lift_of_etale_aeval {T : Type u} [CommRing T] [Algebra R T] (x y :
   rw [heq]
   exact RingHom.Etale.respectsIso.2 _ e₀.symm.toRingEquiv <|
     RingHom.Etale.respectsIso.1 _ (Ideal.quotientEquivAlgOfEq R hI).toRingEquiv <|
-      RingHom.Etale.isStableUnderBaseChange.quotientMap RingHom.Etale.respectsIso _ I H
+      RingHom.Etale.isStableUnderBaseChange.quotientMap _ I H
 
 end NodeAlgebra
 

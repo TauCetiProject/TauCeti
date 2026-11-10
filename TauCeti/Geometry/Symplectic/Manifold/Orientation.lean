@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Orientation.Preserving
+public import TauCeti.Geometry.Manifold.Orientation.Prod
+public import TauCeti.Geometry.Symplectic.Manifold.Prod
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.Orientation
 
@@ -33,9 +35,18 @@ condition on alternating two-forms (`ContinuousAlternatingMap.isOpen_setOf_foral
 Symplectic forms taming a common almost complex structure have the same orientation
 (`TauCeti.SymplecticForm.Tames.orientation_eq`).
 
-A diffeomorphism pulling one nondegenerate form back to another preserves their symplectic
-orientations (`TauCeti.SmoothTwoForm.IsNondegenerate.isOrientationPreservingAt_orientation`). In
-particular symplectomorphisms preserve the symplectic orientation.
+A smooth map between manifolds of the same dimension pulling one nondegenerate form back to
+another preserves their symplectic orientations
+(`TauCeti.SmoothTwoForm.IsNondegenerate.isOrientationPreservingAt_orientation`): its differential
+is injective, because the pulled back form is nondegenerate, and hence invertible. In particular
+symplectomorphisms, and local diffeomorphisms pulling one form back to the other, preserve the
+symplectic orientation.
+
+The symplectic orientation of a product form `σ ⊕ τ` on `M × N` is the product orientation of the
+symplectic orientations of `σ` and `τ`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.orientation_prod`), and the symplectic orientation of a
+constant symplectic form on a vector space is its constant linear symplectic orientation
+(`TauCeti.SymplecticForm.orientation_constSmooth`).
 
 ## Main definitions
 
@@ -46,8 +57,13 @@ particular symplectomorphisms preserve the symplectic orientation.
 
 * `TauCeti.SmoothTwoForm.IsNondegenerate.orientationAt_orientation`: its tangent orientation at
   `x` is the symplectic orientation of the tangent space at `x`.
-* `TauCeti.SmoothTwoForm.IsNondegenerate.isOrientationPreservingAt_orientation`: diffeomorphisms
-  pulling one nondegenerate form back to another preserve the symplectic orientations.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.isOrientationPreservingAt_orientation`: smooth maps
+  between manifolds of the same dimension pulling one nondegenerate form back to another preserve
+  the symplectic orientations.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.orientation_prod`: the symplectic orientation of a
+  product form is the product of the symplectic orientations.
+* `TauCeti.SymplecticForm.orientation_constSmooth`: the symplectic orientation of a constant
+  symplectic form is constant.
 
 ## References
 
@@ -154,24 +170,83 @@ variable {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E�
   [TopologicalSpace H₂] {I₂ : ModelWithCorners ℝ E₂ H₂} [TopologicalSpace M₂] [ChartedSpace H₂ M₂]
   [IsManifold I₂ ∞ M₂] {σ₂ : SmoothTwoForm I₂ M₂}
 
-/-- **Symplectomorphisms preserve the symplectic orientation.** A diffeomorphism pulling a
-nondegenerate two-form `σ₂` back to `σ` preserves the symplectic orientations at every point. -/
+/-- **Symplectic maps preserve the symplectic orientation.** A smooth map `f` between manifolds of
+the same dimension which pulls a nondegenerate two-form `σ₂` back to `σ` preserves the symplectic
+orientations at every point. This applies to symplectomorphisms and to local diffeomorphisms such
+as covering maps; no global injectivity of `f` is needed. -/
 theorem isOrientationPreservingAt_orientation (hσ₂ : σ₂.IsNondegenerate)
-    (hk₂ : finrank ℝ E₂ = k) (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
-    (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ) (x : M) :
-    Manifold.Orientation.IsOrientationPreservingAt (hσ.orientation hk) (hσ₂.orientation hk₂) ψ
+    (hk₂ : finrank ℝ E₂ = k) {f : M → M₂} (hf : ContMDiff I I₂ ∞ f)
+    (hfσ : SmoothForm.mpullback f hf σ₂ = σ) (x : M) :
+    Manifold.Orientation.IsOrientationPreservingAt (hσ.orientation hk) (hσ₂.orientation hk₂) f
       x := by
+  have hD (v w : TangentSpace I x) : hσ₂.symplecticFormAt (f x) (mfderiv I I₂ f x v)
+      (mfderiv I I₂ f x w) = hσ.symplecticFormAt x v w := by
+    rw [symplecticFormAt_apply, symplecticFormAt_apply, ← hfσ, SmoothForm.eval₂_mpullback]
+  -- The differential is injective since it pulls the nondegenerate `σ₂` back to `σ`, and the two
+  -- tangent spaces have the same dimension, so it is invertible.
+  have hinj : Function.Injective (mfderiv I I₂ f x) :=
+    (injective_iff_map_eq_zero _).2 fun v hv ↦ (hσ.symplecticFormAt x).separatingLeft v
+      fun w ↦ (hD v w).symm.trans (by simp [hv])
+  let e := (LinearEquiv.ofInjectiveOfFinrankEq (mfderiv I I₂ f x).toLinearMap hinj
+    (hk.trans hk₂.symm)).toContinuousLinearEquiv
   rw [Manifold.Orientation.isOrientationPreservingAt_iff]
-  refine ⟨ψ.mfderivToContinuousLinearEquiv (by simp) x,
-    Diffeomorph.mfderivToContinuousLinearEquiv_coe _ _, ?_⟩
-  rw [orientationAt_orientation, orientationAt_orientation,
-    ← hσ.symplecticFormAt_transport ψ hψ x]
-  exact (SymplecticForm.isSymplectomorphism_iff_transport_eq.2 rfl).map_orientation hk
+  refine ⟨e, rfl, ?_⟩
+  rw [orientationAt_orientation, orientationAt_orientation]
+  exact ((SymplecticForm.isSymplectomorphism_iff (e := e.toLinearEquiv)).2 hD).map_orientation hk
 
 end Transport
+
+section Prod
+
+variable {F H' N : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold J ∞ N] {τ : SmoothTwoForm J N} {m n : ℕ}
+
+/-- **The symplectic orientation of a product.** The symplectic orientation of the product form
+`σ ⊕ τ` on `M × N` is the product of the symplectic orientations of `σ` and `τ`, with the tangent
+directions of `M` first. -/
+theorem orientation_prod (hτ : τ.IsNondegenerate) (hm : finrank ℝ E = m) (hn : finrank ℝ F = n) :
+    (hσ.prod hτ).orientation (by rw [Module.finrank_prod, hm, hn]) =
+      (hσ.orientation hm).prod (hτ.orientation hn) := by
+  ext x
+  rw [Manifold.Orientation.orientationAt_prod, orientationAt_orientation,
+    orientationAt_orientation, orientationAt_orientation]
+  -- The identification `T_x (M × N) = T_x₁ M × T_x₂ N` is the identity of `E × F`, and it
+  -- carries the tangent form of the product to the linear direct sum of the tangent forms.
+  have hid : (Manifold.tangentSpaceProdEquiv (I := I) (J := J) x).toLinearEquiv =
+      LinearEquiv.refl ℝ (E × F) :=
+    LinearEquiv.ext (Manifold.tangentSpaceProdEquiv_apply x)
+  have h := (SymplecticForm.isSymplectomorphism_iff_transport_eq.2
+    (hσ.symplecticFormAt_prod hτ x)).map_orientation
+      (by rw [Module.finrank_prod, hm, hn] : finrank ℝ (E × F) = m + n)
+  rw [hid, SymplecticForm.orientation_prod (hσ.symplecticFormAt x.1) (hτ.symplecticFormAt x.2) hm
+    hn] at h
+  -- Both tangent spaces are the model space `E × F`, so mapping by its identity changes nothing.
+  exact (DFunLike.congr_fun (Orientation.map_refl (R := ℝ) (M := E × F) (Fin (m + n))) _).symm.trans
+    h
+
+end Prod
 
 end IsNondegenerate
 
 end SmoothTwoForm
+
+namespace SymplecticForm
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] {k : ℕ}
+
+/-- The symplectic orientation of a constant symplectic form on a vector space `V` is the constant
+orientation given at every point by the linear symplectic orientation of the form. -/
+@[simp]
+theorem orientation_constSmooth (omegaForm : SymplecticForm V) (hk : finrank ℝ V = k) :
+    (isNondegenerate_constSmooth omegaForm).orientation hk =
+      Manifold.Orientation.model (omegaForm.orientation hk) (by rw [Fintype.card_fin, hk]) := by
+  ext x
+  rw [SmoothTwoForm.IsNondegenerate.orientationAt_orientation,
+    isNondegenerate_constSmooth_symplecticFormAt, Manifold.Orientation.orientationAt_model]
+  -- The two sides differ only in reading `V` as its own tangent space at `x`.
+  rfl
+
+end SymplecticForm
 
 end TauCeti

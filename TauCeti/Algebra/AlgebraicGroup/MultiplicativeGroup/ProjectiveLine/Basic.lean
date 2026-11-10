@@ -382,13 +382,9 @@ theorem range_projectiveOrbitMap_one :
       (algebraMap (Polynomial k) k[T;T⁻¹])) := by
     rw [PrimeSpectrum.localization_away_comap_range k[T;T⁻¹] Polynomial.X]
     exact hX
-  have key (y : Spec (.of k[T;T⁻¹])) :
-      e.hom (projectiveOrbitMap (H := k[T;T⁻¹]) (1 : Fin 2 → k) (isUnimodular_one k) y) =
-        AlgebraicGeometry.projectiveLine.polynomialChartι k 1
-          (Spec.map (CommRingCat.ofHom (Polynomial.toLaurent : Polynomial k →+* k[T;T⁻¹])) y) := by
-    rw [← Scheme.Hom.comp_apply, projectiveOrbitMap_one_comp_symmetricAlgebraMapIso_hom,
-      Scheme.Hom.comp_apply]
-  exact ⟨p, he ((key p).trans ((congrArg _ hp).trans hq))⟩
+  exact ⟨p, he ((congrArg (fun f ↦ f p)
+    (projectiveOrbitMap_one_comp_symmetricAlgebraMapIso_hom k)).trans
+      ((congrArg _ hp).trans hq))⟩
 
 /-- The boundary of the orbit of `[1 : 1]` consists exactly of the two fixed points `[1 : 0]`
 and `[0 : 1]`. -/

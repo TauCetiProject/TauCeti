@@ -87,19 +87,18 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule_of_lipschitzChartTrace_eq_zero (hp : 
       (by rwa [W1p.lipschitzChartTrace_apply] at hu)
   -- Return to the original coordinates, on the chart epigraph `V = e⁻¹' G`.
   have hVG : (V : Set (WithLp 2 (ℝ × E))) = e ⁻¹' (G : Set (WithLp 2 (ℝ × E))) := by
-    ext x
-    simp [V, G, coe_normalEpigraph_eq_preimage e h.lipschitzWith.continuous]
+    exact Set.ext fun x => by
+      simp [V, G, coe_normalEpigraph_eq_preimage e h.lipschitzWith.continuous]
   let w' := W1p.compAffineIsometryEquivL e hVG w
   have hw' : w' ∈ w1p0Submodule volume V p :=
     W1p.compAffineIsometryEquivL_mem_w1p0Submodule hp e hVG hw
   -- A cutoff `χ`, equal to one near `tsupport ψ` and supported in the chart cylinder.
-  have hcyl : IsOpen (e ⁻¹' normalCylinder (E := E) a b) :=
-    (isOpen_normalCylinder a b).preimage e.continuous
   have hK : IsCompact (tsupport ψ) :=
     Metric.isCompact_of_isClosed_isBounded (isClosed_tsupport ψ)
       ((e.antilipschitzWith.isBounded_preimage (isBounded_normalCylinder a b)).subset hs)
   obtain ⟨χ, N, hχ, -, hχ1, -, hχs, hN, hχN, hgN⟩ :=
-    hK.exists_contDiff_cutoff_with_bounds hcyl hs
+    hK.exists_contDiff_cutoff_with_bounds
+      ((isOpen_normalCylinder (E := E) a b).preimage e.continuous) hs
   -- Inside the cylinder `Ω` and `V` agree, so `χ` carries `w'` from `W^{1,p}_0(V)` to
   -- `W^{1,p}_0(Ω)`.
   have hmem := W1p.localizeL_restrictL_mem_w1p0Submodule (Ω := V) (V := Ω)
@@ -107,8 +106,7 @@ theorem W1p.contDiffSMul_mem_w1p0Submodule_of_lipschitzChartTrace_eq_zero (hp : 
     (inter_tsupport_subset_chartEpigraph h hχs) (chartEpigraph_inter_tsupport_subset h hχs) hw'
   convert hmem using 1
   -- Both sides are `ψ u` on `Ω`.
-  apply W1p.ext_value
-  apply Lp.ext
+  refine W1p.ext_value (Lp.ext ?_)
   have hwG := (ae_restrict_iff' G.isOpen.measurableSet).1
     (W1p.value_lipschitzChartLocalizeL_ae h hψ hM hψM hgM hs u)
   have hwV : ∀ᵐ x ∂(volume : Measure (WithLp 2 (ℝ × E))), x ∈ V →

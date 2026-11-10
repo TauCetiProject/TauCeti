@@ -93,6 +93,14 @@ def universalGSpaceCellularChainComplexIso :
   cellularChainComplexRealizationIso (indexedJoin fun _ : ℕ => G) k ≪≫
     (universalGSpaceChainComplexForget₂Iso k G).symm
 
+/-- The cellular comparison factors through ordered simplicial chains and permutation
+coordinates. -/
+theorem universalGSpaceCellularChainComplexIso_def :
+    universalGSpaceCellularChainComplexIso k G =
+      cellularChainComplexRealizationIso (indexedJoin fun _ : ℕ => G) k ≪≫
+        (universalGSpaceChainComplexForget₂Iso k G).symm :=
+  (rfl)
+
 /-- In each degree the chain comparison is the scaled cellular-basis comparison, up to the
 canonical identification of the cellular chain group. -/
 theorem universalGSpaceCellularChainComplexIso_hom_f (n : ℕ) :

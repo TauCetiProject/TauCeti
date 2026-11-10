@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Padics.Complex.Basic
 public import Mathlib.RingTheory.PowerSeries.Evaluation
 public import Mathlib.RingTheory.MvPowerSeries.LinearTopology
+import Mathlib.RingTheory.PowerSeries.Inverse
 
 /-!
 # Integral root translation of power series
@@ -73,6 +74,32 @@ theorem rootTranslation_coe (ζ : 𝓞_ℂ_[p]) (hζ : ζ ^ p = 1) (i : ℕ)
     rootTranslation p ζ hζ i P =
       P.eval₂ (C.comp (integralCoefficientMap p)) (C (ζ ^ i) * (1 + X) - 1) := by
   rw [rootTranslation_apply, eval₂_coe]
+
+/-- On polynomials, extending a root translation to `ℂ_p` gives evaluation at the same
+translated variable with the canonical p-adic coefficient inclusion. -/
+-- Apply this before `rootTranslation_coe` normalizes the inner translation.
+@[simp↓]
+theorem map_rootTranslation_coe (ζ : 𝓞_ℂ_[p]) (hζ : ζ ^ p = 1) (i : ℕ)
+    (P : Polynomial ℤ_[p]) :
+    PowerSeries.map (𝓞_ℂ_[p]).subtype (rootTranslation p ζ hζ i P) =
+      P.eval₂ (C.comp ((algebraMap ℚ_[p] ℂ_[p]).comp PadicInt.Coe.ringHom))
+        (C ((ζ : ℂ_[p]) ^ i) * (1 + X) - 1) := by
+  rw [rootTranslation_coe, Polynomial.hom_eval₂]
+  simp only [map_sub, map_mul, map_add, map_one, map_X, map_C]
+  congr 1
+  ext a
+  simp
+
+/-- A polynomial with unit constant term stays a unit after an integral root translation
+and extension of coefficients to `ℂ_p`. In particular the translated denominator is nonzero. -/
+theorem isUnit_eval₂_rootTranslation (ζ : 𝓞_ℂ_[p]) (hζ : ζ ^ p = 1) (i : ℕ)
+    (Q : Polynomial ℤ_[p]) (hQ : IsUnit (Q.coeff 0)) :
+    IsUnit (Q.eval₂ (C.comp ((algebraMap ℚ_[p] ℂ_[p]).comp PadicInt.Coe.ringHom))
+      (C ((ζ : ℂ_[p]) ^ i) * (1 + X) - 1)) := by
+  have hunit : IsUnit (Q : PowerSeries ℤ_[p]) :=
+    PowerSeries.isUnit_iff_constantCoeff.mpr (by simpa using hQ)
+  simpa only [map_rootTranslation_coe] using
+    (hunit.map (rootTranslation p ζ hζ i)).map (PowerSeries.map (𝓞_ℂ_[p]).subtype)
 
 /-- Root translation sends `X` to the translated variable `ζ ^ i * (1 + X) - 1`. -/
 @[simp]

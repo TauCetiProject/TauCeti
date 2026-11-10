@@ -31,6 +31,8 @@ completeness available without choosing a global flow or assuming finite dimensi
   pointwise maximal intervals.
 * `TauCeti.isCompleteVectorField_iff_exists_isMIntegralCurve`: completeness in terms of global
   integral curves through every point.
+* `TauCeti.flowOf_flowOf_neg`: for a complete field the time-`(-t)` map of the maximal flow inverts
+  the time-`t` map, so (`TauCeti.flowOf_surjective`) the time-`t` map is surjective.
 * `TauCeti.isCompleteVectorField_of_exists_isMIntegralCurveOn`: the uniform-time completeness
   criterion.
 * `TauCeti.isCompleteVectorField_of_isCompact_of_eq_zero_off`: compactly supported fields are
@@ -137,6 +139,23 @@ theorem exists_isMIntegralCurve {v : (x : M) → TangentSpace I x}
   (isCompleteVectorField_iff_exists_isMIntegralCurve hv).mp hcomplete x
 
 end IsCompleteVectorField
+
+/-- For a complete `C¹` vector field, the time-`(-t)` map of the maximal flow inverts the time-`t`
+map. -/
+theorem flowOf_flowOf_neg {v : (x : M) → TangentSpace I x}
+    (hv : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    (hcomplete : IsCompleteVectorField v) (t : ℝ) (x : M) :
+    flowOf v t (flowOf v (-t) x) = x := by
+  rw [flowOf_apply, flowOf_apply,
+    ← maximalIntegralCurve_add hv (hcomplete.mem_maximalIntegralCurveInterval x (-t))
+      (hcomplete.mem_maximalIntegralCurveInterval x (-t + t)),
+    neg_add_cancel, maximalIntegralCurve_zero (hcomplete.mem_maximalIntegralCurveInterval x 0)]
+
+/-- For a complete `C¹` vector field, the time-`t` map of the maximal flow is surjective. -/
+theorem flowOf_surjective {v : (x : M) → TangentSpace I x}
+    (hv : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
+    (hcomplete : IsCompleteVectorField v) (t : ℝ) : Function.Surjective (flowOf v t) :=
+  fun x ↦ ⟨flowOf v (-t) x, flowOf_flowOf_neg hv hcomplete t x⟩
 
 variable [CompleteSpace E]
 

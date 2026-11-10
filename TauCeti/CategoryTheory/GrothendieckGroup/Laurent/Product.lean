@@ -7,7 +7,7 @@ module
 
 public import TauCeti.CategoryTheory.Exact.Graded.Product
 public import TauCeti.CategoryTheory.GrothendieckGroup.Laurent.Basic
-public import TauCeti.CategoryTheory.GrothendieckGroup.Product
+public import TauCeti.CategoryTheory.GrothendieckGroup.Product.Basic
 
 /-!
 # Laurent Grothendieck groups of product categories

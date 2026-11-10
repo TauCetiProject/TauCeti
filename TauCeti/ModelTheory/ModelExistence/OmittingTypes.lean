@@ -16,6 +16,10 @@ A satisfiable theory of sentences in a countable formation-closed fragment has a
 nonempty model omitting any countable family of partial types in the fragment, provided none
 is isolated over the theory in that fragment. The model may be constructed in any universe.
 Consequently a partial type realized in every countable nonempty model is isolated.
+Over a language with countably many symbols, applying the theorem to the first-order image
+fragment gives the first-order omitting types theorem, for a first-order theory satisfiable in the
+sense of Mathlib's `Theory.IsSatisfiable` and first-order partial types not isolated by a
+first-order formula modulo the theory.
 
 The key refutation lemma applies to the consistency property of satisfiable finite instances.
 Projecting those instances onto a prescribed tuple of Henkin constants gives a consistent
@@ -23,6 +27,15 @@ formula of the fragment. Non-isolation supplies a model and a tuple satisfying t
 but refuting a member of the type. The projection theorem then interprets all the constants,
 even when the prescribed tuple repeats a constant. The model-existence theorem with omission
 requests supplies the final model.
+
+## Main results
+
+* `FirstOrder.Language.Theoryω.exists_countable_model_omitting`: the omitting types theorem for a
+  countable formation-closed fragment.
+* `FirstOrder.Language.Theoryω.isolatesIn_of_realized_in_every_countable_model`: a partial type
+  realized in every countable nonempty model of the theory is isolated.
+* `FirstOrder.Language.Theory.exists_countable_model_omitting`: the first-order omitting types
+  theorem.
 
 ## References
 
@@ -141,5 +154,32 @@ theorem isolatesIn_of_realized_in_every_countable_model
   exact h M hMT (hMo ())
 
 end Theoryω
+
+namespace Theory
+
+/-- **The first-order omitting types theorem.** Over a language with countably many function and
+relation symbols, a satisfiable first-order theory `T` has a countable nonempty model, in any
+universe, omitting any countable family of first-order partial types none of which is isolated
+modulo `T`: for no formula `φ` is `T` together with the existential closure of `φ` satisfiable
+while `T` models the universal closure of `φ → ψ` for every `ψ` in the type. -/
+theorem exists_countable_model_omitting [Countable (Σ l, L.Functions l)]
+    [Countable (Σ l, L.Relations l)] {T : L.Theory} (hT : T.IsSatisfiable)
+    {ι : Type*} [Countable ι] {n : ι → ℕ} (p : ∀ i, Set (L.BoundedFormula Empty (n i)))
+    (hnp : ∀ i, ¬∃ φ : L.BoundedFormula Empty (n i),
+      (insert φ.exs T).IsSatisfiable ∧ ∀ ψ ∈ p i, T ⊨ᵇ (φ.imp ψ).alls) :
+    ∃ (M : Type w) (_ : L.Structure M), Countable M ∧ Nonempty M ∧ M ⊨ T ∧
+      ∀ i (a : Fin (n i) → M), ∃ ψ ∈ p i, ¬ψ.Realize Empty.elim a := by
+  obtain ⟨M, _, hMc, hMne, hMT, hMo⟩ := Theoryω.exists_countable_model_omitting.{u, v, w}
+    (T := BoundedFormula.toOmega '' T) Fragment.firstOrder_countable
+    Fragment.formationClosed_firstOrder
+    (fun _ ⟨φ, _, hφ⟩ => hφ ▸ Fragment.toOmega_mem_firstOrder φ)
+    (Theoryω.isSatisfiable_image_toOmega_iff.2 hT) (fun i => BoundedFormula.toOmega '' p i)
+    (fun _ _ ⟨ψ, _, hψ⟩ => hψ ▸ Fragment.toOmega_mem_firstOrder ψ)
+    (fun i => Theoryω.isolatesIn_firstOrder_iff.not.2 (hnp i))
+  refine ⟨M, inferInstance, hMc, hMne, Theoryω.model_image_toOmega_iff.1 hMT, fun i a => ?_⟩
+  obtain ⟨_, ⟨ψ, hψ, rfl⟩, hψa⟩ := omitsType_iff.1 (hMo i) a
+  exact ⟨ψ, hψ, fun h => hψa ((BoundedFormula.realize_toInf ψ Empty.elim a).2 h)⟩
+
+end Theory
 
 end FirstOrder.Language

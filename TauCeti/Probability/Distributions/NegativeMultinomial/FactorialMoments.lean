@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.NegativeMultinomial.Basic
 import TauCeti.Probability.Distributions.Poisson.FactorialMoments
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.MeasureTheory.Integral.Bind
 import Mathlib.Combinatorics.Enumerative.Stirling
 

@@ -719,8 +719,9 @@ theorem commute_shift_of_mem_stage {a : ℕ} {x : InfiniteTypeAHeckeAlgebra R q}
 variable (R q) in
 /-- The disjoint block map: the algebra map from the tensor product of the stages `a` and `b` to
 the stage `a + b` that places the first factor on the first `a` strands and the second factor,
-shifted by `a`, on the next `b` strands. Its injectivity, which would make it an embedding,
-needs the basis theorem and is not proved here. -/
+shifted by `a`, on the next `b` strands. It is injective by
+`TauCeti.InfiniteTypeAHeckeAlgebra.blockIncl_injective`, proved in
+`TauCeti.Algebra.TypeAHeckeAlgebra.Block`. -/
 def blockIncl (a b : ℕ) : stage R q a ⊗[R] stage R q b →ₐ[R] stage R q (a + b) :=
   (Algebra.TensorProduct.lift (stage R q a).val ((shift R q a).comp (stage R q b).val)
     fun x y ↦ by

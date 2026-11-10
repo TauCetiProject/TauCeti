@@ -33,13 +33,13 @@ contained in the centralizer of `1 ⊗ A`, which is `L ⊗ 1` because `A` is cen
 
 ## Main results
 
-* `TauCeti.Algebra.IsCentral.baseChange`: **`L ⊗[K] A` is central over `L`** when `A` is central
+* `Algebra.IsCentral.baseChange`: **`L ⊗[K] A` is central over `L`** when `A` is central
   over `K` and `L` is a commutative `K`-algebra free as a `K`-module. It is an instance, so
   together with `IsSimpleRing.tensorProduct_of_isCentral_right` instance search sees
   `L ⊗[K] A` as a central simple `L`-algebra with no glue.
-* `TauCeti.Algebra.IsCentral.of_baseChange`: the converse over a field `K`, so centrality is not
+* `Algebra.IsCentral.of_baseChange`: the converse over a field `K`, so centrality is not
   merely preserved by base change but **detected** by it.
-* `TauCeti.Algebra.isCentral_baseChange_iff`: the two packaged as an equivalence.
+* `Algebra.isCentral_baseChange_iff`: the two packaged as an equivalence.
 
 Central *simplicity* of a scalar extension, its degree, and the compatibility of base change with
 `⊗` and `ᵐᵒᵖ` are assembled from these in `TauCeti/Algebra/CentralSimple/BaseChange.lean`.
@@ -58,16 +58,11 @@ is Mathlib's `Algebra.TensorProduct.leftAlgebra`.
 
 ## References
 
-This is part of the **Base change preserves central simplicity, then is a homomorphism** bullet of
-Layer 6 of the
-[semisimple algebras roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/SemisimpleAlgebras/README.md).
 See P. Gille, T. Szamuely, *Central Simple Algebras and Galois Cohomology*, Section 2.2, and
 R. S. Pierce, *Associative Algebras*, GTM 88, Chapter 12.
 -/
 
 public section
-
-namespace TauCeti
 
 open scoped TensorProduct
 
@@ -135,9 +130,11 @@ theorem of_baseChange [Algebra.IsCentral L (L ⊗[K] A)] : Algebra.IsCentral K A
       simpa using congrArg (fun f : K →ₗ[K] K => f 1) hg
     -- Contract `L ⊗[K] A → K ⊗[K] A → A` along `g`.
     have := congrArg
-      (⇑((TensorProduct.lid K A).toLinearMap.comp (TensorProduct.map g LinearMap.id))) hl
-    simp only [LinearMap.coe_comp, Function.comp_apply, TensorProduct.map_tmul,
-      LinearMap.id_coe, id_eq, LinearEquiv.coe_coe, TensorProduct.lid_tmul, hg1, one_smul] at this
+      (⇑((_root_.TensorProduct.lid K A).toLinearMap.comp
+        (_root_.TensorProduct.map g LinearMap.id))) hl
+    simp only [LinearMap.coe_comp, Function.comp_apply, _root_.TensorProduct.map_tmul,
+      LinearMap.id_coe, id_eq, LinearEquiv.coe_coe, _root_.TensorProduct.lid_tmul, hg1,
+      one_smul] at this
     exact Algebra.mem_bot.mpr ⟨g l, by rw [Algebra.algebraMap_eq_smul_one, this]⟩
 
 end Converse
@@ -167,5 +164,3 @@ theorem isCentral_baseChange_iff :
 end Iff
 
 end Algebra
-
-end TauCeti

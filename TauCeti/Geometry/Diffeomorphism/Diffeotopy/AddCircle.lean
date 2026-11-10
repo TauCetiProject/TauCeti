@@ -15,6 +15,7 @@ import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
 import Mathlib.Analysis.Calculus.Deriv.Shift
 import TauCeti.Analysis.Calculus.Deriv.AddCircle
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.Instances.AddCircle.Lift
 import TauCeti.Topology.Instances.AddCircle.Lift
@@ -96,20 +97,13 @@ section Plane
 variable (hL : ContDiff ℝ n L) (hn : n ≠ 0) (hper : ∀ s x, L (s, x + T) = L (s, x) + T)
   (hpos : ∀ s x, 0 < deriv (fun y ↦ L (s, y)) x)
 
-include hL hn in
-/-- The derivative of a slice `y ↦ L (s, y)` is the partial derivative of `L` in its second
-variable. -/
-private theorem hasDerivAt_slice (s x : ℝ) :
-    HasDerivAt (fun y ↦ L (s, y)) (fderiv ℝ L (s, x) (0, 1)) x :=
-  ((hL.differentiable hn) (s, x)).hasFDerivAt.comp_hasDerivAt x
-    ((hasDerivAt_const x s).prodMk (hasDerivAt_id x))
-
 include hL hn hper hpos in
 /-- The map `(s, x) ↦ (s, L (s, x))` is a bijection of the plane: each slice is a lift with
 positive derivative, hence a bijection of `ℝ`. -/
 private theorem bijective_plane : Bijective fun p : ℝ × ℝ ↦ (p.1, L p) := by
-  have h (s : ℝ) := exists_lift_inverse
-    (fun x ↦ (hasDerivAt_slice hL hn s x).differentiableAt.hasDerivAt) (hper s) (hpos s)
+  have hd (s x : ℝ) : DifferentiableAt ℝ (fun y ↦ L (s, y)) x :=
+    (TauCeti.hasDerivAt_slice_right ((hL.differentiable hn) (s, x))).differentiableAt
+  have h (s : ℝ) := exists_lift_inverse (fun x ↦ (hd s x).hasDerivAt) (hper s) (hpos s)
   refine ⟨fun ⟨s, x⟩ ⟨s', x'⟩ hpq ↦ ?_, fun ⟨s, y⟩ ↦ ?_⟩
   · obtain ⟨rfl, hx⟩ := Prod.ext_iff.1 hpq
     obtain ⟨G, hl, -⟩ := h s
@@ -126,7 +120,8 @@ private theorem injective_planeDeriv (p : ℝ × ℝ) : Injective (planeDeriv (L
   refine (injective_iff_map_eq_zero _).2 fun ⟨u, v⟩ h ↦ ?_
   obtain ⟨rfl, h⟩ : u = 0 ∧ fderiv ℝ L p (u, v) = 0 := by simpa [planeDeriv] using h
   -- The second component is `v` times the positive partial derivative in the second variable.
-  have hd : 0 < fderiv ℝ L p (0, 1) := (hasDerivAt_slice hL hn p.1 p.2).deriv ▸ hpos p.1 p.2
+  have hd : 0 < fderiv ℝ L p (0, 1) :=
+    (TauCeti.hasDerivAt_slice_right ((hL.differentiable hn) p)).deriv ▸ hpos p.1 p.2
   have hv : fderiv ℝ L p (0, v) = v * fderiv ℝ L p (0, 1) := by
     simpa using map_smul (fderiv ℝ L p) v ((0 : ℝ), (1 : ℝ))
   rw [hv, mul_eq_zero] at h

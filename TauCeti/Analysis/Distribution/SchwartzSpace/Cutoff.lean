@@ -89,7 +89,7 @@ private lemma pow_mul_norm_iteratedFDeriv_le_div (f : 𝓢(E, F)) (k j : ℕ) {�
 /-- One Leibniz term of `D^n ((1 - χ (R⁻¹ • ·)) • f)` at a point with `‖x‖ ≥ r R` is `O(R⁻¹)`:
 if no derivative falls on the cutoff, the factor `‖x‖ ^ k` is traded for `(r R)⁻¹`, and otherwise
 the derivative of the cutoff contributes the factor `R⁻¹`. -/
-private lemma norm_iteratedFDeriv_one_sub_mul_le (hχ : ContDiff ℝ ∞ χ) {B : ℕ → ℝ}
+private lemma norm_iteratedFDeriv_one_sub_mul_le {B : ℕ → ℝ}
     (hB : ∀ i x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B i) {r : ℝ} (hr : 0 < r) (f : 𝓢(E, F))
     (k n i : ℕ) {R : ℝ} (hR : 1 ≤ R) {x : E} (hx : r * R ≤ ‖x‖) :
     ‖iteratedFDeriv ℝ i (fun y ↦ 1 - χ (R⁻¹ • y)) x‖ *
@@ -123,8 +123,7 @@ private lemma norm_iteratedFDeriv_one_sub_mul_le (hχ : ContDiff ℝ ∞ χ) {B 
         funext y
         exact (neg_sub _ _).symm
       rw [heq, iteratedFDeriv_neg_apply (𝕜 := ℝ), norm_neg]
-      exact TauCeti.norm_iteratedFDeriv_comp_inv_smul_sub_const_le
-        (hχ.of_le (mod_cast le_top)) hi (hB i) hR 1 x
+      exact TauCeti.norm_iteratedFDeriv_comp_inv_smul_sub_const_le hi (hB i) hR 1 x
     have hfi : ‖x‖ ^ k * ‖iteratedFDeriv ℝ (n - i) f x‖ ≤
         SchwartzMap.seminorm ℝ k (n - i) f := le_seminorm ℝ k (n - i) f x
     have hS : 0 ≤ SchwartzMap.seminorm ℝ (k + 1) (n - i) f / r :=
@@ -187,7 +186,7 @@ theorem seminorm_sub_smulLeftCLM_comp_inv_smul_le (hχ : ContDiff ℝ ∞ χ)
             (‖iteratedFDeriv ℝ i h x‖ * (‖x‖ ^ k * ‖iteratedFDeriv ℝ (n - i) f x‖)) := by ring
       _ ≤ (n.choose i : ℝ) * ((1 + B i) * (SchwartzMap.seminorm ℝ k (n - i) f +
             SchwartzMap.seminorm ℝ (k + 1) (n - i) f / r) / R) :=
-          mul_le_mul_of_nonneg_left (norm_iteratedFDeriv_one_sub_mul_le hχ hB hr f k n i hR hx)
+          mul_le_mul_of_nonneg_left (norm_iteratedFDeriv_one_sub_mul_le hB hr f k n i hR hx)
             (Nat.cast_nonneg _)
       _ = _ := by ring
 

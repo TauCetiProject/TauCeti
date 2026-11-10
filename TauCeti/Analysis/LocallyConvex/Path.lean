@@ -40,19 +40,16 @@ namespace ContinuousMap
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
   [IsTopologicalAddGroup E]
 
-/-- A continuous path admits finite convex combinations with smooth scalar weights and exact
-endpoint tails. Their error, relative to the path at `smoothTransition (3 * t - 1)`, lies in any
-specified convex neighbourhood of zero. No norm, completeness or local convexity is required. -/
-theorem exists_smooth_convexCombination_sub_mem (f : C(unitInterval, E))
-    {W : Set E} (hW : W ∈ 𝓝 (0 : E)) (hconv : Convex ℝ W) :
-    ∃ (s : Finset unitInterval) (w : s → ℝ → ℝ),
-      (∀ i, ContDiff ℝ ∞ (w i)) ∧
-      (∀ i t, 0 ≤ w i t) ∧ (∀ t, ∑ i, w i t = 1) ∧
-      (∀ t, t ≤ 1 / 3 → (∑ i, w i t • f i.1) = f 0) ∧
-      (∀ t, 2 / 3 ≤ t → (∑ i, w i t • f i.1) = f 1) ∧
-      ∀ t, (∑ i, w i t • f i.1) -
-        f ⟨Real.smoothTransition (3 * t - 1),
-          Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩ ∈ W := by
+omit [Module ℝ E] in
+/-- A smooth partition of unity of `[0, 1]` indexed by finitely many sample points of a continuous
+path, whose weight at `i` is supported where `f i - f t` lies in the interior of a neighbourhood
+of zero, and away from an endpoint `t` unless `i` is that endpoint. -/
+private theorem exists_smoothPartitionOfUnity_isActive (f : C(unitInterval, E))
+    {W : Set E} (hW : W ∈ 𝓝 (0 : E)) :
+    ∃ (s : Finset unitInterval) (ρ : SmoothPartitionOfUnity s 𝓘(ℝ) ℝ (Icc (0 : ℝ) 1)),
+      ∀ (i : s) (t : ℝ), ρ i t ≠ 0 →
+        f i.1 - f (projIcc 0 1 zero_le_one t) ∈ interior W ∧
+          (i.1 ≠ 0 → t ≠ 0) ∧ (i.1 ≠ 1 → t ≠ 1) := by
   classical
   let p : ℝ → unitInterval := projIcc 0 1 zero_le_one
   have hp : Continuous p := continuous_projIcc
@@ -82,32 +79,60 @@ theorem exists_smooth_convexCombination_sub_mem (f : C(unitInterval, E))
       intro t ht
       obtain ⟨a, ha, hta⟩ := mem_iUnion₂.mp (hs ht)
       exact mem_iUnion_of_mem (⟨a, ha⟩ : s) hta)
+  refine ⟨s, ρ, fun i t hi ↦ ?_⟩
+  have h : t ∈ U i.1 := hρ i (subset_closure hi)
+  exact ⟨h.1.1, fun hi0 ↦ by simpa [U, hi0] using h.1.2, fun hi1 ↦ by simpa [U, hi1] using h.2⟩
+
+omit [IsTopologicalAddGroup E] in
+/-- At an endpoint of `[0, 1]`, a partition of unity whose active samples at the endpoint all
+equal it reproduces the value of the path there. -/
+private theorem sum_smul_eq_of_isActive (f : C(unitInterval, E)) {s : Finset unitInterval}
+    (ρ : SmoothPartitionOfUnity s 𝓘(ℝ) ℝ (Icc (0 : ℝ) 1))
+    (hactive : ∀ (i : s) (t : ℝ), ρ i t ≠ 0 → (i.1 ≠ 0 → t ≠ 0) ∧ (i.1 ≠ 1 → t ≠ 1))
+    (a : unitInterval) (ha : a = 0 ∨ a = 1) :
+    ∑ i : s, ρ i a • f i.1 = f a := by
+  classical
+  have heq (i : s) : ρ i a • f i.1 = ρ i a • f a := by
+    by_cases hi : ρ i a = 0
+    · simp [hi]
+    have h := hactive i a hi
+    have hia : i.1 = a := by
+      rcases ha with rfl | rfl
+      · by_contra hi0
+        exact h.1 hi0 rfl
+      · by_contra hi1
+        exact h.2 hi1 rfl
+    rw [hia]
+  rw [Finset.sum_congr rfl (fun i _ ↦ heq i), ← Finset.sum_smul]
+  have hsum' : ∑ i : s, ρ i a = 1 := by
+    simpa only [finsum_eq_sum_of_fintype] using ρ.sum_eq_one a.2
+  rw [hsum', one_smul]
+
+/-- A continuous path admits finite convex combinations with smooth scalar weights and exact
+endpoint tails. Their error, relative to the path at `smoothTransition (3 * t - 1)`, lies in any
+specified convex neighbourhood of zero. No norm, completeness or local convexity is required. -/
+theorem exists_smooth_convexCombination_sub_mem (f : C(unitInterval, E))
+    {W : Set E} (hW : W ∈ 𝓝 (0 : E)) (hconv : Convex ℝ W) :
+    ∃ (s : Finset unitInterval) (w : s → ℝ → ℝ),
+      (∀ i, ContDiff ℝ ∞ (w i)) ∧
+      (∀ i t, 0 ≤ w i t) ∧ (∀ t, ∑ i, w i t = 1) ∧
+      (∀ t, t ≤ 1 / 3 → (∑ i, w i t • f i.1) = f 0) ∧
+      (∀ t, 2 / 3 ≤ t → (∑ i, w i t • f i.1) = f 1) ∧
+      ∀ t, (∑ i, w i t • f i.1) -
+        f ⟨Real.smoothTransition (3 * t - 1),
+          Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩ ∈ W := by
+  classical
+  obtain ⟨s, ρ, hact⟩ := exists_smoothPartitionOfUnity_isActive f hW
+  have hactive (i : s) (t : ℝ) (hi : ρ i t ≠ 0) :
+      (i.1 ≠ 0 → t ≠ 0) ∧ (i.1 ≠ 1 → t ≠ 1) := (hact i t hi).2
+  let p : ℝ → unitInterval := projIcc 0 1 zero_le_one
   let θ : ℝ → ℝ := fun t ↦ Real.smoothTransition (3 * t - 1)
   have hθ : ContDiff ℝ ∞ θ := Real.smoothTransition.contDiff.comp (by fun_prop)
   have hθmem (t : ℝ) : θ t ∈ Icc (0 : ℝ) 1 :=
     ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
   have hsum (t : ℝ) : ∑ i : s, ρ i (θ t) = 1 := by
     simpa only [finsum_eq_sum_of_fintype] using ρ.sum_eq_one (hθmem t)
-  have hactive {i : s} {t : ℝ} (hi : ρ i t ≠ 0) : t ∈ U i.1 :=
-    hρ i (subset_closure hi)
-  -- At an endpoint, every nonzero weight is attached to that endpoint.
-  have hend (a : unitInterval) (ha : a = 0 ∨ a = 1) :
-      ∑ i : s, ρ i a • f i.1 = f a := by
-    have heq (i : s) : ρ i a • f i.1 = ρ i a • f a := by
-      by_cases hi : ρ i a = 0
-      · simp [hi]
-      have h := hactive hi
-      have hia : i.1 = a := by
-        rcases ha with rfl | rfl
-        · by_contra hi0
-          simpa [U, hi0] using h.1.2
-        · by_contra hi1
-          simpa [U, hi1] using h.2
-      rw [hia]
-    rw [Finset.sum_congr rfl (fun i _ ↦ heq i), ← Finset.sum_smul]
-    have hsum' : ∑ i : s, ρ i a = 1 := by
-      simpa only [finsum_eq_sum_of_fintype] using ρ.sum_eq_one a.2
-    rw [hsum', one_smul]
+  have hend := sum_smul_eq_of_isActive f ρ hactive
   refine ⟨s, fun i t ↦ ρ i (θ t), fun i ↦ ?_, fun i t ↦ ρ.nonneg i _, hsum,
     fun t ht ↦ ?_, fun t ht ↦ ?_, fun t ↦ ?_⟩
   · exact (ρ i).contMDiff.contDiff.comp hθ
@@ -118,7 +143,7 @@ theorem exists_smooth_convexCombination_sub_mem (f : C(unitInterval, E))
   -- A convex combination of the active errors remains in the prescribed neighbourhood.
   · have hmem : (∑ᶠ i : s, ρ i (θ t) • (f i.1 - f (p (θ t)))) ∈ W :=
       hconv.finsum_mem (fun i ↦ ρ.nonneg i _) (ρ.sum_eq_one (hθmem t))
-        (fun i hi ↦ interior_subset (hactive hi).1.1)
+        (fun i hi ↦ interior_subset (hact i _ hi).1)
     simpa only [finsum_eq_sum_of_fintype, smul_sub, Finset.sum_sub_distrib,
       ← Finset.sum_smul, hsum, one_smul, p, projIcc_of_mem _ (hθmem t)] using hmem
 

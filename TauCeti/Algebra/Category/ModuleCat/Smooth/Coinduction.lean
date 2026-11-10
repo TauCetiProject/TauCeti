@@ -105,7 +105,7 @@ theorem mem_smoothPart_coextendScalars_iff [Nonempty ι] (hJ : Directed (· ≥ 
 `R`-linear map `g : A → V` lies in the smooth part of the coextension of scalars exactly when it is
 continuous for the discrete topology on `V`. -/
 theorem mem_smoothPart_coextendScalars_iff_continuous [TopologicalSpace A]
-    [SeparatelyContinuousAdd A] [SeparatelyContinuousMul A] [Nonempty ι]
+    [SeparatelyContinuousAdd A] [SeparatelyContinuousMul A]
     (hJ : (𝓝 (0 : A)).HasBasis (fun _ => True) fun i => (J i : Set A))
     {g : (ModuleCat.coextendScalars f).obj V} :
     g ∈ smoothPart J ((ModuleCat.coextendScalars f).obj V) ↔
