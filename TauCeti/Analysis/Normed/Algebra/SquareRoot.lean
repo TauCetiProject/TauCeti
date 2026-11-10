@@ -22,6 +22,8 @@ This file packages that partial inverse as `TauCeti.sqrtNearOne` together with t
 downstream arguments need: it fixes `1`, it is smooth at `1`, and it is a two-sided inverse of
 squaring on a neighbourhood of `1`.  The two-sided statements are phrased as `Filter.Eventually`
 assertions rather than by exhibiting a neighbourhood, since that is how they get used.
+By uniqueness, the square root is natural: a map preserving squares, such as conjugation by an
+isomorphism or the adjoint for a nondegenerate pairing, commutes with it near `1`.
 
 The motivating application is the Morse lemma, in
 `TauCeti.Analysis.Calculus.Morse.NormalForm`: the operator `(D²f x)⁻¹ ∘ B v` comparing the
@@ -39,6 +41,8 @@ near `1` in a bare Banach algebra, with smooth dependence on the element.
   value really is a square root.
 * `TauCeti.eventually_sqrtNearOne_mul_self`: near `1` it is a left inverse of squaring, which is
   the uniqueness statement: an element close to `1` is recovered from its square.
+* `TauCeti.eventually_map_sqrtNearOne`: maps preserving squares, possibly varying with a
+  parameter, commute with the square root near `1`.
 * `TauCeti.eventually_sqrtNearOne_fixed`: a continuous map fixing `1` and reversing products
   fixes the square root of every fixed element sufficiently close to `1`.
 
@@ -135,6 +139,22 @@ theorem contDiffAt_sqrtNearOne : ContDiffAt ℝ ∞ (sqrtNearOne A) 1 :=
 theorem continuousAt_sqrtNearOne : ContinuousAt (sqrtNearOne A) 1 :=
   contDiffAt_sqrtNearOne.continuousAt
 
+/-- **Naturality of the square root near the identity.** Let `x i` tend to `1` along a filter,
+and let `φ i` be maps into a second Banach algebra which eventually preserve squares, such as
+ring homomorphisms or product-reversing maps. If the images `φ i (sqrtNearOne A (x i))` also tend
+to `1`, then eventually `φ i` carries the square root of `x i` to the square root of `φ i (x i)`.
+The maps may vary with `i`, which is how a family of changes of coordinates, depending
+continuously on a parameter, is handled. -/
+theorem eventually_map_sqrtNearOne {B : Type*} [NormedRing B] [NormedAlgebra ℝ B]
+    [CompleteSpace B] {ι : Type*} {l : Filter ι} {x : ι → A} {φ : ι → A → B}
+    (hsq : ∀ᶠ i in l, ∀ a, φ i (a * a) = φ i a * φ i a) (hx : Tendsto x l (𝓝 1))
+    (hφ : Tendsto (fun i ↦ φ i (sqrtNearOne A (x i))) l (𝓝 1)) :
+    ∀ᶠ i in l, φ i (sqrtNearOne A (x i)) = sqrtNearOne B (φ i (x i)) := by
+  filter_upwards [hsq, hx.eventually eventually_mul_self_sqrtNearOne,
+    hφ.eventually eventually_sqrtNearOne_mul_self] with i hi hs hu
+  rw [← hi, hs] at hu
+  exact hu.symm
+
 /-- A map continuous at `1`, fixing `1`, and reversing products fixes the square root near
 the identity of every fixed element sufficiently close to `1`. -/
 theorem eventually_sqrtNearOne_fixed {adj : A → A} (hc : ContinuousAt adj 1)
@@ -144,9 +164,9 @@ theorem eventually_sqrtNearOne_fixed {adj : A → A} (hc : ContinuousAt adj 1)
     simpa only [sqrtNearOne_one] using (continuousAt_sqrtNearOne (A := A)).tendsto
   have hadj : Tendsto (fun a ↦ adj (sqrtNearOne A a)) (𝓝 1) (𝓝 1) := by
     simpa only [Function.comp_def, h1] using hc.tendsto.comp hroot
-  filter_upwards [eventually_mul_self_sqrtNearOne,
-    hadj.eventually eventually_sqrtNearOne_mul_self] with a hs hu ha
-  rw [← hmul, hs, ha] at hu
-  exact hu.symm
+  filter_upwards [eventually_map_sqrtNearOne (x := id) (φ := fun _ ↦ adj)
+    (Eventually.of_forall fun _ a ↦ hmul a a) tendsto_id hadj] with a h ha
+  rw [id, ha] at h
+  exact h
 
 end TauCeti
