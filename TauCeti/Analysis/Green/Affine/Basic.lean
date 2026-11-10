@@ -8,8 +8,9 @@ module
 public import TauCeti.Analysis.Green.Basic
 public import TauCeti.Analysis.Green.Cell
 public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuousFun
-public import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.LinearAlgebra.Complex.Module
+import TauCeti.MeasureTheory.Integral.Bochner.Affine
+import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Convex.Hull
 import Mathlib.Analysis.Calculus.ContDiff.Operations
@@ -175,12 +176,15 @@ theorem measurableEmbedding_affineMap (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) :
 theorem volume_affineMap_image (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) {s : Set ℂ} :
     volume (affineMap A.toContinuousLinearMap c '' s) =
       ENNReal.ofReal |A.toLinearEquiv.toLinearMap.det| * volume s := by
-  have h : affineMap A.toContinuousLinearMap c '' s =
-      (· + c) '' (A.toContinuousLinearMap '' s) := by
-    rw [image_image]
-    congr 1
-  rw [h, image_add_right, measure_preimage_add_right, Measure.addHaar_image_continuousLinearMap]
-  simp only [ContinuousLinearEquiv.toLinearMap_toContinuousLinearMap]
+  have hf : affineMap A.toContinuousLinearMap c =
+      ⇑(A.toContinuousLinearMap.toAffineMap + AffineMap.const ℝ ℂ c) := by
+    funext z
+    simp
+  have hlin : (A.toContinuousLinearMap.toAffineMap + AffineMap.const ℝ ℂ c).linear =
+      A.toLinearEquiv.toLinearMap := by
+    ext z
+    simp
+  rw [hf, Measure.addHaar_image_affineMap, hlin]
 
 /-- The area measure on an affine image is the pushforward of the absolute determinant density. -/
 theorem map_withDensity_affineMap (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) {s : Set ℂ} :
@@ -199,17 +203,21 @@ theorem map_withDensity_affineMap (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) {s : Set ℂ
 theorem integral_affineMap_image (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) {s : Set ℂ} (f : ℂ → ℝ) :
     (∫ z in affineMap A.toContinuousLinearMap c '' s, f z) =
       |A.toLinearEquiv.toLinearMap.det| * ∫ z in s, f (affineMap A.toContinuousLinearMap c z) := by
-  rw [← map_withDensity_affineMap A c, (measurableEmbedding_affineMap A c).integral_map,
-    withDensity_const, integral_smul_measure, ENNReal.toReal_ofReal (abs_nonneg _), smul_eq_mul]
+  have hf : affineMap A.toContinuousLinearMap c = fun z ↦ c + A z := by
+    funext z
+    rw [affineMap_apply, add_comm, ContinuousLinearEquiv.coe_coe]
+  rw [hf]
+  simpa only [smul_eq_mul, integral_const_mul] using A.integral_image_affine c f s volume
 
 /-- Area integrability is preserved under an invertible affine coordinate map. -/
 theorem integrableOn_affineMap_image_iff (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) {s : Set ℂ} (f : ℂ → ℝ) :
     IntegrableOn f (affineMap A.toContinuousLinearMap c '' s) ↔
       IntegrableOn (f ∘ affineMap A.toContinuousLinearMap c) s := by
-  rw [IntegrableOn, IntegrableOn, ← map_withDensity_affineMap A c,
-    (measurableEmbedding_affineMap A c).integrable_map_iff, withDensity_const,
-    integrable_smul_measure (by simpa using A.toLinearEquiv.isUnit_det'.ne_zero)
-      ENNReal.ofReal_ne_top]
+  have hf : affineMap A.toContinuousLinearMap c = fun z ↦ c + A z := by
+    funext z
+    rw [affineMap_apply, add_comm, ContinuousLinearEquiv.coe_coe]
+  rw [hf]
+  exact A.integrableOn_image_affine_iff c f s volume
 
 /-- Integrability of curl is preserved by affine pullback for differentiable fields. -/
 theorem integrableOn_curl_affinePullback_iff (A : ℂ ≃L[ℝ] ℂ) (c : ℂ) {s : Set ℂ}
