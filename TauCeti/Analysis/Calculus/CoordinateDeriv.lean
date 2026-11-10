@@ -261,8 +261,8 @@ theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     coordinateDeriv_eq_iteratedFDeriv α hf, coordinateDeriv_eq_iteratedFDeriv α hg,
     iteratedFDeriv_add_apply hf.contDiffAt hg.contDiffAt, add_apply]
 
-/-- Scalar multiples commute with coordinate derivatives, with no smoothness assumption: for
-`c = 0` both sides vanish, and otherwise `c` is invertible. -/
+/-- Scalar multiples commute with coordinate derivatives, with no smoothness assumption. -/
+@[simp]
 theorem coordinateDeriv_const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 A]
     [SMulCommClass ℝ 𝕜 A] (α : List (Fin n)) (f : CoordinateSpace n → A) (c : 𝕜) :
     coordinateDeriv α (c • f) = c • coordinateDeriv α f := by
@@ -271,10 +271,7 @@ theorem coordinateDeriv_const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpac
   | cons j js ih =>
     funext x
     rw [coordinateDeriv_cons, ih, Pi.smul_apply, coordinateDeriv_cons]
-    rcases eq_or_ne c 0 with rfl | hc
-    · simp
-    · let := invertibleOfNonzero hc
-      rw [fderiv_const_smul_of_invertible, smul_apply]
+    simp only [fderiv_const_smul_field, Pi.smul_apply, smul_apply]
 
 @[simp]
 theorem coordinateDeriv_neg (α : List (Fin n)) (f : CoordinateSpace n → A) :
@@ -715,6 +712,7 @@ theorem mixedDeriv_add (ha : ContDiff ℝ ∞ a) (hb : ContDiff ℝ ∞ b) (α �
     (contDiff_infty.1 (contDiff_coordinateDeriv_slice hb β ξ) _), Pi.add_apply]
 
 /-- Scalar multiples commute with mixed derivatives, with no smoothness assumption. -/
+@[simp]
 theorem mixedDeriv_const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 A]
     [SMulCommClass ℝ 𝕜 A] (c : 𝕜) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (c • a) x ξ = c • mixedDeriv α β a x ξ := by

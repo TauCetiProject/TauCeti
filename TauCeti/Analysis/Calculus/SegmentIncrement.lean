@@ -63,15 +63,15 @@ theorem enorm_sub_le_lintegral_enorm_fderiv_apply (x h : E)
   · rw [hJ]
     exact le_top
   -- Measurability of the derivative is checked in the completion of `F`.
-  set Gc : ℝ → UniformSpace.Completion F := fun s => (G s : UniformSpace.Completion F)
+  obtain ⟨Gc, hGcdef⟩ : ∃ Gc : ℝ → UniformSpace.Completion F,
+      Gc = ((↑) : F → UniformSpace.Completion F) ∘ G := ⟨_, rfl⟩
   have hGc : ∀ t ∈ Icc (0 : ℝ) 1, ‖deriv Gc t‖ = ‖fderiv ℝ u (x + t • h) h‖ := by
     intro t ht
     have hcoe : HasFDerivAt (𝕜 := ℝ) ((↑) : F → UniformSpace.Completion F)
         UniformSpace.Completion.toComplL (G t) := by
       rw [← UniformSpace.Completion.coe_toComplL (S := ℝ)]
       exact (UniformSpace.Completion.toComplL (α := F) (S := ℝ)).hasFDerivAt
-    rw [show Gc = ((↑) : F → UniformSpace.Completion F) ∘ G from rfl,
-      (hcoe.comp_hasDerivAt t (hline t ht).hasDerivAt).deriv,
+    rw [hGcdef, (hcoe.comp_hasDerivAt t (hline t ht).hasDerivAt).deriv,
       UniformSpace.Completion.coe_toComplL, UniformSpace.Completion.norm_coe, hderiv t ht]
   have hmeas : AEStronglyMeasurable (fun t : ℝ => ‖deriv Gc t‖) volume :=
     (aestronglyMeasurable_deriv Gc volume).norm
