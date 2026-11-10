@@ -632,7 +632,8 @@ theorem map_restrictScalarsHom_inertiaSubgroup (E : IntermediateField F F') :
   rw [Subgroup.mem_inf]
   constructor
   · rintro ⟨_, ⟨g, hg, rfl⟩, rfl⟩
-    have hZ : f g ∈ P.integers.decompositionSubgroup F := g.2
+    have hZ : f g ∈ P.integers.decompositionSubgroup F :=
+      (restrictScalars_mem_decompositionSubgroup_iff (F := F) P E _).mpr g.2
     exact ⟨(IntermediateField.mem_fixingSubgroup_iff _ _).mpr
       fun x hx ↦ (g : F' ≃ₐ[E] F').commutes ⟨x, hx⟩, ⟨f g, hZ⟩, (hiff fun _ ↦ rfl).mp hg, rfl⟩
   · rintro ⟨hE, g, hg, rfl⟩
@@ -640,10 +641,8 @@ theorem map_restrictScalarsHom_inertiaSubgroup (E : IntermediateField F F') :
     have hτ (x : F') : τ x = (g : F' ≃ₐ[F] F') x :=
       congrFun (IntermediateField.coe_fixingSubgroupEquiv_apply E ⟨g, hE⟩) x
     have hτg : τ.restrictScalars F = g := AlgEquiv.ext hτ
-    have hZ : τ ∈ P.integers.decompositionSubgroup E := by
-      have := g.2
-      rw [← hτg] at this
-      exact this
+    have hZ : τ ∈ P.integers.decompositionSubgroup E :=
+      (restrictScalars_mem_decompositionSubgroup_iff (F := F) P E τ).mp (hτg ▸ g.2)
     exact ⟨τ, ⟨⟨τ, hZ⟩, (hiff hτ).mpr hg, rfl⟩, AlgEquiv.ext hτ⟩
 
 variable [FiniteDimensional F F']
@@ -667,9 +666,7 @@ theorem decompositionSubgroup_inertiaField_eq_top :
   ext τ
   simp only [Subgroup.mem_top, iff_true]
   obtain ⟨g, -, hg⟩ := exists_mem_inertiaSubgroup_coe_eq_restrictScalars F P τ
-  have := g.2
-  rw [hg] at this
-  exact this
+  exact (restrictScalars_mem_decompositionSubgroup_iff (F := F) P _ τ).mp (hg ▸ g.2)
 
 variable [IsGalois F F']
 

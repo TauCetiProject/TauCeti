@@ -247,6 +247,33 @@ private theorem aeval_residue_eq_zero (P' : Place k' F') {y : F'} (hy : y ∈ P'
     RingHom.ext fun a ↦ (IsLocalRing.ResidueField.algebraMap_residue a).symm
   rw [aeval_def, eval₂_map, ← hres, ← hom_eval₂, hzero]
 
+/-- **Integrality from a small value of a monic polynomial**: if a monic `g` over `𝒪_P` has
+`P'`-valuation of `g (y)` less than one, at a place `P'` over `P`, then `y` is integral at `P'`:
+otherwise the leading term of `g (y)` dominates its valuation. -/
+private theorem mem_integers_of_valuation_integersEval_lt_one (P' : Place k' F') {y : F'}
+    {g : (P'.restrict k F).integers[X]} (hg : g.Monic)
+    (hv : P'.valuation ((P'.restrict k F).integersEval y g) < 1) : y ∈ P'.integers := by
+  by_contra hy
+  rw [mem_integers_iff, not_le] at hy
+  have hcoeff (a : (P'.restrict k F).integers) :
+      P'.valuation (algebraMap F F' (a : F)) ≤ 1 :=
+    P'.mem_integers_iff.mp ((restrict_eq_iff_integers_le k F P' _).mp rfl _ a.2)
+  rw [integersEval, coe_eval₂RingHom, eval₂_eq_sum_range, Finset.sum_range_succ,
+    hg.coeff_natDegree] at hv
+  have hlow : P'.valuation (∑ i ∈ Finset.range g.natDegree,
+      ((algebraMap F F').comp (algebraMap (P'.restrict k F).integers F)) (g.coeff i) * y ^ i) <
+      P'.valuation (((algebraMap F F').comp (algebraMap (P'.restrict k F).integers F)) 1 *
+        y ^ g.natDegree) := by
+    have hy0 : P'.valuation y ≠ 0 := (zero_lt_one.trans hy).ne'
+    rw [map_one, one_mul, map_pow]
+    refine Valuation.map_sum_lt _ (pow_ne_zero _ hy0) fun i hi ↦ ?_
+    calc _ = P'.valuation (algebraMap F F' (g.coeff i : F)) * P'.valuation y ^ i := by
+          rw [map_mul, map_pow]; rfl
+      _ ≤ P'.valuation y ^ i := mul_le_of_le_one_left' (hcoeff _)
+      _ < P'.valuation y ^ g.natDegree := pow_lt_pow_right₀ hy (Finset.mem_range.mp hi)
+  rw [Valuation.map_add_eq_of_lt_right _ hlow, map_one, one_mul, map_pow] at hv
+  exact not_lt.mpr (one_le_pow₀ hy.le) hv
+
 /-- **Kummer's theorem at a single place, in residue-field form**: if `g` is monic over `𝒪_P` with
 irreducible reduction `γ` over the residue field `F_P`, and `g (y)` vanishes at a place `P'` of
 `F' / k'` over `P` at which `y` is integral, then `γ` is the minimal polynomial over `F_P` of the
@@ -302,33 +329,13 @@ theorem map_residue_eq_of_valuation_lt_one {P : Place k F} {P' : Place k' F'}
     (hv₂ : P'.valuation (P.integersEval y g₂) < 1) :
     g₁.map (IsLocalRing.residue P.integers) = g₂.map (IsLocalRing.residue P.integers) := by
   subst hres
-  -- `y` is integral at `P'`: otherwise the leading term of `g₁ (y)` dominates its valuation
-  have hy : y ∈ P'.integers := by
-    by_contra hy
-    rw [mem_integers_iff, not_le] at hy
-    have hcoeff (a : (P'.restrict k F).integers) :
-        P'.valuation (algebraMap F F' (a : F)) ≤ 1 :=
-      P'.mem_integers_iff.mp ((restrict_eq_iff_integers_le k F P' _).mp rfl _ a.2)
-    rw [integersEval, coe_eval₂RingHom, eval₂_eq_sum_range, Finset.sum_range_succ,
-      hg₁.coeff_natDegree] at hv₁
-    have hlow : P'.valuation (∑ i ∈ Finset.range g₁.natDegree,
-        ((algebraMap F F').comp (algebraMap (P'.restrict k F).integers F)) (g₁.coeff i) * y ^ i) <
-        P'.valuation (((algebraMap F F').comp (algebraMap (P'.restrict k F).integers F)) 1 *
-          y ^ g₁.natDegree) := by
-      have hy0 : P'.valuation y ≠ 0 := (zero_lt_one.trans hy).ne'
-      rw [map_one, one_mul, map_pow]
-      refine Valuation.map_sum_lt _ (pow_ne_zero _ hy0) fun i hi ↦ ?_
-      calc _ = P'.valuation (algebraMap F F' (g₁.coeff i : F)) * P'.valuation y ^ i := by
-            rw [map_mul, map_pow]; rfl
-        _ ≤ P'.valuation y ^ i := mul_le_of_le_one_left' (hcoeff _)
-        _ < P'.valuation y ^ g₁.natDegree := pow_lt_pow_right₀ hy (Finset.mem_range.mp hi)
-    rw [Valuation.map_add_eq_of_lt_right _ hlow, map_one, one_mul, map_pow] at hv₁
-    exact not_lt.mpr (one_le_pow₀ hy.le) hv₁
+  have hy := mem_integers_of_valuation_integersEval_lt_one k F P' hg₁ hv₁
   rw [← minpoly_residue_eq k F P' hy hg₁ hirr₁ hv₁, minpoly_residue_eq k F P' hy hg₂ hirr₂ hv₂]
 
 /-- **The relative degree bound of Kummer's theorem** (Stichtenoth, Theorem 3.3.7): a place `P'`
 over `P` at which a polynomial `g` with irreducible reduction `γ` vanishes has relative degree at
-least `deg γ`, because `γ` is the minimal polynomial of the residue of `y` at `P'`. -/
+least `deg γ`, because `γ` is associated to the minimal polynomial of the residue of `y` at `P'`,
+and so has the same degree. -/
 theorem natDegree_map_residue_le_relativeDegree {P : Place k F} {P' : Place k' F'}
     (hres : P'.restrict k F = P) {y : F'} (hy : y ∈ P'.integers) {g : P.integers[X]}
     (hirr : Irreducible (g.map (IsLocalRing.residue P.integers)))
@@ -607,12 +614,9 @@ theorem exists_restrict_eq_relativeDegree_eq_and_isSeparable (hF : IsFunctionFie
     (le_antisymm (Finset.sum_le_sum fun q _ ↦ (hQ q).2.1) hle)
   -- Specialize to the monic associate `γ'` of `γ`, and identify the place below with `P`.
   obtain ⟨γ', hmonic, hirr', hdvd', hdeg'⟩ : ∃ γ' : P.ResidueField[X], γ'.Monic ∧ Irreducible γ' ∧
-      γ' ∣ φ.map res ∧ γ'.natDegree = γ.natDegree := by
-    have hlc : γ.leadingCoeff⁻¹ ≠ 0 := inv_ne_zero (leadingCoeff_ne_zero.mpr hirr.ne_zero)
-    have hassoc : Associated γ (γ * C γ.leadingCoeff⁻¹) :=
-      associated_mul_unit_right γ _ (isUnit_C.mpr hlc.isUnit)
-    exact ⟨_, monic_mul_leadingCoeff_inv hirr.ne_zero, hassoc.irreducible hirr,
-      hassoc.symm.dvd.trans hdvd, natDegree_mul_C hlc⟩
+      γ' ∣ φ.map res ∧ γ'.natDegree = γ.natDegree :=
+    ⟨normalize γ, monic_normalize hirr.ne_zero, irreducible_normalize_iff.mpr hirr,
+      normalize_dvd_iff.mpr hdvd, natDegree_normalize⟩
   have hγ : γ' ∈ S := (hS γ').mpr ⟨hirr', hmonic, hdvd'⟩
   obtain ⟨hP', -, g', hg'm, hg'map, hv'⟩ := hQ ⟨γ', hγ⟩
   have hrel : relativeDegree k F (Q ⟨γ', hγ⟩) = γ'.natDegree :=

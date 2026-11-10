@@ -154,10 +154,9 @@ theorem decompositionSubgroup_decompositionField_eq_top (P : Place k F') :
     P.integers.decompositionSubgroup (decompositionField F P) = ⊤ := by
   ext τ
   simp only [Subgroup.mem_top, iff_true]
-  have h : τ.restrictScalars F ∈ P.integers.decompositionSubgroup F := by
-    rw [← fixingSubgroup_decompositionField F P]
-    exact (IntermediateField.mem_fixingSubgroup_iff _ _).mpr fun x hx ↦ τ.commutes ⟨x, hx⟩
-  exact h
+  refine (restrictScalars_mem_decompositionSubgroup_iff (F := F) P _ τ).mp ?_
+  rw [← fixingSubgroup_decompositionField F P]
+  exact (IntermediateField.mem_fixingSubgroup_iff _ _).mpr fun x hx ↦ τ.commutes ⟨x, hx⟩
 
 section IsGalois
 

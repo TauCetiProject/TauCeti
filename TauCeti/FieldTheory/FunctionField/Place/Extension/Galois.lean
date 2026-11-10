@@ -202,6 +202,16 @@ theorem stabilizer_eq_decompositionSubgroup :
   rw [MulAction.mem_stabilizer_iff, MulAction.mem_stabilizer_iff, ← integers_smul]
   exact ⟨fun h ↦ by rw [h], fun h ↦ integers_injective h⟩
 
+omit [Algebra k F] [IsScalarTower k F F'] in
+/-- **Decomposition-group membership is unchanged by restricting scalars**: an automorphism of `F'`
+over an intermediate field `E` lies in the decomposition group of `P` over `E` exactly when it lies
+in the decomposition group of `P` over `F`, read as an automorphism over `F`. -/
+theorem restrictScalars_mem_decompositionSubgroup_iff (E : IntermediateField F F')
+    (τ : F' ≃ₐ[E] F') :
+    τ.restrictScalars F ∈ P.integers.decompositionSubgroup F ↔
+      τ ∈ P.integers.decompositionSubgroup E :=
+  Iff.rfl
+
 section Transport
 
 variable (F) (g : P.integers.decompositionSubgroup F)
