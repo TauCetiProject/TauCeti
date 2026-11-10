@@ -295,11 +295,32 @@ theorem ae_isSimpleGraph_map_toRelationalConfiguration [Countable V] (μ : Measu
 
 /-- A law on configurations concentrated on simple graphs is the encoding of its pullback to
 simple graphs. -/
-theorem map_comap_toRelationalConfiguration [Countable V]
+theorem map_comap_toRelationalConfiguration
     {μ : Measure (RelationalConfiguration Language.graph V)} (hμ : ∀ᵐ c ∂μ, IsSimpleGraph c) :
     (μ.comap toRelationalConfiguration).map toRelationalConfiguration = μ := by
-  rw [measurableEmbedding_toRelationalConfiguration.map_comap, range_toRelationalConfiguration]
-  exact Measure.restrict_eq_self_of_ae_mem hμ
+  have hA : NullMeasurableSet {c : RelationalConfiguration Language.graph V | IsSimpleGraph c} μ :=
+    MeasurableSet.univ.nullMeasurableSet.congr (ae_eq_univ.2 (ae_iff.1 hμ)).symm
+  have hnull : ∀ s : Set (SimpleGraph V), MeasurableSet s →
+      NullMeasurableSet (toRelationalConfiguration '' s) μ := by
+    intro s hs
+    obtain ⟨T, hT, hTs⟩ := relationalConfigurationEquiv.measurableSet_image.2 hs
+    have himage : toRelationalConfiguration '' s = T ∩ {c | IsSimpleGraph c} := by
+      have h : toRelationalConfiguration '' s =
+          Subtype.val '' (relationalConfigurationEquiv '' s) := by
+        rw [Set.image_image]
+        rfl
+      rw [h, ← hTs, Set.image_preimage_eq_inter_range, Subtype.range_coe_subtype]
+    rw [himage]
+    exact hT.nullMeasurableSet.inter hA
+  have hinj : Function.Injective
+      (toRelationalConfiguration : SimpleGraph V → RelationalConfiguration Language.graph V) :=
+    fun a b h ↦ relationalConfigurationEquiv.injective (Subtype.ext h)
+  refine Measure.ext fun T hT ↦ ?_
+  rw [Measure.map_apply measurable_toRelationalConfiguration hT,
+    Measure.comap_apply₀ _ _ hinj hnull
+      (measurable_toRelationalConfiguration hT).nullMeasurableSet,
+    Set.image_preimage_eq_inter_range, range_toRelationalConfiguration, ← Measure.restrict_apply hT,
+    Measure.restrict_eq_self_of_ae_mem hμ]
 
 /-- The pullback to simple graphs of a probability law concentrated on simple graphs is a
 probability law. -/
@@ -337,7 +358,7 @@ theorem toRelationalConfiguration_comp_comap (f : V → W) :
 
 /-- For laws concentrated on simple graphs, pulling back to simple graphs commutes with
 restriction. -/
-theorem map_comap_comap_toRelationalConfiguration [Countable V] [Countable W] (f : V → W)
+theorem map_comap_comap_toRelationalConfiguration [Countable V] (f : V → W)
     {μ : Measure (RelationalConfiguration Language.graph W)} (hμ : ∀ᵐ c ∂μ, IsSimpleGraph c) :
     (μ.comap toRelationalConfiguration).map (SimpleGraph.comap f) =
       (μ.map (restrict f)).comap toRelationalConfiguration := by
