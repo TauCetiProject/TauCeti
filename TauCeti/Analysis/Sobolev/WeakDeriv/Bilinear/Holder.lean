@@ -139,13 +139,13 @@ private theorem hasWeakLineDerivOn_bilin_of_memLp (B : F →L[ℝ] G →L[ℝ] H
   have hV'ae := hV'.coeFn_toLp_indicator_restrict W.isOpen.measurableSet hWΩ'
   -- Hölder makes each product converge in `L¹(W)`; the triangle inequality handles the
   -- Leibniz sum.
-  have hsum := (tendsto_setLIntegral_enorm_bilin_normedBump_sub (r := r) B hp hq hU' hV hφ hWμ
+  have hsum := (B.tendsto_setLIntegral_enorm_bilin_normedBump_sub (r := r) hp hq hU' hV hφ hWμ
     hU'ae hVae).add
-    (tendsto_setLIntegral_enorm_bilin_normedBump_sub (r := r) B hp hq hU hV' hφ hWμ hUae hV'ae)
+    (B.tendsto_setLIntegral_enorm_bilin_normedBump_sub (r := r) hp hq hU hV' hφ hWμ hUae hV'ae)
   rw [add_zero] at hsum
   refine hasWeakLineDerivOn_of_tendsto_lintegral_enorm_sub (IntegrableOn.locallyIntegrableOn hlim)
     (IntegrableOn.locallyIntegrableOn hlim') hweak
-    (tendsto_setLIntegral_enorm_bilin_normedBump_sub (r := r) B hp hq hU hV hφ hWμ hUae hVae)
+    (B.tendsto_setLIntegral_enorm_bilin_normedBump_sub (r := r) hp hq hU hV hφ hWμ hUae hVae)
     (tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum (fun _ => zero_le)
       fun n => (lintegral_mono fun x => ?_).trans (lintegral_add_left' ?_ _).le)
   · rw [add_sub_add_comm]

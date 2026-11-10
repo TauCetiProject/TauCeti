@@ -61,8 +61,9 @@ integrability or compact support assumption on the function.
   convolutions converge in `L¹`, written with lower Lebesgue integrals.
 * `TauCeti.tendsto_setLIntegral_enorm_normed_convolution_sub`: for a locally integrable function
   these convolutions converge in `L¹(K)` on every compact set `K`.
-* `TauCeti.tendsto_setLIntegral_enorm_bilin_normedBump_sub`: mollifying both factors of a bilinear
-  product of `Lᵖ` and `Lᵠ` functions converges in `L¹(W)` to the product of the limits.
+* `ContinuousLinearMap.tendsto_setLIntegral_enorm_bilin_normedBump_sub`: mollifying both factors
+  of a bilinear product of `Lᵖ` and `Lᵠ` functions converges in `L¹(W)` to the product of the
+  limits.
 
 ## References
 
@@ -276,7 +277,8 @@ variable {G H : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddComm
 /-- Mollifying both factors of a product by a shrinking normalized bump converges in `L¹(W)` to
 the product of their limits, when the limits are represented on `W` by the classes of `U` and
 `V`. -/
-theorem tendsto_setLIntegral_enorm_bilin_normedBump_sub (B : F →L[ℝ] G →L[ℝ] H)
+theorem _root_.ContinuousLinearMap.tendsto_setLIntegral_enorm_bilin_normedBump_sub
+    (B : F →L[ℝ] G →L[ℝ] H)
     {p q r : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)] [Fact (1 ≤ r)]
     [ENNReal.HolderTriple p q r] (hp : p ≠ ⊤) (hq : q ≠ ⊤) [CompleteSpace F] [CompleteSpace G]
     {U : E → F} {V : E → G} (hU : MemLp U p mu) (hV : MemLp V q mu)
