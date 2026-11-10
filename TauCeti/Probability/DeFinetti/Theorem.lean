@@ -24,10 +24,10 @@ The de Finetti summit in its **conditional** form, together with its conditional
 equivalences.
 
 `conditionallyIID_of_contractable` is the sharp statement: a contractable process valued in a
-nonempty standard Borel space is conditionally i.i.d., a joint-law disintegration given a directing
+standard Borel space is conditionally i.i.d., a joint-law disintegration given a directing
 measure. Since exchangeability implies contractability, `conditionallyIID_of_exchangeable` is de
 Finetti's theorem in the same sharp form. For a process with a.e. measurable coordinates, valued in
-a nonempty standard Borel space, under a finite measure, the conditional equivalences read
+a standard Borel space, under a finite measure, the conditional equivalences read
 
 * exchangeable **iff** conditionally i.i.d. (`deFinetti_equivalence`),
 * contractable **iff** conditionally i.i.d. (`contractable_iff_conditionallyIID`, the two-way
@@ -45,8 +45,8 @@ Their integrated-out mixture forms read
   two-way form)
 
 — Kallenberg, *Probabilistic Symmetries and Invariance Principles*, Theorem 1.1 (pp. 26–28). The
-hard direction is the reverse-martingale de Finetti chain
-(`mixedIID_of_contractable`); the converse directions are the bridges
+hard direction is the conditional summit (`conditionallyIID_of_contractable`), projected to the
+mixture identity by `mixedIID_of_conditionallyIID`; the converse directions are the bridges
 (`MixedIID.exchangeable`, `MixedIID.contractable`).
 
 Both conditional implications conclude `ConditionallyIID`, not merely `MixedIID`. The contractable
@@ -126,7 +126,7 @@ private theorem conditionallyIID_of_contractable_measurable [StandardBorelSpace 
       (Contractable.coordinate_pathLaw hX fun i => (hX_meas i).aemeasurable)).of_pathLaw hX_meas)
 
 /-- **The conditional summit: contractable ⇒ conditionally i.i.d.** A contractable process valued in
-a nonempty standard Borel space has a directing measure given which every finite distinct block is
+a standard Borel space has a directing measure given which every finite distinct block is
 i.i.d., as a joint-law disintegration.
 
 This is the sharp form. It strengthens `contractable_iff_mixedIID`, whose forward direction
@@ -135,55 +135,61 @@ concludes only the mixture identity. No standard-Borel hypothesis is imposed on 
 The witness is available explicitly, at the cost of exactly measurable coordinates:
 `conditionallyIIDWith_of_contractable_pathSpace` names the tail conditional law on path space, and
 `ConditionallyIIDWith.of_pathLaw` transports it. -/
-theorem conditionallyIID_of_contractable [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω}
+theorem conditionallyIID_of_contractable [StandardBorelSpace α] {μ : Measure Ω}
     [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX : Contractable μ X)
     (hX_meas : ∀ n, AEMeasurable (X n) μ) :
-    ConditionallyIID μ X :=
-  (conditionallyIID_of_contractable_measurable (hX.congr fun n => (hX_meas n).ae_eq_mk)
-    fun n => (hX_meas n).measurable_mk).congr_process fun n => ((hX_meas n).ae_eq_mk).symm
+    ConditionallyIID μ X := by
+  rcases isEmpty_or_nonempty Ω with hΩ | ⟨⟨ω⟩⟩
+  · -- On an empty sample space the measure is zero and every identity is between zero measures.
+    refine ConditionallyIID.of_directing (ν := fun ω => isEmptyElim ω)
+      (.intro hX_meas Subsingleton.measurable fun m k _ => ?_)
+    simp [Measure.eq_zero_of_isEmpty μ]
+  · have : Nonempty α := ⟨X 0 ω⟩
+    exact (conditionallyIID_of_contractable_measurable (hX.congr fun n => (hX_meas n).ae_eq_mk)
+      fun n => (hX_meas n).measurable_mk).congr_process fun n => ((hX_meas n).ae_eq_mk).symm
 
-/-- **De Finetti's theorem, conditional form.** An exchangeable process valued in a nonempty
+/-- **De Finetti's theorem, conditional form.** An exchangeable process valued in a
 standard Borel space is conditionally i.i.d. No standard-Borel hypothesis is imposed on the sample
 space. -/
-theorem conditionallyIID_of_exchangeable [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω}
+theorem conditionallyIID_of_exchangeable [StandardBorelSpace α] {μ : Measure Ω}
     [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX : Exchangeable μ X)
     (hX_meas : ∀ n, AEMeasurable (X n) μ) :
     ConditionallyIID μ X :=
   conditionallyIID_of_contractable (hX.contractable hX_meas) hX_meas
 
-/-- **De Finetti's theorem.** An exchangeable process valued in a nonempty standard Borel space is
+/-- **De Finetti's theorem.** An exchangeable process valued in a standard Borel space is
 conditionally i.i.d. This is the conventional theorem-name handle for
 `conditionallyIID_of_exchangeable`. -/
-theorem deFinetti [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω}
+theorem deFinetti [StandardBorelSpace α] {μ : Measure Ω}
     [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX_meas : ∀ n, AEMeasurable (X n) μ)
     (hX : Exchangeable μ X) :
     ConditionallyIID μ X :=
   conditionallyIID_of_exchangeable hX hX_meas
 
 /-- **De Finetti's theorem as an equivalence.** A process with a.e. measurable coordinates, valued
-in a nonempty standard Borel space, is exchangeable iff it is conditionally i.i.d. -/
-theorem deFinetti_equivalence [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω}
+in a standard Borel space, is exchangeable iff it is conditionally i.i.d. -/
+theorem deFinetti_equivalence [StandardBorelSpace α] {μ : Measure Ω}
     [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX_meas : ∀ n, AEMeasurable (X n) μ) :
     Exchangeable μ X ↔ ConditionallyIID μ X :=
   ⟨fun hX => conditionallyIID_of_exchangeable hX hX_meas,
     fun hX => hX.exchangeable⟩
 
 /-- **De Finetti–Ryll-Nardzewski, two-way conditional form.** A process with a.e. measurable
-coordinates, valued in a nonempty standard Borel space, under a finite measure, is contractable iff
+coordinates, valued in a standard Borel space, under a finite measure, is contractable iff
 it is conditionally i.i.d. This is the sharp conditional equivalence, matching
 `contractable_iff_mixedIID` on the mixture side; the converse is `ConditionallyIID.contractable`,
 which needs no side hypotheses. -/
-theorem contractable_iff_conditionallyIID [StandardBorelSpace α] [Nonempty α]
+theorem contractable_iff_conditionallyIID [StandardBorelSpace α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX_meas : ∀ n, AEMeasurable (X n) μ) :
     Contractable μ X ↔ ConditionallyIID μ X :=
   ⟨fun hX => conditionallyIID_of_contractable hX hX_meas, fun hX => hX.contractable⟩
 
 /-- **The de Finetti–Ryll-Nardzewski equivalence.** A process with a.e. measurable coordinates,
-valued in a nonempty standard Borel space, is contractable iff it is both exchangeable and
+valued in a standard Borel space, is contractable iff it is both exchangeable and
 conditionally i.i.d. Derived from the two-way `contractable_iff_conditionallyIID`, with the
 exchangeability conjunct supplied by `ConditionallyIID.exchangeable` (the conjunct is redundant
 given conditional i.i.d.-ness). -/
-theorem deFinetti_RyllNardzewski_equivalence [StandardBorelSpace α] [Nonempty α]
+theorem deFinetti_RyllNardzewski_equivalence [StandardBorelSpace α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α}
     (hX_meas : ∀ n, AEMeasurable (X n) μ) :
     Contractable μ X ↔ Exchangeable μ X ∧ ConditionallyIID μ X :=
@@ -191,33 +197,32 @@ theorem deFinetti_RyllNardzewski_equivalence [StandardBorelSpace α] [Nonempty �
     ⟨fun hX => ⟨hX.exchangeable, hX⟩, And.right⟩
 
 /-- **De Finetti's theorem, mixture equivalence form** (Kallenberg, Theorem 1.1). A process with
-a.e. measurable coordinates, valued in a nonempty standard Borel space, under a finite measure, is
-exchangeable iff it is mixed i.i.d. The forward direction is the reverse-martingale
-de Finetti chain (`mixedIID_of_exchangeable`), run on a measurable version; the converse is the
+a.e. measurable coordinates, valued in a standard Borel space, under a finite measure, is
+exchangeable iff it is mixed i.i.d. The forward direction is the conditional de Finetti theorem
+(`conditionallyIID_of_exchangeable`) followed by `mixedIID_of_conditionallyIID`; the converse is the
 mixture computation `MixedIID.exchangeable`, which needs no side hypotheses. -/
-theorem exchangeable_iff_mixedIID [StandardBorelSpace α] [Nonempty α] {μ : Measure Ω}
+theorem exchangeable_iff_mixedIID [StandardBorelSpace α] {μ : Measure Ω}
     [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX_meas : ∀ n, AEMeasurable (X n) μ) :
     Exchangeable μ X ↔ MixedIID μ X :=
-  ⟨fun hX => (mixedIID_of_exchangeable (hX.congr fun n => (hX_meas n).ae_eq_mk)
-      fun n => (hX_meas n).measurable_mk).congr_process fun n => ((hX_meas n).ae_eq_mk).symm,
+  ⟨fun hX => mixedIID_of_conditionallyIID (conditionallyIID_of_exchangeable hX hX_meas),
     fun hX => hX.exchangeable⟩
 
 /-- **De Finetti–Ryll-Nardzewski, two-way mixture form.** A process with a.e. measurable
-coordinates, valued in a nonempty standard Borel space, under a finite measure, is contractable iff
-it is mixed i.i.d. Forward: the reverse-martingale de Finetti chain (`mixedIID_of_contractable`),
-run on a measurable version; converse: `MixedIID.contractable`, which needs no side hypotheses. -/
-theorem contractable_iff_mixedIID [StandardBorelSpace α] [Nonempty α]
+coordinates, valued in a standard Borel space, under a finite measure, is contractable iff
+it is mixed i.i.d. Forward: the conditional summit (`conditionallyIID_of_contractable`) followed
+by `mixedIID_of_conditionallyIID`; converse: `MixedIID.contractable`, which needs no side
+hypotheses. -/
+theorem contractable_iff_mixedIID [StandardBorelSpace α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX_meas : ∀ n, AEMeasurable (X n) μ) :
     Contractable μ X ↔ MixedIID μ X :=
-  ⟨fun hX => (mixedIID_of_contractable (hX.congr fun n => (hX_meas n).ae_eq_mk)
-      fun n => (hX_meas n).measurable_mk).congr_process fun n => ((hX_meas n).ae_eq_mk).symm,
+  ⟨fun hX => mixedIID_of_conditionallyIID (conditionallyIID_of_contractable hX hX_meas),
     fun hX => hX.contractable⟩
 
 /-- **The de Finetti–Ryll-Nardzewski equivalence, mixture form** (Kallenberg, Theorem 1.1), in
 conjunction form: contractable iff exchangeable and mixed i.i.d. Derived from the two-way
 `contractable_iff_mixedIID`, with the exchangeability conjunct supplied by `MixedIID.exchangeable`
 (the conjunct is redundant given mixed i.i.d.). -/
-theorem contractable_iff_exchangeable_and_mixedIID [StandardBorelSpace α] [Nonempty α]
+theorem contractable_iff_exchangeable_and_mixedIID [StandardBorelSpace α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ → Ω → α} (hX_meas : ∀ n, AEMeasurable (X n) μ) :
     Contractable μ X ↔ Exchangeable μ X ∧ MixedIID μ X :=
   (contractable_iff_mixedIID hX_meas).trans

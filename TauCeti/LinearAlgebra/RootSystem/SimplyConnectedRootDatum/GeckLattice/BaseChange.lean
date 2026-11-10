@@ -566,7 +566,7 @@ theorem geckBaseChangeCoordinateIso_hom_comp_weightTorusBaseChangeMap :
     (t.geckBaseChangeCoordinateIso ht A).hom ≫
           CommHopfAlgCat.baseChangeMap (t.geckWeightTorusIntegralCoordinateMap ht) ≫
         (_root_.CommHopfAlgCat.ofHom
-          (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+          (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
             (G := SplitTorus.characterGroup (Fin t.rank)))) =
       t.geckWeightTorusToBaseChangeCoordinateMap ht A := by
   let _ : Epi (CommHopfAlgCat.mkQuotient
@@ -663,7 +663,7 @@ noncomputable def geckGeneratorCoordinateAlgebraBaseChangeIso :
       t.geckGeneratorCoordinateAlgebra K j
   | .inl _ => AdditiveGroup.coordinateHopfAlgebraBaseChangeIso k K
   | .inr _ => _root_.CommHopfAlgCat.isoMk
-      (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K
+      (MonoidAlgebra.scalarTensorBialgEquiv k K
         (G := SplitTorus.characterGroup (Fin t.rank)))
 
 /-- **The Geck generators commute with scalar extension.** For a ring map `k → K`, each numbered

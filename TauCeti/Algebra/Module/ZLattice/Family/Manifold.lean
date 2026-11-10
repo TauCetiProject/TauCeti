@@ -41,7 +41,7 @@ covering map, and `p` is a holomorphic submersion. The maps `q` and `p` are diff
 discrete fibres, while the fibre of `p` over `y` is the torus `E ⧸ LinearMap.range (P y)`
 (`TauCeti.torusFamilyFiberHomeomorph`), so `p` is not a local diffeomorphism when `E ≠ 0`.
 
-Over `𝕜 = ℝ` or `ℂ`, for a boundaryless finite-dimensional model of `Y` and `n ≥ 1`, the inclusion
+Over `𝕜 = ℝ` or `ℂ`, for a boundaryless model of `Y` and `n ≥ 1`, the inclusion
 `E ⧸ LinearMap.range (P y) → (Y × E)/Λ` of the fibre over `y` is a `C^n` embedding in Mathlib's
 sense, `Manifold.IsSmoothEmbedding`: an immersion which is a homeomorphism onto its image. Its
 image is the literal fibre `p⁻¹(y)` (`TauCeti.range_torusFamilyFiberMap`), its tangent image at
@@ -298,17 +298,17 @@ end Regularity
 section Embedding
 
 variable {𝕜 : Type*} [RCLike 𝕜] {EY : Type*} [NormedAddCommGroup EY] [NormedSpace 𝕜 EY]
-  [FiniteDimensional 𝕜 EY] {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 EY H}
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 EY H}
   [I.Boundaryless] {Y : Type*} [TopologicalSpace Y] [ChartedSpace H Y] [T2Space Y]
   [LocallyCompactSpace Y] {Λ : Type*} [AddCommGroup Λ] [Module.Free ℤ Λ] [Module.Finite ℤ Λ]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [NormedSpace 𝕜 E]
-  [FiniteDimensional 𝕜 E] (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
+  (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))]
   (hinj : ∀ y, Injective (P y)) {n : WithTop ℕ∞} [IsManifold I n Y]
   (hP : ∀ l, ContMDiff I 𝓘(𝕜, E) n fun y ↦ P y l)
 
 /-- **The inclusion of a fibre is an immersion.** For a `C^n` family of full lattices over a
-boundaryless manifold with finite-dimensional model, `n ≥ 1`, the map
+boundaryless manifold, `n ≥ 1`, the map
 `E ⧸ LinearMap.range (P y) → (Y × E)/Λ`, `[v] ↦ [y, v]`, is a `C^n` immersion. -/
 theorem isImmersion_torusFamilyFiberMap (hn : 1 ≤ n) (y : Y) :
     letI := periodAddAction P
@@ -316,6 +316,10 @@ theorem isImmersion_torusFamilyFiberMap (hn : 1 ≤ n) (y : Y) :
     Manifold.IsImmersion 𝓘(𝕜, E) (I.prod 𝓘(𝕜, E)) n (torusFamilyFiberMap P y) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
+  have : FiniteDimensional 𝕜 E := .of_locallyCompactSpace 𝕜
+  have : FiniteDimensional 𝕜 EY :=
+    haveI : Nonempty Y := ⟨y⟩
+    FiniteDimensional.of_locallyCompact_manifold Y I
   have := isManifold_torusFamily P hinj hP
   have : CompleteSpace EY := FiniteDimensional.complete 𝕜 EY
   have hn0 : n ≠ 0 := by rintro rfl; simp at hn
@@ -351,7 +355,7 @@ theorem isImmersion_torusFamilyFiberMap (hn : 1 ≤ n) (y : Y) :
     rw [comp_apply, torusFamilyFiberMap_mk, id_eq, hp, hqz]
 
 /-- **The inclusion of a fibre is an embedding.** For a `C^n` family of full lattices over a
-boundaryless manifold with finite-dimensional model, `n ≥ 1`, the map
+boundaryless manifold, `n ≥ 1`, the map
 `E ⧸ LinearMap.range (P y) → (Y × E)/Λ`, `[v] ↦ [y, v]`, is a `C^n` embedding, with image the
 fibre over `y` (`TauCeti.range_torusFamilyFiberMap`). For holomorphic periods of a complex family
 and `n = ω`, it embeds the complex torus `E ⧸ LinearMap.range (P y)` holomorphically onto the
@@ -366,7 +370,7 @@ theorem isSmoothEmbedding_torusFamilyFiberMap (hn : 1 ≤ n) (y : Y) :
     isEmbedding_torusFamilyFiberMap P y fun l ↦ (hP l).continuous⟩
 
 /-- **The tangent space of a fibre is vertical.** For a `C^n` family of full lattices over a
-boundaryless manifold with finite-dimensional model, `n ≥ 1`, the image of the derivative of the
+boundaryless manifold, `n ≥ 1`, the image of the derivative of the
 inclusion `E ⧸ LinearMap.range (P y) → (Y × E)/Λ` at any point is the kernel of the derivative of
 the projection `(Y × E)/Λ → Y` at its image. -/
 theorem range_mfderiv_torusFamilyFiberMap (hn : 1 ≤ n) (y : Y)
@@ -377,6 +381,10 @@ theorem range_mfderiv_torusFamilyFiberMap (hn : 1 ≤ n) (y : Y)
       (mfderiv (I.prod 𝓘(𝕜, E)) I (torusFamilyProjection P) (torusFamilyFiberMap P y z)).ker := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
+  have : FiniteDimensional 𝕜 E := .of_locallyCompactSpace 𝕜
+  have : FiniteDimensional 𝕜 EY :=
+    haveI : Nonempty Y := ⟨y⟩
+    FiniteDimensional.of_locallyCompact_manifold Y I
   have := isManifold_torusFamily P hinj hP
   have hn0 : n ≠ 0 := by rintro rfl; simp at hn
   have hp := (isSubmersionOfComplement_torusFamilyProjection P hinj hP).isSubmersionAt
@@ -387,8 +395,8 @@ theorem range_mfderiv_torusFamilyFiberMap (hn : 1 ≤ n) (y : Y)
     (((isImmersion_torusFamilyFiberMap P hinj hP hn y).isImmersionAt z).mfderiv_injective hn0) ?_
   rw [Module.finrank_prod, add_comm]
 
-/-- **Maps into a fibre.** For a `C^n` family of full lattices over a boundaryless manifold with
-finite-dimensional model, `n ≥ 1`, a map `g` into `E ⧸ LinearMap.range (P y)` is `C^n` exactly
+/-- **Maps into a fibre.** For a `C^n` family of full lattices over a boundaryless manifold,
+`n ≥ 1`, a map `g` into `E ⧸ LinearMap.range (P y)` is `C^n` exactly
 when its composite with the inclusion `[v] ↦ [y, v]` of the fibre over `y` is `C^n`. Every map into
 the total space with values in the fibre over `y` is such a composite
 (`TauCeti.range_torusFamilyFiberMap`). -/

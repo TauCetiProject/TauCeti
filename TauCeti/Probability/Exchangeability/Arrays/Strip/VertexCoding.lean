@@ -134,6 +134,7 @@ theorem SeparatelyExchangeable.exists_vertex_strip_coding
     (measurable_pi_uncurry_prod fun _ ↦ hr) (measurable_pi_uncurry_prod fun _ ↦ hc)
     hrow.symm hcol.symm
 
+omit [Nonempty α] in
 /-- **The vertex strips and diagonal are coded by i.i.d. vertex noise.** Let `e` enumerate hidden
 vertices, `d` a reservoir of further vertices and `g` visible vertices, all injectively and with
 pairwise disjoint ranges. The data of a vertex `k` consist of the two-oriented strip

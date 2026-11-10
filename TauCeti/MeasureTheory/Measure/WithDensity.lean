@@ -47,6 +47,8 @@ measure finite.
   through a map whose Jacobian identity is already known transports that weight to the image.
 * `MeasureTheory.Measure.map_withDensity_comp`: the image of a measure weighted by a pulled-back
   weight is the image measure weighted by that weight.
+* `MeasurableEmbedding.map_withDensity_comp`: the same along a measurable embedding, with no
+  measurability of the weight.
 * `MeasureTheory.Measure.map_add_right_withDensity`: translating a weighted right-invariant
   measure translates the weight.
 * `MeasureTheory.Measure.map_affine_withDensity`: the image of a weighted Haar measure under an
@@ -213,6 +215,17 @@ theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : 
 theorem map_withDensity_comp {μ : Measure α} {f : α → β} {g : β → ℝ≥0∞} (hf : Measurable f)
     (hg : Measurable g) : (μ.withDensity (g ∘ f)).map f = (μ.map f).withDensity g :=
   map_withDensity_eq_withDensity (jac := fun _ => 1) hf measurable_const hg (by simp) (by simp)
+
+/-- **A pulled-back weight is pushed forward along a measurable embedding.** Unlike
+`map_withDensity_comp`, no measurability of the weight `g` is needed. -/
+theorem _root_.MeasurableEmbedding.map_withDensity_comp {μ : Measure α} {f : α → β}
+    (hf : MeasurableEmbedding f) (g : β → ℝ≥0∞) :
+    (μ.withDensity (g ∘ f)).map f = (μ.map f).withDensity g := by
+  ext s hs
+  rw [Measure.map_apply hf.measurable hs, withDensity_apply _ (hf.measurable hs),
+    withDensity_apply _ hs, ← lintegral_indicator (hf.measurable hs), ← lintegral_indicator hs,
+    hf.lintegral_map]
+  exact lintegral_congr fun x ↦ Set.indicator_comp_right f
 
 /-- **Translating a weighted invariant measure translates its weight.** If `μ` is invariant under
 right translation, then pushing `μ.withDensity f` forward along `x ↦ x + y` gives `μ` weighted by
