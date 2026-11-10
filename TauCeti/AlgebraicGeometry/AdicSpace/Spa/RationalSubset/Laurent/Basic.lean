@@ -180,11 +180,7 @@ theorem val_preimage_laurentPiece_mem_spaRationalFamily
     induction t using Finset.induction with
     | empty =>
       refine ⟨{1}, 1, by simp, ?_⟩
-      ext v
-      simp only [Finset.notMem_empty, Set.iInter_of_empty, Set.iInter_univ, Set.mem_univ,
-        Set.mem_preimage, mem_rationalSubset_iff, true_iff]
-      exact ⟨v.2, by simp,
-        v.1.toValuativeRel.not_vle_one_zero⟩
+      simp [rationalSubset_singleton_one, Subtype.coe_preimage_self]
     | insert i t hi ih =>
       obtain ⟨T, s, hT, hts⟩ := ih
       rw [Finset.set_biInter_insert, hts, ← Set.preimage_inter]
