@@ -7,7 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.LinearAlgebra.RootSystem.LacingNumber
-public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.InvariantForm
 
 /-!
 # Squared root lengths of an invariant form and the Dynkin type
@@ -23,12 +23,11 @@ ratio of the two squared lengths of Mathlib's two-length theorem
 The comparison goes through the identity
 `⟨αⱼ, αᵢ^∨⟩ ⟨αᵢ, αᵢ⟩ = ⟨αᵢ, αⱼ^∨⟩ ⟨αⱼ, αⱼ⟩`, which makes the squared lengths of the simple roots a
 right symmetriser of the Cartan matrix, as is the table `TauCeti.DynkinType.rootLength`. Since the
-Dynkin diagram is connected, two such symmetrisers are proportional.
+Dynkin diagram is connected, two such symmetrisers are proportional. Every root has the squared
+length of a simple root, by `RootPairing.InvariantForm.exists_mem_support_apply_root_root_eq`.
 
 ## Main results
 
-* `RootPairing.InvariantForm.exists_mem_support_apply_root_root_eq`: every root has the squared
-  length of a simple root.
 * `RootPairing.InvariantForm.exists_forall_apply_root_root_eq_mul_rootLength`: the squared lengths
   of the simple roots are one scale times the length table of the type.
 * `RootPairing.InvariantForm.exists_range_apply_root_root_eq`: the set of all squared root lengths
@@ -47,25 +46,8 @@ namespace RootPairing.InvariantForm
 
 open TauCeti
 
-variable {ι : Type*} [Finite ι]
-
-section Domain
-
-variable {R M N : Type*} [CommRing R] [CharZero R] [IsDomain R] [AddCommGroup M] [Module R M]
-  [AddCommGroup N] [Module R N] {P : RootPairing ι R M N} [P.IsCrystallographic] [P.IsReduced]
-
-/-- **Every root has the squared length of one of the simple roots**, for any invariant form. -/
-theorem exists_mem_support_apply_root_root_eq (B : P.InvariantForm) (b : P.Base) (j : ι) :
-    ∃ i ∈ b.support, B.form (P.root j) (P.root j) = B.form (P.root i) (P.root i) := by
-  obtain ⟨i, hi, w, rfl⟩ := exists_mem_support_weylGroupToPerm_eq b j
-  refine ⟨i, hi, ?_⟩
-  rw [← P.weylGroup_apply_root w i]
-  exact apply_weylGroup_smul P w _ _
-
-end Domain
-
-variable {K M N : Type*} [Field K] [AddCommGroup M] [Module K M] [AddCommGroup N] [Module K N]
-  {P : RootPairing ι K M N} [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible]
+variable {ι K M N : Type*} [Finite ι] [Field K] [AddCommGroup M] [Module K M] [AddCommGroup N]
+  [Module K N] {P : RootPairing ι K M N} [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible]
 
 section CharZero
 

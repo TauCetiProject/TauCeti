@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import Mathlib.LinearAlgebra.RootSystem.Finite.Nondegenerate
 public import Mathlib.LinearAlgebra.RootSystem.Irreducible
+public import TauCeti.LinearAlgebra.RootSystem.Basic
 public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.Basic
 
 /-!
@@ -53,14 +54,6 @@ namespace RootPairing
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
   [Module R N] {P : RootPairing ι R M N}
-
-/-- A root system on a nontrivial module has a root. -/
-lemma nonempty_of_isRootSystem [Nontrivial M] (P : RootPairing ι R M N) [P.IsRootSystem] :
-    Nonempty ι := by
-  by_contra! h
-  have hspan := IsRootSystem.span_root_eq_top (P := P)
-  rw [Set.range_eq_empty, Submodule.span_empty] at hspan
-  exact bot_ne_top hspan
 
 namespace InvariantForm
 
