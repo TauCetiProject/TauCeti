@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic
+public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.Basic
 public import TauCeti.Analysis.Complex.Conformal.Reflection.Principle
 -- Non-public: the non-differentiability of the absolute value is used only in a proof.
 import Mathlib.Analysis.Calculus.Deriv.Abs
@@ -39,11 +39,8 @@ lower half-plane, which is not complex differentiable at any real point.
 
 ## Main definitions
 
-* `TauCeti.ClosedUpperHalfPlane.fold`: the fold `z ↦ re z + |im z| i` of the plane onto the
-  closed upper half-plane.
-* `TauCeti.ClosedUpperHalfPlane.PreservesRealAxis`: an open partial homeomorphism of the closed
-  upper half-plane sends a point of its source to the real axis exactly when the point is real.
-* `TauCeti.ClosedUpperHalfPlane.schwarzDouble`: the reflected chart change of the plane.
+* `TauCeti.ClosedUpperHalfPlane.schwarzDouble`: the reflected chart change of the plane, for a
+  chart change satisfying `TauCeti.ClosedUpperHalfPlane.PreservesRealAxis`.
 
 ## Main results
 
@@ -76,86 +73,7 @@ namespace TauCeti
 
 namespace ClosedUpperHalfPlane
 
-/-! ### The fold of the plane onto the closed upper half-plane -/
-
-/-- The fold `z ↦ re z + |im z| i` of the plane onto the closed upper half-plane. It identifies
-`z` with `conj z` and is the identity on the closed upper half-plane. -/
-def fold (z : ℂ) : ClosedUpperHalfPlane :=
-  ⟨(z.re : ℂ) + (|z.im| : ℝ) * I, by simp⟩
-
-theorem coe_fold (z : ℂ) : (fold z : ℂ) = (z.re : ℂ) + (|z.im| : ℝ) * I :=
-  (rfl)
-
-@[simp]
-theorem re_fold (z : ℂ) : (fold z : ℂ).re = z.re := by
-  simp [coe_fold]
-
-@[simp]
-theorem im_fold (z : ℂ) : (fold z : ℂ).im = |z.im| := by
-  simp [coe_fold]
-
-theorem continuous_fold : Continuous fold :=
-  Continuous.subtype_mk (by fun_prop) _
-
-@[simp]
-theorem fold_conj (z : ℂ) : fold (conj z) = fold z :=
-  Subtype.ext (Complex.ext (by simp) (by simp))
-
-@[simp]
-theorem fold_coe (z : ClosedUpperHalfPlane) : fold z = z :=
-  Subtype.ext (Complex.ext (by simp) (by simp [abs_of_nonneg z.property]))
-
-theorem coe_fold_of_im_nonneg {z : ℂ} (hz : 0 ≤ z.im) : (fold z : ℂ) = z :=
-  congrArg Subtype.val (fold_coe ⟨z, hz⟩)
-
-theorem coe_fold_of_im_nonpos {z : ℂ} (hz : z.im ≤ 0) : (fold z : ℂ) = conj z := by
-  rw [← fold_conj, coe_fold_of_im_nonneg (by simpa using hz)]
-
-/-- On the closed upper half-plane, the model inverse is the fold. -/
-theorem closedUpperHalfPlaneModel_symm_eq_fold {z : ℂ} (hz : 0 ≤ z.im) :
-    closedUpperHalfPlaneModel.symm z = fold z :=
-  Subtype.ext ((coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz).trans
-    (coe_fold_of_im_nonneg hz).symm)
-
-/-! ### Chart changes that preserve the real axis -/
-
-/-- An open partial homeomorphism of the closed upper half-plane preserves the real axis if it
-sends a point of its source to the real axis exactly when the point is real. Members of
-`contDiffGroupoid n closedUpperHalfPlaneModel` with `n ≠ 0` do so
-(`ClosedUpperHalfPlane.preservesRealAxis_of_mem_contDiffGroupoid`). -/
-def PreservesRealAxis (e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane) :
-    Prop :=
-  ∀ z ∈ e.source, (z : ℂ).im = 0 ↔ (e z : ℂ).im = 0
-
 variable {e e' : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane}
-
-theorem preservesRealAxis_of_mem_contDiffGroupoid {n : ℕ∞ω}
-    (he : e ∈ contDiffGroupoid n closedUpperHalfPlaneModel) (hn : n ≠ 0) :
-    PreservesRealAxis e := fun _ hz ↦ im_eq_zero_iff_of_mem_contDiffGroupoid he hn hz
-
-theorem preservesRealAxis_of_mem_borderedHolomorphicGroupoid
-    (he : e ∈ borderedHolomorphicGroupoid) : PreservesRealAxis e :=
-  preservesRealAxis_of_mem_contDiffGroupoid (borderedHolomorphicGroupoid_le_contDiffGroupoid he)
-    (by simp)
-
-namespace PreservesRealAxis
-
-/-- A chart change preserving the real axis sends points of positive imaginary part, and only
-those, to points of positive imaginary part. -/
-theorem im_pos_iff (he : PreservesRealAxis e) {z : ClosedUpperHalfPlane} (hz : z ∈ e.source) :
-    0 < (z : ℂ).im ↔ 0 < (e z : ℂ).im := by
-  rw [(z.property).lt_iff_ne', (e z).property.lt_iff_ne', Ne, Ne, he z hz]
-
-protected theorem symm (he : PreservesRealAxis e) : PreservesRealAxis e.symm := fun w hw ↦ by
-  simpa [e.right_inv hw] using (he _ (e.map_target hw)).symm
-
-protected theorem trans (he : PreservesRealAxis e) (he' : PreservesRealAxis e') :
-    PreservesRealAxis (e.trans e') := fun _ hz ↦ (he _ hz.1).trans (he' _ hz.2)
-
-end PreservesRealAxis
-
-theorem preservesRealAxis_refl :
-    PreservesRealAxis (OpenPartialHomeomorph.refl ClosedUpperHalfPlane) := fun _ _ ↦ Iff.rfl
 
 /-! ### The reflected chart change -/
 
