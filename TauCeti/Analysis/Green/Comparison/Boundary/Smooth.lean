@@ -79,11 +79,6 @@ theorem exists_boundary_chart_circulation
   classical
   let φ := mpullback (𝓡∂ (1 + 1)) 𝓘(ℝ, ℂ) f (manifoldOneForm P Q)
   let g : (𝓡∂ (1 + 1)).boundary M → ℂ := fun x ↦ f x
-  have hinc : MDifferentiable 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) (𝓡∂ (1 + 1))
-      (Subtype.val : (𝓡∂ (1 + 1)).boundary M → M) :=
-    (isSmoothEmbedding_subtypeVal_boundary M (by simp : (∞ : ℕ∞ω) ≠ 0)).contMDiff
-      |>.mdifferentiable (by simp)
-  have hg : MDifferentiable 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) g := hf.comp hinc
   have he : boundaryRestriction φ =
       mpullback 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) g (manifoldOneForm P Q) := by
     exact boundaryRestriction_mpullback hf (manifoldOneForm P Q)
@@ -102,7 +97,7 @@ theorem exists_boundary_chart_circulation
     (hp α hα).1.integrableTopForm (hp α hα).2.1
       (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis
   have hlocal (α : (𝓡∂ (1 + 1)).boundary M) (hα : α ∈ s) :=
-    integralTopForm_weighted_mpullback_chart l.boundary P Q g hg (ρ α) α
+    integralTopForm_weighted_mpullback_chart l.boundary P Q g (ρ α) α
       (l.boundary.signAt α α) (fun _ ↦ rfl)
       (by simpa only [ψ, he] using hiψ α hα)
       (by simpa only [ψ, he, extChartAt_source] using (hp α hα).2.2.1)

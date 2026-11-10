@@ -49,7 +49,6 @@ variable {N : Type*} [TopologicalSpace N]
 raw circulation along its parametrization, with the usual real derivative. -/
 theorem inChartAt_mpullback_manifoldOneForm_eq_circulationFun
     (P Q : ℂ → ℝ) (f : N → ℂ)
-    (hf : MDifferentiable 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) f)
     (α : N) {t : ℝ}
     (ht : (EuclideanSpace.equiv (Fin 1) ℝ).symm (fun _ ↦ t) ∈
       (extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) α).target) :
@@ -63,21 +62,54 @@ theorem inChartAt_mpullback_manifoldOneForm_eq_circulationFun
   let e := extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) α
   let g : EuclideanSpace ℝ (Fin 1) → ℂ := f ∘ e.symm
   have ht' : lineParam t ∈ e.target := ht
-  have hd : DifferentiableAt ℝ g (lineParam t) := by
-    have h := (hf (e.symm (lineParam t))).comp_mdifferentiableWithinAt (lineParam t)
-      (mdifferentiableWithinAt_extChartAt_symm ht')
-    simpa only [_root_.ModelWithCorners.range_eq_univ, mdifferentiableWithinAt_univ,
-      mdifferentiableAt_iff_differentiableAt] using h
-  have hγ := hd.hasFDerivAt.comp_hasDerivAt t lineParam.hasFDerivAt.hasDerivAt
   -- Name the canonical inverse projection so the derivative chain rule matches the parameter map.
   change (mpullback _ _ f (manifoldOneForm P Q)).inChartAt α (lineParam t)
     (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis = circulationFun P Q (g ∘ lineParam) t
-  rw [RoughForm.inChartAt_mpullback_modelSpace _ f α ht' (hf _),
-    ContinuousAlternatingMap.compContinuousLinearMap_apply,
-    manifoldOneForm_apply, circulationFun_eq_oneForm, hγ.deriv,
-    _root_.ModelWithCorners.range_eq_univ, fderivWithin_univ, lineParam_one]
-  simp only [Function.comp_apply, ContinuousLinearMap.comp_apply]
-  rfl
+  by_cases hf : MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) f (e.symm (lineParam t))
+  · have hd : DifferentiableAt ℝ g (lineParam t) := by
+      have h := hf.comp_mdifferentiableWithinAt (lineParam t)
+        (mdifferentiableWithinAt_extChartAt_symm ht')
+      simpa only [_root_.ModelWithCorners.range_eq_univ, mdifferentiableWithinAt_univ,
+        mdifferentiableAt_iff_differentiableAt] using h
+    have hγ := hd.hasFDerivAt.comp_hasDerivAt t lineParam.hasFDerivAt.hasDerivAt
+    rw [RoughForm.inChartAt_mpullback_modelSpace _ f α ht' hf,
+      ContinuousAlternatingMap.compContinuousLinearMap_apply,
+      manifoldOneForm_apply, circulationFun_eq_oneForm, hγ.deriv,
+      _root_.ModelWithCorners.range_eq_univ, fderivWithin_univ, lineParam_one]
+    simp only [Function.comp_apply, ContinuousLinearMap.comp_apply]
+    rfl
+  · -- Without differentiability both sides vanish by the junk-value convention.
+    have hnd : ¬ DifferentiableAt ℝ (g ∘ lineParam) t := by
+      intro hdt
+      have hproj : EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0 (lineParam t) = t := rfl
+      have hgd : DifferentiableAt ℝ g (lineParam t) := by
+        have hcomp : DifferentiableAt ℝ ((g ∘ lineParam) ∘ EuclideanSpace.proj (𝕜 := ℝ)
+            (ι := Fin 1) 0) (lineParam t) :=
+          DifferentiableAt.comp (lineParam t) (by rwa [hproj])
+            (EuclideanSpace.proj (𝕜 := ℝ) (ι := Fin 1) 0).differentiableAt
+        refine hcomp.congr_of_eventuallyEq (Filter.Eventually.of_forall fun z ↦ ?_)
+        have he : lineParam (z 0) = z :=
+          (PiLp.equivOfUnique 2 ℝ (fun _ : Fin 1 ↦ ℝ)).symm_apply_apply z
+        simp only [Function.comp_apply, EuclideanSpace.coe_proj, he]
+      exact hf (by
+        have hx : e.symm (lineParam t) ∈ e.source := e.map_target ht'
+        have hg0 : MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) g
+            (e (e.symm (lineParam t))) := by
+          rw [e.right_inv ht']
+          exact hgd.mdifferentiableAt
+        have hg' : MDifferentiableAt 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) (g ∘ e)
+            (e.symm (lineParam t)) :=
+          hg0.comp (e.symm (lineParam t)) (mdifferentiableAt_extChartAt (by
+            simpa only [e, extChartAt_source] using hx))
+        refine hg'.congr_of_eventuallyEq ?_
+        filter_upwards [(isOpen_extChartAt_source α).mem_nhds hx] with y hy
+        simp only [g, Function.comp_apply, e.left_inv hy])
+    rw [circulationFun_eq_oneForm, deriv_zero_of_not_differentiableAt hnd]
+    have hmf : mfderiv 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) f (e.symm (lineParam t)) = 0 :=
+      mfderiv_zero_of_not_mdifferentiableAt hf
+    rw [RoughForm.inChartAt_apply, mpullback_apply, hmf]
+    exact (ContinuousAlternatingMap.map_zero
+      (manifoldOneForm P Q (f (e.symm (lineParam t))))).trans (map_zero _).symm
 
 /-- A compact chart-supported localization of the actual pulled-back circulation form has
 its parametrized circulation integral. The representing orientation supplies the model and
@@ -85,7 +117,6 @@ chart signs, and integrability of the parametrized coefficient is a conclusion. 
 theorem integralTopForm_weighted_mpullback_chart
     (l : Manifold.OrientationLift 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) N (Fin 1))
     (P Q : ℂ → ℝ) (f : N → ℂ)
-    (hf : MDifferentiable 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) f)
     (ρ : N → ℝ) (α : N) (c : ℤˣ) {γ : ℝ → ℂ}
     (hγ : ∀ t, γ t = f ((extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) α).symm
       ((EuclideanSpace.equiv (Fin 1) ℝ).symm (fun _ ↦ t))))
@@ -131,7 +162,7 @@ theorem integralTopForm_weighted_mpullback_chart
       simp only [Units.val_one, Int.cast_one, one_mul]
       rw [RoughForm.inChartAt_fun_smul, ContinuousAlternatingMap.smul_apply, smul_eq_mul]
       have htarget : lineParam (z 0) ∈ e.target := he.symm ▸ hz
-      have hr := inChartAt_mpullback_manifoldOneForm_eq_circulationFun P Q f hf α htarget
+      have hr := inChartAt_mpullback_manifoldOneForm_eq_circulationFun P Q f α htarget
       -- Use the named basis and inverse projection before rewriting the parameter inverse law.
       change (mpullback _ _ f (manifoldOneForm P Q)).inChartAt α (lineParam (z 0)) b =
         circulationFun P Q (fun t ↦ f (e.symm (lineParam t))) (z 0) at hr
@@ -167,7 +198,6 @@ on `a..b`. This connects the boundary-chart description to interval and curve in
 theorem integralTopForm_mpullback_chart_eq_intervalIntegral
     (l : Manifold.OrientationLift 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) N (Fin 1))
     (P Q : ℂ → ℝ) (f : N → ℂ)
-    (hf : MDifferentiable 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) f)
     (α : N) (c : ℤˣ) {γ : ℝ → ℂ} {a b : ℝ} (hab : a ≤ b)
     (hγ : ∀ t, γ t = f ((extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) α).symm
       ((EuclideanSpace.equiv (Fin 1) ℝ).symm (fun _ ↦ t))))
@@ -195,7 +225,7 @@ theorem integralTopForm_mpullback_chart_eq_intervalIntegral
   let A : Set ℝ := {t | lineParam t ∈ e.target}
   have hA : MeasurableSet A := (measurableSet_extChartAt_target α).preimage lineParam.measurable
   have hsub : Icc a b ⊆ A := ht
-  have hr := integralTopForm_weighted_mpullback_chart l P Q f hf (fun _ ↦ 1) α c hγ
+  have hr := integralTopForm_weighted_mpullback_chart l P Q f (fun _ ↦ 1) α c hγ
     (by simpa only [one_smul] using hi) (by simpa only [one_smul] using hs)
     (by simpa only [one_smul] using hσ)
   have hcirci : IntegrableOn (circulationFun P Q γ) A := by
@@ -210,7 +240,7 @@ theorem integralTopForm_mpullback_chart_eq_intervalIntegral
       have hb' := hb _ hx
       rw [e.right_inv htarget] at hb'
       exact ht'.2 hb'
-    have he := inChartAt_mpullback_manifoldOneForm_eq_circulationFun P Q f hf α htarget
+    have he := inChartAt_mpullback_manifoldOneForm_eq_circulationFun P Q f α htarget
     -- Expose the localized coefficient in the canonical one-coordinate parametrization.
     change φ.inChartAt α (lineParam t) (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis =
       circulationFun P Q (fun t ↦ f (e.symm (lineParam t))) t at he
@@ -238,7 +268,6 @@ suffices, since derivatives of the two parametrizations agree on its interior. -
 theorem integralTopForm_mpullback_chart_eq_curveIntegral
     (l : Manifold.OrientationLift 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) N (Fin 1))
     (P Q : ℂ → ℝ) (f : N → ℂ)
-    (hf : MDifferentiable 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) 𝓘(ℝ, ℂ) f)
     (α : N) (c : ℤˣ) {p q : ℂ} (γ : Path p q)
     (hγ : ∀ t ∈ Icc (0 : ℝ) 1, γ.extend t = f ((extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) α).symm
       ((EuclideanSpace.equiv (Fin 1) ℝ).symm (fun _ ↦ t))))
@@ -263,7 +292,7 @@ theorem integralTopForm_mpullback_chart_eq_curveIntegral
           (c : ℝ) * curveIntegral (oneForm P Q) γ := by
   let Γ : ℝ → ℂ := fun t ↦ f ((extChartAt 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) α).symm
     ((EuclideanSpace.equiv (Fin 1) ℝ).symm (fun _ ↦ t)))
-  have hr := integralTopForm_mpullback_chart_eq_intervalIntegral l P Q f hf α c
+  have hr := integralTopForm_mpullback_chart_eq_intervalIntegral l P Q f α c
     (γ := Γ) (a := 0) (b := 1) zero_le_one (fun _ ↦ rfl) hi hs hσ hb ht
   have he : EqOn (circulationFun P Q Γ) (circulationFun P Q γ.extend) (uIoo 0 1) := by
     intro t ht'
