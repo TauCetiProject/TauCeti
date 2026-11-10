@@ -190,14 +190,13 @@ equator at `p₀`, out of the cube `I^k`, that covers the equator off `p₀` and
 points of the boundary of the cube: the collapse `TauCeti.cubeToSphere` of the cube onto the unit
 sphere of `ℝᵏ⁺¹`, followed by a linear isometry of `ℝᵏ⁺¹` onto `u⊥` sending the north pole to
 `p₀`. So the hypotheses of `TauCeti.isIso_hurewicz_tangentCircleGenLoop` can be met. -/
-theorem exists_genLoop_sphereEquator [FiniteDimensional ℝ V] (hu : u ≠ 0)
+theorem exists_genLoop_sphereEquator (hu : u ≠ 0)
     (hV : Module.finrank ℝ V = k + 2) (p₀ : sphereEquator u) :
     ∃ c : Ω^ (Fin k) (sphereEquator u) p₀, (∀ q, q ≠ p₀ → ∃ y, c y = q) ∧
       ∀ y z, c y = c z → y = z ∨ y ∈ Cube.boundary (Fin k) ∧ z ∈ Cube.boundary (Fin k) := by
   have : Fact (Module.finrank ℝ V = (k + 1) + 1) := ⟨hV⟩
-  have hK : Module.finrank ℝ (ℝ ∙ u)ᗮ = k + 1 := Submodule.finrank_orthogonal_span_singleton hu
   let e₀ : EuclideanSpace ℝ (Fin (k + 1)) ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ :=
-    ((stdOrthonormalBasis ℝ (ℝ ∙ u)ᗮ).reindex (finCongr hK)).repr.symm
+    (OrthonormalBasis.fromOrthogonalSpanSingleton (k + 1) hu).repr.symm
   let P : (ℝ ∙ u)ᗮ :=
     ⟨p₀.1.1, Submodule.mem_orthogonal_singleton_iff_inner_left.2 (mem_sphereEquator.1 p₀.2)⟩
   obtain ⟨b, hb⟩ : ∃ b : EuclideanSpace ℝ (Fin (k + 1)), b = sphereNorthPole k := ⟨_, rfl⟩
