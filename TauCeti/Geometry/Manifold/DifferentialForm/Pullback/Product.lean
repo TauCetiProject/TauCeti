@@ -40,6 +40,8 @@ is pulled back from `Y`. The energy identity itself is not proved here.
 
 ## Main results
 
+* `TauCeti.eq_mpullback_snd_of_interior_eq_zero`: on `G × M` with `G` modelled on `ℝ`, a form with
+  `ι_{∂ₛ} α = 0` whose restrictions to the slices are all equal to `β` is `pr₂^* β`.
 * `TauCeti.mpullback_prodMk_eq_of_mlieDerivForm_eq_zero`: on `ℝ × M`, a differentiable form with
   `L_{∂ₛ} α = 0` has the same restriction to every slice.
 * `TauCeti.mpullback_prodMk_eq_of_interior_eq_zero`: on `ℝ × M`, a differentiable closed form with
@@ -80,7 +82,7 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
 /-- Let `G` be a manifold modelled on `ℝ`, such as `ℝ` or a circle. A form on `G × M` whose
 contraction with `∂ₛ = (1, 0)` vanishes, and whose restrictions to the slices `{g} × M` are all
 equal to `β`, is the pullback of `β` along the second projection. -/
-private theorem eq_mpullback_snd_of_interior_eq_zero {G : Type*} [TopologicalSpace G]
+theorem eq_mpullback_snd_of_interior_eq_zero {G : Type*} [TopologicalSpace G]
     [ChartedSpace ℝ G] {α : RoughForm (𝓘(ℝ, ℝ).prod I) (G × M) F (k + 1)}
     {β : RoughForm I M F (k + 1)} (hι : α.interior (fun _ ↦ ((1 : ℝ), (0 : E))) = 0)
     (hβ : ∀ g, mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk g) α = β) :
@@ -170,14 +172,6 @@ namespace SmoothForm
 
 variable {p : ℝ} [Fact (0 < p)]
 
-variable (p) in
-omit [I.Boundaryless] [IsManifold I 2 M] in
-/-- The covering `ℝ × M → AddCircle p × M` is smooth. -/
-private theorem contMDiff_prodMap_coe_id :
-    ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ).prod I) ∞
-      (Prod.map ((↑) : ℝ → AddCircle p) (id : M → M)) :=
-  (AddCircle.contMDiff_coe p ∞).prodMap contMDiff_id
-
 /-- On `AddCircle p × M`, a smooth closed form `α` whose contraction with `∂ₛ = (1, 0)` vanishes is
 the pullback along the second projection of its restriction to any slice `{θ} × M`:
 `α = pr₂^* (ι_θ^* α)`. -/
@@ -190,7 +184,8 @@ theorem mpullback_snd_mpullback_prodMk_of_interior_eq_zero
   let V : (q : ℝ × M) → TangentSpace (𝓘(ℝ, ℝ).prod I) q := fun _ ↦ ((1 : ℝ), (0 : E))
   let W : (q : AddCircle p × M) → TangentSpace (𝓘(ℝ).prod I) q := fun _ ↦ ((1 : ℝ), (0 : E))
   let cover := Prod.map ((↑) : ℝ → AddCircle p) (id : M → M)
-  have hcover : ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ).prod I) ∞ cover := contMDiff_prodMap_coe_id p
+  have hcover : ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ).prod I) ∞ cover :=
+    (AddCircle.contMDiff_coe p ∞).prodMap contMDiff_id
   -- The covering has derivative the identity, so it relates `∂ₛ` on `ℝ × M` to `∂ₛ`.
   have hdcover (q : ℝ × M) :
       mfderiv (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ).prod I) cover q (V q) = W (cover q) := by
