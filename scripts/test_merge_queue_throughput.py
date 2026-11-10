@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Keep native publication, mandatory verdicts and retry work on their intended paths."""
 from pathlib import Path
+import json
 import unittest
 import os
 import subprocess
@@ -77,6 +78,24 @@ class Throughput(unittest.TestCase):
         for guard in ("run.get('path') != '.github/workflows/pr-build.yml'", "run.get('event') not in allowed",
                       "run.get('status') != 'completed'", "get('full_name') != repo"):
             self.assertIn(guard, discover)
+
+    def test_fork_status_recovery_accepts_the_automatic_trusted_workflow(self):
+        steps = workflow('retry-ci-status.yml')['jobs']['publish']['steps']
+        shell = next(s['run'] for s in steps if s.get('id') == 'intents')
+        guard = shell.split("python3 - <<'PY'\n", 1)[1].rsplit('\nPY', 1)[0]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            run = dict(id=99, path='.github/workflows/pr-build.yml', event='pull_request_target',
+                       status='completed', conclusion='failure',
+                       repository={'full_name': 'org/Project'}, head_repository={'full_name': 'fork/Project'})
+            (root / 'source-status-run.json').write_text(json.dumps(run))
+            (root / 'source-status-artifacts.json').write_text(json.dumps(dict(total_count=0, artifacts=[])))
+            for event, accepted in (('workflow_run', True), ('workflow_dispatch', False)):
+                env = dict(os.environ, RUNNER_TEMP=directory, GITHUB_OUTPUT=str(root / 'out'),
+                           CI_STATUS_SOURCE_RUN_ID='99', CI_STATUS_SOURCE_ATTEMPT='1',
+                           GITHUB_REPOSITORY='org/Project', DEFAULT_BRANCH='main', GITHUB_EVENT_NAME=event)
+                result = subprocess.run(['python3', '-c', guard], env=env, capture_output=True, text=True)
+                self.assertEqual(result.returncode == 0, accepted, result.stdout + result.stderr)
 
     def test_old_secondary_cache_protocol_is_removed(self):
         producer = (ROOT / '.github/workflows/pr-build.yml').read_text()
