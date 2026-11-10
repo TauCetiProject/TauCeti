@@ -53,7 +53,7 @@ theorem martingale_sub_initialValue [SigmaFiniteFiltration P ℱ]
   convert hZ.sub hinit using 1
   ext t ω
   have hbot : Z ⊥ = {ω | ⊥ < hX.localSeq n ω}.indicator (X ⊥) :=
-    stoppedProcess_indicator_pos_bot _
+    stoppedProcess_bot _ _
   simp only [Pi.sub_apply, hbot, Z, stoppedProcess_indicator_pos_apply, Set.indicator_apply,
     Set.mem_ofPred_eq]
   split_ifs <;> simp only [sub_self]

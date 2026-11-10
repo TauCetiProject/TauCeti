@@ -69,12 +69,11 @@ theorem stoppedProcess_indicator_pos_apply {ι Ω E : Type*} [LinearOrder ι] [O
   rw [stoppedProcess_indicator_comm]
   simp only [Set.indicator_apply, Set.mem_ofPred_eq, stoppedProcess]
 
-/-- At the initial time, stopping leaves the positive-time indicator process unchanged. -/
+/-- At the initial time, stopping leaves any process unchanged. -/
 @[simp]
-theorem stoppedProcess_indicator_pos_bot {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
-    [Zero E] {X : ι → Ω → E} (τ : Ω → WithTop ι) :
-    stoppedProcess (fun t ↦ {ω | ⊥ < τ ω}.indicator (X t)) τ ⊥ =
-      {ω | ⊥ < τ ω}.indicator (X ⊥) := by
+theorem stoppedProcess_bot {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    (u : ι → Ω → E) (τ : Ω → WithTop ι) :
+    stoppedProcess u τ ⊥ = u ⊥ := by
   ext ω
   exact stoppedProcess_eq_of_le (by simp)
 
