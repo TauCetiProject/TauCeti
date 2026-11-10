@@ -229,6 +229,48 @@ private theorem windingNumber_eq_segment_add_of_notMem {Γ : ℝ → ℂ} {w : �
   rw [uIoo_of_le hab] at ht
   exact Ioo_subset_Icc_self ht
 
+/-- **The winding numbers on the two sides of a straight piece differ by one in the limit.** Let `Γ`
+be a piecewise-`C¹` curve on `[a, c]` which on `[a, b]` is the straight segment `t ↦ v · t + z₀`,
+and let `p = v · s + z₀` with `s ∈ (a, b)` be a point of that segment not visited by the rest of
+the curve. If the points `v (s ± h i) + z₀` avoid the curve for small `h > 0`, the winding number at
+the `+` point minus that at the `-` point tends to `1` as `h → 0⁺`. -/
+private theorem tendsto_windingNumber_sub_of_eqOn_segment {Γ : ℝ → ℂ}
+    (hΓ : IsPiecewiseC1On Γ a c) (hbc : b ≤ c)
+    (hseg : EqOn Γ (fun t : ℝ ↦ v * (t : ℂ) + z₀) (Icc a b)) (hv : v ≠ 0) (hs : s ∈ Ioo a b)
+    (hp : v * s + z₀ ∉ Γ '' Icc b c)
+    (hadd : ∀ᶠ h : ℝ in 𝓝[>] 0, v * (s + h * I) + z₀ ∉ Γ '' uIcc a c)
+    (hsub : ∀ᶠ h : ℝ in 𝓝[>] 0, v * (s - h * I) + z₀ ∉ Γ '' uIcc a c) :
+    Tendsto (fun h : ℝ ↦
+      windingNumber Γ a c (v * (s + h * I) + z₀) - windingNumber Γ a c (v * (s - h * I) + z₀))
+      (𝓝[>] 0) (𝓝 1) := by
+  have hab : a < b := hs.1.trans hs.2
+  have h_eq : (fun h : ℝ ↦
+      (windingNumber (fun t : ℝ ↦ v * (t : ℂ) + z₀) a b (v * (s + h * I) + z₀) -
+        windingNumber (fun t : ℝ ↦ v * (t : ℂ) + z₀) a b (v * (s - h * I) + z₀)) +
+      (windingNumber Γ b c (v * (s + h * I) + z₀) - windingNumber Γ b c (v * (s - h * I) + z₀)))
+      =ᶠ[𝓝[>] 0] fun h : ℝ ↦
+        windingNumber Γ a c (v * (s + h * I) + z₀) -
+          windingNumber Γ a c (v * (s - h * I) + z₀) := by
+    filter_upwards [hadd, hsub] with h h₁ h₂
+    rw [windingNumber_eq_segment_add_of_notMem hΓ hab.le hbc hseg h₁,
+      windingNumber_eq_segment_add_of_notMem hΓ hab.le hbc hseg h₂]
+    ring
+  refine Tendsto.congr' h_eq ?_
+  have hΓbc : IsPiecewiseC1On Γ b c := hΓ.mono (by
+    rw [uIcc_of_le hbc, uIcc_of_le (hab.le.trans hbc)]
+    exact Icc_subset_Icc hab.le le_rfl)
+  have hrest := (hΓbc.absolutelyContinuousOnInterval.tendsto_windingNumber_add_smul_sub
+    (z := v * s + z₀) (by rwa [uIcc_of_le hbc]) (v * I)).mono_left
+    (nhdsWithin_le_nhds (s := Ioi (0 : ℝ)))
+  have hpos (h : ℝ) : v * (s + h * I) + z₀ = v * s + z₀ + h • (v * I) := by
+    rw [Complex.real_smul]
+    ring
+  have hneg (h : ℝ) : v * (s - h * I) + z₀ = v * s + z₀ - h • (v * I) := by
+    rw [Complex.real_smul]
+    ring
+  simp only [← hpos, ← hneg] at hrest
+  simpa using (tendsto_windingNumber_segment_sub (z₀ := z₀) hv hs).add hrest
+
 /-- **A closed curve jumps by one across a straight piece.** Let `Γ` be a closed piecewise-`C¹`
 curve on `[a, c]` which on `[a, b]` is the straight segment `t ↦ v · t + z₀`, and let
 `p = v · s + z₀` with `s ∈ (a, b)` be a point of that segment not visited by the rest of the curve.
@@ -250,45 +292,27 @@ theorem exists_forall_windingNumber_eq_add_one_of_eqOn_segment {Γ : ℝ → ℂ
       (continuous_const.mul continuous_abs).continuousAt.eventually_lt continuousAt_const
         (by simpa using hr)
     exact eventually_mem_nhdsWithin.and (nhdsWithin_le_nhds hlt)
-  have h_off_add : ∀ h : ℝ, 0 < h → ‖v‖ * |h| < r → v * (s + h * I) + z₀ ∉ Γ '' uIcc a c := by
-    intro h hh hlt
-    refine hoff _ (by rwa [Metric.mem_ball, dist_add_right, Complex.dist_mul_add_mul_I]) ?_
+  have hmem_add (h : ℝ) (hlt : ‖v‖ * |h| < r) : v * (s + h * I) + z₀ ∈ ball (v * s + z₀) r := by
+    rwa [Metric.mem_ball, dist_add_right, Complex.dist_mul_add_mul_I]
+  have hmem_sub (h : ℝ) (hlt : ‖v‖ * |h| < r) : v * (s - h * I) + z₀ ∈ ball (v * s + z₀) r := by
+    rwa [Metric.mem_ball, dist_add_right, Complex.dist_mul_sub_mul_I]
+  have him_add (h : ℝ) : ((v * (s + h * I) + z₀ - (v * s + z₀)) / v).im = h := by
     rw [add_sub_add_right_eq_sub, TauCeti.mul_add_mul_I_sub_mul_div_im hv]
-    exact hh.ne'
-  have h_off_sub : ∀ h : ℝ, 0 < h → ‖v‖ * |h| < r → v * (s - h * I) + z₀ ∉ Γ '' uIcc a c := by
-    intro h hh hlt
-    refine hoff _ (by rwa [Metric.mem_ball, dist_add_right, Complex.dist_mul_sub_mul_I]) ?_
+  have him_sub (h : ℝ) : ((v * (s - h * I) + z₀ - (v * s + z₀)) / v).im = -h := by
     rw [add_sub_add_right_eq_sub, TauCeti.mul_sub_mul_I_sub_mul_div_im hv]
+  have h_off_add (h : ℝ) (hh : 0 < h) (hlt : ‖v‖ * |h| < r) :
+      v * (s + h * I) + z₀ ∉ Γ '' uIcc a c := by
+    refine hoff _ (hmem_add h hlt) ?_
+    rw [him_add]
+    exact hh.ne'
+  have h_off_sub (h : ℝ) (hh : 0 < h) (hlt : ‖v‖ * |h| < r) :
+      v * (s - h * I) + z₀ ∉ Γ '' uIcc a c := by
+    refine hoff _ (hmem_sub h hlt) ?_
+    rw [him_sub]
     exact (neg_lt_zero.mpr hh).ne
-  have h_tend : Tendsto (fun h : ℝ ↦
-      windingNumber Γ a c (v * (s + h * I) + z₀) - windingNumber Γ a c (v * (s - h * I) + z₀))
-      (𝓝[>] 0) (𝓝 1) := by
-    have h_eq : (fun h : ℝ ↦
-        (windingNumber (fun t : ℝ ↦ v * (t : ℂ) + z₀) a b (v * (s + h * I) + z₀) -
-          windingNumber (fun t : ℝ ↦ v * (t : ℂ) + z₀) a b (v * (s - h * I) + z₀)) +
-        (windingNumber Γ b c (v * (s + h * I) + z₀) - windingNumber Γ b c (v * (s - h * I) + z₀)))
-        =ᶠ[𝓝[>] 0] fun h : ℝ ↦
-          windingNumber Γ a c (v * (s + h * I) + z₀) -
-            windingNumber Γ a c (v * (s - h * I) + z₀) := by
-      filter_upwards [h_small] with h hh
-      rw [windingNumber_eq_segment_add_of_notMem hΓ hab.le hbc hseg (h_off_add h hh.1 hh.2),
-        windingNumber_eq_segment_add_of_notMem hΓ hab.le hbc hseg (h_off_sub h hh.1 hh.2)]
-      ring
-    refine Tendsto.congr' h_eq ?_
-    have hΓbc : IsPiecewiseC1On Γ b c := hΓ.mono (by
-      rw [uIcc_of_le hbc, uIcc_of_le (hab.le.trans hbc)]
-      exact Icc_subset_Icc hab.le le_rfl)
-    have hrest := (hΓbc.absolutelyContinuousOnInterval.tendsto_windingNumber_add_smul_sub
-      (z := v * s + z₀) (by rwa [uIcc_of_le hbc]) (v * I)).mono_left
-      (nhdsWithin_le_nhds (s := Ioi (0 : ℝ)))
-    have hpos (h : ℝ) : v * (s + h * I) + z₀ = v * s + z₀ + h • (v * I) := by
-      rw [Complex.real_smul]
-      ring
-    have hneg (h : ℝ) : v * (s - h * I) + z₀ = v * s + z₀ - h • (v * I) := by
-      rw [Complex.real_smul]
-      ring
-    simp only [← hpos, ← hneg] at hrest
-    simpa using (tendsto_windingNumber_segment_sub (z₀ := z₀) hv hs).add hrest
+  have h_tend := tendsto_windingNumber_sub_of_eqOn_segment hΓ hbc hseg hv hs hp
+    (h_small.mono fun h hh ↦ h_off_add h hh.1 hh.2)
+    (h_small.mono fun h hh ↦ h_off_sub h hh.1 hh.2)
   have h_near : ∀ᶠ h : ℝ in 𝓝[>] 0,
       dist (windingNumber Γ a c (v * (s + h * I) + z₀) - windingNumber Γ a c (v * (s - h * I) + z₀))
         (1 : ℂ) < 1 :=
@@ -298,16 +322,10 @@ theorem exists_forall_windingNumber_eq_add_one_of_eqOn_segment {Γ : ℝ → ℂ
     (k := 1) hclosed (h_off_add h hh_pos hh_lt) (h_off_sub h hh_pos hh_lt)
     (by simpa using hh_near)
   intro w₁ hw₁ w₂ hw₂ h₁ h₂
-  have hmem_add : v * (s + h * I) + z₀ ∈ ball (v * s + z₀) r := by
-    rwa [Metric.mem_ball, dist_add_right, Complex.dist_mul_add_mul_I]
-  have hmem_sub : v * (s - h * I) + z₀ ∈ ball (v * s + z₀) r := by
-    rwa [Metric.mem_ball, dist_add_right, Complex.dist_mul_sub_mul_I]
-  have e₁ := windingNumber_eq_of_mem_ball_of_mul_im_pos hΓ hclosed hoff 1 w₁ hw₁ _ hmem_add
-    (by simpa using h₁)
-    (by rw [add_sub_add_right_eq_sub, TauCeti.mul_add_mul_I_sub_mul_div_im hv]; simpa using hh_pos)
-  have e₂ := windingNumber_eq_of_mem_ball_of_mul_im_pos hΓ hclosed hoff (-1) w₂ hw₂ _ hmem_sub
-    (by simpa using h₂)
-    (by rw [add_sub_add_right_eq_sub, TauCeti.mul_sub_mul_I_sub_mul_div_im hv]; simpa using hh_pos)
+  have e₁ := windingNumber_eq_of_mem_ball_of_mul_im_pos hΓ hclosed hoff 1 w₁ hw₁ _
+    (hmem_add h hh_lt) (by simpa using h₁) (by rw [him_add]; simpa using hh_pos)
+  have e₂ := windingNumber_eq_of_mem_ball_of_mul_im_pos hΓ hclosed hoff (-1) w₂ hw₂ _
+    (hmem_sub h hh_lt) (by simpa using h₂) (by rw [him_sub]; simpa using hh_pos)
   rw [e₁, e₂, h_jump, Int.cast_one]
 
 end TauCeti.Contour
