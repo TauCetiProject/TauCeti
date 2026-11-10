@@ -50,18 +50,34 @@ theorem hasDerivAt_hamiltonianFlow (hX : LipschitzWith K (ω.hamiltonianVectorFi
       (ω.hamiltonianVectorField H (ω.hamiltonianFlow H hX t x)) t :=
   hasDerivAt_flowOfLipschitz hX x t
 
-/-- An autonomous differentiable Hamiltonian is conserved by its flow. -/
+/-- An autonomous Hamiltonian is conserved by its flow. Where `H` is not differentiable, its
+Hamiltonian vector field vanishes by convention, so the orbit is a rest point. -/
 theorem hamiltonianFlow_conserves (hX : LipschitzWith K (ω.hamiltonianVectorField H))
-    (hH : Differentiable ℝ H) (t : ℝ) (x : V) :
-    H (ω.hamiltonianFlow H hX t x) = H x := by
-  have hd (s : ℝ) : HasDerivAt (fun s ↦ H (ω.hamiltonianFlow H hX s x)) 0 s := by
-    convert (hH _).hasFDerivAt.comp_hasDerivAt s
-      (ω.hasDerivAt_hamiltonianFlow H hX x s) using 1
-    · rfl
-    · simp
-  have hc := is_const_of_deriv_eq_zero (fun s ↦ (hd s).differentiableAt)
-    (fun s ↦ (hd s).deriv) t 0
-  simpa using hc
+    (t : ℝ) (x : V) : H (ω.hamiltonianFlow H hX t x) = H x := by
+  by_cases hz : ∃ s, ω.hamiltonianVectorField H (ω.hamiltonianFlow H hX s x) = 0
+  · -- The orbit through `x` meets a rest point, hence it is constant.
+    obtain ⟨s, hs⟩ := hz
+    have hrest := (forall_flowOfLipschitz_eq_self_iff hX _).2 hs
+    have h1 (r : ℝ) : ω.hamiltonianFlow H hX r x = x := by
+      have e := hrest (r - s)
+      have e0 := hrest (-s)
+      rw [← hamiltonianFlow_eq, ← Flow.map_add, sub_add_cancel] at e
+      rw [← hamiltonianFlow_eq, ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply] at e0
+      rw [e, ← e0]
+    rw [h1 t]
+  · push Not at hz
+    have hdiff (s : ℝ) : DifferentiableAt ℝ H (ω.hamiltonianFlow H hX s x) := by
+      by_contra h
+      exact hz s ((ω.hamiltonianVectorField_eq_zero_iff H _).2
+        (fderiv_zero_of_not_differentiableAt h))
+    have hd (s : ℝ) : HasDerivAt (fun s ↦ H (ω.hamiltonianFlow H hX s x)) 0 s := by
+      convert (hdiff s).hasFDerivAt.comp_hasDerivAt s
+        (ω.hasDerivAt_hamiltonianFlow H hX x s) using 1
+      · rfl
+      · simp
+    have hc := is_const_of_deriv_eq_zero (fun s ↦ (hd s).differentiableAt)
+      (fun s ↦ (hd s).deriv) t 0
+    simpa using hc
 
 /-- The time maps of a globally Lipschitz Hamiltonian flow are `C^(n+1)` when the
 Hamiltonian is `C^(n+2)`. -/
