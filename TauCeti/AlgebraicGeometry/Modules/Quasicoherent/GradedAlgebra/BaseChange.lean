@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.RingHom.FiniteType
 public import Mathlib.RingTheory.TensorProduct.IsBaseChangePi
 public import TauCeti.AlgebraicGeometry.Modules.GradedAlgebra.Sections
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.BaseChange
-public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Pullback
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Pullback.Basic
 public import TauCeti.RingTheory.IsTensorProduct.Pushout
 
 /-!

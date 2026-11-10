@@ -52,6 +52,9 @@ restricts to a cartesian square `UY ⟶ UX` over `W' ⟶ W ≅ Spec Γ(S, W)`
 (Mathlib's `AlgebraicGeometry.Scheme.Hom.isPullback_resLE`), which reduces these to the global
 statements.
 
+The comparison also holds over any affine open `V ⊆ g⁻¹ U`, without requiring the whole
+inverse image to be affine (`Scheme.Hom.exists_pullbackSectionsLE_equiv`).
+
 ## Main results
 
 * `AlgebraicGeometry.Scheme.Hom.span_singleton_pullbackSections_eq_top`: over affine opens, the
@@ -868,5 +871,45 @@ theorem isBaseChange_pullbackSectionsLEBaseLinear (g' : X' ⟶ X) (M : X.Modules
       IsBaseChange Γ(S', W') (pullbackSectionsLEBaseLinear g' M H.toCommSq h eX
         (hUY.le.trans inf_le_left) (hUY.le.trans inf_le_right)) :=
   isBaseChange_pullbackSectionsLEBaseLinear_aux g' M H hW hW' h eX (.inl hUX) hUY
+
+end AlgebraicGeometry.Scheme.Hom
+
+namespace AlgebraicGeometry.Scheme.Hom
+
+variable {X Y : Scheme.{u}} (g : Y ⟶ X)
+
+/-- Over affine opens `U` of `X` and `V ⊆ g⁻¹ U` of `Y`, pulling back the sections of a
+quasicoherent sheaf from `U` to `V` is the extension of scalars along `g.appLE U V`. This is the
+cartesian square `g ≫ 𝟙 = 𝟙 ≫ g` case of `Scheme.Hom.isBaseChange_pullbackSectionsLEBaseLinear`,
+recorded as a linear equivalence. -/
+theorem exists_pullbackSectionsLE_equiv (M : X.Modules) [M.IsQuasicoherent]
+    {U : X.Opens} (hU : IsAffineOpen U) {V : Y.Opens} (hV' : IsAffineOpen V)
+    (hV : V ≤ g ⁻¹ᵁ U) :
+    letI : Algebra Γ(X, U) Γ(Y, V) := (g.appLE U V hV).hom.toAlgebra
+    ∃ e : Γ(Y, V) ⊗[Γ(X, U)] Γ(M, U) ≃ₗ[Γ(Y, V)] Γ((Scheme.Modules.pullback g).obj M, V),
+      ∀ m, e (1 ⊗ₜ m) = g.pullbackSectionsLE M U V hV m := by
+  let : Algebra Γ(X, U) Γ(Y, V) := (g.appLE U V hV).hom.toAlgebra
+  let : Module Γ(X, U) Γ((Scheme.Modules.pullback g).obj M, V) :=
+    Module.compHom _ (g.appLE U V hV).hom
+  have : IsScalarTower Γ(X, U) Γ(Y, V) Γ((Scheme.Modules.pullback g).obj M, V) :=
+    IsScalarTower.of_algebraMap_smul fun _ _ ↦ rfl
+  -- The base change statement acts on `Γ(X, U)` and `Γ(Y, V)` through `appLE` of identities.
+  let alg₁ : Algebra Γ(X, U) Γ(X, U) := ((𝟙 X : X ⟶ X).appLE U U le_rfl).hom.toAlgebra
+  have t₁ : @IsScalarTower Γ(X, U) Γ(X, U) Γ(M, U) alg₁.toSMul _ _ :=
+    @IsScalarTower.of_algebraMap_smul _ _ _ _ _ alg₁ _ _ fun r m ↦ by
+      rw [RingHom.algebraMap_toAlgebra, appLE_eq_id_of_eq_id (f := 𝟙 X) rfl U le_rfl]
+      rfl
+  let alg₂ : Algebra Γ(Y, V) Γ(Y, V) := ((𝟙 Y : Y ⟶ Y).appLE V V le_rfl).hom.toAlgebra
+  have t₂ : @IsScalarTower Γ(Y, V) Γ(Y, V) Γ((Scheme.Modules.pullback g).obj M, V)
+      alg₂.toSMul _ _ :=
+    @IsScalarTower.of_algebraMap_smul _ _ _ _ _ alg₂ _ _ fun r m ↦ by
+      rw [RingHom.algebraMap_toAlgebra, appLE_eq_id_of_eq_id (f := 𝟙 Y) rfl V le_rfl]
+      rfl
+  have hbc := Scheme.Hom.isBaseChange_pullbackSectionsLEBaseLinear (g' := g) (M := M)
+    (H := IsPullback.of_id_snd) (W := U) (W' := V) (UX := U) (UY := V) hU hV' hV le_rfl hU
+    (inf_eq_right.mpr hV).symm
+  refine ⟨hbc.equiv, fun m ↦ ?_⟩
+  rw [hbc.equiv_tmul, one_smul]
+  erw [Scheme.Hom.pullbackSectionsLEBaseLinear_apply]
 
 end AlgebraicGeometry.Scheme.Hom
