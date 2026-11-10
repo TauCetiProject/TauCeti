@@ -279,14 +279,6 @@ theorem normGradedMap_zero_bijective_iff (h : IsTotallyRamified K L) :
 
 /-! ### The tame case -/
 
-omit [Module.Finite K L] in
-/-- In a totally and tamely ramified Galois extension the degree divides `q - 1`. -/
-private theorem finrank_dvd_card_residueField_sub_one (h : IsTotallyRamified K L)
-    (ht : IsTamelyRamified K L) : finrank K L ∣ Nat.card 𝓀[K] - 1 := by
-  have hdvd := ht.ramificationIndex_dvd_card_residueField_sub_one
-  rwa [(isTotallyRamified_iff_ramificationIndex_eq_finrank K L).1 h, natCard_residueField K L,
-    h.inertiaDegree_eq_one, pow_one] at hdvd
-
 /-- **The tame break at zero.** For a totally and tamely ramified Galois extension `L/K` of
 nonarchimedean local fields, the kernel of the graded norm `normGradedMap K L 0` has order
 `[L : K]`, and its image has index `[L : K]`. In prime degree this is the regime `v = t = 0`, the
@@ -295,7 +287,7 @@ theorem normGradedMap_tame_break_zero (h : IsTotallyRamified K L) (ht : IsTamely
     Nat.card (normGradedMap K L 0).ker = finrank K L ∧
       (normGradedMap K L 0).range.index = finrank K L := by
   rw [natCard_ker_normGradedMap_zero h, index_range_normGradedMap_zero h,
-    Nat.gcd_eq_right (finrank_dvd_card_residueField_sub_one h ht), and_self]
+    Nat.gcd_eq_right (h.finrank_dvd_card_residueField_sub_one ht), and_self]
 
 /-! ### Before the break -/
 

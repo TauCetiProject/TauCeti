@@ -84,10 +84,11 @@ theorem isTamelyRamified_of_finrank_eq_one (h : Module.finrank K L = 1) :
     Algebra.finrank_eq_one_iff_bijective_algebraMap.1 h
   have hsurj : Function.Surjective (Units.map (algebraMap K L : K →* L)) :=
     (Units.mapEquiv (RingEquiv.ofBijective (algebraMap K L) hbij).toMulEquiv).surjective
-  rw [isTamelyRamified_iff, ramificationIndex_def,
-    MonoidHom.range_eq_top.2
-      (show Function.Surjective ((normalizedValuation L) ∘ Units.map (algebraMap K L : K →* L)) from
-        (normalizedValuation_surjective (K := L)).comp hsurj), Subgroup.index_top]
+  -- The bundled composite `normalizedValuation L ∘ Units.map _` is surjective, being a composite
+  -- of surjections (the coercion of a composite of homomorphisms is the composite of coercions).
+  have hrange : ((normalizedValuation L).comp (Units.map (algebraMap K L : K →* L))).range = ⊤ :=
+    MonoidHom.range_eq_top.2 ((normalizedValuation_surjective (K := L)).comp hsurj)
+  rw [isTamelyRamified_iff, ramificationIndex_def, hrange, Subgroup.index_top]
   exact (CharP.prime_ringChar 𝓀[K]).not_dvd_one
 
 namespace LocalFieldsRamification
@@ -134,6 +135,15 @@ theorem IsTamelyRamified.ramificationIndex_dvd_card_residueField_sub_one
   rwa [TauCeti.IsLocalRing.RamificationGroupGraded, h1, Subgroup.bot_subgroupOf,
     Nat.card_congr (QuotientGroup.quotientBot).toEquiv, ← lowerRamificationGroup_def,
     natCard_lowerRamificationGroup_zero] at hG
+
+/-- In a totally and tamely ramified Galois extension the degree divides `q - 1`, where `q` is the
+cardinality of the residue field of the base. -/
+theorem IsTotallyRamified.finrank_dvd_card_residueField_sub_one [IsGalois K L]
+    (h : IsTotallyRamified K L) (ht : IsTamelyRamified K L) :
+    Module.finrank K L ∣ Nat.card 𝓀[K] - 1 := by
+  have hdvd := ht.ramificationIndex_dvd_card_residueField_sub_one
+  rwa [(isTotallyRamified_iff_ramificationIndex_eq_finrank K L).1 h, natCard_residueField K L,
+    h.inertiaDegree_eq_one, pow_one] at hdvd
 
 /-- **Totally and tamely ramified extensions are radical.** If `L/K` is a totally and tamely
 ramified extension of nonarchimedean local fields, of degree `e = e(L/K)`, then there are a
