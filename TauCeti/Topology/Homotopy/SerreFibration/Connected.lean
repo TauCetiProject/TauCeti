@@ -186,25 +186,15 @@ private theorem homotopyGroupMap_fiberι_eq {N : Type*} {e : p.fiber b}
 points of the fibre over `b` that are joined in `E` are joined in the fibre. -/
 private theorem joined_of_joined_fiberι (hp : serreFibrations p) (hB : Subsingleton (π_ 1 B b))
     {e y : p.fiber b} (h : Joined e.1 y.1) : Joined e y := by
-  -- Points of the fibre are zero-dimensional generalized loops, whose classes are their path
-  -- components (`homotopyGroupEquivZerothHomotopyOfIsEmpty`).
-  let ℓ : Ω^ (Fin 0) (p.fiber b) e := (genLoopHomeoOfIsEmpty (Fin 0) e).symm y
-  have hℓ : ℓ 0 = y := genLoopHomeoOfIsEmpty_symm_apply y 0
-  -- The image of `y` is joined to `e` in `E`, so its class is a boundary.
-  obtain ⟨c, hc⟩ := (mem_range_fibrationBoundary_iff hp
-      (a := show HomotopyGroup (Fin 0) (p.fiber b) e from ⟦ℓ⟧)).2 <| by
-    rw [homotopyGroupMap_fiberι_eq]
-    apply (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) e.1).injective
-    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk,
-      homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, ContinuousMap.coe_mk, hℓ]
-    exact ZerothHomotopy.sound h.symm.somePath
+  -- The point `y` is joined to `e` in `E`, so its class is a boundary.
+  obtain ⟨c, hc⟩ := (joined_iff_mem_range_fibrationBoundary hp y).1 h
   -- Since `π_1(B, b)` is trivial, it is the boundary of the constant loop, which is constant.
   have : Subsingleton (HomotopyGroup (Option (Fin 0)) B b) :=
     (HomotopyGroup.congrEquiv (finSuccEquiv 0).symm).subsingleton
   rw [Subsingleton.elim c ⟦GenLoop.const⟧, fibrationBoundary_const] at hc
   have h1 := congrArg (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) e) hc
   rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk,
-    hℓ] at h1
+    genLoopHomeoOfIsEmpty_symm_apply] at h1
   exact Quotient.exact h1
 
 /-- Every point of `E` is joined to a point of the fibre over `b` when `B` is path-connected: lift
