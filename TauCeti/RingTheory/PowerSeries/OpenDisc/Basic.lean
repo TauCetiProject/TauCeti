@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.PowerSeries.Log
 public import TauCeti.RingTheory.PowerSeries.Entire.Basic
 public import TauCeti.RingTheory.PowerSeries.GaussNorm
+import Mathlib.Analysis.Normed.Ring.Finite
 import Mathlib.FieldTheory.Finite.Basic
 import TauCeti.Analysis.Normed.Field.NatCast
 
@@ -398,10 +399,9 @@ theorem onOpenDisc_one_of_norm_coeff_le {f : K⟦X⟧}
         rw [← map_natCast (ZMod.castHom (dvd_refl p) K) n, h0, map_zero])
       have hpow : (n : K) ^ (p - 1) = 1 := by
         simpa using congrArg (ZMod.castHom (dvd_refl p) K) (ZMod.pow_card_sub_one_eq_one hn')
-      have hnorm : ‖(n : K)‖ = 1 := by
-        have hp1 : p - 1 ≠ 0 := by have := hprime.two_le; omega
-        refine (pow_eq_one_iff_of_nonneg (norm_nonneg _) hp1).1 ?_
-        rw [← norm_pow, hpow, norm_one]
+      have hnorm : ‖(n : K)‖ = 1 :=
+        (isOfFinOrder_iff_pow_eq_one.mpr
+          ⟨p - 1, Nat.sub_pos_of_lt hprime.one_lt, hpow⟩).norm_eq_one
       simp [hnorm]
   · have : CharZero K := (CharP.charP_zero_iff_charZero K).mp hp
     refine onOpenDisc_iff.mpr fun r hr hr1 ↦ ?_
