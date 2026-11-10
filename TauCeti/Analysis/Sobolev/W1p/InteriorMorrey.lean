@@ -97,13 +97,7 @@ theorem W1p.setIntegral_ball_norm_gradient_le {Omega : Opens E} (u : W1p mu Omeg
     rw [ball_eq_empty.2 hr]
     simp
   set q : ℝ := 1 - 1 / p.toReal
-  have hq : 0 ≤ q := by
-    have h1 : (1 : ℝ≥0∞) ≤ p := Fact.out
-    rcases eq_or_ne p ∞ with rfl | hptop
-    · simp [q]
-    · have : 1 ≤ p.toReal := by simpa using ENNReal.toReal_mono hptop h1
-      simp only [q, sub_nonneg]
-      exact (div_le_one (by linarith)).2 this
+  have hq : 0 ≤ q := ENNReal.one_sub_one_div_toReal_nonneg Fact.out
   have hf : AEStronglyMeasurable (W1p.gradient u) (mu.restrict (ball z r)) :=
     (Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hball le_rfl)
   have hfin : eLpNorm (W1p.gradient u) p (mu.restrict (ball z r)) ≠ ∞ :=
