@@ -56,27 +56,30 @@ theorem norm_inverse_one_sub_le {x : R} (hx : ‖x‖ < 1) :
   rw [inverse_one_sub x hx]
   exact tsum_geometric_le_of_norm_lt_one x hx
 
-/-- In a normed ring with summable geometric series, perturbing a unit `u` by `t`
-with `‖u⁻¹‖ * ‖t‖ < 1` gives an element whose inverse has norm at most
-`‖u⁻¹‖ / (1 - ‖u⁻¹‖ * ‖t‖)`. The perturbed element is a unit by `Units.oneSub`. -/
+omit [HasSummableGeomSeries R] in
+/-- In a normed ring, perturbing a unit `u` by `t` with `‖u⁻¹‖ * ‖t‖ < 1` gives an element whose
+inverse has norm at most `‖u⁻¹‖ / (1 - ‖u⁻¹‖ * ‖t‖)`. No summability of geometric series is needed:
+if the perturbed element is not a unit its inverse is `0`, and if it is a unit its inverse
+satisfies the resolvent identity. -/
 theorem norm_inverse_add_le (u : Rˣ) {t : R}
     (ht : ‖(↑u⁻¹ : R)‖ * ‖t‖ < 1) :
     ‖Ring.inverse (↑u + t)‖ ≤ ‖(↑u⁻¹ : R)‖ / (1 - ‖(↑u⁻¹ : R)‖ * ‖t‖) := by
-  have hs : ‖-(↑u⁻¹ * t)‖ ≤ ‖(↑u⁻¹ : R)‖ * ‖t‖ := (norm_neg _).trans_le (norm_mul_le _ _)
-  have hs₁ : ‖-(↑u⁻¹ * t)‖ < 1 := hs.trans_lt ht
-  have key : (↑u + t : R) = ↑(u * Units.oneSub _ hs₁) := by simp [mul_add]
-  set v : Rˣ := u * Units.oneSub _ hs₁
-  have hy : (↑v⁻¹ : R) = ↑u⁻¹ - ↑u⁻¹ * t * ↑v⁻¹ := by
-    calc (↑v⁻¹ : R) = ↑u⁻¹ * ↑u * ↑v⁻¹ := by simp
-      _ = ↑u⁻¹ * (↑v - t) * ↑v⁻¹ := by rw [← key, add_sub_cancel_right]
-      _ = ↑u⁻¹ - ↑u⁻¹ * t * ↑v⁻¹ := by simp [mul_sub, sub_mul, mul_assoc]
-  have h1 : ‖(↑v⁻¹ : R)‖ ≤ ‖(↑u⁻¹ : R)‖ + ‖(↑u⁻¹ : R)‖ * ‖t‖ * ‖(↑v⁻¹ : R)‖ := by
-    conv_lhs => rw [hy]
-    refine (norm_sub_le _ _).trans ?_
-    gcongr
-    exact (norm_mul_le _ _).trans (by gcongr; exact norm_mul_le _ _)
-  rw [key, Ring.inverse_unit, le_div_iff₀ (by linarith)]
-  nlinarith
+  have hden : 0 < 1 - ‖(↑u⁻¹ : R)‖ * ‖t‖ := by linarith
+  by_cases hunit : IsUnit (↑u + t : R)
+  · obtain ⟨v, hv⟩ := hunit
+    have hy : (↑v⁻¹ : R) = ↑u⁻¹ - ↑u⁻¹ * t * ↑v⁻¹ := by
+      calc (↑v⁻¹ : R) = ↑u⁻¹ * ↑u * ↑v⁻¹ := by simp
+        _ = ↑u⁻¹ * (↑v - t) * ↑v⁻¹ := by rw [hv, add_sub_cancel_right]
+        _ = ↑u⁻¹ - ↑u⁻¹ * t * ↑v⁻¹ := by simp [mul_sub, sub_mul, mul_assoc]
+    have h1 : ‖(↑v⁻¹ : R)‖ ≤ ‖(↑u⁻¹ : R)‖ + ‖(↑u⁻¹ : R)‖ * ‖t‖ * ‖(↑v⁻¹ : R)‖ := by
+      conv_lhs => rw [hy]
+      refine (norm_sub_le _ _).trans ?_
+      gcongr
+      exact (norm_mul_le _ _).trans (by gcongr; exact norm_mul_le _ _)
+    rw [← hv, Ring.inverse_unit, le_div_iff₀ hden]
+    nlinarith
+  · rw [Ring.inverse_non_unit _ hunit, norm_zero]
+    exact div_nonneg (norm_nonneg _) hden.le
 
 /-- Perturbing a unit `a` with `‖a⁻¹‖ ≤ M` to `(1 - w) * a + d`, where `‖w‖ < 1` and
 `M * ‖d‖ < 1 - ‖w‖`, gives a unit whose inverse has norm at most `M / (1 - ‖w‖ - M * ‖d‖)`. -/
@@ -94,12 +97,9 @@ theorem isUnit_one_sub_mul_add_and_norm_inverse_le {a w d : R} {M : ℝ}
   have hN : ‖(↑(v * u)⁻¹ : R)‖ * (1 - ‖w‖) ≤ M := by
     set S := ∑' i : ℕ, (· * w)^[i] w
     have hvS : (↑v⁻¹ : R) = 1 + S := by
-      have h1 : (↑v : R) * (1 + S) = 1 := by
-        have := add_self_mul_geom_series hw
-        calc (↑v : R) * (1 + S) = 1 + (S - (w + w * S)) := by rw [hv]; noncomm_ring
-          _ = 1 := by rw [this, sub_self, add_zero]
-      calc (↑v⁻¹ : R) = ↑v⁻¹ * (↑v * (1 + S)) := by rw [h1, mul_one]
-        _ = 1 + S := by rw [← mul_assoc, Units.inv_mul, one_mul]
+      rw [← Ring.inverse_unit, hv, ← geom_series_eq_inverse w hw,
+        (summable_geometric_of_norm_lt_one hw).tsum_eq_zero_add]
+      simp [S, mul_right_iterate_apply_self]
     have hS : ‖S‖ ≤ ‖w‖ / (1 - ‖w‖) := tsum_iterate_mul_le_of_norm_lt_one w hw
     have h : ‖(↑(v * u)⁻¹ : R)‖ ≤ M * (1 - ‖w‖)⁻¹ := by
       rw [mul_inv_rev, Units.val_mul, hvS, mul_add, mul_one]
