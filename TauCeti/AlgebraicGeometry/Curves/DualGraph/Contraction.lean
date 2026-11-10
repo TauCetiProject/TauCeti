@@ -411,7 +411,9 @@ lemma map_val_ends_contractTail (e : (G.contractTail hv).Edge) :
     ((G.contractTail hv).ends e).map Subtype.val = G.ends e.1 := by
   rw [ends_def, ends_def, Sym2.map_mk]
 
-/-- After contracting a tail `v`, a vertex of valence one that survives keeps its attachment. -/
+/-- After contracting a tail `v`, a vertex that remains of valence one keeps its attachment. A
+neighbour of `v` also survives but loses an incident edge, so it is excluded by the valence
+hypothesis. -/
 lemma coe_attachment_contractTail {u : G.Vertex} (hu : G.valence u = 1) (huv : u ≠ v)
     (hu' : (G.contractTail hv).valence ⟨u, huv⟩ = 1) :
     ((G.contractTail hv).attachment hu' : G.Vertex) = G.attachment hu := by
@@ -420,7 +422,9 @@ lemma coe_attachment_contractTail {u : G.Vertex} (hu : G.valence u = 1) (huv : u
   rw [← endpoint_rev_eq_attachment hu' he,
     ← endpoint_rev_eq_attachment hu (congrArg Subtype.val he)]
 
-/-- After contracting a tail `v`, a vertex of valence two that survives keeps its neighbours. -/
+/-- After contracting a tail `v`, a vertex that remains of valence two keeps its unordered pair of
+neighbours. A neighbour of `v` also survives but loses an incident edge, so it is excluded by the
+valence hypothesis. -/
 lemma sym2_coe_bridgeNeighbor_contractTail {u : G.Vertex} (hu : G.valence u = 2) (huv : u ≠ v)
     (hu' : (G.contractTail hv).valence ⟨u, huv⟩ = 2) :
     s(((G.contractTail hv).bridgeNeighbor hu' 0 : G.Vertex),
