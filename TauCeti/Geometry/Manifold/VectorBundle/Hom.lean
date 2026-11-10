@@ -268,6 +268,25 @@ variable {𝕜 B M F₁ F₂ F₃ EB HB EM HM : Type*} [NontriviallyNormedField 
   {n : WithTop ℕ∞} {b : M → B}
   {A : ∀ y, V₂ (b y) →L[𝕜] V₃ (b y)} {C : ∀ y, V₁ (b y) →L[𝕜] V₂ (b y)}
 
+/-- Composing two hom-bundle fields along the same base map preserves their regularity at a
+point. -/
+theorem ContMDiffAt.clm_bundle_comp {x : M}
+    (hA : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₂ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₂ →L[𝕜] F₃) (E := fun z ↦ V₂ z →L[𝕜] V₃ z) (b y) (A y)) x)
+    (hC : ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (C y)) x) :
+    ContMDiffAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
+        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((A y).comp (C y))) x := by
+  have hAx := (contMDiffAt_hom_bundle _).mp hA
+  have hCx := (contMDiffAt_hom_bundle _).mp hC
+  rw [contMDiffAt_hom_bundle]
+  refine ⟨hAx.1, (hAx.2.clm_comp hCx.2).congr_of_eventuallyEq ?_⟩
+  filter_upwards [hAx.1.continuousAt.preimage_mem_nhds
+    ((trivializationAt F₂ V₂ (b x)).open_baseSet.mem_nhds
+      (mem_baseSet_trivializationAt F₂ V₂ (b x)))] with y hy
+  exact ContinuousLinearMap.inCoordinates_comp (A y) (C y) hy
+
 /-- Composing two hom-bundle fields along the same base map preserves their regularity. -/
 theorem ContMDiff.clm_bundle_comp
     (hA : ContMDiff IM (IB.prod 𝓘(𝕜, F₂ →L[𝕜] F₃)) n
@@ -276,16 +295,8 @@ theorem ContMDiff.clm_bundle_comp
       (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun z ↦ V₁ z →L[𝕜] V₂ z) (b y) (C y))) :
     ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₃)) n
       (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₃)
-        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((A y).comp (C y))) := by
-  intro x
-  have hAx := (contMDiffAt_hom_bundle _).mp (hA x)
-  have hCx := (contMDiffAt_hom_bundle _).mp (hC x)
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨hAx.1, (hAx.2.clm_comp hCx.2).congr_of_eventuallyEq ?_⟩
-  filter_upwards [hAx.1.continuousAt.preimage_mem_nhds
-    ((trivializationAt F₂ V₂ (b x)).open_baseSet.mem_nhds
-      (mem_baseSet_trivializationAt F₂ V₂ (b x)))] with y hy
-  exact ContinuousLinearMap.inCoordinates_comp (A y) (C y) hy
+        (E := fun z ↦ V₁ z →L[𝕜] V₃ z) (b y) ((A y).comp (C y))) :=
+  fun x ↦ (hA x).clm_bundle_comp (hC x)
 
 /-- Composition of native `Cⁿ` hom-bundle sections. -/
 def ContMDiffSection.clmComp
