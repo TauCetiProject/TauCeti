@@ -238,7 +238,7 @@ zero multiplicity of `α` at `z`, let `ν` be continuous, and let `V` be a real 
 variations whose section variations decompose as `δα = α G + e^ν H` with `G` continuous and `H`
 entire. The principal-part data `H⁽ʲ⁾(a)` at the points `⟨a, j⟩`, `j < count a D`, of `D` form a
 real-linear map from `V` to `D → ℂ`. -/
-@[expose] def principalPartMap {D : Multiset ℂ}
+def principalPartMap {D : Multiset ℂ}
     (hα : IsZeroMultiplicity (sectionValue x) fun z ↦ Multiset.count z D) {ν : ℂ → ℂ}
     (hν : Continuous ν) {V : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4))}
     (hV : ∀ y ∈ V, ∃ G : ℂ → ℂ, Continuous G ∧ ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
@@ -271,7 +271,7 @@ theorem principalPartMap_apply {D : Multiset ℂ}
     (hV : ∀ y ∈ V, ∃ G : ℂ → ℂ, Continuous G ∧ ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
       ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w)
     (y : V) (i : Multiset.ToType D) :
-    principalPartMap hα hν hV y i = principalPart x ν y i.1 i.2 := rfl
+    principalPartMap hα hν hV y i = principalPart x ν y i.1 i.2 := (rfl)
 
 /-- **Injectivity of the principal-part map.** Let `x` have `Cᵏ` connection coefficients
 (`k ≥ 1`) and differentiable section, satisfy the holomorphicity rows and have zero divisor `D`,
