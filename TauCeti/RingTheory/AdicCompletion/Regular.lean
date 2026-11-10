@@ -20,8 +20,9 @@ In particular the parameter remains a non-zero-divisor
 when forming a localization of its own adic completion.
 
 An element that is regular modulo every power of an ideal `I` is regular on the `I`-adic
-completion. For a weakly regular pair `(a, b)` on `M`, this makes `a` regular on the `(b)`-adic
-completion of `M`, even when `b` itself is not regular on `M`. This is the form in which a
+completion. For a weakly regular pair `(a, b)` on `M`, the element `a` is regular on `M ⧸ bⁿ M`
+for every `n`, so it is regular on the `(b)`-adic completion of `M`, even when `b` itself is not
+regular on `M`. This is the form in which a
 regular pair `(p, v)` makes the `(v)`-adic completion `p`-torsion-free before it is completed a
 second time, `p`-adically.
 -/
@@ -74,10 +75,17 @@ theorem AdicCompletion.isSMulRegular_of_forall_isSMulRegular_quotient {I : Ideal
   fun x y hxy ↦ AdicCompletion.ext fun n ↦ h n <| by
     simpa only [val_smul_apply] using congrArg (fun z ↦ z.val n) hxy
 
+/-- For a weakly regular pair `(a, b)` on `M`, the element `a` is regular on `M ⧸ bⁿ M` for
+every `n`. -/
+theorem RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotient_pow_smul_top {a b : R}
+    (h : IsWeaklyRegular M [a, b]) (n : ℕ) :
+    IsSMulRegular (M ⧸ (Ideal.span {b} ^ n • ⊤ : Submodule R M)) a := by
+  rw [Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul]
+  simpa only [pow_one] using h.isSMulRegular_quotSMulTop_pow_swap n 1
+
 /-- For a weakly regular pair `(a, b)` on `M`, the element `a` is regular on the `(b)`-adic
 completion of `M`. The element `b` need not be regular on `M`. -/
 theorem RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_adicCompletion {a b : R}
     (h : IsWeaklyRegular M [a, b]) : IsSMulRegular (AdicCompletion (Ideal.span {b}) M) a :=
-  AdicCompletion.isSMulRegular_of_forall_isSMulRegular_quotient fun n ↦ by
-    rw [Ideal.span_singleton_pow, Submodule.ideal_span_singleton_smul]
-    simpa only [pow_one] using h.isSMulRegular_quotSMulTop_pow_swap n 1
+  AdicCompletion.isSMulRegular_of_forall_isSMulRegular_quotient
+    h.isSMulRegular_quotient_pow_smul_top
