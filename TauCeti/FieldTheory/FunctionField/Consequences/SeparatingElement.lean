@@ -344,7 +344,7 @@ theorem exists_transcendental_and_isSeparable_adjoin_and_finrank_le_of_constantC
   -- It suffices to find a separating element of `L(W)`.
   suffices hx : ∃ x ∈ riemannRochSpace W, Transcendental k x ∧ Algebra.IsSeparable k⟮x⟯ F by
     obtain ⟨x, hxW, hxt, hxs⟩ := hx
-    have hdeg := Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace hF hWeff hxW hxt
+    have hdeg := Divisor.finrank_adjoin_le_degree_of_mem_riemannRochSpace hF hWeff hxW
     exact ⟨x, hxt, hxs, by omega⟩
   obtain ⟨p, hp⟩ := ExpChar.exists F
   cases hp with
