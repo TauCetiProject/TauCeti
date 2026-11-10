@@ -125,31 +125,7 @@ theorem exists_bijOn_const_mul_schwarzChristoffelPrimitive_add_of_isJordanCurve_
     ∃ a : ι → ℝ, Injective a ∧ ∃ A : ℂ, A ≠ 0 ∧ ∃ B : ℂ,
       BijOn (fun z => A * schwarzChristoffelPrimitive a e z₀ z + B) upperHalfPlaneSet U ∧
       ∀ i, A * schwarzChristoffelVertex a e z₀ i + B = v i := by
-  -- `U` is the inside of the Jordan curve `frontier U`, hence connected
-  have hsub : ∀ y ∈ U, connectedComponentIn (frontier U)ᶜ y ⊆ U := fun y hy =>
-    (isPreconnected_connectedComponentIn).subset_of_closure_inter_subset hUo
-      ⟨y, mem_connectedComponentIn (fun h => (hUo.frontier_eq ▸ h).2 hy), hy⟩
-      fun z hz => by
-        by_contra hzU
-        exact connectedComponentIn_subset _ _ hz.2 (hUo.frontier_eq ▸ ⟨hz.1, hzU⟩)
-  have hin : ∀ y ∈ U, connectedComponentIn (frontier U)ᶜ y = filledHull (frontier U) \ frontier U :=
-    fun y hy => by
-      rcases hUJ.connectedComponentIn_eq_filledHull_sdiff_or_compl
-        (fun h => (hUo.frontier_eq ▸ h).2 hy) with h | h
-      · exact h
-      · have hb := hUb.subset (h ▸ hsub y hy : (filledHull (frontier U))ᶜ ⊆ U)
-        exact (NormedSpace.unbounded_univ ℂ ℂ (((isBounded_filledHull.mpr
-          hUJ.isCompact.isBounded).union hb).subset (by simp))).elim
-  obtain ⟨x, hx⟩ : U.Nonempty := by
-    by_contra h
-    rw [not_nonempty_iff_eq_empty] at h
-    exact hUJ.nonempty.ne_empty (by simp [h])
-  have hUc : IsConnected U := by
-    convert hUJ.isConnected_filledHull_sdiff
-    refine Subset.antisymm (fun y hy => ?_) fun y hy => ?_
-    · rw [← hin y hy]
-      exact mem_connectedComponentIn fun h => (hUo.frontier_eq ▸ h).2 hy
-    · exact hsub x hx (by rwa [hin x hx])
+  have hUc : IsConnected U := hUJ.isConnected_of_isOpen_of_isBounded hUo hUb
   obtain ⟨f, a, p, ha, hfd, hfc, hfi, hfH, hfa, hfp, hpf⟩ :=
     exists_prevertices_of_isJordanCurve_frontier hUo hUc hUb hUJ hv
       (vertex_mem_frontier_of_corner e he hcorner)
