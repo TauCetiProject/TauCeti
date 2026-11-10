@@ -24,13 +24,15 @@ continuous linear functional `L` is positive on both tangent vectors and on ever
 `γ₂ (t + r) - γ₁ t`, `-r ≤ t ≤ 0`, from the arriving arc to the leaving one across the corner:
 all these secants lie in one open half-space.
 
-These secants are the velocities of the moving-average rounding of a corner: if the continuous
-curve `γ` is `γ₁` on `t ≤ 0` and `γ₂` on `t ≥ 0`, the `C¹` curve `c s = (2ρ)⁻¹ ∫ γ` over
-`[s - ρ, s + ρ]` has `c' s = (2ρ)⁻¹ (γ (s + ρ) - γ (s - ρ))`, which for `|s| ≤ ρ` is such a
-secant with `r = 2ρ` and `t = s - ρ`. So the rounded curve is regular near the corner and its
-tangent stays in one open half-plane there; its turning across the corner is the angle in
-`(-π, π)` between two secant directions tending to `v₁` and `v₂`. The same secants appear in
-Hopf's secant proof of the theorem of turning tangents for curves with corners.
+These secants control the moving-average rounding of a corner. If the continuous curve `γ` is
+`γ₁` on `t ≤ 0` and `γ₂` on `t ≥ 0`, then for `ρ > 0` the `C¹` curve `c s = (2ρ)⁻¹ ∫ γ` over
+`[s - ρ, s + ρ]` has velocity `c' s = (2ρ)⁻¹ (γ (s + ρ) - γ (s - ρ))`; for `|s| ≤ ρ` this is
+the positive multiple `(2ρ)⁻¹` of such a secant, with `r = 2ρ` and `t = s - ρ`. So once
+`2ρ < δ`, the rounded curve has nonzero velocity near the corner, lying in the open half-space
+`{L > 0}`. For a curve in an oriented Euclidean plane this means that the tangent direction of
+the rounded curve does not wind around the corner: its signed turning across the corner is the
+angle in `(-π, π)` between two secant directions tending to `v₁` and `v₂`. The same secants
+appear in Hopf's secant proof of the theorem of turning tangents for planar curves with corners.
 
 ## Main results
 
