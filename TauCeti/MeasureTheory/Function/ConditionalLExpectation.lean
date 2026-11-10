@@ -36,12 +36,12 @@ variable {Ω : Type*} {m₀ m m₁ : MeasurableSpace Ω} {P : Measure[m₀] Ω}
   {X Z G : Ω → ℝ≥0∞}
 
 /-- Conditioning successively on a larger and then a smaller sigma-algebra is the same
-as conditioning on the smaller one. The larger trimmed measure must be sigma-finite. -/
-theorem condLExp_condLExp_of_le (hle : m ≤ m₁) (hm₁ : m₁ ≤ m₀)
-    [SigmaFinite (P.trim hm₁)] :
+as conditioning on the smaller one. -/
+theorem condLExp_condLExp_of_le (hle : m ≤ m₁) (hm₁ : m₁ ≤ m₀) :
     P⁻[P⁻[X | m₁] | m] =ᵐ[P] P⁻[X | m] := by
   by_cases hP : SigmaFinite (P.trim (hle.trans hm₁))
   swap; · simp_rw [condLExp_of_not_sigmaFinite (hle.trans hm₁) hP]; rfl
+  have := sigmaFiniteTrim_mono (μ := P) hm₁ hle
   refine ae_eq_condLExp (hle.trans hm₁) P X (measurable_condLExp _ _ _) ?_
   intro s hs
   rw [setLIntegral_condLExp (hle.trans hm₁) P _ hs,
