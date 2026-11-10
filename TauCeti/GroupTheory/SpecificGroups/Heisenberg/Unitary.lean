@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.Heisenberg.Matrix
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 
@@ -37,30 +38,49 @@ namespace TauCeti.HeisenbergGroup
 
 variable {R : Type*} [CommRing R] (σ : R →+* R) (hσ : Function.Involutive σ)
 
-/-- The unitary root subgroup, with trace equal to norm in its two free coordinates. -/
-def unitarySubgroup : Subgroup (HeisenbergGroup R) where
-  carrier := {a | a.y = σ a.x ∧ a.z + σ a.z = a.x * σ a.x}
-  one_mem' := by simp
-  mul_mem' := by
-    rintro a b ⟨hay, haz⟩ ⟨hby, hbz⟩
-    constructor
-    · simp [hay, hby]
-    · simp only [mul_z, mul_x, map_add, map_mul, hby, hσ b.x]
-      linear_combination haz + hbz
-  inv_mem' := by
-    rintro a ⟨hay, haz⟩
-    constructor
-    · simp [hay]
-    · simp only [inv_z, inv_x, map_add, map_neg, map_mul, hay, hσ a.x]
-      linear_combination -haz
+/-- The upper unitriangular isometries of the signed reversal form. For an involution,
+the trace of the second free coordinate equals the norm of the first. -/
+def unitarySubgroup : Subgroup (HeisenbergGroup R) :=
+  (Matrix.specialIsometryGroup !![0, 0, 1; 0, -1, 0; 1, 0, 0] σ).comap toSpecialLinear
+
+/-- Membership in the unitary root subgroup is preservation of the signed reversal form. -/
+theorem transpose_map_toMatrix_mul_form_iff (a : HeisenbergGroup R) :
+    ((toMatrix a).map σ)ᵀ * !![0, 0, 1; 0, -1, 0; 1, 0, 0] * toMatrix a =
+        !![0, 0, 1; 0, -1, 0; 1, 0, 0] ↔ a ∈ unitarySubgroup σ := by
+  simp only [unitarySubgroup, Subgroup.mem_comap, Matrix.mem_specialIsometryGroup_iff,
+    coe_toSpecialLinear]
+
+include hσ
 
 @[simp]
 theorem mem_unitarySubgroup {a : HeisenbergGroup R} :
-    a ∈ unitarySubgroup σ hσ ↔ a.y = σ a.x ∧ a.z + σ a.z = a.x * σ a.x := Iff.rfl
+    a ∈ unitarySubgroup σ ↔ a.y = σ a.x ∧ a.z + σ a.z = a.x * σ a.x := by
+  rw [← transpose_map_toMatrix_mul_form_iff]
+  constructor
+  · intro h
+    have hy := congrFun (congrFun h 1) 2
+    have hz := congrFun (congrFun h 2) 2
+    simp only [toMatrix_apply, Fin.isValue, Matrix.mul_apply, transpose_apply, Matrix.map_apply,
+      of_apply, cons_val', cons_val_one, cons_val_zero, cons_val_fin_one, Fin.sum_univ_three,
+      map_one, one_mul, cons_val, map_zero, zero_mul, add_zero, mul_zero, zero_add, neg_mul,
+      mul_one, mul_neg] at hy hz
+    have hy' : a.y = σ a.x := by linear_combination -hy
+    refine ⟨hy', ?_⟩
+    rw [hy', hσ a.x] at hz
+    linear_combination hz
+  · rintro ⟨hy, hz⟩
+    ext i j
+    by_cases hij : i = 2 ∧ j = 2
+    · obtain ⟨rfl, rfl⟩ := hij
+      -- The (2,2) entry is exactly the trace-norm equation.
+      simp [toMatrix_apply, Matrix.mul_apply, Fin.sum_univ_three, hy, hσ a.x]
+      linear_combination hz
+    · fin_cases i <;> fin_cases j <;>
+        simp_all [toMatrix_apply, Matrix.mul_apply, Fin.sum_univ_three, hσ a.x]
 
 /-- Construct a unitary root element from parameters whose trace is the norm. -/
-def unitaryMk (x z : R) (hz : z + σ z = x * σ x) : unitarySubgroup σ hσ :=
-  ⟨⟨x, σ x, z⟩, rfl, hz⟩
+def unitaryMk (x z : R) (hz : z + σ z = x * σ x) : unitarySubgroup σ :=
+  ⟨⟨x, σ x, z⟩, (mem_unitarySubgroup σ hσ).mpr ⟨rfl, hz⟩⟩
 
 @[simp]
 theorem coe_unitaryMk (x z : R) (hz : z + σ z = x * σ x) :
@@ -68,78 +88,60 @@ theorem coe_unitaryMk (x z : R) (hz : z + σ z = x * σ x) :
 
 /-- The two parameters uniquely determine a unitary root element. -/
 @[ext]
-theorem unitary_ext {a b : unitarySubgroup σ hσ}
+theorem unitary_ext {a b : unitarySubgroup σ}
     (hx : (a : HeisenbergGroup R).x = (b : HeisenbergGroup R).x)
     (hz : (a : HeisenbergGroup R).z = (b : HeisenbergGroup R).z) : a = b := by
   apply Subtype.ext
-  exact HeisenbergGroup.ext hx (by rw [a.property.1, b.property.1, hx]) hz
+  exact HeisenbergGroup.ext hx
+    (by rw [((mem_unitarySubgroup σ hσ).mp a.property).1,
+      ((mem_unitarySubgroup σ hσ).mp b.property).1, hx]) hz
 
 /-- Every unitary root element is given by its two parameters. -/
 @[simp]
-theorem unitaryMk_eq (a : unitarySubgroup σ hσ) :
+theorem unitaryMk_eq (a : unitarySubgroup σ) :
     unitaryMk σ hσ (a : HeisenbergGroup R).x (a : HeisenbergGroup R).z
       ((mem_unitarySubgroup σ hσ).mp a.property).2 = a := by
-  apply unitary_ext <;> rfl
+  apply unitary_ext σ hσ <;> rfl
 
 /-- The multiplication law for the two parameters of the twisted root group. -/
-theorem coe_unitary_mul (a b : unitarySubgroup σ hσ) :
-    ((a * b : unitarySubgroup σ hσ) : HeisenbergGroup R) =
+theorem coe_unitary_mul (a b : unitarySubgroup σ) :
+    ((a * b : unitarySubgroup σ) : HeisenbergGroup R) =
       ⟨(a : HeisenbergGroup R).x + (b : HeisenbergGroup R).x,
         σ ((a : HeisenbergGroup R).x + (b : HeisenbergGroup R).x),
         (a : HeisenbergGroup R).z + (b : HeisenbergGroup R).z +
           (a : HeisenbergGroup R).x * σ (b : HeisenbergGroup R).x⟩ := by
-  ext <;> simp [a.property.1, b.property.1]
+  ext <;> simp [((mem_unitarySubgroup σ hσ).mp a.property).1,
+    ((mem_unitarySubgroup σ hσ).mp b.property).1]
 
 /-- Inversion negates the first parameter and applies the involution to the second. -/
-theorem coe_unitary_inv (a : unitarySubgroup σ hσ) :
-    ((a⁻¹ : unitarySubgroup σ hσ) : HeisenbergGroup R) =
+theorem coe_unitary_inv (a : unitarySubgroup σ) :
+    ((a⁻¹ : unitarySubgroup σ) : HeisenbergGroup R) =
       ⟨-(a : HeisenbergGroup R).x, σ (-(a : HeisenbergGroup R).x),
         σ (a : HeisenbergGroup R).z⟩ := by
   apply HeisenbergGroup.ext
   · rfl
-  · simp [a.property.1]
-  · simp only [Subgroup.coe_inv, inv_z, a.property.1]
+  · simp [((mem_unitarySubgroup σ hσ).mp a.property).1]
+  · simp only [Subgroup.coe_inv, inv_z, ((mem_unitarySubgroup σ hσ).mp a.property).1]
     linear_combination -((mem_unitarySubgroup σ hσ).mp a.property).2
 
 /-- The commutator formula for the twisted root group. -/
-theorem coe_unitary_commutator (a b : unitarySubgroup σ hσ) :
-    ((⁅a, b⁆ : unitarySubgroup σ hσ) : HeisenbergGroup R) =
+theorem coe_unitary_commutatorElement (a b : unitarySubgroup σ) :
+    ((⁅a, b⁆ : unitarySubgroup σ) : HeisenbergGroup R) =
       ⟨0, 0, (a : HeisenbergGroup R).x * σ (b : HeisenbergGroup R).x -
         (b : HeisenbergGroup R).x * σ (a : HeisenbergGroup R).x⟩ := by
-  exact (map_commutatorElement (unitarySubgroup σ hσ).subtype a b).trans
+  exact (map_commutatorElement (unitarySubgroup σ).subtype a b).trans
     ((commutatorElement_eq (a : HeisenbergGroup R) (b : HeisenbergGroup R)).trans
-      (by rw [a.property.1, b.property.1]))
+      (by rw [((mem_unitarySubgroup σ hσ).mp a.property).1,
+        ((mem_unitarySubgroup σ hσ).mp b.property).1]))
 
+omit hσ in
 /-- Every commutator in the twisted root group is central. -/
-theorem unitary_commutator_mem_center (a b : unitarySubgroup σ hσ) :
-    ⁅a, b⁆ ∈ Subgroup.center (unitarySubgroup σ hσ) := by
+theorem unitary_commutatorElement_mem_center (a b : unitarySubgroup σ) :
+    ⁅a, b⁆ ∈ Subgroup.center (unitarySubgroup σ) := by
   apply Subgroup.mem_center_iff.mpr
   intro c
   apply Subtype.ext
   exact Subgroup.mem_center_iff.mp (zAxis_le_center
     (commutatorElement_mem_zAxis (a : HeisenbergGroup R) (b : HeisenbergGroup R))) c
-
-/-- The unitary equations are precisely preservation of the signed reversal form by an upper
-unitriangular matrix. -/
-theorem transpose_map_toMatrix_mul_form_iff (a : HeisenbergGroup R) :
-    ((toMatrix a).map σ)ᵀ * !![0, 0, 1; 0, -1, 0; 1, 0, 0] * toMatrix a =
-        !![0, 0, 1; 0, -1, 0; 1, 0, 0] ↔ a ∈ unitarySubgroup σ hσ := by
-  constructor
-  · intro h
-    have hy : -a.y + σ a.x = 0 := by
-      simpa [toMatrix_apply, Matrix.mul_apply, Fin.sum_univ_three] using
-        congrFun (congrFun h 1) 2
-    have hz : a.z + -(σ a.y * a.y) + σ a.z = 0 := by
-      simpa [toMatrix_apply, Matrix.mul_apply, Fin.sum_univ_three] using
-        congrFun (congrFun h 2) 2
-    have hy' : a.y = σ a.x := by linear_combination -hy
-    refine ⟨hy', ?_⟩
-    rw [hy', hσ a.x] at hz
-    linear_combination hz
-  · rintro ⟨hy, hz⟩
-    ext i j
-    fin_cases i <;> fin_cases j <;>
-      simp [toMatrix_apply, Matrix.mul_apply, Fin.sum_univ_three, hy, hσ a.x]
-    linear_combination hz
 
 end TauCeti.HeisenbergGroup

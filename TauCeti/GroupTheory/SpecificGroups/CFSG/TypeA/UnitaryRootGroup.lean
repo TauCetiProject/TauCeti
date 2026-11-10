@@ -16,8 +16,7 @@ The upper unitriangular root group of `SU₃(q)` has matrices
 We embed the corresponding unitary subgroup of the Heisenberg group into the finite
 special unitary model and then into the actual Steinberg fixed points of `²A₂(q)`.
 The embedding is injective and retains the matrix coordinates under finite-field descent.
-Thus the inherited multiplication and central commutator formulas describe an actual root
-subgroup, rather than an abstract group with no comparison to the fixed-point carrier.
+The inherited multiplication and central commutator formulas describe this root subgroup.
 
 ## References
 
@@ -35,28 +34,36 @@ namespace TauCeti.ValidLieTypeIndex
 
 variable (d : ValidLieTypeIndex)
 
-/-- The upper unitriangular twisted root group in the finite special unitary model of `SU₃(q)`.
-Its parameters satisfy trace equal to norm over the quadratic extension. -/
+/-- A Heisenberg matrix is fixed by the graph-twisted Frobenius exactly when it belongs to
+the unitary root subgroup. -/
+theorem toSpecialLinear_mem_fixedSubgroup_iff
+    (a : HeisenbergGroup (GaloisField d.characteristic (d.fieldExponent * 2))) :
+    HeisenbergGroup.toSpecialLinear a ∈ fixedSubgroup (d.galoisFieldTwistedFrobenius 2) ↔
+      a ∈ HeisenbergGroup.unitarySubgroup
+        (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2))
+          d.characteristic d.fieldExponent) := by
+  rw [fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup,
+    typeAGraphConjugator_two, Matrix.mem_specialIsometryGroup_iff,
+    HeisenbergGroup.coe_toSpecialLinear, HeisenbergGroup.transpose_map_toMatrix_mul_form_iff]
+
+/-- The embedding of the unitary Heisenberg root subgroup into the finite special unitary
+model `SU₃(q)` by its upper unitriangular matrix. -/
 def unitaryRootHom :
     HeisenbergGroup.unitarySubgroup
         (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2))
-          d.characteristic d.fieldExponent) involutive_iterateFrobenius_galoisField →*
+          d.characteristic d.fieldExponent) →*
       fixedSubgroup (d.galoisFieldTwistedFrobenius 2) :=
   (HeisenbergGroup.toSpecialLinear.comp
-    (HeisenbergGroup.unitarySubgroup _ involutive_iterateFrobenius_galoisField).subtype).codRestrict
+    (HeisenbergGroup.unitarySubgroup _).subtype).codRestrict
       (fixedSubgroup (d.galoisFieldTwistedFrobenius 2)) fun a ↦ by
-        rw [mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff]
-        rw [typeAGraphConjugator_two, MonoidHom.comp_apply, HeisenbergGroup.coe_toSpecialLinear,
-          ← coe_iterateFrobenius_galoisField]
-        exact (HeisenbergGroup.transpose_map_toMatrix_mul_form_iff _
-          involutive_iterateFrobenius_galoisField (a : HeisenbergGroup
-            (GaloisField d.characteristic (d.fieldExponent * 2)))).mpr a.property
+        simpa only [MonoidHom.comp_apply, Subgroup.coe_subtype] using
+          (d.toSpecialLinear_mem_fixedSubgroup_iff a).mpr a.property
 
 /-- The root homomorphism has the standard upper unitriangular matrix. -/
 @[simp]
 theorem coe_unitaryRootHom (a : HeisenbergGroup.unitarySubgroup
     (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2))
-      d.characteristic d.fieldExponent) involutive_iterateFrobenius_galoisField) :
+      d.characteristic d.fieldExponent)) :
     ((d.unitaryRootHom a : SpecialLinearGroup (Fin 3)
         (GaloisField d.characteristic (d.fieldExponent * 2))) : Matrix (Fin 3) (Fin 3)
           (GaloisField d.characteristic (d.fieldExponent * 2))) =
@@ -71,8 +78,8 @@ theorem unitaryRootHom_injective : Function.Injective d.unitaryRootHom := by
   apply HeisenbergGroup.toSpecialLinear_injective
   exact congrArg Subtype.val h
 
-/-- An upper unitriangular matrix of the finite special unitary group is in the root group.
-The unitary equations force the two Heisenberg coordinate relations. -/
+/-- An element of the finite special unitary group lies in the range of `unitaryRootHom`
+exactly when its matrix is upper unitriangular. -/
 theorem mem_range_unitaryRootHom_iff (g : fixedSubgroup (d.galoisFieldTwistedFrobenius 2)) :
     g ∈ d.unitaryRootHom.range ↔ ∃ a : HeisenbergGroup
         (GaloisField d.characteristic (d.fieldExponent * 2)),
@@ -84,13 +91,9 @@ theorem mem_range_unitaryRootHom_iff (g : fixedSubgroup (d.galoisFieldTwistedFro
   · rintro ⟨a, rfl⟩
     exact ⟨a, d.coe_unitaryRootHom a⟩
   · rintro ⟨a, ha⟩
-    have h := (mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff 2
-      (g : SpecialLinearGroup (Fin 3)
-        (GaloisField d.characteristic (d.fieldExponent * 2)))).mp g.property
-    rw [ha, ← coe_iterateFrobenius_galoisField] at h
-    rw [typeAGraphConjugator_two] at h
-    have ha' := (HeisenbergGroup.transpose_map_toMatrix_mul_form_iff _
-      involutive_iterateFrobenius_galoisField a).mp h
+    have hga : HeisenbergGroup.toSpecialLinear a = g.val :=
+      Subtype.ext (by simpa using ha.symm)
+    have ha' := (d.toSpecialLinear_mem_fixedSubgroup_iff a).mp (hga.symm ▸ g.property)
     refine ⟨⟨a, ha'⟩, ?_⟩
     apply Subtype.ext
     apply Subtype.ext
@@ -101,14 +104,13 @@ end TauCeti.ValidLieTypeIndex
 
 namespace TauCeti.TypeALieIndex
 
-/-- The twisted upper root group as a subgroup of the actual Steinberg fixed points of `²A₂(q)`.
-The map uses the proved finite-field/carrier descent, not an identification by group name. -/
+/-- The embedding of the unitary root group into the Steinberg fixed points of `²A₂(q)`;
+its range is the upper root subgroup. -/
 def unitaryRootHom (q : PrimePower) (hv : (LieTypeIndex.twistedA 2 q).Valid) :
     HeisenbergGroup.unitarySubgroup
         (iterateFrobenius (GaloisField (ofTwistedA 2 q hv).1.characteristic
           ((ofTwistedA 2 q hv).1.fieldExponent * 2)) (ofTwistedA 2 q hv).1.characteristic
-          (ofTwistedA 2 q hv).1.fieldExponent)
-          ValidLieTypeIndex.involutive_iterateFrobenius_galoisField →*
+          (ofTwistedA 2 q hv).1.fieldExponent) →*
       (ofTwistedA 2 q hv).FixedPoints :=
   (specialUnitaryEquivFixedPoints 2 q hv).toMonoidHom.comp (ofTwistedA 2 q hv).1.unitaryRootHom
 
@@ -117,8 +119,7 @@ theorem unitaryRootHom_apply (q : PrimePower) (hv : (LieTypeIndex.twistedA 2 q).
     (a : HeisenbergGroup.unitarySubgroup
       (iterateFrobenius (GaloisField (ofTwistedA 2 q hv).1.characteristic
         ((ofTwistedA 2 q hv).1.fieldExponent * 2)) (ofTwistedA 2 q hv).1.characteristic
-        (ofTwistedA 2 q hv).1.fieldExponent)
-          ValidLieTypeIndex.involutive_iterateFrobenius_galoisField) :
+        (ofTwistedA 2 q hv).1.fieldExponent)) :
     unitaryRootHom q hv a =
       specialUnitaryEquivFixedPoints 2 q hv ((ofTwistedA 2 q hv).1.unitaryRootHom a) := (rfl)
 
@@ -130,8 +131,7 @@ theorem carrierEquivSpecialLinear_unitaryRootHom (q : PrimePower)
     (a : HeisenbergGroup.unitarySubgroup
       (iterateFrobenius (GaloisField (ofTwistedA 2 q hv).1.characteristic
         ((ofTwistedA 2 q hv).1.fieldExponent * 2)) (ofTwistedA 2 q hv).1.characteristic
-        (ofTwistedA 2 q hv).1.fieldExponent)
-          ValidLieTypeIndex.involutive_iterateFrobenius_galoisField) :
+        (ofTwistedA 2 q hv).1.fieldExponent)) :
     (ofTwistedA 2 q hv).carrierEquivSpecialLinear
         (unitaryRootHom q hv a : (ofTwistedA 2 q hv).AmbientGroup) =
       SpecialLinearGroup.map
