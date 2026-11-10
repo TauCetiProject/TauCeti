@@ -351,10 +351,10 @@ instance nonempty_isotropicPoints_galoisField [NeZero r] :
   rw [unitaryForm_apply] at hiso
   exact ⟨⟨_, (mk_mem_isotropicPoints_iff (Pi.single_ne_zero_iff.mpr one_ne_zero)).mpr hiso⟩⟩
 
-/-- **An element of `SU_{r+1}(q)` fixing every isotropic point is central**, in positive rank `r`.
-Here `SU_{r+1}(q)` is the special isometry group of the form `B(x, y) = σ(x)ᵀ Q y`, with
-`σ : x ↦ x ^ q` and `Q` the signed reversal matrix. -/
-theorem mem_center_specialIsometryGroup_of_forall_smul_eq_galoisField [NeZero r]
+/-- **An element of `SU_{r+1}(q)` fixing every isotropic point is central.** In rank `r = 0` the
+group is trivial. Here `SU_{r+1}(q)` is the special isometry group of the form
+`B(x, y) = σ(x)ᵀ Q y`, with `σ : x ↦ x ^ q` and `Q` the signed reversal matrix. -/
+theorem mem_center_specialIsometryGroup_of_forall_smul_eq_galoisField
     {g : (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
       Matrix (Fin (r + 1)) (Fin (r + 1))
         (GaloisField d.characteristic (d.fieldExponent * 2))).specialIsometryGroup
@@ -367,8 +367,14 @@ theorem mem_center_specialIsometryGroup_of_forall_smul_eq_galoisField [NeZero r]
       ((typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
         Matrix (Fin (r + 1)) (Fin (r + 1))
           (GaloisField d.characteristic (d.fieldExponent * 2))).specialIsometryGroup
-        (iterateFrobenius _ d.characteristic d.fieldExponent)) :=
-  mem_center_specialIsometryGroup_of_forall_smul_eq involutive_iterateFrobenius_galoisField
+        (iterateFrobenius _ d.characteristic d.fieldExponent)) := by
+  rcases Nat.eq_zero_or_pos r with rfl | hr
+  · obtain rfl : g = 1 := Subtype.ext (Matrix.SpecialLinearGroup.ext _ _ fun i j ↦ by
+      rw [Fin.fin_one_eq_zero i, Fin.fin_one_eq_zero j]
+      simpa [Matrix.det_fin_one] using g.1.2)
+    exact one_mem _
+  have : NeZero r := ⟨hr.ne'⟩
+  exact mem_center_specialIsometryGroup_of_forall_smul_eq involutive_iterateFrobenius_galoisField
     transpose_map_typeAGraphConjugator_galoisField (isUnits_det_units _).ne_zero
     (fun _ ↦ exists_add_neg_one_pow_mul_iterateFrobenius_eq)
     exists_ne_zero_add_neg_one_pow_mul_iterateFrobenius_eq_zero hg

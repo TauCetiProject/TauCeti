@@ -109,8 +109,6 @@ theorem pow_fieldExponent_apply_lengthPerm {τ : Monoid.End G}
     {x : Fin e.1.rank → Multiplicative e.1.Closure → G}
     (hτ : ∀ i u, τ (x i u) =
       x (e.lengthPerm i) (Multiplicative.ofAdd (Multiplicative.toAdd u ^ e.exponent i)))
-    (hsq : ∀ i u, τ (τ (x i u)) =
-      x i (Multiplicative.ofAdd (Multiplicative.toAdd u ^ e.1.characteristic)))
     (i : Fin e.1.rank) (u : Multiplicative e.1.Closure) :
     (τ ^ e.1.fieldExponent) (x i u) =
       x (e.lengthPerm i) (Multiplicative.ofAdd (Multiplicative.toAdd u ^
@@ -119,7 +117,9 @@ theorem pow_fieldExponent_apply_lengthPerm {τ : Monoid.End G}
     (x := fun a => x i (Multiplicative.ofAdd a))
     (y := fun a => x (e.lengthPerm i) (Multiplicative.ofAdd a))
     (fun a => hτ i (Multiplicative.ofAdd a))
-    (fun a => hsq (e.lengthPerm i) (Multiplicative.ofAdd a))
+    (fun a => by
+      simp only [hτ, toAdd_ofAdd, lengthPerm_lengthPerm, ← pow_mul]
+      rw [mul_comm, exponent_mul_exponent_lengthPerm])
     (Multiplicative.toAdd u)
 
 end TauCeti.SuzukiReeIndex
