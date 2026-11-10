@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.SpecificGroups.Sporadic.HigmanSims.Basic
 public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
 public import Mathlib.GroupTheory.GroupAction.Transitive
+import TauCeti.GroupTheory.GroupAction.PermutationRigidity
 
 /-!
 # Basic orbits and a base of the Higman--Sims model
@@ -996,20 +997,12 @@ private theorem fixed_of_rank (g : Equiv.Perm (Fin 100))
     (hg : ∀ x y, related (g x) (g y) = related x y) (n : ℕ)
     (hseed : ∀ x : Fin 100, rigidRank x < n → x.val < 6 → g x = x) :
     ∀ x, rigidRank x < n → g x = x := by
-  have h : ∀ m, ∀ x, rigidRank x = m → m < n → g x = x := by
-    intro m
-    induction m using Nat.strong_induction_on with
-    | ind m ih =>
-      intro x hxm hmn
-      by_cases hx : x.val < 6
-      · exact hseed x (hxm ▸ hmn) hx
-      · apply rigidAnchors_unique x (by omega)
-        apply profile_apply g hg
-        intro z hz
-        have hlt := rigidAnchors_rank x z hz
-        rw [hxm] at hlt
-        exact ih _ hlt z rfl (hlt.trans hmn)
-  exact fun x hx => h _ x rfl hx
+  apply g.apply_eq_self_of_rank (seed := fun x ↦ x.val < 6)
+    (rel := fun z x ↦ (decide (x = z), related z x)) rigidAnchors_rank ?_ ?_ n hseed
+  · intro x hx
+    exact rigidAnchors_unique x (by omega)
+  · intro x y
+    exact Prod.ext (Bool.decide_congr g.injective.eq_iff) (hg x y)
 
 private theorem eq_one_of_fix_six (g : Equiv.Perm (Fin 100))
     (hg : ∀ x y, related (g x) (g y) = related x y)

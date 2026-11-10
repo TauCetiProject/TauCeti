@@ -10,6 +10,7 @@ public import TauCeti.GroupTheory.GroupAction.Stabilizer.Chain
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.GroupAction.Transitive
 import Mathlib.Data.Nat.Bits
+import TauCeti.GroupTheory.GroupAction.PermutationRigidity
 
 /-!
 # Basic orbits and a base of the McLaughlin permutation model
@@ -27,8 +28,7 @@ and its row at `0` is precisely the displayed second orbit. The third orbit cons
 of the points in that row, other than `1`, absent from the row at `1`. The fourth
 orbit consists of the points in the row at `2` absent from both rows at `0` and `1`.
 The six points `0, …, 5` form a base, and the stabilizer of `0, …, 4` has order two:
-its orbit of `5` is exactly `{5, 215}`. These tail results leave only the orbit of `4`
-under the four-point stabilizer to be computed for the full order formula.
+its orbit of `5` is exactly `{5, 215}`.
 
 Rigidity uses the rank-and-anchor method also used in `HigmanSims.Orbits`: adjacency to
 short lists of already determined vertices uniquely determines the next vertex. Starting with five
@@ -488,6 +488,10 @@ private def pointSequence (i : ℕ) : Fin 275 := Fin.ofNat 275 i
 
 @[simp] private theorem pointSequence_three : pointSequence 3 = 3 := rfl
 
+@[simp] private theorem pointSequence_four : pointSequence 4 = 4 := rfl
+
+@[simp] private theorem pointSequence_five : pointSequence 5 = 5 := rfl
+
 private theorem stabilizerChain_insert (n : ℕ) {S : Set (Fin 275)}
     (h : McL.stabilizerChain pointSequence n =
       McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) S) :
@@ -896,20 +900,10 @@ private theorem rigidAnchors_unique (x : Fin 275) (hx : 6 ≤ x.val) : ∀ y,
 private theorem fixed_of_rank {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL) (n : ℕ)
     (hseed : ∀ x : Fin 275, rigidRank x < n → x.val < 6 → g x = x) :
     ∀ x, rigidRank x < n → g x = x := by
-  have h : ∀ m, ∀ x, rigidRank x = m → m < n → g x = x := by
-    intro m
-    induction m using Nat.strong_induction_on with
-    | ind m ih =>
-      intro x hxm hmn
-      by_cases hx : x.val < 6
-      · exact hseed x (hxm ▸ hmn) hx
-      · apply rigidAnchors_unique x (by omega)
-        apply List.map_congr_left
-        intro z hz
-        have hlt := rigidAnchors_rank x z hz
-        rw [hxm] at hlt
-        exact related_fixed hg (ih _ hlt z rfl (hlt.trans hmn)) x
-  exact fun x hx ↦ h _ x rfl hx
+  apply g.apply_eq_self_of_rank (seed := fun x ↦ x.val < 6)
+    rigidAnchors_rank ?_ (related_apply hg) n hseed
+  intro x hx
+  exact rigidAnchors_unique x (by omega)
 
 private theorem image_five {g : Equiv.Perm (Fin 275)} (hg : g ∈ McL)
     (hfix : ∀ x : Fin 275, x.val < 5 → g x = x) : g 5 = 5 ∨ g 5 = 215 := by
@@ -984,11 +978,11 @@ theorem orbit_fixing_zero_one_two_three_four_five :
 private theorem stabilizerChain_five :
     McL.stabilizerChain pointSequence 5 =
       McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2, 3, 4} : Set (Fin 275)) := by
-  have h := stabilizerChain_insert 4 stabilizerChain_four
-  have h4 : pointSequence 4 = 4 := rfl
-  rw [h4, Set.insert_comm (4 : Fin 275) 0, Set.insert_comm (4 : Fin 275) 1,
-    Set.insert_comm (4 : Fin 275) 2, Set.pair_comm (4 : Fin 275) 3] at h
-  exact h
+  rw [stabilizerChain_insert 4 stabilizerChain_four]
+  congr 2
+  ext x
+  simp only [pointSequence_four, Set.mem_insert_iff, Set.mem_singleton_iff]
+  tauto
 
 /-- The pointwise stabilizer of `{0, 1, 2, 3, 4}` in the exact ATLAS model has order two. -/
 -- Simplify the subgroup's order before its membership predicate expands the intersection.
@@ -996,9 +990,8 @@ private theorem stabilizerChain_five :
     Nat.card ↥(McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275))
       ({0, 1, 2, 3, 4} : Set (Fin 275))) = 2 := by
   have h := McL.ncard_orbit_mul_card_stabilizerChain_succ pointSequence 5
-  have h5 : pointSequence 5 = 5 := rfl
   have h6 : McL.stabilizerChain pointSequence 6 = ⊥ := stabilizerChain_six_eq_bot
-  rw [stabilizerChain_five, h5] at h
+  rw [stabilizerChain_five, pointSequence_five] at h
   simpa only [Nat.reduceAdd,
     ncard_orbit_fixing_zero_one_two_three_four_five, h6, Subgroup.card_bot, mul_one] using h.symm
 
