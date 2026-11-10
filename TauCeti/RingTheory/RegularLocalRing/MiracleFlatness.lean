@@ -95,7 +95,7 @@ theorem flat_of_normal_dim_two [IsLocalRing B] [IsDomain B] [IsIntegrallyClosed 
   -- Normality makes a parameter pair of the base regular on the algebra.
   obtain ⟨x, y, hxy, -, hreg⟩ :=
     TauCeti.IsRegularLocalRing.exists_regular_parameters_of_finite_normal hinj hdim
-  have := TauCeti.IsRegularLocalRing.free_of_isWeaklyRegular hdim hxy hreg.toIsWeaklyRegular
+  have := TauCeti.IsRegularLocalRing.free_of_isWeaklyRegular hxy hreg.toIsWeaklyRegular
   infer_instance
 
 /-- A finite torsion-free algebra over a two-dimensional regular local ring is free if its
@@ -111,7 +111,7 @@ theorem free_of_normal_dim_two [Module.IsTorsionFree A B] (hdim : ringKrullDim A
   obtain ⟨x, y, hxy⟩ := TauCeti.IsRegularLocalRing.exists_span_pair_eq_maximalIdeal hdim
   have hx0 := TauCeti.IsLocalRing.ne_zero_of_span_pair_eq_maximalIdeal
     (not_isPrincipal_maximalIdeal_of_one_lt_ringKrullDim (R := A) (hdim ▸ by decide)) hxy
-  refine TauCeti.IsRegularLocalRing.free_of_isWeaklyRegular hdim hxy
+  refine TauCeti.IsRegularLocalRing.free_of_isWeaklyRegular hxy
     ((isWeaklyRegular_cons_iff B x [y]).mpr ⟨IsSMulRegular.of_ne_zero hx0,
       (isWeaklyRegular_singleton_iff _ _).mpr
         (TauCeti.isSMulRegular_quotSMulTop_iff.mpr fun b c hc ↦ ?_)⟩)
