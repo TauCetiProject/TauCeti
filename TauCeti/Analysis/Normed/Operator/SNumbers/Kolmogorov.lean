@@ -67,7 +67,8 @@ theorem le_kolmogorovNumber_iff {T : E →L[𝕜] F} {n : ℕ} {c : ℝ≥0} :
   exact (le_ciInf_iff (OrderBot.bddBelow _)).trans Subtype.forall
 
 /-- A strict upper bound admits a subspace with strictly smaller quotient norm. -/
-theorem exists_nnnorm_mkQL_comp_lt {T : E →L[𝕜] F} {n : ℕ} {c : ℝ≥0}
+theorem exists_nnnorm_mkQL_comp_lt_of_kolmogorovNumber_lt
+    {T : E →L[𝕜] F} {n : ℕ} {c : ℝ≥0}
     (h : T.kolmogorovNumber n < c) :
     ∃ V : Submodule 𝕜 F, Module.rank 𝕜 V ≤ n ∧ ‖V.mkQL ∘L T‖₊ < c := by
   rw [kolmogorovNumber_def] at h
@@ -239,23 +240,21 @@ theorem kolmogorov_apply {X Y : Type u}
     [NormedAddCommGroup X] [NormedSpace 𝕜 X] [NormedAddCommGroup Y] [NormedSpace 𝕜 Y]
     (T : X →L[𝕜] Y) (n : ℕ) : kolmogorov T n = T.kolmogorovNumber n := (rfl)
 
-/-- Kolmogorov numbers satisfy the s-number axioms over complete scalar fields. -/
-theorem isSNumberSequence_kolmogorov [CompleteSpace 𝕜] :
-    IsSNumberSequence (kolmogorov (𝕜 := 𝕜)) where
-  norm T := T.kolmogorovNumber_zero
-  antitone T := T.antitone_kolmogorovNumber
-  add_le S T n := S.kolmogorovNumber_add_le T n
-  comp_le B T A n := B.kolmogorovNumber_comp_comp_le T A n
-  eq_zero_of_rank_le hT := ContinuousLinearMap.kolmogorovNumber_eq_zero_of_rank_le hT
-  normalize n := by
-    simp [ContinuousLinearMap.kolmogorovNumber_id, rank_euclideanSpace]
-
 /-- Over a complete scalar field, Kolmogorov numbers are a strict s-number sequence.
 The normed spaces themselves need not be complete. -/
 theorem isStrictSNumberSequence_kolmogorov [CompleteSpace 𝕜] :
-    IsStrictSNumberSequence (kolmogorov (𝕜 := 𝕜)) where
-  toIsSNumberSequence := isSNumberSequence_kolmogorov
-  normalize_of_lt_rank n hn := by
-    simp [ContinuousLinearMap.kolmogorovNumber_id, hn]
+    IsStrictSNumberSequence (kolmogorov (𝕜 := 𝕜)) :=
+  .of_normalize_of_lt_rank
+    (fun T ↦ T.kolmogorovNumber_zero)
+    (fun T ↦ T.antitone_kolmogorovNumber)
+    (fun S T n ↦ S.kolmogorovNumber_add_le T n)
+    (fun B T A n ↦ B.kolmogorovNumber_comp_comp_le T A n)
+    ContinuousLinearMap.kolmogorovNumber_eq_zero_of_rank_le
+    fun n hn ↦ by simp [ContinuousLinearMap.kolmogorovNumber_id, hn]
+
+/-- Kolmogorov numbers satisfy the s-number axioms over complete scalar fields. -/
+theorem isSNumberSequence_kolmogorov [CompleteSpace 𝕜] :
+    IsSNumberSequence (kolmogorov (𝕜 := 𝕜)) :=
+  isStrictSNumberSequence_kolmogorov.toIsSNumberSequence
 
 end TauCeti.SNumbers
