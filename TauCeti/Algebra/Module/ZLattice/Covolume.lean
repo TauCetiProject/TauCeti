@@ -182,6 +182,7 @@ theorem _root_.ZLattice.covolume_le_abs_det_mul_measureReal (L : Submodule ℤ E
 /-- The zero lattice of a nontrivial space has covolume `0`. Its fundamental domain is the whole
 space, of infinite measure, so this is the value `ENNReal.toReal ∞ = 0` by convention; the true
 covolume is infinite. -/
+@[simp]
 theorem _root_.ZLattice.covolume_bot [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure] :
     ZLattice.covolume (⊥ : Submodule ℤ E) μ = 0 := by
   have h : IsAddFundamentalDomain (⊥ : Submodule ℤ E) (Set.univ : Set E) μ :=
