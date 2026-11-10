@@ -23,13 +23,13 @@ variable {R : Type*} [Ring R] [Algebra ℚ R]
 
 /-- The finite logarithm of the dual-number unit `1 + ε` is `ε`. -/
 theorem log_dualNumberUnit :
-    IsNilpotent.log (dualNumberUnit R : DualNumber R) = DualNumber.eps := by
+    IsNilpotent.log (dualNumberUnit (1 : R) : DualNumber R) = DualNumber.eps := by
   rw [IsNilpotent.log_eq_sum (n := 2) (by simp [DualNumber.eps_pow_two])]
   simp [Finset.sum_range_succ]
 
 /-- The logarithm of `1 + ε` is nonzero over a nontrivial coefficient ring. -/
 theorem log_dualNumberUnit_ne_zero [Nontrivial R] :
-    IsNilpotent.log (dualNumberUnit R : DualNumber R) ≠ 0 := by
+    IsNilpotent.log (dualNumberUnit (1 : R) : DualNumber R) ≠ 0 := by
   rw [log_dualNumberUnit]
   exact DualNumber.eps_ne_zero
 

@@ -128,14 +128,32 @@ section Comodules
 variable (R : Type*) [CommRing R]
 
 /-- The rank-one comodule of the standard character of the multiplicative group. -/
-abbrev standardComodule : Comodule R R[T;T⁻¹] (Fin 1 → R) :=
+@[instance_reducible]
+noncomputable def standardComodule : Comodule R R[T;T⁻¹] (Fin 1 → R) :=
   Comodule.ofGroupLike (Pi.basisFun R (Fin 1)) (fun _ ↦ (T 1 : R[T;T⁻¹]))
     (fun _ ↦ by simpa using (groupLikeT R).isGroupLikeElem_val)
 
 /-- The rank-two comodule of the characters `T` and `T⁻¹` of the multiplicative group. -/
-abbrev pairedComodule : Comodule R R[T;T⁻¹] (Fin 2 → R) :=
+@[instance_reducible]
+noncomputable def pairedComodule : Comodule R R[T;T⁻¹] (Fin 2 → R) :=
   Comodule.ofGroupLike (Pi.basisFun R (Fin 2)) ![(T 1 : R[T;T⁻¹]), T (-1)]
     (fun i ↦ ⟨by fin_cases i <;> simp, by fin_cases i <;> simp [LaurentPolynomial.comul_T]⟩)
+
+/-- In the standard basis, the standard comodule has coefficient matrix `diag(T)`. -/
+@[simp]
+theorem coefficientMatrix_standardComodule :
+    letI := standardComodule R
+    Comodule.coefficientMatrix (C := R[T;T⁻¹]) (Pi.basisFun R (Fin 1)) =
+      Matrix.diagonal (fun _ ↦ T 1) := by
+  exact Comodule.coefficientMatrix_ofGroupLike _ _ _
+
+/-- In the standard basis, the paired comodule has coefficient matrix `diag(T, T⁻¹)`. -/
+@[simp]
+theorem coefficientMatrix_pairedComodule :
+    letI := pairedComodule R
+    Comodule.coefficientMatrix (C := R[T;T⁻¹]) (Pi.basisFun R (Fin 2)) =
+      Matrix.diagonal ![T 1, T (-1)] := by
+  exact Comodule.coefficientMatrix_ofGroupLike _ _ _
 
 variable {R} [Nontrivial R]
 
@@ -145,7 +163,7 @@ theorem unipotenceIdeal_standard :
     Comodule.unipotenceIdeal R R[T;T⁻¹] (Fin 1 → R) = Ideal.span {(T 1 - 1 : R[T;T⁻¹])} := by
   let := standardComodule R
   rw [Comodule.unipotenceIdeal_eq_contentIdeal_coefficientMatrix_charpoly (Pi.basisFun R (Fin 1)),
-    Comodule.coefficientMatrix_ofGroupLike, Module.finrank_fin_fun]
+    coefficientMatrix_standardComodule, Module.finrank_fin_fun]
   exact contentIdeal_charpoly_standard
 
 /-- For the native comodule with characters `T` and `T⁻¹`, the unipotence ideal is
@@ -156,7 +174,7 @@ theorem unipotenceIdeal_paired :
       Ideal.span {((T 1 - 1 : R[T;T⁻¹]) ^ 2)} := by
   let := pairedComodule R
   rw [Comodule.unipotenceIdeal_eq_contentIdeal_coefficientMatrix_charpoly (Pi.basisFun R (Fin 2)),
-    Comodule.coefficientMatrix_ofGroupLike, Module.finrank_fin_fun]
+    coefficientMatrix_pairedComodule, Module.finrank_fin_fun]
   exact contentIdeal_charpoly_paired
 
 end Comodules
@@ -165,14 +183,15 @@ end Comodules
 theorem contentIdeal_charpoly_paired_le_ker_laurentEval_dualNumberUnit
     {R : Type*} [CommRing R] :
     ((Matrix.diagonal ![(T 1 : R[T;T⁻¹]), T (-1)]).charpoly -
-      (Polynomial.X - 1) ^ 2).contentIdeal ≤ RingHom.ker (laurentEval (dualNumberUnit R)) := by
+      (Polynomial.X - 1) ^ 2).contentIdeal ≤
+      RingHom.ker (laurentEval (dualNumberUnit (1 : R))) := by
   rw [contentIdeal_charpoly_paired, Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
   simp [pow_two]
 
 /-- The infinitesimal point is excluded from the fixed reduced unipotent variety. -/
 theorem not_unipotentVarietyIdeal_le_ker_laurentEval_dualNumberUnit :
     ¬ HopfAlgebra.unipotentVarietyIdeal k k[T;T⁻¹] ≤
-      RingHom.ker (laurentEval (dualNumberUnit k)) := by
+      RingHom.ker (laurentEval (dualNumberUnit (1 : k))) := by
   rw [unipotentVarietyIdeal_eq_span, Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
   simp only [map_sub, map_one, laurentEval_T, zpow_one, coe_dualNumberUnit,
     add_sub_cancel_left]
