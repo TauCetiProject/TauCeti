@@ -56,7 +56,8 @@ The coefficient-identification argument follows Mathlib's
 
 * `TauCeti.EisensteinSeries.qExpansion_identity_zmod`: the Lipschitz formula for a function of
   residues modulo `v`.
-* `TauCeti.EisensteinSeries.summable_charRow`: for `k ≥ 2` the rows are summable.
+* `TauCeti.EisensteinSeries.summable_charRow`: the rows are summable (for `k ≥ 2` they decay
+  exponentially, for `k < 2` they vanish).
 * `TauCeti.EisensteinSeries.qExpansion_coeff_of_apply_eq_tsum_charRow`,
   `TauCeti.EisensteinSeries.qExpansion_coeff_of_apply_eq_tsum_charRow_of_isPrimitive`: the
   coefficients of a modular form of weight `k ≥ 2` which is the sum of these rows.
@@ -313,10 +314,74 @@ private lemma summable_norm_charTerm (z : ℍ) :
         gcongr
     _ = _ := by ring
 
-/-- **The rows are summable.** For `k ≥ 2`, the rows `ψ(c) ∑_d φ⁻¹(d) (c v z + d)^(-k)` of the
-Eisenstein series with character form a summable family in `c ∈ ℤ`; they decay exponentially in
-`|c|`. In weight two this holds although the double series does not converge absolutely. -/
-theorem summable_charRow (hk : 2 ≤ k) (z : ℍ) : Summable (charRow ψ φ k z) := by
+/-- In weight `k < 2` the inner series of a row is not summable, along the residue class `d ≡ 1`
+modulo `v` its terms decay no faster than `1 / n`; so the row is zero. -/
+private lemma charRow_eq_zero_of_lt_two (hk : k < 2) (z : ℍ) (c : ℤ) :
+    charRow ψ φ k z c = 0 := by
+  rw [charRow_def, tsum_eq_zero_of_not_summable, mul_zero]
+  intro h
+  set w : ℂ := ((v * c : ℤ) : ℂ) * z + 1 with hw
+  have hv : (0 : ℝ) < v := Nat.cast_pos.mpr (NeZero.pos v)
+  have h1 : Summable fun n : ℕ ↦ ‖(w + (v : ℂ) * n) ^ (-(k : ℤ))‖ := by
+    have := (h.comp_injective (i := fun n : ℕ ↦ (1 + v * n : ℤ)) fun m n hmn ↦
+      (by simpa using hmn : m = n ∨ v = 0).resolve_right (NeZero.ne v)).norm
+    simpa [Function.comp_def, hw, add_assoc] using this
+  have hne (n : ℕ) : w + (v : ℂ) * n ≠ 0 := by
+    intro h0
+    have him := congrArg Complex.im h0
+    have hre := congrArg Complex.re h0
+    simp only [hw, Complex.add_im, Complex.mul_im, Complex.intCast_re, Complex.intCast_im,
+      Complex.one_im, Complex.natCast_im, Complex.natCast_re, Complex.mul_re, Complex.add_re,
+      Complex.one_re, Complex.zero_im, Complex.zero_re] at him hre
+    push_cast at him hre
+    have hz := z.2
+    have hc : c = 0 := by
+      by_contra hc
+      have : (v : ℝ) * c * (z : ℂ).im = 0 := by linarith
+      rcases mul_eq_zero.mp this with h | h
+      · exact (mul_ne_zero hv.ne' (by exact_mod_cast hc)) h
+      · exact hz.ne' h
+    subst hc
+    have : (0 : ℝ) ≤ (v : ℝ) * n := by positivity
+    simp at hre
+    linarith
+  set C : ℝ := ‖w‖ + v with hC
+  have hC1 : 1 ≤ C := by
+    have : (1 : ℝ) ≤ v := Nat.one_le_cast.mpr (NeZero.pos v)
+    linarith [norm_nonneg w]
+  have hbound (n : ℕ) : 1 / (C * (n + 1)) ≤ ‖(w + (v : ℂ) * n) ^ (-(k : ℤ))‖ := by
+    have hpos : 0 < ‖w + (v : ℂ) * n‖ := norm_pos_iff.mpr (hne n)
+    have hle : ‖w + (v : ℂ) * n‖ ≤ C * (n + 1) := by
+      calc ‖w + (v : ℂ) * n‖ ≤ ‖w‖ + v * n := by
+            refine (norm_add_le _ _).trans ?_
+            simp
+        _ ≤ C * (n + 1) := by
+            rw [hC]
+            have : (0 : ℝ) ≤ n := n.cast_nonneg
+            nlinarith [norm_nonneg w]
+    interval_cases k
+    · simp only [Nat.cast_zero, neg_zero, zpow_zero, norm_one]
+      rw [div_le_one (by positivity)]
+      nlinarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]
+    · simp only [Nat.cast_one, zpow_neg, zpow_one, norm_inv]
+      rw [← one_div]
+      exact one_div_le_one_div_of_le hpos hle
+  have h2 : Summable fun n : ℕ ↦ 1 / (C * (n + 1)) :=
+    h1.of_nonneg_of_le (fun n ↦ by positivity) hbound
+  have h3 : Summable fun n : ℕ ↦ 1 / ((n + 1 : ℕ) : ℝ) := by
+    refine (h2.mul_left C).congr fun n ↦ ?_
+    push_cast
+    field_simp
+  exact Real.not_summable_one_div_natCast ((summable_nat_add_iff 1).mp h3)
+
+/-- **The rows are summable.** The rows `ψ(c) ∑_d φ⁻¹(d) (c v z + d)^(-k)` of the Eisenstein
+series with character form a summable family in `c ∈ ℤ`. For `k ≥ 2` they decay exponentially in
+`|c|`; in weight two this holds although the double series does not converge absolutely. For
+`k < 2` the inner series are not summable, so every row is zero (`charRow_eq_zero_of_lt_two`). -/
+theorem summable_charRow (z : ℍ) : Summable (charRow ψ φ k z) := by
+  rcases lt_or_ge k 2 with hk | hk
+  · rw [funext (charRow_eq_zero_of_lt_two ψ φ hk z)]
+    exact summable_zero
   have hS := summable_norm_charTerm ψ φ (k := k) z
   -- the rows `c ≥ 1`, by the Lipschitz formula
   have hpnat : Summable fun c : ℕ+ ↦ charRow ψ φ k z c := by
@@ -350,7 +415,7 @@ private lemma tsum_charRow_eq_add_tsum_pnat (hk : 2 ≤ k) (hpar : ψ (-1) * φ 
       rw [sq, ← mul_pow, neg_one_mul, neg_neg, one_pow]
     rw [charRow_neg, hφ]
     linear_combination (charRow ψ φ k z c * (-1) ^ k) * hpar + charRow ψ φ k z c * hsq
-  rw [tsum_int_eq_zero_add_two_mul_tsum_pnat heven (summable_charRow ψ φ hk z),
+  rw [tsum_int_eq_zero_add_two_mul_tsum_pnat heven (summable_charRow ψ φ z),
     tsum_congr (charRow_pnat ψ φ hk z), tsum_mul_left]
   simp only [charRow_zero, nsmul_eq_mul, Nat.cast_ofNat, add_right_inj]
   ring
@@ -439,12 +504,14 @@ theorem qExpansion_coeff_of_apply_eq_tsum_charRow_of_isPrimitive (hk : 2 ≤ k)
 
 /-! ### The Eisenstein series with character in weight `k ≥ 3` -/
 
+omit [NeZero v] in
 /-- **The Eisenstein series with character summed along rows.** For `k ≥ 3`, `G_k^{ψ,φ}(z)` is the
 sum over `c ∈ ℤ` of the rows `ψ(c) ∑_{d ∈ ℤ} φ⁻¹(d) (c v z + d)^(-k)`: only the pairs `(v c, d)`
 contribute to the absolutely convergent double series. -/
 theorem hasSum_charRow_charEisensteinSeriesMF (hk : 3 ≤ (k : ℤ)) (huv : u * v ∣ N) (z : ℍ) :
     HasSum (charRow ψ φ k z) (charEisensteinSeriesMF ψ φ hk huv z) := by
-  convert (summable_charRow ψ φ (k := k) (by omega) z).hasSum using 1
+  have : NeZero v := ⟨fun h ↦ NeZero.ne N (by simpa [h] using huv)⟩
+  convert (summable_charRow ψ φ z).hasSum using 1
   set F : ℤ × ℤ → ℂ := fun p ↦
     (if (v : ℤ) ∣ p.1 then ψ ((p.1 / v : ℤ) : ZMod u) * φ⁻¹ (p.2 : ZMod v) else 0) *
       eisSummand k ![p.1, p.2] z with hF
@@ -472,7 +539,7 @@ theorem hasSum_charRow_charEisensteinSeriesMF (hk : 3 ≤ (k : ℤ)) (huv : u * 
     tsum_congr fun p ↦ by simp [hF]
   rw [← hW', hFsum, hsum.tsum_prod]
   -- only the pairs `(v c, d)` contribute
-  exact ((hasSum_charRow_iff ψ φ k z).mp (summable_charRow ψ φ (by omega) z).hasSum).tsum_eq
+  exact ((hasSum_charRow_iff ψ φ k z).mp (summable_charRow ψ φ z).hasSum).tsum_eq
 
 /-- **The `q`-expansion of the Eisenstein series with character.** For characters `ψ` modulo
 `u` and `φ` modulo `v` with `ψ(-1) φ(-1) = (-1)^k`, the constant coefficient of `G_k^{ψ,φ}` is
