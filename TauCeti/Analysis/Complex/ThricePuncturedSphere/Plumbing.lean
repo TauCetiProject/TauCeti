@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
 public import TauCeti.Analysis.Complex.RealChart
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
+public import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.RingTheory.Complex
 import Mathlib.RingTheory.Norm.Transitivity
 
@@ -53,6 +54,9 @@ collides with `c_q`, and the four-punctured sphere breaks into the two pairs of 
 * `TauCeti.ThricePuncturedSphere.Puncture.aedisjoint_truncation_image`: in real coordinates, the
   truncation `S_{L/2}` of `S` and its image under the plumbing map meet only in the null circle
   `s_q = L/2`.
+* `TauCeti.ThricePuncturedSphere.Puncture.setIntegral_plumbedTruncation_of_integrableOn`: so a
+  function integrable over both truncations integrates over their union as the sum of its
+  integrals over them.
 
 ## References
 
@@ -354,6 +358,13 @@ open TauCeti.Complex (realChart realChart_apply realChart_injective contDiff_rea
 
 variable {q : Puncture} {L : ℝ}
 
+/-- The plumbing map is continuous. -/
+theorem continuous_plumbingMap (q : Puncture) (L : ℝ) : Continuous (q.plumbingMap L) := by
+  have hψ : q.plumbingMap L = fun w => q.endCenter + q.plumbingFactor L * w :=
+    funext (plumbingMap_apply q L)
+  rw [hψ]
+  fun_prop
+
 /-- The plumbing map is smooth in real coordinates. -/
 theorem contDiff_realChart_plumbingMap (q : Puncture) (L : ℝ) {n : WithTop ℕ∞} :
     ContDiff ℝ n (realChart (q.plumbingMap L)) := by
@@ -453,6 +464,44 @@ theorem aedisjoint_truncation_image (hq : q ≠ inf) :
   rw [hsymm, (Complex.volume_preserving_equiv_real_prod.symm _).measure_preimage
     Metric.isClosed_sphere.measurableSet.nullMeasurableSet]
   exact Measure.addHaar_sphere volume _ _
+
+/-- The image `ψ(S_{L/2})` of the inserted truncation, in real coordinates, lies in the plumbed
+four-punctured sphere. -/
+theorem realChart_plumbingMap_image_subset (hq : q ≠ inf) (hL : 4 < L) :
+    realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)) ⊆
+      {z : ℝ × ℝ | (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
+        Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} := by
+  rintro _ ⟨w, hw, rfl⟩
+  rw [mem_ofPred_eq, realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
+  exact plumbingMap_mem_plumbedSphere_of_mem_truncation hq hL hw
+
+/-- The union `S_R ∪ ψ(S_R)` of a truncation and its image under the plumbing map is measurable in
+real coordinates. -/
+theorem measurableSet_preimage_plumbedTruncation (q : Puncture) (L R : ℝ) :
+    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹'
+      (truncation R ∪ q.plumbingMap L '' truncation R)) :=
+  (((isCompact_truncation _).union ((isCompact_truncation _).image
+    (continuous_plumbingMap q L))).isClosed.preimage
+    Complex.equivRealProdCLM.symm.continuous).measurableSet
+
+/-- The plumbed truncation `S_{L/2} ∪ ψ(S_{L/2})` is the union of the receiving truncation
+`S_{L/2}` and its image `ψ(S_{L/2})`, which meet in a null set, so a function integrable over both
+pieces integrates over the plumbed truncation as the sum of its integrals over them. -/
+theorem setIntegral_plumbedTruncation_of_integrableOn (hq : q ≠ inf) {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ × ℝ → E}
+    (hT : IntegrableOn f (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)))
+    (hA : IntegrableOn f (realChart (q.plumbingMap L) ''
+      (Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2)))) :
+    ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+        (truncation (L / 2) ∪ q.plumbingMap L '' truncation (L / 2)), f z =
+      (∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation (L / 2), f z) +
+        ∫ z in realChart (q.plumbingMap L) '' (Complex.equivRealProdCLM.symm ⁻¹'
+          truncation (L / 2)), f z := by
+  have hA' := (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+    (isCompact_truncation (L / 2))).image (contDiff_realChart_plumbingMap q L (n := 0)).continuous
+  rw [preimage_union, preimage_image_plumbingMap]
+  exact setIntegral_union₀ (aedisjoint_truncation_image hq)
+    hA'.isClosed.measurableSet.nullMeasurableSet hT hA
 
 /-- The plumbing map carries the circle `s = -L/2` of the end at `∞` of the inserted pair of pants
 to the circle `s = L/2` of the end `q` of the receiving one. -/

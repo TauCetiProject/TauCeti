@@ -21,7 +21,7 @@ On each end it moves points radially about the center `c_q` of the end, changing
 longitudinal coordinate `h = ±s_q` to the compressed height
 `TauCeti.ThricePuncturedSphere.compressedHeight R ε h`. This is `h` up to `R + ε / 2`, is less
 than `R + ε` everywhere, and is the constant `R + 3ε/4` beyond `R + ε`. Since the radius
-`‖w - c_q‖` is `‖b_q‖ exp (∓2π s_q)`, the map on the end `q` is
+`‖w - c_q‖` is `‖b_q‖ exp (-2π s_q) = ‖b_q‖ exp (∓2π h)`, the map on the end `q` is
 `w ↦ c_q + exp (±2π (h - compressedHeight R ε h)) • (w - c_q)`
 (`TauCeti.ThricePuncturedSphere.Puncture.endCompression`), and the compression of `S` is the
 composition of the compressions of the three ends.
@@ -70,6 +70,13 @@ theorem compressedHeight_def (R ε h : ℝ) :
 theorem compressedHeight_of_le (hε : 0 < ε) (hh : h ≤ R + ε / 2) : compressedHeight R ε h = h := by
   rw [compressedHeight_def, smoothTransition.zero_of_nonpos, zero_mul, add_zero]
   exact div_nonpos_of_nonpos_of_nonneg (by linarith) hε.le
+
+/-- From `R + ε` on the compressed height is the constant `R + 3ε/4`. -/
+theorem compressedHeight_of_ge (hε : 0 < ε) (hh : R + ε ≤ h) :
+    compressedHeight R ε h = R + 3 * ε / 4 := by
+  rw [compressedHeight_def, smoothTransition.one_of_one_le (by rw [le_div_iff₀ hε]; linarith),
+    one_mul]
+  ring
 
 /-- The compressed height is less than `R + ε`. -/
 theorem compressedHeight_lt (hε : 0 < ε) (h : ℝ) : compressedHeight R ε h < R + ε := by
