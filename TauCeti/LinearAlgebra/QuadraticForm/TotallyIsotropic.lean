@@ -30,7 +30,7 @@ vector of `W`, that is, when the restriction of `Q` to `W` is zero.
   `W ⊔ W' = ⊤` with `W'` totally isotropic, a vector of `W'` which is polar-orthogonal to `W`
   vanishes.
 * `QuadraticMap.IsTotallyIsotropic.finrank_eq_of_codisjoint`: two totally isotropic subspaces
-  spanning a finite-dimensional nondegenerate quadratic space have the same dimension.
+  spanning a nondegenerate quadratic space have the same dimension.
 
 The Witt-index comparison for maximal totally isotropic subspaces (Lam I.4.4) is in
 `TauCeti.LinearAlgebra.QuadraticForm.Witt.TotallyIsotropic`.
@@ -164,19 +164,30 @@ end Ring
 
 section Field
 
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   {Q : QuadraticForm K V} {W W' : Submodule K V}
 
-/-- Two totally isotropic subspaces spanning a finite-dimensional nondegenerate quadratic space
-have the same dimension: the polar pairing embeds each into the dual of the other. -/
+/-- If `W` is finite-dimensional and `W ⊔ W' = ⊤` with `W'` totally isotropic in a nondegenerate
+space, then `W'` is finite-dimensional of dimension at most that of `W`: the polar pairing embeds
+`W'` into the dual of `W`. -/
+theorem IsTotallyIsotropic.finite_and_finrank_le_of_codisjoint (hW' : Q.IsTotallyIsotropic W')
+    (hQ : Q.Nondegenerate) (hWW' : Codisjoint W W') [FiniteDimensional K W] :
+    FiniteDimensional K W' ∧ Module.finrank K W' ≤ Module.finrank K W := by
+  have hinj := hW'.polarBilin_compl₁₂_flip_injective hQ hWW'
+  refine ⟨Module.Finite.of_injective _ hinj, ?_⟩
+  simpa [Subspace.dual_finrank_eq] using LinearMap.finrank_le_finrank_of_injective hinj
+
+/-- Two totally isotropic subspaces spanning a nondegenerate quadratic space have the same
+dimension: the polar pairing embeds each into the dual of the other. -/
 theorem IsTotallyIsotropic.finrank_eq_of_codisjoint (hW : Q.IsTotallyIsotropic W)
     (hW' : Q.IsTotallyIsotropic W') (hQ : Q.Nondegenerate) (hWW' : Codisjoint W W') :
     Module.finrank K W' = Module.finrank K W := by
-  apply le_antisymm
-  · simpa [Subspace.dual_finrank_eq] using
-      LinearMap.finrank_le_finrank_of_injective (hW'.polarBilin_compl₁₂_flip_injective hQ hWW')
-  · simpa [Subspace.dual_finrank_eq] using
-      LinearMap.finrank_le_finrank_of_injective (hW.polarBilin_compl₁₂_flip_injective hQ hWW'.symm)
+  by_cases hfW : FiniteDimensional K W
+  · obtain ⟨hfW', h₁⟩ := hW'.finite_and_finrank_le_of_codisjoint hQ hWW'
+    exact le_antisymm h₁ (hW.finite_and_finrank_le_of_codisjoint hQ hWW'.symm).2
+  · by_cases hfW' : FiniteDimensional K W'
+    · exact absurd (hW.finite_and_finrank_le_of_codisjoint hQ hWW'.symm).1 hfW
+    · rw [Module.finrank_of_not_finite hfW, Module.finrank_of_not_finite hfW']
 
 end Field
 
