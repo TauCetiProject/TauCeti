@@ -6,10 +6,10 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.NumberTheory.HeckeRing.GLn.Basic
+public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal
 public import TauCeti.NumberTheory.HeckeRing.One
 
 import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Int
-import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 
 /-!
 # Diagonal coset representatives for the `GL_n` Hecke ring
@@ -28,7 +28,9 @@ Chris Birkbeck), on top of the matrix-level Smith normal form
 
 ## Main definitions
 
-* `natDiagGL`: the diagonal matrix `diag(a₁,...,aₙ)` as an element of `GL_n(ℚ)`.
+The diagonal element `natDiagGL` itself, `diag(a₁,...,aₙ)` in `GL_n(ℚ)`, is defined in
+`TauCeti.NumberTheory.HeckeRing.GLn.Diagonal`; its algebraic API is developed here.
+
 * `IsDvdChain`: the divisibility condition `a i ∣ a j` for `i ≤ j`.
 * `diagCoset`: the double coset `SL_n(ℤ) · diag(a₁,...,aₙ) · SL_n(ℤ)`.
 * `diagElem`: the Hecke ring element `T(a₁,...,aₙ)`, the coset with coefficient `1`.
@@ -63,22 +65,6 @@ variable (n : ℕ)
 
 section Diagonal
 
-/-- The diagonal `GL_n(ℚ)` element `diag(a₁,...,aₙ)` with positive natural number entries.
-Returns `1` (the identity matrix) when the positivity condition `∀ i, 0 < a i` fails;
-this is a junk value that simplifies the API by avoiding an explicit positivity argument.
-Only positivity is needed for a meaningful value — a positive tuple that is not a
-divisibility chain still names its genuine diagonal coset. -/
-noncomputable def natDiagGL (a : Fin n → ℕ) : GL (Fin n) ℚ :=
-  if h : ∀ i, 0 < a i then
-    TauCeti.diagGL fun i ↦ Units.mk0 (a i : ℚ) (by exact_mod_cast (h i).ne')
-  else 1
-
-@[simp] lemma natDiagGL_coe (a : Fin n → ℕ) (ha : ∀ i, 0 < a i) :
-    (↑(natDiagGL n a) : Matrix (Fin n) (Fin n) ℚ) =
-    Matrix.diagonal (fun i ↦ (a i : ℚ)) := by
-  rw [natDiagGL, dite_eq_left ha, TauCeti.diagGL_coe]
-  simp
-
 /-- **The integral witness of `natDiagGL`.** `natDiagGL n a` is the entrywise cast of the
 integral diagonal matrix with entries `a`.
 
@@ -92,12 +78,10 @@ lemma natDiagGL_coe_eq_map_intCast (a : Fin n → ℕ) (ha : ∀ i, 0 < a i) :
   norm_num
 
 lemma hasIntEntries_natDiagGL (a : Fin n → ℕ) : HasIntEntries n (natDiagGL n a) := by
-  rw [natDiagGL]
-  split_ifs with h
-  · exact (hasIntEntries_iff n).mpr ⟨Matrix.diagonal (fun i ↦ (a i : ℤ)), by
-      rw [TauCeti.diagGL_coe]
-      ext i j; simp [Matrix.diagonal_apply, Matrix.map_apply]⟩
-  · exact hasIntEntries_one n
+  by_cases h : ∀ i, 0 < a i
+  · exact (hasIntEntries_iff n).mpr ⟨_, natDiagGL_coe_eq_map_intCast n a h⟩
+  · rw [natDiagGL_of_not_pos n h]
+    exact hasIntEntries_one n
 
 /-- Positivity is preserved by pointwise products. -/
 private lemma pi_mul_pos {a b : Fin n → ℕ} (ha : ∀ i, 0 < a i) (hb : ∀ i, 0 < b i) :
@@ -123,17 +107,12 @@ lemma natDiagGL_mem_posDetInt (a : Fin n → ℕ) : natDiagGL n a ∈ posDetInt 
   refine (mem_posDetInt_iff n).mpr ⟨hasIntEntries_natDiagGL n a, ?_⟩
   by_cases ha : ∀ i, 0 < a i
   · exact natDiagGL_det_pos n a ha
-  · rw [natDiagGL, dite_eq_right ha]
+  · rw [natDiagGL_of_not_pos n ha]
     simp
 
 lemma natDiagGL_det (a : Fin n → ℕ) (ha : ∀ i, 0 < a i) :
     (↑(natDiagGL n a) : Matrix (Fin n) (Fin n) ℚ).det = ∏ i, (a i : ℚ) := by
   rw [natDiagGL_coe n a ha, Matrix.det_diagonal]
-
-/-- The junk branch of `natDiagGL`: without positivity the value is the identity. -/
-@[simp] lemma natDiagGL_of_not_pos {a : Fin n → ℕ} (ha : ¬ ∀ i, 0 < a i) :
-    natDiagGL n a = 1 :=
-  dite_eq_right ha
 
 /-- **Natural diagonal matrices commute**, with no positivity hypothesis: on the positive branch
 this is `natDiagGL_mul` and `mul_comm` of the entry tuples, and when either tuple fails positivity
