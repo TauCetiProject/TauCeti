@@ -241,10 +241,12 @@ every `mu ∈ S`, on which every simple coroot takes integer values, and which e
 reflection carries into itself. Then every `mu ∈ S` has a Weyl-group element `w` for which `w • mu`
 again lies in `S` and every simple coroot takes a natural value on it.
 
-A member on which some simple coroot is negative is moved by the corresponding reflection strictly
-closer to `lam`, so the induction on the height of `lam - mu` stops exactly at a dominant member;
-the set of weights admitting such a `w` is reflection stable, which is what lets the induction run
-inside it.
+In positive characteristic `p` every integer cast equals the natural cast of its residue mod `p`,
+so the integrality hypothesis already makes `mu` itself dominant and `w = 1` works. In
+characteristic zero, a member on which some simple coroot is negative is moved by the corresponding
+reflection strictly closer to `lam`, so the induction on the height of `lam - mu` stops exactly at
+a dominant member; the set of weights admitting such a `w` is reflection stable, which is what lets
+the induction run inside it.
 
 `RootPairing.exists_mem_dominantChamber` is the same statement for an arbitrary weight, with
 dominance read as `0 ≤ ⟨mu, αᵢ^∨⟩` and no reference to `lam`. It needs a `[LinearOrder R]` on the
@@ -273,7 +275,7 @@ theorem exists_weylGroup_smul_dominant_of_forall_reflection_mem_of_sub_mem_posRo
     refine ⟨(z % p).toNat, ?_⟩
     rw [one_smul, hz, ← Int.cast_natCast,
       Int.toNat_of_nonneg (Int.emod_nonneg _ (by exact_mod_cast hp0))]
-    exact (CharP.intCast_eq_intCast R p).2 (Int.mod_modEq z p).symm
+    exact CharP.intCast_eq_intCast_mod R p
   -- Undoing a reflection by appending it to the Weyl-group element on the right.
   have hsmul : ∀ (i : ι) (x : M) (w : P.weylGroup),
       (w * RootPairing.weylGroup.ofIdx P i) • P.reflection i x = w • x := fun i x w ↦ by
