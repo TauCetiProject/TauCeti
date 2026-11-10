@@ -166,6 +166,12 @@ lemma ext (h : ∀ (x : M) (v : TangentSpace I x), J x v = K x v) : J = K := by
   ext x v
   exact h x v
 
+/-- Two smooth almost complex structures with the same value on every tangent fiber are equal. -/
+lemma ext_almostComplexStructureAt
+    (h : ∀ x, J.almostComplexStructureAt x = K.almostComplexStructureAt x) : J = K := by
+  ext x v
+  rw [← almostComplexStructureAt_apply, h x, almostComplexStructureAt_apply]
+
 section ContMDiffApply
 
 variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
@@ -188,6 +194,19 @@ lemma mdifferentiableAt_apply (J : SmoothAlmostComplexStructure I M) {b : N → 
     (hV : MDifferentiableAt I' I.tangent (fun y ↦ TotalSpace.mk' E (b y) (V y)) y₀) :
     MDifferentiableAt I' I.tangent (fun y ↦ TotalSpace.mk' E (b y) (J (b y) (V y))) y₀ :=
   ((J.toEndomorphism.contMDiff.mdifferentiableAt (by simp)).comp y₀ hb).clm_bundle_apply hV
+
+/-- A family of smooth almost complex structures which equals a fixed `J` near `y₀`, read along a
+map `b` which is `C^n` at `y₀`, is `C^n` at `y₀` as a section of the tangent endomorphism bundle
+along `b`. -/
+lemma contMDiffAt_toEndomorphism_of_eventuallyEq {n : ℕ∞ω} [ENat.LEInfty n]
+    {J' : N → SmoothAlmostComplexStructure I M} {b : N → M} {y₀ : N}
+    (hb : ContMDiffAt I' I n b y₀) (hJ' : ∀ᶠ y in nhds y₀, J' y = J) :
+    ContMDiffAt I' (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
+        (b y) ((J' y).toEndomorphism (b y))) y₀ :=
+  (((J.toEndomorphism.contMDiff (b y₀)).of_le ENat.LEInfty.out).comp y₀ hb).congr_of_eventuallyEq
+    (hJ'.mono fun y hy ↦ by simp only [hy, Function.comp_apply])
 
 end ContMDiffApply
 
