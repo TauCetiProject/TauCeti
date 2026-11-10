@@ -26,9 +26,11 @@ homotopy `h` commutes with every `eM k`, and its inclusion `i` and projection `p
 `eN k` with `eM k`. Let `δ` be strictly triangular: its component `eM j * δ * eM i` vanishes
 unless `i < j` (`TauCeti.IsStrictlyTriangular`). Then:
 
-* `δ h` is strictly triangular, hence nilpotent, so `1 + δ h` is invertible and the basic
-  perturbation lemma `TauCeti.LinearSpecialContraction.perturb` applies
-  (`TauCeti.LinearSpecialContraction.isUnit_one_add_mul_homotopy_of_isStrictlyTriangular`);
+* `δ h` is strictly triangular, hence nilpotent, so `1 + δ h` is invertible
+  (`TauCeti.LinearSpecialContraction.isUnit_one_add_mul_homotopy_of_isStrictlyTriangular`).
+  This is the invertibility hypothesis of the basic perturbation lemma
+  `TauCeti.LinearSpecialContraction.perturb`, which applies to `δ` once moreover
+  `(dM + δ)² = dM²`, for instance when `dM` and `dM + δ` are both differentials;
 * the perturbation operator `X = (1 + δ h)⁻¹ δ` is the finite sum
   `∑_{k < #I} (-1)ᵏ (δ h)ᵏ δ`
   (`TauCeti.LinearSpecialContraction.perturbationSeries_eq_sum_of_isStrictlyTriangular`);
@@ -41,15 +43,18 @@ unless `i < j` (`TauCeti.IsStrictlyTriangular`). Then:
   components, where its component from `i` to `j` adds `p X_{ji} i`
   (`TauCeti.LinearSpecialContraction.isStrictlyTriangular_perturbedDifferential_sub` and
   `TauCeti.LinearSpecialContraction.comp_perturbedDifferential_comp`). If `dM` is diagonal then so
-  is `dN` (`TauCeti.LinearSpecialContraction.comp_dN_eq_dN_comp`), so the transferred structure is
+  is `dN` (`TauCeti.LinearContraction.comp_dN_eq_dN_comp`), so the transferred structure is
   again a cube with the vertex differentials `dN`;
-* the perturbed inclusion, projection and homotopy differ from those of `c` only in strictly
-  increasing components (`TauCeti.LinearSpecialContraction.comp_perturb_incl_comp_of_not_lt` and
-  its two companions), so the perturbed contraction is again diagonal up to strictly increasing
-  terms.
+* when `(dM + δ)² = dM²`, so that the perturbed contraction exists, its inclusion, projection
+  and homotopy differ from those of `c` only in strictly increasing components
+  (`TauCeti.LinearSpecialContraction.comp_perturb_incl_comp_of_not_lt` and its two companions), so
+  the perturbed contraction is again diagonal up to strictly increasing terms.
 
-Neither `dM` nor `dN` needs to be diagonal for these statements, and only `eM` is required to be a
-complete family of orthogonal idempotents; `eN` only enters through the intertwining hypotheses.
+The invertibility, the finite series, the component recursion and the components of the
+transferred differential hold for every strictly triangular `δ`; only the statements about the
+perturbed contraction need `(dM + δ)² = dM²`. Neither `dM` nor `dN` needs to be diagonal for
+these statements, and only `eM` is required to be a complete family of orthogonal idempotents;
+`eN` only enters through the intertwining hypotheses.
 
 ## References
 
@@ -80,8 +85,9 @@ include he hh hδ
 
 /-- **Invertibility for strictly triangular perturbations.** If the homotopy of `c` commutes with
 a complete family of orthogonal idempotents indexed by a finite preordered set and `δ` is strictly
-triangular, then `δ h` is nilpotent and `1 + δ h` is invertible, so the basic perturbation lemma
-`LinearSpecialContraction.perturb` applies to `δ`. -/
+triangular, then `δ h` is nilpotent and `1 + δ h` is invertible. This is the invertibility
+hypothesis of the basic perturbation lemma `LinearSpecialContraction.perturb`, which applies to `δ`
+when moreover `(dM + δ)² = dM²`. -/
 theorem isUnit_one_add_mul_homotopy_of_isStrictlyTriangular : IsUnit (1 + δ * c.homotopy) :=
   (hδ.mul_of_forall_commute hh).isUnit_one_add he
 
@@ -90,19 +96,13 @@ geometric series `∑_{k < #I} (-1)ᵏ (δ h)ᵏ δ`, truncated at the cardinali
 theorem perturbationSeries_eq_sum_of_isStrictlyTriangular :
     c.perturbationSeries δ =
       ∑ k ∈ range (Fintype.card I), (-(δ * c.homotopy)) ^ k * δ := by
-  set u := δ * c.homotopy
-  have hu : u ^ Fintype.card I = 0 := (hδ.mul_of_forall_commute hh).pow_card_eq_zero he
-  have hU := c.isUnit_one_add_mul_homotopy_of_isStrictlyTriangular δ he hh hδ
-  have hgeom : (1 + u) * ∑ k ∈ range (Fintype.card I), (-u) ^ k = 1 := by
-    have h := mul_neg_geom_sum (-u) (Fintype.card I)
-    rwa [sub_neg_eq_add, neg_pow, hu, mul_zero, sub_zero] at h
-  rw [perturbationSeries_def, ← Finset.sum_mul]
-  congr 1
-  calc Ring.inverse (1 + u)
-      = Ring.inverse (1 + u) * ((1 + u) * ∑ k ∈ range (Fintype.card I), (-u) ^ k) := by
-        rw [hgeom, mul_one]
-    _ = ∑ k ∈ range (Fintype.card I), (-u) ^ k := by
-        rw [← mul_assoc, Ring.inverse_mul_cancel _ hU, one_mul]
+  have hu : (δ * c.homotopy) ^ Fintype.card I = 0 :=
+    (hδ.mul_of_forall_commute hh).pow_card_eq_zero he
+  ext z : 1
+  rw [c.perturbationSeries_apply_eq_sum_of_pow_apply_eq_zero δ
+      (c.isUnit_one_add_mul_homotopy_of_isStrictlyTriangular δ he hh hδ)
+      (by rw [hu, LinearMap.zero_apply]), LinearMap.sum_apply]
+  simp only [mul_apply_eq_comp]
 
 /-- The perturbation operator of a strictly triangular perturbation is strictly triangular. -/
 theorem isStrictlyTriangular_perturbationSeries :
@@ -152,14 +152,6 @@ section Retract
 variable (hincl : ∀ k, c.incl ∘ₗ eN k = eM k ∘ₗ c.incl)
   (hproj : ∀ k, eN k ∘ₗ c.proj = c.proj ∘ₗ eM k)
 include hincl hproj
-
-/-- The components of the compression `p f i` of an endomorphism `f` of `M` are the compressions
-of the components of `f`, when the inclusion and the projection intertwine the two families. -/
-theorem comp_proj_comp_comp_incl_comp (f : Module.End R M) (i j : I) :
-    eN j ∘ₗ (c.proj ∘ₗ f ∘ₗ c.incl) ∘ₗ eN i = c.proj ∘ₗ (eM j * f * eM i) ∘ₗ c.incl := by
-  rw [Module.End.mul_eq_comp, Module.End.mul_eq_comp]
-  simp only [LinearMap.comp_assoc, hincl]
-  rw [← LinearMap.comp_assoc, hproj, LinearMap.comp_assoc]
 
 /-- The component of the transferred differential `dN + p X i` from `i` to `j` is the component
 of `dN` plus the compression of the component `X_{ji}` of the perturbation operator. -/
@@ -249,18 +241,5 @@ theorem comp_perturb_homotopy_comp_of_not_lt {i j : I} (h : ¬i < j) :
     _ = 0 := by rw [hX, mul_zero, zero_mul]
 
 end Retract
-
-/-- If the differential `dM` is diagonal, so is the differential `dN = p dM i` of the retract. -/
-theorem comp_dN_eq_dN_comp (hincl : ∀ k, c.incl ∘ₗ eN k = eM k ∘ₗ c.incl)
-    (hproj : ∀ k, eN k ∘ₗ c.proj = c.proj ∘ₗ eM k) (hdM : ∀ k, Commute (eM k) dM) (k : I) :
-    eN k ∘ₗ dN = dN ∘ₗ eN k := by
-  have hdN : dN = c.proj ∘ₗ dM ∘ₗ c.incl := by
-    rw [← LinearMap.comp_assoc, c.proj_comp_dM, LinearMap.comp_assoc, c.proj_comp_incl,
-      LinearMap.comp_id]
-  have hd : eM k ∘ₗ dM = dM ∘ₗ eM k := by
-    rw [← Module.End.mul_eq_comp, (hdM k).eq, Module.End.mul_eq_comp]
-  rw [hdN, ← LinearMap.comp_assoc, hproj, LinearMap.comp_assoc, LinearMap.comp_assoc,
-    LinearMap.comp_assoc, hincl, ← LinearMap.comp_assoc c.incl dM (eM k), hd,
-    LinearMap.comp_assoc]
 
 end TauCeti.LinearSpecialContraction

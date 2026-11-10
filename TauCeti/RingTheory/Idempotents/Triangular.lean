@@ -8,13 +8,14 @@ module
 public import Mathlib.Order.Interval.Finset.Defs
 public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.Nilpotent.Defs
+public import TauCeti.Order.Preorder.Finite
 import Mathlib.RingTheory.Nilpotent.Basic
 
 /-!
 # Strictly triangular elements relative to orthogonal idempotents
 
-Let `e : I → R` be a complete family of orthogonal idempotents of a ring `R`, indexed by a finite
-preordered set `I`. It splits every `a : R` into components `e j * a * e i`, the part of
+Let `e : I → R` be a complete family of orthogonal idempotents of a semiring `R`, indexed by a
+finite preordered set `I`. It splits every `a : R` into components `e j * a * e i`, the part of
 `a` that sends the summand of `i` to the summand of `j`. We call `a` *strictly triangular* when
 its component from `i` to `j` vanishes unless `i < j`, so that `a` only moves strictly up in `I`
 (`TauCeti.IsStrictlyTriangular`).
@@ -24,12 +25,12 @@ ordered by inclusion: the arrows of the cube between distinct vertices strictly 
 while the internal differentials of the vertices are diagonal. Iterating such an element moves
 along strictly increasing chains of `I`, which are shorter than the cardinality of `I`. Hence
 strictly triangular elements are nilpotent, with `a ^ Fintype.card I = 0`
-(`TauCeti.IsStrictlyTriangular.pow_card_eq_zero`), and `1 + a` is a unit. This is what makes
-homological perturbation along the arrows of a cube a finite computation.
+(`TauCeti.IsStrictlyTriangular.pow_card_eq_zero`), and over a ring `1 + a` is a unit. This is what
+makes homological perturbation along the arrows of a cube a finite computation.
 
-The proof of nilpotence uses the rank `#{k | k < i}`, which strictly increases along `<`: by
-induction, the component of `a ^ n` from `i` to `j` vanishes unless the rank of `j` exceeds the
-rank of `i` by at least `n`.
+The proof of nilpotence uses the rank `#{k | k < i}`, which strictly increases along `<`
+(`TauCeti.card_filter_lt_lt_card_filter_lt`): by induction, the component of `a ^ n` from `i` to
+`j` vanishes unless the rank of `j` exceeds the rank of `i` by at least `n`.
 
 ## Main definitions
 
@@ -43,7 +44,7 @@ rank of `i` by at least `n`.
   `TauCeti.IsStrictlyTriangular.mul_mul_mul_eq_sum_Ioo` restricts the intermediate indices of such
   a product to the open interval `Finset.Ioo i j`.
 * `TauCeti.IsStrictlyTriangular.pow_card_eq_zero`: a strictly triangular element `a` has
-  `a ^ Fintype.card I = 0`; in particular `1 + a` is a unit
+  `a ^ Fintype.card I = 0`; in particular, over a ring, `1 + a` is a unit
   (`TauCeti.IsStrictlyTriangular.isUnit_one_add`).
 -/
 
@@ -53,7 +54,7 @@ open Finset
 
 namespace CompleteOrthogonalIdempotents
 
-variable {R I : Type*} [Ring R] [Fintype I] {e : I → R}
+variable {R I : Type*} [Semiring R] [Fintype I] {e : I → R}
 
 /-- The component of a product relative to a complete family of orthogonal idempotents is the sum,
 over the intermediate indices, of the products of the components of the factors. -/
@@ -70,12 +71,16 @@ end CompleteOrthogonalIdempotents
 
 namespace TauCeti
 
-variable {R I : Type*} [Ring R] [Preorder I] {e : I → R} {a b : R}
+variable {R I : Type*} [Preorder I]
 
-/-- An element `a` of a ring is **strictly triangular** with respect to a family `e` indexed by a
-preordered set when its component `e j * a * e i`, from the summand of `i` to the summand of `j`,
-vanishes unless `i < j`. For a complete family of orthogonal idempotents this says that `a` maps
-each summand into the sum of the strictly larger summands. -/
+section Semiring
+
+variable [Semiring R] {e : I → R} {a b : R}
+
+/-- An element `a` of a semiring is **strictly triangular** with respect to a family `e` indexed
+by a preordered set when its component `e j * a * e i`, from the summand of `i` to the summand of
+`j`, vanishes unless `i < j`. For a complete family of orthogonal idempotents this says that `a`
+maps each summand into the sum of the strictly larger summands. -/
 def IsStrictlyTriangular (e : I → R) (a : R) : Prop :=
   ∀ ⦃i j : I⦄, ¬i < j → e j * a * e i = 0
 
@@ -98,16 +103,6 @@ theorem zero : IsStrictlyTriangular e (0 : R) := fun _ _ _ ↦ by
 theorem add (ha : IsStrictlyTriangular e a) (hb : IsStrictlyTriangular e b) :
     IsStrictlyTriangular e (a + b) := fun _ _ h ↦ by
   rw [mul_add, add_mul, ha h, hb h, add_zero]
-
-/-- The negative of a strictly triangular element is strictly triangular. -/
-theorem neg (ha : IsStrictlyTriangular e a) : IsStrictlyTriangular e (-a) := fun _ _ h ↦ by
-  rw [mul_neg, neg_mul, ha h, neg_zero]
-
-/-- A difference of strictly triangular elements is strictly triangular. -/
-theorem sub (ha : IsStrictlyTriangular e a) (hb : IsStrictlyTriangular e b) :
-    IsStrictlyTriangular e (a - b) := by
-  rw [sub_eq_add_neg]
-  exact ha.add hb.neg
 
 /-- A finite sum of strictly triangular elements is strictly triangular. -/
 theorem sum {ι : Type*} {s : Finset ι} {f : ι → R} (hf : ∀ k ∈ s, IsStrictlyTriangular e (f k)) :
@@ -151,21 +146,6 @@ theorem mul_mul_mul_eq_sum_Ioo [LocallyFiniteOrder I] (he : CompleteOrthogonalId
   · rw [hb hik, mul_zero]
   · rw [ha hkj, zero_mul]
 
-/-- The rank `#{k | k < i}` strictly increases along `<`. -/
-private theorem card_filter_lt_lt_card_filter_lt [DecidableRel ((· < ·) : I → I → Prop)]
-    {i j : I} (h : i < j) : #{k | k < i} < #{k | k < j} := by
-  refine Finset.card_lt_card ((Finset.ssubset_iff_of_subset fun k hk ↦ ?_).2 ⟨i, ?_, ?_⟩)
-  · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hk ⊢
-    exact hk.trans h
-  · simpa using h
-  · simp
-
-/-- The rank `#{k | k < i}` is smaller than the cardinality of `I`. -/
-private theorem card_filter_lt_lt_card [DecidableRel ((· < ·) : I → I → Prop)] (i : I) :
-    #{k | k < i} < Fintype.card I := by
-  rw [← Finset.card_univ]
-  exact Finset.card_lt_card (Finset.filter_ssubset.2 ⟨i, Finset.mem_univ _, lt_irrefl i⟩)
-
 /-- The component of `a ^ n` from `i` to `j` vanishes unless the rank of `j` exceeds the rank of
 `i` by at least `n`. -/
 private theorem mul_pow_mul_eq_zero [DecidableRel ((· < ·) : I → I → Prop)]
@@ -204,9 +184,27 @@ theorem isNilpotent (he : CompleteOrthogonalIdempotents e) (ha : IsStrictlyTrian
     IsNilpotent a :=
   ⟨_, ha.pow_card_eq_zero he⟩
 
+end IsStrictlyTriangular
+
+end Semiring
+
+namespace IsStrictlyTriangular
+
+variable [Ring R] {e : I → R} {a b : R}
+
+/-- The negative of a strictly triangular element is strictly triangular. -/
+theorem neg (ha : IsStrictlyTriangular e a) : IsStrictlyTriangular e (-a) := fun _ _ h ↦ by
+  rw [mul_neg, neg_mul, ha h, neg_zero]
+
+/-- A difference of strictly triangular elements is strictly triangular. -/
+theorem sub (ha : IsStrictlyTriangular e a) (hb : IsStrictlyTriangular e b) :
+    IsStrictlyTriangular e (a - b) := by
+  rw [sub_eq_add_neg]
+  exact ha.add hb.neg
+
 /-- For a strictly triangular `a`, the element `1 + a` is a unit. -/
-theorem isUnit_one_add (he : CompleteOrthogonalIdempotents e) (ha : IsStrictlyTriangular e a) :
-    IsUnit (1 + a) :=
+theorem isUnit_one_add [Fintype I] (he : CompleteOrthogonalIdempotents e)
+    (ha : IsStrictlyTriangular e a) : IsUnit (1 + a) :=
   (ha.isNilpotent he).isUnit_one_add
 
 end IsStrictlyTriangular
