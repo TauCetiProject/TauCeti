@@ -136,19 +136,17 @@ theorem rpow_hilbertSchmidtEnergy_add_le (S T : E →L[𝕜] F) (b : HilbertBasi
 private theorem completeSpace_of_hilbertBasis (b : HilbertBasis ι 𝕜 E) : CompleteSpace E :=
   b.repr.toIsometryEquiv.completeSpace
 
-variable (𝕜 F) in
-/-- The embedding of a space into its completion, as a continuous linear map. -/
-private noncomputable abbrev toCompl : F →L[𝕜] UniformSpace.Completion F :=
-  (UniformSpace.Completion.toComplₗᵢ (𝕜 := 𝕜) (E := F)).toContinuousLinearMap
-
 /-- Embedding the target into its completion does not change the energy. -/
 private theorem hilbertSchmidtEnergy_toCompl_comp (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
-    (toCompl 𝕜 F ∘L T).hilbertSchmidtEnergy b = T.hilbertSchmidtEnergy b := by
+    ((UniformSpace.Completion.toComplL : F →L[𝕜] UniformSpace.Completion F) ∘L
+      T).hilbertSchmidtEnergy b = T.hilbertSchmidtEnergy b := by
   simp [hilbertSchmidtEnergy_def]
 
 /-- Embedding the target into its completion does not change the operator norm. -/
-private theorem enorm_toCompl_comp (T : E →L[𝕜] F) : ‖toCompl 𝕜 F ∘L T‖ₑ = ‖T‖ₑ := by
-  rw [← ofReal_norm, ← ofReal_norm, LinearIsometry.norm_toContinuousLinearMap_comp]
+private theorem enorm_toCompl_comp (T : E →L[𝕜] F) :
+    ‖(UniformSpace.Completion.toComplL : F →L[𝕜] UniformSpace.Completion F) ∘L T‖ₑ = ‖T‖ₑ := by
+  rw [← ofReal_norm, ← ofReal_norm, ← UniformSpace.Completion.toContinuousLinearMap_toComplₗᵢ,
+    LinearIsometry.norm_toContinuousLinearMap_comp]
 
 section Complete
 
@@ -207,7 +205,7 @@ theorem enorm_sq_le_hilbertSchmidtEnergy (T : E →L[𝕜] F) (b : HilbertBasis 
     ‖T‖ₑ ^ 2 ≤ T.hilbertSchmidtEnergy b := by
   have := completeSpace_of_hilbertBasis b
   rw [← enorm_toCompl_comp T, ← hilbertSchmidtEnergy_toCompl_comp T b]
-  generalize toCompl 𝕜 F ∘L T = T
+  generalize (UniformSpace.Completion.toComplL : F →L[𝕜] UniformSpace.Completion F) ∘L T = T
   obtain ⟨w, c, -⟩ := exists_hilbertBasis 𝕜 (UniformSpace.Completion F)
   -- `‖T x‖ₑ² = ∑' j, ‖⟪T† cⱼ, x⟫‖ₑ² ≤ (∑' j, ‖T† cⱼ‖ₑ²) ‖x‖ₑ² = E_c(T†) ‖x‖ₑ²`.
   have key (x : E) : ‖T x‖ₑ ^ 2 ≤ T.hilbertSchmidtEnergy b * ‖x‖ₑ ^ 2 := by
