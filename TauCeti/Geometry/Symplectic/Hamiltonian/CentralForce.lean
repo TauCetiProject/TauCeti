@@ -75,8 +75,8 @@ there.
 * `TauCeti.norm_rungeLenz_eq_abs_mul_sqrt`: `‖A‖ = |m κ| √(1 + 2 H ℓ² / (m κ²))`.
 * `TauCeti.norm_fst_eq_div_one_add_sqrt_mul_cos_angle`: Kepler orbits are conics,
   `‖q‖ = ℓ² / (m κ (1 + e cos φ))`.
-* `TauCeti.norm_rungeLenz_lt_iff_centralForceHamiltonian_neg`: the eccentricity is less than one
-  exactly when the energy is negative.
+* `TauCeti.norm_rungeLenz_lt_iff_centralForceHamiltonian_neg`: `‖A‖ < m κ` exactly when the energy
+  is negative; for `κ > 0` this says that the eccentricity is less than one.
 
 ## References
 
@@ -366,9 +366,10 @@ theorem norm_fst_mul_sub_norm_rungeLenz_le_sq_sub_inner_sq (m κ : ℝ) (x : V �
   rw [inner_rungeLenz_fst] at h
   linear_combination h
 
-/-- **Bound states are ellipses.** For nonzero angular momentum, the eccentricity `‖A‖ / (m κ)` is
-less than one exactly when the energy is negative. For a repulsive or vanishing coupling `κ ≤ 0`
-both sides are false. -/
+/-- **Bound states are ellipses.** For nonzero angular momentum, `‖A‖ < m κ` exactly when the
+energy is negative. For an attractive coupling `κ > 0` the inequality says that the eccentricity
+`‖A‖ / (m κ)` is less than one; for a repulsive or vanishing coupling `κ ≤ 0` both sides are
+false. -/
 theorem norm_rungeLenz_lt_iff_centralForceHamiltonian_neg {m κ : ℝ} (hm : 0 < m)
     {x : V × V} (hℓ : ‖x.1‖ ^ 2 * ‖x.2‖ ^ 2 - ⟪x.1, x.2⟫_ℝ ^ 2 ≠ 0) :
     ‖rungeLenz m κ x‖ < m * κ ↔ centralForceHamiltonian m (fun r ↦ -κ / r) x < 0 := by
