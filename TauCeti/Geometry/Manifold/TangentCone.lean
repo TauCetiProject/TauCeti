@@ -303,7 +303,7 @@ theorem exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (hn : n ≠ 
     (hq₁ : q₁ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
     (hq₂ : q₂ ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
     (h₁ : IsSliceChart q₁ (L₁ : Set E) s₁) (h₂ : IsSliceChart q₂ (L₂ : Set E) s₂)
-    (hy₁ : y ∈ q₁.source) (hy₂ : y ∈ q₂.source) (hys₁ : y ∈ s₁) (hys₂ : y ∈ s₂)
+    (hy₁ : y ∈ q₁.source) (hy₂ : y ∈ q₂.source) (hys₂ : y ∈ s₂)
     (htr : Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₁ y) ⊔
       Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s₂ y) = ⊤)
     (hL₁ : L₁.ClosedComplemented) (hL₂ : L₂.ClosedComplemented)
@@ -316,7 +316,7 @@ theorem exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (hn : n ≠ 
   obtain ⟨hy₂', hc₂, hcs₂, he₂⟩ := isSliceChart_chartAt_symm_trans hq₂ h₂ hy₂
   rw [mtangentConeAt_eq_tangentConeAt_chartAt, mtangentConeAt_eq_tangentConeAt_chartAt] at htr hI ⊢
   obtain ⟨e, hye, hC, hCs, he⟩ := exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top hn
-    he₁ he₂ hy₁' hy₂' (chartAt_self_mem_preimage hys₁) (chartAt_self_mem_preimage hys₂) hc₁ hc₂
+    he₁ he₂ hy₁' hy₂' (chartAt_self_mem_preimage hys₂) hc₁ hc₂
     ((hcs₁ _ (OpenPartialHomeomorph.map_source _ hy₁')).differentiableAt hn)
     ((hcs₂ _ (OpenPartialHomeomorph.map_source _ hy₂')).differentiableAt hn) htr
     hL₁ hL₂ hI
@@ -418,14 +418,14 @@ private theorem level_chartAt_symm (hn : n ≠ 0) (hU : IsOpen U) (hyU : y ∈ U
 variable [CompleteSpace E] [CompleteSpace F]
 
 /-- **Cutting by a transverse regular level set.** Let a chart `q` of the maximal atlas flatten
-`s` onto a linear subspace near a point `y` of `s`, and let `g : M → F` be `C^n` (`n ≠ 0`) near
+`s` onto a linear subspace near a point `y`, and let `g : M → F` be `C^n` (`n ≠ 0`) near
 `y`, with `g y = c` and surjective differential at `y`. If the tangent space of `s` at `y` and the
 kernel of the differential of `g` at `y` span the model space, then a chart of the maximal atlas
 flattens `s ∩ g⁻¹ {c}` near `y` onto the intersection of the tangent space of `s` with that
 kernel. The model subspace, the kernel and that intersection must be complemented. -/
 theorem exists_isSliceChart_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top (hn : n ≠ 0)
     (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) (hs : IsSliceChart q (L : Set E) s)
-    (hy : y ∈ q.source) (hys : y ∈ s) (hU : IsOpen U) (hyU : y ∈ U)
+    (hy : y ∈ q.source) (hU : IsOpen U) (hyU : y ∈ U)
     (hg : ContMDiffOn 𝓘(𝕜, E) 𝓘(𝕜, F) n g U) (hgy : g y = c)
     (hg' : (mvfderiv 𝓘(𝕜, E) g y).range = ⊤)
     (htr : Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s y) ⊔ (mvfderiv 𝓘(𝕜, E) g y).ker = ⊤)
@@ -439,8 +439,7 @@ theorem exists_isSliceChart_inter_preimage_of_span_mtangentConeAt_sup_ker_eq_top
   obtain ⟨hy', hc, hcs, he⟩ := isSliceChart_chartAt_symm_trans hq hs hy
   obtain ⟨hG, hGy, hU', hyU', hC, hpre⟩ := level_chartAt_symm (s := s) hn hU hyU hg hgy
   rw [mtangentConeAt_eq_tangentConeAt_chartAt] at htr hI ⊢
-  obtain ⟨e, hye, hC, hCs, he⟩ := exists_isSliceChart_inter_preimage_zero hn he hy'
-    (chartAt_self_mem_preimage hys) hc
+  obtain ⟨e, hye, hC, hCs, he⟩ := exists_isSliceChart_inter_preimage_zero hn he hy' hc
     ((hcs _ (OpenPartialHomeomorph.map_source _ hy')).differentiableAt hn) hG hg' hGy hU' hyU' hC
     htr hL hker hI
   -- The chart is the preferred chart at `y` followed by the flattening chart `e` of the model.
