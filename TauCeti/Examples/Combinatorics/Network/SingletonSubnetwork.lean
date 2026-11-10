@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Network.Connectivity.Subnetwork
+public import TauCeti.Combinatorics.Network.Subnetwork
 
 /-!
 # A singleton subnetwork of a larger network
