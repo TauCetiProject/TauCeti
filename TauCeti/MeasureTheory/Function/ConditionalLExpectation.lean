@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.ConditionalLExpectation
-public import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # Nonnegative conditional expectations and changes of measure
@@ -131,15 +130,16 @@ theorem condLExp_withDensity (hm : m ≤ m₀) [SigmaFinite (P.trim hm)]
     [SigmaFinite ((P.withDensity Z).trim hm)]
     (hZ : AEMeasurable[m₀] Z P) (hX : AEMeasurable[m₀] X (P.withDensity Z)) :
     (P.withDensity Z)⁻[X | m] =ᵐ[P.withDensity Z] P⁻[Z * X | m] / P⁻[Z | m] := by
-  have htop : ∀ᵐ ω ∂(P.withDensity Z).trim hm, P⁻[Z | m] ω ≠ ∞ := by
+  have htop : ∀ᵐ ω ∂P.trim hm, P⁻[Z | m] ω ≠ ∞ := by
     have : SigmaFinite ((P.trim hm).withDensity P⁻[Z | m]) := by
       rw [← trim_withDensity_eq_withDensity_condLExp hm]
       infer_instance
-    rw [trim_withDensity_eq_withDensity_condLExp hm]
-    exact ae_withDensity_ne_top_of_sigmaFinite (measurable_condLExp _ _ _)
+    filter_upwards [Measure.rnDeriv_ne_top ((P.trim hm).withDensity P⁻[Z | m]) (P.trim hm),
+      Measure.rnDeriv_withDensity (P.trim hm) (measurable_condLExp _ _ _)] with ω hfinite heq
+    rwa [heq] at hfinite
   filter_upwards [(withDensity_absolutelyContinuous P Z).ae_eq
     (condLExp_withDensity_mul hm hZ hX), condLExp_ne_zero_withDensity hm,
-    ae_of_ae_trim hm htop] with ω hmul hzero hfinite
+    (withDensity_absolutelyContinuous P Z).ae_le (ae_of_ae_trim hm htop)] with ω hmul hzero hfinite
   exact (ENNReal.eq_div_iff hzero hfinite).2 hmul
 
 end TauCeti.MeasureTheory
