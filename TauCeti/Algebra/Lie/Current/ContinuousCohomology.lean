@@ -466,8 +466,7 @@ theorem exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ {Ψ : LinearMap.Bili
   have hΨ0 : Ψ ≠ 0 := by
     rintro rfl
     obtain ⟨t, ht⟩ := hspan (killingForm K L) (LieModule.traceForm_lieInvariant K L L)
-    obtain ⟨x, hx⟩ := exists_ne (0 : L)
-    exact hx ((IsKilling.killingForm_nondegenerate K L).1 x fun y ↦ by simp [ht])
+    exact (IsKilling.killingForm_nondegenerate K L).ne_zero (by simp [ht])
   set eK := TrivialLieModule.equiv K (currentAlgebra K L) K
   -- Each functional `φ` on the coefficients turns `c` into a scalar continuous cocycle, which by
   -- the scalar classification is `t φ • c_Ψ + d₁₂ (f φ)` with `f φ` continuous.
@@ -538,7 +537,8 @@ theorem residueClassMap_surjective {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieI
 
 variable (Z) in
 /-- **Continuous second cohomology of formal currents with discrete coefficients.** Under the
-hypotheses of `exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂`, for every vector space `Z` with
+hypotheses of `exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂`, and assuming `Ψ` is nonzero (which
+injectivity of the residue class map needs), for every vector space `Z` with
 trivial action, of arbitrary dimension, the residue class map `z ↦ [c_Ψ ⊗ z]` is a linear
 equivalence from `Z` onto the continuous second cohomology of formal currents with coefficients in
 `Z`. For `Z = K` it sends `t` to `t • residueClass` (`residueClassMap_self`). -/
