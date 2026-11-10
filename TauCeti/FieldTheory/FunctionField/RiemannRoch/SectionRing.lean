@@ -10,7 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.HolomorphyRing.Basic
 public import TauCeti.FieldTheory.FunctionField.RiemannRoch.Principal
 public import TauCeti.RingTheory.GradedAlgebra.CoeffSubalgebra.Basic
 public import TauCeti.RingTheory.GradedAlgebra.HomogeneousLocalization.Basic
-public import TauCeti.RingTheory.GradedAlgebra.Veronese
+public import TauCeti.RingTheory.GradedAlgebra.Veronese.Basic
 
 /-!
 # The section ring of a divisor
