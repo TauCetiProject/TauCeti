@@ -46,8 +46,6 @@ and `K`.
   `v_K(x ^ n - 1) = v_K(x - 1) + v_K(n)` for a deep unit `x ≠ 1`.
 * `TauCeti.log_normalizedValuationWithZero_zpow_sub_one_le`: if `x ^ M ≠ 1` lies in a deep
   step, then `v_K(x ^ b - 1) ≤ v_K(x ^ M - 1) + v_K(|b|)`.
-* `TauCeti.log_normalizedValuationWithZero_sub_one_le_of_pow_eq_one`: in characteristic zero, a
-  root of unity `ζ ≠ 1` has `v_K(ζ - 1) ≤ v_K(p)`.
 * `TauCeti.log_normalizedValuationWithZero_zpow_sub_one_le_max_add_mul_log`: in characteristic
   zero, the one-factor estimate with the explicit constant above.
 * `TauCeti.exists_log_normalizedValuationWithZero_zpow_sub_one_le`: its form
@@ -170,24 +168,6 @@ theorem log_normalizedValuationWithZero_zpow_sub_one_nonpos {x : Kˣ}
   rw [← normalizedValuation_eq_one_iff, map_zpow] at hval
   exact hx <| (mem_unitFiltration_zero x).mpr <|
     (normalizedValuation_eq_one_iff x).mp (by simpa [hb] using hval)
-
-/-- **A root of unity is shallow.** With `p` the residue characteristic and `e = v_K(p)`, a root of
-unity `ζ ≠ 1` of `K` has `v_K(ζ - 1) ≤ e`: the step `U(K, e + 1)` contains no nontrivial root of
-unity. -/
-theorem log_normalizedValuationWithZero_sub_one_le_of_pow_eq_one [CharZero K] {ζ : Kˣ} {n : ℕ}
-    (hn : n ≠ 0) (hζn : ζ ^ n = 1) (hζ : ζ ≠ 1) :
-    WithZero.log (normalizedValuationWithZero K ((ζ : K) - 1)) ≤
-      natCastValuation K (ringChar 𝓀[K]) (natCast_ringChar_residueField_ne_zero K) := by
-  have hpK := natCast_ringChar_residueField_ne_zero K
-  have hnK : (n : K) ≠ 0 := Nat.cast_ne_zero.mpr hn
-  have hdeep : ζ ∉ unitFiltration K (natCastValuation K (ringChar 𝓀[K]) hpK + 1) := fun h ↦
-    hζ <| Subgroup.disjoint_def.mp (disjoint_rootsOfUnity_unitFiltration hnK
-      fun ℓ hℓ hℓK _ ↦ natCastValuation_lt_sub_one_mul_natCastValuation_ringChar_add_one hpK hℓ hℓK)
-      ((mem_rootsOfUnity n ζ).mpr hζn) h
-  rw [mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one (Nat.succ_ne_zero _) hζ]
-    at hdeep
-  push_cast at hdeep
-  omega
 
 /-- **The one-factor estimate with an explicit constant.** Let `K` be a nonarchimedean local field
 of characteristic zero, that is, a finite extension of `ℚ_[p]`, with residue field of `q` elements
