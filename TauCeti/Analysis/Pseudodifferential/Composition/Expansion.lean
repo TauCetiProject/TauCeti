@@ -189,19 +189,21 @@ private theorem integrable_taylorTerm_and_integral_eq [CompleteSpace W] [Complet
   have hexp (η : CoordinateSpace n) : taylorTerm a b k x ξ η =
       ∑ r, ((k.factorial : ℂ)⁻¹ * (-Complex.I) ^ k) •
         ContinuousLinearMap.compL ℂ V W U (D r) (g r η) := by
-    rw [taylorTerm, ContinuousMultilinearMap.apply_eq_sum_single]
-    simp only [hD, ContinuousLinearMap.compL_apply, g]
-    rw [ContinuousLinearMap.smul_comp, ← ContinuousLinearMap.compL_apply,
-      ← ContinuousLinearMap.flip_apply, map_sum, Finset.smul_sum, Finset.smul_sum]
+    set Φ : (W →L[ℂ] U) →L[ℂ] V →L[ℂ] U :=
+      (ContinuousLinearMap.compL ℂ V W U).flip (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)
+    have hΦ (X : W →L[ℂ] U) : X.comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η) = Φ X := by simp [Φ]
+    rw [taylorTerm, hΦ, ContinuousMultilinearMap.apply_eq_sum_single]
+    simp only [hD, Finset.smul_sum, map_sum]
     refine Finset.sum_congr rfl fun r _ ↦ ?_
-    conv_rhs => rw [mul_smul, ← ContinuousLinearMap.comp_smul,
-      ← fourierChar_smul_prod_smul_fourier_slice hb r x ξ η]
-    simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply, PiLp.smul_apply,
-      smul_eq_mul, ← Complex.coe_smul, ContinuousLinearMap.comp_smul,
-      ContinuousLinearMap.smul_comp, smul_smul]
-    congr 1
-    push_cast
-    ring
+    calc (𝐞 ⟪η, x⟫ : ℂ) • Φ ((k.factorial : ℝ)⁻¹ • (∏ i, ((2 * π) • η) (r i)) • D r)
+        = (k.factorial : ℂ)⁻¹ • ContinuousLinearMap.compL ℂ V W U (D r)
+            ((𝐞 ⟪η, x⟫ : ℂ) • ((∏ i, 2 * π * η (r i)) • 𝓕 (fun y ↦ b.coefficient (y, ξ)) η)) := by
+          simp only [Φ, ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply,
+            ContinuousLinearMap.smul_comp, ContinuousLinearMap.comp_smul, PiLp.smul_apply,
+            smul_eq_mul]
+          rw [smul_comm, ← Complex.coe_smul, Complex.ofReal_inv, Complex.ofReal_natCast]
+      _ = _ := by
+          rw [fourierChar_smul_prod_smul_fourier_slice hb r x ξ η, map_smul, smul_smul]
   set F : (Fin k → Fin n) → CoordinateSpace n → V →L[ℂ] U := fun r η ↦
     ((k.factorial : ℂ)⁻¹ * (-Complex.I) ^ k) • ContinuousLinearMap.compL ℂ V W U (D r) (g r η)
   have hint (r : Fin k → Fin n) : Integrable (F r) :=
