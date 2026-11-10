@@ -84,16 +84,16 @@ theorem isCompact_segment (𝕜 : Type*) {E : Type*} [Ring 𝕜] [PartialOrder �
 end TauCeti
 
 /-- The convex join of two compact sets is compact: it is the image of `s ×ˢ t ×ˢ [0, 1]` under
-`((a, b), θ) ↦ (1 - θ) • a + θ • b`. -/
-theorem IsCompact.convexJoin {𝕜 E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [IsOrderedRing 𝕜]
-    [TopologicalSpace 𝕜] [CompactIccSpace 𝕜] [IsTopologicalRing 𝕜]
+`((a, b), θ) ↦ a + θ • (b - a)`. -/
+theorem IsCompact.convexJoin {𝕜 E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [AddRightMono 𝕜]
+    [TopologicalSpace 𝕜] [CompactIccSpace 𝕜]
     [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
     [ContinuousSMul 𝕜 E] {s t : Set E} (hs : IsCompact s) (ht : IsCompact t) :
     IsCompact (convexJoin 𝕜 s t) := by
-  have : _root_.convexJoin 𝕜 s t = (fun p : (E × E) × 𝕜 ↦ (1 - p.2) • p.1.1 + p.2 • p.1.2) ''
+  have : _root_.convexJoin 𝕜 s t = (fun p : (E × E) × 𝕜 ↦ p.1.1 + p.2 • (p.1.2 - p.1.1)) ''
       ((s ×ˢ t) ×ˢ Icc 0 1) := by
     ext x
-    simp only [mem_convexJoin, segment_eq_image, mem_image, mem_prod, Prod.exists]
+    simp only [mem_convexJoin, segment_eq_image', mem_image, mem_prod, Prod.exists]
     constructor
     · rintro ⟨a, ha, b, hb, θ, hθ, rfl⟩
       exact ⟨a, b, θ, ⟨⟨ha, hb⟩, hθ⟩, rfl⟩
@@ -105,7 +105,7 @@ theorem IsCompact.convexJoin {𝕜 E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [I
 namespace TopologicalSpace.Compacts
 
 variable (𝕜 : Type*) {E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [IsOrderedRing 𝕜]
-  [TopologicalSpace 𝕜] [CompactIccSpace 𝕜] [IsTopologicalRing 𝕜]
+  [TopologicalSpace 𝕜] [CompactIccSpace 𝕜]
   [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [IsTopologicalAddGroup E]
   [ContinuousSMul 𝕜 E] (y : E) (K : Compacts E)
 
@@ -118,6 +118,14 @@ def starHull : Compacts E :=
 theorem coe_starHull : (K.starHull 𝕜 y : Set E) = convexJoin 𝕜 {y} (insert y (K : Set E)) :=
   (rfl)
 
+variable {𝕜 y K} in
+/-- A point lies in the star hull of `K` about `y` if and only if it is `y` or lies on a segment
+from `y` to a point of `K`. -/
+theorem mem_starHull_iff {x : E} :
+    x ∈ K.starHull 𝕜 y ↔ x = y ∨ ∃ z ∈ K, x ∈ segment 𝕜 y z := by
+  rw [← SetLike.mem_coe, coe_starHull, convexJoin_singleton_left, mem_iUnion₂]
+  simp [segment_same]
+
 theorem insert_subset_starHull : insert y (K : Set E) ⊆ K.starHull 𝕜 y :=
   subset_convexJoin_right (singleton_nonempty y)
 
@@ -129,5 +137,13 @@ theorem le_starHull : K ≤ K.starHull 𝕜 y :=
 
 theorem starConvex_starHull : StarConvex 𝕜 y (K.starHull 𝕜 y : Set E) :=
   TauCeti.starConvex_convexJoin_singleton_left y _
+
+variable {𝕜 y K} in
+/-- The star hull of `K` about `y` is the least set containing `y` and `K` and star-convex about
+`y`. -/
+theorem starHull_subset {s : Set E} (hs : StarConvex 𝕜 y s) (hy : y ∈ s) (hK : (K : Set E) ⊆ s) :
+    (K.starHull 𝕜 y : Set E) ⊆ s := by
+  rw [coe_starHull, convexJoin_singleton_left]
+  exact iUnion₂_subset fun z hz ↦ hs.segment_subset (insert_subset hy hK hz)
 
 end TopologicalSpace.Compacts
