@@ -225,6 +225,47 @@ theorem kerProjHomEquivFundamentalGroup_apply
     (kerProjHomEquivFundamentalGroup z).toPath = z.1.path.cast rfl (mem_ker_projHom.1 z.2).symm :=
   (rfl)
 
+/-- A point `[γ]` of the universal cover lying over the identity is central: conjugating it by
+a point `[α]` gives the class of the path `t ↦ α t * γ t * (α t)⁻¹`, which is homotopic rel
+endpoints to `γ` through the paths `t ↦ α (s t) * γ t * (α (s t))⁻¹`. This needs no local
+connectivity of `G`. -/
+theorem mem_center_of_proj_eq_one {z : UniversalCover (1 : G)} (hz : z.proj = 1) :
+    z ∈ Subgroup.center (UniversalCover (1 : G)) := by
+  refine Subgroup.mem_center_iff.mpr fun g ↦ ?_
+  rw [← mul_inv_eq_iff_eq_mul]
+  -- A continuous family of paths from `1` to `x` gives equal classes.
+  have mk_eq_mk_of_homotopy {x y : G} (hxy : x = y) {p : Path 1 x} {q : Path 1 y}
+      (F : I × I → G) (hF : Continuous F) (h₀ : ∀ t, F (0, t) = p t) (h₁ : ∀ t, F (1, t) = q t)
+      (hs₀ : ∀ s, F (s, 0) = 1) (hs₁ : ∀ s, F (s, 1) = x) :
+      mk x (.mk p) = mk y (.mk q) := by
+    subst hxy
+    refine congrArg (mk x) (Path.Homotopic.Quotient.eq.2 ⟨
+      { toFun := F
+        continuous_toFun := hF
+        map_zero_left := h₀
+        map_one_left := h₁
+        prop' := fun s t ht ↦ ?_ }⟩)
+    rcases ht with rfl | ht
+    · simp [hs₀]
+    · rw [Set.mem_singleton_iff.mp ht]
+      simp [hs₁]
+  induction g using induction_on with | h y α =>
+  induction z using induction_on with | h x γ =>
+  obtain rfl : x = 1 := hz
+  rw [inv_mk, mk_mul_mk, mk_mul_mk]
+  refine mk_eq_mk_of_homotopy (by simp) (fun p ↦ α (σ p.1 * p.2) * γ p.2 * (α (σ p.1 * p.2))⁻¹)
+    (by fun_prop) (fun t ↦ ?_) (fun t ↦ ?_) (fun s ↦ ?_) (fun s ↦ ?_)
+  · simp
+  · simp
+  · simp
+  · simp
+
+/-- The kernel of the covering homomorphism is central. -/
+theorem ker_projHom_le_center :
+    (projHom (G := G) : UniversalCover (1 : G) →* G).ker ≤
+      Subgroup.center (UniversalCover (1 : G)) :=
+  fun _ hz ↦ mem_center_of_proj_eq_one (mem_ker_projHom.1 hz)
+
 /-! ### The topological group structure -/
 
 variable [LocallyPathConnectedSpace G] [SemilocallySimplyConnectedSpace G]
@@ -280,22 +321,6 @@ instance instIsTopologicalGroup : IsTopologicalGroup (UniversalCover (1 : G)) wh
 /-- The endpoint projection is a covering homomorphism. -/
 theorem isCoveringMap_projHom : IsCoveringMap (projHom : UniversalCover (1 : G) →ₜ* G) :=
   isCoveringMap 1
-
-/-- A point of the universal cover lying over the identity is central: conjugating it by a
-variable element gives a continuous map into the discrete fibre over `1` from a connected space. -/
-theorem mem_center_of_proj_eq_one {z : UniversalCover (1 : G)} (hz : z.proj = 1) :
-    z ∈ Subgroup.center (UniversalCover (1 : G)) := by
-  refine Subgroup.mem_center_iff.mpr fun g ↦ ?_
-  have h := (isCoveringMap (1 : G)).const_of_comp (g := fun g ↦ g * z * g⁻¹) (by fun_prop)
-    (fun a a' ↦ by simp [hz]) g 1
-  rw [← mul_inv_eq_iff_eq_mul, h]
-  simp
-
-/-- The kernel of the covering homomorphism is central. -/
-theorem ker_projHom_le_center :
-    (projHom (G := G) : UniversalCover (1 : G) →* G).ker ≤
-      Subgroup.center (UniversalCover (1 : G)) :=
-  fun _ hz ↦ mem_center_of_proj_eq_one (mem_ker_projHom.1 hz)
 
 /-- The kernel of the covering homomorphism is discrete: it is the fibre of the covering map over
 the identity. -/
