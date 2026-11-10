@@ -53,7 +53,8 @@ valuation `ω` of the field, and it says that `z` acts on the apartment by the t
 
 * `TauCeti.BruhatTits.Valuation.filtration_antitone`: `U (a, l) ≤ U (a, k)` for `k ≤ l`.
 * `TauCeti.BruhatTits.Valuation.commutator_filtration_le`: the axiom (V3) for subgroups.
-* `TauCeti.BruhatTits.Valuation.bruhat_value_right`: the value form of (V5) for the right factor.
+* `TauCeti.BruhatTits.Valuation.apply_reflectionPerm_right_eq_neg_of_mul_mul_mem_reflectionCoset`:
+  the value form of (V5) for the right factor.
 * `TauCeti.BruhatTits.Valuation.valueSet_neg`: `Γ (-a) = -Γ a`.
 * `TauCeti.BruhatTits.Valuation.equivalence_equipollent`: equipollence is an equivalence relation.
 * `TauCeti.BruhatTits.Valuation.isCompatible_iff_filtration`: `φ` is compatible with `ν` if and
@@ -116,7 +117,8 @@ structure Valuation (D : RootDatum P G) where
     toFun j u = 2 • toFun i ⟨u, D.le_of_root_eq_two_smul i j h u.2⟩
   /-- (V5) If `u' u u'' ∈ M a` with `u ∈ U a` and `u', u'' ∈ U (-a)`, then
   `φ (-a) u' = -φ a u`. -/
-  bruhat_value_left (i : ι) (u : D.U i) (u' u'' : D.U (P.reflectionPerm i i))
+  apply_reflectionPerm_left_eq_neg_of_mul_mul_mem_reflectionCoset (i : ι) (u : D.U i)
+    (u' u'' : D.U (P.reflectionPerm i i))
     (h : (u' : G) * u * u'' ∈ D.reflectionCoset i) : toFun _ u' = -toFun i u
 
 namespace Valuation
@@ -257,14 +259,16 @@ variable [IsStrictOrderedRing R]
 
 /-- The value form of (V5) for the right factor: if `u' u u'' ∈ M a` with `u ∈ U a` and
 `u', u'' ∈ U (-a)`, then `φ (-a) u'' = -φ a u`. -/
-theorem bruhat_value_right (u : D.U i) (u' u'' : D.U (P.reflectionPerm i i))
+theorem apply_reflectionPerm_right_eq_neg_of_mul_mul_mem_reflectionCoset (u : D.U i)
+    (u' u'' : D.U (P.reflectionPerm i i))
     (h : (u' : G) * u * u'' ∈ D.reflectionCoset i) : φ _ u'' = -φ i u := by
   have h' : ((u''⁻¹ : D.U _) : G) * (u⁻¹ : D.U i) * (u'⁻¹ : D.U _) ∈ D.reflectionCoset i := by
     simpa [mul_assoc] using D.inv_mem_reflectionCoset h
-  simpa using φ.bruhat_value_left i u⁻¹ u''⁻¹ u'⁻¹ h'
+  simpa using φ.apply_reflectionPerm_left_eq_neg_of_mul_mul_mem_reflectionCoset i u⁻¹ u''⁻¹ u'⁻¹ h'
 
 /-- In (V5) the middle factor `u` is nontrivial, so `φ a u` is real. -/
-theorem bruhat_value_ne_top (u : D.U i) (u' u'' : D.U (P.reflectionPerm i i))
+theorem apply_ne_top_of_mul_mul_mem_reflectionCoset (u : D.U i)
+    (u' u'' : D.U (P.reflectionPerm i i))
     (h : (u' : G) * u * u'' ∈ D.reflectionCoset i) : φ i u ≠ ⊤ := by
   rw [φ.apply_ne_top_iff, Ne, ← Subtype.coe_inj]
   exact D.ne_one_of_mul_mul_mem_reflectionCoset u'.2 u''.2 h
@@ -288,7 +292,8 @@ theorem neg_mem_valueSet_neg {k : ℝ} (hk : k ∈ φ.valueSet i) :
     simp only [Subgroup.coe_inv]
     rw [← hxy]
     group
-  refine ⟨_, (φ.bruhat_value_left i u _ _ hn').trans ?_⟩
+  refine ⟨_,
+    (φ.apply_reflectionPerm_left_eq_neg_of_mul_mul_mem_reflectionCoset i u _ _ hn').trans ?_⟩
   rw [hu, WithTop.LinearOrderedAddCommGroup.coe_neg]
 
 /-- The value set of `-a` is the negative of that of `a`: `Γ (-a) = -Γ a`. -/
@@ -317,7 +322,7 @@ instance : Unique (Valuation D) where
       exists_apply_eq_apply_conj_add := isEmptyElim
       commutator_mem := isEmptyElim
       apply_eq_two_smul := isEmptyElim
-      bruhat_value_left := isEmptyElim }
+      apply_reflectionPerm_left_eq_neg_of_mul_mul_mem_reflectionCoset := isEmptyElim }
   uniq _ := ext isEmptyElim
 
 end RankZero
@@ -373,8 +378,9 @@ def shift (v : N) : Valuation D where
     have hv : P.root' j v = 2 * P.root' i v := by simp [RootPairing.root', h]
     rw [φ.apply_eq_two_smul i j h u, hv, two_nsmul, two_nsmul, two_mul, WithTop.coe_add]
     abel
-  bruhat_value_left i u u' u'' h := by
-    rw [φ.bruhat_value_left i u u' u'' h, P.root'_reflectionPerm_self, LinearMap.neg_apply]
+  apply_reflectionPerm_left_eq_neg_of_mul_mul_mem_reflectionCoset i u u' u'' h := by
+    rw [φ.apply_reflectionPerm_left_eq_neg_of_mul_mul_mem_reflectionCoset i u u' u'' h,
+      P.root'_reflectionPerm_self, LinearMap.neg_apply]
     generalize φ.toFun i u = x
     cases x with
     | top => simp
