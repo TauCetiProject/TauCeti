@@ -6,7 +6,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import TauCeti.RingTheory.Norm.Projective
-public import Mathlib.AlgebraicGeometry.Morphisms.Finite
+public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
 /-!
 # Basic opens defined by norms
@@ -16,8 +16,7 @@ projective, the norm of a section is nonvanishing exactly on the fibres where th
 never vanishes. The norm open is the complement, within the affine open, of the image of
 the section's vanishing locus.
 
-This criterion constructs affine neighborhoods containing entire fibres, as used in descent
-of affine charts. It uses the finite projective norm and does not require a basis.
+Both formulas use the finite projective norm and do not require a basis.
 
 ## References
 
@@ -39,19 +38,16 @@ theorem mem_basicOpen_projectiveNorm_iff {X Y : Scheme.{u}} (f : Y ⟶ X) [IsFin
     (hproj : letI := (f.app U).hom.toAlgebra; Module.Projective Γ(X, U) Γ(Y, f ⁻¹ᵁ U))
     (s : Γ(Y, f ⁻¹ᵁ U)) {x : X} (hx : x ∈ U) :
     letI := (f.app U).hom.toAlgebra
-    letI : Module.Finite Γ(X, U) Γ(Y, f ⁻¹ᵁ U) :=
-      RingHom.finite_algebraMap.mp (by
-        simpa only [RingHom.algebraMap_toAlgebra] using f.finite_app U hU)
+    letI := f.moduleFinite_app_of_isAffineOpen hU
     letI := hproj
     x ∈ X.basicOpen (Algebra.projectiveNorm Γ(X, U) s) ↔
       ∀ y, f y = x → y ∈ Y.basicOpen s := by
   let := (f.app U).hom.toAlgebra
-  let : Module.Finite Γ(X, U) Γ(Y, f ⁻¹ᵁ U) :=
-    RingHom.finite_algebraMap.mp (by
-      simpa only [RingHom.algebraMap_toAlgebra] using f.finite_app U hU)
+  let := f.moduleFinite_app_of_isAffineOpen hU
   let := hproj
   have hV : IsAffineOpen (f ⁻¹ᵁ U) := hU.preimage f
   obtain ⟨p, rfl⟩ : x ∈ Set.range hU.fromSpec := by rwa [hU.range_fromSpec]
+  have hxU : hU.fromSpec p ∈ U := hx
   let : p.asIdeal.IsPrime := p.isPrime
   have hmap (q : Spec Γ(Y, f ⁻¹ᵁ U)) :
       f (hV.fromSpec q) = hU.fromSpec (PrimeSpectrum.comap (f.app U).hom q) := by
@@ -65,13 +61,13 @@ theorem mem_basicOpen_projectiveNorm_iff {X Y : Scheme.{u}} (f : Y ⟶ X) [IsFin
   · intro h y hy
     obtain ⟨q, rfl⟩ : y ∈ Set.range hV.fromSpec := by
       rw [hV.range_fromSpec]
-      change f y ∈ U
-      rw [hy]
-      exact (Set.ext_iff.mp hU.range_fromSpec _).mp ⟨p, rfl⟩
+      exact (Scheme.Hom.mem_preimage (f := f)).mpr (hy.symm ▸ hxU)
     rw [← Scheme.Hom.mem_preimage, hV.fromSpec_preimage_basicOpen]
+    -- Membership in the spectrum's basic open is non-membership in its prime ideal.
     change s ∉ q.asIdeal
     intro hs
     apply h
+    -- The norm criterion asks for a prime above `p` containing `s`.
     refine ⟨q.asIdeal, ⟨q.isPrime, ⟨?_⟩⟩, hs⟩
     rw [hmap] at hy
     exact (congrArg PrimeSpectrum.asIdeal (hU.fromSpec.isOpenEmbedding.injective hy)).symm
@@ -91,16 +87,12 @@ theorem basicOpen_projectiveNorm_eq {X Y : Scheme.{u}} (f : Y ⟶ X) [IsFinite f
     (hproj : letI := (f.app U).hom.toAlgebra; Module.Projective Γ(X, U) Γ(Y, f ⁻¹ᵁ U))
     (s : Γ(Y, f ⁻¹ᵁ U)) :
     letI := (f.app U).hom.toAlgebra
-    letI : Module.Finite Γ(X, U) Γ(Y, f ⁻¹ᵁ U) :=
-      RingHom.finite_algebraMap.mp (by
-        simpa only [RingHom.algebraMap_toAlgebra] using f.finite_app U hU)
+    letI := f.moduleFinite_app_of_isAffineOpen hU
     letI := hproj
     (X.basicOpen (Algebra.projectiveNorm Γ(X, U) s) : Set X) =
       (U : Set X) \ f '' ((f ⁻¹ᵁ U : Set Y) \ (Y.basicOpen s : Set Y)) := by
   let := (f.app U).hom.toAlgebra
-  let : Module.Finite Γ(X, U) Γ(Y, f ⁻¹ᵁ U) :=
-    RingHom.finite_algebraMap.mp (by
-      simpa only [RingHom.algebraMap_toAlgebra] using f.finite_app U hU)
+  let := f.moduleFinite_app_of_isAffineOpen hU
   let := hproj
   ext x
   constructor
@@ -114,6 +106,6 @@ theorem basicOpen_projectiveNorm_eq {X Y : Scheme.{u}} (f : Y ⟶ X) [IsFinite f
     intro y hy
     by_contra hs
     apply hx
-    exact ⟨y, ⟨by change f y ∈ U; rwa [hy], hs⟩, hy⟩
+    exact ⟨y, ⟨(Scheme.Hom.mem_preimage (f := f)).mpr (hy.symm ▸ hxU), hs⟩, hy⟩
 
 end AlgebraicGeometry.Scheme.Hom
