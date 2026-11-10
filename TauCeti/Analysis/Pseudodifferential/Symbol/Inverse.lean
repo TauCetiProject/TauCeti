@@ -111,7 +111,7 @@ private theorem exists_contDiff_eventuallyEq_inverse (ha : ContDiff ℝ ∞ a)
     (fun q hq ↦ (ha.contDiffAt.clm_inverse hq).contDiffWithinAt) hU
   refine ⟨g, hg, hgp, fun v ↦ ?_⟩
   filter_upwards [hgp.eventually_nhds, hU] with q (hq : g =ᶠ[𝓝 q] _) hqU
-  rw [hq.fderiv_eq, fderiv_clm_inverse_apply (ha.differentiable (by simp) q) hqU, hq.eq_of_nhds]
+  rw [hq.fderiv_eq, fderiv_clm_inverse (ha.differentiable (by simp) q) hqU, hq.eq_of_nhds]
 
 omit [CompleteSpace V] in
 /-- One step of the induction behind `exists_norm_mixedDeriv_inverse_le`: if `g` agrees with

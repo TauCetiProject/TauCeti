@@ -193,10 +193,8 @@ private theorem eventually_norm_mixedDeriv_cutoff_smul_le
       (χ (t⁻¹ • p.2) • (const (ContinuousLinearMap.id ℂ W) : Symbol n W W 0).coefficient p).comp
         ((a τ).coefficient p) :=
     funext fun p => by simp
-  have hsum : compBound (fun s s' => t⁻¹ * C s s') M α β = t⁻¹ * compBound C M α β := by
-    simp only [compBound, mul_assoc, List.sum_map_mul_left]
   rw [hfun]
-  refine hcomp.trans (le_of_eq_of_le (by rw [hsum, add_comm (1 : ℝ) μ]) ?_)
+  refine hcomp.trans (le_of_eq_of_le (by rw [compBound_const_mul_left, add_comm (1 : ℝ) μ]) ?_)
   gcongr
   rw [inv_mul_le_iff₀ ht0, one_div, inv_pow, ← div_eq_mul_inv, le_div_iff₀ (by positivity)]
   exact htB

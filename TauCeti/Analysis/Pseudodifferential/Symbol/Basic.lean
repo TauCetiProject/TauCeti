@@ -740,7 +740,7 @@ variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m'' : ℝ}
 /-- The constant of the Leibniz estimate `norm_mixedDeriv_comp_le`: the sum of
 `C s₁ t₁ * D s₂ t₂` over all splittings of `α` into complementary subwords `s₁, s₂` and of `β`
 into `t₁, t₂`. -/
-@[expose] def compBound (C D : List (Fin n) → List (Fin n) → ℝ) (α β : List (Fin n)) : ℝ :=
+def compBound (C D : List (Fin n) → List (Fin n) → ℝ) (α β : List (Fin n)) : ℝ :=
   (β.sublists'.revzip.map fun t => (α.sublists'.revzip.map fun s => C s.1 t.1 * D s.2 t.2).sum).sum
 
 /-- The product estimate behind `TauCeti.Symbol.comp`: bounds `C s t ⟨ξ⟩^(m' - |t|)` and
@@ -800,6 +800,23 @@ theorem compBound_nonneg {C D : List (Fin n) → List (Fin n) → ℝ}
     exact List.sum_nonneg fun _ h' => by
       obtain ⟨s, -, rfl⟩ := List.mem_map.1 h'
       exact mul_nonneg (hC _ _) (hD _ _)
+
+/-- A constant factor of the first family of bounds pulls out of `compBound`. -/
+theorem compBound_const_mul_left (c : ℝ) (C D : List (Fin n) → List (Fin n) → ℝ)
+    (α β : List (Fin n)) :
+    compBound (fun s t => c * C s t) D α β = c * compBound C D α β := by
+  simp only [compBound, mul_assoc, List.sum_map_mul_left]
+
+/-- If every product `C s₁ t₁ * D s₂ t₂` of the bounds tends to zero, then so does
+`compBound C D α β`. -/
+theorem tendsto_compBound {ι : Type*} {l : Filter ι} {C D : ι → List (Fin n) → List (Fin n) → ℝ}
+    (h : ∀ s₁ t₁ s₂ t₂, Filter.Tendsto (fun i => C i s₁ t₁ * D i s₂ t₂) l (nhds 0))
+    (α β : List (Fin n)) :
+    Filter.Tendsto (fun i => compBound (C i) (D i) α β) l (nhds 0) := by
+  have := tendsto_list_sum (a := fun _ => (0 : ℝ)) β.sublists'.revzip fun t _ => by
+    simpa using tendsto_list_sum (a := fun _ => (0 : ℝ)) α.sublists'.revzip
+      fun s _ => h s.1 t.1 s.2 t.2
+  simpa [compBound] using this
 
 /-- The pointwise composition `(x, ξ) ↦ b(x, ξ) ∘ a(x, ξ)` of symbols of orders `m'` and `m` is a
 symbol of order `m' + m`. For matrix-valued symbols this is the matrix product. -/

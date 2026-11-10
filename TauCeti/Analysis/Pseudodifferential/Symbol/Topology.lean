@@ -429,11 +429,8 @@ private theorem tendsto_seminorm_comp {ι : Type*} {l : Filter ι} (K : Compacts
     (h : ∀ s₁ t₁ s₂ t₂, Tendsto (fun i =>
       Symbol.seminorm K s₁ t₁ (b i) * Symbol.seminorm K s₂ t₂ (a i)) l (𝓝 0)) :
     Tendsto (fun i => Symbol.seminorm K α β ((b i).comp (a i))) l (𝓝 0) := by
-  refine squeeze_zero (fun _ => apply_nonneg _ _) (fun i => seminorm_comp_le K α β (b i) (a i)) ?_
-  have := tendsto_list_sum (a := fun _ => (0 : ℝ)) β.sublists'.revzip fun t _ => by
-    simpa using tendsto_list_sum (a := fun _ => (0 : ℝ)) α.sublists'.revzip
-      fun s _ => h s.1 t.1 s.2 t.2
-  simpa [compBound] using this
+  exact squeeze_zero (fun _ => apply_nonneg _ _) (fun i => seminorm_comp_le K α β (b i) (a i))
+    (tendsto_compBound h α β)
 
 /-- Composition of symbols is jointly continuous for the symbol topologies. -/
 theorem continuous_comp :

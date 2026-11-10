@@ -43,7 +43,7 @@ with the constant `C`; the latter involves no inversion.
   vector curve.
 * `ContDiffAt.clm_inverse`: the pointwise inverse of a `C^n` family of continuous linear maps is
   `C^n` at an invertible base point, with smoothness over a subfield of the field of linearity.
-* `fderiv_clm_inverse_apply`: the Fréchet derivative `(a⁻¹)' v = -(a⁻¹ ∘ a' v ∘ a⁻¹)` of the
+* `fderiv_clm_inverse`: the Fréchet derivative `(a⁻¹)' v = -(a⁻¹ ∘ a' v ∘ a⁻¹)` of the
   pointwise inverse of a family over a normed space.
 * `ContDiffAt.inverse` and `ContDiff.inverse`: the ring inverse of a `C^n` family of units
   is `C^n`.
@@ -219,7 +219,7 @@ theorem ContDiffAt.clm_inverse (ha : ContDiffAt 𝕜 n a p) (hp : (a p).IsInvert
 
 /-- The derivative of the pointwise inverse of a family of `𝕜'`-linear maps, differentiable over a
 subfield `𝕜`, at a point where it is invertible: `(a⁻¹)' v = -(a⁻¹ ∘ a' v ∘ a⁻¹)`. -/
-theorem fderiv_clm_inverse_apply (ha : DifferentiableAt 𝕜 a p) (hp : (a p).IsInvertible)
+theorem fderiv_clm_inverse (ha : DifferentiableAt 𝕜 a p) (hp : (a p).IsInvertible)
     (v : X) :
     fderiv 𝕜 (fun q ↦ (a q).inverse) p v =
       -((a p).inverse ∘L (fderiv 𝕜 a p v ∘L (a p).inverse)) := by
