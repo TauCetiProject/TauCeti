@@ -431,11 +431,10 @@ theorem dropLastOfRow_appendToRow (a : α) {k : ℕ} {rows : List (List α)}
       simpa [appendToRow, dropLastOfRow] using
         ih (fun h => hne (mem_cons_of_mem _ h)) (by simpa using hk)
 
-/-- **The rows of `TauCeti.dropLastOfRow k`** at a corner: row `k` loses its last letter, and
+/-- **The rows of `TauCeti.dropLastOfRow k`** at a nonempty row: row `k` loses its last letter, and
 every other row is unchanged, provided that deleting row `k` (when it has a single cell) shifts
 only empty rows. Rows beyond the last one are read as empty. -/
-theorem getD_dropLastOfRow {k : ℕ} {rows : List (List α)}
-    (hk : (rows.getD (k + 1) []).length < (rows.getD k []).length)
+theorem getD_dropLastOfRow {k : ℕ} {rows : List (List α)} (hk : 0 < (rows.getD k []).length)
     (hz : (rows.getD k []).length = 1 → ∀ i, k < i → (rows.getD i []).length = 0) (i : ℕ) :
     (dropLastOfRow k rows).getD i [] =
       if i = k then (rows.getD k []).dropLast else rows.getD i [] := by
@@ -448,7 +447,7 @@ theorem getD_dropLastOfRow {k : ℕ} {rows : List (List α)}
       · have h1 : row.length = 1 := by
           have := congrArg length hd
           rw [length_dropLast, length_nil] at this
-          simp only [getD_cons_zero, getD_cons_succ] at hk
+          simp only [getD_cons_zero] at hk
           omega
         have hzero (j : ℕ) : rows[j]?.getD [] = [] := by
           simpa using hz (by simpa using h1) (j + 1) (by omega)
@@ -1058,7 +1057,7 @@ theorem length_getD_reverseRowInsert_fst {α β : Type*} [LinearOrder β]
   have hz : (Q.getD k []).length = 1 → ∀ j, k < j → (Q.getD j []).length = 0 := fun h j hj ↦ by
     rw [← hshape]
     exact hP.length_getD_eq_zero_of_le (k := k + 1) (by rw [hshape]; omega) hj
-  rw [getD_dropLastOfRow hk hz i]
+  rw [getD_dropLastOfRow (Nat.zero_lt_of_lt hk) hz i]
   split_ifs at h1 ⊢ with hik
   · subst hik
     rw [length_dropLast]
