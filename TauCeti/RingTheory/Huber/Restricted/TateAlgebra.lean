@@ -103,7 +103,7 @@ open TauCeti.Huber UniformSpace
 
 section Maximal
 
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
+variable {K : Type*} [NormedField K] [IsUltrametricDist K]
   [CompleteSpace K] {n : ℕ} (m : Ideal (restrictedMvPowerSeriesCompletion n K)) [m.IsMaximal]
 
 /-- **Every maximal ideal of the completed Tate algebra in `n` variables has height `n`** over a
@@ -134,7 +134,7 @@ end Maximal
 
 section NontriviallyNormedField
 
-variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
+variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K]
   [CompleteSpace K] {n : ℕ} (m : Ideal (restrictedMvPowerSeriesCompletion n K)) [m.IsMaximal]
 
 /-- The polynomials in a maximal ideal `m` of the completed Tate algebra `K⟨X₁, …, Xₙ⟩` form a
