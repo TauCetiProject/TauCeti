@@ -12,6 +12,7 @@ import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.NegMulLog
 import TauCeti.Analysis.Calculus.ContDiff.Puncture
 import TauCeti.Analysis.Complex.Wirtinger.Radial
+import TauCeti.Analysis.SpecialFunctions.Log.InvLog
 
 /-!
 # The `log log` example: a `W^{1,∞}` pseudoholomorphic graph that is not `W^{2,∞}`
@@ -155,33 +156,6 @@ private theorem contDiffOn_one_ball_of_tendsto_fderiv {g : ℂ → ℂ}
       with y hy0 hy using hg y hy hy0
   · exact (hg z hz hz0).contDiffWithinAt
 
-/-- `(log ‖z‖²)⁻¹ → 0` on the punctured plane. -/
-private theorem tendsto_inv_log_norm_sq :
-    Tendsto (fun z : ℂ ↦ (Real.log (‖z‖ ^ 2))⁻¹) (𝓝[≠] 0) (𝓝 0) := by
-  have h : Tendsto (fun z : ℂ ↦ ‖z‖ ^ 2) (𝓝[≠] 0) (𝓝[>] 0) := by
-    refine tendsto_nhdsWithin_iff.2 ⟨?_, eventually_nhdsWithin_of_forall fun z hz ↦ ?_⟩
-    · simpa using (tendsto_norm_zero.mono_left nhdsWithin_le_nhds).pow 2
-    · exact pow_pos (norm_pos_iff.2 hz) 2
-  exact tendsto_inv_atBot_zero.comp (Real.tendsto_log_nhdsGT_zero.comp h)
-
-/-- `‖z‖ log ‖z‖ → 0` at the origin. -/
-private theorem tendsto_norm_mul_log_norm :
-    Tendsto (fun z : ℂ ↦ ‖z‖ * Real.log ‖z‖) (𝓝 0) (𝓝 0) := by
-  simpa [Function.comp_def] using
-    (Real.continuous_mul_log.comp continuous_norm).tendsto (0 : ℂ)
-
-/-- For `0 ≤ r < e⁻¹`, `|log log (1 / r)| ≤ log (1 / r)`. -/
-private theorem abs_log_log_inv_le {r : ℝ} (hr : 0 ≤ r) (hr1 : r < Real.exp (-1)) :
-    |Real.log (Real.log r⁻¹)| ≤ -Real.log r := by
-  rcases hr.eq_or_lt with rfl | hr
-  · simp
-  have hlog : Real.log r < -1 := (Real.log_lt_iff_lt_exp hr).2 hr1
-  have hx : 1 < Real.log r⁻¹ := by rw [Real.log_inv]; linarith
-  rw [abs_of_pos (Real.log_pos hx)]
-  have := Real.log_le_sub_one_of_pos (zero_lt_one.trans hx)
-  rw [Real.log_inv] at this ⊢
-  linarith
-
 /-- On the punctured unit disc, `‖z‖²` lies in `(0, 1)`. -/
 private theorem norm_sq_mem {z : ℂ} (hz0 : z ≠ 0) (hz1 : ‖z‖ < 1) :
     0 < ‖z‖ ^ 2 ∧ ‖z‖ ^ 2 < 1 :=
@@ -203,14 +177,15 @@ private theorem contDiffAt_logLogExample {m : WithTop ℕ∞} {z : ℂ} (hz0 : z
 private theorem hasFDerivAt_logLogExample_zero :
     HasFDerivAt logLogExample (0 : ℂ →L[ℝ] ℂ) 0 := by
   have hk : Tendsto (fun z : ℂ ↦ z * (Real.log (Real.log ‖z‖⁻¹) : ℂ)) (𝓝 0) (𝓝 0) := by
-    have h0 := tendsto_norm_mul_log_norm.abs
-    rw [abs_zero] at h0
+    have h0 : Tendsto (fun z : ℂ ↦ |‖z‖ * Real.log ‖z‖|) (𝓝 0) (𝓝 0) := by
+      simpa [Function.comp_def] using
+        (Real.continuous_mul_log.comp continuous_norm).abs.tendsto (0 : ℂ)
     refine squeeze_zero_norm' ?_ h0
     filter_upwards [ball_mem_nhds (0 : ℂ) (Real.exp_pos (-1))] with z hz
     rw [mem_ball_zero_iff] at hz
     rw [norm_mul, Complex.norm_real, Real.norm_eq_abs]
     calc ‖z‖ * |Real.log (Real.log ‖z‖⁻¹)| ≤ ‖z‖ * -Real.log ‖z‖ := by
-          gcongr; exact abs_log_log_inv_le (norm_nonneg z) hz
+          gcongr; exact Real.abs_log_log_inv_le (norm_nonneg z) hz
       _ = -(‖z‖ * Real.log ‖z‖) := by ring
       _ ≤ |‖z‖ * Real.log ‖z‖| := neg_le_abs _
   rw [hasFDerivAt_iff_isLittleO_nhds_zero]
@@ -224,11 +199,16 @@ private theorem hasFDerivAt_logLogExample_zero :
 `2 r / |log r²| + 2 r |log log (1 / r)|`. -/
 private theorem tendsto_fderiv_logLogExample :
     Tendsto (fderiv ℝ logLogExample) (𝓝[≠] 0) (𝓝 0) := by
+  have hu : Tendsto (fun z : ℂ ↦ (Real.log (‖z‖ ^ 2))⁻¹) (𝓝 0) (𝓝 0) := by
+    simpa [Function.comp_def] using Real.continuousAt_inv_log_zero.tendsto.comp
+      ((continuous_norm.pow 2).tendsto' (0 : ℂ) 0 (by simp))
+  have hm : Tendsto (fun z : ℂ ↦ ‖z‖ * Real.log ‖z‖) (𝓝 0) (𝓝 0) := by
+    simpa [Function.comp_def] using
+      (Real.continuous_mul_log.comp continuous_norm).tendsto (0 : ℂ)
   have hb : Tendsto (fun z : ℂ ↦ 2 * ‖z‖ * |(Real.log (‖z‖ ^ 2))⁻¹| +
       2 * |‖z‖ * Real.log ‖z‖|) (𝓝[≠] 0) (𝓝 0) := by
-    simpa using (((tendsto_norm_zero.mono_left nhdsWithin_le_nhds).const_mul 2).mul
-      tendsto_inv_log_norm_sq.abs).add
-        ((tendsto_norm_mul_log_norm.mono_left nhdsWithin_le_nhds).abs.const_mul 2)
+    simpa using ((((tendsto_norm_zero.const_mul 2).mul hu.abs).add
+      (hm.abs.const_mul 2)).mono_left nhdsWithin_le_nhds)
   refine squeeze_zero_norm' ?_ hb
   filter_upwards [self_mem_nhdsWithin,
     nhdsWithin_le_nhds (ball_mem_nhds (0 : ℂ) (Real.exp_pos (-1)))] with z hz0 hz
@@ -246,7 +226,7 @@ private theorem tendsto_fderiv_logLogExample :
         ≤ -Real.log ‖z‖ * (2 * ‖z‖) := by
           rw [show (((2 : ℕ) : ℝ) * ‖z‖ ^ (2 - 1)) = 2 * ‖z‖ by norm_num]
           gcongr
-          exact abs_log_log_inv_le (norm_nonneg z) hz
+          exact Real.abs_log_log_inv_le (norm_nonneg z) hz
       _ = 2 * -(‖z‖ * Real.log ‖z‖) := by ring
       _ ≤ 2 * |‖z‖ * Real.log ‖z‖| := by gcongr; exact neg_le_abs _
   rw [h1]
@@ -261,13 +241,6 @@ private theorem conjWirtingerDeriv_logLogExample_apply_one_eq {z : ℂ} (hz1 : �
   rw [logLogExample_eq,
     conjWirtingerDeriv_pow_mul_ofReal_comp_norm_sq_apply_one 2 (hasDerivAt_profile hs0 hs1)]
   ring
-
-/-- `(log ‖z‖²)⁻¹ → 0` at the origin, where it takes the value `0`. -/
-private theorem tendsto_inv_log_norm_sq_nhds :
-    Tendsto (fun z : ℂ ↦ (Real.log (‖z‖ ^ 2))⁻¹) (𝓝 0) (𝓝 0) := by
-  have h : ContinuousWithinAt (fun z : ℂ ↦ (Real.log (‖z‖ ^ 2))⁻¹) {0}ᶜ 0 := by
-    simpa [ContinuousWithinAt] using tendsto_inv_log_norm_sq
-  simpa using (continuousWithinAt_compl_self.1 h).tendsto
 
 /-- The radial term in the derivative of `\bar∂f`, rewritten in terms of `(log ‖z‖²)⁻¹`. -/
 private theorem abs_profileDeriv_deriv_eq {z : ℂ} (hz0 : z ≠ 0) (hz1 : ‖z‖ < 1) :
@@ -290,11 +263,14 @@ private theorem abs_profileDeriv_deriv_eq {z : ℂ} (hz0 : z ≠ 0) (hz1 : ‖z�
 `2 |u + u²| + 3 |u|` with `u = (log ‖z‖²)⁻¹ → 0`. -/
 private theorem contDiffOn_pow_mul_profileDeriv :
     ContDiffOn ℝ 1 (fun z : ℂ ↦ z ^ 3 * (profileDeriv (‖z‖ ^ 2) : ℂ)) (ball 0 1) := by
+  have hu : Tendsto (fun z : ℂ ↦ (Real.log (‖z‖ ^ 2))⁻¹) (𝓝 0) (𝓝 0) := by
+    simpa [Function.comp_def] using Real.continuousAt_inv_log_zero.tendsto.comp
+      ((continuous_norm.pow 2).tendsto' (0 : ℂ) 0 (by simp))
   refine contDiffOn_one_ball_of_tendsto_fderiv (fun z hz hz0 ↦ ?_) ?_ ?_
   · obtain ⟨hs0, hs1⟩ := norm_sq_mem hz0 (by simpa using hz)
     exact contDiffAt_pow_mul_ofReal_comp_norm_sq 3 (contDiffAt_profileDeriv hs0 hs1)
   · have hk : Tendsto (fun z : ℂ ↦ z ^ 2 * (profileDeriv (‖z‖ ^ 2) : ℂ)) (𝓝 0) (𝓝 0) := by
-      have h0 := tendsto_inv_log_norm_sq_nhds.abs
+      have h0 := hu.abs
       rw [abs_zero] at h0
       refine squeeze_zero_norm (fun z ↦ le_of_eq ?_) h0
       rw [norm_mul, norm_pow, Complex.norm_real, Real.norm_eq_abs, norm_sq_mul_abs_profileDeriv]
@@ -304,7 +280,7 @@ private theorem contDiffOn_pow_mul_profileDeriv :
     simp only [zero_add, ne_eq, OfNat.ofNat_ne_zero, not_false_eq_true, zero_pow, zero_mul,
       sub_zero, zero_apply]
     ring
-  · have hu := tendsto_inv_log_norm_sq
+  · replace hu := hu.mono_left (nhdsWithin_le_nhds (s := {0}ᶜ))
     have hb : Tendsto (fun z : ℂ ↦
         2 * |(Real.log (‖z‖ ^ 2))⁻¹ + ((Real.log (‖z‖ ^ 2))⁻¹) ^ 2| +
           3 * |(Real.log (‖z‖ ^ 2))⁻¹|) (𝓝[≠] 0) (𝓝 0) := by
@@ -350,11 +326,6 @@ private theorem re_fderiv_logLogExample_ofReal_apply_one {x : ℝ} (hx0 : 0 < x)
   rw [← ofReal_pow, ofReal_re]
   ring
 
-/-- `log log (1 / x) → ∞` as `x → 0⁺`. -/
-private theorem tendsto_log_log_inv :
-    Tendsto (fun x : ℝ ↦ Real.log (Real.log x⁻¹)) (𝓝[>] 0) atTop :=
-  Real.tendsto_log_atTop.comp (Real.tendsto_log_atTop.comp tendsto_inv_nhdsGT_zero)
-
 /-- **The second derivative of the example is unbounded near the origin.** Along the positive real
 axis `Re (Df(x) 1) = 2 x log log (1 / x) + 2 x / log x²`, so a bound `‖D²f‖ ≤ M` on a punctured
 disc would give `Re (Df(x) 1) ≤ M x` by the mean value theorem, contradicting
@@ -366,9 +337,12 @@ theorem not_isBoundedUnder_norm_fderiv_fderiv_logLogExample :
   obtain ⟨δ, hδ, hδM⟩ := Metric.eventually_nhds_iff.1 (eventually_nhdsWithin_iff.1 hM)
   set ρ := min δ (Real.exp (-1))
   have hρ : 0 < ρ := lt_min hδ (Real.exp_pos _)
+  -- `log log (1 / x) → ∞` as `x → 0⁺`
+  have hll : Tendsto (fun x : ℝ ↦ Real.log (Real.log x⁻¹)) (𝓝[>] 0) atTop :=
+    Real.tendsto_log_atTop.comp (Real.tendsto_log_atTop.comp tendsto_inv_nhdsGT_zero)
   obtain ⟨x, ⟨hx0, hxρ⟩, hxP⟩ :=
     ((show ∀ᶠ t in 𝓝[>] (0 : ℝ), t ∈ Ioo 0 ρ from Ioo_mem_nhdsGT hρ).and
-      (tendsto_log_log_inv.eventually_gt_atTop (M / 2 + 1))).exists
+      (hll.eventually_gt_atTop (M / 2 + 1))).exists
   have hxδ : x < δ := hxρ.trans_le (min_le_left _ _)
   have hxe : x < Real.exp (-1) := hxρ.trans_le (min_le_right _ _)
   have hx1 : x < 1 := hxe.trans (Real.exp_lt_one_iff.2 (by norm_num))

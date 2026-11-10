@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Pow
 
 /-!
 # Monomials times radial profiles
@@ -62,13 +63,6 @@ theorem conjWirtingerDeriv_ofReal_comp_norm_sq_apply_one (h : HasDerivAt C c (�
   rw [conjWirtingerDeriv_apply, fderiv_ofReal_comp_norm_sq_apply h,
     fderiv_ofReal_comp_norm_sq_apply h]
   apply Complex.ext <;> simp <;> ring
-
-/-- The real derivative of `w ↦ wⁿ` has norm at most `n ‖z‖ⁿ⁻¹`. -/
-theorem norm_fderiv_pow_le (n : ℕ) (z : ℂ) :
-    ‖fderiv ℝ (fun w : ℂ ↦ w ^ n) z‖ ≤ n * ‖z‖ ^ (n - 1) := by
-  rw [((hasDerivAt_pow n z).hasFDerivAt.restrictScalars ℝ).fderiv]
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
-  simp [mul_comm]
 
 variable (n : ℕ)
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Graph
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # The graph structure of a function `ℂ → ℂ`
@@ -116,16 +117,11 @@ theorem isJHolomorphicAt_graph_conjWirtingerGraphAlmostComplex {g : ℂ → ℂ}
       (differentiableAt_id.prodMk hg)
   refine isJHolomorphicAt_of_hasFDerivAt hd.hasFDerivAt
     ((isComplexLinearMap_iff_apply _ _ _).2 fun v ↦ ?_)
-  have hI := fderiv_graph_I_eq_conjWirtingerGraphStructure hg
-  have hv : v = v.re • (1 : ℂ) + v.im • I := by
-    apply Complex.ext <;> simp
-  have hIv : I • v = v.re • I - v.im • (1 : ℂ) := by
-    apply Complex.ext <;> simp
   simp only [ContinuousLinearMap.coe_coe, AlmostComplexStructure.ofComplexModule_apply,
-    conjWirtingerGraphAlmostComplex_apply]
-  rw [hIv]
-  conv_rhs => rw [hv]
-  simp only [map_add, map_sub, map_smul, hI, conjWirtingerGraphStructure_apply_apply, smul_neg]
-  abel
+    conjWirtingerGraphAlmostComplex_apply, smul_eq_mul, mul_comm I v]
+  exact (fderiv ℝ (fun w ↦ WithLp.toLp 2 (w, g w)) z : ℂ →ₗ[ℝ] WithLp 2 (ℂ × ℂ))
+    |>.apply_mul_I_eq_of_apply_I_eq (A := conjWirtingerGraphStructure g (WithLp.toLp 2 (z, g z)))
+      (fderiv_graph_I_eq_conjWirtingerGraphStructure hg)
+      (conjWirtingerGraphStructure_apply_apply g _) v
 
 end TauCeti
