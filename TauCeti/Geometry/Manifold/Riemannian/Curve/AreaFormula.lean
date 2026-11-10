@@ -13,6 +13,7 @@ import TauCeti.Analysis.ConstantSpeed
 import TauCeti.Geometry.Manifold.MFDeriv.LocalInjectivity
 import TauCeti.Geometry.Manifold.Riemannian.ArcLength
 import TauCeti.Geometry.Manifold.Riemannian.EVariationComparison
+import TauCeti.MeasureTheory.Covering.DisjointCover
 import TauCeti.MeasureTheory.Measure.Stieltjes
 import TauCeti.Topology.EMetricSpace.CurveLength
 
@@ -33,17 +34,18 @@ Riemannian length `∫_[p, q] ‖γ'‖` (`TauCeti.Manifold.eVariationOn_eq_path
 interval `K ⊆ O`, the set function `B ↦ μH[1] (γ '' (B ∩ K))` is an outer measure bounded on every
 interval `(a, b]` by the finite measure `ν` with density `‖γ'‖` on `K`. Writing `ν` as the measure
 of its cumulative Stieltjes function, whose outer measure is the largest outer measure with these
-interval values, the bound extends to every measurable set. Countably many compact intervals cover
-`B`, which gives the upper bound.
+interval values, the bound extends to every measurable set
+(`MeasureTheory.OuterMeasure.le_measure_of_Ioc_le`). Countably many disjoint measurable pieces of
+compact intervals cover `B` (`TauCeti.exists_disjoint_measurableSet_cover_of_mem_nhds`), which
+gives the upper bound.
 
 For the equality, the points where the velocity vanishes contribute nothing to either side. Near
-a point with nonzero velocity the differential of `γ` is injective, so `γ` is injective on a
-compact interval `J` around that point (`ContMDiffAt.exists_mem_nhds_injOn`). There
-the trace measure of `γ '' J` is again the length
-(`ContinuousOn.eVariationOn_eq_hausdorffMeasure_image`), which is finite, and the upper bound on
-the complement turns into the lower bound on every measurable subset of `J`. The images of
-disjoint measurable subsets of an injective parameter set are disjoint and measurable by the
-Lusin–Souslin theorem, so the local equalities add up.
+a point with nonzero velocity `γ` is injective on a compact interval `J` around that point
+(`ContMDiffAt.exists_mem_nhds_injOn_of_curveVelocity_ne_zero`). There the trace measure of
+`γ '' J` is again the length (`ContinuousOn.eVariationOn_eq_hausdorffMeasure_image`), which is
+finite, and the upper bound on the complement turns into the lower bound on every measurable
+subset of `J`. The images of disjoint measurable subsets of an injective parameter set are disjoint
+and measurable by the Lusin–Souslin theorem, so the local equalities add up.
 
 ## Main statements
 
@@ -62,6 +64,12 @@ Lusin–Souslin theorem, so the local equalities add up.
 * H. Federer, *Geometric Measure Theory*, Theorem 2.10.13 and Section 3.2.
 * L. C. Evans, R. F. Gariepy, *Measure Theory and Fine Properties of Functions*, revised edition,
   Section 3.3.
+* The measure-theoretic statements, and the passage from the identity of measures to the weighted
+  formula, follow the Euclidean area formula for injective parametrizations in
+  `TauCeti.MeasureTheory.Function.AreaFormula.Integral`, namely
+  `TauCeti.restrict_map_withDensity_normDet_fderiv_eq_euclideanHausdorffMeasure` and
+  `TauCeti.lintegral_image_eq_lintegral_normDet_fderiv_mul`, with the speed of the curve in place
+  of the Jacobian.
 -/
 
 public section
@@ -71,86 +79,13 @@ open scoped ENNReal Manifold
 
 namespace TauCeti.Manifold
 
-/-- An outer measure on `ℝ` that is bounded on every interval `Ioc a b` by a measure with finite
-left tails is bounded by it on every measurable set. -/
-private theorem outerMeasure_le_of_Ioc_le (m : OuterMeasure ℝ) (ν : Measure ℝ)
-    (hν : ∀ t, ν (Iic t) ≠ ∞) (h : ∀ a b, m (Ioc a b) ≤ ν (Ioc a b)) {s : Set ℝ}
-    (hs : MeasurableSet s) : m s ≤ ν s := by
-  set F := ν.cumulativeStieltjes hν
-  have hF (a b : ℝ) : ν (Ioc a b) = ENNReal.ofReal (F b - F a) := by
-    rw [← F.measure_Ioc, Measure.measure_cumulativeStieltjes]
-  have hmF : m ≤ F.outer := by
-    refine OuterMeasure.le_ofFunction.2 fun t ↦ ?_
-    rw [F.length_eq]
-    refine le_iInf₂ fun a b ↦ le_iInf fun hab ↦ ?_
-    rw [← hF]
-    exact (measure_mono fun x hx ↦ hab ⟨hx, notMem_botSet_of_lt (sub_one_lt x)⟩).trans (h a b)
-  have hcar : (inferInstance : MeasurableSpace ℝ) ≤ F.outer.caratheodory := by
-    rw [BorelSpace.measurable_eq (α := ℝ)]
-    exact F.borel_le_measurable
-  have hFν : F.outer.toMeasure hcar = ν := by
-    refine Measure.ext_of_Ioc' _ _ (fun a b _ ↦ ?_) fun a b _ ↦ ?_ <;>
-      rw [toMeasure_apply _ _ measurableSet_Ioc, F.outer_Ioc]
-    · exact ENNReal.ofReal_ne_top
-    · exact (hF a b).symm
-  calc m s ≤ F.outer s := hmF s
-    _ = ν s := by rw [← toMeasure_apply _ hcar hs, hFν]
-
-/-- If every point of a nonempty set of reals has a measurable neighbourhood `N x`, then the set
-is covered by countably many disjoint measurable sets, each contained in one of these
-neighbourhoods. -/
-private theorem exists_disjoint_cover {S : Set ℝ} (hS : S.Nonempty) (N : ℝ → Set ℝ)
-    (hN : ∀ x ∈ S, N x ∈ 𝓝 x) (hNm : ∀ x ∈ S, MeasurableSet (N x)) :
-    ∃ D : ℕ → Set ℝ, (∀ n, MeasurableSet (D n)) ∧ Pairwise (Disjoint on D) ∧
-      S ⊆ ⋃ n, D n ∧ ∀ n, ∃ x ∈ S, D n ⊆ N x := by
-  have : Nonempty S := hS.to_subtype
-  obtain ⟨f, hf⟩ := (HereditarilyLindelofSpace.isLindelof S).indexed_countable_subcover
-    (fun x : S ↦ interior (N x)) (fun _ ↦ isOpen_interior)
-    fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx⟩, mem_interior_iff_mem_nhds.2 (hN x hx)⟩
-  refine ⟨disjointed fun n ↦ N (f n), MeasurableSet.disjointed fun n ↦ hNm _ (f n).2,
-    disjoint_disjointed _, ?_, fun n ↦ ⟨f n, (f n).2, disjointed_subset _ n⟩⟩
-  rw [iUnion_disjointed]
-  exact hf.trans (iUnion_mono fun n ↦ interior_subset)
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [EMetricSpace M] [ChartedSpace H M]
   {γ : ℝ → M} {O : Set ℝ}
 
-/-- A `C¹` curve is injective on a compact interval neighbourhood of every parameter at which its
-velocity does not vanish. -/
-private theorem exists_Icc_injOn (hO : IsOpen O) (hγ : ContMDiffOn 𝓘(ℝ) I 1 γ O) {x : ℝ}
-    (hx : x ∈ O) (hv : curveVelocity I γ x ≠ 0) :
-    ∃ a b, Icc a b ∈ 𝓝 x ∧ Icc a b ⊆ O ∧ InjOn γ (Icc a b) := by
-  have hinj : Function.Injective (mfderiv 𝓘(ℝ) I γ x) := by
-    let L : ℝ →L[ℝ] TangentSpace I (γ x) := mfderiv 𝓘(ℝ) I γ x
-    have hL (c : ℝ) : L c = c • curveVelocity I γ x := by
-      rw [curveVelocity_apply]
-      change L c = c • L 1
-      simpa only [smul_eq_mul, mul_one] using L.map_smul c (1 : ℝ)
-    refine (injective_iff_map_eq_zero L).2 fun c hc ↦ ?_
-    rw [hL] at hc
-    exact (smul_eq_zero.1 hc).resolve_right hv
-  obtain ⟨t, ht, htinj⟩ :=
-    (hγ.contMDiffAt (hO.mem_nhds hx)).exists_mem_nhds_injOn one_ne_zero hinj
-  obtain ⟨a, b, -, hab, hsub⟩ := exists_Icc_mem_subset_of_mem_nhds (inter_mem ht (hO.mem_nhds hx))
-  exact ⟨a, b, hab, fun s hs ↦ (hsub hs).2, htinj.mono fun s hs ↦ (hsub hs).1⟩
-
 variable [IsManifold I 1 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)]
-
-/-- The speed of a `C¹` curve is continuous on an open parameter set. -/
-private theorem continuousOn_norm_curveVelocity (hO : IsOpen O)
-    (hγ : ContMDiffOn 𝓘(ℝ) I 1 γ O) : ContinuousOn (fun s ↦ ‖curveVelocity I γ s‖) O :=
-  (hγ.continuousOn_norm_curveVelocityWithin hO.uniqueMDiffOn).congr fun s hs ↦ by
-    simp only [curveVelocityWithin_of_mem_nhds (hO.mem_nhds hs)]
-
-/-- A `C¹` curve has finite length on a compact interval inside its open parameter set. -/
-private theorem setLIntegral_Icc_lt_top (hO : IsOpen O) (hγ : ContMDiffOn 𝓘(ℝ) I 1 γ O)
-    {u v : ℝ} (huv : Icc u v ⊆ O) : ∫⁻ s in Icc u v, ‖curveVelocity I γ s‖ₑ < ∞ := by
-  have := (((continuousOn_norm_curveVelocity hO hγ).mono huv).integrableOn_compact
-    (μ := volume) isCompact_Icc).lintegral_lt_top
-  simpa only [ofReal_norm] using this
 
 variable [IsRiemannianManifold I M] [MeasurableSpace M] [BorelSpace M]
 
@@ -174,12 +109,12 @@ private theorem hausdorffMeasure_image_inter_Icc_le (hO : IsOpen O)
   have hν {s : Set ℝ} (hs : MeasurableSet s) :
       ν s = ∫⁻ t in s ∩ Icc u v, ‖curveVelocity I γ t‖ₑ := by
     rw [withDensity_apply _ hs, Measure.restrict_restrict hs]
-  have key := outerMeasure_le_of_Ioc_le
+  have key := OuterMeasure.le_measure_of_Ioc_le
     (OuterMeasure.restrict (Icc u v) (OuterMeasure.comap γ μH[1].toOuterMeasure)) ν
     (fun t ↦ by
       rw [hν measurableSet_Iic]
       exact ((lintegral_mono_set inter_subset_right).trans_lt
-        (setLIntegral_Icc_lt_top hO hγ huv)).ne)
+        (hγ.setLIntegral_enorm_curveVelocity_lt_top hO isCompact_Icc huv)).ne)
     (fun a b ↦ ?_) hB
   · simpa [hν hB] using key
   · rw [OuterMeasure.restrict_apply, OuterMeasure.comap_apply, Measure.coe_toOuterMeasure,
@@ -204,8 +139,8 @@ theorem hausdorffMeasure_image_le_setLIntegral (hO : IsOpen O) (hγ : ContMDiffO
   · simp
   choose! a b _ hab hsub using fun x (hx : x ∈ B) ↦
     exists_Icc_mem_subset_of_mem_nhds (hO.mem_nhds (hBO hx))
-  obtain ⟨D, hDm, hDd, hBD, hDN⟩ := exists_disjoint_cover hne (fun x ↦ Icc (a x) (b x)) hab
-    fun _ _ ↦ measurableSet_Icc
+  obtain ⟨D, hDm, hDd, hBD, hDN⟩ := exists_disjoint_measurableSet_cover_of_mem_nhds hne
+    (fun x ↦ Icc (a x) (b x)) hab fun _ _ ↦ measurableSet_Icc
   have hB' : B = ⋃ n, B ∩ D n := by rw [← inter_iUnion, inter_eq_left.2 hBD]
   calc μH[1] (γ '' B) = μH[1] (⋃ n, γ '' (B ∩ D n)) := by rw [← image_iUnion, ← hB']
     _ ≤ ∑' n, μH[1] (γ '' (B ∩ D n)) := measure_iUnion_le _
@@ -230,7 +165,8 @@ private theorem setLIntegral_le_hausdorffMeasure_image (hO : IsOpen O)
     simp only [curveVelocity_apply]
     rfl
   have hfin : ∫⁻ s in Icc u v \ B, ‖curveVelocity I γ s‖ₑ ≠ ∞ :=
-    ((lintegral_mono_set sdiff_subset).trans_lt (setLIntegral_Icc_lt_top hO hγ huv)).ne
+    ((lintegral_mono_set sdiff_subset).trans_lt
+      (hγ.setLIntegral_enorm_curveVelocity_lt_top hO isCompact_Icc huv)).ne
   refine ENNReal.le_of_add_le_add_right hfin ?_
   calc (∫⁻ s in B, ‖curveVelocity I γ s‖ₑ) + ∫⁻ s in Icc u v \ B, ‖curveVelocity I γ s‖ₑ
         = ∫⁻ s in Icc u v, ‖curveVelocity I γ s‖ₑ := by
@@ -257,9 +193,16 @@ theorem hausdorffMeasure_image_eq_setLIntegral (hO : IsOpen O) (hγ : ContMDiffO
       zero_le
     by_contra hne
     exact hS.subset ⟨hs, fun h ↦ hne (by simp [h])⟩
-  choose! a b hab hsub hinjab using fun x (hx : x ∈ S) ↦ exists_Icc_injOn hO hγ (hAO hx.1) hx.2
-  obtain ⟨D, hDm, hDd, hSD, hDN⟩ := exists_disjoint_cover hS (fun x ↦ Icc (a x) (b x)) hab
-    fun _ _ ↦ measurableSet_Icc
+  have hloc (x : ℝ) (hx : x ∈ S) :
+      ∃ a b, Icc a b ∈ 𝓝 x ∧ Icc a b ⊆ O ∧ InjOn γ (Icc a b) := by
+    have hxO := hO.mem_nhds (hAO hx.1)
+    obtain ⟨t, ht, htinj⟩ :=
+      (hγ.contMDiffAt hxO).exists_mem_nhds_injOn_of_curveVelocity_ne_zero one_ne_zero hx.2
+    obtain ⟨a, b, -, hab, hsub⟩ := exists_Icc_mem_subset_of_mem_nhds (inter_mem ht hxO)
+    exact ⟨a, b, hab, fun s hs ↦ (hsub hs).2, htinj.mono fun s hs ↦ (hsub hs).1⟩
+  choose! a b hab hsub hinjab using hloc
+  obtain ⟨D, hDm, hDd, hSD, hDN⟩ := exists_disjoint_measurableSet_cover_of_mem_nhds hS
+    (fun x ↦ Icc (a x) (b x)) hab fun _ _ ↦ measurableSet_Icc
   have hzero : ∫⁻ s in A \ ⋃ n, D n, ‖curveVelocity I γ s‖ₑ = 0 := by
     refine (setLIntegral_congr_fun (hA.diff (.iUnion hDm)) fun s hs ↦ ?_).trans lintegral_zero
     by_contra hne
@@ -332,7 +275,7 @@ theorem lintegral_image_eq_lintegral_enorm_curveVelocity_mul (hO : IsOpen O)
     ∫⁻ y in γ '' A, g y ∂μH[1] = ∫⁻ s in A, ‖curveVelocity I γ s‖ₑ * g (γ s) := by
   have hspeed : AEMeasurable (fun s ↦ ‖curveVelocity I γ s‖ₑ) (volume.restrict A) := by
     simpa only [ofReal_norm] using
-      (((continuousOn_norm_curveVelocity hO hγ).mono hAO).aemeasurable hA).ennreal_ofReal
+      (((hγ.continuousOn_norm_curveVelocity hO).mono hAO).aemeasurable hA).ennreal_ofReal
   rw [← restrict_map_withDensity_enorm_curveVelocity_eq_hausdorffMeasure hO hγ hA hAO hinj,
     (ContinuousOn.measurableEmbedding hA (hγ.continuousOn.mono hAO) hinj).lintegral_map]
   simp only [domRestrict_apply]

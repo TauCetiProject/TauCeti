@@ -31,7 +31,10 @@ results usable without unfolding their construction.
 ## Main results
 
 * `ContMDiffOn.continuousOn_norm_curveVelocityWithin`: the speed of a `C¹` curve is continuous on
-  a parameter set with unique derivatives.
+  a parameter set with unique derivatives, and `ContMDiffOn.continuousOn_norm_curveVelocity` is
+  its open-set case.
+* `ContMDiffOn.setLIntegral_enorm_curveVelocity_lt_top`: a `C¹` curve on an open parameter set
+  has finite length on every compact subset of it.
 * `ContMDiffOn.pathELength_eq_ofReal_integral_norm_curveVelocityWithin`: the Riemannian length of a
   `C¹` curve over a compact interval is the integral of its speed.
 * `ContMDiffOn.pathELength_le_ofReal_sqrt_energy`: the length `L` and the energy `E` of a `C¹`
@@ -81,6 +84,22 @@ theorem _root_.ContMDiffOn.continuousOn_norm_curveVelocityWithin {γ : ℝ → M
     (ContMDiffOn.continuousOn_curveVelocityLiftWithin hγ hs).congr fun t _ ↦
       (curveVelocityLiftWithin_apply (I := I) γ s t).symm
   exact (TauCeti.continuous_norm_bundle E (fun x : M ↦ TangentSpace I x)).comp_continuousOn hlift
+
+/-- The Riemannian speed of a `C¹` curve on an open parameter set is continuous there. -/
+theorem _root_.ContMDiffOn.continuousOn_norm_curveVelocity {γ : ℝ → M} {O : Set ℝ}
+    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ O) (hO : IsOpen O) :
+    ContinuousOn (fun t ↦ ‖curveVelocity I γ t‖) O :=
+  (hγ.continuousOn_norm_curveVelocityWithin hO.uniqueMDiffOn).congr fun t ht ↦ by
+    simp only [curveVelocityWithin_of_mem_nhds (hO.mem_nhds ht)]
+
+/-- A `C¹` curve on an open parameter set has finite length on every compact subset of it: the
+integral of its speed over such a set is finite. -/
+theorem _root_.ContMDiffOn.setLIntegral_enorm_curveVelocity_lt_top {γ : ℝ → M} {O : Set ℝ}
+    (hγ : ContMDiffOn 𝓘(ℝ, ℝ) I 1 γ O) (hO : IsOpen O) {K : Set ℝ} (hK : IsCompact K)
+    (hKO : K ⊆ O) : ∫⁻ t in K, ‖curveVelocity I γ t‖ₑ < (∞ : ℝ≥0∞) := by
+  simpa only [ofReal_norm] using
+    (((hγ.continuousOn_norm_curveVelocity hO).mono hKO).integrableOn_compact
+      (μ := volume) hK).lintegral_lt_top
 
 /-- The Riemannian length of a `C¹` curve over a compact interval inside its parameter set is the
 integral of its speed. -/
