@@ -50,7 +50,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'}
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
-  [FiniteDimensional ℝ F] [J.Boundaryless] [T2Space N]
+  [FiniteDimensional ℝ F] [J.Boundaryless]
   [RiemannianBundle (fun y : N => TangentSpace J y)] [IsManifold J ∞ N]
   [IsContMDiffRiemannianBundle J ∞ F (fun y : N => TangentSpace J y)]
 

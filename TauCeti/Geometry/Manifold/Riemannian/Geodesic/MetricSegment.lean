@@ -58,18 +58,18 @@ variable [FiniteDimensional ℝ E] [I.Boundaryless]
 
 variable {p : M}
 
-/-- **A minimizing geodesic is a metric geodesic segment.** Let `v` lie in the domain of `exp_p`
-and satisfy `‖v‖ ≤ dist p (exp_p v)`, so that equality holds by `dist_riemannianExp_le`. Then the
-maximal geodesic from `p` with initial velocity `v`, read on `[0, 1]`, is a geodesic segment from
-`p` to `exp_p v` in the metric sense. -/
-theorem isGeodesicSegment_maximalGeodesic {v : TangentSpace I p} (hv : v ∈ expDomain I M p)
+/-- **A minimizing geodesic is a metric geodesic segment.** Let `v` satisfy
+`‖v‖ ≤ dist p (exp_p v)`, so that `v` lies in the domain of `exp_p` and equality holds by
+`dist_riemannianExp_le`. Then the maximal geodesic from `p` with initial velocity `v`, read on
+`[0, 1]`, is a geodesic segment from `p` to `exp_p v` in the metric sense. -/
+theorem isGeodesicSegment_maximalGeodesic {v : TangentSpace I p}
     (hmin : ‖v‖ ≤ dist p (riemannianExp I M p v)) :
     IsGeodesicSegment (maximalGeodesic I M p v) p (riemannianExp I M p v) where
   source := maximalGeodesic_zero p v
   target := (riemannianExp_def p v).symm
   dist_eq s hs t ht := by
     rw [← riemannianExp_smul p v s, ← riemannianExp_smul p v t,
-      dist_riemannianExp_smul_riemannianExp_smul hv hmin hs ht,
+      dist_riemannianExp_smul_riemannianExp_smul hmin hs ht,
       le_antisymm (dist_riemannianExp_le p v) hmin]
 
 /-- **An everywhere-defined exponential map yields metric geodesic segments.** If `exp_p` is
@@ -81,7 +81,7 @@ theorem exists_isGeodesicSegment_of_expDomain_eq_univ (ha : expDomain I M p = un
   obtain ⟨v, hvq, hv⟩ := exists_riemannianExp_eq_and_norm_eq_dist ha q
   refine ⟨maximalGeodesic I M p v, ?_⟩
   rw [← hvq]
-  exact isGeodesicSegment_maximalGeodesic (ha ▸ mem_univ v) (le_of_eq (by rw [hvq, hv]))
+  exact isGeodesicSegment_maximalGeodesic (le_of_eq (by rw [hvq, hv]))
 
 variable (I) in
 include I in
