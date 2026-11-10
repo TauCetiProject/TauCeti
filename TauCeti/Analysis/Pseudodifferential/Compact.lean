@@ -124,18 +124,16 @@ variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace
 /-- **Compactness of quantizations with compact spatial support.** For a symbol `a` of order `m`
 with compact spatial support between finite-dimensional complex normed spaces and real orders
 `r < s - m`, the quantization `Op(a)` extends from Schwartz functions to a compact operator
-`H^s(ℝⁿ; V) → H^r(ℝⁿ; W)`.
-
-As in `TauCeti.Symbol.exists_quantizeSobolev`, isomorphisms `e₁ : V ≃L[ℂ] ℂ^k` and
-`e₂ : W ≃L[ℂ] ℂ^l` reduce this to the Hilbert-space statement
-`TauCeti.Symbol.isCompactOperator_inclusion_comp_quantizeSobolev`. -/
+`H^s(ℝⁿ; V) → H^r(ℝⁿ; W)`. -/
 theorem exists_isCompactOperator_quantizeSobolev (a : Symbol n V W m)
     (ha : a.HasCompactSpatialSupport) {r s : ℝ} (h : r < s - m) :
     ∃ T : H^{s}(CoordinateSpace n, V) →L[ℂ] H^{r}(CoordinateSpace n, W), IsCompactOperator T ∧
       ∀ (u : 𝓢(CoordinateSpace n, V)) (φ : 𝓢(CoordinateSpace n, ℂ)),
         (T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
           ∫ x, φ x • quantizeSchwartzValue a.coefficient u x := by
-  -- Transport to the Hilbert spaces `ℂ^k` and `ℂ^l` along isomorphisms `e₁` and `e₂`.
+  -- As in `exists_quantizeSobolev`, transport along isomorphisms `e₁ : V ≃L[ℂ] ℂ^k` and
+  -- `e₂ : W ≃L[ℂ] ℂ^l` to the Hilbert-space statement
+  -- `isCompactOperator_inclusion_comp_quantizeSobolev`.
   let e₁ : V ≃L[ℂ] EuclideanSpace ℂ (Fin (Module.finrank ℂ V)) :=
     ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
   let e₂ : W ≃L[ℂ] EuclideanSpace ℂ (Fin (Module.finrank ℂ W)) :=
