@@ -406,6 +406,23 @@ theorem hamiltonianCurvature_continuation (ω : SmoothTwoForm I M) {β : ℝ →
     zero_apply, sub_zero]
   exact fderiv_mul_apply_stdComplexLineReal (h := fun t ↦ H t x) hβ hH
 
+/-- A datum `K = K_s ds + K_t dt` with `K_s = 0` and `K_t` independent of `s` near the line
+`s = c` has zero curvature along that line. -/
+theorem hamiltonianCurvature_eq_zero_of_cylindrical (ω : SmoothTwoForm I M)
+    {Ks Kt : ℝ × ℝ → M → ℝ} {c : ℝ} (hKs : ∀ᶠ s in 𝓝 c, ∀ t, Ks (s, t) = 0)
+    (hKt : ∀ᶠ s in 𝓝 c, ∀ t, Kt (s, t) = Kt (c, t)) (t : ℝ) (x : M) :
+    ω.hamiltonianCurvature Ks Kt (c, t) x = 0 := by
+  have hfst : Tendsto Prod.fst (𝓝 ((c, t) : ℝ × ℝ)) (𝓝 c) := continuous_fst.tendsto (c, t)
+  have hs : Ks =ᶠ[𝓝 (c, t)] fun _ _ ↦ 0 := by
+    filter_upwards [hfst.eventually hKs] with w hw
+    funext x
+    simpa using congrFun (hw w.2) x
+  have ht : Kt =ᶠ[𝓝 (c, t)] fun w ↦ Kt (c, w.2) := by
+    filter_upwards [hfst.eventually hKt] with w hw
+    simpa using hw w.2
+  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hs ht]
+  exact ω.hamiltonianCurvature_cylindrical (fun t ↦ Kt (c, t)) (c, t) x
+
 end Curvature
 
 /-! ### Changes of domain coordinates -/
@@ -824,6 +841,16 @@ theorem hamiltonianCurvature_constSmooth (ω : SymplecticForm V)
     ω.constSmooth.hamiltonianCurvature Ks Kt z x = ω.hamiltonianCurvature Ks Kt z x := by
   rw [SmoothTwoForm.hamiltonianCurvature_def, hamiltonianCurvature_def,
     poissonBracket_constSmooth]
+
+open Filter Topology in
+/-- A datum `K = K_s ds + K_t dt` with `K_s = 0` and `K_t` independent of `s` near the line
+`s = c` has zero curvature along that line. This is the vector-space case of
+`TauCeti.SmoothTwoForm.hamiltonianCurvature_eq_zero_of_cylindrical`. -/
+theorem hamiltonianCurvature_eq_zero_of_cylindrical (ω : SymplecticForm V)
+    {Ks Kt : ℝ × ℝ → V → ℝ} {c : ℝ} (hKs : ∀ᶠ s in 𝓝 c, ∀ t, Ks (s, t) = 0)
+    (hKt : ∀ᶠ s in 𝓝 c, ∀ t, Kt (s, t) = Kt (c, t)) (t : ℝ) (x : V) :
+    ω.hamiltonianCurvature Ks Kt (c, t) x = 0 := by
+  simpa using ω.constSmooth.hamiltonianCurvature_eq_zero_of_cylindrical hKs hKt t x
 
 /-- Under the canonical target tangent identification the intrinsic perturbed derivative
 for a constant form is the vector-space perturbed derivative. -/
