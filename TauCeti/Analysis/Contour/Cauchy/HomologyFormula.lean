@@ -14,7 +14,7 @@ import TauCeti.Analysis.Contour.Cycle.Residue
 # Cauchy's integral formula in homology form, for all derivatives
 
 For `f` holomorphic on an open `U`, a closed piecewise-`C¹` curve `γ` in `U` that is
-**null-homologous** there, and a point `z ∈ U` off the curve,
+**null-homologous** there, and a point `z` off the curve,
 
 `∫ t in a..b, γ' t • (f (γ t) / (γ t − z) ^ (k + 1)) = 2πi · n_z(γ) · f⁽ᵏ⁾(z) / k !`
 
@@ -70,7 +70,7 @@ namespace TauCeti.Contour
 
 /-- **Cauchy's integral formula for the `k`-th derivative, homology form.** Let `f` be holomorphic
 on an open `U`, let `γ` be a closed piecewise-`C¹` curve in `U` that is null-homologous there, and
-let `z ∈ U` lie off the curve. Then for every `k`,
+let `z` lie off the curve. Then for every `k`,
 
 `∫ t in a..b, γ' t • (f (γ t) / (γ t − z) ^ (k + 1)) = 2πi · n_z(γ) · f⁽ᵏ⁾(z) / k !`,
 
@@ -81,7 +81,7 @@ to the Cauchy kernel `w ↦ f w / (w − z) ^ (k + 1)`, whose only possible sing
 theorem cauchyIntegralFormula_iteratedDeriv_nullHomologous {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → ℂ}
     {a b : ℝ} {z : ℂ} (hU : IsOpen U) (hf : DifferentiableOn ℂ f U) (hγ : IsPiecewiseC1On γ a b)
     (hγU : ∀ t ∈ uIcc a b, γ t ∈ U) (hclosed : γ a = γ b) (hnull : IsNullHomologous γ a b U)
-    (hz : z ∈ U) (hoff : ∀ t ∈ uIcc a b, γ t ≠ z) (k : ℕ) :
+    (hoff : ∀ t ∈ uIcc a b, γ t ≠ z) (k : ℕ) :
     ∫ t in a..b, deriv γ t • (f (γ t) / (γ t - z) ^ (k + 1))
       = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b z *
           (iteratedDeriv k f z / (k.factorial : ℂ)) := by
@@ -89,11 +89,11 @@ theorem cauchyIntegralFormula_iteratedDeriv_nullHomologous {f : ℂ → ℂ} {U 
   simpa only [Cycle.integral_of_raw, Cycle.windingNumber_of_raw] using
     Cycle.cauchyIntegralFormula_iteratedDeriv_nullHomologous hU hf
       ((Cycle.isIn_of_raw_iff γ hγ hclosed U).2 hγU)
-      ((Cycle.isNullHomologous_of_raw_iff γ hγ hclosed U).2 hnull) hz
+      ((Cycle.isNullHomologous_of_raw_iff γ hγ hclosed U).2 hnull)
       (by simpa only [Cycle.trace_of_raw, Set.mem_image, not_exists, not_and] using hoff) k
 
 /-- **Cauchy's integral formula, homology form.** For `f` holomorphic on an open
-`U`, `γ` a closed piecewise-`C¹` curve in `U` that is null-homologous there, and `z ∈ U` off the
+`U`, `γ` a closed piecewise-`C¹` curve in `U` that is null-homologous there, and `z` off the
 curve,
 
 `∫ t in a..b, γ' t • (f (γ t) / (γ t − z)) = 2πi · n_z(γ) · f z`,
@@ -104,10 +104,10 @@ this statement is the homology Cauchy theorem `TauCeti.Contour.homologyCauchyThe
 theorem cauchyIntegralFormula_nullHomologous {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ}
     (hU : IsOpen U) (hf : DifferentiableOn ℂ f U) (hγ : IsPiecewiseC1On γ a b)
     (hγU : ∀ t ∈ uIcc a b, γ t ∈ U) (hclosed : γ a = γ b) (hnull : IsNullHomologous γ a b U)
-    (hz : z ∈ U) (hoff : ∀ t ∈ uIcc a b, γ t ≠ z) :
+    (hoff : ∀ t ∈ uIcc a b, γ t ≠ z) :
     ∫ t in a..b, deriv γ t • (f (γ t) / (γ t - z))
       = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b z * f z := by
-  simpa using cauchyIntegralFormula_iteratedDeriv_nullHomologous hU hf hγ hγU hclosed hnull hz
+  simpa using cauchyIntegralFormula_iteratedDeriv_nullHomologous hU hf hγ hγU hclosed hnull
     hoff 0
 
 /-- **Cauchy's integral formula for the first derivative, homology form.** The `k = 1` case of
@@ -117,11 +117,11 @@ theorem cauchyIntegralFormula_nullHomologous {f : ℂ → ℂ} {U : Set ℂ} {γ
 theorem cauchyIntegralFormula_deriv_nullHomologous {f : ℂ → ℂ} {U : Set ℂ} {γ : ℝ → ℂ} {a b : ℝ}
     {z : ℂ} (hU : IsOpen U) (hf : DifferentiableOn ℂ f U) (hγ : IsPiecewiseC1On γ a b)
     (hγU : ∀ t ∈ uIcc a b, γ t ∈ U) (hclosed : γ a = γ b) (hnull : IsNullHomologous γ a b U)
-    (hz : z ∈ U) (hoff : ∀ t ∈ uIcc a b, γ t ≠ z) :
+    (hoff : ∀ t ∈ uIcc a b, γ t ≠ z) :
     ∫ t in a..b, deriv γ t • (f (γ t) / (γ t - z) ^ 2)
       = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b z * deriv f z := by
   simpa [iteratedDeriv_one] using
-    cauchyIntegralFormula_iteratedDeriv_nullHomologous hU hf hγ hγU hclosed hnull hz hoff 1
+    cauchyIntegralFormula_iteratedDeriv_nullHomologous hU hf hγ hγU hclosed hnull hoff 1
 
 end TauCeti.Contour
 
