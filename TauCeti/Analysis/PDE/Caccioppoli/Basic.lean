@@ -191,25 +191,32 @@ the support of a cutoff with `ψ² ≤ 1`. The comparison function may dominate 
 almost everywhere. -/
 theorem W1p.setIntegral_sq_mul_value_sq_le (w : W1p mu Omega 2) {ψ : EuclideanSpace ℝ ι → ℝ}
     (hψ1 : ∀ x, ψ x ^ 2 ≤ 1)
-    {S : Set (EuclideanSpace ℝ ι)} (hS : MeasurableSet S) (hts : tsupport ψ ⊆ S)
+    {S : Set (EuclideanSpace ℝ ι)} (hts : tsupport ψ ⊆ S)
     {g : EuclideanSpace ℝ ι → ℝ} (hg : Integrable g (mu.restrict Omega))
     (hwg : ∀ᵐ x ∂mu.restrict Omega, W1p.value w x ^ 2 ≤ g x) :
     ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu ≤
       ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ S, g x ∂mu := by
+  have hg0 : ∀ᵐ x ∂mu.restrict Omega, 0 ≤ g x := hwg.mono fun x hx => (sq_nonneg _).trans hx
   by_cases hF : Integrable (fun x => ψ x ^ 2 * W1p.value w x ^ 2) (mu.restrict Omega)
   swap
   · rw [integral_undef hF]
-    refine integral_nonneg_of_ae ?_
-    exact ae_mono (Measure.restrict_mono inter_subset_left le_rfl)
-      (hwg.mono fun x hx => (sq_nonneg _).trans hx)
-  rw [← setIntegral_indicator hS]
-  refine integral_mono_ae hF (hg.indicator hS) ?_
-  filter_upwards [hwg] with x hx
-  by_cases hxS : x ∈ S
-  · rw [indicator_of_mem hxS]
-    exact (mul_le_of_le_one_left (sq_nonneg _) (hψ1 x)).trans hx
-  · rw [indicator_of_notMem hxS, image_eq_zero_of_notMem_tsupport fun hx' => hxS (hts hx')]
-    simp
+    exact integral_nonneg_of_ae (ae_mono (Measure.restrict_mono inter_subset_left le_rfl) hg0)
+  have hT : MeasurableSet (tsupport ψ) := (isClosed_tsupport ψ).measurableSet
+  calc
+    ∫ x in Omega, ψ x ^ 2 * W1p.value w x ^ 2 ∂mu ≤ ∫ x in Omega, (tsupport ψ).indicator g x ∂mu :=
+      integral_mono_ae hF (hg.indicator hT) (by
+        filter_upwards [hwg] with x hx
+        by_cases hxS : x ∈ tsupport ψ
+        · rw [indicator_of_mem hxS]
+          exact (mul_le_of_le_one_left (sq_nonneg _) (hψ1 x)).trans hx
+        · rw [indicator_of_notMem hxS, image_eq_zero_of_notMem_tsupport hxS]
+          simp)
+    _ = ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ tsupport ψ, g x ∂mu := setIntegral_indicator hT
+    _ ≤ ∫ x in (Omega : Set (EuclideanSpace ℝ ι)) ∩ S, g x ∂mu := by
+      refine setIntegral_mono_set ?_ ?_ ?_
+      · exact hg.mono_measure (Measure.restrict_mono inter_subset_left le_rfl)
+      · exact ae_mono (Measure.restrict_mono inter_subset_left le_rfl) hg0
+      · exact (inter_subset_inter_right _ hts).eventuallyLE
 
 open Filter Metric in
 /-- **Localizing a cutoff Caccioppoli inequality with a datum to concentric balls.** There is a
@@ -219,9 +226,10 @@ nonnegative on `Ω`, and suppose that every smooth `ψ` compactly supported in `
 
 `∫_Ω ψ² ‖∇w‖² ≤ A ∫_Ω ‖∇ψ‖² w² + ∫_Ω ψ² g`.
 
-Then for every pair of balls `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with `0 < r < R`,
+Then for every pair of balls `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with `r < R`,
 
 `∫_{B(x₀, r)} ‖∇w‖² ≤ A (C / (R - r))² ∫_{B(x₀, R)} w² + ∫_{B(x₀, R)} g`.
+For `r ≤ 0` the inner ball is empty and the bound is trivial.
 
 The cutoff is one on `B(x₀, r)`, takes values in `[0, 1]`, is supported in `B(x₀, R)`, and has
 gradient at most `C / (R - r)`. -/
@@ -229,7 +237,7 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_add_setIntegral_of_cutoff :
     ∃ C : ℝ, 0 < C ∧ ∀ {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
       {Omega : Opens (EuclideanSpace ℝ ι)} (w : W1p mu Omega 2) {A : ℝ}
       {g : EuclideanSpace ℝ ι → ℝ} {x₀ : EuclideanSpace ℝ ι} {r R : ℝ},
-      0 ≤ A → Integrable g (mu.restrict Omega) → (∀ᵐ x ∂mu.restrict Omega, 0 ≤ g x) → 0 < r →
+      0 ≤ A → Integrable g (mu.restrict Omega) → (∀ᵐ x ∂mu.restrict Omega, 0 ≤ g x) →
       r < R → ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
       (∀ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ → HasCompactSupport ψ →
         tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) →
@@ -241,7 +249,12 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_add_setIntegral_of_cutoff :
           + ∫ x in ball x₀ R, g x ∂mu := by
   obtain ⟨C, hC0, hC⟩ := exists_forall_contDiff_cutoff_closedBall (E := EuclideanSpace ℝ ι)
   refine ⟨2 * (C + 1), by positivity, ?_⟩
-  intro mu _ Omega w A g x₀ r R hA hg hg0 hr hrR hball hcacc
+  intro mu _ Omega w A g x₀ r R hA hg hg0 hrR hball hcacc
+  rcases le_or_gt r 0 with hr | hr
+  · rw [Metric.ball_eq_empty.2 hr, Measure.restrict_empty, integral_zero_measure]
+    exact add_nonneg (mul_nonneg (mul_nonneg hA (sq_nonneg _))
+      (integral_nonneg fun x => sq_nonneg _))
+      (integral_nonneg_of_ae (ae_restrict_of_ae_restrict_of_subset hball hg0))
   -- A cutoff equal to one on `ball x₀ r` and supported in
   -- `closedBall x₀ ((r + R) / 2) ⊆ ball x₀ R`.
   obtain ⟨ψ, hψ, hrange, hone, hts, hgrad, -⟩ := hC x₀ hr.le (by linarith : r < (r + R) / 2)
@@ -295,7 +308,7 @@ supported in `Ω` satisfies
 
 `∫_Ω ψ² ‖∇w‖² ≤ A ∫_Ω ‖∇ψ‖² w² + B ∫_Ω ψ² w²`.
 
-Then for every pair of balls `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with `0 < r < R`,
+Then for every pair of balls `B(x₀, r) ⊆ B(x₀, R) ⊆ Ω` with `r < R`,
 
 `∫_{B(x₀, r)} ‖∇w‖² ≤ (A (C / (R - r))² + B) ∫_{B(x₀, R)} w²`.
 
@@ -317,12 +330,9 @@ theorem exists_setIntegral_ball_norm_gradient_sq_le_of_cutoff :
     (ι := ι)
   refine ⟨C, hC0, ?_⟩
   intro mu _ Omega w A B x₀ r R hA hB hrR hball hcacc
-  rcases le_or_gt r 0 with hr | hr
-  · rw [Metric.ball_eq_empty.2 hr, Measure.restrict_empty, integral_zero_measure]
-    exact mul_nonneg (by positivity) (integral_nonneg fun x => sq_nonneg _)
   have hloc := hC w (g := fun x => B * W1p.value w x ^ 2) hA
     ((Lp.memLp (W1p.value w)).integrable_sq.const_mul B)
-    (Eventually.of_forall fun x => by positivity) hr hrR hball fun ψ hψ hcpt hts => by
+    (Eventually.of_forall fun x => by positivity) hrR hball fun ψ hψ hcpt hts => by
       simp_rw [mul_left_comm (ψ _ ^ 2), integral_const_mul]
       exact hcacc ψ hψ hcpt hts
   rw [integral_const_mul] at hloc

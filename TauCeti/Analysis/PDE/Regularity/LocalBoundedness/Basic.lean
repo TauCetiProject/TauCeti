@@ -446,7 +446,7 @@ private theorem setIntegral_sq_mul_posPart_sq_le {u : W1p mu Omega 2} {k l : ℝ
         max (W1p.value u x - k) 0 ^ 2 ∂mu :=
   W1p.setIntegral_sq_mul_value_sq_le _ (fun x => by
     obtain ⟨h0, h1⟩ := hψ01 (mem_range_self x)
-    exact pow_le_one₀ h0 h1) (isClosed_tsupport ψ).measurableSet subset_rfl
+    exact pow_le_one₀ h0 h1) subset_rfl
     hwk.integrable_sq (value_posPartAboveOfMemLp_sq_le_ae hkl hwl)
 
 /-- One step of De Giorgi's iteration on balls. Suppose that the truncations `(u - l)⁺` at every
