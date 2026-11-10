@@ -562,8 +562,7 @@ theorem integral_floerEnergyDensity_image_realChart_Icc_prod_Ico (ω : Symplecti
       (fun w _ ↦ hdet w) (fun w hw ↦ hud hw) (fun w hw ↦ htgt hw _ 1)
       (fun w hw ↦ htgt hw _ Complex.I),
     ω.integral_hamiltonianCurvature_image hmeas hinj (fun w _ ↦ hφ.contDiffAt) (fun w _ ↦ hdet w)
-      (fun w hw ↦ hdom hw _ 1) (fun w hw ↦ hdom hw _ Complex.I) (fun w hw ↦ htgt hw _ 1)
-      (fun w hw ↦ htgt hw _ Complex.I)]
+      (fun w hw ↦ hdom hw _ 1) (fun w hw ↦ hdom hw _ Complex.I)]
   -- The pulled-back datum, evaluated on a tangent vector `v`, is `P` at `f` on `f' v`.
   have hpb (v : ℝ × ℝ) : perturbationPullback φ (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x Complex.I) v =
