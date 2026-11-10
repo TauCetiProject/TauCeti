@@ -21,6 +21,9 @@ this is the dyadic decomposition used to split singular integrals into shells.
 Along `l ×ˢ 𝓝 x`, a radius sequence tending to zero plus the distance to `x` eventually
 stays below any positive `r` (`Metric.eventually_add_dist_lt_of_tendsto_zero`), so the closed
 balls of those radii about the points near `x` eventually lie in `ball x r`.
+
+On the real line, the extended distance from `b` to `a ≤ b` is `b - a`
+(`Real.edist_eq_ofReal_sub_of_le`).
 -/
 
 public section
@@ -65,3 +68,8 @@ theorem Metric.eventually_add_dist_lt_of_tendsto_zero {ι X : Type*} [PseudoMetr
   have ht0 : Tendsto (fun p : ι × X => rho p.1 + dist p.2 x)
       (l ×ˢ 𝓝 x) (𝓝 0) := by simpa only [dist_self, zero_add] using ht
   exact (tendsto_order.1 ht0).2 r hr
+
+/-- On the real line, the extended distance from `b` to `a ≤ b` is `b - a`. -/
+theorem Real.edist_eq_ofReal_sub_of_le {a b : ℝ} (h : a ≤ b) :
+    edist b a = ENNReal.ofReal (b - a) := by
+  rw [edist_dist, Real.dist_eq, abs_of_nonneg (sub_nonneg.mpr h)]

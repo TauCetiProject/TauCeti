@@ -30,7 +30,10 @@ Write `s = |α|²`. Away from the zeros of `α` the pair has the gauge-invariant
 
 `τ = Im (conj α ∇_a α) / s = Im (α⁻¹ dα) + b`,
 
-whose first summand is the differential of a local branch of `arg α`. In Taubes's passage from
+whose first summand is the differential of a local branch of `arg α`. The modulus is governed by
+the real part instead: `ds = 2 Re (conj α ∇_a α)`, so `|ds| ≤ 2 |α| |∇_a α|`
+(`fderiv_norm_sq_apply_eq_re_conj_mul_covariantDeriv`,
+`norm_fderiv_norm_sq_le_mul_norm_covariantDeriv`). In Taubes's passage from
 Seiberg–Witten solutions to pseudoholomorphic curves, `α` is the component of the rescaled
 spinor along the canonical unit spinor, its zero set concentrates along the limiting curve, and
 the curvature `i F_a = -db` is compared with the current of that curve through the **cutoff
@@ -161,6 +164,33 @@ theorem continuous_covariantDeriv (hα : ContDiff ℝ 1 α) (hb : Continuous b) 
     Continuous (covariantDeriv b α) := by
   unfold covariantDeriv
   fun_prop
+
+/-- The derivative of `|α|²` is `2 Re (conj α ∇_a α)`, for every connection form `a = i b`: the
+connection term contributes `Re (conj α · i b α) = Re (i b |α|²) = 0`. This is the modulus
+counterpart of `covariantPhaseForm_apply_eq_div`, which reads the phase form off the imaginary
+part. -/
+theorem fderiv_norm_sq_apply_eq_re_conj_mul_covariantDeriv (hα : DifferentiableAt ℝ α x)
+    (v : E) :
+    fderiv ℝ (fun y ↦ ‖α y‖ ^ 2) x v = 2 * (conj (α x) * covariantDeriv b α x v).re := by
+  rw [hα.hasFDerivAt.norm_sq.fderiv, covariantDeriv_apply]
+  simp only [_root_.smul_apply, ContinuousLinearMap.comp_apply, innerSL_apply_apply, Complex.inner,
+    nsmul_eq_mul, Nat.cast_ofNat, mul_add, add_re, mul_re, mul_im, conj_re, conj_im, I_re, I_im,
+    ofReal_re, ofReal_im]
+  ring
+
+/-- The derivative of `|α|²` is bounded by `2 |α| |∇_a α|`, for every connection form. -/
+theorem norm_fderiv_norm_sq_le_mul_norm_covariantDeriv (hα : DifferentiableAt ℝ α x) :
+    ‖fderiv ℝ (fun y ↦ ‖α y‖ ^ 2) x‖ ≤ 2 * ‖α x‖ * ‖covariantDeriv b α x‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  rw [fderiv_norm_sq_apply_eq_re_conj_mul_covariantDeriv (b := b) hα, Real.norm_eq_abs, abs_mul,
+    abs_two, mul_assoc, mul_assoc]
+  refine mul_le_mul_of_nonneg_left ?_ zero_le_two
+  calc |(conj (α x) * covariantDeriv b α x v).re|
+      ≤ ‖conj (α x) * covariantDeriv b α x v‖ := abs_re_le_norm _
+    _ = ‖α x‖ * ‖covariantDeriv b α x v‖ := by rw [norm_mul, RCLike.norm_conj]
+    _ ≤ ‖α x‖ * (‖covariantDeriv b α x‖ * ‖v‖) := by
+      gcongr
+      exact ContinuousLinearMap.le_opNorm _ _
 
 /-- The phase form `τ = Im (α⁻¹ dα) + b` of a pair `(a, α)` with `a = i b`. Away from the zeros
 of `α` it is `Im (conj α ∇_a α) / |α|²` (`covariantPhaseForm_apply_eq_div`). -/

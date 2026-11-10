@@ -25,15 +25,15 @@ pairwise disjoint attaching circles of a Heegaard diagram on a surface `Σ` (Ozs
 compact and pairwise disjoint, so `T_α` really is an embedded `g`-torus and not merely a continuous
 image of one. The companion open-range statement, where the members of the family are open rather
 than compact and the product is an open subspace, is
-`TauCeti.Sym.isOpenEmbedding_ofFn_map`.
+`Sym.isOpenEmbedding_ofFn_map`.
 
 ## Main declarations
 
-* `TauCeti.Sym.isClosed_pi` and `TauCeti.Sym.isCompact_pi`: the subspace is closed, respectively
+* `Sym.isClosed_pi` and `Sym.isCompact_pi`: the subspace is closed, respectively
   compact, when the members of the family are.
-* `TauCeti.Sym.isClosedEmbedding_ofFn_subtypeVal`: for a pairwise disjoint family of compact sets
+* `Sym.isClosedEmbedding_ofFn_subtypeVal`: for a pairwise disjoint family of compact sets
   in a Hausdorff space, the parametrization by ordered tuples is a closed embedding.
-* `TauCeti.Sym.piHomeomorph`: the resulting homeomorphism with the product of the members.
+* `Sym.piHomeomorph`: the resulting homeomorphism with the product of the members.
 
 ## References
 
@@ -44,8 +44,6 @@ than compact and the product is an open subspace, is
 
 public section
 
-namespace TauCeti
-
 open Topology
 
 namespace Sym
@@ -55,19 +53,19 @@ variable {α : Type*} [TopologicalSpace α] {n : ℕ} {A : Fin n → Set α}
 /-- The parametrization of `Sym.pi A` by ordered tuples is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_ofFn_subtypeVal :
-    Continuous fun x : ∀ i, ↥(A i) => Sym.ofFn fun i => (x i : α) :=
+    Continuous fun x : ∀ i, ↥(A i) => ofFn fun i => (x i : α) :=
   continuous_ofFn.comp (continuous_pi fun i => continuous_subtype_val.comp (continuous_apply i))
 
 /-- The unordered tuples with one point in each member of a family of closed sets form a closed
 subspace of the symmetric power: the quotient map onto a symmetric power is closed. -/
-theorem isClosed_pi (hA : ∀ i, IsClosed (A i)) : IsClosed (Sym.pi A) := by
-  rw [Sym.pi_eq_image_univ_pi]
+theorem isClosed_pi (hA : ∀ i, IsClosed (A i)) : IsClosed (pi A) := by
+  rw [pi_eq_image_univ_pi]
   exact isClosedMap_ofFn _ (isClosed_set_pi fun i _ => hA i)
 
 /-- The unordered tuples with one point in each member of a family of compact sets form a compact
 subspace of the symmetric power. -/
-theorem isCompact_pi (hA : ∀ i, IsCompact (A i)) : IsCompact (Sym.pi A) := by
-  rw [Sym.pi_eq_image_univ_pi]
+theorem isCompact_pi (hA : ∀ i, IsCompact (A i)) : IsCompact (pi A) := by
+  rw [pi_eq_image_univ_pi]
   exact (isCompact_univ_pi hA).image continuous_ofFn
 
 variable [T2Space α]
@@ -77,24 +75,24 @@ an embedded product.** For the attaching circles of a Heegaard diagram this says
 `T_α` is embedded, and closed, in the symmetric power of the surface. -/
 theorem isClosedEmbedding_ofFn_subtypeVal (hA : ∀ i, IsCompact (A i))
     (h : Pairwise (Function.onFun Disjoint A)) :
-    IsClosedEmbedding fun x : ∀ i, ↥(A i) => Sym.ofFn fun i => (x i : α) :=
+    IsClosedEmbedding fun x : ∀ i, ↥(A i) => ofFn fun i => (x i : α) :=
   have (i : Fin n) : CompactSpace ↥(A i) := isCompact_iff_compactSpace.1 (hA i)
-  continuous_ofFn_subtypeVal.isClosedEmbedding (Sym.ofFn_subtypeVal_injective h)
+  continuous_ofFn_subtypeVal.isClosedEmbedding (ofFn_subtypeVal_injective h)
 
 /-- **The subspace `Sym.pi A` is the product of the members of the family**, for a pairwise
 disjoint family of compact sets in a Hausdorff space: the topological refinement of
 `Sym.piEquiv`. -/
 noncomputable def piHomeomorph (hA : ∀ i, IsCompact (A i))
-    (h : Pairwise (Function.onFun Disjoint A)) : (∀ i, ↥(A i)) ≃ₜ ↥(Sym.pi A) :=
+    (h : Pairwise (Function.onFun Disjoint A)) : (∀ i, ↥(A i)) ≃ₜ ↥(pi A) :=
   ((isClosedEmbedding_ofFn_subtypeVal hA h).isEmbedding.toHomeomorph).trans
-    (Homeomorph.setCongr (Sym.pi_eq_range A).symm)
+    (Homeomorph.setCongr (pi_eq_range A).symm)
 
-/-- The homeomorphism underlying `TauCeti.Sym.piHomeomorph` is the parametrization by ordered
+/-- The homeomorphism underlying `Sym.piHomeomorph` is the parametrization by ordered
 tuples. -/
 @[simp]
 theorem coe_piHomeomorph_apply (hA : ∀ i, IsCompact (A i))
     (h : Pairwise (Function.onFun Disjoint A)) (x : ∀ i, ↥(A i)) :
-    (piHomeomorph hA h x : Sym α n) = Sym.ofFn fun i => (x i : α) := by
+    (piHomeomorph hA h x : Sym α n) = ofFn fun i => (x i : α) := by
   -- Evaluate each link of the chain through its application lemma instead of unfolding the
   -- equivalence it is built from: the application lemmas are stable under changes to those
   -- definitions, which definitional unfolding is not.
@@ -102,5 +100,3 @@ theorem coe_piHomeomorph_apply (hA : ∀ i, IsCompact (A i))
     IsEmbedding.toHomeomorph_apply_coe]
 
 end Sym
-
-end TauCeti
