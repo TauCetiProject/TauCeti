@@ -35,12 +35,8 @@ integrable, `∫ₐᵇ g ≤ √(b - a) √(∫ₐᵇ g²)`. -/
 theorem integral_le_sqrt_mul_sqrt_integral_sq {g : ℝ → ℝ} {a b : ℝ} (hab : a ≤ b)
     (hg2 : IntervalIntegrable (fun t ↦ g t ^ 2) volume a b) :
     ∫ t in a..b, g t ≤ √(b - a) * √(∫ t in a..b, g t ^ 2) := by
-  -- Bound `∫ g` by `∫ |g|`; this is trivial if `g` is not integrable, as its integral is `0`.
-  have hle : ∫ t in a..b, g t ≤ ∫ t in a..b, |g t| := by
-    by_cases hgi : IntervalIntegrable g volume a b
-    · exact intervalIntegral.integral_mono_on hab hgi hgi.abs fun t _ ↦ le_abs_self _
-    · rw [intervalIntegral.integral_undef hgi]
-      exact intervalIntegral.integral_nonneg hab fun _ _ ↦ abs_nonneg _
+  have hle : ∫ t in a..b, g t ≤ ∫ t in a..b, |g t| :=
+    (le_abs_self _).trans (intervalIntegral.abs_integral_le_integral_abs hab)
   refine hle.trans ?_
   have hg2' : IntervalIntegrable (fun t ↦ |g t| ^ 2) volume a b := by simpa only [sq_abs] using hg2
   simp only [← sq_abs (g _)]

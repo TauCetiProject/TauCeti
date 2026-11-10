@@ -406,7 +406,7 @@ theorem exists_forall_norm_sub_le_mul_sqrt_setIntegral_floerEnergyDensity
       (ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH).continuous hsa).norm.congr fun t ↦ by
         rw [sliceDefect_def]
   -- By Cauchy–Schwarz, the `L¹` norm of the defect is at most its `L²` norm.
-  have hCS := integral_le_sqrt_mul_sqrt_integral_sq zero_le_one (fun t _ ↦ norm_nonneg _)
+  have hCS := integral_le_sqrt_mul_sqrt_integral_sq zero_le_one
     ((hηc.pow 2).intervalIntegrable 0 1)
   rw [sub_zero, Real.sqrt_one, one_mul] at hCS
   have hint := integral_norm_sq_sub_le_mul_setIntegral_floerEnergyDensity hH hu hc hJc hJM hfloer

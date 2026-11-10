@@ -95,8 +95,7 @@ theorem intervalIntegral_apply_apply_eq_sub_const {V G : Type*} [NormedAddCommGr
     {f f' : ℝ → V}
     (hfc : ContinuousOn f [[a, b]])
     (hf : ∀ x ∈ Ioo (min a b) (max a b), HasDerivAt f (f' x) x) (hfab : f a = f b)
-    (hf'ii : IntervalIntegrable f' volume a b) (m : V)
-    (hint : IntervalIntegrable (fun x => B (f x - m) (f' x)) volume a b) :
+    (hf'ii : IntervalIntegrable f' volume a b) (m : V) :
     ∫ x in a..b, B (f x) (f' x) = ∫ x in a..b, B (f x - m) (f' x) := by
   have hBm : IntervalIntegrable (fun x => B m (f' x)) volume a b :=
     ⟨(B m).integrable_comp hf'ii.1, (B m).integrable_comp hf'ii.2⟩
@@ -108,8 +107,14 @@ theorem intervalIntegral_apply_apply_eq_sub_const {V G : Type*} [NormedAddCommGr
     rw [intervalIntegral.integral_eq_sub_of_hasDeriv_right ((B m).continuous.comp_continuousOn hfc)
       (fun x hx => ((B m).hasFDerivAt.comp_hasDerivAt x (hf x hx)).hasDerivWithinAt) hBm]
     simp [hfab]
-  rw [← add_zero (∫ x in a..b, B (f x - m) (f' x)), ← hmean,
-    ← intervalIntegral.integral_add hint hBm]
-  simp [map_sub]
+  by_cases hint : IntervalIntegrable (fun x => B (f x - m) (f' x)) volume a b
+  · rw [← add_zero (∫ x in a..b, B (f x - m) (f' x)), ← hmean,
+      ← intervalIntegral.integral_add hint hBm]
+    simp [map_sub]
+  · -- if `B (f x - m) (f' x)` is not integrable then neither is `B (f x) (f' x)`, as `B m (f' x)`
+    -- is, and both integrals vanish
+    have hfint : ¬ IntervalIntegrable (fun x => B (f x) (f' x)) volume a b := fun h =>
+      hint (by simpa [map_sub] using h.sub hBm)
+    rw [intervalIntegral.integral_undef hint, intervalIntegral.integral_undef hfint]
 
 end ContinuousLinearMap
