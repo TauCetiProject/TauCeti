@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Prod
 import TauCeti.MeasureTheory.Function.Lp.Translation
 import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
+import TauCeti.MeasureTheory.Group.Arithmetic
 import Mathlib.MeasureTheory.Group.Integral
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
@@ -95,16 +96,6 @@ section Product
 omit [MeasurableAdd G]
 variable [MeasurableSub₂ G] [SFinite ν]
 variable {K : Type*} {α : Type*} [MeasurableSpace α] {μ : Measure α}
-
-/-- On an additive group, measurability of subtraction gives measurability of translations. -/
-private theorem measurableAdd_of_measurableSub₂ : MeasurableAdd G :=
-  have hneg : Measurable fun x : G ↦ 0 - x := measurable_const.sub measurable_id
-  ⟨fun c ↦ by
-      have h : Measurable fun x : G ↦ c - (0 - x) := measurable_const.sub hneg
-      simpa using h,
-    fun c ↦ by
-      have h : Measurable fun x : G ↦ x - -c := measurable_id.sub_const (-c)
-      simpa using h⟩
 
 /-- An integrable kernel with integrable weights and a.e.-measurable shifts gives a jointly
 integrable function `(t, z) ↦ k (z - c t) * v t` for the product measure. -/

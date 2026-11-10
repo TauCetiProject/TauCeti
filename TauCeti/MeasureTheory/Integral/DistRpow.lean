@@ -26,10 +26,12 @@ For an additive Haar measure on a finite-dimensional real normed space the growt
 `n` the dimension and `A` the measure of the unit ball
 (`MeasureTheory.Measure.setLIntegral_ofReal_norm_rpow_neg_le`).
 
-The proof splits the region `dist x y > R` into the dyadic annuli `2ᵏ R ≤ dist x y < 2ᵏ⁺¹ R`.
-On the `k`-th annulus `dist x y ^ (-s)` is at most `(2ᵏ R) ^ (-s)`, and the annulus lies in a
-ball of measure at most `A (2ᵏ⁺¹ R)ⁿ`, so the annuli contribute a convergent geometric series
-with ratio `2 ^ (n - s)`.
+For `0 ≤ s` the proof splits the region `dist x y > R` into the dyadic annuli
+`2ᵏ R ≤ dist x y < 2ᵏ⁺¹ R`. On the `k`-th annulus `dist x y ^ (-s)` is at most `(2ᵏ R) ^ (-s)`,
+and the annulus lies in a ball of measure at most `A (2ᵏ⁺¹ R)ⁿ`, so the annuli contribute a
+convergent geometric series with ratio `2 ^ (n - s)`. For `s < 0` the dyadic bound on an annulus
+fails and the statement is degenerate: if `A < ∞` the growth bound forces `μ = 0`, and if
+`A = ∞` the right-hand side is `∞`.
 
 ## Main declarations
 
