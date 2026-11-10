@@ -238,6 +238,12 @@ theorem one_le_of_inv_add_eq_inv {r : ENNReal} (hexp : pstar⁻¹ + r = p⁻¹) 
     _ = p⁻¹ := hexp
     _ ≤ 1 := ENNReal.inv_le_one.2 hp1
 
+/-- For `q < ∞` and any `s`, there is an exponent `r < ∞` with `1/r = 1/q + s`: the intermediate
+exponent of a chain of Sobolev embeddings ending in `L^q`. -/
+theorem exists_inv_eq_inv_add_of_ne_top {q : ENNReal} (hq : q ≠ ∞) (s : ENNReal) :
+    ∃ r : ENNReal, r ≠ ∞ ∧ r⁻¹ = q⁻¹ + s :=
+  ⟨(q⁻¹ + s)⁻¹, ENNReal.inv_ne_top.2 (by simp [hq]), inv_inv _⟩
+
 omit [Fact (1 ≤ p)] in
 /-- The exponent relation `1/p⋆ + 1/n = 1/p` of the Sobolev embedding of `W^{1,p}` in dimension
 `n`, read in `ℝ`. No finiteness hypothesis on `p⋆` is needed: at `p⋆ = ∞` the relation forces

@@ -218,7 +218,7 @@ theorem l1Norm_mul_le (P Q : R[X]) : (P * Q).l1Norm ≤ P.l1Norm * Q.l1Norm := b
 
 /-- Evaluation is controlled by coefficient length and the largest power of the evaluation
 point permitted by the degree. -/
-theorem norm_eval_le_l1Norm_mul [NormOneClass R] (P : R[X]) (z : R) :
+theorem norm_eval_le_l1Norm_mul (P : R[X]) (z : R) :
     ‖P.eval z‖ ≤ P.l1Norm * max 1 ‖z‖ ^ P.natDegree := by
   rw [eval_eq_sum, sum_def]
   calc
@@ -226,7 +226,9 @@ theorem norm_eval_le_l1Norm_mul [NormOneClass R] (P : R[X]) (z : R) :
       norm_sum_le _ _
     _ ≤ ∑ i ∈ P.support, ‖P.coeff i‖ * ‖z‖ ^ i := by
       gcongr with i
-      exact (norm_mul_le _ _).trans (by gcongr; exact norm_pow_le z i)
+      rcases i.eq_zero_or_pos with rfl | hi
+      · simp
+      · exact (norm_mul_le _ _).trans (by gcongr; exact norm_pow_le' z hi)
     _ ≤ P.l1Norm * max 1 ‖z‖ ^ P.natDegree :=
       P.sum_support_norm_coeff_mul_le _ fun i hi ↦
         (pow_le_pow_left₀ (norm_nonneg z) (le_max_right 1 ‖z‖) i).trans
@@ -234,7 +236,7 @@ theorem norm_eval_le_l1Norm_mul [NormOneClass R] (P : R[X]) (z : R) :
 
 /-- Evaluation is controlled by the coefficient sup norm: for `P` of degree at most `n`,
 `‖P(z)‖ ≤ (n + 1) ‖P‖_∞ max(1, ‖z‖) ^ n`. -/
-theorem norm_eval_le_add_one_mul_supNorm_mul [NormOneClass R] {P : R[X]} {n : ℕ}
+theorem norm_eval_le_add_one_mul_supNorm_mul {P : R[X]} {n : ℕ}
     (hP : P.natDegree ≤ n) (z : R) :
     ‖P.eval z‖ ≤ (n + 1) * P.supNorm * max 1 ‖z‖ ^ n := by
   refine (norm_eval_le_l1Norm_mul P z).trans ?_
@@ -243,19 +245,28 @@ theorem norm_eval_le_add_one_mul_supNorm_mul [NormOneClass R] {P : R[X]} {n : �
   · exact P.l1Norm_le_natDegree_add_one_mul_supNorm.trans (by gcongr)
   · exact le_max_left _ _
 
+/-- Taking a positive power raises the coefficient l¹-norm by at most the same power. -/
+theorem l1Norm_pow_le_of_ne_zero (P : R[X]) {n : ℕ} (hn : n ≠ 0) :
+    (P ^ n).l1Norm ≤ P.l1Norm ^ n := by
+  induction n with
+  | zero => exact absurd rfl hn
+  | succ n ih =>
+      rcases eq_or_ne n 0 with rfl | h0
+      · simp only [zero_add, pow_one, le_refl]
+      · rw [pow_succ, pow_succ]
+        exact (l1Norm_mul_le _ _).trans
+          (mul_le_mul (ih h0) le_rfl P.l1Norm_nonneg (pow_nonneg P.l1Norm_nonneg n))
+
 /-- Taking a power raises the coefficient l¹-norm by at most the same power. -/
 theorem l1Norm_pow_le [NormOneClass R] (P : R[X]) (n : ℕ) :
     (P ^ n).l1Norm ≤ P.l1Norm ^ n := by
-  induction n with
-  | zero => simp only [pow_zero, l1Norm_one, le_refl]
-  | succ n ih =>
-      rw [pow_succ, pow_succ]
-      exact (l1Norm_mul_le _ _).trans
-        (mul_le_mul ih le_rfl P.l1Norm_nonneg (pow_nonneg P.l1Norm_nonneg n))
+  rcases eq_or_ne n 0 with rfl | hn
+  · simp only [pow_zero, l1Norm_one, le_refl]
+  · exact P.l1Norm_pow_le_of_ne_zero hn
 
 /-- The coefficient l¹-norm of a composition `P.comp Q` is at most that of `P` times
 `max 1 Q.l1Norm ^ P.natDegree`. -/
-theorem l1Norm_comp_le [NormOneClass R] (P Q : R[X]) :
+theorem l1Norm_comp_le (P Q : R[X]) :
     (P.comp Q).l1Norm ≤ P.l1Norm * max 1 Q.l1Norm ^ P.natDegree := by
   rw [comp_eq_sum_left, sum_def]
   calc
@@ -264,10 +275,12 @@ theorem l1Norm_comp_le [NormOneClass R] (P Q : R[X]) :
       l1Norm_sum_le P.support _
     _ ≤ ∑ i ∈ P.support, ‖P.coeff i‖ * Q.l1Norm ^ i := by
       gcongr with i
-      exact (l1Norm_mul_le _ _).trans <| by
-        rw [l1Norm_C]
-        gcongr
-        exact l1Norm_pow_le Q i
+      rcases i.eq_zero_or_pos with rfl | hi
+      · simp [l1Norm_C]
+      · exact (l1Norm_mul_le _ _).trans <| by
+          rw [l1Norm_C]
+          gcongr
+          exact Q.l1Norm_pow_le_of_ne_zero hi.ne'
     _ ≤ P.l1Norm * max 1 Q.l1Norm ^ P.natDegree :=
       P.sum_support_norm_coeff_mul_le _ fun i hi ↦
         (pow_le_pow_left₀ Q.l1Norm_nonneg (le_max_right 1 Q.l1Norm) i).trans
@@ -279,22 +292,43 @@ theorem l1Norm_C_mul_X_add_C_le (c d : R) : (C c * X + C d).l1Norm ≤ ‖c‖ +
   rw [C_mul_X_eq_monomial]
   simpa only [l1Norm_monomial, l1Norm_C] using l1Norm_add_le (monomial 1 c) (C d)
 
-/-- The coefficient l¹-norm of `X + C a` is at most `1 + ‖a‖`. -/
-theorem l1Norm_X_add_C_le [NormOneClass R] (a : R) : (X + C a : R[X]).l1Norm ≤ 1 + ‖a‖ := by
-  simpa only [l1Norm_X, l1Norm_C] using l1Norm_add_le (X : R[X]) (C a)
+/-- Multiplying by `X + C a` multiplies the coefficient l¹-norm by at most `1 + ‖a‖`. -/
+theorem l1Norm_mul_X_add_C_le (Q : R[X]) (a : R) :
+    (Q * (X + C a)).l1Norm ≤ Q.l1Norm * (1 + ‖a‖) := by
+  calc
+    (Q * (X + C a)).l1Norm = (Q * X + Q * C a).l1Norm := by rw [mul_add]
+    _ ≤ (Q * X).l1Norm + (Q * C a).l1Norm := l1Norm_add_le _ _
+    _ ≤ Q.l1Norm + Q.l1Norm * ‖a‖ := by
+      gcongr
+      · simpa only [pow_one] using (Q.l1Norm_mul_X_pow 1).le
+      · simpa only [l1Norm_C] using l1Norm_mul_le Q (C a)
+    _ = Q.l1Norm * (1 + ‖a‖) := by ring
 
 /-- The coefficient l¹-norm of the translate `P.comp (X + C a)` is at most
 `(1 + ‖a‖) ^ natDegree` times that of `P`. -/
-theorem l1Norm_comp_X_add_C_le [NormOneClass R] (P : R[X]) (a : R) :
-    (P.comp (X + C a)).l1Norm ≤ P.l1Norm * (1 + ‖a‖) ^ P.natDegree :=
-  (P.l1Norm_comp_le _).trans <| by
-    gcongr
-    · exact P.l1Norm_nonneg
-    · exact max_le (le_add_of_nonneg_right (norm_nonneg a)) (l1Norm_X_add_C_le a)
+theorem l1Norm_comp_X_add_C_le (P : R[X]) (a : R) :
+    (P.comp (X + C a)).l1Norm ≤ P.l1Norm * (1 + ‖a‖) ^ P.natDegree := by
+  have hpow (Q : R[X]) (i : ℕ) : (Q * (X + C a) ^ i).l1Norm ≤ Q.l1Norm * (1 + ‖a‖) ^ i := by
+    induction i with
+    | zero => simp
+    | succ i ih =>
+      rw [pow_succ, ← mul_assoc, pow_succ, ← mul_assoc]
+      exact (l1Norm_mul_X_add_C_le _ a).trans (by gcongr)
+  rw [comp_eq_sum_left, sum_def]
+  calc
+    (∑ i ∈ P.support, C (P.coeff i) * (X + C a) ^ i).l1Norm ≤
+        ∑ i ∈ P.support, (C (P.coeff i) * (X + C a) ^ i).l1Norm :=
+      l1Norm_sum_le P.support _
+    _ ≤ ∑ i ∈ P.support, ‖P.coeff i‖ * (1 + ‖a‖) ^ i := by
+      gcongr with i
+      simpa only [l1Norm_C] using hpow (C (P.coeff i)) i
+    _ ≤ P.l1Norm * (1 + ‖a‖) ^ P.natDegree :=
+      P.sum_support_norm_coeff_mul_le _ fun i hi ↦
+        pow_le_pow_right₀ (le_add_of_nonneg_right (norm_nonneg a)) (le_natDegree_of_mem_supp i hi)
 
 /-- The coefficient l¹-norm of the `k`-th Hasse derivative is at most `2 ^ natDegree` times
 that of `P`. -/
-theorem l1Norm_hasseDeriv_le [NormOneClass R] (P : R[X]) (k : ℕ) :
+theorem l1Norm_hasseDeriv_le (P : R[X]) (k : ℕ) :
     (hasseDeriv k P).l1Norm ≤ 2 ^ P.natDegree * P.l1Norm := by
   rw [hasseDeriv_apply, sum_def, mul_comm]
   calc
@@ -303,10 +337,8 @@ theorem l1Norm_hasseDeriv_le [NormOneClass R] (P : R[X]) (k : ℕ) :
       l1Norm_sum_le P.support _
     _ ≤ ∑ i ∈ P.support, ‖P.coeff i‖ * (i.choose k : ℝ) := by
       gcongr with i
-      rw [l1Norm_monomial, mul_comm]
-      refine (norm_mul_le _ _).trans ?_
-      gcongr
-      simpa only [norm_one, mul_one] using (Nat.norm_cast_le (α := R) (i.choose k))
+      rw [l1Norm_monomial, ← nsmul_eq_mul, mul_comm]
+      exact norm_nsmul_le
     _ ≤ P.l1Norm * 2 ^ P.natDegree :=
       P.sum_support_norm_coeff_mul_le _ fun i hi ↦ by
         exact_mod_cast (Nat.choose_le_two_pow i k).trans
@@ -314,7 +346,7 @@ theorem l1Norm_hasseDeriv_le [NormOneClass R] (P : R[X]) (k : ℕ) :
 
 /-- The coefficient length of a Hasse derivative of `P` is at most `(2 ^ δ) ^ r C₁ ^ r` when
 `P` has degree at most `δ r` and coefficient length at most `C₁ ^ r`. -/
-theorem l1Norm_hasseDeriv_le_pow [NormOneClass R] {P : R[X]} {k r : ℕ} {δ C₁ : ℝ}
+theorem l1Norm_hasseDeriv_le_pow {P : R[X]} {k r : ℕ} {δ C₁ : ℝ}
     (hP : (P.natDegree : ℝ) ≤ δ * r) (hPC : P.l1Norm ≤ C₁ ^ r) :
     (hasseDeriv k P).l1Norm ≤ (2 ^ δ) ^ r * C₁ ^ r :=
   (P.l1Norm_hasseDeriv_le k).trans <|
@@ -322,7 +354,7 @@ theorem l1Norm_hasseDeriv_le_pow [NormOneClass R] {P : R[X]} {k r : ℕ} {δ C�
 
 section CommRing
 
-variable {A : Type*} [SeminormedCommRing A] [NormOneClass A]
+variable {A : Type*} [SeminormedCommRing A]
 
 /-- If `V * (X - a) ^ m = W`, then `V` is bounded on the closed unit ball around `a` by the
 coefficient l¹-norm of `W` times `(1 + ‖a‖) ^ natDegree W`. -/
@@ -355,11 +387,18 @@ theorem l1Norm_aeval_homogenize_le (p : A[X]) (n : ℕ) (g h : A[X]) :
       ≤ ∑ kl ∈ Finset.antidiagonal n, p.supNorm * (g.l1Norm ^ kl.1 * h.l1Norm ^ kl.2) := by
         refine Finset.sum_le_sum fun kl _ ↦ ?_
         rw [algebraMap_eq]
-        refine (l1Norm_mul_le _ _).trans ?_
-        rw [l1Norm_C]
-        exact mul_le_mul (p.le_supNorm _) ((l1Norm_mul_le _ _).trans (mul_le_mul
-          (l1Norm_pow_le _ _) (l1Norm_pow_le _ _) (l1Norm_nonneg _) (by positivity)))
-          (l1Norm_nonneg _) p.supNorm_nonneg
+        by_cases h0 : kl.1 = 0 ∧ kl.2 = 0
+        · simpa [h0.1, h0.2, l1Norm_C] using p.le_supNorm kl.1
+        · have hkl : (g ^ kl.1 * h ^ kl.2).l1Norm ≤ g.l1Norm ^ kl.1 * h.l1Norm ^ kl.2 := by
+            rcases eq_or_ne kl.1 0 with h1 | h1
+            · simpa [h1] using h.l1Norm_pow_le_of_ne_zero (fun h2 ↦ h0 ⟨h1, h2⟩)
+            · rcases eq_or_ne kl.2 0 with h2 | h2
+              · simpa [h2] using g.l1Norm_pow_le_of_ne_zero h1
+              · exact (l1Norm_mul_le _ _).trans (mul_le_mul (g.l1Norm_pow_le_of_ne_zero h1)
+                  (h.l1Norm_pow_le_of_ne_zero h2) (l1Norm_nonneg _) (by positivity))
+          refine (l1Norm_mul_le _ _).trans ?_
+          rw [l1Norm_C]
+          exact mul_le_mul (p.le_supNorm _) hkl (l1Norm_nonneg _) p.supNorm_nonneg
     _ ≤ p.supNorm * (g.l1Norm + h.l1Norm) ^ n := by
         -- Each term `‖g‖₁ ^ k ‖h‖₁ ^ (n - k)` occurs in the binomial expansion.
         rw [← Finset.mul_sum, add_pow, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]

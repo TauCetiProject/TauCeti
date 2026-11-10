@@ -49,8 +49,12 @@ manifold differential of a function to tangent vectors whose base point varies.
   inverse-chart pullback is the image of the field under the differential of the chart.
 * `ContMDiffOn.contDiffOn_mpullback_extChartAt_symm`: on a boundaryless model, the inverse-chart
   pullback of a `C^m` vector field is `C^m` on the chart target, when `m + 1 ≤ n`.
+* `VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt_symm`: near the
+  chart centre, these pullbacks are the coordinates in the tangent-bundle trivialization.
 * `MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartAt_symm`:
   differentiability of these coordinate expressions without a completeness assumption.
+* `ContMDiffWithinAt.contDiffWithinAt_mpullbackWithin_extChartAt_symm`: `C^n` regularity of
+  these coordinate expressions, over any model with corners.
 * `TauCeti.eventually_hasDerivAt_extChartAt_family`: read in the chart at `y`, the points near `y`
   of a family of maps which is the identity at time `t` move with the coordinate velocity of the
   field.
@@ -370,6 +374,18 @@ theorem ContMDiffOn.contDiffOn_mpullback_extChartAt_symm [I.Boundaryless]
     rw [(extChartAt I x).right_inv hz.1, I.range_eq_univ, VectorField.mpullbackWithin_univ] at hw'
     exact hw'
 
+/-- Near the chart image of `x`, within the model range, the inverse-chart pullback of a vector
+field is its coordinate expression in the tangent-bundle trivialization at `x`. -/
+theorem VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt_symm
+    (V : (x : M) → TangentSpace I x) (x : M) :
+    (fun z ↦ (trivializationAt E (TangentSpace I) x
+      (V ((extChartAt I x).symm z))).2) =ᶠ[𝓝[range I] (extChartAt I x x)]
+      VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I) := by
+  filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with z hz
+  have hh := VectorField.mpullbackWithin_extChartAt_symm_apply V ((extChartAt I x).map_target hz)
+  rw [(extChartAt I x).right_inv hz] at hh
+  exact hh.symm
+
 /-- Differentiability of a vector field as a tangent-bundle section implies differentiability
 of its inverse-chart pullback within the corresponding chart set. No completeness of the model
 space is needed: the pullback agrees with the vector bundle's preferred fibre coordinates. -/
@@ -383,14 +399,28 @@ theorem MDifferentiableWithinAt.differentiableWithinAt_mpullbackWithin_extChartA
   have hd := hc.differentiableWithinAt_writtenInExtChartAt
   simp only [writtenInExtChartAt, extChartAt_model_space_eq_id,
     PartialEquiv.refl_coe, Function.comp_def, id_eq] at hd
-  have heq : (fun z ↦ (trivializationAt E (TangentSpace I) x
-      (V ((extChartAt I x).symm z))).2) =ᶠ[𝓝[range I] (extChartAt I x x)]
-      VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I) := by
-    filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with z hz
-    have hh := VectorField.mpullbackWithin_extChartAt_symm_apply V ((extChartAt I x).map_target hz)
-    rw [(extChartAt I x).right_inv hz] at hh
-    exact hh.symm
+  have heq := VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt_symm V x
   exact hd.congr_of_eventuallyEq
+    (heq.symm.filter_mono (nhdsWithin_mono _ inter_subset_right))
+    (by
+      rw [extChartAt_to_inv]
+      exact VectorField.mpullbackWithin_extChartAt_symm_apply V (mem_extChartAt_source x))
+
+/-- A vector field which is `C^n` as a tangent-bundle section within a set has a `C^n`
+inverse-chart pullback within the corresponding chart set. Unlike
+`ContMDiffOn.contDiffOn_mpullback_extChartAt_symm`, no boundarylessness and no extra regularity of
+the manifold are needed: the pullback agrees with the vector bundle's preferred fibre
+coordinates. -/
+theorem ContMDiffWithinAt.contDiffWithinAt_mpullbackWithin_extChartAt_symm
+    (hV : ContMDiffWithinAt I I.tangent n (fun y ↦ (V y : TangentBundle I M)) s x) :
+    ContDiffWithinAt 𝕜 n
+      (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I))
+      ((extChartAt I x).symm ⁻¹' s ∩ range I) (extChartAt I x x) := by
+  have hc := contMDiffWithinAt_section.mp hV
+  rw [contMDiffWithinAt_iff_source, contMDiffWithinAt_iff_contDiffWithinAt,
+    Function.comp_def] at hc
+  have heq := VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt_symm V x
+  exact hc.congr_of_eventuallyEq
     (heq.symm.filter_mono (nhdsWithin_mono _ inter_subset_right))
     (by
       rw [extChartAt_to_inv]

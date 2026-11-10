@@ -60,7 +60,7 @@ theorem halfStudentTMeasure_eq_map_betaPrimeMeasure (hν : 0 < ν) (hs : 0 < s) 
   rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure]
   norm_num only [mul_one_div, mul_div_cancel_left₀ _ (two_ne_zero : (2 : ℝ) ≠ 0)]
   have hdegrees : 2 * (ν / 2) = ν := by ring
-  rw [hdegrees, ← studentTMeasure_map_sq hν,
+  rw [hdegrees, ← studentTMeasure_map_sq ν,
     Measure.map_map (by fun_prop) (by fun_prop),
     Measure.map_map (by fun_prop) (by fun_prop), halfStudentTMeasure_of_pos hν hs]
   congr 1

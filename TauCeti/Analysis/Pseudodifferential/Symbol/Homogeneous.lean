@@ -95,13 +95,9 @@ theorem coefficient_cutoffSymbol_of_two_le_norm
 smoothing symbol: the two cut-off terms agree at all frequencies of norm at least `2`. -/
 theorem isSmoothing_cutoffSymbol_sub_cutoffSymbol
     (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
-    (cutoffSymbol χ a - cutoffSymbol χ' a).IsSmoothing := by
-  set d := cutoffSymbol χ a - cutoffSymbol χ' a
-  have hR : ∀ x ξ, 2 ≤ ‖ξ‖ → d.coefficient (x, ξ) = 0 := fun x ξ hξ => by
-    simp [d, χ.apply_eq_one_of_two_le_norm hξ, χ'.apply_eq_one_of_two_le_norm hξ]
-  rw [← Symbol.ext (Symbol.coefficient_ofBoundedFrequencySupport (m := m) _
-    d.contDiff_coefficient 2 hR)]
-  exact Symbol.isSmoothing_ofBoundedFrequencySupport _ _ 2 hR
+    (cutoffSymbol χ a - cutoffSymbol χ' a).IsSmoothing :=
+  Symbol.isSmoothing_of_coefficient_eq_zero 2 fun x ξ hξ => by
+    simp [χ.apply_eq_one_of_two_le_norm hξ, χ'.apply_eq_one_of_two_le_norm hξ]
 
 /-- A homogeneous symbol of degree `m` whose cut-off term is a symbol of some order `m' < m`
 vanishes. -/

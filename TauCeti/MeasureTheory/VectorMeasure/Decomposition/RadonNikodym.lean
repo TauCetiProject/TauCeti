@@ -118,7 +118,7 @@ theorem withDensityᵥ_scalarRNDeriv (μ : VectorMeasure X 𝕜) (ν : Measure X
       exact withDensityᵥ_smul' (μ := ν)
         (fun x ↦ ((scalarMeasureImagPart μ).rnDeriv ν x : 𝕜)) (RCLike.I : 𝕜)
     _ = μ := by
-      rw [← scalarMeasureOfReal_withDensityᵥ hreal, ← scalarMeasureOfReal_withDensityᵥ himag,
+      rw [← scalarMeasureOfReal_withDensityᵥ, ← scalarMeasureOfReal_withDensityᵥ,
         hre, him, scalarMeasureOfReal_realPart_add_I_smul_imagPart]
 
 /-- The variation of a scalar measure is obtained by taking the pointwise norm of its

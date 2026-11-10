@@ -57,7 +57,9 @@ Since the `H^s` norm is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`, this is the est
   Fourier transform in the position.
 * Further facts about the Fourier transform `â(η, ξ)` of the position slices: linearity in `a`
   (`TauCeti.Symbol.HasCompactSpatialSupport.fourier_slice_add`,
-  `TauCeti.Symbol.HasCompactSpatialSupport.fourier_slice_smul`), joint continuity
+  `TauCeti.Symbol.HasCompactSpatialSupport.fourier_slice_smul`), integrability in `η` and Fourier
+  inversion (`TauCeti.Symbol.HasCompactSpatialSupport.integrable_fourier_slice`,
+  `TauCeti.Symbol.HasCompactSpatialSupport.fourierInv_fourier_slice`), joint continuity
   (`TauCeti.Symbol.HasCompactSpatialSupport.continuous_fourier_slice`), differentiability in `ξ`
   with the Fourier transform of `∂_ξ a` as derivative
   (`TauCeti.Symbol.HasCompactSpatialSupport.hasFDerivAt_fourier_slice`,
@@ -141,6 +143,19 @@ theorem HasCompactSpatialSupport.fourier_slice_smul (ha : a.HasCompactSpatialSup
   rw [← (ha.smul c).fourier_sliceSchwartz, h, FourierTransform.fourier_smul,
     ← ha.fourier_sliceSchwartz]
   rfl
+
+/-- The Fourier transform `η ↦ â(η, ξ)` of each position slice is integrable. -/
+theorem HasCompactSpatialSupport.integrable_fourier_slice (ha : a.HasCompactSpatialSupport)
+    (ξ : CoordinateSpace n) : Integrable (𝓕 fun y ↦ a.coefficient (y, ξ)) := by
+  rw [← ha.coe_sliceSchwartz, ← SchwartzMap.fourier_coe]
+  exact (𝓕 (ha.sliceSchwartz ξ)).integrable
+
+/-- **Fourier inversion for the position slices**: `a(x, ξ) = ∫ exp(2πi ⟪η, x⟫) â(η, ξ) dη`. -/
+theorem HasCompactSpatialSupport.fourierInv_fourier_slice [CompleteSpace W]
+    (ha : a.HasCompactSpatialSupport) (ξ : CoordinateSpace n) :
+    𝓕⁻ (𝓕 fun y ↦ a.coefficient (y, ξ)) = fun y ↦ a.coefficient (y, ξ) := by
+  rw [← ha.coe_sliceSchwartz, ← SchwartzMap.fourier_coe, ← SchwartzMap.fourierInv_coe,
+    fourierInv_fourier_eq]
 
 /-- The Schwartz seminorms of the position slices of a symbol with compact spatial support grow
 at most like `⟨ξ⟩ ^ m`. -/
