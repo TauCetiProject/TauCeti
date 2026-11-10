@@ -539,12 +539,13 @@ theorem reduceRingHom_apply (p : ℕ) [Fact p.Prime] [NeZero e]
     reduceRingHom p r hr x = reduce p r x := by
   rw [reduceRingHom, evalRingHom_eq_evalCoeffs, reduce]
 
-/-- For a prime `p`, reduction at a primitive `e`-th root in `ZMod p` sends the distinguished
+/-- Reduction at a root of the cyclotomic polynomial, over any modulus, sends the distinguished
 generator `ζ` to that root. -/
 @[simp]
-theorem reduce_zeta (p : ℕ) [Fact p.Prime] [NeZero e] (r : ZMod p) (hr : IsPrimitiveRoot r e) :
+theorem reduce_zeta {p : ℕ} {r : ZMod p}
+    (hr : (cyclotomic e ℤ).eval₂ (Int.castRingHom (ZMod p)) r = 0) :
     reduce p r (zeta e) = r := by
-  rw [← reduceRingHom_apply p r hr, reduceRingHom, evalRingHom_zeta]
+  rw [reduce, ← evalRingHom_eq_evalCoeffs _ _ hr, evalRingHom_zeta]
 
 /-! ## The distinguished complex embedding -/
 

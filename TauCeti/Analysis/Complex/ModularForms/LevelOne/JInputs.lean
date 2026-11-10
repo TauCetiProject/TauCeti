@@ -57,6 +57,7 @@ of which vanishes because `Δ = (E₄³ - E₆²) / 1728` has no zeros.
 * `TauCeti.ModularForm.tendsto_qParam_mul_j_atImInfty`,
   `TauCeti.ModularForm.analyticAt_cuspFunction_qParam_mul_j`: `q j → 1` at `i∞`, and `q j` is
   analytic in `q` at the cusp.
+* `TauCeti.ModularForm.infinite_range_j`: `j` takes infinitely many values.
 * `TauCeti.ModularForm.meromorphicAt_cuspFunction_j`,
   `TauCeti.ModularForm.meromorphicOrderAt_cuspFunction_j`: `j` is meromorphic in its width-one
   q-coordinate, with a simple pole at zero.
@@ -274,7 +275,7 @@ theorem periodic_j_comp_ofComplex : Function.Periodic (j ∘ ofComplex) 1 :=
 /-- The function `q j` is `1`-periodic, read on `ℂ` through `ofComplex`. -/
 theorem periodic_qParam_mul_j_comp_ofComplex :
     Function.Periodic ((fun τ : ℍ ↦ 𝕢 1 τ * j τ) ∘ ofComplex) 1 := by
-  simpa using (TauCeti.UpperHalfPlane.periodic_qParam_comp_ofComplex one_ne_zero).mul
+  simpa using (TauCeti.UpperHalfPlane.periodic_qParam_comp_ofComplex).mul
     periodic_j_comp_ofComplex
 
 /-- The function `q j` is holomorphic on the upper half-plane. -/
@@ -295,6 +296,18 @@ theorem tendsto_qParam_mul_j_atImInfty :
 /-- The function `q j` is bounded at `i∞`. -/
 theorem isBoundedAtImInfty_qParam_mul_j : IsBoundedAtImInfty (fun τ : ℍ ↦ 𝕢 1 τ * j τ) :=
   tendsto_qParam_mul_j_atImInfty.isBigO_one ℝ
+
+/-- The modular invariant takes infinitely many values: `q j → 1` at `i∞` while `q → 0`, so `j` is
+unbounded. -/
+theorem infinite_range_j : (Set.range j).Infinite := by
+  intro hfin
+  obtain ⟨B, hB⟩ := hfin.isBounded.exists_norm_le
+  have h0 : Tendsto (fun τ : ℍ ↦ 𝕢 1 τ * j τ) atImInfty (𝓝 0) :=
+    squeeze_zero_norm (a := fun τ : ℍ ↦ ‖𝕢 1 τ‖ * B) (fun τ ↦ by
+      rw [norm_mul]
+      exact mul_le_mul_of_nonneg_left (hB _ ⟨τ, rfl⟩) (norm_nonneg _))
+      (by simpa using (qParam_tendsto_atImInfty one_pos).norm.mul_const B)
+  exact one_ne_zero (tendsto_nhds_unique tendsto_qParam_mul_j_atImInfty h0)
 
 /-- The cusp function of `q j` is analytic at `q = 0`, so `j`, read in the coordinate `q`, is
 meromorphic at the cusp. -/

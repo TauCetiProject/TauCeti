@@ -20,8 +20,11 @@ Alongside it, the raw-function form of Mathlib's coefficient-uniqueness statemen
 `[FunLike F ℍ ℂ]`, and `ℍ → ℂ` carries no such instance, so an operator built as a plain
 function on `ℍ` — every Hecke-style slash sum before it is packaged as a `ModularForm` — cannot
 invoke it. The proof is Mathlib's, run through `UpperHalfPlane.hasFPowerSeriesOnBall_cuspFunction`,
-which *is* stated for `{f : ℍ → ℂ}`, with `qExpansionFormalMultilinearSeries` spelled out
-inline for the same reason.
+which *is* stated for `{f : ℍ → ℂ}`, and through
+`TauCeti.UpperHalfPlane.hasFPowerSeriesAt_cuspFunction`, the raw-function statement that the
+`q`-expansion is the power series of an analytic cusp function at `0`, with
+`qExpansionFormalMultilinearSeries` spelled out as `FormalMultilinearSeries.ofScalars` for the
+same reason.
 
 Alongside them, the `n`-th coefficient bundled as a `ℂ`-linear functional on *cusp* forms,
 `CuspForm.qExpansionCoeffₗ` — the linear map above, composed with the inclusion of cusp forms
@@ -54,6 +57,8 @@ expanded through: one multiplies by `q` and divides the expansion of the product
 * `TauCeti.ModularForm.qExpansionLinearMap`.
 * `ModularForm.qExpansion_zsmul` (at root, so dot notation on `ModularForm` elaborates): the
   `q`-expansion commutes with integer multiples.
+* `TauCeti.UpperHalfPlane.hasFPowerSeriesAt_cuspFunction`: the `q`-expansion of a raw function
+  is the power series of its cusp function at `0`.
 * `TauCeti.UpperHalfPlane.qExpansion_coeff_unique`.
 * `CuspForm.qExpansionCoeffₗ` (at root, so dot notation on `CuspForm` elaborates): the `n`-th
   coefficient as a `ℂ`-linear functional on cusp forms.
@@ -109,6 +114,18 @@ lemma _root_.ModularForm.qExpansion_zsmul {Γ : Subgroup (GL (Fin 2) ℝ)} (hh :
     qExpansion h ⇑(n • f) = n • qExpansion h f :=
   map_zsmul (_root_.ModularForm.qExpansionAddHom hh hΓ k) n f
 
+/-- If the cusp function of a raw function `f` on `ℍ` is analytic at `0`, then the
+`q`-expansion of `f` is its power series at `0`.
+
+This is the raw-function form of the step Mathlib's `UpperHalfPlane.hasFPowerSeries_cuspFunction`
+proves inline: `qExpansionFormalMultilinearSeries` needs `[FunLike F ℍ ℂ]`, so the series is
+written as `FormalMultilinearSeries.ofScalars` of the coefficients. -/
+lemma UpperHalfPlane.hasFPowerSeriesAt_cuspFunction {f : ℍ → ℂ}
+    (hfanalytic : AnalyticAt ℂ (cuspFunction h f) 0) :
+    HasFPowerSeriesAt (cuspFunction h f) (.ofScalars ℂ fun m ↦ (qExpansion h f).coeff m) 0 := by
+  simpa [_root_.UpperHalfPlane.qExpansion_coeff, div_eq_mul_inv, mul_comm]
+    using hfanalytic.hasFPowerSeriesAt
+
 /-- **Uniqueness of `q`-expansion coefficients, for a raw function on `ℍ`.** If `f` is given by
 a convergent expansion `f τ = ∑' m, c m * 𝕢 h τ ^ m` and its cusp function is analytic at `0`,
 then the `c m` are the coefficients of `qExpansion h f`.
@@ -122,16 +139,15 @@ lemma UpperHalfPlane.qExpansion_coeff_unique {f : ℍ → ℂ} {c : ℕ → ℂ}
     c m = (qExpansion h f).coeff m := by
   have h1 := (_root_.UpperHalfPlane.hasFPowerSeriesOnBall_cuspFunction hh hfanalytic
     hf).hasFPowerSeriesAt
-  have h2 : HasFPowerSeriesAt (cuspFunction h f)
-      (.ofScalars ℂ fun m ↦ (qExpansion h f).coeff m) 0 := by
-    simpa [_root_.UpperHalfPlane.qExpansion_coeff, div_eq_mul_inv, mul_comm]
-      using hfanalytic.hasFPowerSeriesAt
-  simpa using congr_arg (FormalMultilinearSeries.coeff · m) (h1.eq_formalMultilinearSeries h2)
+  simpa using congr_arg (FormalMultilinearSeries.coeff · m)
+    (h1.eq_formalMultilinearSeries (hasFPowerSeriesAt_cuspFunction hfanalytic))
 
 /-- The `q`-parameter of width `h` is `h`-periodic, read on `ℂ` through `ofComplex`. -/
-theorem UpperHalfPlane.periodic_qParam_comp_ofComplex (hh : h ≠ 0) :
-    Function.Periodic ((fun τ : ℍ ↦ Function.Periodic.qParam h τ) ∘ ofComplex) h :=
-  _root_.UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
+theorem UpperHalfPlane.periodic_qParam_comp_ofComplex :
+    Function.Periodic ((fun τ : ℍ ↦ Function.Periodic.qParam h τ) ∘ ofComplex) h := by
+  rcases eq_or_ne h 0 with rfl | hh
+  · exact fun x ↦ by simp
+  exact _root_.UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ by
     simp only [coe_vadd, Function.Periodic.qParam, mul_add, add_div,
       mul_div_cancel_right₀ _ (Complex.ofReal_ne_zero.mpr hh), Complex.exp_add,
       Complex.exp_two_pi_mul_I, one_mul]
@@ -139,7 +155,7 @@ theorem UpperHalfPlane.periodic_qParam_comp_ofComplex (hh : h ≠ 0) :
 /-- The cusp function of the `q`-parameter is analytic at `0`. -/
 theorem UpperHalfPlane.analyticAt_cuspFunction_qParam (hh : 0 < h) :
     AnalyticAt ℂ (cuspFunction h fun τ : ℍ ↦ Function.Periodic.qParam h τ) 0 :=
-  _root_.UpperHalfPlane.analyticAt_cuspFunction_zero hh (periodic_qParam_comp_ofComplex hh.ne')
+  _root_.UpperHalfPlane.analyticAt_cuspFunction_zero hh periodic_qParam_comp_ofComplex
     (Function.Periodic.differentiable_qParam.mdifferentiable.comp mdifferentiable_coe)
     ((_root_.UpperHalfPlane.qParam_tendsto_atImInfty hh).isBigO_one ℝ)
 
@@ -357,16 +373,16 @@ lemma _root_.CuspForm.qExpansionCoeffₗ_apply {Γ : Subgroup (GL (Fin 2) ℝ)} 
   exact congrArg (fun g ↦ (qExpansion h g).coeff n) (funext (CuspForm.toModularFormₗ_apply f))
 
 /-- **A cusp form is determined by its `q`-expansion.** The cusp-form counterpart of Mathlib's
-`ModularForm.qExpansion_injective`: a cusp form and its image under the injective inclusion
-`CuspForm.toModularFormₗ` have the same underlying function. -/
-lemma _root_.CuspForm.qExpansion_injective {Γ : Subgroup (GL (Fin 2) ℝ)} [Γ.HasDetOne]
+`ModularForm.qExpansion_injective`: a cusp form and its image under the inclusion
+`ModularFormClass.modularForm` have the same underlying function. -/
+lemma _root_.CuspForm.qExpansion_injective {Γ : Subgroup (GL (Fin 2) ℝ)}
     (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods) {k : ℤ} :
     Function.Injective (fun f : CuspForm Γ k ↦ qExpansion h f) := by
-  have hcoe (f : CuspForm Γ k) : ⇑(CuspForm.toModularFormₗ f) = ⇑f :=
-    funext (CuspForm.toModularFormₗ_apply f)
-  refine fun f g hfg ↦ CuspForm.toModularFormₗ_injective
-    (_root_.ModularForm.qExpansion_injective hh hΓ ?_)
-  simpa only [hcoe] using hfg
+  refine fun f g hfg ↦ DFunLike.ext _ _ fun z ↦ ?_
+  have := congrArg (fun m : ModularForm Γ k ↦ m z)
+    (_root_.ModularForm.qExpansion_injective hh hΓ
+      (a₁ := ModularFormClass.modularForm f) (a₂ := ModularFormClass.modularForm g) hfg)
+  simpa using this
 
 /-- The translate `1 / d +ᵥ σ`, read in `ℂ`, is the subtraction `TauCeti.Periodic.qParam_sub`
 expects: that lemma is stated at `z - j`, and the shift here enters as a `+ᵥ` on `ℍ`. Naming the
@@ -379,13 +395,18 @@ private lemma coe_vadd_one_div_eq_sub {d : ℕ} (σ : ℍ) :
 
 /-- **A shift by `1 / d` fixes every `q`-power the support condition leaves alive.** Translating
 the argument by `1 / d` scales the `n`-th `q`-power by a `d`-th root of unity raised to `n`, which
-is trivial exactly on the multiples of `d` — and a coefficient function supported there kills
-every other index. This is what a `q`-support hypothesis is spent on when descending along `V_d`.
+for `d > 0` is trivial exactly on the multiples of `d` — and a coefficient function supported there
+kills every other index. This is what a `q`-support hypothesis is spent on when descending along
+`V_d`. For `d = 0` the shift `1 / d` is `0`, so it is the identity shift and every `q`-power is
+fixed.
 -/
-theorem smul_qParam_pow_shift_eq {d : ℕ} [NeZero d] {c : ℕ → ℂ}
+theorem smul_qParam_pow_shift_eq {d : ℕ} {c : ℕ → ℂ}
     (hc : ∀ n : ℕ, ¬ d ∣ n → c n = 0) (σ : ℍ) (n : ℕ) :
     c n • Function.Periodic.qParam (1 : ℝ) ((((1 : ℝ) / (d : ℝ)) +ᵥ σ : ℍ) : ℂ) ^ n =
       c n • Function.Periodic.qParam (1 : ℝ) (σ : ℂ) ^ n := by
+  rcases d.eq_zero_or_pos with rfl | hd
+  · simp
+  have : NeZero d := ⟨hd.ne'⟩
   have hqP : Function.Periodic.qParam (1 : ℝ) ((((1 : ℝ) / (d : ℝ)) +ᵥ σ : ℍ) : ℂ) =
       Function.Periodic.qParam (1 : ℝ) (σ : ℂ) *
         Complex.exp (2 * (Real.pi : ℂ) * Complex.I / (d : ℂ)) := by

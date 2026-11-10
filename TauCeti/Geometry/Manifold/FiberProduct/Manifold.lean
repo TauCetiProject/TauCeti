@@ -143,8 +143,8 @@ theorem exists_isManifold_transverseFiberProduct_isSmoothEmbedding (hn : 1 ≤ n
   obtain ⟨a, q, rfl⟩ := hcover p
   have hn0 : n ≠ 0 := ne_of_gt (lt_of_lt_of_le zero_lt_one hn)
   have hinc : (Subtype.val : P → X × Y) ∘ ι a = (Subtype.val : U a → X × Y) := rfl
-  have hrange := (hlocal a q).range_mfderiv_comp hn0
-    (hi.contMDiff _ |>.mdifferentiableAt hn0)
+  have hrange := (hlocal a q).range_mfderiv_comp (K := IX.prod IY)
+    (g := (Subtype.val : P → X × Y)) hn0
   rw [hinc] at hrange
   rw [← hrange]
   exact (localData a).choose_spec.2.2 q v

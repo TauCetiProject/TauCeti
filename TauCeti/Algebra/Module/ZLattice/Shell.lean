@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Set.Card
 public import TauCeti.Algebra.Module.ZLattice.Determinant
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Topology.MetricSpace.DiscreteAddSubgroup
 
 /-!
@@ -508,9 +509,7 @@ theorem representationNumber_isBigO :
     exact Nat.cast_le.mpr (Set.ncard_le_ncard (shell_subset_closedBall L t)
       (L.toAddSubgroup.finite_inter isBounded_closedBall))
   · filter_upwards [eventually_ge_atTop 0] with t ht
-    rw [Function.comp_apply, Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul ht]
-    congr 1
-    ring
+    rw [Function.comp_apply, Real.pow_sqrt_eq_rpow ht]
 
 end Growth
 

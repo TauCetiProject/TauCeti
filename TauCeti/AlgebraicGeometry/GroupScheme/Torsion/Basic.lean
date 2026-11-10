@@ -8,7 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.GroupScheme.Kernel
 public import TauCeti.AlgebraicGeometry.GroupScheme.KilledByRank
 public import TauCeti.CategoryTheory.Monoidal.Cartesian.CommGrp
-import TauCeti.CategoryTheory.Preadditive.CoprimeKernels
+import TauCeti.CategoryTheory.Linear.CoprimeKernels
 import TauCeti.CategoryTheory.Preadditive.NSMul
 
 /-!

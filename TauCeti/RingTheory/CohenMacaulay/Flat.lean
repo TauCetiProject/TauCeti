@@ -71,7 +71,7 @@ variable {R S : Type u} [CommRing R] [CommRing S] [Algebra R S] [IsLocalRing R] 
 /-- **Cohen–Macaulay rings along a flat local homomorphism.** For a flat local homomorphism
 `R → S` of Noetherian local rings, `S` is Cohen–Macaulay if and only if `R` and the closed fibre
 `S ⧸ 𝔪_R S` are. The closed fibre is taken as an `S`-module; by
-`Module.isCohenMacaulay_iff_isCohenMacaulay_self_of_surjective` this is the same as asking the
+`Module.isCohenMacaulay_iff_isCohenMacaulay_of_surjective` this is the same as asking the
 local ring `S ⧸ 𝔪_R S` to be Cohen–Macaulay over itself. H. Matsumura, *Commutative Ring Theory*,
 Corollary of Theorem 23.3. -/
 theorem isCohenMacaulay_self_iff_of_flat :
@@ -143,7 +143,7 @@ theorem isCohenMacaulay_localization_atPrime_of_flat (p : Ideal R) [p.IsPrime] (
   let e : Localization.AtPrime r ⧸ I ≃+* Localization.AtPrime Q :=
     (Ideal.quotEquivOfEq hI.symm).trans
       (Ideal.Fiber.localizationAlgEquivQuotient p Q).toRingEquiv.symm
-  exact (isCohenMacaulay_iff_isCohenMacaulay_self_of_surjective Ideal.Quotient.mk_surjective).2
+  exact (isCohenMacaulay_iff_isCohenMacaulay_of_surjective Ideal.Quotient.mk_surjective).2
     (e.isCohenMacaulay_self_iff.2 (hq Q rfl))
 
 end Global

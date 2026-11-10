@@ -87,9 +87,8 @@ theorem exists_delineation_on_hyperplane {n a : ℕ}
           (continuousAt_pi.2 fun i ↦ (hb i).continuousAt)
     refine hc.congr (hbs.mono fun c hc ↦ ?_)
     simp only [← hc, coeff_map, Complex.coe_algebraMap, Complex.ofReal_re]
-  obtain ⟨ε, hε, hεU, D, hD⟩ := exists_delineation_ball_of_isRoot_iff hcoeff
-    (hmonic.mono fun _ h ↦ h.ne_zero) hdeg (hU.mem_nhds hbU) (fun i ↦ (hs i).continuousOn)
-    hmono hroots hmult
+  obtain ⟨ε, hε, hεU, D, hD⟩ := exists_delineation_ball_of_isRoot_iff hcoeff hdeg
+    (hU.mem_nhds hbU) (fun i ↦ (hs i).continuousOn) hmono hroots hmult
   refine ⟨ε, hε, D, fun i ↦ ?_⟩
   obtain ⟨j, hj⟩ := hD i
   exact ⟨s j, (hs j).mono hεU, hj⟩

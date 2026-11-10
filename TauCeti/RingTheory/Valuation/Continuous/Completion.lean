@@ -54,7 +54,7 @@ No completeness or Hausdorff assumption on the original ring is required. The va
 must be nontrivial so that the support is proper. -/
 theorem map_supp_completion_ne_top_of_isContinuous (hv : v.IsContinuous) :
     Ideal.map (Completion.coeRingHom : A →+* Completion A) v.supp ≠ ⊤ :=
-  map_completion_ne_top_of_isClosed (isClosed_supp_of_isContinuous hv)
+  map_completion_ne_top_of_isClosed hv.isClosed_supp
     (Ideal.IsPrime.ne_top inferInstance)
 
 end TauCeti

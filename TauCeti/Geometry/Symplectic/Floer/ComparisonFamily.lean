@@ -39,8 +39,9 @@ The file also fixes one choice of `ρ` and `L`: `TauCeti.Floer.comparisonCutoff`
 `TauCeti.Floer.comparisonNeckLength`, built from `Real.smoothTransition`.
 
 The domain here is a coordinate rectangle with a single neck and the target is a symplectic
-vector space: this is the model near one neck. The family on a sphere with three necks, its
-almost complex structures and manifold targets are not treated here.
+vector space: this is the model near one neck. The matching almost complex structures are in
+`TauCeti.Geometry.Symplectic.Floer.ComparisonFamily.AlmostComplex`. The family on a sphere with
+three necks and manifold targets are not treated here.
 
 ## Main definitions
 
@@ -113,6 +114,14 @@ theorem comparisonCutoff_mem_Icc {R : ℝ} (hR : 0 ≤ R) : comparisonCutoff R �
     have h₁ := smoothTransition.le_one (3 * R - 1)
     rw [comparisonCutoff_def]
     constructor <;> nlinarith
+
+/-- The cutoff has absolute value at most `1` for `R ≥ -1`: it is `R` itself on `[-1, 0]`. -/
+theorem abs_comparisonCutoff_le_one {R : ℝ} (hR : -1 ≤ R) : |comparisonCutoff R| ≤ 1 := by
+  rcases le_total 0 R with h | h
+  · obtain ⟨h₀, h₁⟩ := comparisonCutoff_mem_Icc h
+    exact abs_le.2 ⟨by linarith, h₁⟩
+  · rw [comparisonCutoff_of_le (by linarith)]
+    exact abs_le.2 ⟨hR, by linarith⟩
 
 theorem contDiff_comparisonCutoff {n : ℕ∞} : ContDiff ℝ n comparisonCutoff :=
   contDiff_id.add ((contDiff_const.sub contDiff_id).mul

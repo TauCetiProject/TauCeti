@@ -123,7 +123,7 @@ theorem Contractable.condExp_block_comp_future_ae_eq {μ : Measure Ω} [IsFinite
     (fun ω i ↦ X (k i) ω) (fun ω i ↦ X (l i) ω) (fun ω n ↦ X (c + n) ω)
     (Measurable.of_eval fun i ↦ hX_meas (k i))
     (Measurable.of_eval fun i ↦ hX_meas (l i))
-    (Measurable.of_eval fun n ↦ hX_meas (c + n)) hpair hf
+    hpair hf
 
 /-- **Tail-conditioned selection invariance for finite blocks.** For a contractable process, any
 two *strictly monotone* selections of the same length have the same conditional law given the

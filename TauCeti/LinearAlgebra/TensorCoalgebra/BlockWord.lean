@@ -144,6 +144,16 @@ theorem letter_blockWord {a b : ℕ} (hb : 0 < b) : letter R M (blockWord R e a 
   rw [zero_add, blockWord_succ, map_add, map_sum, letter_ofLetter]
   simp only [letter_prepend, Finset.sum_const_zero, add_zero]
 
+/-- Splitting off the first letter of the left block reindexes the pairs of a block of length
+`b + 1` by the length `c + 1` of the left block. -/
+private theorem sum_Ioo_blockWord_tmul (a b : ℕ) :
+    ∑ c ∈ Finset.Ioo 0 (b + 1), blockWord R e a c ⊗ₜ[R] blockWord R e (a + c) (b + 1 - c) =
+      ∑ c ∈ Finset.range b,
+        blockWord R e a (c + 1) ⊗ₜ[R] blockWord R e (a + c + 1) (b - c) := by
+  rw [← Finset.Ico_add_one_left_eq_Ioo, Finset.sum_Ico_eq_sum_range]
+  refine Finset.sum_congr (by simp) fun c _ ↦ ?_
+  rw [zero_add, add_comm 1 c, ← add_assoc, show b + 1 - (c + 1) = b - c by omega]
+
 /-- Block words form a block family. -/
 theorem isBlockFamily_blockWord : IsBlockFamily R (blockWord R e) := by
   intro a b
@@ -163,23 +173,7 @@ theorem isBlockFamily_blockWord : IsBlockFamily R (blockWord R e) := by
       simp only [LinearMap.rTensor_tmul]
     rw [blockWord_succ, map_add, deconcatenation_ofLetter, zero_add, map_sum,
       Finset.sum_congr rfl hcut, Finset.sum_add_distrib]
-    -- On the right, split off the letter of each left block and expand the rest.
-    have hright : ∑ c ∈ Finset.Ioo 0 (b + 1),
-        blockWord R e a c ⊗ₜ[R] blockWord R e (a + c) (b + 1 - c) =
-          ∑ c ∈ Finset.range b,
-            blockWord R e a (c + 1) ⊗ₜ[R] blockWord R e (a + c + 1) (b - c) := by
-      refine Finset.sum_nbij' (· - 1) (· + 1) ?_ ?_ ?_ ?_ ?_ <;>
-        simp only [Finset.mem_Ioo, Finset.mem_range]
-      · omega
-      · omega
-      · intro c hc; omega
-      · intro c _; omega
-      · intro c hc
-        obtain ⟨c, rfl⟩ := Nat.exists_eq_add_of_lt hc.1
-        simp only [zero_add, Nat.add_sub_cancel]
-        congr 2
-        omega
-    rw [hright]
+    rw [sum_Ioo_blockWord_tmul]
     simp only [blockWord_succ, TensorProduct.add_tmul, Finset.sum_add_distrib,
       TensorProduct.sum_tmul]
     congr 1

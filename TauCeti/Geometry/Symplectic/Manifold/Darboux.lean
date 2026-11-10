@@ -116,8 +116,8 @@ private theorem trans_toDiffeomorph_darboux {F₁ F₂ : Type*}
         (by simp)
     ext v
     have heq : ⇑chart' = ⇑L ∘ ⇑chart := funext hcoe
-    rw [heq, mvfderiv_comp_apply_of_differentiableAt L.differentiableAt hmd,
-      ContinuousLinearEquiv.fderiv, ContinuousLinearMap.comp_apply]
+    rw [heq]
+    exact (L.toContinuousLinearMap).mvfderiv_comp_apply hmd v
   refine ⟨hsrc.symm ▸ hx₀, by rw [hcoe, h0, map_zero], hderiv, fun x hx v w ↦ ?_⟩
   rw [hderiv x hx, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
     ContinuousLinearEquiv.coe_coe, ← ContinuousLinearEquiv.coe_toLinearEquiv,
@@ -171,8 +171,9 @@ theorem IsSymplectic.exists_darbouxChart_of_isInteriorPoint
     exact (hform.isNondegenerate.symplecticFormAt_apply x₀ u' w').trans
       ((SmoothBundleForm.eval₂_apply form x₀ u' w').trans
         (congrArg (fun A : E [⋀^Fin 2]→L[ℝ] ℝ ↦ A ![u, w]) hηy₀.symm))
-  have hnd : ∀ v : E, (∀ w : E, η y₀ ![v, w] = 0) → v = 0 := fun v hv ↦
-    form₀.separatingLeft v fun w ↦ (hform₀_apply v w).trans (hv w)
+  have hnd : ∀ v : E, (∀ w : E, η y₀ ![v, w] = 0) → v = 0 :=
+    form.inChartAt_extChartAt_self_nondegenerate
+      (hform.isNondegenerate.nondegenerate_bilinFormAt x₀)
   -- Apply the flat Moser–Darboux theorem to `η` on `W` around `y₀`.
   obtain ⟨Φ_flat, V₀, hΦy₀, hV₀_open, hy₀V₀, hV₀_sub, hη_inv⟩ :=
     exists_diffeomorph_centered_forall_mem_eq_compContinuousLinearMap_fderiv (r := (⊤ : ℕ∞))

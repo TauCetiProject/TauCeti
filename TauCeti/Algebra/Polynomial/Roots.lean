@@ -84,4 +84,11 @@ theorem sum_rootMultiplicity_le_natDegree (f : R[X]) (s : Finset R) :
     _ = f.roots.card := Multiset.toFinset_sum_count_eq f.roots
     _ ≤ f.natDegree := card_roots' f
 
+/-- A nonzero constant multiple of a product of linear factors vanishes exactly at the
+`r i`. -/
+theorem isRoot_C_mul_prod_X_sub_C_iff {ι : Type*} [Fintype ι] {l : R} (hl : l ≠ 0)
+    (r : ι → R) (z : R) : (C l * ∏ i, (X - C (r i))).IsRoot z ↔ ∃ i, r i = z := by
+  rw [root_mul, iff_false_intro (not_isRoot_C _ z hl), false_or, isRoot_prod]
+  simp [sub_eq_zero, eq_comm]
+
 end Polynomial

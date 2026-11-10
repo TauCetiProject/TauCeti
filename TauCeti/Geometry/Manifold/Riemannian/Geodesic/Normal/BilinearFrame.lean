@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Frame
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Normal.Frame.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Bilinear
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.BilinearTensor
 
@@ -62,8 +62,6 @@ theorem normalBilinearFrame_apply (b : OrthonormalBasis ι ℝ (TangentSpace I p
     normalBilinearFrame I M p U b k q u v =
       inner ℝ (normalOrthonormalFrame I M p U b k.1 q) u *
         inner ℝ (normalOrthonormalFrame I M p U b k.2 q) v := (rfl)
-
-variable [I.Boundaryless] [T2Space M]
 
 namespace IsNormalDomain
 
@@ -165,6 +163,8 @@ theorem coeff_normalBilinearFrame (h : IsNormalDomain I M p U)
   simpa only [sum_apply, smul_apply, smul_eq_mul,
     h.normalBilinearFrame_apply_frame b hq, mul_ite, mul_one, mul_zero,
     Finset.sum_ite_eq', Finset.mem_univ, ite_true] using hv.symm
+
+variable [I.Boundaryless] [T2Space M]
 
 /-- At the centre of a normal frame, the differential of a bilinear tensor component equals
 the corresponding component of its covariant derivative. Only differentiability at the

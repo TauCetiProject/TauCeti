@@ -158,7 +158,7 @@ theorem newtonSlopes_eq_replicate (hv : ∀ x, v x = ⊤ → x = 0) {f : R[X]} (
 
 /-- Counting finite slopes in terms of roots: a predicate holds for a number of finite slopes
 equal to the number of nonzero roots `α` for which it holds at `-v α`. -/
-private theorem card_filter_newtonSlopes_eq [DecidableEq R] (hv : ∀ x, v x = ⊤ → x = 0) {f : R[X]}
+theorem card_filter_newtonSlopes_eq [DecidableEq R] (hv : ∀ x, v x = ⊤ → x = 0) {f : R[X]}
     (hf : f.Splits) (p : ℝ → Prop) [DecidablePred p] :
     ((f.newtonSlopes v).filter p).card =
       (f.roots.filter fun α => α ≠ 0 ∧ p (-(v α).untop₀)).card := by

@@ -38,10 +38,18 @@ a single coordinate norm, so it consists of evaluations at a norm-bounded set of
 space `B j` (`TauCeti.dualProjectiveLimit.exists_forall_exists_norm_le_eval_eq`). No completeness
 or reflexivity of the spaces `B j` is needed.
 
+Given a topological vector space `L` with compatible continuous linear maps `ι j : B j → L`,
+`ι (j + 1) ∘ T j = ι j`, precomposition with the maps `ι j` sends a continuous functional on `L`
+to a point of the projective limit (`TauCeti.dualProjectiveLimit.precomp`). It is injective when
+the ranges of the `ι j` cover `L` (`TauCeti.dualProjectiveLimit.precomp_injective`), and
+surjective when moreover the `ι j` are injective and a linear functional on `L` is continuous as
+soon as its composites with all `ι j` are (`TauCeti.dualProjectiveLimit.precomp_surjective`): a
+compatible family of functionals then glues to a functional on `L`.
+
 For an inductive limit `L` of Banach spaces with compact injective bonding maps, such as the
-space of holomorphic germs along a compact set, the projective limit is the dual of `L`, and the
-uniform norm bound is the input for the bounded regularity of `L` and for the identification of
-`L` with the strong dual of this Fréchet space.
+space of holomorphic germs along a compact set, the projective limit is therefore the dual of `L`,
+and the uniform norm bound is the input for the bounded regularity of `L` and for the
+identification of `L` with the strong dual of this Fréchet space.
 
 ## Main declarations
 
@@ -56,6 +64,8 @@ uniform norm bound is the input for the bounded regularity of `L` and for the id
   set of vectors of a single space `B j`.
 * `TauCeti.dualProjectiveLimit.exists_eval_eq`: for weakly compact bonding maps, every continuous
   functional on the projective limit is an evaluation.
+* `TauCeti.dualProjectiveLimit.precomp`: precomposition `L′ → lim_j B j′` with compatible maps
+  `ι j : B j → L`.
 
 ## References
 
@@ -280,6 +290,88 @@ theorem exists_eval_eq (hT : ∀ n, (T n).IsWeaklyCompact)
     (Set.finite_range _).bddAbove
   obtain ⟨x, -, hx⟩ := h ()
   exact ⟨j, x, hx⟩
+
+section Precomp
+
+variable {L : Type*} [AddCommGroup L] [Module 𝕜 L] [TopologicalSpace L] {ι : ∀ n, B n →L[𝕜] L}
+
+variable (ι) in
+/-- Precomposition with compatible maps `ι j : B j → L` sends a continuous functional `φ` on `L`
+to the point `(φ ∘ ι j)_j` of the projective limit `lim_j B j′`. -/
+def precomp (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) :
+    StrongDual 𝕜 L →L[𝕜] dualProjectiveLimit T where
+  toFun φ := ⟨fun n ↦ φ.comp (ι n), mem_dualProjectiveLimit.2 fun n ↦ by rw [comp_assoc, hι]⟩
+  map_add' φ ψ := by ext; simp
+  map_smul' c φ := by ext; simp
+  cont := (continuous_pi fun n ↦ (ContinuousLinearMap.precomp 𝕜 (ι n)).continuous).subtype_mk _
+
+@[simp]
+theorem precomp_apply (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n) (φ : StrongDual 𝕜 L) (n : ℕ) :
+    (precomp ι hι φ : ∀ n, StrongDual 𝕜 (B n)) n = φ.comp (ι n) :=
+  (rfl)
+
+/-- A continuous functional on `L` is determined by its composites with the maps `ι j` when the
+ranges of these maps cover `L`. -/
+theorem precomp_injective (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x) :
+    Function.Injective (precomp ι hι) := by
+  intro φ ψ h
+  ext x
+  obtain ⟨n, y, rfl⟩ := hcover x
+  simpa using congr($(congr_arg (coord T n) h) y)
+
+/-- A vector of `B j` can be moved along the bonding maps to any later stage `B k`, without
+changing its image in `L` or its value under a compatible family of functionals. -/
+private theorem exists_stage_eq (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (f : dualProjectiveLimit T) {j k : ℕ} (hjk : j ≤ k) (y : B j) :
+    ∃ y' : B k, ι k y' = ι j y ∧
+      (f : ∀ n, StrongDual 𝕜 (B n)) k y' = (f : ∀ n, StrongDual 𝕜 (B n)) j y := by
+  induction k, hjk using Nat.le_induction with
+  | base => exact ⟨y, rfl, rfl⟩
+  | succ k _ ih =>
+    obtain ⟨y', hι', hf'⟩ := ih
+    exact ⟨T k y', by rw [← hι', ← hι k, coe_comp, Function.comp_apply],
+      by rw [apply_succ_apply, hf']⟩
+
+/-- For injective maps `ι j`, a compatible family of functionals takes the same value on two
+vectors with the same image in `L`. -/
+private theorem apply_eq_of_eq (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (f : dualProjectiveLimit T) {j k : ℕ} {y : B j}
+    {y' : B k} (h : ι j y = ι k y') :
+    (f : ∀ n, StrongDual 𝕜 (B n)) j y = (f : ∀ n, StrongDual 𝕜 (B n)) k y' := by
+  rcases le_total j k with hjk | hkj
+  · obtain ⟨z, hz, hfz⟩ := exists_stage_eq hι f hjk y
+    rw [← hfz, hinj k (hz.trans h)]
+  · obtain ⟨z, hz, hfz⟩ := exists_stage_eq hι f hkj y'
+    rw [← hfz, hinj j (h.trans hz.symm)]
+
+/-- Every compatible family of continuous functionals on the spaces `B j` comes from a continuous
+functional on their inductive limit `L`. -/
+theorem precomp_surjective (hι : ∀ n, (ι (n + 1)).comp (T n) = ι n)
+    (hinj : ∀ n, Function.Injective (ι n)) (hcover : ∀ x : L, ∃ n, ∃ y, ι n y = x)
+    (hfinal : ∀ ψ : L →ₗ[𝕜] 𝕜, (∀ n, Continuous (ψ ∘ ι n)) → Continuous ψ) :
+    Function.Surjective (precomp ι hι) := by
+  intro f
+  choose m y hy using hcover
+  -- The functional `x ↦ f (m x) (y x)` is well defined, whatever stage represents `x`.
+  have hval (x : L) {n : ℕ} (z : B n) (hz : ι n z = x) :
+      (f : ∀ n, StrongDual 𝕜 (B n)) (m x) (y x) = (f : ∀ n, StrongDual 𝕜 (B n)) n z :=
+    apply_eq_of_eq hι hinj f ((hy x).trans hz.symm)
+  let ψ : L →ₗ[𝕜] 𝕜 :=
+    { toFun x := (f : ∀ n, StrongDual 𝕜 (B n)) (m x) (y x)
+      map_add' x x' := by
+        obtain ⟨z, hz, hfz⟩ := exists_stage_eq hι f (le_max_left (m x) (m x')) (y x)
+        obtain ⟨z', hz', hfz'⟩ := exists_stage_eq hι f (le_max_right (m x) (m x')) (y x')
+        rw [hval (x + x') (z + z') (by rw [map_add, hz, hz', hy, hy]), map_add, hfz, hfz']
+      map_smul' c x := by
+        rw [hval (c • x) (c • y x) (by rw [map_smul, hy]), map_smul, RingHom.id_apply] }
+  have hψ (n : ℕ) (z : B n) : ψ (ι n z) = (f : ∀ n, StrongDual 𝕜 (B n)) n z := hval _ z rfl
+  refine ⟨⟨ψ, hfinal ψ fun n ↦ ?_⟩, ?_⟩
+  · exact ((f : ∀ n, StrongDual 𝕜 (B n)) n).continuous.congr fun z ↦ (hψ n z).symm
+  · ext n z
+    exact hψ n z
+
+end Precomp
 
 end dualProjectiveLimit
 

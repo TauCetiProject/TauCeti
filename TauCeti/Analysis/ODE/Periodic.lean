@@ -9,10 +9,9 @@ public import Mathlib.LinearAlgebra.Determinant
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Analysis.ODE.DysonSeries
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
-import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
-import Mathlib.Topology.Instances.AddCircle.Defs
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Topology.Instances.Real.TwistedExtension
 
 /-!
 # Twisted periodic solutions of linear equations and the return map
@@ -42,10 +41,18 @@ Such a solution is twisted exactly when `w d = ε • w 0`
   (`TauCeti.kerTwistedLinearOperatorEquiv`), with inverse `x ↦ (t ↦ Ψ t x)`;
 * `f` lies in the range of `L` exactly when `E f` lies in the range of `ε - P`
   (`TauCeti.mem_range_twistedLinearOperator_iff`);
-* for `d > 0` and `ε = ±1` the endpoint map `E` is surjective
-  (`TauCeti.twistedEndpoint_surjective`), so it
+* for `d > 0` and `ε ≠ 0` the endpoint map `E` is surjective
+  (`TauCeti.twistedEndpoint_surjective`), since a forcing on `[0, d]` vanishing at both ends
+  extends to a map twisted by `ε` (`TauCeti.exists_continuous_add_eq_smul_eqOn`), so it
   induces a linear equivalence from the cokernel of `L` onto the cokernel of `ε - P`
   (`TauCeti.quotientRangeTwistedLinearOperatorEquiv`).
+
+When `ε - P` is invertible the same formula gives an a priori estimate: every solution of
+`w' = M w + f` with `w d = ε • w 0` satisfies `‖w t‖ ≤ C ∫₀ᵈ ‖f‖` on `[0, d]`, with `C` depending
+only on `M`, `d` and `ε` (`TauCeti.exists_forall_norm_le_mul_integral_norm`). For `ε = 1` and the
+linearization of a Hamiltonian vector field along a nondegenerate periodic orbit, this is the
+estimate which shows that loops near the orbit are controlled by their defect from Hamilton's
+equation.
 
 So the kernel and cokernel of `d/dt - M` on twisted loops are those of the finite complex
 `ε - P : X → X`, for an arbitrary continuous periodic coefficient `M`. When `X` is
@@ -68,6 +75,8 @@ operators `∂t - J₀ S(t)` on loops twisted by the sign characters of the orbi
 
 * `TauCeti.exists_twisted_solution_iff`: the twisted problem `w' = M w + f` is solvable exactly when
   `E f` lies in the range of `ε - Ψ(d)`.
+* `TauCeti.exists_forall_norm_le_mul_integral_norm`: the a priori estimate
+  `‖w t‖ ≤ C ∫₀ᵈ ‖f‖` for twisted solutions when `ε - Ψ(d)` is invertible.
 * `TauCeti.kerTwistedLinearOperatorEquiv`: `ker L ≃ ker (ε - Ψ(d))`.
 * `TauCeti.quotientRangeTwistedLinearOperatorEquiv`: `coker L ≃ coker (ε - Ψ(d))`.
 * `TauCeti.finiteDimensional_ker_twistedLinearOperator`,
@@ -224,6 +233,60 @@ theorem forall_add_eq_smul_iff_smul_one_sub_apply_eq (hM : Continuous M)
     apply_eq_dysonSeriesLeft_apply_add hM hfc hw d, sub_apply, smul_apply, one_apply_eq_self,
     sub_eq_iff_eq_add', eq_comm]
 
+/-- **An a priori estimate for twisted solutions.** Let `Ψ = dysonSeriesLeft M` be the propagator of
+`w' = M w` and suppose that `ε - Ψ(d)` is invertible. Then there is a constant `C ≥ 0` such that
+every solution of `w' = M w + f`, with `f` continuous and `w d = ε • w 0`, satisfies
+`‖w t‖ ≤ C ∫₀ᵈ ‖f s‖ ds` for `t ∈ [0, d]`. Neither `M` nor `f` needs to be periodic. -/
+theorem exists_forall_norm_le_mul_integral_norm (hM : Continuous M) (hd : 0 ≤ d)
+    (hP : IsUnit (ε • 1 - dysonSeriesLeft M d)) :
+    ∃ C, 0 ≤ C ∧ ∀ {f w : ℝ → X}, Continuous f → (∀ t, HasDerivAt w (M t (w t) + f t) t) →
+      w d = ε • w 0 → ∀ t ∈ Icc 0 d, ‖w t‖ ≤ C * ∫ s in 0..d, ‖f s‖ := by
+  obtain ⟨A, hA⟩ := (isCompact_Icc (a := 0) (b := d)).exists_bound_of_continuousOn
+    (continuous_dysonSeriesLeft hM).continuousOn
+  obtain ⟨B, hB⟩ := (isCompact_Icc (a := 0) (b := d)).exists_bound_of_continuousOn
+    (continuous_dysonSeries hM.neg).continuousOn
+  set N := ‖(↑hP.unit⁻¹ : X →L[ℝ] X)‖
+  refine ⟨|A| * (N * |A| * |B| + |B|), by positivity, fun {f w} hf hw hwd t ht => ?_⟩
+  set I := ∫ s in 0..d, ‖f s‖
+  -- The integral term of variation of constants is bounded by `|B| I` on `[0, d]`.
+  have hint (t : ℝ) (ht : t ∈ Icc 0 d) :
+      ‖∫ s in 0..t, dysonSeries (-M) s (f s)‖ ≤ |B| * I := by
+    calc ‖∫ s in 0..t, dysonSeries (-M) s (f s)‖ ≤ ∫ s in 0..t, |B| * ‖f s‖ := by
+          refine norm_integral_le_of_norm_le ht.1 (Filter.Eventually.of_forall fun s hs => ?_)
+            ((continuous_const.mul hf.norm).intervalIntegrable _ _)
+          exact (ContinuousLinearMap.le_opNorm _ _).trans (mul_le_mul_of_nonneg_right
+            ((hB s ⟨hs.1.le, hs.2.trans ht.2⟩).trans (le_abs_self _)) (norm_nonneg _))
+      _ = |B| * ∫ s in 0..t, ‖f s‖ := integral_const_mul _ _
+      _ ≤ |B| * I := mul_le_mul_of_nonneg_left (integral_mono_interval le_rfl ht.1 ht.2
+          (Filter.Eventually.of_forall fun _ => norm_nonneg _) (hf.norm.intervalIntegrable _ _))
+          (abs_nonneg _)
+  have hΨ (t : ℝ) (ht : t ∈ Icc 0 d) (v : X) : ‖dysonSeriesLeft M t v‖ ≤ |A| * ‖v‖ :=
+    (ContinuousLinearMap.le_opNorm _ _).trans
+      (mul_le_mul_of_nonneg_right ((hA t ht).trans (le_abs_self _)) (norm_nonneg _))
+  have hd' : d ∈ Icc 0 d := ⟨hd, le_rfl⟩
+  -- Solving `(ε - Ψ(d)) (w 0) = Ψ(d) (∫₀ᵈ Ψ(s)⁻¹ (f s) ds)` for `w 0`.
+  have h0 : ‖w 0‖ ≤ N * |A| * |B| * I := by
+    have heq : (↑hP.unit : X →L[ℝ] X) (w 0) =
+        dysonSeriesLeft M d (∫ s in 0..d, dysonSeries (-M) s (f s)) := by
+      rw [hP.unit_spec, sub_apply, smul_apply, one_apply_eq_self, ← hwd,
+        apply_eq_dysonSeriesLeft_apply_add hM hf hw d, add_sub_cancel_left]
+    have hw0 : w 0 = (↑hP.unit⁻¹ : X →L[ℝ] X) (dysonSeriesLeft M d
+        (∫ s in 0..d, dysonSeries (-M) s (f s))) := by
+      rw [← heq, ← mul_apply_eq_comp, Units.inv_mul, one_apply_eq_self]
+    rw [hw0]
+    calc _ ≤ N * ‖dysonSeriesLeft M d (∫ s in 0..d, dysonSeries (-M) s (f s))‖ :=
+          ContinuousLinearMap.le_opNorm _ _
+      _ ≤ N * (|A| * (|B| * I)) := mul_le_mul_of_nonneg_left
+          ((hΨ d hd' _).trans (mul_le_mul_of_nonneg_left (hint d hd') (abs_nonneg _)))
+          (norm_nonneg _)
+      _ = N * |A| * |B| * I := by ring
+  rw [eq_dysonSeriesLeft_apply_add_integral hM hf hw t]
+  calc _ ≤ |A| * ‖w 0 + ∫ s in 0..t, dysonSeries (-M) s (f s)‖ := hΨ t ht _
+    _ ≤ |A| * (N * |A| * |B| * I + |B| * I) :=
+        mul_le_mul_of_nonneg_left ((norm_add_le _ _).trans (add_le_add h0 (hint t ht)))
+          (abs_nonneg _)
+    _ = |A| * (N * |A| * |B| + |B|) * I := by ring
+
 /-- **Solvability of the twisted problem.** For `M` continuous and periodic of period `d`, and `f`
 continuous and twisted by `ε` along `d`, the equation `w' = M w + f` has a solution twisted by `ε`
 along `d` exactly when `Ψ(d) (∫₀ᵈ Ψ(s)⁻¹ (f s) ds)` lies in the range of `ε - Ψ(d)`. -/
@@ -283,83 +346,36 @@ theorem mem_range_twistedLinearOperator_iff (hM : Continuous M) (hper : Function
         f.2.1⟩
     exact ⟨⟨w, hc, htw⟩, (twistedLinearOperator_eq_iff hM hper ⟨w, hc, htw⟩ f).2 hw⟩
 
-/-- The scalar weight `e(s) = (1 + ε) / 2 + (1 - ε) / 2 · sin (π s / d)`, equal to `1` for `ε = 1`
-and to `sin (π s / d)` for `ε = -1`: it is twisted by `ε` along `d` and positive on `(0, d)`. -/
-private def twistWeight (d ε s : ℝ) : ℝ :=
-  (1 + ε) / 2 + (1 - ε) / 2 * Real.sin (Real.pi * s / d)
-
-private theorem continuous_twistWeight (d ε : ℝ) : Continuous (twistWeight d ε) := by
-  unfold twistWeight
-  fun_prop
-
-private theorem twistWeight_add (hd : d ≠ 0) (hε : ε ^ 2 = 1) (s : ℝ) :
-    twistWeight d ε (s + d) = ε * twistWeight d ε s := by
-  have h : Real.pi * (s + d) / d = Real.pi * s / d + Real.pi := by field_simp
-  simp only [twistWeight, h, Real.sin_add_pi]
-  linear_combination (Real.sin (Real.pi * s / d) - 1) / 2 * hε
-
-private theorem twistWeight_pos (hε : ε ^ 2 = 1) {s : ℝ}
-    (hsin : 0 < Real.sin (Real.pi * s / d)) : 0 < twistWeight d ε s := by
-  obtain rfl | rfl : ε = 1 ∨ ε = -1 := by
-    have : (ε - 1) * (ε + 1) = 0 := by linear_combination hε
-    rcases mul_eq_zero.1 this with h | h
-    · exact Or.inl (by linarith)
-    · exact Or.inr (by linarith)
-  · norm_num [twistWeight]
-  · norm_num [twistWeight, hsin]
-
-/-- For `d > 0` and `ε = ±1`, every vector `y` is `∫₀ᵈ Ψ(s)⁻¹ (f s) ds` for some continuous map
+/-- For `d > 0` and `ε ≠ 0`, every vector `y` is `∫₀ᵈ Ψ(s)⁻¹ (f s) ds` for some continuous map
 `f` twisted by `ε` along `d`. -/
 theorem exists_mem_twistedContinuous_integral_eq (hM : Continuous M) (hd : 0 < d)
-    (hε : ε ^ 2 = 1) (y : X) :
+    (hε : ε ≠ 0) (y : X) :
     ∃ f ∈ twistedContinuous X d ε, ∫ s in 0..d, dysonSeries (-M) s (f s) = y := by
-  have : Fact (0 < d) := ⟨hd⟩
-  set θ : ℝ → ℝ := fun s => Real.sin (Real.pi * s / d)
-  -- On `[0, d]`, `g s = θ s • Ψ s y` vanishes at both ends, so it lifts to a continuous `h` of
-  -- period `d` which agrees with `g` on `[0, d]`.
+  -- On `[0, d]`, `g s = θ s • Ψ s y` with `θ s = s (d - s)` vanishes at both ends, so it extends
+  -- to a continuous map `h` twisted by `ε` along `d` which agrees with `g` on `[0, d]`.
+  set θ : ℝ → ℝ := fun s => s * (d - s)
   set g : ℝ → X := fun s => θ s • dysonSeriesLeft M s y
-  have hg0 : g 0 = 0 := by simp [g, θ]
-  have hgd : g d = 0 := by simp [g, θ, mul_div_cancel_right₀ _ hd.ne']
-  set h : ℝ → X := fun s => AddCircle.liftIco d 0 g (s : AddCircle d)
-  have hh : Continuous h :=
-    (AddCircle.liftIco_continuous (p := d) (a := 0) (f := g) (by rw [zero_add, hg0, hgd])
-      (Continuous.continuousOn ((by fun_prop : Continuous θ).smul
-        ((continuous_dysonSeriesLeft hM).clm_apply continuous_const)))).comp
-      (AddCircle.continuous_mk' d)
-  have hhg (s : ℝ) (hs : s ∈ Icc 0 d) : h s = g s := by
-    rcases hs.2.lt_or_eq with hsd | rfl
-    · exact AddCircle.liftIco_coe_apply (by simpa using And.intro hs.1 hsd)
-    · rw [hgd, ← hg0]
-      simp only [h, AddCircle.coe_period]
-      exact AddCircle.liftIco_coe_apply (by simpa using hd)
-  -- The twisted map `e • h`, normalized by `c = ∫₀ᵈ e θ > 0`.
-  set e := twistWeight d ε
-  set c : ℝ := ∫ s in 0..d, e s * θ s
-  have hθ (s : ℝ) (hs : s ∈ Ioo 0 d) : 0 < θ s := by
-    refine Real.sin_pos_of_pos_of_lt_pi (by have := hs.1; positivity) ?_
-    rw [div_lt_iff₀ hd]
-    nlinarith [Real.pi_pos, hs.2]
+  have hg : Continuous g := (by fun_prop : Continuous θ).smul
+    ((continuous_dysonSeriesLeft hM).clm_apply continuous_const)
+  obtain ⟨h, hh, hhd, hhg⟩ := exists_continuous_add_eq_smul_eqOn hd hε hg.continuousOn
+    (by simp [g, θ])
+  -- The twisted map `h`, normalized by `c = ∫₀ᵈ θ > 0`.
+  set c : ℝ := ∫ s in 0..d, θ s
   have hc : 0 < c :=
-    intervalIntegral_pos_of_pos_on
-      (((continuous_twistWeight d ε).mul (by fun_prop)).intervalIntegrable 0 d)
-      (fun s hs => mul_pos (twistWeight_pos hε (hθ s hs)) (hθ s hs)) hd
-  refine ⟨c⁻¹ • fun s => e s • h s, Submodule.smul_mem _ _
-    ⟨(continuous_twistWeight d ε).smul hh, fun s => ?_⟩, ?_⟩
-  · have hper : h (s + d) = h s := by simp only [h, AddCircle.coe_add_period]
-    have he : e (s + d) = ε * e s := twistWeight_add hd.ne' hε s
-    beta_reduce
-    rw [he, hper, mul_smul]
-  · have hint : ∫ s in 0..d, dysonSeries (-M) s ((c⁻¹ • fun s => e s • h s) s) =
-        ∫ s in 0..d, (c⁻¹ * (e s * θ s)) • y := by
-      refine integral_congr fun s hs => ?_
-      rw [uIcc_of_le hd.le] at hs
-      simp only [Pi.smul_apply, hhg s hs, g, map_smul, ← mul_apply_eq_comp,
-        dysonSeries_neg_mul_dysonSeriesLeft hM, one_apply_eq_self, smul_smul]
-    rw [hint, intervalIntegral.integral_smul_const, intervalIntegral.integral_const_mul,
-      inv_mul_cancel₀ hc.ne', one_smul]
+    intervalIntegral_pos_of_pos_on ((by fun_prop : Continuous θ).intervalIntegrable 0 d)
+      (fun s hs => mul_pos hs.1 (sub_pos.2 hs.2)) hd
+  refine ⟨c⁻¹ • h, Submodule.smul_mem _ _ ⟨hh, hhd⟩, ?_⟩
+  have hint : ∫ s in 0..d, dysonSeries (-M) s ((c⁻¹ • h) s) =
+      ∫ s in 0..d, (c⁻¹ * θ s) • y := by
+    refine integral_congr fun s hs => ?_
+    rw [uIcc_of_le hd.le] at hs
+    simp only [Pi.smul_apply, hhg hs, g, map_smul, ← mul_apply_eq_comp,
+      dysonSeries_neg_mul_dysonSeriesLeft hM, one_apply_eq_self, smul_smul]
+  rw [hint, intervalIntegral.integral_smul_const, intervalIntegral.integral_const_mul,
+    inv_mul_cancel₀ hc.ne', one_smul]
 
-/-- For `d > 0` and `ε = ±1` the endpoint map is surjective. -/
-theorem twistedEndpoint_surjective (hM : Continuous M) (hd : 0 < d) (hε : ε ^ 2 = 1) :
+/-- For `d > 0` and `ε ≠ 0` the endpoint map is surjective. -/
+theorem twistedEndpoint_surjective (hM : Continuous M) (hd : 0 < d) (hε : ε ≠ 0) :
     Function.Surjective (twistedEndpoint (X := X) hM d ε) := by
   intro v
   obtain ⟨f, hf, hfy⟩ := exists_mem_twistedContinuous_integral_eq hM hd hε (dysonSeries (-M) d v)
@@ -434,11 +450,11 @@ private theorem range_twistedLinearOperator_eq_ker (hM : Continuous M)
   rw [mem_range_twistedLinearOperator_iff, LinearMap.mem_ker, LinearMap.comp_apply,
     Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
 
-/-- **The cokernel of `L` is the cokernel of `ε - Ψ(d)`.** For `d > 0` and `ε = ±1` the endpoint
+/-- **The cokernel of `L` is the cokernel of `ε - Ψ(d)`.** For `d > 0` and `ε ≠ 0` the endpoint
 map induces a linear equivalence from the cokernel of `L = d/dt - M` on maps twisted by `ε` onto
 the cokernel of `ε - Ψ(d)`. -/
 def quotientRangeTwistedLinearOperatorEquiv (hM : Continuous M) (hper : Function.Periodic M d)
-    (hd : 0 < d) (hε : ε ^ 2 = 1) :
+    (hd : 0 < d) (hε : ε ≠ 0) :
     (twistedContinuous X d ε ⧸ LinearMap.range (twistedLinearOperator hM hper ε)) ≃ₗ[ℝ]
       X ⧸ LinearMap.range (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) :=
   (Submodule.quotEquivOfEq _ _ (range_twistedLinearOperator_eq_ker hM hper)).trans
@@ -449,7 +465,7 @@ def quotientRangeTwistedLinearOperatorEquiv (hM : Continuous M) (hper : Function
 
 @[simp]
 theorem quotientRangeTwistedLinearOperatorEquiv_mk (hM : Continuous M)
-    (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ^ 2 = 1) (f : twistedContinuous X d ε) :
+    (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ≠ 0) (f : twistedContinuous X d ε) :
     quotientRangeTwistedLinearOperatorEquiv hM hper hd hε (Submodule.Quotient.mk f) =
       Submodule.Quotient.mk (twistedEndpoint hM d ε f) :=
   (rfl)
@@ -461,9 +477,9 @@ theorem ker_twistedLinearOperator_eq_bot_iff (hM : Continuous M) (hper : Functio
   rw [← Submodule.subsingleton_iff_eq_bot, ← Submodule.subsingleton_iff_eq_bot,
     (kerTwistedLinearOperatorEquiv hM hper ε).subsingleton_congr]
 
-/-- For `d > 0` and `ε = ±1`, `L` is surjective exactly when `ε - Ψ(d)` is. -/
+/-- For `d > 0` and `ε ≠ 0`, `L` is surjective exactly when `ε - Ψ(d)` is. -/
 theorem range_twistedLinearOperator_eq_top_iff (hM : Continuous M)
-    (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ^ 2 = 1) :
+    (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ≠ 0) :
     LinearMap.range (twistedLinearOperator hM hper ε) = ⊤ ↔
       LinearMap.range (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) = ⊤ := by
   rw [← Submodule.Quotient.subsingleton_iff, ← Submodule.Quotient.subsingleton_iff,
@@ -482,18 +498,18 @@ instance finiteDimensional_ker_twistedLinearOperator (hM : Continuous M)
     FiniteDimensional ℝ (LinearMap.ker (twistedLinearOperator hM hper ε)) :=
   (kerTwistedLinearOperatorEquiv hM hper ε).symm.finiteDimensional
 
-/-- In finite dimension, for `d > 0` and `ε = ±1`, the cokernel of `L = d/dt - M` on maps twisted
+/-- In finite dimension, for `d > 0` and `ε ≠ 0`, the cokernel of `L = d/dt - M` on maps twisted
 by `ε` is finite-dimensional. -/
 theorem finiteDimensional_quotient_range_twistedLinearOperator (hM : Continuous M)
-    (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ^ 2 = 1) :
+    (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ≠ 0) :
     FiniteDimensional ℝ
       (twistedContinuous X d ε ⧸ LinearMap.range (twistedLinearOperator hM hper ε)) :=
   (quotientRangeTwistedLinearOperatorEquiv hM hper hd hε).symm.finiteDimensional
 
-/-- **Index zero.** In finite dimension, for `d > 0` and `ε = ±1`, the kernel and the cokernel of
+/-- **Index zero.** In finite dimension, for `d > 0` and `ε ≠ 0`, the kernel and the cokernel of
 `L = d/dt - M` on maps twisted by `ε` have the same dimension. -/
 theorem finrank_ker_twistedLinearOperator_eq_finrank_quotient_range (hM : Continuous M)
-    (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ^ 2 = 1) :
+    (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ≠ 0) :
     Module.finrank ℝ (LinearMap.ker (twistedLinearOperator hM hper ε)) =
       Module.finrank ℝ
         (twistedContinuous X d ε ⧸ LinearMap.range (twistedLinearOperator hM hper ε)) := by
@@ -513,11 +529,11 @@ theorem ker_twistedLinearOperator_eq_bot_iff_det_ne_zero (hM : Continuous M)
       LinearMap.det (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) ≠ 0 := by
   rw [ker_twistedLinearOperator_eq_bot_iff, Ne, LinearMap.det_eq_zero_iff_ker_ne_bot, not_not]
 
-/-- **Fredholm alternative.** In finite dimension, for `d > 0` and `ε = ±1`, the twisted problem
+/-- **Fredholm alternative.** In finite dimension, for `d > 0` and `ε ≠ 0`, the twisted problem
 `w' = M w + f` is solvable for every continuous twisted `f` exactly when `det (ε - Ψ(d)) ≠ 0`,
 that is, exactly when the twisted problem `w' = M w` has only the zero solution. -/
 theorem range_twistedLinearOperator_eq_top_iff_det_ne_zero (hM : Continuous M)
-    (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ^ 2 = 1) :
+    (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ≠ 0) :
     LinearMap.range (twistedLinearOperator hM hper ε) = ⊤ ↔
       LinearMap.det (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) ≠ 0 := by
   rw [range_twistedLinearOperator_eq_top_iff hM hper hd hε, Ne,

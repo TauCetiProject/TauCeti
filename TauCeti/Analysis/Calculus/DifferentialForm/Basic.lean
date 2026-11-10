@@ -23,7 +23,9 @@ in the coefficient space, and `TauCeti.extDerivWithin_smul_field` extends `extDe
 scalars, such as `ℂ`, that act on the coefficients but not on the domain, and
 `TauCeti.extDerivWithin_function_smul` is the Leibniz rule for multiplication by a scalar
 function. `DifferentiableAt.extDerivWithin` is the exterior-derivative version of
-`DifferentiableAt.fderivWithin`.
+`DifferentiableAt.fderivWithin`, and `TauCeti.tsupport_extDeriv_subset` and
+`HasCompactSupport.extDeriv` are the versions of `tsupport_fderiv_subset` and
+`HasCompactSupport.fderiv`.
 -/
 
 public section
@@ -35,6 +37,17 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {n : ℕ} {ω : E → E [⋀^Fin n]→L[𝕜] F} {s t : Set E} {x : E}
 
+/-- The alternatization of a continuous linear map into one-forms, on an ordered pair:
+`alternatizeUncurryFin f (v, w) = f v (w) - f w (v)`. -/
+theorem ContinuousAlternatingMap.alternatizeUncurryFin_apply_pair
+    (f : E →L[𝕜] E [⋀^Fin 1]→L[𝕜] F) (v w : E) :
+    alternatizeUncurryFin f ![v, w] = f v (fun _ ↦ w) - f w (fun _ ↦ v) := by
+  have h₀ : (0 : Fin 2).removeNth ![v, w] = (fun _ : Fin 1 ↦ w) := by
+    funext i; fin_cases i; rfl
+  have h₁ : (1 : Fin 2).removeNth ![v, w] = (fun _ : Fin 1 ↦ v) := by
+    funext i; fin_cases i; rfl
+  simp [alternatizeUncurryFin_apply, h₀, h₁, sub_eq_add_neg]
+
 namespace TauCeti
 
 /-- The exterior derivative of a one-form on an ordered pair is the alternating part of its
@@ -42,13 +55,7 @@ Fréchet derivative. This formula also respects the derivative's junk-value conv
 theorem extDeriv_apply_pair {ω : E → E [⋀^Fin 1]→L[𝕜] F} (x v w : E) :
     extDeriv ω x ![v, w] = (fderiv 𝕜 ω x v) (fun _ ↦ w) -
       (fderiv 𝕜 ω x w) (fun _ ↦ v) := by
-  rw [extDeriv]
-  simp only [ContinuousAlternatingMap.alternatizeUncurryFin_apply]
-  have h₀ : (0 : Fin 2).removeNth ![v, w] = (fun _ : Fin 1 ↦ w) := by
-    funext i; fin_cases i; rfl
-  have h₁ : (1 : Fin 2).removeNth ![v, w] = (fun _ : Fin 1 ↦ v) := by
-    funext i; fin_cases i; rfl
-  simp [h₀, h₁, sub_eq_add_neg]
+  rw [extDeriv, ContinuousAlternatingMap.alternatizeUncurryFin_apply_pair]
 
 /-- The exterior derivative of a zero-form on a single vector is its Fréchet derivative in that
 direction. This formula also respects the derivative's junk-value convention. -/
@@ -134,6 +141,17 @@ theorem extDeriv_function_smul {c : E → 𝕜} (hc : DifferentiableAt 𝕜 c x)
   simpa only [extDerivWithin_univ, fderivWithin_univ] using
     extDerivWithin_function_smul uniqueDiffWithinAt_univ hc.differentiableWithinAt
       hω.differentiableWithinAt
+
+/-- The exterior derivative of a form vanishes wherever the form vanishes near the point, so its
+topological support lies in that of the form. -/
+theorem tsupport_extDeriv_subset : tsupport (extDeriv ω) ⊆ tsupport ω :=
+  (tsupport_comp_subset (ContinuousAlternatingMap.alternatizeUncurryFinCLM 𝕜 E F).map_zero
+    (fderiv 𝕜 ω)).trans (tsupport_fderiv_subset 𝕜)
+
+/-- The exterior derivative of a compactly supported form is compactly supported. -/
+theorem _root_.HasCompactSupport.extDeriv (hω : HasCompactSupport ω) :
+    HasCompactSupport (extDeriv ω) :=
+  hω.mono' (subset_tsupport _ |>.trans tsupport_extDeriv_subset)
 
 end TauCeti
 

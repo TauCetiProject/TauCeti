@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.Family.ContMDiff
 public import TauCeti.Algebra.Module.ZLattice.Family.HomeomorphProd
-public import TauCeti.Algebra.Module.ZLattice.Family.Manifold
+public import TauCeti.Algebra.Module.ZLattice.Family.Isotrivial
 
 /-!
 # The smooth global trivialization of a family of tori
@@ -23,11 +23,9 @@ standard lattice `ℤ^ι = span ℤ (range (Pi.basisFun ℝ ι))`
 This file proves that the global trivialization `[y, v] ↦ (y, [F_y⁻¹ v])` of
 `TauCeti.torusFamilyHomeomorphProd`, with `F_y⁻¹` the coordinate map of the period basis at `y`,
 is a `C^n` diffeomorphism `(Y × E)/Λ ≃ Y × T` over `Y` (`TauCeti.torusFamilyDiffeomorphProd`).
-Upstairs, `(y, v) ↦ (y, F_y⁻¹ v)` and its inverse `(y, x) ↦ (y, F_y x)` are `C^n` because the
-period frame and its inverse depend `C^n` on `y`
-(`TauCeti.contMDiff_uncurry_periodBasis_equivFun`). Both orbit maps
-`Y × E → (Y × E)/Λ` and `Y × ℝ^ι → Y × T` are surjective `C^n` local diffeomorphisms, so
-smoothness descends to the quotients.
+This is the specialization of `TauCeti.torusFamilyLinearDiffeomorphProd` to the coordinate
+maps of the period bases, which depend `C^n` on `y`
+(`TauCeti.contMDiff_periodBasis_equivFunL`).
 
 The diffeomorphism is real-linear on fibres and depends on the basis `b`. Only a real `C^n`
 trivialization is constructed: no complex structure is supplied on `T`, and no holomorphic
@@ -81,33 +79,12 @@ noncomputable def torusFamilyDiffeomorphProd :
     letI := periodAddAction P
     letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
     Diffeomorph (I.prod 𝓘(ℝ, E)) (I.prod 𝓘(ℝ, ι → ℝ)) (AddAction.orbitRel.Quotient Λ (Y × E))
-      (Y × AddAction.orbitRel.Quotient (span ℤ (range (Pi.basisFun ℝ ι))) (ι → ℝ)) n :=
-  letI := periodAddAction P
-  letI := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-  let e := (torusFamilyHomeomorphProd P b hinj fun l ↦ (hP l).continuous).toEquiv.trans
-    ((Equiv.refl Y).prodCongr (span ℤ (range (Pi.basisFun ℝ ι))).orbitRelQuotientAddEquiv.symm)
-  { toEquiv := e
-    contMDiff_toFun := by
-      -- Upstairs the map is `(y, v) ↦ (y, [F_y⁻¹ v])`; the orbit map of `Y × E` is a surjective
-      -- local diffeomorphism.
-      have h : ⇑e ∘ Quotient.mk (AddAction.orbitRel Λ (Y × E)) = fun p : Y × E ↦
-          (p.1, Quotient.mk _ ((periodBasis P b hinj p.1).equivFun p.2)) :=
-        funext fun p ↦ by simp [e]
-      rw [← (isLocalDiffeomorph_torusFamily_mk P hinj hP).contMDiff_comp_iff
-        Quotient.mk_surjective le_rfl, h]
-      exact contMDiff_fst.prodMk (isLocalDiffeomorph_addQuotientMk.contMDiff.comp
-        (contMDiff_uncurry_periodBasis_equivFun P b hinj hP))
-    contMDiff_invFun := by
-      -- Upstairs the inverse is `(y, x) ↦ [y, F_y x]`; the orbit map of the standard torus is a
-      -- surjective local diffeomorphism.
-      have h : ⇑e.symm ∘ Prod.map id (Quotient.mk _) =
-          Quotient.mk (AddAction.orbitRel Λ (Y × E)) ∘ fun p : Y × (ι → ℝ) ↦
-            (p.1, (periodBasis P b hinj p.1).equivFun.symm p.2) :=
-        funext fun ⟨y, x⟩ ↦ by simp [e]
-      rw [← (isLocalDiffeomorph_addQuotientMk (I := 𝓘(ℝ, ι → ℝ))).contMDiff_comp_prodMap_iff
-        Quotient.mk_surjective le_rfl, h]
-      exact (isLocalDiffeomorph_torusFamily_mk P hinj hP).contMDiff.comp
-        (contMDiff_fst.prodMk (contMDiff_uncurry_periodBasis_equivFun_symm P b hinj hP)) }
+      (Y × AddAction.orbitRel.Quotient (span ℤ (range (Pi.basisFun ℝ ι))) (ι → ℝ)) n := by
+  exact torusFamilyLinearDiffeomorphProd P (span ℤ (range (Pi.basisFun ℝ ι)))
+    (fun y ↦ (periodBasis P b hinj y).equivFunL)
+    (by simpa only [Basis.equivFunL_toLinearEquiv] using
+      map_range_periodBasis_equivFun P b hinj) hinj hP
+    (contMDiff_periodBasis_equivFunL P b hinj hP)
 
 /-- The smooth trivialization sends the class of `(y, v)` to `y` and the class of the period
 coordinates of `v` at `y`. -/
@@ -118,8 +95,9 @@ coordinates of `v` at `y`. -/
       (p.1, Quotient.mk _ ((periodBasis P b hinj p.1).equivFun p.2)) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-  rw [← Diffeomorph.coe_toEquiv]
-  simp [torusFamilyDiffeomorphProd]
+  rcases p with ⟨y, v⟩
+  simp only [torusFamilyDiffeomorphProd, torusFamilyLinearDiffeomorphProd_mk,
+    ← ContinuousLinearEquiv.coe_toLinearEquiv, Basis.equivFunL_toLinearEquiv]
 
 /-- The inverse of the smooth trivialization sends `y` and the class of `x` to the class of
 `(y, ∑ i, x i • P y (b i))`. -/
@@ -130,7 +108,6 @@ coordinates of `v` at `y`. -/
       Quotient.mk _ (y, (periodBasis P b hinj y).equivFun.symm x) := by
   let _ := periodAddAction P
   let _ := torusFamilyChartedSpace (H := H) P (fun l ↦ (hP l).continuous) hinj
-  rw [← Diffeomorph.toEquiv_coe_symm]
   simp [torusFamilyDiffeomorphProd]
 
 /-- The smooth trivialization lies over the parameter space. -/

@@ -47,6 +47,11 @@ compares a polynomial Belyi map with its conjugates.
   `[ofPolynomial q^σ]`.
 * `TauCeti.AlgebraicBelyiPair.IsoClass.smul_mk_ofPolynomial_eq_iff`: `g` fixes the class of
   `ofPolynomial q` exactly when `q(a X + b) = q^g` for some `a ≠ 0` and `b`.
+* `TauCeti.AlgebraicBelyiPair.IsoClass.smul_mk_ofPolynomial_eq_self`: automorphisms of `k` fixing
+  a subfield containing the coefficients of `q` fix the class of `ofPolynomial q`.
+* `TauCeti.AlgebraicBelyiPair.IsoClass.stabilizer_mk_ofPolynomial_eq_top` and
+  `TauCeti.AlgebraicBelyiPair.IsoClass.trueOrbitSize_mk_ofPolynomial`: for rational coefficients
+  the class is fixed by `Gal(k/ℚ)`, and its true orbit size is `1`.
 
 ## References
 
@@ -164,6 +169,33 @@ theorem smul_mk_ofPolynomial_eq_iff (g : G) :
   smul_mk_eq_mk_iff_of_aeval g (adjoin_ofPolynomialGen q hq hcrit)
     (algebraMap_ofPolynomial_X q hq hcrit) (adjoin_ofPolynomialGen q hq hcrit)
     (algebraMap_ofPolynomial_X q hq hcrit)
+
+/-- An automorphism of `k` fixing a subfield `K` that contains the coefficients of `q` fixes the
+class of the polynomial Belyi pair `ofPolynomial q`. Unlike
+`TauCeti.AlgebraicBelyiPair.IsoClass.IsDefinedOver.smul_eq`, this needs no algebraicity of `k`
+over `K`. -/
+theorem smul_mk_ofPolynomial_eq_self {K : Type*} [CommSemiring K] [Algebra K k]
+    (hK : q ∈ lifts (algebraMap K k)) {g : k ≃ₐ[ℚ] k}
+    (hg : ∀ c : K, g (algebraMap K k c) = algebraMap K k c) :
+    g • mk (ofPolynomial q hq hcrit) = mk (ofPolynomial q hq hcrit) := by
+  obtain ⟨p, rfl⟩ := (mem_lifts _).mp hK
+  refine (smul_mk_ofPolynomial_eq_iff hq hcrit g).mpr ⟨1, 0, one_ne_zero, ?_⟩
+  have hgK : (MulSemiringAction.toRingHom _ k g).comp (algebraMap K k) = algebraMap K k :=
+    RingHom.ext fun c ↦ by simpa using hg c
+  rw [Polynomial.map_map, hgK]
+  simp
+
+/-- **A polynomial Belyi pair with rational coefficients is fixed by `Gal(k/ℚ)`**: the stabilizer
+of its class is the whole automorphism group of `k`. -/
+theorem stabilizer_mk_ofPolynomial_eq_top (hℚ : q ∈ lifts (algebraMap ℚ k)) :
+    MulAction.stabilizer (k ≃ₐ[ℚ] k) (mk (ofPolynomial q hq hcrit)) = ⊤ :=
+  eq_top_iff.mpr fun g _ ↦ smul_mk_ofPolynomial_eq_self hq hcrit hℚ g.commutes
+
+/-- The Galois orbit of the class of a polynomial Belyi pair with rational coefficients is a single
+point: its true orbit size is `1`. -/
+theorem trueOrbitSize_mk_ofPolynomial (hℚ : q ∈ lifts (algebraMap ℚ k)) :
+    (mk (ofPolynomial q hq hcrit)).trueOrbitSize = 1 := by
+  rw [trueOrbitSize_eq_index, stabilizer_mk_ofPolynomial_eq_top hq hcrit hℚ, Subgroup.index_top]
 
 end IsoClass
 
