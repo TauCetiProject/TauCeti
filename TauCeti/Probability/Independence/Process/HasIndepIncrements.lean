@@ -332,6 +332,26 @@ end ProbabilityTheory
 
 namespace ProbabilityTheory
 
+/-- Equal increment laws of a.e. nondecreasing natural-valued processes remain equal after
+casting the processes to the integers. The sample spaces may differ. -/
+theorem IdentDistrib.natCast_sub_of_monotone {T Ω Ω' : Type*} [Preorder T]
+    [MeasurableSpace Ω] [MeasurableSpace Ω'] {P : Measure Ω} {Q : Measure Ω'}
+    {X : T → Ω → ℕ} {Y : T → Ω' → ℕ} {s t : T}
+    (h : IdentDistrib (fun ω ↦ X t ω - X s ω) (fun ω ↦ Y t ω - Y s ω) P Q)
+    (hmonoX : ∀ᵐ ω ∂P, Monotone (fun t ↦ X t ω))
+    (hmonoY : ∀ᵐ ω ∂Q, Monotone (fun t ↦ Y t ω)) (hst : s ≤ t) :
+    IdentDistrib (fun ω ↦ (X t ω : ℤ) - X s ω)
+      (fun ω ↦ (Y t ω : ℤ) - Y s ω) P Q := by
+  have hcast := h.comp (measurable_of_countable (fun n : ℕ ↦ (n : ℤ)))
+  have hx : (fun ω ↦ ((X t ω - X s ω : ℕ) : ℤ)) =ᵐ[P]
+      (fun ω ↦ (X t ω : ℤ) - X s ω) := by
+    filter_upwards [hmonoX] with ω hω using Int.ofNat_sub (hω hst)
+  have hy : (fun ω ↦ ((Y t ω - Y s ω : ℕ) : ℤ)) =ᵐ[Q]
+      (fun ω ↦ (Y t ω : ℤ) - Y s ω) := by
+    filter_upwards [hmonoY] with ω hω using Int.ofNat_sub (hω hst)
+  exact (IdentDistrib.of_ae_eq hcast.aemeasurable_fst hx).symm.trans
+    (hcast.trans (IdentDistrib.of_ae_eq hcast.aemeasurable_snd hy))
+
 /-- Nondecreasing count processes starting at zero have the same full path law if they have
 independent increments and corresponding increment laws agree. The sample spaces may differ.
 Monotonicity makes natural-number subtraction agree with subtraction after casting to integers. -/
@@ -355,16 +375,8 @@ theorem HasIndepIncrements.identDistrib_nat {T Ω Ω' : Type*} [LinearOrder T] [
   have h0YZ : ∀ᵐ ω ∂Q, (Y ⊥ ω : ℤ) = 0 := by
     filter_upwards [h0Y] with ω hω using by simp [hω]
   have hdist := (hX.natCast hmonoX).identDistrib (hY.natCast hmonoY)
-    hmXZ hmYZ h0XZ h0YZ (fun s t hst ↦ by
-      have hx : (fun ω ↦ (X t ω : ℤ) - X s ω) =ᵐ[P]
-          (fun ω ↦ ((X t ω - X s ω : ℕ) : ℤ)) := by
-        filter_upwards [hmonoX] with ω hω using (Int.ofNat_sub (hω hst)).symm
-      have hy : (fun ω ↦ (Y t ω : ℤ) - Y s ω) =ᵐ[Q]
-          (fun ω ↦ ((Y t ω - Y s ω : ℕ) : ℤ)) := by
-        filter_upwards [hmonoY] with ω hω using (Int.ofNat_sub (hω hst)).symm
-      exact (IdentDistrib.of_ae_eq ((hmXZ t).sub (hmXZ s)).aemeasurable hx).trans
-        (((hlaw s t hst).comp (measurable_of_countable (fun n : ℕ ↦ (n : ℤ)))).trans
-          (IdentDistrib.of_ae_eq ((hmYZ t).sub (hmYZ s)).aemeasurable hy).symm))
+    hmXZ hmYZ h0XZ h0YZ (fun s t hst ↦
+      (hlaw s t hst).natCast_sub_of_monotone hmonoX hmonoY hst)
   simpa only [Function.comp_def, Int.toNat_natCast] using
     hdist.comp (Measurable.of_eval fun _ ↦
       (measurable_of_countable Int.toNat).comp (measurable_pi_apply _))

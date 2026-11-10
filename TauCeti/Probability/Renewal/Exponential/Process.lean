@@ -19,7 +19,6 @@ nondecreasing count process starting at zero with independent Poisson increments
 rate, even on a different sample space. Equality is on the product sigma-algebra of all
 nonnegative time coordinates; no path continuity assumption is needed for this equality.
 
-The independence statement uses the natural count history, not an enlarged filtration.
 The natural-valued renewal count uses its existing value zero on explosive paths.
 
 ## References
