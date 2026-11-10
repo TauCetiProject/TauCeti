@@ -109,7 +109,7 @@ theorem mem_center_of_val_eq_scalar {g : GLSymplecticFin m R} {c : R}
 
 /-- The center of the symplectic group consists exactly of scalar matrices whose scalar squares to
 one. No reducedness or characteristic assumption is needed, and in rank zero the group is trivial
-and the scalar is `1`. -/
+and the scalar can be chosen to be `1`. -/
 theorem mem_center_iff (g : GLSymplecticFin m R) :
     g ∈ Subgroup.center (GLSymplecticFin m R) ↔
       ∃ c : R, (g.val : Matrix _ _ R) = Matrix.scalar (Fin (m + m)) c ∧ c ^ 2 = 1 := by
