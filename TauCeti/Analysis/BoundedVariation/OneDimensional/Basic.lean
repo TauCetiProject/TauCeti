@@ -34,10 +34,10 @@ function and the cumulative-measure integration-by-parts identity.
 
 public section
 
-open MeasureTheory Set Filter
+open MeasureTheory Set Filter TauCeti
 open scoped ENNReal Distributions
 
-namespace TauCeti
+namespace BoundedVariationOn
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {f : ℝ → E}
@@ -45,7 +45,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E
 /-- The classical derivative measure of a globally bounded-variation function is its
 measure-valued distributional derivative. The test function is only required to be `C¹`.
 Neither continuity of `f` nor integrability of `f` on the whole line is assumed. -/
-theorem _root_.BoundedVariationOn.integral_deriv_smul_eq_neg_integral_vectorMeasure
+theorem integral_deriv_smul_eq_neg_integral_vectorMeasure
     (hf : BoundedVariationOn f univ) {φ : ℝ → ℝ}
     (hφ : ContDiff ℝ 1 φ) (hcφ : HasCompactSupport φ) :
     ∫ x, deriv φ x • f x = -∫ᵛ x, φ x ∂•hf.vectorMeasure := by
@@ -72,7 +72,7 @@ theorem _root_.BoundedVariationOn.integral_deriv_smul_eq_neg_integral_vectorMeas
 
 /-- On any open subset of the line, distributional total variation is bounded by the
 variation of the classical derivative measure. No global integrability is required. -/
-theorem _root_.BoundedVariationOn.totalVariationOn_le_variation_vectorMeasure
+theorem totalVariationOn_le_variation_vectorMeasure
     {f : ℝ → ℝ} (hf : BoundedVariationOn f univ) (Ω : TopologicalSpace.Opens ℝ) :
     totalVariationOn volume Ω f ≤ hf.vectorMeasure.variation Ω := by
   refine totalVariationOn_le_iff.mpr fun φ hφ ↦ ?_
@@ -102,9 +102,9 @@ theorem _root_.BoundedVariationOn.totalVariationOn_le_variation_vectorMeasure
 
 /-- Classical global bounded variation implies finite distributional variation on every
 open set, including the whole line and functions with nonzero limits at infinity. -/
-theorem _root_.BoundedVariationOn.totalVariationOn_lt_top
+theorem totalVariationOn_lt_top
     {f : ℝ → ℝ} (hf : BoundedVariationOn f univ) (Ω : TopologicalSpace.Opens ℝ) :
     totalVariationOn volume Ω f < ∞ :=
   (hf.totalVariationOn_le_variation_vectorMeasure Ω).trans_lt (measure_lt_top _ _)
 
-end TauCeti
+end BoundedVariationOn
