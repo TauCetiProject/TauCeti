@@ -169,26 +169,6 @@ theorem Adj.exists_isBlock_superset_pair [Finite V] (h : G.Adj u v) :
     ∃ B, G.IsBlock B ∧ {u, v} ⊆ B :=
   exists_isBlock_superset (G.induce_pair_connected_of_adj h) (G.not_isCutVertex_induce_pair u v)
 
-/-- A bridge remains a bridge in an induced subgraph containing both of its endpoints. -/
-theorem IsBridge.induce (hb : G.IsBridge s(u, v)) {C : Set V} (hu : u ∈ C) (hv : v ∈ C) :
-    (G.induce C).IsBridge s(⟨u, hu⟩, ⟨v, hv⟩) := by
-  by_cases h : G.Adj u v
-  · have huv : (G.induce C).Adj ⟨u, hu⟩ ⟨v, hv⟩ := induce_adj.mpr h
-    apply (isBridge_iff_forall_cycle_notMem huv).mpr
-    intro z p hp hep
-    have hp' : (p.map (Embedding.induce (G := G) C).toHom).IsCycle :=
-      hp.map (f := (Embedding.induce (G := G) C).toHom)
-        (Embedding.induce (G := G) C).injective
-    apply hb.notMem_edges_of_isCycle hp'
-    rw [Walk.edges_map]
-    simpa using List.mem_map_of_mem
-      (f := Sym2.map ((Embedding.induce (G := G) C) : C → V)) hep
-  · rw [isBridge_iff]
-    intro hreach
-    apply (isBridge_iff.mp hb)
-    rw [deleteEdges_eq_self.mpr (by simpa [Set.disjoint_singleton_right] using h)]
-    exact (hreach.mono (deleteEdges_le _)).map (Embedding.induce (G := G) C).toHom
-
 /-- The endpoints of a bridge edge form a block. -/
 theorem IsBridge.isBlock_pair (hb : G.IsBridge s(u, v)) (h : G.Adj u v) :
     G.IsBlock ({u, v} : Set V) := by
