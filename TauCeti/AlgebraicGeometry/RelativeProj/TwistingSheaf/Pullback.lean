@@ -17,14 +17,15 @@ Let `φ : B ⟶ A` be a morphism of graded algebras on a scheme `X` with quasi-c
 components, inducing `f : Proj_X(A) ⟶ Proj_X(B)` (`CategoryTheory.CommMon.relativeProjMap`), and
 let `f^* 𝒪(n) ⟶ 𝒪(n)` be the glued morphism of twisting sheaves
 (`CategoryTheory.CommMon.relativeProjTwistingSheafMap`). This file proves that it is an isomorphism
-when `𝒪(n)` is invertible on `Proj_X(B)` and, over every affine open `U` of `X`, the standard opens
+when, over every affine open `U` of `X`, the standard opens
 `D₊(φ b)` of the images of the elements `b` of degree one of `⨁ n, Γ(Bₙ, U)` cover the chart
 `Proj (⨁ n, Γ(Aₙ, U))` (Stacks, Lemma 27.11.5 (01N1), on affine charts).
 
 Over such a standard open, the morphism sends the pullback of the standard generator `bⁿ` of
 `𝒪(n)` on `D₊(b)` to the standard generator `(φ b)ⁿ` of `𝒪(n)` on `D₊(φ b)`, which is a basis of
-`𝒪(n)` there. A morphism out of a line bundle sending local sections onto local bases is an
-isomorphism (`AlgebraicGeometry.Scheme.Modules.isIso_of_forall_exists_bijective_smul`).
+`𝒪(n)` there. These charts also trivialize the pullback of `𝒪(n)`. A morphism out of a line
+bundle sending local sections onto local bases is an isomorphism
+(`AlgebraicGeometry.Scheme.Modules.isIso_of_forall_exists_bijective_smul`).
 
 ## Main results
 
@@ -33,6 +34,8 @@ isomorphism (`AlgebraicGeometry.Scheme.Modules.isIso_of_forall_exists_bijective_
   components.
 * `CategoryTheory.CommMon.π_app_relativeProjTwistingSheafMap_app_chartGenerator`: the glued
   morphism sends the pullback of the standard generator `bⁿ` to the standard generator `(φ b)ⁿ`.
+* `CategoryTheory.CommMon.isInvertible_pullback_relativeProjTwistingSheaf`: the covering
+  hypothesis makes the pullback of `𝒪(n)` invertible.
 * `CategoryTheory.CommMon.isIso_relativeProjTwistingSheafMap`: the glued morphism
   `f^* 𝒪(n) ⟶ 𝒪(n)` is an isomorphism under the covering hypothesis above.
 
@@ -152,16 +155,69 @@ theorem _root_.CategoryTheory.CommMon.π_app_relativeProjTwistingSheafMap_app_ch
     _ (homOfLE (Scheme.Hom.preimage_mono _ (i.le.trans hVA))).op _).symm.trans
       (Proj.twistingSheaf.res_chartGenerator _ _ _ _ _ _)
 
-/-- **The pullback of `𝒪(n)` along `Proj_X(A) ⟶ Proj_X(B)` is `𝒪(n)`**: if `𝒪(n)` is invertible on
-`Proj_X(B)` and, over every affine open `U` of `X`, the chart `Proj (⨁ n, Γ(Aₙ, U))` is covered by
+/-- The pullback of a relative twisting sheaf is invertible if the degree-one target charts
+cover the source charts, even if the twisting sheaf is not invertible everywhere on the target. -/
+theorem _root_.CategoryTheory.CommMon.isInvertible_pullback_relativeProjTwistingSheaf
+    (h : ∀ (U : X.AffineZariskiSite) (y : Proj (A.gradedSectionsGrading U.toOpens)),
+      ∃ b ∈ B.gradedSectionsGrading U.toOpens 1,
+        y ∈ Proj.basicOpen _ (CommMon.gradedSectionsGradedHom φ U.toOpens b)) :
+    AlgebraicGeometry.SheafOfModules.isInvertible A.relativeProj
+      ((Scheme.Modules.pullback (CommMon.relativeProjMap φ hφ)).obj
+        (B.relativeProjTwistingSheaf n)) := by
+  have localTriviality (x : A.relativeProj) : ∃ (W : A.relativeProj.Opens) (_ : x ∈ W),
+      Nonempty (SheafOfModules.unit W.toScheme.ringCatSheaf ≅
+        ((Scheme.Modules.pullback (CommMon.relativeProjMap φ hφ)).obj
+          (B.relativeProjTwistingSheaf n)).restrict W.ι) := by
+    obtain ⟨U, y, hy⟩ : ∃ U : X.AffineZariskiSite,
+        ∃ y : Proj (A.gradedSectionsGrading U.toOpens), A.relativeProjCover.f U y = x :=
+      A.relativeProjCover.exists_eq x
+    obtain ⟨b, hb, hyb⟩ := h U y
+    let g : Proj (B.gradedSectionsGrading U.toOpens) ⟶ B.relativeProj := B.relativeProjCover.f U
+    have : IsOpenImmersion g := B.isOpenImmersion_relativeProjCover_f U
+    let V := Proj.basicOpen (B.gradedSectionsGrading U.toOpens) b
+    let W : A.relativeProj.Opens := colimit.ι A.relativeProjGluingData.functor U ''ᵁ
+      Proj.basicOpen _ (CommMon.gradedSectionsGradedHom φ U.toOpens b)
+    have hW : W ≤ CommMon.relativeProjMap φ hφ ⁻¹ᵁ (g ''ᵁ V) :=
+      CommMon.image_basicOpen_le_preimage_relativeProjMap φ hφ U b
+    -- Transport the standard trivialization from D₊(b) to its image in the relative Proj.
+    let e : SheafOfModules.unit V.toScheme.ringCatSheaf ≅
+        (Proj.twistingSheaf (B.gradedSectionsGrading U.toOpens) n).restrict V.ι :=
+      TauCeti.SheafOfModules.LocalTrivializations.unitIsoRestrict
+        (M := Proj.twistingSheaf (B.gradedSectionsGrading U.toOpens) n)
+        (TauCeti.SheafOfModules.freePUnitIsoUnit _ ≪≫ Proj.twistingSheaf.chartIso n b hb)
+    let eV : SheafOfModules.unit (g ''ᵁ V).toScheme.ringCatSheaf ≅
+        (B.relativeProjTwistingSheaf n).restrict (g ''ᵁ V).ι :=
+      (Scheme.Modules.restrictUnitIso (g.isoImage V).inv).symm ≪≫
+        (Scheme.Modules.restrictFunctor (g.isoImage V).inv).mapIso
+          (e ≪≫ (Scheme.Modules.restrictFunctor V.ι).mapIso
+            (B.restrictRelativeProjTwistingSheafIso n U).symm ≪≫
+            ((Scheme.Modules.restrictFunctorComp V.ι g).app
+              (B.relativeProjTwistingSheaf n)).symm) ≪≫
+        ((Scheme.Modules.restrictFunctorComp (g.isoImage V).inv (V.ι ≫ g)).app
+          (B.relativeProjTwistingSheaf n)).symm ≪≫
+        (Scheme.Modules.restrictFunctorCongr (g.isoImage_inv_ι V)).app
+          (B.relativeProjTwistingSheaf n)
+    -- Restriction of pullback is pullback of restriction along W → D₊(b).
+    exact ⟨W, hy ▸ ⟨y, hyb, rfl⟩, ⟨
+      (Scheme.Modules.pullbackObjUnitIso ((CommMon.relativeProjMap φ hφ).resLE _ W hW)).symm ≪≫
+        (Scheme.Modules.pullback ((CommMon.relativeProjMap φ hφ).resLE _ W hW)).mapIso eV ≪≫
+        ((Scheme.Modules.restrictPullbackIso (CommMon.relativeProjMap φ hφ) _ W hW).app
+          (B.relativeProjTwistingSheaf n)).symm⟩⟩
+  choose W hx e using localTriviality
+  exact AlgebraicGeometry.SheafOfModules.isInvertible_iff_exists_isOpenCover.mpr
+    ⟨A.relativeProj, W, TopologicalSpace.IsOpenCover.mk
+      (top_unique fun x _ ↦ TopologicalSpace.Opens.mem_iSup.mpr ⟨x, hx x⟩), e⟩
+
+/-- **The pullback of `𝒪(n)` along `Proj_X(A) ⟶ Proj_X(B)` is `𝒪(n)`**: if, over every affine open
+`U` of `X`, the chart `Proj (⨁ n, Γ(Aₙ, U))` is covered by
 the standard opens `D₊(φ b)` of the images of the elements `b` of degree one of `⨁ n, Γ(Bₙ, U)`,
 then the glued morphism of twisting sheaves `f^* 𝒪(n) ⟶ 𝒪(n)` is an isomorphism. -/
 theorem _root_.CategoryTheory.CommMon.isIso_relativeProjTwistingSheafMap
-    [AlgebraicGeometry.SheafOfModules.isInvertible B.relativeProj (B.relativeProjTwistingSheaf n)]
     (h : ∀ (U : X.AffineZariskiSite) (y : Proj (A.gradedSectionsGrading U.toOpens)),
       ∃ b ∈ B.gradedSectionsGrading U.toOpens 1,
         y ∈ Proj.basicOpen _ (CommMon.gradedSectionsGradedHom φ U.toOpens b)) :
     IsIso (CommMon.relativeProjTwistingSheafMap φ hφ n) := by
+  have := CommMon.isInvertible_pullback_relativeProjTwistingSheaf φ hφ n h
   refine Scheme.Modules.isIso_of_forall_exists_bijective_smul _ fun x ↦ ?_
   obtain ⟨y, hy⟩ := A.relativeProjCover.covers x
   obtain ⟨b, hb, hyb⟩ := h (A.relativeProjCover.idx x) y
