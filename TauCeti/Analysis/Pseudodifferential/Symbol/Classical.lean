@@ -758,7 +758,7 @@ theorem term_surjective :
     tendsto_atBot_add_const_left _ m (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)
   obtain ⟨b, hb⟩ := Symbol.exists_asymptoticSum hm hm' fun j => cutoffSymbol χ (h j)
   refine ⟨⟨Symbol.inclusion (by simp) b, h, χ, fun N => ?_⟩, rfl⟩
-  obtain ⟨r, hr⟩ := hb N
+  obtain ⟨r, hr⟩ := Symbol.isAsymptoticSum_iff.1 hb N
   refine ⟨r, fun p => ?_⟩
   simp [← hr, Finset.sum_apply]
 
