@@ -15,7 +15,7 @@ import TauCeti.Analysis.BoundedVariation.Translation
 
 Pulling a function and its open domain back by a positive dilation of ratio `r` multiplies its
 variation by `r / r ^ n`, where `n` is the dimension. Equivalently, dilating a set and its
-ambient open domain multiplies its perimeter by `r ^ (n - 1)` in positive dimension.
+ambient open domain multiplies its perimeter by `r ^ (n - 1)`.
 
 The quantities are extended nonnegative reals, so the statements apply to infinite perimeter
 and do not require finite volume. The coefficient written as a quotient also covers dimension
@@ -75,13 +75,15 @@ theorem totalVariationOn_comp_smul_le (hr : 0 < r) (hVO : MapsTo (fun x : E => r
   exact mul_le_mul_right (ofReal_integral_le_totalVariationOn ψ fun y => by
     simpa only [ψ, dilateTestFunction_apply] using hφ (r⁻¹ • y)) _
 
-/-- Pulling a function and its open domain back by a positive dilation gives the exact
+/-- Pulling a function and its open domain back by a nonnegative dilation gives the exact
 inverse surface scaling of its distributional variation. The quotient coefficient includes
-dimension zero. -/
-theorem totalVariationOn_comp_smul (hr : 0 < r) (hVO : MapsTo (fun x : E => r • x) V Ω)
+dimension zero and the degenerate dilation `r = 0`, where both sides vanish. -/
+theorem totalVariationOn_comp_smul (hr : 0 ≤ r) (hVO : MapsTo (fun x : E => r • x) V Ω)
     (hOV : MapsTo (fun y : E => r⁻¹ • y) Ω V) :
     totalVariationOn μ V (fun x => u (r • x)) =
       ENNReal.ofReal (r / r ^ Module.finrank ℝ E) * totalVariationOn μ Ω u := by
+  rcases hr.eq_or_lt with rfl | hr
+  · simp [totalVariationOn_const (μ := μ) (Ω := V) (u 0)]
   refine le_antisymm (totalVariationOn_comp_smul_le hr hVO) ?_
   have hle := totalVariationOn_comp_smul_le (μ := μ) (inv_pos.mpr hr) hOV
     (u := fun x => u (r • x))
@@ -105,7 +107,7 @@ theorem totalVariationOn_comp_smul (hr : 0 < r) (hVO : MapsTo (fun x : E => r �
 theorem totalVariationOn_comap_smul (hr : 0 < r) :
     totalVariationOn μ (Opens.comap ⟨(r • ·), by fun_prop⟩ Ω) (fun x => u (r • x)) =
       ENNReal.ofReal (r / r ^ Module.finrank ℝ E) * totalVariationOn μ Ω u := by
-  apply totalVariationOn_comp_smul hr
+  apply totalVariationOn_comp_smul hr.le
   · intro x hx
     exact Opens.mem_comap.mp hx
   · intro y hy
@@ -133,7 +135,7 @@ theorem perimeter_preimage_smul (hr : 0 < r) (hVO : MapsTo (fun x : E => r • x
     perimeter μ V ((r • ·) ⁻¹' s) =
       ENNReal.ofReal (r / r ^ Module.finrank ℝ E) * perimeter μ Ω s := by
   rw [perimeter_preimage_smul_eq_totalVariationOn, perimeter_def]
-  exact totalVariationOn_comp_smul hr hVO hOV
+  exact totalVariationOn_comp_smul hr.le hVO hOV
 
 /-- Perimeter scaling with the preimage domain written canonically. -/
 theorem perimeter_comap_smul (hr : 0 < r) :
@@ -143,11 +145,23 @@ theorem perimeter_comap_smul (hr : 0 < r) :
   exact totalVariationOn_comap_smul hr
 
 /-- Dilating a set and its ambient open domain by a positive ratio scales perimeter by
-`r ^ (n - 1)` in positive dimension. This includes sets of infinite volume or perimeter. -/
-theorem perimeter_smul [Nontrivial E] (hr : 0 < r)
+`r ^ (n - 1)`, with truncated subtraction, so the factor is `1` in dimension zero. This includes
+sets of infinite volume or perimeter. -/
+theorem perimeter_smul (hr : 0 < r)
     (hVO : MapsTo (fun x : E => r • x) V Ω) (hOV : MapsTo (fun y : E => r⁻¹ • y) Ω V) :
     perimeter μ Ω (r • s) =
       ENNReal.ofReal (r ^ (Module.finrank ℝ E - 1)) * perimeter μ V s := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have hVΩ : V = Ω := by
+      ext x
+      exact ⟨fun hx => by simpa [Subsingleton.elim (r • x) x] using hVO hx,
+        fun hx => by simpa [Subsingleton.elim (r⁻¹ • x) x] using hOV hx⟩
+    have hs : r • s = s := by
+      ext x
+      simp only [Set.mem_smul_set]
+      exact ⟨fun ⟨y, hy, _⟩ => Subsingleton.elim y x ▸ hy, fun hx =>
+        ⟨x, hx, Subsingleton.elim _ _⟩⟩
+    simp [hVΩ, hs, Module.finrank_zero_of_subsingleton]
   have h := perimeter_preimage_smul (μ := μ) (s := s) (inv_pos.mpr hr) hOV
     (by simpa only [inv_inv] using hVO)
   rw [preimage_smul_inv₀ hr.ne'] at h

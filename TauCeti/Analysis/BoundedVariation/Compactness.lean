@@ -96,10 +96,12 @@ bounded set `L`, bounded in `L¹` and in total variation on the whole space, is 
 `L¹(μ)`: the translation estimate gives the equicontinuity under translations. -/
 theorem totallyBounded_of_integrable_totalVariationOn_le {F : (E → ℝ) → E → ℝ} {L : Set E}
     {B : ℝ≥0∞} (hL : Bornology.IsBounded L) (hM : M ≠ ⊤) (hB : B ≠ ⊤)
-    (hsupp : ∀ u ∈ S, ∀ x ∉ L, F u x = 0) (hint : ∀ u ∈ S, Integrable (F u) μ)
+    (hsupp : ∀ u ∈ S, ∀ x ∉ L, F u x = 0)
     (hnorm : ∀ u ∈ S, ∫⁻ x, ‖F u x‖ₑ ∂μ ≤ M)
     (hvar : ∀ u ∈ S, totalVariationOn μ ⊤ (F u) ≤ B) :
     TotallyBounded {f : Lp ℝ 1 μ | ∃ u ∈ S, f =ᵐ[μ] F u} := by
+  have hint : ∀ f : Lp ℝ 1 μ, ∀ u ∈ S, f =ᵐ[μ] F u → Integrable (F u) μ := fun f u hu hf =>
+    ⟨((Lp.memLp f).aestronglyMeasurable.congr hf), (hnorm u hu).trans_lt hM.lt_top⟩
   refine totallyBounded_of_comp_add_sub_of_isBounded_of_ae_eq_zero_compl ENNReal.one_ne_top
     hL ?_ hM ?_ ?_
   · rintro f ⟨u, hu, hf⟩
@@ -107,7 +109,8 @@ theorem totallyBounded_of_integrable_totalVariationOn_le {F : (E → ℝ) → E 
     rw [hx]
     exact hsupp u hu x hxL
   · rintro f ⟨u, hu, hf⟩
-    rw [eLpNorm_congr_ae hf, eLpNorm_one_eq_lintegral_eNorm (hint u hu).aestronglyMeasurable]
+    rw [eLpNorm_congr_ae hf,
+      eLpNorm_one_eq_lintegral_eNorm (hint f u hu hf).aestronglyMeasurable]
     exact hnorm u hu
   · intro ε hε
     obtain ⟨δ, hδ, hδε⟩ := ENNReal.exists_nnreal_pos_mul_lt hB hε.ne'
@@ -119,9 +122,9 @@ theorem totallyBounded_of_integrable_totalVariationOn_le {F : (E → ℝ) → E 
       rw [h₁, h₂]
     rw [eLpNorm_congr_ae hinc, eLpNorm_one_eq_lintegral_eNorm
       (f := fun x => F u (x + h) - F u x)
-      (((hint u hu).comp_add_right h).sub (hint u hu)).aestronglyMeasurable]
+      (((hint f u hu hf).comp_add_right h).sub (hint f u hu hf)).aestronglyMeasurable]
     refine (lintegral_enorm_comp_add_sub_le_mul_totalVariationOn
-      (hint u hu).locallyIntegrable h).trans ?_
+      (hint f u hu hf).locallyIntegrable h).trans ?_
     refine (mul_le_mul' ?_ (hvar u hu)).trans hδε.le
     exact eNorm_le_coe.mpr (by exact_mod_cast hh.le)
 
@@ -162,7 +165,7 @@ theorem totallyBounded_of_setLIntegral_le_of_totalVariationOn_le (hK : IsCompact
   -- The Fréchet--Kolmogorov criterion applies to the family of the `χ u` in `L¹`.
   have hT := totallyBounded_of_integrable_totalVariationOn_le (S := S) (F := (χ * ·))
     hχc.isCompact.isBounded hM hB (fun u _ x hx => by
-      simp [image_eq_zero_of_notMem_tsupport hx]) hint
+      simp [image_eq_zero_of_notMem_tsupport hx])
     (fun u hu => (hnorm u).trans (hbdd u hu)) hvarχ
   exact totallyBounded_restrict_of_forall_eqOn (g := (χ * ·)) hK.measurableSet
     (fun u hu => memLp_one_iff_integrable.2 (hint u hu))
