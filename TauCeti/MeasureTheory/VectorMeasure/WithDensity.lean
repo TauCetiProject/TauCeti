@@ -122,7 +122,7 @@ private theorem integral_eq_integral_variation_withDensityᵥ (B : E →L[ℝ] F
     (hg : Integrable g ν) (f : X → E) :
     ∫ x, B (f x) (g x) ∂ν = ∫ x, B (f x) (‖g x‖⁻¹ • g x) ∂(ν.withDensityᵥ g).variation := by
   rw [Measure.variation_withDensityᵥ hg, integral_withDensity_eq_integral_toReal_smul₀
-    hg.aestronglyMeasurable.enorm (ae_of_all _ fun _ => enorm_lt_top)]
+    hg.aestronglyMeasurable.enorm (ae_of_all _ fun _ => eNorm_lt_top)]
   congr with x
   rcases eq_or_ne (g x) 0 with hx | hx
   · simp [hx]
@@ -293,7 +293,7 @@ theorem integrable_withDensity_mul_iff (hg : μ.Integrable g) :
       μ.Integrable fun x => f x * g x := by
   have hgm : AEStronglyMeasurable g μ.variation := hg.1
   rw [VectorMeasure.Integrable, variation_withDensity_mul hg,
-    integrable_withDensity_iff_integrable_smul₀' hgm.enorm (ae_of_all _ fun _ => enorm_lt_top)]
+    integrable_withDensity_iff_integrable_smul₀' hgm.enorm (ae_of_all _ fun _ => eNorm_lt_top)]
   -- The direction `‖g x‖⁻¹ • g x` of `g` has norm at most one and is a.e. strongly measurable.
   -- Multiplying by it, or by its conjugate, converts `‖g‖ • f` into `f * g` and back.
   have hu : AEStronglyMeasurable (fun x => ‖g x‖⁻¹ • g x) μ.variation :=
@@ -340,7 +340,7 @@ theorem integral_withDensity_mul (hg : μ.Integrable g) (f : X → 𝕜) :
   have hlint (u : X → 𝕜) :
       ∫⁻ x, ‖u x‖ₑ ∂η.variation = ∫⁻ x, ‖u x‖ₑ * ‖g x‖ₑ ∂μ.variation := by
     rw [hρ, lintegral_withDensity_eq_lintegral_mul_non_measurable₀ _ hg.1.enorm
-      (ae_of_all _ fun _ => enorm_lt_top)]
+      (ae_of_all _ fun _ => eNorm_lt_top)]
     simp_rw [Pi.mul_apply, mul_comm]
   refine Integrable.induction (μ := η.variation)
     (fun f => ∫ᵛ x, f x ∂[ContinuousLinearMap.mul ℝ 𝕜; η] =
@@ -358,8 +358,8 @@ theorem integral_withDensity_mul (hg : μ.Integrable g) (f : X → 𝕜) :
     refine isClosed_eq continuous_integral (LipschitzWith.of_edist_le fun f₁ f₂ => ?_).continuous
     rw [edist_eq_enorm_sub, ← integral_fun_sub (hmul (L1.integrable_coeFn f₁))
       (hmul (L1.integrable_coeFn f₂)), L1.edist_def]
-    simp_rw [← sub_mul, edist_eq_enorm_sub, hlint, ← enorm_mul]
-    refine enorm_integral_le_lintegral_enorm.trans ?_
+    simp_rw [← sub_mul, edist_eq_enorm_sub, hlint, ← eNorm_mul]
+    refine eNorm_integral_le_lintegral_eNorm.trans ?_
     rw [enorm_eq_nnnorm, ContinuousLinearMap.opNNNorm_mul, ENNReal.coe_one, one_mul]
   · -- A `|g · μ|`-null set meets `{g ≠ 0}` in a `|μ|`-null set, where `f * g` does not see `f`.
     intro f₁ f₂ hae _ h₁

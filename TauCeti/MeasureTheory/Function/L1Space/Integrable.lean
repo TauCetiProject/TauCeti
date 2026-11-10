@@ -99,7 +99,7 @@ theorem integrable_norm_rpow_of_memLp_id_ofReal {E : Type*} [SeminormedAddCommGr
     (hν : MemLp id (ENNReal.ofReal p) ν) : Integrable (fun x : E ↦ ‖x‖ ^ p) ν := by
   -- Apply the normed-target moment lemma to the real-valued norm.
   simpa only [ENNReal.toReal_ofReal hp, id_eq, norm_norm] using
-    (hν.of_le_enorm hν.aestronglyMeasurable.norm (by simp)).integrable_norm_rpow'
+    (hν.of_le_eNorm hν.aestronglyMeasurable.norm (by simp)).integrable_norm_rpow'
 
 /-- For a positive real order, `Lᵖ` membership of the identity on the real line is
 equivalent to integrability of the absolute power. -/

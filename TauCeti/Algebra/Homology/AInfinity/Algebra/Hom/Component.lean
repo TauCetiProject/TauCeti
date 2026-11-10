@@ -61,7 +61,7 @@ variable {R : Type uR} {A : Type uA} {B : Type uB}
 /-- The restriction of the suspended Taylor map of an `A∞` morphism to words of length `n`.
 It is zero in arity zero. -/
 noncomputable def suspendedComponent (f : AInfinityHom AA BB) (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n ↦ A) B :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) B :=
   if hn : 0 < n then
     PiTensorProduct.lift.symm
       (f.taylor ∘ₗ ReducedTensorWords.of R A ⟨n, hn⟩)
@@ -85,7 +85,7 @@ theorem suspendedComponent_apply (f : AInfinityHom AA BB) (n : ℕ) (hn : 0 < n)
 zero in arity zero. For positive arity, the Koszul twists undo the tensor-power suspension sign
 in the Taylor map. -/
 noncomputable def component (f : AInfinityHom AA BB) (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n ↦ A) B :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) B :=
   (f.suspendedComponent n).compLinearMap fun i ↦
     AA.grading.koszulTwist ((n : ℤ) - 1 - i)
 

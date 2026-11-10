@@ -93,7 +93,7 @@ in the seminorm form `eLpNorm (f i - g) 1 μ → 0` (for instance by
 
 * `tendsto_eLpNorm_one_of_tendsto_integral_norm_sub` converts the former into the latter.
 
-The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_enorm`, whose home is
+The conversion is `MeasureTheory.ofReal_integral_norm_eq_lintegral_eNorm`, whose home is
 `Mathlib.MeasureTheory.Integral.Bochner.Basic`, plus continuity of `ENNReal.ofReal` at `0`.
 
 * `tendsto_integral_smul_of_tendsto_lintegral_enorm_sub` turns `L¹(s)` convergence into
@@ -167,7 +167,7 @@ theorem integrable_sum_map_dirac (s : Multiset X) (g : X → E) :
   induction s using Multiset.induction_on with
   | empty => simp
   | cons a s ih =>
-    simpa only [map_cons, sum_cons] using (integrable_dirac enorm_lt_top).add_measure ih
+    simpa only [map_cons, sum_cons] using (integrable_dirac eNorm_lt_top).add_measure ih
 
 /-- The integral against the counting measure of a multiset is the sum over the multiset. -/
 @[simp]
@@ -177,7 +177,7 @@ theorem integral_sum_map_dirac [NormedSpace ℝ E] [CompleteSpace E] (s : Multis
   | empty => simp
   | cons a s ih =>
     simp only [map_cons, sum_cons]
-    rw [integral_add_measure (integrable_dirac enorm_lt_top) (integrable_sum_map_dirac s g),
+    rw [integral_add_measure (integrable_dirac eNorm_lt_top) (integrable_sum_map_dirac s g),
       integral_dirac, ih]
 
 end Multiset
@@ -483,8 +483,8 @@ theorem tendsto_eLpNorm_one_of_tendsto_integral_norm_sub {Ω E ι : Type*} [Meas
   refine Tendsto.congr' ?_ (by
     simpa only [ENNReal.ofReal_zero] using (ENNReal.continuous_ofReal.tendsto 0).comp h)
   filter_upwards [hf] with i hi
-  rw [eLpNorm_one_eq_lintegral_enorm hi.aestronglyMeasurable,
-    ← ofReal_integral_norm_eq_lintegral_enorm hi]
+  rw [eLpNorm_one_eq_lintegral_eNorm hi.aestronglyMeasurable,
+    ← ofReal_integral_norm_eq_lintegral_eNorm hi]
   simp only [Function.comp_apply, Pi.sub_apply]
 
 /-- If `a i → b` in `L¹(s)`, then the integrals `∫ x, c x • a i x ∂μ` converge to
@@ -514,7 +514,7 @@ theorem tendsto_integral_smul_of_tendsto_lintegral_enorm_sub {α 𝕜 F ι : Typ
         filter_upwards [hK, hcsupp] with x hxK hxsupp
         rw [← smul_sub]
         by_cases hxs : x ∈ s
-        · rw [Set.indicator_of_mem hxs, enorm_smul]
+        · rw [Set.indicator_of_mem hxs, eNorm_smul]
           gcongr
           simpa only [← ofReal_norm] using ENNReal.ofReal_le_ofReal hxK
         · simp [Set.indicator_of_notMem hxs, hxsupp hxs]

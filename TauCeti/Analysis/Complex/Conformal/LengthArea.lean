@@ -300,11 +300,11 @@ theorem edist_comp_le_lintegral_Ioc (hUo : IsOpen U) (hf : DifferentiableOn ℂ 
       ((hγ.contDiffAt (Icc_mem_nhds ht.1 ht.2)).differentiableAt one_ne_zero).hasDerivAt
     have h : HasDerivAt (fun t => f (γ t)) (deriv γ t • deriv f (γ t)) t :=
       ((hf _ hmem).differentiableAt (hUo.mem_nhds hmem)).hasDerivAt.scomp t hγt
-    rw [h.deriv, smul_eq_mul, enorm_mul]
+    rw [h.deriv, smul_eq_mul, eNorm_mul]
   calc edist (f (γ a)) (f (γ b))
       = ‖f (γ b) - f (γ a)‖ₑ := by rw [edist_comm, edist_eq_enorm_sub]
     _ ≤ ∫⁻ t in Icc a b, ‖deriv (fun t => f (γ t)) t‖ₑ :=
-        enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc hcd hab
+        eNorm_sub_le_lintegral_deriv_of_contDiffOn_Icc hcd hab
     _ = ∫⁻ t in Ioo a b, ‖deriv (fun t => f (γ t)) t‖ₑ := by rw [restrict_Ioo_eq_restrict_Icc]
     _ = ∫⁻ t in Ioo a b, ‖deriv γ t‖ₑ * ‖deriv f (γ t)‖ₑ :=
         setLIntegral_congr_fun measurableSet_Ioo hderiv

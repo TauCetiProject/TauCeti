@@ -350,7 +350,7 @@ theorem abs_integral_floerEnergyDensity_cappedCylinderComponent_sub_le (ω : Sym
     hsub, abs_neg]
   have hB0 (r : Puncture) : 0 ≤ Bb r := (abs_nonneg _).trans (hBb r 0 0)
   have hsum : 0 ≤ ∑ r, Bb r := Finset.sum_nonneg fun r _ ↦ hB0 r
-  rw [← ENNReal.ofReal_le_ofReal_iff (add_nonneg (hB0 one) hsum), ← Real.enorm_eq_ofReal_abs,
+  rw [← ENNReal.ofReal_le_ofReal_iff (add_nonneg (hB0 one) hsum), ← Real.eNorm_eq_ofReal_abs,
     ENNReal.ofReal_add (hB0 one) hsum, ENNReal.ofReal_sum_of_nonneg fun r _ ↦ hB0 r]
   have hcurv := lintegral_enorm_hamiltonianCurvature_cappedCylinderComponent_le ω hHb hHbs hL hBb
     0 u
@@ -359,7 +359,7 @@ theorem abs_integral_floerEnergyDensity_cappedCylinderComponent_sub_le (ω : Sym
     rw [Measure.volume_eq_prod]
     exact Measure.set_prod_ae_eq EventuallyEq.rfl Ico_ae_eq_Icc
   rw [zero_add, setLIntegral_congr hsets] at hcurv
-  exact (enorm_integral_le_lintegral_enorm _).trans
+  exact (eNorm_integral_le_lintegral_eNorm _).trans
     ((lintegral_mono_set (prod_mono (subset_univ _) le_rfl)).trans hcurv)
 
 /-- **The action bound of the capped cylinder.** Under the hypotheses of

@@ -75,7 +75,7 @@ def torusFirstHomologyEquiv :
   ((hurewiczHomologyAddEquiv (X := TopCat.of (∀ i, AddCircle (p i))) 0).symm.trans
     (AddEquiv.toMultiplicativeRight.symm
       ((AddCircle.piFundamentalGroupMulEquivZero hp).abelianizationCongr.trans
-        (Abelianization.equivOfComm.symm.trans
+        (Group.Abelianization.equivOfComm.symm.trans
           (MulEquiv.funMultiplicative ι ℤ).symm)))).toIntLinearEquiv
 
 /-- The class of the straight loop `TauCeti.torusLoop p n` corresponds to `n`. -/

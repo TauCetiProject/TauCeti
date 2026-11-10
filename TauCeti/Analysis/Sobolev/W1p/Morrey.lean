@@ -71,7 +71,7 @@ gradient in `W^{1,p}(ℝⁿ)`. -/
 private theorem eLpNorm_fderiv_testFunction_eq (phi : 𝓓((⊤ : Opens E), ℝ)) :
     eLpNorm (fderiv ℝ (phi : E → ℝ)) p mu =
       ‖W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ (p : ℝ≥0∞) phi)‖ₑ := by
-  rw [W1p.gradient_ofTestFunctionₗ, Lp.enorm_def]
+  rw [W1p.gradient_ofTestFunctionₗ, Lp.eNorm_def]
   refine Eq.trans ?_ (eLpNorm_congr_ae
     (Filter.EventuallyEq.symm (gradientTestFunctionLp_apply_ae (mu := mu) (p : ℝ≥0∞) phi)))
   rw [Opens.coe_top, Measure.restrict_univ]
@@ -112,9 +112,9 @@ theorem W1p.exists_holderWith_ae_eq_value (hp : (finrank ℝ E : ℝ≥0) < p)
     have hphi : ContDiff ℝ 1 (phi : E → ℝ) := phi.contDiff.of_le (by simp)
     have hfin : eLpNorm (fderiv ℝ (phi : E → ℝ)) p mu ≠ ∞ := by
       rw [eLpNorm_fderiv_testFunction_eq]
-      exact enorm_ne_top
+      exact eNorm_ne_top
     have h := holderWith_of_contDiff_of_finrank_lt (μ := mu) hphi hp hfin x y
-    rwa [eLpNorm_fderiv_testFunction_eq, toNNReal_enorm] at h
+    rwa [eLpNorm_fderiv_testFunction_eq, toNNReal_eNorm] at h
   -- Approximate `u` by test functions.
   obtain ⟨v, hvmem, hvlim⟩ := mem_closure_iff_seq_limit.1
     (W1p.denseRange_ofTestFunctionₗ_top (mu := mu) ENNReal.coe_ne_top u)

@@ -119,7 +119,7 @@ theorem HasWeakFDerivOn.ae_norm_smul_polarDensity_eq [μ.IsAddHaarMeasure] {g : 
   have hrep (φ : 𝓓(Ω, E)) : ∫ x, divergenceCLM φ x * u x ∂μ =
       -∫ x, ⟪φ x, τ x⟫ ∂variationMeasure μ Ω u := by
     rw [hvar, integral_withDensity_eq_integral_toReal_smul₀ hgm.enorm
-      (ae_of_all _ fun _ => enorm_lt_top)]
+      (ae_of_all _ fun _ => eNorm_lt_top)]
     simp_rw [toReal_enorm, smul_eq_mul, ← real_inner_smul_right, hτ]
     have hsub : ∫ x : Ω, ⟪(φ : E → E) x, g x⟫ ∂ν = ∫ x in Ω, ⟪(φ : E → E) x, g x⟫ ∂μ :=
       integral_subtype_comap hΩ fun x => ⟪(φ : E → E) x, g x⟫
@@ -151,7 +151,7 @@ theorem setLIntegral_enorm_rnDeriv_smul_polarDensity_le [IsFiniteMeasureOnCompac
       ≤ ∫⁻ x in A, (variationMeasure μ Ω u).rnDeriv (μ.comap (↑)) x *
           ‖polarDensity μ Ω u x‖ₑ ∂μ.comap (↑) := by
         refine lintegral_mono fun x => ?_
-        rw [enorm_smul, Real.enorm_of_nonneg ENNReal.toReal_nonneg]
+        rw [eNorm_smul, Real.eNorm_of_nonneg ENNReal.toReal_nonneg]
         gcongr
         exact ENNReal.ofReal_toReal_le
     _ = ∫⁻ x in A, ‖polarDensity μ Ω u x‖ₑ ∂variationMeasure μ Ω u :=

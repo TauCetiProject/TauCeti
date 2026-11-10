@@ -436,7 +436,7 @@ private theorem volume_ball_le_add_of_wkp
   have hA : A ≠ ∞ := ((eLpNorm_mono_measure _ (Measure.restrict_mono upperContactSet_subset
     le_rfl)).trans_lt hgΩ.eLpNorm_lt_top).ne
   have hE5 := ENNReal.Tendsto.const_mul (tendsto_eLpNorm_smoothField_iteratedGradient_sub u)
-    (Or.inr (enorm_ne_top : ‖K‖ₑ ≠ ∞))
+    (Or.inr (eNorm_ne_top : ‖K‖ₑ ≠ ∞))
   rw [mul_zero] at hE5
   obtain ⟨η, hη, hvη⟩ := Metric.uniformContinuousOn_iff.1
     (hΩb.isCompact_closure.uniformContinuousOn_of_continuous hcont) ε hε

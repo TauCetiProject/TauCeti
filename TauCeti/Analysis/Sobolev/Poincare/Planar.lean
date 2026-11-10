@@ -149,7 +149,7 @@ theorem integral_sq_le_mul_sq_integral_norm_fderiv (hE : finrank ℝ E = 2) {f :
   have hl : ∫⁻ x, ‖f x‖ₑ ^ (2 : ℝ) ∂μ = ENNReal.ofReal (∫ x, f x ^ 2 ∂μ) := by
     rw [ofReal_integral_eq_lintegral_ofReal hint (Eventually.of_forall fun x ↦ sq_nonneg _)]
     refine lintegral_congr fun x ↦ ?_
-    rw [Real.enorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) (by norm_num),
+    rw [Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_rpow_of_nonneg (abs_nonneg _) (by norm_num),
       Real.rpow_two, sq_abs]
   have hr : ∫⁻ x, ‖fderiv ℝ f x‖ₑ ∂μ = ENNReal.ofReal (∫ x, ‖fderiv ℝ f x‖ ∂μ) := by
     rw [ofReal_integral_eq_lintegral_ofReal hintd (Eventually.of_forall fun x ↦ norm_nonneg _)]

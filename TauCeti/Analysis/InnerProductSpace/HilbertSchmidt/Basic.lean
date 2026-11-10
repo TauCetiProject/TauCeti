@@ -109,7 +109,7 @@ theorem hilbertSchmidtEnergy_zero (b : HilbertBasis ι 𝕜 E) :
 @[simp]
 theorem hilbertSchmidtEnergy_smul (c : 𝕜) (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E) :
     (c • T).hilbertSchmidtEnergy b = ‖c‖ₑ ^ 2 * T.hilbertSchmidtEnergy b := by
-  simp [hilbertSchmidtEnergy_def, enorm_smul, mul_pow, ENNReal.tsum_mul_left]
+  simp [hilbertSchmidtEnergy_def, eNorm_smul, mul_pow, ENNReal.tsum_mul_left]
 
 /-- Composition on the left with a bounded operator scales the energy by at most `‖A‖ₑ²`. -/
 theorem hilbertSchmidtEnergy_comp_le_left (A : F →L[𝕜] G) (T : E →L[𝕜] F)
@@ -160,7 +160,7 @@ theorem hilbertSchmidtEnergy_comp_le_right (T : F →L[𝕜] G) (B : E →L[𝕜
     (T ∘L B).hilbertSchmidtEnergy b ≤ T.hilbertSchmidtEnergy c * ‖B‖ₑ ^ 2 := by
   obtain ⟨w, d, -⟩ := exists_hilbertBasis 𝕜 G
   rw [← hilbertSchmidtEnergy_adjoint _ b d, ← hilbertSchmidtEnergy_adjoint T c d, adjoint_comp,
-    mul_comm, ← LinearIsometryEquiv.enorm_map adjoint B]
+    mul_comm, ← LinearIsometryEquiv.eNorm_map adjoint B]
   exact hilbertSchmidtEnergy_comp_le_left _ _ d
 
 /-- **Two-sided ideal inequality for the energy.** `E_b(A T B) ≤ ‖A‖ₑ² E_c(T) ‖B‖ₑ²`, where `b`
@@ -182,7 +182,7 @@ theorem enorm_sq_le_hilbertSchmidtEnergy (T : E →L[𝕜] F) (b : HilbertBasis 
       ← c.tsum_enorm_sq_inner]
     refine _root_.tsum_le_tsum fun j ↦ ?_
     rw [← adjoint_inner_left, ← mul_pow]
-    exact pow_le_pow_left₀ zero_le (enorm_inner_le_enorm _ _) 2
+    exact pow_le_pow_left₀ zero_le (eNorm_inner_le_eNorm _ _) 2
   set M := T.hilbertSchmidtEnergy b ^ (2⁻¹ : ℝ)
   have hM : M ^ 2 = T.hilbertSchmidtEnergy b := ENNReal.rpow_inv_natCast_pow two_ne_zero _
   rw [← hM]

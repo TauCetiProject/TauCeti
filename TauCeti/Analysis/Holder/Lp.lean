@@ -50,8 +50,8 @@ theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' : p �
       mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu := by
   have hdev : ‖ballAverage mu r g x - g x‖ₑ ≤ C * ENNReal.ofReal r ^ (α : ℝ) := by
     rw [ballAverage_sub_self hp hgLp hr]
-    rw [setAverage_eq, enorm_smul]
-    refine (mul_le_mul le_rfl (enorm_integral_le_lintegral_enorm _) bot_le bot_le).trans ?_
+    rw [setAverage_eq, eNorm_smul]
+    refine (mul_le_mul le_rfl (eNorm_integral_le_lintegral_eNorm _) bot_le bot_le).trans ?_
     calc
       _ ≤ ‖(mu.real (ball (0 : E) r))⁻¹‖ₑ *
           ∫⁻ _ in ball (0 : E) r, (C * ENNReal.ofReal r ^ (α : ℝ)) ∂mu := by
@@ -70,7 +70,7 @@ theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' : p �
       _ = C * ENNReal.ofReal r ^ (α : ℝ) := by
         have hinv : ‖(mu.real (ball (0 : E) r))⁻¹‖ₑ =
             (mu (ball (0 : E) r))⁻¹ := by
-          rw [Real.enorm_eq_ofReal (by positivity), measureReal_def, ← ENNReal.toReal_inv,
+          rw [Real.eNorm_eq_ofReal (by positivity), measureReal_def, ← ENNReal.toReal_inv,
             ENNReal.ofReal_toReal
               (ENNReal.inv_ne_top.2 (measure_ball_pos mu 0 hr).ne')]
         rw [hinv]
@@ -97,7 +97,7 @@ theorem norm_le_add_eLpNorm_toReal (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' 
   have hfin : (C : ℝ≥0∞) * ENNReal.ofReal r ^ (α : ℝ) +
       mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu ≠ ∞ := by
     finiteness
-  have hx' := (ENNReal.toReal_le_toReal enorm_ne_top hfin).2 hx
+  have hx' := (ENNReal.toReal_le_toReal eNorm_ne_top hfin).2 hx
   rw [ENNReal.toReal_add (by finiteness) (ENNReal.mul_ne_top hvol hgLp.eLpNorm_ne_top),
     ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.coe_toReal, ← ENNReal.toReal_rpow,
     ENNReal.toReal_ofReal hr.le] at hx'
@@ -117,7 +117,7 @@ def toHolderSpace (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 ≤ p) (hp' : 
   have hpoint (x : E) : ‖g x‖ ≤ R.toReal := by
     have hx : ‖g x‖ₑ ≤ R := by
       simpa [R] using hg.enorm_le_add_eLpNorm hp hp' hgLp one_pos x
-    simpa only [toReal_enorm] using (ENNReal.toReal_le_toReal enorm_ne_top hR).2 hx
+    simpa only [toReal_enorm] using (ENNReal.toReal_le_toReal eNorm_ne_top hR).2 hx
   let G : E →ᵇ F := BoundedContinuousFunction.mkOfBound ⟨g, hg.continuous hα⟩
     (2 * R.toReal) (BoundedContinuousFunction.dist_le_two_norm' hpoint)
   have hG : (G : E → F) = g := by
@@ -154,7 +154,7 @@ theorem norm_toHolderSpace_le (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 �
       exact ⟨ENNReal.coe_lt_top, ENNReal.mul_lt_top
         (lt_top_iff_ne_top.2 (ENNReal.rpow_ne_top_of_ne_zero
           (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne)) hgLp.eLpNorm_lt_top⟩
-    simpa only [toReal_enorm] using (ENNReal.toReal_le_toReal enorm_ne_top hfin).2 hunit
+    simpa only [toReal_enorm] using (ENNReal.toReal_le_toReal eNorm_ne_top hfin).2 hunit
   · have hb : HolderWith C α (fun x => hg.toHolderSpace hα hp hp' hgLp x) := by
       intro x y
       simpa only [toHolderSpace_apply] using hg x y

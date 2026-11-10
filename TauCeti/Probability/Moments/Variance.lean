@@ -277,7 +277,7 @@ theorem evariance_integral_prod_le (hF : Measurable F) (hint : Integrable F (ν.
     calc ‖∫ w, (F (a, w) - ∫ a', F (a', w) ∂ν) ∂π‖ₑ ^ 2
         ≤ (∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ∂π) ^ 2 := by
           gcongr
-          exact enorm_integral_le_lintegral_enorm _
+          exact eNorm_integral_le_lintegral_eNorm _
       _ ≤ _ := by
           simpa [ENNReal.rpow_two] using rpow_lintegral_le_measure_univ_rpow_mul
             (μ := π) (u := fun w => ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ)

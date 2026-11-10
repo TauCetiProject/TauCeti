@@ -198,7 +198,7 @@ agree for `x > 0`; for `x ≤ 0` the left side is `0`. -/
 theorem ofReal_inv_sqrt_le_enorm_rpow (x : ℝ) : ENNReal.ofReal (√x)⁻¹ ≤ ‖x‖ₑ ^ (-2⁻¹ : ℝ) := by
   rcases le_or_gt x 0 with hx | hx
   · simp [Real.sqrt_eq_zero'.mpr hx]
-  rw [Real.inv_sqrt_eq_rpow, ← ofReal_rpow_of_pos hx, Real.enorm_of_nonneg hx.le]
+  rw [Real.inv_sqrt_eq_rpow, ← ofReal_rpow_of_pos hx, Real.eNorm_of_nonneg hx.le]
   norm_num
 
 /-- If `y > 0` and `y³ ≤ 2 |d|`, then `1 / √d ≤ √2 y^(-3/2)`, as values in `ℝ≥0∞`. This is the

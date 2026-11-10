@@ -130,7 +130,7 @@ def finiteSubmodule : Submodule 𝕜 (E →L[𝕜] F) where
   carrier := {A | g A < ∞}
   add_mem' {A B} hA hB := (g.map_add_le A B).trans_lt (ENNReal.add_lt_top.2 ⟨hA, hB⟩)
   zero_mem' := by simp
-  smul_mem' c A hA := by simpa using ENNReal.mul_lt_top enorm_lt_top hA
+  smul_mem' c A hA := by simpa using ENNReal.mul_lt_top eNorm_lt_top hA
 
 variable {g}
 

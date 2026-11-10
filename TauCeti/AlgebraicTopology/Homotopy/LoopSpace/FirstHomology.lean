@@ -47,7 +47,7 @@ space with the second homotopy group of the original space. -/
 def pathLoopSpaceFirstHomologyAddEquiv (x : X) [PathConnectedSpace (Ω X x)] :
     Additive (π_ 2 X x) ≃+
       ((singularChains ℤ).obj (TopCat.of (Ω X x))).homology 1 :=
-  ((Abelianization.equivOfComm.trans
+  ((Group.Abelianization.equivOfComm.trans
       fundamentalGroupLoopSpaceMulEquiv.symm.abelianizationCongr).toAdditive).trans
     (HurewiczOne.hurewiczHomologyAddEquiv (X := TopCat.of (Ω X x)) (Path.refl x))
 
@@ -64,7 +64,7 @@ theorem pathLoopSpaceFirstHomologyAddEquiv_symm_loopClass (x : X)
   rw [AddEquiv.symm_apply_eq]
   simp only [pathLoopSpaceFirstHomologyAddEquiv, AddEquiv.trans_apply,
     MulEquiv.toAdditive_apply_apply, toMul_ofMul, MulEquiv.trans_apply,
-    ← fundamentalGroupLoopSpaceMulEquiv_apply, Abelianization.equivOfComm_apply,
+    ← fundamentalGroupLoopSpaceMulEquiv_apply, Group.Abelianization.equivOfComm_apply,
     abelianizationCongr_of, MulEquiv.symm_apply_apply]
   exact (HurewiczOne.hurewiczHomologyAddEquiv_ofMul_of_mk
     (X := TopCat.of (Ω X x)) γ).symm

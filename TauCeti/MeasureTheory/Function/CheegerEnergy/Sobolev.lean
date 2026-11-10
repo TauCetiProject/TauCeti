@@ -190,7 +190,7 @@ theorem enorm_sq (f : CheegerSobolevSpace m) :
 omit [OpensMeasurableSpace X] in
 private theorem lowerSemicontinuous_enorm_sq_add_cheegerEnergy :
     LowerSemicontinuous fun f : Lp ℝ 2 m ↦ ‖f‖ₑ ^ 2 + 2 * cheegerEnergy m f := by
-  refine ((ENNReal.continuous_pow 2).comp continuous_enorm).lowerSemicontinuous.add ?_
+  refine ((ENNReal.continuous_pow 2).comp continuous_eNorm).lowerSemicontinuous.add ?_
   exact (ENNReal.continuous_const_mul (by norm_num : (2 : ℝ≥0∞) ≠ ∞)).comp_lowerSemicontinuous
     lowerSemicontinuous_cheegerEnergy (fun _ _ h ↦ by dsimp only; gcongr)
 

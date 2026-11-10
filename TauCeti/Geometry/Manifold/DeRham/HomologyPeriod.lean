@@ -132,7 +132,7 @@ transported along the Hurewicz isomorphism from the abelianization of `π₁(M, 
 theorem homologyPeriodHom_hurewiczHomologyAddEquiv [PathConnectedSpace M] {x : M}
     (g : FundamentalGroup M x) :
     homologyPeriodHom φ (hurewiczHomologyAddEquiv (X := .of M) x
-        (Additive.ofMul (Abelianization.of g))) =
+        (Additive.ofMul (Group.Abelianization.of g))) =
       periodHom φ x (Additive.ofMul g) := by
   rw [hurewiczHomologyAddEquiv_apply, hurewiczAb_ofMul_of, homologyPeriodHom_hurewicz₁]
 

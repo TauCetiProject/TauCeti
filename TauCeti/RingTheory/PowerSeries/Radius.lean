@@ -107,7 +107,7 @@ theorem le_radius_of_bound (C : ℝ) {r : ℝ≥0} (h : ∀ n, ‖coeff n f‖ *
 /-- The radius is infinite exactly when the series is entire. -/
 @[simp]
 theorem radius_eq_top_iff : f.radius = ⊤ ↔ f.IsEntire := by
-  refine ⟨fun h ↦ isEntire_iff.mpr fun r ↦ isRestricted_of_lt_radius (h ▸ enorm_lt_top),
+  refine ⟨fun h ↦ isEntire_iff.mpr fun r ↦ isRestricted_of_lt_radius (h ▸ eNorm_lt_top),
     fun h ↦ ENNReal.eq_top_of_forall_nnreal_le fun r ↦ ?_⟩
   simpa using le_radius_of_isRestricted (h.isRestricted r)
 

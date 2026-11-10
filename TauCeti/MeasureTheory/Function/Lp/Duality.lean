@@ -90,7 +90,7 @@ theorem enorm_integral_mul_le {𝕜 : Type*} [NonUnitalNormedRing 𝕜] [NormedS
     {p q : ℝ≥0∞} [p.HolderConjugate q] {u v : α → 𝕜} :
     ‖∫ x, u x * v x ∂μ‖ₑ ≤ eLpNorm u p μ * eLpNorm v q μ := by
   calc ‖∫ x, u x * v x ∂μ‖ₑ ≤ eLpNorm (fun x => u x * v x) 1 μ :=
-        (enorm_integral_le_lintegral_enorm _).trans lintegral_enorm_le_eLpNorm_one
+        (eNorm_integral_le_lintegral_eNorm _).trans lintegral_eNorm_le_eLpNorm_one
     _ ≤ eLpNorm u p μ * eLpNorm v q μ := by
         simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm_of_pos (· * ·) 1 continuous_mul
           (ae_of_all _ fun x => by simpa using norm_mul_le (u x) (v x)) zero_lt_one
@@ -101,7 +101,7 @@ theorem enorm_integral_inner_le {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGro
     [InnerProductSpace 𝕜 H] {p q : ℝ≥0∞} [p.HolderConjugate q] {u v : α → H} :
     ‖∫ x, ⟪u x, v x⟫_𝕜 ∂μ‖ₑ ≤ eLpNorm u p μ * eLpNorm v q μ := by
   calc ‖∫ x, ⟪u x, v x⟫_𝕜 ∂μ‖ₑ ≤ eLpNorm (fun x => ⟪u x, v x⟫_𝕜) 1 μ :=
-        (enorm_integral_le_lintegral_enorm _).trans lintegral_enorm_le_eLpNorm_one
+        (eNorm_integral_le_lintegral_eNorm _).trans lintegral_eNorm_le_eLpNorm_one
     _ ≤ eLpNorm u p μ * eLpNorm v q μ := by
         simpa using eLpNorm_le_eLpNorm_mul_eLpNorm_of_norm_of_pos (fun a b => ⟪a, b⟫_𝕜) 1
           continuous_inner (ae_of_all _ fun x => by simpa using norm_inner_le_norm (u x) (v x))
@@ -195,7 +195,7 @@ theorem AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le [Sig
   have hEpos : 0 < μ {x | t < ‖h' x‖ₑ} := by
     refine pos_iff_ne_zero.2 fun h0 => htN.not_ge ?_
     rw [eLpNorm_exponent_top hmeas]
-    refine eLpNormEssSup_le_of_ae_enorm_bound ?_
+    refine eLpNormEssSup_le_of_ae_eNorm_bound ?_
     filter_upwards [hhh', measure_eq_zero_iff_ae_notMem.1 h0] with x hx hx'
     rw [hx]
     simpa using hx'
@@ -232,7 +232,7 @@ theorem AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le [Sig
   -- On the other hand `‖h‖ > t` on `F`, so `t μ(F) ≤ C μ(F)`, contradicting `C < t`.
   have hlow : t * μ F ≤ eLpNorm (F.indicator h) 1 μ := by
     rw [eLpNorm_indicator_eq_eLpNorm_restrict hFm.nullMeasurableSet,
-      eLpNorm_one_eq_lintegral_enorm hmeas.restrict, ← setLIntegral_const]
+      eLpNorm_one_eq_lintegral_eNorm hmeas.restrict, ← setLIntegral_const]
     refine setLIntegral_mono_ae hmeas.enorm.restrict ?_
     filter_upwards [hhh'] with x hx hxF
     rw [hx]
@@ -271,7 +271,7 @@ theorem Lp.enorm_integral_mul_le_of_apply_eq {q' : ℝ≥0∞} [Fact (1 ≤ q')]
         congr 1
         exact integral_congr_ae (by filter_upwards [hσ.coeFn_toLp] with x hx; rw [hx])
     _ ≤ ‖Λ‖ₑ * ‖hσ.toLp σ‖ₑ := Λ.le_opENorm _
-    _ = ‖Λ‖ₑ * eLpNorm σ q' μ := by rw [Lp.enorm_def, eLpNorm_congr_ae hσ.coeFn_toLp]
+    _ = ‖Λ‖ₑ * eLpNorm σ q' μ := by rw [Lp.eNorm_def, eLpNorm_congr_ae hσ.coeFn_toLp]
 
 /-- The truncation of `h` to a spanning set where `‖h‖ ≤ N` has `L^q` norm at most `C`, by testing
 `h` against the extremal function of the truncation. -/
@@ -387,9 +387,9 @@ noncomputable def toDual [SigmaFinite μ] : Lp 𝕜 q μ →ₗᵢ[𝕜] StrongD
     congr 1
     -- Hölder's inequality gives `‖Λ‖ ≤ ‖g‖_q`; testing `Λ` on simple functions gives the converse.
     refine le_antisymm (Λ.opENorm_le_bound fun f => ?_) ?_
-    · rw [ContinuousLinearMap.lpPairing_mul_eq_integral, Lp.enorm_def, Lp.enorm_def]
+    · rw [ContinuousLinearMap.lpPairing_mul_eq_integral, Lp.eNorm_def, Lp.eNorm_def]
       exact TauCeti.enorm_integral_mul_le
-    · rw [Lp.enorm_def]
+    · rw [Lp.eNorm_def]
       exact (Lp.memLp g).eLpNorm_le_of_forall_enorm_integral_mul_le fun σ hσ =>
         enorm_integral_mul_le_of_apply_eq Λ hσ
           (ContinuousLinearMap.lpPairing_mul_eq_integral g _)

@@ -103,7 +103,7 @@ private theorem strip_lintegral_lt_top {c : ℝ} (hc : 0 < c) :
         gcongr with y; rw [Real.volume_Icc]; norm_num
     _ = _ := by simp
     _ < ⊤ := lt_of_le_of_lt (setLIntegral_mono' measurableSet_Ioi
-        fun y _ ↦ Real.ofReal_le_enorm _)
+        fun y _ ↦ Real.ofReal_le_eNorm _)
         (integrableOn_zpow_neg_two_Ioi hc).hasFiniteIntegral
 
 private theorem setLIntegral_im_eq_prod (g : ℝ → ENNReal) (T : Set (ℝ × ℝ)) :

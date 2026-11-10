@@ -249,7 +249,7 @@ theorem enorm_greenIntegral_le (g : ℝ → X) (t : ℝ) :
       ∫⁻ s, ENNReal.ofReal (K * Real.exp (-(α * |t - s|))) * ‖g s‖ₑ := by
   set k : ℝ → ℝ≥0∞ := fun s ↦ ENNReal.ofReal (K * Real.exp (-(α * |t - s|))) * ‖g s‖ₑ
   have h₁ : ‖∫ s in Iic t, exp ((t - s) • A) (P (g s))‖ₑ ≤ ∫⁻ s in Iic t, k s := by
-    refine (enorm_integral_le_lintegral_enorm _).trans
+    refine (eNorm_integral_le_lintegral_eNorm _).trans
       (lintegral_mono_ae ((ae_restrict_mem measurableSet_Iic).mono fun s hst ↦ ?_))
     have hts : 0 ≤ t - s := sub_nonneg.2 hst
     calc ‖exp ((t - s) • A) (P (g s))‖ₑ = ENNReal.ofReal ‖exp ((t - s) • A) (P (g s))‖ := by
@@ -258,7 +258,7 @@ theorem enorm_greenIntegral_le (g : ℝ → X) (t : ℝ) :
           ENNReal.ofReal_le_ofReal ((hs _ hts _).trans_eq (by rw [abs_of_nonneg hts, neg_mul]))
       _ = k s := by rw [ENNReal.ofReal_mul (by positivity), ofReal_norm]
   have h₂ : ‖∫ s in Ioi t, exp ((t - s) • A) (g s - P (g s))‖ₑ ≤ ∫⁻ s in Ioi t, k s := by
-    refine (enorm_integral_le_lintegral_enorm _).trans
+    refine (eNorm_integral_le_lintegral_eNorm _).trans
       (lintegral_mono_ae ((ae_restrict_mem measurableSet_Ioi).mono fun s hst ↦ ?_))
     have hts : t - s < 0 := sub_neg.2 hst
     calc ‖exp ((t - s) • A) (g s - P (g s))‖ₑ =
@@ -293,8 +293,8 @@ theorem eLpNorm_greenIntegral_le (hα : 0 < α) (hg : Continuous g) (hgM : ∀ s
   have hexp : (1 - p.toReal⁻¹) + p.toReal⁻¹ = 1 := sub_add_cancel _ _
   calc eLpNorm (greenIntegral A P g) p volume
       ≤ eLpNorm (fun t ↦ ∫⁻ s, k t s * ‖g s‖ₑ) p volume :=
-        eLpNorm_mono_enorm (continuous_greenIntegral hs hu hα hg hgM).aestronglyMeasurable
-          fun t ↦ by simpa only [enorm_eq_self] using enorm_greenIntegral_le hs hu g t
+        eLpNorm_mono_eNorm (continuous_greenIntegral hs hu hα hg hgM).aestronglyMeasurable
+          fun t ↦ by simpa only [eNorm_eq_self] using enorm_greenIntegral_le hs hu g t
     _ ≤ ENNReal.ofReal (2 * K / α) ^ (1 - p.toReal⁻¹) *
           ENNReal.ofReal (2 * K / α) ^ p.toReal⁻¹ * eLpNorm (fun s ↦ ‖g s‖ₑ) p volume :=
         TauCeti.eLpNorm_lintegral_mul_le hk hg.aestronglyMeasurable.enorm hp (ae_of_all _ hrow)
@@ -302,7 +302,7 @@ theorem eLpNorm_greenIntegral_le (hα : 0 < α) (hg : Continuous g) (hgM : ∀ s
     _ = ENNReal.ofReal (2 * K / α) * eLpNorm g p volume := by
       rw [← ENNReal.rpow_add_of_nonneg _ _ (TauCeti.one_sub_toReal_inv_nonneg hp)
         (inv_nonneg.2 ENNReal.toReal_nonneg), hexp, ENNReal.rpow_one,
-        eLpNorm_enorm _ hg.aestronglyMeasurable]
+        eLpNorm_eNorm _ hg.aestronglyMeasurable]
 
 end Bounds
 

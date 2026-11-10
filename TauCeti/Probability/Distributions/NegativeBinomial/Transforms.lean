@@ -112,7 +112,7 @@ theorem memLp_id_map_cast_negativeBinomialMeasure {r p : ℝ} (hr : 0 ≤ r) (hp
     MemLp id q ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) := by
   rcases hr.eq_or_lt with rfl | hr
   · rw [negativeBinomialMeasure_zero hp hp1, Measure.map_dirac' (by fun_prop)]
-    exact memLp_dirac enorm_lt_top
+    exact memLp_dirac eNorm_lt_top
   · exact memLp_of_mem_interior_integrableExpSet
       (zero_mem_interior_integrableExpSet_id_map_cast_negativeBinomialMeasure hr hp hp1) q
 

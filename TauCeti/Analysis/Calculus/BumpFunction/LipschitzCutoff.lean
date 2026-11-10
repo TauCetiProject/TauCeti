@@ -182,7 +182,7 @@ theorem enorm_fderiv_mul_indicator_le_indicator {F : Type*} [NormedAddCommGroup 
   swap
   · simp [hys]
   by_cases hyA : y ∈ ball x₀ R \ ball x₀ r
-  · rw [indicator_of_mem (mem_inter hys hyA), indicator_of_mem hys, Pi.one_apply, enorm_one,
+  · rw [indicator_of_mem (mem_inter hys hyA), indicator_of_mem hys, Pi.one_apply, eNorm_one,
       mul_one, ← ofReal_norm]
     exact (ENNReal.ofReal_le_ofReal (norm_fderiv_le_of_lipschitz ℝ hψK)).trans_eq
       ENNReal.ofReal_coe_nnreal

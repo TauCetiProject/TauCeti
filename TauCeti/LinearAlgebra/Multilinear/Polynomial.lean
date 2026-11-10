@@ -49,7 +49,7 @@ derivative `φ.linearDeriv ((p l)(t)) ((p l)′(t)) = ∑ₖ φ((p 0)(t), …, (
 `t ↦ φ((p l)(t))` vanishes at every scalar `t`, then `φ((p l)(t))` takes the same value at all
 scalars. -/
 theorem apply_eval_algebraMap_eq_of_linearDeriv_eq_zero
-    (φ : MultilinearMap R (fun _ : ι ↦ A) M) (p : ι → A[X])
+    (φ : MultilinearMap (RingHom.id R) (fun _ : ι ↦ A) M) (p : ι → A[X])
     (h : ∀ t : R, φ.linearDeriv (fun l ↦ (p l).eval (algebraMap R A t))
       (fun l ↦ (p l).derivative.eval (algebraMap R A t)) = 0) (s t : R) :
     φ (fun l ↦ (p l).eval (algebraMap R A s)) = φ (fun l ↦ (p l).eval (algebraMap R A t)) := by

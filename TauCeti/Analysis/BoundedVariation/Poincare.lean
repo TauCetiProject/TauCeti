@@ -155,7 +155,7 @@ private theorem setLIntegral_setLIntegral_enorm_sub_le_of_measurable
         lintegral_mono hinner
     _ = (∫⁻ h in U - U, ‖h‖ₑ ∂μ) * totalVariationOn μ Ω u := by
         have hUU : MeasurableSet (U - U) := (Ω.isOpen.sub_left).measurableSet
-        rw [lintegral_mul_const _ (measurable_enorm.indicator hUU), lintegral_indicator hUU]
+        rw [lintegral_mul_const _ (measurable_eNorm.indicator hUU), lintegral_indicator hUU]
 
 /-- **The double-integral estimate.** On a convex open set `Ω`, a locally integrable `u`
 satisfies `∫_Ω ∫_Ω |u x - u y| ≤ (∫_{Ω - Ω} ‖h‖) |Du|(Ω)`, where `|Du|(Ω)` is the total
@@ -405,7 +405,7 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_measurableSet
       exact (ENNReal.ofReal_pos.2 (div_pos (lt_of_le_of_ne (by positivity) hK.symm) hSpos)).ne'
     · have h0 : Tendsto (fun n ↦ (⨍ y in S ∩ V n, u y ∂μ) - a) atTop (𝓝 0) := by
         simpa using havg.sub_const a
-      simpa [Function.comp_def] using (continuous_enorm.tendsto (0 : ℝ)).comp h0
+      simpa [Function.comp_def] using (continuous_eNorm.tendsto (0 : ℝ)).comp h0
   -- `A` is the increasing union of the sets `A ∩ V n`.
   have hAV : ⋃ n, A ∩ V n = A := by rw [← inter_iUnion, hVunion, inter_eq_left.2 hA]
   have hdir : Directed (· ⊆ ·) fun n => A ∩ V n :=

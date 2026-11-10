@@ -175,7 +175,7 @@ private theorem lintegral_mul_totalVariationOn_line_add_le_of_contDiff {w : E �
     rw [totalVariationOn_line_eq_lintegral hw, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
     refine lintegral_congr fun t => ?_
     simp only [F, L, orthogonalLineEquiv_apply]
-    rw [ENNReal.ofReal_mul (Real.sqrt_nonneg _), Real.enorm_eq_ofReal_abs]
+    rw [ENNReal.ofReal_mul (Real.sqrt_nonneg _), Real.eNorm_eq_ofReal_abs]
   have h₂ : ∫ y : (ℝ ∙ e)ᗮ, divergenceCLM φ y * ∫ t : ℝ, w ((y : E) + t • e) =
       ∫ p, G p ∂(volume.prod volume) := by
     rw [integral_divergence_mul_integral_line_eq hw hwc e he φ, integral_neg]

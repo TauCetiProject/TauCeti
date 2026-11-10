@@ -285,7 +285,7 @@ theorem lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le (ω : Smoot
         have hHt : DifferentiableAt ℝ (fun t ↦ H t (u (φ z))) z.2 :=
           ((hHs.comp (f := fun t : ℝ ↦ (t, u (φ z))) (contMDiff_id.prodMk contMDiff_const)
             ).contDiff.differentiable one_ne_zero) z.2
-        rw [ω.hamiltonianCurvature_pssPlaneEndComponent hH z hHt, Real.enorm_eq_ofReal_abs]
+        rw [ω.hamiltonianCurvature_pssPlaneEndComponent hH z hHt, Real.eNorm_eq_ofReal_abs]
         simpa [abs_mul, abs_of_nonneg (hψ _), ← ENNReal.ofReal_mul (hψ _)] using
           ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left (hB z.2 (u (φ z))) (hψ _))
     _ = ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (p.endSign * s - 1)) *

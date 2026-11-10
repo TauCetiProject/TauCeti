@@ -539,7 +539,7 @@ Tate pairing of `σ ∈ Γ^ab` with the connecting class `δχ` of a character i
 sign it is `χ(σ)`, and the Artin map satisfies the classical character formula
 `χ(artinMap a) = inv(a₀ ∪ δχ)` instead of being the inverse of the classical reciprocity map. -/
 def tateHMinusTwoEquivAbelianization :
-    L.TrivialTateH (-2) ≃+ Additive (Abelianization L.Gal) :=
+    L.TrivialTateH (-2) ≃+ Additive (Group.Abelianization L.Gal) :=
   TauCeti.TateCohomology.HNegTwoAddEquivAbelianization.trans (AddEquiv.neg _)
 
 /-- The layer's degree-`-2` identification is the negative of the generic identification for its
@@ -560,7 +560,7 @@ theorem tateHMinusTwoEquivAbelianization_single_one (g : L.Gal) :
         (groupHomology.H1π (Rep.trivial ℤ L.Gal ℤ)
           ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ L.Gal ℤ)).inv
             (Finsupp.single g 1)))))) =
-      Additive.ofMul (Abelianization.of g⁻¹) := by
+      Additive.ofMul (Group.Abelianization.of g⁻¹) := by
   rw [tateHMinusTwoEquivAbelianization_apply,
     TauCeti.TateCohomology.HNegTwoAddEquivAbelianization_single_one, map_inv, ofMul_inv]
 
@@ -568,7 +568,7 @@ theorem tateHMinusTwoEquivAbelianization_single_one (g : L.Gal) :
 first-homology class represented by `(g⁻¹, 1)`. -/
 @[simp]
 theorem tateHMinusTwoEquivAbelianization_symm_of (g : L.Gal) :
-    L.tateHMinusTwoEquivAbelianization.symm (Additive.ofMul (Abelianization.of g)) =
+    L.tateHMinusTwoEquivAbelianization.symm (Additive.ofMul (Group.Abelianization.of g)) =
       (TateCohomology.isoGroupHomology (-2) 1 rfl).inv.app
         (Rep.trivial ℤ L.Gal ℤ)
         (groupHomology.H1π (Rep.trivial ℤ L.Gal ℤ)

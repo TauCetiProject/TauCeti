@@ -53,7 +53,7 @@ variable {R : Type uR} [CommRing R] {ι : Type*} [Fintype ι]
 The input modules and twist parameters may vary from slot to slot. -/
 @[simp]
 theorem isHomogeneous_comp_koszulTwist_iff (t : ι → ℤ) (q : ℤ)
-    (f : MultilinearMap R M N) :
+    (f : MultilinearMap (RingHom.id R) M N) :
     TauCeti.MultilinearMap.IsHomogeneous
         (f.compLinearMap fun i ↦ (G i).koszulTwist (t i)) (fun i ↦ (G i).piece) ℬ q ↔
       TauCeti.MultilinearMap.IsHomogeneous f (fun i ↦ (G i).piece) ℬ q := by

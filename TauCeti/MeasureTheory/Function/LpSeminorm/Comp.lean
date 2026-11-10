@@ -61,6 +61,6 @@ theorem MemLp.comp_quasiMeasurePreserving_top (hg : MemLp g ∞ ν)
   have hgm := hg.aestronglyMeasurable
   rw [memLp_iff, eLpNorm_exponent_top hgm] at hg
   rw [memLp_iff, eLpNorm_exponent_top (hgm.comp_quasiMeasurePreserving hf)]
-  exact (eLpNormEssSup_le_of_ae_enorm_bound (hf.ae ae_le_eLpNormEssSup)).trans_lt hg
+  exact (eLpNormEssSup_le_of_ae_eNorm_bound (hf.ae ae_le_eLpNormEssSup)).trans_lt hg
 
 end MeasureTheory

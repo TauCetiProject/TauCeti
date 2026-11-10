@@ -124,7 +124,7 @@ theorem setLIntegral_compl_closedBall_enorm_le_of_hormander {K : X → X → E �
         ← integral_sub ((hint.add hint₀).congr (.of_forall fun y => by simp)) hint₀]
       simp
     rw [heq]
-    exact (enorm_integral_le_lintegral_enorm _).trans
+    exact (eNorm_integral_le_lintegral_eNorm _).trans
       (lintegral_mono fun y => ContinuousLinearMap.le_opENorm _ _)
   have hmeas : AEMeasurable (Function.uncurry fun x y => ‖K x y - K x y₀‖ₑ * ‖b y‖ₑ)
       ((μ.restrict (closedBall y₀ (2 * r))ᶜ).prod μ) :=
@@ -217,11 +217,11 @@ theorem mul_volume_lt_enorm_le_of_isEmpty [IsEmpty ι]
   have hvol : (volume : Measure (ι → ℝ)) = Measure.dirac x0 := by
     rw [volume_pi, Measure.pi_of_empty]
   have hnormF : ‖T f‖ₑ = ‖T f x0‖ₑ := by
-    rw [Lp.enorm_def]
+    rw [Lp.eNorm_def]
     have := eLpNorm_dirac ((T f : Lp F 2 volume) : (ι → ℝ) → F) x0 (p := 2) (by norm_num)
     rwa [← hvol] at this
   have hnormE : ‖f‖ₑ = ‖f x0‖ₑ := by
-    rw [Lp.enorm_def]
+    rw [Lp.eNorm_def]
     have := eLpNorm_dirac ((f : Lp E 2 volume) : (ι → ℝ) → E) x0 (p := 2) (by norm_num)
     rwa [← hvol] at this
   have hint (g : (ι → ℝ) → ℝ≥0∞) : ∫⁻ x, g x = g x0 := by
@@ -255,11 +255,11 @@ private theorem mul_volume_lt_enorm_calderonZygmundGood_le [Nonempty ι]
     exact (mul_le_mul_right hV _).trans h
   have hu : eLpNorm u 2 volume ^ 2 ≤
       ‖T‖ₑ ^ 2 * (2 ^ Fintype.card ι * t * ∫⁻ x, ‖f x‖ₑ) := by
-    rw [← Lp.enorm_def]
+    rw [← Lp.eNorm_def]
     calc ‖u‖ₑ ^ 2 ≤ (‖T‖ₑ * ‖(memLp_two_calderonZygmundGood hf ht ht').toLp _‖ₑ) ^ 2 :=
           pow_le_pow_left₀ zero_le (T.le_opENorm _) 2
       _ = ‖T‖ₑ ^ 2 * eLpNorm (calderonZygmundGood f t) 2 volume ^ 2 := by
-          rw [mul_pow, Lp.enorm_toLp]
+          rw [mul_pow, Lp.eNorm_toLp]
       _ ≤ _ := mul_le_mul_right (sq_eLpNorm_calderonZygmundGood_le hf ht) _
   -- With `t = 2 s`, the two bounds read `s² V ≤ ‖T‖² 2ⁿ (2 s) ‖f‖₁`; cancel one factor of `s`.
   have ht2 : t = 2 * (t / 2) := (ENNReal.mul_div_cancel two_ne_zero ENNReal.ofNat_ne_top).symm
@@ -385,7 +385,7 @@ theorem mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le [Nonempty ι]
   · simp
   rcases eq_or_ne t ∞ with rfl | ht'
   · simp
-  have hf : Integrable f := ⟨Lp.aestronglyMeasurable f, hasFiniteIntegral_iff_enorm.2 hI.lt_top⟩
+  have hf : Integrable f := ⟨Lp.aestronglyMeasurable f, hasFiniteIntegral_iff_eNorm.2 hI.lt_top⟩
   have hg := memLp_two_calderonZygmundGood hf ht ht'
   set g := hg.toLp _
   set b := ((Lp.memLp f).sub hg).toLp _

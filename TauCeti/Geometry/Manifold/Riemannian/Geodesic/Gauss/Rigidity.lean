@@ -101,7 +101,7 @@ theorem IsNormalDomain.enorm_riemannianLog_eq_pathELength_of_piecewise (h : IsNo
     pathELength_add ht.1 ht.2
   have hL : pathELength I γ a b ≠ ⊤ := by
     rw [hlen]
-    exact enorm_ne_top
+    exact eNorm_ne_top
   have hA_top : pathELength I γ a t ≠ ⊤ :=
     ne_top_of_le_ne_top hL (hsum ▸ le_self_add)
   have hB_top : pathELength I γ t b ≠ ⊤ :=

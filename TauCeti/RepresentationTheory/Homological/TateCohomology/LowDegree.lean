@@ -440,7 +440,7 @@ variable (A : Rep R G) [A.IsTrivial]
 /-- For a trivial representation `A`, degree-`-2` Tate cohomology is the tensor product of the
 additive abelianization of the group with `A`. -/
 def HNegTwoAddEquivTensorOfIsTrivial :
-    tateCohomology A (-2) ≃+ (Additive <| Abelianization G) ⊗[ℤ] A :=
+    tateCohomology A (-2) ≃+ (Additive <| Group.Abelianization G) ⊗[ℤ] A :=
   let e : tateCohomology A (-2) ≅ groupHomology.H1 A :=
     (TateCohomology.isoGroupHomology (-2) 1 (Eq.refl (-2))).app A
   e.toLinearEquiv.toAddEquiv.trans (H1AddEquivOfIsTrivial A)
@@ -461,7 +461,7 @@ theorem HNegTwoAddEquivTensorOfIsTrivial_single (g : G) (a : A) :
     (dsimp% only (HNegTwoAddEquivTensorOfIsTrivial A
       ((TateCohomology.isoGroupHomology (-2) 1 (Eq.refl (-2))).inv.app A
         (H1π A ((cycles₁IsoOfIsTrivial A).inv (Finsupp.single g a)))))) =
-      Additive.ofMul (Abelianization.of g) ⊗ₜ[ℤ] a :=
+      Additive.ofMul (Group.Abelianization.of g) ⊗ₜ[ℤ] a :=
   -- The natural isomorphism lands in `groupHomology.functor R G 1`, whereas the low-degree API
   -- uses the definitionally equal alias `groupHomology.H1`; the two facts are therefore composed
   -- as terms, since `rw` cannot match across that unfolding.
@@ -474,7 +474,7 @@ homology class. -/
 @[simp]
 theorem HNegTwoAddEquivTensorOfIsTrivial_symm_tmul (g : G) (a : A) :
     (HNegTwoAddEquivTensorOfIsTrivial A).symm
-        (Additive.ofMul (Abelianization.of g) ⊗ₜ[ℤ] a) =
+        (Additive.ofMul (Group.Abelianization.of g) ⊗ₜ[ℤ] a) =
       (TateCohomology.isoGroupHomology (-2) 1 (Eq.refl (-2))).inv.app A
         (H1π A ((cycles₁IsoOfIsTrivial A).inv (Finsupp.single g a))) := by
   simp [AddEquiv.symm_apply_eq]
@@ -521,16 +521,16 @@ variable {G : Type} [Group G] [Fintype G]
 /-- The degree-`-2` Tate cohomology of the trivial integral representation is the additive
 abelianization of the group. -/
 def HNegTwoAddEquivAbelianization :
-    tateCohomology (Rep.trivial ℤ G ℤ) (-2) ≃+ Additive (Abelianization G) :=
+    tateCohomology (Rep.trivial ℤ G ℤ) (-2) ≃+ Additive (Group.Abelianization G) :=
   (HNegTwoAddEquivTensorOfIsTrivial (Rep.trivial ℤ G ℤ)).trans
-    (TensorProduct.rid ℤ (Additive (Abelianization G))).toAddEquiv
+    (TensorProduct.rid ℤ (Additive (Group.Abelianization G))).toAddEquiv
 
 /-- The integral degree-`-2` identification is the tensor description followed by the right
 unitor. -/
 theorem HNegTwoAddEquivAbelianization_apply
     (x : tateCohomology (Rep.trivial ℤ G ℤ) (-2)) :
     HNegTwoAddEquivAbelianization x =
-      (TensorProduct.rid ℤ (Additive (Abelianization G)))
+      (TensorProduct.rid ℤ (Additive (Group.Abelianization G)))
         (HNegTwoAddEquivTensorOfIsTrivial (Rep.trivial ℤ G ℤ) x) :=
   (rfl)
 
@@ -543,7 +543,7 @@ theorem HNegTwoAddEquivAbelianization_single_one (g : G) :
       ((TateCohomology.isoGroupHomology (-2) 1 (Eq.refl (-2))).inv.app (Rep.trivial ℤ G ℤ)
         (H1π (Rep.trivial ℤ G ℤ)
           ((cycles₁IsoOfIsTrivial (Rep.trivial ℤ G ℤ)).inv (Finsupp.single g 1)))))) =
-      Additive.ofMul (Abelianization.of g) := by
+      Additive.ofMul (Group.Abelianization.of g) := by
   rw [HNegTwoAddEquivAbelianization, AddEquiv.trans_apply, HNegTwoAddEquivTensorOfIsTrivial_single]
   simp
 
@@ -551,7 +551,7 @@ theorem HNegTwoAddEquivAbelianization_single_one (g : G) :
 class represented by `(g, 1)`. -/
 @[simp]
 theorem HNegTwoAddEquivAbelianization_symm_of (g : G) :
-    HNegTwoAddEquivAbelianization.symm (Additive.ofMul (Abelianization.of g)) =
+    HNegTwoAddEquivAbelianization.symm (Additive.ofMul (Group.Abelianization.of g)) =
       (TateCohomology.isoGroupHomology (-2) 1 (Eq.refl (-2))).inv.app
         (Rep.trivial ℤ G ℤ)
         (H1π (Rep.trivial ℤ G ℤ)

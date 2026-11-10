@@ -8,6 +8,7 @@ module
 public import Mathlib.RingTheory.Flat.Basic
 
 import Mathlib.LinearAlgebra.Basis.VectorSpace
+import Mathlib.LinearAlgebra.TensorProduct.Basis
 
 /-!
 # Scalar extensions of modules

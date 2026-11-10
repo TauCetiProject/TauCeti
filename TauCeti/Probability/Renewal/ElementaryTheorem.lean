@@ -107,7 +107,7 @@ theorem uniformIntegrable_renewalCountNat_div (hT : ∀ n, Measurable (T n))
   refine ⟨hu, 1 + C, fun t ↦ ?_⟩
   -- The bound `x ≤ 1 + x ^ 2` turns the second-moment bound into a first-moment bound.
   have hsq (x : ℝ) : x ≤ 1 + x ^ 2 := by nlinarith [sq_nonneg (x - 1)]
-  rw [eLpNorm_one_eq_lintegral_enorm (hm t)]
+  rw [eLpNorm_one_eq_lintegral_eNorm (hm t)]
   calc ∫⁻ ω, ‖(renewalCountNat T t ω : ℝ) / t‖ₑ ∂P
       ≤ ∫⁻ ω, 1 + ENNReal.ofReal (‖(renewalCountNat T t ω : ℝ) / t‖ ^ 2) ∂P := by
         refine lintegral_mono fun ω ↦ ?_

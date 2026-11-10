@@ -120,7 +120,7 @@ theorem setLIntegral_enorm_sub_inv_le (s : Set ℂ) (z : ℂ) :
       ((Complex.locallyIntegrable_sub_inv z).integrableOn_isCompact
         (isCompact_closedBall z 1)).neg.congr_fun
           (fun w _ ↦ by rw [Pi.neg_apply, ← inv_neg, neg_sub]) measurableSet_closedBall
-    rw [← ofReal_integral_norm_eq_lintegral_enorm hi]
+    rw [← ofReal_integral_norm_eq_lintegral_eNorm hi]
     simp_rw [norm_inv]
     rw [integral_norm_sub_inv_closedBall zero_le_one, mul_one]
   calc ∫⁻ w in s, ‖(w - z)⁻¹‖ₑ

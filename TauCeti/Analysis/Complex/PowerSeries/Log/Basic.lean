@@ -95,7 +95,7 @@ private theorem exists_differentiableOn_exp_comp_ofScalarsSum_of_zeroFree (f : �
     ((FormalMultilinearSeries.ofScalars ℂ fun n ↦ coeff n f).hasFPowerSeriesOnBall hfr).mono
       hRposE hR
   have hmem : ∀ w ∈ Metric.ball (0 : ℂ) R, ‖w‖ₑ < (R : ENNReal) := fun w hw ↦ by
-    rw [enorm_lt_coe]
+    rw [eNorm_lt_coe]
     exact NNReal.coe_lt_coe.mp (by simpa using Metric.mem_ball.mp hw)
   have hFd : DifferentiableOn ℂ
       (FormalMultilinearSeries.ofScalarsSum (E := ℂ) fun n ↦ coeff n f) (Metric.ball 0 R) := by

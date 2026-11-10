@@ -351,7 +351,7 @@ theorem integral_calderonZygmundBad [CompleteSpace E] (f : (ι → ℝ) → E) (
 /-- Each bad part has `L¹` norm at most twice the integral of `‖f‖` over its cube. -/
 theorem lintegral_enorm_calderonZygmundBad_le (f : (ι → ℝ) → E) (q : ℤ × (ι → ℤ)) :
     ∫⁻ x, ‖calderonZygmundBad f q x‖ₑ ≤ 2 * ∫⁻ x in dyadicCube q.1 q.2, ‖f x‖ₑ := by
-  simp_rw [calderonZygmundBad, enorm_indicator_eq_indicator_enorm]
+  simp_rw [calderonZygmundBad, eNorm_indicator_eq_indicator_eNorm]
   rw [lintegral_indicator (measurableSet_dyadicCube q.1 q.2), two_mul]
   calc ∫⁻ x in dyadicCube q.1 q.2, ‖f x - ⨍ y in dyadicCube q.1 q.2, f y ∂volume‖ₑ
       ≤ ∫⁻ x in dyadicCube q.1 q.2, (‖f x‖ₑ + ‖⨍ y in dyadicCube q.1 q.2, f y ∂volume‖ₑ) :=
@@ -418,8 +418,8 @@ theorem aestronglyMeasurable_calderonZygmundGood (hf : AEStronglyMeasurable f) (
 /-- The good part of an integrable `f` is integrable. -/
 theorem integrable_calderonZygmundGood (hf : Integrable f) (t : ℝ≥0∞) :
     Integrable (calderonZygmundGood f t) :=
-  ⟨aestronglyMeasurable_calderonZygmundGood hf.1 t, hasFiniteIntegral_iff_enorm.2 <|
-    (lintegral_enorm_calderonZygmundGood_le f t).trans_lt (hasFiniteIntegral_iff_enorm.1 hf.2)⟩
+  ⟨aestronglyMeasurable_calderonZygmundGood hf.1 t, hasFiniteIntegral_iff_eNorm.2 <|
+    (lintegral_enorm_calderonZygmundGood_le f t).trans_lt (hasFiniteIntegral_iff_eNorm.1 hf.2)⟩
 
 /-- The bad parts of a function in `Lᵖ` are in `Lᵖ`. -/
 theorem memLp_calderonZygmundBad {p : ℝ≥0∞} (hf : MemLp f p) (q : ℤ × (ι → ℤ)) :

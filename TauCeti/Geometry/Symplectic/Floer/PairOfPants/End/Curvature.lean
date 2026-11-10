@@ -272,9 +272,9 @@ theorem setLIntegral_image_endChart_enorm_hamiltonianCurvature_le (ω : SmoothTw
   refine (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral hKd hKx hm
     (fun z hz x ↦ ?_) u).trans_eq (lintegral_mul_const' _ _ ENNReal.ofReal_ne_top)
   rw [ω.hamiltonianCurvature_perturbationPullback_endChart_of_eq hK
-    (endSign_mul_pos_of_mem_endStrip hz) (hP _) (hh _ _), enorm_mul, enorm_mul,
-    Real.enorm_eq_ofReal_abs q.endSign, abs_endSign, ENNReal.ofReal_one, one_mul,
-    Real.enorm_eq_ofReal_abs (h _ _)]
+    (endSign_mul_pos_of_mem_endStrip hz) (hP _) (hh _ _), eNorm_mul, eNorm_mul,
+    Real.eNorm_eq_ofReal_abs q.endSign, abs_endSign, ENNReal.ofReal_one, one_mul,
+    Real.eNorm_eq_ofReal_abs (h _ _)]
   gcongr
   exact hB _ _
 

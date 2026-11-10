@@ -97,7 +97,7 @@ theorem lintegral_eLpNorm_restrict_ball_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞) {g
   have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   have hpow : ∀ ν : Measure E, AEStronglyMeasurable g ν →
       eLpNorm g p ν ^ p.toReal = ∫⁻ x, ‖g x‖ₑ ^ p.toReal ∂ν := fun ν hν => by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hν, ← ENNReal.rpow_mul,
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hν, ← ENNReal.rpow_mul,
       one_div_mul_cancel hq.ne', ENNReal.rpow_one]
   simp_rw [hpow _ hg.restrict, hpow μ hg]
   exact lintegral_setLIntegral_ball (hg.enorm.pow_const _) r

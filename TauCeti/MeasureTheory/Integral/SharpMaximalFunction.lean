@@ -572,12 +572,12 @@ theorem eLpNorm_le_eLpNorm_sharpMaximalFunction [Nonempty ι] {f : (ι → ℝ) 
   have hp₀ : p ≠ 0 := (zero_lt_one.trans hp).ne'
   have hpr : 1 < p.toReal := by
     simpa using (ENNReal.toReal_lt_toReal ENNReal.one_ne_top hp_top).2 hp
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp_top hf.1,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp_top
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top hf.1,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp_top
       (measurable_sharpMaximalFunction volume f).aestronglyMeasurable,
     ← ENNReal.mul_rpow_of_nonneg _ _ (by positivity)]
   refine ENNReal.rpow_le_rpow ?_ (by positivity)
-  simpa only [enorm_eq_self] using
+  simpa only [eNorm_eq_self] using
     lintegral_enorm_rpow_le_lintegral_sharpMaximalFunction_rpow hf hpr
 
 end FeffermanStein

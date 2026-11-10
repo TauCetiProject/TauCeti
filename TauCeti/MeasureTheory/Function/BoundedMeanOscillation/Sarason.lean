@@ -227,7 +227,7 @@ private theorem setLAverage_setLAverage_enorm_convolution_sub_le {ψ : E → ℝ
         simp only [setLAverage_eq']
         exact lintegral_mono fun x => lintegral_mono fun y =>
           (enorm_convolution_lsmul_sub_convolution_lsmul_le hψ hψc hfi x y).trans_eq
-            (lintegral_congr fun z => by rw [Real.enorm_of_nonneg (hψ0 z)])
+            (lintegral_congr fun z => by rw [Real.eNorm_of_nonneg (hψ0 z)])
     _ = ∫⁻ z, ENNReal.ofReal (ψ z) * ∫⁻ x, ∫⁻ y, ‖f (x - z) - f (y - z)‖ₑ ∂ν ∂ν ∂μ := by
         have hswap (x : E) : ∫⁻ y, ∫⁻ z, K x y z ∂μ ∂ν = ∫⁻ z, ∫⁻ y, K x y z ∂ν ∂μ :=
           lintegral_lintegral_swap
@@ -410,11 +410,11 @@ private theorem edist_convolution_le (hf : MemBMO f μ) {ψ : E → ℝ} (hψ : 
     simp only [sub_smul]
   have hball : μ (ball x (2 * t)) = μ (ball (0 : E) (2 * t)) := Measure.addHaar_ball_center μ x _
   rw [edist_eq_enorm_sub, heq]
-  refine (enorm_integral_le_lintegral_enorm _).trans ?_
+  refine (eNorm_integral_le_lintegral_eNorm _).trans ?_
   calc ∫⁻ w, ‖(ψ (x - w) - ψ (y - w)) • (f w - m)‖ₑ ∂μ
       ≤ ∫⁻ w, (ball x (2 * t)).indicator (fun w => η * ‖f w - m‖ₑ) w ∂μ := by
         refine lintegral_mono fun w => ?_
-        rw [enorm_smul]
+        rw [eNorm_smul]
         by_cases hw : w ∈ ball x (2 * t)
         · rw [indicator_of_mem hw]
           gcongr

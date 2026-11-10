@@ -608,9 +608,9 @@ private theorem meas_lt_enorm_le_add_setLIntegral (T : Lp E p₁ μ →L[𝕜] L
         (‖T‖ₑ ^ p₁.toReal * ∫⁻ x in Sᶜ, ‖f x‖ₑ ^ p₁.toReal ∂μ) := by
     refine ENNReal.le_two_rpow_mul_inv_rpow_mul hs hs'
       ((mul_meas_ge_le_pow_eLpNorm' (μ := ν) hp₁0 hp₁ _).trans ?_)
-    rw [← Lp.enorm_def, ← lintegral_enorm_rpow_eq_setLIntegral hS.compl hm₂.coeFn_toLp hq₁,
-      lintegral_rpow_enorm_eq_rpow_eLpNorm' hq₁, ← eLpNorm_eq_eLpNorm' hp₁0 hp₁
-        (Lp.aestronglyMeasurable _), ← Lp.enorm_def, ← ENNReal.mul_rpow_of_nonneg _ _ hq₁.le]
+    rw [← Lp.eNorm_def, ← lintegral_enorm_rpow_eq_setLIntegral hS.compl hm₂.coeFn_toLp hq₁,
+      lintegral_rpow_eNorm_eq_rpow_eLpNorm' hq₁, ← eLpNorm_eq_eLpNorm' hp₁0 hp₁
+        (Lp.aestronglyMeasurable _), ← Lp.eNorm_def, ← ENNReal.mul_rpow_of_nonneg _ _ hq₁.le]
     exact ENNReal.rpow_le_rpow (T.le_opENorm _) hq₁.le
   have hSc : Sᶜ = {x | ‖f x‖ₑ ≤ s} := by
     ext x
@@ -668,8 +668,8 @@ theorem eLpNorm_le_of_rpow_mul_meas_lt_le (T : Lp E p₁ μ →L[𝕜] Lp F p₁
         (ENNReal.ofReal_pos.2 ht).ne' ENNReal.ofReal_ne_top).trans_eq ?_
       ring
   simp only [Real.one_rpow, mul_one] at key
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top (Lp.aestronglyMeasurable _),
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp_top (Lp.aestronglyMeasurable _),
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top (Lp.aestronglyMeasurable _),
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top (Lp.aestronglyMeasurable _),
     ← ENNReal.mul_rpow_of_nonneg _ _ (one_div_nonneg.2 hq.le)]
   exact ENNReal.rpow_le_rpow key (one_div_nonneg.2 hq.le)
 

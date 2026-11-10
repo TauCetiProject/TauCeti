@@ -272,8 +272,8 @@ private theorem mul_volume_lt_enorm_le_of_coordConj
     filter_upwards [coeFn_lpCoord b (T f)] with x hx
     simp only [coordConj_lpCoord, hx, Function.comp_apply, mem_ofPred_eq, mem_preimage]
   have hnorm : ∫⁻ x, ‖lpCoord b E f x‖ₑ = ∫⁻ v, ‖f v‖ₑ := by
-    rw [← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _),
-      ← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _), eLpNorm_lpCoord]
+    rw [← eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable _),
+      ← eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable _), eLpNorm_lpCoord]
   rwa [hlevel, hnorm] at h
 
 variable [CompleteSpace E] [CompleteSpace F]
@@ -477,7 +477,7 @@ theorem exists_eLpNorm_le_of_norm_sub_le_mul_rpow [Nontrivial V]
   obtain ⟨B', hB', hT'⟩ := exists_cancellation b (adjoint T) hk'm hδ' hsize' hk' hrep'
   rw [← adjoint_coordConj] at hT'
   obtain ⟨A, hA⟩ := exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le
-    (ι := Fin (Module.finrank ℝ V)) (H := H) (K := K) 2 (M := ‖coordConj b T‖ₑ) enorm_ne_top hB hB'
+    (ι := Fin (Module.finrank ℝ V)) (H := H) (K := K) 2 (M := ‖coordConj b T‖ₑ) eNorm_ne_top hB hB'
     hp hp_top
   refine ⟨A, fun f => ?_⟩
   simpa only [coordConj_lpCoord, eLpNorm_lpCoord] using
@@ -553,7 +553,7 @@ theorem _root_.TauCeti.setLIntegral_enorm_sub_le_of_norm_sub_le {G G' : Type*}
     _ = ∫⁻ z in {z | 2 * ‖h‖ < ‖z‖}, ‖K (z - h) - K z‖ₑ := by
         rw [lintegral_sub_right_eq_self, lintegral_indicator hS]
     _ = ENNReal.ofReal (∫ z in {z | 2 * ‖h‖ < ‖z‖}, ‖K (z - h) - K z‖) :=
-        (ofReal_integral_norm_eq_lintegral_enorm hint.integrableOn).symm
+        (ofReal_integral_norm_eq_lintegral_eNorm hint.integrableOn).symm
     _ ≤ ENNReal.ofReal B := ENNReal.ofReal_le_ofReal (hB h)
 
 end ContinuousLinearMap

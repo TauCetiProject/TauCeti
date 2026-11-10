@@ -485,9 +485,9 @@ theorem exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow_le [Nontrivial V]
     (Finset.sum_le_sum_of_subset (Finset.range_mono (by omega))) (by norm_num)
   simp_rw [hG]
   rw [eLpNorm_iSup_eq_iSup_eLpNorm hmeas (.of_forall hmono)]
-  refine iSup_le fun n ↦ (eLpNorm_mono_enorm_ae (hmeas n).aestronglyMeasurable ?_).trans (hC n f)
+  refine iSup_le fun n ↦ (eLpNorm_mono_eNorm_ae (hmeas n).aestronglyMeasurable ?_).trans (hC n f)
   -- Pointwise, `G n` is the `ℓ²` norm of `(Δ₀ f, …, Δₙ f)`.
   filter_upwards [coeFn_sqFun φ n f] with x hx
-  rw [hx, enorm_eq_self, lp.enorm_sum_single]
+  rw [hx, eNorm_eq_self, lp.enorm_sum_single]
 
 end TauCeti

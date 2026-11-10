@@ -172,7 +172,7 @@ theorem W1p.exists_eLpNorm_mixed_le (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : 
   let : ENNReal.HolderTriple (p : ℝ≥0∞) r (q : ℝ≥0∞) := hhr
   refine ⟨‖S‖₊, fun B f g ↦ ?_⟩
   have hT := W1p.holderComp_spec (p := p) S hS B
-  rw [← eLpNorm_congr_ae (hT.1 f g), ← Lp.enorm_def]
+  rw [← eLpNorm_congr_ae (hT.1 f g), ← Lp.eNorm_def]
   simpa only [enorm_eq_nnnorm] using hT.2 f g
 
 /-- The actual mixed product lies in `L^q(V)` for every `V` with compact closure in `Ω`. -/

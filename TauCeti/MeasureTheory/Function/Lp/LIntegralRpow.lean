@@ -50,14 +50,14 @@ open scoped ENNReal Topology
 
 /-- For a finite nonzero exponent, the `p`-th power of the `Lᵖ` seminorm of an a.e. measurable
 `ℝ≥0∞`-valued function is the integral of the `p`-th power of that function. This is
-`MeasureTheory.lintegral_rpow_enorm_eq_rpow_eLpNorm'` read at an `ℝ≥0∞`-valued exponent and at a
+`MeasureTheory.lintegral_rpow_eNorm_eq_rpow_eLpNorm'` read at an `ℝ≥0∞`-valued exponent and at a
 function whose enorm is the identity, which is the shape the extended-valued estimates use. -/
 theorem eLpNorm_rpow_eq_lintegral {α : Type*} [MeasurableSpace α]
     {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) {f : α → ℝ≥0∞} {μ : Measure α}
     (hf : AEMeasurable f μ) :
     eLpNorm f p μ ^ p.toReal = ∫⁻ a, f a ^ p.toReal ∂μ := by
   rw [eLpNorm_eq_eLpNorm' hp0 hp hf.aestronglyMeasurable,
-    ← lintegral_rpow_enorm_eq_rpow_eLpNorm' (ENNReal.toReal_pos hp0 hp)]
+    ← lintegral_rpow_eNorm_eq_rpow_eLpNorm' (ENNReal.toReal_pos hp0 hp)]
   simp
 
 /-- For a finite nonzero exponent, the `Lᵖ` seminorm of an a.e. measurable `ℝ≥0∞`-valued function
@@ -66,8 +66,8 @@ theorem eLpNorm_eq_lintegral_rpow {α : Type*} [MeasurableSpace α]
     {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) {f : α → ℝ≥0∞} {μ : Measure α}
     (hf : AEMeasurable f μ) :
     eLpNorm f p μ = (∫⁻ a, f a ^ p.toReal ∂μ) ^ (1 / p.toReal) := by
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hf.aestronglyMeasurable]
-  simp only [enorm_eq_self]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hf.aestronglyMeasurable]
+  simp only [eNorm_eq_self]
 
 /-- **Fatou's lemma for the `Lᵖ` seminorm of `ℝ≥0∞`-valued functions.** For a finite nonzero
 exponent, an almost everywhere pointwise limit of functions whose `Lᵖ` seminorms are bounded by
@@ -118,14 +118,14 @@ theorem eLpNorm_ennreal_le_of_ae_tendsto {α : Type*} [MeasurableSpace α] {μ :
   · rw [eLpNorm_exponent_zero hg.aestronglyMeasurable]
     exact zero_le
   rcases eq_or_ne p ∞ with rfl | hp
-  · rw [eLpNorm_exponent_top hg.aestronglyMeasurable, eLpNormEssSup_eq_essSup_enorm]
-    simp only [enorm_eq_self]
+  · rw [eLpNorm_exponent_top hg.aestronglyMeasurable, eLpNormEssSup_eq_essSup_eNorm]
+    simp only [eNorm_eq_self]
     have hcongr : essSup g μ = essSup (fun x ↦ atTop.liminf fun n ↦ f' n x) μ :=
       essSup_congr_ae (hlim'.mono fun x hx ↦ hx.liminf_eq.symm)
     rw [hcongr]
     refine (ENNReal.essSup_liminf_le f').trans
       (liminf_le_of_frequently_le' (.of_forall fun n ↦ ?_))
-    simpa [eLpNorm_exponent_top (hf' n).aestronglyMeasurable, eLpNormEssSup_eq_essSup_enorm] using
+    simpa [eLpNorm_exponent_top (hf' n).aestronglyMeasurable, eLpNormEssSup_eq_essSup_eNorm] using
       hle' n
   · exact eLpNorm_le_of_ae_tendsto_ennreal hp0 hp hf' hlim' hle'
 
@@ -136,8 +136,8 @@ theorem ae_lt_top_of_eLpNorm_ne_top {α : Type*} [MeasurableSpace α] {μ : Meas
     ∀ᵐ x ∂μ, f x < ∞ := by
   have hf : AEMeasurable f μ := (aestronglyMeasurable_of_eLpNorm_ne_top h).aemeasurable
   rcases eq_or_ne p ∞ with rfl | hp
-  · rw [eLpNorm_exponent_top hf.aestronglyMeasurable, eLpNormEssSup_eq_essSup_enorm] at h
-    simp only [enorm_eq_self] at h
+  · rw [eLpNorm_exponent_top hf.aestronglyMeasurable, eLpNormEssSup_eq_essSup_eNorm] at h
+    simp only [eNorm_eq_self] at h
     exact ae_lt_of_essSup_lt h.lt_top
   · have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
     have hint : ∫⁻ x, f x ^ p.toReal ∂μ ≠ ∞ := by
@@ -164,9 +164,9 @@ theorem eLpNorm_le_eLpNorm_of_lintegral_rpow_le {α : Type*} [MeasurableSpace α
   have hr0 : (0 : ℝ) < p.toReal := ENNReal.toReal_pos hp₀ hp
   have hwle : (∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂ν) ^ (1 / p.toReal) ≤ eLpNorm w p ν := by
     by_cases hw : AEStronglyMeasurable w ν
-    · exact (eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp hw).ge
+    · exact (eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp hw).ge
     · simp [eLpNorm_of_not_aestronglyMeasurable hw]
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp hv]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp₀ hp hv]
   calc (∫⁻ x, ‖v x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal)
       ≤ (ENNReal.ofReal (c ^ p.toReal) * ∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂ν) ^ (1 / p.toReal) :=
         ENNReal.rpow_le_rpow h (by positivity)
@@ -192,17 +192,17 @@ theorem rpow_lintegral_le_measure_univ_rpow_mul {α : Type*} [MeasurableSpace α
   have hf : AEStronglyMeasurable u μ := hu.aestronglyMeasurable
   have hr0 : (0 : ℝ) < r := one_pos.trans_le hr
   have hCr : eLpNorm u (ENNReal.ofReal r) μ = (∫⁻ x, u x ^ r ∂μ) ^ (1 / r) := by
-    rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (by simpa using hr0) ENNReal.ofReal_ne_top hf,
+    rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal (by simpa using hr0) ENNReal.ofReal_ne_top hf,
       ENNReal.toReal_ofReal hr0.le]
-    simp only [enorm_eq_self]
+    simp only [eNorm_eq_self]
   have holder : ∫⁻ x, u x ∂μ
       ≤ (∫⁻ x, u x ^ r ∂μ) ^ (1 / r) * μ Set.univ ^ (1 - 1 / r) := by
     have hle : (1 : ℝ≥0∞) ≤ ENNReal.ofReal r := by
       rw [← ENNReal.ofReal_one]; exact ENNReal.ofReal_le_ofReal hr
     have := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (f := u) (μ := μ) hle hf
-    rw [eLpNorm_one_eq_lintegral_enorm hf, hCr, ENNReal.toReal_one,
+    rw [eLpNorm_one_eq_lintegral_eNorm hf, hCr, ENNReal.toReal_one,
       ENNReal.toReal_ofReal hr0.le, div_one] at this
-    simpa only [enorm_eq_self] using this
+    simpa only [eNorm_eq_self] using this
   have hinv : 1 / r * r = 1 := by field_simp
   have hexp : (1 - 1 / r) * r = r - 1 := by field_simp
   calc (∫⁻ x, u x ∂μ) ^ r

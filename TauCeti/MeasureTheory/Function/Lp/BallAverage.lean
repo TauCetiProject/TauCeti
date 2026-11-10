@@ -330,9 +330,9 @@ theorem eLpNorm_ballAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : AEStrongly
   have hcore := lintegral_enorm_setAverage_rpow_le (mu := mu) (q := p.toReal) hq
     (G := fun x e => g (x + e)) (hgm.comp_measurable (measurable_fst.add measurable_snd)) hr
   simp only [← ballAverage_eq_setAverage_ball_zero] at hcore
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp'
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp'
       (stronglyMeasurable_ballAverage hgm).aestronglyMeasurable,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hgm.aestronglyMeasurable]
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp' hgm.aestronglyMeasurable]
   refine ENNReal.rpow_le_rpow (hcore.trans_eq ?_) (by positivity)
   have hslice : ∀ e : E, ∫⁻ x, ‖g (x + e)‖ₑ ^ p.toReal ∂mu = ∫⁻ x, ‖g x‖ₑ ^ p.toReal ∂mu :=
     fun e => lintegral_add_right_eq_self (fun y => ‖g y‖ₑ ^ p.toReal) e
@@ -381,7 +381,7 @@ private theorem eLpNorm_ballAverage_sub_le_of_stronglyMeasurable (hp : 1 ≤ p) 
     have h := ENNReal.rpow_le_rpow (hC e he) hq0.le
     have hsm : StronglyMeasurable fun y => f (y + e) - f y :=
       (hfm.comp_measurable (measurable_id.add_const e)).sub hfm
-    rwa [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hsm.aestronglyMeasurable,
+    rwa [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp' hsm.aestronglyMeasurable,
       ← ENNReal.rpow_mul, one_div_mul_cancel hq0.ne', ENNReal.rpow_one] at h
   have hmain : ∫⁻ x, ‖ballAverage mu r f x - f x‖ₑ ^ p.toReal ∂mu ≤ C ^ p.toReal := by
     refine hcore.trans ?_
@@ -395,7 +395,7 @@ private theorem eLpNorm_ballAverage_sub_le_of_stronglyMeasurable (hp : 1 ≤ p) 
             mul_assoc, ENNReal.inv_mul_cancel hV0 hVt, mul_one]
   have hsub : StronglyMeasurable fun x => ballAverage mu r f x - f x :=
     (stronglyMeasurable_ballAverage hfm).sub hfm
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hsub.aestronglyMeasurable]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp' hsub.aestronglyMeasurable]
   calc (∫⁻ x, ‖ballAverage mu r f x - f x‖ₑ ^ p.toReal ∂mu) ^ (1 / p.toReal)
       ≤ (C ^ p.toReal) ^ (1 / p.toReal) := ENNReal.rpow_le_rpow hmain (by positivity)
     _ = C := by rw [← ENNReal.rpow_mul, mul_one_div_cancel hq0.ne', ENNReal.rpow_one]

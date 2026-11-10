@@ -176,7 +176,7 @@ private theorem ae_norm_eq_one_of_le_one (hT : HasLocallyFiniteMass T) {τ : Ω 
     rw [← hUV, massMeasure_preimage_coe hT hU, localMass_le_iff]
     intro φ hφU hφ
     rw [hτ φ, hUV, ← lintegral_indicator hV.measurableSet]
-    refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+    refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun x => ?_)
     by_cases hx : x ∈ V
     · rw [indicator_of_mem hx]
       refine ((τ x).le_opENorm (φ x)).trans ?_

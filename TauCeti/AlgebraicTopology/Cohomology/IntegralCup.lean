@@ -243,7 +243,7 @@ theorem integralCup_integralCohomologyOne_right (p : ℕ) (a : X.integralCohomol
 /-- **The iterated cup product of degree-one classes**, `(a₁, …, a_r) ↦ a₁ ⌣ (a₂ ⌣ ⋯ a_r)`, as
 a multilinear map `H¹(X; ℤ)ʳ → Hʳ(X; ℤ)`; for `r = 0` it is the unit class. -/
 def integralCupProd :
-    (r : ℕ) → MultilinearMap ℤ (fun _ : Fin r ↦ X.integralCohomology 1) (X.integralCohomology r)
+    (r : ℕ) → MultilinearMap (RingHom.id ℤ) (fun _ : Fin r ↦ X.integralCohomology 1) (X.integralCohomology r)
   | 0 => MultilinearMap.constOfIsEmpty ℤ _ X.integralCohomologyOne
   | r + 1 => MultilinearMap.mk'
     (fun v ↦ X.integralCup 1 r (r + 1) (by omega) (v 0) (integralCupProd r (Fin.tail v)))

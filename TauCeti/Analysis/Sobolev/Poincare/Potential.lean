@@ -157,7 +157,7 @@ theorem setLIntegral_closedBall_lintegral_segment_le {g : E → ℝ≥0∞}
         ∫⁻ t in Ioc (0 : ℝ) 1, K t y := by
     intro y
     by_cases hy : y ∈ closedBall x D
-    · rw [indicator_of_mem hy, ← lintegral_mul_const' _ _ enorm_ne_top]
+    · rw [indicator_of_mem hy, ← lintegral_mul_const' _ _ eNorm_ne_top]
       simp only [K, ite_eq_left (mem_closedBall_iff_norm'.1 hy), ofReal_norm]
     · rw [indicator_of_notMem hy]
       simp [K, ite_eq_right (mt mem_closedBall_iff_norm'.2 hy)]
@@ -207,7 +207,7 @@ theorem setLIntegral_enorm_sub_le_of_starConvex (hΩ : IsOpen Ω) (hu : ContDiff
       ((hcont.comp (by fun_prop : Continuous fun t : ℝ => x + t • (y - x)).continuousOn
         hmem).clm_apply continuousOn_const)
     rw [add_sub_cancel, enorm_sub_rev] at h
-    rw [← lintegral_mul_const' _ _ enorm_ne_top, setLIntegral_congr Ioc_ae_eq_Icc]
+    rw [← lintegral_mul_const' _ _ eNorm_ne_top, setLIntegral_congr Ioc_ae_eq_Icc]
     refine h.trans (setLIntegral_mono' measurableSet_Icc fun t ht => ?_)
     simp only [g, indicator_of_mem (hmem t ht), enorm_sub_rev x y]
     exact ContinuousLinearMap.le_opENorm _ _

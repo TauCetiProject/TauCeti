@@ -102,7 +102,7 @@ private theorem tendsto_eLpNorm_indicator_closedBall {a A M : ℝ} (ha : 0 < a) 
         ENNReal.ofReal (2 * A * M * √π / (a + n)) := by
     have hn : 0 < a + n := by positivity
     rw [Complex.eLpNorm_two_indicator_closedBall_const _ _ (by positivity),
-      Real.enorm_eq_ofReal (by positivity), ← ENNReal.ofReal_mul (by positivity)]
+      Real.eNorm_eq_ofReal (by positivity), ← ENNReal.ofReal_mul (by positivity)]
     congr 1
     field_simp
   simp_rw [hbeq]

@@ -235,7 +235,7 @@ theorem integrableOn_integral_fderiv (h : IsContinuityEquation μ v a b) {φ : �
       (measurable_id.prodMk (measurable_const.prodMk h.measurable_velocity))
   refine ⟨hF.stronglyMeasurable.aestronglyMeasurable_integral_measure
     h.measurable h.ae_measure_univ_ne_top, ?_⟩
-  exact (lintegral_mono fun t ↦ enorm_integral_le_lintegral_enorm _).trans_lt
+  exact (lintegral_mono fun t ↦ eNorm_integral_le_lintegral_eNorm _).trans_lt
     (h.lintegral_lintegral_enorm_fderiv_lt_top hφ hφc)
 
 /-- For almost every time `t ∈ (a, b)`, the slice `μₜ` is finite and `vₜ` is `μₜ`-integrable. -/
@@ -263,7 +263,7 @@ theorem integrableOn_integral_norm (h : IsContinuityEquation μ v a b) :
     (h.measurable_velocity.enorm.aemeasurable_lintegral_measure
       h.measurable h.ae_measure_univ_ne_top)
     h.lintegral_lintegral_enorm_lt_top.ne).congr (ae_of_all _ fun t ↦ ?_)
-  exact (integral_norm_eq_lintegral_enorm
+  exact (integral_norm_eq_lintegral_eNorm
     (h.measurable_velocity.comp measurable_prodMk_left).aestronglyMeasurable).symm
 
 /-- For a bounded jointly strongly measurable function `f` of time and space with values in a
@@ -387,7 +387,7 @@ theorem isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : Measure 
       ((volume.restrict (Ioo a b)).prod P) := by
     refine integrable_fderiv_apply_one hφ1 hφc (measurable_fst.prodMk hγ').aestronglyMeasurable
       ⟨(hv.comp (measurable_fst.prodMk hγ')).aestronglyMeasurable, ?_⟩
-    rw [hasFiniteIntegral_iff_enorm]
+    rw [hasFiniteIntegral_iff_eNorm]
     simpa only [lintegral_prod _ hvγ.aemeasurable] using hint'
   rw [integral_integral_swap hInt]
   refine integral_eq_zero_of_ae ?_
@@ -475,7 +475,7 @@ theorem exists_isContinuityEquation_map {Ω : Type*} [MeasurableSpace Ω] (P : M
   have hW : Measurable W := hV.comp measurable_swap
   have hWint : Integrable W ν := by
     refine ⟨hW.aestronglyMeasurable, ?_⟩
-    rw [hasFiniteIntegral_iff_enorm, hν, lintegral_prod _ hW.enorm.aemeasurable,
+    rw [hasFiniteIntegral_iff_eNorm, hν, lintegral_prod _ hW.enorm.aemeasurable,
       lintegral_lintegral_swap (f := fun t ω ↦ ‖V ω t‖ₑ) hW.enorm.aemeasurable]
     exact hint
   -- the conditional expectation of the velocity is a function `u` of the time and the position
@@ -528,7 +528,7 @@ theorem isContinuityEquation_map_add_smul (μ : Measure E) [IsFiniteMeasure μ] 
     (.of_forall fun x ↦ .of_forall fun t _ ↦ ?_) ?_
   · simpa using ((hasDerivAt_id' t).smul_const w).const_add x
   · simp only [lintegral_const, Measure.restrict_apply_univ]
-    exact ENNReal.mul_lt_top (ENNReal.mul_lt_top enorm_lt_top measure_Ioo_lt_top)
+    exact ENNReal.mul_lt_top (ENNReal.mul_lt_top eNorm_lt_top measure_Ioo_lt_top)
       (measure_lt_top μ univ)
 
 /-- **A stationary law solves the continuity equation.** A finite measure which does not move

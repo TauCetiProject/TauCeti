@@ -195,7 +195,7 @@ theorem enorm_integral_divergenceCLM_mul_le_variationMeasure (hu : LocallyIntegr
     ‖∫ x, divergenceCLM φ x * u x ∂μ‖ₑ ≤ variationMeasure μ Ω u ((↑) ⁻¹' (U : Set E)) := by
   let φU : 𝓓(U, E) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφU⟩
   have hdiv (x : E) : divergenceCLM φU x = divergenceCLM φ x := by simp [φU]
-  rw [variationMeasure_preimage_coe hu hfin hU, Real.enorm_eq_ofReal_abs]
+  rw [variationMeasure_preimage_coe hu hfin hU, Real.eNorm_eq_ofReal_abs]
   simpa only [hdiv] using ofReal_abs_integral_le_totalVariationOn (μ := μ) (u := u) φU hφ
 
 /-- The total mass of the variation measure of a function of locally finite variation on `Ω` is

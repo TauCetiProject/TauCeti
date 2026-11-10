@@ -157,7 +157,7 @@ variable {α E : Type*} {_ : MeasurableSpace α} [NormedAddCommGroup E] [NormedS
 theorem enorm_average_le_laverage (μ : Measure α) (f : α → E) :
     ‖⨍ x, f x ∂μ‖ₑ ≤ ⨍⁻ x, ‖f x‖ₑ ∂μ := by
   rw [average_eq', laverage_eq']
-  exact enorm_integral_le_lintegral_enorm _
+  exact eNorm_integral_le_lintegral_eNorm _
 
 /-- The extended norm of an average over a set is at most the average of the extended norm over
 the set. -/
@@ -232,7 +232,7 @@ theorem enorm_setAverage_le (hp : 1 ≤ p) (hp' : p ≠ ∞) :
   rw [← ENNReal.rpow_mul, mul_inv_cancel₀ hq0.ne', ENNReal.rpow_one] at hroot
   refine hroot.trans_eq ?_
   rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ENNReal.inv_rpow, ← ENNReal.rpow_neg,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp' hf.aestronglyMeasurable, one_div]
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp' hf.aestronglyMeasurable, one_div]
 
 end Holder
 
@@ -315,7 +315,7 @@ theorem setLAverage_enorm_sub_const_eq_top (hf : AEStronglyMeasurable f (μ.rest
     by_contra h
     have hsub : IntegrableOn (fun y => f y - b) s μ :=
       ⟨hf.sub aestronglyMeasurable_const,
-        hasFiniteIntegral_iff_enorm.2 (lt_top_iff_ne_top.2 h)⟩
+        hasFiniteIntegral_iff_eNorm.2 (lt_top_iff_ne_top.2 h)⟩
     simp_rw [sub_eq_add_neg] at hsub
     exact hfs (integrable_add_const_iff.1 hsub)
   rw [setLAverage_eq, hint, ENNReal.top_div_of_ne_top hs]
@@ -382,8 +382,8 @@ theorem setLAverage_enorm_const_smul_sub_setAverage {𝕜 : Type*} [NormedDivisi
     ⨍⁻ y in s, ‖k • f y - ⨍ z in s, k • f z ∂μ‖ₑ ∂μ =
       ‖k‖ₑ * ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂μ‖ₑ ∂μ := by
   have havg : ⨍ z in s, k • f z ∂μ = k • ⨍ z in s, f z ∂μ := integral_smul k f
-  simp_rw [havg, ← smul_sub, enorm_smul, setLAverage_eq,
-    lintegral_const_mul' _ _ enorm_ne_top, mul_div_assoc]
+  simp_rw [havg, ← smul_sub, eNorm_smul, setLAverage_eq,
+    lintegral_const_mul' _ _ eNorm_ne_top, mul_div_assoc]
 
 omit [CompleteSpace F] in
 /-- On a set of finite measure, an a.e. strongly measurable `f` with zero mean oscillation agrees
@@ -430,7 +430,7 @@ theorem laverage_rpow_enorm_rpow_inv_eq {F : Type*} [NormedAddCommGroup F] {f : 
     {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (hf : AEStronglyMeasurable f μ) :
     (⨍⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ) ^ p.toReal⁻¹ = eLpNorm f p μ / μ Set.univ ^ p.toReal⁻¹ := by
   rw [laverage_eq, ENNReal.div_rpow_of_nonneg _ _ (inv_nonneg.2 ENNReal.toReal_nonneg),
-    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hf, one_div]
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hf, one_div]
 
 /-- An estimate `∫_s ‖g‖² ≤ α ∫_t ‖f‖² + β ∫_t ‖G‖²` between Bochner integrals, read as one
 between averages in `ℝ≥0∞`, when the measure of `t` is finite and `k` times that of `s`. -/
@@ -567,7 +567,7 @@ theorem norm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht :
     ‖(⨍ x in s, f x ∂μ) - c‖ ≤ μ.real t / μ.real s * ⨍ x in t, ‖f x - c‖ ∂μ := by
   have hfc : IntegrableOn (fun x => f x - c) t μ := hf.sub (integrableOn_const ht)
   have hav : (⨍⁻ x in t, ‖f x - c‖ₑ ∂μ).toReal = ⨍ x in t, ‖f x - c‖ ∂μ := by
-    simpa using toReal_setLAverage hfc.1.enorm (ae_of_all _ fun _ => enorm_ne_top)
+    simpa using toReal_setLAverage hfc.1.enorm (ae_of_all _ fun _ => eNorm_ne_top)
   rw [← toReal_enorm, measureReal_def, measureReal_def, ← ENNReal.toReal_div, ← hav,
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono

@@ -772,7 +772,7 @@ private theorem lintegral_enorm_fourierIntegral_mul_gaussian_le (F : V → ℂ)
   have hprod_int : Integrable fun ξ : V => 𝓕 F ξ * Complex.exp (-(t * ‖ξ‖ ^ 2 : ℝ)) :=
     (integrable_cexp_neg_mul_sq_norm ht).bdd_mul hft_cont.aestronglyMeasurable
       (ae_of_all _ fun ξ => hbound ξ)
-  rw [← ofReal_integral_norm_eq_lintegral_enorm hprod_int]
+  rw [← ofReal_integral_norm_eq_lintegral_eNorm hprod_int]
   refine ENNReal.ofReal_le_ofReal ?_
   have hnorm_eq : ∀ ξ : V, ‖𝓕 F ξ * Complex.exp (-(t * ‖ξ‖ ^ 2 : ℝ))‖ =
       (𝓕 F ξ * Complex.exp (-(t * ‖ξ‖ ^ 2 : ℝ))).re := by

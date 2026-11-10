@@ -331,7 +331,7 @@ theorem mul_meas_ofReal_lt_le_setLIntegral
     calc ∫⁻ x, ‖g₁ x‖ₑ ∂μ
         = ∫⁻ x in S, ‖v x‖ₑ ∂μ := by
           rw [hg₁def]
-          simp_rw [enorm_indicator_eq_indicator_enorm]
+          simp_rw [eNorm_indicator_eq_indicator_eNorm]
           exact lintegral_indicator hSmeas _
       _ = ∫⁻ x in {x | ENNReal.ofReal (c * t) < ‖v x‖ₑ}, ‖v x‖ₑ ∂μ := by
           rw [Measure.restrict_congr_set hsets]

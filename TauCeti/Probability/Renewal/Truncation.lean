@@ -82,8 +82,8 @@ theorem tendstoUniformly_renewalConv_indicator_Ici (μ : Measure ℝ≥0) [IsPro
       simp [edist_eq_enorm_sub]
     _ ≤ ∫⁻ s in Iic t ∩ {s | (N : ℝ≥0) ≤ t - s}, ENNReal.ofReal (h (t - s))
         ∂μ.renewalMeasure := by
-      simpa only [Real.enorm_of_nonneg (h₀ _)] using
-        (enorm_integral_le_lintegral_enorm (fun s => h (t - s)))
+      simpa only [Real.eNorm_of_nonneg (h₀ _)] using
+        (eNorm_integral_le_lintegral_eNorm (fun s => h (t - s)))
     _ ≤ ⨆ u : ℝ≥0, ∫⁻ s in Iic u ∩ {s | (N : ℝ≥0) ≤ u - s},
         ENNReal.ofReal (h (u - s)) ∂μ.renewalMeasure := le_iSup (fun u =>
           ∫⁻ s in Iic u ∩ {s | (N : ℝ≥0) ≤ u - s},

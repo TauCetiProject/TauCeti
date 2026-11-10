@@ -374,7 +374,7 @@ theorem tendsto_setLIntegral_enorm_outerNormal_sub_div (hx : x ∈ reducedBounda
   refine ENNReal.div_le_of_le_mul ?_
   have hi : IntegrableOn (fun y : Ω => outerNormal μ Ω s y - outerNormal μ Ω s x) S lam :=
     (integrableOn_outerNormal hSfin).sub (integrableOn_const hSfin)
-  rw [← ofReal_integral_norm_eq_lintegral_enorm hi]
+  rw [← ofReal_integral_norm_eq_lintegral_eNorm hi]
   calc ENNReal.ofReal (∫ y in S, ‖outerNormal μ Ω s y - outerNormal μ Ω s x‖ ∂lam)
       ≤ ENNReal.ofReal (2 * (δ.toReal / 2) * lam.real S) := ENNReal.ofReal_le_ofReal hr
     _ = δ * lam S := by

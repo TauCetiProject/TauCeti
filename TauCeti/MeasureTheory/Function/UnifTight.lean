@@ -28,7 +28,7 @@ protected theorem UnifTight.ae_mono {α β ι : Type*} {m : MeasurableSpace α}
     (hfg : ∀ i, (‖f i ·‖ₑ) ≤ᵐ[μ] (‖g i ·‖ₑ)) : UnifTight f p μ := by
   intro ε hε
   obtain ⟨s, hs, hfinite, hbound⟩ := hg.exists_measurableSet_indicator hε.ne'
-  refine ⟨s, hfinite.ne, fun n ↦ (eLpNorm_mono_enorm_ae
+  refine ⟨s, hfinite.ne, fun n ↦ (eLpNorm_mono_eNorm_ae
     ((hf_meas n).indicator hs.compl) ?_).trans (hbound n)⟩
   filter_upwards [hfg n] with x hx
   by_cases hxs : x ∈ sᶜ

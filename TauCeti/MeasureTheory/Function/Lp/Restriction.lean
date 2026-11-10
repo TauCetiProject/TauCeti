@@ -239,7 +239,7 @@ theorem tendsto_setLIntegral_enorm_sub_of_tendsto_Lp
   have hmeas : AEStronglyMeasurable (⇑(A n) - ⇑A₀) (μ.restrict W) :=
     ((Lp.aestronglyMeasurable _).sub (Lp.aestronglyMeasurable _)).mono_measure
       Measure.restrict_le_self
-  rw [eLpNorm_one_eq_lintegral_enorm hmeas]
+  rw [eLpNorm_one_eq_lintegral_eNorm hmeas]
   refine lintegral_congr_ae ?_
   filter_upwards [ae_restrict_of_ae (ha n), ha₀] with x h₁ h₂
   rw [Pi.sub_apply, h₁, h₂]

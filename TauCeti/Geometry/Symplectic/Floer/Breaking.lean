@@ -145,7 +145,7 @@ private theorem lintegral_edist_le (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) {
     (hcont.comp (by fun_prop) fun r hr ↦ hmem hr).intervalIntegrable
   rw [edist_eq_enorm_sub, ← intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hint,
     intervalIntegral.integral_of_le hαβ]
-  exact (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono_set Ioc_subset_Icc_self)
+  exact (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono_set Ioc_subset_Icc_self)
 
 /-- Along a vertical segment `{r} × [t₁, t₂]` the defect of `u` from the integral equation of the
 Hamiltonian flow is the integral of the `t`-component `∂_t u - X_{H_t}(u)` of the perturbed
@@ -182,7 +182,7 @@ private theorem lintegral_enorm_sub_sub_integral_le (hH : ContDiff ℝ 1 (uncurr
     (hcontX.comp (by fun_prop) fun t htm ↦ hmem htm).intervalIntegrable
   rw [← intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hint,
     ← intervalIntegral.integral_sub hint hintX, intervalIntegral.integral_of_le ht]
-  exact (enorm_integral_le_lintegral_enorm _).trans
+  exact (eNorm_integral_le_lintegral_eNorm _).trans
     (lintegral_mono_set (Ioc_subset_Icc_self.trans (Icc_subset_Icc ht₁ ht₂)))
 
 end Segments
@@ -265,8 +265,8 @@ private theorem tendsto_lintegral_enorm_perturbedFDeriv (hEU : E ⊆ U)
       (volume.restrict (Icc (a + s k) (b + s k) ×ˢ Icc (0 : ℝ) 1)) :=
     (hg.mono (hk.trans hEU)).aestronglyMeasurable (measurableSet_Icc.prod measurableSet_Icc)
   have hL := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := 2) one_le_two hmeas
-  rw [eLpNorm_one_eq_lintegral_enorm hmeas,
-    eLpNorm_eq_lintegral_rpow_enorm_toReal two_ne_zero ENNReal.ofNat_ne_top hmeas,
+  rw [eLpNorm_one_eq_lintegral_eNorm hmeas,
+    eLpNorm_eq_lintegral_rpow_eNorm_toReal two_ne_zero ENNReal.ofNat_ne_top hmeas,
     Measure.restrict_apply_univ, hvol] at hL
   convert hL using 3 <;> norm_num
 

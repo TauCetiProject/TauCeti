@@ -116,15 +116,15 @@ theorem opMulEquiv_symm_op (g : DeckGroup) :
 
 /-- **The abelianization of the deck group** `H(ℤ) × ℤ` is `ℤ³`, through the coordinates
 `((x, y, z), n) ↦ (x, y, n)`. -/
-def abelianizationMulEquiv : Abelianization DeckGroup ≃* Multiplicative (ℤ × ℤ × ℤ) :=
-  (Abelianization.prodMulEquiv _).trans <|
-    (HeisenbergGroup.abelianizationMulEquiv.prodCongr Abelianization.equivOfComm.symm).trans <|
+def abelianizationMulEquiv : Group.Abelianization DeckGroup ≃* Multiplicative (ℤ × ℤ × ℤ) :=
+  (Group.Abelianization.prodMulEquiv _).trans <|
+    (HeisenbergGroup.abelianizationMulEquiv.prodCongr Group.Abelianization.equivOfComm.symm).trans <|
       (MulEquiv.prodMultiplicative (ℤ × ℤ) ℤ).symm.trans
         (AddEquiv.prodAssoc (M := ℤ) (N := ℤ) (P := ℤ)).toMultiplicative
 
 @[simp]
 theorem abelianizationMulEquiv_of (g : DeckGroup) :
-    abelianizationMulEquiv (Abelianization.of g) = .ofAdd (g.1.x, g.1.y, g.2.toAdd) := by
+    abelianizationMulEquiv (Group.Abelianization.of g) = .ofAdd (g.1.x, g.1.y, g.2.toAdd) := by
   simp [abelianizationMulEquiv, MulEquiv.prodCongr]
 
 end DeckGroup

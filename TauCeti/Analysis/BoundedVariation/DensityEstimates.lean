@@ -116,13 +116,13 @@ private theorem ofReal_abs_integral_mul_inner_polarDensity_le
   have hφ : (φ : E → ℝ) = ψ := coe_mk
   simp only [divergenceCLM_postcompCLM_toSpanSingleton, postcompCLM_apply, comp_apply,
     ContinuousLinearMap.toSpanSingleton_apply, hφ, real_inner_smul_left] at h
-  rw [← abs_neg, ← h, ← Real.enorm_eq_ofReal_abs]
-  refine (enorm_integral_le_lintegral_enorm _).trans <|
+  rw [← abs_neg, ← h, ← Real.eNorm_eq_ofReal_abs]
+  refine (eNorm_integral_le_lintegral_eNorm _).trans <|
     (lintegral_mono fun y => ?_).trans (lintegral_indicator_const_le _ _)
   have hd : ∂_{v} φ y = fderiv ℝ ψ y v := by
     rw [lineDerivOp_apply]
     exact (hψ.differentiable (by simp) y).lineDeriv_eq_fderiv
-  rw [hd, enorm_mul]
+  rw [hd, eNorm_mul]
   refine le_trans ?_ (enorm_fderiv_mul_indicator_le_indicator hψ01 hψ1 hψR hψK s y)
   gcongr
   exact (fderiv ℝ ψ y).le_opENorm_of_le (by simpa [← ofReal_norm] using hv) |>.trans_eq (mul_one _)

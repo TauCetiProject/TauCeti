@@ -125,7 +125,7 @@ theorem enorm_integral_sub_integral_le_of_hormander {K : X → X → E →L[ℝ]
   · have hx : Integrable (fun y => K x y (b y)) μ :=
       (hint.add hx').congr (.of_forall fun y => by simp)
     rw [← integral_sub hx hx']
-    refine (enorm_integral_le_lintegral_enorm _).trans (le_of_eq_of_le ?_ hlint)
+    refine (eNorm_integral_le_lintegral_eNorm _).trans (le_of_eq_of_le ?_ hlint)
     simp
   · have hx : ¬Integrable (fun y => K x y (b y)) μ := fun hx =>
       hx' ((hx.sub hint).congr (.of_forall fun y => by simp))
@@ -218,7 +218,7 @@ theorem setLAverage_enorm_sub_setAverage_le_of_hormander_of_measure_closedBall_l
       exact ae_le_eLpNormEssSup
     filter_upwards [hf₂, hfM] with y h1 h2
     rw [h1]
-    exact (enorm_indicator_le_enorm_self _ _).trans h2
+    exact (eNorm_indicator_le_eNorm_self _ _).trans h2
   have hvan : ∀ᵐ y ∂μ, y ∈ closedBall c (5 * r) → f₂ y = 0 := by
     filter_upwards [hf₂] with y h hy
     rw [h, indicator_of_notMem (notMem_compl_iff.2 hy)]

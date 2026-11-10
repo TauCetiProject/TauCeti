@@ -65,7 +65,7 @@ theorem enorm_integral_smul_le {α 𝕜 F : Type*} [MeasurableSpace α]
     {μ : Measure α} {p q : ℝ≥0∞} [p.HolderConjugate q] {a : α → 𝕜} {f : α → F} :
     ‖∫ x, a x • f x ∂μ‖ₑ ≤ eLpNorm a p μ * eLpNorm f q μ := by
   calc ‖∫ x, a x • f x ∂μ‖ₑ ≤ eLpNorm (fun x => a x • f x) 1 μ :=
-      (enorm_integral_le_lintegral_enorm _).trans lintegral_enorm_le_eLpNorm_one
+      (eNorm_integral_le_lintegral_eNorm _).trans lintegral_eNorm_le_eLpNorm_one
     _ ≤ eLpNorm a p μ * eLpNorm f q μ := eLpNorm_smul_le_mul_eLpNorm_of_pos zero_lt_one
 
 end TauCeti

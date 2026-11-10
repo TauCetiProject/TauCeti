@@ -175,7 +175,7 @@ private theorem normalFlatMass_smul_le (a : ℝ) :
   · simp [ha]
   have ha' : ‖a‖ₑ ≠ 0 := by simpa using ha
   conv_rhs => rw [normalFlatMass_def]
-  simp_rw [ENNReal.mul_iInf_of_ne ha' enorm_ne_top]
+  simp_rw [ENNReal.mul_iInf_of_ne ha' eNorm_ne_top]
   refine le_iInf fun S => le_iInf fun hS => le_iInf fun hR => ?_
   refine (normalFlatMass_le_of_eq_add_comp_extDerivCLM (a • T) (hR.smul a) (hS.smul a)
     (by simp [smul_sub])).trans_eq ?_
@@ -189,7 +189,7 @@ theorem normalFlatMass_smul (a : ℝ) :
   · simp [ha]
   refine le_antisymm (T.normalFlatMass_smul_le a) ?_
   have h := (a • T).normalFlatMass_smul_le a⁻¹
-  have hnorm : ‖a‖ₑ * ‖a⁻¹‖ₑ = 1 := by rw [← enorm_mul, mul_inv_cancel₀ ha]; simp
+  have hnorm : ‖a‖ₑ * ‖a⁻¹‖ₑ = 1 := by rw [← eNorm_mul, mul_inv_cancel₀ ha]; simp
   simpa [smul_smul, inv_mul_cancel₀ ha, ← mul_assoc, hnorm] using mul_le_mul' (le_refl ‖a‖ₑ) h
 
 /-- Reversing a current preserves its flat mass. -/
@@ -197,7 +197,7 @@ theorem normalFlatMass_smul (a : ℝ) :
 theorem normalFlatMass_neg : (-T).normalFlatMass = T.normalFlatMass := by
   have h := T.normalFlatMass_smul (-1 : ℝ)
   rw [_root_.neg_one_smul ℝ T] at h
-  simpa only [enorm_neg, enorm_one, one_mul] using h
+  simpa only [enorm_neg, eNorm_one, one_mul] using h
 
 /-- Boundary is a contraction for the normal flat mass in positive degrees. -/
 theorem normalFlatMass_comp_extDerivCLM_le

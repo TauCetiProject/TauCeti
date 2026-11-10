@@ -198,8 +198,8 @@ theorem hasSum_coeff_logDeriv_mul_pow_of_zeroFree (f : ℂ⟦X⟧)
     exact_mod_cast hRpos'
   have hlogSeries := hasFPowerSeriesOnBall_logDeriv_of_zeroFree f hf0 hr hne hRpos hRr
   have hzBall : z ∈ Metric.eball (0 : ℂ) (R : ENNReal) := by
-    rw [Metric.mem_eball, edist_zero_right, enorm_lt_coe]
-    exact enorm_lt_coe.mp hzR
+    rw [Metric.mem_eball, edist_zero_right, eNorm_lt_coe]
+    exact eNorm_lt_coe.mp hzR
   simpa [mul_comm] using hlogSeries.hasSum hzBall
 
 /-- A formal logarithmic derivative converges absolutely throughout a zero-free disk. -/

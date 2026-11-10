@@ -277,7 +277,7 @@ theorem totalVariationOn_smul_of_nonneg {c : ℝ} (hc : 0 ≤ c) :
 /-- The total variation is absolutely homogeneous: `|D(c u)|(Ω) = |c| |Du|(Ω)`. -/
 theorem totalVariationOn_smul (c : ℝ) :
     totalVariationOn μ Ω (c • u) = ‖c‖ₑ * totalVariationOn μ Ω u := by
-  rw [Real.enorm_eq_ofReal_abs]
+  rw [Real.eNorm_eq_ofReal_abs]
   rcases le_total 0 c with hc | hc
   · rw [abs_of_nonneg hc, totalVariationOn_smul_of_nonneg hc]
   · rw [abs_of_nonpos hc, ← totalVariationOn_smul_of_nonneg (neg_nonneg.mpr hc), neg_smul,
@@ -383,18 +383,18 @@ theorem totalVariationOn_le_liminf [OpensMeasurableSpace E] {ι : Type*} {l : Fi
   -- The pairing with `ψ` is bounded by `‖ψ‖_∞ ∫_K |w|`, where `K = tsupport ψ`.
   have hbound (w : E → ℝ) : ‖∫ x, ψ x * w x ∂μ‖ₑ ≤
       ‖(ψ : BoundedContinuousFunction E ℝ)‖ₑ * ∫⁻ x in tsupport ψ, ‖w x‖ₑ ∂μ := by
-    rw [← lintegral_const_mul' _ _ enorm_ne_top,
+    rw [← lintegral_const_mul' _ _ eNorm_ne_top,
       ← lintegral_indicator (isClosed_tsupport _).measurableSet]
-    refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+    refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun x => ?_)
     by_cases hx : x ∈ tsupport ψ
-    · rw [Set.indicator_of_mem hx, enorm_mul]
+    · rw [Set.indicator_of_mem hx, eNorm_mul]
       gcongr
       exact enorm_le_iff_norm_le.mpr <| by
         simpa using (ψ : BoundedContinuousFunction E ℝ).norm_coe_le_norm x
     · simp [image_eq_zero_of_notMem_tsupport hx]
   rw [tendsto_iff_edist_tendsto_0]
   have hlim := ENNReal.Tendsto.const_mul (a := ‖(ψ : BoundedContinuousFunction E ℝ)‖ₑ)
-    (h _ ψ.hasCompactSupport.isCompact ψ.tsupport_subset) (Or.inr enorm_ne_top)
+    (h _ ψ.hasCompactSupport.isCompact ψ.tsupport_subset) (Or.inr eNorm_ne_top)
   rw [mul_zero] at hlim
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
     (.of_forall fun _ => zero_le) (hu.mono fun i hi => ?_)
@@ -453,7 +453,7 @@ theorem HasWeakFDerivOn.totalVariationOn_le_setLIntegral_enorm [OpensMeasurableS
   simp_rw [← smul_eq_mul (α := ℝ)]
   rw [h.integral_divergenceCLM_smul_eq_neg_integral φ]
   refine (ENNReal.ofReal_le_ofReal (neg_le_abs _)).trans ?_
-  rw [← Real.enorm_eq_ofReal_abs]
+  rw [← Real.eNorm_eq_ofReal_abs]
   exact φ.enorm_integral_apply_le_setLIntegral_enorm hφ U
 
 /-- **A weakly differentiable function has locally finite variation.** If `u` has a weak
@@ -500,7 +500,7 @@ theorem HasWeakFDerivOn.totalVariationOn_eq_setLIntegral_enorm {U : E → E →L
 measure, exactly when its weak derivative is integrable on `Ω`. -/
 theorem HasWeakFDerivOn.totalVariationOn_lt_top_iff_integrableOn {U : E → E →L[ℝ] ℝ}
     (h : HasWeakFDerivOn μ Ω u U) : totalVariationOn μ Ω u < ∞ ↔ IntegrableOn U Ω μ := by
-  rw [h.totalVariationOn_eq_setLIntegral_enorm, ← hasFiniteIntegral_iff_enorm]
+  rw [h.totalVariationOn_eq_setLIntegral_enorm, ← hasFiniteIntegral_iff_eNorm]
   exact ⟨fun hfi => ⟨h.locallyIntegrableOn_deriv.aestronglyMeasurable, hfi⟩,
     Integrable.hasFiniteIntegral⟩
 

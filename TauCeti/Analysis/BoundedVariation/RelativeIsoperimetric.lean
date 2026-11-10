@@ -79,7 +79,7 @@ private theorem measure_inter_ball_rpow_le_perimeter (hn : 2 ≤ finrank ℝ E) 
   -- `μ(t ∩ B) / 2 ≤ ∫_{t ∩ B} |u - a| ≤ C μ(t ∩ B) ^ (1/n) P(s; B)` with `C` the
   -- Poincaré–Wirtinger constant of `B`, and `2C ≤ 2 ^ (n + 1) ω ^ (-1/n)`.
   have hb' : 2⁻¹ ≤ ‖b - a‖ₑ := by
-    rw [Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_inv_of_pos two_pos,
+    rw [Real.eNorm_eq_ofReal_abs, ← ENNReal.ofReal_ofNat, ← ENNReal.ofReal_inv_of_pos two_pos,
       ← one_div]
     exact ENNReal.ofReal_le_ofReal hb
   have hlow : 2⁻¹ * μ (t ∩ B) ≤ ∫⁻ x in t ∩ B, ‖u x - a‖ₑ ∂μ := by

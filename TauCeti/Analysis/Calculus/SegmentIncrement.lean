@@ -15,7 +15,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
 
 This file bounds the increment of a function between `x` and `x + h` by the integral of its
 directional derivative along the segment joining them. It is the multi-dimensional form of
-Mathlib's one-dimensional `enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc`, obtained by
+Mathlib's one-dimensional `eNorm_sub_le_lintegral_deriv_of_contDiffOn_Icc`, obtained by
 composing with the affine parametrization `t ↦ x + t • h` of the segment.
 
 The hypotheses of the first estimate are local to the segment: differentiability at each of its
@@ -67,7 +67,7 @@ theorem enorm_sub_le_lintegral_enorm_fderiv_apply (x h : E)
   have hC1 : ContDiffOn ℝ 1 (fun s : ℝ => u (x + s • h)) (Icc 0 1) := by
     rw [contDiffOn_one_iff_derivWithin (uniqueDiffOn_Icc zero_lt_one)]
     exact ⟨fun t ht => (hline t ht).differentiableWithinAt, hc.congr hderiv⟩
-  simpa using (enorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc hC1 zero_le_one).trans_eq
+  simpa using (eNorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc hC1 zero_le_one).trans_eq
     (setLIntegral_congr_fun measurableSet_Icc fun t ht => by rw [hderiv t ht])
 
 /-- The oscillation of a function along a segment is bounded by the integrated norm of its

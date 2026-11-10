@@ -265,7 +265,7 @@ private theorem ae_value_le_add_of_toReal_eLpNorm_posPartAbove_le (hOmega : mu O
         ν {x | ENNReal.ofReal (t - l) ≤ ‖W1p.value w x‖ₑ} := by
       refine measure_mono_ae ?_
       filter_upwards [W1p.value_posPartAbove_ae (by norm_num) (hk.trans hkl) u] with x hx hxt
-      rw [hx, Real.enorm_of_nonneg (le_max_right _ _)]
+      rw [hx, Real.eNorm_of_nonneg (le_max_right _ _)]
       have hxt' : t < W1p.value u x := hxt
       exact ENNReal.ofReal_le_ofReal (le_max_of_le_left (by linarith))
     have hfin' : eLpNorm (W1p.value w) s ν ^ ((s : ℝ≥0∞).toReal) ≠ ∞ :=

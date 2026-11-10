@@ -124,7 +124,7 @@ theorem exists_setAverage_rpow_mul_setAverage_rpow_neg_le [Nonempty ι] :
     have hfi := hint (ball y ρ) ((ball_subset_ball (by linarith : ρ ≤ 2 * ρ)).trans h2)
       measure_ball_lt_top.ne
     rw [setLAverage_eq]
-    simp_rw [Real.enorm_eq_ofReal_abs]
+    simp_rw [Real.eNorm_eq_ofReal_abs]
     calc (∫⁻ x in ball y ρ, ENNReal.ofReal |f x - ⨍ z in ball y ρ, f z ∂mu| ∂mu) / mu (ball y ρ)
         = ENNReal.ofReal (⨍ x in ball y ρ, |f x - ⨍ z in ball y ρ, f z ∂mu| ∂mu) :=
           (ofReal_setAverage (f := fun x => |f x - ⨍ z in ball y ρ, f z ∂mu|)

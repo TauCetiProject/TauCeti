@@ -313,7 +313,7 @@ theorem potentialEnergy_ne_bot_of_hasFiniteMoment {V : E → ℝ} {μ : Measure 
   have hnorm : AEStronglyMeasurable (fun x : E ↦ ‖x‖) μ :=
     continuous_norm.measurable.aestronglyMeasurable
   have hmem : MemLp (fun x : E ↦ ‖x‖) 2 μ :=
-    (memLp_congr_enorm hnorm measurable_edist_right.aestronglyMeasurable
+    (memLp_congr_eNorm hnorm measurable_edist_right.aestronglyMeasurable
       (.of_forall fun x ↦ by simp [edist_eq_enorm_sub])).2
       (hμ.memLp (x := 0) measurable_edist_right.aestronglyMeasurable)
   have hsq := (memLp_two_iff_integrable_sq_norm hnorm).1 hmem

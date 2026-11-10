@@ -77,8 +77,8 @@ theorem strictConvexSpace [Fact (1 ≤ p)] (hp : 1 < p) (hp_top : p ≠ ∞) :
     simpa using ENNReal.toReal_strict_mono hp_top hp
   -- The integral of the `q`-th power of the pointwise norm is the `q`-th power of the norm.
   have hint (h : Lp E p μ) : ∫⁻ x, ‖h x‖ₑ ^ p.toReal ∂μ = ‖h‖ₑ ^ p.toReal := by
-    rw [Lp.enorm_def, eLpNorm_eq_eLpNorm' hp0 hp_top (Lp.aestronglyMeasurable h),
-      lintegral_rpow_enorm_eq_rpow_eLpNorm' (zero_lt_one.trans hq)]
+    rw [Lp.eNorm_def, eLpNorm_eq_eLpNorm' hp0 hp_top (Lp.aestronglyMeasurable h),
+      lintegral_rpow_eNorm_eq_rpow_eLpNorm' (zero_lt_one.trans hq)]
   have hone {h : Lp E p μ} (hh : ‖h‖ = 1) : ‖h‖ₑ = 1 := by
     rw [← ofReal_norm, hh, ENNReal.ofReal_one]
   have hmid : ‖(2⁻¹ : ℝ) • (f + g)‖ = 1 := by

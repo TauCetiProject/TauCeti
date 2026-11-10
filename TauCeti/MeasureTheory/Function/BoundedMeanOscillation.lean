@@ -220,7 +220,7 @@ theorem memBMO_zero : MemBMO (0 : X → F) μ :=
 
 theorem MemBMO.const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F] [NormSMulClass 𝕜 F]
     [SMulCommClass ℝ 𝕜 F] (hf : MemBMO f μ) (k : 𝕜) : MemBMO (k • f) μ :=
-  ⟨hf.1.smul k, by rw [bmoSeminorm_const_smul]; exact ENNReal.mul_lt_top enorm_lt_top hf.2⟩
+  ⟨hf.1.smul k, by rw [bmoSeminorm_const_smul]; exact ENNReal.mul_lt_top eNorm_lt_top hf.2⟩
 
 theorem MemBMO.neg (hf : MemBMO f μ) : MemBMO (-f) μ :=
   ⟨hf.1.neg, by rw [bmoSeminorm_neg]; exact hf.2⟩
@@ -441,7 +441,7 @@ theorem memVMO_zero : MemVMO (0 : X → F) μ :=
 theorem MemVMO.const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F] [NormSMulClass 𝕜 F]
     [SMulCommClass ℝ 𝕜 F] (hf : MemVMO f μ) (k : 𝕜) : MemVMO (k • f) μ := by
   refine ⟨hf.1.const_smul k, ?_⟩
-  have h := ENNReal.Tendsto.const_mul hf.2 (Or.inr (show ‖k‖ₑ ≠ ∞ from enorm_ne_top))
+  have h := ENNReal.Tendsto.const_mul hf.2 (Or.inr (show ‖k‖ₑ ≠ ∞ from eNorm_ne_top))
   rw [mul_zero] at h
   rwa [show vmoModulus (k • f) μ = fun r => ‖k‖ₑ * vmoModulus f μ r from
     funext (vmoModulus_const_smul k)]

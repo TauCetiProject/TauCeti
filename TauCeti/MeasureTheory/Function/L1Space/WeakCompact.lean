@@ -121,7 +121,7 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
   · -- Weakly compact sets are bounded.
     obtain ⟨R, hR⟩ := isBounded_iff_forall_norm_le.1 hA.isBounded_toWeakSpace_preimage
     refine ⟨R.toNNReal, fun f ↦ ?_⟩
-    rw [← Lp.enorm_def, ← ofReal_norm]
+    rw [← Lp.eNorm_def, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal
       (hR f (subset_closure (s := toWeakSpace 𝕜 (Lp 𝕜 1 μ) '' A) (mem_image_of_mem _ f.2)))
   by_contra hne
@@ -140,7 +140,7 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
       fun n ↦ ?_
     simpa only [s, measure_toMeasurable] using ht n
   have hbig (n : ℕ) : ε < ∫⁻ x in s n, ‖(i n : α → 𝕜) x‖ₑ ∂μ := by
-    rw [← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _).restrict]
+    rw [← eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable _).restrict]
     exact (hit n).trans_le
       (eLpNorm_mono_measure _ (Measure.restrict_mono (subset_toMeasurable _ _) le_rfl))
   -- By Šmulian's theorem, a subsequence converges weakly.
@@ -186,7 +186,7 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
     (fun S hS ↦ (hset S hS).comp ((tendsto_add_atTop_nat K).comp hσ.tendsto_atTop)) hBm hB
   have hzero' : Tendsto (fun j ↦ ∫⁻ x in B j, ‖h (σ j + K) x‖ₑ ∂μ) atTop (𝓝 0) := by
     refine (ENNReal.tendsto_ofReal hzero).congr' (.of_forall fun j ↦ ?_) |>.trans ?_
-    · exact ofReal_integral_norm_eq_lintegral_enorm (hh _).integrableOn
+    · exact ofReal_integral_norm_eq_lintegral_eNorm (hh _).integrableOn
     · rw [ENNReal.ofReal_zero]
   obtain ⟨j, hj⟩ := (ENNReal.tendsto_nhds_zero.1 hzero' (ε / 2 / 2)
     (ENNReal.half_pos (ENNReal.half_pos hε.ne').ne')).exists
@@ -212,7 +212,7 @@ theorem isCompact_closure_toWeakSpace_iff_isBounded_and_unifIntegrable {A : Set 
     exact ENNReal.toReal_le_of_le_ofReal C.coe_nonneg (by simpa using hC ⟨f, hf⟩)
   · obtain ⟨R, hR⟩ := isBounded_iff_forall_norm_le.1 hA
     refine ⟨R.toNNReal, fun f ↦ ?_⟩
-    rw [← Lp.enorm_def, ← ofReal_norm]
+    rw [← Lp.eNorm_def, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (hR f f.2)
 
 /-- **Dunford–Pettis theorem**, classical form. For a finite measure, a subset `A` of scalar `L¹`
@@ -229,8 +229,8 @@ theorem isCompact_closure_toWeakSpace_iff_isBounded_and_forall_setIntegral_le
   -- On a measurable set, the restricted `L¹` seminorm is the integral of the norm.
   have heq (f : Lp 𝕜 1 μ) (s : Set α) :
       eLpNorm (f : α → 𝕜) 1 (μ.restrict s) = ENNReal.ofReal (∫ x in s, ‖(f : α → 𝕜) x‖ ∂μ) := by
-    rw [eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable f).restrict,
-      ofReal_integral_norm_eq_lintegral_enorm (L1.integrable_coeFn f).integrableOn]
+    rw [eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable f).restrict,
+      ofReal_integral_norm_eq_lintegral_eNorm (L1.integrable_coeFn f).integrableOn]
   rw [unifIntegrable_iff']
   constructor
   · intro hA ε hε

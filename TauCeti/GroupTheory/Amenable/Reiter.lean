@@ -137,7 +137,7 @@ theorem exists_finset_sum_card_smul_symmDiff_lt_of_sum_tsum_lt {p : X → ℝ} (
   have : IsFiniteMeasure m := ⟨by simp [m]⟩
   have h' : ∑ g ∈ K, ∫⁻ x, ‖p (g⁻¹ • x) - p x‖ₑ ∂m <
       ENNReal.ofReal ε * ∫⁻ x, ENNReal.ofReal (p x) ∂m := by
-    simp_rw [Real.enorm_eq_ofReal_abs]
+    simp_rw [Real.eNorm_eq_ofReal_abs]
     rw [sum_congr rfl fun g hg ↦ lintegral_ofReal_count_restrict_eq_tsum (fun _ ↦ abs_nonneg _)
         fun x hx ↦ by simp [hpU x hx, hpgU hg x hx],
       lintegral_ofReal_count_restrict_eq_tsum hp hpU,

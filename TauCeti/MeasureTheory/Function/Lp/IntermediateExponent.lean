@@ -52,8 +52,8 @@ theorem MemLp.of_le_of_le {f : α → ε} {p₀ p p₁ : ℝ≥0∞} (hf₀ : Me
   · rwa [top_le_iff.1 h₁] at hf₁
   have hp0 : p ≠ 0 := (hp₀.bot_lt.trans_le h₀).ne'
   have hmeas := hf₀.aestronglyMeasurable
-  refine (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp hmeas).2 ?_
-  have hI₀ := lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hp₀ (ne_top_of_le_ne_top hp h₀)
+  refine (eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top hp0 hp hmeas).2 ?_
+  have hI₀ := lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp₀ (ne_top_of_le_ne_top hp h₀)
     hf₀.eLpNorm_lt_top
   have hle : p₀.toReal ≤ p.toReal := ENNReal.toReal_mono hp h₀
   rcases eq_or_ne p₁ ∞ with rfl | hp₁
@@ -72,7 +72,7 @@ theorem MemLp.of_le_of_le {f : α → ε} {p₀ p p₁ : ℝ≥0∞} (hf₀ : Me
         rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_nonneg hr hC)]
         exact ENNReal.mul_lt_top (ENNReal.rpow_lt_top_of_nonneg hr hC) hI₀
   · -- `‖f‖ ^ p` is dominated by `‖f‖ ^ p₀` where `‖f‖ ≤ 1` and by `‖f‖ ^ p₁` elsewhere.
-    have hI₁ := lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top
+    have hI₁ := lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top
       (hp0.bot_lt.trans_le h₁).ne' hp₁ hf₁.eLpNorm_lt_top
     have hle₁ : p.toReal ≤ p₁.toReal := ENNReal.toReal_mono hp₁ h₁
     calc ∫⁻ a, ‖f a‖ₑ ^ p.toReal ∂μ
@@ -123,7 +123,7 @@ theorem eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow {f : α → ε} {p₀ p₁ p : 
       (Or.inl (ENNReal.ofReal_pos.2 ha).ne'), ENNReal.inv_div (Or.inl ENNReal.ofReal_ne_top)
       (Or.inl (ENNReal.ofReal_pos.2 hθ₀).ne'), div_eq_mul_inv, div_eq_mul_inv]
   calc eLpNorm f p μ = eLpNorm ((‖f ·‖ₑ ^ (1 - θ)) * (‖f ·‖ₑ ^ θ)) p μ := by
-        rw [← eLpNorm_enorm f hf]
+        rw [← eLpNorm_eNorm f hf]
         congr 1
         ext x
         rw [Pi.mul_apply, ← ENNReal.rpow_add_of_nonneg _ _ ha.le hθ₀.le, sub_add_cancel,
@@ -133,7 +133,7 @@ theorem eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow {f : α → ε} {p₀ p₁ p : 
         eLpNorm_le_eLpNorm_mul_eLpNorm_ennreal (hf.enorm.pow_const _).aestronglyMeasurable
           (hf.enorm.pow_const _).aestronglyMeasurable
     _ = eLpNorm f p₀ μ ^ (1 - θ) * eLpNorm f p₁ μ ^ θ := by
-        rw [eLpNorm_enorm_rpow f hf ha, eLpNorm_enorm_rpow f hf hθ₀, hr₀, hr₁]
+        rw [eLpNorm_eNorm_rpow f hf ha, eLpNorm_eNorm_rpow f hf hθ₀, hr₀, hr₁]
 
 /-- **Logarithmic convexity of the `Lᵖ` norms**, for elements `f ∈ Lᵖ`, `f₀ ∈ L^{p₀}` and
 `f₁ ∈ L^{p₁}` representing the same function: if `0 ≤ θ ≤ 1` and

@@ -186,7 +186,7 @@ theorem W1p.isClosed_setOf_eLpNorm_value_le (q : ENNReal) (C : ℝ≥0) :
       ((map_continuous (W1p.gradientL (mu := mu) (Omega := Omega) (p := p))).tendsto u).comp hvu
   have hbound : Tendsto (fun k => (C : ℝ≥0∞) * ‖W1p.gradient (v k)‖ₑ) atTop
       (𝓝 ((C : ℝ≥0∞) * ‖W1p.gradient u‖ₑ)) :=
-    ENNReal.Tendsto.const_mul ((continuous_enorm.tendsto _).comp hgradient)
+    ENNReal.Tendsto.const_mul ((continuous_eNorm.tendsto _).comp hgradient)
       (Or.inr ENNReal.coe_ne_top)
   obtain ⟨ns, hns, hae⟩ :=
     (tendstoInMeasure_of_tendsto_Lp hvalue).exists_seq_tendsto_ae

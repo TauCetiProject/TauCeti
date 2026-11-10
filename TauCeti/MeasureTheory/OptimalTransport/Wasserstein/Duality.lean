@@ -87,8 +87,8 @@ theorem ofReal_integral_add_integral_le_wassersteinEDist_add_rpow (hp1 : 1 ≤ p
     calc eLpNorm (fun z : Y × Y ↦ edist (Q₁ z.1) (Q₂ z.2)) p γ
         ≤ eLpNorm ((fun z : Y × Y ↦ edist z.1 z.2) +
             ((fun z : Y × Y ↦ edist z.1 (Q₁ z.1)) + fun z ↦ edist z.2 (Q₂ z.2))) p γ := by
-          refine eLpNorm_mono_enorm hmeas.aestronglyMeasurable fun z ↦ ?_
-          simp only [enorm_eq_self, Pi.add_apply]
+          refine eLpNorm_mono_eNorm hmeas.aestronglyMeasurable fun z ↦ ?_
+          simp only [eNorm_eq_self, Pi.add_apply]
           calc edist (Q₁ z.1) (Q₂ z.2)
               ≤ edist (Q₁ z.1) z.1 + edist z.1 z.2 + edist z.2 (Q₂ z.2) :=
                 edist_triangle4 _ _ _ _

@@ -80,7 +80,7 @@ section One
 variable (τ : A →ₗ[k] M) (δ : derivationLieAlgebra k A)
 
 /-- The `1`-cochain `(a₀, a₁) ↦ τ(a₀ δ(a₁))` of a linear map `τ` and a derivation `δ`. -/
-def traceDerivationCochain : MultilinearMap k (fun _ : Fin 2 ↦ A) M :=
+def traceDerivationCochain : MultilinearMap (RingHom.id k) (fun _ : Fin 2 ↦ A) M :=
   MultilinearMap.mk' (fun a ↦ τ (a 0 * (δ : Module.End k A) (a 1)))
     (fun a i x y ↦ by fin_cases i <;> simp [mul_add, add_mul])
     (fun a i c x ↦ by fin_cases i <;> simp [smul_mul_assoc, mul_smul_comm])
@@ -128,7 +128,7 @@ def traceDerivationCocycle (hτ : ∀ x y, τ (x * y) = τ (y * x))
 theorem coe_traceDerivationCocycle (hτ : ∀ x y, τ (x * y) = τ (y * x))
     (hδ : ∀ x, τ ((δ : Module.End k A) x) = 0) :
     ((traceDerivationCocycle hτ hδ : cyclicCochains k A M 1) :
-      MultilinearMap k (fun _ : Fin 2 ↦ A) M) = traceDerivationCochain τ δ :=
+      MultilinearMap (RingHom.id k) (fun _ : Fin 2 ↦ A) M) = traceDerivationCochain τ δ :=
   (rfl)
 
 end One
@@ -141,7 +141,7 @@ variable (τ : A →ₗ[k] M) (δ₁ δ₂ : derivationLieAlgebra k A)
 
 /-- The `2`-cochain `(a₀, a₁, a₂) ↦ τ(a₀ (δ₁(a₁) δ₂(a₂) - δ₂(a₁) δ₁(a₂)))` of a linear map `τ`
 and two derivations `δ₁`, `δ₂`. -/
-def traceDerivationPairCochain : MultilinearMap k (fun _ : Fin 3 ↦ A) M :=
+def traceDerivationPairCochain : MultilinearMap (RingHom.id k) (fun _ : Fin 3 ↦ A) M :=
   MultilinearMap.mk'
     (fun a ↦ τ (a 0 * ((δ₁ : Module.End k A) (a 1) * (δ₂ : Module.End k A) (a 2) -
       (δ₂ : Module.End k A) (a 1) * (δ₁ : Module.End k A) (a 2))))
@@ -220,7 +220,7 @@ theorem coe_traceDerivationPairCocycle (hτ : ∀ x y, τ (x * y) = τ (y * x))
     (hδ₁ : ∀ x, τ ((δ₁ : Module.End k A) x) = 0) (hδ₂ : ∀ x, τ ((δ₂ : Module.End k A) x) = 0)
     (hcomm : Commute (δ₁ : Module.End k A) δ₂) :
     ((traceDerivationPairCocycle hτ hδ₁ hδ₂ hcomm : cyclicCochains k A M 2) :
-      MultilinearMap k (fun _ : Fin 3 ↦ A) M) = traceDerivationPairCochain τ δ₁ δ₂ :=
+      MultilinearMap (RingHom.id k) (fun _ : Fin 3 ↦ A) M) = traceDerivationPairCochain τ δ₁ δ₂ :=
   (rfl)
 
 end Two

@@ -162,8 +162,8 @@ private theorem abs_integral_hamiltonianCurvature_le (ω : SymplecticForm V) (hH
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)| ≤ B := by
   have hB₀ : 0 ≤ B := (abs_nonneg _).trans (hB 0 0)
-  rw [← ENNReal.ofReal_le_ofReal_iff hB₀, ← Real.enorm_eq_ofReal_abs]
-  exact (enorm_integral_le_lintegral_enorm _).trans
+  rw [← ENNReal.ofReal_le_ofReal_iff hB₀, ← Real.eNorm_eq_ofReal_abs]
+  exact (eNorm_integral_le_lintegral_eNorm _).trans
     (ω.lintegral_enorm_hamiltonianCurvature_pssPlanePerturbation_le hH hHs hB u)
 
 /-- **The energy and the action on discs of a PSS plane.** If `|H| ≤ B`, then for every `R ≥ 2`

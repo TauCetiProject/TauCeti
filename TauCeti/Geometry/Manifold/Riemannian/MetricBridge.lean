@@ -24,7 +24,7 @@ norm times the distance from `x` to `y`.
 This is the chart-level estimate needed when transferring vector-valued variation estimates to
 `Manifold.pathELength` in the Hopf--Rinow lower-semicontinuity argument.  The proof uses the
 interval-integral estimate
-`enorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc` and the chain rule for `mfderivWithin`.
+`eNorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc` and the chain rule for `mfderivWithin`.
 
 The interval-integral estimate and the local-coordinate differential argument follow the
 corresponding constructions in Mathlib's `Geometry/Manifold/Riemannian/Basic.lean`.
@@ -87,7 +87,7 @@ theorem enorm_sub_le_mul_pathELength {f : M → F} {γ : ℝ → M} {a b : ℝ}
     calc
       ‖(f ∘ γ) b - (f ∘ γ) a‖ₑ ≤
           ∫⁻ t in Icc a b, ‖derivWithin (f ∘ γ) (Icc a b) t‖ₑ := by
-        apply enorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc _ hab.le
+        apply eNorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc _ hab.le
         rwa [← contMDiffOn_iff_contDiffOn]
       _ ≤ ∫⁻ t in Icc a b, C * ‖mfderiv[Icc a b] γ t 1‖ₑ := by
         apply setLIntegral_mono' measurableSet_Icc (fun t ht ↦ ?_)

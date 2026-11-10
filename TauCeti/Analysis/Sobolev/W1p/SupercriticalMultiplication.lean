@@ -160,7 +160,7 @@ private theorem W1p.lintegral_mul_value_sub_le (hp : (finrank ℝ E : ℝ≥0) <
   refine lintegral_mono_ae ?_
   filter_upwards [(W1p.value_ae_eq_morreyRepresentative v hp).filter_mono
     (ae_mono Measure.restrict_le_self)] with x hv
-  rw [← hv, ← sub_mul, enorm_mul]
+  rw [← hv, ← sub_mul, eNorm_mul]
   gcongr
   exact W1p.enorm_testFunction_sub_morreyRepresentative_le hp phi a u hphi x
 
@@ -205,10 +205,10 @@ private theorem W1p.lintegral_mulGradient_sub_le (hp : (finrank ℝ E : ℝ≥0)
     abel
   rw [hsplit]
   refine (enorm_add_le _ _).trans (add_le_add ?_ ?_)
-  · rw [enorm_smul]
+  · rw [eNorm_smul]
     gcongr
     exact W1p.enorm_testFunction_sub_morreyRepresentative_le hp phi a u hphi x
-  · rw [enorm_smul]
+  · rw [eNorm_smul]
     gcongr
     exact W1p.enorm_morreyRepresentative_le_embedding hp v x
 

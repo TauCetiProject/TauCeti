@@ -43,7 +43,7 @@ theorem sum_mul_enorm_sub_sq_eq {ι : Type*} (s : Finset ι) {w : ι → ℝ≥0
       ‖a - ∑ i ∈ s, (w i : ℝ) * b i‖ₑ ^ 2 +
         ∑ i ∈ s, (w i : ℝ≥0∞) * ‖∑ j ∈ s, (w j : ℝ) * b j - b i‖ₑ ^ 2 := by
   have hsq (r : ℝ) : ‖r‖ₑ ^ 2 = ENNReal.ofReal (r ^ 2) := by
-    rw [Real.enorm_eq_ofReal_abs, ← ENNReal.ofReal_pow (abs_nonneg r), sq_abs]
+    rw [Real.eNorm_eq_ofReal_abs, ← ENNReal.ofReal_pow (abs_nonneg r), sq_abs]
   have hmul (c : ℝ≥0) (r : ℝ) : (c : ℝ≥0∞) * ‖r‖ₑ ^ 2 = ENNReal.ofReal (c * r ^ 2) := by
     rw [hsq, ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul c.coe_nonneg]
   simp only [hmul]

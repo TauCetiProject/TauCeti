@@ -194,8 +194,8 @@ private theorem totalVariationOn_smoothTransition_comp (hu : LocallyLipschitzOn 
   refine setLIntegral_congr_fun_ae Ω.isOpen.measurableSet ?_
   filter_upwards [hu.ae_differentiableAt_of_mem (μ := μ) Ω.isOpen] with x hx hxΩ
   rw [((hx hxΩ).hasFDerivAt.sub_const t).const_mul c |>.smoothTransition |>.fderiv, smul_smul,
-    mul_comm, enorm_smul,
-    Real.enorm_of_nonneg (mul_nonneg hc Real.smoothTransition.monotone.deriv_nonneg)]
+    mul_comm, eNorm_smul,
+    Real.eNorm_of_nonneg (mul_nonneg hc Real.smoothTransition.monotone.deriv_nonneg)]
 
 /-- The indicator of `{u > t}` is the pointwise limit of the smoothed superlevel functions
 `ψ ((n + 1) (u - t))`, so by lower semicontinuity their variations bound the perimeter of
@@ -233,7 +233,7 @@ private theorem perimeter_le_liminf_totalVariationOn_smoothTransition_comp
     have hi : {x | t < u x}.indicator (1 : E → ℝ) x ∈ Icc 0 1 := by
       by_cases hxt : t < u x <;> simp [hxt]
     dsimp only
-    rw [Real.enorm_eq_ofReal_abs, ENNReal.ofReal_le_one]
+    rw [Real.eNorm_eq_ofReal_abs, ENNReal.ofReal_le_one]
     exact abs_sub_le_iff.2 ⟨by linarith [hi.1], by linarith [hi.2]⟩
   · refine tendsto_const_nhds.congr' ?_
     by_cases hxt : t < u x
@@ -276,7 +276,7 @@ theorem _root_.LocallyLipschitzOn.lintegral_perimeter_eq_setLIntegral_enorm_fder
   have hint (n : ℕ) : ∫⁻ t, ∫⁻ x in Ω, F n t x ∂μ = ∫⁻ x in Ω, ‖fderiv ℝ u x‖ₑ ∂μ := by
     rw [lintegral_lintegral_swap (hF n)]
     refine lintegral_congr fun x => ?_
-    rw [lintegral_mul_const' _ _ enorm_ne_top,
+    rw [lintegral_mul_const' _ _ eNorm_ne_top,
       Real.smoothTransition.lintegral_ofReal_mul_deriv _ (by positivity), one_mul]
   -- Lower semicontinuity, then Fatou's lemma and Tonelli's theorem.
   calc ∫⁻ t, perimeter μ Ω {x | t < u x}

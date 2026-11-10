@@ -42,7 +42,7 @@ namespace MeasureTheory
 `(∑' i, ‖f i‖ ^ p) ^ (1 / p)`. -/
 theorem eLpNorm_count_eq_tsum (hp0 : p ≠ 0) (hp : p ≠ ∞) (f : α → ε) :
     eLpNorm f p count = (∑' i, ‖f i‖ₑ ^ p.toReal) ^ (1 / p.toReal) := by
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp .of_discrete, lintegral_count]
+  rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp .of_discrete, lintegral_count]
 
 /-- The `L^∞` seminorm for the counting measure is the supremum `⨆ i, ‖f i‖`. -/
 theorem eLpNorm_count_top (f : α → ε) : eLpNorm f ∞ count = ⨆ i, ‖f i‖ₑ := by

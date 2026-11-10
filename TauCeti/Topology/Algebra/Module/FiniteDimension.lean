@@ -23,7 +23,7 @@ intermediate space; the target may be any topological vector space.
 `Module.End.toContinuousLinearMap_apply` identifies the values of an endomorphism and its
 continuous version.
 
-A multilinear map `f : MultilinearMap 𝕜 M N` on finitely many finite-dimensional Hausdorff
+A multilinear map `f : MultilinearMap (RingHom.id 𝕜) M N` on finitely many finite-dimensional Hausdorff
 topological vector spaces over a complete nontrivially normed field is continuous when addition
 and scalar multiplication are continuous in the codomain:
 `MultilinearMap.continuous_of_finiteDimensional`. The codomain need only be an additive
@@ -123,7 +123,7 @@ variable {𝕜 ι : Type*} {M : ι → Type*} {N : Type*} [NontriviallyNormedFie
 /-- A multilinear map on finitely many finite-dimensional Hausdorff topological vector spaces
 over a complete nontrivially normed field is continuous when its codomain is an additive
 commutative monoid with continuous addition and scalar multiplication. No bound is required. -/
-theorem continuous_of_finiteDimensional (f : MultilinearMap 𝕜 M N) : Continuous f := by
+theorem continuous_of_finiteDimensional (f : MultilinearMap (RingHom.id 𝕜) M N) : Continuous f := by
   classical
   cases nonempty_fintype ι
   set b : ∀ i, Module.Basis (Fin (Module.finrank 𝕜 (M i))) 𝕜 (M i) :=

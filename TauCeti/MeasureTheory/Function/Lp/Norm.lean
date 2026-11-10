@@ -128,7 +128,7 @@ theorem exists_eLpNorm_le_mul_enorm_of_ae_eq {alpha X F : Type*} [MeasurableSpac
       ≤ eLpNorm (v u) pstar m * m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) :=
         eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hq (pos_iff_ne_zero.2 hq0)
     _ = ‖S u‖ₑ * m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) := by
-        rw [Lp.enorm_def, eLpNorm_congr_ae (hS u)]
+        rw [Lp.eNorm_def, eLpNorm_congr_ae (hS u)]
     _ ≤ ‖S‖ₑ * ‖u‖ₑ * m Set.univ ^ (1 / q.toReal - 1 / pstar.toReal) := by
         gcongr
         exact S.le_opENorm u
@@ -251,8 +251,8 @@ theorem Lp.integral_norm_le_mul_norm {alpha F : Type*} [MeasurableSpace alpha]
   have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := p) (μ := m) Fact.out
     (Lp.aestronglyMeasurable f)
   rw [ENNReal.toReal_one, div_one] at h
-  rw [integral_norm_eq_lintegral_enorm (Lp.aestronglyMeasurable f),
-    ← eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable f), Lp.norm_def, mul_comm,
+  rw [integral_norm_eq_lintegral_eNorm (Lp.aestronglyMeasurable f),
+    ← eLpNorm_one_eq_lintegral_eNorm (Lp.aestronglyMeasurable f), Lp.norm_def, mul_comm,
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top (Lp.eLpNorm_ne_top f)
     (ENNReal.rpow_ne_top_of_nonneg hexp (measure_ne_top m _))) h

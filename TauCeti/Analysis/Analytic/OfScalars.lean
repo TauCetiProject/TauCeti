@@ -184,7 +184,7 @@ theorem _root_.HasFPowerSeriesOnBall.comp_pow_ofScalars {𝕂 : Type*} [Nontrivi
   · -- the series of `f` at `y ^ m`, reindexed along the multiples of `m`
     have hy1 : ‖y‖ₑ ≤ 1 := (mem_eball_zero_iff.mp hy).le.trans hr
     have hym : y ^ m ∈ Metric.eball (0 : 𝕂) r := by
-      rw [mem_eball_zero_iff, enorm_pow]
+      rw [mem_eball_zero_iff, eNorm_pow]
       exact (pow_le_of_le_one zero_le hy1 hm.ne').trans_lt (mem_eball_zero_iff.mp hy)
     have hs := hf.hasSum hym
     simp only [ofScalars_apply_eq, zero_add] at hs ⊢

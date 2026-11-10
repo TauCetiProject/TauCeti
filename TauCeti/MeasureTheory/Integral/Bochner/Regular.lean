@@ -53,6 +53,6 @@ theorem enorm_setIntegral_le_of_forall_isClosed_subset {X G : Type*} [Topologica
     _ ≤ ‖∫ x in F, f x ∂μ‖ₑ + ‖∫ x in B \ F, f x ∂μ‖ₑ := enorm_add_le _ _
     _ ≤ ∫⁻ x in B, k x ∂μ + ε :=
         add_le_add ((hF F hFB hFc).trans (lintegral_mono_set hFB))
-          ((enorm_integral_le_lintegral_enorm _).trans hζ.le)
+          ((eNorm_integral_le_lintegral_eNorm _).trans hζ.le)
 
 end TauCeti

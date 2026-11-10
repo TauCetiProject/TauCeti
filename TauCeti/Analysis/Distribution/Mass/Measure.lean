@@ -89,7 +89,7 @@ theorem enorm_apply_le_sum_localMass_mul {𝓖 : Type*} [FunLike 𝓖 𝓓^{n}(�
       rw [← ofReal_norm, ← ofReal_norm]
       exact ENNReal.ofReal_le_ofReal (hψφ i x)
     · simp [image_eq_zero_of_notMem_tsupport fun h => hx (hψW i h)]
-  calc ‖T (∑ i, ψ i)‖ₑ ≤ ∑ i, ‖T (ψ i)‖ₑ := by rw [map_sum]; exact enorm_sum_le _ _
+  calc ‖T (∑ i, ψ i)‖ₑ ≤ ∑ i, ‖T (ψ i)‖ₑ := by rw [map_sum]; exact eNorm_sum_le _ _
     _ ≤ ∑ i : s, localMass T (W i) * c i := Finset.sum_le_sum fun i _ =>
         enorm_apply_le_localMass_mul_of_forall_enorm_le T (hψW i) (hψc i)
     _ ≤ ∑ i, localMass T (W i) * c i := by

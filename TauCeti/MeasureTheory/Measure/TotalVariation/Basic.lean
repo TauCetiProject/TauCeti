@@ -60,7 +60,7 @@ variable {α : Type*} [MeasurableSpace α] {μ ν : Measure α} [IsFiniteMeasure
 /-- Total variation bounds the difference of the masses of each measurable event. -/
 theorem abs_measureReal_sub_le_tvDist {s : Set α} (hs : MeasurableSet s) :
     |μ.real s - ν.real s| ≤ tvDist μ ν := by
-  have h := (VectorMeasure.enorm_measure_le_variation
+  have h := (VectorMeasure.eNorm_measure_le_variation
     (μ.toSignedMeasure - ν.toSignedMeasure) s).trans (measure_mono (subset_univ s))
   rw [← VectorMeasure.etvDist, ← etvDist_eq_etvDist_toSignedMeasure] at h
   have hr := ENNReal.toReal_mono (etvDist_ne_top μ ν) h

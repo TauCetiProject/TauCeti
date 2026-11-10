@@ -408,7 +408,7 @@ theorem isCurveOfMaximalSlope_of_hasGradientAt {f : E → ℝ} {u G : ℝ → E}
     refine setLIntegral_congr_fun measurableSet_uIoc fun r hr ↦ ?_
     have hr' := hsub (uIoc_subset_uIcc hr)
     rw [(hu r hr').metricDerivative_eq, (hf r hr').hasFDerivAt.descendingSlope_eq,
-      LinearIsometryEquiv.enorm_map, enorm_neg, Real.HolderConjugate.two_two.div_add_div_ennreal,
+      LinearIsometryEquiv.eNorm_map, enorm_neg, Real.HolderConjugate.two_two.div_add_div_ennreal,
       ← ofReal_norm,
       ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) zero_le_two]
     norm_cast

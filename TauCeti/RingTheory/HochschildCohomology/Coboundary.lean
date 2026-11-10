@@ -213,20 +213,20 @@ variable (R A M : Type*) [CommSemiring R] [Semiring A] [Algebra R A] [AddCommGro
 
 /-- The zeroth coface `(∂₀ψ)(a₀, …, aₙ) = a₀ • ψ(a₁, …, aₙ)`. -/
 private def leftCoface :
-    MultilinearMap R (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M :=
   (multilinearCurryFirstEquiv R (fun _ : Fin (n + 1) ↦ A) M).symm.toLinearMap ∘ₗ
     LinearMap.compMultilinearMapₗ R (Algebra.lsmul R R M).toLinearMap.flip
 
 /-- The last coface `(∂ₙ₊₁ψ)(a₀, …, aₙ) = ψ(a₀, …, aₙ₋₁) • aₙ`. -/
 private def rightCoface :
-    MultilinearMap R (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M :=
   (multilinearCurryRightEquiv R (fun _ : Fin (n + 1) ↦ A) M).symm.toLinearMap ∘ₗ
     LinearMap.compMultilinearMapₗ R
       ((Algebra.lsmul R R M).toLinearMap ∘ₗ (MulOpposite.opLinearEquiv R).toLinearMap).flip
 
 /-- The inner cofaces, precomposition with the multiplication of two adjacent entries. -/
 private def innerCoface : ∀ {n : ℕ}, Fin n →
-    MultilinearMap R (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M
   | 0, j => j.elim0
   | _ + 1, j => hochschildCoface R A M j.castSucc
 
@@ -235,21 +235,21 @@ private def innerCoface : ∀ {n : ℕ}, Fin n →
 the first entry on the left, the last coface multiplies by the last entry on the right, and the
 others multiply two adjacent entries. -/
 def hochschildBimoduleCoface (i : Fin (n + 2)) :
-    MultilinearMap R (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M :=
   Fin.cases (leftCoface R A M) (Fin.lastCases (rightCoface R A M) (innerCoface R A M)) i
 
 variable {R A M}
 
 /-- The zeroth coface multiplies by the first entry on the left. -/
 @[simp]
-theorem hochschildBimoduleCoface_zero_apply (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M)
+theorem hochschildBimoduleCoface_zero_apply (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M)
     (a : Fin (n + 1) → A) :
     hochschildBimoduleCoface R A M 0 ψ a = a 0 • ψ (Fin.tail a) := by
   simp [hochschildBimoduleCoface, leftCoface]
 
 /-- The last coface multiplies by the last entry on the right. -/
 @[simp]
-theorem hochschildBimoduleCoface_last_apply (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M)
+theorem hochschildBimoduleCoface_last_apply (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M)
     (a : Fin (n + 1) → A) :
     hochschildBimoduleCoface R A M (Fin.last (n + 1)) ψ a =
       op (a (Fin.last n)) • ψ (Fin.init a) := by
@@ -259,7 +259,7 @@ theorem hochschildBimoduleCoface_last_apply (ψ : MultilinearMap R (fun _ : Fin 
 /-- The inner cofaces multiply two adjacent entries. -/
 @[simp]
 theorem hochschildBimoduleCoface_castSucc_succ_apply (j : Fin n)
-    (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) (a : Fin (n + 1) → A) :
+    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M) (a : Fin (n + 1) → A) :
     hochschildBimoduleCoface R A M j.castSucc.succ ψ a =
       ψ (Fin.contractNth j.castSucc (· * ·) a) := by
   cases n with
@@ -269,14 +269,14 @@ theorem hochschildBimoduleCoface_castSucc_succ_apply (j : Fin n)
 /-- The inner cofaces multiply two adjacent entries, with the index written as `j.succ.castSucc`
 rather than `j.castSucc.succ`. -/
 theorem hochschildBimoduleCoface_succ_castSucc_apply (j : Fin n)
-    (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) (a : Fin (n + 1) → A) :
+    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M) (a : Fin (n + 1) → A) :
     hochschildBimoduleCoface R A M j.succ.castSucc ψ a =
       ψ (Fin.contractNth j.castSucc (· * ·) a) := by
   rw [← Fin.succ_castSucc, hochschildBimoduleCoface_castSucc_succ_apply]
 
 /-- The cofaces evaluate by the coface formulas `TauCeti.hochschildBimoduleCofaceFun`. -/
 private theorem coe_hochschildBimoduleCoface (i : Fin (n + 2))
-    (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) :
+    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M) :
     ⇑(hochschildBimoduleCoface R A M i ψ) =
       hochschildBimoduleCofaceFun (· • ·) (fun a m ↦ op a • m) ψ i := by
   funext a
@@ -291,7 +291,7 @@ private theorem coe_hochschildBimoduleCoface (i : Fin (n + 2))
 
 /-- The cosimplicial identity `∂_{j+1} ∘ ∂ᵢ = ∂ᵢ ∘ ∂_j` for `i ≤ j`. -/
 theorem hochschildBimoduleCoface_hochschildBimoduleCoface [SMulCommClass A Aᵐᵒᵖ M]
-    {i j : Fin (n + 2)} (hij : i ≤ j) (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) :
+    {i j : Fin (n + 2)} (hij : i ≤ j) (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M) :
     hochschildBimoduleCoface R A M j.succ (hochschildBimoduleCoface R A M i ψ) =
       hochschildBimoduleCoface R A M i.castSucc (hochschildBimoduleCoface R A M j ψ) :=
   MultilinearMap.coe_injective <| by
@@ -312,14 +312,14 @@ sum `∑ᵢ (-1)ⁱ ∂ᵢ` of the cofaces. Explicitly
 `(δψ)(a₀, …, aₙ) = a₀ ψ(a₁, …, aₙ) + ∑_{j < n} (-1)ʲ⁺¹ ψ(a₀, …, aⱼaⱼ₊₁, …, aₙ)
   + (-1)ⁿ⁺¹ ψ(a₀, …, aₙ₋₁) aₙ`. -/
 def hochschildBimoduleCoboundary (n : ℕ) :
-    MultilinearMap R (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap R (fun _ : Fin (n + 1) ↦ A) M :=
+    MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M :=
   ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • hochschildBimoduleCoface R A M i
 
 variable {R A M} {n : ℕ}
 
 /-- The coboundary evaluates as the alternating sum of the cofaces. -/
 @[simp]
-theorem hochschildBimoduleCoboundary_apply (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M)
+theorem hochschildBimoduleCoboundary_apply (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M)
     (a : Fin (n + 1) → A) :
     hochschildBimoduleCoboundary R A M n ψ a =
       ∑ i : Fin (n + 2), (-1 : ℤ) ^ (i : ℕ) • hochschildBimoduleCoface R A M i ψ a := by
@@ -327,7 +327,7 @@ theorem hochschildBimoduleCoboundary_apply (ψ : MultilinearMap R (fun _ : Fin n
 
 /-- The Hochschild coboundary with coefficients in a bimodule, in explicit form. -/
 theorem hochschildBimoduleCoboundary_apply_eq_add_sum_add
-    (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) (a : Fin (n + 1) → A) :
+    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M) (a : Fin (n + 1) → A) :
     hochschildBimoduleCoboundary R A M n ψ a =
       a 0 • ψ (Fin.tail a) +
         ∑ j : Fin n, (-1 : ℤ) ^ ((j : ℕ) + 1) • ψ (Fin.contractNth j.castSucc (· * ·) a) +
@@ -338,7 +338,7 @@ theorem hochschildBimoduleCoboundary_apply_eq_add_sum_add
 /-- The Hochschild coboundary with coefficients in a bimodule squares to zero. -/
 @[simp]
 theorem hochschildBimoduleCoboundary_hochschildBimoduleCoboundary [SMulCommClass A Aᵐᵒᵖ M]
-    (ψ : MultilinearMap R (fun _ : Fin n ↦ A) M) :
+    (ψ : MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M) :
     hochschildBimoduleCoboundary R A M (n + 1) (hochschildBimoduleCoboundary R A M n ψ) = 0 := by
   ext a
   have h : hochschildBimoduleCoboundary R A M n ψ =

@@ -92,8 +92,8 @@ theorem integrable_prod_sub_inv_smul {f : ℂ → F} (hf : Integrable f) {s : Se
   calc ∫⁻ z, ∫⁻ w in s, ‖(w - z)⁻¹ • f z‖ₑ
       ≤ ∫⁻ z, (ENNReal.ofReal (2 * π) + volume s) * ‖f z‖ₑ := by
         refine lintegral_mono fun z ↦ ?_
-        simp_rw [enorm_smul]
-        rw [lintegral_mul_const' _ _ enorm_ne_top]
+        simp_rw [eNorm_smul]
+        rw [lintegral_mul_const' _ _ eNorm_ne_top]
         gcongr
         exact setLIntegral_enorm_sub_inv_le s z
     _ = (ENNReal.ofReal (2 * π) + volume s) * ∫⁻ z, ‖f z‖ₑ := lintegral_const_mul' _ _ hC

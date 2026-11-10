@@ -82,9 +82,9 @@ private theorem integrable_fourier_sub_mul_smul (σ φ : 𝓢(E, ℂ)) (f : Lp F
   set H : E → ℝ≥0∞ := (fun x ↦ ‖φ x‖ₑ) ⋆ₗ[volume] fun x ↦ ‖𝓕 σ x‖ₑ
   have hinner : ∀ y, ∫⁻ x, ‖(𝓕 σ (y - x) * φ x) • f y‖ₑ = ‖f y‖ₑ * H y := fun y ↦ by
     simp only [H, lconvolution_def]
-    rw [← lintegral_const_mul' _ _ enorm_ne_top]
+    rw [← lintegral_const_mul' _ _ eNorm_ne_top]
     refine lintegral_congr fun x ↦ ?_
-    rw [enorm_smul, enorm_mul, neg_add_eq_sub]
+    rw [eNorm_smul, eNorm_mul, neg_add_eq_sub]
     ring
   rw [HasFiniteIntegral, lintegral_prod _ hmeas.enorm]
   simp only [Function.uncurry_apply_pair, hinner]
@@ -100,10 +100,10 @@ private theorem integrable_fourier_sub_mul_smul (σ φ : 𝓢(E, ℂ)) (f : Lp F
     ((Lp.aestronglyMeasurable f).enorm.mul hHm).aestronglyMeasurable
   calc ∫⁻ y, ‖f y‖ₑ * H y
       = eLpNorm (fun y ↦ ‖f y‖ₑ * H y) 1 volume := by
-        rw [eLpNorm_one_eq_lintegral_enorm hfH]
+        rw [eLpNorm_one_eq_lintegral_eNorm hfH]
         simp
     _ ≤ 1 * eLpNorm f p volume * eLpNorm H p' volume :=
-        eLpNorm_le_eLpNorm_mul_eLpNorm_of_enorm (fun v h ↦ ‖v‖ₑ * h) 1
+        eLpNorm_le_eLpNorm_mul_eLpNorm_of_eNorm (fun v h ↦ ‖v‖ₑ * h) 1
           (fun hf hH ↦ (hf.enorm.mul hH.aemeasurable).aestronglyMeasurable)
           (Lp.aestronglyMeasurable f) hHm.aestronglyMeasurable
           (Filter.Eventually.of_forall fun _ ↦ by simp)
@@ -113,8 +113,8 @@ private theorem integrable_fourier_sub_mul_smul (σ φ : 𝓢(E, ℂ)) (f : Lp F
         exact eLpNorm_lconvolution_le hp' le_rfl (by rw [inv_one, add_comm])
           φ.continuous.enorm.aemeasurable (𝓕 σ).continuous.enorm.aemeasurable
     _ < ∞ := by
-        rw [eLpNorm_enorm _ φ.continuous.aestronglyMeasurable,
-          eLpNorm_enorm _ (𝓕 σ).continuous.aestronglyMeasurable, one_mul]
+        rw [eLpNorm_eNorm _ φ.continuous.aestronglyMeasurable,
+          eLpNorm_eNorm _ (𝓕 σ).continuous.aestronglyMeasurable, one_mul]
         exact ENNReal.mul_lt_top (Lp.eLpNorm_lt_top f)
           (ENNReal.mul_lt_top (φ.eLpNorm_lt_top p' volume) ((𝓕 σ).eLpNorm_lt_top 1 volume))
 
@@ -200,7 +200,7 @@ theorem exists_fourierMultiplierCLM_eq_and_norm_le (σ : 𝓢(E, ℂ))
   have hK : AEStronglyMeasurable (𝓕⁻ (σ : E → ℂ)) volume := by
     rw [← SchwartzMap.fourierInv_coe]
     exact (𝓕⁻ σ).continuous.aestronglyMeasurable
-  rw [eLpNorm_one_eq_lintegral_enorm hK, ← integral_norm_eq_lintegral_enorm hK] at hgf
+  rw [eLpNorm_one_eq_lintegral_eNorm hK, ← integral_norm_eq_lintegral_eNorm hK] at hgf
   exact ⟨g, hg, hgf⟩
 
 end TemperedDistribution

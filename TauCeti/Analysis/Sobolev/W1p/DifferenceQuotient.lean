@@ -189,7 +189,7 @@ theorem W1p.eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu �
     (LpToLpRestrictCLM E ℝ ℝ nu p T).comp (((innerSL ℝ h).compLpL p nu).comp W1p.gradientL)
   have hA : ∀ v : W1p mu ⊤ p, ‖A v‖ₑ =
       eLpNorm (fun x ↦ W1p.value v (x + h) - W1p.value v x) p (mu.restrict K) := fun v ↦ by
-    rw [Lp.enorm_def]
+    rw [Lp.eNorm_def]
     refine (eLpNorm_congr_ae ?_).trans (by rw [htop])
     filter_upwards [LpToLpRestrictCLM_coeFn ℝ K (nu.translateLp p h (W1p.valueL v) -
         W1p.valueL v), ae_restrict_of_ae (Lp.coeFn_sub (nu.translateLp p h (W1p.valueL v))
@@ -202,7 +202,7 @@ theorem W1p.eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu �
     rw [h1, h2, Pi.sub_apply, h3, Function.comp_apply]
   have hB : ∀ v : W1p mu ⊤ p, ‖B v‖ₑ =
       eLpNorm (fun x ↦ ⟪h, W1p.gradient v x⟫_ℝ) p (mu.restrict T) := fun v ↦ by
-    rw [Lp.enorm_def]
+    rw [Lp.eNorm_def]
     refine (eLpNorm_congr_ae ?_).trans (by rw [htop])
     filter_upwards [LpToLpRestrictCLM_coeFn ℝ T ((innerSL ℝ h).compLpL p nu (W1p.gradientL v)),
       ae_restrict_of_ae ((innerSL ℝ h).coeFn_compLpL (W1p.gradientL v))] with x h1 h2
@@ -287,7 +287,7 @@ theorem W1p.eLpNorm_inv_mul_value_comp_add_smul_sub_le (hp : p ≠ ∞) (u : W1p
       ≤ ‖t⁻¹‖ₑ * (‖t‖ₑ * eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict T)) := by
         gcongr
     _ = eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p (mu.restrict T) := by
-        rw [← mul_assoc, ← enorm_mul, inv_mul_cancel₀ ht, enorm_one, one_mul]
+        rw [← mul_assoc, ← eNorm_mul, inv_mul_cancel₀ ht, eNorm_one, one_mul]
 
 /-- **Uniform bound on difference quotients near a compact set.** Let `u ∈ W^{1,p}(Ω)`,
 `1 ≤ p < ∞`, and let `K ⊆ Ω` be compact. Then for all sufficiently small `t`,
@@ -354,7 +354,7 @@ theorem W1p.norm_value_differenceQuotient_le (hp : p ≠ ∞) (v : E) (t : ℝ) 
     calc ‖t⁻¹‖ₑ * eLpNorm (fun x ↦ W1p.value u (x + t • v) - W1p.value u x) p nu
         ≤ ‖t⁻¹‖ₑ * (‖t‖ₑ * eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p nu) := by gcongr
       _ = eLpNorm (fun x ↦ ⟪v, W1p.gradient u x⟫_ℝ) p nu := by
-          rw [← mul_assoc, ← enorm_mul, inv_mul_cancel₀ ht, enorm_one, one_mul]
+          rw [← mul_assoc, ← eNorm_mul, inv_mul_cancel₀ ht, eNorm_one, one_mul]
   have hfin : ‖v‖ₑ * eLpNorm (W1p.gradient u : E → E) p nu ≠ ∞ :=
     ENNReal.mul_ne_top (by simp) (Lp.eLpNorm_ne_top _)
   calc ‖W1p.value q‖ = (eLpNorm (W1p.value q : E → ℝ) p nu).toReal := Lp.norm_def _

@@ -541,7 +541,7 @@ private theorem exists_contDiffOn_lintegral_le_totalVariationOn_le
         ∑ k ∈ Finset.range m, (mollifiedPiece μ u ζ n k x - ζ k x * u x) := by
       rw [hwx, Finset.sum_sub_distrib, hux]
     rw [hsum]
-    exact (enorm_sum_le _ _).trans (sum_le_tsum _)
+    exact (eNorm_sum_le _ _).trans (sum_le_tsum _)
   calc ∫⁻ x in Ω, ‖∑' k, mollifiedPiece μ u ζ n k x - u x‖ₑ ∂μ
       ≤ ∫⁻ x in Ω, ∑' k, ‖mollifiedPiece μ u ζ n k x - ζ k x * u x‖ₑ ∂μ :=
         setLIntegral_mono' Ω.isOpen.measurableSet hpt

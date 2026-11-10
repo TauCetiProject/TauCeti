@@ -116,7 +116,7 @@ private theorem measureLpMultiplicationOperator_continuous {m : α → ℝ≥0}
     · filter_upwards with t
       filter_upwards with a
       have hbound (u : ℝ≥0) : ‖Real.exp (-((u : ℝ) * m a)) • f a‖ₑ ≤ ‖f a‖ₑ := by
-        rw [enorm_smul]
+        rw [eNorm_smul]
         apply mul_le_of_le_one_left zero_le
         rw [enorm_eq_nnnorm, ← ENNReal.coe_one, ENNReal.coe_le_coe]
         apply NNReal.coe_le_coe.mp

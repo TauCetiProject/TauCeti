@@ -281,8 +281,8 @@ theorem eLpNorm_schrodingerPropagator_le {t : ℝ} (ht : t ≠ 0)
     (f : Lp F 2 (volume : Measure E)) (hf : Integrable f) :
     eLpNorm (schrodingerPropagator F t f) ∞ volume ≤
       ENNReal.ofReal ((4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) / 2)) * eLpNorm f 1 volume := by
-  rw [eLpNorm_exponent_top, eLpNorm_one_eq_lintegral_enorm,
-    ← ofReal_integral_norm_eq_lintegral_enorm hf, ← ENNReal.ofReal_mul (by positivity)]
+  rw [eLpNorm_exponent_top, eLpNorm_one_eq_lintegral_eNorm,
+    ← ofReal_integral_norm_eq_lintegral_eNorm hf, ← ENNReal.ofReal_mul (by positivity)]
   · exact eLpNormEssSup_le_of_ae_bound (norm_schrodingerPropagator_apply_le ht f hf)
   all_goals exact Lp.aestronglyMeasurable _
 
