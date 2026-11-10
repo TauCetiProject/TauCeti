@@ -146,14 +146,21 @@ theorem adjoin_range_stage_eq_top :
             fun element ↦ Algebra.subset_adjoin ⟨⟨object, element⟩, rfl⟩)
           naturality {first second} morphism := by
             ext element
-            exact Subtype.ext (stage_map_apply functor morphism element) } }
+            apply Subtype.ext
+            simp } }
   have hsection : CommAlgCat.ofHom (S.val.comp (desc functor cocone)) = 𝟙 (algebra functor) := by
     refine colimit.hom_ext fun object ↦ ?_
     ext element
-    exact congrArg Subtype.val (desc_stage_apply functor cocone object element)
+    -- Read both sides at the stage of `element`.
+    change S.val (desc functor cocone (stage functor object element)) =
+      stage functor object element
+    rw [desc_stage_apply]
+    simp [cocone]
   refine top_unique fun element _ ↦ ?_
-  have h : ((desc functor cocone element : S) : algebra functor) = element :=
-    congrArg (fun φ : algebra functor ⟶ algebra functor ↦ φ.hom element) hsection
+  have h : ((desc functor cocone element : S) : algebra functor) = element := by
+    have := congrArg CommAlgCat.Hom.hom hsection
+    simp only [CommAlgCat.hom_ofHom] at this
+    exact DFunLike.congr_fun this element
   rw [← h]
   exact (desc functor cocone element).2
 
