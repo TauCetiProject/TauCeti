@@ -293,7 +293,7 @@ theorem windingWeight_ellipse {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (z : ℂ) :
 theorem volume_ellipse_image_ball (a b : ℝ) (ha : a ≠ 0) (hb : b ≠ 0) :
     volume (affineMap (ellipseCoordinates a b ha hb) 0 '' Metric.ball (0 : ℂ) 1) =
       ENNReal.ofReal (Real.pi * |a * b|) := by
-  rw [volume_affineMap_image _ _ measurableSet_ball.nullMeasurableSet,
+  rw [volume_affineMap_image _ _,
     det_ellipseCoordinates, Complex.volume_ball]
   simp only [ENNReal.ofReal_one, one_pow, one_mul]
   rw [ENNReal.ofReal_mul Real.pi_pos.le, ← NNReal.coe_real_pi, ENNReal.ofReal_coe_nnreal]
