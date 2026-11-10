@@ -84,6 +84,15 @@ theorem mem_flowDomain {v : (x : M) → TangentSpace I x} {t : ℝ} {x : M} :
   simp only [flowDomain, mem_preimage, Prod.swap_prod_mk,
     mem_maximalIntegralCurveFlowDomain]
 
+/-- Time zero belongs to the maximal-flow domain of `x` as soon as some time does. -/
+theorem mem_flowDomain_zero_of_mem {v : (x : M) → TangentSpace I x} {t : ℝ} {x : M}
+    (ht : (t, x) ∈ flowDomain v) : ((0 : ℝ), x) ∈ flowDomain v :=
+  mem_flowDomain.mpr (zero_mem_maximalIntegralCurveInterval_of_mem (mem_flowDomain.mp ht))
+
+/-- The maximal flow fixes every point at time zero. -/
+theorem flowOf_zero (v : (x : M) → TangentSpace I x) (x : M) : flowOf v 0 x = x := by
+  rw [flowOf_apply, maximalIntegralCurve_zero]
+
 variable [T2Space M] [BoundarylessManifold I M] [CompleteSpace E]
 
 omit [CompleteSpace E] in
@@ -108,14 +117,6 @@ theorem mem_flowDomain_zero [IsManifold I 1 M] {v : (x : M) → TangentSpace I x
     ((0 : ℝ), x) ∈ flowDomain v := by
   rw [mem_flowDomain]
   exact zero_mem_maximalIntegralCurveInterval hv.contMDiffAt
-
-omit [T2Space M] in
-/-- The maximal flow fixes every point at time zero. -/
-theorem flowOf_zero [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
-    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (x : M) :
-    flowOf v 0 x = x := by
-  rw [flowOf_apply]
-  exact maximalIntegralCurve_zero (mem_flowDomain.mp (mem_flowDomain_zero hv x))
 
 omit [CompleteSpace E] in
 /-- A global integral curve of a `C¹` field is the maximal flow through its initial value.
@@ -261,12 +262,12 @@ theorem mfderiv_flowOf_zero_apply [IsManifold I 1 M]
   have hopen : {s : ℝ | (s, x) ∈ flowDomain v} ∈ 𝓝 (0 : ℝ) :=
     ((isOpen_flowDomain hv).preimage (continuous_id.prodMk continuous_const)).mem_nhds h0
   have htime := ((isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hopen).hasMFDerivAt.mfderiv
-  have hspace : (fun z : M ↦ flowOf v 0 z) = id := funext (flowOf_zero hv)
+  have hspace : (fun z : M ↦ flowOf v 0 z) = id := funext (flowOf_zero v)
   have h1 : @Eq E (mfderiv 𝓘(ℝ) I (fun t : ℝ ↦ flowOf v t x) 0 a) (a • v x) := by
     rw [htime]
     -- Unfold the application of `smulRight`, whose domain is the tangent space of `ℝ` at `0`.
     change @Eq E ((1 : ℝ →L[ℝ] ℝ) a • v (flowOf v 0 x)) (a • v x)
-    rw [flowOf_zero hv x]
+    rw [flowOf_zero v x]
     rfl
   have h2 : @Eq E (mfderiv I I (fun z : M ↦ flowOf v 0 z) x w) w := by
     rw [hspace, mfderiv_id]
@@ -310,6 +311,7 @@ theorem flowOf_add [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
   refine ⟨mem_flowDomain.mpr hst, ?_⟩
   simpa only [flowOf_apply] using (maximalIntegralCurve_add hv hs' hst).symm
 
+omit [CompleteSpace E] in
 /-- The flow can be run backwards along a trajectory: if time `t` is defined at `x`, then time
 `-t` is defined at `flowOf v t x`. -/
 theorem neg_mem_flowDomain_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
@@ -318,21 +320,24 @@ theorem neg_mem_flowDomain_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpa
   rw [mem_flowDomain, flowOf_apply,
     mem_maximalIntegralCurveInterval_maximalIntegralCurve_iff hv (mem_flowDomain.mp ht),
     add_neg_cancel, ← mem_flowDomain]
-  exact mem_flowDomain_zero hv x
+  exact mem_flowDomain_zero_of_mem ht
 
+omit [CompleteSpace E] in
 /-- Flowing for time `-t` undoes flowing for time `t`. -/
 theorem flowOf_neg_flowOf [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
     (ht : (t, x) ∈ flowDomain v) : flowOf v (-t) (flowOf v t x) = x := by
-  rw [(flowOf_add hv ht (neg_mem_flowDomain_flowOf hv ht)).2, add_neg_cancel, flowOf_zero hv]
+  rw [(flowOf_add hv ht (neg_mem_flowDomain_flowOf hv ht)).2, add_neg_cancel, flowOf_zero]
 
+omit [CompleteSpace E] in
 /-- If `x` returns to itself at time `t`, it does so at every natural multiple of `t`. -/
 theorem flowOf_natCast_mul_of_flowOf_eq [IsManifold I 1 M] {v : (x : M) → TangentSpace I x}
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
     (ht : (t, x) ∈ flowDomain v) (hx : flowOf v t x = x) (k : ℕ) :
     ((k : ℝ) * t, x) ∈ flowDomain v ∧ flowOf v ((k : ℝ) * t) x = x := by
   induction k with
-  | zero => simpa only [Nat.cast_zero, zero_mul] using ⟨mem_flowDomain_zero hv x, flowOf_zero hv x⟩
+  | zero =>
+    simpa only [Nat.cast_zero, zero_mul] using ⟨mem_flowDomain_zero_of_mem ht, flowOf_zero v x⟩
   | succ k ih =>
     obtain ⟨hk, hkx⟩ := ih
     obtain ⟨hmem, heq⟩ := flowOf_add hv hk (t := t) (by rwa [hkx])
