@@ -26,7 +26,9 @@ transport affine inequalities by composition with their inverses.
 
 Adapted from `Mei/Geometry/Toric/Algebraic/IntegralAffine.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei),
-commit `61509bfe75ce943898bc99cfa509fb40bb78c614` (Apache 2.0).
+commit `61509bfe75ce943898bc99cfa509fb40bb78c614` (Apache 2.0). The group and action
+structure on self-equivalences, `eq_of_eqOn_open` and the `existsUnique_extension*` theorems
+were adapted from the same file at commit `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca`.
 -/
 
 public section
