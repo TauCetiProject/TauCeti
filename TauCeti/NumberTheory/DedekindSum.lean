@@ -10,13 +10,13 @@ public import Mathlib.Data.Int.Interval
 public import Mathlib.Data.Rat.Floor
 public import Mathlib.RingTheory.Coprime.Basic
 import Mathlib.Algebra.BigOperators.Field
-import Mathlib.Algebra.BigOperators.Intervals
+import TauCeti.Algebra.BigOperators.FloorSum
+import TauCeti.Data.Nat.Cast.Basic
 import Mathlib.RingTheory.Coprime.Lemmas
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Lift
 import Mathlib.Tactic.Positivity
-import TauCeti.Data.Nat.ModEq
 
 /-!
 # Dedekind sums and their reciprocity law
@@ -74,6 +74,13 @@ classical sum of products of sawtooth functions `((r / c)) ((d r / c))`; when `g
 summand with `c ∣ d r` contributes `-r / (2c)` here rather than the sawtooth value `0`. -/
 def dedekindSum (d c : ℤ) : ℚ :=
   ∑ r ∈ Ioo 0 c, (r / c : ℚ) * (Int.fract ((d * r : ℤ) / c : ℚ) - 1 / 2)
+
+/-- The characteristic finite-sum formula for the Dedekind sum. -/
+theorem dedekindSum_def (d c : ℤ) :
+    dedekindSum d c =
+      ∑ r ∈ Ioo 0 c, (r / c : ℚ) * (Int.fract ((d * r : ℤ) / c : ℚ) - 1 / 2) := by
+  unfold dedekindSum
+  rfl
 
 /-- The Dedekind sum `s(d, c)` depends on `d` only modulo `c`. -/
 @[simp]
@@ -148,21 +155,6 @@ private theorem dedekindSum_natCast (h c : ℕ) :
       omega
     simp
 
-private theorem sum_range_cast_id (n : ℕ) : ∑ r ∈ range n, (r : ℚ) = n * (n - 1) / 2 := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [sum_range_succ, ih]; push_cast; ring
-
-private theorem sum_range_cast_sq (n : ℕ) :
-    ∑ r ∈ range n, (r : ℚ) ^ 2 = n * (n - 1) * (2 * n - 1) / 6 := by
-  induction n with
-  | zero => simp
-  | succ n ih => rw [sum_range_succ, ih]; push_cast; ring
-
-private theorem natCast_mul_mod (h c r : ℕ) :
-    ((h * r % c : ℕ) : ℚ) = h * r - c * (h * r / c : ℕ) := by
-  rw [eq_sub_iff_add_eq, ← Nat.cast_mul, ← Nat.cast_mul, ← Nat.cast_add, Nat.mod_add_div]
-
 /-- The Dedekind sum through the floor sum `∑_{r < c} r ⌊h r / c⌋`:
 `s(h, c) = h (c - 1)(2c - 1) / (6c) - (∑_{r < c} r ⌊h r / c⌋) / c - (c - 1) / 4`. -/
 private theorem dedekindSum_natCast_eq_floorSum {c : ℕ} (hc : 0 < c) (h : ℕ) :
@@ -171,7 +163,7 @@ private theorem dedekindSum_natCast_eq_floorSum {c : ℕ} (hc : 0 < c) (h : ℕ)
   have hc' : (c : ℚ) ≠ 0 := by positivity
   have hterm (r : ℕ) : ((r : ℚ) / c) * (((h * r % c : ℕ) : ℚ) / c - 1 / 2) =
       h / c ^ 2 * (r : ℚ) ^ 2 - 1 / c * ((r * (h * r / c) : ℕ) : ℚ) - 1 / (2 * c) * r := by
-    rw [natCast_mul_mod]
+    rw [Nat.cast_mod_eq_sub_mul_div]
     push_cast
     field_simp
   rw [dedekindSum_natCast, sum_congr rfl fun r _ ↦ hterm r, sum_sub_distrib, sum_sub_distrib,
@@ -179,71 +171,6 @@ private theorem dedekindSum_natCast_eq_floorSum {c : ℕ} (hc : 0 < c) (h : ℕ)
   push_cast
   field_simp
   ring
-
-/-- Summing `h r = c ⌊h r / c⌋ + (h r mod c)` over a full residue system. -/
-private theorem mul_sum_div {h c : ℕ} (hhc : h.Coprime c) :
-    (c : ℚ) * ∑ r ∈ range c, ((h * r / c : ℕ) : ℚ) = (h - 1) * (c * (c - 1) / 2) := by
-  have hperm := Nat.Coprime.sum_range_mul_mod hhc (fun r ↦ (r : ℚ))
-  simp only [natCast_mul_mod, sum_sub_distrib, ← mul_sum, sum_range_cast_id] at hperm
-  linear_combination -hperm
-
-/-- Summing the squares of `h r - c ⌊h r / c⌋` over a full residue system. -/
-private theorem sq_mul_sum_div_sq {h c : ℕ} (hhc : h.Coprime c) :
-    (c : ℚ) ^ 2 * ∑ r ∈ range c, ((h * r / c : ℕ) : ℚ) ^ 2 =
-      2 * h * c * (∑ r ∈ range c, r * (h * r / c) : ℕ) +
-        (1 - h ^ 2) * (c * (c - 1) * (2 * c - 1) / 6) := by
-  have hperm := Nat.Coprime.sum_range_mul_mod hhc (fun r ↦ (r : ℚ) ^ 2)
-  have hterm (r : ℕ) : (((h * r % c : ℕ) : ℚ)) ^ 2 = h ^ 2 * (r : ℚ) ^ 2 -
-      2 * h * c * ((r * (h * r / c) : ℕ) : ℚ) + c ^ 2 * ((h * r / c : ℕ) : ℚ) ^ 2 := by
-    rw [natCast_mul_mod]
-    push_cast
-    ring
-  simp only [hterm, sum_add_distrib, sum_sub_distrib, ← mul_sum, sum_range_cast_sq] at hperm
-  push_cast at hperm ⊢
-  linear_combination hperm
-
-/-- The lattice points `(r, s)` with `0 ≤ s < h` lying below the line `c s = h r`. -/
-private theorem filter_range_mul_le {h c r : ℕ} (hh : 0 < h) (hc : 0 < c) (hr : r < c) :
-    (range h).filter (fun s ↦ c * s ≤ h * r) = range (h * r / c + 1) := by
-  ext s
-  simp only [mem_filter, mem_range, Nat.lt_succ_iff, Nat.le_div_iff_mul_le hc]
-  constructor
-  · rintro ⟨-, hs⟩
-    linarith
-  · intro hs
-    refine ⟨?_, by linarith⟩
-    by_contra! hsh
-    nlinarith
-
-/-- Counting the lattice points of the rectangle `[0, c) × [0, h)` on either side of the
-diagonal `c s = h r`, weighted by `r`. -/
-private theorem sum_mul_div_add_sum_sum {h c : ℕ} (hh : 0 < h) (hc : 0 < c)
-    (hhc : h.Coprime c) :
-    ∑ r ∈ range c, r * (h * r / c + 1) + ∑ s ∈ range h, ∑ r ∈ range (c * s / h + 1), r =
-      h * ∑ r ∈ range c, r := by
-  have hsplit : ∀ r ∈ range c, ∀ s ∈ range h,
-      (if c * s ≤ h * r then r else 0) + (if h * r ≤ c * s then r else 0) = r := by
-    intro r hr s hs
-    rw [mem_range] at hr hs
-    by_cases h₁ : c * s ≤ h * r <;> by_cases h₂ : h * r ≤ c * s <;> simp only [h₁, h₂,
-      ↓reduceIte, add_zero, zero_add]
-    · have hdvd : c ∣ r := hhc.symm.dvd_of_dvd_mul_left ⟨s, (le_antisymm h₁ h₂).symm⟩
-      obtain rfl : r = 0 := Nat.eq_zero_of_dvd_of_lt hdvd hr
-      rfl
-    · omega
-  have h₁ : ∑ r ∈ range c, ∑ s ∈ range h, (if c * s ≤ h * r then r else 0) =
-      ∑ r ∈ range c, r * (h * r / c + 1) := by
-    refine sum_congr rfl fun r hr ↦ ?_
-    rw [← sum_filter, filter_range_mul_le hh hc (mem_range.1 hr), sum_const, card_range,
-      smul_eq_mul, mul_comm]
-  have h₂ : ∑ r ∈ range c, ∑ s ∈ range h, (if h * r ≤ c * s then r else 0) =
-      ∑ s ∈ range h, ∑ r ∈ range (c * s / h + 1), r := by
-    rw [sum_comm]
-    refine sum_congr rfl fun s hs ↦ ?_
-    rw [← sum_filter, filter_range_mul_le hc hh (mem_range.1 hs)]
-  rw [← h₁, ← h₂, ← sum_add_distrib, mul_sum]
-  refine sum_congr rfl fun r hr ↦ ?_
-  rw [← sum_add_distrib, sum_congr rfl (hsplit r hr), sum_const, card_range, smul_eq_mul]
 
 /-- **The reciprocity law of Dedekind sums** (Apostol, Theorem 3.7): for coprime integers
 `h, c ≥ 1`, `s(h, c) + s(c, h) = (h² + c² + 1) / (12 h c) - 1/4`. -/
@@ -265,8 +192,8 @@ theorem dedekindSum_add_dedekindSum {h c : ℤ} (hh : 0 < h) (hc : 0 < c) (hhc :
   push_cast at hcount
   simp only [sum_range_cast_id, mul_add, mul_one, sum_add_distrib, hp, ← sum_div] at hcount
   -- The two residue-permutation identities for `c` modulo `h`.
-  have h₁ := mul_sum_div hhc.symm
-  have h₂ := sq_mul_sum_div_sq hhc.symm
+  have h₁ := hhc.symm.mul_sum_div (K := ℚ)
+  have h₂ := hhc.symm.sq_mul_sum_div_sq (K := ℚ)
   push_cast at h₂
   -- Eliminating the sums of `⌊c s / h⌋` and `⌊c s / h⌋²` relates the two floor sums.
   have hST : (h : ℚ) * ∑ x ∈ range c, (x : ℚ) * ((h * x / c : ℕ) : ℚ) +

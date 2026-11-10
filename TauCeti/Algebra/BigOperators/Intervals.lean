@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.BigOperators.Intervals
+public import Mathlib.Algebra.Field.Basic
+public import Mathlib.Algebra.CharZero.Defs
 public import Mathlib.Algebra.Group.Nat.Even
 public import Mathlib.Data.Int.Interval
 import Mathlib.Algebra.BigOperators.Ring.Finset
@@ -27,6 +29,8 @@ and the nonpositive half `∑ j ∈ range (N + 1), F (-(j : ℤ))`. In a ring, t
 
 ## Main results
 
+* `Finset.sum_range_cast_id`, `Finset.sum_range_cast_sq`: the sums of natural numbers and
+  their squares in a field of characteristic zero.
 * `Finset.sum_Ico_eq_sum_Ico_add`: the regrouping of `∑ k ∈ Ico m (n + 1), f k` into the pairs
   `β k + γ (k + 1)`.
 * `Finset.sum_Ico_one_sub_one_const`: `∑ _k ∈ Ico 1 (n - 1), c = (n - 2) * c` for `2 ≤ n`.
@@ -115,5 +119,19 @@ theorem sum_Icc_neg_one_pow_add_one {R : Type*} [Ring R] (n : ℕ) :
     ∑ k ∈ Icc 1 n, (-1 : R) ^ (k + 1) = if Even n then 0 else 1 := by
   rw [← Ico_add_one_right_eq_Icc, sum_Ico_eq_sum_range, add_tsub_cancel_right, ← neg_one_geom_sum]
   simp [pow_add]
+
+/-- The sum of the natural numbers below `n`, cast into a field of characteristic zero. -/
+theorem sum_range_cast_id {K : Type*} [Field K] [CharZero K] (n : ℕ) :
+    ∑ r ∈ range n, (r : K) = n * (n - 1) / 2 := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [sum_range_succ, ih]; push_cast; ring
+
+/-- The sum of the squares of natural numbers below `n`, in a field of characteristic zero. -/
+theorem sum_range_cast_sq {K : Type*} [Field K] [CharZero K] (n : ℕ) :
+    ∑ r ∈ range n, (r : K) ^ 2 = n * (n - 1) * (2 * n - 1) / 6 := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [sum_range_succ, ih]; push_cast; ring
 
 end Finset
