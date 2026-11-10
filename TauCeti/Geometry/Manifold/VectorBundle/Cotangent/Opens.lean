@@ -43,6 +43,13 @@ def openInclusion (U : Opens M) (z : CotangentBundle I U) : CotangentBundle I M 
   TotalSpace.mk' (E →L[𝕜] 𝕜) (z.proj : M)
     (z.2 ∘L (Manifold.tangentSpaceOpenEquiv (I := I) z.proj).symm.toContinuousLinearMap)
 
+/-- The cotangent inclusion extends a covector over `x ∈ U` to the covector over `x ∈ M`
+obtained by composing with the inverse tangent-space identification. -/
+theorem openInclusion_def (U : Opens M) (z : CotangentBundle I U) :
+    openInclusion U z = TotalSpace.mk' (E →L[𝕜] 𝕜) (z.proj : M)
+      (z.2 ∘L (Manifold.tangentSpaceOpenEquiv (I := I) z.proj).symm.toContinuousLinearMap) :=
+  (rfl)
+
 /-- The cotangent inclusion covers the inclusion of the open base. -/
 @[simp]
 theorem proj_openInclusion (U : Opens M) (z : CotangentBundle I U) :
