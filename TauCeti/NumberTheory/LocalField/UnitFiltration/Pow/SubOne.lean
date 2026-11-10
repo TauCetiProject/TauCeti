@@ -97,9 +97,8 @@ theorem log_normalizedValuationWithZero_pow_sub_one {n : ℕ} (hn : (n : K) ≠ 
     have := (mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one
       m.succ_ne_zero hx1).mp h
     omega
-  have h1 := (pow_mem_unitFiltration_add_natCastValuation_iff hn hi him hx).mpr hxm
-  have h2 := (pow_mem_unitFiltration_add_natCastValuation_iff hn hi (him.trans m.le_succ)
-    hx).not.mpr hxm1
+  have h1 := (pow_mem_unitFiltration_add_natCastValuation_iff hn hi hx).mpr hxm
+  have h2 := (pow_mem_unitFiltration_add_natCastValuation_iff hn hi hx).not.mpr hxm1
   rw [mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one (by omega) hxn1,
     Units.val_pow_eq_pow_val] at h1 h2
   push_cast at h1 h2

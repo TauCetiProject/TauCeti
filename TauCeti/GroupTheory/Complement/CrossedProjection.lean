@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.GroupExtension.Quotient.Basic
+public import TauCeti.GroupTheory.Complement.Local
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle
 public import TauCeti.GroupTheory.GroupAction.ConjAct
@@ -16,7 +17,8 @@ public import TauCeti.GroupTheory.GroupAction.ConjAct
 For an abelian normal subgroup `N` of `G`, a complement determines a crossed map
 `c : G → N` which restricts to the identity on `N`. Conversely, the locus where
 such a map equals `1` is a complement. This file proves both constructions and the
-existence criterion, without any finiteness assumption.
+existence criterion, without any finiteness assumption. The same projection for a local
+complement `K` of `N` in an intermediate subgroup `H` is a crossed map on `H`.
 
 The conjugation action is explicit rather than a global instance. The additive
 coefficient action uses `Additive.distribMulAction`, and kernels use the existing
@@ -94,6 +96,18 @@ theorem crossedProjection_eq_one_iff (g : G) : h.crossedProjection g = 1 ↔ g �
   exact h.coe_equiv_fst_eq_one_iff_mem N.one_mem
 
 end IsComplement'
+
+/-- The left projection of a local complement `K` of `N` in `H` satisfies the crossed identity
+for the conjugation action of `H` on `N`. -/
+theorem IsLocalComplement.isMulCocycle₁_leftProjection [IsMulCommutative N] {K H : Subgroup G}
+    (h : N.IsLocalComplement K H) : IsMulCocycle₁ h.leftProjection := by
+  intro x y
+  rw [h.leftProjection_eq_iff]
+  have hx := (h.leftProjection_eq_iff x _).mp rfl
+  have hy := (h.leftProjection_eq_iff y _).mp rfl
+  simp only [coe_mul, Subgroup.smul_def, coe_conjugationAction_smul]
+  convert K.mul_mem hx hy using 1
+  group
 
 variable [IsMulCommutative N]
 

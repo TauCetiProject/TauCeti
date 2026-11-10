@@ -338,6 +338,67 @@ theorem deriv_eq (f : ParabolicC2HolderSpace α E F hab) (x : E) (t : Icc a b)
       timeDerivL f (slabMk x t) :=
   ((f.hasTimeDerivWithinAt x t).hasDerivAt (Icc_mem_nhds ht.1 ht.2)).deriv
 
+/-! ### Locality of the derivative fields -/
+
+section Locality
+
+variable {f g : ParabolicC2HolderSpace α E F hab} {U : Set (slab (E := E) a b)}
+
+/-- The spatial gradient is local: maps that agree on an open subset of the slab have the same
+spatial gradient there. -/
+theorem eqOn_spatialFDerivL_of_eqOn (hU : IsOpen U) (h : EqOn f g U) :
+    EqOn (spatialFDerivL f) (spatialFDerivL g) U := by
+  intro p hp
+  obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
+  have hev : (fun y ↦ f (slabMk y t)) =ᶠ[𝓝 x] fun y ↦ g (slabMk y t) :=
+    eventually_of_mem ((hU.preimage (spatialSlice t).continuous).mem_nhds (by simpa using hp))
+      fun _ hy ↦ h (by simpa using hy)
+  rw [← f.fderiv_eq, ← g.fderiv_eq, hev.fderiv_eq]
+
+/-- The spatial Hessian is local: maps that agree on an open subset of the slab have the same
+spatial Hessian there. -/
+theorem eqOn_spatialSecondFDerivL_of_eqOn (hU : IsOpen U) (h : EqOn f g U) :
+    EqOn (spatialSecondFDerivL f) (spatialSecondFDerivL g) U := by
+  have hx := eqOn_spatialFDerivL_of_eqOn hU h
+  intro p hp
+  obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
+  have hev : (fun y ↦ spatialFDerivL f (slabMk y t)) =ᶠ[𝓝 x]
+      fun y ↦ spatialFDerivL g (slabMk y t) :=
+    eventually_of_mem ((hU.preimage (spatialSlice t).continuous).mem_nhds (by simpa using hp))
+      fun _ hy ↦ hx (by simpa using hy)
+  rw [← f.fderiv_spatialFDeriv_eq, ← g.fderiv_spatialFDeriv_eq, hev.fderiv_eq]
+
+/-- The time derivative is local: maps that agree on an open subset of the slab have the same
+time derivative there, also at the endpoints of the time interval. -/
+theorem eqOn_timeDerivL_of_eqOn (hU : IsOpen U) (h : EqOn f g U) :
+    EqOn (timeDerivL f) (timeDerivL g) U := by
+  intro p hp
+  obtain ⟨x, t, rfl⟩ : ∃ x t, slabMk x t = p := ⟨_, _, slabMk_space_slabTime p⟩
+  -- The times `s ∈ [a, b]` with `(x, s) ∈ U` form a neighbourhood of `t` within `[a, b]`.
+  have hU' : (↑) '' (timeSlice x ⁻¹' U) ∈ 𝓝[Icc a b] (t : ℝ) :=
+    mem_nhds_subtype_iff_nhdsWithin.1
+      ((hU.preimage (timeSlice x).continuous).mem_nhds (by simpa using hp))
+  have hev : timeExtension hab.le f x =ᶠ[𝓝[Icc a b] (t : ℝ)] timeExtension hab.le g x := by
+    filter_upwards [hU'] with _ ⟨s, hs, hst⟩
+    rw [← hst, timeExtension_of_mem, timeExtension_of_mem]
+    exact h (by simpa using hs)
+  rw [← f.derivWithin_eq, ← g.derivWithin_eq,
+    hev.derivWithin_eq (by rw [timeExtension_of_mem, timeExtension_of_mem]; exact h hp)]
+
+/-- A map vanishing at parabolic distance greater than `r` from `z` has spatial Hessian vanishing
+there. This is the support condition under which a principal coefficient can be frozen at `z`
+(`TauCeti.ParabolicC2HolderSpace.norm_spatialOperatorL_sub_const_apply_le`). -/
+theorem spatialSecondFDerivL_eq_zero_of_forall_lt_dist {z : slab (E := E) a b} {r : ℝ}
+    (h : ∀ q, r < dist q z → f q = 0) (p : slab (E := E) a b) (hp : r < dist p z) :
+    spatialSecondFDerivL f p = 0 := by
+  have hU : IsOpen {q : slab (E := E) a b | r < dist q z} :=
+    isOpen_lt continuous_const (continuous_id.dist continuous_const)
+  have h0 : EqOn f (0 : ParabolicC2HolderSpace α E F hab) {q | r < dist q z} := fun q hq ↦ by
+    rw [h q hq, zero_apply]
+  rw [eqOn_spatialSecondFDerivL_of_eqOn hU h0 hp, map_zero, HolderSpace.zero_apply]
+
+end Locality
+
 /-- Construct an element from its bounded fields and the three derivative identities. -/
 def mk (u : slab (E := E) a b →ᵇ F) (ux : slab (E := E) a b →ᵇ (E →L[ℝ] F))
     (uxx : HolderSpace α (slab (E := E) a b) (E →L[ℝ] E →L[ℝ] F))

@@ -10,6 +10,8 @@ public import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.Completion
 public import TauCeti.Topology.Algebra.UniformRing
 public import Mathlib.Topology.Algebra.UniformFilterBasis
 
+import Mathlib.Algebra.Regular.Pi
+
 /-!
 # Completeness of the weighted restricted power series over a complete base
 
@@ -87,6 +89,8 @@ specialisations are discharged with.
   `TauCeti.Huber.uniformContinuous_restrictedMvPowerSeriesCompletionEquiv_symm` : the
   comparison and its inverse are uniformly continuous. The inverse is the canonical map into
   the completion, which is `TauCeti.Huber.coe_restrictedMvPowerSeriesCompletionEquiv_symm`.
+* `TauCeti.Huber.isSMulRegular_restrictedMvPowerSeriesCompletion` : a scalar acting injectively
+  on `A` acts injectively on `A⟨X₁,…,Xₖ⟩`.
 
 ## Provenance
 
@@ -346,6 +350,17 @@ theorem coe_restrictedMvPowerSeriesCompletionAlgEquiv_symm :
     ⇑(restrictedMvPowerSeriesCompletionAlgEquiv k A).symm
       = ⇑(restrictedMvPowerSeriesCompletionEquiv k A).symm :=
   UniformSpace.Completion.coe_completeAlgEquivSelf_symm _ A
+
+/-- A scalar acting injectively on `A` acts injectively on `A⟨X₁,…,Xₖ⟩`: the comparison carries
+the action to the coefficientwise action on power series. -/
+theorem isSMulRegular_restrictedMvPowerSeriesCompletion {a : A} (ha : IsSMulRegular A a) :
+    IsSMulRegular (restrictedMvPowerSeriesCompletion k A) a := by
+  rw [(restrictedMvPowerSeriesCompletionAlgEquiv k A).toEquiv.isSMulRegular_congr
+    (map_smul (restrictedMvPowerSeriesCompletionAlgEquiv k A) a)]
+  exact .of_injective (⟨Subtype.val, fun _ _ ↦ by
+      simp [Algebra.smul_def, MvPowerSeries.algebraMap_apply]⟩ :
+    weightedRestrictedSubring (fun _ : Fin k ↦ ({1} : Set A)) isWeightFamily_one_weight →[A]
+      MvPowerSeries (Fin k) A) Subtype.val_injective (Pi.isSMulRegular_iff.mpr fun _ ↦ ha)
 
 end Comparison
 

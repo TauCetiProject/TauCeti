@@ -118,6 +118,7 @@ theorem orthonormal_matrixCoeffLp {n : ι → ℕ} (hunitary : ∀ i, IsUnitary 
   · rw [(π i).schur_orthogonality (hπ i) (π j) (hπ j) (hunitary j) (hirr i) (hirr j) (hne hij)]
     simp [Sigma.ext_iff, hij]
 
+omit [∀ i, NormedSpace ℝ (V i)] [∀ i, SMulCommClass ℝ 𝕜 (V i)] in
 /-- **The irreducible characters are orthonormal.** The characters of a family of pairwise
 inequivalent finite-dimensional irreducible unitary representations of a compact group form an
 orthonormal system in `L²(G)`.

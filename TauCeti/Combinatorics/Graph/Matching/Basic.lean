@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Simple
+public import TauCeti.Combinatorics.Graph.Incidence
 
 /-!
 # Matchings in multigraphs
@@ -22,12 +23,24 @@ is equivalently the assertion that this canonical subgraph is spanning.  This co
 edge-set representation, convenient for deleting and partitioning multigraph edges, with the
 subgraph viewpoint used by Mathlib for simple-graph matchings.
 
+A matching of a subgraph is a matching of the whole graph, and a perfect matching of a spanning
+subgraph is a perfect matching of the whole graph. Deleting a perfect matching lowers the incidence
+count of every actual vertex with finitely many incident edges by exactly one; this is the step that
+splits the edge set of a regular bipartite multigraph into perfect matchings.
+
 ## Main definitions
 
 * `Graph.IsMatching G M`: the actual edges in `M` form a matching.
 * `Graph.IsPerfectMatching G M`: `M` is a matching incident to every actual vertex.
 * `Graph.matchingSubgraph G M`: the subgraph containing precisely the selected edges and their
   endpoints.
+
+## Main results
+
+* `Graph.IsPerfectMatching.image_inclusion`: a perfect matching of a spanning subgraph is a perfect
+  matching of the whole graph.
+* `Graph.IsPerfectMatching.incidenceCount_deleteEdges_add_one`: deleting a perfect matching lowers
+  by one the incidence count of every actual vertex with finitely many incident edges.
 -/
 
 public section
@@ -318,5 +331,42 @@ theorem isPerfectMatching_univ_banana_singleton {u v : α} {e : β} (huv : u ≠
     let f : E(banana u v {e}) := ⟨e, by simp⟩
     refine ⟨f, Set.mem_univ f, ?_⟩
     simpa [f, banana_inc] using x.2
+
+/-! ### Subgraphs and edge deletion -/
+
+variable {H : Graph α β}
+
+/-- A matching of a subgraph is a matching of the whole graph. -/
+theorem IsMatching.image_inclusion (hHG : H ≤ G) {M : Set E(H)} (hM : H.IsMatching M) :
+    G.IsMatching (Set.inclusion hHG.edgeSet_mono '' M) := by
+  refine ⟨?_, ?_⟩
+  · rintro _ ⟨e, he, rfl⟩ x hx
+    exact hM.not_isLoopAt he x ((hHG.isLoopAt_congr e.2).2 hx)
+  · rintro _ ⟨e, he, rfl⟩ _ ⟨f, hf, rfl⟩ hef x ⟨hex, hfx⟩
+    exact hef <| congrArg _ <|
+      hM.eq_of_inc he hf ((hHG.inc_congr e.2).2 hex) ((hHG.inc_congr f.2).2 hfx)
+
+/-- A perfect matching of a spanning subgraph is a perfect matching of the whole graph. -/
+theorem IsPerfectMatching.image_inclusion (hHG : H ≤s G) {M : Set E(H)}
+    (hM : H.IsPerfectMatching M) :
+    G.IsPerfectMatching (Set.inclusion hHG.le.edgeSet_mono '' M) := by
+  refine ⟨hM.1.image_inclusion hHG.le, fun x ↦ ?_⟩
+  obtain ⟨e, he, hex⟩ := hM.2 ⟨x, hHG.vertexSet_eq.symm ▸ x.2⟩
+  exact ⟨_, ⟨e, he, rfl⟩, (hHG.le.inc_congr e.2).1 hex⟩
+
+/-- Exactly one edge of a perfect matching is incident with each actual vertex. -/
+theorem IsPerfectMatching.ncard_incidenceSet_inter (hM : G.IsPerfectMatching M) (x : V(G)) :
+    (G.incidenceSet x ∩ Subtype.val '' M).ncard = 1 := by
+  obtain ⟨e, ⟨he, hex⟩, hu⟩ := hM.existsUnique_inc x
+  refine ncard_eq_one.2 ⟨e, eq_singleton_iff_unique_mem.2 ⟨⟨hex, e, he, rfl⟩, ?_⟩⟩
+  rintro _ ⟨hfx, f, hf, rfl⟩
+  exact congrArg Subtype.val (hu f ⟨hf, hfx⟩)
+
+/-- Deleting a perfect matching lowers the incidence count of every actual vertex with finitely
+many incident edges by exactly one. -/
+theorem IsPerfectMatching.incidenceCount_deleteEdges_add_one (hM : G.IsPerfectMatching M)
+    (x : V(G)) (hfin : (G.incidenceSet x).Finite) :
+    (G.deleteEdges (Subtype.val '' M)).incidenceCount x + 1 = G.incidenceCount x := by
+  rw [← hM.ncard_incidenceSet_inter x, G.incidenceCount_deleteEdges_add_ncard_inter _ _ hfin]
 
 end Graph
