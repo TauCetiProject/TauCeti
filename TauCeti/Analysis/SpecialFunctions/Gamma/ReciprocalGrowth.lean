@@ -9,6 +9,8 @@ public import Mathlib.Analysis.PSeries
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import Mathlib.NumberTheory.Harmonic.Bounds
 public import TauCeti.Analysis.Complex.CanonicalProduct.ElementaryFactor
+public import TauCeti.Analysis.SpecialFunctions.Log.GrowthScale
+public import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
 # Growth of the reciprocal Gamma functions
@@ -54,41 +56,7 @@ public section
 open Finset Filter Topology
 open scoped Real
 
-namespace Real
-
-/-- The growth scale `(1 + r) log (2 + r)` absorbs both `r log (1 + r)` and `r`. -/
-theorem mul_mul_log_one_add_add_mul_le {A B r : ℝ} (hA : 0 ≤ A) (hB : 0 ≤ B) (hr : 0 ≤ r) :
-    A * r * log (1 + r) + B * r ≤ (A + 2 * B) * (1 + r) * log (2 + r) := by
-  have hlog : log (1 + r) ≤ log (2 + r) := log_le_log (by linarith) (by linarith)
-  have hlog₁ : 0 ≤ log (1 + r) := log_nonneg (by linarith)
-  -- `log 2 ≥ 1 - 2⁻¹`.
-  have hlog₂ : 1 / 2 ≤ log (2 + r) := by
-    have h := one_sub_inv_le_log_of_pos (by norm_num : (0 : ℝ) < 2)
-    have := log_le_log (by norm_num : (0 : ℝ) < 2) (by linarith : (2 : ℝ) ≤ 2 + r)
-    norm_num at h
-    linarith
-  have h₁ : r * log (1 + r) ≤ (1 + r) * log (2 + r) :=
-    mul_le_mul (by linarith) hlog hlog₁ (by linarith)
-  -- `r ≤ 1 + r` and `1 ≤ 2 log (2 + r)`.
-  have h₂ : r ≤ 2 * ((1 + r) * log (2 + r)) := by nlinarith
-  calc
-    A * r * log (1 + r) + B * r ≤
-        A * ((1 + r) * log (2 + r)) + B * (2 * ((1 + r) * log (2 + r))) := by
-      rw [mul_assoc]
-      exact add_le_add (mul_le_mul_of_nonneg_left h₁ hA) (mul_le_mul_of_nonneg_left h₂ hB)
-    _ = (A + 2 * B) * (1 + r) * log (2 + r) := by ring
-
-end Real
-
 namespace Complex
-
-/-- A real power of a positive real number grows at most exponentially in the exponent. -/
-theorem norm_ofReal_cpow_le_exp {a : ℝ} (ha : 0 < a) (w : ℂ) :
-    ‖(a : ℂ) ^ w‖ ≤ Real.exp (|Real.log a| * ‖w‖) := by
-  rw [norm_cpow_eq_rpow_re_of_pos ha, Real.rpow_def_of_pos ha]
-  exact Real.exp_le_exp.mpr <| (le_abs_self _).trans <| by
-    rw [abs_mul]
-    exact mul_le_mul_of_nonneg_left (abs_re_le_norm w) (abs_nonneg _)
 
 /-- One factor of Euler's product: `s + k = k E₁(-s/k) e^{s/k}` for `k = j + 1`. -/
 theorem add_natCast_succ_eq_mul_weierstrassFactorOne (s : ℂ) (j : ℕ) :
@@ -133,8 +101,7 @@ theorem norm_inv_GammaSeq_le (s : ℂ) {n : ℕ} (hn : n ≠ 0) :
     rw [norm_exp]
     refine Real.exp_le_exp.mpr ?_
     have : (s * ((harmonic n : ℂ) - Real.log n)).re = s.re * ((harmonic n : ℝ) - Real.log n) := by
-      rw [show ((harmonic n : ℂ) - Real.log n) = (((harmonic n : ℝ) - Real.log n : ℝ) : ℂ) by
-        push_cast; rfl, re_mul_ofReal]
+      rw [← ofReal_ratCast, ← ofReal_sub, re_mul_ofReal]
     rw [this]
     calc
       _ ≤ |s.re| * ((harmonic n : ℝ) - Real.log n) :=
@@ -280,16 +247,15 @@ theorem norm_inv_Gammaℂ_le_exp_mul_log (s : ℂ) :
   have hlog2pi : |Real.log (2 * π)| ≤ 7 := by
     rw [abs_of_nonneg (Real.log_nonneg (by linarith [Real.two_le_pi]))]
     linarith [Real.log_le_sub_one_of_pos h2pi, Real.pi_le_four]
-  have hpow : ‖(((2 * π : ℝ) : ℂ) ^ (-s))⁻¹‖ ≤ Real.exp (7 * r) := by
-    rw [← cpow_neg, neg_neg]
+  have hpow : ‖((2 * π : ℂ) ^ (-s))⁻¹‖ ≤ Real.exp (7 * r) := by
+    rw [← cpow_neg, neg_neg, ← ofReal_ofNat, ← ofReal_mul]
     refine (norm_ofReal_cpow_le_exp h2pi _).trans (Real.exp_le_exp.mpr ?_)
     rw [← hr_def]
     -- `|log (2π)| r ≤ 7 r` by `hlog2pi`.
     nlinarith [abs_nonneg (Real.log (2 * π))]
   have hG := norm_inv_Gamma_le s
   rw [← hr_def] at hG
-  rw [Gammaℂ_def, mul_inv, mul_inv, norm_mul, norm_mul, show (2 * π : ℂ) = ((2 * π : ℝ) : ℂ) by
-    push_cast; rfl]
+  rw [Gammaℂ_def, mul_inv, mul_inv, norm_mul, norm_mul]
   have h2 : ‖(2 : ℂ)⁻¹‖ ≤ 1 := by rw [norm_inv, Complex.norm_two]; norm_num
   calc
     _ ≤ 1 * Real.exp (7 * r) * Real.exp (2 * r * Real.log (1 + r) + 10 * r) :=
