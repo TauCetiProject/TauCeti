@@ -23,6 +23,8 @@ rectangle over it (`MeasureTheory.Measure.measure_prod_eq_zero_of_fst_eq_zero`).
 For a probability measure `μ`, the pairs with a coordinate in a set `s` have `μ.prod μ`-measure
 at most `2 * μ s` (`MeasureTheory.Measure.prod_self_union_le_two_mul`). Weighting by a function
 of the first coordinate commutes with taking the first marginal (`fst_withDensity`).
+Projecting a measurable restriction of a product weights the first factor by the masses of
+its vertical sections (`map_fst_restrict_prod_eq_withDensity`).
 
 It also records that almost every section of an almost-everywhere measurable function on a
 product `μ.prod ν` is almost-everywhere measurable (`AEMeasurable.prodMk_left`), the counterpart of
@@ -48,6 +50,21 @@ public section
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
+
+/-- Projecting the part of a product measure in a measurable set gives the first measure
+weighted by the masses of the vertical sections. Only the second factor must be s-finite. -/
+theorem map_fst_restrict_prod_eq_withDensity {α β : Type*} [MeasurableSpace α]
+    [MeasurableSpace β] (μ : Measure α) (ν : Measure β) [SFinite ν]
+    {A : Set (α × β)} (hA : MeasurableSet A) :
+    ((μ.prod ν).restrict A).map Prod.fst =
+      μ.withDensity (fun x ↦ ν (Prod.mk x ⁻¹' A)) := by
+  ext s hs
+  rw [map_apply measurable_fst hs, restrict_apply (measurable_fst hs),
+    prod_apply ((measurable_fst hs).inter hA), withDensity_apply _ hs,
+    ← lintegral_indicator hs]
+  apply lintegral_congr
+  intro x
+  by_cases hx : x ∈ s <;> simp [Set.preimage, hx]
 
 /-- Weighting a joint measure by a function of its first coordinate weights its first marginal
 by the same function. No finiteness assumption is needed. -/
