@@ -129,10 +129,41 @@ theorem fiberSetoid_zero_one {a b : SolidTorus} : fiberSetoid 0 1 a b ↔ a.1 = 
   · simp [h]
   · rw [zpow_one, inv_mul_cancel_right]
 
+/-- Scaling both exponents by a nonzero integer does not change the fibres of `V(p, q)`: the
+`g`-th power map of the circle is onto. -/
+theorem fiberSetoid_mul_left {g : ℤ} (hg : g ≠ 0) (p q : ℤ) :
+    fiberSetoid (g * p) (g * q) = fiberSetoid p q := by
+  refine Setoid.ext fun a b ↦ ?_
+  simp only [fiberSetoid_iff]
+  constructor
+  · rintro ⟨t, h₁, h₂⟩
+    exact ⟨t ^ g, by rwa [← zpow_mul], by rwa [← zpow_mul]⟩
+  · rintro ⟨s, h₁, h₂⟩
+    obtain ⟨θ, rfl⟩ := Circle.exp_surjective s
+    have hs : Circle.exp (θ / g) ^ g = Circle.exp θ := by
+      rw [← Circle.exp_intCast_mul, mul_div_cancel₀ _ (Int.cast_ne_zero.2 hg)]
+    exact ⟨Circle.exp (θ / g), by rwa [zpow_mul, hs], by rwa [zpow_mul, hs]⟩
+
+/-- For `q ≠ 0`, the fibres of `V(p, q)` are those of a model `V(p', q')` with `p'` coprime to `q'`
+(and `q' > 0` if `q > 0`), obtained by dividing out the greatest common divisor. -/
+theorem exists_isCoprime_fiberSetoid_eq {p q : ℤ} (hq : q ≠ 0) :
+    ∃ p' q' : ℤ, (0 < q → 0 < q') ∧ q' ≠ 0 ∧ IsCoprime p' q' ∧
+      fiberSetoid p q = fiberSetoid p' q' := by
+  have hg : 0 < Int.gcd p q := Int.gcd_pos_of_ne_zero_right p hq
+  have hg' : (Int.gcd p q : ℤ) ≠ 0 := by omega
+  have hdq : q = Int.gcd p q * (q / Int.gcd p q) :=
+    (Int.mul_ediv_cancel' (Int.gcd_dvd_right p q)).symm
+  refine ⟨p / Int.gcd p q, q / Int.gcd p q, fun h ↦ ?_, fun h ↦ hq (by rw [hdq, h, mul_zero]),
+    Int.isCoprime_iff_gcd_eq_one.2 (Int.gcd_div_gcd_div_gcd hg), ?_⟩
+  · exact (mul_pos_iff_of_pos_left (by omega)).1 (hdq ▸ h)
+  · rw [← fiberSetoid_mul_left hg' (p / Int.gcd p q), Int.mul_ediv_cancel' (Int.gcd_dvd_left p q),
+      ← hdq]
+
 /-- Every fibre of the model fibred solid torus `V(p, q)`, for `q ≠ 0` and `p` coprime to `q`, is
 homeomorphic to a circle. -/
-theorem nonempty_homeomorph_circle {p q : ℤ} (hq : q ≠ 0) (hpq : IsCoprime p q)
-    (a : SolidTorus) : Nonempty ({b | fiberSetoid p q a b} ≃ₜ Circle) := by
+private theorem nonempty_homeomorph_circle_of_isCoprime {p q : ℤ} (hq : q ≠ 0)
+    (hpq : IsCoprime p q) (a : SolidTorus) :
+    Nonempty ({b | fiberSetoid p q a b} ≃ₜ Circle) := by
   -- The core is the circle `{0} × S¹`; off the core the orbit map of the circle action is
   -- injective by coprimality.
   suffices ∃ f : Circle → SolidTorus, Continuous f ∧ Function.Injective f ∧
@@ -172,6 +203,14 @@ theorem nonempty_homeomorph_circle {p q : ℤ} (hq : q ≠ 0) (hpq : IsCoprime p
     · ext b
       exact ⟨fun ⟨t, ht⟩ ↦ ⟨t, by rw [← ht], by rw [← ht]⟩,
         fun ⟨t, h₁, h₂⟩ ↦ ⟨t, Prod.ext (Subtype.ext h₁) h₂⟩⟩
+
+/-- Every fibre of the model fibred solid torus `V(p, q)`, for `q ≠ 0`, is homeomorphic to a
+circle. -/
+theorem nonempty_homeomorph_circle {p q : ℤ} (hq : q ≠ 0) (a : SolidTorus) :
+    Nonempty ({b | fiberSetoid p q a b} ≃ₜ Circle) := by
+  obtain ⟨p', q', -, hq', hpq, h⟩ := exists_isCoprime_fiberSetoid_eq (p := p) hq
+  rw [h]
+  exact nonempty_homeomorph_circle_of_isCoprime hq' hpq a
 
 end SolidTorus
 
@@ -235,7 +274,7 @@ variable {r : Setoid M}
 theorem nonempty_homeomorph_circle (h : IsSeifertFibration r) (x : M) :
     Nonempty ({y | r x y} ≃ₜ Circle) := by
   obtain ⟨p, q, hq, hpq, e, hx, he⟩ := h x
-  obtain ⟨φ⟩ := SolidTorus.nonempty_homeomorph_circle hq.ne' hpq (e x)
+  obtain ⟨φ⟩ := SolidTorus.nonempty_homeomorph_circle hq.ne' (e x)
   exact ⟨(e.homeomorphOfImageSubsetSource (fun y hy ↦ he.source_saturated x hx y hy)
     (he.image_setOf_rel hx)).trans φ⟩
 
@@ -258,16 +297,16 @@ theorem _root_.Homeomorph.isSeifertFibered_iff (φ : N ≃ₜ M) :
 
 namespace SolidTorus
 
-/-- The model fibred solid torus `V(p, q)`, for `q > 0` and `p` coprime to `q`, is Seifert fibred.
--/
-theorem isSeifertFibration_fiberSetoid {p q : ℤ} (hq : 0 < q) (hpq : IsCoprime p q) :
-    IsSeifertFibration (fiberSetoid p q) := fun _ ↦
-  ⟨p, q, hq, hpq, OpenPartialHomeomorph.refl _, mem_univ _,
-    ⟨fun _ _ _ _ ↦ mem_univ _, fun _ _ _ _ ↦ mem_univ _, fun _ _ _ _ ↦ Iff.rfl⟩⟩
+/-- The model fibred solid torus `V(p, q)`, for `q > 0`, is Seifert fibred. -/
+theorem isSeifertFibration_fiberSetoid {p q : ℤ} (hq : 0 < q) :
+    IsSeifertFibration (fiberSetoid p q) := fun _ ↦ by
+  obtain ⟨p', q', hq', -, hpq, h⟩ := exists_isCoprime_fiberSetoid_eq (p := p) hq.ne'
+  exact ⟨p', q', hq' hq, hpq, OpenPartialHomeomorph.refl _, mem_univ _,
+    ⟨fun _ _ _ _ ↦ mem_univ _, fun _ _ _ _ ↦ mem_univ _, fun _ _ _ _ ↦ by rw [h]; rfl⟩⟩
 
 /-- The solid torus is Seifert fibred. -/
 theorem isSeifertFibered : IsSeifertFibered SolidTorus :=
-  ⟨_, isSeifertFibration_fiberSetoid (p := 0) one_pos isCoprime_one_right⟩
+  ⟨_, isSeifertFibration_fiberSetoid (p := 0) one_pos⟩
 
 end SolidTorus
 
