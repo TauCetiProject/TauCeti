@@ -69,7 +69,6 @@ section EnergyCritical
 
 variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [FiniteDimensional ℝ E] [IsManifold I 2 M]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 /-- **Geodesics are critical points of the energy.** For `2 ≤ n`, a geodesic on the open interval
@@ -112,7 +111,6 @@ private theorem isFixedEndpointVariation_chartVariation [IsManifold I n M] (hJo 
 
 variable [IsManifold I 2 M] [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [FiniteDimensional ℝ E]
-  [ContMDiffVectorBundle 1 E (TangentSpace I : M → Type _) I]
   [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
 
 /-- The first-variation integrand of the chart variation: `φ t` times the pairing of the tangent
