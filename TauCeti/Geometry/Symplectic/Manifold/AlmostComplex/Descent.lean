@@ -82,11 +82,11 @@ variable {E H M E' H' N : Type*}
 section Deck
 
 /-- Deck transformations commuting with `J` make `J` compatible with the identifications of `q`:
-if `q` is differentiable with injective differentials, `g` satisfies `q ∘ g = q`, sends `x` to
+if `q` has injective differentials, `g` satisfies `q ∘ g = q`, sends `x` to
 `x'` and its differential at `x` commutes with `J`, then
 any two tangent vectors at `x` and `x'` with the same image under the differentials of `q` are sent
 by `J` to two vectors with the same image. -/
-theorem mfderiv_apply_eq_of_deck (hq : MDifferentiable I I' q)
+theorem mfderiv_apply_eq_of_deck
     (hinj : ∀ x : M, Injective (mfderiv I I' q x))
     (J : SmoothAlmostComplexStructure I M) {g : M → M} {x x' : M} (hgx : g x = x')
     (hg : MDifferentiableAt I I g x) (hqg : q ∘ g = q)
@@ -95,10 +95,19 @@ theorem mfderiv_apply_eq_of_deck (hq : MDifferentiable I I' q)
     (hvv' : mfderiv I I' q x v = mfderiv I I' q x' v') :
     mfderiv I I' q x (J x v) = mfderiv I I' q x' (J x' v') := by
   subst hgx
+  by_cases hq : MDifferentiableAt I I' q (g x)
+  swap
+  · -- If `q` is not differentiable at `g x` its differential there is zero, so the tangent space
+    -- at `g x` is a subsingleton by injectivity.
+    have hs : Subsingleton (TangentSpace I (g x)) :=
+      ⟨fun a b ↦ hinj (g x) (by rw [mfderiv_zero_of_not_mdifferentiableAt hq]; rfl)⟩
+    have hs' : Subsingleton (TangentSpace I x) := hs
+    rw [Subsingleton.elim (J x v) 0, Subsingleton.elim (J (g x) v') 0, map_zero, map_zero]
+    rfl
   -- The chain rule for `q ∘ g = q` identifies `dq_x` with `dq_{g x} ∘ dg_x`.
   have hchain (w : TangentSpace I x) :
       mfderiv I I' q x w = mfderiv I I' q (g x) (mfderiv I I g x w) := by
-    have h := mfderiv_comp x (hq (g x)) hg
+    have h := mfderiv_comp x hq hg
     rw [hqg] at h
     -- After rewriting, `ContinuousLinearMap.comp_apply` closes the goal definitionally; it
     -- cannot be used by `rw` because the tangent spaces at `q x` and `q (g x)` differ
@@ -126,7 +135,7 @@ theorem mfderiv_apply_eq_of_eqvGen (hq : IsLocalDiffeomorph I I' ∞ q)
   induction hxx' with
   | rel x x' h =>
     obtain ⟨g, hgx, hg, hqg, hgJ⟩ := hR x x' h
-    exact mfderiv_apply_eq_of_deck (hq.mdifferentiable (by simp))
+    exact mfderiv_apply_eq_of_deck
       (fun y ↦ (hq.isInvertible_mfderiv (by simp) y).injective) J hgx hg hqg hgJ v v' hvv'
   | refl x => rw [((hq x).isInvertible_mfderiv (by simp)).injective hvv']
   | symm x x' _ ih => exact (ih v' v hvv'.symm).symm
