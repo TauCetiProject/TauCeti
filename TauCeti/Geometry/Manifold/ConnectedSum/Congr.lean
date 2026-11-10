@@ -102,8 +102,8 @@ and `e₂` is homeomorphic to the connected sum of `N` and `M` along `e₂` and 
 on each punctured summand: `e₁ v` is glued to `e₂ (inversion 0 1 v)` in both, as the inversion is
 an involution. -/
 def commHomeomorph : ConnectedSum e₁ e₂ ≃ₜ ConnectedSum e₂ e₁ where
-  toFun := lift (inr e₂ e₁) (inl e₂ e₁) fun _ hv _ _ ↦ (inl_inversion_eq_inr hv _ _).symm
-  invFun := lift (inr e₁ e₂) (inl e₁ e₂) fun _ hv _ _ ↦ (inl_inversion_eq_inr hv _ _).symm
+  toFun := lift (inr e₂ e₁) (inl e₂ e₁) fun _ _ _ _ ↦ (inl_inversion_eq_inr _ _).symm
+  invFun := lift (inr e₁ e₂) (inl e₁ e₂) fun _ _ _ _ ↦ (inl_inversion_eq_inr _ _).symm
   left_inv p := by obtain ⟨x | y, rfl⟩ := mk_surjective e₁ e₂ p <;> simp
   right_inv p := by obtain ⟨y | x, rfl⟩ := mk_surjective e₂ e₁ p <;> simp
   continuous_toFun := continuous_lift _ _ _ (continuous_inr e₂ e₁) (continuous_inl e₂ e₁)
@@ -254,7 +254,7 @@ private theorem exists_congrLeftInr_eq (he₁ : Injective e₁) (he₂ : Injecti
       exact apply_mem_puncture φ.injective hφ.eq_of_nhds (apply_inversion_mem_puncture he₁ hw0)
     rw [congrLeftInr_apply φ hφ he₁ he₂ hw0]
     exact (congrArg (inl e₁' e₂) (Subtype.ext ((coe_punctureMap _ _ _).trans (hεφ hdist)))).trans
-      (inl_inversion_eq_inr hw0 hx hy)
+      (inl_inversion_eq_inr hx hy)
   · exact congrLeftInr_of_notMem φ hφ he₁ h
 
 /-- Every point of the connected sum lies in the first punctured summand, or is a point of the
@@ -269,7 +269,7 @@ private theorem exists_eq_inl_or_exists_eq_inr (he₁ : Injective e₁) (r : ℝ
   · obtain ⟨w, -, rfl⟩ := hyr
     have hw : w ≠ 0 := by rintro rfl; exact mem_puncture.1 hy rfl
     exact .inl ⟨⟨e₁ (inversion 0 1 w), apply_inversion_mem_puncture he₁ hw⟩,
-      (inl_inversion_eq_inr hw _ hy).trans (mk_inr e₁ e₂ _).symm⟩
+      (inl_inversion_eq_inr _ hy).trans (mk_inr e₁ e₂ _).symm⟩
   · exact .inr ⟨⟨y, hy⟩, hyr, (mk_inr e₁ e₂ _).symm⟩
 
 /-- The map `congrLeftMap` for `φ.symm` undoes the map for `φ`. -/
@@ -287,7 +287,7 @@ private theorem congrLeftMap_symm_congrLeftMap (hφ' : φ.symm ∘ e₁' =ᶠ[�
     rw [congrLeftInr_apply φ hφ he₁ he₂ hw, congrLeftMap_inl]
     exact (congrArg (inl e₁ e₂) (Subtype.ext (by simp) :
       _ = ⟨e₁ (inversion 0 1 w), apply_inversion_mem_puncture he₁ hw⟩)).trans
-      (inl_inversion_eq_inr hw _ hy)
+      (inl_inversion_eq_inr _ hy)
   · rw [congrLeftInr_of_notMem φ hφ he₁ h, congrLeftMap_inr]
     exact congrLeftInr_of_notMem φ.symm _ he₁' h
 
@@ -345,12 +345,13 @@ theorem congrLeftHomeomorph_inl (x : puncture e₁) :
     (congrArg _ (Subtype.ext (coe_punctureMap _ _ _)))
 
 @[simp]
-theorem congrLeftHomeomorph_inr_apply {w : E} (hw : w ≠ 0) (hy : e₂ w ∈ puncture e₂) :
+theorem congrLeftHomeomorph_inr_apply {w : E} (hy : e₂ w ∈ puncture e₂) :
     congrLeftHomeomorph φ hφ h₁ h₁' h₂ (inr e₁ e₂ ⟨e₂ w, hy⟩) =
       inl e₁' e₂ ⟨φ (e₁ (inversion 0 1 w)), apply_mem_puncture φ.injective hφ.eq_of_nhds
-        (apply_inversion_mem_puncture h₁.injective hw)⟩ :=
+        (apply_inversion_mem_puncture h₁.injective fun h ↦ mem_puncture.1 hy (congrArg e₂ h))⟩ :=
   ((congrLeftMap_inr φ hφ h₁.injective h₂.injective _).trans
-    (congrLeftInr_apply φ hφ h₁.injective h₂.injective hw hy)).trans
+    (congrLeftInr_apply φ hφ h₁.injective h₂.injective
+      (fun h ↦ mem_puncture.1 hy (congrArg e₂ h)) hy)).trans
     (congrArg _ (Subtype.ext (coe_punctureMap _ _ _)))
 
 @[simp]
@@ -501,12 +502,12 @@ variable {e₁ : E → M} {e₂ : E → N}
 
 /-- Points of the punctured summands are glued as soon as they are the images of a nonzero vector
 and of its inversion. -/
-private theorem inl_eq_inr_of_eq {x : puncture e₁} {y : puncture e₂} (v : E) (hv : v ≠ 0)
+private theorem inl_eq_inr_of_eq {x : puncture e₁} {y : puncture e₂} (v : E)
     (hx : e₁ v = x) (hy : e₂ (inversion 0 1 v) = y) : inl e₁ e₂ x = inr e₁ e₂ y := by
   have hx' : x = ⟨e₁ v, hx ▸ x.2⟩ := Subtype.ext hx.symm
   have hy' : y = ⟨e₂ (inversion 0 1 v), hy ▸ y.2⟩ := Subtype.ext hy.symm
   rw [hx', hy']
-  exact inl_eq_inr v hv _ _
+  exact inl_eq_inr v _ _
 
 variable (e₁ e₂)
 
@@ -519,11 +520,11 @@ def compLinearIsometryEquivHomeomorph :
   toFun := lift
     (inl (e₁ ∘ R) (e₂ ∘ R) ∘ Opens.inclusion (puncture_comp_linearIsometryEquiv R e₁).ge)
     (inr (e₁ ∘ R) (e₂ ∘ R) ∘ Opens.inclusion (puncture_comp_linearIsometryEquiv R e₂).ge)
-    fun v hv _ _ ↦ inl_eq_inr_of_eq (R.symm v) (by simpa using hv) (by simp)
+    fun v _ _ _ ↦ inl_eq_inr_of_eq (R.symm v) (by simp)
       (by simp [LinearIsometryEquiv.map_inversion_zero])
   invFun := lift (inl e₁ e₂ ∘ Opens.inclusion (puncture_comp_linearIsometryEquiv R e₁).le)
     (inr e₁ e₂ ∘ Opens.inclusion (puncture_comp_linearIsometryEquiv R e₂).le)
-    fun v hv _ _ ↦ inl_eq_inr_of_eq (R v) (by simpa using hv) (by simp)
+    fun v _ _ _ ↦ inl_eq_inr_of_eq (R v) (by simp)
       (by simp [LinearIsometryEquiv.map_inversion_zero])
   left_inv p := by obtain ⟨x | y, rfl⟩ := mk_surjective e₁ e₂ p <;> simp
   right_inv p := by obtain ⟨x | y, rfl⟩ := mk_surjective (e₁ ∘ R) (e₂ ∘ R) p <;> simp

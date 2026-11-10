@@ -78,7 +78,7 @@ def map (hφ : Injective φ) (hψ : Injective ψ) (h₁ : φ ∘ e₁ = e₁') (
           ⟨e₂' (inversion 0 1 v), hmy⟩ :=
         Subtype.ext (by rw [coe_punctureMap]; exact congrFun h₂ _)
       simp only [comp_apply, hx', hy']
-      exact inl_eq_inr v hv _ _
+      exact inl_eq_inr v _ _
 
 variable (hφ : Injective φ) (hψ : Injective ψ) (h₁ : φ ∘ e₁ = e₁') (h₂ : ψ ∘ e₂ = e₂')
 
