@@ -38,6 +38,7 @@ namespace UniformSpace.Completion
 /-- **Countable generation of `𝓝 x` is detected in the separated completion**: the neighbourhood
 filter of a point is countably generated exactly when that of its image in the separated completion
 is. -/
+@[simp]
 theorem isCountablyGenerated_nhds_coe_iff {α : Type*} [UniformSpace α] {x : α} :
     (𝓝 (x : Completion α)).IsCountablyGenerated ↔ (𝓝 x).IsCountablyGenerated := by
   refine ⟨fun _ ↦ isDenseInducing_coe.nhds_eq_comap x ▸ inferInstance, fun _ ↦ ?_⟩
