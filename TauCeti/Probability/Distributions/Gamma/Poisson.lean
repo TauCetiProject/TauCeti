@@ -60,9 +60,10 @@ namespace Probability
 
 /-- Multiplying a Gamma kernel by finitely many Poisson masses shifts its shape by the total
 count and its rate by the sum of the Poisson weights. The identity holds for arbitrary real
-parameters at every point, without positivity or normalization assumptions. At the origin both
-sides vanish, because either every count is zero or the shifted shape is a nonpositive integer,
-where `Real.Gamma` vanishes. -/
+parameters at every point, without positivity or normalization assumptions. At the origin the two
+sides agree: if every count is zero they coincide, and otherwise the left side vanishes, as does
+the right, since either `0 ^ (r + ∑ k - 1) = 0` or `r` is a nonpositive integer, where
+`Real.Gamma` vanishes. -/
 theorem _root_.Real.gammaKernel_mul_prod_exp_mul_pow_div_factorial {ι : Type*} [Fintype ι]
     (c r : ℝ) (p : ι → ℝ) (k : ι → ℕ) (x : ℝ) :
     c ^ r / Real.Gamma r * x ^ (r - 1) * Real.exp (-(c * x)) *
@@ -106,8 +107,8 @@ theorem _root_.Real.gammaKernel_mul_prod_exp_mul_pow_div_factorial {ι : Type*} 
           (Real.exp (-(c * x)) * (∏ i, Real.exp (-(p i * x))))) := by ring
     _ = _ := by rw [hpow, hexp]
 
-/-- Collecting `c ^ r / Γ r * x ^ (r - 1) * exp (-(c * x))` against `exp (-x) * x ^ k / k !` at a
-nonzero point: the two powers of `x` and the two exponentials each combine, leaving
+/-- Collecting `c ^ r / Γ r * x ^ (r - 1) * exp (-(c * x))` against `exp (-x) * x ^ k / k !` at
+every point: the two powers of `x` and the two exponentials each combine, leaving
 `x ^ (r + k - 1) * exp (-((c + 1) * x))` under the constant `c ^ r / (Γ r * k !)`.
 
 The identity is algebraic. Nothing here is assumed positive, so neither
