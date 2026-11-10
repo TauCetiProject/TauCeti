@@ -114,17 +114,23 @@ theorem volume_le_smul_map_volume_of_lift (hpos : ∀ x, 0 < F' x) {M : ℝ} (hM
     fun x ↦ ?_)) hFc.measurable) AddCircle.measurable_mk'
   simpa [abs_of_pos (hpos x)] using ENNReal.ofReal_le_ofReal (hMF x)
 
+/-- If the lift `F` of `φ` has positive derivative, every left inverse `ψ` of `φ` is measurable:
+it is the inverse of the homeomorphism of the circle presented by `F`. -/
+private theorem measurable_of_lift_of_leftInverse (hpos : ∀ x, 0 < F' x)
+    {ψ : AddCircle T → AddCircle T} (hψφ : Function.LeftInverse ψ φ) : Measurable ψ := by
+  have hmono : StrictMono F := strictMono_of_hasDerivAt_pos hF hpos
+  have hFc : Continuous F := continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt
+  rw [eq_homeomorphOfLift_symm_of_leftInverse hmono hFc hper hφ hψφ]
+  exact (homeomorphOfLift φ hmono hFc hper hφ).symm.continuous.measurable
+
 /-- If the lift `F` of `φ` satisfies `0 < F' ≤ M` and `ψ` is a left inverse of `φ`, then `ψ` pushes
 the measure of the circle forward to at most `M` times itself. -/
 theorem map_volume_le_of_lift_of_leftInverse (hpos : ∀ x, 0 < F' x) {M : ℝ}
     (hMF : ∀ x, F' x ≤ M) {ψ : AddCircle T → AddCircle T}
     (hψφ : Function.LeftInverse ψ φ) :
     (volume : Measure (AddCircle T)).map ψ ≤ ENNReal.ofReal M • volume := by
-  have hmono : StrictMono F := strictMono_of_hasDerivAt_pos hF hpos
   have hFc : Continuous F := continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt
-  have hψ : Measurable ψ := by
-    rw [eq_homeomorphOfLift_symm_of_leftInverse hmono hFc hper hφ hψφ]
-    exact (homeomorphOfLift φ hmono hFc hper hφ).symm.continuous.measurable
+  have hψ := measurable_of_lift_of_leftInverse hF hper hφ hpos hψφ
   calc (volume : Measure (AddCircle T)).map ψ
       ≤ (ENNReal.ofReal M • (volume : Measure (AddCircle T)).map φ).map ψ :=
         Measure.map_mono (volume_le_smul_map_volume_of_lift hF hper hφ hpos hMF) hψ
@@ -147,11 +153,7 @@ theorem map_haarAddCircle_le_of_lift_of_leftInverse (hpos : ∀ x, 0 < F' x) {M 
     (hMF : ∀ x, F' x ≤ M) {ψ : AddCircle T → AddCircle T}
     (hψφ : Function.LeftInverse ψ φ) :
     (haarAddCircle : Measure (AddCircle T)).map ψ ≤ ENNReal.ofReal M • haarAddCircle := by
-  have hmono : StrictMono F := strictMono_of_hasDerivAt_pos hF hpos
-  have hFc : Continuous F := continuous_iff_continuousAt.2 fun x ↦ (hF x).continuousAt
-  have hψ : Measurable ψ := by
-    rw [eq_homeomorphOfLift_symm_of_leftInverse hmono hFc hper hφ hψφ]
-    exact (homeomorphOfLift φ hmono hFc hper hφ).symm.continuous.measurable
+  have hψ := measurable_of_lift_of_leftInverse hF hper hφ hpos hψφ
   rw [haarAddCircle_eq_smul_volume,
     Measure.map_smul _ hψ.aemeasurable,
     smul_comm]
