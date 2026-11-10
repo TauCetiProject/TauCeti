@@ -42,11 +42,12 @@ theorem toUnits_permutationUnitary {R : Type*} [CommRing R] [StarRing R] {ι : T
 
 /-- A permutation matrix lies in the unitary subgroup of the general linear group; over a ring
 with trivial star, such as `ℝ`, this is the orthogonal group. -/
-theorem permutationGL_mem_unitarySubgroup {R : Type*} [CommRing R] [StarRing R] {ι : Type*}
+theorem permutationGL_mem_unitarySubgroup {R : Type*} [Semiring R] [StarRing R] {ι : Type*}
     [Fintype ι] [DecidableEq ι] (σ : Equiv.Perm ι) :
     permutationGL σ ∈ unitarySubgroup (GL ι R) := by
-  rw [mem_unitarySubgroup_GL_iff_mem_unitaryGroup, ← toUnits_permutationUnitary,
-    Unitary.val_toUnits_apply]
-  exact (permutationUnitary σ).property
+  rw [mem_unitarySubgroup_iff, Units.unitary_eq, Submonoid.mem_comap, Units.coeHom_apply,
+    permutationGL_coe, Unitary.mem_iff, star_eq_conjTranspose, conjTranspose_permMatrix,
+    ← permMatrix_mul, ← permMatrix_mul, inv_inv, inv_mul_cancel, mul_inv_cancel, permMatrix_one]
+  exact ⟨rfl, rfl⟩
 
 end TauCeti
