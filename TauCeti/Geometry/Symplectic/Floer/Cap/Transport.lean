@@ -52,7 +52,8 @@ taken by the product-class API of `TauCeti.Geometry.Symplectic.Floer.Cap.Basic`,
 * `TauCeti.Floer.SphericalCapClass.transport_vadd`,
   `TauCeti.Floer.SphericalCapClass.transport_vsub_transport`: transport of cap classes commutes
   with recapping and preserves the classes by which cap classes differ.
-* `TauCeti.Floer.SphericalCapClass.transport_bijective`: transport is a bijection of cap classes.
+* `TauCeti.Floer.SphericalCapClass.transport_bijective`: for a contractible loop on a
+  path-connected space, transport is a bijection of cap classes.
 
 ## References
 
@@ -91,6 +92,7 @@ theorem transport_def (p : Path x y) (D : RawCap γ) :
   (rfl)
 
 /-- Transport is natural for gluing a homotopy of loops to a cap. -/
+@[simp]
 theorem transport_comp (p : Path x y) (u : (⟨γ₁⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₂⟩)
     (D : RawCap γ₂) :
     transport p (u ≫ D) = (FundamentalGroupoid.map p.conjLoop).map u ≫ transport p D := by
@@ -165,6 +167,7 @@ theorem transport_vsub_transport (p : Path x y) (q' q : SphericalCapClass ω c �
       SphericalPeriodGroup.ofHomotopyGroup_homotopyGroupTransport, ofMul_toMul]
 
 /-- Transport is natural for gluing a homotopy of loops to a cap class. -/
+@[simp]
 theorem transport_glue (p : Path x y) (u : (⟨γ₁⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₂⟩)
     (q : SphericalCapClass ω c γ₂) :
     transport p (glue u q) = glue (u.map p.conjLoop) (transport p q) := by
@@ -187,7 +190,8 @@ theorem transport_vadd (p : Path x y) (g : SphericalPeriodGroup ω c)
       ← ofHomotopyGroup_vadd_mk, SphericalPeriodGroup.ofHomotopyGroup_homotopyGroupTransport,
       ofMul_toMul]
 
-/-- **Transport of the cap classes of a contractible loop is a bijection.** -/
+/-- **Transport of the cap classes of a contractible loop on a path-connected space is a
+bijection.** -/
 theorem transport_bijective [Nonempty (RawCap γ)] (p : Path x y) :
     Function.Bijective (transport (ω := ω) (c := c) (γ := γ) p) := by
   have : Nonempty (RawCap (p.conjLoop γ)) := ⟨RawCap.transport p (Classical.arbitrary _)⟩

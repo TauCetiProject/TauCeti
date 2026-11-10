@@ -439,6 +439,7 @@ theorem _root_.GenLoop.fromDoubleLoop_apply (β : Ω (Ω X x) (Path.refl x)) (z 
 
 /-- `fundamentalGroupLoopSpaceMulEquiv` sends the class of a double loop to the class of its
 square. -/
+@[simp]
 theorem fundamentalGroupLoopSpaceMulEquiv_fromPath_mk (β : Ω (Ω X x) (Path.refl x)) :
     fundamentalGroupLoopSpaceMulEquiv (FundamentalGroup.fromPath (.mk β)) =
       ⟦GenLoop.fromDoubleLoop β⟧ := by

@@ -201,33 +201,27 @@ private theorem loopSpaceTransport_fromPath_mk (p : Path x y) (α : Ω (Ω X x) 
   simp [loopSpaceTransport, conjDoubleLoop, FundamentalGroup.fundamentalGroupMulEquivOfPath_apply,
     Path.Homotopic.Quotient.mk_map]
 
-private theorem homotopic_conjDoubleLoop_refl (α : Ω (Ω X x) (Path.refl x)) :
-    ((Path.refl x).conjDoubleLoop α).Homotopic α := by
-  rw [← Path.Homotopic.Quotient.eq]
-  -- naturality of the homotopy `conjLoopReflHomotopy x` along `α`
-  have h := Path.Homotopic.map_trans_evalAt (conjLoopReflHomotopy x) α
-  rw [evalAt_conjLoopReflHomotopy] at h
-  -- `h` lives over `ContinuousMap.id (Ω X x) (Path.refl x)`, which is `Path.refl x` by definition
-  have h' : ((Path.refl x).conjLoopContraction.symm.trans
-      (α.map (Path.refl x).conjLoop.continuous)).Homotopic
-        (α.trans (Path.refl x).conjLoopContraction.symm) := by
-    have hid : α.map (ContinuousMap.id (Ω X x)).continuous = α := Path.map_id α
-    rw [hid] at h
-    exact h.symm
-  rw [conjDoubleLoop, Path.Homotopic.Quotient.mk_trans, Path.Homotopic.Quotient.mk_trans,
-    ← Path.Homotopic.Quotient.trans_assoc, ← Path.Homotopic.Quotient.mk_trans,
-    Path.Homotopic.Quotient.eq.2 h', Path.Homotopic.Quotient.mk_trans,
-    Path.Homotopic.Quotient.trans_assoc, Path.Homotopic.Quotient.mk_symm,
-    Path.Homotopic.Quotient.symm_trans, Path.Homotopic.Quotient.trans_refl]
-
 /-- **Conjugation by a constant path acts trivially** on the fundamental group of the loop
 space. -/
+@[simp]
 theorem loopSpaceTransport_refl (x : X) :
     (Path.refl x).loopSpaceTransport = MonoidHom.id _ := by
-  ext ⟨q⟩
-  obtain ⟨α, rfl⟩ := Path.Homotopic.Quotient.mk_surjective q
-  exact congrArg FundamentalGroup.toArrow ((loopSpaceTransport_fromPath_mk _ α).trans
-    (congrArg _ (Path.Homotopic.Quotient.eq.2 (homotopic_conjDoubleLoop_refl α))))
+  refine MonoidHom.ext fun g => ?_
+  -- the identity map induces the identity on `π₁`
+  have hid : FundamentalGroup.map (ContinuousMap.id (Ω X x)) (Path.refl x) g = g := by
+    ext
+    rw [FundamentalGroup.map_apply_asHom]
+    induction g.asHom using Quotient.inductionOn with
+    | h a => exact congrArg Path.Homotopic.Quotient.mk (Path.map_id a)
+  -- freely homotopic maps agree on `π₁` up to base-point change along the trace
+  have h : (FundamentalGroup.fundamentalGroupMulEquivOfPath
+      (Path.refl x).conjLoopContraction).symm g =
+        FundamentalGroup.map (Path.refl x).conjLoop (Path.refl x) g := by
+    have h := (conjLoopReflHomotopy x).fundamentalGroupMulEquivOfPath_evalAt_map (Path.refl x) g
+    rw [hid, evalAt_conjLoopReflHomotopy] at h
+    rwa [← FundamentalGroup.fundamentalGroupMulEquivOfPath_symm]
+  rw [loopSpaceTransport, MonoidHom.comp_apply, ← h, MulEquiv.coe_toMonoidHom,
+    MulEquiv.apply_symm_apply, MonoidHom.id_apply]
 
 /-! ### Conjugation along a continuous family of paths -/
 
@@ -334,6 +328,7 @@ variable {X : Type*} [TopologicalSpace X] {x y : X}
 /-- **Conjugation transport is base-point change of `π₂`**: under the identification
 `π₁(Ω X x, refl x) ≃* π₂(X, x)`, conjugating loops of loops by a path `p` is the transport
 `TauCeti.homotopyGroupTransport p` of second homotopy groups along `p`. -/
+@[simp]
 theorem fundamentalGroupLoopSpaceMulEquiv_loopSpaceTransport (p : Path x y)
     (a : FundamentalGroup (Ω X x) (Path.refl x)) :
     fundamentalGroupLoopSpaceMulEquiv (p.loopSpaceTransport a) =
@@ -343,6 +338,7 @@ theorem fundamentalGroupLoopSpaceMulEquiv_loopSpaceTransport (p : Path x y)
   have h₀ : FundamentalGroup.fromPath (.mk α) =
       FundamentalGroup.fromPath (.mk ((Path.refl x).conjDoubleLoop α)) := by
     rw [← Path.loopSpaceTransport_fromPath_mk, Path.loopSpaceTransport_refl, MonoidHom.id_apply]
+  -- the case split produces `End.of`, of which `FundamentalGroup.fromPath` is an abbreviation
   rw [show (End.of (Path.Homotopic.Quotient.mk α) : FundamentalGroup (Ω X x) (Path.refl x)) =
       FundamentalGroup.fromPath (.mk α) from rfl, Path.loopSpaceTransport_fromPath_mk, h₀,
     fundamentalGroupLoopSpaceMulEquiv_fromPath_mk, fundamentalGroupLoopSpaceMulEquiv_fromPath_mk,
