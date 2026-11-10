@@ -358,12 +358,15 @@ theorem plumbedPerturbation_update_smul_cylindricalEndLift_of_pos (hq : q ≠ in
 /-- **The family on the output end.** For every `λ` and `L > 2`, on the part `s ≤ -1` of the
 output end, the pullback of the plumbed datum with neck Hamiltonian `λ G` along the end lift `φ_∞`
 is the continuation datum `β(-s - 1) Hb_∞(t) dt`. -/
-theorem plumbedPerturbation_update_smul_cylindricalEndLift_inf_of_le (hq : q ≠ inf) (hrq : r ≠ q)
-    (hr : r ≠ inf) (hL : 2 < L) (hHb : Periodic (Hb inf) 1) (c : ℝ) {z : ℂ} (hz : z.re ≤ -1)
-    (x : M) (v : ℂ) :
+theorem plumbedPerturbation_update_smul_cylindricalEndLift_inf_of_le (hq : q ≠ inf) (hL : 2 < L)
+    (hHb : Periodic (Hb inf) 1) (c : ℝ) {z : ℂ} (hz : z.re ≤ -1) (x : M) (v : ℂ) :
     plumbedPerturbation (update Ha inf (c • G)) (update Hb q (c • G)) q L
         (inf.cylindricalEndLift z) x (deriv inf.cylindricalEndLift z * v) =
       v.im * (smoothTransition (-z.re - 1) * Hb inf z.im x) := by
+  -- The moving-ends identification is stated with the remaining finite input `r` of `Hb`.
+  obtain ⟨r, hrq, hr⟩ : ∃ r : Puncture, r ≠ q ∧ r ≠ inf := by
+    cases q
+    exacts [⟨one, by decide, by decide⟩, ⟨zero, by decide, by decide⟩, absurd rfl hq]
   have hnorm : 2 * Real.exp (2 * π) ≤ ‖inf.cylindricalEndLift z‖ := by
     have h := norm_cylindricalEndLift_sub_endCenter inf z
     rw [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
