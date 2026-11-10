@@ -161,22 +161,15 @@ theorem stalkPullback_bijective {g : Y → X} (hg : ∀ᶠ y in 𝓝 (f a), Cont
     Function.Bijective (stalkPullback hf) := by
   have hg_tendsto : Tendsto g (𝓝 (f a)) (𝓝 a) := by
     simpa only [hgf.self_of_nhds] using hg.self_of_nhds.continuousAt.tendsto
-  refine ⟨(injective_iff_map_eq_zero _).2 fun s hs ↦ ?_, fun s ↦ ?_⟩
-  · -- A germ whose composition with `f` vanishes near `a` vanishes near `f a = f (g (f a))`.
-    obtain ⟨u, -, hu⟩ := exists_toFilterGerm_eq (f a) s
-    have h0 := (eq_zero_iff_of_toFilterGerm_eq (f := u ∘ f) (by
-      rw [toFilterGerm_stalkPullback, hu, Germ.coe_compTendsto])).1 hs
-    refine (eq_zero_iff_of_toFilterGerm_eq (hu _ le_rfl)).2 ?_
-    filter_upwards [hfg, hg_tendsto.eventually h0] with y hy hy0
-    simpa [hy] using hy0
-  · -- A germ `u` at `a` is the pullback of the germ `u ∘ g` at `f a`.
-    obtain ⟨u, hu_an, hu⟩ := exists_toFilterGerm_eq a s
-    obtain ⟨t, ht⟩ := exists_toFilterGerm_eq_of_eventually_contMDiffAt (x := f a) (f := u ∘ g)
-      ((hg.and (hg_tendsto.eventually hu_an)).mono fun y hy ↦ hy.2.comp y hy.1)
-    refine ⟨t, toFilterGerm_nhds_injective a ?_⟩
-    rw [toFilterGerm_stalkPullback, ht _ le_rfl, hu, Germ.coe_compTendsto, Germ.coe_eq]
-    filter_upwards [hgf] with x hx
-    simp [hx]
+  refine ⟨(injective_iff_map_eq_zero _).2 fun s hs ↦ ?_,
+    stalkPullback_surjective_of_eventually_leftInverse hf hg hgf⟩
+  -- A germ whose composition with `f` vanishes near `a` vanishes near `f a = f (g (f a))`.
+  obtain ⟨u, -, hu⟩ := exists_toFilterGerm_eq (f a) s
+  have h0 := (eq_zero_iff_of_toFilterGerm_eq (f := u ∘ f) (by
+    rw [toFilterGerm_stalkPullback, hu, Germ.coe_compTendsto])).1 hs
+  refine (eq_zero_iff_of_toFilterGerm_eq (hu _ le_rfl)).2 ?_
+  filter_upwards [hfg, hg_tendsto.eventually h0] with y hy hy0
+  simpa [hy] using hy0
 
 variable [I.Boundaryless] [IsManifold I ω X] {V : Type} [NormedAddCommGroup V] [NormedSpace ℂ V]
 
