@@ -173,7 +173,7 @@ which, read in the split coordinates `(u, v)` of `φ`, is a map `χ` of the cont
 `χ 0 = (u, v)(y)`, strictly differentiable at `0`, whose derivative is a section of the contracting
 coordinate `u`. -/
 theorem exists_hasStrictFDerivAt_mem_stableSet (hMS : hX.IsMorseSmale)
-    (hf : IsMorse 𝓘(ℝ, E) f) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) (φ : MorseChart E f x)
+    (hf : IsMorse 𝓘(ℝ, E) f) (φ : MorseChart E f x)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i)) :
     ∃ ε > 0, ∀ ⦃b y : M⦄,
@@ -190,7 +190,8 @@ theorem exists_hasStrictFDerivAt_mem_stableSet (hMS : hX.IsMorseSmale)
         ∀ᶠ z in 𝓝 0, φ.coord.symm (φ.splitCoord.symm (χ z)) ∈ φ.toChart.target ∧
           φ.toChart.symm (φ.coord.symm (φ.splitCoord.symm (χ z))) ∈ hX.flow.stableSet b := by
   -- Near `x`, the unstable set of `x` is the stable set of `x` for the reversed field `-X`.
-  have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
+  have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero
+    ((φ.mfderiv_eq_zero_iff φ.mem_source).2 rfl)
   obtain ⟨ε, hε, hεs⟩ := (hX.neg hf).exists_forall_mem_stableSet_iff (φ.neg hnd)
     (φ.coord_mfderiv_neg hφ hnd) (hf.neg.contMDiff.mdifferentiable (by simp))
   simp only [MorseChart.neg_toChart, MorseChart.neg_coord, MorseChart.neg_weight, Pi.neg_apply,
