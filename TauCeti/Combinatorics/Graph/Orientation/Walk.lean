@@ -46,6 +46,57 @@ def FollowsOrientation {x y : α} (p : G.Walk x y) (o : G.Orientation) : Prop :=
 
 variable {o : G.Orientation} {x y z : α}
 
+/-! ### Orienting a trail -/
+
+/-- The endpoint reached immediately after traversing an edge at its first occurrence in a walk.
+
+The membership proof is an argument because the edge type is independent of the endpoints. -/
+noncomputable def edgeHead : {x y : α} → (p : G.Walk x y) → (e : β) → e ∈ p.edges → α
+  | _, _, .nil, _, he => by simp at he
+  | _, _, .cons' _ v _ f _ p, e, he =>
+      by
+        classical
+        exact if h : e = f then v else p.edgeHead e (by simpa [h] using he)
+
+@[simp]
+theorem edgeHead_cons_self {e : β} (h : G.IsLink e x y) (p : G.Walk y z)
+    (he : e ∈ (Walk.cons e h p).edges) :
+    (Walk.cons e h p).edgeHead e he = y := by
+  simp [edgeHead]
+
+@[simp]
+theorem edgeHead_cons_of_ne {e f : β} (h : G.IsLink e x y) (p : G.Walk y z)
+    (hef : f ≠ e) (hf : f ∈ (Walk.cons e h p).edges) :
+    (Walk.cons e h p).edgeHead f hf = p.edgeHead f (by simpa [hef] using hf) := by
+  simp [edgeHead, hef]
+
+/-- The head selected for an edge of a walk is incident with that edge. -/
+theorem edgeHead_inc (p : G.Walk x y) (e : β) (he : e ∈ p.edges) :
+    G.Inc e (p.edgeHead e he) := by
+  induction p with
+  | nil => simp at he
+  | @cons x v y f h p ih =>
+      by_cases hef : e = f
+      · subst e
+        simpa using h.inc_right
+      · rw [edgeHead_cons_of_ne h p hef]
+        exact ih (by simpa [hef] using he)
+
+/-- Restricting a walk to a subgraph does not change the forward endpoint of an edge. -/
+theorem edgeHead_transfer {H : Graph α β} (hGH : G ≤ H) (p : H.Walk x y)
+    (hp : ∀ e, e ∈ p.edges → e ∈ E(G)) (e : β)
+    (he : e ∈ (p.transfer hGH hp).edges) :
+    (p.transfer hGH hp).edgeHead e he = p.edgeHead e (by simpa using he) := by
+  induction p with
+  | nil => simp at he
+  | @cons x v y f h p ih =>
+      simp only [transfer_cons] at he ⊢
+      by_cases hef : e = f
+      · subst e
+        simp
+      · rw [edgeHead_cons_of_ne _ _ hef, edgeHead_cons_of_ne h p hef]
+        exact ih (fun g hg ↦ hp g (by simp [hg])) (by simpa [hef] using he)
+
 @[simp]
 theorem followsOrientation_nil (x : α) : (nil : G.Walk x x).FollowsOrientation o :=
   True.intro
@@ -55,6 +106,30 @@ theorem followsOrientation_cons {e : β} (h : G.IsLink e x y) (p : G.Walk y z) :
     (cons e h p).FollowsOrientation o ↔
       (o.tail ⟨e, h.edge_mem⟩ : α) = x ∧
         (o.head ⟨e, h.edge_mem⟩ : α) = y ∧ p.FollowsOrientation o := Iff.rfl
+
+/-- A trail follows an orientation when every traversed edge has the endpoint selected by
+`edgeHead` as its oriented head. -/
+theorem IsTrail.followsOrientation_of_head_eq_edgeHead {p : G.Walk x y} (hp : p.IsTrail)
+    (hhead : ∀ (e : β) (he : e ∈ p.edges),
+      (o.head ⟨e, p.edges_subset_edgeSet he⟩ : α) = p.edgeHead e he) :
+    p.FollowsOrientation o := by
+  induction p with
+  | nil => simp
+  | @cons x v y e h p ih =>
+      rw [isTrail_cons] at hp
+      have hhead_e : (o.head ⟨e, h.edge_mem⟩ : α) = v := by
+        simpa using hhead e (by simp)
+      have htail_e : (o.tail ⟨e, h.edge_mem⟩ : α) = x := by
+        apply (o.isLink ⟨e, h.edge_mem⟩).symm.right_unique
+        simpa only [hhead_e] using h.symm
+      rw [followsOrientation_cons]
+      refine ⟨htail_e, hhead_e, ih hp.1 ?_⟩
+      intro f hf
+      have hfe : f ≠ e := fun hfe ↦ hp.2 (hfe ▸ hf)
+      have h := hhead f (by simp [hf])
+      rw [edgeHead_cons_of_ne _ _ hfe] at h
+      convert h using 1
+
 
 /-- A single traversal follows the orientation exactly when its endpoints are the chosen
 ordered ends. -/

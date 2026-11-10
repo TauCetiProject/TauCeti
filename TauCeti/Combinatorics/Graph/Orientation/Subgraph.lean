@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Combinatorics.Graph.Orientation.Indegree
+public import TauCeti.Combinatorics.Graph.Orientation.Walk
 public import TauCeti.Combinatorics.Graph.Union
 
 /-!
@@ -75,6 +76,16 @@ theorem restrict_rfl (o : Orientation G) : o.restrict le_rfl = o :=
 theorem restrict_restrict (o : Orientation K) (hGK : G ≤ K) (hHG : H ≤ G) :
     (o.restrict hGK).restrict hHG = o.restrict (hHG.trans hGK) :=
   ext_of_head fun _ ↦ Subtype.ext (rfl)
+
+/-- A walk in a subgraph follows the restricted orientation exactly when its image follows the
+ambient orientation. -/
+@[simp]
+theorem _root_.Graph.Walk.followsOrientation_mapLe_iff_restrict
+    (o : Orientation G) (h : H ≤ G) {x y : V} (p : H.Walk x y) :
+    (p.mapLe h).FollowsOrientation o ↔ p.FollowsOrientation (o.restrict h) := by
+  induction p with
+  | nil => simp
+  | cons e he p ih => simp [ih]
 
 /-- Restriction commutes with reversal. -/
 @[simp]

@@ -110,6 +110,12 @@ theorem toWalk_fst_mem (e : G.Ear H) : e.toWalk.1 ∈ V(H) := by
   | «open» _ _ _ start_mem => exact start_mem
   | «closed» _ _ _ base_mem => exact base_mem
 
+/-- The ending vertex of an ear belongs to its base graph. -/
+theorem toWalk_snd_mem (e : G.Ear H) : e.toWalk.2.1 ∈ V(H) := by
+  cases e with
+  | «open» _ _ _ _ end_mem => exact end_mem
+  | «closed» _ _ _ base_mem => exact base_mem
+
 /-- Ears are equal when they have the same kind and the same endpoint-indexed walk. -/
 @[ext]
 theorem ext (e f : G.Ear H) (hkind : e.kind = f.kind) (hwalk : e.toWalk = f.toWalk) :
@@ -167,6 +173,11 @@ theorem length_pos : ∀ e : G.Ear H, 0 < e.toWalk.2.2.length
       Nat.pos_of_ne_zero fun h ↦ endpoints_ne (walk.eq_of_length_eq_zero h)
   | .closed _ _walk isCycle _ _ _ =>
       Nat.pos_of_ne_zero fun h ↦ isCycle.not_nil ((Walk.length_eq_zero_iff.mp h))
+
+/-- The underlying walk of an ear traverses every edge at most once. -/
+theorem isTrail_toWalk : ∀ e : G.Ear H, e.toWalk.2.2.IsTrail
+  | .open _ _walk isPath _ _ _ _ _ => isPath.isTrail
+  | .closed _ _walk isCycle _ _ _ => isCycle.isTrail
 
 /-- The graph traced by an ear is a subgraph of its ambient graph. -/
 theorem toGraph_le (e : G.Ear H) : e.toGraph ≤ G :=
