@@ -271,7 +271,7 @@ theorem IsNondegenerate.abs_setIntegral_floerEnergyDensity_cappedComparisonPertu
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {R : ℝ} (hR₀ : 0 ≤ R)
     {U D : Set (ℝ × ℝ)} (hU : IsOpen U)
     (hTU : Complex.equivRealProdCLM.symm ⁻¹' truncation (comparisonNeckLength R + 3) ⊆ U)
-    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U) (hD : MeasurableSet D)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
     (hTD : Complex.equivRealProdCLM.symm ⁻¹' truncation (comparisonNeckLength R + 3) ⊆ D)
     (hE : IntegrableOn (ω.floerEnergyDensity
       (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
@@ -290,7 +290,7 @@ theorem IsNondegenerate.abs_setIntegral_floerEnergyDensity_cappedComparisonPertu
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)| ≤ 2 * ∑ q, B q := by
   rw [cappedComparisonPerturbation_def] at hE hR
   have hid := hω.setIntegral_floerEnergyDensity_cappedPerturbation hH hHs
-    (comparisonCutoff R) (comparisonNeckLength R) hU hTU hu hD hTD hE hR
+    (comparisonCutoff R) (comparisonNeckLength R) hU hTU hu hTD hE hR
   rw [← cappedComparisonPerturbation_def] at hid
   rw [hid, sub_sub_cancel_left, abs_neg]
   exact ω.abs_setIntegral_hamiltonianCurvature_cappedComparisonPerturbation_le hH hHs hB hR₀ u D
@@ -320,7 +320,7 @@ theorem IsNondegenerate.abs_integral_floerEnergyDensity_cappedComparisonPerturba
         (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)| ≤ 2 * ∑ q, B q := by
   simpa only [Measure.restrict_univ] using
     hω.abs_setIntegral_floerEnergyDensity_cappedComparisonPerturbation_sub_le hH hHs hB hR₀
-      isOpen_univ (subset_univ _) hu.contMDiffOn MeasurableSet.univ (subset_univ _)
+      isOpen_univ (subset_univ _) hu.contMDiffOn (subset_univ _)
       hE.integrableOn hR.integrableOn
 
 /-- A finite-energy Floer solution of the capped comparison family, with tame almost complex
