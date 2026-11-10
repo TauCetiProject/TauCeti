@@ -18,7 +18,10 @@ public import TauCeti.AlgebraicTopology.Singular.EilenbergZilber
 The external product sends classes on `X` and `Y` to a class on `X × Y`. It uses the
 Alexander–Whitney map with a coefficient pairing `M ⊗ N ⟶ P`, and is natural in both spaces.
 Pulling it back along the diagonal gives the cup product. Equivalently, the external product
-is the cup product of the pullbacks along the two projections.
+is the cup product of the pullbacks along the two projections. For a cup product along any chain
+coefficient morphism `u : T ⟶ R ⊗ S`, such as `(λ_ k).inv` for coefficients in a ring `k`, the cup
+product of the two pullbacks is the external product with its chain coefficients changed along `u`
+(`TauCeti.singularCup_singularCohomologyMap_fst_snd`).
 
 The Eilenberg–Zilber isomorphism identifies cohomology of the product with cohomology of
 `Hom(C(X; R) ⊗ C(Y; S), P)`. Under this isomorphism the external product is represented by
@@ -145,6 +148,28 @@ lemma singularCross_eq_singularCup (X Y : TopCat.{w}) (μ : M ⊗ N ⟶ P)
     (ChainComplex.cup_naturality (TopCat.alexanderWhitney X Y R S) μ
       ((X ⊗ Y).alexanderWhitneyDiagonal (𝟙 (R ⊗ S))) (𝟙 _) _ _
       (by simpa using hD') p q n h a b).symm
+
+/-- **The cup product of pullbacks along the two projections, with any chain coefficients**: for a
+coefficient morphism `u : T ⟶ R ⊗ S`, the cup product along `u` of `pr₁^* a` and `pr₂^* b` is the
+external product `a × b ∈ Hⁿ(X × Y; R ⊗ S, P)` with its chain coefficients changed along `u`. With
+`u = (λ_ k).inv` this expresses the cup product `pr₁^* a ⌣ pr₂^* b` in the cohomology of `X × Y`
+with coefficients in `k` through the external product. -/
+lemma singularCup_singularCohomologyMap_fst_snd (X Y : TopCat.{w}) (u : T ⟶ R ⊗ S)
+    (μ : M ⊗ N ⟶ P) (p q n : ℕ) (h : p + q = n)
+    (a : X.singularCohomology R k M p) (b : Y.singularCohomology S k N q) :
+    (X ⊗ Y).singularCup k u μ p q n h (TopCat.singularCohomologyMap (fst X Y) p a)
+        (TopCat.singularCohomologyMap (snd X Y) q b) =
+      HomologicalComplex.homologyMap ((ChainComplex.linearYonedaFunctor k P).map
+          (((SSet.chainComplexFunctor C).map u).app (TopCat.toSSet.obj (X ⊗ Y))).op) n
+        (singularCross k X Y μ p q n h a b) := by
+  rw [singularCross_eq_singularCup, singularCup_def, singularCup_def]
+  -- the Alexander–Whitney diagonal along `u` is the one along `𝟙 (R ⊗ S)` after the change of
+  -- chain coefficients along `u`
+  have hD : (X ⊗ Y).alexanderWhitneyDiagonal u =
+      ((SSet.chainComplexFunctor C).map u).app _ ≫ (X ⊗ Y).alexanderWhitneyDiagonal (𝟙 _) := by
+    simp [alexanderWhitneyDiagonal_def]
+  rw [hD]
+  exact ChainComplex.cup_precomp _ _ _ p q n h _ _
 
 end CrossProduct
 
