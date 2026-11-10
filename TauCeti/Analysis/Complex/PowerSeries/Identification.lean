@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.PowerSeries.Coefficient
-public import TauCeti.MeasureTheory.Integral.Torus.ContinuousMap
 public import Mathlib.Analysis.Analytic.Basic
-import TauCeti.Analysis.Analytic.ContinuousMap
+public import TauCeti.Analysis.Complex.PowerSeries.Integration
 
 /-!
 # Identifying multivariate Cauchy coefficients of native series
@@ -24,8 +23,8 @@ strictly inside the ball of representation. It includes the constant coefficient
 zero.
 
 The proof combines `ContinuousMultilinearMap.torusIntegral_cauchyCoeff`, homogeneous-degree
-orthogonality, uniform convergence of native partial sums on a compact family of points, and
-`TauCeti.torusIntegralCLM`.
+orthogonality, and termwise integration of the native series from
+`HasFPowerSeriesOnBall.hasSum_torusIntegral_cauchyCoeff`.
 
 ## References
 
@@ -71,47 +70,12 @@ theorem HasFPowerSeriesOnBall.torusIntegral_cauchyCoeff
   classical
   let A : ℕ → F := fun k ↦ ((2 * π * I : ℂ) ^ n)⁻¹ •
     (∯ z in T(c, R), (∏ i, (z i - c i) ^ (m i + 1))⁻¹ • p k (fun _ ↦ z - c))
-  have hzero (k : ℕ) (hk : k ≠ ∑ i, m i) : A k = 0 := by
-    exact (torusIntegral_cauchyCoeff_translate p m k).trans
+  have hzero (k : ℕ) (hk : k ≠ ∑ i, m i) : A k = 0 :=
+    (torusIntegral_cauchyCoeff_translate p m k).trans
       ((p k).torusIntegral_cauchyCoeff_eq_zero m hR (by simpa using hk.symm))
-  -- Restrict the uniformly convergent partial sums to the compact boundary.
-  let K := (i : Fin n) → sphere (c i) |R i|
-  let v : K → Fin n → ℂ := fun z i ↦ z i
-  have hv : Continuous v := by fun_prop
-  have hbound (z : K) : ‖v z - c‖ ≤ s := by
-    refine (pi_norm_le_iff_of_nonneg s.2).2 fun i ↦ ?_
-    exact (mem_sphere_iff_norm.1 (z i).2).le.trans (by rw [abs_of_pos (hR i)]; exact hRs i)
-  have hmem (z : K) : v z ∈ eball c r := by
-    rw [mem_eball, edist_eq_enorm_sub]
-    exact lt_of_le_of_lt (by exact_mod_cast hbound z) hs
-  let G : C(K, F) := ⟨fun z ↦ f (v z), hf.continuousOn.comp_continuous hv hmem⟩
-  let P : ℕ → C(K, F) := fun k ↦ ⟨fun z ↦ p k (fun _ ↦ v z - c), by fun_prop⟩
-  have hconv : Tendsto (fun N ↦ ∑ k ∈ Finset.range N, P k) atTop (𝓝 G) :=
-    (hf.hasSum_compact ⟨v, hv⟩ hs hbound).tendsto_sum_nat
-  -- The Cauchy weight is continuous on the boundary, since every radius is positive.
-  let W : C(K, ℂ) := ⟨_, TauCeti.continuous_inv_prod_sub_pow (c := c) (fun i ↦ (hR i).ne') m⟩
-  have hW : Continuous (fun u : C(K, F) ↦ W • u) := by
-    exact ContinuousMap.continuous_of_continuous_uncurry _
-      ((W.continuous.comp continuous_snd).smul continuous_eval)
-  have hL : Continuous (fun u : C(K, F) ↦
-      ((2 * π * I : ℂ) ^ n)⁻¹ • TauCeti.torusIntegralCLM c R (W • u)) :=
-    continuous_const.smul ((TauCeti.torusIntegralCLM c R).continuous.comp hW)
-  have hlimit := (hL.tendsto G).comp hconv
-  have hterm (k : ℕ) : ((2 * π * I : ℂ) ^ n)⁻¹ •
-      TauCeti.torusIntegralCLM c R (W • P k) = A k := by
-    rw [TauCeti.torusIntegralCLM_eq_torusIntegral c R _
-      (fun z ↦ (∏ i, (z i - c i) ^ (m i + 1))⁻¹ • p k (fun _ ↦ z - c))
-      (fun _ ↦ rfl)]
-  have hstable : ∀ᶠ N in atTop,
-      ((2 * π * I : ℂ) ^ n)⁻¹ •
-        TauCeti.torusIntegralCLM c R (W • ∑ k ∈ Finset.range N, P k) = A (∑ i, m i) := by
-    filter_upwards [eventually_gt_atTop (∑ i, m i)] with N hN
-    simp only [map_sum, Finset.smul_sum, hterm]
-    exact Finset.sum_eq_single (∑ i, m i) (fun k _ hk ↦ hzero k hk)
-      (fun hn ↦ (hn (Finset.mem_range.mpr hN)).elim)
-  have hvalue := tendsto_nhds_unique hlimit
-    (tendsto_const_nhds.congr' (hstable.mono fun _ h ↦ h.symm))
-  rw [TauCeti.torusIntegralCLM_eq_torusIntegral c R _
-    (fun z ↦ (∏ i, (z i - c i) ^ (m i + 1))⁻¹ • f z) (fun _ ↦ rfl)] at hvalue
-  exact hvalue.trans ((torusIntegral_cauchyCoeff_translate p m _).trans
-    ((p (∑ i, m i)).torusIntegral_cauchyCoeff m hR))
+  have hsum : HasSum A (((2 * π * I : ℂ) ^ n)⁻¹ •
+      ∯ z in T(c, R), (∏ i, (z i - c i) ^ (m i + 1))⁻¹ • f z) :=
+    (hf.hasSum_torusIntegral_cauchyCoeff hs hR hRs m).const_smul _
+  exact (hsum.unique (hasSum_single (∑ i, m i) hzero)).trans
+    ((torusIntegral_cauchyCoeff_translate p m _).trans
+      ((p (∑ i, m i)).torusIntegral_cauchyCoeff m hR))
