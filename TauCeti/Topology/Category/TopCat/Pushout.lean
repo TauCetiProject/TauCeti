@@ -43,7 +43,8 @@ closed embedding.
   agree on the overlaps glue to a map out of the whole space.
 * `CategoryTheory.IsPushout.of_isClosedEmbedding`: a cover by a closed subspace and finitely many
   closed pieces meeting it along prescribed subspaces is a pushout square.
-* `TauCeti.TopCat.range_union_iUnion_range_of_isPushout_sigma`: every point of a pushout of
+* `TauCeti.TopCat.range_union_iUnion_range_of_isPushout_sigma`,
+  `TauCeti.TopCat.exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma`: every point of a pushout of
   `L` and `⨆ᵢ D i` comes from `L` or from one of the `D i`.
 * `TauCeti.TopCat.injective_of_isPushout_sigma_of_comp`,
   `TauCeti.TopCat.isClosedEmbedding_of_isPushout_sigma_of_comp`: a map out of the pushout of `L` and
@@ -275,9 +276,11 @@ theorem range_union_iUnion_range_of_isPushout_sigma {W : TopCat.{u}} {f : W ⟶ 
   · obtain ⟨⟨i⟩, d, rfl⟩ := Concrete.colimit_exists_rep (Discrete.functor D) z
     exact Or.inr (Set.mem_iUnion.2 ⟨i, d, rfl⟩)
 
-/-- Pointwise form of `TauCeti.TopCat.range_union_iUnion_range_of_isPushout_sigma`. -/
-private theorem exists_eq_inl_or_exists_eq_inr {W : TopCat.{u}} {f : W ⟶ L} {h : W ⟶ ∐ D}
-    (sq : IsPushout f h inl inr) (y : P) :
+/-- Every point of a pushout of `L` and `⨆ᵢ D i` is the image of a point of `L` or of one of the
+`D i`. This is the pointwise form of
+`TauCeti.TopCat.range_union_iUnion_range_of_isPushout_sigma`. -/
+theorem exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma {W : TopCat.{u}} {f : W ⟶ L}
+    {h : W ⟶ ∐ D} (sq : IsPushout f h inl inr) (y : P) :
     (∃ x, inl x = y) ∨ ∃ i d, inr (Sigma.ι D i d) = y := by
   rcases (range_union_iUnion_range_of_isPushout_sigma sq).symm ▸ Set.mem_univ y with hy | hy
   · exact Or.inl hy
@@ -305,8 +308,9 @@ theorem injective_of_isPushout_sigma_of_comp (hg : Function.Injective g)
     have ha : g (α i a) = g x := by rw [← hinl', hsq, hinr', h]
     rwa [← hg ha]
   intro a b hab
-  rcases exists_eq_inl_or_exists_eq_inr sq a with ⟨x, rfl⟩ | ⟨i, d, rfl⟩ <;>
-    rcases exists_eq_inl_or_exists_eq_inr sq b with ⟨x', rfl⟩ | ⟨i', d', rfl⟩
+  rcases exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma sq a with ⟨x, rfl⟩ | ⟨i, d, rfl⟩ <;>
+    rcases exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma sq b with
+      ⟨x', rfl⟩ | ⟨i', d', rfl⟩
   · rw [hinl', hinl'] at hab
     rw [hg hab]
   · rw [hinl', hinr'] at hab
@@ -343,7 +347,8 @@ theorem isClosedEmbedding_of_isPushout_sigma_of_comp [Finite ι] (hg : IsClosedE
     ext y
     constructor
     · rintro ⟨z, hz, rfl⟩
-      rcases exists_eq_inl_or_exists_eq_inr sq z with ⟨x, rfl⟩ | ⟨i, d, rfl⟩
+      rcases exists_eq_inl_or_exists_eq_inr_of_isPushout_sigma sq z with
+        ⟨x, rfl⟩ | ⟨i, d, rfl⟩
       · exact Or.inl ⟨x, hz, (hinl' x).symm⟩
       · exact Or.inr (Set.mem_iUnion.2 ⟨i, d, hz, (hinr' i d).symm⟩)
     · rintro (⟨x, hx, rfl⟩ | hy)

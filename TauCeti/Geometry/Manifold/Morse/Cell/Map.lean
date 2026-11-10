@@ -66,6 +66,8 @@ homotopic to `χ₀` as a map of pairs, and the two attaching maps are homotopic
   map of pairs `(D^k, ∂D^k) → (M_{c+ε}, M_{c-ε})`.
 * `OpenPartialHomeomorph.isClosedEmbedding_morseCharacteristicMap`: the characteristic map is a
   closed embedding.
+* `OpenPartialHomeomorph.disjoint_range_morseCharacteristicMap`: the cells of two charts with
+  disjoint sources are disjoint.
 * `OpenPartialHomeomorph.morseAttachingMap_comp_sublevelInclusion`: the attaching map is the
   restriction of the characteristic map to the boundary sphere.
 * `TauCeti.mapsTo_range_diskBoundaryInclusion_of_morseCharacteristicMap_le`,
@@ -340,6 +342,30 @@ theorem preimage_morseCharacteristicMap_sublevel (hk : k ≤ n) (hε : 0 < ε) :
   rw [mem_range_diskBoundaryInclusion_iff, ← mem_sphere_zero_iff_norm,
     ← closedBall_inter_preimage_morseCellMap_sublevel hball hf hk hε]
   exact ⟨fun h ↦ ⟨w.down.2, h⟩, fun h ↦ h.2⟩
+
+/-- A point of the disc carried by the characteristic map into the lower sublevel `M_{c-ε}`,
+viewed inside `M_{c+ε}`, lies on the boundary sphere. -/
+theorem mem_range_diskBoundaryInclusion_of_morseCharacteristicMap (hk : k ≤ n) (hε : 0 < ε)
+    (v : TopCat.disk.{u} k)
+    (hv : morseCharacteristicMap ψ hk hε.le hball hf v ∈
+      range (TopCat.ofHom (sublevelInclusion f (c - ε) (c + ε) (by linarith)))) :
+    v ∈ range (TopCat.diskBoundaryInclusion.{u} k) := by
+  obtain ⟨x, hx⟩ := hv
+  rw [← preimage_morseCharacteristicMap_sublevel hball hf hk hε, mem_preimage, mem_ofPred_eq, ← hx]
+  exact (congrArg f (coe_sublevelInclusion_apply f _ x)).trans_le x.2
+
+/-- The cells of two charts with disjoint sources are disjoint. -/
+theorem disjoint_range_morseCharacteristicMap {k' : ℕ}
+    {ψ' : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} (hψ : Disjoint ψ.source ψ'.source)
+    (hball' : closedBall 0 √ε ⊆ ψ'.target)
+    (hf' : ∀ y ∈ ψ'.source, f y = c + ∑ j, (if j.val < k' then -1 else 1) * ψ' y j ^ 2)
+    (hk : k ≤ n) (hk' : k' ≤ n) (hε : 0 ≤ ε) :
+    Disjoint (range (morseCharacteristicMap ψ hk hε hball hf))
+      (range (morseCharacteristicMap ψ' hk' hε hball' hf')) :=
+  disjoint_left.2 fun _ ⟨v, hv⟩ ⟨w, hw⟩ ↦ hψ.ne_of_mem
+    (morseCellMap_mem_source hball hk (mem_closedBall_zero_iff.1 v.down.2))
+    (morseCellMap_mem_source hball' hk' (mem_closedBall_zero_iff.1 w.down.2))
+    congr(($(hv.trans hw.symm) : M))
 
 /-- The image of the characteristic map is the cell `{‖ψ x‖² ≤ ε, (ψ x)ⱼ = 0 for j ≥ k}` of the
 chart, viewed in the sublevel `M_{c+ε}`. -/
