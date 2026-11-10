@@ -41,20 +41,21 @@ variable {k V P : Type*} [Ring k] [AddCommGroup V] [Module k V] [AddTorsor V P]
 
 /-- The arrangement whose only exception is a point, in a nontrivial space. -/
 noncomputable def point (p : P) : ExceptionalArrangement k P :=
-  ⟨{AffineSubspace.mk' p ⊥}, fun S hS htop => by
+  ⟨{({p} : AffineSubspace k P)}, fun S hS htop => by
     obtain rfl := Finset.mem_singleton.mp hS
-    simpa [AffineSubspace.direction_mk'] using congrArg AffineSubspace.direction htop⟩
+    have : Nontrivial P := (vadd_right_injective p).nontrivial
+    exact AffineSubspace.singleton_ne_top k V p htop⟩
 
 /-- The only exception of `point p` is the subspace `{p}`. -/
 @[simp]
 theorem exceptions_point (p : P) :
-    (point p : ExceptionalArrangement k P).exceptions = {AffineSubspace.mk' p ⊥} := (rfl)
+    (point p : ExceptionalArrangement k P).exceptions = {({p} : AffineSubspace k P)} := (rfl)
 
 /-- A point is generic for `point p` exactly when it differs from `p`. -/
 @[simp]
 theorem isGeneric_point_iff {p x : P} :
     (point p : ExceptionalArrangement k P).IsGeneric x ↔ x ≠ p := by
-  simp [isGeneric_iff, AffineSubspace.mem_mk', vsub_eq_zero_iff_eq]
+  simp [isGeneric_iff]
 
 end Point
 
