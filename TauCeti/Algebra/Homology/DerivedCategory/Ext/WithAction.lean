@@ -56,7 +56,7 @@ variable {A : Type*} [Semiring A] {F : C} (ρ : A →+* End F)
 /-- `Ext P F n` with the action of `A` induced by an action `ρ : A →+* End F` of `A` on `F`,
 `a • x = ρ(a)_* x`. -/
 -- Expose the synonym so its inherited additive and scalar instances share the Ext carrier.
-@[expose, nolint unusedArguments]
+@[expose]
 def WithAction (_ρ : A →+* End F) (P : C) (n : ℕ) : Type w := Ext P F n
 
 namespace WithAction
