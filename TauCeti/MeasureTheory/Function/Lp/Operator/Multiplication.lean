@@ -24,6 +24,11 @@ that action as `BoundedContinuousFunction.mulLp F μ p hp`, a bounded operator o
 operators on `L²(X, H)`. These operators carry the coefficient representation of the regular
 covariant representation of a C⋆-dynamical system on `L²(G, H)`.
 
+A bounded continuous scalar function `φ : X →ᵇ 𝕜` acts through the symbol `x ↦ φ x • 1`, giving
+the operator `BoundedContinuousFunction.smulLp φ μ p hp` of pointwise multiplication by `φ`. Its
+adjoint on `L²` is multiplication by `star φ` (`BoundedContinuousFunction.adjoint_smulLp`). Bounded
+weights act on `L²` in this way in weighted energy estimates for elliptic operators.
+
 The symbol is not regarded as an element of `L∞`: on a locally compact group that is not
 σ-compact, a Haar measure is not σ-finite, and a continuous operator-valued function need not be
 a.e. strongly measurable. Mathlib's Hölder multiplication `ContinuousLinearMap.holderL` therefore
@@ -142,6 +147,83 @@ theorem mulLp_mul (F G : X →ᵇ (E →L[𝕜] E)) :
   filter_upwards [F.coeFn_mulLp hp (G.mulLp μ p hp f), G.coeFn_mulLp hp f] with x hF hG
   simp [hF, hG]
 
+/-! ### Scalar symbols -/
+
+variable (μ p hp) in
+/-- Pointwise multiplication by a bounded continuous scalar function `φ`, as a bounded operator
+`f ↦ (x ↦ φ x • f x)` on `Lᵖ(X, E)` for `1 ≤ p < ∞`. -/
+def smulLp (φ : X →ᵇ 𝕜) : Lp E p μ →L[𝕜] Lp E p μ :=
+  mulLp μ p hp <| .ofNormedAddCommGroup (β := E →L[𝕜] E)
+    (fun x ↦ φ x • ContinuousLinearMap.id 𝕜 E) (φ.continuous.smul continuous_const) ‖φ‖ fun x ↦ by
+      rw [norm_smul]
+      exact (mul_le_of_le_one_right (norm_nonneg _) ContinuousLinearMap.norm_id_le).trans
+        (φ.norm_coe_le_norm x)
+
+variable (hp) in
+/-- Multiplication by a scalar function acts by pointwise multiplication almost everywhere. -/
+theorem coeFn_smulLp (φ : X →ᵇ 𝕜) (f : Lp E p μ) :
+    φ.smulLp μ p hp f =ᵐ[μ] fun x ↦ φ x • f x := by
+  rw [smulLp]
+  refine (coeFn_mulLp hp _ f).trans (.of_forall fun x ↦ ?_)
+  simp only [coe_ofNormedAddCommGroup, _root_.smul_apply, ContinuousLinearMap.id_apply]
+
+/-- Multiplication by `φ` has norm at most the supremum norm of `φ`. -/
+theorem norm_smulLp_apply_le (φ : X →ᵇ 𝕜) (f : Lp E p μ) :
+    ‖φ.smulLp μ p hp f‖ ≤ ‖φ‖ * ‖f‖ :=
+  Lp.norm_le_mul_norm_of_ae_le_mul <| by
+    filter_upwards [coeFn_smulLp hp φ f] with x hx
+    rw [hx, norm_smul]
+    exact mul_le_mul_of_nonneg_right (φ.norm_coe_le_norm x) (norm_nonneg _)
+
+/-- Multiplication operators are monotone in the pointwise norm of their scalar symbols. -/
+theorem norm_smulLp_apply_le_norm_smulLp_apply {φ ψ : X →ᵇ 𝕜} (h : ∀ x, ‖φ x‖ ≤ ‖ψ x‖)
+    (f : Lp E p μ) : ‖φ.smulLp μ p hp f‖ ≤ ‖ψ.smulLp μ p hp f‖ :=
+  Lp.norm_le_norm_of_ae_le <| by
+    filter_upwards [coeFn_smulLp hp φ f, coeFn_smulLp hp ψ f] with x h₁ h₂
+    rw [h₁, h₂, norm_smul, norm_smul]
+    exact mul_le_mul_of_nonneg_right (h x) (norm_nonneg _)
+
+@[simp]
+theorem smulLp_add (φ ψ : X →ᵇ 𝕜) :
+    (φ + ψ).smulLp μ p hp = φ.smulLp μ p hp + ψ.smulLp μ p hp (E := E) := by
+  ext1 f
+  rw [_root_.add_apply]
+  refine Lp.ext ?_
+  filter_upwards [coeFn_smulLp hp (φ + ψ) f, coeFn_smulLp hp φ f, coeFn_smulLp hp ψ f,
+    Lp.coeFn_add (φ.smulLp μ p hp f) (ψ.smulLp μ p hp f)] with x h₁ h₂ h₃ h₄
+  simp only [h₁, h₄, Pi.add_apply, h₂, h₃, add_apply, add_smul]
+
+@[simp]
+theorem smulLp_smul (c : 𝕜) (φ : X →ᵇ 𝕜) :
+    (c • φ).smulLp μ p hp = c • φ.smulLp μ p hp (E := E) := by
+  ext1 f
+  rw [_root_.smul_apply]
+  refine Lp.ext ?_
+  filter_upwards [coeFn_smulLp hp (c • φ) f, coeFn_smulLp hp φ f,
+    Lp.coeFn_smul c (φ.smulLp μ p hp f)] with x h₁ h₂ h₃
+  simp only [h₁, h₃, Pi.smul_apply, h₂, smul_apply, smul_eq_mul, mul_smul]
+
+/-- Multiplication by a constant function is multiplication by the constant. -/
+@[simp]
+theorem smulLp_const (c : 𝕜) :
+    (const X c).smulLp μ p hp = c • (1 : Lp E p μ →L[𝕜] Lp E p μ) := by
+  ext1 f
+  rw [_root_.smul_apply, one_apply_eq_self]
+  refine Lp.ext ?_
+  filter_upwards [coeFn_smulLp hp (const X c) f, Lp.coeFn_smul c f] with x h₁ h₂
+  simp only [h₁, h₂, const_apply, Pi.smul_apply]
+
+/-- Multiplication operators by scalar functions compose by multiplying the functions. -/
+@[simp]
+theorem smulLp_mul (φ ψ : X →ᵇ 𝕜) :
+    (φ * ψ).smulLp μ p hp = φ.smulLp μ p hp * ψ.smulLp μ p hp (E := E) := by
+  ext1 f
+  rw [mul_apply_eq_comp]
+  refine Lp.ext ?_
+  filter_upwards [coeFn_smulLp hp (φ * ψ) f, coeFn_smulLp hp φ (ψ.smulLp μ p hp f),
+    coeFn_smulLp hp ψ f] with x h₁ h₂ h₃
+  simp only [h₁, h₂, h₃, mul_apply, mul_smul]
+
 end Lp
 
 section Hilbert
@@ -159,6 +241,26 @@ theorem adjoint_mulLp (F : X →ᵇ (H →L[𝕜] H)) :
   filter_upwards [(star F).coeFn_mulLp ENNReal.ofNat_ne_top f,
     F.coeFn_mulLp ENNReal.ofNat_ne_top g] with x hF hG
   simp [hF, hG, ContinuousLinearMap.star_eq_adjoint, ContinuousLinearMap.adjoint_inner_left]
+
+/-- The adjoint of multiplication by a scalar function `φ` is multiplication by `star φ`. -/
+@[simp]
+theorem adjoint_smulLp (φ : X →ᵇ 𝕜) :
+    ContinuousLinearMap.adjoint (φ.smulLp μ 2 ENNReal.ofNat_ne_top (E := H)) =
+      (star φ).smulLp μ 2 ENNReal.ofNat_ne_top := by
+  refine ((ContinuousLinearMap.eq_adjoint_iff _ _).2 fun f g ↦ ?_).symm
+  rw [L2.inner_def, L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [coeFn_smulLp ENNReal.ofNat_ne_top (star φ) f,
+    coeFn_smulLp ENNReal.ofNat_ne_top φ g] with x hF hG
+  rw [hF, hG, inner_smul_left, inner_smul_right, star_apply, RCLike.star_def,
+    RCLike.conj_conj]
+
+/-- Moving a scalar multiplication operator across the `L²` inner product conjugates its
+symbol. -/
+theorem inner_smulLp_apply_left (φ : X →ᵇ 𝕜) (f g : Lp H 2 μ) :
+    ⟪φ.smulLp μ 2 ENNReal.ofNat_ne_top f, g⟫_𝕜 =
+      ⟪f, (star φ).smulLp μ 2 ENNReal.ofNat_ne_top g⟫_𝕜 := by
+  rw [← adjoint_smulLp, ContinuousLinearMap.adjoint_inner_right]
 
 variable (μ) in
 /-- Multiplication of `L²(X, H)` by bounded continuous operator-valued functions, as a unital
