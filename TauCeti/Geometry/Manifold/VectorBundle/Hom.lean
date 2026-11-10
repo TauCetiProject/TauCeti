@@ -247,7 +247,7 @@ theorem _root_.Bundle.Trivialization.contMDiffOn_compl₁₂_symmₗ
     TauCeti.contMDiffWithinAt_clm_apply.mpr fun w ↦ ?_
   have h := ContMDiffWithinAt.clm_bundle_apply₂ (F₃ := G) (E₃ := Bundle.Trivial B G)
     (b := id) (hβ y hy) (hs v) (hs w)
-  exact (contMDiffWithinAt_totalSpace.mp h).2.congr
+  exact (contMDiffWithinAt_totalSpace_iff.mp h).2.congr
     (fun z hz ↦ by simp [e.symmₗ_apply hz]) (by simp [e.symmₗ_apply hy])
 
 end TrivializationForm

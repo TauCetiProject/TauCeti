@@ -1276,7 +1276,7 @@ theorem MemBMO.memLp_restrict_ball [Nonempty ι] [CompleteSpace E]
   set c := ⨍ y in ball x₀ r, f y ∂μ
   -- `f - c` lies in `Lᵖ(B)` by the `Lᵖ` form of the John–Nirenberg inequality.
   have hsub : MemLp (fun x => f x - c) p (μ.restrict (ball x₀ r)) := by
-    refine (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp
+    refine (eLpNorm_lt_top_iff_lintegral_rpow_eNorm_lt_top hp0 hp
       (hfm.sub aestronglyMeasurable_const)).2 ?_
     obtain ⟨C, hC⟩ := exists_setLAverage_enorm_sub_setAverage_rpow_le_mul_bmoSeminorm_rpow
       (ι := ι) (ENNReal.toReal_pos hp0 hp)

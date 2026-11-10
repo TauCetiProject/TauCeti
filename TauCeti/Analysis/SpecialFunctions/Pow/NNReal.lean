@@ -411,7 +411,7 @@ at `0`. -/
 theorem tendsto_const_mul_nnnorm_rpow_nhds_zero {E : Type*} [SeminormedAddGroup E] (c : ℝ≥0)
     {a : ℝ} (ha : 0 < a) : Filter.Tendsto (fun x : E ↦ c * ‖x‖₊ ^ a) (𝓝 0) (𝓝 0) := by
   have h : Continuous fun x : E ↦ c * ‖x‖₊ ^ a :=
-    continuous_const.mul ((NNReal.continuous_rpow_const ha.le).comp continuous_nnnorm)
+    continuous_const.mul ((NNReal.continuous_rpow_const ha.le).comp continuous_nnNorm)
   simpa [NNReal.zero_rpow ha.ne'] using h.tendsto 0
 
 end TauCeti

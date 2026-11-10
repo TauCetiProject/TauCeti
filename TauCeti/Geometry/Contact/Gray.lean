@@ -157,7 +157,7 @@ theorem contMDiff_grayRate : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ α.
   have hβ := (contMDiffAt_sectionAlong_degreeOneEquiv_iff (b := Prod.snd)
     (α := fun q : ℝ × M ↦ mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id)
       α.timeDeriv)).2 (contMDiff_mpullback_prodMk α.timeDeriv p)
-  have h := (contMDiffAt_totalSpace.1
+  have h := (contMDiffAt_totalSpace_iff.1
     (ContMDiffAt.clm_bundle_apply (E₂ := Trivial M ℝ) hβ hR)).2
   simp only [Trivial.eq_trivialization, degreeOneEquiv_apply_apply_vec] at h
   -- This is the defining formula of the Gray rate.

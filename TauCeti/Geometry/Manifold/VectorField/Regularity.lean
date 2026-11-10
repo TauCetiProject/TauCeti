@@ -416,7 +416,7 @@ theorem ContMDiffWithinAt.contDiffWithinAt_mpullbackWithin_extChartAt_symm
     ContDiffWithinAt 𝕜 n
       (VectorField.mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (range I))
       ((extChartAt I x).symm ⁻¹' s ∩ range I) (extChartAt I x x) := by
-  have hc := contMDiffWithinAt_section.mp hV
+  have hc := contMDiffWithinAt_section_iff.mp hV
   rw [contMDiffWithinAt_iff_source, contMDiffWithinAt_iff_contDiffWithinAt,
     Function.comp_def] at hc
   have heq := VectorField.trivializationAt_snd_eventuallyEq_mpullbackWithin_extChartAt_symm V x

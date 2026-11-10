@@ -520,8 +520,7 @@ private theorem setIntegral_ball_max_sub_sq_succ_le {q : ℝ≥0∞} (hq : 2 ≤
     setIntegral_mono_set ((hint k hk0).mono_set
       ((Metric.ball_subset_ball hr₀R).trans hball))
       (Eventually.of_forall fun x => hnn k x)
-      (inter_subset_right.trans
-        (hψts.trans (Metric.closedBall_subset_ball hρr₀))).eventuallySubset
+      (inter_subset_right.trans (hψts.trans (Metric.closedBall_subset_ball hρr₀))).eventuallySubset
   -- The cutoff and zeroth-order terms are both at most a multiple of `4ʲ R⁻²`.
   have hG := one_add_mul_div_div_two_pow_sq_add_le (A := A) (c := c) hB hR j
   refine hlhs.trans (hstep.trans ?_)

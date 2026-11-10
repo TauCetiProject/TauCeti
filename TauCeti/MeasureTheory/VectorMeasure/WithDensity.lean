@@ -91,9 +91,9 @@ integrable with respect to `ν`, see `MeasureTheory.Measure.variation_withDensit
 theorem Measure.variation_withDensityᵥ_le (ν : Measure X) (g : X → F) :
     (ν.withDensityᵥ g).variation ≤ ν.withDensity fun x => ‖g x‖ₑ := by
   by_cases hg : Integrable g ν
-  · refine VectorMeasure.variation_le_of_forall_enorm_le fun s hs => ?_
+  · refine VectorMeasure.variation_le_of_forall_eNorm_le fun s hs => ?_
     rw [withDensityᵥ_apply hg hs, withDensity_apply _ hs]
-    exact enorm_integral_le_lintegral_enorm _
+    exact eNorm_integral_le_lintegral_eNorm _
   · simp only [Measure.withDensityᵥ, hg, dite_false, VectorMeasure.variation_zero]
     exact Measure.zero_le _
 
@@ -205,9 +205,9 @@ theorem integral_mul_withDensityᵥ {g : X → 𝕜} (hg : Integrable g ν) {f :
   rw [integral_undef hf, eq_comm]
   refine MeasureTheory.integral_undef fun hfg ↦ hf ?_
   rw [VectorMeasure.Integrable, Measure.variation_withDensityᵥ hg,
-    integrable_withDensity_iff_integrable_smul₀' hg.aestronglyMeasurable.enorm
-      (ae_of_all _ fun _ => enorm_lt_top)]
-  simp only [toReal_enorm]
+    integrable_withDensity_iff_integrable_smul₀' hg.aestronglyMeasurable.eNorm
+      (ae_of_all _ fun _ => eNorm_lt_top)]
+  simp only [toReal_eNorm]
   refine hfg.norm.mono' ?_ (ae_of_all _ fun x => ?_)
   · have : (fun x => ‖g x‖ • f x) = fun x => (f x * g x) * ((‖g x‖ : 𝕜) * (g x)⁻¹) := by
       ext x

@@ -367,7 +367,7 @@ theorem tendsto_ballAverage_cocompact (hf : MemLp f p mu) (hp : 1 ≤ p) (hp' : 
   -- The finite measure `ν` with density `‖f‖ ^ p` gives vanishing mass to far balls.
   set ν := mu.withDensity fun y => ‖f y‖ₑ ^ p.toReal
   have : IsFiniteMeasure ν := isFiniteMeasure_withDensity
-    (lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top (zero_lt_one.trans_le hp).ne' hp'
+    (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top (zero_lt_one.trans_le hp).ne' hp'
       hf.eLpNorm_lt_top).ne
   have hν : Filter.Tendsto (fun x => ν (closedBall x r)) (Filter.cocompact E) (nhds 0) := by
     have htight := isTightMeasureSet_singleton (μ := ν)
