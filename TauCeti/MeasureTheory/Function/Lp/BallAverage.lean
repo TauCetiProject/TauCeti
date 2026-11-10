@@ -133,6 +133,7 @@ theorem ballAverage_zero (mu : Measure E) (r : ℝ) (x : E) :
   average_zero (mu.restrict (ball x r))
 
 /-- For `r ≤ 0` the balls are empty and the ball average is the zero function. -/
+@[simp]
 theorem ballAverage_eq_zero_of_nonpos (hr : r ≤ 0) : ballAverage mu r f = 0 :=
   funext fun x => by simp [ballAverage, Metric.ball_eq_empty.2 hr]
 
