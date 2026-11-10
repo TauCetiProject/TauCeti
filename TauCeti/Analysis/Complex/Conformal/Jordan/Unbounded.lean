@@ -111,7 +111,8 @@ closure of `U` gives a set whose frontier is a planar Jordan curve through `0`. 
 theorem isJordanCurve_frontier_image_inv_sub (hq : q ∉ closure U)
     (hUJ : IsJordanCurve (insert ∞ (((↑) : ℂ → OnePoint ℂ) '' frontier U))) :
     IsJordanCurve (frontier ((fun z : ℂ => (z - q)⁻¹) '' U)) := by
-  rw [frontier_image_inv_sub hq (not_isBounded_of_isJordanCurve_frontier hUJ)]
+  rw [frontier_image_inv_sub (fun h => hq (subset_closure h))
+    (not_isBounded_of_isJordanCurve_frontier hUJ)]
   exact isJordanCurve_insert_zero_image_inv_sub
     (fun h => hq (frontier_subset_closure h)) hUJ
 
@@ -139,7 +140,7 @@ theorem exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_insert_inft
   have hVc : IsConnected ((fun z : ℂ => (z - q)⁻¹) '' U) :=
     hUc.image _ ((continuousOn_id.sub continuousOn_const).inv₀ fun z hz =>
       sub_ne_zero.mpr fun (h : z = q) => hqU (h ▸ hz))
-  have hVfr := frontier_image_inv_sub hq hUb
+  have hVfr := frontier_image_inv_sub hqU hUb
   obtain ⟨g, hgc, hgd, hgV, hgcl, hgR, hg0⟩ :=
     exists_continuousOn_bijOn_upperHalfPlaneSet_of_isJordanCurve_frontier hVo hVc
       (isBounded_image_inv_sub hq)

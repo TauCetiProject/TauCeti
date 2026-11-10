@@ -164,7 +164,7 @@ theorem locallyConnectedSpace_frontier_image_inv_sub_of_frontier_eq {ι κ : Typ
     (hU : frontier U =
       (⋃ i, segment ℝ (x i) (y i)) ∪ ⋃ k, (fun t : ℝ => p k + (t : ℂ) * d k) '' Ici 0) :
     LocallyConnectedSpace (frontier ((fun z : ℂ => (z - q)⁻¹) '' U)) := by
-  rw [frontier_image_inv_sub hq hUb, hU]
+  rw [frontier_image_inv_sub (fun h => hq (subset_closure h)) hUb, hU]
   exact locallyConnectedSpace_insert_zero_image_inv_sub_union_segment_ray x y p d hd
     (hU ▸ fun h => hq (frontier_subset_closure h))
 

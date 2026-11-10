@@ -168,7 +168,7 @@ private theorem exists_inverted_coordinate_of_polygonal_ends {ι : Type*} [Finit
   -- the real boundary values of `g` are the inverses of `w - q` for frontier points `w`
   have hgr' : insert (w - q)⁻¹ (g '' {z : ℂ | z.im = 0}) =
       insert 0 ((fun z : ℂ => (z - q)⁻¹) '' frontier U) := by
-    rw [hgr, frontier_image_inv_sub hq hUb]
+    rw [hgr, frontier_image_inv_sub (fun h => hq (subset_closure h)) hUb]
   have hfront {z : ℂ} (hz : z.im = 0) (hgz : g z ≠ 0) : q + (g z)⁻¹ ∈ frontier U := by
     obtain ⟨w', hw', hwg'⟩ := ((hgr' ▸ mem_insert_of_mem _ ⟨z, hz, rfl⟩ :
       g z ∈ insert 0 ((fun z : ℂ => (z - q)⁻¹) '' frontier U))).resolve_left hgz

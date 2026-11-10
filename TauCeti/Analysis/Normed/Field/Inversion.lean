@@ -41,7 +41,7 @@ into an open set.
 * `TauCeti.isOpen_image_inv_sub`, `TauCeti.interior_image_inv_sub` and
   `TauCeti.frontier_image_inv_sub`: the inversion of an open set about a point outside it is open,
   the interior of the inversion of a set is the inversion of its interior, and inverting an
-  unbounded set about a point outside its closure adds `0` to the inverted frontier.
+  unbounded set about a point outside it adds `0` to the inverted frontier.
 * `TauCeti.isOpen_insert_zero_image_inv_sub`, `TauCeti.closure_insert_zero_image_inv_sub` and
   `TauCeti.frontier_insert_zero_image_inv_sub`: an open set with bounded complement, inverted about
   any point and completed by `0`, is open; the completed inversion of any set has the completed
@@ -263,16 +263,16 @@ theorem interior_image_inv_sub (hq : q ∉ U) :
       exact (inv_injective.comp (sub_left_injective (b := q)) hvz) ▸ hv
   exact ⟨u, hN.subset_interior_iff.mpr hNU ⟨fun h => hq (h ▸ hu), hw⟩, rfl⟩
 
-/-- Inverting an unbounded set `U` about a point `q` outside its closure, the frontier of the
-image is the image of the frontier together with `0`, the image of infinity. -/
-theorem frontier_image_inv_sub (hq : q ∉ closure U) (hUb : ¬IsBounded U) :
+/-- Inverting an unbounded set `U` about a point `q` outside it, the frontier of the image is the
+image of the frontier together with `0`, the image of infinity. -/
+theorem frontier_image_inv_sub (hq : q ∉ U) (hUb : ¬IsBounded U) :
     frontier ((fun z : 𝕜 => (z - q)⁻¹) '' U) =
       insert 0 ((fun z : 𝕜 => (z - q)⁻¹) '' frontier U) := by
   have hU0 : (0 : 𝕜) ∉ (fun z : 𝕜 => (z - q)⁻¹) '' interior U := by
     rintro ⟨z, hz, hz0⟩
     rw [inv_eq_zero, sub_eq_zero] at hz0
-    exact hq (subset_closure (interior_subset (hz0 ▸ hz)))
-  rw [frontier, closure_image_inv_sub hUb, interior_image_inv_sub fun h => hq (subset_closure h),
+    exact hq (interior_subset (hz0 ▸ hz))
+  rw [frontier, closure_image_inv_sub hUb, interior_image_inv_sub hq,
     insert_sdiff_of_notMem _ hU0, frontier, image_sdiff (f := fun z : 𝕜 => (z - q)⁻¹)
       (inv_injective.comp (sub_left_injective (b := q)))]
 
