@@ -39,8 +39,9 @@ with the constant `C`; the latter involves no inversion.
 * `HasDerivAt.clm_inverse_of_completeSpace`: the Banach-space specialization for an inverse family.
 * `HasDerivAt.clm_inverse_apply_of_completeSpace`: the Banach-space specialization acting on a
   vector curve.
-* `TauCeti.fderiv_eq_neg_comp_of_comp_eq_id`: the derivative of a family `φ` of left inverses
-  of `ψ`, over any normed space of variables, is `-(φ ∘ ψ' ∘ φ)`.
+* `TauCeti.fderiv_eq_neg_comp_of_comp_eq_id`: the derivative of a family `φ`, with `φ y` a left
+  inverse of `ψ y` near `z` and a two-sided inverse at `z`, over any normed space of variables,
+  is `-(φ z ∘ ψ' ∘ φ z)`.
 * `ContDiffAt.inverse` and `ContDiff.inverse`: the ring inverse of a `C^n` family of units
   is `C^n`.
 * `DifferentiableAt.deriv_eq_mul_sub_mul_of_mul_eq_mul`: a family `K` with `K t * P t = P t * C`
