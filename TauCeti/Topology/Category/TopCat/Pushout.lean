@@ -42,12 +42,13 @@ map out of such a pushout which restricts to closed embeddings on `A` and on fin
   agree on the overlaps glue to a map out of the whole space.
 * `CategoryTheory.IsPushout.of_isClosedEmbedding`: a cover by a closed subspace and finitely many
   closed pieces meeting it along prescribed subspaces is a pushout square.
-* `TopCat.range_union_iUnion_range_of_isPushout_sigma`: every point of the pushout of `L` and
-  `⨆ᵢ D i` along `⨆ᵢ A i` comes from `L` or from one of the `D i`.
-* `TopCat.injective_of_isPushout_sigma`, `TopCat.isClosedEmbedding_of_isPushout_sigma`: a map out
-  of the pushout of `L` and `⨆ᵢ D i` along `⨆ᵢ A i` restricting to injective maps (resp. closed
-  embeddings) on `L` and on the `D i`, with the images of the `D i` pairwise disjoint and meeting
-  `L` only along the `A i`, is injective (resp. a closed embedding).
+* `TauCeti.TopCat.range_union_iUnion_range_of_isPushout_sigma`: every point of the pushout of
+  `L` and `⨆ᵢ D i` along `⨆ᵢ A i` comes from `L` or from one of the `D i`.
+* `TauCeti.TopCat.injective_of_isPushout_sigma`,
+  `TauCeti.TopCat.isClosedEmbedding_of_isPushout_sigma`: a map out of the pushout of `L` and
+  `⨆ᵢ D i` along `⨆ᵢ A i` restricting to injective maps (resp. closed embeddings) on `L` and on
+  the `D i`, with the images of the `D i` pairwise disjoint and meeting `L` only along the `A i`,
+  is injective (resp. a closed embedding).
 -/
 
 public section
@@ -251,7 +252,7 @@ end ClosedCover
 
 end CategoryTheory.IsPushout
 
-namespace TopCat
+namespace TauCeti.TopCat
 
 section PushoutSigma
 
@@ -273,7 +274,7 @@ theorem range_union_iUnion_range_of_isPushout_sigma
   · obtain ⟨⟨i⟩, d, rfl⟩ := Concrete.colimit_exists_rep (Discrete.functor D) z
     exact Or.inr (Set.mem_iUnion.2 ⟨i, d, rfl⟩)
 
-/-- Pointwise form of `TopCat.range_union_iUnion_range_of_isPushout_sigma`. -/
+/-- Pointwise form of `TauCeti.TopCat.range_union_iUnion_range_of_isPushout_sigma`. -/
 private theorem exists_eq_inl_or_exists_eq_inr
     (sq : IsPushout (Sigma.desc α) (Limits.Sigma.map j) inl inr) (y : P) :
     (∃ x, inl x = y) ∨ ∃ i d, inr (Sigma.ι D i d) = y := by
@@ -353,4 +354,4 @@ theorem isClosedEmbedding_of_isPushout_sigma [Finite ι] (hg : IsClosedEmbedding
 
 end PushoutSigma
 
-end TopCat
+end TauCeti.TopCat
