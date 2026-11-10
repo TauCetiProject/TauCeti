@@ -39,26 +39,37 @@ variable (k : Type u) [Field k] {X : Scheme.{u}} [X.Over (Spec (.of k))] [IsInte
   [FiniteDimensional k (Scheme.Modules.Cohomology (trivial X).obj 1)]
   (L : InvertibleSheaf X)
 
-/-- A line bundle with a nonzero global section on a proper integral curve has nonnegative
-Euler-characteristic degree, even when the curve is singular. -/
-theorem eulerDegree_nonneg_of_nonzero_section (s : Γ(L.obj, ⊤)) (hs : s ≠ 0) :
-    0 ≤ L.eulerDegree k := by
-  obtain ⟨I, hI, hclass⟩ := L.exists_isEffectiveCartier_of_nonzero_section s hs
+/-- A nonzero section on a proper integral curve gives an effective Cartier ideal of inverse
+class, and the degree of the line bundle is the length over the ground field of its zero
+subscheme. -/
+theorem exists_isEffectiveCartier_eulerDegree_eq_of_ne_zero
+    (s : Γ(L.obj, ⊤)) (hs : s ≠ 0) :
+    ∃ (I : X.IdealSheafData) (hI : I.IsEffectiveCartier),
+      LineBundleClass.mk hI.toInvertibleSheaf = (LineBundleClass.mk L)⁻¹ ∧
+        L.eulerDegree k = (I.subschemeι ≫ X ↘ Spec (.of k)).finrank default := by
+  obtain ⟨I, hI, hclass⟩ := L.exists_isEffectiveCartier_of_ne_zero s hs
   have := hI.isFinite_subschemeι_comp (f := X ↘ Spec (.of k))
   have hdegree := hI.eulerDegree_inv_mk_toInvertibleSheaf k I default
   rw [hclass, inv_inv, LineBundleClass.eulerDegree_mk] at hdegree
+  exact ⟨I, hI, hclass, hdegree⟩
+
+/-- A line bundle with a nonzero global section on a proper integral curve has nonnegative
+Euler-characteristic degree, even when the curve is singular. -/
+theorem eulerDegree_nonneg_of_ne_zero (s : Γ(L.obj, ⊤)) (hs : s ≠ 0) :
+    0 ≤ L.eulerDegree k := by
+  obtain ⟨I, _, _, hdegree⟩ := L.exists_isEffectiveCartier_eulerDegree_eq_of_ne_zero k s hs
   exact hdegree.symm ▸ Int.natCast_nonneg _
 
 /-- A line bundle on a proper integral curve that has a nonzero global section has degree
 zero exactly when it is trivial. No genus, smoothness, or rational-point assumption is needed. -/
-theorem eulerDegree_eq_zero_iff_of_nonzero_section (s : Γ(L.obj, ⊤)) (hs : s ≠ 0) :
+theorem eulerDegree_eq_zero_iff_of_ne_zero (s : Γ(L.obj, ⊤)) (hs : s ≠ 0) :
     L.eulerDegree k = 0 ↔ LineBundleClass.mk L = 1 := by
   constructor
   · intro hdeg
-    obtain ⟨I, hI, hclass⟩ := L.exists_isEffectiveCartier_of_nonzero_section s hs
+    obtain ⟨I, hI, hclass, hdegree⟩ :=
+      L.exists_isEffectiveCartier_eulerDegree_eq_of_ne_zero k s hs
     have := hI.isFinite_subschemeι_comp (f := X ↘ Spec (.of k))
-    have hdegree := hI.eulerDegree_inv_mk_toInvertibleSheaf k I default
-    rw [hclass, inv_inv, LineBundleClass.eulerDegree_mk, hdeg] at hdegree
+    rw [hdeg] at hdegree
     have hempty : IsEmpty I.subscheme := by
       have hnot := (Scheme.Hom.finrank_eq_zero_iff_notMem_range
         (I.subschemeι ≫ X ↘ Spec (.of k)) default).mp (Int.natCast_eq_zero.mp hdegree.symm)

@@ -61,7 +61,7 @@ variable [IsIntegral X]
 
 /-- A nonzero section of a line bundle on an integral scheme gives an effective Cartier
 ideal whose associated line-bundle class is the inverse of the original class. -/
-theorem exists_isEffectiveCartier_of_nonzero_section (s : Γ(L.obj, ⊤)) (hs : s ≠ 0) :
+theorem exists_isEffectiveCartier_of_ne_zero (s : Γ(L.obj, ⊤)) (hs : s ≠ 0) :
     ∃ (I : X.IdealSheafData) (hI : I.IsEffectiveCartier),
       LineBundleClass.mk hI.toInvertibleSheaf = (LineBundleClass.mk L)⁻¹ := by
   let _ : TauCeti.SheafOfModules.IsInvertible (R := X.ringCatSheaf) L.obj := L.property
@@ -69,21 +69,17 @@ theorem exists_isEffectiveCartier_of_nonzero_section (s : Γ(L.obj, ⊤)) (hs : 
   let M : SheafOfModules X.ringCatSheaf := L.obj
   have : L.obj.IsLocallyFree := inferInstanceAs M.IsLocallyFree
   have : L.obj.IsFiniteType := inferInstanceAs M.IsFiniteType
-  let _ : MonoidalPreadditive X.Modules := TauCeti.SheafOfModules.monoidalPreadditive X.sheaf
   let φ₀ := (Scheme.Modules.dualHomUnitEquiv L.obj).symm (L.obj.unitHomEquivTop.symm s)
   have hφ₀ : φ₀ ≠ 0 := by
     intro hz
-    have h := congrArg (fun f ↦ L.obj.unitHomEquivTop
-      (Scheme.Modules.dualHomUnitEquiv L.obj f)) hz
-    have hzero : L.obj.unitHomEquivTop (Scheme.Modules.dualHomUnitEquiv L.obj 0) = 0 := by
-      simp only [Scheme.Modules.dualHomUnitEquiv_apply, MonoidalPreadditive.zero_whiskerRight,
-        Limits.comp_zero, Limits.zero_comp]
-      -- The zero in `X.Modules` is read through the underlying sheaf morphism here.
-      erw [Scheme.Modules.unitHomEquivTop_apply]
-      rfl
     have hrec := congrArg L.obj.unitHomEquivTop
       ((Scheme.Modules.dualHomUnitEquiv L.obj).apply_symm_apply (L.obj.unitHomEquivTop.symm s))
-    exact hs (((hrec.trans (L.obj.unitHomEquivTop.apply_symm_apply s)).symm.trans h).trans hzero)
+    apply hs
+    calc
+      s = L.obj.unitHomEquivTop (Scheme.Modules.dualHomUnitEquiv L.obj φ₀) :=
+        (hrec.trans (L.obj.unitHomEquivTop.apply_symm_apply s)).symm
+      _ = 0 := by
+        simp only [hz, Scheme.Modules.dualHomUnitEquiv_zero, Scheme.Modules.unitHomEquivTop_zero]
   -- `dual_obj` compares the bundled dual with the internal Hom used by evaluation.
   let e : (dual L).obj ≅ (ihom L.obj).obj (𝟙_ X.Modules) := eqToIso (dual_obj L)
   let φ : (dual L).obj ⟶ 𝟙_ X.Modules := e.hom ≫ φ₀

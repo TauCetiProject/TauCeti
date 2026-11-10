@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.EpiMono
 public import TauCeti.AlgebraicGeometry.LineBundle.Germ
+public import TauCeti.AlgebraicGeometry.Modules.Sections
 
 /-!
 # Morphisms of line bundles on integral schemes
@@ -47,10 +48,8 @@ theorem hom_ext_of_app {M : X.Modules} (L : InvertibleSheaf X) {φ ψ : M ⟶ L.
     exact (hnat φ).symm.trans ((congrArg (fun f ↦ f
       (M.presheaf.map (homOfLE (inf_le_left : V ⊓ U ≤ V)).op s))
         (h (V ⊓ U) inf_le_right)).trans (hnat ψ))
-  · apply TopCat.Presheaf.section_ext
-      (⟨L.obj.presheaf, L.obj.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
-    intro x hx
-    exact (hV ⟨⟨x, hx⟩⟩).elim
+  · let : IsEmpty V := ⟨fun x ↦ hV ⟨x⟩⟩
+    exact Scheme.Modules.section_ext_of_isEmpty _ _
 
 variable (L : InvertibleSheaf X)
 
@@ -67,7 +66,7 @@ private theorem app_generator_ne_zero
   ext s
   rw [Scheme.Modules.eq_trivializationCoordinate_smul_map_trivializationGenerator
     L.obj t (homOfLE hWV ≫ i) s]
-  erw [Scheme.Modules.Hom.app_smul]
+  rw [Scheme.Modules.Hom.app_smul]
   have hnat : φ.app W (L.obj.presheaf.map (homOfLE hWV).op
       (L.obj.presheaf.map i.op (Scheme.Modules.trivializationGenerator L.obj t))) =
       (𝟙_ X.Modules).presheaf.map (homOfLE hWV).op
@@ -101,17 +100,16 @@ theorem app_injective_of_ne_zero_to_unit
       rwa [hs, map_zero] at hnat
     rw [Scheme.Modules.eq_trivializationCoordinate_smul_map_trivializationGenerator
       L.obj t i (L.obj.presheaf.map j.op s)] at hzero
-    erw [Scheme.Modules.Hom.app_smul] at hzero
+    rw [Scheme.Modules.Hom.app_smul] at hzero
     -- In the unit sheaf scalar multiplication is multiplication of regular functions.
     let a : Γ(X, V ⊓ U) := φ.app (V ⊓ U) b
     have hmul : (Scheme.Modules.trivializationCoordinate L.obj t i
-        (L.obj.presheaf.map j.op s) * a : Γ(X, V ⊓ U)) = 0 := hzero
+        (L.obj.presheaf.map j.op s) * a : Γ(X, V ⊓ U)) = 0 := by
+      exact (Scheme.Modules.unit_smul_eq_mul X (V ⊓ U) _ _).symm.trans hzero
     simpa only [map_zero] using (mul_eq_zero.mp hmul).resolve_right hb
-  · intro s s' _
-    apply TopCat.Presheaf.section_ext
-      (⟨L.obj.presheaf, L.obj.isSheaf⟩ : TopCat.Sheaf AddCommGrpCat X)
-    intro x hx
-    exact (hV ⟨⟨x, hx⟩⟩).elim
+  · let : IsEmpty V := ⟨fun x ↦ hV ⟨x⟩⟩
+    intro s s' _
+    exact Scheme.Modules.section_ext_of_isEmpty s s'
 
 /-- A nonzero morphism from a line bundle to the structure sheaf of an integral scheme
 is a monomorphism. Equivalently, a nonzero section of the dual is a regular section. -/
