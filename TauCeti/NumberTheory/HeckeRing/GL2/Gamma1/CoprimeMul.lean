@@ -204,6 +204,17 @@ theorem mem_doubleCoset_natDiagGL_Gamma1_of_primitive [NeZero N] (n : ℕ) {x : 
       ((ZMod.intCast_zmod_eq_zero_iff_dvd _ _).mp hX10)
       (Int.isUnit_intCast_iff_gcd_eq_one.mp (hX00 ▸ isUnit_one)) hdet hprim
 
+/-- If coprime `m`, `n` have `m * n = 0`, then one of them is `0` and the other is `1`, so all of
+`diag(1, m)`, `diag(1, n)` and `diag(1, m n)` are the identity. -/
+private lemma natDiagGL_one_eq_one_of_coprime_of_mul_eq_zero {m n : ℕ} (hmn : m.Coprime n)
+    (h0 : m * n = 0) :
+    natDiagGL 2 ![1, m] = 1 ∧ natDiagGL 2 ![1, n] = 1 ∧ natDiagGL 2 ![1, m * n] = 1 := by
+  rcases Nat.mul_eq_zero.1 h0 with rfl | rfl
+  · obtain rfl : n = 1 := by simpa using hmn
+    exact ⟨natDiagGL_one_zero, natDiagGL_one_one, by rw [Nat.zero_mul]; exact natDiagGL_one_zero⟩
+  · obtain rfl : m = 1 := by simpa using hmn
+    exact ⟨natDiagGL_one_one, natDiagGL_one_zero, by rw [Nat.mul_zero]; exact natDiagGL_one_zero⟩
+
 /-- **The coprime sandwich.** For coprime `m`, `n` and `γ ∈ Γ₁(N)`, the product
 `diag(1, m) · γ · diag(1, n)` lies in `Γ₁(N) · diag(1, m n) · Γ₁(N)`. Its integral matrix
 `!![a, b n; m c, m n d]` is primitive: a prime dividing `a` and `b n` but not `b` divides `n`,
@@ -213,16 +224,12 @@ theorem natDiagGL_mul_mapGL_mul_natDiagGL_mem_doubleCoset [NeZero N] {m n : ℕ}
     natDiagGL 2 ![1, m] * mapGL ℚ γ * natDiagGL 2 ![1, n] ∈
       doubleCoset (natDiagGL 2 ![1, m * n]) ((Gamma1 N).map (mapGL ℚ))
         ((Gamma1 N).map (mapGL ℚ)) := by
-  rcases Nat.eq_zero_or_pos m with rfl | hm
-  · obtain rfl : n = 1 := by simpa using hmn
-    rw [Nat.zero_mul, natDiagGL_one_zero, natDiagGL_one_one, one_mul, mul_one,
-      TauCeti.doubleCoset_one_self]
+  by_cases h0 : m * n = 0
+  · obtain ⟨h1, h2, h3⟩ := natDiagGL_one_eq_one_of_coprime_of_mul_eq_zero hmn h0
+    rw [h1, h2, h3, one_mul, mul_one, TauCeti.doubleCoset_one_self]
     exact Subgroup.mem_map_of_mem _ hγ
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · obtain rfl : m = 1 := by simpa using hmn
-    rw [Nat.mul_zero, natDiagGL_one_zero, natDiagGL_one_one, one_mul, mul_one,
-      TauCeti.doubleCoset_one_self]
-    exact Subgroup.mem_map_of_mem _ hγ
+  have hm : 0 < m := Nat.pos_of_ne_zero (left_ne_zero_of_mul h0)
+  have hn : 0 < n := Nat.pos_of_ne_zero (right_ne_zero_of_mul h0)
   obtain ⟨h00, -, h10⟩ := (Gamma1_mem N γ).mp hγ
   have hdet := γ.fin_two_mul_sub_mul_eq_one
   have hX : (↑(natDiagGL 2 ![1, m] * mapGL ℚ γ * natDiagGL 2 ![1, n]) :
@@ -262,14 +269,12 @@ theorem doubleCoset_natDiagGL_mul_of_coprime [NeZero N] {m n : ℕ} (hmn : m.Cop
         doubleCoset (natDiagGL 2 ![1, n]) ((Gamma1 N).map (mapGL ℚ))
           ((Gamma1 N).map (mapGL ℚ)) := by
   -- if `m` or `n` is `0`, coprimality makes the other `1`, and all three diagonals are `1`
-  rcases Nat.eq_zero_or_pos m with rfl | hm
-  · obtain rfl : n = 1 := by simpa using hmn
-    rw [Nat.zero_mul, natDiagGL_one_zero, natDiagGL_one_one, TauCeti.doubleCoset_one_self]
+  by_cases h0 : m * n = 0
+  · obtain ⟨h1, h2, h3⟩ := natDiagGL_one_eq_one_of_coprime_of_mul_eq_zero hmn h0
+    rw [h1, h2, h3, TauCeti.doubleCoset_one_self]
     exact (Submonoid.coe_mul_self_eq ((Gamma1 N).map (mapGL ℚ)).toSubmonoid).symm
-  rcases Nat.eq_zero_or_pos n with rfl | hn
-  · obtain rfl : m = 1 := by simpa using hmn
-    rw [Nat.mul_zero, natDiagGL_one_zero, natDiagGL_one_one, TauCeti.doubleCoset_one_self]
-    exact (Submonoid.coe_mul_self_eq ((Gamma1 N).map (mapGL ℚ)).toSubmonoid).symm
+  have hm : 0 < m := Nat.pos_of_ne_zero (left_ne_zero_of_mul h0)
+  have hn : 0 < n := Nat.pos_of_ne_zero (right_ne_zero_of_mul h0)
   have hδ : natDiagGL 2 ![1, m] * natDiagGL 2 ![1, n] = natDiagGL 2 ![1, m * n] := by
     rw [natDiagGL_mul 2 _ _ (fun i ↦ by fin_cases i <;> simp [hm]) fun i ↦ by
       fin_cases i <;> simp [hn]]
@@ -332,11 +337,9 @@ theorem op_smul_eq_of_op_mul_smul_eq {m n : ℕ}
   · rw [hdeg, TauCeti.doubleCoset_one_self] at hb hb'
     rw [rightCoset_eq_iff]
     exact mul_mem hb' (inv_mem hb)
-  have hn : 0 < n := Nat.pos_of_ne_zero (by rintro rfl; exact hdeg natDiagGL_one_zero)
-  have hm : 0 < m := Nat.pos_of_ne_zero fun h0 ↦ by
-    subst h0
-    obtain rfl : n = 1 := by simpa using hmn
-    exact hdeg natDiagGL_one_one
+  have h0 : m * n ≠ 0 := fun h0 ↦ hdeg (natDiagGL_one_eq_one_of_coprime_of_mul_eq_zero hmn h0).2.1
+  have hn : 0 < n := Nat.pos_of_ne_zero (right_ne_zero_of_mul h0)
+  have hm : 0 < m := Nat.pos_of_ne_zero (left_ne_zero_of_mul h0)
   obtain ⟨A, hA, -, -⟩ := exists_intMatrix_of_mem_doubleCoset_natDiagGL ha
   obtain ⟨A', hA', -, -⟩ := exists_intMatrix_of_mem_doubleCoset_natDiagGL ha'
   obtain ⟨B, hB, hB00, hB10⟩ := exists_intMatrix_of_mem_doubleCoset_natDiagGL hb
