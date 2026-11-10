@@ -39,6 +39,7 @@ This applies to words in the generators of a Coxeter group, whose Coxeter graph 
   one-degenerate order that is invariant under commutations and rotations is constant.
 * `List.IsOneDegenerateOrder.append_singleton` builds a one-degenerate order letter by letter, and
   `List.IsOneDegenerateOrder.map_equiv` transports one along an equivalence.
+* `List.isOneDegenerateOrder_finRange`: `0, 1, …, n - 1` is a one-degenerate order of a path.
 
 ## References
 
@@ -237,6 +238,22 @@ theorem eq_of_isOneDegenerateOrder (hsymm : ∀ x y, adj x y → adj y x)
         simp)
       (herase hl) (herase hl')
     exact (stepA l hl).trans (hψ.trans (stepA l' hl').symm)
+
+/-- The path `0, 1, …, n - 1` is a one-degenerate order for a relation that relates distinct
+indices only when they are consecutive. -/
+theorem isOneDegenerateOrder_finRange {n : ℕ} {adj : Fin n → Fin n → Prop}
+    (h : ∀ i j, i ≠ j → adj i j → i.val + 1 = j.val ∨ j.val + 1 = i.val) :
+    IsOneDegenerateOrder adj (finRange n) := by
+  intro S₁ z S₂ hS x hx y hy hzx hzy
+  have hlt := (pairwise_append.1 (hS ▸ pairwise_lt_finRange n)).2.2
+  have key : ∀ w ∈ S₁, adj z w → w.val + 1 = z.val := by
+    intro w hw hzw
+    have hwz : w.val < z.val := hlt w hw z mem_cons_self
+    rcases h z w (fun he => by rw [he] at hwz; omega) hzw with h' | h' <;> omega
+  have := key x hx hzx
+  have := key y hy hzy
+  ext
+  omega
 
 end List
 
