@@ -45,6 +45,8 @@ Finally, for `n ∣ m` it records the power map from the `m`-th to the `n`-th ro
 
 * `TauCeti.eq_one_of_pow_eq_one_of_sub_one_mem`: in a commutative ring without zero divisors, a
   root of unity that is congruent to `1` modulo an ideal not containing its order is `1`.
+* `TauCeti.subsingleton_rootsOfUnity_prime_pow`: in a reduced commutative ring of exponential
+  characteristic `p`, the group of `pʲ`-th roots of unity is trivial.
 * `TauCeti.card_rootsOfUnity_two`: in a domain in which `2 ≠ 0`, the group `μ₂ = {±1}` has two
   elements.
 * `TauCeti.card_rootsOfUnity_dvd`: in a domain, the number of `n`-th roots of unity divides `n`.
@@ -366,5 +368,15 @@ theorem rootsOfUnityPowOfDvd_comp {M : Type*} [CommMonoid M] {n m l : ℕ}
   apply Subtype.ext
   simp only [MonoidHom.comp_apply, coe_rootsOfUnityPowOfDvd_apply]
   rw [← pow_mul, Nat.div_mul_div h₂ h₁]
+
+/-- In a reduced commutative ring of exponential characteristic `p`, there is no nontrivial
+`pʲ`-th root of unity: `(u - 1) ^ pʲ = u ^ pʲ - 1`, so `u ^ pʲ = 1` forces `u = 1`. -/
+theorem subsingleton_rootsOfUnity_prime_pow [IsReduced R] (p j : ℕ) [ExpChar R p] :
+    Subsingleton (rootsOfUnity (p ^ j) R) := by
+  have key (x : rootsOfUnity (p ^ j) R) : x = 1 := by
+    have h : (x : Rˣ) ∈ rootsOfUnity 1 R :=
+      (mem_rootsOfUnity_prime_pow_mul_iff R p j 1).1 (by simp)
+    exact Subtype.ext (by simpa [mem_rootsOfUnity] using h)
+  exact ⟨fun x y ↦ (key x).trans (key y).symm⟩
 
 end TauCeti
