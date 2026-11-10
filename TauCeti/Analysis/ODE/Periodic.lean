@@ -11,6 +11,7 @@ public import TauCeti.Analysis.ODE.DysonSeries
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
 import TauCeti.Topology.Instances.Real.TwistedExtension
 
 /-!
@@ -49,9 +50,10 @@ Such a solution is twisted exactly when `w d = ε • w 0`
 
 When `ε - P` is invertible the same formula gives an a priori estimate: every solution of
 `w' = M w + f` with `w d = ε • w 0` satisfies `‖w t‖ ≤ C ∫₀ᵈ ‖f‖` on `[0, d]`, with `C` depending
-only on `M`, `d` and `ε` (`TauCeti.exists_forall_norm_le_mul_integral_norm`). For `ε = 1` and the
-linearization of a Hamiltonian vector field along a nondegenerate periodic orbit, this is the
-estimate which shows that loops near the orbit are controlled by their defect from Hamilton's
+only on `M`, `d` and `ε` (`TauCeti.exists_forall_norm_le_mul_integral_norm`), and hence
+`∫₀ᵈ ‖w‖² ≤ C ∫₀ᵈ ‖f‖²` (`TauCeti.exists_integral_norm_sq_le_mul_integral_norm_sq`). For `ε = 1`
+and the linearization of a Hamiltonian vector field along a nondegenerate periodic orbit, this is
+the estimate which shows that loops near the orbit are controlled by their defect from Hamilton's
 equation.
 
 So the kernel and cokernel of `d/dt - M` on twisted loops are those of the finite complex
@@ -76,7 +78,8 @@ operators `∂t - J₀ S(t)` on loops twisted by the sign characters of the orbi
 * `TauCeti.exists_twisted_solution_iff`: the twisted problem `w' = M w + f` is solvable exactly when
   `E f` lies in the range of `ε - Ψ(d)`.
 * `TauCeti.exists_forall_norm_le_mul_integral_norm`: the a priori estimate
-  `‖w t‖ ≤ C ∫₀ᵈ ‖f‖` for twisted solutions when `ε - Ψ(d)` is invertible.
+  `‖w t‖ ≤ C ∫₀ᵈ ‖f‖` for twisted solutions when `ε - Ψ(d)` is invertible, and its `L²` form
+  `TauCeti.exists_integral_norm_sq_le_mul_integral_norm_sq`.
 * `TauCeti.kerTwistedLinearOperatorEquiv`: `ker L ≃ ker (ε - Ψ(d))`.
 * `TauCeti.quotientRangeTwistedLinearOperatorEquiv`: `coker L ≃ coker (ε - Ψ(d))`.
 * `TauCeti.finiteDimensional_ker_twistedLinearOperator`,
@@ -287,6 +290,40 @@ theorem exists_forall_norm_le_mul_integral_norm (hM : Continuous M) (hd : 0 ≤ 
           (abs_nonneg _)
     _ = |A| * (N * |A| * |B| + |B|) * I := by ring
 
+/-- **An `L²` a priori estimate for twisted solutions.** Let `Ψ = dysonSeriesLeft M` be the
+propagator of `w' = M w` and suppose that `ε - Ψ(d)` is invertible. Then there is a constant
+`C ≥ 0` such that every solution of `w' = M w + f`, with `f` continuous and `w d = ε • w 0`,
+satisfies `∫₀ᵈ ‖w‖² ≤ C ∫₀ᵈ ‖f‖²`. It follows from the pointwise estimate
+`TauCeti.exists_forall_norm_le_mul_integral_norm` by the Cauchy–Schwarz inequality. -/
+theorem exists_integral_norm_sq_le_mul_integral_norm_sq (hM : Continuous M) (hd : 0 ≤ d)
+    (hP : IsUnit (ε • 1 - dysonSeriesLeft M d)) :
+    ∃ C, 0 ≤ C ∧ ∀ {f w : ℝ → X}, Continuous f → (∀ t, HasDerivAt w (M t (w t) + f t) t) →
+      w d = ε • w 0 → ∫ t in 0..d, ‖w t‖ ^ 2 ≤ C * ∫ t in 0..d, ‖f t‖ ^ 2 := by
+  obtain ⟨C₀, hC₀, hA⟩ := exists_forall_norm_le_mul_integral_norm hM hd hP
+  refine ⟨d * (C₀ ^ 2 * d), by positivity, fun {f w} hf hw hwd ↦ ?_⟩
+  have hwc : Continuous w := continuous_iff_continuousAt.2 fun t ↦ (hw t).continuousAt
+  have hf2 : 0 ≤ ∫ t in 0..d, ‖f t‖ ^ 2 :=
+    integral_nonneg hd fun _ _ ↦ by positivity
+  -- Cauchy–Schwarz: `(∫₀ᵈ ‖f‖)² ≤ d ∫₀ᵈ ‖f‖²`.
+  have hCS : (∫ t in 0..d, ‖f t‖) ^ 2 ≤ d * ∫ t in 0..d, ‖f t‖ ^ 2 := by
+    have h := integral_le_sqrt_mul_sqrt_integral_sq hd (fun t _ ↦ norm_nonneg (f t))
+      ((hf.norm.pow 2).intervalIntegrable _ _)
+    rw [sub_zero] at h
+    calc (∫ t in 0..d, ‖f t‖) ^ 2 ≤ (√d * √(∫ t in 0..d, ‖f t‖ ^ 2)) ^ 2 :=
+          pow_le_pow_left₀ (integral_nonneg hd fun _ _ ↦ norm_nonneg _) h 2
+      _ = d * ∫ t in 0..d, ‖f t‖ ^ 2 := by rw [mul_pow, Real.sq_sqrt hd, Real.sq_sqrt hf2]
+  have hpt (t : ℝ) (ht : t ∈ Icc 0 d) : ‖w t‖ ^ 2 ≤ C₀ ^ 2 * d * ∫ t in 0..d, ‖f t‖ ^ 2 :=
+    calc ‖w t‖ ^ 2 ≤ (C₀ * ∫ s in 0..d, ‖f s‖) ^ 2 :=
+          pow_le_pow_left₀ (norm_nonneg _) (hA hf hw hwd t ht) 2
+      _ = C₀ ^ 2 * (∫ s in 0..d, ‖f s‖) ^ 2 := mul_pow _ _ _
+      _ ≤ C₀ ^ 2 * (d * ∫ t in 0..d, ‖f t‖ ^ 2) := mul_le_mul_of_nonneg_left hCS (by positivity)
+      _ = C₀ ^ 2 * d * ∫ t in 0..d, ‖f t‖ ^ 2 := by ring
+  calc ∫ t in 0..d, ‖w t‖ ^ 2 ≤ ∫ _ in 0..d, C₀ ^ 2 * d * ∫ t in 0..d, ‖f t‖ ^ 2 :=
+        integral_mono_on hd ((hwc.norm.pow 2).intervalIntegrable _ _) intervalIntegrable_const hpt
+    _ = d * (C₀ ^ 2 * d) * ∫ t in 0..d, ‖f t‖ ^ 2 := by
+        rw [intervalIntegral.integral_const, sub_zero, smul_eq_mul]
+        ring
+
 /-- **Solvability of the twisted problem.** For `M` continuous and periodic of period `d`, and `f`
 continuous and twisted by `ε` along `d`, the equation `w' = M w + f` has a solution twisted by `ε`
 along `d` exactly when `Ψ(d) (∫₀ᵈ Ψ(s)⁻¹ (f s) ds)` lies in the range of `ε - Ψ(d)`. -/
@@ -490,6 +527,17 @@ end KernelCokernel
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ X]
+
+/-- In finite dimension, `ε - Ψ(d)` is invertible as soon as the return map `Ψ(d)` has no
+eigenvector of eigenvalue `ε`. This is the hypothesis of the a priori estimates
+`TauCeti.exists_forall_norm_le_mul_integral_norm` and
+`TauCeti.exists_integral_norm_sq_le_mul_integral_norm_sq`. -/
+theorem isUnit_smul_one_sub_dysonSeriesLeft (h : ∀ v, dysonSeriesLeft M d v = ε • v → v = 0) :
+    IsUnit (ε • 1 - dysonSeriesLeft M d : X →L[ℝ] X) := by
+  refine ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.2
+    ((LinearMap.isUnit_iff_ker_eq_bot _).2 (LinearMap.ker_eq_bot'.2 fun v hv ↦ h v ?_))
+  have hv' : ε • v - dysonSeriesLeft M d v = 0 := by simpa using hv
+  exact (sub_eq_zero.1 hv').symm
 
 /-- In finite dimension, the kernel of `L = d/dt - M` on maps twisted by `ε` is
 finite-dimensional. -/
