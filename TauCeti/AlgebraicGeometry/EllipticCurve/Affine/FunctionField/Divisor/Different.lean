@@ -226,15 +226,11 @@ theorem ord_infinity_invariantDifferentialDenom (h2 : (2 : F) ≠ 0) :
   have hc (c : F) : W.infinityPlace (algebraMap F W.FunctionField c) ≤ 1 := by
     rw [← Place.valuation_infinity, ← Place.mem_integers_iff]
     exact (Place.infinity W).algebraMap_mem_integers c
-  have hx : W.infinityPlace (genericX W) = WithZero.exp 2 := by
-    rw [genericX_eq_algebraMap_ratFunc_X, infinityPlace_algebraMap_ratFunc W RatFunc.X_ne_zero,
-      RatFunc.intDegree_X]
-    norm_num
   have hlt : W.infinityPlace
       (algebraMap F W.FunctionField W.a₁ * genericX W + algebraMap F W.FunctionField W.a₃) <
       W.infinityPlace (2 * genericY W) := by
     refine (Valuation.map_add _ _ _).trans_lt (max_lt ?_ ?_)
-    · rw [map_mul, hx, hy]
+    · rw [map_mul, infinityPlace_genericX, hy]
       calc W.infinityPlace (algebraMap F W.FunctionField W.a₁) * WithZero.exp 2
           ≤ 1 * WithZero.exp 2 := by gcongr; exact hc _
         _ < WithZero.exp 3 := by rw [one_mul, WithZero.exp_lt_exp]; norm_num
