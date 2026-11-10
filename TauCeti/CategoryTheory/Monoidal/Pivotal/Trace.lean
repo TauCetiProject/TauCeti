@@ -255,6 +255,48 @@ theorem rightTrace_unit (a : 𝟙_ C ⟶ 𝟙_ C) : rightTrace a = a := by
 
 end Unit
 
+section Zero
+
+variable [HasZeroMorphisms C]
+
+omit [PivotalCategory C] in
+/-- Whiskering on the left preserves zero morphisms in a rigid category, since `tensorLeft` is a
+left adjoint. -/
+@[simp]
+theorem whiskerLeft_zero_of_rigid (W : C) {X Y : C} :
+    W ◁ (0 : X ⟶ Y) = 0 := by
+  simpa using (tensorLeft W).map_zero X Y
+
+omit [PivotalCategory C] in
+/-- Whiskering on the right preserves zero morphisms in a rigid category, since `tensorRight` is a
+left adjoint. -/
+@[simp]
+theorem zero_whiskerRight_of_rigid (W : C) {X Y : C} :
+    (0 : X ⟶ Y) ▷ W = 0 := by
+  simpa using (tensorRight W).map_zero X Y
+
+/-- The left trace of zero is zero. -/
+@[simp]
+theorem leftTrace_zero (X : C) : leftTrace (0 : X ⟶ X) = 0 := by
+  simp [leftTrace_def]
+
+/-- The zero object has left pivotal dimension zero. -/
+@[simp]
+theorem leftDim_zero [HasZeroObject C] : leftDim (0 : C) = 0 := by
+  rw [← leftTrace_id, id_zero, leftTrace_zero]
+
+/-- The right trace of zero is zero. -/
+@[simp]
+theorem rightTrace_zero (X : C) : rightTrace (0 : X ⟶ X) = 0 := by
+  simp [rightTrace_def]
+
+/-- The zero object has right pivotal dimension zero. -/
+@[simp]
+theorem rightDim_zero [HasZeroObject C] : rightDim (0 : C) = 0 := by
+  rw [← rightTrace_id, id_zero, rightTrace_zero]
+
+end Zero
+
 section Linear
 
 variable [Preadditive C] [MonoidalPreadditive C]
@@ -263,20 +305,6 @@ variable [Preadditive C] [MonoidalPreadditive C]
 @[simp]
 theorem leftTrace_add {X : C} (f g : X ⟶ X) : leftTrace (f + g) = leftTrace f + leftTrace g := by
   simp [leftTrace_def]
-
-omit [MonoidalPreadditive C] in
-/-- The left trace of zero is zero. -/
-@[simp]
-theorem leftTrace_zero (X : C) : leftTrace (0 : X ⟶ X) = 0 := by
-  have : (tensorLeft Xᘁ).IsLeftAdjoint := (tensorLeftAdjunction X Xᘁ).isLeftAdjoint
-  have h : Xᘁ ◁ (0 : X ⟶ X) = 0 := (tensorLeft Xᘁ).map_zero X X
-  simp [leftTrace_def, h]
-
-omit [MonoidalPreadditive C] in
-/-- The zero object has left pivotal dimension zero. -/
-@[simp]
-theorem leftDim_zero [HasZeroObject C] : leftDim (0 : C) = 0 := by
-  rw [← leftTrace_id, id_zero, leftTrace_zero]
 
 /-- The left trace commutes with finite sums. -/
 @[simp]
@@ -302,20 +330,6 @@ theorem leftTrace_sub {X : C} (f g : X ⟶ X) : leftTrace (f - g) = leftTrace f 
 theorem rightTrace_add {X : C} (f g : X ⟶ X) :
     rightTrace (f + g) = rightTrace f + rightTrace g := by
   simp [rightTrace_def]
-
-omit [MonoidalPreadditive C] in
-/-- The right trace of zero is zero. -/
-@[simp]
-theorem rightTrace_zero (X : C) : rightTrace (0 : X ⟶ X) = 0 := by
-  have : (tensorRight Xᘁ).IsLeftAdjoint := (tensorRightAdjunction Xᘁ Xᘁᘁ).isLeftAdjoint
-  have h : (0 : X ⟶ X) ▷ Xᘁ = 0 := (tensorRight Xᘁ).map_zero X X
-  simp [rightTrace_def, h]
-
-omit [MonoidalPreadditive C] in
-/-- The zero object has right pivotal dimension zero. -/
-@[simp]
-theorem rightDim_zero [HasZeroObject C] : rightDim (0 : C) = 0 := by
-  rw [← rightTrace_id, id_zero, rightTrace_zero]
 
 /-- The right trace commutes with finite sums. -/
 @[simp]

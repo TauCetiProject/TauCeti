@@ -166,6 +166,22 @@ theorem trace_tensorHom {X Y : C} (f : X ⟶ X) (g : Y ⟶ Y) :
 theorem quantumDim_tensor (X Y : C) : quantumDim (X ⊗ Y) = quantumDim X ≫ quantumDim Y := by
   rw [← trace_id, ← trace_id, ← trace_id, ← id_tensorHom_id, trace_tensorHom]
 
+section Zero
+
+variable [HasZeroMorphisms C]
+
+/-- The trace of zero is zero. -/
+@[simp]
+theorem trace_zero (X : C) : trace (0 : X ⟶ X) = 0 := by
+  rw [trace_eq_leftTrace, leftTrace_zero]
+
+/-- The zero object has quantum dimension zero. -/
+@[simp]
+theorem quantumDim_zero [HasZeroObject C] : quantumDim (0 : C) = 0 := by
+  rw [quantumDim_eq_leftDim, leftDim_zero]
+
+end Zero
+
 section Linear
 
 variable [Preadditive C] [MonoidalPreadditive C]
@@ -174,18 +190,6 @@ variable [Preadditive C] [MonoidalPreadditive C]
 @[simp]
 theorem trace_add {X : C} (f g : X ⟶ X) : trace (f + g) = trace f + trace g := by
   simp only [trace_eq_leftTrace, leftTrace_add]
-
-omit [MonoidalPreadditive C] in
-/-- The trace of zero is zero. -/
-@[simp]
-theorem trace_zero (X : C) : trace (0 : X ⟶ X) = 0 := by
-  rw [trace_eq_leftTrace, leftTrace_zero]
-
-omit [MonoidalPreadditive C] in
-/-- The zero object has quantum dimension zero. -/
-@[simp]
-theorem quantumDim_zero [HasZeroObject C] : quantumDim (0 : C) = 0 := by
-  rw [quantumDim_eq_leftDim, leftDim_zero]
 
 /-- The trace commutes with finite sums. -/
 @[simp]
