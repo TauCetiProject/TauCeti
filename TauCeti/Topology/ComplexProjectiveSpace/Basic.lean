@@ -156,13 +156,11 @@ instance instSubsingletonZero : Subsingleton (ComplexProjectiveSpace 0) where
     induction p using ComplexProjectiveSpace.inductionOn with | h x => ?_
     induction q using ComplexProjectiveSpace.inductionOn with | h y => ?_
     have hnorm (z : sphere (0 : EuclideanSpace ℂ (Fin 1)) 1) : ‖z.1 0‖ = 1 := by
-      have h := norm_eq_of_mem_sphere z
-      rwa [EuclideanSpace.norm_eq, Fin.sum_univ_one, Real.sqrt_sq (norm_nonneg _)] at h
+      simpa using (EuclideanSpace.norm_eq z.1).symm.trans (norm_eq_of_mem_sphere z)
     have hy : y.1 0 ≠ 0 := norm_ne_zero_iff.1 (by rw [hnorm]; exact one_ne_zero)
     refine (mk_eq_mk_iff 0 x y).2 ⟨⟨x.1 0 / y.1 0, by simp [hnorm]⟩, Subtype.ext ?_⟩
     ext i
-    rw [Fin.fin_one_eq_zero i, Sphere.coe_sphere_smul, PiLp.smul_apply, smul_eq_mul,
-      div_mul_cancel₀ _ hy]
+    simp [Fin.fin_one_eq_zero i, div_mul_cancel₀ _ hy]
 
 /-- Complex projective space is path connected, as a continuous image of the unit sphere of the
 real vector space underlying `ℂⁿ⁺¹`, of real dimension `2n + 2 > 1`. -/

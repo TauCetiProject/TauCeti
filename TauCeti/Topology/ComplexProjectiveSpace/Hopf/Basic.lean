@@ -64,8 +64,7 @@ private theorem sphereDirection_smul_apply (c : sphere (0 : ℂ) 1)
     sphereDirection 1 ((c • v).1 k) = c * sphereDirection 1 (v.1 k) := by
   have hv' : v.1 k ≠ 0 := (mk_mem_affineOpen_iff k v).1 hv
   have h : (c • v).1 k = ‖v.1 k‖ • ((c * sphereDirection 1 (v.1 k) : sphere (0 : ℂ) 1) : ℂ) := by
-    rw [Sphere.coe_sphere_smul, PiLp.smul_apply, smul_eq_mul, Metric.unitSphere.coe_mul,
-      ← mul_smul_comm, norm_smul_sphereDirection]
+    simp [← mul_smul_comm]
   rw [h, sphereDirection_smul_of_pos _ (norm_pos_iff.2 hv')]
 
 /-- The direction `v_k / |v_k|` of the `k`th coordinate is continuous on the unit vectors with
