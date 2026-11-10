@@ -20,7 +20,7 @@ public section
 
 namespace TauCeti.Examples.EdgeDeletion
 
-open Graph Function
+open Graph
 
 /-- Two vertices joined by two parallel edges, on infinite ambient types. -/
 abbrev parallel : Graph ℕ ℕ := Graph.banana 0 1 {0, 1}
@@ -45,7 +45,7 @@ private abbrev base : V(loops) := ⟨0, by simp [loops]⟩
 
 -- The surviving parallel edge retains identity 0; deleting the absent identity 37 has no effect.
 example : ((parallel.deleteEdges deleted).incidentEdges ({source} : Finset V(parallel))).map
-      ((Embedding.refl ℕ).subtypeMap
+      (Set.embeddingOfSubset _ _
         (deleteEdges_le (G := parallel) (F := deleted)).edgeSet_mono) =
     {⟨0, by simp [parallel]⟩} := by
   classical
