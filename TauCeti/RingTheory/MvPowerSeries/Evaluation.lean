@@ -179,6 +179,7 @@ theorem continuous_eval₂_of_continuous [Finite σ] {X : Type*} [TopologicalSpa
   exact eval₂_sub_eval₂_mem hφ (heval y) (heval x)
     (I.toAddSubgroup.isClosed_of_isOpen hI) hy f
 
+omit [IsTopologicalRing S] [IsLinearTopology S S] in
 /-- **The value lies in `I ^ k` when the arguments do and `φ` sends the constant term there.**
 Every monomial of positive degree already carries an argument, hence a factor from `I ^ k`; the
 constant monomial is covered by the hypothesis on the image of the constant term. -/
@@ -187,6 +188,8 @@ theorem eval₂_mem_pow (hφ : Continuous φ) (ha : HasEval a) (hI : IsAdic I) {
     (hcc : φ (constantCoeff f) ∈ I ^ k) :
     eval₂ φ a f ∈ I ^ k := by
   classical
+  have : IsTopologicalRing S := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  have := hI.isLinearTopology
   have htot := hasSum_eval₂ hφ ha f
   have hval : ∀ d : σ →₀ ℕ, φ (coeff d f) * d.prod (fun s e ↦ a s ^ e) ∈ I ^ k := by
     intro d
@@ -200,6 +203,7 @@ theorem eval₂_mem_pow (hφ : Continuous φ) (ha : HasEval a) (hI : IsAdic I) {
   have hsum := tsum_mem (hI.isClosed_pow k) hval
   rwa [htot.tsum_eq] at hsum
 
+omit [IsTopologicalRing S] [IsLinearTopology S S] in
 /-- **Small coefficient images improve the bound.** If `φ` kills the coefficients below total degree
 `c` and sends every coefficient of `f` into `I ^ k`, evaluation at arguments of `I ^ j` lies in
 `I ^ (k + c * j)`. -/
@@ -209,6 +213,8 @@ theorem eval₂_mem_pow_add_mul (hφ : Continuous φ) (ha : HasEval a) (hI : IsA
     (hlow : ∀ d : σ →₀ ℕ, d.degree < c → φ (coeff d f) = 0) :
     eval₂ φ a f ∈ I ^ (k + c * j) := by
   classical
+  have : IsTopologicalRing S := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  have := hI.isLinearTopology
   have htot := hasSum_eval₂ hφ ha f
   have hval : ∀ d : σ →₀ ℕ, φ (coeff d f) * d.prod (fun s e ↦ a s ^ e) ∈ I ^ (k + c * j) := by
     intro d
@@ -225,6 +231,7 @@ theorem eval₂_mem_pow_add_mul (hφ : Continuous φ) (ha : HasEval a) (hI : IsA
   have hsum := tsum_mem (hI.isClosed_pow (k + c * j)) hval
   rwa [htot.tsum_eq] at hsum
 
+omit [IsTopologicalRing S] [IsLinearTopology S S] in
 /-- **If the coefficient images vanish below total degree `c`, evaluation at arguments of
 `I ^ j` takes values in `I ^ (c * j)`.** -/
 theorem eval₂_mem_pow_mul (hφ : Continuous φ) (ha : HasEval a) (hI : IsAdic I) {j c : ℕ}
@@ -233,12 +240,15 @@ theorem eval₂_mem_pow_mul (hφ : Continuous φ) (ha : HasEval a) (hI : IsAdic 
     eval₂ φ a f ∈ I ^ (c * j) := by
   simpa using eval₂_mem_pow_add_mul (k := 0) hφ ha hI hmem f (fun _ ↦ by simp) hcoeff
 
+omit [IsTopologicalRing S] [IsLinearTopology S S] in
 /-- **The value differs from the image of the constant term by an element of `I`.** Equivalently,
 for arguments drawn from `I` the value of `f` is congruent to the image of its constant term
 modulo `I`. -/
 theorem eval₂_sub_constantCoeff_mem (hφ : Continuous φ) (ha : HasEval a)
     (hI : IsAdic I) (hmem : ∀ i, a i ∈ I) (f : MvPowerSeries σ R) :
     eval₂ φ a f - φ (constantCoeff f) ∈ I := by
+  have : IsTopologicalRing S := hI ▸ I.nonarchimedean.toIsTopologicalRing
+  have := hI.isLinearTopology
   have key := eval₂_mem_pow (k := 1) hφ ha hI (by simpa using hmem)
     (f - C (constantCoeff f)) (by simp)
   rw [pow_one] at key
@@ -303,6 +313,7 @@ variable {S : Type*} [CommRing S] [UniformSpace S] [IsUniformAddGroup S] [Comple
     [T2Space S] [IsTopologicalRing S] [IsLinearTopology S S]
 variable {φ : R →+* S} {a : σ → S} {I : Ideal S}
 
+omit [IsLinearTopology S S] in
 /-- **Evaluation onto an adically complete ring.** Let `S` carry the `I`-adic topology, for which
 it is complete and Hausdorff. If finitely many arguments generate `I` and every class of `S ⧸ I`
 is the image of a coefficient, then every element of `S` is the value of a power series. -/
@@ -310,6 +321,7 @@ theorem eval₂_surjective [Finite σ] (hφ : Continuous φ) (hI : IsAdic I)
     (hspan : Ideal.span (Set.range a) = I)
     (hres : Function.Surjective ((Ideal.Quotient.mk I).comp φ)) :
     Function.Surjective (eval₂ φ a : MvPowerSeries σ R → S) := by
+  have := hI.isLinearTopology
   have ha : HasEval a := hasEval_of_mem hI fun i ↦ hspan ▸ Ideal.subset_span ⟨i, rfl⟩
   -- The ideal of the variables, for which the power series ring is complete, maps onto `I`.
   have hmap : (Ideal.span (Set.range X)).map (eval₂Hom hφ ha) = I := by
