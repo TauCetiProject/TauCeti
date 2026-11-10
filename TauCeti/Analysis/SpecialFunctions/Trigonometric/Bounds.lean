@@ -28,6 +28,12 @@ For angles `α, β > 0` and `γ ≥ 0` with
 second hyperbolic law of cosines it is the hyperbolic cosine of the side opposite `γ` in a
 hyperbolic triangle with angles `α`, `β`, `γ`. These supply the positive sine factors and the
 hyperbolic scale in the matrix representations of triangle groups.
+
+The second-order Taylor remainder of `x ↦ exp (x * I)` is at most `|x| ^ 3`
+(`TauCeti.norm_exp_ofReal_mul_I_sub_le_cube`) and at most `3 * x ^ 2`
+(`TauCeti.norm_exp_ofReal_mul_I_sub_le_sq`). The first bound is sharp to order for small `x`,
+the second for large `x`; splitting an expectation between them is the standard estimate on a
+characteristic function near the origin.
 -/
 
 public section
@@ -179,5 +185,62 @@ theorem exists_cosine_rule_parameter {α β γ : ℝ} (hα : 0 < α) (hβ : 0 < 
   refine ⟨cosh d, exp d, hK, Real.one_lt_exp_iff.2 hd, ?_⟩
   rw [cosh_eq, exp_neg]
   field_simp
+
+/-- The second-order Taylor remainder of `x ↦ exp (x * I)` is controlled by the corresponding
+remainders of cosine and sine. -/
+private theorem norm_exp_ofReal_mul_I_sub_le_abs_add_abs (x : ℝ) :
+    ‖Complex.exp (x * Complex.I) - (1 + x * Complex.I - x ^ 2 / 2)‖ ≤
+      |cos x - 1 + x ^ 2 / 2| + |sin x - x| := by
+  refine (Complex.norm_le_abs_re_add_abs_im _).trans (le_of_eq ?_)
+  congr 2
+  · simp [Complex.exp_ofReal_mul_I_re, pow_two]
+    ring
+  · simp [Complex.exp_ofReal_mul_I_im, pow_two]
+
+/-- The second-order Taylor remainder of `x ↦ exp (x * I)` is at most `|x| ^ 3`. -/
+theorem norm_exp_ofReal_mul_I_sub_le_cube (x : ℝ) :
+    ‖Complex.exp (x * Complex.I) - (1 + x * Complex.I - x ^ 2 / 2)‖ ≤ |x| ^ 3 := by
+  refine (norm_exp_ofReal_mul_I_sub_le_abs_add_abs x).trans ?_
+  have hs : |sin x - x| ≤ |x| ^ 3 / 6 := by
+    rw [abs_sub_comm]
+    exact abs_sub_sin_le x
+  have hc : |cos x - 1 + x ^ 2 / 2| ≤ |x| ^ 3 / 2 := by
+    have h0 := abs_nonneg x
+    have hx2 : x ^ 2 = |x| ^ 2 := (sq_abs x).symm
+    rcases le_or_gt |x| 1 with h | h
+    · -- for `|x| ≤ 1`, the fourth-order cosine bound is stronger
+      have hcos := cos_bound h
+      rw [show cos x - 1 + x ^ 2 / 2 = cos x - (1 - x ^ 2 / 2) by ring]
+      refine hcos.trans ?_
+      have : |x| ^ 4 ≤ |x| ^ 3 := pow_le_pow_of_le_one h0 h (by norm_num)
+      nlinarith [pow_nonneg h0 3]
+    · -- for `|x| > 1`, the remainder is at most `x ^ 2 / 2 ≤ |x| ^ 3 / 2`
+      have h1 := one_sub_sq_div_two_le_cos (x := x)
+      have h2 := cos_le_one x
+      rw [abs_of_nonneg (by linarith)]
+      have : |x| ^ 2 ≤ |x| ^ 3 := pow_le_pow_right₀ h.le (by norm_num)
+      nlinarith
+  nlinarith [pow_nonneg (abs_nonneg x) 3]
+
+/-- The second-order Taylor remainder of `x ↦ exp (x * I)` is at most `3 * x ^ 2`. -/
+theorem norm_exp_ofReal_mul_I_sub_le_sq (x : ℝ) :
+    ‖Complex.exp (x * Complex.I) - (1 + x * Complex.I - x ^ 2 / 2)‖ ≤ 3 * x ^ 2 := by
+  refine (norm_exp_ofReal_mul_I_sub_le_abs_add_abs x).trans ?_
+  have hc : |cos x - 1 + x ^ 2 / 2| ≤ x ^ 2 / 2 := by
+    have h1 := one_sub_sq_div_two_le_cos (x := x)
+    have h2 := cos_le_one x
+    rw [abs_of_nonneg (by linarith)]
+    linarith
+  have hs : |sin x - x| ≤ 2 * x ^ 2 := by
+    have hx2 : x ^ 2 = |x| ^ 2 := (sq_abs x).symm
+    rcases le_or_gt |x| 1 with h | h
+    · have hsin := abs_sub_sin_le x
+      rw [abs_sub_comm] at hsin
+      have : |x| ^ 3 ≤ |x| ^ 2 := pow_le_pow_of_le_one (abs_nonneg x) h (by norm_num)
+      nlinarith [abs_nonneg x]
+    · calc |sin x - x| ≤ |sin x| + |x| := abs_sub _ _
+        _ ≤ |x| + |x| := add_le_add abs_sin_le_abs le_rfl
+        _ ≤ 2 * x ^ 2 := by nlinarith
+  nlinarith [sq_nonneg x]
 
 end TauCeti
