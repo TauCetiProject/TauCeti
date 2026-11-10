@@ -52,11 +52,7 @@ theorem weylUnit_conj_of_cartan_eq_neg_two (hs : IsSerreSystem ℚ CM H E F)
       have hw : (-2 : ℚ) • E j = 0 := by rw [← hweight, hH, zero_lie]
       exact (smul_eq_zero.mp hw).resolve_left (by norm_num)
     simp [hz]
-  have ht : IsSl2Triple (H i) (E i) (F i) :=
-    { h_ne_zero := hH
-      lie_e_f := hs.lie_E_F_self i
-      lie_h_e_nsmul := by simpa [hii, two_smul] using hs.lie_H_E i i
-      lie_h_f_nsmul := by simpa [hii, two_smul] using hs.lie_H_F i i }
+  have ht := hs.isSl2Triple hii hH
   have hne : j ≠ i := by
     intro h
     subst j

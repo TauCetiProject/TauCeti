@@ -20,8 +20,9 @@ rational operator identity from which integral lattice identities can be transpo
 The root-string formulas come from `IsSl2Triple.weylUnit_conj_of_lie_h_eq_neg` and its
 highest-weight counterpart. Serre's nested-bracket identities then identify the conjugated
 raising and lowering operators; functoriality of the nilpotent exponential identifies the
-Weyl units themselves. The raising-operator calculation generalizes the one for the Geck
-carrier in `TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.SingleBond`.
+Weyl units themselves. The Geck single-bond sign comparison in
+`TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Weyl.SingleBond`
+is derived from `TauCeti.IsSerreSystem.weylUnit_conj_E_of_cartan_eq_neg_one`.
 No faithfulness, weight basis or finite-dimensionality is required.
 
 ## References
@@ -51,11 +52,7 @@ theorem weylUnit_conj_E_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
   by_cases hH : H i = 0
   · have hz : E j = 0 := by simpa [hH] using hw.symm
     simp [hz]
-  have ht : IsSl2Triple (H i) (E i) (F i) :=
-    { h_ne_zero := hH
-      lie_e_f := hs.lie_E_F_self i
-      lie_h_e_nsmul := by simpa [hii, two_smul] using hs.lie_H_E i i
-      lie_h_f_nsmul := by simpa [hii, two_smul] using hs.lie_H_F i i }
+  have ht := hs.isSl2Triple hii hH
   have hne : j ≠ i := by intro h; subst j; omega
   exact ht.weylUnit_conj_of_lie_h_eq_neg hE hF hw
     (by rw [← lie_skew, hs.lie_E_F_of_ne j i hne, neg_zero])
@@ -71,11 +68,7 @@ theorem weylUnit_conj_F_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
   by_cases hH : H i = 0
   · have hz : F j = 0 := by simpa [hH] using hw.symm
     simp [hz]
-  have ht : IsSl2Triple (H i) (E i) (F i) :=
-    { h_ne_zero := hH
-      lie_e_f := hs.lie_E_F_self i
-      lie_h_e_nsmul := by simpa [hii, two_smul] using hs.lie_H_E i i
-      lie_h_f_nsmul := by simpa [hii, two_smul] using hs.lie_H_F i i }
+  have ht := hs.isSl2Triple hii hH
   have hne : i ≠ j := by intro h; subst j; omega
   exact ht.weylUnit_conj_of_lie_h_eq_self hE hF hw
     (hs.lie_E_F_of_ne i j hne) (hs.lie_F_lie_F_F_of_eq_neg_one hij)
@@ -94,7 +87,9 @@ theorem weylUnit_braid_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
   let b := weylUnit hEj hFj
   let c (u : Aˣ) : A →+* A :=
     MulSemiringAction.toRingHom (ConjAct Aˣ) A (ConjAct.toConjAct u)
-  have hc (u : Aˣ) (x : A) : c u x = (u : A) * x * ↑u⁻¹ := rfl
+  have hc (u : Aˣ) (x : A) : c u x = (u : A) * x * ↑u⁻¹ := by
+    simp only [c, MulSemiringAction.toRingHom_apply, ConjAct.units_smul_def,
+      ConjAct.ofConjAct_toConjAct]
   have hne : i ≠ j := by intro h; subst j; omega
   have haE : c a (E j) = ⁅E i, E j⁆ :=
     hs.weylUnit_conj_E_of_cartan_eq_neg_one hii hij hEi hFi
@@ -113,11 +108,7 @@ theorem weylUnit_braid_of_cartan_eq_neg_one (hs : IsSerreSystem ℚ CM H E F)
     have hFj0 : F j = 0 := by simpa [hHi0, hij] using (hs.lie_H_F i j).symm
     apply Units.ext
     simp [hEi0, hFi0, hEj0, hFj0]
-  have ht : IsSl2Triple (H j) (E j) (F j) :=
-    { h_ne_zero := hH
-      lie_e_f := hs.lie_E_F_self j
-      lie_h_e_nsmul := by simpa [hjj, two_smul] using hs.lie_H_E j j
-      lie_h_f_nsmul := by simpa [hjj, two_smul] using hs.lie_H_F j j }
+  have ht := hs.isSl2Triple hjj hH
   have hbEj : c b (E j) = -F j := by
     simpa only [hc, b, coe_weylUnit, coe_inv_weylUnit] using weylUnit_conj_e ht hEj hFj
   have hbFj : c b (F j) = -E j := by
