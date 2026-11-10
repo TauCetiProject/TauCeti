@@ -175,15 +175,8 @@ theorem negativePlanePerturbation_neg (hH : Periodic H 1) (w : ℂ) (x : M) :
   · -- At the pole both sides vanish.
     have h : (inf.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter inf
     simp [negativePlanePerturbation_def, h, smoothTransition.zero_of_nonpos]
-  · obtain ⟨k, hk⟩ := exists_endCoord_inf_neg hw
-    have hcast : (1 / 2 + k : ℂ) = ((1 / 2 + k : ℝ) : ℂ) := by push_cast; ring
-    have him : (inf.endCoord (-w)).im + 1 / 2 = (inf.endCoord w).im + (k + 1) := by
-      rw [hk, Complex.add_im, Complex.mul_I_im, hcast, Complex.ofReal_re]
-      ring
-    have hp : H ((inf.endCoord w).im + (k + 1)) = H (inf.endCoord w).im := by
-      simpa using hH.int_mul (k + 1) (inf.endCoord w).im
-    simp only [negativePlanePerturbation_def, re_endCoord_inf_neg, endAngularForm_inf_neg, him, hp,
-      smul_neg]
+  · simp only [negativePlanePerturbation_def, re_endCoord_inf_neg, endAngularForm_inf_neg,
+      apply_im_endCoord_inf_neg_add_half hH hw, smul_neg]
 
 /-- Families indexed by the ends that are `H` at the end `p` and zero at the other two ends
 inherit any property shared by `H` and `0`. -/

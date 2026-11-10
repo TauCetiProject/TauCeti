@@ -210,13 +210,6 @@ theorem perturbationPullback_pairOfPantsPerturbation_exchangeHamiltonians
 
 /-! ### The ends of the family -/
 
-/-- Every `c ∈ [0, 1]` lies within distance `1` of `1`. -/
-private theorem norm_ofReal_sub_one_le {c : ℝ} (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1) :
-    ‖(c : ℂ) - 1‖ ≤ 1 := by
-  rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real,
-    Real.norm_of_nonpos (by linarith)]
-  linarith
-
 /-- The translated plane datum vanishes within distance `2` of `c`. -/
 theorem negativePlanePerturbation_sub_eq_zero {H : ℝ → M → ℝ} {c : ℝ} {w : ℂ}
     (hw : ‖w - c‖ ≤ 2) (x : M) : negativePlanePerturbation H (w - c) x = 0 :=
@@ -244,13 +237,9 @@ private theorem pairOfPantsPerturbation_update_inf_eq_zero {w : ℂ} (h₀ : 1 /
 theorem pairOfPantsPerturbation_update_inf_eq_zero_of_le_norm_sub {c : ℝ} (hc₀ : 0 ≤ c)
     (hc₁ : c ≤ 1) {w : ℂ} (hw : 3 / 2 ≤ ‖w - c‖) (x : M) :
     pairOfPantsPerturbation (update H inf 0) w x = 0 := by
-  refine pairOfPantsPerturbation_update_inf_eq_zero ?_ ?_ x
-  · have := norm_sub_le w (c : ℂ)
-    rw [Complex.norm_real, Real.norm_of_nonneg hc₀] at this
-    linarith
-  · have := norm_sub_le (w - 1) ((c : ℂ) - 1)
-    rw [sub_sub_sub_cancel_right] at this
-    linarith [norm_ofReal_sub_one_le hc₀ hc₁]
+  obtain ⟨h₀, h₁⟩ := half_le_norm_of_le_norm_sub (r := 1) (w := w) (abs_le.2 ⟨by linarith, hc₁⟩)
+    (abs_le.2 ⟨by linarith, by linarith⟩) (by linarith)
+  exact pairOfPantsPerturbation_update_inf_eq_zero h₀ h₁ x
 
 /-- **The family near the inputs.** For `0 ≤ c ≤ 1`, on the disc `|w| ≤ 3` every member of the
 family is the pair-of-pants datum. -/

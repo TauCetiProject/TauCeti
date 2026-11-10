@@ -204,14 +204,7 @@ theorem negativePlaneAlmostComplex_neg (h₀ : ω.Compatible J₀) (hJp : Period
   · -- At the pole both cutoffs vanish.
     have h : (inf.endCoord 0).re = 0 := by simpa using re_endCoord_endCenter inf
     simp [h, smoothTransition.zero_of_nonpos]
-  · obtain ⟨k, hk⟩ := exists_endCoord_inf_neg hw
-    have hcast : (1 / 2 + k : ℂ) = ((1 / 2 + k : ℝ) : ℂ) := by push_cast; ring
-    have him : (inf.endCoord (-w)).im + 1 / 2 = (inf.endCoord w).im + (k + 1) := by
-      rw [hk, Complex.add_im, Complex.mul_I_im, hcast, Complex.ofReal_re]
-      ring
-    have hp : J ((inf.endCoord w).im + (k + 1)) = J (inf.endCoord w).im := by
-      simpa using hJp.int_mul (k + 1) (inf.endCoord w).im
-    rw [him, hp]
+  · rw [apply_im_endCoord_inf_neg_add_half hJp hw]
 
 /-! ### The input part and the plane part of the pair-of-pants structure -/
 

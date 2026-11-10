@@ -82,22 +82,6 @@ variable {M V : Type*}
 private theorem three_lt_two_mul_exp_two_pi : 3 < 2 * Real.exp (2 * π) := by
   nlinarith [Real.add_one_le_exp (2 * π), Real.two_le_pi]
 
-/-- For `-1 ≤ c ≤ 2`, a point at distance more than `3` from `c` is at distance at least `1/2`
-from both inputs `0` and `1`. -/
-private theorem half_le_norm_of_three_lt_norm_sub {c : ℝ} (hc : c ∈ Icc (-1) 2) {w : ℂ}
-    (hw : 3 < ‖w - c‖) : 1 / 2 ≤ ‖w‖ ∧ 1 / 2 ≤ ‖w - 1‖ := by
-  have h₀ : ‖(c : ℂ)‖ ≤ 2 := by
-    rw [Complex.norm_real, Real.norm_eq_abs, abs_le]
-    exact ⟨by linarith [hc.1], hc.2⟩
-  have h₁ : ‖(c : ℂ) - 1‖ ≤ 2 := by
-    rw [← Complex.ofReal_one, ← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs,
-      abs_le]
-    exact ⟨by linarith [hc.1], by linarith [hc.2]⟩
-  have hw₀ := norm_sub_le w (c : ℂ)
-  have hw₁ := norm_sub_le (w - 1) ((c : ℂ) - 1)
-  rw [sub_sub_sub_cancel_right] at hw₁
-  constructor <;> linarith
-
 section Algebraic
 
 variable [AddCommGroup V] [Module ℝ V] [FiniteDimensional ℝ V]
@@ -168,8 +152,9 @@ theorem cayley_exchangeAlmostComplex (h₀ : ω.Compatible J₀) {c : ℝ} (hc :
   rcases le_or_gt ‖w - c‖ (2 * Real.exp (2 * π)) with hw | hw
   · rw [exchangeAlmostComplex_of_norm_le h₀ hw, negativePlaneAlmostComplex_eq_of_norm_le h₀ hw,
       AlmostComplexStructure.cayley_self, add_zero]
-  · obtain ⟨hw₀, hw₁⟩ :=
-      half_le_norm_of_three_lt_norm_sub hc (three_lt_two_mul_exp_two_pi.trans hw)
+  · obtain ⟨hw₀, hw₁⟩ := half_le_norm_of_le_norm_sub (r := 2) (w := w)
+      (abs_le.2 ⟨by linarith [hc.1], hc.2⟩) (abs_le.2 ⟨by linarith [hc.1], by linarith [hc.2]⟩)
+      (by linarith [three_lt_two_mul_exp_two_pi])
     rw [exchangeAlmostComplex_of_lt_norm h₀ hw,
       pairOfPantsAlmostComplex_update_inf_base_eq (hJb := hJ) h₀ hw₀ hw₁,
       AlmostComplexStructure.cayley_self, zero_add]
@@ -305,7 +290,9 @@ theorem contMDiffAt_exchangeAlmostComplex (h₀ : ω.Compatible J₀) {n : ℕ�
       continuous_fst.continuousAt.eventually (isOpen_Ioo.mem_nhds hc)] with p hp hpc
     rcases le_or_gt ‖p.2.1 - p.1‖ (2 * Real.exp (2 * π)) with hle | hgt
     · -- In the annulus `3 < ‖w - c‖ ≤ 2 exp (2π)` both parts are the base structure.
-      obtain ⟨hw₀, hw₁⟩ := half_le_norm_of_three_lt_norm_sub (Ioo_subset_Icc_self hpc) hp
+      obtain ⟨hw₀, hw₁⟩ := half_le_norm_of_le_norm_sub (r := 2) (w := p.2.1)
+        (abs_le.2 ⟨by linarith [hpc.1], hpc.2.le⟩)
+        (abs_le.2 ⟨by linarith [hpc.1], by linarith [hpc.2]⟩) (by linarith)
       rw [exchangeAlmostComplex_of_norm_le h₀ hle,
         pairOfPantsAlmostComplex_update_inf_base_eq (hJb := hJ) h₀ hw₀ hw₁,
         negativePlaneAlmostComplex_eq_of_norm_le h₀ hle]
