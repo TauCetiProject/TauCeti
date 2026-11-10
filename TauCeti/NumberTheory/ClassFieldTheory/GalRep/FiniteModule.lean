@@ -61,6 +61,9 @@ theorem finiteModuleEquivRep_smul (g : Field.absoluteGaloisGroup K) (x : M) :
 
 /-- Continuity of the original action makes the associated representation smooth discrete. -/
 instance : Fact (IsSmoothDiscrete (ZMod (Nat.card M)) (finiteModuleRep K M)) := by
+  -- These local instances reproduce those in `finiteModuleRep`: the module uses the same
+  -- `AddCommGroup.zmodModule` construction, and the continuity proofs are proof-irrelevant.
+  -- Unfolding `finiteModuleRep` therefore gives exactly the restricted representation below.
   let : Module (ZMod (Nat.card M)) M := AddCommGroup.zmodModule
     (fun _ ↦ card_nsmul_eq_zero')
   let : ContinuousSMul (ZMod (Nat.card M)) M := ⟨continuous_of_discreteTopology⟩
