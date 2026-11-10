@@ -87,8 +87,9 @@ nilpositive element of an `sl₂` triple `(h, e, f)`. -/
 theorem exists_isSl2Triple_of_isNilpotent_ad {e : L} (he : IsNilpotent (ad K L e)) (he0 : e ≠ 0) :
     ∃ h f : L, IsSl2Triple h e f := by
   obtain ⟨h, hh, hhe⟩ := exists_mem_range_ad_lie_eq_two_nsmul_of_isNilpotent_ad he
+  have := HasUniqueDiv.of_isTorsionFree K L
   obtain ⟨f, hf, -⟩ := existsUnique_isSl2Triple_of_isNilpotent_ad he hhe hh
-    (left_ne_zero_of_lie_eq_nsmul K hhe two_ne_zero he0)
+    (left_ne_zero_of_lie_eq_nsmul hhe two_ne_zero he0)
   exact ⟨h, f, hf⟩
 
 /-- In a finite-dimensional Lie algebra with nondegenerate Killing form over a field of
@@ -214,9 +215,10 @@ theorem exists_isSl2Triple_iff_sub_mem (t : IsSl2Triple h e f) {h' : L} :
     have hh : h' ∈ LinearMap.range (ad K L e) := by
       rw [← sub_add_cancel h' h]
       exact add_mem hrange ⟨f, by rw [ad_apply, t.lie_e_f]⟩
+    have := HasUniqueDiv.of_isTorsionFree K L
     obtain ⟨f', hf', -⟩ := existsUnique_isSl2Triple_of_isNilpotent_ad
       (t.isNilpotent_toEnd_e (K := K) (M := L)) hhe hh
-      (left_ne_zero_of_lie_eq_nsmul K hhe two_ne_zero t.e_ne_zero)
+      (left_ne_zero_of_lie_eq_nsmul hhe two_ne_zero t.e_ne_zero)
     exact ⟨f', hf'⟩
 
 variable [LieAlgebra ℚ L]

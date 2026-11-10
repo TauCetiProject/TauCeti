@@ -461,6 +461,28 @@ lemma Bialgebra.CounitAlgebra.toAlgHom_eq_one_ofConv :
 
 end BialgebraCommTargetPoint
 
+section InclusionComponents
+
+variable {R A C : Type*} [CommSemiring R] [Semiring A] [Bialgebra R A] [CommSemiring C]
+  [Algebra R C]
+
+/-- The first component of the inclusion of a point `g` into the dual-number points is `g`. -/
+lemma _root_.WithConv.fstHom_comp_mapValue_inlAlgHom (g : WithConv (A →ₐ[R] C)) :
+    (TrivSqZeroExt.fstHom R C C).toLinearMap ∘ₗ
+        (AlgHom.mapValue (H := A) (TrivSqZeroExt.inlAlgHom R C C) g).ofConv.toLinearMap =
+      g.ofConv.toLinearMap := by
+  ext x
+  simp [AlgHom.mapValue_apply]
+
+/-- The second component of the inclusion of a point into the dual-number points is `0`. -/
+lemma _root_.WithConv.sndHom_comp_mapValue_inlAlgHom (g : WithConv (A →ₐ[R] C)) :
+    (TrivSqZeroExt.sndHom C C).restrictScalars R ∘ₗ
+        (AlgHom.mapValue (H := A) (TrivSqZeroExt.inlAlgHom R C C) g).ofConv.toLinearMap = 0 := by
+  ext x
+  simp [AlgHom.mapValue_apply]
+
+end InclusionComponents
+
 section Hopf
 
 open TrivSqZeroExt WithConv _root_.Bialgebra Bialgebra.CounitAlgebra

@@ -653,8 +653,7 @@ private theorem pairOfPantsPerturbation_add_const_eq (c : Puncture → ℝ → �
         pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) (Complex.equivRealProdCLM.symm z) x₀ v
     := by
   funext z x
-  rw [pairOfPantsPerturbation_add H (fun q t (_ : M) ↦ c q t), add_apply,
-    pairOfPantsPerturbation_const_target c _ x x₀]
+  rw [pairOfPantsPerturbation_add_const, add_apply, pairOfPantsPerturbation_const_target c _ x x₀]
 
 omit [TopologicalSpace M] in
 /-- The components of the perturbation of functions of time do not depend on the target point. -/
@@ -1128,10 +1127,8 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
   set T := Complex.equivRealProdCLM.symm ⁻¹' truncation R
   set A : Puncture → Set (ℝ × ℝ) := fun q => endChart q '' endPiece q R
   set C := T \ ⋃ q, A q
-  have hT : IsCompact T :=
-    Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
-  have hTS : T ⊆ thricePuncturedSphereReal := fun z hz =>
-    mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
+  have hT : IsCompact T := isCompact_preimage_truncation R
+  have hTS : T ⊆ thricePuncturedSphereReal := preimage_truncation_subset_thricePuncturedSphereReal R
   have hE := hω.integrableOn_floerEnergyDensity_pairOfPantsPerturbation hH hHs hu hT hTS
   have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv
     isOpen_thricePuncturedSphereReal hu stdComplexLineReal stdComplexLineImag
@@ -1335,11 +1332,8 @@ theorem integrableOn_truncation_pairOfPantsPerturbation (ω : SymplecticForm V)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z))
         (Complex.equivRealProdCLM.symm ⁻¹' truncation R) := by
-  have hT : IsCompact (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
-    Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
-  have hTS : Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal :=
-    fun z hz =>
-      mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
+  have hT := isCompact_preimage_truncation R
+  have hTS := preimage_truncation_subset_thricePuncturedSphereReal R
   have hKs := contDiffOn_pairOfPantsPerturbation hH hHs 1
   have hKt := contDiffOn_pairOfPantsPerturbation hH hHs Complex.I
   have hdu := hu.continuousOn_fderiv_of_isOpen isOpen_thricePuncturedSphereReal le_rfl

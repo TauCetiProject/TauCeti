@@ -35,6 +35,10 @@ when endomorphisms are identified with tensors, without adding an instance on th
   identity, on either side, is `1`-Lipschitz in the operator.
 * `TauCeti.apply_self_pos_of_apply_tmul_tmul`: the tensor product of two positive definite
   Hermitian forms is positive definite.
+* `TensorProduct.instCompleteSpaceOfFiniteDimensional`: the tensor product of two
+  finite-dimensional inner product spaces is complete, which discharges completeness hypotheses
+  on tensor products in adjoint statements for finite-dimensional factors.
+* `ContinuousLinearMap.rTensor_lTensor_apply_comm`: `f ⊗ 1` and `1 ⊗ g` commute.
 * `InnerProductSpace.tensorDualMetric_tmul`: on pure tensors, the metric on `F ⊗ E*` is the
   product of the inner product of `F` and the dual metric of `E`.
 * `InnerProductSpace.tensorDualMetric_eq_trace`: evaluation carries this metric to the
@@ -123,6 +127,32 @@ theorem apply_self_pos_of_apply_tmul_tmul {h₁ : W₁ →ₗ⋆[𝕜] W₁ →�
 end Sesquilinear
 
 end TauCeti
+
+namespace TensorProduct
+
+variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
+
+/-- The Hilbert tensor product of two finite-dimensional inner product spaces is complete, so
+operators between such tensor products have adjoints. -/
+instance instCompleteSpaceOfFiniteDimensional : CompleteSpace (E ⊗[𝕜] F) :=
+  FiniteDimensional.complete 𝕜 _
+
+end TensorProduct
+
+namespace ContinuousLinearMap
+
+variable {𝕜 X₀ X₁ Y₀ Y₁ : Type*} [RCLike 𝕜] [NormedAddCommGroup X₀] [InnerProductSpace 𝕜 X₀]
+  [NormedAddCommGroup X₁] [InnerProductSpace 𝕜 X₁] [NormedAddCommGroup Y₀] [InnerProductSpace 𝕜 Y₀]
+  [NormedAddCommGroup Y₁] [InnerProductSpace 𝕜 Y₁]
+
+/-- `f ⊗ 1` and `1 ⊗ g` commute: the pointwise form of Mathlib's
+`ContinuousLinearMap.rTensor_comp_lTensor` and `ContinuousLinearMap.lTensor_comp_rTensor`. -/
+theorem rTensor_lTensor_apply_comm (f : X₀ →L[𝕜] X₁) (g : Y₀ →L[𝕜] Y₁) (x : X₀ ⊗[𝕜] Y₀) :
+    f.rTensor Y₁ (g.lTensor X₀ x) = g.lTensor X₁ (f.rTensor Y₀ x) := by
+  rw [← comp_apply, rTensor_comp_lTensor, ← comp_apply, lTensor_comp_rTensor]
+
+end ContinuousLinearMap
 
 namespace InnerProductSpace
 

@@ -131,7 +131,6 @@ private lemma exists_equiv_of_algHom_reverse_star (hQ : Q.Nondegenerate)
         ℍ[𝓩,(a : _),0,(b : _)],
       ∀ x, e (reverseEven Q x) = star (e x) := by
   let _ : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
-  let _ : IsScalarTower K 𝓩 (even Q) := Subalgebra.isScalarTower_centerAlgebra
   let _ := hfield.toField
   let _ : Invertible (2 : 𝓩) := IsScalarTower.invertibleAlgebraCoeNat K 𝓩 2
   let _ : IsSimpleRing ℍ[𝓩,(a : 𝓩),0,(b : 𝓩)] :=
@@ -170,8 +169,6 @@ theorem exists_evenQuaternionEquiv_of_finrank_eq_four_of_isField_center
           ℍ[Subalgebra.center K (even Q),(a : _),0,(b : _)],
         ∀ x, e (reverseEven Q x) = star (e x) := by
   obtain ⟨x, y, z, hxy, hxz, hyz, hx, hy, hz⟩ := hQ.exists_orthogonal_triple (by omega)
-  let _ : IsScalarTower K (Subalgebra.center K (even Q)) (even Q) :=
-    Subalgebra.isScalarTower_centerAlgebra
   let a : (Subalgebra.center K (even Q))ˣ :=
     Units.map (algebraMap K (Subalgebra.center K (even Q))).toMonoidHom
       (Units.mk0 (-(Q x * Q y)) (neg_ne_zero.mpr (mul_ne_zero hx hy)))

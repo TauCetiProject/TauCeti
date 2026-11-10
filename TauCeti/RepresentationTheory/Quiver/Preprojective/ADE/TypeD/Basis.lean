@@ -64,7 +64,7 @@ open _root_.Quiver PathAlgebra DoubledQuiver CategoryTheory
 
 variable (k : Type*) [Field k] {n : ℕ}
 
-attribute [local instance] forkNeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 /-! ### The word operators -/
 
