@@ -125,7 +125,7 @@ theorem functionFieldEquiv_functionFieldMap_homOfAlgHom (z : F) :
 functions**: a dominant `k`-morphism `f : X' ⟶ X` is `homOfAlgHom φ` exactly when, under the
 identifications `k(X) ≃ F` and `k(X') ≃ F'`, its pullback of rational functions is `φ`. -/
 theorem eq_homOfAlgHom_iff (f : twoChartModel hF' hx' ⟶ twoChartModel hF hx)
-    [f.IsOver (Spec (.of k))] [IsDominant f] :
+    [IsDominant f] :
     f = homOfAlgHom hF hF' hx hx' hxt hx't φ ↔
       ∀ z, functionFieldEquiv hx't (f.functionFieldMap ((functionFieldEquiv hxt).symm z)) =
         φ z := by

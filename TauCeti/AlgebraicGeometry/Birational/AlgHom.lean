@@ -103,12 +103,18 @@ theorem functionFieldMap_homOfFunctionFieldAlgHom :
 /-- **A dominant morphism into a proper scheme is determined by its pullback of rational
 functions**: a dominant `k`-morphism `f : X ⟶ Y` is `homOfFunctionFieldAlgHom hX ψ` exactly when
 its pullback of rational functions is `ψ`. -/
-theorem eq_homOfFunctionFieldAlgHom_iff (f : X ⟶ Y) [f.IsOver (Spec (.of k))] [IsDominant f] :
+theorem eq_homOfFunctionFieldAlgHom_iff (f : X ⟶ Y) [IsDominant f] :
     f = homOfFunctionFieldAlgHom hX ψ ↔ ∀ a, f.functionFieldMap a = ψ a := by
-  refine ⟨fun h a ↦ ?_, fun h ↦ Hom.ext_of_functionFieldMap_eq (Spec (.of k)) ?_⟩
+  refine ⟨fun h a ↦ ?_, fun h ↦ ?_⟩
   · subst h
     simp
-  rw [functionFieldMap_homOfFunctionFieldAlgHom]
+  have : Y.IsSeparated := by
+    rw [Scheme.isSeparated_iff, ← Limits.terminal.comp_from (Y ↘ Spec (.of k))]
+    infer_instance
+  refine AlgebraicGeometry.ext_of_isDominant (X.fromSpecStalk (genericPoint X)) ?_
+  rw [← Hom.SpecMap_functionFieldMap_fromSpecStalk, ← Hom.SpecMap_functionFieldMap_fromSpecStalk,
+    functionFieldMap_homOfFunctionFieldAlgHom]
+  congr 2
   ext a
   exact h a
 
