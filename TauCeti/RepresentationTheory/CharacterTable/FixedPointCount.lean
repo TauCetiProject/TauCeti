@@ -15,15 +15,16 @@ public import TauCeti.RepresentationTheory.Induction.Permutation
 Let `G` be a group acting on finite types `X` and `Y`, and let `k` be a field of
 characteristic zero. The character of the permutation representation `k[X]` at `g` is the number
 of points of `X` fixed by `g`, cast into `k` (`TauCeti.char_ofMulAction`), and over a field of
-characteristic zero a representation is determined by its character
-(`Representation.nonempty_equiv_of_character_eq`). Characteristic zero makes the cast injective,
-so the two statements combine into an exact criterion:
+characteristic zero a finite-dimensional representation of a finite group is determined by its
+character (`Representation.nonempty_equiv_of_character_eq`). The two actions factor through a
+finite group, namely the image of `G` in `Perm X × Perm Y`, and the characteristic-zero hypothesis
+makes the cast injective, so the two statements combine into an exact criterion:
 
 `k[X] ≃ k[Y]` as representations of `G` **if and only if** `#X^g = #Y^g` for every `g : G`.
 
 Both directions need the characteristic-zero hypothesis, for different reasons. Without it the
 fixed-point counts are only visible modulo the characteristic, so an isomorphism says less; and
-without it a representation is not determined by its character at all.
+without it a representation of a finite group is not determined by its character at all.
 
 The criterion is strictly weaker than an equivalence of `G`-sets: an equivariant equivalence
 `X ≃ Y` gives an equivalence of permutation representations
@@ -37,11 +38,6 @@ condition says that `H` and `K` are almost conjugate, meeting every conjugacy cl
 same number of elements (`Subgroup.almostConjugate_iff_forall_natCard_fixedBy_eq`). Nothing about
 Gassmann's examples is proved here; what is proved is the criterion they are examples for.
 
-One numerical consequence is recorded along the way, and it needs no assumption on the
-characteristic: equivalent permutation representations come from `G`-sets of the same size, because
-an equivalence of representations is in particular a linear equivalence and `k[X]` has dimension
-`#X` over any field. In the subgroup form this is the equality of the two indices.
-
 ## Main statements
 
 * `TauCeti.natCard_fixedBy_eq_of_nonempty_equiv_ofMulAction`: equivalent permutation representations
@@ -49,12 +45,10 @@ an equivalence of representations is in particular a linear equivalence and `k[X
 * `TauCeti.nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq`: **the classification** —
   over a field of characteristic zero, two permutation representations of a group on finite sets are
   equivalent exactly when the fixed-point counts of the underlying `G`-sets agree.
-* `TauCeti.natCard_eq_of_nonempty_equiv_ofMulAction`: the cardinalities agree, over any field.
 * `TauCeti.nonempty_iso_repOfMulAction_iff_forall_natCard_fixedBy_eq`: the same classification,
   read on the objects of `Rep k G`.
 * `TauCeti.nonempty_equiv_ind_trivial_iff_forall_natCard_fixedBy_eq`: the subgroup form, for the
-  representations induced from the trivial representations of two subgroups, with
-  `TauCeti.index_eq_of_nonempty_equiv_ind_trivial` its numerical consequence.
+  representations induced from the trivial representations of two subgroups.
 * `TauCeti.almostConjugate_iff_nonempty_equiv_ofMulAction`: two subgroups are almost conjugate
   exactly when the permutation representations on their coset spaces are equivalent.
 
@@ -96,16 +90,13 @@ omit [Finite G] in
 /-- **Permutation representations in characteristic zero are classified by fixed-point counts.**
 For a group `G` acting on finite types `X` and `Y` and a field `k` of characteristic zero,
 the permutation representations `k[X]` and `k[Y]` are equivalent exactly when `g` fixes as many
-points of `X` as of `Y`, for every `g : G`.
-
-The forward direction is `TauCeti.natCard_fixedBy_eq_of_nonempty_equiv_ofMulAction`; the backward
-one factors the two actions through the finite group `Perm X × Perm Y`, reads the fixed-point
-counts as the permutation characters of the image of `G`, and appeals to
-`Representation.nonempty_equiv_of_character_eq` there. -/
+points of `X` as of `Y`, for every `g : G`. -/
 theorem nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq [CharZero k] :
     Nonempty ((ofMulAction k G X).Equiv (ofMulAction k G Y)) ↔
       ∀ g : G, Nat.card (fixedBy X g) = Nat.card (fixedBy Y g) := by
   refine ⟨fun h g ↦ natCard_fixedBy_eq_of_nonempty_equiv_ofMulAction k h g, fun h ↦ ?_⟩
+  -- Backward direction: factor both actions through the finite group `Perm X × Perm Y`, read the
+  -- fixed-point counts as permutation characters of the image of `G`, and compare characters there.
   let f : G →* Equiv.Perm X × Equiv.Perm Y :=
     (MulAction.toPermHom G X).prod (MulAction.toPermHom G Y)
   let ρX : Representation k f.range (MonoidAlgebra k X) :=
@@ -125,19 +116,6 @@ theorem nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq [CharZero k] :
   refine ⟨.mk φ.toLinearEquiv fun g ↦ ?_⟩
   rw [hX, hY]
   exact φ.isIntertwining' _
-
-omit [Finite G] [Finite X] [Finite Y] in
-/-- **Equivalent permutation representations come from `G`-sets of the same size.** This needs no
-assumption on the characteristic: an equivalence of representations is in particular a linear
-equivalence, and `k[X]` has dimension `#X` over any field. -/
-theorem natCard_eq_of_nonempty_equiv_ofMulAction
-    (h : Nonempty ((ofMulAction k G X).Equiv (ofMulAction k G Y))) :
-    Nat.card X = Nat.card Y := by
-  obtain ⟨φ⟩ := h
-  have hrank := ((MonoidAlgebra.coeffLinearEquiv k (S := k) (M := X)).symm.trans
-    (φ.toLinearEquiv.trans (MonoidAlgebra.coeffLinearEquiv k (S := k) (M := Y)))).rank_eq
-  rw [rank_finsupp_self, rank_finsupp_self] at hrank
-  exact Nat.card_congr (Cardinal.eq.mp (Cardinal.lift_inj.mp hrank)).some
 
 omit [Finite G] in
 /-- **The classification in `Rep k G`.** The permutation representations of two finite `G`-sets are
@@ -176,21 +154,6 @@ theorem nonempty_equiv_ind_trivial_iff_forall_natCard_fixedBy_eq [CharZero k] :
     (nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq (X := G ⧸ H) (Y := G ⧸ K) k)
   exact ⟨fun ⟨φ⟩ ↦ ⟨((indTrivialEquiv k H).symm.trans φ).trans (indTrivialEquiv k K)⟩,
     fun ⟨φ⟩ ↦ ⟨((indTrivialEquiv k H).trans φ).trans (indTrivialEquiv k K).symm⟩⟩
-
-omit [Finite G] in
-/-- **Equivalently induced trivial representations force equal indices.** The coset space `G ⧸ H`
-has cardinality `H.index`, so this is
-`TauCeti.natCard_eq_of_nonempty_equiv_ofMulAction` on the coset spaces, read through
-`Subgroup.index = Nat.card (G ⧸ ·)`. It is the one numerical condition on `H` and `K` that is
-visible without any character computation, and so holds over every field. -/
-theorem index_eq_of_nonempty_equiv_ind_trivial
-    (h : Nonempty (((Representation.trivial k H k).ind H.subtype).Equiv
-      ((Representation.trivial k K k).ind K.subtype))) :
-    H.index = K.index := by
-  rw [Subgroup.index_eq_card, Subgroup.index_eq_card]
-  refine natCard_eq_of_nonempty_equiv_ofMulAction (G := G) (X := G ⧸ H) (Y := G ⧸ K) k ?_
-  obtain ⟨φ⟩ := h
-  exact ⟨((indTrivialEquiv k H).symm.trans φ).trans (indTrivialEquiv k K)⟩
 
 /-- **Almost-conjugate subgroups are those with equivalent permutation representations.** Two
 subgroups `H` and `K` of a finite group `G` meet every conjugacy class of `G` in the same number of
