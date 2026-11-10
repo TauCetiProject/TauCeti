@@ -200,10 +200,11 @@ residue degree, so that residue degree and its coefficient must equal one. -/
 theorem exists_place_degree_eq_one_of_nonneg_of_degree_eq_one
     {D : Divisor k F} (hD : 0 ≤ D) (hdeg : degree D = 1) :
     ∃ P : Place k F, P ∈ D.support ∧ P.degree = 1 := by
-  obtain ⟨P, hP, hne⟩ := Finset.exists_ne_zero_of_sum_ne_zero
-    (show ∑ P ∈ D.support, D P * (P.degree : ℤ) ≠ 0 by
-      rw [← degree_eq_sum_support, hdeg]
-      exact one_ne_zero)
+  have hsum : degree D ≠ 0 := by
+    rw [hdeg]
+    exact one_ne_zero
+  rw [degree_eq_sum_support] at hsum
+  obtain ⟨P, hP, hne⟩ := Finset.exists_ne_zero_of_sum_ne_zero hsum
   refine ⟨P, hP, ?_⟩
   have hle : (P.degree : ℤ) ≤ 1 := by
     rw [← hdeg]
