@@ -161,14 +161,10 @@ private theorem lintegral_floerEnergyDensity_signedEndChart_ne_top (ω : Symplec
     (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u
   have hs : MeasurableSet (Ioi (2 : ℝ) ×ˢ Ico (0 : ℝ) 1) := measurableSet_Ioi.prod measurableSet_Ico
-  -- The segment `t = 1` of the closed strip is a null set.
-  have hnull : volume (Ioi (2 : ℝ) ×ˢ ({1} : Set ℝ)) = 0 := by
-    rw [Measure.volume_eq_prod, Measure.prod_prod, Real.volume_singleton, mul_zero]
-  have hsub : Ioi (2 : ℝ) ×ˢ Icc (0 : ℝ) 1 ⊆ Ioi 2 ×ˢ Ico 0 1 ∪ Ioi 2 ×ˢ {1} := by
-    rintro ⟨s, t⟩ ⟨hs, ht₀, ht₁⟩
-    rcases ht₁.lt_or_eq with ht | ht
-    · exact Or.inl ⟨hs, ht₀, ht⟩
-    · exact Or.inr ⟨hs, ht⟩
+  -- The closed strip is the half-open strip up to the null segment `t = 1`.
+  have hsets : (Ioi (2 : ℝ) ×ˢ Ico (0 : ℝ) 1 : Set (ℝ × ℝ)) =ᵐ[volume] Ioi 2 ×ˢ Icc 0 1 := by
+    rw [Measure.volume_eq_prod]
+    exact Measure.set_prod_ae_eq EventuallyEq.rfl Ico_ae_eq_Icc
   -- On the half-open strip, change variables along the injective signed end chart.
   have hchange : ∫⁻ ζ in Ioi 2 ×ˢ Ico 0 1, ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0)
       (fun w x ↦ q.endSign * H q (q.endSign * w.2) x) (u ∘ signedEndChart q) ζ) =
@@ -186,14 +182,8 @@ private theorem lintegral_floerEnergyDensity_signedEndChart_ne_top (ω : Symplec
   have himage : signedEndChart q '' (Ioi 2 ×ˢ Ico 0 1) ⊆ thricePuncturedSphereReal := by
     rintro _ ⟨ζ, hζ, rfl⟩
     exact signedEndChart_mem_thricePuncturedSphereReal (lt_trans two_pos hζ.1)
-  refine ne_top_of_le_ne_top hE ?_
-  calc _ ≤ ∫⁻ ζ in Ioi 2 ×ˢ Ico 0 1 ∪ Ioi 2 ×ˢ {1}, ENNReal.ofReal
-          (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w x ↦ q.endSign * H q (q.endSign * w.2) x)
-            (u ∘ signedEndChart q) ζ) := lintegral_mono_set hsub
-    _ ≤ _ := lintegral_union_le _ _ _
-    _ = ∫⁻ z in signedEndChart q '' (Ioi 2 ×ˢ Ico 0 1), ENNReal.ofReal (e z) := by
-        rw [setLIntegral_measure_zero _ _ hnull, add_zero, hchange]
-    _ ≤ _ := lintegral_mono_set himage
+  rw [← setLIntegral_congr hsets, hchange]
+  exact ne_top_of_le_ne_top hE (lintegral_mono_set himage)
 
 omit [FiniteDimensional ℝ V] in
 /-- The action of the loops of an end read in the signed end chart: replacing `H` by `±H(±t)` and
