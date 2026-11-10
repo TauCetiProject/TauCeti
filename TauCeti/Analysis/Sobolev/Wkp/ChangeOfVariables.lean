@@ -404,6 +404,41 @@ theorem add_const (a : E) (hA : MapsTo (· + a) U V) :
       pos := one_pos
       le_abs_det := fun x _ ↦ by simp [ContinuousLinearMap.det] }
 
+/-- **Changes of variables on relatively compact sets.** Let `Φ` be `Cᵏ` with `k ≥ 1` on an open
+set `Ω`. If the closure of an open `U` is compact and contained in `Ω`, `Φ` is injective on `U`
+with invertible derivative on `closure U`, and `Φ` maps `U` into `V`, then `Φ` is a change of
+variables of order `k` from `U` into `V`. The constant `L` is a bound for the derivatives of
+orders `1` through `k` on `closure U`, and `c` is a positive lower bound for the absolute value
+of the Jacobian determinant there; both exist by compactness. -/
+theorem exists_of_isCompact_closure [FiniteDimensional ℝ E] {Ω : Set E} (hΩ : IsOpen Ω)
+    (hk : 1 ≤ k) (hΦ : ContDiffOn ℝ k Φ Ω) (hinj : InjOn Φ U)
+    (hdet : ∀ x ∈ closure (U : Set E), (fderiv ℝ Φ x).det ≠ 0)
+    (hUc : IsCompact (closure (U : Set E))) (hUΩ : closure (U : Set E) ⊆ Ω)
+    (hUV : MapsTo Φ U V) : ∃ L c, IsChangeOfVariables k U V Φ L c := by
+  have hk' : (1 : ℕ∞ω) ≤ k := by exact_mod_cast hk
+  have hsum : ContinuousOn
+      (fun x => ∑ i ∈ Finset.range (k + 1), ‖iteratedFDeriv ℝ i Φ x‖) (closure (U : Set E)) :=
+    continuousOn_finsetSum _ fun i hi => (ContinuousOn.continuousOn_iteratedFDeriv hΦ hΩ
+      (by exact_mod_cast Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))).norm.mono hUΩ
+  obtain ⟨L, hL⟩ := hUc.exists_bound_of_continuousOn hsum
+  have hdetc : ContinuousOn (fun x => |(fderiv ℝ Φ x).det|) (closure (U : Set E)) :=
+    (ContinuousLinearMap.continuous_det.comp_continuousOn
+      ((hΦ.continuousOn_fderiv_of_isOpen hΩ hk').mono hUΩ)).abs
+  obtain ⟨c, hc, hcdet⟩ := hUc.exists_forall_le' hdetc fun x hx => abs_pos.2 (hdet x hx)
+  refine ⟨L, c,
+    { contDiffOn := hΦ.mono (subset_closure.trans hUΩ)
+      differentiableOn :=
+        (hΦ.mono (subset_closure.trans hUΩ)).differentiableOn (by positivity)
+      injOn := hinj
+      mapsTo := hUV
+      norm_iteratedFDeriv_le := fun i _ hik x hx => ?_
+      pos := hc
+      le_abs_det := fun x hx => hcdet x (subset_closure hx) }⟩
+  have hx := hL x (subset_closure hx)
+  rw [Real.norm_of_nonneg (Finset.sum_nonneg fun _ _ => norm_nonneg _)] at hx
+  exact (Finset.single_le_sum (fun j _ => norm_nonneg (iteratedFDeriv ℝ j Φ x))
+    (Finset.mem_range.2 (Nat.lt_succ_of_le hik))).trans hx
+
 variable [MeasurableSpace E] [BorelSpace E] {mu : Measure E}
 
 /-- A change of variables is almost everywhere measurable on `U`. -/
