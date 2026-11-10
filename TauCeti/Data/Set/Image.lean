@@ -37,11 +37,15 @@ lemma image_image_inter_eq_inter_image {α β γ δ : Type*} {A s : Set α} {B :
     ι '' (g '' (s ∩ A)) = U ∩ g' '' (f '' s ∩ B) := by
   grind [MapsTo]
 
+end TauCeti
+
+namespace Equiv
+
 /-- If a map `g` agrees on `s` with an equivalence of subtypes `s ≃ t`, then `g` is injective
 on `s`. -/
-theorem injOn_of_equiv_apply_eq {α β : Type*} {s : Set α} {t : Set β} {g : α → β} (e : s ≃ t)
+theorem injOn_of_apply_eq {α β : Type*} {s : Set α} {t : Set β} {g : α → β} (e : s ≃ t)
     (he : ∀ z : s, (e z : β) = g z) : InjOn g s :=
   fun x hx y hy hxy => congrArg Subtype.val
     (e.injective (Subtype.ext ((he ⟨x, hx⟩).trans (hxy.trans (he ⟨y, hy⟩).symm))))
 
-end TauCeti
+end Equiv
