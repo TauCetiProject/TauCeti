@@ -194,6 +194,14 @@ theorem cpow_inv_cpow_of_arg_mem_Ioc {u : ℂ} {r : ℝ} (hr : 0 < r)
       u.arg * r⁻¹ ≤ (r * Real.pi) * r⁻¹ := mul_le_mul_of_nonneg_right harg.2 (inv_nonneg.mpr hr.le)
       _ = Real.pi := by field_simp
 
+/-- The power coordinate `I * f ^ (1 / β)` is injective on a set where `f` is injective and the
+principal `β`-th root of `f` can be recovered by the `β`-th power. -/
+theorem injOn_I_mul_cpow_inv {S : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (hinj : Set.InjOn f S)
+    (hrecover : ∀ z ∈ S, (f z ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z) :
+    Set.InjOn (fun z => I * f z ^ ((β⁻¹ : ℝ) : ℂ)) S := fun z hz w hw hzw => by
+  have hp : f z ^ ((β⁻¹ : ℝ) : ℂ) = f w ^ ((β⁻¹ : ℝ) : ℂ) := mul_left_cancel₀ I_ne_zero hzw
+  exact hinj hz hw (by rw [← hrecover z hz, ← hrecover w hw, hp])
+
 /-- **A local holomorphic branch of the `k`-th root.** Near a nonzero `z₀` with a chosen `k`-th
 root `c`, there is a `k`-th root function which is complex differentiable at `z₀` and takes the
 value `c` there, namely `z ↦ c * (z / z₀) ^ (k⁻¹ : ℂ)`. -/

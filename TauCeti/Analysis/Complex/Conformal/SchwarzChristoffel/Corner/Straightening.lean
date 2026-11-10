@@ -48,38 +48,6 @@ open scoped ComplexConjugate
 
 namespace TauCeti
 
-private theorem pi_mul_div_two_lt_pi {β : ℝ} (hβ : β < 2) :
-    Real.pi * β / 2 < Real.pi := by
-  nlinarith [mul_pos Real.pi_pos (sub_pos.mpr hβ)]
-
-/-- The closed upper part of the corner stays in the closed sector: the argument condition on the
-open upper part passes to its closure by continuity of `f`. -/
-private theorem arg_sub_mem_Icc_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {w : ℂ} {β : ℝ}
-    (hΩopen : IsOpen Ω) (hβ : β ∈ Ioo (0 : ℝ) 2)
-    (hfcont : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
-    (hsector_open : ∀ z ∈ Ω ∩ {z : ℂ | 0 < z.im},
-      (f z - w).arg ∈ Ioo (-(Real.pi * β / 2)) (Real.pi * β / 2))
-    {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) :
-    (f z - w).arg ∈ Icc (-(Real.pi * β / 2)) (Real.pi * β / 2) := by
-  have hangle : Real.pi * β / 2 ∈ Icc (0 : ℝ) Real.pi :=
-    ⟨div_nonneg (mul_nonneg Real.pi_pos.le hβ.1.le) (by norm_num),
-      (pi_mul_div_two_lt_pi hβ.2).le⟩
-  have hzclosure : z ∈ closure (Ω ∩ {y : ℂ | 0 < y.im}) := by
-    apply hΩopen.inter_closure
-    exact ⟨hz.1, by simpa only [Complex.closure_setOfPred_lt_im, mem_ofPred_eq] using hz.2⟩
-  have hqcont : ContinuousWithinAt (fun y => f y - w) (Ω ∩ {y : ℂ | 0 < y.im}) z :=
-    ((hfcont z hz).sub continuousWithinAt_const).mono fun y hy =>
-      ⟨hy.1, by simpa only [mem_ofPred_eq] using hy.2.le⟩
-  have htarget : IsClosed {q : ℂ | ‖q‖ * Real.cos (Real.pi * β / 2) ≤ q.re} :=
-    isClosed_le (continuous_norm.mul continuous_const) Complex.continuous_re
-  apply (arg_mem_Icc_iff_norm_mul_cos_le_re hangle).2
-  have hmem : f z - w ∈ closure {q : ℂ | ‖q‖ * Real.cos (Real.pi * β / 2) ≤ q.re} := by
-    apply hqcont.mem_closure hzclosure
-    intro y hy
-    exact (arg_mem_Icc_iff_norm_mul_cos_le_re hangle).1
-      (Ioo_subset_Icc_self (hsector_open y hy))
-  simpa only [htarget.closure_eq, mem_ofPred_eq] using hmem
-
 /-- A point of the open upper part lies in the closed upper part, and is not the corner. -/
 private theorem mem_closed_and_ne_of_mem_upper {Ω : Set ℂ} {f : ℂ → ℂ} {x : ℝ} {w : ℂ}
     (hq_ne : ∀ z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}, z ≠ (x : ℂ) → f z - w ≠ 0) {z : ℂ}

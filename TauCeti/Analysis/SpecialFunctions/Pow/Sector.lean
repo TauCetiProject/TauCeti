@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
+import Mathlib.Analysis.Complex.ReImTopology
+
 /-!
 # Principal complex powers on a sector
 
@@ -20,6 +22,10 @@ from its principal root is `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc`.
 * `TauCeti.arg_mem_Icc_iff_norm_mul_cos_le_re` characterizes a closed symmetric sector without
   referring to the discontinuous argument function on the target side.
 * `TauCeti.cpow_inv_re_pos_of_arg_mem_sector` maps an open sector into the right half-plane.
+* `TauCeti.arg_sub_mem_Icc_of_arg_mem_sector` passes the open-sector condition on the upper part
+  of a set to its closed upper part by continuity.
+* `TauCeti.im_I_mul_cpow_inv_eq_zero` sends the boundary rays of a sector to the real axis under
+  the power coordinate `I * w ^ (1 / β)`.
 * `TauCeti.cos_mul_norm_le_re_exp_mul_cpow` bounds `z ^ β` on the closed upper half-plane below
   by a cone inequality, for `0 ≤ β ≤ 2`.
 -/
@@ -53,6 +59,53 @@ theorem cpow_inv_re_pos_of_arg_mem_sector {z : ℂ} {β : ℝ} (hβ : 0 < β) (h
     linarith [harg.1]
   · rw [div_lt_iff₀ hβ]
     linarith [harg.2]
+
+/-- A sector of opening `β * π` with `β < 2` has half-opening less than `π`. -/
+theorem pi_mul_div_two_lt_pi {β : ℝ} (hβ : β < 2) :
+    Real.pi * β / 2 < Real.pi := by
+  nlinarith [mul_pos Real.pi_pos (sub_pos.mpr hβ)]
+
+/-- The closed upper part of the corner stays in the closed sector: the argument condition on the
+open upper part passes to its closure by continuity of `f`. -/
+theorem arg_sub_mem_Icc_of_arg_mem_sector {Ω : Set ℂ} {f : ℂ → ℂ} {w : ℂ} {β : ℝ}
+    (hΩopen : IsOpen Ω) (hβ : β ∈ Ioo (0 : ℝ) 2)
+    (hfcont : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ z.im}))
+    (hsector_open : ∀ z ∈ Ω ∩ {z : ℂ | 0 < z.im},
+      (f z - w).arg ∈ Ioo (-(Real.pi * β / 2)) (Real.pi * β / 2))
+    {z : ℂ} (hz : z ∈ Ω ∩ {z : ℂ | 0 ≤ z.im}) :
+    (f z - w).arg ∈ Icc (-(Real.pi * β / 2)) (Real.pi * β / 2) := by
+  have hangle : Real.pi * β / 2 ∈ Icc (0 : ℝ) Real.pi :=
+    ⟨div_nonneg (mul_nonneg Real.pi_pos.le hβ.1.le) (by norm_num),
+      (pi_mul_div_two_lt_pi hβ.2).le⟩
+  have hzclosure : z ∈ closure (Ω ∩ {y : ℂ | 0 < y.im}) := by
+    apply hΩopen.inter_closure
+    exact ⟨hz.1, by simpa only [Complex.closure_setOfPred_lt_im, mem_ofPred_eq] using hz.2⟩
+  have hqcont : ContinuousWithinAt (fun y => f y - w) (Ω ∩ {y : ℂ | 0 < y.im}) z :=
+    ((hfcont z hz).sub continuousWithinAt_const).mono fun y hy =>
+      ⟨hy.1, by simpa only [mem_ofPred_eq] using hy.2.le⟩
+  have htarget : IsClosed {q : ℂ | ‖q‖ * Real.cos (Real.pi * β / 2) ≤ q.re} :=
+    isClosed_le (continuous_norm.mul continuous_const) Complex.continuous_re
+  apply (arg_mem_Icc_iff_norm_mul_cos_le_re hangle).2
+  have hmem : f z - w ∈ closure {q : ℂ | ‖q‖ * Real.cos (Real.pi * β / 2) ≤ q.re} := by
+    apply hqcont.mem_closure hzclosure
+    intro y hy
+    exact (arg_mem_Icc_iff_norm_mul_cos_le_re hangle).1
+      (Ioo_subset_Icc_self (hsector_open y hy))
+  simpa only [htarget.closure_eq, mem_ofPred_eq] using hmem
+
+/-- A point `w` that is zero or whose argument has absolute value `β * π / 2` goes to the real axis
+under the power coordinate `I * w ^ (1 / β)`: the boundary rays of the sector of opening `β * π`
+become the real axis. -/
+theorem im_I_mul_cpow_inv_eq_zero {w : ℂ} {β : ℝ} (hβ : 0 < β)
+    (hw : w ≠ 0 → |w.arg| = β * Real.pi / 2) :
+    (Complex.I * w ^ ((β⁻¹ : ℝ) : ℂ)).im = 0 := by
+  by_cases hw0 : w = 0
+  · simp [hw0, ofReal_ne_zero.mpr hβ.ne']
+  · have heq : |w.arg * β⁻¹| = Real.pi / 2 := by
+      rw [abs_mul, abs_of_pos (inv_pos.mpr hβ), hw hw0]
+      field_simp [hβ.ne']
+    simp only [I_mul_im, cpow_ofReal_re]
+    rw [← Real.cos_abs, heq, Real.cos_pi_div_two, mul_zero]
 
 /-- In the closed upper half-plane with `0 ≤ β ≤ 2`, the power `z ^ β`, rotated by
 `exp (-(β π / 2) i)`, lies in the cone of real part at least `cos (β π / 2)` times the norm. -/

@@ -11,6 +11,7 @@ import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import TauCeti.Analysis.SpecialFunctions.Pow.Complex
+import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
 /-!
 # Power coordinates at a polygonal corner
@@ -105,25 +106,10 @@ theorem straighten_sector {Ω : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (hβ : β 
 
 /-- The two bounding rays of the sector become the real axis under the power coordinate
 `I * f ^ (1 / β)`. -/
-private theorem straighten_sector_real {Ω : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (hβ : 0 < β)
+theorem straighten_sector_real {Ω : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (hβ : 0 < β)
     (hrays : ∀ z ∈ Ω, z.im = 0 → f z ≠ 0 → |(f z).arg| = β * Real.pi / 2) :
-    ∀ z ∈ Ω, z.im = 0 → (I * f z ^ ((β⁻¹ : ℝ) : ℂ)).im = 0 := by
-  intro z hz hzim
-  by_cases hfz : f z = 0
-  · simp [hfz, ofReal_ne_zero.mpr hβ.ne']
-  · have heq : |(f z).arg * β⁻¹| = Real.pi / 2 := by
-      rw [abs_mul, abs_of_pos (inv_pos.mpr hβ), hrays z hz hzim hfz]
-      field_simp [hβ.ne']
-    simp only [I_mul_im, cpow_ofReal_re]
-    rw [← Real.cos_abs, heq, Real.cos_pi_div_two, mul_zero]
-
-/-- The power coordinate `I * f ^ (1 / β)` is injective on a set where `f` is injective and the
-principal `β`-th root of `f` can be recovered by the `β`-th power. -/
-theorem injOn_I_mul_cpow_inv {S : Set ℂ} {f : ℂ → ℂ} {β : ℝ} (hinj : InjOn f S)
-    (hrecover : ∀ z ∈ S, (f z ^ ((β⁻¹ : ℝ) : ℂ)) ^ (β : ℂ) = f z) :
-    InjOn (fun z => I * f z ^ ((β⁻¹ : ℝ) : ℂ)) S := fun z hz w hw hzw => by
-  have hp : f z ^ ((β⁻¹ : ℝ) : ℂ) = f w ^ ((β⁻¹ : ℝ) : ℂ) := mul_left_cancel₀ I_ne_zero hzw
-  exact hinj hz hw (by rw [← hrecover z hz, ← hrecover w hw, hp])
+    ∀ z ∈ Ω, z.im = 0 → (I * f z ^ ((β⁻¹ : ℝ) : ℂ)).im = 0 :=
+  fun z hz hzim => im_I_mul_cpow_inv_eq_zero hβ (hrays z hz hzim)
 
 /-- **Power coordinate at a corner.** Suppose `f` is continuous and injective on the closed
 upper part of a symmetric open set, holomorphic on its open upper part, and takes a real point
