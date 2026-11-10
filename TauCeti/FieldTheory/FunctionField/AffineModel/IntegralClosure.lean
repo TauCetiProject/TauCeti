@@ -37,8 +37,8 @@ The places missing from the finite chart are the poles of `x`, of which there ar
 ## Main results
 
 * `TauCeti.isDedekindDomain_integralClosure_adjoin` and
-  `TauCeti.isFractionRing_integralClosure_adjoin`: `R_x` is a Dedekind domain with fraction field
-  `F`.
+  `TauCeti.isFractionRing_integralClosure_adjoin`: `R_x` is a Dedekind domain, with fraction field
+  `F` when `x` is transcendental over `k` (for algebraic `x` it is the constant field).
 * `TauCeti.isDedekindDomain_holomorphyRing_setOf_mem` and
   `TauCeti.finiteType_holomorphyRing_setOf_mem`: `R_x` is a Dedekind domain and a finitely
   generated `k`-algebra (for `x` transcendental over `k` this is `R_x`; for algebraic `x` it is the
@@ -168,14 +168,24 @@ variable {x : F}
 open _root_.IntermediateField.algebraAdjoinAdjoin
 
 /-- **`R_x` is a Dedekind domain**: the integral closure of `k[x]` in an algebraic function field
-`F`, for `x` transcendental over `k`. No separability of `F / k(x)` is assumed. -/
-theorem isDedekindDomain_integralClosure_adjoin (hF : IsFunctionField k F)
-    (hx : Transcendental k x) : IsDedekindDomain (integralClosure (Algebra.adjoin k {x}) F) := by
-  have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
-  -- `k[x] ≅ k[X]` is a principal ideal domain, hence Dedekind.
-  have : IsPrincipalIdealRing (Algebra.adjoin k {x}) :=
-    .of_surjective _ (Polynomial.algEquivOfTranscendental k x hx).surjective
-  exact integralClosure.isDedekindDomain _ k⟮x⟯ F
+`F`. No separability of `F / k(x)` is assumed. For `x` algebraic over `k` it is the constant field
+of `F`, a field. -/
+theorem isDedekindDomain_integralClosure_adjoin (hF : IsFunctionField k F) (x : F) :
+    IsDedekindDomain (integralClosure (Algebra.adjoin k {x}) F) := by
+  by_cases hx : IsAlgebraic k x
+  · have h := restrictScalars_integralClosure_adjoin_eq_holomorphyRing hF x
+    rw [Place.setOf_mem_integers_eq_univ hx, holomorphyRing_univ hF] at h
+    -- restricting scalars, and passing from an intermediate field to its subalgebra, keep the
+    -- carrier and the ring structure
+    have : IsDedekindDomain ((integralClosure (Algebra.adjoin k {x}) F).restrictScalars k) := by
+      rw [h]
+      exact inferInstanceAs (IsDedekindDomain (algebraicClosure k F))
+    exact this
+  · have : FiniteDimensional k⟮x⟯ F := hF.finiteDimensional_adjoin hx
+    -- `k[x] ≅ k[X]` is a principal ideal domain, hence Dedekind.
+    have : IsPrincipalIdealRing (Algebra.adjoin k {x}) :=
+      .of_surjective _ (Polynomial.algEquivOfTranscendental k x hx).surjective
+    exact integralClosure.isDedekindDomain _ k⟮x⟯ F
 
 /-- **`F` is the field of fractions of `R_x`**, for `x ∈ F` transcendental over `k` in an
 algebraic function field `F`. -/
@@ -188,12 +198,8 @@ theorem isFractionRing_integralClosure_adjoin (hF : IsFunctionField k F)
 `k` this holomorphy ring is `R_x`, and for algebraic `x` it is the constant field. -/
 theorem isDedekindDomain_holomorphyRing_setOf_mem (hF : IsFunctionField k F) (x : F) :
     IsDedekindDomain (holomorphyRing {P : Place k F | x ∈ P.integers}) := by
-  by_cases hx : IsAlgebraic k x
-  · rw [Place.setOf_mem_integers_eq_univ hx, holomorphyRing_univ hF]
-    -- the carrier of the subalgebra underlying an intermediate field is that of the field
-    exact inferInstanceAs (IsDedekindDomain (algebraicClosure k F))
-  · rw [← restrictScalars_integralClosure_adjoin_eq_holomorphyRing hF x]
-    exact isDedekindDomain_integralClosure_adjoin hF hx
+  rw [← restrictScalars_integralClosure_adjoin_eq_holomorphyRing hF x]
+  exact isDedekindDomain_integralClosure_adjoin hF x
 
 /-- **The functions regular wherever `x` is form a finitely generated `k`-algebra**: for `x`
 transcendental over `k` this holomorphy ring is `R_x`, and for algebraic `x` it is the finite
