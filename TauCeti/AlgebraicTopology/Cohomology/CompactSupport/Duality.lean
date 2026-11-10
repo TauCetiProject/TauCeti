@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.Cohomology.Cap.Relative
 public import TauCeti.AlgebraicTopology.Cohomology.CompactSupport.Extension
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.FundamentalClass
-public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
 public import TauCeti.CategoryTheory.Monoidal.Preadditive
 
 /-!
@@ -52,8 +51,6 @@ Poincaré duality.
   class supported in a compact `K` is the cap product with `μ_K`.
 * `TauCeti.HomologicalOrientation.dualityMap_compactSupportCohomologyIsoOfCompactSpace_inv`: for
   compact `M`, the duality map is the cap product with the fundamental class.
-* `TauCeti.HomologicalOrientation.localHomologyMap_fundamentalClassOn_comap`: open embeddings
-  carry fundamental classes along compact sets to fundamental classes.
 * `TauCeti.HomologicalOrientation.dualityMap_neg`: reversing the orientation negates the duality
   map.
 * `TauCeti.HomologicalOrientation.compactSupportCohomologyExtend_dualityMap`: naturality along open
@@ -70,8 +67,8 @@ cochains on them with values in `L`. The cap product pairs the two along the rig
 `φ(σ|[0, …, p]) • σ|[p, …, n]`. A module over a ring enters through its underlying abelian group.
 
 Instance search finds the `ℤ`-linear structure of `ModuleCat ℤ` as a preadditive category, for
-which Mathlib's `MonoidalLinear ℤ` instance does not apply; the local instance
-`TauCeti.monoidalLinearIntDuality` supplies it, as for `TopCat.integralCup`.
+which Mathlib's `MonoidalLinear ℤ` instance does not apply; `CategoryTheory.monoidalLinearInt`
+supplies it as a local instance, as for `TopCat.integralCup`.
 
 ## References
 
@@ -88,12 +85,7 @@ open CategoryTheory MonoidalCategory Module TopologicalSpace Topology Set
 
 namespace TauCeti
 
-/-- Mathlib's `MonoidalLinear ℤ` instance on `ModuleCat ℤ` is stated for its `ℤ`-linear structure
-as a category of modules, while instance search finds the `ℤ`-linear structure of a preadditive
-category; whiskering commutes with the integer multiples of the latter as well. -/
-local instance monoidalLinearIntDuality : MonoidalLinear ℤ (ModuleCat.{0} ℤ) where
-  whiskerLeft_smul X _ _ r f := whiskerLeft_zsmul r X f
-  smul_whiskerRight r _ _ f X := zsmul_whiskerRight r f X
+attribute [local instance] monoidalLinearInt
 
 namespace HomologicalOrientation
 
@@ -108,20 +100,13 @@ def capFundamentalClassOn {K : Set M} (hK : IsCompact K) (p q : ℕ) (h : p + q 
         (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p ⟶
       ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) q).obj L).obj
         (TopCat.of M) :=
-  ModuleCat.ofHom (X := (TopPair.ofSubset (Kᶜ : Set (TopCat.of M))).singularCohomology
-      (ModuleCat.of ℤ (ULift.{0} ℤ)) ℤ L p)
-    { toFun α := ((TopPair.ofSubset (Kᶜ : Set (TopCat.of M))).singularCap ℤ (ρ_ _).inv
-          (ρ_ L).hom p q n h α).hom (o.fundamentalClassOn hn hK)
-      map_add' α β := by
-        rw [LinearMap.map_add]
-        rfl
-      map_smul' c α := by
-        refine (congrArg (fun f ↦ ModuleCat.Hom.hom f (o.fundamentalClassOn hn hK))
-          (((TopPair.ofSubset (Kᶜ : Set (TopCat.of M))).singularCap ℤ (ρ_ _).inv
-            (ρ_ L).hom p q n h).map_smul c α)).trans ?_
-        simp only [ModuleCat.hom_smul, LinearMap.smul_apply, RingHom.id_apply]
-        -- The two sides use `zsmul` and the given `ℤ`-module structure, respectively.
-        exact (int_smul_eq_zsmul _ _ _).symm }
+  -- `AddMonoidHom.toIntLinearMap` would use the `ℤ`-module structures of the underlying additive
+  -- groups rather than those of the objects of `ModuleCat ℤ`.
+  let f := (LinearMap.applyₗ (R := ℤ) (o.fundamentalClassOn hn hK)).toAddMonoidHom.comp <|
+    ModuleCat.homAddEquiv.toAddMonoidHom.comp
+      ((TopPair.ofSubset (Kᶜ : Set (TopCat.of M))).singularCap ℤ (ρ_ _).inv
+        (ρ_ L).hom p q n h).toAddMonoidHom
+  ModuleCat.ofHom { f with map_smul' := map_intCast_smul f ℤ ℤ }
 
 /-- Capping with the fundamental class along `K` evaluates the relative cap product at `μ_K`. -/
 lemma capFundamentalClassOn_apply {K : Set M} (hK : IsCompact K) (p q : ℕ) (h : p + q = n)
@@ -155,7 +140,7 @@ lemma singularCohomologyMap_comp_capFundamentalClassOn {K K' : Compacts (TopCat.
   rw [ModuleCat.hom_comp, LinearMap.comp_apply, capFundamentalClassOn_apply,
     capFundamentalClassOn_apply]
   have hμ := o.localHomologyRestriction_fundamentalClassOn_of_subset hn K'.isCompact
-    K.isCompact (show (K : Set M) ⊆ K' from hKK')
+    K.isCompact (SetLike.coe_subset_coe.2 hKK')
   rw [localHomologyRestriction_def] at hμ
   refine (Eq.trans ?_ this).trans ((ConcreteCategory.comp_apply _ _ _).trans (congrArg _ hμ))
   exact (ConcreteCategory.comp_apply _ _ _).trans (ConcreteCategory.id_apply _)
@@ -196,11 +181,12 @@ lemma dualityMap_compactSupportCohomologyι_apply (p q : ℕ) (h : p + q = n)
 lemma dualityMap_neg (p q : ℕ) (h : p + q = n) :
     (-o).dualityMap hn L p q h = -o.dualityMap hn L p q h := by
   refine TopCat.compactSupportCohomology_hom_ext fun K ↦ ?_
-  ext α
   rw [Preadditive.comp_neg, compactSupportCohomologyι_dualityMap,
-    compactSupportCohomologyι_dualityMap, ModuleCat.hom_neg, LinearMap.neg_apply,
-    capFundamentalClassOn_apply, capFundamentalClassOn_apply, fundamentalClassOn_neg, map_neg]
-  rfl
+    compactSupportCohomologyι_dualityMap]
+  ext α
+  rw [ModuleCat.hom_neg, LinearMap.neg_apply, capFundamentalClassOn_apply,
+    capFundamentalClassOn_apply, fundamentalClassOn_neg]
+  exact map_neg _ _
 
 /-- **The duality map of a compact manifold is the cap product with the fundamental class**: for
 compact `M`, on `Hᵖ(M; L) ≅ Hᵖ_c(M; L)` the duality map is `α ↦ [M] ⌢ α`. -/
@@ -231,26 +217,6 @@ lemma dualityMap_compactSupportCohomologyIsoOfCompactSpace_inv [CompactSpace M] 
 section OpenEmbedding
 
 variable {U : Type} [TopologicalSpace U] [T2Space U] [ChartedSpace E U]
-
-/-- **Open embeddings carry fundamental classes to fundamental classes**: for an open embedding
-`j : U → M` and compact `K ⊆ U`, the map `Hₙ(U, U ∖ K; ℤ) ⟶ Hₙ(M, M ∖ j(K); ℤ)` induced by `j`
-carries the fundamental class along `K` of the pulled-back orientation `o.comap hj` to the
-fundamental class of `o` along `j(K)`. -/
-theorem localHomologyMap_fundamentalClassOn_comap {j : C(U, M)} (hj : IsOpenEmbedding j)
-    {K : Set U} (hK : IsCompact K) :
-    localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) j (hj.injective.preimage_image K).subset n
-        ((o.comap hj).fundamentalClassOn hn hK) =
-      o.fundamentalClassOn hn (hK.image j.continuous) := by
-  refine o.eq_fundamentalClassOn hn _ ?_
-  rintro _ ⟨x, hx, rfl⟩
-  have hjx : j ⁻¹' {j x} ⊆ {x} := by
-    rw [← image_singleton, hj.injective.preimage_image]
-  rw [← ConcreteCategory.comp_apply, localHomologyMap_comp_localHomologyRestriction,
-    ← localHomologyRestriction_comp_localHomologyMap _ j (singleton_subset_iff.2 hx) hjx,
-    ConcreteCategory.comp_apply, localHomologyRestriction_fundamentalClassOn _ _ _ hx,
-    ← localOrientationEquiv_comap_apply o hj x, IsOpenEmbedding.coe_localOrientationEquiv,
-    localHomologyIsoOfIsOpenEmbedding_hom]
-  rfl
 
 /-- **Naturality of the duality map along open embeddings**: for an open embedding `j : U → M`,
 with `U` oriented by the pulled-back orientation, `D_M ∘ j_! = j_* ∘ D_U`, where
