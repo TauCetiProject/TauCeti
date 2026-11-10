@@ -108,10 +108,11 @@ theorem perturbationPullback_apply (φ : ℝ × ℝ → ℝ × ℝ) (Ks Kt : ℝ
       (fderiv ℝ φ w v).1 * Ks (φ w) x + (fderiv ℝ φ w v).2 * Kt (φ w) x :=
   (rfl)
 
-/-- The pullback of the zero perturbation is zero. -/
+/-- The pullback of the zero perturbation along any change of coordinates is zero. -/
 @[simp]
 theorem perturbationPullback_zero (φ : ℝ × ℝ → ℝ × ℝ) (v : ℝ × ℝ) :
-    perturbationPullback φ (fun _ (_ : X) ↦ (0 : ℝ)) (fun _ _ ↦ 0) v = fun _ _ ↦ 0 := by
+    perturbationPullback φ (fun (_ : ℝ × ℝ) (_ : X) ↦ (0 : ℝ)) (fun _ _ ↦ 0) v =
+      fun _ _ ↦ 0 := by
   funext w x
   simp [perturbationPullback_apply]
 

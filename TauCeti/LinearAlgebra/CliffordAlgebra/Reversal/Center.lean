@@ -142,7 +142,7 @@ theorem reverseEven_eq_self_iff_of_mem_center (hQ : Q.Nondegenerate)
   have hle : Even l.length := hlen ▸ heven
   have hne : l ≠ [] := List.length_pos_iff.mp (hlen ▸ hpos)
   obtain ⟨a, b, hab⟩ :=
-    (mem_center_even_iff_exists_eq_add_smul_volume hl hle hne hspan hQl).mp hx
+    (mem_center_even_iff_exists_eq_add_smul_volume hl hle hspan hQl).mp hx
   by_cases hsign : Even ((finrank K V).choose 2)
   · have hfix : reverseEven Q x = x := by
       have hxcoord : x = algebraMap K (even Q) a +

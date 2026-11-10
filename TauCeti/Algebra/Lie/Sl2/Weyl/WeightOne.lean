@@ -11,8 +11,9 @@ public import TauCeti.Algebra.Lie.Sl2.Weyl.Automorphism
 # The Weyl automorphism on a two-dimensional root string
 
 For an `sl₂` triple, a lowest-weight vector of weight minus one whose raising string has
-length two is sent to its raising bracket by the pinned Weyl automorphism. This determines
-the parameter sign when transporting a simple root subgroup across a single bond.
+length two is sent to its raising bracket by the pinned Weyl automorphism. Dually, conjugation
+by the Weyl unit sends a highest-weight element of weight one to its negated lowering bracket.
+These formulas determine parameter signs when transporting root subgroups across a single bond.
 
 ## References
 
@@ -22,16 +23,16 @@ the parameter sign when transporting a simple root subgroup across a single bond
 
 public section
 
-namespace TauCeti
+namespace IsSl2Triple
 
-open LieAlgebra
+open TauCeti LieAlgebra
 
 variable {K L : Type*} [CommRing K] [LieRing L] [LieAlgebra K L] [LieAlgebra ℚ L]
   {h e f : L}
 
 /-- The pinned Weyl automorphism sends a lowest-weight vector of weight minus one on a
 length-two raising string to its raising bracket. -/
-theorem _root_.IsSl2Triple.weylAut_apply_of_lie_h_eq_neg (t : IsSl2Triple h e f)
+theorem weylAut_apply_of_lie_h_eq_neg (t : IsSl2Triple h e f)
     (he : IsNilpotent (ad K L e)) (hf : IsNilpotent (ad K L f)) {y : L}
     (hhy : ⁅h, y⁆ = -y) (hfy : ⁅f, y⁆ = 0) (heey : ⁅e, ⁅e, y⁆⁆ = 0) :
     weylAut t he.exists_pow_apply_eq_zero hf.exists_pow_apply_eq_zero y = ⁅e, y⁆ := by
@@ -62,7 +63,7 @@ attribute [local instance 100] LieRing.ofAssociativeRing
 
 /-- Conjugation by the pinned Weyl unit sends a lowest-weight element of weight minus one
 on a length-two raising string to its raising commutator. -/
-theorem _root_.IsSl2Triple.weylUnit_conj_of_lie_h_eq_neg (t : IsSl2Triple H E F)
+theorem weylUnit_conj_of_lie_h_eq_neg (t : IsSl2Triple H E F)
     (hE : IsNilpotent E) (hF : IsNilpotent F)
     (hHY : ⁅H, Y⁆ = -Y) (hFY : ⁅F, Y⁆ = 0) (hEEY : ⁅E, ⁅E, Y⁆⁆ = 0) :
     (weylUnit hE hF : A) * Y * (((weylUnit hE hF)⁻¹ : Aˣ) : A) = ⁅E, Y⁆ := by
@@ -70,6 +71,24 @@ theorem _root_.IsSl2Triple.weylUnit_conj_of_lie_h_eq_neg (t : IsSl2Triple H E F)
   exact t.weylAut_apply_of_lie_h_eq_neg (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE)
     (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF) hHY hFY hEEY
 
+/-- Conjugation by the pinned Weyl unit sends a highest-weight element of weight one on a
+length-two lowering string to the negative of its lowering commutator. -/
+theorem _root_.IsSl2Triple.weylUnit_conj_of_lie_h_eq_self (t : IsSl2Triple H E F)
+    (hE : IsNilpotent E) (hF : IsNilpotent F)
+    (hHY : ⁅H, Y⁆ = Y) (hEY : ⁅E, Y⁆ = 0) (hFFY : ⁅F, ⁅F, Y⁆⁆ = 0) :
+    (weylUnit hE hF : A) * Y * (((weylUnit hE hF)⁻¹ : Aˣ) : A) = -⁅F, Y⁆ := by
+  let he := (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE).exists_pow_apply_eq_zero
+  let hf := (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF).exists_pow_apply_eq_zero
+  let hne := (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE.neg).exists_pow_apply_eq_zero
+  let hnf := (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF.neg).exists_pow_apply_eq_zero
+  rw [← weylAut_apply_eq_weylUnit_conj (K := ℚ) t hE hF,
+    ← t.weylAut_neg_symm he hf hnf hne]
+  simpa only [neg_lie] using t.neg_symm.weylAut_apply_of_lie_h_eq_neg
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hF.neg)
+    (LieAlgebra.ad_nilpotent_of_nilpotent (R := ℚ) hE.neg)
+    (by simp only [neg_lie, hHY]) (by simp only [neg_lie, hEY, neg_zero])
+    (by simp only [neg_lie, lie_neg, neg_neg, hFFY])
+
 end Associative
 
-end TauCeti
+end IsSl2Triple

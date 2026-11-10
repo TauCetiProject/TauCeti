@@ -151,10 +151,10 @@ theorem singularCohomology_prodThomPair_ext [Linear k (ModuleCat.{w} k)]
   have hc : prodThomPairFiberMap F PUnit.unit ≫ prodThomPairMap F c = prodThomPairFiberMap F b :=
     prodThomPairFiberMap_comp_prodThomPairMap F _ c
   have hb := congrArg (TopPair.singularCohomologyMap (R := R) (k := k) (M := M)
-    (prodThomPairPUnitSnd F) _) (h b)
+    (prodThomPairSnd PUnit F) _) (h b)
   simp only [← hc, ← ConcreteCategory.comp_apply, ← Category.assoc,
     ← TopPair.singularCohomologyMap_comp,
-    prodThomPairPUnitSnd_comp_prodThomPairFiberMap, Category.id_comp] at hb
+    prodThomPairSnd_comp_prodThomPairFiberMap, Category.id_comp] at hb
   have hb' := congrArg (fun x ↦ (prodThomPairSingularHomologyIso R PUnit F 0 (finrank ℝ F)).inv ≫
     (prodThomPair PUnit F).singularKronecker k _ x) hb
   rw [prodThomPairSingularHomologyIso_inv_comp_singularKronecker_naturality,
