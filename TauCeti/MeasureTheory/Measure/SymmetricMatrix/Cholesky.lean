@@ -430,20 +430,37 @@ theorem setLIntegral_posDef_symmetricLebesgue
 /-- The Bochner-integral form of the Cholesky change of variables: an integral over the
 positive-definite cone becomes a weighted integral over the positive-diagonal coordinate region. -/
 theorem integral_posDef_symmetricLebesgue {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → E}
-    (hf : AEStronglyMeasurable f ((symmetricLebesgue p).restrict
-      {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
-        (A : Matrix (Fin p) (Fin p) ℝ).PosDef})) :
+    {f : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) → E} :
     ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).PosDef}, f A ∂symmetricLebesgue p =
       ∫ x in posDiagLowerRegion p,
         ((2 : ℝ) ^ p * ∏ i : Fin p, x ⟨(i, i), le_rfl⟩ ^ (p - i.1)) •
           f (lowerTriangleGram p x) := by
-  rw [← map_cholesky_symmetricLebesgue] at hf ⊢
-  rw [integral_map (measurable_lowerTriangleGram p).aemeasurable hf,
-    integral_withDensity_eq_integral_toReal_smul (measurable_choleskyJacobianDensity p)
-      (.of_forall fun _ => ENNReal.ofReal_lt_top)]
+  -- The Jacobian change of variables for Bochner integrals needs no measurability of `f`, so
+  -- run it in the coordinates, where the chart carries Lebesgue measure to `symmetricLebesgue`.
+  have hmap : (volume : Measure (lowerTriangle p → ℝ)).map
+      ⇑(symmetricLowerCoordinatesMeasurableEquiv p).symm = symmetricLebesgue p := by
+    rw [symmetricLowerCoordinatesMeasurableEquiv_symm_coe]
+    exact (measurePreserving_symmetricLowerCoordinates_symm p).map_eq
+  have hcomp (x : lowerTriangle p → ℝ) : lowerTriangleGram p x =
+      (symmetricLowerCoordinatesMeasurableEquiv p).symm (choleskyReconstructionCoordinates p x) :=
+    lowerTriangleGram_eq_symm_apply p x
+  have himg : choleskyReconstructionCoordinates p '' posDiagLowerRegion p =
+      (symmetricLowerCoordinatesMeasurableEquiv p).symm ⁻¹'
+        {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+          (A : Matrix (Fin p) (Fin p) ℝ).PosDef} := by
+    rw [← lowerTriangleGram_image_posDiagLowerRegion]
+    ext y
+    simp only [Set.mem_image, Set.mem_preimage, hcomp]
+    exact ⟨fun ⟨x, hx, hxy⟩ => ⟨x, hx, by rw [hxy]⟩,
+      fun ⟨x, hx, hxy⟩ => ⟨x, hx, (symmetricLowerCoordinatesMeasurableEquiv p).symm.injective hxy⟩⟩
+  rw [← hmap, (symmetricLowerCoordinatesMeasurableEquiv p).symm.measurableEmbedding.setIntegral_map,
+    ← himg, integral_image_eq_integral_abs_det_fderiv_smul volume
+      (measurableSet_posDiagLowerRegion p)
+      (fun x _ => (hasFDerivAt_choleskyReconstructionCoordinates x).hasFDerivWithinAt)
+      (injOn_choleskyReconstructionCoordinates p)]
   refine setIntegral_congr_fun (measurableSet_posDiagLowerRegion p) fun x hx => ?_
-  rw [toReal_choleskyJacobianDensity p hx]
+  simp only [← fderiv_choleskyReconstructionCoordinates, hcomp,
+    abs_det_fderiv_choleskyReconstructionCoordinates x hx]
 
 end TauCeti
