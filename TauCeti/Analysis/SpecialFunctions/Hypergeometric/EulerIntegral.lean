@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Beta
 public import Mathlib.MeasureTheory.Integral.DominatedConvergence
+public import TauCeti.Analysis.Complex.SlitPlane
 
 /-!
 # Euler's integral for the Gauss hypergeometric function
@@ -33,7 +34,7 @@ noncomputable section
 open Complex Filter MeasureTheory Set
 open scoped Topology
 
-namespace TauCeti
+namespace Complex
 
 /-- Euler's integral, normalized to represent the regularized Gauss function in
 its convergence region `0 < b.re < c.re`, with `1 - z ∈ Complex.slitPlane`.
@@ -43,15 +44,19 @@ def eulerIntegral (a b c z : ℂ) : ℂ :=
     ∫ t : ℝ in 0..1, (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
       (1 - z * t) ^ (-a)
 
+/-- The defining normalized integral representation of `eulerIntegral`, at all parameters. -/
+theorem eulerIntegral_def (a b c z : ℂ) :
+    eulerIntegral a b c z =
+      (Gamma b * Gamma (c - b))⁻¹ *
+        ∫ t : ℝ in 0..1, (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
+          (1 - z * t) ^ (-a) := (rfl)
+
 /-- The Euler kernel has no branch-cut crossing on the closed integration interval. -/
 theorem continuousOn_eulerKernel (a : ℂ) {z : ℂ} (hz : 1 - z ∈ slitPlane) :
     ContinuousOn (fun t : ℝ => (1 - z * t) ^ (-a)) (Icc 0 1) := by
   refine continuousOn_of_forall_continuousAt fun t ht => ?_
   apply ContinuousAt.cpow (by fun_prop) (by fun_prop)
-  have h := starConvex_one_slitPlane.add_smul_sub_mem hz ht.1 ht.2
-  convert h using 1
-  simp only [real_smul]
-  ring
+  exact one_sub_mul_ofReal_mem_slitPlane hz ht
 
 /-- Euler's integrand is interval integrable throughout its classical parameter
 region, for every argument off the cut `[1, ∞)`. -/
@@ -78,10 +83,7 @@ theorem continuousOn_eulerIntegral {b c : ℂ} (hb : 0 < b.re) (hcb : b.re < c.r
   have hk : ContinuousOn (fun q : (ℂ × ℂ) × ℝ =>
       (1 - q.1.2 * q.2) ^ (-q.1.1)) (K ×ˢ Icc 0 1) := by
     refine ContinuousOn.cpow (by fun_prop) (by fun_prop) fun q hq => ?_
-    have h := starConvex_one_slitPlane.add_smul_sub_mem (hKU hq.1) hq.2.1 hq.2.2
-    convert h using 1
-    simp only [real_smul]
-    ring
+    exact one_sub_mul_ofReal_mem_slitPlane (hKU hq.1) hq.2
   obtain ⟨M, hM⟩ := (hK.prod isCompact_Icc).exists_bound_of_continuousOn hk
   have hi : ContinuousAt (fun q : ℂ × ℂ =>
       ∫ t : ℝ in 0..1, (t : ℂ) ^ (b - 1) * (1 - (t : ℂ)) ^ (c - b - 1) *
@@ -101,10 +103,7 @@ theorem continuousOn_eulerIntegral {b c : ℂ} (hb : 0 < b.re) (hcb : b.re < c.r
       simp only [uIoc_of_le zero_le_one, mem_Ioc] at ht
       apply ContinuousAt.mul continuousAt_const
       apply ContinuousAt.cpow (by fun_prop) (by fun_prop)
-      have h := starConvex_one_slitPlane.add_smul_sub_mem hp ht.1.le ht.2
-      convert h using 1
-      simp only [real_smul]
-      ring
+      exact one_sub_mul_ofReal_mem_slitPlane hp ⟨ht.1.le, ht.2⟩
   exact (hi.const_mul _).continuousWithinAt
 
 /-- With first parameter zero the normalized Euler integral is constant, even when
@@ -113,7 +112,7 @@ its argument lies on the cut. This statement does not identify a continued funct
 theorem eulerIntegral_zero_left {b c : ℂ} (hb : 0 < b.re) (hcb : b.re < c.re) (z : ℂ) :
     eulerIntegral 0 b c z = (Gamma c)⁻¹ := by
   have hcb' : 0 < (c - b).re := by simpa using sub_pos.mpr hcb
-  simp only [eulerIntegral, neg_zero, cpow_zero, mul_one]
+  simp only [eulerIntegral_def, neg_zero, cpow_zero, mul_one]
   rw [← betaIntegral, betaIntegral_eq_Gamma_mul_div b (c - b) hb hcb', add_sub_cancel]
   field_simp [Gamma_ne_zero_of_re_pos hb, Gamma_ne_zero_of_re_pos hcb']
 
@@ -121,6 +120,6 @@ theorem eulerIntegral_zero_left {b c : ℂ} (hb : 0 < b.re) (hcb : b.re < c.re) 
 @[simp]
 theorem eulerIntegral_zero (a : ℂ) {b c : ℂ} (hb : 0 < b.re) (hcb : b.re < c.re) :
     eulerIntegral a b c 0 = (Gamma c)⁻¹ := by
-  simpa [eulerIntegral] using eulerIntegral_zero_left hb hcb 0
+  simpa [eulerIntegral_def] using eulerIntegral_zero_left hb hcb 0
 
-end TauCeti
+end Complex
