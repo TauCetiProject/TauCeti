@@ -554,8 +554,8 @@ theorem DualFeasible.isCyclicallyMonotone_dualContactSet
       Finset.sum_le_sum fun i _ ↦ h.ofReal_add_le (x i) (y (σ i))
 
 /-- **A certified plan is concentrated on a measurable `c`-cyclically monotone set.** The
-contact set need not be measurable: a measurable set of full measure inside it is obtained from a
-measurable hull of its null complement. The converse implication, that concentration on a
+contact set need not be measurable, but it has full measure, so it contains a measurable set of
+full measure. The converse implication, that concentration on a
 `c`-cyclically monotone set forces optimality, is the Schachermayer--Teichmann theorem
 `TauCeti.IsCoupling.isOptimalCoupling_of_isCyclicallyMonotone`; it needs a finite cost and
 Polish spaces. -/
@@ -563,13 +563,8 @@ theorem IsDualCertificate.exists_isCyclicallyMonotone [MeasurableSpace X] [Measu
     {μ : Measure X} {ν : Measure Y} {π : Measure (X × Y)}
     (h : IsDualCertificate c π μ ν φ ψ) :
     ∃ S : Set (X × Y), MeasurableSet S ∧ IsCyclicallyMonotone c S ∧ π Sᶜ = 0 := by
-  set C := dualContactSet c φ ψ
-  refine ⟨(toMeasurable π Cᶜ)ᶜ, (measurableSet_toMeasurable π Cᶜ).compl, ?_, ?_⟩
-  · refine h.dualFeasible.isCyclicallyMonotone_dualContactSet.mono ?_
-    rw [Set.compl_subset_comm]
-    exact subset_toMeasurable π Cᶜ
-  · rw [compl_compl, measure_toMeasurable]
-    exact ae_iff.1 h.ae_mem_dualContactSet
+  obtain ⟨S, hS, hm, hsub⟩ := h.ae_mem_dualContactSet.exists_measurable_mem
+  exact ⟨S, hm, h.dualFeasible.isCyclicallyMonotone_dualContactSet.mono hsub, ae_iff.1 hS⟩
 
 end CyclicallyMonotone
 
