@@ -31,6 +31,8 @@ This comparison is useful for embeddings of real interpolation spaces.
 * `TauCeti.eLpNorm_le_eLpNorm_rpow_toReal_sub_one`: its form for Hölder conjugate exponents.
 * `TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm`: convergence to zero in `Lᵖ`
   for `1 ≤ p` implies convergence to zero in `L¹`.
+* `MeasureTheory.tendsto_eLpNorm_of_tendsto_eLpNorm_one`: convergence to zero in `L¹` implies
+  convergence to zero in `Lᵖ` for `p ≤ 1`.
 * `TauCeti.MeasureTheory.tendsto_integral_norm_of_tendsto_eLpNorm`: if `eLpNorm (f i) p μ → 0`
   for some `1 ≤ p`, then `∫ ‖f i‖ ∂μ → 0`.
 * `TauCeti.MeasureTheory.not_tendsto_eLpNorm_sub_of_separated`: a sequence whose terms stay a
@@ -206,5 +208,23 @@ theorem eLpNorm_le_of_exponent_le
   rw [hnorm, ENNReal.inv_mul_le_iff (ENNReal.ofReal_ne_zero_iff.2 hM)
     ENNReal.ofReal_ne_top, mul_one] at h
   exact h
+
+/-- On a finite measure space, convergence to zero in `L¹` of a family of a.e. strongly
+measurable functions implies convergence to zero in `Lᵖ` for every exponent `p ≤ 1`. -/
+theorem tendsto_eLpNorm_of_tendsto_eLpNorm_one {ι : Type*} {l : Filter ι} [IsFiniteMeasure μ]
+    {F : ι → α → E} (hp : p ≤ 1) (hF : ∀ i, AEStronglyMeasurable (F i) μ)
+    (h : Tendsto (fun i => eLpNorm (F i) 1 μ) l (𝓝 0)) :
+    Tendsto (fun i => eLpNorm (F i) p μ) l (𝓝 0) := by
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact tendsto_const_nhds.congr fun i => (eLpNorm_exponent_zero (hF i)).symm
+  have h_exp : 0 ≤ 1 / p.toReal - 1 / (1 : ℝ≥0∞).toReal := by
+    rw [ENNReal.toReal_one, div_one, sub_nonneg,
+      one_le_div (ENNReal.toReal_pos hp0 (ne_top_of_le_ne_top ENNReal.one_ne_top hp))]
+    exact ENNReal.toReal_le_of_le_ofReal zero_le_one (by simpa using hp)
+  have h_lim := ENNReal.Tendsto.mul_const h
+    (Or.inr (ENNReal.rpow_ne_top_of_nonneg h_exp (measure_ne_top μ Set.univ)))
+  rw [zero_mul] at h_lim
+  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h_lim (fun _ => zero_le)
+    fun i => eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp (hF i)
 
 end MeasureTheory

@@ -13,6 +13,7 @@ import TauCeti.Analysis.RCLike.Basic
 import TauCeti.Probability.Martingale.AntitoneLimit
 import TauCeti.MeasureTheory.Function.AEStronglyMeasurable
 import TauCeti.MeasureTheory.Function.ConditionalExpectation
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 
 /-!
 # Martingale convergence theorems
@@ -196,30 +197,6 @@ theorem tendsto_eLpNorm_condExp_iInf [IsFiniteMeasure μ] {𝔽 : ℕ → Measur
     Tendsto (fun n => eLpNorm (μ[f | 𝔽 n] - μ[f | ⨅ n, 𝔽 n]) 1 μ) atTop (𝓝 0) :=
   (tendsto_ae_and_eLpNorm_condExp_iInf h_filtration h_le0 f).2
 
-/-- For an exponent `p ≤ 1`, convergence of the conditional expectations in `L¹` implies their
-convergence in `Lᵖ`, as the `Lᵖ` seminorm is controlled by the `L¹` norm on a finite measure
-space. -/
-private theorem tendsto_eLpNorm_condExp_of_le_one [IsFiniteMeasure μ]
-    {𝔽 : ℕ → MeasurableSpace Ω} {m : MeasurableSpace Ω} {p : ℝ≥0∞} (hp1 : p ≤ 1)
-    {g : Ω → ℝ}
-    (h_L1 : Tendsto (fun n => eLpNorm (μ[g | 𝔽 n] - μ[g | m]) 1 μ) atTop (𝓝 0)) :
-    Tendsto (fun n => eLpNorm (μ[g | 𝔽 n] - μ[g | m]) p μ) atTop (𝓝 0) := by
-  -- The local `m` would otherwise be found as the measurable structure of `Ω`.
-  let _ : MeasurableSpace Ω := mΩ
-  rcases eq_or_ne p 0 with rfl | hp0
-  · exact tendsto_const_nhds.congr fun _ => (eLpNorm_exponent_zero
-      (integrable_condExp.sub integrable_condExp).aestronglyMeasurable).symm
-  have h_exp : 0 ≤ 1 / p.toReal - 1 / (1 : ℝ≥0∞).toReal := by
-    rw [ENNReal.toReal_one, div_one, sub_nonneg,
-      one_le_div (ENNReal.toReal_pos hp0 (ne_top_of_le_ne_top ENNReal.one_ne_top hp1))]
-    exact ENNReal.toReal_le_of_le_ofReal zero_le_one (by simpa using hp1)
-  have h_lim := ENNReal.Tendsto.mul_const h_L1
-    (Or.inr (ENNReal.rpow_ne_top_of_nonneg h_exp (measure_ne_top μ Set.univ)))
-  rw [zero_mul] at h_lim
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h_lim (fun _ => zero_le)
-    fun _ => eLpNorm_le_eLpNorm_mul_rpow_measure_univ hp1
-      (integrable_condExp.sub integrable_condExp).aestronglyMeasurable
-
 /-- `Lᵖ` convergence of the conditional expectations of an essentially bounded function, for
 `p < ∞`, given their convergence in `L¹`. -/
 theorem tendsto_eLpNorm_condExp_of_ae_bdd [IsFiniteMeasure μ]
@@ -230,7 +207,8 @@ theorem tendsto_eLpNorm_condExp_of_ae_bdd [IsFiniteMeasure μ]
   -- The local `m` would otherwise be found as the measurable structure of `Ω`.
   let _ : MeasurableSpace Ω := mΩ
   rcases le_total p 1 with hp1 | hp
-  · exact tendsto_eLpNorm_condExp_of_le_one hp1 h_L1
+  · exact tendsto_eLpNorm_of_tendsto_eLpNorm_one hp1
+      (fun _ => (integrable_condExp.sub integrable_condExp).aestronglyMeasurable) h_L1
   -- The conditional expectations of `g` inherit its essential bound, so they are uniformly
   -- integrable in `Lᵖ`, and Vitali's theorem upgrades the convergence in measure, which follows
   -- from the `L¹` convergence, to `Lᵖ` convergence.
@@ -259,7 +237,8 @@ private theorem tendsto_eLpNorm_condExp_of_tendsto_real [IsFiniteMeasure μ]
   -- The local `m` would otherwise be found as the measurable structure of `Ω`.
   let _ : MeasurableSpace Ω := mΩ
   rcases le_total p 1 with hp1 | hp1
-  · exact tendsto_eLpNorm_condExp_of_le_one hp1 (h_L1 f)
+  · exact tendsto_eLpNorm_of_tendsto_eLpNorm_one hp1
+      (fun _ => (integrable_condExp.sub integrable_condExp).aestronglyMeasurable) (h_L1 f)
   -- For `1 ≤ p`, approximate `f` by a simple, hence bounded, function `g` up to `ε / 3`. The
   -- bounded case handles `g`, and `μ[· | m]` contracts the `Lᵖ` seminorm, so `f - g` contributes at
   -- most `ε / 3` at each of the two levels.
