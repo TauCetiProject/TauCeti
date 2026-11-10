@@ -46,11 +46,7 @@ theorem IsLatticeSpan.tendsto_renewalMeasure_real_mul (ha : F.IsLatticeSpan a)
     (hmax : IsGreatest {b | F.IsLatticeSpan b} a) :
     Tendsto (fun n : ℕ => F.renewalMeasure.real {(n : ℝ≥0) * a}) atTop
       (𝓝 ((a : ℝ) * ((∫⁻ t, (t : ℝ≥0∞) ∂F)⁻¹).toReal)) := by
-  have hF : F {0} < 1 := by
-    apply tsub_pos_iff_lt.mp
-    rw [← prob_compl_eq_one_sub (measurableSet_singleton 0)]
-    exact pos_iff_ne_zero.mpr
-      (measure_compl_singleton_zero_ne_zero_of_isGreatest_isLatticeSpan hmax)
+  have hF := measure_singleton_zero_lt_one_of_isGreatest_isLatticeSpan hmax
   let ν := F[|{0}ᶜ].map (fun x ↦ ⌊x / a⌋₊)
   have := isProbabilityMeasure_cond_compl_singleton hF.ne
   have hν : ν {0} = 0 := by
@@ -97,11 +93,7 @@ theorem IsLatticeSpan.tendsto_renewalFunction_succ_mul_sub (ha : F.IsLatticeSpan
     Tendsto (fun n : ℕ => (F.renewalFunction ((n + 1 : ℕ) * a)).toReal -
       (F.renewalFunction ((n : ℝ≥0) * a)).toReal) atTop
       (𝓝 ((a : ℝ) * ((∫⁻ t, (t : ℝ≥0∞) ∂F)⁻¹).toReal)) := by
-  have hF : F {0} < 1 := by
-    apply tsub_pos_iff_lt.mp
-    rw [← prob_compl_eq_one_sub (measurableSet_singleton 0)]
-    exact pos_iff_ne_zero.mpr
-      (measure_compl_singleton_zero_ne_zero_of_isGreatest_isLatticeSpan hmax)
+  have hF := measure_singleton_zero_lt_one_of_isGreatest_isLatticeSpan hmax
   let := F.isLocallyFiniteMeasure_renewalMeasure hF
   simpa only [ha.toReal_renewalFunction_succ_mul_sub, Function.comp_def] using
     (ha.tendsto_renewalMeasure_real_mul hmax).comp (tendsto_add_atTop_nat 1)

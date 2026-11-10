@@ -283,6 +283,14 @@ theorem measure_compl_singleton_zero_ne_zero_of_isGreatest_isLatticeSpan {g : �
     exact ⟨0, by simp [mem_singleton_iff.1 hx]⟩
   exact (hg.2 hspan).not_gt (lt_two_mul_self hg.1.pos)
 
+/-- A probability measure with a greatest lattice span has mass strictly below one at `0`. -/
+theorem measure_singleton_zero_lt_one_of_isGreatest_isLatticeSpan [IsProbabilityMeasure μ]
+    {g : ℝ≥0} (hg : IsGreatest {b | μ.IsLatticeSpan b} g) : μ {0} < 1 := by
+  apply tsub_pos_iff_lt.mp
+  rw [← prob_compl_eq_one_sub (measurableSet_singleton 0)]
+  exact pos_iff_ne_zero.mpr
+    (measure_compl_singleton_zero_ne_zero_of_isGreatest_isLatticeSpan hg)
+
 /-- A span `a` is the greatest span exactly when the positive `n` with `μ {n * a} > 0` have gcd
 one. -/
 theorem isGreatest_setOf_isLatticeSpan_iff :

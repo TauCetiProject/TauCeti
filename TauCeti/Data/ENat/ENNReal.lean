@@ -23,7 +23,7 @@ namespace WithTop
 /-- Sending infinity to infinity and natural numbers to their casts is `ENat.toENNReal`.
 Use explicitly: as a global simp rule, this can leave a cast of `WithTop` infinity that
 simp lemmas for `ENat` infinity do not match. -/
-theorem recTopCoe_top_natCast (t : WithTop ℕ) :
+theorem recTopCoe_top_natCast_eq_toENNReal (t : WithTop ℕ) :
     t.recTopCoe (⊤ : ℝ≥0∞) (fun n => (n : ℝ≥0∞)) = ENat.toENNReal t := by
   induction t using WithTop.recTopCoe with
   | top => exact ENat.toENNReal_top.symm

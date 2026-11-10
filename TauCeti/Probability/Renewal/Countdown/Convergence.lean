@@ -97,7 +97,7 @@ theorem tendsto_countdownKernel_map_pred_pow_apply_zero (ν : Measure ℕ) [IsPr
     have hret : (∫⁻ ω, (hittingAfter (fun n ω => ω n) {z} 1 ω).recTopCoe ⊤
         (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (dirac z) κ) = ∞ := by
       rw [hm]
-      simp_rw [WithTop.recTopCoe_top_natCast]
+      simp_rw [WithTop.recTopCoe_top_natCast_eq_toENNReal]
       exact (ν.lintegral_hittingAfter_countdownKernel_map_pred hν).trans hmean
     simpa only [hmass, hmean, ENNReal.inv_top, ENNReal.toReal_zero] using
       κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top
