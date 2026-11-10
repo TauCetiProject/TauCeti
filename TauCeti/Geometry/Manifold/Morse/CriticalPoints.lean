@@ -1014,7 +1014,6 @@ theorem toNat_totalCriticalCount_modEq_sum_range_neg_one_pow_mul_toNat_criticalC
   exact (by simpa using ((show (-1 : ℤ) ≡ 1 [ZMOD 2] by decide).pow (manifoldMorseIndex I f x)) :
     (-1 : ℤ) ^ manifoldMorseIndex I f x ≡ 1 [ZMOD 2]).symm
 
-omit [FiniteDimensional ℝ E] in
 /-- **Duality of critical counts.** Replacing a Morse function by its negation exchanges the
 numbers of critical points of index `j` and `dim M - j`. -/
 theorem IsMorse.criticalCount_neg (hf : IsMorse I f) {j : ℕ} (hj : j ≤ Module.finrank ℝ E) :
