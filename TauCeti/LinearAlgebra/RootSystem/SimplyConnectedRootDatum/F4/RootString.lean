@@ -95,14 +95,27 @@ theorem f4_not_root_eq_add_nsmul_of_length_eq_of_two_le (α β γ : Fin 48) (n :
         rcases f4Length_eq_one_or_eq_two γ with hγ | hγ <;>
         omega) hneg hn h
 
+/-- If a short F4 root plus a root is a long root, the root is short. -/
+theorem f4Length_eq_one_of_root_eq_add_of_length_eq_one_of_length_eq_two (α β γ : Fin 48)
+    (hβ : f4Length β = 1) (hγ : f4Length γ = 2)
+    (h : f4SimplyConnectedRootDatum.root γ =
+      f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α) :
+    f4Length α = 1 := by
+  have hlen := f4Length_of_root_eq_add_zsmul α β γ 1 (by simpa only [one_zsmul] using h)
+  rcases f4Length_eq_one_or_eq_two α with hα | hα
+  · exact hα
+  · rw [hα, hβ, hγ] at hlen
+    omega
+
 /-- When the sum of two short F4 roots is long, their Cartan pairing is zero. -/
 theorem f4_pairing_eq_zero_of_short_add_short_eq_long (α β γ : Fin 48)
-    (hα : f4Length α = 1) (hβ : f4Length β = 1) (hγ : f4Length γ = 2)
+    (hβ : f4Length β = 1) (hγ : f4Length γ = 2)
     (h : f4SimplyConnectedRootDatum.root γ =
       f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α) :
     f4SimplyConnectedRootDatum.pairing β α = 0 :=
   f4SimplyConnectedRootDatum.pairing_eq_zero_of_short_add_short_eq_long f4Length
-    f4Length_mul_pairing_comm α β γ hα hβ hγ h
+    f4Length_mul_pairing_comm α β γ
+    (f4Length_eq_one_of_root_eq_add_of_length_eq_one_of_length_eq_two α β γ hβ hγ h) hβ hγ h
 
 /-- A positive root string from a short root in a long-root direction has at most
 one step, and that step is again short. -/
@@ -121,12 +134,13 @@ theorem f4_n_eq_one_and_pairing_eq_neg_one_and_length_eq_one_of_short_add_nsmul_
 /-- The short-short-to-long root edge has descending chain coefficient one,
 so its Chevalley bracket coefficient has absolute value two. -/
 theorem f4_chainBotCoeff_eq_one_of_short_add_short_eq_long (α β γ : Fin 48)
-    (hα : f4Length α = 1) (hβ : f4Length β = 1) (hγ : f4Length γ = 2)
+    (hβ : f4Length β = 1) (hγ : f4Length γ = 2)
     (h : f4SimplyConnectedRootDatum.root γ =
       f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α) :
     f4SimplyConnectedRootDatum.chainBotCoeff α β = 1 :=
   f4SimplyConnectedRootDatum.chainBotCoeff_eq_one_of_short_add_short_eq_long f4Length
-    f4Length_mul_pairing_comm α β γ hα hβ hγ h
+    f4Length_mul_pairing_comm α β γ
+    (f4Length_eq_one_of_root_eq_add_of_length_eq_one_of_length_eq_two α β γ hβ hγ h) hβ hγ h
 
 /-- If two steps in a short-root direction carry a long root to another root, the Cartan
 pairings are `-2` and `-1`, and the endpoint is long. This is the root string underlying the
@@ -183,25 +197,23 @@ theorem f4Length_eq_two_of_root_eq_add_of_long_long (α β γ : Fin 48)
   norm_num at hlen
   omega
 
-/-- A short-root direction has no third step from a long root. -/
-theorem f4_not_root_eq_long_add_three_short (α β γ : Fin 48)
-    (hα : f4Length α = 1) (hβ : f4Length β = 2)
+/-- No F4 root is a root plus three times a root. -/
+theorem f4_not_root_eq_add_three_zsmul (α β γ : Fin 48)
     (hγ : f4SimplyConnectedRootDatum.root γ =
       f4SimplyConnectedRootDatum.root β + (3 : ℤ) •
         f4SimplyConnectedRootDatum.root α) : False := by
   have hpair := abs_pairing_f4SimplyConnectedRootDatum_le_two β α
   have hpairLower : -2 ≤ f4SimplyConnectedRootDatum.pairing β α :=
     (abs_le.mp hpair).1
-  rw [f4SimplyConnectedRootDatum_pairing] at hpairLower
   have hlen := f4Length_of_root_eq_add_zsmul α β γ 3 hγ
   have hγ := f4Length_eq_one_or_eq_two γ
-  rw [hα, hβ] at hlen
-  norm_num at hlen
-  omega
+  rcases f4Length_eq_one_or_eq_two α with hα | hα <;>
+    rcases f4Length_eq_one_or_eq_two β with hβ | hβ <;>
+    rw [hα, hβ] at hlen <;>
+    omega
 
-/-- A short root with Cartan pairing one has no positive step in the given root direction. -/
-theorem f4_chainTopCoeff_eq_zero_of_short_pairing_eq_one (α β : Fin 48)
-    (hβ : f4Length β = 1)
+/-- A root with Cartan pairing one has no positive step in the given root direction. -/
+theorem f4_chainTopCoeff_eq_zero_of_pairing_eq_one (α β : Fin 48)
     (hpair : f4SimplyConnectedRootDatum.pairing β α = 1) :
     f4SimplyConnectedRootDatum.chainTopCoeff α β = 0 := by
   rw [f4SimplyConnectedRootDatum.chainTopCoeff_eq_zero_iff]
@@ -210,12 +222,13 @@ theorem f4_chainTopCoeff_eq_zero_of_short_pairing_eq_one (α β : Fin 48)
   have hlen := f4Length_of_root_eq_add_zsmul α β γ 1 (by
     simpa only [one_zsmul] using hγ)
   rcases f4Length_eq_one_or_eq_two α with hα | hα <;>
+    rcases f4Length_eq_one_or_eq_two β with hβ | hβ <;>
     rcases f4Length_eq_one_or_eq_two γ with hγlen | hγlen <;>
     rw [hα, hβ, hγlen, hpair] at hlen <;> norm_num at hlen
 
-/-- A short root orthogonal to a long root has no positive step in the long-root direction. -/
-theorem f4_chainTopCoeff_eq_zero_of_short_long_pairing_eq_zero (α β : Fin 48)
-    (hα : f4Length α = 2) (hβ : f4Length β = 1)
+/-- A root orthogonal to a long root has no positive step in the long-root direction. -/
+theorem f4_chainTopCoeff_eq_zero_of_length_eq_two_of_pairing_eq_zero (α β : Fin 48)
+    (hα : f4Length α = 2)
     (hpair : f4SimplyConnectedRootDatum.pairing β α = 0) :
     f4SimplyConnectedRootDatum.chainTopCoeff α β = 0 := by
   rw [f4SimplyConnectedRootDatum.chainTopCoeff_eq_zero_iff]
@@ -223,7 +236,8 @@ theorem f4_chainTopCoeff_eq_zero_of_short_long_pairing_eq_zero (α β : Fin 48)
   rintro ⟨γ, hγ⟩
   have hlen := f4Length_of_root_eq_add_zsmul α β γ 1 (by
     simpa only [one_zsmul] using hγ)
-  rcases f4Length_eq_one_or_eq_two γ with hγlen | hγlen <;>
+  rcases f4Length_eq_one_or_eq_two β with hβ | hβ <;>
+    rcases f4Length_eq_one_or_eq_two γ with hγlen | hγlen <;>
     rw [hα, hβ, hγlen, hpair] at hlen <;> norm_num at hlen
 
 end TauCeti.DynkinType
