@@ -325,6 +325,7 @@ private theorem inner_leviCivitaConnection_horizontalLift_self {B : Π y : N, Ta
   linarith
 
 /-- **O'Neill's tensor `A` vanishes on the diagonal of the horizontal space.** -/
+@[simp]
 theorem oneillA_self {u : TangentSpace I x} (hu : u ∈ (mfderiv I J f x).kerᗮ) :
     h.oneillA x u u = 0 := by
   let : IsManifold I (∞ + 1) M := by simpa using (inferInstance : IsManifold I ∞ M)
