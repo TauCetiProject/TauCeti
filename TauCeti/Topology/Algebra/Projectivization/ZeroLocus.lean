@@ -174,10 +174,6 @@ closed set. -/
 theorem isOpen_setOfPred_mulVec_surjective_jacobiMatrixAt_rep
     {p : ι → MvPolynomial (Fin N) ℂ} {d : ι → ℕ} (hp : ∀ i, (p i).IsHomogeneous (d i)) :
     IsOpen {L : ℙ ℂ (Fin N → ℂ) | (jacobiMatrixAt p L.rep).mulVec.Surjective} := by
-  by_cases hι : Finite ι
-  swap
-  · convert isOpen_empty using 1
-    exact Set.eq_empty_of_forall_notMem fun L hL ↦ hι (Matrix.finite_of_mulVec_surjective _ hL)
   rw [← Projectivization.isQuotientMap_mk'.isOpen_preimage]
   have hJ : Continuous fun v : {v : Fin N → ℂ // v ≠ 0} ↦ jacobiMatrixAt p v.1 :=
     continuous_matrix fun i j ↦ by
@@ -222,12 +218,6 @@ theorem mk_mem_complexProjectiveBadRankLocus_iff
     (c, Projectivization.mk ℂ v hv) ∈ complexProjectiveBadRankLocus N d ↔
       (∀ i, eval v (c i : MvPolynomial (Fin N) ℂ) = 0) ∧
         ¬(jacobiMatrixAt (fun i ↦ (c i : MvPolynomial (Fin N) ℂ)) v).mulVec.Surjective := by
-  by_cases hι : Finite ι
-  swap
-  · rw [mem_complexProjectiveBadRankLocus, mk_mem_complexProjectiveIncidence_iff _ _ hv]
-    exact and_congr_right fun _ ↦ iff_of_true
-      (fun h ↦ hι (Matrix.finite_of_mulVec_surjective _ h))
-      (fun h ↦ hι (Matrix.finite_of_mulVec_surjective _ h))
   rw [mem_complexProjectiveBadRankLocus, mk_mem_complexProjectiveIncidence_iff,
     mulVec_surjective_jacobiMatrixAt_iff_of_mk_eq_mk
       (fun i ↦ (mem_homogeneousSubmodule _ _).mp (c i).2) (Projectivization.rep_ne_zero _) hv
@@ -237,11 +227,6 @@ theorem mk_mem_complexProjectiveBadRankLocus_iff
 the point, and full rank is an open condition. -/
 theorem isClosed_complexProjectiveBadRankLocus (d : ι → ℕ) :
     IsClosed (complexProjectiveBadRankLocus N d) := by
-  by_cases hι : Finite ι
-  swap
-  · convert isClosed_complexProjectiveIncidence (N := N) d using 1
-    exact Set.Subset.antisymm (complexProjectiveBadRankLocus_subset d)
-      fun x hx ↦ ⟨hx, fun h ↦ hι (Matrix.finite_of_mulVec_surjective _ h)⟩
   rw [← (IsOpenQuotientMap.id.prodMap
     Projectivization.isOpenQuotientMap_mk').isQuotientMap.isClosed_preimage]
   have hJ : Continuous fun x : (∀ i, homogeneousSubmodule (Fin N) ℂ (d i)) ×
