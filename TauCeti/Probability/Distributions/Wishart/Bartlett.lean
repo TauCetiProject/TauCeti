@@ -381,13 +381,15 @@ theorem map_diagonal_sq_pi_bartlettCoordinateMeasure (hn : (p : ℝ) - 1 < n) :
       exact map_sq_bartlettCoordinateMeasure_of_eq hn rfl
 
 /-- The product of the coordinate laws gives no mass to a nonpositive diagonal coordinate. -/
-theorem pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion (hn : (p : ℝ) - 1 < n) :
+theorem pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion :
     Measure.pi (bartlettCoordinateMeasure (p := p) n) (posDiagLowerRegion p)ᶜ = 0 := by
   rw [pi_bartlettCoordinateMeasure_eq_withDensity,
     withDensity_apply _ (measurableSet_posDiagLowerRegion p).compl]
   refine setLIntegral_eq_zero (measurableSet_posDiagLowerRegion p).compl fun x hx ↦ ?_
-  rw [← ENNReal.ofReal_prod_of_nonneg fun ij _ ↦ bartlettCoordinatePDFReal_nonneg hn ij (x ij),
-    prod_bartlettCoordinatePDFReal_of_notMem hx, ENNReal.ofReal_zero, Pi.zero_apply]
+  obtain ⟨i, hi⟩ := not_forall.1 ((mem_posDiagLowerRegion p).not.1 hx)
+  have hmem : x (⟨(i, i), le_rfl⟩ : lowerTriangle p) ∉ Ioi (0 : ℝ) := by simpa using hi
+  exact Finset.prod_eq_zero (Finset.mem_univ (⟨(i, i), le_rfl⟩ : lowerTriangle p))
+    (by simp [bartlettCoordinatePDFReal, Set.indicator_of_notMem hmem])
 
 /-! ### The Bartlett decomposition -/
 
@@ -430,7 +432,7 @@ theorem map_choleskyLowerCoordinates_comap_nonsingularWishartMeasure (hn : (p : 
       (posDiagLowerRegion p) = Measure.pi (bartlettCoordinateMeasure (p := p) n) :=
     Measure.restrict_eq_self_of_ae_mem <| by
       rw [ae_iff]
-      exact pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion hn
+      exact pi_bartlettCoordinateMeasure_compl_posDiagLowerRegion
   ext s hs
   have hE : MeasurableSet (Subtype.val '' (choleskyLowerCoordinates p ⁻¹' s)) :=
     hemb.measurableSet_image.2 (measurable_choleskyLowerCoordinates p hs)
