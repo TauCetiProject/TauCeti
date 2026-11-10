@@ -122,30 +122,9 @@ theorem exists_coprimePart_exactK0_ofMulAction_eq_nsmul
     refine ⟨C, le_rfl, hnormal, ?_, ?_, ?_⟩
     · simpa using (Nat.card_pos (α := C)).ne'
     · simp
-    · have : Subsingleton (C ⧸ C.subgroupOf C) :=
-        ⟨fun a b ↦ by
-          induction a using QuotientGroup.induction_on
-          induction b using QuotientGroup.induction_on
-          exact QuotientGroup.eq.mpr (by rw [hbot]; trivial)⟩
-      have hρ : ∀ g : C, (Representation.ofMulAction k C (C ⧸ C.subgroupOf C)) g =
-          LinearMap.id := by
-        intro g
-        ext q
-        simp [Subsingleton.elim (g • (q : C ⧸ C.subgroupOf C)) q]
-      let e : Representation.ofMulAction k C (C ⧸ C.subgroupOf C) |>.Equiv
-          (Representation.trivial k C k) :=
-        Representation.Equiv.mk ((MonoidAlgebra.coeffLinearEquiv k).trans
-          (Finsupp.uniqueLinearEquiv k k (1 : C ⧸ C.subgroupOf C))) (by
-          intro g
-          rw [hρ g]
-          ext x
-          simp)
-      let : Module.Finite k[C] (Representation.ofMulAction k C (C ⧸ C.subgroupOf C)).asModule :=
-        Module.Finite.of_restrictScalars_finite k k[C] _
-      let : Module.Finite k[C] (Representation.trivial k C k).asModule :=
-        Module.Finite.of_restrictScalars_finite k k[C] _
+    · have : Subsingleton (C ⧸ C.subgroupOf C) := hbot ▸ QuotientGroup.subsingleton_quotient_top
       simp only [pow_zero, one_smul, Nat.factorization_zero_right]
-      exact ExactK0.of_congr (Representation.asModuleLinearEquivOfEquiv e).toFGModuleCatIso
+      exact (permK0_def k _).symm.trans (permK0_of_subsingleton k _)
 
 /-- **Inducing across a quotient of `p`-power exponent.** Let `D ≤ C` be subgroups of a finite
 group `G`, with `D` normal in `C` and every element of `C` having a `p`-power power in `D`. Then
@@ -176,7 +155,7 @@ theorem exists_coprimePart_indK0_of_trivial_eq_nsmul [Finite G] (C : Subgroup G)
       D.relIndex C = p ^ (Nat.card C).factorization p ∧
       (letI : Module.Finite k[D] (Representation.trivial k D k).asModule :=
         Module.Finite.of_restrictScalars_finite k k[D] _
-      let : Module.Finite k[C] (Representation.trivial k C k).asModule :=
+      letI : Module.Finite k[C] (Representation.trivial k C k).asModule :=
         Module.Finite.of_restrictScalars_finite k k[C] _
       indK0 k D (ExactK0.of (FGModuleCat.of k[D] (Representation.trivial k D k).asModule)) =
         (p ^ (Nat.card C).factorization p) • indK0 k C
