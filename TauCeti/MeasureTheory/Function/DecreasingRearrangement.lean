@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+-- Proof-only: the radial retraction realizing the infimum in the `K`-functional formula.
+import TauCeti.Analysis.Normed.Module.Ball.Retraction
 -- Proof-only: the layer-cake formula for powers of an `ℝ≥0∞`-valued function.
 import TauCeti.Analysis.SpecialFunctions.Pow.Integral
 -- Proof-only: right continuity of the distribution function `t ↦ μ {t < f}`.
@@ -22,7 +24,8 @@ distribution as `f`:
 `f* s = sup {c | s < μ {f > c}} = inf {c | μ {f > c} ≤ s}`.
 
 The measure `μ` is arbitrary: no σ-finiteness, measurability or finiteness hypothesis enters the
-definition, and `f* s = ∞` exactly when `μ {f > c} > s` for every level `c`. For `s ≤ 0` the value
+definition, and `f* s = ∞` exactly when `ENNReal.ofReal s < μ {f > c}` for every finite level
+`c`. For `s ≤ 0` the value
 is the essential supremum of `f`, which is also the limit of `f* s` as `s ↓ 0`. For the counting
 measure on a finite type, `f* s` is the entry of index `⌊s⌋` in the list of values of `f` sorted
 in decreasing order, and `0` beyond its length. The decreasing rearrangement is the commutative
@@ -39,7 +42,7 @@ The main result is the formula for Peetre's `K`-functional of the couple `(L¹, 
 
 `∫₀ᵗ f* = inf {‖f₀‖₁ + t ‖f₁‖_∞ | f = f₀ + f₁}`.
 
-The infimum is attained by the radial truncation of `f` at the level `f* t`, and equals the
+The infimum is attained by the radial retraction of `f` at the level `f* t`, and equals the
 infimum over `c ≥ 0` of `∫ (f - c)⁺ + t c`. This identifies the `K`-functional of `(L¹, L∞)` with
 the integral of the rearrangement; the real interpolation spaces of `(L¹, L∞)` are computed
 from it.
@@ -69,8 +72,8 @@ from it.
   `essSup_decreasingRearrangement`.
 * `MeasureTheory.Measure.decreasingRearrangement_add_le`,
   `MeasureTheory.Measure.decreasingRearrangement_mul_le`: the shifted subadditivity and
-  submultiplicativity, and `decreasingRearrangement_le_add_essSup`, the stability under a
-  bounded perturbation.
+  submultiplicativity, and `decreasingRearrangement_le_add_essSup`, the bound
+  `f* s ≤ g* s + ess sup h` whenever `f ≤ g + h` almost everywhere.
 * `MeasureTheory.Measure.lintegral_decreasingRearrangement_eq_iInf_lintegral_sub`: the formula
   `∫₀ᵗ f* = inf_c (∫ (f - c) + t c)`.
 * `MeasureTheory.Measure.lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm`: the
@@ -220,13 +223,22 @@ theorem decreasingRearrangement_indicator (A : Set α) (c : ℝ≥0∞) (s : ℝ
     rw [this, measure_empty]
     split_ifs <;> simp [hbc]
 
-/-- Multiplication by a finite constant commutes with rearrangement. -/
-theorem decreasingRearrangement_const_mul (f : α → ℝ≥0∞) {a : ℝ≥0∞} (ha : a ≠ ∞) (s : ℝ) :
+/-- Multiplication by a constant commutes with rearrangement. -/
+theorem decreasingRearrangement_const_mul (f : α → ℝ≥0∞) (a : ℝ≥0∞) (s : ℝ) :
     μ.decreasingRearrangement (fun y ↦ a * f y) s = a * μ.decreasingRearrangement f s := by
   rcases eq_or_ne a 0 with rfl | ha₀
   · simp only [zero_mul]
     exact le_antisymm (μ.decreasingRearrangement_le_iff.2 (by simp)) bot_le
   refine eq_of_forall_lt_iff fun b ↦ ?_
+  rcases eq_or_ne a ∞ with rfl | ha
+  · -- Multiplying by `∞` only remembers where `f` is positive.
+    rcases eq_or_ne b ∞ with rfl | hb
+    · simp
+    have key : ∀ x : ℝ≥0∞, b < ∞ * x ↔ 0 < x := fun x ↦ by
+      rcases eq_or_ne x 0 with rfl | hx
+      · simp
+      · simp [ENNReal.top_mul hx, hb.lt_top, pos_iff_ne_zero.2 hx]
+    simp only [lt_decreasingRearrangement_iff, key]
   have key : ∀ x : ℝ≥0∞, b < a * x ↔ b / a < x := fun x ↦ by
     rw [ENNReal.div_lt_iff (Or.inl ha₀) (Or.inl ha), mul_comm]
   simp only [lt_decreasingRearrangement_iff, key]
@@ -262,7 +274,8 @@ theorem decreasingRearrangement_mul_le (f g : α → ℝ≥0∞) (hs : 0 ≤ s) 
   simp only [mem_union, mem_ofPred_eq, not_or, not_lt] at h
   exact (mul_le_mul' h.1 h.2).not_gt hy
 
-/-- A perturbation `h` moves the decreasing rearrangement by at most its essential supremum. -/
+/-- If `f ≤ g + h` almost everywhere, then `f* s ≤ g* s + ess sup h`: adding `h` raises the
+decreasing rearrangement by at most the essential supremum of `h`. -/
 theorem decreasingRearrangement_le_add_essSup {h : α → ℝ≥0∞} (hfg : f ≤ᵐ[μ] g + h) (s : ℝ) :
     μ.decreasingRearrangement f s ≤ μ.decreasingRearrangement g s + essSup h μ := by
   rcases le_total s 0 with hs | hs
@@ -413,31 +426,9 @@ section Normed
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-/-- The radial truncation `x ↦ min 1 (r / ‖x‖) • x` onto the closed ball of radius `r ≥ 0`
-leaves a remainder of norm `‖x‖ - r`. -/
-private theorem enorm_sub_truncation (x : E) {r : ℝ} (hr : 0 ≤ r) :
-    ‖x - min 1 (r / ‖x‖) • x‖ₑ = ‖x‖ₑ - ENNReal.ofReal r ∧
-      ‖min 1 (r / ‖x‖) • x‖ₑ ≤ ENNReal.ofReal r := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp
-  have hx' : 0 < ‖x‖ := norm_pos_iff.2 hx
-  rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_sub _ hr]
-  rcases le_total ‖x‖ r with hxr | hxr
-  · have h1 : min 1 (r / ‖x‖) = 1 := min_eq_left ((one_le_div hx').2 hxr)
-    refine ⟨by simp [h1, sub_nonpos.2 hxr], ?_⟩
-    rw [h1, one_smul]
-    exact ENNReal.ofReal_le_ofReal hxr
-  · have h1 : min 1 (r / ‖x‖) = r / ‖x‖ := min_eq_right ((div_le_one hx').2 hxr)
-    have hnorm : ‖(r / ‖x‖) • x‖ = r := by
-      rw [norm_smul, Real.norm_of_nonneg (div_nonneg hr hx'.le), div_mul_cancel₀ _ hx'.ne']
-    have hsub : x - (r / ‖x‖) • x = (1 - r / ‖x‖) • x := by rw [sub_smul, one_smul]
-    refine ⟨congrArg ENNReal.ofReal ?_, by rw [h1, hnorm]⟩
-    rw [h1, hsub, norm_smul, Real.norm_of_nonneg (sub_nonneg.2 ((div_le_one hx').2 hxr)), sub_mul,
-      one_mul, div_mul_cancel₀ _ hx'.ne']
-
 /-- **The `K`-functional of `(L¹, L∞)`.** For an a.e. strongly measurable `f`,
 `∫₀ᵗ ‖f‖* = inf {‖f₀‖₁ + t ‖f₁‖_∞ | f₀ + f₁ = f}`, the infimum being attained by the radial
-truncation of `f` at the level `‖f‖* t`. -/
+retraction of `f` at the level `‖f‖* t`. -/
 theorem lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm {f : α → E}
     (hf : AEStronglyMeasurable f μ) (t : ℝ) :
     ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s =
@@ -464,14 +455,18 @@ theorem lintegral_decreasingRearrangement_enorm_eq_iInf_eLpNorm {f : α → E}
         _ ≤ ∫⁻ s in Ioc 0 t, μ.decreasingRearrangement (‖f ·‖ₑ) s :=
             setLIntegral_mono (by fun_prop) fun s hs ↦
               μ.antitone_decreasingRearrangement _ hs.2
-    · -- Radial truncation of `f` at the level `c = ‖f‖* t`.
-      set f₁ : α → E := fun y ↦ min 1 (c.toReal / ‖f y‖) • f y
+    · -- Radial retraction of `f` at the level `c = ‖f‖* t`.
+      have hr : 0 ≤ c.toReal := ENNReal.toReal_nonneg
+      have hcr : ENNReal.ofReal c.toReal = c := ENNReal.ofReal_toReal hc
+      set f₁ : α → E := fun y ↦ TauCeti.radialRetraction c.toReal (f y)
       have hf₁ : AEStronglyMeasurable f₁ μ :=
-        (((measurable_const.min (measurable_const.div measurable_id)).comp_aemeasurable
-          hf.norm.aemeasurable).aestronglyMeasurable).smul hf
+        (TauCeti.lipschitzWith_radialRetraction hr).continuous.comp_aestronglyMeasurable hf
       refine iInf_le_of_le (f - f₁) (iInf_le_of_le f₁ (iInf_le_of_le (sub_add_cancel f f₁) ?_))
-      have htrunc := fun y ↦ enorm_sub_truncation (f y) (ENNReal.toReal_nonneg (a := c))
-      simp only [ENNReal.ofReal_toReal hc] at htrunc
+      have htrunc : ∀ y, ‖f y - f₁ y‖ₑ = ‖f y‖ₑ - c ∧ ‖f₁ y‖ₑ ≤ c := fun y ↦ by
+        rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, TauCeti.norm_sub_radialRetraction hr,
+          TauCeti.norm_radialRetraction hr, ENNReal.ofReal_max, ENNReal.ofReal_zero,
+          max_eq_left zero_le, ENNReal.ofReal_sub _ hr, hcr]
+        exact ⟨rfl, (ENNReal.ofReal_le_ofReal (min_le_right _ _)).trans_eq hcr⟩
       rw [eLpNorm_one_eq_lintegral_enorm (hf.sub hf₁), eLpNorm_exponent_top hf₁,
         eLpNormEssSup_eq_essSup_enorm,
         μ.lintegral_decreasingRearrangement_eq_lintegral_sub hf.enorm t]
