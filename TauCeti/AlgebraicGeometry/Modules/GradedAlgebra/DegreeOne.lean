@@ -34,9 +34,9 @@ degree if this holds over every affine open.
 
 public section
 
-open CategoryTheory DirectSum
+open CategoryTheory DirectSum TauCeti
 
-namespace TauCeti
+namespace CategoryTheory.CommMon
 
 open _root_.AlgebraicGeometry
 
@@ -50,7 +50,7 @@ sections.** Over an affine open `U` of `X` over which `⨁ n, Γ(Aₙ, U)` is ge
 homogeneous elements of degrees `0` and `1`, a morphism `φ : B ⟶ A` of graded algebras that is an
 epimorphism of quasicoherent module sheaves in degree one maps `⨁ n, Γ(Bₙ, U)` onto every
 homogeneous component of positive degree of `⨁ n, Γ(Aₙ, U)`. -/
-theorem _root_.CategoryTheory.CommMon.grade_subset_range_gradedSectionsGradedHom_of_epi_one
+theorem grade_subset_range_gradedSectionsGradedHom_of_epi_one
     [(A.X 1).IsQuasicoherent] [(B.X 1).IsQuasicoherent] (U : X.Opens) (hU : IsAffineOpen U)
     (h : Algebra.adjoin Γ(X, U) ((A.gradedSectionsGrading U 0 : Set (⨁ n, Γ(A.X n, U))) ∪
       A.gradedSectionsGrading U 1) = ⊤)
@@ -72,7 +72,7 @@ over every affine open `U` of `X` the graded ring of sections `⨁ n, Γ(Aₙ, U
 homogeneous elements of degrees `0` and `1`, then a morphism `φ : B ⟶ A` of graded quasicoherent
 algebras that is an epimorphism `B₁ ⟶ A₁` is an epimorphism `Bₙ ⟶ Aₙ` of module sheaves for every
 `n > 0`. -/
-theorem _root_.CategoryTheory.CommMon.epi_hom_hom_of_epi_one
+theorem epi_hom_hom_of_epi_one
     [(A.X 1).IsQuasicoherent] [(B.X 1).IsQuasicoherent]
     (h : ∀ U : X.Opens, IsAffineOpen U →
       Algebra.adjoin Γ(X, U) ((A.gradedSectionsGrading U 0 : Set (⨁ n, Γ(A.X n, U))) ∪
@@ -87,4 +87,4 @@ theorem _root_.CategoryTheory.CommMon.epi_hom_hom_of_epi_one
   simp only [CommMon.gradedSectionsGradedHom_apply, CommMon.gradedSectionsMap_apply] at this
   exact this.trans (DirectSum.of_eq_same (β := fun i ↦ Γ(A.X i, U)) i x)
 
-end TauCeti
+end CategoryTheory.CommMon
