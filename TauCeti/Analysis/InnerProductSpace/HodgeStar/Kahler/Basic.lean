@@ -228,10 +228,8 @@ theorem norm_lieMap_lieMap_le (η : ⋀[ℝ]^2 V) :
   have h₁ : ‖D η‖ ^ 2 ≤ ‖η‖ * ‖D (D η)‖ := by
     rw [← real_inner_self_eq_norm_sq, hskew]
     exact (neg_le_abs _).trans (abs_real_inner_le_norm _ _)
-  have h₂' : ‖D (D η)‖ = 2 * ‖D η‖ := by
-    rw [← Real.sqrt_sq (norm_nonneg (D (D η))), h₂, Real.sqrt_mul' _ (sq_nonneg _),
-      Real.sqrt_sq (norm_nonneg _), show (4 : ℝ) = 2 ^ 2 by norm_num,
-      Real.sqrt_sq zero_le_two]
+  have h₂' : ‖D (D η)‖ = 2 * ‖D η‖ :=
+    (sq_eq_sq₀ (norm_nonneg _) (by positivity)).1 (by rw [h₂]; ring)
   rw [h₂'] at h₁ ⊢
   nlinarith [norm_nonneg (D η), norm_nonneg η]
 

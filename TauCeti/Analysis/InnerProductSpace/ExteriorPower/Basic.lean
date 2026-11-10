@@ -48,7 +48,8 @@ operator that represents the two-form `ω(u, w) = ⟪F, u ∧ w⟫` through the 
   `OrthonormalBasis.norm_sq_eq_sum_sq_inner_ιMulti_two`: the coordinates of two-vectors in the
   basis `bᵢ ∧ bⱼ` induced by an orthonormal basis `b` of a four-dimensional space.
 * `exteriorPower.norm_ιMulti_sq`: `‖v₁ ∧ ⋯ ∧ vₙ‖ ^ 2` is the Gram determinant of `v`.
-* `exteriorPower.norm_ιMulti_le_prod_norm`: Hadamard's inequality `‖v₁ ∧ ⋯ ∧ vₙ‖ ≤ ∏ ‖vᵢ‖`.
+* `exteriorPower.norm_ιMulti_le_prod_norm`: Hadamard's inequality `‖v₁ ∧ ⋯ ∧ vₙ‖ ≤ ∏ ‖vᵢ‖`, and
+  `exteriorPower.norm_ιMulti_two_le`: its case `‖u ∧ w‖ ≤ ‖u‖ ‖w‖` of two vectors.
 * `TauCeti.inner_twoVectorContraction_apply`: the contraction `u ⌟ F` of a two-vector
   `F ∈ ⋀² V` by `⟪u, ·⟫` (`TauCeti.twoVectorContraction`) represents the two-form of `F`,
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`: on two-forms, wedging with `u` is adjoint to contracting with
@@ -176,6 +177,10 @@ theorem norm_ιMulti_le_prod_norm (v : Fin n → E) : ‖ιMulti ℝ n v‖ ≤ 
   refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1 ?_
   rw [norm_ιMulti_sq, ← Finset.prod_pow]
   simpa using Matrix.re_det_gram_le_prod_norm_sq (𝕜 := ℝ) v
+
+/-- **Hadamard's inequality** for two vectors: `‖u ∧ w‖ ≤ ‖u‖ ‖w‖`. -/
+theorem norm_ιMulti_two_le (u w : E) : ‖ιMulti ℝ 2 ![u, w]‖ ≤ ‖u‖ * ‖w‖ := by
+  simpa [Fin.prod_univ_two] using norm_ιMulti_le_prod_norm ![u, w]
 
 end exteriorPower
 

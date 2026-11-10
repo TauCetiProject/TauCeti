@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 public import Mathlib.Geometry.Convex.Cone.Pointed
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
 
@@ -28,6 +29,7 @@ positive forms is split into estimates on the summands.
 public section
 
 open Metric
+open scoped Pointwise
 
 variable {E : Type*} [SeminormedAddCommGroup E]
 
@@ -56,21 +58,14 @@ variable [Module ℝ E] [NormSMulClass ℝ E] (C : PointedCone ℝ E)
 for `c ≥ 0`, since `C` is invariant under multiplication by positive scalars. -/
 theorem infDist_smul {c : ℝ} (hc : 0 ≤ c) (x : E) :
     infDist (c • x) (C : Set E) = c * infDist x (C : Set E) := by
-  have hC : (C : Set E).Nonempty := ⟨0, C.zero_mem⟩
   rcases hc.eq_or_lt with rfl | hc
   · rw [zero_smul, zero_mul, infDist_zero_of_mem C.zero_mem]
-  have hdist (y z : E) : dist (c • y) (c • z) = c * dist y z := by
-    rw [dist_smul₀, Real.norm_of_nonneg hc.le]
-  refine le_antisymm ?_ ?_
-  · -- Each `c • z` with `z ∈ C` lies in `C`.
-    rw [← div_le_iff₀' hc]
-    refine (le_infDist hC).2 fun z hz ↦ ?_
-    rw [div_le_iff₀' hc, ← hdist]
-    exact infDist_le_dist_of_mem (C.smul_mem hc.le hz)
-  · -- Each `z ∈ C` is `c • (c⁻¹ • z)` with `c⁻¹ • z ∈ C`.
-    refine (le_infDist hC).2 fun z hz ↦ ?_
-    have h := infDist_le_dist_of_mem (x := x) (C.smul_mem (inv_nonneg.2 hc.le) hz)
-    calc c * infDist x (C : Set E) ≤ c * dist x (c⁻¹ • z) := by gcongr
-      _ = dist (c • x) z := by rw [← hdist, smul_inv_smul₀ hc.ne']
+  -- A positive multiple of `C` is `C` itself.
+  have hcC : c • (C : Set E) = C := Set.ext fun z ↦ by
+    rw [Set.mem_smul_set_iff_inv_smul_mem₀ hc.ne']
+    exact ⟨fun h ↦ by simpa [smul_inv_smul₀ hc.ne'] using C.smul_mem hc.le h,
+      C.smul_mem (inv_nonneg.2 hc.le)⟩
+  have h := infDist_smul₀ c (C : Set E) x
+  rwa [hcC, Real.norm_of_nonneg hc.le] at h
 
 end PointedCone

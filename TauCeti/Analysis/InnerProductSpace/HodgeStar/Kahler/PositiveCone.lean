@@ -351,11 +351,6 @@ private theorem norm_imGradient_le (P : V →L[ℝ] ℂ) : ‖imGradient P‖ �
   exact (Complex.imCLM.opNorm_comp_le P).trans (by rw [Complex.imCLM_norm, one_mul])
 
 omit hJ in
-/-- `‖u ∧ w‖ ≤ ‖u‖ ‖w‖`. -/
-private theorem norm_ιMulti_two_le (u w : V) : ‖ιMulti ℝ 2 ![u, w]‖ ≤ ‖u‖ * ‖w‖ := by
-  simpa [Fin.prod_univ_two] using norm_ιMulti_le_prod_norm ![u, w]
-
-omit hJ in
 /-- **The two-form `Im (conj (P u) P w)` is represented by a two-vector**: for a complex-valued
 covector `P = p₁ + i p₂`, it is `p₁ ∧ p₂`. -/
 theorem exists_inner_ιMulti_eq_im (P : V →L[ℝ] ℂ) :

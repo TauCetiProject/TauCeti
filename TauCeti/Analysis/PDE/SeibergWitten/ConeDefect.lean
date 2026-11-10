@@ -48,8 +48,10 @@ of a pair on a finite-dimensional inner product space with an orthogonal `J`:
 `dist(Θ, positiveCone) ≤ (1 - χ(s)) dist(i F_a, positiveCone) + 4 χ'(s) |∂bar_a α| |∇_a α|`.
 
 The curvature term only contributes where `χ(s) < 1`, that is on `{|α|² ≤ 1 / 2}`, a region of
-volume `O(1 / r)`. There `r |β| = O(√r)` in `L¹` by the `L²` bound `‖β‖₂ = O(1 / r)`, and the
-`O(√r)` negative Hermitian density integrates to `O(r^(-1/2))`. The derivative term is `O(r^(-1/2))`
+volume `O(1 / r)`, where `|1 - |α|² - |β|²| ≥ 1 / 4`. There
+`r |β| / 2 ≤ √r |1 - |α|² - |β|²| + r^(3/2) |β|² / 4`, so `∫ r |β| = O(r^(-1/2))` by
+`∫ |1 - |α|² - |β|²| = O(1 / r)` and `‖β‖₂² = O(1 / r²)`, and the `O(√r)` negative Hermitian
+density integrates to `O(r^(-1/2))`. The derivative term is `O(r^(-1/2))`
 by `‖∂bar_a α‖₂ = O(r^(-1/2))` and `‖∇_a α‖₂ = O(1)`. These coarse bounds are those of
 `TauCeti.Analysis.PDE.SeibergWitten.CoarseBounds`, and the integrated estimate is
 `TauCeti.SeibergWitten.integral_infDist_positiveCone_le`. As there, the fields are functions on
@@ -112,38 +114,6 @@ theorem infDist_positiveCone_le_of_inner_ιMulti_eq (hJ : ∀ v w, ⟪J v, J w�
   gcongr
   exact AlmostComplexStructure.infDist_positiveCone_le_of_inner_ιMulti_eq_im hJ hPQ hY
 
-/-- The `J`-linear part `∂_a α = ∇_a α - ∂bar_a α` of the covariant derivative is `J`-linear. -/
-private theorem covariantDeriv_sub_covariantDBar_apply (b : V → V [⋀^Fin 1]→L[ℝ] ℝ)
-    (α : V → ℂ) (x v : V) :
-    (covariantDeriv b α x - covariantDBar J b α x) (J v) =
-      Complex.I * (covariantDeriv b α x - covariantDBar J b α x) v := by
-  simp only [sub_apply, covariantDBar_apply, J.apply_apply, map_neg]
-  ring_nf
-  rw [Complex.I_sq]
-  ring
-
-/-- For an orthogonal `J`, `‖∂_a α‖ ≤ ‖∇_a α‖`: `∂_v α = (∇_v α - i ∇_{J v} α) / 2`. -/
-private theorem norm_covariantDeriv_sub_covariantDBar_le (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
-    (b : V → V [⋀^Fin 1]→L[ℝ] ℝ) (α : V → ℂ) (x : V) :
-    ‖covariantDeriv b α x - covariantDBar J b α x‖ ≤ ‖covariantDeriv b α x‖ := by
-  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ ?_
-  have hv : (covariantDeriv b α x - covariantDBar J b α x) v =
-      (covariantDeriv b α x v - Complex.I * covariantDeriv b α x (J v)) / 2 := by
-    simp only [sub_apply, covariantDBar_apply]
-    ring
-  have hJv : ‖J v‖ = ‖v‖ := AlmostComplexStructure.norm_apply hJ v
-  rw [hv, norm_div, Complex.norm_ofNat]
-  calc ‖covariantDeriv b α x v - Complex.I * covariantDeriv b α x (J v)‖ / 2
-      ≤ (‖covariantDeriv b α x v‖ + ‖covariantDeriv b α x (J v)‖) / 2 := by
-        gcongr
-        refine (norm_sub_le _ _).trans_eq ?_
-        rw [norm_mul, Complex.norm_I, one_mul]
-    _ ≤ (‖covariantDeriv b α x‖ * ‖v‖ + ‖covariantDeriv b α x‖ * ‖v‖) / 2 := by
-        gcongr
-        · exact (covariantDeriv b α x).le_opNorm v
-        · exact ((covariantDeriv b α x).le_opNorm (J v)).trans_eq (by rw [hJv])
-    _ = ‖covariantDeriv b α x‖ * ‖v‖ := by ring
-
 /-- **The distance of the cutoff current to the positive cone.** Let `J` be an orthogonal almost
 complex structure on a finite-dimensional inner product space, `(b, α)` an abelian Higgs pair with
 curvature `i F_a = -db`, and `χ` a cutoff vanishing near `0` with `χ(s) ≤ 1` and `χ'(s) ≥ 0` at
@@ -166,14 +136,15 @@ theorem infDist_positiveCone_cutoffCurrent_le (hJ : ∀ v w, ⟪J v, J w⟫ = �
         4 * deriv χ (Complex.normSq (α x)) *
           (‖covariantDBar J b α x‖ * ‖covariantDeriv b α x‖) := by
   have h := infDist_positiveCone_le_of_inner_ιMulti_eq hJ (sub_nonneg.2 hχ₁)
-    (mul_nonneg zero_le_two hχ') (covariantDeriv_sub_covariantDBar_apply b α x)
+    (mul_nonneg zero_le_two hχ') (covariantDeriv_sub_covariantDBar_apply_apply J b α x)
     (Θ := (alternatingFormEquiv V 2).symm (cutoffCurrent χ b α x))
     (F := (alternatingFormEquiv V 2).symm (-extDeriv b x)) fun u w ↦ by
       rw [inner_alternatingFormEquiv_symm_ιMulti, inner_alternatingFormEquiv_symm_ιMulti,
         cutoffCurrent_apply_pair hα hb hχ hχ₀, ContinuousAlternatingMap.neg_apply]
       ring
   refine h.trans ?_
-  have hn := norm_covariantDeriv_sub_covariantDBar_le hJ b α x
+  have hn :=
+    norm_covariantDeriv_sub_covariantDBar_le J (AlmostComplexStructure.norm_apply hJ) b α x
   have hDbar := norm_nonneg (covariantDBar J b α x)
   have := mul_le_mul_of_nonneg_left hn (mul_nonneg (mul_nonneg zero_le_two hχ') hDbar)
   nlinarith

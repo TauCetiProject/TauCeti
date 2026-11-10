@@ -583,6 +583,37 @@ theorem covariantDBar_apply_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E
   rw [← coe_covariantDBar_eq_complexAntilinearPart, DistribSMul.toLinearMap_apply] at h
   rw [h, smul_eq_mul, neg_mul]
 
+/-- The `J`-linear part `∂_a α = ∇_a α - ∂bar_a α` of the covariant derivative is `J`-linear:
+`∂_a α (J v) = i ∂_a α v`. -/
+theorem covariantDeriv_sub_covariantDBar_apply_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ)
+    (x v : E) :
+    (covariantDeriv b α x - covariantDBar J b α x) (J v) =
+      I * (covariantDeriv b α x - covariantDBar J b α x) v := by
+  simp only [_root_.sub_apply, covariantDBar_apply, J.apply_apply, map_neg]
+  linear_combination covariantDeriv b α x (J v) / 2 * I_sq
+
+/-- If `J` preserves the norm, then `‖∂_a α‖ ≤ ‖∇_a α‖`, since
+`∂_v α = (∇_v α - i ∇_{J v} α) / 2`. -/
+theorem norm_covariantDeriv_sub_covariantDBar_le (hJ : ∀ v, ‖J v‖ = ‖v‖)
+    (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ) (x : E) :
+    ‖covariantDeriv b α x - covariantDBar J b α x‖ ≤ ‖covariantDeriv b α x‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun v ↦ ?_
+  have hv : (covariantDeriv b α x - covariantDBar J b α x) v =
+      (covariantDeriv b α x v - I * covariantDeriv b α x (J v)) / 2 := by
+    simp only [_root_.sub_apply, covariantDBar_apply]
+    ring
+  rw [hv, norm_div, Complex.norm_ofNat]
+  calc ‖covariantDeriv b α x v - I * covariantDeriv b α x (J v)‖ / 2
+      ≤ (‖covariantDeriv b α x v‖ + ‖covariantDeriv b α x (J v)‖) / 2 := by
+        gcongr
+        refine (norm_sub_le _ _).trans_eq ?_
+        rw [norm_mul, norm_I, one_mul]
+    _ ≤ (‖covariantDeriv b α x‖ * ‖v‖ + ‖covariantDeriv b α x‖ * ‖v‖) / 2 := by
+        gcongr
+        · exact (covariantDeriv b α x).le_opNorm v
+        · exact ((covariantDeriv b α x).le_opNorm (J v)).trans_eq (by rw [hJ])
+    _ = ‖covariantDeriv b α x‖ * ‖v‖ := by ring
+
 /-- `∂bar_a α` of a `C¹` section for a continuous connection form is continuous. -/
 theorem continuous_covariantDBar {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} (hα : ContDiff ℝ 1 α)
     (hb : Continuous b) : Continuous (covariantDBar J b α) := by
