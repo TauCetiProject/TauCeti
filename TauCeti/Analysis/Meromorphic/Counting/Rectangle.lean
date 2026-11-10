@@ -12,9 +12,12 @@ public import Mathlib.Analysis.Complex.Basic
 # Exact additivity of counts in imaginary height
 
 Rectangles are closed in their real coordinate and half open in their imaginary coordinate.
-Thus a zero on a splitting edge contributes to precisely one of the two pieces. The
-containing closed rectangle is compact, which supplies finite divisor support, including at its
-edges.
+Thus a point on a splitting edge belongs to precisely one of the two pieces, so its divisor
+multiplicity is counted once, in the lower piece. The counts are those of the divisor
+`MeromorphicOn.divisor f U`, which is identically zero unless `f` is meromorphic on `U`: for a
+function that is not meromorphic on `U` every count is zero by convention, and no actual zeros are
+counted. The containing closed rectangle is compact, which supplies finite divisor support,
+including at its edges.
 -/
 
 public section
@@ -61,7 +64,9 @@ theorem divisorCount_reProdIm_Ioc_eq_add
   exact divisorCount_union hdisjoint hfirst hsecond
 
 /-- Splitting a half-open rectangle in imaginary height adds the natural zero counts exactly.
-Zeros on the splitting edge belong to the lower piece and are counted only once. -/
+Positive divisor multiplicities on the splitting edge are assigned to the lower piece and counted
+only once. If `f` is not meromorphic on `U` the divisor vanishes, so all counts are zero by
+convention. -/
 theorem zeroCount_reProdIm_Ioc_eq_add
     (ht12 : t₁ ≤ t₂) (ht23 : t₂ ≤ t₃)
     (hU : Icc σ₁ σ₂ ×ℂ Icc t₁ t₃ ⊆ U) :
