@@ -256,7 +256,6 @@ def firstHomologyAddEquiv :
 
 /-- The class of the loop `deckLoop g` in the first homology of the Kodaira–Thurston manifold has
 coordinates `(x, y, n)`, where `g = ((x, y, z), n)`. -/
-@[simp]
 theorem firstHomologyAddEquiv_loopClass_deckLoop (g : DeckGroup) :
     firstHomologyAddEquiv
         (H₁AddEquivHomology _ (loopClass (X := TopCat.of KodairaThurston) (deckLoop g))) =

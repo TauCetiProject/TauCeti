@@ -44,20 +44,20 @@ torus `E / L` with `E ≠ 0`, is infinite.
 
 public section
 
-/-- A discrete subgroup of a `T₁` topological group acts properly discontinuously on the group by
-left multiplication. -/
-@[to_additive /-- A discrete additive subgroup of a `T₁` additive topological group acts properly
+/-- A discrete subgroup of a topological group acts properly discontinuously on the group by left
+multiplication. -/
+@[to_additive /-- A discrete additive subgroup of an additive topological group acts properly
 discontinuously on the group by translation. -/]
 instance Subgroup.properlyDiscontinuousSMul_of_discreteTopology {G : Type*} [Group G]
-    [TopologicalSpace G] [IsTopologicalGroup G] [T1Space G] (S : Subgroup G) [DiscreteTopology S] :
+    [TopologicalSpace G] [IsTopologicalGroup G] (S : Subgroup G) [DiscreteTopology S] :
     ProperlyDiscontinuousSMul S G :=
   S.properlyDiscontinuousSMul_of_tendsto_cofinite <|
     S.tendsto_coe_cofinite_of_isDiscrete <| isDiscrete_iff_discreteTopology.2 ‹_›
 
-/-- A discrete submodule of a `T₁` topological module acts properly discontinuously on the module
-by translation. -/
+/-- A discrete submodule of a topological module acts properly discontinuously on the module by
+translation. -/
 instance Submodule.properlyDiscontinuousVAdd_of_discreteTopology {R M : Type*} [Ring R]
-    [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsTopologicalAddGroup M] [T1Space M]
+    [AddCommGroup M] [Module R M] [TopologicalSpace M] [IsTopologicalAddGroup M]
     (p : Submodule R M) [DiscreteTopology p] : ProperlyDiscontinuousVAdd p M :=
   AddSubgroup.properlyDiscontinuousVAdd_of_discreteTopology p.toAddSubgroup
 
