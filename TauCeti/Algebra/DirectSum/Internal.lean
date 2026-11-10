@@ -27,7 +27,9 @@ commit `bac6f02d25746bc1c2ec808601d4e9284911c475` (Apache 2.0),
 by the Mei contributors (Authors: Codex).
 `DirectSum.map_decompose_shift` says that an additive map carrying each summand of one
 decomposition into a summand of another, along an injective reindexing of the degrees, commutes
-with the homogeneous projections, while `DirectSum.isInternal_comap` and
+with the homogeneous projections, and `DirectSum.mem_biSup_iff_decompose_eq_zero` characterizes
+the sum of a subfamily of summands by the vanishing of the remaining components. Further,
+`DirectSum.isInternal_comap` and
 `DirectSum.Decomposition.restrict` transport a decomposition backwards along an injective linear
 map whose range contains the homogeneous projections of its elements, with
 `DirectSum.map_decompose_restrict` computing the projections of the restricted decomposition.
@@ -259,6 +261,30 @@ theorem map_decompose_shift {ι κ M N S T : Type*}
     · rw [DirectSum.decompose_of_mem_ne ℳ hxM (Ne.symm hij), map_zero,
         DirectSum.decompose_of_mem_ne 𝓝 hxN fun hc ↦ Ne.symm hij (hσ hc)]
   | add x y hx hy => simp [hx, hy]
+
+/-- An element lies in the sum of the summands whose indices satisfy `p` exactly when its
+components at the remaining indices vanish. -/
+theorem mem_biSup_iff_decompose_eq_zero {R ι M : Type*} [Semiring R] [DecidableEq ι]
+    [AddCommMonoid M] [Module R M] (ℳ : ι → Submodule R M) [Decomposition ℳ] (p : ι → Prop)
+    {x : M} : x ∈ ⨆ (i) (_ : p i), ℳ i ↔ ∀ i, ¬p i → (decompose ℳ x i : M) = 0 := by
+  classical
+  constructor
+  · intro hx i hi
+    -- The summands indexed by `p` lie in the kernel of the `i`-th component.
+    have hle : ⨆ (j) (_ : p j), ℳ j ≤
+        LinearMap.ker ((ℳ i).subtype ∘ₗ component R ι (fun j ↦ ℳ j) i ∘ₗ
+          (decomposeLinearEquiv ℳ).toLinearMap) :=
+      iSup₂_le fun j hj y hy ↦ by
+        simpa [decomposeLinearEquiv_apply, ← apply_eq_component] using
+          decompose_of_mem_ne ℳ hy fun hji ↦ hi (by subst hji; exact hj)
+    simpa [decomposeLinearEquiv_apply, ← apply_eq_component] using hle hx
+  · intro h
+    rw [← sum_support_decompose ℳ x]
+    refine Submodule.sum_mem _ fun i _ ↦ ?_
+    by_cases hi : p i
+    · exact Submodule.mem_iSup_of_mem i (Submodule.mem_iSup_of_mem hi (decompose ℳ x i).2)
+    · rw [h i hi]
+      exact Submodule.zero_mem _
 
 end DirectSum
 

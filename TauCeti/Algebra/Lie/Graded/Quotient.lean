@@ -17,7 +17,8 @@ homogeneous pieces. This file equips the existing `TauCeti.InternalGrading.quoti
 bracket compatibility, retaining its module decomposition and homogeneous projection API.
 Zero pieces remain zero, so support restrictions pass to the quotient.
 
-Use `TauCeti.InternalGrading.ofDecomposition` to start from a `GradedLieAlgebra`.
+Use `TauCeti.InternalGrading.ofDecomposition` to start from a `GradedLieAlgebra`; the instance
+`TauCeti.InternalGrading.instGradedBracketOfDecomposition` supplies its bracket compatibility.
 The existing `quotient_piece`, `mem_quotient_piece_iff`, and `decompose_quotient_mk`
 characterize the pieces and compute their projections.
 
@@ -32,6 +33,15 @@ namespace LieIdeal
 
 variable {ι : Type} {R L : Type*} [DecidableEq ι] [AddCommMonoid ι]
   [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- The internal grading carried by a Lie grading keeps its bracket compatibility, so that
+`LieIdeal.instGradedLieAlgebraQuotient` applies to `TauCeti.InternalGrading.ofDecomposition ℒ`. -/
+instance _root_.TauCeti.InternalGrading.instGradedBracketOfDecomposition (ℒ : ι → Submodule R L)
+    [GradedLieAlgebra ℒ] :
+    SetLike.GradedBracket (TauCeti.InternalGrading.ofDecomposition ℒ).piece
+      (TauCeti.InternalGrading.ofDecomposition ℒ).piece := by
+  rw [TauCeti.InternalGrading.ofDecomposition_piece]
+  infer_instance
 
 /-- The quotient by a homogeneous Lie ideal inherits the Lie grading on the images of the
 homogeneous pieces, using the existing homogeneous module quotient grading. -/
