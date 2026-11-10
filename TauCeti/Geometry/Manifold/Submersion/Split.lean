@@ -71,14 +71,37 @@ theorem IsDiffSubmersionAt.congr_of_eventuallyEq (hf : IsDiffSubmersionAt I J f 
   -- The equal values at `x` identify the two target tangent spaces.
   exact (tangentSpaceCast J (f x) (g x)).hasRightInverse.comp hf
 
-/-- Composites of differentiable maps with split-surjective differentials again have
-split-surjective differentials. -/
+/-- Composites of maps with split-surjective differentials again have split-surjective
+differentials. No differentiability is assumed: where a map is not differentiable its manifold
+derivative is `0`, which forces the relevant tangent space to be trivial. -/
 theorem IsDiffSubmersionAt.comp {g : N → M'}
-    (hg : IsDiffSubmersionAt J K g (f x)) (hf : IsDiffSubmersionAt I J f x)
-    (hgd : MDifferentiableAt J K g (f x)) (hfd : MDifferentiableAt I J f x) :
+    (hg : IsDiffSubmersionAt J K g (f x)) (hf : IsDiffSubmersionAt I J f x) :
     IsDiffSubmersionAt I K (g ∘ f) x := by
-  rw [isDiffSubmersionAt_iff, mfderiv_comp x hgd hfd]
-  exact ContinuousLinearMap.HasRightInverse.comp hg hf
+  by_cases hfd : MDifferentiableAt I J f x
+  · by_cases hgd : MDifferentiableAt J K g (f x)
+    · rw [isDiffSubmersionAt_iff, mfderiv_comp x hgd hfd]
+      exact ContinuousLinearMap.HasRightInverse.comp hg hf
+    · -- `mfderiv J K g (f x) = 0` has a right inverse, so the target `E'` is trivial.
+      rw [isDiffSubmersionAt_iff, mfderiv_zero_of_not_mdifferentiableAt hgd] at hg
+      obtain ⟨s, hs⟩ := hg
+      have : Subsingleton (TangentSpace K ((g ∘ f) x)) := ⟨fun a b ↦ by
+        have ha := hs a
+        have hb := hs b
+        simp only [zero_apply] at ha hb
+        exact ha.symm.trans hb⟩
+      exact ⟨0, fun v ↦ Subsingleton.elim _ _⟩
+  · -- `mfderiv I J f x = 0` has a right inverse, so `F` is trivial, and so is `E'`.
+    rw [isDiffSubmersionAt_iff, mfderiv_zero_of_not_mdifferentiableAt hfd] at hf
+    obtain ⟨s, hs⟩ := hf
+    have hF : Subsingleton (TangentSpace J (f x)) := ⟨fun a b ↦ by
+      have ha := hs a
+      have hb := hs b
+      simp only [zero_apply] at ha hb
+      exact ha.symm.trans hb⟩
+    obtain ⟨t, ht⟩ := hg
+    have : Subsingleton (TangentSpace K ((g ∘ f) x)) := ⟨fun a b ↦ by
+      rw [← ht a, ← ht b, Subsingleton.elim (t a) (t b)]⟩
+    exact ⟨0, fun v ↦ Subsingleton.elim _ _⟩
 
 /-- For finite-dimensional targets, splitting the derivative is equivalent to being a regular
 point. No differentiability or finite-dimensionality of the source is needed. -/
