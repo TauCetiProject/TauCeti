@@ -11,6 +11,7 @@ public import TauCeti.AlgebraicTopology.Singular.Homotopy.Invariance
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.HomologyCross
 public import TauCeti.Topology.Homotopy.Homotopic.Translation
 public import TauCeti.Topology.Instances.AddCircle.Cover
+public import TauCeti.Topology.Instances.AddCircle.Loops
 import Mathlib.Analysis.Convex.PathConnected
 
 /-!
@@ -53,14 +54,6 @@ def fundamentalClass : ((singularChains ℤ).obj (TopCat.of (AddCircle p))).homo
 theorem fundamentalClass_def :
     fundamentalClass p = H₁AddEquivHomology _
       (loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 1)) := (rfl)
-
-/-- The loop winding `n` times around `AddCircle p` at time `t` is the image of the real number
-`n * p * t`. -/
-theorem zsmulLoop_zero_apply_eq_coe (n : ℤ) (t : unitInterval) :
-    zsmulLoop p 0 n t = (((n : ℝ) * p * t : ℝ) : AddCircle p) := by
-  rw [zsmulLoop_apply, ← coe_zsmul, coe_zero, add_zero, zsmul_eq_mul]
-  congr 1
-  ring
 
 /-- Winding `a + b` times around a circle is homologous to winding `a` times and then `b` times:
 in the universal cover the two paths have the same endpoints. -/
