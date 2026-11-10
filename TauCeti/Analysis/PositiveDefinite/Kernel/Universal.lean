@@ -41,7 +41,8 @@ open scoped ComplexOrder
 
 namespace TauCeti
 
-variable {𝕜 X : Type*} [RCLike 𝕜] [TopologicalSpace X]
+variable {𝕜 X : Type*} [Semiring 𝕜] [TopologicalSpace 𝕜] [IsTopologicalSemiring 𝕜]
+  [TopologicalSpace X]
 
 /-- A kernel `k : X → X → 𝕜` is *universal* when its continuous sections `k x` span a dense
 subspace of `C(X, 𝕜)`; sections that are not continuous are ignored. On a compact space this says
@@ -63,14 +64,12 @@ theorem isUniversalKernel_of_isUnit [Fintype X] [DecidableEq X] [DiscreteTopolog
   have htop : Submodule.span 𝕜 {f : C(X, 𝕜) | ∃ x, ⇑f = k x} = ⊤ := by
     refine Submodule.eq_top_iff'.2 fun f ↦ ?_
     -- `f` is the combination of the sections with coefficients `f ᵥ* k⁻¹`.
-    have hf : f = ∑ x, (⇑f ᵥ* (Matrix.of k)⁻¹) x •
+    have hf : f = ∑ x, (⇑f ᵥ* (↑hk.unit⁻¹ : Matrix X X 𝕜)) x •
         (⟨k x, continuous_of_discreteTopology⟩ : C(X, 𝕜)) := by
       ext y
-      have h := congrFun (show (⇑f ᵥ* (Matrix.of k)⁻¹) ᵥ* Matrix.of k = ⇑f by
-        rw [Matrix.vecMul_vecMul, Matrix.nonsing_inv_mul _ ((Matrix.isUnit_iff_isUnit_det _).1 hk),
-          Matrix.vecMul_one]) y
-      simpa only [vecMul, dotProduct, ContinuousMap.coe_sum, ContinuousMap.coe_smul,
-        ContinuousMap.coe_mk, Finset.sum_apply, Pi.smul_apply, smul_eq_mul, of_apply] using h.symm
+      have h : (⇑f ᵥ* (↑hk.unit⁻¹ : Matrix X X 𝕜)) ᵥ* Matrix.of k = ⇑f := by
+        rw [vecMul_vecMul, hk.val_inv_mul, vecMul_one]
+      simpa [vecMul, dotProduct] using (congrFun h y).symm
     rw [hf]
     exact Submodule.sum_mem _ fun x _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨x, rfl⟩)
   rw [isUniversalKernel_def, htop, Submodule.top_coe]
