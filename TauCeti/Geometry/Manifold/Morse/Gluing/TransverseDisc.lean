@@ -65,6 +65,7 @@ namespace MorseChart
 
 variable (φ : MorseChart E f x)
 
+omit [FiniteDimensional ℝ E] in
 /-- If, on the open coordinate cube of radius `ε` of a Morse chart, membership in `s` is read off
 the chart image by a predicate `P`, then it is read off by `P` on a neighbourhood of each point of
 that cube. -/
