@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.Graph.Orientation.Basic
+public import TauCeti.Combinatorics.Graph.Orientation.Subgraph
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Bidirected
 
 /-!
@@ -15,6 +15,8 @@ public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Bidirected
 edge. Such walks between actual vertices correspond exactly to directed walks of
 `Graph.Orientation.Hom`, via `Graph.Orientation.walkEquiv`. The correspondence retains the
 vertex and edge sequences, commutes with concatenation, and preserves paths and cycles.
+Every trail also determines an orientation in which it is traversed forward, with arbitrary
+directions on the remaining edges.
 
 Unlike the bidirected construction, an orientation has only one arrow per edge identity.
 Consequently directed cycles forget to undirected cycles without a separate trail assumption:
@@ -80,6 +82,86 @@ theorem followsOrientation_reverse (p : G.Walk x y) :
   | nil => simp
   | cons e h p ih =>
     simp [reverse_cons, IsLink.toWalk_eq_cons, ih, and_comm, and_left_comm]
+
+/-- Whether a walk follows an orientation depends only on the directions chosen for the edges
+traversed by that walk. -/
+theorem FollowsOrientation.congr {o' : G.Orientation} {p : G.Walk x y}
+    (hp : p.FollowsOrientation o)
+    (h : ∀ e : G.edgeSet, e.1 ∈ p.edges → o.head e = o'.head e) :
+    p.FollowsOrientation o' := by
+  induction p with
+  | nil => simp
+  | @cons x y z e he p ih =>
+      have hhead := h ⟨e, he.edge_mem⟩ (by simp)
+      have htail : o.tail ⟨e, he.edge_mem⟩ = o'.tail ⟨e, he.edge_mem⟩ :=
+        Orientation.tail_eq_of_head_eq hhead
+      rw [followsOrientation_cons] at hp ⊢
+      exact ⟨by simpa [htail] using hp.1, by simpa [hhead] using hp.2.1,
+        ih hp.2.2 fun f hf ↦ h f (by simp [hf])⟩
+
+/-- A walk in a subgraph follows the restricted orientation exactly when its image in the
+larger graph follows the original orientation. -/
+@[simp]
+theorem followsOrientation_mapLe_iff {H : Graph α β} (h : H ≤ G)
+    {x y : α} (p : H.Walk x y) (o : G.Orientation) :
+    (p.mapLe h).FollowsOrientation o ↔ p.FollowsOrientation (o.restrict h) := by
+  induction p with
+  | nil => simp
+  | @cons x y z e he p ih =>
+      simp only [mapLe_cons, followsOrientation_cons, ih, Orientation.coe_restrict_tail,
+        Orientation.coe_restrict_head]
+
+/-- Restricting a walk to a subgraph and restricting its orientation preserve the property of
+following that orientation. -/
+theorem FollowsOrientation.transfer {H : Graph α β} {x y : α} {o : G.Orientation}
+    {p : G.Walk x y} (hp : p.FollowsOrientation o) (h : H ≤ G)
+    (hedges : ∀ e, e ∈ p.edges → e ∈ E(H)) :
+    (p.transfer h hedges).FollowsOrientation (o.restrict h) := by
+  apply (followsOrientation_mapLe_iff h (p.transfer h hedges) o).mp
+  simpa only [mapLe_transfer] using hp
+
+/-- Orient a graph so that a trail is traversed from its start to its end. Edges outside the
+trail retain an arbitrary orientation. -/
+noncomputable def orientation : {x y : α} → (p : G.Walk x y) → p.edges.Nodup → G.Orientation
+  | _, _, .nil, _ => Orientation.ofEdgeEnds G
+  | _, _, .cons' x y z e h p, hp => by
+      classical
+      have hp' : (e :: p.edges).Nodup := by simpa only [edges_cons] using hp
+      exact Orientation.ofHead
+        (fun f ↦ if hf : f.1 = e then ⟨y, h.right_mem⟩
+          else (p.orientation (List.nodup_cons.1 hp').2).head f)
+        fun f ↦ by
+          split_ifs with hf
+          · subst hf
+            exact h.inc_right
+          · exact (p.orientation (List.nodup_cons.1 hp').2).head_inc f
+
+@[simp]
+theorem orientation_cons_head {x y z : α} (e : β) (h : G.IsLink e x y)
+    (p : G.Walk y z) (hp : (Walk.cons e h p).edges.Nodup) :
+    ((Walk.cons e h p).orientation hp).head ⟨e, h.edge_mem⟩ = ⟨y, h.right_mem⟩ := by
+  simp [orientation]
+
+@[simp]
+theorem orientation_cons_tail {x y z : α} (e : β) (h : G.IsLink e x y)
+    (p : G.Walk y z) (hp : (Walk.cons e h p).edges.Nodup) :
+    ((Walk.cons e h p).orientation hp).tail ⟨e, h.edge_mem⟩ = ⟨x, h.left_mem⟩ := by
+  apply Subtype.ext
+  apply (((Walk.cons e h p).orientation hp).isLink ⟨e, h.edge_mem⟩).left_unique
+  simpa using h
+
+/-- A trail follows the orientation obtained by directing its successive edges forward. -/
+theorem followsOrientation_orientation {x y : α} (p : G.Walk x y) (hp : p.edges.Nodup) :
+    p.FollowsOrientation (p.orientation hp) := by
+  induction p with
+  | nil => simp
+  | @cons x y z e h p ih =>
+      have hp' : (e :: p.edges).Nodup := by simpa only [edges_cons] using hp
+      have hpTail : p.edges.Nodup := (List.nodup_cons.1 hp').2
+      rw [followsOrientation_cons]
+      refine ⟨by simp, by simp, ih hpTail |>.congr fun f hf ↦ ?_⟩
+      have hne : f.1 ≠ e := fun hfe ↦ (List.nodup_cons.1 hp').1 (hfe ▸ hf)
+      simp [orientation, hne]
 
 /-- A walk following an orientation, viewed as a directed walk on the actual vertices. -/
 def toOriented : {x y : α} → (p : G.Walk x y) → (hp : p.FollowsOrientation o) →
