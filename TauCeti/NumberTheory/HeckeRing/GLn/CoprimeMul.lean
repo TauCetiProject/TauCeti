@@ -19,13 +19,13 @@ triple (Shimura, Proposition 3.16): when the determinants `∏ aᵢ`, `∏ bᵢ`
 product of the two diagonal double cosets is again a single diagonal coset,
 `T(a) · T(b) = T(a * b)`.
 
-The two levels differ in what they assume. The **set-level** results — the double-coset
-statements and their supporting lemmas — carry `∀ i, 0 < a i` explicitly, because
-`natDiagGL` sends a tuple with a zero entry to its junk value `1` and those statements are
-about genuine diagonal representatives. The **ring-level** theorem
-`diagElem_mul_of_coprime` needs no positivity at all: on a tuple with a zero entry both
-sides degenerate, and coprimality forces the *other* tuple to be all ones (a zero entry makes
-that determinant `0`, and `Nat.Coprime 0 m` holds only for `m = 1`), so the identity survives.
+The two levels differ in what they assume. The set-level statement `mul_mem_doubleCoset_of_coprime`
+needs only coprimality: a zero entry in one tuple forces the other tuple to be all ones (a zero
+entry makes that determinant `0`, and `Nat.Coprime 0 m` holds only for `m = 1`), and then both
+sides are the junk value `1` of `natDiagGL`. Only its private supporting lemmas, which are about
+genuine diagonal representatives, still carry `∀ i, 0 < a i`. The **ring-level** theorem
+`diagElem_mul_of_coprime` likewise needs no positivity at all: on a tuple with a zero entry both
+sides degenerate, so the identity survives.
 Both levels hold for every rank `n`.
 
 The scalar row (Shimura 3.17) lives in `GLn/ScalarMul.lean`.
@@ -159,16 +159,6 @@ end Conjugation
 
 section CoprimeCosets
 
-/-- A tuple whose entries have product `1` is the constant tuple `1`. -/
-private lemma eq_one_of_prod_eq_one (b : Fin n → ℕ) (hb : ∏ i, b i = 1) : b = 1 := by
-  ext i
-  exact Nat.dvd_one.mp (hb ▸ Finset.dvd_prod_of_mem b (Finset.mem_univ i))
-
-/-- A tuple with a non-positive entry has product `0`. -/
-private lemma prod_eq_zero_of_not_pos (a : Fin n → ℕ) (ha : ¬ ∀ i, 0 < a i) : ∏ i, a i = 0 := by
-  obtain ⟨i, hi⟩ := not_forall.mp ha
-  exact Finset.prod_eq_zero (Finset.mem_univ i) (Nat.eq_zero_of_not_pos hi)
-
 /-- **The set-level coprime product** (Shimura, Proposition 3.16, key step): sandwiching any
 `τ ∈ SL_n(ℤ)` between the diagonals of `a` and `b` stays inside the double coset of the
 diagonal of `a * b`, when the determinants are coprime. If an entry is zero, the other tuple
@@ -180,15 +170,19 @@ lemma mul_mem_doubleCoset_of_coprime (a b : Fin n → ℕ)
   have h1 : natDiagGL n (1 : Fin n → ℕ) = 1 := natDiagGL_one n
   by_cases ha_pos : ∀ i, 0 < a i
   swap
-  · obtain rfl : b = 1 := eq_one_of_prod_eq_one n b <| by
-      simpa [prod_eq_zero_of_not_pos n a ha_pos] using hcop
+  · obtain ⟨i, hi⟩ := not_forall.mp ha_pos
+    have h0 : ∏ j, a j = 0 := Finset.prod_eq_zero (Finset.mem_univ i) (Nat.eq_zero_of_not_pos hi)
+    have hb1 : ∏ j, b j = 1 := by simpa [h0] using hcop
+    obtain rfl : b = 1 := funext fun j ↦ Finset.prod_eq_one_iff.mp hb1 j (Finset.mem_univ j)
     rw [mul_one a, natDiagGL_of_not_pos n ha_pos, h1, one_mul, mul_one,
       TauCeti.doubleCoset_one_self]
     exact coe_mem_SLnZ n τ
   by_cases hb_pos : ∀ i, 0 < b i
   swap
-  · obtain rfl : a = 1 := eq_one_of_prod_eq_one n a <| by
-      simpa [prod_eq_zero_of_not_pos n b hb_pos] using hcop
+  · obtain ⟨i, hi⟩ := not_forall.mp hb_pos
+    have h0 : ∏ j, b j = 0 := Finset.prod_eq_zero (Finset.mem_univ i) (Nat.eq_zero_of_not_pos hi)
+    have ha1 : ∏ j, a j = 1 := by simpa [h0] using hcop
+    obtain rfl : a = 1 := funext fun j ↦ Finset.prod_eq_one_iff.mp ha1 j (Finset.mem_univ j)
     rw [one_mul b, natDiagGL_of_not_pos n hb_pos, h1, one_mul, mul_one,
       TauCeti.doubleCoset_one_self]
     exact coe_mem_SLnZ n τ

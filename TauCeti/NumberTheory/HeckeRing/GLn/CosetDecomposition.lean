@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.Matrix.Triangular
 public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
 
+import Mathlib.Tactic.LinearCombination
+
 /-!
 # Upper-triangular representatives for a diagonal double coset
 
@@ -16,11 +18,10 @@ coset `SL_n(ℤ) · diag(a) · SL_n(ℤ)`, indexed by the bounded entry assignme
 `B_{ij} ∈ {0, …, a_j / a_i - 1}` for `i < j`. The construction, its membership in the double
 coset, and its injectivity need no hypothesis on `a` at all.
 
-*Distinctness of the cosets* does: when `a` is positive and a divisibility chain (`IsDvdChain`),
-distinct entry assignments give representatives in distinct left `SL_n(ℤ)`-cosets. Integrality
-of the connecting element gives divisibility of the comparison entries by `a_j / gcd(a_i, a_j)`,
-which is what the argument runs on; for a divisibility chain this is the exact quotient
-`a_j / a_i`.
+*Distinctness of the cosets* does: when `a` is positive, distinct entry assignments give
+representatives in distinct left `SL_n(ℤ)`-cosets. Integrality of the connecting element gives
+divisibility of the comparison entries by `a_j / gcd(a_i, a_j)`, which is what the argument runs
+on; for a divisibility chain this is the exact quotient `a_j / a_i`.
 
 Counting the index type then bounds the number of left cosets in the double coset below by
 `∏_{i < j} (a_j / a_i)`. That count is a consequence of the distinctness proved here, not
@@ -49,7 +50,7 @@ does not, since `upperTriGL` is visibly a composition of injective maps.
   matrices, hence distinct representatives.
 * `eq_of_upperTriGL_eq_mapGL_mul_upperTriGL` and `eq_of_upperTriGL_mul_inv_mem_SLnZ` — the
   representatives lie in *distinct* left `SL_n(ℤ)`-cosets: two of them are left-equivalent
-  only when their entry assignments already agree, for a positive tuple `a`.
+  only when their entry assignments already agree.
 
 The two steps behind that conclusion are also stated separately, since each is reusable:
 `dvd_comparison_of_upperTriGL_eq_mapGL_mul_upperTriGL` turns left equivalence into
@@ -352,29 +353,27 @@ lemma dvd_comparison_of_upperTriGL_eq_mapGL_mul_upperTriGL {a : Fin n → ℕ}
     exact_mod_cast (Nat.mul_div_cancel' (Nat.gcd_dvd_right (a i) (a j))).symm
   rw [hx, hy] at hZ
   have hg0 : (Nat.gcd (a i) (a j) : ℤ) ≠ 0 := by exact_mod_cast hg.ne'
-  generalize (Nat.gcd (a i) (a j) : ℤ) = g at hg0 hZ
-  generalize ((a i / Nat.gcd (a i) (a j) : ℕ) : ℤ) = x at hcop hZ
-  generalize ((a j / Nat.gcd (a i) (a j) : ℕ) : ℤ) = y at hcop hZ ⊢
-  generalize (unitriMat B₁ * (unitriMat B₂)⁻¹) i j = C at hZ ⊢
-  generalize (S : Matrix (Fin n) (Fin n) ℤ) i j = t at hZ
-  have hq : x * C = t * y := mul_left_cancel₀ hg0 (by linarith)
-  exact hcop.dvd_of_dvd_mul_left ⟨t, by linarith⟩
+  have hq : ((a i / Nat.gcd (a i) (a j) : ℕ) : ℤ) * (unitriMat B₁ * (unitriMat B₂)⁻¹) i j =
+      (S : Matrix (Fin n) (Fin n) ℤ) i j * ((a j / Nat.gcd (a i) (a j) : ℕ) : ℤ) :=
+    mul_left_cancel₀ hg0 (by linear_combination hZ)
+  exact hcop.dvd_of_dvd_mul_left ⟨(S : Matrix (Fin n) (Fin n) ℤ) i j, by linear_combination hq⟩
 
-/-- The upper-triangular representatives of a positive tuple lie in pairwise
-**distinct** left `SL_n(ℤ)`-cosets: if two of them differ by a left factor in `SL_n(ℤ)`, their
-entry assignments already agree. Equivalently, `B ↦ SL_n(ℤ) · upperTriGL B` is injective. -/
-theorem eq_of_upperTriGL_eq_mapGL_mul_upperTriGL {a : Fin n → ℕ} (ha : ∀ i, 0 < a i)
+/-- The upper-triangular representatives lie in pairwise **distinct** left `SL_n(ℤ)`-cosets: if two
+of them differ by a left factor in `SL_n(ℤ)`, their entry assignments already agree. Equivalently,
+`B ↦ SL_n(ℤ) · upperTriGL B` is injective. -/
+theorem eq_of_upperTriGL_eq_mapGL_mul_upperTriGL {a : Fin n → ℕ}
     {B₁ B₂ : UpperTriEntries n a}
     {S : SpecialLinearGroup (Fin n) ℤ} (hS : upperTriGL B₁ = mapGL ℚ S * upperTriGL B₂) :
     B₁ = B₂ :=
-  eq_of_dvd_comparison fun _ _ _ ↦ dvd_comparison_of_upperTriGL_eq_mapGL_mul_upperTriGL ha hS
+  eq_of_dvd_comparison fun _ _ hij ↦
+    dvd_comparison_of_upperTriGL_eq_mapGL_mul_upperTriGL (pos_of_lt B₁ hij.ne) hS
 
 /-- The same statement phrased with the subgroup `SLnZ n` of `GL_n(ℚ)`: distinct entry
 assignments give representatives in distinct left cosets of `SL_n(ℤ)`. -/
-theorem eq_of_upperTriGL_mul_inv_mem_SLnZ {a : Fin n → ℕ} (ha : ∀ i, 0 < a i)
+theorem eq_of_upperTriGL_mul_inv_mem_SLnZ {a : Fin n → ℕ}
     {B₁ B₂ : UpperTriEntries n a}
     (h : upperTriGL B₁ * (upperTriGL B₂)⁻¹ ∈ SLnZ n) : B₁ = B₂ := by
   obtain ⟨S, hSeq⟩ := (mem_SLnZ_iff n).mp h
-  exact eq_of_upperTriGL_eq_mapGL_mul_upperTriGL ha (by rw [hSeq]; group)
+  exact eq_of_upperTriGL_eq_mapGL_mul_upperTriGL (by rw [hSeq]; group)
 
 end HeckeRing.GLn

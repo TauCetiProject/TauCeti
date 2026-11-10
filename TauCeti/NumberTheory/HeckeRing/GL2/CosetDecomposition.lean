@@ -153,10 +153,7 @@ noncomputable def upperTriRep (b : Fin p) : GL (Fin 2) ℚ :=
     have heq := upperTriGL_apply_lt ((upperTriEntriesEquivFin p).symm b) hlt
     have hdef : (⟨(0, 1), hlt⟩ : {ij : Fin 2 × Fin 2 // ij.1 < ij.2}) = default := Subtype.ext rfl
     rw [hdef, upperTriEntriesEquivFin_symm_apply_default_val b] at heq
-    simp only [upperTriRep, Fin.zero_eta, Fin.isValue, Fin.mk_one, Matrix.of_apply,
-      Matrix.cons_val', Matrix.cons_val_one, Matrix.cons_val_fin_one, Matrix.cons_val_zero]
-    rw [heq]
-    simp
+    exact heq.trans (by simp)
   · simp [upperTriRep]
   · simp [upperTriRep, ha]
 
