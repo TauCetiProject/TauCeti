@@ -232,15 +232,8 @@ theorem index_eq_one_iff (M : L.IntermediateCarrier) : index M = 1 ↔ M = ⊥ :
 /-- The index of the dual carrier is the discriminant of the lattice. -/
 @[simp]
 theorem index_top : index (⊤ : L.IntermediateCarrier) = L.discriminant := by
-  rw [index_eq_natCard_discriminantSubgroup, L.discriminantSubgroup_top, AddSubgroup.card_top]
-  by_cases h : L.form.Nondegenerate
-  · let _ : L.IsNondegenerate := ⟨h⟩
-    exact L.natCard_discriminantGroup
-  · have hinf : Infinite L.DiscriminantGroup :=
-      not_finite_iff_infinite.mp fun hfin ↦ h (L.finite_discriminantGroup_iff_nondegenerate.mp hfin)
-    rw [Nat.card_eq_zero_of_infinite]
-    have := mt L.discriminant_pos_iff.mp h
-    lia
+  rw [index_eq_natCard_discriminantSubgroup, L.discriminantSubgroup_top, AddSubgroup.card_top,
+    L.natCard_discriminantGroup]
 
 /-- The index of a full intermediate carrier is positive. -/
 theorem index_pos (M : L.IntermediateCarrier) [M.1.IsLattice ℚ] : 0 < index M := by
@@ -284,8 +277,7 @@ theorem IsIntegral.index_sq_dvd_discriminant (hM : IsIntegral M) :
   by_cases h : L.form.Nondegenerate
   · let _ : L.IsNondegenerate := ⟨h⟩
     exact Dvd.intro_left _ hM.discriminant_mul_index_sq
-  · have h0 : L.discriminant = 0 := Nat.eq_zero_of_not_pos (mt L.discriminant_pos_iff.mp h)
-    rw [h0]
+  · rw [(L.discriminant_eq_zero_iff).mpr h]
     exact dvd_zero _
 
 /-- The discriminant of an integral overlattice is the exact quotient `disc(L) / [M : L]²`. -/

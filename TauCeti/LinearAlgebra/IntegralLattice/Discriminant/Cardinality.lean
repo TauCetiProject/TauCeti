@@ -96,16 +96,22 @@ theorem natCard_discriminantGroup_eq_natAbs_gramDet (L : IntegralLattice V)
   exact (Submodule.natAbs_det_basis_change (L.dualCarrierBasis b) L.carrierInDual
     (L.carrierInDualBasis b)).symm
 
-/-- **The order of the discriminant group is the lattice discriminant.** -/
-theorem natCard_discriminantGroup (L : IntegralLattice V) [L.IsNondegenerate] :
+/-- **The order of the discriminant group is the lattice discriminant.** For a degenerate lattice
+both sides are `0`: the discriminant group is infinite, so its cardinality is `0`. -/
+theorem natCard_discriminantGroup (L : IntegralLattice V) :
     Nat.card L.DiscriminantGroup = L.discriminant := by
   classical
-  rw [L.natCard_discriminantGroup_eq_natAbs_gramDet (Module.Free.chooseBasis ℤ L),
-    L.discriminant_eq_natAbs_gramDet (Module.Free.chooseBasis ℤ L)]
+  by_cases h : L.form.Nondegenerate
+  · let _ : L.IsNondegenerate := ⟨h⟩
+    rw [L.natCard_discriminantGroup_eq_natAbs_gramDet (Module.Free.chooseBasis ℤ L),
+      L.discriminant_eq_natAbs_gramDet (Module.Free.chooseBasis ℤ L)]
+  · have hinf : Infinite L.DiscriminantGroup :=
+      not_finite_iff_infinite.mp fun hfin ↦ h (L.finite_discriminantGroup_iff_nondegenerate.mp hfin)
+    rw [Nat.card_eq_zero_of_infinite, (L.discriminant_eq_zero_iff).mpr h]
 
 /-- **Vectors pairing into `pℤ` are divisible by `p`** when `p` is prime to the discriminant: if
 `p` divides the pairing of `v` with every lattice vector, then `v / p` lies in `L`. -/
-theorem inv_smul_mem_carrier_of_forall_dvd (L : IntegralLattice V) [L.IsNondegenerate] {p : ℕ}
+theorem inv_smul_mem_carrier_of_forall_dvd (L : IntegralLattice V) {p : ℕ}
     [NeZero p] (hp : p.Coprime L.discriminant) {v : L}
     (hv : ∀ w : L, (p : ℤ) ∣ L.integralForm v w) :
     (p : ℚ)⁻¹ • (v : V) ∈ L.carrier := by
@@ -133,7 +139,7 @@ theorem inv_smul_mem_carrier_of_forall_dvd (L : IntegralLattice V) [L.IsNondegen
 
 /-- **A vector outside `p L` pairs with some lattice vector coprimely to `p`** when the prime `p`
 is prime to the discriminant. -/
-theorem exists_isCoprime_integralForm (L : IntegralLattice V) [L.IsNondegenerate] {p : ℕ}
+theorem exists_isCoprime_integralForm (L : IntegralLattice V) {p : ℕ}
     (hp : p.Prime) (hd : p.Coprime L.discriminant) {v : L} (hv : ∀ y : L, v ≠ (p : ℤ) • y) :
     ∃ w : L, IsCoprime (L.integralForm v w) p := by
   have : NeZero p := ⟨hp.ne_zero⟩
