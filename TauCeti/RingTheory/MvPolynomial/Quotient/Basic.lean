@@ -33,27 +33,6 @@ theorem _root_.Ideal.span_range_mk_monomial_eq_top (I : Ideal (MvPolynomial n A)
   rwa [Submodule.map_span, Submodule.map_top, LinearMap.range_eq_top.mpr
     (Ideal.Quotient.mkₐ_surjective A I), ← Set.range_comp, coe_basisMonomials] at this
 
-/-- The coefficient map on polynomial quotients is semilinear for its coefficient ring map. -/
-theorem _root_.RingHom.quotientMap_mvPolynomial_smul (φ : A →+* B)
-    (I : Ideal (MvPolynomial n A)) (a : A) (x : MvPolynomial n A ⧸ I) :
-    Ideal.quotientMap (I.map (map φ)) (map φ) Ideal.le_comap_map (a • x) =
-      φ a • Ideal.quotientMap (I.map (map φ)) (map φ) Ideal.le_comap_map x := by
-  let ψ := Ideal.quotientMap (I.map (map φ)) (map φ) Ideal.le_comap_map
-  have hψmk (f : MvPolynomial n A) :
-      ψ (Ideal.Quotient.mk I f) = Ideal.Quotient.mk _ (map φ f) := Ideal.quotientMap_mk
-  obtain ⟨f, rfl⟩ := Ideal.Quotient.mk_surjective x
-  calc
-    ψ (a • Ideal.Quotient.mk I f) = ψ (Ideal.Quotient.mk I (C a * f)) := by
-      apply congrArg ψ
-      rw [C_mul', ← Ideal.Quotient.mkₐ_eq_mk A]
-      exact (map_smul (Ideal.Quotient.mkₐ A I) a f).symm
-    _ = Ideal.Quotient.mk (I.map (map φ)) (C (φ a) * map φ f) := by
-      rw [hψmk, map_mul, map_C]
-    _ = φ a • Ideal.Quotient.mk (I.map (map φ)) (map φ f) := by
-      rw [C_mul', ← Ideal.Quotient.mkₐ_eq_mk B]
-      exact map_smul (Ideal.Quotient.mkₐ B (I.map (map φ))) (φ a) (map φ f)
-    _ = φ a • ψ (Ideal.Quotient.mk I f) := by rw [hψmk]
-
 variable [Algebra A B]
 
 /-- Coefficient extension commutes with forming a polynomial quotient. -/

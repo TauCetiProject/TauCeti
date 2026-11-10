@@ -5,6 +5,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
+public import TauCeti.LinearAlgebra.TensorProduct.Quotient
 public import TauCeti.RingTheory.MvPolynomial.Quotient.Basic
 public import Mathlib.RingTheory.Spectrum.Prime.FreeLocus
 public import Mathlib.RingTheory.Flat.Basic
@@ -41,59 +42,22 @@ theorem _root_.RingHom.span_range_mk_map_eq_top_iff (φ : A →+* B) (I : Ideal 
     Submodule.span B (Set.range fun i ↦ Ideal.Quotient.mk (I.map (map φ)) (map φ (v i))) = ⊤ ↔
       (Module.annihilator A ((MvPolynomial n A ⧸ I) ⧸
         Submodule.span A (Set.range fun i ↦ Ideal.Quotient.mk I (v i)))).map φ = ⊤ := by
-  classical
   let _ := φ.toAlgebra
-  set N := Submodule.span A (Set.range fun i ↦ Ideal.Quotient.mk I (v i))
-  set S := Submodule.span B (Set.range fun i ↦ Ideal.Quotient.mk (I.map (map φ)) (map φ (v i)))
-  constructor
-  · intro hS
-    let e := I.tensorQuotientMvPolynomialEquiv (B := B)
-    let Θ := e.symm
-    have hΘmk (f : MvPolynomial n A) :
-        Θ (Ideal.Quotient.mk _ (map φ f)) = (1 : B) ⊗ₜ[A] Ideal.Quotient.mk I f := by
-      apply e.symm_apply_eq.mpr
-      simpa only [one_smul, RingHom.algebraMap_toAlgebra] using
-        (I.tensorQuotientMvPolynomialEquiv_tmul (B := B) 1 f).symm
-    have hT := congrArg (Submodule.map Θ.toLinearMap) hS
-    rw [Submodule.map_span, Submodule.map_top, LinearMap.range_eq_top.mpr Θ.surjective,
-      ← Set.range_comp] at hT
-    let π := LinearMap.baseChange B N.mkQ
-    have hπ : Function.Surjective π := LinearMap.lTensor_surjective _ N.mkQ_surjective
-    have hker : (⊤ : Submodule B (B ⊗[A] (MvPolynomial n A ⧸ I))) ≤ LinearMap.ker π := by
-      rw [← hT, Submodule.span_le]
-      rintro _ ⟨i, rfl⟩
-      -- Membership in the linear-map kernel is the equation π(value) = 0.
-      change π (Θ (Ideal.Quotient.mk _ (map φ (v i)))) = 0
-      rw [hΘmk, LinearMap.baseChange_tmul, Submodule.mkQ_apply,
-        (Submodule.Quotient.mk_eq_zero N).mpr (Submodule.subset_span ⟨i, rfl⟩), tmul_zero]
-    have : Subsingleton (B ⊗[A] ((MvPolynomial n A ⧸ I) ⧸ N)) := by
-      refine subsingleton_of_forall_eq 0 fun y ↦ ?_
-      obtain ⟨y, rfl⟩ := hπ y
-      exact hker trivial
-    exact TauCeti.Module.annihilator_map_eq_top_of_subsingleton_tensorProduct (B := B)
-  · intro hJ
-    let ψ := Ideal.quotientMap (I.map (map φ)) (map φ) Ideal.le_comap_map
-    have hψmk (f : MvPolynomial n A) :
-        ψ (Ideal.Quotient.mk I f) = Ideal.Quotient.mk _ (map φ f) :=
-      Ideal.quotientMap_mk
-    have hψ (a : A) (x : MvPolynomial n A ⧸ I) : ψ (a • x) = φ a • ψ x :=
-      φ.quotientMap_mvPolynomial_smul I a x
-    let ψₗ : (MvPolynomial n A ⧸ I) →ₛₗ[φ]
-        (MvPolynomial n B ⧸ I.map (map φ)) :=
-      { ψ.toAddMonoidHom with map_smul' := hψ }
-    have hN : N ≤ S.comap ψₗ := by
-      apply Submodule.span_le.mpr
-      rintro _ ⟨i, rfl⟩
-      exact Submodule.subset_span ⟨i, hψmk (v i)⟩
-    have key (f : MvPolynomial n A) : Ideal.Quotient.mk _ (map φ f) ∈ S := by
-      exact ψₗ.apply_mem_of_annihilator_quotient_map_eq_top N S hN hJ
-        (Ideal.Quotient.mk I f)
-    apply top_unique
-    rw [← Ideal.span_range_mk_monomial_eq_top (I.map (map φ)), Submodule.span_le]
-    rintro _ ⟨m, rfl⟩
-    have h := key (monomial m 1)
-    rw [map_monomial, map_one] at h
-    exact h
+  let e := I.tensorQuotientMvPolynomialEquiv (B := B)
+  have hspan : (Submodule.span A (Set.range fun i ↦ Ideal.Quotient.mk I (v i))).baseChange B =
+      (Submodule.span B (Set.range fun i ↦
+        Ideal.Quotient.mk (I.map (map φ)) (map φ (v i)))).map e.symm.toLinearMap := by
+    rw [Submodule.baseChange_span, Submodule.map_span, ← Set.range_comp, ← Set.range_comp]
+    congr 2
+    ext i
+    apply e.injective
+    change e ((1 : B) ⊗ₜ[A] Ideal.Quotient.mk I (v i)) = e (e.symm _)
+    rw [e.apply_symm_apply]
+    simpa only [e, one_smul, RingHom.algebraMap_toAlgebra] using
+      I.tensorQuotientMvPolynomialEquiv_tmul (B := B) 1 (v i)
+  rw [← Submodule.map_eq_top_iff (e := e.symm.toLinearEquiv), ← hspan,
+    Submodule.baseChange_eq_top_iff_subsingleton]
+  exact TauCeti.Module.annihilator_map_eq_top_iff_subsingleton_tensorProduct.symm
 
 attribute [local instance] Module.free_of_flat_of_isLocalRing in
 /-- Monomial bases exist locally. If `A[n] ⧸ I` is a finitely presented flat `A`-module of rank `d`
