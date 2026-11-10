@@ -22,6 +22,9 @@ Conjugation also preserves norms (Mathlib's `Complex.norm_conj`), so the norm of
 expression is the denominator of the Möbius automorphisms of the unit disc and of the
 pseudo-hyperbolic expression.
 
+Inversion preserves the open right half-plane: `z⁻¹` has positive real part exactly when `z`
+does (`Complex.inv_re_pos`).
+
 The scalar Cayley expression `1 + (z - conj z) / (r - z)` has unit norm for real `r`.
 When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number's conjugate
 by itself; at `z = r`, Lean's totalized inverse gives value one.
@@ -30,6 +33,12 @@ by itself; at `z = r`, Lean's totalized inverse gives value one.
 public section
 
 open scoped ComplexConjugate
+
+/-- A complex number and its inverse lie in the open right half-plane together. -/
+theorem Complex.inv_re_pos {z : ℂ} : 0 < z⁻¹.re ↔ 0 < z.re := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp
+  · rw [inv_re, div_pos_iff_of_pos_right (normSq_pos.mpr hz)]
 
 /-- The scalar Cayley expression has unit norm at real `r`, including when `z = r`
 under the totalized inverse convention. -/
