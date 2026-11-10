@@ -35,29 +35,6 @@ namespace TauCeti.SerreGraph
 
 variable {Γ : SerreGraph} {O F : Set Γ.E} {R : Type*} [Ring R]
 
-/-- Taking integer coefficients into a ring commutes with the signed incidence boundary. -/
-theorem incidenceBoundary_mapRange_intCast (Γ : SerreGraph) (O : Set Γ.E) (c : O →₀ ℤ) :
-    Γ.incidenceBoundary O R (c.mapRange (Int.cast : ℤ → R) Int.cast_zero) =
-      (Γ.incidenceBoundary O ℤ c).mapRange (Int.cast : ℤ → R) Int.cast_zero := by
-  classical
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c d hc hd =>
-    simp only [Finsupp.mapRange_add (f := (Int.cast : ℤ → R)) (fun x y =>
-      Int.cast_add x y), map_add, hc, hd]
-  | single e n =>
-    ext v
-    simp [incidenceBoundary_single, Finsupp.mapRange_single, Finsupp.single_apply,
-      smul_sub, Int.cast_sub, Int.cast_ite]
-
-/-- The chain obtained by taking the coefficients of an integral cycle into a ring
-is again a cycle. -/
-theorem mapRange_intCast_mem_ker_incidenceBoundary (Γ : SerreGraph) (O : Set Γ.E)
-    (c : (Γ.incidenceBoundary O ℤ).ker) :
-    c.val.mapRange (Int.cast : ℤ → R) Int.cast_zero ∈ (Γ.incidenceBoundary O R).ker := by
-  rw [LinearMap.mem_ker, Γ.incidenceBoundary_mapRange_intCast, LinearMap.mem_ker.mp c.property]
-  simp
-
 /-- Extension of scalars identifies the integral cycle lattice with the incidence kernel
 over any ring. Its action on actual edge coordinates is `cycleBaseChangeEquiv_tmul`.
 The spanning forest used to construct the equivalence does not affect this action. -/

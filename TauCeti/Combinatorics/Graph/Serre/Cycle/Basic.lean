@@ -135,6 +135,35 @@ theorem modTwoCycleBoundary_rev (e : Γ.E) (he : e ∈ O) (hre : Γ.rev e ∈ O)
       Γ.modTwoCycleBoundary O (Finsupp.single ⟨e, he⟩ 1) :=
   incidenceBoundary_rev_of_charTwo (ZMod 2) e he hre
 
+section
+
+variable {R : Type*} [Ring R]
+
+/-- Taking integer coefficients into a ring commutes with the signed incidence boundary. -/
+theorem incidenceBoundary_mapRange_intCast (Γ : SerreGraph) (O : Set Γ.E) (c : O →₀ ℤ) :
+    Γ.incidenceBoundary O R (c.mapRange (Int.cast : ℤ → R) Int.cast_zero) =
+      (Γ.incidenceBoundary O ℤ c).mapRange (Int.cast : ℤ → R) Int.cast_zero := by
+  classical
+  induction c using Finsupp.induction_linear with
+  | zero => simp
+  | add c d hc hd =>
+    simp only [Finsupp.mapRange_add (f := (Int.cast : ℤ → R)) (fun x y =>
+      Int.cast_add x y), map_add, hc, hd]
+  | single e n =>
+    ext v
+    simp [incidenceBoundary_single, Finsupp.mapRange_single, Finsupp.single_apply,
+      smul_sub, Int.cast_sub, Int.cast_ite]
+
+/-- The chain obtained by taking the coefficients of an integral cycle into a ring
+is again a cycle. -/
+theorem mapRange_intCast_mem_ker_incidenceBoundary (Γ : SerreGraph) (O : Set Γ.E)
+    (c : (Γ.incidenceBoundary O ℤ).ker) :
+    c.val.mapRange (Int.cast : ℤ → R) Int.cast_zero ∈ (Γ.incidenceBoundary O R).ker := by
+  rw [LinearMap.mem_ker, Γ.incidenceBoundary_mapRange_intCast, LinearMap.mem_ker.mp c.property]
+  simp
+
+end
+
 /-- Incidence boundaries commute with the pushforward of chains along a graph morphism. -/
 theorem Hom.incidenceBoundary_mapDomain {Δ : SerreGraph} (f : Γ.Hom Δ)
     {O' : Set Δ.E} (hO : Set.MapsTo f.mapE O O') (R : Type*) [Ring R] (c : O →₀ R) :
