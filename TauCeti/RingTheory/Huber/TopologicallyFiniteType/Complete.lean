@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.Huber.TopologicallyFiniteType.Basic
 
 import TauCeti.RingTheory.Huber.WeightedRestrictedSeries.PairOfDefinition
+import TauCeti.Topology.Algebra.Ring.Ideal
 import TauCeti.Topology.Algebra.IsUniformGroup.Quotient
 
 /-!
@@ -117,18 +118,8 @@ ring structure is assumed: its addition is continuous, because `B` is an open qu
 topological ring. -/
 theorem IsTopologicallyFiniteType.t2Space (hφ : IsTopologicallyFiniteType φ) : T2Space B := by
   obtain ⟨k, T, -, hT, π, hπ, -⟩ := isTopologicallyFiniteType_iff.mp hφ
-  -- addition and negation on `B` are continuous because they lift along the open quotient map `π`
-  have hadd : ContinuousAdd B := ⟨by
-    rw [← (IsOpenQuotientMap.prodMap hπ hπ).continuous_comp_iff]
-    convert hπ.continuous.comp continuous_add using 1
-    ext ⟨a, b⟩
-    simp⟩
-  have hneg : ContinuousNeg B := ⟨by
-    rw [← hπ.continuous_comp_iff]
-    convert hπ.continuous.comp continuous_neg using 1
-    ext a
-    simp⟩
-  have : IsTopologicalAddGroup B := ⟨⟩
+  -- `B` is a topological ring, as an open quotient of one; `{0}` closed makes it `T1`, hence `T2`
+  have := hπ.isTopologicalRing
   have : T1Space B := IsTopologicalAddGroup.t1Space B (by simpa using hφ.isClosed_ideal ⊥)
   infer_instance
 
