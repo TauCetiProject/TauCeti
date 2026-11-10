@@ -9,7 +9,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.PointwiseDecay
 public import Mathlib.Topology.Compactification.OnePoint.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Inv
 import TauCeti.Analysis.Calculus.FDeriv.Puncture
-import TauCeti.Analysis.Complex.OperatorNorm
+import TauCeti.Analysis.RCLike.OperatorNorm
 import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Puncture
 import TauCeti.LinearAlgebra.Complex.Module
