@@ -553,9 +553,9 @@ variable [IsTopologicalAddGroup E] [SimplyConnectedSpace E] [Module ℝ E] [Cont
   [∀ y, DiscreteTopology (LinearMap.range (P y))]
   (hcont : ∀ l, Continuous fun y ↦ P y l) (hinj : ∀ y, Injective (P y))
 
-/-- **A flat marking differs from the canonical one by a locally constant automorphism.** For a
-flat family of markings `μ` and two points `y₀` and `y₁` joined by a path in the base, the
-automorphisms `μ y ∘ (torusFamilyMarking y)⁻¹` of `Λ` at `y₀` and `y₁` agree. -/
+/-- **A flat marking differs from the canonical one by an automorphism that is constant on each
+path component.** For a flat family of markings `μ` and two points `y₀` and `y₁` joined by a path
+in the base, the automorphisms `μ y ∘ (torusFamilyMarking y)⁻¹` of `Λ` at `y₀` and `y₁` agree. -/
 theorem IsFlatTorusFamilyMarking.torusFamilyMarking_symm_trans_eq
     {μ : ∀ y : Y, letI := periodAddAction P
       ((singularChains ℤ).obj (TopCat.of
