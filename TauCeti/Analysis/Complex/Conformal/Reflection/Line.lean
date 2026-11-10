@@ -40,8 +40,9 @@ The source line has base point `p` and direction `a`, while the target line has 
 and direction `b`. In affine coordinates, this is exactly the real-axis extension:
 `q + b * schwarzReflection (w ↦ (f (p + a * w) - q) / b) ((z - p) / a)`.
 The definition is total. Agreement with the original branch needs `a ≠ 0` and `b ≠ 0`, while
-holomorphy and the reflection symmetry only need `a ≠ 0`: for `b = 0` the function is the constant
-`q`, and the symmetry reads `q = q`. -/
+holomorphy needs neither: for `a = 0` or `b = 0` the function is constant.  The reflection
+symmetry only needs `a ≠ 0`: for `b = 0` the function is the constant `q`, and the symmetry reads
+`q = q`. -/
 noncomputable def lineSchwarzReflection (p a q b : ℂ) (f : ℂ → ℂ) (z : ℂ) : ℂ :=
   q + b * schwarzReflection (fun w => (f (p + a * w) - q) / b) ((z - p) / a)
 
@@ -144,22 +145,27 @@ private lemma im_targetChart_comp_affineChart_eq_zero {p a q b : ℂ} (ha : a �
   hline (p + a * w) hw (by rw [affineChart_right_inv ha]; exact hwim)
 
 /-- **Schwarz reflection principle across an affine line, holomorphy form.** Let the source line
-be `p + a * ℝ`, with `a ≠ 0`. Suppose an open domain `Ω` is invariant under reflection in this
+be `p + a * ℝ`. Suppose an open domain `Ω` is invariant under reflection in this
 line. If `f` is continuous on the closed positive side, holomorphic on the open positive side,
 and its boundary values have real target coordinate, then `lineSchwarzReflection p a q b f` is
 holomorphic throughout `Ω`.
 
 The side and boundary conditions are expressed in the affine coordinates `(z - p) / a` and
-`(f z - q) / b`. The target direction `b` need not be nonzero for holomorphy: when `b = 0`, the
-conclusion is the constant function with value `q`. The packaged reflection theorem below assumes
-`b ≠ 0` to obtain branch agreement and target-line symmetry. -/
+`(f z - q) / b`. Neither direction need be nonzero for holomorphy: when `a = 0` the conclusion is
+the constant `q + b * ((f p - q) / b)`, and when `b = 0` it is the constant `q`. The packaged
+reflection theorem below assumes `a ≠ 0` and `b ≠ 0` to obtain branch agreement and target-line
+symmetry. -/
 theorem differentiableOn_lineSchwarzReflection_of_symmetric {Ω : Set ℂ} {p a q b : ℂ} {f : ℂ → ℂ}
-    (ha : a ≠ 0) (hΩopen : IsOpen Ω)
+    (hΩopen : IsOpen Ω)
     (hΩ : MapsTo (fun z => p + a * (starRingEnd ℂ) ((z - p) / a)) Ω Ω)
     (hcont : ContinuousOn f (Ω ∩ {z : ℂ | 0 ≤ ((z - p) / a).im}))
     (hholo : DifferentiableOn ℂ f (Ω ∩ {z : ℂ | 0 < ((z - p) / a).im}))
     (hline : ∀ z ∈ Ω, ((z - p) / a).im = 0 → ((f z - q) / b).im = 0) :
     DifferentiableOn ℂ (lineSchwarzReflection p a q b f) Ω := by
+  rcases eq_or_ne a 0 with rfl | ha
+  · -- The source coordinate `(z - p) / 0` is `0`, so the extension is constant.
+    refine (differentiableOn_const (lineSchwarzReflection p 0 q b f p)).congr fun z _ => ?_
+    simp [lineSchwarzReflection_def]
   -- Read everything in the charts `φ w = p + a·w` and `ψ z = (z - p)/a`, where the source line is
   -- the real axis and the four hypotheses become those of the half-plane theorem.
   have hUopen : IsOpen ((fun w : ℂ => p + a * w) ⁻¹' Ω) :=
@@ -219,7 +225,7 @@ theorem exists_differentiableOn_eqOn_lineReflection_of_symmetric
         F (p + a * (starRingEnd ℂ) ((z - p) / a)) =
           q + b * (starRingEnd ℂ) ((F z - q) / b) := by
   refine ⟨lineSchwarzReflection p a q b f,
-    differentiableOn_lineSchwarzReflection_of_symmetric ha hΩopen hΩ hcont hholo hline,
+    differentiableOn_lineSchwarzReflection_of_symmetric hΩopen hΩ hcont hholo hline,
     ?_, ?_⟩
   · intro z hz
     exact lineSchwarzReflection_of_coord_im_nonneg f ha hb hz.2
