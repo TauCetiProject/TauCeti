@@ -134,7 +134,7 @@ private theorem powerResidueSymbol_mul_powerResidueSymbol_absNorm {π₁ : 𝓞 
         powerResidueSymbol (span {π₁}) 3 (Ideal.Quotient.mk _ (absNorm P₂ : 𝓞 K)) =
       powerResidueSymbol P₂ 3 (Ideal.Quotient.mk P₂ (absNorm (span {π₁}) : 𝓞 K)) ^ 2 := by
   rw [← powerResidueSymbolIdeal_of_isMaximal (span {π₁}),
-    ← powerResidueSymbol_stickelbergerPhi _ _ hP₂ h (by norm_num), ← map_mul, ← map_mul,
+    ← powerResidueSymbol_stickelbergerPhi _ _ hP₂ h, ← map_mul, ← map_mul,
     mul_stickelbergerPhi_three_eq_absNorm_sq rfl hπ₁, map_pow, map_pow]
 
 /-- **The law of cubic reciprocity.** Let `K = ℚ(ζ₃)`, so that `𝓞 K = ℤ[ω]`, and let `π₁` and `π₂`

@@ -229,7 +229,7 @@ theorem intValuation_smul_stickelbergerPhi (hm : 2 ≤ m) {p : ℕ} [Fact p.Prim
 
 /-- A prime containing `Φ(P)` contains `N P`, since `Φ(P) σ₋₁(Φ(P)) = N(P)^m` for the complex
 conjugation `σ₋₁`. -/
-private theorem absNorm_mem_of_stickelbergerPhi_mem (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [P.IsMaximal]
+private theorem absNorm_mem_of_stickelbergerPhi_mem (hm : 2 ≤ m) (P : Ideal (𝓞 K))
     (hP : (absNorm P).Coprime m) {Q : Ideal (𝓞 K)} [Q.IsPrime]
     (hΦQ : stickelbergerPhi P m ∈ Q) : (absNorm P : 𝓞 K) ∈ Q := by
   let τ := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) ((galEquivZMod m K).symm (-1))
@@ -253,7 +253,7 @@ private theorem count_normalizedFactors_stickelbergerPhi [DecidableEq (Ideal (�
   have hpP : (p : 𝓞 K) ∈ P := by
     simpa using (mem_of_liesOver P (span {(p : ℤ)}) (p : ℤ)).1 (mem_span_singleton_self _)
   have hNP : p ^ inertiaDeg P ℤ = absNorm P := pow_inertiaDeg p P
-  have hΦ := stickelbergerPhi_ne_zero hP hm
+  have hΦ := stickelbergerPhi_ne_zero (m := m) P
   by_cases hpQ : (p : 𝓞 K) ∈ Q
   swap
   · -- Away from `p`: no `σ⁻¹ • P` is `Q`, and `Φ(P) ∉ Q` as `N P = p ^ f ∉ Q`.
@@ -313,7 +313,7 @@ theorem span_stickelbergerPhi_of_isMaximal (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [
     rw [hσ.2]
     exact prime_of_isPrime (Ring.ne_bot_of_isMaximal_of_not_isField inferInstance
       (RingOfIntegers.not_isField K)) inferInstance
-  have hΦ := stickelbergerPhi_ne_zero hP hm
+  have hΦ := stickelbergerPhi_ne_zero (m := m) P
   suffices h : normalizedFactors (span {stickelbergerPhi P m}) = M by
     rw [← hMprod, ← h, prod_normalizedFactors_eq_self (by simpa using hΦ)]
   ext Q
