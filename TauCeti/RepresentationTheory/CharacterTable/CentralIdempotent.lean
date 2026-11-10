@@ -260,7 +260,7 @@ end Scalar
 
 section Degree
 
-variable [Finite G] [FiniteDimensional k V] [IsAlgClosed k]
+variable [FiniteDimensional k V] [IsAlgClosed k]
 variable [Invertible (Nat.card G : k)] [ρ.IsIrreducible]
 
 /-- **The degree of an irreducible representation is a unit in the base field.** Over an
@@ -272,6 +272,8 @@ This is the diagonal case of
 the scalar by which the character sum acts is `|G|`, which is a unit by hypothesis. -/
 theorem isUnit_char_one : IsUnit (ρ.character 1) := by
   classical
+  have : Finite G :=
+    Nat.finite_of_card_ne_zero fun h ↦ Invertible.ne_zero (Nat.card G : k) (by simp [h])
   have : Fintype G := Fintype.ofFinite G
   have h := centralCharacter_characterSumCenter_mul_character_one ρ ρ
   rw [ite_eq_left ⟨_root_.Representation.Equiv.refl ρ⟩, mul_one] at h

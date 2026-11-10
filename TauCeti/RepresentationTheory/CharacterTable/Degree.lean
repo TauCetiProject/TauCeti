@@ -106,16 +106,21 @@ end Divisibility
 
 section Dvd
 
-variable [Finite G] [IsAlgClosed k] [CharZero k] [FiniteDimensional k V]
+variable [IsAlgClosed k] [CharZero k] [FiniteDimensional k V]
   (ρ : Representation k G V) [ρ.IsIrreducible]
 
 include ρ in
 /-- **The degree of an irreducible character divides the order of the group.**
 
 Over an algebraically closed field of characteristic zero, the dimension of an irreducible
-representation of a finite group `G` divides `|G|`. -/
+representation of a finite group `G` divides `|G|`. For an infinite group `Nat.card G = 0` and the
+statement is trivial. -/
 theorem finrank_dvd_card : finrank k V ∣ Nat.card G := by
   classical
+  rcases finite_or_infinite G with hG | hG
+  swap
+  · rw [Nat.card_eq_zero_of_infinite]
+    exact dvd_zero _
   let _ : Fintype G := Fintype.ofFinite G
   have hcard : (Nat.card G : k) ≠ 0 := Nat.cast_ne_zero.mpr Nat.card_pos.ne'
   have : Invertible (Nat.card G : k) := invertibleOfNonzero hcard
@@ -133,7 +138,7 @@ end Representation
 
 namespace FDRep
 
-variable {k G : Type*} [Field k] [IsAlgClosed k] [CharZero k] [Group G] [Finite G]
+variable {k G : Type*} [Field k] [IsAlgClosed k] [CharZero k] [Group G]
 
 /-- **The degree of an irreducible character divides the order of the group**, for a bundled
 finite-dimensional representation. -/
