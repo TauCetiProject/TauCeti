@@ -365,40 +365,6 @@ theorem coe_halfSpinCliffordMulEquiv_symm_apply_of_neg_norm_sq
 
 end ChiralEquiv
 
-omit hQ in
-/-- For the zero quadratic form the chirality element squares to zero. -/
-private theorem chirality_mul_self_of_forall_eq_zero (hQ₀ : ∀ v, Q v = 0) :
-    chirality Q o * chirality Q o = 0 := by
-  have hpolar (a b : V) : algebraMap ℝ (CliffordAlgebra Q) (QuadraticMap.polar Q a b) = 0 := by
-    simp [QuadraticMap.polar, hQ₀]
-  have hanti (a b : V) : ι Q a * ι Q b = -(ι Q b * ι Q a) :=
-    eq_neg_of_add_eq_zero_left (by rw [ι_mul_ι_add_swap, hpolar])
-  have hsq (a : V) : ι Q a * ι Q a = 0 := by rw [ι_sq_scalar, hQ₀, map_zero]
-  have hmove (a c : V) (y : CliffordAlgebra Q) :
-      ι Q c * (ι Q a * y) = -(ι Q a * (ι Q c * y)) := by
-    rw [← mul_assoc, hanti c a, neg_mul, mul_assoc]
-  let b := o.finOrthonormalBasis (by norm_num) Fact.out
-  have hb : b.toBasis.orientation = o := o.finOrthonormalBasis_orientation _ _
-  have hQb : (QuadraticMap.associated Q).IsOrthoᵢ b.toBasis := fun i j _ ↦ by
-    simp [QuadraticMap.associated_apply, hQ₀, Function.onFun]
-  have h : volumeElement Q o = ι Q (b 0) * (ι Q (b 1) * (ι Q (b 2) * ι Q (b 3))) := by
-    rw [volumeElement_eq o b hb hQb]
-    simp [List.finRange_succ]
-  have key : ι Q (b 0) * (ι Q (b 1) * (ι Q (b 2) * ι Q (b 3))) * ι Q (b 0) = 0 := by
-    calc _ = ι Q (b 0) * (ι Q (b 1) * (ι Q (b 2) * (ι Q (b 3) * ι Q (b 0)))) := by
-          simp only [mul_assoc]
-      _ = -(ι Q (b 0) * (ι Q (b 1) * (ι Q (b 2) * (ι Q (b 0) * ι Q (b 3))))) := by
-          rw [hanti (b 3) (b 0), mul_neg, mul_neg, mul_neg]
-      _ = ι Q (b 0) * (ι Q (b 1) * (ι Q (b 0) * (ι Q (b 2) * ι Q (b 3)))) := by
-          rw [hmove (b 0) (b 2), mul_neg, mul_neg, neg_neg]
-      _ = -(ι Q (b 0) * (ι Q (b 0) * (ι Q (b 1) * (ι Q (b 2) * ι Q (b 3))))) := by
-          rw [hmove (b 0) (b 1), mul_neg]
-      _ = 0 := by rw [← mul_assoc, hsq, zero_mul, neg_zero]
-  rw [chirality_eq_neg_volumeElement, neg_mul_neg, h]
-  calc _ = (ι Q (b 0) * (ι Q (b 1) * (ι Q (b 2) * ι Q (b 3))) * ι Q (b 0)) *
-        (ι Q (b 1) * (ι Q (b 2) * ι Q (b 3))) := by simp only [mul_assoc]
-    _ = 0 := by rw [key, zero_mul]
-
 variable (ρ) in
 omit hQ in
 /-- The two eigenspaces of `Γ` have the same dimension: `dim W⁻ = dim W⁺`. -/

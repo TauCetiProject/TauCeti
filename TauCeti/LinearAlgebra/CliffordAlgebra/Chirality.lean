@@ -16,6 +16,7 @@ import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.CliffordAlgebra.Functoriality
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthonormalBasis
+import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
 
 /-!
@@ -88,6 +89,8 @@ spinors does.
 * `CliffordAlgebra.chirality_eq`: `Γ = -c(e₁) c(e₂) c(e₃) c(e₄)` for every positively
   oriented orthonormal basis `e`.
 * `CliffordAlgebra.chirality_mul_self`: `Γ² = 1`.
+* `CliffordAlgebra.chirality_mul_self_of_forall_eq_zero`: for the zero quadratic form the chirality
+  element squares to zero.
 * `CliffordAlgebra.chirality_mul_ι`: `Γ c(v) = -c(v) Γ`, and
   `CliffordAlgebra.ofBaseChangeAux_chirality_mul_ι`: the same for the image of `Γ` in the Clifford
   algebra of a base change, against every vector of `A ⊗[ℝ] V`.
@@ -198,6 +201,19 @@ private theorem frame_orientation : (frame o).toBasis.orientation = o :=
 theorem chirality_mul_self : chirality Q o * chirality Q o = 1 := by
   rw [chirality_eq_neg_volumeElement, neg_mul_neg, volumeElement_mul_self o hQ]
   norm_num
+
+omit hQ in
+/-- For the zero quadratic form the chirality element squares to zero, in contrast to
+`CliffordAlgebra.chirality_mul_self`. -/
+theorem chirality_mul_self_of_forall_eq_zero (hQ₀ : ∀ v, Q v = 0) :
+    chirality Q o * chirality Q o = 0 := by
+  have hQb : (QuadraticMap.associated Q).IsOrthoᵢ (frame o).toBasis := fun i j _ ↦ by
+    simp [QuadraticMap.associated_apply, hQ₀, Function.onFun]
+  have hl : ((List.finRange 4).map (frame o)).Pairwise Q.IsOrtho :=
+    List.pairwise_of_forall fun x y ↦ by rw [QuadraticMap.isOrtho_def, hQ₀, hQ₀, hQ₀, add_zero]
+  rw [chirality_eq_neg_volumeElement, neg_mul_neg,
+    volumeElement_eq o (frame o) (frame_orientation o) hQb, prod_map_ι_sq_scalar hl]
+  simp [hQ₀, List.finRange_succ]
 
 omit hQ in
 /-- **The chirality element anticommutes with every generator**: `Γ c(v) = -c(v) Γ`. -/
@@ -657,8 +673,10 @@ variable {K W W' : Type*} [CommRing K] [Algebra ℝ K] [AddCommGroup W] [Module 
 
 variable {o ρ o' ρ'} in
 /-- A map `U` of Clifford modules that intertwines the generators along an orientation-preserving
-linear isometry `f`, `U c(v) = c(f v) U`, intertwines the chirality elements: `U Γ = Γ' U`. -/
-theorem comp_chirality_eq_chirality_comp (hQ : ∀ v, Q v = -‖v‖ ^ 2)
+linear isometry `f`, `U c(v) = c(f v) U`, intertwines the chirality elements: `U Γ = Γ' U`. No
+normalization of the quadratic forms is needed: unless `U = 0`, the intertwining forces
+`Q' (f v) = Q v`. -/
+theorem comp_chirality_eq_chirality_comp
     {f : V ≃ₗᵢ[ℝ] V'} (ho : o.map (Fin 4) f.toLinearEquiv = o')
     {U : W →ₗ[K] W'} (hU : ∀ v, U ∘ₗ ρ (ι Q v) = ρ' (ι Q' (f v)) ∘ₗ U) :
     U ∘ₗ ρ (chirality Q o) = ρ' (chirality Q' o') ∘ₗ U := by
@@ -666,8 +684,7 @@ theorem comp_chirality_eq_chirality_comp (hQ : ∀ v, Q v = -‖v‖ ^ 2)
   · simp [hU₀]
   obtain ⟨w, hw⟩ : ∃ w, U w ≠ 0 := by simpa [LinearMap.ext_iff] using hU₀
   -- A nonzero intertwiner forces the quadratic forms to agree along `f`.
-  have hQ' : ∀ v, Q' v = -‖v‖ ^ 2 := fun u ↦ by
-    obtain ⟨v, rfl⟩ := f.surjective u
+  have hQf (v : V) : Q' (f v) = Q v := by
     have h := LinearMap.congr_fun (hU v) (ρ (ι Q v) w)
     have h₁ : ρ (ι Q v) (ρ (ι Q v) w) = Q v • w := by
       rw [← mul_apply_eq_comp, ← map_mul, ι_sq_scalar, AlgHom.commutes,
@@ -680,14 +697,12 @@ theorem comp_chirality_eq_chirality_comp (hQ : ∀ v, Q v = -‖v‖ ^ 2)
     rw [h₃, h₁, LinearMap.map_smul_of_tower, h₂] at h
     have h' : (Q v - Q' (f v)) • U w = 0 := by rw [sub_smul, h, sub_self]
     rw [smul_eq_zero, sub_eq_zero] at h'
-    rw [← (h'.resolve_right hw), hQ, f.norm_map]
-  let e : Q.IsometryEquiv Q' := f.toQuadraticIsometryEquiv (c := -1)
-    (fun v ↦ (hQ v).trans (neg_one_mul _).symm) (fun v ↦ (hQ' v).trans (neg_one_mul _).symm)
-  have he (v : V) : e.toIsometry v = f v := congrFun (f.coe_toQuadraticIsometryEquiv _ _) v
+    exact (h'.resolve_right hw).symm
+  let e : Q.IsometryEquiv Q' := { f.toLinearEquiv with map_app' := hQf }
+  have he (v : V) : e.toIsometry v = f v := rfl
   rw [comp_eq_map_comp_of_forall_ι (f := e.toIsometry) (fun v ↦ he v ▸ hU v),
-    map_chirality o hQ hQ' e, ← ho]
-  -- The underlying linear equivalence of `e` is that of `f`.
-  rw [f.toLinearEquiv_toQuadraticIsometryEquiv]
+    chirality_eq_neg_volumeElement, chirality_eq_neg_volumeElement, map_neg,
+    map_volumeElement o e fun v ↦ f.norm_map v, ← ho]
 
 /-- An equivalence `U` of Clifford modules that intertwines the chirality elements, `U Γ = Γ' U`,
 restricts to an equivalence of the positive half-spinors `W⁺ ≃ W'⁺`. By
