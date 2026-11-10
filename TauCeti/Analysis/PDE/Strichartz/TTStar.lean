@@ -35,10 +35,10 @@ Hölder's inequality in space then bounds each pairing by
 `A |s - t| ^ (-2 / q) ‖F(s)‖_{r'} ‖G(t)‖_{r'}`, and when `2 < q < ∞` the time integral of this
 kernel is a fractional integral of order `1 - 2 / q` on `ℝ`. The Hardy–Littlewood–Sobolev
 inequality maps `L^{q'}` to `L^q` under it, so the double integral is at most
-`C A ‖F‖_{L^{q'} L^{r'}} ‖G‖_{L^{q'} L^{r'}}`, with `C` depending only on `q`. The bound is on
-the double integral of the absolute values of the pairings, so it also controls every truncation
-of the double integral, for instance to `s < t`, which is the form taken by retarded (Duhamel)
-estimates.
+`C A ‖F‖_{L^{q'} L^{r'}} ‖G‖_{L^{q'} L^{r'}}`, with `C` independent of the family `U`, of `A`
+and of `F` and `G`. The bound is on the double integral of the absolute values of the pairings, so
+it also controls every truncation of the double integral, for instance to `s < t`, which is the
+form taken by retarded (Duhamel) estimates.
 
 The mixed norm of a function `F : ℝ → L²(X, μ)` is written
 `eLpNorm (fun s ↦ eLpNorm (F s) r' μ) p volume`; for almost everywhere strongly measurable `F` the

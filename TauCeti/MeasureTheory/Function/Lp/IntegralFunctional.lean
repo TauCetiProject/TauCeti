@@ -32,11 +32,12 @@ Fatou's lemma, and the equality of norm and weak closures for convex sets.
 In particular the extended integral of the squared norm is weakly lower semicontinuous on `Lp`
 (`TauCeti.lowerSemicontinuous_lintegral_norm_sq_comp_toWeakSpace_symm`).
 
-In the same way, every Lebesgue seminorm `eLpNorm u q ν`, including `q = ∞`, is norm lower
-semicontinuous on `Lp`, with the value `∞` allowed. Consequently, for an almost everywhere strongly
-measurable family `G` of `Lp` functions, `b ↦ eLpNorm (G b) q ν` is almost everywhere measurable,
-which is what makes mixed norms such as `L^p_t L^q_x` of an `L²`-valued function of time
-meaningful.
+In the same way, for `ν ≪ μ`, every Lebesgue seminorm `eLpNorm u q ν`, including `q = ∞`, is norm
+lower semicontinuous on `Lp`, with the value `∞` allowed (`TauCeti.lowerSemicontinuous_eLpNorm_Lp`).
+Consequently, for an almost everywhere strongly measurable family `G` of `Lp` functions and
+`ν ≪ μ`, `b ↦ eLpNorm (G b) q ν` is almost everywhere measurable
+(`MeasureTheory.AEStronglyMeasurable.aemeasurable_eLpNorm_Lp`), which is what makes mixed norms
+such as `L^p_t L^q_x` of an `L²`-valued function of time meaningful.
 
 On `L²`, the integral of the modular `√(1 + v²) - 1` over any set is moreover norm continuous
 (`TauCeti.continuous_setIntegral_sqrt_one_add_sq_sub_one`). The modular is at most `v² / 2`, and
@@ -215,8 +216,9 @@ namespace MeasureTheory.AEStronglyMeasurable
 variable {α β F : Type*} [MeasurableSpace α] [MeasurableSpace β] [NormedAddCommGroup F]
   {μ ν : Measure α} {ρ : Measure β} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- The Lebesgue seminorms of an almost everywhere strongly measurable family of `Lp` functions
-form an almost everywhere measurable function of the parameter. -/
+/-- The Lebesgue seminorms, for any exponent `q` and any measure `ν ≪ μ`, of an almost everywhere
+strongly measurable family of `Lp` functions form an almost everywhere measurable function of the
+parameter. -/
 theorem aemeasurable_eLpNorm_Lp {G : β → Lp F p μ} (hG : AEStronglyMeasurable G ρ)
     (hν : ν ≪ μ) (q : ℝ≥0∞) : AEMeasurable (fun b ↦ eLpNorm (G b) q ν) ρ := by
   borelize ↥(Lp F p μ)
