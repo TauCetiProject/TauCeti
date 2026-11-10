@@ -323,7 +323,7 @@ variable [P.IsCrystallographic]
 theorem isSimpleRaise_iff {i j : ι} :
     b.IsSimpleRaise i j ↔ ∃ k ∈ b.support, P.reflectionPerm k i = j ∧ P.pairingIn ℤ i k = -1 := by
   refine exists_congr fun k ↦ and_congr_right fun hk ↦ and_congr_right fun hj ↦ ?_
-  rw [← hj, TauCeti.height_reflectionPerm_of_mem_support P b hk]
+  rw [← hj, b.height_reflectionPerm_of_mem_support hk]
   omega
 
 variable {b} in
