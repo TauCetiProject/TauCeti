@@ -19,13 +19,16 @@ missing a point `p`, and let `N` be a neighbourhood of a point `y ≠ p`. Readin
 (`TauCeti.exists_homeomorph_eqOn_closedBall_mapsTo_closedBall`) gives a map of the sphere,
 continuous and injective off `p`, which is the identity near `y` and carries `K` into `N`. This is
 the replacement for the homeomorphism `h` in M. Brown's proof of the generalized Schoenflies
-theorem.
+theorem. The same chart, read from a point `z` outside a compact set `K`, shows that `K` lies in
+the open cell of an embedded closed cell missing `z`.
 
 ## Main results
 
 * `TauCeti.exists_continuousOn_injOn_mapsTo_sphere`: a map of the sphere, continuous and injective
   off a point `p`, which is the identity near `y` and pushes a compact set missing `p` into a given
   neighbourhood of `y`.
+* `TauCeti.exists_continuous_injective_isOpen_image_ball_superset_notMem_range`: a compact subset
+  of `Sⁿ` missing a point `z` lies in the open cell of an embedded `n`-cell missing `z`.
 
 ## References
 
@@ -40,6 +43,7 @@ open Function Metric Module Set Filter Topology
 namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
 /-- **Pushing a compact subset of a sphere towards a point.** Let `K` be a compact subset of the
 unit sphere of a finite-dimensional real inner product space, missing a point `p`, and let `N` be a
@@ -86,5 +90,49 @@ theorem exists_continuousOn_injOn_mapsTo_sphere [FiniteDimensional ℝ F] {p y :
     rw [add_sub_cancel_right, ← mem_closedBall_zero_iff]
     exact hρmaps <|
       mem_closedBall_zero_iff.2 (mem_closedBall_iff_norm.1 (hR (mem_image_of_mem φ hz)))
+
+/-- **A cell around a compact subset of a sphere.** Let `E` be a finite-dimensional real normed
+space of dimension `n`. A compact subset `K` of the unit sphere `Sⁿ` of a real inner product space
+of dimension `n + 1`, missing a point `z`, lies in the open cell `θ(ball 0 1)` of a continuous
+injection `θ : E → Sⁿ` whose range misses `z`: the preimage of a large ball under the
+stereographic projection from `z`. -/
+theorem exists_continuous_injective_isOpen_image_ball_superset_notMem_range
+    (hEF : finrank ℝ F = finrank ℝ E + 1) {z : sphere (0 : F) 1} {K : Set (sphere (0 : F) 1)}
+    (hK : IsCompact K) (hzK : z ∉ K) :
+    ∃ θ : E → sphere (0 : F) 1, Continuous θ ∧ Injective θ ∧ IsOpen (θ '' ball 0 1) ∧
+      K ⊆ θ '' ball 0 1 ∧ z ∉ range θ := by
+  have : Fact (finrank ℝ F = finrank ℝ E + 1) := ⟨hEF⟩
+  set φ := stereographic' (finrank ℝ E) z
+  have hsrc : φ.source = {z}ᶜ := stereographic'_source z
+  have htgt : φ.target = univ := stereographic'_target z
+  have hsymm : Continuous φ.symm := continuousOn_univ.1 (htgt ▸ φ.continuousOn_symm)
+  let L : E ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ E)) :=
+    ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
+  have hKφ : K ⊆ φ.source := fun u hu ↦ by rw [hsrc]; exact fun h ↦ hzK (h ▸ hu)
+  -- `K` lies in a ball of radius `R` in the chart read back in `E`.
+  obtain ⟨R, hR, hRK⟩ := (hK.image_of_continuousOn
+    (L.symm.continuous.comp_continuousOn (φ.continuousOn.mono hKφ))).isBounded.subset_ball_lt 0 0
+  set ψ : E ≃ₜ EuclideanSpace ℝ (Fin (finrank ℝ E)) :=
+    (Homeomorph.smulOfNeZero R hR.ne').trans L.toHomeomorph
+  have hψ (x : E) : ψ x = L (R • x) := by simp [ψ]
+  refine ⟨fun x ↦ φ.symm (ψ x), hsymm.comp ψ.continuous, fun x x' h ↦ ψ.injective ?_, ?_,
+    fun u hu ↦ ?_, ?_⟩
+  · exact φ.symm.injOn (by rw [φ.symm_source, htgt]; trivial)
+      (by rw [φ.symm_source, htgt]; trivial) h
+  · rw [show (fun x ↦ φ.symm (ψ x)) '' ball (0 : E) 1 = φ.symm '' (ψ '' ball 0 1) from
+      (image_image _ _ _).symm]
+    exact φ.isOpen_image_symm_of_subset_target (ψ.isOpenMap _ isOpen_ball)
+      (by rw [htgt]; exact subset_univ _)
+  · refine ⟨R⁻¹ • L.symm (φ u), ?_, ?_⟩
+    · have hu' := hRK (mem_image_of_mem (fun u ↦ L.symm (φ u)) hu)
+      rw [mem_ball_zero_iff] at hu' ⊢
+      rw [norm_smul, Real.norm_of_nonneg (inv_nonneg.2 hR.le), inv_mul_lt_iff₀ hR, mul_one]
+      exact hu'
+    · simp only [hψ, smul_inv_smul₀ hR.ne', ContinuousLinearEquiv.apply_symm_apply]
+      exact φ.left_inv (hKφ hu)
+  · rintro ⟨x, hx⟩
+    have : φ.symm (ψ x) ∈ φ.source := φ.map_target (by rw [htgt]; trivial)
+    rw [hsrc] at this
+    exact this hx
 
 end TauCeti

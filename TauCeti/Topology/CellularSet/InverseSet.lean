@@ -44,13 +44,16 @@ The proof has three steps.
   `Sⁿ \ {p}`, carrying `f(Q)` into the neighbourhood `f(Q ∩ U)` of `y`. Then `g = f⁻¹ ∘ k ∘ f`
   on `Q \ X`, extended by the identity on `X`, is a continuous injection of `Q` into `U`: near
   `X` it is the identity, and elsewhere the inverse of `f` is continuous because `Q` is compact
-  (`ContinuousOn.continuousOn_invFunOn_image_of_isCompact`). Its image is a cell containing `X` in
-  its interior, and iterating with `U` shrinking to `X` exhibits `X` as cellular.
+  (`ContinuousOn.continuousOn_invFunOn_image_of_isCompact`,
+  `TauCeti.exists_continuousOn_lift_comp`). Its image is a cell containing `X` in its interior,
+  and iterating with `U` shrinking to `X` exhibits `X` as cellular.
 
 ## Main results
 
 * `TauCeti.isCellularSet_closedBall_inter_preimage`: **Brown's theorem on inverse sets**: the only
   inverse set of a map of an `n`-cell into `Sⁿ`, `n ≥ 2`, is cellular.
+* `TauCeti.exists_continuousOn_lift_comp`: `f⁻¹ ∘ k ∘ f` off a fibre of `f`, extended by the
+  identity on it, is continuous on a compact set.
 
 ## References
 
@@ -177,27 +180,63 @@ private theorem image_closedBall_mem_nhds (hn : 2 ≤ finrank ℝ E)
   · exact hy'
   · exact image_mono (fun x hx ↦ (hOQ hx).1) (hsub ⟨hz, hzy⟩)
 
-omit [InnerProductSpace ℝ F] in
-/-- Off the fibre `X` over `y`, the map `f⁻¹ ∘ k ∘ f` is continuous on the closed ball `Q`, for a
-map `k` continuous off a point `p ∉ f(Q)` which preserves `f(Q \ X)`: the inverse of `f` on
-`Q \ X` is continuous since `Q` is compact. -/
-private theorem continuousWithinAt_invFunOn_comp (hf : ContinuousOn f (closedBall 0 1))
-    (hinj : InjOn f (closedBall 0 1 \ f ⁻¹' {y})) {p : sphere (0 : F) 1}
-    (hp : p ∉ f '' closedBall 0 1) {k : sphere (0 : F) 1 → sphere (0 : F) 1}
-    (hkc : ContinuousOn k {p}ᶜ)
-    (hkP : ∀ x ∈ closedBall 0 1 \ f ⁻¹' {y}, k (f x) ∈ f '' (closedBall 0 1 \ f ⁻¹' {y}))
-    {x : E} (hx : x ∈ closedBall 0 1 \ f ⁻¹' {y}) :
-    ContinuousWithinAt (fun x ↦ invFunOn f (closedBall 0 1 \ f ⁻¹' {y}) (k (f x)))
-      (closedBall 0 1 \ f ⁻¹' {y}) x := by
-  have hinv : ContinuousOn (invFunOn f (closedBall 0 1 \ f ⁻¹' {y}))
-      (f '' (closedBall 0 1 \ f ⁻¹' {y})) :=
-    hf.continuousOn_invFunOn_image_of_isCompact (isCompact_closedBall 0 1) sdiff_subset hinj
-      (disjoint_left.2 fun _ ⟨x', hx', hx'z⟩ ⟨x'', hx'', hx''z⟩ ↦
-        hx''.2 (hx''z.trans (hx'z.symm.trans (not_not.1 fun h ↦ hx'.2 ⟨hx'.1, h⟩))))
-  have hkf : ContinuousWithinAt (fun x ↦ k (f x)) (closedBall 0 1 \ f ⁻¹' {y}) x :=
-    (hkc.continuousAt (isOpen_compl_singleton.mem_nhds fun h ↦ hp ⟨x, hx.1, h⟩))
-      |>.comp_continuousWithinAt ((hf x hx.1).mono sdiff_subset)
-  exact (hinv _ (hkP x hx)).comp (f := fun x' ↦ k (f x')) hkf hkP
+/-- **Lifting `k ∘ f` through `f` off a fibre.** Let `f` be continuous on a compact set `Q`, with
+values in a Hausdorff space, and injective on `P = Q \ f⁻¹(S)`, where no point of `S` other than
+`y` lies near `y`. Let `k` be continuous on `f(Q)`, the identity near `y`, and map `f(x)` into
+`f(P)` for every `x ∈ Q` off the fibre over `y`. Then `f⁻¹ ∘ k ∘ f` off that fibre, extended by the
+identity on it, is continuous on `Q`: it lifts `k ∘ f` through `f`, maps `Q` off the fibre into
+`P` and fixes the fibre pointwise. -/
+theorem exists_continuousOn_lift_comp {α β : Type*} [TopologicalSpace α] [TopologicalSpace β]
+    [T2Space β] {Q : Set α} (hQ : IsCompact Q) {f : α → β} (hf : ContinuousOn f Q) {S : Set β}
+    (hinj : InjOn f (Q \ f ⁻¹' S)) {y : β} (hSy : ∀ᶠ y' in 𝓝 y, y' ∈ S → y' = y) {k : β → β}
+    (hkc : ContinuousOn k (f '' Q)) (hkid : k =ᶠ[𝓝 y] id)
+    (hkP : ∀ x ∈ Q, f x ≠ y → k (f x) ∈ f '' (Q \ f ⁻¹' S)) :
+    ∃ g : α → α, ContinuousOn g Q ∧ (∀ x ∈ Q, f (g x) = k (f x)) ∧
+      (∀ x ∈ Q, f x ≠ y → g x ∈ Q \ f ⁻¹' S) ∧ ∀ x ∈ Q, f x = y → g x = x := by
+  classical
+  rcases isEmpty_or_nonempty α with hα | hα
+  · exact ⟨id, continuousOn_id, fun x ↦ isEmptyElim x, fun x ↦ isEmptyElim x,
+      fun x ↦ isEmptyElim x⟩
+  set P := Q \ f ⁻¹' S
+  have hky : k y = y := hkid.eq_of_nhds
+  set g := fun x ↦ if f x = y then x else invFunOn f P (k (f x))
+  have hgP {x} (hx : x ∈ Q) (hxy : f x ≠ y) : g x ∈ P ∧ f (g x) = k (f x) := by
+    simp only [g, hxy, ↓reduceIte]
+    exact ⟨invFunOn_mem (hkP x hx hxy), invFunOn_eq (hkP x hx hxy)⟩
+  have hinv : ContinuousOn (invFunOn f P) (f '' P) :=
+    hf.continuousOn_invFunOn_image_of_isCompact hQ sdiff_subset hinj
+      (disjoint_left.2 fun _ ⟨x, hx, hxz⟩ ⟨x', hx', hx'z⟩ ↦ hx'.2 <| by
+        rw [mem_preimage, hx'z, ← hxz]
+        exact not_not.1 fun h ↦ hx.2 ⟨hx.1, h⟩)
+  refine ⟨g, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx hxy ↦ (hgP hx hxy).1,
+    fun x _ hxy ↦ by simp [g, hxy]⟩
+  · by_cases hxy : f x = y
+    · -- Near the fibre over `y`, `g` is the identity.
+      have hev : ∀ᶠ y' in 𝓝 (f x), k y' = id y' ∧ (y' ∈ S → y' = y) := by
+        rw [hxy]
+        exact hkid.and hSy
+      have hid : g =ᶠ[𝓝[Q] x] id := by
+        filter_upwards [self_mem_nhdsWithin, (hf x hx).eventually hev] with x' hx' ⟨hx'k, hx'S⟩
+        by_cases hx'y : f x' = y
+        · simp [g, hx'y]
+        have hx'P : x' ∈ P := ⟨hx', fun h ↦ hx'y (hx'S h)⟩
+        simp only [g, hx'y, ↓reduceIte, hx'k, id_eq]
+        exact hinj.leftInvOn_invFunOn hx'P
+      exact continuousWithinAt_id.congr_of_eventuallyEq hid (hid.eq_of_nhdsWithin hx)
+    · -- Elsewhere, `g` is `f⁻¹ ∘ k ∘ f`.
+      set T := Q ∩ f ⁻¹' {y}ᶜ
+      have hkf : ContinuousWithinAt (fun x ↦ k (f x)) T x :=
+        (hkc (f x) (mem_image_of_mem f hx)).comp ((hf x hx).mono inter_subset_left)
+          fun x' hx' ↦ mem_image_of_mem f hx'.1
+      have hgx : ContinuousWithinAt g T x :=
+        ((hinv _ (hkP x hx hxy)).comp (f := fun x ↦ k (f x)) hkf
+          fun x' hx' ↦ hkP x' hx'.1 hx'.2).congr
+          (fun x' hx' ↦ by simp [g, show f x' ≠ y from hx'.2]) (by simp [g, hxy])
+      exact hgx.mono_of_mem_nhdsWithin (inter_mem self_mem_nhdsWithin
+        ((hf x hx).preimage_mem_nhdsWithin (isOpen_compl_singleton.mem_nhds hxy)))
+  · by_cases hxy : f x = y
+    · simp [g, hxy, hky]
+    · exact (hgP hx hxy).2
 
 omit [InnerProductSpace ℝ F] in
 /-- **One shrinking step, given a push of `f(Q)`.** Let `k` be a map of the sphere, continuous
@@ -212,55 +251,30 @@ private theorem exists_mapsTo_of_mapsTo_image (hf : ContinuousOn f (closedBall 0
     (hkN : MapsTo k (f '' closedBall 0 1) (f '' (closedBall 0 1 ∩ U))) :
     ∃ g : E → E, ContinuousOn g (closedBall 0 1) ∧ InjOn g (closedBall 0 1) ∧
       MapsTo g (closedBall 0 1) U ∧ ∀ x ∈ closedBall 0 1 ∩ f ⁻¹' {y}, g x = x := by
-  classical
   set Q := closedBall (0 : E) 1
   set P := Q \ f ⁻¹' {y}
   have hfp {x : E} (hx : x ∈ Q) : f x ∈ ({p}ᶜ : Set (sphere (0 : F) 1)) := fun h ↦ hp ⟨x, hx, h⟩
   have hky : k y = y := hkid.eq_of_nhds
-  have hkP {x : E} (hx : x ∈ P) : k (f x) ∈ f '' P := by
-    obtain ⟨x', hx', hx'k⟩ := hkN (mem_image_of_mem f hx.1)
-    refine ⟨x', ⟨hx'.1, fun h ↦ hx.2 ?_⟩, hx'k⟩
-    exact hki (hfp hx.1) hyp (hx'k.symm.trans h ▸ hky.symm)
-  set g : E → E := fun x ↦ if f x = y then x else invFunOn f P (k (f x))
-  have hgX {x : E} (hx : f x = y) : g x = x := by simp [g, hx]
-  have hg {x : E} (hx : f x ≠ y) : g x = invFunOn f P (k (f x)) := by simp [g, hx]
-  have hgP {x : E} (hx : x ∈ P) : g x ∈ P ∧ f (g x) = k (f x) := by
-    rw [hg hx.2]
-    exact ⟨invFunOn_mem (hkP hx), invFunOn_eq (hkP hx)⟩
+  have hkP {x : E} (hx : x ∈ Q) (hxy : f x ≠ y) : k (f x) ∈ f '' P := by
+    obtain ⟨x', hx', hx'k⟩ := hkN (mem_image_of_mem f hx)
+    refine ⟨x', ⟨hx'.1, fun h ↦ hxy ?_⟩, hx'k⟩
+    exact hki (hfp hx) hyp (hx'k.symm.trans h ▸ hky.symm)
+  obtain ⟨g, hgc, hfg, hgP, hgX⟩ := exists_continuousOn_lift_comp (isCompact_closedBall 0 1) hf
+    hinj (Eventually.of_forall fun _ h ↦ h) (hkc.mono fun _ ⟨x, hx, hxq⟩ ↦ hxq ▸ hfp hx) hkid
+    fun x hx hxy ↦ hkP hx hxy
   -- `g` maps `Q` into `U`.
   have hgU : MapsTo g Q U := fun x hx ↦ by
     by_cases hxy : f x = y
-    · simpa [g, hxy] using hXU ⟨hx, hxy⟩
-    obtain ⟨hgx, hfgx⟩ := hgP ⟨hx, hxy⟩
+    · simpa [hgX x hx hxy] using hXU ⟨hx, hxy⟩
     obtain ⟨x', hx', hx'k⟩ := hkN (mem_image_of_mem f hx)
-    rw [eq_of_apply_eq hinj hgx.1 hx'.1 (hfgx.trans hx'k.symm) hgx.2]
+    have hgx := hgP x hx hxy
+    rw [eq_of_apply_eq hinj hgx.1 hx'.1 ((hfg x hx).trans hx'k.symm) hgx.2]
     exact hx'.2
-  have hfg {x : E} (hx : x ∈ Q) : f (g x) = k (f x) := by
-    by_cases hxy : f x = y
-    · simp [g, hxy, hky]
-    · exact (hgP ⟨hx, hxy⟩).2
-  refine ⟨g, fun x hx ↦ ?_, fun x hx x' hx' h ↦ ?_, hgU, fun x hx ↦ hgX hx.2⟩
-  · -- Near a point mapped close to `y`, `g` is the identity; elsewhere it is `f⁻¹ ∘ k ∘ f`.
-    obtain ⟨W, hWk, hW, hyW⟩ := _root_.eventually_nhds_iff.1 hkid
-    by_cases hxW : f x ∈ W
-    · have hid : g =ᶠ[𝓝[Q] x] id := by
-        filter_upwards [self_mem_nhdsWithin,
-          (hf x hx).preimage_mem_nhdsWithin (hW.mem_nhds hxW)] with x' hx' hx'W
-        by_cases hx'y : f x' = y
-        · simp [g, hx'y]
-        have hfgx' : f (g x') = f x' := (hfg hx').trans (hWk _ hx'W)
-        exact eq_of_apply_eq hinj (hgP ⟨hx', hx'y⟩).1.1 hx' hfgx' (by rwa [hfgx'])
-      exact continuousWithinAt_id.congr_of_eventuallyEq hid (hid.eq_of_nhdsWithin hx)
-    · have hxP : x ∈ P := ⟨hx, fun h ↦ hxW (h ▸ hyW)⟩
-      have hgx : ContinuousWithinAt g P x :=
-        (continuousWithinAt_invFunOn_comp hf hinj hp hkc (fun x' hx' ↦ hkP hx') hxP).congr
-          (fun x' hx' ↦ hg hx'.2) (hg hxP.2)
-      exact hgx.mono_of_mem_nhdsWithin (inter_mem self_mem_nhdsWithin
-        ((hf x hx).preimage_mem_nhdsWithin (isOpen_compl_singleton.mem_nhds hxP.2)))
-  · have hfx : f x = f x' := hki (hfp hx) (hfp hx') (by rw [← hfg hx, ← hfg hx', h])
-    by_cases hxy : f x = y
-    · simpa [g, hxy, ← hfx] using h
-    · exact eq_of_apply_eq hinj hx hx' hfx hxy
+  refine ⟨g, hgc, fun x hx x' hx' h ↦ ?_, hgU, fun x hx ↦ hgX x hx.1 hx.2⟩
+  have hfx : f x = f x' := hki (hfp hx) (hfp hx') (by rw [← hfg x hx, ← hfg x' hx', h])
+  by_cases hxy : f x = y
+  · rwa [hgX x hx hxy, hgX x' hx' (hfx ▸ hxy)] at h
+  · exact eq_of_apply_eq hinj hx hx' hfx hxy
 
 /-- **One shrinking step.** For every open `U` containing the fibre `X` over `y`, there is a map
 of `E`, continuous and injective on the closed ball, which fixes `X` pointwise and maps the closed
