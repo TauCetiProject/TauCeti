@@ -36,16 +36,9 @@ open scoped Matrix
 entries times `‖ξ‖²`. -/
 theorem Matrix.toQuadraticForm'_le_sum_abs_mul_sq {ι : Type*} [Fintype ι] [DecidableEq ι]
     (A : Matrix ι ι ℝ) (ξ : EuclideanSpace ℝ ι) :
-    A.toQuadraticForm' ξ ≤ (∑ i, ∑ j, |A i j|) * ‖ξ‖ ^ 2 := by
-  rw [Matrix.toQuadraticForm'_apply, Finset.sum_mul]
-  simp only [dotProduct, Matrix.mulVec, Finset.mul_sum, Finset.sum_mul]
-  refine Finset.sum_le_sum fun i _ ↦ Finset.sum_le_sum fun j _ ↦ ?_
-  have hi : |ξ i| ≤ ‖ξ‖ := by simpa using PiLp.norm_apply_le ξ i
-  have hj : |ξ j| ≤ ‖ξ‖ := by simpa using PiLp.norm_apply_le ξ j
-  calc ξ i * (A i j * ξ j) ≤ |ξ i * (A i j * ξ j)| := le_abs_self _
-    _ = |A i j| * (|ξ i| * |ξ j|) := by rw [abs_mul, abs_mul]; ring
-    _ ≤ |A i j| * (‖ξ‖ * ‖ξ‖) := by gcongr
-    _ = |A i j| * ‖ξ‖ ^ 2 := by ring
+    A.toQuadraticForm' ξ ≤ (∑ i, ∑ j, |A i j|) * ‖ξ‖ ^ 2 :=
+  (TauCeti.PDE.toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq A ξ).trans
+    (mul_le_mul_of_nonneg_right (TauCeti.PDE.norm_matrixBilinearForm_le_sum_abs A) (sq_nonneg _))
 
 namespace TauCeti
 
