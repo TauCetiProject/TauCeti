@@ -204,8 +204,6 @@ theorem eq_zero_of_orbitCoordinates_one_eq_zero {n : ℕ}
     AlgebraicGeometry.projectiveLine.dehomogenize_eq_zero_iff R 1 hs'] at hcomp
   rw [← hss', hcomp, map_zero]
 
-variable [IsDomain R]
-
 /-- The orbit of `[1 : 1]` is dense in the projective line. -/
 theorem dense_range_projectiveOrbitMap_one :
     Dense (Set.range (projectiveOrbitMap (H := R[T;T⁻¹]) (1 : Fin 2 → R) (isUnimodular_one R))) :=
