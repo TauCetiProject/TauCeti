@@ -89,14 +89,6 @@ private lemma LSeries_eq_of_hasSum {a : ℕ → ℂ} {v : ℂ} (hs0 : s ≠ 0)
 
 namespace ModularForm
 
-/-- In negative weight the `q`-expansion coefficients of a modular form are all zero, since the
-form is zero. -/
-lemma qExpansion_coeff_eq_zero_of_neg_weight [ModularFormClass F Γ k] (hk : k < 0) (f : F) :
-    (fun n ↦ (qExpansion Γ.strictWidthInfty f).coeff n) = 0 := by
-  rw [coe_eq_zero_of_neg_weight hk f, qExpansion_zero]
-  funext n
-  simp
-
 /-- **Hecke's abscissa bound for modular forms**: the Dirichlet series of the `q`-expansion
 coefficients converges absolutely for `Re s > k + 1` (from `aₙ = O(nᵏ)` for `k ≥ 0`; in negative
 weight the form is zero). -/
@@ -109,7 +101,8 @@ theorem abscissaOfAbsConv_qExpansion_coeff_le [ModularFormClass F Γ k] (f : F) 
       (Eventually.of_forall fun n ↦ ?_)
     simp only [Real.rpow_intCast]
   · refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y _ ↦ ?_
-    rw [qExpansion_coeff_eq_zero_of_neg_weight (lt_of_not_ge hk) f]
+    rw [qExpansion_eq_zero_of_neg_weight (lt_of_not_ge hk) f]
+    simp only [map_zero]
     exact LSeriesSummable_zero
 
 /-- On the half-plane `Re s > k + 1`, the Dirichlet series of the `q`-expansion
@@ -151,14 +144,6 @@ end ModularForm
 
 namespace CuspForm
 
-/-- For nonpositive weight the `q`-expansion coefficients of a cusp form are all zero, since the
-form is zero. -/
-lemma qExpansion_coeff_eq_zero_of_weight_nonpos [CuspFormClass F Γ k] (hk : k ≤ 0) (f : F) :
-    (fun n ↦ (qExpansion Γ.strictWidthInfty f).coeff n) = 0 := by
-  rw [coe_eq_zero_of_weight_nonpos hk f, qExpansion_zero]
-  funext n
-  simp
-
 /-- **The mean-square abscissa bound for cusp forms**: the Dirichlet series of the
 `q`-expansion coefficients converges absolutely for `Re s > (k+1)/2`. In particular its
 abscissa is at most one in weight one. -/
@@ -177,7 +162,8 @@ theorem abscissaOfAbsConv_qExpansion_coeff_le [CuspFormClass F Γ k] (f : F) :
       TauCeti.LSeries.abscissaOfAbsConv_le_of_sum_norm_sq_bigO hO
         (le_trans (by norm_num) (Nat.cast_nonneg k))
   · refine LSeries.abscissaOfAbsConv_le_of_forall_lt_LSeriesSummable fun y _ ↦ ?_
-    rw [qExpansion_coeff_eq_zero_of_weight_nonpos (le_of_lt (lt_of_not_ge hk)) f]
+    rw [qExpansion_eq_zero_of_weight_nonpos (le_of_lt (lt_of_not_ge hk)) f]
+    simp only [map_zero]
     exact LSeriesSummable_zero
 
 /-- The Dirichlet series of the `q`-expansion coefficients of a cusp form converges absolutely
@@ -217,7 +203,7 @@ theorem hasEntireExtension_qExpansion_coeff [CuspFormClass F Γ k] (f : F) :
         (Or.inl (Complex.ofReal_ne_zero.mpr Γ.strictWidthInfty_pos.ne'))).mul
         (differentiable_L hk f)
   · refine LSeries.hasEntireExtension_of_support_finite ?_
-    rw [qExpansion_coeff_eq_zero_of_weight_nonpos hk f]
+    rw [qExpansion_eq_zero_of_weight_nonpos hk f]
     simp
 
 /-- The entire L-function of a positive-weight cusp form is nonzero if one of its
