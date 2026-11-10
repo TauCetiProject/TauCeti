@@ -228,6 +228,27 @@ private lemma measure_lt_renewalExcess_of_measurable (hT : ∀ n, Measurable (T 
     Measure.renewalMeasure_def, Measure.restrict_sum _ measurableSet_Iic, lintegral_sum_measure]
   exact tsum_congr fun n ↦ measure_arrival_le_lt_arrival_succ hT hindep hid n t x
 
+/-- Identically distributed increments are almost everywhere equal to measurable ones. -/
+private lemma exists_measurable_ae_eq (hid : ∀ n, IdentDistrib (T n) (T 0) P P) :
+    ∃ T' : ℕ → Ω → ℝ≥0, (∀ n, Measurable (T' n)) ∧ ∀ n, T' n =ᵐ[P] T n :=
+  ⟨fun n ↦ (hid n).aemeasurable_fst.mk (T n), fun n ↦ (hid n).aemeasurable_fst.measurable_mk,
+    fun n ↦ (hid n).aemeasurable_fst.ae_eq_mk.symm⟩
+
+/-- Changing the increments on a null set changes the excess only on a null set. -/
+private lemma renewalExcess_congr_ae {T' : ℕ → Ω → ℝ≥0} (hae : ∀ n, T' n =ᵐ[P] T n) (t : ℝ≥0) :
+    renewalExcess T' t =ᵐ[P] renewalExcess T t := by
+  filter_upwards [arrival_congr_ae hae] with ω harr
+  have hrc : renewalCount T' t ω = renewalCount T t ω := by
+    simp only [renewalCount_def, harr]
+  rw [renewalExcess_def, renewalExcess_def, renewalCountNat_def, renewalCountNat_def,
+    funext harr, hrc, harr]
+
+/-- The excess is almost everywhere measurable for identically distributed increments. -/
+private lemma aemeasurable_renewalExcess (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (t : ℝ≥0) :
+    AEMeasurable (renewalExcess T t) P := by
+  obtain ⟨T', hT', hae⟩ := exists_measurable_ae_eq hid
+  exact ⟨renewalExcess T' t, measurable_renewalExcess hT' t, (renewalExcess_congr_ae hae t).symm⟩
+
 /-- **The excess-tail representation**, in `ℝ≥0∞`. For i.i.d. increments with law `F`, the excess
 at time `t` exceeds `x` with probability `∫_{[0, t]} F((t - s + x, ∞)) U(ds)`, where `U` is the
 renewal measure of `F`. If the increments are almost surely zero, both sides vanish. The increments
@@ -237,18 +258,11 @@ theorem measure_lt_renewalExcess (hindep : iIndepFun T P)
     P {ω | x < renewalExcess T t ω} =
       ∫⁻ s in Iic t, P.map (T 0) (Ioi (t - s + x)) ∂(P.map (T 0)).renewalMeasure := by
   -- Replace the increments by measurable representatives, which changes nothing almost surely.
-  set T' : ℕ → Ω → ℝ≥0 := fun n ↦ (hid n).aemeasurable_fst.mk (T n)
-  have hT' (n : ℕ) : Measurable (T' n) := (hid n).aemeasurable_fst.measurable_mk
-  have hae (n : ℕ) : T' n =ᵐ[P] T n := (hid n).aemeasurable_fst.ae_eq_mk.symm
+  obtain ⟨T', hT', hae⟩ := exists_measurable_ae_eq hid
   have hid' (n : ℕ) : IdentDistrib (T' n) (T' 0) P P :=
     (IdentDistrib.of_ae_eq (hT' n).aemeasurable (hae n)).trans
       ((hid n).trans (IdentDistrib.of_ae_eq (hT' 0).aemeasurable (hae 0)).symm)
-  have hexc : renewalExcess T' t =ᵐ[P] renewalExcess T t := by
-    filter_upwards [arrival_congr_ae hae] with ω harr
-    have hrc : renewalCount T' t ω = renewalCount T t ω := by
-      simp only [renewalCount_def, harr]
-    rw [renewalExcess_def, renewalExcess_def, renewalCountNat_def, renewalCountNat_def,
-      funext harr, hrc, harr]
+  have hexc := renewalExcess_congr_ae hae t
   have hset : {ω | x < renewalExcess T t ω} =ᵐ[P] {ω | x < renewalExcess T' t ω} := by
     refine eventuallyEqSet_iff.2 ?_
     filter_upwards [hexc] with ω hω
@@ -275,14 +289,15 @@ theorem measureReal_lt_renewalExcess (hindep : iIndepFun T P)
 /-- **The distribution function of the excess.** For i.i.d. increments with law `F` that are not
 almost surely zero, `P(E t ≤ x) = (h ∗ U) t` for the forcing term `h u = F([0, u + x]) - F([0, u])`,
 where `U` is the renewal measure of `F`. -/
-theorem measureReal_renewalExcess_le (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+theorem measureReal_renewalExcess_le (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (hzero : P {ω | T 0 ω = 0} < 1) (t x : ℝ≥0) :
     P.real {ω | renewalExcess T t ω ≤ x} =
       renewalConv (fun u ↦ (P.map (T 0)).real (Iic (u + x)) - (P.map (T 0)).real (Iic u))
         (P.map (T 0)).renewalMeasure t := by
   have := hindep.isProbabilityMeasure
   set F := P.map (T 0)
-  have hF : F {0} < 1 := by rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)]
+  have hF : F {0} < 1 := by
+    rwa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst (measurableSet_singleton 0)]
   have hU := (Measure.renewalMeasure_Iic_lt_top F hF t).ne
   have hint (y : ℝ≥0) := integrableOn_Iic_sub (h := fun u ↦ F.real (Ioi (u + y))) (C := 1)
     (Antitone.measurable fun _ _ h ↦ measureReal_mono (Ioi_subset_Ioi (by gcongr)))
@@ -291,8 +306,8 @@ theorem measureReal_renewalExcess_le (hT : ∀ n, Measurable (T n)) (hindep : iI
   have hcompl : {ω | renewalExcess T t ω ≤ x} = {ω | x < renewalExcess T t ω}ᶜ := by
     ext
     simp
-  rw [hcompl, probReal_compl_eq_one_sub (measurableSet_lt measurable_const
-      (measurable_renewalExcess hT t)), measureReal_lt_renewalExcess hindep hid,
+  rw [hcompl, probReal_compl_eq_one_sub₀ (nullMeasurableSet_lt aemeasurable_const
+      (aemeasurable_renewalExcess hid t)), measureReal_lt_renewalExcess hindep hid,
     ← renewalConv_measureReal_Ioi_renewalMeasure hF t]
   have hfun : (fun u ↦ F.real (Iic (u + x)) - F.real (Iic u)) =
       (fun u ↦ F.real (Ioi (u + 0))) - fun u ↦ F.real (Ioi (u + x)) := by
@@ -334,7 +349,7 @@ theorem measureReal_lt_renewalExcess_eq_add (hindep : iIndepFun T P)
 /-- **The renewal equation for the distribution function of the excess.** For i.i.d. increments
 with law `F`, `g t = P(E t ≤ x)` solves the renewal equation `g = h + g ∗ F` with forcing term
 `h t = F([0, t + x]) - F([0, t])`. If the increments are almost surely zero, `g = 1` and `h = 0`. -/
-theorem measureReal_renewalExcess_le_eq_add (hT : ∀ n, Measurable (T n)) (hindep : iIndepFun T P)
+theorem measureReal_renewalExcess_le_eq_add (hindep : iIndepFun T P)
     (hid : ∀ n, IdentDistrib (T n) (T 0) P P) (t x : ℝ≥0) :
     P.real {ω | renewalExcess T t ω ≤ x} =
       ((P.map (T 0)).real (Iic (t + x)) - (P.map (T 0)).real (Iic t)) +
@@ -343,24 +358,26 @@ theorem measureReal_renewalExcess_le_eq_add (hT : ∀ n, Measurable (T n)) (hind
   by_cases hzero : P {ω | T 0 ω = 0} < 1
   swap
   · -- Every excess and every `F([0, y])` equals `1`.
-    have hone {s : Set Ω} (hs : MeasurableSet s) (h : ∀ᵐ ω ∂P, ω ∈ s) : P.real s = 1 := by
-      rw [measureReal_def, (prob_compl_eq_zero_iff hs).1 (ae_iff.1 h), ENNReal.toReal_one]
+    have hone {s : Set Ω} (hs : NullMeasurableSet s P) (h : ∀ᵐ ω ∂P, ω ∈ s) : P.real s = 1 := by
+      rw [measureReal_def, (prob_compl_eq_zero_iff₀ hs).1 (ae_iff.1 h), ENNReal.toReal_one]
     have hE (s : ℝ≥0) : P.real {ω | renewalExcess T s ω ≤ x} = 1 := by
-      refine hone (measurableSet_le (measurable_renewalExcess hT s) measurable_const) ?_
+      refine hone (nullMeasurableSet_le (aemeasurable_renewalExcess hid s) aemeasurable_const) ?_
       filter_upwards [ae_renewalExcess_eq_zero hindep hid hzero s] with ω hω
       simp [hω]
     have hF (y : ℝ≥0) : (P.map (T 0)).real (Iic y) = 1 := by
-      rw [map_measureReal_apply (hT 0) measurableSet_Iic]
-      refine hone ((hT 0) measurableSet_Iic) ?_
+      rw [measureReal_def, Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst
+        measurableSet_Iic, ← measureReal_def]
+      refine hone ((hid 0).aemeasurable_fst.nullMeasurable measurableSet_Iic) ?_
       filter_upwards [ae_forall_eq_of_identDistrib hid
         (le_antisymm prob_le_one (not_lt.1 hzero))] with ω hω
       simp [hω 0]
     simp [hE, hF, renewalConv_def]
   have := Measure.isLocallyFiniteMeasure_renewalMeasure _
-    (by rwa [Measure.map_apply (hT 0) (measurableSet_singleton 0)])
+    (by rwa [Measure.map_apply_of_aemeasurable (hid 0).aemeasurable_fst
+      (measurableSet_singleton 0)])
   have hcdf : Measurable fun u : ℝ≥0 ↦ (P.map (T 0)).real (Iic u) :=
     Monotone.measurable fun _ _ h ↦ measureReal_mono (Iic_subset_Iic.2 h)
-  simp_rw [measureReal_renewalExcess_le hT hindep hid hzero]
+  simp_rw [measureReal_renewalExcess_le hindep hid hzero]
   refine renewalConv_renewalMeasure_eq_add (C := 1) ((hcdf.comp (measurable_add_const x)).sub hcdf)
     fun u _ ↦ abs_sub_le_iff.2 ⟨?_, ?_⟩ <;>
   linarith [measureReal_nonneg (μ := P.map (T 0)) (s := Iic u),
