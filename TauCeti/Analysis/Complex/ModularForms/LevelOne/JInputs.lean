@@ -450,7 +450,7 @@ theorem laurentQExpansion_j :
 /-- The Laurent `q`-expansion of `j` has order `-1`: `j` has a simple pole at `i∞`. -/
 @[simp]
 theorem orderTop_laurentQExpansion_j : (UpperHalfPlane.laurentQExpansion 1 j).orderTop = -1 := by
-  rw [UpperHalfPlane.orderTop_laurentQExpansion one_pos meromorphicAt_cuspFunction_j,
+  rw [UpperHalfPlane.orderTop_laurentQExpansion meromorphicAt_cuspFunction_j,
     meromorphicOrderAt_cuspFunction_j]
 
 /-- The Laurent `q`-coefficients of `j` are those of `q j`, shifted down by one. -/
