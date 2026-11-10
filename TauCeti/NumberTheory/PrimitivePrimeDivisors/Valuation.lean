@@ -15,8 +15,9 @@ Let `p` be a prime not dividing `a * b`, and let `d` be the order of `a / b` mod
 For odd `p`, the valuation of `a ^ k - b ^ k` vanishes unless `d ∣ k`; at a positive
 multiple of `d` it is the valuation at exponent `d` plus the valuation of `k`.
 
-The successive quotients in the tower of exponents `d * p ^ e` have valuation one,
-with exactly one exception: for `p = 2` the first quotient has valuation `v₂(a + b)`.
+For any positive multiple `k` of `d`, the quotient from exponent `k` to `p * k`
+has valuation one, except when `p = 2` and `k` is odd, when it has valuation `v₂(a + b)`.
+In the tower `d * p ^ e`, only the first dyadic quotient is exceptional.
 This is the valuation increment used to isolate a nonprimitive prime divisor in a
 homogeneous cyclotomic factor. The statements need neither coprimality of the bases
 nor positivity of the smaller base, only `b < a` and nonvanishing modulo `p`.
@@ -49,76 +50,59 @@ theorem multiplicity_pow_sub_pow_eq_ite_orderOf_dvd {p : ℕ} (hp : p.Prime)
   have ha : ¬ p ∣ a := fun h => hab (dvd_mul_of_dvd_left h b)
   have hb : ¬ p ∣ b := fun h => hab (dvd_mul_of_dvd_right h a)
   split_ifs with hd
-  · have hpd : ¬ p ∣ orderOf ((a : ZMod p) * (b : ZMod p)⁻¹) := by
-      intro h
-      have := Nat.le_of_dvd (Nat.sub_pos_of_lt hp.one_lt)
-        (h.trans (hp.orderOf_ratio_dvd_sub_one hab))
-      have := hp.one_lt
-      omega
-    exact Nat.multiplicity_pow_sub_pow_of_dvd_pow_sub_pow hpodd hba
-      ((hp.dvd_pow_sub_pow_iff_orderOf_dvd hba.le hb _).mpr (dvd_refl _)) ha hpd hd hk
+  · exact Nat.multiplicity_pow_sub_pow_of_dvd_pow_sub_pow hpodd hba
+      ((hp.dvd_pow_sub_pow_iff_orderOf_dvd hba.le hb _).mpr (dvd_refl _)) ha
+      (hp.not_dvd_orderOf_ratio hab) hd hk
   · exact multiplicity_eq_zero_of_not_dvd
       (fun h => hd ((hp.dvd_pow_sub_pow_iff_orderOf_dvd hba.le hb k).mp h))
 
-/-- Successive quotients at exponents `d * p ^ e`, where `d` is the order of the ratio
-modulo `p`, have valuation one. The first dyadic quotient instead has valuation
-`v₂(a + b)`; no other quotient is exceptional. -/
-theorem multiplicity_order_prime_power_quotient {p : ℕ} (hp : p.Prime)
-    {a b : ℕ} (hba : b < a) (hab : ¬ p ∣ a * b) (e : ℕ) :
-    let d := orderOf ((a : ZMod p) * (b : ZMod p)⁻¹)
-    multiplicity p ((a ^ (d * p ^ (e + 1)) - b ^ (d * p ^ (e + 1))) /
-      (a ^ (d * p ^ e) - b ^ (d * p ^ e))) =
-        if p = 2 ∧ e = 0 then multiplicity 2 (a + b) else 1 := by
+/-- For a nonzero multiple `k` of the order of the ratio modulo `p`, the quotient from
+exponent `k` to `p * k` has valuation one. At `p = 2` and odd `k`, its valuation is
+instead `v₂(a + b)`. In particular, along the tower `d * p ^ e` only the first dyadic
+quotient is exceptional. -/
+theorem multiplicity_pow_sub_pow_div_pow_sub_pow_eq_ite {p : ℕ} (hp : p.Prime)
+    {a b k : ℕ} (hba : b < a) (hab : ¬ p ∣ a * b) (hk : k ≠ 0)
+    (hdk : orderOf ((a : ZMod p) * (b : ZMod p)⁻¹) ∣ k) :
+    multiplicity p ((a ^ (p * k) - b ^ (p * k)) / (a ^ k - b ^ k)) =
+      if p = 2 ∧ Odd k then multiplicity 2 (a + b) else 1 := by
   let : Fact p.Prime := ⟨hp⟩
-  dsimp only
-  let d := orderOf ((a : ZMod p) * (b : ZMod p)⁻¹)
-  have hd : 0 < d := hp.orderOf_ratio_pos hab
-  have hdiv : d * p ^ e ∣ d * p ^ (e + 1) :=
-    Nat.mul_dvd_mul_left d (pow_dvd_pow p (by omega))
+  have hpk : p * k ≠ 0 := mul_ne_zero hp.ne_zero hk
+  have hmul : multiplicity p (p * k) = 1 + multiplicity p k := by
+    rw [Nat.multiplicity_mul hp.ne_zero hk]
+    simp
   -- The quotient is exact, so its valuation is the difference of adjacent valuations.
-  rw [Nat.multiplicity_div_of_dvd (Nat.pow_sub_pow_dvd_pow_sub_pow a b hdiv)]
+  rw [Nat.multiplicity_div_of_dvd
+    (Nat.pow_sub_pow_dvd_pow_sub_pow a b (dvd_mul_left k p))]
   by_cases hp2 : p = 2
   · subst p
-    have hd1 : d = 1 := by
-      exact Nat.dvd_one.mp (hp.orderOf_ratio_dvd_sub_one hab)
     have ha : Odd a := Nat.not_even_iff_odd.mp (fun h =>
       hab (dvd_mul_of_dvd_left h.two_dvd b))
     have hb : Odd b := Nat.not_even_iff_odd.mp (fun h =>
       hab (dvd_mul_of_dvd_right h.two_dvd a))
-    simp only [hd1, one_mul, true_and]
-    -- At two the order is one. Separate the first step from the even-exponent steps.
-    rcases e with _ | e
-    · simp only [Nat.zero_add, pow_zero, pow_one, ite_true]
+    have hv1 := Nat.multiplicity_pow_two_sub_pow_of_even hba ha hb
+      (even_two.mul_right k) hpk
+    rw [hmul] at hv1
+    simp only [true_and]
+    -- Odd exponents retain the base valuation; even exponents use dyadic lifting twice.
+    by_cases hodd : Odd k
+    · rw [ite_eq_left hodd, Nat.multiplicity_pow_two_sub_pow_of_odd ha hb hodd]
       have hval := Nat.multiplicity_pow_two_sub_pow hba
         (Nat.Odd.sub_odd ha hb).two_dvd ha.not_two_dvd_nat (by decide : 2 ≠ 0)
         (by decide : Even 2)
+      have hkval := multiplicity_eq_zero_of_not_dvd hodd.not_two_dvd_nat
       have htwo : multiplicity 2 2 = 1 := by simp
       rw [htwo] at hval
       omega
-    · simp only [Nat.succ_ne_zero, ite_false]
-      have hn0 : 2 ^ (e + 1) ≠ 0 := pow_ne_zero _ (by decide)
-      have hn1 : 2 ^ (e + 1 + 1) ≠ 0 := pow_ne_zero _ (by decide)
-      have he0 : Even (2 ^ (e + 1)) := even_two.pow_of_ne_zero (by omega)
-      have he1 : Even (2 ^ (e + 1 + 1)) := even_two.pow_of_ne_zero (by omega)
-      have hv0 := Nat.multiplicity_pow_two_sub_pow_of_even hba ha hb he0 hn0
-      have hv1 := Nat.multiplicity_pow_two_sub_pow_of_even hba ha hb he1 hn1
-      simp only [Nat.multiplicity_prime_pow] at hv0 hv1
+    · rw [ite_eq_right hodd]
+      have hv0 := Nat.multiplicity_pow_two_sub_pow_of_even hba ha hb
+        (Nat.not_odd_iff_even.mp hodd) hk
       omega
-  · -- For odd primes, the valuation grows by one at every step of the tower.
+  · -- For odd primes, the order-based formulas differ only in the exponent valuation.
     have hpodd : Odd p := hp.odd_of_ne_two hp2
-    have hn0 : d * p ^ e ≠ 0 := mul_ne_zero hd.ne' (pow_ne_zero _ hp.ne_zero)
-    have hn1 : d * p ^ (e + 1) ≠ 0 := mul_ne_zero hd.ne' (pow_ne_zero _ hp.ne_zero)
-    have hv0 := hp.multiplicity_pow_sub_pow_eq_ite_orderOf_dvd hpodd hba hab hn0
-    have hv1 := hp.multiplicity_pow_sub_pow_eq_ite_orderOf_dvd hpodd hba hab hn1
-    have hpd : multiplicity p d = 0 := multiplicity_eq_zero_of_not_dvd (by
-      intro h
-      have := Nat.le_of_dvd (Nat.sub_pos_of_lt hp.one_lt)
-        (h.trans (hp.orderOf_ratio_dvd_sub_one hab))
-      have := hp.one_lt
-      omega)
-    dsimp only [d] at *
-    simp only [dvd_mul_right, ite_true, Nat.multiplicity_mul hd.ne'
-      (pow_ne_zero _ hp.ne_zero), Nat.multiplicity_prime_pow, hpd, zero_add] at hv0 hv1
+    have hv0 := hp.multiplicity_pow_sub_pow_eq_ite_orderOf_dvd hpodd hba hab hk
+    have hv1 := hp.multiplicity_pow_sub_pow_eq_ite_orderOf_dvd hpodd hba hab hpk
+    rw [ite_eq_left hdk] at hv0
+    rw [ite_eq_left (dvd_mul_of_dvd_right hdk p), hmul] at hv1
     simp only [hp2, false_and, ite_false]
     omega
 
