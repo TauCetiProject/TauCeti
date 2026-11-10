@@ -20,6 +20,9 @@ uniform order statements:
 * `IsPreconnected.forall_le_or_forall_ge`: a continuous function on `s` which never takes a value
   in the open interval `Ioo a b`, with `a < b`, lies below `a` on all of `s` or above `b` on all
   of `s`.
+* `IsPreconnected.subsingleton_image_of_interior_eq_empty`: in a densely ordered space, a
+  continuous function on `s` with values in a set with empty interior, for instance a null set of
+  `ℝ`, is constant on `s`.
 -/
 
 public section
@@ -71,3 +74,18 @@ theorem IsPreconnected.forall_le_or_forall_ge (hs : IsPreconnected s)
   exact (isPreconnected_iff_subset_of_disjoint_closed.1 (hs.image f hf) _ _ isClosed_Iic
     isClosed_Ici hcover hdisj).imp (fun h x hx ↦ h (mem_image_of_mem f hx))
     fun h x hx ↦ h (mem_image_of_mem f hx)
+
+/-- A continuous function on a preconnected set, with values in a subset `t` of a densely ordered
+space whose interior is empty, is constant on the set: its image is preconnected, so it contains
+the open interval between any two of its points, which would lie in the interior of `t`. -/
+theorem IsPreconnected.subsingleton_image_of_interior_eq_empty [DenselyOrdered α]
+    (hs : IsPreconnected s) {f : X → α} (hf : ContinuousOn f s) {t : Set α}
+    (hft : MapsTo f s t) (ht : interior t = ∅) : (f '' s).Subsingleton := by
+  have hIoo {a b : α} (ha : a ∈ f '' s) (hb : b ∈ f '' s) : ¬a < b := fun hab ↦ by
+    obtain ⟨c, hc⟩ := nonempty_Ioo.2 hab
+    have hsub : Ioo a b ⊆ interior t := interior_maximal
+      (Ioo_subset_Icc_self.trans ((hs.image f hf).Icc_subset ha hb |>.trans
+        (image_subset_iff.2 hft))) isOpen_Ioo
+    rw [ht] at hsub
+    exact hsub hc
+  exact fun a ha b hb ↦ le_antisymm (not_lt.1 (hIoo hb ha)) (not_lt.1 (hIoo ha hb))
