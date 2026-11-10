@@ -221,18 +221,17 @@ theorem isCompact_closure_splitGluingPairs :
   · obtain ⟨e, -, -⟩ :=
       exists_homeomorph_closure_splitGluingPairs hg hgε hk hkε hε hr₀ hr₀₁ hK
     exact isCompact_iff_compactSpace.mpr e.compactSpace
-  · have hsub : (splitGluingPairs ε r₀ g k).Subsingleton := by
-      intro p hp q hq
-      have hp0 : p.1.snd = 0 := by
-        simpa using hp.2.1.trans (mul_nonpos_of_nonpos_of_nonneg hr₀ hε.le)
-      have hq0 : q.1.snd = 0 := by
-        simpa using hq.2.1.trans (mul_nonpos_of_nonpos_of_nonneg hr₀ hε.le)
-      have h1 : p.1 = q.1 := by
-        refine WithLp.ofLp_injective 2 (Prod.ext ?_ ?_)
-        · exact (hp.2.2.1.trans (by rw [hp0])).trans (hq.2.2.1.trans (by rw [hq0])).symm
-        · exact hp0.trans hq0.symm
-      exact Prod.ext h1 (by rw [hp.2.2.2.1, hq.2.2.2.1, h1])
-    rw [hsub.isClosed.closure_eq]
-    exact hsub.isCompact
+  · -- If `r₀ ≤ 0` the entrance point has zero unstable coordinate, so there is at most one pair.
+    have hsub : splitGluingPairs ε r₀ g k ⊆
+        {(WithLp.toLp 2 (g 0, 0), splitPassage ε (WithLp.toLp 2 (g 0, 0)))} := by
+      intro p hp
+      obtain ⟨-, hb, hg', he, -⟩ := mem_splitGluingPairs.1 hp
+      have h0 : p.1.snd = 0 := by
+        simpa using hb.trans (mul_nonpos_of_nonpos_of_nonneg hr₀ hε.le)
+      have h1 : p.1 = WithLp.toLp 2 (g 0, 0) :=
+        WithLp.ofLp_injective 2 (Prod.ext (hg'.trans (congrArg g h0)) h0)
+      exact Prod.ext h1 (he.trans (by rw [h1]))
+    exact isCompact_singleton.of_isClosed_subset isClosed_closure
+      (closure_minimal hsub isClosed_singleton)
 
 end TauCeti
