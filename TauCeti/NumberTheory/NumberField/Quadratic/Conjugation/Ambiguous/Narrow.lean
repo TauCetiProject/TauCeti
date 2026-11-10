@@ -111,39 +111,6 @@ theorem mk0_map_ringOfIntegersQuadraticConj_eq_inv (hmin : minpoly ℤ θ = X ^ 
   have hpos : 0 < n := lt_of_le_of_ne (Int.natCast_nonneg _) fun h0 => hne (by rw [← h0]; simp)
   simpa using isTotallyPositive_intCast (K := K) hpos
 
-/-- **Cancelling the conjugate ideal.** If `(x) σJ = (y) J` for a nonzero ideal `J` and `x y` with
-`x * y` totally positive, then `x * σx = y * σy`: conjugating the identity and multiplying the two
-gives `(x σx) σJ = (y σy) σJ`, so `(x σx) = (y σy)` as ideals. The two rational norm generators
-therefore agree up to sign, and the sign is `+` because the norm of `x * y` is positive. -/
-private theorem mul_ringOfIntegersQuadraticConj_eq_of_span_mul_map_eq
-    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
-    {J : Ideal (𝓞 K)} (hJm0 : Ideal.map (ringOfIntegersQuadraticConj hmin hgen) J ≠ 0)
-    {x y : 𝓞 K} (hxK : (x : K) ≠ 0) (hyK : (y : K) ≠ 0)
-    (hpos : IsTotallyPositive ((x : K) * (y : K)))
-    (hxy : Ideal.span {x} * Ideal.map (ringOfIntegersQuadraticConj hmin hgen) J =
-      Ideal.span {y} * J) :
-    x * ringOfIntegersQuadraticConj hmin hgen x = y * ringOfIntegersQuadraticConj hmin hgen y := by
-  set σ := ringOfIntegersQuadraticConj hmin hgen with _
-  have hinv : Function.Involutive σ := ringOfIntegersQuadraticConj_involutive hmin hgen
-  -- Conjugating that identity gives the companion identity.
-  have hxy2 : Ideal.span {σ x} * J = Ideal.span {σ y} * Ideal.map σ J := by
-    have h := congrArg (Ideal.map σ) hxy
-    rwa [Ideal.map_mul, Ideal.map_mul, Ideal.map_span, Ideal.map_span, Set.image_singleton,
-      Set.image_singleton, Ideal.map_map_of_involutive hinv] at h
-  -- Multiplying the two identities and cancelling `σJ` leaves `(x σx) = (y σy)`.
-  have hspan : Ideal.span {x * σ x} = Ideal.span ({y * σ y} : Set (𝓞 K)) := by
-    refine mul_right_cancel₀ hJm0 ?_
-    rw [← Ideal.span_singleton_mul_span_singleton, ← Ideal.span_singleton_mul_span_singleton]
-    calc Ideal.span {x} * Ideal.span {σ x} * Ideal.map σ J
-        = Ideal.span {σ x} * (Ideal.span {x} * Ideal.map σ J) := by ring
-      _ = Ideal.span {σ x} * (Ideal.span {y} * J) := by rw [hxy]
-      _ = Ideal.span {y} * (Ideal.span {σ x} * J) := by ring
-      _ = Ideal.span {y} * (Ideal.span {σ y} * Ideal.map σ J) := by rw [hxy2]
-      _ = Ideal.span {y} * Ideal.span {σ y} * Ideal.map σ J := by ring
-  exact mul_ringOfIntegersQuadraticConj_eq_mul_ringOfIntegersQuadraticConj_of_associated hmin hgen
-    (norm_pos_of_isTotallyPositive (mul_ne_zero hxK hyK) hpos)
-    (Ideal.span_singleton_eq_span_singleton.mp hspan)
-
 /-- **The Hilbert 90 twist is narrowly principal.** If `x * ε = y * σε` with `x * y` totally
 positive, then `ε / σε = y / x` is totally positive, so `±ε` is totally positive and the ideal `(ε)`
 is trivial in the narrow class group. -/
@@ -204,7 +171,8 @@ theorem exists_map_ringOfIntegersQuadraticConj_eq_self_of_sq_eq_one
   have hspanx : Ideal.span ({x} : Set (𝓞 K)) ≠ 0 := by
     rw [ne_eq, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]; exact hx
   have hnorm : x * σ x = y * σ y :=
-    mul_ringOfIntegersQuadraticConj_eq_of_span_mul_map_eq hmin hgen hJm0 hxK hyK hpos hxy
+    mul_ringOfIntegersQuadraticConj_eq_of_span_mul_map_eq hmin hgen hJ0
+      (norm_pos_of_isTotallyPositive (mul_ne_zero hxK hyK) hpos) hxy
   -- Hilbert 90 produces the twisting element.
   obtain ⟨ε, hε0, hε⟩ := exists_ne_zero_mul_eq_mul_ringOfIntegersQuadraticConj hmin hgen hx hnorm
   have hspanε : Ideal.span ({ε} : Set (𝓞 K)) ≠ 0 := by
