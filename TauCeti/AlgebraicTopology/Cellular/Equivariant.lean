@@ -9,7 +9,7 @@ public import TauCeti.AlgebraicTopology.Cellular.Map
 public import Mathlib.RepresentationTheory.Rep.Basic
 
 /-!
-# Cellular chains with a group action
+# Cellular chains with a monoid action
 
 A family of cellular self-maps satisfying the action laws induces representations on cellular
 chains. Naturality of the cellular differential assembles these into a complex in `Rep`.
@@ -30,7 +30,7 @@ namespace TauCeti
 universe u
 
 variable {X : Type u} [TopologicalSpace X] [T2Space X] (C : Set X) [CWComplex C]
-  {G : Type u} [Group G] (ρ : G → (TopCat.of C ⟶ TopCat.of C))
+  {G : Type u} [Monoid G] (ρ : G → (TopCat.of C ⟶ TopCat.of C))
   (hcell : ∀ g, IsCellular C C (ρ g))
   (hone : ρ 1 = 𝟙 _) (hmul : ∀ g h, ρ (g * h) = ρ h ≫ ρ g)
   (R : Type u) [Ring R]
@@ -71,7 +71,7 @@ theorem cellularActionDifferential_hom_toLinearMap (n : ℕ) :
     (cellularActionDifferential C ρ hcell hone hmul R n).hom.toLinearMap =
       (cellularDifferential C (ModuleCat.of R R) n).hom := (rfl)
 
-/-- Cellular chains retaining a cellular group action. -/
+/-- Cellular chains retaining a cellular monoid action. -/
 def cellularActionComplex : ChainComplex (Rep R G) ℕ :=
   ChainComplex.of (fun n ↦ Rep.of (cellularActionRepresentation C ρ hcell hone hmul R n))
     (cellularActionDifferential C ρ hcell hone hmul R) fun n ↦ by
