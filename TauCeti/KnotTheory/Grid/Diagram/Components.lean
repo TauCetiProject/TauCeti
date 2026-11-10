@@ -590,14 +590,16 @@ def reprString (G : GridDiagram n) : String :=
 
 /-- The `Repr` instance emits a `parseGridDiagram` call for this grid diagram. -/
 instance : Repr (GridDiagram n) where
-  reprPrec G _ :=
+  reprPrec G p :=
     if G.reprString.isEmpty then
-      Std.Format.text ("TauCeti.GridDiagram.parseGridDiagram " ++ toString n ++ " \"\"")
+      Repr.addAppParen
+        (Std.Format.text ("TauCeti.GridDiagram.parseGridDiagram " ++ toString n ++ " \"\"")) p
     else
       let lines := G.reprString.splitOn "\n" |>.map fun line ↦ "  " ++ line
-      Std.Format.text
-        ("TauCeti.GridDiagram.parseGridDiagram " ++ toString n ++ " \"\n" ++
-          String.intercalate "\n" lines ++ "\n\"")
+      Repr.addAppParen
+        (Std.Format.text
+          ("TauCeti.GridDiagram.parseGridDiagram " ++ toString n ++ " \"\n" ++
+            String.intercalate "\n" lines ++ "\n\"")) p
 
 end GridDiagram
 
