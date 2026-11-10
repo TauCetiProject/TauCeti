@@ -104,67 +104,6 @@ private def memLpSolutions (hf : LipschitzWith K (∇ f)) (y : E) (μ : Measure 
   smul_mem' c v hv := by
     simpa only [mem_ofPred_eq, map_smul, Pi.smul_def] using hv.const_smul c
 
-/-- Near a point `x` at which a chart `e` flattening `S` onto `L` is tangent to the identity, the
-tangent spaces of `S` lie in the cone `⟪B v, v⟫ ≥ 0`, as soon as the form `⟪B u, u⟫` is coercive
-on `L`. -/
-private theorem eventually_forall_mem_span_tangentConeAt_inner_nonneg {S : Set E}
-    {L : Submodule ℝ E} {B : E →L[ℝ] E} {e : OpenPartialHomeomorph E E} {x : E}
-    (hxe : x ∈ e.source) (hed : HasFDerivAt e (ContinuousLinearMap.id ℝ E) x)
-    (heC : ∀ z ∈ e.source, ContDiffAt ℝ 1 e z) (heCs : ∀ z ∈ e.target, ContDiffAt ℝ 1 e.symm z)
-    (heS : ∀ z ∈ e.source, z ∈ S ↔ e z ∈ L) {c : ℝ} (hc : 0 < c)
-    (hL : ∀ u ∈ L, c * ‖u‖ ^ 2 ≤ ⟪B u, u⟫) :
-    ∀ᶠ z in 𝓝 x, z ∈ S → ∀ v ∈ Submodule.span ℝ (tangentConeAt ℝ S z), 0 ≤ ⟪B v, v⟫ := by
-  set δ : ℝ := min (1 / 2) (c / (12 * (‖B‖ + 1))) with hδ
-  have hδpos : 0 < δ := lt_min (by norm_num) (by positivity)
-  have hfd : Tendsto (fun z ↦ fderiv ℝ e z) (𝓝 x) (𝓝 (ContinuousLinearMap.id ℝ E)) := by
-    have h := (heC x hxe).continuousAt_fderiv one_ne_zero
-    rwa [ContinuousAt, hed.fderiv] at h
-  filter_upwards [e.open_source.mem_nhds hxe, hfd.eventually (Metric.ball_mem_nhds _ hδpos)]
-    with z hz hzd hzS v hv
-  obtain ⟨A, hA⟩ := e.exists_hasFDerivAt_of_chart hz ((heC z hz).differentiableAt one_ne_zero)
-    ((heCs _ (e.map_source hz)).differentiableAt one_ne_zero)
-  rw [(isSliceChart_iff.2 heS).span_tangentConeAt_eq_comap L.closed_of_finiteDimensional hz hzS
-    hA] at hv
-  -- The vector `u = A v` lies in `L` and is `δ`-close to `v`.
-  set u := A v with hudef
-  have hu := hL u hv
-  have huv : ‖u - v‖ ≤ δ * ‖v‖ := by
-    have h : u - v = (fderiv ℝ e z - ContinuousLinearMap.id ℝ E) v := by
-      rw [hA.fderiv, hudef, sub_apply, ContinuousLinearMap.id_apply,
-        ContinuousLinearEquiv.coe_coe]
-    rw [h]
-    refine ((fderiv ℝ e z - _).le_opNorm v).trans (mul_le_mul_of_nonneg_right ?_ (norm_nonneg v))
-    simpa [dist_eq_norm] using hzd.le
-  -- Compare the forms at `u` and at `v`.
-  have hexp : ⟪B v, v⟫ = ⟪B u, u⟫ - ⟪B (u - v), u⟫ - ⟪B v, u - v⟫ := by
-    simp only [map_sub, inner_sub_left, inner_sub_right]
-    ring
-  have h₁ : ⟪B (u - v), u⟫ ≤ ‖B‖ * ‖u - v‖ * ‖u‖ :=
-    (real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right (B.le_opNorm _) (norm_nonneg _))
-  have h₂ : ⟪B v, u - v⟫ ≤ ‖B‖ * ‖v‖ * ‖u - v‖ :=
-    (real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right (B.le_opNorm _) (norm_nonneg _))
-  have hδ₁ : δ ≤ 1 / 2 := min_le_left _ _
-  have hδ₂ : ‖B‖ * δ ≤ c / 12 := by
-    have h : δ ≤ c / (12 * (‖B‖ + 1)) := min_le_right _ _
-    rw [le_div_iff₀ (by positivity)] at h
-    nlinarith [norm_nonneg B]
-  have hun : ‖v‖ / 2 ≤ ‖u‖ := by
-    have := norm_sub_norm_le v u
-    rw [norm_sub_rev] at this
-    nlinarith [norm_nonneg v]
-  have hun' : ‖u‖ ≤ 3 / 2 * ‖v‖ := by
-    have := norm_le_norm_add_norm_sub' u v
-    nlinarith [norm_nonneg v]
-  have h₃ : ‖B‖ * ‖u - v‖ * ‖u‖ ≤ ‖B‖ * (δ * ‖v‖) * (3 / 2 * ‖v‖) :=
-    mul_le_mul (mul_le_mul_of_nonneg_left huv (norm_nonneg _)) hun' (norm_nonneg _)
-      (by positivity)
-  have h₄ : ‖B‖ * ‖v‖ * ‖u - v‖ ≤ ‖B‖ * ‖v‖ * (δ * ‖v‖) :=
-    mul_le_mul_of_nonneg_left huv (by positivity)
-  have h₅ : c * (‖v‖ / 2) ^ 2 ≤ c * ‖u‖ ^ 2 :=
-    mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (by positivity) hun 2) hc.le
-  have h₆ := mul_le_mul_of_nonneg_right hδ₂ (sq_nonneg ‖v‖)
-  nlinarith
-
 namespace IsNondegenerateCriticalPoint
 
 /-- **Tangent vectors of a stable set decay along the flow.** Let `q` be a nondegenerate critical
@@ -194,8 +133,8 @@ theorem mem_span_tangentConeAt_stableSet_iff_memLp (hq : IsNondegenerateCritical
     intro v hv
     obtain ⟨e, hqe, hed, heC, heCs, heS⟩ :=
       hq.exists_stableSet_chart_hasFDerivAt_id (n := 1) hfs hf
-    have hcone := eventually_forall_mem_span_tangentConeAt_inner_nonneg (B := B) hqe hed heC heCs
-      heS hc fun u hu ↦ by
+    have hcone := (isSliceChart_iff.2 heS).eventually_forall_mem_span_tangentConeAt_inner_nonneg
+      (Submodule.closed_of_finiteDimensional _) (B := B) hqe hed heC heCs hc fun u hu ↦ by
         have := hBsym.mul_norm_sq_le_re_inner_of_mem_positiveSpectralSubspace rfl
           (fun i hi ↦ by simpa [abs_of_pos hi] using hceig i hi.ne')
           ((hBsym.mem_positiveSpectralSubspace_iff rfl).2
@@ -266,8 +205,8 @@ theorem mem_span_tangentConeAt_unstableSet_iff_memLp (hp : IsNondegenerateCritic
     intro v hv
     obtain ⟨e, hpe, hed, heC, heCs, heS⟩ :=
       hp.exists_unstableSet_chart_hasFDerivAt_id (n := 1) hfs hf
-    have hcone := eventually_forall_mem_span_tangentConeAt_inner_nonneg (B := -B) hpe hed heC
-      heCs heS hc fun u hu ↦ by
+    have hcone := (isSliceChart_iff.2 heS).eventually_forall_mem_span_tangentConeAt_inner_nonneg
+      (Submodule.closed_of_finiteDimensional _) (B := -B) hpe hed heC heCs hc fun u hu ↦ by
         have := hBsym.re_inner_le_neg_mul_norm_sq_of_mem_negativeSpectralSubspace rfl
           (fun i hi ↦ by simpa [abs_of_neg hi] using hceig i hi.ne)
           ((hBsym.mem_negativeSpectralSubspace_iff rfl).2

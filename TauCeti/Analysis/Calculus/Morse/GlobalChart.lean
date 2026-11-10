@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Calculus.Morse.LocalToGlobal
 public import TauCeti.Analysis.Calculus.Morse.Stable
 -- Private: the gradient and the Fréchet derivative have the same norm.
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Calculus.ContDiff.Translation
 
 /-!
 # Global stable and unstable sets are embedded `C^n` submanifolds
@@ -173,47 +174,6 @@ private theorem exists_chart_of_isInvariant {n : ℕ} (hfs : ContDiff ℝ (n + 1
           hS (-T) hz⟩
     exact hinv.trans (hqS _ hz)
 
-omit [FiniteDimensional ℝ E] [CompleteSpace E] in
-/-- Translating a chart `q` of the displacement `w - x`, tangent to the identity at `0`, and
-restricting it to an open set `V` containing `x`, gives a chart around `x`, tangent to the
-identity at `x`, that cuts out a set `S` by `q (w - x) ∈ L` as soon as `q` does on `V`. -/
-private theorem exists_chart_self_of_translate {n : ℕ} {q : OpenPartialHomeomorph E E}
-    (hq0 : x - x ∈ q.source) (hqd : HasFDerivAt q (ContinuousLinearMap.id ℝ E) 0)
-    (hqC : ∀ z ∈ q.source, ContDiffAt ℝ n q z) (hqCs : ∀ z ∈ q.target, ContDiffAt ℝ n q.symm z)
-    {S L V : Set E} (hVo : IsOpen V) (hxV : x ∈ V)
-    (hVS : ∀ w ∈ V, w - x ∈ q.source → (w ∈ S ↔ q (w - x) ∈ L)) :
-    ∃ e : OpenPartialHomeomorph E E, x ∈ e.source ∧
-      HasFDerivAt e (ContinuousLinearMap.id ℝ E) x ∧
-      (∀ z ∈ e.source, ContDiffAt ℝ n e z) ∧
-      (∀ z ∈ e.target, ContDiffAt ℝ n e.symm z) ∧
-      ∀ z ∈ e.source, z ∈ S ↔ e z ∈ L := by
-  let e := ((Homeomorph.subRight x).toOpenPartialHomeomorph.restrOpen V hVo).trans q
-  have hesource : e.source = {z | z ∈ V ∧ z - x ∈ q.source} := by
-    ext z
-    simp [e]
-  have he : (e : E → E) = fun z ↦ q (z - x) := by
-    ext z
-    simp [e]
-  have hes : (e.symm : E → E) = fun z ↦ q.symm z + x := by
-    ext z
-    simp [e]
-  refine ⟨e, by rw [hesource]; exact ⟨hxV, hq0⟩, ?_, fun z hz ↦ ?_, fun z hz ↦ ?_,
-    fun z hz ↦ ?_⟩
-  · rw [he]
-    have hqd' : HasFDerivAt q (ContinuousLinearMap.id ℝ E) (x - x) := by rwa [sub_self]
-    have hsub : HasFDerivAt (fun z : E ↦ z - x) (ContinuousLinearMap.id ℝ E) x :=
-      (hasFDerivAt_id x).sub_const x
-    simpa [Function.comp_def] using hqd'.comp (f := fun z : E ↦ z - x) x hsub
-  · rw [hesource] at hz
-    rw [he]
-    exact (hqC _ hz.2).comp z (contDiffAt_id.sub contDiffAt_const)
-  · rw [OpenPartialHomeomorph.trans_target] at hz
-    rw [hes]
-    exact (hqCs z hz.1).add contDiffAt_const
-  · rw [hesource] at hz
-    rw [he]
-    exact hVS z hz.1 hz.2
-
 /-- **A stable-set chart at the critical point, tangent to the identity.** For a globally
 `C^(n+1)` function with globally Lipschitz gradient and a nondegenerate critical point `x`, there
 is a `C^n` ambient chart around `x`, with `C^n` inverse and derivative the identity at `x`,
@@ -232,8 +192,8 @@ theorem exists_stableSet_chart_hasFDerivAt_id (h : IsNondegenerateCriticalPoint 
   obtain ⟨V, hVconf, hVo, hxV⟩ := _root_.mem_nhds_iff.1
     (h.eventually_forall_dist_le_of_mem_stableSet (isNegativeGradient_negativeGradientFlow f hf)
       (hfs.differentiable (by norm_num)) hr)
-  have hxq : x - x ∈ q.source := by simpa [hqs] using hρ
-  refine exists_chart_self_of_translate hxq hqd hqC hqCs hVo hxV fun w hwV hwq ↦ ?_
+  have hxq : (0 : E) ∈ q.source := by simpa [hqs] using hρ
+  refine exists_chart_comp_sub hxq hqd hqC hqCs hVo hxV fun w hwV hwq ↦ ?_
   have hxw : x + (w - x) = w := add_sub_cancel x w
   rw [SetLike.mem_coe, ← hqset _ hwq, h.mem_localStableSet_iff_negativeGradientFlow hf, hxw]
   refine ⟨fun hw ↦ ⟨fun t ht ↦ ?_, ?_⟩, fun hmem ↦ ?_⟩
@@ -262,8 +222,8 @@ theorem exists_unstableSet_chart_hasFDerivAt_id (h : IsNondegenerateCriticalPoin
   obtain ⟨V, hVconf, hVo, hxV⟩ := _root_.mem_nhds_iff.1
     (h.eventually_forall_dist_le_of_mem_unstableSet
       (isNegativeGradient_negativeGradientFlow f hf) (hfs.differentiable (by norm_num)) hr)
-  have hxq : x - x ∈ q.source := by simpa [hqs] using hρ
-  refine exists_chart_self_of_translate hxq hqd hqC hqCs hVo hxV fun w hwV hwq ↦ ?_
+  have hxq : (0 : E) ∈ q.source := by simpa [hqs] using hρ
+  refine exists_chart_comp_sub hxq hqd hqC hqCs hVo hxV fun w hwV hwq ↦ ?_
   have hxw : x + (w - x) = w := add_sub_cancel x w
   rw [SetLike.mem_coe, ← hqset _ hwq, h.mem_localUnstableSet_iff_negativeGradientFlow hf, hxw]
   refine ⟨fun hw ↦ ⟨fun t ht ↦ ?_, ?_⟩, fun hmem ↦ ?_⟩
