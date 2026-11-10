@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Polynomial.Eval.Sign
 public import TauCeti.Algebra.Polynomial.LinearFactor
 public import TauCeti.Algebra.Polynomial.Thom.Basic
+public import TauCeti.Data.Nat.Factorial.NatCast
 public import Mathlib.Algebra.Polynomial.FieldDivision
 public import Mathlib.Basic.Sign.Basic
 import Mathlib.Topology.Algebra.Order.Field
@@ -191,18 +192,12 @@ variable {R : Type*} [CommRing R] [LinearOrder R] [NoZeroDivisors R]
 
 omit [NoZeroDivisors R] in
 /-- If the factorial of the root multiplicity of `q` at `a` vanishes in `R`, the right-hand sign
-of `q` at `a` is zero: the first nonzero derivative is multiplied by that factorial. -/
+of `q` at `a` is zero: the derivative of that order evaluates at `a` to the factorial times the
+value of the residual factor, hence to zero. -/
 theorem derivSignRight_eq_zero_of_natCast_factorial_eq_zero {q : R[X]} {a : R}
     (h : ((q.rootMultiplicity a).factorial : R) = 0) : q.derivSignRight a = 0 := by
   rw [derivSignRight_def, eval_iterate_derivative_rootMultiplicity, nsmul_eq_mul, h, zero_mul,
     sign_zero]
-
-omit [LinearOrder R] [NoZeroDivisors R] in
-/-- If `m` is positive and vanishes in `R`, so does the factorial of every `k ≥ m`. -/
-private theorem natCast_factorial_eq_zero_of_le {m k : ℕ} (hm : 0 < m) (hmR : (m : R) = 0)
-    (hk : m ≤ k) : (k.factorial : R) = 0 := by
-  obtain ⟨c, hc⟩ := Nat.factorial_dvd_factorial hk
-  rw [hc, Nat.cast_mul, ← Nat.mul_factorial_pred hm.ne', Nat.cast_mul, hmR, zero_mul, zero_mul]
 
 /-- At a root, the derivative has the right-hand sign of the polynomial. -/
 theorem derivSignRight_derivative_of_isRoot {p : R[X]} {a : R} (ha : p.IsRoot a) :
@@ -216,7 +211,7 @@ theorem derivSignRight_derivative_of_isRoot {p : R[X]} {a : R} (ha : p.IsRoot a)
     have hzero (q : R[X]) (hq : p.rootMultiplicity a ≤ q.rootMultiplicity a) :
         q.derivSignRight a = 0 :=
       derivSignRight_eq_zero_of_natCast_factorial_eq_zero
-        (natCast_factorial_eq_zero_of_le hm hmR hq)
+        (Nat.cast_factorial_eq_zero_of_le hm hmR hq)
     rw [hzero p le_rfl]
     by_cases hd : p.derivative = 0
     · rw [hd, derivSignRight_zero]
@@ -239,7 +234,7 @@ theorem derivSignLeft_derivative_of_isRoot {p : R[X]} {a : R} (ha : p.IsRoot a) 
   by_cases hmR : (p.rootMultiplicity a : R) = 0
   · have : p.derivSignRight a = 0 :=
       derivSignRight_eq_zero_of_natCast_factorial_eq_zero
-        (natCast_factorial_eq_zero_of_le hm hmR le_rfl)
+        (Nat.cast_factorial_eq_zero_of_le hm hmR le_rfl)
     simp [this]
   rw [derivative_rootMultiplicity_of_root_of_mem_nonZeroDivisors ha
     (mem_nonZeroDivisors_of_ne_zero hmR), hk]
