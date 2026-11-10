@@ -173,6 +173,17 @@ theorem MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top {q q' : ℝ�
     _ ≤ ε / 2 + (C + ε / 2) := by gcongr
     _ = C + ε := by rw [add_comm, add_assoc, ENNReal.add_halves]
 
+/-- If `‖h' x‖ₑ > t` on a set of positive measure, then some bounded slice `‖h' x‖ₑ ≤ N` of that
+set has positive measure. -/
+private theorem exists_pos_measure_inter_enorm_le {E : Type*} [NormedAddCommGroup E] {h' : α → E}
+    {t : ℝ≥0∞} (hpos : 0 < μ {x | t < ‖h' x‖ₑ}) :
+    ∃ N : ℕ, 0 < μ ({x | t < ‖h' x‖ₑ} ∩ {x | ‖h' x‖ₑ ≤ N}) := by
+  by_contra! hN
+  refine hpos.ne' (measure_mono_null (fun x hx => ?_)
+    (measure_iUnion_null fun N => nonpos_iff_eq_zero.1 (hN N)))
+  obtain ⟨N, hN⟩ := ENNReal.exists_nat_gt (enorm_ne_top (x := h' x))
+  exact Set.mem_iUnion.2 ⟨N, hx, hN.le⟩
+
 /-- **Norming by simple functions, `q = ∞`.** On a σ-finite measure space, let `h` be almost
 everywhere strongly measurable. If `h` satisfies
 `‖∫ h g‖ ≤ C ‖g‖₁` for every simple function `g ∈ L¹`, then `‖h‖_∞ ≤ C`. In particular `h ∈ L^∞`
@@ -192,20 +203,14 @@ theorem AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le [Sig
     measurableSet_lt measurable_const hmeas.stronglyMeasurable_mk.measurable.enorm
   have hG (N : ℕ) : MeasurableSet {x | ‖h' x‖ₑ ≤ N} :=
     measurableSet_le hmeas.stronglyMeasurable_mk.measurable.enorm measurable_const
-  have hEpos : ∃ N : ℕ, 0 < μ ({x | t < ‖h' x‖ₑ} ∩ {x | ‖h' x‖ₑ ≤ N}) := by
-    by_contra! hN
-    have hnull : μ {x | t < ‖h' x‖ₑ} = 0 := by
-      refine measure_mono_null (fun x hx => ?_)
-        (measure_iUnion_null fun N => nonpos_iff_eq_zero.1 (hN N))
-      obtain ⟨N, hN⟩ := ENNReal.exists_nat_gt (enorm_ne_top (x := h' x))
-      exact Set.mem_iUnion.2 ⟨N, hx, hN.le⟩
-    refine htN.not_ge ?_
+  have hpos : 0 < μ {x | t < ‖h' x‖ₑ} := by
+    refine pos_iff_ne_zero.2 fun hnull => htN.not_ge ?_
     rw [eLpNorm_exponent_top hmeas]
     refine eLpNormEssSup_le_of_ae_enorm_bound ?_
     filter_upwards [hhh', measure_eq_zero_iff_ae_notMem.1 hnull] with x hx hx'
     rw [hx]
     simpa using hx'
-  obtain ⟨N, hNpos⟩ := hEpos
+  obtain ⟨N, hNpos⟩ := exists_pos_measure_inter_enorm_le hpos
   obtain ⟨F, hFm, hFE, hFpos, hFtop⟩ :=
     Measure.exists_subset_measure_lt_top (hE.inter (hG N)) hNpos
   -- The case `q = 1`, applied to `1_F h`, bounds `∫_F ‖h‖` by `C μ(F)`.
@@ -215,8 +220,7 @@ theorem AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le [Sig
     filter_upwards [ae_restrict_of_ae hhh', ae_restrict_mem hFm] with x hx hxF
     have h2 : ‖h' x‖ₑ ≤ (N : ℝ≥0∞) := (hFE hxF).2
     rw [hx]
-    rwa [← ofReal_norm, ← ENNReal.ofReal_natCast,
-      ENNReal.ofReal_le_ofReal_iff N.cast_nonneg] at h2
+    simpa [← ofReal_norm] using h2
   have hkC : eLpNorm (F.indicator h) 1 μ ≤ C * μ F := by
     refine hk.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top (q' := ∞) ENNReal.one_ne_top
       fun g _ => ?_
