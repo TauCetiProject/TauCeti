@@ -121,14 +121,57 @@ theorem integral_injHomDensity_eq_sum_div {V W : Type*} [Fintype V] [Fintype W]
 injective homomorphism density of the pattern is `c`, provided the host has at least as many
 vertices as the pattern. -/
 theorem integral_injHomDensity_eq_of_forall {V W : Type*} [Fintype V] [Fintype W]
-    (F : SimpleGraph V) (ν : Measure (SimpleGraph W)) [IsFiniteMeasure ν] {c : ℝ}
+    (F : SimpleGraph V) (ν : Measure (SimpleGraph W)) {c : ℝ}
     (hVW : Fintype.card V ≤ Fintype.card W) (h : ∀ f : V ↪ W, ν.real {G | F.map f ≤ G} = c) :
     ∫ G, injHomDensity F G ∂ν = c := by
+  classical
   have hd : ((Fintype.card W).descFactorial (Fintype.card V) : ℝ) ≠ 0 := by
     exact_mod_cast (Nat.descFactorial_pos.mpr hVW).ne'
-  rw [integral_injHomDensity_eq_sum_div, Finset.sum_congr rfl fun f _ => h f, Finset.sum_const,
-    nsmul_eq_mul, Finset.card_univ, Fintype.card_embedding_eq]
-  exact mul_div_cancel_left₀ c hd
+  -- A host graph has nonzero density exactly when some embedded copy of the pattern lies in it.
+  have hpos (G : SimpleGraph W) : injHomDensity F G ≠ 0 ↔ ∃ f : V ↪ W, F.map f ≤ G := by
+    rw [injHomDensity_def, SimpleGraph.card_injective_hom_eq_sum_map_le]
+    simp [hd]
+  by_cases hinf : ∃ G, ν {G} = ⊤ ∧ ∃ f : V ↪ W, F.map f ≤ G
+  · -- An atom of infinite mass carrying the pattern makes `c` and the integral both vanish.
+    obtain ⟨G, hG, f, hf⟩ := hinf
+    have hc : c = 0 := by
+      rw [← h f, Measure.real, ENNReal.toReal_eq_zero_iff]
+      exact Or.inr (top_unique (hG ▸ measure_mono fun x hx ↦ by
+        rw [Set.mem_singleton_iff] at hx
+        exact hx ▸ hf))
+    rw [hc]
+    refine integral_undef fun hint ↦ ?_
+    have hfin := hint.2
+    have hge : ‖injHomDensity F G‖ₑ * ν {G} ≤ ∫⁻ x, ‖injHomDensity F x‖ₑ ∂ν := by
+      calc ‖injHomDensity F G‖ₑ * ν {G}
+          = ∫⁻ x in {G}, ‖injHomDensity F x‖ₑ ∂ν :=
+            (lintegral_singleton (fun x ↦ ‖injHomDensity F x‖ₑ) G).symm
+        _ ≤ _ := setLIntegral_le_lintegral _ _
+    rw [hG, ENNReal.mul_top (by simpa using (hpos G).2 ⟨f, hf⟩)] at hge
+    exact hfin.ne (top_unique hge)
+  · push Not at hinf
+    let s : Set (SimpleGraph W) := {G | ν {G} ≠ ⊤}
+    have hs : MeasurableSet s := (Set.toFinite s).measurableSet
+    have hg0 : ∀ G, G ∉ s → injHomDensity F G = 0 := fun G hG ↦ by
+      by_contra hne
+      obtain ⟨f, hf⟩ := (hpos G).1 hne
+      exact hinf G (not_not.1 hG) f hf
+    have : IsFiniteMeasure (ν.restrict s) := ⟨by
+      rw [Measure.restrict_apply_univ]
+      have hsum := sum_measure_singleton (μ := ν) (s := (Set.toFinite s).toFinset)
+      rw [Set.Finite.coe_toFinset] at hsum
+      rw [← hsum]
+      exact ENNReal.sum_lt_top.2 fun G hG ↦ lt_top_iff_ne_top.2 (by simpa [s] using hG)⟩
+    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hg0,
+      integral_injHomDensity_eq_sum_div F (ν.restrict s)]
+    have hS (f : V ↪ W) : (ν.restrict s).real {G | F.map f ≤ G} = c := by
+      rw [← h f, Measure.real, Measure.real, Measure.restrict_apply' hs]
+      congr 2
+      refine Set.inter_eq_left.2 fun G hG ↦ ?_
+      exact fun hG' ↦ hinf G hG' f hG
+    rw [Finset.sum_congr rfl fun f _ ↦ hS f, Finset.sum_const, nsmul_eq_mul, Finset.card_univ,
+      Fintype.card_embedding_eq]
+    exact mul_div_cancel_left₀ c hd
 
 /-- Under any probability measure on host graphs, the mean ordinary and injective homomorphism
 densities of a pattern differ by at most `C(k, 2) / n`, the union bound on the proportion of
