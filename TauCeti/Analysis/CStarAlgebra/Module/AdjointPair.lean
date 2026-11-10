@@ -102,7 +102,7 @@ theorem unique_right_cstarModule
   h.symm_cstarModule.unique_left_cstarModule h'.symm_cstarModule
 
 /-- An adjoint identity forces additivity; no additivity is assumed of either function. -/
-theorem map_add_of_cstarModule
+theorem map_add_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) (x y : E) :
     T (x + y) = T x + T y := by
@@ -111,7 +111,7 @@ theorem map_add_of_cstarModule
   simp [h.inner_eq_cstarModule]
 
 /-- An adjoint identity forces complex linearity. -/
-theorem map_smul_of_cstarModule
+theorem map_smul_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) (c : ℂ) (x : E) :
     T (c • x) = c • T x := by
@@ -121,7 +121,7 @@ theorem map_smul_of_cstarModule
 
 /-- An adjoint identity forces compatibility with the coefficient action. For a right
 module over B, use A = Bᵐᵒᵖ. -/
-theorem map_smul_coeff_of_cstarModule
+theorem map_smul_coeff_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) (a : A) (x : E) :
     T (a • x) = a • T x := by
@@ -130,18 +130,18 @@ theorem map_smul_coeff_of_cstarModule
   simp [h.inner_eq_cstarModule]
 
 /-- Bundle the complex linearity forced by a C⋆-module adjoint identity. -/
-def toLinearMapOfCStarModule
+def toLinearMapCStarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) : E →ₗ[ℂ] F where
   toFun := T
-  map_add' := h.map_add_of_cstarModule
-  map_smul' := h.map_smul_of_cstarModule
+  map_add' := h.map_add_cstarModule
+  map_smul' := h.map_smul_cstarModule
 
 @[simp]
-theorem toLinearMapOfCStarModule_apply
+theorem toLinearMapCStarModule_apply
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) (x : E) :
-    h.toLinearMapOfCStarModule x = T x := (rfl)
+    h.toLinearMapCStarModule x = T x := (rfl)
 
 end Algebraic
 
@@ -154,14 +154,14 @@ variable {A E F : Type*} [NonUnitalCStarAlgebra A] [PartialOrder A] [StarOrdered
 
 /-- The graph of a function admitting an everywhere-defined C⋆-module adjoint is closed.
 Completeness is not needed for this assertion. -/
-theorem isClosed_graph_of_cstarModule
+theorem isClosed_graph_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) :
-    IsClosed (h.toLinearMapOfCStarModule.graph : Set (E × F)) := by
-  have heq : (h.toLinearMapOfCStarModule.graph : Set (E × F)) =
+    IsClosed (h.toLinearMapCStarModule.graph : Set (E × F)) := by
+  have heq : (h.toLinearMapCStarModule.graph : Set (E × F)) =
       ⋂ y : F, {p | inner A p.2 y = inner A p.1 (S y)} := by
     ext p
-    simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, toLinearMapOfCStarModule_apply,
+    simp only [SetLike.mem_coe, LinearMap.mem_graph_iff, toLinearMapCStarModule_apply,
       Set.mem_iInter, Set.mem_ofPred_eq]
     constructor
     · intro hp y
@@ -178,38 +178,38 @@ variable [CompleteSpace E] [CompleteSpace F]
 
 /-- The first function of an adjoint pair between complete C⋆-modules is continuous;
 apply to `h.symm_cstarModule` for the second. -/
-theorem continuous_of_cstarModule
+theorem continuous_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) : Continuous T :=
-  h.toLinearMapOfCStarModule.continuous_of_isClosed_graph h.isClosed_graph_of_cstarModule
+  h.toLinearMapCStarModule.continuous_of_isClosed_graph h.isClosed_graph_cstarModule
 
 /-- Bundle the bounded complex-linear map forced by the adjoint identity on complete modules. -/
-def toContinuousLinearMapOfCStarModule
+def toContinuousLinearMapCStarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) : E →L[ℂ] F where
-  toLinearMap := h.toLinearMapOfCStarModule
-  cont := h.continuous_of_cstarModule
+  toLinearMap := h.toLinearMapCStarModule
+  cont := h.continuous_cstarModule
 
 @[simp]
-theorem toContinuousLinearMapOfCStarModule_apply
+theorem toContinuousLinearMapCStarModule_apply
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) (x : E) :
-    h.toContinuousLinearMapOfCStarModule x = T x := (rfl)
+    h.toContinuousLinearMapCStarModule x = T x := (rfl)
 
 /-- Both functions in an adjoint pair on complete C⋆-modules are bounded complex-linear
 maps commuting with the coefficient action. In particular this applies to nonunital right
 Hilbert modules by taking the coefficient algebra to be an opposite algebra. -/
-theorem exists_continuousLinearMaps_of_cstarModule
+theorem exists_continuousLinearMaps_cstarModule
     (h : IsAdjointPair (innerₛₗ (A := A) (E := E)).flip
       (innerₛₗ (A := A) (E := F)).flip T S) :
     ∃ (T' : E →L[ℂ] F) (S' : F →L[ℂ] E),
       (∀ x, T' x = T x) ∧ (∀ y, S' y = S y) ∧
       (∀ (a : A) (x : E), T (a • x) = a • T x) ∧
       (∀ (a : A) (y : F), S (a • y) = a • S y) :=
-  ⟨h.toContinuousLinearMapOfCStarModule, h.symm_cstarModule.toContinuousLinearMapOfCStarModule,
-    h.toContinuousLinearMapOfCStarModule_apply,
-    h.symm_cstarModule.toContinuousLinearMapOfCStarModule_apply,
-    h.map_smul_coeff_of_cstarModule, h.symm_cstarModule.map_smul_coeff_of_cstarModule⟩
+  ⟨h.toContinuousLinearMapCStarModule, h.symm_cstarModule.toContinuousLinearMapCStarModule,
+    h.toContinuousLinearMapCStarModule_apply,
+    h.symm_cstarModule.toContinuousLinearMapCStarModule_apply,
+    h.map_smul_coeff_cstarModule, h.symm_cstarModule.map_smul_coeff_cstarModule⟩
 
 end Analytic
 
