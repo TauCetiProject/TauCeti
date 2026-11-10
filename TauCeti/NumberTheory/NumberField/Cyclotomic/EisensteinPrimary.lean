@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.Multiplicity
 public import Mathlib.NumberTheory.NumberField.Cyclotomic.Ideal
 import TauCeti.NumberTheory.NumberField.AutomorphismAction
+import TauCeti.RingTheory.Ideal.Norm.AbsNorm
 
 /-!
 # Primary elements of `ℤ[ζ_p]`
@@ -194,23 +195,10 @@ omit [IsCyclotomicExtension {p} ℚ K] in
 theorem absNorm_span_singleton_coprime_of_isEisensteinPrimary {α : 𝓞 K}
     (hα : IsEisensteinPrimary hζ.toInteger α) :
     (Ideal.absNorm (Ideal.span {α})).Coprime p := by
-  rw [Nat.coprime_comm, hp.out.coprime_iff_not_dvd]
-  intro hpN
-  obtain ⟨P, hP, hPunder, hPα⟩ :=
-    Ideal.exists_isMaximal_dvd_of_dvd_absNorm' hp.out (Ideal.span {α}) hpN
-  have : P.IsPrime := hP.isPrime
-  have hpP : (p : 𝓞 K) ∈ P := by
-    have : (p : ℤ) ∈ P.under ℤ := by simp [hPunder]
-    simpa using this
-  have hlP : hζ.toInteger - 1 ∈ P := by
-    have hpow : (hζ.toInteger - 1) ^ (p - 1) ∈ P :=
-      P.mem_of_dvd (associated_zeta_sub_one_pow_prime p hζ).symm.dvd hpP
-    exact hP.isPrime.mem_of_pow_mem _ hpow
-  obtain ⟨a, b, hab⟩ := hα.1
-  have hαP : α ∈ P := (Ideal.span_singleton_le_iff_mem _).mp (Ideal.le_of_dvd hPα)
-  exact hP.ne_top (P.eq_top_of_isUnit_mem (by
-    rw [← hab]
-    exact P.add_mem (P.mul_mem_left a hαP) (P.mul_mem_left b hlP)) isUnit_one)
+  apply Ideal.absNorm_coprime_of_isCoprime_span_natCast
+  rw [Ideal.isCoprime_span_singleton_iff]
+  exact hα.1.pow_right.of_isCoprime_of_dvd_right
+    (associated_zeta_sub_one_pow_prime p hζ).symm.dvd
 
 /-- For an odd prime `p`, an integer is divisible by `(ζ - 1) ^ 2` in `ℤ[ζ_p]` if and only if it
 is divisible by `p`. -/
