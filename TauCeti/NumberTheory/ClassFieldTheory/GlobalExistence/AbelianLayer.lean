@@ -29,9 +29,10 @@ This is reciprocity for the abelian layers of a class formation
 class group `C_K` through `globalGroundEquiv`. The lattice laws of global norm subgroups are
 likewise those of the norm subgroups of a class formation
 (`ClassFormation.normSubgroup_inf_of_isAbelian`, `ClassFormation.normSubgroup_sup`), read on `C_K`
-through `globalGroundOrderIso`: the compositum of two finite abelian extensions has the
-intersection of their norm subgroups as its norm subgroup (`globalNormSubgroup_inf_of_isAbelian`),
-and the intersection of two finite Galois extensions has the product of their norm subgroups
+through `globalGroundOrderIso`: the compositum of a finite extension with a finite
+abelian one has the intersection of their norm subgroups as its norm subgroup
+(`globalNormSubgroup_inf_of_isAbelian`), and the intersection of two finite Galois
+extensions has the product of their norm subgroups
 (`globalNormSubgroup_sup`; by norm limitation this needs no abelianity).
 
 The construction and the proofs follow the local counterpart
@@ -169,18 +170,17 @@ section Lattice
 
 variable {K} {V W : OpenNormalSubgroup (AbsoluteGaloisGroup K)}
 
-/-- **Composita.** For finite abelian extensions of a number field cut out by `V` and `W`, the
-idele-class norm subgroup of their compositum, cut out by `V ⊓ W`, is the intersection of the two
-norm subgroups. Abelianity is needed: by norm limitation the left side only sees the maximal
-abelian subextension of the compositum, which can be larger than the compositum of the maximal
-abelian subextensions. -/
-theorem globalNormSubgroup_inf_of_isAbelian (hV : V.IsAbelianClassFieldLayer)
-    (hW : W.IsAbelianClassFieldLayer) :
+/-- **Composita.** For finite extensions of a number field cut out by `V` and `W`, with `W`
+abelian, the idele-class norm subgroup of their compositum, cut out by `V ⊓ W`, is the
+intersection of the two norm subgroups. Abelianity of `W` is needed: by norm limitation the left
+side only sees the maximal abelian subextension of the compositum, which can be larger than the
+compositum of the maximal abelian subextensions when neither extension is abelian. -/
+theorem globalNormSubgroup_inf_of_isAbelian (hW : W.IsAbelianClassFieldLayer) :
     globalNormSubgroup K (V ⊓ W) = globalNormSubgroup K V ⊓ globalNormSubgroup K W := by
   apply (globalGroundOrderIso K).injective
   rw [map_inf, globalGroundOrderIso_globalNormSubgroup, globalGroundOrderIso_globalNormSubgroup,
     globalGroundOrderIso_globalNormSubgroup,
-    (globalClassFormation K).normSubgroup_inf_of_isAbelian hV hW]
+    (globalClassFormation K).normSubgroup_inf_of_isAbelian hW]
 
 /-- **Intersections.** The idele-class norm subgroup of the intersection of the finite Galois
 extensions cut out by `V` and `W`, which is cut out by `V ⊔ W`, is the product of the two norm
