@@ -20,6 +20,10 @@ budget-admissible points; any violating point would remain admissible and exceed
 This is the scalar point-selection step in curvature estimates; see the proof of Theorem 3.1
 of B.-L. Chen, *Strong uniqueness of the Ricci flow*, arXiv:0706.3081v2, p. 10. Applying it to
 the square root of curvature gives a factor-four curvature bound. No flow is constructed here.
+
+Formalization references:
+[lean-eval-submissions](https://github.com/frenzymath/lean-eval-submissions)
+and [PoincareConjecture](https://github.com/frenzymath/PoincareConjecture).
 -/
 
 public section

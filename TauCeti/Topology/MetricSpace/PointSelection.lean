@@ -17,6 +17,10 @@ selected point has at least the original size, stays within half the distance to
 and has a controlled ball with a fixed size-radius product. No global bound or nonnegativity
 assumption on the field is needed. For a square-root curvature field the doubling estimate
 gives a factor-four curvature estimate.
+
+Formalization references:
+[lean-eval-submissions](https://github.com/frenzymath/lean-eval-submissions)
+and [PoincareConjecture](https://github.com/frenzymath/PoincareConjecture).
 -/
 
 public section
