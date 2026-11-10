@@ -573,8 +573,9 @@ theorem tateHMinusTwoEquivAbelianization_symm_of (g : L.Gal) :
         (Rep.trivial ℤ L.Gal ℤ)
         (groupHomology.H1π (Rep.trivial ℤ L.Gal ℤ)
           ((groupHomology.cycles₁IsoOfIsTrivial (Rep.trivial ℤ L.Gal ℤ)).inv
-            (Finsupp.single g⁻¹ 1))) := by
-  simp [AddEquiv.symm_apply_eq]
+            (Finsupp.single g⁻¹ 1))) :=
+  (AddEquiv.symm_apply_eq _).2
+    ((L.tateHMinusTwoEquivAbelianization_single_one g⁻¹).trans (by rw [inv_inv])).symm
 
 /-- **In positive degrees the Tate cohomology of a finite normal layer is its ordinary
 cohomology.** This is Mathlib's comparison `TateCohomology.isoGroupCohomology`, stated between the

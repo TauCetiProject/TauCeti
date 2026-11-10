@@ -146,7 +146,9 @@ theorem suspensionEquiv_apply_of_mem (q : ℤ)
       fun i ↦ negOnePowCast R (((n : ℤ) - 1 - i) * d i) • x i := by
     funext i
     rw [(G i).koszulTwist_apply_of_mem (hx i), negOnePowCast_eq_intCast]
-  rw [ht, MultilinearMap.map_smul_univ, ← negOnePowCast_sum]
+  rw [ht, MultilinearMap.map_smul_univ]
+  simp only [RingHom.id_apply]
+  rw [← negOnePowCast_sum]
 
 /-- On homogeneous inputs, unsuspension has the identical sign when degrees are measured in
 the original gradings. -/
