@@ -646,26 +646,32 @@ private lemma signedWeight_reflMap_of_axis_ne (hax : axis p ≠ axis q) (u : Fin
   -- complement. In each case `hval` gives twice the pairing with the coroot, from which the
   -- pairing itself is `1`, `1`, `-1`, `-1`, and `0`.
   by_cases c1 : u = p
-  · rw [c1, ite_eq_left rfl, ite_eq_right h1, ite_eq_right h2] at hval
-    rw [c1, show signedWeight p ⬝ᵥ corootOfPair p q = 1 by omega, reflMap_fst, ite_eq_right h1,
-      signedWeight_opp]
+  · simp only [c1, h1, h2, ↓reduceIte] at hval
+    have hpair : signedWeight p ⬝ᵥ corootOfPair p q = 1 := by omega
+    simp only [c1, hpair, reflMap_fst, h1, ↓reduceIte, signedWeight_opp]
     module
   by_cases c2 : u = q
-  · rw [c2, ite_eq_right h3, ite_eq_right h4, ite_eq_left rfl] at hval
-    rw [c2, show signedWeight q ⬝ᵥ corootOfPair p q = 1 by omega, reflMap_snd h3, signedWeight_opp]
+  · simp only [c2, h3, h4, ↓reduceIte] at hval
+    have hpair : signedWeight q ⬝ᵥ corootOfPair p q = 1 := by omega
+    simp only [c2, hpair, reflMap_snd h3, signedWeight_opp]
     module
   by_cases c3 : u = opp p
-  · rw [c3, ite_eq_right (opp_ne_self p), ite_eq_left rfl, ite_eq_right h5, ite_eq_right h6] at hval
-    rw [c3, show signedWeight (opp p) ⬝ᵥ corootOfPair p q = -1 by omega, reflMap_opp_fst h5,
-      ite_eq_right h1, signedWeight_opp]
+  · simp only [c3, opp_ne_self, h5, h6, ↓reduceIte] at hval
+    have hpair : signedWeight (opp p) ⬝ᵥ corootOfPair p q = -1 := by omega
+    simp only [c3, hpair, reflMap_opp_fst h5, h1, ↓reduceIte]
+    -- Only now expand `signedWeight (opp _)`: earlier, `simp` would rewrite it inside `hpair`'s
+    -- left-hand side before `hpair` could fire.
+    rw [signedWeight_opp]
     module
   by_cases c4 : u = opp q
-  · rw [c4, ite_eq_right h7, ite_eq_right h8, ite_eq_right (opp_ne_self q), ite_eq_left rfl] at hval
-    rw [c4, show signedWeight (opp q) ⬝ᵥ corootOfPair p q = -1 by omega, reflMap_opp_snd h7 h8,
-      signedWeight_opp]
+  · simp only [c4, opp_ne_self, h7, h8, ↓reduceIte] at hval
+    have hpair : signedWeight (opp q) ⬝ᵥ corootOfPair p q = -1 := by omega
+    simp only [c4, hpair, reflMap_opp_snd h7 h8]
+    rw [signedWeight_opp]
     module
-  · rw [ite_eq_right c1, ite_eq_right c3, ite_eq_right c2, ite_eq_right c4] at hval
-    rw [show signedWeight u ⬝ᵥ corootOfPair p q = 0 by omega, reflMap_of_ne c1 c2 c3 c4]
+  · simp only [c1, c2, c3, c4, ↓reduceIte] at hval
+    have hpair : signedWeight u ⬝ᵥ corootOfPair p q = 0 := by omega
+    simp only [hpair, reflMap_of_ne c1 c2 c3 c4]
     module
 
 /-- **The reflection formula on a single signed basis vector.** -/
@@ -697,28 +703,29 @@ private lemma signedCoweight_reflMap_of_axis_ne (hax : axis p ≠ axis q) (u : F
   rw [rootOfPair_of_ne h1, add_dotProduct, signedWeight_dotProduct_signedCoweight,
     signedWeight_dotProduct_signedCoweight]
   -- The long-root reflection has four exceptional signed basis vectors. Their
-  -- root-pairing values are `2`, `2`, `-2`, and `-2`; the complement pairs to zero.
+  -- root-pairing values are `2`, `2`, `-2`, and `-2`; the complement pairs to zero. In each case
+  -- `simp` evaluates the pairing and the reflection, and `hsum` turns `2 • corootOfPair p q` into
+  -- signed coweights.
   by_cases c1 : u = p
-  · rw [c1, ite_eq_left rfl, ite_eq_right h3, ite_eq_right h4, add_zero, hsum, reflMap_fst,
-      ite_eq_right h1, signedCoweight_opp]
+  · simp only [c1, h1, h3, h4, reflMap_fst, signedCoweight_opp, ↓reduceIte, add_zero, hsum]
     module
   by_cases c2 : u = q
-  · rw [c2, ite_eq_right h1, ite_eq_right h2, ite_eq_left rfl, zero_add, hsum, reflMap_snd h3,
-      signedCoweight_opp]
+  · simp only [c2, h1, h2, reflMap_snd h3, signedCoweight_opp, ↓reduceIte, zero_add, hsum]
     module
   by_cases c3 : u = opp p
-  · rw [c3, opp_opp, ite_eq_right (opp_ne_self p).symm, ite_eq_left rfl, ite_eq_right h4,
-      ite_eq_right h3, add_zero, neg_smul, hsum, reflMap_opp_fst h5, ite_eq_right h1,
-      signedCoweight_opp]
+  · simp only [c3, h1, h3, h4, (opp_ne_self p).symm, opp_opp, reflMap_opp_fst h5,
+      signedCoweight_opp, ↓reduceIte, add_zero, neg_smul, hsum]
     module
   by_cases c4 : u = opp q
-  · rw [c4, opp_opp, ite_eq_right h2, ite_eq_right h1, ite_eq_right (opp_ne_self q).symm,
-      ite_eq_left rfl, zero_add, neg_smul, hsum, reflMap_opp_snd h7 h8, signedCoweight_opp]
+  · simp only [c4, h1, h2, (opp_ne_self q).symm, opp_opp, reflMap_opp_snd h7 h8,
+      signedCoweight_opp, ↓reduceIte, zero_add, neg_smul, hsum]
     module
-  · rw [ite_eq_right (Ne.symm c1), ite_eq_right fun hc => c3 (by rw [hc, opp_opp]),
-      ite_eq_right (Ne.symm c2), ite_eq_right fun hc => c4 (by rw [hc, opp_opp]),
-      reflMap_of_ne c1 c2 c3 c4]
-    module
+  · have c1' : p ≠ u := Ne.symm c1
+    have c2' : q ≠ u := Ne.symm c2
+    have c3' : p ≠ opp u := fun hc => c3 (by rw [hc, opp_opp])
+    have c4' : q ≠ opp u := fun hc => c4 (by rw [hc, opp_opp])
+    simp only [c1', c2', c3', c4', reflMap_of_ne c1 c2 c3 c4, ↓reduceIte, add_zero, zero_smul,
+      sub_zero]
 
 /-- **The reflection formula on the double of a single signed basis vector.** -/
 lemma signedCoweight_reflMap (h : IsPair p q) (u : Fin (2 * n)) :
