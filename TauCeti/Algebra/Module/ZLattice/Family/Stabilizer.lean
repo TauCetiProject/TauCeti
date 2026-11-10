@@ -257,7 +257,7 @@ theorem exists_pow_smul_torusFamilyFiberMap_eq_self_iff {g : Γ} {y : Y} (hy : g
   exists_congr fun z ↦ pow_smul_torusFamilyFiberMap_eq_self_iff R hone hmul P ρ hP b hb hbone hbmul
     hy k z
 
-include hbone hbmul in
+include hbmul in
 /-- **Periodicity on a fibre over a fixed point.** If `g • y = y` and `g ^ m = 1`, the affine
 automorphism by which `g` acts on the fibre over `y` has `m`-th iterate the identity. By
 `AddEquiv.affineEquiv_iterate_eq_id_iff`, its linear part then has `m`-th iterate the identity and
@@ -267,23 +267,59 @@ theorem affineEquiv_torusFamilyFiber_iterate_eq_id_of_pow_eq_one {g : Γ} {y : Y
     (hy : g • y = y) {m : ℕ} (hm : g ^ m = 1) :
     (⇑(AddEquiv.affineEquiv (torusFamilyFiberLinearPart R hone hmul P ρ hP hy)
       (torusFamilyFiberTranslationPart P b hb hy)))^[m] = id := by
+  let _ := periodAddAction P
+  -- The cocycle law `b (1 * 1) = A_1 (b 1)` and `R 1 = id` force `b 1 y = [y, 0]`.
+  have hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0) := by
+    intro y
+    obtain ⟨⟨y', c⟩, hq⟩ := Quotient.exists_rep (b 1 y)
+    have hy' : y' = y := by
+      have := hb 1 y
+      rwa [← hq, torusFamilyProjection_mk, one_smul] at this
+    rw [hy'] at hq
+    have hβ : b 1 y = Quotient.mk _ ((1 : Γ) • y, c) := by rw [one_smul, ← hq]
+    have h := hbmul 1 1 y
+    rw [mul_one, ← hq, torusFamilyAffineMap_mk_of_eq R P ρ hP b hb hβ c, hone, one_smul] at h
+    have hc : c ∈ LinearMap.range (P y) := by
+      simpa using ((mem_orbit_periodAddAction_iff P).1
+        (AddAction.orbitRel_apply.1 (Quotient.exact h))).2
+    rw [← hq]
+    exact Quotient.sound (AddAction.orbitRel_apply.2 ((mem_orbit_periodAddAction_iff P).2
+      ⟨rfl, by simpa using hc⟩))
   let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
   funext z
   apply torusFamilyFiberMap_injective P y
   rw [← pow_smul_torusFamilyFiberMap R hone hmul P ρ hP b hb hbone hbmul hy, hm, one_smul, id]
 
-include hone hmul hbone hbmul in
+include hbone hbmul in
 /-- **Translation parts of finite order are torsion.** If `g • y = y`, `g ^ m = 1` and `R g y` is
 the identity, so that `g` acts on the fibre over `y` by the translation by `t`, then `t` is an
 `m`-torsion point of the torus `E / LinearMap.range (P y)`: `m • t = 0`. -/
 theorem nsmul_torusFamilyFiberTranslationPart_eq_zero {g : Γ} {y : Y} (hy : g • y = y)
     (hR : ∀ v, R g y v = v) {m : ℕ} (hm : g ^ m = 1) :
     m • torusFamilyFiberTranslationPart P b hb hy = 0 := by
-  have h := ((AddEquiv.affineEquiv_iterate_eq_id_iff _ _ m).1
-    (affineEquiv_torusFamilyFiber_iterate_eq_id_of_pow_eq_one R hone hmul P ρ hP b hb hbone hbmul
-      hy hm)).2
-  rwa [torusFamilyFiberLinearPart_eq_refl R hone hmul P ρ hP hy hR,
-    AddEquiv.partialNorm_refl] at h
+  let _ := periodAddAction P
+  obtain ⟨β, hβ⟩ := Quotient.exists_rep (torusFamilyFiberTranslationPart P b hb hy)
+  have hbβ : b g y = Quotient.mk _ (g • y, β) := by
+    rw [hy, ← torusFamilyFiberMap_fiberTranslationPart P b hb hy, ← hβ, torusFamilyFiberMap_mk]
+  -- Iterating the translation `[y, v] ↦ [y, v + β]` `k` times adds `k • β`.
+  have hiter : ∀ k : ℕ, (torusFamilyAffineMap R P ρ hP b hb g)^[k] (Quotient.mk _ (y, 0)) =
+      Quotient.mk _ (y, k • β) := by
+    intro k
+    induction k with
+    | zero => simp
+    | succ k ih =>
+      rw [Function.iterate_succ_apply', ih, torusFamilyAffineMap_mk_of_eq R P ρ hP b hb hbβ, hR,
+        hy, succ_nsmul]
+  have h := torusFamilyAffineMap_iterate_b_one R P ρ hP b hb hbmul g m y
+  rw [hm, hbone, hiter] at h
+  have hmem : m • β ∈ LinearMap.range (P y) := by
+    simpa using ((mem_orbit_periodAddAction_iff P).1
+      (AddAction.orbitRel_apply.1 (Quotient.exact h))).2
+  rw [← hβ]
+  have := map_nsmul (LinearMap.range (P y)).orbitRelQuotientMkHom m β
+  rw [Submodule.coe_orbitRelQuotientMkHom,
+    (Submodule.orbitRelQuotient_mk_eq_zero_iff _).2 hmem] at this
+  exact this.symm
 
 /-! ### Freeness of the affine action -/
 

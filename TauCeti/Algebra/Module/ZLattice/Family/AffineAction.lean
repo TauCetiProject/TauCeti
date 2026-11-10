@@ -263,6 +263,15 @@ theorem faithfulSMul_torusFamilyAffineMulAction [FaithfulSMul Γ Y] :
 
 /-! ### Iterates of translations -/
 
+include hbmul in
+/-- **The translation section along powers.** The value of the translation section at `g ^ k` is
+the `k`-th iterate of the affine map of `g` applied to the value at `1`. -/
+theorem torusFamilyAffineMap_iterate_b_one (g : Γ) (k : ℕ) (y : Y) :
+    (torusFamilyAffineMap R P ρ hP b hb g)^[k] (b 1 y) = b (g ^ k) y := by
+  induction k with
+  | zero => simp
+  | succ k ih => rw [Function.iterate_succ_apply', ih, pow_succ', hbmul]
+
 section Translation
 
 variable {g : Γ} (hR : ∀ y v, R g y v = v) {β : Y → E}
@@ -283,20 +292,23 @@ theorem torusFamilyAffineMap_iterate_mk_of_translation (k : ℕ) (y : Y) (v : E)
     rw [Function.iterate_succ_apply', ih, torusFamilyAffineMap_mk_of_eq R P ρ hP b hb (hβ _), hR]
     simp [pow_succ', mul_smul, birkhoffSum_succ_apply, add_assoc]
 
-include ρ hP hb hone hmul hbone hbmul in
+include hbmul in
 /-- **The orbit sum of a translation is a period.** Let `g` act on the family of tori by an affine
-action with trivial linear part, with translation section lifting to `β`,
-`b g y = [g • y, β y]`. If `g ^ m = 1`, then the orbit sum `∑ j < m, β (g ^ j • y)` is a period
-at `y`. -/
+map with trivial linear part, with translation section lifting to `β`, `b g y = [g • y, β y]`,
+and `b (g * h) y` the image of `b h y` under the affine map of `g`. If `g ^ m = 1`, then the orbit
+sum `∑ j < m, β (g ^ j • y)` is a period at `y`. -/
 theorem birkhoffSum_translation_mem_range_of_pow_eq_one {m : ℕ} (hg : g ^ m = 1) (y : Y) :
     birkhoffSum (g • ·) β m y ∈ LinearMap.range (P y) := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
-  have h := torusFamilyAffineMap_iterate_mk_of_translation R P ρ hP b hb hR hβ m y 0
-  rw [← funext (torusFamilyAffineMulAction_smul R hone hmul P ρ hP b hb hbone hbmul g),
-    smul_iterate_apply, hg] at h
-  simp only [one_smul, zero_add] at h
-  simpa using ((mem_orbit_periodAddAction_iff P).1 (Quotient.exact h.symm)).2
+  obtain ⟨⟨y', c⟩, hq⟩ := Quotient.exists_rep (b 1 y)
+  have hy' : y' = y := by
+    have := hb 1 y
+    rwa [← hq, torusFamilyProjection_mk, one_smul] at this
+  rw [hy'] at hq
+  have h := torusFamilyAffineMap_iterate_b_one R P ρ hP b hb hbmul g m y
+  rw [hg, ← hq, torusFamilyAffineMap_iterate_mk_of_translation R P ρ hP b hb hR hβ m y c, hg,
+    one_smul] at h
+  simpa using ((mem_orbit_periodAddAction_iff P).1 (Quotient.exact h)).2
 
 end Translation
 
@@ -352,17 +364,15 @@ section ConstantOrbitSum
 variable [TopologicalSpace Y] [T2Space Y] [LocallyCompactSpace Y] [PreconnectedSpace Y]
   [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] {Γ : Type*} [Monoid Γ] [MulAction Γ Y] [ContinuousConstSMul Γ Y]
-  (R : Γ → Y → E →+ E) (hone : ∀ (y : Y) (v : E), R 1 y v = v)
-  (hmul : ∀ (g h : Γ) (y : Y) (v : E), R (g * h) y v = R g (h • y) (R h y v))
+  (R : Γ → Y → E →+ E)
   (P : Y → Λ →ₗ[ℤ] E) [∀ y, DiscreteTopology (LinearMap.range (P y))]
   [∀ y, IsZLattice ℝ (LinearMap.range (P y))] (ρ : Representation ℤ Γ Λ)
   (hP : ∀ (g : Γ) (y : Y) (l : Λ), P (g • y) (ρ g l) = R g y (P y l))
   (b : Γ → Y → letI := periodAddAction P; AddAction.orbitRel.Quotient Λ (Y × E))
   (hb : ∀ (g : Γ) (y : Y), torusFamilyProjection P (b g y) = g • y)
-  (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
   (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hP b hb g (b h y))
 
-include hone hmul ρ hP hb hbone hbmul in
+include hbmul in
 /-- **The orbit sum of a translation is a constant period.** Over a preconnected base, let `g`
 act on a continuous family of full lattices by an affine action with trivial linear part, with
 translation section lifting to a continuous `β`, `b g y = [g • y, β y]`. If `g ^ m = 1`, there
@@ -374,7 +384,7 @@ theorem exists_birkhoffSum_translation_eq_period (hcont : ∀ l, Continuous fun 
     ∃ l : Λ, ∀ y, birkhoffSum (g • ·) β m y = P y l :=
   exists_eq_period_of_mem_range P hcont hinj continuous_id
     (continuous_finsetSum _ fun j _ ↦ hβc.comp ((continuous_const_smul g).iterate j))
-    (birkhoffSum_translation_mem_range_of_pow_eq_one R hone hmul P ρ hP b hb hbone hbmul hR hβ hg)
+    (birkhoffSum_translation_mem_range_of_pow_eq_one R P ρ hP b hb hbmul hR hβ hg)
 
 end ConstantOrbitSum
 

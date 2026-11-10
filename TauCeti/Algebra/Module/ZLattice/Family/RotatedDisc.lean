@@ -179,7 +179,7 @@ theorem isCancelSMul_torusFamilyAffineMulAction_rootsOfUnityBall_iff_addOrderOf_
     addOrderOf_eq_iff (NeZero.pos m)]
   simp only [AddEquiv.coe_refl, Function.iterate_id, id, sub_self, AddEquiv.partialNorm_refl]
   -- The torsion condition `m • t = 0` always holds; the conditions on smaller orders agree.
-  exact ⟨fun h ↦ ⟨nsmul_torusFamilyFiberTranslationPart_eq_zero R hone hmul P ρ hP b hb hbone hbmul
+  exact ⟨fun h ↦ ⟨nsmul_torusFamilyFiberTranslationPart_eq_zero R P ρ hP b hb hbone hbmul
     _ hR hζ.pow_eq_one, fun k hk hk₀ ↦ (h k hk₀ hk 0).symm⟩, fun h k hk₀ hk _ ↦ (h.2 k hk hk₀).symm⟩
 
 /-- **Freeness of a translation over the rotated disc, through its lattice class.** Let `ζ` be a
@@ -205,7 +205,7 @@ theorem isCancelSMul_torusFamilyAffineMulAction_rootsOfUnityBall_iff_addOrderOf_
   -- The translation part `t = [β]` on the central torus is `m`-torsion.
   have ht : (m : ℤ) • torusFamilyFiberTranslationPart P b hb hy = 0 := by
     rw [natCast_zsmul]
-    exact nsmul_torusFamilyFiberTranslationPart_eq_zero R hone hmul P ρ hP b hb hbone hbmul hy hR
+    exact nsmul_torusFamilyFiberTranslationPart_eq_zero R P ρ hP b hb hbone hbmul hy hR
       hζ.pow_eq_one
   let x : Submodule.torsionBy ℤ (AddAction.orbitRel.Quotient (LinearMap.range (P u₀)) E) m :=
     ⟨_, (Submodule.mem_torsionBy_iff _ _).2 ht⟩
