@@ -205,10 +205,6 @@ private lemma exists_d_eq_of_twistedChainComplexMap_f_eq_d {n : ℕ}
   -- Subdivide the filling `w` until it splits as a pushforward plus a chain in the subspace.
   obtain ⟨_, ⟨w₁, rfl⟩, w₂, hw₂, hw⟩ :=
     Submodule.mem_sup.1 (smallTwistedChains_le_range_sup f L hf U hUf (n + 1) (hN N le_rfl))
-  have hdw₂ : L.twistedChainComplex.d (n + 1) n w₂ ∈
-      smallTwistedChains L (fun _ : Unit ↦ Set.range P'.map) n := by
-    rw [← twistedChainComplexπ_f_apply_eq_zero_iff, ← HomologicalComplex.Hom.comm_apply,
-      (P'.twistedChainComplexπ_f_apply_eq_zero_iff L w₂).2 hw₂, map_zero]
   -- The boundary of `w` differs from the image of `a` by a chain in the target subspace.
   have he : L.twistedChainComplex.d (n + 1) n w -
       (LocalCoefficientSystem.twistedChainComplexMap (Hom.fst f) L).f n a ∈
@@ -235,7 +231,8 @@ private lemma exists_d_eq_of_twistedChainComplexMap_f_eq_d {n : ℕ}
         ← hw, map_add]
       abel
     rw [this]
-    exact sub_mem (iterate_twistedSubdivision_mem_smallTwistedChains L _ he N) hdw₂
+    exact sub_mem (iterate_twistedSubdivision_mem_smallTwistedChains L _ he N)
+      (d_mem_smallTwistedChains L _ hw₂)
   refine ⟨(P.twistedChainComplexπ _).f (n + 1)
       (((twistedSubdivisionHomotopy _).idPow N).hom n (n + 1) a) +
     (P.twistedChainComplexπ _).f (n + 1) w₁, ?_⟩
@@ -277,13 +274,11 @@ inclusion of pairs `(A, A ∩ B) ⟶ (X, B)` induces a quasi-isomorphism of rela
 complexes. -/
 theorem quasiIso_twistedChainComplexMap_excisionMap (h : interior A ∪ interior B = Set.univ) :
     QuasiIso (twistedChainComplexMap (excisionMap A B) L) := by
-  refine quasiIso_twistedChainComplexMap_of_open_cover (excisionMap A B) L
+  exact quasiIso_twistedChainComplexMap_of_open_cover (excisionMap A B) L
     (isEmbedding_fst_excisionMap A B) (mem_range_map_of_fst_excisionMap_mem A B)
     (fun b : Bool ↦ bif b then interior A else interior B)
-    (fun b ↦ by cases b <;> exact isOpen_interior) ?_
+    (fun b ↦ by cases b <;> exact isOpen_interior) (iUnion_cond_interior_eq_univ A B h)
     (interior_subset_range_or_subset_range_fst_excisionMap A B)
-  rw [← Set.union_eq_iUnion]
-  exact h
 
 /-- **Excision with local coefficients.** If the interiors of `A` and `B` cover `X`, the
 inclusion of pairs `(A, A ∩ B) ⟶ (X, B)` induces isomorphisms on relative twisted homology. -/
@@ -297,12 +292,8 @@ If `closure Z ⊆ interior B`, the inclusion of pairs `(X ∖ Z, B ∖ Z) ⟶ (X
 quasi-isomorphism of relative twisted chain complexes. -/
 theorem quasiIso_twistedChainComplexMap_excisionMap_compl (Z : Set X)
     (h : closure Z ⊆ interior B) : QuasiIso (twistedChainComplexMap (excisionMap Zᶜ B) L) := by
-  refine quasiIso_twistedChainComplexMap_excisionMap Zᶜ B L ?_
-  rw [interior_compl, Set.eq_univ_iff_forall]
-  intro x
-  by_cases hx : x ∈ closure Z
-  · exact Or.inr (h hx)
-  · exact Or.inl hx
+  exact quasiIso_twistedChainComplexMap_excisionMap Zᶜ B L
+    (interior_compl_union_interior_eq_univ B h)
 
 /-- **Excision with local coefficients of a set with closure in the interior of the subspace.**
 If `closure Z ⊆ interior B`, the inclusion of pairs `(X ∖ Z, B ∖ Z) ⟶ (X, B)` induces isomorphisms
@@ -318,9 +309,8 @@ relative twisted chain complexes. -/
 theorem quasiIso_twistedChainComplexMap_excisionMap_of_isClosed_subset {U K : Set X}
     (hU : IsOpen U) (hK : IsClosed K) (hKU : K ⊆ U) :
     QuasiIso (twistedChainComplexMap (excisionMap U Kᶜ) L) := by
-  refine quasiIso_twistedChainComplexMap_excisionMap U Kᶜ L ?_
-  rw [hU.interior_eq, hK.isOpen_compl.interior_eq]
-  exact Set.eq_univ_of_subset (Set.union_subset_union_left _ hKU) (Set.union_compl_self K)
+  exact quasiIso_twistedChainComplexMap_excisionMap U Kᶜ L
+    (interior_union_interior_compl_eq_univ hU hK hKU)
 
 /-- **Excision with local coefficients onto a neighbourhood.** If `U` is open and contains the
 closed set `K`, the inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms on relative
