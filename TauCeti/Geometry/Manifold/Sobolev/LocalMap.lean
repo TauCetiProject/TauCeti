@@ -56,10 +56,13 @@ class of continuous maps with Sobolev coordinate expressions.
 ## Implementation notes
 
 The charts tested are those of the maximal atlases, so the definition does not depend on the
-chosen atlases. That it suffices to test one atlas of each, composition with `C^ℓ` maps of `M`
-and the weak differential of a Sobolev map need the change-of-variables and chain rules for
-planar local Sobolev classes, and are not part of this file. Charts reaching the boundary of a
-bordered surface are not treated here.
+chosen atlases. As for `ContMDiff`, the definitions carry no manifold hypotheses: they are meant
+for `IsManifold 𝓘(ℂ) 1 X` and `IsManifold 𝓘(ℝ, F) ∞ M`, under which the maximal atlases contain
+the given charts and so cover `X` and `M`. For charted spaces with incompatible charts they need
+not cover, and the coordinate tests can be vacuous. That it suffices to test one atlas of each,
+composition with `C^ℓ` maps of `M` and the weak differential of a Sobolev map need the
+change-of-variables and chain rules for planar local Sobolev classes, and are not part of this
+file. Charts reaching the boundary of a bordered surface are not treated here.
 
 ## References
 
