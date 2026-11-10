@@ -7,12 +7,10 @@ module
 
 public import TauCeti.Analysis.Sobolev.LipschitzDomain.GlobalExtension
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Compactness
-public import TauCeti.Analysis.Sobolev.GraphStep.ScalarProjection
 import TauCeti.Analysis.Normed.Operator.Compact.Interpolation
 import TauCeti.Analysis.Sobolev.LipschitzDomain.SobolevEmbedding
 import TauCeti.Analysis.Sobolev.W1p.LocalCompactness
 import TauCeti.Data.ENNReal.InterpolatedExponent
-import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 
 /-!
 # Rellich–Kondrachov on bounded Lipschitz domains
@@ -25,10 +23,6 @@ value map factors as extension to the whole space followed by restriction to `Ω
 compact by local Rellich compactness (`TauCeti.W1p.isCompactOperator_valueL_restrictL`), since
 `closure Ω` is compact. At `p = ∞`, the local compactness theorem uses Arzelà–Ascoli for
 the uniformly bounded equi-Lipschitz whole-space representatives.
-
-Applied coordinatewise through the scalar projections `TauCeti.WeakDerivStep.toW1pL`, the same
-compactness holds for the field selected by a weak-derivative graph space with finite-dimensional
-target. This is the input for the higher-order statement.
 
 Compactness then gives the Poincaré–Wirtinger inequality on bounded connected Lipschitz domains,
 with a constant that is not explicit.
@@ -48,8 +42,6 @@ strict: at `q = p⋆` the inclusion is bounded but not compact.
 
 * `TauCeti.W1p.isCompactOperator_valueL_of_isLipschitzDomainWith`: Rellich–Kondrachov
   compactness of `W^{1,p}(Ω) → Lᵖ(Ω)`.
-* `TauCeti.WeakDerivStep.isCompactOperator_comp_prevL_of_isLipschitzDomainWith`: compactness of a
-  finite-dimensional weak-derivative graph field into `Lᵖ(Ω; F)`.
 * `TauCeti.W1p.exists_eLpNorm_value_sub_setAverage_le_of_isLipschitzDomainWith`: the
   Poincaré–Wirtinger inequality on a bounded connected Lipschitz domain.
 * `TauCeti.W1p.exists_isCompactOperator_of_isLipschitzDomainWith`: Rellich–Kondrachov
@@ -90,41 +82,6 @@ theorem W1p.isCompactOperator_valueL_of_isLipschitzDomainWith
     rw [ContinuousLinearMap.comp_assoc, hT, ContinuousLinearMap.comp_id]
   rw [heq]
   exact hK.comp_clm T
-
-namespace WeakDerivStep
-
-variable {F X : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
-  [SeminormedAddCommGroup X] [NormedSpace ℝ X]
-
-/-- On a bounded Lipschitz domain, the field selected by `base` is compact as a map from the
-weak-derivative graph space into `Lᵖ(Ω; F)`, for finite-dimensional `F` and `1 ≤ p ≤ ∞`. -/
-theorem isCompactOperator_comp_prevL_of_isLipschitzDomainWith
-    (base : X →L[ℝ] Lp F p (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))))
-    (hΩ : (Ω : Set (WithLp 2 (ℝ × E))).IsLipschitzDomainWith L)
-    (hb : IsBounded (Ω : Set (WithLp 2 (ℝ × E)))) :
-    IsCompactOperator (base.comp (prevL base)) := by
-  classical
-  let b := Module.finBasis ℝ F
-  let ℓ := fun i ↦ (b.coord i).toContinuousLinearMap
-  let C := fun i ↦ ((ContinuousLinearMap.toSpanSingleton ℝ (b i)).compLpL
-    p (volume.restrict (Ω : Set (WithLp 2 (ℝ × E))))).comp
-      ((W1p.valueL (mu := volume) (Omega := Ω) (p := p)).comp (toW1pL base (ℓ i)))
-  have hC (i) : IsCompactOperator (C i) :=
-    ((W1p.isCompactOperator_valueL_of_isLipschitzDomainWith hΩ hb).comp_clm
-      (toW1pL base (ℓ i))).clm_comp
-        ((ContinuousLinearMap.toSpanSingleton ℝ (b i)).compLpL p
-          (volume.restrict (Ω : Set (WithLp 2 (ℝ × E)))))
-  have heq : base.comp (prevL base) = ∑ i, C i := by
-    apply ContinuousLinearMap.ext
-    intro u
-    simpa only [sum_apply, C, ContinuousLinearMap.comp_apply,
-      W1p.valueL_apply, value_toW1pL, prevL_apply, ℓ] using
-      eq_sum_basis_compLpL b (base (prev base u))
-  rw [heq]
-  -- Compact operators form a submodule, so finite coordinate reconstruction preserves compactness.
-  exact (compactOperator (RingHom.id ℝ) _ _).sum_mem fun i _ ↦ hC i
-
-end WeakDerivStep
 
 /-- **The Poincaré–Wirtinger inequality on bounded connected Lipschitz domains.** Let `Ω` be a
 bounded, preconnected Lipschitz domain, let `S ⊆ Ω` have positive measure, and let `1 ≤ p ≤ ∞`.
