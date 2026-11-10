@@ -70,20 +70,22 @@ namespace TauCeti
 
 /-! ### Openness of the kernel of restriction -/
 
-/-- Let `Ω/F` be algebraic, `F/K` an extension and `L/K` finite normal. Restriction of
-`Gal(Ω/F)` to `Gal(L/K)` along a `K`-embedding `j : L →ₐ[K] Ω` has open kernel: an automorphism of
-`Ω/F` fixing the images under `j` of a `K`-basis of `L` fixes `j(L)`, and those images generate a
-finite extension of `F`. -/
+/-- Let `F/K` be an extension, `Ω` an extension of `F` and `K`, and `L/K` finite normal.
+Restriction of `Gal(Ω/F)` to `Gal(L/K)` along a `K`-embedding `j : L →ₐ[K] Ω` has open kernel:
+an automorphism of `Ω/F` fixing the images under `j` of a `K`-basis of `L` fixes `j(L)`, and those
+images generate a finite extension of `F`. -/
 theorem _root_.AlgHom.isOpen_ker_restrictNormalHom_comp_restrictScalarsHom
     {K F L Ω : Type*} [Field K] [Field F] [Field L] [Field Ω] [Algebra K F] [Algebra K L]
-    [Algebra F Ω] [Algebra K Ω] [IsScalarTower K F Ω] [Algebra.IsAlgebraic F Ω]
+    [Algebra F Ω] [Algebra K Ω] [IsScalarTower K F Ω]
     [FiniteDimensional K L] [Normal K L] (j : L →ₐ[K] Ω) :
     IsOpen ((j.restrictNormalHom.comp
       (AlgEquiv.restrictScalarsHom K : Gal(Ω/F) →* Gal(Ω/K))).ker : Set Gal(Ω/F)) := by
   let b := Module.finBasis K L
   let E := IntermediateField.adjoin F (Set.range fun i ↦ j (b i))
   have : FiniteDimensional F E := IntermediateField.finiteDimensional_adjoin
-    fun x _ ↦ Algebra.IsIntegral.isIntegral x
+    fun _ ⟨i, hi⟩ ↦ by
+      subst hi
+      exact ((Algebra.IsIntegral.isIntegral (R := K) (b i)).map j).tower_top
   refine Subgroup.isOpen_mono (fun τ hτ ↦ ?_) E.fixingSubgroup_isOpen
   rw [MonoidHom.mem_ker, MonoidHom.comp_apply, AlgHom.restrictNormalHom_eq_iff]
   -- `τ ∘ j` and `j` are `K`-linear maps agreeing on the basis `b`.
