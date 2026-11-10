@@ -29,7 +29,8 @@ The slant product satisfies the evaluation law
 `⟨φ / x, y⟩ = ⟨φ, u_*(x × y)⟩` (`TopCat.singularKronecker_singularSlant`), where `x × y` is the
 homology cross product `TopCat.singularHomologyCross`; on the classes of a cycle and a cocycle it
 is the class of the slant product of representatives (`TopCat.singularSlant_homologyπ`), and it is
-natural, `(f × g)^* φ / x = g^* (φ / f_* x)` (`TopCat.singularSlant_naturality`).
+natural, `(f × g)^* φ / x = g^* (φ / f_* x)` (`TopCat.singularSlant_naturality`), also in the
+coefficient module `M` (`TopCat.singularSlant_coefficient_naturality`).
 
 Slant products by homology classes turn a cohomology class on a product into classes on the second
 factor. For a line bundle `U` on `X × Y` with first Chern class `c₁(U) ∈ H²(X × Y; ℤ)`, the slant
@@ -79,6 +80,7 @@ for the cohomology of a product one of whose factors has finitely generated proj
 * `TopCat.singularSlant_homologyπ`: its value on classes of cycles and cocycles.
 * `TopCat.singularKronecker_singularSlant`: the evaluation law `⟨φ / x, y⟩ = ⟨φ, u_*(x × y)⟩`.
 * `TopCat.singularSlant_naturality`: naturality in both spaces.
+* `TopCat.singularSlant_coefficient_naturality`: naturality in the coefficient module.
 * `TopCat.singularSlant_singularCohomologyMap_fst_eq_zero` and
   `TopCat.singularSlant_singularCohomologyMap_snd_eq_zero`: the vanishing of the slant product of a
   class pulled back from one factor in the degrees where the cohomology or homology of a point
@@ -184,6 +186,18 @@ lemma singularSlant_naturality {X Y X' Y' : TopCat.{w}} (f : X ⟶ X') (g : Y �
       rw [Category.assoc, ← ((SSet.chainComplexFunctor _).map u).naturality]
       exact shuffle_naturality_assoc f g R S _)
     p q n h x φ
+
+/-- **Naturality of the slant product in the coefficients**: for a coefficient map `g : M ⟶ N`,
+`g_* φ / x = g_* (φ / x)`. -/
+lemma singularSlant_coefficient_naturality (X Y : TopCat.{w}) (u : R ⊗ S ⟶ T)
+    {N : ModuleCat.{w} k} (g : M ⟶ N) (p q n : ℕ) (h : p + q = n)
+    (x : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj R).obj X)
+    (φ : (X ⊗ Y).singularCohomology T k M n) :
+    singularSlant k N X Y u p q n h x
+        (homologyMap (((toSSet.obj (X ⊗ Y)).chainComplex T).linearYonedaObjMap k g) n φ) =
+      homologyMap (((toSSet.obj Y).chainComplex S).linearYonedaObjMap k g) q
+        (singularSlant k M X Y u p q n h x φ) :=
+  TauCeti.ChainComplex.slant_coefficient_naturality _ g p q n h x φ
 
 /-- **A class pulled back from the first factor has no slant products in positive codegree**: for
 `a ∈ Hⁿ(X; T, M)` and `x ∈ Hₚ(X; R)` with `p + q = n` and `q ≠ 0`, `pr₁^* a / x = 0`. In particular

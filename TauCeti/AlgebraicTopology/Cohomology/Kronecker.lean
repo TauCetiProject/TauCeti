@@ -36,7 +36,8 @@ the case where its `Ext¹`-term vanishes.
 * `TopCat.singularKroneckerEquiv`: for an injective coefficient object `M`, the Kronecker map is a
   `k`-linear equivalence.
 * `TopCat.singularKronecker_bijective_zero`: in degree zero the Kronecker map is bijective for
-  every coefficient object.
+  every coefficient object. Hence a monomorphism `M ⟶ N` of coefficients induces an injection
+  `H⁰(X; R, M) ⟶ H⁰(X; R, N)` (`TopCat.singularCohomology_coefficient_injective_zero`).
 * `TopPair.singularKronecker`: the Kronecker map `Hⁿ(X, A; R, M) →ₗ[k] (Hₙ(X, A; R) ⟶ M)` of
   relative singular cohomology, the Kronecker map of the relative singular chain complex, with
   `TopPair.singularKronecker_homologyπ` and `TopPair.singularKronecker_naturality`;
@@ -117,6 +118,16 @@ degree-zero singular chains. -/
 theorem singularKronecker_bijective_zero (X : TopCat.{w}) (k : Type*) [Ring k] [Linear k C] :
     Function.Bijective (X.singularKronecker (R := R) (M := M) k 0) :=
   TauCeti.ChainComplex.kronecker_bijective_of_isIso 0
+
+/-- In degree zero, a monomorphism of coefficient objects `g : M ⟶ N` induces an injection
+`H⁰(X; R, M) ⟶ H⁰(X; R, N)`: both groups are `Hom(H₀(X; R), -)` by the Kronecker map. -/
+theorem singularCohomology_coefficient_injective_zero (X : TopCat.{w}) (k : Type*) [Ring k]
+    [Linear k C] {N : C} (g : M ⟶ N) [Mono g] :
+    Function.Injective
+      (HomologicalComplex.homologyMap (((toSSet.obj X).chainComplex R).linearYonedaObjMap k g) 0) :=
+  fun α β hαβ ↦ (X.singularKronecker_bijective_zero (R := R) (M := M) k).1 <| by
+    rw [← cancel_mono g, ← singularKronecker_coefficient_naturality,
+      ← singularKronecker_coefficient_naturality, hαβ]
 
 /-- The equivalence `TopCat.singularKroneckerEquiv` is the Kronecker map. -/
 @[simp]

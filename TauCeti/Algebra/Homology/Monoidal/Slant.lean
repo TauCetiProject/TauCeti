@@ -39,7 +39,8 @@ and a cocycle slanted by a boundary is a coboundary, so the slant product descen
 `⟨φ / x, y⟩ = ⟨φ, D_*(x × y)⟩` for homology classes `x ∈ Hₚ(K)` and `y ∈ H_q(L)`
 (`TauCeti.ChainComplex.kronecker_slant`), where `x × y` is the homology cross product
 `HomologicalComplex.homologyCross`, and it is natural along maps of the triples `(K, L, T)`
-compatible with the chain maps `D` (`TauCeti.ChainComplex.slant_naturality`).
+compatible with the chain maps `D` (`TauCeti.ChainComplex.slant_naturality`) and along maps of
+the coefficient module `P` (`TauCeti.ChainComplex.slant_coefficient_naturality`).
 
 Slanting by a cycle `z` of degree zero is a pullback: if `v ↦ e (D (z ⊗ v))` is a chain map
 `c : L ⟶ T'` for some chain map `e : T ⟶ T'`, then `e^* φ / [z] = c^* φ`
@@ -72,7 +73,8 @@ has finitely generated projective homology.
 * `TauCeti.ChainComplex.slant`: the slant product on homology and cohomology, with
   `TauCeti.ChainComplex.slant_homologyπ` computing it on classes of cycles and cocycles.
 * `TauCeti.ChainComplex.kronecker_slant`: the evaluation law `⟨φ / x, y⟩ = ⟨φ, D_*(x × y)⟩`.
-* `TauCeti.ChainComplex.slant_naturality`: naturality.
+* `TauCeti.ChainComplex.slant_naturality` and `TauCeti.ChainComplex.slant_coefficient_naturality`:
+  naturality in the complexes and in the coefficient module.
 * `TauCeti.ChainComplex.slant_homologyπ_zero_homologyMap`: the slant product by a cycle of degree
   zero along which `D` restricts to a chain map.
 * `TauCeti.ChainComplex.slantCochain_cupCochain`, `TauCeti.ChainComplex.slant_cup` and
@@ -508,6 +510,25 @@ lemma slant_naturality {K' L' T' : ChainComplex (ModuleCat.{u} k) ℕ} [K'.HasTe
   rw [iCycles_slantCycles, iCycles_cyclesMap_linearYonedaFunctor_map_apply,
     iCycles_cyclesMap_linearYonedaFunctor_map_apply, iCycles_slantCycles, hfi]
   exact slantCochain_naturality D D' f g e hD p q n h _ _
+
+/-- **Naturality of the slant product in the coefficients**: for a coefficient map `g : P ⟶ P'`,
+`g_* φ / x = g_* (φ / x)` for classes `x ∈ Hₚ(K)` and `φ ∈ Hⁿ(Hom(T, P))`. -/
+lemma slant_coefficient_naturality {P' : ModuleCat.{u} k} (g : P ⟶ P') (p q n : ℕ)
+    (h : p + q = n) (x : K.homology p) (φ : (T.linearYonedaObj k P).homology n) :
+    slant k D p q n h x (homologyMap (T.linearYonedaObjMap k g) n φ) =
+      homologyMap (L.linearYonedaObjMap k g) q (slant k D p q n h x φ) := by
+  obtain ⟨z, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p x
+  obtain ⟨ψ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ n φ
+  rw [T.homologyMap_linearYonedaObjMap_homologyπ_apply k, slant_homologyπ, slant_homologyπ,
+    L.homologyMap_linearYonedaObjMap_homologyπ_apply k]
+  congr 1
+  apply HomologicalComplex.moduleCat_iCycles_injective
+  rw [iCycles_slantCycles, L.iCycles_cyclesMap_linearYonedaObjMap_apply k, iCycles_slantCycles,
+    T.iCycles_cyclesMap_linearYonedaObjMap_apply k]
+  -- both cochains send `v` to `g (ψ (D (z ⊗ v)))`
+  refine ModuleCat.hom_ext (LinearMap.ext fun v ↦ ?_)
+  rw [ModuleCat.hom_comp, LinearMap.comp_apply, slantCochain_apply]
+  exact congrArg g (slantCochain_apply D p q n h _ _ v).symm
 
 section CupProduct
 

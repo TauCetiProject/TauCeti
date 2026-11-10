@@ -71,6 +71,9 @@ free in that degree and zero above it, while in the top degree it need not be to
   `TopCat.isZero_singularCohomology_succ_of_projective_homology` and their `TopPair` versions: over
   a hereditary ring, the Kronecker map is bijective in degree `n + 1` when `Hₙ(X; R)` is
   projective, and cohomology vanishes in degree `n + 1` when moreover `Hₙ₊₁(X; R) = 0`.
+* `TopCat.singularCohomology_coefficient_injective_succ`: over a hereditary ring, a monomorphism
+  of coefficient modules induces an injection on `Hⁿ⁺¹(X; R, -)` when `Hₙ(X; R)` is projective.
+  For `n = 0` this applies to every space, so `H¹(X; ℤ) ⟶ H¹(X; ℝ)` is injective.
 * `TopCat.singularExtToCohomology`: the map `Ext¹(Hₙ(X; R), M) →ₗ[k] Hⁿ⁺¹(X; R, M)`, computed on
   extension classes by `TopCat.singularExtToCohomology_extClass_comp_mk₀`.
 * `TopCat.singularExtToCohomology_injective` and
@@ -284,6 +287,21 @@ theorem isZero_singularCohomology_succ_of_projective_homology (n : ℕ)
     ⟨h.eq_of_src⟩
   have := (X.singularKronecker_bijective_succ_of_projective_homology R M n).1.subsingleton
   exact ModuleCat.isZero_of_subsingleton _
+
+variable {M} in
+/-- **Coefficient injectivity above a projective homology module**, over a hereditary commutative
+ring: for a projective coefficient module `R`, if `Hₙ(X; R)` is projective, a monomorphism
+`g : M ⟶ N` induces an injection `Hⁿ⁺¹(X; R, M) ⟶ Hⁿ⁺¹(X; R, N)`, since both are
+`Hom(Hₙ₊₁(X; R), -)` by the Kronecker map. As `H₀(X; ℤ)` is free, `H¹(X; ℤ) ⟶ H¹(X; ℝ)` is
+injective for every space `X`. -/
+theorem singularCohomology_coefficient_injective_succ (n : ℕ)
+    [Projective (((singularHomologyFunctor (ModuleCat.{w} k) n).obj R).obj X)]
+    {N : ModuleCat.{w} k} (g : M ⟶ N) [Mono g] :
+    Function.Injective (HomologicalComplex.homologyMap
+      (((toSSet.obj X).chainComplex R).linearYonedaObjMap k g) (n + 1)) :=
+  fun α β hαβ ↦ (X.singularKronecker_bijective_succ_of_projective_homology R M n).1 <| by
+    rw [← cancel_mono g, ← singularKronecker_coefficient_naturality,
+      ← singularKronecker_coefficient_naturality, hαβ]
 
 end Hereditary
 
