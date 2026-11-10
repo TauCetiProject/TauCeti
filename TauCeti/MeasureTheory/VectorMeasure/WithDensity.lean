@@ -86,8 +86,8 @@ variable {X E F G : Type*} [MeasurableSpace X] {ν : Measure X}
   [NormedAddCommGroup G] [NormedSpace ℝ G]
 
 /-- The variation of a vector measure with density `g` with respect to `ν` is at most the measure
-with density `‖g‖ₑ` with respect to `ν`. This is an equality in a complete space, see
-`MeasureTheory.Measure.variation_withDensityᵥ`. -/
+with density `‖g‖ₑ` with respect to `ν`. This is an equality when the space is complete and `g` is
+integrable with respect to `ν`, see `MeasureTheory.Measure.variation_withDensityᵥ`. -/
 theorem Measure.variation_withDensityᵥ_le (ν : Measure X) (g : X → F) :
     (ν.withDensityᵥ g).variation ≤ ν.withDensity fun x => ‖g x‖ₑ := by
   by_cases hg : Integrable g ν
