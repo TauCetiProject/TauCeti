@@ -43,7 +43,8 @@ Writing `x = (a_m, α_m) + y` with `y ∈ H^k`, the transformed field is
 `H^k` because `H^k(ℂ)` is an algebra, and `(u - 1) α_m` lies in `H^k` because the reference
 section is smooth with bounded derivatives. The integer order enters only through this last
 multiplication. Composition of the action is multiplication of gauges
-(`TauCeti.Vortex.gaugeTransform_mul`).
+(`TauCeti.Vortex.gaugeTransform_mul`), so `G_(k+1)` acts on `A_m^k`; the action is bundled as a
+`MulAction` instance, with the order condition supplied as `Fact (1 < k)`.
 
 No topology or Banach Lie group charts on `G_s` are constructed here, and neither continuity nor
 smoothness of the action is asserted.
@@ -51,6 +52,8 @@ smoothness of the action is asserted.
 ## Main definitions
 
 * `TauCeti.Vortex.sobolevGaugeGroup hs`: the group `G_s`, `s > 1`, as a subgroup of `ℂ → Circle`.
+* The `MulAction` of `G_(k+1)` on the affine field space `A_m^k`, for an integer `k > 1`
+  (`TauCeti.Vortex.coe_sobolevGaugeGroup_smul`).
 
 ## Main results
 
@@ -336,49 +339,28 @@ theorem gaugeTransform_referenceField_sub_mem_sobolevFields {k : ℕ} (hk : 1 < 
   have hmono := realSobolevFunctions_mono (E := ℂ) (p := 2) (by norm_num) (by norm_num)
     (le_add_of_nonneg_right zero_le_one : (k : ℝ) ≤ k + 1)
   have hform (v : ℂ) := gaugeForm_apply_mem_realSobolevFunctions hk' hu v
-  -- The connection part `-u⁻¹ du` and the two section fields multiplied by `α_m`.
-  have h₀ : (fun z ↦ !₂[-gaugeForm u z 1, -gaugeForm u z I, 0, 0]) ∈ sobolevFields k := by
-    refine mem_sobolevFields.2 fun i ↦ ?_
-    fin_cases i
-    · convert neg_mem (hform 1) using 1
-      ext z
-      simp [-gaugeForm_apply]
-    · convert neg_mem (hform I) using 1
-      ext z
-      simp [-gaugeForm_apply]
-    · exact zero_mem _
-    · exact zero_mem _
-  have h₁ : (fun z ↦ !₂[0, 0, (u z : ℂ).re - 1, (u z : ℂ).im]) ∈ sobolevFields k := by
-    refine mem_sobolevFields.2 fun i ↦ ?_
-    fin_cases i
-    · exact zero_mem _
-    · exact zero_mem _
-    · simpa using hmono hu₁
-    · simpa using hmono hu₂
-  have h₂ : (fun z ↦ !₂[0, 0, -(u z : ℂ).im, (u z : ℂ).re - 1]) ∈ sobolevFields k := by
-    refine mem_sobolevFields.2 fun i ↦ ?_
-    fin_cases i
-    · exact zero_mem _
-    · exact zero_mem _
-    · convert neg_mem (hmono hu₂) using 1
-      ext z
-      simp
-    · simpa using hmono hu₁
-  -- The coordinates of the reference section are smooth with bounded derivatives.
-  have hbound (i : Fin 4) : ∃ M, 0 ≤ M ∧
-      ∀ j ≤ k, ∀ z, ‖iteratedFDeriv ℝ j (fun z ↦ referenceField f m z i) z‖ ≤ M := by
-    choose C hC using fun j ↦ exists_norm_iteratedFDeriv_referenceField_apply_le f m i j
-    refine ⟨∑ j ∈ Finset.range (k + 1), |C j|, by positivity, fun j hj z ↦ (hC j z).trans ?_⟩
-    exact (le_abs_self _).trans (Finset.single_le_sum (f := fun j ↦ |C j|)
-      (fun _ _ ↦ abs_nonneg _) (Finset.mem_range.2 (Nat.lt_succ_of_le hj)))
-  have hsmul (i : Fin 4) {w : ℂ → EuclideanSpace ℝ (Fin 4)} (hw : w ∈ sobolevFields k) :
-      (fun z ↦ referenceField f m z i • w z) ∈ sobolevFields k := by
-    obtain ⟨M, hM, hMb⟩ := hbound i
-    exact smul_mem_sobolevFields_natCast k (contDiff_euclidean.1 (contDiff_referenceField f m) i)
-      hM hMb hw
-  convert add_mem (add_mem h₀ (hsmul 2 h₁)) (hsmul 3 h₂) using 1
-  ext z i
-  fin_cases i <;> simp [gaugeTransform_apply] <;> ring
+  -- Multiplication by a coordinate of the reference section preserves `H^k`.
+  have href (i : Fin 4) {g : ℂ → ℝ} (hg : g ∈ realSobolevFunctions ℂ (k + 1 : ℝ) 2) :=
+    mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hk
+      (referenceField_mem_framedFieldSpace f m k) i (hmono hg)
+  refine mem_sobolevFields.2 fun i ↦ ?_
+  fin_cases i
+  · convert neg_mem (hform 1) using 1
+    ext z
+    simp [gaugeTransform_apply, -gaugeForm_apply]
+  · convert neg_mem (hform I) using 1
+    ext z
+    simp [gaugeTransform_apply, -gaugeForm_apply]
+  · -- `Re u · p - Im u · q - p = p (Re u - 1) - q Im u`.
+    convert sub_mem (href 2 hu₁) (href 3 hu₂) using 1
+    ext z
+    simp [gaugeTransform_apply]
+    ring
+  · -- `Im u · p + Re u · q - q = p Im u + q (Re u - 1)`.
+    convert add_mem (href 2 hu₂) (href 3 hu₁) using 1
+    ext z
+    simp [gaugeTransform_apply]
+    ring
 
 /-- **The Sobolev gauge group `G_(k+1)` acts on the affine field space `A_m^k`**, for every integer
 `k > 1`: the charge-one action `(a, α) ↦ (a - u⁻¹ du, u α)` of `u ∈ G_(k+1)` maps `A_m^k` to
@@ -414,5 +396,27 @@ theorem gaugeTransform_mem_framedFieldSpace_iff {k : ℕ} (hk : 1 < k) {hs : 1 <
       one_ne_zero
   have h' := gaugeTransform_mem_framedFieldSpace hk (inv_mem hu) h
   rwa [← gaugeTransform_mul (hd (inv_mem hu)) (hd hu), inv_mul_cancel, gaugeTransform_one] at h'
+
+/-- **The action of `G_(k+1)` on `A_m^k`**, for an integer `k > 1`: a gauge `u` acts on a framed
+field by the charge-one transformation `(a, α) ↦ (a - u⁻¹ du, u α)`. The action laws are
+`gaugeTransform_one` and `gaugeTransform_mul`, which applies since the elements of `G_(k+1)` are
+`C¹`. -/
+instance {k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1} {f : ContDiffBump (0 : ℝ)} {m : ℕ} :
+    MulAction (sobolevGaugeGroup hs) (framedFieldSpace f m k) where
+  smul u x := ⟨gaugeTransform u x, gaugeTransform_mem_framedFieldSpace Fact.out u.2 x.2⟩
+  one_smul x := Subtype.ext (gaugeTransform_one x)
+  mul_smul u v x := by
+    have hk' : (1 : ℝ) < k := by exact_mod_cast (Fact.out : 1 < k)
+    have hd (v : sobolevGaugeGroup hs) : Differentiable ℝ (fun z ↦ (v.1 z : ℂ)) :=
+      (contDiff_of_mem_sobolevGaugeGroup (k := 1) (by push_cast; linarith) v.2).differentiable
+        one_ne_zero
+    exact Subtype.ext (gaugeTransform_mul (hd u) (hd v) x)
+
+/-- The bundled action of `G_(k+1)` on `A_m^k` is the charge-one coordinate transformation. -/
+@[simp]
+theorem coe_sobolevGaugeGroup_smul {k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1}
+    {f : ContDiffBump (0 : ℝ)} {m : ℕ} (u : sobolevGaugeGroup hs) (x : framedFieldSpace f m k) :
+    ((u • x : framedFieldSpace f m k) : ℂ → EuclideanSpace ℝ (Fin 4)) =
+      gaugeTransform u x := (rfl)
 
 end TauCeti.Vortex
