@@ -207,7 +207,7 @@ nontrivial closed subgroup has a non-square. -/
 theorem profiniteIndex_subgroupOf_map_powMonoidHom_two_eq_one_iff {A : Subgroup ℤ_[2]ˣ}
     (hA : IsClosed (A : Set ℤ_[2]ˣ)) :
     Subgroup.profiniteIndex ((A.map (powMonoidHom 2)).subgroupOf A) = 1 ↔ A = ⊥ := by
-  rw [← relIndex_map_powMonoidHom_two_eq_one_iff hA]
+  rw [← relIndex_map_powMonoidHom_two_eq_one_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ (profiniteIndex_subgroupOf_map_powMonoidHom_eq_primePower hA
     (k := 0) (by rw [h]; rfl)).trans (Supernatural.primePower_zero _)⟩
   rcases relIndex_map_powMonoidHom_two_eq_one_or_two_or_four hA with h₁ | h₁ | h₁

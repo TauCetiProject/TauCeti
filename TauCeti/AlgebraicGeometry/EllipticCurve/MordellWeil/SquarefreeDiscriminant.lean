@@ -202,8 +202,8 @@ theorem even_valuationOfNeZero_sub_root_of_exp_neg_one_le (p : W.f.Factors) {x y
   obtain ⟨he₀, hrest⟩ := eq_one_and_forall_eq_one_of_exp_neg_one_le_prod (i₀ := i₀)
     (t := fun i : W.PrimesAboveFactors R v ↦ i.2.1.valuation (𝕃 i.1)
       (3 * θ i.1 ^ 2 + 2 * ι i.1 W.a₂ * θ i.1 + ι i.1 W.a₄))
-    (fun i ↦ W.valuation_deriv_root_le_one R i.1 (by rwa [hv]) (by rwa [hv]) (by rwa [hv])) he
-    (hd.trans_eq (W.prod_valuation_deriv_root R v).symm) hw
+    (fun i _ ↦ W.valuation_deriv_root_le_one R i.1 (by rwa [hv]) (by rwa [hv]) (by rwa [hv]))
+    (fun i _ ↦ he i) (hd.trans_eq (W.prod_valuation_deriv_root R v).symm) (Finset.mem_univ _) hw
   -- the valuations of `x - θ` are even away from `i₀`, with product `v(y)²`
   have hlog (i : W.PrimesAboveFactors R v) :
       log (i.2.1.valuation (𝕃 i.1) (ι i.1 x - θ i.1)) = Multiplicative.toAdd
@@ -212,13 +212,14 @@ theorem even_valuationOfNeZero_sub_root_of_exp_neg_one_le (p : W.f.Factors) {x y
     rw [← HeightOneSpectrum.valuationOfNeZero_eq]
     rfl
   have hev := two_dvd_log_of_prod_eq_sq (i₀ := i₀) (c := v.valuation K y)
-    (s := fun i : W.PrimesAboveFactors R v ↦ i.2.1.valuation (𝕃 i.1) (ι i.1 x - θ i.1))
+    (x := fun i : W.PrimesAboveFactors R v ↦ i.2.1.valuation (𝕃 i.1) (ι i.1 x - θ i.1))
     (e := fun i : W.PrimesAboveFactors R v ↦ i.2.1.asIdeal.inertiaDeg R)
-    (fun i ↦ (Valuation.ne_zero_iff _).mpr (W.isUnit_algebraMap_sub_root hx i.1).ne_zero) he₀
-    (fun i hi ↦ by
+    (fun i _ _ ↦ (Valuation.ne_zero_iff _).mpr (W.isUnit_algebraMap_sub_root hx i.1).ne_zero)
+    (Finset.mem_univ _) he₀
+    (fun i hi₁ hi ↦ by
       rw [hlog]
       exact W.even_valuationOfNeZero_sub_root R i.1 h hx _ (IsUnit.unit_spec _) i.2.1
-        (by rwa [hv]) (by rwa [hv]) (by rwa [hv]) (hrest i hi)) (by
+        (by rwa [hv]) (by rwa [hv]) (by rwa [hv]) (hrest i hi₁ hi)) (by
       rw [W.prod_valuation_algebraMap_sub_root R v, (equation_iff_eval_f_eq_sq W x y).mp h,
         map_pow])
   rw [hlog] at hev

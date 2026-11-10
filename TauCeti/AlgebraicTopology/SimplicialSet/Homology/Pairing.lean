@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.SimplicialSet.Homology.MapHomologicalComplex
 public import Mathlib.CategoryTheory.Monoidal.Preadditive
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Basic
+public import TauCeti.CategoryTheory.Monoidal.Limits
 
 /-!
 # Coefficient pairings on simplicial chains
@@ -37,6 +38,7 @@ out of tensor products of simplicial chains, such as the shuffle map.
   identification `F(C(X; R)) ≅ C(X; F(R))` on the summand of a simplex.
 * `SSet.chainComplexPairing`: the chain map `M ⊗ C(X; S) ⟶ C(X; P)` induced by `μ`.
 * `SSet.whiskerLeft_ιChainComplex_chainComplexPairing_f`: its value on the summand of a simplex.
+* `SSet.chainComplexPairing_leftUnitor_hom_f`: the tensor unit acts on chains by the left unitor.
 * `SSet.chainComplexPairing_naturality`: it is natural in the simplicial set.
 * `SSet.chainComplexPairing_comp_chainComplexFunctor_map_app`,
   `SSet.whiskerLeft_chainComplexFunctor_map_app_comp_chainComplexPairing` and
@@ -148,6 +150,16 @@ lemma whiskerLeft_ιChainComplex_chainComplexPairing_f (X : SSet.{w}) (μ : M �
   dsimp at this
   rw [chainComplexPairing, HomologicalComplex.comp_f, this,
     SSet.ιChainComplex_chainComplexFunctor_map_app_f]
+
+/-- The chain map `𝟙 ⊗ C(X; S) ⟶ C(X; S)` induced by the left unitor of `S` is, in each degree,
+the left unitor of the object of chains. -/
+@[simp]
+lemma chainComplexPairing_leftUnitor_hom_f (X : SSet.{w}) (S : C) (n : ℕ) :
+    (X.chainComplexPairing (λ_ S).hom).f n = (λ_ ((X.chainComplex S).X n)).hom := by
+  rw [← cancel_epi (λ_ ((X.chainComplex S).X n)).inv, Iso.inv_hom_id]
+  ext x
+  rw [leftUnitor_inv_naturality_assoc, whiskerLeft_ιChainComplex_chainComplexPairing_f,
+    Iso.inv_hom_id_assoc, Category.comp_id]
 
 /-- The chain map induced by a coefficient pairing is natural in the simplicial set. -/
 @[reassoc]

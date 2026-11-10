@@ -116,29 +116,13 @@ theorem hasDerivAt_mpullback_timeDependentFlowOf (s t : ℝ) (x : M)
   have hsmooth (a b : ℝ) : MDifferentiable I I (timeDependentFlowOf X a b) :=
     ((contMDiff_timeDependentFlowOf hc (n := 2) (by norm_num) hX).comp
       ((contMDiff_const (c := (a, b))).prodMk contMDiff_id)).mdifferentiable (by norm_num)
-  set L : E →L[ℝ] E := mfderiv I I (timeDependentFlowOf X s t) x
-  -- By the composition law, `φ_{s,u}^* α = φ_{s,t}^* (φ_{t,u}^* α)`, so the derivative at `t` is
-  -- read at the base time of the flow from `t`.
-  have hshift (u : ℝ) : mpullback I I (timeDependentFlowOf X s u) α x =
-      compContinuousLinearMapCLM (ι := Fin k) (F := F) L
-        (mpullback I I (timeDependentFlowOf X t u) α (timeDependentFlowOf X s t x)) := by
-    have hcomp : timeDependentFlowOf X s u =
-        timeDependentFlowOf X t u ∘ timeDependentFlowOf X s t :=
-      funext fun z ↦ (timeDependentFlowOf_trans hc hX₁ s t u z).symm
-    rw [hcomp, mpullback_comp_at (hsmooth s t x) (hsmooth t u _)]
-    ext v
-    -- Both sides evaluate `φ_{t,u}^* α` at `φ_{s,t} x` on the vectors `L (v i)`. The operator
-    -- `compContinuousLinearMapCLM L` acts on forms on `E`, while the pulled-back form takes values
-    -- on tangent spaces, which are `E` only up to unfolding; so `compContinuousLinearMapCLM_apply`
-    -- does not rewrite here, and the right side is unfolded by `rfl`.
-    rw [mpullback_apply]
-    rfl
-  have h := (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt t
+  -- By the composition law, `φ_{s,u} = φ_{t,u} ∘ φ_{s,t}`, so the derivative at `t` is read at
+  -- the base time of the flow from `t`.
+  exact hasDerivAt_mpullback_of_eq_comp (χ := timeDependentFlowOf X t)
+    (Eventually.of_forall fun u ↦ Eventually.of_forall fun z ↦
+      (timeDependentFlowOf_trans hc hX₁ s t u z).symm)
+    (hsmooth s t x) (Eventually.of_forall fun u ↦ hsmooth t u _)
     (hasDerivAt_mpullback_timeDependentFlowOf_self hX t _ hα)
-  refine (h.congr_of_eventuallyEq (Eventually.of_forall fun u ↦ hshift u)).congr_deriv ?_
-  ext v
-  -- As in `hshift`, the left side is `compContinuousLinearMapCLM L` applied up to unfolding.
-  exact (mpullback_apply (timeDependentFlowOf X s t) (mlieDerivForm (X t) α) x v).symm
 
 /-- **Invariance of forms under time-dependent flows.** For a jointly `C²` time-dependent vector
 field `X` with complete suspension, the time-dependent flow preserves a differentiable form `α`,
@@ -161,18 +145,10 @@ theorem mpullback_timeDependentFlowOf_eq_self_iff
       funext fun u ↦ congrFun (h t u) y
     rw [hconst] at hd
     exact hd.unique (hasDerivAt_const (F := E [⋀^Fin k]→L[ℝ] F) t (α y))
-  · -- With vanishing Lie derivatives, the pullbacks at each point have zero velocity.
+  · -- With vanishing Lie derivatives, the pullbacks by the flow from `s` are constant.
     intro h s t
-    funext x
-    set P : ℝ → E [⋀^Fin k]→L[ℝ] F := fun u ↦ mpullback I I (timeDependentFlowOf X s u) α x
-    have hderiv (u : ℝ) : HasDerivAt P 0 u := by
-      have hd := hasDerivAt_mpullback_timeDependentFlowOf hc hX s u x (hα _)
-      rw [h u, mpullback_zero] at hd
-      exact hd
-    have hconst := is_const_of_deriv_eq_zero (fun u ↦ (hderiv u).differentiableAt)
-      (fun u ↦ (hderiv u).deriv) t s
-    simp only [P, hid s] at hconst
-    exact hconst
+    rw [mpullback_eq_of_forall_mlieDerivForm_eq_zero
+      (fun u x ↦ hasDerivAt_mpullback_timeDependentFlowOf hc hX s u x (hα _)) h t s, hid s]
 
 /-- **Time-dependent flows preserve closed forms with closed contractions.** For a jointly `C²`
 time-dependent vector field `X` with complete suspension and a differentiable closed form `β`

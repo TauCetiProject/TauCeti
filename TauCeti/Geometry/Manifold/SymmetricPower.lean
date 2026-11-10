@@ -28,7 +28,7 @@ The chart at an unordered tuple `s` is assembled from three inputs, each already
   `V_j`, with multiplicities `n₁, …, n_k` as the degrees
   (`Finset.exists_mem_range_sumSubtype_of_t2`);
 * that concatenation is an open embedding
-  `Sym^{n₁}(V₁) × ⋯ × Sym^{n_k}(V_k) ↪ Sym α n` (`TauCeti.Sym.isOpenEmbedding_sumSubtype`);
+  `Sym^{n₁}(V₁) × ⋯ × Sym^{n_k}(V_k) ↪ Sym α n` (`Sym.isOpenEmbedding_sumSubtype`);
 * each factor is an open subspace of affine space, charted by the elementary symmetric functions
   of its points read in the ambient coordinate
   (`TauCeti.Sym.isOpenEmbedding_coeffEquiv_comp_map`), and the factors regroup into `Fin n → K`
@@ -349,7 +349,7 @@ theorem symChartAt_spec (s : Sym α n) :
 /-- **The symmetric power of a Hausdorff space charted by `K` is charted by `Fin n → K`.** This
 constructs only the `ChartedSpace` structure. Reading it as a topological-manifold result also
 requires suitable countability hypotheses, which are not assumed here; the Hausdorff instance is
-already supplied by `TauCeti.Sym.instT2Space`.
+already supplied by `Sym.instT2Space`.
 
 Deliberately not an instance: when `α := K`, a later canonical single-chart structure built from
 `TauCeti.Sym.coeffHomeomorph` would have the same instance key. -/

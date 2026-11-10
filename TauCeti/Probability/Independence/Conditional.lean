@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Function.FactorsThrough
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.Probability.Independence.Process.Basic
+import TauCeti.MeasureTheory.Function.AEEqOfLIntegral.Mul
 import TauCeti.MeasureTheory.Function.ConditionalExpectation
 import TauCeti.MeasureTheory.MeasurableSpace.Sup
 
@@ -444,41 +445,6 @@ private lemma integral_sq_condExp_eq_of_pair_law [IsFiniteMeasure μ] (X : Ω �
           * (μ[φ | MeasurableSpace.comap W' inferInstance]) ω ∂μ :=
         (integral_mul_self_condExp_comap_eq_integral_sq_map hW'.aemeasurable
           hg₂_sm.aestronglyMeasurable hμ₂_eq).symm
-
-/-- Two real functions with equal integrals of their squares (`∫ g₁² = ∫ g₂²`) and matching cross
-integral (`∫ g₂ g₁ = ∫ g₁²`) are a.e. equal: the `L²` distance polarises to
-`∫ (g₂ - g₁)² = ∫ g₂² - 2 ∫ g₂ g₁ + ∫ g₁² = 0`. The products `g₁²`, `g₂²`, `g₂ g₁` are assumed
-integrable. -/
-private lemma ae_eq_of_integral_mul_eq_of_integral_sq_eq {Ω : Type*} {mΩ : MeasurableSpace Ω}
-    {μ : Measure Ω} {g₁ g₂ : Ω → ℝ} (hg₁sq : Integrable (fun ω ↦ g₁ ω * g₁ ω) μ)
-    (hg₂sq : Integrable (fun ω ↦ g₂ ω * g₂ ω) μ) (hg₂g₁ : Integrable (fun ω ↦ g₂ ω * g₁ ω) μ)
-    (h_cross : ∫ ω, g₂ ω * g₁ ω ∂μ = ∫ ω, g₁ ω * g₁ ω ∂μ)
-    (h_sq : ∫ ω, g₁ ω * g₁ ω ∂μ = ∫ ω, g₂ ω * g₂ ω ∂μ) :
-    g₁ =ᵐ[μ] g₂ := by
-  have h_L2_zero : ∫ ω, (g₂ ω - g₁ ω) ^ 2 ∂μ = 0 := by
-    have h_expand : ∀ᵐ ω ∂μ,
-        (g₂ ω - g₁ ω) ^ 2 = g₂ ω * g₂ ω - 2 * (g₂ ω * g₁ ω) + g₁ ω * g₁ ω := by
-      filter_upwards with ω
-      ring
-    have hc2_int : Integrable (fun ω ↦ 2 * (g₂ ω * g₁ ω)) μ := hg₂g₁.const_mul 2
-    have hsub_int : Integrable (fun ω ↦ g₂ ω * g₂ ω - 2 * (g₂ ω * g₁ ω)) μ := hg₂sq.sub hc2_int
-    have h1 : ∫ ω, (g₂ ω - g₁ ω) ^ 2 ∂μ =
-        ∫ ω, g₂ ω * g₂ ω ∂μ - 2 * ∫ ω, g₂ ω * g₁ ω ∂μ + ∫ ω, g₁ ω * g₁ ω ∂μ := by
-      rw [integral_congr_ae h_expand, integral_add hsub_int hg₁sq,
-        integral_sub hg₂sq hc2_int, integral_const_mul]
-    rw [h1, h_cross, h_sq]
-    ring
-  have h_sq_int : Integrable (fun ω ↦ (g₂ ω - g₁ ω) ^ 2) μ := by
-    have h_eq : (fun ω ↦ (g₂ ω - g₁ ω) ^ 2)
-        = fun ω ↦ g₂ ω * g₂ ω - 2 * (g₂ ω * g₁ ω) + g₁ ω * g₁ ω := by
-      funext ω
-      ring
-    rw [h_eq]
-    exact (hg₂sq.sub (hg₂g₁.const_mul 2)).add hg₁sq
-  have h_diff_zero : ∀ᵐ ω ∂μ, (g₂ ω - g₁ ω) ^ 2 = 0 :=
-    (integral_eq_zero_iff_of_nonneg_ae (ae_of_all μ fun ω ↦ sq_nonneg _) h_sq_int).mp h_L2_zero
-  filter_upwards [h_diff_zero] with ω hω
-  exact (sub_eq_zero.mp (sq_eq_zero_iff.mp hω)).symm
 
 /-- The conditional expectation of a `0/1` indicator is bounded by `1` in norm almost everywhere,
 on any sub-σ-algebra: the indicator itself is, and conditioning does not increase the bound. -/

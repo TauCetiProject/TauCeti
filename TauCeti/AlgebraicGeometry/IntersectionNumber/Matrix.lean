@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.IntersectionNumber.SpecialFiber
 public import TauCeti.AlgebraicGeometry.SpecialFiber.Dimension
 public import TauCeti.LinearAlgebra.Matrix.NegSemidef
+import TauCeti.Topology.Connected.Basic
 
 /-!
 # The intersection matrix of the special fibre of a regular model
@@ -40,6 +41,13 @@ the properties of [Stacks, Tag 0C5X](https://stacks.math.columbia.edu/tag/0C5X):
 Since the multiplicities are positive, the intersection form `x ↦ xᵀ A x` is therefore negative
 semidefinite over every linearly ordered field.
 
+Distinct components `Cᵢ ≠ Cⱼ` have `aᵢⱼ > 0` exactly when they meet, the scheme-theoretic
+intersection `Cᵢ ∩ Cⱼ` being finite over `κ` of length `aᵢⱼ`. The components are finitely many
+closed sets covering the special fibre, so when the special fibre is connected the graph on the
+components with an edge wherever `aᵢⱼ > 0` is connected. The intersection form then vanishes
+exactly on the multiples of `m`: a vertical divisor `D = Σᵢ xᵢ Cᵢ` has `D² = 0` if and only if it
+is a rational multiple of the special fibre `Σᵢ mᵢ Cᵢ`.
+
 ## Main declarations
 
 * `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix`: the intersection matrix of the
@@ -52,6 +60,12 @@ semidefinite over every linearly ordered field.
   entries of `A` are nonnegative.
 * `AlgebraicGeometry.Scheme.Hom.dotProduct_mulVec_specialFiberIntersectionMatrix_nonpos`: the
   intersection form is negative semidefinite.
+* `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_pos_iff`: an off-diagonal entry is
+  positive exactly when the two components meet.
+* `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_reflTransGen`: for a connected
+  special fibre, the positive-entry graph of `A` is connected.
+* `AlgebraicGeometry.Scheme.Hom.dotProduct_mulVec_specialFiberIntersectionMatrix_eq_zero_iff`: for
+  a connected special fibre, `xᵀ A x = 0` exactly when `x` is a multiple of `m`.
 
 ## References
 
@@ -211,28 +225,127 @@ theorem specialFiberIntersectionMatrix_nonneg_of_ne {i j} (hij : i ≠ j) :
   exact LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_nonneg_of_ne _ hX
     fun h ↦ hij (Subtype.ext h)
 
-/-- **The intersection form of the special fibre is negative semidefinite.** Under the hypotheses
-of `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_mulVec_specialFiberMultiplicity`,
-the intersection matrix `A` of the special fibre satisfies `xᵀ A x ≤ 0` for every vector `x` over
-a linearly ordered field ([Stacks, Tag 0C5X](https://stacks.math.columbia.edu/tag/0C5X)). -/
-theorem dotProduct_mulVec_specialFiberIntersectionMatrix_nonpos [Flat toBase] {π : R}
-    (hπ : maximalIdeal R = Ideal.span {π}) (hreg : IsSMulRegular R π) {K : Type*} [Field K]
-    [LinearOrder K] [IsStrictOrderedRing K]
-    (x : (toBase.finite_setOf_base_eq_closedPoint
-      (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → K) :
-    x ⬝ᵥ (toBase.specialFiberIntersectionMatrix hX hη).map (Int.cast : ℤ → K) *ᵥ x ≤ 0 := by
-  have hπ0 := toBase.ne_zero_of_base_ne_closedPoint hη hπ
-  refine Matrix.dotProduct_mulVec_nonpos_of_mulVec_eq_zero
-    ((toBase.specialFiberIntersectionMatrix_isSymm hX hη h₀ h₁).map _)
-    (fun i j hij ↦ Int.cast_nonneg_iff.mpr
-      (toBase.specialFiberIntersectionMatrix_nonneg_of_ne hX hη h₀ h₁ hij))
-    (m := fun j ↦ (toBase.specialFiberMultiplicity π j : K))
-    (fun j ↦ Nat.cast_pos.mpr (toBase.specialFiberMultiplicity_pos hη
-      (hπ ▸ Ideal.mem_span_singleton_self π) hπ0 j ((Set.Finite.mem_toFinset _).mp j.2))) ?_ x
+/-- **Distinct components meet positively exactly when they meet.** Under the hypotheses of
+`AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_isSymm`, distinct components `Cᵢ`
+and `Cⱼ` of the special fibre have `(Cⱼ · Cᵢ) > 0` if and only if they have a common point: the
+intersection number is the length of the finite scheme `Cᵢ ∩ Cⱼ`. -/
+theorem specialFiberIntersectionMatrix_pos_iff {i j} (hij : i ≠ j) :
+    0 < toBase.specialFiberIntersectionMatrix hX hη i j ↔
+      (closure {((i : CodimensionOnePoint X) : X)} ∩
+        closure {((j : CodimensionOnePoint X) : X)}).Nonempty := by
+  have hi : toBase (i : CodimensionOnePoint X) = closedPoint R := (Set.Finite.mem_toFinset _).mp i.2
+  let := subschemeOverResidueField (toBase.ker_specialFiberι_le_vanishingIdeal_closure_singleton hi)
+  obtain ⟨_, _, _, _⟩ := toBase.component_hypotheses hX h₀ h₁ hi
+  rw [specialFiberIntersectionMatrix_apply,
+    LineBundleClass.intersectionNumber_inv_mk_toInvertibleSheaf_pos_iff _ _ _
+      (isEffectiveCartier_comap_subschemeι_vanishingIdeal_closure_singleton_of_isRegular hX
+        fun h ↦ hij (Subtype.ext h)),
+    ← Set.image_nonempty, Set.image_preimage_eq_range_inter,
+    IdealSheafData.range_subschemeι, IdealSheafData.coe_support_vanishingIdeal,
+    IdealSheafData.coe_support_vanishingIdeal, TopologicalSpace.Closeds.coe_mk,
+    TopologicalSpace.Closeds.coe_mk]
+
+/-- **A connected special fibre has a connected intersection graph.** Under the hypotheses of
+`AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_isSymm`, if the special fibre is
+connected then any two of its components are joined by a chain of components in which consecutive
+components are distinct with positive intersection number. The components are finitely many
+closed sets covering the special fibre, and distinct components meet exactly when their
+intersection number is positive. -/
+theorem specialFiberIntersectionMatrix_reflTransGen
+    (hconn : _root_.IsPreconnected (toBase ⁻¹' {closedPoint R})) (i j) :
+    Relation.ReflTransGen
+      (fun i j ↦ i ≠ j ∧ 0 < toBase.specialFiberIntersectionMatrix hX hη i j) i j := by
+  have hR := toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη
+  have hc (c : (toBase.finite_setOf_base_eq_closedPoint hR hη).toFinset) :
+      toBase (c : CodimensionOnePoint X) = closedPoint R :=
+    (Set.Finite.mem_toFinset _).mp c.2
+  -- The components cover the special fibre.
+  have hcover : ⋃ c : (toBase.finite_setOf_base_eq_closedPoint hR hη).toFinset,
+      closure {((c : CodimensionOnePoint X) : X)} = toBase ⁻¹' {closedPoint R} := by
+    refine (Set.iUnion_subset fun c ↦ closure_minimal (Set.singleton_subset_iff.mpr (hc c))
+      ((isClosed_singleton_closedPoint R).preimage toBase.continuous)).antisymm fun x hx ↦ ?_
+    obtain ⟨y, hy, hyx⟩ := toBase.exists_maximal_base_eq_closedPoint_specializes hR hx
+    obtain ⟨hy₁, hy₂⟩ := (toBase.maximal_base_eq_closedPoint_iff hR hη).mp hy
+    exact Set.mem_iUnion.mpr ⟨⟨⟨y, hy₂⟩, (Set.Finite.mem_toFinset _).mpr hy₁⟩,
+      specializes_iff_mem_closure.mp hyx⟩
+  rw [← hcover] at hconn
+  have h := hconn.transGen_of_iUnion_of_isClosed (locallyFinite_of_finite _)
+    (fun _ ↦ isClosed_closure) i j
+    ⟨_, subset_closure rfl⟩ ⟨_, subset_closure rfl⟩
+  refine Relation.reflTransGen_closed (fun a b hab ↦ ?_) i j h.to_reflTransGen
+  by_cases hab' : a = b
+  · exact hab' ▸ .refl
+  · exact .single ⟨hab', (toBase.specialFiberIntersectionMatrix_pos_iff hX hη h₀ h₁ hab').mpr hab⟩
+
+section Multiplicity
+
+variable [Flat toBase] {π : R} (hπ : maximalIdeal R = Ideal.span {π}) (hreg : IsSMulRegular R π)
+  {K : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
+
+omit hX h₀ h₁ [TauCeti.AlgebraicGeometry.IsRegular X] [IsProper toBase] [Flat toBase] in
+include hπ in
+/-- The multiplicities of the components of the special fibre are positive in every linearly
+ordered field. -/
+private theorem specialFiberMultiplicity_cast_pos
+    (j : (toBase.finite_setOf_base_eq_closedPoint
+      (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset) :
+    (0 : K) < toBase.specialFiberMultiplicity π j :=
+  Nat.cast_pos.mpr (toBase.specialFiberMultiplicity_pos hη (hπ ▸ Ideal.mem_span_singleton_self π)
+    (toBase.ne_zero_of_base_ne_closedPoint hη hπ) j ((Set.Finite.mem_toFinset _).mp j.2))
+
+omit [LinearOrder K] [IsStrictOrderedRing K] in
+include hπ hreg in
+/-- The intersection matrix, with entries cast to a field, kills the vector of multiplicities. -/
+private theorem map_mulVec_specialFiberMultiplicity :
+    (toBase.specialFiberIntersectionMatrix hX hη).map (Int.cast : ℤ → K) *ᵥ
+      (fun j ↦ (toBase.specialFiberMultiplicity π j : K)) = 0 := by
   funext i
   have h := congrArg (Int.cast : ℤ → K) (congrFun
     (toBase.specialFiberIntersectionMatrix_mulVec_specialFiberMultiplicity hX hη h₀ h₁ hπ hreg) i)
   simpa [Matrix.mulVec, dotProduct] using h
+
+include hπ hreg in
+/-- **The intersection form of the special fibre is negative semidefinite.** Under the hypotheses
+of `AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_mulVec_specialFiberMultiplicity`,
+the intersection matrix `A` of the special fibre satisfies `xᵀ A x ≤ 0` for every vector `x` over
+a linearly ordered field ([Stacks, Tag 0C5X](https://stacks.math.columbia.edu/tag/0C5X)). -/
+theorem dotProduct_mulVec_specialFiberIntersectionMatrix_nonpos
+    (x : (toBase.finite_setOf_base_eq_closedPoint
+      (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → K) :
+    x ⬝ᵥ (toBase.specialFiberIntersectionMatrix hX hη).map (Int.cast : ℤ → K) *ᵥ x ≤ 0 :=
+  Matrix.dotProduct_mulVec_nonpos_of_mulVec_eq_zero
+    ((toBase.specialFiberIntersectionMatrix_isSymm hX hη h₀ h₁).map _)
+    (fun _ _ hij ↦ Int.cast_nonneg_iff.mpr
+      (toBase.specialFiberIntersectionMatrix_nonneg_of_ne hX hη h₀ h₁ hij))
+    (toBase.specialFiberMultiplicity_cast_pos hη hπ)
+    (toBase.map_mulVec_specialFiberMultiplicity hX hη h₀ h₁ hπ hreg) x
+
+include hπ hreg in
+/-- **The isotropic vectors of the intersection form of a connected special fibre.** Under the
+hypotheses of
+`AlgebraicGeometry.Scheme.Hom.specialFiberIntersectionMatrix_mulVec_specialFiberMultiplicity`, if
+the special fibre is connected then a vector `x` over a linearly ordered field satisfies
+`xᵀ A x = 0` exactly when it is a multiple of the vector `m` of multiplicities of the components.
+For a vertical divisor `D = Σᵢ xᵢ Cᵢ` this says that `D² = 0` if and only if `D` is a rational
+multiple of the special fibre `Σᵢ mᵢ Cᵢ`
+([Stacks, Tag 0C5X](https://stacks.math.columbia.edu/tag/0C5X); Liu, Theorem 9.1.23). -/
+theorem dotProduct_mulVec_specialFiberIntersectionMatrix_eq_zero_iff
+    (hconn : _root_.IsPreconnected (toBase ⁻¹' {closedPoint R}))
+    (x : (toBase.finite_setOf_base_eq_closedPoint
+      (toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη) hη).toFinset → K) :
+    x ⬝ᵥ (toBase.specialFiberIntersectionMatrix hX hη).map (Int.cast : ℤ → K) *ᵥ x = 0 ↔
+      ∃ c : K, ∀ j, x j = c * toBase.specialFiberMultiplicity π j := by
+  refine (Matrix.dotProduct_mulVec_eq_zero_iff_of_mulVec_eq_zero
+    ((toBase.specialFiberIntersectionMatrix_isSymm hX hη h₀ h₁).map _)
+    (fun _ _ hij ↦ Int.cast_nonneg_iff.mpr
+      (toBase.specialFiberIntersectionMatrix_nonneg_of_ne hX hη h₀ h₁ hij))
+    (fun i j ↦ ?_) (toBase.specialFiberMultiplicity_cast_pos hη hπ)
+    (toBase.map_mulVec_specialFiberMultiplicity hX hη h₀ h₁ hπ hreg) x).trans ?_
+  · simpa only [Matrix.map_apply, Int.cast_pos] using
+      toBase.specialFiberIntersectionMatrix_reflTransGen hX hη h₀ h₁ hconn i j
+  · simp only [funext_iff, Pi.smul_apply, smul_eq_mul]
+
+end Multiplicity
 
 end Finiteness
 

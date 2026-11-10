@@ -37,6 +37,8 @@ boundary points.
 
 * `TauCeti.Manifold.contDiffAt_extChartAt_family`: a jointly `C^n` family of maps of `M` fixing
   `x` is jointly `C^n` when read in the chart at `x`.
+* `TauCeti.Manifold.eventuallyEq_extChartAt_family_of_eq_id`: a family of maps which is the
+  identity near `x` at time `t` is, read in the chart at `x`, the identity near the image of `x`.
 * `TauCeti.Manifold.contMDiffAt_deriv_of_contMDiffAt_uncurry`: the parameter derivative of a
   jointly `C^n` family is `C^m` for `m + 1 ≤ n`.
 * `ContMDiffAt.contMDiffAt_curveVelocity_snd`: for a jointly `C^n` map `f : 𝕜 → 𝕜 → M`, the
@@ -95,6 +97,19 @@ theorem contDiffAt_extChartAt_family [I.Boundaryless] {ψ : 𝕜 → M → M} (h
       exact hid)
   rw [← modelWithCornersSelf_prod, chartedSpaceSelf_prod, contMDiffAt_iff_contDiffAt] at hcomp
   exact hcomp
+
+/-- A family of maps which is the identity near `x` at time `t`, read in the chart at `x`, is the
+identity near the image of `x` at time `t`. -/
+theorem eventuallyEq_extChartAt_family_of_eq_id [I.Boundaryless] {ψ : 𝕜 → M → M}
+    (hid : ∀ᶠ y in 𝓝 x, ψ t y = y) :
+    (fun z ↦ extChartAt I x (ψ t ((extChartAt I x).symm z))) =ᶠ[𝓝 (extChartAt I x x)] id := by
+  have hid' : ∀ᶠ z in 𝓝 (extChartAt I x x), ψ t ((extChartAt I x).symm z) =
+      (extChartAt I x).symm z :=
+    (continuousAt_extChartAt_symm x).tendsto.eventually (p := fun y ↦ ψ t y = y)
+      (by rwa [extChartAt_to_inv])
+  filter_upwards [extChartAt_target_mem_nhds x, hid'] with z hz hz'
+  simp only [hz', id_eq]
+  exact (extChartAt I x).right_inv hz
 
 variable [IsManifold I 1 M]
 

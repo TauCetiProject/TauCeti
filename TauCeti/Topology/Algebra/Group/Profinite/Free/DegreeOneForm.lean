@@ -594,10 +594,12 @@ theorem degreeOneForm_dualBasis_self (ρ : gradedPiece p (freeProP p X) 1) (i : 
       simp [Pi.single_apply, mul_comm]
   exact (evalDegreeOneForm_apply _ _ ρ).symm.trans (LinearMap.congr_fun h ρ)
 
+omit [LinearOrder X] in
 /-- **At `p = 2` the degree-one form determines the class**: the diagonal entries of its matrix
 are the `2`-power coordinates and the entries above the diagonal the commutator coordinates. -/
 theorem degreeOneForm_injective_of_two (hp : p = 2) :
     Function.Injective (degreeOneForm (p := p) (X := X)) := by
+  let : LinearOrder X := IsWellOrder.linearOrder WellOrderingRel
   intro ρ₁ ρ₂ h
   rw [(degreeOneBasis p X).ext_elem_iff]
   rintro (k | ⟨⟨i, j⟩, hij⟩)
@@ -883,6 +885,8 @@ theorem exists_continuousMulEquiv_degreeOneForm_gradedMap_dualBasis
   rw [degreeOneForm_gradedMap, LinearMap.compl₁₂_apply, he, he, Module.Basis.equiv_apply,
     Module.Basis.equiv_apply, Equiv.refl_apply, Equiv.refl_apply]
 
+end Automorphism
+
 /-- **Any matrix of the degree-one form is attained in the dual basis of the generators after an
 automorphism.** For every class `ρ ∈ gr_1(F)` and every basis `η` of the continuous `𝔽_p`-dual of
 `F`, there is a continuous automorphism `e` of `F` such that the matrix of the degree-one form of
@@ -900,8 +904,6 @@ theorem exists_continuousMulEquiv_toMatrix_degreeOneForm_gradedMap [Fintype X] [
   obtain ⟨e, he⟩ := exists_continuousMulEquiv_degreeOneForm_gradedMap_dualBasis ρ η
   exact ⟨e, Matrix.ext fun i j ↦ by
     rw [LinearMap.BilinForm.toMatrix_apply, LinearMap.BilinForm.toMatrix_apply, he]⟩
-
-end Automorphism
 
 end freeProP
 

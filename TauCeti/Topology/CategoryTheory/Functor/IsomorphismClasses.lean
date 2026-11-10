@@ -14,9 +14,11 @@ public import Mathlib.Topology.Constructions
 
 Give the isomorphism classes of a category the quotient topology from its objects. A functor
 continuous on objects induces a continuous map on these quotients. If its object map is a
-quotient map, so is the induced map. Consequently a fully faithful functor whose object map
-is quotient induces a homeomorphism `CategoryTheory.Functor.isomorphismClassesHomeomorph`.
-In particular this applies to fully faithful refinements with open surjective object map.
+quotient map, so is the induced map. Consequently a full functor reflecting isomorphisms whose
+object map is quotient induces a homeomorphism
+`CategoryTheory.Functor.isomorphismClassesHomeomorph`. This covers fully faithful functors and
+full functors out of groupoids. In particular this applies to fully faithful refinements with
+open surjective object map.
 
 For groupoids these quotients are the coarse spaces. The construction keeps all arrows and
 requires no faithfulness of an isotropy action. It does not require a continuous choice of
@@ -55,9 +57,10 @@ theorem isQuotientMap_isomorphismClasses_map (F : C ⥤ D) (hF : IsQuotientMap F
     (F.isomorphismClasses_map_comp_mk.symm ▸
       (isQuotientMap_quotient_mk' (X := D) (s := isIsomorphicSetoid D)).comp hF)
 
-/-- A fully faithful functor with quotient object map identifies the spaces of isomorphism
-classes homeomorphically. For groupoids this is the coarse homeomorphism of the refinement. -/
-def isomorphismClassesHomeomorph (F : C ⥤ D) [F.Full] [F.Faithful]
+/-- A full functor reflecting isomorphisms, for instance a fully faithful functor, with quotient
+object map identifies the spaces of isomorphism classes homeomorphically. For groupoids this is
+the coarse homeomorphism of the refinement. -/
+def isomorphismClassesHomeomorph (F : C ⥤ D) [F.Full] [F.ReflectsIsomorphisms]
     (hF : IsQuotientMap F.obj) :
     Quotient (isIsomorphicSetoid C) ≃ₜ Quotient (isIsomorphicSetoid D) :=
   (isHomeomorph_iff_isQuotientMap_injective
@@ -68,7 +71,7 @@ def isomorphismClassesHomeomorph (F : C ⥤ D) [F.Full] [F.Faithful]
 /-- The coarse homeomorphism has Mathlib's map on isomorphism classes as its underlying
 function. -/
 @[simp]
-theorem coe_isomorphismClassesHomeomorph (F : C ⥤ D) [F.Full] [F.Faithful]
+theorem coe_isomorphismClassesHomeomorph (F : C ⥤ D) [F.Full] [F.ReflectsIsomorphisms]
     (hF : IsQuotientMap F.obj) :
     ⇑(F.isomorphismClassesHomeomorph hF) =
       (isomorphismClasses.map F.toCatHom :
@@ -76,7 +79,7 @@ theorem coe_isomorphismClassesHomeomorph (F : C ⥤ D) [F.Full] [F.Faithful]
 
 /-- The coarse homeomorphism sends the class of an object to the class of its image. -/
 @[simp]
-theorem isomorphismClassesHomeomorph_apply_mk (F : C ⥤ D) [F.Full] [F.Faithful]
+theorem isomorphismClassesHomeomorph_apply_mk (F : C ⥤ D) [F.Full] [F.ReflectsIsomorphisms]
     (hF : IsQuotientMap F.obj) (x : C) :
     F.isomorphismClassesHomeomorph hF (Quotient.mk _ x) =
       Quotient.mk _ (F.obj x) := by
@@ -84,7 +87,7 @@ theorem isomorphismClassesHomeomorph_apply_mk (F : C ⥤ D) [F.Full] [F.Faithful
 
 /-- The inverse coarse homeomorphism takes the class of an image object back to its class. -/
 @[simp]
-theorem isomorphismClassesHomeomorph_symm_apply_mk (F : C ⥤ D) [F.Full] [F.Faithful]
+theorem isomorphismClassesHomeomorph_symm_apply_mk (F : C ⥤ D) [F.Full] [F.ReflectsIsomorphisms]
     (hF : IsQuotientMap F.obj) (x : C) :
     (F.isomorphismClassesHomeomorph hF).symm (Quotient.mk _ (F.obj x)) =
       Quotient.mk _ x := by
@@ -102,7 +105,7 @@ theorem isomorphismClassesHomeomorph_id :
 /-- Composing refinements composes their coarse homeomorphisms in the same order. -/
 @[simp]
 theorem isomorphismClassesHomeomorph_comp (F : C ⥤ D) (G : D ⥤ E)
-    [F.Full] [F.Faithful] [G.Full] [G.Faithful]
+    [F.Full] [F.ReflectsIsomorphisms] [G.Full] [G.ReflectsIsomorphisms]
     (hF : IsQuotientMap F.obj) (hG : IsQuotientMap G.obj) :
     (F ⋙ G).isomorphismClassesHomeomorph (hG.comp hF) =
       (F.isomorphismClassesHomeomorph hF).trans (G.isomorphismClassesHomeomorph hG) := by
@@ -112,7 +115,7 @@ theorem isomorphismClassesHomeomorph_comp (F : C ⥤ D) (G : D ⥤ E)
 
 /-- Naturally isomorphic refinements give equal coarse homeomorphisms. -/
 theorem isomorphismClassesHomeomorph_eq_of_iso (F : C ⥤ D) (G : C ⥤ D)
-    [F.Full] [F.Faithful] [G.Full] [G.Faithful]
+    [F.Full] [F.ReflectsIsomorphisms] [G.Full] [G.ReflectsIsomorphisms]
     (hF : IsQuotientMap F.obj) (hG : IsQuotientMap G.obj) (e : F ≅ G) :
     F.isomorphismClassesHomeomorph hF = G.isomorphismClassesHomeomorph hG := by
   ext q

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.RealAlgebraic.Nash.Graph
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
+import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 import TauCeti.Geometry.RealAlgebraic.Semialgebraic.Derivative
 
 /-!
@@ -21,6 +22,11 @@ Analyticity follows from analyticity of the Fréchet derivative. Semialgebraicit
 its graph follows from the difference-quotient limit formula, without choosing a
 polynomial relation or excluding its discriminant locus. The local Nash graph
 criterion then gives a polynomial relation for the derivative on a full neighborhood.
+
+Iterating, every iterated derivative of a Nash germ evaluated at fixed directions is again a
+Nash germ (`TauCeti.IsNashAt.iteratedFDeriv_apply`). This lets one describe the order of
+vanishing of a Nash germ, for instance the multiplicity of a root along a line, through its
+successive derivatives.
 
 ## References
 
@@ -47,5 +53,19 @@ theorem IsNashAt.fderiv_apply {σ : Type*} [Fintype σ] {f : (σ → ℝ) → �
     mem_ball_self hr, hsemi, hgraph.fderiv_apply isOpen_ball ?_ v⟩
   · exact ((ContinuousLinearMap.apply ℝ ℝ v).analyticAt _).comp hf.analyticAt.fderiv
   · exact fun y hy ↦ (hB hy).2.differentiableWithinAt
+
+/-- The `n`-th derivative of a Nash germ, evaluated at fixed directions `m`, is a Nash germ. -/
+theorem IsNashAt.iteratedFDeriv_apply {σ : Type*} [Fintype σ] {f : (σ → ℝ) → ℝ} {x : σ → ℝ}
+    (hf : IsNashAt f x) (n : ℕ) (m : Fin n → σ → ℝ) :
+    IsNashAt (fun y ↦ iteratedFDeriv ℝ n f y m) x := by
+  induction n with
+  | zero => simpa using hf
+  | succ n ih =>
+    refine ((ih (Fin.tail m)).fderiv_apply (m 0)).congr ?_
+    filter_upwards [hf.analyticAt.eventually_analyticAt] with y hy
+    obtain ⟨U, hU, hfU⟩ := hy.exists_mem_nhds_analyticOnNhd
+    have hd : DifferentiableAt ℝ (iteratedFDeriv ℝ n f) y :=
+      ((hfU.iteratedFDeriv n) y (mem_of_mem_nhds hU)).differentiableAt
+    rw [iteratedFDeriv_succ_apply_left, fderiv_continuousMultilinear_apply_const_apply hd]
 
 end TauCeti

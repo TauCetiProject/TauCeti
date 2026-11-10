@@ -18,12 +18,10 @@ be cancelled from an identity over `ℕ`.
 
 ## Main results
 
-* `TauCeti.Nat.superFactorial_pos`: the superfactorial is positive.
+* `Nat.superFactorial_pos`: the superfactorial is positive.
 -/
 
 public section
-
-namespace TauCeti
 
 namespace Nat
 
@@ -33,5 +31,3 @@ theorem superFactorial_pos (n : ℕ) : 0 < n.superFactorial := by
   exact Nat.prod_factorial_pos _ id
 
 end Nat
-
-end TauCeti

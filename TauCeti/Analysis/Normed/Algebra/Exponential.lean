@@ -40,6 +40,8 @@ Baker--Campbell--Hausdorff expansion.
   (`TauCeti.norm_exp_le_exp_norm`, with the scalar-multiple form `TauCeti.norm_exp_smul_le`), and
   power-bounded elements satisfy `‖exp (s • b)‖ ≤ M * Real.exp ‖s‖`
   (`TauCeti.norm_exp_smul_le_mul_exp_of_norm_pow_le`).
+* `TauCeti.norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le`: if the powers of `exp x` are
+  bounded by `C`, then `‖exp (t • x)‖ ≤ C * Real.exp ‖x‖` uniformly in `t ≥ 0`.
 * `TauCeti.norm_exp_smul_one_le`: `‖exp (c • 1)‖ ≤ Real.exp c` for real `c` when `‖1‖ ≤ 1`.
 -/
 
@@ -154,6 +156,25 @@ theorem norm_exp_smul_le_mul_exp_of_norm_pow_le {b : 𝔸} {M : ℝ} (s : 𝕜)
   rw [smul_pow, norm_smul, norm_pow, mul_comm]
   gcongr
   exact hpow n
+
+/-- If every power of `exp x` has norm at most `C`, then `‖exp (t • x)‖ ≤ C * Real.exp ‖x‖` for
+every real `t ≥ 0`. -/
+theorem norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le [CompleteSpace 𝔸]
+    (h_one : ‖(1 : 𝔸)‖ ≤ 1) {x : 𝔸} {C : ℝ} (hC : ∀ n : ℕ, ‖exp x ^ n‖ ≤ C) {t : ℝ}
+    (ht : 0 ≤ t) : ‖exp ((t : 𝕜) • x)‖ ≤ C * Real.exp ‖x‖ := by
+  let +nondep : NormedAlgebra ℚ 𝔸 := .restrictScalars ℚ 𝕜 𝔸
+  -- Write `t = n + s` with `n = ⌊t⌋₊` and `0 ≤ s ≤ 1`, so that
+  -- `exp (t • x) = (exp x) ^ n * exp (s • x)`.
+  have hs0 : 0 ≤ t - ⌊t⌋₊ := sub_nonneg.mpr (Nat.floor_le ht)
+  have hs1 : t - ⌊t⌋₊ ≤ 1 := by linarith [Nat.lt_floor_add_one t]
+  have hsplit : (t : 𝕜) = (⌊t⌋₊ : 𝕜) + ((t - ⌊t⌋₊ : ℝ) : 𝕜) := by push_cast; ring
+  rw [hsplit, add_smul, exp_add_of_commute (((Commute.refl x).smul_left _).smul_right _),
+    Nat.cast_smul_eq_nsmul, exp_nsmul]
+  refine (norm_mul_le _ _).trans (mul_le_mul (hC _) ?_ (norm_nonneg _)
+    ((norm_nonneg _).trans (hC 0)))
+  refine (norm_exp_smul_le h_one x _).trans ?_
+  rw [Real.exp_le_exp, RCLike.norm_ofReal, abs_of_nonneg hs0]
+  nlinarith [norm_nonneg x]
 
 end RCLike
 

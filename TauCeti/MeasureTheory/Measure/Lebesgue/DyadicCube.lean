@@ -38,6 +38,8 @@ Mathlib's differentiation theorem along closed balls with moving centres.
   `TauCeti.dyadicCube_subset_or_disjoint`, `TauCeti.disjoint_dyadicCube`: the nesting of the
   dyadic levels.
 * `TauCeti.closure_dyadicCube`: the closure of a dyadic cube is a closed sup-norm ball.
+* `TauCeti.dist_lt_of_mem_dyadicCube`: two points of a cube of level `k` are at sup distance less
+  than `2ᵏ`.
 * `TauCeti.volume_dyadicCube`, `TauCeti.volume_dyadicCube_add_one`: a cube of level `k` has
   volume `(2ᵏ)ⁿ`, so its parent is `2ⁿ` times larger.
 * `TauCeti.exists_forall_lt_of_mul_volume_dyadicCube_lt`: in positive dimension, the dyadic cubes
@@ -205,6 +207,17 @@ theorem closure_dyadicCube (k : ℤ) (m : ι → ℤ) :
   have h2 : (0 : ℝ) < 2 ^ k := zpow_pos two_pos k
   rw [closedBall_dyadicCenter, dyadicCube_eq_pi, closure_pi_set]
   exact pi_congr rfl fun i _ => closure_Ico (mul_lt_mul_of_pos_right (lt_add_one _) h2).ne
+
+/-- Two points of a dyadic cube of level `k` are at sup distance less than its side length `2ᵏ`. -/
+theorem dist_lt_of_mem_dyadicCube (hx : x ∈ dyadicCube k m) (hy : y ∈ dyadicCube k m) :
+    dist x y < 2 ^ k := by
+  rw [dyadicCube_eq_pi] at hx hy
+  rw [dist_pi_lt_iff (zpow_pos two_pos k)]
+  intro i
+  have hxi := hx i (mem_univ i)
+  have hyi := hy i (mem_univ i)
+  rw [Real.dist_eq, abs_sub_lt_iff]
+  constructor <;> nlinarith [hxi.1, hxi.2, hyi.1, hyi.2]
 
 /-- A dyadic cube of level `k` has volume `(2ᵏ)ⁿ`. -/
 theorem volume_dyadicCube (k : ℤ) (m : ι → ℤ) :
