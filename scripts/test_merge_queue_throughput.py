@@ -63,6 +63,19 @@ class Throughput(unittest.TestCase):
         self.assertIn('ci-status-intents-sandbox-', discover['run'])
         self.assertIn("present=", discover['run'])
 
+    def test_manual_reporting_recovery_keeps_original_run_identity_and_skips_build_sweep(self):
+        retry = workflow('retry-ci-status.yml')
+        jobs = retry['jobs']
+        publish = jobs['publish']
+        self.assertIn("inputs.source_run_id != ''", publish['if'])
+        self.assertIn('inputs.source_run_id', publish['env']['CI_STATUS_SOURCE_RUN_ID'])
+        self.assertIn('inputs.source_run_id && inputs.source_attempt', publish['concurrency']['group'])
+        self.assertIn("inputs.source_run_id == ''", jobs['recover-builds']['if'])
+        discover = next(s for s in publish['steps'] if s.get('id') == 'intents')['run']
+        for guard in ("run.get('path') != '.github/workflows/pr-build.yml'", "run.get('event') not in allowed",
+                      "run.get('status') != 'completed'", "get('full_name') != repo"):
+            self.assertIn(guard, discover)
+
     def test_old_secondary_cache_protocol_is_removed(self):
         producer = (ROOT / '.github/workflows/pr-build.yml').read_text()
         self.assertNotIn('bulk-unpack-cache.py', producer)
