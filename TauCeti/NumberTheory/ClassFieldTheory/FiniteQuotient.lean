@@ -262,11 +262,12 @@ attribute [local instance] TopRep.distribMulAction TopRep.smulCommClass
 /-- Every finite smooth discrete Galois representation comes from a finite module over a finite
 Galois quotient. Thus finite-group representation theory applies without changing coefficients. -/
 theorem exists_galRepOfQuotient_iso (X : GalRep n F) [Finite X.V]
-    [DiscreteTopology X.V] [hX : Fact (IsSmoothDiscrete (ZMod n) X)] :
+    [hX : Fact (IsSmoothDiscrete (ZMod n) X)] :
     ∃ (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
       (A : Rep (ZMod n) (Field.absoluteGaloisGroup F ⧸ V.toSubgroup)),
       Finite A.V ∧ Nonempty ((galRepOfQuotient n F V).obj A ≅ X) := by
   have := hX.out.continuousSMul
+  have := hX.out.discreteTopology
   obtain ⟨V, hV⟩ := (Set.finite_univ (α := X.V)).exists_openNormalSubgroup_smul_eq_self
     (G := Field.absoluteGaloisGroup F)
   obtain ⟨A, ⟨e⟩⟩ := exists_galRepOfQuotient_iso_of_trivial n F V X fun g hg x ↦
@@ -312,23 +313,44 @@ theorem exists_openNormalSubgroup_le_muNRep_ρ_eq_self (hn : IsUnit (n : F))
     exact le_inf hV hK
 
 variable {n F} in
-/-- **Adjoining `μₗ` keeps the index prime to `ℓ`.** For a prime `ℓ` invertible in `F` and an
-open normal subgroup `V` of `G_F` of index prime to `ℓ`, some open normal subgroup `W ≤ V` acts
-trivially on `μₗ`, still has index prime to `ℓ`, and has commutative quotient when `V` has: its
-index divides `[G_F : V] · (ℓ - 1)`. -/
+/-- **Adjoining `μₗ` keeps the index prime to `ℓ`.** For a prime `ℓ` and an open normal subgroup `V`
+of `G_F` of index prime to `ℓ`, some open normal subgroup `W ≤ V` acts trivially on `μₗ`, still has
+index prime to `ℓ`, and has commutative quotient when `V` has: if `ℓ` is invertible in `F` its index
+divides `[G_F : V] · (ℓ - 1)`, and otherwise `μₗ` is trivial and `W = V`. -/
 theorem exists_openNormalSubgroup_le_muNRep_ρ_eq_self_of_coprime [Fact n.Prime]
-    (hn : IsUnit (n : F)) (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
+    (V : OpenNormalSubgroup (Field.absoluteGaloisGroup F))
     (hV : V.toSubgroup.index.Coprime n) :
     ∃ W : OpenNormalSubgroup (Field.absoluteGaloisGroup F), W ≤ V ∧
       (∀ g ∈ W, ∀ x : (muNRep n F).V, (muNRep n F).ρ g x = x) ∧
       W.toSubgroup.index.Coprime n ∧
       (IsMulCommutative (Field.absoluteGaloisGroup F ⧸ V.toSubgroup) →
         IsMulCommutative (Field.absoluteGaloisGroup F ⧸ W.toSubgroup)) := by
-  obtain ⟨W, hWV, hW, hdvd, hcomm⟩ := exists_openNormalSubgroup_le_muNRep_ρ_eq_self hn V
-  refine ⟨W, hWV, hW,
-    Nat.Coprime.coprime_dvd_left hdvd (Nat.coprime_mul_iff_left.2 ⟨hV, ?_⟩), hcomm⟩
-  rw [Nat.totient_prime Fact.out]
-  exact (Nat.coprime_self_sub_left (Fact.out : n.Prime).one_le).2 (Nat.coprime_one_left n)
+  by_cases hn : IsUnit (n : F)
+  · obtain ⟨W, hWV, hW, hdvd, hcomm⟩ := exists_openNormalSubgroup_le_muNRep_ρ_eq_self hn V
+    refine ⟨W, hWV, hW,
+      Nat.Coprime.coprime_dvd_left hdvd (Nat.coprime_mul_iff_left.2 ⟨hV, ?_⟩), hcomm⟩
+    rw [Nat.totient_prime Fact.out]
+    exact (Nat.coprime_self_sub_left (Fact.out : n.Prime).one_le).2 (Nat.coprime_one_left n)
+  · -- In characteristic `n` the group `μₙ` is trivial, so `V` itself acts trivially on it.
+    have hn0 : (n : F) = 0 := by simpa [isUnit_iff_ne_zero] using hn
+    have hchar : CharP F n := (CharP.charP_iff_prime_eq_zero Fact.out).2 hn0
+    have : CharP (SeparableClosure F) n :=
+      charP_of_injective_algebraMap (algebraMap F (SeparableClosure F)).injective n
+    have hsub : Subsingleton (muNRep n F).V := by
+      have : Subsingleton (KummerCoeff F n) := by
+        refine ⟨fun x y ↦ ?_⟩
+        have h1 : ∀ z : KummerCoeff F n, z = 0 := fun z ↦ by
+          have hu : ((z.toMul : (SeparableClosure F)ˣ)) ^ n = 1 :=
+            (mem_rootsOfUnity n _).1 z.toMul.2
+          have hz : ((z.toMul : (SeparableClosure F)ˣ) : SeparableClosure F) ^ n = 1 := by
+            rw [← Units.val_pow_eq_pow_val, hu, Units.val_one]
+          have hz1 : (((z.toMul : (SeparableClosure F)ˣ) : SeparableClosure F) - 1) ^ n = 0 := by
+            rw [sub_pow_char, hz, one_pow, sub_self]
+          have hz2 := pow_eq_zero_iff (Fact.out : n.Prime).ne_zero |>.1 hz1
+          exact Additive.toMul.injective (Subtype.ext (Units.ext (sub_eq_zero.1 hz2)))
+        rw [h1 x, h1 y]
+      exact (kummerCoeffEquivMuNRep n F).toEquiv.symm.subsingleton
+    exact ⟨V, le_rfl, fun g _ x ↦ Subsingleton.elim _ _, hV, id⟩
 
 /-- **`μₙ` is inflated from the quotient** by an open normal subgroup `V` acting trivially on it:
 some finite-dimensional representation of `G_F ⧸ V` inflates to `μₙ`
