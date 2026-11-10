@@ -687,8 +687,8 @@ theorem nonempty_linearEquiv_isotypicComponent :
         let f : S →ₗ[A] M := (isotypicComponent A M S).subtype ∘ₗ e.symm.toLinearMap ∘ₗ
           LinearMap.single A (fun _ : Fin n ↦ S) ⟨0, Nat.pos_of_ne_zero hn0⟩
         have hsingle : Function.Injective
-            (LinearMap.single A (fun _ : Fin n ↦ S) ⟨0, Nat.pos_of_ne_zero hn0⟩) := fun x y h ↦ by
-          simpa using congrFun h ⟨0, Nat.pos_of_ne_zero hn0⟩
+            (LinearMap.single A (fun _ : Fin n ↦ S) ⟨0, Nat.pos_of_ne_zero hn0⟩) :=
+          Pi.single_injective (M := fun _ : Fin n ↦ S) _
         have hf : Function.Injective f :=
           Subtype.val_injective.comp (e.symm.injective.comp hsingle)
         obtain ⟨x, hx⟩ := exists_ne (0 : S)
