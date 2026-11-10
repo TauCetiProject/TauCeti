@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.ContinuousMap.Basic
 public import TauCeti.Analysis.Fredholm.CompactPerturbation
 public import TauCeti.Analysis.Sobolev.Circle.OfContinuousMap
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
@@ -45,7 +46,6 @@ comparing weak and classical derivatives
 
 ## Main definitions
 
-* `TauCeti.CircleSobolev.applyLoop S ζ`: the continuous loop `x ↦ S x (ζ x)`.
 * `TauCeti.CircleSobolev.mulLoop T hs S`: for `s > 1/2`, the bounded real-linear map
   `H^s(E) → H⁰(E)` multiplying the continuous representative pointwise by `S`.
 * `TauCeti.CircleSobolev.loopOperator T S`: the operator `ζ ↦ ζ' - S ζ`, `H¹(E) → H⁰(E)`.
@@ -74,6 +74,7 @@ public section
 noncomputable section
 
 open Complex
+open ContinuousMap (applyContinuousLinearMap applyContinuousLinearMap_apply)
 open scoped Real
 
 namespace TauCeti
@@ -81,17 +82,6 @@ namespace TauCeti
 namespace CircleSobolev
 
 variable {s t : ℝ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-
-/-- The pointwise application `x ↦ S x (ζ x)` of a continuous loop `S` of real-linear maps to a
-continuous loop `ζ`, as a continuous loop. -/
-def applyLoop {T : ℝ} (S : C(AddCircle T, E →L[ℝ] E)) (ζ : C(AddCircle T, E)) :
-    C(AddCircle T, E) :=
-  ⟨fun x ↦ S x (ζ x), S.continuous.clm_apply ζ.continuous⟩
-
-@[simp]
-theorem applyLoop_apply {T : ℝ} (S : C(AddCircle T, E →L[ℝ] E)) (ζ : C(AddCircle T, E))
-    (x : AddCircle T) : applyLoop S ζ x = S x (ζ x) :=
-  (rfl)
 
 variable (T : ℝ) [hT : Fact (0 < T)] [FiniteDimensional ℂ E]
 
@@ -103,31 +93,12 @@ real-linear map `H^s(E) → H⁰(E)`: the continuous representative of `a` is mu
 `S`, and the resulting continuous loop is sent to `H⁰(E)` by its Fourier coefficients. -/
 def mulLoop (hs : 1 / 2 < s) (S : C(AddCircle T, E →L[ℝ] E)) :
     CircleSobolev s E →L[ℝ] CircleSobolev 0 E :=
-  LinearMap.mkContinuous
-    { toFun a := ofContinuousMap T (applyLoop S (toContinuousMap T hs a))
-      map_add' a b := by
-        rw [← map_add]
-        congr 1
-        ext x
-        simp
-      map_smul' r a := by
-        rw [RingHom.id_apply, ← ContinuousLinearMap.map_smul_of_tower]
-        congr 1
-        ext x
-        simp }
-    (‖(ofContinuousMap T : C(AddCircle T, E) →L[ℂ] CircleSobolev 0 E)‖ * ‖S‖ *
-      ‖(toContinuousMap T hs : CircleSobolev s E →L[ℂ] C(AddCircle T, E))‖) fun a ↦ by
-    refine ((ofContinuousMap (E := E) T).le_opNorm _).trans ?_
-    rw [mul_assoc, mul_assoc]
-    refine mul_le_mul_of_nonneg_left ?_ (norm_nonneg _)
-    refine (ContinuousMap.norm_le _ (by positivity)).2 fun x ↦ ?_
-    refine ((S x).le_opNorm _).trans ?_
-    exact mul_le_mul (S.norm_coe_le_norm x)
-      (((toContinuousMap T hs a).norm_coe_le_norm x).trans ((toContinuousMap T hs).le_opNorm a))
-      (norm_nonneg _) (norm_nonneg S)
+  (ofContinuousMap T).restrictScalars ℝ ∘L applyContinuousLinearMap S ∘L
+    (toContinuousMap T hs).restrictScalars ℝ
 
 theorem mulLoop_apply (hs : 1 / 2 < s) (S : C(AddCircle T, E →L[ℝ] E)) (a : CircleSobolev s E) :
-    mulLoop T hs S a = ofContinuousMap T (applyLoop S (toContinuousMap T hs a)) :=
+    mulLoop T hs S a =
+      ofContinuousMap T (applyContinuousLinearMap S (toContinuousMap T hs a)) :=
   (rfl)
 
 /-- Multiplication by `S` only depends on the continuous representative, so it commutes with the
@@ -202,9 +173,13 @@ theorem loopOperator_eq_zero_iff (S : C(AddCircle T, E →L[ℝ] E)) (a : Circle
       HasDerivAt (fun y : ℝ ↦ toContinuousMap T (by norm_num) a y)
         (S x (toContinuousMap T (by norm_num) a x)) x := by
   rw [loopOperator_apply, sub_eq_zero, mulLoop_apply]
-  refine ⟨fun h x ↦ hasDerivAt_toContinuousMap_of_derivative_eq T a _ h x, fun h ↦ ?_⟩
+  refine ⟨fun h x ↦ by
+    simpa only [applyContinuousLinearMap_apply] using
+      hasDerivAt_toContinuousMap_of_derivative_eq T a _ h x, fun h ↦ ?_⟩
   obtain ⟨b, hb, hdb⟩ := exists_toContinuousMap_eq_and_derivative_eq T
-    (toContinuousMap T (by norm_num) a) (applyLoop S (toContinuousMap T (by norm_num) a)) h
+    (toContinuousMap T (by norm_num) a)
+    (applyContinuousLinearMap S (toContinuousMap T (by norm_num) a))
+    fun x ↦ by simpa only [applyContinuousLinearMap_apply] using h x
   rwa [toContinuousMap_injective T _ hb] at hdb
 
 /-- **`L_S` is invertible exactly when `ζ' = S ζ` has no nonzero periodic solution.** Since `L_S`
@@ -214,7 +189,9 @@ theorem isInvertible_loopOperator_iff (S : C(AddCircle T, E →L[ℝ] E)) :
     (loopOperator T S).IsInvertible ↔
       ∀ ζ : C(AddCircle T, E), (∀ x : ℝ, HasDerivAt (fun y : ℝ ↦ ζ y) (S x (ζ x)) x) → ζ = 0 := by
   refine ⟨fun h ζ hζ ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨a, ha, -⟩ := exists_toContinuousMap_eq_and_derivative_eq T ζ (applyLoop S ζ) hζ
+  · obtain ⟨a, ha, -⟩ :=
+      exists_toContinuousMap_eq_and_derivative_eq T ζ (applyContinuousLinearMap S ζ)
+        fun x ↦ by simpa only [applyContinuousLinearMap_apply] using hζ x
     have ha0 : loopOperator T S a = 0 :=
       (loopOperator_eq_zero_iff T S a).2 fun x ↦ by rw [ha]; exact hζ x
     rw [← ha, h.injective (ha0.trans (map_zero _).symm), map_zero]

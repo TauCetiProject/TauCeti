@@ -204,7 +204,7 @@ theorem hasDerivAt_toContinuousMap_of_derivative_eq (a : CircleSobolev 1 E)
       (hgc.intervalIntegrable y (y + T)), hgp.intervalIntegral_add_eq y 0, hmean, add_zero]
   set Gc : C(AddCircle T, E) := ⟨hper.lift,
     continuous_coinduced_dom.2 <| continuous_iff_continuousAt.2 fun y ↦ (hG y).continuousAt⟩
-  have hGc (y : ℝ) : Gc y = G y := rfl
+  have hGc (y : ℝ) : Gc y = G y := hper.lift_coe y
   -- Away from frequency zero, `G` has the Fourier coefficients of `a`.
   have hGcoeff (n : ℤ) (hn : n ≠ 0) : fourierCoeff Gc n = a.coeff n := by
     have hl : (2 * π * I * n / T : ℂ) ≠ 0 := by
