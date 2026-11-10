@@ -169,12 +169,12 @@ theorem isClosedImmersion_rootSubgroup_of_simple
   have h := mkQuotient_comp_chevalleyRootSubgroupToralCoordinateMap D.representation
     D.lattice D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
     D.basis D.coordinateWeight γ
-  intro a
-  obtain ⟨x, hx⟩ := D.rootCoordinateMap_surjective_of_simple hcoord γ a
-  refine ⟨(CommHopfAlgCat.mkQuotient _ _).hom x, ?_⟩
-  have heval := congrArg (fun f => f.hom x) h
-  simp only [CommHopfAlgCat.hom_comp, BialgHom.comp_apply] at heval
-  exact heval.trans hx
+  rw [CommHopfAlgCat.liftQuotient_unique _ _
+    (kostantToralDefiningIdeal_toIdeal_le_ker_kostantRootSubgroupCoordinateMap D.representation
+      D.lattice D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
+      D.basis D.coordinateWeight γ) _ h]
+  exact CommHopfAlgCat.liftQuotient_surjective_of_surjective _ _ _
+    (D.rootCoordinateMap_surjective_of_simple hcoord γ)
 
 end ChevalleyDatum
 
