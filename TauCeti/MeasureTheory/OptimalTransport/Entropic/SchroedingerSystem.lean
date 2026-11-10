@@ -206,7 +206,7 @@ private theorem logIntegralExp_sub_sub_le_of_le [IsFiniteMeasure ν] (hν : ν �
       (sub_nonneg.2 (Real.exp_le_exp.2 (hm b)))
     linarith [(abs_le.1 (hM (a, b))).2, (abs_le.1 (hM (a', b))).1]
   unfold logIntegralExp
-  exact log_sub_sub_le_of_bounds hM0 hA₁ hA₂ hB₁ hB₂ hA₁lo hA₁hi hB₂A₂ hBA
+  exact log_sub_sub_le_of_bounds hM0 hA₂ hB₂ hA₁lo hA₁hi hB₂A₂ hBA
 
 /-- **The half-step contracts oscillations.** If the difference of two potentials on `B` has
 oscillation at most `ω`, then the difference of their log-partition functions on `A` has

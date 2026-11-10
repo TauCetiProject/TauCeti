@@ -75,14 +75,47 @@ theorem log_one_add_mul_exp_div_add_exp_le {l σ : ℝ} (hl : 1 ≤ l) (hσ : 0 
   rw [log_div (hpos₁ σ).ne' (hpos₂ σ).ne']
   linarith
 
+/-- If `α' < 0`, then the inequality `α * β' ≤ l ^ 2 * (β * α')` with `α, β, β' ≥ 0` and `1 ≤ l`
+forces `β = 0` and `α * β' = 0`. -/
+private theorem eq_zero_of_birkhoff_of_neg {α β α' β' l : ℝ} (hα : 0 ≤ α) (hβ : 0 ≤ β)
+    (hβ' : 0 ≤ β') (hα' : α' < 0) (hl : 1 ≤ l) (h : α * β' ≤ l ^ 2 * (β * α')) :
+    β = 0 ∧ α * β' = 0 := by
+  have hl2 : 0 < l ^ 2 := pow_pos (zero_lt_one.trans_le hl) 2
+  have h1 : l ^ 2 * (β * α') ≤ 0 :=
+    mul_nonpos_of_nonneg_of_nonpos hl2.le (mul_nonpos_of_nonneg_of_nonpos hβ hα'.le)
+  have h2 : α * β' = 0 := le_antisymm (h.trans h1) (mul_nonneg hα hβ')
+  refine ⟨?_, h2⟩
+  by_contra hβ0
+  have : l ^ 2 * (β * α') < 0 :=
+    mul_neg_of_pos_of_neg hl2 (mul_neg_of_pos_of_neg (lt_of_le_of_ne hβ (Ne.symm hβ0)) hα')
+  linarith
+
 /-- The two-dimensional cross-ratio inequality behind Birkhoff's theorem. Let `1 ≤ s` and
-`1 ≤ l`, and let `α, β, α', β'` be nonnegative with `α * β' ≤ l ^ 2 * (β * α')`. Then the cross
-ratio of `(s ^ 2 * α + β, α + β)` and `(s ^ 2 * α' + β', α' + β')` is at most
-`((1 + l * s) / (l + s)) ^ 2`. -/
-theorem birkhoff_cross_ratio_le {α β α' β' s l : ℝ} (hα : 0 ≤ α) (hβ : 0 ≤ β) (hα' : 0 ≤ α')
+`1 ≤ l`, let `α, β, β'` be nonnegative, and let `α'` be arbitrary with
+`α * β' ≤ l ^ 2 * (β * α')`. Then the cross ratio of `(s ^ 2 * α + β, α + β)` and
+`(s ^ 2 * α' + β', α' + β')` is at most `((1 + l * s) / (l + s)) ^ 2`. -/
+theorem birkhoff_cross_ratio_le {α β α' β' s l : ℝ} (hα : 0 ≤ α) (hβ : 0 ≤ β)
     (hβ' : 0 ≤ β') (hs : 1 ≤ s) (hl : 1 ≤ l) (h : α * β' ≤ l ^ 2 * (β * α')) :
     (s ^ 2 * α + β) * (α' + β') / ((α + β) * (s ^ 2 * α' + β')) ≤
       ((1 + l * s) / (l + s)) ^ 2 := by
+  by_cases hα' : 0 ≤ α'
+  swap
+  · -- A negative `α'` forces `β = 0` and `α * β' = 0`, so the cross ratio is `0` or `1`.
+    obtain ⟨rfl, hαβ'⟩ := eq_zero_of_birkhoff_of_neg hα hβ hβ' (not_le.mp hα') hl h
+    rcases hα.eq_or_lt with rfl | hαpos
+    · simp only [mul_zero, zero_add, zero_mul, zero_div]
+      positivity
+    obtain rfl : β' = 0 := (mul_eq_zero.mp hαβ').resolve_left hαpos.ne'
+    have hs0 : s ≠ 0 := by positivity
+    have hα0 : α ≠ 0 := hαpos.ne'
+    have hα'0 : α' ≠ 0 := (not_le.mp hα').ne
+    have h1 : (s ^ 2 * α + 0) * (α' + 0) / ((α + 0) * (s ^ 2 * α' + 0)) = 1 := by
+      field_simp
+      ring
+    have hls : l + s ≤ 1 + l * s := by nlinarith
+    rw [h1, div_pow]
+    refine (one_le_div (by positivity)).2 ?_
+    exact pow_le_pow_left₀ (by linarith) hls 2
   rcases (by positivity : 0 ≤ (α + β) * (s ^ 2 * α' + β')).eq_or_lt with hD | hD
   · rw [← hD, div_zero]
     positivity
@@ -108,14 +141,29 @@ theorem birkhoff_cross_ratio_le {α β α' β' s l : ℝ} (hα : 0 ≤ α) (hβ 
 `α, β, α', β'` with `α * β' ≤ l ^ 2 * (β * α')`, the logarithmic cross ratio of
 `(R * α + β, α + β)` and `(R * α' + β', α' + β')` is at most `(l - 1) / (l + 1) * log R`. -/
 theorem log_birkhoff_cross_ratio_le {α β α' β' R l : ℝ} (hα : 0 ≤ α) (hβ : 0 ≤ β)
-    (hα' : 0 ≤ α') (hβ' : 0 ≤ β') (hR : 1 ≤ R) (hl : 1 ≤ l) (h : α * β' ≤ l ^ 2 * (β * α')) :
+    (hβ' : 0 ≤ β') (hR : 1 ≤ R) (hl : 1 ≤ l) (h : α * β' ≤ l ^ 2 * (β * α')) :
     log ((R * α + β) * (α' + β') / ((α + β) * (R * α' + β'))) ≤
       (l - 1) / (l + 1) * log R := by
   have hσ : 0 ≤ log R / 2 := by linarith [log_nonneg hR]
-  have hle := birkhoff_cross_ratio_le hα hβ hα' hβ' (one_le_exp hσ) hl h
+  have hle := birkhoff_cross_ratio_le hα hβ hβ' (one_le_exp hσ) hl h
   rw [sq (exp _), ← exp_add, add_halves, exp_log (by linarith)] at hle
-  rcases (by positivity : 0 ≤ (R * α + β) * (α' + β') / ((α + β) * (R * α' + β'))).eq_or_lt
-    with h0 | h0
+  have hnn : 0 ≤ (R * α + β) * (α' + β') / ((α + β) * (R * α' + β')) := by
+    by_cases hα' : 0 ≤ α'
+    · positivity
+    -- A negative `α'` forces `β = 0` and `α * β' = 0`, so the cross ratio is `0` or `1`.
+    obtain ⟨rfl, hαβ'⟩ := eq_zero_of_birkhoff_of_neg hα hβ hβ' (not_le.mp hα') hl h
+    rcases hα.eq_or_lt with rfl | hαpos
+    · simp
+    obtain rfl : β' = 0 := (mul_eq_zero.mp hαβ').resolve_left hαpos.ne'
+    have hR0 : R ≠ 0 := by positivity
+    have hα0 : α ≠ 0 := hαpos.ne'
+    have hα'0 : α' ≠ 0 := (not_le.mp hα').ne
+    have h1 : (R * α + 0) * (α' + 0) / ((α + 0) * (R * α' + 0)) = 1 := by
+      field_simp
+      ring
+    rw [h1]
+    exact zero_le_one
+  rcases hnn.eq_or_lt with h0 | h0
   · rw [← h0, log_zero]
     exact mul_nonneg (div_nonneg (by linarith) (by linarith)) (log_nonneg hR)
   refine (log_le_log h0 hle).trans ?_
@@ -123,15 +171,19 @@ theorem log_birkhoff_cross_ratio_le {α β α' β' R l : ℝ} (hα : 0 ≤ α) (
   linarith [log_one_add_mul_exp_div_add_exp_le hl hσ]
 
 /-- **A one-sided scalar estimate for the half-step contraction of the Schrödinger system.** For
-positive reals `A₁, A₂, B₁, B₂` and `0 ≤ M` with `exp m * A₂ ≤ A₁ ≤ exp (m + ω) * A₂`,
+positive reals `A₂, B₂` and `0 ≤ M` with `exp m * A₂ ≤ A₁ ≤ exp (m + ω) * A₂`,
 `exp (-2M) * B₂ ≤ A₂` and `exp (-2M) * (A₁ - exp m * A₂) ≤ B₁ - exp m * B₂`, the signed difference
 `(log A₁ - log A₂) - (log B₁ - log B₂)` is at most `(1 - exp (-4M)) * ω`. Only this one-sided bound
 is claimed. -/
-theorem log_sub_sub_le_of_bounds {A₁ A₂ B₁ B₂ M m ω : ℝ} (hM0 : 0 ≤ M) (hA₁ : 0 < A₁)
-    (hA₂ : 0 < A₂) (hB₁ : 0 < B₁) (hB₂ : 0 < B₂) (hA₁lo : exp m * A₂ ≤ A₁)
+theorem log_sub_sub_le_of_bounds {A₁ A₂ B₁ B₂ M m ω : ℝ} (hM0 : 0 ≤ M)
+    (hA₂ : 0 < A₂) (hB₂ : 0 < B₂) (hA₁lo : exp m * A₂ ≤ A₁)
     (hA₁hi : A₁ ≤ exp (m + ω) * A₂) (hB₂A₂ : exp (-(2 * M)) * B₂ ≤ A₂)
     (hBA : exp (-(2 * M)) * (A₁ - exp m * A₂) ≤ B₁ - exp m * B₂) :
     (log A₁ - log A₂) - (log B₁ - log B₂) ≤ (1 - exp (-(4 * M))) * ω := by
+  have hA₁ : 0 < A₁ := lt_of_lt_of_le (mul_pos (exp_pos m) hA₂) hA₁lo
+  have hB₁ : 0 < B₁ := by
+    have := mul_nonneg (exp_pos (-(2 * M))).le (sub_nonneg.2 hA₁lo)
+    linarith [mul_pos (exp_pos m) hB₂]
   -- With `s = exp (-4M)`: `s * A₁ * B₂ + (1 - s) * exp m * A₂ * B₂ ≤ B₁ * A₂`.
   have hss : exp (-(2 * M)) * exp (-(2 * M)) = exp (-(4 * M)) := by
     rw [← exp_add]
