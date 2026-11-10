@@ -433,13 +433,17 @@ theorem morseIndex_neg_eq_of_leviForm_eq_zero (h : leviForm f x = 0) :
   simpa [hessianQuadraticForm_apply] using hB v v
 
 /-- **The Morse index of a Levi-flat function.** If the Levi form of `f` vanishes at `x` and its
-Hessian there is nondegenerate, then the Morse index of `f` at `x` is the complex dimension. This
-applies to the real part of a holomorphic function, by `TauCeti.leviForm_re_eq_zero`. -/
-theorem morseIndex_eq_finrank_of_leviForm_eq_zero [FiniteDimensional ℂ V]
+Hessian there is nondegenerate, then the Morse index of `f` at `x` is the complex dimension. In
+infinite dimensions both sides are `0` by convention. This applies to the real part of a
+holomorphic function, by `TauCeti.leviForm_re_eq_zero`. -/
+theorem morseIndex_eq_finrank_of_leviForm_eq_zero
     (h : leviForm f x = 0) (hnd : (hessianQuadraticForm f x).Nondegenerate) :
     morseIndex f x = Module.finrank ℂ V := by
-  have hsum := morseIndex_neg_add_morseIndex_eq_finrank hnd
-  rw [morseIndex_neg_eq_of_leviForm_eq_zero h, finrank_real_eq_two_mul_finrank_complex] at hsum
-  omega
+  by_cases hV : FiniteDimensional ℂ V
+  · have hsum := morseIndex_neg_add_morseIndex_eq_finrank hnd
+    rw [morseIndex_neg_eq_of_leviForm_eq_zero h, finrank_real_eq_two_mul_finrank_complex] at hsum
+    omega
+  · rw [morseIndex_eq_zero_of_not_finiteDimensional fun _ ↦
+      hV (Module.Finite.of_restrictScalars_finite ℝ ℂ V), Module.finrank_of_not_finite hV]
 
 end TauCeti

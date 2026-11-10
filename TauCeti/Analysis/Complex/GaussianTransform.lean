@@ -34,16 +34,15 @@ open Complex MeasureTheory Set
 
 namespace TauCeti
 
-/-- **Gaussian transforms over a compact interval are entire.** For `g` integrable on `[a, b]`,
-the function `z ↦ ∫ y in a..b, g y * exp (-c (z - y)²)` is complex differentiable everywhere. -/
+/-- **Gaussian transforms over a compact interval are entire.** The function
+`z ↦ ∫ y in a..b, g y * exp (-c (z - y)²)` is complex differentiable everywhere. -/
 theorem differentiable_intervalIntegral_mul_cexp_neg_mul_sub_sq {g : ℝ → ℂ} {a b : ℝ}
-    (hg : IntervalIntegrable g volume a b) (c : ℂ) :
+    (c : ℂ) :
     Differentiable ℂ fun z : ℂ ↦ ∫ y in a..b, g y * cexp (-c * (z - y) ^ 2) := by
   -- Expanding the square writes the transform as `exp (-c z²)` times a truncated Laplace
   -- transform evaluated at `-2 c z`.
   have hL := differentiable_intervalIntegral_mul_cexp_neg_mul
-    (hg.mul_continuousOn
-      (by fun_prop : Continuous fun y : ℝ ↦ cexp (-c * (y : ℂ) ^ 2)).continuousOn)
+    (f := fun y ↦ g y * cexp (-c * (y : ℂ) ^ 2)) (a := a) (b := b)
   have key : (fun z : ℂ ↦ ∫ y in a..b, g y * cexp (-c * (z - y) ^ 2)) =
       fun z ↦ cexp (-c * z ^ 2) *
         ∫ y in a..b, (g y * cexp (-c * (y : ℂ) ^ 2)) * cexp (-(-2 * c * z) * y) := by
