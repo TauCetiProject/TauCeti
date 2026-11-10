@@ -28,11 +28,11 @@ combines the coefficient-to-Mahler and Landau bounds without an extra degree fac
 
 public section
 
-namespace TauCeti
+namespace Nat
 
 /-- The central binomial coefficient satisfies the square-root upper bound
 `C(2n,n) √(2n+1) ≤ 4^n`. -/
-theorem _root_.Nat.centralBinom_mul_sqrt_le_four_pow (n : ℕ) :
+theorem centralBinom_mul_sqrt_le_four_pow (n : ℕ) :
     (n.centralBinom : ℝ) * Real.sqrt (2 * n + 1) ≤ 4 ^ n := by
   have hsq : ∀ n : ℕ, (n.centralBinom : ℝ) ^ 2 * (2 * n + 1) ≤ 16 ^ n := by
     intro n
@@ -57,7 +57,7 @@ theorem _root_.Nat.centralBinom_mul_sqrt_le_four_pow (n : ℕ) :
   exact hsq n
 
 /-- The largest binomial coefficient in row `k`, times `√(k+1)`, is at most `2^k`. -/
-theorem _root_.Nat.choose_middle_mul_sqrt_le_two_pow (k : ℕ) :
+theorem choose_middle_mul_sqrt_le_two_pow (k : ℕ) :
     (k.choose (k / 2) : ℝ) * Real.sqrt (k + 1) ≤ 2 ^ k := by
   obtain ⟨n, rfl | rfl⟩ : ∃ n, k = 2 * n ∨ k = 2 * n + 1 := ⟨k / 2, by omega⟩
   · convert Nat.centralBinom_mul_sqrt_le_four_pow n using 1 <;>
@@ -85,7 +85,7 @@ theorem _root_.Nat.choose_middle_mul_sqrt_le_two_pow (k : ℕ) :
       0 ≤ (Nat.choose (2 * n + 1) n : ℝ))]
 
 /-- Middle binomial coefficients are supermultiplicative in the row index. -/
-theorem _root_.Nat.choose_middle_mul_choose_middle_le (a b : ℕ) :
+theorem choose_middle_mul_choose_middle_le (a b : ℕ) :
     a.choose (a / 2) * b.choose (b / 2) ≤ (a + b).choose ((a + b) / 2) := by
   calc
     a.choose (a / 2) * b.choose (b / 2) ≤
@@ -98,7 +98,7 @@ theorem _root_.Nat.choose_middle_mul_choose_middle_le (a b : ℕ) :
 
 /-- A finite product of middle binomial coefficients is bounded by the middle
 coefficient of the sum of their row indices. -/
-theorem _root_.Nat.prod_choose_middle_le_choose_sum_middle {ι : Type*} (s : Finset ι) (d : ι → ℕ) :
+theorem prod_choose_middle_le_choose_sum_middle {ι : Type*} (s : Finset ι) (d : ι → ℕ) :
     ∏ i ∈ s, (d i).choose (d i / 2) ≤ (∑ i ∈ s, d i).choose ((∑ i ∈ s, d i) / 2) := by
   classical
   induction s using Finset.induction_on with
@@ -107,4 +107,4 @@ theorem _root_.Nat.prod_choose_middle_le_choose_sum_middle {ι : Type*} (s : Fin
     simp only [Finset.prod_insert hi, Finset.sum_insert hi]
     exact (Nat.mul_le_mul_left _ ih).trans (Nat.choose_middle_mul_choose_middle_le _ _)
 
-end TauCeti
+end Nat
