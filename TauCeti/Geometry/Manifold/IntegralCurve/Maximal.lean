@@ -505,6 +505,28 @@ theorem Ici_subset_maximalIntegralCurveInterval_of_isCompact_of_mapsTo [Complete
   obtain ⟨s, hs, hts⟩ := not_bddAbove_iff.mp hup t
   exact ordConnected_maximalIntegralCurveInterval.out h0 hs ⟨ht, hts.le⟩
 
+/-- **A maximal integral curve that converges to a zero of the field is defined for all positive
+time.** If the maximal interval of existence were bounded above, the maximal integral curve would be
+constantly its initial point `x` after that time, so its limit `p` would be `x`, and then the
+constant curve at the zero `x` of `v` would extend the maximal interval to all positive times. -/
+theorem Ici_subset_maximalIntegralCurveInterval_of_tendsto [CompleteSpace E]
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {p : M} (hvp : v p = 0)
+    (hconv : Tendsto (maximalIntegralCurve v x) atTop (𝓝 p)) :
+    Ici 0 ⊆ maximalIntegralCurveInterval v x := by
+  have h0 := zero_mem_maximalIntegralCurveInterval (v := v) (x := x) hv.contMDiffAt
+  by_contra hsub
+  obtain ⟨t, ht, htn⟩ := not_subset.1 hsub
+  have hxp : x = p := by
+    refine tendsto_nhds_unique (tendsto_const_nhds.congr' ?_) hconv
+    filter_upwards [eventually_ge_atTop t] with s hs
+    exact (maximalIntegralCurve_eq_of_not_mem fun hsm ↦
+      htn (ordConnected_maximalIntegralCurveInterval.out h0 hsm ⟨ht, hs⟩)).symm
+  subst hxp
+  have ht0 : 0 ≤ t := ht
+  have hγ := (isMIntegralCurve_const hvp).isMIntegralCurveOn (Ioo (-(t + 1)) (t + 1))
+  exact htn (hγ.subset_maximalIntegralCurveInterval ⟨by linarith, by linarith⟩ rfl
+    ⟨by linarith, by linarith⟩)
+
 /-- **A maximal integral curve confined to a compact set is defined for all time.** Neither
 endpoint of the maximal interval can be finite, since the escape lemma would force the curve out of
 the compact set there. -/

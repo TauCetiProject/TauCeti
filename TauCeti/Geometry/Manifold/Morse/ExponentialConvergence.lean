@@ -189,6 +189,7 @@ variable (hp : IsManifoldNondegenerateCriticalPoint I f p)
   (hconv : Tendsto (maximalIntegralCurve (-mgradient I f) x) atTop (𝓝 p))
 include hp hx hconv
 
+omit hx in
 /-- **The tail length of a trajectory converging to a nondegenerate critical point is controlled
 by the square root of its energy.** If the maximal integral curve `γ` of `-grad f` through `x`
 exists for all positive time and converges to a nondegenerate critical point `p`, then for some
@@ -202,6 +203,14 @@ theorem exists_pathELength_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
   have : IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x) :=
     IsContMDiffRiemannianBundle.toIsContinuousRiemannianBundle (IB := I) (n := 1)
   have : IsManifold I 1 M := IsManifold.of_le one_le_two
+  have hx : Ici 0 ⊆ maximalIntegralCurveInterval (-mgradient I f) x :=
+    Ici_subset_maximalIntegralCurveInterval_of_tendsto (contMDiff_neg_mgradient_one hf)
+      (by
+        have h := (isManifoldNondegenerateCriticalPoint_iff I).1 hp
+        rw [Pi.neg_apply, neg_eq_zero, mgradient_eq_zero_iff, ← mem_criticalPoints]
+        exact (mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero_of_differentiableAt
+          (h.contDiffAt.differentiableAt (by simp))).2 h.fderiv_eq_zero)
+      hconv
   set γ := maximalIntegralCurve (-mgradient I f) x
   set e : ℝ → ℝ := fun s ↦ f (γ s) - f p
   obtain ⟨lam, hlam, hloj⟩ := hp.exists_mul_abs_sub_le_norm_mgradient_sq
@@ -290,7 +299,7 @@ theorem exists_riemannianEDist_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
   have : IsManifold I 1 M := IsManifold.of_le one_le_two
   set γ := maximalIntegralCurve (-mgradient I f) x
   obtain ⟨K, hK, hlen⟩ := exists_pathELength_le_mul_sqrt_maximalIntegralCurve_neg_mgradient
-    hp hx hconv hf
+    hp hconv hf
   refine ⟨K, hK, ?_⟩
   filter_upwards [hlen, eventually_ge_atTop 0] with t ht ht0
   refine ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_
