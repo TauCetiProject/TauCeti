@@ -53,6 +53,12 @@ theorem weightRatio_top (L : Ω → ι → Module.Dual K V) (c : Ω → ι → �
     weightRatio L c (⊤ : Submodule K V) = 0 := by
   simp [weightRatio_def]
 
+/-- The zero subspace has weight ratio minus the total weight per ambient dimension. -/
+@[simp]
+theorem weightRatio_bot (L : Ω → ι → Module.Dual K V) (c : Ω → ι → ℝ) :
+    weightRatio L c (⊥ : Submodule K V) = -weight L c ⊤ / finrank K V := by
+  simp [weightRatio_def]
+
 /-- Under zero total weight, the numerator of the ratio is just the subspace weight. -/
 theorem weightRatio_eq_of_weight_top_eq_zero {L : Ω → ι → Module.Dual K V}
     {c : Ω → ι → ℝ} (h : weight L c (⊤ : Submodule K V) = 0)
@@ -62,9 +68,19 @@ theorem weightRatio_eq_of_weight_top_eq_zero {L : Ω → ι → Module.Dual K V}
 
 variable [FiniteDimensional K V]
 
+/-- Multiplying the weight ratio by codimension recovers the weight gain. -/
+theorem weightRatio_mul_codim (L : Ω → ι → Module.Dual K V) (c : Ω → ι → ℝ)
+    (U : Submodule K V) :
+    weightRatio L c U * (finrank K V - (finrank K U : ℝ)) =
+      weight L c U - weight L c ⊤ := by
+  by_cases hU : U = ⊤
+  · subst U; simp
+  · rw [weightRatio_def, div_mul_cancel₀]
+    exact sub_ne_zero.mpr (by exact_mod_cast (ne_of_gt (finrank_lt hU)))
+
 /-- A uniform upper bound on proper-subspace ratios is a linear weight bound,
 including equality at the whole space. -/
-theorem weightRatio_le_iff {L : Ω → ι → Module.Dual K V} {c : Ω → ι → ℝ}
+theorem forall_weightRatio_le_iff {L : Ω → ι → Module.Dual K V} {c : Ω → ι → ℝ}
     {a : ℝ} :
     (∀ U : Submodule K V, U ≠ ⊤ → weightRatio L c U ≤ a) ↔
       ∀ U : Submodule K V, weight L c U - weight L c ⊤ ≤
@@ -76,9 +92,11 @@ theorem weightRatio_le_iff {L : Ω → ι → Module.Dual K V} {c : Ω → ι �
   · intro h U
     by_cases hU : U = ⊤
     · subst U; simp
-    · exact (div_le_iff₀ (hpos U hU)).mp (h U hU)
+    · simpa only [weightRatio_mul_codim] using
+        (mul_le_mul_of_nonneg_right (h U hU) (hpos U hU).le)
   · intro h U hU
-    exact (div_le_iff₀ (hpos U hU)).mpr (h U)
+    apply (mul_le_mul_iff_left₀ (hpos U hU)).mp
+    simpa only [weightRatio_mul_codim] using h U
 
 /-- Only finitely many weight ratios occur for finitely supported weights. -/
 theorem finite_range_weightRatio (L : Ω → ι → Module.Dual K V) {c : Ω → ι → ℝ}
@@ -90,7 +108,7 @@ theorem finite_range_weightRatio (L : Ω → ι → Module.Dual K V) {c : Ω →
     (by rintro _ ⟨U, rfl⟩; exact ⟨_, ⟨U, rfl⟩, _, ⟨U, rfl⟩, rfl⟩)
 
 /-- There is a proper maximum-ratio subspace of minimum dimension. -/
-theorem exists_maximal_weightRatio [Nontrivial V]
+theorem exists_exceptionalSubspace [Nontrivial V]
     (L : Ω → ι → Module.Dual K V) {c : Ω → ι → ℝ} (hc : HasFiniteSupport c) :
     ∃ T : Submodule K V, T ≠ ⊤ ∧
       (∀ U, U ≠ ⊤ → weightRatio L c U ≤ weightRatio L c T) ∧
@@ -113,26 +131,21 @@ theorem exists_maximal_weightRatio [Nontrivial V]
   · intro U hU heq
     exact hmin _ ⟨U, ⟨hU, heq.trans hS.2⟩, rfl⟩
 
-/-- The intersection of two proper maximum-ratio subspaces also maximizes the ratio. -/
+/-- Intersecting a proper maximizer with a subspace of the same ratio preserves the ratio. -/
 theorem weightRatio_inf_eq_of_maximal {L : Ω → ι → Module.Dual K V}
     (hL : ∀ v, span K (range (L v)) = ⊤) {c : Ω → ι → ℝ}
-    (hc : HasFiniteSupport c) {T U : Submodule K V} (hT : T ≠ ⊤) (hU : U ≠ ⊤)
+    (hc : HasFiniteSupport c) {T U : Submodule K V} (hT : T ≠ ⊤)
     (hmax : ∀ W, W ≠ ⊤ → weightRatio L c W ≤ weightRatio L c T)
     (hUT : weightRatio L c U = weightRatio L c T) :
     weightRatio L c (T ⊓ U) = weightRatio L c T := by
   have hI : T ⊓ U ≠ ⊤ := ne_top_of_le_ne_top hT inf_le_left
-  have hbound := weightRatio_le_iff.mp hmax
+  have hbound := forall_weightRatio_le_iff.mp hmax
   have hdim := finrank_sup_add_finrank_inf_eq T U
   have hdimR : (finrank K ↥(T ⊔ U) : ℝ) + finrank K ↥(T ⊓ U) =
       finrank K T + finrank K U := by exact_mod_cast hdim
-  have hTeq : weight L c T - weight L c ⊤ =
-      weightRatio L c T * (finrank K V - (finrank K T : ℝ)) := by
-    rw [weightRatio_def, div_mul_cancel₀ _ (ne_of_gt (sub_pos.mpr
-      (by exact_mod_cast (finrank_lt hT))))]
-  have hUeq : weight L c U - weight L c ⊤ =
-      weightRatio L c T * (finrank K V - (finrank K U : ℝ)) := by
-    rw [← hUT, weightRatio_def, div_mul_cancel₀ _ (ne_of_gt (sub_pos.mpr
-      (by exact_mod_cast (finrank_lt hU))))]
+  have hTeq := (weightRatio_mul_codim L c T).symm
+  have hUeq := (weightRatio_mul_codim L c U).symm
+  rw [hUT] at hUeq
   apply le_antisymm (hmax _ hI)
   apply (le_div_iff₀ (sub_pos.mpr
     (by exact_mod_cast (finrank_lt hI)))).mpr
@@ -142,16 +155,16 @@ theorem weightRatio_inf_eq_of_maximal {L : Ω → ι → Module.Dual K V}
   simp only [mul_add] at hmul
   nlinarith only [hTeq, hUeq, hsuper, hsup, hmul]
 
-/-- A minimum-dimensional maximizer is contained in every proper maximizer. -/
+/-- A minimum-dimensional proper maximizer is contained in every subspace of the same ratio. -/
 theorem le_of_minimal_maximal_weightRatio {L : Ω → ι → Module.Dual K V}
     (hL : ∀ v, span K (range (L v)) = ⊤) {c : Ω → ι → ℝ}
-    (hc : HasFiniteSupport c) {T U : Submodule K V} (hT : T ≠ ⊤) (hU : U ≠ ⊤)
+    (hc : HasFiniteSupport c) {T U : Submodule K V} (hT : T ≠ ⊤)
     (hmax : ∀ W, W ≠ ⊤ → weightRatio L c W ≤ weightRatio L c T)
     (hmin : ∀ W, W ≠ ⊤ → weightRatio L c W = weightRatio L c T →
       finrank K T ≤ finrank K W)
     (hUT : weightRatio L c U = weightRatio L c T) : T ≤ U := by
   have hI : T ⊓ U ≠ ⊤ := ne_top_of_le_ne_top hT inf_le_left
-  have heq := weightRatio_inf_eq_of_maximal hL hc hT hU hmax hUT
+  have heq := weightRatio_inf_eq_of_maximal hL hc hT hmax hUT
   have hrank : finrank K ↥(T ⊓ U) = finrank K T :=
     le_antisymm (Submodule.finrank_mono (inf_le_left : T ⊓ U ≤ T)) (hmin _ hI heq)
   have hTI : T ⊓ U = T :=
@@ -164,7 +177,7 @@ def exceptionalSubspace (L : Ω → ι → Module.Dual K V) (c : Ω → ι → �
   classical
   exact if h : Nontrivial V ∧ (∀ v, span K (range (L v)) = ⊤) ∧ HasFiniteSupport c then
     letI := h.1
-    (exists_maximal_weightRatio L h.2.2).choose
+    (exists_exceptionalSubspace L h.2.2).choose
   else ⊥
 
 /-- The exceptional subspace is proper, maximizes the weight ratio, and has the
@@ -177,11 +190,11 @@ theorem exceptionalSubspace_spec [Nontrivial V] {L : Ω → ι → Module.Dual K
       ∀ U, U ≠ ⊤ → weightRatio L c U = weightRatio L c (exceptionalSubspace L c) →
         finrank K (exceptionalSubspace L c) ≤ finrank K U := by
   classical
-  have heq : exceptionalSubspace L c = (exists_maximal_weightRatio L hc).choose := by
+  have heq : exceptionalSubspace L c = (exists_exceptionalSubspace L hc).choose := by
     unfold exceptionalSubspace
     exact dite_eq_left ⟨inferInstance, hL, hc⟩
   rw [heq]
-  exact (exists_maximal_weightRatio L hc).choose_spec
+  exact (exists_exceptionalSubspace L hc).choose_spec
 
 /-- The exceptional subspace is proper for valid data on a nonzero space. -/
 theorem exceptionalSubspace_ne_top [Nontrivial V] {L : Ω → ι → Module.Dual K V}
@@ -189,14 +202,14 @@ theorem exceptionalSubspace_ne_top [Nontrivial V] {L : Ω → ι → Module.Dual
     (hc : HasFiniteSupport c) : exceptionalSubspace L c ≠ ⊤ :=
   (exceptionalSubspace_spec hL hc).1
 
-/-- The exceptional subspace is contained in every proper weight-ratio maximizer. -/
+/-- The exceptional subspace is contained in every subspace of the same weight ratio. -/
 theorem exceptionalSubspace_le [Nontrivial V] {L : Ω → ι → Module.Dual K V}
     (hL : ∀ v, span K (range (L v)) = ⊤) {c : Ω → ι → ℝ}
-    (hc : HasFiniteSupport c) {U : Submodule K V} (hU : U ≠ ⊤)
+    (hc : HasFiniteSupport c) {U : Submodule K V}
     (heq : weightRatio L c U = weightRatio L c (exceptionalSubspace L c)) :
     exceptionalSubspace L c ≤ U := by
   obtain ⟨hT, hmax, hmin⟩ := exceptionalSubspace_spec hL hc
-  exact le_of_minimal_maximal_weightRatio hL hc hT hU hmax hmin heq
+  exact le_of_minimal_maximal_weightRatio hL hc hT hmax hmin heq
 
 /-- Any proper maximum-ratio subspace of minimum dimension is the exceptional subspace. -/
 theorem eq_exceptionalSubspace_iff [Nontrivial V] {L : Ω → ι → Module.Dual K V}
@@ -211,8 +224,8 @@ theorem eq_exceptionalSubspace_iff [Nontrivial V] {L : Ω → ι → Module.Dual
   · rintro ⟨hT, hmax, hmin⟩
     obtain ⟨hE, hEmax, hEmin⟩ := exceptionalSubspace_spec hL hc
     have heq := le_antisymm (hmax _ hE) (hEmax _ hT)
-    exact le_antisymm (le_of_minimal_maximal_weightRatio hL hc hT hE hmax hmin heq)
-      (exceptionalSubspace_le hL hc hT heq.symm)
+    exact le_antisymm (le_of_minimal_maximal_weightRatio hL hc hT hmax hmin heq)
+      (exceptionalSubspace_le hL hc heq.symm)
 
 /-- With total weight zero, the exceptional subspace is zero exactly when every
 proper subspace has nonpositive weight (semistability). -/
@@ -221,24 +234,24 @@ theorem exceptionalSubspace_eq_bot_iff [Nontrivial V] {L : Ω → ι → Module.
     (hc : HasFiniteSupport c) (htop : weight L c (⊤ : Submodule K V) = 0) :
     exceptionalSubspace L c = ⊥ ↔ ∀ U, U ≠ ⊤ → weight L c U ≤ 0 := by
   have hbot : weightRatio L c (⊥ : Submodule K V) = 0 := by
-    simp [weightRatio_def, htop]
+    simp [htop]
   constructor
   · intro heq
     have hmax := (exceptionalSubspace_spec hL hc).2.1
     rw [heq, hbot] at hmax
-    have h := weightRatio_le_iff.mp hmax
+    have h := forall_weightRatio_le_iff.mp hmax
     intro U _
     simpa [htop] using h U
   · intro h
     apply le_bot_iff.mp
-    apply exceptionalSubspace_le hL hc bot_ne_top
+    apply exceptionalSubspace_le hL hc
     have hbound : ∀ U : Submodule K V, weight L c U - weight L c ⊤ ≤
         (0 : ℝ) * (finrank K V - (finrank K U : ℝ)) := by
       intro U
       by_cases hU : U = ⊤
       · simp [hU]
       · simpa [htop] using h U hU
-    have hle := weightRatio_le_iff.mpr hbound _ (exceptionalSubspace_spec hL hc).1
+    have hle := forall_weightRatio_le_iff.mpr hbound _ (exceptionalSubspace_spec hL hc).1
     have hge := (exceptionalSubspace_spec hL hc).2.1 _ bot_ne_top
     rw [hbot] at hge ⊢
     exact (le_antisymm hle hge).symm
