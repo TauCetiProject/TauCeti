@@ -105,9 +105,8 @@ theorem L2.not_finiteDimensional_of_pairwise_disjoint {A : ℕ → Set α}
     (linearIndependent_of_ne_zero_of_inner_eq_zero (𝕜 := 𝕜) (fun k hk ↦ ?_) fun j k hjk ↦ ?_)
   · have h := L2.inner_indicatorConstLp_one_indicatorConstLp_one (𝕜 := 𝕜) (hA k) (hA k) (hfin k)
       (hfin k)
-    rw [hk, inner_zero_left, Set.inter_self, eq_comm, RCLike.ofReal_eq_zero,
-      measureReal_eq_zero_iff (hfin k)] at h
-    exact hpos k h
+    simp [hk] at h
+    exact hpos k ((measureReal_eq_zero_iff (hfin k)).1 (RCLike.ofReal_eq_zero.1 h.symm))
   · refine (L2.inner_indicatorConstLp_one_indicatorConstLp_one (hA j) (hA k) (hfin j)
       (hfin k)).trans ?_
     rw [(hdisj hjk).inter_eq, measureReal_empty, RCLike.ofReal_zero]
@@ -130,12 +129,9 @@ theorem L2.not_finiteDimensional_restrict_of_isOpen {E : Type*} [NormedAddCommGr
   have hAopen (k : ℕ) : IsOpen (A k) := Metric.isOpen_ball.sdiff Metric.isClosed_closedBall
   have hAne (k : ℕ) : (A k).Nonempty := by
     have hk : (0 : ℝ) < k + 1 := by positivity
+    have hlt := div_lt_div_of_pos_left hr hk (by linarith : (k : ℝ) + 1 < k + 2)
     obtain ⟨v, hv⟩ := exists_norm_eq E (by positivity : 0 ≤ (r / (k + 1) + r / (k + 2)) / 2)
-    refine ⟨x + v, ?_, ?_⟩
-    · rw [Metric.mem_ball, dist_eq_norm, add_sub_cancel_left, hv]
-      linarith [div_lt_div_of_pos_left hr hk (by linarith : (k : ℝ) + 1 < k + 2)]
-    · rw [Metric.mem_closedBall, dist_eq_norm, add_sub_cancel_left, hv, not_le]
-      linarith [div_lt_div_of_pos_left hr hk (by linarith : (k : ℝ) + 1 < k + 2)]
+    refine ⟨x + v, ?_, ?_⟩ <;> simp [dist_eq_norm, hv] <;> linarith
   refine L2.not_finiteDimensional_of_pairwise_disjoint (fun k ↦ (hAopen k).measurableSet)
     (fun k ↦ ?_) (fun k ↦ ?_) ?_
   · rw [Measure.restrict_apply (hAopen k).measurableSet,
@@ -148,8 +144,7 @@ theorem L2.not_finiteDimensional_restrict_of_isOpen {E : Type*} [NormedAddCommGr
     · exact (this hjk.symm ((Nat.lt_or_gt_of_ne hjk).resolve_left hlt)).symm
     refine Set.disjoint_left.2 fun y hyj hyk ↦ hyj.2 (Metric.ball_subset_closedBall ?_)
     refine Metric.ball_subset_ball ?_ hyk.1
-    have hjk' : (j : ℝ) + 2 ≤ k + 1 := by
-      exact_mod_cast Nat.add_le_add_right (Nat.succ_le_of_lt hlt) 1
+    have hjk' : (j : ℝ) + 2 ≤ k + 1 := by exact_mod_cast (by omega : j + 2 ≤ k + 1)
     exact div_le_div_of_nonneg_left hr.le (by positivity) hjk'
 
 /-- For a complex inner product space `F` with its induced real structure, the real inner product

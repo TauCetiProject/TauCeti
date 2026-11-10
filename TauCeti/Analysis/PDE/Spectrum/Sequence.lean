@@ -78,6 +78,73 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)} [mu.Is
 
 attribute [local instance] W1p0.instNormedAddCommGroup W1p0.instInnerProductSpace
 
+/-- In an orthonormal basis `(e_g)` of `L²(Ω)` diagonalizing the solution operator `S` of the
+Dirichlet problem with eigenvalues `κ_g⁻¹`, the operator acts on each basis vector by
+`S e_g = κ_g⁻¹ e_g`. -/
+private theorem dirichletSolutionOperator_hilbertBasis {σ : Type*}
+    {hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)}
+    {hcoercive : IsCoercive (energyFormH1L0 hcoeff)}
+    {B : HilbertBasis σ ℝ (Lp ℝ 2 (mu.restrict Omega))} {kappa : σ → ℝ}
+    (hsum : ∀ f : Lp ℝ 2 (mu.restrict Omega),
+      HasSum (fun g ↦ (kappa g)⁻¹ • B.repr f g • B g)
+        (dirichletSolutionOperator hcoeff hcoercive f)) (g : σ) :
+    dirichletSolutionOperator hcoeff hcoercive (B g) = (kappa g)⁻¹ • B g := by
+  classical
+  refine (hsum (B g)).unique ?_
+  convert hasSum_single (f := fun g' ↦ (kappa g')⁻¹ • B.repr (B g) g' • B g') g
+    (fun g' hg' ↦ by simp [B.repr_self, hg']) using 1
+  simp [B.repr_self]
+
+/-- On a bounded domain, the positive eigenvalues `κ_g` of an orthonormal basis of `L²(Ω)`
+diagonalizing the solution operator have finite sublevel sets: the solution operator is compact
+and sends `e_g` to `κ_g⁻¹ e_g`, so only finitely many `κ_g⁻¹` exceed any positive threshold. -/
+private theorem northcott_of_hilbertBasis {σ : Type*}
+    {hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)}
+    {hcoercive : IsCoercive (energyFormH1L0 hcoeff)}
+    (hOmega : IsBounded (Omega : Set (EuclideanSpace ℝ ι)))
+    {B : HilbertBasis σ ℝ (Lp ℝ 2 (mu.restrict Omega))} {kappa : σ → ℝ}
+    (hpos : ∀ g, 0 < kappa g)
+    (hsum : ∀ f : Lp ℝ 2 (mu.restrict Omega),
+      HasSum (fun g ↦ (kappa g)⁻¹ • B.repr f g • B g)
+        (dirichletSolutionOperator hcoeff hcoercive f)) :
+    Northcott kappa := by
+  refine ⟨fun R ↦ ?_⟩
+  rcases le_or_gt R 0 with hR | hR
+  · exact (finite_empty).subset fun g hg ↦ absurd ((hpos g).trans_le hg) hR.not_gt
+  refine (B.orthonormal.finite_setOf_le_norm_apply
+    (isCompactOperator_dirichletSolutionOperator hcoeff hcoercive hOmega)
+    (inv_pos.2 hR)).subset fun g (hg : kappa g ≤ R) ↦ ?_
+  simpa [dirichletSolutionOperator_hilbertBasis hsum, norm_smul, B.orthonormal.1 g,
+    abs_of_pos (hpos g)] using inv_anti₀ (hpos g) hg
+
+/-- The eigenvalues of an orthonormal eigenbasis of `L²(Ω)` exhaust the Dirichlet spectrum of a
+symmetric coercive energy form: an eigenfunction for any other eigenvalue would be orthogonal to
+every basis vector. -/
+private theorem isDirichletEigenvalue_iff_exists_eq_of_hilbertBasis {σ : Type*}
+    {hcoeff : MemLp (fun x ↦ energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)}
+    (hcoercive : IsCoercive (energyFormH1L0 hcoeff))
+    (hsymm : ∀ u v : W1p0 mu Omega 2,
+      energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
+        energyFormH1 a b c (v : W1p mu Omega 2) (u : W1p mu Omega 2))
+    {B : HilbertBasis σ ℝ (Lp ℝ 2 (mu.restrict Omega))} {kappa : σ → ℝ}
+    {u : σ → W1p0 mu Omega 2} (heig : ∀ g, IsDirichletEigenvalue mu Omega a b c (kappa g))
+    (hvalue : ∀ g, W1p.value (u g : W1p mu Omega 2) = B g)
+    (heq : ∀ (g : σ) (v : W1p0 mu Omega 2),
+      energyFormH1 a b c (u g : W1p mu Omega 2) (v : W1p mu Omega 2) =
+        kappa g * ⟪W1p.value (u g : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ)
+    (kappa' : ℝ) :
+    IsDirichletEigenvalue mu Omega a b c kappa' ↔ ∃ g, kappa g = kappa' := by
+  refine ⟨fun h ↦ ?_, fun ⟨g, hg⟩ ↦ hg ▸ heig g⟩
+  obtain ⟨w, hw, hweq⟩ := (isDirichletEigenvalue_iff _).1 h
+  by_contra! hne
+  have hwJ : W1p0.valueL w ≠ 0 := hcoercive.apply_ne_zero_of_forall_apply_eq_smul_inner
+    W1p0.valueL hw fun v ↦ by simpa only [energyFormH1L0_apply, W1p0.valueL_apply] using hweq v
+  refine hwJ (B.repr.map_eq_zero_iff.1 (lp.ext (funext fun g ↦ ?_)))
+  have h := hsymm w (u g)
+  rw [hweq, heq, hvalue, real_inner_comm] at h
+  rw [HilbertBasis.repr_apply_apply, W1p0.valueL_apply, lp.coeFn_zero, Pi.zero_apply]
+  exact (mul_eq_mul_right_iff.1 h.symm).resolve_left (hne g)
+
 /-- **The Dirichlet eigenvalues form a sequence `0 < λ₀ ≤ λ₁ ≤ ⋯ → ∞`.** Let `Ω ⊆ ℝⁿ`, `n ≥ 1`,
 be a nonempty bounded open set and let the energy form `a` of `L` be symmetric and coercive on
 `H¹₀(Ω)`. Then there are a nondecreasing sequence `λₖ` tending to infinity and an orthonormal
@@ -111,24 +178,9 @@ theorem exists_hilbertBasis_nat_isDirichletEigenvalue_monotone [Nonempty ι]
           (dirichletSolutionOperator hcoeff hcoercive f) := by
   obtain ⟨s, B, kappa, u, hB, hpos, heig, hvalue, heq, hsum⟩ :=
     exists_hilbertBasis_forall_isDirichletEigenvalue hcoeff hcoercive hOmega hsymm
-  -- The solution operator acts on the basis vector `B g` by `κ_g⁻¹`.
-  have hS (g : s) :
-      dirichletSolutionOperator hcoeff hcoercive (B g) = (kappa g)⁻¹ • B g := by
-    classical
-    refine (hsum (B g)).unique ?_
-    convert hasSum_single (f := fun g' ↦ (kappa g')⁻¹ • B.repr (B g) g' • B g') g
-      (fun g' hg' ↦ by simp [B.repr_self, hg']) using 1
-    simp [B.repr_self]
-  -- Only finitely many eigenvalues lie below any bound, by compactness of the solution operator.
-  have hfin (R : ℝ) : {g : s | kappa g ≤ R}.Finite := by
-    rcases le_or_gt R 0 with hR | hR
-    · exact (finite_empty).subset fun g hg ↦ absurd ((hpos g).trans_le hg) hR.not_gt
-    refine (B.orthonormal.finite_setOf_le_norm_apply
-      (isCompactOperator_dirichletSolutionOperator hcoeff hcoercive hOmega)
-      (inv_pos.2 hR)).subset fun g (hg : kappa g ≤ R) ↦ ?_
-    rw [mem_ofPred_eq, hS, norm_smul, B.orthonormal.1 g, mul_one, Real.norm_eq_abs,
-      abs_of_pos (inv_pos.2 (hpos g))]
-    exact inv_anti₀ (hpos g) hg
+  have hvalue' (g : s) : W1p.value (u g : W1p mu Omega 2) = B g := by
+    rw [hvalue g, hB]
+  have hN := northcott_of_hilbertBasis hOmega hpos hsum
   -- The basis is infinite, since `L²(Ω)` is infinite-dimensional.
   have : Infinite s := by
     rw [← not_finite_iff_infinite]
@@ -136,7 +188,6 @@ theorem exists_hilbertBasis_nat_isDirichletEigenvalue_monotone [Nonempty ι]
     have := Fintype.ofFinite s
     exact L2.not_finiteDimensional_restrict_of_isOpen (𝕜 := ℝ) mu Omega.isOpen
       hOmega_nonempty (Module.Finite.of_basis B.toOrthonormalBasis.toBasis)
-  have hN : Northcott kappa := ⟨hfin⟩
   obtain ⟨e, he⟩ := Northcott.exists_equiv_monotone_comp kappa
   -- Reindex the eigenbasis along the nondecreasing enumeration `e`.
   let basis : HilbertBasis ℕ ℝ (Lp ℝ 2 (mu.restrict Omega)) :=
@@ -146,23 +197,10 @@ theorem exists_hilbertBasis_nat_isDirichletEigenvalue_monotone [Nonempty ι]
     simp only [basis, HilbertBasis.coe_mk, Function.comp_apply]
   have hrepr (f : Lp ℝ 2 (mu.restrict Omega)) (k : ℕ) : basis.repr f k = B.repr f (e k) := by
     rw [HilbertBasis.repr_apply_apply, HilbertBasis.repr_apply_apply, hbasis]
-  have hvalue' (g : s) : W1p.value (u g : W1p mu Omega 2) = B g := by
-    rw [hvalue g, hB]
-  -- A Dirichlet eigenvalue occurs in the sequence: otherwise its eigenfunction would be
-  -- orthogonal to the whole eigenbasis.
   have hiff (kappa' : ℝ) :
-      IsDirichletEigenvalue mu Omega a b c kappa' ↔ ∃ k, kappa (e k) = kappa' := by
-    refine ⟨fun h ↦ ?_, fun ⟨k, hk⟩ ↦ hk ▸ heig (e k)⟩
-    obtain ⟨w, hw, hweq⟩ := (isDirichletEigenvalue_iff _).1 h
-    by_contra! hne
-    have hwJ : W1p0.valueL w ≠ 0 := hcoercive.apply_ne_zero_of_forall_apply_eq_smul_inner
-      W1p0.valueL hw fun v ↦ by simpa only [energyFormH1L0_apply, W1p0.valueL_apply] using hweq v
-    refine hwJ (B.repr.map_eq_zero_iff.1 (lp.ext (funext fun g ↦ ?_)))
-    have hg : kappa g ≠ kappa' := by simpa using hne (e.symm g)
-    have h := hsymm w (u g)
-    rw [hweq, heq, hvalue', real_inner_comm] at h
-    rw [HilbertBasis.repr_apply_apply, W1p0.valueL_apply, lp.coeFn_zero, Pi.zero_apply]
-    exact (mul_eq_mul_right_iff.1 h.symm).resolve_left hg
+      IsDirichletEigenvalue mu Omega a b c kappa' ↔ ∃ k, kappa (e k) = kappa' :=
+    (isDirichletEigenvalue_iff_exists_eq_of_hilbertBasis hcoercive hsymm heig hvalue' heq
+      kappa').trans e.surjective.exists
   refine ⟨basis, kappa ∘ e, u ∘ e, he, Nat.cofinite_eq_atTop ▸
     ((northcott_iff_tendsto kappa).1 hN).comp e.injective.tendsto_cofinite, ?_,
     fun k ↦ by rw [hbasis]; exact hvalue' (e k), fun k v ↦ heq (e k) v, hiff, fun f ↦ ?_⟩
