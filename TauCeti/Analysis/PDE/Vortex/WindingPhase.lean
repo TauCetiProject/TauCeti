@@ -300,8 +300,8 @@ theorem exists_norm_sub_referenceField_le_mul_exp
     (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
     (f : ContDiffBump (0 : ℝ)) {c : ℝ} (hc : c < 1 / 2) :
     ∃ K, ∀ z, ‖x z - referenceField f m z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨K₁, hK₁⟩ := exists_norm_covariantDerivative_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc
-  obtain ⟨K₂, hK₂⟩ := exists_one_sub_normSq_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc
+  obtain ⟨K₁, hK₁⟩ := exists_norm_covariantDerivative_le_mul_exp hb₁ hp hq hsol hlim hc
+  obtain ⟨K₂, hK₂⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim hc
   obtain ⟨R, -, hR⟩ :=
     hasBasis_cobounded_norm.eventually_iff.mp (cobounded_eq_cocompact (α := ℂ) ▸ hphase)
   have hcont : Continuous fun z ↦ ‖x z - referenceField f m z‖ := by
@@ -322,7 +322,7 @@ theorem exists_norm_sub_referenceField_le_mul_exp
   have hs0 : 0 ≤ ‖sectionValue x z‖ := norm_nonneg _
   have h := norm_sub_referenceField_le f hrOut (hp.differentiable (by norm_num) z)
     (hq.differentiable (by norm_num) z) hnhds (by nlinarith)
-    (by nlinarith [normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim z])
+    (by nlinarith [normSq_le_one_of_tendsto hp hq hsol hlim z])
   have h1 := hK₁ z 1
   have hI := hK₁ z I
   rw [norm_one, mul_one] at h1

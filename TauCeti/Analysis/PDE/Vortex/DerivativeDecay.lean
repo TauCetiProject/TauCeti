@@ -77,7 +77,6 @@ variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 /-- Where `|α|² > 0` at `w` and at `w + h`, the difference `D = ℓ - ℓ (· + h)` of `ℓ = log |α|²`
 satisfies `Δ D (w) = (|α|²(w) - |α|²(w + h)) / 4`, by the scalar equation at both points. -/
 private theorem laplacian_log_normSq_sub_comp_add_right
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0) {w h : ℂ} (hw : 0 < 4 * (x w 2 ^ 2 + x w 3 ^ 2))
     (hwh : 0 < 4 * (x (w + h) 2 ^ 2 + x (w + h) 3 ^ 2)) :
@@ -90,9 +89,9 @@ private theorem laplacian_log_normSq_sub_comp_add_right
     (hscd.contDiffAt.log hwh.ne').comp w (contDiffAt_id.add contDiffAt_const)
   rw [show (fun y ↦ ℓ y - ℓ (y + h)) = ℓ - fun y ↦ ℓ (y + h) from rfl,
     (hscd.contDiffAt.log hw.ne').laplacian_sub hshift, congrFun (laplacian_comp_add_right ℓ h) w,
-    laplacian_log_normSq_of_equation_eq_zero (hb₁ w) (hb₂ w) hp.contDiffAt hq.contDiffAt
+    laplacian_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt
       (right_ne_zero_of_mul hw.ne') (Eventually.of_forall hsol),
-    laplacian_log_normSq_of_equation_eq_zero (hb₁ (w + h)) (hb₂ (w + h)) hp.contDiffAt
+    laplacian_log_normSq_of_equation_eq_zero hp.contDiffAt
       hq.contDiffAt (right_ne_zero_of_mul hwh.ne') (Eventually.of_forall hsol)]
   ring
 
@@ -101,7 +100,6 @@ private theorem laplacian_log_normSq_sub_comp_add_right
 `|z| = R`. Then `|ℓ z - ℓ (z + h)| ≤ L |h| exp (-c (|z| - R))` for `|z| ≥ R`. The difference
 solves `Δ D = V D` for a potential `V ≥ c²`, so `D` and `-D` are subsolutions of `-Δ + V`. -/
 private theorem abs_log_normSq_sub_log_normSq_add_le_mul_exp
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c R L : ℝ}
@@ -127,7 +125,7 @@ private theorem abs_log_normSq_sub_log_normSq_add_le_mul_exp
       ((hscd.contDiffAt.log (hpos (w + h) (hwh w hw)).ne').comp w
         (contDiffAt_id.add contDiffAt_const))
   have hΔD : ∀ w : ℂ, R ≤ ‖w‖ → Δ D w = (s w - s (w + h)) / 4 := fun w hw ↦
-    laplacian_log_normSq_sub_comp_add_right hb₁ hb₂ hp hq hsol (hpos w (hw₁ w hw))
+    laplacian_log_normSq_sub_comp_add_right hp hq hsol (hpos w (hw₁ w hw))
       (hpos (w + h) (hwh w hw))
   -- The potential `V = Δ D / D` is a difference quotient of `exp / 4`, hence at least `c²`.
   set V : ℂ → ℝ := fun w ↦ if D w = 0 then c ^ 2 else Δ D w / D w with hV
@@ -170,7 +168,6 @@ private theorem abs_log_normSq_sub_log_normSq_add_le_mul_exp
 /-- The case `0 ≤ c` of `exists_eventually_norm_fderiv_log_normSq_le_mul_exp`, with a
 nonnegative constant. -/
 private theorem exists_eventually_norm_fderiv_log_normSq_le_mul_exp_of_nonneg
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
@@ -224,7 +221,7 @@ private theorem exists_eventually_norm_fderiv_log_normSq_le_mul_exp_of_nonneg
   have hle := hd.le_of_lip' hC (by
     filter_upwards [closedBall_mem_nhds z one_pos] with y hy
     rw [mem_closedBall, dist_eq_norm] at hy
-    have h := abs_log_normSq_sub_log_normSq_add_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc₀ hR₀'
+    have h := abs_log_normSq_sub_log_normSq_add_le_mul_exp hp hq hsol hlim hc₀ hR₀'
       (le_max_right _ _) hpos (fun w hw ↦ (le_max_left _ _).trans (hsR w hw).le) hmv hy hz
     rw [add_sub_cancel] at h
     rw [Real.norm_eq_abs, abs_sub_comm]
@@ -236,7 +233,6 @@ private theorem exists_eventually_norm_fderiv_log_normSq_le_mul_exp_of_nonneg
 whole plane whose section satisfies `|α| → 1` at infinity has
 `|∇ log |α|²| ≤ K exp (-c |z|)`, for every rate `c < 1 / 2`. -/
 theorem exists_eventually_norm_fderiv_log_normSq_le_mul_exp
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
@@ -244,7 +240,7 @@ theorem exists_eventually_norm_fderiv_log_normSq_le_mul_exp
     ∃ K, ∀ᶠ z in cocompact ℂ,
       ‖fderiv ℝ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z‖ ≤
         K * Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨K, hK₀, hK⟩ := exists_eventually_norm_fderiv_log_normSq_le_mul_exp_of_nonneg hb₁ hb₂
+  obtain ⟨K, hK₀, hK⟩ := exists_eventually_norm_fderiv_log_normSq_le_mul_exp_of_nonneg
     hp hq hsol hlim (le_max_right c 0) (max_lt hc (by norm_num))
   refine ⟨K, hK.mono fun z hz ↦ hz.trans (mul_le_mul_of_nonneg_left ?_ hK₀)⟩
   exact Real.exp_le_exp.mpr (neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left _ _)
@@ -253,21 +249,20 @@ theorem exists_eventually_norm_fderiv_log_normSq_le_mul_exp
 /-- **Exponential decay of the gradient of `|α|²`.** A vortex on the whole plane whose section
 satisfies `|α| → 1` at infinity has `|∇ |α|²| ≤ K exp (-c |z|)` for every rate `c < 1 / 2`. -/
 theorem exists_norm_fderiv_normSq_le_mul_exp
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
     (hc : c < 1 / 2) :
     ∃ K, ∀ z, ‖fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
   have hscd := contDiff_normSq hp hq
-  obtain ⟨K, hK⟩ := exists_eventually_norm_fderiv_log_normSq_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc
+  obtain ⟨K, hK⟩ := exists_eventually_norm_fderiv_log_normSq_le_mul_exp hp hq hsol hlim hc
   refine exists_forall_le_mul_exp_of_eventually_le (K := K)
     (hscd.continuous_fderiv (by norm_num)).norm ?_
   filter_upwards [hK, hlim.eventually (lt_mem_nhds (by norm_num : (0 : ℝ) < 1))] with z hz hpos
   -- Where `|α|² > 0`, `∇ |α|² = |α|² ∇ log |α|²` and `|α|² ≤ 1`.
   have hd := ((hscd.differentiable (by norm_num)) z).hasFDerivAt.log hpos.ne'
   rw [hd.fderiv, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos hpos] at hz
-  have h₁ := normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim z
+  have h₁ := normSq_le_one_of_tendsto hp hq hsol hlim z
   have heq : ‖fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z‖ =
       4 * (x z 2 ^ 2 + x z 3 ^ 2) * ((4 * (x z 2 ^ 2 + x z 3 ^ 2))⁻¹ *
         ‖fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z‖) := by
@@ -279,7 +274,7 @@ theorem exists_norm_fderiv_normSq_le_mul_exp
 plane whose section satisfies `|α| → 1` at infinity has `|d_a α (v)| ≤ K |v| exp (-c |z|)` for
 every rate `c < 1 / 2`. -/
 theorem exists_norm_covariantDerivative_le_mul_exp
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
+    (hb₁ : Differentiable ℝ (fun w ↦ x w 0))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
@@ -296,7 +291,7 @@ theorem exists_norm_covariantDerivative_le_mul_exp
     have h₀ : Continuous fun z ↦ x z 0 := hb₁.continuous
     simp only [covariantDerivative_apply, one_re, one_im, mul_one, mul_zero, add_zero]
     exact (h₁.add ((continuous_const.mul (continuous_ofReal.comp h₀)).mul h₂)).norm
-  obtain ⟨K, hK⟩ := exists_norm_fderiv_normSq_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc
+  obtain ⟨K, hK⟩ := exists_norm_fderiv_normSq_le_mul_exp hp hq hsol hlim hc
   -- Where `|α|² ≥ 1 / 2`, the covariant derivative is bounded by the gradient of `|α|²`.
   obtain ⟨K', hK'⟩ := exists_forall_le_mul_exp_of_eventually_le hcont (c := c) (K := K) (by
     filter_upwards [hlim.eventually (lt_mem_nhds (by norm_num : (1 / 2 : ℝ) < 1))] with z hz
@@ -311,15 +306,15 @@ theorem exists_norm_covariantDerivative_le_mul_exp
 whose section satisfies `|α| → 1` at infinity has energy density
 `|F_a|² + |d_a α|² + (1 - |α|²)²` bounded by `K exp (-c |z|)` for every rate `c < 1`. -/
 theorem exists_energyDensity_le_mul_exp
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
+    (hb₁ : Differentiable ℝ (fun w ↦ x w 0))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
     (hc : c < 1) :
     ∃ K, ∀ z, energyDensity x z ≤ K * Real.exp (-(c * ‖z‖)) := by
   have hc' : c / 2 < 1 / 2 := by linarith
-  obtain ⟨K₁, hK₁⟩ := exists_one_sub_normSq_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc'
-  obtain ⟨K₂, hK₂⟩ := exists_norm_covariantDerivative_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc'
+  obtain ⟨K₁, hK₁⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim hc'
+  obtain ⟨K₂, hK₂⟩ := exists_norm_covariantDerivative_le_mul_exp hb₁ hp hq hsol hlim hc'
   refine ⟨(1 / 64 + 1) * K₁ ^ 2 + 2 * K₂ ^ 2, fun z ↦ ?_⟩
   set E := Real.exp (-(c / 2 * ‖z‖)) with hE
   have hE₀ : 0 ≤ E := (Real.exp_pos _).le
@@ -328,7 +323,7 @@ theorem exists_energyDensity_le_mul_exp
     ring_nf
   -- The modulus defect, and hence the curvature, is bounded by `K₁ E`.
   have hdef₀ : 0 ≤ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
-    linarith [normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim z]
+    linarith [normSq_le_one_of_tendsto hp hq hsol hlim z]
   have hdef : (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) ^ 2 ≤ K₁ ^ 2 * E ^ 2 := by
     rw [← mul_pow]
     exact pow_le_pow_left₀ hdef₀ (hK₁ z) 2

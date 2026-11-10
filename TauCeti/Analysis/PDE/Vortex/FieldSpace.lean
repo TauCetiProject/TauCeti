@@ -430,7 +430,7 @@ theorem normSq_le_one_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : 
     refine contDiff_zero.1 (contDiff_euclidean.2 fun i ↦ contDiff_zero.2 ?_)
     fin_cases i
     exacts [hb₁.continuous, hb₂.continuous, hp.continuous, hq.continuous]
-  exact normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol
+  exact normSq_le_one_of_tendsto hp hq hsol
     (tendsto_normSq_of_mem_framedFieldSpace hs hx hcont) z
 
 end TauCeti.Vortex

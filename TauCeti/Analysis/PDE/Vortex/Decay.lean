@@ -62,7 +62,6 @@ variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 `u = -log |α|²` of a vortex satisfies `c² u ≤ Δ u`: the scalar equation gives
 `Δ u = (1 - |α|²) / 4`, and `|α|² u ≤ 1 - |α|²`. -/
 private theorem sq_mul_neg_log_normSq_le_laplacian
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0) {c : ℝ} {z : ℂ} (hc : 4 * c ^ 2 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2))
     (hpos : 0 < 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (hle : 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ 1) :
@@ -72,8 +71,8 @@ private theorem sq_mul_neg_log_normSq_le_laplacian
   have hα : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0 := fun h ↦ by simp [t, h] at hpos
   have hΔ : Δ (fun w ↦ -Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z = (1 - t) / 4 := by
     rw [← Pi.neg_def, congrFun laplacian_neg z,
-      Pi.neg_apply, laplacian_log_normSq_of_equation_eq_zero hb₁.differentiableAt
-        hb₂.differentiableAt hp.contDiffAt hq.contDiffAt hα (Eventually.of_forall hsol)]
+      Pi.neg_apply, laplacian_log_normSq_of_equation_eq_zero hp.contDiffAt hq.contDiffAt hα
+        (Eventually.of_forall hsol)]
     ring
   have hu₀ : 0 ≤ -Real.log t := neg_nonneg.mpr (Real.log_nonpos hpos.le hle)
   -- `t (-log t) ≤ 1 - t`, from `1 - t⁻¹ ≤ log t`.
@@ -88,14 +87,13 @@ private theorem sq_mul_neg_log_normSq_le_laplacian
 
 /-- The case `0 ≤ c` of `exists_one_sub_normSq_le_mul_exp`, with a nonnegative constant. -/
 private theorem exists_one_sub_normSq_le_mul_exp_of_nonneg
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
     (hc₀ : 0 ≤ c) (hc : c < 1 / 2) :
     ∃ K, 0 ≤ K ∧ ∀ z, 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ K * Real.exp (-(c * ‖z‖)) := by
   set s : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2) with hs
-  have hs₁ : ∀ z, s z ≤ 1 := normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim
+  have hs₁ : ∀ z, s z ≤ 1 := normSq_le_one_of_tendsto hp hq hsol hlim
   have hscd : ContDiff ℝ 2 s := contDiff_normSq hp hq
   -- Outside a disc of radius `R`, `|α|² > 4 c²`.
   have h4c : 4 * c ^ 2 < 1 := by nlinarith
@@ -113,7 +111,7 @@ private theorem exists_one_sub_normSq_le_mul_exp_of_nonneg
   have hucd : ∀ z, R < ‖z‖ → ContDiffAt ℝ 2 u z := fun z hz ↦
     (hscd.contDiffAt.log (hpos z hz.le).ne').neg
   have hsub : ∀ z, R < ‖z‖ → c ^ 2 * u z ≤ Δ u z := fun z hz ↦
-    sq_mul_neg_log_normSq_le_laplacian hb₁ hb₂ hp hq hsol (hsR z hz.le).le (hpos z hz.le) (hs₁ z)
+    sq_mul_neg_log_normSq_le_laplacian hp hq hsol (hsR z hz.le).le (hpos z hz.le) (hs₁ z)
   have hulim : Tendsto u (cocompact ℂ) (𝓝 0) := by
     simpa [hu] using ((Real.continuousAt_log one_ne_zero).tendsto.comp hlim).neg
   -- A bound for `u` on the sphere of radius `R`.
@@ -138,13 +136,12 @@ private theorem exists_one_sub_normSq_le_mul_exp_of_nonneg
 whose section satisfies `|α| → 1` at infinity has `1 - |α(z)|² ≤ K exp (-c |z|)` for every rate
 `c < 1 / 2`, with a constant `K` depending on `c`. -/
 theorem exists_one_sub_normSq_le_mul_exp
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
     (hc : c < 1 / 2) :
     ∃ K, ∀ z, 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ K * Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨K, hK₀, hK⟩ := exists_one_sub_normSq_le_mul_exp_of_nonneg hb₁ hb₂ hp hq hsol hlim
+  obtain ⟨K, hK₀, hK⟩ := exists_one_sub_normSq_le_mul_exp_of_nonneg hp hq hsol hlim
     (le_max_right c 0) (max_lt hc (by norm_num))
   refine ⟨K, fun z ↦ (hK z).trans (mul_le_mul_of_nonneg_left ?_ hK₀)⟩
   exact Real.exp_le_exp.mpr (neg_le_neg (mul_le_mul_of_nonneg_right (le_max_left _ _)
@@ -154,17 +151,16 @@ theorem exists_one_sub_normSq_le_mul_exp
 section satisfies `|α| → 1` at infinity has curvature coefficient bounded by `K exp (-c |z|)` for
 every rate `c < 1 / 2`. -/
 theorem exists_abs_curvature_le_mul_exp
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
     (hc : c < 1 / 2) :
     ∃ K, ∀ z, |fderiv ℝ (fun w ↦ x w 1) z 1 - fderiv ℝ (fun w ↦ x w 0) z I| ≤
       K * Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨K, hK⟩ := exists_one_sub_normSq_le_mul_exp hb₁ hb₂ hp hq hsol hlim hc
+  obtain ⟨K, hK⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim hc
   refine ⟨K / 8, fun z ↦ ?_⟩
   have h₀ : 0 ≤ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) := by
-    linarith [normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim z]
+    linarith [normSq_le_one_of_tendsto hp hq hsol hlim z]
   rw [curvature_eq_of_equation_eq_zero (hsol z), abs_neg, abs_of_nonneg (by linarith)]
   linarith [hK z]
 
@@ -173,31 +169,29 @@ variable (μ : Measure ℂ) [μ.IsAddHaarMeasure]
 /-- The modulus defect `1 - |α|²` of a vortex on the whole plane with `|α| → 1` at infinity is
 integrable. -/
 theorem integrable_one_sub_normSq
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     Integrable (fun z ↦ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) μ := by
-  obtain ⟨K, hK⟩ := exists_one_sub_normSq_le_mul_exp hb₁ hb₂ hp hq hsol hlim
+  obtain ⟨K, hK⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim
     (by norm_num : (1 / 4 : ℝ) < 1 / 2)
   have hint : Integrable (fun z : ℂ ↦ K * Real.exp (-(1 / 4 * ‖z‖))) μ :=
     (integrable_exp_neg_mul_norm μ (by norm_num : (0 : ℝ) < 1 / 4)).const_mul K
   have hcont : Continuous fun z ↦ 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) :=
     continuous_const.sub (continuous_const.mul ((hp.continuous.pow 2).add (hq.continuous.pow 2)))
   refine hint.mono' hcont.aestronglyMeasurable (.of_forall fun z ↦ ?_)
-  have h₁ := normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim z
+  have h₁ := normSq_le_one_of_tendsto hp hq hsol hlim z
   rw [Real.norm_eq_abs, abs_of_nonneg (by linarith)]
   exact hK z
 
 /-- **Integrability of the curvature of a plane vortex.** A vortex on the whole plane whose
 section satisfies `|α| → 1` at infinity has integrable curvature coefficient `∂₁ b₂ - ∂₂ b₁`. -/
 theorem integrable_curvature
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
     Integrable (fun z ↦ fderiv ℝ (fun w ↦ x w 1) z 1 - fderiv ℝ (fun w ↦ x w 0) z I) μ := by
-  refine ((integrable_one_sub_normSq μ hb₁ hb₂ hp hq hsol hlim).div_const 8).neg.congr
+  refine ((integrable_one_sub_normSq μ hp hq hsol hlim).div_const 8).neg.congr
     (.of_forall fun z ↦ ?_)
   exact (curvature_eq_of_equation_eq_zero (hsol z)).symm
 

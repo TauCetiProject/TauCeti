@@ -44,7 +44,6 @@ the factor from a prescribed zero divisor. -/
 theorem existsUnique_framedGauge_of_forall_section_eq_mul
     {x y : ℂ → EuclideanSpace ℝ (Fin 4)} {h phase : ℂ → ℂ}
     (hxb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hxb₂ : Differentiable ℝ (fun w ↦ x w 1))
-    (hxp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hxq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hyb₁ : Differentiable ℝ (fun w ↦ y w 0)) (hyb₂ : Differentiable ℝ (fun w ↦ y w 1))
     (hyp : ContDiff ℝ 2 (fun w ↦ y w 2)) (hyq : ContDiff ℝ 2 (fun w ↦ y w 3))
     (hxsol : ∀ z, equation x z = 0) (hysol : ∀ z, equation y z = 0)
@@ -63,7 +62,7 @@ theorem existsUnique_framedGauge_of_forall_section_eq_mul
   have hphase' : Tendsto (fun z ↦ ‖phase z‖) (cocompact ℂ) (𝓝 1) :=
     tendsto_const_nhds.congr' (hphase.mono fun _ h ↦ h.symm)
   obtain ⟨f, hf, hfactor, hfields⟩ :=
-    exists_eq_phaseGauge_of_forall_section_eq_mul hxb₁ hxb₂ hxp hxq hyb₁ hyb₂ hyp hyq
+    exists_eq_phaseGauge_of_forall_section_eq_mul hxb₁ hxb₂ hyb₁ hyb₂ hyp hyq
       hxsol hysol (tendsto_normSq_of_tendsto_sectionValue_mul hphase' hxlim)
       (tendsto_normSq_of_tendsto_sectionValue_mul hphase' hylim) (hh.of_le (by simp)) hh₀ hα'
       hdense
