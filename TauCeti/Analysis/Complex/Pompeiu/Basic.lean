@@ -208,10 +208,9 @@ theorem hasDerivAt_cauchyTransform_of_notMem_tsupport {f : ℂ → F} {w : ℂ} 
           norm_pos_iff.mp (hε0.trans_le (hfar hw' hz))
         exact (((hasDerivAt_id w').sub_const z).inv hne).smul_const (f z) |>.congr_deriv
           (by simp only [neg_div, one_div, neg_smul, id]))
-  rw [show cauchyTransform f = fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z from
-    funext (cauchyTransform_apply f)]
   convert hderiv.2.const_smul (Real.pi : ℂ)⁻¹ using 1
-  simp_rw [neg_smul, integral_neg, smul_neg]
+  · exact funext (cauchyTransform_apply f)
+  · simp_rw [neg_smul, integral_neg, smul_neg]
 
 /-- The Cauchy transform of integrable data is holomorphic off its closed support. -/
 theorem differentiableOn_cauchyTransform_compl_tsupport {f : ℂ → F} (hf : Integrable f) :
