@@ -718,13 +718,15 @@ theorem integral_floerEnergyDensity_pairOfPantsContinuationPerturbation
     hHs hu hR hRL).symm
 
 /-- **The topological energy of a pair of pants with continuation necks is bounded below, for a
-manifold target.** Let `u` solve the Floer equation `(du - X_K)^{0,1} = 0` on `S` for almost
-complex structures `J z` on the tangent spaces `T_{u(z)} M` tamed by the two-form, under the
-hypotheses of
-`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsContinuationPerturbation`,
-with `|G_q|, |H_q| ≤ B_q` and `|H_q - G_q| ≤ D_q`. Since its energy is nonnegative, its symplectic
-area plus the Hamiltonian terms of the outer Hamiltonians at the asymptotic orbits is at least
-`-∑ q, (B_q + D_q)`, for all neck positions. -/
+manifold target.** Let `K` be the perturbation with continuation necks from period-one `C¹`
+Hamiltonians `G_q` to `H_q` with `|G_q|, |H_q| ≤ B_q` and `|H_q - G_q| ≤ D_q`. Let `u` be a map
+which is `C¹` on `S`, solves the Floer equation `(du - X_K)^{0,1} = 0` on `S` for almost complex
+structures `J z` on the tangent spaces `T_{u(z)} M` tamed by the two-form, has integrable
+symplectic area density over `S`, and whose loops `t ↦ u(φ_q(±R + i t))` converge pointwise to
+loops `x_q` as `R → ∞`. Then its symplectic area plus the Hamiltonian terms of the outer
+Hamiltonians at the asymptotic orbits is at least `-∑ q, (B_q + D_q)`, for all neck positions.
+No integrability of the energy density is needed: this is the limit of the bound on the
+truncations `S_R`. -/
 theorem neg_sum_le_integral_add_sum_of_pairOfPantsContinuationPerturbation
     (hω : ω.IsNondegenerate) (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
     (hGs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (G q)))
@@ -734,11 +736,6 @@ theorem neg_sum_le_integral_add_sum_of_pairOfPantsContinuationPerturbation
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal) {x : Puncture → ℝ → M}
     (hx : ∀ q t, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
       (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x q t)))
-    (hE : IntegrableOn (ω.floerEnergyDensity
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦
-        pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
-      u) thricePuncturedSphereReal)
     (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
@@ -758,13 +755,18 @@ theorem neg_sum_le_integral_add_sum_of_pairOfPantsContinuationPerturbation
           (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
             (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
         ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t) := by
-  have hpos := setIntegral_nonneg (μ := volume) isOpen_thricePuncturedSphereReal.measurableSet
-    fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
-  have hC := (abs_le.1 (abs_setIntegral_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le
-    ω hG hH hGs hHs hGB hHB hD L u thricePuncturedSphereReal)).1
-  rw [hω.integral_floerEnergyDensity_pairOfPantsContinuationPerturbation hG hH hGs hHs hHB hu hx hE
-    hA] at hpos
-  linarith
+  -- The lower bound holds on every truncation `S_R` with `R ≥ 2` and `R ≥ L_q + 1` for all `q`,
+  -- and its right-hand side converges to that on `S` as `R → ∞`.
+  have hlim := (tendsto_setIntegral_truncation hA).add
+    (tendsto_finsetSum Finset.univ fun q _ ↦
+      (tendsto_intervalIntegral_endLoop (fun q ↦ (hHs q).continuous) hHB hu.continuousOn
+        (hx q)).const_mul q.endSign)
+  refine ge_of_tendsto hlim ?_
+  filter_upwards [eventually_ge_atTop 2,
+    Filter.eventually_all.2 fun q ↦ eventually_ge_atTop (L q + 1)] with R hR hRL
+  have hTS := preimage_truncation_subset_thricePuncturedSphereReal R
+  exact hω.neg_sum_le_integral_add_sum_of_pairOfPantsContinuationPerturbation_truncation hG hH hGs
+    hHs hGB hHB hD hu hR hRL (fun z hz ↦ hJ z (hTS hz)) fun z hz ↦ hfloer z (hTS hz)
 
 end IsNondegenerate
 
