@@ -290,4 +290,16 @@ theorem integral_laplacian_mul_planarNewtonianKernel_sub {f : ℂ → ℝ} (hf :
   rw [← h, ← integral_add_right_eq_self _ a]
   simp
 
+/-- For a `C²` function `f` with compact support on `ℂ`, the integrand `Δ f · G(· - a)` of the
+distributional identity `-Δ G(· - a) = δₐ` is integrable. -/
+theorem integrable_laplacian_mul_planarNewtonianKernel_sub {f : ℂ → ℝ} (hf : ContDiff ℝ 2 f)
+    (hc : HasCompactSupport f) (a : ℂ) :
+    Integrable fun z ↦ Δ f z * planarNewtonianKernel (z - a) := by
+  have hg : Integrable fun z ↦ planarNewtonianKernel z • (Δ f ∘ Homeomorph.addRight a) z :=
+    locallyIntegrable_planarNewtonianKernel.integrable_smul_right_of_hasCompactSupport
+      (hf.continuous_laplacian.comp (Homeomorph.addRight a).continuous)
+      (hc.laplacian.comp_homeomorph (Homeomorph.addRight a))
+  simpa only [Function.comp_apply, Homeomorph.coe_addRight, sub_add_cancel, smul_eq_mul,
+    mul_comm] using hg.comp_sub_right a
+
 end TauCeti
