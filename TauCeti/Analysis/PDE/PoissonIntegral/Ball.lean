@@ -126,11 +126,9 @@ theorem integrable_ballPoissonKernel_mul {g : sphere (0 : EuclideanSpace ℝ (Fi
     (hg : Integrable g volume.toSphere) {x : EuclideanSpace ℝ (Fin n)} :
     Integrable (fun y : sphere (0 : EuclideanSpace ℝ (Fin n)) 1 ↦ ballPoissonKernel n x y * g y)
       volume.toSphere := by
-  by_cases hx : ‖x‖ = 1
-  · simp [ballPoissonKernel_def, hx]
-  · have hK := continuous_ballPoissonKernel_on_sphere x hx
-    obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn hK.continuousOn
-    exact hg.bdd_mul hK.aestronglyMeasurable (ae_of_all _ fun y ↦ hC y (mem_univ y))
+  have hK := continuous_ballPoissonKernel_on_sphere x
+  obtain ⟨C, hC⟩ := isCompact_univ.exists_bound_of_continuousOn hK.continuousOn
+  exact hg.bdd_mul hK.aestronglyMeasurable (ae_of_all _ fun y ↦ hC y (mem_univ y))
 
 /-- The Poisson integral of boundary data `g` on the unit sphere of `ℝⁿ`,
 
@@ -298,7 +296,7 @@ theorem tendsto_ballPoissonIntegral {g : sphere (0 : EuclideanSpace ℝ (Fin n))
     eventually_nhdsWithin_of_eventually_nhds (closedBall_mem_nhds _ (half_pos hδ))
   filter_upwards [self_mem_nhdsWithin, hsmall, hnear] with x hx hxsmall hxnear
   rw [mem_ball_zero_iff] at hx
-  have hKi := integrableOn_univ.mp (integrableOn_ballPoissonKernel x hx.ne univ)
+  have hKi := integrableOn_univ.mp (integrableOn_ballPoissonKernel x univ)
   -- Positivity and mass one turn the pointwise majorant into the required integral estimate.
   rw [Real.dist_eq, ballPoissonIntegral_sub_const hn hgi hx]
   calc |∫ y, ballPoissonKernel n x y * (g y - g z) ∂volume.toSphere|
