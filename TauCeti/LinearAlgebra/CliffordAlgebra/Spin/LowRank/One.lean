@@ -91,17 +91,24 @@ theorem ker_spinToSpecialOrthogonal_eq_top_of_finrank_eq_one (hV : Module.finran
     infer_instance
   exact MonoidHom.ker_eq_top_iff.mpr (MonoidHom.ext fun _ ↦ Subsingleton.elim _ _)
 
+omit [Invertible (2 : K)] in
 /-- In dimension one the Spin group of a nondegenerate form is `{1, -1}`. -/
 theorem spinGroup.eq_one_or_eq_negOne_of_finrank_eq_one (hQ : Q.Nondegenerate)
     (hV : Module.finrank K V = 1) (x : spinGroup Q) :
     x = 1 ∨ x = spinGroup.negOne Q
       (have := Module.nontrivial_of_finrank_eq_succ hV; hQ.ne_zero) := by
-  have : Module.Finite K V := Module.finite_of_finrank_eq_succ hV
-  have : Nontrivial V := Module.nontrivial_of_finrank_pos (R := K) (by rw [hV]; exact one_pos)
-  refine (mem_ker_spinToSpecialOrthogonal_iff Q hQ x).mp ?_
-  rw [ker_spinToSpecialOrthogonal_eq_top_of_finrank_eq_one Q hV]
-  exact Subgroup.mem_top x
+  obtain ⟨a, ha⟩ := exists_eq_algebraMap_of_mem_even_of_finrank_eq_one Q hV x
+    (spinGroup.mem_even x.2)
+  rcases subsingleton_or_nontrivial (CliffordAlgebra Q) with hQ' | hQ'
+  · exact .inl (Subtype.ext (Subsingleton.elim _ _))
+  have h := spinGroup.star_mul_self_of_mem x.2
+  rw [ha, star_algebraMap, ← map_mul] at h
+  rcases mul_self_eq_one_iff.mp ((algebraMap K (CliffordAlgebra Q)).injective
+    (by rw [h, map_one])) with rfl | rfl
+  · exact .inl (Subtype.ext (by simpa using ha))
+  · exact .inr (Subtype.ext (by simpa using ha))
 
+omit [Invertible (2 : K)] in
 /-- In dimension one the Spin group of a nondegenerate form consists of exactly the Clifford
 elements `1` and `-1`. -/
 theorem mem_spinGroup_iff_of_finrank_eq_one (hQ : Q.Nondegenerate)
