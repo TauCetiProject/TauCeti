@@ -138,19 +138,55 @@ theorem contDiffAt_planarNewtonianKernel {n : WithTop ℕ∞} {z : ℂ} (hz : z 
   simpa only [sub_zero] using
     (contDiffAt_planarNewtonianKernel_sub (n := n) (z := z) (a := 0) hz)
 
-/-- The planar Newtonian kernel solves the homogeneous Laplace equation pointwise away from its
-pole.  Its nonzero distributional Laplacian is concentrated at the omitted pole. -/
-@[simp]
-theorem laplacian_planarNewtonianKernel {z : ℂ} (hz : z ≠ 0) :
-    Δ planarNewtonianKernel z = 0 :=
-  (harmonicAt_planarNewtonianKernel hz).2.self_of_nhds
+/-- Along the real axis through the pole `a`, the derivative of the translated planar Newtonian
+kernel in the direction `1` is `-(2 π t)⁻¹`. -/
+private theorem fderiv_planarNewtonianKernel_sub_apply_one {a : ℂ} {t : ℝ} (ht : 0 < t) :
+    fderiv ℝ (fun w : ℂ ↦ planarNewtonianKernel (w - a)) (a + t) 1 = -(2 * Real.pi)⁻¹ * t⁻¹ := by
+  have hne : a + (t : ℂ) ≠ a := by simpa using ht.ne'
+  have hd := ((contDiffAt_planarNewtonianKernel_sub (n := 2) hne).differentiableAt
+    (by norm_num)).hasFDerivAt
+  have hcurve : HasDerivAt (fun s : ℝ ↦ a + (s : ℂ)) 1 t :=
+    (hasDerivAt_id t).ofReal_comp.const_add a
+  have h2 := (Real.hasDerivAt_log ht.ne').const_mul (-(2 * Real.pi)⁻¹)
+  refine (hd.comp_hasDerivAt t hcurve).unique (h2.congr_of_eventuallyEq ?_)
+  filter_upwards [lt_mem_nhds ht] with s hs
+  simp [planarNewtonianKernel_def, abs_of_pos hs]
 
-/-- A translated planar Newtonian kernel solves the homogeneous Laplace equation away from its
-pole. -/
+/-- The gradient of the translated planar Newtonian kernel is not differentiable at the pole. -/
+private theorem not_differentiableAt_fderiv_planarNewtonianKernel_sub (a : ℂ) :
+    ¬ DifferentiableAt ℝ (fderiv ℝ (fun w : ℂ ↦ planarNewtonianKernel (w - a))) a := by
+  intro hd
+  have hg : ContinuousAt
+      (fun s : ℝ ↦ fderiv ℝ (fun w : ℂ ↦ planarNewtonianKernel (w - a)) (a + s) 1) 0 :=
+    (ContinuousLinearMap.apply ℝ ℝ (1 : ℂ)).continuous.continuousAt.comp
+      (hd.continuousAt.comp_of_eq (by fun_prop : Continuous fun s : ℝ ↦ a + (s : ℂ)).continuousAt
+        (by simp))
+  have h1 : Tendsto (fun s : ℝ ↦ -(2 * Real.pi)⁻¹ * s⁻¹) (𝓝[>] 0) atBot :=
+    tendsto_inv_nhdsGT_zero.const_mul_atTop_of_neg (by simp [Real.pi_pos])
+  have h2 : Tendsto
+      (fun s : ℝ ↦ fderiv ℝ (fun w : ℂ ↦ planarNewtonianKernel (w - a)) (a + s) 1) (𝓝[>] 0)
+      atBot :=
+    h1.congr' (by
+      filter_upwards [self_mem_nhdsWithin] with s hs
+      exact (fderiv_planarNewtonianKernel_sub_apply_one hs).symm)
+  exact not_tendsto_nhds_of_tendsto_atBot h2 _ (hg.tendsto.mono_left nhdsWithin_le_nhds)
+
+/-- A translated planar Newtonian kernel solves the homogeneous Laplace equation pointwise. At
+the pole the value `0` is the junk value of the non-differentiable kernel. Its nonzero
+distributional Laplacian is concentrated at the pole. -/
 @[simp]
-theorem laplacian_planarNewtonianKernel_sub {z a : ℂ} (hza : z ≠ a) :
-    Δ (fun w : ℂ ↦ planarNewtonianKernel (w - a)) z = 0 :=
-  (harmonicAt_planarNewtonianKernel_sub hza).2.self_of_nhds
+theorem laplacian_planarNewtonianKernel_sub {z a : ℂ} :
+    Δ (fun w : ℂ ↦ planarNewtonianKernel (w - a)) z = 0 := by
+  rcases eq_or_ne z a with rfl | hza
+  · rw [laplacian_eq_iteratedFDeriv_complexPlane]
+    simp [iteratedFDeriv_two_apply, fderiv_zero_of_not_differentiableAt
+      (not_differentiableAt_fderiv_planarNewtonianKernel_sub z)]
+  · exact (harmonicAt_planarNewtonianKernel_sub hza).2.self_of_nhds
+
+/-- The planar Newtonian kernel solves the homogeneous Laplace equation pointwise. -/
+@[simp]
+theorem laplacian_planarNewtonianKernel {z : ℂ} : Δ planarNewtonianKernel z = 0 := by
+  simpa using laplacian_planarNewtonianKernel_sub (z := z) (a := 0)
 
 /-- Moving the pole of the planar Newtonian kernel by at most `R` changes its value at a point `z`
 with `2 R ≤ ‖z‖` by at most `π⁻¹ R / ‖z‖`. -/
