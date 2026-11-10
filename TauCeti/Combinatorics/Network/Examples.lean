@@ -56,7 +56,7 @@ example. -/
 abbrev LexIntPair := ℤ ×ₗ ℤ
 
 /-- A pair of integers, regarded as an element of the lexicographic coefficient group. -/
-@[expose] def lexPair (a b : ℤ) : LexIntPair :=
+def lexPair (a b : ℤ) : LexIntPair :=
   toLex (a, b)
 
 /-- The capacities of the nonterminating augmentation example. The four outer arrows have
@@ -91,22 +91,37 @@ private theorem lexPair_nonneg_of_nonneg {a b : ℤ} (ha : 0 ≤ a) (hb : 0 ≤ 
   rw [← toLex_zero, lexPair, Prod.Lex.toLex_le_toLex']
   exact ⟨ha, fun _ ↦ hb⟩
 
+/-- `lexPair a b` corresponds to the pair `(a, b)`. -/
+@[simp]
+theorem ofLex_lexPair (a b : ℤ) : ofLex (lexPair a b) = (a, b) := by
+  unfold lexPair; rfl
+
+/-- Pairs are compared lexicographically. -/
+theorem lexPair_le_lexPair_iff {a b c d : ℤ} :
+    lexPair a b ≤ lexPair c d ↔ a < c ∨ a = c ∧ b ≤ d :=
+  Prod.Lex.toLex_le_toLex
+
+/-- Pairs are strictly compared lexicographically. -/
+theorem lexPair_lt_lexPair_iff {a b c d : ℤ} :
+    lexPair a b < lexPair c d ↔ a < c ∨ a = c ∧ b < d :=
+  Prod.Lex.toLex_lt_toLex
+
 /-- Addition of lexicographically ordered pairs is coordinatewise. -/
 @[simp]
-private theorem lexPair_add (a b c d : ℤ) :
-    lexPair a b + lexPair c d = lexPair (a + c) (b + d) :=
-  rfl
+theorem lexPair_add (a b c d : ℤ) :
+    lexPair a b + lexPair c d = lexPair (a + c) (b + d) := by
+  unfold lexPair; rfl
 
 /-- Subtraction of lexicographically ordered pairs is coordinatewise. -/
 @[simp]
-private theorem lexPair_sub (a b c d : ℤ) :
-    lexPair a b - lexPair c d = lexPair (a - c) (b - d) :=
-  rfl
+theorem lexPair_sub (a b c d : ℤ) :
+    lexPair a b - lexPair c d = lexPair (a - c) (b - d) := by
+  unfold lexPair; rfl
 
 /-- The pair `(0, 0)` is zero in the lexicographic coefficient group. -/
 @[simp]
-private theorem lexPair_zero : lexPair 0 0 = 0 :=
-  rfl
+theorem lexPair_zero : lexPair 0 0 = 0 := by
+  unfold lexPair; rfl
 
 @[simp]
 private theorem lexPair_natCast_nonneg (m : ℕ) : 0 ≤ lexPair 0 m :=
@@ -201,19 +216,24 @@ def reversePath :
     (x := 2) (Sum.inl ())).cons (x := 1) (Sum.inr ())).cons
     (x := 3) (Sum.inl ())
 
-private theorem forwardPath_nodup : forwardPath.arrows.Nodup := by
+/-- The residual path `0 → 1 → 2 → 3` uses no residual arrow twice. -/
+theorem forwardPath_nodup : forwardPath.arrows.Nodup := by
   simp [forwardPath, ArrowWalk.arrows_cons]
 
-private theorem forwardPath_nonempty : forwardPath.arrows ≠ [] := by
+/-- The residual path `0 → 1 → 2 → 3` is nonempty. -/
+theorem forwardPath_nonempty : forwardPath.arrows ≠ [] := by
   simp [forwardPath, ArrowWalk.arrows_cons]
 
-private theorem reversePath_nodup : reversePath.arrows.Nodup := by
+/-- The residual path `0 → 2 → 1 → 3` uses no residual arrow twice. -/
+theorem reversePath_nodup : reversePath.arrows.Nodup := by
   simp [reversePath, ArrowWalk.arrows_cons]
 
-private theorem reversePath_nonempty : reversePath.arrows ≠ [] := by
+/-- The residual path `0 → 2 → 1 → 3` is nonempty. -/
+theorem reversePath_nonempty : reversePath.arrows ≠ [] := by
   simp [reversePath, ArrowWalk.arrows_cons]
 
-private theorem forwardPath_positive (m : ℕ) :
+/-- Every arrow of `0 → 1 → 2 → 3` has positive residual capacity in the even state. -/
+theorem forwardPath_positive (m : ℕ) :
     ∀ a ∈ forwardPath.arrows,
       0 < residualCapacity 0 capacity (evenFlow m).toFun a.2.2 := by
   intro a ha
@@ -224,7 +244,8 @@ private theorem forwardPath_positive (m : ℕ) :
   · simp [capacity, evenFlow, evenAssignment]
   · simp [capacity, evenFlow, evenAssignment, lexPair, Prod.Lex.toLex_lt_toLex]
 
-private theorem reversePath_positive (m : ℕ) :
+/-- Every arrow of `0 → 2 → 1 → 3` has positive residual capacity in the odd state. -/
+theorem reversePath_positive (m : ℕ) :
     ∀ a ∈ reversePath.arrows,
       0 < residualCapacity 0 capacity (oddFlow m).toFun a.2.2 := by
   intro a ha
@@ -235,7 +256,8 @@ private theorem reversePath_positive (m : ℕ) :
   · simp [oddFlow, oddAssignment]
   · simp [capacity, oddFlow, oddAssignment, lexPair, Prod.Lex.toLex_lt_toLex]
 
-private theorem forwardPath_bottleneck (m : ℕ) :
+/-- In the even state, the path `0 → 1 → 2 → 3` has bottleneck `(0, 1)`. -/
+theorem forwardPath_bottleneck (m : ℕ) :
     forwardPath.bottleneck (residualCapacity 0 capacity (evenFlow m).toFun)
       forwardPath_nonempty = lexPair 0 1 := by
   apply le_antisymm
@@ -253,7 +275,8 @@ private theorem forwardPath_bottleneck (m : ℕ) :
     rcases ha with (rfl | rfl) | rfl
     all_goals simp [capacity, evenFlow, evenAssignment]
 
-private theorem reversePath_bottleneck (m : ℕ) :
+/-- In the odd state, the path `0 → 2 → 1 → 3` has bottleneck `(0, 1)`. -/
+theorem reversePath_bottleneck (m : ℕ) :
     reversePath.bottleneck (residualCapacity 0 capacity (oddFlow m).toFun)
       reversePath_nonempty = lexPair 0 1 := by
   apply le_antisymm
@@ -400,23 +423,28 @@ def maximumFlow : Flow capacity 0 3 where
       intro w e
       fin_cases w <;> simp [maximumAssignment])
 
-private def firstShortestPath :
+/-- The residual path `0 → 1 → 3`, the first shortest augmenting path from zero. -/
+def firstShortestPath :
     ArrowWalk (ResidualHom (fun _ _ : Fin 4 ↦ Unit)) 0 3 :=
   ((ArrowWalk.nil (Q := ResidualHom (fun _ _ : Fin 4 ↦ Unit)) 0).cons
     (x := 1) (Sum.inl ())).cons (x := 3) (Sum.inl ())
 
-private def secondShortestPath :
+/-- The residual path `0 → 2 → 3`, the second shortest augmenting path. -/
+def secondShortestPath :
     ArrowWalk (ResidualHom (fun _ _ : Fin 4 ↦ Unit)) 0 3 :=
   ((ArrowWalk.nil (Q := ResidualHom (fun _ _ : Fin 4 ↦ Unit)) 0).cons
     (x := 2) (Sum.inl ())).cons (x := 3) (Sum.inl ())
 
-private theorem firstShortestPath_nonempty : firstShortestPath.arrows ≠ [] := by
+/-- The residual path `0 → 1 → 3` is nonempty. -/
+theorem firstShortestPath_nonempty : firstShortestPath.arrows ≠ [] := by
   simp [firstShortestPath, ArrowWalk.arrows_cons]
 
-private theorem secondShortestPath_nonempty : secondShortestPath.arrows ≠ [] := by
+/-- The residual path `0 → 2 → 3` is nonempty. -/
+theorem secondShortestPath_nonempty : secondShortestPath.arrows ≠ [] := by
   simp [secondShortestPath, ArrowWalk.arrows_cons]
 
-private theorem firstShortestPath_positive :
+/-- Every arrow of `0 → 1 → 3` has positive residual capacity for the zero flow. -/
+theorem firstShortestPath_positive :
     ∀ a ∈ firstShortestPath.arrows,
       0 < residualCapacity 0 capacity
         (Flow.zero capacity_nonneg : Flow capacity (0 : Fin 4) 3).toFun a.2.2 := by
@@ -426,7 +454,8 @@ private theorem firstShortestPath_positive :
   rcases ha with rfl | rfl
   all_goals simp [capacity]
 
-private theorem secondShortestPath_positive :
+/-- Every arrow of `0 → 2 → 3` has positive residual capacity after the first augmentation. -/
+theorem secondShortestPath_positive :
     ∀ a ∈ secondShortestPath.arrows,
       0 < residualCapacity 0 capacity firstShortestFlow.toFun a.2.2 := by
   intro a ha
@@ -435,7 +464,8 @@ private theorem secondShortestPath_positive :
   rcases ha with rfl | rfl
   all_goals simp [capacity, firstShortestFlow, firstShortestAssignment]
 
-private theorem firstShortestPath_distance :
+/-- The path `0 → 1 → 3` is a shortest positive residual path for the zero flow. -/
+theorem firstShortestPath_distance :
     (firstShortestPath.length : ℕ∞) =
       positiveEDist (residualCapacity 0 capacity
         (Flow.zero capacity_nonneg : Flow capacity (0 : Fin 4) 3).toFun) 0 3 := by
@@ -452,7 +482,8 @@ private theorem firstShortestPath_distance :
   · simpa [firstShortestPath, ArrowWalk.length] using
       positiveEDist_le_length firstShortestPath firstShortestPath_positive
 
-private theorem secondShortestPath_distance :
+/-- The path `0 → 2 → 3` is a shortest positive residual path after the first augmentation. -/
+theorem secondShortestPath_distance :
     (secondShortestPath.length : ℕ∞) =
       positiveEDist (residualCapacity 0 capacity firstShortestFlow.toFun) 0 3 := by
   apply le_antisymm
@@ -467,7 +498,8 @@ private theorem secondShortestPath_distance :
   · simpa [secondShortestPath, ArrowWalk.length] using
       positiveEDist_le_length secondShortestPath secondShortestPath_positive
 
-private theorem firstShortestPath_bottleneck :
+/-- For the zero flow, the path `0 → 1 → 3` has bottleneck `(1, 0)`. -/
+theorem firstShortestPath_bottleneck :
     firstShortestPath.bottleneck (residualCapacity 0 capacity
       (Flow.zero capacity_nonneg : Flow capacity (0 : Fin 4) 3).toFun)
       firstShortestPath_nonempty = lexPair 1 0 := by
@@ -487,7 +519,8 @@ private theorem firstShortestPath_bottleneck :
     rcases ha with rfl | rfl
     all_goals simp [capacity]
 
-private theorem secondShortestPath_bottleneck :
+/-- After the first augmentation, the path `0 → 2 → 3` has bottleneck `(1, 0)`. -/
+theorem secondShortestPath_bottleneck :
     secondShortestPath.bottleneck (residualCapacity 0 capacity firstShortestFlow.toFun)
       secondShortestPath_nonempty = lexPair 1 0 := by
   apply le_antisymm
@@ -547,18 +580,6 @@ theorem maximumFlow_isMaximum : maximumFlow.IsMaximum := by
       rw [show ({0} : Finset (Fin 4))ᶜ = {1, 2, 3} by decide]
       simp [arrowSum_def, capacity, one_nsmul]
     _ = maximumFlow.val := maximumFlow_val.symm
-
-/-- Shortest-path augmentation reaches the maximum value `(2, 0)` in two steps, in contrast to
-the infinite sequence of arbitrary augmentations above. -/
-theorem shortest_augmentation_reaches_maximum_in_two_steps :
-    BoundedFlow.ShortestAugmentationStep
-        (Flow.zero capacity_nonneg : Flow capacity (0 : Fin 4) 3).toBoundedFlow
-        firstShortestFlow.toBoundedFlow ∧
-      firstShortestFlow.toBoundedFlow.ShortestAugmentationStep maximumFlow.toBoundedFlow ∧
-      maximumFlow.IsMaximum ∧ maximumFlow.val = lexPair 2 0 :=
-  ⟨zero_shortestAugmentationStep_firstShortestFlow,
-    firstShortestFlow_shortestAugmentationStep_maximumFlow, maximumFlow_isMaximum,
-    maximumFlow_val⟩
 
 end LexicographicAugmentationExample
 
