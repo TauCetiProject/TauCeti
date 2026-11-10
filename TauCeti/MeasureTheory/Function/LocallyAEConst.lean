@@ -6,22 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.OpenPos
-import Mathlib.Topology.Bases
 
 /-!
 # Locally almost everywhere constant functions on preconnected sets
 
 A function that is almost everywhere constant near each point of a preconnected set is almost
 everywhere equal to a single constant on the whole set, provided the measure charges every
-nonempty open set and the space is second countable. This is the measure-theoretic analogue of
-`IsPreconnected.constant` for locally constant functions. It turns local constancy statements,
-such as the constancy on every ball of a Sobolev function with vanishing weak gradient, into
-global ones on a connected domain.
+nonempty open set and the space is hereditarily Lindelöf (for instance second countable). This
+is the measure-theoretic analogue of `IsPreconnected.constant` for locally constant functions. It
+turns local constancy statements, such as the constancy on every ball of a Sobolev function with
+vanishing weak gradient, into global ones on a connected domain.
 
 The positivity of the measure on open sets makes the local constant at each point unique, so the
 points near which `f` equals a given constant form an open set. Connectedness then forces a single
-constant, and second countability reduces the union of the local neighbourhoods to a countable
-one.
+constant, and since every subset of a hereditarily Lindelöf space is Lindelöf, countably many of
+the local neighbourhoods cover the set.
 
 ## Main results
 
@@ -31,17 +30,18 @@ one.
 
 public section
 
-open MeasureTheory Set TopologicalSpace
+open MeasureTheory Set
 open scoped Topology
 
 namespace IsPreconnected
 
 /-- **A locally almost everywhere constant function on a preconnected set is almost everywhere
-constant.** Let `μ` be positive on nonempty open sets of a second-countable space. If every point
-of a preconnected set `s` has a neighbourhood on which `f` is `μ`-almost everywhere equal to a
-constant, then `f` is `μ`-almost everywhere equal to a single constant on `s`. -/
+constant.** Let `μ` be positive on nonempty open sets of a hereditarily Lindelöf space (for
+instance a second-countable one). If every point of a preconnected set `s` has a neighbourhood on
+which `f` is `μ`-almost everywhere equal to a constant, then `f` is `μ`-almost everywhere equal to
+a single constant on `s`. -/
 theorem exists_ae_eq_const_of_forall_nhds {X β : Type*}
-    [TopologicalSpace X] [SecondCountableTopology X] [MeasurableSpace X] {μ : Measure X}
+    [TopologicalSpace X] [HereditarilyLindelofSpace X] [MeasurableSpace X] {μ : Measure X}
     [μ.IsOpenPosMeasure] [Nonempty β] {s : Set X} (hs : IsPreconnected s) {f : X → β}
     (hf : ∀ x ∈ s, ∃ c, ∃ U ∈ 𝓝 x, ∀ᵐ y ∂μ.restrict U, f y = c) :
     ∃ c, ∀ᵐ y ∂μ.restrict s, f y = c := by
@@ -78,16 +78,12 @@ theorem exists_ae_eq_const_of_forall_nhds {X β : Type*}
         obtain ⟨d, hdx⟩ := hf x₁ hx₁
         exact ⟨x₁, hx₁, d, fun hdc => hx₁c (hdc ▸ hdx), hdx⟩)
     exact hd (hunique hyd hyc)
-  -- Countably many of these neighbourhoods cover `s`.
+  -- `s` is Lindelöf, so countably many of these neighbourhoods cover it.
   choose! U hU hUc using hall
-  obtain ⟨T, hTs, hTc, hT⟩ := isOpen_biUnion_countable s (fun x => interior (U x))
-    (fun _ _ => isOpen_interior)
-  have hcover : s ⊆ ⋃ x ∈ T, interior (U x) := by
-    rw [hT]
-    exact fun x hx => mem_biUnion hx (mem_interior_iff_mem_nhds.2 (hU x hx))
-  refine ⟨c₀, ae_restrict_of_ae_restrict_of_subset hcover ?_⟩
-  exact (ae_restrict_biUnion_iff _ hTc _).2 fun x hx =>
-    ae_restrict_of_ae_restrict_of_subset interior_subset (hUc x (hTs hx))
+  obtain ⟨T, hTc, hTs, hcover⟩ :=
+    (HereditarilyLindelofSpace.isLindelof s).elim_nhds_subcover U hU
+  exact ⟨c₀, ae_restrict_of_ae_restrict_of_subset hcover <|
+    (ae_restrict_biUnion_iff _ hTc _).2 fun x hx => hUc x (hTs x hx)⟩
 
 end IsPreconnected
 
