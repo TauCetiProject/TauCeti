@@ -49,6 +49,8 @@ this is the separation input for comparing and fitting together smooth triangula
 
 ## Main results
 
+* `TauCeti.IsStarImmersion.exists_pos_mul_norm_sub_le_norm_sub`: a `C¹` star immersion of a
+  complex on a finite vertex type separates nearby points uniformly in barycentric coordinates.
 * `TauCeti.IsStarImmersion.exists_antilipschitzWith`: an injective `C¹` star immersion of a
   complex on a finite vertex type is antilipschitz in barycentric coordinates.
 * `TauCeti.IsStarImmersion.exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub`: the secant
@@ -463,9 +465,12 @@ private theorem pair_conditions (h : IsStarImmersion n f) {G : Face K → (ι �
     rw [hqb, ← hxy] at h₂
     exact congrArg _ (h.2 σ τ pb px qb qy _ (DFunLike.coe_injective hqb.symm) (hseg σ pb px) h₂)
 
-/-- A `C¹` star immersion of a complex on a finite vertex type separates nearby points uniformly,
-in barycentric coordinates. -/
-private theorem exists_pos_mul_norm_sub_le_norm_sub (h : IsStarImmersion n f) (hn : 1 ≤ n) :
+/-- **Star immersions separate nearby points.** A `Cⁿ` star immersion, `1 ≤ n`, of a complex on a
+finite vertex type separates nearby points uniformly in barycentric coordinates: there are `c > 0`
+and `δ > 0` with `c * ‖x - y‖ ≤ ‖f x - f y‖` whenever `‖x - y‖ < δ`. No injectivity is needed.
+The converse, for maps which are `Cⁿ` on every closed simplex, is
+`TauCeti.isStarImmersion_of_forall_mul_norm_sub_le`. -/
+theorem exists_pos_mul_norm_sub_le_norm_sub (h : IsStarImmersion n f) (hn : 1 ≤ n) :
     ∃ c > 0, ∃ δ > 0, ∀ x y : Realization K, ‖(x.1 : ι → ℝ) - y.1‖ < δ →
       c * ‖(x.1 : ι → ℝ) - y.1‖ ≤ ‖f x - f y‖ := by
   classical
