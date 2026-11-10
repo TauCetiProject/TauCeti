@@ -20,8 +20,8 @@ polynomial.
 
 * `TauCeti.Place.ord_algebraMap_eq_of_restrict_eq`: the order of a polynomial in `x` at a
   place over the finite place `q`.
-* `TauCeti.Place.ord_algebraMap_pos_of_restrict_eq`: such a polynomial has positive order when it
-  is divisible by `q`.
+* `TauCeti.Place.ord_algebraMap_pos_of_restrict_eq`: a nonzero such polynomial has positive order
+  when it is divisible by `q`.
 -/
 
 public section
