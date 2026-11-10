@@ -269,7 +269,7 @@ theorem HasCauchyPVWith.of_integrable {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ �
       Filter.Tendsto (fun ε : ℝ => if ∃ s ∈ S, ‖γ t - s‖ ≤ ε then 0 else g t)
         (𝓝[>] 0) (𝓝 (g t)) := by
     filter_upwards [S.countable_toSet.ae_deriv_eq_zero_on_preimage
-      (measurableReal := inferInstance) γ MeasureTheory.volume] with t ht _
+      γ MeasureTheory.volume] with t ht _
     by_cases hS : γ t ∈ S
     · have hg0 : g t = 0 := by simp [_hg, ht hS]
       refine Filter.Tendsto.congr' ?_ tendsto_const_nhds
