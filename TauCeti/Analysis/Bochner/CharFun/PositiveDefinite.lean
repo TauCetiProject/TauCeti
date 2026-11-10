@@ -67,18 +67,8 @@ finite, `charFun μ` vanishes. -/
 theorem continuous_charFun_and_isPositiveDefinite_of_star_eq_neg [StarAddMonoid E]
     (hstar : ∀ x : E, star x = -x) :
     Continuous (MeasureTheory.charFun μ) ∧ IsPositiveDefinite (MeasureTheory.charFun μ) := by
-  refine ⟨?_, charFun_isPositiveDefinite_of_star_eq_neg hstar⟩
-  by_cases hμ : IsFiniteMeasure μ
-  · -- dominated convergence, with the constant bound `1` for the kernel
-    simp_rw [funext charFun_apply]
-    refine continuous_of_dominated (bound := fun _ ↦ 1)
-      (fun t ↦ ?_) (fun t ↦ ?_) (integrable_const 1) (ae_of_all _ fun x ↦ ?_)
-    · exact (by fun_prop : Continuous fun x : E ↦
-        Complex.exp (inner ℝ x t * Complex.I)).aestronglyMeasurable
-    · exact ae_of_all _ fun x ↦ (Complex.norm_exp_ofReal_mul_I _).le
-    · fun_prop
-  · rw [charFun_of_not_isFiniteMeasure hμ]
-    exact continuous_zero
+  exact ⟨continuous_charFun_of_opensMeasurableSpace,
+    charFun_isPositiveDefinite_of_star_eq_neg hstar⟩
 
 end Seminormed
 
