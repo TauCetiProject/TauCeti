@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.DerivativeTest
-public import TauCeti.Analysis.Calculus.TaylorIntegral
+public import TauCeti.Analysis.Calculus.Taylor.Integral
 
 import Mathlib.Analysis.Calculus.Deriv.Shift
 

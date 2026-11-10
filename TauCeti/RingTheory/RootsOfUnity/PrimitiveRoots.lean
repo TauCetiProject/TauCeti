@@ -39,8 +39,8 @@ Multiplying one `n`-th root of a nonzero `a` by the powers of a primitive `n`-th
   unity `ζ` to `ζ ^ j` sends every `n`-th root of unity `μ` to `μ ^ j`.
 * `IsPrimitiveRoot.autToPow_eq_one_iff`: the cyclotomic character kills an automorphism exactly
   when it fixes the chosen primitive root.
-* `IsPrimitiveRoot.coe_autToPow_eq_natCast`: an automorphism raising the primitive root to the
-  `k`-th power has cyclotomic character `k`.
+* `IsPrimitiveRoot.coe_autToPow_eq_natCast_iff`: an automorphism has cyclotomic character `k`
+  exactly when it raises the primitive root to the `k`-th power.
 * `IsPrimitiveRoot.cast_autToPow_eq_natCast`: modulo a divisor `d` of the level, the cyclotomic
   character is read off from the action on a primitive `d`-th root of unity.
 * `IsPrimitiveRoot.cast_autToPow_restrictNormalHom_eq`: the same for the restriction of an
@@ -118,15 +118,15 @@ theorem _root_.IsPrimitiveRoot.card_nthRootsFinset_of_pow_eq {n : ℕ} {ζ α a 
   rw [nthRootsFinset_def, Multiset.toFinset_card_of_nodup (hζ.nthRoots_nodup ha),
     hζ.card_nthRoots, ite_eq_left ⟨α, hα⟩]
 
-/-- **The cyclotomic character from the action on `ζ`.** An automorphism raising the primitive
-`m`-th root of unity `ζ` to the `k`-th power has cyclotomic character `k` modulo `m`. -/
-theorem _root_.IsPrimitiveRoot.coe_autToPow_eq_natCast {K M : Type*} [CommRing K] [CommRing M]
-    [IsDomain M] [Algebra K M] {m : ℕ} [NeZero m] {ζ : M} (hζ : IsPrimitiveRoot ζ m)
-    {x : M ≃ₐ[K] M} {k : ℕ} (hx : x ζ = ζ ^ k) : (hζ.autToPow K x : ZMod m) = k := by
-  rw [← ZMod.natCast_zmod_val (hζ.autToPow K x : ZMod m), ZMod.natCast_eq_natCast_iff]
-  have hmod := (hζ.isOfFinOrder (NeZero.ne _)).pow_eq_pow_iff_modEq.mp
-    ((hζ.autToPow_spec K x).trans hx)
-  simpa only [hζ.eq_orderOf] using hmod
+/-- **The cyclotomic character from the action on `ζ`.** An automorphism has cyclotomic character
+`k` modulo `m` exactly when it raises the primitive `m`-th root of unity `ζ` to the `k`-th
+power. -/
+theorem _root_.IsPrimitiveRoot.coe_autToPow_eq_natCast_iff {K M : Type*} [CommRing K]
+    [CommRing M] [IsDomain M] [Algebra K M] {m : ℕ} [NeZero m] {ζ : M}
+    (hζ : IsPrimitiveRoot ζ m) {x : M ≃ₐ[K] M} {k : ℕ} :
+    (hζ.autToPow K x : ZMod m) = k ↔ x ζ = ζ ^ k := by
+  rw [← hζ.autToPow_spec K x, (hζ.isOfFinOrder (NeZero.ne _)).pow_eq_pow_iff_modEq,
+    ← hζ.eq_orderOf, ← ZMod.natCast_eq_natCast_iff, ZMod.natCast_zmod_val]
 
 /-- **The cyclotomic character detects fixing `ζ`.** `autToPow` sends `x` to `1` exactly when `x`
 fixes the chosen primitive root, since `autToPow` is defined by the power `x` sends it to. -/
@@ -134,10 +134,7 @@ fixes the chosen primitive root, since `autToPow` is defined by the power `x` se
 theorem _root_.IsPrimitiveRoot.autToPow_eq_one_iff {K M : Type*} [CommRing K] [CommRing M]
     [IsDomain M] [Algebra K M] {m : ℕ} [NeZero m] {ζ : M} (hζ : IsPrimitiveRoot ζ m)
     (x : M ≃ₐ[K] M) : hζ.autToPow K x = 1 ↔ x ζ = ζ := by
-  refine ⟨fun h ↦ ?_, fun h ↦ Units.ext ?_⟩
-  · rw [← hζ.autToPow_spec K x, h, Units.val_one, ZMod.val_one_eq_one_mod, hζ.eq_orderOf,
-      pow_mod_orderOf, pow_one]
-  · simpa using hζ.coe_autToPow_eq_natCast (K := K) (k := 1) (by rw [h, pow_one])
+  rw [← Units.val_eq_one, ← Nat.cast_one, hζ.coe_autToPow_eq_natCast_iff, pow_one]
 
 /-- **The cyclotomic character modulo a divisor.** Let `d ∣ m`. An automorphism raising the
 primitive `d`-th root of unity `ζ ^ (m / d)` to the `c`-th power has cyclotomic character
@@ -152,8 +149,8 @@ theorem _root_.IsPrimitiveRoot.cast_autToPow_eq_natCast {K M : Type*} [CommRing 
     (Nat.div_dvd_of_dvd hd)
   rw [Nat.div_div_self hd (NeZero.ne m)] at ht
   -- Both `c` and the exponent of `x` on `ζ` are the exponent of `x` on `ζ ^ (m / d)`.
-  rw [ZMod.cast_eq_val, ← ht.coe_autToPow_eq_natCast (K := K) hx,
-    ht.coe_autToPow_eq_natCast (K := K) (k := (hζ.autToPow K x : ZMod m).val)]
+  rw [ZMod.cast_eq_val, ← ht.coe_autToPow_eq_natCast_iff.2 hx,
+    (ht.coe_autToPow_eq_natCast_iff (k := (hζ.autToPow K x : ZMod m).val)).2]
   rw [map_pow, ← hζ.autToPow_spec K x, ← pow_mul, ← pow_mul, mul_comm]
 
 /-- **The cyclotomic character of a restriction.** Let `E` be a normal intermediate field of a field

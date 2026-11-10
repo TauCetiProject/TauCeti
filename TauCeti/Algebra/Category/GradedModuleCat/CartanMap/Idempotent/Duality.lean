@@ -73,7 +73,7 @@ theorem gradedProjectiveExtEuler_nondegenerate_of_isPrimitiveIdempotent :
   have hI (i : I) := Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩
   exact gradedProjectiveExtEuler_nondegenerate _ he.idem he₀ hI
     (pairwise_smulGradedDimension_gradedPositiveMulQuotient_eq_zero hneg he₀ hprim hnoniso) _
-    (gradedIdempotentProjectiveBasisOfPrimitive_apply he he₀ hI hprim hnoniso)
+    (gradedIdempotentProjectiveBasisOfPrimitive_apply he hI hprim hnoniso)
     (fun i => smulGradedDimension_gradedPositiveMulQuotient_self_ne_zero hneg (he.idem i) (he₀ i)
       (hprim i).ne_zero)
     (isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent hneg he he₀
@@ -91,7 +91,7 @@ theorem gradedProjectiveExtEuler_bijective_iff_finrank_end_eq_one :
   have hI (i : I) := Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩
   rw [gradedProjectiveExtEuler_bijective_iff _ he.idem he₀ hI
     (pairwise_smulGradedDimension_gradedPositiveMulQuotient_eq_zero hneg he₀ hprim hnoniso) _
-    (gradedIdempotentProjectiveBasisOfPrimitive_apply he he₀ hI hprim hnoniso)
+    (gradedIdempotentProjectiveBasisOfPrimitive_apply he hI hprim hnoniso)
     (fun i => smulGradedDimension_gradedPositiveMulQuotient_self_ne_zero hneg (he.idem i) (he₀ i)
       (hprim i).ne_zero)
     (isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent hneg he he₀
@@ -111,7 +111,7 @@ theorem gradedProjectiveExtEuler_flip_bijective_iff_finrank_end_eq_one :
   have hI (i : I) := Ideal.isHomogeneous_span_singleton 𝒜 ⟨0, he₀ i⟩
   rw [gradedProjectiveExtEuler_flip_bijective_iff _ he.idem he₀ hI
     (pairwise_smulGradedDimension_gradedPositiveMulQuotient_eq_zero hneg he₀ hprim hnoniso) _
-    (gradedIdempotentProjectiveBasisOfPrimitive_apply he he₀ hI hprim hnoniso)
+    (gradedIdempotentProjectiveBasisOfPrimitive_apply he hI hprim hnoniso)
     (fun i => smulGradedDimension_gradedPositiveMulQuotient_self_ne_zero hneg (he.idem i) (he₀ i)
       (hprim i).ne_zero)
     (isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent hneg he he₀
