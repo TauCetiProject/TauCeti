@@ -113,7 +113,7 @@ private theorem exists_subseq_memWkpLoc_tendsto_wkp_family {ι : Type*} [Countab
   have hcompat : ∀ i {n n'} (h : n ≤ n'),
       Wkp.restrictL (hEmono h) k (a (n', i)) = a (n, i) := fun i n n' h => by
     have hres : ∀ m, Wkp.restrictL (hEmono h) k (x m (n', i)) = x m (n, i) :=
-      fun m => Wkp.restrictL_eq_of_value_ae_eq _ (hxval m (n, i)) (hxval m (n', i))
+      fun m => Wkp.restrictL_eq_of_value_ae_eq_restrict _ k (hxval m (n', i)) (hxval m (n, i))
     refine tendsto_nhds_unique ?_ (hxa' (n, i))
     simpa only [Function.comp_def, hres] using
       ((Wkp.restrictL (hEmono h) k).continuous.tendsto _).comp (hxa' (n', i))
@@ -147,8 +147,9 @@ private theorem exists_subseq_memWkpLoc_tendsto_wkp_family {ι : Type*} [Countab
   · intro W hWc hWΩ i y w hy hw
     obtain ⟨n, hWn⟩ := hWE W hWc hWΩ
     have hy' : ∀ j, Wkp.restrictL hWn k (x (φ j) (n, i)) = y j := fun j =>
-      Wkp.restrictL_eq_of_value_ae_eq hWn (hy j) (hxval (φ j) (n, i))
-    have hw' : Wkp.restrictL hWn k (a (n, i)) = w := Wkp.restrictL_eq_of_value_ae_eq hWn hw (hv i n)
+      Wkp.restrictL_eq_of_value_ae_eq_restrict hWn k (hxval (φ j) (n, i)) (hy j)
+    have hw' : Wkp.restrictL hWn k (a (n, i)) = w :=
+      Wkp.restrictL_eq_of_value_ae_eq_restrict hWn k (hv i n) hw
     simpa only [Function.comp_def, hy', hw'] using
       ((Wkp.restrictL hWn k).continuous.tendsto _).comp (hxa' (n, i))
 
