@@ -51,8 +51,8 @@ coefficients `x` and `x²` degenerate at `0`, into equations with constant coeff
 * `TauCeti.deriv_deriv_quadratic`: the second derivative of `s ↦ a + b s + c s ^ 2`.
 * `TauCeti.deriv_const_add_smul`, `TauCeti.iteratedDeriv_two_const_add_smul`: the first and
   second derivatives of the affine line `t ↦ a + t • b`.
-* `TauCeti.hasDerivAt_moebius`, `TauCeti.deriv_deriv_moebius`: the first and second derivatives of
-  `s ↦ (a s + b) / (c s + d)`.
+* `TauCeti.hasDerivAt_linearFractional`, `TauCeti.deriv_deriv_linearFractional`: the first and
+  second derivatives of `s ↦ (a s + b) / (c s + d)`.
 * `TauCeti.deriv_deriv_sqrt_quadratic`: the second derivative of `s ↦ √(a + b s + c s ^ 2)`, and
   `TauCeti.deriv_deriv_sqrt_quadratic_zero` its value at `0`.
 * `TauCeti.mul_deriv_comp_log`, `TauCeti.sq_mul_deriv_deriv_comp_log`,
@@ -136,28 +136,27 @@ section LinearFractional
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {a b c d t : 𝕜}
 
+/-- The affine function `s ↦ c * s + d` has derivative `c`. -/
+private theorem hasDerivAt_mul_add (c d t : 𝕜) : HasDerivAt (fun s ↦ c * s + d) c t := by
+  simpa using ((hasDerivAt_id t).const_mul c).add_const (c := d)
+
 /-- Away from its pole, the linear fractional function `s ↦ (a * s + b) / (c * s + d)` has
 derivative `(a * d - b * c) / (c * t + d) ^ 2` at `t`. -/
-theorem hasDerivAt_moebius (ht : c * t + d ≠ 0) :
+theorem hasDerivAt_linearFractional (ht : c * t + d ≠ 0) :
     HasDerivAt (fun s ↦ (a * s + b) / (c * s + d)) ((a * d - b * c) / (c * t + d) ^ 2) t := by
-  have hp : HasDerivAt (fun s : 𝕜 ↦ a * s + b) a t := by
-    simpa using ((hasDerivAt_id t).const_mul a).add_const (c := b)
-  have hq : HasDerivAt (fun s : 𝕜 ↦ c * s + d) c t := by
-    simpa using ((hasDerivAt_id t).const_mul c).add_const (c := d)
-  convert hp.div hq ht using 1
+  convert (hasDerivAt_mul_add a b t).div (hasDerivAt_mul_add c d t) ht using 1
   ring
 
 /-- Away from its pole, the linear fractional function `s ↦ (a * s + b) / (c * s + d)` has second
 derivative `-2 * c * (a * d - b * c) / (c * t + d) ^ 3` at `t`. -/
-theorem deriv_deriv_moebius (ht : c * t + d ≠ 0) :
+theorem deriv_deriv_linearFractional (ht : c * t + d ≠ 0) :
     deriv (deriv fun s ↦ (a * s + b) / (c * s + d)) t =
       -2 * c * (a * d - b * c) / (c * t + d) ^ 3 := by
-  have hq : HasDerivAt (fun s : 𝕜 ↦ c * s + d) c t := by
-    simpa using ((hasDerivAt_id t).const_mul c).add_const (c := d)
+  have hq := hasDerivAt_mul_add c d t
   have hderiv : deriv (fun s ↦ (a * s + b) / (c * s + d)) =ᶠ[𝓝 t]
       fun s ↦ (a * d - b * c) / (c * s + d) ^ 2 := by
     filter_upwards [hq.continuousAt.eventually_ne ht] with s hs
-    exact (hasDerivAt_moebius hs).deriv
+    exact (hasDerivAt_linearFractional hs).deriv
   rw [hderiv.deriv_eq]
   convert ((hasDerivAt_const t (a * d - b * c)).div (hq.pow 2) (pow_ne_zero 2 ht)).deriv using 1
   simp only [Pi.pow_apply, Nat.cast_ofNat]

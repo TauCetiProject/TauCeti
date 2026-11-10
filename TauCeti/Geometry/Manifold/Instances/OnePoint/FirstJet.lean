@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Geometry.Manifold.LocalDiffeomorph
+import TauCeti.Analysis.Calculus.Deriv.Second
 
 /-!
 # First jets of Möbius transformations
@@ -120,12 +121,7 @@ theorem mfderiv_smul_coe (g : GL (Fin 2) 𝕜) {z : 𝕜} (hz : g 1 0 * z + g 1 
     filter_upwards [hq.continuousAt.eventually_ne hz] with w hw
     simp [smul_some_eq_ite, hw]
   · rw [chartAt_coe, affineChart_coe, det_fin_two]
-    have hp : HasDerivAt (fun w : 𝕜 ↦ g 0 0 * w + g 0 1) (g 0 0) z := by
-      simpa using ((hasDerivAt_id z).const_mul (g 0 0)).add_const (c := g 0 1)
-    have hq' : HasDerivAt (fun w : 𝕜 ↦ g 1 0 * w + g 1 1) (g 1 0) z := by
-      simpa using ((hasDerivAt_id z).const_mul (g 1 0)).add_const (c := g 1 1)
-    convert HasDerivAt.div hp hq' hz using 1
-    ring
+    exact TauCeti.hasDerivAt_linearFractional hz
 
 end Matrix.GeneralLinearGroup
 
