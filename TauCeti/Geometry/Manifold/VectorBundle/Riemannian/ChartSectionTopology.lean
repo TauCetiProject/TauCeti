@@ -46,6 +46,10 @@ metrics; it does not assert that smooth sections are open among Cᵏ sections.
   induced from the section topology on Cᵏ metrics, for `k : ℕ∞`.
 * `Bundle.ContMDiffRiemannianMetric.chartCkTopology_eq_frameCkTopology`: the finite-order chart
   and section topologies on the fixed smooth-metric carrier coincide.
+* `Bundle.ContMDiffRiemannianMetric.chartC2Topology_eq_frameCkTopology`: the C² comparison
+  directly in terms of the chart C² topology.
+* `Bundle.ContMDiffRiemannianMetric.chartCInftyTopology_eq_frameTopology`: the smooth chart
+  and section topologies coincide without forgetting regularity.
 * `Bundle.ContMDiffRiemannianMetric.isEmbedding_toSymmetricSection_chartCInfty`: the smooth
   section map is an embedding.
 * `Bundle.ContMDiffRiemannianMetric.isOpenEmbedding_toSymmetricSection_chartCInfty`: on a compact
@@ -326,6 +330,36 @@ theorem chartCkTopology_eq_frameCkTopology [LocallyCompactSpace E] (k : ℕ)
   rw [frameCkTopology_def]
   exact chartCkTopology_eq_induced_ofLE k e U hU hcover
 
+/-- The chart C² topology is the finite-order section topology of order two on smooth metrics. -/
+theorem chartC2Topology_eq_frameCkTopology [LocallyCompactSpace E]
+    {ι : Type*}
+    (e : ι → Trivialization (symmetricBilinearMaps ℝ E ℝ)
+      (π (symmetricBilinearMaps ℝ E ℝ)
+        (fun x : M ↦ symmetricBilinearMaps ℝ (TangentSpace I x) ℝ)))
+    [∀ i, MemTrivializationAtlas (e i)]
+    (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
+    (hcover : ∀ x, ∃ i, x ∈ U i) :
+    chartC2Topology (I := I) (M := M) = frameCkTopology I e U hU 2 := by
+  simpa only [chartC2Topology, Nat.cast_ofNat] using
+    chartCkTopology_eq_frameCkTopology (I := I) 2 e U hU hcover
+
+/-- The chart C∞ topology agrees with the section topology on smooth metrics for any covering
+system of smooth frames. No regularity-forgetting map is needed at smooth order. -/
+theorem chartCInftyTopology_eq_frameTopology [LocallyCompactSpace E]
+    {ι : Type*}
+    (e : ι → Trivialization (symmetricBilinearMaps ℝ E ℝ)
+      (π (symmetricBilinearMaps ℝ E ℝ)
+        (fun x : M ↦ symmetricBilinearMaps ℝ (TangentSpace I x) ℝ)))
+    [∀ i, MemTrivializationAtlas (e i)]
+    (U : ι → Opens M) (hU : ∀ i, (U i : Set M) ⊆ (e i).baseSet)
+    (hcover : ∀ x, ∃ i, x ∈ U i) :
+    chartCInftyTopology (I := I) (M := M) = frameTopology I ∞ e U hU := by
+  have hforget : (fun g : ContMDiffRiemannianMetric I ∞ E
+      (fun x : M ↦ TangentSpace I x) ↦ g.ofLE (m := ∞) (by simp)) = id :=
+    funext fun g ↦ ofLE_refl g _
+  simpa only [hforget, induced_id] using
+    chartCkTopology_eq_induced_ofLE (I := I) ⊤ e U hU hcover
+
 /-- The section of a metric embeds the smooth metrics with the chart C∞ topology into the smooth
 sections of `Sym²(T*M)` with the compact derivative topology of any covering frame system. -/
 theorem isEmbedding_toSymmetricSection_chartCInfty [LocallyCompactSpace E]
@@ -342,13 +376,8 @@ theorem isEmbedding_toSymmetricSection_chartCInfty [LocallyCompactSpace E]
       (V := fun x : M ↦ TangentSpace I x)) := by
   let _ := chartCInftyTopology (I := I) (M := M)
   let _ := ContMDiffSection.frameTopology (I := I) (n := ∞) e U hU
-  have hforget : (fun g : ContMDiffRiemannianMetric I ∞ E
-      (fun x : M ↦ TangentSpace I x) ↦ g.ofLE (m := ∞) (by simp)) = id :=
-    funext fun g ↦ ofLE_refl g _
-  have htop : chartCInftyTopology (I := I) (M := M) = frameTopology I ∞ e U hU := by
-    simpa only [hforget, induced_id] using
-      chartCkTopology_eq_induced_ofLE (I := I) ⊤ e U hU hcover
-  exact ⟨⟨htop.trans (frameTopology_eq_induced ⊤ e U hU)⟩, toSymmetricSection_injective⟩
+  exact ⟨⟨(chartCInftyTopology_eq_frameTopology e U hU hcover).trans
+    (frameTopology_eq_induced ⊤ e U hU)⟩, toSymmetricSection_injective⟩
 
 /-- On a compact manifold the smooth metrics with the chart C∞ topology form an open subspace of
 the smooth sections of `Sym²(T*M)`, with the compact derivative topology of any covering frame
