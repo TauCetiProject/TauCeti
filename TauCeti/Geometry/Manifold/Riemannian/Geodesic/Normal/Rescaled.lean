@@ -58,9 +58,10 @@ theorem _root_.IsCompact.eventually_exists_partialDiffeomorph_riemannianExp_inv_
   have hA (x : F) : A x = (scale j)⁻¹ • e x := by simp [A]
   have hmap : MapsTo A (ball 0 R) (ball 0 r) := by
     intro x hx
-    rw [hA, mem_ball_zero_iff, norm_smul, e.norm_map, Real.norm_eq_abs, abs_inv, abs_of_pos hj,
-      ← div_eq_inv_mul, div_lt_iff₀ hj]
-    exact (mem_ball_zero_iff.1 hx).trans ((div_lt_iff₀' hr).1 hjR)
+    have hR : R < scale j * r := (div_lt_iff₀ hr).1 hjR
+    simp only [mem_ball_zero_iff, hA, norm_smul, norm_inv, Real.norm_of_nonneg hj.le,
+      LinearIsometryEquiv.norm_map, inv_mul_lt_iff₀ hj] at hx ⊢
+    linarith
   obtain ⟨Φ, hsource, hΦ⟩ :=
     (hnormal p hp).exists_partialDiffeomorph_riemannianExp_comp A isOpen_ball hmap
   exact ⟨Φ, hsource, hΦ.trans (funext fun x ↦ congrArg (riemannianExp I M p) (hA x))⟩
