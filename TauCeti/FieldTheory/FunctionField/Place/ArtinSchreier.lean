@@ -112,9 +112,11 @@ theorem exists_ord_sub_pow_sub_self_gt_of_dvd_ord {n : ℕ} (hn : 1 < n)
   · have := (P.mem_filtration_iff_le_ord hzero).mp hmem
     omega
 
-/-- Over a perfect residue field in characteristic `p`, every Artin–Schreier class has
-an integral representative or a representative with negative order not divisible by `p`.
-The substitution lies in `F` itself; no completion is used. -/
+/-- Over a perfect residue field in characteristic `p`, with `p` prime, every Artin–Schreier class
+`u + {w ^ p - w}` has an integral representative or a representative with negative order not
+divisible by `p`. The substitution lies in `F` itself; no completion is used. For `p = 0` the map
+`w ↦ w ^ 0 - w` is not the Artin–Schreier map: the statement is then a formal extension, in which
+the zero (hence integral) representative `u - (w ^ 0 - w) = 0` is obtained with `w = 1 - u`. -/
 theorem exists_reduced_artinSchreier_representative (p : ℕ) [CharP F p]
     [PerfectField P.ResidueField] (u : F) :
     ∃ w : F, u - (w ^ p - w) ∈ P.integers ∨
