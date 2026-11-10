@@ -64,6 +64,10 @@ that are not surjective and is invariant under proper homotopies, that is homoto
   `f_*[M] = deg f • [N]` in `Hₙ(N; ℤ)`, and more generally
   `TauCeti.HomologicalOrientation.mapFundamentalClass_comp_eq_degree_smul`:
   `(g ∘ f)_*[M] = deg f • g_*[N]` for every continuous `g : N → X`.
+* `TauCeti.HomologicalOrientation.singularHomologyMap_eq_degree_smul`: a self-map of a compact
+  connected oriented manifold acts on top homology by multiplication by its degree, and
+  `TauCeti.HomologicalOrientation.bijective_singularHomologyMap_iff`: it is bijective there exactly
+  when its degree is `±1`.
 
 ## References
 
@@ -402,6 +406,36 @@ theorem mapFundamentalClass_comp_eq_degree_smul {X : Type} [TopologicalSpace X] 
     mapFundamentalClass_def o' hF g]
   exact map_zsmul (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
     (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom g)).hom _ _
+
+/-- **A self-map acts on top homology by its degree**: for a self-map `f` of a compact connected
+oriented `n`-manifold, `f_*` is multiplication by the degree of `f` on `Hₙ(M; ℤ)`. -/
+theorem singularHomologyMap_eq_degree_smul [ConnectedSpace M] (f : C(M, M))
+    (γ : ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).obj (TopCat.of M)) :
+    (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+      (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom f)).hom γ = o.degree o hE f • γ := by
+  obtain ⟨d, rfl⟩ := o.exists_eq_zsmul_fundamentalClass hE γ
+  have h := o.mapFundamentalClass_eq_degree_smul o hE hE f
+  rw [mapFundamentalClass_def] at h
+  exact (map_zsmul _ d _).trans ((congrArg (d • ·) h).trans (zsmul_comm _ _ _))
+
+/-- **A self-map is bijective on top homology exactly when its degree is `±1`**, for a compact
+connected oriented manifold. -/
+theorem bijective_singularHomologyMap_iff [ConnectedSpace M] (f : C(M, M)) :
+    Function.Bijective (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+        (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom f)).hom ↔
+      o.degree o hE f = 1 ∨ o.degree o hE f = -1 := by
+  have hmap := funext (o.singularHomologyMap_eq_degree_smul hE f)
+  rw [hmap]
+  refine ⟨fun hb ↦ ?_, ?_⟩
+  · -- The fundamental class is hit by some `e • [M]`, so `deg f * e = 1`.
+    obtain ⟨γ, hγ⟩ := hb.2 (o.fundamentalClass hE)
+    obtain ⟨e, rfl⟩ := o.exists_eq_zsmul_fundamentalClass hE γ
+    refine Int.eq_one_or_neg_one_of_mul_eq_one (v := e) ((o.fundamentalClassEquiv hE).injective ?_)
+    simp only [fundamentalClassEquiv_apply, mul_smul, one_smul]
+    exact hγ
+  · -- Multiplication by `±1` is an involution.
+    rintro (h | h) <;> exact Function.Involutive.bijective fun γ ↦ by simp [h]
 
 end CompactSpace
 
