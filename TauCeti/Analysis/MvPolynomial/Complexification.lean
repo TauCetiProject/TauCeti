@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.MvPolynomial.Polynomial
 public import TauCeti.Analysis.MvPolynomial.DirectionalOrder
 public import TauCeti.Analysis.Analytic.Complexification.Basic
 public import TauCeti.Topology.Algebra.MvPolynomial.Nonvanishing
@@ -229,12 +228,11 @@ namespace Polynomial
 
 /-- The coefficients of a real multivariate polynomial complexified and evaluated along a family
 of points are analytic when every coordinate of the family is analytic. -/
-theorem analyticOnNhd_coeff_map_eval₂Hom {σ E : Type*} [Finite σ] [NormedAddCommGroup E]
+theorem analyticOnNhd_coeff_map_eval₂Hom {σ E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℂ E] (p : Polynomial (MvPolynomial σ ℝ)) {f : E → σ → ℂ} {S : Set E}
     (hf : ∀ j, AnalyticOnNhd ℂ (fun z ↦ f z j) S) (i : ℕ) :
     AnalyticOnNhd ℂ
       (fun z ↦ (p.map (MvPolynomial.eval₂Hom Complex.ofRealHom (f z))).coeff i) S := by
-  have := Fintype.ofFinite σ
   intro z hz
   simp only [coeff_map, MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_eq_eval_map]
   simpa only [MvPolynomial.aeval_eq_eval] using
