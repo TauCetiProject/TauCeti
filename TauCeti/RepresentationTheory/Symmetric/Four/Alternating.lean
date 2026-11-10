@@ -135,8 +135,7 @@ theorem alternatingGroupFourLinearCharacter_classData_rep (ζ : rootsOfUnity 3 k
         (i.cast numClasses_alternatingGroupFourClassData) := by
   rw [alternatingGroupFourLinearCharacter_apply, alternatingGroupFourZModThreeHom_classData_rep,
     toAdd_ofAdd]
-  fin_cases i <;> simp [Fin.cast, Matrix.cons_val, show ZMod.val (1 : ZMod 3) = 1 from rfl,
-    show ZMod.val (2 : ZMod 3) = 2 from rfl]
+  fin_cases i <;> simp [Fin.cast, Matrix.cons_val, ZMod.val_one, ZMod.val_ofNat]
 
 /-- `L_ζ` takes the value `ζ` at the three-cycle `(0 1 2)`. -/
 @[simp]
