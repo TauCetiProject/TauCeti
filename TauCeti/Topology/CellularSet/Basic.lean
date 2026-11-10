@@ -59,6 +59,8 @@ of compact sets with diameters tending to `0`. The collapse is their pointwise l
 * `TauCeti.isCellularSet_iff`: the witnesses of cellularity.
 * `TauCeti.IsCellularSet.isCompact`, `TauCeti.IsCellularSet.nonempty`: in a Hausdorff space, a
   cellular set is a nonempty compact set.
+* `TauCeti.IsCellularSet.image`: a map continuous and injective near a cellular set carries it to
+  a cellular set.
 * `TauCeti.exists_collapse_iInter`: the intersection of a nested sequence of compact sets with
   Euclidean interiors is collapsed to one point by a continuous surjection whose other fibres are
   singletons.
@@ -237,6 +239,31 @@ theorem IsCellularSet.nonempty {E : Type*} [NormedAddCommGroup E] [ProperSpace E
     (fun i ↦ (hsub i).trans (image_mono ball_subset_closedBall))
     (fun i ↦ ⟨e i 0, mem_image_of_mem _ (mem_closedBall_self zero_le_one)⟩) (hQc 0)
     fun i ↦ (hQc i).isClosed
+
+/-- **Images of cellular sets.** Let `X` be a cellular subset of a Hausdorff space `M`, modelled on
+a proper space `E`. If `h` is continuous and injective on an open set `O ⊇ X`, then `h '' X` is
+cellular: the cells of `X` eventually lie in `O`, and their images are cells of `h '' X`. -/
+theorem IsCellularSet.image {E : Type*} [NormedAddCommGroup E] [ProperSpace E] {M N : Type*}
+    [TopologicalSpace M] [T2Space M] [TopologicalSpace N] {X O : Set M} (hX : IsCellularSet E X)
+    (hO : IsOpen O) (hXO : X ⊆ O) {h : M → N} (hhc : ContinuousOn h O) (hhi : InjOn h O) :
+    IsCellularSet E (h '' X) := by
+  obtain ⟨e, hec, hei, hsub, rfl⟩ := (isCellularSet_iff E).1 hX
+  set Q : ℕ → Set M := fun i ↦ e i '' closedBall 0 1
+  have hQc (i : ℕ) : IsCompact (Q i) := (isCompact_closedBall 0 1).image_of_continuousOn (hec i)
+  have hQanti : Antitone Q :=
+    antitone_nat_of_succ_le fun i ↦ (hsub i).trans (image_mono ball_subset_closedBall)
+  -- Some cell `Q n` already lies in `O`, and so do all later cells.
+  obtain ⟨n, hn⟩ := exists_subset_nhds_of_isCompact' hQanti.directed_ge hQc
+    (fun i ↦ (hQc i).isClosed) (hO.mem_nhdsSet.2 hXO)
+  have hQO (i : ℕ) : Q (i + n) ⊆ O := (hQanti (Nat.le_add_left n i)).trans hn
+  have hmaps (i : ℕ) : MapsTo (e (i + n)) (closedBall 0 1) O :=
+    (mapsTo_image _ _).mono_right (hQO i)
+  refine (isCellularSet_iff E).2 ⟨fun i ↦ h ∘ e (i + n), fun i ↦ hhc.comp (hec _) (hmaps i),
+    fun i ↦ hhi.comp (hei _) (hmaps i), fun i ↦ ?_, ?_⟩
+  · rw [image_comp, image_comp, add_right_comm]
+    exact image_mono (hsub _)
+  · simp_rw [image_comp]
+    rw [← (hhi.mono (iUnion_subset hQO)).image_iInter_eq, hQanti.iInter_nat_add]
 
 /-- **Collapsing a cellular set.** Let `M` be a metric space which is a topological manifold
 modelled on a finite-dimensional real normed space `E`, and `X ⊆ M` a cellular set. For every open
