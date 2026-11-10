@@ -102,29 +102,6 @@ end BoundedDerivedCategory
 
 open BoundedDerivedCategory
 
-/-- The object of `Kᵇ(C)` of a bounded complex. -/
--- Local: the general constructor `TauCeti.HomotopyCategory.Bounded.mk` is added in #35104.
-private abbrev boundedMk (K : CochainComplex C ℤ) (a b : ℤ) [K.IsStrictlyGE a]
-    [K.IsStrictlyLE b] : HomotopyCategory.Bounded C :=
-  ⟨(_root_.HomotopyCategory.quotient C (.up ℤ)).obj K,
-    (HomotopyCategory.bounded_quotient_obj_iff K).2
-      ((CochainComplex.bounded_iff C K).2 ⟨a, b, inferInstance, inferInstance⟩)⟩
-
-/-- A map of bounded complexes with acyclic mapping cone is inverted in `Dᵇ(E)`. -/
--- Local: the general statement `TauCeti.ExactStructure.acyclicBounded_trW_mkMap` is added in
--- #35104.
-private theorem acyclicBounded_trW_homMk {X : HomotopyCategory.Bounded C} {K : CochainComplex C ℤ}
-    {a b : ℤ} [K.IsStrictlyGE a] [K.IsStrictlyLE b] (g : X.obj.as ⟶ K)
-    (hg : E.acyclic (CochainComplex.mappingCone g)) :
-    E.acyclicBounded.trW (ObjectProperty.homMk
-      ((_root_.HomotopyCategory.quotient C (.up ℤ)).map g) : X ⟶ boundedMk K a b) := by
-  rw [acyclicBounded_trW_iff]
-  refine (E.boundedAcyclic.trW_iff_of_distinguished _
-    (_root_.HomotopyCategory.mappingCone_triangleh_distinguished g)).2
-      (E.boundedAcyclic_quotient_obj (CochainComplex.bounded_mappingCone g
-        ((HomotopyCategory.bounded_quotient_obj_iff X.obj.as).1 X.property)
-        ((CochainComplex.bounded_iff C K).2 ⟨a, b, inferInstance, inferInstance⟩)) hg)
-
 namespace EnoughInjectives
 
 variable {E} (hE : E.EnoughInjectives)
@@ -190,10 +167,11 @@ private theorem exists_truncation (R : BoundedResolution (E := E) Y) (n : ℤ)
   obtain ⟨T, j, r', hrj, hiso, hmono, _, hge, hr'⟩ :=
     exists_truncation_of_acyclic_mappingCone R.r R.acyclic n
   have := hge R.a inferInstance
-  refine ⟨boundedMk T (min R.a (n + 1)) (n + 1),
-    ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map r'),
+  let B := HomotopyCategory.Bounded.mk T
+    ((CochainComplex.bounded_iff C T).2 ⟨min R.a (n + 1), n + 1, inferInstance, inferInstance⟩)
+  refine ⟨B, ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map r'),
     ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map j),
-    acyclicBounded_trW_homMk E r' hr',
+    E.acyclicBounded_trW_homMk_quotient_map (X := Y) (Y := B) r' hr',
     ObjectProperty.hom_ext _
       (((_root_.HomotopyCategory.quotient C (.up ℤ)).map_comp r' j).symm.trans
         (congrArg (_root_.HomotopyCategory.quotient C (.up ℤ)).map hrj)),

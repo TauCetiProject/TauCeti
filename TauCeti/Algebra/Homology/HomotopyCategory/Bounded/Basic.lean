@@ -41,6 +41,7 @@ The construction follows the organization of Mathlib's bounded-below category
   a localization functor with respect to the homotopy equivalences, so functors and their shift
   compatibilities descend along it.
 * `TauCeti.HomotopyCategory.Bounded.toPlus`: the inclusion `Kᵇ(C) ⥤ K⁺(C)`.
+* `TauCeti.HomotopyCategory.Bounded.mk`: the class in `Kᵇ(C)` of a bounded cochain complex.
 * `TauCeti.HomotopyCategory.Bounded.rep`: the underlying cochain complex of an object of the
   bounded homotopy category, strictly bounded below and above
   (`TauCeti.HomotopyCategory.Bounded.exists_isStrictlyGE_isStrictlyLE`).
@@ -300,6 +301,12 @@ variable {C} in
 lemma bounded_rep (K : HomotopyCategory.Bounded C) : CochainComplex.bounded C (rep K) := by
   rw [← HomotopyCategory.bounded_quotient_obj_iff, quotient_obj_rep]
   exact K.property
+
+variable {C} in
+/-- The class in `Kᵇ(C)` of a bounded cochain complex. -/
+abbrev mk (K : CochainComplex C ℤ) (hK : CochainComplex.bounded C K) :
+    HomotopyCategory.Bounded C :=
+  ⟨_, (HomotopyCategory.bounded_quotient_obj_iff K).2 hK⟩
 
 variable {C} in
 /-- The underlying complex of an object of the bounded homotopy category is strictly bounded
