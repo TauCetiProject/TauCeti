@@ -10,6 +10,8 @@ public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.Trace.Square
 import Mathlib.RingTheory.TensorProduct.Finite
+import TauCeti.LinearAlgebra.Trace.Basic
+import TauCeti.RingTheory.TensorProduct.Finite
 
 /-!
 # Symmetric and antisymmetric tensors in a tensor square
@@ -220,27 +222,9 @@ theorem _root_.LinearMap.trace_map_self_comp_comm [Module.Free K M] (f : M →�
     rintro ⟨i, j⟩
     simp [Module.Basis.toMatrix_apply, Module.Basis.tensorProduct_apply,
       Module.Basis.tensorProduct_repr_tmul_apply, mul_comm]
-  · have htrace_zero : ∀ (N : Type _) [AddCommMonoid N] [Module K N], ¬ Module.Finite K N →
-        ∀ g : N →ₗ[K] N, LinearMap.trace K N g = 0 := by
-      intro N _ _ hN g
-      have hne : ¬∃ s : Finset N, Nonempty (Module.Basis s K N) := by
-        rintro ⟨s, ⟨b⟩⟩
-        exact hN (Module.Finite.of_basis b)
-      rw [LinearMap.trace, dite_eq_right hne, LinearMap.zero_apply]
-    have hMM : ¬ Module.Finite K (M ⊗[K] M) := by
-      intro h
-      obtain hK | hK := subsingleton_or_nontrivial K
-      · have := Module.subsingleton K M
-        exact hM inferInstance
-      · set b := Module.Free.chooseBasis K M
-        have hfin : Finite (Module.Free.ChooseBasisIndex K M × Module.Free.ChooseBasisIndex K M) :=
-          Module.Finite.finite_basis (b.tensorProduct b)
-        rcases isEmpty_or_nonempty (Module.Free.ChooseBasisIndex K M) with hι | hι
-        · exact hM (Module.Finite.of_basis b)
-        · have : Finite (Module.Free.ChooseBasisIndex K M) :=
-            Finite.prod_left (Module.Free.ChooseBasisIndex K M)
-          exact hM (Module.Finite.of_basis b)
-    rw [htrace_zero _ hMM, htrace_zero _ hM]
+  · have hMM : ¬ Module.Finite K (M ⊗[K] M) := mt Module.Finite.of_tensorProduct_self hM
+    rw [TauCeti.LinearMap.trace_eq_zero_of_not_finite hMM,
+      TauCeti.LinearMap.trace_eq_zero_of_not_finite hM, LinearMap.zero_apply, LinearMap.zero_apply]
 
 end Trace
 
