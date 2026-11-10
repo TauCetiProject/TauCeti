@@ -74,11 +74,23 @@ theorem isHermitian_sampleSecondMoment (v : ι → n → 𝕜) : (sampleSecondMo
     simp [finiteMean_eq_inv_smul_sum, star_sum, mul_comm]
 
 /-- The empirical second-moment matrix is positive semidefinite. -/
-theorem posSemidef_sampleSecondMoment [Finite n] (v : ι → n → 𝕜) :
+theorem posSemidef_sampleSecondMoment (v : ι → n → 𝕜) :
     (sampleSecondMoment v).PosSemidef := by
-  have := Fintype.ofFinite n
+  -- Mathlib proves positive semidefiniteness of `vecMulVec a (star a)` only for finite `n`; the
+  -- quadratic form on a finitely supported `x` is `star s * s` for `s = ∑ⱼ star (aⱼ) * xⱼ`.
+  have hrank (a : n → 𝕜) : (vecMulVec a (star a)).PosSemidef := by
+    refine ⟨IsHermitian.ext fun k l ↦ by simp [vecMulVec_apply, mul_comm], fun x ↦ ?_⟩
+    have : (x.sum fun i xi ↦ x.sum fun j xj ↦ star xi * vecMulVec a (star a) i j * xj) =
+        star (x.sum fun j xj ↦ star (a j) * xj) * x.sum fun j xj ↦ star (a j) * xj := by
+      simp only [Finsupp.sum, star_sum, Finset.sum_mul, Finset.mul_sum, vecMulVec_apply]
+      rw [Finset.sum_comm]
+      refine Finset.sum_congr rfl fun i _ ↦ Finset.sum_congr rfl fun j _ ↦ ?_
+      simp only [star_mul, star_star, Pi.star_apply]
+      ring
+    rw [this]
+    exact star_mul_self_nonneg _
   rw [sampleSecondMoment_def, finiteMean_eq_inv_smul_sum]
-  exact (posSemidef_sum _ fun i _ ↦ posSemidef_vecMulVec_self_star (v i)).smul (by positivity)
+  exact (posSemidef_sum _ fun i _ ↦ hrank (v i)).smul (by positivity)
 
 end TauCeti
 
@@ -124,7 +136,7 @@ theorem isHermitian_sampleCovariance (X : Matrix p n 𝕜) : (sampleCovariance X
   exact TauCeti.isHermitian_sampleSecondMoment _
 
 /-- The sample covariance matrix is positive semidefinite. -/
-theorem posSemidef_sampleCovariance [Finite p] (X : Matrix p n 𝕜) :
+theorem posSemidef_sampleCovariance (X : Matrix p n 𝕜) :
     (sampleCovariance X).PosSemidef := by
   rw [sampleCovariance_eq_sampleSecondMoment]
   exact TauCeti.posSemidef_sampleSecondMoment _

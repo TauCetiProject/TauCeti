@@ -70,6 +70,7 @@ theorem _root_.LDL.lower_apply_diag (i : n) : LDL.lower hS i i = 1 := by
     (LDL.lowerInv_apply_diag hS i)
   simpa [LDL.lower, ← Matrix.transpose_nonsing_inv] using hinv
 
+omit [LocallyFiniteOrderBot n] in
 include hS in
 open Matrix in
 /-- **Cholesky factorization**: a positive-definite matrix over `ℝ` or `ℂ` is `Bᴴ B` for an upper
@@ -77,6 +78,10 @@ triangular `B` with positive diagonal. Writing the LDL decomposition as `S = L D
 lower unitriangular and `D` diagonal with positive real entries, take `B = √D Lᴴ`. -/
 theorem _root_.Matrix.PosDef.exists_isUpperTriangular_conjTranspose_mul_self_eq :
     ∃ B : Matrix n n 𝕜, B.IsUpperTriangular ∧ (∀ i, 0 < B i i) ∧ Bᴴ * B = S := by
+  -- Mathlib's `LDL` decomposition needs a `LocallyFiniteOrderBot` index type; every finite linear
+  -- order is one, and the conclusion does not depend on the choice of instance.
+  let : LocallyFiniteOrderBot n :=
+    LocallyFiniteOrderBot.ofIic n (fun a => Finset.univ.filter (· ≤ a)) (by simp)
   have hd := LDL.diagEntries_pos hS
   -- the diagonal entries of `D` are the positive reals `re (d i)`
   have hre (i : n) : ((RCLike.re (LDL.diagEntries hS i) : ℝ) : 𝕜) = LDL.diagEntries hS i := by
