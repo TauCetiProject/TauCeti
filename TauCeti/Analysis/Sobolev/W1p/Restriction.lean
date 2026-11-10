@@ -34,7 +34,7 @@ interior regularity arguments pass from a weak solution on `Ω` to smaller open 
 * `TauCeti.W1p.setIntegral_norm_gradient_sub_sq_eq`: the `L²` distance on the smaller set between
   the weak gradients of a function and of a function defined only there.
 * `TauCeti.W1p.continuous_setAverage_value`: the mean of the value component over a fixed
-  finite-measure subset depends continuously on the Sobolev function.
+  subset depends continuously on the Sobolev function.
 
 ## References
 
@@ -275,7 +275,8 @@ depends continuously on the function (for a subset of infinite measure the mean 
 theorem W1p.continuous_setAverage_value (hSU : S ⊆ (U : Set E)) :
     Continuous fun v : W1p mu U p => ⨍ y in S, W1p.value v y ∂mu := by
   by_cases hSfin : mu S = ∞
-  · simpa [average, hSfin] using continuous_const
+  · simp only [setAverage_eq, measureReal_def, hSfin, ENNReal.toReal_top, inv_zero, zero_smul]
+    exact continuous_const
   have hrs : (mu.restrict (U : Set E)).restrict S = mu.restrict S :=
     Measure.restrict_restrict_of_subset hSU
   have hmeas : (mu.restrict (U : Set E)) S = mu S := by

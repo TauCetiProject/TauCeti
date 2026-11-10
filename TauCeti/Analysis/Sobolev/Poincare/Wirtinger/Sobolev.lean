@@ -146,7 +146,7 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 omit [FiniteDimensional ℝ E] in
 /-- The Sobolev functions whose deviation from their mean over `S` has `L^q` norm at most `C`
 times the `Lᵖ` norm of their gradient form a **closed** subset of `W^{1,p}(Ω)`, for every
-exponent `q` and every `S ⊆ Ω` of finite measure.
+exponent `q` and every `S ⊆ Ω` (for `μ S = ∞` the mean is `0`).
 
 Continuity of the left-hand side on `W^{1,p}(Ω)` is not available in general, but it is lower
 semicontinuous: convergence in `W^{1,p}(Ω)` gives an almost everywhere convergent subsequence of
