@@ -56,26 +56,29 @@ theorem exists_cos_sin_two_pi_mul_eq {a b : ℝ} (h : a ^ 2 + b ^ 2 = 1) :
     rw [Complex.norm_def, Complex.normSq_mk, Real.sqrt_eq_one]
     nlinarith
   have hz0 : z ≠ 0 := fun h0 => by simp [h0] at hz
-  have hp : (0 : ℝ) < 2 * π := by positivity
-  -- Reduce the argument of `z` modulo `2π` into `[0, 2π)`.
-  have hr : toIcoMod hp 0 z.arg = z.arg - (toIcoDiv hp 0 z.arg : ℝ) * (2 * π) := by
-    rw [toIcoMod, zsmul_eq_mul]
-  have hmem := toIcoMod_mem_Ico' hp z.arg
-  refine ⟨⟨toIcoMod hp 0 z.arg / (2 * π), div_nonneg hmem.1 hp.le, (div_le_one hp).2 hmem.2.le⟩,
-    ?_⟩
-  simp only [mul_div_cancel₀ _ hp.ne', hr, cos_sub_int_mul_two_pi, sin_sub_int_mul_two_pi]
-  exact ⟨by rw [Complex.cos_arg hz0, hz, div_one], by rw [Complex.sin_arg, hz, div_one]⟩
+  have : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+  obtain ⟨t, ht⟩ := AddCircle.surjective_ofUnitInterval (p := 2 * π) (z.arg : Real.Angle)
+  rw [AddCircle.ofUnitInterval_apply] at ht
+  -- `Real.Angle` is by definition `AddCircle (2 * π)`, with the same quotient map from `ℝ`.
+  have ht' : ((2 * π * t : ℝ) : Real.Angle) = z.arg := by rw [mul_comm]; exact ht
+  refine ⟨t, ?_, ?_⟩
+  · rw [← Real.Angle.cos_coe, ht', Real.Angle.cos_coe, Complex.cos_arg hz0, hz, div_one]
+  · rw [← Real.Angle.sin_coe, ht', Real.Angle.sin_coe, Complex.sin_arg, hz, div_one]
 
 /-- On the unit interval, `cos 2πt = 1` only at the end points. -/
 theorem eq_zero_or_eq_one_of_cos_two_pi_mul_eq_one {t : I} (h : cos (2 * π * t) = 1) :
     t = 0 ∨ t = 1 := by
-  obtain ⟨n, hn⟩ := (Real.cos_eq_one_iff _).1 h
-  have hnt : (n : ℝ) = t := mul_right_cancel₀ (by positivity : (2 * π) ≠ 0) (by linarith)
-  have h0 : 0 ≤ n := by exact_mod_cast hnt ▸ t.2.1
-  have h1 : n ≤ 1 := by exact_mod_cast hnt ▸ t.2.2
-  obtain rfl | rfl : n = 0 ∨ n = 1 := by omega
-  · exact Or.inl (Subtype.ext (by simpa using hnt.symm))
-  · exact Or.inr (Subtype.ext (by simpa using hnt.symm))
+  have : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+  rw [← Real.cos_zero, Real.Angle.cos_eq_iff_coe_eq_or_eq_neg, Real.Angle.coe_zero, neg_zero,
+    or_self] at h
+  have h' : AddCircle.ofUnitInterval (2 * π) t = AddCircle.ofUnitInterval (2 * π) 0 := by
+    rw [AddCircle.ofUnitInterval_zero, AddCircle.ofUnitInterval_apply, mul_comm (t : ℝ)]
+    -- `Real.Angle` is by definition `AddCircle (2 * π)`, with the same quotient map from `ℝ`.
+    exact h
+  obtain h | ⟨h, -⟩ | ⟨h, -⟩ := AddCircle.ofUnitInterval_eq_ofUnitInterval_iff.1 h'
+  · exact Or.inl h
+  · exact Or.inl h
+  · exact Or.inr h
 
 /-- On the unit interval, `cos 2πt` and `sin 2πt` determine `t`, except that they agree at the two
 end points. -/
