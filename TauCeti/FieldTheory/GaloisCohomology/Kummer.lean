@@ -572,13 +572,12 @@ section Restriction
 
 variable (L : Type*) [Field L] [Algebra K L] (σ : L →ₐ[K] SeparableClosure K)
 
-variable {K n L} in
-/-- If `s ^ n = b` in `L`, then the image of `s` under a `K`-embedding `ι : L → Kˢ` is the
-underlying element of a unit of `Kˢ` whose `n`-th power is `b`. -/
-theorem _root_.AlgHom.exists_unit_pow_eq_map [NeZero n] (ι : L →ₐ[K] SeparableClosure K)
+variable {K n L} {E : Type*} [Field E] [Algebra K E] in
+/-- If `s ^ n = b` in `L`, then the image of `s` under a `K`-embedding `ι : L → E` is the
+underlying element of a unit of `E` whose `n`-th power is `b`. -/
+theorem _root_.AlgHom.exists_unit_pow_eq_map [NeZero n] (ι : L →ₐ[K] E)
     (b : Kˣ) {s : L} (hs : s ^ n = algebraMap K L b) :
-    ∃ β : (SeparableClosure K)ˣ, (β : SeparableClosure K) = ι s ∧
-      β ^ n = Units.map (algebraMap K (SeparableClosure K)).toMonoidHom b := by
+    ∃ β : Eˣ, (β : E) = ι s ∧ β ^ n = Units.map (algebraMap K E).toMonoidHom b := by
   have hs0 : ι s ≠ 0 := (map_ne_zero_iff _ ι.injective).2 <| by
     rintro rfl
     rw [zero_pow (NeZero.ne n), eq_comm, map_eq_zero] at hs
