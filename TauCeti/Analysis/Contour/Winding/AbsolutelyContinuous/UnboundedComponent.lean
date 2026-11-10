@@ -59,12 +59,19 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_zero_of_notMem_fi
 
 /-- **Outside the filled hull of a rectifiable closed curve, the winding number of its arclength
 parametrization vanishes.** -/
-theorem _root_.BoundedVariationOn.windingNumber_naturalParameterization_eq_zero_of_notMem_filledHull
-    {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ} (hγ : BoundedVariationOn γ (Icc a b))
+theorem _root_.ContinuousOn.windingNumber_naturalParameterization_eq_zero_of_notMem_filledHull
+    {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ}
     (hcont : ContinuousOn γ (Icc a b)) (hclosed : γ a = γ b)
     (hz : z ∉ filledHull (γ '' Icc a b)) :
     windingNumber (naturalParameterization γ (Icc a b) a) 0
         (eVariationOn γ (Icc a b)).toReal z = 0 := by
+  by_cases hγ : BoundedVariationOn γ (Icc a b)
+  swap
+  · -- infinite variation: the parameter interval is degenerate
+    have htop : eVariationOn γ (Icc a b) = ⊤ := by
+      by_contra h
+      exact hγ h
+    rw [htop, ENNReal.toReal_top, windingNumber_same]
   rcases le_or_gt a b with hab | hab
   swap
   · rw [Icc_eq_empty (not_le.mpr hab), eVariationOn.subsingleton _ subsingleton_empty]

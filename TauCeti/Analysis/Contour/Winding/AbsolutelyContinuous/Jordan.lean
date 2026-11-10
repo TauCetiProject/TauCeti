@@ -462,12 +462,13 @@ theorem eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt
 curve is positively oriented (`jordanSign γ a b = 1`) if and only if the leftward normal `I * v`
 points into the bounded inside `filledHull (γ '' uIcc a b) \ (γ '' uIcc a b)`. -/
 theorem jordanSign_eq_one_iff_eventually_mem_filledHull_sdiff
-    {γ : ℝ → ℂ} {a b t₀ : ℝ} {v : ℂ} (hab : a < b)
+    {γ : ℝ → ℂ} {a b t₀ : ℝ} {v : ℂ}
     (hγ : AbsolutelyContinuousOnInterval γ a b) (hclosed : γ a = γ b)
     (hinj : InjOn γ (Ico a b)) (ht₀ : t₀ ∈ Ioo a b) (hd : HasDerivAt γ v t₀) (hv : v ≠ 0) :
     jordanSign γ a b = 1 ↔
       ∀ᶠ h : ℝ in 𝓝[>] 0,
         γ t₀ + h • (I * v) ∈ filledHull (γ '' uIcc a b) \ (γ '' uIcc a b) := by
+  have hab : a < b := ht₀.1.trans ht₀.2
   have hev :=
     hγ.eventually_mem_filledHull_sdiff_and_notMem_of_hasDerivAt
       hclosed hinj ht₀ hd hv
@@ -587,11 +588,15 @@ theorem jordanSign_naturalParameterization_eq_one_or_neg_one
     (hγ.naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn hab.le hclosed)
     (hγ.injOn_naturalParameterization_Ico hcont hinj hab.le)
 
+end BoundedVariationOn
+
+namespace ContinuousOn
+
 /-- **The Jordan index theorem for the arclength parametrization of a rectifiable simple closed
 curve:** on `filledHull (γ '' Icc a b) \ (γ '' Icc a b)`, the winding number of
 `naturalParameterization γ (Icc a b) a` equals its orientation sign `σ ∈ {1, -1}`. -/
 theorem windingNumber_naturalParameterization_eq_jordanSign
-    {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ} (hγ : BoundedVariationOn γ (Icc a b))
+    {γ : ℝ → ℂ} {a b : ℝ} {z : ℂ}
     (hcont : ContinuousOn γ (Icc a b)) (hclosed : γ a = γ b) (hinj : InjOn γ (Ico a b))
     (hz : z ∈ filledHull (γ '' Icc a b) \ (γ '' Icc a b)) :
     windingNumber (naturalParameterization γ (Icc a b) a) 0
@@ -606,6 +611,13 @@ theorem windingNumber_naturalParameterization_eq_jordanSign
     · rw [Icc_self, image_singleton] at hz
       exact hz.2 (closedConvexHull_min subset_rfl (convex_singleton _) isClosed_singleton
         (filledHull_subset_closedConvexHull (singleton_nonempty _) hz.1))
+  by_cases hγ : BoundedVariationOn γ (Icc a b)
+  swap
+  · -- infinite variation: the parameter interval is degenerate
+    have htop : eVariationOn γ (Icc a b) = ⊤ := by
+      by_contra h
+      exact hγ h
+    rw [htop, ENNReal.toReal_top, windingNumber_same, jordanSign_same, Int.cast_zero]
   have hz' : z ∈ filledHull (naturalParameterization γ (Icc a b) a ''
       uIcc 0 (eVariationOn γ (Icc a b)).toReal) \
       (naturalParameterization γ (Icc a b) a '' uIcc 0 (eVariationOn γ (Icc a b)).toReal) := by
@@ -641,7 +653,7 @@ theorem jordanSign_naturalParameterization_comp_of_monotoneOn
 /-- **Decreasing continuous reparametrizations negate the arclength orientation sign of a
 rectifiable curve.** The reparametrization `φ` need not be absolutely continuous. -/
 theorem jordanSign_naturalParameterization_comp_of_antitoneOn
-    {γ : ℝ → ℂ} {φ : ℝ → ℝ} {a b c d : ℝ} (hγ : BoundedVariationOn γ (Icc a b))
+    {γ : ℝ → ℂ} {φ : ℝ → ℝ} {a b c d : ℝ}
     (hcont : ContinuousOn γ (Icc a b)) (hcd : c ≤ d) (hφ : ContinuousOn φ (Icc c d))
     (hφm : AntitoneOn φ (Icc c d)) (hφc : φ c = b) (hφd : φ d = a) :
     jordanSign (naturalParameterization (γ ∘ φ) (Icc c d) c) 0
@@ -652,6 +664,12 @@ theorem jordanSign_naturalParameterization_comp_of_antitoneOn
   have hL : eVariationOn (γ ∘ φ) (Icc c d) = eVariationOn γ (Icc a b) := by
     rw [eVariationOn.comp_eq_of_antitoneOn _ _ hφm,
       hφ.image_Icc_of_antitoneOn hcd hφm, hφc, hφd]
+  by_cases hγ : BoundedVariationOn γ (Icc a b)
+  swap
+  · have htop : eVariationOn γ (Icc a b) = ⊤ := by
+      by_contra h
+      exact hγ h
+    rw [hL, htop, ENNReal.toReal_top, jordanSign_same, jordanSign_same, neg_zero]
   have hη : AbsolutelyContinuousOnInterval (naturalParameterization γ (Icc a b) a) 0
       (eVariationOn γ (Icc a b)).toReal :=
     hγ.absolutelyContinuousOnInterval_naturalParameterization hcont hab
@@ -659,4 +677,4 @@ theorem jordanSign_naturalParameterization_comp_of_antitoneOn
     hγ.eqOn_naturalParameterization_comp_of_antitoneOn hcont hcd hφ hφm hφc hφd)]
   simpa only [zero_add] using hη.jordanSign_comp_sub
 
-end BoundedVariationOn
+end ContinuousOn
