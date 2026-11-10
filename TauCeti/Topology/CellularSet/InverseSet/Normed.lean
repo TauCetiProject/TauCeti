@@ -303,14 +303,12 @@ theorem exists_cell_subset_of_injOn_closedBall_diff (hEF : finrank ℝ E = finra
       closedBall 0 1 ∩ f ⁻¹' {p} ⊆ interior (g '' ball 0 1) ∧ g '' closedBall 0 1 ⊆ U := by
   /- The map is `g = f⁻¹ ∘ h ∘ f` away from `M` and the identity on `M`, where `h` is a
   homeomorphism of `F` fixing a neighbourhood of `p` and pulling `f '' closedBall 0 1` into
-  `f '' (U ∩ ball 0 1)`, which is open by Brown's Theorem 0. Then `g` is injective, maps the closed
-  ball into `U`, and is the identity near `M`; it is continuous at the points of `M` because it is
-  the identity near them, and elsewhere because the inverse of `f` on `B \ M` is continuous, the
-  closed ball being compact. -/
-  classical
+  `f '' (U ∩ ball 0 1)`, which is open by Brown's Theorem 0. Then `g` is continuous and injective
+  on the closed ball and maps it into `U`, by
+  `ContinuousOn.exists_continuousOn_injOn_mapsTo_of_mapsTo_image`, and it is the identity near
+  `M`. -/
   set B := closedBall (0 : E) 1
   set M := B ∩ f ⁻¹' {p}
-  set P := B \ f ⁻¹' {p}
   -- A ball `ball p ε` lies in the image of `U ∩ ball 0 1`, which is open by Theorem 0.
   obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1
     (isOpen_image_of_injOn_closedBall_diff hEF hf hinj (hU.inter isOpen_ball)
@@ -337,81 +335,23 @@ theorem exists_cell_subset_of_injOn_closedBall_diff (hEF : finrank ℝ E = finra
     simp only [h, Homeomorph.trans_apply, Homeomorph.coe_subRight, Homeomorph.coe_addRight,
       add_sub_cancel_right]
     linarith
-  have hhp : h p = p := hh_fix (mem_closedBall_self (by positivity))
-  have hh_ne (y : F) (hy : y ≠ p) : h y ≠ p := fun h' ↦ hy (h.injective (h'.trans hhp.symm))
-  have hh_mapsU (x : E) (hx : x ∈ B) : h (f x) ∈ f '' (U ∩ ball 0 1) :=
-    hεU (hh_maps (hR ⟨x, hx, rfl⟩))
-  have hfp (x : E) (hx : x ∈ B) (hxM : x ∉ M) : f x ≠ p := fun hfx ↦ hxM ⟨hx, hfx⟩
-  -- The map `g`: the identity on `M`, and the `f`-preimage of `h ∘ f` elsewhere.
-  set g : E → E := fun x ↦ if x ∈ M then x else invFunOn f P (h (f x))
-  have hgM (x : E) (hx : x ∈ M) : g x = x := by simp [g, hx]
-  have hg_spec (x : E) (hx : x ∈ B) (hxM : x ∉ M) :
-      g x ∈ U ∩ ball 0 1 ∧ f (g x) = h (f x) := by
-    obtain ⟨u, hu, hfu⟩ := hh_mapsU x hx
-    have hne : h (f x) ≠ p := hh_ne _ (hfp x hx hxM)
-    have huP : u ∈ P := ⟨ball_subset_closedBall hu.2, fun hc ↦ hne (hfu.symm.trans hc)⟩
-    have hex : ∃ a ∈ P, f a = h (f x) := ⟨u, huP, hfu⟩
-    have hgx : g x = invFunOn f P (h (f x)) := by simp [g, hxM]
-    have hfgx : f (g x) = h (f x) := hgx ▸ invFunOn_eq hex
-    have hgu : g x = u := hinj (hgx ▸ invFunOn_mem hex) huP (hfgx.trans hfu.symm)
-    exact ⟨hgu ▸ hu, hgu ▸ hfu⟩
-  have hgB : MapsTo g B B := fun x hx ↦ by
-    by_cases hxM : x ∈ M
-    · rwa [hgM x hxM]
-    · exact ball_subset_closedBall (hg_spec x hx hxM).1.2
-  have hfg (x : E) (hx : x ∈ B) : f (g x) = h (f x) := by
-    by_cases hxM : x ∈ M
-    · rw [hgM x hxM, mem_singleton_iff.1 hxM.2, hhp]
-    · exact (hg_spec x hx hxM).2
-  -- Near `M`, where `h` is the identity, so is `g`.
-  have hg_id (x : E) (hx : x ∈ B) (hxV : f x ∈ ball p (ε / 2)) : g x = x := by
-    by_cases hxM : x ∈ M
-    · exact hgM x hxM
-    · refine hinj ⟨hgB hx, fun hgx ↦ hh_ne _ (hfp x hx hxM) ((hfg x hx).symm.trans hgx)⟩
-        ⟨hx, hfp x hx hxM⟩ ?_
-      rw [hfg x hx, hh_fix (ball_subset_closedBall hxV), id]
-  refine ⟨g, fun x hx ↦ ?_, fun x hx y hy hxy ↦ ?_, ?_, ?_⟩
-  · by_cases hxV : f x ∈ ball p (ε / 2)
-    · refine continuousWithinAt_id.congr_of_eventuallyEq ?_ (hg_id x hx hxV)
-      filter_upwards [self_mem_nhdsWithin, (hf x hx).preimage_mem_nhdsWithin
-        (isOpen_ball.mem_nhds hxV)] with y hyB hyV
-      exact hg_id y hyB hyV
-    /- Away from `M`, `g = f⁻¹ ∘ h ∘ f`, where the inverse of `f` on `P = B \ M` is continuous
-    on `f '' P` because `B` is compact. -/
-    have hxP : x ∈ P := ⟨hx, fun hxp ↦ hxV (by rw [mem_preimage.1 hxp]; exact mem_ball_self (by
-      positivity))⟩
-    have hinv : ContinuousOn (invFunOn f P) (f '' P) :=
-      hf.continuousOn_invFunOn_image_of_isCompact (isCompact_closedBall 0 1) sdiff_subset hinj
-        (disjoint_left.2 fun _ ⟨a, ha, haz⟩ ⟨b, hb, hbz⟩ ↦
-          hb.2 (hbz.trans (haz.symm.trans (not_not.1 fun h ↦ ha.2 ⟨ha.1, h⟩))))
-    have hhP (y : E) (hy : y ∈ P) : h (f y) ∈ f '' P :=
-      ⟨g y, ⟨hgB hy.1, fun hc ↦ hh_ne _ hy.2 ((hfg y hy.1).symm.trans hc)⟩, hfg y hy.1⟩
-    have hgP (y : E) (hy : y ∈ P) : g y = invFunOn f P (h (f y)) := by
-      simp [g, show y ∉ M from fun hyM ↦ hy.2 hyM.2]
-    have hhf : ContinuousWithinAt (fun y ↦ h (f y)) P x :=
-      h.continuous.continuousAt.comp_continuousWithinAt ((hf x hx).mono sdiff_subset)
-    have hcomp : ContinuousWithinAt (fun y ↦ invFunOn f P (h (f y))) P x :=
-      (hinv _ (hhP x hxP)).comp (f := fun y ↦ h (f y)) hhf hhP
-    exact (hcomp.congr hgP (hgP x hxP)).mono_of_mem_nhdsWithin (inter_mem self_mem_nhdsWithin
-      ((hf x hx).preimage_mem_nhdsWithin (isOpen_compl_singleton.mem_nhds hxP.2)))
-  · have hfxy : f x = f y := h.injective (by rw [← hfg x hx, ← hfg y hy, hxy])
-    by_cases hxM : x ∈ M
-    · have hyM : y ∈ M := ⟨hy, mem_singleton_iff.2 (hfxy.symm.trans (mem_singleton_iff.1 hxM.2))⟩
-      rwa [hgM x hxM, hgM y hyM] at hxy
-    · exact hinj ⟨hx, hfp x hx hxM⟩ ⟨hy, fun hyp ↦ hfp x hx hxM (hfxy.trans hyp)⟩ hfxy
-  · -- `g` is the identity on the open neighbourhood `ball 0 1 ∩ f ⁻¹' ball p (ε / 2)` of `M`.
-    have hNo : IsOpen (ball (0 : E) 1 ∩ f ⁻¹' ball p (ε / 2)) :=
-      (hf.mono ball_subset_closedBall).isOpen_inter_preimage isOpen_ball isOpen_ball
-    have hMN : M ⊆ ball (0 : E) 1 ∩ f ⁻¹' ball p (ε / 2) := fun m hm ↦
-      ⟨hM hm, by rw [mem_preimage, mem_singleton_iff.1 hm.2]; exact mem_ball_self (by positivity)⟩
-    have hNg : ball (0 : E) 1 ∩ f ⁻¹' ball p (ε / 2) ⊆ g '' ball 0 1 := fun y hy ↦
-      ⟨y, hy.1, hg_id y (ball_subset_closedBall hy.1) hy.2⟩
-    exact hMN.trans (interior_maximal hNg hNo)
-  · rintro _ ⟨x, hx, rfl⟩
-    by_cases hxM : x ∈ M
-    · rw [hgM x hxM]
-      exact hMU hxM
-    · exact (hg_spec x hx hxM).1.1
+  have hh_mapsU : MapsTo h (f '' B) (f '' (B ∩ (U ∩ ball 0 1))) := by
+    rintro _ ⟨x, hx, rfl⟩
+    obtain ⟨u, hu, hfu⟩ := hεU (hh_maps (hR ⟨x, hx, rfl⟩))
+    exact ⟨u, ⟨ball_subset_closedBall hu.2, hu⟩, hfu⟩
+  obtain ⟨g, hgc, hgi, hgU, hg_id⟩ := hf.exists_continuousOn_injOn_mapsTo_of_mapsTo_image
+    (isCompact_closedBall 0 1) hinj (subset_inter hMU hM) isOpen_univ (mapsTo_univ _ _)
+    h.continuous.continuousOn h.injective.injOn
+    (eventuallyEq_of_mem (closedBall_mem_nhds p (half_pos hε)) hh_fix) hh_mapsU
+  refine ⟨g, hgc, hgi, ?_, hgU.image_subset.trans inter_subset_left⟩
+  -- `g` is the identity on the open neighbourhood `ball 0 1 ∩ f ⁻¹' ball p (ε / 2)` of `M`.
+  have hNo : IsOpen (ball (0 : E) 1 ∩ f ⁻¹' ball p (ε / 2)) :=
+    (hf.mono ball_subset_closedBall).isOpen_inter_preimage isOpen_ball isOpen_ball
+  have hMN : M ⊆ ball (0 : E) 1 ∩ f ⁻¹' ball p (ε / 2) := fun m hm ↦
+    ⟨hM hm, by rw [mem_preimage, mem_singleton_iff.1 hm.2]; exact mem_ball_self (by positivity)⟩
+  have hNg : ball (0 : E) 1 ∩ f ⁻¹' ball p (ε / 2) ⊆ g '' ball 0 1 := fun y hy ↦
+    ⟨y, hy.1, hg_id y (ball_subset_closedBall hy.1) (hh_fix (ball_subset_closedBall hy.2))⟩
+  exact hMN.trans (interior_maximal hNg hNo)
 
 /-- **Brown's Theorem 3: the only inverse set of a map of a cell is cellular.** Let `E` and `F`
 be finite-dimensional real normed spaces of the same dimension and `f : E → F` a map continuous on
