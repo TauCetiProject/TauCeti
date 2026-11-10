@@ -169,12 +169,18 @@ theorem isCompleteVectorField_of_isCompact_of_eq_zero_off {v : (x : M) → Tange
     (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt) (hK.insert x)
     (mapsTo_maximalIntegralCurve_insert_of_eq_zero_off hv hvK)
 
-/-- Every `C¹` vector field on a compact boundaryless Banach manifold is complete. -/
+omit [CompleteSpace E] in
+/-- Every `C¹` vector field on a compact boundaryless manifold is complete. No completeness of the
+model space is assumed: a nonempty compact manifold is modelled on a finite-dimensional space. -/
 theorem isCompleteVectorField_of_compactSpace [CompactSpace M]
     {v : (x : M) → TangentSpace I x}
     (hv : ContMDiff I I.tangent 1 (fun x ↦ (⟨x, v x⟩ : TangentBundle I M))) :
     IsCompleteVectorField v := by
   rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
+  rcases isEmpty_or_nonempty M with hM | hM
+  · exact fun x ↦ isEmptyElim x
+  have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M I
+  have : CompleteSpace E := FiniteDimensional.complete ℝ E
   exact fun _ ↦ maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
     (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt) isCompact_univ fun _ _ ↦ mem_univ _
 
