@@ -423,21 +423,12 @@ theorem joined_iff_mem_range_fibrationBoundary (hp : serreFibrations p) (y : p.f
     Joined e.1 y.1 ↔ (⟦(genLoopHomeoOfIsEmpty (Fin 0) e).symm y⟧ :
       HomotopyGroup (Fin 0) (p.fiber b) e) ∈ range (fibrationBoundary hp e) := by
   -- Classes of zero-dimensional generalized loops are path components.
-  constructor
-  · intro h
-    refine (mem_range_fibrationBoundary_iff hp).2 ?_
-    apply (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) e.1).injective
-    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk,
-      homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, genLoopHomeoOfIsEmpty_symm_apply,
-      TopCat.Hom.fiberι_apply]
-    exact ZerothHomotopy.sound h.symm.somePath
-  · intro h
-    have h1 := congrArg (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) e.1)
-      ((mem_range_fibrationBoundary_iff hp).1 h)
-    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk,
-      homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, genLoopHomeoOfIsEmpty_symm_apply,
-      TopCat.Hom.fiberι_apply] at h1
-    exact (Quotient.exact h1).symm
+  refine Iff.trans ?_ (mem_range_fibrationBoundary_iff hp).symm
+  rw [HomotopyGroup.map_mk]
+  refine Iff.trans ?_ HomotopyGroup.mk_eq_mk_iff_joined.symm
+  rw [GenLoop.map_apply, genLoopHomeoOfIsEmpty_symm_apply, TopCat.Hom.fiberι_apply,
+    GenLoop.const_apply]
+  exact ⟨Joined.symm, Joined.symm⟩
 
 /-- **Exactness at `π_n(E, e)`.** A class of the total space comes from the fibre exactly when it
 becomes trivial in `π_n(B, b)`. -/

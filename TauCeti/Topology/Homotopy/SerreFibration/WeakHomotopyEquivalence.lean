@@ -175,7 +175,8 @@ private theorem joined_of_joined_map_of_fiber (hp : serreFibrations p)
   refine (joined_iff_mem_range_fibrationBoundary hp (e := e) y).2
     ⟨γ, (hfib.map_bijective (Fin 0) e).1 (hy'.trans ?_)⟩
   rw [HomotopyGroup.map_mk]
-  exact congrArg _ (GenLoop.ext _ _ fun t ↦ by rw [GenLoop.map_apply]; rfl)
+  exact congrArg _ (GenLoop.ext _ _ fun t ↦ by
+    rw [GenLoop.map_apply, genLoopHomeoOfIsEmpty_symm_apply, genLoopHomeoOfIsEmpty_symm_apply])
 
 end Comparison
 

@@ -215,6 +215,14 @@ theorem _root_.homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk [IsEmpty N] {Y :
       ZerothHomotopy.mk (f (p 0)) := by
   rw [map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply]
 
+/-- **Classes of zero-dimensional generalized loops are path components.** Two such loops have
+the same class exactly when their values are joined by a path. -/
+theorem mk_eq_mk_iff_joined [IsEmpty N] {p q : Ω^ N X x} :
+    (⟦p⟧ : HomotopyGroup N X x) = ⟦q⟧ ↔ Joined (p 0) (q 0) := by
+  refine (homotopyGroupEquivZerothHomotopyOfIsEmpty N x).apply_eq_iff_eq.symm.trans ?_
+  rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk]
+  exact ⟨Quotient.exact, fun h ↦ ZerothHomotopy.sound h.somePath⟩
+
 /-- **Two loops at `x` are joined by a path in the loop space exactly when they are homotopic.**
 This is `GenLoop.homotopic_iff_joined` for a singleton index type, carried across the
 homeomorphism `GenLoop.homeomorphOfUnique` onto Mathlib's loop space `Ω X x`. -/

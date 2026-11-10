@@ -192,10 +192,9 @@ private theorem joined_of_joined_fiberι (hp : serreFibrations p) (hB : Subsingl
   have : Subsingleton (HomotopyGroup (Option (Fin 0)) B b) :=
     (HomotopyGroup.congrEquiv (finSuccEquiv 0).symm).subsingleton
   rw [Subsingleton.elim c ⟦GenLoop.const⟧, fibrationBoundary_const] at hc
-  have h1 := congrArg (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) e) hc
-  rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk,
-    genLoopHomeoOfIsEmpty_symm_apply] at h1
-  exact Quotient.exact h1
+  have h1 := HomotopyGroup.mk_eq_mk_iff_joined.1 hc
+  rw [GenLoop.const_apply, genLoopHomeoOfIsEmpty_symm_apply] at h1
+  exact h1
 
 /-- Every point of `E` is joined to a point of the fibre over `b` when `B` is path-connected: lift
 a path from its projection to `b`. -/
