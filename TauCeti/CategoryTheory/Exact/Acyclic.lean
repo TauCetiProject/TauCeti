@@ -168,6 +168,23 @@ noncomputable def shift {K : CochainComplex C ℤ} (h : E.AcyclicData K) (a : �
       Category.assoc, key (n + a + 1) (n + 1 + a) (by lia), reassoc_of% (h.fac (n + a)),
       key' _ _ (by lia)]
 
+section descZ
+
+variable {K : CochainComplex C ℤ} (h : E.AcyclicData K)
+
+/-- The morphism out of the cycles `Zⁿ⁺¹` induced by a morphism out of `Kⁿ` killing `Zⁿ ↣ Kⁿ`. -/
+noncomputable def descZ {T : C} (n : ℤ) (k : K.X n ⟶ T) (hk : h.i n ≫ k = 0) : h.Z (n + 1) ⟶ T :=
+  (E.isKernelCokernelPair _ (h.conflation n)).desc k hk
+
+@[reassoc (attr := simp)]
+theorem p_descZ {T : C} (n : ℤ) (k : K.X n ⟶ T) (hk : h.i n ≫ k = 0) :
+    h.p n ≫ h.descZ n k hk = k :=
+  (E.isKernelCokernelPair _ (h.conflation n)).g_desc k hk
+
+instance (n : ℤ) : Epi (h.p n) := (E.isDeflation_g (h.conflation n)).epi
+
+end descZ
+
 end AcyclicData
 
 /-- An acyclic complex stays acyclic under isomorphism of complexes. -/
@@ -282,6 +299,79 @@ theorem acyclic_mappingCone {K L : CochainComplex C ℤ} (φ : K ⟶ L) (hK : E.
     · simp [d_snd_v φ m (m + 1) rfl, huv]
     · simp [reassoc_of% (hke (m + 1))]
     · simp [hkv, B.fac]
+
+/-- **The mapping cone of a map built from pushouts of inflations is acyclic.** Let `φ : K ⟶ L`
+come with objects `Bᵐ`, inflations `j : Bᵐ ↣ Lᵐ` and pushout squares
+```text
+Bᵐ ──j──▶ Lᵐ
+│q        │u
+▼         ▼
+Kᵐ⁺¹ ─v─▶ Bᵐ⁺¹
+```
+such that the differential of `L` is `u ≫ j`, `φ` is `v ≫ j`, the differential of `K` is `v ≫ q`
+and `u ≫ q = 0`. Then the cone of `φ` is acyclic, with cycles `Bᵐ`: the pushout conflations
+`Bᵐ ↣ Lᵐ ⊞ Kᵐ⁺¹ ↠ Bᵐ⁺¹` are its degreewise conflations. This is the dual of the last step of
+Bühler's proof of Theorem 12.7, where such data come from a recursive construction. -/
+theorem acyclic_mappingCone_of_isPushout {K L : CochainComplex C ℤ} (φ : K ⟶ L) (B : ℤ → C)
+    (j : ∀ m, B m ⟶ L.X m) (q : ∀ m, B m ⟶ K.X (m + 1)) (u : ∀ m, L.X m ⟶ B (m + 1))
+    (v : ∀ m, K.X m ⟶ B m) (hj : ∀ m, E.IsInflation (j m))
+    (sq : ∀ m, IsPushout (j m) (q m) (u m) (v (m + 1)))
+    (hd : ∀ m, u m ≫ j (m + 1) = L.d m (m + 1)) (hφ : ∀ m, v m ≫ j m = φ.f m)
+    (hq : ∀ m, v m ≫ q m = K.d m (m + 1)) (huq : ∀ m, u m ≫ q (m + 1) = 0) :
+    E.acyclic (CochainComplex.mappingCone φ) := by
+  open CochainComplex.mappingCone in
+  refine ⟨{
+    Z := B
+    i m := j m ≫ (inr φ).f m - q m ≫ (inl φ).v (m + 1) m (by lia)
+    p m := (fst φ).1.v m (m + 1) rfl ≫ v (m + 1) + (snd φ).v m m (add_zero m) ≫ u m
+    zero m := by simp [(sq m).w]
+    conflation m := ?_
+    fac m := ?_ }⟩
+  · refine E.conflation_of_iso ?_
+      (E.conflation_shortComplex_of_isPushout_of_isInflation (hj m) (sq m))
+    let e := biprod.braiding _ _ ≪≫
+      (HomologicalComplex.homotopyCofiber.XIsoBiprod φ m (m + 1) rfl).symm
+    -- The isomorphism `Lᵐ ⊞ Kᵐ⁺¹ ≅ cone` is the decomposition of the cone into its two summands.
+    -- Mathlib's simp lemmas for `XIsoBiprod` carry their own biproduct instance, so they are
+    -- applied by unification rather than by `simp`.
+    have h₁ : biprod.inr ≫ (HomologicalComplex.homotopyCofiber.XIsoBiprod φ m (m + 1) rfl).inv =
+        (inr φ).f m :=
+      HomologicalComplex.homotopyCofiber.inr_XIsoBiprod_inv φ (m + 1) m rfl
+    have h₂ : biprod.inl ≫ (HomologicalComplex.homotopyCofiber.XIsoBiprod φ m (m + 1) rfl).inv =
+        (inl φ).v (m + 1) m (by lia) :=
+      HomologicalComplex.homotopyCofiber.inl_XIsoBiprod_inv φ (m + 1) m rfl
+    -- The last step of each case closes by unification, for the same reason.
+    have he : e.hom = biprod.desc ((inr φ).f m) ((inl φ).v (m + 1) m (by lia)) := by
+      apply biprod.hom_ext'
+      · simp only [e, Iso.trans_hom, Iso.symm_hom, biprod.braiding_hom, biprod.lift_eq,
+          Preadditive.add_comp, Category.assoc, h₁, Preadditive.comp_add,
+          BinaryBicone.inl_snd_assoc, zero_comp, zero_add]
+        exact (biprod.inl_fst_assoc _).trans (biprod.inl_desc _ _).symm
+      · simp only [e, Iso.trans_hom, Iso.symm_hom, biprod.braiding_hom, biprod.lift_eq,
+          Preadditive.add_comp, Category.assoc, h₂, Preadditive.comp_add,
+          BinaryBicone.inr_fst_assoc, zero_comp, add_zero]
+        exact (biprod.inr_snd_assoc _).trans (biprod.inr_desc _ _).symm
+    refine ShortComplex.isoMk (Iso.refl _) e (Iso.refl _) ?_ ?_
+    · dsimp only [CommSq.shortComplex]
+      rw [he]
+      apply ext_to φ m (m + 1) rfl <;> simp [sub_eq_add_neg]
+    · dsimp only [CommSq.shortComplex]
+      rw [he]
+      apply biprod.hom_ext' <;> simp
+  · apply ext_from φ (m + 1) m rfl <;> apply ext_to φ (m + 1) (m + 1 + 1) rfl
+    · simp [d_fst_v φ m (m + 1) (m + 1 + 1) rfl rfl, reassoc_of% (hq (m + 1))]
+    · simp [d_snd_v φ m (m + 1) rfl, hφ]
+    · simp [huq]
+    · simp [hd]
+
+/-- Acyclicity of mapping cones is invariant under isomorphisms of arrows, through Mathlib's
+`HomologicalComplex.homotopyCofiber.mapArrowIso`. -/
+theorem acyclic_mappingCone_of_iso {K₁ L₁ K₂ L₂ : CochainComplex C ℤ} {φ₁ : K₁ ⟶ L₁}
+    {φ₂ : K₂ ⟶ L₂} (a : K₁ ≅ K₂) (b : L₁ ≅ L₂) (comm : φ₁ ≫ b.hom = a.hom ≫ φ₂)
+    (h : E.acyclic (CochainComplex.mappingCone φ₂)) :
+    E.acyclic (CochainComplex.mappingCone φ₁) :=
+  E.acyclic.prop_of_iso (HomologicalComplex.homotopyCofiber.mapArrowIso φ₂ φ₁
+    (fun j ↦ ⟨j - 1, by simp⟩) (Arrow.isoMk a b comm.symm).symm) h
 
 end ExactStructure
 

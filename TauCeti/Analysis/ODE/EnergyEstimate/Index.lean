@@ -611,16 +611,14 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
   -- orthogonal complements, so the kernel and cokernel are `W ⊓ U` and `Wᗮ ⊓ Uᗮ`.
   set W := Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ioi 0)
   set U := Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)
-  have hW : Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0) = Wᗮ := by
-    rw [hsymplus.orthogonal_pointSpectralSubspace, compl_Ioi, ← Iio_insert,
-      Module.End.pointSpectralSubspace_insert_zero (LinearMap.ker_eq_bot.2
-        (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
-          (le_inv_mul_iff₀ hα).2 (hplus v)))]
-  have hU : Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Ioi 0) = Uᗮ := by
-    rw [hsymminus.orthogonal_pointSpectralSubspace, compl_Iio, ← Ioi_insert,
-      Module.End.pointSpectralSubspace_insert_zero (LinearMap.ker_eq_bot.2
-        (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
-          (le_inv_mul_iff₀ hα).2 (hminus v)))]
+  have hW : Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0) = Wᗮ :=
+    (hsymplus.orthogonal_pointSpectralSubspace_Ioi_zero (LinearMap.ker_eq_bot.2
+      (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
+        (le_inv_mul_iff₀ hα).2 (hplus v)))).symm
+  have hU : Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Ioi 0) = Uᗮ :=
+    (hsymminus.orthogonal_pointSpectralSubspace_Iio_zero (LinearMap.ker_eq_bot.2
+      (ContinuousLinearMap.injective_of_forall_norm_le fun v ↦
+        (le_inv_mul_iff₀ hα).2 (hminus v)))).symm
   rw [hW, hU, Submodule.inf_orthogonal]
   have h1 := Submodule.finrank_sup_add_finrank_inf_eq W U
   have h2 := (W ⊔ U).finrank_add_finrank_orthogonal

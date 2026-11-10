@@ -220,7 +220,7 @@ field itself, whose norm to itself is the identity. This pins the direction of t
 class-field correspondence. -/
 @[simp]
 theorem globalNormSubgroup_top :
-    globalNormSubgroup K (openNormalSubgroupTop (AbsoluteGaloisGroup K)) = ⊤ := by
+    globalNormSubgroup K ⊤ = ⊤ := by
   apply top_unique
   intro c _
   apply mem_globalNormSubgroup_iff.2

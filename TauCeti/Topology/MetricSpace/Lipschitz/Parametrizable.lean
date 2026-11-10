@@ -303,13 +303,13 @@ theorem image_of_locallyLipschitz {E F : Type*} [PseudoMetricSpace E] [PseudoMet
   exact Set.mem_iUnion.2 ⟨i, z, hz, rfl⟩
 
 /-- A set Lipschitz parametrized in dimension `d` has zero additive Haar measure in a
-finite-dimensional real normed space of dimension strictly larger than `d`.
+real normed space of dimension strictly larger than `d` (so in particular finite-dimensional).
 
 This statement is formulated for an arbitrary additive Haar measure, so it applies directly to
 the volume normalization used by a lattice and is invariant under later linear coordinate
 changes. -/
 theorem measure_zero {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    [MeasurableSpace E] [BorelSpace E]
     (μ : Measure E) [μ.IsAddHaarMeasure] {d : ℕ} {S : Set E}
     (hS : IsLipschitzParametrizable d S) (hd : d < Module.finrank ℝ E) : μ S = 0 := by
   obtain ⟨n, C, f, hf, hSf⟩ := isLipschitzParametrizable_iff.1 hS

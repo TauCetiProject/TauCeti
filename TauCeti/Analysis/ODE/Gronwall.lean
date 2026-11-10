@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
-public import Mathlib.Analysis.ODE.Gronwall
+public import TauCeti.Analysis.ODE.Gronwall.Interior
 import Mathlib.Analysis.Calculus.Monotone
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -47,7 +47,10 @@ Mathlib's uniqueness statement `eq_zero_of_abs_deriv_le_mul_abs_self_of_eq_zero_
 the vanishing of a function with `‖f'‖ ≤ K ‖f‖` forward from the left endpoint of an interval.
 Reversing time gives the two-sided version: on `[a, b]` such a function vanishes identically as
 soon as it vanishes at one point (`TauCeti.eq_zero_of_norm_deriv_le_mul_norm_self_of_mem_Icc`).
-This is the uniqueness argument for linear differential equations by energy estimates.
+The general closed-interval bound is supplied by
+`TauCeti.norm_le_gronwallBound_of_norm_derivWithin_le`; its interior-derivative variant is
+`TauCeti.norm_le_gronwallBound_of_norm_deriv_le`. This is the uniqueness argument for linear
+differential equations by energy estimates.
 
 ## References
 
@@ -227,27 +230,9 @@ theorem eq_zero_of_norm_deriv_le_mul_norm_self_of_mem_Icc {E : Type*} [NormedAdd
     (bound : ∀ x ∈ Icc a b, ‖f' x‖ ≤ K * ‖f x‖) (hc : c ∈ Icc a b) (hfc : f c = 0) :
     ∀ x ∈ Icc a b, f x = 0 := by
   intro x hx
-  rcases le_total c x with hcx | hxc
-  · have hsub : Icc c b ⊆ Icc a b := Icc_subset_Icc_left hc.1
-    exact eq_zero_of_abs_deriv_le_mul_abs_self_of_eq_zero_right
-      (fun y hy ↦ (hf y (hsub hy)).continuousWithinAt.mono hsub)
-      (fun y hy ↦ (hf y (hsub (Ico_subset_Icc_self hy))).mono_of_mem_nhdsWithin
-        (Icc_mem_nhdsGE_of_mem ⟨hc.1.trans hy.1, hy.2⟩))
-      hfc (fun y hy ↦ bound y (hsub (Ico_subset_Icc_self hy))) x ⟨hcx, hx.2⟩
-  · -- Reverse time and run the forward argument on `[-c, -a]`.
-    have hsub : Icc (-c) (-a) ⊆ -Icc a b := fun y hy ↦
-      ⟨by linarith [hy.2], by linarith [hy.1, hc.2]⟩
-    have key := eq_zero_of_abs_deriv_le_mul_abs_self_of_eq_zero_right
-      (f := fun y ↦ f (-y)) (f' := fun y ↦ -f' (-y)) (K := K) (a := -c) (b := -a)
-      (fun y hy ↦ (hf (-y) (hsub hy)).continuousWithinAt.comp continuous_neg.continuousWithinAt
-        fun z hz ↦ hsub hz)
-      (fun y hy ↦ by
-        have h := ((hf (-y) (hsub (Ico_subset_Icc_self hy))).mono_of_mem_nhdsWithin
-          (Icc_mem_nhdsLE_of_mem ⟨by linarith [hy.2], by linarith [hy.1, hc.2]⟩)).scomp y
-          (hasDerivWithinAt_neg y (Ici y)) fun z hz ↦ neg_le_neg_iff.2 hz
-        simpa [Function.comp_def] using h)
-      (by simpa using hfc) (fun y hy ↦ by simpa using bound (-y) (hsub (Ico_subset_Icc_self hy)))
-      (-x) ⟨by linarith, by linarith [hx.1]⟩
-    simpa using key
+  have h := norm_le_gronwallBound_of_norm_derivWithin_le hc hf
+    (δ := 0) (ε := 0) (by simp only [hfc, norm_zero, le_refl])
+    (fun y hy ↦ by simpa only [add_zero] using bound y hy) x hx
+  simpa only [gronwallBound_ε0_δ0, norm_le_zero_iff] using h
 
 end TauCeti
