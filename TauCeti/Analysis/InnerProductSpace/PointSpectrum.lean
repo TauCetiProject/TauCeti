@@ -32,8 +32,7 @@ For a symmetric operator on a finite-dimensional inner product space, the eigens
 eigenvalues are mutually orthogonal and span `E`. Hence the point-spectral subspaces selected by
 `Ω` and by its complement are orthogonal complements of each other, the point-spectral subspace is
 the span of the vectors of an ordered eigenbasis whose eigenvalues lie in `Ω`, and its orthogonal
-projection is the functional calculus `𝟙_Ω(A)` of the indicator function of `Ω`. When `A` is
-moreover injective, its negative and positive spectral subspaces are complementary.
+projection is the functional calculus `𝟙_Ω(A)` of the indicator function of `Ω`.
 
 On a finite-dimensional subspace invariant under a symmetric operator, point-spectral containment
 is equivalent to a quadratic-form bound: the restricted point spectrum lies in `(-∞, a]` exactly
@@ -81,8 +80,6 @@ spectrum from that of its orthogonal complement.
   spanned by the vectors of the ordered eigenbasis whose eigenvalues lie in `Ω`.
 * `LinearMap.IsSymmetric.coe_starProjection_pointSpectralSubspace`: its orthogonal projection is
   the functional calculus of the indicator function of `Ω`.
-* `LinearMap.IsSymmetric.isCompl_pointSpectralSubspace_Iio_Ioi`: for an injective symmetric
-  operator the negative and positive spectral subspaces are complementary.
 * `LinearMap.IsSymmetric.re_inner_apply_self_lt_zero_of_mem_pointSpectralSubspace` and
   `LinearMap.IsSymmetric.re_inner_apply_self_pos_of_mem_pointSpectralSubspace`: the quadratic form
   of a symmetric operator is negative definite on its point-spectral subspaces selected by negative
@@ -417,12 +414,6 @@ theorem orthogonal_pointSpectralSubspace_Iio_zero (hA : A.IsSymmetric)
     (A.pointSpectralSubspace (Set.Iio 0))ᗮ = A.pointSpectralSubspace (Set.Ioi 0) := by
   rw [hA.orthogonal_pointSpectralSubspace, Set.compl_Iio, ← Set.Ioi_insert,
     Module.End.pointSpectralSubspace_insert_zero hA']
-
-/-- For an injective symmetric operator, the negative and positive spectral subspaces are
-complementary: the space is their direct sum. -/
-theorem isCompl_pointSpectralSubspace_Iio_Ioi (hA : A.IsSymmetric) (hker : LinearMap.ker A = ⊥) :
-    IsCompl (A.pointSpectralSubspace (Set.Iio 0)) (A.pointSpectralSubspace (Set.Ioi 0)) :=
-  hA.orthogonal_pointSpectralSubspace_Iio_zero hker ▸ Submodule.isCompl_orthogonal _
 
 /-- For an injective symmetric operator on a finite-dimensional space, the orthogonal complement of
 the positive spectral subspace is the negative spectral subspace. -/
