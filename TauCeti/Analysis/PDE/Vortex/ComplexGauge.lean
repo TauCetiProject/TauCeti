@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import Mathlib.MeasureTheory.Function.L2Space
+import Mathlib.MeasureTheory.Integral.Asymptotics
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Liouville
 import TauCeti.Analysis.PDE.Vortex.Zeros
@@ -395,28 +396,19 @@ private theorem integrable_norm_sq_of_memLp_sectionValue_mul {μ : Measure ℂ}
     (hy₂ : MemLp y 2 μ) (hh : Continuous h)
     (hα : ∀ z, sectionValue y z = h z * sectionValue x z) :
     Integrable (fun z ↦ ‖h z‖ ^ 2) μ := by
-  obtain ⟨K, hK, hKs⟩ := mem_cocompact.mp
-    (hlim.eventually (lt_mem_nhds (by norm_num : (1 / 2 : ℝ) < 1)))
   have hy : Integrable (fun z ↦ ‖y z‖ ^ 2) μ :=
     (memLp_two_iff_integrable_sq_norm hy₂.aestronglyMeasurable).mp hy₂
-  have hK' : Integrable (K.indicator fun z ↦ ‖h z‖ ^ 2) μ :=
-    ((hh.norm.pow 2).continuousOn.integrableOn_compact hK).integrable_indicator
-      hK.measurableSet
-  refine ((hy.const_mul 8).add hK').mono' (hh.norm.pow 2).aestronglyMeasurable
-    (ae_of_all _ fun z ↦ ?_)
-  rw [Real.norm_of_nonneg (by positivity), Pi.add_apply]
-  by_cases hz : z ∈ K
-  · rw [Set.indicator_of_mem hz]
-    nlinarith [sq_nonneg ‖y z‖]
-  · rw [Set.indicator_of_notMem hz]
-    have hz' : 1 / 2 < 4 * (x z 2 ^ 2 + x z 3 ^ 2) := hKs hz
-    -- `|h|² |α|² = |δα|² ≤ 4 |y|²` and `|α|² > 1 / 2`.
-    have he : ‖h z‖ ^ 2 * (4 * (x z 2 ^ 2 + x z 3 ^ 2)) = ‖sectionValue y z‖ ^ 2 := by
-      rw [hα, norm_mul, mul_pow, sq_norm_sectionValue]
-    have hs : ‖sectionValue y z‖ ^ 2 ≤ 4 * ‖y z‖ ^ 2 := by
-      rw [sq_norm_sectionValue, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
-      nlinarith [sq_nonneg (y z 0), sq_nonneg (y z 1)]
-    nlinarith [sq_nonneg ‖h z‖]
+  refine LocallyIntegrable.integrable_of_isBigO_cocompact (hh.norm.pow 2).locallyIntegrable
+    (Asymptotics.IsBigO.of_bound 8 ?_) (hy.integrableAtFilter _)
+  filter_upwards [hlim.eventually (lt_mem_nhds (by norm_num : (1 / 2 : ℝ) < 1))] with z hz'
+  rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity)]
+  -- `|h|² |α|² = |δα|² ≤ 4 |y|²` and `|α|² > 1 / 2`.
+  have he : ‖h z‖ ^ 2 * (4 * (x z 2 ^ 2 + x z 3 ^ 2)) = ‖sectionValue y z‖ ^ 2 := by
+    rw [hα, norm_mul, mul_pow, sq_norm_sectionValue]
+  have hs : ‖sectionValue y z‖ ^ 2 ≤ 4 * ‖y z‖ ^ 2 := by
+    rw [sq_norm_sectionValue, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
+    nlinarith [sq_nonneg (y z 0), sq_nonneg (y z 1)]
+  nlinarith [sq_nonneg ‖h z‖]
 
 /-- **Kernel elements divisible by the section vanish.** At a `C¹` plane field satisfying the
 holomorphicity rows of the vortex equation, with `|α| → 1` at infinity, a continuous
