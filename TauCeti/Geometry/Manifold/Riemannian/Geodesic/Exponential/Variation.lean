@@ -26,6 +26,8 @@ curve is needed.
 * `TauCeti.Manifold.variationField_exponentialVariation`: its variation field is the given field.
 * `TauCeti.Manifold.contMDiffAt_exponentialVariation`: its joint regularity on the domain of the
   exponential map.
+* `TauCeti.Manifold.contMDiffAt_exponentialVariation_zero`: its joint regularity along the
+  central curve.
 
 ## References
 
@@ -93,5 +95,13 @@ theorem contMDiffAt_exponentialVariation {n : ℕ∞} {s t : ℝ}
     (contMDiffOn_riemannianExp_tangentBundle.contMDiffAt
       (isOpen_setOfPred_mem_expDomain.mem_nhds hv)).of_le (by exact_mod_cast le_top)
   exact hexp.comp (s, t) hinput
+
+/-- The exponential variation is jointly `C^n` at every point `(0, t)` of the central curve where
+the lift of `V` to the tangent bundle is `C^n`. -/
+theorem contMDiffAt_exponentialVariation_zero {n : ℕ∞} {t : ℝ}
+    (hV : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n (fun t ↦ TotalSpace.mk' E (γ t) (V t)) t) :
+    ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n
+      (fun z : ℝ × ℝ ↦ exponentialVariation I γ V z.1 z.2) (0, t) :=
+  contMDiffAt_exponentialVariation γ V hV (by simp)
 
 end TauCeti.Manifold
