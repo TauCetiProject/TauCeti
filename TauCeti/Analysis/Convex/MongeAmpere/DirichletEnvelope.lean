@@ -119,7 +119,7 @@ theorem nonpos_of_mem_dirichletSubsolutions (hΩ : IsOpen Ω) (hΩc : Convex ℝ
   by_cases hxΩ : x ∈ Ω
   · exact le_of_mongeAmpereMeasure_le_of_le_frontier μ hΩ hb (convexOn_const 0 hΩc)
       (hw.1.subset subset_closure hΩc) continuousOn_const hw.2.1
-      (by rw [mongeAmpereMeasure_ite_const μ hΩ hΩc]; exact Measure.zero_le _)
+      (by rw [mongeAmpereMeasure_ite_const μ hΩ]; exact Measure.zero_le _)
       hw.2.2.1 hxΩ
   · exact hw.2.2.1 x (hΩ.frontier_eq.symm ▸ ⟨hx, hxΩ⟩)
 

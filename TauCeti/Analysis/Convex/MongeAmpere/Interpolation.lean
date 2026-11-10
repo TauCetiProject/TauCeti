@@ -234,7 +234,7 @@ theorem map_smul_add_smul_gradient_absolutelyContinuous (hf : Convex ℝ {p : E 
 convex (convex real epigraph, never `⊥`), with real representative `F` and `D` the interior of its
 effective domain, and let `H x` be, for almost every `x ∈ D`, a first-order expansion of the
 subdifferential of `f` at `x` (the Alexandrov Hessian, see
-`rnDeriv_mongeAmpereMeasure_withDensity_ae_eq`). Let `μ` be an s-finite measure, absolutely
+`rnDeriv_mongeAmpereMeasure_withDensity_ae_eq`). Let `μ` be a measure, absolutely
 continuous with respect to an additive Haar measure `ρ` and carried by `D`, and let `0 ≤ t < 1`.
 Then the density of `μ` and the density of its interpolant `μₜ = (Tₜ)₊ μ`, with
 `Tₜ x = (1 - t) • x + t • ∇F x`, satisfy
@@ -244,12 +244,13 @@ theorem rnDeriv_ae_eq_indicator_ofReal_det_mul_rnDeriv_map_smul_add_smul_gradien
     (hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}) (hbot : ∀ x, f x ≠ ⊥) {H : E → E →L[ℝ] E}
     (hH : ∀ᵐ x ∂ρ, x ∈ interior {x | f x ≠ ⊤} → ∃ y, ∀ ε > 0, ∀ᶠ x' in 𝓝 x,
       ∀ y' ∈ subdifferential (innerₗ E) f x', ‖y' - y - H x (x' - x)‖ ≤ ε * ‖x' - x‖)
-    {μ : Measure E} [SFinite μ] (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
+    {μ : Measure E} (hμ : μ ≪ ρ) (hμD : ∀ᵐ x ∂μ, x ∈ interior {x | f x ≠ ⊤})
     {t : ℝ} (ht₀ : 0 ≤ t) (ht₁ : t < 1) :
     μ.rnDeriv ρ =ᵐ[ρ] (interior {x | f x ≠ ⊤}).indicator fun x =>
       ENNReal.ofReal ((1 - t) • ContinuousLinearMap.id ℝ E + t • H x).det *
         (μ.map fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x).rnDeriv ρ
           ((1 - t) • x + t • (∇ fun x' => (f x').toReal) x) := by
+  have : SFinite μ := sfinite_of_absolutelyContinuous hμ
   set T := fun x => (1 - t) • x + t • (∇ fun x' => (f x').toReal) x
   set g := (μ.map T).rnDeriv ρ
   have hT : Measurable T := measurable_smul_add_smul_gradient t

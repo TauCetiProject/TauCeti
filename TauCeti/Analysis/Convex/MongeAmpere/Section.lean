@@ -107,11 +107,24 @@ theorem mongeAmpereMeasure_ite_mul_norm_sq_add {U : Set E} [DecidablePred (· �
     ContinuousLinearMap.coe_id, LinearMap.det_smul, LinearMap.det_id, mul_one]
   exact withDensity_const _
 
-/-- On a positive-dimensional space, a constant potential on an open convex set,
+/-- On a positive-dimensional space, a constant potential on an open set,
 extended by `⊤` outside it, has zero Monge–Ampère measure. -/
 theorem mongeAmpereMeasure_ite_const [Nontrivial E] {U : Set E}
-    [DecidablePred (· ∈ U)] (hU : IsOpen U) (hUc : Convex ℝ U) (c : ℝ) :
+    [DecidablePred (· ∈ U)] (hU : IsOpen U) (c : ℝ) :
     mongeAmpereMeasure μ (fun y => if y ∈ U then (c : EReal) else ⊤) = 0 := by
+  by_cases hUc : Convex ℝ U
+  swap
+  · -- The epigraph projects onto `U`, so it is not convex when `U` is not.
+    refine mongeAmpereMeasure_eq_zero_of_not_convex μ fun hconv => hUc ?_
+    have himg : (LinearMap.fst ℝ E ℝ) '' {p : E × ℝ | (if p.1 ∈ U then (c : EReal) else ⊤) ≤ p.2} =
+        U := by
+      ext x
+      refine ⟨?_, fun hx => ⟨(x, c), by simp [hx], rfl⟩⟩
+      rintro ⟨⟨y, t⟩, hp, rfl⟩
+      by_contra hy
+      rw [LinearMap.fst_apply] at hy
+      simp [hy] at hp
+    exact himg ▸ hconv.linear_image _
   have hdim : finrank ℝ E ≠ 0 := (finrank_pos (R := ℝ) (M := E)).ne'
   simpa only [zero_div, zero_mul, zero_add, zero_pow hdim, ENNReal.ofReal_zero, zero_smul]
     using mongeAmpereMeasure_ite_mul_norm_sq_add μ hU hUc (a := 0) le_rfl c
@@ -333,6 +346,7 @@ theorem exists_ofReal_neg_pow_le_mul_ofReal_mul_measure_mul_mongeAmpereMeasure :
     _ ≤ c₁ * ENNReal.ofReal d * μ G * M * (R * B)⁻¹ := mul_le_mul_left hmain _
     _ = c₁ * (R * B)⁻¹ * ENNReal.ofReal d * μ G * M := by ring
 
+omit [Nontrivial E] in
 /-- **The depth of a convex function is controlled by its volume and Monge–Ampère mass.** There
 is a constant `C`, depending only on `E` and `μ`, such that for every bounded open set `G`, every
 `v` convex on `G`, continuous on its closure and nonnegative on its frontier, and every `x₀ ∈ G`,
@@ -345,6 +359,28 @@ theorem exists_ofReal_neg_pow_le_mul_measure_mul_mongeAmpereMeasure :
       (∀ x ∈ frontier G, 0 ≤ v x) → ∀ x₀ ∈ G,
       ENNReal.ofReal (-v x₀) ^ finrank ℝ E ≤
         C * μ G * mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) G := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In a subsingleton space `G = univ`, and `MA_v(G) = μ univ` is positive and finite.
+    have hfin : μ univ ≠ ∞ := (Set.toFinite (univ : Set E)).isCompact.measure_lt_top.ne
+    have hpos : μ univ ≠ 0 := (isOpen_univ.measure_pos μ (univ_nonempty (α := E))).ne'
+    refine ⟨((μ univ)⁻¹ * (μ univ)⁻¹).toNNReal, fun G _ v hGo _ hv _ _ x₀ hx₀ => ?_⟩
+    classical
+    have hGu : G = univ := eq_univ_of_forall fun x => by rwa [Subsingleton.elim x x₀]
+    have hint : x₀ ∈ interior {x | (if x ∈ G then (v x : EReal) else ⊤) ≠ ⊤} := by
+      rwa [setOf_ite_ne_top, hGo.interior_eq]
+    obtain ⟨p, hp⟩ := nonempty_subdifferential_of_mem_interior (convex_epigraph_ite hv)
+      ite_ne_bot hint
+    have hMA : mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) G = μ univ := by
+      rw [mongeAmpereMeasure_apply μ (convex_epigraph_ite hv) ite_ne_bot
+        AbsolutelyContinuous.rfl hGo.measurableSet]
+      congr 1
+      refine eq_univ_of_forall fun q => ?_
+      obtain rfl : q = p := Subsingleton.elim q p
+      exact (mem_subgradientImage_iff _).2 ⟨x₀, ⟨hx₀, hint⟩, hp⟩
+    rw [finrank_zero_of_subsingleton, pow_zero, hMA, hGu, ENNReal.coe_toNNReal
+      (ENNReal.mul_ne_top (ENNReal.inv_ne_top.2 hpos) (ENNReal.inv_ne_top.2 hpos)),
+      show (μ univ)⁻¹ * (μ univ)⁻¹ * μ univ * μ univ = ((μ univ)⁻¹ * μ univ) * ((μ univ)⁻¹ * μ univ)
+        by ring, ENNReal.inv_mul_cancel hpos hfin, one_mul]
   obtain ⟨C, hC⟩ := exists_ofReal_neg_pow_le_mul_ofReal_mul_measure_mul_mongeAmpereMeasure μ
     (E := E)
   refine ⟨C * 2, fun G _ v hGo hGb hv hvc hfr x₀ hx₀ => ?_⟩
@@ -358,6 +394,7 @@ theorem exists_ofReal_neg_pow_le_mul_measure_mul_mongeAmpereMeasure :
     linarith [norm_sub_le (T x₀) z]
   simpa using hC G v 2 hGo hGb hv hvc hfr x₀ hx₀ hd
 
+omit [Nontrivial E] in
 /-- **The volume of a domain is controlled by the depth of a convex function on it.** There is a
 constant `C`, depending only on `E` and `μ`, with the following property. Let `G` be a bounded
 open set and `v` convex on `G`, continuous on its closure, with `v ≤ 0` on the frontier of `G` and
@@ -371,6 +408,23 @@ theorem exists_mul_measure_sq_le_mul_ofReal_pow :
         mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) →
       lam * μ G ^ 2 ≤ C * ENNReal.ofReal h ^ finrank ℝ E := by
   classical
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · -- In a subsingleton space `MA_v(G) ≤ μ univ`, and `μ univ` is finite.
+    have hfin : μ univ ≠ ∞ := (Set.toFinite (univ : Set E)).isCompact.measure_lt_top.ne
+    refine ⟨(μ univ * μ univ).toNNReal, fun G _ v lam h hGo _ hv _ _ _ hMA => ?_⟩
+    rw [finrank_zero_of_subsingleton, pow_zero, mul_one,
+      ENNReal.coe_toNNReal (ENNReal.mul_ne_top hfin hfin), pow_two]
+    have h₁ : (lam : ℝ≥0∞) * μ G ≤ μ univ :=
+      calc (lam : ℝ≥0∞) * μ G = ((lam : ℝ≥0∞) • μ.restrict G) G := by
+            rw [_root_.smul_apply, Measure.restrict_apply_self, smul_eq_mul]
+        _ ≤ mongeAmpereMeasure μ (fun x => if x ∈ G then (v x : EReal) else ⊤) G :=
+            Measure.le_iff'.1 hMA G
+        _ ≤ μ univ := by
+            rw [mongeAmpereMeasure_apply μ (convex_epigraph_ite hv) ite_ne_bot
+              AbsolutelyContinuous.rfl hGo.measurableSet]
+            exact measure_mono (subset_univ _)
+    rw [← mul_assoc]
+    exact mul_le_mul' h₁ (measure_mono (subset_univ _))
   obtain ⟨r, hr, hnorm⟩ := exists_affineEquiv_ball_subset_image_subset_ball E
   set n := finrank ℝ E
   have hn : n ≠ 0 := finrank_pos.ne'
@@ -462,6 +516,7 @@ theorem exists_ofReal_pow_le_mul_measure_convexSection_mul_mongeAmpereMeasure :
     show -(u x + (-ℓ) x + c) = h by simp only [LinearMap.neg_apply, c]; ring] at key
   exact key
 
+omit [Nontrivial E] in
 /-- **Upper volume estimate for sections.** There is a constant `C`, depending only on `E` and
 `μ`, with the following property. Let `u` be convex on an open set `Ω`, let `ℓ` be a supporting
 slope of `u` at `x`, and let `S = {y ∈ Ω | u y < u x + ℓ (y - x) + h}` be a bounded section whose

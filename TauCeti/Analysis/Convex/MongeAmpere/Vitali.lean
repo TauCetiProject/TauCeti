@@ -135,6 +135,7 @@ theorem exists_measure_convexSection_le_sqrt_mul :
             one_mul]
       _ ≤ _ := by gcongr
 
+omit [Nontrivial E] in
 /-- **Intersecting sections swallow each other.** There is a constant `C`, depending only on `E`
 and `μ`, with the following property. Let `u` be convex on an open set `Ω`, with
 `λ μ ≤ MA_u ≤ Λ μ` on `Ω` for the Monge–Ampère measure of `u` extended by `⊤` off `Ω` and
@@ -190,6 +191,7 @@ theorem exists_convexSection_subset_convexSection_of_nonempty_inter :
   rw [show θ * (2 * θ * k) = 2 * θ ^ 2 * k by ring] at e₃
   exact e₁.trans ((convexSection_mono_height (by nlinarith)).trans e₃)
 
+omit [Nontrivial E] in
 /-- **The Vitali covering lemma for sections.** There is a constant `C`, depending only on `E`
 and `μ`, with the following property. Let `u` be convex on an open set `Ω`, with
 `λ μ ≤ MA_u ≤ Λ μ` on `Ω` for the Monge–Ampère measure of `u` extended by `⊤` off `Ω` and
