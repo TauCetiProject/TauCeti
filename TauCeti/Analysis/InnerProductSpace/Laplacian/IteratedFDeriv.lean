@@ -16,8 +16,8 @@ commutes with differentiation: for `f` of class `C³` at `x`,
 
 `Δ (Df) x = D (Δ f) x`,
 
-and for `f` smooth on an open set `s`, the same holds for every iterated derivative in fixed
-directions `m`: `Δ (Dⁿ f · m) x = Dⁿ (Δ f) x m` for `x ∈ s`. Here `Df` and `Dⁿ f` are the
+and for `f` of class `Cⁿ⁺²` on an open set `s`, the same holds for the `n`-th iterated derivative
+in fixed directions `m`: `Δ (Dⁿ f · m) x = Dⁿ (Δ f) x m` for `x ∈ s`. Here `Df` and `Dⁿ f` are the
 functions `fderiv ℝ f` and `iteratedFDeriv ℝ n f`.
 
 Both sides of the first identity are traces of the third derivative `D³f x`, contracted in
@@ -30,9 +30,8 @@ differentiated equation `Δ (Dⁿ f) = Dⁿ g`.
 
 * `ContDiffAt.laplacian_fderiv`: `Δ (Df) x = D (Δ f) x` for `f` of class `C³` at `x`.
 * `ContDiffAt.laplacian_fderiv_apply`: the same for a directional derivative `y ↦ Df y v`.
-* `ContDiffAt.laplacian`: the Laplacian of a `Cⁿ` function is `Cᵐ` when `m + 2 ≤ n`.
-* `TauCeti.laplacian_iteratedFDeriv_apply`: `Δ (Dⁿ f · m) x = Dⁿ (Δ f) x m` for `f` smooth on an
-  open set containing `x`.
+* `TauCeti.laplacian_iteratedFDeriv_apply`: `Δ (Dⁿ f · m) x = Dⁿ (Δ f) x m` for `f` of class
+  `Cⁿ⁺²` on an open set containing `x`.
 -/
 
 public section
@@ -89,41 +88,33 @@ theorem _root_.ContDiffAt.laplacian_fderiv_apply {f : E → F} {x : E} (hf : Con
   exact (hf.fderiv_right (m := 2) (by norm_num)).laplacian_CLM_comp_left
     (l := ContinuousLinearMap.apply ℝ F v)
 
-/-- The Laplacian loses two derivatives: if `f` is `Cⁿ` at `x` and `m + 2 ≤ n`, then `Δ f` is `Cᵐ`
-at `x`. -/
-theorem _root_.ContDiffAt.laplacian {n m : WithTop ℕ∞} {f : E → F} {x : E}
-    (hf : ContDiffAt ℝ n f x) (hm : m + 2 ≤ n) : ContDiffAt ℝ m (Δ f) x := by
-  have hD : ContDiffAt ℝ m (fderiv ℝ (fderiv ℝ f)) x :=
-    (hf.fderiv_right (m := m + 1) (by convert hm using 1; norm_num [add_assoc])).fderiv_right
-      le_rfl
-  have hΔ : Δ f = traceL ∘ fderiv ℝ (fderiv ℝ f) := funext (laplacian_eq_traceL f)
-  rw [hΔ]
-  exact traceL.contDiff.contDiffAt.comp x hD
-
-/-- **The Laplacian commutes with iterated derivatives.** For `f` smooth on an open set `s`,
-`x ∈ s` and directions `m`, `Δ (Dⁿ f · m) x = Dⁿ (Δ f) x m`, where `Dⁿ f = iteratedFDeriv ℝ n f`. -/
-theorem laplacian_iteratedFDeriv_apply {f : E → F} {s : Set E} (hs : IsOpen s)
-    (hf : ContDiffOn ℝ ∞ f s) {n : ℕ} (m : Fin n → E) {x : E} (hx : x ∈ s) :
+/-- **The Laplacian commutes with iterated derivatives.** For `f` of class `Cⁿ⁺²` on an open set
+`s`, `x ∈ s` and directions `m`, `Δ (Dⁿ f · m) x = Dⁿ (Δ f) x m`, where
+`Dⁿ f = iteratedFDeriv ℝ n f`. -/
+theorem laplacian_iteratedFDeriv_apply {f : E → F} {s : Set E} (hs : IsOpen s) {n : ℕ}
+    (hf : ContDiffOn ℝ (n + 2) f s) (m : Fin n → E) {x : E} (hx : x ∈ s) :
     Δ (fun y ↦ iteratedFDeriv ℝ n f y m) x = iteratedFDeriv ℝ n (Δ f) x m := by
   induction n generalizing x with
   | zero => simp
   | succ n ih =>
-    have hcd : ∀ y ∈ s, ContDiffAt ℝ ∞ (iteratedFDeriv ℝ n f) y := fun y hy ↦
-      (hf.contDiffAt (hs.mem_nhds hy)).iteratedFDeriv_right (by simp)
+    have hcd : ∀ y ∈ s, ContDiffAt ℝ 3 (iteratedFDeriv ℝ n f) y := fun y hy ↦
+      (hf.contDiffAt (hs.mem_nhds hy)).iteratedFDeriv_right (by norm_cast; omega)
     -- Near `x`, the `(n + 1)`-st derivative in direction `m` is a derivative of an `n`-th one.
     have hsucc : (fun y ↦ iteratedFDeriv ℝ (n + 1) f y m) =ᶠ[𝓝 x]
         fun y ↦ fderiv ℝ (fun z ↦ iteratedFDeriv ℝ n f z (Fin.tail m)) y (m 0) :=
       Filter.eventually_of_mem (hs.mem_nhds hx) fun y hy ↦
-        ((hcd y hy).differentiableAt (by simp)).iteratedFDeriv_succ_apply_left'
+        ((hcd y hy).differentiableAt (by norm_num)).iteratedFDeriv_succ_apply_left'
     have hg : ContDiffAt ℝ 3 (fun z ↦ iteratedFDeriv ℝ n f z (Fin.tail m)) x :=
-      ((ContinuousMultilinearMap.apply ℝ (fun _ : Fin n ↦ E) F
-        (Fin.tail m)).contDiff.contDiffAt.comp x (hcd x hx)).of_le (by simp)
+      (ContinuousMultilinearMap.apply ℝ (fun _ : Fin n ↦ E) F
+        (Fin.tail m)).contDiff.contDiffAt.comp x (hcd x hx)
     have heq : Δ (fun z ↦ iteratedFDeriv ℝ n f z (Fin.tail m)) =ᶠ[𝓝 x]
         fun z ↦ iteratedFDeriv ℝ n (Δ f) z (Fin.tail m) :=
-      Filter.eventually_of_mem (hs.mem_nhds hx) fun y hy ↦ ih (Fin.tail m) hy
+      Filter.eventually_of_mem (hs.mem_nhds hx) fun y hy ↦
+        ih (hf.of_le (by norm_cast; omega)) (Fin.tail m) hy
     have hΔ : DifferentiableAt ℝ (iteratedFDeriv ℝ n (Δ f)) x :=
-      (((hf.contDiffAt (hs.mem_nhds hx)).laplacian (m := ∞) (by simp)).iteratedFDeriv_right
-        (m := 1) (by simp)).differentiableAt (by norm_num)
+      (((hf.contDiffAt (hs.mem_nhds hx)).laplacian (m := n + 1) (by norm_cast)
+        ).iteratedFDeriv_right (m := 1) (add_comm _ _).le).differentiableAt
+        (by norm_num)
     rw [(laplacian_congr_nhds hsucc).eq_of_nhds, hg.laplacian_fderiv_apply, heq.fderiv_eq,
       hΔ.iteratedFDeriv_succ_apply_left']
 

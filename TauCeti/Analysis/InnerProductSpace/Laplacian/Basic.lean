@@ -88,6 +88,7 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
 * `ContDiff.laplacian_comp_norm_sq`: the Laplacian of a radial function `x ↦ ρ (‖x‖ ^ 2)` is
   `4 ‖x‖² ρ'' (‖x‖²) + 2 (dim E) ρ' (‖x‖²)`.
 * `ContDiff.laplacian`: the Laplacian loses two derivatives at every regularity order.
+* `ContDiffAt.laplacian`: the same at a point.
 * `ContDiffAt.laplacian_fun_mul_complex`: the planar product rule in directions `1` and `I`.
 * `ContDiffAt.laplacian_fun_mul`: the Leibniz rule `Δ (f g) = f Δg + 2 ⟪∇f, ∇g⟫ + g Δf`.
 * `ContDiffAt.laplacian_comp`: the chain rule `Δ (F ∘ q) = F''(q) ‖∇q‖² + F'(q) Δq` for a real
@@ -180,6 +181,17 @@ theorem _root_.ContDiff.laplacian {n m : WithTop ℕ∞} {f : E → F}
   have hΔ : Δ f = L ∘ fderiv ℝ (fderiv ℝ f) := funext (laplacian_eq_traceL f)
   rw [hΔ]
   exact L.contDiff.comp hD
+
+/-- The Laplacian loses two derivatives at a point: if `f` is `Cⁿ` at `x` and `m + 2 ≤ n`, then
+`Δ f` is `Cᵐ` at `x`. -/
+theorem _root_.ContDiffAt.laplacian {n m : WithTop ℕ∞} {f : E → F} {x : E}
+    (hf : ContDiffAt ℝ n f x) (hm : m + 2 ≤ n) : ContDiffAt ℝ m (Δ f) x := by
+  have hD : ContDiffAt ℝ m (fderiv ℝ (fderiv ℝ f)) x :=
+    (hf.fderiv_right (m := m + 1) (by convert hm using 1; norm_num [add_assoc])).fderiv_right
+      le_rfl
+  have hΔ : Δ f = traceL ∘ fderiv ℝ (fderiv ℝ f) := funext (laplacian_eq_traceL f)
+  rw [hΔ]
+  exact traceL.contDiff.contDiffAt.comp x hD
 
 /-- The Laplacian is the sum of the second directional derivatives along an orthonormal basis:
 if `fderiv ℝ f` is differentiable at `x`, then `Δ f x = ∑ᵢ ∂ᵥᵢ (∂ᵥᵢ f) x`. -/

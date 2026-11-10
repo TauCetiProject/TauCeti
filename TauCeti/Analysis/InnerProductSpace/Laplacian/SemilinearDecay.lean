@@ -10,6 +10,7 @@ public import TauCeti.Analysis.InnerProductSpace.Laplacian.IteratedFDeriv
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Calculus.MeanValue
+import TauCeti.Analysis.Calculus.IteratedFDeriv.LeibnizRemainder
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 
 /-!
@@ -229,124 +230,6 @@ private theorem exists_norm_fderiv_le_mul_exp_of_laplacian_eq {u : E → ℝ} {G
     rw [div_mul_cancel₀ _ (sub_ne_zero.mpr heq)]
     simp
 
-omit [FiniteDimensional ℝ E] in
-/-- **The Leibniz estimate for `Dⁿ (V g) - V Dⁿ g`.** The `n`-th derivative of `V • g` differs from
-`V` times the `n`-th derivative of `g` by terms in which `V` is differentiated at least once: if
-`‖DⁱV p‖ ≤ B` for `1 ≤ i ≤ n` and `‖Dʲg p‖ ≤ M` for `j < n`, the difference is at most
-`2ⁿ B M`. -/
-private theorem norm_iteratedFDeriv_smul_sub_smul_le {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {V : E → ℝ} {g : E → F} {n : ℕ} (hV : ContDiff ℝ n V)
-    (hg : ContDiff ℝ n g) (p : E) {B M : ℝ} (hB : 0 ≤ B) (hM : 0 ≤ M)
-    (hVb : ∀ i, 1 ≤ i → i ≤ n → ‖iteratedFDeriv ℝ i V p‖ ≤ B)
-    (hgb : ∀ j, j < n → ‖iteratedFDeriv ℝ j g p‖ ≤ M) :
-    ‖iteratedFDeriv ℝ n (fun y ↦ V y • g y) p - V p • iteratedFDeriv ℝ n g p‖ ≤ 2 ^ n * B * M := by
-  have hsub : (fun y ↦ (V y - V p) • g y) = (fun y ↦ V y • g y) - fun y ↦ V p • g y := by
-    funext y
-    simp [sub_smul]
-  have h₁ : iteratedFDeriv ℝ n (fun y ↦ V y • g y) p - V p • iteratedFDeriv ℝ n g p =
-      iteratedFDeriv ℝ n (fun y ↦ (V y - V p) • g y) p := by
-    have hA : ContDiffAt ℝ n (fun y ↦ V y • g y) p := (hV.smul hg).contDiffAt
-    have hA' : ContDiffAt ℝ n (fun y ↦ V p • g y) p := contDiffAt_const.smul hg.contDiffAt
-    rw [hsub, iteratedFDeriv_sub_apply hA hA', iteratedFDeriv_const_smul_apply' hg.contDiffAt]
-  rw [h₁]
-  refine (norm_iteratedFDeriv_smul_le (hV.sub contDiff_const) hg p le_rfl).trans ?_
-  calc ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) *
-        ‖iteratedFDeriv ℝ i (fun y ↦ V y - V p) p‖ * ‖iteratedFDeriv ℝ (n - i) g p‖
-      ≤ ∑ i ∈ Finset.range (n + 1), (n.choose i : ℝ) * (B * M) := by
-        refine Finset.sum_le_sum fun i hi ↦ ?_
-        rw [mul_assoc]
-        refine mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _)
-        rcases Nat.eq_zero_or_pos i with rfl | hi₀
-        · simp only [norm_iteratedFDeriv_zero, sub_self, norm_zero, zero_mul]
-          positivity
-        · have hin : i ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
-          have hVi : iteratedFDeriv ℝ i (fun y ↦ V y - V p) p = iteratedFDeriv ℝ i V p := by
-            have hfun : (fun y ↦ V y - V p) = V - fun _ ↦ V p := rfl
-            rw [hfun, iteratedFDeriv_sub_apply (hV.of_le (by exact_mod_cast hin)).contDiffAt
-              contDiffAt_const, iteratedFDeriv_const_of_ne hi₀.ne', Pi.zero_apply, sub_zero]
-          rw [hVi]
-          exact mul_le_mul (hVb i hi₀ hin) (hgb (n - i) (by omega)) (norm_nonneg _) hB
-    _ = 2 ^ n * B * M := by
-      rw [← Finset.sum_mul, ← Nat.cast_sum, Nat.sum_range_choose]
-      push_cast
-      ring
-
-omit [FiniteDimensional ℝ E] in
-/-- **The top-order term of `Dⁿ⁺¹ (G ∘ u)`.** The `(n + 1)`-st derivative of `G ∘ u` differs from
-`G'(u) Dⁿ⁺¹u` by terms involving only derivatives of `u` of order at most `n`: if the derivatives of
-order `1` to `n` of `G' ∘ u` are bounded by `B` at `p`, and those of `u` by `M`, the difference is
-at most `2ⁿ B M`. -/
-private theorem norm_iteratedFDeriv_succ_comp_sub_smul_le {u : E → ℝ} {G : ℝ → ℝ} {n : ℕ}
-    (hG : ContDiff ℝ ∞ G) (hu : ContDiff ℝ ∞ u) (p : E) {B M : ℝ} (hB : 0 ≤ B) (hM : 0 ≤ M)
-    (hVb : ∀ i, 1 ≤ i → i ≤ n → ‖iteratedFDeriv ℝ i (deriv G ∘ u) p‖ ≤ B)
-    (hub : ∀ j, 1 ≤ j → j ≤ n → ‖iteratedFDeriv ℝ j u p‖ ≤ M) :
-    ‖iteratedFDeriv ℝ (n + 1) (G ∘ u) p - deriv G (u p) • iteratedFDeriv ℝ (n + 1) u p‖ ≤
-      2 ^ n * B * M := by
-  have hG' : ContDiff ℝ ∞ (deriv G) := (contDiff_infty_iff_deriv.mp hG).2
-  -- The chain rule: `D (G ∘ u) = (G' ∘ u) • Du`.
-  have hfd : (fun y ↦ fderiv ℝ (G ∘ u) y) = fun y ↦ (deriv G ∘ u) y • fderiv ℝ u y :=
-    funext fun y ↦ (((hG.differentiable (by simp)) (u y)).hasDerivAt.comp_hasFDerivAt y
-      ((hu.differentiable (by simp)) y).hasFDerivAt).fderiv
-  rw [iteratedFDeriv_succ_eq_comp_right, iteratedFDeriv_succ_eq_comp_right (f := u),
-    Function.comp_apply, Function.comp_apply, hfd]
-  set Φ := (continuousMultilinearCurryRightEquiv' ℝ n E ℝ).symm
-  have hΦ : ∀ a b : E [×n]→L[ℝ] E →L[ℝ] ℝ, Φ a - deriv G (u p) • Φ b =
-      Φ (a - deriv G (u p) • b) := fun a b ↦ by
-    rw [LinearIsometryEquiv.map_sub, LinearIsometryEquiv.map_smul]
-  rw [hΦ, LinearIsometryEquiv.norm_map]
-  refine norm_iteratedFDeriv_smul_sub_smul_le ((hG'.comp hu).of_le (by exact_mod_cast le_top))
-    ((hu.fderiv_right (m := n) (by exact_mod_cast le_top)).of_le le_rfl) p hB hM hVb
-    fun j hj ↦ ?_
-  rw [norm_iteratedFDeriv_fderiv]
-  exact hub (j + 1) (by omega) (by omega)
-
-omit [FiniteDimensional ℝ E] in
-/-- **The remainder in the equation for `Dⁿu`.** The function
-`f = Dⁿ(G ∘ u) (·) m - G'(u) Dⁿu (·) m` is differentiable, and its derivative at `p` is bounded by
-`(‖Dⁿ⁺¹(G ∘ u) p - G'(u p) Dⁿ⁺¹u p‖ + ‖D(G' ∘ u) p‖ ‖Dⁿu p‖) ∏ ‖mᵢ‖`. -/
-private theorem norm_fderiv_iteratedFDeriv_comp_apply_sub_le {u : E → ℝ} {G : ℝ → ℝ} {n : ℕ}
-    (hG : ContDiff ℝ ∞ G) (hu : ContDiff ℝ ∞ u) (m : Fin n → E) (p : E) :
-    DifferentiableAt ℝ ((fun y ↦ iteratedFDeriv ℝ n (G ∘ u) y m) -
-        (deriv G ∘ u) * fun y ↦ iteratedFDeriv ℝ n u y m) p ∧
-      ‖fderiv ℝ ((fun y ↦ iteratedFDeriv ℝ n (G ∘ u) y m) -
-        (deriv G ∘ u) * fun y ↦ iteratedFDeriv ℝ n u y m) p‖ ≤
-      (‖iteratedFDeriv ℝ (n + 1) (G ∘ u) p - deriv G (u p) • iteratedFDeriv ℝ (n + 1) u p‖ +
-        ‖fderiv ℝ (deriv G ∘ u) p‖ * ‖iteratedFDeriv ℝ n u p‖) * ∏ i, ‖m i‖ := by
-  have hG' : ContDiff ℝ ∞ (deriv G) := (contDiff_infty_iff_deriv.mp hG).2
-  have hdiff : ∀ {g : E → ℝ}, ContDiff ℝ ∞ g → DifferentiableAt ℝ (iteratedFDeriv ℝ n g) p :=
-    fun hg ↦ (ContDiff.differentiable_iteratedFDeriv (m := n)
-      (by exact_mod_cast ENat.natCast_lt_top n) hg) p
-  -- The derivative of `Dⁿg (·) m` in the direction `v` is `Dⁿ⁺¹g (cons v m)`.
-  have happly : ∀ {g : E → ℝ}, ContDiff ℝ ∞ g → ∀ v,
-      fderiv ℝ (fun y ↦ iteratedFDeriv ℝ n g y m) p v =
-        iteratedFDeriv ℝ (n + 1) g p (Fin.cons v m) := fun hg v ↦ by
-    rw [(hdiff hg).iteratedFDeriv_succ_apply_left', Fin.tail_cons, Fin.cons_zero]
-  have happ_diff : ∀ {g : E → ℝ}, ContDiff ℝ ∞ g →
-      DifferentiableAt ℝ (fun y ↦ iteratedFDeriv ℝ n g y m) p := fun hg ↦
-    (ContinuousMultilinearMap.apply ℝ (fun _ : Fin n ↦ E) ℝ m).differentiableAt.comp p (hdiff hg)
-  have hF := (happ_diff (hG.comp hu)).hasFDerivAt.sub
-    (((hG'.comp hu).differentiable (by simp) p).hasFDerivAt.mul (happ_diff hu).hasFDerivAt)
-  refine ⟨hF.differentiableAt, ?_⟩
-  rw [hF.fderiv]
-  set T := iteratedFDeriv ℝ (n + 1) (G ∘ u) p - deriv G (u p) • iteratedFDeriv ℝ (n + 1) u p
-  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
-  have happ : (fderiv ℝ (fun y ↦ iteratedFDeriv ℝ n (G ∘ u) y m) p -
-      ((deriv G ∘ u) p • fderiv ℝ (fun y ↦ iteratedFDeriv ℝ n u y m) p +
-        iteratedFDeriv ℝ n u p m • fderiv ℝ (deriv G ∘ u) p)) v =
-      T (Fin.cons v m) - iteratedFDeriv ℝ n u p m * fderiv ℝ (deriv G ∘ u) p v := by
-    simp only [T, sub_apply, add_apply, smul_apply, smul_eq_mul, happly hu, happly (hG.comp hu),
-      Function.comp_apply]
-    ring
-  rw [happ]
-  calc ‖T (Fin.cons v m) - iteratedFDeriv ℝ n u p m * fderiv ℝ (deriv G ∘ u) p v‖
-      ≤ ‖T‖ * ‖v‖ * ∏ i, ‖m i‖ +
-          ‖iteratedFDeriv ℝ n u p‖ * (∏ i, ‖m i‖) * (‖fderiv ℝ (deriv G ∘ u) p‖ * ‖v‖) := by
-        refine (norm_sub_le _ _).trans (add_le_add (T.norm_map_cons_le v m) ?_)
-        rw [norm_mul]
-        exact mul_le_mul ((iteratedFDeriv ℝ n u p).le_opNorm m)
-          ((fderiv ℝ (deriv G ∘ u) p).le_opNorm v) (norm_nonneg _) (by positivity)
-    _ = _ := by ring
-
 /-- **The inductive step.** Let `u` be smooth with `Δu = G(u)` outside a ball and `u → 0`, where
 `G` is smooth with `G' > c'²` near `0`. If the derivatives of `u` of orders `1` to `n ≥ 1` are
 bounded by `K exp (-c ‖z‖)` far out, with `0 < c < c'`, then so is the derivative of order
@@ -413,8 +296,8 @@ private theorem exists_norm_iteratedFDeriv_succ_le_mul_exp {u : E → ℝ} {G : 
   have hkey : ∀ p : E, R₀ ≤ ‖p‖ →
       ‖iteratedFDeriv ℝ (n + 1) (G ∘ u) p - V p • iteratedFDeriv ℝ (n + 1) u p‖ ≤
         2 ^ n * BV * (K * Real.exp (-(c * ‖p‖))) := fun p hp ↦
-    norm_iteratedFDeriv_succ_comp_sub_smul_le hG hu p hBV (by positivity) (hVb p hp)
-      (hder' p hp)
+    norm_iteratedFDeriv_succ_comp_sub_smul_le (hG.of_le (by exact_mod_cast htop (n + 1)))
+      (hu.of_le (by exact_mod_cast htop (n + 1))) p hBV (by positivity) (hVb p hp) (hder' p hp)
   -- The constants of the final bound.
   set Rc := max R₀ 0 + 1
   have hRc : 0 < Rc := by positivity
@@ -453,15 +336,18 @@ private theorem exists_norm_iteratedFDeriv_succ_le_mul_exp {u : E → ℝ} {G : 
     have hev : Δ u =ᶠ[𝓝 y] G ∘ u :=
       Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hy)
         fun z hz ↦ hΔ z hz
-    rw [laplacian_iteratedFDeriv_apply isOpen_univ hu.contDiffOn m (mem_univ y),
+    rw [laplacian_iteratedFDeriv_apply isOpen_univ (hu.of_le (htop (n + 2))).contDiffOn m
+      (mem_univ y),
       (hev.iteratedFDeriv ℝ n).eq_of_nhds]
     simp [f]
   -- The gradient of the remainder `f` decays.
   have hfd : ∀ p : E, R₀ ≤ ‖p‖ → DifferentiableAt ℝ f p ∧
       ‖fderiv ℝ f p‖ ≤ G₁ * Real.exp (-(c * ‖p‖)) * P := by
     intro p hp
-    obtain ⟨hd, hb⟩ := norm_fderiv_iteratedFDeriv_comp_apply_sub_le hG hu m p
-    refine ⟨hd, hb.trans ?_⟩
+    have hVd : DifferentiableAt ℝ V p := hV.differentiable (by simp) p
+    refine ⟨((ContinuousMultilinearMap.apply ℝ (fun _ : Fin n ↦ E) ℝ m).differentiableAt.comp p
+      (hdiff hGu n p)).sub (hVd.mul (hw p)),
+      (norm_fderiv_iteratedFDeriv_apply_sub_smul_le (hdiff hGu n p) (hdiff hu n p) hVd m).trans ?_⟩
     have hVfd : ‖fderiv ℝ V p‖ ≤ BV := by
       rw [← norm_iteratedFDeriv_one]
       exact hVb p hp 1 le_rfl (by omega)
