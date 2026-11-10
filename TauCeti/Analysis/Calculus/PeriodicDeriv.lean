@@ -39,6 +39,8 @@ protected so that opening `Function.Periodic` does not shadow `deriv` and `logDe
   function is periodic.
 * `TauCeti.fderiv_add_eq_smul`: a scalar twist `f (x + c) = a • f x` under translation passes to
   the Fréchet derivative.
+* `TauCeti.fderiv_apply_eq_zero_of_forall_periodic_smul`: a function invariant under all
+  translations along a vector `v` has derivative vanishing on `v`.
 -/
 
 public section
@@ -92,6 +94,21 @@ theorem fderiv_add_eq_smul {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [No
     simp [hf]
   · let _ := invertibleOfNonzero ha
     rw [← fderiv_comp_add_right, hfun, fderiv_const_smul_of_invertible]
+
+/-- A function invariant under all translations along a vector `v`, that is periodic with every
+period `τ • v`, has Fréchet derivative vanishing on `v` at every point. Since `fderiv` is again
+invariant (`Function.Periodic.fderiv`), the same holds for the iterated derivatives. -/
+theorem fderiv_apply_eq_zero_of_forall_periodic_smul {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F}
+    {v : E} (h : ∀ τ : 𝕜, Function.Periodic f (τ • v)) (x : E) : fderiv 𝕜 f x v = 0 := by
+  by_cases hd : DifferentiableAt 𝕜 f x
+  · have hline : HasDerivAt (fun τ : 𝕜 ↦ x + τ • v) v 0 := by
+      simpa using ((hasDerivAt_id (0 : 𝕜)).smul_const v).const_add x
+    have hcomp := hd.hasFDerivAt.comp_hasDerivAt_of_eq (0 : 𝕜) hline (by simp)
+    have hconst : (fun τ : 𝕜 ↦ f (x + τ • v)) = fun _ ↦ f x := funext fun τ ↦ h τ x
+    rw [Function.comp_def, hconst] at hcomp
+    exact hcomp.unique (hasDerivAt_const _ _)
+  · simp [fderiv_zero_of_not_differentiableAt hd]
 
 end TauCeti
 
