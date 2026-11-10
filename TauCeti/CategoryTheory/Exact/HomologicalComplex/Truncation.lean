@@ -21,9 +21,9 @@ T = (⋯ → Iⁿ⁻¹ → Iⁿ ↠ Zⁿ⁺¹(C) → 0),      j : T ⟶ I,
 
 with `j` the identity in degrees `≤ n` and the inflation in degree `n + 1`. The map `r` factors as
 `Y ⟶ T ⟶ I`, and the mapping cone of `Y ⟶ T` is acyclic: it is the truncation of `C` at its
-cycles `Zⁿ⁺¹(C)`, `TauCeti.ExactStructure.AcyclicData.ofTruncation`. When `Y` is bounded and `I` is
-bounded below, `T` is bounded, so this replaces a bounded below resolution of a bounded complex by
-a bounded one, compatibly with the original.
+cycles `Zⁿ⁺¹(C)`, `TauCeti.ExactStructure.AcyclicData.acyclic_of_truncation`. When `Y` is bounded
+and `I` is bounded below, `T` is bounded, so this replaces a bounded below resolution of a bounded
+complex by a bounded one, compatibly with the original.
 
 The truncation is constructed for `n = -1` and moved to any `n` by shifting.
 
@@ -72,6 +72,8 @@ private theorem d_comp_d (m : ℤ) : d hC m ≫ d hC (m + 1) = 0 :=
   match m with
   | Int.negSucc 0 => comp_zero
   | Int.negSucc 1 => by
+    -- `d` is defined by matching on the degree, and `Int.negSucc 1 + 1` reduces to
+    -- `Int.negSucc 0` only by evaluation, so `change` states the two differentials.
     change I.d (Int.negSucc 1) (Int.negSucc 0) ≫ (inr r).f (Int.negSucc 0) ≫
       hC.p (Int.negSucc 0) = 0
     have h : hC.p (Int.negSucc 1) ≫ hC.i (Int.negSucc 0) =
@@ -114,6 +116,7 @@ private theorem d_jf_neg_one :
     (inr r).f (Int.negSucc 0) ≫ hC.p (Int.negSucc 0) ≫ jf hC 0 = I.d (Int.negSucc 0) 0 := by
   have h : hC.p (Int.negSucc 0) ≫ hC.i 0 =
       (CochainComplex.mappingCone r).d (Int.negSucc 0) 0 := hC.fac _
+  -- Unfold `jf hC 0`, defined by matching on the degree.
   change (inr r).f (Int.negSucc 0) ≫ hC.p (Int.negSucc 0) ≫ hC.i 0 ≫ (snd r).v 0 0 (add_zero 0) =
     _
   rw [reassoc_of% h, (inr r).comm_assoc, inr_f_snd_v, Category.comp_id]
@@ -124,10 +127,13 @@ private theorem jf_comm (m : ℤ) :
   | Int.negSucc 0 =>
     (Category.assoc _ _ _).trans ((d_jf_neg_one hC).trans (Category.id_comp _).symm)
   | Int.negSucc (k + 1) => by
+    -- In negative degrees `d` is the differential of `I` and `jf` is the identity, by the matches
+    -- defining them; `Int.negSucc (k + 1) + 1` reduces to `Int.negSucc k` only by evaluation.
     change I.d (Int.negSucc (k + 1)) (Int.negSucc k) ≫ 𝟙 _ =
       𝟙 _ ≫ I.d (Int.negSucc (k + 1)) (Int.negSucc k)
     simp
   | Int.ofNat 0 => by
+    -- `d hC 0 = 0` and `jf hC 0 = i ≫ snd`, by the matches defining them.
     change 0 ≫ jf hC 1 = (hC.i 0 ≫ (snd r).v 0 0 (add_zero 0)) ≫ I.d 0 1
     have h := d_snd_v r 0 1 rfl
     rw [(Y.isZero_of_isStrictlyLE (-1) 1 (by lia)).eq_of_src (r.f 1) 0, comp_zero, zero_add] at h
@@ -155,10 +161,14 @@ private theorem rf_comm (m : ℤ) : Y.d m (m + 1) ≫ rf hC (m + 1) = rf hC m �
   match m with
   | Int.negSucc 0 => by
     have := mono_jf_zero hC
+    -- In degree `0` the factorization is zero. In degree `-1`, its composite with the
+    -- monomorphism `jf hC 0` is `r ≫ I.d = Y.d ≫ r`, which vanishes since `Y⁰ = 0`.
     have h : r.f (Int.negSucc 0) ≫ (inr r).f (Int.negSucc 0) ≫ hC.p (Int.negSucc 0) ≫ jf hC 0 =
         0 := by
       rw [d_jf_neg_one, r.comm, (Y.isZero_of_isStrictlyLE (-1) 0 (by lia)).eq_of_tgt
         (Y.d (Int.negSucc 0) 0) 0, zero_comp]
+    -- The codomain `Z (-1 + 1)` of `hC.p (-1)` is the source `X 0` of `jf hC 0` only after
+    -- evaluating `-1 + 1`, so `rw [Category.assoc]` does not apply and the reassociation is a term.
     have key : (r.f (Int.negSucc 0) ≫ (inr r).f (Int.negSucc 0) ≫ hC.p (Int.negSucc 0)) ≫
         jf hC 0 = 0 ≫ jf hC 0 :=
       (Category.assoc _ _ _).trans ((congrArg (r.f (Int.negSucc 0) ≫ ·)
@@ -202,6 +212,7 @@ private theorem isIso_coneMap_f (m : ℤ) (hm : m < 0) : IsIso ((coneMap hC).f m
   have : IsIso ((𝟙 Y : Y ⟶ Y).f (Int.negSucc k + 1)) := by
     rw [HomologicalComplex.id_f]
     infer_instance
+  -- In negative degrees `j` is the identity, by the match defining its components.
   have : IsIso ((j hC).f (Int.negSucc k)) := inferInstanceAs (IsIso (𝟙 _))
   exact isIso_map_f _ _ _ _ _ _ _ rfl
 
@@ -216,10 +227,11 @@ private theorem coneIso_hom_i : (coneIso hC).hom ≫ hC.i 0 = (coneMap hC).f 0 :
   apply ext_to r 0 1 rfl
   · exact (Y.isZero_of_isStrictlyLE (-1) 1 (by lia)).eq_of_tgt _ _
   · rw [map_f_snd_v, Category.assoc]
+    -- `(j hC).f 0` is `hC.i 0 ≫ snd`, by the match defining the components of `j`.
     rfl
 
 private theorem acyclic_mappingCone_r' : E.acyclic (CochainComplex.mappingCone (r' hC)) :=
-  (hC.ofTruncation (coneMap hC) (isIso_coneMap_f hC) (coneIso hC) (coneIso_hom_i hC)).acyclic
+  hC.acyclic_of_truncation (coneMap hC) (isIso_coneMap_f hC) (coneIso hC) (coneIso_hom_i hC)
 
 end TruncationAtZero
 
@@ -235,6 +247,7 @@ private theorem exists_truncation_zero {Y I : CochainComplex C ℤ} (r : Y ⟶ I
   refine ⟨complex hC, j hC, r' hC, r'_j hC, fun k hk ↦ ?_, mono_jf_zero hC, ?_, fun a ha ↦ ?_,
     acyclic_mappingCone_r' hC⟩
   · obtain ⟨k, rfl⟩ := Int.eq_negSucc_of_lt_zero (show k < 0 by lia)
+    -- In negative degrees `j` is the identity, by the match defining its components.
     exact inferInstanceAs (IsIso (𝟙 _))
   · rw [CochainComplex.isStrictlyLE_iff]
     intro i hi

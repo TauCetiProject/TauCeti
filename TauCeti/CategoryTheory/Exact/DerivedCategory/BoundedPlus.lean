@@ -14,7 +14,7 @@ public import TauCeti.Algebra.Homology.HomotopyCategory.LowDegreeIso
 # The bounded derived category inside the bounded below derived category
 
 Let `E` be an exact structure. Bounded complexes are bounded below, and bounded acyclic complexes
-are acyclic, so the inclusion `Kᵇ(C) ⥤ K⁺(C)` induces a triangulated functor
+are acyclic, so the inclusion `Kᵇ(C) ⥤ K⁺(C)` induces an additive functor
 `Dᵇ(E) ⥤ D⁺(E)`. When `E` has enough injectives, this functor is fully faithful. No idempotent
 completeness is needed (Keller, *Derived categories and their uses*, Lemma 11.7).
 
@@ -47,6 +47,8 @@ a monomorphism in degree `n + 1`. Then maps and homotopies from `X` into `I` are
 
 * Bernhard Keller, *Derived categories and their uses*, Handbook of Algebra 1 (1996),
   Lemma 11.7.
+* Bernhard Keller, *Chain complexes and stable categories*, Manuscripta Math. **67** (1990),
+  379--417, Section 4.1.
 -/
 
 public section
@@ -60,21 +62,13 @@ universe v u
 variable {C : Type u} [Category.{v} C] [Preadditive C] [HasZeroObject C] [HasBinaryBiproducts C]
   (E : ExactStructure C)
 
-/-- The inclusion `Kᵇ(C) ⥤ K⁺(C)`. -/
-abbrev boundedToPlus : HomotopyCategory.Bounded C ⥤ _root_.HomotopyCategory.Plus C :=
-  ObjectProperty.ιOfLE (HomotopyCategory.bounded_le_plus C)
-
 /-- The inclusion `Kᵇ(C) ⥤ K⁺(C)` sends the morphisms inverted in `Dᵇ(E)` to morphisms inverted
 in `D⁺(E)`. -/
 theorem acyclicBounded_trW_le :
-    E.acyclicBounded.trW ≤ E.acyclicPlus.trW.inverseImage (boundedToPlus (C := C)) := by
+    E.acyclicBounded.trW ≤ E.acyclicPlus.trW.inverseImage (HomotopyCategory.Bounded.toPlus C) := by
   intro X Y f hf
   rw [MorphismProperty.inverseImage_iff, acyclicPlus_trW_iff]
-  have h : E.acyclicBounded = E.boundedAcyclic.inverseImage (HomotopyCategory.Bounded.ι C) := by
-    ext X
-    exact E.acyclicBounded_iff X
-  rw [h] at hf
-  rw [ObjectProperty.inverseImage_trW_iff] at hf
+  rw [acyclicBounded_trW_iff] at hf
   refine ObjectProperty.trW_monotone (fun X hX ↦ ?_) _ hf
   obtain ⟨K, _, ha, e⟩ := (E.boundedAcyclic_iff X).1 hX
   exact (E.homotopyAcyclic_iff X).2 ⟨K, ha, e⟩
@@ -84,22 +78,21 @@ namespace BoundedDerivedCategory
 /-- The functor `Dᵇ(E) ⥤ D⁺(E)` induced by the inclusion of bounded complexes into bounded below
 complexes. -/
 noncomputable def toPlus : E.BoundedDerivedCategory ⥤ E.PlusDerivedCategory :=
-  Localization.lift (boundedToPlus ⋙ PlusDerivedCategory.Q E)
+  Localization.lift (HomotopyCategory.Bounded.toPlus C ⋙ PlusDerivedCategory.Q E)
     (fun _ _ f hf ↦ Localization.inverts (PlusDerivedCategory.Q E) E.acyclicPlus.trW _
       (E.acyclicBounded_trW_le f hf)) (Q E)
 
 /-- The functor `Dᵇ(E) ⥤ D⁺(E)` is induced by the inclusion `Kᵇ(C) ⥤ K⁺(C)`. -/
-noncomputable def QCompToPlusIso : Q E ⋙ toPlus E ≅ boundedToPlus ⋙ PlusDerivedCategory.Q E :=
+noncomputable def QCompToPlusIso :
+    Q E ⋙ toPlus E ≅ HomotopyCategory.Bounded.toPlus C ⋙ PlusDerivedCategory.Q E :=
   Localization.fac _ _ _
 
 /-- The functor `Dᵇ(E) ⥤ D⁺(E)` on the image of a morphism of `Kᵇ(C)`. -/
 theorem toPlus_map_Q {X Y : HomotopyCategory.Bounded C} (f : X ⟶ Y) :
     (toPlus E).map ((Q E).map f) = (QCompToPlusIso E).hom.app X ≫
-      (PlusDerivedCategory.Q E).map (boundedToPlus.map f) ≫ (QCompToPlusIso E).inv.app Y :=
+      (PlusDerivedCategory.Q E).map ((HomotopyCategory.Bounded.toPlus C).map f) ≫
+        (QCompToPlusIso E).inv.app Y :=
   (NatIso.naturality_2 (QCompToPlusIso E) f).symm
-
-instance : (boundedToPlus (C := C)).Additive where
-  map_add := rfl
 
 instance : (toPlus E).Additive :=
   (Localization.functor_additive_iff (Q E) E.acyclicBounded.trW (toPlus E)).2
@@ -109,14 +102,8 @@ end BoundedDerivedCategory
 
 open BoundedDerivedCategory
 
-omit [HasZeroObject C] [HasBinaryBiproducts C] in
-/-- A bounded complex is strictly bounded below and above. -/
-private theorem exists_isStrictlyGE_isStrictlyLE (X : HomotopyCategory.Bounded C) :
-    ∃ a b : ℤ, CochainComplex.IsStrictlyGE X.obj.as a ∧ CochainComplex.IsStrictlyLE X.obj.as b :=
-  (CochainComplex.bounded_iff C _).1
-    ((HomotopyCategory.bounded_quotient_obj_iff X.obj.as).1 X.property)
-
 /-- The object of `Kᵇ(C)` of a bounded complex. -/
+-- Local: the general constructor `TauCeti.HomotopyCategory.Bounded.mk` is added in #35104.
 private abbrev boundedMk (K : CochainComplex C ℤ) (a b : ℤ) [K.IsStrictlyGE a]
     [K.IsStrictlyLE b] : HomotopyCategory.Bounded C :=
   ⟨(_root_.HomotopyCategory.quotient C (.up ℤ)).obj K,
@@ -124,15 +111,14 @@ private abbrev boundedMk (K : CochainComplex C ℤ) (a b : ℤ) [K.IsStrictlyGE 
       ((CochainComplex.bounded_iff C K).2 ⟨a, b, inferInstance, inferInstance⟩)⟩
 
 /-- A map of bounded complexes with acyclic mapping cone is inverted in `Dᵇ(E)`. -/
+-- Local: the general statement `TauCeti.ExactStructure.acyclicBounded_trW_mkMap` is added in
+-- #35104.
 private theorem acyclicBounded_trW_homMk {X : HomotopyCategory.Bounded C} {K : CochainComplex C ℤ}
     {a b : ℤ} [K.IsStrictlyGE a] [K.IsStrictlyLE b] (g : X.obj.as ⟶ K)
     (hg : E.acyclic (CochainComplex.mappingCone g)) :
     E.acyclicBounded.trW (ObjectProperty.homMk
       ((_root_.HomotopyCategory.quotient C (.up ℤ)).map g) : X ⟶ boundedMk K a b) := by
-  have h : E.acyclicBounded = E.boundedAcyclic.inverseImage (HomotopyCategory.Bounded.ι C) := by
-    ext Y
-    exact E.acyclicBounded_iff Y
-  rw [h, ObjectProperty.inverseImage_trW_iff]
+  rw [acyclicBounded_trW_iff]
   refine (E.boundedAcyclic.trW_iff_of_distinguished _
     (_root_.HomotopyCategory.mappingCone_triangleh_distinguished g)).2
       (E.boundedAcyclic_quotient_obj (CochainComplex.bounded_mappingCone g
@@ -159,7 +145,7 @@ private structure BoundedResolution (Y : HomotopyCategory.Bounded C) where
 include hE in
 private theorem nonempty_resolution (Y : HomotopyCategory.Bounded C) :
     Nonempty (BoundedResolution (E := E) Y) := by
-  obtain ⟨a, b, _, _⟩ := exists_isStrictlyGE_isStrictlyLE Y
+  obtain ⟨a, b, _, _⟩ := HomotopyCategory.Bounded.exists_isStrictlyGE_isStrictlyLE Y
   obtain ⟨I, r, hIa, hI, hr⟩ := hE.exists_injectiveResolution Y.obj.as a
   exact ⟨⟨I, a, hIa, r, hr, hI⟩⟩
 
@@ -173,7 +159,8 @@ private abbrev resObj (R : BoundedResolution (E := E) Y) : _root_.HomotopyCatego
     (_root_.HomotopyCategory.plus_quotient_obj_iff R.I).2 ⟨R.a, inferInstance⟩⟩
 
 /-- The resolution as a morphism of `K⁺(C)`. -/
-private abbrev resHom (R : BoundedResolution (E := E) Y) : boundedToPlus.obj Y ⟶ resObj R :=
+private abbrev resHom (R : BoundedResolution (E := E) Y) :
+    (HomotopyCategory.Bounded.toPlus C).obj Y ⟶ resObj R :=
   ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map R.r)
 
 private instance (R : BoundedResolution (E := E) Y) :
@@ -190,99 +177,92 @@ private theorem resolution_map_bijective (R : BoundedResolution (E := E) Y)
       ((E.injectivePlus_iff _).2 ((E.plusInjective_iff _).2
         ⟨R.I, ⟨R.a, inferInstance⟩, R.isInjective, ⟨Iso.refl _⟩⟩))) _ X
 
-
-omit [HasZeroObject C] [HasBinaryBiproducts C] in
-/-- The bounds needed to truncate a resolution of `Y` above `n`. -/
-private theorem exists_bound (X Y : HomotopyCategory.Bounded C) :
-    ∃ n : ℤ, CochainComplex.IsStrictlyLE X.obj.as n ∧ CochainComplex.IsStrictlyLE Y.obj.as n := by
-  obtain ⟨_, b, _, _⟩ := exists_isStrictlyGE_isStrictlyLE X
-  obtain ⟨_, b', _, _⟩ := exists_isStrictlyGE_isStrictlyLE Y
-  exact ⟨max b b', CochainComplex.isStrictlyLE_of_le X.obj.as b _ (le_max_left _ _),
-    CochainComplex.isStrictlyLE_of_le Y.obj.as b' _ (le_max_right _ _)⟩
+/-- **The resolution truncated above `n`**: a map `rT : Y ⟶ B` of `Kᵇ(C)` inverted in `Dᵇ(E)` and
+a map `jT : B ⟶ I` of `K⁺(C)` with `rT ≫ jT = r`, through which maps from complexes vanishing above
+`n` into `I` factor uniquely. -/
+private theorem exists_truncation (R : BoundedResolution (E := E) Y) (n : ℤ)
+    [CochainComplex.IsStrictlyLE Y.obj.as n] :
+    ∃ (B : HomotopyCategory.Bounded C) (rT : Y ⟶ B)
+      (jT : (HomotopyCategory.Bounded.toPlus C).obj B ⟶ resObj R),
+      E.acyclicBounded.trW rT ∧ (HomotopyCategory.Bounded.toPlus C).map rT ≫ jT = resHom R ∧
+      ∀ X : HomotopyCategory.Bounded C, CochainComplex.IsStrictlyLE X.obj.as n →
+        Function.Bijective fun g : X ⟶ B ↦ (HomotopyCategory.Bounded.toPlus C).map g ≫ jT := by
+  obtain ⟨T, j, r', hrj, hiso, hmono, _, hge, hr'⟩ :=
+    exists_truncation_of_acyclic_mappingCone R.r R.acyclic n
+  have := hge R.a inferInstance
+  refine ⟨boundedMk T (min R.a (n + 1)) (n + 1),
+    ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map r'),
+    ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map j),
+    acyclicBounded_trW_homMk E r' hr',
+    ObjectProperty.hom_ext _
+      (((_root_.HomotopyCategory.quotient C (.up ℤ)).map_comp r' j).symm.trans
+        (congrArg (_root_.HomotopyCategory.quotient C (.up ℤ)).map hrj)),
+    fun X _ ↦ ?_⟩
+  -- On underlying morphisms of the homotopy category, the map is composition with `j`.
+  have hb := CochainComplex.bijective_comp_quotient_map_of_isIso_of_mono (M := X.obj.as) j n
+    hiso hmono
+  refine ⟨fun g₁ g₂ h ↦ ObjectProperty.hom_ext _ (hb.1 (congrArg (·.hom) h)), fun f ↦ ?_⟩
+  obtain ⟨g, hg⟩ := hb.2 f.hom
+  exact ⟨ObjectProperty.homMk g, ObjectProperty.hom_ext _ hg⟩
 
 include hE in
 /-- **Faithfulness on objects of `Kᵇ(C)`**: a morphism of `Dᵇ(E)` vanishing in `D⁺(E)` is zero. -/
 private theorem eq_zero_of_toPlus_map_eq_zero {X Y : HomotopyCategory.Bounded C}
-    (β : (Q E).obj X ⟶ (Q E).obj Y) (hβ : (toPlus E).map β = 0) : β = 0 := by
+    (β : (Q E).obj X ⟶ (Q E).obj Y) (hβ : (BoundedDerivedCategory.toPlus E).map β = 0) :
+    β = 0 := by
   obtain ⟨φ, rfl⟩ := Localization.exists_rightFraction (Q E) E.acyclicBounded.trW β
   have := Localization.inverts (Q E) E.acyclicBounded.trW φ.s φ.hs
   suffices h : (Q E).map φ.f = 0 by
     rw [← cancel_epi ((Q E).map φ.s), φ.map_s_comp_map, h, comp_zero]
-  have h₁ : (PlusDerivedCategory.Q E).map (boundedToPlus.map φ.f) = 0 := by
-    have h := (toPlus E).congr_map (φ.map_s_comp_map (Q E) (Localization.inverts _ _))
+  have h₁ : (PlusDerivedCategory.Q E).map ((HomotopyCategory.Bounded.toPlus C).map φ.f) = 0 := by
+    have h := (BoundedDerivedCategory.toPlus E).congr_map
+      (φ.map_s_comp_map (Q E) (Localization.inverts _ _))
     rw [Functor.map_comp, hβ, comp_zero, BoundedDerivedCategory.toPlus_map_Q] at h
     simpa using h.symm
+  -- `f` vanishes into the resolution, hence into its truncation, which `Dᵇ(E)` inverts.
   obtain ⟨R⟩ := nonempty_resolution hE Y
-  have h₂ : boundedToPlus.map φ.f ≫ resHom R = 0 :=
+  have h₂ : (HomotopyCategory.Bounded.toPlus C).map φ.f ≫ resHom R = 0 :=
     (resolution_map_bijective R _).1 (by rw [Functor.map_comp, h₁, zero_comp, Functor.map_zero])
-  obtain ⟨f₀, hf₀⟩ := (_root_.HomotopyCategory.quotient C (.up ℤ)).map_surjective φ.f.hom
-  have h₃ : (_root_.HomotopyCategory.quotient C (.up ℤ)).map f₀ ≫
-      (_root_.HomotopyCategory.quotient C (.up ℤ)).map R.r = 0 := by
-    rw [hf₀]
-    exact congrArg (·.hom) h₂
-  obtain ⟨n, _, _⟩ := exists_bound φ.X' Y
-  obtain ⟨T, j, r', hrj, hiso, hmono, _, hge, hr'⟩ :=
-    exists_truncation_of_acyclic_mappingCone R.r R.acyclic n
-  have := hge R.a inferInstance
-  have h₄ : (_root_.HomotopyCategory.quotient C (.up ℤ)).map f₀ ≫
-      (_root_.HomotopyCategory.quotient C (.up ℤ)).map r' = 0 :=
-    (CochainComplex.bijective_comp_quotient_map_of_isIso_of_mono (M := φ.X'.obj.as) j n hiso
-      hmono).1 (by
-        dsimp only
-        rw [Category.assoc, ← Functor.map_comp, hrj, h₃, zero_comp])
-  let rT : Y ⟶ boundedMk T (min R.a (n + 1)) (n + 1) :=
-    ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map r')
-  have := Localization.inverts (Q E) _ rT (acyclicBounded_trW_homMk E r' hr')
-  have h₅ : φ.f ≫ rT = 0 := ObjectProperty.hom_ext _ (by
-    change φ.f.hom ≫ (_root_.HomotopyCategory.quotient C (.up ℤ)).map r' = 0
-    rw [← hf₀]
-    exact h₄)
-  rw [← cancel_mono ((Q E).map rT), zero_comp, ← Functor.map_comp, h₅, Functor.map_zero]
+  obtain ⟨n, _, _⟩ := HomotopyCategory.Bounded.exists_isStrictlyLE_isStrictlyLE φ.X' Y
+  obtain ⟨B, rT, jT, hrT, hρ, hbij⟩ := exists_truncation R n
+  have := Localization.inverts (Q E) _ rT hrT
+  have h₃ : φ.f ≫ rT = 0 :=
+    (hbij φ.X' inferInstance).1 (by
+      dsimp only
+      rw [Functor.map_comp, Category.assoc, hρ, h₂, Functor.map_zero, zero_comp])
+  rw [← cancel_mono ((Q E).map rT), zero_comp, ← Functor.map_comp, h₃, Functor.map_zero]
 
 include hE in
 /-- **Fullness on objects of `Kᵇ(C)`**: every morphism of `D⁺(E)` between bounded complexes comes
 from `Dᵇ(E)`. -/
 private theorem exists_toPlus_map_eq {X Y : HomotopyCategory.Bounded C}
-    (α : (toPlus E).obj ((Q E).obj X) ⟶ (toPlus E).obj ((Q E).obj Y)) :
-    ∃ β, (toPlus E).map β = α := by
+    (α : (BoundedDerivedCategory.toPlus E).obj ((Q E).obj X) ⟶
+      (BoundedDerivedCategory.toPlus E).obj ((Q E).obj Y)) :
+    ∃ β, (BoundedDerivedCategory.toPlus E).map β = α := by
   let e := QCompToPlusIso E
   let α' := e.inv.app X ≫ α ≫ e.hom.app Y
+  -- `α'` composed with the resolution of `Y` is the class of a map `fR` of `K⁺(C)`, which factors
+  -- through the truncation of the resolution as `gT ≫ jT`.
   obtain ⟨R⟩ := nonempty_resolution hE Y
-  obtain ⟨fR, hfR⟩ := (resolution_map_bijective R (boundedToPlus.obj X)).2
+  obtain ⟨fR, hfR⟩ := (resolution_map_bijective R ((HomotopyCategory.Bounded.toPlus C).obj X)).2
     (α' ≫ (PlusDerivedCategory.Q E).map (resHom R))
-  obtain ⟨f₀, hf₀⟩ := (_root_.HomotopyCategory.quotient C (.up ℤ)).map_surjective fR.hom
-  obtain ⟨n, _, _⟩ := exists_bound X Y
-  obtain ⟨T, j, r', hrj, hiso, hmono, _, hge, hr'⟩ :=
-    exists_truncation_of_acyclic_mappingCone R.r R.acyclic n
-  have := hge R.a inferInstance
-  obtain ⟨g', hg'⟩ := (CochainComplex.bijective_comp_quotient_map_of_isIso_of_mono
-    (M := X.obj.as) j n hiso hmono).2 ((_root_.HomotopyCategory.quotient C (.up ℤ)).map f₀)
-  let rT : Y ⟶ boundedMk T (min R.a (n + 1)) (n + 1) :=
-    ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map r')
-  let gT : X ⟶ boundedMk T (min R.a (n + 1)) (n + 1) := ObjectProperty.homMk g'
-  let jT : boundedToPlus.obj (boundedMk T (min R.a (n + 1)) (n + 1)) ⟶ resObj R :=
-    ObjectProperty.homMk ((_root_.HomotopyCategory.quotient C (.up ℤ)).map j)
-  have hrT : E.acyclicBounded.trW rT := acyclicBounded_trW_homMk E r' hr'
+  obtain ⟨n, _, _⟩ := HomotopyCategory.Bounded.exists_isStrictlyLE_isStrictlyLE X Y
+  obtain ⟨B, rT, jT, hrT, hρ, hbij⟩ := exists_truncation R n
+  obtain ⟨gT, hgT⟩ := (hbij X inferInstance).2 fR
+  dsimp only at hgT
   have := Localization.inverts (Q E) _ rT hrT
-  have : IsIso ((PlusDerivedCategory.Q E).map (boundedToPlus.map rT)) :=
+  have : IsIso ((PlusDerivedCategory.Q E).map ((HomotopyCategory.Bounded.toPlus C).map rT)) :=
     Localization.inverts _ _ _ (E.acyclicBounded_trW_le rT hrT)
-  have hρ : boundedToPlus.map rT ≫ jT = resHom R := ObjectProperty.hom_ext _ (by
-    change (_root_.HomotopyCategory.quotient C (.up ℤ)).map r' ≫
-      (_root_.HomotopyCategory.quotient C (.up ℤ)).map j =
-        (_root_.HomotopyCategory.quotient C (.up ℤ)).map R.r
-    rw [← Functor.map_comp, hrj])
-  have hgT : boundedToPlus.map gT ≫ jT = fR := ObjectProperty.hom_ext _ (by
-    change g' ≫ (_root_.HomotopyCategory.quotient C (.up ℤ)).map j = fR.hom
-    rw [← hf₀]
-    exact hg')
   have : IsIso ((PlusDerivedCategory.Q E).map jT) := by
-    have : IsIso ((PlusDerivedCategory.Q E).map (boundedToPlus.map rT) ≫
+    have : IsIso ((PlusDerivedCategory.Q E).map ((HomotopyCategory.Bounded.toPlus C).map rT) ≫
         (PlusDerivedCategory.Q E).map jT) := by
       rw [← Functor.map_comp, hρ]
       infer_instance
-    exact IsIso.of_isIso_comp_left ((PlusDerivedCategory.Q E).map (boundedToPlus.map rT)) _
-  have key : (PlusDerivedCategory.Q E).map (boundedToPlus.map gT) ≫
-      inv ((PlusDerivedCategory.Q E).map (boundedToPlus.map rT)) = α' := by
+    exact IsIso.of_isIso_comp_left
+      ((PlusDerivedCategory.Q E).map ((HomotopyCategory.Bounded.toPlus C).map rT)) _
+  -- So `α'` is the class of the fraction `rT⁻¹ ∘ gT`.
+  have key : (PlusDerivedCategory.Q E).map ((HomotopyCategory.Bounded.toPlus C).map gT) ≫
+      inv ((PlusDerivedCategory.Q E).map ((HomotopyCategory.Bounded.toPlus C).map rT)) = α' := by
     rw [IsIso.comp_inv_eq, ← cancel_mono ((PlusDerivedCategory.Q E).map jT),
       ← Functor.map_comp, hgT, hfR, Category.assoc α', ← Functor.map_comp, hρ]
   refine ⟨(Q E).map gT ≫ inv ((Q E).map rT), ?_⟩
@@ -293,7 +273,7 @@ private theorem exists_toPlus_map_eq {X Y : HomotopyCategory.Bounded C}
 
 include hE in
 /-- **`Dᵇ(E) ⥤ D⁺(E)` is full** for an exact structure with enough injectives. -/
-theorem full_toPlus : (toPlus E).Full where
+theorem full_toPlus : (BoundedDerivedCategory.toPlus E).Full where
   map_surjective {A B} α := by
     have := Localization.essSurj (Q E) E.acyclicBounded.trW
     let eA := (Q E).objObjPreimageIso A
@@ -305,7 +285,7 @@ theorem full_toPlus : (toPlus E).Full where
 
 include hE in
 /-- **`Dᵇ(E) ⥤ D⁺(E)` is faithful** for an exact structure with enough injectives. -/
-theorem faithful_toPlus : (toPlus E).Faithful where
+theorem faithful_toPlus : (BoundedDerivedCategory.toPlus E).Faithful where
   map_injective {A B} β₁ β₂ h := by
     have := Localization.essSurj (Q E) E.acyclicBounded.trW
     let eA := (Q E).objObjPreimageIso A
@@ -318,7 +298,7 @@ theorem faithful_toPlus : (toPlus E).Faithful where
 include hE in
 /-- **`Dᵇ(E) ⥤ D⁺(E)` is fully faithful** for an exact structure with enough injectives, with no
 idempotent completeness (Keller, *Derived categories and their uses*, Lemma 11.7). -/
-noncomputable def fullyFaithfulToPlus : (toPlus E).FullyFaithful :=
+noncomputable def fullyFaithfulToPlus : (BoundedDerivedCategory.toPlus E).FullyFaithful :=
   have := full_toPlus hE
   have := faithful_toPlus hE
   .ofFullyFaithful _

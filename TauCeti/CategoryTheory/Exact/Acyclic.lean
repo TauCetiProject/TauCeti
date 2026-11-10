@@ -43,9 +43,9 @@ conflations `Wₙ ↣ Kⁿ⁺¹ ⊞ Lⁿ ↠ Wₙ₊₁` of the cone.
 * `TauCeti.ExactStructure.acyclic_mappingCone_of_isPushout`: the mapping cone of a map built from
   pushouts of inflations is acyclic, and `TauCeti.ExactStructure.acyclic_mappingCone_of_iso`:
   acyclicity of mapping cones is invariant under isomorphisms of arrows.
-* `TauCeti.ExactStructure.AcyclicData.ofTruncation`: a complex mapping to an acyclic complex by an
-  isomorphism in negative degrees, onto the cycles `Z⁰` in degree `0`, and vanishing above, is
-  acyclic.
+* `TauCeti.ExactStructure.AcyclicData.acyclic_of_truncation`: a complex mapping to an acyclic
+  complex by an isomorphism in negative degrees, onto the cycles `Z⁰` in degree `0`, and vanishing
+  above, is acyclic.
 
 ## References
 
@@ -236,12 +236,16 @@ private theorem truncP_truncI (m : ℤ) :
       rw [← he]
       have := (E.isInflation_f (hL.conflation 0)).mono
       infer_instance
+    -- `truncP` and `truncI` are defined by matching on the degree, and `Int.negSucc 0 + 1`
+    -- reduces to `0` only by evaluation, so their equation lemmas do not apply; `change` states
+    -- the unfolded morphisms.
     change (c.f _ ≫ hL.p (Int.negSucc 0)) ≫ e.inv = K.d (Int.negSucc 0) 0
     have h₁ : hL.p (Int.negSucc 0) ≫ hL.i 0 = L.d (Int.negSucc 0) 0 := hL.fac _
     rw [← cancel_mono (c.f 0), ← c.comm, ← he, Category.assoc, e.inv_hom_id_assoc,
       Category.assoc, h₁]
   | Int.negSucc (k + 1) => by
     have := hc (Int.negSucc k) (Int.negSucc_lt_zero k)
+    -- As above, `Int.negSucc (k + 1) + 1` reduces to `Int.negSucc k` only by evaluation.
     change (c.f _ ≫ hL.p (Int.negSucc (k + 1))) ≫ hL.i (Int.negSucc k) ≫ inv (c.f (Int.negSucc k)) =
       K.d (Int.negSucc (k + 1)) (Int.negSucc k)
     have h₁ : hL.p (Int.negSucc (k + 1)) ≫ hL.i (Int.negSucc k) =
@@ -249,20 +253,20 @@ private theorem truncP_truncI (m : ℤ) :
     rw [Category.assoc, reassoc_of% h₁, c.comm_assoc, IsIso.hom_inv_id, Category.comp_id]
   | Int.ofNat k => (K.isZero_of_isStrictlyLE 0 _ (by lia)).eq_of_tgt _ _
 
-/-- **A truncation of an acyclic complex at an object of cycles is acyclic.** If `c : K ⟶ L` is
-an isomorphism in negative degrees, `K` vanishes in positive degrees and `c⁰` is an isomorphism
-`K⁰ ≅ Z⁰` followed by the inflation `Z⁰ ↣ L⁰`, then `K` is acyclic. -/
-noncomputable def ofTruncation : E.AcyclicData K where
+/-- The acyclicity data of a truncation of an acyclic complex at an object of cycles. -/
+private noncomputable def ofTruncation : E.AcyclicData K where
   Z := truncZ hL
   i := truncI hL c hc e
   p := truncP hL c
   zero m := match m with
     | Int.negSucc 0 => by
       have := hc (Int.negSucc 0) (Int.negSucc_lt_zero 0)
+      -- Unfold the matches defining `truncI` and `truncP` in this degree, as in `truncP_truncI`.
       change (hL.i _ ≫ inv (c.f _)) ≫ c.f _ ≫ hL.p (Int.negSucc 0) = 0
       simp [hL.zero]
     | Int.negSucc (k + 1) => by
       have := hc (Int.negSucc (k + 1)) (Int.negSucc_lt_zero (k + 1))
+      -- Unfold the matches defining `truncI` and `truncP` in this degree, as in `truncP_truncI`.
       change (hL.i _ ≫ inv (c.f _)) ≫ c.f _ ≫ hL.p (Int.negSucc (k + 1)) = 0
       simp [hL.zero]
     | Int.ofNat _ => comp_zero
@@ -298,6 +302,13 @@ noncomputable def ofTruncation : E.AcyclicData K where
           s_g := (isZero_zero C).eq_of_src _ _
           id := hK.eq_of_src _ _ }
   fac m := truncP_truncI hL c hc e he m
+
+include hL hc he in
+/-- **A truncation of an acyclic complex at an object of cycles is acyclic.** If `c : K ⟶ L` is
+an isomorphism in negative degrees, `K` vanishes in positive degrees and `c⁰` is an isomorphism
+`K⁰ ≅ Z⁰` followed by the inflation `Z⁰ ↣ L⁰`, then `K` is acyclic. -/
+theorem acyclic_of_truncation : E.acyclic K :=
+  (ofTruncation hL c hc e he).acyclic
 
 end ofTruncation
 

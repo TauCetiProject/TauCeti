@@ -42,7 +42,8 @@ it does not change the quotient (Bühler, Remark 10.5).
 
 ## Main results
 
-* The bounded acyclic objects form a triangulated subcategory.
+* The bounded acyclic objects form a triangulated subcategory, and
+  `TauCeti.ExactStructure.acyclicBounded_trW_iff` describes the morphisms it inverts.
 * `Dᵇ(E)` is a triangulated category and `Q` is a triangulated functor.
 * Bounded acyclic complexes become zero in `Dᵇ(E)`, by the general
   `ObjectProperty.TrWLocalization.isZero_obj`.
@@ -185,6 +186,12 @@ theorem acyclicBounded_iff (X : HomotopyCategory.Bounded C) :
 instance : E.acyclicBounded.IsTriangulated := by
   dsimp only [acyclicBounded]
   infer_instance
+
+/-- A morphism of `Kᵇ(C)` is in `E.acyclicBounded.trW` exactly when its image in the homotopy
+category is in `E.boundedAcyclic.trW`. -/
+theorem acyclicBounded_trW_iff {X Y : HomotopyCategory.Bounded C} (f : X ⟶ Y) :
+    E.acyclicBounded.trW f ↔ E.boundedAcyclic.trW f.hom :=
+  ObjectProperty.inverseImage_trW_iff _ _ f
 
 /-- The **bounded derived category** `Dᵇ(E)` of an exact category: the Verdier quotient of the
 bounded homotopy category by the bounded acyclic complexes. -/
