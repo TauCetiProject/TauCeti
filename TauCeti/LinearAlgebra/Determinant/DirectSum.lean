@@ -200,7 +200,7 @@ private theorem detLineCongr_detLineShortExactEquiv_ker_tmul
     funext fun i ↦ Subtype.ext (by simp [he])
   refine Subtype.ext ?_
   rw [LinearEquiv.coe_detLineCongr, coe_detLineShortExactEquiv_ker_tmul,
-    TauCeti.ExteriorAlgebra.map_ιMulti_append, hu, hw, Submodule.coe_smul,
+    TauCeti.ExteriorAlgebra.map_ιMulti_append_eq_neg_one_pow_smul, hu, hw, Submodule.coe_smul,
     coe_detLineShortExactEquiv_ker_tmul]
 
 omit [FiniteDimensional K (ker f)] [FiniteDimensional K (ker g)] in
@@ -232,8 +232,9 @@ private theorem detLineCongr_symm_detLineShortExactEquiv_coker_tmul
       simp [← ha, hQ']
   refine Subtype.ext ?_
   rw [LinearEquiv.detLineCongr_symm, LinearEquiv.coe_detLineCongr,
-    coe_detLineShortExactEquiv_coker_tmul, TauCeti.ExteriorAlgebra.map_ιMulti_append, hy, hx,
-    Submodule.coe_smul, coe_detLineShortExactEquiv_coker_tmul]
+    coe_detLineShortExactEquiv_coker_tmul,
+    TauCeti.ExteriorAlgebra.map_ιMulti_append_eq_neg_one_pow_smul, hy, hx, Submodule.coe_smul,
+    coe_detLineShortExactEquiv_coker_tmul]
 
 variable (K) in
 /-- A functional on the determinant line of a finite-dimensional space taking the value `1` at
