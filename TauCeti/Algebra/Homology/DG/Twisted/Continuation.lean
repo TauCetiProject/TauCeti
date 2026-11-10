@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Homology.DG.Twisted.Complex
 public import TauCeti.Algebra.Homology.DG.Twisted.Filtration
 public import Mathlib.Data.Matrix.Mul
+import TauCeti.Algebra.DirectSum.Internal
 import TauCeti.Algebra.Ring.NegOnePow
 
 /-!
@@ -214,13 +215,10 @@ theorem continuationMap_twistedDifferential (hν : ∀ x y, ν x y ∈ 𝒜 (ind
   suffices key : ∀ (x : P) {q : ℤ} {α : M}, α ∈ ℳ q →
       continuationMap R M ν (twistedDifferential mP ℳ dM (Pi.single x α)) =
         twistedDifferential mQ ℳ dM (continuationMap R M ν (Pi.single x α)) by
-    rw [← Finset.univ_sum_single f, map_sum, map_sum, map_sum, map_sum]
-    refine Finset.sum_congr rfl fun x _ ↦ ?_
-    generalize f x = α
-    induction α using DirectSum.Decomposition.inductionOn ℳ with
-    | zero => simp
-    | @homogeneous i α => exact key x α.2
-    | add a b ha hb => rw [Pi.single_add, map_add, map_add, map_add, map_add, ha, hb]
+    have hlin : continuationMap R M ν ∘ₗ twistedDifferential mP ℳ dM =
+        twistedDifferential mQ ℳ dM ∘ₗ continuationMap R M ν :=
+      LinearMap.pi_ext_of_decomposition ℳ fun x q α hα ↦ key x hα
+    exact LinearMap.congr_fun hlin f
   intro x q α hα
   funext w
   -- Left-hand side: `Ψ` of `D_P (α ⊗ x) = dM α ⊗ x + (-1) ^ q Σ_z (α · mP x z) ⊗ z`.
