@@ -118,6 +118,7 @@ theorem of_mem_strandCountPart (φ : StrandDiagram α) :
     rw [Finset.mem_singleton.1 (Finsupp.support_single_subset hψ)]
 
 /-- A strand diagram lies in the part with `k` strands exactly when it has `k` strands. -/
+@[simp]
 theorem of_mem_strandCountPart_iff [Nontrivial R] {φ : StrandDiagram α} {k : ℕ} :
     (of φ : StrandsAlgebra R α) ∈ strandCountPart R k ↔ #φ.source = k := by
   rw [mem_strandCountPart, ← basis_apply, Module.Basis.repr_self,
