@@ -271,16 +271,6 @@ namespace ContinuousAffineMap
 
 open MeasureTheory
 
-variable {R V W : Type*} [Ring R] [AddCommGroup V] [Module R V] [TopologicalSpace V]
-  [AddCommGroup W] [Module R W] [TopologicalSpace W] [IsTopologicalAddGroup V]
-  [IsTopologicalAddGroup W]
-
-/-- A continuous affine map is its linear part followed by the translation by its value at `0`. -/
-theorem coe_eq_add_const_comp_contLinear (f : V →ᴬ[R] W) :
-    (f : V → W) = (fun y ↦ y + f 0) ∘ f.contLinear := by
-  funext x
-  simpa [add_comm] using congrFun f.decomp x
-
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {s : Set E}
@@ -290,7 +280,7 @@ determinant of absolute value `1` preserves an additive Haar measure. -/
 theorem measurePreserving_of_abs_det_eq_one (T : E →ᴬ[ℝ] E) (habs : |T.contLinear.det| = 1) :
     MeasurePreserving T μ μ := by
   have hdet : T.contLinear.det ≠ 0 := fun h ↦ by simp [h] at habs
-  have hT0 := T.coe_eq_add_const_comp_contLinear
+  have hT0 : (T : E → E) = (fun y ↦ y + T 0) ∘ T.contLinear := T.decomp
   have hL : μ.map T.contLinear = μ := by
     have h := Measure.map_linearMap_addHaar_eq_smul_addHaar μ hdet
     rw [ContinuousLinearMap.coe_coe] at h
@@ -317,7 +307,7 @@ theorem setIntegral_comp_of_image_eq (T : E →ᴬ[ℝ] E) (hμ : μ s ≠ ∞)
     h₀ (hT ▸ addHaar_image_eq_zero_of_det_fderivWithin_eq_zero μ hd fun _ _ ↦ h)
   have hinj : Function.Injective T := T.toAffineMap.linear_injective_iff.1
     ((Module.End.isUnit_iff _).1 ((LinearMap.isUnit_iff_isUnit_det _).2 hdet.isUnit)).1
-  have hT0 := T.coe_eq_add_const_comp_contLinear
+  have hT0 : (T : E → E) = (fun y ↦ y + T 0) ∘ T.contLinear := T.decomp
   -- Comparing the measures of `s` and of its image `T '' s = s` forces `|det| = 1`.
   have habs : |T.contLinear.det| = 1 := by
     have h : μ (T '' s) = ENNReal.ofReal |T.contLinear.det| * μ s := by
