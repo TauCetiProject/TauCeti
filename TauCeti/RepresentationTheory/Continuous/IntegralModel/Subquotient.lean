@@ -13,9 +13,7 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 
 An integral model induces integral models on every invariant vector subspace and on its
 quotient. The former is the intersection with the original lattice; the latter is its image
-in the quotient vector space. Over the fraction field of the coefficient domain, the
-intersection is saturated: a nonzero coefficient cannot carry a vector into the subspace
-unless it was already there. The quotient of the original lattice by this intersection
+in the quotient vector space. The quotient of the original lattice by this intersection
 identifies with the quotient lattice, not merely with a finite-index submodule of it.
 
 The restriction requires a Noetherian coefficient domain with the given fraction field;
@@ -32,8 +30,11 @@ public section
 
 namespace TauCeti.GaloisLattice.IntegralModel
 
-variable {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ]
-  {O : Type*} [CommRing O] {E : Type*} [Field E] [Algebra O E]
+variable {Γ : Type*} [Monoid Γ] [TopologicalSpace Γ] {O : Type*} [CommRing O]
+
+section Subspace
+
+variable {E : Type*} [Field E] [Algebra O E]
   {V : Type*} [AddCommGroup V] [Module E V] [Module O V] [IsScalarTower O E V]
   [TopologicalSpace V] {ρ : ContinuousRep Γ E V}
   (Λ : IntegralModel O ρ) (W : Submodule E V) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W)
@@ -77,9 +78,14 @@ theorem submodelInclusion_equivariant [IsFractionRing O E] [IsNoetherianRing O]
   apply Subtype.ext
   simp
 
+end Subspace
+
 section Quotient
 
-variable [IsTopologicalAddGroup V]
+variable {E : Type*} [CommRing E] [Algebra O E]
+  {V : Type*} [AddCommGroup V] [Module E V] [Module O V] [IsScalarTower O E V]
+  [TopologicalSpace V] [IsTopologicalAddGroup V] {ρ : ContinuousRep Γ E V}
+  (Λ : IntegralModel O ρ) (W : Submodule E V) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W)
 
 /-- The image of `Λ` in the quotient by an invariant vector subspace. -/
 def quotientModel : IntegralModel O (ρ.quotient W hW) where
@@ -94,11 +100,6 @@ theorem quotientModel_lattice :
     (Λ.quotientModel W hW).lattice = Λ.lattice.map (W.mkQ.restrictScalars O) :=
   (rfl)
 
-/-- A vector belongs to the quotient model exactly when it has a representative in `Λ`. -/
-theorem mem_quotientModel_lattice (x : V ⧸ W) :
-    x ∈ (Λ.quotientModel W hW).lattice ↔ ∃ y ∈ Λ.lattice, W.mkQ y = x :=
-  Iff.rfl
-
 /-- The surjection from the original lattice onto its quotient model. -/
 def quotientProjection : Λ.lattice →ₗ[O] (Λ.quotientModel W hW).lattice :=
   (W.mkQ.restrictScalars O).submoduleMap Λ.lattice
@@ -107,11 +108,6 @@ def quotientProjection : Λ.lattice →ₗ[O] (Λ.quotientModel W hW).lattice :=
 theorem coe_quotientProjection (x : Λ.lattice) :
     (Λ.quotientProjection W hW x : V ⧸ W) = W.mkQ (x : V) :=
   (rfl)
-
-/-- The lattice projection is surjective. -/
-theorem quotientProjection_surjective : Function.Surjective (Λ.quotientProjection W hW) := by
-  rintro ⟨x, y, hy, rfl⟩
-  exact ⟨⟨y, hy⟩, rfl⟩
 
 /-- The projection's kernel is exactly the intersection with the invariant subspace,
 viewed inside `Λ`. -/
@@ -134,12 +130,23 @@ noncomputable def quotientLatticeEquiv :
     (Λ.lattice ⧸ (W.restrictScalars O).comap Λ.lattice.subtype) ≃ₗ[O]
       (Λ.quotientModel W hW).lattice :=
   (Submodule.quotEquivOfEq _ _ (Λ.ker_quotientProjection W hW).symm).trans
-    ((Λ.quotientProjection W hW).quotKerEquivOfSurjective (Λ.quotientProjection_surjective W hW))
+    ((Λ.quotientProjection W hW).quotKerEquivOfSurjective
+      ((W.mkQ.restrictScalars O).submoduleMap_surjective Λ.lattice))
 
 @[simp]
 theorem quotientLatticeEquiv_mk (x : Λ.lattice) :
     Λ.quotientLatticeEquiv W hW (Submodule.Quotient.mk x) = Λ.quotientProjection W hW x := by
-  simp [quotientLatticeEquiv]
+  simp only [quotientLatticeEquiv, LinearEquiv.trans_apply, Submodule.quotEquivOfEq_mk]
+  exact LinearMap.quotKerEquivOfSurjective_apply_mk _ _ x
+
+end Quotient
+
+section Exactness
+
+variable {E : Type*} [Field E] [Algebra O E]
+  {V : Type*} [AddCommGroup V] [Module E V] [Module O V] [IsScalarTower O E V]
+  [TopologicalSpace V] [IsTopologicalAddGroup V] {ρ : ContinuousRep Γ E V}
+  (Λ : IntegralModel O ρ) (W : Submodule E V) (hW : ∀ g, ∀ x ∈ W, ρ g x ∈ W)
 
 /-- The inclusion and projection form an exact sequence of integral lattices. -/
 theorem range_submodelInclusion_eq_ker_quotientProjection
@@ -154,6 +161,6 @@ theorem range_submodelInclusion_eq_ker_quotientProjection
   · intro hx
     exact ⟨⟨⟨x, hx⟩, x.property⟩, rfl⟩
 
-end Quotient
+end Exactness
 
 end TauCeti.GaloisLattice.IntegralModel
