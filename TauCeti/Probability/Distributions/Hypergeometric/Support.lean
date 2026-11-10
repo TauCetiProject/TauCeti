@@ -41,7 +41,7 @@ theorem support_hypergeometricMeasure (N K n : ℕ) :
   split_ifs with h
   · rw [Measure.support_eq_setOf_singleton_ne_zero]
     ext k
-    rw [mem_ofPred_eq, hypergeometricMeasure_singleton_ne_zero_iff h.1 h.2]
+    rw [mem_ofPred_eq, hypergeometricMeasure_singleton_ne_zero_iff h.1]
     simp only [mem_Icc, le_min_iff]
     omega
   · simp [hypergeometricMeasure_eq_zero_of_invalid h]
