@@ -9,7 +9,7 @@ public import TauCeti.Probability.BrownianMotion.Filtered
 import TauCeti.MeasureTheory.Function.L2Space
 import TauCeti.Probability.BrownianMotion.Martingale
 import TauCeti.Probability.Distributions.Gaussian.Moments
-import Mathlib.Probability.Independence.Integration
+import TauCeti.Probability.Independence.Integration
 
 /-!
 # Centered weighted Brownian quadratic sums
@@ -66,13 +66,8 @@ square integrable. -/
 theorem memLp_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
     {s t : ℝ≥0} (hst : s ≤ t) {Y : Ω → ℝ} (hY : Measurable[ℱ s] Y) (hYi : MemLp Y 2 P) :
     MemLp (fun ω ↦ Y ω * ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s))) 2 P := by
-  have hD := hB.toIsPreBrownianReal.memLp_sq_sub_sub (s := s) (t := t)
-  refine (memLp_two_iff_integrable_sq (hYi.aestronglyMeasurable.mul
-    hD.aestronglyMeasurable)).2 ?_
-  simpa only [mul_pow, Function.comp_def, id_eq, Pi.mul_def] using
-    ((indepFun_sq_sub_sub hB hst hY).comp
-    (measurable_id.pow_const 2) (measurable_id.pow_const 2)).integrable_mul
-      hYi.integrable_sq hD.integrable_sq
+  exact (indepFun_sq_sub_sub hB hst hY).memLp_two_mul hYi
+    hB.toIsPreBrownianReal.memLp_sq_sub_sub
 
 /-- The second moment of a past-weighted centered squared increment factors exactly,
 with no integrability assumption on the height. -/

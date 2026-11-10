@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
 import TauCeti.MeasureTheory.Function.L2Space
-import Mathlib.Probability.Independence.Integration
+import TauCeti.Probability.Independence.Integration
 
 /-!
 # The isometry for elementary Brownian integrals
@@ -52,11 +52,7 @@ theorem memLp_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P) (hst : s ≤ t)
     MemLp (fun ω => ξ ω * (W t ω - W s ω)) 2 P := by
   have hΔ : MemLp (W t - W s) 2 P :=
     (hW.hasLaw_sub_of_le hst).memLp (memLp_id_gaussianReal 2)
-  have hi := ((hW.indepFun_sub hst hξ.measurable).comp (measurable_id.pow_const 2)
-    (measurable_id.pow_const 2)).integrable_mul hξ₂.integrable_sq hΔ.integrable_sq
-  apply (memLp_two_iff_integrable_sq (hξ₂.aestronglyMeasurable.mul
-    hΔ.aestronglyMeasurable)).2
-  simpa only [Pi.mul_def, Function.comp_apply, id_eq, mul_pow, Pi.sub_apply] using hi
+  exact (hW.indepFun_sub hst hξ.measurable).memLp_two_mul hξ₂ hΔ
 
 /-- A measurable height known at the left endpoint times a Brownian increment has mean zero.
 No integrability is required: the Bochner integral is zero also in the nonintegrable case. -/
