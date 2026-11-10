@@ -14,7 +14,7 @@ public import TauCeti.LinearAlgebra.ExteriorPower.Basis
 For a short exact sequence `0 → M → N → P → 0` over a commutative ring, finite bases
 of `M` and `P` give a canonical comparison of their determinant lines. Its value is the
 wedge of the submodule vectors followed by arbitrary lifts of the quotient vectors.
-The comparison is independent of both finite bases and the section used in its proof.
+The comparison is independent of both finite bases and of the quotient lifts.
 No field or nontriviality hypothesis is required.
 
 This is the affine free-module input for the determinant of an extension of vector bundles.
@@ -91,8 +91,8 @@ private theorem exact_canonical_adjunction
   exact ⟨equivOfLifts hf he b c lifts hlifts, equivOfLifts_wedge hf he b c lifts hlifts⟩
 
 /-- The determinant comparison of a short exact sequence of modules with finite bases.
-The submodule factor comes first. Although bases construct the map, its value on wedges
-characterizes it without reference to either basis. -/
+The submodule factor comes first. Its value on wedges characterizes the map independently
+of either finite basis. -/
 def shortExactEquivOfBasis
     {R M N P : Type*} [CommRing R]
     [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
@@ -137,8 +137,7 @@ theorem shortExactEquivOfBasis_symm_ιMulti (v : Fin n → M) (z : Fin r → N) 
   (LinearEquiv.symm_apply_eq _).2
     (shortExactEquivOfBasis_tmul_ιMulti hf he hq b c v z).symm
 
-/-- The wedge formula uniquely determines the determinant comparison. In particular,
-the choice of lifts in its construction cannot change the comparison. -/
+/-- The wedge formula uniquely determines the determinant comparison. -/
 theorem shortExactEquivOfBasis_unique
     (e : (⋀[R]^n M) ⊗[R] (⋀[R]^r P) ≃ₗ[R] ⋀[R]^(n + r) N)
     (h : ∀ (v : Fin n → M) (z : Fin r → N),

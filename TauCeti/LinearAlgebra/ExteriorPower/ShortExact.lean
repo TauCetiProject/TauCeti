@@ -18,10 +18,8 @@ where `vⱼ` is any lift of `wⱼ` along `g`. Since `a + c = dim V`, this identi
 of the top exterior powers of `U` and `W` with the top exterior power of `V`. The factor of the
 subspace comes first.
 
-The analogous comparison over arbitrary commutative rings, with finite bases supplied explicitly,
-is `TauCeti.exteriorPower.shortExactEquivOfBasis` in
-`TauCeti.LinearAlgebra.ExteriorPower.FreeShortExact`. The field interface uses `finrank` to infer
-the degrees.
+For the analogous comparison over a commutative ring with explicit finite bases, see
+`TauCeti.exteriorPower.shortExactEquivOfBasis`.
 
 This is the determinant-line identity `det V ≅ det U ⊗ det W`. It is the linear-algebra input for
 comparing determinant lines along exact sequences, such as the kernel/cokernel sequence of a
