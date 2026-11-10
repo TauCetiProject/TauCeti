@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Ideal.AssociatedGraded
-public import TauCeti.RingTheory.MvPolynomial.Homogeneous
 public import TauCeti.RingTheory.Regular.RegularSequence
-import Mathlib.RingTheory.MvPolynomial.Tower
 
 /-!
 # The associated graded ring of a weakly regular sequence
@@ -20,12 +18,7 @@ polynomial `F` of degree `ν` to the degree-`ν` class of `F(a)`. If `a₁, …,
 sequence on `R`, this map is an isomorphism: a weakly regular sequence is quasi-regular.
 
 Quasi-regularity is the statement that a homogeneous form `F` of degree `ν` with
-`F(a) ∈ Iᵛ⁺¹` has all its coefficients in `I`. It is proved by induction on the length of the
-sequence. Write `J` for the ideal of the first `n - 1` elements and `x = aₙ`. Since the first
-`n - 1` elements are quasi-regular and `x` is a nonzerodivisor modulo `J`, multiplication by `x`
-is injective modulo every power `Jᵘ`. Splitting `F = G + H Xₙ`, with `G` free of `Xₙ`, a form with
-`F(a) = 0` then has `H(a) ∈ Jᵛ`; the coefficients of `H` lie in `I` by induction on the degree,
-and those of `G` by quasi-regularity of the first `n - 1` elements.
+`F(a) ∈ Iᵛ⁺¹` has all its coefficients in `I`.
 
 The degree-one part of the isomorphism is `RingTheory.Sequence.IsWeaklyRegular.cotangentBasis`.
 For a regular system of parameters of a regular local ring it identifies the associated graded
@@ -33,16 +26,11 @@ ring of the maximal ideal with a polynomial ring over the residue field.
 
 ## Main definitions
 
-* `Ideal.AssociatedGraded.mvPolynomialHom`: the map `(R ⧸ I)[X₁, …, Xₙ] → gr_I R` sending `Xᵢ`
-  to the degree-one class of `aᵢ ∈ I`.
 * `RingTheory.Sequence.IsWeaklyRegular.associatedGradedEquiv`: for a weakly regular sequence
   generating `I`, this map is an isomorphism `(R ⧸ I)[X₁, …, Xₙ] ≃ₐ[R ⧸ I] gr_I R`.
 
 ## Main results
 
-* `Ideal.AssociatedGraded.mvPolynomialHom_map_of_isHomogeneous`: the image of a homogeneous
-  polynomial of degree `ν` is the degree-`ν` class of its value.
-* `Ideal.AssociatedGraded.mvPolynomialHom_surjective`: the map is onto when the `aᵢ` generate `I`.
 * `RingTheory.Sequence.IsWeaklyRegular.coeff_mem_of_eval_mem_pow_succ`: a weakly regular sequence
   is quasi-regular.
 * `RingTheory.Sequence.IsWeaklyRegular.mvPolynomialHom_injective`: for a weakly regular sequence
@@ -60,92 +48,6 @@ public section
 open MvPolynomial RingTheory.Sequence
 
 variable {R : Type*} [CommRing R]
-
-namespace Ideal.AssociatedGraded
-
-variable (I : Ideal R) {σ : Type*} {a : σ → R}
-
-/-- The `R ⧸ I`-algebra map `(R ⧸ I)[Xᵢ] → gr_I R` sending `Xᵢ` to the degree-one class of
-`aᵢ ∈ I`. -/
-noncomputable def mvPolynomialHom (ha : ∀ i, a i ∈ I) :
-    MvPolynomial σ (R ⧸ I) →ₐ[R ⧸ I] I.AssociatedGraded :=
-  aeval fun i ↦ mk I 1 ⟨a i, by rw [pow_one]; exact ha i⟩
-
-/-- `mvPolynomialHom` sends `Xᵢ` to the degree-one class of `aᵢ`. -/
-@[simp]
-theorem mvPolynomialHom_X (ha : ∀ i, a i ∈ I) (i : σ) :
-    mvPolynomialHom I ha (X i) = mk I 1 ⟨a i, by rw [pow_one]; exact ha i⟩ :=
-  aeval_X _ _
-
-variable {I}
-
-/-- Over `R`, a homogeneous polynomial of degree one is sent to the degree-one class of its
-value. -/
-private theorem aeval_mk_of_mem_homogeneousSubmodule_one (ha : ∀ i, a i ∈ I)
-    {F : MvPolynomial σ R} (hF : F ∈ homogeneousSubmodule σ R 1) (h : F.eval a ∈ I ^ 1) :
-    aeval (fun i ↦ mk I 1 ⟨a i, by rw [pow_one]; exact ha i⟩) F = mk I 1 ⟨F.eval a, h⟩ := by
-  have hmem (x : MvPolynomial σ R) (hx : x ∈ Submodule.span R (Set.range X)) : x.eval a ∈ I ^ 1 :=
-    IsHomogeneous.eval_mem_pow ha (by rwa [← homogeneousSubmodule_one_eq_span_X] at hx)
-  rw [homogeneousSubmodule_one_eq_span_X] at hF
-  induction hF using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    simp
-  | zero => exact (map_zero _).symm
-  | add x y hx' hy' hx hy =>
-    rw [map_add, hx (hmem x hx'), hy (hmem y hy'), ← map_add]
-    congr 1
-    exact Subtype.ext (by simp)
-  | smul r x hx' hx =>
-    rw [map_smul, hx (hmem x hx'), ← map_smul]
-    congr 1
-    exact Subtype.ext (by simp)
-
-/-- `mvPolynomialHom` sends the reduction of a homogeneous polynomial `F` of degree `ν` to the
-degree-`ν` class of `F(a)`. -/
-theorem mvPolynomialHom_map_of_isHomogeneous (ha : ∀ i, a i ∈ I) {ν : ℕ}
-    {F : MvPolynomial σ R} (hF : F.IsHomogeneous ν) :
-    mvPolynomialHom I ha (F.map (Ideal.Quotient.mk I)) = mk I ν ⟨F.eval a, hF.eval_mem_pow ha⟩ := by
-  rw [mvPolynomialHom, ← Ideal.Quotient.algebraMap_eq, aeval_map_algebraMap]
-  generalize hF.eval_mem_pow ha = h
-  have hmem (x : MvPolynomial σ R) (i : ℕ) (hx : x ∈ homogeneousSubmodule σ R 1 ^ i) :
-      x.eval a ∈ I ^ i :=
-    IsHomogeneous.eval_mem_pow ha (by rwa [homogeneousSubmodule_one_pow] at hx)
-  have hF' : F ∈ homogeneousSubmodule σ R 1 ^ ν := by
-    rw [homogeneousSubmodule_one_pow]
-    exact hF
-  clear hF
-  induction hF' using Submodule.pow_induction_on_left' with
-  | algebraMap r => simp
-  | add x y i hx' hy' hx hy =>
-    rw [map_add, hx (hmem x i hx'), hy (hmem y i hy'), ← map_add]
-    congr 1
-    exact Subtype.ext (by simp)
-  | mem_mul m hm i x hx' hx =>
-    rw [map_mul, aeval_mk_of_mem_homogeneousSubmodule_one ha hm (hmem m 1 (by rwa [pow_one])),
-      hx (hmem x i hx'), mk_mul_mk, mk_congr (Nat.add_comm 1 i)]
-    congr 1
-    exact Subtype.ext (by simp)
-
-/-- If the `aᵢ` generate `I`, then `mvPolynomialHom` is surjective: `gr_I R` is generated by the
-degree-one classes of the `aᵢ` over its degree-zero part `R ⧸ I`. -/
-theorem mvPolynomialHom_surjective (ha : ∀ i, a i ∈ I) (hI : I ≤ span (Set.range a)) :
-    Function.Surjective (mvPolynomialHom I ha) := by
-  intro g
-  induction g using DirectSum.induction_on with
-  | zero => exact ⟨0, map_zero _⟩
-  | of ν q =>
-    obtain ⟨⟨y, hy⟩, rfl⟩ := Submodule.Quotient.mk_surjective _ q
-    obtain ⟨F, hF, rfl⟩ :=
-      (mem_span_pow_iff_exists_isHomogeneous a y).mp (pow_right_mono hI ν hy)
-    exact ⟨F.map (Ideal.Quotient.mk I),
-      (mvPolynomialHom_map_of_isHomogeneous ha hF).trans (mk_apply ν _)⟩
-  | add g g' hg hg' =>
-    obtain ⟨F, rfl⟩ := hg
-    obtain ⟨F', rfl⟩ := hg'
-    exact ⟨F + F', map_add _ _ _⟩
-
-end Ideal.AssociatedGraded
 
 namespace RingTheory.Sequence.IsWeaklyRegular
 
@@ -225,11 +127,18 @@ private theorem coeff_mem_of_eval_mem_pow_succ_of_castSucc {n : ℕ} {a : Fin (n
     have hH0 : H.map (Ideal.Quotient.mk _) = 0 := MvPolynomial.ext _ _ hHI
     simp [hGH, map_rename, hG0, hH0]
 
-/-- Quasi-regularity of a weakly regular sequence indexed by `Fin n`, by induction on `n`. -/
+/-- If `a : Fin n → R` is weakly regular and a homogeneous polynomial `F` of degree `ν`
+satisfies `F(a) ∈ (a)ᵛ⁺¹`, then every coefficient of `F` belongs to `(a)`. -/
 private theorem coeff_mem_of_eval_mem_pow_succ_aux :
     ∀ {n : ℕ} {a : Fin n → R}, IsWeaklyRegular R (List.ofFn a) →
       ∀ {ν : ℕ} {F : MvPolynomial (Fin n) R}, F.IsHomogeneous ν →
         F.eval a ∈ span (Set.range a) ^ (ν + 1) → ∀ e, F.coeff e ∈ span (Set.range a) := by
+  /- Induct on the length of the sequence. Write `J` for the ideal of the first `n - 1`
+  elements and `x = aₙ`. Since the first `n - 1` elements are quasi-regular and `x` is a
+  nonzerodivisor modulo `J`, multiplication by `x` is injective modulo every power `Jᵘ`.
+  Splitting `F = G + H Xₙ`, with `G` free of `Xₙ`, a form with `F(a) = 0` then has
+  `H(a) ∈ Jᵛ`; the coefficients of `H` lie in `I` by induction on the degree, and those of
+  `G` by quasi-regularity of the first `n - 1` elements. -/
   intro n
   induction n with
   | zero =>
