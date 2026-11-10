@@ -273,13 +273,11 @@ private theorem mul_sub_mem_map_span_pow (hF' : IsFunctionField k' F')
     (by simpa [IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F'] using hbc) hw
 
 /-- If `w` is congruent to `1` at `P'`, then `w u - u` lies in `x ^ m 𝒪'_P` for every `u` in the
-local model `𝒪'_P` small at the other places over `P`, as soon as `w` is small there too. -/
+local model `𝒪'_P` small at the other places over `P`. -/
 private theorem mul_sub_self_mem_map_span_pow (hF' : IsFunctionField k' F')
     (he : ramificationIdx F P' = 1) {x : (P'.restrict k F).integers}
     (hx : (P'.restrict k F).ord (x : F) = 1) (m : ℕ)
     {w u : integralClosure (P'.restrict k F).integers F'} (hw1 : (w : F') - 1 ∈ P'.filtration m)
-    (hw : ∀ Q' : Place k' F', Q'.restrict k F = P'.restrict k F → Q' ≠ P' →
-      (w : F') ∈ Q'.filtration (ramificationIdx F Q' * m))
     (hu : ∀ Q' : Place k' F', Q'.restrict k F = P'.restrict k F → Q' ≠ P' →
       (u : F') ∈ Q'.filtration (ramificationIdx F Q' * m)) :
     w * u - u ∈ (Ideal.span {x ^ m}).map
@@ -289,8 +287,8 @@ private theorem mul_sub_self_mem_map_span_pow (hF' : IsFunctionField k' F')
     simpa [sub_mul] using P'.mul_mem_filtration hw1
       (P'.mem_filtration_zero_iff.mpr (algebraMap_mem_integers_of_mem_integralClosure k F P' u))
   · push_cast
-    exact sub_mem (mul_mem_filtration_of_mem_integralClosure hQ' (hw Q' hQ' h) u)
-      (hu Q' hQ' h)
+    refine sub_mem ?_ (hu Q' hQ' h)
+    simpa [mul_comm] using mul_mem_filtration_of_mem_integralClosure hQ' (hu Q' hQ' h) w
 
 variable [Algebra.IsSeparable F F']
 
@@ -702,7 +700,7 @@ theorem trace_sub_sum_mem_filtration (hF' : IsFunctionField k F') (hP : P.degree
     hbt hΦb hbS (z := zS) hzQ
   have hz : zS * W - zS ∈ (Ideal.span {xR ^ m}).map (algebraMap _ _) := by
     rw [mul_comm]
-    exact mul_sub_self_mem_map_span_pow k F P' hF' he ht m hW1 hWS hzQ
+    exact mul_sub_self_mem_map_span_pow k F P' hF' he ht m hW1 hzQ
   -- Since `z ≡ z W`, the class of `z` maps into the span of the `b j`, as `W` does.
   have hspanz (s : integralClosure (P'.restrict k F).integers F') :
       ∃ cs : Fin (Module.finrank k P'.ResidueField) → (P'.restrict k F).integers,
