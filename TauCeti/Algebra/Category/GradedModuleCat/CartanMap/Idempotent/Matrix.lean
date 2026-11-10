@@ -85,11 +85,11 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A] [Module.Fi
 projective basis `[A eⱼ]` and the head basis `[Sᵢ]`, the coefficient of `qᵖ` in the `(i, j)`
 entry of the graded Cartan matrix is `dim_k(eᵢ A eⱼ ∩ 𝒜 p)`. -/
 theorem coeff_gradedCartanMatrix_gradedIdempotentProjectiveBasis (i j : I) (p : ℤ) :
-    (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasis he he₀ hI hneg hspan hne)
+    (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasis he hI hneg hspan hne)
         (gradedIdempotentHeadBasis hneg he he₀ hspan hne) i j).coeff p =
       Module.finrank k ↥(cornerSubmodule k (e i) (e j) ⊓ 𝒜 p) := by
   refine coeff_gradedCartanMatrix_of_ofIdeal_span_singleton _ _ he.idem he₀ (fun i i' h => ?_)
-    (fun i => ?_) j (he.idem j) (hI j) (gradedIdempotentProjectiveBasis_apply he he₀ hI hneg hspan
+    (fun i => ?_) j (he.idem j) (hI j) (gradedIdempotentProjectiveBasis_apply he hI hneg hspan
       hne j) i p
   · beta_reduce
     rw [← gradedIdempotentHeadBasis_repr_apply hneg he he₀ hspan hne, Module.Basis.repr_self,
@@ -101,7 +101,7 @@ theorem coeff_gradedCartanMatrix_gradedIdempotentProjectiveBasis (i j : I) (p : 
 of `q`. -/
 theorem coeff_gradedCartanMatrix_gradedIdempotentProjectiveBasis_of_neg (i j : I) {p : ℤ}
     (hp : p < 0) :
-    (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasis he he₀ hI hneg hspan hne)
+    (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasis he hI hneg hspan hne)
         (gradedIdempotentHeadBasis hneg he he₀ hspan hne) i j).coeff p = 0 := by
   rw [coeff_gradedCartanMatrix_gradedIdempotentProjectiveBasis, hneg p hp, inf_bot_eq,
     finrank_bot, Nat.cast_zero]
@@ -109,7 +109,7 @@ theorem coeff_gradedCartanMatrix_gradedIdempotentProjectiveBasis_of_neg (i j : I
 /-- **The graded Cartan matrix in the canonical bases is the identity modulo `q`**: the constant
 term of its `(i, j)` entry is `1` if `i = j` and `0` otherwise. -/
 theorem coeff_zero_gradedCartanMatrix_gradedIdempotentProjectiveBasis [DecidableEq I] (i j : I) :
-    (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasis he he₀ hI hneg hspan hne)
+    (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasis he hI hneg hspan hne)
         (gradedIdempotentHeadBasis hneg he he₀ hspan hne) i j).coeff 0 =
       if i = j then 1 else 0 := by
   rw [coeff_gradedCartanMatrix_gradedIdempotentProjectiveBasis]
@@ -140,10 +140,10 @@ graded Cartan matrix, multiplied by `dim_k End_A(Sᵢ)`, is `dim_k(eᵢ A eⱼ �
 theorem finrank_end_mul_coeff_gradedCartanMatrix_gradedIdempotentProjectiveBasisOfPrimitive
     (i j : I) (p : ℤ) :
     (Module.finrank k (Module.End A (gradedPositiveMulQuotient 𝒜 (he₀ i))) : ℤ) *
-        (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso)
+        (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasisOfPrimitive he hI hprim hnoniso)
           (gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim hnoniso) i j).coeff p =
       Module.finrank k ↥(cornerSubmodule k (e i) (e j) ⊓ 𝒜 p) := by
-  rw [gradedCartanMatrix_apply, gradedIdempotentProjectiveBasisOfPrimitive_apply he he₀ hI hprim
+  rw [gradedCartanMatrix_apply, gradedIdempotentProjectiveBasisOfPrimitive_apply he hI hprim
     hnoniso j, gradedCartanMap_of]
   -- The `eᵢ`-coordinate of `[A eⱼ]` is `dim_k End_A(Sᵢ)` times its `i`th head-basis coordinate.
   have h := congrArg (fun f : LaurentPolynomial ℤ => f.coeff p)
@@ -159,7 +159,7 @@ theorem finrank_end_mul_coeff_gradedCartanMatrix_gradedIdempotentProjectiveBasis
 field, not only a splitting field. -/
 theorem coeff_gradedCartanMatrix_gradedIdempotentProjectiveBasisOfPrimitive_of_neg
     (i j : I) {p : ℤ} (hp : p < 0) :
-    (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso)
+    (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasisOfPrimitive he hI hprim hnoniso)
       (gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim hnoniso) i j).coeff p = 0 := by
   have hd : (Module.finrank k (Module.End A (gradedPositiveMulQuotient 𝒜 (he₀ i))) : ℤ) ≠ 0 := by
     intro hd
@@ -174,7 +174,7 @@ theorem coeff_gradedCartanMatrix_gradedIdempotentProjectiveBasisOfPrimitive_of_n
 even over a nonsplitting field. The division-endomorphism dimensions cancel on both sides. -/
 theorem coeff_zero_gradedCartanMatrix_gradedIdempotentProjectiveBasisOfPrimitive
     [DecidableEq I] (i j : I) :
-    (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso)
+    (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasisOfPrimitive he hI hprim hnoniso)
       (gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim hnoniso) i j).coeff 0 =
         if i = j then 1 else 0 := by
   have hd : (Module.finrank k (Module.End A (gradedPositiveMulQuotient 𝒜 (he₀ i))) : ℤ) ≠ 0 := by
@@ -212,7 +212,7 @@ matrix in the canonical bases has unit determinant in `ℤ[q,q⁻¹]`. -/
 theorem isUnit_det_gradedCartanMatrix_gradedIdempotentProjectiveBasis
     (h : ∀ i j, IsGradedEulerAdmissible.{uA} k (GradedModuleCat.shift 𝒜)
       (gradedPositiveMulQuotient 𝒜 (he₀ i)) (gradedPositiveMulQuotient 𝒜 (he₀ j))) :
-    IsUnit (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasis he he₀ hI hneg hspan hne)
+    IsUnit (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasis he hI hneg hspan hne)
       (gradedIdempotentHeadBasis hneg he he₀ hspan hne)).det := by
   -- The degree-zero part is semisimple and the heads form an exhaustive family of graded simples.
   have := isSemisimpleRing_gradeZero_of_completeOrthogonalIdempotents he he₀ hspan
@@ -234,7 +234,7 @@ theorem isUnit_det_gradedCartanMatrix_gradedIdempotentProjectiveBasisOfPrimitive
     (h : ∀ i j, IsGradedEulerAdmissible.{uA} k (GradedModuleCat.shift 𝒜)
       (gradedPositiveMulQuotient 𝒜 (he₀ i)) (gradedPositiveMulQuotient 𝒜 (he₀ j))) :
     IsUnit (gradedCartanMatrix 𝒜
-      (gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso)
+      (gradedIdempotentProjectiveBasisOfPrimitive he hI hprim hnoniso)
       (gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim hnoniso)).det :=
   isUnit_det_gradedCartanMatrix_of_isGradedEulerAdmissible hneg
     (isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient_of_isPrimitiveIdempotent hneg he he₀

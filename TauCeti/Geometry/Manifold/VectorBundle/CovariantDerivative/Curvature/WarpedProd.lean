@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.Laplacian
 public import TauCeti.Geometry.Manifold.Riemannian.WarpedProd
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Sectional.Basic
-import Mathlib.Analysis.Calculus.Deriv.Inv
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.WarpedProd
@@ -81,15 +80,10 @@ private theorem IsWarpedProduct.curvatureOperator_horizontal_vertical_horizontal
   have hXY := D.contMDiff_apply hX hY
   -- On horizontal sections the connection has no horizontal/vertical correction except
   -- `∇_V Y = (Y f / f) V`.
-  have hh {W : Π x : M, TangentSpace I x} (hW : CMDiff ∞ (T% W)) (q : M × N)
-      (u : TangentSpace (I.prod J) q) :
-      tangentSpaceProdEquiv q (cov (prodVectorField W 0) q u) =
-        (D W q.1 (tangentSpaceProdEquiv q u).1,
-          (mvfderiv I f q.1 (W q.1) / f q.1) • (tangentSpaceProdEquiv q u).2) := by
-    simpa [cov, D, (leviCivitaConnection J N).isCovariantDerivativeOnUniv.zero] using
-      h.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField
-        (hf.mdifferentiableAt (by simp)) (hW.mdifferentiableAt (by simp))
-        (h0N.mdifferentiableAt (by simp)) u
+  have hh (W : Π x : M, TangentSpace I x) (hW : CMDiff ∞ (T% W)) (q : M × N)
+      (u : TangentSpace (I.prod J) q) :=
+    h.tangentSpaceProdEquiv_leviCivitaConnection_prodVectorField_zero (p := q)
+      (hf.mdifferentiableAt (by simp)) (hW.mdifferentiableAt (by simp)) u
   have hv (q : M × N) : cov (prodVectorField 0 V) q (prodVectorField X 0 q) =
       (mvfderiv I f q.1 (X q.1) / f q.1) • prodVectorField 0 V q := by
     apply (tangentSpaceProdEquiv q).injective
@@ -105,45 +99,21 @@ private theorem IsWarpedProduct.curvatureOperator_horizontal_vertical_horizontal
     apply (tangentSpaceProdEquiv q).injective
     simp only [Pi.smul_apply', Function.comp_apply, map_smul,
       tangentSpaceProdEquiv_prodVectorField]
-    simpa [a] using hh hY q (prodVectorField 0 V q)
+    simpa [a] using hh _ hY q (prodVectorField 0 V q)
   have hXYeq : (fun q ↦ cov (prodVectorField Y 0) q (prodVectorField X 0 q)) =
       prodVectorField (fun x ↦ D Y x (X x)) 0 := by
     funext q
     apply (tangentSpaceProdEquiv q).injective
     rw [tangentSpaceProdEquiv_prodVectorField]
-    simpa using hh hY q (prodVectorField X 0 q)
+    simpa using hh _ hY q (prodVectorField X 0 q)
+  have : IsManifold I (minSmoothness ℝ 2) M := .of_le (n := ∞) (by simp)
+  have : IsManifold J (minSmoothness ℝ 2) N := .of_le (n := ∞) (by simp)
   -- Horizontal and vertical lifts commute.
-  have hbracket : mlieBracket (I.prod J) (prodVectorField X 0) (prodVectorField 0 V) p = 0 := by
-    have : IsManifold I (minSmoothness ℝ 2) M := .of_le (n := ∞) (by simp)
-    have : IsManifold J (minSmoothness ℝ 2) N := .of_le (n := ∞) (by simp)
-    apply (tangentSpaceProdEquiv p).injective
-    rw [mlieBracket_prodVectorField (hX.mdifferentiableAt (by simp))
-      (h0M.mdifferentiableAt (by simp)) (h0N.mdifferentiableAt (by simp))
-      (hV.mdifferentiableAt (by simp))]
-    simp only [map_zero, tangentSpaceProdEquiv_prodVectorField, mlieBracket_zero_right,
-      mlieBracket_zero_left, Pi.zero_apply, Prod.mk_zero_zero]
+  have hbracket := mlieBracket_prodVectorField_horizontal_vertical (p := p)
+    (hX.mdifferentiableAt (by simp)) (hV.mdifferentiableAt (by simp))
   -- The derivative of `Y f / f` and the two connection corrections combine into `Hess f / f`.
-  have hcoeff :
-      a p.1 * (mvfderiv I f p.1 (X p.1) / f p.1) +
-          mvfderiv I a p.1 (X p.1) -
-          mvfderiv I f p.1 (D Y p.1 (X p.1)) / f p.1 =
-        hessian I f p.1 (X p.1) (Y p.1) / f p.1 := by
-    rw [hessian_apply_eq_mvfderiv_sub p.1 (hf.of_le (by simp)).contMDiffAt X Y
-      (hY.mdifferentiableAt (by simp))]
-    have hinv : mvfderiv I (fun x ↦ (f x)⁻¹) p.1 (X p.1) =
-        -(f p.1 ^ 2)⁻¹ * mvfderiv I f p.1 (X p.1) := by
-      simpa only [Function.comp_def, fderiv_inv, ContinuousLinearMap.toSpanSingleton_apply,
-        smul_eq_mul, mul_comm] using
-        (mvfderiv_comp_apply_of_differentiableAt
-          (differentiableAt_inv hf₀) (hf.mdifferentiableAt (by simp)) (X p.1))
-    dsimp only [a]
-    simp only [div_eq_mul_inv]
-    rw [mvfderiv_fun_mul (g := fun x ↦ (f x)⁻¹) (hdY.mdifferentiableAt (by simp))
-      ((hf.mdifferentiableAt (by simp)).inv hf₀)]
-    simp only [add_apply, smul_apply, smul_eq_mul, hinv]
-    dsimp only [D]
-    field_simp [hf₀]
-    ring
+  have hcoeff := hessian_div_eq_mvfderiv_add (I := I) (hf.contMDiffAt.of_le (by simp))
+    (x := p.1) (hY.mdifferentiableAt (by simp)) hf₀ X
   -- Substitute these three derivatives in the definition of curvature.
   rw [curvatureOperator_apply, hVY, hXYeq, hbracket, map_zero, sub_zero,
     cov.isCovariantDerivativeOnUniv.leibniz
@@ -153,7 +123,7 @@ private theorem IsWarpedProduct.curvatureOperator_horizontal_vertical_horizontal
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply,
     mvfderiv_comp_fst_apply, prodVectorField_fst, Function.comp_apply, map_add, map_sub,
     map_smul, hv, smul_smul]
-  rw [hh hXY]
+  rw [hh _ hXY]
   simp only [tangentSpaceProdEquiv_prodVectorField, Pi.zero_apply, map_zero, Prod.smul_mk,
     smul_zero, Prod.mk_add_mk, Prod.mk_sub_mk, zero_add, sub_zero]
   rw [← add_smul, ← sub_smul, hcoeff]

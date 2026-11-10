@@ -46,6 +46,8 @@ whenever `k < p`, including the behavior at the origin, on arbitrary real inner-
 * `hasFDerivAt_norm_of_ne`: the derivative of the norm itself away from zero.
 * `iteratedFDeriv_two_norm_rpow_apply`: the Hessian of an arbitrary real power away from zero.
 * `norm_iteratedFDeriv_two_norm_rpow_le`: the Hessian is `O(‖x‖ ^ (p - 2))`.
+* `inv_norm_le_norm_fderiv_fderiv_norm`: the second derivative of the norm is at least `‖x‖⁻¹`
+  in operator norm when a nonzero direction is orthogonal to `x`.
 * `norm_iteratedFDeriv_two_norm_rpow_sub_le`: for `p ≤ 3`, the Hessian changes by
   `O(‖a - b‖ ‖b‖ ^ (p - 3))` between points `a` and `b` with `2 ‖a - b‖ ≤ ‖b‖`.
 * `laplacian_norm_rpow_of_ne`: the radial Laplacian formula
@@ -110,10 +112,11 @@ theorem contDiff_norm_rpow_of_lt {k : ℕ} {p : ℝ}
     let θ : E := ‖x‖⁻¹ • x
     have hθ : ‖θ‖ = 1 := by simp [θ, norm_smul, hx]
     have hθ0 : θ ≠ 0 := norm_ne_zero_iff.mp (by rw [hθ]; norm_num)
-    have hscale := norm_iteratedFDeriv_smul_of_homogeneous (hf.of_le (by exact_mod_cast hj))
-      (p := p) (fun t ht y ↦ by simp only [norm_smul, Real.norm_of_nonneg ht.le,
+    have hscale := norm_iteratedFDeriv_smul_of_homogeneous
+      (f := fun x : E ↦ ‖x‖ ^ p) (p := p) (j := j)
+      (fun t ht y ↦ by simp only [norm_smul, Real.norm_of_nonneg ht.le,
         Real.mul_rpow ht.le (norm_nonneg y), smul_eq_mul])
-      (norm_pos_iff.mpr hx) hθ0
+      (norm_pos_iff.mpr hx) (x := θ)
     have hnorm := norm_iteratedFDeriv_eq_of_norm_eq p j (hθ.trans he.symm)
     simpa only [θ, smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.mpr hx), one_smul,
       hnorm, mul_comm] using hscale.le
@@ -260,6 +263,23 @@ theorem norm_iteratedFDeriv_two_norm_rpow_le (p : ℝ) {x : E} (hx : x ≠ 0) :
     _ = |p| * (|p - 2| + 1) * ‖x‖ ^ (p - 2) * (‖m 0‖ * ‖m 1‖) := by
         rw [← h42]
         ring
+
+/-- Away from the origin, the second derivative of the norm has operator norm at least `‖x‖⁻¹`
+when some nonzero direction `v` is orthogonal to `x`: by the Hessian formula for `‖·‖ ^ p` with
+`p = 1`, it takes the value `‖v‖ ^ 2 / ‖x‖` on `v` twice. -/
+theorem inv_norm_le_norm_fderiv_fderiv_norm {x v : E} (hx : x ≠ 0) (hv : v ≠ 0)
+    (hxv : ⟪x, v⟫_ℝ = 0) : ‖x‖⁻¹ ≤ ‖fderiv ℝ (fderiv ℝ fun y : E ↦ ‖y‖) x‖ := by
+  have hx0 : 0 < ‖x‖ := norm_pos_iff.2 hx
+  have hv0 : 0 < ‖v‖ := norm_pos_iff.2 hv
+  have hH := iteratedFDeriv_two_norm_rpow_apply 1 hx v v
+  simp only [Real.rpow_one, iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_fin_one, hxv, mul_zero, zero_add, one_mul, real_inner_self_eq_norm_sq] at hH
+  have hvv : fderiv ℝ (fderiv ℝ fun y : E ↦ ‖y‖) x v v = ‖v‖ ^ 2 / ‖x‖ := by
+    rw [hH, show (1 : ℝ) - 2 = -1 by norm_num, Real.rpow_neg_one, div_eq_inv_mul]
+  have hle := (fderiv ℝ (fderiv ℝ fun y : E ↦ ‖y‖) x).le_opNorm₂ v v
+  rw [hvv, Real.norm_of_nonneg (by positivity), div_le_iff₀ hx0] at hle
+  rw [inv_le_iff_one_le_mul₀ hx0]
+  nlinarith [mul_pos hv0 hv0]
 
 /-- Along the line `s ↦ b + s • d`, the Hessian formula of `x ↦ ‖x‖ ^ p`
 (`TauCeti.iteratedFDeriv_two_norm_rpow_apply`) evaluated on two fixed directions `v`, `w` is
