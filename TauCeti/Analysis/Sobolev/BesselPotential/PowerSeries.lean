@@ -104,26 +104,14 @@ theorem exists_hasSum_mul_pow {s : ℝ} (hs : finrank ℝ E < 2 * s) :
     have hS (N : ℕ) : MemSobolev s 2 (S N : 𝓢'(E, ℂ)) := by
       simpa only [S, Lp.toTemperedDistribution_sum, Lp.toTemperedDistribution_smul] using
         MemSobolev.sum fun n (_ : n ∈ Finset.range N) ↦ (hp n).smul (a n)
-    have hSw (N : ℕ) : (hS N).toBesselPotentialSpace = ∑ n ∈ Finset.range N, a n • w n :=
-      calc (hS N).toBesselPotentialSpace
-          = (MemSobolev.sum (t := Finset.range N) fun n _ ↦
-              (hp n).smul (a n)).toBesselPotentialSpace :=
-            BesselPotentialSpace.ext (by simp [S])
-        _ = ∑ n ∈ Finset.range N, ((hp n).smul (a n)).toBesselPotentialSpace :=
-            MemSobolev.toBesselPotentialSpace_sum _
-        _ = ∑ n ∈ Finset.range N, a n • w n :=
-            Finset.sum_congr rfl fun n _ ↦ (hp n).toBesselPotentialSpace_smul (a n)
     have hlim := ae_tendsto_of_tendsto_toBesselPotentialSpace hs hS hv <| by
-      simpa only [hSw, hvF] using hsum.hasSum.tendsto_sum_nat
-    have hpart : ∀ᵐ x ∂volume, ∀ N, S N x = ∑ n ∈ Finset.range N, a n * u x ^ (n + 1) := by
-      have hterm : ∀ᵐ x ∂volume, ∀ n, (a n • p n : Lp ℂ 2 (volume : Measure E)) x =
-          a n * u x ^ (n + 1) :=
-        ae_all_iff.2 fun n ↦ by
-          filter_upwards [Lp.coeFn_smul (a n) (p n), hpu n] with x h h'
-          rw [h, Pi.smul_apply, h', smul_eq_mul]
-      refine ae_all_iff.2 fun N ↦ ?_
-      filter_upwards [Lp.coeFn_finsetSum (Finset.range N) fun n ↦ a n • p n, hterm] with x h h'
-      simp only [S, h, Finset.sum_apply, h']
+      simpa only [MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul hp, hvF] using
+        hsum.hasSum.tendsto_sum_nat
+    have hpart : ∀ᵐ x ∂volume, ∀ N, S N x = ∑ n ∈ Finset.range N, a n * u x ^ (n + 1) :=
+      ae_all_iff.2 fun N ↦ by
+        filter_upwards [(Lp.coeFn_finsetSum _ _).trans <| eventuallyEq_sum fun n _ ↦
+          (Lp.coeFn_smul (a n) (p n)).trans ((hpu n).const_smul (a n))] with x h
+        simpa [S] using h
     filter_upwards [hlim, hpart, hsup hu] with x hx hSx hux
     -- The pointwise series is dominated by `C R` times the majorant series.
     have hbound (n : ℕ) : ‖a n * u x ^ (n + 1)‖ ≤ C * R * (‖a n‖ * (C * R) ^ n) := by

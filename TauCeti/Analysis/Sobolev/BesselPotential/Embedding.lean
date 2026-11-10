@@ -68,7 +68,7 @@ spaces.
 * `TemperedDistribution.exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace`: the bound
   `|u(x)| ≤ C ‖u‖_{H^s}`, `2s > n`, almost everywhere.
 * `TemperedDistribution.ae_tendsto_of_tendsto_toBesselPotentialSpace`: convergence in `H^s`,
-  `2s > n`, implies uniform convergence almost everywhere.
+  `2s > n`, implies convergence almost everywhere.
 * `TemperedDistribution.tendsto_cocompact_of_mem_realSobolevFunctions`: a continuous real
   function in `H^s`, `2s > n`, tends to zero at infinity.
 * `TauCeti.Wkp.toZeroAtInfty`: the Sobolev embedding `W^{k,2}(ℝⁿ) →L[ℝ] C₀(ℝⁿ)` for `2k > n`.
@@ -197,8 +197,7 @@ theorem exists_forall_ae_norm_le_mul_norm_toBesselPotentialSpace {s : ℝ}
 
 /-- **Convergence in `H^s` implies convergence almost everywhere, `s > n / 2`.** If `L²`
 functions `u n ∈ H^s` converge in `H^s` to an `L²` function `v ∈ H^s`, then `u n x → v x` for
-almost every `x`. The convergence is uniform off a null set, by the bound
-`|u n x - v x| ≤ C ‖u n - v‖_{H^s}` of the Sobolev embedding. -/
+almost every `x`. -/
 theorem ae_tendsto_of_tendsto_toBesselPotentialSpace {s : ℝ} (hs : finrank ℝ E < 2 * s)
     {u : ℕ → Lp F 2 (volume : Measure E)} {v : Lp F 2 (volume : Measure E)}
     (hu : ∀ n, MemSobolev s 2 (u n : 𝓢'(E, F))) (hv : MemSobolev s 2 (v : 𝓢'(E, F)))

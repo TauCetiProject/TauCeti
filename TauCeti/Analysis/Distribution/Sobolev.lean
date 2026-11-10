@@ -44,6 +44,8 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_smul`,
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_sum`: the element of `H^{s,p}` defined
   by a tempered distribution in `H^{s,p}` depends linearly on it.
+* `TemperedDistribution.MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul`: the
+  same for a finite linear combination of `Lᵠ` functions in `H^{s,p}`.
 * `TemperedDistribution.sobolevSubmodule`: `H^{s,p}` as a complex submodule of tempered
   distributions.
 * `TemperedDistribution.realSobolevSubmodule`: the real `Lᵖ` functions whose complexification
@@ -168,6 +170,21 @@ theorem MemSobolev.toBesselPotentialSpace_sum {ι : Type*} {t : Finset ι} {s : 
     | cons i t hi ih =>
       rw [Finset.sum_cons, Finset.sum_cons, BesselPotentialSpace.toDistr_add, ← ih,
         MemSobolev.toBesselPotentialSpace_toDistr]
+
+/-- The element of `H^{s,p}` defined by a finite linear combination of `Lᵠ` functions in
+`H^{s,p}` is the same linear combination of the elements defined by these functions. -/
+theorem MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul {ι : Type*}
+    {t : Finset ι} {s : ℝ} {p q : ENNReal} [Fact (1 ≤ p)] [Fact (1 ≤ q)] {μ : Measure E}
+    [μ.HasTemperateGrowth] {a : ι → ℂ} {f : ι → Lp F q μ}
+    (hf : ∀ i, MemSobolev s p (f i : 𝓢'(E, F)))
+    (h : MemSobolev s p ((∑ i ∈ t, a i • f i : Lp F q μ) : 𝓢'(E, F))) :
+    h.toBesselPotentialSpace = ∑ i ∈ t, a i • (hf i).toBesselPotentialSpace :=
+  calc h.toBesselPotentialSpace
+      = (MemSobolev.sum fun i (_ : i ∈ t) ↦ (hf i).smul (a i)).toBesselPotentialSpace :=
+        BesselPotentialSpace.ext (by simp)
+    _ = ∑ i ∈ t, a i • (hf i).toBesselPotentialSpace := by
+        rw [MemSobolev.toBesselPotentialSpace_sum fun i ↦ (hf i).smul (a i)]
+        exact Finset.sum_congr rfl fun i _ ↦ (hf i).toBesselPotentialSpace_smul (a i)
 
 /-- An `Lᵖ` function that agrees almost everywhere with a smooth compactly supported function lies
 in every Bessel-potential space `H^{s,p}`. -/
