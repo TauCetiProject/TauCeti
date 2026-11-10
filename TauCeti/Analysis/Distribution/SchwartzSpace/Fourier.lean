@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.FourierMultiplier
 public import Mathlib.Analysis.Fourier.LpSpace
+import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
@@ -40,6 +41,11 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
 `y ↦ exp(i ⟪y, ξ⟫) φ(ε y) v` is a Schwartz function whose Fourier transform
 `|ε|⁻ⁿ 𝓕 φ (ε⁻¹ (ζ - ξ / 2π)) v` concentrates at the frequency `ξ / 2π` as `ε → 0`.
 
+If a Schwartz function `χ` equals `1` near `0`, the moments of positive order of its Fourier
+transform vanish, since they are the derivatives at `0` of `𝓕 (𝓕 χ) = χ (-·)`. Convolving with
+`𝓕 χ` therefore reproduces Taylor polynomials, which is how a cutoff of a kernel near the diagonal
+changes a symbol only by a smoothing remainder.
+
 ## Main declarations
 
 * `SchwartzMap.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
@@ -65,6 +71,10 @@ For a Schwartz function `φ` and a nonzero `ε`, the *cut-off exponential*
   second derivatives along an orthonormal basis sum to the squared `L²` norm of the Laplacian.
 * `SchwartzMap.cutoffExponential`: the cut-off exponential `y ↦ exp(i ⟪y, ξ⟫) φ(ε y) v`.
 * `SchwartzMap.fourier_cutoffExponential`: its Fourier transform.
+* `SchwartzMap.integral_fourier_eq_apply_zero`, `SchwartzMap.fourier_fourier_apply`: the integral
+  of `𝓕 f` is `f 0`, and `𝓕 (𝓕 f) = f (-·)`.
+* `SchwartzMap.integral_fourier_smul_apply_eq_zero`: if `χ = 1` near `0`, every moment of positive
+  order of `𝓕 χ` vanishes, `∫ 𝓕 χ (v) M (v, …, v) dv = 0`.
 
 ## References
 
@@ -76,6 +86,7 @@ public section
 
 open scoped FourierTransform SchwartzMap RealInnerProductSpace Real Laplacian LineDeriv
 open FourierTransform MeasureTheory
+open scoped Topology
 
 namespace SchwartzMap
 
@@ -264,6 +275,103 @@ theorem fourier_cutoffExponential [CompleteSpace F] (φ : 𝓢(E, ℂ)) {ε : �
     TauCeti.fourier_comp_smul (fun z ↦ φ z • v), TauCeti.fourier_smul_const, fourier_coe]
 
 end CutoffExponential
+
+section Moment
+
+/-! ### Moments of the Fourier transform -/
+
+variable [NormedSpace ℂ F] [CompleteSpace F]
+
+/-- The integral of the Fourier transform of a Schwartz function is its value at `0`. -/
+theorem integral_fourier_eq_apply_zero (f : 𝓢(E, F)) : ∫ v, 𝓕 (f : E → F) v = f 0 := by
+  have h : (𝓕⁻ (𝓕 f : 𝓢(E, F)) : 𝓢(E, F)) 0 = f 0 := by
+    rw [FourierTransform.fourierInv_fourier_eq]
+  rw [fourierInv_coe, fourier_coe, Real.fourierInv_eq] at h
+  simpa using h
+
+/-- The Fourier transform of the Fourier transform of a Schwartz function is its reflection. -/
+theorem fourier_fourier_apply (f : 𝓢(E, F)) (w : E) : 𝓕 (𝓕 (f : E → F)) w = f (-w) := by
+  have h := Real.fourierInv_eq_fourier_neg (𝓕 (f : E → F)) (-w)
+  rw [neg_neg] at h
+  rw [← h]
+  have h' : (𝓕⁻ (𝓕 f : 𝓢(E, F)) : 𝓢(E, F)) (-w) = f (-w) := by
+    rw [FourierTransform.fourierInv_fourier_eq]
+  rwa [fourierInv_coe, fourier_coe] at h'
+
+/-- **Vanishing moments**, in coordinates. If a Schwartz function `χ` equals `1` near `0`, then
+`∫ ⟪v, m₁⟫ ⋯ ⟪v, mₖ⟫ 𝓕 χ (v) dv = 0` for every `k ≠ 0`: the `k`-th derivative at `0` of
+`𝓕 (𝓕 χ) = χ (-·)` vanishes. -/
+theorem integral_prod_inner_smul_fourier_eq_zero (χ : 𝓢(E, ℂ))
+    (hχ : (χ : E → ℂ) =ᶠ[𝓝 0] 1) {k : ℕ} (hk : k ≠ 0) (m : Fin k → E) :
+    ∫ v, (∏ i, ⟪v, m i⟫) • 𝓕 (χ : E → ℂ) v = 0 := by
+  have hD := Real.iteratedFDeriv_fourier (f := 𝓕 (χ : E → ℂ)) (N := k)
+    (fun n _ ↦ (𝓕 χ).integrable_pow_mul volume n) (𝓕 χ).continuous.aestronglyMeasurable
+    (n := k) le_rfl
+  have hev : 𝓕 (𝓕 (χ : E → ℂ)) =ᶠ[𝓝 0] fun _ ↦ (1 : ℂ) := by
+    have ht : Filter.Tendsto (fun w : E ↦ -w) (𝓝 0) (𝓝 0) := by
+      simpa using (continuous_neg.tendsto (0 : E))
+    filter_upwards [ht.eventually hχ] with w hw
+    rw [fourier_fourier_apply]
+    simpa using hw
+  have hzero : iteratedFDeriv ℝ k (𝓕 (𝓕 (χ : E → ℂ))) 0 m = 0 := by
+    rw [(hev.iteratedFDeriv ℝ k).eq_of_nhds, iteratedFDeriv_const_of_ne hk]
+    rfl
+  have hint : Integrable fun v ↦
+      VectorFourier.fourierPowSMulRight (innerSL ℝ) (𝓕 (χ : E → ℂ)) v k :=
+    VectorFourier.integrable_fourierPowSMulRight _ ((𝓕 χ).integrable_pow_mul volume k)
+      (𝓕 χ).continuous.aestronglyMeasurable
+  rw [hD, Real.fourier_eq] at hzero
+  simp only [inner_zero_right, neg_zero, AddChar.map_zero_eq_one, one_smul] at hzero
+  rw [ContinuousMultilinearMap.integral_apply hint] at hzero
+  simp only [VectorFourier.fourierPowSMulRight_apply] at hzero
+  rw [integral_smul] at hzero
+  exact (smul_eq_zero.1 hzero).resolve_left (pow_ne_zero _ (by simp [Real.pi_ne_zero]))
+
+/-- **Vanishing moments.** If a Schwartz function `χ` equals `1` near `0`, then every moment of
+positive order of its Fourier transform vanishes: `∫ 𝓕 χ (v) M (v, …, v) dv = 0` for every
+continuous multilinear map `M` of positive arity. -/
+theorem integral_fourier_smul_apply_eq_zero (χ : 𝓢(E, ℂ)) (hχ : (χ : E → ℂ) =ᶠ[𝓝 0] 1)
+    {k : ℕ} (hk : k ≠ 0) (M : ContinuousMultilinearMap ℝ (fun _ : Fin k ↦ E) F) :
+    ∫ v, 𝓕 (χ : E → ℂ) v • M (fun _ ↦ v) = 0 := by
+  classical
+  set b := stdOrthonormalBasis ℝ E
+  -- Expand `M (v, …, v)` in the coordinates of `v` in an orthonormal basis.
+  have hM (v : E) : M (fun _ ↦ v) = ∑ r : Fin k → Fin (Module.finrank ℝ E),
+      (∏ i, ⟪v, b (r i)⟫) • M (fun i ↦ b (r i)) := by
+    have hv : (fun _ : Fin k ↦ v) = fun _ ↦ ∑ j, ⟪b j, v⟫ • b j :=
+      funext fun _ ↦ (b.sum_repr' v).symm
+    rw [hv, M.map_sum]
+    refine Finset.sum_congr rfl fun r _ ↦ ?_
+    rw [M.map_smul_univ]
+    simp [real_inner_comm]
+  have hterm (r : Fin k → Fin (Module.finrank ℝ E)) : Integrable fun v ↦
+      ((∏ i, ⟪v, b (r i)⟫) • 𝓕 (χ : E → ℂ) v) • M (fun i ↦ b (r i)) := by
+    refine Integrable.smul_const ?_ _
+    have hc : Continuous (𝓕 (χ : E → ℂ)) := (𝓕 χ).continuous
+    refine ((𝓕 χ).integrable_pow_mul volume k).mono'
+      (by fun_prop : Continuous fun v ↦ (∏ i, ⟪v, b (r i)⟫) • 𝓕 (χ : E → ℂ) v).aestronglyMeasurable
+      (.of_forall fun v ↦ ?_)
+    rw [norm_smul, norm_prod]
+    gcongr
+    · calc ∏ i, ‖⟪v, b (r i)⟫‖ ≤ ∏ _i : Fin k, ‖v‖ := by
+            gcongr with i
+            simpa [b.orthonormal.1 (r i)] using abs_real_inner_le_norm v (b (r i))
+        _ = ‖v‖ ^ k := by simp
+    · rfl
+  calc ∫ v, 𝓕 (χ : E → ℂ) v • M (fun _ ↦ v)
+      = ∫ v, ∑ r : Fin k → Fin (Module.finrank ℝ E),
+          ((∏ i, ⟪v, b (r i)⟫) • 𝓕 (χ : E → ℂ) v) • M (fun i ↦ b (r i)) := by
+        congr 1 with v
+        rw [hM, Finset.smul_sum]
+        exact Finset.sum_congr rfl fun r _ ↦ by rw [smul_assoc, smul_comm]
+    _ = ∑ r : Fin k → Fin (Module.finrank ℝ E),
+          (∫ v, (∏ i, ⟪v, b (r i)⟫) • 𝓕 (χ : E → ℂ) v) • M (fun i ↦ b (r i)) := by
+        rw [integral_finsetSum _ fun r _ ↦ hterm r]
+        exact Finset.sum_congr rfl fun r _ ↦ integral_smul_const _ _
+    _ = 0 := Finset.sum_eq_zero fun r _ ↦ by
+        rw [integral_prod_inner_smul_fourier_eq_zero χ hχ hk, zero_smul]
+
+end Moment
 
 variable [InnerProductSpace ℂ F] [CompleteSpace F]
 

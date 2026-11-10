@@ -53,6 +53,7 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `⟨x + y⟩ ^ s ≤ 2 ^ s (⟨x⟩ ^ s + ⟨y⟩ ^ s)` for `s ≥ 0`, which splits the weight of a convolution
   between its two factors.
 * `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_pow`: `⟨x⟩ ^ N ≤ (1 + ‖x‖) ^ N` for natural `N`.
+* `TauCeti.norm_pow_le_one_add_norm_sq_rpow`: conversely `‖x‖ ^ N ≤ ⟨x⟩ ^ N`.
 * `TauCeti.one_add_norm_sq_rpow_le_one_add_norm_rpow`: the bracket is at most the
   inhomogeneous norm, `⟨x⟩ ^ r ≤ (1 + ‖x‖) ^ r` for `r ≥ 0`.
 * `TauCeti.one_add_norm_sq_rpow_le_two_pow_mul_one_add_norm_pow`: the comparison
@@ -247,6 +248,16 @@ theorem one_add_norm_sq_rpow_le_one_add_norm_pow (x : E) (N : ℕ) :
     _ = (1 + ‖x‖) ^ N := by
         rw [← Real.rpow_natCast (1 + ‖x‖) 2, ← Real.rpow_mul (by positivity),
           ← Real.rpow_natCast]
+        ring_nf
+
+/-- A natural power of the norm is at most the same power of the Japanese bracket:
+`‖x‖ ^ N ≤ (1 + ‖x‖ ^ 2) ^ (N / 2)`. -/
+theorem norm_pow_le_one_add_norm_sq_rpow (x : E) (N : ℕ) :
+    ‖x‖ ^ N ≤ (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) :=
+  calc ‖x‖ ^ N ≤ √(1 + ‖x‖ ^ 2) ^ N :=
+        pow_le_pow_left₀ (norm_nonneg _) (Real.le_sqrt_of_sq_le (by linarith)) _
+    _ = (1 + ‖x‖ ^ 2) ^ ((N : ℝ) / 2) := by
+        rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast, ← Real.rpow_mul (by positivity)]
         ring_nf
 
 /-- The Japanese bracket is at most the inhomogeneous norm: for `r ≥ 0`,

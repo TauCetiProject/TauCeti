@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Taylor
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
+import Mathlib.Analysis.Calculus.TaylorIntegral
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.ZPow
 import Mathlib.Analysis.Calculus.MeanValue
@@ -53,6 +54,8 @@ function divided by its parameter is completely monotone.
   `(-1)ⁿ f⁽ⁿ⁺¹⁾ ≥ 0` on `(x, y)`, then `f x` is at most the Taylor polynomial of order `n` at `y`,
   evaluated at `x`.
 * `TauCeti.iteratedDeriv_div_id`: the formula for the `n`-th derivative of `t ↦ f t / t`.
+* `TauCeti.norm_sub_sum_iteratedFDeriv_le`: Taylor's theorem with a bound on the remainder for a
+  function on a normed space, along a segment, from a bound on the next Fréchet derivative.
 -/
 
 public section
@@ -203,5 +206,40 @@ theorem iteratedDeriv_div_id {f : ℝ → ℝ} {s : Set ℝ} {n : ℕ} {t : ℝ}
     pow_add (-1 : ℝ) k m]
   field_simp
   simp [pow_right_comm _ k 2]
+
+
+/-! ### Taylor's theorem along a segment -/
+
+section Segment
+
+variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup G]
+  [NormedSpace ℝ G] [CompleteSpace G]
+
+/-- **Taylor's theorem along a segment**, with a bound on the remainder. If the `(N + 1)`-st
+derivative of `h` is bounded by `B` on the segment from `ξ` to `ξ + v`, then `h (ξ + v)` differs
+from the Taylor polynomial `∑_{k ≤ N} D^k h(ξ) (v, …, v) / k!` by at most
+`B ‖v‖ ^ (N + 1) / N!`. This bounds the integral remainder of Mathlib's
+`map_add_eq_sum_add_integral_iteratedFDeriv`. -/
+theorem norm_sub_sum_iteratedFDeriv_le {h : E → G} {N : ℕ} (hh : ContDiff ℝ (N + 1) h)
+    (ξ v : E) {B : ℝ}
+    (hB : ∀ s ∈ Icc (0 : ℝ) 1, ‖iteratedFDeriv ℝ (N + 1) h (ξ + s • v)‖ ≤ B) :
+    ‖h (ξ + v) - ∑ k ∈ Finset.range (N + 1), (k ! : ℝ)⁻¹ • iteratedFDeriv ℝ k h ξ (fun _ ↦ v)‖ ≤
+      B * ‖v‖ ^ (N + 1) / N ! := by
+  rw [map_add_eq_sum_add_integral_iteratedFDeriv fun t _ ↦ hh.contDiffAt, add_sub_cancel_left,
+    norm_smul, norm_inv, RCLike.norm_natCast, inv_mul_eq_div]
+  gcongr
+  refine (intervalIntegral.norm_integral_le_of_norm_le_const fun t ht ↦ ?_).trans_eq
+    (by rw [sub_zero, abs_one, mul_one])
+  rw [uIoc_of_le zero_le_one] at ht
+  have ht' : t ∈ Icc (0 : ℝ) 1 := Ioc_subset_Icc_self ht
+  rw [norm_smul, norm_pow, Real.norm_eq_abs, abs_of_nonneg (by linarith [ht'.2])]
+  refine (mul_le_of_le_one_left (norm_nonneg _) (pow_le_one₀ (by linarith [ht'.2])
+    (by linarith [ht'.1]))).trans ?_
+  refine ((iteratedFDeriv ℝ (N + 1) h (ξ + t • v)).le_opNorm _).trans ?_
+  rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+  gcongr
+  exact hB t ht'
+
+end Segment
 
 end TauCeti
