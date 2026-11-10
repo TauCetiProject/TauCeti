@@ -27,7 +27,7 @@ The underlying function is Mathlib's `tangentMap`; no parallel tangent-map API i
 * `Diffeomorph.tangent_refl`: the tangent lift of the identity is the identity.
 * `Diffeomorph.tangent_trans`: taking a tangent lift commutes with composition.
 * `Diffeomorph.tangent_curveVelocityLift`: tangent lifts carry the velocity lift of a
-  differentiable curve to the velocity lift of its image.
+  curve to the velocity lift of its image.
 -/
 
 public section
@@ -103,15 +103,30 @@ theorem tangent_trans (h : M ≃ₘ⟮I, J⟯ N) (g : N ≃ₘ⟮J, K⟯ P) :
     tangentMap_comp_at z ((g.mdifferentiable (by simp)) (h z.1))
       ((h.mdifferentiable (by simp)) z.1)
 
-/-- A tangent lift carries the velocity lift of a differentiable curve to the velocity lift of
-the image curve. This is the bundled tangent-map form of the chain rule. -/
-theorem tangent_curveVelocityLift (h : M ≃ₘ⟮I, J⟯ N) {γ : 𝕜 → M} {t : 𝕜}
-    (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t) :
+/-- A tangent lift carries the velocity lift of a curve to the velocity lift of the image curve.
+This is the bundled tangent-map form of the chain rule. -/
+theorem tangent_curveVelocityLift (h : M ≃ₘ⟮I, J⟯ N) {γ : 𝕜 → M} {t : 𝕜} :
     h.tangent (TauCeti.Manifold.curveVelocityLift I γ t) =
       TauCeti.Manifold.curveVelocityLift J (h ∘ γ) t := by
   rw [coe_tangent]
-  exact TauCeti.Manifold.tangentMap_curveVelocityLift
-    ((h.mdifferentiable (by simp)) (γ t)) hγ
+  by_cases hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t
+  · exact TauCeti.Manifold.tangentMap_curveVelocityLift
+      ((h.mdifferentiable (by simp)) (γ t)) hγ
+  · -- Neither curve is differentiable at `t`, so both velocities vanish.
+    have hhγ : ¬MDifferentiableAt 𝓘(𝕜, 𝕜) J (h ∘ γ) t := fun hd ↦ hγ <| by
+      simpa [Function.comp_def] using
+        ((h.symm.mdifferentiable (by simp)) (h (γ t))).comp t hd
+    have h₁ : TauCeti.Manifold.curveVelocityLift I γ t = TotalSpace.mk' E (γ t) 0 := by
+      rw [TauCeti.Manifold.curveVelocityLift_apply, TauCeti.Manifold.curveVelocity_apply,
+        mfderiv_zero_of_not_mdifferentiableAt hγ]
+      rfl
+    have h₂ : TauCeti.Manifold.curveVelocityLift J (h ∘ γ) t =
+        TotalSpace.mk' F (h (γ t)) 0 := by
+      rw [TauCeti.Manifold.curveVelocityLift_apply, TauCeti.Manifold.curveVelocity_apply,
+        mfderiv_zero_of_not_mdifferentiableAt hhγ]
+      rfl
+    rw [h₁, h₂]
+    exact congrArg (TotalSpace.mk' F (h (γ t))) (map_zero (mfderiv I J h (γ t)))
 
 end Diffeomorph
 
