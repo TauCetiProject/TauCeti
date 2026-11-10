@@ -37,6 +37,11 @@ apply to complex manifolds. Two properties tie it to the complex structure:
 
 ## Main declarations
 
+* `TauCeti.SmoothAlmostComplexStructure.ofTangentCoordChangeISMul`: multiplication by `i` on the
+  tangent spaces of a manifold modelled on a complex normed space, as a smooth almost complex
+  structure, when the tangent coordinate changes commute with multiplication by `i`. Both the
+  almost complex structure of a complex manifold and that of a Riemann surface with boundary are
+  built from it.
 * `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold`: the almost complex structure of a
   complex manifold.
 * `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold_apply`,
@@ -65,7 +70,86 @@ noncomputable section
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M]
+
+namespace SmoothAlmostComplexStructure
+
+variable {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
+  (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+
+/-- In the tangent coordinates of the chart at `x₀`, multiplication by `i` on the tangent spaces
+is multiplication by `i`, on the whole chart domain, when the tangent coordinate changes commute
+with multiplication by `i`. -/
+private theorem inTangentCoordinates_I_smul_id
+    (h : ∀ {x y z : M}, z ∈ (chartAt H x).source ∩ (chartAt H y).source → ∀ v : E,
+      tangentCoordChange I x y z (Complex.I • v) = Complex.I • tangentCoordChange I x y z v)
+    {x₀ x : M} (hx : x ∈ (chartAt H x₀).source) :
+    inTangentCoordinates I I id id
+        (fun x : M ↦ (Complex.I • ContinuousLinearMap.id ℝ E :
+          TangentSpace I x →L[ℝ] TangentSpace I x)) x₀ x =
+      Complex.I • ContinuousLinearMap.id ℝ E := by
+  refine (inTangentCoordinates_eq (I := I) (I' := I) id id _ hx hx).trans
+    (ContinuousLinearMap.ext fun v ↦ ?_)
+  have hx' : x ∈ (extChartAt I x₀).source ∩ (extChartAt I x).source ∩
+      (extChartAt I x₀).source := by
+    simp [hx]
+  simp only [ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply]
+  exact (h ⟨mem_chart_source H x, hx⟩ _).trans
+    (congrArg (Complex.I • ·)
+      ((tangentCoordChange_comp hx').trans (tangentCoordChange_self (by simp [hx]))))
+
+/-- Multiplication by `i` on the tangent spaces of a manifold `M` modelled on a complex normed
+space `E`, as a smooth almost complex structure, when the tangent coordinate changes of `M`
+commute with multiplication by `i`. -/
+def ofTangentCoordChangeISMul
+    (h : ∀ {x y z : M}, z ∈ (chartAt H x).source ∩ (chartAt H y).source → ∀ v : E,
+      tangentCoordChange I x y z (Complex.I • v) = Complex.I • tangentCoordChange I x y z v) :
+    SmoothAlmostComplexStructure I M where
+  toEndomorphism :=
+    ⟨fun _ ↦ Complex.I • ContinuousLinearMap.id ℝ E, fun x₀ ↦ by
+      -- In the tangent coordinates at `x₀`, the section is constantly multiplication by `I` near
+      -- `x₀`, since the tangent coordinate changes commute with multiplication by `I`.
+      rw [contMDiffAt_hom_bundle]
+      refine ⟨contMDiffAt_id, (contMDiffAt_const (c := Complex.I • ContinuousLinearMap.id ℝ E))
+        |>.congr_of_eventuallyEq ?_⟩
+      filter_upwards [(chartAt H x₀).open_source.mem_nhds (mem_chart_source H x₀)] with x hx
+      exact inTangentCoordinates_I_smul_id I M h hx⟩
+  square_neg x := ContinuousLinearMap.ext fun v ↦ by
+    simp only [ContinuousLinearMap.comp_apply]
+    -- The tangent space at `x` is the model space `E`, where `I • I • w = -w`.
+    have h (w : E) : Complex.I • Complex.I • w = -w := by
+      rw [smul_smul, Complex.I_mul_I, neg_one_smul]
+    exact h v
+
+variable {I M}
+variable (h : ∀ {x y z : M}, z ∈ (chartAt H x).source ∩ (chartAt H y).source → ∀ v : E,
+  tangentCoordChange I x y z (Complex.I • v) = Complex.I • tangentCoordChange I x y z v)
+
+/-- The almost complex structure `ofTangentCoordChangeISMul` is multiplication by `i` on every
+tangent space. -/
+@[simp]
+theorem ofTangentCoordChangeISMul_apply (x : M) (v : E) :
+    ofTangentCoordChangeISMul I M h x v = Complex.I • v :=
+  (rfl)
+
+/-- The almost complex structure `ofTangentCoordChangeISMul` is multiplication by `i` on every
+tangent space, as an endomorphism. -/
+theorem toEndomorphism_ofTangentCoordChangeISMul (x : M) :
+    (ofTangentCoordChangeISMul I M h).toEndomorphism x =
+      (Complex.I • ContinuousLinearMap.id ℝ E : TangentSpace I x →L[ℝ] TangentSpace I x) :=
+  ContinuousLinearMap.ext fun v ↦ ofTangentCoordChangeISMul_apply h x v
+
+/-- In the tangent coordinates of the chart at any point `x₀`, the almost complex structure
+`ofTangentCoordChangeISMul` is multiplication by `i` on the whole chart domain. -/
+theorem inTangentCoordinates_ofTangentCoordChangeISMul {x₀ x : M}
+    (hx : x ∈ (chartAt H x₀).source) :
+    inTangentCoordinates I I id id
+        (fun x ↦ (ofTangentCoordChangeISMul I M h).toEndomorphism x) x₀ x =
+      Complex.I • ContinuousLinearMap.id ℝ E :=
+  inTangentCoordinates_I_smul_id I M h hx
+
+end SmoothAlmostComplexStructure
+
+variable {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M]
 
 namespace SmoothAlmostComplexStructure
 
@@ -73,32 +157,9 @@ variable (E M) in
 /-- The almost complex structure of a complex manifold `M` modelled on `𝓘(ℂ, E)`, as a smooth
 almost complex structure of the underlying real manifold modelled on `𝓘(ℝ, E)`: on every tangent
 space, which is `E`, it is multiplication by `i` (`ofComplexManifold_apply`). -/
-def ofComplexManifold : SmoothAlmostComplexStructure 𝓘(ℝ, E) M where
-  toEndomorphism :=
-    ⟨fun _ ↦ Complex.I • ContinuousLinearMap.id ℝ E, fun x₀ ↦ by
-      -- In the tangent coordinates at `x₀`, the section is constantly multiplication by `I` near
-      -- `x₀`, since the real coordinate changes are complex linear.
-      rw [contMDiffAt_hom_bundle]
-      refine ⟨contMDiffAt_id, (contMDiffAt_const (c := Complex.I • ContinuousLinearMap.id ℝ E))
-        |>.congr_of_eventuallyEq ?_⟩
-      filter_upwards [(chartAt E x₀).open_source.mem_nhds (mem_chart_source E x₀)] with x hx
-      refine (inTangentCoordinates_eq (I := 𝓘(ℝ, E)) (I' := 𝓘(ℝ, E)) id id
-        (fun x : M ↦ (Complex.I • ContinuousLinearMap.id ℝ E :
-          TangentSpace 𝓘(ℝ, E) x →L[ℝ] TangentSpace 𝓘(ℝ, E) x)) hx hx).trans
-        (ContinuousLinearMap.ext fun v ↦ ?_)
-      have hx' : x ∈ (extChartAt 𝓘(ℝ, E) x₀).source ∩ (extChartAt 𝓘(ℝ, E) x).source ∩
-          (extChartAt 𝓘(ℝ, E) x₀).source := by
-        simp [hx]
-      simp only [ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply]
-      exact (tangentCoordChange_smul ℝ (𝕜' := ℂ) ⟨mem_chart_source E x, hx⟩ _ _).trans
-        (congrArg (Complex.I • ·)
-          ((tangentCoordChange_comp hx').trans (tangentCoordChange_self (by simp [hx]))))⟩
-  square_neg x := ContinuousLinearMap.ext fun v ↦ by
-    simp only [ContinuousLinearMap.comp_apply]
-    -- The tangent space at `x` is the model space `E`, where `I • I • w = -w`.
-    have h (w : E) : Complex.I • Complex.I • w = -w := by
-      rw [smul_smul, Complex.I_mul_I, neg_one_smul]
-    exact h v
+def ofComplexManifold : SmoothAlmostComplexStructure 𝓘(ℝ, E) M :=
+  -- The real tangent coordinate changes are complex linear.
+  ofTangentCoordChangeISMul 𝓘(ℝ, E) M fun h v ↦ tangentCoordChange_smul ℝ (𝕜' := ℂ) h _ v
 
 /-- The almost complex structure of a complex manifold is multiplication by `i` on every tangent
 space. -/
