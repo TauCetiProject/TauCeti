@@ -146,7 +146,7 @@ theorem range_eq_unitsPrincipal_of_hasPrescriptionProperty_demushkinWordNeTwo (h
     hχ]
   subst hq
   push_cast at h₁
-  exact topologicalClosure_zpowers_eq_unitsPrincipal_of_val_mul_one_sub_pow_eq_one hf hf₂ h₁
+  exact topologicalClosure_zpowers_eq_unitsPrincipal_of_val_mul_one_sub_pow_eq_one hf₂ h₁
 
 /-- **The image of the canonical character of the `q = 0` normal form is trivial**, for `n ≥ 2`
 even: the relator `(x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)` has no `p`-power part, and any character with
