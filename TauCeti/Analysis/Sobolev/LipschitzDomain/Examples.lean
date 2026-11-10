@@ -182,10 +182,6 @@ theorem isLipschitzChartWith_openUnitSquare_of (c : WithLp 2 (ℝ × ℝ)) {α �
   rw [mem_normalCylinder, Real.norm_eq_abs] at hz
   simpa [openUnitSquare] using hmem z.fst z.snd (abs_lt.2 ⟨hz.1, hz.2.1⟩) hz.2.2
 
-/-- The square of `(√2)⁻¹` is `1 / 2`. -/
-private theorem inv_sqrt_two_sq : ((√2)⁻¹ : ℝ) ^ 2 = 1 / 2 := by
-  rw [inv_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2), one_div]
-
 /-- `(√2)⁻¹` lies in `(1 / 2, 1)`. -/
 private theorem inv_sqrt_two_mem : ((√2)⁻¹ : ℝ) ∈ Ioo (1 / 2) 1 := by
   have h1 : (1 : ℝ) < √2 := by
@@ -214,7 +210,7 @@ private theorem corner_iff {u v : ℝ} (hu : |u| < 1 / 2) (hv : |v| < 1 / 2) :
 
 /-- The vector `((√2)⁻¹, (√2)⁻¹)` has unit length. -/
 theorem inv_sqrt_two_sq_add_inv_sqrt_two_sq : ((√2)⁻¹ : ℝ) ^ 2 + ((√2)⁻¹ : ℝ) ^ 2 = 1 := by
-  rw [inv_sqrt_two_sq]; norm_num
+  rw [inv_pow, Real.sq_sqrt (by norm_num : (0 : ℝ) ≤ 2)]; norm_num
 
 /-- The rotation by `π / 4` centred at the corner `0` is a chart of the open unit square with
 graph `|s|` and constant `1`. -/
