@@ -32,7 +32,8 @@ homology of `S_V` is the first step of their Proposition 6.21. The two propertie
 circles are those asked of `c`, which is what the composite `Σ_p → Ω_p E → Ω_p Ω_p Sⁿ` of
 Example 6.20 needs: there `c` is itself a family of circles, in a sphere of one dimension less.
 For a sphere of dimension `k + 1`, the cube collapse `TauCeti.cubeToSphere` onto the equator
-`TauCeti.sphereEquator u` meets the hypotheses on `c` (`TauCeti.exists_genLoop_sphereEquator`).
+`TauCeti.sphereEquator u` meets the hypotheses on `c` (`TauCeti.exists_genLoop_sphereEquator`, in
+`TauCeti.AlgebraicTopology.Sphere.Equator`).
 
 ## Main declarations
 
@@ -181,40 +182,6 @@ theorem surjective_tangentCircleGenLoop (hu : ‖u‖ = 1) (c : Ω^ (Fin k) (sph
   refine ⟨Fin.cons t y, Subtype.ext ?_⟩
   rw [coe_tangentCircleGenLoop_apply, Fin.tail_cons, Fin.cons_zero, hy, ← hθ]
   rw [tangentCircle_def, tangentCircle_def, hc, hs]
-
-/-! ### The standard collapse onto the equator -/
-
-/-- **The equator is a sphere collapsed from a cube.** If `V` has dimension `k + 2`, then for every
-point `p₀` of the equator orthogonal to the nonzero vector `u` there is a generalized loop of the
-equator at `p₀`, out of the cube `I^k`, that covers the equator off `p₀` and identifies only
-points of the boundary of the cube: the collapse `TauCeti.cubeToSphere` of the cube onto the unit
-sphere of `ℝᵏ⁺¹`, followed by a linear isometry of `ℝᵏ⁺¹` onto `u⊥` sending the north pole to
-`p₀`. So the hypotheses of `TauCeti.isIso_hurewicz_tangentCircleGenLoop` can be met. -/
-theorem exists_genLoop_sphereEquator (hu : u ≠ 0)
-    (hV : Module.finrank ℝ V = k + 2) (p₀ : sphereEquator u) :
-    ∃ c : Ω^ (Fin k) (sphereEquator u) p₀, (∀ q, q ≠ p₀ → ∃ y, c y = q) ∧
-      ∀ y z, c y = c z → y = z ∨ y ∈ Cube.boundary (Fin k) ∧ z ∈ Cube.boundary (Fin k) := by
-  have : Fact (Module.finrank ℝ V = (k + 1) + 1) := ⟨hV⟩
-  let e₀ : EuclideanSpace ℝ (Fin (k + 1)) ≃ₗᵢ[ℝ] (ℝ ∙ u)ᗮ :=
-    (OrthonormalBasis.fromOrthogonalSpanSingleton (k + 1) hu).repr.symm
-  let P : (ℝ ∙ u)ᗮ :=
-    ⟨p₀.1.1, Submodule.mem_orthogonal_singleton_iff_inner_left.2 (mem_sphereEquator.1 p₀.2)⟩
-  obtain ⟨b, hb⟩ : ∃ b : EuclideanSpace ℝ (Fin (k + 1)), b = sphereNorthPole k := ⟨_, rfl⟩
-  have hab : ‖b‖ = ‖e₀.symm P‖ := by
-    rw [LinearIsometryEquiv.norm_map, hb]
-    simp [P, norm_eq_of_mem_sphere]
-  -- Rotate the north pole onto the preimage of `p₀` by a reflection.
-  let e := (ℝ ∙ (b - e₀.symm P))ᗮ.reflection.trans e₀
-  have he : sphereToEquator e (sphereNorthPole k) = p₀ := by
-    refine Subtype.ext (Subtype.ext ?_)
-    rw [coe_sphereToEquator, ← hb]
-    simp [e, Submodule.reflection_sub hab, P]
-  refine ⟨GenLoop.map (sphereToEquator e) he (sphereGenLoop k), fun q hq ↦ ?_, fun y z h ↦ ?_⟩
-  · obtain ⟨s, rfl⟩ := surjective_sphereToEquator e q
-    obtain ⟨y, hy⟩ := exists_cubeToSphere_eq_of_ne (s := s) fun hs ↦ hq (by rw [hs, he])
-    exact ⟨y, by rw [GenLoop.map_apply, sphereGenLoop_apply, hy]⟩
-  · rw [GenLoop.map_apply, GenLoop.map_apply, sphereGenLoop_apply, sphereGenLoop_apply] at h
-    exact cubeToSphere_eq_cubeToSphere_iff.1 (injective_sphereToEquator e h)
 
 end TauCeti
 
