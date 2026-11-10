@@ -38,6 +38,11 @@ C⋆-dynamical system. For a compact group with normalized Haar measure and scal
   `λ g` is `Lp.compMeasurePreserving (g⁻¹ * ·)`, represented by `x ↦ f (g⁻¹ * x)`.
 * `MeasureTheory.Measure.isUnitary_leftRegular`: the action on `L²(G, E)` is unitary.
 * `MeasureTheory.Measure.continuous_leftRegular_apply`: the action is strongly continuous.
+* `MeasureTheory.Measure.invariants_count_leftRegular`: for an infinite group, counting-measure
+  `Lᵖ`, `1 ≤ p < ∞`, has no nonzero invariant vector.
+
+For the counting-measure obstruction, see Bekka–de la Harpe–Valette,
+*Kazhdan's Property (T)*, Appendix G.5.
 -/
 
 public section
@@ -107,5 +112,28 @@ theorem continuous_leftRegular_apply [TopologicalSpace G] [IsTopologicalGroup G]
       ⟨fun q : G × G => q.1⁻¹ * q.2, continuous_fst.inv.mul continuous_snd⟩).continuous
   simp only [leftRegular_apply]
   exact continuous_const.compMeasurePreservingLp hg _ hp
+
+section Invariants
+
+/-- For counting measure on an infinite group, the vector-valued regular representation on
+`Lᵖ`, `1 ≤ p < ∞`, has only the zero invariant vector. -/
+@[simp]
+theorem invariants_count_leftRegular [Infinite G] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp' : p ≠ ∞) :
+    ((count : Measure G).leftRegular 𝕜 E p).invariants = ⊥ := by
+  have hp : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p)).ne'
+  apply le_antisymm _ bot_le
+  intro f hf
+  have hconst (x : G) : f x = f 1 := by
+    have hg := ae_count_iff.mp (coeFn_leftRegular (𝕜 := 𝕜) count p x f) x
+    rw [hf x] at hg
+    simpa using hg
+  have hc : MemLp (fun _ : G ↦ f 1) p count :=
+    (memLp_congr_ae (.of_forall hconst)).mp (Lp.memLp f)
+  have hz : f 1 = 0 := by
+    simpa [memLp_const_iff hp hp', count_apply_infinite Set.infinite_univ] using hc
+  exact Lp.ext (.of_forall fun x ↦ by simp [hconst x, hz])
+
+end Invariants
 
 end MeasureTheory.Measure
