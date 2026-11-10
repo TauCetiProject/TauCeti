@@ -393,11 +393,13 @@ theorem IsRadialGraph.mono {A B : Set E} (hA : IsRadialGraph A) (h : B ⊆ A) :
   intro u hu r₁ r₂ h₁ h₂ hr₁ hr₂
   exact hA u hu r₁ r₂ h₁ h₂ (h hr₁) (h hr₂)
 
-/-- A measurable set avoiding the origin with volume-null positive-ray slices is Haar-null. -/
+/-- A measurable set avoiding the origin with almost-everywhere volume-null positive-ray slices
+is Haar-null. -/
 theorem _root_.MeasureTheory.Measure.addHaar_eq_zero_of_ae_ray_notMem
     (μ : Measure E) [μ.IsAddHaarMeasure]
-    {A : Set E} (hAmeas : MeasurableSet A) (hA0 : (0 : E) ∉ A) (hslice : ∀ ω ∈ sphere (0 : E) 1,
-      volume {t : ℝ | 0 < t ∧ t • ω ∈ A} = 0) :
+    {A : Set E} (hAmeas : MeasurableSet A) (hA0 : (0 : E) ∉ A)
+    (hslice : ∀ᵐ ω : sphere (0 : E) 1 ∂μ.toSphere,
+      volume {t : ℝ | 0 < t ∧ t • (ω : E) ∈ A} = 0) :
     μ A = 0 := by
   classical
   by_cases hE : Subsingleton E
@@ -410,9 +412,10 @@ theorem _root_.MeasureTheory.Measure.addHaar_eq_zero_of_ae_ray_notMem
   rw [← lintegral_indicator_one hAmeas]
   rw [lintegral_eq_lintegral_toSphere_lintegral_Ioi (μ := μ)
     (f := A.indicator 1) (measurable_one.indicator hAmeas)]
-  refine lintegral_eq_zero_of_ae_eq_zero (Eventually.of_forall fun ω ↦ ?_)
   apply lintegral_eq_zero_of_ae_eq_zero
-  filter_upwards [ae_restrict_of_ae (measure_eq_zero_iff_ae_notMem.mp (hslice ω ω.2)),
+  filter_upwards [hslice] with ω hω
+  apply lintegral_eq_zero_of_ae_eq_zero
+  filter_upwards [ae_restrict_of_ae (measure_eq_zero_iff_ae_notMem.mp hω),
     ae_restrict_mem measurableSet_Ioi] with t ht htpos
   have hnot : t • (ω : E) ∉ A := fun h ↦ ht ⟨htpos, h⟩
   simp only [indicator_of_notMem hnot, mul_zero, Pi.zero_apply]
@@ -423,9 +426,10 @@ theorem _root_.MeasureTheory.Measure.addHaar_eq_zero_of_isRadialGraph
     {A : Set E} (hAmeas : MeasurableSet A) (hA0 : (0 : E) ∉ A) (hray : IsRadialGraph A) :
     μ A = 0 := by
   apply μ.addHaar_eq_zero_of_ae_ray_notMem hAmeas hA0
-  intro ω hω
-  have hslice : {t : ℝ | 0 < t ∧ t • ω ∈ A}.Subsingleton :=
-    fun s hs t ht ↦ hray ω hω s t hs.1 ht.1 hs.2 ht.2
+  apply Eventually.of_forall
+  intro ω
+  have hslice : {t : ℝ | 0 < t ∧ t • (ω : E) ∈ A}.Subsingleton :=
+    fun s hs t ht ↦ hray ω ω.2 s t hs.1 ht.1 hs.2 ht.2
   exact hslice.countable.measure_zero volume
 
 /-- An arbitrary Haar almost-everywhere predicate transports to the polar product measure; no
