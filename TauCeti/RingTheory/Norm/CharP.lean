@@ -74,22 +74,31 @@ end TauCeti
 
 namespace PowerBasis
 
-variable {k B : Type*} [Field k] [CommRing B] [Algebra k B] (pb : PowerBasis k B)
-variable {p : ℕ} [ExpChar k p] {a : k}
-
 /-- **The `p`-th power of an element in coordinates.** If `α ^ p = a` for the generator `α` of a
-power basis over a field of exponential characteristic `p`, then in `T ⊗[k] B` the `p`-th power of
-`∑ᵢ xᵢ ⊗ αⁱ` is the scalar `∑ᵢ aⁱ xᵢ ^ p` of `T`. -/
-theorem sum_tmul_gen_pow_pow_char (hgen : pb.gen ^ p = algebraMap k B a)
+power basis over a commutative ring of exponential characteristic `p`, then in `T ⊗[k] B` the
+`p`-th power of `∑ᵢ xᵢ ⊗ αⁱ` is the scalar `∑ᵢ aⁱ xᵢ ^ p` of `T`. -/
+theorem sum_tmul_gen_pow_pow_char {k B : Type*} [CommRing k] [CommRing B] [Algebra k B]
+    (pb : PowerBasis k B) {p : ℕ} [ExpChar k p] {a : k} (hgen : pb.gen ^ p = algebraMap k B a)
     {T : Type*} [CommRing T] [Algebra k T] (x : Fin pb.dim → T) :
     (∑ i, x i ⊗ₜ[k] (pb.gen ^ (i : ℕ))) ^ p =
       algebraMap T (T ⊗[k] B) (∑ i : Fin pb.dim, a ^ (i : ℕ) • x i ^ p) := by
-  nontriviality T ⊗[k] B
-  have : ExpChar (T ⊗[k] B) p := expChar_of_injective_algebraMap (algebraMap k _).injective p
-  -- the Frobenius of `T ⊗[k] B` is additive, and `(αⁱ) ^ p = aⁱ` is a scalar
+  -- the Frobenius of `T ⊗[k] B` is additive, since `p` is `1` or a prime vanishing in `k`
+  have hfrob : (∑ i, x i ⊗ₜ[k] (pb.gen ^ (i : ℕ))) ^ p =
+      ∑ i, (x i ⊗ₜ[k] (pb.gen ^ (i : ℕ))) ^ p := by
+    obtain _ | ⟨hp⟩ := ‹ExpChar k p›
+    · simp
+    · nontriviality T ⊗[k] B
+      have : CharP (T ⊗[k] B) p := (CharP.charP_iff_prime_eq_zero hp).2 <| by
+        rw [← map_natCast (algebraMap k (T ⊗[k] B)), CharP.cast_eq_zero, map_zero]
+      have : ExpChar (T ⊗[k] B) p := .prime hp
+      exact sum_pow_char (p := p) _ _
+  -- and `(αⁱ) ^ p = aⁱ` is a scalar
   have hpow (i : ℕ) : (pb.gen ^ i) ^ p = a ^ i • 1 := by
     rw [← pow_mul, mul_comm, pow_mul, hgen, ← map_pow, Algebra.algebraMap_eq_smul_one]
-  simp [sum_pow_char, Algebra.TensorProduct.tmul_pow, hpow, TensorProduct.smul_tmul]
+  simp [hfrob, Algebra.TensorProduct.tmul_pow, hpow, TensorProduct.smul_tmul]
+
+variable {k B : Type*} [Field k] [CommRing B] [Algebra k B] (pb : PowerBasis k B)
+variable {p : ℕ} [ExpChar k p] {a : k}
 
 /-- **The norm form of a `p`-th root extension.** Let `k` be a field of exponential characteristic
 `p` and `α` the generator of a power basis of rank `p` with `α ^ p = a`. Then the norm form of `B`
