@@ -245,6 +245,39 @@ theorem covariantDerivative_one_eq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z :
   simp
   linear_combination (2 * (x z 0 : ℂ) * (x z 3 : ℂ)) * I_sq
 
+/-- The real part of the covariant derivative in the real field coordinates:
+`Re ∇_v α = 2 (∂_v p - b(v) q)`. -/
+theorem covariantDerivative_re {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (v : ℂ) :
+    (covariantDerivative x z v).re =
+      2 * (fderiv ℝ (fun w ↦ x w 2) z v - (x z 0 * v.re + x z 1 * v.im) * x z 3) := by
+  simp [covariantDerivative_apply, fderiv_sectionValue_apply hp hq, sectionValue_apply]
+  ring
+
+/-- The imaginary part of the covariant derivative in the real field coordinates:
+`Im ∇_v α = 2 (∂_v q + b(v) p)`. -/
+theorem covariantDerivative_im {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (v : ℂ) :
+    (covariantDerivative x z v).im =
+      2 * (fderiv ℝ (fun w ↦ x w 3) z v + (x z 0 * v.re + x z 1 * v.im) * x z 2) := by
+  simp [covariantDerivative_apply, fderiv_sectionValue_apply hp hq, sectionValue_apply]
+  ring
+
+/-- The covariant derivative of the section of a `C¹` field in a fixed direction is
+continuous. -/
+theorem continuous_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : ContDiff ℝ 1 x)
+    (v : ℂ) : Continuous fun z ↦ covariantDerivative x z v := by
+  have hxi (i : Fin 4) : ContDiff ℝ 1 fun w ↦ x w i := (contDiff_piLp 2).1 hx i
+  have hdx (i : Fin 4) : Continuous fun z ↦ fderiv ℝ (fun w ↦ x w i) z v :=
+    ((hxi i).continuous_fderiv one_ne_zero).clm_apply continuous_const
+  have := hx.continuous
+  simp only [covariantDerivative_apply, sectionValue_apply,
+    fderiv_sectionValue_apply ((hxi 2).differentiable one_ne_zero _)
+      ((hxi 3).differentiable one_ne_zero _)]
+  fun_prop
+
 /-- The real curvature coefficient: `F_a = i curvature ds ∧ dt`. -/
 def curvature (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
   fderiv ℝ (fun w ↦ x w 1) z 1 - fderiv ℝ (fun w ↦ x w 0) z I
