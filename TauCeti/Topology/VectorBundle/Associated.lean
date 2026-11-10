@@ -37,6 +37,8 @@ variable {𝕜 B G F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [DistribMulAction G F] [SMulCommClass G 𝕜 F] [ContinuousSMul G F]
 
+-- `AssociatedBundle G P F b` is the core's fibre, a type synonym of `F`.
+-- These instances deliberately reuse the model's addition, zero and scalar multiplication.
 instance instAddCommGroup (b : B) : AddCommGroup (AssociatedBundle G P F b) :=
   inferInstanceAs (AddCommGroup F)
 
@@ -58,6 +60,8 @@ instance localTriv_isLinear (b : B) :
       simp only [FiberBundleCore.localTriv_apply]
       rw [associatedBundleCore_coordChange (F := F) _ _ x (r • v),
         associatedBundleCore_coordChange (F := F) _ _ x v]
+      -- The fibre module is the model module. Specify `F` to select the given
+      -- commuting group action on the model rather than on the fibre synonym.
       exact @SMulCommClass.smul_comm G 𝕜 F _ _ ‹SMulCommClass G 𝕜 F› _ r v
 
 /-- A linear action in finite dimension upgrades the associated fibre bundle to a vector
@@ -79,6 +83,15 @@ instance instVectorBundle [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] :
       (fun _ hx ↦ ⟨hx, mem_univ _⟩)).congr fun b hb ↦ ?_
     exact e.coordChangeL_apply' e' hb v
 
+/-- Classes in a fixed principal frame respect addition. -/
+@[simp]
+theorem mk_add {b : B} (p : P b) (v w : F) :
+    mk G p (v + w) = mk G p v + mk G p w := by
+  simp only [mk_def, smul_add]
+  -- The remaining equality identifies the fibre addition with the model addition,
+  -- as specified by `instAddCommGroup`.
+  rfl
+
 variable (𝕜 G) in
 /-- Each principal frame identifies the model with the associated fibre by a continuous
 linear equivalence. This uses the existing associated-bundle class map. -/
@@ -88,10 +101,15 @@ def mkContinuousLinearEquiv {b : B} (p : P b) :
   -- Associated fibres have the model's topology and linear structure by construction.
   invFun x := @HSMul.hSMul G F F _ (trivializationAt G P b ⟨b, p⟩).2⁻¹ x
   left_inv v := by rw [mk_def]; exact inv_smul_smul _ v
-  right_inv x := by rw [mk_def]; exact @smul_inv_smul G F _ _ _ x
-  map_add' v w := by simp only [mk_def, smul_add]; rfl
+  right_inv x := by
+    rw [mk_def]
+    -- View `x` in the model `F`, of which the fibre is a type synonym.
+    exact @smul_inv_smul G F _ _ _ x
+  map_add' := mk_add p
   map_smul' r v := by
     simp only [mk_def]
+    -- The fibre scalar multiplication is the model's by `instModule`; specify `F`
+    -- so instance search uses the given commuting action on the model.
     exact @SMulCommClass.smul_comm G 𝕜 F _ _ ‹SMulCommClass G 𝕜 F› _ r v
   continuous_toFun := by
     have h := continuous_const_smul (T := F) (trivializationAt G P b ⟨b, p⟩).2
@@ -103,12 +121,6 @@ def mkContinuousLinearEquiv {b : B} (p : P b) :
 theorem mkContinuousLinearEquiv_apply {b : B} (p : P b) (v : F) :
     mkContinuousLinearEquiv 𝕜 G p v = mk G p v := (rfl)
 
-/-- Classes in a fixed principal frame respect addition. -/
-@[simp]
-theorem mk_add {b : B} (p : P b) (v w : F) :
-    mk G p (v + w) = mk G p v + mk G p w :=
-  by simp only [mk_def, smul_add]; rfl
-
 /-- Classes in a fixed principal frame respect scalar multiplication. -/
 @[simp]
 theorem mk_smul_scalar {b : B} (p : P b) (r : 𝕜) (v : F) :
@@ -118,8 +130,10 @@ theorem mk_smul_scalar {b : B} (p : P b) (r : 𝕜) (v : F) :
 
 /-- The zero class is independent of the principal frame. -/
 @[simp]
-theorem mk_zero {b : B} (p : P b) : mk G p (0 : F) = 0 :=
-  by simp only [mk_def, smul_zero]; rfl
+theorem mk_zero {b : B} (p : P b) : mk G p (0 : F) = 0 := by
+  simp only [mk_def, smul_zero]
+  -- `instAddCommGroup` uses the model zero as the fibre zero.
+  rfl
 
 /-- Changing a principal frame transforms the vector coordinate by the division element. -/
 @[simp]
@@ -139,8 +153,11 @@ theorem coordChangeL_apply [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
         (trivializationAt G P i).coordChange (trivializationAt G P j) b 1 • v := by
   rw [Trivialization.coordChangeL_apply']
   · rw [trivializationAt_eq_localTriv, trivializationAt_eq_localTriv]
-    rw [associatedBundleCore_def]
-    exact fiberBundleCoreOfGroupCocycle_localTriv_coordChange _ _ _ _ _ _ _ _ i j hb v
+    simp only [FiberBundleCore.localTriv_symm_apply, FiberBundleCore.localTriv_apply]
+    rw [FiberBundleCore.coordChange_comp, associatedBundleCore_coordChange]
+    simp only [FiberBundleCore.baseSet_at, associatedBundleCore_localTriv_baseSet,
+      associatedBundleCore_indexAt]
+    exact ⟨⟨hb.1, mem_baseSet_trivializationAt G P b⟩, hb.2⟩
   · simpa only [baseSet_trivializationAt] using hb
 
 end TauCeti.AssociatedBundle
