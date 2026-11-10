@@ -40,8 +40,8 @@ perturbation lemma for complete filtered contractions, where the series need not
 * `Module.End.ringInverse_one_add_apply_sub_sum_mem`: when `1 + T` is invertible, its inverse
   is the limit of the partial geometric sums, with an explicit rate of convergence.
 * `Module.End.ringInverse_one_add_apply_mem`: the inverse preserves the filtration.
-* `TauCeti.IsCompleteFiltration.surjOn`: a map from a complete filtration to a separated one
-  which is surjective on the associated graded modules is surjective.
+* `TauCeti.IsCompleteFiltration.surjOn`: a map sending a complete filtration into a separated one
+  compatibly, and surjective on the associated graded modules, maps `F 0` onto `G 0`.
 * `TauCeti.isCompleteFiltration_pi`: the filtration of a product `∀ i, E i` by vanishing of the
   coordinates of weight below `n` is complete and separated.
 

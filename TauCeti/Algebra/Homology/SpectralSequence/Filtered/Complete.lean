@@ -82,10 +82,10 @@ private lemma exists_sub_d_mem_of_isZero_homology_cokernel {i m : ℤ}
   set φ := Subobject.ofLE (F i) (F (i + 1)) (hF (Int.le_add_one le_rfl))
   have hdz' : (F (i + 1) : CochainComplex (ModuleCat R) ℤ).d m (m + 1) z = 0 := by
     apply (ModuleCat.mono_iff_injective ((F (i + 1)).arrow.f (m + 1))).1 inferInstance
-    rw [map_zero, ← ModuleCat.comp_apply, ← (F (i + 1)).arrow.comm, ModuleCat.comp_apply]
+    rw [map_zero, ← HomologicalComplex.Hom.comm_apply]
     exact hdz
   have hc : (cokernel φ).d m (m + 1) ((cokernel.π φ).f m z) = 0 := by
-    rw [← ModuleCat.comp_apply, (cokernel.π φ).comm, ModuleCat.comp_apply, hdz', map_zero]
+    rw [HomologicalComplex.Hom.comm_apply, hdz', map_zero]
   have hQ := ((cokernel φ).exactAt_iff' (m - 1) m (m + 1) (by simp) (by simp)).1
     (((cokernel φ).exactAt_iff_isZero_homology m).2 h)
   rw [ShortComplex.moduleCat_exact_iff] at hQ
@@ -96,13 +96,11 @@ private lemma exists_sub_d_mem_of_isZero_homology_cokernel {i m : ℤ}
   rw [ShortComplex.moduleCat_exact_iff] at hS
   obtain ⟨u, hu⟩ := hS (z - (F (i + 1) : CochainComplex (ModuleCat R) ℤ).d (m - 1) m w) (by
     dsimp at hw ⊢
-    rw [map_sub, ← ModuleCat.comp_apply _ ((cokernel.π φ).f m), ← (cokernel.π φ).comm,
-      ModuleCat.comp_apply, hw, sub_self])
+    rw [map_sub, ← HomologicalComplex.Hom.comm_apply (cokernel.π φ), hw, sub_self])
   refine ⟨(F (i + 1)).arrow.f (m - 1) w, ⟨w, rfl⟩, u, ?_⟩
   dsimp at hu
   rw [← Subobject.ofLE_arrow (hF (Int.le_add_one le_rfl)), HomologicalComplex.comp_f,
-    ModuleCat.comp_apply, hu, map_sub, ← ModuleCat.comp_apply _ ((F (i + 1)).arrow.f m),
-    ← (F (i + 1)).arrow.comm, ModuleCat.comp_apply]
+    ModuleCat.comp_apply, hu, map_sub, ← HomologicalComplex.Hom.comm_apply (F (i + 1)).arrow]
 
 /-- **The stages of a complete filtration with vanishing graded cohomology are acyclic.** Let `F`
 be an increasing filtration of a complex of modules `K`. Suppose that the stages `F_{a-k}`,
@@ -130,7 +128,7 @@ theorem isZero_homology_of_isCompleteFiltration {a m : ℤ}
   have hι (u : (F a : CochainComplex (ModuleCat R) ℤ).X m)
       (hu : (F a : CochainComplex (ModuleCat R) ℤ).d m (m + 1) u = 0) :
       K.d m (m + 1) ((F a).arrow.f m u) = 0 := by
-    rw [← ModuleCat.comp_apply, (F a).arrow.comm, ModuleCat.comp_apply, hu, map_zero]
+    rw [HomologicalComplex.Hom.comm_apply, hu, map_zero]
   have e₀ : a - ((0 : ℕ) : ℤ) = a := by simp
   obtain ⟨_, hy₀, hy⟩ := hc.surjOn (G := G)
     (fun z hz ↦ Subtype.ext <| hs z fun i ↦ Subobject.range_arrow_f_hom_le
@@ -150,7 +148,7 @@ theorem isZero_homology_of_isCompleteFiltration {a m : ℤ}
   have hy := congrArg Subtype.val hy
   simp only [f, LinearMap.codRestrict_apply] at hy
   dsimp
-  rw [← ModuleCat.comp_apply, ← (F a).arrow.comm, ModuleCat.comp_apply]
+  rw [← HomologicalComplex.Hom.comm_apply]
   simpa using hy
 
 /-- Completeness of the stages below `a` in degree `m` passes to the stages below any `i ≤ a`. -/

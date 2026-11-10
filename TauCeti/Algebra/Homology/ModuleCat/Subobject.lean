@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Homology.HomologicalComplex
 public import Mathlib.CategoryTheory.Subobject.FactorThru
 public import Mathlib.Algebra.Homology.HomologicalComplexLimits
 public import Mathlib.Algebra.Category.ModuleCat.Abelian
+import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 
 /-!
 # Factoring through subcomplexes of complexes of modules
@@ -83,7 +84,6 @@ theorem d_mem_range_arrow_f_hom (i j : ι) {x : L.X i}
     (L.d i j).hom x ∈ LinearMap.range (S.arrow.f j).hom := by
   obtain ⟨y, rfl⟩ := hx
   exact ⟨((S : HomologicalComplex (ModuleCat R) c).d i j).hom y, by
-    rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← S.arrow.comm, ModuleCat.hom_comp,
-      LinearMap.comp_apply]⟩
+    rw [← HomologicalComplex.Hom.comm_apply]⟩
 
 end CategoryTheory.Subobject
