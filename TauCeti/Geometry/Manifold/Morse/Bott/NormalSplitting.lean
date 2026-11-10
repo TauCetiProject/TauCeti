@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Spectral.Inertia
 public import TauCeti.Analysis.InnerProductSpace.Spectral.Projection
 public import TauCeti.Geometry.Manifold.Morse.Bott.Coordinates
-import TauCeti.Analysis.InnerProductSpace.Symmetric.Signature
 import TauCeti.Analysis.InnerProductSpace.Dual
 
 /-!
@@ -37,28 +36,30 @@ The pointwise statements need only some linear equivalence `L : P ≃ₗ[ℝ] No
 `Q (u, v) = Hess (L u, L v)`, such as `(e.linearEquivAt ℝ s hs).symm` for a normal-bundle
 trivialization `e`. Such a form is negative definite on the negative spectral subspace of its
 Riesz operator and positive definite on the positive one: apply
-`InnerProductSpace.apply_self_neg_of_mem_pointSpectralSubspace_Iio` and
-`InnerProductSpace.apply_self_pos_of_mem_pointSpectralSubspace_Ioi` to
+`InnerProductSpace.apply_self_neg_of_mem_pointSpectralSubspace_Iio_continuousLinearMapOfBilin` and
+`InnerProductSpace.apply_self_pos_of_mem_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin` to
 `IsCriticalSubmanifold.isSelfAdjoint_continuousLinearMapOfBilin`. For a Morse–Bott submanifold
 the form is injective (`IsNondegenerateCriticalSubmanifold.injective_of_normalHessian_eq`), so its
 Riesz operator is invertible by `InnerProductSpace.isUnit_continuousLinearMapOfBilin`.
 
 ## Main results
 
-In the namespace `TauCeti.SmoothEmbedding`:
+In the namespace `TauCeti.SmoothEmbedding.IsCriticalSubmanifold`:
 
-* `IsCriticalSubmanifold.isSelfAdjoint_continuousLinearMapOfBilin`: a form representing the normal
-  Hessian has a self-adjoint Riesz operator.
-* `IsNondegenerateCriticalSubmanifold.isCompl_pointSpectralSubspace_continuousLinearMapOfBilin`:
-  for a Morse–Bott submanifold, the negative and positive spectral subspaces of the Riesz operator
-  are complementary.
-* `IsNondegenerateCriticalSubmanifold.finrank_pointSpectralSubspace_Iio_continuousLinearMapOfBilin`,
-  `IsNondegenerateCriticalSubmanifold.finrank_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin`:
-  the negative and positive spectral subspaces of the Riesz operator have dimensions the Morse
-  index of `f` and the Morse index of `-f`.
-* `IsNondegenerateCriticalSubmanifold.exists_contMDiffOn_starProjection_pointSpectralSubspace`:
-  in each normal-bundle trivialization, the negative and positive spectral projections of the
-  normal Hessian are `C^k`.
+* `isSelfAdjoint_continuousLinearMapOfBilin`: a form representing the normal Hessian has a
+  self-adjoint Riesz operator.
+
+In the namespace `TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`:
+
+* `isCompl_pointSpectralSubspace_Iio_Ioi_continuousLinearMapOfBilin`: for a Morse–Bott
+  submanifold, the negative and positive spectral subspaces of the Riesz operator are
+  complementary.
+* `finrank_pointSpectralSubspace_Iio_continuousLinearMapOfBilin`,
+  `finrank_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin`: the negative and positive
+  spectral subspaces of the Riesz operator have dimensions the Morse index of `f` and the Morse
+  index of `-f`.
+* `exists_contMDiffOn_starProjection_pointSpectralSubspace`: in each normal-bundle trivialization,
+  the negative and positive spectral projections of the normal Hessian are `C^k`.
 
 ## References
 
@@ -87,13 +88,21 @@ namespace IsCriticalSubmanifold
 
 variable [I.Boundaryless] [IsManifold I 2 M]
 
+omit [FiniteDimensional ℝ P] in
+/-- A bilinear form representing the normal Hessian through a linear equivalence is symmetric. -/
+private theorem symm_of_normalHessian_eq (h : i.IsCriticalSubmanifold f) {s : S}
+    (L : P ≃ₗ[ℝ] i.NormalSpace s hn) {Q : P →L[ℝ] P →L[ℝ] ℝ}
+    (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) (u v : P) :
+    Q u v = Q v u := by
+  rw [← hQ, ← hQ, (h.isSymm_normalHessian hn s).eq]
+
 /-- A bilinear form on an inner product space `P` representing the normal Hessian of a critical
 submanifold through a linear equivalence `L` has a self-adjoint Riesz operator. -/
 theorem isSelfAdjoint_continuousLinearMapOfBilin (h : i.IsCriticalSubmanifold f) {s : S}
     (L : P ≃ₗ[ℝ] i.NormalSpace s hn) {Q : P →L[ℝ] P →L[ℝ] ℝ}
     (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) : IsSelfAdjoint Q♯ :=
-  InnerProductSpace.isSelfAdjoint_continuousLinearMapOfBilin fun u v ↦ by
-    rw [← hQ, ← hQ, (h.isSymm_normalHessian hn s).eq]
+  InnerProductSpace.isSelfAdjoint_continuousLinearMapOfBilin <|
+    h.symm_of_normalHessian_eq hn L hQ
 
 end IsCriticalSubmanifold
 
@@ -104,7 +113,7 @@ variable [I.Boundaryless] [IsManifold I 2 M]
 /-- **The normal splitting.** For a bilinear form `Q` representing the normal Hessian of a
 Morse–Bott critical submanifold through a linear equivalence `L`, the negative and positive
 spectral subspaces of its Riesz operator are complementary, so `P` is their direct sum. -/
-theorem isCompl_pointSpectralSubspace_continuousLinearMapOfBilin
+theorem isCompl_pointSpectralSubspace_Iio_Ioi_continuousLinearMapOfBilin
     (h : i.IsNondegenerateCriticalSubmanifold f) {s : S} (L : P ≃ₗ[ℝ] i.NormalSpace s hn)
     {Q : P →L[ℝ] P →L[ℝ] ℝ} (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) :
     IsCompl (Module.End.pointSpectralSubspace Q♯.toLinearMap (Iio 0))
@@ -133,10 +142,9 @@ theorem finrank_pointSpectralSubspace_Iio_continuousLinearMapOfBilin
     {Q : P →L[ℝ] P →L[ℝ] ℝ} (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) :
     Module.finrank ℝ (Module.End.pointSpectralSubspace Q♯.toLinearMap (Iio 0)) =
       manifoldMorseIndex I f (i s) := by
-  have hA := (h.isSelfAdjoint_continuousLinearMapOfBilin hn L hQ).isSymmetric
-  rw [← h.sigNeg_normalHessian hn s, ← (h.equivalent_toQuadraticMap hn L hQ).sigNeg_eq,
-    hA.sigNeg_eq_finrank_pointSpectralSubspace fun u ↦ by
-      simp [continuousLinearMapOfBilin_apply]]
+  rw [InnerProductSpace.finrank_pointSpectralSubspace_Iio_continuousLinearMapOfBilin
+    (h.symm_of_normalHessian_eq hn L hQ), (h.equivalent_toQuadraticMap hn L hQ).sigNeg_eq,
+    h.sigNeg_normalHessian hn s]
 
 /-- **The positive normal subspace has the dimension of the coindex.** If a bilinear form `Q` on
 an inner product space `P` represents the normal Hessian of a Morse–Bott critical submanifold at
@@ -147,10 +155,9 @@ theorem finrank_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin
     {Q : P →L[ℝ] P →L[ℝ] ℝ} (hQ : ∀ u v, h.normalHessian hn s (L u) (L v) = Q u v) :
     Module.finrank ℝ (Module.End.pointSpectralSubspace Q♯.toLinearMap (Ioi 0)) =
       manifoldMorseIndex I (-f) (i s) := by
-  have hA := (h.isSelfAdjoint_continuousLinearMapOfBilin hn L hQ).isSymmetric
-  rw [← h.sigPos_normalHessian hn s, ← (h.equivalent_toQuadraticMap hn L hQ).sigPos_eq,
-    hA.sigPos_eq_finrank_pointSpectralSubspace fun u ↦ by
-      simp [continuousLinearMapOfBilin_apply]]
+  rw [InnerProductSpace.finrank_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin
+    (h.symm_of_normalHessian_eq hn L hQ), (h.equivalent_toQuadraticMap hn L hQ).sigPos_eq,
+    h.sigPos_normalHessian hn s]
 
 end IsNondegenerateCriticalSubmanifold
 
@@ -166,12 +173,12 @@ a `C^k` family `Q` of bilinear forms on `P`, and the orthogonal projections onto
 positive spectral subspaces of the Riesz operators `(Q s)♯` are `C^k` on the base set.
 
 The ranges of these projections are the spectral subspaces themselves. They are complementary
-(`isCompl_pointSpectralSubspace_continuousLinearMapOfBilin`), `Q s` is negative, respectively
-positive, definite on them
-(`InnerProductSpace.apply_self_neg_of_mem_pointSpectralSubspace_Iio` and
-`InnerProductSpace.apply_self_pos_of_mem_pointSpectralSubspace_Ioi`, applied to
-`IsCriticalSubmanifold.isSelfAdjoint_continuousLinearMapOfBilin`), and their dimensions are
-the Morse indices of `f` and `-f` at `i s`
+(`isCompl_pointSpectralSubspace_Iio_Ioi_continuousLinearMapOfBilin`), `Q s` is negative,
+respectively positive, definite on them
+(`InnerProductSpace.apply_self_neg_of_mem_pointSpectralSubspace_Iio_continuousLinearMapOfBilin`
+and `InnerProductSpace.apply_self_pos_of_mem_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin`,
+applied to `IsCriticalSubmanifold.isSelfAdjoint_continuousLinearMapOfBilin`), and their dimensions
+are the Morse indices of `f` and `-f` at `i s`
 (`finrank_pointSpectralSubspace_Iio_continuousLinearMapOfBilin` and
 `finrank_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin`). Each of these applies to the
 linear equivalence `((i.normalSpaceTrivialization hn hdim s₀).linearEquivAt ℝ s hs).symm`. -/

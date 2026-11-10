@@ -45,10 +45,20 @@ subspaces of the dimensions prescribed by Sylvester's law of inertia.
 
 ## Main results
 
-* `InnerProductSpace.apply_self_neg_of_mem_pointSpectralSubspace_Iio`,
-  `InnerProductSpace.apply_self_pos_of_mem_pointSpectralSubspace_Ioi`: a real bilinear form with a
-  self-adjoint Riesz operator is negative definite on the negative spectral subspace of that
-  operator and positive definite on the positive one.
+* `InnerProductSpace.finrank_pointSpectralSubspace_Iio_continuousLinearMapOfBilin`,
+  `InnerProductSpace.finrank_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin`: the negative
+  and positive indices of inertia of a symmetric form are the dimensions of the negative and
+  positive spectral subspaces of its Riesz operator.
+* `InnerProductSpace.pointSpectralSubspace_Iio_continuousLinearMapOfBilin_neg`: negating the form
+  exchanges the negative and positive spectral subspaces.
+* `InnerProductSpace.pointSpectralSubspace_continuousLinearMapOfBilin_bilinearComp`,
+  `InnerProductSpace.pointSpectralSubspace_continuousLinearMapOfBilin_eq_map_synthesisMap`: the
+  spectral subspaces are natural for linear isometry equivalences, in particular for the
+  coordinates of an orthonormal basis.
+* `InnerProductSpace.apply_self_neg_of_mem_pointSpectralSubspace_Iio_continuousLinearMapOfBilin`,
+  `InnerProductSpace.apply_self_pos_of_mem_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin`:
+  a real bilinear form with a self-adjoint Riesz operator is negative definite on the negative
+  spectral subspace of that operator and positive definite on the positive one.
 
 ## References
 
@@ -144,7 +154,7 @@ theorem finrank_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin
 
 /-- A real bilinear form with a self-adjoint Riesz operator is negative definite on the negative
 spectral subspace of that operator. -/
-theorem apply_self_neg_of_mem_pointSpectralSubspace_Iio
+theorem apply_self_neg_of_mem_pointSpectralSubspace_Iio_continuousLinearMapOfBilin
     {B : W →L[ℝ] W →L[ℝ] ℝ} (hB : IsSelfAdjoint (continuousLinearMapOfBilin B)) {u : W}
     (hu : u ∈ Module.End.pointSpectralSubspace (continuousLinearMapOfBilin B).toLinearMap (Iio 0))
     (hu0 : u ≠ 0) : B u u < 0 := by
@@ -153,7 +163,7 @@ theorem apply_self_neg_of_mem_pointSpectralSubspace_Iio
 
 /-- A real bilinear form with a self-adjoint Riesz operator is positive definite on the positive
 spectral subspace of that operator. -/
-theorem apply_self_pos_of_mem_pointSpectralSubspace_Ioi
+theorem apply_self_pos_of_mem_pointSpectralSubspace_Ioi_continuousLinearMapOfBilin
     {B : W →L[ℝ] W →L[ℝ] ℝ} (hB : IsSelfAdjoint (continuousLinearMapOfBilin B)) {u : W}
     (hu : u ∈ Module.End.pointSpectralSubspace (continuousLinearMapOfBilin B).toLinearMap (Ioi 0))
     (hu0 : u ≠ 0) : 0 < B u u := by
