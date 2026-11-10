@@ -7,14 +7,15 @@ module
 
 public import TauCeti.Algebra.CrossedProduct.Noncommutative.Basic
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
+import TauCeti.LinearAlgebra.Finsupp.Supported
 
 /-!
 # Restriction of noncommutative crossed systems
 
 Pulling a crossed system back along a monoid homomorphism induces an algebra map on its
 crossed products. This map fixes the coefficient algebra and sends `[h]` to `[f h]`.
-In coordinates it is `Finsupp.mapDomain f`, so it is injective when `f` is injective.
-Its image then consists exactly of the elements supported on the image of `f`.
+In coordinates it is `Finsupp.mapDomain f`, so it is injective when `f` is injective. Its image
+consists exactly of the elements supported on the image of `f`, injective or not.
 
 For a subgroup inclusion this realizes the restricted crossed product as the actual
 subalgebra supported on that subgroup. It supplies the algebra inclusion along which
@@ -103,8 +104,8 @@ theorem comapHom_injective (hf : Function.Injective f) :
   apply Finsupp.mapDomain_injective hf
   simpa only [repr_comapHom] using congrArg (basis c).repr hab
 
-/-- The restricted crossed product is precisely the subalgebra with coefficients vanishing
-outside the image of the index homomorphism. -/
+/-- The image of the restricted crossed-product map is precisely the subalgebra with coefficients
+vanishing outside the image of the index homomorphism. -/
 theorem mem_range_comapHom_iff (a : Algebra c) :
     a ∈ (comapHom c f).range ↔ ∀ g ∉ Set.range f, (basis c).repr a g = 0 := by
   have hr : a ∈ (comapHom c f).range ↔
@@ -117,18 +118,7 @@ theorem mem_range_comapHom_iff (a : Algebra c) :
       apply (basis c).repr.injective
       exact (repr_comapHom c f ((basis (c.comap f)).repr.symm b)).trans
         (by rw [LinearEquiv.apply_symm_apply, hb])
-  rw [hr]
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro ⟨y, hy⟩ g hg
-    rw [← hy]
-    exact Finsupp.mapDomain_of_notMem_range y g hg
-  · refine ⟨Finsupp.mapDomain (Function.invFun f) ((basis c).repr a), ?_⟩
-    rw [← Finsupp.mapDomain_comp]
-    refine (Finsupp.mapDomain_congr fun g hg ↦ ?_).trans Finsupp.mapDomain_id
-    have hg' : g ∈ Set.range f := by
-      by_contra hn
-      exact Finsupp.mem_support_iff.1 hg (h g hn)
-    exact Function.invFun_eq hg'
+  rw [hr, Finsupp.mem_range_mapDomain_iff']
 
 end Algebra
 
