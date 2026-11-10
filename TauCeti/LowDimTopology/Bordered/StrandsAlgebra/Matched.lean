@@ -65,10 +65,11 @@ Grouping them by the number `i` of strands gives the occupancy idempotents, whic
 because products preserve the number of strands. As an `R`-algebra, the matched subalgebra is
 therefore the product of the corners `e_i A e_i` of the occupancy idempotents, its occupancy
 summands (`TauCeti.StrandsAlgebra.OccupancySummand`); for a pointed matched circle these are the
-summands `A(Z, j)` of Lipshitz, Ozsváth and Thurston. Over a ring of characteristic two, the
-differential preserves each summand and makes it an ungraded differential algebra
+summands `A(Z, j)` of Lipshitz, Ozsváth and Thurston. Resolving a crossing does not move the
+endpoints of a diagram, so the differential commutes with the `I(s)` and preserves each summand
 (`TauCeti.StrandsAlgebra.occupancyDifferential`), and the isomorphism intertwines the differentials
-(`TauCeti.StrandsAlgebra.occupancyAlgEquiv_matchedDifferential`).
+(`TauCeti.StrandsAlgebra.occupancyAlgEquiv_matchedDifferential`). Over a ring of characteristic
+two, this makes each summand an ungraded differential algebra.
 
 ## Main definitions
 
@@ -107,6 +108,9 @@ differential preserves each summand and makes it an ungraded differential algebr
   `TauCeti.StrandsAlgebra.matchedIdem_mul_matchedIdem`: the `I(s)` are orthogonal idempotents of the
   matched subalgebra.
 * `TauCeti.StrandsAlgebra.differential_matchedIdem`: the `I(s)` are cycles.
+* `TauCeti.StrandsAlgebra.differential_matchedIdem_mul`,
+  `TauCeti.StrandsAlgebra.differential_mul_matchedIdem`: the differential commutes with
+  multiplication by the `I(s)`.
 * `TauCeti.StrandsAlgebra.horizontalCompletion_mul_horizontalCompletion`: the product of two
   generators.
 * `TauCeti.StrandsAlgebra.matchedOne_mul`, `TauCeti.StrandsAlgebra.mul_matchedOne`: `∑ₛ I(s)` is
@@ -131,8 +135,8 @@ differential preserves each summand and makes it an ungraded differential algebr
   decomposition are the corners `e_i x e_i`, and an element is the sum of its components.
 * `TauCeti.StrandsAlgebra.isUngradedDGAlgebra_occupancyDifferential`: over a ring of
   characteristic two, each occupancy summand is an ungraded differential algebra.
-* `TauCeti.StrandsAlgebra.occupancyAlgEquiv_matchedDifferential`: in characteristic two the
-  occupancy decomposition intertwines the differentials.
+* `TauCeti.StrandsAlgebra.occupancyAlgEquiv_matchedDifferential`: the occupancy decomposition
+  intertwines the differentials.
 
 ## References
 
@@ -462,6 +466,28 @@ theorem matchedIdem_mul_mul_matchedIdem_eq_zero_of_card_ne (M : α → β) {s t 
     · rw [of_mul_matchedIdem,
         ite_eq_right fun ht ↦ h (by rw [← hs.2, ← ht.2, card_target]), smul_zero]
     · simp
+
+/-- The differential commutes with left multiplication by `I(s)`: resolving a crossing does not
+move the starting points. -/
+theorem differential_matchedIdem_mul (M : α → β) (s : Finset β) (x : StrandsAlgebra R α) :
+    differential R α (matchedIdem R M s * x) = matchedIdem R M s * differential R α x := by
+  induction x using induction_on with
+  | zero => simp
+  | add x y hx hy => simp [mul_add, hx, hy]
+  | smul_of r φ =>
+    by_cases h : φ.source.image M = s ∧ #φ.source = #s <;>
+      simp [matchedIdem_mul_of, differential_of, mul_sum, source_resolve, h]
+
+/-- The differential commutes with right multiplication by `I(t)`: resolving a crossing does not
+move the end points. -/
+theorem differential_mul_matchedIdem (M : α → β) (x : StrandsAlgebra R α) (t : Finset β) :
+    differential R α (x * matchedIdem R M t) = differential R α x * matchedIdem R M t := by
+  induction x using induction_on with
+  | zero => simp
+  | add x y hx hy => simp [add_mul, hx, hy]
+  | smul_of r φ =>
+    by_cases h : φ.target.image M = t ∧ #φ.target = #t <;>
+      simp [of_mul_matchedIdem, differential_of, sum_mul, target_resolve, h]
 
 end Idempotents
 
@@ -1272,21 +1298,19 @@ theorem matchedDifferential_occupancyIdem (i : Fin (Fintype.card β + 1)) :
     matchedDifferential R M (occupancyIdem R M i) = 0 := by
   simp [occupancyIdem_def]
 
-/-- Over a ring of characteristic two, the differential commutes with left multiplication by an
-occupancy idempotent. -/
-theorem matchedDifferential_occupancyIdem_mul [CharP R 2] (i : Fin (Fintype.card β + 1))
+/-- The differential commutes with left multiplication by an occupancy idempotent. -/
+theorem matchedDifferential_occupancyIdem_mul (i : Fin (Fintype.card β + 1))
     (x : matchedSubalgebra R M) :
     matchedDifferential R M (occupancyIdem R M i * x) =
-      occupancyIdem R M i * matchedDifferential R M x := by
-  simp [matchedDifferential_mul]
+      occupancyIdem R M i * matchedDifferential R M x :=
+  Subtype.ext (by simp [sum_mul, differential_matchedIdem_mul])
 
-/-- Over a ring of characteristic two, the differential commutes with right multiplication by an
-occupancy idempotent. -/
-theorem matchedDifferential_mul_occupancyIdem [CharP R 2] (x : matchedSubalgebra R M)
+/-- The differential commutes with right multiplication by an occupancy idempotent. -/
+theorem matchedDifferential_mul_occupancyIdem (x : matchedSubalgebra R M)
     (i : Fin (Fintype.card β + 1)) :
     matchedDifferential R M (x * occupancyIdem R M i) =
-      matchedDifferential R M x * occupancyIdem R M i := by
-  simp [matchedDifferential_mul]
+      matchedDifferential R M x * occupancyIdem R M i :=
+  Subtype.ext (by simp [mul_sum, differential_mul_matchedIdem])
 
 /-- `e_i x e_j` vanishes for distinct occupancy idempotents `e_i` and `e_j`. -/
 theorem occupancyIdem_mul_mul_occupancyIdem_eq_zero_of_ne {i j : Fin (Fintype.card β + 1)}
@@ -1348,10 +1372,10 @@ theorem occupancyAlgEquiv_symm_apply (y : Π i, OccupancySummand R M i) :
   completeOrthogonalIdempotents_occupancyIdem.algEquivOfIsMulCentral_symm_apply _ y
 
 variable (R M) in
-/-- The differential of the occupancy summand with `i` strands, over a ring of characteristic two:
-the restriction of the differential of the matched subalgebra, which preserves the corner
-`e_i A e_i` because `e_i` is a cycle. -/
-def occupancyDifferential [CharP R 2] (i : Fin (Fintype.card β + 1)) :
+/-- The differential of the occupancy summand with `i` strands: the restriction of the
+differential of the matched subalgebra, which preserves the corner `e_i A e_i` because it commutes
+with multiplication by `e_i`. -/
+def occupancyDifferential (i : Fin (Fintype.card β + 1)) :
     OccupancySummand R M i →ₗ[R] OccupancySummand R M i where
   toFun y := ⟨matchedDifferential R M y.1, by
     obtain ⟨r, hr⟩ := y.2
@@ -1361,7 +1385,7 @@ def occupancyDifferential [CharP R 2] (i : Fin (Fintype.card β + 1)) :
   map_smul' r y := Subtype.ext (map_smul (matchedDifferential R M) r y.1)
 
 @[simp]
-theorem occupancyDifferential_apply_coe [CharP R 2] (i : Fin (Fintype.card β + 1))
+theorem occupancyDifferential_apply_coe (i : Fin (Fintype.card β + 1))
     (y : OccupancySummand R M i) :
     (occupancyDifferential R M i y).1 = matchedDifferential R M y.1 :=
   (rfl)
@@ -1388,9 +1412,9 @@ theorem isUngradedDGAlgebra_occupancyDifferential {R : Type*} [CommRing R] [Char
   map_mul := occupancyDifferential_mul i
   map_map := occupancyDifferential_occupancyDifferential i
 
-/-- Over a ring of characteristic two, the occupancy decomposition intertwines the differential of
-the matched subalgebra with the differentials of its occupancy summands. -/
-theorem occupancyAlgEquiv_matchedDifferential [CharP R 2] (x : matchedSubalgebra R M)
+/-- The occupancy decomposition intertwines the differential of the matched subalgebra with the
+differentials of its occupancy summands. -/
+theorem occupancyAlgEquiv_matchedDifferential (x : matchedSubalgebra R M)
     (i : Fin (Fintype.card β + 1)) :
     occupancyAlgEquiv R M (matchedDifferential R M x) i =
       occupancyDifferential R M i (occupancyAlgEquiv R M x i) :=
