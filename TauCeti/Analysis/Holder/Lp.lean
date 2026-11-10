@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.Holder.Normed
 
+import Mathlib.Analysis.Normed.Module.Completion
 import TauCeti.MeasureTheory.Function.Lp.BallAverage
 
 /-!
@@ -38,14 +39,13 @@ open scoped ENNReal NNReal BoundedContinuousFunction
 open TauCeti
 
 variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [BorelSpace E]
-  [ProperSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
+  [ProperSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {mu : Measure E} [mu.IsAddHaarMeasure] {g : E → F} {C α : ℝ≥0} {p : ℝ≥0∞}
 
-/-- A globally Hölder function with finite `Lᵖ` norm is pointwise bounded. At any positive
-scale `r`, the bound is its Hölder constant times `r^α`, plus the `Lᵖ` norm multiplied by
-the reciprocal `p`-th root of the volume of the radius-`r` ball. -/
-theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' : p ≠ ∞)
-    (hgLp : MemLp g p mu) {r : ℝ} (hr : 0 < r) (x : E) :
+/-- The case of `HolderWith.enorm_le_add_eLpNorm` with a complete target, where the function is
+compared with its average on a ball. -/
+private theorem enorm_le_add_eLpNorm_of_completeSpace [CompleteSpace F] (hg : HolderWith C α g)
+    (hp : 1 ≤ p) (hp' : p ≠ ∞) (hgLp : MemLp g p mu) {r : ℝ} (hr : 0 < r) (x : E) :
     ‖g x‖ₑ ≤ C * ENNReal.ofReal r ^ (α : ℝ) +
       mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu := by
   have hdev : ‖ballAverage mu r g x - g x‖ₑ ≤ C * ENNReal.ofReal r ^ (α : ℝ) := by
@@ -83,6 +83,29 @@ theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' : p �
     _ ≤ C * ENNReal.ofReal r ^ (α : ℝ) + mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu :=
       add_le_add (by rw [edist_comm]; simpa only [edist_eq_enorm_sub] using hdev)
         (enorm_ballAverage_le hp hp' x)
+
+/-- A globally Hölder function with finite `Lᵖ` norm is pointwise bounded. At any positive
+scale `r`, the bound is its Hölder constant times `r^α`, plus the `Lᵖ` norm multiplied by
+the reciprocal `p`-th root of the volume of the radius-`r` ball. -/
+theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' : p ≠ ∞)
+    (hgLp : MemLp g p mu) {r : ℝ} (hr : 0 < r) (x : E) :
+    ‖g x‖ₑ ≤ C * ENNReal.ofReal r ^ (α : ℝ) +
+      mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu := by
+  -- Pass to the completion of `F`, which changes neither the Hölder constant, nor the `Lᵖ` norm,
+  -- nor the pointwise norms.
+  let e : F → UniformSpace.Completion F := (↑)
+  have hge : HolderWith C α (e ∘ g) := fun y z ↦ by
+    simpa only [Function.comp_apply, e, UniformSpace.Completion.coe_isometry.edist_eq]
+      using hg y z
+  have hgeLp : MemLp (e ∘ g) p mu :=
+    hgLp.of_le ((UniformSpace.Completion.continuous_coe F).comp_aestronglyMeasurable
+      hgLp.aestronglyMeasurable)
+      (.of_forall fun y ↦ (UniformSpace.Completion.norm_coe (g y)).le)
+  have hnorm : eLpNorm (e ∘ g) p mu = eLpNorm g p mu :=
+    eLpNorm_congr_enorm_ae hgeLp.aestronglyMeasurable hgLp.aestronglyMeasurable
+      (.of_forall fun y ↦ UniformSpace.Completion.enorm_coe (g y))
+  simpa only [Function.comp_apply, e, UniformSpace.Completion.enorm_coe, hnorm] using
+    enorm_le_add_eLpNorm_of_completeSpace hge hp hp' hgeLp hr x
 
 /-- Real-valued form of `HolderWith.enorm_le_add_eLpNorm`: a globally Hölder function with finite
 `Lᵖ` norm is pointwise bounded by its Hölder constant times `r ^ α` plus its `Lᵖ` norm times the
