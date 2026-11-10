@@ -49,11 +49,16 @@ at whatever generality Mathlib provides; the conformal-mapping theorems that con
 the monodromy theorem (`Conformal/Monodromy.lean`) and global branches
 (`Conformal/GlobalBranch.lean`) — are scalar and stay scalar, instantiating `E = ℂ`.
 
-Completeness of `E` is asked for exactly where those Mathlib inputs ask for it, and nowhere else:
-the definition itself, the gluing and reparametrisation lemmas, and the closure of continuations
-under sums and products need none, while everything resting on the identity principle —
-`TauCeti.IsAnalyticContinuationAlong.eventuallyEq` and all of its consequences — needs `E` to be a
-Banach space.
+Completeness of `E` is asked for only where the Mathlib inputs ask for it: the derivative closure
+`TauCeti.IsAnalyticContinuationAlong.deriv`, the construction from holomorphy
+`TauCeti.IsAnalyticContinuationAlong.of_differentiableOn` (with their `ContinuesAlong` and
+`ContinuesInside` counterparts), and the comparison lemma
+`TauCeti.IsAnalyticContinuationAlong.eventuallyEq_of_mapsTo`. The definition itself, the gluing and
+reparametrisation lemmas, the closure under sums and products, and the whole uniqueness theorem
+`TauCeti.IsAnalyticContinuationAlong.eventuallyEq` with its consequences hold for every complex
+normed space `E`: the uniqueness argument passes to `UniformSpace.Completion E`, which is complete
+and into which `E` embeds injectively, so that `AnalyticAt.exists_ball_analyticOnNhd` applies to the
+composites with the embedding.
 
 The *domain* stays `ℂ`: a path in a higher-dimensional domain is not the object the monodromy
 theorem and its consumers are about, and `deriv` — under which continuations are closed below — is
@@ -67,10 +72,12 @@ of `E`, again the generality at which Mathlib states `AnalyticAt.mul`.
 preconnected parameter set whose germs agree at one parameter time agree at every parameter time.
 
 The proof is the standard connectedness argument. Germ agreement is a *locally constant* property
-of the parameter: at a time `t`, both `f t` and `g t` are analytic on a common disc `D` about
-`γ t`, so by the identity principle (`AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq`) their
-germs agree at one point of `D` exactly when they agree at every point of `D` — and for `u` near
-`t` the point `γ u` lies in `D` while the germs of `f u, g u` at `γ u` are those of `f t, g t`.
+of the parameter: at a time `t`, both `f t` and `g t`, composed with the embedding into the
+completion of `E`, are analytic on a common disc `D` about `γ t`, so by the identity principle
+(`AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq`) their germs agree at one point of `D` exactly
+when they agree at every point of `D` (the embedding is injective, so agreement of the composites is
+agreement of the germs) — and for `u` near `t` the point `γ u` lies in `D` while the germs of
+`f u, g u` at `γ u` are those of `f t, g t`.
 A locally constant property on a preconnected parameter set is constant
 (`IsLocallyConstant.apply_eq_of_preconnectedSpace`).
 
@@ -181,6 +188,19 @@ theorem eventually_eventuallyEq_iff_of_analyticAt {F G : ℂ → E} {z : ℂ}
   rw [hiff, hiff]
   exact ⟨fun h => eventuallyEq_nhds_of_analyticOnNhd_ball hFr hGr hw hz h,
     fun h => eventuallyEq_nhds_of_analyticOnNhd_ball hFr hGr hz hw h⟩
+
+/-- Germ agreement at a point spreads to the points a moving base point reaches nearby: if `F` and
+`G` are analytic at `c t₀` and have the same germ there, then they have the same germ at `c t` for
+every `t` near `t₀`.
+
+This is the transport that lets a germ comparison made at the base point `c t₀` be re-used at the
+moving endpoint `c t` of a free homotopy, and it is why the two edges of such a homotopy may be
+compared against one fixed representative family. -/
+theorem eventually_eventuallyEq_of_continuousAt {Z : Type*} [TopologicalSpace Z] {c : Z → ℂ}
+    {t₀ : Z} {F G : ℂ → E} (hc : ContinuousAt c t₀) (hF : AnalyticAt ℂ F (c t₀))
+    (hG : AnalyticAt ℂ G (c t₀)) (h : F =ᶠ[𝓝 (c t₀)] G) :
+    ∀ᶠ t in 𝓝 t₀, F =ᶠ[𝓝 (c t)] G :=
+  hc.eventually ((eventually_eventuallyEq_iff_of_analyticAt hF hG).mono fun _ hiff ↦ hiff.mpr h)
 
 /-! ### Analytic continuation along a path -/
 
