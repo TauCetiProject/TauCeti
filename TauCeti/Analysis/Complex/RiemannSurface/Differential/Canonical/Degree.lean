@@ -97,11 +97,11 @@ end IsCanonicalDivisor
 namespace FiniteHolomorphicMap
 
 /-- **The Riemann–Hurwitz count does not depend on the map.** For two finite holomorphic maps
-`f g : X → ℙ¹` from a compact connected Riemann surface carrying a canonical divisor,
+`f g : X → ℙ¹` from a compact connected Riemann surface,
 `-2 deg f + deg R_f = -2 deg g + deg R_g`. -/
-theorem neg_two_mul_degree_add_ramificationDegree_eq {K : WeilDivisor X}
-    (hK : IsCanonicalDivisor K) (f g : FiniteHolomorphicMap X (OnePoint ℂ)) :
+theorem neg_two_mul_degree_add_ramificationDegree_eq (f g : FiniteHolomorphicMap X (OnePoint ℂ)) :
     -2 * (degree f : ℤ) + ramificationDegree f = -2 * (degree g : ℤ) + ramificationDegree g := by
+  have hK := isCanonicalDivisor_neg_two_infty.divisorPullback_add_ramificationDivisor f
   rw [← hK.degree_eq_neg_two_mul_degree_add_ramificationDegree f,
     hK.degree_eq_neg_two_mul_degree_add_ramificationDegree g]
 
