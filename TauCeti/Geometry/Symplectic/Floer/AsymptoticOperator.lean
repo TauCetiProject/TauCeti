@@ -451,7 +451,7 @@ theorem stationaryCylinderOperator_exp_smul (δ : ℝ) (hξ : DifferentiableAt �
 
 /-- For continuously varying `J_t`, the norm `g_t(f, f)` of a continuous map `f` of the cylinder
 for `g_t = ω(·, J_t ·)` is continuous. -/
-private theorem continuous_associatedBilinForm_apply_self
+theorem continuous_associatedBilinForm_apply_self
     (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) {f : ℝ × ℝ → V} (hf : Continuous f) :
     Continuous fun z ↦ ω.associatedBilinForm (J z.2) (f z) (f z) :=
   ω.continuous_apply_comp hf (hJc.comp (continuous_snd.prodMk hf))
@@ -459,7 +459,7 @@ private theorem continuous_associatedBilinForm_apply_self
 /-- For continuously varying `J_t` and `S_t` and a `C¹` map `ξ`, the energy density
 `g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ)` of the cylinder is continuous, where
 `g_t = ω(·, J_t ·)`. -/
-private theorem continuous_associatedBilinForm_add_apply_self
+theorem continuous_associatedBilinForm_add_apply_self
     (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) (hSc : Continuous S) (hξ : ContDiff ℝ 1 ξ) :
     Continuous fun z : ℝ × ℝ ↦
       ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
