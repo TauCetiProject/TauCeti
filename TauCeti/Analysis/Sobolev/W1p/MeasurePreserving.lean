@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.W1p.Zero
 public import TauCeti.Analysis.Sobolev.WeakDeriv.MeasurePreserving
+import Mathlib.Analysis.Calculus.AddTorsor.AffineMap
 import TauCeti.Analysis.Normed.Affine.Isometry.Basic
 import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
@@ -258,8 +259,7 @@ theorem W1p.compMeasurePreservingL_mem_w1p0Submodule_of_contDiff (hΦc : ContDif
   have hK : IsCompact (Φ ⁻¹' tsupport φ) := hΦp.isCompact_preimage φ.hasCompactSupport.isCompact
   have hKU : Φ ⁻¹' tsupport φ ⊆ U := hUV ▸ preimage_mono φ.tsupport_subset
   have hsub : tsupport (fun x => φ (Φ x)) ⊆ Φ ⁻¹' tsupport φ :=
-    closure_minimal (fun x hx => subset_tsupport φ fun h => hx (by simp [h]))
-      ((isClosed_tsupport _).preimage hΦc.continuous)
+    tsupport_comp_subset_preimage φ hΦc.continuous
   let ψ : 𝓓(U, ℝ) := TestFunction.mk (fun x => φ (Φ x)) (φ.contDiff.comp hΦc)
     (hK.of_isClosed_subset isClosed_closure hsub) (hsub.trans hKU)
   have heq : W1p.compMeasurePreservingL hΦ hUV hΦl hM (W1p.ofTestFunctionₗ ν V p φ) =
@@ -331,13 +331,8 @@ theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule
     (hu : u ∈ w1p0Submodule volume V p) :
     W1p.compAffineIsometryEquivL g hUV u ∈ w1p0Submodule volume U p := by
   rw [W1p.compAffineIsometryEquivL]
-  refine W1p.compMeasurePreservingL_mem_w1p0Submodule_of_contDiff (Φ := ⇑g) ?_
-    g.toHomeomorph.isProperMap _ _ _ _ hu
-  -- An affine isometry is its linear part plus a constant.
-  have hg : ⇑g = fun y => g.linearIsometryEquiv y + g 0 := funext fun y => by
-    simpa using g.map_vadd 0 y
-  rw [hg]
-  exact g.linearIsometryEquiv.contDiff.add contDiff_const
+  exact W1p.compMeasurePreservingL_mem_w1p0Submodule_of_contDiff (Φ := ⇑g)
+    g.toAffineIsometry.toContinuousAffineMap.contDiff g.toHomeomorph.isProperMap _ _ _ _ hu
 
 /-- Precomposition with `g.symm` undoes precomposition with `g`: `(u ∘ g) ∘ g⁻¹ = u`. -/
 @[simp] theorem W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL (g : F ≃ᵃⁱ[ℝ] F')
