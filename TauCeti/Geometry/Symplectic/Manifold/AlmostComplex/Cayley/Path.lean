@@ -255,16 +255,6 @@ theorem cayleyPath_apply (t : ℝ) (x : M) (v : TangentSpace I x) :
     almostComplexStructureAt_cayleyPath]
   rfl
 
-/-- A smooth almost complex structure agreeing with the pointwise path at every point is the
-path. -/
-private theorem cayleyPath_eq_of_forall {t : ℝ} {J : SmoothAlmostComplexStructure I M}
-    (h : ∀ x, SymplecticForm.Compatible.cayleyPath (V := E) (h₀.compatibleAt x)
-      (h₁.compatibleAt x) t = J.almostComplexStructureAt x) :
-    h₀.cayleyPath h₁ t = J := by
-  ext x v
-  rw [← (h₀.cayleyPath h₁ t).almostComplexStructureAt_apply x v,
-    ← J.almostComplexStructureAt_apply x v, almostComplexStructureAt_cayleyPath, h x]
-
 /-- At every point, the Cayley coordinate of `J_t` relative to `J₀` is the Cayley coordinate of
 `J₁` scaled by `smoothTransition t`. Since compatible structures are determined by their Cayley
 coordinate, this characterizes the path. -/
@@ -287,22 +277,25 @@ theorem compatible_cayleyPath (t : ℝ) : σ.Compatible (h₀.cayleyPath h₁ t)
 /-- The path agrees with `J₀` on the whole incoming collar `t ≤ 0`. -/
 @[simp]
 theorem cayleyPath_of_nonpos {t : ℝ} (ht : t ≤ 0) : h₀.cayleyPath h₁ t = J₀ :=
-  cayleyPath_eq_of_forall h₀ h₁ fun x ↦
-    SymplecticForm.Compatible.cayleyPath_of_nonpos (V := E) (h₀.compatibleAt x)
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x ↦ by
+    rw [almostComplexStructureAt_cayleyPath]
+    exact SymplecticForm.Compatible.cayleyPath_of_nonpos (V := E) (h₀.compatibleAt x)
       (h₁.compatibleAt x) ht
 
 /-- The path agrees with `J₁` on the whole outgoing collar `1 ≤ t`. -/
 @[simp]
 theorem cayleyPath_of_one_le {t : ℝ} (ht : 1 ≤ t) : h₀.cayleyPath h₁ t = J₁ :=
-  cayleyPath_eq_of_forall h₀ h₁ fun x ↦
-    SymplecticForm.Compatible.cayleyPath_of_one_le (V := E) (h₀.compatibleAt x)
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x ↦ by
+    rw [almostComplexStructureAt_cayleyPath]
+    exact SymplecticForm.Compatible.cayleyPath_of_one_le (V := E) (h₀.compatibleAt x)
       (h₁.compatibleAt x) ht
 
 /-- The Cayley path from a compatible structure to itself is constant. -/
 @[simp]
 theorem cayleyPath_self (t : ℝ) : h₀.cayleyPath h₀ t = J₀ :=
-  cayleyPath_eq_of_forall h₀ h₀ fun x ↦
-    SymplecticForm.Compatible.cayleyPath_self (V := E) (h₀.compatibleAt x) t
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x ↦ by
+    rw [almostComplexStructureAt_cayleyPath]
+    exact SymplecticForm.Compatible.cayleyPath_self (V := E) (h₀.compatibleAt x) t
 
 /-- The Cayley path is jointly smooth in time and space: `(t, x) ↦ J_t x` is a smooth section of
 the tangent endomorphism bundle along the projection `ℝ × M → M`. -/
