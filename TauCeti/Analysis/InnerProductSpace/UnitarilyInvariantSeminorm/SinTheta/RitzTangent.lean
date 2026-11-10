@@ -377,7 +377,8 @@ private theorem tanThetaResidualWitness_scalar
         hA.le_re_inner_apply_self_of_pointSpectrumIn hUperpRed hgap.2 hyUperp
       simpa [hynorm] using hbound
     have hSyl := LinearMap.congr_fun
-      (hA.sylvester_starProjection_orthogonal_comp hU X.toLinearMap M) v
+      (((hA.isReducing_iff_mem_invtSubmodule U).mpr hU).sylvester_starProjection_orthogonal_comp
+        X.toLinearMap M) v
     -- Pair the projected Sylvester identity with the sine left singular vector;
     -- the ordered form bounds supply the gap times its singular value.
     have hpair :
