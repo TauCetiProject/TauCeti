@@ -478,8 +478,8 @@ theorem fderiv_extChartAt_comp_apply_eq_inChart {F : Type*} [NormedAddCommGroup 
       J.inChart x ((extChartAt I x ∘ u) w) (fderiv ℝ (extChartAt I x ∘ u) w b) := by
   have hinv := congr($(mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt' hw)
     (mfderiv 𝓘(ℝ, F) I u w b))
-  rw [hu.fderiv_extChartAt_comp_apply hw, hu.fderiv_extChartAt_comp_apply hw,
-    Function.comp_apply, h]
+  rw [hu.continuousAt.fderiv_extChartAt_comp_apply hw,
+    hu.continuousAt.fderiv_extChartAt_comp_apply hw, Function.comp_apply, h]
   exact (congrArg _ (congrArg _ hinv)).symm.trans
     (J.inChart_extChartAt_apply_eq_mfderiv x hw _).symm
 

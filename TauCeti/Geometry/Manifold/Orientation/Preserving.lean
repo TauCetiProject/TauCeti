@@ -750,7 +750,7 @@ theorem signAt_mul_signAt_mul_det_pos
       (extChartAt I β x) = tangentCoordChange J (f x) α (f x) ∘L D ∘L
         tangentCoordChange I β x x := by
     subst hD₀
-    exact hf.fderivWithin_extChartAt_comp_extChartAt_symm
+    exact hf.continuousAt.fderivWithin_extChartAt_comp_extChartAt_symm
       (by simpa only [extChartAt_source] using hx) (by simpa only [extChartAt_source] using hfx)
   -- `e` is the derivative `D`, read as a linear equivalence of the model spaces; this is `rfl`
   -- because `TangentSpace I x` and `TangentSpace J (f x)` are by definition `E` and `E'`.

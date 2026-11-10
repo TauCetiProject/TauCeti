@@ -63,7 +63,7 @@ Without differentiability `mfderiv` is zero, so then `det (1 - df_x) = 1` althou
 nondegenerate.
 Read in the extended chart at any point `x'` whose chart contains `x`, the derivative of `f` at the
 fixed point is `df_x` conjugated by the derivative of the transition map
-(`MDifferentiableAt.fderivWithin_extChartAt_comp_extChartAt_symm`), so `det (1 - df_x)` can be
+(`ContinuousAt.fderivWithin_extChartAt_comp_extChartAt_symm`), so `det (1 - df_x)` can be
 computed in any chart, also on manifolds with boundary or corners
 (`TauCeti.det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm`).
 
@@ -516,7 +516,7 @@ theorem det_id_sub_fderivWithin_extChartAt_comp_extChartAt_symm [IsManifold I 1 
   have hchart : fderivWithin 𝕜 (extChartAt I x' ∘ f ∘ (extChartAt I x').symm) (range I)
       (extChartAt I x' x) = T ∘L D ∘L T' := by
     have hT₀ : tangentCoordChange I (f x) x' (f x) = T := by rw [hx]
-    rw [hf.fderivWithin_extChartAt_comp_extChartAt_symm hx' (by rwa [hx]), hT₀]
+    rw [hf.continuousAt.fderivWithin_extChartAt_comp_extChartAt_symm hx' (by rwa [hx]), hT₀]
     -- `D` is `mfderiv I I f x` by definition.
     rfl
   -- So `1 - T ∘ D ∘ T'` is the conjugate of `1 - D` by `e`.

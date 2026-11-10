@@ -162,7 +162,7 @@ theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
     rfl
   -- The chart at `u z` has the identity as derivative there.
   have hD₀ (v : ℂ) : fderiv ℝ (extChartAt I (u z) ∘ u) z v = mfderiv 𝓘(ℝ, ℂ) I u z v := by
-    rw [(hu.mdifferentiableAt (by norm_num)).fderiv_extChartAt_comp_apply
+    rw [hu.continuousAt.fderiv_extChartAt_comp_apply
       (mem_extChartAt_source (u z)), mfderiv_extChartAt_self]
     -- The identity of the tangent space at `u z` applied to `mfderiv u z v`.
     rfl
