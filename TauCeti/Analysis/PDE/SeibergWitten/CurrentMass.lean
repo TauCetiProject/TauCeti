@@ -42,9 +42,10 @@ independently of `r` and of the solution, and so is the mass of `T_r`:
   (`Distribution.mass`) of the current `ζ ↦ ∫ ω ∧ ζ` on test forms on an open set of finite
   volume;
 * `exists_mass_integral_wedge_le_of_add_hodgeStar_eq`: for solutions of the large-parameter
-  curvature equation in a constant unitary frame, the mass of `ζ ↦ ∫ i F_a ∧ ζ` is bounded by a
-  constant depending only on the constants in the coarse bounds, the forcing bound and the lower
-  bound on the Hermitian part of `i F_a`, once `r` is large.
+  curvature equation in a constant unitary frame, the mass of `ζ ↦ ∫ i F_a ∧ ζ` on test forms on
+  an open set `Ω` of finite volume is bounded by a constant depending only on `Ω`, the basis used
+  to integrate, the constants in the coarse bounds, the forcing bound and the lower bound on the
+  Hermitian part of `i F_a`, once `r` is large.
 
 A uniform mass bound is the input for extracting weak limits of the currents `T_{r_n}` as
 `r_n → ∞` (`Distribution.isCompact_image_coe_mass_le`). The two general bounds are stated for a
