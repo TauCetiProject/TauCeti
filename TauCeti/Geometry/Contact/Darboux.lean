@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Contact.Standard
 public import TauCeti.Topology.Algebra.Module.Contact
+import TauCeti.Analysis.Calculus.Contact
 import TauCeti.Analysis.Calculus.DifferentialForm.Flow
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.Moser
@@ -73,8 +74,6 @@ here.
 
 ## Main results
 
-* `ContDiffOn.symplectizationForm`: the continuous symplectization form of `C^n` families is
-  `C^n`.
 * `TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_extDeriv_eq`:
   the local contact Gray–Moser lemma.
 * `TauCeti.exists_diffeomorph_eventually_mpullback_innerProductContactForm_eq_smul`: the contact
@@ -96,30 +95,6 @@ open Set Filter Topology
 open scoped Manifold InnerProductSpace
 
 namespace TauCeti
-
-section SymplectizationForm
-
-variable {𝕜 E P : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  [NormedAddCommGroup P] [NormedSpace 𝕜 P]
-
-/-- The continuous symplectization form of `C^n` families of covectors and bilinear forms is
-`C^n`. -/
-theorem _root_.ContDiffOn.symplectizationForm {n : WithTop ℕ∞} {s : Set P} {a : P → E →L[𝕜] 𝕜}
-    {b : P → E →L[𝕜] E →L[𝕜] 𝕜} (ha : ContDiffOn 𝕜 n a s) (hb : ContDiffOn 𝕜 n b s) :
-    ContDiffOn 𝕜 n (fun p ↦ (a p).symplectizationForm (b p)) s := by
-  have ha' : ContDiffOn 𝕜 n (fun p ↦ (a p).comp (ContinuousLinearMap.snd 𝕜 𝕜 E)) s :=
-    ha.clm_comp contDiffOn_const
-  have h : ContDiffOn 𝕜 n (fun p ↦
-      (ContinuousLinearMap.fst 𝕜 𝕜 E).smulRight ((a p).comp (ContinuousLinearMap.snd 𝕜 𝕜 E)) -
-        ((a p).comp (ContinuousLinearMap.snd 𝕜 𝕜 E)).smulRight (ContinuousLinearMap.fst 𝕜 𝕜 E) +
-        ((ContinuousLinearMap.compL 𝕜 (𝕜 × E) E 𝕜).flip (ContinuousLinearMap.snd 𝕜 𝕜 E)).comp
-          ((b p).comp (ContinuousLinearMap.snd 𝕜 𝕜 E))) s :=
-    ((contDiffOn_const.smulRight ha').sub (ha'.smulRight contDiffOn_const)).add
-      (contDiffOn_const.clm_comp (hb.clm_comp contDiffOn_const))
-  refine h.congr fun p _ ↦ ContinuousLinearMap.ext fun q ↦ ContinuousLinearMap.ext fun q' ↦ ?_
-  simp
-
-end SymplectizationForm
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
@@ -186,7 +161,9 @@ private theorem compContinuousLinearMap_fderiv_eq_exp_integral_smul
     have hrate : deriv (fun s ↦ ω s y) t + lieDerivForm (Y t) (ω t) y = -σ t y • ω t y := by
       rw [hdt, lieDerivForm_eq_curryLeft_extDeriv_add hωt (hYd t ht), hzero, add_zero, hext]
       ext m
-      rw [show m = ![m 0] from (FinVec.etaExpand_eq m).symm]
+      -- Expand `m` into a one-entry vector, the form in which `hY` evaluates the forms.
+      have hm : m = ![m 0] := (FinVec.etaExpand_eq m).symm
+      rw [hm]
       simp only [ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.sub_apply,
         ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.curryLeft_apply_apply,
         smul_eq_mul, ω]
@@ -216,12 +193,14 @@ private theorem eq_and_extDeriv_eq_of_eq_pullback {E : Type*} [NormedAddCommGrou
   refine ⟨?_, ?_⟩
   · ext m
     have hLm : ⇑L ∘ ![m 0] = ![L (m 0)] := (FinVec.map_eq _ _).symm
-    rw [show m = ![m 0] from (FinVec.etaExpand_eq m).symm, ← h₀]
+    have hm : m = ![m 0] := (FinVec.etaExpand_eq m).symm
+    rw [hm, ← h₀]
     simp [hgd.fderiv, hLm]
   · rw [extDeriv_pullback hσ hg (by simp)]
     ext m
     have hLm : ⇑L ∘ ![m 0, m 1] = ![L (m 0), L (m 1)] := (FinVec.map_eq _ _).symm
-    rw [show m = ![m 0, m 1] from (FinVec.etaExpand_eq m).symm, ← h₁]
+    have hm : m = ![m 0, m 1] := (FinVec.etaExpand_eq m).symm
+    rw [hm, ← h₁]
     simp [hgd.fderiv, hLm]
 
 variable [FiniteDimensional ℝ V]
@@ -452,7 +431,7 @@ theorem exists_diffeomorph_eventually_mpullback_innerProductContactForm_eq_smul
     ((contMDiff_iff_contDiff.1 ψ.contMDiff).differentiable hr0 y).hasFDerivAt
   have hΦ : HasFDerivAt (ψ.trans A) ((L : V →L[ℝ] E).comp (fderiv ℝ ψ y)) y := by
     have hAd : HasFDerivAt A (L : V →L[ℝ] E) (ψ y) := by
-      rw [show ⇑A = fun y ↦ L (y - x₀) from funext hA]
+      rw [funext hA]
       exact (L.hasFDerivAt.comp _ ((hasFDerivAt_id _).sub_const x₀)).congr_fderiv
         (ContinuousLinearMap.comp_id _)
     exact hAd.comp y hψd
