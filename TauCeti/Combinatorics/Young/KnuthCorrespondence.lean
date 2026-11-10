@@ -395,14 +395,15 @@ theorem exists_robinsonSchenstedKnuth_eq_iff {p : List (List β) × List (List �
     rw [← hn, hperm.length_eq, length_append, length_singleton]
     omega
   obtain ⟨ws, hws, hrsk⟩ := ih _ hlen' _ _ (hP.reverseRowInsert hcornerP)
-    (hQ.dropLastOfRow hcornerQ) (length_getD_reverseRowInsert_fst hP hQ hshape hcornerQ) rfl
+    (hQ.dropLastOfRow hcornerQ) (length_getD_reverseRowInsert_fst hP hshape hcornerQ) rfl
   refine ⟨ws ++ [(a, b)], sortedLE_map_toLex_append_singleton_of_forall hws
     (fun x hx => hmax x (hperm.symm.subset (mem_append_left [a] (by rwa [hrsk] at hx))))
     fun i hi => ?_, ?_⟩
   · -- The rows above row `k` are unchanged, and none of them ends in `a` by the choice of `k`.
     rw [hrsk] at hi ⊢
     rw [hidx] at hi
-    simp only [getD_dropLastOfRow hQ hcornerQ i, hi.ne, ite_false]
+    simp only [getD_dropLastOfRow (Nat.zero_lt_of_lt hcornerQ)
+      (fun _ j hj ↦ hQ.length_getD_eq_zero_of_le (k := k + 1) (by omega) hj) i, hi.ne, ite_false]
     exact hkmin i hi
   · rw [robinsonSchenstedKnuth_append_singleton, hrsk]
     simp only
