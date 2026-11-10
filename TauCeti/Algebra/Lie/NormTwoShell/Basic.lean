@@ -549,12 +549,12 @@ private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even
   have hb := b.2
   have hc := c.2
   -- The three pairings lie in `{-1, 0, 1}`, and decide which pairwise sums are roots.
-  have hp1 := hB.neg_one_le_dotProduct_mulVec hdiag ha hb fun h ↦ hab' (by rw [h, neg_add_cancel])
-  have hp2 := hB.dotProduct_mulVec_le_one hdiag ha hb (Subtype.coe_injective.ne hab)
-  have hq1 := hB.neg_one_le_dotProduct_mulVec hdiag hb hc fun h ↦ hbc' (by rw [h, neg_add_cancel])
-  have hq2 := hB.dotProduct_mulVec_le_one hdiag hb hc (Subtype.coe_injective.ne hbc)
-  have hr1 := hB.neg_one_le_dotProduct_mulVec hdiag hc ha fun h ↦ hca' (by rw [h, neg_add_cancel])
-  have hr2 := hB.dotProduct_mulVec_le_one hdiag hc ha (Subtype.coe_injective.ne hca)
+  have hp1 := hB.neg_one_le_dotProduct_mulVec ha hb fun h ↦ hab' (by rw [h, neg_add_cancel])
+  have hp2 := hB.dotProduct_mulVec_le_one ha hb (Subtype.coe_injective.ne hab)
+  have hq1 := hB.neg_one_le_dotProduct_mulVec hb hc fun h ↦ hbc' (by rw [h, neg_add_cancel])
+  have hq2 := hB.dotProduct_mulVec_le_one hb hc (Subtype.coe_injective.ne hbc)
+  have hr1 := hB.neg_one_le_dotProduct_mulVec hc ha fun h ↦ hca' (by rw [h, neg_add_cancel])
+  have hr2 := hB.dotProduct_mulVec_le_one hc ha (Subtype.coe_injective.ne hca)
   have hmab := hS.add_mem_normTwoShell_iff ha hb
   have hmbc := hS.add_mem_normTwoShell_iff hb hc
   have hmca := hS.add_mem_normTwoShell_iff hc ha
@@ -620,8 +620,8 @@ private theorem jacobi_root_root_root_of_add_eq_zero (hB : B.PosDef) (hdiag : �
   have hca' : (c : I → ℤ) + a ≠ 0 := fun h ↦
     hcb (Subtype.ext ((eq_neg_of_add_eq_zero_left h).trans hbv.symm))
   -- The pairing `d = ⟪a, c⟫` lies in `{-1, 0, 1}` and decides which of the two sums is a root.
-  have hle := hB.dotProduct_mulVec_le_one hdiag a.2 c.2 (Subtype.coe_injective.ne hca.symm)
-  have hge := hB.neg_one_le_dotProduct_mulVec hdiag a.2 c.2 fun h ↦
+  have hle := hB.dotProduct_mulVec_le_one a.2 c.2 (Subtype.coe_injective.ne hca.symm)
+  have hge := hB.neg_one_le_dotProduct_mulVec a.2 c.2 fun h ↦
     hcb (Subtype.ext (by rw [hbv, h, neg_neg]))
   have hmbc : (b : I → ℤ) + c ∈ B.normTwoShell ↔ (a : I → ℤ) ⬝ᵥ B *ᵥ c = 1 := by
     rw [hS.add_mem_normTwoShell_iff b.2 c.2, hbv, neg_dotProduct, neg_inj]
