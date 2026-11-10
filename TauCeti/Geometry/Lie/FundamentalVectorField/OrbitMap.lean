@@ -41,6 +41,8 @@ an immersion, respectively a submersion.
 
 ## Main results
 
+* `TauCeti.mfderiv_smul_const_apply`: the differential of the orbit map at `g` is that of the orbit
+  map of `g • x` at the identity, precomposed with the differential of right translation by `g⁻¹`.
 * `TauCeti.orbitTangent_fundamental_smul`: `T_{g • x}(G • x) = d(y ↦ g • y)_x (T_x(G • x))`.
 * `TauCeti.range_mfderiv_smul_const`: the image of the differential of the orbit map at `g` is the
   orbit tangent space at `g • x`.
@@ -126,6 +128,19 @@ theorem orbitTangent_fundamental_smul_eq_top_iff (g : G) (x : M) :
   exact Submodule.map_eq_top_iff (e := e.toLinearEquiv)
 
 /-! ### The differential of the orbit map -/
+
+omit [CompleteSpace E] [CompleteSpace E'] [IsManifold I' ∞ M] in
+/-- The derivative at `g` of the orbit map of `x` is that of the orbit map of `g • x` at the
+identity, precomposed with the derivative of right translation by `g⁻¹`. -/
+theorem mfderiv_smul_const_apply (g : G) (x : M) (v : TangentSpace I g) :
+    mfderiv I I' (fun h : G ↦ h • x) g v =
+      mfderiv I I' (fun h : G ↦ h • g • x) 1 (mfderiv I I (· * g⁻¹) g v) := by
+  have hfun : (fun h : G ↦ h • x) = (fun h : G ↦ h • g • x) ∘ ((· * g⁻¹) : G → G) :=
+    funext fun h ↦ by simp [mul_smul]
+  rw [hfun]
+  exact mfderiv_comp_apply_of_eq g (ContMDiffSMul.mdifferentiableAt_smul_const (g • x) 1)
+    ((contMDiff_mul_right (a := g⁻¹) (n := 1)).contMDiffAt.mdifferentiableAt one_ne_zero)
+    (mul_inv_cancel g) v
 
 /-- **The image of the differential of the orbit map** at `g` is the orbit tangent space at
 `g • x`, spanned by the values of the fundamental vector fields. -/
