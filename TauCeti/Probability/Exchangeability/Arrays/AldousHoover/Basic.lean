@@ -5,6 +5,7 @@ Authors: Codex
 -/
 module
 
+public import TauCeti.MeasureTheory.Measure.AEMeasurable
 public import TauCeti.Probability.Exchangeability.Arrays.Basic
 public import TauCeti.Probability.Process.Array.AldousHoover.Basic
 
@@ -47,20 +48,6 @@ namespace TauCeti.Probability.AldousHoover
 
 variable {α : Type*} [MeasurableSpace α]
 
-/-- The law of a function is unchanged by a measure-preserving measurable equivalence of its
-domain, with no measurability assumption on the function. -/
-private theorem map_comp_eq_of_map_eq {X : Type*} [MeasurableSpace X] {μ : Measure X}
-    {e : X ≃ᵐ X} (he : μ.map e = μ) (g : X → α) : μ.map (g ∘ e) = μ.map g := by
-  by_cases hg : AEMeasurable g μ
-  · rw [← AEMeasurable.map_map_of_aemeasurable (by rwa [he]) e.measurable.aemeasurable, he]
-  · have hge : ¬ AEMeasurable (g ∘ e) μ := by
-      rwa [(show MeasurePreserving e μ μ from ⟨e.measurable, he⟩).aemeasurable_comp_iff
-        e.measurableEmbedding]
-    by_cases hμ : μ = 0
-    · simp [hμ]
-    · rw [Measure.map_of_not_aemeasurable_of_ne_zero hge hμ,
-        Measure.map_of_not_aemeasurable_of_ne_zero hg hμ]
-
 /-- **Every separate Aldous--Hoover coding is separately exchangeable.** -/
 theorem separatelyExchangeable_separateArray
     (f : I × I × I × I → α) :
@@ -74,7 +61,8 @@ theorem separatelyExchangeable_separateArray
     funext u p
     simpa only [Function.comp_apply] using separateArray_reindex f rowPerm colPerm u p
   rw [hfun]
-  exact map_comp_eq_of_map_eq (map_separateNoiseCongr_noiseMeasure rowPerm colPerm) _
+  exact Measure.map_comp_measurableEquiv_of_map_eq
+    (map_separateNoiseCongr_noiseMeasure rowPerm colPerm) _
 
 /-- **Every joint Aldous--Hoover coding is jointly exchangeable.** -/
 theorem jointlyExchangeable_jointArray
@@ -88,7 +76,7 @@ theorem jointlyExchangeable_jointArray
     funext u p
     simpa only [Function.comp_apply] using jointArray_reindex f perm u p
   rw [hfun]
-  exact map_comp_eq_of_map_eq (map_jointNoiseCongr_noiseMeasure perm) _
+  exact Measure.map_comp_measurableEquiv_of_map_eq (map_jointNoiseCongr_noiseMeasure perm) _
 
 end TauCeti.Probability.AldousHoover
 
