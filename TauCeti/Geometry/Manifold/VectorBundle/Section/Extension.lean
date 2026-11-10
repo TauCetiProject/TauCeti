@@ -78,9 +78,8 @@ theorem exists_apply_eq_isCompact_tsupport_subset (x₀ : M) (v : V x₀) {U : S
   let s : Cₛ^n⟮I; F, V⟯ := ⟨(ρ : M → ℝ) • t, (ρ.contMDiff.of_le (mod_cast le_top)).smul_section ht⟩
   have hsρ : s.tsupport ⊆ _root_.tsupport ρ :=
     (tsupport_subset_iff (_root_.isClosed_tsupport _)).2 fun x hx ↦ by
-      change ρ x • t x = 0
-      rw [image_eq_zero_of_notMem_tsupport (f := (ρ : M → ℝ)) hx, zero_smul]
-  exact ⟨s, by change ρ x₀ • t x₀ = v; rw [ρ.eq_one, one_smul, htv],
+      simp [s, image_eq_zero_of_notMem_tsupport (f := (ρ : M → ℝ)) hx]
+  exact ⟨s, by simp [s, htv],
     ρ.hasCompactSupport.isCompact.of_isClosed_subset s.isClosed_tsupport hsρ, hsρ.trans hρ⟩
 
 end ContMDiffSection
