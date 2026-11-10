@@ -180,10 +180,29 @@ theorem ResolutionVanishesOn.exists_isOpen {T : Set G} (hT : IsCompact T) (n : �
       fun g hg ↦ ?_⟩
     exact (hW ⟨F' g, hg.1⟩).mono (Set.inter_subset_right.trans (Set.iInter_subset _ _)) n
 
-/-- **Vanishing on a set spreads to its closure.** An element of the coinduced resolution of a
-discrete representation of a compact group that vanishes on a set `T` vanishes on the closure of
-`T`: the iterated maps are continuous into discrete spaces. -/
-theorem ResolutionVanishesOn.closure {T : Set G} (n : ℕ) :
+omit [CompactSpace G] [DiscreteTopology X.V] in
+/-- **The vanishing locus is closed.** For a Hausdorff coefficient module, the elements of the
+coinduced resolution that vanish on a set `T` form a closed subset: it is an intersection of the
+preimages of closed sets under the continuous evaluations at the points of `T`. -/
+theorem isClosed_setOf_resolutionVanishesOn [T2Space X.V] (T : Set G) (n : ℕ) :
+    IsClosed {F : (TopRep.resolutionX X n).V | ResolutionVanishesOn X T n F} := by
+  induction n with
+  | zero => exact isClosed_singleton
+  | succ n ih =>
+    have : {F : (TopRep.resolutionX X (n + 1)).V | ResolutionVanishesOn X T (n + 1) F} =
+        ⋂ g ∈ T, (fun F : C(G, (TopRep.resolutionX X n).V) ↦ F g) ⁻¹'
+          {v | ResolutionVanishesOn X T n v} := by
+      ext F
+      simp [Set.mem_iInter]
+    rw [this]
+    exact isClosed_biInter fun g _ ↦ ih.preimage (continuous_eval_const g)
+
+omit [CompactSpace G] [DiscreteTopology X.V] in
+/-- **Vanishing on a set spreads to its closure.** An element of the coinduced resolution that
+vanishes on a set `T` vanishes on the closure of `T`, for a Hausdorff coefficient module: the
+vanishing locus is closed (`TauCeti.ContinuousCohomology.isClosed_setOf_resolutionVanishesOn`) and
+the iterated maps are continuous. -/
+theorem ResolutionVanishesOn.closure [T2Space X.V] {T : Set G} (n : ℕ) :
     ∀ {F : (TopRep.resolutionX X n).V}, ResolutionVanishesOn X T n F →
       ResolutionVanishesOn X (_root_.closure T) n F := by
   induction n with
@@ -193,7 +212,9 @@ theorem ResolutionVanishesOn.closure {T : Set G} (n : ℕ) :
     set F' : C(G, (TopRep.resolutionX X n).V) := F
     have hsub : T ⊆ F' ⁻¹' {v | ResolutionVanishesOn X (_root_.closure T) n v} :=
       fun g hg ↦ ih (hF g hg)
-    exact fun g hg ↦ closure_minimal hsub ((isClosed_discrete _).preimage F'.continuous) hg
+    exact fun g hg ↦ closure_minimal hsub
+      ((isClosed_setOf_resolutionVanishesOn (X := X) (_root_.closure T) n).preimage
+        F'.continuous) hg
 
 end ContinuousCohomology
 
