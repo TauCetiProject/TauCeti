@@ -43,7 +43,7 @@ homogeneous submodules over the loop algebra.
 
 ## Main definitions
 
-* `TauCeti.pathFromChainSkeleton C H R q`: the chains on `P_b B` supported over the `q`-skeleton,
+* `TauCeti.pathFromChainSkeleton b C H R q`: the chains on `P_b B` supported over the `q`-skeleton,
   as a submodule over `C_*(Ω_b B; R)`.
 
 ## Main results
@@ -52,8 +52,8 @@ homogeneous submodules over the loop algebra.
 * `TauCeti.isHomogeneous_pathFromChainSkeleton`,
   `TauCeti.cubicalChainModuleDifferential_mem_pathFromChainSkeleton`: each stage is a homogeneous
   submodule closed under the boundary.
-* `TauCeti.pathFromChainSkeleton_of_neg`: below degree `0`, the stage is zero for an absolute CW
-  complex.
+* `TauCeti.pathFromChainSkeleton_eq_bot_of_neg`: below degree `0`, the stage is zero for an
+  absolute CW complex.
 * `TauCeti.iSup_pathFromChainSkeleton_eq_top`: the filtration is exhaustive.
 * `TauCeti.cubicalChainModuleLinearMap_toMoorePathFrom_mem_pathFromChainSkeleton`: chains of a
   pulled-back path fibration over a subset mapped into a skeleton lie in the corresponding stage.
@@ -154,7 +154,7 @@ theorem mem_pathFromChainSkeleton_of_neg {q : ℤ} (hq : q < 0)
 
 /-- For an absolute CW complex, the skeletal filtration is zero below degree `0`. -/
 @[simp]
-theorem pathFromChainSkeleton_of_neg {C : Set B} [CWComplex C] {q : ℤ} (hq : q < 0) :
+theorem pathFromChainSkeleton_eq_bot_of_neg {C : Set B} [CWComplex C] {q : ℤ} (hq : q < 0) :
     pathFromChainSkeleton b C H R q = ⊥ := by
   refine (Submodule.eq_bot_iff _).2 fun x hx ↦ ?_
   rwa [mem_pathFromChainSkeleton, preimageSkeleton_eq_empty _ hq,
