@@ -19,12 +19,13 @@ open scoped ContDiff
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
 /-- A tower of functions with the stated successive ordinary derivatives gives a smooth zeroth
 function. -/
-theorem contDiff_of_derivative_tower (F : ℕ → ℝ → E)
-    (hF : ∀ k x, HasDerivAt (F k) (F (k + 1) x) x) : ContDiff ℝ ∞ (F 0) := by
+theorem contDiff_of_derivative_tower (F : ℕ → 𝕜 → E)
+    (hF : ∀ k x, HasDerivAt (F k) (F (k + 1) x) x) : ContDiff 𝕜 ∞ (F 0) := by
   have hiter (k : ℕ) : iteratedDeriv k (F 0) = F k := by
     induction k with
     | zero => exact iteratedDeriv_zero

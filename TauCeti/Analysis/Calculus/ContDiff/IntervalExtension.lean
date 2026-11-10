@@ -5,7 +5,7 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
-public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 public import TauCeti.Analysis.Calculus.IteratedDeriv.Basic
 public import Mathlib.Analysis.Calculus.SmoothSeries
