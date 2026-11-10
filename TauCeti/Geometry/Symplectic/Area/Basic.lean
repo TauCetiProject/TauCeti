@@ -195,6 +195,20 @@ theorem loopArea_comp_add_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Func
     intervalIntegral.integral_comp_neg (fun θ ↦ ω (g θ) (deriv g θ)), neg_neg]
   ring
 
+/-- **The loop area of a loop traversed backwards.** If `x` is `1`-periodic, the loop
+`t ↦ x(-t)` has the opposite loop area. -/
+theorem loopArea_comp_neg (ω : SymplecticForm V) {x : ℝ → V} (hx : Function.Periodic x 1) :
+    ω.loopArea (fun t ↦ x (-t)) = -ω.loopArea x := by
+  have hper : Function.Periodic (fun t ↦ ω (x t) (deriv x t)) 1 := fun t ↦ by
+    have hd : deriv x (t + 1) = deriv x t := by
+      rw [← deriv_comp_add_const, show (fun s ↦ x (s + 1)) = x from funext hx]
+    simp only [hx t, hd]
+  have h := hper.intervalIntegral_add_eq (-1) 0
+  rw [neg_add_cancel, zero_add] at h
+  simp only [loopArea_def, deriv_comp_neg, map_neg, intervalIntegral.integral_neg,
+    intervalIntegral.integral_comp_neg (fun t ↦ ω (x t) (deriv x t)), neg_zero, h]
+  ring
+
 variable [FiniteDimensional ℝ V] {u : ℝ × ℝ → V} {a b : ℝ}
 
 /-- **The symplectic area of a cylinder.** Let `u` be `C²` near `[a, b] × [0, 1]`, with
