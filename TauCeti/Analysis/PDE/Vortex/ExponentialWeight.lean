@@ -106,7 +106,7 @@ private theorem norm_adjoint_smulLeftCLM_sub_le (hx : Continuous x) (φ ψ : ℂ
     coeFn_testFieldToLp (μ := μ) η] with z h₁ h₂ h₃ h₄ h₅ h₆
   have hψ₀ : 0 ≤ ψ z := (norm_nonneg _).trans (hψ z)
   rw [h₁, Pi.sub_apply, h₂, h₃, h₄, h₅, h₆,
-    show ⇑(smulLeftCLM hφ η) = fun t ↦ φ t • η t from funext (smulLeftCLM_apply hφ η),
+    funext (smulLeftCLM_apply hφ η),
     gaugeFixedAdjoint_fun_smul x (hφ.differentiable (by norm_num) z)
       (η.contDiff.differentiable (by norm_num) z), add_sub_cancel_left,
     ← sq_le_sq₀ (norm_nonneg _) (norm_nonneg _), norm_sq_gaugeFixedAdjointSymbol]
@@ -435,8 +435,8 @@ private theorem norm_smulLp_one_sub_mul_le (hx : ContDiff ℝ 1 x) (hsol : ∀ z
   set dφ : ℂ →ᵇ ℝ := normFDeriv hφ hdφb
   -- The exterior multiplier inequality for `φ`.
   set X := ‖smulLp μ 2 ofNat_ne_top φ u‖
-  have hB := mul_norm_sq_smulLp_le hx hsol ha hR hT hS hweak φ dφ hφ (fun z ↦ rfl) fun z hz ↦ by
-    rw [hφe]; simp [hβR z hz]
+  have hB := mul_norm_sq_smulLp_le hx hsol ha hR hT hS hweak φ dφ hφ (normFDeriv_apply hφ hdφb)
+      fun z hz ↦ by rw [hφe]; simp [hβR z hz]
   have hin : ⟪smulLp μ 2 ofNat_ne_top φ f, smulLp μ 2 ofNat_ne_top φ u⟫ ≤ F * X :=
     (real_inner_le_norm _ _).trans (mul_le_mul_of_nonneg_right
       ((norm_smulLp_le_of_abs_le hφw f).trans hFw) (norm_nonneg _))
@@ -517,7 +517,7 @@ private theorem norm_smulLp_weight_le_of_norm_smulLp_le (hx : Continuous x) {c K
     rw [← Real.sqrt_sq hF, ← Real.sqrt_mul (by positivity)]
     refine Real.sqrt_le_sqrt ?_
     nlinarith [mul_le_mul hdu hdu (norm_nonneg _) (by positivity)]
-  refine (norm_smulLp_le_sqrt_add hx hT hS hweak w dw hw fun z ↦ rfl).trans ?_
+  refine (norm_smulLp_le_sqrt_add hx hT hS hweak w dw hw (normFDeriv_apply hw hdwb)).trans ?_
   rw [solutionConst]
   nlinarith
 
