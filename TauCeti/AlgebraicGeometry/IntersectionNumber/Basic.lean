@@ -65,8 +65,9 @@ off-diagonal entries of the intersection matrix.
 * `LineBundleClass.intersectionNumber k ι a`: the intersection number `(a · C)` of a line-bundle
   class `a` on `X` with `ι : C ⟶ X`;
 * `LineBundleClass.intersectionNumber_pullback`: compatibility with pullback along a morphism
-  `g : X ⟶ Y`, `(g^* a · C) = (a · (ι ≫ g))` with `C` mapping to `Y` by `ι ≫ g` (the cycle-level
-  projection formula, with the degree of `C` over its image, is not proved here);
+  `g : X ⟶ Y`, `(g^* a · C) = (a · (ι ≫ g))` with `C` mapping to `Y` by `ι ≫ g`; when `C` maps
+  finitely and flatly onto a curve, the projection formula with the degree of `C` over that curve
+  is `LineBundleClass.intersectionNumber_pullback_of_finrank_eq`;
 * `LineBundleClass.intersectionNumber_eq_zero_of_eq_comp`: every class has intersection number
   zero with a curve contracted to a point; combined with `intersectionNumber_pullback` applied to
   `ι ≫ g`, so does every pullback along a morphism `g` contracting the curve;
