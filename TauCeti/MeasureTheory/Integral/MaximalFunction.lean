@@ -323,11 +323,8 @@ theorem setLIntegral_ball_le_two_pow_mul_measure_mul_maximalFunction (μ : Measu
     rw [mem_ball] at hx hy ⊢
     linarith [dist_triangle y c x, dist_comm x c]
   have hμ : μ (ball x (2 * r)) = 2 ^ finrank ℝ E * μ (ball c r) := by
-    rw [Measure.addHaar_ball_of_pos μ x (by positivity : (0 : ℝ) < 2 * r),
-      Measure.addHaar_ball_of_pos μ c hr, ← mul_assoc, mul_pow,
-      ENNReal.ofReal_mul (by positivity : (0 : ℝ) ≤ 2 ^ finrank ℝ E),
-      ENNReal.ofReal_pow (by norm_num : (0 : ℝ) ≤ 2)]
-    norm_num
+    rw [μ.addHaar_ball_mul_of_pos x two_pos, μ.addHaar_ball_center c,
+      ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
   calc ∫⁻ y in ball c r, ‖f y‖ₑ ∂μ ≤ ∫⁻ y in ball x (2 * r), ‖f y‖ₑ ∂μ := lintegral_mono_set hsub
     _ ≤ μ (ball x (2 * r)) * maximalFunction μ f x :=
         setLIntegral_ball_le_measure_mul_maximalFunction (by positivity) measure_ball_lt_top.ne
