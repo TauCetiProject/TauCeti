@@ -27,7 +27,8 @@ the inclusion of pairs `(A, A ∩ B) ⟶ (X, B)` when the interiors of `A` and `
 (`TopPair.isIso_twistedHomologyMap_excisionMap`), to excising a set whose closure lies in the
 interior of the subspace (`TopPair.isIso_twistedHomologyMap_excisionMap_compl`), and to computing
 homology modulo the complement of a closed set `K` in an open neighbourhood `U` of `K`
-(`TopPair.isIso_twistedHomologyMap_excisionMap_of_isClosed_subset`). The last form is what
+(`TopPair.isIso_twistedHomologyMap_excisionMap_of_isClosed_subset`), each with a chain-level
+`quasiIso_twistedChainComplexMap_` counterpart. The last form is what
 compares relative groups `H_*(U, U ∖ K; L)` of an open subset with those of the ambient space, as
 needed for restriction of locally finite homology to open subsets and for compact pairs.
 
@@ -292,16 +293,34 @@ theorem isIso_twistedHomologyMap_excisionMap (h : interior A ∪ interior B = Se
   infer_instance
 
 /-- **Excision with local coefficients of a set with closure in the interior of the subspace.**
-If `closure Z ⊆ interior B`, the inclusion of pairs `(X ∖ Z, B ∖ Z) ⟶ (X, B)` induces isomorphisms
-on relative twisted homology. -/
-theorem isIso_twistedHomologyMap_excisionMap_compl (Z : Set X) (h : closure Z ⊆ interior B)
-    (n : ℕ) : IsIso (twistedHomologyMap (excisionMap Zᶜ B) L n) := by
-  refine isIso_twistedHomologyMap_excisionMap Zᶜ B L ?_ n
+If `closure Z ⊆ interior B`, the inclusion of pairs `(X ∖ Z, B ∖ Z) ⟶ (X, B)` induces a
+quasi-isomorphism of relative twisted chain complexes. -/
+theorem quasiIso_twistedChainComplexMap_excisionMap_compl (Z : Set X)
+    (h : closure Z ⊆ interior B) : QuasiIso (twistedChainComplexMap (excisionMap Zᶜ B) L) := by
+  refine quasiIso_twistedChainComplexMap_excisionMap Zᶜ B L ?_
   rw [interior_compl, Set.eq_univ_iff_forall]
   intro x
   by_cases hx : x ∈ closure Z
   · exact Or.inr (h hx)
   · exact Or.inl hx
+
+/-- **Excision with local coefficients of a set with closure in the interior of the subspace.**
+If `closure Z ⊆ interior B`, the inclusion of pairs `(X ∖ Z, B ∖ Z) ⟶ (X, B)` induces isomorphisms
+on relative twisted homology. -/
+theorem isIso_twistedHomologyMap_excisionMap_compl (Z : Set X) (h : closure Z ⊆ interior B)
+    (n : ℕ) : IsIso (twistedHomologyMap (excisionMap Zᶜ B) L n) := by
+  have := quasiIso_twistedChainComplexMap_excisionMap_compl B L Z h
+  infer_instance
+
+/-- **Excision with local coefficients onto a neighbourhood.** If `U` is open and contains the
+closed set `K`, the inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces a quasi-isomorphism of
+relative twisted chain complexes. -/
+theorem quasiIso_twistedChainComplexMap_excisionMap_of_isClosed_subset {U K : Set X}
+    (hU : IsOpen U) (hK : IsClosed K) (hKU : K ⊆ U) :
+    QuasiIso (twistedChainComplexMap (excisionMap U Kᶜ) L) := by
+  refine quasiIso_twistedChainComplexMap_excisionMap U Kᶜ L ?_
+  rw [hU.interior_eq, hK.isOpen_compl.interior_eq]
+  exact Set.eq_univ_of_subset (Set.union_subset_union_left _ hKU) (Set.union_compl_self K)
 
 /-- **Excision with local coefficients onto a neighbourhood.** If `U` is open and contains the
 closed set `K`, the inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms on relative
@@ -309,9 +328,8 @@ twisted homology. -/
 theorem isIso_twistedHomologyMap_excisionMap_of_isClosed_subset {U K : Set X} (hU : IsOpen U)
     (hK : IsClosed K) (hKU : K ⊆ U) (n : ℕ) :
     IsIso (twistedHomologyMap (excisionMap U Kᶜ) L n) := by
-  refine isIso_twistedHomologyMap_excisionMap U Kᶜ L ?_ n
-  rw [hU.interior_eq, hK.isOpen_compl.interior_eq]
-  exact Set.eq_univ_of_subset (Set.union_subset_union_left _ hKU) (Set.union_compl_self K)
+  have := quasiIso_twistedChainComplexMap_excisionMap_of_isClosed_subset L hU hK hKU
+  infer_instance
 
 end Subsets
 

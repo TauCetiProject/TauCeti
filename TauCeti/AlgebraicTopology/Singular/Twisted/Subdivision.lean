@@ -624,21 +624,27 @@ lemma twistedChainComplexMap_f_comp_twistedPrismX (k : ℕ) :
         twistedSingularChain_comp_twistedChainComplexMap_f]
 
 /-- Barycentric subdivision, iterated any number of times, is natural in the space. -/
+@[reassoc]
+lemma twistedChainComplexMap_comp_pow_twistedSubdivisionChainMap (N : ℕ) :
+    twistedChainComplexMap f M ≫ (End.of (twistedSubdivisionChainMap M) ^ N).asHom =
+      (End.of (twistedSubdivisionChainMap ((pullback f.hom).obj M)) ^ N).asHom ≫
+        twistedChainComplexMap f M := by
+  induction N with
+  | zero => simp
+  | succ N ih =>
+    rw [pow_succ', End.mul_asHom, pow_succ', End.mul_asHom, reassoc_of% ih,
+      twistedChainComplexMap_comp_twistedSubdivisionChainMap, Category.assoc]
+
+/-- Barycentric subdivision, iterated any number of times, is natural in the space, on
+elements. -/
 lemma twistedChainComplexMap_f_iterate_twistedSubdivision (N : ℕ) {n : ℕ}
     (c : ((pullback f.hom).obj M).twistedChainComplex.X n) :
     ((twistedChainComplexMap f M).f n).hom
         (((End.of (twistedSubdivisionChainMap ((pullback f.hom).obj M)) ^ N).asHom.f n).hom c) =
       ((End.of (twistedSubdivisionChainMap M) ^ N).asHom.f n).hom
-        (((twistedChainComplexMap f M).f n).hom c) := by
-  induction N with
-  | zero => simp
-  | succ N ih =>
-    have hcomm := congrArg (fun φ ↦ (φ.f n).hom
-        (((End.of (twistedSubdivisionChainMap ((pullback f.hom).obj M)) ^ N).asHom.f n).hom c))
-      (twistedChainComplexMap_comp_twistedSubdivisionChainMap f M)
-    simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply] at hcomm
-    rw [HomologicalComplex.pow_f_succ, HomologicalComplex.pow_f_succ, ModuleCat.hom_comp,
-      ModuleCat.hom_comp, LinearMap.comp_apply, LinearMap.comp_apply, ← ih, hcomm]
+        (((twistedChainComplexMap f M).f n).hom c) :=
+  (congrArg (fun φ ↦ (φ.f n).hom c)
+    (twistedChainComplexMap_comp_pow_twistedSubdivisionChainMap f M N)).symm
 
 end Naturality
 
