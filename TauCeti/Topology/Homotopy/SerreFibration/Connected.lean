@@ -164,12 +164,6 @@ section FiberInclusion
 
 variable {b : B}
 
-/-- A trivial group of generalized loops with `k + 1` directions stays trivial when the directions
-are indexed by `Option (Fin k)`. -/
-private theorem subsingleton_homotopyGroup_option {X : Type*} [TopologicalSpace X] {x : X} {k : ℕ}
-    (h : Subsingleton (π_ (k + 1) X x)) : Subsingleton (HomotopyGroup (Option (Fin k)) X x) :=
-  (HomotopyGroup.congrEquiv (finSuccEquiv k).symm).subsingleton
-
 /-- The fibre inclusion `p⁻¹(b) → E` as the inclusion of a subspace. Unlike
 `ContinuousMap.subtypeVal (p ⁻¹' {b})`, whose domain is `Set.Elem` with the subtype topology, its
 domain is the `TopCat` fibre `p.fiber b`, so it matches `p.fiberι b` and the homotopy groups of
@@ -205,7 +199,8 @@ private theorem joined_of_joined_fiberι (hp : serreFibrations p) (hB : Subsingl
       homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, ContinuousMap.coe_mk, hℓ]
     exact ZerothHomotopy.sound h.symm.somePath
   -- Since `π_1(B, b)` is trivial, it is the boundary of the constant loop, which is constant.
-  have := subsingleton_homotopyGroup_option hB
+  have : Subsingleton (HomotopyGroup (Option (Fin 0)) B b) :=
+    (HomotopyGroup.congrEquiv (finSuccEquiv 0).symm).subsingleton
   rw [Subsingleton.elim c ⟦GenLoop.const⟧, fibrationBoundary_const] at hc
   have h1 := congrArg (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) e) hc
   rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk,
@@ -241,7 +236,9 @@ theorem isNConnected_fiberι_of_mem_serreFibrations (hp : serreFibrations p) {n 
     | succ k =>
       -- In positive degrees the induced map is a homomorphism, and by exactness at `π_k(F)` its
       -- kernel consists of boundaries of classes of the trivial group `π_{k+1}(B, b)`.
-      have := subsingleton_homotopyGroup_option (hB (k + 2) hk)
+      have : Subsingleton (HomotopyGroup (Option (Fin (k + 1))) B b) :=
+        @Equiv.subsingleton _ _ (HomotopyGroup.congrEquiv (finSuccEquiv (k + 1)).symm)
+          (hB (k + 2) hk)
       refine (injective_iff_map_eq_one
         (HomotopyGroup.mapHom (N := Fin (k + 1)) (x := e) (fiberVal p b) rfl)).2 fun c hc ↦ ?_
       rw [HomotopyGroup.mapHom_apply, ← HomotopyGroup.mk_const_eq_one,
