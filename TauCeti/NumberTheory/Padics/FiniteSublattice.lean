@@ -41,8 +41,7 @@ variable (ι : Type*) (p k : ℕ) [Fact p.Prime]
 
 /-- The coordinatewise inclusion of integral vectors into p-adic integral vectors. -/
 def intVectorToPadic : (ι → ℤ) →ₗ[ℤ] (ι → ℤ_[p]) :=
-  LinearMap.pi fun i ↦
-    (Int.castAddHom ℤ_[p]).toIntLinearMap.comp (LinearMap.proj i)
+  (Int.castAddHom ℤ_[p]).toIntLinearMap.compLeft ι
 
 @[simp]
 theorem intVectorToPadic_apply (x : ι → ℤ) (i : ι) :
@@ -71,15 +70,12 @@ theorem padicVectorReduction_apply (x : ι → ℤ_[p]) (i : ι) :
 
 omit [Fact p.Prime] in
 /-- Integral vectors surject onto the finite residue vectors. -/
-theorem intVectorReduction_surjective : Function.Surjective (intVectorReduction ι p k) := by
-  intro x
-  choose y hy using fun i ↦ ZMod.intCast_surjective (x i)
-  exact ⟨y, funext hy⟩
+theorem intVectorReduction_surjective : Function.Surjective (intVectorReduction ι p k) :=
+  Function.Surjective.piMap fun _ ↦ ZMod.intCast_surjective
 
 /-- P-adic integral vectors surject onto the finite residue vectors. -/
-theorem padicVectorReduction_surjective : Function.Surjective (padicVectorReduction ι p k) := by
-  intro x
-  exact ⟨fun i ↦ (x i).val, by ext; simp⟩
+theorem padicVectorReduction_surjective : Function.Surjective (padicVectorReduction ι p k) :=
+  Function.Surjective.piMap fun _ ↦ ZMod.ringHom_surjective (PadicInt.toZModPow k)
 
 /-- Reduction commutes with the inclusion of integral vectors into p-adic vectors. -/
 @[simp]
