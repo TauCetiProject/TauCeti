@@ -86,8 +86,10 @@ theorem hamiltonianCurvature_const_mul (ω : SmoothTwoForm I M) (ρ : ℝ) (z : 
   have h (K : ℝ × ℝ → M → ℝ) : (fun w ↦ ρ * K w x) = ρ • fun w ↦ K w x := by
     ext
     simp
-  simp only [hamiltonianCurvature_def, h, fderiv_const_smul_field, poissonBracket_const_mul_left,
-    poissonBracket_const_mul_right, Pi.smul_apply, smul_apply, smul_eq_mul]
+  have hK (K : M → ℝ) : (fun y ↦ ρ * K y) = ρ • K := rfl
+  simp only [hamiltonianCurvature_def, h, hK, fderiv_const_smul_field,
+    poissonBracket_const_smul_left, poissonBracket_const_smul_right, Pi.smul_apply, smul_apply,
+    smul_eq_mul]
   ring
 
 /-- **Uniform pointwise curvature bound for scaled perturbations.** For every `ρ ∈ [0, 1]`, the
@@ -175,8 +177,9 @@ theorem hamiltonianCurvature_mul (ω : SmoothTwoForm I M) {β : ℝ × ℝ → �
       β z * ω.hamiltonianCurvature Ks Kt z x +
           (β z - β z ^ 2) * ω.poissonBracket (Ks z) (Kt z) x +
         fderiv ℝ β z stdComplexLineReal * Kt z x - fderiv ℝ β z stdComplexLineImag * Ks z x := by
-  simp only [hamiltonianCurvature_def, fderiv_fun_mul hβ hKs, fderiv_fun_mul hβ hKt,
-    poissonBracket_const_mul_left, poissonBracket_const_mul_right,
+  have hK (K : M → ℝ) : (fun y ↦ β z * K y) = β z • K := rfl
+  simp only [hamiltonianCurvature_def, fderiv_fun_mul hβ hKs, fderiv_fun_mul hβ hKt, hK,
+    poissonBracket_const_smul_left, poissonBracket_const_smul_right,
     add_apply, smul_apply, smul_eq_mul]
   ring
 
