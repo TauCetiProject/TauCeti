@@ -17,13 +17,12 @@ needed, since an invertible derivative forces differentiability
 (`mdifferentiableAt_of_isInvertible_mfderiv`), and no finite-dimensionality or smoothness of the
 manifolds is assumed.
 
-Conversely, between manifolds modelled on finite-dimensional spaces of the same dimension over a
-complete field, if a composite of differentiable maps has invertible manifold derivative then so do
-both factors (`isInvertible_mfderiv_of_isInvertible_mfderiv_comp`).
-
 Between manifolds modelled on finite-dimensional spaces of the same dimension over a complete
 field, an injective or surjective manifold derivative is invertible
 (`isInvertible_mfderiv_of_injective`, `isInvertible_mfderiv_of_surjective`).
+Conversely to the first statement, between such manifolds, if a composite of differentiable maps
+has invertible manifold derivative then so do both factors
+(`isInvertible_mfderiv_of_isInvertible_mfderiv_comp`).
 
 If the source is modelled on a finite-dimensional space over a complete field and the derivative
 carries a tangent basis `b` onto a basis `b'`, then it is the continuous linear equivalence mapping
@@ -62,8 +61,8 @@ theorem isInvertible_mfderiv_of_injective [CompleteSpace 𝕜] [FiniteDimensiona
     (hdim : Module.finrank 𝕜 E = Module.finrank 𝕜 E')
     (hinj : Function.Injective (mfderiv I I' f x)) : (mfderiv I I' f x).IsInvertible :=
   ⟨(LinearEquiv.ofBijective (mfderiv I I' f x : TangentSpace I x →ₗ[𝕜] TangentSpace I' (f x))
-      ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).1 hinj⟩
-      ).toContinuousLinearEquiv, ContinuousLinearMap.ext fun _ ↦ rfl⟩
+    ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).1 hinj⟩
+    ).toContinuousLinearEquiv, ContinuousLinearMap.ext fun _ ↦ rfl⟩
 
 /-- Between manifolds modelled on finite-dimensional spaces of the same dimension over a complete
 field, a surjective manifold derivative is invertible. -/

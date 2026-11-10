@@ -52,7 +52,7 @@ theorem exists_topologicalClosure_zpowers_eq_iff_of_isClosed
       · exact hbot (by rw [h, inf_comm]; exact
           (disjoint_unitsPrincipal_zpowers_neg_one (by omega : 2 ≤ 2)).eq_bot)
       · rw [h] at hneg
-        exact neg_one_notMem_topologicalClosure_zpowers_two hf
+        exact neg_one_notMem_topologicalClosure_zpowers_two
           (neg_mem_unitsPrincipal_two_of_val_eq hv)
           (neg_notMem_unitsPrincipal_two_succ_of_val_eq hv) hneg
     · exact Or.inl hneg

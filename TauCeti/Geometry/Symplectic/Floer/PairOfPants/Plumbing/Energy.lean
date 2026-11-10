@@ -135,25 +135,6 @@ private theorem endCutoff_cylindricalEndLift (hL : 0 < L) (r r' : Puncture) (t :
 
 /-! ### The receiving and inserted pieces of a map -/
 
-/-- In the real coordinates of the plumbed four-punctured sphere, the components of the plumbed
-perturbation of `C¹` Hamiltonians are `C¹` jointly in the domain and target points. -/
-private theorem contDiffAt_uncurry_plumbedPerturbation (hq : q ≠ inf)
-    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
-    (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
-    (hab : Hb q = Ha inf) (hL : 4 < L) {z : ℝ × ℝ}
-    (hz : (Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1) ∧
-      Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1) (x : V) (v : ℂ) :
-    ContDiffAt ℝ 1
-      (uncurry fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v)
-      (z, x) := by
-  have h := contMDiffAt_plumbedPerturbation (I := 𝓘(ℝ, V)) (n := 1) hq hHa hHb
-    (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHas r).contMDiff)
-    (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hab hL hz x
-  rw [contMDiffAt_prod_modelWithCornersSelf_iff, contMDiffAt_iff_contDiffAt] at h
-  exact (h.comp (f := fun p : (ℝ × ℝ) × V ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x)
-    ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
-      contDiff_snd).contDiffAt).clm_apply contDiffAt_const
-
 /-- The components of the plumbed perturbation are `C¹` on the plumbed four-punctured sphere times
 the target. -/
 private theorem contDiffOn_uncurry_plumbedPerturbation (hq : q ≠ inf)
@@ -166,7 +147,7 @@ private theorem contDiffOn_uncurry_plumbedPerturbation (hq : q ≠ inf)
         Complex.equivRealProdCLM.symm z ≠ 1) ∧
         Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1} ×ˢ univ) := by
   rintro ⟨z, x⟩ ⟨hz, -⟩
-  exact (contDiffAt_uncurry_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hz x
+  exact (contDiffAt_uncurry_plumbedPerturbation (n := 1) hq hHa hHb hHas hHbs hab hL hz x
     v).contDiffWithinAt
 
 /-- The receiving piece `(1 - β(s_q - L/2 - 1)) u` of a map `u` that is `C²` on the plumbed
@@ -253,7 +234,7 @@ private theorem differentiableAt_plumbedPerturbation_domain (hq : q ≠ inf)
       Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1) (x : V) (v : ℂ) :
     DifferentiableAt ℝ
       (fun z ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v) z :=
-  ((contDiffAt_uncurry_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hz x v).comp z
+  ((contDiffAt_uncurry_plumbedPerturbation (n := 1) hq hHa hHb hHas hHbs hab hL hz x v).comp z
     (contDiffAt_id.prodMk contDiffAt_const)).differentiableAt one_ne_zero
 
 /-- At points of the plumbed four-punctured sphere, the components of the plumbed perturbation
@@ -266,7 +247,7 @@ private theorem differentiableAt_plumbedPerturbation_target (hq : q ≠ inf)
       Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1) (x : V) (v : ℂ) :
     DifferentiableAt ℝ
       (fun x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x v) x :=
-  ((contDiffAt_uncurry_plumbedPerturbation hq hHa hHb hHas hHbs hab hL hz x v).comp x
+  ((contDiffAt_uncurry_plumbedPerturbation (n := 1) hq hHa hHb hHas hHbs hab hL hz x v).comp x
     (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt one_ne_zero
 
 /-! ### The energy and curvature of the two pieces -/
@@ -393,8 +374,8 @@ private theorem setIntegral_hamiltonianCurvature_receiving (ω : SymplecticForm 
     rwa [endSign_eq_one hq, one_mul] at h
   have hu : endCutoff q (L / 2 + 1) z • u z = u z := (receivingPiece_eventuallyEq u hz).eq_of_nhds
   rw [hu, ← hamiltonianCurvature_constSmooth, ← hamiltonianCurvature_constSmooth]
-  exact congrFun (SmoothTwoForm.hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_le
-    ω.constSmooth hq hab hL (ne_endCenter ⟨hz'.1, hz'.2.1⟩ q) hre) (u z)
+  exact congrFun (SmoothTwoForm.hamiltonianCurvature_plumbedPerturbation_of_re_endCoord_lt
+    ω.constSmooth hq hab (ne_endCenter ⟨hz'.1, hz'.2.1⟩ q) (by linarith)) (u z)
 
 /-- Over the image under the plumbing map of the inserted truncation `S_{L/2}`, the integrated
 curvature of the plumbed perturbation along `u` is the integrated curvature over `S` of the
