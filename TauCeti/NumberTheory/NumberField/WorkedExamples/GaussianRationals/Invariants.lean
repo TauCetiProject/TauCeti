@@ -80,9 +80,19 @@ theorem nrComplexPlaces_eq_one (hmin : minpoly ℤ θ = X ^ 2 + 1)
   InfinitePlace.nrComplexPlaces_eq_one_of_discr_lt_zero
     (by rw [discr_eq_neg_four hmin hgen]; decide) (by rw [finrank_eq_two hmin hgen]; decide)
 
-/-- A number field containing a square root of `−1` is totally complex. -/
-theorem isTotallyComplex (hmin : minpoly ℤ θ = X ^ 2 + 1) : IsTotallyComplex K :=
-  isTotallyComplex_of_minpoly_eq_X_sq_sub_C_of_neg (minpoly_eq_X_sq_sub_C hmin) (by norm_num)
+omit [NumberField K] in
+/-- A field containing a square root of `−1` is totally complex. -/
+theorem isTotallyComplex (hmin : minpoly ℤ θ = X ^ 2 + 1) : IsTotallyComplex K := by
+  have hsq : (θ : K) ^ 2 = -1 := by
+    have h : θ ^ 2 + 1 = 0 := by simp [hmin]
+    have := congrArg (fun x : 𝓞 K ↦ (x : K)) h
+    push_cast at this
+    linear_combination this
+  -- every place gives an embedding, so `K` has characteristic zero
+  refine ⟨fun w ↦ ?_⟩
+  have : CharZero K := RingHom.charZero w.embedding
+  exact (isTotallyComplex_of_sq_ratCast_of_neg (x := (θ : K)) (r := (-1 : ℚ))
+    (by rw [hsq, map_neg, map_one]) (by norm_num)).isComplex w
 
 /-- A number field containing a square root of `−1` has no real place. -/
 theorem nrRealPlaces_eq_zero (hmin : minpoly ℤ θ = X ^ 2 + 1) : nrRealPlaces K = 0 :=
