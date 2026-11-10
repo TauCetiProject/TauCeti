@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Star.Real
 public import Mathlib.Analysis.Convex.PathConnected
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Arctan
 public import TauCeti.LinearAlgebra.TotallyReal.Euclidean
@@ -15,15 +14,12 @@ public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Path
 # The Maslov index of paths with endpoints transverse to `ℝⁿ`
 
 For a real `n × n` matrix `S`, the real subspace `{S y + i y | y ∈ ℝⁿ}` of `ℂⁿ`
-(`Matrix.lagrangianChart`) is the image of `ℝⁿ` under the complex matrix `S + i`
-(`Matrix.lagrangianChartFrame`). It meets `ℝⁿ` only in `0`
-(`Matrix.lagrangianChart_inf_realSubspace`), and it determines `S`
-(`Matrix.lagrangianChart_injective`). When `S` is symmetric, `S + i` is invertible
-(`Matrix.det_lagrangianChartFrame_ne_zero`), and the subspace is Lagrangian for the standard
-symplectic form `Im ⟪·, ·⟫` of `ℂⁿ` (`Matrix.im_inner_eq_zero_of_mem_lagrangianChart`). Every
-Lagrangian subspace transverse to `ℝⁿ` arises in this way, as the graph of a symmetric matrix over
-`i ℝⁿ` (McDuff–Salamon, Section 2.3), although that surjectivity is not needed and not proved here.
-The symmetric matrices form a convex set, so these chart subspaces form a contractible cell.
+(`Matrix.lagrangianChart`, in `TauCeti.LinearAlgebra.TotallyReal.Euclidean`) is the image of `ℝⁿ`
+under the complex matrix `S + i`. It meets `ℝⁿ` only in `0`, it determines `S`, and for symmetric
+`S` it is Lagrangian for the standard symplectic form `Im ⟪·, ·⟫` of `ℂⁿ`. For a scalar matrix it
+is a rotation of `ℝⁿ` (`Matrix.lagrangianChart_smul_one`), whose Maslov phase is computed in
+`Matrix.maslovPhase_realImage_smul_one`. The symmetric matrices form a convex set, so these chart
+subspaces form a contractible cell.
 
 A continuous path `S t` of symmetric matrices gives a path of maximal totally real subspaces
 (`TauCeti.TotallyRealPath.ofLagrangianChart`). Any two such paths with the same endpoints have
@@ -79,124 +75,6 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 
 open TauCeti
 
-/-- The complex matrix `S + i` of a real matrix `S`. It maps `ℝⁿ` onto the subspace
-`{S y + i y | y ∈ ℝⁿ}`, and it is invertible when `S` is symmetric. -/
-def lagrangianChartFrame (S : Matrix n n ℝ) : Matrix n n ℂ :=
-  S.map ((↑) : ℝ → ℂ) + Complex.I • 1
-
-omit [Fintype n] in
-/-- The entries of `S + i`. -/
-theorem lagrangianChartFrame_apply (S : Matrix n n ℝ) (i j : n) :
-    S.lagrangianChartFrame i j = S i j + Complex.I * (1 : Matrix n n ℂ) i j := by
-  simp [lagrangianChartFrame]
-
-/-- `(S + i) (S - i) = S² + 1`. -/
-theorem lagrangianChartFrame_mul (S : Matrix n n ℝ) :
-    S.lagrangianChartFrame * (S.map ((↑) : ℝ → ℂ) - Complex.I • 1) =
-      (S * S + 1).map ((↑) : ℝ → ℂ) := by
-  have h : (S * S).map ((↑) : ℝ → ℂ) = S.map (↑) * S.map (↑) :=
-    Matrix.map_mul (f := Complex.ofRealHom)
-  rw [lagrangianChartFrame, Matrix.map_add _ Complex.ofReal_add, h,
-    Matrix.map_one _ (by simp) (by simp)]
-  simp [add_mul, mul_sub, smul_smul]
-  abel
-
-/-- For a symmetric real matrix `S`, the matrix `S + i` is invertible: its product with `S - i`
-is the positive definite matrix `S² + 1`. -/
-theorem det_lagrangianChartFrame_ne_zero {S : Matrix n n ℝ} (hS : S.IsSymm) :
-    S.lagrangianChartFrame.det ≠ 0 := by
-  have hpos : (Sᴴ * S + 1).PosDef :=
-    PosDef.posSemidef_add (posSemidef_conjTranspose_mul_self S) PosDef.one
-  rw [conjTranspose_eq_transpose_of_trivial, hS.eq] at hpos
-  intro h
-  have h' := congrArg Matrix.det (lagrangianChartFrame_mul S)
-  have hdet : ((S * S + 1).map ((↑) : ℝ → ℂ)).det = ((S * S + 1).det : ℂ) :=
-    (RingHom.map_det Complex.ofRealHom _).symm
-  rw [det_mul, h, zero_mul, hdet] at h'
-  exact hpos.det_pos.ne' (by exact_mod_cast h'.symm)
-
-/-- The subspace `{S y + i y | y ∈ ℝⁿ}` of `ℂⁿ`, the image of `ℝⁿ` under `S + i`. For symmetric
-`S` it is a Lagrangian subspace transverse to `ℝⁿ`. -/
-def lagrangianChart (S : Matrix n n ℝ) : Submodule ℝ (EuclideanSpace ℂ n) :=
-  S.lagrangianChartFrame.realImage
-
-/-- The coordinates of `(S + i) x`. -/
-private theorem lagrangianChartFrame_mulVec_apply (S : Matrix n n ℝ) (x : n → ℂ) (i : n) :
-    (S.lagrangianChartFrame *ᵥ x) i = ∑ j, (S i j : ℂ) * x j + Complex.I * x i := by
-  simp [lagrangianChartFrame, mulVec, dotProduct, add_mul, Finset.sum_add_distrib,
-    Matrix.one_apply]
-
-/-- A vector lies in `{S y + i y | y ∈ ℝⁿ}` exactly when its real part is `S` applied to its
-imaginary part. -/
-theorem mem_lagrangianChart {S : Matrix n n ℝ} {v : EuclideanSpace ℂ n} :
-    v ∈ S.lagrangianChart ↔ ∀ i, (v i).re = ∑ j, S i j * (v j).im := by
-  rw [lagrangianChart, mem_realImage]
-  constructor
-  · rintro ⟨x, hx, rfl⟩ i
-    simp [lagrangianChartFrame_mulVec_apply, Complex.re_sum, Complex.im_sum,
-      mem_realSubspace.1 hx]
-  · intro hv
-    let y : EuclideanSpace ℂ n := WithLp.toLp 2 fun j ↦ ((v j).im : ℂ)
-    refine ⟨y, mem_realSubspace.2 fun j ↦ by simp [y], ?_⟩
-    ext i
-    apply Complex.ext
-    · simp [lagrangianChartFrame_mulVec_apply, y, hv i, Complex.re_sum]
-    · simp [lagrangianChartFrame_mulVec_apply, y, Complex.im_sum]
-
-/-- The subspace `{S y + i y | y ∈ ℝⁿ}` meets `ℝⁿ` only in `0`. -/
-theorem lagrangianChart_inf_realSubspace (S : Matrix n n ℝ) :
-    S.lagrangianChart ⊓ realSubspace n = ⊥ := by
-  refine (Submodule.eq_bot_iff _).2 fun v ⟨hv, hv'⟩ ↦ ?_
-  have him := mem_realSubspace.1 hv'
-  ext i
-  apply Complex.ext
-  · simp [mem_lagrangianChart.1 hv i, him]
-  · simp [him i]
-
-/-- The subspace `{S y + i y | y ∈ ℝⁿ}` determines `S`. -/
-theorem lagrangianChart_injective :
-    Function.Injective (lagrangianChart : Matrix n n ℝ → Submodule ℝ (EuclideanSpace ℂ n)) := by
-  intro S T h
-  ext i j
-  -- Test both subspaces on the vector `S eⱼ + i eⱼ`.
-  let v : EuclideanSpace ℂ n :=
-    WithLp.toLp 2 fun k ↦ (S k j : ℂ) + Complex.I * (if k = j then 1 else 0)
-  have hv : v ∈ S.lagrangianChart := mem_lagrangianChart.2 fun k ↦ by
-    simp [v, apply_ite]
-  have := (mem_lagrangianChart.1 (h ▸ hv)) i
-  simpa [v, apply_ite] using this
-
-/-- For symmetric `S`, the subspace `{S y + i y | y ∈ ℝⁿ}` is isotropic for the standard symplectic
-form `Im ⟪·, ·⟫` of `ℂⁿ`; being maximal totally real, it is Lagrangian. -/
-theorem im_inner_eq_zero_of_mem_lagrangianChart {S : Matrix n n ℝ} (hS : S.IsSymm)
-    {v w : EuclideanSpace ℂ n} (hv : v ∈ S.lagrangianChart) (hw : w ∈ S.lagrangianChart) :
-    (inner ℂ v w).im = 0 := by
-  have hv' := mem_lagrangianChart.1 hv
-  have hw' := mem_lagrangianChart.1 hw
-  simp only [PiLp.inner_apply, Complex.im_sum, RCLike.inner_apply, Complex.mul_im,
-    Complex.conj_re, Complex.conj_im, hv', hw', Finset.sum_mul, Finset.mul_sum]
-  -- The two double sums agree after swapping the summation and using the symmetry of `S`.
-  have key : ∑ x, ∑ i, (w x).im * (S x i * (v i).im) =
-      ∑ x, ∑ i, S x i * (w i).im * (v x).im := by
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun x _ ↦ Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [hS.apply x i]
-    ring
-  simp only [Finset.sum_add_distrib, key, mul_neg, Finset.sum_neg_distrib, neg_add_cancel]
-
-/-- For symmetric `S`, the subspace `{S y + i y | y ∈ ℝⁿ}` is maximal totally real. -/
-theorem isMaximalTotallyReal_lagrangianChart {S : Matrix n n ℝ} (hS : S.IsSymm) :
-    IsMaximalTotallyReal ((LinearMap.lsmul ℂ (EuclideanSpace ℂ n) Complex.I).restrictScalars ℝ)
-      S.lagrangianChart :=
-  isMaximalTotallyReal_realImage (det_lagrangianChartFrame_ne_zero hS)
-
-omit [Fintype n] in
-/-- The complex matrix `S + i` of a scalar matrix `s` is the scalar `s + i`. -/
-theorem lagrangianChartFrame_smul_one (s : ℝ) :
-    (s • (1 : Matrix n n ℝ)).lagrangianChartFrame = ((s : ℂ) + Complex.I) • 1 := by
-  ext i j
-  by_cases hij : i = j <;> simp [lagrangianChartFrame, hij]
-
 /-- The chart subspace `{s y + i y | y ∈ ℝⁿ}` of a scalar matrix is the rotation `e^{iα} ℝⁿ` of
 `ℝⁿ` by the angle `α = π / 2 - arctan s ∈ (0, π)` of `s + i`. -/
 theorem lagrangianChart_smul_one (s : ℝ) :
@@ -231,12 +109,6 @@ theorem lagrangianChart_neg_one :
     ring
   rw [← neg_one_smul ℝ (1 : Matrix n n ℝ), lagrangianChart_smul_one, arctan_neg, arctan_one, h,
     ← smul_smul, Complex.coe_smul, realImage_smul _ (by norm_num)]
-
-/-- For a nonzero scalar `z`, the rotated subspace `z ℝⁿ` is maximal totally real. -/
-theorem isMaximalTotallyReal_realImage_smul_one {z : ℂ} (hz : z ≠ 0) :
-    IsMaximalTotallyReal ((LinearMap.lsmul ℂ (EuclideanSpace ℂ n) Complex.I).restrictScalars ℝ)
-      (z • (1 : Matrix n n ℂ)).realImage :=
-  isMaximalTotallyReal_realImage (by simp [hz])
 
 /-- The Maslov phase of the rotated subspace `z ℝⁿ` relative to `ℝⁿ` is `(z / conj z) ^ n`. -/
 theorem maslovPhase_realImage_smul_one {z : ℂ} (hz : z ≠ 0) :
