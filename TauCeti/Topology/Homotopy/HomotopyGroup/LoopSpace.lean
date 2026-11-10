@@ -90,6 +90,12 @@ theorem congrEquiv_symm_mk (e : M ≃ N) (q : Ω^ N X x) :
     (congrEquiv e).symm (⟦q⟧ : HomotopyGroup N X x) = ⟦_root_.GenLoop.congr x e.symm q⟧ :=
   by rw [congrEquiv.eq_1]; rfl
 
+/-- Reindexing the cube directions sends the trivial class to the trivial class. -/
+theorem congrEquiv_const (e : M ≃ N) :
+    congrEquiv e (⟦_root_.GenLoop.const⟧ : HomotopyGroup M X x) = ⟦_root_.GenLoop.const⟧ := by
+  rw [congrEquiv_mk]
+  exact congrArg _ (_root_.GenLoop.ext _ _ fun _ => rfl)
+
 /-- Reindexing the cube directions commutes with the maps induced by based continuous maps. -/
 @[simp]
 theorem map_congrEquiv {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y)
