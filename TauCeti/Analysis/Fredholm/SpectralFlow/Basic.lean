@@ -240,6 +240,14 @@ theorem spectralFlow_self (A : ℝ → E →L[𝕜] E) (a : ℝ) : spectralFlow 
   unfold spectralFlow
   split_ifs <;> simp
 
+omit [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] in
+/-- **Reversal.** Running the path backwards negates the spectral flow. -/
+theorem spectralFlow_symm (A : ℝ → E →L[𝕜] E) (a b : ℝ) :
+    spectralFlow A b a = -spectralFlow A a b := by
+  unfold spectralFlow
+  rw [uIcc_comm b a]
+  split_ifs <;> ring
+
 /-- **The spectral flow is computed by any primitive.** For a family `A` continuous on `[[a, b]]`
 and any spectral flow primitive `g` of `A` on a set containing `[[a, b]]`, the spectral flow from
 `a` to `b` is `g b - g a`. -/
@@ -268,16 +276,6 @@ theorem spectralFlow_add_spectralFlow (hs : s.OrdConnected) (hA : ContinuousOn A
   rw [hg.spectralFlow_eq subset_union_left (hA.mono (hs.uIcc_subset ha hb)),
     hg.spectralFlow_eq subset_union_right (hA.mono (hs.uIcc_subset hb hc')),
     hg.spectralFlow_eq uIcc_subset_uIcc_union_uIcc (hA.mono (hs.uIcc_subset ha hc'))]
-  ring
-
-/-- **Reversal.** For a continuous family with finite spectral cutoffs on `[[a, b]]`, running the
-path backwards negates the spectral flow. -/
-theorem spectralFlow_symm (hA : ContinuousOn A (uIcc a b))
-    (hc : ∀ x ∈ uIcc a b, ∃ c, IsFiniteSpectralCutoff (A x) c) :
-    spectralFlow A b a = -spectralFlow A a b := by
-  obtain ⟨g, hg⟩ := exists_isSpectralFlowPrimitive_uIcc ordConnected_uIcc hA hc left_mem_uIcc
-    right_mem_uIcc
-  rw [hg.spectralFlow_eq le_rfl hA, hg.spectralFlow_eq (uIcc_comm b a).le (uIcc_comm a b ▸ hA)]
   ring
 
 /-- **A single upward crossing.** On a finite-dimensional space, along the scalar path
