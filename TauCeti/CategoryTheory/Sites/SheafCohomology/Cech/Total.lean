@@ -91,8 +91,9 @@ lemma cechTotalComplexMap_def (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.m
 @[simp]
 lemma cechTotalComplexMap_id :
     cechTotalComplexMap P (𝟙 (FormalCoproduct.mk _ U)) = 𝟙 _ := by
-  simp [cechTotalComplexMap, cechTotalComplexFunctor, totalFunctor,
-    ComplexShape.Embedding.extendFunctor]
+  rw [cechTotalComplexMap_def, cechComplexMap_id, HomologicalComplex.extendMap_id,
+    total.map_id]
+  rfl
 
 /-- Refinement of total Čech complexes respects composition contravariantly. -/
 @[simp]
@@ -100,8 +101,9 @@ lemma cechTotalComplexMap_comp {ν : Type w} {W : ν → C}
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
     (ψ : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ W) :
     cechTotalComplexMap P (φ ≫ ψ) = cechTotalComplexMap P ψ ≫ cechTotalComplexMap P φ := by
-  simp [cechTotalComplexMap, HomologicalComplex.extendMap_comp, cechTotalComplexFunctor,
-    totalFunctor, ComplexShape.Embedding.extendFunctor]
+  simp only [cechTotalComplexMap_def, cechComplexMap_comp,
+    HomologicalComplex.extendMap_comp, total.map_comp]
+  rfl
 
 /-- The total refinement map is natural in the presheaf of coefficient complexes. -/
 @[reassoc]
@@ -112,8 +114,10 @@ lemma cechTotalComplexMap_naturality {Q : Cᵒᵖ ⥤ CochainComplex A ℤ} (α 
   have h := congrArg
     (fun k ↦ total.map (HomologicalComplex.extendMap k ComplexShape.embeddingUpNat)
       (ComplexShape.up ℤ)) (cechComplexMap_naturality P α φ)
-  simpa [cechTotalComplexFunctor, cechTotalComplexMap, HomologicalComplex.extendMap_comp,
-    totalFunctor, ComplexShape.Embedding.extendFunctor] using h
+  simp only [HomologicalComplex.extendMap_comp, total.map_comp] at h
+  rw [cechTotalComplexFunctor_map, cechTotalComplexFunctor_map,
+    cechTotalComplexMap_def, cechTotalComplexMap_def]
+  exact h
 
 /-- The totalized refinement prism. Its homotopy equation is `T_φ - T_ψ = DH + HD`,
 as for the native Čech prism. Swapping `φ` and `ψ` gives the opposite difference. -/
@@ -121,6 +125,22 @@ def cechTotalComplexMapHomotopy
     (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
     Homotopy (cechTotalComplexMap P φ) (cechTotalComplexMap P ψ) :=
   ((cechComplexMapHomotopy P φ ψ).extend ComplexShape.embeddingUpNat).totalMap
+    (ComplexShape.up ℤ)
+
+/-- On each total summand the refinement prism is the extended Čech prism, with no extra
+sign. The inclusion on the right has bidegree `(p - 1,q)`. -/
+@[reassoc, simp]
+lemma ι_cechTotalComplexMapHomotopy_hom
+    (φ ψ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (p q n : ℤ)
+    (hpq : p + q = n) :
+    ιTotal _ (ComplexShape.up ℤ) p q n hpq ≫
+        (cechTotalComplexMapHomotopy P φ ψ).hom n (n - 1) =
+      (((cechComplexMapHomotopy P φ ψ).extend ComplexShape.embeddingUpNat).hom
+        p (p - 1)).f q ≫
+          ιTotal _ (ComplexShape.up ℤ) (p - 1) q (n - 1)
+            (by omega : p - 1 + q = n - 1) := by
+  unfold cechTotalComplexMapHomotopy
+  exact Homotopy.ι_totalMap_hom_up_int _ p q n hpq
 
 /-- Total Čech cohomology maps are independent of the chosen raw refinement function. -/
 lemma homologyMap_cechTotalComplexMap_eq
