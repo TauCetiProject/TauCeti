@@ -59,6 +59,16 @@ theorem coe_reattachmentRadial_of_norm_le {w : TopCat.disk.{u} k} (hw : ‖w.dow
   rw [reattachmentRadial, coe_diskRadialPush_one_of_norm_le _ hw]
   norm_num
 
+theorem coe_reattachmentRadial_of_le_norm {w : TopCat.disk.{u} k} (hw : 1 / 2 ≤ ‖w.down.1‖) :
+    (reattachmentRadial w).down.1 = ‖w.down.1‖⁻¹ • w.down.1 :=
+  coe_diskRadialPush_one_of_le_norm (by norm_num) hw
+
+/-- On the annulus `1/2 ≤ ‖x‖`, the radial part of `x` is its direction `x / ‖x‖` on the boundary
+sphere. -/
+theorem reattachmentRadial_of_le_norm {w : TopCat.disk.{u} k} (hw : 1 / 2 ≤ ‖w.down.1‖) :
+    reattachmentRadial w = TopCat.diskBoundaryInclusion k (annulusDir (by norm_num) ⟨w, hw⟩) :=
+  (diskBoundaryInclusion_annulusDir _ ⟨w, hw⟩).symm
+
 /-- The point `(1/2) • θ` of the disc, for `θ` on the boundary sphere, has radial part `θ`. -/
 theorem reattachmentRadial_half_smul (θ : TopCat.diskBoundary.{u} k)
     (hθ : (1 / 2 : ℝ) • θ.down.1 ∈ closedBall (0 : EuclideanSpace ℝ (Fin k)) 1) :
