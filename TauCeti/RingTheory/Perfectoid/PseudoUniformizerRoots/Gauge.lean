@@ -71,7 +71,7 @@ open Filter Topology TauCeti.Huber
 
 namespace TauCeti.Perfectoid.PseudoUniformizerRoots
 
-variable {p : ℕ} [NeZero p] {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
+variable {p : ℕ} {R : Type*} [CommRing R] [TopologicalSpace R] [IsTopologicalRing R]
   [IsHuberRing R] [IsUniform R] (ϖ : PseudoUniformizerRoots p R)
 
 /-- The norm datum `(R°, ϖ, 1/2)` of a uniform Huber ring with a pseudouniformiser with compatible
@@ -122,6 +122,8 @@ theorem isPowMul_gauge : IsPowMul ϖ.gauge :=
 theorem isNonarchimedean_gauge : IsNonarchimedean ϖ.gauge :=
   isNonarchimedean_spectralSeminorm _
 
+variable [NeZero p]
+
 /-- **Scaling by the roots.** Multiplication by `ϖ ^ (m / p ^ n)` scales the spectral gauge
 exactly by `2 ^ (-(m / p ^ n))`. -/
 @[simp]
@@ -165,6 +167,7 @@ theorem gauge_root_mul (n : ℕ) (x : R) :
 theorem gauge_root_zero_mul (x : R) : ϖ.gauge (ϖ.root 0 * x) = 1 / 2 * ϖ.gauge x := by
   simp [Real.rpow_neg_one]
 
+omit [NeZero p] in
 /-- The spectral gauge takes values at most one on the powers of an element of gauge at most
 one. -/
 private theorem gauge_pow_le_one {x : R} (hx : ϖ.gauge x ≤ 1) (k : ℕ) : ϖ.gauge (x ^ k) ≤ 1 := by
@@ -173,6 +176,7 @@ private theorem gauge_pow_le_one {x : R} (hx : ϖ.gauge x ≤ 1) (k : ℕ) : ϖ.
   · rw [ϖ.isPowMul_gauge _ hk]
     exact pow_le_one₀ (apply_nonneg _ _) hx
 
+omit [NeZero p] in
 /-- **The open unit ball of the spectral gauge is `R°°`**: `|x|_ϖ < 1` exactly when `x` is
 topologically nilpotent. -/
 theorem gauge_lt_one_iff {x : R} : ϖ.gauge x < 1 ↔ IsTopologicallyNilpotent x :=
@@ -249,11 +253,13 @@ theorem gauge_eq_zero_iff [T1Space R] {x : R} : ϖ.gauge x = 0 ↔ x = 0 := by
       (apply_nonneg _ _)
   simpa using (tateNorm_eq_zero_iff ϖ.normDatum).mp h
 
+omit [NeZero p] in
 /-- In a nonzero Hausdorff ring the spectral gauge takes the value one at one. -/
 @[simp]
 theorem gauge_one [T1Space R] [Nontrivial R] : ϖ.gauge 1 = 1 :=
   spectralSeminorm_one _
 
+omit [NeZero p] in
 /-- In a nonzero Hausdorff ring the spectral gauge is power-multiplicative at every exponent:
 `|x ^ n|_ϖ = |x|_ϖ ^ n`. -/
 @[simp]
