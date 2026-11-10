@@ -48,6 +48,9 @@ Lagrangian subspace transverse to `ℝⁿ` arises in this way, as the graph of a
   (`Matrix.lagrangianChart_inf_realSubspace`) and determines `S` (`Matrix.lagrangianChart_inj`).
   For symmetric `S` it is maximal totally real (`Matrix.isMaximalTotallyReal_lagrangianChart`) and
   isotropic for `Im ⟪·, ·⟫` (`Matrix.im_inner_eq_zero_of_mem_lagrangianChart`), hence Lagrangian.
+* `Matrix.lagrangianChartCLE`: for symmetric `S`, the automorphism `S + i` of `ℂⁿ`, mapping `ℝⁿ`
+  onto the chart subspace (`Matrix.map_lagrangianChartCLE`) and continuous in `S`
+  (`Matrix.continuous_lagrangianChartCLE`).
 
 ## References
 
@@ -379,6 +382,29 @@ theorem isMaximalTotallyReal_lagrangianChart {S : Matrix n n ℝ} (hS : S.IsSymm
     IsMaximalTotallyReal ((LinearMap.lsmul ℂ (EuclideanSpace ℂ n) Complex.I).restrictScalars ℝ)
       S.lagrangianChart :=
   isMaximalTotallyReal_realImage (det_lagrangianChartFrame_ne_zero hS)
+
+/-- For symmetric `S`, the continuous linear automorphism `S + i` of `ℂⁿ`. It maps `ℝⁿ` onto
+`{S y + i y | y ∈ ℝⁿ}` (`Matrix.map_lagrangianChartCLE`). -/
+def lagrangianChartCLE {S : Matrix n n ℝ} (hS : S.IsSymm) :
+    EuclideanSpace ℂ n ≃L[ℂ] EuclideanSpace ℂ n :=
+  S.lagrangianChartFrame.toEuclideanCLE (det_lagrangianChartFrame_ne_zero hS)
+
+/-- The automorphism `S + i` maps `ℝⁿ` onto `{S y + i y | y ∈ ℝⁿ}`. -/
+@[simp]
+theorem map_lagrangianChartCLE {S : Matrix n n ℝ} (hS : S.IsSymm) :
+    (realSubspace n).map (((lagrangianChartCLE hS).toLinearEquiv :
+      EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n).restrictScalars ℝ) = S.lagrangianChart :=
+  (realImage_eq_map_toEuclideanCLE _).symm
+
+/-- The automorphisms `S x + i` of `ℂⁿ` depend continuously on a continuous family `S x` of
+symmetric real matrices. -/
+theorem continuous_lagrangianChartCLE {X : Type*} [TopologicalSpace X] {S : X → Matrix n n ℝ}
+    (hS : Continuous S) (hS' : ∀ x, (S x).IsSymm) :
+    Continuous fun x ↦
+      (lagrangianChartCLE (hS' x) : EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) := by
+  simp only [lagrangianChartCLE, coe_toEuclideanCLE, lagrangianChartFrame]
+  exact continuous_toEuclideanCLM.comp
+    ((hS.matrix_map Complex.continuous_ofReal).add continuous_const)
 
 omit [Fintype n] in
 /-- The complex matrix `S + i` of a scalar matrix `s` is the scalar `s + i`. -/

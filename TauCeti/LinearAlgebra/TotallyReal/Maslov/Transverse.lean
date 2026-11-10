@@ -168,23 +168,6 @@ variable {n : Type*} [Fintype n] [DecidableEq n]
 
 open Matrix
 
-/-- The automorphisms `S x + i` of `ℂⁿ` depend continuously on a continuous family `S x` of real
-matrices. -/
-private theorem continuous_toEuclideanCLE_lagrangianChartFrame {X : Type*} [TopologicalSpace X]
-    {S : X → Matrix n n ℝ} (hS : Continuous S) (h : ∀ x, (S x).lagrangianChartFrame.det ≠ 0) :
-    Continuous fun x ↦ ((S x).lagrangianChartFrame.toEuclideanCLE (h x) :
-      EuclideanSpace ℂ n →L[ℂ] EuclideanSpace ℂ n) := by
-  simp only [coe_toEuclideanCLE, lagrangianChartFrame]
-  exact continuous_toEuclideanCLM.comp
-    ((hS.matrix_map Complex.continuous_ofReal).add continuous_const)
-
-/-- The chart subspace of `S` is the image of `ℝⁿ` under the automorphism `S + i`. -/
-private theorem map_toEuclideanCLE_lagrangianChartFrame {S : Matrix n n ℝ}
-    (h : S.lagrangianChartFrame.det ≠ 0) :
-    (realSubspace n).map (((S.lagrangianChartFrame.toEuclideanCLE h).toLinearEquiv :
-      EuclideanSpace ℂ n →ₗ[ℂ] EuclideanSpace ℂ n).restrictScalars ℝ) = S.lagrangianChart :=
-  (realImage_eq_map_toEuclideanCLE h).symm
-
 namespace TotallyRealPath
 
 /-- The path `t ↦ {S t y + i y | y ∈ ℝⁿ}` of the chart subspaces of a path `S` of symmetric real
@@ -193,9 +176,8 @@ def ofLagrangianChart {S₀ S₁ : Matrix n n ℝ} (S : Path S₀ S₁) (hS : �
     TotallyRealPath (EuclideanSpace ℂ n) where
   toFun t := (S t).lagrangianChart
   exists_frame := ⟨realSubspace n, isMaximalTotallyReal_realSubspace,
-    fun t ↦ (S t).lagrangianChartFrame.toEuclideanCLE (det_lagrangianChartFrame_ne_zero (hS t)),
-    continuous_toEuclideanCLE_lagrangianChartFrame S.continuous _,
-    fun _ ↦ realImage_eq_map_toEuclideanCLE _⟩
+    fun t ↦ lagrangianChartCLE (hS t), continuous_lagrangianChartCLE S.continuous hS,
+    fun t ↦ (map_lagrangianChartCLE (hS t)).symm⟩
 
 @[simp]
 theorem ofLagrangianChart_apply {S₀ S₁ : Matrix n n ℝ} (S : Path S₀ S₁)
@@ -235,20 +217,18 @@ theorem relativeMaslovIndex_ofLagrangianChart {S₀ S₁ : Matrix n n ℝ} (S T 
   have hHc : Continuous H := by
     simp only [H, AffineMap.lineMap_apply_module]
     fun_prop
-  let A (p : I × I) := (H p).lagrangianChartFrame.toEuclideanCLE
-    (det_lagrangianChartFrame_ne_zero (hH p))
-  let B (p : I × I) := (T p.2).lagrangianChartFrame.toEuclideanCLE
-    (det_lagrangianChartFrame_ne_zero (hT p.2))
+  let A (p : I × I) := lagrangianChartCLE (hH p)
+  let B (p : I × I) := lagrangianChartCLE (hT p.2)
   have h := relativeMaslovIndex_eq_of_homotopy (ofLagrangianChart S hS) (ofLagrangianChart T hT)
     (ofLagrangianChart T hT) (ofLagrangianChart T hT) isMaximalTotallyReal_realSubspace A B
-    (continuous_toEuclideanCLE_lagrangianChartFrame hHc _)
-    (continuous_toEuclideanCLE_lagrangianChartFrame (T.continuous.comp continuous_snd) _)
-    (fun t ↦ by simp [A, map_toEuclideanCLE_lagrangianChartFrame, H])
-    (fun t ↦ by simp [B, map_toEuclideanCLE_lagrangianChartFrame])
-    (fun t ↦ by simp [A, map_toEuclideanCLE_lagrangianChartFrame, H])
-    (fun t ↦ by simp [B, map_toEuclideanCLE_lagrangianChartFrame])
-    (fun s ↦ by simp [A, B, map_toEuclideanCLE_lagrangianChartFrame, H])
-    (fun s ↦ by simp [A, B, map_toEuclideanCLE_lagrangianChartFrame, H])
+    (continuous_lagrangianChartCLE hHc hH)
+    (continuous_lagrangianChartCLE (T.continuous.comp continuous_snd) fun p ↦ hT p.2)
+    (fun t ↦ by simp [A, H])
+    (fun t ↦ by simp [B])
+    (fun t ↦ by simp [A, H])
+    (fun t ↦ by simp [B])
+    (fun s ↦ by simp [A, B, H])
+    (fun s ↦ by simp [A, B, H])
   exact h.trans (relativeMaslovIndex_self _)
 
 /-- The **Maslov index relative to `ℝⁿ`** of a path `Λ` of maximal totally real subspaces of `ℂⁿ`
@@ -331,29 +311,18 @@ theorem transverseMaslovIndex_eq_of_homotopy (Λ₀ Λ₁ : TotallyRealPath (Euc
     Λ₀.transverseMaslovIndex hS₀ hS₁ (by rw [hΛ₀, hA₀]) (by rw [hΛ₀, hA₁]) =
       Λ₁.transverseMaslovIndex hS₀ hS₁ (by rw [hΛ₁, hA₀]) (by rw [hΛ₁, hA₁]) := by
   -- Compare both paths with the chart path of the segment, held fixed during the homotopy.
-  let B (p : I × I) := (Path.segment S₀ S₁ p.2).lagrangianChartFrame.toEuclideanCLE
-    (det_lagrangianChartFrame_ne_zero (isSymm_segment hS₀ hS₁ p.2))
+  let B (p : I × I) := lagrangianChartCLE (isSymm_segment hS₀ hS₁ p.2)
   let Γ := ofLagrangianChart (Path.segment S₀ S₁) (isSymm_segment hS₀ hS₁)
   rw [transverseMaslovIndex, transverseMaslovIndex]
   exact relativeMaslovIndex_eq_of_homotopy Λ₀ Γ Λ₁ Γ isMaximalTotallyReal_realSubspace A B hA
-    (continuous_toEuclideanCLE_lagrangianChartFrame
-      ((Path.segment S₀ S₁).continuous.comp continuous_snd) _)
-    hΛ₀ (fun t ↦ by simp [B, Γ, map_toEuclideanCLE_lagrangianChartFrame]) hΛ₁
-    (fun t ↦ by simp [B, Γ, map_toEuclideanCLE_lagrangianChartFrame])
-    (fun s ↦ by simp [B, map_toEuclideanCLE_lagrangianChartFrame, hA₀])
-    (fun s ↦ by simp [B, map_toEuclideanCLE_lagrangianChartFrame, hA₁])
+    (continuous_lagrangianChartCLE ((Path.segment S₀ S₁).continuous.comp continuous_snd)
+      fun p ↦ isSymm_segment hS₀ hS₁ p.2)
+    hΛ₀ (fun t ↦ by simp [B, Γ]) hΛ₁
+    (fun t ↦ by simp [B, Γ])
+    (fun s ↦ by simp [B, hA₀])
+    (fun s ↦ by simp [B, hA₁])
 
 /-! ### Normalization -/
-
-/-- The angle lifts in the normalization: `n` times twice the rotation angle `π (2t - 1) / 4` of the
-path, and `n` times twice the angle `π / 2 - arctan (2t - 1)` of the chart subspace of the
-segment. Their difference grows by `2π n` from `t = 0` to `t = 1`. -/
-private theorem rotation_angle_sub (k : ℕ) :
-    ((2 * k * (π * (2 * 1 - 1) / 4)) - 2 * k * (π / 2 - arctan (2 * 1 - 1))) -
-      ((2 * k * (π * (2 * 0 - 1) / 4)) - 2 * k * (π / 2 - arctan (2 * 0 - 1))) =
-      (k : ℤ) * (2 * π) := by
-  norm_num [arctan_one, arctan_neg]
-  ring
 
 /-- **Normalization.** The rotation `t ↦ e^{iπ(2t - 1)/4} ℝⁿ` from the chart subspace of `-1` to
 that of `1` crosses `ℝⁿ` once, at `t = 1/2`, in the positive direction; its Maslov index relative to
@@ -395,9 +364,9 @@ theorem transverseMaslovIndex_rotation (Λ : TotallyRealPath (EuclideanSpace ℂ
   · rw [Circle.coe_exp, maslovPhasePath_apply, key _ _ (hΛ t)]
   · rw [Circle.coe_exp, maslovPhasePath_apply, key _ _ (by
       rw [ofLagrangianChart_apply, hseg, lagrangianChart_smul_one])]
-  · have := rotation_angle_sub k
-    simp only [Set.Icc.coe_one, Set.Icc.coe_zero] at this ⊢
-    linarith
+  · simp only [Set.Icc.coe_one, Set.Icc.coe_zero]
+    norm_num [arctan_one, arctan_neg]
+    ring
 
 end TotallyRealPath
 
