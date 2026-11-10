@@ -225,7 +225,7 @@ lemma dualityMap_compactSupportCohomologyIsoOfCompactSpace_inv [CompactSpace M] 
     (TopPair.ofSubset (((⊤ : Compacts (TopCat.of M)) : Set (TopCat.of M))ᶜ)) ℤ (ρ_ _).inv
       (ρ_ L).hom p q n h γ) (o.fundamentalClass hn)
   refine Eq.trans ?_ this.symm
-  exact (congrArg _ (o.singularHomologyπ_fundamentalClass hn).symm).trans
+  exact (congrArg _ (o.singularHomologyπ_fundamentalClass hn _).symm).trans
     (ConcreteCategory.comp_apply _ _ _).symm
 
 section OpenEmbedding
