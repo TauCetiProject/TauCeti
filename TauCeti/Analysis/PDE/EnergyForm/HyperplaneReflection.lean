@@ -302,47 +302,6 @@ theorem energyFormH1_reflectPrincipal_compHyperplaneReflectionL (hν : ν ≠ 0)
     W1p.compHyperplaneReflectionL_compHyperplaneReflectionL] at h
   exact h
 
-omit [DecidableEq ι] in
-/-- A field equal to `f` above the hyperplane and to `G ∘ f ∘ ρ` below it, for a continuous `G`,
-is measurable on `U` as soon as `f` is measurable on `U ∩ H`. -/
-private theorem aestronglyMeasurable_piecewise_comp_hyperplaneReflection {β : Type*}
-    [TopologicalSpace β] (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
-    (hU : MapsTo (hyperplaneReflection ν c₀) U U) {f : EuclideanSpace ℝ ι → β} {G : β → β}
-    (hG : Continuous G) (hf : AEStronglyMeasurable f (mu.restrict (U ⊓ H))) :
-    AEStronglyMeasurable
-      ({x | ⟪x, ν⟫_ℝ < c₀}.piecewise (fun x => G (f (hyperplaneReflection ν c₀ x))) f)
-      (mu.restrict U) := by
-  have hS : MeasurableSet {x : EuclideanSpace ℝ ι | ⟪x, ν⟫_ℝ < c₀} :=
-    measurableSet_lt (continuous_id.inner continuous_const).measurable measurable_const
-  refine AEStronglyMeasurable.piecewise hS.nullMeasurableSet ?_ ?_
-  · -- Below the hyperplane, `ρ` carries the measure onto the part of `U` above it.
-    have hpre : hyperplaneReflection ν c₀ ⁻¹' (U ⊓ H : Opens (EuclideanSpace ℝ ι)) =
-        {x | ⟪x, ν⟫_ℝ < c₀} ∩ U := by
-      have hlt (x : EuclideanSpace ℝ ι) : c₀ < ⟪hyperplaneReflection ν c₀ x, ν⟫_ℝ ↔
-          ⟪x, ν⟫_ℝ < c₀ := by
-        simpa only [hyperplaneReflection_hyperplaneReflection] using
-          (inner_hyperplaneReflection_lt_iff hν c₀ (x := hyperplaneReflection ν c₀ x)).symm
-      ext x
-      refine ⟨fun hx => ⟨(hlt x).1 ((hH _).1 (Opens.mem_inf.1 hx).2), ?_⟩,
-        fun hx => Opens.mem_inf.2 ⟨hU hx.2, (hH _).2 ((hlt x).2 hx.1)⟩⟩
-      simpa only [hyperplaneReflection_hyperplaneReflection] using hU (Opens.mem_inf.1 hx).1
-    have hmp := (measurePreserving_hyperplaneReflection mu ν c₀).restrict_preimage
-      (U ⊓ H).isOpen.measurableSet
-    rw [hpre] at hmp
-    rw [Measure.restrict_restrict hS]
-    exact hG.comp_aestronglyMeasurable (hf.comp_measurePreserving hmp)
-  · -- Above the hyperplane the field is `f`; the hyperplane itself is null.
-    rw [Measure.restrict_restrict hS.compl]
-    refine hf.mono_measure (Measure.restrict_congr_set ?_).le
-    filter_upwards [measure_eq_zero_iff_ae_notMem.1
-      (Measure.addHaar_setOf_inner_eq mu hν c₀)] with x hx
-    have hx' : ⟪x, ν⟫_ℝ ≠ c₀ := hx
-    simp only [eq_iff_iff, mem_inter_iff, mem_compl_iff, mem_ofPred_eq, not_lt, SetLike.mem_coe,
-      hH]
-    constructor
-    · exact fun h => ⟨h.2, lt_of_le_of_ne h.1 (Ne.symm hx')⟩
-    · exact fun h => ⟨h.2.le, h.1⟩
-
 /-- The reflected principal coefficient is measurable on `U` when `a` is measurable on `U ∩ H`. -/
 theorem aestronglyMeasurable_reflectPrincipal (hν : ν ≠ 0) (hH : ∀ x, x ∈ H ↔ c₀ < ⟪x, ν⟫_ℝ)
     (hU : MapsTo (hyperplaneReflection ν c₀) U U)
@@ -358,7 +317,7 @@ theorem aestronglyMeasurable_reflectPrincipal (hν : ν ≠ 0) (hH : ∀ x, x �
         one_smul]
     · rw [reflectPrincipal_of_le (not_lt.1 hx), piecewise_eq_of_notMem _ _ _ hx]
   rw [h]
-  exact aestronglyMeasurable_piecewise_comp_hyperplaneReflection hν hH hU
+  exact aestronglyMeasurable_piecewise_comp_hyperplaneReflection hν hH U.isOpen.measurableSet hU
     ((continuous_const.mul continuous_id).mul continuous_const) ha
 
 /-- The reflected drift is measurable on `U` when `b` is measurable on `U ∩ H`. -/
@@ -376,7 +335,7 @@ theorem aestronglyMeasurable_reflectDrift (hν : ν ≠ 0) (hH : ∀ x, x ∈ H 
         one_smul]
     · rw [reflectDrift_of_le (not_lt.1 hx), piecewise_eq_of_notMem _ _ _ hx]
   rw [h]
-  exact aestronglyMeasurable_piecewise_comp_hyperplaneReflection hν hH hU
+  exact aestronglyMeasurable_piecewise_comp_hyperplaneReflection hν hH U.isOpen.measurableSet hU
     (toEuclideanCLM (𝕜 := ℝ) P).continuous hb
 
 omit [DecidableEq ι] in
@@ -394,7 +353,8 @@ theorem aestronglyMeasurable_reflectDensity (hν : ν ≠ 0) (hH : ∀ x, x ∈ 
         abs_det_fderiv_hyperplaneReflection, one_mul, id]
     · rw [reflectDensity_of_le (not_lt.1 hx), piecewise_eq_of_notMem _ _ _ hx]
   rw [h]
-  exact aestronglyMeasurable_piecewise_comp_hyperplaneReflection hν hH hU continuous_id hc
+  exact aestronglyMeasurable_piecewise_comp_hyperplaneReflection hν hH U.isOpen.measurableSet hU
+    continuous_id hc
 
 omit [DecidableEq ι] in
 /-- A Sobolev function on `U` vanishing on `U ∖ H` has, almost everywhere on `U ∖ H`, vanishing

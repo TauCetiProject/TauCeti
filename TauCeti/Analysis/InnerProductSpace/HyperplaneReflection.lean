@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Affine
+public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import TauCeti.Analysis.InnerProductSpace.Reflection
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
+import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lemmas
 import TauCeti.Data.Set.Function
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # Reflection in an affine hyperplane
@@ -36,11 +39,15 @@ normal vector and an offset.
 * `TauCeti.hyperplaneReflection_hyperplaneReflection`: it is an involution.
 * `TauCeti.inner_hyperplaneReflection`: it reverses the signed height `⟪x, ν⟫ - c`.
 * `TauCeti.hyperplaneReflection_eq_self_iff`: its fixed points are the points of the hyperplane.
+* `TauCeti.hyperplaneReflection_eq_self_of_mem_closure`: it fixes the points of the closure of the
+  open half-space `{x | c < ⟪x, ν⟫}` outside it.
 * `TauCeti.fderiv_hyperplaneReflection` and `TauCeti.abs_det_fderiv_hyperplaneReflection`: its
   derivative is the linear reflection, of determinant `±1`.
 * `TauCeti.measurePreserving_hyperplaneReflection`: it preserves every additive Haar measure, and
   its restriction to every measurable set it maps into itself
   (`TauCeti.measurePreserving_restrict_hyperplaneReflection`).
+* `TauCeti.aestronglyMeasurable_piecewise_comp_hyperplaneReflection`: a field equal to `f` above
+  the hyperplane and to `G ∘ f ∘ ρ` below it is measurable when `f` is measurable above it.
 -/
 
 public section
@@ -119,6 +126,18 @@ theorem hyperplaneReflection_eq_self_iff {ν : F} (hν : ν ≠ 0) (c : ℝ) {x 
   rw [hyperplaneReflection_apply, sub_eq_self, smul_eq_zero, or_iff_left hν, mul_eq_zero,
     or_iff_right two_ne_zero, div_eq_zero_iff, or_iff_left hν2, sub_eq_zero]
 
+/-- Points of the closure of an open half-space `H = {x | c < ⟪x, ν⟫}` outside `H` lie on the
+hyperplane, where the reflection is the identity. -/
+theorem hyperplaneReflection_eq_self_of_mem_closure {ν : F} {c : ℝ} {H : Set F}
+    (hH : ∀ x, x ∈ H ↔ c < ⟪x, ν⟫_ℝ) {x : F} (hxc : x ∈ closure H) (hxH : x ∉ H) :
+    hyperplaneReflection ν c x = x := by
+  have hset : H = {x | c < ⟪x, ν⟫_ℝ} := Set.ext hH
+  have hle : c ≤ ⟪x, ν⟫_ℝ := by
+    rw [hset] at hxc
+    exact closure_lt_subset_le continuous_const (continuous_id.inner continuous_const) hxc
+  exact hyperplaneReflection_eq_self_of_inner_eq
+    (le_antisymm (not_lt.1 fun h => hxH ((hH x).2 h)) hle)
+
 /-- The hyperplane reflection maps the open half-space `{x | c < ⟪x, ν⟫}` onto the opposite
 open half-space `{x | ⟪x, ν⟫ < c}`, and conversely. -/
 theorem inner_hyperplaneReflection_lt_iff {ν : F} (hν : ν ≠ 0) (c : ℝ) {x : F} :
@@ -172,5 +191,49 @@ theorem measurePreserving_restrict_hyperplaneReflection [FiniteDimensional ℝ F
       (hV.image_eq_of_involutive (hyperplaneReflection_involutive ν c))
   simpa only [hpre] using
     (measurePreserving_hyperplaneReflection μ ν c).restrict_preimage hVm
+
+/-- A field equal to `f` on the closed half-space `{x | c ≤ ⟪x, ν⟫}` and to `G ∘ f ∘ ρ` below
+it, for a continuous `G`, is a.e. strongly measurable on a measurable set `U` that `ρ` maps into
+itself, as soon as `f` is a.e. strongly measurable on the part `U ∩ H` of `U` above the
+hyperplane, where `H = {x | c < ⟪x, ν⟫}`. -/
+theorem aestronglyMeasurable_piecewise_comp_hyperplaneReflection [FiniteDimensional ℝ F]
+    [MeasurableSpace F] [BorelSpace F] {μ : Measure F} [μ.IsAddHaarMeasure] {β : Type*}
+    [TopologicalSpace β] {ν : F} (hν : ν ≠ 0) {c : ℝ} {H U : Set F}
+    (hH : ∀ x, x ∈ H ↔ c < ⟪x, ν⟫_ℝ) (hUm : MeasurableSet U)
+    (hU : Set.MapsTo (hyperplaneReflection ν c) U U) {f : F → β} {G : β → β}
+    (hG : Continuous G) (hf : AEStronglyMeasurable f (μ.restrict (U ∩ H))) :
+    AEStronglyMeasurable
+      ({x | ⟪x, ν⟫_ℝ < c}.piecewise (fun x => G (f (hyperplaneReflection ν c x))) f)
+      (μ.restrict U) := by
+  have hS : MeasurableSet {x : F | ⟪x, ν⟫_ℝ < c} :=
+    measurableSet_lt (continuous_id.inner continuous_const).measurable measurable_const
+  have hHm : MeasurableSet H := by
+    rw [show H = {x | c < ⟪x, ν⟫_ℝ} from Set.ext hH]
+    exact measurableSet_lt measurable_const (continuous_id.inner continuous_const).measurable
+  refine AEStronglyMeasurable.piecewise hS.nullMeasurableSet ?_ ?_
+  · -- Below the hyperplane, `ρ` carries the measure onto the part of `U` above it.
+    have hpre : hyperplaneReflection ν c ⁻¹' (U ∩ H) = {x | ⟪x, ν⟫_ℝ < c} ∩ U := by
+      have hlt (x : F) : c < ⟪hyperplaneReflection ν c x, ν⟫_ℝ ↔ ⟪x, ν⟫_ℝ < c := by
+        simpa only [hyperplaneReflection_hyperplaneReflection] using
+          (inner_hyperplaneReflection_lt_iff hν c (x := hyperplaneReflection ν c x)).symm
+      ext x
+      refine ⟨fun hx => ⟨(hlt x).1 ((hH _).1 hx.2), ?_⟩,
+        fun hx => ⟨hU hx.2, (hH _).2 ((hlt x).2 hx.1)⟩⟩
+      simpa only [hyperplaneReflection_hyperplaneReflection] using hU hx.1
+    have hmp := (measurePreserving_hyperplaneReflection μ ν c).restrict_preimage
+      (hUm.inter hHm)
+    rw [hpre] at hmp
+    rw [Measure.restrict_restrict hS]
+    exact hG.comp_aestronglyMeasurable (hf.comp_measurePreserving hmp)
+  · -- Above the hyperplane the field is `f`; the hyperplane itself is null.
+    rw [Measure.restrict_restrict hS.compl]
+    refine hf.mono_measure (Measure.restrict_congr_set ?_).le
+    filter_upwards [measure_eq_zero_iff_ae_notMem.1
+      (Measure.addHaar_setOf_inner_eq μ hν c)] with x hx
+    have hx' : ⟪x, ν⟫_ℝ ≠ c := hx
+    simp only [eq_iff_iff, Set.mem_inter_iff, Set.mem_compl_iff, Set.mem_ofPred_eq, not_lt, hH]
+    constructor
+    · exact fun h => ⟨h.2, lt_of_le_of_ne h.1 (Ne.symm hx')⟩
+    · exact fun h => ⟨h.2.le, h.1⟩
 
 end TauCeti

@@ -141,18 +141,6 @@ theorem W1p.value_sub_compHyperplaneReflectionL_ae (hp : p ≠ ⊤) (hν : ν �
     ae_restrict_mem (U ⊓ H).isOpen.measurableSet] with x hx hxUH
   exact hx (Opens.mem_inf.1 hxUH).2
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Points of the closed half-space `{x | c ≤ ⟪x, ν⟫}` outside the open half-space `H` lie on the
-hyperplane, where the reflection is the identity. -/
-private theorem hyperplaneReflection_eq_self_of_mem_closure (hH : ∀ x, x ∈ H ↔ c < ⟪x, ν⟫_ℝ)
-    {x : E} (hxc : x ∈ closure (H : Set E)) (hxH : x ∉ H) : hyperplaneReflection ν c x = x := by
-  have hset : (H : Set E) = {x | c < ⟪x, ν⟫_ℝ} := Set.ext hH
-  have hle : c ≤ ⟪x, ν⟫_ℝ := by
-    rw [hset] at hxc
-    exact closure_lt_subset_le continuous_const (continuous_id.inner continuous_const) hxc
-  exact hyperplaneReflection_eq_self_of_inner_eq
-    (le_antisymm (not_lt.1 fun h => hxH ((hH x).2 h)) hle)
-
 /-- For a test function `φ`, the restriction of `φ - φ ∘ ρ` to `U ∩ H` has value `φ - φ ∘ ρ`. -/
 private theorem value_restrictL_sub_compHyperplaneReflectionL_ofTestFunction_ae (hp : p ≠ ⊤)
     (hU : MapsTo (hyperplaneReflection ν c) U U) (φ : 𝓓(U, ℝ)) :
