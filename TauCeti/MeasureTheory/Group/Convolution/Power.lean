@@ -164,12 +164,8 @@ theorem conv_Iic_le {M : Type*} [MeasurableSpace M] [AddCommMonoid M] [PartialOr
     _ ≤ ∫⁻ x, ν (Prod.mk x ⁻¹' (Set.Iic t ×ˢ Set.Iic t)) ∂μ :=
         prod_apply_le (measurableSet_Iic.prod measurableSet_Iic)
     _ = μ (Set.Iic t) * ν (Set.Iic t) := by
-        have hx (x : M) : ν (Prod.mk x ⁻¹' (Set.Iic t ×ˢ Set.Iic t)) =
-            (Set.Iic t).indicator (fun _ ↦ ν (Set.Iic t)) x := by
-          by_cases h : x ∈ Set.Iic t
-          · rw [Set.mk_preimage_prod_right h, Set.indicator_of_mem h]
-          · rw [Set.mk_preimage_prod_right_eq_empty h, Set.indicator_of_notMem h, measure_empty]
-        simp_rw [hx]
+        classical
+        simp_rw [Set.mk_preimage_prod_right_eq_if, measure_if]
         rw [lintegral_indicator measurableSet_Iic, setLIntegral_const, mul_comm]
 
 /-- Mixing a family of measures indexed by `ℕ` that turns addition into convolution commutes
