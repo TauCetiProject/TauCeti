@@ -215,7 +215,7 @@ namespace TauCeti
 covered by countably many closed balls of radii at most `δ` with `∑ (2 rᵢ) ^ d ≤ M + ε`, then
 `μH[d] A ≤ M`. This is `hausdorffMeasure_le_liminf_tsum` for covers by closed balls. -/
 theorem hausdorffMeasure_le_of_forall_exists_closedBall_cover {X : Type u} [MetricSpace X]
-    [MeasurableSpace X] [BorelSpace X] {d : ℝ} (hd : 0 ≤ d) {A : Set X} {M : ℝ≥0∞}
+    [MeasurableSpace X] [BorelSpace X] {d : ℝ} {A : Set X} {M : ℝ≥0∞}
     (h : ∀ δ : ℝ, 0 < δ → ∀ ε : ℝ≥0∞, 0 < ε →
       ∃ (ι : Type u) (_ : Countable ι) (x : ι → X) (r : ι → ℝ), (∀ i, r i ≤ δ) ∧
         A ⊆ ⋃ i, closedBall (x i) (r i) ∧ ∑' i, ENNReal.ofReal (2 * r i) ^ d ≤ M + ε) :
@@ -226,6 +226,21 @@ theorem hausdorffMeasure_le_of_forall_exists_closedBall_cover {X : Type u} [Metr
     simpa using tendsto_const_nhds.add ENNReal.tendsto_inv_nat_nhds_zero
   have hδ : Tendsto (fun n : ℕ => ENNReal.ofReal (2 * (1 / (n + 1)))) atTop (𝓝 0) := by
     simpa using ENNReal.tendsto_ofReal (tendsto_one_div_add_atTop_nhds_zero_nat.const_mul 2)
+  rcases le_or_gt 0 d with hd | hd
+  swap
+  · -- For a negative exponent the sums blow up, so `M = ⊤` unless `A` is empty.
+    rcases A.eq_empty_or_nonempty with rfl | ⟨a, ha⟩
+    · simp
+    have hT : Tendsto (fun n : ℕ => ENNReal.ofReal (2 * (1 / (n + 1))) ^ d) atTop (𝓝 ⊤) := by
+      have h0 := hδ.inv
+      rw [ENNReal.inv_zero] at h0
+      have := (ENNReal.tendsto_rpow_at_top (neg_pos.2 hd)).comp h0
+      simpa [Function.comp_def, ENNReal.rpow_neg, ENNReal.inv_rpow] using this
+    refine le_top.trans (le_of_tendsto_of_tendsto hT hlim (Eventually.of_forall fun n => ?_))
+    obtain ⟨i, hi⟩ := mem_iUnion.1 (hA n ha)
+    exact (ENNReal.rpow_le_rpow_of_nonpos
+      (ENNReal.ofReal_le_ofReal (by linarith [hrδ n i])) hd.le).trans
+      ((le_tsum _ i).trans (hsum n))
   -- Instance argument of `hausdorffMeasure_le_liminf_tsum`.
   have : ∀ n, Countable (ι n) := hι
   calc μH[d] A ≤ liminf (fun n => ∑' i, ediam (closedBall (x n i) (r n i)) ^ d) atTop :=
