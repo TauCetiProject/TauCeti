@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.FiberProduct.Manifold
+public import TauCeti.Geometry.Manifold.FiberProduct.Composition
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Composition
 import TauCeti.Geometry.Manifold.Immersion.Differential
 
@@ -28,24 +28,15 @@ This is the tangent hypothesis of `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagra
 so on this actual fibre-product manifold the composite is a Lagrangian map for `pr₁*σ₁ - pr₂*σ₃`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianMap.relComp_transverseFiberProduct`).
 
-The composite need not be an immersion. Its differential at `(x, y)` sends a tangent pair
-`(u, w)` to `((df u).1, (dg w).2)`, so it is injective exactly when there is no **excess**: the
-only matching pair `(u, w)` with `(df u).1 = 0` and `(dg w).2 = 0` is zero
-(`TauCeti.injective_mfderiv_relComp_transverseFiberProduct_iff`).
-When `f` and `g` have injective differentials, the excess at `(x, y)` is the space of vectors
-`v ∈ T M₂` with `(0, v)` tangent to `f` and `(v, 0)` tangent to `g`
-(`TauCeti.injective_mfderiv_relComp_transverseFiberProduct_iff_of_injective`).
+The composite is smooth (`TauCeti.contMDiff_relComp_transverseFiberProduct`) but need not be an
+immersion: its differential is injective exactly when the composition has no **excess**
+(`TauCeti.injective_mfderiv_relComp_transverseFiberProduct_iff`). These general facts about
+composites over transverse fibre products live in
+`TauCeti.Geometry.Manifold.FiberProduct.Composition`.
 A transverse composite without excess that is a topological embedding is therefore a Lagrangian
 correspondence `M₁ ⇝ M₃`.
 
 ## Main results
-
-In the namespace `TauCeti`:
-
-* `contMDiff_relComp_transverseFiberProduct`: the composite is smooth on the transverse fibre
-  product.
-* `injective_mfderiv_relComp_transverseFiberProduct_iff`: the composite has injective
-  differential exactly where the composition has no excess.
 
 In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`:
 
@@ -100,76 +91,6 @@ variable (hf : ContMDiff K₁ (I₁.prod I₂) ∞ f) (hg : ContMDiff K₂ (I₂
         (mfderiv K₂ I₂ (fun y ↦ (g y).1) p.2)).range = ⊤)
 
 include hf hg htrans
-
-/-- The composite `(x, y) ↦ ((f x).1, (g y).2)` is smooth on the transverse fibre product
-`L₁ ×_{M₂} L₂`. -/
-theorem contMDiff_relComp_transverseFiberProduct :
-    letI := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
-    ContMDiff KF (I₁.prod I₃) ∞
-      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) := by
-  let := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
-  have hval := (isSmoothEmbedding_coe_transverseFiberProduct (by simp) hf.snd hg.fst
-    htrans).contMDiff
-  exact (hf.comp hval.fst).fst.prodMk (hg.comp hval.snd).snd
-
-/-- **The excess of a transverse composition.** The differential at `p = (x, y)` of the composite
-`(x, y) ↦ ((f x).1, (g y).2)` on the transverse fibre product is injective exactly when the
-composition has no excess at `p`: every tangent pair `(u, w)` with `(df u).2 = (dg w).1`,
-`(df u).1 = 0` and `(dg w).2 = 0` is zero. No Lagrangian condition is needed. -/
-theorem injective_mfderiv_relComp_transverseFiberProduct_iff
-    (p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1}) :
-    letI := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
-    Function.Injective (mfderiv KF (I₁.prod I₃)
-      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) p) ↔
-      ∀ u w, (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).2 = (mfderiv K₂ (I₂.prod I₃) g p.1.2 w).1 →
-        (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).1 = 0 → (mfderiv K₂ (I₂.prod I₃) g p.1.2 w).2 = 0 →
-          u = 0 ∧ w = 0 := by
-  let := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
-  have hval := ((isSmoothEmbedding_coe_transverseFiberProduct (by simp) hf.snd hg.fst
-    htrans).contMDiff p).mdifferentiableAt (by simp)
-  have hf' := hf.mdifferentiable (by simp) p.1.1
-  have hg' := hg.mdifferentiable (by simp) p.1.2
-  -- The differential of the composite reads off the outer components of `df` and `dg`.
-  have hd := hf'.mfderiv_prodMk_fst_snd_comp_apply
-    (a := fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ q.1.1) (b := fun q ↦ q.1.2) hg'
-    hval.fst hval.snd
-  rw [injective_iff_map_eq_zero]
-  constructor
-  · intro hinj u w hfg hu hw
-    obtain ⟨ξ, rfl, rfl⟩ := exists_mfderiv_eq_of_transverseFiberProduct (by simp) hf.snd hg.fst
-      htrans p u w (by rwa [hf'.mfderiv_snd_apply, hg'.mfderiv_fst_apply])
-    rw [hinj ξ (by rw [hd, hu, hw]; rfl), map_zero, map_zero]
-    exact ⟨rfl, rfl⟩
-  · intro hexc ξ hξ0
-    rw [hd] at hξ0
-    obtain ⟨h₁, h₂⟩ := hexc _ _
-      (hf'.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct_comp (a := fun q ↦ q.1.1)
-        (b := fun q ↦ q.1.2) hg' hval.fst hval.snd (fun q ↦ q.2) ξ)
-      (congrArg Prod.fst hξ0) (congrArg Prod.snd hξ0)
-    exact eq_zero_of_mfderiv_transverseFiberProduct (by simp) hf.snd hg.fst htrans p ξ h₁ h₂
-
-/-- **The excess of a transverse composition of immersions.** If `f` and `g` have injective
-differentials at `x` and `y`, the composite `(x, y) ↦ ((f x).1, (g y).2)` on the transverse fibre
-product has injective differential at `(x, y)` exactly when no nonzero `v ∈ T M₂` has `(0, v)`
-tangent to `f` and `(v, 0)` tangent to `g`. -/
-theorem injective_mfderiv_relComp_transverseFiberProduct_iff_of_injective
-    (p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1})
-    (hfi : Function.Injective (mfderiv K₁ (I₁.prod I₂) f p.1.1))
-    (hgi : Function.Injective (mfderiv K₂ (I₂.prod I₃) g p.1.2)) :
-    letI := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
-    Function.Injective (mfderiv KF (I₁.prod I₃)
-      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) p) ↔
-      ∀ u w, (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).1 = 0 →
-        (mfderiv K₂ (I₂.prod I₃) g p.1.2 w).2 = 0 →
-        (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).2 = (mfderiv K₂ (I₂.prod I₃) g p.1.2 w).1 →
-          (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).2 = 0 := by
-  rw [injective_mfderiv_relComp_transverseFiberProduct_iff hf hg htrans]
-  refine forall₂_congr fun u w ↦ ⟨fun h hu hw hfg ↦ ?_, fun h hfg hu hw ↦ ?_⟩
-  · rw [(h hfg hu hw).1, map_zero]
-    rfl
-  · have hu0 : mfderiv K₁ (I₁.prod I₂) f p.1.1 u = 0 := Prod.ext hu (h hu hw hfg)
-    have hw0 : mfderiv K₂ (I₂.prod I₃) g p.1.2 w = 0 := Prod.ext (hfg ▸ h hu hw hfg) hw
-    exact ⟨(injective_iff_map_eq_zero _).1 hfi u hu0, (injective_iff_map_eq_zero _).1 hgi w hw0⟩
 
 namespace SmoothTwoForm.IsNondegenerate
 
