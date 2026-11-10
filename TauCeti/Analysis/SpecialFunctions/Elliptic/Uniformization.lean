@@ -14,6 +14,7 @@ import Mathlib.Analysis.Complex.Liouville
 import Mathlib.NumberTheory.LSeries.HurwitzZetaValues
 import Mathlib.NumberTheory.ModularForms.LevelOne.GradedRing
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Basic
+import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 
 /-!
 # The Weierstrass curve of a period lattice
@@ -76,6 +77,8 @@ while it vanishes on `Λ` and nowhere else. A point `(x, y)` of the curve with `
   `g₂³ - 27 g₃²`, and it is nonzero.
 * `PeriodPair.weierstrassCurve_j`, `UpperHalfPlane.weierstrassCurve_j_periodPair`: the
   `j`-invariant, and its identification with the modular invariant `TauCeti.ModularForm.j`.
+* `PeriodPair.weierstrassCurve_j_eq_1728_iff`, `PeriodPair.weierstrassCurve_j_eq_zero_iff`: the
+  `j`-invariant is `1728` exactly when `g₃ = 0`, and `0` exactly when `g₂ = 0`.
 * `PeriodPair.weierstrassPoint_add_coe`, `PeriodPair.weierstrassPoint_neg`,
   `PeriodPair.weierstrassPoint_eq_zero_iff`: the point map is `Λ`-periodic, odd, and vanishes
   exactly on `Λ`.
@@ -229,6 +232,18 @@ lemma weierstrassCurve_j :
   simp only [c₄, b₂, b₄, weierstrassCurve_a₁, weierstrassCurve_a₂, weierstrassCurve_a₃,
     weierstrassCurve_a₄]
   ring
+
+variable {L} in
+/-- The `j`-invariant of `E_Λ` is `1728` exactly when `g₃(Λ) = 0`. -/
+lemma weierstrassCurve_j_eq_1728_iff : L.weierstrassCurve.j = 1728 ↔ L.g₃ = 0 := by
+  rw [WeierstrassCurve.j_eq_1728_iff]
+  norm_num [c₆, b₂, b₄, b₆]
+
+variable {L} in
+/-- The `j`-invariant of `E_Λ` is `0` exactly when `g₂(Λ) = 0`. -/
+lemma weierstrassCurve_j_eq_zero_iff : L.weierstrassCurve.j = 0 ↔ L.g₂ = 0 := by
+  rw [WeierstrassCurve.j_eq_zero_iff]
+  norm_num [c₄, b₂, b₄]
 
 end PeriodPair
 
