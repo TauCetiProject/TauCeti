@@ -25,10 +25,10 @@ Over a field the fundamental theorem of Hopf modules then gives
 finite-dimensional Hopf algebra form a line (`TauCeti.finrank_rightCointegrals`). This is the
 theorem of Larson and Sweedler. A nonzero cointegral supplies the hypothesis of the results in
 `TauCeti.Algebra.HopfAlgebra.Frobenius`, so the antipode is bijective
-(`TauCeti.HopfAlgebra.antipode_bijective`) and the left and right integrals form lines
-(`TauCeti.finrank_leftIntegral`, `TauCeti.finrank_rightIntegral`). Precomposition with the
-antipode then exchanges right and left cointegrals, so the left cointegrals form a line too
-(`TauCeti.finrank_leftCointegrals`).
+(`TauCeti.HopfAlgebra.antipode_bijective_of_finiteDimensional`) and the left and right integrals
+form lines (`TauCeti.finrank_leftIntegral`, `TauCeti.finrank_rightIntegral`). Precomposition
+with the antipode then exchanges right and left cointegrals, so the left cointegrals form a line
+too (`TauCeti.finrank_leftCointegrals`).
 
 ## References
 
@@ -235,7 +235,8 @@ private theorem exists_isRightInvariantIntegral_ne_zero :
 
 /-- **Larson–Sweedler.** The antipode of a finite-dimensional Hopf algebra over a field is
 bijective. -/
-theorem HopfAlgebra.antipode_bijective : Function.Bijective (HopfAlgebra.antipode k : H → H) := by
+theorem HopfAlgebra.antipode_bijective_of_finiteDimensional :
+    Function.Bijective (HopfAlgebra.antipode k : H → H) := by
   obtain ⟨φ, hφ, h0⟩ := exists_isRightInvariantIntegral_ne_zero (k := k) (H := H)
   exact hφ.antipode_bijective h0
 
@@ -256,7 +257,7 @@ private theorem isLeftCointegral_comp_antipode {φ : Module.Dual k H} (hφ : IsR
     IsLeftCointegral (φ ∘ₗ HopfAlgebra.antipode k) := by
   rw [isLeftCointegral_def]
   intro x
-  apply (HopfAlgebra.antipode_bijective (k := k) (H := H)).1
+  apply (HopfAlgebra.antipode_bijective_of_finiteDimensional (k := k) (H := H)).1
   have hw (w : H ⊗[k] H) :
       HopfAlgebra.antipode k (TensorProduct.rid k H
         ((φ ∘ₗ HopfAlgebra.antipode k).lTensor H w)) =
@@ -274,7 +275,7 @@ private theorem isRightCointegral_comp_antipode {φ : Module.Dual k H} (hφ : Is
     IsRightCointegral (φ ∘ₗ HopfAlgebra.antipode k) := by
   rw [isRightCointegral_def]
   intro x
-  apply (HopfAlgebra.antipode_bijective (k := k) (H := H)).1
+  apply (HopfAlgebra.antipode_bijective_of_finiteDimensional (k := k) (H := H)).1
   have hw (w : H ⊗[k] H) :
       HopfAlgebra.antipode k (TensorProduct.lid k H
         ((φ ∘ₗ HopfAlgebra.antipode k).rTensor H w)) =
@@ -291,7 +292,8 @@ private theorem isRightCointegral_comp_antipode {φ : Module.Dual k H} (hφ : Is
 one-dimensional space. -/
 theorem finrank_leftCointegrals : Module.finrank k (leftCointegrals k H) = 1 := by
   have hinj : Function.Injective (HopfAlgebra.antipode k (A := H)).dualMap :=
-    LinearMap.dualMap_injective_of_surjective (HopfAlgebra.antipode_bijective (k := k) (H := H)).2
+    LinearMap.dualMap_injective_of_surjective
+      (HopfAlgebra.antipode_bijective_of_finiteDimensional (k := k) (H := H)).2
   have hle : Module.finrank k (leftCointegrals k H) ≤ Module.finrank k (rightCointegrals k H) :=
     LinearMap.finrank_le_finrank_of_injective
       (f := ((HopfAlgebra.antipode k (A := H)).dualMap.domRestrict _).codRestrict
