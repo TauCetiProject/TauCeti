@@ -246,7 +246,7 @@ private theorem homogeneousComponent_homDefect_eq_zero_of_pow (hF : F.height p =
       refine hP (k - h) ?_
       have := Nat.pow_lt_pow_right hp'.one_lt (show k - h < k by omega)
       omega
-  rw [hk, homogeneousComponent_homDefect_eq_smul_lazardCocycle hf hp' hpK hk₀ (hk ▸ hΦ),
+  rw [hk, homogeneousComponent_homDefect_eq_smul_lazardCocycle hf hp' hpK (hk ▸ hΦ),
     ← neg_sub, map_neg, ← pSeriesError, ← hk, hP₀, neg_zero, zero_smul, MvPolynomial.coe_zero]
 
 /-- Let `f` be a homomorphism from `F` to `G` up to degree `N`, with `N + 1` not a power of `p`.

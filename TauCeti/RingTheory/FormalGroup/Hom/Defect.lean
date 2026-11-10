@@ -202,7 +202,7 @@ theorem succ_le_order_homDefect_of_coeff_nsmulSeries_eq {p : ℕ} (hp : p.Prime)
     coeff_X_pow, mul_one, Algebra.algebraMap_self, RingHom.id_apply] at hG' hF'
   rw [← PowerSeries.coeff_def Finsupp.single_eq_same] at hG' hF'
   refine succ_le_order_of_homogeneousComponent_eq_zero hn ?_
-  rw [homogeneousComponent_homDefect_eq_smul_lazardCocycle hg hp hpR hk hn, map_sub, hG', hF',
+  rw [homogeneousComponent_homDefect_eq_smul_lazardCocycle hg hp hpR hn, map_sub, hG', hF',
     hFG, sub_self, zero_smul, MvPolynomial.coe_zero]
 
 /-- The inductive step: a normalised `g` whose homomorphism defect vanishes below a degree
