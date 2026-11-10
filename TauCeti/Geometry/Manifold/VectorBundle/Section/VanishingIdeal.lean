@@ -8,8 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 import Mathlib.Geometry.Manifold.BumpFunction
-import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Geometry.Manifold.VectorBundle.Tensoriality
 
 /-!
 # The fibre of a vector bundle as sections modulo the vanishing ideal
@@ -21,9 +21,9 @@ sums `∑ fᵢ sᵢ` with `fᵢ(x) = 0`. A smooth section lies in `I_x Γ(V)` ex
 `x`, so evaluation at `x` identifies the quotient `Γ(V) / I_x Γ(V)` with the fibre `V_x`.
 
 Together with `TauCeti.smoothCotangentEquiv`, which identifies `I_x / I_x²` with the cotangent
-space `T_x*M`, this turns the algebraic description of differential operators between modules of
-sections into fibrewise statements: a `C^∞(M)`-linear construction on sections that descends
-to the quotients by `I_x Γ(V)` becomes a map between fibres at `x`.
+space `T_x*M` at interior points `x`, this turns the algebraic description of differential
+operators between modules of sections into fibrewise statements: a `C^∞(M)`-linear construction
+on sections that descends to the quotients by `I_x Γ(V)` becomes a map between fibres at `x`.
 
 Finite rank enters through local frames: near `x` a section is a finite combination of frame
 sections, which is what makes `I_x Γ(V)`, a submodule of *finite* sums, large enough.
@@ -39,11 +39,11 @@ sections, which is what makes `I_x Γ(V)`, a submodule of *finite* sums, large e
 
 ## Implementation notes
 
-Near `x`, a section is the sum of its coefficients in the local frame of a trivialization times
-the frame sections. Cutting both off by a smooth bump function equal to one near `x` gives global
-smooth coefficients and sections. The coefficients vanish at `x` when the section does, and the
-section differs from the cut-off sum by a section vanishing near `x`, which is `(1 - χ) s` for
-another bump function `χ`.
+A section vanishing near `x` is `(1 - χ) s` for a bump function `χ` equal to one near `x`, so it
+lies in `I_x Γ(V)`. Hence the class of a section modulo `I_x Γ(V)` is a local, additive operation,
+and `f s - f(x) s = (f - f(x)) s` shows it is linear over smooth functions through evaluation at
+`x`. The tensoriality criterion `TauCeti.Manifold.eq_of_contMDiff_tensorial`, proved by a cut-off
+local frame expansion, then shows that this class depends only on the value at `x`.
 
 ## References
 
@@ -102,37 +102,38 @@ there.** A smooth section of a finite-rank bundle vanishing at `x` lies in `I_x 
 theorem mem_smoothVanishingIdeal_smul_top_of_apply_eq_zero {x : M} {s : Cₛ^∞⟮I; F, V⟯}
     (hs : s x = 0) :
     s ∈ smoothVanishingIdeal I x • (⊤ : Submodule C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯) := by
-  let e := trivializationAt F V x
-  have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
-  let b := Module.finBasis ℝ F
-  -- Globally smooth sections agreeing with the local frame of `e` near `x`.
-  obtain ⟨t, ht, hte⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b hx
-  -- A bump function supported in `e.baseSet` and equal to one near `x`.
-  obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I)
-    (e.open_baseSet.mem_nhds hx)).mem_iff.mp (e.open_baseSet.mem_nhds hx)
-  -- The cut-off frame coefficients of `s` are globally smooth.
-  let c (i : Fin (Module.finrank ℝ F)) : C^∞⟮I, M; ℝ⟯ :=
-    ⟨fun y ↦ ρ y * e.localFrameCoeff I b i y (s y), contMDiff_of_tsupport fun y hy ↦ by
-      have hye : y ∈ e.baseSet := hρ (tsupport_mul_subset_left hy)
-      exact ρ.contMDiff.contMDiffAt.mul
-        (contMDiffAt_localFrameCoeff (I := I) b hye (s.contMDiff y) i)⟩
-  have hc_apply (i) (y : M) : c i y = ρ y * e.localFrameCoeff I b i y (s y) := rfl
-  let T (i : Fin (Module.finrank ℝ F)) : Cₛ^∞⟮I; F, V⟯ := ⟨t i, ht i⟩
-  have hT_apply (i) (y : M) : T i y = t i y := rfl
-  have hc (i) : c i ∈ smoothVanishingIdeal I x := by
-    rw [mem_smoothVanishingIdeal_iff, hc_apply, hs, map_zero, mul_zero]
-  -- Near `x`, the section is the sum of its frame coefficients times the frame.
-  have hrem : ∀ᶠ y in 𝓝 x, (s - ∑ i, c i • T i) y = 0 := by
-    filter_upwards [ρ.eventuallyEq_one, eventually_all.2 hte,
-      e.eventually_eq_localFrame_sum_coeff_smul (I := I) b hx (s := s)] with y hρy hty hsy
-    rw [← ContMDiffSection.evalLinearMap_apply, map_sub, map_sum]
-    simp only [ContMDiffSection.evalLinearMap_apply, ContMDiffSection.smul_apply, hc_apply,
-      hT_apply, hty, hρy, Pi.one_apply, one_mul]
-    rw [sub_eq_zero, ← hsy]
-  have hsum : ∑ i, c i • T i ∈
-      smoothVanishingIdeal I x • (⊤ : Submodule C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯) :=
-    Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem_smul (hc i) Submodule.mem_top
-  simpa using add_mem (mem_smoothVanishingIdeal_smul_top_of_eventuallyEq_zero hrem) hsum
+  classical
+  let N := smoothVanishingIdeal I x • (⊤ : Submodule C^∞⟮I, M; ℝ⟯ Cₛ^∞⟮I; F, V⟯)
+  -- The class modulo `I_x Γ(V)` of a smooth section, extended by zero to all sections.
+  let Φ : (Π y : M, V y) → Cₛ^∞⟮I; F, V⟯ ⧸ N := fun u ↦
+    if hu : CMDiff ∞ (T% u) then Submodule.Quotient.mk ⟨u, hu⟩ else 0
+  have hΦ {u : Π y : M, V y} (hu : CMDiff ∞ (T% u)) : Φ u = Submodule.Quotient.mk ⟨u, hu⟩ :=
+    dite_eq_left hu
+  -- `Φ` is tensorial, so it only depends on the value at `x`.
+  have h := Manifold.eq_of_contMDiff_tensorial (I := I) Φ x
+    (fun hu hu' huu' ↦ by
+      rw [hΦ hu, hΦ hu', Submodule.Quotient.eq]
+      refine mem_smoothVanishingIdeal_smul_top_of_eventuallyEq_zero ?_
+      filter_upwards [huu'] with y hy
+      simp [hy])
+    (fun hu hu' ↦ by
+      rw [hΦ (hu.add_section hu'), hΦ hu, hΦ hu', ← Submodule.Quotient.mk_add]
+      rfl)
+    (fun {f u} hf hu ↦ by
+      rw [hΦ (hf.smul_section hu), hΦ hu, ← Submodule.Quotient.mk_smul, Submodule.Quotient.eq]
+      let g : C^∞⟮I, M; ℝ⟯ := ⟨fun y ↦ f y - f x, hf.sub contMDiff_const⟩
+      have hg_apply (y : M) : g y = f y - f x := rfl
+      have hg : (⟨f • u, hf.smul_section hu⟩ : Cₛ^∞⟮I; F, V⟯) - f x • ⟨u, hu⟩ = g • ⟨u, hu⟩ := by
+        ext y
+        rw [ContMDiffSection.smul_apply, hg_apply, sub_smul]
+        rfl
+      rw [hg]
+      exact Submodule.smul_mem_smul (by rw [mem_smoothVanishingIdeal_iff, hg_apply, sub_self])
+        Submodule.mem_top)
+    s.contMDiff (contMDiff_zeroSection ℝ V) (by simpa using hs)
+  rw [hΦ s.contMDiff, hΦ (contMDiff_zeroSection ℝ V)] at h
+  exact (Submodule.Quotient.mk_eq_zero N).mp (h.trans ((Submodule.Quotient.mk_eq_zero N).mpr
+    (Submodule.zero_mem N)))
 
 /-- A smooth section of a finite-rank bundle lies in `I_x Γ(V)`, the submodule of finite sums of
 products with smooth functions vanishing at `x`, if and only if it vanishes at `x`. -/
