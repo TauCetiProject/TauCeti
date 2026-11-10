@@ -38,6 +38,11 @@ symmetric operator `A`: the increment of `F - ⟪·, y + A z⟫` is that of a qu
 (`LinearMap.IsSymmetric.increment_sub_quadratic_eq`), and a coercive quadratic of this form
 dominates its perturbation on a sphere (`LinearMap.lt_on_sphere_of_abs_increment_le`).
 
+A real coercive quadratic form also loses at most the size of a perturbation of the operator
+(`sub_norm_mul_norm_sq_le_inner`) and stays nonnegative under a small perturbation and scalar
+shift (`inner_add_smul_id_nonneg_of_norm_sub_le`), which gives the convexity
+of perturbed barrier functions, for instance in the Monge–Ampère viscosity argument.
+
 ## Provenance
 
 Adapted from `ForTauCeti/Analysis/InnerProductSpace/CoerciveUnit.lean`
@@ -226,6 +231,35 @@ theorem le_re_of_mem_spectrum_of_positive_lyapunov
       (CFC.rpow_nonneg (a := C) (y := (1 / 2 : ℝ))).isSelfAdjoint
       (CFC.rpow_nonneg (a := C) (y := (-(1 / 2 : ℝ)))).isSelfAdjoint
       hRR hRinvR hRRinv hlyap hδ hB) hz'
+
+section Real
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- **A coercive quadratic form loses at most the size of the perturbation.** If
+`κ ‖v‖² ≤ ⟪A v, v⟫`, then `(κ - ‖D - A‖) ‖v‖² ≤ ⟪D v, v⟫`. -/
+theorem sub_norm_mul_norm_sq_le_inner {A : F →L[ℝ] F} {κ : ℝ}
+    (hA : ∀ v, κ * ‖v‖ ^ 2 ≤ inner ℝ (A v) v) (D : F →L[ℝ] F) (v : F) :
+    (κ - ‖D - A‖) * ‖v‖ ^ 2 ≤ inner ℝ (D v) v := by
+  have h₁ : -(‖D - A‖ * ‖v‖ ^ 2) ≤ inner ℝ ((D - A) v) v :=
+    neg_le_of_abs_le ((D - A).abs_inner_apply_le v)
+  have h₂ : inner ℝ (D v) v = inner ℝ (A v) v + inner ℝ ((D - A) v) v := by
+    rw [← inner_add_left]; simp
+  nlinarith [hA v]
+
+/-- **The quadratic form stays nonnegative under small perturbations.** If `κ ‖v‖² ≤ ⟪A v, v⟫`
+and `‖D - A‖ ≤ κ + t`, then `0 ≤ ⟪(D + t • id) v, v⟫`. -/
+theorem inner_add_smul_id_nonneg_of_norm_sub_le {A D : F →L[ℝ] F} {κ t : ℝ}
+    (hA : ∀ v, κ * ‖v‖ ^ 2 ≤ inner ℝ (A v) v) (hD : ‖D - A‖ ≤ κ + t) (v : F) :
+    0 ≤ inner ℝ ((D + t • ContinuousLinearMap.id ℝ F) v) v := by
+  have h₂ : inner ℝ ((D + t • ContinuousLinearMap.id ℝ F) v) v =
+      inner ℝ (D v) v + t * ‖v‖ ^ 2 := by
+    simp only [_root_.add_apply, _root_.smul_apply, ContinuousLinearMap.id_apply,
+      inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq]
+  rw [h₂]
+  nlinarith [sub_norm_mul_norm_sq_le_inner hA D v, mul_nonneg (sub_nonneg.2 hD) (sq_nonneg ‖v‖)]
+
+end Real
 
 end ContinuousLinearMap
 

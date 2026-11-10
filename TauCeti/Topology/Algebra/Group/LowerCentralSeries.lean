@@ -575,14 +575,6 @@ theorem pLowerCentralSeries_eq_topologicalClosure (k : ℕ) :
     · rintro _ ⟨x, hx, rfl⟩
       exact pow_mem_pLowerCentralStep (le_topologicalClosure _ hx)
 
-/-- On a discrete group the lower `p`-series is the abstract lower `p`-central series of the
-group. -/
-theorem pLowerCentralSeries_eq_of_discreteTopology [DiscreteTopology G] (k : ℕ) :
-    pLowerCentralSeries p G k = (⊤ : Subgroup G).pLowerCentralSeries p k := by
-  rw [pLowerCentralSeries_eq_topologicalClosure]
-  exact le_antisymm (topologicalClosure_minimal _ le_rfl (isClosed_discrete _))
-    (le_topologicalClosure _)
-
 /-! ### Functoriality -/
 
 variable {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
@@ -627,14 +619,30 @@ theorem isTopCharacteristic_pLowerCentralSeries (k : ℕ) :
     IsTopCharacteristic G (pLowerCentralSeries p G k) :=
   isTopCharacteristic_iff_map_eq.mpr fun φ ↦ φ.map_pLowerCentralSeries_eq k
 
+end Series
+
+/-! ### Discrete groups -/
+
+section Discrete
+
+variable {p : ℕ} {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
+  {H : Type*} [Group H] [TopologicalSpace H] [DiscreteTopology H]
+
+/-- On a discrete group the lower `p`-series is the abstract lower `p`-central series of the
+group. -/
+theorem pLowerCentralSeries_eq_of_discreteTopology (k : ℕ) :
+    pLowerCentralSeries p G k = (⊤ : Subgroup G).pLowerCentralSeries p k := by
+  rw [pLowerCentralSeries_eq_topologicalClosure]
+  exact le_antisymm (topologicalClosure_minimal _ le_rfl (isClosed_discrete _))
+    (le_topologicalClosure _)
+
 /-- A group isomorphism between discrete groups matches their lower `p`-series term by term. -/
-theorem _root_.MulEquiv.map_pLowerCentralSeries_eq_of_discreteTopology [DiscreteTopology G]
-    [DiscreteTopology H] (e : G ≃* H) (k : ℕ) :
+theorem _root_.MulEquiv.map_pLowerCentralSeries_eq_of_discreteTopology (e : G ≃* H) (k : ℕ) :
     (pLowerCentralSeries p G k).map e.toMonoidHom = pLowerCentralSeries p H k :=
   ContinuousMulEquiv.map_pLowerCentralSeries_eq
     ⟨e, continuous_of_discreteTopology, continuous_of_discreteTopology⟩ k
 
-end Series
+end Discrete
 
 /-! ### The cyclic groups `ℤ/pⁿ` -/
 

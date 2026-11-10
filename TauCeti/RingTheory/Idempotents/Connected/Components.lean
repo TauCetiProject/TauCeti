@@ -127,6 +127,16 @@ theorem mem_basicOpen_connectedComponentsIdempotent
   rw [← SetLike.mem_coe, basicOpen_connectedComponentsIdempotent]
   simp only [Set.mem_preimage, Set.mem_singleton_iff]
 
+/-- The idempotent selecting a connected component is nonzero, because the component is nonempty
+and the idempotent does not vanish at any of its points. -/
+@[simp]
+theorem connectedComponentsIdempotent_ne_zero (C : ConnectedComponents (PrimeSpectrum R)) :
+    connectedComponentsIdempotent C ≠ 0 := by
+  obtain ⟨x, hx⟩ := ConnectedComponents.surjective_coe C
+  intro h0
+  have hmem := (mem_basicOpen_connectedComponentsIdempotent C x).mpr hx
+  simp [h0] at hmem
+
 /-- Distinct connected components have orthogonal component-indexed idempotents. -/
 theorem connectedComponentsIdempotent_mul_eq_zero
     {C D : ConnectedComponents (PrimeSpectrum R)} (hCD : C ≠ D) :

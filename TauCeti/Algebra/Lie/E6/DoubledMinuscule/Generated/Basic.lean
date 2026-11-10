@@ -175,7 +175,7 @@ noncomputable def generatorCoordinateAlgebraBaseChangeIso
   match j with
   | .inl _ => AdditiveGroup.coordinateHopfAlgebraBaseChangeIso k K
   | .inr _ => _root_.CommHopfAlgCat.isoMk
-      (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K
+      (MonoidAlgebra.scalarTensorBialgEquiv k K
         (G := SplitTorus.characterGroup (Fin 6)))
 
 /-- Each numbered root or torus generator over `K` is the scalar extension of the corresponding

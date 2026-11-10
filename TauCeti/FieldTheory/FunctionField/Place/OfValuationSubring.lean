@@ -110,7 +110,7 @@ private theorem valuation_aeval_mul_lt
       _ = A.valuation x := mul_one _
       _ ≤ A.valuation (y j) := hxy j
 
-/-- **Stichtenoth, Lemma 1.1.7.** Let `x` be a nonzero nonunit of a valuation subring `A` of `F`
+/-- **Stichtenoth, Lemma 1.1.7.** Let `x` be a nonzero element of a valuation subring `A` of `F`
 containing the constants. A family of nonunits of `A` whose valuations increase strictly
 along a linear order, and are all at least `A.valuation x` — hence nonzero — is linearly
 independent over `k(x)`.
@@ -119,11 +119,14 @@ In Stichtenoth's additive notation the hypothesis reads
 `ord x ≥ ord (y i₀) > ord (y i₁) > ⋯ > 0`, and the conclusion bounds the length of such a chain by
 `[F : k(x)]`. -/
 theorem linearIndependent_of_strictMono_valuation (hk : ∀ c : k, algebraMap k F c ∈ A) {x : F}
-    (hx0 : x ≠ 0) (hx : A.valuation x < 1) {ι : Type*} [LinearOrder ι] {y : ι → F}
+    (hx0 : x ≠ 0) {ι : Type*} [LinearOrder ι] {y : ι → F}
     (hy : ∀ i, A.valuation (y i) < 1)
     (hmono : StrictMono fun i ↦ A.valuation (y i)) (hxy : ∀ i, A.valuation x ≤ A.valuation (y i)) :
     LinearIndependent k⟮x⟯ y := by
   classical
+  rcases isEmpty_or_nonempty ι with hι | ⟨⟨i₁⟩⟩
+  · exact linearIndependent_empty_type
+  have hx : A.valuation x < 1 := (hxy i₁).trans_lt (hy i₁)
   have hxpos : 0 < A.valuation x := zero_lt_iff.2 ((Valuation.ne_zero_iff _).2 hx0)
   have hy0 : ∀ i, y i ≠ 0 := fun i ↦ (Valuation.ne_zero_iff _).1 (hxpos.trans_le (hxy i)).ne'
   have hkle : ∀ c : k, A.valuation (algebraMap k F c) ≤ 1 :=
@@ -170,7 +173,7 @@ private theorem not_exists_seq_valuation_strictMono (hF : IsFunctionField k F)
   have : FiniteDimensional k⟮x⟯ F :=
     hF.finiteDimensional_adjoin (Valuation.transcendental_of_ne_one k x hx0 hx.ne)
   have hli : LinearIndependent k⟮x⟯ fun i : Fin (Module.finrank k⟮x⟯ F + 1) ↦ y i :=
-    linearIndependent_of_strictMono_valuation hk hx0 hx (fun i ↦ hy i)
+    linearIndependent_of_strictMono_valuation hk hx0 (fun i ↦ hy i)
       (fun _ _ hij ↦ hmono hij) fun i ↦ hxy.trans (hmono.monotone (Nat.zero_le _))
   simpa using hli.fintype_card_le_finrank
 
