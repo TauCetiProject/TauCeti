@@ -95,7 +95,7 @@ theorem eqOn_signedInChartAt_image {φ ψ : RoughForm I M ℝ k} {s : Set M} (h 
   rw [signedInChartAt_apply_of_mem_source _ _ _ _ (hs hx),
     signedInChartAt_apply_of_mem_source _ _ _ _ (hs hx), hc]
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+variable [MeasurableSpace E] [BorelSpace E]
 
 /-- Signed preferred-chart integrals and integrability agree on an actual overlap. The
 compatibility condition is the signed transition Jacobian, not an assumed integral identity.
@@ -117,6 +117,7 @@ theorem signedInChartAt_changeChart [IsManifold I 1 M]
         (∫ y in (extChartAt I β) '' s, φ.signedInChartAt b β σβ y ∂μ) ∧
       (IntegrableOn (φ.signedInChartAt b α σα) ((extChartAt I α) '' s) μ ↔
         IntegrableOn (φ.signedInChartAt b β σβ) ((extChartAt I β) '' s) μ) := by
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   let A := (extChartAt I α) '' s
   let e := (extChartAt I α).symm ≫ extChartAt I β
   let D := fun y ↦ fderivWithin ℝ
@@ -148,7 +149,6 @@ theorem signedInChartAt_changeChart [IsManifold I 1 M]
       hinj]
     exact (integrableOn_congr_fun (fun y hy ↦ hcoef y hy) hs).symm
 
-omit [FiniteDimensional ℝ E] in
 /-- Actual integrability of unsigned top-form coefficients is invariant under a chart change.
 The absolute Jacobian theorem and a measurable determinant sign preserve both strong
 measurability and integrability, even for arbitrary rough forms on nonorientable manifolds. -/
@@ -190,7 +190,7 @@ theorem integrableOn_signedInChartAt_one_changeChart [IsManifold I 1 M]
   simpa only [IntegrableOn, smul_eq_mul] using
     MeasureTheory.integrable_smul_iff_abs_smul (F := ℝ) hd
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+omit [MeasurableSpace E] [BorelSpace E] in
 /-- A source sign constant on the form's support factors out of the actual chart coefficient. -/
 theorem signedInChartAt_eq_const_mul_unsigned
     (ψ : RoughForm I M ℝ k) (b : Module.Basis (Fin k) ℝ E) (α : M)

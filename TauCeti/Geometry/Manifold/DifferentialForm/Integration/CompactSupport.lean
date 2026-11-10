@@ -169,8 +169,6 @@ theorem integrable_signedInChartAt (φ : RoughForm I M ℝ k)
     (φ.support_signedInChartAt_subset b α σ)).mp
       ((φ.continuousOn_signedInChartAt b α σ hσ hφ).mono htarget |>.integrableOn_compact hK)
 
-variable [FiniteDimensional ℝ E]
-
 /-- Chart-supported top forms have the same actual signed coefficient integral in
 any two charts containing their support. Only the model is equipped with a measurable structure. -/
 theorem integral_signedInChartAt_eq_of_tsupport_subset [IsManifold I 1 M]
