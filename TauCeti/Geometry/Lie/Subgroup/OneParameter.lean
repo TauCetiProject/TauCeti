@@ -70,7 +70,7 @@ section Definition
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G] [BoundarylessManifold I G]
+  [LieGroup I (minSmoothness ℝ 3) G] [T2Space G] [BoundarylessManifold I G]
   [IsTopologicalGroup G]
 
 omit [IsTopologicalGroup G] in
