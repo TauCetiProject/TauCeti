@@ -18,11 +18,6 @@ rationality nor salience, and the additive map need not be injective.
 The monoid construction allows ordered semirings; the positive-multiple
 characterizations use an ordered field.
 
-For a linear graph compatible with additive lattice maps, lattice points in
-the graph cone are precisely the graph of the source lattice points. This
-allows graph lifts to retain degree data even when the lattice homomorphism
-has a kernel.
-
 Adapted from `Mei/Geometry/Convex/Cone/LatticePoints.lean` in
 [yuma-mizuno-lean/Mei](https://github.com/yuma-mizuno-lean/Mei), commit
 `3d2e9c869ee44c41ae9c7b5c6e2042898430d0ca` (Apache 2.0).
@@ -49,10 +44,13 @@ theorem mem_latticePoints {σ : PointedCone R V} {i : N →+ V} {n : N} :
     n ∈ σ.latticePoints i ↔ i n ∈ σ := Iff.rfl
 
 /-- Enlarging the cone enlarges its lattice-point monoid. -/
-theorem latticePoints_mono (i : N →+ V) :
-    Monotone (fun σ : PointedCone R V => σ.latticePoints i) := by
-  intro σ τ h n hn
-  exact h hn
+@[gcongr]
+theorem latticePoints_mono {σ τ : PointedCone R V} (h : σ ≤ τ) (i : N →+ V) :
+    σ.latticePoints i ≤ τ.latticePoints i := fun _ hn ↦ h hn
+
+/-- The lattice-point monoid is monotone in the cone. -/
+theorem latticePoints_monotone (i : N →+ V) :
+    Monotone (fun σ : PointedCone R V => σ.latticePoints i) := fun _ _ h ↦ latticePoints_mono h i
 
 /-- Lattice points commute with intersection of cones. -/
 @[simp]
@@ -60,25 +58,6 @@ theorem latticePoints_inf (σ τ : PointedCone R V) (i : N →+ V) :
     (σ ⊓ τ).latticePoints i = σ.latticePoints i ⊓ τ.latticePoints i := by
   ext n
   simp
-
-/-- A graph cone has precisely the graph of the source lattice points. Only the
-target lattice map must be injective; the lattice homomorphism may have a kernel. -/
-theorem latticePoints_map_prod_id {M W : Type*} [AddCommMonoid M]
-    [AddCommMonoid W] [Module R W] (σ : PointedCone R V)
-    (i : N →+ V) (j : M →+ W) (f : N →+ M) (F : V →ₗ[R] W)
-    (hf : ∀ n, F (i n) = j (f n)) (hj : Function.Injective j) :
-    (σ.map (F.prod LinearMap.id)).latticePoints (j.prodMap i) =
-      (σ.latticePoints i).map (f.prod (AddMonoidHom.id N)) := by
-  ext ⟨m, n⟩
-  simp only [mem_latticePoints, AddMonoidHom.coe_prodMap, Prod.map_apply, mem_map,
-    LinearMap.prod_apply, Function.prod_apply, LinearMap.id_apply, Prod.mk.injEq,
-    AddSubmonoid.mem_map, AddMonoidHom.prod_apply, AddMonoidHom.id_apply]
-  constructor
-  · rintro ⟨x, hx, hxm, hxn⟩
-    subst x
-    exact ⟨n, hx, hj ((hf n).symm.trans hxm), rfl⟩
-  · rintro ⟨a, ha, ham, rfl⟩
-    exact ⟨i a, ha, by rw [hf, ham], rfl⟩
 
 variable {K W : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [AddCommMonoid W] [Module K W]
