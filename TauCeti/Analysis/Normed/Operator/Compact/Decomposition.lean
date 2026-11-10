@@ -14,7 +14,7 @@ import TauCeti.LinearAlgebra.End.RangePow
 /-!
 # Stable kernel and range splittings for compact operators
 
-For a compact operator `K` on a real or complex Banach space and a nonzero scalar `μ`,
+For a compact operator `K` on a real or complex normed space and a nonzero scalar `μ`,
 the kernels and ranges of powers of `K - μ • 1` stabilise.
 Their stable values are topological complements. This is the closed-subspace splitting
 underlying the nilpotent and invertible parts of Riesz--Schauder theory; in particular,
