@@ -208,17 +208,39 @@ variable {K M : Type*} [CommSemiring K] [AddCommMonoid M] [Module K M]
 /-- **The trace of `f ⊗ f` composed with the flip is the trace of `f ∘ f`.** In a basis the
 diagonal entry of the composite at `eᵢ ⊗ eⱼ` is `aᵢⱼ aⱼᵢ`, and summing those over all pairs is the
 trace of the square of the matrix of `f`, which is
-`Module.Basis.trace_eq_trace_comp_self_of_toMatrix_diag`. -/
-theorem _root_.LinearMap.trace_map_self_comp_comm [Module.Free K M] [Module.Finite K M]
-    (f : M →ₗ[K] M) :
+`Module.Basis.trace_eq_trace_comp_self_of_toMatrix_diag`.  When `M` is not finite, neither
+module has a finite basis and both traces are zero. -/
+theorem _root_.LinearMap.trace_map_self_comp_comm [Module.Free K M] (f : M →ₗ[K] M) :
     LinearMap.trace K (M ⊗[K] M)
         (TensorProduct.map f f ∘ₗ (TensorProduct.comm K M M).toLinearMap)
       = LinearMap.trace K M (f ∘ₗ f) := by
-  set b := Module.Free.chooseBasis K M
-  refine b.trace_eq_trace_comp_self_of_toMatrix_diag (b.tensorProduct b) (Equiv.refl _) f _ ?_
-  rintro ⟨i, j⟩
-  simp [Module.Basis.toMatrix_apply, Module.Basis.tensorProduct_apply,
-    Module.Basis.tensorProduct_repr_tmul_apply, mul_comm]
+  by_cases hM : Module.Finite K M
+  · set b := Module.Free.chooseBasis K M
+    refine b.trace_eq_trace_comp_self_of_toMatrix_diag (b.tensorProduct b) (Equiv.refl _) f _ ?_
+    rintro ⟨i, j⟩
+    simp [Module.Basis.toMatrix_apply, Module.Basis.tensorProduct_apply,
+      Module.Basis.tensorProduct_repr_tmul_apply, mul_comm]
+  · have htrace_zero : ∀ (N : Type _) [AddCommMonoid N] [Module K N], ¬ Module.Finite K N →
+        ∀ g : N →ₗ[K] N, LinearMap.trace K N g = 0 := by
+      intro N _ _ hN g
+      have hne : ¬∃ s : Finset N, Nonempty (Module.Basis s K N) := by
+        rintro ⟨s, ⟨b⟩⟩
+        exact hN (Module.Finite.of_basis b)
+      rw [LinearMap.trace, dite_eq_right hne, LinearMap.zero_apply]
+    have hMM : ¬ Module.Finite K (M ⊗[K] M) := by
+      intro h
+      obtain hK | hK := subsingleton_or_nontrivial K
+      · have := Module.subsingleton K M
+        exact hM inferInstance
+      · set b := Module.Free.chooseBasis K M
+        have hfin : Finite (Module.Free.ChooseBasisIndex K M × Module.Free.ChooseBasisIndex K M) :=
+          Module.Finite.finite_basis (b.tensorProduct b)
+        rcases isEmpty_or_nonempty (Module.Free.ChooseBasisIndex K M) with hι | hι
+        · exact hM (Module.Finite.of_basis b)
+        · have : Finite (Module.Free.ChooseBasisIndex K M) :=
+            Finite.prod_left (Module.Free.ChooseBasisIndex K M)
+          exact hM (Module.Finite.of_basis b)
+    rw [htrace_zero _ hMM, htrace_zero _ hM]
 
 end Trace
 
