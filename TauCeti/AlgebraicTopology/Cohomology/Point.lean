@@ -185,7 +185,7 @@ lemma singularCohomologyPointZeroIso_hom_naturality_right {M' : C} (g : M ⟶ M'
   simp only [ModuleCat.hom_comp, LinearMap.coe_comp, Function.comp_apply,
     singularCohomologyPointZeroIso_hom_homologyπ_apply R k M' X σ,
     singularCohomologyPointZeroIso_hom_homologyπ_apply R k M X σ]
-  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply]
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply]
   -- The cochain map postcomposes with `g` (`ChainComplex.linearYonedaObjMap_f_hom_apply`), and
   -- so does `Linear.rightComp`; its statement is typed in the cochain module, so it is applied
   -- as a term.

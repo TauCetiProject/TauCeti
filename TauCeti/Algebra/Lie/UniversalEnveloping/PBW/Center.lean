@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization
+public import TauCeti.Algebra.Lie.UniversalEnveloping.PBW.Symmetrization.Basic
 
 /-!
 # The PBW symbols of central elements

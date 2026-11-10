@@ -14,17 +14,17 @@ public import Mathlib.LinearAlgebra.BilinearForm.Properties
 This file records a pointwise characterization of positive semidefiniteness for symmetric
 bilinear forms. It converts `IsPosSemidef` into diagonal nonnegativity, the form consumed by
 quadratic-form signature criteria and other pointwise positivity arguments. Over an ordered ring,
-it also bounds the value of a positive-semidefinite form on a sum of `k` vectors by `k` times the
-sum of their values, the inequality `‖x₁ + ⋯ + xₖ‖² ≤ k (‖x₁‖² + ⋯ + ‖xₖ‖²)` of inner product
-spaces.
+it also bounds the value of a form with nonnegative diagonal on a sum of `k` vectors by `k` times
+the sum of their values, the inequality `‖x₁ + ⋯ + xₖ‖² ≤ k (‖x₁‖² + ⋯ + ‖xₖ‖²)` of inner
+product spaces.
 
 ## Main results
 
 * `LinearMap.BilinForm.isPosSemidef_iff_forall_nonneg`: a symmetric bilinear form is
   positive-semidefinite exactly when its diagonal values are nonnegative.
-* `LinearMap.BilinForm.IsPosSemidef.apply_sum_sum_le_card_mul_sum`: the value of a
-  positive-semidefinite form on a sum of vectors is at most the number of summands times the sum
-  of their values.
+* `LinearMap.BilinForm.IsNonneg.apply_sum_sum_le_card_mul_sum`: the value of a form with
+  nonnegative diagonal on a sum of vectors is at most the number of summands times the sum of
+  their values.
 * `LinearMap.BilinForm.apply_sq_le_mul_of_apply_le_apply`: Cauchy-Schwarz against a majorant, for
   a symmetric form with nonnegative diagonal.
 -/
@@ -33,56 +33,45 @@ public section
 
 namespace LinearMap.BilinForm
 
-variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [LE R]
-
 /-- A symmetric bilinear form is positive-semidefinite if and only if its values on all vectors
 are nonnegative. -/
 @[grind =]
-theorem isPosSemidef_iff_forall_nonneg (B : LinearMap.BilinForm R M) (hB : B.IsSymm) :
+theorem isPosSemidef_iff_forall_nonneg {R M : Type*} [CommSemiring R] [AddCommMonoid M]
+    [Module R M] [LE R] (B : LinearMap.BilinForm R M) (hB : B.IsSymm) :
     B.IsPosSemidef ↔ ∀ x, 0 ≤ B x x := by
-  rw [LinearMap.BilinForm.isPosSemidef_def, LinearMap.BilinForm.isNonneg_def]
-  simp only [hB, true_and]
+  simp [isPosSemidef_def, isNonneg_def, hB]
 
 section OrderedRing
 
 variable {R M ι : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup M]
   [Module R M]
 
-/-- A positive-semidefinite bilinear form satisfies
+/-- A bilinear form with nonnegative diagonal satisfies
 `B (x₁ + ⋯ + xₖ) (x₁ + ⋯ + xₖ) ≤ k * (B x₁ x₁ + ⋯ + B xₖ xₖ)`. -/
-theorem IsPosSemidef.apply_sum_sum_le_card_mul_sum {B : LinearMap.BilinForm R M}
-    (hB : B.IsPosSemidef) (s : Finset ι) (x : ι → M) :
+theorem IsNonneg.apply_sum_sum_le_card_mul_sum {B : LinearMap.BilinForm R M}
+    (hB : B.IsNonneg) (s : Finset ι) (x : ι → M) :
     B (∑ i ∈ s, x i) (∑ i ∈ s, x i) ≤ s.card * ∑ i ∈ s, B (x i) (x i) := by
-  -- Each cross term satisfies `2 B(x, y) ≤ B(x, x) + B(y, y)`, since `B(x - y, x - y) ≥ 0`.
-  have hpair (i j : ι) : 2 * B (x i) (x j) ≤ B (x i) (x i) + B (x j) (x j) := by
-    have h := hB.isNonneg.nonneg (x i - x j)
-    simp only [map_sub, LinearMap.sub_apply, hB.isSymm.eq (x j) (x i)] at h
+  -- Each pair of cross terms satisfies `B(x, y) + B(y, x) ≤ B(x, x) + B(y, y)`, since
+  -- `B(x - y, x - y) ≥ 0`.
+  have hpair (i j : ι) : B (x i) (x j) + B (x j) (x i) ≤ B (x i) (x i) + B (x j) (x j) := by
+    have h := hB.nonneg (x i - x j)
+    simp only [map_sub, LinearMap.sub_apply] at h
     linarith
-  have hsum : 2 * B (∑ i ∈ s, x i) (∑ i ∈ s, x i) ≤
-      2 * (s.card * ∑ i ∈ s, B (x i) (x i)) := by
-    simp only [map_sum, LinearMap.sum_apply, Finset.mul_sum]
-    calc ∑ j ∈ s, ∑ i ∈ s, 2 * B (x i) (x j)
-        ≤ ∑ j ∈ s, ∑ i ∈ s, (B (x i) (x i) + B (x j) (x j)) :=
-          Finset.sum_le_sum fun j _ ↦ Finset.sum_le_sum fun i _ ↦ hpair i j
-      _ = ∑ i ∈ s, 2 * (s.card * B (x i) (x i)) := by
-          simp only [Finset.sum_add_distrib, Finset.sum_const, nsmul_eq_mul, ← Finset.mul_sum]
-          ring
-  exact le_of_mul_le_mul_left hsum two_pos
+  have h := Finset.sum_le_sum fun j (_ : j ∈ s) ↦ Finset.sum_le_sum fun i (_ : i ∈ s) ↦ hpair i j
+  simp only [Finset.sum_add_distrib, Finset.sum_const, nsmul_eq_mul, ← Finset.mul_sum] at h
+  have hcomm : ∑ j ∈ s, ∑ i ∈ s, B (x j) (x i) = ∑ j ∈ s, ∑ i ∈ s, B (x i) (x j) :=
+    Finset.sum_comm
+  simp only [map_sum, LinearMap.sum_apply]
+  linarith
 
 /-- **Cauchy-Schwarz against a majorant.** If `F` is a symmetric positive semidefinite bilinear
 form and `F x x ≤ F x z`, then `F x v ^ 2 ≤ F z z * F v v` for every `v`. -/
-theorem apply_sq_le_mul_of_apply_le_apply {K V : Type*} [CommRing K] [LinearOrder K]
-    [IsStrictOrderedRing K] [AddCommGroup V] [Module K V]
-    (F : LinearMap.BilinForm K V) (hnonneg : ∀ x, 0 ≤ F x x) (hsymm : LinearMap.IsSymm F)
-    {x z : V} (hle : F x x ≤ F x z) (v : V) : F x v ^ 2 ≤ F z z * F v v := by
+theorem apply_sq_le_mul_of_apply_le_apply (F : LinearMap.BilinForm R M)
+    (hnonneg : ∀ x, 0 ≤ F x x) (hsymm : LinearMap.IsSymm F) {x z : M} (hle : F x x ≤ F x z)
+    (v : M) : F x v ^ 2 ≤ F z z * F v v := by
   -- The hypothesis first bounds `F x x` by `F z z`, and then Cauchy-Schwarz bounds `F x v`.
   have hbound : F x x ≤ F z z := by
-    rcases eq_or_lt_of_le (hnonneg x) with h0 | h0
-    · exact h0 ▸ hnonneg z
-    · refine le_of_mul_le_mul_left ?_ h0
-      refine (mul_self_le_mul_self h0.le hle).trans ?_
-      rw [← pow_two]
-      exact F.apply_sq_le_of_symm hnonneg hsymm _ z
+    nlinarith [F.apply_sq_le_of_symm hnonneg hsymm x z, hnonneg x, hnonneg z]
   exact (F.apply_sq_le_of_symm hnonneg hsymm x v).trans
     (mul_le_mul_of_nonneg_right hbound (hnonneg v))
 

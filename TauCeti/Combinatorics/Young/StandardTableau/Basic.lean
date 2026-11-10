@@ -101,41 +101,26 @@ theorem col_strict {μ : YoungDiagram} (T : StandardYoungTableau μ)
     T ⟨(i₁, j), μ.up_left_mem h.le (by rfl) hcell⟩ < T ⟨(i₂, j), hcell⟩ :=
   T.col_strict' h hcell
 
-private def transposeCellEquiv (μ : YoungDiagram) : ↥μ.transpose.cells ≃ ↥μ.cells :=
-  (Equiv.prodComm ℕ ℕ).subtypeEquiv fun _ => YoungDiagram.mem_transpose
-
--- These are the two defining equations of `transposeCellEquiv`, in the shape
--- `@[simps apply symm_apply]` would generate: `Equiv.subtypeEquiv` applies `Equiv.prodComm` to the
--- underlying pair in each direction, so both sides differ only by the subtype coercion and hold by
--- `rfl`.  They are needed because Mathlib's own `Equiv.subtypeEquiv_apply` and
--- `Equiv.subtypeEquiv_symm` no longer fire on this equivalence: the subtype here is `↥μ.cells`, the
--- `Finset` coercion to a sort, which `simp` no longer sees through to `Subtype _` after the bump.
-@[simp]
-private theorem transposeCellEquiv_apply (μ : YoungDiagram) (c : ↥μ.transpose.cells) :
-    transposeCellEquiv μ c = ⟨c.1.swap, YoungDiagram.mem_transpose.mp c.2⟩ :=
-  rfl
-
-@[simp]
-private theorem transposeCellEquiv_symm_apply (μ : YoungDiagram) (c : ↥μ.cells) :
-    (transposeCellEquiv μ).symm c =
-      ⟨c.1.swap, YoungDiagram.mem_transpose.mpr c.2⟩ :=
-  rfl
-
 /-- Transpose a standard Young tableau by swapping its rows and columns while preserving its
-labels. -/
+labels: its underlying tableau is `YoungTableau.transpose`. -/
 def transpose {μ : YoungDiagram} (T : StandardYoungTableau μ) :
     StandardYoungTableau μ.transpose where
-  toTableau :=
-    (transposeCellEquiv μ).trans
-      (T.toTableau.trans (finCongr (YoungDiagram.card_transpose μ).symm))
+  toTableau := YoungTableau.transpose T.toTableau
   row_strict' h hcell := by
-    simpa only [Equiv.trans_apply, transposeCellEquiv_apply, Prod.swap, finCongr,
-      Equiv.coe_fn_mk, Fin.cast_lt_cast, toTableau_apply] using
+    simpa only [YoungTableau.transpose_apply, YoungDiagram.transposeCellsEquiv_apply, Prod.swap,
+      Fin.cast_lt_cast, toTableau_apply] using
       T.col_strict h (YoungDiagram.mem_transpose.mp hcell)
   col_strict' h hcell := by
-    simpa only [Equiv.trans_apply, transposeCellEquiv_apply, Prod.swap, finCongr,
-      Equiv.coe_fn_mk, Fin.cast_lt_cast, toTableau_apply] using
+    simpa only [YoungTableau.transpose_apply, YoungDiagram.transposeCellsEquiv_apply, Prod.swap,
+      Fin.cast_lt_cast, toTableau_apply] using
       T.row_strict h (YoungDiagram.mem_transpose.mp hcell)
+
+/-- The underlying tableau of the transpose of a standard Young tableau is the transpose of its
+underlying tableau. -/
+@[simp]
+theorem transpose_toTableau {μ : YoungDiagram} (T : StandardYoungTableau μ) :
+    T.transpose.toTableau = YoungTableau.transpose T.toTableau :=
+  (rfl)
 
 /-- Transposition preserves the numeric label of each cell. -/
 @[simp]
@@ -146,21 +131,21 @@ theorem transpose_apply_val {μ : YoungDiagram} (T : StandardYoungTableau μ)
     (T.transpose c).val = (T.transpose.toTableau c).val :=
       congrArg Fin.val (toTableau_apply T.transpose c).symm
     _ = (T ⟨c.1.swap, YoungDiagram.mem_transpose.mp c.2⟩).val := by
-      simp only [transpose, Equiv.trans_apply, transposeCellEquiv_apply,
-        finCongr, Equiv.coe_fn_mk, Fin.val_cast, toTableau_apply]
+      simp only [transpose, YoungTableau.transpose_apply, YoungDiagram.transposeCellsEquiv_apply,
+        Fin.val_cast, toTableau_apply]
 
 private def untranspose {μ : YoungDiagram} (T : StandardYoungTableau μ.transpose) :
     StandardYoungTableau μ where
   toTableau :=
-    (transposeCellEquiv μ).symm.trans
+    μ.transposeCellsEquiv.symm.trans
       (T.toTableau.trans (finCongr (YoungDiagram.card_transpose μ)))
   row_strict' h hcell := by
-    simpa only [Equiv.trans_apply, transposeCellEquiv_symm_apply, Prod.swap, finCongr,
-      Equiv.coe_fn_mk, Fin.cast_lt_cast, toTableau_apply] using
+    simpa only [Equiv.trans_apply, YoungDiagram.transposeCellsEquiv_symm_apply, Prod.swap,
+      finCongr_apply, Fin.cast_lt_cast, toTableau_apply] using
       T.col_strict h (YoungDiagram.mem_transpose.mpr hcell)
   col_strict' h hcell := by
-    simpa only [Equiv.trans_apply, transposeCellEquiv_symm_apply, Prod.swap, finCongr,
-      Equiv.coe_fn_mk, Fin.cast_lt_cast, toTableau_apply] using
+    simpa only [Equiv.trans_apply, YoungDiagram.transposeCellsEquiv_symm_apply, Prod.swap,
+      finCongr_apply, Fin.cast_lt_cast, toTableau_apply] using
       T.row_strict h (YoungDiagram.mem_transpose.mpr hcell)
 
 private theorem untranspose_apply_val {μ : YoungDiagram}
@@ -170,8 +155,8 @@ private theorem untranspose_apply_val {μ : YoungDiagram}
     (untranspose T c).val = ((untranspose T).toTableau c).val :=
       congrArg Fin.val (toTableau_apply (untranspose T) c).symm
     _ = (T ⟨c.1.swap, YoungDiagram.mem_transpose.mpr c.2⟩).val := by
-      simp only [untranspose, Equiv.trans_apply, transposeCellEquiv_symm_apply,
-        finCongr, Equiv.coe_fn_mk, Fin.val_cast, toTableau_apply]
+      simp only [untranspose, Equiv.trans_apply, YoungDiagram.transposeCellsEquiv_symm_apply,
+        finCongr_apply, Fin.val_cast, toTableau_apply]
 
 /-- Transposition is an equivalence between standard Young tableaux of conjugate shapes. -/
 def transposeEquiv (μ : YoungDiagram) :

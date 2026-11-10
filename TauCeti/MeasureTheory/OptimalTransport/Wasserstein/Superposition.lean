@@ -122,8 +122,9 @@ private theorem exists_dense_eqOn_map_eval_lintegral_curveAction_le (hp1 : 1 < p
         hab.le hr hDd (fun t ht ↦ ?_) hA (by rintro _ ⟨n, rfl⟩; exact hηAC n)
         (by rintro _ ⟨n, rfl⟩; exact hηA n)
     obtain ⟨m, hm⟩ := hD t ht
-    exact isTightMeasureSet_image_map_of_eventually_eq η (fun γ : C(Icc a b, E) ↦ γ t)
-      ((μ t : ProbabilityMeasure E) : Measure E) m hm
+    rw [← range_comp']
+    exact isTightMeasureSet_range_of_eventually_eq <|
+      Nat.cofinite_eq_atTop ▸ eventually_atTop.2 ⟨m, hm⟩
   -- By Prokhorov's theorem, a subsequence converges to a law `ηlim`.
   have hcpt : IsCompact (closure (range ηs)) := by
     refine isCompact_closure_of_isTightMeasureSet ?_

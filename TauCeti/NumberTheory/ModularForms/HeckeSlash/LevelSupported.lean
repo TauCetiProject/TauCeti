@@ -231,7 +231,7 @@ theorem heckeTNat_mem_modFormCharSpace_of_primeFactors_subset (n : ℕ) [NeZero 
   intro g
   rw [coe_heckeTNat_of_primeFactors_subset k n hn, ← ModularForm.rat_slash_mapGL]
   exact heckeSlashUpperTri_slash_mapGL_of_nebentypus_of_primeFactors_subset k χ n
-    (NeZero.ne n) hn g fun δ ↦ by rw [ModularForm.rat_slash_mapGL]; exact hf δ
+    hn g fun δ ↦ by rw [ModularForm.rat_slash_mapGL]; exact hf δ
 
 /-- **`T_n` preserves the nebentypus on cusp forms**: it maps `S_k(N, χ)` into itself, at every
 index supported on the level. -/
@@ -243,7 +243,7 @@ theorem heckeTCuspNat_mem_cuspFormCharSpace_of_primeFactors_subset (n : ℕ) [Ne
   intro g
   rw [coe_heckeTCuspNat_of_primeFactors_subset k n hn, ← ModularForm.rat_slash_mapGL]
   exact heckeSlashUpperTri_slash_mapGL_of_nebentypus_of_primeFactors_subset k χ n
-    (NeZero.ne n) hn g fun δ ↦ by rw [ModularForm.rat_slash_mapGL]; exact hf δ
+    hn g fun δ ↦ by rw [ModularForm.rat_slash_mapGL]; exact hf δ
 
 end Nebentypus
 

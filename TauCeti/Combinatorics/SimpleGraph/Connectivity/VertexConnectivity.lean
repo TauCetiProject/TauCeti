@@ -83,11 +83,15 @@ ed., Graduate Texts in Mathematics 173, Springer, 2017, Section 1.4.
 * `SimpleGraph.isVertexReachable_iff_exists_paths`: **Menger's theorem**, predicate form, for
   nonadjacent vertices.
 * `SimpleGraph.isVertexConnected_iff_forall_exists_paths`: the **global form of Menger's
-  theorem**: on a finite vertex type with more than `k` vertices, `k`-vertex-connectivity is the
-  existence of `k` distinct internally disjoint paths between every two distinct vertices.
+  theorem**: on a vertex type `V` with `k < Nat.card V` (which forces `V` to be finite),
+  `k`-vertex-connectivity is the existence of `k` distinct internally disjoint paths between every
+  two distinct vertices.
 * `SimpleGraph.Walk.reachable_induce_coe_of_mem_support`,
   `SimpleGraph.Walk.reachable_start_induce_coe`: lifting walks in `G` with `toSubgraph ≤ K` to
   reachability in induced subgraphs of `K.coe`.
+* `SimpleGraph.reachable_induce_compl_of_mem_verts_toSubgraph_of_encard_le_one`: after deleting at
+  most one vertex of `K`, every remaining vertex of a path in `K` between two vertices of a
+  subgraph `L ≤ K` is joined to a remaining vertex of `L`.
 * `SimpleGraph.Walk.IsCycle.isVertexConnected_two_toSubgraph`: the subgraph traced by a cycle is
   `2`-vertex-connected, with no finiteness assumption.
 
@@ -375,6 +379,36 @@ theorem Walk.reachable_start_induce_coe {K : G.Subgraph} {s : Set K.verts}
       ⟨x, hrs x hx⟩ :=
   r.reachable_induce_coe_of_mem_support hrK hrs r.start_mem_support hx
 
+/-- If a path `p` with both ends in `L` lies in `K ≥ L` and at most one vertex `s` of `K` is
+deleted, every remaining vertex of `p` is still joined in `K` to a remaining vertex of `L`. -/
+theorem reachable_induce_compl_of_mem_verts_toSubgraph_of_encard_le_one {K L : G.Subgraph}
+    {u v : V} {p : G.Walk u v} (hp : p.IsPath) (hpK : p.toSubgraph ≤ K) (hu : u ∈ L.verts)
+    (hv : v ∈ L.verts) (hLK : L ≤ K) {s : Set K.verts} (hs1 : s.encard ≤ 1) {w : K.verts}
+    (hws : w ∉ s) (hwp : w.1 ∈ p.toSubgraph.verts) :
+    ∃ z : L.verts, ∃ hz : (⟨z.1, hLK.1 z.2⟩ : K.verts) ∉ s,
+      (K.coe.induce sᶜ).Reachable ⟨w, hws⟩ ⟨⟨z.1, hLK.1 z.2⟩, hz⟩ := by
+  classical
+  rw [Walk.mem_verts_toSubgraph] at hwp
+  obtain ⟨q, r, -, -, hqr⟩ := hp.mem_support_iff_exists_append.mp hwp
+  have hqK : q.toSubgraph ≤ K :=
+    le_trans le_sup_left (by rw [← Walk.toSubgraph_append, ← hqr]; exact hpK)
+  have hrK : r.toSubgraph ≤ K :=
+    le_trans le_sup_right (by rw [← Walk.toSubgraph_append, ← hqr]; exact hpK)
+  by_cases hqs : ∃ x₀ : K.verts, x₀.1 ∈ q.support ∧ x₀ ∈ s
+  · obtain ⟨x₀, hx₀q, hx₀s⟩ := hqs
+    have hrs : ∀ z : K.verts, z.1 ∈ r.support → z ∉ s := by
+      intro z hzr hzs
+      have hzx₀ : z = x₀ := Set.encard_le_one_iff.mp hs1 z x₀ hzs hx₀s
+      have hx₀w : x₀.1 ≠ w.1 := fun heq ↦ hws (Subtype.ext heq.symm ▸ hx₀s)
+      exact (hqr ▸ hp).ne_of_mem_support_of_append hx₀w hx₀q (hzx₀ ▸ hzr) rfl
+    have hvs : (⟨v, hLK.1 hv⟩ : K.verts) ∉ s := hrs _ r.end_mem_support
+    exact ⟨⟨v, hv⟩, hvs,
+      r.reachable_induce_coe_of_mem_support hrK hrs r.start_mem_support r.end_mem_support⟩
+  · push Not at hqs
+    have hus : (⟨u, hLK.1 hu⟩ : K.verts) ∉ s := hqs _ q.start_mem_support
+    exact ⟨⟨u, hu⟩, hus,
+      q.reachable_induce_coe_of_mem_support hqK hqs q.end_mem_support q.start_mem_support⟩
+
 /-- Deleting a nonempty set `s` of at most one vertex from the subgraph traced by a cycle leaves the
 remaining vertices pairwise reachable. -/
 private theorem Walk.IsCycle.reachable_induce_coe_compl_of_encard_le_one {c : G.Walk u u}
@@ -555,13 +589,14 @@ private theorem reachable_induce_deleteEdges_of_isVertexReachable {x y : V} {X :
   · rw [Walk.support_transfer] at hz
     exact fun hzX ↦ hp z hz (Set.mem_insert_of_mem _ hzX)
 
-/-- **The global form of Menger's theorem.** A simple graph on a finite vertex type with more than
-`k` vertices is `k`-vertex-connected exactly when every two distinct vertices `s` and `t`,
-adjacent or not, are joined by `k` distinct paths pairwise sharing no vertex other than `s` and
-`t`. -/
-theorem isVertexConnected_iff_forall_exists_paths [Finite V] {k : ℕ} (hk : k < Nat.card V) :
+/-- **The global form of Menger's theorem.** A simple graph on a vertex type `V` with
+`k < Nat.card V` (which forces `V` to be finite) is `k`-vertex-connected exactly when every two
+distinct vertices `s` and `t`, adjacent or not, are joined by `k` distinct paths pairwise sharing
+no vertex other than `s` and `t`. -/
+theorem isVertexConnected_iff_forall_exists_paths {k : ℕ} (hk : k < Nat.card V) :
     G.IsVertexConnected k ↔ ∀ s t, s ≠ t → ∃ P : Fin k → G.Walk s t, Function.Injective P ∧
       (∀ i, (P i).IsPath) ∧ Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) := by
+  have : Finite V := Nat.finite_of_card_ne_zero (by omega)
   have hcard : (k : ℕ∞) + 1 ≤ ENat.card V := by
     have := Fintype.ofFinite V
     rw [ENat.card_eq_coe_fintype_card, ← Nat.card_eq_fintype_card]

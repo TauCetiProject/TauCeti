@@ -106,6 +106,34 @@ checks current source evidence, comments and closes confirmed stacks, and blocks
 bors admission. Keep/hold/human labels do not exempt stacks. Reviewers should follow
 the same policy; shared files, imports and roadmap areas alone do not establish stacking.
 
+## Changing labels by comment
+
+Anyone who can comment can add or remove the labels below, without triage access.
+Post a new issue or pull request conversation comment with the exact label on its own
+line to add it, or prefix it with `-` to remove it. For example:
+
+```text
+dont-repair-in-queue
+-help wanted
+```
+
+Names are case-sensitive; surrounding whitespace is ignored. You can put several commands
+on separate lines, and the last command for each label wins. Other text is ignored.
+Editing or deleting a comment does not undo a command; post a new comment instead.
+Review bodies and inline review comments are not processed.
+
+| Allowed labels | Purpose |
+| --- | --- |
+| `dont-repair-in-queue` | Opt out of agent edits during queue integration; work needing repair is withdrawn instead. |
+| `hold` | Pause automated review, repair, and admission; protect against automatic housekeeping closure. |
+| `keep` | Protect against automatic housekeeping closure; also pause repair and admission, while allowing review. |
+| `mathlib-overlap` | Flag work adopting an overlapping Mathlib API. |
+| `documentation`, `enhancement`, `help wanted` | Describe the issue or PR and invite contributors. |
+
+A hold does not withdraw a contribution already admitted to staging or exempt a PR from
+the no-stacking policy. Generated CI, review, queue, and roadmap-attribution labels are
+managed by their owning automation and cannot be changed by comment commands.
+
 ## Mathlib dependency
 
 Although Tau Ceti and [Mathlib](https://leanprover-community.github.io/) differ both in the review mechanisms and in design standards, and while they target different mathematical goals, we envision a strong synergy between the two libraries. We hope to build overlapping communities around both libraries.

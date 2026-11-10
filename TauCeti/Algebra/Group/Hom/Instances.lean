@@ -135,8 +135,8 @@ theorem _root_.MonoidHom.compHom_bijective_of_forall_pow_eq_one {M N P : Type*} 
   apply (Function.bijective_iff_existsUnique _).2
   intro ψ
   simpa only [MonoidHom.ext_iff, MonoidHom.compHom_apply_apply, MonoidHom.comp_apply] using
-    ψ.existsUnique_comp_eq_of_injective f hf
-      (fun a => hf' (ψ a) (by rw [← map_pow, hM, map_one]))
+    (ψ.existsUnique_comp_eq_iff_of_injective f hf).mpr
+      fun a => hf' (ψ a) (by rw [← map_pow, hM, map_one])
 
 end TauCeti
 

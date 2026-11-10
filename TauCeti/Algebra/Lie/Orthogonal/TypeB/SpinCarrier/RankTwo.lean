@@ -492,7 +492,7 @@ private theorem symplecticChangeOfBasis_inv_conj (A : Type v) [CommRing A]
           Matrix.GeneralLinearGroup.map (algebraMap ℤ A) symplecticChangeOfBasis) = g := by
   rw [← hx]
   simp only [mul_assoc, inv_mul_cancel_left, inv_mul_cancel, mul_one]
-  rw [Equiv.reindexGL_symm, MulEquiv.symm_apply_apply]
+  rw [Equiv.reindexGL_symm_apply_reindexGL]
 
 /-- **The rank-two spin carrier is the rank-two symplectic carrier.** Over every commutative ring
 `A`, reindexing the spin lattice basis to the symplectic coordinates and conjugating by

@@ -122,7 +122,7 @@ private theorem rootSpace_typeDWeightAdd_apply_eq_zero
     apply rootSpace_entry_eq_zero_of_isRegular_coordinate hX (.inl a) (.inr b) k
     simpa [typeDWeightAdd_def, Pi.single_apply, eq_comm] using hk
   · obtain ⟨k, hk⟩ :=
-      exists_isRegular_neg_single_add_single_sub_single_add_single h2 hij a b
+      exists_isRegular_neg_single_add_single_sub_single_add_single h2 i j a b
     apply rootSpace_entry_eq_zero_of_isRegular_coordinate hX (.inr a) (.inl b) k
     simpa [typeDWeightAdd_def, Pi.single_apply, eq_comm] using hk
   · apply rootSpace_typeDDiagonalCartan_apply_eq_zero_of_isRegular hX (.inr a) (.inr b)

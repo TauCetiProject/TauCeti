@@ -313,9 +313,9 @@ private theorem IsNormalDomain.sameRay_riemannianLog_of_enorm_eq_add_pathELength
     rw [← contMDiffOn_iff_contDiffOn]
     exact (h.contMDiffOn_riemannianLog.of_le (by simp)).comp hγ hγU
   have hdom : MapsTo (riemannianLog I M p U ∘ γ) (Icc c d) U := fun u hu ↦
-    h.riemannianLog_mem (hγU hu)
+    riemannianLog_mem (hγU hu)
   have hEq : EqOn (riemannianExp I M p ∘ (riemannianLog I M p U ∘ γ)) γ (Icc c d) :=
-    fun u hu ↦ h.riemannianExp_riemannianLog (hγU hu)
+    fun u hu ↦ riemannianExp_riemannianLog (hγU hu)
   -- the radial norm grows by the arc length of the curve
   have hr : ∀ u ∈ Icc c d, ‖(riemannianLog I M p U ∘ γ) u‖ =
       ‖(riemannianLog I M p U ∘ γ) c‖ + ∫ s in c..u,
@@ -425,7 +425,7 @@ theorem IsNormalDomain.eq_riemannianExp_smul_of_pathELength_eq_of_piecewise
     {t : ℝ} (ht : t ∈ Icc a b) :
     γ t = riemannianExp I M p ((‖riemannianLog I M p U (γ t)‖ / ‖v‖) • v) := by
   rw [← h.riemannianLog_eq_smul_of_pathELength_eq_of_piecewise hv hγ hγU hγa hγb hlen ht,
-    h.riemannianExp_riemannianLog (hγU ht)]
+    riemannianExp_riemannianLog (hγU ht)]
 
 /-- **Piecewise `C¹` minimizers are reparametrized radial geodesics.** A piecewise `C¹` curve on
 `[a, b]` from the centre of a normal neighbourhood to `exp_p v`, staying in the neighbourhood and

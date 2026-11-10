@@ -38,7 +38,7 @@ So the pieces are pairwise disjoint and cover the critical set
 each critical point lies on exactly one of them
 (`TauCeti.IsMorseBottFamily.existsUnique_mem_range`), only finitely many of them meet a compact set
 (by `LocallyFinite.finite_nonempty_inter_compact`), and on a compact manifold there are finitely
-many (`TauCeti.IsMorseBottFamily.finite`). On a boundaryless manifold each piece is closed
+many (`TauCeti.IsMorseBottFamily.finite`). Each piece is closed
 (`TauCeti.IsMorseBottFamily.isClosed_range`). The same family exhibits `-f` as a Morse–Bott
 function (`TauCeti.IsMorseBottFamily.neg`).
 
@@ -149,9 +149,8 @@ theorem finite [CompactSpace M] : Finite ι :=
     have := h.nonempty a
     range_nonempty (i a)
 
-/-- On a boundaryless manifold each piece is closed, as a connected component of the closed
-critical set. -/
-theorem isClosed_range [I.Boundaryless] [IsManifold I 1 M] (a : ι) : IsClosed (range (i a)) := by
+/-- Each piece is closed, as a connected component of the closed critical set. -/
+theorem isClosed_range [IsManifold I 1 M] (a : ι) : IsClosed (range (i a)) := by
   obtain ⟨s⟩ := h.nonempty a
   rw [h.range_eq_connectedComponentIn a s]
   exact (isClosed_criticalPoints (h.contMDiff.of_le (by simp))).connectedComponentIn

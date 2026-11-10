@@ -374,4 +374,20 @@ theorem isNormal_comp_evalCLM_comp_toBoundedContinuousFunctionCLM
 
 end Point
 
+variable (F V)
+
+/-- Normal currents form a real submodule of the continuous linear maps on test forms. -/
+def normalCurrentSubmodule (Ω : Opens E) (k : ℕ) :
+    Submodule ℝ (𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V) where
+  carrier := {T | IsNormal T}
+  zero_mem' := isNormal_zero
+  add_mem' := IsNormal.add
+  smul_mem' a _ h := h.smul a
+
+variable {F V}
+
+@[simp] theorem mem_normalCurrentSubmodule {Ω : Opens E} {k : ℕ}
+    {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V} :
+    T ∈ normalCurrentSubmodule F V Ω k ↔ IsNormal T := Iff.rfl
+
 end Distribution

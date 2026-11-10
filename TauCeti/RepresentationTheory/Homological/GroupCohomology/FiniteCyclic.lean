@@ -335,7 +335,7 @@ private theorem carryCochain_mem_cocycles₂ (a : A) (ha : A.ρ g a = a) :
     (Representation.mem_invariants_iff_of_forall_mem_zpowers A.ρ g hg a).2 ha x
   rw [mem_cocycles₂_iff]
   intro x y z
-  have h := TauCeti.Nat.carry_add_carry (cyclicLog_lt g hg x) (cyclicLog_lt g hg y)
+  have h := Nat.carry_add_carry (cyclicLog_lt g hg x) (cyclicLog_lt g hg y)
     (cyclicLog_lt g hg z)
   simp only [carryCochain_apply, cyclicLog_mul]
   split_ifs at h ⊢ <;> simp_all

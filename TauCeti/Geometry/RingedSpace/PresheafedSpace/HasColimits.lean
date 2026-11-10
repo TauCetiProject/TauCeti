@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.RingedSpace.SheafedSpace
+public import Mathlib.Geometry.RingedSpace.PresheafedSpace.HasColimits
+public import Mathlib.Topology.Sheaves.Functors
 
 /-!
 # Colimits of presheafed spaces with sheaf structure presheaves
@@ -33,8 +34,8 @@ namespace AlgebraicGeometry.PresheafedSpace
 
 universe w w' v u
 
-variable {C : Type u} [Category.{v} C] {J : Type w} [Category.{w'} J] [Small.{v} J]
-  [HasLimitsOfShape Jᵒᵖ C]
+variable {C : Type u} [Category.{v} C] {J : Type w} [Category.{w'} J]
+  [HasColimitsOfShape J TopCat.{v}] [HasLimitsOfShape Jᵒᵖ C]
 
 /-- **A colimit of sheafed spaces, computed among presheafed spaces, is a sheafed space.** If every
 object of a diagram `F` of presheafed spaces has a sheaf structure presheaf, then so does the cocone
