@@ -139,7 +139,7 @@ convergence, and `l.length` is at most `morseIndex f p - morseIndex f x`. -/
 theorem exists_isChain_of_mem_closure_unstableSet_inter_unstableSet_of_isCompact_sublevel
     {p x : E} (hfs : ContDiff ℝ 2 f)
     (hf : LipschitzWith K (∇ f)) (hM : HasNondegenerateCriticalPointsOn f univ)
-    (hcompact : IsCompact {z | f z ≤ f p}) (hpx : p ≠ x)
+    (hcompact : IsCompact {z | f z ≤ f p})
     (hy : (closure (Flow.unstableSet (negativeGradientFlow f hf) p) ∩
       Flow.unstableSet (negativeGradientFlow f hf) x).Nonempty)
     (htr : IsMorseSmale f hf) :
@@ -155,9 +155,12 @@ theorem exists_isChain_of_mem_closure_unstableSet_inter_unstableSet_of_isCompact
     exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel hfs hf hM hcompact hy₁
   have hx : IsNondegenerateCriticalPoint f x :=
     tendsto_nhds_unique (Flow.mem_unstableSet.1 hya) (Flow.mem_unstableSet.1 hy₂) ▸ ha
-  exact hx.exists_isChain_of_mem_closure_unstableSet_inter_unstableSet hfs hf hpx hy
-    (fun {_} hz ↦ exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel
-      hfs hf hM hcompact hz) htr
+  by_cases hpx : p = x
+  · subst hpx
+    exact ⟨[], by simp, by simp, by simpa using hx, by simp⟩
+  · exact hx.exists_isChain_of_mem_closure_unstableSet_inter_unstableSet hfs hf hpx hy
+      (fun {_} hz ↦ exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel
+        hfs hf hM hcompact hz) htr
 
 /-- An index-one Morse--Smale trajectory space has finitely many trajectories when the Morse
 function has compact sublevels. A trajectory is represented by its unique point at the level
