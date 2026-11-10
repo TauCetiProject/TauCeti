@@ -22,8 +22,8 @@ operators `Rⱼ = R_{eⱼ}` are the classical Riesz transforms, with symbols `-i
 dimension one, `R₁` is the Hilbert transform, with symbol `-i sign ξ`. The symbol is linear in
 `v`, so `v ↦ R_v` is linear and `R_v = ∑ⱼ ⟪v, eⱼ⟫ Rⱼ`.
 
-The symbol is bounded by `‖v‖` but discontinuous at the origin, and homogeneous of degree `0`.
-Hence:
+The symbol is bounded by `‖v‖` and homogeneous of degree `0`; for `v ≠ 0` it is discontinuous at
+the origin. Hence:
 
 * `R_v` is bounded on `L²` with `‖R_v‖ ≤ ‖v‖`, and skew-adjoint: `R_v† = -R_v`.
 * `R_v R_w = -T_{m_{v,w}}`, where `T_{m_{v,w}} = ∂_v ∂_w Δ⁻¹` is the Hessian multiplier with
