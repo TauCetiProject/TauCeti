@@ -18,10 +18,11 @@ in `(1, B)` or by excluding it as the minimal polynomial of an integral primitiv
 The field test can be discharged by the index–discriminant formula. These are proofs of the tests,
 not Boolean assertions about an unchecked root-finding procedure.
 
-In a number field of prime degree and unit rank one, a certificate excludes every unit in the
-selected real interval. With `B = w u > 1`, normalization then proves that `u` generates the units
-modulo torsion. The certificate does not depend on a choice of real place: the root test excludes
-all real roots in the interval, and soundness can be applied at any real place.
+In a number field of unit rank one with a real place, whose degree is then prime, a certificate
+excludes every unit in the selected real interval. With `B = w u > 1`, normalization then proves
+that `u` generates the units modulo torsion. The certificate does not depend on a choice of real
+place: the root test excludes all real roots in the interval, and soundness can be applied at any
+real place.
 
 ## References
 
@@ -73,14 +74,13 @@ theorem of_discr {B : ℝ}
       (heq ▸ θ.discr_minpoly_eq_index_sq_mul_discr)
 
 /-- A certificate excludes all units with real image strictly between `1` and `B`, provided the
-unit rank is one and the field degree is prime. -/
+unit rank is one. -/
 theorem no_unit_between_real {B : ℝ} (h : UnitCandidateEliminationCertificate K B)
-    (hr : rank K = 1) (hp : Nat.Prime (Module.finrank ℚ K))
-    {w : InfinitePlace K} (hw : w.IsReal) :
+    (hr : rank K = 1) {w : InfinitePlace K} (hw : w.IsReal) :
     ¬ ∃ v : (𝓞 K)ˣ,
       1 < w.embedding_of_isReal hw (v : K) ∧ w.embedding_of_isReal hw (v : K) < B := by
   intro ⟨v, hlo, hhi⟩
-  have hmem := minpoly_mem_unitCandidates hr hp hw v hlo hhi.le
+  have hmem := minpoly_mem_unitCandidates hr hw v hlo hhi.le
   rcases (unitCandidateEliminationCertificate_iff B).mp h _ hmem with hroot | hfield
   · apply hroot _ ⟨hlo, hhi⟩
     exact minpoly.aeval_algHom ℤ
@@ -92,7 +92,8 @@ theorem no_unit_between_real {B : ℝ} (h : UnitCandidateEliminationCertificate 
         rw [← norm_embedding_of_isReal hw, Real.norm_eq_abs,
           abs_of_pos (zero_lt_one.trans hlo)]
       exact (ne_of_gt hlo) (hval ▸ hone)
-    exact hfield ⟨v, adjoin_eq_top_of_finrank_prime hp hnot⟩ rfl
+    exact hfield ⟨v, adjoin_eq_top_of_finrank_prime
+      (finrank_prime_of_rank_eq_one_of_isReal hr hw) hnot⟩ rfl
 
 /-- **Soundness of unit-candidate elimination.** A unit expanding at a real place generates
 modulo torsion if every candidate below its absolute value has been eliminated. -/
@@ -100,27 +101,8 @@ theorem sound {u : (𝓞 K)ˣ} {w : InfinitePlace K}
     (h : UnitCandidateEliminationCertificate K (w u))
     (hr : rank K = 1) (hw : w.IsReal) (hu : 1 < w u) :
     Subgroup.closure {u} ⊔ torsion K = ⊤ := by
-  -- two infinite places, one of them real, force `finrank ℚ K ∈ {2, 3}`, hence prime
-  have hp : Nat.Prime (Module.finrank ℚ K) := by
-    have hcard := card_eq_nrRealPlaces_add_nrComplexPlaces (K := K)
-    have hdeg := card_add_two_mul_card_eq_rank (K := K)
-    have hpos : 0 < nrRealPlaces K := Nat.pos_of_ne_zero fun h0 ↦ by
-      have := (nrRealPlaces_eq_zero_iff (K := K)).1 h0
-      exact (not_isReal_iff_isComplex.2 (this.isComplex w)) hw
-    have hpl : 0 < Fintype.card (InfinitePlace K) := Fintype.card_pos_iff.2 ⟨w⟩
-    have hr' : Fintype.card (InfinitePlace K) = 2 := by unfold rank at hr; omega
-    rw [← hdeg]
-    rcases Nat.lt_or_ge (nrComplexPlaces K) 1 with h0 | h1
-    · have hc : nrComplexPlaces K = 0 := by omega
-      have hrl : nrRealPlaces K = 2 := by omega
-      rw [hc, hrl]
-      exact Nat.prime_two
-    · have hc : nrComplexPlaces K = 1 := by omega
-      have hrl : nrRealPlaces K = 1 := by omega
-      rw [hc, hrl]
-      exact Nat.prime_three
   exact (generates_mod_torsion_iff_no_unit_between_real hr u w hw hu).mpr
-    (h.no_unit_between_real hr hp hw)
+    (h.no_unit_between_real hr hw)
 
 end UnitCandidateEliminationCertificate
 

@@ -34,7 +34,7 @@ in the given field.
 * `TauCeti.NumberField.Units.unitCandidates`: the finite set of candidate minimal polynomials,
   characterised by `TauCeti.NumberField.Units.mem_unitCandidates_iff`.
 * `TauCeti.NumberField.Units.minpoly_mem_unitCandidates`: completeness of the candidate set at
-  unit rank one and prime degree.
+  unit rank one.
 
 ## References
 
@@ -151,9 +151,8 @@ theorem minpoly_mem_unitCandidates_of_adjoin_eq_top (hr : rank K = 1)
   exact h
 
 /-- Every unit whose value at a real infinite place lies in `(1, B]` has its minimal polynomial
-in `unitCandidates K B` when the unit rank is one and the field degree is prime. -/
-theorem minpoly_mem_unitCandidates (hr : rank K = 1)
-    (hp : Nat.Prime (Module.finrank ℚ K)) {w : InfinitePlace K} (hw : w.IsReal)
+in `unitCandidates K B` when the unit rank is one. -/
+theorem minpoly_mem_unitCandidates (hr : rank K = 1) {w : InfinitePlace K} (hw : w.IsReal)
     (v : (𝓞 K)ˣ) {B : ℝ}
     (hlo : 1 < w.embedding_of_isReal hw (v : K))
     (hhi : w.embedding_of_isReal hw (v : K) ≤ B) :
@@ -166,6 +165,7 @@ theorem minpoly_mem_unitCandidates (hr : rank K = 1)
         abs_of_pos (lt_trans zero_lt_one hlo)]
     exact (ne_of_gt hlo) (hval ▸ hvone)
   exact minpoly_mem_unitCandidates_of_adjoin_eq_top hr hw v
-    (adjoin_eq_top_of_finrank_prime hp hnot) hlo hhi
+    (adjoin_eq_top_of_finrank_prime (finrank_prime_of_rank_eq_one_of_isReal hr hw) hnot)
+    hlo hhi
 
 end TauCeti.NumberField.Units
