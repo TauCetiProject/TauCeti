@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
 
 import Mathlib.LinearAlgebra.Matrix.Integer
+import TauCeti.Data.Nat.GCD
 import TauCeti.GroupTheory.DoubleCoset.Identity
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.CongruenceSplit
 
@@ -159,21 +160,6 @@ end Conjugation
 
 section CoprimeCosets
 
-section ZeroEntry
-
-variable {n}
-
-/-- **A zero entry forces the other tuple to be all ones**: a zero entry makes the determinant `0`,
-and `Nat.Coprime 0 m` holds only for `m = 1`. -/
-private lemma eq_one_of_coprime_of_not_pos {x y : Fin n → ℕ}
-    (hc : Nat.Coprime (∏ i, x i) (∏ i, y i)) (hx : ¬ ∀ i, 0 < x i) : y = 1 := by
-  obtain ⟨i, hi⟩ := not_forall.mp hx
-  have hx0 : (∏ i, x i) = 0 := Finset.prod_eq_zero (Finset.mem_univ i) (Nat.eq_zero_of_not_pos hi)
-  have hy1 : (∏ i, y i) = 1 := (Nat.coprime_zero_left _).mp (hx0 ▸ hc)
-  exact funext fun j ↦ Nat.dvd_one.mp (hy1 ▸ Finset.dvd_prod_of_mem y (Finset.mem_univ j))
-
-end ZeroEntry
-
 /-- **The set-level coprime product** (Shimura, Proposition 3.16, key step): sandwiching any
 `τ ∈ SL_n(ℤ)` between the diagonals of `a` and `b` stays inside the double coset of the
 diagonal of `a * b`, when the determinants are coprime. If an entry is zero, the other tuple
@@ -182,16 +168,16 @@ lemma mul_mem_doubleCoset_of_coprime (a b : Fin n → ℕ)
     (hcop : Nat.Coprime (∏ i, a i) (∏ i, b i)) (τ : SpecialLinearGroup (Fin n) ℤ) :
     natDiagGL n a * mapGL ℚ τ * natDiagGL n b ∈
       doubleCoset (natDiagGL n (a * b) : GL (Fin n) ℚ) (SLnZ n) (SLnZ n) := by
-  have h1 : natDiagGL n (1 : Fin n → ℕ) = 1 := natDiagGL_one n
+  have h1 : natDiagGL n (1 : Fin n → ℕ) = 1 := by rw [Pi.one_def, natDiagGL_one]
   by_cases ha_pos : ∀ i, 0 < a i
   swap
-  · obtain rfl := eq_one_of_coprime_of_not_pos hcop ha_pos
+  · obtain rfl := Nat.Coprime.eq_one_of_exists_eq_zero hcop (by simpa using ha_pos)
     rw [mul_one a, natDiagGL_of_not_pos n ha_pos, h1, one_mul, mul_one,
       TauCeti.doubleCoset_one_self]
     exact coe_mem_SLnZ n τ
   by_cases hb_pos : ∀ i, 0 < b i
   swap
-  · obtain rfl := eq_one_of_coprime_of_not_pos hcop.symm hb_pos
+  · obtain rfl := Nat.Coprime.eq_one_of_exists_eq_zero hcop.symm (by simpa using hb_pos)
     rw [one_mul b, natDiagGL_of_not_pos n hb_pos, h1, one_mul, mul_one,
       TauCeti.doubleCoset_one_self]
     exact coe_mem_SLnZ n τ
@@ -552,11 +538,11 @@ theorem diagElem_mul_of_coprime (a b : Fin n → ℕ)
   · by_cases hb_pos : ∀ i, 0 < b i
     · exact diagElem_mul_of_coprime_of_pos n a b ha_pos hb_pos hcop
     · -- `b` is not positive, so coprimality forces `a` to be all ones
-      obtain rfl := eq_one_of_coprime_of_not_pos hcop.symm hb_pos
-      rw [one_mul, show (1 : Fin n → ℕ) = fun _ ↦ 1 from rfl, diagElem_one, one_mul]
+      obtain rfl := Nat.Coprime.eq_one_of_exists_eq_zero hcop.symm (by simpa using hb_pos)
+      rw [one_mul, Pi.one_def, diagElem_one, one_mul]
   · -- `a` is not positive, so coprimality forces `b` to be all ones
-    obtain rfl := eq_one_of_coprime_of_not_pos hcop ha_pos
-    rw [mul_one, show (1 : Fin n → ℕ) = fun _ ↦ 1 from rfl, diagElem_one, mul_one]
+    obtain rfl := Nat.Coprime.eq_one_of_exists_eq_zero hcop (by simpa using ha_pos)
+    rw [mul_one, Pi.one_def, diagElem_one, mul_one]
 
 end CoprimeIntegrality
 

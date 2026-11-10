@@ -20,11 +20,11 @@ coset, and its injectivity need no hypothesis on `a` at all.
 
 *Distinctness of the cosets* needs no hypothesis on `a` either: distinct entry assignments give
 representatives in distinct left `SL_n(ℤ)`-cosets, because an entry assignment with two indices
-already forces `a` to be positive (`pos_of_lt`). Integrality of the connecting element gives
-divisibility of the comparison entries by `a_j / gcd(a_i, a_j)`, which is what the argument runs
-on; for a divisibility chain this is the exact quotient `a_j / a_i`. Positivity of `a` remains a
-hypothesis only of `dvd_comparison_of_upperTriGL_eq_mapGL_mul_upperTriGL`, and then only at the
-index `i`.
+already forces `a` to be positive (`UpperTriEntries.pos`). Integrality of the connecting
+element gives divisibility of the comparison entries by `a_j / gcd(a_i, a_j)`, which is what the
+argument runs on; for a divisibility chain this is the exact quotient `a_j / a_i`. Positivity of
+`a` remains a hypothesis of `upperTriGL_coe` and `upperTriGL_apply_diag`, and, at the index `i`
+only, of `dvd_comparison_of_upperTriGL_eq_mapGL_mul_upperTriGL`.
 
 Counting the index type then bounds the number of left cosets in the double coset below by
 `∏_{i < j} (a_j / a_i)`. That count is a consequence of the distinctness proved here, not
@@ -166,7 +166,7 @@ lemma upperTriGL_mem_doubleCoset {a : Fin n → ℕ} (B : UpperTriEntries n a) :
 
 /-- If entry assignments exist and `n` has two distinct indices, every entry of `a` is positive:
 the first entry `a₀` is positive as the divisor of `a₁ / a₀ ≠ 0`, and `a₀ ≤ aₖ` for all `k`. -/
-private lemma pos_of_lt {a : Fin n → ℕ} (B : UpperTriEntries n a) {i j : Fin n}
+lemma UpperTriEntries.pos {a : Fin n → ℕ} (B : UpperTriEntries n a) {i j : Fin n}
     (h : i ≠ j) : ∀ k, 0 < a k := by
   obtain ⟨m, hm⟩ : ∃ m : Fin n, ∀ k, m ≤ k := ⟨⟨0, i.pos⟩, fun k ↦ Nat.zero_le _⟩
   have hpos : ∀ k, m < k → 0 < a m ∧ a m ≤ a k := fun k hk ↦
@@ -185,7 +185,7 @@ No positivity hypothesis on `a` is needed: an entry assignment `B` with `i < j` 
 @[simp] lemma upperTriGL_apply_lt {a : Fin n → ℕ} (B : UpperTriEntries n a)
     {i j : Fin n} (h : i < j) :
     (upperTriGL B : Matrix (Fin n) (Fin n) ℚ) i j = (a i : ℚ) * (B ⟨(i, j), h⟩ : ℕ) := by
-  have ha := pos_of_lt B h.ne
+  have ha := B.pos h.ne
   rw [upperTriGL]
   simp [natDiagGL_coe n a ha, Matrix.diagonal_mul, unitriMat_apply_lt B h]
 
@@ -200,7 +200,7 @@ No positivity hypothesis on `a` is needed: an entry assignment `B` with `i < j` 
 @[simp] lemma upperTriGL_apply_eq_zero_of_lt {a : Fin n → ℕ}
     (B : UpperTriEntries n a) {i j : Fin n} (h : j < i) :
     (upperTriGL B : Matrix (Fin n) (Fin n) ℚ) i j = 0 := by
-  have ha := pos_of_lt B h.ne'
+  have ha := B.pos h.ne'
   rw [upperTriGL]
   simp [natDiagGL_coe n a ha, Matrix.diagonal_mul, unitriMat_apply_eq_zero_of_lt B h]
 
@@ -261,7 +261,7 @@ private lemma comparison_apply_eq_zero {a : Fin n → ℕ} {B₁ B₂ : UpperTri
     -- `C i j` is a difference of two entries, each strictly below `a j / a i`.
     have hb₁ : (B₁ ⟨(i, j), hij⟩ : ℕ) < a j / a i := (B₁ ⟨(i, j), hij⟩).isLt
     have hb₂ : (B₂ ⟨(i, j), hij⟩ : ℕ) < a j / a i := (B₂ ⟨(i, j), hij⟩).isLt
-    have hai : 0 < a i := pos_of_lt B₁ hij.ne i
+    have hai : 0 < a i := B₁.pos hij.ne i
     have hle : a j / a i ≤ a j / Nat.gcd (a i) (a j) :=
       Nat.div_le_div_left (Nat.gcd_le_left _ hai) (Nat.gcd_pos_of_pos_left _ hai)
     refine Int.eq_zero_of_abs_lt_dvd (hdvd hij) ?_
@@ -328,11 +328,11 @@ lemma dvd_comparison_of_upperTriGL_eq_mapGL_mul_upperTriGL {a : Fin n → ℕ}
     (ha : 0 < a i) (hS : upperTriGL B₁ = mapGL ℚ S * upperTriGL B₂) :
     ((a j / Nat.gcd (a i) (a j) : ℕ) : ℤ) ∣ (unitriMat B₁ * (unitriMat B₂)⁻¹) i j := by
   -- Positivity at `i` gives positivity everywhere: another index `k ≠ i` forces it by
-  -- `pos_of_lt`, and otherwise `i` is the only index.
+  -- `UpperTriEntries.pos`, and otherwise `i` is the only index.
   have ha' : ∀ k, 0 < a k := by
     by_cases h : ∃ k, k ≠ i
     · obtain ⟨k, hk⟩ := h
-      exact pos_of_lt B₁ hk.symm
+      exact B₁.pos hk.symm
     · push Not at h
       exact fun k ↦ h k ▸ ha
   -- Cancel `U(B₂)` on the right, in the group `GL_n(ℚ)`.
@@ -379,7 +379,7 @@ theorem eq_of_upperTriGL_eq_mapGL_mul_upperTriGL {a : Fin n → ℕ}
     {S : SpecialLinearGroup (Fin n) ℤ} (hS : upperTriGL B₁ = mapGL ℚ S * upperTriGL B₂) :
     B₁ = B₂ :=
   eq_of_dvd_comparison fun _ _ hij ↦
-    dvd_comparison_of_upperTriGL_eq_mapGL_mul_upperTriGL (pos_of_lt B₁ hij.ne _) hS
+    dvd_comparison_of_upperTriGL_eq_mapGL_mul_upperTriGL (B₁.pos hij.ne _) hS
 
 /-- The same statement phrased with the subgroup `SLnZ n` of `GL_n(ℚ)`: distinct entry
 assignments give representatives in distinct left cosets of `SL_n(ℤ)`. -/
