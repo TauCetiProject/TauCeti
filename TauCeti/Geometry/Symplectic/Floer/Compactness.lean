@@ -403,14 +403,14 @@ theorem exists_pos_forall_pi_mul_sq_mul_norm_fderiv_one_sq_le_of_small_energy_pa
   have hint : ∫ y in ball z₀ r,
       ‖fderiv ℝ (fun w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p, (0 : P)), u w)) y 1‖ ^ 2 =
       ∫ y in ball z₀ r, ‖fderiv ℝ u y 1‖ ^ 2 := by
-    simp only [norm_fderiv_toLp_const_prodMk_apply]
+    simp only [fderiv_toLp_const_prodMk_apply, WithLp.norm_toLp_snd]
   have h := hmean (u := fun w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p, 0), u w)) hr hrD
     (WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_const.prodMk hu))
     (((WithLp.prod_continuous_toLp 2 (WithLp 2 (P × P)) V).comp_continuousOn
       ((continuousOn_const (c := 0)).prodMk hu')).congr fun y _ ↦ by simp)
     (fun y hy ↦ by simp [WithLp.ext_iff, hCR y hy])
     (fun y hy ↦ ⟨(p, u y), ⟨hp, huK y hy⟩, rfl⟩) (by rwa [hint])
-  rwa [hint, norm_fderiv_toLp_const_prodMk_apply] at h
+  rwa [hint, fderiv_toLp_const_prodMk_apply, WithLp.norm_toLp_snd] at h
 
 /-- **Floer solutions over a compact parameter window converge off finitely many bubbling
 points.** Let `J_p` and `X_p` depend on a parameter `p` in a real inner product space `P`, jointly
@@ -454,21 +454,17 @@ theorem exists_pos_forall_tendsto_tendstoLocallyUniformlyOn_subseq_off_finset
   obtain ⟨p₀, hp₀, ψ, hψ, hlim⟩ := hC.tendsto_subseq hpC
   set g : ℕ → ℂ → WithLp 2 (WithLp 2 (P × P) × V) :=
     fun k w ↦ WithLp.toLp 2 (WithLp.toLp 2 (p (ψ k), 0), u (ψ k) w) with hg
-  have hdiff : ∀ k, ∀ y ∈ Ω, DifferentiableAt ℝ (u k) y := fun k y hy ↦
-    ((hu k).differentiableOn (by norm_num)).differentiableAt (hΩ.mem_nhds hy)
   -- The constant parameter coordinate does not change the energy density.
   have hnorm : ∀ k, ∀ y ∈ Ω,
-      ‖fderiv ℝ (g k) y 1‖ ^ 2 = ‖fderiv ℝ (u (ψ k)) y 1‖ ^ 2 := fun k y hy ↦ by
-    rw [norm_fderiv_toLp_prodMk_apply_sq (differentiableAt_const _) (hdiff _ y hy)]
-    simp
+      ‖fderiv ℝ (g k) y 1‖ ^ 2 = ‖fderiv ℝ (u (ψ k)) y 1‖ ^ 2 := fun k y _ ↦ by
+    simp [hg]
   have hint' : ∀ k, ∀ S ⊆ Ω, MeasurableSet S →
       ∫ y in S, ‖fderiv ℝ (g k) y 1‖ ^ 2 = ∫ y in S, ‖fderiv ℝ (u (ψ k)) y 1‖ ^ 2 :=
     fun k S hSΩ hS ↦ setIntegral_congr_fun hS fun y hy ↦ hnorm k y (hSΩ hy)
   obtain ⟨φ, Z, w, hφ, hZΩ, hcard, hconc, hbd, hwcont, hwK, hwlim⟩ := hconv hΩ hΩD
     (u := g) (fun k ↦ WithLp.contDiff_toLp.comp_contDiffOn (contDiffOn_const.prodMk (hu (ψ k))))
     (fun k y hy ↦ by
-      simp [hg, fderiv_toLp_prodMk_apply (differentiableAt_const _) (hdiff _ y hy),
-        WithLp.ext_iff, hCR (ψ k) y hy])
+      simp [hg, WithLp.ext_iff, hCR (ψ k) y hy])
     (fun k y hy ↦ ⟨(p (ψ k), u (ψ k) y), ⟨hpC _, huK _ hy⟩, rfl⟩)
     (fun k ↦ (hint (ψ k)).congr_fun (fun y hy ↦ (hnorm k y hy).symm) hΩ.measurableSet)
     (fun k ↦ (hint' k Ω subset_rfl hΩ.measurableSet).trans_le (hE (ψ k)))

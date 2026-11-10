@@ -40,9 +40,8 @@ geometric Jacobian is the classical surface factor `sqrt (1 + ‖A‖²)`.
   `TauCeti.norm_fderiv_toLp_prodMk_apply_sq`: the derivative of `w ↦ (f w, g w)` dominates
   those of `f` and `g`, and in the Euclidean product its value on `v` has squared length
   `‖df v‖² + ‖dg v‖²`.
-* `TauCeti.fderiv_toLp_const_prodMk_apply`, `TauCeti.norm_fderiv_toLp_const_prodMk_apply`: with a
-  constant first coordinate the derivative is `v ↦ (0, dg v)`, of the length of `dg v`, at every
-  point.
+* `TauCeti.fderiv_toLp_const_prodMk_apply`: with a constant first coordinate the derivative is
+  `v ↦ (0, dg v)` at every point.
 * `HasFDerivAt.normalGraphEmbedding`: the derivative of a graph parametrization is the graph of
   the derivative.
 * `DifferentiableAt.fderiv_normalGraphEmbedding`: the Fréchet derivative of a graph
@@ -154,12 +153,6 @@ theorem fderiv_toLp_const_prodMk_apply (c : F) (g : G → E) (y v : G) :
     rw [fderiv_zero_of_not_differentiableAt h, fderiv_zero_of_not_differentiableAt hg,
       zero_apply, zero_apply]
     exact (WithLp.toLp_zero (V := F × E) p).symm
-
-/-- The derivative of a map `w ↦ (c, g w)` into `WithLp p (F × E)` with constant first coordinate
-has, in every direction `v`, the length of `dg v`. -/
-theorem norm_fderiv_toLp_const_prodMk_apply (c : F) (g : G → E) (y v : G) :
-    ‖fderiv 𝕜 (fun w ↦ WithLp.toLp p (c, g w)) y v‖ = ‖fderiv 𝕜 g y v‖ := by
-  rw [fderiv_toLp_const_prodMk_apply, WithLp.norm_toLp_snd]
 
 section NormalGraph
 
