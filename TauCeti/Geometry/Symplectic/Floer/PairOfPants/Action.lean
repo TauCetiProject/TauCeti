@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
+import TauCeti.Analysis.Calculus.ContDiff.Cutoff
 import TauCeti.Geometry.Symplectic.Area.ThricePuncturedSphere
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Identity
 import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
@@ -627,25 +628,23 @@ private theorem exists_contDiffOn_eventuallyEq (q : Puncture) {c : ℝ} {u : ℝ
   have hv_eq {z : ℝ × ℝ} (hz : σ z ≤ c + 1 / 4) : v z = u z := by
     simp only [v, smoothTransition.zero_of_nonpos (by linarith : 2 * (σ z - c) - 1 / 2 ≤ 0),
       sub_zero, one_smul]
-  refine ⟨v, fun z hz ↦ ContDiffAt.contDiffWithinAt ?_, fun z ↦ hv_eq,
+  have hW : IsOpen {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+      Complex.equivRealProdCLM.symm z ≠ 1 ∧ σ z < c + 1} :=
+    isOpen_iff_mem_nhds.2 fun z hz ↦ by
+      filter_upwards [isOpen_thricePuncturedSphereReal.mem_nhds ⟨hz.1, hz.2.1⟩,
+        (hσ ⟨hz.1, hz.2.1⟩).continuousAt.eventually (gt_mem_nhds hz.2.2)] with w hw hw'
+      exact ⟨hw.1, hw.2, hw'⟩
+  refine ⟨v, contDiffOn_smul_of_eventuallyEq_zero hW (fun z hz ↦ contDiffAt_const.sub
+      (smoothTransition.contDiff.contDiffAt.comp z
+        ((contDiffAt_const.mul ((hσ hz).sub contDiffAt_const)).sub contDiffAt_const))) hu
+      fun z hz hzW ↦ ?_, fun z ↦ hv_eq,
     fun z hz hσz ↦ ((hσ hz).continuousAt.eventually (gt_mem_nhds hσz)).mono fun _ h ↦
       hv_eq h.le⟩
-  by_cases hσz : σ z < c + 1
-  · -- Inside the circle `±s = c + 1` both factors are `C²`.
-    have hn : {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1 ∧ σ z < c + 1} ∈ 𝓝 z := by
-      filter_upwards [isOpen_thricePuncturedSphereReal.mem_nhds hz,
-        (hσ hz).continuousAt.eventually (gt_mem_nhds hσz)] with w hw hw'
-      exact ⟨hw.1, hw.2, hw'⟩
-    exact (contDiffAt_const.sub (smoothTransition.contDiff.contDiffAt.comp z
-      ((contDiffAt_const.mul ((hσ hz).sub contDiffAt_const)).sub contDiffAt_const))).smul
-        (hu.contDiffAt hn)
-  · -- Beyond the circle `±s = c + 3/4` the cut-off map vanishes.
-    refine (contDiffAt_const (c := (0 : V))).congr_of_eventuallyEq ?_
-    filter_upwards [(hσ hz).continuousAt.eventually (lt_mem_nhds
-      (by linarith : c + 3 / 4 < σ z))] with w hw
-    simp only [v, smoothTransition.one_of_one_le (by linarith : 1 ≤ 2 * (σ w - c) - 1 / 2),
-      sub_self, zero_smul]
+  -- Beyond the circle `±s = c + 3/4` the cutoff vanishes.
+  have hσz : c + 1 ≤ σ z := not_lt.1 fun h ↦ hzW ⟨hz.1, hz.2, h⟩
+  filter_upwards [(hσ hz).continuousAt.eventually (lt_mem_nhds
+    (by linarith : c + 3 / 4 < σ z))] with w hw
+  rw [smoothTransition.one_of_one_le (by linarith : 1 ≤ 2 * (σ w - c) - 1 / 2), sub_self]
 
 /-- The curvature of the pair-of-pants perturbation along any map vanishes on `S` outside the
 part `±s ≤ c` of the end `q` of the truncation `S_R`, for `2 ≤ c` and `2 ≤ R`. -/
