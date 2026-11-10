@@ -17,7 +17,7 @@ Its quantization `Op(a)` is bounded from `H^s(ℝⁿ; V)` to `H^{s - m}(ℝⁿ; 
 is moreover **compact** as an operator `H^s → H^r` for every `r < s - m`. In particular:
 
 * a symbol of negative order `m < 0` with compact spatial support quantizes to a compact operator
-  `H^s → H^s` (`TauCeti.Symbol.exists_isCompactOperator_quantizeSobolev_of_neg`);
+  `H^s → H^s` (`TauCeti.Symbol.exists_isCompactOperator_quantizeSobolev` with `r = s`);
 * a smoothing symbol with compact spatial support quantizes to a compact operator `H^s → H^r` for
   all real `s` and `r` (`TauCeti.Symbol.IsSmoothing.exists_isCompactOperator_quantizeSobolev`).
 
@@ -41,8 +41,6 @@ support. Since `a(x, ξ) = 0` for `x ∉ K`, the function `Op(a) u` vanishes out
   compact for `r < s - m`, between complex Hilbert spaces `V` and `W` with `W` finite-dimensional.
 * `TauCeti.Symbol.exists_isCompactOperator_quantizeSobolev`: the same for finite-dimensional
   complex normed `V` and `W`.
-* `TauCeti.Symbol.exists_isCompactOperator_quantizeSobolev_of_neg`: symbols of negative order
-  with compact spatial support give compact operators `H^s → H^s`.
 * `TauCeti.Symbol.IsSmoothing.exists_isCompactOperator_quantizeSobolev`: smoothing symbols with
   compact spatial support give compact operators between any two Bessel-potential spaces.
 
@@ -156,18 +154,6 @@ theorem exists_isCompactOperator_quantizeSobolev (a : Symbol n V W m)
     toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply a e₁ e₂ fun u φ ↦ ?_⟩
   rw [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
     toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply]
-
-/-- **Operators of negative order are compact.** For a symbol `a` of negative order `m < 0` with
-compact spatial support between finite-dimensional complex normed spaces, the quantization
-`Op(a)` extends from Schwartz functions to a compact operator `H^s(ℝⁿ; V) → H^s(ℝⁿ; W)`, for
-every real `s`. -/
-theorem exists_isCompactOperator_quantizeSobolev_of_neg (a : Symbol n V W m)
-    (ha : a.HasCompactSpatialSupport) (hm : m < 0) (s : ℝ) :
-    ∃ T : H^{s}(CoordinateSpace n, V) →L[ℂ] H^{s}(CoordinateSpace n, W), IsCompactOperator T ∧
-      ∀ (u : 𝓢(CoordinateSpace n, V)) (φ : 𝓢(CoordinateSpace n, ℂ)),
-        (T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
-          ∫ x, φ x • quantizeSchwartzValue a.coefficient u x :=
-  a.exists_isCompactOperator_quantizeSobolev ha (by linarith)
 
 /-- **Smoothing operators with compact spatial support are compact.** If `a` is a smoothing
 symbol with compact spatial support between finite-dimensional complex normed spaces, its
