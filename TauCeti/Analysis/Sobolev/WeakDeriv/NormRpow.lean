@@ -186,14 +186,12 @@ private lemma integral_norm_rpow_mul_fderiv_eq_neg (hs0 : s ≤ 0)
   -- Both sides converge as `t → 0⁺`.
   have hL := tendsto_integral_mul_of_dominated_away ((measure_singleton (0 : E)))
     (μ := μ) (l := 𝓝[>] (0 : ℝ)) (K := regPow s) (K₀ := regPow s 0)
-    hg'.aestronglyMeasurable
     (eventually_mem_nhdsWithin.mono fun t ht ↦ (continuous_regPow s ht).aestronglyMeasurable)
     (by simpa [regPow_zero] using hloc.integrable_smul_right_of_hasCompactSupport hg' hcg')
     (eventually_mem_nhdsWithin.mono fun t ht x hx ↦ abs_regPow_le hs0 (le_of_lt ht) hx)
     (fun x hx ↦ tendsto_sq_add_rpow (norm_ne_zero_iff.mpr hx) _)
   have hR := tendsto_integral_mul_of_dominated_away ((measure_singleton (0 : E)))
     (μ := μ) (l := 𝓝[>] (0 : ℝ)) (K := regPowDeriv s v) (K₀ := regPowDeriv s v 0)
-    hg.continuous.aestronglyMeasurable
     (eventually_mem_nhdsWithin.mono fun t ht ↦
       (continuous_regPowDeriv s v ht).aestronglyMeasurable)
     (hintD.congr hderiv)
