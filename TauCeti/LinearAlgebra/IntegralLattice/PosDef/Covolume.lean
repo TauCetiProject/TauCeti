@@ -122,9 +122,10 @@ theorem injective_of_inner_eq : Function.Injective φ := by
 
 /-- A map carrying the form of a nondegenerate lattice to the inner product carries every carrier
 basis to an `ℝ`-linearly independent family. -/
-theorem linearIndependent_comp_basis {ι : Type*} [Finite ι] (e : Basis ι ℤ L) :
+theorem linearIndependent_comp_basis {ι : Type*} (e : Basis ι ℤ L) :
     LinearIndependent ℝ (fun i ↦ φ (e i)) := by
   classical
+  have := Module.Finite.finite_basis e
   have := Fintype.ofFinite ι
   rw [← Matrix.det_gram_ne_zero_iff_linearIndependent, det_gram_comp_eq_determinant hφ]
   exact_mod_cast (determinant_ne_zero_iff L).mpr L.form_nondegenerate
