@@ -75,9 +75,9 @@ theorem abs_dotProduct_mulVec_le_of_inverse_lower_bound (hLam : 0 < Lam)
   have hn : ‖v‖ ≤ Lam * ‖ξ‖ := by
     have hc := mul_le_mul_of_nonneg_left
       ((le_abs_self _).trans (hcs ξ)) hLam.le
-    have hs : ‖v‖ ^ 2 ≤ ‖v‖ * (Lam * ‖ξ‖) := by nlinarith
-    linarith [two_mul_le_add_of_sq_le_mul (norm_nonneg v)
-      (mul_nonneg hLam.le (norm_nonneg ξ)) hs]
+    by_cases hv : v = 0
+    · simpa only [hv, norm_zero] using mul_nonneg hLam.le (norm_nonneg ξ)
+    exact le_of_mul_le_mul_left (by nlinarith [he, hc]) (norm_pos_iff.mpr hv)
   exact (hcs η).trans (by nlinarith [norm_nonneg η])
 
 /-- An operator bound and coercivity give inverse coercivity with constant `M² / λ`. -/
@@ -102,12 +102,11 @@ theorem inverse_quadratic_lower_bound_of_bounds (hlam : 0 < lam)
   have hu := hupper ξ v
   rw [hav] at hu
   have hself : ξ ⬝ᵥ ξ = ‖ξ‖ ^ 2 := by
-    simpa only [Matrix.toQuadraticForm'_apply, one_mulVec] using toQuadraticForm'_one ξ
+    simpa only [EuclideanSpace.inner_eq_star_dotProduct, star_trivial] using
+      real_inner_self_eq_norm_sq ξ
   rw [hself, abs_of_nonneg (sq_nonneg _)] at hu
-  have hn : ‖ξ‖ ≤ M * ‖v‖ := by
-    have hs : ‖ξ‖ ^ 2 ≤ ‖ξ‖ * (M * ‖v‖) := by nlinarith [hu]
-    linarith [two_mul_le_add_of_sq_le_mul (norm_nonneg ξ)
-      (mul_nonneg hM.le (norm_nonneg v)) hs]
+  have hn : ‖ξ‖ ≤ M * ‖v‖ :=
+    le_of_mul_le_mul_left (by nlinarith [hu]) (norm_pos_iff.mpr hξ)
   have hs : ‖ξ‖ ^ 2 ≤ M ^ 2 * ‖v‖ ^ 2 := by
     nlinarith [mul_self_le_mul_self (norm_nonneg ξ) hn]
   rw [inv_div, div_mul_eq_mul_div, div_le_iff₀ (sq_pos_of_pos hM)]
@@ -220,12 +219,12 @@ end IsUniformlyEllipticAE
 /-- Pointwise operator-bound ellipticity with constants `(λ, M)` implies almost-everywhere
 inverse-coercive ellipticity with constants `(λ, M² / λ)`, not generally `(λ, M)`. -/
 theorem UniformlyEllipticOn.isUniformlyEllipticAE (h : UniformlyEllipticOn Ω a lam M)
-    (hΩ : MeasurableSet Ω) :
+    (hΩ : NullMeasurableSet Ω mu) :
     IsUniformlyEllipticAE mu Ω a lam (M ^ 2 / lam) := by
   have hconst : lam ≤ M ^ 2 / lam :=
     (le_div_iff₀ h.pos).mpr (by nlinarith [mul_self_le_mul_self h.pos.le h.le])
   refine ⟨h.pos, hconst, ?_⟩
-  filter_upwards [ae_restrict_mem hΩ] with x hx
+  filter_upwards [ae_restrict_mem₀ hΩ] with x hx
   have hl : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (a x *ᵥ ξ) := by
     simpa only [Matrix.toQuadraticForm'_apply] using h.lower_bound hx
   exact ⟨hl, inverse_quadratic_lower_bound_of_bounds h.pos hl (h.upper_bound hx)⟩
