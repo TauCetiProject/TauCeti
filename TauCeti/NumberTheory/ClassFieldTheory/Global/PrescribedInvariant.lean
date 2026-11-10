@@ -87,8 +87,8 @@ invariant `1 / [U : V]` (`exists_ideleSumLocalInv_eq_one_div_degree_of_prime`).
 
 ## Main results
 
-* `TauCeti.ClassFieldTheory.exists_sumLocalInv_ideleLocalization_eq`: for every `n ≥ 1` there is
-  a class of `H²(G_K, I_{Kˢ})` whose local invariants sum to `1 / n`.
+* `TauCeti.ClassFieldTheory.exists_sumLocalInv_ideleLocalization_eq`: for every `n` there is a class
+  of `H²(G_K, I_{Kˢ})` whose local invariants sum to `1 / n`.
 * `TauCeti.ClassFieldTheory.ideleLocalization_surjective`: every family of local Brauer classes is
   the family of localizations of a class of `H²(G_K, I_{Kˢ})`.
 * `TauCeti.ClassFieldTheory.exists_refinement_ideleLayerCorInfl_eq_index_nsmul`: `[G_K : U]`
@@ -356,10 +356,12 @@ private theorem exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux {E : 
   rw [sumLocalInvSection_apply, ideleLocalization_fst_apply, ← hx, AddEquiv.symm_apply_apply]
 
 /-- **A class of `H²(G_K, I_{Kˢ})` with sum of local invariants `1 / n`.** -/
-theorem exists_sumLocalInv_ideleLocalization_eq {n : ℕ} (hn : n ≠ 0) :
+theorem exists_sumLocalInv_ideleLocalization_eq (n : ℕ) :
     ∃ x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K),
       sumLocalInv K (ideleLocalization K x) = ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by
   classical
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact ⟨0, by simp⟩
   obtain ⟨x, hx⟩ := exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux (E := ⊥) rfl
     (Classical.arbitrary (HeightOneSpectrum (𝓞 K))) hn
   exact ⟨x, by rw [hx, sumLocalInv_sumLocalInvSection]⟩
@@ -393,7 +395,7 @@ theorem exists_refinement_ideleSumLocalInv_eq (L : NormalLayer (AbsoluteGaloisGr
       ideleSumLocalInv K L' y = ((1 / L.degree : ℚ) : AddCircle (1 : ℚ)) := by
   have hd : L.ground.toSubgroup.index ≠ 0 := Subgroup.FiniteIndex.index_ne_zero
   obtain ⟨x, hx⟩ := exists_sumLocalInv_ideleLocalization_eq (K := K)
-    (mul_ne_zero L.degree_pos.ne' hd)
+    (L.degree * L.ground.toSubgroup.index)
   obtain ⟨L', T, y, hy⟩ := exists_refinement_ideleLayerCorInfl_eq_index_nsmul K L x
   refine ⟨L', T, y, ?_⟩
   rw [ideleSumLocalInv_apply, hy, map_nsmul, map_nsmul, hx, ← AddCircle.coe_nsmul]

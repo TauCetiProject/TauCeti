@@ -24,8 +24,8 @@ C_E  ≃  (C_{Kˢ})^U.
 The map sends the class of an idele `a` of `E` to the class of `a` regarded as an idele of `Kˢ`.
 
 * It is **surjective** by Hilbert 90 for `U`: an idele class fixed by `U` is the class of an idele
-  fixed by `U` (`exists_ideleClassMk_eq_of_isClosed`), which is an idele of `E` by Galois descent
-  for ideles (`mem_range_ideleCoeffOfIntermediateField_iff`).
+  fixed by `U` (`exists_ideleClassMk_eq_of_forall_smul_eq`), which is an idele of `E` by Galois
+  descent for ideles (`mem_range_ideleCoeffOfIntermediateField_iff`).
 * It is **injective** because a principal idele of `Kˢ` that is an idele of `E` comes from a unit
   of `Kˢ` fixed by `U`, that is, from a unit of `E` (`mem_level_unitsFormation_iff`).
 
@@ -139,7 +139,7 @@ private theorem ker_ideleToClassLevel :
 private theorem surjective_ideleToClassLevel : Function.Surjective (ideleToClassLevel hU) := by
   rintro ⟨z, hz⟩
   obtain ⟨c, rfl⟩ := (ideleClassCoeffEquivGlobalFormation K).surjective z
-  obtain ⟨x, hx, rfl⟩ := exists_ideleClassMk_eq_of_isClosed U.toSubgroup U.isClosed (c := c)
+  obtain ⟨x, hx, rfl⟩ := exists_ideleClassMk_eq_of_forall_smul_eq U.toSubgroup (c := c)
     fun u hu ↦ (ideleClassCoeffEquivGlobalFormation K).injective <| by
       rw [ideleClassCoeffEquivGlobalFormation_smul]
       exact (globalFormation K).mem_level.1 hz u hu
