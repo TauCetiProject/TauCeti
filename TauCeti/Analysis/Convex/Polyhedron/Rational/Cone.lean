@@ -6,7 +6,9 @@ Authors: Codex
 module
 
 public import TauCeti.Analysis.Convex.Polyhedron.Rational.Basic
+public import TauCeti.Analysis.Convex.Recession.Basic
 public import TauCeti.Geometry.Toric.Algebraic.Cone.RationalDuality
+public import TauCeti.LinearAlgebra.AffineSpace.AffineMap
 
 /-!
 # Rational-normal polyhedral cones
