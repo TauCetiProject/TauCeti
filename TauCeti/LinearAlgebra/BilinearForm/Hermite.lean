@@ -115,11 +115,17 @@ theorem apply_self_nonneg_of_forall_le {M : Type*} [AddCommGroup M] {B : LinearM
     simp only [map_smul, LinearMap.smul_apply, smul_eq_mul] at this
     nlinarith
 
+/-- A vector outside the line `ℤ v` is not cancelled by adding any integer multiple of `v`. -/
+private theorem ne_zero_add_zsmul_of_notMem_span {M : Type*} [AddCommGroup M] {v y : M}
+    (hy : y ∉ ℤ ∙ v) (k : ℤ) : y + k • v ≠ 0 := fun h ↦ hy (Submodule.mem_span_singleton.mpr
+  ⟨-k, by rw [neg_smul]; exact (eq_neg_of_add_eq_zero_left h).symm⟩)
+
 /-- If a vector `v` of least norm among the nonzero vectors of a symmetric integral form has
-norm `0`, then it is orthogonal to every `y` outside `ℤ v` (given as `y + k v ≠ 0` for all `k`). -/
+norm `0`, then it is orthogonal to every `y` outside `ℤ v`. -/
 theorem apply_eq_zero_of_apply_self_eq_zero_of_forall_le {M : Type*} [AddCommGroup M]
     {B : LinearMap.BilinForm ℤ M} (hB : B.IsSymm) {v y : M} (hv0 : B v v = 0)
-    (hmin : ∀ x, x ≠ 0 → B v v ≤ B x x) (hne : ∀ k : ℤ, y + k • v ≠ 0) : B y v = 0 := by
+    (hmin : ∀ x, x ≠ 0 → B v v ≤ B x x) (hy : y ∉ ℤ ∙ v) : B y v = 0 := by
+  have hne := ne_zero_add_zsmul_of_notMem_span hy
   have hyy : 0 ≤ B y y := hv0 ▸ hmin y (by simpa using hne 0)
   by_contra hne'
   -- The witness `k = -(B y y + 1) * B y v` makes `B (y + k v) (y + k v) = B y y + 2 k B y v`
@@ -132,21 +138,22 @@ theorem apply_eq_zero_of_apply_self_eq_zero_of_forall_le {M : Type*} [AddCommGro
 
 /-- **The minimality step of Hermite's inequality.** Let `v` be a vector of least norm
 `μ = B(v, v)` among the nonzero vectors, for a symmetric integral form `B`. Every `y` outside
-`ℤ v` satisfies `3 μ² ≤ 4 (μ B(y, y) - B(y, v) B(v, y))`. Indeed, adding to `y` a multiple `t v`
-with `t` nearest to `-B(v, y) / μ` gives a nonzero vector with `4 B(v, y + t v)² ≤ μ²`, and
-completing the square along `v` (`LinearMap.BilinForm.mul_apply_add_smul_add_smul`) compares its
-norm, which is at least `μ`, with the condensed form. -/
+`ℤ v` satisfies `3 μ² ≤ 4 (μ B(y, y) - B(y, v) B(v, y))`. If `μ = 0` then `B(y, v) = 0`
+(`apply_eq_zero_of_apply_self_eq_zero_of_forall_le`) and both sides vanish. Otherwise `μ > 0`,
+and adding to `y` a multiple `t v` with `t` nearest to `-B(v, y) / μ` gives a nonzero vector with
+`4 B(v, y + t v)² ≤ μ²`, and completing the square along `v`
+(`LinearMap.BilinForm.mul_apply_add_smul_add_smul`) compares its norm, which is at least `μ`, with
+the condensed form. -/
 theorem three_mul_sq_le_four_mul_sub_of_forall_le {M : Type*} [AddCommGroup M]
     {B : LinearMap.BilinForm ℤ M} (hB : B.IsSymm) {v y : M}
     (hmin : ∀ x, x ≠ 0 → B v v ≤ B x x) (hy : y ∉ ℤ ∙ v) :
     3 * B v v ^ 2 ≤ 4 * (B v v * B y y - B y v * B v y) := by
-  have hne : ∀ k : ℤ, y + k • v ≠ 0 := fun k h ↦ hy (Submodule.mem_span_singleton.mpr
-    ⟨-k, by rw [neg_smul]; exact (eq_neg_of_add_eq_zero_left h).symm⟩)
+  have hne := ne_zero_add_zsmul_of_notMem_span hy
   by_cases hμ : 0 < B v v
   swap
   · -- A least norm is nonnegative, so here `B v v = 0`, and then `y` is orthogonal to `v`.
     have hv0 : B v v = 0 := le_antisymm (not_lt.mp hμ) (apply_self_nonneg_of_forall_le hmin)
-    have hyv := apply_eq_zero_of_apply_self_eq_zero_of_forall_le hB hv0 hmin hne
+    have hyv := apply_eq_zero_of_apply_self_eq_zero_of_forall_le hB hv0 hmin hy
     simp [hv0, hyv]
   obtain ⟨k, hk⟩ := Int.exists_two_mul_abs_sub_mul_le (B v y) hμ.ne'
   rw [abs_of_pos hμ] at hk
