@@ -67,6 +67,18 @@ noncomputable section
 
 open scoped BigOperators
 
+namespace TauCeti
+
+/-- The cardinal dimension of a finite Euclidean coordinate space is its number of coordinates. -/
+@[simp]
+theorem rank_euclideanSpace {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {ι : Type*} [Fintype ι] :
+    Module.rank 𝕜 (EuclideanSpace 𝕜 ι) = Fintype.card ι := by
+  rw [(WithLp.linearEquiv 2 𝕜 (ι → 𝕜)).rank_eq]
+  simp
+
+end TauCeti
+
 namespace EuclideanSpace
 
 /-- The dot product of the coordinates of a real Euclidean vector with themselves is its squared

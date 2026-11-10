@@ -102,6 +102,7 @@ theorem nnnorm_mkQL_comp_le (S : Submodule 𝕜₂ F) (f : E →SL[σ] F) :
 
 /-- The quotient projection has norm one when the submodule is not dense. -/
 theorem norm_mkQL (S : Submodule 𝕜 E) (hS : ¬ Dense (S : Set E)) : ‖S.mkQL‖ = 1 := by
+  -- Both quotient projections send a representative to its class via QuotientAddGroup.mk.
   rw [S.mkQL.norm_eq_normedAddGroupHom S.toAddSubgroup.normedMk (fun _ ↦ rfl)]
   apply S.toAddSubgroup.norm_normedMk
   intro h

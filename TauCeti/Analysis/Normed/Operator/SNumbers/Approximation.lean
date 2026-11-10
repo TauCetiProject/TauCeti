@@ -55,10 +55,7 @@ theorem isSNumberSequence_approximation : IsSNumberSequence (approximation (𝕜
   comp_le B T A n := B.singularValue_comp_comp_le T A n
   eq_zero_of_rank_le hT := ContinuousLinearMap.singularValue_eq_zero_of_rank_le hT
   normalize n := by
-    have hrank : Module.rank 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1))) = (n + 1 : ℕ) := by
-      rw [(WithLp.linearEquiv 2 𝕜 (Fin (n + 1) → 𝕜)).rank_eq]
-      simp
-    simp [approximation_apply, ContinuousLinearMap.singularValue_id, hrank]
+    simp [approximation_apply, ContinuousLinearMap.singularValue_id, rank_euclideanSpace]
 
 /-- Approximation numbers are strict: every identity is normalized below the dimension.
 No completeness assumption on the field or the space is needed. -/

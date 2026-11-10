@@ -248,10 +248,7 @@ theorem isSNumberSequence_kolmogorov [CompleteSpace 𝕜] :
   comp_le B T A n := B.kolmogorovNumber_comp_comp_le T A n
   eq_zero_of_rank_le hT := ContinuousLinearMap.kolmogorovNumber_eq_zero_of_rank_le hT
   normalize n := by
-    have hrank : Module.rank 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1))) = (n + 1 : ℕ) := by
-      rw [(WithLp.linearEquiv 2 𝕜 (Fin (n + 1) → 𝕜)).rank_eq]
-      simp
-    simp [ContinuousLinearMap.kolmogorovNumber_id, hrank]
+    simp [ContinuousLinearMap.kolmogorovNumber_id, rank_euclideanSpace]
 
 /-- Over a complete scalar field, Kolmogorov numbers are a strict s-number sequence.
 The normed spaces themselves need not be complete. -/
