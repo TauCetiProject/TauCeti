@@ -63,8 +63,6 @@ theorem normalBilinearFrame_apply (b : OrthonormalBasis ι ℝ (TangentSpace I p
       inner ℝ (normalOrthonormalFrame I M p U b k.1 q) u *
         inner ℝ (normalOrthonormalFrame I M p U b k.2 q) v := (rfl)
 
-variable [I.Boundaryless] [T2Space M]
-
 namespace IsNormalDomain
 
 -- Cache the nested operator norms: otherwise elaborating the local-frame type exceeds
@@ -165,6 +163,8 @@ theorem coeff_normalBilinearFrame (h : IsNormalDomain I M p U)
   simpa only [sum_apply, smul_apply, smul_eq_mul,
     h.normalBilinearFrame_apply_frame b hq, mul_ite, mul_one, mul_zero,
     Finset.sum_ite_eq', Finset.mem_univ, ite_true] using hv.symm
+
+variable [I.Boundaryless] [T2Space M]
 
 /-- At the centre of a normal frame, the differential of a bilinear tensor component equals
 the corresponding component of its covariant derivative. Only differentiability at the

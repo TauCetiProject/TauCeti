@@ -144,7 +144,7 @@ private theorem ofReal_abs_inner_setIntegral_polarDensity_le_mul_liminf
   -- `σ` is integrable on the compact sets `closedBall x ρ ⊆ Ω`.
   have hint (ρ : ℝ) (hρ : closedBall x ρ ⊆ Ω) :
       IntegrableOn σ (((↑) : Ω → E) ⁻¹' closedBall x ρ) ν :=
-    (locallyIntegrable_polarDensity hu hfin).integrableOn_isCompact
+    (locallyIntegrable_polarDensity (μ := μ) (Ω := Ω) (u := s.indicator 1)).integrableOn_isCompact
       (Topology.IsInducing.subtypeVal.isCompact_preimage' (isCompact_closedBall x ρ)
         (by rwa [Subtype.range_coe]))
   -- Cutoffs between `closedBall x r` and `ball x (r + h)` with Lipschitz constant `t / h`.
@@ -155,7 +155,7 @@ private theorem ofReal_abs_inner_setIntegral_polarDensity_le_mul_liminf
       (𝓝 ⟪v, ∫ y in ((↑) : Ω → E) ⁻¹' closedBall x r, σ y ∂ν⟫) := by
     rw [← integral_inner (hint r hΩ) v]
     simpa only [smul_eq_mul] using tendsto_integral_smul_of_cutoff (g := fun y => ⟪v, σ y⟫)
-      measurable_subtype_coe (measurable_polarDensity.const_inner.aestronglyMeasurable) hδ
+      measurable_subtype_coe hδ
       ((hint (r + δ) (by rwa [add_comm])).const_inner v)
       (fun h hh => (hψs h hh).continuous.measurable)
       (fun h hh y => abs_le.2 ⟨(neg_nonpos.2 zero_le_one).trans (hψ01 h hh (mem_range_self y)).1,

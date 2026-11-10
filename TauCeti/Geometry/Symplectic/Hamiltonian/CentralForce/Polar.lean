@@ -53,18 +53,19 @@ squared angular momentum `‖q‖² ‖p‖² - ⟪q, p⟫²` is `L²` (`TauCeti
 
 The parametrization is `2π`-periodic in `θ`. The angle `θ ∈ ℝ / 2πℤ` of a nonzero position in the
 plane of `u` and `w` is `TauCeti.polarAngle u w`. For an orthonormal basis `b` of a plane `V`, it is
-Mathlib's oriented angle from `b₀` for the orientation of `b` (`TauCeti.polarAngle_eq_oangle`), and
-the polar coordinates `(r, p_r, θ, L)`, with `r > 0` and `θ ∈ ℝ / 2πℤ`, put
-`(0, ∞) × ℝ × (ℝ / 2πℤ) × ℝ` in bijection with the punctured phase space `{(q, p) | q ≠ 0}`
-(`TauCeti.polarCanonicalEquiv`).
+Mathlib's oriented angle from `b₀` for the orientation of `b` (`TauCeti.polarAngle_eq_oangle`).
+Every point `(q, p)` with `q ≠ 0` is the image of its length, radial momentum, polar angle and
+angular momentum (`TauCeti.polarCanonical_polarAngle`), and these coordinates are determined by the
+point, the angle modulo `2π` (`TauCeti.polarCanonical_eq_polarCanonical_iff`). The resulting global
+smooth polar canonical coordinates, with the angle in the circle `AddCircle (2 * π)`, are
+`TauCeti.polarCanonicalDiffeomorph` in
+`TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Coordinates`.
 
 ## Main definitions
 
 * `TauCeti.polarRadialUnit`, `TauCeti.polarAngularUnit`: the polar unit vectors `e_r`, `e_θ`.
 * `TauCeti.polarCanonical`: the cotangent lift `(r, p_r, θ, L) ↦ (r e_r, p_r e_r + (L / r) e_θ)`.
 * `TauCeti.polarAngle`: the angle of a position, in `Real.Angle = ℝ / 2πℤ`.
-* `TauCeti.polarCanonicalEquiv`: the global polar canonical coordinates, a bijection onto the
-  punctured phase space of the plane.
 
 ## Main results
 
@@ -76,6 +77,8 @@ the polar coordinates `(r, p_r, θ, L)`, with `r > 0` and `θ ∈ ℝ / 2πℤ`,
   `TauCeti.hasDerivAt_polarCanonical_comp`: Hamilton's equations in polar coordinates.
 * `TauCeti.polarCanonical_eq_polarCanonical_iff`: for `r, r' > 0` two points agree exactly when
   their coordinates agree, with the angles compared modulo `2π`.
+* `TauCeti.polarCanonical_polarAngle`: every point off the collision set is the image of its
+  polar coordinates.
 
 ## References
 
@@ -550,51 +553,6 @@ theorem polarCanonical_polarAngle {q : V} (p : V) (hq : q ≠ 0) {θ : ℝ}
       linear_combination -⟪p, b 0⟫_ℝ * hn
     · field_simp
       linear_combination -⟪p, b 1⟫_ℝ * hn
-
-/-- **Global polar canonical coordinates.** For an orthonormal basis `b` of a plane `V`, the polar
-canonical parametrization identifies `(0, ∞) × ℝ × (ℝ / 2πℤ) × ℝ`, with coordinates
-`((r, p_r), (θ, L))`, with the punctured phase space `{(q, p) | q ≠ 0}`. The inverse sends
-`(q, p)` to its length `‖q‖`, radial momentum, polar angle and angular momentum. -/
-noncomputable def polarCanonicalEquiv :
-    {x : (ℝ × ℝ) × (Real.Angle × ℝ) // 0 < x.1.1} ≃ puncturedPhaseSpace V where
-  toFun x := ⟨polarCanonical (b 0) (b 1) (x.1.1, (x.1.2.1.toReal, x.1.2.2)), by
-    rw [mem_puncturedPhaseSpace, ← norm_ne_zero_iff,
-      norm_fst_polarCanonical (b.norm_eq_one 0) (b.norm_eq_one 1)
-        (b.inner_eq_zero (by decide))]
-    exact (abs_pos.2 x.2.ne').ne'⟩
-  invFun y := ⟨((‖y.1.1‖, radialMomentum y.1), (polarAngle (b 0) (b 1) y.1.1,
-    angularMomentum (b 0) (b 1) y.1)), norm_pos_iff.2 (mem_puncturedPhaseSpace.1 y.2)⟩
-  left_inv x := by
-    obtain ⟨⟨⟨r, pᵣ⟩, ⟨θ, L⟩⟩, hr⟩ := x
-    have h0 := b.norm_eq_one 0
-    have h1 := b.norm_eq_one 1
-    have h01 : ⟪b 0, b 1⟫_ℝ = 0 := b.inner_eq_zero (by decide)
-    have hr' : 0 < ((r, pᵣ), (θ.toReal, L)).1.1 := hr
-    simp only [Subtype.mk.injEq, Prod.mk.injEq]
-    refine ⟨⟨?_, radialMomentum_polarCanonical h0 h1 h01 hr'⟩, ?_,
-      angularMomentum_polarCanonical h0 h1 h01 hr'.ne'⟩
-    · rw [norm_fst_polarCanonical h0 h1 h01, abs_of_pos hr]
-    · rw [polarAngle_polarCanonical h0 h1 h01 hr', Real.Angle.coe_toReal]
-  right_inv y := by
-    obtain ⟨⟨q, p⟩, hq⟩ := y
-    exact Subtype.ext (polarCanonical_polarAngle b p (mem_puncturedPhaseSpace.1 hq)
-      (Real.Angle.coe_toReal _))
-
-/-- The polar canonical coordinates `((r, p_r), (θ, L))` with `θ ∈ ℝ / 2πℤ` name the image of
-`((r, p_r), (θ', L))` under the polar canonical parametrization, for every lift `θ'` of `θ`. -/
-theorem coe_polarCanonicalEquiv_apply (x : {x : (ℝ × ℝ) × (Real.Angle × ℝ) // 0 < x.1.1})
-    {θ : ℝ} (hθ : (θ : Real.Angle) = x.1.2.1) :
-    (polarCanonicalEquiv b x : V × V) = polarCanonical (b 0) (b 1) (x.1.1, (θ, x.1.2.2)) :=
-  polarCanonical_eq_of_coe_eq _ _ (by rw [Real.Angle.coe_toReal, hθ]) _ _ _
-
-/-- The polar canonical coordinates of `(q, p)`, `q ≠ 0`, are its length `‖q‖`, radial momentum,
-polar angle and angular momentum. -/
-@[simp]
-theorem coe_polarCanonicalEquiv_symm_apply (y : puncturedPhaseSpace V) :
-    ((polarCanonicalEquiv b).symm y : (ℝ × ℝ) × (Real.Angle × ℝ)) =
-      ((‖y.1.1‖, radialMomentum y.1),
-        (polarAngle (b 0) (b 1) y.1.1, angularMomentum (b 0) (b 1) y.1)) :=
-  (rfl)
 
 end Angle
 

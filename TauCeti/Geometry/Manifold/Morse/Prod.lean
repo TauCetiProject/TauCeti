@@ -109,10 +109,8 @@ theorem mvfderiv_comp_fst_add_comp_snd_eq_zero_iff [I.Boundaryless] [I'.Boundary
     (hf : MDifferentiableAt I 𝓘(ℝ) f x) (hg : MDifferentiableAt I' 𝓘(ℝ) g y) :
     mvfderiv (I.prod I') (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) = 0 ↔
       mvfderiv I f x = 0 ∧ mvfderiv I' g y = 0 := by
-  have hsum : MDifferentiableAt (I.prod I') 𝓘(ℝ) (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) :=
-    (hf.comp (x, y) mdifferentiableAt_fst).add (hg.comp (x, y) mdifferentiableAt_snd)
-  rw [hsum.mvfderiv_eq_fderiv_comp_extChartAt_symm, hf.mvfderiv_eq_fderiv_comp_extChartAt_symm,
-    hg.mvfderiv_eq_fderiv_comp_extChartAt_symm, comp_fst_add_comp_snd_comp_extChartAt_prod_symm]
+  rw [mvfderiv_eq_fderiv_comp_extChartAt_symm, mvfderiv_eq_fderiv_comp_extChartAt_symm,
+    mvfderiv_eq_fderiv_comp_extChartAt_symm, comp_fst_add_comp_snd_comp_extChartAt_prod_symm]
   simp only [extChartAt_prod, PartialEquiv.prod_coe]
   exact fderiv_comp_fst_add_comp_snd_eq_zero_iff hf.differentiableAt_comp_extChartAt_symm
     hg.differentiableAt_comp_extChartAt_symm

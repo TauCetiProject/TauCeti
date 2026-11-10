@@ -38,7 +38,7 @@ namespace TauCeti
 
 open PathAlgebra DoubledQuiver
 
-attribute [local instance] d4NeighborSetFintype inducedSubgraphNeighborSetFintype
+attribute [local instance] SimpleGraph.neighborSetFintypeOfFinite
 
 variable (k : Type*) [CommRing k] {V : Type*} [Finite V] {G : SimpleGraph V}
 

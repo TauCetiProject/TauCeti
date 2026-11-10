@@ -5,10 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LyapunovForm
+public import TauCeti.Analysis.InnerProductSpace.LyapunovForm.Basic
 public import TauCeti.Analysis.ODE.EnergyEstimate.Basic
+import TauCeti.Algebra.Order.Field.Basic
 import TauCeti.Analysis.InnerProductSpace.Coercive
 import TauCeti.Analysis.InnerProductSpace.Symmetric.Interpolation
+import TauCeti.Analysis.Normed.Group.Basic
 
 /-!
 # Global estimates for a first-order operator on the line
@@ -241,16 +243,7 @@ theorem exists_pos_nonneg_forall_integral_norm_deriv_sq_add_integral_norm_sq_le_
     (Real.le_norm_self _).trans (hK s hs)
   have hK₀ : 0 ≤ K := (by positivity : (0 : ℝ) ≤ ‖S 0‖ * ‖A 0‖ + ‖deriv S 0‖ / 2).trans
     (hK' 0 ⟨by linarith, by linarith⟩)
-  -- A uniform bound on `A`.
-  obtain ⟨KA, hKA⟩ := (isCompact_Icc (a := -R) (b := R)).exists_bound_of_continuousOn
-    hA.continuousOn
-  set MA := max KA (max (‖Aminus‖ + 1) (‖Aplus‖ + 1))
-  have hMA (s : ℝ) : ‖A s‖ ≤ MA := by
-    rcases lt_or_ge s (-R) with hs | hs
-    · exact (mem_Iic.mp (ha s (by linarith)).2).trans (le_max_of_le_right (le_max_left _ _))
-    rcases le_or_gt s R with hs' | hs'
-    · exact (hKA s ⟨hs, hs'⟩).trans (le_max_left _ _)
-    · exact (mem_Iic.mp (hb s (by linarith)).2).trans (le_max_of_le_right (le_max_right _ _))
+  obtain ⟨MA, hMA⟩ := exists_forall_norm_le_of_tendsto hA hbot htop
   set c := min cm cp
   have hc : 0 < c := lt_min hcm hcp
   refine ⟨R, hR, 2 + (2 * MA ^ 2 + 1) * (2 / c) * ((‖Sm‖ + ‖Sp - Sm‖) ^ 2 / (2 * c) + (K + c)),
@@ -273,16 +266,6 @@ theorem exists_pos_nonneg_forall_integral_norm_deriv_sq_add_integral_norm_sq_le_
   have hZ : 0 ≤ ∫ s, ‖deriv u s + A s (u s)‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
   have hW : 0 ≤ ∫ s in Icc (-R) R, ‖u s‖ ^ 2 :=
     setIntegral_nonneg measurableSet_Icc fun _ _ ↦ by positivity
-  -- Solve `hY` for `∫ ‖u‖²` and substitute the result into `hX`.
-  set a := (‖Sm‖ + ‖Sp - Sm‖) ^ 2 / (2 * c)
-  set b := K + c
-  have hY' : (∫ s, ‖u s‖ ^ 2) ≤ 2 / c * (a * (∫ s, ‖deriv u s + A s (u s)‖ ^ 2) +
-      b * ∫ s in Icc (-R) R, ‖u s‖ ^ 2) := by
-    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
-    linarith
-  have hk : 0 ≤ (2 * MA ^ 2 + 1) * (2 / c) := by positivity
-  nlinarith [mul_le_mul_of_nonneg_left hY' (by positivity : (0 : ℝ) ≤ 2 * MA ^ 2 + 1),
-    mul_nonneg (mul_nonneg hk (by positivity : (0 : ℝ) ≤ b)) hZ,
-    mul_nonneg (mul_nonneg hk (by positivity : (0 : ℝ) ≤ a)) hW]
+  exact TauCeti.add_le_mul_add_mul_of_le_of_le hc (by positivity) (by positivity) hZ hW hX hY
 
 end TauCeti
