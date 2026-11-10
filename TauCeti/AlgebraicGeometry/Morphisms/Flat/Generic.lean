@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Morphisms.Flat.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.FiniteType
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import TauCeti.RingTheory.Spectrum.Prime.GenericFreeness
+import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
 
 /-!
 # Generic flatness
@@ -140,9 +141,6 @@ theorem exists_dense_open_flat
   refine ⟨U, hU, (flat_restrict_iff f U).mpr ?_⟩
   intro x hx
   obtain ⟨A, y, hy, hxy⟩ := Opens.mem_iSup.mp hx
-  have : MorphismProperty.RespectsIso (@Flat : MorphismProperty Scheme.{u}) := by
-    rw [HasRingHomProperty.eq_affineLocally (P := @Flat)]
-    exact affineLocally_respectsIso _ RingHom.Flat.respectsIso
   have hflatA : Flat (f ∣_ A.1.ι ''ᵁ V A) :=
     (MorphismProperty.arrow_mk_iso_iff (@Flat : MorphismProperty Scheme.{u})
       (morphismRestrictRestrict f A.1 (V A))).mp (hflat A)
