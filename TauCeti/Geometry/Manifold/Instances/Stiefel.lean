@@ -11,6 +11,7 @@ public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Data.Sym.Card
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 import TauCeti.Analysis.Fredholm.LevelSet.Inclusion
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Stiefel manifolds of orthonormal frames
@@ -267,15 +268,14 @@ variable {E k} in
 read in the space of `k`-families, is injective. -/
 theorem injective_mvfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k) :
     Injective (mvfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ)
-      ((↑) : stiefel E k → Fin k → E) v) := by
-  rw [mvfderiv, ContinuousLinearMap.coe_comp]
-  exact (NormedSpace.fromTangentSpace _).injective.comp (injective_mfderiv_coe_levelSet _ _ _ _ v)
+      ((↑) : stiefel E k → Fin k → E) v) :=
+  injective_mvfderiv_iff.2 (injective_mfderiv_coe_levelSet _ _ _ _ v)
 
 variable {E k} in
 /-- The differential at `v` of the inclusion of the Stiefel manifold takes values in the kernel of
 the derivative of the Gram map: a tangent vector `a` at `v` satisfies
 `⟪v i, a j⟫ + ⟪a i, v j⟫ = 0` for all `i` and `j`. -/
-theorem gramSym2Deriv_mvfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k)
+theorem gramSym2Deriv_mvfderiv_coe_stiefel_eq_zero [FiniteDimensional ℝ E] (v : stiefel E k)
     (w : TangentSpace 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) v) :
     gramSym2Deriv E k v (mvfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ)
       ((↑) : stiefel E k → Fin k → E) v w) = 0 := by
@@ -283,8 +283,7 @@ theorem gramSym2Deriv_mvfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefe
       ((↑) : stiefel E k → Fin k → E) v w) ∈ (gramSym2Deriv E k v).ker := by
     rw [← range_mfderiv_coe_stiefel v]
     exact LinearMap.mem_range_self _ w
-  -- `mvfderiv` is `mfderiv` followed by the identification of the tangent space of the vector
-  -- space `Fin k → E` with itself, which is the identity.
+  rw [mvfderiv_apply_eq_mfderiv_apply]
   exact h
 
 /-- The `i`th vector of an orthonormal frame, as a point of the unit sphere. For `k = 2` and
