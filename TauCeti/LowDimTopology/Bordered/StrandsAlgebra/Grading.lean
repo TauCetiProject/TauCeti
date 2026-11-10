@@ -72,6 +72,9 @@ boundary of total sum zero, and every grading of a diagram lies in it
 
 ## Main results
 
+* `TauCeti.StrandGradingGroup.linking_add_linking_swap`, `TauCeti.StrandGradingGroup.linking_self`:
+  the symmetric part of `L` is minus the product of the total sums of the boundaries, so `L` is
+  antisymmetric on boundaries of total sum zero.
 * `TauCeti.StrandDiagram.grading_trans`: the grading is multiplicative on composable diagrams.
 * `TauCeti.StrandDiagram.grading_idOn`: the identity diagrams have grading `1`.
 * `TauCeti.StrandDiagram.grading_mem_gPrime`: every grading of a diagram lies in `G'(n)`.
@@ -144,6 +147,51 @@ theorem exists_linking_eq (δ₁ δ₂ : α → ℤ) :
   choose k hk using fun p ↦ exists_pointMultiplicity_eq p δ₂
   refine ⟨∑ p, δ₁ p * k p, ?_⟩
   simp [linking_apply, hk, div_eq_mul_inv, Finset.sum_mul, mul_assoc]
+
+/-- The multiplicity `m(β, p)` in terms of the boundary at and above `p` rather than below it:
+`m(β, p) = ∑_{y > p} δ y + δ p / 2 - ∑_y δ y`. -/
+theorem pointMultiplicity_eq_sum_gt (p : α) (δ : α → ℤ) :
+    pointMultiplicity p δ =
+      ∑ y ∈ ({y | p < y} : Finset α), (δ y : ℚ) + δ p / 2 - ∑ y, (δ y : ℚ) := by
+  have h : ∑ y, (δ y : ℚ) = ∑ y ∈ ({y | y < p} : Finset α), (δ y : ℚ) + δ p +
+      ∑ y ∈ ({y | p < y} : Finset α), (δ y : ℚ) := by
+    have hp : (δ p : ℚ) = ∑ y, if p = y then (δ y : ℚ) else 0 := by simp
+    rw [Finset.sum_filter, Finset.sum_filter, hp, ← Finset.sum_add_distrib,
+      ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun y _ ↦ ?_
+    rcases lt_trichotomy y p with hy | rfl | hy
+    · simp [hy, hy.ne', hy.not_gt]
+    · simp
+    · simp [hy, hy.ne, hy.not_gt]
+  rw [pointMultiplicity_apply, h]
+  ring
+
+/-- **The symmetric part of `L`** is the product of the total sums of the boundaries:
+`L(β₁, β₂) + L(β₂, β₁) = -(∑ ∂β₁) (∑ ∂β₂)`. So `L` is antisymmetric on the classes of
+`H₁([1, n], {1, …, n})`, whose boundaries have total sum zero. -/
+theorem linking_add_linking_swap (δ₁ δ₂ : α → ℤ) :
+    linking δ₁ δ₂ + linking δ₂ δ₁ = -((∑ x, (δ₁ x : ℚ)) * ∑ x, (δ₂ x : ℚ)) := by
+  -- Exchanging the two summation variables turns the pairs `y < p` into the pairs `p < y`.
+  have hswap : ∑ p, (δ₂ p : ℚ) * ∑ y ∈ ({y | y < p} : Finset α), (δ₁ y : ℚ) =
+      ∑ p, (δ₁ p : ℚ) * ∑ y ∈ ({y | p < y} : Finset α), (δ₂ y : ℚ) := by
+    simp only [Finset.sum_filter, Finset.mul_sum, mul_ite, mul_zero]
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun p _ ↦ Finset.sum_congr rfl fun y _ ↦ by rw [mul_comm]
+  have hdiag : ∑ p, (δ₂ p : ℚ) * (δ₁ p / 2) = ∑ p, (δ₁ p : ℚ) * (δ₂ p / 2) :=
+    Finset.sum_congr rfl fun p _ ↦ by ring
+  have h₂₁ : linking δ₂ δ₁ =
+      -∑ p, (δ₁ p : ℚ) * (pointMultiplicity p δ₂ + ∑ x, (δ₂ x : ℚ)) := by
+    simp only [linking_apply, pointMultiplicity_eq_sum_gt _ δ₂, sub_add_cancel]
+    simp only [pointMultiplicity_apply, mul_sub, mul_neg, mul_add, Finset.sum_sub_distrib,
+      Finset.sum_neg_distrib, Finset.sum_add_distrib, hswap, hdiag]
+    ring
+  rw [h₂₁, linking_apply]
+  simp only [mul_add, Finset.sum_add_distrib, ← Finset.sum_mul]
+  ring
+
+/-- `L(β, β) = -(∑ ∂β)² / 2`, which vanishes on the classes of `H₁([1, n], {1, …, n})`. -/
+theorem linking_self (δ : α → ℤ) : linking δ δ = -(∑ x, (δ x : ℚ)) ^ 2 / 2 := by
+  linear_combination (1 / 2 : ℚ) * linking_add_linking_swap δ δ
 
 end StrandGradingGroup
 
