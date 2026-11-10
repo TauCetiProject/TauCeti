@@ -47,19 +47,6 @@ local instance : (mu.restrict (univ : Set E)).IsAddHaarMeasure := by
   rw [Measure.restrict_univ]
   infer_instance
 
-/-- The smooth convolution representative of a zero-extended derivative field. -/
-private def smoothField {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (phi : ContDiffBump (0 : E)) (f : Lp F p (mu.restrict Omega)) : E → F :=
-  phi.normed mu ⋆[ContinuousLinearMap.lsmul ℝ ℝ, mu] (Omega : Set E).indicator (f : E → F)
-
-private theorem contDiff_smoothField {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (phi : ContDiffBump (0 : E)) (f : Lp F p (mu.restrict Omega)) :
-    ContDiff ℝ (⊤ : ℕ∞) (smoothField phi f) := by
-  have hmem := (memLp_indicator_iff_restrict Omega.isOpen.measurableSet.nullMeasurableSet).2
-    (Lp.memLp f)
-  exact phi.hasCompactSupport_normed.contDiff_convolution_left
-    (ContinuousLinearMap.lsmul ℝ ℝ) phi.contDiff_normed (hmem.locallyIntegrable Fact.out)
-
 /-- A localized smooth representative, with compact support in the original domain. -/
 private def localTest (chi : 𝓓(Omega, ℝ)) (phi : ContDiffBump (0 : E))
     (k : ℕ) (u : Wkp mu Omega p k) : 𝓓(Omega, ℝ) :=
@@ -91,7 +78,7 @@ private theorem iteratedGradient_localTest (chi : 𝓓(Omega, ℝ))
   -- Near `x ∈ U` the test function is the mollified value, and so are its derivatives.
   rw [iteratedGradientTestFunction_def,
     ((localTest_eventuallyEq chi hchi phi (k + 1) u x hx).iteratedGradientChain k).eq_of_nhds]
-  exact iteratedGradientChain_normed_convolution_indicator_value phi U.isOpen hphi k u x hx
+  exact iteratedGradientChain_smoothField_value phi U.isOpen hphi k u x hx
 
 /-- The restricted `Lᵖ` class of a mollified zero extension used in the approximation. -/
 private def localAverage {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
@@ -105,8 +92,9 @@ private def localAverage {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 private theorem localAverage_ae {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     [CompleteSpace F] (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
     (f : Lp F p (mu.restrict Omega)) :
-    localAverage (U := U) hp phi f =ᵐ[mu.restrict U] smoothField phi f :=
-  normedBumpLp_extendByZero_restrict_ae_eq_convolution hp phi Omega.isOpen.measurableSet U f
+    localAverage (U := U) hp phi f =ᵐ[mu.restrict U] smoothField phi f := by
+  rw [smoothField_def]
+  exact normedBumpLp_extendByZero_restrict_ae_eq_convolution hp phi Omega.isOpen.measurableSet U f
 
 /-- The restriction to `U` of the `W^{k,p}(Ω)` element of a test function is represented on `U`
 by that test function. -/

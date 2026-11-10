@@ -69,7 +69,7 @@ private theorem wordValue_def (g : G) (i : G ⧸ U.toSubgroup) :
 
 private theorem wordValue_one (g : G) :
     wordValue U hU s hs α g (QuotientGroup.mk 1) = evensB1 U.toSubgroup s α g := by
-  rw [← evensExtend_lWord_mk_one hU hs,
+  rw [← evensExtend_lWord_mk_one,
     evensExtend_of_mem (lWord_mem _ _ (Subgroup.indexTwoTransversal_mk hU hs) _ _)]
   simp only [wordValue, wordCoord, Subgroup.monomialHom_left, twoTransversal_rep]
 

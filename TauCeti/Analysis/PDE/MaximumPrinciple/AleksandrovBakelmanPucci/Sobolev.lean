@@ -5,298 +5,627 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.PDE.Ellipticity.Basic
 public import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import TauCeti.Analysis.Matrix.Contraction
-import TauCeti.Analysis.Normed.Module.FiniteDimension
-import TauCeti.Analysis.Sobolev.Wkp.Local.UniformApproximation
-import TauCeti.Topology.MetricSpace.Thickening
+import Mathlib.Algebra.Order.Star.Real
+import TauCeti.Analysis.Normed.Module.Basic
+import TauCeti.Analysis.Sobolev.Wkp.Mollification
+import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
+import TauCeti.MeasureTheory.Function.Lp.DominatedConvergence
 
 /-!
 # The Aleksandrov–Bakelman–Pucci estimate for strong solutions
 
-Let `Ω ⊆ ℝⁿ = EuclideanSpace ℝ ι`, `n ≥ 1`, be bounded and open, and let `a` be a field of
-symmetric matrices, uniformly elliptic on `Ω` with constants `λ ≤ Λ`. Let `v` be continuous on
-`closure Ω` and lie in `W^{2,n}_loc(Ω)`, and suppose that
+Let `Ω` be a bounded open subset of `ℝⁿ = EuclideanSpace ℝ ι`, `n ≥ 1`, and let `u ∈ W^{2,n}(Ω)`
+(the Sobolev space `TauCeti.Wkp` on all of `Ω`) have a representative `v` that is continuous on
+`closure Ω`. Write `D²u` for the weak Hessian `TauCeti.Wkp.iteratedGradient 1 u`, so that
+`(D²u eⱼ)ᵢ` is the weak derivative `∂ᵢ∂ⱼu`. Let `a` be a field of positive definite matrices on
+`Ω` with `D* = (det a)^{1/n}`, and let `f` satisfy
 
-`f ≤ ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv` almost everywhere in `Ω`,
+`f ≤ ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu` almost everywhere in `Ω`,
 
-with the weak second derivatives of `v`. Local membership is expressed on every open `U` with
-compact closure in `Ω`, by an element of `W^{2,n}(U)` that agrees with `v` almost everywhere on
-`U` and satisfies the inequality almost everywhere on `U`. Write `D* = (det a)^{1/n}` and
-`f⁻ = max (-f) 0`, and suppose `f⁻ / D* ∈ Lⁿ(Ω)`. If `v ≤ m` on `frontier Ω`, then on `Ω`
+so that `u` is a strong subsolution. If `m` bounds `v` on `frontier Ω`, the
+Aleksandrov–Bakelman–Pucci estimate bounds `v` on `Ω` by
 
-`v ≤ m + diam Ω / (n ωₙ^{1/n}) ‖f⁻ / D*‖_{Lⁿ(Ω)}`,
+`v ≤ m + diam Ω / (n ωₙ^{1/n}) ‖f⁻ / D*‖_{Lⁿ(Γ⁺)}`,
 
-where `ωₙ` is the volume of the unit ball
-(`TauCeti.PDE.le_add_mul_eLpNorm_negPart_div_det_rpow_of_wkp`; Gilbarg–Trudinger, Theorem 9.1,
-without drift, where the norm is taken over the upper contact set rather than over `Ω`). This
-is the maximum principle of the non-divergence theory with measurable coefficients: no continuity
-of `a` is assumed, the only measurability used is that of `f⁻ / D*`, through its membership in
-`Lⁿ(Ω)`, and no Sobolev regularity up to the boundary is assumed. It is the estimate behind the
-Krylov–Safonov Harnack inequality for strong solutions.
+where `Γ⁺` is the upper contact set of `v` on `Ω` and `ωₙ` is the volume of the unit ball
+(Gilbarg–Trudinger, Theorem 9.1 without drift, for functions in `W^{2,n}(Ω)`). The coefficients
+are assumed measurable, positive definite and with `∑ᵢⱼ |aⁱʲ| ≤ K D*` almost everywhere on `Ω`,
+for some constant `K`. This holds with `K = n² Λ / λ` when `λ ‖ξ‖² ≤ ξ · a ξ` and `|aⁱʲ| ≤ Λ`,
+since then `det a ≥ λⁿ`; the constant `K` does not enter the estimate. The measure form
+`TauCeti.PDE.volume_ball_le_setLIntegral_upperContactSet_of_wkp` needs no integrability of `f`.
 
-## The argument
+This is the maximum principle behind the Krylov–Safonov theory of non-divergence equations with
+measurable coefficients, whose solutions are strong rather than classical.
 
-The estimate for `C²` functions is `TauCeti.PDE.le_add_mul_eLpNorm_negPart_div_det_rpow`. Its
-differential inequality is required at every point of the upper contact set, which may be a null
-set; `TauCeti.PDE.le_add_mul_eLpNorm_negPart_div_det_rpow_of_ae` first relaxes this to an
-inequality almost everywhere on the upper contact set, keeping the `Lⁿ` norm over it, by
-replacing `f` with `min f (∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu)`.
+## The approximation
 
-For a strong solution, fix `ε > 0`. Since `v` is uniformly continuous on the compact set
-`closure Ω` and `v ≤ m` on the frontier, `v ≤ m + ε` on a boundary layer
-`{y ∈ Ω : dist(y, Ωᶜ) < ρ}` (`TauCeti.exists_pos_forall_infDist_compl_lt_le_add`). Inside it
-lies the open set `V = {y : dist(y, Ωᶜ) > r}`, `r < ρ`, whose closure is a compact subset of
-the open set `W = {y : dist(y, Ωᶜ) > r / 2}`, itself with compact closure in `Ω`. Mollifiers `w`
-of `v` converge to `v` uniformly on `closure V`, and their Hessians converge in `Lⁿ` to the weak
-Hessian `D²v` of the element of `W^{2,n}(W)` representing `v`
-(`TauCeti.Wkp.exists_contDiff_tendstoUniformlyOn_tendsto_eLpNorm_iteratedGradientChain_sub`). As
-`|aⁱʲ| ≤ Λ` and `D* ≥ λ`, the function `w` satisfies
+The classical estimate `TauCeti.PDE.volume_ball_le_setLIntegral_upperContactSet` applies to
+`C²` functions. Mollify `u` at radius `δₖ → 0` and apply it on the open sets
+`Vₖ = {y | 2 δₖ < infDist y Ωᶜ}`, where the mollification `uₖ` is smooth with Hessian the
+mollified weak Hessian (`TauCeti.Wkp.fderiv_gradient_smoothField_value`). Since `v` is uniformly
+continuous on `closure Ω`, the `uₖ` converge to `v` uniformly on `Vₖ`, and on `frontier Vₖ` they
+are at most `m` plus a small error. The right-hand sides converge as well:
 
-`-(f⁻ / D* + n² Λ / λ ‖D²w - D²v‖) D* ≤ ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼw` almost everywhere in `V`,
+* the principal parts `Fₖ = ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼuₖ` differ from `F = ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu` by at most
+  `K D* ‖D²uₖ - D²u‖`, and `D²uₖ → D²u` in `Lⁿ`, so `‖Fₖ⁻ / D*‖_{Lⁿ(Γₖ)}` is at most
+  `‖F⁻ / D*‖_{Lⁿ(Γₖ)}` plus a vanishing error, where `Γₖ` is the upper contact set of `uₖ` on
+  `Vₖ`;
+* a point lying in infinitely many `Γₖ` lies in the upper contact set of `v` on `Ω`
+  (`TauCeti.PDE.mem_upperContactSet_of_frequently`), so by the reverse Fatou lemma
+  (`TauCeti.limsup_eLpNorm_restrict_le`) the limit superior of `‖F⁻ / D*‖_{Lⁿ(Γₖ)}` is at most
+  `‖F⁻ / D*‖_{Lⁿ(Γ⁺)}`.
 
-and is at most `m + 2ε` on `frontier V`. The almost-everywhere estimate on `V` bounds `w`, hence
-`v`, up to errors that vanish with `ε` and the mollification radius.
+Finally `F⁻ ≤ f⁻` almost everywhere. Neither the area formula nor the almost everywhere twice
+differentiability of `W^{2,n}` functions is used.
 
 ## Main declarations
 
+* `TauCeti.PDE.volume_ball_le_setLIntegral_upperContactSet_of_wkp`: the measure form
+  `|B(0, (v x - m) / diam Ω)| ≤ ∫_{Γ⁺} (f⁻ / n)ⁿ / det a`.
 * `TauCeti.PDE.le_add_mul_eLpNorm_negPart_div_det_rpow_of_wkp`: **the Aleksandrov–Bakelman–Pucci
-  estimate for strong solutions** in `W^{2,n}_loc(Ω) ∩ C(closure Ω)`.
+  estimate** for strong subsolutions in `W^{2,n}(Ω) ∩ C(closure Ω)`.
 
 ## References
 
 * D. Gilbarg, N. S. Trudinger, *Elliptic Partial Differential Equations of Second Order*,
-  Section 9.1 (Theorem 9.1).
+  Section 9.1 (Lemmas 9.2 and 9.3, Theorem 9.1).
 -/
 
 public section
 
 noncomputable section
 
-open Filter InnerProductSpace Matrix Metric MeasureTheory Set Topology TopologicalSpace
+open Filter Matrix Metric MeasureTheory Set Topology TopologicalSpace
 open scoped ENNReal Gradient RealInnerProductSpace
 
 namespace TauCeti
 
 namespace PDE
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι] {Ω : Set (EuclideanSpace ℝ ι)}
-  {u v f : EuclideanSpace ℝ ι → ℝ} {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {m lam Lam : ℝ}
-  {x : EuclideanSpace ℝ ι}
+variable {ι : Type*} [Fintype ι] [DecidableEq ι]
 
-/-- The pointwise comparison between the principal parts of two Hessians `H₁` and `H₂`: if
-`t ≤ ∑ᵢⱼ Aᵢⱼ ⟪H₂ eᵢ, eⱼ⟫`, the entries of `A` are bounded by `Λ` and `λ ≤ D`, then
-`-(t⁻ / D + n² Λ / λ ‖H₁ - H₂‖) D ≤ ∑ᵢⱼ Aᵢⱼ ⟪H₁ eᵢ, eⱼ⟫`. -/
-private theorem neg_mul_le_sum_mul_inner {A : Matrix ι ι ℝ}
-    {H₁ H₂ : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι} {t D : ℝ} (hLam : 0 ≤ Lam)
-    (hA : ∀ i j, |A i j| ≤ Lam) (hlam : 0 < lam) (hD : lam ≤ D)
-    (ht : t ≤ ∑ i, ∑ j, A i j *
-      ⟪H₂ (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ) :
-    -((t⁻ / D + Fintype.card ι ^ 2 * Lam / lam * ‖H₁ - H₂‖) * D) ≤
-      ∑ i, ∑ j, A i j * ⟪H₁ (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ := by
-  have hD0 : 0 < D := hlam.trans_le hD
-  -- The two principal parts differ by the contraction of the form `⟪(H₁ - H₂) ·, ·⟫`.
-  have herr := Matrix.abs_sum_sum_mul_apply_single_single_le hA ((innerSL ℝ).comp (H₁ - H₂))
-  simp only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, sub_apply,
-    inner_sub_left, mul_sub, Finset.sum_sub_distrib] at herr
-  have hB : Fintype.card ι ^ 2 * Lam * ‖(innerSL ℝ).comp (H₁ - H₂)‖ ≤
-      Fintype.card ι ^ 2 * Lam * ‖H₁ - H₂‖ :=
-    mul_le_mul_of_nonneg_left ((ContinuousLinearMap.opNorm_comp_le _ _).trans
-      (mul_le_of_le_one_left (norm_nonneg _) (norm_innerSL_le ℝ))) (by positivity)
-  have hK : Fintype.card ι ^ 2 * Lam * ‖H₁ - H₂‖ ≤
-      Fintype.card ι ^ 2 * Lam / lam * ‖H₁ - H₂‖ * D := by
-    rw [div_mul_eq_mul_div, div_mul_eq_mul_div, le_div_iff₀ hlam]
-    have : 0 ≤ (Fintype.card ι : ℝ) ^ 2 * Lam * ‖H₁ - H₂‖ := by positivity
-    nlinarith
-  have hexp : (t⁻ / D + Fintype.card ι ^ 2 * Lam / lam * ‖H₁ - H₂‖) * D =
-      t⁻ + Fintype.card ι ^ 2 * Lam / lam * ‖H₁ - H₂‖ * D := by
-    field_simp
-  rw [hexp]
-  linarith [neg_le.1 (neg_le_negPart t), (abs_le.1 herr).1, hB]
+/-! ### The approximating sequence -/
 
-/-- **One approximation step.** Let `a` be symmetric and uniformly elliptic on the bounded set `Ω`
-with `f⁻ / D* ∈ Lⁿ(Ω)`, let `V ⊆ Ω` be open, and suppose that `f ≤ ∑ᵢⱼ aⁱʲ ⟪H eᵢ, eⱼ⟫` almost
-everywhere on `V` for a field `H` of Hessians. If `w` is `C²`, then on `V`, `w` is at most its
-frontier bound `m'` plus the right-hand side of the estimate, where the `Lⁿ` norm of `f⁻ / D*` is
-enlarged by `n² Λ / λ` times the `Lⁿ(V)` distance between the Hessian of `w` and `H`. -/
-private theorem le_add_mul_add_mul_eLpNorm_iteratedGradientChain_sub [Nonempty ι]
-    [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] (hΩb : Bornology.IsBounded Ω)
-    (ha : UniformlyEllipticOn Ω a lam Lam) (ha_symm : ∀ y ∈ Ω, (a y).IsSymm)
+section Sequence
+
+omit [DecidableEq ι]
+
+/-- The radius `1 / (k + 1)` of the `k`th mollifier. -/
+private def abpRadius (k : ℕ) : ℝ := 1 / ((k : ℝ) + 1)
+
+private theorem abpRadius_pos (k : ℕ) : 0 < abpRadius k := by
+  unfold abpRadius
+  positivity
+
+private theorem tendsto_abpRadius : Tendsto abpRadius atTop (𝓝 0) :=
+  tendsto_one_div_add_atTop_nhds_zero_nat
+
+/-- The `k`th mollifier, a normalized bump of outer radius `abpRadius k`. -/
+private def abpBump (k : ℕ) : ContDiffBump (0 : EuclideanSpace ℝ ι) :=
+  ⟨abpRadius k / 2, abpRadius k, half_pos (abpRadius_pos k), half_lt_self (abpRadius_pos k)⟩
+
+omit [Fintype ι] in
+private theorem abpBump_rOut (k : ℕ) : (abpBump (ι := ι) k).rOut = abpRadius k :=
+  rfl
+
+/-- The open set of points at distance more than `2 abpRadius k` from the complement of `Ω`, on
+which the `k`th mollification is compared with the classical estimate. -/
+private def abpDomain (Ω : Set (EuclideanSpace ℝ ι)) (k : ℕ) : Set (EuclideanSpace ℝ ι) :=
+  {y | 2 * abpRadius k < infDist y Ωᶜ}
+
+private theorem isOpen_abpDomain (Ω : Set (EuclideanSpace ℝ ι)) (k : ℕ) :
+    IsOpen (abpDomain Ω k) :=
+  isOpen_lt continuous_const (continuous_infDist_pt _)
+
+/-- At distance at least `2 abpRadius k` from `Ωᶜ`, the ball of radius `abpRadius k` lies in
+`Ω`. -/
+private theorem ball_subset_of_two_mul_abpRadius_le {Ω : Set (EuclideanSpace ℝ ι)} {k : ℕ}
+    {y : EuclideanSpace ℝ ι} (hy : 2 * abpRadius k ≤ infDist y Ωᶜ) :
+    ball y (abpRadius k) ⊆ Ω :=
+  (ball_subset_ball (by linarith [abpRadius_pos k])).trans ball_infDist_compl_subset
+
+private theorem closedBall_subset_of_mem_abpDomain {Ω : Set (EuclideanSpace ℝ ι)} {k : ℕ}
+    {y : EuclideanSpace ℝ ι} (hy : y ∈ abpDomain Ω k) :
+    closedBall y (abpBump (ι := ι) k).rOut ⊆ Ω :=
+  (closedBall_subset_ball (by rw [abpBump_rOut]; linarith [abpRadius_pos k, hy.out])).trans
+    ball_infDist_compl_subset
+
+private theorem abpDomain_subset (Ω : Set (EuclideanSpace ℝ ι)) (k : ℕ) : abpDomain Ω k ⊆ Ω :=
+  fun _ hy => closedBall_subset_of_mem_abpDomain hy
+    (mem_closedBall_self (abpBump (ι := ι) k).rOut_pos.le)
+
+/-- Every point of an open set `Ω` with nonempty complement lies in all but finitely many of the
+sets `abpDomain Ω k`. -/
+private theorem eventually_lt_infDist {Ω : Set (EuclideanSpace ℝ ι)} (hΩ : IsOpen Ω)
+    (hΩc : Ωᶜ.Nonempty) {y : EuclideanSpace ℝ ι} (hy : y ∈ Ω) (c : ℝ) :
+    ∀ᶠ k in atTop, c * abpRadius k < infDist y Ωᶜ := by
+  have hpos : 0 < infDist y Ωᶜ := (infDist_pos_iff_notMem_closure hΩc).1
+    (by rwa [hΩ.isClosed_compl.closure_eq, notMem_compl_iff])
+  exact (tendsto_abpRadius.const_mul c).eventually (gt_mem_nhds (by rwa [mul_zero]))
+
+end Sequence
+
+omit [DecidableEq ι] in
+/-- The exponent `n = card ι` of the `Lⁿ` spaces is at least `1`, so `ι` is nonempty. -/
+private theorem nonempty_of_one_le_card [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] : Nonempty ι :=
+  Fintype.card_pos_iff.1 (by exact_mod_cast
+    (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ Fintype.card ι)))
+
+section Mollification
+
+variable [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] {Ω : Opens (EuclideanSpace ℝ ι)}
+  (u : Wkp volume Ω (Fintype.card ι) 2) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
+
+/-- Where every bump centred near `y` stays in `Ω`, the classical principal part of the
+mollification of `u` is the principal part of the mollified weak Hessian. -/
+private theorem sum_mul_fderiv_fderiv_smoothField (phi : ContDiffBump (0 : EuclideanSpace ℝ ι))
+    {y : EuclideanSpace ℝ ι} (hy : ∀ᶠ z in 𝓝 y, closedBall z phi.rOut ⊆ Ω) (A : Matrix ι ι ℝ) :
+    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ (Wkp.smoothField phi (Wkp.value 2 u))) y
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) =
+      ∑ i, ∑ j, A i j *
+        Wkp.smoothField phi (Wkp.iteratedGradient 1 u) y (EuclideanSpace.single j 1) i := by
+  have hc : ContDiffAt ℝ 2 (Wkp.smoothField phi (Wkp.value 2 u)) y :=
+    (Wkp.contDiff_smoothField phi _).contDiffAt.of_le (by simp)
+  refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
+  rw [hc.isSymmSndFDerivAt (by simp), ← inner_hessianOperator_left, ← fderiv_gradient,
+    Wkp.fderiv_gradient_smoothField_value u phi hy, EuclideanSpace.inner_single_right]
+  simp
+
+/-- **The classical estimate for a mollification.** Let `V` be open, with the bump `phi` centred at
+any point of `V` contained in `Ω`. Then the classical Aleksandrov–Bakelman–Pucci measure estimate
+holds on `V` for the mollification `uφ` of `u`, with right-hand side
+`n⁻ⁿ ‖Fφ⁻ / D*‖ⁿ_{Lⁿ(Γ)}`, where `Fφ = ∑ᵢⱼ aⁱʲ (D²u)φ eⱼ · eᵢ` is the principal part of the
+mollified weak Hessian and `Γ` is the upper contact set of `uφ` on `V`. -/
+private theorem volume_ball_le_eLpNorm_smoothField
+    (hΩb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι)))
+    (phi : ContDiffBump (0 : EuclideanSpace ℝ ι)) {V : Set (EuclideanSpace ℝ ι)}
+    (hV : IsOpen V) (hVΩ : ∀ y ∈ V, closedBall y phi.rOut ⊆ Ω)
+    (ha : ∀ᵐ y ∂(volume.restrict Ω), (a y).PosDef)
+    (hmeas : AEStronglyMeasurable a (volume.restrict Ω)) {m : ℝ}
+    (hm : ∀ z ∈ frontier V, Wkp.smoothField phi (Wkp.value 2 u) z ≤ m)
+    {x : EuclideanSpace ℝ ι} (hx : x ∈ V) :
+    volume (ball (0 : EuclideanSpace ℝ ι)
+        ((Wkp.smoothField phi (Wkp.value 2 u) x - m) / diam V)) ≤
+      ENNReal.ofReal (((Fintype.card ι : ℝ) ^ Fintype.card ι)⁻¹) *
+        eLpNorm (fun y => (∑ i, ∑ j, a y i j *
+          Wkp.smoothField phi (Wkp.iteratedGradient 1 u) y (EuclideanSpace.single j 1) i)⁻ /
+            (a y).det ^ (Fintype.card ι : ℝ)⁻¹) (Fintype.card ι)
+          (volume.restrict (upperContactSet (Wkp.smoothField phi (Wkp.value 2 u)) V)) ^
+        Fintype.card ι := by
+  have := nonempty_of_one_le_card (ι := ι)
+  set w := Wkp.smoothField phi (Wkp.value 2 u)
+  set G := Wkp.smoothField phi (Wkp.iteratedGradient 1 u)
+  have hVsub : V ⊆ Ω := fun y hy => hVΩ y hy (mem_closedBall_self phi.rOut_pos.le)
+  have hw : ContDiff ℝ (⊤ : ℕ∞) w := Wkp.contDiff_smoothField phi _
+  have hΓΩ : upperContactSet w V ⊆ Ω := (upperContactSet_subset).trans hVsub
+  -- The classical estimate needs positive definite coefficients everywhere on the contact set, so
+  -- apply it to `b`, which replaces `a` by the identity off the set where `a` is positive definite.
+  classical
+  set b : EuclideanSpace ℝ ι → Matrix ι ι ℝ := fun y => if (a y).PosDef then a y else 1
+  have hb (y : EuclideanSpace ℝ ι) : (b y).PosDef := by
+    by_cases h : (a y).PosDef
+    · simp [b, h]
+    · simpa [b, h] using PosDef.one
+  have hbΓ : b =ᵐ[volume.restrict (upperContactSet w V)] a :=
+    ae_restrict_of_ae_restrict_of_subset hΓΩ (ha.mono fun y hy => by simp [b, hy])
+  have hmb : AEStronglyMeasurable b (volume.restrict (upperContactSet w V)) :=
+    (hmeas.mono_measure (Measure.restrict_mono hΓΩ le_rfl)).congr hbΓ.symm
+  have hkey := volume_ball_le_setLIntegral_upperContactSet (hΩb.subset hVsub) hV
+    hw.continuous.continuousOn (hw.contDiffOn.of_le (by simp))
+    (a := b) (f := fun y => ∑ i, ∑ j, b y i j * G y (EuclideanSpace.single j 1) i)
+    (fun y _ => hb y)
+    (fun y hy => (sum_mul_fderiv_fderiv_smoothField u phi
+      (by filter_upwards [hV.mem_nhds (upperContactSet_subset hy)] using hVΩ) (b y)).ge)
+    hm hx
+  rw [setLIntegral_ofReal_negPart_div_card_pow_div_det_eq (ae_of_all _ hb)
+    (aestronglyMeasurable_negPart_div_det_rpow hmb (aestronglyMeasurable_sum_mul_apply_single hmb
+      (Wkp.contDiff_smoothField phi _).continuous.aestronglyMeasurable))] at hkey
+  refine hkey.trans_eq ?_
+  congr 2
+  refine eLpNorm_congr_ae ?_
+  filter_upwards [hbΓ] with y hy
+  rw [hy]
+
+omit [DecidableEq ι] in
+/-- **Uniform convergence of the mollifications.** If the value of `u` agrees on `Ω` with a
+function `v` continuous on the compact set `closure Ω`, then for every `ε > 0` and all large `k`,
+the `k`th mollification of `u` is within `ε` of `v` at every point at distance at least
+`2 abpRadius k` from `Ωᶜ`. -/
+private theorem eventually_dist_smoothField_le
+    (hΩb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι)))
+    {v : EuclideanSpace ℝ ι → ℝ} (hcont : ContinuousOn v (closure Ω))
+    (hv : Wkp.value 2 u =ᵐ[volume.restrict Ω] v) {ε : ℝ} (hε : 0 < ε) :
+    ∀ᶠ k in atTop, ∀ y, 2 * abpRadius k ≤ infDist y (Ω : Set (EuclideanSpace ℝ ι))ᶜ →
+      dist (Wkp.smoothField (abpBump k) (Wkp.value 2 u) y) (v y) ≤ ε := by
+  obtain ⟨η, hη, hvη⟩ := Metric.uniformContinuousOn_iff.1
+    (hΩb.isCompact_closure.uniformContinuousOn_of_continuous hcont) ε hε
+  filter_upwards [tendsto_abpRadius.eventually (gt_mem_nhds hη)] with k hk y hy
+  have hball := ball_subset_of_two_mul_abpRadius_le hy
+  have hyΩ : y ∈ (Ω : Set (EuclideanSpace ℝ ι)) := hball (mem_ball_self (abpRadius_pos k))
+  refine Wkp.dist_smoothField_le (abpBump k) hv (by rwa [abpBump_rOut]) fun z hz => ?_
+  rw [abpBump_rOut] at hz
+  exact (hvη z (subset_closure (hball hz)) y (subset_closure hyΩ)
+    ((mem_ball.1 hz).trans hk)).le
+
+omit [DecidableEq ι] in
+/-- **The limit of the contact sets.** A point lying in the upper contact set of the `k`th
+mollification on `abpDomain Ω k` for infinitely many `k` lies in the upper contact set of `v` on
+`Ω`. -/
+private theorem mem_upperContactSet_of_frequently_smoothField
+    (hΩb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι)))
+    (hΩc : (Ω : Set (EuclideanSpace ℝ ι))ᶜ.Nonempty)
+    {v : EuclideanSpace ℝ ι → ℝ} (hcont : ContinuousOn v (closure Ω))
+    (hv : Wkp.value 2 u =ᵐ[volume.restrict Ω] v) {y : EuclideanSpace ℝ ι}
+    (hy : ∃ᶠ k in atTop,
+      y ∈ upperContactSet (Wkp.smoothField (abpBump k) (Wkp.value 2 u)) (abpDomain Ω k)) :
+    y ∈ upperContactSet v Ω := by
+  set w := fun k => Wkp.smoothField (abpBump k) (Wkp.value 2 u)
+  have hyΩ : y ∈ (Ω : Set (EuclideanSpace ℝ ι)) :=
+    hy.exists.elim fun k hk => abpDomain_subset _ k (upperContactSet_subset hk)
+  obtain ⟨M, hM⟩ := hΩb.isCompact_closure.exists_bound_of_continuousOn hcont
+  -- Pointwise convergence at the points of `Ω`.
+  have hconv (z : EuclideanSpace ℝ ι) (hz : z ∈ (Ω : Set (EuclideanSpace ℝ ι))) :
+      Tendsto (fun k => w k z) atTop (𝓝 (v z)) := by
+    refine Metric.tendsto_nhds.2 fun ε hε => ?_
+    filter_upwards [eventually_dist_smoothField_le u hΩb hcont hv (half_pos hε),
+      eventually_lt_infDist Ω.isOpen hΩc hz 2] with k hk hkz
+    exact (hk z hkz.le).trans_lt (half_lt_self hε)
+  have hr : 0 < infDist y (Ω : Set (EuclideanSpace ℝ ι))ᶜ / 2 := by
+    have := eventually_lt_infDist Ω.isOpen hΩc hyΩ 0
+    simp only [zero_mul, eventually_const] at this
+    positivity
+  refine mem_upperContactSet_of_frequently (M := M + 1) hr ?_ (fun z hz => ?_) ?_ hconv hyΩ hy
+  · filter_upwards [eventually_lt_infDist Ω.isOpen hΩc hyΩ 4] with k hk z hz
+    have h := infDist_le_infDist_add_dist (x := y) (y := z) (s := (Ω : Set (EuclideanSpace ℝ ι))ᶜ)
+    rw [mem_ball, dist_comm] at hz
+    rw [abpDomain, mem_ofPred_eq]
+    linarith
+  · filter_upwards [eventually_lt_infDist Ω.isOpen hΩc hz 2] with k hk using hk
+  · filter_upwards [eventually_dist_smoothField_le u hΩb hcont hv one_pos] with k hk z hz
+    have h1 := hk z hz.out.le
+    have h2 := hM z (subset_closure (abpDomain_subset _ k hz))
+    rw [Real.dist_eq] at h1
+    rw [Real.norm_eq_abs] at h2
+    exact (abs_le.2 ⟨by linarith [abs_le.1 h1, abs_le.1 h2], by
+      linarith [abs_le.1 h1, abs_le.1 h2]⟩ : |w k z| ≤ M + 1)
+
+/-- **Comparison of the right-hand sides.** On every subset `S` of `Ω`, the `Lⁿ(S)` norm of
+`Fφ⁻ / D*`, for the principal part `Fφ` of the mollified weak Hessian, exceeds that of `F⁻ / D*`,
+for the principal part `F` of the weak Hessian, by at most `K` times the `Lⁿ` distance between
+the mollified weak Hessian and the weak Hessian. -/
+private theorem eLpNorm_negPart_smoothField_le
+    (ha : ∀ᵐ y ∂(volume.restrict Ω), (a y).PosDef)
+    (hmeas : AEStronglyMeasurable a (volume.restrict Ω)) {K : ℝ}
+    (hK : ∀ᵐ y ∂(volume.restrict Ω),
+      ∑ i, ∑ j, |a y i j| ≤ K * (a y).det ^ (Fintype.card ι : ℝ)⁻¹)
+    (phi : ContDiffBump (0 : EuclideanSpace ℝ ι)) {S : Set (EuclideanSpace ℝ ι)}
+    (hS : S ⊆ Ω) :
+    eLpNorm (fun y => (∑ i, ∑ j, a y i j *
+          Wkp.smoothField phi (Wkp.iteratedGradient 1 u) y (EuclideanSpace.single j 1) i)⁻ /
+            (a y).det ^ (Fintype.card ι : ℝ)⁻¹) (Fintype.card ι) (volume.restrict S) ≤
+      eLpNorm (fun y => (∑ i, ∑ j, a y i j *
+          Wkp.iteratedGradient 1 u y (EuclideanSpace.single j 1) i)⁻ /
+            (a y).det ^ (Fintype.card ι : ℝ)⁻¹) (Fintype.card ι) (volume.restrict S) +
+        ‖K‖ₑ * eLpNorm (Wkp.smoothField phi (Wkp.iteratedGradient 1 u) -
+          (Ω : Set (EuclideanSpace ℝ ι)).indicator (Wkp.iteratedGradient 1 u))
+          (Fintype.card ι) volume := by
+  set D := Wkp.iteratedGradient 1 u
+  set G := Wkp.smoothField phi D
+  have hSΩ : ∀ᵐ y ∂(volume.restrict S), y ∈ (Ω : Set (EuclideanSpace ℝ ι)) :=
+    ae_restrict_of_ae_restrict_of_subset hS (ae_restrict_mem Ω.isOpen.measurableSet)
+  have hle : volume.restrict S ≤ volume.restrict Ω := Measure.restrict_mono hS le_rfl
+  have hmS := hmeas.mono_measure hle
+  have hDS : AEStronglyMeasurable (fun y => (D y : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι))
+      (volume.restrict S) := (Lp.aestronglyMeasurable D).mono_measure hle
+  calc _ ≤ eLpNorm (fun y => (∑ i, ∑ j, a y i j * D y (EuclideanSpace.single j 1) i)⁻ /
+          (a y).det ^ (Fintype.card ι : ℝ)⁻¹ + K * ‖G y - D y‖) (Fintype.card ι)
+          (volume.restrict S) := by
+        refine eLpNorm_mono_ae_real (aestronglyMeasurable_negPart_div_det_rpow hmS
+          (aestronglyMeasurable_sum_mul_apply_single hmS
+            (Wkp.contDiff_smoothField phi D).continuous.aestronglyMeasurable)) ?_
+        filter_upwards [ae_restrict_of_ae_restrict_of_subset hS ha,
+          ae_restrict_of_ae_restrict_of_subset hS hK] with y hay hKy
+        rw [Real.norm_of_nonneg (div_nonneg (negPart_nonneg _)
+          (Real.rpow_nonneg hay.det_pos.le _))]
+        exact negPart_div_det_rpow_le hay hKy (G y) (D y)
+    _ ≤ _ := eLpNorm_add_le (Fact.out : (1 : ℝ≥0∞) ≤ Fintype.card ι)
+    _ ≤ _ := by
+        gcongr
+        have hK' : (fun y => K * ‖G y - D y‖) = K • fun y => ‖G y - D y‖ := rfl
+        rw [hK', eLpNorm_const_smul,
+          eLpNorm_norm (fun y => G y - D y)
+            ((Wkp.contDiff_smoothField phi D).continuous.aestronglyMeasurable.sub hDS)]
+        gcongr
+        refine (eLpNorm_congr_ae ?_).trans_le (eLpNorm_mono_measure _ Measure.restrict_le_self)
+        filter_upwards [hSΩ] with y hy
+        simp [Set.indicator_of_mem hy]
+
+omit [DecidableEq ι] in
+/-- **The right-hand sides on the contact sets.** If `g ∈ Lⁿ(Ω)`, then for every `c` above the
+`Lⁿ` norm of `g` on the upper contact set of `v`, the `Lⁿ` norm of `g` on the upper contact set of
+the `k`th mollification on `abpDomain Ω k` is below `c` for all large `k`. -/
+private theorem eventually_eLpNorm_upperContactSet_lt
+    (hΩb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι)))
+    (hΩc : (Ω : Set (EuclideanSpace ℝ ι))ᶜ.Nonempty) {v : EuclideanSpace ℝ ι → ℝ}
+    (hcont : ContinuousOn v (closure Ω)) (hv : Wkp.value 2 u =ᵐ[volume.restrict Ω] v)
+    {g : EuclideanSpace ℝ ι → ℝ} (hg : MemLp g (Fintype.card ι) (volume.restrict Ω)) {c : ℝ≥0∞}
+    (hc : eLpNorm g (Fintype.card ι) (volume.restrict (upperContactSet v Ω)) < c) :
+    ∀ᶠ k in atTop, eLpNorm g (Fintype.card ι) (volume.restrict
+      (upperContactSet (Wkp.smoothField (abpBump k) (Wkp.value 2 u)) (abpDomain Ω k))) < c := by
+  have hsub : limsup (fun k => upperContactSet (Wkp.smoothField (abpBump k) (Wkp.value 2 u))
+      (abpDomain Ω k)) atTop ⊆ upperContactSet v Ω := fun y hy =>
+    mem_upperContactSet_of_frequently_smoothField u hΩb hΩc hcont hv
+      (Filter.mem_limsup_iff_frequently_mem.1 hy)
+  refine eventually_lt_of_limsup_lt ((limsup_eLpNorm_restrict_le
+    (zero_lt_one.trans_le Fact.out).ne' (ENNReal.natCast_ne_top _) hg
+    (fun k => measurableSet_upperContactSet (isOpen_abpDomain _ k)
+      ((Wkp.contDiff_smoothField _ _).contDiffOn.of_le (by simp)))
+    fun k => upperContactSet_subset.trans (abpDomain_subset _ k)).trans_lt ?_)
+  exact (eLpNorm_mono_measure g (Measure.restrict_mono hsub le_rfl)).trans_lt hc
+
+omit [DecidableEq ι] in
+/-- The mollified weak Hessians converge to the extension by zero of the weak Hessian in `Lⁿ`. -/
+private theorem tendsto_eLpNorm_smoothField_iteratedGradient_sub :
+    Tendsto (fun k => eLpNorm (Wkp.smoothField (abpBump k) (Wkp.iteratedGradient 1 u) -
+      (Ω : Set (EuclideanSpace ℝ ι)).indicator (Wkp.iteratedGradient 1 u)) (Fintype.card ι)
+        volume) atTop (𝓝 0) := by
+  simpa only [Wkp.smoothField_def] using tendsto_eLpNorm_normed_convolution_sub
+    (ENNReal.natCast_ne_top _) (phi := abpBump)
+    (by simpa only [abpBump_rOut] using tendsto_abpRadius)
+    ((memLp_indicator_iff_restrict Ω.isOpen.measurableSet.nullMeasurableSet).2
+      (Lp.memLp (Wkp.iteratedGradient 1 u)))
+
+omit [DecidableEq ι] in
+/-- **The boundary values of the mollifications.** If `v ≤ m` on `frontier Ω`, the mollification
+is within `ε` of `v` at distance `2 abpRadius k` from `Ωᶜ`, and `v` varies by less than `ε` over
+distances below `η > 2 abpRadius k` in `closure Ω`, then the mollification is at most `m + 2ε` on
+`frontier (abpDomain Ω k)`. -/
+private theorem smoothField_le_of_mem_frontier_abpDomain
+    (hΩc : (Ω : Set (EuclideanSpace ℝ ι))ᶜ.Nonempty) {v : EuclideanSpace ℝ ι → ℝ} {m ε η : ℝ}
+    (hm : ∀ z ∈ frontier (Ω : Set (EuclideanSpace ℝ ι)), v z ≤ m)
+    (hvη : ∀ y ∈ closure (Ω : Set (EuclideanSpace ℝ ι)), ∀ z ∈ closure (Ω : Set _),
+      dist y z < η → dist (v y) (v z) < ε) {k : ℕ} (hkη : 2 * abpRadius k < η)
+    (hkU : ∀ y, 2 * abpRadius k ≤ infDist y (Ω : Set (EuclideanSpace ℝ ι))ᶜ →
+      dist (Wkp.smoothField (abpBump k) (Wkp.value 2 u) y) (v y) ≤ ε)
+    {z : EuclideanSpace ℝ ι} (hz : z ∈ frontier (abpDomain Ω k)) :
+    Wkp.smoothField (abpBump k) (Wkp.value 2 u) z ≤ m + 2 * ε := by
+  have hz' : 2 * abpRadius k = infDist z (Ω : Set (EuclideanSpace ℝ ι))ᶜ :=
+    frontier_lt_subset_eq continuous_const (continuous_infDist_pt _) hz
+  have hzΩ : z ∈ (Ω : Set (EuclideanSpace ℝ ι)) :=
+    ball_subset_of_two_mul_abpRadius_le hz'.le (mem_ball_self (abpRadius_pos k))
+  -- The nearest point of `Ωᶜ` lies on `frontier Ω`, where `v ≤ m`.
+  obtain ⟨q, hq, hqd⟩ := exists_mem_frontier_infDist_compl_eq_dist hzΩ (nonempty_compl.1 hΩc)
+  have h1 := hvη z (subset_closure hzΩ) q (frontier_subset_closure hq) (by
+    rw [← hqd, ← hz']; exact hkη)
+  have h2 := hkU z hz'.le
+  rw [Real.dist_eq] at h1 h2
+  linarith [abs_le.1 h1.le, abs_le.1 h2, hm q hq]
+
+/-- **The estimate up to `ε`.** With `F` the principal part of the weak Hessian and `Γ⁺` the upper
+contact set of `v` on `Ω`, for every `ε > 0`,
+`|B(0, (v x - m - 3ε) / diam Ω)| ≤ n⁻ⁿ (‖F⁻ / D*‖_{Lⁿ(Γ⁺)} + 2ε)ⁿ`. It is the classical estimate
+for a mollification of `u` with a small enough radius. -/
+private theorem volume_ball_le_add_of_wkp
+    (hΩb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι)))
+    (hΩc : (Ω : Set (EuclideanSpace ℝ ι))ᶜ.Nonempty) {v : EuclideanSpace ℝ ι → ℝ}
+    (hcont : ContinuousOn v (closure Ω)) (hv : Wkp.value 2 u =ᵐ[volume.restrict Ω] v)
+    (ha : ∀ᵐ y ∂(volume.restrict Ω), (a y).PosDef)
+    (hmeas : AEStronglyMeasurable a (volume.restrict Ω)) {K : ℝ}
+    (hK : ∀ᵐ y ∂(volume.restrict Ω),
+      ∑ i, ∑ j, |a y i j| ≤ K * (a y).det ^ (Fintype.card ι : ℝ)⁻¹)
+    (hgΩ : MemLp (fun y => (∑ i, ∑ j, a y i j *
+          Wkp.iteratedGradient 1 u y (EuclideanSpace.single j 1) i)⁻ /
+            (a y).det ^ (Fintype.card ι : ℝ)⁻¹) (Fintype.card ι) (volume.restrict Ω))
+    {m : ℝ} (hm : ∀ z ∈ frontier (Ω : Set (EuclideanSpace ℝ ι)), v z ≤ m)
+    {x : EuclideanSpace ℝ ι} (hx : x ∈ Ω) {ε : ℝ} (hε : 0 < ε) :
+    volume (ball (0 : EuclideanSpace ℝ ι)
+        ((v x - m - 3 * ε) / diam (Ω : Set (EuclideanSpace ℝ ι)))) ≤
+      ENNReal.ofReal (((Fintype.card ι : ℝ) ^ Fintype.card ι)⁻¹) *
+        (eLpNorm (fun y => (∑ i, ∑ j, a y i j *
+          Wkp.iteratedGradient 1 u y (EuclideanSpace.single j 1) i)⁻ /
+            (a y).det ^ (Fintype.card ι : ℝ)⁻¹) (Fintype.card ι)
+          (volume.restrict (upperContactSet v Ω)) + ENNReal.ofReal (2 * ε)) ^
+        Fintype.card ι := by
+  have := nonempty_of_one_le_card (ι := ι)
+  set w := fun k => Wkp.smoothField (abpBump k) (Wkp.value 2 u)
+  set A := eLpNorm (fun y => (∑ i, ∑ j, a y i j *
+    Wkp.iteratedGradient 1 u y (EuclideanSpace.single j 1) i)⁻ /
+      (a y).det ^ (Fintype.card ι : ℝ)⁻¹) (Fintype.card ι) (volume.restrict (upperContactSet v Ω))
+  have hA : A ≠ ∞ := ((eLpNorm_mono_measure _ (Measure.restrict_mono upperContactSet_subset
+    le_rfl)).trans_lt hgΩ.eLpNorm_lt_top).ne
+  have hE5 := ENNReal.Tendsto.const_mul (tendsto_eLpNorm_smoothField_iteratedGradient_sub u)
+    (Or.inr (enorm_ne_top : ‖K‖ₑ ≠ ∞))
+  rw [mul_zero] at hE5
+  obtain ⟨η, hη, hvη⟩ := Metric.uniformContinuousOn_iff.1
+    (hΩb.isCompact_closure.uniformContinuousOn_of_continuous hcont) ε hε
+  -- Choose `k` large enough for all the approximations at once.
+  obtain ⟨k, hk4, hk5, hkU, hkx, hkη⟩ :=
+    ((eventually_eLpNorm_upperContactSet_lt u hΩb hΩc hcont hv hgΩ
+      (ENNReal.lt_add_right hA (ENNReal.ofReal_pos.2 hε).ne')).and
+    ((hE5.eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 hε))).and
+    ((eventually_dist_smoothField_le u hΩb hcont hv hε).and
+    ((eventually_lt_infDist Ω.isOpen hΩc hx 2).and
+    ((tendsto_abpRadius.const_mul 2).eventually
+      (gt_mem_nhds (by rwa [mul_zero] : (2 : ℝ) * 0 < η))))))).exists
+  have hxV : x ∈ abpDomain Ω k := hkx
+  have hstep := volume_ball_le_eLpNorm_smoothField u hΩb (abpBump k) (isOpen_abpDomain _ k)
+    (fun y hy => closedBall_subset_of_mem_abpDomain hy) ha hmeas
+    (fun z hz => smoothField_le_of_mem_frontier_abpDomain u hΩc hm hvη hkη hkU hz) hxV
+  refine (measure_mono ?_).trans (hstep.trans ?_)
+  · -- Compare the radii: `v x - m - 3ε ≤ w x - (m + 2ε)` and `diam V ≤ diam Ω`.
+    have hwx := hkU x hkx.le
+    rw [Real.dist_eq] at hwx
+    have hnum : v x - m - 3 * ε ≤ w k x - (m + 2 * ε) := by linarith [abs_le.1 hwx]
+    rcases le_or_gt (v x - m - 3 * ε) 0 with hneg | hpos
+    · rw [ball_eq_empty.2 (div_nonpos_of_nonpos_of_nonneg hneg diam_nonneg)]
+      exact empty_subset _
+    have hVΩ := abpDomain_subset (Ω : Set (EuclideanSpace ℝ ι)) k
+    refine ball_subset_ball ((div_le_div_of_nonneg_right hnum diam_nonneg).trans
+      (div_le_div_of_nonneg_left (by linarith)
+        ((isOpen_abpDomain _ k).diam_pos (hΩb.subset hVΩ) hxV) (diam_mono hVΩ hΩb)))
+  · gcongr
+    calc _ ≤ _ := eLpNorm_negPart_smoothField_le u ha hmeas hK (abpBump k)
+          (S := upperContactSet (w k) (abpDomain Ω k))
+          (upperContactSet_subset.trans (abpDomain_subset _ k))
+      _ ≤ A + ENNReal.ofReal ε + ENNReal.ofReal ε := add_le_add hk4.le hk5.le
+      _ = A + ENNReal.ofReal (2 * ε) := by
+          rw [add_assoc, ← ENNReal.ofReal_add hε.le hε.le, two_mul]
+
+/-- On `Ω`, `F⁻ / D* ≤ K ‖D²u‖` for the principal part `F` of the weak Hessian, so
+`F⁻ / D* ∈ Lⁿ(Ω)`. -/
+private theorem memLp_negPart_div_det_rpow
+    (ha : ∀ᵐ y ∂(volume.restrict Ω), (a y).PosDef)
+    (hmeas : AEStronglyMeasurable a (volume.restrict Ω)) {K : ℝ}
+    (hK : ∀ᵐ y ∂(volume.restrict Ω),
+      ∑ i, ∑ j, |a y i j| ≤ K * (a y).det ^ (Fintype.card ι : ℝ)⁻¹) :
+    MemLp (fun y => (∑ i, ∑ j, a y i j *
+      Wkp.iteratedGradient 1 u y (EuclideanSpace.single j 1) i)⁻ /
+        (a y).det ^ (Fintype.card ι : ℝ)⁻¹) (Fintype.card ι) (volume.restrict Ω) := by
+  set D := Wkp.iteratedGradient 1 u
+  refine MemLp.of_le ((Lp.memLp D).norm.const_mul K) (aestronglyMeasurable_negPart_div_det_rpow
+    hmeas (aestronglyMeasurable_sum_mul_apply_single hmeas (Lp.aestronglyMeasurable D))) ?_
+  filter_upwards [ha, hK] with y hay hKy
+  have h := negPart_div_det_rpow_le hay hKy (D y) 0
+  simp only [_root_.zero_apply, PiLp.zero_apply, mul_zero, Finset.sum_const_zero,
+    negPart_zero, zero_div, zero_add, sub_zero] at h
+  rw [Real.norm_of_nonneg (div_nonneg (negPart_nonneg _)
+    (Real.rpow_nonneg hay.det_pos.le _)), Real.norm_eq_abs]
+  exact h.trans (le_abs_self _)
+
+/-- On a subset `Γ` of `Ω`, the right-hand side `n⁻ⁿ ‖F⁻ / D*‖ⁿ_{Lⁿ(Γ)}` written with the principal
+part `F` of the weak Hessian is at most `∫_Γ (f⁻ / n)ⁿ / det a` for every `f ≤ F`. -/
+private theorem mul_eLpNorm_pow_le_setLIntegral
+    (ha : ∀ᵐ y ∂(volume.restrict Ω), (a y).PosDef)
+    (hmeas : AEStronglyMeasurable a (volume.restrict Ω)) {f : EuclideanSpace ℝ ι → ℝ}
+    (hf : ∀ᵐ y ∂(volume.restrict Ω),
+      f y ≤ ∑ i, ∑ j, a y i j * Wkp.iteratedGradient 1 u y (EuclideanSpace.single j 1) i)
+    {Γ : Set (EuclideanSpace ℝ ι)} (hΓ : Γ ⊆ Ω) :
+    ENNReal.ofReal (((Fintype.card ι : ℝ) ^ Fintype.card ι)⁻¹) *
+        eLpNorm (fun y => (∑ i, ∑ j, a y i j *
+          Wkp.iteratedGradient 1 u y (EuclideanSpace.single j 1) i)⁻ /
+            (a y).det ^ (Fintype.card ι : ℝ)⁻¹) (Fintype.card ι) (volume.restrict Γ) ^
+          Fintype.card ι ≤
+      ∫⁻ y in Γ, ENNReal.ofReal (((f y)⁻ / Fintype.card ι) ^ Fintype.card ι / (a y).det) := by
+  have := nonempty_of_one_le_card (ι := ι)
+  have hle : volume.restrict Γ ≤ volume.restrict Ω := Measure.restrict_mono hΓ le_rfl
+  rw [← setLIntegral_ofReal_negPart_div_card_pow_div_det_eq
+    (ae_restrict_of_ae_restrict_of_subset hΓ ha)
+    (aestronglyMeasurable_negPart_div_det_rpow (hmeas.mono_measure hle)
+      (aestronglyMeasurable_sum_mul_apply_single (hmeas.mono_measure hle)
+        ((Lp.aestronglyMeasurable _).mono_measure hle)))]
+  refine lintegral_mono_ae ?_
+  filter_upwards [ae_restrict_of_ae_restrict_of_subset hΓ hf] with y hy
+  rcases le_or_gt (a y).det 0 with hd | hd
+  · rw [ENNReal.ofReal_of_nonpos (div_nonpos_of_nonneg_of_nonpos
+      (pow_nonneg (div_nonneg (negPart_nonneg _) (Nat.cast_nonneg _)) _) hd)]
+    exact zero_le
+  refine ENNReal.ofReal_le_ofReal (div_le_div_of_nonneg_right ?_ hd.le)
+  refine pow_le_pow_left₀ (div_nonneg (negPart_nonneg _) (Nat.cast_nonneg _))
+    (div_le_div_of_nonneg_right ?_ (Nat.cast_nonneg _)) _
+  rw [negPart_def, negPart_def]
+  exact max_le_max (neg_le_neg hy) le_rfl
+
+omit [DecidableEq ι] [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] in
+/-- **Letting `ε → 0`.** If `0 < t / d` with `d > 0` and
+`|B(0, (t - 3ε) / d)| ≤ C (A + 2ε)ⁿ` for every `ε > 0`, then `|B(0, t / d)| ≤ C Aⁿ`. -/
+private theorem volume_ball_le_of_forall_pos {t d : ℝ} (hR : 0 < t / d) {C A : ℝ≥0∞}
+    (hC : C ≠ ∞) (h : ∀ ε : ℝ, 0 < ε → volume (ball (0 : EuclideanSpace ℝ ι) ((t - 3 * ε) / d)) ≤
+      C * (A + ENNReal.ofReal (2 * ε)) ^ Fintype.card ι) :
+    volume (ball (0 : EuclideanSpace ℝ ι) (t / d)) ≤ C * A ^ Fintype.card ι := by
+  have hrad : Tendsto (fun ε : ℝ => (t - 3 * ε) / d) (𝓝 0) (𝓝 (t / d)) := by
+    have hc : Continuous fun ε : ℝ => (t - 3 * ε) / d := by fun_prop
+    simpa using hc.tendsto 0
+  -- For small `ε` the radius is positive, and the volume is `((t - 3ε) / d)ⁿ ωₙ`.
+  have hL : Tendsto (fun ε : ℝ => volume (ball (0 : EuclideanSpace ℝ ι) ((t - 3 * ε) / d)))
+      (𝓝[>] 0) (𝓝 (volume (ball (0 : EuclideanSpace ℝ ι) (t / d)))) := by
+    rw [Measure.addHaar_ball_of_pos _ _ hR]
+    refine Tendsto.congr' ?_ ((ENNReal.Tendsto.mul_const (ENNReal.tendsto_ofReal (hrad.pow _))
+      (Or.inr measure_ball_lt_top.ne)).mono_left nhdsWithin_le_nhds)
+    filter_upwards [(hrad.eventually (lt_mem_nhds hR)).filter_mono nhdsWithin_le_nhds]
+      with ε hε
+    rw [Measure.addHaar_ball_of_pos _ _ hε]
+  have hRt : Tendsto (fun ε : ℝ => C * (A + ENNReal.ofReal (2 * ε)) ^ Fintype.card ι)
+      (𝓝[>] 0) (𝓝 (C * A ^ Fintype.card ι)) := by
+    have hc : Continuous fun ε : ℝ => ENNReal.ofReal (2 * ε) :=
+      ENNReal.continuous_ofReal.comp (continuous_const.mul continuous_id)
+    have h1 : Tendsto (fun ε : ℝ => A + ENNReal.ofReal (2 * ε)) (𝓝 0) (𝓝 A) := by
+      simpa using tendsto_const_nhds.add (hc.tendsto 0)
+    exact (ENNReal.Tendsto.const_mul (((ENNReal.continuous_pow _).tendsto A).comp h1)
+      (Or.inr hC)).mono_left nhdsWithin_le_nhds
+  exact le_of_tendsto_of_tendsto hL hRt (eventually_nhdsWithin_of_forall h)
+
+/-! ### The estimate -/
+
+/-- **The Aleksandrov–Bakelman–Pucci estimate for strong subsolutions, measure form**
+(Gilbarg–Trudinger, Lemma 9.3 for `W^{2,n}` functions, without drift). Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be
+bounded and open, let `u ∈ W^{2,n}(Ω)` agree almost everywhere on `Ω` with a function `v`
+continuous on `closure Ω`, and let `m` bound `v` on `frontier Ω`. Let `a` be measurable on `Ω`,
+with `a y` positive definite and `∑ᵢⱼ |aⁱʲ(y)| ≤ K (det a(y))^{1/n}` for almost every `y ∈ Ω`,
+and let
+`f ≤ ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu` almost everywhere on `Ω`. Then for `x ∈ Ω`,
+`|B(0, (v x - m) / diam Ω)| ≤ ∫_{Γ⁺} (f⁻ / n)ⁿ / det a`, where `Γ⁺` is the upper contact set of
+`v` on `Ω`. -/
+theorem volume_ball_le_setLIntegral_upperContactSet_of_wkp
+    (hΩb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) {v : EuclideanSpace ℝ ι → ℝ}
+    (hcont : ContinuousOn v (closure Ω)) (hv : Wkp.value 2 u =ᵐ[volume.restrict Ω] v)
+    (ha : ∀ᵐ y ∂(volume.restrict Ω), (a y).PosDef)
+    (hmeas : AEStronglyMeasurable a (volume.restrict Ω)) {K : ℝ}
+    (hK : ∀ᵐ y ∂(volume.restrict Ω),
+      ∑ i, ∑ j, |a y i j| ≤ K * (a y).det ^ (Fintype.card ι : ℝ)⁻¹)
+    {f : EuclideanSpace ℝ ι → ℝ} (hf : ∀ᵐ y ∂(volume.restrict Ω),
+      f y ≤ ∑ i, ∑ j, a y i j * Wkp.iteratedGradient 1 u y (EuclideanSpace.single j 1) i)
+    {m : ℝ} (hm : ∀ z ∈ frontier (Ω : Set (EuclideanSpace ℝ ι)), v z ≤ m)
+    {x : EuclideanSpace ℝ ι} (hx : x ∈ Ω) :
+    volume (ball (0 : EuclideanSpace ℝ ι) ((v x - m) / diam (Ω : Set (EuclideanSpace ℝ ι)))) ≤
+      ∫⁻ y in upperContactSet v Ω,
+        ENNReal.ofReal (((f y)⁻ / Fintype.card ι) ^ Fintype.card ι / (a y).det) := by
+  have := nonempty_of_one_le_card (ι := ι)
+  have hΩc : (Ω : Set (EuclideanSpace ℝ ι))ᶜ.Nonempty := nonempty_compl.2 fun h =>
+    NormedSpace.unbounded_univ ℝ (EuclideanSpace ℝ ι) (h ▸ hΩb)
+  refine le_trans ?_ (mul_eLpNorm_pow_le_setLIntegral u ha hmeas hf upperContactSet_subset)
+  rcases le_or_gt (v x) m with hvm | hvm
+  · rw [ball_eq_empty.2 (div_nonpos_of_nonpos_of_nonneg (sub_nonpos.2 hvm) diam_nonneg),
+      measure_empty]
+    exact zero_le
+  exact volume_ball_le_of_forall_pos (div_pos (sub_pos.2 hvm)
+    (Ω.isOpen.diam_pos hΩb hx)) ENNReal.ofReal_ne_top fun ε hε =>
+      volume_ball_le_add_of_wkp u hΩb hΩc hcont hv ha hmeas hK
+        (memLp_negPart_div_det_rpow u ha hmeas hK) hm hx hε
+
+/-- **The Aleksandrov–Bakelman–Pucci estimate for strong subsolutions** (Gilbarg–Trudinger,
+Theorem 9.1 for `W^{2,n}` functions, without drift). Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be bounded and open,
+let `u ∈ W^{2,n}(Ω)` agree almost everywhere on `Ω` with a function `v` continuous on
+`closure Ω`, and let `m` bound `v` on `frontier Ω`. Let `a` be measurable on `Ω`, with `a y`
+positive definite and `∑ᵢⱼ |aⁱʲ(y)| ≤ K D*(y)` for almost every `y ∈ Ω`, where
+`D* = (det a)^{1/n}`, and
+let `f ≤ ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu` almost everywhere on `Ω`, with `f⁻ / D* ∈ Lⁿ(Γ⁺)` on the upper contact
+set `Γ⁺` of `v`. Then on `Ω`, `v ≤ m + diam Ω / (n ωₙ^{1/n}) ‖f⁻ / D*‖_{Lⁿ(Γ⁺)}`, where `ωₙ`
+is the volume of the unit ball. -/
+theorem le_add_mul_eLpNorm_negPart_div_det_rpow_of_wkp
+    (hΩb : Bornology.IsBounded (Ω : Set (EuclideanSpace ℝ ι))) {v : EuclideanSpace ℝ ι → ℝ}
+    (hcont : ContinuousOn v (closure Ω)) (hv : Wkp.value 2 u =ᵐ[volume.restrict Ω] v)
+    (ha : ∀ᵐ y ∂(volume.restrict Ω), (a y).PosDef)
+    (hmeas : AEStronglyMeasurable a (volume.restrict Ω)) {K : ℝ}
+    (hK : ∀ᵐ y ∂(volume.restrict Ω),
+      ∑ i, ∑ j, |a y i j| ≤ K * (a y).det ^ (Fintype.card ι : ℝ)⁻¹)
+    {f : EuclideanSpace ℝ ι → ℝ} (hf : ∀ᵐ y ∂(volume.restrict Ω),
+      f y ≤ ∑ i, ∑ j, a y i j * Wkp.iteratedGradient 1 u y (EuclideanSpace.single j 1) i)
     (hg : MemLp (fun y => (f y)⁻ / (a y).det ^ (Fintype.card ι : ℝ)⁻¹) (Fintype.card ι)
-      (volume.restrict Ω))
-    {V : Set (EuclideanSpace ℝ ι)} (hV : IsOpen V) (hVΩ : V ⊆ Ω)
-    {H : EuclideanSpace ℝ ι → IteratedGradient (EuclideanSpace ℝ ι) 1}
-    (hf : ∀ᵐ y ∂volume.restrict V, f y ≤ ∑ i, ∑ j, a y i j *
-      ⟪H y (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ)
-    {w : EuclideanSpace ℝ ι → ℝ} (hw : ContDiff ℝ 2 w)
-    (he : MemLp (fun y => iteratedGradientChain w 1 y - H y) (Fintype.card ι) (volume.restrict V))
-    {m' : ℝ} (hm : ∀ z ∈ frontier V, w z ≤ m') (hx : x ∈ V) :
-    w x ≤ m' + diam Ω / (Fintype.card ι *
-        (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal ^ (Fintype.card ι : ℝ)⁻¹) *
-      ((eLpNorm (fun y => (f y)⁻ / (a y).det ^ (Fintype.card ι : ℝ)⁻¹) (Fintype.card ι)
-          (volume.restrict Ω)).toReal + Fintype.card ι ^ 2 * Lam / lam *
-        (eLpNorm (fun y => iteratedGradientChain w 1 y - H y)
-          (Fintype.card ι) (volume.restrict V)).toReal) := by
-  set n := Fintype.card ι
-  set D : EuclideanSpace ℝ ι → ℝ := fun y => (a y).det ^ (n : ℝ)⁻¹
-  set e := fun y => iteratedGradientChain w 1 y - H y
-  set Kc : ℝ := n ^ 2 * Lam / lam
-  set G : EuclideanSpace ℝ ι → ℝ := (fun y => (f y)⁻ / D y) + fun y => Kc * ‖e y‖
-  have hKc : 0 ≤ Kc := div_nonneg (mul_nonneg (sq_nonneg _) ha.upper_nonneg) ha.pos.le
-  have hD (y : EuclideanSpace ℝ ι) (hy : y ∈ Ω) : lam ≤ D y := by
-    calc lam = (lam ^ n) ^ (n : ℝ)⁻¹ :=
-          (Real.pow_rpow_inv_natCast ha.pos.le Fintype.card_ne_zero).symm
-      _ ≤ D y := Real.rpow_le_rpow (pow_nonneg ha.pos.le _)
-          (ha.pow_card_le_det hy (ha_symm y hy)) (by positivity)
-  have hμ : volume.restrict V ≤ volume.restrict Ω := Measure.restrict_mono hVΩ le_rfl
-  have hμc : volume.restrict (upperContactSet w V) ≤ volume.restrict V :=
-    Measure.restrict_mono (fun y hy => upperContactSet_subset hy) le_rfl
-  -- On `V`, the negative part of `-(G D*)` divided by `D*` is `G`.
-  have hGeq : (fun y => (-(G y * D y))⁻ / D y) =ᵐ[volume.restrict V] G := by
-    filter_upwards [ae_restrict_mem hV.measurableSet] with y hy
-    have hD0 : 0 < D y := ha.pos.trans_le (hD y (hVΩ hy))
-    have hG0 : 0 ≤ G y :=
-      add_nonneg (div_nonneg (negPart_nonneg _) hD0.le) (mul_nonneg hKc (norm_nonneg _))
-    rw [negPart_eq_neg'.2 (by simpa using mul_nonneg hG0 hD0.le), neg_neg,
-      mul_div_cancel_right₀ _ hD0.ne']
-  have h := le_add_mul_eLpNorm_negPart_div_det_rpow_of_ae (f := fun y => -(G y * D y))
-    (hΩb.subset hVΩ) hV hw.continuous.continuousOn hw.contDiffOn
-    (fun y hy => ha.posDef (hVΩ (upperContactSet_subset hy))
-      (ha_symm y (hVΩ (upperContactSet_subset hy)))) (ae_mono hμc ?_)
-    (MemLp.ae_eq (hGeq.filter_mono (ae_mono hμc)).symm
-      (((hg.mono_measure hμ).add (he.norm.const_mul Kc)).mono_measure hμc)) hm hx
-  · rw [eLpNorm_congr_ae (hGeq.filter_mono (ae_mono hμc))] at h
-    refine h.trans (add_le_add le_rfl (mul_le_mul
-      (div_le_div_of_nonneg_right (diam_mono hVΩ hΩb) (by positivity)) ?_ ENNReal.toReal_nonneg
-      (div_nonneg diam_nonneg (by positivity))))
-    have hKe : (fun y => Kc * ‖e y‖) = Kc • fun y => ‖e y‖ := by
-      ext y
-      rw [Pi.smul_apply, smul_eq_mul]
-    -- Minkowski's inequality for `G = f⁻ / D* + Kc ‖e‖`.
-    have hle : eLpNorm G n (volume.restrict (upperContactSet w V)) ≤
-        eLpNorm (fun y => (f y)⁻ / D y) n (volume.restrict Ω) + ‖Kc‖ₑ * eLpNorm e n
-          (volume.restrict V) := by
-      refine (eLpNorm_mono_measure _ hμc).trans ((eLpNorm_add_le Fact.out).trans
-        (add_le_add (eLpNorm_mono_measure _ hμ) (le_of_eq ?_)))
-      rw [hKe, eLpNorm_const_smul, eLpNorm_norm e he.aestronglyMeasurable]
-    refine (ENNReal.toReal_mono (ENNReal.add_ne_top.2 ⟨hg.eLpNorm_ne_top,
-      ENNReal.mul_ne_top enorm_ne_top he.eLpNorm_ne_top⟩) hle).trans_eq ?_
-    rw [ENNReal.toReal_add hg.eLpNorm_ne_top (ENNReal.mul_ne_top enorm_ne_top he.eLpNorm_ne_top),
-      ENNReal.toReal_mul, toReal_enorm, Real.norm_of_nonneg hKc]
-  · -- The differential inequality for `w` on `V`, from that for `H` and the Hessian comparison.
-    filter_upwards [hf, ae_restrict_mem hV.measurableSet] with y hfy hy
-    refine (neg_mul_le_sum_mul_inner (H₁ := iteratedGradientChain w 1 y) ha.upper_nonneg
-      (ha.abs_apply_le (hVΩ hy)) ha.pos (hD y (hVΩ hy)) hfy).trans_eq ?_
-    -- `H₁` is typed as a continuous linear map, the unfolding of `IteratedGradient _ 1`, so
-    -- the order-one identity is applied by `exact` rather than by rewriting.
-    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
-      congrArg (a y i j * ·) (inner_iteratedGradientChain_one_apply w y _ _)
-
-/-- **The Aleksandrov–Bakelman–Pucci estimate for strong solutions** (Gilbarg–Trudinger,
-Theorem 9.1 without drift). Let `Ω ⊆ ℝⁿ`, `n ≥ 1`, be bounded and open, and let `a` be symmetric
-and uniformly elliptic on `Ω` with constants `λ ≤ Λ`. Let `v` be continuous on `closure Ω` with
-`v ≤ m` on `frontier Ω`, and let `v ∈ W^{2,n}_loc(Ω)` satisfy `f ≤ ∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼv` almost
-everywhere: on every open `U` with compact closure in `Ω` there is an element of `W^{2,n}(U)`
-agreeing almost everywhere on `U` with `v` whose weak second derivatives satisfy the inequality
-almost everywhere on `U`. If `f⁻ / D*`, with `D* = (det a)^{1/n}`, lies in `Lⁿ(Ω)`, then on `Ω`,
-`v ≤ m + diam Ω / (n ωₙ^{1/n}) ‖f⁻ / D*‖_{Lⁿ(Ω)}`, where `ωₙ` is the volume of the unit ball. -/
-theorem le_add_mul_eLpNorm_negPart_div_det_rpow_of_wkp [Nonempty ι]
-    [Fact (1 ≤ (Fintype.card ι : ℝ≥0∞))] (hΩb : Bornology.IsBounded Ω) (hΩ : IsOpen Ω)
-    (hv : ContinuousOn v (closure Ω))
-    (hu : ∀ U : Opens (EuclideanSpace ℝ ι), IsCompact (closure (U : Set (EuclideanSpace ℝ ι))) →
-      closure (U : Set (EuclideanSpace ℝ ι)) ⊆ Ω → ∃ uU : Wkp volume U (Fintype.card ι) 2,
-        (Wkp.value 2 uU : EuclideanSpace ℝ ι → ℝ) =ᵐ[volume.restrict U] v ∧
-        ∀ᵐ y ∂volume.restrict (U : Set (EuclideanSpace ℝ ι)), f y ≤ ∑ i, ∑ j, a y i j *
-          ⟪Wkp.iteratedGradient 1 uU y (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ)
-    (ha : UniformlyEllipticOn Ω a lam Lam) (ha_symm : ∀ y ∈ Ω, (a y).IsSymm)
-    (hg : MemLp (fun y => (f y)⁻ / (a y).det ^ (Fintype.card ι : ℝ)⁻¹) (Fintype.card ι)
-      (volume.restrict Ω))
-    (hm : ∀ z ∈ frontier Ω, v z ≤ m) (hx : x ∈ Ω) :
-    v x ≤ m + diam Ω / (Fintype.card ι *
+      (volume.restrict (upperContactSet v Ω)))
+    {m : ℝ} (hm : ∀ z ∈ frontier (Ω : Set (EuclideanSpace ℝ ι)), v z ≤ m)
+    {x : EuclideanSpace ℝ ι} (hx : x ∈ Ω) :
+    v x ≤ m + diam (Ω : Set (EuclideanSpace ℝ ι)) / (Fintype.card ι *
         (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal ^ (Fintype.card ι : ℝ)⁻¹) *
       (eLpNorm (fun y => (f y)⁻ / (a y).det ^ (Fintype.card ι : ℝ)⁻¹) (Fintype.card ι)
-        (volume.restrict Ω)).toReal := by
-  set n := Fintype.card ι
-  set C := diam Ω / (n * (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal ^ (n : ℝ)⁻¹)
-  set N := (eLpNorm (fun y => (f y)⁻ / (a y).det ^ (n : ℝ)⁻¹) n (volume.restrict Ω)).toReal
-  set Kc : ℝ := n ^ 2 * Lam / lam
-  have hC : 0 ≤ C := div_nonneg diam_nonneg (by positivity)
-  have hKc : 0 ≤ Kc := div_nonneg (mul_nonneg (sq_nonneg _) ha.upper_nonneg) ha.pos.le
-  refine le_of_forall_pos_le_add fun ε hε => ?_
-  have hΩu : Ω ≠ univ := fun h => NormedSpace.unbounded_univ ℝ (EuclideanSpace ℝ ι) (h ▸ hΩb)
-  -- `v ≤ m + ε / 4` on a boundary layer `{dist(·, Ωᶜ) < ρ}`.
-  obtain ⟨ρ, hρ, hlayer⟩ := exists_pos_forall_infDist_compl_lt_le_add hΩb hΩu hv hm
-    (by positivity : 0 < ε / 4)
-  have hxd : 0 < infDist x Ωᶜ :=
-    (hΩ.isClosed_compl.notMem_iff_infDist_pos (nonempty_compl.2 hΩu)).1 (notMem_compl_iff.2 hx)
-  -- `V = {dist(·, Ωᶜ) > r}` contains `x`, and its closure lies in the compact `K ⊆ Ω`.
-  set r := min (ρ / 2) (infDist x Ωᶜ / 2)
-  have hr : 0 < r := lt_min (half_pos hρ) (half_pos hxd)
-  set V : Set (EuclideanSpace ℝ ι) := {y | r < infDist y Ωᶜ}
-  set K : Set (EuclideanSpace ℝ ι) := {y | r ≤ infDist y Ωᶜ}
-  have hV : IsOpen V := isOpen_lt continuous_const (continuous_infDist_pt _)
-  have hKc' : IsClosed K := isClosed_le continuous_const (continuous_infDist_pt _)
-  have hKΩ : K ⊆ Ω := setOf_le_infDist_compl_subset hr
-  have hK : IsCompact K := hΩb.isCompact_setOf_le_infDist_compl hr
-  have hVK : V ⊆ K := ofPred_subset_ofPred.2 fun _ => le_of_lt
-  have hxV : x ∈ V := (min_le_right _ _).trans_lt (half_lt_self hxd)
-  -- The Sobolev hypothesis on `W = {dist(·, Ωᶜ) > r / 2}`, whose closure is compact in `Ω`.
-  set W₀ : Set (EuclideanSpace ℝ ι) := {y | r / 2 < infDist y Ωᶜ}
-  let W : Opens (EuclideanSpace ℝ ι) := ⟨W₀, isOpen_lt continuous_const (continuous_infDist_pt _)⟩
-  have hW : (W : Set (EuclideanSpace ℝ ι)) = W₀ := Opens.coe_mk
-  have hWcl : closure (W : Set (EuclideanSpace ℝ ι)) ⊆ {y | r / 2 ≤ infDist y Ωᶜ} := by
-    rw [hW]
-    exact closure_minimal (ofPred_subset_ofPred.2 fun _ => le_of_lt)
-      (isClosed_le continuous_const (continuous_infDist_pt _))
-  have hWΩ : closure (W : Set (EuclideanSpace ℝ ι)) ⊆ Ω :=
-    hWcl.trans (setOf_le_infDist_compl_subset (half_pos hr))
-  obtain ⟨uW, huW, hfW⟩ := hu W
-    ((hΩb.isCompact_setOf_le_infDist_compl (half_pos hr)).of_isClosed_subset isClosed_closure hWcl)
-    hWΩ
-  have hKW : K ⊆ W := by
-    rw [hW]
-    exact ofPred_subset_ofPred.2 fun _ => (half_lt_self hr).trans_le
-  -- Mollifiers `w j` of `v`, uniformly close to `v` on `K`, with Hessians close in `Lⁿ(K)`.
-  obtain ⟨w, hw, hwv, hwe⟩ :=
-    Wkp.exists_contDiff_tendstoUniformlyOn_tendsto_eLpNorm_iteratedGradientChain_sub
-      (ENNReal.natCast_ne_top _) 1 uW
-      (hv.mono fun y hy => subset_closure (hWΩ (subset_closure hy))) huW hK hKW
-  set θ := ε / 4 / ((C + 1) * (Kc + 1))
-  have hθ : 0 < θ := by positivity
-  obtain ⟨j, hj, hje⟩ := ((Metric.tendstoUniformlyOn_iff.1 hwv (ε / 4) (by positivity)).and
-    (hwe.eventually (gt_mem_nhds (ENNReal.ofReal_pos.2 hθ)))).exists
-  have hw2 : ContDiff ℝ 2 (w j) := contDiff_infty.1 (hw j) 2
-  have hμ : volume.restrict V ≤ volume.restrict K := Measure.restrict_mono hVK le_rfl
-  have heV := (eLpNorm_mono_measure _ hμ).trans hje.le
-  have he : MemLp (fun y => iteratedGradientChain (w j) 1 y - Wkp.iteratedGradient 1 uW y) n
-      (volume.restrict V) :=
-    heV.trans_lt ENNReal.ofReal_lt_top
-  -- On `frontier V`, `w j ≤ v + ε / 4 ≤ m + ε / 2`.
-  have hfr (z) (hz : z ∈ frontier V) : w j z ≤ m + ε / 4 + ε / 4 := by
-    have hzK : z ∈ K := closure_minimal hVK hKc' (frontier_subset_closure hz)
-    rw [hV.frontier_eq] at hz
-    have hz1 := hlayer z (hKΩ hzK) ((not_lt.1 hz.2).trans_lt
-      ((min_le_left _ _).trans_lt (half_lt_self hρ)))
-    have hz2 := hj z hzK
-    rw [Real.dist_eq] at hz2
-    linarith [(abs_lt.1 hz2).1]
-  have hstep := le_add_mul_add_mul_eLpNorm_iteratedGradientChain_sub hΩb ha ha_symm hg hV
-    (hVK.trans hKΩ) (ae_mono (Measure.restrict_mono (hVK.trans hKW) le_rfl) hfW) hw2 he hfr hxV
-  have hx' := hj x (hVK hxV)
-  rw [Real.dist_eq] at hx'
-  -- The Hessian error contributes at most `C Kc θ ≤ ε / 4`.
-  have herr : C * (N + Kc * (eLpNorm (fun y => iteratedGradientChain (w j) 1 y -
-      Wkp.iteratedGradient 1 uW y) n (volume.restrict V)).toReal) ≤ C * N + ε / 4 := by
-    have h1 : (eLpNorm (fun y => iteratedGradientChain (w j) 1 y -
-        Wkp.iteratedGradient 1 uW y) n (volume.restrict V)).toReal ≤ θ :=
-      ENNReal.toReal_le_of_le_ofReal hθ.le heV
-    have h2 : C * Kc * θ ≤ ε / 4 := by
-      calc C * Kc * θ ≤ (C + 1) * (Kc + 1) * θ := by gcongr <;> nlinarith
-        _ = ε / 4 := by simp only [θ]; field_simp
-    nlinarith [mul_le_mul_of_nonneg_left h1 (mul_nonneg hC hKc)]
-  linarith [(abs_lt.1 hx').2]
+        (volume.restrict (upperContactSet v Ω))).toReal := by
+  have := nonempty_of_one_le_card (ι := ι)
+  exact le_add_mul_eLpNorm_negPart_div_det_rpow_of_volume_ball_le hΩb Ω.isOpen hx
+    (ae_restrict_of_ae_restrict_of_subset upperContactSet_subset ha) hg
+    (volume_ball_le_setLIntegral_upperContactSet_of_wkp u hΩb hcont hv ha hmeas hK hf hm hx)
+
+end Mollification
 
 end PDE
 

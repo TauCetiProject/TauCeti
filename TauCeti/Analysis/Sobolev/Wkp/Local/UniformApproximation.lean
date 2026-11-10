@@ -26,7 +26,7 @@ transfers the values and boundary values of the solution, and the `Lᵖ` converg
 equation.
 
 The derivative identity behind the `Lᵖ` convergence is
-`TauCeti.Wkp.iteratedGradientChain_normed_convolution_indicator_value` from
+`TauCeti.Wkp.iteratedGradientChain_smoothField_value` from
 `TauCeti.Analysis.Sobolev.Wkp.Mollification`: wherever the support of the bump stays inside `Ω`,
 the classical derivatives of the mollified value are the mollified weak derivatives.
 
@@ -123,8 +123,8 @@ theorem exists_contDiff_tendstoUniformlyOn_tendsto_eLpNorm_iteratedGradientChain
         Omega.isOpen.measurableSet (U : Set E) (iteratedGradient k u),
       iteratedGradient_restrictL_ae hUΩ k u, ae_restrict_mem U.isOpen.measurableSet]
       with x h₁ h₂ hx
-    rw [Pi.sub_apply, h₁, h₂, hw,
-      iteratedGradientChain_normed_convolution_indicator_value (phi j) U.isOpen
-        (fun y hy => (hball j y hy).trans hδΩ) k u x hx]
+    rw [Pi.sub_apply, h₁, h₂, hw, ← smoothField_def (phi j) (value (k + 1) u),
+      iteratedGradientChain_smoothField_value (phi j) U.isOpen
+        (fun y hy => (hball j y hy).trans hδΩ) k u x hx, smoothField_def]
 
 end TauCeti.Wkp
