@@ -127,7 +127,7 @@ theorem mem_positiveSubgroup_iff_exists_prod_of_isSimplyLaced (hs : t.IsSimplyLa
     have hjoin : (⨆ γ ∈ S, (X γ).range) =
         Subgroup.closure (⋃ γ ∈ S, Set.range (X γ)) := by
       simp only [← MonoidHom.coe_range, Subgroup.closure_iUnion, Subgroup.closure_eq]
-    rw [hjoin, D.positiveSubgroup_eq_closure]
+    rw [hjoin, positiveSubgroup, D.subsystemSubgroup_eq_closure]
     congr 1
     ext x
     simp only [Set.mem_ofPred_eq, Set.mem_iUnion, Set.mem_range, S, mem_posRootsFinset, X,

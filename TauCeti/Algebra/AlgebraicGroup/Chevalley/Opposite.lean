@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.OppositeBorel
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Order
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
