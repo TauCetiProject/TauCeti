@@ -401,14 +401,18 @@ theorem Tames.isUnit_one_sub_mul_of_toLinearMap (h₀ : ω.Tames J₀) (h₁ : �
   rw [ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap]
   simpa [hA, hB] using h₀.isUnit_one_sub_mul h₁
 
+variable (J₀ J₁) in
 /-- In operator-norm coordinates, the Cayley transform is the rational expression
-`-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹` of the continuous endomorphisms `J₀` and `J₁`. -/
-theorem Tames.toContinuousLinearMap_cayley (h₀ : ω.Tames J₀) (h₁ : ω.Tames J₁)
+`-(1 + J₀ J₁)(1 - J₀ J₁)⁻¹` of the continuous endomorphisms `J₀` and `J₁`, with the junk
+inverse `0` when `1 - J₀ J₁` is not invertible on either side. -/
+theorem _root_.TauCeti.AlmostComplexStructure.toContinuousLinearMap_cayley
     (hA : A.toLinearMap = J₀.toLinearMap) (hB : B.toLinearMap = J₁.toLinearMap) :
     LinearMap.toContinuousLinearMap (J₀.cayley J₁) = cayleyFormula A B := by
   apply ContinuousLinearMap.coe_injective
-  have hinv := (h₀.isUnit_one_sub_mul_of_toLinearMap h₁ hA hB).map_ringInverse
-    (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ))
+  have : IsLocalHom (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ) (M₁ := V)) :=
+    ⟨fun _ h ↦ ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.mpr h⟩
+  have hinv := map_ringInverse (ContinuousLinearMap.toLinearMapRingHom (R₁ := ℝ) (M₁ := V))
+    (1 - A * B)
   simp only [ContinuousLinearMap.toLinearMapRingHom_apply, map_sub, map_one, map_mul] at hinv
   rw [AlmostComplexStructure.cayley_eq_cayleyFormula, LinearMap.coe_toContinuousLinearMap,
     cayleyFormula_def, cayleyFormula_def, ContinuousLinearMap.toLinearMap_neg,
@@ -435,7 +439,7 @@ theorem Compatible.toContinuousLinearMap_cayleyEquiv_symm_smul_cayley (h₀ : ω
   have hA' : LinearMap.toContinuousLinearMap J₀.toLinearMap = A :=
     ContinuousLinearMap.coe_injective (by rw [LinearMap.coe_toContinuousLinearMap, hA])
   rw [hsymm, h₀.cayleyEquiv_symm_apply_toContinuousLinearMap _ hC, cayleyPathFormula_def, hCdef,
-    h₀.tames.toContinuousLinearMap_cayley h₁ hA hB, hA']
+    J₀.toContinuousLinearMap_cayley J₁ hA hB, hA']
 
 /-- In operator-norm coordinates, compatible Cayley interpolation is the rational
 expression `cayleyPathFormula` with the same weight and endpoints. -/
@@ -466,7 +470,7 @@ theorem Compatible.isUnit_one_sub_smul_cayleyFormula (h₀ : ω.Compatible J₀)
     (h₁ : ω.Tames J₁) {b : ℝ} (hb : |b| ≤ 1) (hA : A.toLinearMap = J₀.toLinearMap)
     (hB : B.toLinearMap = J₁.toLinearMap) :
     IsUnit (1 - b • cayleyFormula A B) := by
-  rw [← h₀.tames.toContinuousLinearMap_cayley h₁ hA hB]
+  rw [← J₀.toContinuousLinearMap_cayley J₁ hA hB]
   refine isUnit_one_sub_of_toLinearMap_mem_cayleyBall (ω := ω) (J₀ := J₀) ?_
   simpa only [ContinuousLinearMap.toLinearMap_smul, LinearMap.coe_toContinuousLinearMap]
     using h₀.smul_cayley_mem_cayleyBall h₁ hb
