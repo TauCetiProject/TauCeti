@@ -54,10 +54,10 @@ embeddings sending some increasing `m`-tuple into a prescribed set `T` of `m`-tu
   into `T`.
 * `Finset.card_filter_injective_exists_mem_le`: at most `n * #B * card V ^ (n - 1)` injective
   `n`-tuples meet a prescribed set `B` of vertices.
-* `Finset.card_filter_injective_mem_range_and_mem_range_eq`: the number of injective maps whose
+* `TauCeti.card_filter_injective_mem_range_and_mem_range_eq`: the number of injective maps whose
   range contains two given distinct elements does not depend on which two.
-* `Finset.descFactorial_two_mul_card_filter_injective_mem_range_and_mem_range`: for injective
-  maps `ι → κ`, that number times `(card κ).descFactorial 2` is
+* `TauCeti.descFactorial_two_mul_card_filter_injective_mem_range_and_mem_range`: for
+  injective maps `ι → κ`, that number times `(card κ).descFactorial 2` is
   `(card κ).descFactorial (card ι) * (card ι).descFactorial 2`.
 -/
 
@@ -265,6 +265,10 @@ theorem card_filter_injective_exists_mem_le [Fintype V] [DecidableEq V] {n : ℕ
   rw [← Nat.card_congr e, Nat.card_eq_fintype_card, Fintype.card_subtype] at h
   simpa only [Fintype.card_fin, Nat.choose_one_right, hT] using h
 
+end Finset
+
+namespace TauCeti
+
 section TwoInRange
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ] {a b : κ}
@@ -337,4 +341,4 @@ theorem descFactorial_two_mul_card_filter_injective_mem_range_and_mem_range
 
 end TwoInRange
 
-end Finset
+end TauCeti
