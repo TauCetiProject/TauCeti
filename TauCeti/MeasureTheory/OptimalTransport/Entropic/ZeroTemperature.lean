@@ -518,12 +518,17 @@ variable {X : Type*} [MeasurableSpace X] [MetricSpace X] [PolishSpace X] [BorelS
 /-- **The zero-temperature limit of the entropic Wasserstein cost.** On a Polish metric space, for
 `0 < p < ∞`, as `ε → 0⁺` the entropically regularised transport cost for the cost `d ^ p`
 converges to `W_p(ν, μ) ^ p`, provided `μ` has finite `p`-moment. No moment hypothesis is needed
-on `ν`: without one both sides are `∞`. -/
-theorem tendsto_entropicTransportCost_wassersteinEDist_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞)
+on `ν`: without one both sides are `∞`. For `p = 0` and `p = ∞` the exponent `p.toReal` vanishes,
+and both sides are `1`. -/
+theorem tendsto_entropicTransportCost_wassersteinEDist_rpow
     (ν μ : Measure X) [IsProbabilityMeasure ν] [IsProbabilityMeasure μ] (hμ : HasFiniteMoment p μ) :
     Tendsto (fun ε ↦ entropicTransportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) ε ν μ)
       (𝓝[>] 0) (𝓝 (wassersteinEDist p ν μ ^ p.toReal)) := by
   have hd : Measurable fun z : X × X ↦ edist z.1 z.2 := measurable_edist
+  by_cases hpt : p.toReal = 0
+  · simp only [hpt, ENNReal.rpow_zero, entropicTransportCost_const]
+    exact tendsto_const_nhds
+  obtain ⟨hp0, hp⟩ := not_or.1 (mt (ENNReal.toReal_eq_zero_iff p).2 hpt)
   rw [wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
   by_cases hν : HasFiniteMoment p ν
   swap

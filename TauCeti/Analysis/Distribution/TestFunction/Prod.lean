@@ -8,10 +8,12 @@ module
 public import Mathlib.Analysis.Distribution.TestFunction
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
+import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import TauCeti.Topology.Algebra.Support
 
 /-!
-# Tensor products of test functions
+# Tensor products and slices of test functions
 
 Let `Ω ⊆ E` and `O ⊆ D` be open subsets of real normed spaces and let `ψ` be a real test function
 on `O`. For a test function `φ` on `Ω`, the function `(x, t) ↦ ψ t • φ x` is a test function on
@@ -24,6 +26,11 @@ without enlarging their support in the first factor. Composed with a pullback al
 form `(x, t) ↦ (Φ (x, t), t)`, it cuts off the pullback of a test form along a map `Φ` that is
 proper only on bounded slabs `Ω × [c, d]`.
 
+Conversely, a test function `φ` on an open set `V ⊆ E × D` has slices `y ↦ φ (x, y)`, which are
+test functions on every open set `O ⊆ D` containing the second projection of `V`
+(`TestFunction.sliceRight`). Pairing the slices with a distribution on `O` is the first step of
+the tensor product of distributions.
+
 For complex smooth functions `φ` supported in a compact set `K₁ ⊆ E` and `ψ` supported in a
 compact set `K₂ ⊆ D`, the tensor product `(x, y) ↦ φ x * ψ y` is a smooth function supported in
 `K₁ ×ˢ K₂` (`ContDiffMapSupportedIn.tensor`), bilinear in `φ` and `ψ`. These are the tensor
@@ -34,6 +41,10 @@ products of test functions against which Schwartz kernels are tested.
 * `TestFunction.prodSMulCLM`: the continuous linear map `φ ↦ ((x, t) ↦ ψ t • φ x)`.
 * `TestFunction.prodSMulCLM_apply`: its values.
 * `TestFunction.tsupport_prodSMulCLM_subset`: its support lies in `tsupport φ ×ˢ tsupport ψ`.
+* `TestFunction.sliceRight`: the slice `y ↦ φ (x, y)` of a test function on a product, with its
+  support `TestFunction.tsupport_sliceRight_subset`, derivative bound
+  `TestFunction.norm_iteratedFDeriv_sliceRight_le` and derivatives
+  `TestFunction.sliceRight_lineDerivOp_zero_prod`.
 * `ContDiffMapSupportedIn.tensor`: the tensor product `(x, y) ↦ φ x * ψ y` of complex smooth
   functions `φ`, `ψ` supported in compact sets `K₁`, `K₂`, supported in `K₁ ×ˢ K₂`, with
   `ContDiffMapSupportedIn.tensor_apply` and its bilinearity.
@@ -43,7 +54,7 @@ public section
 
 noncomputable section
 
-open Set TopologicalSpace TauCeti
+open Set TopologicalSpace TauCeti LineDeriv
 open scoped Distributions
 
 namespace TestFunction
@@ -126,6 +137,82 @@ theorem prodSMulCLM_apply (φ : 𝓓(Ω, F)) (p : E × D) :
 theorem tsupport_prodSMulCLM_subset (φ : 𝓓(Ω, F)) :
     tsupport (prodSMulCLM ψ hV φ) ⊆ tsupport φ ×ˢ tsupport ψ :=
   tsupport_snd_smul_fst_subset _ _
+
+/-! ### Slices -/
+
+variable {hO : MapsTo Prod.snd (V : Set (E × D)) O}
+
+variable (hO) in
+/-- The **slice** `y ↦ φ (x, y)` of a test function `φ` on `V ⊆ E × D` at a point `x : E`, as a
+test function on an open set `O ⊆ D` containing the second projection of `V`. -/
+def sliceRight (φ : 𝓓(V, F)) (x : E) : 𝓓(O, F) :=
+  ⟨fun y ↦ φ (x, y), φ.contDiff.comp (contDiff_const.prodMk contDiff_id),
+    (φ.hasCompactSupport.image continuous_snd).of_isClosed_subset (isClosed_tsupport _)
+      ((tsupport_comp_subset_preimage (f := fun y ↦ (x, y)) φ (by fun_prop)).trans
+        fun y hy ↦ ⟨(x, y), hy, rfl⟩),
+    (tsupport_comp_subset_preimage (f := fun y ↦ (x, y)) φ (by fun_prop)).trans
+      fun y hy ↦ hO (φ.tsupport_subset hy)⟩
+
+/-- The slice of `φ` at `x` is `y ↦ φ (x, y)`. -/
+@[simp]
+theorem sliceRight_apply (φ : 𝓓(V, F)) (x : E) (y : D) : sliceRight hO φ x y = φ (x, y) :=
+  (rfl)
+
+/-- The slice of `φ` at `x` is supported in the slice `{y | (x, y) ∈ tsupport φ}` of the support
+of `φ`. -/
+theorem tsupport_sliceRight_subset (φ : 𝓓(V, F)) (x : E) :
+    tsupport (sliceRight hO φ x) ⊆ Prod.mk x ⁻¹' tsupport φ :=
+  tsupport_comp_subset_preimage (f := fun y ↦ (x, y)) φ (by fun_prop)
+
+/-- Every slice of `φ` is supported in the second projection of the support of `φ`. -/
+theorem tsupport_sliceRight_subset_image_snd (φ : 𝓓(V, F)) (x : E) :
+    tsupport (sliceRight hO φ x) ⊆ Prod.snd '' tsupport φ :=
+  (tsupport_sliceRight_subset φ x).trans fun y hy ↦ ⟨(x, y), hy, rfl⟩
+
+/-- The slice of `φ` at a point outside the first projection of its support vanishes. -/
+theorem sliceRight_eq_zero {φ : 𝓓(V, F)} {x : E} (hx : x ∉ Prod.fst '' tsupport φ) :
+    sliceRight hO φ x = 0 := by
+  ext y
+  rw [sliceRight_apply, image_eq_zero_of_notMem_tsupport fun h ↦ hx ⟨(x, y), h, rfl⟩, zero_apply]
+
+@[simp]
+theorem sliceRight_add (φ ψ : 𝓓(V, F)) (x : E) :
+    sliceRight hO (φ + ψ) x = sliceRight hO φ x + sliceRight hO ψ x :=
+  (rfl)
+
+@[simp]
+theorem sliceRight_sub (φ ψ : 𝓓(V, F)) (x : E) :
+    sliceRight hO (φ - ψ) x = sliceRight hO φ x - sliceRight hO ψ x :=
+  (rfl)
+
+@[simp]
+theorem sliceRight_smul (c : ℝ) (φ : 𝓓(V, F)) (x : E) :
+    sliceRight hO (c • φ) x = c • sliceRight hO φ x :=
+  (rfl)
+
+/-- The derivatives of a slice are bounded by those of the test function:
+`‖Dⁱ (y ↦ φ (x, y)) y‖ ≤ ‖Dⁱ φ (x, y)‖`. -/
+theorem norm_iteratedFDeriv_sliceRight_le (φ : 𝓓(V, F)) (i : ℕ) (x : E) (y : D) :
+    ‖iteratedFDeriv ℝ i (sliceRight hO φ x) y‖ ≤ ‖iteratedFDeriv ℝ i φ (x, y)‖ :=
+  _root_.ContDiff.norm_iteratedFDeriv_prod_right_le φ.contDiff i (mod_cast le_top) x y
+
+/-- Differentiating in the second variable commutes with taking slices:
+`∂_{(0, w)} φ (x, ·) = ∂_{w} (φ (x, ·))`. -/
+theorem sliceRight_lineDerivOp_zero_prod (φ : 𝓓(V, F)) (w : D) (x : E) :
+    sliceRight hO (∂_{((0, w) : E × D)} φ) x = ∂_{w} (sliceRight hO φ x) := by
+  ext y
+  have hφ := (φ.contDiff.differentiable (by simp) (x, y)).hasFDerivAt.comp y
+    (hasFDerivAt_prodMk_right (𝕜 := ℝ) x y)
+  rw [Function.comp_def, ← funext (sliceRight_apply (hO := hO) φ x)] at hφ
+  rw [sliceRight_apply, lineDerivOp_apply_eq_fderiv, lineDerivOp_apply_eq_fderiv, hφ.fderiv]
+  simp
+
+/-- The slice of a tensor product of real test functions is a multiple of the second factor:
+`(y ↦ ψ y φ x) = φ x • ψ`. -/
+theorem sliceRight_prodSMulCLM (ψ : 𝓓(O, ℝ)) (hV : (Ω : Set E) ×ˢ (O : Set D) ⊆ V)
+    (φ : 𝓓(Ω, ℝ)) (x : E) : sliceRight hO (prodSMulCLM ψ hV φ) x = φ x • ψ := by
+  ext y
+  simp [mul_comm]
 
 end TestFunction
 

@@ -103,15 +103,34 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpa
   [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   {μ : Measure E} [μ.HasTemperateGrowth]
 
+omit [SecondCountableTopology E] in
+/-- For a Schwartz function `f`, the function `‖x‖ ^ k * ‖D^n f x‖` is integrable. Unlike
+`SchwartzMap.integrable_pow_mul_iteratedFDeriv`, this needs no second countability of `E`: the
+function is real-valued and continuous. -/
+theorem integrable_pow_mul_norm_iteratedFDeriv (f : 𝓢(E, F)) (k n : ℕ) :
+    Integrable (fun x ↦ ‖x‖ ^ k * ‖iteratedFDeriv ℝ n f x‖) μ := by
+  refine ((Measure.integrable_pow_neg_integrablePower μ).const_mul
+    (2 ^ μ.integrablePower * (SchwartzMap.seminorm ℝ 0 n f +
+      SchwartzMap.seminorm ℝ (k + μ.integrablePower) n f))).mono'
+    ((continuous_norm.pow k).mul
+      ((f.smooth ⊤).continuous_iteratedFDeriv (mod_cast le_top)).norm).aestronglyMeasurable
+    (.of_forall fun x ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity)]
+  exact pow_mul_le_of_le_of_pow_mul_le (norm_nonneg _) (norm_nonneg _)
+    (norm_iteratedFDeriv_le_seminorm ℝ _ _ x) (le_seminorm ℝ _ _ _ x)
+
+omit [SecondCountableTopology E] in
 /-- For a Schwartz function `f`, the function `‖x‖ ^ k ‖f x‖²` is integrable. -/
 theorem integrable_norm_pow_mul_norm_sq (f : 𝓢(E, F)) (k : ℕ) :
     Integrable (fun x ↦ ‖x‖ ^ k * ‖f x‖ ^ 2) μ := by
-  refine ((f.integrable_pow_mul μ k).const_mul (SchwartzMap.seminorm ℝ 0 0 f)).mono'
-    (by fun_prop) (.of_forall fun x ↦ ?_)
-  rw [Real.norm_of_nonneg (by positivity), sq, ← mul_assoc, mul_comm _ ‖f x‖]
+  refine ((f.integrable_pow_mul_norm_iteratedFDeriv (μ := μ) k 0).const_mul
+    (SchwartzMap.seminorm ℝ 0 0 f)).mono' (by fun_prop) (.of_forall fun x ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity), sq, ← mul_assoc, mul_comm _ ‖f x‖,
+    norm_iteratedFDeriv_zero]
   gcongr
   exact f.norm_le_seminorm ℝ x
 
+omit [SecondCountableTopology E] in
 /-- A Schwartz function vanishes if and only if the integral of its squared norm does, against a
 measure of temperate growth that charges every nonempty open set. -/
 theorem integral_norm_sq_eq_zero_iff [μ.IsOpenPosMeasure] {f : 𝓢(E, F)} :
@@ -124,13 +143,17 @@ theorem integral_norm_sq_eq_zero_iff [μ.IsOpenPosMeasure] {f : 𝓢(E, F)} :
   have := (hcont.ae_eq_iff_eq μ continuous_zero).mp hae
   exact SchwartzMap.ext fun x => by simpa using congrFun this x
 
+omit [SecondCountableTopology E] in
 /-- For Schwartz functions `f` and `g` with values in a real inner product space, the pointwise
 inner product `⟪f x, g x⟫` is integrable. -/
 theorem integrable_inner {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
     (f g : 𝓢(E, H)) : Integrable (fun x ↦ ⟪f x, g x⟫_ℝ) μ := by
-  convert (pairing (innerSL ℝ) f g).integrable (μ := μ) using 1
-  ext x
-  rw [pairing_apply_apply, innerSL_apply_apply]
+  have hf := f.integrable_pow_mul_norm_iteratedFDeriv (μ := μ) 0 0
+  simp only [pow_zero, one_mul, norm_iteratedFDeriv_zero] at hf
+  refine (hf.const_mul (SchwartzMap.seminorm ℝ 0 0 g)).mono'
+    (f.continuous.inner g.continuous).aestronglyMeasurable (.of_forall fun x ↦ ?_)
+  rw [mul_comm]
+  exact (norm_inner_le_norm _ _).trans (by gcongr; exact g.norm_le_seminorm ℝ x)
 
 /-- For a Schwartz function `f` and every real `r`, the function `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is
 integrable. With `r = s / 2` this is the Japanese bracket weight `⟨x⟩ ^ s ‖f x‖`. -/
@@ -157,10 +180,11 @@ theorem integrable_one_add_norm_smul_sq_rpow_mul_norm (c m : ℝ) (f : 𝓢(E, F
       rw [Real.norm_of_nonneg (by positivity)]
       exact f.one_add_norm_smul_sq_rpow_mul_norm_le (𝕜 := ℝ) c m μ.integrablePower x)
 
+omit [SecondCountableTopology E] in
 /-- The norms of the derivatives of a Schwartz function are integrable. -/
 theorem integrable_norm_iteratedFDeriv (f : 𝓢(E, F)) (k : ℕ) :
     Integrable (fun x ↦ ‖iteratedFDeriv ℝ k f x‖) μ := by
-  simpa only [pow_zero, one_mul] using f.integrable_pow_mul_iteratedFDeriv μ 0 k
+  simpa only [pow_zero, one_mul] using f.integrable_pow_mul_norm_iteratedFDeriv (μ := μ) 0 k
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
 
@@ -173,6 +197,7 @@ theorem integrable_iteratedFDeriv_comp_left (L : F →L[ℝ] G) (f : 𝓢(E, F))
       (mod_cast le_top)).aestronglyMeasurable
     (.of_forall fun _ ↦ L.norm_iteratedFDeriv_comp_left (f.smooth ⊤).contDiffAt (mod_cast le_top))
 
+omit [SecondCountableTopology E] in
 /-- For a Schwartz function `f` and a continuous linear map `L`,
 `∫ ‖D^k (L ∘ f)‖ ≤ ‖L‖ ∫ ‖D^k f‖`. -/
 theorem integral_norm_iteratedFDeriv_comp_left_le (L : F →L[ℝ] G) (f : 𝓢(E, F)) (k : ℕ) :

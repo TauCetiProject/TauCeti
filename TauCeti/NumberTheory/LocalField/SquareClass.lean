@@ -56,7 +56,7 @@ compute Hilbert symbols over `K` and to count its quadratic extensions.
   exhaust the square-class group.
 * `TauCeti.exists_isSquare_mul_of_isUnit_two`: every element of `Kˣ` agrees, up to a square,
   with one of `1`, `u`, `π`, `u π`.
-* `TauCeti.exists_isSquare_mul_of_isUnit_two_of_integerUnit_residue_not_isSquare`: the four
+* `TauCeti.exists_isSquare_mul_of_integerUnit_residue_not_isSquare`: the four
   representatives can be formed from any specified integer-ring unit with nonsquare residue.
 * `TauCeti.isSquare_or_isSquare_mul_of_isUnit_two`: an element of even valuation is a square or
   `u` times a square.
@@ -225,15 +225,26 @@ theorem exists_isSquare_mul_of_isUnit_two (h2 : IsUnit (2 : 𝒪[K])) {π u : K�
   · exact ⟨π, by simp, (squareClass_eq_iff_isSquare_mul a π).mp h⟩
   · exact ⟨u * π, by simp, (squareClass_eq_iff_isSquare_mul a (u * π)).mp h⟩
 
-/-- **The four square classes with an explicitly chosen unramified unit.** Away from residue
-characteristic two, if a unit `u` of `𝒪[K]` has nonsquare residue, then every element of `Kˣ`
+/-- **The four square classes with an explicitly chosen unramified unit.** If a unit `u` of `𝒪[K]`
+has nonsquare residue (which forces odd residue characteristic), then every element of `Kˣ`
 agrees, up to a square, with one of `1`, `u`, `π`, and `u π`. -/
-theorem exists_isSquare_mul_of_isUnit_two_of_integerUnit_residue_not_isSquare
-    (h2 : IsUnit (2 : 𝒪[K])) {π : Kˣ} (hπ : IsUniformizer K π) (u : 𝒪[K]ˣ)
+theorem exists_isSquare_mul_of_integerUnit_residue_not_isSquare
+    {π : Kˣ} (hπ : IsUniformizer K π) (u : 𝒪[K]ˣ)
     (hu : ¬IsSquare (Units.map (residue 𝒪[K] : 𝒪[K] →* 𝓀[K]) u)) (a : Kˣ) :
     ∃ r ∈ ({1, Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u,
         π, Units.map (Subring.subtype 𝒪[K] : 𝒪[K] →* K) u * π} : Set Kˣ),
       IsSquare (a * r) := by
+  -- a nonsquare residue forces odd residue characteristic: in characteristic two every element
+  -- of the finite residue field is a square
+  have h2 : IsUnit (2 : 𝒪[K]) := by
+    by_contra h2
+    refine hu ?_
+    have h20 : (2 : 𝓀[K]) = 0 := by
+      have h := (IsLocalRing.residue_eq_zero_iff (2 : 𝒪[K])).2
+        ((IsLocalRing.mem_maximalIdeal _).2 h2)
+      rwa [map_ofNat] at h
+    have : CharP 𝓀[K] 2 := CharTwo.of_one_ne_zero_of_two_eq_zero one_ne_zero h20
+    exact Units.isSquare_coe_iff.mp (isSquare_of_charTwo' _)
   apply exists_isSquare_mul_of_isUnit_two h2 hπ
   · rw [normalizedValuation_integerUnits]
     exact ⟨0, by simp⟩

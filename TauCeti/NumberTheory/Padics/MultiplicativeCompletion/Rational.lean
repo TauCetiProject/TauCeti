@@ -15,6 +15,7 @@ import Mathlib.FieldTheory.Galois.NormalBasis
 import Mathlib.FieldTheory.Tower
 import TauCeti.LinearAlgebra.Dimension.Localization
 import TauCeti.NumberTheory.LocalField.DeepUnits.Basic
+import TauCeti.NumberTheory.LocalField.Logarithm
 import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
 import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.Finite
 import TauCeti.NumberTheory.Padics.MultiplicativeCompletion.FreeQuotient
@@ -112,8 +113,7 @@ private theorem exists_linearIndependent_padicCompletionUnitsOf_conj :
         Additive.ofMul (padicCompletionUnitsOf p L
           (o.elim ϖ fun j ↦ Units.map j.2.toRingEquiv.toMonoidHom (u j.1))) := by
   have hi : absoluteRamificationIndex L p < (p - 1) * (absoluteRamificationIndex L p + 1) :=
-    (Nat.lt_succ_self _).trans_le
-      (Nat.le_mul_of_pos_left _ (Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt))
+    absoluteRamificationIndex_lt_sub_one_mul_of_lt (Nat.lt_succ_self _)
   have hp0 : (p : L) ≠ 0 := by
     have := FinitePadicExtension.charZero L p
     exact Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
@@ -125,14 +125,14 @@ private theorem exists_linearIndependent_padicCompletionUnitsOf_conj :
   set nb := IsGalois.normalBasis K L
   -- Deep units `u k` whose logarithms are nonzero multiples of `b k • α` for the normal basis
   -- generator `α = nb 1`, and their conjugates `v (k, σ) = σ (u k)`.
-  choose u hu c hc hlog using fun k ↦ exists_mem_unitFiltration_log_eq_smul hi (b k • nb 1)
+  choose u hu c hc hlog using fun k ↦ exists_mem_unitFiltration_log_eq_smul p
+    (absoluteRamificationIndex L p + 1) (b k • nb 1)
   set v : Fin (Module.finrank ℚ_[p] K) × (L ≃ₐ[K] L) → Lˣ :=
     fun j ↦ Units.map j.2.toRingEquiv.toMonoidHom (u j.1)
   have hv (j) : v j ∈ unitFiltration L (absoluteRamificationIndex L p + 1) :=
     (j.2.restrictScalars ℚ_[p]).unitsMap_mem_unitFiltration_iff.mpr (hu j.1)
   have hvlog (j) : NormedSpace.log (v j : L) = c j.1 • (b.smulTower nb) j := by
-    have h := (j.2.restrictScalars ℚ_[p]).map_log_of_mem_unitFiltration_one p
-      (unitFiltration_antitone (Nat.succ_le_succ (Nat.zero_le _)) (hu j.1))
+    have h := (j.2.restrictScalars ℚ_[p]).map_log (u j.1 : L)
     rw [hlog, map_smul, AlgEquiv.restrictScalars_apply, AlgEquiv.restrictScalars_apply,
       map_smul] at h
     rw [Module.Basis.smulTower_apply, IsGalois.normalBasis_apply, h, Units.coe_map]

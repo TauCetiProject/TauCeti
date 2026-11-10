@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.InformationTheory.KullbackLeibler.Basic
-public import TauCeti.Analysis.Convex.RecessionConstant
+public import TauCeti.Analysis.Convex.Recession.Constant
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.PotentialEnergy
 
 /-!

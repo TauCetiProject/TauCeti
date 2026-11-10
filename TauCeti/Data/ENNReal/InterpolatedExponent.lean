@@ -25,6 +25,8 @@ Marcinkiewicz). This file records its elementary arithmetic.
 * `TauCeti.inv_eq_ofReal_of_inv_eq`: `1 / s` is the real convex combination of `1 / s₀` and
   `1 / s₁`.
 * `TauCeti.mem_uIcc_of_inv_eq`: `s` lies between `s₀` and `s₁`.
+* `TauCeti.exists_inv_eq_of_mem_Ioo`: conversely, every `s` strictly between `s₀` and `s₁` is
+  interpolated with some `0 < θ < 1`.
 * `TauCeti.eq_top_iff_of_inv_eq`: for `0 < θ < 1`, `s = ∞` exactly when `s₀ = s₁ = ∞`.
 * `TauCeti.one_le_of_inv_eq`: interpolating exponents in `[1, ∞]` stays in `[1, ∞]`.
 * `TauCeti.inv_conjExponent_eq_of_inv_eq`: the conjugate exponents interpolate in the same way.
@@ -62,6 +64,29 @@ theorem mem_uIcc_of_inv_eq (hθ : θ ∈ Set.Icc (0 : ℝ) 1)
     rw [hs]
     refine ⟨(h1 _).trans_le ?_, le_trans ?_ (h1 _).ge⟩ <;> gcongr <;> simp
   simpa using ENNReal.inv_strictAnti.antitone.mapsTo_uIcc hs'
+
+/-- Every exponent strictly between `s₀ ≠ 0` and `s₁` is an interpolated exponent
+`1 / s = (1 - θ) / s₀ + θ / s₁` for some `0 < θ < 1`. -/
+theorem exists_inv_eq_of_mem_Ioo (hs₀ : s₀ ≠ 0) (hs : s ∈ Set.Ioo s₀ s₁) :
+    ∃ θ ∈ Set.Ioo (0 : ℝ) 1, s⁻¹ = ENNReal.ofReal (1 - θ) * s₀⁻¹ + ENNReal.ofReal θ * s₁⁻¹ := by
+  have hs0 : s ≠ 0 := (pos_iff_ne_zero.2 hs₀).trans hs.1 |>.ne'
+  have h₀ : s₀⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hs₀
+  have h : s⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 hs0
+  have h₁ : s₁⁻¹ ≠ ∞ := ENNReal.inv_ne_top.2 ((pos_iff_ne_zero.2 hs0).trans hs.2).ne'
+  rw [← ENNReal.ofReal_toReal h₀, ← ENNReal.ofReal_toReal h, ← ENNReal.ofReal_toReal h₁]
+  have hr₀ : s⁻¹.toReal < s₀⁻¹.toReal := ENNReal.toReal_strict_mono h₀ (ENNReal.inv_lt_inv.2 hs.1)
+  have hr₁ : s₁⁻¹.toReal < s⁻¹.toReal := ENNReal.toReal_strict_mono h (ENNReal.inv_lt_inv.2 hs.2)
+  have hb : 0 ≤ s₁⁻¹.toReal := ENNReal.toReal_nonneg
+  generalize s₀⁻¹.toReal = a, s⁻¹.toReal = r, s₁⁻¹.toReal = b at *
+  have hab : 0 < a - b := by linarith
+  have hθ₀ : 0 < (a - r) / (a - b) := div_pos (by linarith) hab
+  have hθ₁ : (a - r) / (a - b) < 1 := (div_lt_one hab).2 (by linarith)
+  refine ⟨(a - r) / (a - b), ⟨hθ₀, hθ₁⟩, ?_⟩
+  rw [← ENNReal.ofReal_mul (by linarith), ← ENNReal.ofReal_mul hθ₀.le,
+    ← ENNReal.ofReal_add (by nlinarith) (by positivity)]
+  congr 1
+  field_simp
+  ring
 
 /-- For `0 < θ < 1`, an interpolated exponent is infinite exactly when both endpoint exponents
 are. -/
