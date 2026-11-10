@@ -17,7 +17,8 @@ the fraction field. This file records that the order of vanishing is transported
 isomorphisms, and that the order of a nonzero element of `R` is trivial
 exactly when that element is a unit: `R ⧸ (x)` is the zero ring exactly when `(x)` is the unit
 ideal. Mathlib has the forward direction, `Ring.ordFrac_of_isUnit`; the converse is what reads
-"`f` has order zero at a codimension-one point" as "`f` is a unit at that point".
+"`f` has order zero at a codimension-one point" as "`f` is a unit at that point". Finally, the
+order of vanishing turns finite products of non-zero-divisors into sums.
 
 ## Main results
 
@@ -25,6 +26,8 @@ ideal. Mathlib has the forward direction, `Ring.ordFrac_of_isUnit`; the converse
   `TauCeti.Ring.ordFrac_map_of_ringEquiv`: the order of vanishing is invariant under ring
   isomorphisms, also as a homomorphism to `ℤᵐ⁰` and on fraction fields;
 * `TauCeti.Ring.ord_eq_zero_iff`: `Ring.ord R x = 0` exactly when `x` is a unit;
+* `TauCeti.Ring.ord_prod`: the order of a finite product of non-zero-divisors is the sum of the
+  orders;
 * `TauCeti.Ring.isUnit_iff_ordFrac_one`: `x` is a unit exactly when `Ring.ordFrac R x = 1`; this
   extends Mathlib's `Ring.isUnit_iff_ordFrac_one_of_isDiscreteValuationRing` to Noetherian domains
   of dimension at most one.
@@ -91,6 +94,17 @@ quotient `R ⧸ (x)` is trivial exactly when `(x)` is the unit ideal. -/
 theorem ord_eq_zero_iff (x : R) : Ring.ord R x = 0 ↔ IsUnit x := by
   rw [Ring.ord, Module.length_eq_zero_iff, Submodule.Quotient.subsingleton_iff,
     Ideal.span_singleton_eq_top]
+
+/-- The order of vanishing of a finite product of non-zero-divisors is the sum of their orders. -/
+theorem ord_prod {ι : Type*} (s : Finset ι) {f : ι → R} (hf : ∀ i ∈ s, f i ∈ R⁰) :
+    Ring.ord R (∏ i ∈ s, f i) = ∑ i ∈ s, Ring.ord R (f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.sum_insert hi,
+      Ring.ord_mul' R (hf i (Finset.mem_insert_self i s)),
+      ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)]
 
 variable [IsDomain R] [IsNoetherianRing R] [Ring.KrullDimLE 1 R]
   {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K]
