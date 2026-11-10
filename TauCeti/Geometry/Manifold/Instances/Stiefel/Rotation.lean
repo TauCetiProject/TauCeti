@@ -45,6 +45,9 @@ Each point `(a, w)` with `w ≠ ±a` has exactly two preimages, `((a, v), z)` an
   with `Im z > 0`.
 * `TauCeti.im_ne_zero_of_stiefelRotationFamily_eq`: every preimage of such a point has
   `Im z ≠ 0`.
+* `TauCeti.stiefelRotationInvolution`: the involution `((u, v), z) ↦ ((u, -v), conj z)`, under
+  which the map is invariant; its orbits through points with `Im z ≠ 0` are the fibres of the map
+  (`TauCeti.stiefelRotationFamily_eq_iff_eq_or_eq_stiefelRotationInvolution`).
 
 ## References
 
@@ -184,5 +187,66 @@ theorem exists_stiefelRotationFamily_eq {a w : sphere (0 : E) 1} (hwa : w ≠ a)
   -- The two vectors of the frame `![a, v]` are `a` and `v` by definition.
   exact ⟨(⟨_, hframe⟩, z), hz, Prod.ext (Subtype.ext (by simp))
     ((snd_stiefelRotationFamily_eq (p := a) _ rfl).trans hvz)⟩
+
+/-! ### The involution exchanging the two preimages -/
+
+/-- The involution `((u, v), z) ↦ ((u, -v), conj z)` of `T¹Sⁿ⁺¹ × S¹`, under which the Stiefel
+rotation family is invariant (`TauCeti.stiefelRotationFamily_stiefelRotationInvolution`). -/
+def stiefelRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
+    stiefel E 2 × sphere (0 : ℂ) 1 :=
+  (stiefelTwoReflection x.1, conjSphere x.2)
+
+/-- The involution `((u, v), z) ↦ ((u, -v), conj z)` is the product of the frame reflection and
+complex conjugation on the unit circle. -/
+theorem stiefelRotationInvolution_eq_prodMap :
+    stiefelRotationInvolution (E := E) = Prod.map stiefelTwoReflection conjSphere :=
+  (rfl)
+
+@[simp]
+theorem fst_stiefelRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
+    (stiefelRotationInvolution x).1 = stiefelTwoReflection x.1 :=
+  (rfl)
+
+@[simp]
+theorem snd_stiefelRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
+    (stiefelRotationInvolution x).2 = conjSphere x.2 :=
+  (rfl)
+
+/-- The map `((u, v), z) ↦ ((u, -v), conj z)` is an involution. -/
+@[simp]
+theorem stiefelRotationInvolution_stiefelRotationInvolution
+    (x : stiefel E 2 × sphere (0 : ℂ) 1) :
+    stiefelRotationInvolution (stiefelRotationInvolution x) = x :=
+  Prod.ext (stiefelTwoReflection_stiefelTwoReflection x.1) (Subtype.ext (by simp))
+
+@[simp]
+theorem stiefelRotationFamily_stiefelRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
+    stiefelRotationFamily (stiefelRotationInvolution x) = stiefelRotationFamily x := by
+  refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)
+  · simp [stiefelRotationInvolution]
+  · simp [stiefelRotationInvolution]
+
+/-- Two points of `T¹Sⁿ⁺¹ × S¹`, one of them with `Im z ≠ 0`, have the same image under the
+Stiefel rotation family exactly when they are equal or exchanged by the involution
+`((u, v), z) ↦ ((u, -v), conj z)`. -/
+theorem stiefelRotationFamily_eq_iff_eq_or_eq_stiefelRotationInvolution
+    {x y : stiefel E 2 × sphere (0 : ℂ) 1} (hx : (x.2 : ℂ).im ≠ 0) :
+    stiefelRotationFamily y = stiefelRotationFamily x ↔
+      y = x ∨ y = stiefelRotationInvolution x := by
+  rw [stiefelRotationFamily_eq_stiefelRotationFamily_iff hx]
+  refine or_congr_right ⟨fun ⟨h₀, h₁, hz⟩ ↦ Prod.ext (Subtype.ext (funext fun i ↦ ?_))
+    (Subtype.ext (by simpa using hz)), fun h ↦ ?_⟩
+  · fin_cases i
+    exacts [by simpa using h₀, by simpa using h₁]
+  · subst h
+    simp [stiefelRotationInvolution]
+
+/-- The involution `((u, v), z) ↦ ((u, -v), conj z)` is smooth. -/
+theorem contMDiff_stiefelRotationInvolution [FiniteDimensional ℝ E] {r : ℕ∞ω} :
+    ContMDiff (𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ).prod (𝓡 1))
+      (𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ).prod (𝓡 1)) r
+      (stiefelRotationInvolution (E := E)) :=
+  (contMDiff_stiefelTwoReflection.comp contMDiff_fst).prodMk
+    (contMDiff_conjSphere.comp contMDiff_snd)
 
 end TauCeti
