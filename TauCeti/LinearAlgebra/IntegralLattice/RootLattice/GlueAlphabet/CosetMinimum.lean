@@ -243,11 +243,15 @@ theorem glueMinimum_nonneg (t : DynkinType) (ht : t.IsSimplyLaced) (a : t.glueAl
   | F4 => exact absurd ht not_isSimplyLaced_F4
   | G2 => exact absurd ht not_isSimplyLaced_G2
 
-/-- On `Aₙ`, `q(i) = i (n + 1 - i) / (2 (n + 1))` modulo `ℤ`, stated in the standard model. -/
-theorem typeAStandardQuadraticModule_quadratic_eq_glueMinimum_div_two (n : ℕ)
-    (ht : (A n).IsSimplyLaced) (a : ZMod (n + 1)) :
-    (typeAStandardQuadraticModule n).quadratic a =
+/-- On `Aₙ`, `q(i) = i (n + 1 - i) / (2 (n + 1))` modulo `ℤ`. -/
+theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_A (n : ℕ)
+    (ht : (A n).IsSimplyLaced) (a : (A n).glueAlphabet ht) :
+    ((A n).glueAlphabet ht).quadratic a =
       (((A n).glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+  -- The glue alphabet of `A n` is the standard model by `rfl` (`glueAlphabet_A`).
+  suffices h : ∀ a : ZMod (n + 1), (typeAStandardQuadraticModule n).quadratic a =
+      (((A n).glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) from h a
+  intro a
   have ha : ((a.val : ℤ) : ZMod (n + 1)) = a := by exact_mod_cast ZMod.natCast_zmod_val a
   conv_lhs => rw [← ha]
   rw [typeAStandardQuadraticModule_quadratic_intCast, glueMinimum_A, ← sub_eq_zero,
@@ -315,11 +319,15 @@ theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_D_of_odd (n : ℕ)
     congr 1
     ring
 
-/-- On `E₆`, `q(a) = μ(a) / 2` modulo `ℤ`, stated in the standard model. -/
-theorem typeE₆StandardQuadraticModule_quadratic_eq_glueMinimum_div_two
-    (ht : E6.IsSimplyLaced) (a : ZMod 3) :
-    typeE₆StandardQuadraticModule.quadratic a =
+/-- On `E₆`, `q(a) = μ(a) / 2` modulo `ℤ`. -/
+theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_E6
+    (ht : E6.IsSimplyLaced) (a : E6.glueAlphabet ht) :
+    (E6.glueAlphabet ht).quadratic a =
       ((E6.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+  -- The glue alphabet of `E6` is the standard model by `rfl` (`glueAlphabet_E6`).
+  suffices h : ∀ a : ZMod 3, typeE₆StandardQuadraticModule.quadratic a =
+      ((E6.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) from h a
+  intro a
   rcases (by decide : ∀ z : ZMod 3, z = 0 ∨ z = 1 ∨ z = 2) a with rfl | rfl | rfl
   · exact (QuadraticMap.map_zero _).trans (by simp)
   · simp only [typeE₆StandardQuadraticModule_quadratic_one, glueMinimum_E6,
@@ -335,11 +343,15 @@ theorem typeE₆StandardQuadraticModule_quadratic_eq_glueMinimum_div_two
     congr 1
     norm_num
 
-/-- On `E₇`, `q(a) = μ(a) / 2` modulo `ℤ`, stated in the standard model. -/
-theorem typeE₇StandardQuadraticModule_quadratic_eq_glueMinimum_div_two
-    (ht : E7.IsSimplyLaced) (a : ZMod 2) :
-    typeE₇StandardQuadraticModule.quadratic a =
+/-- On `E₇`, `q(a) = μ(a) / 2` modulo `ℤ`. -/
+theorem quadratic_glueAlphabet_eq_glueMinimum_div_two_E7
+    (ht : E7.IsSimplyLaced) (a : E7.glueAlphabet ht) :
+    (E7.glueAlphabet ht).quadratic a =
       ((E7.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+  -- The glue alphabet of `E7` is the standard model by `rfl` (`glueAlphabet_E7`).
+  suffices h : ∀ a : ZMod 2, typeE₇StandardQuadraticModule.quadratic a =
+      ((E7.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) from h a
+  intro a
   rcases (by decide : ∀ z : ZMod 2, z = 0 ∨ z = 1) a with rfl | rfl
   · exact (QuadraticMap.map_zero _).trans (by simp)
   · simp only [typeE₇StandardQuadraticModule_quadratic_one, glueMinimum_E7,
@@ -357,13 +369,13 @@ theorem quadratic_glueAlphabet_eq_glueMinimum_div_two (t : DynkinType) (ht : t.I
   -- The glue alphabets of `A n`, `E6` and `E7` are the standard models by `rfl`
   -- (`glueAlphabet_A`, `glueAlphabet_E6`, `glueAlphabet_E7`), so `a` lies in the standard model.
   cases t with
-  | A n => exact typeAStandardQuadraticModule_quadratic_eq_glueMinimum_div_two n ht a
+  | A n => exact quadratic_glueAlphabet_eq_glueMinimum_div_two_A n ht a
   | D n =>
     rcases Nat.even_or_odd n with hn | hn
     · exact quadratic_glueAlphabet_eq_glueMinimum_div_two_D_of_even n ht hn a
     · exact quadratic_glueAlphabet_eq_glueMinimum_div_two_D_of_odd n ht hn a
-  | E6 => exact typeE₆StandardQuadraticModule_quadratic_eq_glueMinimum_div_two ht a
-  | E7 => exact typeE₇StandardQuadraticModule_quadratic_eq_glueMinimum_div_two ht a
+  | E6 => exact quadratic_glueAlphabet_eq_glueMinimum_div_two_E6 ht a
+  | E7 => exact quadratic_glueAlphabet_eq_glueMinimum_div_two_E7 ht a
   | E8 =>
     rw [Subsingleton.elim a 0, glueMinimum_E8, QuadraticMap.map_zero]
     simp
