@@ -72,9 +72,9 @@ theorem tendsto_measure_Icc_atBot (μ : Measure α) (a : α) :
 
 end Preorder
 
-section DenselyOrdered
+section LinearOrder
 
-variable [LinearOrder α] [DenselyOrdered α] [TopologicalSpace α] [OrderTopology α]
+variable [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
   [FirstCountableTopology α] [OpensMeasurableSpace α] {a : α}
 
 /-- If some `μ (-∞, r)` with `r > a` is finite, then the measure of `(-∞, x)` tends to the
@@ -84,8 +84,7 @@ theorem tendsto_measure_Iio_nhdsGT (hf : ∃ r > a, μ (Iio r) ≠ ∞) :
   have h : ⋂ r > a, Iio r = Iic a := by
     ext x
     simp only [mem_iInter, mem_Iio, mem_Iic]
-    exact ⟨fun h => le_of_forall_gt_imp_ge_of_dense fun r hr => (h r hr).le,
-      fun h r hr => h.trans_lt hr⟩
+    exact ⟨fun h => not_lt.1 fun hx => lt_irrefl x (h x hx), fun h r hr => h.trans_lt hr⟩
   rw [← h]
   exact tendsto_measure_biInter_gt (fun _ _ => measurableSet_Iio.nullMeasurableSet)
     (fun _ _ _ hij => Iio_subset_Iio hij) hf
@@ -94,10 +93,16 @@ theorem tendsto_measure_Iio_nhdsGT (hf : ∃ r > a, μ (Iio r) ≠ ∞) :
 at `a`. -/
 theorem tendsto_measure_Iic_nhdsGT (hf : ∃ r > a, μ (Iic r) ≠ ∞) :
     Tendsto (fun x => μ (Iic x)) (𝓝[>] a) (𝓝 (μ (Iic a))) := by
+  by_cases hbot : 𝓝[>] a = ⊥
+  · rw [hbot]
+    exact tendsto_bot
   have h : ⋂ r > a, Iic r = Iic a := by
     ext x
     simp only [mem_iInter, mem_Iic]
-    exact ⟨le_of_forall_gt_imp_ge_of_dense, fun h r hr => h.trans hr.le⟩
+    refine ⟨fun h => not_lt.1 fun hx => ?_, fun h r hr => h.trans hr.le⟩
+    have hcov : ¬ a ⋖ x := fun hcov => hbot (nhdsGT_eq_bot_iff.2 (.inr ⟨x, hcov⟩))
+    obtain ⟨c, hac, hcx⟩ := (not_covBy_iff hx).1 hcov
+    exact (h c hac).not_gt hcx
   rw [← h]
   exact tendsto_measure_biInter_gt (fun _ _ => measurableSet_Iic.nullMeasurableSet)
     (fun _ _ _ hij => Iic_subset_Iic.2 hij) hf
@@ -109,16 +114,21 @@ omit [OpensMeasurableSpace α] in
 `ℝ≥0∞`. No finiteness assumption is needed. -/
 theorem continuousWithinAt_Iio_measure_Iic (μ : Measure α) [NullSingletonClass μ] (a : α) :
     ContinuousWithinAt (fun x ↦ μ (Iic x)) (Iio a) a := by
+  by_cases ha : Order.IsSuccPrelimit a
+  swap
+  · obtain ⟨b, hb⟩ := Order.not_isSuccPrelimit_iff.1 ha
+    rw [ContinuousWithinAt, show 𝓝[Iio a] a = ⊥ from nhdsLT_eq_bot_iff.2 (.inr ⟨b, hb⟩)]
+    exact tendsto_bot
   have : IsCountablyGenerated (atTop : Filter (Iio a)) := by
-    rw [← comap_coe_Iio_nhdsLT a]
+    rw [← comap_coe_Iio_nhdsLT a ha]
     infer_instance
   have hUnion : (⋃ x : Iio a, Iic (x : α)) = Iio a := by
     rw [iUnion_coe_set]
-    exact isLUB_Iio.biUnion_Iic_eq_Iio (lt_irrefl a)
+    exact ha.isLUB_Iio.biUnion_Iic_eq_Iio (lt_irrefl a)
   have h := tendsto_measure_iUnion_atTop (μ := μ)
     (s := fun x : Iio a ↦ Iic (x : α)) (fun _ _ h ↦ Iic_subset_Iic.mpr h)
   rw [hUnion, measure_congr Iio_ae_eq_Iic] at h
-  exact (tendsto_comp_coe_Iio_atTop (f := fun x ↦ μ (Iic x))).mp h
+  exact (tendsto_comp_coe_Iio_atTop ha (f := fun x ↦ μ (Iic x))).mp h
 
 /-- Removing points with infinite original cumulative mass makes the cumulative function
 of an atomless measure continuous, with values in `ℝ≥0∞`. No local finiteness is assumed. -/
@@ -149,7 +159,7 @@ theorem continuous_cumulative_restrict_lt_top (μ : Measure α) [NullSingletonCl
 
 end Measure
 
-end DenselyOrdered
+end LinearOrder
 
 /-- Reflection turns the real mass of an open right tail into that of the opposite left tail. -/
 @[simp]

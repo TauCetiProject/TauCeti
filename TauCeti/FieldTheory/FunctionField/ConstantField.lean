@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.AlgebraicClosure
 public import TauCeti.FieldTheory.FunctionField.Basic
 public import TauCeti.RingTheory.IntegralClosure.IntegrallyClosed
+import TauCeti.FieldTheory.AlgebraicClosure
 import TauCeti.FieldTheory.RatFunc.Transcendental
 
 /-!
@@ -111,7 +112,8 @@ theorem finiteDimensional_of_isAlgebraic (hF : IsFunctionField k F) (E : Type*) 
 field (Stichtenoth, Corollary 1.1.16). -/
 theorem finiteDimensional_algebraicClosure (hF : IsFunctionField k F) :
     FiniteDimensional k (_root_.algebraicClosure k F) :=
-  hF.finiteDimensional_of_isAlgebraic _
+  have := hF.essFiniteType
+  inferInstance
 
 end IsFunctionField
 

@@ -45,7 +45,9 @@ In the normalization `f(σ) ≤ (σ / 2) (1 + C σ) (1 + δ) f'(σ) + A σ ^ 4` 
 Consequently a bound on `f` at a fixed radius `σ₀ ≤ 1` gives the quadratic upper bound
 `f σ ≤ K' σ ^ 2` for `c h ≤ σ ≤ σ₀` (`TauCeti.le_mul_sq_of_le_mul_deriv_add`), and a lower bound
 `m h ^ 2 ≤ f (c h)` gives a quadratic lower bound `m' σ ^ 2 ≤ f σ + A σ ^ 4` for `c h ≤ σ ≤ 1`
-(`TauCeti.mul_sq_le_add_of_le_mul_deriv_add`), both uniformly in `h`. This is the integration step
+(`TauCeti.mul_sq_le_add_of_le_mul_deriv_add`), both uniformly in `h`. At radii `σ` small enough
+that `2 A σ ^ 2 ≤ m'`, the error term is absorbed and `(m' / 2) σ ^ 2 ≤ f σ`
+(`TauCeti.mul_sq_le_of_le_mul_deriv_add`). This is the integration step
 of Taubes's monotonicity estimate for the local defect energy `r ∫_{B_σ} |1 - |ψ|²|` of the
 Seiberg–Witten equations on a symplectic four-manifold perturbed by a large multiple `r` of the
 symplectic form, where `h = r^(-1/2)`.
@@ -380,6 +382,24 @@ theorem mul_sq_le_add_of_le_mul_deriv_add {f : ℝ → ℝ} {σ C δ A c h K m :
         field_simp
     _ ≤ Λ * (c * h) ^ 2 * (f σ + A * σ ^ 4) * (1 + C) ^ 2 := by gcongr
     _ = (f σ + A * σ ^ 4) * (c ^ 2 * (1 + C) ^ 2 * Λ) * h ^ 2 := by ring
+
+/-- **Quadratic lower bound at small radii.** Under the hypotheses of
+`TauCeti.mul_sq_le_add_of_le_mul_deriv_add`, write
+`m' = m / (c ^ 2 (1 + C) ^ 2 exp (2 K (1 + |log c|)))` for its constant. At a radius `σ` small
+enough that `2 A σ ^ 2 ≤ m'`, the error term `A σ ^ 4` is absorbed: `(m' / 2) σ ^ 2 ≤ f σ`.
+
+With `h = r^(-1/2)`, this is the lower bound `E(σ) ≥ c′ σ ^ 2` for the defect energy of a ball
+centred at a zero, at radii between `c r^(-1/2)` and a fixed small radius, uniformly in `r`. -/
+theorem mul_sq_le_of_le_mul_deriv_add {f : ℝ → ℝ} {σ C δ A c h K m : ℝ} (hC : 0 ≤ C)
+    (hδ : 0 ≤ δ) (hA : 0 ≤ A) (hc : 0 < c) (hh : 0 < h) (hh1 : h ≤ 1) (hδh : δ ≤ K * h)
+    (hσ : c * h ≤ σ) (hσ1 : σ ≤ 1) (hf : MonotoneOn f (Icc (c * h) σ)) (hm : 0 ≤ m)
+    (hfm : m * h ^ 2 ≤ f (c * h))
+    (hf' : ∀ᵐ τ, τ ∈ Ioo (c * h) σ →
+      f τ ≤ τ / 2 * (1 + C * τ) * (1 + δ) * deriv f τ + A * τ ^ 4)
+    (hσA : 2 * A * σ ^ 2 ≤ m / (c ^ 2 * (1 + C) ^ 2 * Real.exp (2 * K * (1 + |Real.log c|)))) :
+    m / (c ^ 2 * (1 + C) ^ 2 * Real.exp (2 * K * (1 + |Real.log c|))) / 2 * σ ^ 2 ≤ f σ := by
+  have key := mul_sq_le_add_of_le_mul_deriv_add hC hδ hA hc hh hh1 hδh hσ hσ1 hf hm hfm hf'
+  nlinarith [mul_le_mul_of_nonneg_right hσA (sq_nonneg σ)]
 
 end TauCeti
 
