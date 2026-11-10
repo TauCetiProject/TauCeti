@@ -129,11 +129,6 @@ instance instUnits : CoefficientSemifield Fˣ where
   left_distrib a b c := Units.ext (mul_add (a : F) b c)
   right_distrib a b c := Units.ext (add_mul (a : F) b c)
 
-/-- The auxiliary addition of units of a semifield is the addition of the semifield. -/
-@[simp, norm_cast]
-theorem val_units_add (a b : Fˣ) : ((a + b : Fˣ) : F) = a + b :=
-  (rfl)
-
 end Units
 
 /-- The positive rationals, as the units of `ℚ≥0`, form a coefficient semifield. -/
@@ -142,3 +137,14 @@ example : CoefficientSemifield ℚ≥0ˣ := inferInstance
 end CoefficientSemifield
 
 end TauCeti
+
+namespace Units
+
+variable {F : Type*} [Semifield F] [Subsingleton (AddUnits F)]
+
+/-- The auxiliary addition of units of a semifield is the addition of the semifield. -/
+@[simp, norm_cast]
+theorem val_add (a b : Fˣ) : ((a + b : Fˣ) : F) = a + b :=
+  (rfl)
+
+end Units
