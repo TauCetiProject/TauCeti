@@ -161,6 +161,16 @@ theorem chevalleyRootSubgroup_val (γ : Fin t.numRoots) (A : CommAlgCat ℤ) (u 
     ← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap, MulEquiv.apply_symm_apply,
     baseChangeExpHom_apply, baseChangeExpLinearEquiv_toLinearMap]
 
+/-- A root subgroup is trivial when its root vector acts as zero in the representation. -/
+theorem chevalleyRootSubgroup_eq_one_of_apply_eq_zero (γ : Fin t.numRoots)
+    (hγ : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ)) = 0)
+    (A : CommAlgCat ℤ) (u : Multiplicative A) :
+    chevalleyRootSubgroup ρ M hM hnil γ A u = 1 := by
+  apply Units.ext
+  rw [chevalleyRootSubgroup_val,
+    baseChangeExp_of_pow_eq_zero _ M _ (k := 1) (by simpa only [pow_one] using hγ)]
+  simp
+
 /-- **At a simple root the root subgroup is the simple root subgroup** `xᵢ` of the Kostant data. -/
 @[simp]
 theorem chevalleyRootSubgroup_simpleIndex (i : Fin t.rank) (A : CommAlgCat ℤ) :

@@ -121,6 +121,39 @@ variable {η : Type*} (b : Module.Basis η ℤ M) (wt : η → Fin t.rank → �
 variable (hwt : ∀ j, IsCartanWeightVector (t.lieBasis ht).h ρ (wt j) (b j : V))
 
 include hwt in
+private theorem root_operators_and_torus_eq_of_coroot_apply_eq_zero (α : Fin t.numRoots)
+    (hH : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ
+      ((coroot (t.rootEquiv ht α : LieModule.Weight ℚ (t.cartanSubalgebra ht)
+        (t.lieAlgebra ht)) : t.cartanSubalgebra ht) : t.lieAlgebra ht)) = 0)
+    (A : CommAlgCat ℤ) (s : Aˣ) :
+    ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht α)) = 0 ∧
+      ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht
+        ((t.simplyConnectedRootDatum ht).reflectionPerm α α))) = 0 ∧
+      kostantTorusPoints M b wt A
+        (fun i => s ^ (t.simplyConnectedRootDatum ht).coroot α i) = 1 := by
+  -- The sl₂ bracket relations force both root operators to vanish.
+  let φ := ρ.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
+  have he := congrArg φ ((t.isSl2Triple_chevalleySystem ht α).lie_h_e_smul ℚ)
+  have hf := congrArg φ ((t.isSl2Triple_chevalleySystem ht α).lie_lie_smul_f ℚ)
+  simp only [LieHom.map_lie, map_smul, map_neg] at he hf
+  simp only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply] at he hf
+  rw [hH, zero_lie] at he hf
+  refine ⟨(smul_eq_zero.mp he.symm).resolve_left (by norm_num), ?_, ?_⟩
+  · have hf' := neg_eq_zero.mp hf.symm
+    exact (smul_eq_zero.mp hf').resolve_left (by norm_num)
+  · -- The weight equation on each nonzero basis vector makes the torus exponent zero.
+    have hW (j : η) : (∑ i, (t.simplyConnectedRootDatum ht).coroot α i * wt j i : ℤ) = 0 := by
+      have hj := apply_ι_coroot_rootEquiv_of_isCartanWeightVector ρ (hwt j) α
+      rw [hH, LinearMap.zero_apply] at hj
+      have hb : (b j : V) ≠ 0 := fun hz => b.ne_zero j (Subtype.ext hz)
+      have hz := (smul_eq_zero.mp hj.symm).resolve_right hb
+      exact_mod_cast hz
+    refine Units.ext (Module.Basis.ext (b.baseChange A) fun j => ?_)
+    simp only [Module.Basis.baseChange_apply, kostantTorusPoints_tmul_basis, torusCharacter_def,
+      ← zpow_mul, Finset.prod_zpow_eq_zpow_sum, hW, zpow_zero, Units.val_one, one_mul,
+      one_apply_eq_self]
+
+include hwt in
 /-- Chevalley's rank-one identity at every numbered root. The torus parameter is the native
 coroot, including at nonsimple roots. No faithfulness of the representation is required.
 The coefficient ring may have arbitrary characteristic and may be nonreduced. -/
@@ -159,40 +192,10 @@ theorem chevalleyRootSubgroup_mul_mul_eq_kostantTorusPoints_mul (α : Fin t.numR
       kostantTorusPoints_tmul_basis, W, torusCharacter_def, ← zpow_mul,
       Finset.prod_zpow_eq_zpow_sum]
   by_cases hH : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (H ())) = 0
-  · -- If the coroot acts trivially, both root operators and all coroot weights vanish.
-    let φ := ρ.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)
-    have he := congrArg φ (hα ())
-    have hf := congrArg φ (hneg ())
-    simp only [LieHom.map_lie, map_smul, map_neg] at he hf
-    simp only [φ, LieHom.comp_apply, AlgHom.toLieHom_apply] at he hf
-    rw [hH, zero_lie] at he hf
-    have he0 : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht α)) = 0 :=
-      (smul_eq_zero.mp he.symm).resolve_left (by norm_num)
-    have hf0 : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht
-        ((t.simplyConnectedRootDatum ht).reflectionPerm α α))) = 0 := by
-      have hf' := neg_eq_zero.mp hf.symm
-      exact (smul_eq_zero.mp hf').resolve_left (by norm_num)
-    have hx (γ : Fin t.numRoots)
-        (hγ : ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ)) = 0)
-        (u : Multiplicative A) : chevalleyRootSubgroup ρ M hM hnil γ A u = 1 := by
-      apply Units.ext
-      rw [chevalleyRootSubgroup_val,
-        baseChangeExp_of_pow_eq_zero _ M _ (k := 1) (by simpa only [pow_one] using hγ)]
-      simp
-    have hW (j : η) : W j () = 0 := by
-      have hj := hw j
-      rw [isCartanWeightVector_iff] at hj
-      specialize hj ()
-      rw [hH, LinearMap.zero_apply] at hj
-      have hb : (b j : V) ≠ 0 := fun hz => b.ne_zero j (Subtype.ext hz)
-      have hz : (W j () : ℚ) = 0 := (smul_eq_zero.mp hj.symm).resolve_right hb
-      exact_mod_cast hz
-    have htorus_one : kostantCoordinateCocharacter M b W A () s = 1 := by
-      refine Units.ext (Module.Basis.ext (b.baseChange A) fun j => ?_)
-      simp only [Module.Basis.baseChange_apply, kostantCoordinateCocharacter_tmul_basis,
-        hW, zpow_zero, Units.val_one, one_mul, one_apply_eq_self]
-    rw [← htorus, htorus_one]
-    simp only [hx α he0, hx _ hf0, mul_one]
+  · obtain ⟨he0, hf0, htorus_one⟩ :=
+      root_operators_and_torus_eq_of_coroot_apply_eq_zero ρ M b wt hwt α hH A s
+    simp only [chevalleyRootSubgroup_eq_one_of_apply_eq_zero ρ M hM hnil α he0,
+      chevalleyRootSubgroup_eq_one_of_apply_eq_zero ρ M hM hnil _ hf0, htorus_one, mul_one]
   · have hT := (t.isSl2Triple_chevalleySystem ht α).map
       (ρ.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)) hH
     have h := kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL
