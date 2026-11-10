@@ -17,7 +17,7 @@ import Mathlib.Topology.Separation.Hausdorff
 
 A curve is often produced not as a `Path` but as a function `g : ℝ → X` defined on an *open*
 interval `Ioo a b`, continuous there, and converging at each of the two ends. This file turns such
-a function into an honest `Path` between its two limits, `TauCeti.Path.ofContinuousOnIoo`, and
+a function into an honest `Path` between its two limits, `Path.ofContinuousOnIoo`, and
 records what its values are on the interior of the unit interval and what its range is.
 
 The construction is the extension `TauCeti.extendIoo a b u v g` of `g` across the two ends of the
@@ -40,31 +40,33 @@ construction useful, since the endpoints are in general *not* values of `g`.
 Whether the path is simple is not a matter of the extension but of `g` and of the endpoints, and
 the one step of that argument which is not a plain composition is recorded here, in the
 reparametrisation-only form and with no topology on `X` at all:
-`TauCeti.eq_or_eq_endpoints_of_notMem_of_forall_mem_Ioo` says that if a curve on the unit interval
-is injective on the interior, and that interior stays inside a set to which neither endpoint value
-belongs, then the only repetition left is between the two endpoints. That is the statement "the
-path is a simple arc, except that it may be a loop".
+`TauCeti.eq_or_eq_endpoints_of_notMem_of_forall_mem_Ioo` says that if a function on a closed
+interval `Icc a b` is injective on the interior `Ioo a b`, and that interior is sent inside a set
+to which neither endpoint value belongs, then the only repetition left is between the two
+endpoints. On the unit interval that is the statement "the path is a simple arc, except that it may
+be a loop".
 
-It is stated for a bare function `unitInterval → X`, with no hypothesis relating it to `g` or to
-the extension, rather than for `TauCeti.Path.ofContinuousOnIoo` itself: a consumer typically
-receives its path from an existential and knows only a parametrisation formula for it, which it
-uses to establish the membership and injectivity hypotheses; a `Path` specializes through its
-coercion. Injectivity on the interior is likewise left to the call site, being the injectivity of
-`g` composed with that of `AffineMap.lineMap a b`.
+It is stated for a bare function on a partial order, with no hypothesis relating it to `g` or to
+the extension, rather than for `Path.ofContinuousOnIoo` itself: a consumer typically receives its
+path from an existential and knows only a parametrisation formula for it, which it uses to
+establish the membership and injectivity hypotheses; a `Path` specializes through its coercion,
+every point of `unitInterval` lying in `Icc 0 1`. Injectivity on the interior is likewise left to
+the call site, being the injectivity of `g` composed with that of `AffineMap.lineMap a b`.
 
 ## Main declarations
 
 * `TauCeti.extendIoo` — a function on `Ioo a b`, extended across both ends by prescribed values,
   with `TauCeti.extendIoo_apply_of_mem_Ioo`, `TauCeti.extendIoo_apply_of_le_left` and
   `TauCeti.extendIoo_apply_of_left_lt_of_right_le` computing it at every point, and
-  `TauCeti.continuousOn_Icc_extendIoo`, its continuity on `Icc a b`.
-* `TauCeti.Path.ofContinuousOnIoo` — the path traced by a function continuous on `Ioo a b` with a
+  `TauCeti.continuousOn_Icc_extendIoo`, its continuity on `Icc a b`, degenerate intervals
+  included.
+* `Path.ofContinuousOnIoo` — the path traced by a function continuous on `Ioo a b` with a
   limit at each end, from the limit at `a` to the limit at `b`.
-* `TauCeti.Path.ofContinuousOnIoo_apply` and
-  `TauCeti.Path.ofContinuousOnIoo_apply_of_mem_Ioo` — its values, in general and on the interior.
-* `TauCeti.Path.range_ofContinuousOnIoo` — its range is `closure (g '' Ioo a b)`.
-* `TauCeti.eq_or_eq_endpoints_of_notMem_of_forall_mem_Ioo` — the simplicity lemma above; it runs on
-  Mathlib's trichotomy `Set.eq_endpoints_or_mem_Ioo_of_mem_Icc`, read on the unit interval.
+* `Path.ofContinuousOnIoo_apply` and
+  `Path.ofContinuousOnIoo_apply_of_mem_Ioo` — its values, in general and on the interior.
+* `Path.range_ofContinuousOnIoo` — its range is `closure (g '' Ioo a b)`.
+* `TauCeti.eq_or_eq_endpoints_of_notMem_of_forall_mem_Ioo` — the simplicity lemma above, over
+  an arbitrary partial order.
 
 ## Generality
 
@@ -72,60 +74,34 @@ The extension and its continuity are stated over an arbitrary linearly ordered d
 order-closed topology; only the path is real, `AffineMap.lineMap` and `unitInterval` being so. The
 path and its values ask nothing of `X` beyond a topology; only the range computation is Hausdorff,
 the image of a compact set having to be closed there. The simplicity lemma assumes nothing about
-`X` at all.
+`X` at all, and of its domain only a partial order.
 -/
 
 public section
 
-namespace TauCeti
-
 open Filter Set Topology
 open scoped unitInterval
 
-section Reparametrisation
+namespace TauCeti
 
-variable {X : Type*} {a b : ℝ} {γ : I → X}
+section Endpoints
 
-/-- The affine parametrisation from the unit interval to `Icc a b` sends the whole unit interval
-into `Icc a b`. -/
-private theorem lineMap_mem_Icc (hab : a ≤ b) (t : I) :
-    AffineMap.lineMap a b (t : ℝ) ∈ Icc a b :=
-  segment_eq_Icc hab ▸ lineMap_mem_segment ℝ a b t.2
+variable {X α : Type*} [PartialOrder α] {a b x y : α} {γ : α → X}
 
-/-- The affine parametrisation from the unit interval to `Icc a b` sends its interior into
-`Ioo a b`. -/
-private theorem lineMap_mem_Ioo (hab : a < b) {t : I}
-    (ht : t ∈ Ioo (0 : I) 1) : AffineMap.lineMap a b (t : ℝ) ∈ Ioo a b := by
-  rw [← openSegment_eq_Ioo hab]
-  exact lineMap_mem_openSegment ℝ a b (by simpa using ht)
-
-/-- **A path repeats only at its endpoints when its interior avoids both endpoint values.**
-If `γ` maps the open interval into `S`, neither endpoint value lies in `S`, and `γ` is injective on
-the open interval, then any repeated value is a common value of the two endpoints.
+/-- **A function on a closed interval repeats only at the endpoints when the interior avoids both
+endpoint values.** If `γ` maps the open interval `Ioo a b` into `S`, neither endpoint value lies in
+`S`, and `γ` is injective on the open interval, then two points of `Icc a b` with a common value
+are equal or are the two endpoints.
 
 Purely a statement about function values: neither `γ` nor `S` carries any topology, and a `Path`
-specializes automatically through its coercion. The frontier/open-set form is derived at the call
-site. -/
+specializes through its coercion, with `a = 0` and `b = 1` in `unitInterval`. -/
 theorem eq_or_eq_endpoints_of_notMem_of_forall_mem_Ioo {S : Set X}
-    (hzero : γ 0 ∉ S) (hone : γ 1 ∉ S)
-    (hmem : ∀ t ∈ Ioo (0 : I) 1, γ t ∈ S)
-    (hinj : InjOn γ (Ioo (0 : I) 1)) ⦃x y : I⦄ (hxy : γ x = γ y) :
-    x = y ∨ (x = 0 ∧ y = 1) ∨ (x = 1 ∧ y = 0) := by
-  rcases eq_endpoints_or_mem_Ioo_of_mem_Icc (a := (0 : I)) (b := 1) x.2 with rfl | rfl | hx
-  · rcases eq_endpoints_or_mem_Ioo_of_mem_Icc (a := (0 : I)) (b := 1) y.2 with rfl | rfl | hy
-    · exact Or.inl rfl
-    · exact Or.inr (Or.inl ⟨rfl, rfl⟩)
-    · exact absurd (by rw [hxy]; exact hmem y hy) hzero
-  · rcases eq_endpoints_or_mem_Ioo_of_mem_Icc (a := (0 : I)) (b := 1) y.2 with rfl | rfl | hy
-    · exact Or.inr (Or.inr ⟨rfl, rfl⟩)
-    · exact Or.inl rfl
-    · exact absurd (by rw [hxy]; exact hmem y hy) hone
-  · rcases eq_endpoints_or_mem_Ioo_of_mem_Icc (a := (0 : I)) (b := 1) y.2 with rfl | rfl | hy
-    · exact absurd (by rw [← hxy]; exact hmem x hx) hzero
-    · exact absurd (by rw [← hxy]; exact hmem x hx) hone
-    · exact Or.inl (hinj hx hy hxy)
+    (ha : γ a ∉ S) (hb : γ b ∉ S) (hmem : ∀ t ∈ Ioo a b, γ t ∈ S) (hinj : InjOn γ (Ioo a b))
+    (hx : x ∈ Icc a b) (hy : y ∈ Icc a b) (hxy : γ x = γ y) :
+    x = y ∨ (x = a ∧ y = b) ∨ (x = b ∧ y = a) := by
+  grind [eq_endpoints_or_mem_Ioo_of_mem_Icc, InjOn]
 
-end Reparametrisation
+end Endpoints
 
 section Extend
 
@@ -171,11 +147,13 @@ theorem extendIoo_apply_of_left_lt_of_right_le (hax : a < x) (hx : b ≤ x) :
 
 /-- **A function continuous on an open interval and converging at both ends extends continuously
 to the closed interval.** The extension is `TauCeti.extendIoo` by the two limits; being handed
-them, the proof glues at the two ends and asks nothing of `X` beyond a topology. -/
+them, it asks nothing of `X` beyond a topology. No nondegeneracy `a < b` is assumed: otherwise
+`Icc a b` has at most one point. -/
 theorem continuousOn_Icc_extendIoo [TopologicalSpace α] [OrderClosedTopology α]
-    [TopologicalSpace X] (hab : a < b)
-    (hg : ContinuousOn g (Ioo a b)) (hu : Tendsto g (𝓝[>] a) (𝓝 u))
+    [TopologicalSpace X] (hg : ContinuousOn g (Ioo a b)) (hu : Tendsto g (𝓝[>] a) (𝓝 u))
     (hv : Tendsto g (𝓝[<] b) (𝓝 v)) : ContinuousOn (extendIoo a b u v g) (Icc a b) := by
+  rcases le_or_gt b a with hab | hab
+  · exact (subsingleton_Icc_of_ge hab).continuousOn _
   have hleft : ContinuousWithinAt (extendIoo a b u v g) (Icc a b) a := by
     refine ContinuousWithinAt.mono ?_ Icc_subset_Ici_self
     rw [← Ioi_insert, continuousWithinAt_insert_self]
@@ -199,7 +177,11 @@ theorem continuousOn_Icc_extendIoo [TopologicalSpace α] [OrderClosedTopology α
 
 end Extend
 
+end TauCeti
+
 namespace Path
+
+open TauCeti
 
 variable {X : Type*} [TopologicalSpace X] {a b : ℝ} {u v : X} {g : ℝ → X}
 
@@ -209,17 +191,17 @@ to `u` at `a` from the right and to `v` at `b` from the left, then `g` traverses
 parametrisation `AffineMap.lineMap a b` of `Icc a b` by the unit interval.
 
 Its values on the interior of the unit interval are those of `g`
-(`TauCeti.Path.ofContinuousOnIoo_apply_of_mem_Ioo`) and its range is `closure (g '' Ioo a b)`
-(`TauCeti.Path.range_ofContinuousOnIoo`); the endpoints `u` and `v` need not themselves be values
-of `g`. Compute with it through `TauCeti.Path.ofContinuousOnIoo_apply` rather than through the
+(`Path.ofContinuousOnIoo_apply_of_mem_Ioo`) and its range is `closure (g '' Ioo a b)`
+(`Path.range_ofContinuousOnIoo`); the endpoints `u` and `v` need not themselves be values
+of `g`. Compute with it through `Path.ofContinuousOnIoo_apply` rather than through the
 definition. -/
 noncomputable def ofContinuousOnIoo (hab : a < b) (hg : ContinuousOn g (Ioo a b))
     (hu : Tendsto g (𝓝[>] a) (𝓝 u)) (hv : Tendsto g (𝓝[<] b) (𝓝 v)) : Path u v where
   toFun t := extendIoo a b u v g (AffineMap.lineMap a b (t : ℝ))
   continuous_toFun :=
-    (continuousOn_Icc_extendIoo hab hg hu hv).comp_continuous
+    (continuousOn_Icc_extendIoo hg hu hv).comp_continuous
       (by simp only [AffineMap.lineMap_apply_ring]; fun_prop)
-      fun t => lineMap_mem_Icc hab.le t
+      fun t => segment_eq_Icc hab.le ▸ lineMap_mem_segment ℝ a b t.2
   source' := by simp
   target' := by simp [hab]
 
@@ -229,8 +211,7 @@ affine parametrisation of `Icc a b` by the unit interval. -/
 theorem ofContinuousOnIoo_apply (hab : a < b) (hg : ContinuousOn g (Ioo a b))
     (hu : Tendsto g (𝓝[>] a) (𝓝 u)) (hv : Tendsto g (𝓝[<] b) (𝓝 v)) (t : I) :
     ofContinuousOnIoo hab hg hu hv t = extendIoo a b u v g (AffineMap.lineMap a b (t : ℝ)) :=
-  -- Parenthesised: the bare-`rfl` elaborator additionally demands that `ofContinuousOnIoo` be
-  -- `@[expose]`d, which it cannot be while its proof fields use private lemmas of this file.
+  -- Parenthesised: a bare `rfl` would demand that the body of `ofContinuousOnIoo` be exposed.
   (rfl)
 
 /-- **On the interior of the unit interval the path traced by `g` is `g` itself**, along the affine
@@ -242,7 +223,8 @@ theorem ofContinuousOnIoo_apply_of_mem_Ioo (hab : a < b) (hg : ContinuousOn g (I
     (hu : Tendsto g (𝓝[>] a) (𝓝 u)) (hv : Tendsto g (𝓝[<] b) (𝓝 v)) {t : I}
     (ht : t ∈ Ioo (0 : I) 1) :
     ofContinuousOnIoo hab hg hu hv t = g (AffineMap.lineMap a b (t : ℝ)) := by
-  rw [ofContinuousOnIoo_apply, extendIoo_apply_of_mem_Ioo (lineMap_mem_Ioo hab ht)]
+  rw [ofContinuousOnIoo_apply, extendIoo_apply_of_mem_Ioo]
+  exact openSegment_eq_Ioo hab ▸ lineMap_mem_openSegment ℝ a b (by simpa using ht)
 
 /-- **The range of the path traced by `g` is the closure of the curve.** The path traverses the
 closed interval `Icc a b`, which is the closure of `Ioo a b` and compact, so its image under a map
@@ -255,7 +237,7 @@ theorem range_ofContinuousOnIoo [T2Space X] (hab : a < b) (hg : ContinuousOn g (
   have hparam : range (fun t : I => AffineMap.lineMap a b (t : ℝ)) = Icc a b := by
     rw [← image_eq_range, ← segment_eq_image_lineMap, segment_eq_Icc hab.le]
   have hcont : ContinuousOn (extendIoo a b u v g) (closure (Ioo a b)) :=
-    hcl ▸ continuousOn_Icc_extendIoo hab hg hu hv
+    hcl ▸ continuousOn_Icc_extendIoo hg hu hv
   have heq : EqOn (extendIoo a b u v g) g (Ioo a b) := fun _ hx => extendIoo_apply_of_mem_Ioo hx
   have hfun : ⇑(ofContinuousOnIoo hab hg hu hv)
       = extendIoo a b u v g ∘ fun t : I => AffineMap.lineMap a b (t : ℝ) :=
@@ -264,5 +246,3 @@ theorem range_ofContinuousOnIoo [T2Space X] (hab : a < b) (hg : ContinuousOn g (
     heq.image_eq]
 
 end Path
-
-end TauCeti
