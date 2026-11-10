@@ -440,9 +440,7 @@ theorem bijective_singularHomologyFunctor_map_iff_isUnit_degree (f : C(M, N)) :
   change Function.Bijective φ ↔ _
   rw [key, (o'.fundamentalClassEquiv hF).bijective.of_comp_iff',
     Function.Bijective.of_comp_iff _ (o.fundamentalClassEquiv hE).symm.bijective]
-  refine ⟨fun h ↦ ?_, fun ⟨u, hu⟩ ↦ hu ▸ u.mulRight_bijective⟩
-  obtain ⟨c, hc⟩ := h.2 1
-  exact IsUnit.of_mul_eq_one_right c hc
+  exact IsUnit.isUnit_iff_mulRight_bijective.symm
 
 include hF in
 /-- **The degree detects isomorphisms on integral top homology.** For a map `f : M → N` between

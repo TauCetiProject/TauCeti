@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.Geometry.Manifold.PontryaginThom.Basic
+import TauCeti.Geometry.Sphere.Connected
 
 /-!
 # The degree of a Pontryagin–Thom collapse along a map
@@ -90,13 +91,6 @@ variable {P E : Type} [TopologicalSpace P] [T2Space P] [CompactSpace P]
     (EuclideanSpace ℝ (Fin (k + 1))) (k + 1))
   (hE : finrank ℝ E = k + 1)
 
-/-- The sphere `Sᵏ⁺¹`, `k + 1 ≥ 1`, is connected. -/
-private theorem connectedSpace_sphere :
-    ConnectedSpace (sphere (0 : EuclideanSpace ℝ (Fin (k + 2))) 1) :=
-  isConnected_iff_connectedSpace.1 <| isConnected_sphere (by
-    rw [← finrank_eq_rank, finrank_euclideanSpace_fin]
-    exact_mod_cast (by omega : 1 < k + 2)) 0 zero_le_one
-
 /-- **The degree of a collapse along a map is an intersection number.** Let `c` be the
 Pontryagin–Thom collapse onto `Sᵏ⁺¹` of a framed tube around `f : S → M`, and `g : P → M` a map from
 a compact oriented manifold of dimension `k + 1` meeting the core `f(S)` in finitely many points.
@@ -107,7 +101,7 @@ theorem degree_pontryaginThomSphereMap_comp_eq_sum_localIndex {f : S → M}
     (hg : (g ⁻¹' range f).Finite) :
     o.degree o' hE ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp g) = ∑ x ∈ hg.toFinset,
       o.localIndex o' ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp g) x := by
-  have := connectedSpace_sphere (k := k)
+  have := connectedSpace_euclideanSphere (by omega : 1 < k + 2)
   have hpre : (pontryaginThomSphereMap h.isOpenEmbedding s₀).comp g ⁻¹'
       {onePointHomeomorphSphere (k + 1) s₀ ((0 : Fin (k + 1) → ℝ) : OnePoint _)} = g ⁻¹' range f :=
     ext fun x ↦ h.pontryaginThomSphereMap_eq_iff s₀
@@ -129,7 +123,7 @@ theorem isUnit_degree_pontryaginThomSphereMap_comp {f : S → M}
     (hx : g ⁻¹' range f = {x}) {U : Set P} (hUo : IsOpen U) (hxU : x ∈ U)
     (hgU : IsOpenEmbedding fun z : U ↦ pontryaginThomCollapse τ (g z)) :
     IsUnit (o.degree o' hE ((pontryaginThomSphereMap h.isOpenEmbedding s₀).comp g)) := by
-  have := connectedSpace_sphere (k := k)
+  have := connectedSpace_euclideanSphere (by omega : 1 < k + 2)
   have hgx : g x ∈ range f := hx.symm.subset (mem_singleton x)
   -- On `U`, the collapse along `g` is the normal coordinate of `g` read in the sphere.
   have hcU :
