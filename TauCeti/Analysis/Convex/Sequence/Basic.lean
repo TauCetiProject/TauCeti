@@ -211,11 +211,13 @@ theorem ne_top_of_le_of_le {i j k : ℕ} (hi : h i ≠ ⊤) (hk : h k ≠ ⊤)
     (hij : i ≤ j) (hjk : j ≤ k) : h j ≠ ⊤ :=
   hh.ordConnected.out hi hk ⟨hij, hjk⟩
 
-/-- Every later secant is bounded below by the slope of a finite edge that
-precedes it. The length-zero case is included. -/
-theorem mul_slope_le_sub {i j m : ℕ} (hi : h i ≠ ⊤) (hj : h j ≠ ⊤)
+/-- Every later secant is bounded below by the slope of an edge `m, m + 1` that precedes it.
+Finiteness at `i` follows from that at `m` and `j`, and the edge is finite when `i < j`. For
+`i = j` the inequality is the trivial `0 ≤ 0`, with no finiteness of `h (m + 1)` needed. -/
+theorem mul_slope_le_sub {i j m : ℕ} (hj : h j ≠ ⊤)
     (hm : h m ≠ ⊤) (hij : i ≤ j) (hmi : m ≤ i) :
     ((j - i : ℕ) : ℝ) * unitSlope h m ≤ (h j).untop₀ - (h i).untop₀ := by
+  have hi : h i ≠ ⊤ := hh.ne_top_of_le_of_le hm hj hmi hij
   rcases hij.eq_or_lt with rfl | hlt
   · simp
   have hm' : h (m + 1) ≠ ⊤ := hh.ne_top_of_le_of_le hm hj (Nat.le_succ m) (by omega)
@@ -230,8 +232,9 @@ theorem mul_slope_le_sub {i j m : ℕ} (hi : h i ≠ ⊤) (hj : h j ≠ ⊤)
   rw [sum_Ico_sub (fun n => (h n).untop₀) hlt.le] at hs
   simpa only [sum_const, Nat.card_Ico, nsmul_eq_mul, unitSlope] using hs
 
-/-- Every earlier secant is bounded above by the slope of a finite edge that
-follows its last edge. The length-zero case is included. -/
+/-- Every earlier secant is bounded above by the slope of an edge `m, m + 1` that follows its
+last edge. The edge is finite when `i < j`, and for `i = j` the inequality is the trivial
+`0 ≤ 0`. -/
 theorem sub_le_mul_slope {i j m : ℕ} (hi : h i ≠ ⊤) (hm' : h (m + 1) ≠ ⊤)
     (hij : i ≤ j) (hjm : j ≤ m + 1) :
     (h j).untop₀ - (h i).untop₀ ≤ ((j - i : ℕ) : ℝ) * unitSlope h m := by
@@ -259,7 +262,7 @@ theorem supportingLine_le {n : ℕ} (hn : h n ≠ ⊤) (hn' : h (n + 1) ≠ ⊤)
   · simp [hk]
   · rw [← WithTop.coe_untop₀_of_ne_top hk, WithTop.coe_le_coe]
     rcases le_total n k with hnk | hkn
-    · have hs := hh.mul_slope_le_sub hn hk hn hnk le_rfl
+    · have hs := hh.mul_slope_le_sub hk hn hnk le_rfl
       rw [Nat.cast_sub hnk] at hs
       linarith
     · have hs := hh.sub_le_mul_slope hk hn' hkn (Nat.le_succ n)
@@ -278,7 +281,7 @@ theorem chord_inequality {i j k : ℕ} (hi : h i ≠ ⊤) (hk : h k ≠ ⊤)
     exact le_rfl
   have hj' : h (j + 1) ≠ ⊤ := hh.ne_top_of_le_of_le hi hk (by omega) hjk'
   have hleft := hh.sub_le_mul_slope hi hj' hij (Nat.le_succ j)
-  have hright := hh.mul_slope_le_sub hj hk hj hjk le_rfl
+  have hright := hh.mul_slope_le_sub hk hj hjk le_rfl
   rw [Nat.cast_sub hij] at hleft
   rw [Nat.cast_sub hjk] at hright
   have hleft' := mul_le_mul_of_nonneg_left hleft

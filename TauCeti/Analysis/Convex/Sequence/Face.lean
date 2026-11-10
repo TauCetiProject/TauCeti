@@ -111,7 +111,7 @@ theorem IsConvexSeq.isSupportingLine_iff_unitSlope {h : ℕ → WithTop ℝ}
       nlinarith
     · simp
     · have hn' := hh.ne_top_of_le_of_le hn hk (Nat.le_succ n) hnk
-      have hs := hh.mul_slope_le_sub hn hk hn hnk.le le_rfl
+      have hs := hh.mul_slope_le_sub hk hn hnk.le le_rfl
       have hb := hright hn'
       rw [Nat.cast_sub hnk.le] at hs
       have hdiff : 0 ≤ (k : ℝ) - n := sub_nonneg.mpr (Nat.cast_le.mpr hnk.le)
@@ -343,7 +343,7 @@ theorem unitSlope_lt (hf : IsFiniteFace h σ l u) (hh : IsConvexSeq h)
     omega
   have hi_strict : c + σ * i < (h i).untop₀ :=
     lt_of_le_of_ne hi_lower hi_ne.symm
-  have hs := hh.mul_slope_le_sub hif.1 hf.left_ne_top hif.1 hil.le le_rfl
+  have hs := hh.mul_slope_le_sub hf.left_ne_top hif.1 hil.le le_rfl
   rw [hl_real, Nat.cast_sub hil.le] at hs
   have hil_real : (i : ℝ) < l := Nat.cast_lt.mpr hil
   nlinarith
@@ -562,7 +562,7 @@ theorem IsConvexSeq.supportingFace_subset_Iic_of_lt_unitSlope {h : ℕ → WithT
     rw [mem_supportingFace] at hn
     rw [hn]
     exact WithTop.coe_ne_top
-  have hs := hh.mul_slope_le_sub hmf.1 hn_top hmf.1 hmn.le le_rfl
+  have hs := hh.mul_slope_le_sub hn_top hmf.1 hmn.le le_rfl
   rw [Nat.cast_sub hmn.le] at hs
   have hcm := hc m
   rw [← WithTop.coe_untop₀_of_ne_top hmf.1, WithTop.coe_le_coe] at hcm
@@ -596,7 +596,7 @@ theorem IsConvexSeq.exists_isFiniteFace_of_lt_unitSlope {h : ℕ → WithTop ℝ
     · have hcn : c ≤ (h n).untop₀ - σ * n := hmin n ⟨hnm, hn⟩
       linarith
     · have hmn : m ≤ n := (lt_of_not_ge hnm).le
-      have htail := hh.mul_slope_le_sub hmf.1 hn hmf.1 hmn le_rfl
+      have htail := hh.mul_slope_le_sub hn hmf.1 hmn le_rfl
       rw [Nat.cast_sub hmn] at htail
       have hprod := mul_nonneg (sub_nonneg.mpr hσ.le)
         (sub_nonneg.mpr (Nat.cast_le.mpr hmn) : (0 : ℝ) ≤ n - m)
