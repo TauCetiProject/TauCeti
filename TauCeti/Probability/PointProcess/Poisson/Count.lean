@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.PointProcess.Poisson.Basic
 public import TauCeti.MeasureTheory.Measure.NNReal
 public import Mathlib.Probability.Independence.Process.HasIndepIncrements.Basic
+import TauCeti.Probability.PointProcess.Poisson.IntegerValued
 import Mathlib.MeasureTheory.Function.Floor
 
 /-!
@@ -68,12 +69,9 @@ of the intensity rules out infinite counts simultaneously on all bounded time in
 theorem ae_monotone_nat_count [IsLocallyFiniteMeasure Λ]
     (h : IsPoissonRandomMeasure P M Λ) :
     ∀ᵐ ω ∂P, Monotone (fun t : ℝ≥0 ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊) := by
-  filter_upwards [ae_all_iff.2 (fun n : ℕ ↦
-    h.ae_exists_eq_natCast (A := Ioc 0 (n : ℝ≥0)) measurableSet_Ioc measure_Ioc_lt_top)] with ω hω
-  have hfin (t : ℝ≥0) : M ω (Ioc 0 t) ≠ ∞ := by
-    obtain ⟨n, hn⟩ := hω ⌈t⌉₊
-    exact ne_top_of_le_ne_top (by rw [hn]; exact ENNReal.natCast_ne_top n)
-      (measure_mono (Ioc_subset_Ioc_right (Nat.le_ceil t)))
+  filter_upwards [h.ae_isLocallyFiniteMeasure] with ω hω
+  have hfin (t : ℝ≥0) : M ω (Ioc 0 t) ≠ ∞ :=
+    (measure_Ioc_lt_top (μ := M ω)).ne
   intro s t hst
   exact Nat.floor_mono (ENNReal.toNNReal_mono (hfin t)
     (measure_mono (Ioc_subset_Ioc_right hst)))

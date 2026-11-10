@@ -41,26 +41,6 @@ namespace TauCeti.Probability
 variable {Ω X ι : Type*} [MeasurableSpace Ω] [MeasurableSpace X]
   {P : Measure Ω} {N : ι → Ω → Measure X} {Λ : ι → Measure X}
 
-/-- On a set of finite intensity, converting a Poisson count to a natural number recovers
-its native Poisson law, and casting back agrees almost surely with the original count. -/
-private theorem poisson_count_floor_toNNReal {M : Ω → Measure X} {ν : Measure X}
-    (h : IsPoissonRandomMeasure P M ν) {A : Set X} (hA : MeasurableSet A)
-    (hfin : ν A < ∞) :
-    HasLaw (fun ω => ⌊(M ω A).toNNReal⌋₊) (poissonMeasure (ν A).toNNReal) P ∧
-      ∀ᵐ ω ∂P, (⌊(M ω A).toNNReal⌋₊ : ℝ≥0∞) = M ω A := by
-  have hlaw := h.hasLaw hA hfin
-  have hm : Measurable (fun x : ℝ≥0∞ => ⌊x.toNNReal⌋₊) :=
-    Nat.measurable_floor.comp ENNReal.measurable_toNNReal
-  constructor
-  · simpa [Measure.map_map hm Measurable.of_discrete, Function.comp_def] using
-      (hasLaw_map hm.aemeasurable).comp hlaw
-  · have hs : MeasurableSet {x : ℝ≥0∞ | (⌊x.toNNReal⌋₊ : ℝ≥0∞) = x} :=
-      measurableSet_eq_fun (Measurable.of_discrete.comp hm) measurable_id
-    apply (ae_map_iff hlaw.aemeasurable hs).mp
-    rw [hlaw.map_eq]
-    exact (ae_map_iff Measurable.of_discrete.aemeasurable hs).mpr
-      (ae_of_all _ fun k => by simp)
-
 /-- The joint count law of a finite independent superposition, on a finite disjoint
 family of measurable sets of finite total intensity. -/
 private theorem hasLaw_sum_counts [Fintype ι]
@@ -90,8 +70,7 @@ private theorem hasLaw_sum_counts [Fintype ι]
       (fun _ => Nat.measurable_floor.comp ENNReal.measurable_toNNReal))
   have hlaw : HasLaw (fun ω (p : ι × Fin n) => Z p.1 p.2 ω)
       (Measure.pi fun p => poissonMeasure (r p)) P :=
-    iIndepFun.hasLaw_pi (fun p => (poisson_count_floor_toNNReal (h p.1) (hA p.2)
-      (hfi p.1 p.2)).1) hall
+    iIndepFun.hasLaw_pi (fun p => (h p.1).hasLaw_natFloor (hA p.2) (hfi p.1 p.2)) hall
   have hsum := (hasLaw_map (X := FunOnFinite.map (M := ℕ) (Prod.snd : ι × Fin n → Fin n))
     Measurable.of_discrete.aemeasurable).comp hlaw
   rw [map_funOnFinite_map_pi_poissonMeasure] at hsum
@@ -106,7 +85,7 @@ private theorem hasLaw_sum_counts [Fintype ι]
   apply hcast.congr
   have hae : ∀ᵐ ω ∂P, ∀ i j, (⌊(N i ω (A j)).toNNReal⌋₊ : ℝ≥0∞) = N i ω (A j) :=
     ae_all_iff.mpr fun i => ae_all_iff.mpr fun j =>
-      (poisson_count_floor_toNNReal (h i) (hA j) (hfi i j)).2
+      (h i).ae_natCast_natFloor_eq (hA j) (hfi i j)
   filter_upwards [hae] with ω hω
   ext j
   simp [FunOnFinite.map_apply_apply, Finset.sum_filter, Fintype.sum_prod_type, Z, sum_apply, hω]
