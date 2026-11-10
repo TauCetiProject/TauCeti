@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.LogDeriv
-public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.Basic
 
 /-!
 # Logarithmic derivatives of completed Dirichlet L-functions

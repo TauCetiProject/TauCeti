@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.DirichletCharacter.LFunction.CompletedLogDeriv
+public import TauCeti.NumberTheory.DirichletCharacter.LFunction.Completed.LogDeriv
 public import TauCeti.NumberTheory.LFunctions.Zeros.Completion.Dirichlet.Basic
 
 /-!
