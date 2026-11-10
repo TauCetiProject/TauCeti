@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.ModelTheory.Infinitary.ConstantAbstraction
 public import TauCeti.ModelTheory.Infinitary.GraphTranslation.BackTranslate
 public import TauCeti.ModelTheory.Infinitary.GraphTranslation.Reconstruction
+public import TauCeti.ModelTheory.Interpolation.ConstantElimination
 public import TauCeti.ModelTheory.Interpolation.PCClass
 public import TauCeti.ModelTheory.ModelExistence.ModelExistence
 
@@ -169,12 +169,6 @@ private def updateStructure {M : Type w} [L[[ℕ]].Structure M] (c : ℕ) (m : M
   @withConstantsStructure L M ((L.lhomWithConstants ℕ).reduct M) ℕ
     (constantsOn.structure (Function.update (fun d => (L.con d : M)) c m))
 
-private theorem updateStructure_con {M : Type w} [iM : L[[ℕ]].Structure M] (c : ℕ) :
-    updateStructure c (L.con c : M) = iM := by
-  unfold updateStructure
-  rw [Function.update_eq_self]
-  exact withConstantsStructure_reduct_eq (L := L) (γ := ℕ) M
-
 private theorem realize_con_updateStructure_self {M : Type w} [L[[ℕ]].Structure M] {α : Type*}
     (c : ℕ) (m : M) (v : α → M) :
     @Term.realize _ M (updateStructure c m) _ v (L.con c).term = m := by
@@ -206,13 +200,15 @@ private theorem realize_updateStructure_of_notMem {M : Type w} [iM : L[[ℕ]].St
     (fun d hd => Function.update_of_ne (by rintro rfl; exact hc hd : d ≠ c) m
       (fun d => (L.con d : M))) v xs, ← hS]
 
-private theorem model_updateStructure {M : Type w} [L[[ℕ]].Structure M]
+private theorem model_updateStructure {M : Type w} [iM : L[[ℕ]].Structure M]
     {Γ : L[[ℕ]].Theoryω} {c : ℕ} (hc : ∀ χ ∈ Γ, c ∉ χ.constantSupport) (m : M)
-    (hM : Γ.Model M) : @Theoryω.Model _ Γ M (updateStructure c m) :=
-  (@Theoryω.model_iff _ Γ M (updateStructure c m)).2 fun χ hχ => by
-    have h₀ := hM.realize_of_mem hχ
-    simp only [SentenceInf.realize_def, FormulaInf.realize_def] at h₀ ⊢
-    exact (realize_updateStructure_of_notMem (hc χ hχ) m Empty.elim default).2 h₀
+    (hM : Γ.Model M) : @Theoryω.Model _ Γ M (updateStructure c m) := by
+  let S : L.Structure M := (L.lhomWithConstants ℕ).reduct M
+  have hS : iM = @withConstantsStructure L M S ℕ
+      (constantsOn.structure fun d => (L.con d : M)) :=
+    (withConstantsStructure_reduct_eq (L := L) (γ := ℕ) M).symm
+  unfold updateStructure
+  exact (Theoryω.model_constantsOn_update_iff _ m hc).2 (hS ▸ hM)
 
 private theorem realize_abstractConst_snoc {M : Type w} [iM : L[[ℕ]].Structure M]
     (c : ℕ) (θ : L[[ℕ]].Sentenceω) (m : M) :
@@ -231,33 +227,13 @@ already lie in `K`. -/
 private theorem hasSep_of_finite_extra {R : Set (Σ n, L[[ℕ]].Relations n)} {K E : Set ℕ}
     (hE : E.Finite) {Γ Δ : L[[ℕ]].Theoryω} (hΓK : ∀ χ ∈ Γ, χ.constantSupport ⊆ K)
     (hsep : HasSep R (K ∪ E) Γ Δ) : HasSep R K Γ Δ := by
-  classical
-  have hfin : (E \ K).Finite := hE.subset Set.sdiff_subset
-  suffices ∀ S : Finset ℕ, (∀ c ∈ S, c ∉ K) → HasSep R (K ∪ ↑S) Γ Δ → HasSep R K Γ Δ from
-    this hfin.toFinset (fun _ hc => (hfin.mem_toFinset.1 hc).2) <| by
-      obtain ⟨θ, hr, hs, hΓ, hΔ⟩ := hsep
-      refine ⟨θ, hr, hs.trans fun c hc => ?_, hΓ, hΔ⟩
-      exact if hcK : c ∈ K then .inl hcK else .inr (hfin.mem_toFinset.2 ⟨hc.resolve_left hcK, hcK⟩)
-  intro S
-  induction S using Finset.induction_on with
-  | empty => intro _ h; simpa using h
-  | @insert c S _ ih =>
-    intro hSK ⟨θ, hrel, hsupp, hΓ, hΔ⟩
-    have hcK : c ∉ K := hSK c (Finset.mem_insert_self c S)
-    refine ih (fun d hd => hSK d (Finset.mem_insert_of_mem hd))
-      ⟨(abstractConst c θ).all, by simpa using hrel, ?_, ?_, ?_⟩
-    · rw [constantSupport_all, constantSupport_abstractConst]
-      exact fun d hd => (hsupp hd.1).imp_right fun h => (Finset.mem_insert.1 h).resolve_left hd.2
-    · refine Theoryω.entails_iff.2 fun M _ _ hM => ?_
-      rw [SentenceInf.realize_def, FormulaInf.realize_def, realize_all]
-      exact fun m => (realize_abstractConst_snoc c θ m).2 <|
-        @entails_realize L Γ θ hΓ M (updateStructure c m) ‹_›
-          (model_updateStructure (fun χ hχ h => hcK (hΓK χ hχ h)) m hM)
-    · refine Theoryω.entails_iff.2 fun M _ _ hM => SentenceInf.realize_not.2 fun hall => ?_
-      rw [SentenceInf.realize_def, FormulaInf.realize_def, realize_all] at hall
-      have hcon := (realize_abstractConst_snoc c θ (L.con c : M)).1 (hall (L.con c))
-      rw [updateStructure_con (L := L)] at hcon
-      exact SentenceInf.realize_not.1 (entails_realize hΔ M hM) hcon
+  obtain ⟨θ, hrel, hsupp, hΓ, hΔ⟩ := hsep
+  obtain ⟨χ, hr, -, hk, hΓχ, hΔχ⟩ :=
+    Theoryω.exists_separator_constantSupport_subset hE hΓK hsupp hΓ hΔ
+  refine ⟨χ, ?_, hk, hΓχ, hΔχ⟩
+  rw [← relationsInSigned_union_not true χ, hr true, hr (!true),
+    relationsInSigned_union_not]
+  exact hrel
 
 /-- Existential witness elimination: if `c ∉ pairSupport Γ Δ` and every model of `Γ` admits an
 interpretation of `c` satisfying `ψ`, any separator of `(insert ψ Γ, Δ)` with constant budget
@@ -278,13 +254,7 @@ private theorem hasSep_elim_witness {R : Set (Σ n, L[[ℕ]].Relations n)} {K : 
       @entails_realize L _ θ hΓθ M (updateStructure c m) ‹_›
         ((@Theoryω.model_insert_iff _ _ M (updateStructure c m) _).2
           ⟨hm, model_updateStructure (fun _ hχ h => hc (subset_pairSupport_left hχ h)) m hM⟩)⟩
-  · refine Theoryω.entails_iff.2 fun M _ _ hM => SentenceInf.realize_not.2 ?_
-    rw [SentenceInf.realize_def, FormulaInf.realize_def, realize_ex]
-    rintro ⟨m, hm⟩
-    exact (@SentenceInf.realize_not _ _ M (updateStructure c m)).1
-      (@entails_realize L Δ θ.not hΔθ M (updateStructure c m) ‹_›
-        (model_updateStructure (fun _ hχ h => hc (subset_pairSupport_right hχ h)) m hM))
-      ((realize_abstractConst_snoc c θ m).1 hm)
+  · exact hΔθ.not_ex_abstractConst (fun _ hχ h => hc (subset_pairSupport_right hχ h))
 
 /-- A valid `(R₁, R₂)`-inseparable finite pair `(Γ, Δ)`. -/
 private structure InsepPair (R₁ R₂ : Set (Σ n, L.Relations n)) (Γ Δ : L[[ℕ]].Theoryω) : Prop where

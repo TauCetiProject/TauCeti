@@ -83,7 +83,7 @@ theorem map_dirichletNormalize_sum_pi_gammaMeasure {a : ι → ℝ} {r : ℝ}
   have hscale : (Measure.pi fun i ↦ gammaMeasure (a i) 1).map
       (fun x i ↦ r⁻¹ * x i) = Measure.pi fun i ↦ gammaMeasure (a i) r := by
     rw [Measure.pi_map_pi (fun _ ↦ (measurable_const_mul r⁻¹).aemeasurable)]
-    simp_rw [gammaMeasure_map_const_mul (ha _) one_pos (inv_pos.mpr hr), one_div, inv_inv]
+    simp_rw [gammaMeasure_map_const_mul (inv_pos.mpr hr), one_div, inv_inv]
   have hcomm : (fun x : ι → ℝ ↦ (dirichletNormalize (fun i ↦ r⁻¹ * x i),
       ∑ i, r⁻¹ * x i)) =
       (Prod.map id (r⁻¹ * ·)) ∘ (fun x ↦ (dirichletNormalize x, ∑ i, x i)) := by
@@ -99,7 +99,7 @@ theorem map_dirichletNormalize_sum_pi_gammaMeasure {a : ι → ℝ} {r : ℝ}
         map_dirichletNormalize_sum_pi_gammaMeasure_one ha]
     _ = _ := by
       rw [← Measure.map_prod_map _ _ measurable_id (measurable_const_mul r⁻¹), Measure.map_id,
-        gammaMeasure_map_const_mul hA one_pos (inv_pos.mpr hr)]
+        gammaMeasure_map_const_mul (inv_pos.mpr hr)]
       simp
 
 /-- Normalizing independent Gamma coordinates gives a Dirichlet law at every common positive

@@ -33,7 +33,7 @@ an order-zero bound on the tests supported in each compact subset of `Ω`.
   `‖T φ‖ₑ ≤ localMass T U * ‖φ‖_∞` when `φ` is supported in `U`.
 * `Distribution.localMass_comp_le_of_enorm_apply_le`,
   `Distribution.HasLocallyFiniteMass.comp_of_norm_apply_le`: precomposition with a pointwise
-  bounded map of test functions that does not enlarge supports.
+  bounded map of test functions (which does not enlarge supports).
 * `Distribution.mass_eq_zero_iff`: a linear map has mass zero exactly when it vanishes.
 * `Distribution.localMass_add_localMass_le`: for a real-valued linear map, the local masses on
   disjoint sets add up to at most the local mass on their union.
@@ -410,13 +410,20 @@ theorem HasLocallyFiniteMass.smul [NormedSpace ℝ V] (hf : HasLocallyFiniteMass
   exact mul_le_mul_of_nonneg_left (hfC φ hφ) (norm_nonneg a)
 
 /-- **Order-zero operators preserve local finiteness.** Precomposition with a map `L` of test
-functions that does not enlarge supports and satisfies a pointwise bound `‖L ψ x‖ ≤ b x ‖ψ x‖`
-by a continuous weight `b` preserves locally finite mass. -/
+functions that satisfies a pointwise bound `‖L ψ x‖ ≤ b x ‖ψ x‖` by a continuous weight `b`
+preserves locally finite mass. Such a map does not enlarge supports. -/
 theorem HasLocallyFiniteMass.comp_of_norm_apply_le {G : Type*} [NormedAddCommGroup G]
     [NormedSpace ℝ G] {T : 𝓓^{n}(Ω, F) → V} (hT : HasLocallyFiniteMass T)
-    {L : 𝓓^{n}(Ω, G) → 𝓓^{n}(Ω, F)} (hLs : ∀ ψ, tsupport (L ψ) ⊆ tsupport ψ) {b : E → ℝ}
-    (hb : Continuous b) (hL : ∀ ψ x, ‖L ψ x‖ ≤ b x * ‖ψ x‖) : HasLocallyFiniteMass (T ∘ L) := by
+    {L : 𝓓^{n}(Ω, G) → 𝓓^{n}(Ω, F)} {b : E → ℝ} (hb : Continuous b)
+    (hL : ∀ ψ x, ‖L ψ x‖ ≤ b x * ‖ψ x‖) : HasLocallyFiniteMass (T ∘ L) := by
   rw [hasLocallyFiniteMass_def] at hT ⊢
+  -- The pointwise bound already forces `L ψ` to vanish off `tsupport ψ`.
+  have hLs (ψ : 𝓓^{n}(Ω, G)) : tsupport (L ψ) ⊆ tsupport ψ := by
+    refine closure_minimal (fun x hx => ?_) (isClosed_tsupport _)
+    by_contra hxψ
+    have h0 := hL ψ x
+    rw [image_eq_zero_of_notMem_tsupport hxψ, norm_zero, mul_zero] at h0
+    exact hx (norm_le_zero_iff.1 h0)
   intro K hK hKΩ
   obtain ⟨C, hC, hTC⟩ := hT K hK hKΩ
   obtain ⟨M, hM⟩ := hK.exists_bound_of_continuousOn hb.continuousOn

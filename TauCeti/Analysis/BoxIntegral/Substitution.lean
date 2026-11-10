@@ -47,7 +47,7 @@ theorem hasIntegral_Henstock_deriv_smul_comp {E : Type*} [NormedAddCommGroup E] 
   have ha : θ a ∈ Icc c d := hmap (left_mem_Icc.mpr hab.le)
   have hb : θ b ∈ Icc c d := hmap (right_mem_Icc.mpr hab.le)
   obtain ⟨F, hF, hdF, hvalue⟩ :=
-    TauCeti.intervalIntegral.exists_continuous_primitive_Icc (ha.1.trans ha.2) hf
+    TauCeti.intervalIntegral.exists_continuous_primitive_Icc hf
   have h := hasIntegral_Henstock_of_hasDerivAt_off_countable hab hs (hF.comp_continuousOn hθ)
     (fun t ht ↦ (hdF (θ t) (hmap (Ioo_subset_Icc_self ht.1))).scomp t (hdθ t ht))
   simpa only [Function.comp_apply, hvalue (θ a) ha (θ b) hb] using h

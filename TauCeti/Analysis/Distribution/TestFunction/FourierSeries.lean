@@ -36,7 +36,7 @@ this are of independent use:
   `ψ ↦ ‖T ψ‖` for a continuous linear map `T` to a normed space, grows polynomially along the
   modulated cutoffs (`ContDiffMapSupportedIn.exists_seminorm_modulate_le`);
 * the coefficients `𝓕 φ (m)` decay faster than every power of `‖m‖`, since `𝓕 φ` is a Schwartz
-  function (`ZLattice.summable_one_add_norm_pow_mul_norm`).
+  function (`ContDiffMapSupportedIn.summable_one_add_norm_pow_mul_norm_fourier`).
 
 Expansions of this kind are the first step of the Fourier-series proof of the Schwartz kernel
 theorem: a continuous linear map on test functions is determined by its values on the
@@ -56,6 +56,8 @@ the resulting double series converge.
   modulated cutoff.
 * `ContDiffMapSupportedIn.exists_seminorm_modulate_le`: a continuous seminorm grows at most
   polynomially along modulated cutoffs.
+* `ContDiffMapSupportedIn.summable_one_add_norm_pow_mul_norm_fourier`: the Fourier transform of a
+  smooth function supported in `K` decays rapidly along a lattice.
 * `ContDiffMapSupportedIn.hasSum_fourier_smul_modulate`: the Fourier expansion of a smooth
   function supported in `K`, converging in `𝓓_{K}(E, ℂ)`.
 
@@ -278,15 +280,23 @@ private theorem hasSum_fourier_smul_modulate_apply (φ χ : 𝓓_{K}(E, ℂ))
   simp only [FunLike.coe_smul, Pi.smul_apply, modulate_apply, smul_eq_mul]
   ring
 
+/-- **Rapid decay of the Fourier transform along a lattice.** The Fourier transform of a smooth
+function `φ` supported in `K` decays faster than every power along a discrete subgroup `Λ`: the
+family `ℓ ↦ (1 + ‖ℓ‖) ^ k ‖𝓕 φ ℓ‖` is summable for every `k`. -/
+theorem summable_one_add_norm_pow_mul_norm_fourier (Λ : Submodule ℤ E) [DiscreteTopology Λ]
+    (φ : 𝓓_{K}(E, ℂ)) (k : ℕ) :
+    Summable fun ℓ : Λ ↦ (1 + ‖(ℓ : E)‖) ^ k * ‖𝓕 (φ : E → ℂ) ℓ‖ := by
+  let g : 𝓢(E, ℂ) := φ.hasCompactSupport.toSchwartzMap φ.contDiff
+  -- `g` is `φ`, read as a Schwartz function.
+  have hg : (g : E → ℂ) = φ := rfl
+  have hdecay := ZLattice.summable_one_add_norm_pow_mul_norm Λ (𝓕 g) k
+  rwa [SchwartzMap.fourier_coe, hg] at hdecay
+
 /-- The `k`-th seminorm bound for the terms of the Fourier expansion is summable. -/
 private theorem summable_norm_fourier_mul (φ χ : 𝓓_{K}(E, ℂ)) (k : ℕ) :
     Summable fun m : ZLattice.dual L ↦ ‖(ZLattice.covolume L : ℂ)⁻¹ * 𝓕 (φ : E → ℂ) m‖ *
       (ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K k χ * (1 + 2 * π * ‖(m : E)‖) ^ k) := by
-  let g : 𝓢(E, ℂ) := φ.hasCompactSupport.toSchwartzMap φ.contDiff
-  -- `g` is `φ`, read as a Schwartz function.
-  have hg : (g : E → ℂ) = φ := rfl
-  have hdecay := ZLattice.summable_one_add_norm_pow_mul_norm (ZLattice.dual L) (𝓕 g) k
-  rw [SchwartzMap.fourier_coe, hg] at hdecay
+  have hdecay := summable_one_add_norm_pow_mul_norm_fourier (ZLattice.dual L) φ k
   refine (hdecay.mul_left (‖(ZLattice.covolume L : ℂ)⁻¹‖ *
     ContDiffMapSupportedIn.supSeminorm ℂ E ℂ ⊤ K k χ * (2 * π) ^ k)).of_nonneg_of_le
       (fun m ↦ by positivity) fun m ↦ ?_

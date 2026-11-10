@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Nilpotent.Exp
+public import TauCeti.RingTheory.Nilpotent.Exp.Basic
 public import Mathlib.RingTheory.Nilpotent.Defs
 public import Mathlib.LinearAlgebra.TensorProduct.Tower
 import TauCeti.Algebra.BigOperators.Finset.Range
@@ -28,9 +28,9 @@ of every commutative ring acts on `R ⊗[ℤ] M` by `R`-linear automorphisms.
 
 This is the base-ring-valued form of a root subgroup action in the Chevalley--Demazure
 construction, and an arbitrary-ring analogue of the earlier integer exponential from
-`TauCeti/RingTheory/Nilpotent/Exp.lean`. The new content here is that the integral divided-power
-operators make the same family available over every parameter ring, even when the ring has positive
-characteristic.
+`TauCeti/RingTheory/Nilpotent/Exp/Basic.lean`. The new content here is that the integral
+divided-power operators make the same family available over every parameter ring, even when the
+ring has positive characteristic.
 
 ## Main definitions and results
 

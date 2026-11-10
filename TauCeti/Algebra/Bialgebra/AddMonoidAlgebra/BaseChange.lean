@@ -17,7 +17,7 @@ For `M = ℤ` this identifies scalar extension of the Laurent coordinate algebra
 multiplicative group with the Laurent coordinate algebra over the new base.
 
 This is the additive-monoid counterpart of
-`TauCeti.MonoidAlgebra.scalarTensorBialgEquiv`, using Mathlib's
+`MonoidAlgebra.scalarTensorBialgEquiv`, using Mathlib's
 `AddMonoidAlgebra.scalarTensorEquiv` for the underlying algebra equivalence.
 -/
 

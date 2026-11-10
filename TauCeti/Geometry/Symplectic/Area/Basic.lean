@@ -176,6 +176,25 @@ theorem loopArea_comp_sub_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Func
   simp only [hderiv, hsmul, intervalIntegral.integral_const_mul, hsub, hshift, smul_eq_mul]
   field_simp
 
+/-- **The loop area of a circle traversed forwards.** If `g` is `2π`-periodic, the loop
+`t ↦ g(θ₀ + 2πt)` runs once through a period of `g`, so its loop area is the area
+`½ ∫_{-π}^{π} ω(g(θ), g'(θ)) dθ` of `g` over one period. -/
+theorem loopArea_comp_add_mul (ω : SymplecticForm V) {g : ℝ → V} (hg : Function.Periodic g (2 * π))
+    (θ₀ : ℝ) :
+    ω.loopArea (fun t ↦ g (θ₀ + 2 * π * t)) =
+      (1 / 2 : ℝ) * ∫ θ in -π..π, ω (g θ) (deriv g θ) := by
+  -- Traverse the reflected function `θ ↦ g(-θ)` backwards.
+  have hg' : Function.Periodic (fun θ ↦ g (-θ)) (2 * π) := fun θ ↦ by
+    simp only
+    rw [show -(θ + 2 * π) = -θ - 2 * π by ring, ← hg (-θ - 2 * π), sub_add_cancel]
+  have h := ω.loopArea_comp_sub_mul hg' (-θ₀)
+  have hloop : (fun t ↦ g (-(-θ₀ - 2 * π * t))) = fun t ↦ g (θ₀ + 2 * π * t) :=
+    funext fun t ↦ congrArg g (by ring)
+  simp only [hloop, deriv_comp_neg, map_neg] at h
+  rw [h, intervalIntegral.integral_neg,
+    intervalIntegral.integral_comp_neg (fun θ ↦ ω (g θ) (deriv g θ)), neg_neg]
+  ring
+
 variable [FiniteDimensional ℝ V] {u : ℝ × ℝ → V} {a b : ℝ}
 
 /-- **The symplectic area of a cylinder.** Let `u` be `C²` near `[a, b] × [0, 1]`, with
@@ -241,7 +260,7 @@ the outer boundary action minus the inner boundary action for the primitive `λ�
 This identity does not require any regularity on the inner disc or a holomorphicity hypothesis. -/
 theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
     (ω : SymplecticForm V) {u : ℂ → V} (z₀ : ℂ) {a b : ℝ}
-    (ha : 0 < a) (hab : a ≤ b)
+    (ha : 0 ≤ a) (hab : a ≤ b)
     (hu : ∀ z ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b}, ContDiffAt ℝ 2 u z) :
     ∫ z in {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b},
       ω (fderiv ℝ u z 1) (fderiv ℝ u z I) =
@@ -260,10 +279,10 @@ theorem integral_fderiv_apply_annulus [FiniteDimensional ℝ V]
         fderiv ℝ u (circleMap z₀ r θ) (circleMap 0 r θ * I) := by
     have hm : circleMap z₀ r θ ∈ {z : ℂ | a ≤ ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} := by
       simpa only [mem_ofPred_eq, circleMap_sub_center, norm_circleMap_zero,
-        abs_of_nonneg (le_trans ha.le hr.1)] using (mem_Icc.mp hr)
+        abs_of_nonneg (le_trans ha hr.1)] using (mem_Icc.mp hr)
     exact (((hu _ hm).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt θ
       (hasDerivAt_circleMap z₀ r θ)).deriv
-  have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha.le hab hu
+  have hgreen := B.integral_bilinear_fderiv_sub_annulus z₀ ha hab hu
   simp only [hskew, integral_const_mul] at hgreen
   simp only [hB, ← hcircle b ⟨hab, le_rfl⟩, ← hcircle a ⟨le_rfl, hab⟩] at hgreen
   linarith

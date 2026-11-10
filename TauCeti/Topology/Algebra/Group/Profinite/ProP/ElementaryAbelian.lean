@@ -40,8 +40,8 @@ This is the value against which the normalisation of `H²` is checked: an `H²` 
 or `d ^ 2` classes for `(ℤ/p)^d` would be wrong. The counting statements are about the order of the
 explicit continuous cohomology `H2 G (ZMod p)`, with the action of `G` on `𝔽_p` carried as an
 instance as in `TauCeti.Topology.Algebra.Group.Profinite.ProP.Relation.Rank`; no triviality
-hypothesis is needed, since `G` is a `p`-group (`TauCeti.isPGroup_of_proPFrattini_eq_bot`) and a
-`p`-group can only act trivially on `𝔽_p` (`IsPGroup.smul_zmod_eq_self`). The count is then read
+hypothesis is needed, since `G` is pro-`p` and a pro-`p` group can only act trivially on `𝔽_p`
+(`TauCeti.IsProP.smul_zmod_eq_self`). The count is then read
 as the `𝔽_p`-dimension of the continuous cohomology `cohomFp p G 2` with trivial coefficients,
 through `TauCeti.cohomFpLinearEquivH2`.
 
@@ -106,7 +106,6 @@ theorem natCard_H2_of_proPFrattini_eq_bot (hfg : IsTopologicallyFinitelyGenerate
     Nat.card (H2 G (ZMod p)) =
       p ^ (topologicalGeneratorRankNat G hfg * (topologicalGeneratorRankNat G hfg + 1) / 2) := by
   have hp : p.Prime := Fact.out
-  have htriv := (isPGroup_of_proPFrattini_eq_bot hΦ).smul_zmod_eq_self
   set d := topologicalGeneratorRankNat G hfg
   -- A minimal presentation `G ≅ ⟨X ∣ rels⟩` on a type `X` with `d` elements; its relation
   -- subgroup is `R = Φ(F) = λ_1(F)`.
@@ -135,7 +134,7 @@ theorem natCard_H2_of_proPFrattini_eq_bot (hfg : IsTopologicallyFinitelyGenerate
       (proPFrattini_quotient_pLowerCentralStep_eq_bot hp R hRc) hcard
   have harith : d + d.choose 2 = d * (d + 1) / 2 := by
     rw [Nat.choose_two_right, add_comm, ← Nat.triangle_succ, Nat.add_sub_cancel, mul_comm]
-  rw [presentedProP.natCard_H2 rels hrels e htriv hQfg, hrank, harith]
+  rw [presentedProP.natCard_H2 rels hrels e hQfg, hrank, harith]
 
 /-- `H²(G, 𝔽_p)` is finite for a topologically finitely generated profinite group `G` with trivial
 pro-`p` Frattini subgroup. -/

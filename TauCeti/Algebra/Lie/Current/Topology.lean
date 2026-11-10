@@ -26,7 +26,7 @@ algebra `L` the bracket is jointly continuous, because brackets of currents of o
 `M` and `N` have order at least `M + N` and every current has a finite lower order. Truncations
 of a current converge to it, so polynomial currents are dense.
 
-When `L` is a free `R`-module, the topology is Hausdorff. When `L` is moreover finite, it is
+When `L` is a free `R`-module, the topology is Hausdorff. When `L` is finitely generated, it is
 complete: a Cauchy sequence has eventually constant coefficients below every order and a common
 lower order, and every such coefficient family is the coefficient family of a formal current. The
 finiteness assumption cannot be dropped: for infinitely many basis vectors `bᵢ`, the partial sums
@@ -39,7 +39,7 @@ of `∑ᵢ Xⁱ ⊗ bᵢ` form a Cauchy sequence without a limit in the tensor p
 * `TauCeti.CurrentAlgebra.tendsto_nhds_iff`: convergence of currents in terms of orders.
 * `TauCeti.CurrentAlgebra.continuous_lie`: the bracket of formal currents is continuous.
 * `TauCeti.CurrentAlgebra.instT2Space`, `TauCeti.CurrentAlgebra.instCompleteSpace`: the topology is
-  Hausdorff, and complete over a finite free coefficient module.
+  Hausdorff over a free coefficient module, and complete over a finitely generated one.
 * `TauCeti.CurrentAlgebra.denseRange_ofLoop`: polynomial currents are dense.
 
 ## References
@@ -184,8 +184,8 @@ private theorem exists_coeff_eq_of_cauchySeq {u : ℕ → currentAlgebra R L} (h
   rw [← sub_eq_zero, ← map_sub]
   exact coeff_eq_zero_of_mem_orderSubmodule R L (hk k le_rfl m hm) hn
 
-/-- The order topology is complete over a finite free coefficient module. -/
-instance instCompleteSpace [Module.Free R L] [Module.Finite R L] :
+/-- The order topology is complete over a finitely generated coefficient module. -/
+instance instCompleteSpace [Module.Finite R L] :
     CompleteSpace (currentAlgebra R L) := by
   have : (𝓤 (currentAlgebra R L)).IsCountablyGenerated :=
     have : (𝓝 (0 : currentAlgebra R L)).IsCountablyGenerated :=

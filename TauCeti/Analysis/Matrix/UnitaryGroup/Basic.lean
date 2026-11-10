@@ -10,6 +10,7 @@ public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.LinearAlgebra.UnitaryGroup
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.LinearAlgebra.Matrix.UnitaryGroup.Block
 
 /-!
 # `U(n) = Circle · SU(n)`
@@ -28,12 +29,15 @@ unitary group. Rescaling by a scalar of modulus one keeps a matrix unitary, so n
   `Aᴴ A` is a scalar matrix and `‖det A‖ = 1` is unitary. This turns conditions that determine a
   matrix only up to a scalar factor, such as those coming from its action on a projective space,
   into unitarity.
+* `Matrix.forall_sq_norm_add_sq_norm_eq_iff_mem_unitaryGroup`: a complex `2 × 2` matrix is
+  unitary exactly when it preserves the Hermitian norm of every vector `(z, 1)`.
 
 
 ## Main definitions
 
 * `Matrix.UnitaryGroup.detCircle`: the determinant of a complex unitary matrix, as a continuous
-  group morphism `U(n) →* Circle`.
+  group morphism `U(n) →* Circle`. It is multiplicative on block-diagonal sums
+  (`Matrix.UnitaryGroup.detCircle_sum`).
 -/
 
 public section
@@ -75,6 +79,48 @@ theorem mem_unitaryGroup_of_star_mul_self_eq_scalar {𝕜 : Type*} [RCLike 𝕜]
     (Finset.sum_nonneg fun _ _ => sq_nonneg _)
     Fintype.card_ne_zero).mp hpow]
   simp
+
+open ComplexConjugate in
+/-- **Recognizing `2 × 2` unitary matrices.** A complex matrix `!![a, b; c, d]` is unitary exactly
+when `|a z + b|² + |c z + d|² = |z|² + 1` for every `z`, that is, when it preserves the Hermitian
+norm of every vector `(z, 1)`. -/
+theorem forall_sq_norm_add_sq_norm_eq_iff_mem_unitaryGroup (A : Matrix (Fin 2) (Fin 2) ℂ) :
+    (∀ z : ℂ, ‖A 0 0 * z + A 0 1‖ ^ 2 + ‖A 1 0 * z + A 1 1‖ ^ 2 = ‖z‖ ^ 2 + 1) ↔
+      A ∈ unitaryGroup (Fin 2) ℂ := by
+  -- Unitarity says that the columns `(a, c)` and `(b, d)` are orthonormal.
+  rw [mem_unitaryGroup_iff', ← Matrix.ext_iff]
+  simp only [Fin.forall_fin_two, Matrix.mul_apply, Fin.sum_univ_two, Matrix.star_apply,
+    Complex.star_def, Matrix.one_apply_eq, ne_eq, zero_ne_one, not_false_eq_true,
+    Matrix.one_apply_ne, one_ne_zero]
+  -- In complex form the identity reads `(conj a conj z + conj b) (a z + b) + ⋯ = conj z z + 1`.
+  have key (z : ℂ) : ‖A 0 0 * z + A 0 1‖ ^ 2 + ‖A 1 0 * z + A 1 1‖ ^ 2 = ‖z‖ ^ 2 + 1 ↔
+      (conj (A 0 0) * conj z + conj (A 0 1)) * (A 0 0 * z + A 0 1) +
+        (conj (A 1 0) * conj z + conj (A 1 1)) * (A 1 0 * z + A 1 1) = conj z * z + 1 := by
+    rw [← Complex.ofReal_inj]
+    push_cast
+    simp only [← Complex.conj_mul', map_add, map_mul]
+  simp only [key]
+  generalize A 0 0 = a
+  generalize A 0 1 = b
+  generalize A 1 0 = c
+  generalize A 1 1 = d
+  constructor
+  · -- Evaluate at `z = 0, 1, -1, i` and compare.
+    intro h
+    have h0 := h 0
+    have h1 := h 1
+    have hm1 := h (-1)
+    have hI := h Complex.I
+    simp only [map_zero, map_one, map_neg, Complex.conj_I, mul_zero, zero_add, mul_one,
+      mul_neg] at h0 h1 hm1 hI
+    have h01 : conj a * b + conj c * d = 0 := by
+      linear_combination (h1 - hm1) / 4 + Complex.I / 2 * hI - Complex.I / 4 * (h1 + hm1) +
+        ((conj a * b + conj c * d - conj b * a - conj d * c) / 2 +
+          Complex.I / 2 * (conj a * a + conj c * c - 1)) * Complex.I_sq
+    refine ⟨⟨by linear_combination (h1 + hm1) / 2 - h0, h01⟩, ?_, h0⟩
+    simpa [mul_comm] using congrArg conj h01
+  · rintro ⟨⟨h00, h01⟩, h10, h11⟩ z
+    linear_combination (conj z * z) * h00 + conj z * h01 + z * h10 + h11
 
 /-- `U(n) = Circle · SU(n)`: every complex unitary matrix becomes special unitary after
 multiplication by a suitable scalar of modulus one. The scalar is a `card n`-th root of the inverse
@@ -118,5 +164,28 @@ theorem coe_detCircle (U : unitaryGroup n ℂ) : (detCircle U : ℂ) = (U : Matr
 /-- The determinant of a unitary matrix depends continuously on the matrix. -/
 theorem continuous_detCircle : Continuous (detCircle : unitaryGroup n ℂ → Circle) :=
   Continuous.subtype_mk (continuous_subtype_val.matrix_det) _
+
+section Sum
+
+variable {m : Type*} [Fintype m] [DecidableEq m]
+
+/-- The block-diagonal sum of unitary matrices depends continuously on the two blocks. -/
+theorem continuous_sum {α : Type*} [CommRing α] [StarRing α] [TopologicalSpace α] :
+    Continuous (sum : unitaryGroup n α × unitaryGroup m α →* unitaryGroup (n ⊕ m) α) := by
+  refine continuous_induced_rng.2 ?_
+  simpa only [Function.comp_def, coe_sum] using
+    Continuous.matrix_fromBlocks (continuous_subtype_val.comp continuous_fst) continuous_const
+      continuous_const (continuous_subtype_val.comp continuous_snd)
+
+/-- The determinant of a block-diagonal sum of unitary matrices is the product of the
+determinants. -/
+@[simp]
+theorem detCircle_sum (p : unitaryGroup n ℂ × unitaryGroup m ℂ) :
+    detCircle (sum p) = detCircle p.1 * detCircle p.2 := by
+  refine Circle.ext ?_
+  rw [Circle.coe_mul, coe_detCircle, coe_detCircle, coe_detCircle, coe_sum]
+  exact det_fromBlocks_zero₂₁ _ _ _
+
+end Sum
 
 end Matrix.UnitaryGroup

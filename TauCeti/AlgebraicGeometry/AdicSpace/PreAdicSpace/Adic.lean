@@ -66,6 +66,8 @@ subspaces (`isPreAdic.isSheafy_iff`), the mechanism of Wedhorn's Remark 8.27.
 * `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_completionLocalization`: if the
   structure presheaf of `Spa(A, A⁺)` is a sheaf, so is that of every rational localisation
   `Spa(A⟨T/s⟩, A_U⁺)`.
+* `TauCeti.ValuationSpectrum.isSheaf_presentationLimitPresheaf_rationalLocalizationPair`: the same,
+  for the rational localisation as a pair.
 
 ## References
 
@@ -309,6 +311,33 @@ theorem isSheaf_presentationLimitPresheaf_completionLocalization (T : Finset A) 
     (PreAdicSpace.isSheafy_restrict _ hs)
 
 end
+
+open Huber.PairOfDefinition PreAdicSpace in
+/-- If `T` spans an open ideal and the structure presheaf of `Spa(A, A⁺)` is a sheaf, then so is the
+structure presheaf of `Spa` of the rational localisation `(A⟨T/s⟩, A_U⁺)`, as a pair
+(`PairOfDefinition.rationalLocalizationPair`). -/
+theorem isSheaf_presentationLimitPresheaf_rationalLocalizationPair {A : Type u}
+    [CommRing A] [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A]
+    (P : PairOfDefinition A) (U : Pair A) (hP : P.ringOfDefinition ≤ U.plus) (T : Finset A) (s : A)
+    (L : Type u) [CommRing L] [Algebra A L] [IsLocalization.Away s L]
+    (hden : P.HasDenominatorPower T s L) (hT : IsOpen (Ideal.span (T : Set A) : Set A))
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa U.plus))
+      (presentationLimitPresheaf P U.plus)) :
+    letI := P.locUniformSpace T s L hden
+    letI := P.isUniformAddGroup_locUniformSpace T s L hden
+    letI := P.isTopologicalRing_locUniformSpace T s L hden
+    letI := P.isHuberRing_completion_locTopology T s L hden
+    Presheaf.IsSheaf
+      (Opens.grothendieckTopology ↥(spa (P.rationalLocalizationPair U hP T s L hden).plus))
+      (presentationLimitPresheaf (P.completionLocalization T s L hden)
+        (P.rationalLocalizationPair U hP T s L hden).plus) := by
+  let _ := P.locUniformSpace T s L hden
+  have _ := P.isUniformAddGroup_locUniformSpace T s L hden
+  have _ := P.isTopologicalRing_locUniformSpace T s L hden
+  have _ := P.isHuberRing_completion_locTopology T s L hden
+  rw [rationalLocalizationPair_plus]
+  exact isSheaf_presentationLimitPresheaf_completionLocalization P U.plus
+    U.isRingOfIntegralElements.isPowerBounded_of_mem hP T s L hden hT hsheaf
 
 /-- **The adic spectrum of a sheafy Huber pair is an affinoid adic space.** The ring need not be
 complete, Hausdorff, or Tate. -/

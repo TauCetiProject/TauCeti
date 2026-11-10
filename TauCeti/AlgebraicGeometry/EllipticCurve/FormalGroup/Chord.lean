@@ -390,8 +390,7 @@ than merely the third root of a cubic, and it is the identity the addition serie
 theorem subst_formalThirdRoot_formalW :
     subst (fun _ : Unit ↦ formalThirdRoot W) (formalW W) =
       formalSlope W * formalThirdRoot W + formalIntercept W := by
-  refine eq_of_wEquation_mvPowerSeries W (constantCoeff_formalThirdRoot W) ?_ ?_ ?_
-    (line_at_thirdRoot W)
+  refine eq_of_wEquation_mvPowerSeries W ?_ ?_ ?_ (line_at_thirdRoot W)
   · exact constantCoeff_subst_eq_zero (hasSubst_formalThirdRoot W)
       (fun _ ↦ constantCoeff_formalThirdRoot W) (constantCoeff_formalW W)
   · simp

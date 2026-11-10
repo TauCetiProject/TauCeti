@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Gaussian.Conditional.Basic
 public import TauCeti.Probability.Distributions.MultivariateT.PDF
 import TauCeti.Probability.Distributions.Gamma.Measurability
+import TauCeti.Probability.Distributions.Gaussian.Conditional.Measurability
 import TauCeti.Probability.Distributions.MultivariateT.Measurability
 
 /-!
@@ -153,24 +154,13 @@ theorem _root_.EuclideanSpace.map_snd_fst_multivariateTMeasure (m : EuclideanSpa
   -- each precision `τ`, swap the order of integration by Gamma–Gaussian conjugacy, and recognise
   -- the posterior Gamma mixture of Gaussian laws as the conditional multivariate t law.
   ext A hA
-  -- Given the precision `τ`, the retained block given the observed block `x₂` is Gaussian with
-  -- the same regression mean and covariance `τ⁻¹ • C`; this is jointly measurable in `(τ, x₂)`.
-  let η : Kernel (ℝ × EuclideanSpace ℝ κ) (EuclideanSpace ℝ ι) :=
-    ⟨fun p => multivariateGaussian (mean p.2) (p.1⁻¹ • C), by
-      have hμ : Measurable mean := by
-        simp only [mean]
-        rw [funext fun x₂ => m.gaussianCondMean_def S x₂]
-        fun_prop
-      exact measurable_multivariateGaussian.comp
-        ((hμ.comp measurable_snd).prodMk (by fun_prop))⟩
-  have : IsMarkovKernel η := ⟨fun p => inferInstanceAs (IsProbabilityMeasure
-    (multivariateGaussian (mean p.2) (p.1⁻¹ • C)))⟩
+  have : Measurable mean :=
+    EuclideanSpace.measurable_gaussianCondMean.comp
+      ((measurable_const (a := (m, S))).prodMk measurable_id)
   have hF : Measurable fun p : ℝ × EuclideanSpace ℝ κ =>
       multivariateGaussian (mean p.2) (p.1⁻¹ • C) (Prod.mk p.2 ⁻¹' A) :=
-    -- The section of `{q | (q.1.2, q.2) ∈ A}` at `p` is by definition the section of `A` at `p.2`.
-    Kernel.measurable_kernel_prodMk_left (κ := η)
-      (t := {q : (ℝ × EuclideanSpace ℝ κ) × EuclideanSpace ℝ ι | (q.1.2, q.2) ∈ A})
-      (hA.preimage (by fun_prop))
+    measurable_multivariateGaussian_prodMk_left_apply (g := Prod.snd) (this.comp measurable_snd)
+      (by fun_prop) measurable_snd hA
   calc (multivariateTMeasure m S ν).map
         (fun x => ((EuclideanSpace.sumEquivProd x).2, (EuclideanSpace.sumEquivProd x).1)) A
       = ∫⁻ τ, ((multivariateGaussian m (τ⁻¹ • S)).map

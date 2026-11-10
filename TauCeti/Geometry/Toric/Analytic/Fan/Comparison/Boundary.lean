@@ -110,7 +110,7 @@ theorem coe_algebraicAnalyticBoundaryDiffeomorph_apply (n : ℕ∞ω)
     (x : AlgebraicComplexPoint.boundaryComponent Φ ρ) :
     letI := algebraicBoundaryComponentChartedSpace hΦ ρ
     (algebraicAnalyticBoundaryDiffeomorph hΦ ρ n x).1 = algebraicAnalyticEquiv hΦ x.1 := by
-  simp only [algebraicAnalyticBoundaryDiffeomorph, coe_diffeomorphOfBijective,
+  simp only [algebraicAnalyticBoundaryDiffeomorph, IsLocalDiffeomorph.coe_diffeomorphOfBijective,
     coe_algebraicAnalyticBoundaryHomeomorph_apply]
 
 /-- The inverse component complex diffeomorphism of order `n` commutes with the inverse ambient

@@ -137,23 +137,12 @@ private theorem UniformlyEllipticOn.ae_ball_value_eq_of_frequently_sub_lt [Nonem
       _ = 0 + ε := by field_simp; ring
   have havg : ⨍ x in ball y (2 * r), W1p.value w x ^ p₀ ∂mu = 0 :=
     (Real.rpow_eq_zero hA0 (inv_ne_zero hp₀.ne')).1 (hA.antisymm (Real.rpow_nonneg hA0 _))
-  -- `w^{p₀}` is integrable on `B(y, 2r)`, as `w ∈ L²` there and `p₀ ≤ 2`.
-  have hint : IntegrableOn (fun x => W1p.value w x ^ p₀) (ball y (2 * r)) mu := by
-    have hmem : MemLp (W1p.value w) (ENNReal.ofReal p₀) (mu.restrict (ball y (2 * r))) :=
-      ((Lp.memLp _).mono_measure (Measure.restrict_mono h2U le_rfl)).mono_exponent
-        ((ENNReal.ofReal_le_ofReal hp₀2).trans_eq (ENNReal.ofReal_ofNat 2))
-    refine (hmem.integrable_norm_rpow (ENNReal.ofReal_pos.2 hp₀).ne'
-      ENNReal.ofReal_ne_top).congr ?_
-    filter_upwards [hw02] with x hx
-    rw [ENNReal.toReal_ofReal hp₀.le, Real.norm_of_nonneg hx]
-  rw [setAverage_eq, smul_eq_mul, mul_eq_zero, inv_eq_zero] at havg
-  have hzero := (integral_eq_zero_iff_of_nonneg_ae
-    (hw02.mono fun x hx => Real.rpow_nonneg hx _) hint).1
-    (havg.resolve_left (measureReal_ball_pos mu y (by linarith)).ne')
+  have hzero := ae_eq_zero_of_setAverage_rpow_eq_zero hp₀
+    ((ENNReal.ofReal_le_ofReal hp₀2).trans_eq (ENNReal.ofReal_ofNat 2))
+    (measure_ball_pos mu y (by linarith)).ne' measure_ball_lt_top.ne
+    ((Lp.memLp _).mono_measure (Measure.restrict_mono h2U le_rfl)) hw02 havg
   filter_upwards [ae_restrict_of_ae_restrict_of_subset hr2 hzero,
-    ae_restrict_of_ae_restrict_of_subset hr2 hw02,
-    ae_restrict_of_ae_restrict_of_subset (hr2.trans h2U) hwv] with x h1 h2 h3
-  have := (Real.rpow_eq_zero h2 hp₀.ne').1 h1
+    ae_restrict_of_ae_restrict_of_subset (hr2.trans h2U) hwv] with x h1 h2
   linarith
 
 /-- **The strong maximum principle for weak subsolutions.** Let `a` be measurable and uniformly

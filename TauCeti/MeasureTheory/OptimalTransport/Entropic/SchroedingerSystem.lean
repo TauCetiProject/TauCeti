@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Basic
 import Mathlib.Probability.Moments.Basic
+import TauCeti.Analysis.SpecialFunctions.Log.BirkhoffCrossRatio
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -97,15 +98,22 @@ private theorem measurable_logIntegralExp [SFinite ν] (hh : Measurable h) (hψ 
     (by fun_prop : Measurable fun z : A × B ↦ Real.exp (h z + ψ z.2)).stronglyMeasurable
   exact this.integral_prod_right'.measurable.log
 
+/-- The kernel `exp (h (a, b) + ψ b)` is integrable in `b` when `h` and `ψ` are bounded and
+measurable. -/
+private theorem integrable_exp_add_of_abs_le [IsFiniteMeasure ν] (hh : Measurable h)
+    (hM : ∀ z, |h z| ≤ M) (hψ : Measurable ψ) {C : ℝ} (hC : ∀ b, |ψ b| ≤ C) (a : A) :
+    Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν := by
+  simpa only [one_mul] using ProbabilityTheory.integrable_exp_mul_of_le (μ := ν) 1 (M + C)
+    zero_le_one (by fun_prop) (ae_of_all _ fun b ↦
+      (le_abs_self _).trans ((abs_add_le _ _).trans (add_le_add (hM _) (hC b))))
+
 /-- Integrating `exp (h (a, b) + ψ b + t)` against `ν` gives `exp (t + logIntegralExp h ν ψ a)`. -/
 private theorem lintegral_ofReal_exp_add [IsFiniteMeasure ν] (hν : ν ≠ 0) (hh : Measurable h)
     (hM : ∀ z, |h z| ≤ M) (hψ : Measurable ψ) {C : ℝ} (hC : ∀ b, |ψ b| ≤ C) (a : A) (t : ℝ) :
     ∫⁻ b, ENNReal.ofReal (Real.exp (h (a, b) + ψ b + t)) ∂ν =
       ENNReal.ofReal (Real.exp (t + logIntegralExp h ν ψ a)) := by
   have := NeZero.mk hν
-  have hint : Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν := by
-    simpa using ProbabilityTheory.integrable_exp_mul_of_le 1 (M + C) zero_le_one (by fun_prop)
-      (ae_of_all _ fun b ↦ by linarith [(abs_le.1 (hM (a, b))).2, (abs_le.1 (hC b)).2])
+  have hint := integrable_exp_add_of_abs_le (ν := ν) hh hM hψ hC a
   have hsplit : (fun b ↦ Real.exp (h (a, b) + ψ b + t)) =
       fun b ↦ Real.exp (h (a, b) + ψ b) * Real.exp t := funext fun b ↦ Real.exp_add _ _
   rw [← ofReal_integral_eq_lintegral_ofReal (hsplit ▸ hint.mul_const _)
@@ -118,9 +126,7 @@ private theorem abs_logIntegralExp_le [IsFiniteMeasure ν] (hν : ν ≠ 0) (hh 
   have hν' : 0 < ν.real univ := by
     rw [measureReal_def]
     exact ENNReal.toReal_pos (Measure.measure_univ_ne_zero.2 hν) (measure_ne_top _ _)
-  have hint : Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν := by
-    simpa using ProbabilityTheory.integrable_exp_mul_of_le 1 (M + C) zero_le_one (by fun_prop)
-      (ae_of_all _ fun b ↦ by linarith [(abs_le.1 (hM (a, b))).2, (abs_le.1 (hC b)).2])
+  have hint := integrable_exp_add_of_abs_le (ν := ν) hh hM hψ hC a
   have hlo : Real.exp (-(M + C)) * ν.real univ ≤ ∫ b, Real.exp (h (a, b) + ψ b) ∂ν := by
     rw [mul_comm, ← smul_eq_mul, ← integral_const]
     refine integral_mono (integrable_const _) hint fun b ↦ Real.exp_le_exp.2 ?_
@@ -155,9 +161,8 @@ private theorem logIntegralExp_sub_sub_le_of_le [IsFiniteMeasure ν] (hν : ν �
     exact (abs_nonneg _).trans (hM (a, b₀))
   -- The four partition functions `A₁, A₂` at `a` and `B₁, B₂` at `a'`.
   have hi (a : A) {ψ : B → ℝ} (hψ : Measurable ψ) {C : ℝ} (hC : ∀ b, |ψ b| ≤ C) :
-      Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν := by
-    simpa using ProbabilityTheory.integrable_exp_mul_of_le 1 (M + C) zero_le_one (by fun_prop)
-      (ae_of_all _ fun b ↦ by linarith [(abs_le.1 (hM (a, b))).2, (abs_le.1 (hC b)).2])
+      Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν :=
+    integrable_exp_add_of_abs_le (ν := ν) hh hM hψ hC a
   set A₁ := ∫ b, Real.exp (h (a, b) + ψ₁ b) ∂ν
   set A₂ := ∫ b, Real.exp (h (a, b) + ψ₂ b) ∂ν
   set B₁ := ∫ b, Real.exp (h (a', b) + ψ₁ b) ∂ν
@@ -200,50 +205,8 @@ private theorem logIntegralExp_sub_sub_le_of_le [IsFiniteMeasure ν] (hν : ν �
     refine mul_le_mul_of_nonneg_right (Real.exp_le_exp.2 ?_)
       (sub_nonneg.2 (Real.exp_le_exp.2 (hm b)))
     linarith [(abs_le.1 (hM (a, b))).2, (abs_le.1 (hM (a', b))).1]
-  -- With `s = exp (-4M)`: `s * A₁ * B₂ + (1 - s) * exp m * A₂ * B₂ ≤ B₁ * A₂`.
-  have hss : Real.exp (-(2 * M)) * Real.exp (-(2 * M)) = Real.exp (-(4 * M)) := by
-    rw [← Real.exp_add]
-    ring_nf
-  set s := Real.exp (-(4 * M))
-  have hkey : s * A₁ * B₂ + (1 - s) * Real.exp m * A₂ * B₂ ≤ B₁ * A₂ := by
-    have h₁ : 0 ≤ A₁ - Real.exp m * A₂ := sub_nonneg.2 hA₁lo
-    have h₂ := mul_le_mul hBA hB₂A₂ (by positivity)
-      ((mul_nonneg (Real.exp_pos _).le h₁).trans hBA)
-    have h₃ : Real.exp (-(2 * M)) * (A₁ - Real.exp m * A₂) * (Real.exp (-(2 * M)) * B₂) =
-        s * (A₁ - Real.exp m * A₂) * B₂ := by
-      rw [← hss]
-      ring
-    rw [h₃] at h₂
-    linarith
-  -- With `E = exp ((1 - s) * ω)`, convexity of `exp` and `A₁ ≤ exp (m + ω) * A₂` give
-  -- `A₁ ≤ E * (s * A₁ + (1 - s) * exp m * A₂)`, which with `hkey` yields `A₁ * B₂ ≤ E * (A₂ * B₁)`.
-  have hs0 : 0 < s := Real.exp_pos _
-  have hs1 : s ≤ 1 := Real.exp_le_one_iff.2 (by linarith)
-  have hconv : Real.exp (s * ω) ≤ s * Real.exp ω + (1 - s) := by
-    simpa using convexOn_exp.2 (mem_univ ω) (mem_univ 0) hs0.le (sub_nonneg.2 hs1) (by ring)
-  set E := Real.exp ((1 - s) * ω)
-  have hE : E * Real.exp (s * ω) = Real.exp ω := by
-    rw [← Real.exp_add]
-    ring_nf
-  have hEpos : 0 < E := Real.exp_pos _
-  have h₁ : A₁ * Real.exp ω ≤
-      E * (s * A₁ * Real.exp ω + (1 - s) * Real.exp m * Real.exp ω * A₂) := by
-    have h₁a : A₁ * Real.exp ω = E * A₁ * Real.exp (s * ω) := by
-      rw [← hE]
-      ring
-    have h₁b := mul_le_mul_of_nonneg_left hconv (mul_nonneg hEpos.le hA₁.le)
-    have h₁c := mul_le_mul_of_nonneg_left ((Real.exp_add m ω) ▸ hA₁hi)
-      (mul_nonneg hEpos.le (sub_nonneg.2 hs1))
-    linarith
-  have h₂ : A₁ ≤ E * (s * A₁ + (1 - s) * Real.exp m * A₂) := by
-    have hω0 := Real.exp_pos ω
-    nlinarith [h₁]
-  have hmain : A₁ * B₂ ≤ E * (A₂ * B₁) := by nlinarith [hkey, h₂, hB₂, hEpos]
   unfold logIntegralExp
-  have := Real.log_le_log (by positivity) hmain
-  rw [Real.log_mul hA₁.ne' hB₂.ne', Real.log_mul (Real.exp_pos _).ne' (by positivity),
-    Real.log_exp, Real.log_mul hA₂.ne' hB₁.ne'] at this
-  linarith
+  exact log_sub_sub_le_of_bounds hM0 hA₁ hA₂ hB₁ hB₂ hA₁lo hA₁hi hB₂A₂ hBA
 
 /-- **The half-step contracts oscillations.** If the difference of two potentials on `B` has
 oscillation at most `ω`, then the difference of their log-partition functions on `A` has
@@ -518,29 +481,11 @@ theorem exists_isCoupling_withDensity_exp_add [IsFiniteMeasure μ] [IsFiniteMeas
     rw [hf_def]
     simp only [Function.comp_apply, Prod.swap_prod_mk]
     ring_nf
-  have hfst : ((μ.prod ν).withDensity f).fst = μ := by
-    ext s hs
-    rw [Measure.fst_apply hs, ← prod_univ, withDensity_apply _ (hs.prod MeasurableSet.univ),
-      setLIntegral_prod _ hf.aemeasurable]
-    simp_rw [Measure.restrict_univ, hrow]
-    rw [setLIntegral_const, one_mul]
-  have hsnd (t : Set Y) (ht : MeasurableSet t) :
-      ((μ.prod ν).withDensity f).snd t = ENNReal.ofReal (Real.exp (-c)) * ν t := by
-    rw [Measure.snd_apply ht, ← univ_prod, withDensity_apply _ (MeasurableSet.univ.prod ht),
-      setLIntegral_prod_symm _ hf.aemeasurable]
-    simp_rw [Measure.restrict_univ, hcol]
-    rw [setLIntegral_const]
-  -- Comparing total masses forces `exp (-c) = 1`.
-  have hc : ENNReal.ofReal (Real.exp (-c)) = 1 := by
-    have h₁ := hsnd univ MeasurableSet.univ
-    rw [Measure.snd_univ, ← Measure.fst_univ, hfst, hμν] at h₁
-    exact ((ENNReal.mul_eq_right (Measure.measure_univ_ne_zero.2 hν) (measure_ne_top _ _)).1
-      h₁.symm)
+  have hcoupling := isCoupling_withDensity_of_lintegral_eq hμν hf.aemeasurable (ae_of_all _ hrow)
+    (ae_of_all _ hcol)
   refine ⟨φ, ψ, max (M + C + |Real.log (ν.real univ)|) C, hφ, hψ,
-    fun x ↦ (hφC x).trans (le_max_left _ _), fun y ↦ (hC y).trans (le_max_right _ _),
-    ⟨hfst, ?_⟩⟩
-  ext t ht
-  rw [hsnd t ht, hc, one_mul]
+    fun x ↦ (hφC x).trans (le_max_left _ _), fun y ↦ (hC y).trans (le_max_right _ _), ?_⟩
+  exact hcoupling
 
 /-- **The Schrödinger system against a reference measure with bounded log-density.** Let `μ` and
 `ν` be finite measures of equal mass, and let the reference measure `R` have density `exp g`
@@ -580,7 +525,7 @@ theorem IsCoupling.exists_eq_withDensity_exp_add_of_klDiv_eq_schroedingerValue
   have : IsFiniteMeasure ν := hπ.snd_eq ▸ inferInstance
   obtain ⟨φ, ψ, C, hφ, hψ, hφC, hψC, hσ⟩ :=
     exists_isCoupling_withDensity_exp_add_of_eq_withDensity hπ.measure_univ_eq hg hgM hR
-  have : IsFiniteMeasure R := hR ▸ isFiniteMeasure_withDensity_ofReal_exp hg.aemeasurable
+  have : IsFiniteMeasure R := hR ▸ isFiniteMeasure_withDensity_ofReal_exp
     (ae_of_all _ fun z ↦ (abs_le.1 (hgM z)).2)
   have hφi : Integrable φ μ :=
     Integrable.of_bound hφ.aestronglyMeasurable C (ae_of_all _ fun x ↦ hφC x)

@@ -7,11 +7,13 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
+import Mathlib.Analysis.SpecialFunctions.Complex.Log
 
 /-!
 # Real part of the complex winding normalization
 
-Multiplication by `(2πi)⁻¹` converts an imaginary part into the real normalized index.
+Multiplication by `(2πi)⁻¹` converts an imaginary part into the real normalized index, and
+integer multiples of `2πi` determine their integer (`Complex.intCast_mul_two_pi_I_injective`).
 -/
 
 public section
@@ -26,5 +28,10 @@ theorem re_inv_two_pi_I_mul (w : ℂ) :
   rw [he, mul_inv_rev, inv_I]
   simp [Complex.mul_re, Complex.mul_im, div_eq_mul_inv]
   ring
+
+/-- Integer multiples of `2πi` determine their integer. -/
+theorem intCast_mul_two_pi_I_injective :
+    Function.Injective fun n : ℤ ↦ (n : ℂ) * (2 * Real.pi * I) := fun _ _ h ↦
+  Int.cast_injective (mul_right_cancel₀ two_pi_I_ne_zero h)
 
 end Complex

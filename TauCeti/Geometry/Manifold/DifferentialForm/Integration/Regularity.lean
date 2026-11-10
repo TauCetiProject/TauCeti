@@ -40,12 +40,13 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
   {k : ℕ} {n : WithTop ℕ∞} {φ : RoughForm I M ℝ k}
 
-omit [MeasurableSpace E] [BorelSpace E] in
+omit [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ E] in
 /-- A compactly supported C0 top form satisfies the canonical integrability predicate.
 The explicit basis records the degree; the model's Borel structure is used only internally. -/
 theorem IsSmoothForm.integrableTopForm (hφ : IsSmoothForm I n φ)
     (hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ) φ))
     (b : Module.Basis (Fin k) ℝ E) : IntegrableTopForm φ := by
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   let : MeasurableSpace E := borel E
   let : BorelSpace E := ⟨rfl⟩
   let : LocallyCompactSpace H := I.locallyCompactSpace
@@ -57,6 +58,7 @@ theorem IsSmoothForm.integrableTopForm (hφ : IsSmoothForm I n φ)
     (hφ.continuousOn_inChartAt (β i))).mono (hu i).2.2.2.1).integrableOn_compact
       (hu i).2.2.1 (μ := b.addHaar)).mono_set (hu i).2.2.2.2
 
+omit [FiniteDimensional ℝ E] in
 /-- Every positive signed preferred-chart coefficient of a compactly supported C0 form is
 integrable, including when the manifold is nonorientable or non-Hausdorff. -/
 theorem IsSmoothForm.integrable_signedInChartAt_one (hφ : IsSmoothForm I n φ)

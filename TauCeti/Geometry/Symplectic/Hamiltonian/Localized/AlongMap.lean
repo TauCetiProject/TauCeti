@@ -68,14 +68,15 @@ theorem exists_contDiff_hamiltonianVectorField_comp_eq (ω : SymplecticForm V) {
     rintro _ ⟨z, hz, rfl⟩
     exact mem_interior_iff_mem_nhds.mpr (hW z (hξΩ hz))
   -- A bump function equal to `1` near the graph and supported in the interior of `W`.
-  obtain ⟨χ, hχ, -, hχ1, hχc, hχW⟩ := hGc.exists_contDiff_cutoff isOpen_interior hGW
+  obtain ⟨χ, hχ, -, hχ1, hχc, hχW⟩ :=
+    hGc.exists_contDiff_cutoff_eventuallyEq_one isOpen_interior hGW
   -- The Hamiltonian is `ω(ξ z, ·)` near the graph and vanishes off the support of `ξ`.
   have hX (z : P) :
       ω.hamiltonianVectorField (fun y ↦ χ (z, y) * ω (ξ z) y) (u z) = ξ z := by
     by_cases hz : z ∈ tsupport ξ
     · have hev : ∀ᶠ y in 𝓝 (u z), χ (z, y) = 1 :=
         (continuous_const.prodMk continuous_id).continuousAt.preimage_mem_nhds
-          (mem_interior_iff_mem_nhds.mp (hχ1 (mem_image_of_mem _ hz)))
+          (hχ1 _ (mem_image_of_mem _ hz))
       have hK : (fun y ↦ χ (z, y) * ω (ξ z) y) =ᶠ[𝓝 (u z)] fun y ↦ ω (ξ z) y :=
         hev.mono fun y hy ↦ by simp [hy]
       rw [ω.hamiltonianVectorField_congr_of_eventuallyEq hK, hamiltonianVectorField_apply_left]
