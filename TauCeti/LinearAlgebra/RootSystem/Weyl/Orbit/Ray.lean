@@ -68,9 +68,9 @@ omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
 theorem mapsTo_preReflection_orbit_weylGroup (i : ι) (lam : V) :
     Set.MapsTo (Module.preReflection (P.root i) (P.coroot' i))
       (MulAction.orbit P.weylGroup lam) (MulAction.orbit P.weylGroup lam) := by
-  rintro _ ⟨w, rfl⟩
-  refine ⟨weylGroup.ofIdx P i * w, ?_⟩
-  simp [mul_smul, P.reflection_apply, Module.preReflection_apply]
+  intro v hv
+  simpa [P.reflection_apply, Module.preReflection_apply] using
+    MulAction.mapsTo_smul_orbit (weylGroup.ofIdx P i) lam hv
 
 end Field
 
