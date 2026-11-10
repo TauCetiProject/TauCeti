@@ -55,6 +55,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   `x ↦ (1 + ‖x‖ ^ 2) ^ (-(n + 1) / 2)` is integrable.
 * `TauCeti.integrable_one_add_mul_norm_pow_mul_rpow_neg_one_add_norm_sq`: the weight
   `(1 + c ‖x‖) ^ i` times `(1 + ‖x‖ ^ 2) ^ (-r / 2)` is integrable when `dim V + i < r`.
+* `TauCeti.integrable_one_add_norm_rpow_neg_add_one`: the weight `(1 + ‖x‖) ^ (-(n + 1))` is
+  integrable on `ℝⁿ`.
 * `TauCeti.integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq`,
   `TauCeti.integral_norm_rpow_mul_rpow_neg_one_add_norm_sq`: integrability and value of the
   radial moments of the Japanese bracket, for every additive Haar measure.
@@ -168,6 +170,12 @@ theorem integrable_one_add_mul_norm_pow_mul_rpow_neg_one_add_norm_sq (μ : Measu
     _ = (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ (-(r - i) / 2) := by
           rw [mul_assoc, ← Real.rpow_add hA]
           ring_nf
+
+/-- The decay weight `x ↦ (1 + ‖x‖) ^ (-(n + 1))` is integrable on `ℝⁿ`: Mathlib's
+`integrable_one_add_norm` with the exponent one more than the dimension. -/
+theorem integrable_one_add_norm_rpow_neg_add_one {n : ℕ} :
+    Integrable fun x : EuclideanSpace ℝ (Fin n) ↦ (1 + ‖x‖) ^ (-((n : ℝ) + 1)) :=
+  integrable_one_add_norm (by rw [finrank_euclideanSpace_fin]; linarith)
 
 end Integrability
 
