@@ -30,10 +30,18 @@ For singular chains, `TopCat.singularCap_comp_singularKronecker` is the case `M 
 `N' = N` arbitrary and `ν = (λ_ N).hom`, with `B' = B = C(X; S)`, `a` the chain map induced by the
 left unitor of `S` (in each degree the left unitor of the object of chains) and `ψ' = ψ`.
 
+On classes the compatibility of `ψ` and `ψ'` is expressed through the map of cochain complexes
+`Hom(B, N) ⟶ Hom(M ⊗ B, N')`, `ψ' ↦ (M ◁ ψ') ≫ ν`: the identity holds for classes `ψ` and `β` such
+that the pull-back of `ψ` along `a` is the image of `β` under this map.
+
 ## Main results
 
 * `TauCeti.ChainComplex.capChain_comp`: the identity `⟨ψ, x ⌢ φ⟩ = ⟨φ ⌣ ψ', x⟩` of cochains.
-* `TauCeti.ChainComplex.cap_comp_kronecker`: the identity on homology and cohomology classes.
+* `TauCeti.ChainComplex.cap_comp_kronecker`: the identity on homology classes and cocycles.
+* `ChainComplex.linearYonedaObjWhiskerLeft`: the extension of cochains along `ν`.
+* `TauCeti.ChainComplex.cap_comp_kronecker_linearYonedaObjWhiskerLeft` and
+  `TauCeti.ChainComplex.cap_comp_kronecker_of_homologyMap_eq`: the identity on homology and
+  cohomology classes, for the identity action and for a general action.
 
 ## References
 
@@ -70,6 +78,49 @@ lemma capChain_comp (p q n : ℕ) (h : p + q = n) (φ : A.X p ⟶ M) (ψ : B'.X 
 
 end Chain
 
+end TauCeti.ChainComplex
+
+namespace ChainComplex
+
+section Whisker
+
+variable {C : Type*} [Category* C] [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C]
+  {k : Type*} [CommRing k] [Linear k C] [MonoidalLinear k C] {M N N' : C}
+
+variable (k M) in
+/-- **Extension of cochains along a coefficient pairing**: for a pairing `ν : M ⊗ N ⟶ N'`, the map
+of cochain complexes `Hom(B, N) ⟶ Hom(M ⊗ B, N')` sending a cochain `ψ` to `(M ◁ ψ) ≫ ν`. -/
+def linearYonedaObjWhiskerLeft (B : ChainComplex C ℕ) (ν : M ⊗ N ⟶ N') :
+    B.linearYonedaObj k N ⟶
+      ChainComplex.linearYonedaObj (((tensorLeft M).mapHomologicalComplex _).obj B) k N' where
+  f i := ModuleCat.ofHom
+    { toFun ψ := (M ◁ (ψ : B.X i ⟶ N)) ≫ ν
+      map_add' ψ ψ' := by
+        change (M ◁ (ψ + ψ' : B.X i ⟶ N)) ≫ ν = (M ◁ (ψ : B.X i ⟶ N)) ≫ ν + (M ◁ ψ') ≫ ν
+        rw [MonoidalPreadditive.whiskerLeft_add, Preadditive.add_comp]
+      map_smul' r ψ := by
+        change (M ◁ (r • ψ : B.X i ⟶ N)) ≫ ν = r • ((M ◁ (ψ : B.X i ⟶ N)) ≫ ν)
+        rw [MonoidalLinear.whiskerLeft_smul, Linear.smul_comp] }
+  comm' i j _ := by
+    ext ψ
+    exact ((Category.assoc _ _ _).symm.trans
+      (congrArg (· ≫ ν) (MonoidalCategory.whiskerLeft_comp M (B.d j i) (ψ : B.X i ⟶ N)).symm))
+
+/-- The extension of a cochain `ψ` along a pairing `ν` is `(M ◁ ψ) ≫ ν`. -/
+@[simp↓]
+lemma linearYonedaObjWhiskerLeft_f_hom_apply (B : ChainComplex C ℕ) (ν : M ⊗ N ⟶ N') (i : ℕ)
+    (ψ : B.X i ⟶ N) :
+    (B.linearYonedaObjWhiskerLeft k M ν).f i ψ = (M ◁ ψ) ≫ ν :=
+  (rfl)
+
+end Whisker
+
+end ChainComplex
+
+namespace TauCeti.ChainComplex
+
+variable {C : Type*} [Category* C]
+
 section Homology
 
 variable [Abelian C] [MonoidalCategory C] [MonoidalPreadditive C] {A B B' E : ChainComplex C ℕ}
@@ -93,6 +144,47 @@ lemma cap_comp_kronecker (p q n : ℕ) (h : p + q = n) (φ : (A.linearYonedaObj 
     kronecker_homologyπ, iCycles_cupCycles]
   exact (capCycles_i_assoc D a p q n h φ _).trans
     (congrArg (E.iCycles n ≫ ·) (capChain_comp D a ν p q n h _ _ _ hψ))
+
+/-- **The Kronecker pairing of a cap product with an extended class**,
+`⟨ν(M ⊗ β), x ⌢ α⟩ = ⟨α ⌣ β, x⟩`: capping with a class `α ∈ Hᵖ(Hom(A, M))` along the diagonal `D`
+and the identity action of `M`, into `H_q(M ⊗ B)`, and then evaluating the extension of a class
+`β ∈ H^q(Hom(B, N))` along the pairing `ν`, is evaluating the cup product of `α` and `β` along `D`
+and `ν`. -/
+lemma cap_comp_kronecker_linearYonedaObjWhiskerLeft (p q n : ℕ) (h : p + q = n)
+    (α : (A.linearYonedaObj k M).homology p) (β : (B.linearYonedaObj k N).homology q) :
+    cap k D (𝟙 _) p q n h α ≫ kronecker k _ N' q
+        (homologyMap (B.linearYonedaObjWhiskerLeft k M ν) q β) =
+      kronecker k E N' n (cup k D ν p q n h α β) := by
+  obtain ⟨φ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p α
+  obtain ⟨ψ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ q β
+  rw [← ConcreteCategory.comp_apply, homologyπ_naturality, ConcreteCategory.comp_apply]
+  refine cap_comp_kronecker D (𝟙 _) ν p q n h φ _ ψ ?_
+  rw [← ConcreteCategory.comp_apply, cyclesMap_i, ConcreteCategory.comp_apply,
+    HomologicalComplex.id_f]
+  exact Category.id_comp _
+
+/-- **The Kronecker pairing of a cap product on homology classes**, `⟨ψ, x ⌢ α⟩ = ⟨α ⌣ β, x⟩`:
+if the pull-back along the action `a : M ⊗ B ⟶ B'` of a class `ψ ∈ H^q(Hom(B', N'))` is the
+extension along the pairing `ν` of a class `β ∈ H^q(Hom(B, N))`, then capping with a class `α`
+along `D` and `a` and evaluating `ψ` is evaluating the cup product of `α` and `β` along `D` and
+`ν`.  This is the class-level form of `TauCeti.ChainComplex.cap_comp_kronecker`. -/
+lemma cap_comp_kronecker_of_homologyMap_eq (p q n : ℕ) (h : p + q = n)
+    (α : (A.linearYonedaObj k M).homology p) (ψ : (B'.linearYonedaObj k N').homology q)
+    (β : (B.linearYonedaObj k N).homology q)
+    (hψ : homologyMap (K := B'.linearYonedaObj k N')
+        (L := ChainComplex.linearYonedaObj (((tensorLeft M).mapHomologicalComplex _).obj B) k N')
+        ((linearYonedaFunctor k N').map a.op) q ψ =
+      homologyMap (B.linearYonedaObjWhiskerLeft k M ν) q β) :
+    cap k D a p q n h α ≫ kronecker k B' N' q ψ =
+      kronecker k E N' n (cup k D ν p q n h α β) := by
+  have hcap := cap_naturality D a D (𝟙 _) (𝟙 E) (𝟙 A) (𝟙 B) a (by simp) (by simp) p q n h α
+  have hα : homologyMap (K := A.linearYonedaObj k M) (L := A.linearYonedaObj k M)
+      ((linearYonedaFunctor k M).map (𝟙 A).op) p α = α := by
+    rw [op_id, CategoryTheory.Functor.map_id]
+    exact ConcreteCategory.congr_hom (homologyMap_id (A.linearYonedaObj k M) p) α
+  rw [hα, homologyMap_id, Category.id_comp] at hcap
+  rw [← hcap, Category.assoc, ← kronecker_naturality, hψ,
+    cap_comp_kronecker_linearYonedaObjWhiskerLeft]
 
 end Homology
 
