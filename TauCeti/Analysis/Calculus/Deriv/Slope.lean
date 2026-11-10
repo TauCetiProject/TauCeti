@@ -30,6 +30,8 @@ A negative right derivative gives strict decrease on a punctured right neighborh
 
 * `HasDerivAtFilter.tendsto_slope`: slopes converge to the derivative away from the base point.
 * `HasDerivAt.tendsto_nsmul_sub_add_div`: `n • (f (x + t / n) - f x)` tends to `t • f'`.
+* `HasDerivWithinAt.eventually_lt_of_neg`: a negative right derivative gives strict decrease
+  on a punctured right neighborhood.
 -/
 
 public section

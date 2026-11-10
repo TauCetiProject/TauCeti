@@ -21,6 +21,8 @@ definite symmetric bilinear form must be opposite. The maximum need not be diffe
 and no completeness or finite-dimensionality assumption is needed.
 
 This is the variational return-direction argument for two inverse exponential radius branches.
+It supplies the opposite-terminal-velocity step in Klingenberg's lemma, used for the
+Poincare3D §2.4 noncollapse-to-injectivity input.
 
 ## References
 
@@ -51,6 +53,27 @@ theorem IsMinFilter.not_both_deriv_neg_max {f g : ℝ → ℝ} {a b x : ℝ}
       (hft.trans_le (le_max_left _ _)) (hgt.trans_le (le_max_right _ _)))
   exact hfalse.exists.choose_spec
 
+/-- At a local minimum of a maximum, the maximum of the directional derivatives is
+nonnegative in every direction. -/
+theorem IsLocalMin.max_hasFDerivAt_nonneg
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {f g : E → ℝ} {f' g' : E →L[ℝ] ℝ} {x : E}
+    (hmin : IsLocalMin (fun z ↦ Max.max (f z) (g z)) x)
+    (hf : HasFDerivAt f f' x) (hg : HasFDerivAt g g' x) (y : E) :
+    0 ≤ Max.max (f' y) (g' y) := by
+  by_contra hneg
+  let c : ℝ → E := fun t ↦ x + t • y
+  have hc : HasDerivAt c y 0 := by
+    simpa [c] using ((hasDerivAt_id (0 : ℝ)).smul_const y).const_add x
+  have hc0 : c 0 = x := by simp [c]
+  have hf' := hf.comp_hasDerivAt_of_eq 0 hc hc0.symm
+  have hg' := hg.comp_hasDerivAt_of_eq 0 hc hc0.symm
+  rw [← hc0] at hmin
+  have hm : IsLocalMin (fun t ↦ Max.max (f (c t)) (g (c t))) 0 :=
+    hmin.comp_continuous hc.continuousAt
+  exact (hm.filter_mono nhdsWithin_le_nhds).not_both_deriv_neg_max
+    hf'.hasDerivWithinAt hg'.hasDerivWithinAt (max_lt_iff.mp (lt_of_not_ge hneg))
+
 /-- Equal-length gradients for a positive definite symmetric bilinear form are opposite at a
 local minimum of the maximum. Only the second slot of the form needs to be continuous. -/
 theorem IsLocalMin.eq_neg_of_max_hasFDerivAt_bilin
@@ -73,18 +96,8 @@ theorem IsLocalMin.eq_neg_of_max_hasFDerivAt_bilin
   have hv : B v (-(u + v)) < 0 := by
     rw [map_neg, map_add, hBsymm v u]
     linarith
-  let c : ℝ → E := fun t ↦ x + t • (-(u + v))
-  have hc : HasDerivAt c (-(u + v)) 0 := by
-    simpa [c] using ((hasDerivAt_id (0 : ℝ)).smul_const (-(u + v))).const_add x
-  have hc0 : c 0 = x := by simp [c]
-  have hf' : HasDerivAt (fun t ↦ f (c t)) (B u (-(u + v))) 0 := by
-    simpa only [Function.comp_def] using (hc0.symm ▸ hf).comp_hasDerivAt 0 hc
-  have hg' : HasDerivAt (fun t ↦ g (c t)) (B v (-(u + v))) 0 := by
-    simpa only [Function.comp_def] using (hc0.symm ▸ hg).comp_hasDerivAt 0 hc
-  have hm : IsLocalMin (fun t ↦ Max.max (f (c t)) (g (c t))) 0 :=
-    (hc0.symm ▸ hmin).comp_continuous hc.continuousAt
-  exact (hm.filter_mono nhdsWithin_le_nhds).not_both_deriv_neg_max
-    hf'.hasDerivWithinAt hg'.hasDerivWithinAt ⟨hu, hv⟩
+  exact (not_lt_of_ge (hmin.max_hasFDerivAt_nonneg hf hg (-(u + v))))
+    (max_lt hu hv)
 
 /-- Equal-norm inner-product gradients are opposite at a local minimum of the maximum. -/
 theorem IsLocalMin.eq_neg_of_max_hasFDerivAt_inner
@@ -97,5 +110,5 @@ theorem IsLocalMin.eq_neg_of_max_hasFDerivAt_inner
   exact hmin.eq_neg_of_max_hasFDerivAt_bilin (innerSL ℝ).toLinearMap
     (fun a b ↦ real_inner_comm b a) (fun a ha ↦ real_inner_self_pos.mpr ha)
     hf hg (by
-      change inner ℝ u u = inner ℝ v v
-      rw [real_inner_self_eq_norm_sq, real_inner_self_eq_norm_sq, hnorm])
+      simp only [ContinuousLinearMap.coe_coe, innerSL_apply_apply,
+        real_inner_self_eq_norm_sq, hnorm])
