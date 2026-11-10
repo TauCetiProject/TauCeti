@@ -23,10 +23,11 @@ The continuity proof uses `HasFDerivWithinAt.lim`, the rescaled-difference chara
 of the derivative in Mathlib.
 
 For a family of maps `f p` over a parameter space, differentiable near the origin with
-derivatives jointly continuous in the parameter and the point, the rescalings are jointly
+derivatives jointly continuous in the parameter and the point, the differences `f p y - f p 0`
+are jointly continuous (`TauCeti.continuousOn_sub_apply_zero_family`), the rescalings are jointly
 continuous in the parameter as well (`TauCeti.continuousOn_derivativeRescale_family`), and over a
 compact parameter space one linear bound and one radius serve the whole family
-(`TauCeti.exists_forall_norm_derivativeRescale_le_family`). Both rest on the mean value
+(`TauCeti.exists_forall_norm_derivativeRescale_le_family`). All three rest on the mean value
 inequality, which bounds the distance of a rescaling from a fixed linear map by the oscillation
 of the derivatives along a segment (`TauCeti.norm_derivativeRescale_sub_le`).
 -/
@@ -256,7 +257,7 @@ derivatives jointly continuous in the parameter and the point, are jointly conti
 value inequality bounds `(f p - f p₀) y - (f p - f p₀) 0` by the distance of the derivatives of
 `f p` and `f p₀` along the segment from `0` to `y`, which is small uniformly on that compact
 segment. -/
-private theorem continuousOn_sub_apply_zero_family
+theorem continuousOn_sub_apply_zero_family
     (hf : ∀ p, ∀ y ∈ ball (0 : E) r, HasFDerivAt (f p) (D p y) y)
     (hD : ContinuousOn (uncurry D) (univ ×ˢ ball 0 r)) :
     ContinuousOn (fun q : P × E ↦ f q.1 q.2 - f q.1 0) (univ ×ˢ ball 0 r) := by
