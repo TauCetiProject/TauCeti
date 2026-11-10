@@ -31,8 +31,8 @@ valuations on `A_inf = W(𝒪_F)`.
   `x = ∑_{i < m} [xᵢ] pⁱ + pᵐ b` of the Teichmüller expansion.
 * `WittVector.teichmullerCoeff_sum_teichmuller_mul_pow` : the Teichmüller coordinates of a finite
   Teichmüller sum `∑_{j ∈ s} [aⱼ] pʲ` are the `aᵢ` for `i ∈ s`, and vanish off `s`.
-* `WittVector.teichmullerCoeff_eq_of_dvd_sub` : the first `n + 1` Teichmüller coordinates only
-  depend on the residue modulo `p ^ (n + 1)`.
+* `WittVector.pow_dvd_sub_iff_forall_teichmullerCoeff_eq` : two Witt vectors are congruent
+  modulo `p ^ (n + 1)` exactly when their first `n + 1` Teichmüller coordinates agree.
 * `WittVector.teichmullerCoeff_teichmuller_mul` : `[c] x` has Teichmüller coordinates `c xₙ`.
 * `WittVector.teichmullerCoeff_injective` : a Witt vector is determined by its Teichmüller
   coordinates.
@@ -108,29 +108,17 @@ theorem teichmullerCoeff_sum_teichmuller_mul_pow (a : ℕ → R) (s : Finset ℕ
     simp only [hcoeff, ne_eq, ite_eq_right_iff, not_forall] at hj hl
     exact hj.1.symm.trans hl.1
 
-/-- The Teichmüller coordinates of `[a] p ^ m`: `a` in position `m` and `0` elsewhere. -/
-theorem teichmullerCoeff_teichmuller_mul_pow (a : R) (m n : ℕ) :
-    (teichmuller p a * (p : 𝕎 R) ^ m).teichmullerCoeff n = if n = m then a else 0 := by
-  simpa using teichmullerCoeff_sum_teichmuller_mul_pow (fun _ ↦ a) {m} n
-
 /-- The Teichmüller coordinates of `p ^ m`: `1` in position `m` and `0` elsewhere. -/
 @[simp]
 theorem teichmullerCoeff_natCast_pow (m n : ℕ) :
     ((p : 𝕎 R) ^ m).teichmullerCoeff n = if n = m then 1 else 0 := by
-  simpa using teichmullerCoeff_teichmuller_mul_pow (p := p) (1 : R) m n
+  simpa using teichmullerCoeff_sum_teichmuller_mul_pow (p := p) (fun _ ↦ (1 : R)) {m} n
 
 /-- The Teichmüller coordinates of `[a]`: `a` in position `0` and `0` elsewhere. -/
 @[simp]
 theorem teichmullerCoeff_teichmuller (a : R) (n : ℕ) :
     (teichmuller p a).teichmullerCoeff n = if n = 0 then a else 0 := by
-  simpa using teichmullerCoeff_teichmuller_mul_pow (p := p) a 0 n
-
-/-- The Teichmüller coordinates of a finite Teichmüller sum `∑_{j < n} [aⱼ] pʲ` are the `aᵢ` for
-`i < n`, and vanish from `n` on. -/
-theorem teichmullerCoeff_sum_range_teichmuller_mul_pow (a : ℕ → R) (n i : ℕ) :
-    (∑ j ∈ Finset.range n, teichmuller p (a j) * (p : 𝕎 R) ^ j).teichmullerCoeff i =
-      if i < n then a i else 0 := by
-  simp
+  simpa using teichmullerCoeff_sum_teichmuller_mul_pow (p := p) (fun _ ↦ a) {0} n
 
 /-- **The Teichmüller expansion**: `x` is congruent to `∑_{i ≤ n} [xᵢ] pⁱ` modulo `p ^ (n + 1)`. -/
 theorem pow_dvd_sub_sum_teichmullerCoeff (x : 𝕎 R) (n : ℕ) :
@@ -148,12 +136,13 @@ theorem exists_eq_sum_teichmullerCoeff_add_pow_mul (x : 𝕎 R) (m : ℕ) :
     obtain ⟨b, hb⟩ := pow_dvd_sub_sum_teichmullerCoeff x n
     exact ⟨b, by rw [Nat.range_succ_eq_Iic, ← hb, add_sub_cancel]⟩
 
-/-- The first `n + 1` Teichmüller coordinates only depend on the residue modulo `p ^ (n + 1)`. -/
-theorem teichmullerCoeff_eq_of_dvd_sub {x y : 𝕎 R} {n : ℕ} (h : (p : 𝕎 R) ^ (n + 1) ∣ x - y)
-    {i : ℕ} (hi : i ≤ n) : x.teichmullerCoeff i = y.teichmullerCoeff i := by
+/-- Two Witt vectors are congruent modulo `p ^ (n + 1)` exactly when their first `n + 1`
+Teichmüller coordinates agree. -/
+theorem pow_dvd_sub_iff_forall_teichmullerCoeff_eq {x y : 𝕎 R} {n : ℕ} :
+    (p : 𝕎 R) ^ (n + 1) ∣ x - y ↔ ∀ i ≤ n, x.teichmullerCoeff i = y.teichmullerCoeff i := by
   rw [← Ideal.mem_span_singleton, mem_span_p_pow_iff_le_coeff_eq_zero,
-    ← le_coeff_eq_iff_le_sub_coeff_eq_zero] at h
-  rw [teichmullerCoeff, h i (Nat.lt_succ_of_le hi), teichmullerCoeff]
+    ← le_coeff_eq_iff_le_sub_coeff_eq_zero]
+  simp only [Nat.lt_succ_iff, teichmullerCoeff, EquivLike.apply_eq_iff_eq]
 
 /-- Multiplication by a Teichmüller representative `[c]` multiplies every Teichmüller coordinate
 by `c`. -/
@@ -164,7 +153,8 @@ theorem teichmullerCoeff_teichmuller_mul (c : R) (x : 𝕎 R) (n : ℕ) :
       ∑ i ≤ n, teichmuller p (c * x.teichmullerCoeff i) * (p : 𝕎 R) ^ i := by
     convert (pow_dvd_sub_sum_teichmullerCoeff x n).mul_left (teichmuller p c) using 1
     simp only [mul_sub, Finset.mul_sum, map_mul, mul_assoc]
-  rw [teichmullerCoeff_eq_of_dvd_sub h le_rfl, teichmullerCoeff_sum_teichmuller_mul_pow]
+  rw [pow_dvd_sub_iff_forall_teichmullerCoeff_eq.mp h n le_rfl,
+    teichmullerCoeff_sum_teichmuller_mul_pow]
   simp
 
 /-- A Witt vector over a perfect ring is determined by its Teichmüller coordinates. -/

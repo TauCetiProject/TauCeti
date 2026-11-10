@@ -230,7 +230,7 @@ theorem isSeparable_adjoin_of_finrank_prime [PerfectField k] (hg : genus k F ≠
   obtain ⟨p, _⟩ := ExpChar.exists F
   by_contra hsep
   obtain ⟨y, hyx, htop⟩ := hx.isFunctionField_adjoin.finite_extension
-    |>.exists_pow_eq_and_adjoin_eq_top_of_finrank_prime_of_not_isSeparable p hx hprime hsep
+    |>.exists_pow_eq_and_adjoin_eq_top_of_finrank_prime_of_not_isSeparable p hprime hsep
   exact hg (genus_eq_zero_of_adjoin_eq_top (fun h ↦ hx (hyx ▸ (h.isIntegral.pow p).isAlgebraic))
     htop)
 

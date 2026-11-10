@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Combinatorics.PermutationTriple.Passport.Class
+public import TauCeti.Combinatorics.PermutationTriple.Passport.OfTriple
 public import TauCeti.Combinatorics.PermutationTriple.Examples
 
 /-!
@@ -35,6 +35,8 @@ In degree `5` this gives the passport with monodromy `C₅` and ordered cycle pa
 * `TauCeti.PassportSpec.cyclicTotallyRamified`: the passport `(⟨r⟩, [n], [n], [n])`.
 * `TauCeti.PassportSpec.hasPassport_cyclicPowTriple_iff`: in nonzero degree,
   `cyclicPowTriple n k` lies in this passport exactly when `k` and `k + 1` are coprime to `n`.
+* `TauCeti.ConnectedTriple.passportOf_cyclicPowTriple`: it is then the passport attached to
+  `cyclicPowTriple n k`.
 * `TauCeti.PassportSpec.classSet_cyclicTotallyRamified`: for nonzero `n`, its isomorphism classes
   are indexed by the `k < n` for which `k` and `k + 1` are coprime to `n`.
 * `TauCeti.PassportSpec.passportSize_cyclicTotallyRamified`: for prime `p`, it has `p - 2`
@@ -161,6 +163,19 @@ theorem hasPassport_cyclicPowTriple {k : ℕ} (hk : k.Coprime n) (hk' : (k + 1).
   refine ⟨fun h => ?_, fun h => hasPassport_cyclicPowTriple h.1 h.2⟩
   obtain ⟨-, h0, h1, hinf⟩ := (hasPassport_iff _ _).mp h
   exact cycleData_cyclicPowTriple_iff.mp (Prod.ext h0 (Prod.ext h1 hinf))
+
+/-- When `k` and `k + 1` are coprime to `n`, the passport attached to `cyclicPowTriple n k` is
+`cyclicTotallyRamified n` itself, with the same reference subgroup and not merely a conjugate. -/
+theorem _root_.TauCeti.ConnectedTriple.passportOf_cyclicPowTriple (hn : n ≠ 0) {k : ℕ}
+    (hk : k.Coprime n) (hk' : (k + 1).Coprime n) :
+    ConnectedTriple.passportOf ⟨cyclicPowTriple n k, isConnected_cyclicPowTriple hn⟩ =
+      cyclicTotallyRamified n := by
+  have hc := cycleData_cyclicPowTriple hk hk'
+  refine PassportSpec.ext ?_ ?_ ?_ ?_
+  · rw [ConnectedTriple.passportOf_G, monodromyGroup_cyclicPowTriple, cyclicTotallyRamified_G]
+  · rw [ConnectedTriple.passportOf_lam0, hc, cyclicTotallyRamified_lam0]
+  · rw [ConnectedTriple.passportOf_lam1, hc, cyclicTotallyRamified_lam1]
+  · rw [ConnectedTriple.passportOf_laminf, hc, cyclicTotallyRamified_laminf]
 
 /-- A triple in the passport `cyclicTotallyRamified n` whose component over `0` is rotation is
 `(r, r ^ k)` for a unique-range exponent whose two relevant powers are full cycles. -/

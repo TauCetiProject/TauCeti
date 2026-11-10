@@ -83,7 +83,7 @@ private theorem gromovWassersteinEDist_twoPoint_dirac (a : ℝ) {p : ℝ≥0∞}
     gromovWassersteinEDist p (Measure.uniformOfFinset (.univ : Finset (Fin 2))) (twoPointKernel a)
       (Measure.dirac ()) (fun _ : Unit × Unit ↦ (0 : ℝ)) =
       (2 : ℝ≥0∞) ^ (-1 / p.toReal) * ENNReal.ofReal |a| := by
-  rw [gromovWassersteinEDist_dirac_right () _ (measurable_of_countable _).aestronglyMeasurable]
+  rw [gromovWassersteinEDist_dirac_right () _]
   simpa [twoPointKernel] using eLpNorm_twoPointKernel_edist a 0 hp
 
 /-- The exact GW distance between uniform two-point kernels, including the infinite exponent.

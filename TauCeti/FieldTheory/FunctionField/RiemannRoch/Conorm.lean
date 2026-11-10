@@ -88,15 +88,20 @@ theorem mem_riemannRochSpace_algebraMap_iff_of_coeff_eq [Algebra.IsIntegral F F'
       exact_mod_cast Place.ramificationIdx_pos F P'
     nlinarith [h (P'.restrict k F)]
 
+omit [Algebra.IsIntegral k k'] in
 /-- **Pole bounds descend along integral extensions**: a function `f` of `F` lies in
 `L(n (z)_∞)` precisely when its image in `F'` lies in the Riemann–Roch space of `n` times the pole
-divisor of the image of `z`. The extensions `F' / F` and `k' / k` need only be integral, not
-finite. -/
+divisor of the image of `z`. The extension `F' / F` need only be integral, not finite; the
+algebraicity of `k' / k` is then automatic. -/
 theorem mem_riemannRochSpace_nsmul_poles_map_iff [Algebra.IsIntegral F F']
     (hF : IsFunctionField k F) (hF' : IsFunctionField k' F') (n : ℕ) (z : Fˣ) (f : F) :
     algebraMap F F' f ∈
         riemannRochSpace (n • Divisor.poles hF' (Units.map (algebraMap F F' : F →* F') z)) ↔
       f ∈ riemannRochSpace (n • Divisor.poles hF z) := by
+  -- the base extension is algebraic, hence integral, because both fields have transcendence
+  -- degree one
+  have : Algebra.IsAlgebraic k k' := hF.isAlgebraic_baseExtension hF'
+  have : Algebra.IsIntegral k k' := Algebra.IsAlgebraic.isIntegral
   -- at a place `P'` over `P` the pole order of `z` scales by `e(P' ∣ P) ≥ 0`
   refine mem_riemannRochSpace_algebraMap_iff_of_coeff_eq hF' (fun P' ↦ ?_) f
   simp only [WeilDivisor.coeff_nsmul, Divisor.coeff_poles, Units.coe_map,
@@ -107,6 +112,7 @@ theorem mem_riemannRochSpace_nsmul_poles_map_iff [Algebra.IsIntegral F F']
   rw [← hmax]
   ring
 
+omit [Algebra.IsIntegral k k'] in
 /-- **Enlarging the constants does not change `L(n (z)_∞)`**: for an algebraic extension `k'` of
 `k` inside `F`, for instance the full constant field `algebraicClosure k F`, the Riemann–Roch space
 of `n` times the pole divisor of `z`, computed over `k'`, is the one computed over `k`. -/
@@ -195,6 +201,7 @@ end FiniteFibres
 
 variable [FiniteDimensional F F']
 
+omit [Algebra.IsIntegral k k'] in
 /-- An `F`-linearly independent family of `r` functions in `L(C)` multiplies the dimension of
 the Riemann–Roch space of any divisor `A` of `F`: `r ℓ(A) ≤ [k' : k] ℓ(Con A + C)`, where `ℓ(A)`
 is a dimension over `k` and `ℓ(Con A + C)` one over `k'`.  The products of a `k`-basis of `L(A)`
@@ -207,6 +214,7 @@ theorem Divisor.card_mul_dim_le_finrank_mul_dim_conorm_add [FiniteDimensional k 
     (A : Divisor k F) :
     Fintype.card ι * Divisor.dim A ≤
       Module.finrank k k' * Divisor.dim (Divisor.conorm k' F' A + C) := by
+  have : Algebra.IsIntegral k k' := Algebra.IsIntegral.of_finite k k'
   have : Algebra.IsAlgebraic F F' := Algebra.IsAlgebraic.of_finite F F'
   have hF : IsFunctionField k F := (hF'.of_finiteDimensional (k := k)).of_isAlgebraic_top
   set V := riemannRochSpace (Divisor.conorm k' F' A + C)
