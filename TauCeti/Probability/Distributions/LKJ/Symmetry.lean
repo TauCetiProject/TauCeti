@@ -136,6 +136,23 @@ theorem map_symmetricCongruenceLinearMap_diagonal_lkjMeasure {s : Fin p → ℝ}
   rw [Matrix.det_diagonal, ← Finset.prod_pow]
   exact Finset.prod_eq_one fun i _ ↦ by rw [← sq_abs, hs i, one_pow]
 
+/-- Diagonal sign congruence preserves the LKJ law. -/
+private theorem hasLaw_symmetricCongruenceLinearMap_diagonal_lkjMeasure {s : Fin p → ℝ}
+    (hs : ∀ i, |s i| = 1) :
+    HasLaw (Matrix.symmetricCongruenceLinearMap (Matrix.diagonal s))
+      (lkjMeasure p η) (lkjMeasure p η) :=
+  ⟨(LinearMap.continuous_of_finiteDimensional _).measurable.aemeasurable,
+    map_symmetricCongruenceLinearMap_diagonal_lkjMeasure p η hs⟩
+
+/-- Diagonal congruence multiplies an entry by its two diagonal factors. -/
+private theorem coe_symmetricCongruenceLinearMap_diagonal_apply (s : Fin p → ℝ)
+    (R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ)) (i j : Fin p) :
+    (Matrix.symmetricCongruenceLinearMap (Matrix.diagonal s) R :
+        Matrix (Fin p) (Fin p) ℝ) i j =
+      s i * (R : Matrix (Fin p) (Fin p) ℝ) i j * s j := by
+  simp only [Matrix.coe_symmetricCongruenceLinearMap_apply, Matrix.diagonal_transpose,
+    Matrix.mul_diagonal, Matrix.diagonal_mul]
+
 /-! ### The mean -/
 
 /-- Every entry of an LKJ matrix is integrable: it lies in `[-1, 1]` almost surely. -/
@@ -159,16 +176,11 @@ private theorem integral_coe_apply_lkjMeasure_of_ne {i j : Fin p} (hij : i ≠ j
         (R : Matrix (Fin p) (Fin p) ℝ) i j ∂lkjMeasure p η = 0 := by
   set s : Fin p → ℝ := fun k ↦ if k = i then -1 else 1
   have hs : ∀ k, |s k| = 1 := fun k ↦ by by_cases hk : k = i <;> simp [s, hk]
-  have h := integral_map (μ := lkjMeasure p η)
-    (φ := Matrix.symmetricCongruenceLinearMap (Matrix.diagonal s))
-    (f := fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-      (R : Matrix (Fin p) (Fin p) ℝ) i j)
-    (LinearMap.continuous_of_finiteDimensional _).measurable.aemeasurable
-    (selfAdjoint.measurable_coe_apply i j).aestronglyMeasurable
-  rw [map_symmetricCongruenceLinearMap_diagonal_lkjMeasure p η hs] at h
-  simp only [Matrix.coe_symmetricCongruenceLinearMap_apply, Matrix.diagonal_transpose,
-    Matrix.mul_diagonal, Matrix.diagonal_mul, s, hij.symm, ↓reduceIte, neg_one_mul, mul_one,
-    integral_neg] at h
+  have h := (hasLaw_symmetricCongruenceLinearMap_diagonal_lkjMeasure
+    (p := p) (η := η) hs).integral_comp
+      (selfAdjoint.measurable_coe_apply i j).aestronglyMeasurable
+  simp only [Function.comp_apply, coe_symmetricCongruenceLinearMap_diagonal_apply,
+    s, hij.symm, ↓reduceIte, neg_one_mul, mul_one, integral_neg] at h
   linarith
 
 /-- The entrywise mean of an LKJ matrix is the identity matrix. -/
@@ -230,23 +242,29 @@ theorem covariance_coe_apply_lkjMeasure {ij kl : strictLowerTriangle p} (hne : i
   have hij := ij.2
   set s : Fin p → ℝ := fun k ↦ if k = v then -1 else 1
   have hs : ∀ k, |s k| = 1 := fun k ↦ by by_cases hk : k = v <;> simp [s, hk]
-  have h := covariance_map_fun (μ := lkjMeasure p η)
-    (Z := Matrix.symmetricCongruenceLinearMap (Matrix.diagonal s))
-    (selfAdjoint.measurable_coe_apply ij.1.1 ij.1.2).aestronglyMeasurable
-    (selfAdjoint.measurable_coe_apply kl.1.1 kl.1.2).aestronglyMeasurable
-    (LinearMap.continuous_of_finiteDimensional _).measurable.aemeasurable
-  rw [map_symmetricCongruenceLinearMap_diagonal_lkjMeasure p η hs] at h
-  simp only [Matrix.coe_symmetricCongruenceLinearMap_apply, Matrix.diagonal_transpose,
-    Matrix.mul_diagonal, Matrix.diagonal_mul, s, Ne.symm hvk, Ne.symm hvl, ↓reduceIte,
-    one_mul, mul_one] at h
+  have h := (hasLaw_symmetricCongruenceLinearMap_diagonal_lkjMeasure
+    (p := p) (η := η) hs).covariance_fun_comp
+    (selfAdjoint.measurable_coe_apply ij.1.1 ij.1.2).aemeasurable
+    (selfAdjoint.measurable_coe_apply kl.1.1 kl.1.2).aemeasurable
+  simp only [coe_symmetricCongruenceLinearMap_diagonal_apply] at h
+  have hsign : s ij.1.1 * s ij.1.2 = -1 := by
+    rcases hv with rfl | rfl <;> simp [s, hij.ne, hij.ne']
   have hneg : (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-      (if ij.1.1 = v then -1 else 1) * (R : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 *
-        if ij.1.2 = v then -1 else 1) =
+      s ij.1.1 * (R : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 * s ij.1.2) =
       -fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
         (R : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 := by
     funext R
-    rcases hv with rfl | rfl <;> simp [hij.ne, hij.ne']
-  rw [hneg, covariance_neg_left] at h
+    calc
+      _ = (s ij.1.1 * s ij.1.2) *
+          (R : Matrix (Fin p) (Fin p) ℝ) ij.1.1 ij.1.2 := by ring
+      _ = _ := by simp only [hsign, neg_one_mul, Pi.neg_apply]
+  have hfix : (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+      s kl.1.1 * (R : Matrix (Fin p) (Fin p) ℝ) kl.1.1 kl.1.2 * s kl.1.2) =
+      fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
+        (R : Matrix (Fin p) (Fin p) ℝ) kl.1.1 kl.1.2 := by
+    funext R
+    simp [s, Ne.symm hvk, Ne.symm hvl]
+  rw [hneg, hfix, covariance_neg_left] at h
   linarith
 
 /-! ### Sign symmetry and moments of partial-correlation Gram laws -/

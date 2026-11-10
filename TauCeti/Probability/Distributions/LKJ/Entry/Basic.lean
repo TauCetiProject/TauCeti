@@ -171,12 +171,9 @@ theorem variance_coe_apply_lkjMeasure_of_ne (hη : 0 < η) {i j : Fin p} (hij : 
       1 / (2 * η + p - 1) := by
   have ha := entry_shape_pos hη hij
   have := isProbabilityMeasureBeta ha ha
-  rw [← Function.id_comp (fun R : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
-      (R : Matrix (Fin p) (Fin p) ℝ) i j),
-    ← variance_map aemeasurable_id (selfAdjoint.measurable_coe_apply i j).aemeasurable,
-    map_coe_apply_lkjMeasure_of_ne hη hij, variance_map aemeasurable_id (by fun_prop),
-    Function.id_comp, variance_const_add (by fun_prop), variance_const_mul,
-    ← Function.id_def, variance_id_betaMeasure ha ha]
+  rw [← variance_id_map (selfAdjoint.measurable_coe_apply i j).aemeasurable,
+    map_coe_apply_lkjMeasure_of_ne hη hij, variance_id_map_affine,
+    variance_id_betaMeasure ha ha]
   have h2 : 2 * η + p - 1 = 2 * (η + ((p : ℝ) - 2) / 2) + 1 := by ring
   rw [h2]
   generalize η + ((p : ℝ) - 2) / 2 = a at ha ⊢
