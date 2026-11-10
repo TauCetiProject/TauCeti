@@ -27,7 +27,7 @@ No completeness or Archimedean assumption is needed. The two signs agree exactly
 multiplicity is even, so a nonzero polynomial changes sign at a point exactly when its root
 multiplicity there is odd.
 
-In characteristic zero, the one-sided signs of the derivative at `a` are those of the increment
+Over a domain, the one-sided signs of the derivative at `a` are those of the increment
 `p - p(a)` on the right and their negatives on the left. In particular, at a root the
 derivative has the sign of `p` immediately to the right of the root and the opposite sign
 immediately to the left.
@@ -187,7 +187,7 @@ end Neg
 
 section Derivative
 
-variable {R : Type*} [CommRing R] [LinearOrder R] [NoZeroDivisors R] [CharZero R]
+variable {R : Type*} [CommRing R] [LinearOrder R] [NoZeroDivisors R]
 
 /-- At a root, the derivative has the right-hand sign of the polynomial. -/
 theorem derivSignRight_derivative_of_isRoot {p : R[X]} {a : R} (ha : p.IsRoot a) :
@@ -195,8 +195,26 @@ theorem derivSignRight_derivative_of_isRoot {p : R[X]} {a : R} (ha : p.IsRoot a)
   by_cases hp : p = 0
   · simp [hp]
   have hm : 0 < p.rootMultiplicity a := (rootMultiplicity_pos hp).mpr ha
-  rw [derivSignRight, derivSignRight, derivative_rootMultiplicity_of_root ha,
-    derivativeSign_derivative, Nat.sub_add_cancel hm]
+  by_cases hmR : (p.rootMultiplicity a : R) = 0
+  · -- The factorial of the multiplicity vanishes, and the derivative has at least this multiplicity
+    -- unless it is zero, so both signs are zero.
+    have hfact (k : ℕ) (hk : p.rootMultiplicity a ≤ k) : (k.factorial : R) = 0 := by
+      obtain ⟨c, hc⟩ := Nat.factorial_dvd_factorial hk
+      rw [hc, Nat.cast_mul, ← Nat.mul_factorial_pred hm.ne', Nat.cast_mul, hmR, zero_mul, zero_mul]
+    have hzero (q : R[X]) (hq : p.rootMultiplicity a ≤ q.rootMultiplicity a) :
+        q.derivSignRight a = 0 := by
+      rw [derivSignRight_def, eval_iterate_derivative_rootMultiplicity, nsmul_eq_mul, hfact _ hq,
+        zero_mul, sign_zero]
+    rw [hzero p le_rfl]
+    by_cases hd : p.derivative = 0
+    · rw [hd, derivSignRight_zero]
+    refine hzero _ ((le_rootMultiplicity_iff hd).2 ?_)
+    obtain ⟨g, hg⟩ := p.pow_rootMultiplicity_dvd a
+    generalize p.rootMultiplicity a = m at hmR hg ⊢
+    rw [hg, derivative_mul, derivative_X_sub_C_pow, hmR, map_zero]
+    simp
+  rw [derivSignRight, derivSignRight, derivative_rootMultiplicity_of_root_of_mem_nonZeroDivisors ha
+      (mem_nonZeroDivisors_of_ne_zero hmR), derivativeSign_derivative, Nat.sub_add_cancel hm]
 
 /-- At a root, the derivative has the opposite of the left-hand sign of the polynomial. -/
 theorem derivSignLeft_derivative_of_isRoot {p : R[X]} {a : R} (ha : p.IsRoot a) :
@@ -205,8 +223,14 @@ theorem derivSignLeft_derivative_of_isRoot {p : R[X]} {a : R} (ha : p.IsRoot a) 
   · simp [hp]
   have hm : 0 < p.rootMultiplicity a := (rootMultiplicity_pos hp).mpr ha
   obtain ⟨k, hk⟩ := Nat.exists_eq_succ_of_ne_zero hm.ne'
-  rw [derivSignLeft_def, derivSignLeft_def, derivSignRight_derivative_of_isRoot ha,
-    derivative_rootMultiplicity_of_root ha, hk]
+  rw [derivSignLeft_def, derivSignLeft_def, derivSignRight_derivative_of_isRoot ha]
+  by_cases hmR : (p.rootMultiplicity a : R) = 0
+  · have : p.derivSignRight a = 0 := by
+      rw [derivSignRight_def, eval_iterate_derivative_rootMultiplicity, nsmul_eq_mul,
+        ← Nat.mul_factorial_pred hm.ne', Nat.cast_mul, hmR, zero_mul, zero_mul, sign_zero]
+    simp [this]
+  rw [derivative_rootMultiplicity_of_root_of_mem_nonZeroDivisors ha
+    (mem_nonZeroDivisors_of_ne_zero hmR), hk]
   simp [pow_succ]
 
 /-- At any point `a`, the right-hand sign of the derivative equals the right-hand sign of the
