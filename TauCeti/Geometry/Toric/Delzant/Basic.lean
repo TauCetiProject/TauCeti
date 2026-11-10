@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Convex.Polyhedron.Extreme
 
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
+import Mathlib.LinearAlgebra.Dual.Lemmas
 import Mathlib.RingTheory.FiniteType
 
 /-!
@@ -69,6 +70,8 @@ freedom of shifting a moment map by a constant.
 
 * `TauCeti.Toric.IsDelzant.isCompact`: a Delzant polytope is compact.
 * `TauCeti.Toric.IsDelzant.extremePoints_nonempty`: a Delzant polytope has a vertex.
+* `TauCeti.Toric.mem_extremePoints_facetPolyhedron_iff_span_eq_top`: in finite dimension, the
+  vertices are the points of the polyhedron at which the active normals span `V`.
 * `TauCeti.Toric.exists_mem_extremePoints_activeSet_subset`: the constraints active at a point of
   a compact facet polyhedron are active at some vertex.
 * `TauCeti.Toric.isSmoothVertex_iff_linearIndepOn`: a smooth vertex is a point whose active
@@ -182,6 +185,26 @@ theorem mem_extremePoints_facetPolyhedron_iff [Finite ι] {x : StrongDual ℝ V}
       ∀ w : StrongDual ℝ V, (∀ j ∈ activeSet (facetPairing i u) c x, w (i (u j)) = 0) → w = 0 := by
   unfold facetPolyhedron
   exact mem_extremePoints_polyhedron_iff
+
+/-- **Vertices of a facet polyhedron, by spanning.** In finite dimension, a point `x` of the
+polyhedron is a vertex exactly when the normals active at `x` span `V`. -/
+theorem mem_extremePoints_facetPolyhedron_iff_span_eq_top [Finite ι] [FiniteDimensional ℝ V]
+    {x : StrongDual ℝ V} :
+    x ∈ (facetPolyhedron i u c).extremePoints ℝ ↔ x ∈ facetPolyhedron i u c ∧
+      Submodule.span ℝ ((fun j ↦ i (u j)) '' activeSet (facetPairing i u) c x) = ⊤ := by
+  rw [mem_extremePoints_facetPolyhedron_iff]
+  refine and_congr_right fun _ ↦ ⟨fun h ↦ ?_, fun h w hw ↦ ?_⟩
+  · -- A proper subspace is annihilated by a nonzero functional, which is continuous.
+    by_contra hne
+    obtain ⟨f, hf, hfW⟩ :=
+      Submodule.exists_dual_map_eq_bot_of_lt_top (lt_top_iff_ne_top.2 hne) inferInstance
+    exact hf (LinearMap.toContinuousLinearMap.map_eq_zero_iff.1 (h _ fun j hj ↦
+      LinearMap.le_ker_iff_map.2 hfW (Submodule.subset_span ⟨j, hj, rfl⟩)))
+  · have hle : Submodule.span ℝ ((fun j ↦ i (u j)) '' activeSet (facetPairing i u) c x) ≤
+        LinearMap.ker (w : V →ₗ[ℝ] ℝ) :=
+      Submodule.span_le.2 (by rintro _ ⟨j, hj, rfl⟩; exact hw j hj)
+    rw [h, top_le_iff, LinearMap.ker_eq_top] at hle
+    exact ContinuousLinearMap.coe_injective hle
 
 /-- At a vertex `x`, the active constraints do not all lie in a set `s` of constraints whose
 normals are killed by a nonzero `w ∈ V*`. -/
