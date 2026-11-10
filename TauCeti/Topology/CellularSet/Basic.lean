@@ -60,6 +60,8 @@ of compact sets with diameters tending to `0`. The collapse is their pointwise l
 * `TauCeti.isCellularSet_iff`: the witnesses of cellularity.
 * `TauCeti.IsCellularSet.isCompact`, `TauCeti.IsCellularSet.nonempty`: in a Hausdorff space, a
   cellular set is a nonempty compact set.
+* `TauCeti.IsCellularSet.image`: the image of a cellular set under a continuous injection is
+  cellular.
 * `TauCeti.exists_collapse_iInter`: the intersection of a nested sequence of compact sets with
   Euclidean interiors is collapsed to one point by a continuous surjection whose other fibres are
   singletons.
@@ -239,6 +241,18 @@ theorem IsCellularSet.nonempty {E : Type*} [NormedAddCommGroup E] [ProperSpace E
     (fun i ↦ (hsub i).trans (image_mono ball_subset_closedBall))
     (fun i ↦ ⟨e i 0, mem_image_of_mem _ (mem_closedBall_self zero_le_one)⟩) (hQc 0)
     fun i ↦ (hQc i).isClosed
+
+/-- The image of a cellular set under a continuous injection is cellular: the images of the cells
+are again nested cells. -/
+theorem IsCellularSet.image {E : Type*} [NormedAddCommGroup E] {M N : Type*} [TopologicalSpace M]
+    [TopologicalSpace N] {X : Set M} (hX : IsCellularSet E X) {φ : M → N} (hφ : Continuous φ)
+    (hφi : Injective φ) : IsCellularSet E (φ '' X) := by
+  obtain ⟨e, hec, hei, hsub, rfl⟩ := (isCellularSet_iff E).1 hX
+  refine (isCellularSet_iff E).2 ⟨fun i ↦ φ ∘ e i, fun i ↦ hφ.comp_continuousOn (hec i),
+    fun i ↦ hφi.comp_injOn (hei i), fun i ↦ ?_, ?_⟩
+  · simp only [image_comp]
+    exact image_mono (hsub i)
+  · simp only [image_comp, hφi.injOn.image_iInter_eq]
 
 /-- **Collapsing a cellular set.** Let `M` be a metric space which is a topological manifold
 modelled on a finite-dimensional real normed space `E`, and `X ⊆ M` a cellular set. For every open
