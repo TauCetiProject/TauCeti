@@ -246,12 +246,9 @@ theorem subsingleton_sphere_fiber_of_isPreconnectedApproachAt
     (hFf : EqOn F f (ball c r))
     (hloc : IsPreconnectedApproachAt (f '' ball c r) a) :
     {z | z ∈ sphere c r ∧ F z = a}.Subsingleton := by
-  -- a sphere of nonpositive radius is empty or a point
   by_cases hr : 0 < r
   swap
-  · rcases (not_lt.mp hr).lt_or_eq with h | rfl
-    · simp [sphere_eq_empty_of_neg h]
-    · simp [Set.Subsingleton]
+  · exact (Metric.subsingleton_sphere c (not_lt.mp hr)).anti fun _ hz => hz.1
   have hcl : closure (ball c r) = closedBall c r := closure_ball c hr.ne'
   by_cases ha : a ∈ frontier (f '' ball c r)
   · have hpre : IsPreconnected {z : sphere c r | F z = a} := by
@@ -276,7 +273,6 @@ theorem subsingleton_sphere_fiber_of_isPreconnectedApproachAt
 /-- The preceding inverse-cluster reduction, specialized to a disc
 and fed to Tau Ceti's monotone-extension theorem. -/
 theorem injOn_closedBall_of_isPreconnected_image_approach
-    (hr : 0 < r)
     (hfd : DifferentiableOn ℂ f (ball c r))
     (hfi : InjOn f (ball c r))
     (hFc : ContinuousOn F (closedBall c r))
@@ -284,6 +280,9 @@ theorem injOn_closedBall_of_isPreconnected_image_approach
     (hloc : ∀ a ∈ frontier (f '' ball c r),
       IsPreconnectedApproachAt (f '' ball c r) a) :
     InjOn F (closedBall c r) := by
+  by_cases hr : 0 < r
+  swap
+  · exact (Metric.subsingleton_closedBall c (not_lt.mp hr)).injOn F
   have hcl : closure (ball c r) = closedBall c r :=
     closure_ball c hr.ne'
   let e := DifferentiableOn.toOpenPartialHomeomorph hfd isOpen_ball hfi
