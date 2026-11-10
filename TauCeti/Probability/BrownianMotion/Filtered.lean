@@ -169,7 +169,8 @@ theorem memLp_sq_sub (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
   simpa only [pow_two, Pi.mul_def, Pi.sub_def] using
     (h.mul h : MemLp ((B s - B t) * (B s - B t)) 2 P)
 
-/-- The centered square of a Brownian increment is square integrable, in either time order. -/
+/-- The square of a Brownian increment minus the signed time difference is square integrable,
+in either time order. This expression is centered when `s ≤ t`. -/
 theorem memLp_sq_sub_sub (hB : IsPreBrownianReal B P) {s t : ℝ≥0} :
     MemLp (fun ω ↦ (B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) 2 P := by
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
