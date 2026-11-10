@@ -140,8 +140,15 @@ for the spectrum map induced by the algebra structure map. -/
 theorem morphismProperty_hopfSpec_obj_X_hom_iff
     (P : MorphismProperty Scheme.{u}) (H : CommHopfAlgCat.{u} R) :
     P (((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (op H)).X.hom) ↔
-      P (Spec.map (CommRingCat.ofHom (algebraMap R H))) :=
-  Iff.rfl
+      P (Spec.map (CommRingCat.ofHom (algebraMap R H))) := by
+  have h : ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (op H)).X.hom ≍
+      Spec.map (CommRingCat.ofHom (algebraMap R H)) := by
+    rw [hopfSpec_obj_X_hom]
+    exact eqToHom_comp_heq _ _
+  -- The two schemes agree by `hopfSpec_obj_X_left`, so the heterogeneous equality is an equality.
+  cases hopfSpec_obj_X_left R H
+  rw [eq_of_heq h]
+  rfl
 
 /-- The multiplication source of a Hopf spectrum is the standard affine fibre product of two
 copies of its underlying spectrum over the base. -/
