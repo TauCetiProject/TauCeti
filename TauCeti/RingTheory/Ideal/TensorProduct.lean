@@ -24,8 +24,9 @@ The extension of a module annihilator is contained in its annihilator after arbi
 scalar extension, without a flatness hypothesis. The coefficient algebra `S` need not be
 commutative; extended ideals are left ideals.
 
-For an ideal `I` and a module `M`, injectivity of `I ⊗ M → R ⊗ M` is the vanishing of
-`Tor₁(R ⧸ I, M)`. `Ideal.sup_subtype_rTensor_injective` propagates it from `I` and `J` to `I ⊔ J`,
+For an ideal `I` and a module `M` over a commutative ring `R`, injectivity of `I ⊗ M → R ⊗ M` is
+the vanishing of `Tor₁(R ⧸ I, M)`; over a commutative semiring only the injectivity is meaningful.
+`Ideal.sup_subtype_rTensor_injective` propagates it from `I` and `J` to `I ⊔ J`,
 provided `I M ∩ J M = (I ⊓ J) M`. For an `M`-regular element `x` it holds for the ideal `(x)`
 (`IsSMulRegular.span_singleton_subtype_rTensor_injective`).
 
@@ -141,7 +142,8 @@ section IsSMulRegular
 
 variable {R M : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M]
 
-/-- If `x` is `M`-regular, then `Tor₁ᴿ(R ⧸ (x), M) = 0`: the map `(x) ⊗[R] M → M` is injective. -/
+/-- If `x` is `M`-regular, the map `(x) ⊗[R] M → R ⊗[R] M` is injective. For a commutative ring `R`
+and an `R`-module `M`, this says `Tor₁ᴿ(R ⧸ (x), M) = 0`. -/
 theorem IsSMulRegular.span_singleton_subtype_rTensor_injective {x : R}
     (reg : IsSMulRegular M x) :
     Function.Injective ((Ideal.span {x}).subtype.rTensor M) := by
