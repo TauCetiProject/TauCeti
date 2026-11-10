@@ -56,10 +56,6 @@ Finally, a symmetry `σ` of the affine Cartan matrix carries the affine node to 
   alcove.
 * `RootPairing.exists_mem_fundamentalAlcoveStabilizer_apply_zero_eq`: every coweight in the
   closed fundamental alcove is the translation part of an element of `Ω`.
-* `RootPairing.Base.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes` and
-  `RootPairing.Base.exists_mem_coweightLattice_affineSimpleRoot_eq`: at a special node `k` the
-  closed fundamental alcove has a vertex in the coweight lattice, the origin for `k = 0` and the
-  fundamental coweight `ϖⱼ` for `k = j`.
 * `RootPairing.fundamentalAlcoveStabilizerToPerm_apply_none_mem_specialNodes`: `σ_ω(0)` is a
   special node.
 * `RootPairing.fundamentalAlcoveStabilizerToPerm_apply_none_injective` and
@@ -150,43 +146,6 @@ theorem fundamentalAlcoveStabilizerToPerm_apply_none_mem_specialNodes
     simp [k, affineSimpleRoot_fundamentalAlcoveStabilizerToPerm_apply]
   rw [hk, mul_one] at h
   exact b.mem_specialNodes.mpr (by exact_mod_cast h)
-
-omit [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible] in
-/-- **At a special node `j`, the fundamental coweight `ϖⱼ` is the vertex of the closed fundamental
-alcove opposite the wall `αⱼ = 0`**: the affine simple root `aₖ` takes the value `1` at `ϖⱼ` for
-`k = j` and vanishes for every other `k`, since `θ(ϖⱼ) = mⱼ = 1`. -/
-theorem Base.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes [P.IsRootSystem]
-    [DecidableEq ι] {j : b.support} (hj : some j ∈ b.specialNodes) (k : Option b.support) :
-    b.affineSimpleRoot k (b.fundamentalCoweightBasis j) = if k = some j then 1 else 0 := by
-  rcases k with _ | i
-  · -- The null-root relation at `ϖⱼ` reads `(1 - θ(ϖⱼ)) + mⱼ = 1`, and `mⱼ = 1`.
-    have h := b.sum_affineMarks_mul_affineSimpleRoot (b.fundamentalCoweightBasis j)
-    rw [Fintype.sum_option] at h
-    simp only [Base.affineSimpleRoot_some, root'_fundamentalCoweightBasis, mul_ite, mul_one,
-      mul_zero, Finset.sum_ite_eq', Finset.mem_univ, ite_true, Base.affineMarks_none,
-      Int.cast_one, one_mul, b.mem_specialNodes.mp hj] at h
-    simp only [reduceCtorEq, ite_false]
-    linarith
-  · simp
-
-omit [P.IsCrystallographic] [P.IsReduced] [P.IsIrreducible] in
-/-- **At a special node `k` the closed fundamental alcove has a vertex in the coweight lattice**:
-a point at which `aₖ = 1` and every other affine simple root vanishes. For `k = 0` it is the
-origin, and for a simple root `αⱼ` it is the fundamental coweight `ϖⱼ`
-(`RootPairing.Base.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes`). -/
-theorem Base.exists_mem_coweightLattice_affineSimpleRoot_eq [P.IsRootSystem]
-    {k : Option b.support} (hk : k ∈ b.specialNodes) :
-    ∃ x ∈ P.coweightLattice,
-      b.affineSimpleRoot k x = 1 ∧ ∀ l ≠ k, b.affineSimpleRoot l x = 0 := by
-  classical
-  rcases k with _ | j
-  · refine ⟨0, zero_mem _, by simp, ?_⟩
-    rintro (_ | i) hi
-    · exact absurd rfl hi
-    · simp
-  · refine ⟨b.fundamentalCoweightBasis j, b.fundamentalCoweightBasis_mem_coweightLattice j,
-      by simp [b.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes hk], fun l hl ↦ ?_⟩
-    simp [b.affineSimpleRoot_fundamentalCoweightBasis_of_mem_specialNodes hk, hl]
 
 /-- **`Ω` acts freely on the special nodes**: for a root system, an element `ω` of `Ω` is
 determined by the node `σ_ω(0)`. -/
