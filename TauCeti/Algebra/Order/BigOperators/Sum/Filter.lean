@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.Finset
+import TauCeti.Algebra.BigOperators.Finset.Filter
 
 /-!
 # Finite sums over filters
@@ -37,8 +38,7 @@ over the terms indexed by `q` vanishes whenever `q ≤ p` fails, for instance wh
 theorem sum_filter_eq_zero_of_forall_ne_zero_le [LE α] (s : Finset ι) (hqp : ¬q ≤ p)
     (ha : ∀ i ∈ s, e i ≠ 0 → a i ≤ p) :
     ∑ i ∈ s with a i = q, e i = 0 :=
-  sum_eq_zero fun i hi ↦ by_contra fun hei ↦
-    hqp <| (mem_filter.1 hi).2 ▸ ha i (mem_filter.1 hi).1 hei
+  sum_filter_eq_zero_of_ne fun i hi hei hq ↦ hqp (hq ▸ ha i hi hei)
 
 /-- If all nonzero terms of a finite family have indices at or to the left of `p`, then a filtered
 sum at or beyond `p` is bounded below by any negative `c` that also bounds the sum at `p` from

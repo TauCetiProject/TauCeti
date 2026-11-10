@@ -275,6 +275,15 @@ theorem kronecker_localCohomologyClass (ω : Orientation ℝ F (Fin (n + 1)))
       (ω.localCohomologyClass hF)).hom (ω.localOrientation hF).val = 1 :=
   (ω.eq_localCohomologyClass_iff hF _).1 rfl
 
+/-- The generator selected by `ω` evaluates to `c` on `c` times the local orientation selected by
+`ω`. -/
+theorem kronecker_localCohomologyClass_zsmul (ω : Orientation ℝ F (Fin (n + 1)))
+    (hF : finrank ℝ F = n + 1) (c : ℤ) :
+    (((TopPair.ofSubset ({0}ᶜ : Set (TopCat.of F))).singularKronecker ℤ (n + 1)
+      (ω.localCohomologyClass hF)).hom (c • (ω.localOrientation hF).val)).down = c := by
+  rw [map_zsmul, kronecker_localCohomologyClass]
+  simp
+
 /-- The generator selected by an orientation generates integral local cohomology. -/
 theorem span_localCohomologyClass (ω : Orientation ℝ F (Fin (n + 1)))
     (hF : finrank ℝ F = n + 1) :
