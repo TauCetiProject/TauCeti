@@ -54,36 +54,29 @@ theorem quantile_map_cast_negativeBinomialMeasure_eq_iff (hr : 0 < r) (hp : 0 < 
       regularizedIncompleteBeta_eq_one_of_one_le hr.le (by positivity) (not_le.1 hp1).le
     rw [negativeBinomialMeasure_eq_zero_of_invalid (fun h ↦ hp1 h.2.2), Measure.map_zero,
       Measure.quantile_zero]
-    simp only [hI, hu.2.le, ofPred_true]
-    rw [isLeast_univ_iff, isBot_iff_eq_bot, Nat.bot_eq_zero]
-    exact_mod_cast eq_comm
+    -- Every index qualifies, so the set is everything and its least element is `0`.
+    simp [hI, hu.2.le, isLeast_univ_iff, eq_comm]
 
 /-- At shape zero, every valid negative-binomial law is concentrated at zero, so its lower
 quantiles are zero, at every level and also at invalid success probabilities. -/
+@[simp]
 theorem quantile_map_cast_negativeBinomialMeasure_zero :
     ((negativeBinomialMeasure 0 p).map (Nat.cast : ℕ → ℝ)).quantile u = 0 := by
   by_cases h : 0 < p ∧ p ≤ 1
   · rw [negativeBinomialMeasure_zero h.1 h.2, Measure.map_dirac, Nat.cast_zero]
-    rcases le_or_gt u 0 with h0 | h0
-    · exact Measure.quantile_of_nonpos _ h0
-    rcases le_or_gt u 1 with h1 | h1
-    · exact Measure.quantile_dirac 0 h0 h1
-    · exact Measure.quantile_of_one_lt _ h1
+    exact Measure.quantile_dirac_zero u
   · rw [negativeBinomialMeasure_eq_zero_of_invalid (fun h' ↦ h h'.2), Measure.map_zero,
       Measure.quantile_zero]
 
 /-- At success probability one, every valid negative-binomial law is concentrated at zero, so
 its lower quantiles are zero, at every level and also at invalid shapes. -/
+@[simp]
 theorem quantile_map_cast_negativeBinomialMeasure_one :
     ((negativeBinomialMeasure r 1).map (Nat.cast : ℕ → ℝ)).quantile u = 0 := by
   by_cases hr : 0 ≤ r
   · rw [negativeBinomialMeasure_eq_dirac_of_successProbability_eq_one hr,
       Measure.map_dirac, Nat.cast_zero]
-    rcases le_or_gt u 0 with h0 | h0
-    · exact Measure.quantile_of_nonpos _ h0
-    rcases le_or_gt u 1 with h1 | h1
-    · exact Measure.quantile_dirac 0 h0 h1
-    · exact Measure.quantile_of_one_lt _ h1
+    exact Measure.quantile_dirac_zero u
   · rw [negativeBinomialMeasure_eq_zero_of_invalid (fun h ↦ hr h.1), Measure.map_zero,
       Measure.quantile_zero]
 
@@ -133,7 +126,7 @@ theorem tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsLT_one (hr : 0 ≤
     refine tendsto_atTop.2 fun b ↦ ?_
     have hb : cdf ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) b < 1 := by
       by_cases hb0 : 0 ≤ b
-      · rw [cdf_map_cast_negativeBinomialMeasure hr0 hp hp1 hb0]
+      · rw [cdf_map_cast_negativeBinomialMeasure hr0 hp hb0]
         exact (regularizedIncompleteBeta_lt_one_iff hr0 (by positivity)).2 hp1'
       · rw [Measure.cdf_map_natCast_of_neg _ (lt_of_not_ge hb0)]
         exact zero_lt_one
