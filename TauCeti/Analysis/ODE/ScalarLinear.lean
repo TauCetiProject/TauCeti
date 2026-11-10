@@ -28,6 +28,8 @@ inequality for closed plane curves.
 For a continuous, time-dependent real coefficient `g`, a differentiable solution of `P' = g • P`
 on an open interval `J` is `P t = exp (∫ₛᵗ g) • P s` for all `s, t ∈ J`
 (`TauCeti.eq_exp_integral_smul_of_hasDerivAt_smul`), by the integrating factor `exp (-∫ₛᵘ g)`.
+The same holds on a closed interval `[a, b]` when the derivative exists at its points
+(`TauCeti.eq_exp_integral_smul_of_hasDerivAt_smul_of_le`).
 -/
 
 public section
@@ -137,5 +139,33 @@ theorem eq_exp_integral_smul_of_hasDerivAt_smul {J : Set ℝ} (hJo : IsOpen J)
     rw [smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
   rw [hconst] at hPt
   exact hPt
+
+/-- **Integrating factor on a closed interval.** On `[a, b]`, a solution of the linear equation
+`P' = g • P` with continuous real coefficient `g` satisfies `P b = exp (∫ₐᵇ g) • P a`. The
+derivative is only required at the points of `[a, b]`. -/
+theorem eq_exp_integral_smul_of_hasDerivAt_smul_of_le {a b : ℝ} (hab : a ≤ b) {g : ℝ → ℝ}
+    (hg : ContinuousOn g (Icc a b)) {P : ℝ → V}
+    (hP : ∀ u ∈ Icc a b, HasDerivAt P (g u • P u) u) :
+    P b = Real.exp (∫ u in a..b, g u) • P a := by
+  -- Extend `g` continuously to the whole line by clamping to `[a, b]`.
+  set g' : ℝ → ℝ := fun u ↦ g (projIcc a b hab u)
+  have hg' : Continuous g' :=
+    hg.comp_continuous (continuous_subtype_val.comp continuous_projIcc) fun u ↦ Subtype.mem _
+  have hgg' (u : ℝ) (hu : u ∈ Icc a b) : g' u = g u := by simp [g', projIcc_of_mem hab hu]
+  set G : ℝ → ℝ := fun u ↦ ∫ τ in a..u, g' τ
+  have hG (u : ℝ) : HasDerivAt G (g' u) u := (hg'.integral_hasStrictDerivAt a u).hasDerivAt
+  -- `u ↦ e^{-G u} P u` has zero derivative on `[a, b]`, so it is constant there.
+  have hderiv (u : ℝ) (hu : u ∈ Icc a b) : HasDerivAt (fun u ↦ Real.exp (-G u) • P u) 0 u := by
+    refine ((hG u).neg.exp.smul (hP u hu)).congr_deriv ?_
+    rw [hgg' u hu]
+    module
+  have hconst := constant_of_has_deriv_right_zero
+    (fun u hu ↦ (hderiv u hu).continuousAt.continuousWithinAt)
+    (fun u hu ↦ (hderiv u (Ico_subset_Icc_self hu)).hasDerivWithinAt) b ⟨hab, le_rfl⟩
+  have hGa : G a = 0 := intervalIntegral.integral_same
+  have hGb : G b = ∫ u in a..b, g u :=
+    intervalIntegral.integral_congr fun u hu ↦ hgg' u (by rwa [uIcc_of_le hab] at hu)
+  rw [hGa, neg_zero, Real.exp_zero, one_smul] at hconst
+  rw [← hGb, ← hconst, smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
 
 end TauCeti
