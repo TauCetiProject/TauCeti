@@ -51,13 +51,14 @@ theorem AlgHom.restrictScalars_comp (f : B →ₐ[S] C) (g : A →ₐ[S] B) :
   rfl
 
 /-- A tower `R → S → M` gives a tower `S → R → M` when `algebraMap S R` is a right inverse of
-`algebraMap R S`. Here `M` is any type on which `R` and `S` act, for instance an `S`-algebra or an
-`S`-module. -/
-theorem IsScalarTower.of_algebraMap_rightInverse {M : Type*} [MulAction R M] [MulAction S M]
+`algebraMap R S`. Here `M` is any type with an action of `S` and a scalar multiplication by `R`,
+for instance an `S`-algebra or an `S`-module; the tower makes `R` act through `algebraMap R S`. -/
+theorem IsScalarTower.of_algebraMap_rightInverse {M : Type*} [SMul R M] [MulAction S M]
     [IsScalarTower R S M] [Algebra S R]
     (h : Function.RightInverse (algebraMap S R) (algebraMap R S)) : IsScalarTower S R M :=
   ⟨fun s r m ↦ by
-    rw [Algebra.smul_def, mul_smul, ← algebraMap_smul S (algebraMap S R s) (r • m), h s]⟩
+    rw [← algebraMap_smul S (s • r) m, ← algebraMap_smul S r m, Algebra.smul_def, map_mul, h s,
+      mul_smul]⟩
 
 /-- An `R`-algebra structure on the `S`-algebra `A` forming a scalar tower `R → S → A` is the one
 obtained by restricting scalars along `R → S`. -/
