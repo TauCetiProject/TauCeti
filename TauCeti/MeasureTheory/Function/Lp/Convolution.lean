@@ -124,11 +124,16 @@ theorem norm_convolutionLp_le (hp : p ≠ ∞) (k : E → ℝ) :
 
 /-- **Associativity of convolution on `Lᵖ`.** For integrable kernels `k₁` and `k₂`, convolving
 an `Lᵖ` function with `k₁ ⋆ k₂` is convolving it with `k₂` and then with `k₁`. -/
-theorem convolutionLp_convolution [CompleteSpace F] (hp : p ≠ ∞) {k₁ k₂ : E → ℝ}
+theorem convolutionLp_convolution (hp : p ≠ ∞) {k₁ k₂ : E → ℝ}
     (hk₁ : Integrable k₁ μ) (hk₂ : Integrable k₂ μ) :
     convolutionLp (F := F) hp (k₁ ⋆[lsmul ℝ ℝ, μ] k₂) μ =
       (convolutionLp hp k₁ μ).comp (convolutionLp hp k₂ μ) := by
   ext1 f
+  by_cases hc : CompleteSpace (Lp F p μ)
+  swap
+  · rw [convolutionLp_apply hp (hk₁.integrable_convolution (lsmul ℝ ℝ) hk₂), comp_apply,
+      convolutionLp_apply hp hk₂, convolutionLp_apply hp hk₁, integral_of_not_completeSpace hc,
+      integral_of_not_completeSpace hc]
   set τ : E → Lp F p μ := fun y ↦ μ.translateLp p (-y) f with hτ
   have hτc : Continuous τ := (Measure.continuous_translateLp hp f).comp continuous_neg
   -- The integrand `(w, y) ↦ k₁(y) k₂(w - y) • f(· - w)` is integrable on `E × E`.
