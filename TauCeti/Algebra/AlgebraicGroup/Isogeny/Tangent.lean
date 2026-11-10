@@ -157,7 +157,7 @@ theorem dualCotangentMap_bijective_of_etaleKernel (hf : IsIsogeny f)
   have hsmooth := ((RingHom.etale_iff_formallyUnramified_and_smooth _).mp hetale).2
   -- the differential on counit-valued derivations is bijective
   have hbij : Function.Bijective (derivationComp (B := k) f.hom) :=
-    ⟨derivationComp_injective_of_formallyUnramified f.hom hetale.formallyUnramified,
+    ⟨f.hom.derivationComp_injective_of_formallyUnramified hetale.formallyUnramified,
       derivationComp_surjective_of_formallySmooth f.hom hsmooth.formallySmooth⟩
   let e := (Derivation.cotangentLinearEquiv (R := k) (A := K) (B := k)).trans
     ((LinearEquiv.ofBijective (derivationComp (B := k) f.hom) hbij).trans

@@ -15,7 +15,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Tangent.DerivationMap
 
 A formally smooth morphism of affine monoid schemes induces a surjection on tangent spaces
 at the identity, with values in any commutative coefficient algebra, and a formally unramified
-one induces an injection (`TauCeti.derivationComp_injective_of_formallyUnramified`); an étale
+one induces an injection (`BialgHom.derivationComp_injective_of_formallyUnramified`); an étale
 morphism therefore induces a bijection. No finite presentation, field, or smoothness assumption
 on either monoid is needed.
 
@@ -91,7 +91,7 @@ theorem derivationComp_surjective_of_formallySmooth (φ : A' →ₐc[R] A)
 /-- A formally unramified coordinate morphism induces an injection on counit-valued
 derivations. This is injectivity of the differential of the corresponding affine monoid
 morphism. -/
-theorem derivationComp_injective_of_formallyUnramified (φ : A' →ₐc[R] A)
+theorem _root_.BialgHom.derivationComp_injective_of_formallyUnramified (φ : A' →ₐc[R] A)
     (hφ : φ.toAlgHom.toRingHom.FormallyUnramified) :
     Function.Injective (derivationComp (B := B) φ) := by
   intro d₁ d₂ h
