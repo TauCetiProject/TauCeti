@@ -1,0 +1,106 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Pseudodifferential.Sobolev
+public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Analysis.Sobolev.BesselPotential.Inclusion
+
+/-!
+# Smoothing operators with compact spatial support produce smooth functions
+
+Let `a` be a smoothing symbol on `ℝⁿ` (`TauCeti.Symbol.IsSmoothing`: its coefficient satisfies the
+symbol estimates of every real order) that vanishes for positions outside a compact set. For every
+real `s`, its quantization extends to a bounded operator `Op(a) : H^s(ℝⁿ; V) → H^{s - m}(ℝⁿ; W)`
+(`TauCeti.Symbol.quantizeSobolev`). This file shows that `Op(a)` sends every element of `H^s`,
+including distributions of negative order, to a smooth function.
+
+Since `a` has every real order `m'`, the same operator also maps `H^s` into `H^{s - m'}` for every
+`m'`: the Sobolev extension of `Op(a)` depends only on the coefficient of `a`
+(`TauCeti.Symbol.toDistr_quantizeSobolev_congr`), because two continuous extensions that agree on
+the dense subspace of Schwartz functions agree everywhere. Hence `Op(a) u` lies in `H^t` for every
+real `t`, and the Sobolev embedding `H^t ⊆ C^k`, `t > k + n / 2`
+(`TemperedDistribution.exists_contDiff_eq_integral_of_forall_memSobolev`), makes it a smooth
+function.
+
+## Main results
+
+* `TauCeti.Symbol.toDistr_quantizeSobolev_congr`: the Sobolev extension of `Op(a)` depends only on
+  the coefficient of `a`, not on the order it is assigned.
+* `TauCeti.Symbol.IsSmoothing.memSobolev_toDistr_quantizeSobolev`: for a smoothing symbol with
+  compact spatial support, `Op(a) u ∈ H^t` for every `u ∈ H^s` and all real `s` and `t`.
+* `TauCeti.Symbol.IsSmoothing.exists_contDiff_quantizeSobolev`: `Op(a) u` is a smooth function.
+
+## References
+
+* L. Hörmander, *The Analysis of Linear Partial Differential Operators III*, §18.1 (operators
+  with symbols of order `-∞`).
+* G. B. Folland, *Real Analysis*, 2nd ed., §9.3 (the Sobolev embedding `H_s ⊆ C^k` for
+  `s > k + n / 2`).
+-/
+
+public section
+
+noncomputable section
+
+open MeasureTheory TemperedDistribution
+open scoped SchwartzMap BesselPotentialSpace ContDiff
+
+namespace TauCeti
+
+namespace Symbol
+
+variable {n : ℕ} {m m' : ℝ}
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+
+/-- **The Sobolev extension depends only on the coefficient.** If two symbols `a` and `b`, of
+possibly different orders `m` and `m'`, have the same coefficient and compact spatial support,
+then `Op(a) u` and `Op(b) u` are the same tempered distribution for every `u ∈ H^s`, although they
+are constructed as elements of the different spaces `H^{s - m}` and `H^{s - m'}`. -/
+theorem toDistr_quantizeSobolev_congr {a : Symbol n V W m} {b : Symbol n V W m'}
+    (h : a.coefficient = b.coefficient) (ha : a.HasCompactSpatialSupport)
+    (hb : b.HasCompactSpatialSupport) (s : ℝ) (u : H^{s}(CoordinateSpace n, V)) :
+    (a.quantizeSobolev ha s u).toDistr = (b.quantizeSobolev hb s u).toDistr := by
+  -- Both extensions, followed by the inclusion into `H^r` with `r = min (s - m) (s - m')`, agree
+  -- on Schwartz functions, hence everywhere.
+  have key :
+      BesselPotentialSpace.inclusion (min_le_left (s - m) (s - m')) ∘L a.quantizeSobolev ha s =
+        BesselPotentialSpace.inclusion (min_le_right (s - m) (s - m')) ∘L
+          b.quantizeSobolev hb s :=
+    BesselPotentialSpace.continuousLinearMap_ext ENNReal.ofNat_ne_top fun v ↦
+      BesselPotentialSpace.ext <| by
+        ext φ
+        simp only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
+          toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, h]
+  simpa only [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion] using
+    congrArg (fun T ↦ (T u).toDistr) key
+
+/-- **Smoothing operators gain every order of regularity.** For a smoothing symbol `a` with compact
+spatial support, the quantization `Op(a) u` of any `u ∈ H^s` lies in `H^t` for every real `t`. -/
+theorem IsSmoothing.memSobolev_toDistr_quantizeSobolev {a : Symbol n V W m} (ha : a.IsSmoothing)
+    (hc : a.HasCompactSpatialSupport) (s t : ℝ) (u : H^{s}(CoordinateSpace n, V)) :
+    MemSobolev t 2 (a.quantizeSobolev hc s u).toDistr := by
+  -- A symbol of order `s - t` with the same coefficient maps `H^s` into `H^t`.
+  obtain ⟨b, hb⟩ := isSmoothing_iff.mp ha (s - t)
+  have hbc := hc.of_coefficient_eq hb
+  rw [toDistr_quantizeSobolev_congr hb.symm hc hbc s u]
+  simpa only [sub_sub_cancel] using (b.quantizeSobolev hbc s u).memSobolev_toDistr
+
+/-- **Smoothing operators produce smooth functions.** For a smoothing symbol `a` with compact
+spatial support and every `u ∈ H^s`, `s` real, the quantization `Op(a) u` is a smooth function
+`g`: it pairs with every Schwartz function `φ` as `∫ φ • g`. Taking `s` negative, this applies to
+distributions that are not functions. -/
+theorem IsSmoothing.exists_contDiff_quantizeSobolev {a : Symbol n V W m} (ha : a.IsSmoothing)
+    (hc : a.HasCompactSpatialSupport) (s : ℝ) (u : H^{s}(CoordinateSpace n, V)) :
+    ∃ g : CoordinateSpace n → W, ContDiff ℝ ∞ g ∧
+      ∀ φ : 𝓢(CoordinateSpace n, ℂ), (a.quantizeSobolev hc s u).toDistr φ = ∫ x, φ x • g x :=
+  exists_contDiff_eq_integral_of_forall_memSobolev fun t ↦
+    ha.memSobolev_toDistr_quantizeSobolev hc s t u
+
+end Symbol
+
+end TauCeti
