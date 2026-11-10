@@ -133,14 +133,6 @@ private theorem HasCompactSpatialSupport.exists_norm_fourier_slice_sub_le
       _ = _ := by ring
   exact le_of_mul_le_mul_left hkey (by positivity)
 
-/-- The Fourier transform `â(g t, h t)` of a position slice is continuous along continuous maps
-`g`, `h` into the dual position variable and the frequency. -/
-private theorem HasCompactSpatialSupport.continuous_fourier_slice_comp
-    (ha : a.HasCompactSpatialSupport) {X : Type*} [TopologicalSpace X]
-    {g h : X → CoordinateSpace n} (hg : Continuous g) (hh : Continuous h) :
-    Continuous fun t ↦ 𝓕 (fun x ↦ a.coefficient (x, h t)) (g t) :=
-  (ha.continuous_fourier_slice.comp (hg.prodMk hh) :)
-
 /-- The derivative of `ξ ↦ â(θ, ξ)` in coordinates: its partial derivatives are the Fourier
 transforms of the position slices of `∂_{ξ_j} a`. -/
 private theorem HasCompactSpatialSupport.hasFDerivAt_fourier_slice_coordinateDeriv

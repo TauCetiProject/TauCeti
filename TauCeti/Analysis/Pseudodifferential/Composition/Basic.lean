@@ -234,11 +234,7 @@ private theorem continuous_compIntegrand (hb : b.HasCompactSpatialSupport) :
     a.contDiff_coefficient.continuous.comp (by fun_prop)
   have hB : Continuous fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
       𝓕 (fun y ↦ b.coefficient (y, q.1.2)) q.2 := by
-    have h := hb.continuous_fourier_slice.comp
-      (continuous_snd.prodMk (continuous_snd.comp continuous_fst) :
-        Continuous fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
-          (q.2, q.1.2))
-    simpa only [Function.comp_def] using h
+    exact hb.continuous_fourier_slice_comp continuous_snd (continuous_snd.comp continuous_fst)
   exact he.smul (ha.clm_comp hB)
 
 /-- The weight `⟨η⟩ ^ (-(n + 1))` is integrable on `ℝⁿ`. -/
@@ -771,9 +767,7 @@ private theorem integrable_composeIntegrand (hb : b.HasCompactSpatialSupport)
     (𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) (m' + m)
   have hB : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
       𝓕 (fun y ↦ b.coefficient (y, (2 * π) • q.2)) (q.1 - q.2) := by
-    have h := hb.continuous_fourier_slice.comp (by fun_prop :
-      Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ (q.1 - q.2, (2 * π) • q.2))
-    simpa only [Function.comp_def] using h
+    exact hb.continuous_fourier_slice_comp (by fun_prop) (by fun_prop)
   have hcont : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦ 𝐞 ⟪q.1, x⟫ •
       a.coefficient (x, (2 * π) • q.1)
         (𝓕 (fun y ↦ b.coefficient (y, (2 * π) • q.2)) (q.1 - q.2) (𝓕 u q.2)) :=
@@ -805,9 +799,7 @@ private theorem integrable_fourier_slice_apply (hb : b.HasCompactSpatialSupport)
   obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_slice_le 0
   have hB : Continuous fun ζ : CoordinateSpace n ↦
       𝓕 (fun y ↦ b.coefficient (y, (2 * π) • ζ)) (ζ' - ζ) := by
-    have h := hb.continuous_fourier_slice.comp (by fun_prop :
-      Continuous fun ζ : CoordinateSpace n ↦ (ζ' - ζ, (2 * π) • ζ))
-    simpa only [Function.comp_def] using h
+    exact hb.continuous_fourier_slice_comp (by fun_prop) (by fun_prop)
   refine (((𝓕 u).integrable_one_add_norm_smul_sq_rpow_mul_norm (2 * π) m).const_mul Cb).mono'
     (hB.clm_apply (𝓕 u).continuous).aestronglyMeasurable (.of_forall fun ζ ↦ ?_)
   refine ((ContinuousLinearMap.le_opNorm _ _).trans ?_)

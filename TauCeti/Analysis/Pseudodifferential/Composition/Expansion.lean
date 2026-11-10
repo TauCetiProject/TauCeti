@@ -239,7 +239,8 @@ private theorem continuous_taylorIntegrand (hb : b.HasCompactSpatialSupport) (k 
       iteratedFDeriv ℝ k (fun ζ ↦ a.coefficient (x, ζ)) ξ (fun _ ↦ (2 * π) • η) :=
     (iteratedFDeriv ℝ k (fun ζ ↦ a.coefficient (x, ζ)) ξ).cont.comp
       (continuous_pi fun _ ↦ continuous_id.const_smul ((2 : ℝ) * π))
-  exact he.smul ((hM.const_smul ((k ! : ℝ)⁻¹)).clm_comp (hb.continuous_fourier_slice_apply ξ))
+  exact he.smul ((hM.const_smul ((k ! : ℝ)⁻¹)).clm_comp
+    (hb.continuous_fourier_slice_comp continuous_id continuous_const))
 
 private theorem integrable_taylorIntegrand (hb : b.HasCompactSpatialSupport) (k : ℕ)
     (x ξ : CoordinateSpace n) : Integrable (taylorIntegrand a b k x ξ) := by
@@ -332,7 +333,8 @@ private theorem continuous_remainderIntegrand (hb : b.HasCompactSpatialSupport) 
   have hS : Continuous fun η : CoordinateSpace n ↦ ∑ k ∈ Finset.range N, (k ! : ℝ)⁻¹ •
       iteratedFDeriv ℝ k (fun ζ ↦ a.coefficient (x, ζ)) ξ (fun _ ↦ (2 * π) • η) :=
     continuous_finsetSum _ fun k _ ↦ (hM k).const_smul ((k ! : ℝ)⁻¹)
-  exact he.smul ((hA.sub hS).clm_comp (hb.continuous_fourier_slice_apply ξ))
+  exact he.smul ((hA.sub hS).clm_comp
+    (hb.continuous_fourier_slice_comp continuous_id continuous_const))
 
 /-- On the segment from `ξ` to `ξ + 2πη`, the derivatives of order `N` of `ζ ↦ a(x, ζ)` are at
 most `C ⟨ξ⟩ ^ (m' - N) ⟨η⟩ ^ |m' - N|`, uniformly for positions in a compact set: the symbol
