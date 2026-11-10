@@ -101,11 +101,7 @@ variable {A μ p k} {k' : ℕ}
 every chart-`i` component of a tuple. -/
 def mapL (T : ∀ i : Fin A.n, Wkp μ (A.image i) p k →L[ℝ] Wkp μ (A.image i) p k') :
     SobolevData A μ p k →L[ℝ] SobolevData A μ p k' :=
-  ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.pi fun j ↦ (T i).comp
-    ((ContinuousLinearMap.proj (R := ℝ)
-      (φ := fun _ : Fin (finrank ℝ F) ↦ Wkp μ (A.image i) p k) j).comp
-      (ContinuousLinearMap.proj (R := ℝ)
-        (φ := fun i : Fin A.n ↦ ∀ _ : Fin (finrank ℝ F), Wkp μ (A.image i) p k) i))
+  ContinuousLinearMap.piMap fun i ↦ ContinuousLinearMap.piMap fun _ ↦ T i
 
 omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V]
   [FiniteDimensional ℝ F] in

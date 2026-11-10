@@ -223,8 +223,8 @@ theorem closure_image_subset_chart_image_closure_dom [T2Space E] (i : Fin A.n) :
 /-- The image of chart `i` has compact closure. -/
 theorem isCompact_closure_image [T2Space E] (i : Fin A.n) :
     IsCompact (closure (A.image i : Set E)) :=
-  (A.isCompact_chart_image_closure_dom i).of_isClosed_subset isClosed_closure
-    (A.closure_image_subset_chart_image_closure_dom i)
+  (A.isCompact_chart_image_closure_dom i).closure_of_subset
+    (A.image_subset_chart_image_closure_dom i)
 
 /-- The closure of the image of chart `i` lies in the chart target. -/
 theorem closure_image_subset_target [T2Space E] (i : Fin A.n) :
