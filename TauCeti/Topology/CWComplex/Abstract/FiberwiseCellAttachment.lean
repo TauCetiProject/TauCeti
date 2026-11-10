@@ -75,9 +75,12 @@ compare such choices continuously in a parameter.
 * `TauCeti.exists_homotopyRel_fiberwiseCellReattachment_of_leftInverse`: for a left inverse `g₀`
   of `Φ₀` over `P`, `E` is homotopic to `g₀ ∘ Φ₁` relative to `P × Z`, over `P`.
 * `TauCeti.exists_homotopyRel_fiberwiseCellReattachment_fiberwiseCellReattachment`: two
-  reattachment maps between the same attachments are homotopic relative to `P × Z`, over `P`.
+  reattachment maps between the same attachments, whose homotopies extend to homotopies of the
+  same characteristic maps, are homotopic relative to `P × Z`, over `P`, provided `Φ₀` has a left
+  inverse over `P`.
 * `TauCeti.exists_homotopyRel_fiberwiseCellReattachment_comp_fiberwiseCellReattachment`:
-  reattachment maps compose up to homotopy relative to `P × Z`, over `P`.
+  reattachment maps whose homotopies extend to homotopies of characteristic maps compose up to
+  homotopy relative to `P × Z`, over `P`, provided `Φ₀` has a left inverse over `P`.
 * `TauCeti.fiberwiseCellAttachmentMap_id`, `TauCeti.fiberwiseCellAttachmentMap_comp`: the maps
   induced by maps of parameter spaces are functorial.
 * `TauCeti.fiberwiseCellReattachment_comp_fiberwiseCellAttachmentMap`: reattachment maps commute
