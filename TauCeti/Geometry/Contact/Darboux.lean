@@ -5,18 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Normed.Module.Alternating.Curry
 public import TauCeti.Geometry.Contact.Basic
 public import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
+public import TauCeti.Geometry.Symplectic.Liouville.Linear
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Calculus.DifferentialForm.Flow
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.Moser
-import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.Dynamics.Flow.RestPoint
-import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Geometry.Contact.Symplectization.Linear
 
 /-!
 # The contact Moser lemma and Darboux's theorem for contact forms
@@ -38,7 +39,9 @@ osculating model
 
 `α_lin(x) = α(x₀) + ½ ι_{x - x₀} dα(x₀)`,
 
-whose exterior derivative is the constant form `dα(x₀)`. Hence **Darboux's theorem**
+a constant plus the radial primitive `ContinuousLinearMap.liouvilleFormCLM` of `dα(x₀)`, so its
+exterior derivative is the constant form `dα(x₀)`
+(`ContinuousLinearMap.extDeriv_liouvilleFormCLM_apply_of_skew`). Hence **Darboux's theorem**
 (`TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul`): some `C^r`
 diffeomorphism fixing `x₀` pulls `α` back to a positive multiple of `α_lin` near `x₀`. In linear
 coordinates in which `α(x₀)` and `dα(x₀)` are the standard covector `dz` and the standard
@@ -53,13 +56,14 @@ The proof is Moser's deformation argument along the straight-line family
 
 Pairing the unknown `(σₜ, Yₜ)` with `(s, w) ∈ ℝ × V` turns this system into the Moser contraction
 equation for the bilinear form `((s, v), (s', w)) ↦ s αₜ(w) - s' αₜ(v) + dαₜ(v, w)` on `ℝ × V`,
-the symplectization form of `αₜ` (`Module.Dual.symplectizationForm`). It is nondegenerate exactly
-where `αₜ` is contact (`Module.Dual.isContact_iff_nondegenerate_symplectizationForm`), so the
-contraction equation is solved by `TauCeti.exists_contDiffOn_moserField`. The field `Yₜ` vanishes
-wherever `α₀` and `α₁` agree, in particular at `x₀`, so its time-dependent flow `ψₜ` exists near
-`x₀` up to time one (`TauCeti.exists_eventually_forall_hasDerivAt_fderiv_of_contDiffOn`). Since
-`αₜ(Yₜ) = 0`, Cartan's formula gives `∂ₜ αₜ + L_{Yₜ} αₜ = -σₜ αₜ`, so the pullbacks
-`Pₜ = ψₜ^* αₜ` at a point `x` satisfy the linear equation `∂ₜ Pₜ = -σₜ(ψₜ x) Pₜ`. Integrating,
+the symplectization form of `αₜ` (`ContinuousAlternatingMap.symplectizationFormCLM`). It is
+invertible where `αₜ` is contact (`TauCeti.IsContactFormAt.isInvertible_symplectizationFormCLM`),
+so the contraction equation is solved by `TauCeti.exists_contDiffOn_moserField`. The field `Yₜ`
+vanishes wherever `α₀` and `α₁` agree, in particular at `x₀`, so its time-dependent flow `ψₜ`
+exists near `x₀` up to time one
+(`TauCeti.exists_eventually_forall_hasDerivAt_fderiv_of_contDiffOn`). Since `αₜ(Yₜ) = 0`,
+Cartan's formula gives `∂ₜ αₜ + L_{Yₜ} αₜ = -σₜ αₜ`, so the pullbacks `Pₜ = ψₜ^* αₜ` at a point
+`x` satisfy the linear equation `∂ₜ Pₜ = -σₜ(ψₜ x) Pₜ`. Integrating,
 `ψ₁^* α₁ = exp (-∫₀¹ σₜ(ψₜ x) dt) • α₀` at `x`.
 
 ## Main results
@@ -85,72 +89,6 @@ open scoped Manifold
 namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-! ### The symplectization form of a covector and a two-form -/
-
-section Symplectization
-
-variable [FiniteDimensional ℝ V]
-
-/-- The symplectization form `((s, v), (s', w)) ↦ s a(w) - s' a(v) + b(v, w)` on `ℝ × V` of a
-covector `a` and a two-form `b` on `V` (`Module.Dual.symplectizationForm`), as a continuous
-bilinear map. -/
-private noncomputable def symplectizationCLM (a : V [⋀^Fin 1]→L[ℝ] ℝ)
-    (b : V [⋀^Fin 2]→L[ℝ] ℝ) : ℝ × V →L[ℝ] ℝ × V →L[ℝ] ℝ :=
-  (Module.Dual.symplectizationForm
-    ((ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).symm a : V →L[ℝ] ℝ).toLinearMap
-    (ContinuousAlternatingMap.flatL ℝ V ℝ b).toBilinForm).toContinuousBilinearMap
-
-private theorem symplectizationCLM_apply (a : V [⋀^Fin 1]→L[ℝ] ℝ) (b : V [⋀^Fin 2]→L[ℝ] ℝ)
-    (p q : ℝ × V) :
-    symplectizationCLM a b p q = p.1 * a ![q.2] - q.1 * a ![p.2] + b ![p.2, q.2] := by
-  simp [symplectizationCLM, ← Matrix.vec_single_eq_const]
-
-/-- The symplectization form depends smoothly on the covector and the two-form. -/
-private theorem ContDiffOn.symplectizationCLM {X : Type*} [NormedAddCommGroup X]
-    [NormedSpace ℝ X] {a : X → V [⋀^Fin 1]→L[ℝ] ℝ} {b : X → V [⋀^Fin 2]→L[ℝ] ℝ} {s : Set X}
-    {n : WithTop ℕ∞} (ha : ContDiffOn ℝ n a s) (hb : ContDiffOn ℝ n b s) :
-    ContDiffOn ℝ n (fun x ↦ TauCeti.symplectizationCLM (a x) (b x)) s := by
-  refine contDiffOn_clm_apply.2 fun p ↦ contDiffOn_clm_apply.2 fun q ↦ ?_
-  simp only [symplectizationCLM_apply]
-  have hev {k : ℕ} {f : X → V [⋀^Fin k]→L[ℝ] ℝ} (hf : ContDiffOn ℝ n f s) (m : Fin k → V) :
-      ContDiffOn ℝ n (fun x ↦ f x m) s :=
-    (ContinuousAlternatingMap.apply ℝ V ℝ m).contDiff.comp_contDiffOn hf
-  exact ((contDiffOn_const.mul (hev ha _)).sub (contDiffOn_const.mul (hev ha _))).add (hev hb _)
-
-/-- At a point where a one-form is a contact form, its symplectization form is invertible, by
-`Module.Dual.isContact_iff_nondegenerate_symplectizationForm`. -/
-private theorem IsContactFormAt.isInvertible_symplectizationCLM
-    {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} {x : V} (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α x) :
-    (symplectizationCLM (α x) (extDeriv α x)).IsInvertible := by
-  set B := (ContinuousAlternatingMap.flatL ℝ V ℝ (extDeriv α x)).toBilinForm
-  have hB : B.IsAlt := fun v ↦ by
-    simpa [B] using (extDeriv α x).map_eq_zero_of_eq ![v, v] (i := 0) (j := 1) rfl
-      Fin.zero_ne_one
-  have hcontact : Module.Dual.IsContact
-      ((ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1)).symm (α x) : V →L[ℝ] ℝ).toLinearMap
-      B := by
-    rw [Module.Dual.isContact_iff_of_isRefl hB.isRefl]
-    simp only [ContinuousLinearMap.coe_coe, ContinuousAlternatingMap.ofSubsingletonLIE_symm_apply,
-      ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply, ← Matrix.vec_single_eq_const, B,
-      ContinuousLinearMap.toBilinForm_apply, ContinuousAlternatingMap.flatL_apply_apply]
-    refine ⟨fun h ↦ hc.ne_zero (ContinuousAlternatingMap.ext fun m ↦ ?_),
-      fun v hv hvw ↦ hc.nondegenerate v (RoughForm.mem_ker.2 hv) fun (w : V) hw ↦ ?_⟩
-    · have hm : m = ![m 0] := by
-        funext i
-        rw [Subsingleton.elim i 0]
-        rfl
-      have h0 : α x ![m 0] = 0 := by
-        simpa [← Matrix.vec_single_eq_const] using congrArg (fun f : V →ₗ[ℝ] ℝ ↦ f (m 0)) h
-      rw [hm]
-      exact h0
-    · exact (congrArg (fun A ↦ A ![v, w])
-        (mextDeriv_eq_extDeriv (E := V) (F := ℝ) (k := 1) α x)).trans
-          (hvw w (RoughForm.mem_ker.1 hw))
-  exact isInvertible_toContinuousBilinearMap_iff_separatingLeft.2
-    (Module.Dual.isContact_iff_nondegenerate_symplectizationForm.1 hcontact).1
-
-end Symplectization
 
 /-! ### The contact Moser lemma -/
 
@@ -238,9 +176,9 @@ private theorem exists_contDiffOn_contactMoserField
     (contDiffAt_extDeriv ((hα y hy).contDiffAt (hW.mem_nhds hy)) le_rfl).contDiffWithinAt
   -- The symplectization forms of `α₀` and `α₁`, on `ℝ × V`, and the right-hand side `α₁ - α₀`.
   let B₀ : ℝ × V → ℝ × V →L[ℝ] ℝ × V →L[ℝ] ℝ :=
-    fun p ↦ symplectizationCLM (α₀ p.2) (extDeriv α₀ p.2)
+    fun p ↦ (α₀ p.2).symplectizationFormCLM (extDeriv α₀ p.2)
   let B₁ : ℝ × V → ℝ × V →L[ℝ] ℝ × V →L[ℝ] ℝ :=
-    fun p ↦ symplectizationCLM (α₁ p.2) (extDeriv α₁ p.2)
+    fun p ↦ (α₁ p.2).symplectizationFormCLM (extDeriv α₁ p.2)
   let e : (V [⋀^Fin 1]→L[ℝ] ℝ) →L[ℝ] V →L[ℝ] ℝ :=
     (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := V) (F := ℝ)
       (0 : Fin 1)).symm.toContinuousLinearEquiv.toContinuousLinearMap
@@ -249,15 +187,15 @@ private theorem exists_contDiffOn_contactMoserField
   have hWp : IsOpen (univ ×ˢ W : Set (ℝ × V)) := isOpen_univ.prod hW
   have hsnd : MapsTo (Prod.snd : ℝ × V → V) (univ ×ˢ W) W := fun p hp ↦ hp.2
   have hB {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} (hα : ContDiffOn ℝ (r + 1) α W) :
-      ContDiffOn ℝ r (fun p : ℝ × V ↦ symplectizationCLM (α p.2) (extDeriv α p.2))
+      ContDiffOn ℝ r (fun p : ℝ × V ↦ (α p.2).symplectizationFormCLM (extDeriv α p.2))
         (univ ×ˢ W) :=
-    ContDiffOn.symplectizationCLM ((hα.of_le hrle).comp contDiffOn_snd hsnd)
+    ContDiffOn.symplectizationFormCLM ((hα.of_le hrle).comp contDiffOn_snd hsnd)
       ((hd hα).comp contDiffOn_snd hsnd)
   have hβ : ContDiffOn ℝ r β (univ ×ˢ W) :=
     ((e.contDiff.comp_contDiffOn
       (((hα₁.of_le hrle).sub (hα₀.of_le hrle)).comp contDiffOn_snd hsnd)).clm_comp
         contDiffOn_const)
-  have hL : (B₁ (0, x₀)).IsInvertible := hc.isInvertible_symplectizationCLM
+  have hL : (B₁ (0, x₀)).IsInvertible := hc.isInvertible_symplectizationFormCLM
   -- Solve the Moser contraction equation for the straight line between the symplectization forms.
   obtain ⟨T, U', X, hT, hU', hTI, hxU', hU'W, hX, hXeq⟩ := exists_contDiffOn_moserField hL hWp
     ⟨mem_univ _, hx₀⟩ (hB hα₀) (hB hα₁) (by simp only [B₁, heq, hdeq]) rfl hβ
@@ -277,7 +215,7 @@ private theorem exists_contDiffOn_contactMoserField
         t * ((X (t, (0, y))).1 * α₁ y ![u] - s * α₁ y ![(X (t, (0, y))).2] +
           extDeriv α₁ y ![(X (t, (0, y))).2, u]) = -(α₁ y ![u] - α₀ y ![u]) := by
     have h := (hXeq (t, ((0 : ℝ), y)) ⟨ht, hy⟩ _).2 rfl (s, u)
-    simpa [B₀, B₁, β, e, symplectizationCLM_apply, ← Matrix.vec_single_eq_const] using h
+    simpa [B₀, B₁, β, e, ← Matrix.vec_single_eq_const] using h
   refine ⟨T, U, fun t y ↦ (X (t, (0, y))).1, fun t y ↦ (X (t, (0, y))).2, hT, hU, hTI, hxU, hUW,
     contDiff_snd.comp_contDiffOn hXj, (contDiff_fst.comp_contDiffOn hXj).continuousOn,
     fun t ht y hy ↦ ?_, fun t ht y hy ↦ ?_, fun t ht y hy hαy ↦ ?_⟩
@@ -361,21 +299,37 @@ subset `W` of a finite-dimensional real normed space, which is a contact form at
 some `C^r` diffeomorphism `ψ` of the space fixing `x₀` pulls `α` back, on a neighbourhood of
 `x₀`, to a positive multiple `g • α_lin` of the osculating model form
 `α_lin(x) = α(x₀) + ½ ι_{x - x₀} dα(x₀)`, whose exterior derivative is the constant form
-`dα(x₀)`. -/
+`dα(x₀)`. Its second summand is the radial primitive `ContinuousLinearMap.liouvilleFormCLM` of
+`dα(x₀)`, evaluated at `x - x₀`. -/
 theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul
     {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} {W : Set V} {x₀ : V} {r : ℕ∞} (hr : 1 ≤ r) (hW : IsOpen W)
     (hx₀ : x₀ ∈ W) (hα : ContDiffOn ℝ (r + 1) α W) (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α x₀) :
     ∃ (ψ : V ≃ₘ^r⟮𝓘(ℝ, V), 𝓘(ℝ, V)⟯ V) (g : V → ℝ), ψ x₀ = x₀ ∧
       ∀ᶠ x in 𝓝 x₀, 0 < g x ∧ (α (ψ x)).compContinuousLinearMap (fderiv ℝ ψ x) =
-        g x • (α x₀ + (2⁻¹ : ℝ) • (extDeriv α x₀).curryLeft (x - x₀)) := by
-  have hlin : ContDiff ℝ (r + 1)
-      (fun y ↦ α x₀ + (2⁻¹ : ℝ) • (extDeriv α x₀).curryLeft (y - x₀)) :=
-    contDiff_const.add (((extDeriv α x₀).curryLeft.contDiff.comp
-      (contDiff_id.sub contDiff_const)).const_smul _)
+        g x • (α x₀ + (ContinuousAlternatingMap.flatL ℝ V ℝ (extDeriv α x₀)).liouvilleFormCLM
+          (x - x₀)) := by
+  set L := (ContinuousAlternatingMap.flatL ℝ V ℝ (extDeriv α x₀)).liouvilleFormCLM
+  have hlin : ContDiff ℝ (r + 1) (fun y ↦ α x₀ + L (y - x₀)) :=
+    contDiff_const.add (L.contDiff.comp (contDiff_id.sub contDiff_const))
+  -- The model is a constant plus the radial primitive `L` of the constant form `dα(x₀)`.
+  have hdeq : extDeriv (fun y ↦ α x₀ + L (y - x₀)) x₀ = extDeriv α x₀ := by
+    have e : (fun y ↦ α x₀ + L (y - x₀)) = (fun _ : V ↦ α x₀ - L x₀) + ⇑L := by
+      ext y : 1
+      simp only [map_sub, Pi.add_apply]
+      abel
+    rw [e, extDeriv_add (differentiableAt_const _) L.differentiableAt,
+      ContinuousAlternatingMap.extDeriv_const, Pi.zero_apply, zero_add]
+    ext m
+    rw [ContinuousLinearMap.extDeriv_liouvilleFormCLM_apply_of_skew _ two_ne_zero
+      (fun v w ↦ by simpa [ContinuousAlternatingMap.flatL_apply_apply] using
+        (extDeriv α x₀).map_swap ![w, v] (i := 0) (j := 1) Fin.zero_ne_one),
+      ContinuousAlternatingMap.flatL_apply_apply]
+    congr 1
+    funext i
+    fin_cases i <;> rfl
   obtain ⟨ψ, g, hfix, hψ⟩ :=
     exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_extDeriv_eq hr hW hx₀
-      hlin.contDiffOn hα (by simp)
-      (ContinuousAlternatingMap.extDeriv_const_add_smul_curryLeft_sub _ _ _ _).symm hc
+      hlin.contDiffOn hα (by simp) hdeq.symm hc
   exact ⟨ψ, g, hfix.self_of_nhds (by simp), hψ⟩
 
 end TauCeti
