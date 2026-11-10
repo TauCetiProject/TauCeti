@@ -131,7 +131,7 @@ arbitrary topological modules with strictness hypothesised, so none of that bund
 source works at ring coefficients through its own `restrictedModule` and lifts with
 `restrictedModule_map_surjective`; both come from this file's module-coefficient functor here.
 And the continuity of the action on `↥(range u)`, which the source establishes inline, is
-`Submodule.continuousConstSMul`.
+Mathlib's `ContinuousConstSMul` instance on subobjects.
 
 The name `isRestricted_iff` needs care: the port introduced it for the `coeff`-form unfolding
 lemma, which is now `isRestricted_iff_coeff`. The statement the name carries here — unfolding
