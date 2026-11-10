@@ -193,6 +193,21 @@ theorem windingNumber_eq_of_pathHomotopy {x y w : ℂ} {p q : Path x y} (φ : p.
       fun t => by simpa using hρle (1, t)
   exact hstart.symm.trans ((hchain (Fin.last N)).symm.trans hend)
 
+/-- Dividing a loop `r` at `z` by `z - w` after translating `w` to the origin gives a loop at `1`,
+whose extension is the corresponding affine image of `r.extend`. -/
+private theorem exists_path_one_eq_inv_mul_sub {z w : ℂ} (r : Path z z) (hz : z - w ≠ 0) :
+    ∃ R : Path (1 : ℂ) 1, (∀ t, R t = (z - w)⁻¹ * (r t - w)) ∧
+      R.extend = fun t ↦ (z - w)⁻¹ * (r.extend t - w) := by
+  let f : ℂ → ℂ := fun u ↦ (z - w)⁻¹ * (u - w)
+  have hf : Continuous f := continuous_const.mul (continuous_id.sub continuous_const)
+  have hfz : f z = 1 := inv_mul_cancel₀ hz
+  let R : Path (1 : ℂ) 1 := (r.map hf).cast hfz.symm hfz.symm
+  have hR (t : I) : R t = f (r t) := by
+    simp only [R, Path.cast_coe, Path.map_coe, Function.comp_apply]
+  refine ⟨R, hR, funext fun t ↦ ?_⟩
+  -- `Path.extend` is `Set.IccExtend`, which commutes with postcomposition by `f`.
+  simp only [Path.extend, ContinuousMap.coe_mk, Set.IccExtend_apply, hR, f]
+
 /-- **Free homotopy invariance of the winding number.** Two closed piecewise-`C¹` paths joined by
 a continuous homotopy `F` through closed loops in `ℂ \ {w}` have the same winding number about
 `w`. The basepoint `F (s, 0) = F (s, 1)` may move, and no regularity of the intermediate loops is
@@ -205,36 +220,22 @@ theorem windingNumber_eq_of_homotopy {x y w : ℂ} {p : Path x x} {q : Path y y}
   have hF₀ (s : I) : F (s, 0) - w ≠ 0 := sub_ne_zero.mpr (havoid (s, 0))
   have hx : x - w ≠ 0 := by simpa only [h₀, Path.source] using hF₀ 0
   have hy : y - w ≠ 0 := by simpa only [h₁, Path.source] using hF₀ 1
-  let P : Path (1 : ℂ) 1 :=
-    { toFun := fun t ↦ (x - w)⁻¹ * (p t - w)
-      continuous_toFun := continuous_const.mul (p.continuous.sub continuous_const)
-      source' := by simp [hx]
-      target' := by simp [hx] }
-  let Q : Path (1 : ℂ) 1 :=
-    { toFun := fun t ↦ (y - w)⁻¹ * (q t - w)
-      continuous_toFun := continuous_const.mul (q.continuous.sub continuous_const)
-      source' := by simp [hy]
-      target' := by simp [hy] }
+  obtain ⟨P, hPt, hP⟩ := exists_path_one_eq_inv_mul_sub p hx
+  obtain ⟨Q, hQt, hQ⟩ := exists_path_one_eq_inv_mul_sub q hy
   let H : P.Homotopy Q :=
     { toFun := fun st ↦ (F (st.1, 0) - w)⁻¹ * (F st - w)
       continuous_toFun :=
         (((F.continuous.comp (continuous_fst.prodMk continuous_const)).sub
           continuous_const).inv₀ fun st ↦ hF₀ st.1).mul (F.continuous.sub continuous_const)
-      map_zero_left := fun t ↦ by simp only [h₀, Path.source, P, ContinuousMap.coe_mk]
-      map_one_left := fun t ↦ by simp only [h₁, Path.source, Q, ContinuousMap.coe_mk]
+      map_zero_left := fun t ↦ by simp only [h₀, Path.source, Path.coe_toContinuousMap, hPt]
+      map_one_left := fun t ↦ by simp only [h₁, Path.source, Path.coe_toContinuousMap, hQt]
       prop' := by
         intro s t ht
         rcases ht with rfl | ht
-        · simp [P, hF₀ s, hx]
+        · simp [hPt, hF₀ s, hx]
         · rw [Set.mem_singleton_iff] at ht
           subst t
-          simp [← hF s, P, hF₀ s, hx] }
-  have hP : P.extend = fun t ↦ (x - w)⁻¹ * (p.extend t - w) := by
-    funext t
-    simp only [Path.extend, ContinuousMap.coe_mk, Set.IccExtend_apply, P, Path.coe_mk_mk]
-  have hQ : Q.extend = fun t ↦ (y - w)⁻¹ * (q.extend t - w) := by
-    funext t
-    simp only [Path.extend, ContinuousMap.coe_mk, Set.IccExtend_apply, Q, Path.coe_mk_mk]
+          simp [← hF s, hPt, hF₀ s, hx] }
   have hconst : IsPiecewiseC1On (fun _ ↦ w) 0 1 := .of_contDiffOn contDiffOn_const
   have hw := windingNumber_eq_of_pathHomotopy H
     (by simpa only [hP, smul_eq_mul] using (hp.sub hconst).const_smul (x - w)⁻¹)

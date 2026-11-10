@@ -48,6 +48,7 @@ theorem windingNumber_eq_degree_of_eq_div_norm {x w : ℂ} {u : Circle}
   have hn : ∀ t ∈ Icc (0 : ℝ) 1, γ.extend t ≠ w := by
     intro t ht
     simpa only [Path.extend_apply γ ht] using havoid ⟨t, ht⟩
+  -- A continuous argument `θ` of `γ t - w` on `[0, 1]`, built on a partition `s`.
   obtain ⟨N, s, -, hs0, hs1, hsmono, -, hsavoid, hslit, hθ, hlift⟩ :=
     exists_continuousOn_arg_lift_with_partition (by norm_num : (0 : ℝ) ≤ 1) hc hn
   let θ : ℝ → ℝ := fun t ↦ Complex.arg (γ.extend 0 - w) +
@@ -55,6 +56,7 @@ theorem windingNumber_eq_degree_of_eq_div_norm {x w : ℂ} {u : Circle}
   have hθ_apply (t : ℝ) : θ t = Complex.arg (γ.extend 0 - w) +
       ∑ j ∈ Finset.range N, (Complex.log (segRatio γ.extend w (s j) (s (j + 1)) t)).im := rfl
   simp only [← hθ_apply] at hlift
+  -- `θ` lifts the direction loop `p` through `Circle.exp`.
   have hθp : ∀ t : I, Circle.exp (θ t) = p t := by
     intro t
     apply Subtype.ext
@@ -66,25 +68,12 @@ theorem windingNumber_eq_degree_of_eq_div_norm {x w : ℂ} {u : Circle}
     rw [mul_comm Complex.I] at ht
     rw [mul_comm]
     exact ht.symm
+  -- The total change of the lift is `2π` times the degree of `p` ...
   have hdeg := Circle.sub_eq_degree_mul p hθ.domRestrict hθp
-  have hθ0 : θ 0 = Complex.arg (γ.extend 0 - w) := by
-    suffices h : ∑ j ∈ Finset.range N,
-        (Complex.log (segRatio γ.extend w (s j) (s (j + 1)) 0)).im = 0 by
-      simp only [θ, h, add_zero]
-    refine Finset.sum_eq_zero fun j hj ↦ ?_
-    rw [segRatio_eq_one_of_le (hs0 ▸ hsmono (Nat.zero_le j))
-      (hsavoid j (Finset.mem_range.mp hj).le)]
-    simp
-  have hθ1 : θ 1 = Complex.arg (γ.extend 0 - w) +
-      ∑ j ∈ Finset.range N,
-        (Complex.log ((γ.extend (s (j + 1)) - w) / (γ.extend (s j) - w))).im := by
-    simp only [θ]
-    congr 1
-    refine Finset.sum_congr rfl fun j hj ↦ ?_
-    rw [segRatio_eq_endpoint_div_of_le (hsmono (Nat.le_succ j))
-      ((hsmono (Nat.succ_le_of_lt (Finset.mem_range.mp hj))).trans_eq hs1)]
-  simp only [Set.domRestrict_apply, Set.Icc.coe_one, Set.Icc.coe_zero, ← hθ_apply] at hdeg
-  rw [hθ1, hθ0, add_sub_cancel_left] at hdeg
+  simp only [Set.domRestrict_apply, Set.Icc.coe_one, Set.Icc.coe_zero,
+    sum_im_log_segRatio_eq_zero_of_le hsmono (fun j hj ↦ hsavoid j hj.le) hs0.ge,
+    sum_im_log_segRatio_eq_sum_of_le hsmono hs1.le, add_zero, add_sub_cancel_left] at hdeg
+  -- ... and the imaginary part of the logarithmic integral of `γ` about `w`.
   have hc' : ContinuousOn γ.extend (uIcc 0 1) := hγ.continuousOn
   have hn' : ∀ t ∈ uIcc (0 : ℝ) 1, γ.extend t ≠ w := by simpa using hn
   have hi := intervalIntegrable_inv_sub_mul_deriv hc' hn' hγ.intervalIntegrable_deriv
