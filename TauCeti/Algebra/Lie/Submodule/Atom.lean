@@ -41,6 +41,7 @@ coatom statement runs the same way along the projection `LieSubmodule.Quotient.m
   generates the quotient.
 * `TauCeti.isIrreducible_quotient_iff_isCoatom`: the quotient of a Lie module by a Lie submodule is
   irreducible exactly when that submodule is a coatom of the lattice of Lie submodules.
+* `LieSubmodule.torsion`: the torsion submodule of a Lie module, as a Lie submodule.
 * `TauCeti.isTorsion_or_isTorsionFree_of_isIrreducible`: an irreducible Lie module over a
   domain is either torsion or torsion-free, because the torsion submodule is a Lie
   submodule.
@@ -189,23 +190,51 @@ theorem isIrreducible_quotient_iff_isCoatom {N : LieSubmodule R L M} :
       rw [← heq] at hx
       exact (LieSubmodule.Quotient.mk_eq_zero _).mpr hx
 
+end TauCeti
+
+namespace LieSubmodule
+
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+variable [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+
+variable (R L M) in
+/-- The **torsion Lie submodule** of a Lie module: the torsion submodule `Submodule.torsion R M`
+of the elements killed by a non-zero-divisor of `R`, which is stable under the Lie action because
+`a • ⁅x, m⁆ = ⁅x, a • m⁆`. -/
+@[expose] def torsion : LieSubmodule R L M :=
+  { Submodule.torsion R M with
+    lie_mem := fun {x m} hm ↦ by
+      obtain ⟨a, ha⟩ := (Submodule.mem_torsion_iff _).1 hm
+      refine (Submodule.mem_torsion_iff _).2 ⟨a, ?_⟩
+      rw [Submonoid.smul_def, ← lie_smul, ← Submonoid.smul_def, ha, lie_zero] }
+
+@[simp]
+theorem toSubmodule_torsion : (torsion R L M).toSubmodule = Submodule.torsion R M :=
+  rfl
+
+@[simp]
+theorem mem_torsion_iff (m : M) : m ∈ torsion R L M ↔ ∃ a : nonZeroDivisors R, a • m = 0 :=
+  Submodule.mem_torsion_iff m
+
+end LieSubmodule
+
+namespace TauCeti
+
+variable {R L M : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+variable [AddCommGroup M] [Module R M] [LieRingModule L M] [LieModule R L M]
+
 /-- **An irreducible Lie module is torsion or torsion-free.** The torsion submodule of a Lie module
-over a domain is stable under the action of the Lie algebra, so by irreducibility it is
-either trivial or everything. -/
+is a Lie submodule (`LieSubmodule.torsion`), so by irreducibility it is either trivial or
+everything. -/
 theorem isTorsion_or_isTorsionFree_of_isIrreducible [IsDomain R]
     [LieModule.IsIrreducible R L M] :
     Module.IsTorsion R M ∨ Module.IsTorsionFree R M := by
-  let T : LieSubmodule R L M :=
-    { Submodule.torsion R M with
-      lie_mem := fun {y m} hm ↦ by
-        obtain ⟨a, ha⟩ := (Submodule.mem_torsion_iff _).1 hm
-        refine (Submodule.mem_torsion_iff _).2 ⟨a, ?_⟩
-        rw [Submonoid.smul_def, ← lie_smul, ← Submonoid.smul_def, ha, lie_zero] }
-  rcases IsSimpleOrder.eq_bot_or_eq_top T with hbot | htop
-  · exact Or.inr (Submodule.isTorsionFree_iff_torsion_eq_bot.2
-      (by simpa [T, LieSubmodule.ext_iff, SetLike.ext_iff] using hbot))
-  · refine Or.inl fun m ↦ ?_
-    have hm : m ∈ T := htop ▸ LieSubmodule.mem_top m
-    exact (Submodule.mem_torsion_iff _).1 hm
+  rcases IsSimpleOrder.eq_bot_or_eq_top (LieSubmodule.torsion R L M) with hbot | htop
+  · refine Or.inr (Submodule.isTorsionFree_iff_torsion_eq_bot.2 ?_)
+    rw [← LieSubmodule.toSubmodule_torsion (L := L), hbot, LieSubmodule.bot_toSubmodule]
+  · refine Or.inl ((Submodule.isTorsion'_iff_torsion'_eq_top (R := R) (nonZeroDivisors R)).2 ?_)
+    -- `Submodule.torsion R M` is the abbreviation `Submodule.torsion' R M R⁰`.
+    change Submodule.torsion R M = ⊤
+    rw [← LieSubmodule.toSubmodule_torsion (L := L), htop, LieSubmodule.top_toSubmodule]
 
 end TauCeti
