@@ -153,11 +153,8 @@ theorem _root_.Homeomorph.exists_addCircle_lift_symm_comp_eq_add (φ : AddCircle
 `(F 0, F 0 + T]`. -/
 theorem image_Ioc_of_lift (hF : StrictMono F) (hFc : Continuous F)
     (hper : ∀ x, F (x + T) = F x + T) : F '' Ioc 0 T = Ioc (F 0) (F 0 + T) := by
-  rcases le_or_gt T 0 with hT | hT
-  · rw [Ioc_eq_empty (not_lt.2 hT), Ioc_eq_empty (not_lt.2 (by linarith)), image_empty]
-  refine (image_Ioc_subset_of_lift hF hper).antisymm ?_
-  have hT' : F T = F 0 + T := by simpa using hper 0
-  exact hT' ▸ intermediate_value_Ioc hT.le hFc.continuousOn
+  simpa only [show F T = F 0 + T by simpa using hper 0] using
+    hFc.image_Ioc_of_strictMono hF (a := 0) (b := T)
 
 variable [hT : Fact (0 < T)]
 
