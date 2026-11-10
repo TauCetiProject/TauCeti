@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.DualNumber
 public import Mathlib.Algebra.QuadraticAlgebra.Basic
 public import Mathlib.RingTheory.Nilpotent.Defs
+import Mathlib.RingTheory.DualNumber
 
 /-!
 # Quadratic algebras with a repeated root
@@ -20,14 +21,33 @@ More generally, when the defining polynomial `X² - bX - a` of `QuadraticAlgebra
 the square `(X - r)²`, that is `a = -r²` and `b = 2r`, the change of generator `ω ↦ ω - r`
 identifies the algebra with the dual numbers (`algEquivDualNumberOfDoubleRoot`).
 
-In the repeated-root algebra the norm of `x + yω` is `x²`, its trace is `2x`, and over a
-reduced ring the nilpotent elements are exactly those with vanishing constant coefficient.
-In particular the algebra is not reduced over a nontrivial ring.
+In such an algebra the norm of `x + yω` is `(x + ry)²`, and over a reduced ring the
+nilpotent elements are exactly those with `x + ry = 0`. In particular the algebra is not
+reduced over a nontrivial ring, since the dual numbers are not. Whenever `b = 0`, the trace of
+`x + yω` is `2x`.
 -/
 
 public section
 
 open DualNumber TrivSqZeroExt
+
+namespace DualNumber
+
+variable {R : Type*} [Semiring R] [Nontrivial R]
+
+/-- Over a nontrivial semiring, `ε` is nonzero. -/
+theorem eps_ne_zero : (ε : R[ε]) ≠ 0 := fun h ↦
+  one_ne_zero (α := R) (by simpa using congr(TrivSqZeroExt.snd $h))
+
+/-- Over a nontrivial semiring, the dual numbers are not reduced: `ε` is a nonzero nilpotent. -/
+theorem not_isReduced : ¬IsReduced R[ε] := fun _ ↦ eps_ne_zero (R := R) isNilpotent_eps.eq_zero
+
+/-- Over a nontrivial semiring, the dual numbers do not form a field. -/
+theorem not_isField : ¬IsField R[ε] := fun h ↦ by
+  have := h.isDomain
+  exact not_isReduced (R := R) inferInstance
+
+end DualNumber
 
 namespace QuadraticAlgebra
 
@@ -88,26 +108,41 @@ theorem algEquivDualNumberOfDoubleRoot_omega {a b : R} (r : R) (ha : a = -r ^ 2)
     algEquivDualNumberOfDoubleRoot r ha hb (ω : QuadraticAlgebra R a b) = inl r + ε := by
   ext <;> simp
 
-/-- In the repeated-root algebra the norm of `x + yω` is `x²`. -/
-theorem norm_eq_re_mul_re (z : QuadraticAlgebra R 0 0) : norm z = z.re * z.re := by
-  simp [norm_def]
+/-- The inverse of `algEquivDualNumberOfDoubleRoot` sends `x + yε` to `(x - ry) + yω`. -/
+@[simp]
+theorem algEquivDualNumberOfDoubleRoot_symm_apply {a b : R} (r : R) (ha : a = -r ^ 2)
+    (hb : b = 2 * r) (x : R[ε]) :
+    (algEquivDualNumberOfDoubleRoot r ha hb).symm x = ⟨x.fst - r * x.snd, x.snd⟩ := by
+  rw [AlgEquiv.symm_apply_eq]
+  ext <;> simp
 
-/-- In the repeated-root algebra the trace of `x + yω` is `2x`. -/
-theorem trace_eq_two_mul_re (z : QuadraticAlgebra R 0 0) : trace z = 2 * z.re := by
+/-- When the defining polynomial is `(X - r)²`, the norm of `x + yω` is `(x + ry)²`. -/
+theorem norm_eq_sq_of_double_root {a b : R} (r : R) (ha : a = -r ^ 2) (hb : b = 2 * r)
+    (z : QuadraticAlgebra R a b) : norm z = (z.re + r * z.im) ^ 2 := by
+  subst ha hb
+  rw [norm_def]
+  ring
+
+/-- When `b = 0`, so in particular in `QuadraticAlgebra R 0 0`, the trace of `x + yω` is
+`2x`. -/
+theorem trace_eq_two_mul_re {a : R} (z : QuadraticAlgebra R a 0) : trace z = 2 * z.re := by
   simp [trace_def]
 
-/-- Over a reduced ring, an element of the repeated-root algebra is nilpotent exactly when
-its constant coefficient vanishes; the nilpotent elements form the line `R ω`. -/
-theorem isNilpotent_iff_re_eq_zero [IsReduced R] {z : QuadraticAlgebra R 0 0} :
-    IsNilpotent z ↔ z.re = 0 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ ⟨2, ?_⟩⟩
-  · simpa using (h.map (lift (A := R) ⟨0, by simp⟩)).eq_zero
-  · ext <;> simp [sq, h]
+/-- Over a reduced ring, when the defining polynomial is `(X - r)²`, an element `x + yω` is
+nilpotent exactly when `x + ry = 0`. For `QuadraticAlgebra R 0 0` (take `r = 0`) the
+nilpotent elements form the line `R ω`. -/
+theorem isNilpotent_iff_of_double_root [IsReduced R] {a b : R} (r : R) (ha : a = -r ^ 2)
+    (hb : b = 2 * r) {z : QuadraticAlgebra R a b} :
+    IsNilpotent z ↔ z.re + r * z.im = 0 := by
+  rw [← IsNilpotent.map_iff (algEquivDualNumberOfDoubleRoot r ha hb).injective,
+    isNilpotent_iff_isNilpotent_fst, isNilpotent_iff_eq_zero,
+    fst_algEquivDualNumberOfDoubleRoot]
 
-/-- Over a nontrivial ring, the repeated-root algebra is not reduced: `ω` is a nonzero
-nilpotent. -/
-theorem not_isReduced [Nontrivial R] : ¬IsReduced (QuadraticAlgebra R 0 0) := fun _ ↦
-  (show (ω : QuadraticAlgebra R 0 0) ≠ 0 by simp [QuadraticAlgebra.ext_iff])
-    (IsNilpotent.eq_zero (x := (ω : QuadraticAlgebra R 0 0)) ⟨2, by ext <;> simp [sq]⟩)
+/-- Over a nontrivial ring, a quadratic algebra whose defining polynomial is `(X - r)²` is not
+reduced, since the dual numbers are not. -/
+theorem not_isReduced_of_double_root [Nontrivial R] {a b : R} (r : R) (ha : a = -r ^ 2)
+    (hb : b = 2 * r) : ¬IsReduced (QuadraticAlgebra R a b) := fun _ ↦
+  DualNumber.not_isReduced <|
+    isReduced_of_injective (algEquivDualNumberOfDoubleRoot r ha hb).symm (AlgEquiv.injective _)
 
 end QuadraticAlgebra
