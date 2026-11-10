@@ -61,11 +61,20 @@ theorem im_div_eq_zero_of_mem_frontier {w q b z : ℂ} {ρ : ℝ}
 `{|arg ((z - v) / b)| < α}`, the frontier of `U` away from the vertex lies on the two bounding rays
 `|arg ((z - v) / b)| = α`.  Typically `V` is a ball about the vertex, or the exterior of a ball when
 `U` is a sector near infinity. -/
-theorem abs_arg_div_eq_of_mem_frontier {V : Set ℂ} {v b z : ℂ} {α : ℝ} (hb : b ≠ 0)
+theorem abs_arg_div_eq_of_mem_frontier {V : Set ℂ} {v b z : ℂ} {α : ℝ}
     (hV : IsOpen V) (hU : ∀ y ∈ V, y ≠ v → (y ∈ U ↔ |((y - v) / b).arg| < α)) (hz : z ∈ V)
     (hzv : z ≠ v) (hzU : z ∈ frontier U) : |((z - v) / b).arg| = α := by
   set O := V \ {v}
   have hO : IsOpen O := hV.sdiff isClosed_singleton
+  rcases eq_or_ne b 0 with rfl | hb
+  · -- for `b = 0` the sector is all of `O` or empty, so `z` is not on the frontier unless `α = 0`
+    simp only [div_zero, arg_zero, abs_zero] at hU ⊢
+    have hzO : z ∈ O := ⟨hz, hzv⟩
+    rcases lt_trichotomy 0 α with h | h | h
+    · exact absurd (interior_maximal (fun y (hy : y ∈ O) => (hU y hy.1 hy.2).mpr h) hO hzO) hzU.2
+    · exact h
+    · obtain ⟨y, hyO, hyU⟩ := mem_closure_iff.mp hzU.1 O hO hzO
+      exact absurd ((hU y hyO.1 hyO.2).mp hyU) h.not_gt
   have hφ : ContinuousOn (fun y : ℂ => |((y - v) / b).arg|) O := fun y hy =>
     ((continuousAt_abs_arg (div_ne_zero (sub_ne_zero.mpr hy.2) hb)).comp
       (f := fun y : ℂ => (y - v) / b) (by fun_prop)).continuousWithinAt
@@ -126,9 +135,19 @@ theorem isPreconnectedApproachAt_of_forall_mem_iff_im_div_pos {w q b : ℂ} {ρ 
 `{|arg ((z - v) / b)| < α}` of half-opening `α`, then `U` has preconnected approach regions at
 `v`: in polar coordinates about `v` its traces on small punctured balls are rectangles. -/
 theorem isPreconnectedApproachAt_of_forall_mem_iff_abs_arg_lt {v b : ℂ} {ρ α : ℝ} (hρ : 0 < ρ)
-    (hb : b ≠ 0)
     (hU : ∀ z ∈ ball v ρ, z ≠ v → (z ∈ U ↔ |((z - v) / b).arg| < α)) :
     IsPreconnectedApproachAt U v := by
+  -- for `b = 0` the sector is empty or everything, as for `b = 1` and `α = 0` or `α = 5 > π`
+  obtain ⟨b, α, hb, hU⟩ : ∃ (b' : ℂ) (α' : ℝ), b' ≠ 0 ∧
+      ∀ z ∈ ball v ρ, z ≠ v → (z ∈ U ↔ |((z - v) / b').arg| < α') := by
+    rcases eq_or_ne b 0 with rfl | hb
+    · refine ⟨1, if 0 < α then 5 else 0, one_ne_zero, fun z hz hzv => ?_⟩
+      rw [hU z hz hzv]
+      simp only [div_zero, arg_zero, abs_zero, div_one]
+      split_ifs with h
+      · exact ⟨fun _ => (abs_arg_le_pi _).trans_lt (by linarith [Real.pi_le_four]), fun _ => h⟩
+      · exact ⟨fun h' => absurd h' h, fun h' => absurd h' (abs_nonneg _).not_gt⟩
+    · exact ⟨b, α, hb, hU⟩
   refine isPreconnectedApproachAt_of_isPreconnected_inter_ball hρ fun δ hδ hδρ => ?_
   have hb' : 0 < ‖b‖ := norm_pos_iff.mpr hb
   set P : ℝ × ℝ → ℂ := fun p =>
@@ -292,8 +311,14 @@ theorem tendsto_exp_pi_mul_I_sub_of_tendsto_cobounded {α : Type*} {l : Filter �
 /-- If, far from `c`, every point `z` of a set `U` has `0 < re ((z - c) / b)` (as for a set that
 coincides far out with a half-strip or a half-plane), then some point lies outside the closure of
 `U`, far out in the direction `-b`. -/
-theorem exists_notMem_closure_of_forall_mem_re_div_pos {c b : ℂ} {ρ : ℝ} (hb : b ≠ 0)
+theorem exists_notMem_closure_of_forall_mem_re_div_pos {c b : ℂ} {ρ : ℝ}
     (hU : ∀ z : ℂ, ρ < ‖z - c‖ → z ∈ U → 0 < ((z - c) / b).re) : ∃ q, q ∉ closure U := by
+  -- for `b = 0` the hypothesis says that `U` is empty far out, which `b = 1` also gives
+  obtain ⟨b, hb, hU⟩ : ∃ b' : ℂ, b' ≠ 0 ∧
+      ∀ z : ℂ, ρ < ‖z - c‖ → z ∈ U → 0 < ((z - c) / b').re := by
+    rcases eq_or_ne b 0 with rfl | hb
+    · exact ⟨1, one_ne_zero, fun z hz hzU => absurd (hU z hz hzU) (by simp)⟩
+    · exact ⟨b, hb, hU⟩
   -- the point `q = c - t * b`, at distance `|ρ| + 1` from `c`, has `re ((q - c) / b) = -t < 0`
   have hb' : 0 < ‖b‖ := norm_pos_iff.mpr hb
   set t : ℝ := (|ρ| + 1) / ‖b‖ with ht_def

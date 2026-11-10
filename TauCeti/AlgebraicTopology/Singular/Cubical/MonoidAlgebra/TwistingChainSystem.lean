@@ -239,10 +239,7 @@ theorem cubicalChainSumMap_twistingChainSum {x y : P}
         (cubicalChainSumMap R (q x z) (s x z) * cubicalChainSumMap R (q z y) (s z y)) := by
   rw [twistingChainSum_def, map_sum]
   refine Finset.sum_congr rfl fun z _ ↦ ?_
-  have hcomp : (q x y).comp (ι x z y) = (mulMap G).comp ((q x z).prodMap (q z y)) :=
-    ContinuousMap.ext fun ⟨u, v⟩ ↦ by simpa using hq z u v
-  rw [map_zsmul_unit, cubicalChainSumMap_cubicalChainSumPairing, hcomp,
-    cubicalChainSumPairing_comp_prodMap, cubicalChainSumPairing_mulMap]
+  rw [map_zsmul_unit, cubicalChainSumMap_cubicalChainSumPairing_of_mul (hq z)]
 
 namespace TwistingChainSystem
 

@@ -108,7 +108,7 @@ half-plane is carried into the open sector at that vertex and the other boundary
 lie on its two bounding rays. -/
 private theorem exists_ball_abs_arg_div_of_image_eq (hfc : ContinuousOn f {z : ℂ | 0 ≤ z.im})
     (hfi : InjOn f {z : ℂ | 0 ≤ z.im}) (hfU : f '' upperHalfPlaneSet = U) {x b : ℂ} {ρ α : ℝ}
-    (hx : x.im = 0) (hρ : 0 < ρ) (hb : b ≠ 0)
+    (hx : x.im = 0) (hρ : 0 < ρ)
     (hU : ∀ z ∈ ball (f x) ρ, z ≠ f x → (z ∈ U ↔ |((z - f x) / b).arg| < α)) :
     ∃ r > 0, (∀ z ∈ ball x r, 0 < z.im → |((f z - f x) / b).arg| < α) ∧
       ∀ z ∈ ball x r, z.im = 0 → f z ≠ f x → |((f z - f x) / b).arg| = α := by
@@ -117,7 +117,7 @@ private theorem exists_ball_abs_arg_div_of_image_eq (hfc : ContinuousOn f {z : �
   · have hzx : f z ≠ f x := fun h => by
       simp [hfi hz0.le hx.symm.le h, hx] at hz0
     exact (hU _ (hball hz0.le hz) hzx).mp (hfU ▸ mem_image_of_mem f hz0)
-  · exact abs_arg_div_eq_of_mem_frontier hb isOpen_ball hU (hball hz0.symm.le hz) hzx
+  · exact abs_arg_div_eq_of_mem_frontier isOpen_ball hU (hball hz0.symm.le hz) hzx
       (hfU ▸ mem_frontier_image_upperHalfPlaneSet_of_im_eq_zero
         (hfc _ hz0.symm.le) hz0 (not_mem_image_upperHalfPlaneSet_of_im_eq_zero hfi hz0))
 
@@ -280,7 +280,7 @@ private theorem tendsto_mul_logDeriv_deriv_of_tendsto_cobounded {β ρ : ℝ} {c
     have hw0 : w ≠ 0 := fun h => hgw (h ▸ hg0)
     have him : (-w⁻¹).im = 0 := by simp [hwim]
     rw [harg w hw0]
-    exact abs_arg_div_eq_of_mem_frontier (V := {y : ℂ | ρ < ‖y - c‖}) hb
+    exact abs_arg_div_eq_of_mem_frontier (V := {y : ℂ | ρ < ‖y - c‖})
       (isOpen_lt continuous_const (continuous_id.sub continuous_const).norm)
       (fun y hy _ => hU y hy) ((le_max_left ρ 0).trans_lt (hfar w hw hwim.ge hw0))
       (sub_ne_zero.mp (hne w hw hwim.ge hw0))
@@ -429,7 +429,7 @@ private theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_doma
     obtain ⟨ρ, hρ, b, hb, hU⟩ := hcorner i
     rw [← hfv i] at hU
     obtain ⟨r, hr, hupper, hreal⟩ :=
-      exists_ball_abs_arg_div_of_image_eq hfc hfi hfU (ofReal_im (a i)) hρ hb hU
+      exists_ball_abs_arg_div_of_image_eq hfc hfi hfU (ofReal_im (a i)) hρ hU
     exact ⟨r, hr, b, hb, hfc.mono inter_subset_right, hfi.mono inter_subset_right, hupper, hreal⟩
 
 /-- The turning exponents of a polygonal domain sum to the limit `L` of `z * f''(z) / f'(z)` at
