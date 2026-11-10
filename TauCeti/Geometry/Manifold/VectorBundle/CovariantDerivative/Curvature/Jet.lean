@@ -233,6 +233,7 @@ section VectorSpace
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {ι : Type*} [Fintype ι] [DecidableEq ι] {G : E → E →L[ℝ] E →L[ℝ] ℝ} {z : E}
 
+omit [FiniteDimensional ℝ E] in
 /-- In a basis, the Christoffel symbols of the second kind of a field `G` of symmetric
 nondegenerate bilinear forms are the Christoffel symbols of its coordinate jet. -/
 theorem repr_christoffelSecondKind_eq_christoffelOfJet (b : Basis ι ℝ E)

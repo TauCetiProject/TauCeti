@@ -10,6 +10,7 @@ public import Mathlib.Logic.Relation
 public import TauCeti.Analysis.Convex.Between
 public import TauCeti.Analysis.Convex.Combination
 public import TauCeti.Geometry.Polygon.Simple
+public import TauCeti.LinearAlgebra.AffineSpace.Basic
 public import TauCeti.LinearAlgebra.AffineSpace.Triangle.Chart
 
 /-!
@@ -325,7 +326,7 @@ end Boundary
 
 section Simplicity
 
-variable [IsOrderedRing R] [Nontrivial R]
+variable [IsOrderedRing R]
 
 namespace IsDeltaMove
 
@@ -336,6 +337,7 @@ include h
 was simple before. -/
 theorem isSimple_of_isSimple_insertVertex (hq : (poly.insertVertex i c).IsSimple R) :
     poly.IsSimple R := by
+  have := AddTorsor.nontrivial_of_ne R V (hq.hasNondegenerateEdges 0)
   refine ⟨fun k => ?_, fun k₁ k₂ x hne hx₁ hx₂ => ?_⟩
   · by_cases hk : k = i
     · exact hk ▸ h.left_ne_right
@@ -371,8 +373,9 @@ theorem isSimple_of_isSimple_insertVertex (hq : (poly.insertVertex i c).IsSimple
 
 /-- **A Δ-move keeps a polygon simple.** -/
 theorem isSimple_insertVertex (hp : poly.IsSimple R) :
-    (poly.insertVertex i c).IsSimple R :=
-  hp.insertVertex h.left_ne_apex h.apex_ne_right h.affineSegment_inter_affineSegment
+    (poly.insertVertex i c).IsSimple R := by
+  have := AddTorsor.nontrivial_of_ne R V (hp.hasNondegenerateEdges i)
+  exact hp.insertVertex h.left_ne_apex h.apex_ne_right h.affineSegment_inter_affineSegment
     (fun _ hk _ hx ↦ h.edgeSet_inter_closedInterior_subset hk
       ⟨hx.1, hx.2.elim (fun hx ↦ h.affineSegment_left_subset_closedInterior hx)
         (fun hx ↦ h.affineSegment_right_subset_closedInterior hx)⟩)
@@ -440,7 +443,7 @@ theorem isDeltaMove_of_chart {m : ℕ} {q : Polygon P m} {j : Fin m} {w : P}
     funext k
     fin_cases k <;> rfl
   refine ⟨hind', fun k hk => ?_⟩
-  rw [Affine.Triangle.closedInterior_eq_image_convexHull _ hφ (x := x) (y := y) (z := z)
+  rw [Affine.Triangle.closedInterior_eq_image_convexHull _ (x := x) (y := y) (z := z)
     (by rw [← hx, ← hy, ← hz]), hx, hy, ← image_pair]
   exact hedge k hk
 
@@ -452,7 +455,6 @@ theorem IsDeltaMove.closedInterior_eq_image (h : poly.IsDeltaMove R i c) :
     h.triangle.closedInterior = TauCeti.triangleChart R (poly i) (poly (finRotate n i)) c ''
       convexHull R {((0 : R), (0 : R)), (1, 0), (0, 1)} :=
   Affine.Triangle.closedInterior_eq_image_convexHull _
-    (TauCeti.triangleChart_injective h.affineIndependent)
     (by rw [IsDeltaMove.triangle_points, TauCeti.triangleChart_apply_zero_zero,
       TauCeti.triangleChart_apply_one_zero, TauCeti.triangleChart_apply_zero_one])
 
@@ -555,7 +557,7 @@ namespace TauCeti
 
 namespace SimplePolygon
 
-variable {R V P : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R] [Nontrivial R]
+variable {R V P : Type*} [Ring R] [PartialOrder R] [IsOrderedRing R]
   [AddCommGroup V] [Module R V] [AddTorsor V P]
 
 /-- The simple polygon obtained from `p` by the Δ-move inserting `c` after vertex `i`. -/

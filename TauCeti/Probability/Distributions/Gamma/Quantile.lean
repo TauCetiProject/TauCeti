@@ -206,7 +206,7 @@ theorem strictMonoOn_inverseRegularizedGamma (hs : 0 < s) :
 /-- `P⁻¹(s, ·)` is continuous on the levels `0 < u < 1`. -/
 theorem continuousOn_inverseRegularizedGamma (hs : 0 < s) :
     ContinuousOn (inverseRegularizedGamma s) (Ioo 0 1) :=
-  (Measure.continuousOn_quantile _ (TauCeti.Probability.continuous_cdf_gammaMeasure hs one_pos)
+  (Measure.continuousOn_quantile _
     (strictMonoOn_cdf_gammaMeasure hs)).congr fun _ _ => inverseRegularizedGamma_eq_quantile hs
 
 /-- `P⁻¹(s, u)` tends to `0` from above as the level `u` decreases to `0`. -/
