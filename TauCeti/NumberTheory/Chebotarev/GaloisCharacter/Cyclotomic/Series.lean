@@ -12,6 +12,7 @@ import TauCeti.NumberTheory.Chebotarev.Density.SplitsCompletely
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Cyclotomic.Surjective
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Orthogonality
 import TauCeti.NumberTheory.Chebotarev.GaloisCharacter.Weight
+import TauCeti.NumberTheory.Cyclotomic.Aut
 import TauCeti.NumberTheory.NumberField.DedekindZeta
 
 /-!
@@ -144,20 +145,6 @@ private theorem exists_differentiableOn_eq_LSeries (m : ℕ) [NeZero m]
       UnitaryIdealWeight.toIdealArithmeticFunction_eq_val,
       MonoidHom.val_galoisCharacterUnitaryWeight]
 
-omit [NumberField K] [NumberField F] [IsGalois K F] in
--- A nontrivial character of `Gal(F/K)` forces the level `m` of `F = K(μ_m)` to be nonzero: for
--- `m = 0` the extension `F / K` is trivial.
-private theorem neZero_of_ne_one (m : ℕ) [IsCyclotomicExtension {m} K F]
-    {χ : (F ≃ₐ[K] F) →* ℂˣ} (hχ : χ ≠ 1) : NeZero m := by
-  refine ⟨?_⟩
-  rintro rfl
-  have hsurj := IsCyclotomicExtension.isCyclotomicExtension_zero_iff.mp ‹_›
-  refine hχ (MonoidHom.ext fun σ ↦ ?_)
-  have : σ = 1 := AlgEquiv.ext fun x ↦ by
-    obtain ⟨y, rfl⟩ := hsurj x
-    simp [AlgEquiv.commutes]
-  simp [this]
-
 variable (K F) in
 /-- **Holomorphy on `Re s > 1 - 1 / [K : ℚ]`.** For `F = K(μ_m)` and a nontrivial character `χ` of
 `Gal(F/K)`, the continued `L`-series of `χ` is holomorphic on the half-plane
@@ -166,7 +153,9 @@ theorem differentiableOn_cyclotomicCharacterSeriesC (m : ℕ)
     [IsCyclotomicExtension {m} K F] (χ : (F ≃ₐ[K] F) →* ℂˣ) (hχ : χ ≠ 1) :
     DifferentiableOn ℂ (cyclotomicCharacterSeriesC K F χ)
       {s | 1 - 1 / (Module.finrank ℚ K : ℝ) < s.re} := by
-  have := neZero_of_ne_one m hχ
+  have : Nontrivial (F ≃ₐ[K] F) :=
+    not_subsingleton_iff_nontrivial.mp fun _ ↦ hχ (Subsingleton.elim _ _)
+  have : NeZero m := IsCyclotomicExtension.neZero_of_nontrivial_aut K F
   -- The Artin map is surjective, so `χ ∘ cyclotomicArtin K F m` is nontrivial.
   have h := exists_differentiableOn_eq_LSeries m χ <| by
     rwa [Ne, ← MonoidHom.one_comp (cyclotomicArtin K F m),
@@ -316,7 +305,9 @@ the continued `L`-series of `χ` does not vanish at `s = 1`. -/
 theorem cyclotomicCharacterSeriesC_ne_zero_at_one (m : ℕ) [IsCyclotomicExtension {m} K F]
     (χ : (F ≃ₐ[K] F) →* ℂˣ) (hχ : χ ≠ 1) : cyclotomicCharacterSeriesC K F χ 1 ≠ 0 := by
   intro h0
-  have := neZero_of_ne_one m hχ
+  have : Nontrivial (F ≃ₐ[K] F) :=
+    not_subsingleton_iff_nontrivial.mp fun _ ↦ hχ (Subsingleton.elim _ _)
+  have : NeZero m := IsCyclotomicExtension.neZero_of_nontrivial_aut K F
   have := IsCyclotomicExtension.isMulCommutative {m} K F
   -- The product of all the `L`-series is unbounded as `σ → 1⁺`. But the trivial character's
   -- series times `σ - 1` converges, the series of `χ` divided by `σ - 1` converges since it
