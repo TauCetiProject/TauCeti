@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Homogeneous
+import TauCeti.Analysis.Pseudodifferential.CutoffSymbol
 
 /-!
 # Classical symbols
@@ -758,6 +759,13 @@ end Comp
 
 section Deriv
 
+/-- The cut-off term `cutoffSymbol χ b` is the symbol `HomogeneousSymbol.toSymbol χ b`: both are
+`χ(ξ) b(x, ξ)`. -/
+private theorem cutoffSymbol_eq_toSymbol {d : ℝ} (χ : FrequencyCutoff (CoordinateSpace n))
+    (b : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W d) :
+    cutoffSymbol χ b = HomogeneousSymbol.toSymbol χ b :=
+  Symbol.ext <| funext fun p => by simp
+
 /-- The remainder `a - ∑_{k<N} χ(ξ) a_{m-k}` of a classical symbol after `N` terms, as a symbol of
 order `m`. -/
 private theorem coefficient_remainder_eq_sub_sum (a : ClassicalSymbol n V W m)
@@ -801,7 +809,7 @@ def spatialDeriv (j : Fin n) : ClassicalSymbol n V W m →ₗ[ℂ] ClassicalSymb
         -- expansion.
         ⟨Symbol.spatialDeriv j (a.remainder default N), fun ⟨x, ξ⟩ => by
           rw [a.coefficient_spatialDeriv_remainder default j N x ξ]
-          simp only [spatialDeriv_cutoffSymbol, coefficient_cutoffSymbol]⟩⟩ }
+          simp only [cutoffSymbol_eq_toSymbol, spatialDeriv_toSymbol, coefficient_toSymbol]⟩⟩ }
   map_add' a b := ext (map_add _ a.toSymbol b.toSymbol)
   map_smul' c a := ext (map_smul _ c a.toSymbol)
 
@@ -876,7 +884,8 @@ theorem spatialDeriv_ofHomogeneous (χ : FrequencyCutoff (CoordinateSpace n))
     (b : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
     spatialDeriv j (ofHomogeneous χ b) =
       ofHomogeneous χ (b.spatialDeriv (EuclideanSpace.single j 1)) :=
-  ext (spatialDeriv_cutoffSymbol χ b j)
+  ext (by simp only [toSymbol_spatialDeriv, toSymbol_ofHomogeneous, cutoffSymbol_eq_toSymbol,
+    spatialDeriv_toSymbol])
 
 /-- Spatial derivatives commute with the inclusion of orders. -/
 @[simp]
