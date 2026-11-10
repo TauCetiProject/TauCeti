@@ -358,6 +358,18 @@ private theorem isotropicOscillator_eq_zero_of_mul_eq_zero {r : ℝ} (hr : r ≠
     · exact absurd (pow_eq_zero_iff two_ne_zero |>.1 h) hr
   · exact (mul_eq_zero.1 (pow_eq_zero_iff two_ne_zero |>.1 h3)).resolve_right hr
 
+/-- If `r₁ = 0` is a turning point of an isotropic oscillator with `m ≠ 0` and `r₂ ≠ 0` is another,
+then `E = 0`, `ℓ = 0` and `m ν = 0`. At `r₁ = 0` the right-hand side `ℓ² / r₁²` of the
+turning-point equation is `0` by the convention `x / 0 = 0`, so the equation reduces to
+`2 m E = 0`; then the other turning point forces `ℓ = 0` and `m ν = 0`. -/
+private theorem isotropicOscillator_of_turningPoint_zero (hm : m ≠ 0) (h₁ : r₁ = 0) (h₂ : r₂ ≠ 0)
+    (hr₁ : 2 * m * (E - m * ν ^ 2 * r₁ ^ 2 / 2) = ℓ ^ 2 / r₁ ^ 2)
+    (hr₂ : 2 * m * (E - m * ν ^ 2 * r₂ ^ 2 / 2) = ℓ ^ 2 / r₂ ^ 2) :
+    E = 0 ∧ ℓ = 0 ∧ m * ν = 0 := by
+  have hE : E = 0 := by subst h₁; simpa [hm] using hr₁
+  obtain ⟨hℓ, hν⟩ := isotropicOscillator_eq_zero_of_mul_eq_zero h₂ (by rw [hE, mul_zero]) hr₂
+  exact ⟨hE, hℓ, hν⟩
+
 /-- **Vieta's formula for the isotropic oscillator, sum of squared turning points.** If `r₁, r₂`
 are turning points of an isotropic oscillator with `m ≠ 0` and `r₁² ≠ r₂²`, then
 `2 E = m ν² (r₁² + r₂²)`. -/
@@ -367,13 +379,11 @@ theorem isotropicOscillator_energy_eq (hm : m ≠ 0)
     2 * E = m * ν ^ 2 * (r₁ ^ 2 + r₂ ^ 2) := by
   by_cases h₁ : r₁ = 0
   · have h₂ : r₂ ≠ 0 := fun h => hne (by rw [h₁, h])
-    have hE : E = 0 := by subst h₁; simpa [hm] using hr₁
-    obtain ⟨-, hν⟩ := isotropicOscillator_eq_zero_of_mul_eq_zero h₂ (by rw [hE, mul_zero]) hr₂
+    obtain ⟨hE, -, hν⟩ := isotropicOscillator_of_turningPoint_zero hm h₁ h₂ hr₁ hr₂
     rw [hE, h₁, show m * ν ^ 2 = m * ν * ν by ring, hν]
     simp
   by_cases h₂ : r₂ = 0
-  · have hE : E = 0 := by subst h₂; simpa [hm] using hr₂
-    obtain ⟨-, hν⟩ := isotropicOscillator_eq_zero_of_mul_eq_zero h₁ (by rw [hE, mul_zero]) hr₁
+  · obtain ⟨hE, -, hν⟩ := isotropicOscillator_of_turningPoint_zero hm h₂ h₁ hr₂ hr₁
     rw [hE, h₂, show m * ν ^ 2 = m * ν * ν by ring, hν]
     simp
   have hprod : (m * (r₂ ^ 2 - r₁ ^ 2)) * (2 * E - m * ν ^ 2 * (r₁ ^ 2 + r₂ ^ 2)) = 0 := by
@@ -399,12 +409,10 @@ theorem isotropicOscillator_sq_eq_sq_mul
       simp [hℓ]
   by_cases h₁ : r₁ = 0
   · have h₂ : r₂ ≠ 0 := fun h => hne (by rw [h₁, h])
-    have hE : E = 0 := by subst h₁; simpa [hm] using hr₁
-    obtain ⟨hℓ, -⟩ := isotropicOscillator_eq_zero_of_mul_eq_zero h₂ (by rw [hE, mul_zero]) hr₂
+    obtain ⟨-, hℓ, -⟩ := isotropicOscillator_of_turningPoint_zero hm h₁ h₂ hr₁ hr₂
     simp [hℓ, h₁]
   by_cases h₂ : r₂ = 0
-  · have hE : E = 0 := by subst h₂; simpa [hm] using hr₂
-    obtain ⟨hℓ, -⟩ := isotropicOscillator_eq_zero_of_mul_eq_zero h₁ (by rw [hE, mul_zero]) hr₁
+  · obtain ⟨-, hℓ, -⟩ := isotropicOscillator_of_turningPoint_zero hm h₂ h₁ hr₂ hr₁
     simp [hℓ, h₂]
   linear_combination -isotropicOscillator_turningPoint_eq h₁ hr₁ +
     m * r₁ ^ 2 * isotropicOscillator_energy_eq hm hne hr₁ hr₂
