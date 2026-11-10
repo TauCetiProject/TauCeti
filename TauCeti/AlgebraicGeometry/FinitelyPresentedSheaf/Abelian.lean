@@ -6,11 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Basic
-public import TauCeti.AlgebraicGeometry.Modules.Restriction.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Abelian
 public import TauCeti.AlgebraicGeometry.Modules.Biprod
-public import TauCeti.AlgebraicGeometry.Modules.Restriction.FiniteType
+public import TauCeti.CategoryTheory.ObjectProperty
 public import Mathlib.CategoryTheory.Preadditive.LeftExact
-public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.CategoryTheory.Abelian.Subcategory
 
 /-!
@@ -46,36 +45,6 @@ universe u
 
 namespace AlgebraicGeometry.Scheme.Modules
 
-variable {X : Scheme.{u}} {M N : X.Modules}
-
-/-- The ambient cokernel of a morphism from a quasi-coherent sheaf of finite type to a finitely
-presented sheaf is finitely presented on any scheme. -/
-instance isFinitePresentation_cokernel (f : M ⟶ N) [M.IsQuasicoherent] [M.IsFiniteType]
-    [N.IsFinitePresentation] : (cokernel f).IsFinitePresentation := by
-  refine isFinitePresentation_of_isFinitePresentation_restrict (cokernel f)
-    (fun U : X.affineOpens ↦ U.1) (iSup_affineOpens_eq_top X) fun U ↦ ?_
-  let F := restrictFunctor U.1.ι
-  let G := restrictFunctor U.2.isoSpec.inv
-  apply (isFinitePresentation_restrict_iff_of_isIso _ U.2.isoSpec.inv).mp
-  exact (SheafOfModules.isFinitePresentation (Spec Γ(X, U.1)).ringCatSheaf).prop_of_iso
-    (G.mapIso (PreservesCokernel.iso F f) ≪≫ PreservesCokernel.iso G (F.map f)).symm
-    (isFinitePresentation_cokernel_spec (G.map (F.map f)))
-
-/-- On a locally Noetherian scheme the ambient kernel of a morphism from a quasi-coherent
-sheaf of finite type to a quasi-coherent sheaf is finitely presented. -/
-instance isFinitePresentation_kernel [IsLocallyNoetherian X] (f : M ⟶ N)
-    [M.IsQuasicoherent] [M.IsFiniteType] [N.IsQuasicoherent] :
-    (kernel f).IsFinitePresentation := by
-  refine isFinitePresentation_of_isFinitePresentation_restrict (kernel f)
-    (fun U : X.affineOpens ↦ U.1) (iSup_affineOpens_eq_top X) fun U ↦ ?_
-  let F := restrictFunctor U.1.ι
-  let G := restrictFunctor U.2.isoSpec.inv
-  have : IsNoetherianRing Γ(X, U.1) := IsLocallyNoetherian.component_noetherian U
-  apply (isFinitePresentation_restrict_iff_of_isIso _ U.2.isoSpec.inv).mp
-  exact (SheafOfModules.isFinitePresentation (Spec Γ(X, U.1)).ringCatSheaf).prop_of_iso
-    (G.mapIso (PreservesKernel.iso F f) ≪≫ PreservesKernel.iso G (F.map f)).symm
-    (isFinitePresentation_kernel_spec (G.map (F.map f)))
-
 /-- Finitely presented sheaves are closed under ambient cokernels on every scheme. -/
 instance isFinitePresentation_isClosedUnderCokernels (X : Scheme.{u}) :
     (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderCokernels where
@@ -103,18 +72,11 @@ instance isFinitePresentation_containsZero (X : Scheme.{u}) :
 
 /-- Finitely presented sheaves are closed under binary products, computed as direct sums. -/
 instance isFinitePresentation_isClosedUnderBinaryProducts (X : Scheme.{u}) :
-    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderBinaryProducts where
-  limitsOfShape_le := by
-    rintro M ⟨p⟩
-    have := p.prop_diag_obj ⟨WalkingPair.left⟩
-    have := p.prop_diag_obj ⟨WalkingPair.right⟩
-    -- Name the factors as scheme modules so instance search sees their abelian category.
-    let A : X.Modules := p.diag.obj ⟨WalkingPair.left⟩
-    let B : X.Modules := p.diag.obj ⟨WalkingPair.right⟩
-    exact (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
-      (IsLimit.conePointUniqueUpToIso (BinaryBiproduct.isLimit A B)
-        ((IsLimit.postcomposeHomEquiv (diagramIsoPair p.diag) _).2 p.isLimit))
-      (Scheme.Modules.isFinitePresentation_biprod A B)
+    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderBinaryProducts :=
+  ObjectProperty.isClosedUnderBinaryProducts_of_prop_biprod _ fun A B hA hB ↦ by
+    let := hA
+    let := hB
+    exact Scheme.Modules.isFinitePresentation_biprod A B
 
 /-- Finitely presented sheaves are closed under finite products. -/
 instance isFinitePresentation_isClosedUnderFiniteProducts (X : Scheme.{u}) :

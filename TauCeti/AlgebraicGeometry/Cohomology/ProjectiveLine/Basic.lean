@@ -11,7 +11,7 @@ public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
 public import TauCeti.AlgebraicGeometry.Cohomology.SectionsQuotient.Linear
 public import TauCeti.AlgebraicGeometry.Cohomology.Trivial
-public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Modules.FinitePresentation.Basic
 public import TauCeti.AlgebraicGeometry.Modules.Localization
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ProjectiveLine
