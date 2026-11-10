@@ -260,13 +260,6 @@ section GoodCycle
 variable [AddCommGroup H] [Fintype P] {r : ι → ι → Prop} {cls : ι → H} {pts : ι → Finset P}
   {s : Set ι} {A : H} {l : ι →₀ ℕ} {B : BilinForm ℤ H} {κ : H}
 
-/-- The class of a configuration is the sum of the classes of its components, counted with
-multiplicity, indexed by the support. -/
-private theorem sum_support_smul_eq (hl : l ∈ compatibleConfigurations r cls s A) :
-    ∑ c : l.support, l c • cls c = A := by
-  rw [← (mem_compatibleConfigurations.1 hl).2.2, Finsupp.linearCombination_apply, Finsupp.sum,
-    ← Finset.sum_coe_sort l.support]
-
 /-- The points are covered by the point sets of the components of a point configuration. -/
 private theorem card_le_sum_card (hl : l ∈ pointConfigurations r cls pts s A) :
     Fintype.card P ≤ ∑ c ∈ l.support, (pts c).card := by
@@ -291,7 +284,8 @@ theorem two_mul_card_le_of_mem_pointConfigurations
   have hmem := mem_of_mem_pointConfigurations hl
   -- The good-curve component inequality `∑ l c d(c) ≤ d(A)` over the components.
   have hle := sum_mul_apply_self_sub_apply_canonical_le (B := B) (κ := κ)
-    (C := fun c : l.support ↦ cls c) (m := fun c ↦ l c) (sum_support_smul_eq hl.1)
+    (C := fun c : l.support ↦ cls c) (m := fun c ↦ l c)
+    (sum_support_smul_eq_of_mem_compatibleConfigurations hl.1)
     (fun {c d} hcd ↦ hint c (hmem c) d (hmem d) (rel_of_mem_pointConfigurations hl hcd))
     (fun c hc ↦ hgood c (hmem c) hc)
   rw [Finset.sum_coe_sort l.support (fun c ↦ (l c : ℤ) * (B (cls c) (cls c) - B κ (cls c)))]
@@ -337,7 +331,7 @@ theorem isGoodCycle_of_mem_pointConfigurations (hl : l ∈ pointConfigurations r
       (rel_of_mem_pointConfigurations hl hcd)
   two_mul_card_add_le c := by simpa using hind c (mem_of_mem_pointConfigurations hl c)
   neg_one_le_apply c hc := hgood c (mem_of_mem_pointConfigurations hl c) hc
-  sum_eq := sum_support_smul_eq hl.1
+  sum_eq := sum_support_smul_eq_of_mem_compatibleConfigurations hl.1
   exists_mem p := by
     obtain ⟨c, hc, hp⟩ := hl.2 p
     exact ⟨⟨c, hc⟩, hp⟩
