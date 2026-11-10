@@ -245,8 +245,9 @@ theorem continuousAt_latticeTheta (L : Submodule ℤ (mixedSpace K))
     {y₀ : realSpace K} (hy₀ : ∀ w, 0 < y₀ w) : ContinuousAt (latticeTheta L) y₀ := by
   by_cases hL : DiscreteTopology L
   swap
-  · rw [show latticeTheta L = 0 from
-      funext (latticeTheta_eq_zero_of_not_discreteTopology L hL)]
+  · have hzero : latticeTheta L = fun _ ↦ (0 : ℂ) :=
+      funext (latticeTheta_eq_zero_of_not_discreteTopology L hL)
+    rw [hzero]
     exact continuousAt_const
   obtain ⟨w₀, -, hw₀⟩ := Finset.exists_min_image Finset.univ y₀ Finset.univ_nonempty
   set δ := y₀ w₀ / 2
