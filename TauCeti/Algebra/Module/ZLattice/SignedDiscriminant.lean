@@ -138,6 +138,24 @@ theorem signedDiscr_of_subsingleton [Subsingleton E] (L : Submodule ℤ E) : sig
   have hu : IsUnimodular L := isUnimodular_iff_eq_dual.mpr (Subsingleton.elim _ _)
   rw [hu.signedDiscr_eq_neg_one_pow, Module.finrank_zero_of_subsingleton, Nat.zero_div, pow_zero]
 
+/-- In a nontrivial space, the zero scaling `0 • L = ⊥` of any lattice has signed discriminant `0`:
+its dual is the whole space, so its discriminant group is infinite. -/
+theorem signedDiscr_zero_smul [Nontrivial E] (L : Submodule ℤ E) :
+    signedDiscr ((0 : ℝ) • L) = 0 := by
+  have hbot : (0 : ℝ) • L = ⊥ := by
+    ext x
+    simp
+  obtain ⟨x, hx⟩ := exists_ne (0 : E)
+  rw [signedDiscr_eq_zero_iff, hbot]
+  refine Infinite.of_injective
+    (fun n : ℤ ↦ (Submodule.Quotient.mk ⟨n • x, mem_dual.2 fun y hy ↦ ?_⟩ : DiscriminantGroup ⊥))
+    fun m n hmn ↦ ?_
+  · obtain rfl := (mem_bot ℤ).1 hy
+    exact ⟨0, by simp⟩
+  · have h := (discriminantGroup_mk_eq_mk_iff _ _).1 hmn
+    rw [mem_bot, ← sub_smul, ← Int.cast_smul_eq_zsmul ℝ] at h
+    exact sub_eq_zero.1 (Int.cast_eq_zero.1 ((smul_eq_zero.1 h).resolve_right hx))
+
 /-- The signed discriminant is invariant under linear isometry equivalences. -/
 @[simp]
 theorem signedDiscr_comap (L : Submodule ℤ E) (e : F ≃ₗᵢ[ℝ] E) :
@@ -212,6 +230,18 @@ theorem IsIntegral.signedDiscr_eq_neg_one_pow_mul_det_toMatrix (h : IsIntegral L
     {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Basis ι ℤ L) :
     signedDiscr L =
       (-1) ^ (finrank ℝ E / 2) * (LinearMap.BilinForm.toMatrix b h.integralForm).det := by
+  -- A finite `ℤ`-basis of a lattice spanning `E` over `ℝ` makes `E` finite dimensional.
+  have hspan : span ℤ (Set.range fun i ↦ (b i : E)) = L := by
+    rw [Set.range_comp' Subtype.val b, ← L.coe_subtype, span_image, b.span_eq, map_subtype_top]
+  have : FiniteDimensional ℝ E := by
+    have hs : span ℝ (Set.range fun i ↦ (b i : E)) = ⊤ := by
+      refine eq_top_iff.2 ?_
+      rw [← IsZLattice.span_top (K := ℝ) (L := L)]
+      exact span_le.2 fun x hx ↦
+        span_le_restrictScalars ℤ ℝ _ (hspan.symm ▸ hx : x ∈ span ℤ (Set.range fun i ↦ (b i : E)))
+    have := FiniteDimensional.span_of_finite ℝ (Set.finite_range fun i ↦ (b i : E))
+    rw [hs] at this
+    exact Module.Finite.equiv Submodule.topEquiv
   rw [signedDiscr_def, h.det_toMatrix_integralForm b]
 
 /-- **An even unimodular full lattice has signed discriminant `1`**, since its rank is divisible
@@ -240,13 +270,19 @@ theorem signedDiscr_span_orthonormalBasis {ι : Type*} [Fintype ι] (b : Orthono
     Module.finrank_eq_card_basis b.toBasis]
 
 omit [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L] in
-/-- For an orthonormal basis `b` indexed by `ι` and `m ≠ 0`, the scaled cubic lattice `√m • ℤ b`
-has signed discriminant `(-1) ^ ⌊|ι| / 2⌋ * m ^ |ι|`. In particular `√2 • ℤ²` has signed
-discriminant `-4`. -/
+/-- For an orthonormal basis `b` indexed by `ι`, the scaled cubic lattice `√m • ℤ b` has signed
+discriminant `(-1) ^ ⌊|ι| / 2⌋ * m ^ |ι|`. In particular `√2 • ℤ²` has signed discriminant `-4`. -/
 theorem signedDiscr_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι]
-    (b : OrthonormalBasis ι ℝ E) {m : ℕ} (hm : m ≠ 0) :
+    (b : OrthonormalBasis ι ℝ E) {m : ℕ} :
     signedDiscr (√(m : ℝ) • span ℤ (Set.range b)) =
       (-1) ^ (Fintype.card ι / 2) * (m : ℤ) ^ Fintype.card ι := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
+    · have : Subsingleton E := b.toBasis.repr.injective.subsingleton
+      simp [signedDiscr_of_subsingleton]
+    · have : Nontrivial E := nontrivial_of_ne (b i) 0 (b.orthonormal.ne_zero i)
+      rw [Nat.cast_zero, Real.sqrt_zero, signedDiscr_zero_smul,
+        Nat.cast_zero, zero_pow (Fintype.card_pos_iff.2 ⟨i⟩).ne', mul_zero]
   have := b.toBasis.finiteDimensional_of_finite
   have hu := isUnimodular_span_orthonormalBasis b
   rw [← b.coe_toBasis] at hu ⊢
@@ -380,6 +416,8 @@ theorem IsEven.primitiveCharacter_kroneckerChar_signedDiscr_sqrt_smul_apply
       (TauCeti.kroneckerChar R (signedDiscr L)
         (hL.signedDiscr_modEq_zero_or_one hE)
         hL.isIntegral.signedDiscr_ne_zero).primitiveCharacter a := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact Subsingleton.elim _ _
   obtain ⟨k, hk⟩ := hE
   refine TauCeti.primitiveCharacter_kroneckerChar_apply_of_isSquare_mul _ _ _ _ ?_ a
   rw [hL.isIntegral.signedDiscr_sqrt_smul hm, hk, pow_add]
@@ -393,12 +431,16 @@ theorem IsIntegral.signedDiscr_sqrt_level_smul_dual_ne_zero (h : IsIntegral L) :
   exact isIntegral_sqrt_level_smul_dual.signedDiscr_ne_zero
 
 /-- In even ambient dimension, the signed discriminant of the Fricke partner `√(level L) • L^∨` of
-an integral full lattice is congruent to `0` or `1` modulo `4`. -/
-theorem IsIntegral.signedDiscr_sqrt_level_smul_dual_modEq_zero_or_one (h : IsIntegral L)
-    (hE : Even (finrank ℝ E)) :
+a full lattice is congruent to `0` or `1` modulo `4`. -/
+theorem signedDiscr_sqrt_level_smul_dual_modEq_zero_or_one (hE : Even (finrank ℝ E)) :
     signedDiscr (√(level L : ℝ) • dual L) ≡ 0 [ZMOD 4] ∨
       signedDiscr (√(level L : ℝ) • dual L) ≡ 1 [ZMOD 4] := by
-  have : NeZero √(level L : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr h.level_pos)⟩
+  rcases (level L).eq_zero_or_pos with h0 | hpos
+  · rcases subsingleton_or_nontrivial E with _ | _
+    · simp [signedDiscr_of_subsingleton]
+    · rw [h0, Nat.cast_zero, Real.sqrt_zero, signedDiscr_zero_smul]
+      exact .inl rfl
+  have : NeZero √(level L : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr hpos)⟩
   exact (isEven_sqrt_level_smul_dual L).signedDiscr_modEq_zero_or_one hE
 
 /-- **Fricke invariance of the Kronecker conductor.** For an even full lattice `L` of even rank and
@@ -407,7 +449,7 @@ conductor. -/
 theorem IsEven.conductor_kroneckerChar_signedDiscr_sqrt_level_smul_dual (R : Type*) [CommRing R]
     (hL : IsEven L) (hE : Even (finrank ℝ E)) :
     (TauCeti.kroneckerChar R (signedDiscr (√(level L : ℝ) • dual L))
-      (hL.isIntegral.signedDiscr_sqrt_level_smul_dual_modEq_zero_or_one hE)
+      (signedDiscr_sqrt_level_smul_dual_modEq_zero_or_one hE)
       hL.isIntegral.signedDiscr_sqrt_level_smul_dual_ne_zero).conductor =
       (TauCeti.kroneckerChar R (signedDiscr L)
         (hL.signedDiscr_modEq_zero_or_one hE)
@@ -421,12 +463,14 @@ agree at every integer `a`. -/
 theorem IsEven.primitiveCharacter_kroneckerChar_signedDiscr_sqrt_level_smul_dual_apply
     (R : Type*) [CommRing R] (hL : IsEven L) (hE : Even (finrank ℝ E)) (a : ℤ) :
     (TauCeti.kroneckerChar R (signedDiscr (√(level L : ℝ) • dual L))
-      (hL.isIntegral.signedDiscr_sqrt_level_smul_dual_modEq_zero_or_one hE)
+      (signedDiscr_sqrt_level_smul_dual_modEq_zero_or_one hE)
       hL.isIntegral.signedDiscr_sqrt_level_smul_dual_ne_zero).primitiveCharacter a =
       (TauCeti.kroneckerChar R (signedDiscr L)
         (hL.signedDiscr_modEq_zero_or_one hE)
-        hL.isIntegral.signedDiscr_ne_zero).primitiveCharacter a :=
-  (TauCeti.primitiveCharacter_kroneckerChar_apply_of_isSquare_mul _ _ _ _
+        hL.isIntegral.signedDiscr_ne_zero).primitiveCharacter a := by
+  rcases subsingleton_or_nontrivial R with _ | _
+  · exact Subsingleton.elim _ _
+  exact (TauCeti.primitiveCharacter_kroneckerChar_apply_of_isSquare_mul _ _ _ _
     (hL.isIntegral.isSquare_mul_signedDiscr_sqrt_level_smul_dual hE) a).symm
 
 end FullLattice
