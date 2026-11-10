@@ -152,31 +152,8 @@ theorem fitLaw_apply_singleton [MeasurableSingletonClass X]
   have hg : Measurable fun a ↦ μ.rnDeriv (π.map f) (f a) :=
     (measurable_rnDeriv _ _).comp hf
   have hω : π.fitLaw f μ {ω} = μ.rnDeriv (π.map f) (f ω) * π {ω} := by
-    refine le_antisymm ?_ ?_
-    · have hL : MeasurableSet {a | μ.rnDeriv (π.map f) (f a) = μ.rnDeriv (π.map f) (f ω)} :=
-        measurableSet_eq_fun hg measurable_const
-      have ht := (measurableSet_toMeasurable π {ω}).inter hL
-      calc π.fitLaw f μ {ω}
-          ≤ π.fitLaw f μ (toMeasurable π {ω} ∩ _) :=
-            measure_mono (Set.subset_inter (subset_toMeasurable _ _) fun a (ha : a = ω) ↦ ha ▸ rfl)
-        _ = ∫⁻ a in toMeasurable π {ω} ∩ _, μ.rnDeriv (π.map f) (f a) ∂π :=
-            withDensity_apply _ ht
-        _ = ∫⁻ a in toMeasurable π {ω} ∩ _, μ.rnDeriv (π.map f) (f ω) ∂π :=
-            setLIntegral_congr_fun ht fun a ha ↦ ha.2
-        _ = μ.rnDeriv (π.map f) (f ω) * π (toMeasurable π {ω} ∩ _) := setLIntegral_const _ _
-        _ ≤ μ.rnDeriv (π.map f) (f ω) * π {ω} := by
-            exact mul_le_mul_right ((measure_mono Set.inter_subset_left).trans_eq
-              (measure_toMeasurable ({ω} : Set Ω))) _
-    · have hrestrict : π.restrict {ω} = π {ω} • Measure.dirac ω := by
-        ext t ht
-        rw [restrict_apply ht, smul_apply, dirac_apply' _ ht, smul_eq_mul]
-        by_cases hωt : ω ∈ t
-        · simp [hωt]
-        · simp [hωt, Set.inter_singleton_eq_empty.2 hωt]
-      calc μ.rnDeriv (π.map f) (f ω) * π {ω}
-          = ∫⁻ a in {ω}, μ.rnDeriv (π.map f) (f a) ∂π := by
-            rw [hrestrict, lintegral_smul_measure, lintegral_dirac' _ hg, smul_eq_mul, mul_comm]
-        _ ≤ π.fitLaw f μ {ω} := withDensity_apply_le _ _
+    have := SigmaFinite.of_map π hf.aemeasurable ‹SigmaFinite (π.map f)›
+    rw [fitLaw_def, withDensity_apply' _ {ω}, lintegral_singleton' hg ω]
   rw [hω]
   rcases eq_or_ne (π {ω}) 0 with h | h
   · rw [h, mul_zero, mul_zero]
