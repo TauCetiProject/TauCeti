@@ -9,11 +9,9 @@ public import TauCeti.Analysis.Complex.Pompeiu.Weak
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 public import TauCeti.Analysis.Sobolev.Local.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import TauCeti.Analysis.Complex.Pompeiu.Lp
-import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
+import TauCeti.Analysis.Complex.Wirtinger.Laplacian
 import TauCeti.Analysis.InnerProductSpace.Harmonic.WeakInteriorLp
-import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 
 /-!
 # The Cauchy transform and the divergence-form Laplace equation
@@ -29,7 +27,8 @@ lemma, with no general second-order theory.
 
 For real `f` and `g` and integrable `h` equal to `f + i g` near the test functions' supports, the
 particular solution is `ξ₀ = ½ Re (T h)`. Indeed, for a real test function `φ` put
-`ψ = ∂ₛφ - i ∂ₜφ = 2 ∂φ`, so that `bar∂ ψ = Δφ / 2` because `Δ = 4 ∂ bar∂`. The weak form of
+`ψ = ∂ₛφ - i ∂ₜφ = 2 ∂φ`, so that `bar∂ ψ = Δφ / 2` because `Δ = 4 ∂ bar∂`
+(`TauCeti.conjWirtingerDeriv_fderiv_sub_I_mul_fderiv_apply_one`). The weak form of
 `bar∂ (T h) = h` (`TauCeti.integral_conjWirtingerDeriv_smul_cauchyTransform`) gives
 `∫ (Δφ / 2) T h = -∫ ψ h`, and taking real parts,
 `∫ Δφ • Re (T h) = -2 ∫ (∂ₛφ • Re h + ∂ₜφ • Im h)`
@@ -76,31 +75,6 @@ open scoped ENNReal NNReal Real Distributions ContDiff
 
 namespace TauCeti
 
-/-- `ψ = ∂ₛφ - i ∂ₜφ`, which is `2 ∂φ`, has `bar∂ ψ = Δφ / 2` for a real `C²` function `φ`. -/
-private theorem conjWirtingerDeriv_fderiv_sub_I_mul_fderiv {φ : ℂ → ℝ} (hφ : ContDiff ℝ 2 φ)
-    (w : ℂ) :
-    conjWirtingerDeriv (fun z ↦ (fderiv ℝ φ z 1 : ℂ) - I * (fderiv ℝ φ z I : ℂ)) w 1 =
-      (2 : ℂ)⁻¹ * (Δ φ w : ℂ) := by
-  have hd : DifferentiableAt ℝ (fderiv ℝ φ) w :=
-    (hφ.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero w
-  have hline (v : ℂ) : HasFDerivAt (fun z ↦ ((fderiv ℝ φ z v : ℝ) : ℂ))
-      (ofRealCLM.comp ((ContinuousLinearMap.apply ℝ ℝ v).comp (fderiv ℝ (fderiv ℝ φ) w))) w :=
-    ofRealCLM.hasFDerivAt.comp w
-      ((ContinuousLinearMap.apply ℝ ℝ v).hasFDerivAt.comp w hd.hasFDerivAt)
-  have hψ : HasFDerivAt (fun z ↦ (fderiv ℝ φ z 1 : ℂ) - I * (fderiv ℝ φ z I : ℂ)) _ w :=
-    (hline 1).sub ((hline I).const_mul I)
-  have hca : ContDiffAt ℝ 2 φ w := hφ.contDiffAt
-  have hsymm := hca.isSymmSndFDerivAt (by simp) I 1
-  rw [conjWirtingerDeriv_apply, hψ.fderiv, laplacian_eq_iteratedFDeriv_complexPlane]
-  simp only [iteratedFDeriv_two_apply, sub_apply,
-    smul_apply, ContinuousLinearMap.coe_comp, Function.comp_apply,
-    ContinuousLinearMap.apply_apply, ofRealCLM_apply, smul_eq_mul, Matrix.cons_val_zero,
-    Matrix.cons_val_one, mul_one, ofReal_add, smul_eq_mul]
-  rw [hsymm]
-  ring_nf
-  rw [I_sq]
-  ring
-
 /-- **The real part of the Cauchy transform against the Laplacian.** For integrable complex data
 `h` and a compactly supported real `C²` function `φ`,
 `∫ Δφ • Re (T h) = -2 ∫ (∂ₛφ • Re h + ∂ₜφ • Im h)`.
@@ -116,10 +90,10 @@ theorem integral_laplacian_smul_re_cauchyTransform {h : ℂ → ℂ} (hh : Integ
     ofRealCLM.contDiff.comp (hφ1.clm_apply contDiff_const)
   have hψ : ContDiff ℝ 1 ψ := (hline 1).sub (contDiff_const.mul (hline I))
   have hcline (v : ℂ) : HasCompactSupport fun z ↦ ((fderiv ℝ φ z v : ℝ) : ℂ) :=
-    ((hc.fderiv ℝ).comp_left (g := fun L : ℂ →L[ℝ] ℝ ↦ L v) rfl).comp_left ofReal_zero
+    (hc.fderiv_apply ℝ v).comp_left ofReal_zero
   have hψc : HasCompactSupport ψ := (hcline 1).sub ((hcline I).mul_left)
   have hcw (w : ℂ) : conjWirtingerDeriv ψ w 1 = (2 : ℂ)⁻¹ * (Δ φ w : ℂ) :=
-    conjWirtingerDeriv_fderiv_sub_I_mul_fderiv hφ w
+    conjWirtingerDeriv_fderiv_sub_I_mul_fderiv_apply_one hφ w
   have key := integral_conjWirtingerDeriv_smul_cauchyTransform hh hψc hψ
   simp only [hcw, smul_eq_mul] at key
   have hΔ : Continuous fun w ↦ (2 : ℂ)⁻¹ * (Δ φ w : ℂ) :=
@@ -144,26 +118,6 @@ theorem integral_laplacian_smul_re_cauchyTransform {h : ℂ → ℂ} (hh : Integ
   have hre := congrArg Complex.re key
   rw [e1, neg_re, e2, integral_const_mul] at hre
   linarith
-
-/-- The Laplacian of a test function on `Ω` against a function locally integrable on `Ω` is
-integrable. -/
-private theorem integrable_laplacian_smul_of_locallyIntegrableOn {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] {Ω : Opens ℂ} {u : ℂ → V} (hu : LocallyIntegrableOn u Ω) (φ : 𝓓(Ω, ℝ)) :
-    Integrable fun z ↦ Δ (φ : ℂ → ℝ) z • u z := by
-  simpa only [TestFunction.laplacianCLM_apply] using
-    TestFunction.integrable_smul (LineDeriv.laplacianCLM ℝ ℂ (𝓓(Ω, ℝ)) φ) hu
-
-/-- Two functions locally integrable on `Ω` with the same distributional Laplacian on `Ω` differ
-by a weakly harmonic function. -/
-private theorem weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq {V : Type*}
-    [NormedAddCommGroup V] [NormedSpace ℝ V] {Ω : Opens ℂ} {u₁ u₂ : ℂ → V}
-    (h₁ : LocallyIntegrableOn u₁ Ω) (h₂ : LocallyIntegrableOn u₂ Ω)
-    (h : ∀ φ : 𝓓(Ω, ℝ), ∫ z, Δ (φ : ℂ → ℝ) z • u₁ z = ∫ z, Δ (φ : ℂ → ℝ) z • u₂ z) :
-    WeaklyHarmonicOn volume Ω (u₁ - u₂) := by
-  refine weaklyHarmonicOn_iff.2 ⟨h₁.sub h₂, fun φ ↦ ?_⟩
-  simp only [Pi.sub_apply, smul_sub]
-  rw [integral_sub (integrable_laplacian_smul_of_locallyIntegrableOn h₁ φ)
-    (integrable_laplacian_smul_of_locallyIntegrableOn h₂ φ), h φ, sub_self]
 
 /-- **The particular solution of the divergence-form Laplace equation.** Let `h` be integrable
 complex data with `h = f + i g` on `Ω` for real `f` and `g`. Then `ξ₀ = ½ Re (T h)` solves
@@ -207,7 +161,8 @@ theorem weaklyHarmonicOn_sub_half_re_cauchyTransform {Ω Ω'' : Opens ℂ} (hΩ 
   refine weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq (hξ.mono_set hΩ)
     (hre.locallyIntegrableOn _) fun φ ↦ ?_
   rw [integral_laplacian_smul_half_re_cauchyTransform hh hfg φ]
-  exact hdiv ⟨φ, φ.contDiff, φ.hasCompactSupport, φ.tsupport_subset.trans hΩ⟩
+  simpa only [TestFunction.monoCLM_apply, le_refl, hΩ, and_self, ite_true] using
+    hdiv (TestFunction.monoCLM ℝ φ)
 
 /-- The Cauchy transform of compactly supported `Lᵖ` data, `1 ≤ p ≤ ∞`, is locally `Lᵖ` on every
 subset of the plane. -/
@@ -222,16 +177,6 @@ theorem memLpLoc_cauchyTransform {F : Type*} [NormedAddCommGroup F] [NormedSpace
   obtain ⟨R, hR⟩ := hball K hK.isBounded
   exact (memLp_cauchyTransform (R := R) hp (hh.restrict _)
     ((subset_tsupport h).trans hr)).mono_measure (Measure.restrict_mono hR le_rfl)
-
-/-- The directional derivative of a test function on `Ω` against a function locally integrable on
-`Ω` is integrable. -/
-private theorem integrable_fderiv_smul_of_locallyIntegrableOn {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] {Ω : Opens ℂ} {u : ℂ → V} (hu : LocallyIntegrableOn u Ω) (φ : 𝓓(Ω, ℝ))
-    (v : ℂ) : Integrable fun z ↦ fderiv ℝ (φ : ℂ → ℝ) z v • u z := by
-  have h := TestFunction.integrable_smul (TestFunction.lineDerivCLM ℝ v φ : 𝓓(Ω, ℝ)) hu
-  have hd (z : ℂ) : lineDeriv ℝ (φ : ℂ → ℝ) z v = fderiv ℝ (φ : ℂ → ℝ) z v :=
-    (φ.contDiff.differentiable (by simp) z).lineDeriv_eq_fderiv
-  simpa only [TestFunction.coe_lineDerivCLM, hd] using h
 
 /-- **Divergence-form Laplace equation: decomposition.** Let `V` be a finite-dimensional real
 normed space, `1 ≤ r ≤ ∞`, and let `ξ`, locally integrable on `Ω`, solve `Δ ξ = ∂ₛ f + ∂ₜ g`
@@ -277,26 +222,27 @@ theorem exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq {V : 
   let ξc : Fin (Module.finrank ℝ V) → ℂ → ℝ := fun i w ↦
     (2 : ℝ)⁻¹ * (cauchyTransform (dat i) w).re
   let ξ₀ : ℂ → V := fun w ↦ ∑ i, ξc i w • b i
-  have hξc (i) : MemLpLoc r univ (ξc i) := memLpLoc_iff.2 fun K' hK'u hK' ↦ by
-    have h := memLpLoc_iff.1 (memLpLoc_cauchyTransform hr (hdat i) (hdatc i) (U := univ)) K'
-      hK'u hK'
-    simpa only [RCLike.re_to_complex] using h.re.const_mul (2 : ℝ)⁻¹
-  have hξ₀ : MemLpLoc r univ ξ₀ := MemLpLoc.sum _ fun i _ ↦ memLpLoc_iff.2 fun K' hK'u hK' ↦
-    (ContinuousLinearMap.toSpanSingleton ℝ (b i)).comp_memLp' (memLpLoc_iff.1 (hξc i) K' hK'u hK')
+  have hξc (i) : MemLpLoc r univ (ξc i) :=
+    ((memLpLoc_cauchyTransform hr (hdat i) (hdatc i)).clm_comp reCLM).const_smul (2 : ℝ)⁻¹
+  have hξ₀ : MemLpLoc r univ ξ₀ := MemLpLoc.sum _ fun i _ ↦
+    (hξc i).clm_comp (ContinuousLinearMap.toSpanSingleton ℝ (b i))
   have hξ₀i : LocallyIntegrableOn ξ₀ U :=
     (hξ₀.locallyIntegrableOn hr isClosed_univ.isLocallyClosed).mono_set (subset_univ _)
+  have hUΩ' : U ≤ Ω := subset_closure.trans hUΩ
   have hfi : LocallyIntegrableOn f Ω := hf.locallyIntegrableOn hr Ω.isOpen.isLocallyClosed
   have hgi : LocallyIntegrableOn g Ω := hg.locallyIntegrableOn hr Ω.isOpen.isLocallyClosed
   have hid (φ : 𝓓(U, ℝ)) : ∫ z, Δ (φ : ℂ → ℝ) z • ξ₀ z =
       -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z) := by
-    let φ' : 𝓓(Ω, ℝ) := ⟨φ, φ.contDiff, φ.hasCompactSupport,
-      φ.tsupport_subset.trans (subset_closure.trans hUΩ)⟩
-    have hR : Integrable fun z ↦ fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z :=
-      (integrable_fderiv_smul_of_locallyIntegrableOn hfi φ' 1).add
-        (integrable_fderiv_smul_of_locallyIntegrableOn hgi φ' I)
+    have hd (z v : ℂ) : lineDeriv ℝ (φ : ℂ → ℝ) z v = fderiv ℝ (φ : ℂ → ℝ) z v :=
+      (φ.contDiff.differentiable (by simp) z).lineDeriv_eq_fderiv
+    have hR : Integrable fun z ↦
+        fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z := by
+      simpa only [hd] using (integrable_lineDeriv_smul_of_locallyIntegrableOn
+        (hfi.mono_set hUΩ') φ 1).fun_add (integrable_lineDeriv_smul_of_locallyIntegrableOn
+          (hgi.mono_set hUΩ') φ I)
     have hL := integrable_laplacian_smul_of_locallyIntegrableOn hξ₀i φ
     refine b.ext_elem fun i ↦ ?_
-    have hci (x : V) : b.repr x i = c i x := rfl
+    have hci (x : V) : b.repr x i = c i x := by simp [c]
     rw [hci, hci, ← (c i).integral_comp_comm hL, map_neg, ← (c i).integral_comp_comm hR]
     have hξ₀c (w : ℂ) : c i (ξ₀ w) = ξc i w := by
       rw [← hci]
@@ -306,13 +252,12 @@ theorem exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq {V : 
       integral_laplacian_smul_half_re_cauchyTransform (hdati i) (hdatfg i) φ
   have hwh : WeaklyHarmonicOn volume U (ξ - ξ₀) :=
     weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq
-      (hξ.mono_set (subset_closure.trans hUΩ)) hξ₀i fun φ ↦ by
+      (hξ.mono_set hUΩ') hξ₀i fun φ ↦ by
         rw [hid φ]
-        exact hdiv ⟨φ, φ.contDiff, φ.hasCompactSupport,
-          φ.tsupport_subset.trans (subset_closure.trans hUΩ)⟩
+        simpa only [TestFunction.monoCLM_apply, le_refl, hUΩ', and_self, ite_true] using
+          hdiv (TestFunction.monoCLM ℝ φ)
   obtain ⟨v, hv, hξv⟩ := hwh.exists_harmonicOnNhd_ae_eq
-  exact ⟨ξ₀, hξ₀, hid, hwh, v, hv, hξv.mono fun z hz ↦ by
-    simp only [Pi.add_apply, ← hz, Pi.sub_apply, add_sub_cancel]⟩
+  exact ⟨ξ₀, hξ₀, hid, hwh, v, hv, hξv.mono fun _ ↦ eq_add_of_sub_eq'⟩
 
 /-- **Divergence-form Laplace equation on a ball, with interior bounds.** Under the hypotheses of
 `TauCeti.exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq`, if the closed ball
@@ -320,7 +265,7 @@ of radius `R` about `c` lies in `Ω` and `ρ < R`, then on the open ball `ξ = �
 everywhere, with `ξ₀` locally `Lʳ` solving `Δ ξ₀ = ∂ₛ f + ∂ₜ g` weakly on the ball and `v`
 harmonic there, and by the mean value property `v` and its derivative are bounded on the closed
 ball of radius `ρ` by a constant times the `L¹` norm of `ξ - ξ₀` on the ball of radius `R`. The
-constant depends only on `c`, `ρ` and `R`, not on `ξ`, `f` or `g`. -/
+constant is chosen before `ξ`, `f` and `g`, so it does not depend on them. -/
 theorem exists_ae_eq_add_harmonicOnNhd_norm_fderiv_le_of_integral_laplacian_smul_eq {V : Type*}
     [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ} {c : ℂ}
     {ρ R : ℝ} (hρR : ρ < R) (hRΩ : closedBall c R ⊆ Ω) {r : ℝ≥0∞} (hr : 1 ≤ r) :
@@ -350,8 +295,7 @@ theorem exists_ae_eq_add_harmonicOnNhd_norm_fderiv_le_of_integral_laplacian_smul
       (((hξ₀.locallyIntegrableOn hr isClosed_univ.isLocallyClosed).integrableOn_compact_subset
         (subset_univ _) (isCompact_closedBall c R)).mono_set ball_subset_closedBall)
   obtain ⟨v, hv, hξv, hN⟩ := hC hwh hint
-  exact ⟨ξ₀, v, hξ₀, hid, hv, hξv.mono fun z hz ↦ by
-    simp only [Pi.add_apply, ← hz, Pi.sub_apply, add_sub_cancel], fun x hx ↦ hN x hx⟩
+  exact ⟨ξ₀, v, hξ₀, hid, hv, hξv.mono fun _ ↦ eq_add_of_sub_eq', hN⟩
 
 /-- **Check: the factor `½` is needed.** Without it, `Re (T h)` does not solve the
 divergence-form equation `Δ u = ∂ₛ (Re h) + ∂ₜ (Im h)`: by
@@ -365,24 +309,22 @@ theorem exists_integral_laplacian_smul_re_cauchyTransform_ne :
   set φ : ℂ → ℝ := ⇑β
   have hφ : ContDiff ℝ ∞ φ := β.contDiff
   have hc : HasCompactSupport φ := β.hasCompactSupport
-  set d : ℂ → ℝ := fun z ↦ fderiv ℝ φ z 1 with hd_def
-  have hd : Continuous d := (hφ.continuous_fderiv (by simp)).clm_apply continuous_const
-  have hdc : HasCompactSupport d := (hc.fderiv ℝ).comp_left (g := fun L : ℂ →L[ℝ] ℝ ↦ L 1) rfl
-  let h : ℂ → ℂ := fun z ↦ (d z : ℂ)
+  have hd : Continuous (fderiv ℝ φ · 1) :=
+    (hφ.continuous_fderiv (by simp)).clm_apply continuous_const
+  have hdc : HasCompactSupport (fderiv ℝ φ · 1) := hc.fderiv_apply ℝ 1
+  let h : ℂ → ℂ := fun z ↦ (fderiv ℝ φ z 1 : ℂ)
   have hh : Integrable h :=
     (continuous_ofReal.comp hd).integrable_of_hasCompactSupport (hdc.comp_left ofReal_zero)
   refine ⟨h, φ, hh, hc, hφ, ?_⟩
   rw [integral_laplacian_smul_re_cauchyTransform hh hc (hφ.of_le (by simp))]
   simp only [h, ofReal_re, ofReal_im, mul_zero, add_zero, smul_eq_mul]
-  change -2 * ∫ z, d z * d z ≠ -∫ z, d z * d z
-  obtain ⟨x, hx⟩ : ∃ x, d x ≠ 0 := by
+  obtain ⟨x, hx⟩ : ∃ x, fderiv ℝ φ x 1 ≠ 0 := by
     by_contra hcon
     push Not at hcon
-    have hderiv (t : ℝ) : HasDerivAt (fun t : ℝ ↦ φ t) (d t) t := by
-      have := ((hφ.differentiable (by simp)) (t : ℂ)).hasFDerivAt.comp_hasDerivAt t
-        (hasDerivAt_id t).ofReal_comp
-      convert this using 1
-      rfl
+    have hderiv (t : ℝ) : HasDerivAt (fun t : ℝ ↦ φ t) (fderiv ℝ φ t 1) t := by
+      simpa only [id_eq, ofReal_one, Function.comp_def] using
+        ((hφ.differentiable (by simp)) (t : ℂ)).hasFDerivAt.comp_hasDerivAt t
+          (hasDerivAt_id t).ofReal_comp
     have hconst := is_const_of_deriv_eq_zero (fun t ↦ (hderiv t).differentiableAt)
       (fun t ↦ by rw [(hderiv t).deriv, hcon])
     have h0 : φ ((0 : ℝ) : ℂ) = 1 := β.one_of_mem_closedBall (by simp [β])
@@ -390,9 +332,9 @@ theorem exists_integral_laplacian_smul_re_cauchyTransform_ne :
     have := hconst 0 3
     rw [h0, h3] at this
     exact one_ne_zero this
-  have hpos : 0 < ∫ z, d z * d z :=
+  have hpos : 0 < ∫ z, fderiv ℝ φ z 1 * fderiv ℝ φ z 1 :=
     (hd.mul hd).integral_pos_of_hasCompactSupport_nonneg_ne_zero hdc.mul_left
-      (fun z ↦ mul_self_nonneg (d z)) (mul_self_ne_zero.2 hx)
+      (fun z ↦ mul_self_nonneg (fderiv ℝ φ z 1)) (mul_self_ne_zero.2 hx)
   linarith
 
 end TauCeti
