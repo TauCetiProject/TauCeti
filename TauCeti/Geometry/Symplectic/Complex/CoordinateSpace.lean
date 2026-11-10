@@ -73,6 +73,7 @@ noncomputable def stdComplexPiSymplecticForm : SymplecticForm (ι → ℂ) where
 variable {ι}
 
 /-- The standard symplectic form on `ι → ℂ` is the sum of the coordinate area forms. -/
+@[simp]
 theorem stdComplexPiSymplecticForm_apply (v w : ι → ℂ) :
     stdComplexPiSymplecticForm ι v w = ∑ j, stdComplexSymplecticForm (v j) (w j) :=
   stdComplexPiBilin_apply ι v w
@@ -98,7 +99,7 @@ theorem isLagrangian_stdComplexPiSymplecticForm_range_ofReal :
   have hi : (stdComplexPiSymplecticForm ι).IsIsotropic (LinearMap.range L.toLinearMap) := by
     rw [SymplecticForm.isIsotropic_iff]
     rintro _ ⟨x, rfl⟩ _ ⟨y, rfl⟩
-    simp [L, stdComplexPiSymplecticForm_apply]
+    simp [L]
   refine hi.isLagrangian_of_finrank ?_
   rw [LinearMap.finrank_range_of_inj hinj]
   simp [Module.finrank_pi_fintype, Nat.mul_comm]

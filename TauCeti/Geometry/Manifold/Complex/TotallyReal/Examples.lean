@@ -144,11 +144,11 @@ theorem isLagrangianEmbedding_realLocus :
     ((SymplecticForm.isLagrangianMap_continuousLinearMap_iff _ _).2
       isLagrangian_stdComplexPiSymplecticForm_range_ofReal)
 
-/-- The real locus in complex coordinate space is a Lagrangian embedding for the reversed
-standard symplectic form `-Σ_j ds_j ∧ dt_j`. -/
-theorem isLagrangianEmbedding_realLocus_rescale_neg_one :
+/-- The real locus in complex coordinate space is a Lagrangian embedding for every nonzero
+multiple `c Σ_j ds_j ∧ dt_j` of the standard symplectic form. -/
+theorem isLagrangianEmbedding_realLocus_rescale (c : ℝ) (hc : c ≠ 0) :
     (SymplecticForm.isNondegenerate_constSmooth
-        ((stdComplexPiSymplecticForm ι).rescale (-1) neg_one_lt_zero.ne)).IsLagrangianEmbedding
+        ((stdComplexPiSymplecticForm ι).rescale c hc)).IsLagrangianEmbedding
       𝓘(ℝ, ι → ℝ) (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) :=
   (SmoothTwoForm.IsNondegenerate.isLagrangianEmbedding_iff_of_isSmoothEmbedding
     (isTotallyRealEmbedding_realLocus ∞).isSmoothEmbedding).2
@@ -172,7 +172,7 @@ example :
     IsTotallyRealEmbedding 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℂ) ∞
       (-AlmostComplexStructure.ofComplexModule (ι → ℂ)).constSmooth.almostComplexStructureAt
       (ContinuousLinearMap.piMap fun _ : ι ↦ Complex.ofRealCLM) :=
-  isLagrangianEmbedding_realLocus_rescale_neg_one.isTotallyRealEmbedding
+  (isLagrangianEmbedding_realLocus_rescale (-1) neg_one_lt_zero.ne).isTotallyRealEmbedding
     (SymplecticForm.tames_constSmooth_iff.2
       (stdComplexPiSymplecticForm_tames.rescale_neg_of_neg neg_one_lt_zero))
 
