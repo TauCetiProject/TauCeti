@@ -21,20 +21,26 @@ import TauCeti.MeasureTheory.Integral.NormRpow
 Let `E` be a finite-dimensional real inner product space of dimension `d`. For every real
 exponent `s > 1 - d`, the power `x ↦ ‖x‖ ^ s` is weakly differentiable on every open set, with
 weak derivative its classical derivative `s ‖x‖ ^ (s - 2) ⟪x, ·⟫` away from the origin.
-The condition `s > 1 - d` is exactly local integrability of that derivative, whose norm is
-`|s| ‖x‖ ^ (s - 1)`.
+The condition `s > 1 - d` makes that derivative, whose norm is `|s| ‖x‖ ^ (s - 1)` away from the
+origin, locally integrable.
 
 For `s > 0` the power is continuous and the origin is a removable point
-(`TauCeti.hasWeakFDerivOn_of_hasFDerivAt_off_countable`). For `s ≤ 0` the power is unbounded
-near the origin. Then the power is replaced by the smooth regularizations
+(`TauCeti.hasWeakFDerivOn_of_hasFDerivAt_off_countable`). For `s ≤ 0`, where the power is
+unbounded near the origin unless `s = 0`, the power is replaced by the smooth regularizations
 `(‖x‖ ^ 2 + t) ^ (s / 2)`, whose values and derivatives are dominated by those at `t = 0`, and
-dominated convergence passes the integration by parts identity to the limit `t → 0⁺`. This is the
-argument used for the Newtonian kernel, with a general exponent.
+dominated convergence passes the integration by parts identity to the limit `t → 0⁺`.
+
+This adapts the regularization proof first given for the Newtonian kernel in Tau Ceti's
+`TauCeti.integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul`
+(`TauCeti/Analysis/PDE/FundamentalSolution/Euclidean/DistributionalLaplacian.lean`), replacing the
+exponent `2 - n` by an arbitrary exponent; that theorem is derived from the general one here.
 
 ## Main declarations
 
 * `TauCeti.locallyIntegrable_norm_rpow_smul_innerSL`: the classical derivative is locally
   integrable for `s > 1 - d`.
+* `TauCeti.integral_norm_rpow_mul_fderiv_eq_neg`: integration by parts against `‖x‖ ^ s` for
+  `1 - d < s ≤ 0`.
 * `TauCeti.hasWeakFDerivOn_norm_rpow`: the classical derivative is a weak derivative on every
   open set for `s > 1 - d`.
 -/
@@ -51,19 +57,6 @@ open scoped RealInnerProductSpace
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {s : ℝ}
 
-/-- The norm of the classical derivative of `x ↦ ‖x‖ ^ s` is at most `|s| ‖x‖ ^ (s - 1)`,
-with equality away from the origin. -/
-theorem norm_rpow_smul_innerSL_le (s : ℝ) (x : E) :
-    ‖(s * ‖x‖ ^ (s - 2)) • innerSL ℝ x‖ ≤ |s| * ‖x‖ ^ (s - 1) := by
-  rcases eq_or_ne x 0 with rfl | hx
-  · simp only [map_zero, smul_zero, norm_zero]
-    positivity
-  · have hx' : 0 < ‖x‖ := norm_pos_iff.2 hx
-    rw [norm_smul, innerSL_apply_norm, Real.norm_eq_abs, abs_mul,
-      abs_of_nonneg (Real.rpow_nonneg hx'.le _), mul_assoc, ← Real.rpow_add_one hx'.ne']
-    ring_nf
-    rfl
-
 /-- The norm power regularized at scale `t`. -/
 private def regPow (s t : ℝ) (x : E) : ℝ :=
   (‖x‖ ^ 2 + t) ^ (s / 2)
@@ -78,8 +71,8 @@ private lemma regPow_zero (s : ℝ) (x : E) : regPow s 0 x = ‖x‖ ^ s := by
 
 private lemma regPowDeriv_zero (s : ℝ) (v : E) (x : E) :
     regPowDeriv s v 0 x = ((s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) v := by
-  rw [regPowDeriv, add_zero, show s / 2 - 1 = (s - 2) / 2 by ring,
-    Real.sq_rpow_div_two (norm_nonneg x)]
+  have hs : s / 2 - 1 = (s - 2) / 2 := by ring
+  rw [regPowDeriv, add_zero, hs, Real.sq_rpow_div_two (norm_nonneg x)]
   simp [mul_assoc]
 
 private lemma hasLineDerivAt_regPow (s : ℝ) (v : E) {t : ℝ} (ht : 0 < t) (x : E) :
@@ -142,9 +135,9 @@ private lemma abs_regPowDeriv_le (hs : s ≤ 2) (v : E) {t : ℝ} (ht : 0 ≤ t)
     (abs_nonneg s)
 
 /-- **Integration by parts against a singular norm power.** For `1 - dim E < s ≤ 0` and a `C¹`
-function `g` with compact support, `∫ ‖x‖ ^ s ∂ᵥg = -∫ s ‖x‖ ^ (s - 2) ⟪x, v⟫ g`, although the
-power is unbounded at the origin. -/
-private lemma integral_norm_rpow_mul_fderiv_eq_neg (hs0 : s ≤ 0)
+function `g` with compact support, `∫ ‖x‖ ^ s ∂ᵥg = -∫ s ‖x‖ ^ (s - 2) ⟪x, v⟫ g`, although for
+`s < 0` the power is unbounded near the origin. -/
+theorem integral_norm_rpow_mul_fderiv_eq_neg (hs0 : s ≤ 0)
     (hs : 1 - (Module.finrank ℝ E : ℝ) < s) {g : E → ℝ} (hg : ContDiff ℝ 1 g)
     (hc : HasCompactSupport g) (v : E) :
     ∫ x, ‖x‖ ^ s * fderiv ℝ g x v ∂μ =
@@ -204,7 +197,8 @@ private lemma integral_norm_rpow_mul_fderiv_eq_neg (hs0 : s ≤ 0)
 
 /-- **Norm powers are weakly differentiable.** For `s > 1 - dim E`, on every open set the
 classical derivative `s ‖x‖ ^ (s - 2) ⟪x, ·⟫` of `x ↦ ‖x‖ ^ s`, which exists away from the
-origin, is a weak derivative of the power. For `s ≤ 0` the power is unbounded at the origin. -/
+origin, is a weak derivative of the power, although for `s < 0` the power is unbounded near the
+origin. -/
 theorem hasWeakFDerivOn_norm_rpow (hs : 1 - (Module.finrank ℝ E : ℝ) < s) (Ω : Opens E) :
     HasWeakFDerivOn μ Ω (fun x : E => ‖x‖ ^ s)
       (fun x => (s * ‖x‖ ^ (s - 2)) • innerSL ℝ x) := by

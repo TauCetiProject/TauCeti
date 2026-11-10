@@ -18,8 +18,8 @@ import TauCeti.MeasureTheory.Integral.NormRpow
 
 For the planar local classes `TauCeti.MemLpLoc` and `TauCeti.MemWkpLoc`, this file computes
 exactly when a norm power `z ↦ ‖z‖ ^ s` belongs to them near the origin, and uses these powers to
-show that the mixed-exponent product and the composition results for `W^{1,p}_loc` fail below
-the critical exponent `p = 2`.
+show that the mixed-exponent product and the composition results for `W^{1,p}_loc` fail at the
+subcritical exponent `p = 4 / 3`, below the critical exponent `p = 2`.
 
 For `0 < p < ∞`, `‖z‖ ^ s` is in `Lᵖ_loc` near the origin exactly when `s p > -2`. For
 `1 ≤ p < ∞` and `s ≠ 0`, it is in `W^{1,p}_loc` near the origin exactly when `(s - 1) p > -2`:
@@ -30,10 +30,12 @@ At `p = 4 / 3`:
 
 * `f = ‖z‖ ^ (-6 / 5)` is in `L^{4/3}_loc` and `g = ‖z‖ ^ (-2 / 5)` is in `W^{1,4/3}_loc`, but
   `f g = ‖z‖ ^ (-8 / 5)` is not in `L^{4/3}_loc`. So the mixed-exponent product
-  `Lᵖ_loc × W^{1,q}_loc → L^q_loc` needs `p ≥ 2`.
+  `Lᵖ_loc × W^{1,q}_loc → L^q_loc` fails at `p = q = 4 / 3`, and its hypothesis `p ≥ 2` cannot be
+  dropped altogether.
 * `u = ‖z‖ ^ (-2 / 5)` is in `W^{1,4/3}_loc`, but `u ^ 2 = ‖z‖ ^ (-4 / 5)` is not, since its
   derivative has size `‖z‖ ^ (-9 / 5)` and `(9 / 5) (4 / 3) > 2`. So composition with the smooth
-  map `x ↦ x ^ 2` does not preserve `W^{1,p}_loc` for `p ≤ 2`.
+  map `x ↦ x ^ 2` does not preserve `W^{1,4/3}_loc`, and the supercritical hypothesis `p > 2` of
+  the composition results cannot be dropped altogether.
 
 ## Main declarations
 
@@ -62,42 +64,28 @@ open scoped ENNReal
 
 variable {p : ENNReal} {U : Set ℂ} {s : ℝ}
 
-/-- The `q`-th power of the norm of `‖z‖ ^ s` is the norm power `‖z‖ ^ (s q)`. -/
-private lemma norm_norm_rpow_rpow (s q : ℝ) (z : ℂ) : ‖‖z‖ ^ s‖ ^ q = ‖z‖ ^ (s * q) := by
-  rw [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg z) s),
-    ← Real.rpow_mul (norm_nonneg z)]
-
-/-- A norm power `‖z‖ ^ s` is locally integrable on the plane when `s > -2`. -/
-private lemma locallyIntegrable_norm_rpow_complex (hs : -2 < s) :
-    LocallyIntegrable (fun z : ℂ => ‖z‖ ^ s) volume := by
-  simpa only [zero_sub, norm_neg] using
-    locallyIntegrable_norm_sub_rpow (mu := (volume : Measure ℂ)) (s := s)
-      (by rw [Complex.finrank_real_complex]; push_cast; linarith) (0 : ℂ)
-
 /-- For `0 < p < ∞`, the norm power `z ↦ ‖z‖ ^ s` is locally `Lᵖ` on every subset of the plane
 when `s p > -2`. -/
 theorem memLpLoc_norm_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞) (hs : -2 < s * p.toReal) :
     MemLpLoc p U (fun z : ℂ => ‖z‖ ^ s) := by
   refine memLpLoc_iff.2 fun K _ hc => ?_
   rw [← integrable_norm_rpow_iff (measurable_norm.pow_const s).aestronglyMeasurable hp0 hp]
-  simp only [norm_norm_rpow_rpow]
-  exact (locallyIntegrable_norm_rpow_complex hs).integrableOn_isCompact hc
-
-/-- There is a closed ball of positive radius about the origin inside each neighbourhood of the
-origin. -/
-private lemma exists_closedBall_subset (hU : U ∈ 𝓝 (0 : ℂ)) :
-    ∃ r > 0, closedBall (0 : ℂ) r ⊆ U := by
-  obtain ⟨r, hr, hrU⟩ := Metric.mem_nhds_iff.1 hU
-  exact ⟨r / 2, by positivity, (closedBall_subset_ball (by linarith)).trans hrU⟩
+  simp only [Real.norm_eq_abs, Real.abs_rpow_of_nonneg (norm_nonneg _), abs_norm,
+    ← Real.rpow_mul (norm_nonneg _)]
+  refine (?_ : LocallyIntegrable _ volume).integrableOn_isCompact hc
+  simpa only [zero_sub, norm_neg] using
+    locallyIntegrable_norm_sub_rpow (mu := (volume : Measure ℂ)) (s := s * p.toReal)
+      (by rw [Complex.finrank_real_complex]; push_cast; linarith) (0 : ℂ)
 
 /-- For `0 < p < ∞`, if `s p ≤ -2` then `z ↦ ‖z‖ ^ s` is not locally `Lᵖ` on any neighbourhood
 of the origin. -/
 theorem not_memLpLoc_norm_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞) (hU : U ∈ 𝓝 (0 : ℂ))
     (hs : s * p.toReal ≤ -2) : ¬ MemLpLoc p U (fun z : ℂ => ‖z‖ ^ s) := by
   intro h
-  obtain ⟨r, hr, hrU⟩ := exists_closedBall_subset hU
+  obtain ⟨r, hr, hrU⟩ := nhds_basis_closedBall.mem_iff.1 hU
   have hint := (memLpLoc_iff.1 h _ hrU (isCompact_closedBall 0 r)).integrable_norm_rpow hp0 hp
-  simp only [norm_norm_rpow_rpow] at hint
+  simp only [Real.norm_eq_abs, Real.abs_rpow_of_nonneg (norm_nonneg _), abs_norm,
+    ← Real.rpow_mul (norm_nonneg _)] at hint
   have hball : IntegrableOn (fun z : ℂ => ‖z‖ ^ (s * p.toReal)) (ball 0 r) volume :=
     IntegrableOn.mono_set hint ball_subset_closedBall
   rw [integrableOn_norm_rpow_ball_iff hr, Complex.finrank_real_complex] at hball
@@ -139,7 +127,7 @@ theorem not_memWkpLoc_one_norm_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞) (hU : U ∈
     ¬ MemWkpLoc p U 1 (fun z : ℂ => ‖z‖ ^ s) := by
   intro h
   obtain ⟨-, D, hD, hDp⟩ := memWkpLoc_succ_iff.1 h
-  obtain ⟨r, hr, hrU⟩ := exists_closedBall_subset (interior_mem_nhds.2 hU)
+  obtain ⟨r, hr, hrU⟩ := nhds_basis_closedBall.mem_iff.1 (interior_mem_nhds.2 hU)
   -- On the punctured interior, `D` is the classical derivative.
   let W : Opens ℂ := Opens.interior U ⊓ ⟨{0}ᶜ, isOpen_compl_singleton⟩
   have hdiff : ∀ z ∈ (W : Set ℂ), HasFDerivAt (fun z : ℂ => ‖z‖ ^ s)
@@ -164,9 +152,7 @@ theorem not_memWkpLoc_one_norm_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞) (hU : U ∈
       ae_restrict_of_ae (Measure.ae_ne volume (0 : ℂ))] with z hz hzb hz0
     have hzW : z ∈ (W : Set ℂ) :=
       ⟨by simpa using hrU (ball_subset_closedBall hzb), hz0⟩
-    rw [hz hzW, (hdiff z hzW).fderiv, norm_smul, innerSL_apply_norm, Real.norm_eq_abs,
-      abs_mul, abs_of_nonneg (Real.rpow_nonneg (norm_nonneg z) _), mul_assoc,
-      ← Real.rpow_add_one (norm_ne_zero_iff.2 hz0), show s - 2 + 1 = s - 1 by ring,
+    rw [hz hzW, norm_fderiv_norm_rpow_of_ne s hz0,
       Real.mul_rpow (abs_nonneg s) (Real.rpow_nonneg (norm_nonneg z) _),
       ← Real.rpow_mul (norm_nonneg z)]
   have hpos : (0 : ℝ) < |s| ^ p.toReal := Real.rpow_pos_of_pos (abs_pos.2 hs0) _
@@ -202,7 +188,7 @@ private lemma memWkpLoc_norm_rpow_neg_two_fifths :
   memWkpLoc_one_norm_rpow one_le_four_thirds four_thirds_ne_top
     (by rw [toReal_four_thirds]; norm_num)
 
-/-- **Mixed exponents at order zero fail below `p = 2`.** For `p = q = 4 / 3` on the unit disc,
+/-- **Mixed exponents at order zero fail at `p = 4 / 3`.** For `p = q = 4 / 3` on the unit disc,
 `f = ‖z‖ ^ (-6 / 5)` is in `L^{4/3}_loc` and `g = ‖z‖ ^ (-2 / 5)` is in `W^{1,4/3}_loc`, but
 `f g = ‖z‖ ^ (-8 / 5)` is not in `L^{4/3}_loc`, since `(8 / 5) (4 / 3) = 32 / 15 > 2`. -/
 theorem memLpLoc_memWkpLoc_not_memLpLoc_mul_norm_rpow :
@@ -221,7 +207,7 @@ theorem memLpLoc_memWkpLoc_not_memLpLoc_mul_norm_rpow :
   exact not_memLpLoc_norm_rpow hp0 four_thirds_ne_top (ball_mem_nhds 0 one_pos)
     (by rw [toReal_four_thirds]; norm_num)
 
-/-- **Composition at order one fails for `p ≤ 2`.** For `p = 4 / 3` on the unit disc,
+/-- **Composition at order one fails at `p = 4 / 3`.** On the unit disc,
 `u = ‖z‖ ^ (-2 / 5)` is in `W^{1,4/3}_loc`, but `u ^ 2 = ‖z‖ ^ (-4 / 5)` is not: its derivative
 has size `‖z‖ ^ (-9 / 5)`, and `(9 / 5) (4 / 3) = 12 / 5 > 2`. -/
 theorem memWkpLoc_not_memWkpLoc_sq_norm_rpow :
