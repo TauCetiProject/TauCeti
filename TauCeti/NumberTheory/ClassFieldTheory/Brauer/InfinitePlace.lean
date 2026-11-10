@@ -68,7 +68,7 @@ theorem brCompletion_eq_zero_of_isComplex (w : InfinitePlace K) (hw : w.IsComple
 open scoped Classical in
 /-- The invariant is zero on the zero class and `1/2` on every nonzero class: at a real place by
 the real Brauer group, at a complex place because the Brauer group is trivial. -/
-theorem infiniteInvMap_apply (w : InfinitePlace K) (x : Br w.Completion) :
+theorem infiniteInvMap_apply_eq_ite (w : InfinitePlace K) (x : Br w.Completion) :
     infiniteInvMap w x = if x = 0 then 0 else ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
   rcases w.isReal_or_isComplex with hw | hw
   · rw [infiniteInvMap_of_isReal w hw, AddMonoidHom.comp_apply, realInv_apply]
@@ -85,7 +85,7 @@ theorem infiniteInvMap_eq_realInv_comp (w : InfinitePlace K)
     infiniteInvMap w = realInv.comp e.toAddMonoidHom := by
   classical
   ext x
-  rw [infiniteInvMap_apply w, AddMonoidHom.comp_apply, realInv_apply]
+  rw [infiniteInvMap_apply_eq_ite w, AddMonoidHom.comp_apply, realInv_apply]
   by_cases hx : x = 0
   · subst x
     simp

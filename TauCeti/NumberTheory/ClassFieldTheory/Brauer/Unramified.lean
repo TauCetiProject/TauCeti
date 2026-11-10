@@ -12,7 +12,6 @@ public import TauCeti.FieldTheory.GaloisCohomology.Cyclic
 public import TauCeti.NumberTheory.LocalField.UnitFiltration.GaloisAction
 public import TauCeti.NumberTheory.ClassFieldTheory.Brauer.BaseChange
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
-import TauCeti.NumberTheory.LocalField.AlgebraicExtension.Tower
 import TauCeti.NumberTheory.LocalField.Frobenius
 import TauCeti.NumberTheory.LocalField.UnitFiltration.Unramified
 import TauCeti.NumberTheory.LocalField.UnitFiltration.ValuationSequence
@@ -280,12 +279,8 @@ theorem map_unramifiedClass (a : Kˣ) :
     groupCohomology.map (AlgEquiv.restrictNormalHom L) (unitsInflationHom K L M) 2
         (unramifiedClass K L (Additive.ofMul a)) =
       unramifiedClass K M (Additive.ofMul (a ^ Module.finrank L M)) := by
-  -- The valuative relation of `M` is the one extended from `K`, so it also extends that of `L`.
-  have : ValuativeExtension L M := by
-    have h := algebraicExtension_valuativeExtension_tower K L M
-    have e := algebraicExtensionValuativeRel_eq K M
-    subst e
-    exact h
+  -- The valuative relation of `M` extends that of `K`, so it also extends that of `L`.
+  have : ValuativeExtension L M := .of_isScalarTower (K := K)
   -- Restriction `Gal(M/K) → Gal(L/K)` sends arithmetic Frobenius to arithmetic Frobenius.
   exact map_cyclicClass (mem_zpowers_frobeniusAlgEquiv K L) (mem_zpowers_frobeniusAlgEquiv K M)
     frobeniusAlgEquiv_restrictNormal a

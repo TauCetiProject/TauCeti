@@ -76,8 +76,8 @@ theorem index_normGroup_of_isCyclic [IsCyclic (L ≃ₐ[K] L)] :
 omit [ValuativeRel L] [TopologicalSpace L] [IsNonarchimedeanLocalField L]
   [ValuativeExtension K L] in
 /-- **The local `H²` bound.** For a finite Galois extension `L/K` of nonarchimedean local fields,
-the order of `H²(Gal(L/K), Lˣ)` divides `[L : K]`. No valuative structure on `L` is assumed: it is
-the spectral-norm one over `K`. -/
+the order of `H²(Gal(L/K), Lˣ)` divides `[L : K]`. The statement involves only the field structure
+of `L` (a finite Galois extension of `K`); no valuation or topology on `L` is assumed. -/
 theorem natCard_H2_units_dvd_finrank :
     Nat.card (groupCohomology (Rep.ofMulDistribMulAction (L ≃ₐ[K] L) Lˣ) 2) ∣
       finrank K L := by

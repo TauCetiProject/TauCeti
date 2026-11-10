@@ -74,7 +74,7 @@ theorem infiniteLayerInv_apply_eq_ite (w : InfinitePlace K)
     (x : (NormalLayer.ofOpenNormal V).H (unitsFormation w.Completion) 2) :
     infiniteLayerInv w V x = if x = 0 then 0 else ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) := by
   classical
-  rw [infiniteLayerInv_apply, infiniteInvMap_apply w,
+  rw [infiniteLayerInv_apply, infiniteInvMap_apply_eq_ite w,
     map_eq_zero_iff _ (brInfl_injective V)]
 
 /-- At a complex place every finite-layer archimedean invariant is zero. -/
