@@ -616,6 +616,7 @@ theorem IsMorse.exists_isAdaptedPseudoGradient [CompactSpace M] [T2Space M]
 
 namespace IsAdaptedPseudoGradient
 
+omit [FiniteDimensional ℝ E] in
 /-- **An adapted pseudo-gradient makes `f` differentiable.** At a point where `f` is not
 differentiable, `mfderiv` vanishes, so the point is critical and `f` is a quadratic form in a Morse
 chart around it, which is differentiable. -/
