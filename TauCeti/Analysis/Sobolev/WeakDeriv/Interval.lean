@@ -12,7 +12,7 @@ public import TauCeti.MeasureTheory.Integral.IntervalIntegral.AbsolutelyContinuo
 import TauCeti.Analysis.Calculus.LineDeriv.Basic
 import TauCeti.Analysis.Distribution.DuBoisReymond
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.Primitive
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 import TauCeti.Topology.Order.Interval
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
@@ -77,6 +77,22 @@ theorem, turns `∫ φ' t • ∫ s in α..t, u' s` into `-∫ φ s • u' s`. T
   function for such a continuous representative.
 * `TauCeti.HasWeakLineDerivOn.norm_le_setAverage_add_integral`: for `a < b`, the pointwise bound
   `‖v t‖ ≤ ⨍ s in (a, b), ‖u s‖ + ∫ s in (a, b), ‖u' s‖` of a continuous representative `v`.
+* `MeasureTheory.LocallyIntegrableOn.exists_ae_monotoneOn_of_integral_deriv_mul_nonpos`: a real
+  function locally integrable on `Ioo a b` whose distributional derivative is nonnegative is
+  monotone on `Ioo a b` outside a null set.
+* `MeasureTheory.LocallyIntegrableOn.exists_ae_antitoneOn_sub_integral_of_integral_nonneg`:
+  if `f' ≤ g` in the sense of distributions on `Ioo a b`, with `g` integrable, then
+  `f - ∫ t in a..·, g t` is antitone on `Ioo a b` outside a null set.
+
+## Functions with a nonnegative distributional derivative
+
+The sign version of the du Bois-Reymond lemma says that a locally integrable real function `f`
+with `∫ ψ' f ≤ 0` for every nonnegative test function `ψ` on `(a, b)` is monotone off a null set.
+For continuous `f` this is `ContinuousOn.monotoneOn_of_integral_deriv_mul_nonpos`. In general, let
+`G` be a primitive of `f`. For `δ > 0` the increment `G (· + δ) - G` is continuous, and its
+distributional derivative is again nonnegative: pairing it with `ψ'` gives `∫ χ' f`, where
+`χ x = ∫ s in x - δ..x, ψ s` is a nonnegative test function. So the increment is monotone, and
+dividing by `δ` and letting `δ → 0` at the Lebesgue points of `f` gives the claim.
 
 ## References
 
@@ -88,7 +104,7 @@ theorem, turns `∫ φ' t • ∫ s in α..t, u' s` into `-∫ φ s • u' s`. T
 public section
 
 open MeasureTheory Set Filter TopologicalSpace intervalIntegral
-open scoped Interval Distributions
+open scoped Interval Distributions Pointwise Topology ContDiff
 
 namespace TauCeti
 
@@ -439,4 +455,194 @@ theorem HasWeakLineDerivOn.norm_le_setAverage_add_integral
     field_simp
   exact le_of_mul_le_mul_left (by rw [this]; exact key) hpos
 
+/-! ### Functions with a nonnegative distributional derivative -/
+
+section Monotone
+
+/-- Let `ψ` be a nonnegative test function supported in `Ioo a (b - δ)`, `δ > 0`. Its moving
+integral `χ x = ∫ s in x - δ..x, ψ s` over windows of length `δ` is a nonnegative test function
+supported in `Ioo a b`, with derivative `ψ - ψ (· - δ)`. -/
+private lemma exists_windowIntegral {ψ : ℝ → ℝ} {δ : ℝ} (hδ : 0 < δ) (hψ : ContDiff ℝ ∞ ψ)
+    (hψs : tsupport ψ ⊆ Ioo a (b - δ)) (hψc : HasCompactSupport ψ) (hψnn : ∀ x, 0 ≤ ψ x) :
+    ∃ χ : ℝ → ℝ, ContDiff ℝ ∞ χ ∧ tsupport χ ⊆ Ioo a b ∧ (∀ x, 0 ≤ χ x) ∧
+      deriv χ = fun x ↦ ψ x - ψ (x - δ) := by
+  set Ψ : ℝ → ℝ := fun t ↦ ∫ s in 0..t, ψ s with hΨ_def
+  have hΨd : ∀ t, HasDerivAt Ψ (ψ t) t := fun t ↦
+    integral_hasDerivAt_right (hψ.continuous.intervalIntegrable _ _)
+      (hψ.continuous.stronglyMeasurableAtFilter _ _) hψ.continuous.continuousAt
+  have hΨ : ContDiff ℝ ∞ Ψ := contDiff_infty_iff_deriv.mpr
+    ⟨fun t ↦ (hΨd t).differentiableAt, (funext fun t ↦ (hΨd t).deriv) ▸ hψ⟩
+  have hχ : ∀ x, Ψ x - Ψ (x - δ) = ∫ s in x - δ..x, ψ s := fun x ↦
+    integral_interval_sub_left (hψ.continuous.intervalIntegrable _ _)
+      (hψ.continuous.intervalIntegrable _ _)
+  refine ⟨fun x ↦ Ψ x - Ψ (x - δ), hΨ.sub (hΨ.comp (contDiff_id.sub contDiff_const)), ?_,
+    fun x ↦ by
+      dsimp only
+      rw [hχ x]
+      exact integral_nonneg (by linarith) fun s _ ↦ hψnn s,
+    funext fun x ↦ ((hΨd x).sub ((hΨd (x - δ)).comp_sub_const x δ)).deriv⟩
+  -- `χ x` vanishes unless `x = s + e` with `s ∈ tsupport ψ` and `0 ≤ e ≤ δ`.
+  have hK : IsCompact (tsupport ψ + Icc 0 δ) := hψc.isCompact.add isCompact_Icc
+  refine (closure_minimal (fun x hx ↦ ?_) hK.isClosed).trans fun x hx ↦ ?_
+  · by_contra hxK
+    refine hx ?_
+    dsimp only
+    rw [hχ x, ← integral_zero (a := x - δ) (b := x) (μ := volume) (E := ℝ)]
+    refine integral_congr fun s hs ↦ image_eq_zero_of_notMem_tsupport fun hsK ↦ hxK ?_
+    rw [uIcc_of_le (by linarith)] at hs
+    exact Set.mem_add.2 ⟨s, hsK, x - s, ⟨by linarith [hs.2], by linarith [hs.1]⟩, by ring⟩
+  · obtain ⟨s, hs, e, he, rfl⟩ := Set.mem_add.1 hx
+    have := hψs hs
+    exact ⟨by linarith [this.1, he.1], by linarith [this.2, he.2]⟩
+
+/-- Let `f` be locally integrable on `Ioo a b` with nonnegative distributional derivative, and let
+`G` be its primitive based at `t₀ ∈ Ioo a b`. For `δ > 0`, the increment `G (· + δ) - G` again has
+nonnegative distributional derivative on `Ioo a (b - δ)`. -/
+private lemma integral_deriv_mul_primitive_add_sub_nonpos {f : ℝ → ℝ}
+    (hf : LocallyIntegrableOn f (Ioo a b)) (ht₀ : t₀ ∈ Ioo a b)
+    (h : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b → (∀ x, 0 ≤ ψ x) →
+      ∫ x, deriv ψ x * f x ≤ 0) {δ : ℝ} (hδ : 0 < δ) {ψ : ℝ → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hψs : tsupport ψ ⊆ Ioo a (b - δ)) (hψnn : ∀ x, 0 ≤ ψ x) :
+    ∫ x, deriv ψ x * ((∫ s in t₀..x + δ, f s) - ∫ s in t₀..x, f s) ≤ 0 := by
+  set G : ℝ → ℝ := fun t ↦ ∫ s in t₀..t, f s with hG_def
+  have hψc : HasCompactSupport ψ :=
+    isCompact_Icc.of_isClosed_subset (isClosed_tsupport ψ) (hψs.trans Ioo_subset_Icc_self)
+  have hGc : ContinuousOn G (Ioo a b) :=
+    TauCeti.intervalIntegral.continuousOn_primitive_interval_of_locallyIntegrableOn hf ht₀
+  have hψ'c : Continuous (deriv ψ) := hψ.continuous_deriv (by simp)
+  have hψ's : tsupport (deriv ψ) ⊆ Ioo a (b - δ) := tsupport_deriv_subset.trans hψs
+  -- The pairings of `ψ'` with `G (· + δ)` and with `G` are integrals of continuous functions with
+  -- compact support.
+  have hI₁ : Integrable fun x ↦ deriv ψ x * G (x + δ) :=
+    (ContinuousOn.continuous_of_tsupport_subset (hψ'c.continuousOn.mul (hGc.comp
+      (by fun_prop : Continuous fun x : ℝ ↦ x + δ).continuousOn fun x hx ↦
+        ⟨by linarith [hx.1], by linarith [hx.2]⟩)) isOpen_Ioo
+      (tsupport_mul_subset_left.trans hψ's)).integrable_of_hasCompactSupport hψc.deriv.mul_right
+  have hI₂ : Integrable fun x ↦ deriv ψ x * G x :=
+    (ContinuousOn.continuous_of_tsupport_subset (hψ'c.continuousOn.mul hGc) isOpen_Ioo
+      (tsupport_mul_subset_left.trans (hψ's.trans (Ioo_subset_Ioo_right (by linarith))))
+      ).integrable_of_hasCompactSupport hψc.deriv.mul_right
+  have hI₁' : Integrable fun x ↦ deriv ψ (x - δ) * G x := by
+    simpa only [sub_add_cancel] using hI₁.comp_sub_right δ
+  -- The test function `φ = χ'` is `ψ - ψ (· - δ)`, so `φ' = ψ' - ψ' (· - δ)`.
+  obtain ⟨χ, hχ, hχs, hχnn, hχd⟩ := exists_windowIntegral hδ hψ hψs hψc hψnn
+  have hφ : ContDiff ℝ ∞ (deriv χ) := (contDiff_infty_iff_deriv.1 hχ).2
+  have hφs : tsupport (deriv χ) ⊆ Ioo a b := tsupport_deriv_subset.trans hχs
+  have hφc : HasCompactSupport (deriv χ) :=
+    isCompact_Icc.of_isClosed_subset (isClosed_tsupport _) (hφs.trans Ioo_subset_Icc_self)
+  have hdφ : ∀ x, deriv (deriv χ) x = deriv ψ x - deriv ψ (x - δ) := fun x ↦ by
+    have hd : Differentiable ℝ ψ := hψ.differentiable (by simp)
+    rw [hχd]
+    exact ((hd x).hasDerivAt.sub ((hd (x - δ)).hasDerivAt.comp_sub_const x δ)).deriv
+  -- Pair `φ` with the weak derivative `f` of `G`.
+  have hw : ∫ x, deriv (deriv χ) x * G x = -∫ x, deriv χ x * f x := by
+    simpa using (hasWeakLineDerivOn_intervalIntegral hf ht₀
+      ).integral_lineDeriv_smul_eq_neg_integral_smul ⟨deriv χ, hφ, hφc, hφs⟩
+  calc ∫ x, deriv ψ x * (G (x + δ) - G x)
+      = (∫ x, deriv ψ x * G (x + δ)) - ∫ x, deriv ψ x * G x := by
+        rw [← integral_sub hI₁ hI₂]
+        simp_rw [mul_sub]
+    _ = (∫ x, deriv ψ (x - δ) * G x) - ∫ x, deriv ψ x * G x := by
+        rw [← integral_sub_right_eq_self (fun x ↦ deriv ψ x * G (x + δ)) δ]
+        simp only [sub_add_cancel]
+    _ = -∫ x, deriv (deriv χ) x * G x := by
+        rw [← integral_sub hI₁' hI₂, ← MeasureTheory.integral_neg]
+        congr 1 with x
+        rw [hdφ]
+        ring
+    _ = ∫ x, deriv χ x * f x := by rw [hw, neg_neg]
+    _ ≤ 0 := h χ hχ hχs hχnn
+
+end Monotone
+
 end TauCeti
+
+namespace MeasureTheory.LocallyIntegrableOn
+
+open TauCeti
+
+variable {a b : ℝ}
+
+/-- **The monotone du Bois-Reymond lemma, almost everywhere.** A real function locally integrable
+on an open interval whose distributional derivative is nonnegative, in the sense that
+`∫ x, deriv ψ x * f x ≤ 0` for every nonnegative test function `ψ` on the interval, is monotone on
+the interval outside a null set. -/
+theorem exists_ae_monotoneOn_of_integral_deriv_mul_nonpos
+    {f : ℝ → ℝ} (hf : LocallyIntegrableOn f (Ioo a b))
+    (h : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b → (∀ x, 0 ≤ ψ x) →
+      ∫ x, deriv ψ x * f x ≤ 0) :
+    ∃ s : Set ℝ, (∀ᵐ x, x ∈ s) ∧ MonotoneOn f (Ioo a b ∩ s) := by
+  rcases le_or_gt b a with hba | hab
+  · exact ⟨univ, Eventually.of_forall fun _ ↦ trivial, by
+    simpa [Ioo_eq_empty (not_lt.2 hba)] using (Set.subsingleton_empty (α := ℝ)).monotoneOn f⟩
+  have ht₀ : (a + b) / 2 ∈ Ioo a b := ⟨by linarith, by linarith⟩
+  set G : ℝ → ℝ := fun t ↦ ∫ s in (a + b) / 2..t, f s with hG_def
+  have hGc : ContinuousOn G (Ioo a b) :=
+    TauCeti.intervalIntegral.continuousOn_primitive_interval_of_locallyIntegrableOn hf ht₀
+  -- For `δ > 0` the increment `G (· + δ) - G` is continuous with nonnegative distributional
+  -- derivative on `Ioo a (b - δ)`, hence monotone there.
+  have hmono : ∀ δ > 0, MonotoneOn (fun x ↦ G (x + δ) - G x) (Ioo a (b - δ)) := fun δ hδ ↦
+    ContinuousOn.monotoneOn_of_integral_deriv_mul_nonpos
+      ((hGc.comp (by fun_prop : Continuous fun x : ℝ ↦ x + δ).continuousOn fun x hx ↦
+        ⟨by linarith [hx.1], by linarith [hx.2]⟩).sub
+        (hGc.mono (Ioo_subset_Ioo_right (by linarith))))
+      fun ψ hψ hψs hψnn ↦
+        TauCeti.integral_deriv_mul_primitive_add_sub_nonpos hf ht₀ h hδ hψ hψs hψnn
+  -- At almost every point of the interval the difference quotients of `G` tend to `f`.
+  set s : Set ℝ := {x | x ∈ Ioo a b → HasDerivAt G (f x) x}
+  have hlim : ∀ z ∈ Ioo a b ∩ s,
+      Tendsto (fun δ ↦ δ⁻¹ * (G (z + δ) - G z)) (𝓝[>] 0) (𝓝 (f z)) := fun z hz ↦ by
+    simpa only [smul_eq_mul] using (hasDerivAt_iff_tendsto_slope_zero.1 (hz.2 hz.1)).mono_left
+      (nhdsWithin_mono _ fun δ hδ ↦ ne_of_gt hδ)
+  refine ⟨s, ?_, fun x hx y hy hxy ↦ le_of_tendsto_of_tendsto (hlim x hx) (hlim y hy) ?_⟩
+  · filter_upwards [hf.ae_hasDerivAt_integral] with x hx hxI using hx hxI _ ht₀
+  filter_upwards [Ioo_mem_nhdsGT (sub_pos.2 hy.1.2)] with δ hδ
+  exact mul_le_mul_of_nonneg_left (hmono δ hδ.1 ⟨hx.1.1, by linarith [hδ.2]⟩
+    ⟨hy.1.1, by linarith [hδ.2]⟩ hxy) (inv_nonneg.2 hδ.1.le)
+
+/-- **Functions whose distributional derivative is bounded above.** Let `f` be locally integrable
+and `g` integrable on `Ioo a b`, and suppose that `f' ≤ g` in the sense of distributions:
+`0 ≤ ∫ x, (f x * deriv ψ x + g x * ψ x)` for every nonnegative test function `ψ` on `Ioo a b`.
+Then `f - ∫ t in a..·, g t` is antitone on `Ioo a b` outside a null set. -/
+theorem exists_ae_antitoneOn_sub_integral_of_integral_nonneg
+    {f g : ℝ → ℝ} (hf : LocallyIntegrableOn f (Ioo a b)) (hg : IntegrableOn g (Ioo a b))
+    (h : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b → (∀ x, 0 ≤ ψ x) →
+      0 ≤ ∫ x, (f x * deriv ψ x + g x * ψ x)) :
+    ∃ s : Set ℝ, (∀ᵐ x, x ∈ s) ∧ AntitoneOn (fun x ↦ f x - ∫ t in a..x, g t) (Ioo a b ∩ s) := by
+  set P : ℝ → ℝ := fun x ↦ ∫ t in a..x, g t with hP_def
+  have hP : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ P g 1 :=
+    hasWeakLineDerivOn_intervalIntegral_left hg
+  -- The distributional derivative of `-(f - P)` is `g - f' ≥ 0`.
+  have hneg : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b → (∀ x, 0 ≤ ψ x) →
+      ∫ x, deriv ψ x * -(f x - P x) ≤ 0 := by
+    intro ψ hψ hψs hψnn
+    have hψc : HasCompactSupport ψ :=
+      isCompact_Icc.of_isClosed_subset (isClosed_tsupport ψ) (hψs.trans Ioo_subset_Icc_self)
+    have hψ' : ContDiff ℝ ∞ (deriv ψ) := (contDiff_infty_iff_deriv.1 hψ).2
+    have hIf : Integrable fun x ↦ deriv ψ x * f x :=
+      TestFunction.integrable_smul (Ω := ⟨Ioo a b, isOpen_Ioo⟩)
+        ⟨deriv ψ, hψ', hψc.deriv, tsupport_deriv_subset.trans hψs⟩ hf
+    have hIP : Integrable fun x ↦ deriv ψ x * P x :=
+      TestFunction.integrable_smul (Ω := ⟨Ioo a b, isOpen_Ioo⟩)
+        ⟨deriv ψ, hψ', hψc.deriv, tsupport_deriv_subset.trans hψs⟩ hP.locallyIntegrableOn
+    have hIg : Integrable fun x ↦ ψ x * g x :=
+      TestFunction.integrable_smul (Ω := ⟨Ioo a b, isOpen_Ioo⟩) ⟨ψ, hψ, hψc, hψs⟩
+        hg.locallyIntegrableOn
+    have hw : ∫ x, deriv ψ x * P x = -∫ x, ψ x * g x := by
+      simpa using hP.integral_lineDeriv_smul_eq_neg_integral_smul ⟨ψ, hψ, hψc, hψs⟩
+    have e₁ : ∫ x, deriv ψ x * -(f x - P x) = (∫ x, deriv ψ x * P x) - ∫ x, deriv ψ x * f x := by
+      rw [← integral_sub hIP hIf]
+      congr 1 with x
+      ring
+    have e₂ : ∫ x, (f x * deriv ψ x + g x * ψ x) = (∫ x, deriv ψ x * f x) + ∫ x, ψ x * g x := by
+      rw [← integral_add hIf hIg]
+      congr 1 with x
+      ring
+    have h₀ := h ψ hψ hψs hψnn
+    rw [e₁, hw]
+    linarith
+  obtain ⟨s, hs, hmono⟩ :=
+    ((hf.sub hP.locallyIntegrableOn).neg).exists_ae_monotoneOn_of_integral_deriv_mul_nonpos hneg
+  exact ⟨s, hs, fun x hx y hy hxy ↦ neg_le_neg_iff.1 (hmono hx hy hxy)⟩
+
+end MeasureTheory.LocallyIntegrableOn

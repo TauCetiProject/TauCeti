@@ -6,9 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Covering.OneDim
+public import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 
 /-!
-# Lebesgue differentiation on the line for extended nonnegative densities
+# Lebesgue differentiation on the line
 
 Mathlib's `IntervalIntegrable.ae_hasDerivAt_integral` differentiates the primitive of an
 interval-integrable Bochner integrand. This file records the companion statement for an extended
@@ -21,11 +22,17 @@ Stating it for `ℝ≥0∞`-valued densities avoids choosing a real representati
 `ENNReal.toReal` bookkeeping that comes with it, which is the convenient form when the density
 bounds a distance from above, as for the metric derivative of a curve.
 
+It also records the version of Mathlib's theorem for a Bochner integrand that is only locally
+integrable on an open interval, and so need not be integrable up to the endpoints.
+
 ## Main results
 
 * `TauCeti.ae_tendsto_setLIntegral_uIoc_div`: the one-dimensional Lebesgue differentiation theorem
   for an extended nonnegative density which is almost everywhere measurable with finite lower
   integral on an interval.
+* `MeasureTheory.LocallyIntegrableOn.ae_hasDerivAt_integral`: for `f` locally integrable on
+  `Ioo a b`, at almost every point of `Ioo a b` every primitive of `f` based in `Ioo a b` has
+  derivative `f`.
 -/
 
 public section
@@ -72,3 +79,32 @@ theorem ae_tendsto_setLIntegral_uIoc_div {f : ℝ → ℝ≥0∞} {a b : ℝ}
       edist_dist, Real.dist_eq, abs_of_pos (sub_pos.2 hs.1)]
 
 end TauCeti
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+
+/-- The *Lebesgue differentiation theorem* on an open interval: if `f : ℝ → E` is locally
+integrable on `Ioo a b`, then for almost every `x ∈ Ioo a b` and every `c ∈ Ioo a b`, the
+derivative of `t ↦ ∫ s in c..t, f s` at `x` is `f x`. -/
+theorem MeasureTheory.LocallyIntegrableOn.ae_hasDerivAt_integral {f : ℝ → E} {a b : ℝ}
+    (hf : LocallyIntegrableOn f (Ioo a b)) :
+    ∀ᵐ x, x ∈ Ioo a b → ∀ c ∈ Ioo a b, HasDerivAt (fun t ↦ ∫ s in c..t, f s) (f x) x := by
+  -- Mathlib's theorem applies on each interval between two rational points of `Ioo a b`, and
+  -- these intervals exhaust `Ioo a b`.
+  have key : ∀ p q : ℚ, ∀ᵐ x, (p : ℝ) ∈ Ioo a b → (q : ℝ) ∈ Ioo a b → x ∈ uIcc (p : ℝ) q →
+      ∀ c ∈ uIcc (p : ℝ) q, HasDerivAt (fun t ↦ ∫ s in c..t, f s) (f x) x := by
+    intro p q
+    by_cases hpq : (p : ℝ) ∈ Ioo a b ∧ (q : ℝ) ∈ Ioo a b
+    · have hint : IntervalIntegrable f volume p q := (hf.integrableOn_compact_subset
+        (ordConnected_Ioo.uIcc_subset hpq.1 hpq.2) isCompact_uIcc).intervalIntegrable
+      filter_upwards [hint.ae_hasDerivAt_integral] with x hx _ _ using hx
+    · exact Eventually.of_forall fun x hp hq ↦ absurd ⟨hp, hq⟩ hpq
+  filter_upwards [ae_all_iff.2 fun p ↦ ae_all_iff.2 (key p)] with x hx hxI c hc
+  obtain ⟨p, hp, hpx⟩ := exists_rat_btwn (lt_min hxI.1 hc.1)
+  obtain ⟨q, hxq, hq⟩ := exists_rat_btwn (max_lt hxI.2 hc.2)
+  have hpq : (p : ℝ) ≤ q := hpx.le.trans ((min_le_left _ _).trans ((le_max_left _ _).trans hxq.le))
+  have hmem : ∀ z, min x c ≤ z → z ≤ max x c → z ∈ uIcc (p : ℝ) q := fun z h₁ h₂ ↦ by
+    rw [uIcc_of_le hpq]
+    exact ⟨hpx.le.trans h₁, h₂.trans hxq.le⟩
+  exact hx p q ⟨hp, (hpx.trans_le (min_le_left _ _)).trans hxI.2⟩
+    ⟨hxI.1.trans ((le_max_left _ _).trans_lt hxq), hq⟩ (hmem x (min_le_left _ _) (le_max_left _ _))
+    c (hmem c (min_le_right _ _) (le_max_right _ _))
