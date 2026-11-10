@@ -124,11 +124,8 @@ theorem exists_remainder (N : ℕ) :
   choose s hs using fun j =>
     Symbol.isSmoothing_iff.1 (isSmoothing_cutoffSymbol_sub_cutoffSymbol χ₀ χ (a.term j)) (m - N)
   refine ⟨r₀ + ∑ j ∈ Finset.range N, s j, fun p => ?_⟩
-  have hsum : (∑ j ∈ Finset.range N, s j).coefficient p =
-      ∑ j ∈ Finset.range N, (s j).coefficient p :=
-    map_sum (AddMonoidHom.mk' (fun b : Symbol n V W (m - N) => b.coefficient p) fun _ _ => rfl) _ _
-  simp only [Symbol.coefficient_add, Pi.add_apply, hsum, hr₀, hs, Symbol.coefficient_sub,
-    Pi.sub_apply, coefficient_cutoffSymbol, Finset.sum_sub_distrib]
+  simp only [Symbol.coefficient_add, Pi.add_apply, Symbol.coefficient_sum, Finset.sum_apply, hr₀,
+    hs, Symbol.coefficient_sub, Pi.sub_apply, coefficient_cutoffSymbol, Finset.sum_sub_distrib]
   abel
 
 /-- The remainder `a - ∑_{j<N} χ(ξ) a_{m-j}` of a classical symbol after `N` terms, a symbol of
