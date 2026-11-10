@@ -475,7 +475,7 @@ theorem qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit (f : F
   rcases eq_or_ne (⇑f : ℍ → ℂ) 0 with hf | hf
   · -- the zero form: its norm and every coset factor are zero, with junk order `0`
     have hq (c : CuspTranslationOrbit 𝒢) : quotientFunc f c.out = 0 :=
-      Quotient.inductionOn c.out fun g ↦ (SlashAction.slash_eq_zero_iff k g.val⁻¹ _).2 hf
+      SlashInvariantForm.quotientFunc_eq_zero f hf c.out
     have h0 (h : ℝ) : qExpansionOrderAtCusp h (0 : ℍ → ℂ) = 0 := qExpansionOrderAtCusp_const h 0
     simp [orderAtCuspTranslationOrbit, hq, h0, (_root_.ModularForm.norm_eq_zero_iff 𝒮ℒ f).mpr hf]
   have hne : ∀ c : CuspTranslationOrbit 𝒢,
