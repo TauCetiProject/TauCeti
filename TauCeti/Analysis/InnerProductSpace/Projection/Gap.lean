@@ -233,7 +233,8 @@ theorem rank_eq_of_projectionGap_lt_one (h : projectionGap U V < 1) :
     (rank_le_of_disjoint_orthogonal V U <| disjoint_orthogonal_of_directedProjectionGap_lt_one V U
       ((directedProjectionGap_le_projectionGap V U).trans_lt (projectionGap_comm U V ▸ h)))
 
-/-- Two subspaces at gap less than `1` have the same finite dimension. -/
+/-- Two subspaces at gap less than `1` have the same `finrank`. Both sides are `0` when the
+subspaces are infinite-dimensional. -/
 theorem finrank_eq_of_projectionGap_lt_one (h : projectionGap U V < 1) :
     Module.finrank 𝕜 U = Module.finrank 𝕜 V :=
   congr_arg Cardinal.toNat (rank_eq_of_projectionGap_lt_one U V h)
