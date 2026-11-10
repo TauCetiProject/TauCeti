@@ -73,8 +73,7 @@ concentrated certify optimality even when they are not integrable.
   the map as a minimizer among transport maps;
 * `TauCeti.DualFeasible.isCyclicallyMonotone_dualContactSet` and
   `TauCeti.IsDualCertificate.exists_isCyclicallyMonotone` — contact sets are `c`-cyclically
-  monotone, and a certified plan whose cost and potentials are measurable is concentrated on a
-  measurable such set.
+  monotone, and a certified plan is concentrated on a measurable such set.
 
 ## Implementation notes
 
@@ -502,13 +501,28 @@ theorem isDualCertificate_graphPlan (hc : AEMeasurable c (graphPlan T μ))
 `TauCeti.transportCost_le_lintegral_of_hasLaw`, this exhibits the map as a minimizer among
 transport maps. -/
 theorem transportCost_eq_lintegral_of_ae_mem_dualContactSet
-    (hc : AEMeasurable c (graphPlan T μ)) (hT : HasLaw T ν μ)
+    (hT : HasLaw T ν μ)
     (hfeas : DualFeasible (fun z ↦ (c z : EReal)) φ ψ)
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν)
     (hae : ∀ᵐ x ∂μ, (x, T x) ∈ dualContactSet c φ ψ) :
     transportCost c μ ν = ∫⁻ x, c (x, T x) ∂μ := by
-  exact (isOptimalCoupling_graphPlan_iff hT hc).1
-    (isDualCertificate_graphPlan hc hT hfeas hφ hψ hae).isOptimalCoupling
+  have hf := aemeasurable_prodMk_self hT.aemeasurable
+  have hint := (isCoupling_graphPlan hT).integrable_add_split hφ hψ
+  have hint' : Integrable (fun x ↦ φ x + ψ (T x)) μ :=
+    (integrable_map_measure (g := fun z : X × Y ↦ φ z.1 + ψ z.2)
+      (by simpa only [graphPlan_def] using hint.aestronglyMeasurable) hf).1
+      (by simpa only [graphPlan_def] using hint)
+  have hV : kantorovichDualValue μ ν φ ψ = ∫ x, (φ x + ψ (T x)) ∂μ := by
+    rw [kantorovichDualValue_eq_integral (isCoupling_graphPlan hT) hφ hψ, graphPlan_def,
+      integral_map hf (by simpa only [graphPlan_def] using hint.aestronglyMeasurable)]
+  have hup : ∫⁻ x, c (x, T x) ∂μ = ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) := by
+    rw [hV, ofReal_integral_eq_lintegral_ofReal hint'
+      (hae.mono fun x hx ↦ add_nonneg_of_mem_dualContactSet hx)]
+    exact lintegral_congr_ae (hae.mono fun x hx ↦ (ofReal_eq_of_mem_dualContactSet hx).symm)
+  refine le_antisymm ?_ (hup ▸ hfeas.ofReal_kantorovichDualValue_le_transportCost hφ hψ)
+  calc transportCost c μ ν ≤ ∫⁻ z, c z ∂graphPlan T μ :=
+        transportCost_le_lintegral (isCoupling_graphPlan hT) c
+    _ ≤ ∫⁻ x, c (x, T x) ∂μ := by rw [graphPlan_def]; exact lintegral_map_le _ hf
 
 end Monge
 
@@ -539,18 +553,23 @@ theorem DualFeasible.isCyclicallyMonotone_dualContactSet
     _ ≤ ∑ i, c (x i, y (σ i)) :=
       Finset.sum_le_sum fun i _ ↦ h.ofReal_add_le (x i) (y (σ i))
 
-/-- **A certified plan with measurable cost and potentials is concentrated on a measurable
-`c`-cyclically monotone set.** The converse implication, that concentration on a
+/-- **A certified plan is concentrated on a measurable `c`-cyclically monotone set.** The
+contact set need not be measurable: a measurable set of full measure inside it is obtained from a
+measurable hull of its null complement. The converse implication, that concentration on a
 `c`-cyclically monotone set forces optimality, is the Schachermayer--Teichmann theorem
 `TauCeti.IsCoupling.isOptimalCoupling_of_isCyclicallyMonotone`; it needs a finite cost and
 Polish spaces. -/
 theorem IsDualCertificate.exists_isCyclicallyMonotone [MeasurableSpace X] [MeasurableSpace Y]
     {μ : Measure X} {ν : Measure Y} {π : Measure (X × Y)}
-    (h : IsDualCertificate c π μ ν φ ψ) (hc : Measurable c) (hφm : Measurable φ)
-    (hψm : Measurable ψ) :
-    ∃ S : Set (X × Y), MeasurableSet S ∧ IsCyclicallyMonotone c S ∧ π Sᶜ = 0 :=
-  ⟨dualContactSet c φ ψ, measurableSet_dualContactSet hc hφm hψm,
-    h.dualFeasible.isCyclicallyMonotone_dualContactSet, ae_iff.1 h.ae_mem_dualContactSet⟩
+    (h : IsDualCertificate c π μ ν φ ψ) :
+    ∃ S : Set (X × Y), MeasurableSet S ∧ IsCyclicallyMonotone c S ∧ π Sᶜ = 0 := by
+  set C := dualContactSet c φ ψ
+  refine ⟨(toMeasurable π Cᶜ)ᶜ, (measurableSet_toMeasurable π Cᶜ).compl, ?_, ?_⟩
+  · refine h.dualFeasible.isCyclicallyMonotone_dualContactSet.mono ?_
+    rw [Set.compl_subset_comm]
+    exact subset_toMeasurable π Cᶜ
+  · rw [compl_compl, measure_toMeasurable]
+    exact ae_iff.1 h.ae_mem_dualContactSet
 
 end CyclicallyMonotone
 
