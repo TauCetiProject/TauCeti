@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Commutator
-public import TauCeti.LinearAlgebra.RootSystem.Base
 import Mathlib.GroupTheory.Subgroup.Centralizer
 
 /-!
@@ -114,7 +113,7 @@ theorem closure_simpleRootPair_le_centralizer (i j : Fin t.rank)
   · have hpair : (t.simplyConnectedRootDatum ht).pairingIn ℤ (e i) (e j) = 0 := by
       simpa only [e, coe_simpleSupportEquivSimplyConnectedBase, pairingIn_simpleIndex] using hij
     simpa only [e, coe_simpleSupportEquivSimplyConnectedBase] using
-      b.root_add_root_notMem_range_of_pairingIn_eq_zero (e.injective.ne hne) hpair
+      (b.cartanMatrix_apply_eq_zero_iff (e.injective.ne hne)).mp hpair
   · intro h
     apply b.root_ne_neg_of_ne (e i).property (e j).property
       (by simpa only [e, coe_simpleSupportEquivSimplyConnectedBase] using hindices)
