@@ -62,18 +62,21 @@ theorem norm_coeff_mul_mul_norm_factorial_le {C D : ℝ}
         (‖G.coeff ij.2‖ * ‖((ij.2 / p ^ h)! : ℚ_[p])‖) := by ring
     _ ≤ C * D := mul_le_mul (hF _) (hG _) (by positivity) hC
 
-end Coefficients
-
-variable [NormedRing K] [IsUltrametricDist K] {F G : PowerSeries K}
-
 /-- Bounded factorial-weighted coefficient families are closed under Cauchy products.
 This assertion is at one fixed stage, not just on the open unit disc. -/
 theorem bddAbove_norm_coeff_mul_norm_factorial_mul
     (hF : BddAbove (Set.range fun n ↦ ‖F.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖))
     (hG : BddAbove (Set.range fun n ↦ ‖G.coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖)) :
     BddAbove (Set.range fun n ↦ ‖(F * G).coeff n‖ * ‖((n / p ^ h)! : ℚ_[p])‖) := by
-  exact ⟨amiceDualNorm p h F * amiceDualNorm p h G, Set.forall_mem_range.mpr
-    (norm_coeff_mul_mul_norm_factorial_le (le_amiceDualNorm hF) (le_amiceDualNorm hG))⟩
+  obtain ⟨C, hC⟩ := hF
+  obtain ⟨D, hD⟩ := hG
+  exact ⟨C * D, Set.forall_mem_range.mpr
+    (norm_coeff_mul_mul_norm_factorial_le
+      (Set.forall_mem_range.mp hC) (Set.forall_mem_range.mp hD))⟩
+
+end Coefficients
+
+variable [NormedRing K] [IsUltrametricDist K] {F G : PowerSeries K}
 
 /-- The dual Amice stage norm is submultiplicative whenever both weighted coefficient
 families are bounded. No loss of analytic level or extra constant is necessary. -/
