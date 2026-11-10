@@ -193,11 +193,11 @@ private theorem eventually_norm_mixedDeriv_cutoff_smul_le
   have hcomp := norm_mixedDeriv_comp_le (m' := 1) (m := μ)
     ((const (ContinuousLinearMap.id ℂ W) : Symbol n W W 0).contDiff_cutoff_smul_coefficient χ t)
     (a τ).contDiff_coefficient (C := fun s s' => t⁻¹ * C s s') (D := M)
-    (fun s s' => by
+    (fun s s' _ _ => by
       have h := hC s s' t ht1 1 zero_le_one x hx ξ
       rwa [zero_sub, Real.rpow_neg_one, mul_comm (C s s')] at h)
-    (fun s s' => (le_seminorm K s s' (a τ) hx ξ).trans (mul_le_mul_of_nonneg_right
-      (hM' s s' τ) (rpow_weight_pos ξ _).le)) α β
+    (fun s s' _ _ => (le_seminorm K s s' (a τ) hx ξ).trans (mul_le_mul_of_nonneg_right
+      (hM' s s' τ) (rpow_weight_pos ξ _).le)) (α := α) (β := β)
   have hfun : (fun p => χ (t⁻¹ • p.2) • (a τ).coefficient p) = fun p =>
       (χ (t⁻¹ • p.2) • (const (ContinuousLinearMap.id ℂ W) : Symbol n W W 0).coefficient p).comp
         ((a τ).coefficient p) :=

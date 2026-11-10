@@ -911,6 +911,28 @@ theorem coordinateDeriv_snd_eq_fderiv {f : CoordinateSpace n × CoordinateSpace 
   rw [fderiv_apply_eq_sum_coordinateDeriv hf]
   simp
 
+/-- The mixed derivative of the derivative of a smooth function in the direction `(0, e_j)` is a
+mixed derivative with one more frequency derivative. -/
+theorem mixedDeriv_fderiv_apply_snd {a : CoordinateSpace n × CoordinateSpace n → A}
+    (ha : ContDiff ℝ ∞ a) (α β : List (Fin n)) (j : Fin n) (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (fun p => fderiv ℝ a p (0, EuclideanSpace.single j 1)) x ξ =
+      mixedDeriv α (β ++ [j]) a x ξ := by
+  rw [← mixedDeriv_coordinateDeriv_snd]
+  congr 1
+  funext p
+  exact (coordinateDeriv_snd_eq_fderiv (ha.differentiable (by simp) p) j).symm
+
+/-- The mixed derivative of the derivative of a smooth function in the direction `(e_j, 0)` is a
+mixed derivative with one more position derivative. -/
+theorem mixedDeriv_fderiv_apply_fst {a : CoordinateSpace n × CoordinateSpace n → A}
+    (ha : ContDiff ℝ ∞ a) (α β : List (Fin n)) (j : Fin n) (x ξ : CoordinateSpace n) :
+    mixedDeriv α β (fun p => fderiv ℝ a p (EuclideanSpace.single j 1, 0)) x ξ =
+      mixedDeriv (α ++ [j]) β a x ξ := by
+  rw [← mixedDeriv_coordinateDeriv_fst ha]
+  congr 1
+  funext p
+  exact (coordinateDeriv_fst_eq_fderiv (ha.differentiable (by simp) p) j).symm
+
 end Prod
 
 /-! ### Products with a frequency cutoff -/

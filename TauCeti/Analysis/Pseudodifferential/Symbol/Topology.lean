@@ -423,7 +423,7 @@ theorem seminorm_comp_le (K : Compacts (CoordinateSpace n)) (α β : List (Fin n
       funext (coefficient_comp b a)
     rw [hc]
     exact norm_mixedDeriv_comp_le b.contDiff_coefficient a.contDiff_coefficient
-      (fun s t => le_seminorm K s t b hx ξ) (fun s t => le_seminorm K s t a hx ξ) α β
+      (fun s t _ _ => le_seminorm K s t b hx ξ) (fun s t _ _ => le_seminorm K s t a hx ξ)
 
 /-- If all products `p_{K,α₁,β₁}(b_i) p_{K,α₂,β₂}(a_i)` tend to zero, then so does
 `p_{K,α,β}(b_i ∘ a_i)`, by the Leibniz estimate `seminorm_comp_le`. -/

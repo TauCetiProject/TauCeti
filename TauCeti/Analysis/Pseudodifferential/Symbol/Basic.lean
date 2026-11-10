@@ -738,16 +738,19 @@ section Comp
 variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m'' : ℝ}
 
 /-- The product estimate behind `TauCeti.Symbol.comp`: bounds `C s t ⟨ξ⟩^(m' - |t|)` and
-`D s t ⟨ξ⟩^(m - |t|)` on all mixed derivatives of `b` and `a` at `(x, ξ)` bound the mixed
+`D s t ⟨ξ⟩^(m - |t|)` on the mixed derivatives of `b` and `a` at `(x, ξ)` bound the mixed
 derivative `∂_x^α ∂_ξ^β` of `b ∘ a` by a constant times `⟨ξ⟩^(m' + m - |β|)`. The constant sums
 `C s₁ t₁ * D s₂ t₂` over all splittings of `α` into `s₁, s₂` and of `β` into `t₁, t₂`, as in the
-Leibniz rule. -/
+Leibniz rule. Only the derivatives with `|s| ≤ |α|` and `|t| ≤ |β|` enter, so the bounds are
+only required for those. -/
 theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → W →L[ℂ] U}
     {a : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hb : ContDiff ℝ ∞ b)
     (ha : ContDiff ℝ ∞ a) {x ξ : CoordinateSpace n} {C D : List (Fin n) → List (Fin n) → ℝ}
-    (hC : ∀ s t, ‖mixedDeriv s t b x ξ‖ ≤ C s t * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.length) / 2))
-    (hD : ∀ s t, ‖mixedDeriv s t a x ξ‖ ≤ D s t * (1 + ‖ξ‖ ^ 2) ^ ((m - t.length) / 2))
-    (α β : List (Fin n)) :
+    {α β : List (Fin n)}
+    (hC : ∀ s t, s.length ≤ α.length → t.length ≤ β.length →
+      ‖mixedDeriv s t b x ξ‖ ≤ C s t * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.length) / 2))
+    (hD : ∀ s t, s.length ≤ α.length → t.length ≤ β.length →
+      ‖mixedDeriv s t a x ξ‖ ≤ D s t * (1 + ‖ξ‖ ^ 2) ^ ((m - t.length) / 2)) :
     ‖mixedDeriv α β (fun p => (b p).comp (a p)) x ξ‖ ≤
       (β.sublists'.revzip.map fun t =>
         (α.sublists'.revzip.map fun s => C s.1 t.1 * D s.2 t.2).sum).sum *
@@ -764,7 +767,10 @@ theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → 
   refine List.sum_le_sum fun t ht => ?_
   refine (List.le_sum_of_subadditive norm norm_zero.le norm_add_le _).trans ?_
   rw [List.map_map, ← List.sum_map_mul_right]
-  refine List.sum_le_sum fun s _ => ?_
+  refine List.sum_le_sum fun s hs => ?_
+  have ht' := (List.revzip_sublists' _ _ _ ht).length_eq
+  have hs' := (List.revzip_sublists' _ _ _ hs).length_eq
+  rw [List.length_append] at ht' hs'
   have hw : (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) =
       (1 + ‖ξ‖ ^ 2) ^ ((m' - t.1.length) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - t.2.length) / 2) := by
     rw [← Real.rpow_add (by positivity), ← (List.revzip_sublists' _ _ _ ht).length_eq,
@@ -776,7 +782,8 @@ theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → 
         ContinuousLinearMap.opNorm_comp_le _ _
     _ ≤ (C s.1 t.1 * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.1.length) / 2)) *
         (D s.2 t.2 * (1 + ‖ξ‖ ^ 2) ^ ((m - t.2.length) / 2)) :=
-        mul_le_mul (hC _ _) (hD _ _) (norm_nonneg _) ((norm_nonneg _).trans (hC _ _))
+        mul_le_mul (hC _ _ (by omega) (by omega)) (hD _ _ (by omega) (by omega)) (norm_nonneg _)
+          ((norm_nonneg _).trans (hC _ _ (by omega) (by omega)))
     _ = C s.1 t.1 * D s.2 t.2 * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
         rw [hw]
         ring
@@ -804,8 +811,8 @@ def comp (b : Symbol n W U m') (a : Symbol n V W m) : Symbol n V U (m' + m) wher
     choose C hC0 hC using fun s t => b.exists_bound K hK s t
     choose D hD0 hD using fun s t => a.exists_bound K hK s t
     exact ⟨_, comp_bound_nonneg hC0 hD0 α β, fun x hx ξ => norm_mixedDeriv_comp_le
-      b.contDiff_coefficient a.contDiff_coefficient (fun s t => hC s t x hx ξ)
-      (fun s t => hD s t x hx ξ) α β⟩
+      b.contDiff_coefficient a.contDiff_coefficient (fun s t _ _ => hC s t x hx ξ)
+      (fun s t _ _ => hD s t x hx ξ)⟩
 
 @[simp]
 theorem coefficient_comp (b : Symbol n W U m') (a : Symbol n V W m)
@@ -903,8 +910,8 @@ theorem IsUniform.comp {b : Symbol n W U m'} {a : Symbol n V W m} (hb : b.IsUnif
   choose C hC0 hC using hb
   choose D hD0 hD using ha
   exact ⟨_, comp_bound_nonneg hC0 hD0 α β, fun x ξ => norm_mixedDeriv_comp_le
-    b.contDiff_coefficient a.contDiff_coefficient (fun s t => hC s t x ξ)
-    (fun s t => hD s t x ξ) α β⟩
+    b.contDiff_coefficient a.contDiff_coefficient (fun s t _ _ => hC s t x ξ)
+    (fun s t _ _ => hD s t x ξ)⟩
 
 /-- Composing a symbol with compact spatial support on the right with another symbol keeps compact
 spatial support. -/
