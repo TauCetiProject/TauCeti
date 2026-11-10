@@ -89,18 +89,17 @@ theorem localMultiplicity_onePointMap_pow_zero :
 /-- The extension of `z ↦ z ^ n` to the Riemann sphere has local multiplicity `n` at `∞`, where
 it is `w ↦ w ^ n` in the inverted chart. -/
 @[simp]
-theorem localMultiplicity_onePointMap_pow_infty (hn : n ≠ 0) :
+theorem localMultiplicity_onePointMap_pow_infty :
     localMultiplicity (OnePoint.map fun z : ℂ ↦ z ^ n) (∞ : OnePoint ℂ) = n := by
   rw [← onePointMap_eval_X_pow,
-    localMultiplicity_onePointMap_eval_infty (by simp [Nat.pos_iff_ne_zero, hn]), natDegree_X_pow]
+    localMultiplicity_onePointMap_eval_infty, natDegree_X_pow]
 
 /-- Away from `0` and `∞`, the extension of `z ↦ z ^ n` to the Riemann sphere has local
 multiplicity `1`: there the derivative `n z ^ (n - 1)` does not vanish. -/
 theorem localMultiplicity_onePointMap_pow_coe_of_ne_zero (hn : n ≠ 0) {z : ℂ} (hz : z ≠ 0) :
     localMultiplicity (OnePoint.map fun z : ℂ ↦ z ^ n) (z : OnePoint ℂ) = 1 := by
   rw [← onePointMap_eval_X_pow]
-  exact localMultiplicity_onePointMap_eval_coe_of_not_isRoot (by simp [Nat.pos_iff_ne_zero, hn])
-    (by simp [derivative_X_pow, hn, hz])
+  exact localMultiplicity_onePointMap_eval_coe_of_not_isRoot (by simp [derivative_X_pow, hn, hz])
 
 namespace FiniteHolomorphicMap
 
@@ -127,10 +126,9 @@ end FiniteHolomorphicMap
 
 /-- The power map `z ↦ z ^ n` of the Riemann sphere has degree `n`, the degree of `X ^ n`. -/
 @[simp]
-theorem degree_onePointMap_pow (hn : n ≠ 0) :
+theorem degree_onePointMap_pow :
     degree (OnePoint.map fun z : ℂ ↦ z ^ n) = n := by
-  rw [← onePointMap_eval_X_pow, degree_onePointMap_eval (by simp [Nat.pos_iff_ne_zero, hn]),
-    natDegree_X_pow]
+  rw [← onePointMap_eval_X_pow, degree_onePointMap_eval, natDegree_X_pow]
 
 /-- The power map `z ↦ z ^ n` of the Riemann sphere has ramification degree `2 (n - 1)`: it
 has local multiplicity `n` at `0` and at `∞`, and `1` everywhere else. -/
@@ -149,6 +147,6 @@ theorem ramificationDegree_onePointMap_pow (hn : n ≠ 0) :
       · simp [localMultiplicity_onePointMap_pow_coe_of_ne_zero hn hz] at hx
   rw [ramificationDegree_def, finsum_eq_sum_of_support_subset _ hsupp,
     Finset.sum_pair (coe_ne_infty 0)]
-  simp [hn, two_mul]
+  simp [two_mul]
 
 end TauCeti.RiemannSurface
