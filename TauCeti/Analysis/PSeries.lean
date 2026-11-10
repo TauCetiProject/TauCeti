@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.PSeries
 public import TauCeti.Analysis.SpecialFunctions.Log.Base
 public import Mathlib.Topology.Algebra.InfiniteSum.Real
@@ -42,6 +43,8 @@ dyadic annuli and compares their contributions with a geometric series.
 * `TauCeti.summable_one_add_abs_int_rpow` — `∑ n : ℤ, (1 + |n|) ^ r` converges for `r < -1`.
 * `TauCeti.summable_mul_rpow_of_count_growth` — weighted reciprocal powers are summable
   when sublevel counts grow at a smaller exponent.
+* `TauCeti.not_summable_norm_zpow_neg_add_mul` — along a nonvanishing arithmetic progression
+  `w + v n` in `ℂ`, the norms of the inverse `k`-th powers are not summable for `k < 2`.
 -/
 
 public section
@@ -156,6 +159,41 @@ theorem summable_mul_rpow_of_count_growth {ι : Type*} (r w : ι → ℝ)
     _ ≤ (C * ((2 : ℝ) ^ (n + 1)) ^ B) * ((2 : ℝ) ^ n) ^ (-p) :=
       mul_le_mul_of_nonneg_right (hweight.trans hn) (by positivity)
     _ = (C * 2 ^ B) * q ^ n := by rw [mul_assoc, hscale]; ring
+
+/-- Along a nonvanishing arithmetic progression `w + v n`, the norms of the inverse `k`-th powers
+are not summable for `k < 2`: they are bounded below by a multiple of the harmonic series. -/
+theorem not_summable_norm_zpow_neg_add_mul {k v : ℕ} [NeZero v] (hk : k < 2) {w : ℂ}
+    (hne : ∀ n : ℕ, w + (v : ℂ) * n ≠ 0) :
+    ¬ Summable fun n : ℕ ↦ ‖(w + (v : ℂ) * n) ^ (-(k : ℤ))‖ := by
+  intro h1
+  have hv : (1 : ℝ) ≤ v := Nat.one_le_cast.mpr (NeZero.pos v)
+  set C : ℝ := ‖w‖ + v with hC
+  have hC1 : 1 ≤ C := by linarith [norm_nonneg w]
+  -- the harmonic lower bound `‖w + v n‖ ≤ C (n + 1)`, hence `1 / (C (n + 1)) ≤ ‖(w + v n)⁻ᵏ‖`
+  have hbound (n : ℕ) : 1 / (C * (n + 1)) ≤ ‖(w + (v : ℂ) * n) ^ (-(k : ℤ))‖ := by
+    have hpos : 0 < ‖w + (v : ℂ) * n‖ := norm_pos_iff.mpr (hne n)
+    have hle : ‖w + (v : ℂ) * n‖ ≤ C * (n + 1) := by
+      calc ‖w + (v : ℂ) * n‖ ≤ ‖w‖ + v * n := by
+            refine (norm_add_le _ _).trans ?_
+            simp
+        _ ≤ C * (n + 1) := by
+            rw [hC]
+            have : (0 : ℝ) ≤ n := n.cast_nonneg
+            nlinarith [norm_nonneg w]
+    interval_cases k
+    · simp only [Nat.cast_zero, neg_zero, zpow_zero, norm_one]
+      rw [div_le_one (by positivity)]
+      nlinarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]
+    · simp only [Nat.cast_one, zpow_neg, zpow_one, norm_inv]
+      rw [← one_div]
+      exact one_div_le_one_div_of_le hpos hle
+  have h2 : Summable fun n : ℕ ↦ 1 / (C * (n + 1)) :=
+    h1.of_nonneg_of_le (fun n ↦ by positivity) hbound
+  have h3 : Summable fun n : ℕ ↦ 1 / ((n + 1 : ℕ) : ℝ) := by
+    refine (h2.mul_left C).congr fun n ↦ ?_
+    push_cast
+    field_simp
+  exact Real.not_summable_one_div_natCast ((summable_nat_add_iff 1).mp h3)
 
 end TauCeti
 

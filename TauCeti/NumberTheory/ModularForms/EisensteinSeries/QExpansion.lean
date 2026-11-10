@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.ZMod
 public import Mathlib.NumberTheory.ModularForms.EisensteinSeries.QExpansion
+public import TauCeti.Analysis.PSeries
 public import TauCeti.NumberTheory.ArithmeticFunction.TwistedDivisorSum
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.Character
 public import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
@@ -315,43 +316,9 @@ private lemma summable_norm_charTerm (z : ℍ) :
         gcongr
     _ = _ := by ring
 
-/-- Along a nonvanishing arithmetic progression `w + v n`, the norms of the inverse `k`-th powers
-are not summable for `k < 2`: they are bounded below by a multiple of the harmonic series. -/
-private lemma not_summable_norm_zpow_neg_add_mul (hk : k < 2) {w : ℂ}
-    (hne : ∀ n : ℕ, w + (v : ℂ) * n ≠ 0) :
-    ¬ Summable fun n : ℕ ↦ ‖(w + (v : ℂ) * n) ^ (-(k : ℤ))‖ := by
-  intro h1
-  have hv : (1 : ℝ) ≤ v := Nat.one_le_cast.mpr (NeZero.pos v)
-  set C : ℝ := ‖w‖ + v with hC
-  have hC1 : 1 ≤ C := by linarith [norm_nonneg w]
-  -- the harmonic lower bound `‖w + v n‖ ≤ C (n + 1)`, hence `1 / (C (n + 1)) ≤ ‖(w + v n)⁻ᵏ‖`
-  have hbound (n : ℕ) : 1 / (C * (n + 1)) ≤ ‖(w + (v : ℂ) * n) ^ (-(k : ℤ))‖ := by
-    have hpos : 0 < ‖w + (v : ℂ) * n‖ := norm_pos_iff.mpr (hne n)
-    have hle : ‖w + (v : ℂ) * n‖ ≤ C * (n + 1) := by
-      calc ‖w + (v : ℂ) * n‖ ≤ ‖w‖ + v * n := by
-            refine (norm_add_le _ _).trans ?_
-            simp
-        _ ≤ C * (n + 1) := by
-            rw [hC]
-            have : (0 : ℝ) ≤ n := n.cast_nonneg
-            nlinarith [norm_nonneg w]
-    interval_cases k
-    · simp only [Nat.cast_zero, neg_zero, zpow_zero, norm_one]
-      rw [div_le_one (by positivity)]
-      nlinarith [(n.cast_nonneg : (0 : ℝ) ≤ n)]
-    · simp only [Nat.cast_one, zpow_neg, zpow_one, norm_inv]
-      rw [← one_div]
-      exact one_div_le_one_div_of_le hpos hle
-  have h2 : Summable fun n : ℕ ↦ 1 / (C * (n + 1)) :=
-    h1.of_nonneg_of_le (fun n ↦ by positivity) hbound
-  have h3 : Summable fun n : ℕ ↦ 1 / ((n + 1 : ℕ) : ℝ) := by
-    refine (h2.mul_left C).congr fun n ↦ ?_
-    push_cast
-    field_simp
-  exact Real.not_summable_one_div_natCast ((summable_nat_add_iff 1).mp h3)
-
 /-- In weight `k < 2` the inner series of a row is not summable, along the residue class `d ≡ 1`
 modulo `v` its terms decay no faster than `1 / n`; so the row is zero. -/
+@[simp]
 theorem charRow_eq_zero_of_lt_two (hk : k < 2) (z : ℍ) (c : ℤ) :
     charRow ψ φ k z c = 0 := by
   rw [charRow_def, tsum_eq_zero_of_not_summable, mul_zero]
@@ -374,7 +341,7 @@ theorem charRow_eq_zero_of_lt_two (hk : k < 2) (z : ℍ) (c : ℤ) :
     simp only [hw, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
     push_cast
     ring
-  exact not_summable_norm_zpow_neg_add_mul hk hne h1
+  exact TauCeti.not_summable_norm_zpow_neg_add_mul hk hne h1
 
 /-- **The rows are summable.** The rows `ψ(c) ∑_d φ⁻¹(d) (c v z + d)^(-k)` of the Eisenstein
 series with character form a summable family in `c ∈ ℤ`. For `k ≥ 2` they decay exponentially in

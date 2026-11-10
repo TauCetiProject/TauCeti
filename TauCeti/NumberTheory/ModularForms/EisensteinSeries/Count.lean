@@ -30,11 +30,13 @@ dimension of the Eisenstein part of `M_k(Γ₁(N))` through the constant terms, 
 Diamond–Shurman show that the series span that part (Theorem 4.5.2); this file supplies the
 count of the series.
 
-The count goes through a bijection. Raising `ψ` and `φ` to the levels `g = t u` and `N / g`
-sends an index to a divisor `g ∣ N` and a pair of characters modulo `g` and `N / g` of
+For `N ≠ 0` the count goes through a bijection. Raising `ψ` and `φ` to the levels `g = t u` and
+`N / g` sends an index to a divisor `g ∣ N` and a pair of characters modulo `g` and `N / g` of
 product parity `(-1)^k`; conversely, `u` and `v` are the conductors of such a pair, `ψ` and `φ`
-their primitive characters, and `t = g / u`. This gives the count `card_eq_sum` at every
-level. When `g` or `N / g` exceeds `2`, an odd character at that level exchanges the two
+their primitive characters, and `t = g / u`. This gives the count `card_eq_sum`. At level `0`
+there is no such correspondence: the indices are infinite and `0` has no divisors, so
+`card_eq_sum` holds there only because `Nat.card` of an infinite type and the empty divisor sum
+are both `0`. When `g` or `N / g` exceeds `2`, an odd character at that level exchanges the two
 parities, so exactly half of the `totient(g) totient(N / g)` pairs have parity `(-1)^k`
 (`DirichletCharacter.two_mul_card_apply_neg_one_mul_apply_neg_one_eq`). Every divisor `g` of
 `N ∉ {1, 2, 4}` has this property.
@@ -172,10 +174,10 @@ private theorem infinite_charIndex_zero : Infinite (CharIndex 0 k) := by
   exact Infinite.of_injective (fun n : ℕ ↦ ({ b with t := n, level_dvd := dvd_zero _ } :
     CharIndex 0 k)) fun m n h ↦ congrArg CharIndex.t h
 
-/-- **The number of Eisenstein indices** at level `N`: indices `(ψ, φ, t)` correspond to the
+/-- **The number of Eisenstein indices** at level `N ≠ 0`: indices `(ψ, φ, t)` correspond to the
 divisors `g = t u` of `N` together with a pair of characters modulo `g` and `N / g` whose product
-parity is `(-1)^k`. At level `0` both sides vanish: the indices are infinite and the divisor sum
-is empty. -/
+parity is `(-1)^k`. At level `0` there is no such correspondence; the equality holds because both
+sides are `0`, `Nat.card` of the infinite type of indices and the empty divisor sum. -/
 theorem card_eq_sum :
     Nat.card (CharIndex N k) = ∑ g ∈ N.divisors,
       Nat.card {q : DirichletCharacter ℂ g × DirichletCharacter ℂ (N / g) //

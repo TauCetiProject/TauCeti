@@ -97,6 +97,7 @@ theorem ZMod.isUnit_intCast_two_pow_of_odd (n : ℕ) {a : ℤ} (ha : Odd a) :
 /-- The absolute value of the integer `ZMod.cast` of a residue is its `ZMod.val`: for `d ≠ 0` the
 cast is the least nonnegative representative, and at level `0` the cast is the identity on `ℤ` and
 `ZMod.val` is `Int.natAbs`. -/
+@[simp]
 theorem ZMod.natAbs_cast (x : ZMod d) : (ZMod.cast x : ℤ).natAbs = x.val := by
   rcases d with _ | d
   · -- level `0`: `ZMod 0` is `ℤ` by definition, `ZMod.cast` is the identity and `ZMod.val` is
