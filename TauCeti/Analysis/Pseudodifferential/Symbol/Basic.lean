@@ -1304,6 +1304,23 @@ theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpat
   obtain ⟨K, hK, hKa⟩ := ha
   exact ⟨K, hK, fun x hx ξ ↦ by rw [coefficient_map, hKa x hx ξ, map_zero]⟩
 
+/-- Position derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem spatialDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m) (j : Fin n) :
+    spatialDeriv j (a.map Φ) = (spatialDeriv j a).map Φ :=
+  Symbol.ext (funext fun ⟨x, ξ⟩ ↦ by
+    rw [coefficient_spatialDeriv, coefficient_map, coefficient_spatialDeriv]
+    exact Φ.coordinateDeriv_comp_left [j] ((a.contDiff_coefficient_slice ξ).of_le (by simp)) x)
+
+/-- Frequency derivatives commute with the image under a continuous linear map. -/
+@[simp]
+theorem frequencyDeriv_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m)
+    (j : Fin n) : frequencyDeriv j (a.map Φ) = (frequencyDeriv j a).map Φ :=
+  Symbol.ext (funext fun ⟨x, ξ⟩ ↦ by
+    rw [coefficient_frequencyDeriv, coefficient_map, coefficient_frequencyDeriv]
+    exact Φ.coordinateDeriv_comp_left [j]
+      ((a.contDiff_coefficient.comp (contDiff_const.prodMk contDiff_id)).of_le (by simp)) ξ)
+
 end Map
 
 end Symbol
