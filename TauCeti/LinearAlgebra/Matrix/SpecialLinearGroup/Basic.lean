@@ -90,6 +90,8 @@ proof is independent of the source's.
   `{±I}` when `R` has no zero divisors.
 * `Matrix.SpecialLinearGroup.finite_center` and
   `Matrix.SpecialLinearGroup.card_center_le_two`: that centre is finite, of order at most two.
+* `Matrix.SpecialLinearGroup.center_le_iff_neg_one_mem`: a subgroup of `SL₂` contains the centre
+  exactly when it contains `-I`.
 * `Matrix.SpecialLinearGroup.disjoint_center_iff_neg_one_notMem`: the simp-normal form of the
   `= 1` case, `Disjoint (center _) Γ ↔ -I ∉ Γ`.
 * `Matrix.SpecialLinearGroup.card_center_subgroupOf_eq_two_iff` and
@@ -459,6 +461,17 @@ theorem disjoint_center_iff_neg_one_notMem [NoZeroDivisors R] [NeZero (2 : R)]
       (-1 : SpecialLinearGroup (Fin 2) R) ∉ Γ := by
   rw [← Subgroup.subgroupOf_eq_bot, ← Subgroup.card_eq_one]
   exact card_center_subgroupOf_eq_one_iff Γ
+
+/-- **A subgroup of `SL₂` contains the centre exactly when it contains `-I`**, the centre being
+`{±I}` by `mem_center_iff_eq_one_or_eq_neg_one`. -/
+theorem center_le_iff_neg_one_mem [NoZeroDivisors R]
+    {Γ : Subgroup (SpecialLinearGroup (Fin 2) R)} :
+    Subgroup.center (SpecialLinearGroup (Fin 2) R) ≤ Γ ↔
+      (-1 : SpecialLinearGroup (Fin 2) R) ∈ Γ := by
+  refine ⟨fun h ↦ h (mem_center_iff_eq_one_or_eq_neg_one.mpr (.inr rfl)), fun h g hg ↦ ?_⟩
+  rcases mem_center_iff_eq_one_or_eq_neg_one.mp hg with rfl | rfl
+  · exact Γ.one_mem
+  · exact h
 
 /-- **The `±I` factor is `2` exactly when `-I ∈ Γ`.** The part of the centre that `Γ` contains is
 `{I}` or `{±I}` according to whether `Γ` contains `-I`, so the centre factor in the stabiliser
