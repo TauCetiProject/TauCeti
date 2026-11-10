@@ -35,11 +35,13 @@ namespace TauCeti
 
 /-- A concatenation is independent exactly when its two parts are independent
 and have disjoint spans. -/
-theorem linearIndependent_fin_append [Ring R] [AddCommGroup V] [Module R V]
+theorem linearIndependent_fin_append [Ring R] [AddCommMonoid V] [Module R V]
     {x : Fin p → V} {y : Fin q → V} :
     LinearIndependent R (Fin.append x y) ↔
       LinearIndependent R x ∧ LinearIndependent R y ∧
         Disjoint (span R (range x)) (span R (range y)) := by
+  -- Over a ring, an additive commutative monoid with a module structure is a group.
+  let _ := Module.addCommMonoidToAddCommGroup R (M := V)
   rw [← linearIndependent_equiv finSumFinEquiv]
   -- `erw` unfolds the equivalence coercion to Mathlib's sum eliminator.
   erw [Fin.append_comp_sumElim]
@@ -53,7 +55,7 @@ open TauCeti
 
 /-- Removing the last block of an independent three-block concatenation
 preserves independence. -/
-theorem fin_append_left_append [Ring R] [AddCommGroup V] [Module R V] {r : ℕ}
+theorem fin_append_left_append [Ring R] [AddCommMonoid V] [Module R V] {r : ℕ}
     {x : Fin p → V} {y : Fin q → V} {z : Fin r → V}
     (h : LinearIndependent R (Fin.append x (Fin.append y z))) :
     LinearIndependent R (Fin.append x y) := by
@@ -63,7 +65,7 @@ theorem fin_append_left_append [Ring R] [AddCommGroup V] [Module R V] {r : ℕ}
 
 /-- Removing the middle block of an independent three-block concatenation
 preserves independence. -/
-theorem fin_append_right_append [Ring R] [AddCommGroup V] [Module R V] {r : ℕ}
+theorem fin_append_right_append [Ring R] [AddCommMonoid V] [Module R V] {r : ℕ}
     {x : Fin p → V} {y : Fin q → V} {z : Fin r → V}
     (h : LinearIndependent R (Fin.append x (Fin.append y z))) :
     LinearIndependent R (Fin.append x z) := by
