@@ -25,6 +25,8 @@ so that `η = δα / α` wherever `α ≠ 0`. Following Samols and Taubes, these
 kernel of the gauge-fixed operator `L_x = d₀* ⊕ d₁` of a vortex to the scalar Schrödinger
 equation `Δη = P η`.
 
+* `logVariation_add`, `logVariation_smul`, `logVariation_sub`: the logarithmic variation is
+  real-linear in differentiable `η` (pointwise: `logVariation_add_apply`).
 * `gaugeFixedOperator_logVariation`: at every field, writing `E = ∂bar_a α` for the complex
   holomorphicity defect (the rows `1` and `2` of `equation x`),
   `L_x (logVariation x η) = (Im (P η - Δη), Re (P η - Δη), Re (η E), Im (η E))`.
@@ -45,13 +47,17 @@ equation `Δη = P η`.
 
 Since `η = δα / α`, the function `η` of a kernel element is in general singular at the zeros of
 `α`: the covariant translations of `TauCeti.Analysis.PDE.Vortex.TranslationKernel`, which move
-the zeros, have `η = ∇_v α / α` with poles there. The last two theorems say that if `δα / α`
-extends to a `C²` function, the kernel element vanishes; by linearity of `L_x`, a kernel element
-is determined by the singular part of `δα / α` at the zeros of `α`. This is the vanishing step
-behind the injectivity half of the identification of the kernel of `L_x` with the tangent space of
-the divisor space `Sym^m ℂ` through the principal parts of `δα / α`. The principal-part map
-itself, which needs the local structure of `δα / α` at a zero of `α`, and the construction of a
-kernel element with prescribed principal parts are not treated here.
+the zeros, have `η = ∇_v α / α` with poles there. The last two theorems say that, at a field
+`x` whose holomorphicity rows vanish everywhere, a continuous kernel element `y` vanishes if
+`δα / α` extends to a `C²` function `η` with `η ∈ L²`; for a framed vortex (`x` of class `C¹`
+with `|α|² → 1` at infinity) it suffices that `y ∈ L²`, which gives `η ∈ L²`. By linearity of
+`L_x`, two continuous `L²` kernel elements of such a framed vortex agree once their quotients
+`δα / α` differ by a `C²` function, so such a kernel element is determined by the singular part
+of `δα / α` at the zeros of `α`. This is the vanishing step behind the injectivity half of the
+identification of the kernel of `L_x` with the tangent space of the divisor space `Sym^m ℂ`
+through the principal parts of `δα / α`. The principal-part map itself, which needs the local
+structure of `δα / α` at a zero of `α`, and the construction of a kernel element with prescribed
+principal parts are not treated here.
 
 ## References
 
@@ -336,6 +342,48 @@ theorem logVariation_zero (x : ℂ → EuclideanSpace ℝ (Fin 4)) : logVariatio
   funext z
   ext i
   fin_cases i <;> simp
+
+/-- The logarithmic variation is additive in `η` at a point where both summands are
+differentiable. -/
+theorem logVariation_add_apply (x : ℂ → EuclideanSpace ℝ (Fin 4)) {η ζ : ℂ → ℂ} {z : ℂ}
+    (hη : DifferentiableAt ℝ η z) (hζ : DifferentiableAt ℝ ζ z) :
+    logVariation x (η + ζ) z = logVariation x η z + logVariation x ζ z := by
+  have hre : fderiv ℝ (fun w ↦ (η w).re + (ζ w).re) z =
+      fderiv ℝ (fun w ↦ (η w).re) z + fderiv ℝ (fun w ↦ (ζ w).re) z :=
+    fderiv_fun_add (reCLM.differentiableAt.comp z hη) (reCLM.differentiableAt.comp z hζ)
+  have him : fderiv ℝ (fun w ↦ (η w).im + (ζ w).im) z =
+      fderiv ℝ (fun w ↦ (η w).im) z + fderiv ℝ (fun w ↦ (ζ w).im) z :=
+    fderiv_fun_add (imCLM.differentiableAt.comp z hη) (imCLM.differentiableAt.comp z hζ)
+  ext i
+  fin_cases i <;> simp [hre, him] <;> ring
+
+/-- The logarithmic variation is additive in differentiable functions `η`. -/
+theorem logVariation_add (x : ℂ → EuclideanSpace ℝ (Fin 4)) {η ζ : ℂ → ℂ}
+    (hη : Differentiable ℝ η) (hζ : Differentiable ℝ ζ) :
+    logVariation x (η + ζ) = logVariation x η + logVariation x ζ :=
+  funext fun z ↦ logVariation_add_apply x (hη z) (hζ z)
+
+/-- The logarithmic variation commutes with real scalar multiplication of `η`. -/
+theorem logVariation_smul (x : ℂ → EuclideanSpace ℝ (Fin 4)) (c : ℝ) (η : ℂ → ℂ) :
+    logVariation x (c • η) = c • logVariation x η := by
+  rcases eq_or_ne c 0 with rfl | hc
+  · simp
+  have := invertibleOfNonzero hc
+  have hre (z : ℂ) : fderiv ℝ (fun w ↦ c * (η w).re) z = c • fderiv ℝ (fun w ↦ (η w).re) z :=
+    fderiv_const_smul_of_invertible (f := fun w ↦ (η w).re) c
+  have him (z : ℂ) : fderiv ℝ (fun w ↦ c * (η w).im) z = c • fderiv ℝ (fun w ↦ (η w).im) z :=
+    fderiv_const_smul_of_invertible (f := fun w ↦ (η w).im) c
+  funext z
+  ext i
+  fin_cases i <;> simp [hre, him] <;> ring
+
+/-- The logarithmic variation of a difference of differentiable functions is the difference. -/
+theorem logVariation_sub (x : ℂ → EuclideanSpace ℝ (Fin 4)) {η ζ : ℂ → ℂ}
+    (hη : Differentiable ℝ η) (hζ : Differentiable ℝ ζ) :
+    logVariation x (η - ζ) = logVariation x η - logVariation x ζ := by
+  have hneg : -ζ = (-1 : ℝ) • ζ := by simp
+  rw [sub_eq_add_neg, sub_eq_add_neg, hneg, logVariation_add x hη (hζ.const_smul _),
+    logVariation_smul, neg_one_smul]
 
 /-- **A kernel element with regular `δα / α` vanishes.** Let `x` be a differentiable field whose
 holomorphicity rows vanish everywhere and whose zeros have dense complement, and let `y` be a
