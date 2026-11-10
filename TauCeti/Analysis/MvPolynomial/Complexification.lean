@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.MvPolynomial.Polynomial
 public import TauCeti.Analysis.MvPolynomial.DirectionalOrder
 public import TauCeti.Analysis.Analytic.Complexification.Basic
 public import TauCeti.Topology.Algebra.MvPolynomial.Nonvanishing
@@ -225,15 +226,6 @@ theorem exists_complexification_dense_open_directions_eval_add_smul_eq_pow_mul [
 end MvPolynomial
 
 namespace Polynomial
-
-/-- The coefficients of a polynomial with multivariate coefficients, mapped by evaluating the
-coefficients through a ring homomorphism at a point, are the evaluations of the mapped
-coefficients. -/
-theorem coeff_map_eval₂Hom {R S σ : Type*} [CommSemiring R] [CommSemiring S] (f : R →+* S)
-    (p : Polynomial (MvPolynomial σ R)) (x : σ → S) (i : ℕ) :
-    (p.map (MvPolynomial.eval₂Hom f x)).coeff i =
-      MvPolynomial.eval x ((p.coeff i).map f) := by
-  simp only [coeff_map, MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_eq_eval_map]
 
 /-- The coefficients of a real multivariate polynomial complexified and evaluated along a family
 of points are analytic when every coordinate of the family is analytic. -/

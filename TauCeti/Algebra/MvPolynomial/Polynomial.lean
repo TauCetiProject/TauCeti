@@ -17,6 +17,8 @@ A one-variable polynomial `r : K[X]` can be applied to a multivariate polynomial
 ## Main results
 
 * `MvPolynomial.eval_polynomial_aeval`: `eval f (Polynomial.aeval p r) = r.eval (eval f p)`.
+* `Polynomial.coeff_map_eval₂Hom`: the coefficients of a polynomial with multivariate coefficients,
+  evaluated through a ring homomorphism at a point, are the evaluations of the mapped coefficients.
 -/
 
 public section
@@ -32,3 +34,16 @@ evaluated at the value of `p`. -/
   rw [← aeval_eq_eval, ← Polynomial.aeval_algHom_apply, Polynomial.coe_aeval_eq_eval]
 
 end MvPolynomial
+
+namespace Polynomial
+
+/-- The coefficients of a polynomial with multivariate coefficients, mapped by evaluating the
+coefficients through a ring homomorphism at a point, are the evaluations of the mapped
+coefficients. -/
+theorem coeff_map_eval₂Hom {R S σ : Type*} [CommSemiring R] [CommSemiring S] (f : R →+* S)
+    (p : Polynomial (MvPolynomial σ R)) (x : σ → S) (i : ℕ) :
+    (p.map (MvPolynomial.eval₂Hom f x)).coeff i =
+      MvPolynomial.eval x ((p.coeff i).map f) := by
+  simp only [coeff_map, MvPolynomial.coe_eval₂Hom, MvPolynomial.eval₂_eq_eval_map]
+
+end Polynomial
