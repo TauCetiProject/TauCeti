@@ -165,8 +165,8 @@ theorem exists_comp_eq (hπ : π.IsUnitary) {S : σ →ⁱL ρ}
   · ext v
     have h := e.injective (a₁ := ⟨π g (f v), hπ.apply_mem_orthogonal hKinv g (e.symm _).2⟩)
       (a₂ := ⟨f (σ g v), (e.symm _).2⟩)
-      (Subtype.ext (show T (π g (f v)) = T (f (σ g v)) by simp [hf, S.isIntertwining,
-        T.isIntertwining]))
+      (Subtype.ext (by simp [e, LinearMap.kerComplementEquivRange_apply_coe,
+        toContinuousLinearMap_apply, hf, S.isIntertwining, T.isIntertwining]))
     exact congr($h.1).symm
   · ext v
     exact hf v
