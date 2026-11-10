@@ -152,7 +152,7 @@ theorem _root_.FDRep.character_mem_irreducibleCharacters (X : FDRep k G)
   have := FDRep.isIrreducible_of_simple X
   TauCeti.character_mem_irreducibleCharacters X.ρ
 
-variable [Finite G] [IsAlgClosed k] [Invertible (Nat.card G : k)]
+variable [IsAlgClosed k] [Invertible (Nat.card G : k)]
 
 variable (k G)
 
@@ -162,6 +162,7 @@ distinct because they are linearly independent, and every irreducible character 
 theorem nonempty_equiv_conjClasses_irreducibleCharacters :
     Nonempty (ConjClasses G ≃ irreducibleCharacters k G) := by
   have : NeZero (Nat.card G : k) := ⟨Invertible.ne_zero _⟩
+  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦ NeZero.ne (Nat.card G : k) (by simp [h])
   obtain ⟨d, ρ, hirr, hind, -⟩ := exists_irreducible_family_conjClasses k G
   have := hirr
   have hmem : ∀ C, (ρ C).character ∈ irreducibleCharacters k G := fun C => ⟨d C, ρ C, hirr C, rfl⟩
@@ -174,15 +175,12 @@ theorem nonempty_equiv_conjClasses_irreducibleCharacters :
     obtain ⟨C, ⟨e⟩⟩ := ClassFunction.exists_nonempty_equiv ρ hind rfl σ
     exact ⟨C, Subtype.ext (_root_.Representation.char_iso e).symm⟩
 
-instance : Finite (irreducibleCharacters k G) :=
+instance [Finite G] : Finite (irreducibleCharacters k G) :=
   Finite.of_equiv _ (nonempty_equiv_conjClasses_irreducibleCharacters k G).some
 
-omit [Finite G] in
 /-- **A group with invertible order has as many irreducible characters as conjugacy classes.** -/
 theorem card_irreducibleCharacters :
     Nat.card (irreducibleCharacters k G) = Nat.card (ConjClasses G) :=
-  have : Finite G := Nat.finite_of_card_ne_zero fun h =>
-    Invertible.ne_zero (Nat.card G : k) (by simp [h])
   (Nat.card_congr (nonempty_equiv_conjClasses_irreducibleCharacters k G).some).symm
 
 end Set
