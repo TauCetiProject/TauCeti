@@ -217,12 +217,13 @@ theorem exists_isIsolatingRank :
 
 /-- If every countable level of `K` has at most `ℵ₁` classes, then `K` meets at most `ℵ₁`
 isomorphism classes. The set `K` need not be Borel or isomorphism invariant, and the language need
-not be countable. The proof counts the classes stratum by stratum for the Scott height, which is an
-isolating rank (`TauCeti.isIsolatingRank_scottHeight`); the bound does not depend on the rank. -/
+not be countable. -/
 theorem mk_isoClasses_le_aleph_one (K : Set (RelationalConfiguration L ℕ))
     (hlevels : ∀ α : Ordinal.{0}, α < ω₁ →
       #(Quotient ((bfEquivSetoid L ℕ α).comap (Subtype.val : K → _))) ≤ ℵ₁) :
     #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) ≤ ℵ₁ := by
+  -- count the classes stratum by stratum for the Scott height, an isolating rank
+  -- (`TauCeti.isIsolatingRank_scottHeight`)
   have h := isIsolatingRank_scottHeight L
   have hfib (α : Ordinal.{0}) (hα : α < ω₁) :
       #(rankOnIsoClasses h.iso_invariant K ⁻¹' {α}) ≤ ℵ₁ := by
