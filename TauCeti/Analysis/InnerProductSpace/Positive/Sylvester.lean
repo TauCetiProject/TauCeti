@@ -78,7 +78,6 @@ def positiveSylvesterEquiv (hA : IsStrictlyPositive A) (hB : 0 ≤ B) :
     (F →L[𝕜] E) ≃L[𝕜] (F →L[𝕜] E) :=
   letI := FiniteDimensional.complete 𝕜 E
   let h := sylvester_bijective (A := A) (B := -B)
-    (nonneg_iff_isPositive.mp hA.nonneg).toLinearMap.isSymmetric
     (by
       intro x y
       simp only [coe_coe, neg_apply, inner_neg_left, inner_neg_right]

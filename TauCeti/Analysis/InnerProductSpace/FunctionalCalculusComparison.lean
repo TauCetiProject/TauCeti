@@ -129,14 +129,19 @@ theorem toContinuousLinearMap_operatorAbs_eq_cfcAbs (A : E →ₗ[𝕜] E) :
   rw [toContinuousLinearMap_operatorAbs, CFC.abs, ContinuousLinearMap.star_eq_adjoint,
     ← adjoint_toContinuousLinearMap, ContinuousLinearMap.mul_def]
 
+omit [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
+  [ContinuousFunctionalCalculus ℝ (E →L[𝕜] E) IsSelfAdjoint] [StarOrderedRing (E →L[𝕜] E)] in
 /-- **Agreement of the finite and bounded moduli.** For a linear map between
 finite-dimensional real or complex inner product spaces, the finite spectral modulus is the
 bounded-operator modulus after converting the maps to continuous linear maps. -/
 theorem toContinuousLinearMap_operatorAbs_eq_modulus [CompleteSpace F]
     (A : E →ₗ[𝕜] F) :
     toContinuousLinearMap A.operatorAbs = (toContinuousLinearMap A).modulus := by
-  simp only [toContinuousLinearMap_operatorAbs, ContinuousLinearMap.modulus_eq_sqrt,
-    adjoint_toContinuousLinearMap]
+  refine ContinuousLinearMap.eq_modulus_iff.2 ⟨A.isPositive_operatorAbs, ?_⟩
+  ext x
+  have h := congr($(A.operatorAbs_sq) x)
+  rw [LinearMap.comp_apply, LinearMap.comp_apply] at h
+  simpa [← adjoint_toContinuousLinearMap] using h
 
 end LinearMap
 

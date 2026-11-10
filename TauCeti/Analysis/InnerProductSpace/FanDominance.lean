@@ -223,19 +223,56 @@ theorem mul_map_le_map_comp_right (N : UnitarilyInvariantSeminorm 𝕜 E F) (A :
   rw [LinearMap.comp_assoc, hCG, LinearMap.comp_id] at h
   rwa [le_inv_mul_iff₀ hc] at h
 
+omit [FiniteDimensional 𝕜 E] in
 /-- Composing with an orthogonal projection on the left does not increase a unitarily invariant
 seminorm. -/
 theorem map_starProjection_comp_le (N : UnitarilyInvariantSeminorm 𝕜 E F) (U : Submodule 𝕜 F)
     (A : E →L[𝕜] F) : N (U.starProjection ∘L A) ≤ N A := by
-  simpa using N.map_comp_le_left U.starProjection (A : E →ₗ[𝕜] F) (c := 1)
-    fun y ↦ by simpa using U.norm_starProjection_apply_le y
+  -- `P = (1 + R) / 2` for the reflection `R`, which is an isometry.
+  have hP : ((U.starProjection ∘L A : E →L[𝕜] F) : E →ₗ[𝕜] F) =
+      (2⁻¹ : 𝕜) • ((A : E →ₗ[𝕜] F) + U.reflection.toLinearEquiv.toLinearMap ∘ₗ A) := by
+    ext x
+    simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, LinearMap.smul_apply,
+      LinearMap.add_apply, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+      LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv, Submodule.reflection_apply]
+    module
+  have hR := N.map_linearIsometryEquiv_comp U.reflection (A : E →ₗ[𝕜] F)
+  calc N (U.starProjection ∘L A)
+      = (2⁻¹ : ℝ) * N ((A : E →ₗ[𝕜] F) + U.reflection.toLinearEquiv.toLinearMap ∘ₗ A) := by
+        rw [hP, map_smul_eq_mul]
+        simp
+    _ ≤ (2⁻¹ : ℝ) * (N A + N A) := by
+        gcongr
+        refine (map_add_le_add _ _ _).trans ?_
+        exact add_le_add le_rfl hR.le
+    _ = N A := by ring
 
+omit [FiniteDimensional 𝕜 F] in
 /-- Composing with an orthogonal projection on the right does not increase a unitarily invariant
 seminorm. -/
 theorem map_comp_starProjection_le (N : UnitarilyInvariantSeminorm 𝕜 E F) (U : Submodule 𝕜 E)
     (A : E →L[𝕜] F) : N (A ∘L U.starProjection) ≤ N A := by
-  simpa using N.map_comp_le_right (A : E →ₗ[𝕜] F) U.starProjection (c := 1)
-    fun x ↦ by simpa using U.norm_starProjection_apply_le x
+  -- `P = (1 + R) / 2` for the reflection `R`, which is an isometry.
+  have hP : ((A ∘L U.starProjection : E →L[𝕜] F) : E →ₗ[𝕜] F) =
+      (2⁻¹ : 𝕜) •
+        ((A : E →ₗ[𝕜] F) + (A : E →ₗ[𝕜] F) ∘ₗ U.reflection.toLinearEquiv.toLinearMap) := by
+    ext x
+    simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, LinearMap.smul_apply,
+      LinearMap.add_apply, LinearMap.comp_apply, ContinuousLinearMap.coe_coe,
+      LinearEquiv.coe_coe, LinearIsometryEquiv.coe_toLinearEquiv, Submodule.reflection_apply]
+    rw [map_sub, map_nsmul]
+    module
+  have hR := N.map_comp_linearIsometryEquiv U.reflection (A : E →ₗ[𝕜] F)
+  calc N (A ∘L U.starProjection)
+      = (2⁻¹ : ℝ) * N ((A : E →ₗ[𝕜] F) +
+          (A : E →ₗ[𝕜] F) ∘ₗ U.reflection.toLinearEquiv.toLinearMap) := by
+        rw [hP, map_smul_eq_mul]
+        simp
+    _ ≤ (2⁻¹ : ℝ) * (N A + N A) := by
+        gcongr
+        refine (map_add_le_add _ _ _).trans ?_
+        exact add_le_add le_rfl hR.le
+    _ = N A := by ring
 
 /-! ### Ideal inequalities for a symmetric right factor bounded on a subspace -/
 
