@@ -119,10 +119,14 @@ coordinate change. -/
 theorem alongCurveInChartWithin_coordChange {x y : M} {s : Set 𝕜} {t : 𝕜}
     (hx : γ t ∈ (trivializationAt E (TangentSpace I) x).baseSet)
     (hy : γ t ∈ (trivializationAt E (TangentSpace I) y).baseSet)
-    (hu : UniqueDiffWithinAt 𝕜 s t) (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t)
+    (hγ : MDifferentiableWithinAt 𝓘(𝕜, 𝕜) I γ s t)
     (hV : DifferentiableWithinAt 𝕜 (sectionCoord (F := E) γ V (γ t)) s t) :
     alongCurveInChartWithin cov γ V s y t =
       tangentCoordChange I x y (γ t) (alongCurveInChartWithin cov γ V s x t) := by
+  by_cases hu : UniqueDiffWithinAt 𝕜 s t
+  swap
+  · simp only [alongCurveInChartWithin_apply, derivWithin_zero_of_not_uniqueDiffWithinAt hu,
+      map_zero, add_zero]
   rw [← continuousLinearMapAt_symmL_coordChange hx hy,
     symmL_alongCurveInChartWithin cov γ V hx hu hγ hV,
     ← symmL_alongCurveInChartWithin cov γ V hy hu hγ hV,
