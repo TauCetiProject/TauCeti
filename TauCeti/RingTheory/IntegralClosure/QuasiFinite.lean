@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.Japanese
 
 import Mathlib.Algebra.Module.LocalizedModule.Submodule
 import Mathlib.RingTheory.Localization.Finiteness
-import Mathlib.RingTheory.Polynomial.ScaleRoots
+import TauCeti.RingTheory.IntegralClosure.IsIntegral.Basic
 import TauCeti.RingTheory.Localization.Finiteness
 
 /-!
@@ -34,15 +34,13 @@ over `P` with finite étale generic fibre
 (`TauCeti.Ring.finite_integralClosure_of_isTorsionFree_of_etale`). No excellence or Japanese
 hypothesis enters. This is the route to finiteness of the normalization of a flat finite type
 algebra `A` over a possibly non-excellent discrete valuation ring `R` in its generic fibre
-`B = A[1/π]` when `B` is smooth over the fraction field `K`: near each point of the special fibre,
-one chooses `x ∈ A` such that `A` is quasi-finite over `R[x]` and `K(x) ⊗[R[x]] B` is étale over
-`K(x)`.
+`B = A[1/π]` when `B` is smooth of relative dimension one over the fraction field `K`. Applying
+these results requires constructing, near each point of the special fibre, a coordinate `x ∈ A`
+such that `A` is quasi-finite over `R[x]`, `B` is torsion-free over `R[x]`, and
+`K(x) ⊗[R[x]] B` is étale over `K(x)`. This coordinate construction is not supplied here.
 
 ## Main results
 
-* `IsIntegral.exists_isIntegral_algebraMap_pow_mul`: if each element of `A` times a power of `r`
-  is integral over `P`, every element of an `A`-algebra integral over `A` becomes integral over
-  `P` after multiplication by a power of `r`.
 * `Algebra.QuasiFiniteAt.exists_notMem_finite_localizedModule_integralClosure`: if `A` is of finite
   type over `P` and quasi-finite at a prime `q`, and the integral closure of `P` in `B` is finite,
   then the integral closure of `A` in `B` becomes finite over `A_r` after inverting some `r ∉ q`.
@@ -61,54 +59,8 @@ one chooses `x ∈ A` such that `A` is quasi-finite over `R[x]` and `K(x) ⊗[R[
 
 public section
 
-open Polynomial
-
 variable {P A B : Type*} [CommRing P] [CommRing A] [CommRing B] [Algebra P A] [Algebra A B]
   [Algebra P B] [IsScalarTower P A B]
-
-/-- Let `r ∈ A` be such that every element of `A` times a power of `r` is integral over `P`. Then
-every element `c` of an `A`-algebra that is integral over `A` becomes integral over `P` after
-multiplication by a power of `r`. -/
-theorem IsIntegral.exists_isIntegral_algebraMap_pow_mul {c : B} (hc : IsIntegral A c) {r : A}
-    (H : ∀ a : A, ∃ m, IsIntegral P (r ^ m * a)) :
-    ∃ n, IsIntegral P (algebraMap A B r ^ n * c) := by
-  -- If `f` is a monic equation of `c` over `A` and `rᴺ` clears its coefficients, then `rᴺ c` is
-  -- a root of `f.scaleRoots rᴺ`, a monic polynomial with coefficients integral over `P`.
-  obtain ⟨f, hfm, hfc⟩ := hc
-  choose m hm using H
-  have hr : IsIntegral P r := .of_pow (Nat.succ_pos _) (by simpa [pow_succ] using hm r)
-  -- A common exponent `N` clearing all the coefficients of `f`.
-  set N := ∑ i ∈ Finset.range (f.natDegree + 1), m (f.coeff i)
-  have hcoeff (i : ℕ) : IsIntegral P (r ^ N * f.coeff i) := by
-    rcases le_or_gt i f.natDegree with hi | hi
-    · have : m (f.coeff i) ≤ N := Finset.single_le_sum (f := fun i ↦ m (f.coeff i))
-        (fun _ _ ↦ Nat.zero_le _) (Finset.mem_range.mpr (Nat.lt_succ_of_le hi))
-      rw [← Nat.sub_add_cancel this, pow_add, mul_assoc]
-      exact (hr.pow _).mul (hm _)
-    · rw [f.coeff_eq_zero_of_natDegree_lt hi, mul_zero]
-      exact isIntegral_zero
-  -- The coefficients of `f.scaleRoots rᴺ` lie in the integral closure `S` of `P` in `A`.
-  let S := integralClosure P A
-  have hg (i : ℕ) : (f.scaleRoots (r ^ N)).coeff i ∈ S := by
-    rw [coeff_scaleRoots, mem_integralClosure_iff]
-    rcases lt_or_ge i f.natDegree with hi | hi
-    · obtain ⟨k, hk⟩ : ∃ k, f.natDegree - i = k + 1 := ⟨f.natDegree - i - 1, by omega⟩
-      rw [hk, pow_succ, mul_comm, mul_assoc]
-      exact ((hr.pow N).pow k).mul (hcoeff i)
-    · rw [Nat.sub_eq_zero_of_le hi, pow_zero, mul_one]
-      rcases hi.eq_or_lt with h | h
-      · rw [← h, hfm.coeff_natDegree]
-        exact isIntegral_one
-      · rw [f.coeff_eq_zero_of_natDegree_lt h]
-        exact isIntegral_zero
-  obtain ⟨g, hgf, -, hgm⟩ := lifts_and_natDegree_eq_and_monic
-    ((lifts_iff_coeff_lifts (f := algebraMap S A) _).mpr fun i ↦ ⟨⟨_, hg i⟩, rfl⟩)
-    ((monic_scaleRoots_iff _).mpr hfm)
-  -- So `rᴺ c` is integral over `S`, which is integral over `P`.
-  have : IsIntegral S (algebraMap A B r ^ N * c) := ⟨g, hgm, by
-    rw [IsScalarTower.algebraMap_eq S A B, ← eval₂_map, hgf, ← map_pow, ← aeval_def]
-    exact scaleRoots_aeval_eq_zero hfc⟩
-  exact ⟨N, isIntegral_trans _ this⟩
 
 /-- **The integral closure over a quasi-finite algebra is finite near a point.** Let `A` be a
 finite type `P`-algebra that is quasi-finite over `P` at a prime `q`, and let `B` be an
