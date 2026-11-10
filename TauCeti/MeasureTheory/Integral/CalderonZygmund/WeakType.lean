@@ -239,7 +239,7 @@ omit [CompleteSpace E] in
 /-- On the one-point space `(ι → ℝ)` for empty `ι`, the sharp bound `t |{‖T f‖ > t}| ≤ ‖T‖ ‖f‖₁`
 (`ContinuousLinearMap.mul_volume_lt_enorm_le_of_isEmpty`) is below the weak-type constant of the
 Calderón–Zygmund theorem, whatever the coefficient `c` of the kernel term. -/
-theorem mul_volume_lt_enorm_le_of_isEmpty_add [IsEmpty ι]
+private theorem mul_volume_lt_enorm_le_of_isEmpty_add [IsEmpty ι]
     (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
     (f : Lp E 2 (volume : Measure (ι → ℝ))) (t c : ℝ≥0∞) :
     t * volume {x | t < ‖T f x‖ₑ} ≤

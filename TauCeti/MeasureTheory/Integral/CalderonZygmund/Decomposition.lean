@@ -249,8 +249,7 @@ theorem biUnion_calderonZygmundCubes_subset (hg : ∫⁻ x, g x ≠ ∞) (ht : t
   simp only [iUnion_subset_iff]
   intro p hp x hx
   rcases isEmpty_or_nonempty ι with hι | hι
-  · have huniv : ∀ k m, dyadicCube k m = (Set.univ : Set (ι → ℝ)) := fun k m =>
-      eq_univ_of_forall fun y => mem_dyadicCube.2 (Subsingleton.elim _ _)
+  · have huniv : ∀ k m, dyadicCube k m = (Set.univ : Set (ι → ℝ)) := dyadicCube_eq_univ
     have h1 := hp.1
     have h2 := hp.2 (p.1 + 1) p.2 (lt_add_one p.1) (by simp [huniv])
     simp only [huniv] at h1 h2

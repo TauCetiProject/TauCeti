@@ -255,10 +255,8 @@ theorem mul_volume_lt_enorm_le_of_norm_sub_le_mul_rpow
     t * volume {x | t < ‖T f x‖ₑ} ≤
       (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) +
         4 * (C * ENNReal.ofReal (4 ^ Fintype.card ι / (2 ^ δ - 1)))) * ∫⁻ x, ‖f x‖ₑ := by
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · exact mul_volume_lt_enorm_le_of_isEmpty_add T f t _
-  · exact mul_volume_lt_enorm_le_of_hormander T hKm
-      (fun _ _ => setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow_pi hδ fun x => hK x _ _)
-      hrep f t
+  exact mul_volume_lt_enorm_le_of_hormander T hKm
+    (fun _ _ => setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow_pi hδ fun x => hK x _ _)
+    hrep f t
 
 end ContinuousLinearMap
