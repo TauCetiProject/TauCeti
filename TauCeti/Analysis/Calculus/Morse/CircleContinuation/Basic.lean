@@ -31,8 +31,10 @@ slices are Morse–Smale need not give a transverse parameter field.
 Since `t` increases along `W`, its trajectories in `0 < t < 1` are graphs of functions `Θ` of `t`
 solving `Θ' = 2 δ sin (2 (Θ - r t)) / (t (1 - t²))` (`TauCeti.circleContinuationSlope`). This
 file works with these graphs, and `TauCeti.hasDerivAt_circleContinuationField` turns such a graph
-back into a trajectory of `W`. It proves the three dynamical facts about this equation used by the
-counterexamples.
+back into a trajectory of `W`. On every window `[a, b] ⊆ (0, 1)` on which `r` is continuous
+the slope satisfies the hypotheses of the Picard–Lindelöf theorem
+(`TauCeti.isPicardLindelof_circleContinuationSlope`). The file proves the three dynamical facts
+about this equation used by the counterexamples.
 
 * **Drift bound.** Along any trajectory, between the levels `a` and `b` of `t` the angle moves by
   at most `2 |δ| ∫_a^b (t (1 - t²))⁻¹ dt`, whatever the path `r`
@@ -325,39 +327,49 @@ theorem abs_sub_le_gronwallBound_of_hasDerivWithinAt_circleContinuationSlope
   rw [Real.dist_eq, add_zero] at h
   exact h
 
-/-- The slope of the half-turn path `π ρ` satisfies the Picard–Lindelöf hypotheses on the window
-`[1/3, 5/6]`, with initial angle `π / 2`. -/
-private theorem isPicardLindelof_circleContinuationSlope (δ : ℝ) {ρ : ℝ → ℝ}
-    (hρ : Continuous ρ) :
-    IsPicardLindelof (circleContinuationSlope δ (fun t ↦ π * ρ t))
-      (tmin := 1 / 3) (tmax := 5 / 6) ⟨1 / 3, by norm_num, by norm_num⟩ (π / 2)
-      ⟨4 * |δ|, by positivity⟩ 0 ⟨8 * |δ|, by positivity⟩ ⟨16 * |δ|, by positivity⟩ := by
-  have hmem : ∀ t ∈ Icc (1 / 3 : ℝ) (5 / 6), 0 < t ∧ t < 1 := fun t ht ↦
-    ⟨by linarith [ht.1], by linarith [ht.2]⟩
-  have hinv : ∀ t ∈ Icc (1 / 3 : ℝ) (5 / 6), (t * (1 - t ^ 2))⁻¹ ≤ 4 := fun t ht ↦ by
-    rw [inv_le_comm₀ (baseSpeed_pos (hmem t ht).1 (hmem t ht).2) (by norm_num)]
-    exact (by norm_num : (4 : ℝ)⁻¹ = 1 / 4) ▸ quarter_le_baseSpeed ht.1 ht.2
+/-- On a window `[a, b] ⊆ (0, 1)` the slope satisfies the Picard–Lindelöf hypotheses with initial
+point `(t₀, θ₀)`, for a path continuous on the window. With `m = a (1 - b²)`, a lower bound for
+`t (1 - t²)` on the window, the slope is bounded by `2 |δ| / m` and `4 |δ| / m`-Lipschitz. -/
+theorem isPicardLindelof_circleContinuationSlope (δ : ℝ) {r : ℝ → ℝ} {a b : ℝ}
+    (ha : 0 < a) (hab : a ≤ b) (hb : b < 1) (hr : ContinuousOn r (Icc a b)) (t₀ : Icc a b)
+    (θ₀ : ℝ) :
+    IsPicardLindelof (circleContinuationSlope δ r) t₀ θ₀
+      ⟨2 * |δ| / (a * (1 - b ^ 2)) * (b - a),
+        mul_nonneg (div_nonneg (by positivity) (mul_pos ha (by nlinarith)).le) (sub_nonneg.2 hab)⟩ 0
+      ⟨2 * |δ| / (a * (1 - b ^ 2)), div_nonneg (by positivity) (mul_pos ha (by nlinarith)).le⟩
+      ⟨4 * |δ| / (a * (1 - b ^ 2)), div_nonneg (by positivity) (mul_pos ha (by nlinarith)).le⟩ := by
+  have hm : 0 < a * (1 - b ^ 2) := mul_pos ha (by nlinarith)
+  have hmem : ∀ t ∈ Icc a b, 0 < t ∧ t < 1 := fun t ht ↦
+    ⟨ha.trans_le ht.1, ht.2.trans_lt hb⟩
+  have hinv : ∀ t ∈ Icc a b, (t * (1 - t ^ 2))⁻¹ ≤ (a * (1 - b ^ 2))⁻¹ := fun t ht ↦ by
+    gcongr
+    all_goals nlinarith [ht.1, ht.2]
   refine ⟨fun t ht ↦ ?_, fun θ _ ↦ ?_, fun t ht θ _ ↦ ?_, ?_⟩
   · refine (LipschitzWith.of_dist_le_mul fun θ θ' ↦ ?_).lipschitzOnWith
-    refine (dist_circleContinuationSlope_le δ _ (hmem t ht).1 (hmem t ht).2 θ θ').trans ?_
+    refine (dist_circleContinuationSlope_le δ r (hmem t ht).1 (hmem t ht).2 θ θ').trans ?_
     -- Unfold the coercion of the `ℝ≥0` Lipschitz constant.
-    change _ ≤ (16 * |δ|) * dist θ θ'
-    calc 4 * |δ| * (t * (1 - t ^ 2))⁻¹ * dist θ θ' ≤ 4 * |δ| * 4 * dist θ θ' := by
-          gcongr; exact hinv t ht
-      _ = 16 * |δ| * dist θ θ' := by ring
+    change _ ≤ (4 * |δ| / (a * (1 - b ^ 2))) * dist θ θ'
+    rw [div_eq_mul_inv]
+    gcongr 4 * |δ| * ?_ * _
+    exact hinv t ht
   · simp only [circleContinuationSlope_def]
-    refine ContinuousOn.div (by fun_prop) (by fun_prop) fun t ht ↦ ?_
-    exact (baseSpeed_pos (hmem t ht).1 (hmem t ht).2).ne'
+    refine ContinuousOn.div (continuousOn_const.mul
+      (continuous_sin.comp_continuousOn (continuousOn_const.mul
+        (continuousOn_const.sub hr)))) (by fun_prop) fun t ht ↦
+      (baseSpeed_pos (hmem t ht).1 (hmem t ht).2).ne'
   · rw [Real.norm_eq_abs]
-    refine (abs_circleContinuationSlope_le δ _ (hmem t ht).1 (hmem t ht).2 θ).trans ?_
+    refine (abs_circleContinuationSlope_le δ r (hmem t ht).1 (hmem t ht).2 θ).trans ?_
     -- Unfold the coercion of the `ℝ≥0` bound.
-    change _ ≤ 8 * |δ|
-    have := hinv t ht
-    nlinarith [abs_nonneg δ]
-  · -- Unfold the coercions of the `ℝ≥0` constants and of the initial time.
-    change (8 * |δ|) * max ((5 : ℝ) / 6 - 1 / 3) (1 / 3 - 1 / 3) ≤ 4 * |δ| - 0
-    rw [show max ((5 : ℝ) / 6 - 1 / 3) (1 / 3 - 1 / 3) = 1 / 2 by norm_num]
-    linarith
+    change _ ≤ 2 * |δ| / (a * (1 - b ^ 2))
+    rw [div_eq_mul_inv]
+    gcongr 2 * |δ| * ?_
+    exact hinv t ht
+  · -- Unfold the coercions of the `ℝ≥0` constants.
+    change 2 * |δ| / (a * (1 - b ^ 2)) * max (b - t₀) (t₀ - a) ≤
+      2 * |δ| / (a * (1 - b ^ 2)) * (b - a) - 0
+    rw [sub_zero]
+    gcongr
+    exact max_le (by linarith [t₀.2.1]) (by linarith [t₀.2.2])
 
 /-- The trajectory of the half-turn continuation leaving the source minimum, on the window
 `[1/3, 5/6]`: a solution starting at the angle `π / 2`. -/
@@ -366,7 +378,9 @@ private theorem exists_hasDerivWithinAt_circleContinuationSlope (δ : ℝ) {ρ :
     ∃ Θ : ℝ → ℝ, Θ (1 / 3) = π / 2 ∧ ∀ t ∈ Icc (1 / 3 : ℝ) (5 / 6),
       HasDerivWithinAt Θ (circleContinuationSlope δ (fun t ↦ π * ρ t) t (Θ t))
         (Icc (1 / 3) (5 / 6)) t :=
-  (isPicardLindelof_circleContinuationSlope δ hρ).exists_eq_forall_mem_Icc_hasDerivWithinAt₀
+  (isPicardLindelof_circleContinuationSlope δ (by norm_num) (by norm_num) (by norm_num)
+    (by fun_prop) ⟨1 / 3, by norm_num, by norm_num⟩
+    (π / 2)).exists_eq_forall_mem_Icc_hasDerivWithinAt₀
 
 /-- The angular velocity vanishes where `sin (2 (θ - r t)) = 0`. -/
 theorem circleContinuationSlope_eq_zero {δ : ℝ} {r : ℝ → ℝ} {t θ : ℝ}
