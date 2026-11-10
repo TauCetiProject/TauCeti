@@ -126,8 +126,7 @@ private theorem indicator_edist_rpow_le_of_isFrechetBarycenter {J : Type*} [Fint
     _ ≤ 2 ^ p.toReal * (2 * ∑ j, (w j : ℝ≥0∞) *
         if (R : ℝ≥0∞) ^ p.toReal ≤ f (x j) then f (x j) else 0) := by
       gcongr
-      exact sum_mul_le_two_mul_sum_mul_ite hw (fun j ↦ f (x j))
-        (ENNReal.rpow_ne_top_of_nonneg hpos.le ENNReal.coe_ne_top) h₂
+      exact sum_mul_le_two_mul_sum_mul_ite hw (fun j ↦ f (x j)) h₂
     _ = 2 * 2 ^ p.toReal * ∑ j, (w j : ℝ≥0∞) * {u | R ≤ nndist z u}.indicator f (x j) := by
       simp only [indicator_apply, hRf]
       ring

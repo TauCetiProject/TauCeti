@@ -67,14 +67,28 @@ theorem _root_.ENNReal.toReal_sub_add_toReal_sub {a b : ℝ≥0∞} (ha : a ≠ 
   · rw [tsub_eq_zero_of_le h, ENNReal.toReal_sub_of_le h ha, ENNReal.toReal_zero, add_zero,
       abs_of_nonneg (sub_nonneg.2 (ENNReal.toReal_mono ha h))]
 
-/-- For weights summing to `1` and a threshold `t < ∞` with `2 t ≤ ∑ j, w j * a j`, the weighted
-sum is at most twice its part over the indices with `t ≤ a j`: the other terms contribute at most
-`t`. -/
+/-- For weights summing to `1` and a threshold `t` with `2 t ≤ ∑ j, w j * a j`, the weighted sum is
+at most twice its part over the indices with `t ≤ a j`: the other terms contribute at most `t`. -/
 theorem sum_mul_le_two_mul_sum_mul_ite {J : Type*} [Fintype J] {w : J → ℝ≥0}
-    (hw : ∑ j, w j = 1) (a : J → ℝ≥0∞) {t : ℝ≥0∞} (ht : t ≠ ∞)
+    (hw : ∑ j, w j = 1) (a : J → ℝ≥0∞) {t : ℝ≥0∞}
     (h : 2 * t ≤ ∑ j, (w j : ℝ≥0∞) * a j) :
     ∑ j, (w j : ℝ≥0∞) * a j ≤ 2 * ∑ j, (w j : ℝ≥0∞) * if t ≤ a j then a j else 0 := by
   set B := ∑ j, (w j : ℝ≥0∞) * if t ≤ a j then a j else 0
+  by_cases ht : t = ∞
+  · -- The sum is `∞`, so some term with `a j = ∞` and a nonzero weight lies in the part.
+    subst ht
+    rw [ENNReal.mul_top two_ne_zero, top_le_iff, ENNReal.sum_eq_top] at h
+    obtain ⟨j, -, hj⟩ := h
+    obtain ⟨hwj, haj⟩ : (w j : ℝ≥0∞) ≠ 0 ∧ a j = ∞ := by
+      rcases ENNReal.mul_eq_top.1 hj with h' | h'
+      · exact h'
+      · exact absurd h'.1 ENNReal.coe_ne_top
+    have hB : B = ∞ := top_le_iff.1 <| by
+      calc (∞ : ℝ≥0∞) = (w j : ℝ≥0∞) * if ∞ ≤ a j then a j else 0 := by
+            simp [haj, ENNReal.mul_top hwj]
+        _ ≤ B := Finset.single_le_sum (f := fun j ↦ (w j : ℝ≥0∞) * if ∞ ≤ a j then a j else 0)
+            (fun _ _ ↦ bot_le) (Finset.mem_univ j)
+    simp [hB]
   have hsplit : ∑ j, (w j : ℝ≥0∞) * a j ≤ B + t := by
     calc ∑ j, (w j : ℝ≥0∞) * a j
         ≤ ∑ j, ((w j : ℝ≥0∞) * (if t ≤ a j then a j else 0) + (w j : ℝ≥0∞) * t) := by
