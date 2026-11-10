@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
+public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.LinearAlgebra.Submodule.Independent
 
 /-!
@@ -137,12 +138,11 @@ theorem iSupIndep_veroneseGrading (hd : d ≠ 0) : iSupIndep (veroneseGrading �
 
 /-- The Veronese subalgebra is spanned by its components `𝒜 (d k)`. -/
 theorem iSup_veroneseGrading_eq_top : ⨆ k, veroneseGrading 𝒜 d k = ⊤ := by
-  rw [eq_top_iff]
-  rintro ⟨x, hx⟩ -
-  induction hx using Submodule.iSup_induction' with
-  | mem k x hx => exact Submodule.mem_iSup_of_mem k hx
-  | zero => exact zero_mem _
-  | add x y _ _ hx hy => exact add_mem hx hy
+  apply Submodule.map_injective_of_injective (f := (veronese 𝒜 d).val.toLinearMap)
+    Subtype.val_injective
+  simp only [Submodule.map_iSup, map_veroneseGrading, Submodule.map_top]
+  ext x
+  simp [LinearMap.mem_range, mem_veronese]
 
 /-- The degree-zero part of the Veronese subalgebra is the degree-zero part `𝒜 0` of `A`, as
 rings. -/
@@ -221,19 +221,10 @@ variable {𝒜 d} in
 component in `A`. -/
 @[simp]
 theorem coe_decompose_veroneseGrading [NeZero d] (x : veronese 𝒜 d) (k : ℕ) :
-    ((decompose (veroneseGrading 𝒜 d) x k : veronese 𝒜 d) : A) = decompose 𝒜 (x : A) (d * k) := by
-  classical
-  conv_rhs => rw [← sum_support_decompose (veroneseGrading 𝒜 d) x]
-  push_cast
-  rw [decompose_sum, DirectSum.sum_apply, Submodule.coe_sum,
-    Finset.sum_eq_single k]
-  · exact (decompose_of_mem_same 𝒜 (decompose (veroneseGrading 𝒜 d) x k).2).symm
-  · intro j _ hjk
-    exact decompose_of_mem_ne 𝒜 (decompose (veroneseGrading 𝒜 d) x j).2
-      ((mul_right_injective₀ (NeZero.ne d)).ne hjk)
-  · intro hk
-    rw [DFinsupp.notMem_support_iff.1 hk]
-    simp
+    ((decompose (veroneseGrading 𝒜 d) x k : veronese 𝒜 d) : A) = decompose 𝒜 (x : A) (d * k) :=
+  DirectSum.map_decompose_shift (veroneseGrading 𝒜 d) 𝒜
+    (veronese 𝒜 d).val.toAddMonoidHom (fun k ↦ d * k) (mul_right_injective₀ (NeZero.ne d))
+    (fun _ _ hx ↦ mem_veroneseGrading.mp hx) k x
 
 end Ring
 
