@@ -616,6 +616,7 @@ open StrandGradingGroup
 variable {α β : Type*} [LinearOrder α] [Fintype α] [LinearOrder β] [Fintype β]
 
 /-- The boundary of the class of a relabelled diagram is the relabelled boundary. -/
+@[simp]
 theorem boundary_map (e : α ≃o β) (φ : StrandDiagram α) (y : β) :
     (φ.map e).boundary y = φ.boundary (e.symm y) := by
   simp [boundary_apply]
@@ -627,10 +628,11 @@ theorem grading_map (e : α ≃o β) (φ : StrandDiagram α) :
   have hb : (φ.map e).boundary = φ.boundary ∘ e.symm := funext (boundary_map e φ)
   ext
   · simp [hb, Finset.sum_map, pointMultiplicity_comp_symm]
-  · simp [hb]
+  · simp
 
 /-- The class of a rotated diagram has the negated boundary: its strands run from the end points
 of `φ` to its starting points. -/
+@[simp]
 theorem boundary_reverse (φ : StrandDiagram α) (x : αᵒᵈ) :
     φ.reverse.boundary x = -φ.boundary (ofDual x) := by
   simp only [boundary_apply, source_reverse, target_reverse, Finset.mem_map_equiv,
@@ -639,8 +641,8 @@ theorem boundary_reverse (φ : StrandDiagram α) (x : αᵒᵈ) :
 
 /-- **Rotation reverses the grading.** The grading of a diagram rotated by half a turn is the
 orientation reversal of its grading. Its Maslov component is unchanged: rotation preserves the
-crossings, and the multiplicity of the class of a diagram is the same at its starting and at its
-end points, because `L` vanishes on the class. -/
+crossings, and the multiplicities of the class of a diagram at its starting points have the same
+sum as its multiplicities at its end points, because `L` vanishes on the class. -/
 @[simp]
 theorem grading_reverse (φ : StrandDiagram α) :
     φ.reverse.grading = (StrandGradingGroup.reverse φ.grading).unop := by
@@ -656,7 +658,7 @@ theorem grading_reverse (φ : StrandDiagram α) :
   · simp only [grading_maslov, inversionCount_reverse, source_reverse, Finset.sum_map, hb,
       reverse_maslov]
     simp [pointMultiplicity_toDual, hsum, hST]
-  · simp [hb]
+  · simp
 
 end StrandDiagram
 
@@ -689,6 +691,7 @@ private theorem mem_gradedPart_iff_of_basis (L : StrandsAlgebra R α ≃ₗ[R] S
 
 /-- Relabelling along an order isomorphism `e` carries the part of grading `g` onto the part of
 grading `StrandGradingGroup.map e g`. -/
+@[simp]
 theorem mapAlgEquiv_mem_gradedPart_iff (e : α ≃o β) {g : StrandGradingGroup α}
     {x : StrandsAlgebra R α} :
     mapAlgEquiv e x ∈ gradedPart R (StrandGradingGroup.map e g) ↔ x ∈ gradedPart R g :=
@@ -698,6 +701,7 @@ theorem mapAlgEquiv_mem_gradedPart_iff (e : α ≃o β) {g : StrandGradingGroup 
 
 /-- **Orientation reversal of the strands algebra is graded by the reversal of the grading
 group**: it carries the part of grading `g` onto the part of grading `R(g)`. -/
+@[simp]
 theorem unop_reverseAlgEquiv_mem_gradedPart_iff {g : StrandGradingGroup α}
     {x : StrandsAlgebra R α} :
     (reverseAlgEquiv x).unop ∈ gradedPart R (StrandGradingGroup.reverse g).unop ↔
@@ -708,6 +712,7 @@ theorem unop_reverseAlgEquiv_mem_gradedPart_iff {g : StrandGradingGroup α}
 
 /-- The anti-automorphism of the strands algebra on `{1, …, n}` carries the part of grading `g`
 onto the part of grading `TauCeti.StrandGradingGroup.rev n g`. -/
+@[simp]
 theorem unop_revAlgEquiv_mem_gradedPart_iff {n : ℕ} {g : StrandGradingGroup (Fin n)}
     {x : StrandsAlgebra R (Fin n)} :
     (revAlgEquiv n x).unop ∈ gradedPart R (rev n g).unop ↔ x ∈ gradedPart R g :=
