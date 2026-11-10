@@ -16,13 +16,15 @@ their support.
 At a point `z ∈ U`, Mathlib's `MeromorphicOn.divisor f U` evaluates to
 `(meromorphicOrderAt f z).untop₀`, while zero counts of analytic functions are stated in terms of
 `analyticOrderNatAt f z`. This file records the bridge between the two vocabularies at a point
-where `f` is analytic. It also records finite divisor support on subsets of compact sets
+where `f` is analytic; in particular the divisor vanishes where `f` is analytic and nonzero,
+with no meromorphy hypothesis. It also records finite divisor support on subsets of compact sets
 and on bounded regions whose closures lie in the meromorphic domain.
 
 ## Main results
 
 * `MeromorphicOn.divisor_eq_analyticOrderNatAt` — at a point where `f` is analytic, the divisor
   reads `analyticOrderNatAt f z`.
+* `AnalyticAt.divisor_apply_eq_zero` — the divisor vanishes where `f` is analytic and nonzero.
 * `MeromorphicOn.meromorphicOrderAt_eq_of_divisor_eq` — equal divisors determine equal finite
   meromorphic orders.
 * `MeromorphicOn.divisor_finite_inter_support_of_isCompact` — finite divisor support on a
@@ -47,6 +49,21 @@ theorem MeromorphicOn.divisor_eq_analyticOrderNatAt {𝕜 E : Type*} [Nontrivial
     divisor f U z = (analyticOrderNatAt f z : ℤ) := by
   rw [hm.divisor_apply hz, hf.meromorphicOrderAt_eq, analyticOrderNatAt]
   cases analyticOrderAt f z <;> simp
+
+/-- The divisor of a function vanishes at a point where the function is analytic and nonzero.
+No meromorphy hypothesis is needed: if `f` is not meromorphic on `U`, or `z ∉ U`, the divisor is
+`0` by definition. In particular an entire function with `f 0 ≠ 0` has `0` outside the support of
+its divisor. -/
+theorem AnalyticAt.divisor_apply_eq_zero {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {U : Set 𝕜} {z : 𝕜}
+    (hf : AnalyticAt 𝕜 f z) (hfz : f z ≠ 0) : MeromorphicOn.divisor f U z = 0 := by
+  by_cases hm : MeromorphicOn f U
+  · by_cases hz : z ∈ U
+    · rw [hm.divisor_eq_analyticOrderNatAt hf hz, analyticOrderNatAt,
+        hf.analyticOrderAt_eq_zero.mpr hfz]
+      rfl
+    · simp [hz]
+  · exact MeromorphicOn.divisor_eq_zero_of_not_meromorphicOn hm
 
 /-- Equal divisors determine equal meromorphic orders at a point where both orders are finite.
 The two functions may take values in different normed spaces over the same field. -/

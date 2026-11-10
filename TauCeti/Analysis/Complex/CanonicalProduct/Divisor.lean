@@ -6,7 +6,7 @@ Authors: OpenAI Codex
 module
 
 public import TauCeti.Analysis.Complex.CanonicalProduct.LogDeriv
-public import Mathlib.Analysis.Meromorphic.Divisor
+public import TauCeti.Analysis.Meromorphic.Divisor
 
 /-!
 # The genus-one product of a native zero divisor
@@ -18,7 +18,9 @@ zero, and has exactly the divisor of `f`.
 
 Its logarithmic derivative is the classical paired sum
 `∑' ρ, mρ * (1 / (z - ρ) + 1 / ρ)`. The series is absolutely convergent at every point
-off the divisor support and locally uniformly convergent on its complement. This constructs
+off the divisor support and locally uniformly convergent on its complement. These series results
+assume only that `0` is off the divisor support, which for an entire `f` with `f 0 ≠ 0` is
+`AnalyticAt.divisor_apply_eq_zero`. This constructs
 the product and logarithmic-derivative ingredients of Hadamard factorization; it does not
 assume an enumeration of the zeros or choose a representative for the divisor.
 
@@ -88,7 +90,7 @@ theorem deriv_divisorProductOne_zero : deriv (divisorProductOne f) 0 = 0 := by
         (MeromorphicOn.divisor f Set.univ ρ).toNat) = divisorProductOne f :=
     funext fun w ↦ (divisorProductOne_def f w).symm
   rw [hfun, logDeriv_apply, divisorProductOne_zero, div_one] at h
-  simpa using h
+  simpa [logDerivWeierstrassFactorOneMul_def] using h
 
 include hsum in
 /-- The full complex-indexed product converges to the native divisor product at each point. -/
@@ -101,18 +103,6 @@ theorem hasProd_divisorProductOne (z : ℂ) :
   exact (hasProd_subtype_iff_of_mulSupport_subset
     (mulSupport_divisor_factor_subset f z)).mp h
 
-include hf hf0 in
-private theorem divisor_support_ne_zero (ρ : (MeromorphicOn.divisor f Set.univ).support) :
-    (ρ : ℂ) ≠ 0 := by
-  have ha : AnalyticOnNhd ℂ f Set.univ := fun z _ ↦ hf.analyticAt z
-  have h0 : MeromorphicOn.divisor f Set.univ 0 = 0 := by
-    rw [MeromorphicOn.AnalyticOnNhd.divisor_apply ha (Set.mem_univ 0),
-      (hf.analyticAt 0).analyticOrderAt_eq_zero.mpr hf0]
-    rfl
-  intro hρ
-  have hρmem : MeromorphicOn.divisor f Set.univ ρ ≠ 0 := ρ.property
-  exact hρmem (hρ ▸ h0)
-
 include hf hf0 hsum in
 /-- The native genus-one product has exactly the zeros of an entire function nonzero at zero. -/
 theorem divisorProductOne_eq_zero_iff (z : ℂ) : divisorProductOne f z = 0 ↔ f z = 0 := by
@@ -120,7 +110,9 @@ theorem divisorProductOne_eq_zero_iff (z : ℂ) : divisorProductOne f z = 0 ↔ 
   rw [divisorProductOne_def, tprod_weierstrassFactorOne_pow_eq_zero_iff _ _ hsum]
   constructor
   · rintro ⟨ρ, _, hρ⟩
-    have hzρ : z = (ρ : ℂ) := ((inv_mul_eq_one₀ (divisor_support_ne_zero hf hf0 ρ)).mp hρ).symm
+    have h0 : MeromorphicOn.divisor f Set.univ 0 = 0 := (hf.analyticAt 0).divisor_apply_eq_zero hf0
+    have hρ0 : (ρ : ℂ) ≠ 0 := fun heq ↦ ρ.property (heq ▸ h0)
+    have hzρ : z = (ρ : ℂ) := ((inv_mul_eq_one₀ hρ0).mp hρ).symm
     rw [hzρ]
     by_contra hn
     apply ρ.property
@@ -150,6 +142,7 @@ include hf hf0 hsum in
 /-- For an entire function nonzero at zero, the product has exactly its native divisor. -/
 theorem divisor_divisorProductOne :
     MeromorphicOn.divisor (divisorProductOne f) Set.univ = MeromorphicOn.divisor f Set.univ := by
+  have h0 : MeromorphicOn.divisor f Set.univ 0 = 0 := (hf.analyticAt 0).divisor_apply_eq_zero hf0
   have hfa : AnalyticOnNhd ℂ f Set.univ := fun z _ ↦ hf.analyticAt z
   have hpa : AnalyticOnNhd ℂ (divisorProductOne f) Set.univ :=
     fun z _ ↦ (differentiable_divisorProductOne hsum).analyticAt z
@@ -157,7 +150,7 @@ theorem divisor_divisorProductOne :
   rw [MeromorphicOn.AnalyticOnNhd.divisor_apply hpa (Set.mem_univ z)]
   by_cases hz : z ∈ (MeromorphicOn.divisor f Set.univ).support
   · let ρ : (MeromorphicOn.divisor f Set.univ).support := ⟨z, hz⟩
-    have hρ0 := divisor_support_ne_zero hf hf0 ρ
+    have hρ0 : (ρ : ℂ) ≠ 0 := fun heq ↦ ρ.property (heq ▸ h0)
     have hinj : Function.Injective
         (fun r : (MeromorphicOn.divisor f Set.univ).support ↦ (r : ℂ)⁻¹) := by
       intro r t h
@@ -180,7 +173,7 @@ theorem divisor_divisorProductOne :
     have hpz : divisorProductOne f z ≠ 0 := by
       rw [divisorProductOne, ne_eq, tprod_weierstrassFactorOne_pow_eq_zero_iff _ _ hsum z]
       rintro ⟨ρ, _, hρ⟩
-      have hρ0 := divisor_support_ne_zero hf hf0 ρ
+      have hρ0 : (ρ : ℂ) ≠ 0 := fun heq ↦ ρ.property (heq ▸ h0)
       have heq : z = (ρ : ℂ) := by
         calc
           z = ((ρ : ℂ) * (ρ : ℂ)⁻¹) * z := by rw [mul_inv_cancel₀ hρ0, one_mul]

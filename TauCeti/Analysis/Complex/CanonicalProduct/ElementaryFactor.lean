@@ -142,16 +142,15 @@ theorem analyticOrderAt_weierstrassFactorOne_mul {c z : ℂ} (h : c * z = 1) :
 
 /-- The rational logarithmic derivative of the genus-one factor with slope `a`,
 using total division at its pole. -/
-@[expose]
 noncomputable def logDerivWeierstrassFactorOneMul (a z : ℂ) : ℂ :=
   -a ^ 2 * z / (1 - a * z)
 
 /-- The defining rational expression for the slope-dependent logarithmic derivative. -/
-@[simp]
 theorem logDerivWeierstrassFactorOneMul_def (a z : ℂ) :
-    logDerivWeierstrassFactorOneMul a z = -a ^ 2 * z / (1 - a * z) := rfl
+    logDerivWeierstrassFactorOneMul a z = -a ^ 2 * z / (1 - a * z) := (rfl)
 
 /-- The paired rational logarithmic derivative of an elementary factor with a complex slope. -/
+@[simp]
 theorem logDeriv_weierstrassFactorOne_mul (a z : ℂ) :
     logDeriv (fun w ↦ weierstrassFactorOne (a * w)) z = logDerivWeierstrassFactorOneMul a z := by
   rw [logDerivWeierstrassFactorOneMul_def]

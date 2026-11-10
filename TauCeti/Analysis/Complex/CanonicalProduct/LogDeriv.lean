@@ -64,6 +64,7 @@ private theorem exists_summable_logDerivWeierstrassFactorOneMul_majorant
     rw [norm_mul]
     have ht := mul_le_mul_of_nonneg_left hzC (norm_nonneg (a i))
     nlinarith
+  rw [logDerivWeierstrassFactorOneMul_def]
   exact (TauCeti.norm_neg_sq_mul_div_one_sub_mul_le hzsmall).trans (by gcongr)
 
 /-- The paired rational terms are absolutely summable at every point, using total division. -/
