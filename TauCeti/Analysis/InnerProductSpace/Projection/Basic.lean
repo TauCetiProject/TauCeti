@@ -80,6 +80,8 @@ AIQ-Kitware DKPS formalization (Apache-2.0; Jon Crall and GPT-6).
 * `Submodule.starProjection_sub_starProjection_sq_mul_starProjection`,
   `Submodule.starProjection_mul_starProjection_sub_starProjection_sq`:
   `(P_U - P_V)² P_U = P_U (P_U - P_V)² = P_U - P_U P_V P_U`.
+* `Submodule.span_range_starProjection_orthogonal_basis_succ`: if the zeroth coordinate of `v` in
+  a basis is nonzero, the projections onto `(𝕜 ∙ v)ᗮ` of the other basis vectors span it.
 * `LinearMap.apply_sub_starProjection_ker`,
   `ContinuousLinearMap.comp_starProjection_orthogonal_ker`: maps ignore their kernel component.
 -/
@@ -290,6 +292,37 @@ self-adjoint compressions, together with `LinearMap.adjoint_comp`. -/
 theorem adjoint_orthogonalProjectionOnto_toLinearMap [FiniteDimensional 𝕜 E] :
     LinearMap.adjoint U.orthogonalProjectionOnto.toLinearMap = U.subtype := by
   rw [← U.adjoint_subtype, LinearMap.adjoint_adjoint]
+
+/-- If the zeroth coordinate of `v` in a basis `b` is nonzero, then the orthogonal projections onto
+`(𝕜 ∙ v)ᗮ` of the remaining basis vectors span `(𝕜 ∙ v)ᗮ`. -/
+theorem span_range_starProjection_orthogonal_basis_succ
+    {k : ℕ} (b : Module.Basis (Fin (k + 1)) 𝕜 E) {v : E} (hv : b.repr v 0 ≠ 0) :
+    span 𝕜 (Set.range fun j : Fin k ↦ (𝕜 ∙ v)ᗮ.starProjection (b j.succ)) = (𝕜 ∙ v)ᗮ := by
+  apply le_antisymm
+  · rw [span_le]
+    rintro _ ⟨j, rfl⟩
+    exact starProjection_apply_mem _ _
+  intro w hw
+  set t := b.repr w 0 / b.repr v 0
+  -- `w - t • v` has zeroth coordinate zero, so it is a combination of the other basis vectors.
+  have h0 : b.repr (w - t • v) 0 = 0 := by
+    simp only [map_sub, map_smul, Finsupp.coe_sub, Finsupp.coe_smul, Pi.sub_apply,
+      Pi.smul_apply, smul_eq_mul, t]
+    field_simp
+    ring
+  have hd : w - t • v = ∑ j : Fin k, b.repr (w - t • v) j.succ • b j.succ := by
+    conv_lhs => rw [← b.sum_repr (w - t • v)]
+    rw [Fin.sum_univ_succ, h0, zero_smul, zero_add]
+  have hw' : w = ∑ j : Fin k, b.repr (w - t • v) j.succ • (𝕜 ∙ v)ᗮ.starProjection (b j.succ) :=
+    calc w = (𝕜 ∙ v)ᗮ.starProjection w := (starProjection_eq_self_iff.mpr hw).symm
+      _ = (𝕜 ∙ v)ᗮ.starProjection (w - t • v) + t • (𝕜 ∙ v)ᗮ.starProjection v := by
+        rw [← map_smul, ← map_add, sub_add_cancel]
+      _ = _ := by
+        rw [starProjection_orthogonalComplement_singleton_eq_zero, smul_zero, add_zero]
+        conv_lhs => rw [hd]
+        simp only [map_sum, map_smul]
+  rw [hw']
+  exact sum_mem fun j _ ↦ smul_mem _ _ (subset_span ⟨j, rfl⟩)
 
 section Real
 

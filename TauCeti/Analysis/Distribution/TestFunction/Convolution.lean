@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.BumpFunction.Convolution
-public import TauCeti.Analysis.Calculus.ContDiff.Convolution
+public import TauCeti.Analysis.Calculus.BumpFunction.DerivativeApproximation
 public import Mathlib.Analysis.Distribution.TestFunction
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
 
@@ -97,14 +96,8 @@ theorem iteratedFDeriv_mollify (φ : 𝓓(Ω, F)) (μ : Measure E) [μ.IsAddHaar
     (h : closedBall (0 : E) ρ.rOut + tsupport φ ⊆ (Ω : Set E)) (n : ℕ) :
     iteratedFDeriv ℝ n (mollify φ μ ρ h : E → F) =
       ρ.normed μ ⋆[lsmul ℝ ℝ, μ] iteratedFDeriv ℝ n (φ : E → F) := by
-  -- The bilinear map induced by scalar multiplication is again scalar multiplication.
-  have hL : (compContinuousMultilinearMapL ℝ (fun _ : Fin n => E) F F).comp (lsmul ℝ ℝ) =
-      lsmul ℝ ℝ := by
-    ext a m
-    simp
-  rw [coe_mollify, ← hL]
-  exact φ.hasCompactSupport.iteratedFDeriv_convolution_right (lsmul ℝ ℝ)
-    ρ.continuous_normed.locallyIntegrable φ.contDiff (by simp)
+  rw [coe_mollify]
+  exact φ.hasCompactSupport.iteratedFDeriv_normed_convolution φ.contDiff ρ (by simp)
 
 variable [CompleteSpace F]
 

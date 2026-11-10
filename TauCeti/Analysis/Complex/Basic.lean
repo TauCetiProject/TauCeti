@@ -13,7 +13,9 @@ public import Mathlib.Analysis.Complex.Basic
 Complex conjugation is an isometry fixing the real axis (Mathlib's `Complex.dist_conj_conj`), so
 it maps every open or closed disc centred on the real axis to itself. Such discs are the natural
 domains for reflection across the real axis, for instance the even reflection
-`TauCeti.evenReflection`.
+`TauCeti.evenReflection`. Conjugation maps the real axis into itself
+(`TauCeti.mapsTo_conj_setOf_im_eq_zero`), whereas the rotation `z ↦ I z` does not
+(`TauCeti.not_mapsTo_I_mul_setOf_im_eq_zero`).
 
 Conjugation also preserves norms (Mathlib's `Complex.norm_conj`), so the norm of
 `1 - conj w * z` is symmetric in `z` and `w` (`Complex.norm_one_sub_conj_mul_comm`). This
@@ -58,6 +60,17 @@ theorem conj_mem_ball_of_im_eq_zero (hx₀ : x₀.im = 0) (hz : z ∈ ball x₀ 
 theorem conj_mem_closedBall_of_im_eq_zero (hx₀ : x₀.im = 0) (hz : z ∈ closedBall x₀ r) :
     conj z ∈ closedBall x₀ r := by
   rwa [mem_closedBall, ← Complex.conj_eq_iff_im.2 hx₀, Complex.dist_conj_conj]
+
+/-- Complex conjugation maps the real axis into itself. -/
+theorem mapsTo_conj_setOf_im_eq_zero :
+    Set.MapsTo (conj ·) {z : ℂ | z.im = 0} {z : ℂ | z.im = 0} := fun z hz => by
+  simpa using hz
+
+/-- The rotation `z ↦ I z` does not preserve the real axis, so it is not admissible on
+half-discs. -/
+theorem not_mapsTo_I_mul_setOf_im_eq_zero :
+    ¬ Set.MapsTo (fun z : ℂ => Complex.I * z) {z | z.im = 0} {z | z.im = 0} := fun h => by
+  simpa using h (show (1 : ℂ) ∈ {z : ℂ | z.im = 0} by simp)
 
 variable {E : Type*} [TopologicalSpace E] {τ : E → E} {U : Set E} {ρ : ℝ}
 
