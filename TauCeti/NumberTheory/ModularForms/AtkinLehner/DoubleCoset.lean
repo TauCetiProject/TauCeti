@@ -89,12 +89,12 @@ theorem IsAtkinLehnerMatrix.mem_normalizer_map_mapGL (hQN : Q ∣ N)
     norm_num
   refine Subgroup.mem_normalizer_iff.mpr fun x ↦ ⟨?_, fun hx ↦ ?_⟩
   · rintro ⟨γ, hγ, rfl⟩
-    obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQ hQN hγ
+    obtain ⟨δ, hδ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_left hQN hγ
     refine ⟨δ, hδ, ?_⟩
     rw [eq_mul_inv_iff_mul_eq]
     exact (mul_eq_mul_of_intMatrix hw (mapGL_coe_matrix γ) (mapGL_coe_matrix δ) hmul).symm
   · obtain ⟨δ, hδ, hδx⟩ := hx
-    obtain ⟨γ, hγ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_right hQ hQN hδ
+    obtain ⟨γ, hγ, hmul⟩ := h.exists_mem_Gamma0_mul_eq_mul_right hQN hδ
     refine ⟨γ, hγ, ?_⟩
     have hw' := mul_eq_mul_of_intMatrix hw (mapGL_coe_matrix γ) (mapGL_coe_matrix δ) hmul.symm
     rw [hδx, inv_mul_cancel_right] at hw'
