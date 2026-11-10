@@ -77,13 +77,6 @@ namespace TauCeti
 
 variable (k : Type u) [CommRing k] (X : TopCat.{u}) (P : TopPair.{u})
 
-/-- Tensoring with a module of normalized cubical chains preserves finite limits, since the
-chains are projective and so flat. -/
-instance preservesFiniteLimits_tensorLeft_normalizedCubicalChainComplex_X (p : ℕ) :
-    PreservesFiniteLimits (tensorLeft (((normalizedCubicalChainComplex k).obj X).X p)) :=
-  inferInstanceAs
-    (PreservesFiniteLimits (tensorLeft (ModuleCat.of k (NormalizedCubicalChain X k p))))
-
 /-- Tensoring on the left with `N(X)` preserves the short exact sequence
 `N(B) ⟶ N(Y) ⟶ N(Y, B)` of normalized cubical chains of a pair `(Y, B)`. -/
 theorem shortExact_tensorLeftShortComplex_cubicalChainComplexShortComplex :
@@ -206,8 +199,7 @@ theorem cubicalCrossProductRel_naturality {X' : TopCat.{u}} {P' : TopPair.{u}} (
         (normalizedCubicalChainComplex k).map (TopPair.Hom.fst f)) ≫
           (normalizedCubicalChainComplex k).obj X' ◁
             cokernel.π ((normalizedCubicalChainComplex k).map P'.map) := by
-    rw [← id_tensorHom, tensorHom_comp_tensorHom, ← id_tensorHom, tensorHom_comp_tensorHom,
-      Category.id_comp, Category.comp_id, TopPair.π_cubicalChainComplexMap]
+    simp [whiskerLeft_comp_tensorHom, tensorHom_comp_whiskerLeft]
   calc _ = ((normalizedCubicalChainComplex k).map g ⊗ₘ
         (normalizedCubicalChainComplex k).map (TopPair.Hom.fst f)) ≫
           cubicalCrossProduct k X' P'.fst ≫
@@ -233,11 +225,6 @@ instance quasiIso_cubicalCrossProductRel : QuasiIso (cubicalCrossProductRel k X 
     ((P.prodLeft X).shortExact_cubicalChainComplexShortComplex k)
     (inferInstanceAs (QuasiIso (cubicalCrossProduct k X P.snd)))
     (inferInstanceAs (QuasiIso (cubicalCrossProduct k X P.fst)))
-
-/-- The relative cross product induces an isomorphism on homology. -/
-instance isIso_homologyMap_cubicalCrossProductRel (n : ℕ) :
-    IsIso (homologyMap (cubicalCrossProductRel k X P) n) :=
-  (quasiIsoAt_iff_isIso_homologyMap _ _).1 inferInstance
 
 /-- **The relative Künneth map of cubical homology**,
 `⨁_{p + q = n} Hₚ(X; k) ⊗ H_q(Y, B; k) ⟶ Hₙ(X × Y, X × B; k)`: the algebraic Künneth map of the
@@ -280,10 +267,10 @@ theorem cubicalHomologyKunnethRel_naturality {X' : TopCat.{u}} {P' : TopPair.{u}
       cubicalHomologyKunnethRel k X' P' n =
       cubicalHomologyKunnethRel k X P n ≫
         homologyMap (TopPair.cubicalChainComplexMap k (TopPair.prodLeftMap f g)) n := by
-  rw [cubicalHomologyKunnethRel_def, cubicalHomologyKunnethRel_def, ← Category.assoc,
-    homologyKunneth_naturality, Category.assoc, ← homologyMap_comp, Category.assoc,
-    ← homologyMap_comp, ← cubicalCrossProductRel_naturality,
-    HomologicalComplex.tensorHom_eq_mapBifunctorMap]
+  have h := congrArg (homologyMap · n) (cubicalCrossProductRel_naturality k X P g f)
+  simp only [homologyMap_comp] at h
+  simp only [cubicalHomologyKunnethRel_def, homologyKunneth_naturality_assoc, Category.assoc]
+  exact congrArg (homologyKunneth _ _ n ≫ ·) h
 
 /-- **The relative Künneth theorem for cubical homology**: if the cycles of `N(X)` and `N(Y, B)`
 split off their terms and their homology splits off the cycles, the relative Künneth map
