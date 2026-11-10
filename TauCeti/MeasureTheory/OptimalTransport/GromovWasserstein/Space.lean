@@ -93,8 +93,7 @@ theorem gromovWassersteinEDist_point (K : GromovWassersteinPresentation.{u} p Z)
     gromovWassersteinEDist p K.measure K.kernel (point (p := p) z).measure
       (point (p := p) z).kernel =
       eLpNorm (fun q ↦ edist (K.kernel q) z) p (K.measure.prod K.measure) :=
-  gromovWassersteinEDist_dirac_right (ULift.up ()) (fun _ ↦ z)
-    K.aestronglyMeasurable_kernel p
+  gromovWassersteinEDist_dirac_right (ULift.up ()) (fun _ ↦ z) p
 
 /-- Between constant one-point kernels, GW recovers the target metric at nonzero exponents. -/
 theorem gromovWassersteinEDist_point_point (hp : p ≠ 0) (z w : Z) :

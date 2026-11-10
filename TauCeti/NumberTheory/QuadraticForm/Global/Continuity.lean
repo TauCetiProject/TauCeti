@@ -30,16 +30,16 @@ of the square subgroup in the unit group of the nonarchimedean completion.
 
 public section
 
-namespace TauCeti
+namespace QuadraticForm
 
-open IsDedekindDomain NumberField NumberField.InfinitePlace
+open IsDedekindDomain NumberField NumberField.InfinitePlace TauCeti
 open scoped Topology
 
 variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
 
 /-- A quadratic form localized at a finite place is continuous for the module topology. -/
 @[continuity, fun_prop]
-theorem _root_.QuadraticForm.continuous_atFinitePlace [NumberField K]
+theorem continuous_atFinitePlace [NumberField K]
     (Q : QuadraticForm K V) (v : HeightOneSpectrum (𝓞 K))
     [TopologicalSpace (v.FiniteScalarExtension (V := V))]
     [IsModuleTopology (v.adicCompletion K) (v.FiniteScalarExtension (V := V))] :
@@ -48,7 +48,7 @@ theorem _root_.QuadraticForm.continuous_atFinitePlace [NumberField K]
 
 /-- A quadratic form localized at a real place is continuous for the module topology. -/
 @[continuity, fun_prop]
-theorem _root_.QuadraticForm.continuous_atRealPlace
+theorem continuous_atRealPlace
     (Q : QuadraticForm K V) (w : {w : InfinitePlace K // w.IsReal})
     [TopologicalSpace (RealScalarExtension (V := V) w)]
     [IsModuleTopology ℝ (RealScalarExtension (V := V) w)] :
@@ -59,7 +59,7 @@ theorem _root_.QuadraticForm.continuous_atRealPlace
 /-- A quadratic form localized through a complex embedding is continuous for the module
 topology. -/
 @[continuity, fun_prop]
-theorem _root_.QuadraticForm.continuous_atComplexEmbedding
+theorem continuous_atComplexEmbedding
     (Q : QuadraticForm K V) (w : InfinitePlace K)
     [TopologicalSpace (w.ComplexScalarExtension (V := V))]
     [IsModuleTopology ℂ (w.ComplexScalarExtension (V := V))] :
@@ -69,7 +69,7 @@ theorem _root_.QuadraticForm.continuous_atComplexEmbedding
 
 /-- Around a real local vector with nonzero value there is an open neighborhood on which
 the quadratic value stays nonzero and in the same square class. -/
-theorem _root_.QuadraticForm.exists_isOpen_isSquare_div_atRealPlace
+theorem exists_isOpen_isSquare_div_atRealPlace
     (Q : QuadraticForm K V) (w : {w : InfinitePlace K // w.IsReal})
     [TopologicalSpace (RealScalarExtension (V := V) w)]
     [IsModuleTopology ℝ (RealScalarExtension (V := V) w)]
@@ -88,7 +88,7 @@ theorem _root_.QuadraticForm.exists_isOpen_isSquare_div_atRealPlace
 
 /-- Around a finite local vector with nonzero value there is an open neighborhood on which
 the quadratic value stays nonzero and in the same square class. -/
-theorem _root_.QuadraticForm.exists_isOpen_isSquare_div_atFinitePlace [NumberField K]
+theorem exists_isOpen_isSquare_div_atFinitePlace [NumberField K]
     (Q : QuadraticForm K V) (v : HeightOneSpectrum (𝓞 K))
     [TopologicalSpace (v.FiniteScalarExtension (V := V))]
     [IsModuleTopology (v.adicCompletion K) (v.FiniteScalarExtension (V := V))]
@@ -108,4 +108,4 @@ theorem _root_.QuadraticForm.exists_isOpen_isSquare_div_atFinitePlace [NumberFie
       (hsq.mem_nhds .one) hx)
   exact ⟨U, hUo, hxU, fun z hz ↦ hU hz⟩
 
-end TauCeti
+end QuadraticForm

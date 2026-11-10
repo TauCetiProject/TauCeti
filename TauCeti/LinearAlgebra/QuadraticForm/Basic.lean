@@ -14,6 +14,7 @@ This file records elementary consequences of the quadratic-map axioms.
 
 ## Main results
 
+* `QuadraticMap.Anisotropic.comp`: injective pullback preserves anisotropy.
 * `QuadraticMap.nontrivial_of_ne_zero`: the source of a nonzero quadratic map is nontrivial.
 -/
 
@@ -27,5 +28,15 @@ theorem nontrivial_of_ne_zero {S V N : Type*} [CommSemiring S] [AddCommMonoid V]
     Nontrivial V := by
   obtain ⟨v, hv⟩ := DFunLike.ne_iff.mp hQ
   exact nontrivial_of_ne v 0 (fun h ↦ hv (by simp [h]))
+
+/-- An injective pullback of an anisotropic quadratic map is anisotropic. -/
+theorem Anisotropic.comp {R M N P : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
+    [AddCommMonoid P] [Module R P] {Q : QuadraticMap R M N} (hQ : Q.Anisotropic)
+    (f : P →ₗ[R] M) (hf : Function.Injective f) : (Q.comp f).Anisotropic := by
+  intro x hx
+  apply hf
+  rw [map_zero]
+  exact hQ _ hx
 
 end QuadraticMap

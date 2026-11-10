@@ -95,10 +95,8 @@ theorem not_isSquare_two_fifthCyclotomic {K : Type*} [Field K] [_root_.NumberFie
     (ℚ⟮x⟯.eq_fifthCyclotomicQuadraticSubfield_of_finrank_eq_two hxdeg).trans
       (adjoin_sqrt_five_eq_fifthCyclotomicQuadraticSubfield
         hζ.one_add_two_mul_add_inv_sq_of_five).symm
-  -- A quadratic `ℚ⟮x⟯` puts `x` outside `ℚ`, since `x ∈ ℚ` would make that degree `1`.
   exact not_isSquare_two_mul_five
-    (TauCeti.IntermediateField.isSquare_mul_of_adjoin_simple_eq hx2 hs2
-      (IntermediateField.finrank_adjoin_simple_eq_one_iff.not.mp (by omega)) hxq)
+    (TauCeti.IntermediateField.isSquare_mul_of_adjoin_simple_eq hx2 hs2 hxq)
 
 variable {Ω : Type*} [Field Ω] [CharZero Ω] {a b ζ : Ω}
 
@@ -127,10 +125,8 @@ private theorem notMem_adjoin_of_sq_eq_two_of_sq_eq_five (ha : a ^ 2 = 2) (hb : 
   have heq : ℚ⟮a⟯ = ℚ⟮b⟯ :=
     IntermediateField.eq_of_le_of_finrank_eq (IntermediateField.adjoin_simple_le_iff.mpr hmem)
       (by rw [hadeg, finrank_adjoin_of_sq_eq_five hb'])
-  -- A quadratic `ℚ⟮a⟯` puts `a` outside `ℚ`, since `a ∈ ℚ` would make that degree `1`.
   exact not_isSquare_two_mul_five
-    (TauCeti.IntermediateField.isSquare_mul_of_adjoin_simple_eq ha' hb'
-      (IntermediateField.finrank_adjoin_simple_eq_one_iff.not.mp (by omega)) heq)
+    (TauCeti.IntermediateField.isSquare_mul_of_adjoin_simple_eq ha' hb' heq)
 
 /-- **`ℚ(√5, √2)` meets a fifth cyclotomic field in `ℚ(√5)`.** -/
 theorem adjoin_inf_adjoin_eq_adjoin_of_sq_eq_two (ha : a ^ 2 = 2) (hb : b ^ 2 = 5)
