@@ -321,16 +321,26 @@ theorem one_le_five_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : |t| ≤ 2) (r : ℝ
     _ ≤ 5 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
         gcongr
 
-/-- If `0 < d` and `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`. -/
-theorem rpow_neg_le_one_div_two_mul_sq {d p : ℝ} (hd : 0 < d) (h2 : 2 ≤ d ^ (p - 2)) :
+/-- If `2 ≤ d ^ (p - 2)`, then `d ^ (-p) ≤ 1 / (2 d ^ 2)`. (For `d = 0` the hypothesis fails, as
+`0 ^ x ≤ 1`.) -/
+theorem rpow_neg_le_one_div_two_mul_sq {d p : ℝ} (h2 : 2 ≤ d ^ (p - 2)) :
     d ^ (-p) ≤ 1 / (2 * d ^ 2) := by
-  have hsplit : d ^ (-p) = (d ^ (p - 2))⁻¹ * (d ^ 2)⁻¹ := by
+  rcases eq_or_ne d 0 with rfl | hd0
+  · linarith [zero_rpow_le_one (p - 2)]
+  have hd : 0 < |d| := abs_pos.2 hd0
+  have h2' : 2 ≤ |d| ^ (p - 2) :=
+    h2.trans ((le_abs_self _).trans (abs_rpow_le_abs_rpow _ _))
+  have hsplit : |d| ^ (-p) = (|d| ^ (p - 2))⁻¹ * (|d| ^ 2)⁻¹ := by
     rw [← rpow_neg hd.le, ← rpow_natCast, ← rpow_neg hd.le, ← rpow_add hd]
     congr 1
     push_cast
     ring
-  rw [hsplit, one_div, mul_inv]
-  gcongr
+  calc d ^ (-p) ≤ |d| ^ (-p) := (le_abs_self _).trans (abs_rpow_le_abs_rpow _ _)
+    _ = (|d| ^ (p - 2))⁻¹ * (|d| ^ 2)⁻¹ := hsplit
+    _ ≤ 2⁻¹ * (d ^ 2)⁻¹ := by
+        rw [sq_abs]
+        gcongr
+    _ = 1 / (2 * d ^ 2) := by rw [one_div, mul_inv]
 
 /-- For `0 ≤ p ≤ 1`, a quantity at most `2 h` has `p`-th power at most `2 h^p`. -/
 theorem rpow_le_two_mul_rpow_of_le_two_mul {r h p : ℝ} (hr : 0 ≤ r) (hrh : r ≤ 2 * h)

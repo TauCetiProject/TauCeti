@@ -82,6 +82,8 @@ regular case.
 * `QuadraticMap.Anisotropic.radical_eq_bot`: an anisotropic quadratic map has trivial radical.
 * `QuadraticMap.Anisotropic.nondegenerate`: an anisotropic quadratic map is nondegenerate when
   `2` is invertible.
+* `QuadraticForm.anisotropic_of_finrank_le_one`: a nondegenerate quadratic form on a space of
+  dimension at most one is anisotropic.
 * `LinearMap.BilinMap.polarBilin_toQuadraticMap_of_flip`: the polar form of the quadratic form of a
   symmetric bilinear form `B` is `2 • B`.
 * `LinearMap.BilinForm.radical_toQuadraticMap`: the radical of the quadratic form of a symmetric
@@ -638,6 +640,31 @@ theorem nondegenerate [Invertible (2 : R)] {Q : QuadraticMap R M P}
   QuadraticMap.nondegenerate_iff_radical_eq_bot.mpr hQ.radical_eq_bot
 
 end QuadraticMap.Anisotropic
+
+namespace QuadraticForm
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- A regular quadratic form on a space of dimension at most one is anisotropic. -/
+theorem anisotropic_of_finrank_le_one (Q : QuadraticForm K V)
+    (hQ : Q.Nondegenerate) (hV : Module.finrank K V ≤ 1) : Q.Anisotropic := by
+  obtain ⟨v, hv⟩ := finrank_le_one_iff.mp hV
+  intro x hx
+  obtain ⟨c, rfl⟩ := hv x
+  by_contra hc
+  have hc0 : c ≠ 0 := fun h => hc (by simp [h])
+  have hQv : Q v = 0 := by
+    rw [QuadraticMap.map_smul] at hx
+    simpa [hc0] using hx
+  have hrad : c • v ∈ Q.radical := by
+    rw [QuadraticMap.mem_radical_iff']
+    refine ⟨by simp [QuadraticMap.map_smul, hQv], fun n => ?_⟩
+    obtain ⟨d, rfl⟩ := hv n
+    simp [← add_smul, QuadraticMap.map_smul, hQv]
+  rw [hQ.radical_eq_bot, Submodule.mem_bot] at hrad
+  exact hc hrad
+
+end QuadraticForm
 
 namespace LinearMap
 

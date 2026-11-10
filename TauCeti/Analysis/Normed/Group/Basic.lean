@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Group.Basic
 public import Mathlib.Analysis.Normed.Group.Continuity
 import Mathlib.Analysis.Asymptotics.SpecificAsymptotics
+import Mathlib.Topology.Algebra.Ring.Real
 import Mathlib.Topology.MetricSpace.Bounded
 
 /-!
@@ -28,6 +29,8 @@ A continuous function on `ℝ` with limits at `±∞` is bounded.
 A map bounded by `M` on a set sends it into the closed ball of radius `2 * M` around any of its
 values there.
 
+Near `0`, the product `‖x‖ * R` is eventually less than any positive bound.
+
 A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
 
 ## Main declarations
@@ -45,6 +48,7 @@ A sum `z + a` with `‖a‖ < ‖z‖` is nonzero.
   indices are uniformly close if constants at related indices are.
 * `TauCeti.mapsTo_closedBall_of_forall_norm_le` -- a map bounded by `M` on `s` sends `s` into the
   closed ball of radius `2 * M` around any of its values on `s`.
+* `TauCeti.eventually_norm_mul_lt` -- eventually near `0`, `‖x‖ * R < ρ` for any `ρ > 0`.
 * `TauCeti.add_ne_zero_of_norm_lt` -- `z + a ≠ 0` when `‖a‖ < ‖z‖`.
 -/
 
@@ -90,6 +94,11 @@ theorem mapsTo_closedBall_of_forall_norm_le {α F : Type*} [SeminormedAddCommGro
     Set.MapsTo f s (closedBall (f c) (2 * M)) := fun y hy => by
   rw [mem_closedBall]
   linarith [dist_le_norm_add_norm (f y) (f c), hM y hy, hM c hc]
+
+/-- Eventually near `0`, the norm of `x` times a fixed real `R` is less than any `ρ > 0`. -/
+theorem eventually_norm_mul_lt {E : Type*} [SeminormedAddGroup E] (R : ℝ) {ρ : ℝ} (hρ : 0 < ρ) :
+    ∀ᶠ x in 𝓝 (0 : E), ‖x‖ * R < ρ :=
+  (tendsto_norm_zero.mul_const R).eventually (gt_mem_nhds (by rwa [zero_mul]))
 
 /-- A sum `z + a` with `‖a‖ < ‖z‖` is nonzero. -/
 theorem add_ne_zero_of_norm_lt {E : Type*} [SeminormedAddGroup E] {a z : E} (h : ‖a‖ < ‖z‖) :

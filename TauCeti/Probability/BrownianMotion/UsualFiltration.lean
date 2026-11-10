@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.BrownianMotion.Filtered
-public import TauCeti.Probability.Process.Filtration.NullAugmentation
+public import TauCeti.Probability.Process.Filtration.AmbientNullAugmentation
 import TauCeti.Probability.HasLaw
 import TauCeti.Probability.Independence.Completion
 import TauCeti.Probability.Independence.Limit
@@ -19,7 +19,8 @@ A Brownian motion relative to a filtration remains Brownian after adjoining ambi
 sets and making the filtration right-continuous. The completed measure is explicit: no
 completeness assumption on the original probability space is needed. Applied to the natural
 filtration, this supplies the usual augmented Brownian filtration used in continuous-time
-markets.
+markets. The original-space `ambientNullAugmentation` also preserves the Brownian
+property under the original measure, without completing the ambient space.
 
 For right-continuation, increments starting strictly after `s` are independent of every
 right-continuous event at `s`. Taking their almost sure limit as their starting times decrease
@@ -68,6 +69,17 @@ theorem rightCont (hW : IsFilteredPreBrownianReal ℱ W P)
   have hu' : Tendsto u atTop (nhdsWithin s (Ioi s)) :=
     tendsto_nhdsWithin_iff.2 ⟨hlim, Eventually.of_forall fun n => (hu n).1⟩
   exact tendsto_const_nhds.sub (hω.tendsto.comp hu')
+
+/-- Adjoining ambient-measurable null events preserves the filtered pre-Brownian property
+on the original probability space, without completing its measurable space. -/
+theorem ambientNullAugmentation (hW : IsFilteredPreBrownianReal ℱ W P) :
+    IsFilteredPreBrownianReal (ℱ.ambientNullAugmentation P) W P where
+  toIsPreBrownianReal := hW.toIsPreBrownianReal
+  adapted t := (hW.adapted t).mono (ℱ.le_ambientNullAugmentation P t) le_rfl
+  indep_sub s t hst := by
+    apply indep_of_indep_of_le_right (hW.indep_sub hst).eventuallyMeasurableSpace_right
+    rw [Filtration.ambientNullAugmentation_apply, Filtration.nullAugment_apply]
+    exact inf_le_right
 
 /-- Completing the probability space and adjoining all ambient null events to the
 filtration preserves the filtered pre-Brownian property. -/

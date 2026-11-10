@@ -51,11 +51,7 @@ theorem norm_pow_mul_norm_iteratedFDeriv_prod_right_le (f : 𝓢(P × E, F))
     (l k n : ℕ) (p : P) (x : E) :
     ‖p‖ ^ l * (‖x‖ ^ k * ‖iteratedFDeriv ℝ n (fun y ↦ f (p, y)) x‖) ≤
       SchwartzMap.seminorm 𝕜 (l + k) n f := by
-  have hderiv : ‖iteratedFDeriv ℝ n (fun y ↦ f (p, y)) x‖ ≤
-      ‖iteratedFDeriv ℝ n f (p, x)‖ := by
-    rw [_root_.ContDiff.iteratedFDeriv_prod_right (f.smooth ⊤) n (by simp)]
-    exact (iteratedFDeriv ℝ n f (p, x)).norm_compContinuous_linearIsometry_le
-      (fun _ ↦ LinearIsometry.inr ℝ P E)
+  have hderiv := _root_.ContDiff.norm_iteratedFDeriv_prod_right_le (f.smooth ⊤) n (by simp) p x
   calc
     _ ≤ ‖(p, x)‖ ^ l * (‖(p, x)‖ ^ k * ‖iteratedFDeriv ℝ n f (p, x)‖) := by
       gcongr
