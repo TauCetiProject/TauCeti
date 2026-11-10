@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Sub
+public import Mathlib.MeasureTheory.Measure.GiryMonad
 public import TauCeti.MeasureTheory.Measure.Dirac
 
 /-!
@@ -33,6 +34,20 @@ open scoped ENNReal
 namespace MeasureTheory.Measure
 
 variable {X : Type*} [MeasurableSpace X]
+
+/-- Subtracting a dominated finite measure in measurable families is measurable. -/
+theorem _root_.Measurable.measure_sub {α : Type*} [MeasurableSpace α]
+    {μ ν : α → Measure X} (hμ : Measurable μ) (hν : Measurable ν)
+    (hfinite : ∀ a, IsFiniteMeasure (ν a)) (hle : ∀ a, ν a ≤ μ a) :
+    Measurable (fun a => μ a - ν a) := by
+  apply Measure.measurable_of_measurable_coe
+  intro s hs
+  have heq : (fun a => (μ a - ν a) s) = fun a => μ a s - ν a s := by
+    funext a
+    have := hfinite a
+    exact sub_apply hs (hle a)
+  rw [heq]
+  exact ((Measure.measurable_coe hs).comp hμ).sub ((Measure.measurable_coe hs).comp hν)
 
 /-- Removing one occurrence at `x` does not change the mass of a measurable set avoiding `x`. -/
 theorem sub_dirac_apply_of_notMem (μ : Measure X) {x : X} {A : Set X}
