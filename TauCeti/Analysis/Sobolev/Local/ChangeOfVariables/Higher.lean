@@ -121,12 +121,18 @@ theorem memWkpLoc_comp_openPartialHomeomorph_iff [Fact (1 ≤ p)] (hp : p ≠ �
     (he' : ContDiffOn ℝ k e.symm e.target) {u : ℂ → F} :
     MemWkpLoc p e.source k (fun z => u (e z)) ↔ MemWkpLoc p e.target k u := by
   have hk0 : (k : WithTop ℕ∞) ≠ 0 := by exact_mod_cast Nat.one_le_iff_ne_zero.1 hk
+  have hdet (f : OpenPartialHomeomorph ℂ ℂ) (hf : ContDiffOn ℝ k f f.source)
+      (hf' : ContDiffOn ℝ k f.symm f.target) (y : ℂ) (hy : y ∈ f.source) :
+      (fderiv ℝ f y).det ≠ 0 :=
+    f.det_fderiv_ne_zero hy ((hf.differentiableOn hk0).differentiableAt
+      (f.open_source.mem_nhds hy))
+      ((hf'.differentiableOn hk0).differentiableAt (f.open_target.mem_nhds (f.map_source hy)))
   refine ⟨fun h => ?_, fun h => MemWkpLoc.comp_contDiffOn (U := ⟨_, e.open_source⟩)
     (V := ⟨_, e.open_target⟩) hp hk h he
-    (fun _ => e.det_fderiv_ne_zero (he.differentiableOn hk0) (he'.differentiableOn hk0))
+    (hdet e he he')
     e.mapsTo⟩
   have h' := MemWkpLoc.comp_contDiffOn (U := ⟨_, e.open_target⟩) (V := ⟨_, e.open_source⟩) hp hk h
-    he' (fun _ => e.symm.det_fderiv_ne_zero (he'.differentiableOn hk0) (he.differentiableOn hk0))
+    he' (hdet e.symm he' he)
     e.symm.mapsTo
   exact h'.congr_ae (ae_restrict_of_forall_mem e.open_target.measurableSet
     fun y hy => by simp only [e.right_inv hy])
@@ -200,13 +206,19 @@ theorem memWkpLoc_comp_openPartialHomeomorph_halfPlane_iff [Fact (1 ≤ p)] (hp 
     MemWkpLoc p (e.source ∩ {z | 0 ≤ z.im}) k (fun z => u (e z)) ↔
       MemWkpLoc p (e.target ∩ {z | 0 ≤ z.im}) k u := by
   have hk0 : (k : WithTop ℕ∞) ≠ 0 := by exact_mod_cast Nat.one_le_iff_ne_zero.1 hk
+  have hdet (f : OpenPartialHomeomorph ℂ ℂ) (hf : ContDiffOn ℝ k f f.source)
+      (hf' : ContDiffOn ℝ k f.symm f.target) (y : ℂ) (hy : y ∈ f.source) :
+      (fderiv ℝ f y).det ≠ 0 :=
+    f.det_fderiv_ne_zero hy ((hf.differentiableOn hk0).differentiableAt
+      (f.open_source.mem_nhds hy))
+      ((hf'.differentiableOn hk0).differentiableAt (f.open_target.mem_nhds (f.map_source hy)))
   refine ⟨fun h => ?_, fun h => MemWkpLoc.comp_contDiffOn_halfPlane
     (U := ⟨_, e.open_source⟩) (V := ⟨_, e.open_target⟩) hp hk h he
-    (fun _ => e.det_fderiv_ne_zero (he.differentiableOn hk0) (he'.differentiableOn hk0))
+    (hdet e he he')
     fun z hz => ⟨e.map_source hz.1, hmaps z hz.1 hz.2⟩⟩
   have h' := MemWkpLoc.comp_contDiffOn_halfPlane (U := ⟨_, e.open_target⟩)
     (V := ⟨_, e.open_source⟩) hp hk h he'
-    (fun _ => e.symm.det_fderiv_ne_zero (he'.differentiableOn hk0) (he.differentiableOn hk0))
+    (hdet e.symm he' he)
     fun z hz => ⟨e.map_target hz.1, hmaps' z hz.1 hz.2⟩
   exact h'.congr_ae (ae_restrict_of_forall_mem (e.open_target.measurableSet.inter
     (measurableSet_le measurable_const Complex.measurable_im)) fun y hy => by
