@@ -23,6 +23,10 @@ For counting measure, singleton-supported vectors separate L² functions and det
 continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
 L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
+More generally, the L² pairing of an L² function with the class of any square-integrable
+function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`).
+The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
+`integral_inner` with the integrand in the left slot.
 Indicators of any countably spanning generating π-system of finite-measure sets have
 dense real linear span in L².
 
@@ -35,6 +39,7 @@ coordinate `i` (`MeasureTheory.L2.inner_evalCLM_compLpL`).
 
 public section
 
+open MeasureTheory
 open scoped ComplexConjugate InnerProductSpace
 
 namespace MeasureTheory
@@ -105,6 +110,15 @@ theorem L2.inner_evalCLM_compLpL {ι : Type*} [DecidableEq ι] {G : ι → Type*
   rw [h₁, h₂, lp.singleContinuousLinearMap_apply, lp.inner_single_right]
   rfl
 
+/-- The L² inner product of an L² function `f` with the class of a square-integrable function
+`g` is the integral of their pointwise inner product. -/
+theorem L2.inner_toLp (f : Lp E 2 μ) {g : α → E} (hg : MemLp g 2 μ) :
+    ⟪f, hg.toLp g⟫_𝕜 = ∫ x, ⟪f x, g x⟫_𝕜 ∂μ := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [hg.coeFn_toLp] with x hx
+  rw [hx]
+
 end MeasureTheory
 
 namespace ContinuousLinearMap
@@ -131,6 +145,20 @@ theorem eq_zero_of_apply_indicatorConstLp_singleton
     _ = 0 := by rw [ht, map_zero]
 
 end ContinuousLinearMap
+
+section IntegralInner
+
+variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedSpace ℝ E]
+
+/-- Integration commutes with the inner product against a fixed vector in the right slot:
+`∫ ⟪f x, c⟫ = ⟪∫ f, c⟫`. This is `integral_inner` with the integrand in the left slot. -/
+theorem integral_inner_left {f : α → E} (hf : Integrable f μ) (c : E) :
+    ∫ x, ⟪f x, c⟫_𝕜 ∂μ = ⟪∫ x, f x ∂μ, c⟫_𝕜 := by
+  simpa only [innerSLFlip_apply_apply] using
+    (innerSLFlip 𝕜 c).integral_comp_commSL RCLike.conj_smul hf
+
+end IntegralInner
 
 namespace TauCeti
 

@@ -89,7 +89,7 @@ theorem exists_character_autToPow_apply {K E : Type*} [CommRing K] [CommRing E] 
   change χ (.ofMul (hζ.autToPow K σ)) = _
   have haut : hζ.autToPow K σ =
       ZMod.unitOfCoprime q (Nat.coprime_pow_sub_one (Nat.ne_zero_of_lt hq) hN) :=
-    Units.ext ((hζ.coe_autToPow_eq_natCast hσ.symm).trans (ZMod.coe_unitOfCoprime _ _).symm)
+    Units.ext ((hζ.coe_autToPow_eq_natCast_iff.2 hσ.symm).trans (ZMod.coe_unitOfCoprime _ _).symm)
   rw [haut, hχ]
 
 end IsPrimitiveRoot

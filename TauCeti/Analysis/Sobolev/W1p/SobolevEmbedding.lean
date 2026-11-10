@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Localization
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Sobolev.FiniteMeasure
 import TauCeti.Analysis.Sobolev.W1p.HolderEmbedding
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Whole-space and interior Sobolev embeddings
@@ -46,6 +47,8 @@ the native Morrey embedding also gives a bounded interior inclusion into `L^∞`
   `TauCeti.W1p.norm_sobolevEmbeddingTopL_le` (the Gagliardo--Nirenberg--Sobolev bound).
 * `TauCeti.W1p.exists_eLpNorm_value_le_of_ae_eq`: a bounded linear map into `L^{p⋆}(V)`
   representing the values gives `L^q(V)` bounds for `q ≤ p⋆` when `V` has finite measure.
+* `TauCeti.W1p.exists_lpEmbeddingL_of_eLpNorm_value_le`: conversely, a uniform `L^r(V)` bound on
+  the values gives a bounded linear map into `L^r(V)` representing them.
 * `TauCeti.W1p.exists_sobolevEmbeddingL_of_isCompact_closure`: the interior embedding
   `W^{1,p}(Ω) →L[ℝ] L^{p⋆}(V)`.
 * `TauCeti.W1p.exists_eLpNorm_value_le_of_isCompact_closure` and
@@ -141,33 +144,41 @@ theorem W1p.exists_eLpNorm_value_le_of_ae_eq [Fact (1 ≤ pstar)] {V : Set E} (h
     {q : ℝ≥0∞} (hq : q ≤ pstar) (S : W1p mu Omega p →L[ℝ] Lp ℝ pstar (mu.restrict V))
     (hS : ∀ u, S u =ᵐ[mu.restrict V] W1p.value u) :
     ∃ C : ℝ≥0, ∀ u : W1p mu Omega p,
-      eLpNorm (W1p.value u) q (mu.restrict V) ≤ C * ‖u‖ₑ := by
-  rcases eq_or_ne q 0 with rfl | hq0
-  · refine ⟨0, fun u => ?_⟩
-    rw [eLpNorm_exponent_zero ((Lp.aestronglyMeasurable (S u)).congr (hS u))]
-    exact zero_le
-  have hexp : 0 ≤ 1 / q.toReal - 1 / pstar.toReal := by
-    rw [sub_nonneg]
-    rcases eq_or_ne pstar ∞ with h | h
-    · simp only [h, ENNReal.toReal_top, div_zero]
-      positivity
-    · exact one_div_le_one_div_of_le (ENNReal.toReal_pos hq0 (ne_top_of_le_ne_top h hq))
-        (ENNReal.toReal_mono h hq)
-  have hc : mu V ^ (1 / q.toReal - 1 / pstar.toReal) ≠ ∞ :=
-    ENNReal.rpow_ne_top_of_nonneg hexp hV
-  refine ⟨‖S‖₊ * (mu V ^ (1 / q.toReal - 1 / pstar.toReal)).toNNReal, fun u => ?_⟩
-  calc eLpNorm (W1p.value u) q (mu.restrict V)
-      ≤ eLpNorm (W1p.value u) pstar (mu.restrict V) *
-          mu.restrict V univ ^ (1 / q.toReal - 1 / pstar.toReal) :=
-        eLpNorm_le_eLpNorm_mul_rpow_measure_univ_of_pos hq (pos_iff_ne_zero.2 hq0)
-    _ = ‖S u‖ₑ * mu V ^ (1 / q.toReal - 1 / pstar.toReal) := by
-        rw [Lp.enorm_def, eLpNorm_congr_ae (hS u), Measure.restrict_apply_univ]
-    _ ≤ ‖S‖ₑ * ‖u‖ₑ * mu V ^ (1 / q.toReal - 1 / pstar.toReal) := by
-        gcongr
-        exact S.le_opENorm u
-    _ = _ := by
-        rw [ENNReal.coe_mul, ENNReal.coe_toNNReal hc, enorm_eq_nnnorm]
-        ring
+      eLpNorm (W1p.value u) q (mu.restrict V) ≤ C * ‖u‖ₑ :=
+  exists_eLpNorm_le_mul_enorm_of_ae_eq (by rwa [Measure.restrict_apply_univ]) hq S hS
+
+omit [FiniteDimensional ℝ E] in
+/-- **Inclusions from value bounds.** A uniform estimate `‖u‖_{L^r(V)} ≤ C ‖u‖_{W^{1,p}(Ω)}` on a
+subset `V ⊆ Ω` makes restricting the values of `u ∈ W^{1,p}(Ω)` to `V` a continuous linear map
+`W^{1,p}(Ω) → L^r(V)`. -/
+theorem W1p.exists_lpEmbeddingL_of_eLpNorm_value_le {r : ℝ≥0∞} [Fact (1 ≤ r)] {V : Set E}
+    (hVΩ : V ⊆ Omega) (hbound : ∃ C : ℝ≥0, ∀ u : W1p mu Omega p,
+      eLpNorm (W1p.value u) r (mu.restrict V) ≤ C * ‖u‖ₑ) :
+    ∃ S : W1p mu Omega p →L[ℝ] Lp ℝ r (mu.restrict V),
+      ∀ u, S u =ᵐ[mu.restrict V] W1p.value u := by
+  obtain ⟨C, hC⟩ := hbound
+  have hm (u : W1p mu Omega p) : MemLp (W1p.value u) r (mu.restrict V) :=
+    (hC u).trans_lt (by finiteness)
+  let L : W1p mu Omega p →ₗ[ℝ] Lp ℝ r (mu.restrict V) :=
+    { toFun u := (hm u).toLp (W1p.value u)
+      map_add' u v := by
+        rw [← MemLp.toLp_add]
+        apply MemLp.toLp_congr
+        apply ae_restrict_of_ae_restrict_of_subset hVΩ
+        exact W1p.value_add_ae u v
+      map_smul' c u := by
+        rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
+        apply MemLp.toLp_congr
+        apply ae_restrict_of_ae_restrict_of_subset hVΩ
+        exact W1p.value_smul_ae c u }
+  refine ⟨L.mkContinuous C (fun u ↦ ?_), fun u ↦ (hm u).coeFn_toLp⟩
+  -- This bound is for the anonymous linear map L before mkContinuous is constructed.
+  -- Its function projection is the chosen toLp representative; exposing that projection
+  -- lets the public norm_toLp law apply without unfolding the representative itself.
+  change ‖(hm u).toLp (W1p.value u)‖ ≤ _
+  rw [Lp.norm_toLp]
+  simpa only [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_enorm] using
+    ENNReal.toReal_mono (by finiteness : C * ‖u‖ₑ ≠ ∞) (hC u)
 
 /-! ### The interior of a domain -/
 
@@ -284,44 +295,13 @@ theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
     _ ≤ A * (‖T‖ₑ * ‖u‖ₑ) := by gcongr; exact T.le_opENorm u
     _ = _ := (mul_assoc _ _ _).symm
 
-omit [Nontrivial E] [FiniteDimensional ℝ E] in
-/-- Package a uniform value estimate as a bounded linear inclusion into `L^r`. -/
-private theorem W1p.exists_valueLpCLM_of_bound {r : ℝ≥0∞} [Fact (1 ≤ r)] {V : Set E}
-    (hVΩ : V ⊆ Ω) (hbound : ∃ C : ℝ≥0, ∀ u : W1p μ Ω (q : ℝ≥0∞),
-      eLpNorm (W1p.value u) r (μ.restrict V) ≤ C * ‖u‖ₑ) :
-    ∃ S : W1p μ Ω (q : ℝ≥0∞) →L[ℝ] Lp ℝ r (μ.restrict V),
-      ∀ u, S u =ᵐ[μ.restrict V] W1p.value u := by
-  obtain ⟨C, hC⟩ := hbound
-  have hm (u : W1p μ Ω (q : ℝ≥0∞)) : MemLp (W1p.value u) r (μ.restrict V) :=
-    (hC u).trans_lt (by finiteness)
-  let L : W1p μ Ω (q : ℝ≥0∞) →ₗ[ℝ] Lp ℝ r (μ.restrict V) :=
-    { toFun u := (hm u).toLp (W1p.value u)
-      map_add' u v := by
-        rw [← MemLp.toLp_add]
-        apply MemLp.toLp_congr
-        apply ae_restrict_of_ae_restrict_of_subset hVΩ
-        exact W1p.value_add_ae u v
-      map_smul' c u := by
-        rw [RingHom.id_apply, ← MemLp.toLp_const_smul]
-        apply MemLp.toLp_congr
-        apply ae_restrict_of_ae_restrict_of_subset hVΩ
-        exact W1p.value_smul_ae c u }
-  refine ⟨L.mkContinuous C (fun u ↦ ?_), fun u ↦ (hm u).coeFn_toLp⟩
-  -- This bound is for the anonymous linear map L before mkContinuous is constructed.
-  -- Its function projection is the chosen toLp representative; exposing that projection
-  -- lets the public norm_toLp law apply without unfolding the representative itself.
-  change ‖(hm u).toLp (W1p.value u)‖ ≤ _
-  rw [Lp.norm_toLp]
-  simpa only [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_enorm] using
-    ENNReal.toReal_mono (by finiteness : C * ‖u‖ₑ ≠ ∞) (hC u)
-
 /-- A bounded linear interior Sobolev inclusion for every finite subcritical gain. -/
 theorem W1p.exists_sobolevEmbeddingL_of_subcritical_gain [Fact (1 ≤ (s : ℝ≥0∞))]
     (hqs : q ≤ s) (hgap : (q : ℝ)⁻¹ - (s : ℝ)⁻¹ < (finrank ℝ E : ℝ)⁻¹)
     {V : Set E} (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω) :
     ∃ S : W1p μ Ω (q : ℝ≥0∞) →L[ℝ] Lp ℝ (s : ℝ≥0∞) (μ.restrict V),
       ∀ u, S u =ᵐ[μ.restrict V] W1p.value u :=
-  W1p.exists_valueLpCLM_of_bound (subset_closure.trans hVΩ)
+  W1p.exists_lpEmbeddingL_of_eLpNorm_value_le (subset_closure.trans hVΩ)
     (W1p.exists_eLpNorm_value_le_of_subcritical_gain hqs hgap hVc hVΩ)
 
 omit [Nontrivial E] in
@@ -353,7 +333,7 @@ theorem W1p.exists_lpInftyEmbeddingL_of_isCompact_closure
     rw [← hm]
     simp only [Z, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
     rw [he, indicator_of_mem hx, ht]
-  apply W1p.exists_valueLpCLM_of_bound (subset_closure.trans hVΩ)
+  apply W1p.exists_lpEmbeddingL_of_eLpNorm_value_le (subset_closure.trans hVΩ)
   refine ⟨‖H‖₊, fun u ↦ ?_⟩
   rw [← eLpNorm_congr_ae (hH u)]
   calc

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.LevelSet.Manifold
+import TauCeti.Analysis.Fredholm.LevelSet.Inclusion
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Data.Sym.Card
@@ -57,6 +58,7 @@ manifold structure.
   `Fin k → E` and the projections to the unit sphere are smooth.
 * `TauCeti.range_mfderiv_coe_stiefel`: the tangent space of the Stiefel manifold at `v`, as the
   range of the differential of the inclusion, is the kernel of the derivative of the Gram map.
+* `TauCeti.injective_mfderiv_coe_stiefel`: the differential of the inclusion is injective.
 
 ## References
 
@@ -260,6 +262,14 @@ theorem range_mfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k) :
   rw [h.mfderiv]
   exact (LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)).trans
     (Submodule.range_subtype _)
+
+variable {E k} in
+/-- The differential of the inclusion of the Stiefel manifold into the space of `k`-families is
+injective: the inclusion is an immersion. -/
+theorem injective_mfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k) :
+    Injective (mfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) 𝓘(ℝ, Fin k → E)
+      ((↑) : stiefel E k → Fin k → E) v) :=
+  injective_mfderiv_coe_levelSet _ _ _ _ v
 
 /-- The `i`th vector of an orthonormal frame, as a point of the unit sphere. For `k = 2` and
 `i = 0` this is the projection of the unit tangent bundle of the sphere to its base. -/

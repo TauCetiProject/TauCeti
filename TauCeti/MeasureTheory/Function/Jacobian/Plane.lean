@@ -24,6 +24,8 @@ plane, where densities of this kind arise as coefficients of two-forms.
   scaling by `|det dφ|`.
 * `TauCeti.lintegral_enorm_image_eq_lintegral_enorm_of_eq_det_smul`: the lower Lebesgue integral
   of the size of a density scaling by `det dφ`.
+* `TauCeti.lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul`: the lower Lebesgue
+  integral of the positive part of a real density scaling by `|det dφ|`.
 -/
 
 public section
@@ -62,5 +64,20 @@ theorem lintegral_enorm_image_eq_lintegral_enorm_of_eq_det_smul (hs : Measurable
     (fun w hw ↦ (hφ w hw).hasFDerivAt.hasFDerivWithinAt) hinj]
   refine setLIntegral_congr_fun hs fun w hw ↦ ?_
   rw [hf w hw, enorm_smul, Real.enorm_eq_ofReal_abs]
+
+/-- **Change of variables for the positive part of a density.** If a real density `f` on a
+measurable set `s` is `|det dφ|` times `g ∘ φ`, for a change of coordinates `φ` that is injective
+and differentiable on `s`, then the lower Lebesgue integral of the positive part of `g` over
+`φ '' s` is that of `f` over `s`. No integrability or measurability hypothesis is needed. -/
+theorem lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul {f g : ℝ × ℝ → ℝ}
+    (hs : MeasurableSet s) (hinj : InjOn φ s) (hφ : ∀ w ∈ s, DifferentiableAt ℝ φ w)
+    (hf : ∀ w ∈ s, f w = |(fderiv ℝ φ w).det| * g (φ w)) :
+    ∫⁻ z in φ '' s, ENNReal.ofReal (g z) = ∫⁻ w in s, ENNReal.ofReal (f w) := by
+  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul volume hs
+    (fun w hw ↦ (hφ w hw).hasFDerivAt.hasFDerivWithinAt) hinj]
+  refine setLIntegral_congr_fun hs fun w hw ↦ ?_
+  rw [hf w hw, ENNReal.ofReal_mul (abs_nonneg _)]
 
 end TauCeti
