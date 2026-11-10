@@ -135,8 +135,8 @@ theorem mvfderiv_coe_fst_stiefelRotationFamily_apply (x : stiefel E 2 × sphere 
         (fun y ↦ ((stiefelRotationFamily y).1 : E)) x w =
       mvfderiv 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ)
         ((↑) : stiefel E 2 → Fin 2 → E) x.1 (Manifold.tangentSpaceProdEquiv x w).1 0 := by
-  rw [show (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ ((stiefelRotationFamily y).1 : E)) =
-    fun y ↦ y.1.1 0 from funext fun y ↦ by simp, mvfderiv_frameVector_apply]
+  simp only [coe_fst_stiefelRotationFamily]
+  exact mvfderiv_frameVector_apply x w 0
 
 /-- **The derivative of the rotation family of the unit tangent bundle**, second component, read
 in `E`. A tangent vector `(a, b)` at `((u, v), z)` is sent to
