@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.BigOperators.Group.List.Basic
 public import Mathlib.Algebra.Module.LinearMap.End
+public import Mathlib.Algebra.Module.Submodule.Invariant
 public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.SetTheory.Cardinal.NatCard
@@ -32,6 +33,10 @@ A finite nontrivial module has more than one endomorphism (`Module.End.one_lt_na
 An endomorphism acting as a scalar `a` from a monoid acting on the module has `k`-th power acting
 as `a ^ k` (`Module.End.pow_apply_eq_pow_smul`), so it is `1` once `a ^ k = 1`
 (`Module.End.pow_eq_one_of_apply_eq_smul`).
+
+A submodule fixed pointwise by an endomorphism `f` is invariant under `f`
+(`Submodule.le_comap_of_fixed`), and a submodule invariant under two endomorphisms is invariant
+under their difference (`Module.End.invtSubmodule_inf_invtSubmodule_le_invtSubmodule_sub`).
 -/
 
 public section
@@ -101,5 +106,27 @@ theorem pow_eq_one_of_apply_eq_smul {R M X : Type*} [Semiring R] [AddCommMonoid 
     [Monoid M] [MulAction M X] {a : M} (S : Module.End R X) (hS : ∀ x, S x = a • x) {k : ℕ}
     (hk : a ^ k = 1) : S ^ k = 1 :=
   LinearMap.ext fun x ↦ by rw [pow_apply_eq_pow_smul S hS, hk, one_smul, one_apply_eq_self]
+
+end Module.End
+
+namespace Submodule
+
+/-- A submodule fixed pointwise by an endomorphism is invariant under it. -/
+theorem le_comap_of_fixed {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
+    (p : Submodule R V) (f : Module.End R V)
+    (hfix : ∀ y ∈ p, f y = y) : p ≤ p.comap f :=
+  fun y hy ↦ by rw [Submodule.mem_comap, hfix y hy]; exact hy
+
+end Submodule
+
+namespace Module.End
+
+variable {R V : Type*} [Ring R] [AddCommGroup V] [Module R V] (f g : End R V)
+
+/-- A submodule invariant under two endomorphisms is invariant under their difference. This is the
+analogue of `Module.End.invtSubmodule_inf_invtSubmodule_le_invtSubmodule_add`. -/
+theorem invtSubmodule_inf_invtSubmodule_le_invtSubmodule_sub :
+    f.invtSubmodule ⊓ g.invtSubmodule ≤ (f - g).invtSubmodule :=
+  fun p ⟨hfp, hgp⟩ _ hx ↦ p.sub_mem (hfp hx) (hgp hx)
 
 end Module.End
