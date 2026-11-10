@@ -94,12 +94,6 @@ private theorem hasDerivAt_const_hamiltonianVectorField_const_mul (hp : fderiv �
     smul_zero]
   exact hasDerivAt_const r p
 
-omit [FiniteDimensional ℝ V] in
-/-- The derivative of a `C²` function is differentiable. -/
-private theorem differentiableAt_fderiv_of_contDiff_two (hF : ContDiff ℝ 2 F) (x : V) :
-    DifferentiableAt ℝ (fderiv ℝ F) x :=
-  (hF.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero x
-
 /-- **The linearized evolution at a critical point.** If `p` is a critical point of a `C²`
 function `F`, the derivative at `p` of the Hamiltonian evolution of `εF` from time `s` to time `t`
 is `exp ((t - s) ε dX_F(p))`: along the constant orbit at `p` the linearized Hamiltonian equation
@@ -157,7 +151,7 @@ theorem isNondegenerateCriticalPoint_of_isNondegenerateFixedPt (hF : ContDiff �
     ⟨hF.contDiffAt, hp, fun u hu ↦ ?_⟩
   have hA : fderiv ℝ (ω.hamiltonianVectorField F) p u = 0 :=
     (ω.fderiv_hamiltonianVectorField_apply_eq_zero_iff
-      (differentiableAt_fderiv_of_contDiff_two hF p) u).2 hu
+      ((hF.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero p) u).2 hu
   refine (ω.isNondegenerateFixedPt_timeDependentHamiltonianFlow_const_mul_iff_exp hF hp ε hX s t).1
     h u ?_
   simpa using ContinuousLinearMap.exp_apply_of_apply_eq_smul (μ := (0 : ℝ)) _
@@ -184,7 +178,8 @@ theorem isNondegenerateFixedPt_timeDependentHamiltonianFlow_const_mul_iff (hF : 
     smul_eq_zero, mul_comm (t - s)] at hv
   exact h.separatingLeft v
     ((ω.fderiv_hamiltonianVectorField_apply_eq_zero_iff
-      (differentiableAt_fderiv_of_contDiff_two hF p) v).1 (hv.resolve_left hε))
+      ((hF.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero p) v).1
+      (hv.resolve_left hε))
 
 /-- **Small multiples of a function have nondegenerate constant orbits at its nondegenerate
 critical points, uniformly on compact sets.** For a `C²` function `F` and a compact set `C`, there
