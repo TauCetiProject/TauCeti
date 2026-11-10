@@ -163,6 +163,7 @@ theorem quantizeUniformCLM_comp_fourierMultiplierCLM {a : Symbol n V W m}
         (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ))) =
       quantizeUniformCLM (a.comp (besselPotential s)) (ha.comp (isUniform_besselPotential s)) := by
   rw [← quantizeFrequencyCLM_besselWeight]
+  simp only [besselPotential_eq_ofFrequency]
   exact quantizeUniformCLM_comp_quantizeFrequencyCLM _ _ ha
 
 /-- **Composition with the Bessel multiplier on the left.** For a symbol `a` with compact
@@ -177,6 +178,7 @@ theorem fourierMultiplierCLM_comp_quantizeUniformCLM {a : Symbol n U V m}
       quantizeUniformCLM ((besselPotential s).sharp a ha)
         ((isUniform_besselPotential s).sharp_right a ha) := by
   rw [← quantizeFrequencyCLM_besselWeight]
+  simp only [besselPotential_eq_ofFrequency]
   exact quantizeFrequencyCLM_comp_quantizeUniformCLM _ _ ha
 
 end Bessel

@@ -77,11 +77,18 @@ uniform symbol of order `s` (`TauCeti.Symbol.isUniform_besselPotential`). Its qu
 Mathlib's Fourier multiplier `(1 + ‖ζ‖²) ^ (s / 2)` in the frequency `ζ = ξ / 2π`
 (`TauCeti.Symbol.quantizeSchwartzValue_besselPotential`), which as a tempered distribution is
 Mathlib's Bessel potential `TemperedDistribution.besselPotential`
-(`TauCeti.toTemperedDistribution_quantizeFrequencyCLM_besselPotential`). The body is exposed so
-that results about `TauCeti.Symbol.ofFrequency` apply to it directly. -/
-@[expose] def besselPotential (s : ℝ) : Symbol n V V s :=
+(`TauCeti.toTemperedDistribution_quantizeFrequencyCLM_besselPotential`). -/
+def besselPotential (s : ℝ) : Symbol n V V s :=
   ofFrequency _ (contDiff_besselWeight_smul_id s)
     (exists_norm_iteratedFDeriv_besselWeight_smul_id_le s)
+
+/-- `TauCeti.Symbol.besselPotential` is the frequency-only symbol of the Bessel weight, so results
+about `TauCeti.Symbol.ofFrequency` apply to it. -/
+theorem besselPotential_eq_ofFrequency (s : ℝ) :
+    (besselPotential s : Symbol n V V s) =
+      ofFrequency _ (contDiff_besselWeight_smul_id s)
+        (exists_norm_iteratedFDeriv_besselWeight_smul_id_le s) :=
+  (rfl)
 
 @[simp]
 theorem coefficient_besselPotential (s : ℝ) (p : CoordinateSpace n × CoordinateSpace n) :
