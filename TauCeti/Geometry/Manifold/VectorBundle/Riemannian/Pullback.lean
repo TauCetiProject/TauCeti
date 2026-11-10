@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorBundle.Bilinear.Section
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 
 /-!
@@ -63,29 +64,7 @@ def pullbackBundleEquiv (g : ContMDiffRiemannianMetric IB n G W)
   · refine ((g.isVonNBounded x).image (A x).symm.toContinuousLinearMap).subset ?_
     intro v hv
     exact ⟨A x v, hv, (A x).symm_apply_apply v⟩
-  · intro x
-    rw [contMDiffAt_hom_bundle]
-    refine ⟨contMDiffAt_id, ?_⟩
-    let a (y : B) := ContinuousLinearMap.inCoordinates F V G W x y x y
-      (A y).toContinuousLinearMap
-    let q (y : B) := ContinuousLinearMap.inCoordinates G W (G →L[ℝ] ℝ)
-      (fun z ↦ W z →L[ℝ] ℝ) x y x y (g.inner y)
-    have ha : ContMDiffAt IB 𝓘(ℝ, F →L[ℝ] G) n a x :=
-      ((contMDiffAt_hom_bundle _).mp (hA x)).2
-    have hq : ContMDiffAt IB 𝓘(ℝ, G →L[ℝ] G →L[ℝ] ℝ) n q x :=
-      ((contMDiffAt_hom_bundle _).mp (g.contMDiff x)).2
-    have hc := (ha.clm_precomp (F₃ := ℝ)).clm_comp (hq.clm_comp ha)
-    apply hc.congr_of_eventuallyEq
-    filter_upwards [(trivializationAt F V x).open_baseSet.mem_nhds
-      (FiberBundle.mem_baseSet_trivializationAt F V x),
-      (trivializationAt G W x).open_baseSet.mem_nhds
-      (FiberBundle.mem_baseSet_trivializationAt G W x)] with y hyV hyW
-    dsimp only [a, q]
-    ext v w
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearMap.precomp_apply]
-    rw [inCoordinates_apply_eq₂ hyV hyV (by simp),
-      inCoordinates_apply_eq₂ hyW hyW (by simp)]
-    simp [ContinuousLinearMap.inCoordinates, hyV, hyW]
+  · exact g.contMDiff.bilinearComp_bundle hA
 
 /-- Evaluation of the pulled-back metric uses the original metric on the images. -/
 @[simp]
