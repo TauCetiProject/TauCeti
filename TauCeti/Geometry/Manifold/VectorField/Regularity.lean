@@ -474,11 +474,37 @@ open VectorField
 agrees with the manifold directional derivative. -/
 theorem fderivWithin_chart_apply_mpullbackWithin
     {p : M → F} {U : ∀ y : M, TangentSpace I y} {x : M} {z : E}
-    (hz : z ∈ (extChartAt I x).target)
-    (hpz : MDiffAt p ((extChartAt I x).symm z)) :
+    (hz : z ∈ (extChartAt I x).target) :
     (fderivWithin 𝕜 (p ∘ (extChartAt I x).symm) (Set.range I) z)
         (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm U (Set.range I) z) =
       mvfderiv I p ((extChartAt I x).symm z) (U ((extChartAt I x).symm z)) := by
+  by_cases hpz : MDiffAt p ((extChartAt I x).symm z)
+  swap
+  · -- off differentiability both sides vanish, by the junk-value conventions
+    have hsrc : (extChartAt I x).symm z ∈ (extChartAt I x).source :=
+      (extChartAt I x).map_target hz
+    have hnd : ¬ DifferentiableWithinAt 𝕜 (p ∘ (extChartAt I x).symm) (Set.range I) z := by
+      intro hd
+      apply hpz
+      rw [mdifferentiableAt_iff_of_mem_source (y := p ((extChartAt I x).symm z))
+        (by simpa only [extChartAt_source] using hsrc) (mem_chart_source _ _)]
+      refine ⟨?_, ?_⟩
+      swap
+      · rw [(extChartAt I x).right_inv hz]
+        simpa only [extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp]
+          using hd
+      have hc := hd.continuousWithinAt.comp_of_eq
+        (continuousAt_extChartAt' (I := I) (x := x) hsrc).continuousWithinAt
+        (s := univ) (fun y _ ↦ by simp) ((extChartAt I x).right_inv hz)
+      rw [continuousWithinAt_univ] at hc
+      refine hc.congr ?_
+      filter_upwards [extChartAt_source_mem_nhds' (I := I) hsrc] with y hy
+      simp only [Function.comp_apply, (extChartAt I x).left_inv hy]
+    have h0 : mfderiv% p ((extChartAt I x).symm z) = 0 :=
+      mfderiv_zero_of_not_mdifferentiableAt hpz
+    rw [fderivWithin_zero_of_not_differentiableWithinAt hnd, mvfderiv, h0,
+      ContinuousLinearMap.comp_zero]
+    rfl
   -- `TangentSpace I _` is definitionally the model space `E`; no public rewrite lemma exposes the
   -- coordinate composition in the form needed by the chain rule.
   suffices h : (mfderiv[Set.range I] (p ∘ (extChartAt I x).symm) z)
@@ -501,23 +527,13 @@ theorem fderivWithin_chart_apply_mpullbackWithin
 /-- Near the chart centre within the model range, the coordinate directional derivative
 agrees with the manifold directional derivative composed with the inverse chart. -/
 theorem eventuallyEq_fderivWithin_chart_apply_mpullbackWithin
-    {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M}
-    (hf : CMDiffAt n f x) (hn : 1 ≤ n) :
+    {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M} :
     (fun z ↦ (fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (Set.range I) z)
       (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm U (Set.range I) z)) =ᶠ[
       𝓝[Set.range I] (extChartAt I x x)]
     (fun y ↦ mvfderiv I f y (U y)) ∘ (extChartAt I x).symm := by
-  have hf_eventually := hf.eventually_mdifferentiableAt (ENat.one_le_iff_ne_zero_withTop.1 hn)
-  have hsymm_tendsto : Tendsto (extChartAt I x).symm
-      (𝓝[Set.range I] (extChartAt I x x)) (𝓝 x) := by
-    simpa only [extChartAt_to_inv] using
-      (contMDiffWithinAt_extChartAt_symm_range_self
-        (I := I) (n := 1) x).continuousWithinAt.tendsto
-  have htarget : ∀ᶠ z in 𝓝[Set.range I] (extChartAt I x x),
-      z ∈ (extChartAt I x).target :=
-    extChartAt_target_mem_nhdsWithin x
-  filter_upwards [htarget, hsymm_tendsto hf_eventually] with z hz hfz
-  exact fderivWithin_chart_apply_mpullbackWithin hz hfz
+  filter_upwards [extChartAt_target_mem_nhdsWithin x] with z hz
+  exact fderivWithin_chart_apply_mpullbackWithin hz
 
 end ChartDirectionalDerivatives
 
@@ -537,21 +553,19 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : ℕ∞ω}
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  [IsManifold I (minSmoothness 𝕜 2) M]
+  [IsManifold I 1 M]
 
-/-- Let `f` be a vector-valued function that is `C^n` at `x` with `n ≥ minSmoothness 𝕜 2` (so `C²`
-over `ℝ` or `ℂ`), and let `U` be a vector field differentiable at `x`. Then the directional
-derivative `y ↦ df_y (U y)` is differentiable at `x`. -/
+/-- Let `f` be a vector-valued function that is `C^n` at `x` with `n ≥ 2`, and let `U` be a vector
+field differentiable at `x`. Then the directional derivative `y ↦ df_y (U y)` is differentiable
+at `x`. -/
 theorem mdifferentiableAt_mvfderiv_apply
     {f : M → F} {U : ∀ y : M, TangentSpace I y} {x : M}
-    (hf : CMDiffAt n f x) (hn : minSmoothness 𝕜 2 ≤ n)
+    (hf : CMDiffAt n f x) (hn : 2 ≤ n)
     (hU : MDiffAt (fun y ↦ (U y : TangentBundle I M)) x) :
     MDiffAt (fun y ↦ mvfderiv I f y (U y)) x := by
-  have h2n : (2 : ℕ∞ω) ≤ n :=
-    (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
   have htangent : MDiffAt (fun y ↦ tangentMap I 𝓘(𝕜, F) f
       (U y : TangentBundle I M)) x :=
-    ((hf.contMDiffAt_tangentMap (m := 1) (by norm_num; exact h2n)).mdifferentiableAt
+    ((hf.contMDiffAt_tangentMap (m := 1) (by norm_num; exact hn)).mdifferentiableAt
       (by norm_num)).comp x hU
   have hsnd : MDiffAt (fun p : TangentBundle 𝓘(𝕜, F) F ↦ @id F p.2)
       (tangentMap I 𝓘(𝕜, F) f (U x : TangentBundle I M)) :=
@@ -567,32 +581,21 @@ open VectorField in
 pulled-back field `V`, is the manifold counterpart `mvfderiv I (fun y ↦ mvfderiv I f y (U y)) x`
 applied to `V x`. -/
 theorem fderivWithin_fderivWithin_chart_apply_mpullbackWithin {f : M → F}
-    {U V : ∀ x : M, TangentSpace I x} {x : M} (hf : CMDiffAt n f x)
-    (hn : minSmoothness 𝕜 2 ≤ n)
-    (hU : MDiffAt (fun y ↦ (U y : TangentBundle I M)) x) :
+    {U V : ∀ x : M, TangentSpace I x} {x : M} :
     fderivWithin 𝕜 (fun z ↦ fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (Set.range I) z
         (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm U (Set.range I) z))
       (Set.range I) (extChartAt I x x)
         (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (Set.range I) (extChartAt I x x)) =
       mvfderiv I (fun y ↦ mvfderiv I f y (U y)) x (V x) := by
-  have h2n : (2 : ℕ∞ω) ≤ n :=
-    (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
-  have h1n : (1 : ℕ∞ω) ≤ n := (by norm_num : (1 : ℕ∞ω) ≤ 2).trans h2n
-  have hf_chart : MDiffAt f ((extChartAt I x).symm (extChartAt I x x)) := by
-    simpa only [extChartAt_to_inv] using (hf.of_le h2n).mdifferentiableAt (by norm_num)
-  have hUf := TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hU
-  have hcoord := (TauCeti.eventuallyEq_fderivWithin_chart_apply_mpullbackWithin
-    (I := I) (U := U) hf h1n).fderivWithin_eq
-    (𝕜 := 𝕜) (by
+  rw [(TauCeti.eventuallyEq_fderivWithin_chart_apply_mpullbackWithin (I := I) (U := U)
+    (f := f) (x := x)).fderivWithin_eq (by
       simpa only [Function.comp_apply, extChartAt_to_inv] using
         TauCeti.fderivWithin_chart_apply_mpullbackWithin
-          (I := I) (U := U) (mem_extChartAt_target x) hf_chart)
-  have houter := TauCeti.fderivWithin_chart_apply_mpullbackWithin
-    (I := I) (p := fun y ↦ mvfderiv I f y (U y)) (U := V)
-    (mem_extChartAt_target x) (by simpa only [extChartAt_to_inv] using hUf)
-  rw [extChartAt_to_inv] at houter
-  rw [hcoord]
-  exact houter
+          (I := I) (p := f) (U := U) (mem_extChartAt_target x))]
+  have h := TauCeti.fderivWithin_chart_apply_mpullbackWithin
+    (I := I) (p := fun y ↦ mvfderiv I f y (U y)) (U := V) (mem_extChartAt_target x)
+  rw [extChartAt_to_inv] at h
+  exact h
 
 end DirectionalDerivative
 
