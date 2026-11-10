@@ -116,10 +116,8 @@ private theorem exists_norm_compIntegrand_le (hb : b.HasCompactSpatialSupport)
   obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_slice_le (r + |m'|)
   refine ⟨Ca * 2 ^ (|m'| / 2) * (2 * π) ^ |m'| * Cb, by positivity, fun x hx ξ η ↦ ?_⟩
   have h2π : (1 : ℝ) ≤ 2 * π := by linarith [Real.two_le_pi]
-  have hpeetre := one_add_norm_add_sq_rpow_le_mul m' ξ ((2 * π) • η)
-  have hscale := one_add_norm_sq_rpow_le_of_norm_eq_mul h2π |m'| (x := (2 * π) • η) (y := η)
-    (by rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le])
-  rw [abs_abs] at hscale
+  have hweight := one_add_norm_add_sq_rpow_le_mul_of_norm_le_mul h2π m' ξ (y := (2 * π) • η)
+    (z := η) (by rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le])
   have hξ : (1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) =
       (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
     rw [← Real.rpow_add (by positivity)]
@@ -136,9 +134,7 @@ private theorem exists_norm_compIntegrand_le (hb : b.HasCompactSpatialSupport)
           ((2 * π) ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2)))) *
         (Cb * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2)) := by
         gcongr
-        · refine (hCa x hx _).trans ?_
-          gcongr
-          exact hpeetre.trans (by gcongr)
+        · exact (hCa x hx _).trans (mul_le_mul_of_nonneg_left hweight hCa0)
         · exact hCb η ξ
     _ = Ca * 2 ^ (|m'| / 2) * (2 * π) ^ |m'| * Cb *
           ((1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) *

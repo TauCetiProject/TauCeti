@@ -45,6 +45,9 @@ The brackets are written out as `(1 + ‖x‖ ^ 2) ^ (s / 2)`, the weight of Mat
   `r - s` in either variable.
 * `TauCeti.one_add_norm_sq_rpow_le_of_norm_eq_mul`: rescaling by `c ≥ 1` changes the weight
   `⟨x⟩ ^ s` by at most the factor `c ^ |s|`.
+* `TauCeti.one_add_norm_add_sq_rpow_le_mul_of_norm_le_mul`: Peetre's inequality for a
+  translation `y` with `‖y‖ ≤ c ‖z‖` and `c ≥ 1`,
+  `⟨x + y⟩ ^ s ≤ 2 ^ (|s| / 2) ⟨x⟩ ^ s c ^ |s| ⟨z⟩ ^ |s|`.
 * `TauCeti.one_add_norm_add_sq_rpow_le`: the subadditive form
   `⟨x + y⟩ ^ s ≤ 2 ^ s (⟨x⟩ ^ s + ⟨y⟩ ^ s)` for `s ≥ 0`, which splits the weight of a convolution
   between its two factors.
@@ -177,6 +180,25 @@ theorem one_add_norm_sq_rpow_le_of_norm_eq_mul [SeminormedAddGroup E] {F : Type*
           Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) (by linarith)
       _ ≤ c ^ |s| * (1 + ‖y‖ ^ 2) ^ (s / 2) :=
           le_mul_of_one_le_left (by positivity) (Real.one_le_rpow hc (abs_nonneg s))
+
+omit [SeminormedAddGroup E] in
+/-- **Peetre's inequality** for a translation dominated by a rescaled vector: if `‖y‖ ≤ c ‖z‖` with
+`c ≥ 1`, then `⟨x + y⟩ ^ s ≤ 2 ^ (|s| / 2) ⟨x⟩ ^ s c ^ |s| ⟨z⟩ ^ |s|` for every real `s`. This is
+the form used for frequency translations `ξ + t • (2π) • η` with `0 ≤ t ≤ 1`. -/
+theorem one_add_norm_add_sq_rpow_le_mul_of_norm_le_mul [SeminormedAddGroup E] {F : Type*}
+    [SeminormedAddGroup F] {c : ℝ} (hc : 1 ≤ c) (s : ℝ) (x : E) {y : E} {z : F}
+    (h : ‖y‖ ≤ c * ‖z‖) :
+    (1 + ‖x + y‖ ^ 2) ^ (s / 2) ≤
+      2 ^ (|s| / 2) * (1 + ‖x‖ ^ 2) ^ (s / 2) * (c ^ |s| * (1 + ‖z‖ ^ 2) ^ (|s| / 2)) := by
+  refine (one_add_norm_add_sq_rpow_le_mul s x y).trans ?_
+  gcongr
+  -- Compare `⟨y⟩` with the bracket of the real number `c ‖z‖`, then rescale.
+  have hcz : ‖(c * ‖z‖ : ℝ)‖ = c * ‖z‖ := Real.norm_of_nonneg (by positivity)
+  calc (1 + ‖y‖ ^ 2) ^ (|s| / 2) ≤ (1 + ‖(c * ‖z‖ : ℝ)‖ ^ 2) ^ (|s| / 2) := by
+        rw [hcz]
+        gcongr
+    _ ≤ c ^ |s| * (1 + ‖z‖ ^ 2) ^ (|s| / 2) := by
+        simpa only [abs_abs] using one_add_norm_sq_rpow_le_of_norm_eq_mul hc |s| hcz
 
 /-- **Peetre's inequality, subadditive form.** The Japanese bracket weight
 `(1 + ‖x‖ ^ 2) ^ (s / 2)` is subadditive up to a constant: for `s ≥ 0`,

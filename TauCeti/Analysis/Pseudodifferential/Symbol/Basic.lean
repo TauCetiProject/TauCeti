@@ -29,6 +29,9 @@ space, and develop the first operations of the symbol calculus:
 * `TauCeti.Symbol.inclusion`: a symbol of order `m` is a symbol of every order `m' ≥ m`;
 * `TauCeti.Symbol.frequencyDeriv`: a frequency derivative `∂_{ξ_j}` lowers the order by one;
 * `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order;
+* `TauCeti.Symbol.iteratedFrequencyDeriv`, `TauCeti.Symbol.iteratedSpatialDeriv`: the iterated
+  derivatives `∂_ξ^r a` and `∂_x^r a` along a word `r` of length `k`, symbols of orders `m - k`
+  and `m`;
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
   (`TauCeti.Symbol.const`);
@@ -565,6 +568,110 @@ theorem HasCompactSpatialSupport.spatialDeriv {a : Symbol n V W m}
     Filter.eventually_of_mem (hK.isClosed.isOpen_compl.mem_nhds hx) fun y hy => hKa y hy ξ
   rw [coefficient_spatialDeriv, (h.coordinateDeriv [j]).eq_of_nhds, coordinateDeriv_zero,
     Pi.zero_apply]
+
+/-- The iterated frequency derivative `∂_ξ^r a = ∂_{ξ_{r 0}} ⋯ ∂_{ξ_{r (k - 1)}} a` of a symbol of
+order `m`, a symbol of order `m - k`. -/
+def iteratedFrequencyDeriv {k : ℕ} (r : Fin k → Fin n) (a : Symbol n V W m) :
+    Symbol n V W (m - k) where
+  coefficient p := mixedDeriv [] (List.ofFn r) a.coefficient p.1 p.2
+  contDiff_coefficient := a.contDiff_coefficient.mixedDeriv [] (List.ofFn r)
+  exists_bound K hK α β := by
+    obtain ⟨C, hC, h⟩ := a.exists_bound K hK α (β ++ List.ofFn r)
+    refine ⟨C, hC, fun x hx ξ ↦ ?_⟩
+    rw [mixedDeriv_mixedDeriv a.contDiff_coefficient, List.append_nil]
+    convert h x hx ξ using 3
+    simp only [List.length_append, List.length_ofFn, Nat.cast_add]
+    ring
+
+@[simp]
+theorem coefficient_iteratedFrequencyDeriv {k : ℕ} (r : Fin k → Fin n) (a : Symbol n V W m)
+    (x ξ : CoordinateSpace n) :
+    (iteratedFrequencyDeriv r a).coefficient (x, ξ) =
+      mixedDeriv [] (List.ofFn r) a.coefficient x ξ :=
+  (rfl)
+
+/-- The iterated spatial derivative `∂_x^r a = ∂_{x_{r 0}} ⋯ ∂_{x_{r (k - 1)}} a` of a symbol of
+order `m`, again a symbol of order `m`. -/
+def iteratedSpatialDeriv {k : ℕ} (r : Fin k → Fin n) (a : Symbol n V W m) : Symbol n V W m where
+  coefficient p := mixedDeriv (List.ofFn r) [] a.coefficient p.1 p.2
+  contDiff_coefficient := a.contDiff_coefficient.mixedDeriv (List.ofFn r) []
+  exists_bound K hK α β := by
+    obtain ⟨C, hC, h⟩ := a.exists_bound K hK (α ++ List.ofFn r) β
+    refine ⟨C, hC, fun x hx ξ ↦ ?_⟩
+    rw [mixedDeriv_mixedDeriv a.contDiff_coefficient, List.append_nil]
+    exact h x hx ξ
+
+@[simp]
+theorem coefficient_iteratedSpatialDeriv {k : ℕ} (r : Fin k → Fin n) (a : Symbol n V W m)
+    (x ξ : CoordinateSpace n) :
+    (iteratedSpatialDeriv r a).coefficient (x, ξ) =
+      mixedDeriv (List.ofFn r) [] a.coefficient x ξ :=
+  (rfl)
+
+/-- Iterated frequency derivatives preserve compact spatial support. -/
+theorem HasCompactSpatialSupport.iteratedFrequencyDeriv {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) {k : ℕ} (r : Fin k → Fin n) :
+    (iteratedFrequencyDeriv r a).HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  refine hasCompactSpatialSupport_iff.mpr ⟨K, hK, fun x hx ξ ↦ ?_⟩
+  rw [coefficient_iteratedFrequencyDeriv, mixedDeriv_def, coordinateDeriv_nil,
+    show (fun η ↦ a.coefficient (x, η)) = 0 from funext (hKa x hx), coordinateDeriv_zero,
+    Pi.zero_apply]
+
+/-- Iterated position derivatives preserve compact spatial support. -/
+theorem HasCompactSpatialSupport.iteratedSpatialDeriv {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) {k : ℕ} (r : Fin k → Fin n) :
+    (iteratedSpatialDeriv r a).HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  refine hasCompactSpatialSupport_iff.mpr ⟨K, hK, fun x hx ξ ↦ ?_⟩
+  have h : (fun y ↦ a.coefficient (y, ξ)) =ᶠ[nhds x] 0 :=
+    Filter.eventually_of_mem (hK.isClosed.isOpen_compl.mem_nhds hx) fun y hy ↦ hKa y hy ξ
+  rw [coefficient_iteratedSpatialDeriv, mixedDeriv_def]
+  simp only [coordinateDeriv_nil]
+  rw [(h.coordinateDeriv (List.ofFn r)).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply]
+
+/-- Position derivatives commute with iterated frequency derivatives. -/
+theorem spatialDeriv_iteratedFrequencyDeriv (j : Fin n) {k : ℕ} (r : Fin k → Fin n)
+    (a : Symbol n V W m) :
+    spatialDeriv j (iteratedFrequencyDeriv r a) = iteratedFrequencyDeriv r (spatialDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  rw [coefficient_spatialDeriv, coefficient_iteratedFrequencyDeriv, mixedDeriv_spatialDeriv]
+  simp only [coefficient_iteratedFrequencyDeriv, List.nil_append, mixedDeriv_def,
+    coordinateDeriv_nil]
+
+/-- Position derivatives commute with iterated position derivatives. -/
+theorem spatialDeriv_iteratedSpatialDeriv (j : Fin n) {k : ℕ} (r : Fin k → Fin n)
+    (a : Symbol n V W m) :
+    spatialDeriv j (iteratedSpatialDeriv r a) = iteratedSpatialDeriv r (spatialDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  rw [coefficient_spatialDeriv, coefficient_iteratedSpatialDeriv, mixedDeriv_spatialDeriv]
+  simp only [coefficient_iteratedSpatialDeriv, mixedDeriv_def, coordinateDeriv_nil]
+  rw [coordinateDeriv_perm (List.perm_append_singleton j (List.ofFn r))
+    ((a.contDiff_coefficient_slice ξ).of_le (mod_cast le_top)), coordinateDeriv_cons,
+    coordinateDeriv_cons, coordinateDeriv_nil]
+
+/-- Frequency derivatives commute with iterated frequency derivatives. -/
+theorem coefficient_frequencyDeriv_iteratedFrequencyDeriv (j : Fin n) {k : ℕ}
+    (r : Fin k → Fin n) (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
+    (frequencyDeriv j (iteratedFrequencyDeriv r a)).coefficient (x, ξ) =
+      (iteratedFrequencyDeriv r (frequencyDeriv j a)).coefficient (x, ξ) := by
+  rw [coefficient_frequencyDeriv, coefficient_iteratedFrequencyDeriv, mixedDeriv_frequencyDeriv]
+  simp only [coefficient_iteratedFrequencyDeriv, mixedDeriv_def, coordinateDeriv_nil]
+  rw [coordinateDeriv_perm (List.perm_append_singleton j (List.ofFn r))
+    (f := fun η ↦ a.coefficient (x, η))
+    ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (mod_cast le_top)),
+    coordinateDeriv_cons, coordinateDeriv_cons, coordinateDeriv_nil]
+
+/-- Frequency derivatives commute with iterated position derivatives. -/
+theorem coefficient_frequencyDeriv_iteratedSpatialDeriv (j : Fin n) {k : ℕ}
+    (r : Fin k → Fin n) (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
+    (frequencyDeriv j (iteratedSpatialDeriv r a)).coefficient (x, ξ) =
+      (iteratedSpatialDeriv r (frequencyDeriv j a)).coefficient (x, ξ) := by
+  rw [coefficient_frequencyDeriv, coefficient_iteratedSpatialDeriv, mixedDeriv_frequencyDeriv,
+    mixedDeriv_eq_coordinateDeriv_snd a.contDiff_coefficient]
+  simp only [coefficient_iteratedSpatialDeriv, mixedDeriv_def, coordinateDeriv_nil, List.nil_append]
 
 end Deriv
 

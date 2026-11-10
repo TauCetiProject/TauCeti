@@ -29,12 +29,11 @@ term is the pointwise composition `a ∘ b`, so `a # b - a ∘ b` has order `m' 
 
 ## Main declarations
 
-* `TauCeti.Symbol.iteratedFrequencyDeriv`, `TauCeti.Symbol.iteratedSpatialDeriv`: the iterated
-  derivatives `∂_ξ^r a` and `∂_x^r a` along a word `r`, symbols of orders `m - k` and `m`.
-* `TauCeti.Symbol.sharpTerm`: the `k`-th term of the expansion, a symbol of order `m' + m - k`,
-  with the Leibniz rules `TauCeti.Symbol.spatialDeriv_sharpTerm` and
-  `TauCeti.Symbol.coefficient_frequencyDeriv_sharpTerm`, and leading term `a ∘ b`
-  (`TauCeti.Symbol.sharpTerm_zero`).
+* `TauCeti.Symbol.sharpTerm`: the `k`-th term of the expansion, a symbol of order `m' + m - k`
+  built from the iterated derivatives `TauCeti.Symbol.iteratedFrequencyDeriv` and
+  `TauCeti.Symbol.iteratedSpatialDeriv`, with the Leibniz rules
+  `TauCeti.Symbol.spatialDeriv_sharpTerm` and `TauCeti.Symbol.coefficient_frequencyDeriv_sharpTerm`,
+  and leading term `a ∘ b` (`TauCeti.Symbol.sharpTerm_zero`).
 * `TauCeti.Symbol.exists_sharp_sub_sum_sharpTerm`: **the composition expansion**. For every `N`,
   `a # b - ∑_{k < N} sharpTerm k a b` is a symbol of order `m' + m - N`.
 * `TauCeti.Symbol.exists_sharp_sub_comp`: `a # b - a ∘ b` is a symbol of order `m' + m - 1`.
@@ -77,100 +76,6 @@ namespace Symbol
 
 variable {n : ℕ} {m m' : ℝ} {V W U : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V]
   [NormedAddCommGroup W] [NormedSpace ℂ W] [NormedAddCommGroup U] [NormedSpace ℂ U]
-
-/-! ### Iterated derivatives of symbols -/
-
-/-- The iterated frequency derivative `∂_ξ^r a = ∂_{ξ_{r 0}} ⋯ ∂_{ξ_{r (k - 1)}} a` of a symbol of
-order `m`, a symbol of order `m - k`. -/
-def iteratedFrequencyDeriv {k : ℕ} (r : Fin k → Fin n) (a : Symbol n V W m) :
-    Symbol n V W (m - k) where
-  coefficient p := mixedDeriv [] (List.ofFn r) a.coefficient p.1 p.2
-  contDiff_coefficient := a.contDiff_coefficient.mixedDeriv [] (List.ofFn r)
-  exists_bound K hK α β := by
-    obtain ⟨C, hC, h⟩ := a.exists_bound K hK α (β ++ List.ofFn r)
-    refine ⟨C, hC, fun x hx ξ ↦ ?_⟩
-    rw [mixedDeriv_mixedDeriv a.contDiff_coefficient, List.append_nil]
-    convert h x hx ξ using 3
-    simp only [List.length_append, List.length_ofFn, Nat.cast_add]
-    ring
-
-@[simp]
-theorem coefficient_iteratedFrequencyDeriv {k : ℕ} (r : Fin k → Fin n) (a : Symbol n V W m)
-    (x ξ : CoordinateSpace n) :
-    (iteratedFrequencyDeriv r a).coefficient (x, ξ) =
-      mixedDeriv [] (List.ofFn r) a.coefficient x ξ :=
-  (rfl)
-
-/-- The iterated spatial derivative `∂_x^r a = ∂_{x_{r 0}} ⋯ ∂_{x_{r (k - 1)}} a` of a symbol of
-order `m`, again a symbol of order `m`. -/
-def iteratedSpatialDeriv {k : ℕ} (r : Fin k → Fin n) (a : Symbol n V W m) : Symbol n V W m where
-  coefficient p := mixedDeriv (List.ofFn r) [] a.coefficient p.1 p.2
-  contDiff_coefficient := a.contDiff_coefficient.mixedDeriv (List.ofFn r) []
-  exists_bound K hK α β := by
-    obtain ⟨C, hC, h⟩ := a.exists_bound K hK (α ++ List.ofFn r) β
-    refine ⟨C, hC, fun x hx ξ ↦ ?_⟩
-    rw [mixedDeriv_mixedDeriv a.contDiff_coefficient, List.append_nil]
-    exact h x hx ξ
-
-@[simp]
-theorem coefficient_iteratedSpatialDeriv {k : ℕ} (r : Fin k → Fin n) (a : Symbol n V W m)
-    (x ξ : CoordinateSpace n) :
-    (iteratedSpatialDeriv r a).coefficient (x, ξ) =
-      mixedDeriv (List.ofFn r) [] a.coefficient x ξ :=
-  (rfl)
-
-/-- Iterated frequency derivatives preserve compact spatial support. -/
-theorem HasCompactSpatialSupport.iteratedFrequencyDeriv {a : Symbol n V W m}
-    (ha : a.HasCompactSpatialSupport) {k : ℕ} (r : Fin k → Fin n) :
-    (iteratedFrequencyDeriv r a).HasCompactSpatialSupport := by
-  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
-  refine hasCompactSpatialSupport_iff.mpr ⟨K, hK, fun x hx ξ ↦ ?_⟩
-  rw [coefficient_iteratedFrequencyDeriv, mixedDeriv_def, coordinateDeriv_nil,
-    show (fun η ↦ a.coefficient (x, η)) = 0 from funext (hKa x hx), coordinateDeriv_zero,
-    Pi.zero_apply]
-
-/-- Position derivatives commute with iterated frequency derivatives. -/
-theorem spatialDeriv_iteratedFrequencyDeriv (j : Fin n) {k : ℕ} (r : Fin k → Fin n)
-    (a : Symbol n V W m) :
-    spatialDeriv j (iteratedFrequencyDeriv r a) = iteratedFrequencyDeriv r (spatialDeriv j a) := by
-  ext1
-  funext ⟨x, ξ⟩
-  rw [coefficient_spatialDeriv, coefficient_iteratedFrequencyDeriv, mixedDeriv_spatialDeriv]
-  simp only [coefficient_iteratedFrequencyDeriv, List.nil_append, mixedDeriv_def,
-    coordinateDeriv_nil]
-
-/-- Position derivatives commute with iterated position derivatives. -/
-theorem spatialDeriv_iteratedSpatialDeriv (j : Fin n) {k : ℕ} (r : Fin k → Fin n)
-    (a : Symbol n V W m) :
-    spatialDeriv j (iteratedSpatialDeriv r a) = iteratedSpatialDeriv r (spatialDeriv j a) := by
-  ext1
-  funext ⟨x, ξ⟩
-  rw [coefficient_spatialDeriv, coefficient_iteratedSpatialDeriv, mixedDeriv_spatialDeriv]
-  simp only [coefficient_iteratedSpatialDeriv, mixedDeriv_def, coordinateDeriv_nil]
-  rw [coordinateDeriv_perm (List.perm_append_singleton j (List.ofFn r))
-    ((a.contDiff_coefficient_slice ξ).of_le (mod_cast le_top)), coordinateDeriv_cons,
-    coordinateDeriv_cons, coordinateDeriv_nil]
-
-/-- Frequency derivatives commute with iterated frequency derivatives. -/
-theorem coefficient_frequencyDeriv_iteratedFrequencyDeriv (j : Fin n) {k : ℕ}
-    (r : Fin k → Fin n) (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
-    (frequencyDeriv j (iteratedFrequencyDeriv r a)).coefficient (x, ξ) =
-      (iteratedFrequencyDeriv r (frequencyDeriv j a)).coefficient (x, ξ) := by
-  rw [coefficient_frequencyDeriv, coefficient_iteratedFrequencyDeriv, mixedDeriv_frequencyDeriv]
-  simp only [coefficient_iteratedFrequencyDeriv, mixedDeriv_def, coordinateDeriv_nil]
-  rw [coordinateDeriv_perm (List.perm_append_singleton j (List.ofFn r))
-    (f := fun η ↦ a.coefficient (x, η))
-    ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (mod_cast le_top)),
-    coordinateDeriv_cons, coordinateDeriv_cons, coordinateDeriv_nil]
-
-/-- Frequency derivatives commute with iterated position derivatives. -/
-theorem coefficient_frequencyDeriv_iteratedSpatialDeriv (j : Fin n) {k : ℕ}
-    (r : Fin k → Fin n) (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
-    (frequencyDeriv j (iteratedSpatialDeriv r a)).coefficient (x, ξ) =
-      (iteratedSpatialDeriv r (frequencyDeriv j a)).coefficient (x, ξ) := by
-  rw [coefficient_frequencyDeriv, coefficient_iteratedSpatialDeriv, mixedDeriv_frequencyDeriv,
-    mixedDeriv_eq_coordinateDeriv_snd a.contDiff_coefficient]
-  simp only [coefficient_iteratedSpatialDeriv, mixedDeriv_def, coordinateDeriv_nil, List.nil_append]
 
 /-! ### The terms of the expansion -/
 
@@ -250,12 +155,6 @@ private theorem exists_fourier_mixedDeriv_slice (J : List (Fin n)) :
     rw [hF, hb.fourier_spatialDeriv_slice, smul_smul, List.map_append, List.prod_append]
     simp
 
-/-- Iterated position derivatives preserve compact spatial support. -/
-theorem HasCompactSpatialSupport.iteratedSpatialDeriv (hb : b.HasCompactSpatialSupport) {k : ℕ}
-    (r : Fin k → Fin n) : (iteratedSpatialDeriv r b).HasCompactSpatialSupport := by
-  obtain ⟨c, hc, hcoef, -⟩ := exists_fourier_mixedDeriv_slice (List.ofFn r) hb
-  exact hc.of_coefficient_eq (funext fun p ↦ (hcoef p.1 p.2).symm)
-
 /-- The integrand `exp(2πi ⟪η, x⟫) (∏ᵢ 2π η_{r i}) b̂(η, ξ)` is `(-i)ᵏ` times the Fourier inversion
 integrand of `∂_x^r b`. -/
 private theorem exists_fourierChar_smul_prod_smul_fourier_slice (hb : b.HasCompactSpatialSupport)
@@ -315,13 +214,12 @@ private theorem integrable_taylorTerm_and_integral_eq [CompleteSpace W] [Complet
         ContinuousLinearMap.compL ℂ V W U (D r) (g r η) := by
     rw [taylorTerm, ContinuousMultilinearMap.apply_eq_sum_single]
     simp only [hD, ContinuousLinearMap.compL_apply, g]
-    have hsum (X : (Fin k → Fin n) → W →L[ℂ] U) (B : V →L[ℂ] W) :
-        (∑ r, X r).comp B = ∑ r, (X r).comp B :=
-      ContinuousLinearMap.ext fun v ↦ by simp
-    rw [ContinuousLinearMap.smul_comp, hsum, Finset.smul_sum, Finset.smul_sum]
+    rw [ContinuousLinearMap.smul_comp, ← ContinuousLinearMap.compL_apply,
+      ← ContinuousLinearMap.flip_apply, map_sum, Finset.smul_sum, Finset.smul_sum]
     refine Finset.sum_congr rfl fun r _ ↦ ?_
     conv_rhs => rw [mul_smul, ← ContinuousLinearMap.comp_smul, ← hfun r x ξ η]
-    simp only [PiLp.smul_apply, smul_eq_mul, ← Complex.coe_smul, ContinuousLinearMap.comp_smul,
+    simp only [ContinuousLinearMap.flip_apply, ContinuousLinearMap.compL_apply, PiLp.smul_apply,
+      smul_eq_mul, ← Complex.coe_smul, ContinuousLinearMap.comp_smul,
       ContinuousLinearMap.smul_comp, smul_smul]
     congr 1
     push_cast
@@ -387,14 +285,9 @@ private theorem exists_norm_sharpIntegrand_sub_sum_taylorTerm_le [CompleteSpace 
   -- The weight of the derivative of `a` along the segment from `ξ` to `ξ + y`.
   have hweight (t : ℝ) (ht0 : 0 ≤ t) (ht1 : t ≤ 1) : (1 + ‖ξ + t • y‖ ^ 2) ^ (s / 2) ≤
       2 ^ (|s| / 2) * (1 + ‖ξ‖ ^ 2) ^ (s / 2) * ((2 * π) ^ |s| * (1 + ‖η‖ ^ 2) ^ (|s| / 2)) := by
-    refine (one_add_norm_add_sq_rpow_le_mul s ξ (t • y)).trans ?_
-    gcongr
-    refine (Real.rpow_le_rpow (by positivity) (?_ : 1 + ‖t • y‖ ^ 2 ≤ 1 + ‖y‖ ^ 2)
-      (by positivity)).trans ?_
-    · rw [norm_smul, Real.norm_of_nonneg ht0]
-      gcongr
-      exact mul_le_of_le_one_left (norm_nonneg y) ht1
-    · simpa only [abs_abs] using one_add_norm_sq_rpow_le_of_norm_eq_mul h2π |s| hy
+    refine one_add_norm_add_sq_rpow_le_mul_of_norm_le_mul h2π s ξ ?_
+    rw [norm_smul, Real.norm_of_nonneg ht0, ← hy]
+    exact mul_le_of_le_one_left (norm_nonneg y) ht1
   set B : ℝ := G * (2 ^ (|s| / 2) * (1 + ‖ξ‖ ^ 2) ^ (s / 2) *
     ((2 * π) ^ |s| * (1 + ‖η‖ ^ 2) ^ (|s| / 2))) *
       ((2 * π) ^ (M + 1) * (1 + ‖η‖ ^ 2) ^ (((M + 1 : ℕ) : ℝ) / 2)) with hB
