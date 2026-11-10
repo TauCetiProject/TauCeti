@@ -67,13 +67,27 @@ theorem algebraicExtensionNormedFieldTopology_tower :
     exact h
   exact algebraicExtensionNormedFieldTopology_eq K M
 
+omit [TopologicalSpace L] [IsNonarchimedeanLocalField L] in
 /-- With the valuative relation constructed directly over `K`, the top field of an algebraic
-tower is a valuative extension of the intermediate field as well. -/
+tower is a valuative extension of the intermediate field as well. No topology or local-field
+structure on the intermediate field is needed. -/
 theorem algebraicExtension_valuativeExtension_tower :
     let _ := algebraicExtensionValuativeRel K M
     ValuativeExtension L M := by
-  have := Algebra.IsAlgebraic.tower_top (K := K) (A := M) L
-  rw [algebraicExtensionValuativeRel_tower K L M]
-  exact algebraicExtension_valuativeExtension L M
+  have := Algebra.IsAlgebraic.tower_bot K L M
+  let _ := algebraicExtensionValuativeRel K M
+  let _ := algebraicExtensionNormedField K M
+  let _ := algebraicExtensionNormedField K L
+  refine ⟨fun {a b} => ?_⟩
+  -- On `L` the spectral norm of `M/K` is an absolute value extending that of `K`.
+  let f : AbsoluteValue L ℝ :=
+    (IsAbsoluteValue.toAbsoluteValue (norm : M → ℝ)).comp (algebraMap L M).injective
+  have hf (x : L) : f x = ‖algebraMap L M x‖ := rfl
+  have hnorm (x : L) : ‖algebraMap L M x‖ = ‖x‖ := by
+    rw [← hf]
+    exact algebraicExtensionNormedField_norm_unique K (fun y ↦ by
+      rw [hf, ← IsScalarTower.algebraMap_apply, algebraicExtensionNormedField_norm_algebraMap]) x
+  rw [algebraicExtensionValuativeRel_vle_iff, hnorm, hnorm,
+    ← vle_iff_algebraicExtensionNormedField_norm_le K a b]
 
 end TauCeti
