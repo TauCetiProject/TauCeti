@@ -16,9 +16,9 @@ Positive real scalings and complex translations map horizontal strips bijectivel
 onto the strips whose endpoints undergo the corresponding real affine map. These
 maps rescale logarithmic strip coordinates to arbitrary boundary heights.
 
-An open set of the plane whose frontier is, far to the right, exactly the two horizontal lines
-bounding a strip, and which misses a point of the strip far to the right, lies there outside the
-closed strip; the open set is then exactly the complement of the closed strip.
+An open set of the plane whose frontier is, to the right of some `R`, exactly the two horizontal
+lines bounding a strip, and which misses a point of the strip to the right of `R`, agrees to the
+right of `R` with the complement of the closed strip.
 -/
 
 public section
