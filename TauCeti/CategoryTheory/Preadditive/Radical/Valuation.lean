@@ -40,9 +40,9 @@ scalar towers. Consequently:
   integers;
 * **the tower law over a field**: `dim_k Irr(X, Y) = dim_k F_Y · a = dim_k F_X · b`. The two residue
   division rings need not have the same `k`-dimension, which is how asymmetric valuations arise;
-* **algebraically closed fields**: when `k` is algebraically closed and the endomorphism algebras
-  are finite-dimensional, both residue division rings are `k` itself, and the valuation is
-  `(n, n)` with `n = dim_k Irr(X, Y)`.
+* **algebraically closed fields**: when `k` is algebraically closed and the residue division rings
+  are finite-dimensional (for instance when the endomorphism algebras are), both residue division
+  rings are `k` itself, and the valuation is `(n, n)` with `n = dim_k Irr(X, Y)`.
 
 ## Main definitions
 
@@ -176,10 +176,10 @@ theorem finrank_residueOp_mul_irreducibleMorphismValuation_snd [IsLocalRing (End
 variable [IsAlgClosed k]
 
 /-- Over an algebraically closed field, the first entry of the valuation is the `k`-dimension of
-the space of irreducible morphisms, when the endomorphism algebra of the target is local and
-finite-dimensional. -/
+the space of irreducible morphisms, when the endomorphism algebra of the target is local with
+finite-dimensional residue division ring. -/
 theorem irreducibleMorphismValuation_fst_of_isAlgClosed [IsLocalRing (End Y)]
-    [FiniteDimensional k (End Y)] :
+    [FiniteDimensional k (End Y ⧸ Ring.jacobson (End Y))] :
     (irreducibleMorphismValuation k X Y).1 = finrank k (irreducibleMorphismSpace k X Y) := by
   obtain ⟨e⟩ := nonempty_algEquiv_self_of_finiteDimensional_divisionRing (k := k)
     (D := End Y ⧸ Ring.jacobson (End Y))
@@ -187,10 +187,10 @@ theorem irreducibleMorphismValuation_fst_of_isAlgClosed [IsLocalRing (End Y)]
     finrank_self, one_mul]
 
 /-- Over an algebraically closed field, the second entry of the valuation is the `k`-dimension of
-the space of irreducible morphisms, when the endomorphism algebra of the source is local and
-finite-dimensional. -/
+the space of irreducible morphisms, when the endomorphism algebra of the source is local with
+finite-dimensional residue division ring. -/
 theorem irreducibleMorphismValuation_snd_of_isAlgClosed [IsLocalRing (End X)]
-    [FiniteDimensional k (End X)] :
+    [FiniteDimensional k ((End X)ᵐᵒᵖ ⧸ Ring.jacobson (End X)ᵐᵒᵖ)] :
     (irreducibleMorphismValuation k X Y).2 = finrank k (irreducibleMorphismSpace k X Y) := by
   obtain ⟨e⟩ := nonempty_algEquiv_self_of_finiteDimensional_divisionRing (k := k)
     (D := (End X)ᵐᵒᵖ ⧸ Ring.jacobson (End X)ᵐᵒᵖ)
@@ -198,10 +198,11 @@ theorem irreducibleMorphismValuation_snd_of_isAlgClosed [IsLocalRing (End X)]
     finrank_self, one_mul]
 
 /-- **Over an algebraically closed field the valuation is symmetric**: between objects with local
-finite-dimensional endomorphism algebras, the valuation of the space of irreducible morphisms is
-`(n, n)` with `n` its `k`-dimension. -/
+endomorphism algebras whose residue division rings are finite-dimensional, the valuation of the
+space of irreducible morphisms is `(n, n)` with `n` its `k`-dimension. -/
 theorem irreducibleMorphismValuation_eq_of_isAlgClosed [IsLocalRing (End X)]
-    [IsLocalRing (End Y)] [FiniteDimensional k (End X)] [FiniteDimensional k (End Y)] :
+    [IsLocalRing (End Y)] [FiniteDimensional k ((End X)ᵐᵒᵖ ⧸ Ring.jacobson (End X)ᵐᵒᵖ)]
+    [FiniteDimensional k (End Y ⧸ Ring.jacobson (End Y))] :
     irreducibleMorphismValuation k X Y =
       (finrank k (irreducibleMorphismSpace k X Y), finrank k (irreducibleMorphismSpace k X Y)) :=
   Prod.ext (irreducibleMorphismValuation_fst_of_isAlgClosed k X Y)
