@@ -8,7 +8,9 @@ module
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 public import TauCeti.LinearAlgebra.TotallyReal.Complex
+public import TauCeti.Topology.Algebra.Module.Equiv.SMul
 import Mathlib.Analysis.Normed.Operator.BoundedLinearMaps
+import TauCeti.LinearAlgebra.BilinearMap.Lsmul
 
 /-!
 # Loops of totally real subspaces
@@ -27,8 +29,6 @@ operators.
 * `TauCeti.TotallyRealLoop.isMaximalTotallyReal`: every subspace of such a loop is maximal
   totally real.
 * `TauCeti.TotallyRealLoop.const`: the constant loop at a maximal totally real subspace.
-* `Continuous.continuousLinearEquiv_smulLeft`: scalar multiplication by a continuous family of
-  units is a continuous family of automorphisms, as in the frames of the rotations below.
 * `TauCeti.exists_frame_map`: composing a frame with a continuous family of automorphisms gives a
   frame of the image.
 * `TauCeti.TotallyRealLoop.map`: the pointwise image `t ↦ B t (Λ t)` under a loop `B` of
@@ -48,19 +48,6 @@ public section
 
 open Real
 open scoped unitInterval
-
-/-- Scalar multiplication by a continuous family of units is a continuous family of
-automorphisms. -/
-theorem Continuous.continuousLinearEquiv_smulLeft {𝕜 F X : Type*} [NontriviallyNormedField 𝕜]
-    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace X] {u : X → 𝕜ˣ}
-    (hu : Continuous fun x => (u x : 𝕜)) :
-    Continuous fun x => ((ContinuousLinearEquiv.smulLeft (u x) : F ≃L[𝕜] F) : F →L[𝕜] F) := by
-  have h (x : X) : ((ContinuousLinearEquiv.smulLeft (u x) : F ≃L[𝕜] F) : F →L[𝕜] F) =
-      (u x : 𝕜) • ContinuousLinearMap.id 𝕜 F := by
-    ext y
-    simp [Units.smul_def]
-  simp_rw [h]
-  exact hu.smul continuous_const
 
 namespace TauCeti
 
@@ -196,17 +183,6 @@ private theorem continuous_rotationFrame (a : ℝ) :
     Continuous fun t => (rotationFrame (E := E) a t : E →L[ℂ] E) :=
   Continuous.continuousLinearEquiv_smulLeft (by simp only [Units.val_mk0]; fun_prop)
 
-@[simp]
-private theorem lsmul_one_restrictScalars :
-    (LinearMap.lsmul ℂ E (1 : ℂ)).restrictScalars ℝ = LinearMap.id := by
-  ext x
-  simp
-
-private theorem lsmul_neg_one_restrictScalars :
-    (LinearMap.lsmul ℂ E (-1 : ℂ)).restrictScalars ℝ = -LinearMap.id := by
-  ext x
-  simp
-
 /-- The loop `t ↦ e^{iπkt} L₀`, `t ∈ [0, 1]`, turning a maximal totally real subspace `L₀` through
 `k` half revolutions, for an integer `k`; it closes up because `e^{iπk} = ±1` and `-L₀ = L₀`. For
 `k = 1` it is the half-turn `t ↦ e^{iπt} L₀`. On the unit circle `θ = 2πt`, this is the loop
@@ -226,10 +202,11 @@ noncomputable def rotationZPow {L₀ : Submodule ℝ E}
       rw [← Complex.exp_pi_mul_I, ← Complex.exp_int_mul]
       push_cast
       ring_nf
-    rw [h0, hk, lsmul_one_restrictScalars, Submodule.map_id]
+    rw [h0, hk, LinearMap.lsmul_one_restrictScalars, Submodule.map_id]
     rcases Int.even_or_odd k with he | ho
-    · rw [he.neg_one_zpow, lsmul_one_restrictScalars, Submodule.map_id]
-    · rw [ho.neg_one_zpow, lsmul_neg_one_restrictScalars, Submodule.map_neg, Submodule.map_id]
+    · rw [he.neg_one_zpow, LinearMap.lsmul_one_restrictScalars, Submodule.map_id]
+    · rw [ho.neg_one_zpow, LinearMap.lsmul_neg_one_restrictScalars, Submodule.map_neg,
+        Submodule.map_id]
 
 @[simp]
 theorem rotationZPow_apply {L₀ : Submodule ℝ E}

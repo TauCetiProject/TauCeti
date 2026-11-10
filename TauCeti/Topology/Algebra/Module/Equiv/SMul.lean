@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Topology.Algebra.Module.Equiv.Basic
 
 /-!
@@ -16,7 +17,9 @@ The construction uses Mathlib's `ContinuousLinearEquiv.equivOfInverse'`.
 
 Dually, multiplying a continuous linear map by a nonzero scalar `c` is composing it with the
 scalar equivalence `ContinuousLinearEquiv.smulLeft (Units.mk0 c hc)`, so results about
-composition with equivalences apply to scalar multiples.
+composition with equivalences apply to scalar multiples. Over a normed field, scalar
+multiplication by a continuous family of units is a continuous family of automorphisms
+(`Continuous.continuousLinearEquiv_smulLeft`).
 -/
 
 public section
@@ -49,3 +52,16 @@ theorem smul_eq_smulLeft_comp {c : 𝕜} (hc : c ≠ 0) (f : M →L[𝕜] M₂) 
   ext; simp
 
 end ContinuousLinearMap
+
+/-- Scalar multiplication by a continuous family of units is a continuous family of
+automorphisms. -/
+theorem Continuous.continuousLinearEquiv_smulLeft {𝕜 F X : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace X] {u : X → 𝕜ˣ}
+    (hu : Continuous fun x => (u x : 𝕜)) :
+    Continuous fun x => ((ContinuousLinearEquiv.smulLeft (u x) : F ≃L[𝕜] F) : F →L[𝕜] F) := by
+  have h (x : X) : ((ContinuousLinearEquiv.smulLeft (u x) : F ≃L[𝕜] F) : F →L[𝕜] F) =
+      (u x : 𝕜) • ContinuousLinearMap.id 𝕜 F := by
+    ext y
+    simp [Units.smul_def]
+  simp_rw [h]
+  exact hu.smul continuous_const

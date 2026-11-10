@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Map
 public import TauCeti.LinearAlgebra.TotallyReal.Maslov.Prod
+import TauCeti.Topology.Algebra.Module.Equiv.SMul
 
 /-!
 # The boundary Maslov index on the disc
