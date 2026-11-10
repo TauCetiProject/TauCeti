@@ -24,6 +24,8 @@ of measures.
   finite total mass.
 * `TauCeti.MeasureTheory.measurable_sum_smul_dirac` — a countable mixture of Dirac measures at
   fixed atoms is measurable when each weight is measurable.
+* `TauCeti.MeasureTheory.measurable_sum_dirac` — the counting measure of a countable tuple is
+  measurable in the tuple, with repeated entries counted separately.
 * `TauCeti.MeasureTheory.measurable_probabilityMeasure_map` — pushing forward along a fixed
   measurable map is measurable on `ProbabilityMeasure`.
 * `TauCeti.MeasureTheory.measurable_map_of_measurable_uncurry` — pushing a fixed s-finite measure
@@ -48,6 +50,12 @@ namespace TauCeti
 
 namespace MeasureTheory
 
+/-- The vector of singleton masses is measurable in the measure. -/
+theorem measurable_singleton_evals {ι : Type*} [MeasurableSpace ι]
+    [MeasurableSingletonClass ι] :
+    Measurable fun ξ : Measure ι => fun i => ξ {i} :=
+  measurable_pi_iff.2 fun i => Measure.measurable_coe (measurableSet_singleton i)
+
 /-- A countable mixture of Dirac measures at fixed atoms `g i` is measurable in the weights.
 
 Evaluating on a measurable set turns the measure into the sum
@@ -60,6 +68,16 @@ theorem measurable_sum_smul_dirac {β ι α : Type*} [MeasurableSpace β] [Measu
   refine Measure.measurable_measure.2 fun s hs => ?_
   simp only [Measure.sum_apply _ hs, _root_.smul_apply, smul_eq_mul, Measure.dirac_apply' _ hs]
   exact Measurable.tsum fun i => (hf i).mul_const _
+
+/-- The counting measure of a countable tuple is measurable in the tuple. Repeated entries
+contribute separate Dirac occurrences. -/
+@[fun_prop]
+theorem measurable_sum_dirac {ι α : Type*} [Countable ι] [MeasurableSpace α] :
+    Measurable fun x : ι → α => Measure.sum fun i => Measure.dirac (x i) := by
+  refine Measure.measurable_measure.2 fun s hs => ?_
+  simp only [Measure.sum_apply _ hs]
+  exact Measurable.tsum fun i => (Measure.measurable_coe hs).comp
+    (Measure.measurable_dirac.comp (measurable_pi_apply i))
 
 /-- Pushing a probability measure forward along a fixed measurable map is measurable for the Giry
 structure that `ProbabilityMeasure` inherits as a subtype of `Measure`. -/

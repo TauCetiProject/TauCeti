@@ -32,9 +32,11 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 
 ## Main results
 
-* `TauCeti.Floer.preimage_truncation_subset_thricePuncturedSphereReal`,
+* `TauCeti.Floer.isCompact_preimage_truncation`,
+  `TauCeti.Floer.preimage_truncation_subset_thricePuncturedSphereReal`,
   `TauCeti.Floer.exists_lt_endSign_mul_re_endCoord_of_notMem_truncation`: in real coordinates the
-  truncation `S_R` lies in `S`, and every other point of `S` lies beyond `R` on some end.
+  truncation `S_R` is compact and lies in `S`, and every other point of `S` lies beyond `R` on some
+  end.
 * `TauCeti.Floer.setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation`: the integral over
   `S` of a function vanishing beyond `R` on every end is its integral over `S_R`.
 * `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`: in real coordinates, the
@@ -95,6 +97,11 @@ theorem mem_thricePuncturedSphereReal_iff {z : ℝ × ℝ} :
 theorem isOpen_thricePuncturedSphereReal : IsOpen thricePuncturedSphereReal :=
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
+
+/-- The truncation `S_R` is compact in real coordinates. -/
+theorem isCompact_preimage_truncation (R : ℝ) :
+    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
+  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
 
 /-- The truncation `S_R`, in real coordinates, lies in `S`. -/
 theorem preimage_truncation_subset_thricePuncturedSphereReal (R : ℝ) :
