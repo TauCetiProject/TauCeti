@@ -164,7 +164,9 @@ theorem structureConstant_eq_two_or_eq_neg_two_of_double_chain (h : t ≠ .G2)
     (hδ : (t.simplyConnectedRootDatum ht).root δ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ) :
     t.structureConstant ht α γ = 2 ∨ t.structureConstant ht α γ = -2 := by
-  simpa [chainBotCoeff_eq_one_of_double_chain h hγ hδ] using
+  let := t.isReduced_simplyConnectedRootDatum ht
+  simpa [(t.simplyConnectedRootDatum ht).chainBotCoeff_eq_one_of_double_chain
+    (pairingIn_mem_zero_one_two_of_ne_G2 h) hγ hδ] using
     structureConstant_eq_natCast_or_eq_neg_natCast ⟨δ, hδ⟩
 
 /-- The structure constant vanishes when `α + β` is not a root. -/

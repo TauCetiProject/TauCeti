@@ -5,18 +5,18 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.RootSystem.DoubleChain
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
 
 /-!
-# Double root chains in the pinned datum
+# Double-chain bounds for the pinned datum
 
-If both `α + β` and `2α + β` are roots outside type `G₂`, the `α`-string through `β`
-starts at `β` and ends at `2α + β`. This determines the two structure-constant magnitudes
-in the corresponding two-factor Chevalley commutator. The further sums needed in that
-commutator are neither roots nor zero.
-
-The root-string bounds are supplied by Mathlib's `RootPairing.IsNotG2` API, applied to the
-rational scalar extension of the pinned datum.
+Outside type `G₂`, the Cartan integers of the pinned integral datum lie in
+`{-2, -1, 0, 1, 2}`. This transports Mathlib's `RootPairing.IsNotG2` bound from the
+rational root system, and supplies the hypothesis of the general double-chain API in
+`TauCeti.LinearAlgebra.RootSystem.DoubleChain`. The root-string coefficients, pairings,
+and non-root exclusions themselves are proved there for arbitrary finite reduced
+crystallographic root pairings, without requiring irreducibility.
 
 ## References
 
@@ -28,124 +28,13 @@ public section
 
 namespace TauCeti.DynkinType
 
-variable {t : DynkinType} {ht : t.Valid} (h : t ≠ .G2)
-
-local notation "P" => t.simplyConnectedRootDatum ht
-
-include h
-
-/-- Outside `G₂`, the ascending and descending root-string coefficients sum to at most two. -/
-theorem chainBotCoeff_add_chainTopCoeff_le_two (α β : Fin t.numRoots) :
-    (P).chainBotCoeff α β + (P).chainTopCoeff α β ≤ 2 := by
+/-- Outside type `G₂`, the pinned datum has Cartan integers bounded by two, as required
+by the general double-chain lemmas. -/
+theorem pairingIn_mem_zero_one_two_of_ne_G2 {t : DynkinType} {ht : t.Valid}
+    (h : t ≠ .G2) (α β : Fin t.numRoots) :
+    (t.simplyConnectedRootDatum ht).pairingIn ℤ α β ∈ ({-2, -1, 0, 1, 2} : Set ℤ) := by
   let := t.isNotG2_rationalRootSystem ht h
-  simpa using (t.rationalRootSystem ht).chainBotCoeff_add_chainTopCoeff_le_two α β
-
-/-- In a double chain, the descending coefficient at its initial root is zero. -/
-theorem chainBotCoeff_eq_zero_of_double_chain {α β γ δ : Fin t.numRoots}
-    (hγ : (P).root γ = (P).root α + (P).root β)
-    (hδ : (P).root δ = (P).root α + (P).root γ) : (P).chainBotCoeff α β = 0 := by
-  let := t.isReduced_simplyConnectedRootDatum ht
-  have hli := (P).linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
-  have htop : 2 ≤ (P).chainTopCoeff α β := by
-    apply ((P).root_add_nsmul_mem_range_iff_le_chainTopCoeff hli).1
-    exact ⟨δ, by rw [hδ, hγ]; abel⟩
-  have := chainBotCoeff_add_chainTopCoeff_le_two (ht := ht) h α β
-  omega
-
-/-- In a double chain, the descending coefficient at the middle root is one. -/
-theorem chainBotCoeff_eq_one_of_double_chain {α β γ δ : Fin t.numRoots}
-    (hγ : (P).root γ = (P).root α + (P).root β)
-    (hδ : (P).root δ = (P).root α + (P).root γ) : (P).chainBotCoeff α γ = 1 := by
-  let := t.isReduced_simplyConnectedRootDatum ht
-  have hli := (P).linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
-  rw [(P).chainBotCoeff_of_add hli (hγ.trans (add_comm _ _)),
-    chainBotCoeff_eq_zero_of_double_chain h hγ hδ]
-
-/-- The Cartan integers along a double chain are `⟨β, α∨⟩ = -2` and `⟨α, β∨⟩ = -1`. -/
-theorem pairings_of_double_chain {α β γ δ : Fin t.numRoots}
-    (hγ : (P).root γ = (P).root α + (P).root β)
-    (hδ : (P).root δ = (P).root α + (P).root γ) :
-    (P).pairing β α = -2 ∧ (P).pairing α β = -1 := by
-  let := t.isReduced_simplyConnectedRootDatum ht
-  have hli := (P).linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
-  have hbot := chainBotCoeff_eq_zero_of_double_chain h hγ hδ
-  have htop : (P).chainTopCoeff α β = 2 := by
-    have hpos := (P).one_le_chainTopCoeff_of_root_add_mem ⟨δ, hδ⟩
-    have hstep := (P).chainTopCoeff_of_add hli (hγ.trans (add_comm _ _))
-    have hbound := chainBotCoeff_add_chainTopCoeff_le_two (ht := ht) h α β
-    omega
-  have hβα : (P).pairingIn ℤ β α = -2 := by
-    have := (P).chainBotCoeff_sub_chainTopCoeff hli
-    simpa [hbot, htop] using this.symm
-  have hne : (P).root α ≠ (P).root β := hli.injective.ne (by decide : (0 : Fin 2) ≠ 1)
-  have hneg : (P).root α ≠ -(P).root β := by
-    intro heq
-    apply (P).zero_notMem_range_root
-    exact ⟨γ, by rw [hγ, heq, neg_add_cancel]⟩
-  have hp := (P).pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed' α β hne hneg
-  simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk_zero_zero, Prod.mk_one_one,
-    Prod.mk_eq_zero, Prod.mk_eq_one, Prod.mk.injEq] at hp
-  have hαβ : (P).pairingIn ℤ α β = -1 := by omega
-  constructor
-  · simpa using ((P).algebraMap_pairingIn ℤ β α).symm.trans
-      (congrArg (algebraMap ℤ ℤ) hβα)
-  · simpa using ((P).algebraMap_pairingIn ℤ α β).symm.trans
-      (congrArg (algebraMap ℤ ℤ) hαβ)
-
-/-- Outside `G₂`, a vector whose coroot evaluation is outside the possible Cartan integers
-is neither a root nor zero. -/
-theorem notMem_range_root_and_ne_zero_of_coroot_notMem (α : Fin t.numRoots)
-    {x : Fin t.rank → ℤ} (hx : (P).coroot' α x ∉ ({-2, -1, 0, 1, 2} : Set ℤ)) :
-    x ∉ Set.range (P).root ∧ x ≠ 0 := by
-  constructor
-  · rintro ⟨ε, rfl⟩
-    let := t.isNotG2_rationalRootSystem ht h
-    have hb := RootPairing.IsNotG2.pairingIn_mem_zero_one_two
-      («P» := t.rationalRootSystem ht) ε α
-    have hp : (P).pairingIn ℤ ε α = (P).pairing ε α := by
-      simpa using (P).algebraMap_pairingIn ℤ ε α
-    apply hx
-    simpa only [pairingIn_rationalRootSystem, hp,
-      RootPairing.root_coroot'_eq_pairing] using hb
-  · intro hz
-    apply hx
-    simp [hz]
-
-/-- The sum `α + δ` of the root `α` and the last root `δ = 2α + β` of a double chain is
-neither a root nor zero. -/
-theorem root_add_last_notMem_of_double_chain {α β γ δ : Fin t.numRoots}
-    (hγ : (P).root γ = (P).root α + (P).root β)
-    (hδ : (P).root δ = (P).root α + (P).root γ) :
-    (P).root α + (P).root δ ∉ Set.range (P).root ∧ (P).root α + (P).root δ ≠ 0 := by
-  have hp := (pairings_of_double_chain h hγ hδ).1
-  have heval : (P).coroot' α ((P).root α + (P).root δ) = 4 := by
-    simp [hδ, hγ, map_add, hp]
-  exact notMem_range_root_and_ne_zero_of_coroot_notMem h α (by norm_num [heval])
-
-/-- The sum `β + γ` of the initial root `β` and the middle root `γ = α + β` of a double chain
-is neither a root nor zero. -/
-theorem root_initial_add_middle_notMem_of_double_chain {α β γ δ : Fin t.numRoots}
-    (hγ : (P).root γ = (P).root α + (P).root β)
-    (hδ : (P).root δ = (P).root α + (P).root γ) :
-    (P).root β + (P).root γ ∉ Set.range (P).root ∧ (P).root β + (P).root γ ≠ 0 := by
-  have hp := (pairings_of_double_chain h hγ hδ).2
-  have heval : (P).coroot' β ((P).root β + (P).root γ) = 3 := by
-    simp [hγ, map_add, hp]
-  exact notMem_range_root_and_ne_zero_of_coroot_notMem h β (by norm_num [heval])
-
-omit h in
-/-- The sum of the roots `β` and `δ` in a double chain is twice the root `γ`, and hence is
-neither a root nor zero. This also holds in type `G₂`. -/
-theorem root_initial_add_last_notMem_of_double_chain {α β γ δ : Fin t.numRoots}
-    (hγ : (P).root γ = (P).root α + (P).root β)
-    (hδ : (P).root δ = (P).root α + (P).root γ) :
-    (P).root β + (P).root δ ∉ Set.range (P).root ∧ (P).root β + (P).root δ ≠ 0 := by
-  let := t.isReduced_simplyConnectedRootDatum ht
-  let : HasUniqueDiv (Fin t.rank → ℤ) := .of_isTorsionFree ℤ _
-  have heq : (P).root β + (P).root δ = 2 • (P).root γ := by
-    rw [hδ, hγ]
-    abel
-  rw [heq]
-  exact ⟨(P).nsmul_notMem_range_root, smul_ne_zero (by decide : (2 : ℕ) ≠ 0) ((P).ne_zero γ)⟩
+  simpa using RootPairing.IsNotG2.pairingIn_mem_zero_one_two
+    (P := t.rationalRootSystem ht) α β
 
 end TauCeti.DynkinType

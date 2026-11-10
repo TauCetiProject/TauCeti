@@ -74,16 +74,9 @@ private theorem doublyLaced_vanishing_brackets {α β γ δ : Fin t.numRoots}
     norm_num at this
   · have := (hind 1 2 (by rw [hγ] at hz; linear_combination hz)).1
     norm_num at this
-  · have hsum : (t.simplyConnectedRootDatum ht).root β +
-        (t.simplyConnectedRootDatum ht).root δ =
-          2 • (t.simplyConnectedRootDatum ht).root γ := by
-      rw [hδ, hγ]
-      module
-    refine lie_chevalleySystem_eq_zero ?_ fun hz => ?_
-    · rw [hsum]
-      exact (t.simplyConnectedRootDatum ht).nsmul_notMem_range_root (n := 2)
-    · have := (hind 2 2 (by rw [hδ, hγ] at hz; linear_combination hz)).1
-      norm_num at this
+  · exact lie_chevalleySystem_eq_zero
+      ((t.simplyConnectedRootDatum ht).root_initial_add_last_notMem_of_double_chain hγ hδ).1
+      ((t.simplyConnectedRootDatum ht).root_initial_add_last_notMem_of_double_chain hγ hδ).2
 
 private theorem doublyLaced_iterated_bracket {α β γ δ : Fin t.numRoots}
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
@@ -216,10 +209,13 @@ theorem chevalleyRootSubgroup_mul_of_double_chain (h : t ≠ .G2)
         chevalleyRootSubgroup ρ M hM hnil δ A
           (.ofAdd (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
             (u ^ 2 * v))) *
-        chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u) :=
-  chevalleyRootSubgroup_mul_of_add_eq_of_add_eq ρ M hM hnil hγ hδ
-    (root_add_last_notMem_of_double_chain h hγ hδ).1
-    (root_initial_add_middle_notMem_of_double_chain h hγ hδ).1 A u v
+        chevalleyRootSubgroup ρ M hM hnil α A (.ofAdd u) := by
+  let := t.isReduced_simplyConnectedRootDatum ht
+  exact chevalleyRootSubgroup_mul_of_add_eq_of_add_eq ρ M hM hnil hγ hδ
+    ((t.simplyConnectedRootDatum ht).root_add_last_notMem_of_double_chain
+      (pairingIn_mem_zero_one_two_of_ne_G2 h) hγ hδ).1
+    ((t.simplyConnectedRootDatum ht).root_initial_add_middle_notMem_of_double_chain
+      (pairingIn_mem_zero_one_two_of_ne_G2 h) hγ hδ).1 A u v
 
 /-- Outside `G₂`, the double chain itself supplies the non-root hypotheses of the existing
 Chevalley element-commutator formula, over every commutative value ring. -/
@@ -236,10 +232,13 @@ theorem commutatorElement_chevalleyRootSubgroup_of_double_chain (h : t ≠ .G2)
         (.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
       chevalleyRootSubgroup ρ M hM hnil δ A
         (.ofAdd (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
-          (u ^ 2 * v))) :=
-  commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq ρ M hM hnil hγ hδ
-    (root_add_last_notMem_of_double_chain h hγ hδ).1
-    (root_initial_add_middle_notMem_of_double_chain h hγ hδ).1 A u v
+          (u ^ 2 * v))) := by
+  let := t.isReduced_simplyConnectedRootDatum ht
+  exact commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq ρ M hM hnil hγ hδ
+    ((t.simplyConnectedRootDatum ht).root_add_last_notMem_of_double_chain
+      (pairingIn_mem_zero_one_two_of_ne_G2 h) hγ hδ).1
+    ((t.simplyConnectedRootDatum ht).root_initial_add_middle_notMem_of_double_chain
+      (pairingIn_mem_zero_one_two_of_ne_G2 h) hγ hδ).1 A u v
 
 end
 
