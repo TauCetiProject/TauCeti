@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
-public import TauCeti.Analysis.Complex.CauchyKernel
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Measure.Haar.Unique
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
