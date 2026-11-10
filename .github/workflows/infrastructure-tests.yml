@@ -119,6 +119,7 @@ jobs:
 
       - name: Audit and Lake regression fixtures
         run: |
+          export ELAN_TOOLCHAIN="$(cat lean-toolchain)"
           LEAN="$(elan which lean)"
           LEAN_SYSROOT="$("$LEAN" --print-prefix)"
           export LEAN LEAN_SYSROOT
