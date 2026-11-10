@@ -56,6 +56,10 @@ Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `�
 extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
 (`ContinuousLinearMap.norm_apply_bounds_of_net`).
 
+If `J * J = -1` for a continuous linear operator `J` on a normed space over any nontrivially
+normed field, then the block-diagonal operator `diag(J, J)` on `V × V` also squares to `-1`
+(`TauCeti.prodMap_mul_self_eq_neg_one`).
+
 A continuous bilinear map satisfies a Young-type bound
 `‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for every `c > 0`
 (`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
@@ -479,5 +483,17 @@ theorem ContinuousLinearMap.exists_pi_update_equiv {ι : Type*} [Finite ι] [Dec
   refine ⟨(LinearEquiv.ofInjectiveEndo _ (α.pi_update_injective i hα)).toContinuousLinearEquiv, ?_⟩
   ext v m
   rfl
+
+namespace TauCeti
+
+variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+
+/-- If `J² = -1`, then `J₂ = diag(J, J)` satisfies `J₂² = -1`. -/
+theorem prodMap_mul_self_eq_neg_one {A : V →L[𝕜] V} (hA : A * A = -1) :
+    A.prodMap A * A.prodMap A = -1 := by
+  have h (v : V) : A (A v) = -v := by simpa using congr($hA v)
+  refine ContinuousLinearMap.ext fun x => Prod.ext ?_ ?_ <;> simp [h]
+
+end TauCeti
 
 end

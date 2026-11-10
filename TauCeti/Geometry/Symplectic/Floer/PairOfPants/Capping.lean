@@ -704,7 +704,7 @@ theorem integral_floerEnergyDensity_negativePlanePerturbation_closedBall
       (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x v) =ᶠ[𝓝 z] 0 :=
     (Complex.equivRealProdCLM.symm.continuous.continuousAt.eventually
       (eventually_negativePlanePerturbation_eq_zero (H := H)
-        (mem_ball_zero_iff.1 (closedBall_sdiff_truncation_subset_ball (by linarith) hz)))).mono
+        (mem_ball_zero_iff.1 (closedBall_sdiff_truncation_subset_ball hz)))).mono
       fun _ h ↦ funext fun _ ↦ by simp [h]
   -- The perturbation is `C¹` on the whole plane.
   have hK (v : ℂ) : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1

@@ -102,7 +102,7 @@ theorem iSup_basicOpen_ι_eq_top {κ : Type*} (v : κ → M)
   -- The images of `v` generate over `R` because they span the generators `range ι`.
   have ha : a ∈ Algebra.adjoin R (Set.range fun j ↦ _root_.SymmetricAlgebra.ι R M (v j)) := by
     rw [← Algebra.adjoin_span, Set.range_comp', ← Submodule.map_span, hv, Submodule.map_top,
-      LinearMap.coe_range, adjoin_range_ι]
+      LinearMap.coe_range, SymmetricAlgebra.adjoin_range_ι]
     exact Algebra.mem_top
   induction ha using Algebra.adjoin_induction with
   | mem x hx => exact Algebra.subset_adjoin hx
@@ -160,7 +160,7 @@ theorem irrelevant_ne_bot [Nontrivial M] :
     rw [HomogeneousIdeal.mem_irrelevant_iff, GradedRing.proj_apply,
       DirectSum.decompose_of_mem_ne _ (ι_mem_homogeneousSubmodule R M m) one_ne_zero]
   rw [h, ← HomogeneousIdeal.mem_iff, HomogeneousIdeal.toIdeal_bot, Ideal.mem_bot] at hmem
-  exact hm (ι_injective R M (hmem.trans (map_zero _).symm))
+  exact hm (SymmetricAlgebra.ι_injective R M (hmem.trans (map_zero _).symm))
 
 /-- The projective spectrum of the symmetric algebra of a nonzero free module over a domain is an
 integral scheme. -/
