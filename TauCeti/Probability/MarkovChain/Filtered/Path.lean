@@ -34,7 +34,7 @@ open MeasureTheory ProbabilityTheory Filter
 namespace TauCeti.Probability.IsMarkovChain
 
 variable {Ω S : Type*} {mΩ : MeasurableSpace Ω} [MeasurableSpace S]
-  [Countable S] [Nonempty S] [MeasurableSingletonClass S]
+  [Countable S] [MeasurableSingletonClass S]
   {ℱ : Filtration ℕ mΩ} {X : ℕ → Ω → S} {κ : Kernel S S} {μ : Measure Ω}
   [IsFiniteMeasure μ] [IsMarkovKernel κ]
 
