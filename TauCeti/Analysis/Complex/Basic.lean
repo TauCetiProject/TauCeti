@@ -28,6 +28,8 @@ does (`Complex.inv_re_pos`).
 The scalar Cayley expression `1 + (z - conj z) / (r - z)` has unit norm for real `r`.
 When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number's conjugate
 by itself; at `z = r`, Lean's totalized inverse gives value one.
+
+Two integers whose images in `ℂ` are at distance less than `1` are equal.
 -/
 
 public section
@@ -95,6 +97,13 @@ theorem continuousOn_mapsTo_prodMap_conj (hτ : ContinuousOn τ U) (hτU : Set.M
     conj_mem_ball_of_im_eq_zero (by simp) hz
   exact ⟨hτ.prodMap Complex.continuous_conj.continuousOn, hτU.prodMap hconjBall,
     hτU.prodMap fun z hz ↦ ⟨hconjBall hz.1, by simpa using hz.2⟩⟩
+
+/-- **Two integers whose complex images are closer than `1` are equal.** -/
+theorem eq_of_dist_intCast_lt_one {m n : ℤ} (h : dist (m : ℂ) (n : ℂ) < 1) : m = n := by
+  by_contra hne
+  have : (1 : ℝ) ≤ dist (m : ℂ) (n : ℂ) := by
+    rw [Complex.isometry_intCast.dist_eq]; exact Int.pairwise_one_le_dist hne
+  linarith
 
 end TauCeti
 
