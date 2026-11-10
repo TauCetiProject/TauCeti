@@ -126,6 +126,17 @@ private theorem tendsto_verticalHessianPair (hf : ContDiff ℝ 2 f) :
     (a, (0 : E))
   simpa only [hessianAverage_zero] using h
 
+omit [NormedSpace ℝ P] in
+/-- A fibrewise linear change of coordinates `(b, v) ↦ (b, e b v)`, with `e` continuous at `a`,
+tends to `(a, 0)` at `(a, 0)`. -/
+private theorem tendsto_prodMk_clm_apply {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {e : P → F →L[ℝ] G} (he : ContinuousAt e a) :
+    Tendsto (fun z : P × F ↦ (z.1, e z.1 z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) := by
+  have h : ContinuousAt (fun z : P × F ↦ e z.1 z.2) (a, 0) :=
+    ContinuousAt.clm_apply (ContinuousAt.comp (f := Prod.fst) (x := (a, (0 : F))) he
+      continuousAt_fst) continuousAt_snd
+  simpa using continuousAt_fst.tendsto.prodMk_nhds h.tendsto
+
 /-- Near a point of the zero section with invertible vertical Hessian, the canonical parametric
 Morse coordinate of a `C^{n+2}` family is `C^n`. -/
 theorem eventually_contDiffAt_parametricMorseCoord (hf : ContDiff ℝ (n + 2) f)
@@ -220,11 +231,7 @@ theorem eventually_parametricMorseCoord_comp (hf : ContDiff ℝ 2 f)
       hessianAverage_comp_continuousLinearEquiv_apply (hslice z.1) (e z.1) 0 z.2 w w'
   -- The change of coordinates `ψ (b, v) = (b, e b v)` fixes `(a, 0)`.
   set ψ : P × E' → P × E := fun z ↦ (z.1, e z.1 z.2)
-  have hψ : Tendsto ψ (𝓝 (a, 0)) (𝓝 (a, 0)) := by
-    have h : ContinuousAt (fun z : P × E' ↦ e z.1 z.2) (a, 0) :=
-      ContinuousAt.clm_apply (ContinuousAt.comp (f := Prod.fst) (x := (a, (0 : E'))) he
-        continuousAt_fst) continuousAt_snd
-    simpa [ψ] using continuousAt_fst.tendsto.prodMk_nhds h.tendsto
+  have hψ : Tendsto ψ (𝓝 (a, 0)) (𝓝 (a, 0)) := tendsto_prodMk_clm_apply he
   have hpair := (tendsto_verticalHessianPair hf).comp hψ
   -- Pulling back along `e b` conjugates the canonical congruence of `f` by `e b`.
   filter_upwards [eventually_morseCongruence_bilinearComp
@@ -265,6 +272,13 @@ theorem _root_.Filter.EventuallyEq.parametricMorseCoord {f₁ f₂ : P × E → 
 variable {P' E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [CompleteSpace E']
   {f' : P' × E' → ℝ} {σ : P → P'} {T : P → E ≃L[ℝ] E'}
 
+omit [NormedAddCommGroup P] [NormedSpace ℝ P] in
+/-- **The canonical parametric Morse coordinate only reads the family along fibres.** Changing
+the parameter of a family by any map `σ` changes its canonical coordinate in the same way. -/
+theorem parametricMorseCoord_comp_prodMap (f : P' × E → ℝ) (σ : P → P') (b : P) (v : E) :
+    parametricMorseCoord (fun z ↦ f (σ z.1, z.2)) (b, v) = parametricMorseCoord f (σ b, v) := by
+  simp only [parametricMorseCoord_def]
+
 /-- **The canonical parametric Morse coordinate under a change of trivialization.** Let a `C^2`
 family `f` have invertible vertical Hessian at `(a, 0)`, and let `f'` be the same family in other
 coordinates near the zero section: `f' (σ b, T b v) = f (b, v)` for `(b, v)` near `(a, 0)`, where
@@ -276,7 +290,8 @@ the canonical coordinates correspond:
 This combines the naturality for fibrewise linear changes
 (`TauCeti.eventually_parametricMorseCoord_comp`) with the locality of the coordinate
 (`Filter.EventuallyEq.parametricMorseCoord`) and the fact that it only reads the family along
-fibres, so that the parameter may be changed arbitrarily. -/
+fibres (`TauCeti.parametricMorseCoord_comp_prodMap`), so that the parameter may be changed
+arbitrarily. -/
 theorem eventually_parametricMorseCoord_transition (hf : ContDiff ℝ 2 f)
     (hH : (fderiv ℝ (fderiv ℝ fun v ↦ f (a, v)) 0).IsInvertible)
     (hT : ContinuousAt (fun b ↦ (T b : E →L[ℝ] E')) a)
@@ -289,16 +304,10 @@ theorem eventually_parametricMorseCoord_transition (hf : ContDiff ℝ 2 f)
       ContinuousAt.comp (g := ContinuousLinearMap.inverse) (f := fun b ↦ (T b : E →L[ℝ] E'))
         (x := a) (contDiffAt_map_inverse (n := 0) (T a)).continuousAt hT
   -- The fibrewise changes of coordinates `(b, v) ↦ (b, T b v)` and its inverse fix `(a, 0)`.
-  have hψ : Tendsto (fun z : P × E ↦ (z.1, T z.1 z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) := by
-    have h : ContinuousAt (fun z : P × E ↦ T z.1 z.2) (a, 0) :=
-      ContinuousAt.clm_apply (ContinuousAt.comp (f := Prod.fst) (x := (a, (0 : E))) hT
-        continuousAt_fst) continuousAt_snd
-    simpa using continuousAt_fst.tendsto.prodMk_nhds h.tendsto
-  have hψsymm : Tendsto (fun z : P × E' ↦ (z.1, (T z.1).symm z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) := by
-    have h : ContinuousAt (fun z : P × E' ↦ (T z.1).symm z.2) (a, 0) :=
-      ContinuousAt.clm_apply (ContinuousAt.comp (f := Prod.fst) (x := (a, (0 : E'))) hTsymm
-        continuousAt_fst) continuousAt_snd
-    simpa using continuousAt_fst.tendsto.prodMk_nhds h.tendsto
+  have hψ : Tendsto (fun z : P × E ↦ (z.1, T z.1 z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
+    tendsto_prodMk_clm_apply hT
+  have hψsymm : Tendsto (fun z : P × E' ↦ (z.1, (T z.1).symm z.2)) (𝓝 (a, 0)) (𝓝 (a, 0)) :=
+    tendsto_prodMk_clm_apply hTsymm
   -- Read in the parameter of `f`, the family `f'` is near `(a, 0)` the pullback of `f` along
   -- `(T b)⁻¹`, whose canonical coordinate is natural.
   have hloc : (fun z : P × E' ↦ f' (σ z.1, z.2)) =ᶠ[𝓝 (a, 0)]
@@ -308,8 +317,7 @@ theorem eventually_parametricMorseCoord_transition (hf : ContDiff ℝ 2 f)
   filter_upwards [hψ.eventually hloc.parametricMorseCoord,
     hψ.eventually (eventually_parametricMorseCoord_comp hf hH (e := fun b ↦ (T b).symm) hTsymm)]
     with z hloc' hnat
-  -- The canonical coordinate only reads the family along the fibre over `σ b`.
-  change parametricMorseCoord (fun z ↦ f' (σ z.1, z.2)) (z.1, T z.1 z.2) = _
+  rw [parametricMorseCoord_comp_prodMap] at hloc'
   rw [hloc', hnat]
   simp
 
