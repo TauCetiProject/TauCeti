@@ -296,4 +296,33 @@ theorem composition_assoc : composePrefix ≫ composition = composeSuffix ≫ co
     ← CommRingCat.ofHom_comp, ← CommRingCat.ofHom_comp]
   exact congrArg (fun f ↦ Spec.map (CommRingCat.ofHom f)) coproduct_coassoc
 
+/-- Associativity on arrows parametrized by any test scheme. The pullback lifts encode
+composability, so this statement retains arbitrary scheme-valued points. -/
+theorem composition_lift_assoc {X : Scheme} (f g h : X ⟶ Spec (.of ArrowRing))
+    (hfg : f ≫ target = g ≫ source) (hgh : g ≫ target = h ≫ source) :
+    isPullback_first_second.lift
+        (isPullback_first_second.lift f g hfg ≫ composition) h (by
+          simp only [Category.assoc, composition_target, isPullback_first_second.lift_snd_assoc]
+          exact hgh) ≫ composition =
+      isPullback_first_second.lift f
+        (isPullback_first_second.lift g h hgh ≫ composition) (by
+          simp only [Category.assoc, composition_source, isPullback_first_second.lift_fst_assoc]
+          exact hfg) ≫ composition := by
+  let t := isPullback_initialPair_last.lift (isPullback_first_second.lift f g hfg) h (by
+    simp only [isPullback_first_second.lift_snd_assoc]
+    exact hgh)
+  have hp : t ≫ composePrefix = isPullback_first_second.lift
+      (isPullback_first_second.lift f g hfg ≫ composition) h (by
+        simp only [Category.assoc, composition_target, isPullback_first_second.lift_snd_assoc]
+        exact hgh) := by
+    apply isPullback_first_second.hom_ext <;> simp [t, Category.assoc]
+  have hs : t ≫ composeSuffix = isPullback_first_second.lift f
+      (isPullback_first_second.lift g h hgh ≫ composition) (by
+        simp only [Category.assoc, composition_source, isPullback_first_second.lift_fst_assoc]
+        exact hfg) := by
+    have hts : t ≫ suffix = isPullback_first_second.lift g h hgh := by
+      apply isPullback_first_second.hom_ext <;> simp [t, Category.assoc]
+    apply isPullback_first_second.hom_ext <;> simp [Category.assoc, ← hts, t]
+  simpa only [← Category.assoc, hp, hs] using congrArg (t ≫ ·) composition_assoc
+
 end TauCeti.WeierstrassHopfAlgebroid
