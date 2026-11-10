@@ -22,7 +22,7 @@ It also records basic facts about lattices: a full lattice is the `ℤ`-span of 
 the ambient space, and membership in the pull-back `ZLattice.comap` of a lattice is membership of
 the image. The pull-back `L ∩ V` of a discrete subgroup to a subspace `V` is again discrete, and
 so is the pull-back of a discrete subgroup or of a full lattice along a linear isometry
-equivalence.
+equivalence. A discrete subgroup containing a full lattice is a full lattice.
 
 ## Main results
 
@@ -42,6 +42,7 @@ equivalence.
 * `ZLattice.instDiscreteTopologyComapLinearIsometryEquiv`,
   `ZLattice.instIsZLatticeComapLinearIsometryEquiv`: the pull-back of a discrete subgroup, or of a
   full lattice, along a linear isometry equivalence is again one.
+* `IsZLattice.of_le`: a discrete subgroup containing a full lattice is a full lattice.
 * `TauCeti.discreteTopology_span_one`: the integer span of `1` in `ℝ` is discrete.
 -/
 
@@ -181,6 +182,12 @@ instance instIsZLatticeComapLinearIsometryEquiv [IsZLattice K L] :
   inferInstanceAs (IsZLattice K (ZLattice.comap K L e.toContinuousLinearEquiv.toLinearMap))
 
 end LinearIsometryEquiv
+
+/-- A discrete subgroup containing a full lattice is a full lattice. -/
+theorem _root_.IsZLattice.of_le {K : Type*} [NormedField K] {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace K E] {L₁ L₂ : Submodule ℤ E} [DiscreteTopology L₁] [IsZLattice K L₁]
+    [DiscreteTopology L₂] (h : L₁ ≤ L₂) : IsZLattice K L₂ :=
+  ⟨eq_top_iff.2 (IsZLattice.span_top (K := K) (L := L₁) ▸ Submodule.span_mono h)⟩
 
 variable (K : Type*) [NormedField K] [LinearOrder K] [IsStrictOrderedRing K] [HasSolidNorm K]
   [FloorRing K] {E : Type u} [NormedAddCommGroup E] [NormedSpace K E] [FiniteDimensional K E]
