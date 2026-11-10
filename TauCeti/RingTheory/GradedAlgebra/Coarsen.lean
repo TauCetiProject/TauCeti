@@ -73,18 +73,19 @@ instance [SetLike.GradedMonoid 𝒜] (f : ι →+ κ) : SetLike.GradedMonoid (co
   { (inferInstance : SetLike.GradedMul (coarsenGrading 𝒜 f)) with
     one_mem := by simpa using mem_coarsenGrading_of_mem f (SetLike.one_mem_graded 𝒜) }
 
+/-- The product of the coarsened pieces of degrees `k` and `l` of a graded multiplication lies
+in the coarsened piece of degree `k + l`. -/
+theorem coarsenGrading_mul_le [IsScalarTower R A A] [SetLike.GradedMul 𝒜] (f : ι →+ κ)
+    (k l : κ) :
+    coarsenGrading 𝒜 f k * coarsenGrading 𝒜 f l ≤ coarsenGrading 𝒜 f (k + l) :=
+  Submodule.mul_le.2 fun _ ha _ hb ↦ SetLike.mul_mem_graded ha hb
+
 end GradedMonoid
 
 section Coarsen
 
 variable {R : Type uR} {A : Type uA} {ι : Type uι} {κ : Type uκ}
   [CommSemiring R] [Semiring A] [Algebra R A] [AddMonoid ι] [AddMonoid κ] (𝒜 : ι → Submodule R A)
-
-/-- The product of the coarsened pieces of degrees `k` and `l` of a graded multiplication lies
-in the coarsened piece of degree `k + l`. -/
-theorem coarsenGrading_mul_le [SetLike.GradedMul 𝒜] (f : ι →+ κ) (k l : κ) :
-    coarsenGrading 𝒜 f k * coarsenGrading 𝒜 f l ≤ coarsenGrading 𝒜 f (k + l) :=
-  Submodule.mul_le.2 fun _ ha _ hb ↦ SetLike.mul_mem_graded ha hb
 
 /-- Coarsening the grading of a graded algebra along an additive homomorphism of index monoids
 gives a graded algebra. -/
