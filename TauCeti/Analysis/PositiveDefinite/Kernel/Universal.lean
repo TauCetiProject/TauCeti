@@ -12,22 +12,26 @@ public import Mathlib.Topology.ContinuousMap.Algebra
 /-!
 # Universal kernels
 
-A kernel `k : X → X → 𝕜` is *universal* (`TauCeti.IsUniversalKernel`) when its continuous
-sections `k x` span a dense subspace of `C(X, 𝕜)`. For a continuous kernel on a compact space this
-is Steinwart's universality. On a finite discrete space every kernel with invertible matrix, in
-particular every positive-definite kernel, is universal, while the constant kernel `1`, which is
-positive semidefinite, is not universal on two points.
+A kernel `k : X → X → 𝕜` with values in a topological semiring `𝕜` is *universal*
+(`TauCeti.IsUniversalKernel`) when its continuous sections `k x` span a dense `𝕜`-submodule of
+`C(X, 𝕜)` for the compact-open topology. For real or complex scalars (`RCLike 𝕜`) on a compact
+space the compact-open topology is that of uniform convergence, and for a continuous kernel the
+condition is Steinwart's universality. On a finite discrete space every kernel with invertible
+matrix is universal, over any topological semiring. For real or complex scalars this includes every
+positive-definite kernel, while the constant kernel `1`, which is positive semidefinite, is not
+universal on two points.
 
 ## Main definitions
 
 * `TauCeti.IsUniversalKernel`: the continuous sections of a kernel span a dense subspace of
-  `C(X, 𝕜)`.
+  `C(X, 𝕜)` for the compact-open topology.
 
 ## Main results
 
-* `TauCeti.isUniversalKernel_of_isUnit` and `Matrix.PosDef.isUniversalKernel`: on a finite
-  discrete space, kernels with invertible matrix, in particular positive-definite ones, are
-  universal.
+* `TauCeti.isUniversalKernel_of_isUnit`: on a finite discrete space, a kernel with invertible
+  matrix over a topological semiring is universal.
+* `Matrix.PosDef.isUniversalKernel`: on a finite discrete space, a positive-definite kernel with
+  real or complex values is universal.
 
 ## References
 
@@ -45,9 +49,10 @@ variable {𝕜 X : Type*} [Semiring 𝕜] [TopologicalSpace 𝕜] [IsTopological
   [TopologicalSpace X]
 
 /-- A kernel `k : X → X → 𝕜` is *universal* when its continuous sections `k x` span a dense
-subspace of `C(X, 𝕜)`; sections that are not continuous are ignored. On a compact space this says
-that every continuous function is a uniform limit of finite linear combinations
-`∑ i, c i • k (x i)` of sections, so for a continuous kernel on a compact space it is Steinwart's
+subspace of `C(X, 𝕜)` for the compact-open topology; sections that are not continuous are
+ignored. For real or complex scalars (`RCLike 𝕜`) on a compact space this says that every
+continuous function is a uniform limit of finite linear combinations `∑ i, c i • k (x i)` of
+sections, so for a continuous real or complex kernel on a compact space it is Steinwart's
 universality. -/
 def IsUniversalKernel (k : X → X → 𝕜) : Prop :=
   Dense (Submodule.span 𝕜 {f : C(X, 𝕜) | ∃ x, ⇑f = k x} : Set C(X, 𝕜))
