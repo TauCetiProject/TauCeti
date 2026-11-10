@@ -158,7 +158,7 @@ theorem exists_continuous_primitive_Icc (hf : ContinuousOn f (Icc a b)) :
   · exact ⟨0, continuous_const, fun x hx => ((not_le.2 hab) (hx.1.trans hx.2)).elim,
       fun x hx => ((not_le.2 hab) (hx.1.trans hx.2)).elim⟩
   -- Holding endpoint values constant gives a continuous integrand on the whole line.
-  obtain ⟨g, hg, hgf⟩ := hf.exists_continuous_eqOn_Icc hab
+  obtain ⟨g, hg, hgf⟩ := hf.exists_continuous_eqOn_Icc
   let F : ℝ → E := fun t ↦ ∫ x in a..t, g x
   refine ⟨F, (_root_.intervalIntegral.differentiable_integral_of_continuous hg).continuous,
     ?_, ?_⟩
