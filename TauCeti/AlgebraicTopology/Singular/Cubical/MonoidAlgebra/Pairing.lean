@@ -104,15 +104,12 @@ theorem cubicalChainPairing_assoc {L W U T V : Type*} [TopologicalSpace W] [Topo
     cubicalChainPairing K L R g (cubicalChainPairing H K R f m n) o =
       cubicalChainPairing H L R g' m (cubicalChainPairing K L R f' n o) := by
   induction m using cubicalChainModule.induction_on with
-  | zero => simp
   | add m m' hm hm' => simp only [map_add, LinearMap.add_apply, hm, hm']
   | lof p c =>
     induction n using cubicalChainModule.induction_on with
-    | zero => simp
     | add n n' hn hn' => simp only [map_add, LinearMap.add_apply, hn, hn']
     | lof q c' =>
       induction o using cubicalChainModule.induction_on with
-      | zero => simp
       | add o o' ho ho' => simp only [map_add, ho, ho']
       | lof r c'' =>
         rw [cubicalChainPairing_lof_lof, cubicalChainPairing_lof_lof, cubicalChainPairing_lof_lof,
@@ -226,7 +223,6 @@ theorem cubicalChainModuleDifferential_cubicalChainPairing (f : C(X × Y, Z)) {i
   · simp
   obtain rfl : i = -(p : ℤ) := by omega
   induction n using cubicalChainModule.induction_on with
-  | zero => simp
   | lof q c' => exact cubicalChainModuleDifferential_cubicalChainPairing_lof f c c'
   | add n n' hn hn' =>
     simp only [map_add, hn, hn', smul_add]
@@ -249,11 +245,9 @@ theorem cubicalChainPairing_op_smul_left [Monoid H] [TopologicalSpace H] [Contin
     (n : cubicalChainModule Y K R) :
     cubicalChainPairing H K R f (op a • m) n = cubicalChainPairing H K R f m (a • n) := by
   induction m using cubicalChainModule.induction_on with
-  | zero => simp
   | add m m' hm hm' => simp only [smul_add, map_add, LinearMap.add_apply, hm, hm']
   | lof p c =>
     induction n using cubicalChainModule.induction_on with
-    | zero => simp
     | add n n' hn hn' => simp only [smul_add, map_add, hn, hn']
     | lof q c' =>
       induction a using DirectSum.induction_on with
@@ -280,11 +274,9 @@ theorem cubicalChainPairing_smul_left [Monoid G] [TopologicalSpace G] [Continuou
     (n : cubicalChainModule Y K R) :
     cubicalChainPairing H K R f (a • m) n = a • cubicalChainPairing H K R f m n := by
   induction m using cubicalChainModule.induction_on with
-  | zero => simp
   | add m m' hm hm' => simp only [smul_add, map_add, LinearMap.add_apply, hm, hm']
   | lof p c =>
     induction n using cubicalChainModule.induction_on with
-    | zero => simp
     | add n n' hn hn' => simp only [smul_add, map_add, hn, hn']
     | lof q c' =>
       induction a using DirectSum.induction_on with
@@ -310,11 +302,9 @@ theorem cubicalChainPairing_op_smul_right [Monoid K] [TopologicalSpace K] [Conti
     (n : cubicalChainModule Y K R) :
     cubicalChainPairing H K R f m (op a • n) = op a • cubicalChainPairing H K R f m n := by
   induction m using cubicalChainModule.induction_on with
-  | zero => simp
   | add m m' hm hm' => simp only [smul_add, map_add, LinearMap.add_apply, hm, hm']
   | lof p c =>
     induction n using cubicalChainModule.induction_on with
-    | zero => simp
     | add n n' hn hn' => simp only [smul_add, map_add, hn, hn']
     | lof q c' =>
       induction a using DirectSum.induction_on with
