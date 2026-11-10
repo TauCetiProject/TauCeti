@@ -20,8 +20,8 @@ This file shows that the lattice determines `L` up to a change of basis by `GL(�
 
 ## Main results
 
-* `ContinuousLinearMap.exists_map_intCast_mulVec_eq_of_transposeLattice_le`: if
-  `L₁ᵀ ℤ^κ₁ ⊆ L₂ᵀ ℤ^κ₂`, then `L₁ = N L₂` for an integer matrix `N`.
+* `ContinuousLinearMap.transposeLattice_le_iff`: `L₁ᵀ ℤ^κ₁ ⊆ L₂ᵀ ℤ^κ₂` exactly when
+  `L₁ = N L₂` for an integer matrix `N`.
 * `ContinuousLinearMap.exists_generalLinearGroup_mulVec_eq_of_transposeLattice_eq`: two linear
   maps, the first injective, with the same transpose lattice differ by an element of `GL(ι, ℤ)`.
 * `ContinuousLinearMap.transposeLattice_toLin'_comp`: conversely, composing with an element of
@@ -55,22 +55,36 @@ theorem mem_transposeLattice {L : (ι → ℝ) →L[ℝ] (κ → ℝ)} {v : ι �
     v ∈ L.transposeLattice ↔ ∃ n : κ → ℤ, ∀ w, v ⬝ᵥ w = ∑ i, n i * L w i :=
   Iff.rfl
 
-/-- If every vector of the lattice `L₁ᵀ ℤ^κ₁` lies in `L₂ᵀ ℤ^κ₂`, then `L₁ = N L₂` for an integer
-matrix `N`. -/
-theorem exists_map_intCast_mulVec_eq_of_transposeLattice_le {L₁ : (ι → ℝ) →L[ℝ] (κ → ℝ)}
-    {L₂ : (ι → ℝ) →L[ℝ] (κ' → ℝ)} (h : L₁.transposeLattice ≤ L₂.transposeLattice) :
-    ∃ N : Matrix κ κ' ℤ, ∀ w, L₁ w = N.map (↑) *ᵥ L₂ w := by
+/-- `∑ᵢ nᵢ (N x)ᵢ = ∑ₖ (n N)ₖ xₖ` for an integer matrix `N`. -/
+private theorem sum_intCast_mul_map_intCast_mulVec (N : Matrix κ κ' ℤ) (n : κ → ℤ)
+    (x : κ' → ℝ) :
+    ∑ i, (n i : ℝ) * (N.map (↑) *ᵥ x) i = ∑ k, ((n ᵥ* N) k : ℝ) * x k := by
+  simp only [mulVec, vecMul, dotProduct, Finset.mul_sum, Finset.sum_mul, Int.cast_sum,
+    Int.cast_mul, Matrix.map_apply, mul_assoc]
+  exact Finset.sum_comm
+
+/-- **Comparing transpose lattices.** The lattice `L₁ᵀ ℤ^κ` lies in `L₂ᵀ ℤ^κ'` exactly when
+`L₁ = N L₂` for an integer matrix `N`. -/
+theorem transposeLattice_le_iff {L₁ : (ι → ℝ) →L[ℝ] (κ → ℝ)} {L₂ : (ι → ℝ) →L[ℝ] (κ' → ℝ)} :
+    L₁.transposeLattice ≤ L₂.transposeLattice ↔
+      ∃ N : Matrix κ κ' ℤ, ∀ w, L₁ w = N.map (↑) *ᵥ L₂ w := by
   classical
-  -- The `i`-th row of the matrix of `L₁` is the lattice vector with `n = eᵢ`.
-  have hrow (i : κ) (w : ι → ℝ) :
-      LinearMap.toMatrix' (L₁ : (ι → ℝ) →ₗ[ℝ] (κ → ℝ)) i ⬝ᵥ w = L₁ w i :=
-    congrFun (LinearMap.toMatrix'_mulVec (L₁ : (ι → ℝ) →ₗ[ℝ] (κ → ℝ)) w) i
-  have hmem (i : κ) : LinearMap.toMatrix' (L₁ : (ι → ℝ) →ₗ[ℝ] (κ → ℝ)) i ∈ L₂.transposeLattice :=
-    h ⟨Pi.single i 1, fun w ↦ by simp [hrow, Pi.single_apply]⟩
-  choose n hn using hmem
-  refine ⟨Matrix.of n, fun w ↦ funext fun i ↦ ?_⟩
-  rw [← hrow, hn]
-  simp [mulVec, dotProduct]
+  constructor
+  · intro h
+    -- The `i`-th row of the matrix of `L₁` is the lattice vector with `n = eᵢ`.
+    have hrow (i : κ) (w : ι → ℝ) :
+        LinearMap.toMatrix' (L₁ : (ι → ℝ) →ₗ[ℝ] (κ → ℝ)) i ⬝ᵥ w = L₁ w i :=
+      congrFun (LinearMap.toMatrix'_mulVec (L₁ : (ι → ℝ) →ₗ[ℝ] (κ → ℝ)) w) i
+    have hmem (i : κ) :
+        LinearMap.toMatrix' (L₁ : (ι → ℝ) →ₗ[ℝ] (κ → ℝ)) i ∈ L₂.transposeLattice :=
+      h ⟨Pi.single i 1, fun w ↦ by simp [hrow, Pi.single_apply]⟩
+    choose n hn using hmem
+    refine ⟨Matrix.of n, fun w ↦ funext fun i ↦ ?_⟩
+    rw [← hrow, hn]
+    simp [mulVec, dotProduct]
+  · -- `∑ᵢ nᵢ (L₁)ᵢ = ∑ₖ (n N)ₖ (L₂)ₖ`.
+    rintro ⟨N, hN⟩ v ⟨n, hn⟩
+    exact ⟨n ᵥ* N, fun w ↦ by rw [hn, hN, sum_intCast_mul_map_intCast_mulVec]⟩
 
 /-- **Two bases of one lattice differ by an element of `GL(ι, ℤ)`.** If the injective linear map
 `L` and the linear map `L'` have the same transpose lattice `Lᵀ ℤ^ι = L'ᵀ ℤ^ι`, then `L' = M L`
@@ -79,8 +93,8 @@ theorem exists_generalLinearGroup_mulVec_eq_of_transposeLattice_eq [DecidableEq 
     {L L' : (ι → ℝ) →L[ℝ] (ι → ℝ)} (hL : Injective L)
     (h : L.transposeLattice = L'.transposeLattice) :
     ∃ M : GL ι ℤ, ∀ w, L' w = (M : Matrix ι ι ℤ).map (↑) *ᵥ L w := by
-  obtain ⟨M, hM⟩ := exists_map_intCast_mulVec_eq_of_transposeLattice_le h.ge
-  obtain ⟨N, hN⟩ := exists_map_intCast_mulVec_eq_of_transposeLattice_le h.le
+  obtain ⟨M, hM⟩ := transposeLattice_le_iff.1 h.ge
+  obtain ⟨N, hN⟩ := transposeLattice_le_iff.1 h.le
   -- `L = N M L` and `L` is onto, so `N M = 1`.
   have hsurj : Surjective L :=
     LinearMap.injective_iff_surjective (f := (L : (ι → ℝ) →ₗ[ℝ] (ι → ℝ))).1 hL
@@ -96,23 +110,18 @@ theorem exists_generalLinearGroup_mulVec_eq_of_transposeLattice_eq [DecidableEq 
 
 /-- **Changing the basis by `GL(κ, ℤ)` preserves the transpose lattice.** For an invertible integer
 matrix `M`, the maps `M L` and `L` have the same transpose lattice. -/
+@[simp]
 theorem transposeLattice_toLin'_comp [DecidableEq κ] (M : GL κ ℤ) (L : (ι → ℝ) →L[ℝ] (κ → ℝ)) :
     ((Matrix.toLin' ((M : Matrix κ κ ℤ).map (↑))).toContinuousLinearMap.comp L).transposeLattice =
       L.transposeLattice := by
-  -- `∑ᵢ nᵢ (M L)ᵢ = ∑ₖ (n M)ₖ Lₖ`.
-  have hsum (n : κ → ℤ) (w : ι → ℝ) :
-      ∑ i, (n i : ℝ) * (Matrix.toLin' ((M : Matrix κ κ ℤ).map (↑)) (L w)) i =
-        ∑ k, ((n ᵥ* (M : Matrix κ κ ℤ)) k : ℝ) * L w k := by
-    simp only [Matrix.toLin'_apply, mulVec, vecMul, dotProduct, Finset.mul_sum, Finset.sum_mul,
-      Int.cast_sum, Int.cast_mul, Matrix.map_apply, mul_assoc]
-    exact Finset.sum_comm
-  ext v
-  simp only [mem_transposeLattice, comp_apply, LinearMap.coe_toContinuousLinearMap', hsum]
-  constructor
-  · rintro ⟨n, hn⟩
-    exact ⟨n ᵥ* (M : Matrix κ κ ℤ), hn⟩
-  · rintro ⟨n, hn⟩
-    refine ⟨n ᵥ* ((M⁻¹ : GL κ ℤ) : Matrix κ κ ℤ), fun w ↦ ?_⟩
-    rw [vecMul_vecMul, ← Units.val_mul, inv_mul_cancel, Units.val_one, vecMul_one, hn]
+  refine le_antisymm (transposeLattice_le_iff.2 ⟨M, fun w ↦ rfl⟩)
+    (transposeLattice_le_iff.2 ⟨(M⁻¹ : GL κ ℤ), fun w ↦ ?_⟩)
+  -- `L = M⁻¹ (M L)`.
+  have hmap : ((M⁻¹ : GL κ ℤ) * M : Matrix κ κ ℤ).map ((↑) : ℤ → ℝ) =
+      ((M⁻¹ : GL κ ℤ) : Matrix κ κ ℤ).map (↑) * (M : Matrix κ κ ℤ).map (↑) :=
+    Matrix.map_mul (f := Int.castRingHom ℝ)
+  rw [comp_apply, LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply, mulVec_mulVec,
+    ← hmap, ← Units.val_mul, inv_mul_cancel, Units.val_one, Matrix.map_one _ Int.cast_zero
+    Int.cast_one, one_mulVec]
 
 end ContinuousLinearMap
