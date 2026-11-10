@@ -7,7 +7,6 @@ module
 
 public import Mathlib.FieldTheory.Perfect
 public import Mathlib.RingTheory.Etale.Field
-public import TauCeti.RingTheory.Kaehler.BaseChange
 import TauCeti.LinearAlgebra.Dimension.FinrankOne
 import Mathlib.RingTheory.Algebraic.Integral
 
