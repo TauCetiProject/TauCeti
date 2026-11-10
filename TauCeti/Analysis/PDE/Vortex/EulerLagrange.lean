@@ -77,7 +77,7 @@ theorem integrableOn_mul_exp_of_sobolevReducedFunctional_ne_top
       Real.exp (2 * W1p.value u z)) K := by
   have : IsFiniteMeasure (volume.restrict K) := isFiniteMeasure_restrict.2 hK
   have ha : IntegrableOn (W1p.value u : ℂ → ℝ) K :=
-    ((memLp_value u).restrict K).integrable one_le_two
+    ((W1p.memLp_value u).restrict K).integrable one_le_two
   have hlin : IntegrableOn (fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
       (1 + 2 * W1p.value u z)) K :=
     ((integrable_const 1).add (ha.const_mul 2)).bdd_mul
@@ -220,8 +220,8 @@ private theorem sobolevReducedFunctional_add_smul_le (hm : 0 < P.natDegree)
   refine ⟨_, ‖W1p.gradient v‖ ^ 2 / 2 + 4 * M ^ 2 * (∫ z in K,
     ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * Real.exp (2 * W1p.value u z)) / 16, rfl,
     fun t htM ↦ ?_⟩
-  have hua := memLp_value u
-  have hva := memLp_value v
+  have hua := W1p.memLp_value u
+  have hva := W1p.memLp_value v
   have hpot := sobolevReducedFunctional_ne_top_iff.1 hu
   have hc := memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm
   have hca : Integrable fun z ↦ (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
@@ -330,12 +330,12 @@ theorem integral_inner_gradient_add_integral_mul_value_eq_zero (hm : 0 < P.natDe
     ((continuous_backgroundWeight P.continuous).congr (backgroundWeight_def _))
     (fun z ↦ backgroundWeight_def (P.eval ·) z ▸
       ⟨backgroundWeight_nonneg _ z, backgroundWeight_le_one _ z⟩)
-    (memLp_value u).aestronglyMeasurable (memLp_value v).aestronglyMeasurable hK' hK'fin
+    (W1p.memLp_value u).aestronglyMeasurable (W1p.memLp_value v).aestronglyMeasurable hK' hK'fin
     (integrableOn_mul_exp_of_sobolevReducedFunctional_ne_top hu0 hK'fin) hvI
   have hcb : Integrable fun z ↦ (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
       (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value v z :=
     (memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm).integrable_mul
-      (memLp_value v)
+      (W1p.memLp_value v)
   rw [hinner, ← integral_div, add_assoc, ← integral_add (hvar.div_const 16) hcb] at hL
   rw [← hL]
   congr 1
