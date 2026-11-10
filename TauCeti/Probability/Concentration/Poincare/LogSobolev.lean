@@ -29,6 +29,9 @@ gradient is the operator norm `‖fderiv ℝ f x‖`.
 
 * `MeasureTheory.Measure.PoincareInequality.mono` and
   `MeasureTheory.Measure.LogSobolevInequality.mono`: the inequalities persist for larger constants.
+* `MeasureTheory.Measure.PoincareInequality.eq_zero_or_measure_univ_eq_one` and
+  `MeasureTheory.Measure.LogSobolevInequality.toReal_measure_univ_eq_zero_or_one_le`: the total
+  mass of a measure satisfying the inequality is constrained by the constant function `1`.
 * `MeasureTheory.Measure.PoincareInequality.map_smul` and
   `MeasureTheory.Measure.LogSobolevInequality.map_smul`: dilating the measure by `a`
   multiplies the constant by `a ^ 2`.
@@ -119,6 +122,25 @@ section Scaling
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
 
+omit [BorelSpace E] in
+/-- A finite measure satisfying a Poincaré inequality is zero or has total mass one: the constant
+function `1` has variance zero, which forces the measure to be a probability measure unless it
+vanishes. -/
+theorem PoincareInequality.eq_zero_or_measure_univ_eq_one {μ : Measure E} {C : ℝ}
+    [IsFiniteMeasure μ] (h : PoincareInequality μ C) : μ = 0 ∨ μ Set.univ = 1 := by
+  have h1 := h (fun _ ↦ 1) contDiff_const (memLp_const 1) (by
+    simp only [fderiv_fun_const, Pi.zero_apply, norm_zero]
+    exact (MemLp.zero : MemLp (0 : E → ℝ) 2 μ))
+  have hv0 : variance (fun _ : E ↦ (1 : ℝ)) μ = 0 :=
+    le_antisymm (by simpa using h1) (variance_nonneg _ _)
+  have hae1 := ae_eq_integral_of_variance_eq_zero (memLp_const 1) hv0
+  by_cases hμ0 : μ = 0
+  · exact Or.inl hμ0
+  · obtain ⟨x, hx⟩ := (ae_neBot.2 hμ0).nonempty_of_mem hae1
+    refine Or.inr ?_
+    have : μ.real Set.univ = 1 := by simpa [integral_const] using hx.symm
+    simpa [Measure.real, ENNReal.toReal_eq_one_iff] using this
+
 /-- Dilating a measure satisfying the Poincaré inequality with constant `C` by `a` gives a
 measure satisfying it with constant `a ^ 2 * C`. -/
 theorem PoincareInequality.map_smul {μ : Measure E} {C : ℝ} (h : PoincareInequality μ C) {a : ℝ} :
@@ -138,19 +160,9 @@ theorem PoincareInequality.map_smul {μ : Measure E} {C : ℝ} (h : PoincareIneq
     · rw [h0]
       exact variance_zero _
     · have hμfin : IsFiniteMeasure μ := ⟨by simpa [smul_apply] using hfin⟩
-      have h1 := h (fun _ ↦ 1) contDiff_const (memLp_const 1) (by
-        simp only [fderiv_fun_const, Pi.zero_apply, norm_zero]
-        exact (MemLp.zero : MemLp (0 : E → ℝ) 2 μ))
-      have hv0 : variance (fun _ : E ↦ (1 : ℝ)) μ = 0 :=
-        le_antisymm (by simpa using h1) (variance_nonneg _ _)
-      have hae1 := ae_eq_integral_of_variance_eq_zero (memLp_const 1) hv0
-      by_cases hμ0 : μ = 0
+      rcases h.eq_zero_or_measure_univ_eq_one with hμ0 | hμ1
       · simp [hμ0]
-      · obtain ⟨x, hx⟩ := (ae_neBot.2 hμ0).nonempty_of_mem hae1
-        have hμ1 : μ Set.univ = 1 := by
-          have : μ.real Set.univ = 1 := by simpa [integral_const] using hx.symm
-          simpa [Measure.real, ENNReal.toReal_eq_one_iff] using this
-        simp [hμ1, variance, evariance]
+      · simp [hμ1, variance, evariance]
   · have he := measurableEmbedding_const_smul₀ (α := E) ha
     intro f hf hfL hdf
     have hg : ContDiff ℝ ∞ (fun y ↦ f (a • y)) := hf.comp (contDiff_const_smul a)
@@ -166,6 +178,29 @@ theorem PoincareInequality.map_smul {μ : Measure E} {C : ℝ} (h : PoincareIneq
       _ = a ^ 2 * C * ((a ^ 2)⁻¹ * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ) := by
         field_simp
 
+omit [BorelSpace E] in
+/-- A measure satisfying a logarithmic Sobolev inequality has total mass zero or at least one (as a
+real number, so an infinite mass counts as zero): the constant function `1` has nonpositive
+entropy `-μ(E) log μ(E)`. -/
+theorem LogSobolevInequality.toReal_measure_univ_eq_zero_or_one_le {μ : Measure E} {C : ℝ}
+    (h : LogSobolevInequality μ C) : (μ Set.univ).toReal = 0 ∨ 1 ≤ (μ Set.univ).toReal := by
+  by_cases hfin : μ Set.univ = ⊤
+  · exact Or.inl (by simp [hfin])
+  · have : IsFiniteMeasure μ := ⟨lt_top_iff_ne_top.2 hfin⟩
+    have h1 := h (fun _ : E ↦ (1 : ℝ)) contDiff_const (by
+      simp only [fderiv_fun_const, Pi.zero_apply, norm_zero]
+      exact (MemLp.zero : MemLp (0 : E → ℝ) 2 μ)) (by simp) (by simp)
+    have he : entropy μ (fun _ : E ↦ (1 : ℝ) ^ 2) =
+        -((μ Set.univ).toReal * Real.log (μ Set.univ).toReal) := by
+      simp [entropy_def, Measure.real]
+    have hz : 2 * C * ∫ x, ‖fderiv ℝ (fun _ : E ↦ (1 : ℝ)) x‖ ^ 2 ∂μ = 0 := by simp
+    have h1' : 0 ≤ (μ Set.univ).toReal * Real.log (μ Set.univ).toReal := by linarith
+    rcases (ENNReal.toReal_nonneg).eq_or_lt' with h0 | hpos
+    · exact Or.inl h0
+    · refine Or.inr (Real.log_nonneg_iff hpos |>.1 ?_)
+      by_contra hlt
+      nlinarith [mul_neg_of_pos_of_neg hpos (not_le.1 hlt)]
+
 /-- Dilating a measure satisfying the logarithmic Sobolev inequality with constant `C` by `a`
 gives a measure satisfying it with constant `a ^ 2 * C`. -/
 theorem LogSobolevInequality.map_smul {μ : Measure E} {C : ℝ} (h : LogSobolevInequality μ C)
@@ -176,23 +211,7 @@ theorem LogSobolevInequality.map_smul {μ : Measure E} {C : ℝ} (h : LogSobolev
     rw [hconst, Measure.map_const]
     intro f _ _ _ _
     rw [zero_pow two_ne_zero, zero_mul, mul_zero, zero_mul]
-    have hm : (μ Set.univ).toReal = 0 ∨ 1 ≤ (μ Set.univ).toReal := by
-      by_cases hfin : μ Set.univ = ⊤
-      · exact Or.inl (by simp [hfin])
-      · have : IsFiniteMeasure μ := ⟨lt_top_iff_ne_top.2 hfin⟩
-        have h1 := h (fun _ : E ↦ (1 : ℝ)) contDiff_const (by
-          simp only [fderiv_fun_const, Pi.zero_apply, norm_zero]
-          exact (MemLp.zero : MemLp (0 : E → ℝ) 2 μ)) (by simp) (by simp)
-        have he : entropy μ (fun _ : E ↦ (1 : ℝ) ^ 2) =
-            -((μ Set.univ).toReal * Real.log (μ Set.univ).toReal) := by
-          simp [entropy_def, Measure.real]
-        have hz : 2 * C * ∫ x, ‖fderiv ℝ (fun _ : E ↦ (1 : ℝ)) x‖ ^ 2 ∂μ = 0 := by simp
-        have h1' : 0 ≤ (μ Set.univ).toReal * Real.log (μ Set.univ).toReal := by linarith
-        rcases (ENNReal.toReal_nonneg).eq_or_lt' with h0 | hpos
-        · exact Or.inl h0
-        · refine Or.inr (Real.log_nonneg_iff hpos |>.1 ?_)
-          by_contra hlt
-          nlinarith [mul_neg_of_pos_of_neg hpos (not_le.1 hlt)]
+    have hm := h.toReal_measure_univ_eq_zero_or_one_le
     simp only [entropy_def, integral_smul_measure, integral_dirac, smul_eq_mul]
     rcases hm with h0 | h1
     · simp [h0]
