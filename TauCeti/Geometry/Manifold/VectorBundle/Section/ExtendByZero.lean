@@ -129,41 +129,52 @@ theorem extendByZero_mem_compactlySupported (s : compactlySupported I F n
   rw [mem_compactlySupported, tsupport_extendByZero]
   exact (mem_compactlySupported.mp s.2).image continuous_subtype_val
 
+/-- Restriction of extension by zero is the original section. -/
+@[simp]
+theorem restrict_extendByZero (s : compactlySupported I F n
+    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) :
+    (extendByZero s).restrict U = s.1 := by
+  ext x
+  simp
+
+/-- Extension by zero is determined by its restriction and vanishing outside the open subset. -/
+theorem extendByZero_eq_of_restrict_eq (s : compactlySupported I F n
+    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) (t : Cₛ^n⟮I; F, V⟯)
+    (h₁ : t.restrict U = s.1) (h₂ : ∀ x ∉ U, t x = 0) : extendByZero s = t := by
+  ext x
+  by_cases hx : x ∈ U
+  · rw [extendByZero_apply_of_mem s ⟨x, hx⟩, ← h₁, restrict_apply]
+  · rw [extendByZero_apply_of_notMem s hx, h₂ x hx]
+
 /-- Extension by zero preserves the zero section. -/
 @[simp]
 theorem extendByZero_zero :
     extendByZero (0 : compactlySupported I F n
       ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) = 0 := by
-  ext x
-  by_cases hx : x ∈ U
-  · rw [extendByZero_apply_of_mem _ ⟨x, hx⟩]
-    exact congrFun (coe_zero (I := I) (F := F) (n := n)) (⟨x, hx⟩ : U)
-  · simp [extendByZero_apply_of_notMem _ hx]
+  apply extendByZero_eq_of_restrict_eq
+  · simp
+  · intro x _
+    simp
 
 /-- Extension by zero preserves addition. -/
 @[simp]
 theorem extendByZero_add (s t : compactlySupported I F n
     ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) :
     extendByZero (s + t) = extendByZero s + extendByZero t := by
-  ext x
-  by_cases hx : x ∈ U
-  · simp only [coe_add, Pi.add_apply]
-    rw [extendByZero_apply_of_mem _ ⟨x, hx⟩, extendByZero_apply_of_mem s ⟨x, hx⟩,
-      extendByZero_apply_of_mem t ⟨x, hx⟩]
-    exact congrFun (coe_add s.1 t.1) ⟨x, hx⟩
-  · simp [extendByZero_apply_of_notMem _ hx]
+  apply extendByZero_eq_of_restrict_eq
+  · simp
+  · intro x hx
+    simp [extendByZero_apply_of_notMem _ hx]
 
 /-- Extension by zero commutes with ground-field scalar multiplication. -/
 @[simp]
 theorem extendByZero_smul (c : 𝕜) (s : compactlySupported I F n
     ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) :
     extendByZero (c • s) = c • extendByZero s := by
-  ext x
-  by_cases hx : x ∈ U
-  · simp only [coe_smul, Pi.smul_apply]
-    rw [extendByZero_apply_of_mem _ ⟨x, hx⟩, extendByZero_apply_of_mem s ⟨x, hx⟩]
-    exact congrFun (coe_smul c s.1) ⟨x, hx⟩
-  · simp [extendByZero_apply_of_notMem _ hx]
+  apply extendByZero_eq_of_restrict_eq
+  · simp
+  · intro x hx
+    simp [extendByZero_apply_of_notMem _ hx]
 
 /-- Extension by zero as a linear map on compactly supported native section spaces. -/
 def extendByZeroLinearMap : compactlySupported I F n
@@ -179,14 +190,6 @@ theorem extendByZeroLinearMap_apply (s : compactlySupported I F n
     ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) :
     dsimp% only [ContinuousMap.coe_mk]
       ((extendByZeroLinearMap s).1 = extendByZero s) := (rfl)
-
-/-- Restriction of extension by zero is the original section. -/
-@[simp]
-theorem restrict_extendByZero (s : compactlySupported I F n
-    ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V)) :
-    (extendByZero s).restrict U = s.1 := by
-  ext x
-  simp
 
 /-- Extension by zero is injective. -/
 theorem extendByZero_injective : Function.Injective
@@ -208,26 +211,14 @@ theorem extendByZeroLinearMap_injective : Function.Injective
   intro s t h
   exact extendByZero_injective (congrArg Subtype.val h)
 
-omit [T2Space M] in
-/-- A compactly supported ambient section supported inside `U` remains compactly supported
-when restricted to `U`. Compact support alone would not suffice at the frontier of `U`. -/
-theorem restrict_mem_compactlySupported (s : compactlySupported I F n V)
-    (hs : s.1.tsupport ⊆ U) : s.1.restrict U ∈ compactlySupported I F n
-      ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V) := by
-  rw [mem_compactlySupported, tsupport_restrict]
-  exact Topology.IsInducing.subtypeVal.isCompact_preimage'
-    (mem_compactlySupported.mp s.2) (fun x hx => ⟨⟨x, hs hx⟩, rfl⟩)
-
 /-- An ambient compactly supported section whose closed support lies in the open subset is
 recovered by extending its restriction. -/
 @[simp]
 theorem extendByZero_restrict (s : compactlySupported I F n V) (hs : s.1.tsupport ⊆ U) :
     extendByZero ⟨s.1.restrict U, restrict_mem_compactlySupported s hs⟩ = s.1 := by
-  ext x
-  by_cases hx : x ∈ U
-  · rw [extendByZero_apply_of_mem _ ⟨x, hx⟩, restrict_apply]
-  · rw [extendByZero_apply_of_notMem _ hx]
-    exact (s.1.eq_zero_of_notMem_tsupport (fun h => hx (hs h))).symm
+  apply extendByZero_eq_of_restrict_eq _ _ rfl
+  intro x hx
+  exact s.1.eq_zero_of_notMem_tsupport (fun h => hx (hs h))
 
 /-- The image of extension by zero consists exactly of the compactly supported ambient sections
 whose closed support lies in the open subset. -/
@@ -251,11 +242,9 @@ theorem extendByZero_smul_function (f : C^n⟮I, M; 𝕜⟯)
     extendByZero
       ⟨f.comp (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, U; I, M⟯) • s.1,
         smul_function_mem_compactlySupported _ s.2⟩ = f • extendByZero s := by
-  ext x
-  by_cases hx : x ∈ U
-  · rw [smul_apply, extendByZero_apply_of_mem _ ⟨x, hx⟩,
-      extendByZero_apply_of_mem s ⟨x, hx⟩]
-    exact smul_apply _ s.1 ⟨x, hx⟩
-  · simp [extendByZero_apply_of_notMem _ hx]
+  apply extendByZero_eq_of_restrict_eq
+  · simp
+  · intro x hx
+    simp [extendByZero_apply_of_notMem _ hx]
 
 end ContMDiffSection

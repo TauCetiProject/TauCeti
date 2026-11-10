@@ -175,6 +175,15 @@ theorem tsupport_restrict (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
 
 variable [∀ x, Module 𝕜 (V x)] [VectorBundle 𝕜 F V]
 
+/-- A compactly supported ambient section supported inside `U` remains compactly supported
+when restricted to `U`. Compact support alone would not suffice at the frontier of `U`. -/
+theorem restrict_mem_compactlySupported {U : Opens M} (s : compactlySupported I F n V)
+    (hs : s.1.tsupport ⊆ U) : s.1.restrict U ∈ compactlySupported I F n
+      ((⟨Subtype.val, continuous_subtype_val⟩ : C(U, M)) *ᵖ V) := by
+  rw [mem_compactlySupported, tsupport_restrict]
+  exact Topology.IsInducing.subtypeVal.isCompact_preimage'
+    (mem_compactlySupported.mp s.2) (fun x hx => ⟨⟨x, hs hx⟩, rfl⟩)
+
 @[simp]
 theorem restrict_zero (U : Opens M) : (0 : Cₛ^n⟮I; F, V⟯).restrict U = 0 := by
   exact pullback_zero _
