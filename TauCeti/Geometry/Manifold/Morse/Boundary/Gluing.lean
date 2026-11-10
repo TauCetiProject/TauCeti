@@ -69,13 +69,9 @@ theorem morseBrokenTrajectoryPairs_subset_closure (p r : M) (c₁ c₂ : ℝ) :
     hX.morseBrokenTrajectoryPairs p r c₁ c₂ ⊆ closure (hX.morseTrajectoryPairs p r c₁ c₂) := by
   rintro ⟨y₁, y₂⟩ hw
   simp only [mem_morseBrokenTrajectoryPairs] at hw
-  obtain ⟨q, hq, hpq, hqr, hy₁, rfl, hy₂, rfl⟩ := hw
-  have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
-  refine closure_mono (fun w hw ↦ hX.mem_morseTrajectoryPairs.2 hw)
-    (h.mem_closure_of_mem_unstableSet_inter_stableSet hf
-    (hX.mfderiv_eq_zero_of_forall_eq (hdf p) fun t ↦ by rw [Flow.fixed_of_mem_unstableSet hy₁.1 t])
-    hq (hX.mfderiv_eq_zero_of_forall_eq (hdf r) fun t ↦ by rw [Flow.fixed_of_mem_stableSet hy₂.2 t])
-    hpq hqr hy₁ hy₂)
+  obtain ⟨q, -, hpq, hqr, hy₁, rfl, hy₂, rfl⟩ := hw
+  exact closure_mono (fun w hw ↦ hX.mem_morseTrajectoryPairs.2 hw)
+    (h.mem_closure_of_mem_unstableSet_inter_stableSet hf hpq hqr hy₁ hy₂)
 
 include h hf in
 /-- **The compactified space of index-two trajectories.** Let `p` and `r` be critical points with
@@ -83,28 +79,26 @@ include h hf in
 strictly between `f r` and `f p` from `f r` and `f p`. The closure of the pairs of points on these
 levels of trajectories from `p` to `r` consists of these pairs together with the pairs of points
 of trajectories broken once, at a critical point of intermediate index. -/
-theorem closure_morseTrajectoryPairs {p r : M} (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0)
-    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
+theorem closure_morseTrajectoryPairs {p r : M}
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) {c₁ c₂ : ℝ}
     (hr₂ : f r < c₂) (h₂₁ : c₂ < c₁) (h₁p : c₁ < f p)
     (hgap : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∈ Ioo (f r) (f p) → f x ∈ Ioo c₂ c₁) :
     closure (hX.morseTrajectoryPairs p r c₁ c₂) =
       hX.morseTrajectoryPairs p r c₁ c₂ ∪ hX.morseBrokenTrajectoryPairs p r c₁ c₂ :=
-  (h.closure_morseTrajectoryPairs_subset hf hp hr hind hr₂ h₂₁ h₁p hgap).antisymm
+  (h.closure_morseTrajectoryPairs_subset hf hind hr₂ h₂₁ h₁p hgap).antisymm
     (union_subset subset_closure (h.morseBrokenTrajectoryPairs_subset_closure hf p r c₁ c₂))
 
 include h hf in
 /-- **The compactification adds exactly the broken trajectories.** Under the hypotheses of
 `closure_morseTrajectoryPairs`, the points of the closure of the unbroken trajectory pairs that are
 not unbroken pairs are the broken trajectory pairs. -/
-theorem closure_diff_morseTrajectoryPairs {p r : M} (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0)
-    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
+theorem closure_diff_morseTrajectoryPairs {p r : M}
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) {c₁ c₂ : ℝ}
     (hr₂ : f r < c₂) (h₂₁ : c₂ < c₁) (h₁p : c₁ < f p)
     (hgap : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∈ Ioo (f r) (f p) → f x ∈ Ioo c₂ c₁) :
     closure (hX.morseTrajectoryPairs p r c₁ c₂) \ hX.morseTrajectoryPairs p r c₁ c₂ =
       hX.morseBrokenTrajectoryPairs p r c₁ c₂ := by
-  rw [h.closure_morseTrajectoryPairs hf hp hr hind hr₂ h₂₁ h₁p hgap, union_sdiff_left,
+  rw [h.closure_morseTrajectoryPairs hf hind hr₂ h₂₁ h₁p hgap, union_sdiff_left,
     (hX.disjoint_morseTrajectoryPairs_morseBrokenTrajectoryPairs p r c₁ c₂).symm.sdiff_eq_left]
 
 end IsMorseSmale
