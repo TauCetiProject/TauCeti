@@ -60,6 +60,23 @@ theorem ContinuousWithinAt.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [No
 
 namespace MeasureTheory
 
+/-- Evaluate the stopped process restricted to the event that its random time is positive.
+No measurability or stopping-time assumption is needed. -/
+theorem stoppedProcess_indicator_pos_apply {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    [Zero E] {X : ι → Ω → E} (τ : Ω → WithTop ι) (t : ι) (ω : Ω) :
+    stoppedProcess (fun t ↦ {ω | ⊥ < τ ω}.indicator (X t)) τ t ω =
+      if ⊥ < τ ω then X (min (t : WithTop ι) (τ ω)).untopA ω else 0 := by
+  rw [stoppedProcess_indicator_comm]
+  simp only [Set.indicator_apply, Set.mem_ofPred_eq, stoppedProcess]
+
+/-- At the initial time, stopping leaves any process unchanged. -/
+@[simp]
+theorem stoppedProcess_bot {ι Ω E : Type*} [LinearOrder ι] [OrderBot ι]
+    (u : ι → Ω → E) (τ : Ω → WithTop ι) :
+    stoppedProcess u τ ⊥ = u ⊥ := by
+  ext ω
+  exact stoppedProcess_eq_of_le (by simp)
+
 variable {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι] [Zero E] [Preorder E]
   {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : ι → Ω → E} {s : Set Ω}
 
