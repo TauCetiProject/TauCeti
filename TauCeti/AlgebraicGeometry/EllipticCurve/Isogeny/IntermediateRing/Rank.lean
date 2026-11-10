@@ -179,19 +179,21 @@ a structure globally would be a diamond, since different isogenies induce differ
 Nothing here is spent on separability or on the coordinate rings being Dedekind. -/
 theorem finrank_intermediateRing_eq_degree (φ : Isogeny W₁ W₂)
     [Algebra W₂.CoordinateRing W₁.FunctionField]
-    [Algebra W₂.FunctionField W₁.FunctionField]
-    [IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField]
     [Algebra W₂.CoordinateRing φ.intermediateRing]
     [IsScalarTower W₂.CoordinateRing φ.intermediateRing W₁.FunctionField]
     (h : ∀ x, algebraMap W₂.CoordinateRing W₁.FunctionField x = φ.pullback x) :
     Module.finrank W₂.CoordinateRing φ.intermediateRing = φ.degree := by
+  -- the function-field algebra structure is local, as `IntermediateRing/Basic.lean` prescribes
+  let _ := φ.fieldPullback.toRingHom.toAlgebra
+  have : IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField :=
+    IsScalarTower.of_algebraMap_eq fun x ↦ by
+      rw [h, φ.fieldPullback.algebraMap_toAlgebra_apply, fieldPullback_algebraMap]
   rw [φ.degree_eq_finrank (φ.algebraMap_functionField_eq_fieldPullback h)]
   exact (IsFractionRing.finrank_eq W₂.CoordinateRing W₂.FunctionField φ.intermediateRing
     W₁.FunctionField).symm
 
 /-- **The intermediate ring is projective, hence locally free, over the Dedekind target coordinate
-ring.** Once the function-field algebra structures and scalar towers required by
-`finrank_intermediateRing_eq_degree` are also present, its rank is `φ.degree`. This is the form in
+ring.** By `finrank_intermediateRing_eq_degree` its rank is `φ.degree`. This is the form in
 which the roadmap's place-free fibre count is stated.
 
 The structure map is injective, because it factors the pullback of the isogeny and that is
@@ -236,8 +238,6 @@ Mathlib's `Ideal.sum_ramification_inertia_eq_finrank` takes the binder the same 
 same `Module.Finite`. -/
 theorem sum_ramificationIdx_mul_inertiaDeg_eq_degree (φ : Isogeny W₁ W₂)
     [Algebra W₂.CoordinateRing W₁.FunctionField]
-    [Algebra W₂.FunctionField W₁.FunctionField]
-    [IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField]
     [Algebra W₂.CoordinateRing φ.intermediateRing]
     [IsScalarTower W₂.CoordinateRing φ.intermediateRing W₁.FunctionField]
     [Module.Finite W₂.CoordinateRing φ.intermediateRing]
@@ -265,8 +265,6 @@ a nonsingular `W₁`, which makes the primes counted here points of `W₁`; none
 assumed. -/
 theorem ncard_primesOver_le_degree (φ : Isogeny W₁ W₂)
     [Algebra W₂.CoordinateRing W₁.FunctionField]
-    [Algebra W₂.FunctionField W₁.FunctionField]
-    [IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField]
     [Algebra W₂.CoordinateRing φ.intermediateRing]
     [IsScalarTower W₂.CoordinateRing φ.intermediateRing W₁.FunctionField]
     [Module.Finite W₂.CoordinateRing φ.intermediateRing]
