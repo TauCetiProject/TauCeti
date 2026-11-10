@@ -130,19 +130,21 @@ theorem isZero_homology_of_isCompleteFiltration {a m : ℤ}
       K.d m (m + 1) ((F a).arrow.f m u) = 0 := by
     rw [HomologicalComplex.Hom.comm_apply, hu, map_zero]
   have e₀ : a - ((0 : ℕ) : ℤ) = a := by simp
+  -- The image of the cycle `x` of `F_a` is a cycle of `K` lying in `F_a = F_{a-0}`.
+  have hx₀ : (⟨(F a).arrow.f m x, hι x hx⟩ : Z) ∈ G 0 :=
+    Submodule.mem_comap.2 (Subobject.range_arrow_f_hom_le (hF e₀.ge) m ⟨x, rfl⟩)
   obtain ⟨_, hy₀, hy⟩ := hc.surjOn (G := G)
     (fun z hz ↦ Subtype.ext <| hs z fun i ↦ Subobject.range_arrow_f_hom_le
-      (hF (show a - ((a - i).toNat : ℕ) ≤ i by lia)) m (hz (a - i).toNat))
+      (hF (show a - ((a - i).toNat : ℕ) ≤ i by lia)) m (Submodule.mem_comap.1 (hz (a - i).toNat)))
     f (fun k ↦ by
       rintro _ ⟨y, hy, rfl⟩
-      exact Subobject.d_mem_range_arrow_f_hom _ (m - 1) m hy)
+      exact Submodule.mem_comap.2 (Subobject.d_mem_range_arrow_f_hom _ (m - 1) m hy))
     (fun k z hz ↦ by
       have e : a - ((k + 1 : ℕ) : ℤ) + 1 = a - k := by lia
       obtain ⟨y, hy, hzy⟩ := exists_sub_d_mem_of_isZero_homology_cokernel F hF
-        (h (a - (k + 1 : ℕ)) (by lia)) (e ▸ hz) z.2
-      exact ⟨y, e ▸ hy, hzy⟩)
-    (show (⟨(F a).arrow.f m x, hι x hx⟩ : Z) ∈ G 0 from
-      Subobject.range_arrow_f_hom_le (hF e₀.ge) m ⟨x, rfl⟩)
+        (h (a - (k + 1 : ℕ)) (by lia)) (e ▸ Submodule.mem_comap.1 hz) z.2
+      exact ⟨y, e ▸ hy, Submodule.mem_comap.2 hzy⟩)
+    hx₀
   obtain ⟨y, rfl⟩ := Subobject.range_arrow_f_hom_le (hF e₀.le) (m - 1) hy₀
   refine ⟨y, (ModuleCat.mono_iff_injective ((F a).arrow.f m)).1 inferInstance ?_⟩
   have hy := congrArg Subtype.val hy
