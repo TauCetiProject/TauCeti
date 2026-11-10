@@ -87,13 +87,18 @@ theorem measurable_matrix_mul {l m n R : Type*} [Fintype m] [MeasurableSpace R]
 
 /-- The Gram matrix `X * Xᴴ` is measurable in `X`. -/
 @[fun_prop]
-theorem measurable_matrix_mul_conjTranspose {𝕜 : Type*} [RCLike 𝕜] [MeasurableSpace 𝕜]
-    [BorelSpace 𝕜] [MeasurableMul₂ 𝕜] [MeasurableAdd₂ 𝕜] {m n : Type*} [Fintype n] :
-    Measurable fun X : Matrix m n 𝕜 ↦ X * X.conjTranspose := by
+theorem measurable_matrix_mul_conjTranspose {R : Type*} [NonUnitalSemiring R] [Star R]
+    [TopologicalSpace R] [ContinuousStar R] [MeasurableSpace R] [BorelSpace R]
+    [MeasurableMul₂ R] [MeasurableAdd₂ R] {m n : Type*} [Fintype n] :
+    Measurable fun X : Matrix m n R ↦ X * X.conjTranspose := by
   refine Measurable.of_eval_matrix _ fun i j ↦ ?_
   simp only [Matrix.mul_apply, Matrix.conjTranspose_apply]
   exact Finset.measurable_sum _ fun k _ ↦
     measurable_id.eval_matrix.mul (continuous_star.measurable.comp measurable_id.eval_matrix)
+
+example {m n : Type*} [Fintype n] :
+    Measurable fun X : Matrix m n (ℝ × ℝ) ↦ X * X.conjTranspose :=
+  measurable_matrix_mul_conjTranspose
 
 /-- Square matrices inherit `MeasurableMul₂` from the measurability of matrix multiplication, which
 makes the generic `Measurable.mul` dot notation available for matrix-valued maps. -/
