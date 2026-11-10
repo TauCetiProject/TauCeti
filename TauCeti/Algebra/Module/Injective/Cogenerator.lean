@@ -29,6 +29,10 @@ of finite length, an injective map between modules of the same finite length bei
 * `TauCeti.length_linearMap_of_forall_isMaximal` and `TauCeti.bijective_applyₗ_of_forall_isMaximal`:
   if moreover `E` is injective, then `D` preserves length and biduality holds for modules of finite
   length.
+* `TauCeti.exists_apply_ne_zero_of_forall_isMaximal`: under the same hypotheses, `E` separates the
+  points of every module.
+* `TauCeti.bijective_of_injective_of_injective_flip`: a pairing into `E` that is non-degenerate in
+  both variables, one of which has finite length, identifies each side with the dual of the other.
 
 ## References
 
@@ -134,6 +138,36 @@ theorem bijective_applyₗ_of_forall_isMaximal {M : Type w} [AddCommGroup M] [Mo
     (M := M)
   refine ⟨hinj, surjective_of_injective_of_length_eq hinj (Module.length_ne_top_iff.mpr hM) ?_⟩
   rw [length_linearMap_of_forall_isMaximal hE, length_linearMap_of_forall_isMaximal hE]
+
+/-- **`E` separates points.** If `E` is injective and `Hom_R(R ⧸ 𝔪, E)` has length one for every
+maximal ideal `𝔪`, then every nonzero element of a module is detected by a linear map to `E`. -/
+theorem exists_apply_ne_zero_of_forall_isMaximal {M : Type w} [AddCommGroup M] [Module R M]
+    {m : M} (hm : m ≠ 0) : ∃ ψ : M →ₗ[R] E, ψ m ≠ 0 := by
+  by_contra! h
+  refine hm (injective_applyₗ_of_forall_isMaximal (nontrivial_linearMap_of_isMaximal hE) ?_)
+  ext ψ
+  simp [h ψ]
+
+/-- **A pairing that is non-degenerate in both variables is perfect** once one side has finite
+length. If `E` is injective and `Hom_R(R ⧸ 𝔪, E)` has length one for every maximal ideal `𝔪`, and
+`f : M → Hom_R(N, E)` and its flip `N → Hom_R(M, E)` are injective with `N` of finite length, then
+`M` has finite length and both maps are bijective. The length of `M` is at most that of `D(N)`,
+which is that of `N`, and symmetrically. -/
+theorem bijective_of_injective_of_injective_flip {M N : Type*} [AddCommGroup M] [Module R M]
+    [AddCommGroup N] [Module R N] {f : M →ₗ[R] N →ₗ[R] E} (hf : Function.Injective f)
+    (hf' : Function.Injective f.flip) (hN : IsFiniteLength R N) :
+    IsFiniteLength R M ∧ Function.Bijective f ∧ Function.Bijective f.flip := by
+  have hN' : Module.length R N ≠ ⊤ := Module.length_ne_top_iff.mpr hN
+  have hMN : Module.length R M = Module.length R N :=
+    le_antisymm
+      ((Module.length_le_of_injective f hf).trans
+        (length_linearMap_of_forall_isMaximal hE N).le)
+      ((Module.length_le_of_injective f.flip hf').trans
+        (length_linearMap_of_forall_isMaximal hE M).le)
+  have hM' : Module.length R M ≠ ⊤ := hMN ▸ hN'
+  refine ⟨Module.length_ne_top_iff.mp hM', ⟨hf, surjective_of_injective_of_length_eq hf hM' ?_⟩,
+    ⟨hf', surjective_of_injective_of_length_eq hf' hN' ?_⟩⟩ <;>
+    rw [length_linearMap_of_forall_isMaximal hE, hMN]
 
 end Cogenerator
 
