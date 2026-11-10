@@ -32,7 +32,7 @@ same equivalence `sigmaAntidiagonalEquivProd`.
 
 public section
 
-variable {α : Type*} [AddCommMonoid α] [TopologicalSpace α] [ContinuousAdd α] [RegularSpace α]
+variable {α : Type*} [AddCommMonoid α] [TopologicalSpace α]
 
 /-- **Regrouping a double series by the product of the indices.** If the family
 `(c, m) ↦ f c m` over pairs of positive integers sums to `a`, then so does the series over
@@ -40,10 +40,19 @@ variable {α : Type*} [AddCommMonoid α] [TopologicalSpace α] [ContinuousAdd α
 theorem HasSum.sum_divisorsAntidiagonal {f : ℕ → ℕ → α} {a : α}
     (hf : HasSum (fun p : ℕ+ × ℕ+ ↦ f p.1 p.2) a) :
     HasSum (fun n : ℕ+ ↦ ∑ x ∈ (n : ℕ).divisorsAntidiagonal, f x.1 x.2) a := by
-  refine (sigmaAntidiagonalEquivProd.hasSum_iff.mpr hf).sigma fun n ↦ ?_
-  have h := hasSum_fintype fun x : (n : ℕ).divisorsAntidiagonal ↦ f x.1.1 x.1.2
-  rw [Finset.univ_eq_attach, Finset.sum_attach _ fun x : ℕ × ℕ ↦ f x.1 x.2] at h
-  simpa [sigmaAntidiagonalEquivProd, divisorsAntidiagonalFactors] using h
+  have h := sigmaAntidiagonalEquivProd.hasSum_iff.mpr hf
+  -- the fibres are finite, so the partial sums over finite sets of `n` are partial sums of `h`
+  have hT : Filter.Tendsto (fun s : Finset ℕ+ ↦
+      s.sigma fun n ↦ (Finset.univ : Finset (n : ℕ).divisorsAntidiagonal)) Filter.atTop
+      Filter.atTop := by
+    refine Filter.tendsto_atTop_atTop.2 fun T ↦ ⟨T.image Sigma.fst, fun s hs x hx ↦ ?_⟩
+    exact Finset.mem_sigma.2 ⟨hs (Finset.mem_image_of_mem _ hx), Finset.mem_univ _⟩
+  refine (h.comp hT).congr fun s ↦ ?_
+  simp only [Function.comp_apply, Finset.sum_sigma]
+  refine Finset.sum_congr rfl fun n _ ↦ ?_
+  rw [Finset.univ_eq_attach]
+  simpa [sigmaAntidiagonalEquivProd, divisorsAntidiagonalFactors] using
+    Finset.sum_attach _ fun x : ℕ × ℕ ↦ f x.1 x.2
 
 namespace TauCeti
 
