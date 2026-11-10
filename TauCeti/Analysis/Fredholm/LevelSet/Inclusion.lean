@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 public import TauCeti.Analysis.Fredholm.LevelSet.Manifold
+import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 /-!
 # The inclusion of a regular level set

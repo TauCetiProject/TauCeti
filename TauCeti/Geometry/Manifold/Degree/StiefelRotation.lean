@@ -48,8 +48,6 @@ vanishing of its footnote 16.
 * `TauCeti.mvfderiv_coe_fst_stiefelRotationFamily_apply`,
   `TauCeti.mvfderiv_coe_snd_stiefelRotationFamily_apply`: the derivative, read in `E`.
 * `TauCeti.isInvertible_mfderiv_stiefelRotationFamily`: it is invertible where `Im z ≠ 0`.
-* `TauCeti.stiefelRotationInvolution`: the involution `((u, v), z) ↦ ((u, -v), conj z)`, under
-  which the map is invariant.
 * `TauCeti.isRegularValue_stiefelRotationFamily`: points `(u, q)` with `q ≠ ±u` are regular values.
 * `TauCeti.orientationSign_stiefelRotationInvolution`: the involution has orientation sign `(-1)ⁿ`.
 * `TauCeti.degreeAtRegularValue_stiefelRotationFamily`: the degree is `±(1 + (-1)ⁿ)` there.
@@ -241,58 +239,6 @@ theorem isInvertible_mfderiv_stiefelRotationFamily {x : stiefel E 2 × sphere (0
     ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).1 hinj⟩
       ).toContinuousLinearEquiv, ContinuousLinearMap.ext fun _ ↦ rfl⟩
 
-/-! ### The involution exchanging the two preimages -/
-
-/-- The involution `((u, v), z) ↦ ((u, -v), conj z)` of `T¹Sⁿ⁺¹ × S¹`, under which the Stiefel
-rotation family is invariant (`TauCeti.stiefelRotationFamily_stiefelRotationInvolution`). -/
-def stiefelRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
-    stiefel E 2 × sphere (0 : ℂ) 1 :=
-  (stiefelTwoReflection x.1, Complex.conjSphere x.2)
-
-omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = n + 1 + 1)] in
-@[simp]
-theorem fst_stiefelRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
-    (stiefelRotationInvolution x).1 = stiefelTwoReflection x.1 :=
-  (rfl)
-
-omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = n + 1 + 1)] in
-@[simp]
-theorem coe_snd_stiefelRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
-    ((stiefelRotationInvolution x).2 : ℂ) = (starRingEnd ℂ) (x.2 : ℂ) :=
-  Complex.coe_conjSphere x.2
-
-omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = n + 1 + 1)] in
-/-- The map `((u, v), z) ↦ ((u, -v), conj z)` is an involution. -/
-@[simp]
-theorem stiefelRotationInvolution_stiefelRotationInvolution
-    (x : stiefel E 2 × sphere (0 : ℂ) 1) :
-    stiefelRotationInvolution (stiefelRotationInvolution x) = x :=
-  Prod.ext (stiefelTwoReflection_stiefelTwoReflection x.1) (Subtype.ext (by simp))
-
-omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = n + 1 + 1)] in
-@[simp]
-theorem stiefelRotationFamily_stiefelRotationInvolution (x : stiefel E 2 × sphere (0 : ℂ) 1) :
-    stiefelRotationFamily (stiefelRotationInvolution x) = stiefelRotationFamily x := by
-  refine Prod.ext (Subtype.ext ?_) (Subtype.ext ?_)
-  · simp [stiefelRotationInvolution]
-  · simp [stiefelRotationInvolution]
-
-omit [FiniteDimensional ℝ E] [Fact (finrank ℝ E = n + 1 + 1)] in
-/-- Two points of `T¹Sⁿ⁺¹ × S¹`, one of them with `Im z ≠ 0`, have the same image under the
-Stiefel rotation family exactly when they are equal or exchanged by the involution
-`((u, v), z) ↦ ((u, -v), conj z)`. -/
-theorem stiefelRotationFamily_eq_iff_eq_or_eq_stiefelRotationInvolution
-    {x y : stiefel E 2 × sphere (0 : ℂ) 1} (hx : (x.2 : ℂ).im ≠ 0) :
-    stiefelRotationFamily y = stiefelRotationFamily x ↔
-      y = x ∨ y = stiefelRotationInvolution x := by
-  rw [stiefelRotationFamily_eq_stiefelRotationFamily_iff hx]
-  refine or_congr_right ⟨fun ⟨h₀, h₁, hz⟩ ↦ Prod.ext (Subtype.ext (funext fun i ↦ ?_))
-    (Subtype.ext (by simpa using hz)), fun h ↦ ?_⟩
-  · fin_cases i
-    exacts [by simpa using h₀, by simpa using h₁]
-  · subst h
-    simp [stiefelRotationInvolution]
-
 /-- Every point `(u, q)` of `Sⁿ⁺¹ × Sⁿ⁺¹` with `q ≠ ±u` is a regular value of the Stiefel
 rotation family. -/
 theorem isRegularValue_stiefelRotationFamily {y : sphere (0 : E) 1 × sphere (0 : E) 1}
@@ -305,12 +251,6 @@ theorem isRegularValue_stiefelRotationFamily {y : sphere (0 : E) 1 × sphere (0 
     (im_ne_zero_of_stiefelRotationFamily_eq hy hy' hx)).surjective
 
 /-! ### Orientation signs -/
-
-/-- The involution `((u, v), z) ↦ ((u, -v), conj z)` is smooth. -/
-theorem contMDiff_stiefelRotationInvolution {r : ℕ∞ω} :
-    ContMDiff ((𝓢).prod (𝓡 1)) ((𝓢).prod (𝓡 1)) r (stiefelRotationInvolution (E := E)) :=
-  (contMDiff_stiefelTwoReflection.comp contMDiff_fst).prodMk
-    (Complex.contMDiff_conjSphere.comp contMDiff_snd)
 
 /-- The orientation sign of the involution `((u, v), z) ↦ ((u, -v), conj z)` is `(-1)ⁿ`: the
 frame reflection has sign `(-1)ⁿ⁺¹` and conjugation reverses `S¹`. -/
