@@ -58,7 +58,9 @@ class Throughput(unittest.TestCase):
 
     def test_retained_statuses_recover_even_if_the_build_workflow_succeeded(self):
         retry = workflow('retry-ci-status.yml')['jobs']['publish']
-        self.assertIn('["success","failure"]', retry['if'])
+        self.assertIn("workflow_run.conclusion == 'failure'", retry['if'])
+        self.assertIn("workflow_run.conclusion == 'success'", retry['if'])
+        self.assertIn("startsWith(github.event.workflow_run.display_title, 'bors branch=')", retry['if'])
         discover = next(s for s in retry['steps'] if s.get('id') == 'intents')
         self.assertIn('ci-status-intents-sandbox-', discover['run'])
         self.assertIn("present=", discover['run'])
