@@ -81,19 +81,11 @@ map with a `W^{1,q}_loc` map with finite-dimensional values is locally `L^q`. -/
 theorem MemLpLoc.bilin_of_memWkpLoc (B : F →L[ℝ] G →L[ℝ] H) (hp : 2 < p) (hqp : q ≤ p)
     [Fact (1 ≤ (q : ℝ≥0∞))] {f : ℂ → F} {g : ℂ → G} (hf : MemLpLoc p Ω f)
     (hg : MemWkpLoc q Ω 1 g) : MemLpLoc q Ω (fun z => B (f z) (g z)) := by
-  refine memLpLoc_iff.2 fun K hKΩ hK => ?_
-  obtain ⟨W, hWo, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
-  obtain ⟨Dg, hDg, hDq⟩ := hg.exists_weakFDeriv_of_isOpen
-  obtain ⟨C, hC⟩ := W1p.exists_eLpNorm_bilin_le (μ := volume) (Ω := ⟨W, hWo⟩)
-    (F := F) (G := G) (H := H) (by simpa using hp) hqp hK hKW
-  have hgW := hg.memLpLoc.memLp_of_closure_subset hWc hWΩ
-  have hDW := (memWkpLoc_zero_iff.1 hDq).memLp_of_closure_subset hWc hWΩ
-  have hfK := memLpLoc_iff.1 hf K hKΩ hK
-  exact (hC B f g Dg hfK.aestronglyMeasurable (hDg.mono (subset_closure.trans hWΩ)) hgW
-    hDW).trans_lt
-    (ENNReal.mul_lt_top (ENNReal.mul_lt_top (ENNReal.mul_lt_top ENNReal.coe_lt_top
-      enorm_lt_top) hfK.eLpNorm_lt_top)
-      (ENNReal.add_lt_top.2 ⟨hgW.eLpNorm_lt_top, hDW.eLpNorm_lt_top⟩))
+  let _ := ENNReal.HolderTriple.of_le (p := (p : ℝ≥0∞)) (q := q) (by exact_mod_cast hqp)
+  have hgr : MemLpLoc ((q : ℝ≥0∞)⁻¹ - (p : ℝ≥0∞)⁻¹)⁻¹ Ω g :=
+    hg.memLpLoc_of_holderTriple hp hqp
+  exact memLpLoc_iff.2 fun K hKΩ hK =>
+    B.memLp_of_bilin q (memLpLoc_iff.1 hf K hKΩ hK) (memLpLoc_iff.1 hgr K hKΩ hK)
 
 /-- **The weak Leibniz rule for order-one mixed products.** For `p > 2` and `1 < q ≤ p`, let
 `f ∈ L^{q'}_loc` have weak derivative `Df ∈ Lᵖ_loc`, where `q'` is the conjugate exponent of `q`,
