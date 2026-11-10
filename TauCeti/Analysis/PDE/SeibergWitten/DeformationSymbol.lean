@@ -67,8 +67,8 @@ and `J e₂ = e₃` as a witness that the orientation is the complex orientation
 * `TauCeti.SeibergWitten.two_inv_smul_sub_deformationComplexStructure_deformationSymbol`: the
   complex-linear part of the symbol is the symbol, `(σ_ξ a - J′ (σ_ξ (J a))) / 2 = σ_ξ a`.
 * `TauCeti.SeibergWitten.deformationSymbol_toLinearMap_self`,
-  `TauCeti.SeibergWitten.deformationSymbol_apply_two`,
-  `TauCeti.SeibergWitten.deformationSymbol_apply_three`: the frame calculation
+  `TauCeti.SeibergWitten.deformationSymbol_zero_two`,
+  `TauCeti.SeibergWitten.deformationSymbol_zero_three`: the frame calculation
   `J e₀ ↦ (0, ω_u)`, `e₂ ↦ (0, ρ₁)`, `e₃ ↦ (0, ρ₂)` at `ξ = e₀`.
 * `TauCeti.SeibergWitten.deformationComplexStructure_one_zero`,
   `TauCeti.SeibergWitten.deformationComplexStructure_zero_smul_sub`: `J′ 1 = ω_u` and `J′ ρ₁ = ρ₂`.
@@ -225,7 +225,7 @@ include he
 
 /-- At `ξ = e₀` the symbol sends `e₂` to `(0, ρ₁)`, `ρ₁ = (√2 / 2) (e₀ ∧ e₂ - e₁ ∧ e₃)`, since
 `⋆(e₀ ∧ e₂) = -(e₁ ∧ e₃)` in a positively oriented orthonormal basis. -/
-theorem deformationSymbol_apply_two :
+theorem deformationSymbol_zero_two :
     deformationSymbol o hkl (e 0) (e 2) =
       (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 2] - ιMulti ℝ 2 ![e 1, e 3])) := by
   refine Prod.ext ?_ ?_
@@ -234,7 +234,7 @@ theorem deformationSymbol_apply_two :
 
 /-- At `ξ = e₀` the symbol sends `e₃` to `(0, ρ₂)`, `ρ₂ = (√2 / 2) (e₀ ∧ e₃ + e₁ ∧ e₂)`, since
 `⋆(e₀ ∧ e₃) = e₁ ∧ e₂` in a positively oriented orthonormal basis. -/
-theorem deformationSymbol_apply_three :
+theorem deformationSymbol_zero_three :
     deformationSymbol o hkl (e 0) (e 3) =
       (0, (√2 / 2) • (ιMulti ℝ 2 ![e 0, e 3] + ιMulti ℝ 2 ![e 1, e 2])) := by
   refine Prod.ext ?_ ?_
