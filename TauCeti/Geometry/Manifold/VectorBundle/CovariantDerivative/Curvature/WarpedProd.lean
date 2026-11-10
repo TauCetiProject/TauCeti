@@ -24,10 +24,13 @@ The Hessian and the horizontal norm are those of the base metric.
 
 These identities use the installed warped metric, characterized by
 `TauCeti.Manifold.IsWarpedProduct`, and the existing Levi-Civita connection formula.
-They hold at each point where the warping function is nonzero, without a sign assumption.
+They hold at every point, without a sign or nonvanishing assumption on the warping function:
+where it vanishes the positive definite metric leaves no vertical vectors, so the divisions by it
+only multiply zero.
 
 The tensor identity allows zero vectors and zero-dimensional factors. The sectional formula
-requires nonzero horizontal and vertical vectors, so that they span a genuine tangent plane.
+requires a nonzero vertical vector; for a zero horizontal vector both sides vanish by the
+convention for division by zero.
 
 ## References
 
@@ -134,13 +137,17 @@ variable [T2Space M] [T2Space N]
 and a vertical vector `V`. The Hessian is computed on the base. -/
 theorem IsWarpedProduct.tangentSpaceProdEquiv_curvatureTensor_horizontal_vertical_horizontal
     (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (p : M × N) (hf₀ : f p.1 ≠ 0) (u w : TangentSpace I p.1) (v : TangentSpace J p.2) :
+    (p : M × N) (u w : TangentSpace I p.1) (v : TangentSpace J p.2) :
     tangentSpaceProdEquiv p
         ((leviCivitaConnection (I.prod J) (M × N)).curvatureTensor p
           ((tangentSpaceProdEquiv p).symm (u, 0))
           ((tangentSpaceProdEquiv p).symm (0, v))
           ((tangentSpaceProdEquiv p).symm (w, 0))) =
       (0, (hessian I f p.1 u w / f p.1) • v) := by
+  -- Where the warping function vanishes there are no vertical vectors.
+  rcases eq_or_ne (f p.1) 0 with hf₀ | hf₀
+  · obtain rfl := h.eq_zero_of_warping_eq_zero hf₀ v
+    simp only [Prod.mk_zero_zero, map_zero, LinearMap.zero_apply, smul_zero]
   obtain ⟨X, hX, hXp⟩ := exists_contMDiff_section_eq I E ∞ u
   obtain ⟨Y, hY, hYp⟩ := exists_contMDiff_section_eq I E ∞ w
   obtain ⟨V, hV, hVp⟩ := exists_contMDiff_section_eq J F ∞ v
@@ -164,33 +171,43 @@ theorem IsWarpedProduct.tangentSpaceProdEquiv_curvatureTensor_horizontal_vertica
 paired with the vertical metric: `⟨R(X,V)W,Y⟩ = -f Hess f(X,Y) ⟨V,W⟩_N`. -/
 theorem IsWarpedProduct.inner_curvatureTensor_horizontal_vertical_vertical_horizontal
     (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (p : M × N) (hf₀ : f p.1 ≠ 0) (u w : TangentSpace I p.1) (v z : TangentSpace J p.2) :
+    (p : M × N) (u w : TangentSpace I p.1) (v z : TangentSpace J p.2) :
     ⟪(leviCivitaConnection (I.prod J) (M × N)).curvatureTensor p
         ((tangentSpaceProdEquiv p).symm (u, 0))
         ((tangentSpaceProdEquiv p).symm (0, v))
         ((tangentSpaceProdEquiv p).symm (0, z)),
       (tangentSpaceProdEquiv p).symm (w, 0)⟫_ℝ =
       -f p.1 * hessian I f p.1 u w * ⟪v, z⟫_ℝ := by
+  -- Where the warping function vanishes there are no vertical vectors.
+  rcases eq_or_ne (f p.1) 0 with hf₀ | hf₀
+  · obtain rfl := h.eq_zero_of_warping_eq_zero hf₀ v
+    simp only [Prod.mk_zero_zero, map_zero, LinearMap.zero_apply, inner_zero_left, mul_zero]
   rw [(isMetricCompatible_leviCivitaConnection (I.prod J)).inner_curvatureTensor_eq_neg,
     h.inner_eq, ContinuousLinearEquiv.apply_symm_apply,
-    h.tangentSpaceProdEquiv_curvatureTensor_horizontal_vertical_horizontal hf p hf₀]
+    h.tangentSpaceProdEquiv_curvatureTensor_horizontal_vertical_horizontal hf p]
   simp only [inner_zero_left, zero_add, inner_smul_right]
   rw [real_inner_comm z v]
   field_simp [hf₀]
 
 /-- A mixed plane in a warped product has sectional curvature
-`-Hess f(X,X) / (f |X|²)`. Both spanning vectors are nonzero; no normalization is required. -/
+`-Hess f(X,X) / (f |X|²)`. The vertical vector is nonzero; no normalization is required,
+and both sides vanish for a zero horizontal vector. -/
 theorem IsWarpedProduct.sectionalCurvature_horizontal_vertical
     (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (p : M × N) (hf₀ : f p.1 ≠ 0) (u : TangentSpace I p.1) (v : TangentSpace J p.2)
-    (hu : u ≠ 0) (hv : v ≠ 0) :
+    (p : M × N) (u : TangentSpace I p.1) (v : TangentSpace J p.2) (hv : v ≠ 0) :
     (leviCivitaConnection (I.prod J) (M × N)).sectionalCurvature
         (isMetricCompatible_leviCivitaConnection (I.prod J)) p
         ((tangentSpaceProdEquiv p).symm (u, 0))
         ((tangentSpaceProdEquiv p).symm (0, v)) =
       -hessian I f p.1 u u / (f p.1 * ‖u‖ ^ 2) := by
+  -- A nonzero vertical vector forces the warping function not to vanish.
+  have hf₀ : f p.1 ≠ 0 := fun h₀ ↦ hv (h.eq_zero_of_warping_eq_zero h₀ v)
+  rcases eq_or_ne u 0 with rfl | hu
+  · rw [sectionalCurvature_apply]
+    simp only [Prod.mk_zero_zero, map_zero, inner_zero_right, zero_div]
+    simp
   rw [sectionalCurvature_apply,
-    h.inner_curvatureTensor_horizontal_vertical_vertical_horizontal hf p hf₀,
+    h.inner_curvatureTensor_horizontal_vertical_vertical_horizontal hf p,
     Matrix.real_det_gram_fin_two]
   simp only [h.inner_eq, ContinuousLinearEquiv.apply_symm_apply, inner_zero_left,
     inner_zero_right, zero_add, add_zero, mul_zero, real_inner_self_eq_norm_sq]

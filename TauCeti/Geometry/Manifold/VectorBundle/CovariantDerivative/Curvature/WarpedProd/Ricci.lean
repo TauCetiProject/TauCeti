@@ -56,7 +56,7 @@ variable
 `Ric_M - (dim N / f) Hess f`, evaluated on unscaled base vectors. -/
 theorem IsWarpedProduct.ricciTensor_horizontal
     (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (p : M × N) (hp : f p.1 ≠ 0) (u v : TangentSpace I p.1) :
+    (p : M × N) (u v : TangentSpace I p.1) :
     (leviCivitaConnection (I.prod J) (M × N)).ricciTensor p
         ((tangentSpaceProdEquiv p).symm (u, 0))
         ((tangentSpaceProdEquiv p).symm (v, 0)) =
@@ -72,7 +72,7 @@ theorem IsWarpedProduct.ricciTensor_horizontal
         ((tangentSpaceProdEquiv p).symm (v, 0))) =
         (0, -(hessian I f p.1 u v / f p.1) • w) := by
     rw [curvatureTensor_antisymm, LinearMap.neg_apply, map_neg,
-      h.tangentSpaceProdEquiv_curvatureTensor_horizontal_vertical_horizontal hf p hp]
+      h.tangentSpaceProdEquiv_curvatureTensor_horizontal_vertical_horizontal hf p]
     simp
   simp only [hv, inner_smul_right, (stdOrthonormalBasis ℝ (TangentSpace J p.2)).inner_eq_one,
     mul_one, Finset.sum_const, Finset.card_univ, Fintype.card_fin,
@@ -118,7 +118,7 @@ theorem IsWarpedProduct.ricciTensor_horizontal_vertical
 The Laplace–Beltrami operator on the right has sign `Δ = div grad`. -/
 theorem IsWarpedProduct.ricciTensor_vertical
     (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (p : M × N) (hp : f p.1 ≠ 0) (u v : TangentSpace J p.2) :
+    (p : M × N) (u v : TangentSpace J p.2) :
     (leviCivitaConnection (I.prod J) (M × N)).ricciTensor p
         ((tangentSpaceProdEquiv p).symm (0, u))
         ((tangentSpaceProdEquiv p).symm (0, v)) =
@@ -132,7 +132,7 @@ theorem IsWarpedProduct.ricciTensor_vertical
       inner ℝ w (e ((leviCivitaConnection (I.prod J) (M × N)).curvatureTensor p
         (e.symm (w, 0)) (e.symm (0, u)) (e.symm (0, v)))).1 =
         -f p.1 * hessian I f p.1 w w * inner ℝ u v := by
-    have hc := h.inner_curvatureTensor_horizontal_vertical_vertical_horizontal hf p hp w w u v
+    have hc := h.inner_curvatureTensor_horizontal_vertical_vertical_horizontal hf p w w u v
     rw [h.inner_eq] at hc
     simp only [ContinuousLinearEquiv.apply_symm_apply,
       inner_zero_right, mul_zero, add_zero] at hc
@@ -187,7 +187,7 @@ theorem IsWarpedProduct.ricciTensor_eq
     simp
   conv_lhs => rw [hsplit u, hsplit v]
   simp only [map_add, LinearMap.add_apply, e,
-    h.ricciTensor_horizontal hf p hp, h.ricciTensor_vertical hf p hp,
+    h.ricciTensor_horizontal hf p, h.ricciTensor_vertical hf p,
     h.ricciTensor_horizontal_vertical hf p hp, h.ricciTensor_vertical_horizontal hf p hp,
     add_zero, zero_add]
   ring
