@@ -208,10 +208,8 @@ theorem isMulDistinguished_iff_gaussNorm_eq (hc : 0 < c) {p : Polynomial R}
       have h0 : (p : PowerSeries R).gaussNorm norm c = 0 := by
         simp [PowerSeries.gaussNorm_eq, Subsingleton.elim _ (0 : R)]
       exact hcs.ne (h0.symm.trans h)
-    have hpos : 0 < ‖(1 : R)‖ := norm_pos_iff.2 one_ne_zero
-    have hmul : ‖(1 : R)‖ ≤ ‖(1 : R)‖ * ‖(1 : R)‖ := by simpa using norm_mul_le (1 : R) 1
     have : NormOneClass R :=
-      ⟨le_antisymm ((mul_le_iff_le_one_left hcs).1 hle) (by nlinarith)⟩
+      ⟨le_antisymm ((mul_le_iff_le_one_left hcs).1 hle) (one_le_norm_one R)⟩
     refine ⟨isDistinguished_of_isMonicOfDegree hc hp fun k _ ↦ ?_,
       by rw [hs]; exact isNormMulUnit_one⟩
     rw [← h, ← Polynomial.coeff_coe]
