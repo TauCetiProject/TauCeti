@@ -272,12 +272,13 @@ theorem ncard_mul_eq_of_isBlock (e : orbit t.monodromyGroup B ≃ Fin m) : B.nca
   have h := @IsBlock.ncard_block_mul_ncard_orbit_eq _ _ _ _ ht _ hB hBne
   rwa [← Nat.card_coe_set_eq (orbit _ B), Nat.card_congr e, Nat.card_fin, Nat.card_fin] at h
 
-include ht hB hBne in
-/-- A nonempty block of half the sheets which neither `t.σ0` nor `t.σ1` maps to itself has two
-translates, and the quotient by them is the double cover `(0 1)`, `(0 1)`, `1`. -/
+include ht hB in
+/-- A block of half the sheets which neither `t.σ0` nor `t.σ1` maps to itself has two translates,
+and the quotient by them is the double cover `(0 1)`, `(0 1)`, `1`. -/
 theorem exists_blockQuotient_eq_ofTwo_swap (hcard : B.ncard * 2 = n) (h0 : t.σ0 '' B ≠ B)
     (h1 : t.σ1 '' B ≠ B) :
     ∃ e : orbit t.monodromyGroup B ≃ Fin 2, t.blockQuotient B e = ofTwo (swap 0 1) (swap 0 1) := by
+  have hBne : B.Nonempty := Set.nonempty_iff_ne_empty.2 fun h ↦ h0 (by simp [h])
   have h := ncard_mul_eq_of_isBlock ht hB hBne (Finite.equivFin (orbit t.monodromyGroup B))
   exact ⟨Finite.equivFinOfCardEq (Nat.eq_of_mul_eq_mul_left
     ((Set.ncard_pos B.toFinite).mpr hBne) (h.trans hcard.symm)),
@@ -595,11 +596,23 @@ theorem eulerChar_le_ncard_mul_eulerChar_blockQuotient :
   push_cast at h0 h1 h2 ⊢
   linarith
 
-include hB hBne in
+include hB in
 /-- **Passing to a block quotient does not increase the genus.** The quotient of a connected
-triple by a nonempty block has genus at most that of the triple. -/
+triple by a block has genus at most that of the triple. -/
 theorem genus_blockQuotient_le (htc : t.IsConnected) :
     (t.blockQuotient B e).genus ≤ t.genus := by
+  rcases B.eq_empty_or_nonempty with rfl | hBne
+  · -- the only translate of the empty set is itself, so the quotient has degree one
+    have hsub : Subsingleton (orbit t.monodromyGroup (∅ : Set (Fin n))) :=
+      ⟨fun x y ↦ Subtype.ext (by
+        obtain ⟨g, hg⟩ := mem_orbit_iff.1 x.2
+        obtain ⟨g', hg'⟩ := mem_orbit_iff.1 y.2
+        rw [← hg, ← hg', Set.smul_set_empty, Set.smul_set_empty])⟩
+    have hm : Subsingleton (Fin m) := e.symm.subsingleton
+    rw [Subsingleton.elim (t.blockQuotient ∅ e) 1]
+    have hm1 : m = 1 :=
+      le_antisymm (Fin.subsingleton_iff_le_one.1 hm) (Fin.pos (e ⟨∅, mem_orbit_self _⟩))
+    simp [genus_def, eulerChar_one, hm1]
   have hχ := eulerChar_le_ncard_mul_eulerChar_blockQuotient e htc.isPretransitive hB hBne
   rw [← htc.two_sub_two_mul_genus,
     ← (t.isConnected_blockQuotient B e).two_sub_two_mul_genus] at hχ
