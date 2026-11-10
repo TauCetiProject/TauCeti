@@ -117,14 +117,8 @@ theorem ofContMDiffSection_injective : Function.Injective (ofContMDiffSection A 
   have hcont : ContinuousOn (A.coord i s) (A.image i) :=
     ((A.contDiffOn_coord s.contMDiff i).continuousOn).mono
       ((A.image_subset_chart_image_closure_dom i).trans hO)
-  -- The chart data of the zero tuple vanish, so `A.coord i s` vanishes almost everywhere.
-  have h0 : A.sectionChartData.chartValueL μ p k i
-      (ofContMDiffSection A μ p k s : A.sectionChartData.SobolevData μ p k) = 0 := by
-    rw [hs, ZeroMemClass.coe_zero, map_zero]
-  have hz := Lp.coeFn_zero F p (μ.restrict (A.sectionChartData.image i))
-  rw [← h0] at hz
-  have hae : A.coord i s =ᵐ[μ.restrict (A.image i)] fun _ ↦ 0 :=
-    (A.sectionChartData.chartValueL_ofComponents_ae μ p k _ _ s i).symm.trans hz
+  have hae : A.coord i s =ᵐ[μ.restrict (A.image i)] 0 :=
+    A.sectionChartData.coord_ae_eq_zero_of_ofComponents_eq_zero μ p k _ _ hs i
   have hzero := Measure.eqOn_open_of_ae_eq hae (A.image i).isOpen hcont continuousOn_const
     (A.mem_image.2 ⟨x, hx, rfl⟩)
   rw [A.coord_chart s hx] at hzero

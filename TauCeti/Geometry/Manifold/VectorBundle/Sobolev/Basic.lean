@@ -7,7 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas
+public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas.Basic
+import Mathlib.MeasureTheory.Function.Jacobian
 
 /-!
 # Sobolev spaces of sections of a vector bundle
@@ -39,7 +40,8 @@ the submodule is closed (`TauCeti.SectionChartData.isClosed_sobolevSections`) an
 
 A finite bundle atlas `A : TauCeti.FiniteBundleAtlas E M F V` gives chart data
 `A.sectionChartData` on the chart images `A.image i`, whose chart transitions, being `C¹`
-diffeomorphisms between open sets, carry null sets to null sets. The space `W^{k,p}(V)` is
+diffeomorphisms between open sets, carry null sets to null sets
+(`TauCeti.SectionChartData.aeTransition_of_differentiableOn`). The space `W^{k,p}(V)` is
 `TauCeti.SobolevSection A μ p k`; the analogue for bases with boundary is built from the same
 construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered`.
 
@@ -60,6 +62,8 @@ construction in `TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Bordered`.
 
 * `TauCeti.SectionChartData.mem_sobolevSections_iff_forall_compatible`: a tuple consists of the
   components of a section exactly when its chart data satisfy the cocycle relations.
+* `TauCeti.SectionChartData.aeTransition_of_differentiableOn`: differentiable chart transitions
+  preserve null sets.
 * `TauCeti.SectionChartData.isClosed_sobolevSections`,
   `TauCeti.SobolevSection.instCompleteSpace`: completeness.
 * `TauCeti.SectionChartData.norm_le_sum_of_norm_le`: the norm is at most the sum of the component
@@ -125,11 +129,42 @@ theorem coord_zero (i : Fin C.n) {y : E} (hy : y ∈ C.image i) : C.coord i 0 y 
 /-- Chart transitions carry null sets to null sets: a property holding almost everywhere on the
 image of chart `i` holds, after composition with the chart transition, almost everywhere on the
 overlap of charts `i` and `i'`. -/
-@[expose] def AETransition [MeasurableSpace E] (μ : Measure E) : Prop :=
+def AETransition [MeasurableSpace E] (μ : Measure E) : Prop :=
   ∀ ⦃i i' : Fin C.n⦄ ⦃P : E → Prop⦄, (∀ᵐ y ∂μ.restrict (C.image i), P y) →
     ∀ᵐ y ∂μ.restrict (C.overlap i i'), P (C.transition i i' y)
 
+theorem aeTransition_iff [MeasurableSpace E] {μ : Measure E} :
+    C.AETransition μ ↔ ∀ ⦃i i' : Fin C.n⦄ ⦃P : E → Prop⦄,
+      (∀ᵐ y ∂μ.restrict (C.image i), P y) →
+        ∀ᵐ y ∂μ.restrict (C.overlap i i'), P (C.transition i i' y) :=
+  Iff.rfl
+
 end Coordinates
+
+section Transition
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+  {S : Type*} [AddCommGroup S] [Module ℝ S] (C : SectionChartData E F S)
+
+/-- **Chart transitions preserve null sets.** Chart transitions that are differentiable on the
+overlaps and inverse to each other carry null sets of an additive Haar measure to null sets. -/
+theorem aeTransition_of_differentiableOn {μ : Measure E} [μ.IsAddHaarMeasure]
+    (hd : ∀ i i', DifferentiableOn ℝ (C.transition i i') (C.overlap i i'))
+    (hmaps : ∀ i i', MapsTo (C.transition i i') (C.overlap i i') (C.overlap i' i))
+    (hinv : ∀ i i', ∀ y ∈ C.overlap i i', C.transition i' i (C.transition i i' y) = y) :
+    C.AETransition μ := by
+  refine C.aeTransition_iff.2 fun i i' P h ↦ ?_
+  have hN : μ ({z | ¬P z} ∩ C.overlap i' i) = 0 := by
+    rw [ae_iff, Measure.restrict_apply' (C.image i).isOpen.measurableSet] at h
+    exact measure_mono_null (inter_subset_inter_right _ (C.overlap_subset_image i' i)) h
+  have himage := addHaar_image_eq_zero_of_differentiableOn_of_addHaar_eq_zero μ
+    ((hd i' i).mono inter_subset_right) hN
+  rw [ae_iff, Measure.restrict_apply' (C.isOpen_overlap i i').measurableSet]
+  refine measure_mono_null (fun y hy ↦ ?_) himage
+  exact ⟨C.transition i i' y, ⟨hy.1, hmaps i i' hy.2⟩, hinv i i' y hy.2⟩
+
+end Transition
 
 section Sobolev
 
@@ -185,6 +220,16 @@ theorem chartValueL_ae_eq_coord {w : C.SobolevData μ p k} {s : S} {i : Fin C.n}
   simp_rw [hj, Basis.coord_apply]
   exact (finBasis ℝ F).sum_repr _
 
+/-- The chart data in chart `i` of a tuple equal the reading of a section `s` almost everywhere
+exactly when its chart-`i` components are, almost everywhere, the components of that reading. -/
+theorem chartValueL_ae_eq_coord_iff {w : C.SobolevData μ p k} {s : S} {i : Fin C.n} :
+    C.chartValueL μ p k i w =ᵐ[μ.restrict (C.image i)] C.coord i s ↔
+      ∀ j, (Wkp.value k (w i j) : E → ℝ) =ᵐ[μ.restrict (C.image i)]
+        fun y ↦ (finBasis ℝ F).coord j (C.coord i s y) := by
+  refine ⟨fun h j ↦ ?_, C.chartValueL_ae_eq_coord μ p k⟩
+  filter_upwards [C.chartValueL_apply_ae μ p k i w, h] with y hy hy'
+  rw [← hy', hy, Basis.coord_apply, (finBasis ℝ F).repr_sum_self]
+
 /-- Forgetting the highest derivative of every component does not change the chart data. -/
 theorem chartValueL_lowerOrderL (i : Fin C.n) (w : C.SobolevData μ p (k + 1)) :
     C.chartValueL μ p k i (fun i j ↦ Wkp.lowerOrderL k (w i j)) =
@@ -239,7 +284,8 @@ theorem compatible_of_mem (hC : C.AETransition μ) {w : C.SobolevData μ p k}
     (hw : w ∈ C.sobolevSections μ p k) (i i' : Fin C.n) : C.Compatible μ p k w i i' := by
   obtain ⟨s, hs⟩ := hw
   filter_upwards [ae_restrict_of_ae_restrict_of_subset (C.overlap_subset_image i i') (hs i'),
-    hC (i' := i') (hs i), ae_restrict_mem (C.isOpen_overlap i i').measurableSet] with y h' h hy
+    C.aeTransition_iff.1 hC (i' := i') (hs i),
+    ae_restrict_mem (C.isOpen_overlap i i').measurableSet] with y h' h hy
   rw [h', h, C.coord_eq_coordChange i i' s y hy]
 
 /-- **Gluing.** Chart data satisfying the cocycle relation on every overlap are the components of
@@ -282,7 +328,7 @@ theorem isClosed_setOf_compatible (hC : C.AETransition μ) (i i' : Fin C.n) :
     ae_all_iff.2 fun m ↦ by simpa only [mem_ofPred_eq, compatible_iff] using hw m
   simp only [mem_ofPred_eq, compatible_iff]
   filter_upwards [hrel, ae_restrict_of_ae_restrict_of_subset (C.overlap_subset_image i i') hae',
-    hC (i' := i') hae] with y hy h' h
+    C.aeTransition_iff.1 hC (i' := i') hae] with y hy h' h
   refine tendsto_nhds_unique (h'.comp hms.tendsto_atTop) ?_
   refine (((C.coordChange i i' y).continuous.tendsto _).comp h).congr fun m ↦ ?_
   exact (hy (ns (ms m))).symm
@@ -312,7 +358,7 @@ theorem exists_section (w : C.sobolevSections μ p k) :
   w.2
 
 /-- Two elements of the Sobolev sections are equal when their components have equal values. -/
-theorem ext {w w' : C.sobolevSections μ p k}
+theorem sobolevSections_ext {w w' : C.sobolevSections μ p k}
     (h : ∀ i j, Wkp.value k ((w : C.SobolevData μ p k) i j) =
       Wkp.value k ((w' : C.SobolevData μ p k) i j)) : w = w' :=
   Subtype.ext <| funext fun i ↦ funext fun j ↦ Wkp.ext k (h i j)
@@ -366,13 +412,13 @@ chart `i` are those of `C.coord i (ι t)` in the basis `Module.finBasis ℝ F`. 
 def ofComponents : T →ₗ[ℝ] C.sobolevSections μ p k where
   toFun t := ⟨fun i j ↦ (h t i j).choose,
     ⟨ι t, fun i ↦ C.chartValueL_ae_eq_coord μ p k fun j ↦ (h t i j).choose_spec⟩⟩
-  map_add' t t' := C.ext μ p k fun i j ↦ Lp.ext <| by
+  map_add' t t' := C.sobolevSections_ext μ p k fun i j ↦ Lp.ext <| by
     filter_upwards [(h (t + t') i j).choose_spec, (h t i j).choose_spec, (h t' i j).choose_spec,
       Wkp.value_add k (h t i j).choose (h t' i j).choose ▸ Lp.coeFn_add _ _,
       ae_restrict_mem (C.image i).isOpen.measurableSet] with y h₀ h₁ h₂ hadd hy
     simp only [Submodule.coe_add, Pi.add_apply] at hadd ⊢
     rw [h₀, hadd, h₁, h₂, map_add, C.coord_add i _ _ y hy, map_add]
-  map_smul' c t := C.ext μ p k fun i j ↦ Lp.ext <| by
+  map_smul' c t := C.sobolevSections_ext μ p k fun i j ↦ Lp.ext <| by
     filter_upwards [(h (c • t) i j).choose_spec, (h t i j).choose_spec,
       Wkp.value_smul k c (h t i j).choose ▸ Lp.coeFn_smul _ _,
       ae_restrict_mem (C.image i).isOpen.measurableSet] with y h₀ h₁ hsmul hy
@@ -393,6 +439,16 @@ theorem chartValueL_ofComponents_ae (t : T) (i : Fin C.n) :
     C.chartValueL μ p k i (C.ofComponents μ p k ι h t) =ᵐ[μ.restrict (C.image i)]
       C.coord i (ι t) :=
   C.chartValueL_ae_eq_coord μ p k fun j ↦ (h t i j).choose_spec
+
+/-- If `C.ofComponents μ p k ι h t` vanishes, the reading of `ι t` in every chart vanishes almost
+everywhere on the image of the chart. -/
+theorem coord_ae_eq_zero_of_ofComponents_eq_zero {t : T} (ht : C.ofComponents μ p k ι h t = 0)
+    (i : Fin C.n) : C.coord i (ι t) =ᵐ[μ.restrict (C.image i)] 0 := by
+  have h0 : C.chartValueL μ p k i (C.ofComponents μ p k ι h t : C.SobolevData μ p k) = 0 := by
+    rw [ht, ZeroMemClass.coe_zero, map_zero]
+  have hz := Lp.coeFn_zero F p (μ.restrict (C.image i))
+  rw [← h0] at hz
+  exact (C.chartValueL_ofComponents_ae μ p k ι h t i).symm.trans hz
 
 end Components
 
@@ -454,7 +510,8 @@ variable (A : FiniteBundleAtlas E M F V) (μ : Measure E) [μ.IsAddHaarMeasure] 
 carry null sets to null sets. -/
 theorem FiniteBundleAtlas.aeTransition_sectionChartData [IsManifold 𝓘(ℝ, E) 1 M] :
     A.sectionChartData.AETransition μ :=
-  fun _ _ _ h ↦ A.ae_restrict_overlap_transition h
+  A.sectionChartData.aeTransition_of_differentiableOn A.differentiableOn_transition
+    (fun _ _ _ hy ↦ A.transition_mem_overlap hy) fun _ _ _ hy ↦ A.transition_transition hy
 
 variable [FiniteDimensional ℝ F]
 
