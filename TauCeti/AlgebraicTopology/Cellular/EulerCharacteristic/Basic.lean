@@ -21,9 +21,10 @@ chain group `Hₙ(Xⁿ, Xⁿ⁻¹; M)` is the direct sum of one copy of `M` for 
 
 * The Euler characteristic of a relative CW complex is the alternating count of its cells
   (`TauCeti.cwEulerChar`).
-* The cellular chain group is free when `M` is, finitely generated when `M` is and there are
-  finitely many `n`-cells, and then has rank `#(n-cells) · rank M`
-  (`TauCeti.finrank_cellularChainGroup`).
+* The cellular chain group is free when `M` is, and finitely generated when `M` is and there are
+  finitely many `n`-cells (`TauCeti.finite_cellularChainGroup`). For free `M` it satisfies
+  `finrank = #(n-cells) · finrank M` with no finiteness hypothesis
+  (`TauCeti.finrank_cellularChainGroup`); both sides are `0` in the infinite case.
 * Over a noetherian ring, the cellular homology in degree `n` of a complex with finitely many
   `n`-cells is finitely generated when `M` is (`TauCeti.finite_cellularHomology`).
 * **Euler--Poincaré.**  Over a division ring, for a finite-dimensional coefficient module `M` and
@@ -108,6 +109,12 @@ theorem finrank_cellularChainGroup [StrongRankCondition k] [Module.Free k M] (n 
     Cardinal.sum_const, Cardinal.toNat_mul, Cardinal.toNat_lift, Cardinal.toNat_lift,
     Module.finrank, Nat.card]
 
+/-- The degree-`i` term of the cellular chain complex has dimension the number of `i`-cells times
+`dim M`. -/
+theorem finrank_cellularChainComplex_X [StrongRankCondition k] [Module.Free k M] (i : ℕ) :
+    finrank k ((cellularChainComplex C M).X i) = Nat.card (cell C i) * finrank k M := by
+  rw [cellularChainComplex_X, finrank_cellularChainGroup]
+
 /-- Over a noetherian ring, with finitely generated coefficients, the cellular homology in a degree
 with finitely many cells is finitely generated. -/
 theorem finite_cellularHomology [IsNoetherianRing k] [Module.Finite k M] (n : ℕ)
@@ -127,13 +134,6 @@ theorem finite_cellularChainComplex_X (i : ℕ) [Finite (cell C i)] :
     Module.Finite k ((cellularChainComplex C M).X i) := by
   rw [cellularChainComplex_X]
   infer_instance
-
-omit [Module.Finite k M] in
-/-- The degree-`i` term of the cellular chain complex has dimension the number of `i`-cells times
-`dim M`. -/
-theorem finrank_cellularChainComplex_X (i : ℕ) :
-    finrank k ((cellularChainComplex C M).X i) = Nat.card (cell C i) * finrank k M := by
-  rw [cellularChainComplex_X, finrank_cellularChainGroup]
 
 /-- **Euler--Poincaré for cellular chains.**  For a relative CW complex with finitely many cells
 through degree `n` and a finite-dimensional coefficient module `M`, if there are no `(n + 1)`-cells,
