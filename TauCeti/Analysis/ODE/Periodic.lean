@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Determinant.Endomorphism
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 import TauCeti.Analysis.Calculus.PeriodicDeriv
+import TauCeti.Data.SignType.Basic
 import TauCeti.Topology.Instances.Real.TwistedExtension
 
 /-!
@@ -75,7 +76,7 @@ bijective, this trivialization is `(det (ε - P))⁻¹` times the one given by b
 (`TauCeti.detLineEndEquiv_detLineTwistedLinearOperatorEquiv`), so the two orientations of `det L`
 differ by the sign of `det (ε - P)`
 (`TauCeti.sign_detLineEndEquiv_detLineTwistedLinearOperatorEquiv`). For the orbit-torus operators
-this is the sign of `det (1 - P)` or `det (1 + P)`.
+this is the sign of `det (1 - P)` or `det (-1 - P)`.
 
 ## Main definitions
 
@@ -638,13 +639,8 @@ theorem sign_detLineEndEquiv_detLineTwistedLinearOperatorEquiv (hM : Continuous 
         (detLineTwistedLinearOperatorEquiv hM hper hd hε x)) =
       SignType.sign (LinearMap.det (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X))) *
         SignType.sign ((twistedLinearOperator hM hper ε).detLineEquivOfBijective hL x) := by
-  rw [detLineEndEquiv_detLineTwistedLinearOperatorEquiv hM hper hd hε hL, sign_mul]
-  congr 1
-  generalize LinearMap.det (ε • 1 - (↑(dysonSeriesLeft M d) : X →ₗ[ℝ] X)) = a
-  rcases lt_trichotomy a 0 with h | rfl | h
-  · rw [sign_neg h, sign_neg (inv_lt_zero.2 h)]
-  · rw [inv_zero]
-  · rw [sign_pos h, sign_pos (inv_pos.2 h)]
+  rw [detLineEndEquiv_detLineTwistedLinearOperatorEquiv hM hper hd hε hL, sign_mul,
+    TauCeti.sign_inv]
 
 end DeterminantLine
 

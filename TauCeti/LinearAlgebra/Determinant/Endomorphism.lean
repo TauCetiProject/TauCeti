@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Sign.Defs
 public import TauCeti.LinearAlgebra.Determinant.Exact
+import TauCeti.Data.SignType.Basic
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.RingTheory.PicardGroup.Contraction
 
@@ -47,6 +49,8 @@ differs from the one given by invertibility of `L` by the sign of `det T`. This 
 * `LinearMap.detLineEndEquiv_tmul`: its value on exterior products.
 * `LinearMap.detLineEndEquiv_eq_inv_det_mul`: for bijective `T`, comparison with
   `LinearMap.detLineEquivOfBijective` through the factor `(det T)⁻¹`.
+* `LinearMap.sign_detLineEndEquiv`: over an ordered field, the two trivializations of a bijective
+  `T` induce orientations that differ by the sign of `det T`.
 
 ## References
 
@@ -146,5 +150,14 @@ theorem detLineEndEquiv_eq_inv_det_mul (hT : Function.Bijective T) (x : T.detLin
     fun h ↦ by rw [h, map_zero] at hbij; exact zero_ne_one hbij).mp T.finrank_detLine x
   rw [map_smul, map_smul, hbij, eq_inv_of_mul_eq_one_right key, smul_eq_mul, smul_eq_mul,
     mul_one, mul_comm]
+
+/-- **The canonical and the bijective orientations differ by the sign of the determinant.** Over an
+ordered field, for a bijective endomorphism `T`, the sign of the canonical trivialization of its
+determinant line is the sign of `det T` times the sign of `LinearMap.detLineEquivOfBijective`. -/
+theorem sign_detLineEndEquiv [LinearOrder K] [IsStrictOrderedRing K] (hT : Function.Bijective T)
+    (x : T.detLine) :
+    SignType.sign (T.detLineEndEquiv x) =
+      SignType.sign (LinearMap.det T) * SignType.sign (T.detLineEquivOfBijective hT x) := by
+  rw [detLineEndEquiv_eq_inv_det_mul T hT, sign_mul, TauCeti.sign_inv]
 
 end LinearMap
