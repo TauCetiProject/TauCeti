@@ -453,7 +453,7 @@ private theorem map_koszulTwist_comp_perturb_incl
     LinearMap.comp_apply, e2]
   rw [← e3, ← e1, map_add, e4, e5, map_neg, neg_neg]
 
-include hsq hU in
+include hsq in
 /-- **The perturbed tensor-trick differential is a coderivation.**  Perturbing the tensor-trick
 contraction by an odd graded coderivation `δ` which lowers tensor length, the perturbed
 differential `D' = D + p X i` of `Tᶜ(N)` is again a graded coderivation for the Koszul signs of
@@ -464,6 +464,14 @@ theorem isGradedCoderivation_reducedTensorWords_perturbedDifferential
     (hδfil : ∀ n, Submodule.map δ (filtration R M (n + 1)) ≤ filtration R M n) :
     IsGradedCoderivation H 1
       ((c.reducedTensorWords G H hdM hh hincl hproj).perturbedDifferential δ) := by
+  -- The unit hypothesis of the lemmas below follows from `δ` lowering the tensor length.
+  have hU : IsUnit (1 + δ * (c.reducedTensorWords G H hdM hh hincl hproj).homotopy) := by
+    rw [c.reducedTensorWords_homotopy G H hdM hh hincl hproj]
+    refine Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero _ fun z ↦ ?_
+    refine ReducedTensorWords.exists_pow_apply_eq_zero_of_filtration_lowering R M _
+      (fun n ↦ ?_) z
+    rw [Module.End.mul_eq_comp, Submodule.map_comp]
+    exact (Submodule.map_mono (c.reducedTensorWordsHomotopy_filtration G (n + 1))).trans (hδfil n)
   -- Strategy: `i' D' = (D + δ) i'`, where `i'` is a coalgebra morphism commuting with the Koszul
   -- twists and `D + δ` is a graded coderivation.  Hence `(i' ⊗ i')` intertwines the two sides of
   -- the co-Leibniz rule for `D'`, and `i' ⊗ i'` has the left inverse `p' ⊗ p'`.
