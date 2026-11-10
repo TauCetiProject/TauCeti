@@ -454,15 +454,26 @@ sign changes on the chosen prime-discriminant generators. -/
     (genusFieldRoot_sq_algebraMap hd) (candidateGenusFieldRoot_independent hd)
       (candidateGenusFieldBaseAdjoin hd) v' P
 
-/-- **Order of the relative candidate-genus-field Galois group.** If the squarefree integer `d`
-is not a rational square, the relative group over its embedded quadratic base has order
-`2 ^ (t - 1)`, where `t = (genusPrimeDiscriminants hd).card`. -/
-theorem card_aut_candidateGenusField_over_base {d : ℤ} (hd : Squarefree d)
-    (hnsq : ¬ IsSquare (((d : ℤ) : ℚ))) :
+/-- **Order of the relative candidate-genus-field Galois group.** For squarefree `d`, the relative
+group over the embedded quadratic base has order `2 ^ (t - 1)`, where
+`t = (genusPrimeDiscriminants hd).card`. -/
+theorem card_aut_candidateGenusField_over_base {d : ℤ} (hd : Squarefree d) :
     Nat.card
         (candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd) =
       2 ^ ((genusPrimeDiscriminants hd).card - 1) := by
-  rw [IsGalois.card_aut_eq_finrank,
-    finrank_candidateGenusField_over_candidateGenusFieldBase hd hnsq]
+  rw [IsGalois.card_aut_eq_finrank]
+  by_cases hnsq : IsSquare (((d : ℤ) : ℚ))
+  · -- A rational square has trivial candidate genus field, so the degree is `1 = 2 ^ (0 - 1)`.
+    have hempty := genusPrimeDiscriminants_eq_empty_of_isSquare hd hnsq
+    have hbot : candidateGenusField hd = ⊥ := by
+      rw [candidateGenusField_def, IntermediateField.adjoin_eq_bot_iff]
+      rintro _ ⟨P, rfl⟩
+      exact absurd P.property (by simp [hempty])
+    have h1 : Module.finrank ℚ (candidateGenusField hd) = 1 :=
+      IntermediateField.finrank_eq_one_iff.mpr hbot
+    have h := Module.finrank_mul_finrank ℚ (candidateGenusFieldBase hd) (candidateGenusField hd)
+    rw [h1] at h
+    simp [hempty, Nat.eq_one_of_mul_eq_one_left h]
+  · exact finrank_candidateGenusField_over_candidateGenusFieldBase hd hnsq
 
 end TauCeti.Multiquadratic

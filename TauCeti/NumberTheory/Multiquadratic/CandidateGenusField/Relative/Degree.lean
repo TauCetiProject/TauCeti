@@ -117,6 +117,16 @@ theorem finrank_candidateGenusFieldBase {d : ℤ} (hd : Squarefree d)
     hx2 hxnot
   rwa [bot_sup_eq, IntermediateField.finrank_bot, one_mul] at h
 
+/-- A squarefree integer that is a rational square is `1`, and then the prime-discriminant
+factorization of its fundamental discriminant is empty. -/
+theorem genusPrimeDiscriminants_eq_empty_of_isSquare {d : ℤ} (hd : Squarefree d)
+    (hsq : IsSquare (((d : ℤ) : ℚ))) : genusPrimeDiscriminants hd = ∅ := by
+  obtain ⟨n, hn⟩ := Rat.isSquare_intCast_iff.mp hsq
+  have hunit : IsUnit n := hd n ⟨1, by rw [hn, mul_one]⟩
+  have hd1 : d = 1 := by rcases Int.isUnit_iff.mp hunit with rfl | rfl <;> simpa using hn
+  subst hd1
+  exact genusPrimeDiscriminants_eq hd (by simp) (by simp)
+
 /-- **Relative degree of the candidate genus field over `ℚ(√d)`.** If the squarefree integer
 `d` is not a rational square, the prime-discriminant compositum has degree
 `2 ^ (t - 1)` over its embedded quadratic base, where
