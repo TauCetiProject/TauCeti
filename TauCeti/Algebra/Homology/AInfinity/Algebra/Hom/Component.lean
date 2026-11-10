@@ -169,7 +169,7 @@ theorem isHomogeneous_component (f : AInfinityHom AA BB) (n : ℕ) :
 @[simp]
 theorem component_one (f : AInfinityHom AA BB) :
     f.component 1 =
-      (MultilinearMap.ofSubsingleton R A B (0 : Fin 1)) f.linearPart := by
+      (MultilinearMap.ofSubsingleton (RingHom.id R) A B (0 : Fin 1)) f.linearPart := by
   ext x
   rw [component_apply f 1 (by omega)]
   simp only [PNat.mk_ofNat, Nat.cast_one, sub_self, Fin.val_eq_zero, CharP.cast_eq_zero,

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Quotient.Defs
 public import Mathlib.RingTheory.Ideal.Maps
 public import TauCeti.Algebra.Module.Projective.Semilinear
 

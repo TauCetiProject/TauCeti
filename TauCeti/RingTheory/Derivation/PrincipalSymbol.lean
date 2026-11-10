@@ -103,7 +103,7 @@ times the principal symbol of `D` at `df`. -/
 def commutatorSymbol : (m : ℕ) →
     differentialOperators R A M N m →ₗ[R] MultilinearMap (RingHom.id R) (fun _ : Fin m ↦ A) (M
         →ₗ[A] N)
-  | 0 => (MultilinearMap.constLinearEquivOfIsEmpty R R (fun _ : Fin 0 ↦ A)
+  | 0 => (MultilinearMap.constLinearEquivOfIsEmpty R (RingHom.id R) (fun _ : Fin 0 ↦ A)
       (M →ₗ[A] N)).toLinearMap ∘ₗ toLinearMapOfOrderZero
   | m + 1 => (multilinearCurryLeftEquiv R (fun _ : Fin (m + 1) ↦ A) (M →ₗ[A] N)).symm.toLinearMap ∘ₗ
       LinearMap.compRight R (commutatorSymbol m) ∘ₗ smulCommutatorOfOrderSucc

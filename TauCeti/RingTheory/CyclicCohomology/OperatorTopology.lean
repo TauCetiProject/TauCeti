@@ -88,7 +88,7 @@ theorem isVonNBounded_image_hochschildFace {n : ℕ} {s : Set (Fin (n + 2) → A
     (hs : IsVonNBounded 𝕜 s) (i : Fin (n + 2)) :
     IsVonNBounded 𝕜 (hochschildFace i '' s) := by
   -- The zeroth coface of the unary identity is the native binary multiplication map.
-  let id₁ := ContinuousMultilinearMap.ofSubsingleton 𝕜 A A (0 : Fin 1)
+  let id₁ := ContinuousMultilinearMap.ofSubsingleton (RingHom.id 𝕜) A A (0 : Fin 1)
     (ContinuousLinearMap.id 𝕜 A)
   let mul : ContinuousMultilinearMap 𝕜 (fun _ : Fin 2 ↦ A) A :=
     ⟨hochschildCoface 𝕜 A A 0 id₁.toMultilinearMap, id₁.continuous_hochschildCoface 0⟩

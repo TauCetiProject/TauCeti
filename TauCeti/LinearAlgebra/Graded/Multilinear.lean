@@ -159,7 +159,7 @@ theorem IsHomogeneous.domDomCongrLinearEquiv' {κ' : Type*} [Fintype κ']
     (σ : κ ≃ κ')
     {f : MultilinearMap (RingHom.id R) M N} {𝒜 : (i : κ) → ι → σM i} {ℬ : ι → σN} {q : ι}
     (hf : IsHomogeneous f 𝒜 ℬ q) :
-    IsHomogeneous (_root_.MultilinearMap.domDomCongrLinearEquiv' R ℕ M N σ f)
+    IsHomogeneous (_root_.MultilinearMap.domDomCongrLinearEquiv' ℕ (RingHom.id R) M N σ f)
       (fun i ↦ 𝒜 (σ.symm i)) ℬ q := by
   intro d x hx
   -- reindexing does not change the total input degree

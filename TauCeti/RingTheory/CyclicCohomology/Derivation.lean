@@ -269,7 +269,8 @@ Hochschild coboundary of the `0`-cochain `a ↦ -τ(a z)`. -/
 theorem traceDerivationCochain_innerDerivation (hτ : ∀ x y, τ (x * y) = τ (y * x)) (z : A) :
     traceDerivationCochain τ (innerDerivation k z) =
       hochschildCoboundary k A M 0
-        (MultilinearMap.ofSubsingleton k A M (0 : Fin 1) (-(τ ∘ₗ LinearMap.mulRight k z))) := by
+        (MultilinearMap.ofSubsingleton (RingHom.id k) A M (0 : Fin 1) (-(τ ∘ₗ LinearMap.mulRight k
+            z))) := by
   ext a
   rw [hochschildCoboundary_zero_apply]
   simp only [traceDerivationCochain_apply, coe_innerDerivation, LieAlgebra.ad_apply, Ring.lie_def,
@@ -290,7 +291,8 @@ theorem cyclicCohomology.mk_traceDerivationCocycle_innerDerivation
     cyclicCohomology.mk k A M 1
       (traceDerivationCocycle hτ (map_innerDerivation_apply_eq_zero hτ z)) = 0 := by
   rw [cyclicCohomology.mk_eq_zero_iff, mem_cyclicCoboundaries_succ_iff]
-  refine ⟨⟨MultilinearMap.ofSubsingleton k A M (0 : Fin 1) (-(τ ∘ₗ LinearMap.mulRight k z)),
+  refine ⟨⟨MultilinearMap.ofSubsingleton (RingHom.id k) A M (0 : Fin 1) (-(τ ∘ₗ LinearMap.mulRight
+      k z)),
     by simp⟩, Subtype.ext ?_⟩
   rw [coe_cyclicHochschildCoboundary_apply, coe_traceDerivationCocycle,
     traceDerivationCochain_innerDerivation hτ]

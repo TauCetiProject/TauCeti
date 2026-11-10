@@ -234,9 +234,9 @@ def pontryaginMultilinear (n : ℕ) : MultilinearMap (RingHom.id k)
     (fun _ : Fin n ↦ ((singularHomologyFunctor (ModuleCat.{u} k) 1).obj (𝟙_ _)).obj G)
     (((singularHomologyFunctor (ModuleCat.{u} k) n).obj (𝟙_ _)).obj G) :=
   match n with
-  | 0 => MultilinearMap.constOfIsEmpty k _
+  | 0 => MultilinearMap.constOfIsEmpty (RingHom.id k) _
       (TauCeti.singularHomology₀Section (𝟙_ (ModuleCat.{u} k)) (η[G] PUnit.unit) (1 : k))
-  | 1 => MultilinearMap.ofSubsingleton k _ _ 0 LinearMap.id
+  | 1 => MultilinearMap.ofSubsingleton (RingHom.id k) _ _ 0 LinearMap.id
   | n + 2 => LinearMap.uncurryLeft
       { toFun := fun x ↦
           (pontryaginMul k G 1 (n + 1) (n + 2) (by omega) x).compMultilinearMap

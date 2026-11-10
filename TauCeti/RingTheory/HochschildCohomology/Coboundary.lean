@@ -367,7 +367,7 @@ theorem hochschildBimoduleCoboundary_comp_hochschildBimoduleCoboundary [SMulComm
 /-- The coboundary of the degree-zero cochain with value `m` is the inner derivation
 `a ↦ a • m - m • a`. -/
 theorem hochschildBimoduleCoboundary_constOfIsEmpty (m : M) (a : Fin 1 → A) :
-    hochschildBimoduleCoboundary R A M 0 (MultilinearMap.constOfIsEmpty R _ m) a =
+    hochschildBimoduleCoboundary R A M 0 (MultilinearMap.constOfIsEmpty (RingHom.id R) _ m) a =
       a 0 • m - op (a 0) • m := by
   rw [hochschildBimoduleCoboundary_apply_eq_add_sum_add]
   simp [sub_eq_add_neg]
@@ -375,7 +375,7 @@ theorem hochschildBimoduleCoboundary_constOfIsEmpty (m : M) (a : Fin 1 → A) :
 /-- A degree-zero cochain is a cocycle exactly when its value lies in the centre of the
 bimodule. -/
 theorem hochschildBimoduleCoboundary_constOfIsEmpty_eq_zero_iff (m : M) :
-    hochschildBimoduleCoboundary R A M 0 (MultilinearMap.constOfIsEmpty R _ m) = 0 ↔
+    hochschildBimoduleCoboundary R A M 0 (MultilinearMap.constOfIsEmpty (RingHom.id R) _ m) = 0 ↔
       ∀ x : A, x • m = op x • m := by
   refine ⟨fun h x ↦ ?_, fun h ↦ ?_⟩
   · have hx := DFunLike.congr_fun h fun _ ↦ x
@@ -387,7 +387,7 @@ theorem hochschildBimoduleCoboundary_constOfIsEmpty_eq_zero_iff (m : M) :
 /-- The coboundary of a degree-one cochain `f`:
 `(δf)(a₀, a₁) = a₀ • f a₁ - f (a₀ a₁) + f a₀ • a₁`. -/
 theorem hochschildBimoduleCoboundary_ofSubsingleton (f : A →ₗ[R] M) (a : Fin 2 → A) :
-    hochschildBimoduleCoboundary R A M 1 (MultilinearMap.ofSubsingleton R A M 0 f) a =
+    hochschildBimoduleCoboundary R A M 1 (MultilinearMap.ofSubsingleton (RingHom.id R) A M 0 f) a =
       a 0 • f (a 1) - f (a 0 * a 1) + op (a 1) • f (a 0) := by
   rw [hochschildBimoduleCoboundary_apply_eq_add_sum_add, Fin.sum_univ_one]
   simp only [MultilinearMap.ofSubsingleton_apply_apply, Fin.tail_def, Fin.init_def,
@@ -398,7 +398,8 @@ theorem hochschildBimoduleCoboundary_ofSubsingleton (f : A →ₗ[R] M) (a : Fin
 `f (x y) = x • f y + f x • y`, i.e. when it is a derivation into the bimodule in the sense of
 `TauCeti.BimoduleDerivation`. -/
 theorem hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff (f : A →ₗ[R] M) :
-    hochschildBimoduleCoboundary R A M 1 (MultilinearMap.ofSubsingleton R A M 0 f) = 0 ↔
+    hochschildBimoduleCoboundary R A M 1 (MultilinearMap.ofSubsingleton (RingHom.id R) A M 0
+        f) = 0 ↔
       ∀ x y : A, f (x * y) = x • f y + op y • f x := by
   refine ⟨fun h x y ↦ ?_, fun h ↦ ?_⟩
   · have hxy := DFunLike.congr_fun h ![x, y]
@@ -413,7 +414,8 @@ theorem hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff (f : A →ₗ[R]
 /-- A derivation into the bimodule is a degree-one Hochschild cocycle. -/
 theorem BimoduleDerivation.hochschildBimoduleCoboundary_ofSubsingleton_eq_zero
     [SMulCommClass A Aᵐᵒᵖ M] (D : BimoduleDerivation R A M) :
-    hochschildBimoduleCoboundary R A M 1 (MultilinearMap.ofSubsingleton R A M 0 D) = 0 :=
+    hochschildBimoduleCoboundary R A M 1 (MultilinearMap.ofSubsingleton (RingHom.id R) A M 0
+        D) = 0 :=
   (hochschildBimoduleCoboundary_ofSubsingleton_eq_zero_iff _).2 D.leibniz
 
 end Coboundary

@@ -634,8 +634,8 @@ variable [Module Aᵐᵒᵖ M] [IsScalarTower R Aᵐᵒᵖ M]
 `m_{n+1} = 0` for `n ≥ 2`. -/
 private noncomputable def dgAct (dM : M →ₗ[R] M) :
     (n : ℕ) → MultilinearMap (RingHom.id R) (fun _ : Fin n => A) (M →ₗ[R] M)
-  | 0 => MultilinearMap.constOfIsEmpty R _ dM
-  | 1 => MultilinearMap.ofSubsingleton R A (M →ₗ[R] M) 0
+  | 0 => MultilinearMap.constOfIsEmpty (RingHom.id R) _ dM
+  | 1 => MultilinearMap.ofSubsingleton (RingHom.id R) A (M →ₗ[R] M) 0
     ((Algebra.lsmul R R M).toLinearMap ∘ₗ (opLinearEquiv R).toLinearMap)
   | _ + 2 => 0
 
