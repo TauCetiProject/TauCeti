@@ -356,6 +356,11 @@ theorem card_doubleCoset_mul_card_mackeySubgroup (s : G) (H K : Subgroup G) :
   rw [hdc, card_orbit_eq_relIndex, mul_assoc, mul_comm ((mackeySubgroup s H K).relIndex K), hK,
     mul_comm]
 
+/-- Conjugation preserves the number of elements of a subgroup. -/
+private theorem card_conj_smul_eq (s : G) (H : Subgroup G) :
+    Nat.card (MulAut.conj s • H : Subgroup G) = Nat.card H :=
+  Nat.card_congr (Subgroup.equivSMul (MulAut.conj s) H).toEquiv.symm
+
 /-- **The double-coset size formula, as an index**: `|KsH| = |K| · [sHs⁻¹ : K ⊓ sHs⁻¹]`.
 
 With `Nat.card`'s convention that an infinite type has cardinality `0` and the relative index
@@ -370,7 +375,7 @@ theorem card_doubleCoset_eq_card_mul_relIndex (s : G) (H K : Subgroup G) :
     have hrel : K.relIndex (MulAut.conj s • H) * Nat.card (mackeySubgroup s H K) =
         Nat.card H := by
       rw [mackeySubgroup_def, Subgroup.relIndex_mul_card]
-      exact Nat.card_congr (Subgroup.equivSMul (MulAut.conj s) H).toEquiv.symm
+      exact card_conj_smul_eq s H
     have hpos : 0 < Nat.card (mackeySubgroup s H K) :=
       Nat.pos_of_ne_zero fun h => Nat.card_pos.ne' (by rw [← hrel, h, mul_zero])
     refine Nat.eq_of_mul_eq_mul_right hpos ?_
@@ -388,9 +393,8 @@ theorem card_doubleCoset_eq_card_mul_relIndex (s : G) (H K : Subgroup G) :
     by_cases hK : Finite K
     · -- `K ⊓ sHs⁻¹` is finite and nonempty while `|sHs⁻¹| = |H| = 0`, so the index is `0`.
       have hrel := Subgroup.relIndex_mul_card K (MulAut.conj s • H)
-      have hconj : Nat.card (MulAut.conj s • H : Subgroup G) = 0 := by
-        rw [← Nat.card_congr (Subgroup.equivSMul (MulAut.conj s) H).toEquiv]
-        exact Nat.card_eq_zero_of_infinite
+      have hconj : Nat.card (MulAut.conj s • H : Subgroup G) = 0 :=
+        (card_conj_smul_eq s H).trans Nat.card_eq_zero_of_infinite
       have hfin : Finite (K ⊓ MulAut.conj s • H : Subgroup G) :=
         Finite.of_injective (fun x => (⟨x.1, x.2.1⟩ : K)) fun a b h =>
           Subtype.ext (Subtype.mk.inj h)
@@ -434,11 +438,6 @@ end Translate
 end Orbit
 
 section PrimeCard
-
-/-- Conjugation preserves the number of elements of a subgroup. -/
-private theorem card_conj_smul_eq (s : G) (H : Subgroup G) :
-    Nat.card (MulAut.conj s • H : Subgroup G) = Nat.card H :=
-  Nat.card_congr (Subgroup.equivSMul (MulAut.conj s) H).toEquiv.symm
 
 /-- **A subgroup of prime order either meets `K` trivially after conjugation, or is carried inside
 `K` altogether.** The Mackey subgroup `K ⊓ sHs⁻¹` sits inside the conjugate `sHs⁻¹`, a group of
