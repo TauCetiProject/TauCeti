@@ -58,7 +58,7 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 variable (mu p) in
 /-- The families `w i ∈ W^{k,p}(V i)` such that `w i` and `w j` have the same restriction to
 `V i ⊓ V j` for all `i` and `j`. -/
-@[expose] def compatibleFamilies (V : ι → Opens E) (k : ℕ) :
+def compatibleFamilies (V : ι → Opens E) (k : ℕ) :
     Submodule ℝ (∀ i, Wkp mu (V i) p k) where
   carrier := {w | ∀ i j, restrictL (inf_le_left : V i ⊓ V j ≤ V i) k (w i) =
     restrictL (inf_le_right : V i ⊓ V j ≤ V j) k (w j)}
@@ -68,6 +68,7 @@ variable (mu p) in
   smul_mem' c w hw i j := by
     simp only [Pi.smul_apply, map_smul, hw i j]
 
+@[simp]
 theorem mem_compatibleFamilies {V : ι → Opens E} {k : ℕ} {w : ∀ i, Wkp mu (V i) p k} :
     w ∈ compatibleFamilies mu p V k ↔ ∀ i j,
       restrictL (inf_le_left : V i ⊓ V j ≤ V i) k (w i) =
@@ -101,7 +102,7 @@ theorem restrictL_mem_compatibleFamilies {V : ι → Opens E} (hle : ∀ i, V i 
 
 /-- Restriction of a Sobolev function on `Ω` to the members of a family of open subsets of `Ω`,
 as a continuous linear map into the compatible families. -/
-@[expose] def restrictCompatibleL {V : ι → Opens E} (hle : ∀ i, V i ≤ Omega) (k : ℕ) :
+def restrictCompatibleL {V : ι → Opens E} (hle : ∀ i, V i ≤ Omega) (k : ℕ) :
     Wkp mu Omega p k →L[ℝ] compatibleFamilies mu p V k :=
   (ContinuousLinearMap.pi fun i => restrictL (hle i) k).codRestrict _
     (restrictL_mem_compatibleFamilies hle k)
@@ -111,7 +112,7 @@ as a continuous linear map into the compatible families. -/
 theorem restrictCompatibleL_apply_coe {V : ι → Opens E} (hle : ∀ i, V i ≤ Omega) (k : ℕ)
     (u : Wkp mu Omega p k) (i : ι) :
     (restrictCompatibleL hle k u : ∀ i, Wkp mu (V i) p k) i = restrictL (hle i) k u :=
-  rfl
+  (rfl)
 
 /-- Restriction to the members of an open cover is injective; the cover may be infinite. -/
 theorem restrictCompatibleL_injective {V : ι → Opens E} (hle : ∀ i, V i ≤ Omega)
@@ -158,7 +159,7 @@ theorem norm_le_card_mul_norm_restrictCompatibleL [Fintype ι] {V : ι → Opens
 sets `V i ⊆ Ω` cover `Ω`, then restriction to the `V i` is a continuous linear equivalence from
 `W^{k,p}(Ω)` onto the compatible families in `∏ᵢ W^{k,p}(V i)`. The bounds are
 `norm_restrictCompatibleEquiv_le` and `norm_restrictCompatibleEquiv_symm_le`. -/
-@[expose] def restrictCompatibleEquiv [Fintype ι] {V : ι → Opens E} (hle : ∀ i, V i ≤ Omega)
+def restrictCompatibleEquiv [Fintype ι] {V : ι → Opens E} (hle : ∀ i, V i ≤ Omega)
     (hcov : Omega ≤ ⨆ i, V i) (k : ℕ) :
     Wkp mu Omega p k ≃L[ℝ] compatibleFamilies mu p V k :=
   let e := LinearEquiv.ofBijective (restrictCompatibleL hle k).toLinearMap
@@ -166,14 +167,15 @@ sets `V i ⊆ Ω` cover `Ω`, then restriction to the `V i` is a continuous line
   e.toContinuousLinearEquivOfBounds 1 (Fintype.card ι)
     (fun u => by rw [one_mul]; exact norm_restrictCompatibleL_le hle k u)
     (fun w => by
+      have he : ∀ u, e u = restrictCompatibleL hle k u := fun _ => LinearEquiv.ofBijective_apply ..
       have h := norm_le_card_mul_norm_restrictCompatibleL hle hcov k (e.symm w)
-      rwa [show restrictCompatibleL hle k (e.symm w) = w from e.apply_symm_apply w] at h)
+      rwa [← he, e.apply_symm_apply] at h)
 
 /-- The equivalence `restrictCompatibleEquiv` is the restriction map `restrictCompatibleL`. -/
 theorem restrictCompatibleEquiv_apply [Fintype ι] {V : ι → Opens E}
     (hle : ∀ i, V i ≤ Omega) (hcov : Omega ≤ ⨆ i, V i) (k : ℕ) (u : Wkp mu Omega p k) :
     restrictCompatibleEquiv hle hcov k u = restrictCompatibleL hle k u :=
-  rfl
+  (rfl)
 
 /-- The `i`-th member of the family `restrictCompatibleEquiv u` is the restriction of `u` to
 `V i`. -/
@@ -181,7 +183,7 @@ theorem restrictCompatibleEquiv_apply [Fintype ι] {V : ι → Opens E}
 theorem restrictCompatibleEquiv_apply_coe [Fintype ι] {V : ι → Opens E}
     (hle : ∀ i, V i ≤ Omega) (hcov : Omega ≤ ⨆ i, V i) (k : ℕ) (u : Wkp mu Omega p k) (i : ι) :
     (restrictCompatibleEquiv hle hcov k u : ∀ i, Wkp mu (V i) p k) i = restrictL (hle i) k u :=
-  rfl
+  (rfl)
 
 /-- The inverse of `restrictCompatibleEquiv` glues a compatible family: the glued function
 restricts to each member of the family. -/
