@@ -10,7 +10,7 @@ public import TauCeti.MeasureTheory.Measure.NNReal
 
 import TauCeti.Probability.Distributions.Poisson.SmallRate
 import Mathlib.Order.Interval.Set.Union
-import Mathlib.MeasureTheory.Function.Floor
+import TauCeti.Probability.HasLaw
 
 /-!
 # Simplicity of homogeneous temporal Poisson random measures
@@ -49,9 +49,6 @@ private theorem measure_exists_multiple_singleton_Ioc_eq_zero
   let := h.isProbabilityMeasure
   let δ (n : ℕ) := b / (n : ℝ≥0)
   let C (n k : ℕ) := Ioc ((k : ℝ≥0) * δ n) ((k : ℝ≥0) * δ n + δ n)
-  -- Recover natural-valued cell counts to apply the existing small-rate limit.
-  let count (x : ℝ≥0∞) := ⌊x.toNNReal⌋₊
-  have hm : Measurable count := Nat.measurable_floor.comp ENNReal.measurable_toNNReal
   have hlaw (n k : ℕ) : HasLaw (fun ω ↦ N ω (C n k))
       ((poissonMeasure (r * b / n)).map (Nat.cast : ℕ → ℝ≥0∞)) P := by
     have hrate : ((r : ℝ≥0∞) • nnvolume) (C n k) = (r * b / n : ℝ≥0) := by
@@ -60,21 +57,12 @@ private theorem measure_exists_multiple_singleton_Ioc_eq_zero
       simp only [δ, mul_div_assoc]
     simpa only [hrate, ENNReal.toNNReal_coe] using
       h.hasLaw (A := C n k) measurableSet_Ioc (by rw [hrate]; exact ENNReal.coe_lt_top)
-  let X (n : ℕ) (i : Fin n) (ω : Ω) := count (N ω (C n i))
-  have hX (n : ℕ) (i : Fin n) : HasLaw (X n i) (poissonMeasure (r * b / n)) P := by
-    have hinv : HasLaw count (poissonMeasure (r * b / n))
-        ((poissonMeasure (r * b / n)).map (Nat.cast : ℕ → ℝ≥0∞)) := by
-      refine ⟨hm.aemeasurable, ?_⟩
-      rw [Measure.map_map hm Measurable.of_discrete]
-      simp [count, Function.comp_def]
-    exact hinv.comp (hlaw n i)
-  have hcount (n : ℕ) : ∀ᵐ ω ∂P, ∀ i : Fin n, (X n i ω : ℝ≥0∞) = N ω (C n i) := by
-    refine ae_all_iff.mpr fun i ↦
-      ((hlaw n i).ae_iff (p := fun x ↦ (count x : ℝ≥0∞) = x) (by fun_prop)).mpr ?_
-    apply (ae_map_iff Measurable.of_discrete.aemeasurable
-      (measurableSet_eq_fun (f := fun x : ℝ≥0∞ ↦ (count x : ℝ≥0∞))
-        (by fun_prop) measurable_id)).mpr
-    exact ae_of_all _ fun k ↦ by simp [count]
+  -- Recover natural-valued cell counts to apply the existing small-rate limit.
+  let X (n : ℕ) (i : Fin n) (ω : Ω) := ⌊(N ω (C n i)).toNNReal⌋₊
+  have hX (n : ℕ) (i : Fin n) : HasLaw (X n i) (poissonMeasure (r * b / n)) P :=
+    (hlaw n i).floor_toNNReal_of_map_natCast.1
+  have hcount (n : ℕ) : ∀ᵐ ω ∂P, ∀ i : Fin n, (X n i ω : ℝ≥0∞) = N ω (C n i) :=
+    ae_all_iff.mpr fun i ↦ (hlaw n i).floor_toNNReal_of_map_natCast.2
   rw [← measureReal_eq_zero_iff]
   apply le_antisymm _ measureReal_nonneg
   refine ge_of_tendsto (tendsto_measureReal_exists_two_le_of_hasLaw_poissonMeasure
