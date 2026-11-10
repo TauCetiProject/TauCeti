@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Normed.Lp.Diagonal.Basic
 public import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.MinMax
+import TauCeti.Analysis.OperatorIdeal.ApproximationNumber.Compact
 
 /-!
 # Approximation numbers of infinite diagonal operators
@@ -73,14 +74,8 @@ magnitudes do. -/
 theorem tendsto_singularValue_diagonalCLM (d : ℓ^∞(ℕ, 𝕜))
     (h0 : Tendsto (fun i ↦ ‖d i‖) atTop (𝓝 0)) :
     Tendsto (fun n ↦ (diagonalCLM (p := p) d).singularValue n) atTop (𝓝 0) := by
-  have h : Tendsto (fun n ↦ ‖diagonalCLM (p := p) d - diagonalTruncation d (Finset.range n)‖₊)
-      atTop (𝓝 0) := by
-    refine NNReal.tendsto_coe.1 ?_
-    exact (tendsto_iff_norm_sub_tendsto_zero.1 (tendsto_diagonalTruncation_range d h0)).congr
-      fun n ↦ by rw [norm_sub_rev, coe_nnnorm]
-  exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds h (fun _ ↦ bot_le)
-    fun n ↦ (diagonalCLM (p := p) d).singularValue_le_nnnorm_sub
-      (rank_diagonalTruncation_range_le d n)
+  exact ContinuousLinearMap.tendsto_singularValue_nhds_zero_iff.2
+    ⟨_, rank_diagonalTruncation_range_le d, tendsto_diagonalTruncation_range d h0⟩
 
 /-- For decreasing diagonal magnitudes, retaining the first `n` coordinates attains the
 approximation number at index `n`. -/
