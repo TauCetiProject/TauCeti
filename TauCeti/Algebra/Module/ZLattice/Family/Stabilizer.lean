@@ -216,8 +216,7 @@ theorem torusFamilyAffineMap_fiberMap {g : Γ} {y : Y} (hy : g • y = y)
       AddEquiv.affineEquiv_apply, torusFamilyFiberLinearPart_mk, ← hβ,
       ← Submodule.orbitRelQuotient_mk_add, torusFamilyFiberMap_mk, hy]
 
-variable (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
-  (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hP b hb g (b h y))
+variable (hbmul : ∀ (g h : Γ) (y : Y), b (g * h) y = torusFamilyAffineMap R P ρ hP b hb g (b h y))
 
 /-- **The iterates on a fibre over a fixed point.** If `g • y = y`, then `g ^ k` acts on the fibre
 `E / LinearMap.range (P y)` by the `k`-th iterate of the affine automorphism `x ↦ A x + t` of
@@ -225,12 +224,12 @@ variable (hbone : ∀ y : Y, b 1 y = Quotient.mk _ (y, 0))
 (`AddEquiv.affineEquiv_iterate_apply`). -/
 theorem pow_smul_torusFamilyFiberMap {g : Γ} {y : Y} (hy : g • y = y) (k : ℕ)
     (z : AddAction.orbitRel.Quotient (LinearMap.range (P y)) E) :
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
     g ^ k • torusFamilyFiberMap P y z =
       torusFamilyFiberMap P y ((⇑(AddEquiv.affineEquiv
         (torusFamilyFiberLinearPart R hone hmul P ρ hP hy)
         (torusFamilyFiberTranslationPart P b hb hy)))^[k] z) := by
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
   induction k with
   | zero => simp
   | succ k ih =>
@@ -242,12 +241,12 @@ fibre over `y` is fixed by `g ^ k` exactly when `z - A^k z` is the `k`-th partia
 translation part `t`. -/
 theorem pow_smul_torusFamilyFiberMap_eq_self_iff {g : Γ} {y : Y} (hy : g • y = y) (k : ℕ)
     (z : AddAction.orbitRel.Quotient (LinearMap.range (P y)) E) :
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
     g ^ k • torusFamilyFiberMap P y z = torusFamilyFiberMap P y z ↔
       z - (⇑(torusFamilyFiberLinearPart R hone hmul P ρ hP hy))^[k] z =
         AddEquiv.partialNorm (torusFamilyFiberLinearPart R hone hmul P ρ hP hy) k
           (torusFamilyFiberTranslationPart P b hb hy) := by
-  rw [pow_smul_torusFamilyFiberMap R hone hmul P ρ hP b hb hbone hbmul hy,
+  rw [pow_smul_torusFamilyFiberMap R hone hmul P ρ hP b hb hbmul hy,
     (torusFamilyFiberMap_injective P y).eq_iff, AddEquiv.affineEquiv_iterate_apply_eq_self_iff]
 
 /-- **The fixed-point criterion on a fibre over a fixed point.** If `g • y = y`, then `g ^ k` fixes
@@ -255,12 +254,12 @@ a point of the fibre over `y` exactly when the `k`-th partial norm of the transl
 the image of `1 - A^k`, where `A` is the linear part. -/
 theorem exists_pow_smul_torusFamilyFiberMap_eq_self_iff {g : Γ} {y : Y} (hy : g • y = y)
     (k : ℕ) :
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
     (∃ z, g ^ k • torusFamilyFiberMap P y z = torusFamilyFiberMap P y z) ↔
       ∃ c, c - (⇑(torusFamilyFiberLinearPart R hone hmul P ρ hP hy))^[k] c =
         AddEquiv.partialNorm (torusFamilyFiberLinearPart R hone hmul P ρ hP hy) k
           (torusFamilyFiberTranslationPart P b hb hy) :=
-  exists_congr fun z ↦ pow_smul_torusFamilyFiberMap_eq_self_iff R hone hmul P ρ hP b hb hbone hbmul
+  exists_congr fun z ↦ pow_smul_torusFamilyFiberMap_eq_self_iff R hone hmul P ρ hP b hb hbmul
     hy k z
 
 include hbmul in
@@ -273,13 +272,12 @@ theorem affineEquiv_torusFamilyFiber_iterate_eq_id_of_pow_eq_one {g : Γ} {y : Y
     (hy : g • y = y) {m : ℕ} (hm : g ^ m = 1) :
     (⇑(AddEquiv.affineEquiv (torusFamilyFiberLinearPart R hone hmul P ρ hP hy)
       (torusFamilyFiberTranslationPart P b hb hy)))^[m] = id := by
-  have hbone := translationSection_one_eq_mk_zero R hone P ρ hP b hb hbmul
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
   funext z
   apply torusFamilyFiberMap_injective P y
-  rw [← pow_smul_torusFamilyFiberMap R hone hmul P ρ hP b hb hbone hbmul hy, hm, one_smul, id]
+  rw [← pow_smul_torusFamilyFiberMap R hone hmul P ρ hP b hb hbmul hy, hm, one_smul, id]
 
-include hbone hbmul in
+include hbmul in
 /-- **Translation parts of finite order are torsion.** If `g • y = y`, `g ^ m = 1` and `R g y` is
 the identity, so that `g` acts on the fibre over `y` by the translation by `t`, then `t` is an
 `m`-torsion point of the torus `E / LinearMap.range (P y)`: `m • t = 0`. -/
@@ -289,17 +287,18 @@ theorem nsmul_torusFamilyFiberTranslationPart_eq_zero {g : Γ} {y : Y} (hy : g �
   let _ := periodAddAction P
   obtain ⟨β, hβ⟩ := Quotient.exists_rep (torusFamilyFiberTranslationPart P b hb hy)
   have hbβ := eq_mk_of_torusFamilyFiberTranslationPart_eq_mk P b hb hy hβ.symm
+  obtain ⟨c, hc⟩ := exists_translationSection_one_eq_mk P b hb y
   -- Iterating the translation `[y, v] ↦ [y, v + β]` `k` times adds `k • β`.
-  have hiter : ∀ k : ℕ, (torusFamilyAffineMap R P ρ hP b hb g)^[k] (Quotient.mk _ (y, 0)) =
-      Quotient.mk _ (y, k • β) := by
+  have hiter : ∀ k : ℕ, (torusFamilyAffineMap R P ρ hP b hb g)^[k] (Quotient.mk _ (y, c)) =
+      Quotient.mk _ (y, c + k • β) := by
     intro k
     induction k with
     | zero => simp
     | succ k ih =>
       rw [Function.iterate_succ_apply', ih, torusFamilyAffineMap_mk_of_eq R P ρ hP b hb hbβ, hR,
-        hy, succ_nsmul]
+        hy, succ_nsmul, add_assoc]
   have h := torusFamilyAffineMap_iterate_translationSection_one R P ρ hP b hb hbmul g m y
-  rw [hm, hbone, hiter] at h
+  rw [hm, hc, hiter] at h
   have hmem : m • β ∈ LinearMap.range (P y) := by
     simpa using ((mem_orbit_periodAddAction_iff P).1
       (AddAction.orbitRel_apply.1 (Quotient.exact h))).2
@@ -315,18 +314,18 @@ theorem nsmul_torusFamilyFiberTranslationPart_eq_zero {g : Γ} {y : Y} (hy : g �
 point of the fibre over `y` is the identity. -/
 private theorem isCancelSMul_torusFamilyAffineMulAction_iff_fiberMap :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
     IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)) ↔
       ∀ (y : Y) (g : Γ), g • y = y → ∀ c, g • torusFamilyFiberMap P y c =
         torusFamilyFiberMap P y c → g = 1 := by
   let _ := periodAddAction P
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
   rw [isCancelSMul_iff_eq_one_of_smul_eq]
   refine ⟨fun h y g _ c hc ↦ h g _ hc, fun h g x hx ↦ ?_⟩
   -- `g` fixes the base point of `x`, and `x` is a point of the fibre over it.
   obtain ⟨c, hc⟩ : x ∈ Set.range (torusFamilyFiberMap P (torusFamilyProjection P x)) := by
     rw [range_torusFamilyFiberMap, Set.mem_ofPred_eq]
-  have hy := torusFamilyAffineMulAction_stabilizer_le R hone hmul P ρ hP b hb hbone hbmul x hx
+  have hy := torusFamilyAffineMulAction_stabilizer_le R hone hmul P ρ hP b hb hbmul x hx
   rw [← hc] at hx
   exact h _ g hy c hx
 
@@ -337,19 +336,19 @@ over `y` has no fixed point, that is, its translation part `t` does not lie in t
 `1 - A`. No freeness of the action on the base is assumed. -/
 theorem isCancelSMul_torusFamilyAffineMulAction_iff :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
     IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)) ↔
       ∀ (y : Y) (g : Γ) (hy : g • y = y), g ≠ 1 →
         ∀ c, c - torusFamilyFiberLinearPart R hone hmul P ρ hP hy c ≠
           torusFamilyFiberTranslationPart P b hb hy := by
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
   rw [isCancelSMul_torusFamilyAffineMulAction_iff_fiberMap]
   refine forall₂_congr fun y g ↦ ⟨fun h hy hg c hc ↦ hg (h hy c ?_), fun h hy c hc ↦ ?_⟩
-  · simpa using (pow_smul_torusFamilyFiberMap_eq_self_iff R hone hmul P ρ hP b hb hbone hbmul
+  · simpa using (pow_smul_torusFamilyFiberMap_eq_self_iff R hone hmul P ρ hP b hb hbmul
       hy 1 c).2 (by simpa using hc)
   · by_contra hg
     exact h hy hg c (by simpa using (pow_smul_torusFamilyFiberMap_eq_self_iff R hone hmul P ρ hP
-      b hb hbone hbmul hy 1 c).1 (by simpa using hc))
+      b hb hbmul hy 1 c).1 (by simpa using hc))
 
 /-- **Freeness at cyclic base stabilizers.** Suppose the stabilizer of each point `y` of the base
 is generated by an element `γ y` of finite order. Then the affine action on the total space of the
@@ -361,25 +360,25 @@ theorem isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers (γ
     (hγ : ∀ y, γ y • y = y) (hstab : ∀ y, MulAction.stabilizer Γ y ≤ Subgroup.zpowers (γ y))
     (hfin : ∀ y, IsOfFinOrder (γ y)) :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
     IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)) ↔
       ∀ (y : Y) (k : ℕ), 0 < k → k < orderOf (γ y) →
         ∀ c, c - (⇑(torusFamilyFiberLinearPart R hone hmul P ρ hP (hγ y)))^[k] c ≠
           AddEquiv.partialNorm (torusFamilyFiberLinearPart R hone hmul P ρ hP (hγ y)) k
             (torusFamilyFiberTranslationPart P b hb (hγ y)) := by
   classical
-  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+  let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
   rw [isCancelSMul_torusFamilyAffineMulAction_iff_fiberMap]
   refine forall_congr' fun y ↦ ⟨fun h k hk hkm c hc ↦ pow_ne_one_of_lt_orderOf hk.ne' hkm
     (h _ ((MulAction.mem_stabilizer_iff.1 (Subgroup.pow_mem _ (hγ y) k))) c
-      ((pow_smul_torusFamilyFiberMap_eq_self_iff R hone hmul P ρ hP b hb hbone hbmul
+      ((pow_smul_torusFamilyFiberMap_eq_self_iff R hone hmul P ρ hP b hb hbmul
         (hγ y) k c).2 hc)), fun h g hg c hc ↦ ?_⟩
   -- `g` fixes `y`, so it is a power `γ y ^ k` with `k < orderOf (γ y)`.
   obtain ⟨k, hkm, rfl⟩ := Finset.mem_image.1
     ((hfin y).mem_zpowers_iff_mem_range_orderOf.1 (hstab y hg))
   rcases Nat.eq_zero_or_pos k with rfl | hk
   · exact pow_zero _
-  · exact absurd ((pow_smul_torusFamilyFiberMap_eq_self_iff R hone hmul P ρ hP b hb hbone hbmul
+  · exact absurd ((pow_smul_torusFamilyFiberMap_eq_self_iff R hone hmul P ρ hP b hb hbmul
       (hγ y) k c).1 hc) (h k hk (Finset.mem_range.1 hkm) c)
 
 /-- The cyclic fixed-point condition at a fixed point `y` of `g` only depends on `g`, not on the
@@ -408,7 +407,7 @@ theorem isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers_of_
     (hγ : γ • y₀ = y₀) (hstab : MulAction.stabilizer Γ y₀ ≤ Subgroup.zpowers γ)
     (hfin : IsOfFinOrder γ) (hfree : ∀ y ≠ y₀, MulAction.stabilizer Γ y = ⊥) :
     letI := periodAddAction P
-    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+    letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbmul
     IsCancelSMul Γ (AddAction.orbitRel.Quotient Λ (Y × E)) ↔
       ∀ k : ℕ, 0 < k → k < orderOf γ →
         ∀ c, c - (⇑(torusFamilyFiberLinearPart R hone hmul P ρ hP hγ))^[k] c ≠
@@ -431,7 +430,7 @@ theorem isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers_of_
     · simp [γ', hy]
   have hγ₀ : γ' y₀ = γ := by simp [γ']
   rw [isCancelSMul_torusFamilyAffineMulAction_iff_of_stabilizer_le_zpowers R hone hmul P ρ hP b hb
-    hbone hbmul γ' hγ' hstab' hfin']
+    hbmul γ' hγ' hstab' hfin']
   refine ⟨fun h ↦ (cyclicFixedPointCondition_congr R hone hmul P ρ hP b hb hγ₀ (hγ' y₀) hγ).1
     (h y₀), fun h y ↦ ?_⟩
   by_cases hy : y = y₀
