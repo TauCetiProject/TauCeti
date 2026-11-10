@@ -109,7 +109,7 @@ private theorem exists_ae_measureReal_inter_ball_rpow_le
     refine (measure_mono (preimage_mono ball_subset_closedBall)).trans
       ((hε₂t ⟨hρ.1, hρ.2.trans_le (min_le_right _ _)⟩).trans ?_)
     gcongr
-    exact enorm_setIntegral_polarDensity_closedBall_le_of_hasDerivWithinAt hu hfin hs hρΩ
+    exact enorm_setIntegral_polarDensity_closedBall_le_of_hasDerivWithinAt hs hρΩ
       hdiff.hasDerivAt.hasDerivWithinAt
   have hfin' : μ (s ∩ ball x ρ) ≠ ∞ :=
     measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne
