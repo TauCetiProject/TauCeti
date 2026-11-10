@@ -5,16 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic
+public import TauCeti.Geometry.Manifold.Complex.BorderedHolomorphic.Basic
 
 /-!
 # The interior of a Riemann surface with boundary
 
-Let `M` be a Riemann surface with boundary: a charted space modelled on the closed upper
-half-plane whose transition maps lie in `TauCeti.borderedHolomorphicGroupoid`. Its manifold
-interior `TauCeti.borderedInterior M` is open. Restricting the charts of `M` to the interior and
-reading them in `ℂ` through the open upper half-plane makes the interior a charted space modelled
-on `ℂ` with holomorphic transition maps, that is, a Riemann surface without boundary.
+Let `M` be a `C^1` manifold modelled on the closed upper half-plane. Its manifold interior
+`TauCeti.borderedInterior M` is open. Restricting the charts of `M` to the interior and reading
+them in `ℂ` through the open upper half-plane makes the interior a charted space modelled on `ℂ`.
+When `M` is a Riemann surface with boundary, that is, its transition maps lie in
+`TauCeti.borderedHolomorphicGroupoid`, these charts have holomorphic transition maps, so the
+interior is a Riemann surface without boundary.
 
 The chart of the interior at `x` is the restriction of the chart of `M` at `x`, followed by
 `TauCeti.ClosedUpperHalfPlane.upperHalfPlaneChart`, the inclusion of the points of positive
@@ -27,10 +28,8 @@ diffeomorphism between them (`TauCeti.borderedInteriorDiffeomorph`).
 
 ## Main definitions
 
-* `TauCeti.ClosedUpperHalfPlane.upperHalfPlaneChart`: the inclusion of the open upper half-plane
-  into `ℂ`, as an open partial homeomorphism from the closed upper half-plane.
-* `TauCeti.borderedInterior`: the manifold interior of a Riemann surface with boundary, as an open
-  subset.
+* `TauCeti.borderedInterior`: the manifold interior of a `C^1` manifold modelled on the closed
+  upper half-plane, as an open subset.
 * `TauCeti.instChartedSpaceBorderedInterior`: its charts modelled on `ℂ`.
 * `TauCeti.borderedInteriorDiffeomorph`: the identity, from the complex charts read over `ℝ` to
   the open-subset structure.
@@ -40,12 +39,15 @@ diffeomorphism between them (`TauCeti.borderedInteriorDiffeomorph`).
 * `TauCeti.ClosedUpperHalfPlane.upperHalfPlaneChart_symm_trans_mem_contDiffGroupoid`: bordered
   holomorphic chart changes read in `ℂ` are analytic.
 * `TauCeti.hasGroupoid_borderedInterior` and `TauCeti.isManifold_borderedInterior`: the interior
-  is an analytic manifold modelled on `ℂ`.
+  of a Riemann surface with boundary is an analytic manifold modelled on `ℂ`.
 * `TauCeti.mem_borderedInterior_iff_im_pos`: a point is in the interior exactly when one, or any,
   chart of the atlas sends it to a point of positive imaginary part.
+* `TauCeti.chartAt_borderedInterior_source`, `TauCeti.chartAt_borderedInterior_target` and
+  `TauCeti.chartAt_borderedInterior_symm_apply`: the domain, image and inverse of the chart of the
+  interior, in terms of the chart of `M`.
 * `TauCeti.ClosedUpperHalfPlane.chartAt_borderedInterior_source_eq_univ` and
   `TauCeti.ClosedUpperHalfPlane.chartAt_borderedInterior_target_eq`: the interior of the closed
-  upper half-plane is the open upper half-plane with the identity chart.
+  upper half-plane is the open upper half-plane, with the inclusion into `ℂ` as chart.
 
 ## References
 
@@ -63,49 +65,6 @@ open scoped Manifold ContDiff Topology
 namespace TauCeti
 
 namespace ClosedUpperHalfPlane
-
-/-- The inclusion of the open upper half-plane into `ℂ`, as an open partial homeomorphism from the
-closed upper half-plane. Its source is the set of points of positive imaginary part, and its
-inverse is the model inverse `closedUpperHalfPlaneModel.symm`. -/
--- The exported evaluation, source and target equalities require this body under Lean's module
--- system.
-@[expose] def upperHalfPlaneChart : OpenPartialHomeomorph ClosedUpperHalfPlane ℂ where
-  toFun := Subtype.val
-  invFun := closedUpperHalfPlaneModel.symm
-  source := {z | 0 < (z : ℂ).im}
-  target := {z | 0 < z.im}
-  map_source' {_} hz := hz
-  map_target' {z} hz := by
-    simpa only [mem_ofPred_eq, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg (le_of_lt hz)]
-      using hz
-  left_inv' z _ := closedUpperHalfPlaneModel_symm_coe z
-  right_inv' _ hz := coe_closedUpperHalfPlaneModel_symm_of_im_nonneg (le_of_lt hz)
-  open_source := isOpen_lt continuous_const (continuous_im.comp continuous_subtype_val)
-  open_target := isOpen_lt continuous_const continuous_im
-  continuousOn_toFun := continuous_subtype_val.continuousOn
-  continuousOn_invFun := closedUpperHalfPlaneModel.continuous_symm.continuousOn
-
-/-- `upperHalfPlaneChart` is the inclusion into `ℂ`. -/
-@[simp, mfld_simps]
-theorem upperHalfPlaneChart_apply (z : ClosedUpperHalfPlane) : upperHalfPlaneChart z = z :=
-  rfl
-
-/-- The inverse of `upperHalfPlaneChart` is the model inverse. -/
-@[simp, mfld_simps]
-theorem upperHalfPlaneChart_symm_apply (z : ℂ) :
-    upperHalfPlaneChart.symm z = closedUpperHalfPlaneModel.symm z :=
-  rfl
-
-/-- `upperHalfPlaneChart` is defined at the points of positive imaginary part. -/
-@[simp, mfld_simps]
-theorem upperHalfPlaneChart_source :
-    upperHalfPlaneChart.source = {z : ClosedUpperHalfPlane | 0 < (z : ℂ).im} :=
-  rfl
-
-/-- `upperHalfPlaneChart` takes values in the open upper half-plane. -/
-@[simp, mfld_simps]
-theorem upperHalfPlaneChart_target : upperHalfPlaneChart.target = {z : ℂ | 0 < z.im} :=
-  rfl
 
 /-- A bordered holomorphic chart change, read in `ℂ` through the open upper half-plane, is
 complex differentiable on its source, hence analytic there. -/
@@ -141,29 +100,13 @@ end ClosedUpperHalfPlane
 
 open ClosedUpperHalfPlane
 
-/-- The bordered holomorphic groupoid is closed under restriction to open sets, so open subsets of
-a Riemann surface with boundary are again Riemann surfaces with boundary. -/
-instance closedUnderRestriction_borderedHolomorphicGroupoid :
-    ClosedUnderRestriction borderedHolomorphicGroupoid := by
-  refine (closedUnderRestriction_iff_id_le _).2 ?_
-  rw [StructureGroupoid.le_iff]
-  rintro e ⟨s, hs, hes⟩
-  refine StructureGroupoid.mem_of_eqOnSource _ ?_ hes
-  have hid : ∀ t : Set ClosedUpperHalfPlane, DifferentiableOn ℂ
-      (closedUpperHalfPlaneModel ∘ id ∘ closedUpperHalfPlaneModel.symm)
-      (closedUpperHalfPlaneModel.symm ⁻¹' t ∩ {z | 0 < z.im}) := fun t ↦
-    differentiableOn_id.congr fun z hz ↦ by
-      simpa using coe_closedUpperHalfPlaneModel_symm_of_im_nonneg (le_of_lt hz.2)
-  refine mem_borderedHolomorphicGroupoid_iff.2 ⟨ofSet_mem_contDiffGroupoid hs, ?_, ?_⟩ <;>
-    simpa using hid s
-
 variable (M : Type*) [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
-  [HasGroupoid M borderedHolomorphicGroupoid]
+  [IsManifold closedUpperHalfPlaneModel 1 M]
 
-/-- The manifold interior of a Riemann surface with boundary, as an open subset. -/
+/-- The manifold interior of a `C^1` manifold modelled on the closed upper half-plane, such as a
+Riemann surface with boundary, as an open subset. -/
 def borderedInterior : Opens M :=
-  ⟨closedUpperHalfPlaneModel.interior M,
-    closedUpperHalfPlaneModel.isOpen_interior (n := ∞) (by simp)⟩
+  ⟨closedUpperHalfPlaneModel.interior M, closedUpperHalfPlaneModel.isOpen_interior one_ne_zero⟩
 
 variable {M}
 
@@ -186,13 +129,14 @@ theorem mem_borderedInterior_iff_im_pos {e : OpenPartialHomeomorph M ClosedUpper
     (he : e ∈ atlas ClosedUpperHalfPlane M) {x : M} (hx : x ∈ e.source) :
     x ∈ borderedInterior M ↔ 0 < (e x : ℂ).im := by
   rw [mem_borderedInterior_iff_im_chartAt_pos]
-  have hc := borderedHolomorphicGroupoid_le_contDiffGroupoid
-    (HasGroupoid.compatible (chart_mem_atlas ClosedUpperHalfPlane x) he)
-  simpa [hx] using im_pos_iff_of_mem_contDiffGroupoid hc (by simp)
+  have hc := (contDiffGroupoid 1 closedUpperHalfPlaneModel).compatible
+    (chart_mem_atlas ClosedUpperHalfPlane x) he
+  simpa [hx] using im_pos_iff_of_mem_contDiffGroupoid hc one_ne_zero
     (z := chartAt ClosedUpperHalfPlane x x) (by simp [hx])
 
-/-- The interior of a Riemann surface with boundary is a charted space modelled on `ℂ`: the chart
-at `x` restricts the chart of `M` at `x` to the interior and reads it in `ℂ`. -/
+/-- The interior of a `C^1` manifold modelled on the closed upper half-plane is a charted space
+modelled on `ℂ`: the chart at `x` restricts the chart of `M` at `x` to the interior and reads it
+in `ℂ`. -/
 instance instChartedSpaceBorderedInterior : ChartedSpace ℂ (borderedInterior M) where
   atlas := range fun x : borderedInterior M ↦
     (chartAt ClosedUpperHalfPlane x).trans upperHalfPlaneChart
@@ -211,8 +155,8 @@ theorem chartAt_borderedInterior (x : borderedInterior M) :
 /-- The chart of the interior at `x` evaluates as the chart of `M` at `x`. -/
 @[simp]
 theorem chartAt_borderedInterior_apply (x y : borderedInterior M) :
-    chartAt ℂ x y = (chartAt ClosedUpperHalfPlane (x : M) y : ℂ) :=
-  rfl
+    chartAt ℂ x y = (chartAt ClosedUpperHalfPlane (x : M) y : ℂ) := by
+  simp [chartAt_borderedInterior, Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_coe]
 
 /-- The chart of the interior at `x` is defined on the whole intersection of the interior with the
 source of the chart of `M` at `x`. -/
@@ -226,8 +170,35 @@ theorem chartAt_borderedInterior_source (x : borderedInterior M) :
   refine ⟨And.left, fun hy ↦ ⟨hy, ?_⟩⟩
   exact (mem_borderedInterior_iff_im_pos (chart_mem_atlas _ _) hy).1 y.2
 
+/-- The chart of the interior at `x` takes values in the points of positive imaginary part whose
+model inverse lies in the target of the chart of `M` at `x`. -/
+@[simp]
+theorem chartAt_borderedInterior_target (x : borderedInterior M) :
+    (chartAt ℂ x).target = closedUpperHalfPlaneModel.symm ⁻¹'
+      (chartAt ClosedUpperHalfPlane (x : M)).target ∩ {z : ℂ | 0 < z.im} := by
+  ext z
+  simp only [chartAt_borderedInterior, Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_def,
+    upperHalfPlaneChart_target, upperHalfPlaneChart_symm_apply, mfld_simps]
+  refine ⟨fun h ↦ ⟨h.2.1, h.1⟩, fun h ↦ ⟨h.2, h.1, ?_⟩⟩
+  refine (mem_borderedInterior_iff_im_pos (chart_mem_atlas _ _)
+    ((chartAt _ _).map_target h.1)).2 ?_
+  rw [(chartAt _ _).right_inv h.1, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg h.2.le]
+  exact h.2
+
+/-- The inverse of the chart of the interior at `x` is the inverse of the chart of `M` at `x`
+after the model inverse. -/
+theorem chartAt_borderedInterior_symm_apply (x : borderedInterior M) {z : ℂ}
+    (hz : z ∈ (chartAt ℂ x).target) :
+    ((chartAt ℂ x).symm z : M) =
+      (chartAt ClosedUpperHalfPlane (x : M)).symm (closedUpperHalfPlaneModel.symm z) := by
+  rw [chartAt_borderedInterior, OpenPartialHomeomorph.trans_target, mem_inter_iff, mem_preimage,
+    upperHalfPlaneChart_symm_apply, Opens.chartAt_eq] at hz
+  rw [chartAt_borderedInterior, OpenPartialHomeomorph.coe_trans_symm, Function.comp_apply,
+    upperHalfPlaneChart_symm_apply, Opens.chartAt_eq]
+  exact (chartAt ClosedUpperHalfPlane (x : M)).subtypeRestr_symm_apply _ hz.2
+
 /-- The interior of a Riemann surface with boundary has holomorphic transition maps. -/
-instance hasGroupoid_borderedInterior :
+instance hasGroupoid_borderedInterior [HasGroupoid M borderedHolomorphicGroupoid] :
     HasGroupoid (borderedInterior M) (contDiffGroupoid ω 𝓘(ℂ)) where
   compatible := by
     rintro _ _ ⟨x, rfl⟩ ⟨y, rfl⟩
@@ -237,17 +208,24 @@ instance hasGroupoid_borderedInterior :
       OpenPartialHomeomorph.trans_assoc] using upperHalfPlaneChart_symm_trans_mem_contDiffGroupoid h
 
 /-- The interior of a Riemann surface with boundary is a Riemann surface without boundary. -/
-instance isManifold_borderedInterior : IsManifold 𝓘(ℂ) ω (borderedInterior M) :=
+instance isManifold_borderedInterior [HasGroupoid M borderedHolomorphicGroupoid] :
+    IsManifold 𝓘(ℂ) ω (borderedInterior M) :=
   IsManifold.mk' _ _ _
 
-/-- Near the image of `x`, reading the chart of the interior at `x` back through the open-subset
-chart of `M` at `x` is the identity. Both comparisons of the two structures reduce to this. -/
-private theorem eventually_chartAt_chartAt_symm_eq (x : borderedInterior M) :
-    ∀ᶠ z in 𝓝 (chartAt ℂ x x),
-      (chartAt ClosedUpperHalfPlane x
-        ((chartAt ClosedUpperHalfPlane x).symm (closedUpperHalfPlaneModel.symm z)) : ℂ) = z :=
-  Filter.eventually_of_mem ((chartAt ℂ x).open_target.mem_nhds (mem_chart_target ℂ x))
-    fun _ hz ↦ (chartAt ℂ x).right_inv hz
+/-- The extended chart of the open-subset structure of the interior at `y` evaluates as the
+chart of the interior at `y`. -/
+theorem extChartAt_borderedInterior_apply (x y : borderedInterior M) :
+    extChartAt closedUpperHalfPlaneModel y x = chartAt ℂ y x := by
+  rw [extChartAt_coe, Function.comp_apply, closedUpperHalfPlaneModel_apply,
+    chartAt_borderedInterior_apply]
+  rfl
+
+/-- The inverse of the extended chart of the open-subset structure of the interior at `y` is the
+inverse of the chart of the interior at `y`. -/
+theorem extChartAt_borderedInterior_symm_apply (y : borderedInterior M) (z : ℂ) :
+    (extChartAt closedUpperHalfPlaneModel y).symm z = (chartAt ℂ y).symm z := by
+  rw [extChartAt_coe_symm, chartAt_borderedInterior, OpenPartialHomeomorph.coe_trans_symm,
+    Function.comp_apply, Function.comp_apply, upperHalfPlaneChart_symm_apply]
 
 /-- The identity is a diffeomorphism from the interior with its complex charts, read over `ℝ`, to
 the interior with the open-subset structure of `M`. So the complex structure on the interior
@@ -257,18 +235,20 @@ def borderedInteriorDiffeomorph (n : ℕ∞ω) :
     where
   toEquiv := Equiv.refl _
   contMDiff_toFun x := by
-    refine contMDiffAt_iff.2 ⟨continuousAt_id, contDiffWithinAt_id.congr_of_eventuallyEq ?_ ?_⟩
-    · filter_upwards [nhdsWithin_le_nhds (eventually_chartAt_chartAt_symm_eq x)] with z hz
-      simpa [mfld_simps, chartAt_borderedInterior] using hz
-    · simp [mfld_simps, chartAt_borderedInterior]
+    refine contMDiffAt_iff.2 ⟨continuousAt_id,
+      contDiffWithinAt_id.congr_of_eventuallyEq_of_mem ?_ (mem_range_self _)⟩
+    filter_upwards [nhdsWithin_le_nhds
+      ((chartAt ℂ x).eventually_right_inverse (mem_chart_target ℂ x))] with z hz
+    simpa only [Function.comp_apply, Equiv.coe_refl, id_eq, extChartAt_coe_symm,
+      modelWithCornersSelf_coe_symm, extChartAt_borderedInterior_apply] using hz
   contMDiff_invFun x := by
-    have hx : extChartAt closedUpperHalfPlaneModel x x = chartAt ℂ x x := by
-      simp [mfld_simps, chartAt_borderedInterior]
-    refine contMDiffAt_iff.2 ⟨continuousAt_id, contDiffWithinAt_id.congr_of_eventuallyEq ?_ ?_⟩
-    · rw [hx]
-      filter_upwards [nhdsWithin_le_nhds (eventually_chartAt_chartAt_symm_eq x)] with z hz
-      simpa [mfld_simps, chartAt_borderedInterior] using hz
-    · simp [mfld_simps, chartAt_borderedInterior]
+    refine contMDiffAt_iff.2 ⟨continuousAt_id,
+      contDiffWithinAt_id.congr_of_eventuallyEq_of_mem ?_ (mem_range_self _)⟩
+    rw [extChartAt_borderedInterior_apply]
+    filter_upwards [nhdsWithin_le_nhds
+      ((chartAt ℂ x).eventually_right_inverse (mem_chart_target ℂ x))] with z hz
+    simpa only [Function.comp_apply, Equiv.refl_symm, Equiv.coe_refl, id_eq, extChartAt_coe,
+      modelWithCornersSelf_coe, extChartAt_borderedInterior_symm_apply] using hz
 
 /-- `borderedInteriorDiffeomorph` is the identity. -/
 @[simp]
@@ -296,8 +276,8 @@ theorem mem_borderedInterior_iff {z : ClosedUpperHalfPlane} :
 
 /-- The chart of the interior of the closed upper half-plane is the inclusion into `ℂ`. -/
 theorem chartAt_borderedInterior_eq_coe (x y : borderedInterior ClosedUpperHalfPlane) :
-    chartAt ℂ x y = ((y : ClosedUpperHalfPlane) : ℂ) :=
-  rfl
+    chartAt ℂ x y = ((y : ClosedUpperHalfPlane) : ℂ) := by
+  simp
 
 /-- The chart of the interior of the closed upper half-plane is defined everywhere. -/
 theorem chartAt_borderedInterior_source_eq_univ (x : borderedInterior ClosedUpperHalfPlane) :
@@ -308,11 +288,7 @@ theorem chartAt_borderedInterior_source_eq_univ (x : borderedInterior ClosedUppe
 half-plane. -/
 theorem chartAt_borderedInterior_target_eq (x : borderedInterior ClosedUpperHalfPlane) :
     (chartAt ℂ x).target = {z : ℂ | 0 < z.im} := by
-  rw [← (chartAt ℂ x).image_source_eq_target, chartAt_borderedInterior_source_eq_univ, image_univ]
-  ext z
-  refine ⟨?_, fun hz ↦ ⟨⟨⟨z, le_of_lt hz⟩, mem_borderedInterior_iff.2 hz⟩, rfl⟩⟩
-  rintro ⟨y, rfl⟩
-  exact mem_borderedInterior_iff.1 y.2
+  simp
 
 end ClosedUpperHalfPlane
 
