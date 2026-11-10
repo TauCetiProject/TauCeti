@@ -22,8 +22,8 @@ projective image does not change its index, and lifting that image back to `SL�
 quotient map.
 
 The principal congruence subgroup `Γ(N)` behaves differently: for `N ≥ 3` it does not contain
-`-I`, so its projective image has half its index, `[PSL₂(ℤ) : Γ̄(N)] = |SL₂(ℤ/Nℤ)| / 2`. At
-`N = 3` the two indices are `24` and `12`.
+`-I`, so its projective image has half its index: the image of `Γ(N)` in `PSL₂(ℤ)` has index
+`|SL₂(ℤ/Nℤ)| / 2`. At `N = 3` the two indices are `24` and `12`.
 
 ## References
 

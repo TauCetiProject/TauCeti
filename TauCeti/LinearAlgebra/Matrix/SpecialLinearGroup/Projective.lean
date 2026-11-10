@@ -25,9 +25,9 @@ theorem `QuotientGroup.comapMk'OrderIso` read for the projective special linear 
 In rank two over a ring without zero divisors the centre is `{±I}`, so containing the centre
 means containing `-I`. The image of `Γ ≤ SL(2, R)` in `PSL(2, R)` then has the index of `Γ` when
 `-I ∈ Γ` and half of it otherwise, and has finite index exactly when `Γ` does. For `R = ℤ` this
-is the dictionary between subgroups `Γ̄` of the modular group `PSL(2, ℤ)` and the subgroups
-`±Γ̄` of `SL(2, ℤ)` containing `-I`, and between the index of a subgroup of `SL(2, ℤ)` and its
-projective index.
+is the dictionary between subgroups of the modular group `PSL(2, ℤ)` and the subgroups of
+`SL(2, ℤ)` containing `-I`, and between the index of a subgroup of `SL(2, ℤ)` and its projective
+index.
 
 ## Main declarations
 
