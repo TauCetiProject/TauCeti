@@ -111,7 +111,7 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half {α : ℝ
           (fun _ _ => zero_le) (Finset.mem_univ j)).trans
           (Finset.single_le_sum (f := fun i => ∑ j, (Ma i j).toNNReal) (fun _ _ => zero_le)
             (Finset.mem_univ i))
-  obtain ⟨C, hC⟩ := hball (M := M) hlam hR₀ (by simpa only [c, mul_assoc] using hscale.le)
+  obtain ⟨C, hC⟩ := hball (M := M) hlam (by simpa only [c, mul_assoc] using hscale.le)
     (half_lt_self hR₀)
   refine ⟨R, hR₀, (closedBall_subset_ball (hR.trans_le (min_le_right _ _))).trans hεΩ, C,
     fun hu hN₀ hN₁ hN₂ hV hK => hC hlow (toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq (a x))
