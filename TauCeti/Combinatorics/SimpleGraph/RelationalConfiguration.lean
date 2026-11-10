@@ -309,14 +309,9 @@ theorem map_comap_toRelationalConfiguration
   have hnull : ∀ s : Set (SimpleGraph V), MeasurableSet s →
       NullMeasurableSet (toRelationalConfiguration '' s) μ := by
     intro s hs
-    obtain ⟨T, hT, hTs⟩ := relationalConfigurationEquiv.measurableSet_image.2 hs
-    have himage : toRelationalConfiguration '' s = T ∩ {c | IsSimpleGraph c} := by
-      have h : toRelationalConfiguration '' s =
-          Subtype.val '' (relationalConfigurationEquiv '' s) := by
-        simp only [Set.image_image, coe_relationalConfigurationEquiv]
-      rw [h, ← hTs, Set.image_preimage_eq_inter_range, Subtype.range_coe_subtype]
-    rw [himage]
-    exact hT.nullMeasurableSet.inter hA
+    simpa only [Set.image_image, coe_relationalConfigurationEquiv] using
+      Measure.MeasurableSet.nullMeasurableSet_subtype_coe hA
+        (relationalConfigurationEquiv.measurableSet_image.2 hs)
   refine Measure.ext fun T hT ↦ ?_
   rw [Measure.map_apply measurable_toRelationalConfiguration hT,
     Measure.comap_apply₀ _ _ toRelationalConfiguration_injective hnull
