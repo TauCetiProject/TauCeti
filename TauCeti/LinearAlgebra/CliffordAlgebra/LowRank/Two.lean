@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 public import TauCeti.LinearAlgebra.QuadraticForm.Diagonal.Basic
 -- Public: `ιInv` appears in the coordinate formula for the character.
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Vectors
+import Mathlib.LinearAlgebra.QuadraticForm.Basis
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -54,7 +55,6 @@ universe u v
 section FieldDimension
 
 variable {K : Type u} {V : Type v} [Field K] [AddCommGroup V] [Module K V]
-  [Invertible (2 : K)]
 
 /-- In dimension two, every odd Clifford element is a vector generator. -/
 theorem range_ι_eq_evenOdd_one_of_finrank_eq_two (Q : QuadraticForm K V)
@@ -62,8 +62,16 @@ theorem range_ι_eq_evenOdd_one_of_finrank_eq_two (Q : QuadraticForm K V)
   let _ : FiniteDimensional K V :=
     FiniteDimensional.of_finrank_pos (by rw [hV]; decide)
   let _ : Nontrivial V := Module.nontrivial_of_finrank_pos (by rw [hV]; decide)
+  -- The generator is injective in every characteristic: `changeForm` sends it to the exterior
+  -- algebra's generator.
+  have hinj : Function.Injective (ι Q) := by
+    obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (-Q)
+    intro m n hmn
+    have := congrArg (changeForm (hB.trans (zero_sub Q).symm)) hmn
+    rw [changeForm_ι, changeForm_ι] at this
+    exact (ExteriorAlgebra.ι_inj K m n).1 this
   apply Submodule.eq_of_le_of_finrank_eq (range_ι_le_evenOdd_one Q)
-  rw [LinearMap.finrank_range_of_inj (ι_injective Q), finrank_evenOdd Q, hV]
+  rw [LinearMap.finrank_range_of_inj hinj, finrank_evenOdd Q, hV]
   norm_num
 
 /-- In dimension two, the even Clifford elements are exactly the products `ι a * ι w`, for any
