@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import TauCeti.Analysis.Fourier.Parametric
 import TauCeti.Analysis.InnerProductSpace.Adjoint
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 import TauCeti.MeasureTheory.Function.L2Space
 
@@ -40,6 +41,8 @@ support.
   commute with taking adjoint symbols, `∂ (a*) = (∂ a)*`.
 * `TauCeti.Symbol.integral_inner_quantizeSchwartzValue_adjoint`: the quantization of `a*` is the
   formal adjoint of the quantization of `a`.
+* `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_fourier_slice_sub_smul_le`: the decay
+  `‖â(θ, ξ - sθ)‖ ≤ C (1 + ‖θ‖) ^ (-(n + 1)) ⟨ξ⟩ ^ m`, uniformly for bounded shift scales `s`.
 
 ## The estimates
 
@@ -86,52 +89,72 @@ section Slice
 variable {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
   [NormedSpace ℂ W] {a : Symbol n V W m}
 
-/-- The decay of `â(θ, ξ - 2πθ)`: for a symbol of order `m` with compact spatial support,
-`‖â(θ, ξ - 2πθ)‖ ≤ C (1 + ‖θ‖) ^ (-(n + 1)) ⟨ξ⟩ ^ m`, which is integrable in `θ`. The decay of `â`
-in its first variable absorbs the growth of Peetre's inequality in the shift `2πθ`. -/
-private theorem HasCompactSpatialSupport.exists_norm_fourier_slice_sub_le
-    (ha : a.HasCompactSpatialSupport) :
-    ∃ C, 0 ≤ C ∧ ∀ θ ξ : CoordinateSpace n,
-      ‖𝓕 (fun x ↦ a.coefficient (x, ξ - (2 * π) • θ)) θ‖ ≤
+/-- **The decay of `â(θ, ξ - sθ)`**, uniformly for shift scales `|s| ≤ R`: for a symbol of order
+`m` with compact spatial support, `‖â(θ, ξ - sθ)‖ ≤ C (1 + ‖θ‖) ^ (-(n + 1)) ⟨ξ⟩ ^ m`, which is
+integrable in `θ`. The decay of `â` in its first variable absorbs the growth of Peetre's inequality
+in the shift `sθ`. -/
+theorem HasCompactSpatialSupport.exists_norm_fourier_slice_sub_smul_le
+    (ha : a.HasCompactSpatialSupport) (R : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ s : ℝ, |s| ≤ R → ∀ θ ξ : CoordinateSpace n,
+      ‖𝓕 (fun x ↦ a.coefficient (x, ξ - s • θ)) θ‖ ≤
         C * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
   set k := ⌈|m|⌉₊
+  set c := max R 1
   obtain ⟨C₀, hC₀, hdecay⟩ := ha.exists_one_add_norm_pow_mul_norm_fourier_le (n + 1 + k)
-  refine ⟨C₀ * 2 ^ (|m| / 2) * (2 * π) ^ |m|, by positivity, fun θ ξ ↦ ?_⟩
+  have hc : 1 ≤ c := le_max_right R 1
+  refine ⟨C₀ * 2 ^ (|m| / 2) * c ^ |m|, by positivity, fun s hs θ ξ ↦ ?_⟩
   set t := 1 + ‖θ‖
   have ht : 0 < t := by positivity
   have h1 : 1 ≤ t := le_add_of_nonneg_right (norm_nonneg θ)
-  -- Peetre's inequality for the shift by `2πθ`.
-  have hpeetre := one_add_norm_sq_rpow_le_mul_sub m (ξ - (2 * π) • θ) ξ
+  -- Peetre's inequality for the shift by `sθ`.
+  have hpeetre := one_add_norm_sq_rpow_le_mul_sub m (ξ - s • θ) ξ
   rw [sub_sub_cancel_left, norm_neg] at hpeetre
-  have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) |m| θ
-  rw [abs_abs] at hscale
+  -- Since `‖sθ‖ ≤ c ‖θ‖`, the bracket of the shift is at most `c ^ |m| ⟨θ⟩ ^ |m|`.
+  have hscale : (1 + ‖s • θ‖ ^ 2) ^ (|m| / 2) ≤ c ^ |m| * (1 + ‖θ‖ ^ 2) ^ (|m| / 2) := by
+    have hle : ‖s • θ‖ ≤ ‖c • θ‖ := by
+      rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_of_nonneg (zero_le_one.trans hc)]
+      gcongr
+      exact hs.trans (le_max_left R 1)
+    have h := one_add_norm_smul_sq_rpow_le hc |m| θ
+    rw [abs_abs] at h
+    exact (Real.rpow_le_rpow (by positivity) (by gcongr) (by positivity)).trans h
   -- The bracket `⟨θ⟩ ^ |m|` is at most `(1 + ‖θ‖) ^ k`.
   have hbr : (1 + ‖θ‖ ^ 2) ^ (|m| / 2) ≤ t ^ k := by
     calc (1 + ‖θ‖ ^ 2) ^ (|m| / 2) ≤ t ^ |m| :=
           one_add_norm_sq_rpow_le_one_add_norm_rpow θ (abs_nonneg m)
       _ ≤ t ^ (k : ℝ) := Real.rpow_le_rpow_of_exponent_le h1 (Nat.le_ceil _)
       _ = t ^ k := Real.rpow_natCast t k
-  have hF := hdecay θ (ξ - (2 * π) • θ)
+  have hF := hdecay θ (ξ - s • θ)
   have hpow : t ^ (-((n : ℝ) + 1)) * t ^ (n + 1 + k) = t ^ k := by
     rw [← Real.rpow_natCast, ← Real.rpow_add ht, ← Real.rpow_natCast]
     push_cast
     ring_nf
-  have hkey : t ^ (n + 1 + k) * ‖𝓕 (fun x ↦ a.coefficient (x, ξ - (2 * π) • θ)) θ‖ ≤
-      t ^ (n + 1 + k) * (C₀ * 2 ^ (|m| / 2) * (2 * π) ^ |m| *
+  have hkey : t ^ (n + 1 + k) * ‖𝓕 (fun x ↦ a.coefficient (x, ξ - s • θ)) θ‖ ≤
+      t ^ (n + 1 + k) * (C₀ * 2 ^ (|m| / 2) * c ^ |m| *
         (t ^ (-((n : ℝ) + 1)) * (1 + ‖ξ‖ ^ 2) ^ (m / 2))) := by
     refine hF.trans ?_
-    calc C₀ * (1 + ‖ξ - (2 * π) • θ‖ ^ 2) ^ (m / 2)
-        ≤ C₀ * (2 ^ (|m| / 2) * ((2 * π) ^ |m| * t ^ k) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
+    calc C₀ * (1 + ‖ξ - s • θ‖ ^ 2) ^ (m / 2)
+        ≤ C₀ * (2 ^ (|m| / 2) * (c ^ |m| * t ^ k) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
           gcongr
           refine hpeetre.trans ?_
           gcongr
           exact hscale.trans (by gcongr)
-      _ = C₀ * 2 ^ (|m| / 2) * (2 * π) ^ |m| *
+      _ = C₀ * 2 ^ (|m| / 2) * c ^ |m| *
             ((t ^ (-((n : ℝ) + 1)) * t ^ (n + 1 + k)) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
           rw [hpow]
           ring
       _ = _ := by ring
   exact le_of_mul_le_mul_left hkey (by positivity)
+
+/-- The decay of `â(θ, ξ - 2πθ)`, the case `s = 2π` of
+`HasCompactSpatialSupport.exists_norm_fourier_slice_sub_smul_le`. -/
+private theorem HasCompactSpatialSupport.exists_norm_fourier_slice_sub_le
+    (ha : a.HasCompactSpatialSupport) :
+    ∃ C, 0 ≤ C ∧ ∀ θ ξ : CoordinateSpace n,
+      ‖𝓕 (fun x ↦ a.coefficient (x, ξ - (2 * π) • θ)) θ‖ ≤
+        C * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) :=
+  (ha.exists_norm_fourier_slice_sub_smul_le (2 * π)).imp fun _ hC ↦
+    ⟨hC.1, hC.2 (2 * π) (abs_of_pos Real.two_pi_pos).le⟩
 
 /-- The Fourier transform `â(g t, h t)` of a position slice is continuous along continuous maps
 `g`, `h` into the dual position variable and the frequency. -/
@@ -356,15 +379,11 @@ private theorem HasCompactSpatialSupport.continuous_leftCoeff_integrand
     exact ha.continuous_fourier_slice_comp continuous_id (by fun_prop)
   exact h₁.smul h₂
 
-private theorem integrable_one_add_norm_rpow_neg :
-    Integrable fun θ : CoordinateSpace n ↦ (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) :=
-  integrable_one_add_norm (by rw [finrank_euclideanSpace_fin]; linarith)
-
 private theorem HasCompactSpatialSupport.integrable_fourier_slice_sub
     (ha : a.HasCompactSpatialSupport) (ξ : CoordinateSpace n) :
     Integrable fun θ : CoordinateSpace n ↦ 𝓕 (fun x ↦ a.coefficient (x, ξ - (2 * π) • θ)) θ := by
   obtain ⟨C, -, hC⟩ := ha.exists_norm_fourier_slice_sub_le
-  exact ((integrable_one_add_norm_rpow_neg.mul_const ((1 + ‖ξ‖ ^ 2) ^ (m / 2))).const_mul
+  exact ((integrable_one_add_norm_rpow_neg_succ.mul_const ((1 + ‖ξ‖ ^ 2) ^ (m / 2))).const_mul
     C).mono' (ha.continuous_fourier_slice_comp continuous_id (by fun_prop)).aestronglyMeasurable
       (.of_forall fun θ ↦ hC θ ξ)
 
@@ -424,7 +443,7 @@ private theorem HasCompactSpatialSupport.hasFDerivAt_leftCoeff
     (fun j ξ ↦ (ha.spatialDeriv j).continuous_fourier_slice_comp continuous_id (by fun_prop))
     (fun j ξ ↦ (ha.frequencyDeriv j).continuous_fourier_slice_comp continuous_id (by fun_prop))
     (fun ξ ↦ ha.integrable_fourier_slice_sub ξ)
-    (integrable_one_add_norm_rpow_neg.const_mul D) p₀ (fun θ ξ hξ j ↦ ⟨?_, ?_⟩)
+    (integrable_one_add_norm_rpow_neg_succ.const_mul D) p₀ (fun θ ξ hξ j ↦ ⟨?_, ?_⟩)
   · exact (hball hξ (hCx0 j) (hCx j θ ξ)).trans (by gcongr; exact (hterm j).1)
   · exact (hball hξ (hCξ0 j) (hCξ j θ ξ)).trans (by gcongr; exact (hterm j).2)
 
@@ -471,7 +490,7 @@ private theorem HasCompactSpatialSupport.exists_norm_leftCoeff_le
   set I := ∫ θ : CoordinateSpace n, (1 + ‖θ‖) ^ (-((n : ℝ) + 1))
   have hI : 0 ≤ I := integral_nonneg fun θ ↦ by positivity
   refine ⟨C * I, mul_nonneg hC0 hI, fun p ↦ ?_⟩
-  refine (norm_integral_le_of_norm_le ((integrable_one_add_norm_rpow_neg.mul_const
+  refine (norm_integral_le_of_norm_le ((integrable_one_add_norm_rpow_neg_succ.mul_const
     ((1 + ‖p.2‖ ^ 2) ^ (m / 2))).const_mul C) (.of_forall fun θ ↦ ?_)).trans_eq ?_
   · rw [norm_smul, Circle.norm_coe, one_mul]
     exact hC θ p.2
@@ -661,7 +680,7 @@ private theorem HasCompactSpatialSupport.integrable_adjointIntegrand
       (1 + ‖z.1‖ ^ 2) ^ (m / 2) * ‖𝓕 v z.1‖ * (1 + ‖z.2‖) ^ (-((n : ℝ) + 1)))
       (volume.prod volume) :=
     ((𝓕 v).integrable_one_add_norm_sq_rpow_mul_norm (m / 2)).mul_prod
-      integrable_one_add_norm_rpow_neg
+      integrable_one_add_norm_rpow_neg_succ
   have hcont : Continuous fun q : CoordinateSpace n × (CoordinateSpace n × CoordinateSpace n) ↦
       adjointIntegrand a u v q.1 q.2.1 q.2.2 := by
     have h₁ : Continuous fun q : CoordinateSpace n × (CoordinateSpace n × CoordinateSpace n) ↦
