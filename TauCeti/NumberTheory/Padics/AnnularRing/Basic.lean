@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Group.Ultra
-public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 public import Mathlib.NumberTheory.Padics.PadicIntegers
 public import Mathlib.RingTheory.PowerSeries.WellKnown
+public import Mathlib.Topology.Algebra.InfiniteSum.DiscreteConvolution
 public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
+public import TauCeti.Topology.Algebra.InfiniteSum.DiscreteConvolution
+import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 
 /-!
 # The annular coefficient ring `ℤ_p⟦T, p/T⟧`
@@ -26,10 +28,12 @@ coefficient family `d : ℤ → ℤ_p`, and the valuation condition is stated in
 `‖d_m‖ ≤ p ^ min 0 m`; `TauCeti.AnnularRing.norm_le_zpow_min_iff_pow_dvd` translates it into the
 divisibility `p ^ (-m) ∣ d_m` for `m < 0`.
 
-The product is the convolution `(d e)_m = ∑_{i ∈ ℤ} d_i e_{m - i}`. Each such coefficient is an
+The product is the convolution `(d e)_m = ∑_{i ∈ ℤ} d_i e_{m - i}`, Mathlib's
+`DiscreteConvolution.addRingConvolution` of the coefficient families. Each such coefficient is an
 infinite `p`-adically convergent sum: the term `d_i e_{m - i}` has norm at most
 `p ^ (min 0 i + min 0 (m - i))`, and this exponent tends to `-∞` in both directions. Associativity
-exchanges the order of summation in a double series of this kind.
+follows from `DiscreteConvolution.addRingConvolution_assoc`, since the double series of three
+coefficient families converges in the same way.
 
 The ring contains `T` and `U = p / T`, with `T U = p`. The maps `f ↦ f(T)` and `g ↦ g(U)` are
 ring homomorphisms from `ℤ_p⟦X⟧`, and every element has a unique normal form `f(T) + U g(U)`
@@ -67,6 +71,7 @@ is larger than the `p`-adic completion of `ℤ_p⟦T⟧[p/T]`, in which they ten
 public noncomputable section
 
 open Filter Topology PowerSeries
+open scoped DiscreteConvolution
 
 namespace TauCeti
 
@@ -105,19 +110,12 @@ theorem coeff_injective : Function.Injective (coeff : AnnularRing p → ℤ → 
 
 /-! ### Convergence of the convolution series -/
 
-/-- A family of `p`-adic integers bounded by `p ^ g`, where `g → -∞`, tends to zero. -/
-private theorem tendsto_zero_of_norm_le_zpow {α : Type*} {l : Filter α} {f : α → ℤ_[p]}
-    {g : α → ℤ} (hf : ∀ a, ‖f a‖ ≤ (p : ℝ) ^ g a) (hg : Tendsto g l atBot) :
-    Tendsto f l (𝓝 0) := by
-  refine squeeze_zero_norm hf ?_
-  have h := (tendsto_rpow_atBot_of_base_gt_one (p : ℝ) one_lt_p).comp
-    ((tendsto_intCast_atBot_iff (R := ℝ)).2 hg)
-  simpa [Function.comp_def, Real.rpow_intCast] using h
-
-private theorem norm_mul_le_zpow {a b : ℤ_[p]} {s t : ℤ} (ha : ‖a‖ ≤ (p : ℝ) ^ s)
-    (hb : ‖b‖ ≤ (p : ℝ) ^ t) : ‖a * b‖ ≤ (p : ℝ) ^ (s + t) := by
-  rw [zpow_add₀ (zero_lt_one.trans one_lt_p).ne', norm_mul]
-  exact mul_le_mul ha hb (norm_nonneg _) (by positivity)
+/-- The product of the coefficients of `T ^ i` and `T ^ j` in two elements has norm at most
+`p ^ (min 0 i + min 0 j)`. -/
+theorem norm_coeff_mul_coeff_le (x y : AnnularRing p) (i j : ℤ) :
+    ‖x.coeff i * y.coeff j‖ ≤ (p : ℝ) ^ (min 0 i + min 0 j) := by
+  rw [zpow_add₀ (zero_lt_one.trans one_lt_p).ne']
+  exact norm_mul_le_of_le (x.norm_coeff_le i) (y.norm_coeff_le j)
 
 /-- The exponent bounding the terms of a convolution coefficient tends to `-∞`. -/
 private theorem tendsto_min_add_min (m : ℤ) :
@@ -141,17 +139,18 @@ private theorem tendsto_min_add_min_add_min (m : ℤ) :
 theorem summable_coeff_mul_coeff (x y : AnnularRing p) (m : ℤ) :
     Summable fun i ↦ x.coeff i * y.coeff (m - i) :=
   NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <|
-    tendsto_zero_of_norm_le_zpow
-      (fun i ↦ norm_mul_le_zpow (x.norm_coeff_le i) (y.norm_coeff_le (m - i)))
+    tendsto_zero_of_norm_le_zpow (one_lt_p (p := p)) (fun i ↦ norm_coeff_mul_coeff_le x y i (m - i))
       (tendsto_min_add_min m)
 
 /-- The double convolution series `∑_{i, j} d_i e_j f_{m - i - j}` of three elements converges. -/
 theorem summable_coeff_mul_coeff_mul_coeff (x y z : AnnularRing p) (m : ℤ) :
     Summable fun ij : ℤ × ℤ ↦ x.coeff ij.1 * y.coeff ij.2 * z.coeff (m - ij.1 - ij.2) :=
   NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero <|
-    tendsto_zero_of_norm_le_zpow
-      (fun ij ↦ norm_mul_le_zpow (norm_mul_le_zpow (x.norm_coeff_le ij.1)
-        (y.norm_coeff_le ij.2)) (z.norm_coeff_le (m - ij.1 - ij.2)))
+    tendsto_zero_of_norm_le_zpow (one_lt_p (p := p))
+      (fun ij ↦ by
+        rw [zpow_add₀ (zero_lt_one.trans one_lt_p).ne']
+        exact norm_mul_le_of_le (norm_coeff_mul_coeff_le x y ij.1 ij.2)
+          (z.norm_coeff_le (m - ij.1 - ij.2)))
       (tendsto_min_add_min_add_min m)
 
 /-- The convolution series defining the coefficient of `T ^ m` in a product satisfies the
@@ -159,7 +158,7 @@ valuation condition in degree `m`. -/
 theorem norm_tsum_coeff_mul_coeff_le (x y : AnnularRing p) (m : ℤ) :
     ‖∑' i, x.coeff i * y.coeff (m - i)‖ ≤ (p : ℝ) ^ min 0 m :=
   IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (by positivity) fun i ↦
-    (norm_mul_le_zpow (x.norm_coeff_le i) (y.norm_coeff_le (m - i))).trans
+    (norm_coeff_mul_coeff_le x y i (m - i)).trans
       (zpow_le_zpow_right₀ one_lt_p.le (by omega))
 
 /-! ### The additive structure and the `ℤ_p`-action -/
@@ -224,10 +223,10 @@ instance : Module ℤ_[p] (AnnularRing p) :=
 /-! ### The convolution product -/
 
 instance : One (AnnularRing p) where
-  one := ⟨fun m ↦ if m = 0 then 1 else 0, fun m ↦ by
-    split_ifs with hm
-    · simp [hm]
-    · simp only [norm_zero]; positivity⟩
+  one := ⟨Pi.single 0 1, fun m ↦ by
+    rcases eq_or_ne m 0 with rfl | hm
+    · simp
+    · simp only [Pi.single_eq_of_ne hm, norm_zero]; positivity⟩
 
 instance : NatCast (AnnularRing p) where
   natCast n := (n : ℤ_[p]) • 1
@@ -236,24 +235,58 @@ instance : IntCast (AnnularRing p) where
   intCast n := (n : ℤ_[p]) • 1
 
 instance : Mul (AnnularRing p) where
-  mul x y := ⟨fun m ↦ ∑' i, x.coeff i * y.coeff (m - i), norm_tsum_coeff_mul_coeff_le x y⟩
+  mul x y := ⟨x.coeff ⋆ᵣ₊ y.coeff, fun m ↦ by
+    rw [DiscreteConvolution.addRingConvolution_eq_tsum_neg_add]
+    simpa only [neg_add_eq_sub] using norm_tsum_coeff_mul_coeff_le x y m⟩
 
-theorem coeff_one (m : ℤ) : (1 : AnnularRing p).coeff m = if m = 0 then 1 else 0 := (rfl)
+theorem coeff_one (m : ℤ) : (1 : AnnularRing p).coeff m = if m = 0 then 1 else 0 :=
+  Pi.single_apply 0 1 m
 
-@[simp] theorem coeff_one_zero : (1 : AnnularRing p).coeff 0 = 1 := (rfl)
+@[simp] theorem coeff_one_zero : (1 : AnnularRing p).coeff 0 = 1 :=
+  (coeff_one 0).trans (ite_eq_left rfl)
 
 theorem natCast_def (n : ℕ) : (n : AnnularRing p) = (n : ℤ_[p]) • 1 := (rfl)
 
 theorem intCast_def (n : ℤ) : (n : AnnularRing p) = (n : ℤ_[p]) • 1 := (rfl)
 
+/-- The coefficient family of a product is the additive ring convolution of the coefficient
+families. -/
+theorem coeff_mul_eq_addRingConvolution (x y : AnnularRing p) :
+    (x * y).coeff = x.coeff ⋆ᵣ₊ y.coeff := (rfl)
+
 /-- The coefficient of `T ^ m` in a product is the convolution `∑_{i ∈ ℤ} d_i e_{m - i}`. -/
 theorem coeff_mul (x y : AnnularRing p) (m : ℤ) :
-    (x * y).coeff m = ∑' i, x.coeff i * y.coeff (m - i) := (rfl)
+    (x * y).coeff m = ∑' i, x.coeff i * y.coeff (m - i) := by
+  rw [coeff_mul_eq_addRingConvolution, DiscreteConvolution.addRingConvolution_eq_tsum_neg_add]
+  simp only [neg_add_eq_sub]
+
+/-- Every coefficient of the additive ring convolution of two coefficient families converges. -/
+theorem addConvolutionExists_coeff (x y : AnnularRing p) :
+    DiscreteConvolution.AddConvolutionExists (.mul ℕ ℤ_[p]) x.coeff y.coeff := fun m ↦
+  (DiscreteConvolution.addFiberEquivSub m).summable_iff.1 <|
+    (summable_coeff_mul_coeff y x m).congr fun i ↦ by simp [mul_comm]
+
+/-- The double convolution series of three coefficient families converges when indexed, as in
+`DiscreteConvolution.addRingConvolution_assoc`, by pairs `((k, c), (a, b))` with `k + c = n` and
+`a + b = k`. -/
+theorem summable_sigma_addFiber_coeff_mul_coeff_mul_coeff (x y z : AnnularRing p) (n : ℤ) :
+    Summable fun σ : Σ q : DiscreteConvolution.addFiber n, DiscreteConvolution.addFiber q.1.1 ↦
+      x.coeff σ.2.1.1 * y.coeff σ.2.1.2 * z.coeff σ.1.1.2 := by
+  -- Such a pair is determined by `(a, b)`, since `c = n - a - b`.
+  have hj : Function.Injective fun σ : Σ q : DiscreteConvolution.addFiber n,
+      DiscreteConvolution.addFiber q.1.1 ↦ σ.2.1 := fun _ _ _ ↦ by grind
+  refine ((summable_coeff_mul_coeff_mul_coeff x y z n).comp_injective hj).congr fun σ ↦ ?_
+  obtain ⟨⟨⟨k, c⟩, hkc⟩, ⟨⟨a, b⟩, hab⟩⟩ := σ
+  simp only [DiscreteConvolution.mem_addFiber] at hkc hab
+  simp only [Function.comp_apply]
+  congr 2
+  omega
 
 /-- The convolution series converges to the coefficient of the product. -/
 theorem hasSum_coeff_mul (x y : AnnularRing p) (m : ℤ) :
-    HasSum (fun i ↦ x.coeff i * y.coeff (m - i)) ((x * y).coeff m) :=
-  (summable_coeff_mul_coeff x y m).hasSum
+    HasSum (fun i ↦ x.coeff i * y.coeff (m - i)) ((x * y).coeff m) := by
+  rw [coeff_mul]
+  exact (summable_coeff_mul_coeff x y m).hasSum
 
 /-- Multiplication by a series concentrated in degree `k` shifts the coefficients by `k`. -/
 theorem coeff_mul_of_coeff_eq_zero {x : AnnularRing p} {k : ℤ} (hx : ∀ i ≠ k, x.coeff i = 0)
@@ -266,58 +299,18 @@ instance : CommRing (AnnularRing p) where
   one := 1
   natCast := Nat.cast
   intCast := Int.cast
-  mul_assoc x y z := by
-    ext m : 2
-    have hG := summable_coeff_mul_coeff_mul_coeff x y z m
-    -- Reindex the double series by `(k, i) ↦ (i, k - i)`, `k` being the degree in `x * y`.
-    let e : ℤ × ℤ ≃ ℤ × ℤ :=
-      { toFun ki := (ki.2, ki.1 - ki.2)
-        invFun ij := (ij.1 + ij.2, ij.1)
-        left_inv ki := by simp
-        right_inv ij := by simp }
-    have he (ki : ℤ × ℤ) :
-        x.coeff (e ki).1 * y.coeff (e ki).2 * z.coeff (m - (e ki).1 - (e ki).2) =
-          x.coeff ki.2 * y.coeff (ki.1 - ki.2) * z.coeff (m - ki.1) := by
-      simp [e]
-    have hF := e.summable_iff.2 hG
-    simp only [Function.comp_def, he] at hF
-    calc (x * y * z).coeff m
-        = ∑' k, ∑' i, x.coeff i * y.coeff (k - i) * z.coeff (m - k) := by
-          simp only [coeff_mul]
-          exact tsum_congr fun k ↦ ((summable_coeff_mul_coeff x y k).tsum_mul_right _).symm
-      _ = ∑' ki : ℤ × ℤ, x.coeff ki.2 * y.coeff (ki.1 - ki.2) * z.coeff (m - ki.1) :=
-          hF.tsum_prod.symm
-      _ = ∑' ij : ℤ × ℤ, x.coeff ij.1 * y.coeff ij.2 * z.coeff (m - ij.1 - ij.2) := by
-          simp only [← he]
-          exact e.tsum_eq fun ij ↦ x.coeff ij.1 * y.coeff ij.2 * z.coeff (m - ij.1 - ij.2)
-      _ = ∑' i, ∑' j, x.coeff i * y.coeff j * z.coeff (m - i - j) := hG.tsum_prod
-      _ = (x * (y * z)).coeff m := by
-          simp only [coeff_mul]
-          refine tsum_congr fun i ↦ ?_
-          rw [← (summable_coeff_mul_coeff y z (m - i)).tsum_mul_left]
-          simp only [mul_assoc, sub_sub]
-  one_mul x := by
-    ext m : 2
-    rw [coeff_mul_of_coeff_eq_zero (k := 0) fun i hi ↦ by simp [coeff_one, hi]]
-    simp
-  mul_one x := by
-    ext m : 2
-    rw [coeff_mul, tsum_eq_single m fun i hi ↦ by simp [coeff_one, sub_eq_zero, Ne.symm hi]]
-    simp
-  zero_mul x := by ext m : 2; simp [coeff_mul]
-  mul_zero x := by ext m : 2; simp [coeff_mul]
-  left_distrib x y z := by
-    ext m : 2
-    simp only [coeff_mul, coeff_add, mul_add]
-    exact (summable_coeff_mul_coeff x y m).tsum_add (summable_coeff_mul_coeff x z m)
-  right_distrib x y z := by
-    ext m : 2
-    simp only [coeff_mul, coeff_add, add_mul]
-    exact (summable_coeff_mul_coeff x z m).tsum_add (summable_coeff_mul_coeff y z m)
-  mul_comm x y := by
-    ext m : 2
-    rw [coeff_mul, coeff_mul, ← (Equiv.subLeft m).tsum_eq]
-    simp [mul_comm]
+  mul_assoc x y z := AnnularRing.ext <|
+    DiscreteConvolution.addRingConvolution_assoc (addConvolutionExists_coeff x y)
+      (addConvolutionExists_coeff y z) (summable_sigma_addFiber_coeff_mul_coeff_mul_coeff x y z)
+  one_mul x := AnnularRing.ext <| DiscreteConvolution.single_addRingConvolution x.coeff
+  mul_one x := AnnularRing.ext <| DiscreteConvolution.addRingConvolution_single x.coeff
+  zero_mul x := AnnularRing.ext <| DiscreteConvolution.zero_addRingConvolution x.coeff
+  mul_zero x := AnnularRing.ext <| DiscreteConvolution.addRingConvolution_zero x.coeff
+  left_distrib x y z := AnnularRing.ext <| DiscreteConvolution.addRingConvolution_add _ _ _
+    (addConvolutionExists_coeff x y) (addConvolutionExists_coeff x z)
+  right_distrib x y z := AnnularRing.ext <| DiscreteConvolution.add_addRingConvolution _ _ _
+    (addConvolutionExists_coeff x z) (addConvolutionExists_coeff y z)
+  mul_comm x y := AnnularRing.ext <| DiscreteConvolution.addRingConvolution_comm _ _
   natCast_zero := by simp [natCast_def]
   natCast_succ n := by simp [natCast_def, add_smul]
   intCast_ofNat n := by simp [natCast_def, intCast_def]
@@ -325,14 +318,10 @@ instance : CommRing (AnnularRing p) where
 
 instance : Algebra ℤ_[p] (AnnularRing p) :=
   Algebra.ofModule
-    (fun c x y ↦ by
-      ext m : 2
-      simp only [coeff_smul, coeff_mul, mul_assoc]
-      exact (summable_coeff_mul_coeff x y m).tsum_mul_left c)
-    (fun c x y ↦ by
-      ext m : 2
-      simp only [coeff_smul, coeff_mul, mul_left_comm _ c]
-      exact (summable_coeff_mul_coeff x y m).tsum_mul_left c)
+    (fun c x y ↦ AnnularRing.ext <|
+      DiscreteConvolution.smul_addRingConvolution c _ _ (addConvolutionExists_coeff x y))
+    (fun c x y ↦ AnnularRing.ext <|
+      DiscreteConvolution.addRingConvolution_smul c _ _ (addConvolutionExists_coeff x y))
 
 @[simp] theorem coeff_algebraMap (c : ℤ_[p]) (m : ℤ) :
     (algebraMap ℤ_[p] (AnnularRing p) c).coeff m = if m = 0 then c else 0 := by
@@ -423,30 +412,6 @@ theorem T_mem_nonZeroDivisors : (T : AnnularRing p) ∈ nonZeroDivisors (Annular
 
 /-! ### Substituting `T` and `U` into integral power series -/
 
-/-- A convolution of two families supported in nonnegative degrees, at a nonnegative degree, is
-the finite sum over the antidiagonal. -/
-private theorem tsum_mul_eq_sum_antidiagonal {a b : ℤ → ℤ_[p]} (ha : ∀ i < 0, a i = 0)
-    (hb : ∀ i < 0, b i = 0) (n : ℕ) :
-    ∑' i, a i * b (n - i) = ∑ ij ∈ Finset.antidiagonal n, a ij.1 * b ij.2 := by
-  rw [tsum_eq_sum (s := (Finset.range (n + 1)).map Nat.castEmbedding) fun i hi ↦ ?_,
-    Finset.sum_map, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
-  · refine Finset.sum_congr rfl fun k hk ↦ ?_
-    rw [Nat.castEmbedding_apply, Nat.cast_sub (Finset.mem_range_succ_iff.1 hk)]
-  · simp only [Finset.mem_map, Finset.mem_range, Nat.castEmbedding_apply, not_exists,
-      not_and] at hi
-    rcases lt_or_ge i 0 with h | h
-    · rw [ha i h, zero_mul]
-    · lift i to ℕ using h
-      rw [hb _ (by have := hi i; omega), mul_zero]
-
-/-- A convolution of two families supported in nonnegative degrees vanishes in negative degrees. -/
-private theorem tsum_mul_eq_zero {a b : ℤ → ℤ_[p]} (ha : ∀ i < 0, a i = 0)
-    (hb : ∀ i < 0, b i = 0) {m : ℤ} (hm : m < 0) : ∑' i, a i * b (m - i) = 0 := by
-  refine (tsum_congr fun i ↦ ?_).trans tsum_zero
-  rcases lt_or_ge i 0 with h | h
-  · rw [ha i h, zero_mul]
-  · rw [hb _ (by omega), mul_zero]
-
 /-- The normal form `∑_{n ≥ 0} a_n T ^ n` of a power series in `T`. -/
 private def seriesT (f : ℤ_[p]⟦X⟧) : AnnularRing p :=
   ⟨fun m ↦ if 0 ≤ m then PowerSeries.coeff m.toNat f else 0, fun m ↦ by
@@ -481,10 +446,11 @@ private theorem seriesT_mul (f g : ℤ_[p]⟦X⟧) : seriesT (f * g) = seriesT f
   ext m : 2
   rw [coeff_mul]
   rcases lt_or_ge m 0 with hm | hm
-  · rw [tsum_mul_eq_zero (h f) (h g) hm, coeff_seriesT, ite_eq_right (not_le.2 hm)]
+  · rw [DiscreteConvolution.tsum_mul_sub_eq_zero_of_neg (h f) (h g) hm, coeff_seriesT,
+      ite_eq_right (not_le.2 hm)]
   · lift m to ℕ using hm
-    rw [tsum_mul_eq_sum_antidiagonal (h f) (h g), coeff_seriesT, ite_eq_left (Nat.cast_nonneg _),
-      Int.toNat_natCast, PowerSeries.coeff_mul]
+    rw [DiscreteConvolution.tsum_mul_sub_eq_sum_antidiagonal (h f) (h g), coeff_seriesT,
+      ite_eq_left (Nat.cast_nonneg _), Int.toNat_natCast, PowerSeries.coeff_mul]
     refine Finset.sum_congr rfl fun ij _ ↦ ?_
     simp [coeff_seriesT]
 
@@ -498,10 +464,11 @@ private theorem seriesU_mul (f g : ℤ_[p]⟦X⟧) : seriesU (f * g) = seriesU f
   have hc (i : ℤ) : m + i = -(-m - i) := by ring
   simp only [hc]
   rcases lt_or_ge (-m) 0 with hm | hm
-  · rw [tsum_mul_eq_zero (h f) (h g) hm, coeff_seriesU, ite_eq_right (by omega)]
+  · rw [DiscreteConvolution.tsum_mul_sub_eq_zero_of_neg (h f) (h g) hm, coeff_seriesU,
+      ite_eq_right (by omega)]
   · obtain ⟨n, hn⟩ := Int.eq_ofNat_of_zero_le hm
-    rw [hn, tsum_mul_eq_sum_antidiagonal (h f) (h g), coeff_seriesU, ite_eq_left (by omega),
-      show (-m).toNat = n by omega, PowerSeries.coeff_mul, Finset.mul_sum]
+    rw [hn, DiscreteConvolution.tsum_mul_sub_eq_sum_antidiagonal (h f) (h g), coeff_seriesU,
+      ite_eq_left (by omega), show (-m).toNat = n by omega, PowerSeries.coeff_mul, Finset.mul_sum]
     refine Finset.sum_congr rfl fun ij hij ↦ ?_
     rw [← Finset.mem_antidiagonal.1 hij]
     simp only [coeff_seriesU, neg_nonpos, Nat.cast_nonneg, ite_true, neg_neg, Int.toNat_natCast]
