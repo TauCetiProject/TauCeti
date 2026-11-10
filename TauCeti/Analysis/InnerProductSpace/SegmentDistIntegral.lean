@@ -15,8 +15,8 @@ import TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds
 
 A function with an algebraic singularity at a point `p` is still integrable along a segment
 passing arbitrarily close to `p`, provided the exponent is larger than `-1`. This file proves
-the quantitative form of that statement in `ℂ`, for use in the Schwarz--Christoffel boundary
-theory.
+the quantitative form of that statement in a real inner product space; in `ℂ` it feeds the
+Schwarz--Christoffel boundary theory.
 
 The geometric input is that on the segment from `w` to `z`, parametrized by `[0, 1]`, the
 distance to `p` is at least the length of the segment times the distance of the parameter to a
@@ -29,9 +29,9 @@ only the finite constant `2 / (u + 1)`.
 
 ## Main results
 
-* `Complex.exists_mem_Icc_mul_abs_sub_le_dist` -- the lower bound for the distance to `p` along
+* `TauCeti.exists_mem_Icc_mul_abs_sub_le_dist` -- the lower bound for the distance to `p` along
   a segment.
-* `Complex.integral_dist_rpow_segment_le` -- the arclength integral of `dist ⬝ p ^ u` along a
+* `TauCeti.integral_dist_rpow_segment_le` -- the arclength integral of `dist ⬝ p ^ u` along a
   segment of length `L` is at most `2 / (u + 1) * L ^ (u + 1)` when `-1 < u ≤ 0`.
 -/
 
@@ -39,72 +39,50 @@ public section
 
 open MeasureTheory RealInnerProductSpace Set
 
-namespace Complex
+namespace TauCeti
+
+variable {E : Type*} [SeminormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- On the segment from `w` to `z`, the distance to a point `p` is bounded below by the length of
 the segment times the distance of the parameter to a fixed parameter `c ∈ [0, 1]`.  Geometrically
 `c` is the foot of the perpendicular from `p`, clamped to the parameter interval. -/
-theorem exists_mem_Icc_mul_abs_sub_le_dist (p z w : ℂ) :
+theorem exists_mem_Icc_mul_abs_sub_le_dist (p z w : E) :
     ∃ c ∈ Icc (0 : ℝ) 1, ∀ s ∈ Icc (0 : ℝ) 1,
       ‖z - w‖ * |s - c| ≤ dist (w + s • (z - w)) p := by
-  rcases eq_or_ne z w with rfl | hzw
-  · exact ⟨0, ⟨le_rfl, zero_le_one⟩, fun s _ => by simp⟩
-  have hL : (0 : ℝ) < ‖z - w‖ := norm_pos_iff.mpr (sub_ne_zero_of_ne hzw)
-  set A : ℂ := w - p with hA
-  set B : ℂ := z - w with _hB
-  set q : ℝ := ⟪A, B⟫ with hq
-  set s₀ : ℝ := -q / ‖B‖ ^ 2 with hs₀
-  have key : ∀ t : ℝ, ‖B‖ * |t - s₀| ≤ ‖A + t • B‖ := by
-    intro t
-    have hnorm : ‖A + t • B‖ ^ 2 = ‖A‖ ^ 2 + 2 * t * q + t ^ 2 * ‖B‖ ^ 2 := by
-      rw [hq, norm_add_sq_real, real_inner_smul_right, norm_smul, mul_pow, Real.norm_eq_abs,
-        sq_abs]
-      ring
-    -- Cauchy--Schwarz, in the form that bounds the defect of the projection
-    have hcs : q * q ≤ ‖A‖ ^ 2 * ‖B‖ ^ 2 := by
-      rw [hq, ← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq]
-      exact real_inner_mul_inner_self_le A B
-    have hdiv : q ^ 2 / ‖B‖ ^ 2 ≤ ‖A‖ ^ 2 := by
-      rw [div_le_iff₀ (pow_pos hL 2)]
-      nlinarith [hcs]
-    have hsq : (‖B‖ * |t - s₀|) ^ 2 ≤ ‖A + t • B‖ ^ 2 := by
-      have hexp : (‖B‖ * |t - s₀|) ^ 2 =
-          ‖B‖ ^ 2 * t ^ 2 + 2 * t * q + q ^ 2 / ‖B‖ ^ 2 := by
-        rw [mul_pow, sq_abs, hs₀]
-        field_simp
-        ring
-      rw [hexp, hnorm]
-      linarith [hdiv]
-    exact (abs_le_of_sq_le_sq' hsq (norm_nonneg _)).2
-  set c : ℝ := ↑(projIcc (0 : ℝ) 1 zero_le_one s₀)
-  refine ⟨c, (projIcc (0 : ℝ) 1 zero_le_one s₀).2, ?_⟩
-  intro s hs
+  rcases (norm_nonneg (z - w)).eq_or_lt with hL | hL
+  · exact ⟨0, ⟨le_rfl, zero_le_one⟩, fun s _ => by simp [← hL]⟩
+  set s₀ : ℝ := -⟪w - p, z - w⟫ / ‖z - w‖ ^ 2 with hs₀
+  refine ⟨projIcc (0 : ℝ) 1 zero_le_one s₀, (projIcc (0 : ℝ) 1 zero_le_one s₀).2, fun s hs => ?_⟩
   -- `projIcc` is a contraction, and it fixes the parameters already in `[0, 1]`
-  have hclamp : |s - c| ≤ |s - s₀| := by
-    have h := Set.abs_projIcc_sub_projIcc (a := (0 : ℝ)) (b := 1) (h := zero_le_one)
-      (c := s) (d := s₀)
-    rwa [projIcc_of_mem _ hs] at h
-  have hseg : w + s • B - p = A + s • B := by rw [hA]; abel
-  calc ‖B‖ * |s - c| ≤ ‖B‖ * |s - s₀| :=
-        mul_le_mul_of_nonneg_left hclamp (norm_nonneg _)
-    _ ≤ ‖A + s • B‖ := key s
-    _ = dist (w + s • B) p := by rw [dist_eq_norm, hseg]
+  have hclamp : |s - projIcc (0 : ℝ) 1 zero_le_one s₀| ≤ |s - s₀| := by
+    simpa only [projIcc_of_mem _ hs] using abs_projIcc_sub_projIcc (zero_le_one' ℝ) (c := s)
+  -- the component of `w + s • (z - w) - p` along `z - w` is `‖z - w‖ * (s - s₀)`
+  have hinner : ⟪w + s • (z - w) - p, z - w⟫ = ‖z - w‖ ^ 2 * (s - s₀) := by
+    rw [add_sub_right_comm, inner_add_left, real_inner_smul_left, real_inner_self_eq_norm_sq, hs₀]
+    field_simp
+    ring
+  refine le_of_mul_le_mul_left ?_ hL
+  calc ‖z - w‖ * (‖z - w‖ * |s - projIcc (0 : ℝ) 1 zero_le_one s₀|)
+      ≤ ‖z - w‖ * (‖z - w‖ * |s - s₀|) := by gcongr
+    _ = |⟪w + s • (z - w) - p, z - w⟫| := by rw [hinner, abs_mul, abs_sq, sq, mul_assoc]
+    _ ≤ ‖z - w‖ * dist (w + s • (z - w)) p := by
+      rw [dist_eq_norm, mul_comm]
+      exact abs_real_inner_le_norm _ _
 
 /-- The arclength integral of a nonpositive power of the distance to `p` along the segment from
 `w` to `z`: the parameter integral over `[0, 1]` is multiplied by the length `‖z - w‖` of the
 segment.  For `-1 < u ≤ 0`, the bound `2 / (u + 1) * ‖z - w‖ ^ (u + 1)` is uniform in the
 position of `p`; in particular `p` is allowed to lie on the segment. -/
-theorem integral_dist_rpow_segment_le {p : ℂ} {u : ℝ} (hu : -1 < u) (hu0 : u ≤ 0) {z w : ℂ} :
+theorem integral_dist_rpow_segment_le {p : E} {u : ℝ} (hu : -1 < u) (hu0 : u ≤ 0) {z w : E} :
     (∫ s in (0 : ℝ)..1, dist (w + s • (z - w)) p ^ u) * ‖z - w‖
       ≤ 2 / (u + 1) * ‖z - w‖ ^ (u + 1) := by
   have hu1 : (0 : ℝ) < u + 1 := by linarith
-  rcases eq_or_ne z w with rfl | hzw
-  · rw [sub_self, norm_zero, mul_zero, Real.zero_rpow hu1.ne', mul_zero]
-  have hL : (0 : ℝ) < ‖z - w‖ := norm_pos_iff.mpr (sub_ne_zero_of_ne hzw)
+  rcases (norm_nonneg (z - w)).eq_or_lt with hL | hL
+  · rw [← hL, mul_zero, Real.zero_rpow hu1.ne', mul_zero]
   obtain ⟨c, hc, hclamp⟩ := exists_mem_Icc_mul_abs_sub_le_dist p z w
-  have hmeas : AEStronglyMeasurable (fun s : ℝ => dist (w + s • (z - w)) p ^ u) volume := by
-    have hcontd : Continuous fun s : ℝ => dist (w + s • (z - w)) p := by fun_prop
-    exact (hcontd.measurable.pow measurable_const).aestronglyMeasurable
+  have hmeas : AEStronglyMeasurable (fun s : ℝ => dist (w + s • (z - w)) p ^ u) volume :=
+    ((by fun_prop : Continuous fun s : ℝ => dist (w + s • (z - w)) p).measurable.pow_const
+      u).aestronglyMeasurable
   have hnn : ∀ s : ℝ, 0 ≤ dist (w + s • (z - w)) p ^ u := fun s => Real.rpow_nonneg dist_nonneg _
   -- the segment meets `p` at the single parameter `c` at worst, so that parameter is discarded
   have hbnd : ∀ s ∈ Icc (0 : ℝ) 1, s ≠ c →
@@ -168,4 +146,4 @@ theorem integral_dist_rpow_segment_le {p : ℂ} {u : ℝ} (hu : -1 < u) (hu0 : u
         rw [Real.rpow_add hL, Real.rpow_one]
         ring
 
-end Complex
+end TauCeti
