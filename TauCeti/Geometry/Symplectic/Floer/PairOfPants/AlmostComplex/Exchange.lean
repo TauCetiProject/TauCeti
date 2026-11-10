@@ -38,7 +38,7 @@ main results are:
 
 * `TauCeti.Floer.exchangeAlmostComplex_zero`: at `c = 0` the family is the pair-of-pants structure.
 * `TauCeti.Floer.exchangeAlmostComplex_one`: at `c = 1` it is the pair-of-pants structure with
-  exchanged end structures (`TauCeti.Floer.exchangeHamiltonians`) composed with `σ`, if `J_∞` has
+  exchanged end structures (`TauCeti.Floer.exchangeEndData`) composed with `σ`, if `J_∞` has
   period one. The output structure of the exchanged data is rotated by half a period,
   `t ↦ J_∞(t + 1/2)`, which matches the half turn of the end at `∞`
   (`TauCeti.Floer.negativePlaneAlmostComplex_neg`).
@@ -171,11 +171,11 @@ theorem exchangeAlmostComplex_zero (h₀ : ω.Compatible J₀) :
 
 /-- The input part of the pair-of-pants structure is exchanged by `w ↦ 1 - w`: the input part with
 exchanged end structures at `1 - w` is the input part at `w`. -/
-private theorem pairOfPantsAlmostComplex_update_exchangeHamiltonians_one_sub
+private theorem pairOfPantsAlmostComplex_update_exchangeEndData_one_sub
     (h₀ : ω.Compatible J₀)
-    (hA : ∀ q t x, ω.Tames (update (exchangeHamiltonians J) inf (fun _ _ => J₀) q t x))
+    (hA : ∀ q t x, ω.Tames (update (exchangeEndData J) inf (fun _ _ => J₀) q t x))
     (w : ℂ) (x : M) :
-    pairOfPantsAlmostComplex h₀ (update (exchangeHamiltonians J) inf fun _ _ => J₀) hA (1 - w) x =
+    pairOfPantsAlmostComplex h₀ (update (exchangeEndData J) inf fun _ _ => J₀) hA (1 - w) x =
       pairOfPantsAlmostComplex h₀ (update J inf fun _ _ => J₀)
         (tames_update_inf_base h₀.tames hJ) w x := by
   refine h₀.eq_of_cayley_eq (tames_pairOfPantsAlmostComplex h₀ _ x)
@@ -185,12 +185,12 @@ private theorem pairOfPantsAlmostComplex_update_exchangeHamiltonians_one_sub
 
 /-- **The end of the family is the exchanged pair-of-pants structure.** If the output structure
 `J_∞` has period one in `t`, the member `c = 1` of the family at `w` is the pair-of-pants structure
-with exchanged end structures (`TauCeti.Floer.exchangeHamiltonians`: `J₁` at `0`, `J₀` at `1` and
+with exchanged end structures (`TauCeti.Floer.exchangeEndData`: `J one` at `0`, `J zero` at `1` and
 `t ↦ J_∞(t + 1/2)` at `∞`) at `1 - w`. -/
 theorem exchangeAlmostComplex_one (h₀ : ω.Compatible J₀) (hJp : Periodic (J inf) 1)
-    (hJ' : ∀ q t x, ω.Tames (exchangeHamiltonians J q t x)) (w : ℂ) (x : M) :
+    (hJ' : ∀ q t x, ω.Tames (exchangeEndData J q t x)) (w : ℂ) (x : M) :
     exchangeAlmostComplex h₀ J hJ 1 w x =
-      pairOfPantsAlmostComplex h₀ (exchangeHamiltonians J) hJ' (1 - w) x := by
+      pairOfPantsAlmostComplex h₀ (exchangeEndData J) hJ' (1 - w) x := by
   refine h₀.eq_of_cayley_eq (tames_exchangeAlmostComplex h₀ 1 w x)
     (tames_pairOfPantsAlmostComplex h₀ _ x) ?_
   -- The output part: the exchanged output structure is `J_∞` rotated by half a period.
@@ -201,9 +201,9 @@ theorem exchangeAlmostComplex_one (h₀ : ω.Compatible J₀) (hJp : Periodic (J
     subst hKJ
     rw [← negativePlaneAlmostComplex_neg h₀ hJp hK (w - 1) x, neg_sub]
   rw [cayley_exchangeAlmostComplex h₀ ⟨by norm_num, by norm_num⟩, Complex.ofReal_one,
-    cayley_pairOfPantsAlmostComplex_eq_add (Jb := exchangeHamiltonians J) (hJb := hJ'),
-    pairOfPantsAlmostComplex_update_exchangeHamiltonians_one_sub (hJ := hJ),
-    hplane _ (hJ' inf) (exchangeHamiltonians_inf J)]
+    cayley_pairOfPantsAlmostComplex_eq_add (Jb := exchangeEndData J) (hJb := hJ'),
+    pairOfPantsAlmostComplex_update_exchangeEndData_one_sub (hJ := hJ),
+    hplane _ (hJ' inf) (exchangeEndData_inf J)]
 
 /-- **The family is `J_q(t)` far out on an input end.** For `0 ≤ c ≤ 1`, if `J q` has period one
 in `t`, then on the part `s ≥ 2` of the input end `q` the member `c` of the family at the point
@@ -317,17 +317,17 @@ Floer equation at `z` for the member `c = 1` of the input-exchange family: the p
 `TauCeti.Floer.exchangeAlmostComplex h₀ J hJ 1` at `u(σ(z))`. -/
 theorem isComplexLinearMap_perturbedFDeriv_exchange_one (h₀ : ω.Compatible J₀)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    (hJp : Periodic (J inf) 1) (hJ' : ∀ q t x, ω.Tames (exchangeHamiltonians J q t x))
+    (hJp : Periodic (J inf) 1) (hJ' : ∀ q t x, ω.Tames (exchangeEndData J q t x))
     {u : ℝ × ℝ → V} {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1)
     (hu : DifferentiableAt ℝ u ((1, 0) - z))
     (h : IsComplexLinearMap (AlmostComplexStructure.product ℝ)
-      (pairOfPantsAlmostComplex h₀ (exchangeHamiltonians J) hJ'
+      (pairOfPantsAlmostComplex h₀ (exchangeEndData J) hJ'
         (Complex.equivRealProdCLM.symm ((1, 0) - z)) (u ((1, 0) - z)))
       (ω.perturbedFDeriv
-        (fun z x ↦ pairOfPantsPerturbation (exchangeHamiltonians H)
+        (fun z x ↦ pairOfPantsPerturbation (exchangeEndData H)
           (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation (exchangeHamiltonians H)
+        (fun z x ↦ pairOfPantsPerturbation (exchangeEndData H)
           (Complex.equivRealProdCLM.symm z) x Complex.I)
         u ((1, 0) - z) : ℝ × ℝ →ₗ[ℝ] V)) :
     IsComplexLinearMap (AlmostComplexStructure.product ℝ)
@@ -344,23 +344,21 @@ theorem isComplexLinearMap_perturbedFDeriv_exchange_one (h₀ : ω.Compatible J�
   -- The perturbation is the pullback along `σ` of the exchanged pair-of-pants perturbation.
   have hpull (v : ℝ × ℝ) : (fun z x ↦ exchangePerturbation H 1 (e z) x (e v)) =
       perturbationPullback (fun z ↦ (1, 0) - z)
-        (fun z x ↦ pairOfPantsPerturbation (exchangeHamiltonians H) (e z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation (exchangeHamiltonians H) (e z) x Complex.I) v := by
+        (fun z x ↦ pairOfPantsPerturbation (exchangeEndData H) (e z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation (exchangeEndData H) (e z) x Complex.I) v := by
     funext z' x
-    rw [perturbationPullback_pairOfPantsPerturbation_exchangeHamiltonians (hH inf)]
-  have hreal : e stdComplexLineReal = 1 := by apply Complex.ext <;> simp [e, stdComplexLineReal]
-  have himag : e stdComplexLineImag = Complex.I := by
-    apply Complex.ext <;> simp [e, stdComplexLineImag]
-  rw [← hreal, ← himag, hpull, hpull]
+    rw [perturbationPullback_pairOfPantsPerturbation_exchangeEndData (hH inf)]
+  rw [← equivRealProdCLM_symm_stdComplexLineReal, ← equivRealProdCLM_symm_stdComplexLineImag,
+    hpull, hpull]
   -- The exchanged pair-of-pants perturbation is differentiable in the target point at `σ(z)`.
   have hS : e ((1, 0) - z) ≠ 0 ∧ e ((1, 0) - z) ≠ 1 := by
     rw [hσ]
     exact ⟨fun h0 => hz.2 (by linear_combination -h0), fun h1 => hz.1 (by linear_combination -h1)⟩
   have hK (v : ℂ) : DifferentiableAt ℝ
-      (fun x ↦ pairOfPantsPerturbation (exchangeHamiltonians H) (e ((1, 0) - z)) x v)
+      (fun x ↦ pairOfPantsPerturbation (exchangeEndData H) (e ((1, 0) - z)) x v)
       (u ((1, 0) - z)) := by
-    have hd := (contDiffAt_pairOfPantsPerturbation_prod (periodic_exchangeHamiltonians hH)
-      (contDiff_uncurry_exchangeHamiltonians hHs) hS (u ((1, 0) - z))).differentiableAt
+    have hd := (contDiffAt_pairOfPantsPerturbation_prod (periodic_exchangeEndData hH)
+      (contDiff_uncurry_exchangeEndData hHs) hS (u ((1, 0) - z))).differentiableAt
       one_ne_zero
     exact (hd.comp _ ((differentiableAt_const _).prodMk differentiableAt_id)).clm_apply
       (differentiableAt_const v)
