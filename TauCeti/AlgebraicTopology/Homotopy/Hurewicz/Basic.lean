@@ -667,6 +667,14 @@ theorem hurewicz_inv (a : HomotopyGroup (Fin (n + 1)) X x) :
     hurewicz R n a⁻¹ = -hurewicz R n a :=
   eq_neg_of_add_eq_zero_left (by rw [← hurewicz_mul, inv_mul_cancel, hurewicz_one])
 
+/-- The Hurewicz map sends the `k`-th power of a class to `k` times its Hurewicz class. -/
+@[simp]
+theorem hurewicz_pow (a : HomotopyGroup (Fin (n + 1)) X x) (k : ℕ) :
+    hurewicz R n (a ^ k) = k • hurewicz R n a := by
+  induction k with
+  | zero => rw [pow_zero, hurewicz_one, zero_smul]
+  | succ k ih => rw [pow_succ, hurewicz_mul, ih, succ_nsmul]
+
 /-- **The Hurewicz homomorphism** `π_{n+1}(X, x) → (R ⟶ Hₙ₊₁(X; R))`, from the homotopy group,
 written additively, to the group of morphisms from `R` to singular homology. -/
 def hurewiczHom :
