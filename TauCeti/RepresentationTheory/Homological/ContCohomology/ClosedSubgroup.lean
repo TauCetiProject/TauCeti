@@ -44,7 +44,7 @@ for smooth discrete `X`, so the action of `G` on `X` is required to be continuou
 * `TauCeti.ContinuousCohomology.resolutionMap_subgroupSubtype_eq_zero_iff`,
   `TauCeti.ContinuousCohomology.exists_openSubgroup_le_resolutionMap_subgroupSubtype_eq_zero`:
   on the coinduced resolution, restriction to a subgroup vanishes exactly when the cochain vanishes
-  on tuples from the subgroup, and vanishing on a closed subgroup spreads to an open subgroup.
+  on tuples from the subgroup, and vanishing on a subgroup spreads to an open subgroup.
 * `TauCeti.ContinuousCohomology.resolutionMap_subgroupSubtype_surjective`,
   `TauCeti.ContinuousCohomology.exists_mem_invariants_resolutionMap_subgroupSubtype_eq`: on the
   coinduced resolution, restriction to a closed subgroup is surjective in every degree, and in
@@ -105,20 +105,41 @@ theorem resolutionMap_subgroupSubtype_eq_zero_iff (S : Subgroup G) :
 
 variable [CompactSpace G] [DiscreteTopology X.V] [TotallyDisconnectedSpace G]
 
-/-- **Vanishing on a closed subgroup spreads to an open subgroup.** An element of the coinduced
-resolution of a discrete representation of a profinite group whose restriction to a closed
-subgroup `H` vanishes has vanishing restriction to some open subgroup containing `H`. -/
+/-- **Vanishing on a subgroup spreads to an open subgroup.** An element of the coinduced
+resolution of a discrete representation of a profinite group whose restriction to a subgroup `H`
+vanishes has vanishing restriction to some open subgroup containing `H`: the element, being
+continuous with discrete values, vanishes on the closure of `H`, and the closure is a closed
+subgroup. -/
 theorem exists_openSubgroup_le_resolutionMap_subgroupSubtype_eq_zero {H : Subgroup G}
-    (hH : IsClosed (H : Set G)) {n : ℕ} {F : (TopRep.resolutionX X n).V}
+    {n : ℕ} {F : (TopRep.resolutionX X n).V}
     (hF : (resolutionMap (ContinuousMonoidHom.subgroupSubtype H)
       (𝟙 (TopRep.res (H.subtype : H →* G) X)) n).hom F = 0) :
     ∃ V : OpenSubgroup G, H ≤ V ∧ (resolutionMap (ContinuousMonoidHom.subgroupSubtype
       (V : Subgroup G)) (𝟙 (TopRep.res ((V : Subgroup G).subtype : V →* G) X)) n).hom F = 0 := by
-  obtain ⟨W, hWopen, hHW, hW⟩ :=
-    ((resolutionMap_subgroupSubtype_eq_zero_iff H n F).1 hF).exists_isOpen hH.isCompact n
-  obtain ⟨V, hHV, hVW⟩ := H.exists_openSubgroup_le_subset_of_isClosed hH hWopen hHW
-  exact ⟨V, hHV, (resolutionMap_subgroupSubtype_eq_zero_iff (V : Subgroup G) n F).2
-    (hW.mono hVW n)⟩
+  -- vanishing on `H` passes to its closure, as the iterated maps are continuous into discrete
+  -- spaces
+  have hcl : ∀ (n : ℕ) (F : (TopRep.resolutionX X n).V), ResolutionVanishesOn X (H : Set G) n F →
+      ResolutionVanishesOn X (closure (H : Set G)) n F := by
+    intro n
+    induction n with
+    | zero => exact fun F hF ↦ by simpa only [resolutionVanishesOn_zero] using hF
+    | succ n ih =>
+      intro F hF
+      rw [resolutionVanishesOn_succ] at hF ⊢
+      set F' : C(G, (TopRep.resolutionX X n).V) := F
+      have hsub : (H : Set G) ⊆ F' ⁻¹' {v | ResolutionVanishesOn X (closure (H : Set G)) n v} :=
+        fun g hg ↦ ih _ (hF g hg)
+      exact fun g hg ↦ closure_minimal hsub
+        ((isClosed_discrete _).preimage F'.continuous) hg
+  have hF' : ResolutionVanishesOn X (H.topologicalClosure : Set G) n F := by
+    rw [Subgroup.topologicalClosure_coe]
+    exact hcl n F ((resolutionMap_subgroupSubtype_eq_zero_iff H n F).1 hF)
+  obtain ⟨W, hWopen, hHW, hW⟩ := hF'.exists_isOpen
+    (H.isClosed_topologicalClosure.isCompact) n
+  obtain ⟨V, hHV, hVW⟩ := H.topologicalClosure.exists_openSubgroup_le_subset_of_isClosed
+    H.isClosed_topologicalClosure hWopen hHW
+  exact ⟨V, H.le_topologicalClosure.trans hHV,
+    (resolutionMap_subgroupSubtype_eq_zero_iff (V : Subgroup G) n F).2 (hW.mono hVW n)⟩
 
 /-! ### Extension from a closed subgroup -/
 
@@ -246,7 +267,7 @@ theorem exists_openSubgroup_le_res_eq_zero (hX : IsSmoothDiscrete k X) {H : Subg
       (𝟙 (TopRep.res (H.subtype : H →* G) X)) (n + 1)).hom F.1 = 0 :=
     congrArg Subtype.val hF
   -- so it restricts to zero on some open subgroup `V ⊇ H`
-  obtain ⟨V, hHV, hV⟩ := exists_openSubgroup_le_resolutionMap_subgroupSubtype_eq_zero (X := X) hH
+  obtain ⟨V, hHV, hV⟩ := exists_openSubgroup_le_resolutionMap_subgroupSubtype_eq_zero (X := X)
     (n := n + 1) (F := F.1) hF'
   set KV := TopRep.homogeneousCochains (TopRep.res ((V : Subgroup G).subtype : V →* G) X)
   set φV := cochainsMap (ContinuousMonoidHom.subgroupSubtype (V : Subgroup G))
@@ -310,7 +331,7 @@ theorem exists_openSubgroup_le_resLE_eq (hX : IsSmoothDiscrete k X) {H : Subgrou
   have hD : (resolutionMap (ContinuousMonoidHom.subgroupSubtype H)
       (𝟙 (TopRep.res (H.subtype : H →* G) X)) (n + 1 + 1)).hom (K.d n (n + 1) Cc).1 = 0 :=
     congrArg Subtype.val hD₀
-  obtain ⟨V, hHV, hV⟩ := exists_openSubgroup_le_resolutionMap_subgroupSubtype_eq_zero (X := X) hH
+  obtain ⟨V, hHV, hV⟩ := exists_openSubgroup_le_resolutionMap_subgroupSubtype_eq_zero (X := X)
     (n := n + 1 + 1) (F := (K.d n (n + 1) Cc).1) hD
   set KV := TopRep.homogeneousCochains (TopRep.res ((V : Subgroup G).subtype : V →* G) X)
   set φV := cochainsMap (ContinuousMonoidHom.subgroupSubtype (V : Subgroup G))
