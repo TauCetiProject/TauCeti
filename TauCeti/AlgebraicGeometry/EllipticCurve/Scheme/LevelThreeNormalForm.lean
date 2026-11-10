@@ -194,7 +194,7 @@ theorem existsUnique_levelThreeNormalForm {P Q : Spec (.of R) ⟶ W.projModel}
   · -- any such isomorphism is induced by a change of variables, which determines `μ` and `ζ`
     rintro ⟨μ, ζ⟩ ⟨hζ, e, he, he₀, heP, heQ⟩
     obtain ⟨C, hC, -, hr, ht, hx₂, hy₂⟩ := exists_variableChange_of_iso hζ h₁ h₂ e he he₀ heP heQ
-    exact Prod.ext (eq_levelThreeParameter hb hr ht hC hx₂ hy₂)
+    exact Prod.ext (eq_levelThreeParameter hb hr ht hC hx₂)
       (eq_levelThreeRootOfUnity hb hr ht hC hx₂ hy₂)
 
 /-- **The hypotheses of the level-three normal form are necessary.** Two sections `P` and `Q` of
@@ -254,12 +254,12 @@ theorem levelThreeNormalForm_iso_ext {μ ζ : R} (hζ : ζ ^ 2 + ζ + 1 = 0)
   -- basis of the `3`-torsion
   obtain ⟨x₁, y₁, x₂, y₂, h₁, h₂, hP, hQ⟩ := exists_projModelAffinePoint_of_iso hζ e he he₀
   obtain ⟨C, hC, heC, hr, ht, hx₂, hy₂⟩ := exists_variableChange_of_iso hζ h₁ h₂ e he he₀ hP hQ
-  obtain ⟨C', hC', heC', hr', ht', hx₂', hy₂'⟩ := exists_variableChange_of_iso hζ h₁ h₂ e' he'
+  obtain ⟨C', hC', heC', hr', ht', hx₂', -⟩ := exists_variableChange_of_iso hζ h₁ h₂ e' he'
     he'₀ (heP.symm.trans hP) (heQ.symm.trans hQ)
   have hb := (exists_variableChange_levelThreeNormalForm_iff (W := W)).mp
     ⟨C, hr, ht, μ, ζ, hζ, hC, hx₂, hy₂⟩
-  have hCC' : C = C' := (eq_toLevelThreeNormalForm hb hr ht hC hx₂ hy₂).trans
-    (eq_toLevelThreeNormalForm hb hr' ht' hC' hx₂' hy₂').symm
+  have hCC' : C = C' := (eq_toLevelThreeNormalForm hb hr ht hC hx₂).trans
+    (eq_toLevelThreeNormalForm hb hr' ht' hC' hx₂').symm
   subst hCC'
   exact Iso.ext (heC.trans heC'.symm)
 
