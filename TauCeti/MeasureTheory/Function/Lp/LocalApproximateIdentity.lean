@@ -62,16 +62,18 @@ theorem normedBumpLp_extendByZero_ae_eq_convolution (hp : p ≠ ∞)
     (phi : ContDiffBump (0 : E)) (hs : MeasurableSet s)
     (f : Lp F p (mu.restrict s)) :
     normedBumpLp hp phi (mu.restrict (univ : Set E))
-        (extendByZeroLpₗᵢ ℝ mu hs (subset_univ s) f) =ᵐ[mu.restrict (univ : Set E)]
+        (extendByZeroLpₗᵢ ℝ mu hs.nullMeasurableSet (subset_univ s)
+          f) =ᵐ[mu.restrict (univ : Set E)]
       (phi.normed (mu.restrict (univ : Set E)) ⋆[lsmul ℝ ℝ,
         mu.restrict (univ : Set E)] s.indicator (f : E → F)) := by
   let f₀ : E → F := s.indicator (f : E → F)
   have hf₀ : MemLp f₀ p (mu.restrict (univ : Set E)) := by
     simpa only [f₀, Measure.restrict_univ] using
       (memLp_indicator_iff_restrict hs.nullMeasurableSet).2 (Lp.memLp f)
-  have hext : hf₀.toLp f₀ = extendByZeroLpₗᵢ ℝ mu hs (subset_univ s) f := by
+  have hext : hf₀.toLp f₀ = extendByZeroLpₗᵢ ℝ mu hs.nullMeasurableSet (subset_univ s) f := by
     apply Lp.ext
-    exact hf₀.coeFn_toLp.trans (coeFn_extendByZeroLpₗᵢ ℝ hs (subset_univ s) f).symm
+    exact hf₀.coeFn_toLp.trans
+      (coeFn_extendByZeroLpₗᵢ ℝ hs.nullMeasurableSet (subset_univ s) f).symm
   rw [← hext]
   simpa only [f₀] using normedBumpLp_ae_eq_convolution hp phi hf₀
 
@@ -86,7 +88,7 @@ theorem tendsto_normedBumpLp_extendByZero_restrict (hp : p ≠ ∞)
       Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp) (by
         simpa only [one_smul] using Measure.restrict_mono_set mu (subset_univ t)) <|
         normedBumpLp hp (phi i) (mu.restrict (univ : Set E))
-          (extendByZeroLpₗᵢ ℝ mu hs (subset_univ s) f))
+          (extendByZeroLpₗᵢ ℝ mu hs.nullMeasurableSet (subset_univ s) f))
       l (nhds (Lp.LpToLpOfMeasureLeSMul (E := F) (μ := mu.restrict t)
         (ν := mu.restrict s) (c := 1) (by simp) (by
         simpa only [one_smul] using Measure.restrict_mono_set mu hts) f)) := by
@@ -94,15 +96,15 @@ theorem tendsto_normedBumpLp_extendByZero_restrict (hp : p ≠ ∞)
     Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp) (by
       simpa only [one_smul] using Measure.restrict_mono_set mu (subset_univ t))
   let e : Lp F p (mu.restrict s) →ₗᵢ[ℝ] Lp F p (mu.restrict (univ : Set E)) :=
-    extendByZeroLpₗᵢ ℝ mu hs (subset_univ s)
+    extendByZeroLpₗᵢ ℝ mu hs.nullMeasurableSet (subset_univ s)
   have hlimit := (r.continuous.tendsto (e f)).comp
     (tendsto_normedBumpLp hp hphi (e f))
   have hre : r (e f) = Lp.LpToLpOfMeasureLeSMul (E := F) (μ := mu.restrict t)
       (ν := mu.restrict s) (c := 1) (by simp) (by
       simpa only [one_smul] using Measure.restrict_mono_set mu hts) f := by
     apply Lp.ext
-    have he := (coeFn_extendByZeroLpₗᵢ_restrict ℝ hs (subset_univ s) f).filter_mono
-      (MeasureTheory.ae_mono (Measure.restrict_mono_set mu hts))
+    have he := (coeFn_extendByZeroLpₗᵢ_restrict ℝ hs.nullMeasurableSet (subset_univ s)
+      f).filter_mono (MeasureTheory.ae_mono (Measure.restrict_mono_set mu hts))
     exact ((Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).trans he).trans
       (Lp.coeFn_LpToLpOfMeasureLeSMul _ _ _).symm
   simpa only [Function.comp_def, r, e, hre] using hlimit

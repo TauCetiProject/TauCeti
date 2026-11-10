@@ -60,14 +60,14 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 
 private theorem extend_testFunction_iteratedGradient (hsub : Omega ≤ Omega') (k : ℕ)
     (phi : 𝓓(Omega, ℝ)) :
-    extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet (SetLike.coe_subset_coe.mpr hsub)
+    extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet (SetLike.coe_subset_coe.mpr hsub)
         (iteratedGradientTestFunctionLp (mu := mu) p k phi) =
       iteratedGradientTestFunctionLp (mu := mu) (Omega := Omega') p k
         (TestFunction.monoCLM ℝ phi) := by
   have hs : tsupport (iteratedGradientTestFunction phi k) ⊆ tsupport (phi : E → ℝ) := by
     rw [iteratedGradientTestFunction_def]
     exact tsupport_iteratedGradientChain_subset (phi : E → ℝ) k
-  refine extendByZeroLpₗᵢ_eq_of_ae_eq ℝ Omega.isOpen.measurableSet
+  refine extendByZeroLpₗᵢ_eq_of_ae_eq ℝ Omega.isOpen.nullMeasurableSet
     (SetLike.coe_subset_coe.mpr hsub)
     ((subset_tsupport _).trans (hs.trans phi.tsupport_subset))
     (iteratedGradientTestFunctionLp_apply_ae p k phi) ?_
@@ -103,7 +103,7 @@ theorem Wkp.norm_ofTestFunctionₗ_monoCLM (hsub : Omega ≤ Omega') (k : ℕ)
       rw [Wkp.ofTestFunctionₗ_one, Wkp.ofTestFunctionₗ_one]
       convert h using 1 <;> rfl
   | more k _ ih =>
-      have hd := (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet
+      have hd := (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet
         (SetLike.coe_subset_coe.mpr hsub)).norm_map
           (iteratedGradientTestFunctionLp (mu := mu) p (k + 1) phi)
       rw [extend_testFunction_iteratedGradient hsub] at hd
@@ -148,7 +148,7 @@ theorem Wkp0.extendByZeroₗᵢ_ofTestFunctionₗ (hsub : Omega ≤ Omega') (k :
 theorem Wkp0.value_extendByZeroₗᵢ (hsub : Omega ≤ Omega') (k : ℕ)
     (u : Wkp0 mu Omega p k) :
     Wkp.value k (Wkp0.extendByZeroₗᵢ hsub k u : Wkp mu Omega' p k) =
-      extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet (SetLike.coe_subset_coe.mpr hsub)
+      extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet (SetLike.coe_subset_coe.mpr hsub)
         (Wkp.value k (u : Wkp mu Omega p k)) := by
   refine (Wkp0.denseRange_ofTestFunctionₗ (mu := mu) (Omega := Omega) (p := p) k).induction_on
     u (isClosed_eq ?_ ?_) ?_
@@ -156,7 +156,7 @@ theorem Wkp0.value_extendByZeroₗᵢ (hsub : Omega ≤ Omega') (k : ℕ)
       (Wkp.valueL (mu := mu) (Omega := Omega') (p := p) k).continuous.comp
       (continuous_subtype_val.comp (Wkp0.extendByZeroₗᵢ hsub k).continuous)
   · simpa only [Function.comp_def, Wkp.valueL_apply] using
-      (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet
+      (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet
         (SetLike.coe_subset_coe.mpr hsub)).continuous.comp
           ((Wkp.valueL (mu := mu) (Omega := Omega) (p := p) k).continuous.comp
             continuous_subtype_val)
@@ -173,7 +173,7 @@ theorem Wkp0.iteratedGradient_extendByZeroₗᵢ (hsub : Omega ≤ Omega') (k : 
     (u : Wkp0 mu Omega p (k + 1)) :
     Wkp.iteratedGradient k
         (Wkp0.extendByZeroₗᵢ hsub (k + 1) u : Wkp mu Omega' p (k + 1)) =
-      extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet (SetLike.coe_subset_coe.mpr hsub)
+      extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet (SetLike.coe_subset_coe.mpr hsub)
         (Wkp.iteratedGradient k (u : Wkp mu Omega p (k + 1))) := by
   refine (Wkp0.denseRange_ofTestFunctionₗ (mu := mu) (Omega := Omega) (p := p)
     (k + 1)).induction_on u (isClosed_eq ?_ ?_) ?_
@@ -181,7 +181,7 @@ theorem Wkp0.iteratedGradient_extendByZeroₗᵢ (hsub : Omega ≤ Omega') (k : 
     exact (Wkp.iteratedGradientL (mu := mu) (Omega := Omega') (p := p) k).continuous.comp
       (continuous_subtype_val.comp (Wkp0.extendByZeroₗᵢ hsub (k + 1)).continuous)
   · simp_rw [← Wkp.iteratedGradientL_apply]
-    exact (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet
+    exact (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet
         (SetLike.coe_subset_coe.mpr hsub)).continuous.comp
           ((Wkp.iteratedGradientL (mu := mu) (Omega := Omega) (p := p) k).continuous.comp
             continuous_subtype_val)

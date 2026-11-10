@@ -98,7 +98,7 @@ private def localAverage {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp) (by
     simpa only [one_smul] using Measure.restrict_mono_set mu (subset_univ (U : Set E)))
       (normedBumpLp hp phi (mu.restrict univ)
-        (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.measurableSet (subset_univ _) f))
+        (extendByZeroLpₗᵢ ℝ mu Omega.isOpen.nullMeasurableSet (subset_univ _) f))
 
 private theorem localAverage_ae {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
     [CompleteSpace F] (hp : p ≠ ∞) (phi : ContDiffBump (0 : E))
