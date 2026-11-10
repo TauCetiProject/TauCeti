@@ -54,7 +54,12 @@ namespace TauCeti
 addition. -/
 theorem measurableAdd_of_measurableSub {G : Type*} [AddGroup G] [MeasurableSpace G]
     [MeasurableSub G] : MeasurableAdd G :=
-  ⟨fun c ↦ by simpa using (measurable_const_sub c).comp (measurable_const_sub (0 : G)),
-    fun c ↦ by simpa using measurable_sub_const (-c)⟩
+  ⟨fun c ↦ by
+      have h : Measurable fun x : G ↦ c - (0 - x) :=
+        (measurable_const_sub c).comp (measurable_const_sub 0)
+      simpa using h,
+    fun c ↦ by
+      have h : Measurable fun x : G ↦ x - -c := measurable_sub_const (-c)
+      simpa using h⟩
 
 end TauCeti
