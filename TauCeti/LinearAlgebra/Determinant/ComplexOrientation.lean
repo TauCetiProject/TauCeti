@@ -113,9 +113,8 @@ theorem ιMulti_complexToRealFamily_eq_normSq_det_smul (b c : Basis (Fin n) ℂ 
   set e := complexRealIndexEquiv n
   have hdet : (b.complexToReal.reindex e).det (complexToRealFamily ⇑c) =
       Complex.normSq (b.det c) := by
-    rw [← c.coe_complexToReal_reindex_complexRealIndexEquiv, Basis.det_reindex,
-      Basis.coe_reindex, Function.comp_assoc, Equiv.symm_comp_self, Function.comp_id,
-      Basis.det_complexToReal]
+    simp [e, ← c.coe_complexToReal_reindex_complexRealIndexEquiv, Basis.det_reindex,
+      Function.comp_assoc, Basis.det_complexToReal]
   have h := congrArg Subtype.val
     ((b.complexToReal.reindex e).exteriorPower_ιMulti_eq_det_smul (complexToRealFamily ⇑c))
   rwa [hdet, b.coe_complexToReal_reindex_complexRealIndexEquiv] at h
@@ -221,12 +220,28 @@ theorem IsComplexPositive.ne_zero (hx : IsComplexPositive x) : x ≠ 0 := by
   rw [ZeroMemClass.coe_zero, eq_comm, smul_eq_zero] at hx
   exact hb (hx.resolve_left hc.ne')
 
+omit [IsScalarTower ℝ ℂ E] in
+/-- The exterior product `b₀ ∧ I • b₀ ∧ b₁ ∧ I • b₁ ∧ ⋯` of the real family underlying a complex
+basis `b`, as an element of `det E`, is complex positive. -/
+theorem isComplexPositive_ιMulti_complexToRealFamily (b : Basis (Fin n) ℂ E)
+    (h : finrank ℝ E = 2 * n) :
+    IsComplexPositive (exteriorPower.ιMulti ℝ _ (complexToRealFamily ⇑b ∘ Fin.cast h)) :=
+  ⟨n, b, 1, one_pos, by simp⟩
+
+/-- The exterior product of the image under a complex-linear map `f` of the real family underlying
+a family `v` is complex positive in `det F` when `f ∘ v` is a complex basis `b` of `F`. -/
+theorem isComplexPositive_ιMulti_comp_complexToRealFamily (f : E →ₗ[ℂ] F) {v : Fin n → E}
+    (b : Basis (Fin n) ℂ F) (hv : f ∘ v = b) (h : finrank ℝ F = 2 * n) :
+    IsComplexPositive
+      (exteriorPower.ιMulti ℝ _ ((f.restrictScalars ℝ) ∘ complexToRealFamily v ∘ Fin.cast h)) := by
+  rw [LinearMap.coe_restrictScalars, ← Function.comp_assoc, ← complexToRealFamily_comp, hv]
+  exact isComplexPositive_ιMulti_complexToRealFamily b h
+
 /-- Every finite-dimensional complex vector space has a complex positive element of its real
 determinant line. -/
 theorem exists_isComplexPositive [FiniteDimensional ℂ E] : ∃ x : detLine ℝ E, IsComplexPositive x :=
-  ⟨exteriorPower.ιMulti ℝ _ (complexToRealFamily ⇑(finBasis ℂ E) ∘
-      Fin.cast finrank_real_eq_two_mul_finrank_complex),
-    finrank ℂ E, finBasis ℂ E, 1, one_pos, by simp⟩
+  ⟨_, isComplexPositive_ιMulti_complexToRealFamily (finBasis ℂ E)
+    finrank_real_eq_two_mul_finrank_complex⟩
 
 /-- Two complex positive elements of `det E` differ by a positive factor. -/
 theorem IsComplexPositive.exists_pos_smul_eq (hx : IsComplexPositive x) (hy : IsComplexPositive y) :
@@ -415,9 +430,8 @@ theorem IsComplexPositive.detLineCongr {x : detLine ℝ E} (hx : IsComplexPositi
     (e : E ≃ₗ[ℂ] F) : IsComplexPositive (LinearEquiv.detLineCongr (e.restrictScalars ℝ) x) := by
   obtain ⟨n, b, c, hc, hx⟩ := hx
   refine ⟨n, b.map e, c, hc, ?_⟩
-  rw [LinearEquiv.coe_detLineCongr, hx, map_smul, ExteriorAlgebra.map_apply_ιMulti, Basis.coe_map,
-    ← LinearEquiv.coe_toLinearMap, complexToRealFamily_comp,
-    LinearEquiv.restrictScalars_toLinearMap, LinearMap.coe_restrictScalars]
+  rw [Basis.coe_map, ← e.coe_toLinearMap, complexToRealFamily_comp]
+  simp [hx]
 
 /-- **Complex positivity is invariant under complex-linear isomorphisms**: the isomorphism of real
 determinant lines induced by a complex-linear isomorphism `e` maps an element to a complex positive
@@ -471,12 +485,9 @@ theorem isComplexPositiveTMulDual_congr_detLineCongr_iff (e₁ : E ≃ₗ[ℂ] E
       IsComplexPositiveTMulDual t := by
   rw [← LinearEquiv.restrictScalars_symm, ← LinearEquiv.detLineCongr_symm]
   refine ⟨fun h ↦ ?_, fun h ↦ h.congr_detLineCongr e₁ e₂⟩
-  have := h.congr_detLineCongr e₁.symm e₂.symm
-  convert this using 1
-  rw [← LinearEquiv.restrictScalars_symm, ← LinearEquiv.restrictScalars_symm,
-    ← LinearEquiv.detLineCongr_symm, ← LinearEquiv.detLineCongr_symm]
-  exact ((TensorProduct.congr (LinearEquiv.detLineCongr (e₁.restrictScalars ℝ))
-    (LinearEquiv.detLineCongr (e₂.restrictScalars ℝ)).symm.dualMap).symm_apply_apply t).symm
+  simpa only [← LinearEquiv.restrictScalars_symm, ← LinearEquiv.detLineCongr_symm,
+    ← LinearEquiv.dualMap_symm, ← TensorProduct.congr_symm, LinearEquiv.symm_apply_apply]
+    using h.congr_detLineCongr e₁.symm e₂.symm
 
 end Congr
 
@@ -509,25 +520,18 @@ theorem isComplexPositive_detLineShortExactEquiv_tmul
   have : FiniteDimensional ℂ U := Module.Finite.of_restrictScalars_finite ℝ ℂ U
   have : FiniteDimensional ℂ W := Module.Finite.of_restrictScalars_finite ℝ ℂ W
   have : FiniteDimensional ℂ V := finiteDimensional_of_exact hfgC
-  set bU := finBasis ℂ U
-  set bW := finBasis ℂ W
-  obtain ⟨c, hc, hxc⟩ := (isComplexPositive_iff bU).1 hx
-  obtain ⟨d, hd, hyd⟩ := (isComplexPositive_iff bW).1 hy
-  -- Lift the basis of `W` to `V`; with the image of the basis of `U` it is a basis of `V`.
-  set v : Fin (finrank ℂ W) → V := Function.surjInv hgC ∘ bW
-  have hv : g ∘ v = bW := funext fun i ↦ Function.surjInv_eq hgC _
+  -- Lift a basis of `W` to `V`; with the image of a basis of `U` it is a basis of `V`.
+  obtain ⟨v, bV, hv, hbV⟩ := Basis.exists_coe_eq_append_lift hfC hfgC hgC (finBasis ℂ U)
+    (finBasis ℂ W)
   have hU := finrank_real_eq_two_mul_finrank_complex (V := U)
   have hW := finrank_real_eq_two_mul_finrank_complex (V := W)
-  -- Write `x` and `y` as exterior products of real families of the right lengths.
-  have hx' : x = c • exteriorPower.ιMulti ℝ _ (complexToRealFamily ⇑bU ∘ Fin.cast hU) :=
-    Subtype.ext (by simp [hxc])
-  have hy' : y = d • exteriorPower.ιMulti ℝ _
-      ((g.restrictScalars ℝ) ∘ complexToRealFamily v ∘ Fin.cast hW) :=
-    Subtype.ext (by simp [hyd, ← Function.comp_assoc, ← complexToRealFamily_comp, hv])
-  refine isComplexPositive_of_coe_eq_smul_ιMulti_append f
-    ((Basis.ofExactLift hfC hfgC bU bW v (congrFun hv)).reindex finSumFinEquiv)
-    (Basis.coe_reindex_ofExactLift ..) hU hW (mul_pos hc hd) ?_
-  rw [hx', hy', smul_tmul_smul, map_smul, Submodule.coe_smul, coe_detLineShortExactEquiv_tmul]
+  -- Write `x` and `y` as positive multiples of exterior products of real families.
+  obtain ⟨c, hc, rfl⟩ :=
+    (isComplexPositive_ιMulti_complexToRealFamily (finBasis ℂ U) hU).exists_pos_smul_eq hx
+  obtain ⟨d, hd, rfl⟩ :=
+    (isComplexPositive_ιMulti_comp_complexToRealFamily g (finBasis ℂ W) hv hW).exists_pos_smul_eq hy
+  refine isComplexPositive_of_coe_eq_smul_ιMulti_append f bV hbV hU hW (mul_pos hc hd) ?_
+  rw [smul_tmul_smul, map_smul, Submodule.coe_smul, coe_detLineShortExactEquiv_tmul]
 
 end ShortExact
 
@@ -566,24 +570,18 @@ theorem isComplexPositiveTMulDual_detLineFourTermEquiv
   have : FiniteDimensional ℂ D := Module.Finite.of_surjective h hhC
   have : FiniteDimensional ℂ B := finiteDimensional_of_exact hfgC
   have : FiniteDimensional ℝ D := Module.Finite.trans ℂ D
-  -- Complex bases of `A`, of `range g` and of `D`, and lifts of the last two to `B` and `C`.
+  -- Complex bases of `A`, of `range g` and of `D`, lifts of the last two to `B` and `C`, and the
+  -- complex bases of `B` and of `C` they give, adapted to the exact sequence.
   set bA := finBasis ℂ A
   set bR := finBasis ℂ (LinearMap.range g)
   set bD := finBasis ℂ D
-  set v : Fin (finrank ℂ (LinearMap.range g)) → B := fun i ↦ (LinearMap.mem_range.1 (bR i).2).choose
-  have hv : g.rangeRestrict ∘ v = bR :=
-    funext fun i ↦ Subtype.ext (LinearMap.mem_range.1 (bR i).2).choose_spec
+  obtain ⟨v, bB, hv, hbB⟩ := Basis.exists_coe_eq_append_lift hfC hfgC.rangeRestrict
+    g.surjective_rangeRestrict bA bR
+  obtain ⟨z, bC, hz, hbC⟩ := Basis.exists_coe_eq_append_lift (LinearMap.range g).injective_subtype
+    hghC.range_subtype hhC bR bD
   have hv' : g ∘ v = (LinearMap.range g).subtype ∘ bR := by
     rw [← hv, ← Function.comp_assoc, ← LinearMap.coe_comp, LinearMap.subtype_comp_rangeRestrict]
-  set z : Fin (finrank ℂ D) → C := Function.surjInv hhC ∘ bD
-  have hz : h ∘ z = bD := funext fun i ↦ Function.surjInv_eq hhC _
-  -- They give complex bases of `B` and of `C` adapted to the exact sequence.
-  set bB := (Basis.ofExactLift hfC hfgC.rangeRestrict bA bR v (congrFun hv)).reindex
-    finSumFinEquiv
-  set bC := (Basis.ofExactLift (LinearMap.range g).injective_subtype hghC.range_subtype bR bD z
-    (congrFun hz)).reindex finSumFinEquiv
-  have hbC : ⇑bC = Fin.append (g ∘ v) z := by
-    rw [Basis.coe_reindex_ofExactLift, hv']
+  rw [← hv'] at hbC
   have hB : finrank ℂ B = _ := (finrank_eq_card_basis bB).trans (Fintype.card_fin _)
   have hC : finrank ℂ C = _ := (finrank_eq_card_basis bC).trans (Fintype.card_fin _)
   -- Real dimensions are twice the complex ones.
@@ -611,15 +609,13 @@ theorem isComplexPositiveTMulDual_detLineFourTermEquiv
     simp [γ]
   -- `β`, `γ` and the exterior product of the images of `zR` in `D` are complex positive.
   have hβpos : IsComplexPositive β :=
-    isComplexPositive_of_coe_eq_smul_ιMulti_append f bB (Basis.coe_reindex_ofExactLift ..) hA₂ hR₂
-      one_pos (by rw [hβ, one_smul])
+    isComplexPositive_of_coe_eq_smul_ιMulti_append f bB hbB hA₂ hR₂ one_pos (by rw [hβ, one_smul])
   have hγpos : IsComplexPositive γ :=
     isComplexPositive_of_coe_eq_smul_ιMulti_append g bC hbC hR₂ hD₂ one_pos
       (by rw [hγ, one_smul])
   have hδpos : IsComplexPositive
       (exteriorPower.ιMulti ℝ (finrank ℝ D) ((h.restrictScalars ℝ) ∘ zR)) :=
-    ⟨finrank ℂ D, bD, 1, one_pos, by
-      simp [zR, ← Function.comp_assoc, ← complexToRealFamily_comp, hz]⟩
+    isComplexPositive_ιMulti_comp_complexToRealFamily h bD hz hD₂
   obtain ⟨ξ, hξ⟩ := Projective.exists_dual_eq_one ℝ hδpos.ne_zero
   -- Compute the image of `t = x ⊗ φ`, writing `x` as a positive multiple of `β`.
   obtain ⟨x, φ, hx, hφ, rfl⟩ := ht
@@ -628,7 +624,7 @@ theorem isComplexPositiveTMulDual_detLineFourTermEquiv
     hξ, smul_smul, smul_tmul']
   refine IsComplexPositive.isComplexPositiveTMulDual_tmul (IsComplexPositive.smul ?_
     (mul_pos hc (hφ γ hγpos))) (hδpos.isComplexPositiveDual_of_apply_eq_one hξ)
-  exact ⟨finrank ℂ A, bA, 1, one_pos, by simp [uR]⟩
+  exact isComplexPositive_ιMulti_complexToRealFamily bA hA₂
 
 end FourTerm
 
