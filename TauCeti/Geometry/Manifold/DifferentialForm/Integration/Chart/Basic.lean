@@ -148,6 +148,7 @@ theorem signedInChartAt_changeChart [IsManifold I 1 M]
       hinj]
     exact (integrableOn_congr_fun (fun y hy ↦ hcoef y hy) hs).symm
 
+omit [FiniteDimensional ℝ E] in
 /-- Actual integrability of unsigned top-form coefficients is invariant under a chart change.
 The absolute Jacobian theorem and a measurable determinant sign preserve both strong
 measurability and integrability, even for arbitrary rough forms on nonorientable manifolds. -/
@@ -158,6 +159,7 @@ theorem integrableOn_signedInChartAt_one_changeChart [IsManifold I 1 M]
     (μ : Measure E) [μ.IsAddHaarMeasure] :
     IntegrableOn (φ.signedInChartAt b α (fun _ ↦ 1)) ((extChartAt I α) '' s) μ ↔
       IntegrableOn (φ.signedInChartAt b β (fun _ ↦ 1)) ((extChartAt I β) '' s) μ := by
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   let A := (extChartAt I α) '' s
   let e := (extChartAt I α).symm ≫ extChartAt I β
   let D := fun y ↦ fderivWithin ℝ
