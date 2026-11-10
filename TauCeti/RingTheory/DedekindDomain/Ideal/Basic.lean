@@ -98,6 +98,14 @@ section CommSemiring
 
 variable {R R' : Type*} [CommSemiring R] [CommSemiring R']
 
+/-- Pushing an ideal forward along a ring isomorphism and then back along its inverse is the
+identity. `Ideal.map` takes a `RingHom` class, and `Ideal.map_map` composes `RingHom`s, so the
+statement writes both isomorphisms through their explicit `RingHom` coercions. -/
+private theorem map_symm_map_of_ringEquiv (e : R ≃+* R') (I : Ideal R) :
+    Ideal.map (e.symm : R' →+* R) (Ideal.map (e : R →+* R') I) = I := by
+  have hcomp : (e.symm : R' →+* R).comp (e : R →+* R') = RingHom.id R := by ext x; simp
+  rw [Ideal.map_map, hcomp, Ideal.map_id]
+
 /-- Divisibility of ideals is unchanged by pushing forward along a ring isomorphism: `Ideal.map e`
 and `Ideal.map e.symm` are mutually inverse homomorphisms of the semirings of ideals. -/
 theorem map_dvd_map_iff_of_ringEquiv (e : R ≃+* R') (I J : Ideal R) :
@@ -107,8 +115,7 @@ theorem map_dvd_map_iff_of_ringEquiv (e : R ≃+* R') (I J : Ideal R) :
   change Ideal.map (e : R →+* R') I ∣ Ideal.map (e : R →+* R') J ↔ I ∣ J
   refine ⟨fun h ↦ ?_, fun h ↦ by
     simpa only [mapHom_apply] using map_dvd (mapHom (e : R →+* R')) h⟩
-  have hcomp : (e.symm : R' →+* R).comp (e : R →+* R') = RingHom.id R := by ext x; simp
-  simpa only [mapHom_apply, Ideal.map_map, hcomp, Ideal.map_id] using
+  simpa only [mapHom_apply, map_symm_map_of_ringEquiv] using
     map_dvd (mapHom (e.symm : R' →+* R)) h
 
 /-- The prime-power divisibility `p ^ n ∣ I` is unchanged by pushing forward along a ring
@@ -124,6 +131,14 @@ section RingEquivDedekind
 
 variable {R R' : Type*} [CommRing R] [IsDedekindDomain R] [CommRing R'] [IsDedekindDomain R']
 
+/-- Counting in the factors of `⊥` gives `0`: the factor set of `⊥` is the zero factor set. -/
+private theorem count_factors_bot {S : Type*} [CommRing S] [IsDedekindDomain S]
+    [DecidableEq (Associates (Ideal S))] [∀ a : Associates (Ideal S), Decidable (Irreducible a)]
+    (q : Associates (Ideal S)) : q.count (Associates.mk (⊥ : Ideal S)).factors = 0 := by
+  rw [← zero_eq_bot, Associates.mk_zero, Associates.factors_zero]
+  unfold Associates.count
+  split_ifs <;> rfl
+
 /-- Multiplicities in the factorisation of an ideal are unchanged by pushing forward along a ring
 isomorphism: the number of times `Ideal.map e p` divides `Ideal.map e I` is the number of times
 `p` divides `I`. The identity also holds, with both sides `0`, when `p` is not prime or `I = ⊥`. -/
@@ -132,17 +147,8 @@ theorem count_factors_map_of_ringEquiv (e : R ≃+* R') {p I : Ideal R} :
       (Associates.mk p).count (Associates.mk I).factors := by
   classical
   by_cases hI : I = ⊥
-  · have hmap : Ideal.map e I = ⊥ := by rw [hI, Ideal.map_bot]
-    have h0 : ∀ q : Associates (Ideal R'), q.count (Associates.mk (Ideal.map e I)).factors = 0 :=
-      fun q ↦ by
-        rw [hmap, ← zero_eq_bot, Associates.mk_zero, Associates.factors_zero]
-        unfold Associates.count
-        split_ifs <;> rfl
-    have h0' : ∀ q : Associates (Ideal R), q.count (Associates.mk I).factors = 0 := fun q ↦ by
-      rw [hI, ← zero_eq_bot, Associates.mk_zero, Associates.factors_zero]
-      unfold Associates.count
-      split_ifs <;> rfl
-    rw [h0, h0']
+  · subst hI
+    rw [Ideal.map_bot, count_factors_bot, count_factors_bot]
   by_cases hp : Prime p
   · have hpmap := Ideal.map_prime_of_equiv e hp hp.ne_zero
     have hI0 : I ≠ 0 := by simpa only [zero_eq_bot] using hI
@@ -164,9 +170,10 @@ theorem count_factors_map_of_ringEquiv (e : R ≃+* R') {p I : Ideal R} :
   · -- Neither `p` nor `Ideal.map e p` is prime, so both counts are the junk value `0`.
     have hp' : ¬ Prime (Ideal.map e p) := fun h ↦ hp <| by
       have := Ideal.map_prime_of_equiv e.symm h h.ne_zero
+      -- `Ideal.map_prime_of_equiv` states `Ideal.map` through the isomorphism class coercion; read
+      -- it through `RingHom` coercions, as `map_symm_map_of_ringEquiv` is stated.
       change Prime (Ideal.map (e.symm : R' →+* R) (Ideal.map (e : R →+* R') p)) at this
-      rwa [Ideal.map_map, show (e.symm : R' →+* R).comp (e : R →+* R') = RingHom.id R by ext; simp,
-        Ideal.map_id] at this
+      rwa [map_symm_map_of_ringEquiv] at this
     rw [Associates.count_reducible (mt Associates.irreducible_mk.mp
         (mt (irreducible_iff_prime.mp) hp')),
       Associates.count_reducible (mt Associates.irreducible_mk.mp (mt irreducible_iff_prime.mp hp))]
