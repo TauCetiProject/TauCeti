@@ -188,6 +188,20 @@ theorem norm_cylindricalEndLift_sub_endCenter (q : Puncture) (z : ℂ) :
   rw [cylindricalEndLift_eq, add_sub_cancel_left, norm_mul, Complex.norm_exp]
   simp
 
+/-- The output end lift at `z` has norm `2 exp (-2π Re z)`. -/
+theorem norm_cylindricalEndLift_inf (z : ℂ) :
+    ‖inf.cylindricalEndLift z‖ = 2 * Real.exp (-(2 * π * z.re)) := by
+  have h := norm_cylindricalEndLift_sub_endCenter inf z
+  rwa [endCenter_inf, sub_zero, endScale_inf, Complex.norm_ofNat] at h
+
+/-- The end lift of the end at `0` has norm `exp (-2π Re z) / 2`. -/
+theorem norm_cylindricalEndLift_zero (z : ℂ) :
+    ‖zero.cylindricalEndLift z‖ = Real.exp (-(2 * π * z.re)) / 2 := by
+  have h := norm_cylindricalEndLift_sub_endCenter zero z
+  rw [endCenter_zero, sub_zero, endScale_zero] at h
+  rw [h, norm_div, norm_one, Complex.norm_ofNat]
+  ring
+
 /-- The real part of the exponent of the end lifts. -/
 private theorem re_neg_two_pi_mul (z : ℂ) : (-(2 * (π : ℂ)) * z).re = -(2 * π) * z.re := by
   rw [show -(2 * (π : ℂ)) * z = ((-(2 * π) : ℝ) : ℂ) * z by push_cast; ring,
