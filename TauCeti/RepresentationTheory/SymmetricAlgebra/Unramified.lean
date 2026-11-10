@@ -33,7 +33,7 @@ public section
 namespace Representation
 
 variable {K G V : Type*} [Field K] [Infinite K] [Group G] [Finite G]
-  [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+  [AddCommGroup V] [Module K V]
 
 /-- The residual quotient by the pseudoreflection subgroup is unramified at every height-one
 prime. The base is the full invariant algebra `Sym(V*)^G`, and the source is `Sym(V*)^H`, where
