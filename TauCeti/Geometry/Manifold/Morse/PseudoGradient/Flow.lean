@@ -75,11 +75,15 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 namespace IsAdaptedPseudoGradient
 
+omit [FiniteDimensional ℝ E] in
 /-- An adapted pseudo-gradient on a compact boundaryless manifold is complete. -/
 theorem isCompleteVectorField (hX : IsAdaptedPseudoGradient f X) :
-    IsCompleteVectorField X :=
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
-  isCompleteVectorField_of_compactSpace (hX.contMDiff.of_le (by simp))
+    IsCompleteVectorField X := by
+  rcases isEmpty_or_nonempty M with hM | hM
+  · exact isCompleteVectorField_iff_maximalIntegralCurveInterval.2 fun x ↦ isEmptyElim x
+  · have : FiniteDimensional ℝ E := FiniteDimensional.of_locallyCompact_manifold M 𝓘(ℝ, E)
+    have : CompleteSpace E := FiniteDimensional.complete ℝ E
+    exact isCompleteVectorField_of_compactSpace (hX.contMDiff.of_le (by simp))
 
 /-- The flow of an adapted pseudo-gradient on a compact boundaryless manifold. -/
 noncomputable def flow (hX : IsAdaptedPseudoGradient f X) : Flow ℝ M :=
