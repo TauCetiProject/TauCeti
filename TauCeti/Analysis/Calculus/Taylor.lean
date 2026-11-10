@@ -32,8 +32,8 @@ along a segment in a normed space.
   the last factor being the Taylor polynomial of order `n` of `f` expanded at `t` and evaluated
   at `0`.
 
-* **Taylor's theorem along a segment.** For `f : E → F` on a real normed space, applying the
-  size of the remainder to `t ↦ f (x + t • v)` on `[0, 1]` gives
+* **Taylor's theorem along a segment.** For `f : E → F` on a real normed space, applying
+  Mathlib's `taylor_mean_remainder_bound` to `t ↦ f (x + t • v)` on `[0, 1]` gives
   `‖f (x + v) - ∑_{k ≤ n} D^k f(x) (v, …, v) / k!‖ ≤ C ‖v‖ⁿ⁺¹ / n!` whenever
   `‖D^(n+1) f‖ ≤ C` on the segment from `x` to `x + v`.
 
