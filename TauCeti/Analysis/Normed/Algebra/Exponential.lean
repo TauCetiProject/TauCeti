@@ -28,6 +28,7 @@ Baker--Campbell--Hausdorff expansion.
 
 ## Main results
 
+* `RCLike.exp_ofReal`: the exponential on real scalars in real or complex normed fields.
 * `NormedSpace.exp_real_smul_one`: the exponential of a real scalar multiple of the unit.
 * `NormedSpace.contDiff_exp`: the exponential is smooth of every order, including analytic.
 * `NormedSpace.tendsto_exp_nhds_zero_nhds_one`: the exponential tends to `1` at the origin.
@@ -76,6 +77,11 @@ theorem exp_real_smul_one {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] (x : 
     exp (x • (1 : A)) = Real.exp x • 1 := by
   simpa only [Algebra.algebraMap_eq_smul_one, ← Real.exp_eq_exp_ℝ] using
     (NormedSpace.algebraMap_exp_comm (𝔸 := A) x).symm
+
+/-- The exponential of a real scalar in a real or complex normed field is its real exponential. -/
+theorem _root_.RCLike.exp_ofReal {𝕜 : Type*} [RCLike 𝕜] (x : ℝ) :
+    exp (x : 𝕜) = (Real.exp x : 𝕜) := by
+  simpa only [RCLike.real_smul_eq_coe_mul, mul_one] using (exp_real_smul_one (A := 𝕜) x)
 
 variable (𝕂 : Type*) {A : Type*} [NontriviallyNormedField 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A]
   [CharZero 𝕂] [ContinuousSMul ℚ 𝕂] [CompleteSpace A]

@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.LinearAlgebra.Matrix.Bilinear
 import TauCeti.Analysis.Normed.Algebra.Exponential
 import TauCeti.Analysis.Normed.Algebra.Basic
+import TauCeti.Topology.Algebra.Module.Matrix
 
 /-!
 # The last-column coefficient of a triangular exponential
@@ -37,7 +38,7 @@ coefficient, including when diagonal entries repeat.
 * `Matrix.toBlocks₁₂_exp_fromBlocks_real_smul_one`: the upper-right block is the coefficient
   times the original rectangular block.
 * `Matrix.contDiff_expColumnCoefficient`: joint regularity, including analyticity.
-* `Matrix.IsUpperTriangular.expColumnCoefficient`: the coefficient remains upper triangular.
+* `Matrix.BlockTriangular.expColumnCoefficient`: the coefficient preserves block triangularity.
 * `Matrix.IsUpperTriangular.expColumnCoefficient_apply_diag`: real diagonal entries give
   divided differences, including the equal-entry value.
 * `Matrix.IsUpperTriangular.isUnit_expColumnCoefficient`: real diagonal entries imply
@@ -147,18 +148,6 @@ omit [Fintype n] [CompleteSpace R] in
 @[simp] private theorem coefficientBlockCLM_apply (p : Matrix n n R × ℝ) :
     coefficientBlockCLM p = fromBlocks p.1 0 0 (p.2 • (1 : Matrix n n R)) := rfl
 
-/-- Projection onto the upper-right block. -/
-private def coefficientProjectionCLM : Matrix (n ⊕ n) (n ⊕ n) R →L[ℝ] Matrix n n R where
-  toLinearMap :=
-    { toFun := toBlocks₁₂
-      map_add' := fun _ _ ↦ rfl
-      map_smul' := fun _ _ ↦ rfl }
-  cont := continuous_matrix fun i j ↦ continuous_id.matrix_elem (Sum.inl i) (Sum.inr j)
-
-omit [Fintype n] [CompleteSpace R] [DecidableEq n] in
-@[simp] private theorem coefficientProjectionCLM_apply
-    (A : Matrix (n ⊕ n) (n ⊕ n) R) : coefficientProjectionCLM A = A.toBlocks₁₂ := rfl
-
 /-- The last-column exponential coefficient is jointly smooth in the leading block and
 its final real diagonal entry, with arbitrary finite, smooth, or analytic regularity. -/
 @[fun_prop]
@@ -167,31 +156,31 @@ theorem contDiff_expColumnCoefficient (m : ℕ∞ω) : ContDiff ℝ m
   have he : ContDiff ℝ m (exp : Matrix (n ⊕ n) (n ⊕ n) R → _) := contDiff_exp ℝ
   have hT : ContDiff ℝ m (fun p : Matrix n n R × ℝ ↦ coefficientBlockCLM p) :=
     (coefficientBlockCLM (n := n) (R := R)).contDiff
-  have hP : ContDiff ℝ m (fun A : Matrix (n ⊕ n) (n ⊕ n) R ↦ coefficientProjectionCLM A) :=
-    (coefficientProjectionCLM (n := n) (R := R)).contDiff
+  have hP : ContDiff ℝ m (fun A : Matrix (n ⊕ n) (n ⊕ n) R ↦ toBlocks₁₂CLM ℝ A) :=
+    (toBlocks₁₂CLM ℝ (R := R) (m := n) (n := n) (l := n) (o := n)).contDiff
   have h := hP.comp (he.comp (hT.add
     (contDiff_const (c := fromBlocks (0 : Matrix n n R) (1 : Matrix n n R) 0 0))))
   have hid (p : Matrix n n R × ℝ) :
       coefficientBlockCLM p + fromBlocks (0 : Matrix n n R) (1 : Matrix n n R) 0 0 =
         fromBlocks p.1 1 0 (p.2 • (1 : Matrix n n R)) := by
     simp only [coefficientBlockCLM_apply, fromBlocks_add, add_zero, zero_add]
-  simpa only [Function.comp_def, hid, coefficientProjectionCLM_apply,
+  simpa only [Function.comp_def, hid, toBlocks₁₂CLM_apply,
     ← Matrix.expColumnCoefficient_eq_toBlocks₁₂_exp] using h
 
 end Coefficient
 
 section Triangular
 
-variable [LinearOrder n]
+variable [DecidableEq n] {α : Type*} [LinearOrder α] {b : n → α}
 
-/-- The last-column exponential coefficient of an upper-triangular block is upper triangular. -/
-theorem IsUpperTriangular.expColumnCoefficient {A : Matrix n n R}
-    (hA : A.IsUpperTriangular) (d : ℝ) : (expColumnCoefficient A d).IsUpperTriangular := by
+/-- The last-column exponential coefficient preserves any block-triangular structure. -/
+theorem BlockTriangular.expColumnCoefficient {A : Matrix n n R}
+    (hA : A.BlockTriangular b) (d : ℝ) : (expColumnCoefficient A d).BlockTriangular b := by
   intro i j hji
   rw [expColumnCoefficient_apply]
-  have hscaled (t : ℝ) : ((1 - t) • A).IsUpperTriangular :=
-    (blockTriangularSubalgebra ℝ R id).smul_mem hA (1 - t)
-  have hz (t : ℝ) : exp ((1 - t) • A) i j = 0 := (hscaled t).exp hji
+  have hscaled (t : ℝ) : ((1 - t) • A).BlockTriangular b :=
+    (blockTriangularSubalgebra ℝ R b).smul_mem hA (1 - t)
+  have hz (t : ℝ) : NormedSpace.exp ((1 - t) • A) i j = 0 := (hscaled t).exp hji
   simp only [hz, smul_zero, intervalIntegral.integral_zero]
 
 end Triangular
@@ -207,12 +196,9 @@ theorem IsUpperTriangular.expColumnCoefficient_apply_diag {A : Matrix n n 𝕜}
     Matrix.expColumnCoefficient A d i i = ((dslope Real.exp a d : ℝ) : 𝕜) := by
   have hscaled (t : ℝ) : ((1 - t) • A).IsUpperTriangular :=
     (blockTriangularSubalgebra ℝ 𝕜 id).smul_mem hA (1 - t)
-  have hexp (x : ℝ) : exp (x : 𝕜) = (Real.exp x : 𝕜) := by
-    simpa only [RCLike.real_smul_eq_coe_mul, mul_one] using
-      (NormedSpace.exp_real_smul_one (A := 𝕜) x)
   have he (t : ℝ) : exp ((1 - t) • A) i i = (Real.exp ((1 - t) * a) : 𝕜) := by
     rw [(hscaled t).exp_apply_diag, Matrix.smul_apply, hii,
-      RCLike.real_smul_eq_coe_mul, ← RCLike.ofReal_mul, hexp]
+      RCLike.real_smul_eq_coe_mul, ← RCLike.ofReal_mul, RCLike.exp_ofReal]
   have heq (t : ℝ) : Real.exp (t * d) • exp ((1 - t) • A) i i =
       (Real.exp ((1 - t) * a + t * d) : 𝕜) := by
     rw [he, RCLike.real_smul_eq_coe_mul, Real.exp_add, RCLike.ofReal_mul]
