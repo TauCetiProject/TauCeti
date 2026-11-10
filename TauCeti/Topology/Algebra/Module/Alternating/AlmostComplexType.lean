@@ -14,6 +14,8 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Minpoly
 public import Mathlib.LinearAlgebra.Lagrange
 
+import TauCeti.LinearAlgebra.Complex.Module
+
 /-!
 # The `(p,q)` type of complex-valued alternating forms
 
@@ -281,13 +283,6 @@ theorem isOfType_zero_one_iff (α : V [⋀^Fin 1]→L[ℝ] F) :
     obtain ⟨v, rfl⟩ : ∃ v, w = ![v] := ⟨w 0, by ext i; fin_cases i; rfl⟩
     rw [J.alternatingDerivation_apply_vecCons_fin_one, h, smul_apply]
 
-/-- A complex scalar acts through its real and imaginary parts. -/
-private theorem smul_eq_re_smul_add_im_smul_I_smul {U : Type*} [AddCommGroup U] [Module ℂ U]
-    [Module ℝ U] [IsScalarTower ℝ ℂ U] (c : ℂ) (v : U) :
-    c • v = c.re • v + c.im • I • v := by
-  match_scalars
-  simp
-
 /-- On a complex vector space, a one-form of type `(1,0)` for multiplication by `i` is
 complex-linear. -/
 theorem IsOfType.map_smul_complex {U : Type*} [AddCommGroup U] [Module ℂ U] [Module ℝ U]
@@ -295,7 +290,7 @@ theorem IsOfType.map_smul_complex {U : Type*} [AddCommGroup U] [Module ℂ U] [M
     (h : α.IsOfType (I • ContinuousLinearMap.id ℝ U) 1 0) (c : ℂ) (v : U) :
     α ![c • v] = c • α ![v] := by
   have hI : α ![I • v] = I • α ![v] := (isOfType_one_zero_iff α).1 h v
-  rw [smul_eq_re_smul_add_im_smul_I_smul c v, smul_eq_re_smul_add_im_smul_I_smul c (α ![v]), ← hI,
+  rw [← Complex.re_smul_add_im_smul c v, ← Complex.re_smul_add_im_smul c (α ![v]), ← hI,
     ← ContinuousAlternatingMap.vecCons_smul, ← ContinuousAlternatingMap.vecCons_smul,
     ← ContinuousAlternatingMap.vecCons_add]
 
@@ -307,7 +302,7 @@ theorem IsOfType.map_smul_conj {U : Type*} [AddCommGroup U] [Module ℂ U] [Modu
     α ![c • v] = conj c • α ![v] := by
   have hI : α ![I • v] = -I • α ![v] := (isOfType_zero_one_iff α).1 h v
   -- The imaginary part of `conj c` is `-c.im`; move the sign onto `I` to match `hI`.
-  rw [smul_eq_re_smul_add_im_smul_I_smul c v, smul_eq_re_smul_add_im_smul_I_smul (conj c),
+  rw [← Complex.re_smul_add_im_smul c v, ← Complex.re_smul_add_im_smul (conj c),
     conj_re, conj_im, neg_smul, ← smul_neg, ← neg_smul, ← hI,
     ← ContinuousAlternatingMap.vecCons_smul, ← ContinuousAlternatingMap.vecCons_smul,
     ← ContinuousAlternatingMap.vecCons_add]

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Complex
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Holomorphic
-import Mathlib.Geometry.Manifold.Complex
+import TauCeti.Geometry.Manifold.Complex.Compact
 
 /-!
 # Functoriality and degree zero of Dolbeault cohomology
@@ -118,29 +118,12 @@ section CompactSpace
 
 variable [CompactSpace M] [PreconnectedSpace M] [Nonempty M]
 
-variable (M) in
-/-- On a compact connected complex manifold, the holomorphic functions `M → F` are the constants:
-evaluation at a point identifies them with `F`. -/
-private def holomorphicEquivOfCompactSpace : C^∞⟮𝓘(ℂ, E), M; 𝓘(ℂ, F), F⟯ ≃ₗ[ℂ] F where
-  toFun g := g (Classical.arbitrary M)
-  invFun c := ⟨fun _ ↦ c, contMDiff_const⟩
-  map_add' _ _ := rfl
-  map_smul' _ _ := rfl
-  left_inv g := ContMDiffMap.ext fun x ↦
-    MDifferentiable.apply_eq_of_compactSpace (g.contMDiff.mdifferentiable (by simp)) _ _
-  right_inv _ := rfl
-
-omit [FiniteDimensional ℂ E] [CompleteSpace F] in
-private theorem holomorphicEquivOfCompactSpace_apply (g : C^∞⟮𝓘(ℂ, E), M; 𝓘(ℂ, F), F⟯) :
-    holomorphicEquivOfCompactSpace M g = g (Classical.arbitrary M) :=
-  rfl
-
 variable (E M F) in
 /-- **`H^(0,0)` of a compact connected complex manifold is the space of constants.** The
 holomorphic functions on a compact connected complex manifold with finite-dimensional model are
 constant, so evaluation identifies `H^(0,0)_∂bar(M; F)` with `F`. -/
 def zeroZeroEquivOfCompactSpace : dolbeaultCohomology E M F 0 0 ≃ₗ[ℂ] F :=
-  zeroZeroEquiv E M F ≪≫ₗ holomorphicEquivOfCompactSpace M
+  zeroZeroEquiv E M F ≪≫ₗ holomorphicEquivOfCompactSpace 𝓘(ℂ, E) M
 
 /-- The constant corresponding to the class of a `∂bar`-closed function on a compact connected
 complex manifold is the value of that function at any point. This is not a `simp` lemma, since the
@@ -157,8 +140,7 @@ theorem zeroZeroEquivOfCompactSpace_mk (φ : closedForms E M F 0 0) (x : M) :
 theorem zeroZeroEquiv_zeroZeroEquivOfCompactSpace_symm_apply (c : F) (x : M) :
     zeroZeroEquiv E M F ((zeroZeroEquivOfCompactSpace E M F).symm c) x = c := by
   rw [zeroZeroEquivOfCompactSpace, LinearEquiv.symm_trans_apply, LinearEquiv.apply_symm_apply,
-    LinearEquiv.coe_symm_mk']
-  simp only [holomorphicEquivOfCompactSpace, ContMDiffMap.coeFn_mk]
+    holomorphicEquivOfCompactSpace_symm_apply]
 
 end CompactSpace
 
