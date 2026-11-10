@@ -173,7 +173,9 @@ theorem faceChart_source : (faceChart he i p₀).source =
     IsOpenEmbedding.toOpenPartialHomeomorph_target,
     IsOpenEmbedding.toOpenPartialHomeomorph_source, preimage_univ, inter_univ]
 
-private theorem faceChart_target :
+/-- The target of a face chart is the preimage of the target of the chart of `M` under the
+inclusion of the quadrant onto the face `z i = 0`. -/
+theorem faceChart_target :
     (faceChart he i p₀).target = euclideanQuadrantFaceInclusion i ⁻¹' e.target := by
   rw [faceChart, OpenPartialHomeomorph.trans_target, OpenPartialHomeomorph.symm_target,
     IsOpenEmbedding.toOpenPartialHomeomorph_target,
@@ -189,7 +191,9 @@ private theorem faceChart_faceSection
     IsOpenEmbedding.toOpenPartialHomeomorph_apply,
     IsOpenEmbedding.toOpenPartialHomeomorph_left_inv]
 
-private theorem point_faceChart_symm {q : EuclideanQuadrant m}
+/-- The inverse of a face chart reinserts a zero coordinate in slot `i` and applies the inverse
+of the chart of `M`. -/
+theorem point_faceChart_symm {q : EuclideanQuadrant m}
     (hq : q ∈ (faceChart he i p₀).target) :
     ((faceChart he i p₀).symm q).point = e.symm (euclideanQuadrantFaceInclusion i q) := by
   have : Nonempty {p : M // p ∈ e.source ∧ e.extend (𝓡c (m + 1)) p i = 0} := ⟨p₀⟩
