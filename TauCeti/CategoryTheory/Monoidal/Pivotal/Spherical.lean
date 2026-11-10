@@ -175,11 +175,13 @@ variable [Preadditive C] [MonoidalPreadditive C]
 theorem trace_add {X : C} (f g : X ⟶ X) : trace (f + g) = trace f + trace g := by
   simp only [trace_eq_leftTrace, leftTrace_add]
 
+omit [MonoidalPreadditive C] in
 /-- The trace of zero is zero. -/
 @[simp]
 theorem trace_zero (X : C) : trace (0 : X ⟶ X) = 0 := by
   rw [trace_eq_leftTrace, leftTrace_zero]
 
+omit [MonoidalPreadditive C] in
 /-- The zero object has quantum dimension zero. -/
 @[simp]
 theorem quantumDim_zero [HasZeroObject C] : quantumDim (0 : C) = 0 := by

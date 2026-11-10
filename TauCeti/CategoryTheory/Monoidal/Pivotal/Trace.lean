@@ -264,11 +264,15 @@ variable [Preadditive C] [MonoidalPreadditive C]
 theorem leftTrace_add {X : C} (f g : X ⟶ X) : leftTrace (f + g) = leftTrace f + leftTrace g := by
   simp [leftTrace_def]
 
+omit [MonoidalPreadditive C] in
 /-- The left trace of zero is zero. -/
 @[simp]
 theorem leftTrace_zero (X : C) : leftTrace (0 : X ⟶ X) = 0 := by
-  simp [leftTrace_def]
+  have : (tensorLeft Xᘁ).IsLeftAdjoint := (tensorLeftAdjunction X Xᘁ).isLeftAdjoint
+  have h : Xᘁ ◁ (0 : X ⟶ X) = 0 := (tensorLeft Xᘁ).map_zero X X
+  simp [leftTrace_def, h]
 
+omit [MonoidalPreadditive C] in
 /-- The zero object has left pivotal dimension zero. -/
 @[simp]
 theorem leftDim_zero [HasZeroObject C] : leftDim (0 : C) = 0 := by
@@ -299,11 +303,15 @@ theorem rightTrace_add {X : C} (f g : X ⟶ X) :
     rightTrace (f + g) = rightTrace f + rightTrace g := by
   simp [rightTrace_def]
 
+omit [MonoidalPreadditive C] in
 /-- The right trace of zero is zero. -/
 @[simp]
 theorem rightTrace_zero (X : C) : rightTrace (0 : X ⟶ X) = 0 := by
-  simp [rightTrace_def]
+  have : (tensorRight Xᘁ).IsLeftAdjoint := (tensorRightAdjunction Xᘁ Xᘁᘁ).isLeftAdjoint
+  have h : (0 : X ⟶ X) ▷ Xᘁ = 0 := (tensorRight Xᘁ).map_zero X X
+  simp [rightTrace_def, h]
 
+omit [MonoidalPreadditive C] in
 /-- The zero object has right pivotal dimension zero. -/
 @[simp]
 theorem rightDim_zero [HasZeroObject C] : rightDim (0 : C) = 0 := by
