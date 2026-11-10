@@ -213,26 +213,35 @@ theorem eq_zero_of_apply_eq_smul (h : lambda ∈ resolventSet A) (x : A.domain)
   Subtype.ext <| by rw [ZeroMemClass.coe_zero, ← resolvent_smul_sub_apply h x, hx, sub_self,
     ContinuousLinearMap.map_zero]
 
-/-- **An operator has no proper extension sharing a resolvent point.** If `A ≤ B` and some
-`lambda` lies in the resolvent set of both, then `A = B`.
+omit [TopologicalSpace X] in
+/-- **An operator has no proper extension on which a shift stays injective.** If `A ≤ B`,
+`lambda • I - A` maps `D(A)` onto `X` and `lambda • I - B` is injective on `D(B)`, then `A = B`.
 
-A vector `y ∈ D(B)` has `lambda • y - B y = lambda • x - A x` for a unique `x ∈ D(A)`, by
-surjectivity for `A`; injectivity for `B` then forces `y = x`, so `D(B) ⊆ D(A)`.
-
-This is the step that upgrades "`A` is a restriction of the generator" to "`A` *is* the
-generator" in the generation theorems. -/
-theorem eq_of_le_of_mem_resolventSet {A B : X →ₗ.[𝕜] X} (hAB : A ≤ B)
-    (hA : lambda ∈ resolventSet A) (hB : lambda ∈ resolventSet B) : A = B := by
+A vector `y ∈ D(B)` has `lambda • y - B y = lambda • x - A x` for some `x ∈ D(A)`, by
+surjectivity for `A`; injectivity for `B` then forces `y = x`, so `D(B) ⊆ D(A)`. -/
+theorem eq_of_le_of_smul_sub_surjective_of_injective {A B : X →ₗ.[𝕜] X} (hAB : A ≤ B)
+    (hA : Function.Surjective fun x : A.domain => lambda • (x : X) - A x)
+    (hB : Function.Injective fun x : B.domain => lambda • (x : X) - B x) : A = B := by
   refine LinearPMap.eq_of_le_of_domain_eq hAB (le_antisymm hAB.1 fun y hy => ?_)
-  obtain ⟨x, hx⟩ := (smul_sub_bijective hA).surjective (lambda • y - B ⟨y, hy⟩)
+  obtain ⟨x, hx⟩ := hA (lambda • y - B ⟨y, hy⟩)
   obtain ⟨x', hx'coe, hx'val⟩ := LinearPMap.exists_of_le hAB x
   have hxy : x' = (⟨y, hy⟩ : B.domain) := by
-    refine (smul_sub_bijective hB).injective ?_
+    refine hB ?_
     simp only [← hx'coe, ← hx'val]
     exact hx
   have hcoe : (x : X) = y := by rw [hx'coe, hxy]
   rw [← hcoe]
   exact x.property
+
+/-- **An operator has no proper extension sharing a resolvent point.** If `A ≤ B` and some
+`lambda` lies in the resolvent set of both, then `A = B`.
+
+This is the step that upgrades "`A` is a restriction of the generator" to "`A` *is* the
+generator" in the generation theorems. -/
+theorem eq_of_le_of_mem_resolventSet {A B : X →ₗ.[𝕜] X} (hAB : A ≤ B)
+    (hA : lambda ∈ resolventSet A) (hB : lambda ∈ resolventSet B) : A = B :=
+  eq_of_le_of_smul_sub_surjective_of_injective hAB (smul_sub_bijective hA).surjective
+    (smul_sub_bijective hB).injective
 
 /-- The resolvent commutes with `A` on `D(A)`: `R(lambda) (A x) = A (R(lambda) x)`. -/
 theorem resolvent_apply_comm (h : lambda ∈ resolventSet A) (x : A.domain) :
