@@ -130,9 +130,7 @@ theorem cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn_iff {S : Set Y} 
 theorem cubicalChainModuleLof_ofCube_mem_cubicalChainModuleSupportedIn {S : Set Y} {n : ℕ}
     {c : SingularCube Y n} (hc : Set.range c ⊆ S) :
     cubicalChainModuleLof Y H R n (ofCube Y R c) ∈ cubicalChainModuleSupportedIn H R S :=
-  cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn <| (supportedIn_def R S n).symm ▸
-    ofCube_mem_range_map R (f := ContinuousMap.subtypeVal S) Topology.IsInducing.subtypeVal
-      fun _ hy ↦ ⟨⟨_, hc hy⟩, rfl⟩
+  cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn (ofCube_mem_supportedIn R hc)
 
 variable (H R) in
 /-- **The supported chains are spanned by cubes**: the chains supported in `S` are the span of the
@@ -196,8 +194,8 @@ theorem isHomogeneous_cubicalChainModuleSupportedIn (S : Set Y) :
     by_cases hi : i = -(n : ℤ)
     · subst hi
       rw [DirectSum.decompose_of_mem_same _ (cubicalChainModuleLof_mem _)]
-      exact cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn <|
-        (supportedIn_def R S n).symm ▸ LinearMap.mem_range_self _ c
+      exact cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn
+        (map_subtypeVal_mem_supportedIn R c)
     · rw [DirectSum.decompose_of_mem_ne _ (cubicalChainModuleLof_mem _) (Ne.symm hi)]
       exact zero_mem _
 
@@ -295,7 +293,7 @@ theorem smul_mem_cubicalChainModuleSupportedIn {S : Set Y} (hS : ∀ (g : G), �
     | of p a =>
       rw [← DirectSum.lof_eq_of R, ← cubicalChainLof, lof_smul_cubicalChainModuleLof]
       exact cubicalChainModuleLof_mem_cubicalChainModuleSupportedIn
-        (leftAct_mem_supportedIn hS a ((supportedIn_def R S q).symm ▸ LinearMap.mem_range_self _ c))
+        (leftAct_mem_supportedIn hS a (map_subtypeVal_mem_supportedIn R c))
 
 variable (H R) in
 /-- The chains of `Y` supported in a `G`-invariant subset `S`, as a submodule over the chains of
