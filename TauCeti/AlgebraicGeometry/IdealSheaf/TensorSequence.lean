@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.IdealSheaf.Sequence
 public import TauCeti.AlgebraicGeometry.Cohomology.LongExactSequence
 public import TauCeti.AlgebraicGeometry.VectorBundle.Dual.Basic
-public import Mathlib.CategoryTheory.Adjunction.Limits
 
 /-!
 # Tensoring the exact sequence of a closed subscheme
@@ -36,25 +35,6 @@ public section
 open CategoryTheory MonoidalCategory AlgebraicGeometry
 
 universe u
-
-namespace AlgebraicGeometry.Scheme.Modules
-
-variable {X : Scheme.{u}}
-
-/-- Tensoring with a finite locally free sheaf `E` preserves short exact sequences of sheaves of
-modules: `E` is dualizable, so tensoring with it is right adjoint to tensoring with its dual, as
-well as a left adjoint. -/
-theorem shortExact_map_tensorLeft (E : X.Modules) [E.IsLocallyFree] [E.IsFiniteType]
-    {S : ShortComplex X.Modules} (hS : S.ShortExact) : (S.map (tensorLeft E)).ShortExact := by
-  let : ExactPairing ((ihom E).obj (𝟙_ X.Modules)) E :=
-    TauCeti.exactPairingOfIsIsoDualTensorIhom (Y := E)
-  let : ExactPairing E ((ihom E).obj (𝟙_ X.Modules)) :=
-    BraidedCategory.exactPairing_swap _ _
-  have : Limits.PreservesLimits (tensorLeft E) :=
-    (tensorLeftAdjunction E ((ihom E).obj (𝟙_ X.Modules))).rightAdjoint_preservesLimits
-  exact hS.map_of_exact (tensorLeft E)
-
-end AlgebraicGeometry.Scheme.Modules
 
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 

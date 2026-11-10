@@ -303,22 +303,17 @@ theorem vectorBundleDegree_tensor_eq_add_mul_eulerCharBelow_of_shortExact {Z : S
     (hvan : Subsingleton (Scheme.Modules.Cohomology (V.tensor E₁).obj.obj 2)) :
     vectorBundleDegree k (V.tensor E₂) = vectorBundleDegree k (V.tensor E₁) +
       s * eulerCharBelow k X ((Scheme.Modules.pushforward ι).obj G) 2 := by
-  -- Tensoring with `V` keeps the sequence exact; its terms are `V ⊗ E₁`, `V ⊗ E₂`, `V ⊗ ι_* G`.
+  -- Tensoring with `V` keeps the sequence exact; identifying its first two terms with the
+  -- underlying sheaves of `V.tensor E₁` and `V.tensor E₂` makes it a modification of bundles.
   have hS' := Scheme.Modules.shortExact_map_tensorLeft V.obj.obj hS
-  have hfin (E : FixedRank X r) (i : ℕ)
-      [FiniteDimensional k (Scheme.Modules.Cohomology (V.tensor E).obj.obj i)] :
-      FiniteDimensional k (Scheme.Modules.Cohomology (V.obj.obj ⊗ E.obj.obj) i) := by
-    rwa [← tensor_obj_obj]
-  rw [tensor_obj_obj] at hvan
-  have h : eulerCharBelow k X (V.obj.obj ⊗ E₂.obj.obj) 2 =
-      eulerCharBelow k X (V.obj.obj ⊗ E₁.obj.obj) 2 +
-        eulerCharBelow k X (V.obj.obj ⊗ (Scheme.Modules.pushforward ι).obj G) 2 :=
-    eulerCharBelow_eq_add k hS' 2
-      (fun i hi hi₀ ↦ by obtain rfl : i = 1 := (by omega); exact hfin E₁ 1)
-      (fun i hi ↦ by interval_cases i; exacts [hfin E₂ 0, hfin E₂ 1]) hvan
-  rw [vectorBundleDegree_def, vectorBundleDegree_def, tensor_obj_obj, tensor_obj_obj,
-    ← Scheme.Hom.eulerCharBelow_tensor_pushforward ι k V G 2]
-  linear_combination h
+  have e₁ := tensor_obj_obj V E₁
+  have e₂ := tensor_obj_obj V E₂
+  rw [← Scheme.Hom.eulerCharBelow_tensor_pushforward ι k V G 2]
+  exact vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact k
+    (f := eqToHom e₁ ≫ V.obj.obj ◁ f ≫ eqToHom e₂.symm) (g := eqToHom e₂ ≫ V.obj.obj ◁ g)
+    (w := by simpa using ((ShortComplex.mk f g w).map (tensorLeft V.obj.obj)).zero)
+    (ShortComplex.shortExact_of_iso (ShortComplex.isoMk (eqToIso e₁.symm) (eqToIso e₂.symm)
+      (Iso.refl (V.obj.obj ⊗ (Scheme.Modules.pushforward ι).obj G))) hS') hvan
 
 /-- **Tensoring a modification with a vector bundle on a curve.** On a proper integral curve over
 `k` whose codimension-one local rings are discrete valuation rings, let
