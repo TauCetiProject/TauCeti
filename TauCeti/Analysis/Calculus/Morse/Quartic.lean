@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Sigmoid
 public import TauCeti.Analysis.Calculus.Morse.IntervalBase
 public import TauCeti.Analysis.Calculus.Morse.Pi
 import Mathlib.Analysis.Calculus.Deriv.Prod
-import Mathlib.Analysis.ODE.ExistUnique
 
 /-!
 # The negative gradient flow of the Euclidean quartic
@@ -20,15 +18,15 @@ whose linearization is `1` at `0` and `-2` at `±1`, so trajectories leave `0` a
 approach `±1` at rate `2`. Its flow `TauCeti.intervalBaseFlow 1`, trajectory
 `TauCeti.intervalBaseOrbit 1` from `0` to `1` and time coordinate
 `TauCeti.intervalBaseTimeCoordinate` on `(0, 1)` are developed in
-`TauCeti.Analysis.Calculus.Morse.IntervalBase`, for the base of a continuation, on the half
-`[0, 1]` of the interval. This file completes the picture on the whole interval `[-1, 1]`. For
+`TauCeti.Analysis.Calculus.Morse.IntervalBase`, for the base of a continuation, together with
+the facts about the whole interval `[-1, 1]` used here. For
 every `C`, the flow keeps `(-1, 1)` invariant and its lines are the only negative gradient
 trajectories staying in `[-1, 1]` (`TauCeti.eq_intervalBaseFlow_of_isIntegralCurve`), since the
 field is Lipschitz there. For `C ≠ 0` the critical points are `-1`, `0` and `1`
 (`TauCeti.isNondegenerateCriticalPoint_intervalBasePotential_iff`). For `C > 0` the flow tends
 forward to the sign of the initial point (`TauCeti.tendsto_intervalBaseFlow_atTop_sign`) and
 backward to `0` or the fixed endpoint (`TauCeti.tendsto_intervalBaseFlow_atBot_ite`). Outside
-`[-1, 1]` the flow is not used here. In the time coordinate
+`[-1, 1]` the flow is not used. In the time coordinate
 `s`, the identities `q² = σ (2s)` and `1 - q² = σ (-2s)` for the sigmoid `σ` display the two
 asymptotic rates exactly, and the flow line through any point of `(0, 1)` is a translate of `q`
 (`TauCeti.intervalBaseFlow_eq_intervalBaseOrbit`).
@@ -56,14 +54,6 @@ trajectory from `p` to `q` exactly when, coordinatewise, either `p i = 0`, `y i 
 
 ## Main results
 
-* `TauCeti.isNondegenerateCriticalPoint_intervalBasePotential_iff`,
-  `TauCeti.morseIndex_intervalBasePotential_neg_one`: the critical points of the base potential.
-* `TauCeti.intervalBaseFlow_mem_Ioo`, `TauCeti.tendsto_intervalBaseFlow_atTop_sign`,
-  `TauCeti.tendsto_intervalBaseFlow_atBot_ite`: invariance of `(-1, 1)` and the limits of the flow.
-* `TauCeti.eq_intervalBaseFlow_of_isIntegralCurve`: the trajectories in `[-1, 1]` are the flow
-  lines.
-* `TauCeti.intervalBaseOrbit_sq_eq_sigmoid`, `TauCeti.one_sub_intervalBaseOrbit_sq`,
-  `TauCeti.intervalBaseFlow_eq_intervalBaseOrbit`: the time coordinate.
 * `TauCeti.isNondegenerateCriticalPoint_quarticWellSum_iff`, `TauCeti.morseIndex_quarticWellSum`:
   the critical points of the separated sum and their indices.
 * `TauCeti.hasDerivAt_quarticWellSumFlow`, `TauCeti.fderiv_quarticWellSum_apply`: the coordinatewise
@@ -91,120 +81,6 @@ open scoped Gradient
 namespace TauCeti
 
 variable {C : ℝ}
-
-/-! ### The base potential on the whole interval `[-1, 1]` -/
-
-/-- **The base potential is a Morse function**: for `C ≠ 0` its critical points are `-1`, `0` and
-`1`, all nondegenerate. -/
-theorem isNondegenerateCriticalPoint_intervalBasePotential_iff (hC : C ≠ 0) {t : ℝ} :
-    IsNondegenerateCriticalPoint (intervalBasePotential C) t ↔ t = -1 ∨ t = 0 ∨ t = 1 := by
-  rw [isNondegenerateCriticalPoint_real_iff (contDiff_intervalBasePotential C).contDiffAt,
-    iteratedDeriv_two_intervalBasePotential, deriv_intervalBasePotential]
-  beta_reduce
-  have hfac : C * t * (t ^ 2 - 1) = C * (t * (t + 1) * (t - 1)) := by ring
-  rw [hfac]
-  simp only [mul_eq_zero, hC, false_or, add_eq_zero_iff_eq_neg, sub_eq_zero]
-  refine ⟨fun h ↦ by tauto, fun h ↦ ⟨by tauto, ?_⟩⟩
-  rcases h with rfl | rfl | rfl <;> norm_num [hC]
-
-/-- For `C > 0` the critical point `-1` of the base potential is a local minimum: its Morse index
-is `0`. -/
-@[simp]
-theorem morseIndex_intervalBasePotential_neg_one (hC : 0 < C) :
-    morseIndex (intervalBasePotential C) (-1) = 0 :=
-  morseIndex_real_of_pos (by rw [iteratedDeriv_two_intervalBasePotential]; norm_num; linarith)
-
-/-- The critical point `-1` is fixed by the flow. -/
-@[simp]
-theorem intervalBaseFlow_apply_neg_one (C s : ℝ) : intervalBaseFlow C s (-1) = -1 := by
-  rw [intervalBaseFlow_neg, intervalBaseFlow_apply_one]
-
-/-- The flow preserves `(-1, 1)`. -/
-theorem intervalBaseFlow_mem_Ioo (C s : ℝ) {t : ℝ} (ht : t ∈ Ioo (-1) 1) :
-    intervalBaseFlow C s t ∈ Ioo (-1) 1 := by
-  have h := strictMonoOn_intervalBaseFlow C s
-  have ht' : t ∈ Icc (-1) 1 := Ioo_subset_Icc_self ht
-  constructor
-  · simpa using h ⟨le_rfl, by norm_num⟩ ht' ht.1
-  · simpa using h ht' ⟨by norm_num, le_rfl⟩ ht.2
-
-/-- **Forward limit**: for `C > 0`, as `s → ∞` the flow from `t` tends to the sign of `t`, the
-minimum `±1` on its side of `0`, or `0` if `t = 0`. The closed formula has this limit for every
-`t`, although it is a trajectory only for `t ∈ [-1, 1]`. -/
-theorem tendsto_intervalBaseFlow_atTop_sign (hC : 0 < C) (t : ℝ) :
-    Tendsto (fun s ↦ intervalBaseFlow C s t) atTop (𝓝 (SignType.sign t)) := by
-  rcases eq_or_ne t 0 with rfl | ht0
-  · simp
-  simp only [intervalBaseFlow_apply]
-  have hexp : Tendsto (fun s ↦ exp (-(2 * C * s))) atTop (𝓝 0) :=
-    tendsto_exp_atBot.comp
-      (tendsto_neg_atTop_atBot.comp (tendsto_id.const_mul_atTop (by positivity)))
-  have hD := ((tendsto_const_nhds (x := t ^ 2)).add (hexp.const_mul (1 - t ^ 2))).sqrt
-  rw [mul_zero, add_zero, sqrt_sq_eq_abs] at hD
-  have h := (tendsto_const_nhds (x := t)).div hD (abs_pos.2 ht0).ne'
-  have hsign : (SignType.sign t : ℝ) = t / |t| := by
-    rw [eq_div_iff (abs_pos.2 ht0).ne', sign_mul_abs]
-  rwa [hsign]
-
-/-- **Backward limit**: for `C > 0`, the backward limit of the flow from `t ∈ [-1, 1]` is `0` if
-`t ∈ (-1, 1)`, and `t` itself if `t = ±1`, where the flow is stationary. -/
-theorem tendsto_intervalBaseFlow_atBot_ite (hC : 0 < C) {t : ℝ} (ht : t ∈ Icc (-1) 1) :
-    Tendsto (fun s ↦ intervalBaseFlow C s t) atBot (𝓝 (if t ∈ Ioo (-1) 1 then 0 else t)) := by
-  split_ifs with ht'
-  · exact tendsto_intervalBaseFlow_atBot hC ht'
-  · have h : t ∈ Icc (-1) 1 \ Ioo (-1) 1 := ⟨ht, ht'⟩
-    rw [Icc_sdiff_Ioo_same (by norm_num)] at h
-    rcases h with rfl | rfl <;> simp
-
-/-- The negative gradient field of the base potential is `2 |C|`-Lipschitz on `[-1, 1]`: the
-difference quotient of `C t (1 - t²)` is `C (1 - (a² + a b + b²))`. -/
-theorem lipschitzOnWith_neg_gradient_intervalBasePotential (C : ℝ) :
-    LipschitzOnWith (2 * ‖C‖₊) (fun t ↦ -∇ (intervalBasePotential C) t) (Icc (-1) 1) := by
-  refine LipschitzOnWith.of_dist_le_mul fun a ha b hb ↦ ?_
-  rw [mem_Icc] at ha hb
-  have h : |1 - (a ^ 2 + a * b + b ^ 2)| ≤ 2 := by
-    rw [abs_le]
-    constructor <;> nlinarith
-  simp only [gradient_intervalBasePotential, dist_eq_norm, norm_eq_abs, NNReal.coe_mul,
-    NNReal.coe_ofNat, coe_nnnorm]
-  have hdiff : -(C * a * (a ^ 2 - 1)) - -(C * b * (b ^ 2 - 1)) =
-      C * (a - b) * (1 - (a ^ 2 + a * b + b ^ 2)) := by ring
-  rw [hdiff, abs_mul, abs_mul]
-  nlinarith [mul_nonneg (abs_nonneg C) (abs_nonneg (a - b))]
-
-/-- **Uniqueness of captured trajectories**: a negative gradient trajectory of the base potential
-which stays in `[-1, 1]` is the flow line through its initial point. -/
-theorem eq_intervalBaseFlow_of_isIntegralCurve {γ : ℝ → ℝ}
-    (hγ : IsIntegralCurve γ (fun _ t ↦ -∇ (intervalBasePotential C) t))
-    (hmem : ∀ s, γ s ∈ Icc (-1) 1) : γ = fun s ↦ intervalBaseFlow C s (γ 0) :=
-  ODE_solution_unique_univ (v := fun _ t ↦ -∇ (intervalBasePotential C) t)
-    (s := fun _ ↦ Icc (-1) 1) (fun _ ↦ lipschitzOnWith_neg_gradient_intervalBasePotential C)
-    (fun s ↦ ⟨hγ s, hmem s⟩)
-    (fun s ↦ ⟨isIntegralCurve_intervalBaseFlow C (hmem 0) s, intervalBaseFlow_mem_Icc C s (hmem 0)⟩)
-    (t₀ := 0) (by simp)
-
-/-! ### The time coordinate -/
-
-/-- The square of the trajectory `q` is the sigmoid `σ (2 C s)`: at `C = 1` it leaves `0` at
-rate `1`, and the time coordinate is half the logit of `q²`. -/
-theorem intervalBaseOrbit_sq_eq_sigmoid (C s : ℝ) :
-    intervalBaseOrbit C s ^ 2 = sigmoid (2 * C * s) := by
-  rw [intervalBaseOrbit_sq, sigmoid_def]
-
-/-- One minus the square of the trajectory `q` is the sigmoid `σ (-2 C s)`: at `C = 1` it
-approaches `1` at rate `2`. -/
-theorem one_sub_intervalBaseOrbit_sq (C s : ℝ) :
-    1 - intervalBaseOrbit C s ^ 2 = sigmoid (-(2 * C * s)) := by
-  rw [intervalBaseOrbit_sq_eq_sigmoid, sigmoid_neg]
-
-/-- **The flow lines through `(0, 1)` lie on one orbit**: the flow line through `t ∈ (0, 1)` is the
-unit-rate reference trajectory `intervalBaseOrbit 1` evaluated at time
-`intervalBaseTimeCoordinate t + C * s`. So for `C > 0` it runs forward from `0` to `1`, for
-`C < 0` it runs backward from `1` to `0`, and for `C = 0` it is stationary. -/
-theorem intervalBaseFlow_eq_intervalBaseOrbit (C s : ℝ) {t : ℝ} (ht : t ∈ Ioo 0 1) :
-    intervalBaseFlow C s t = intervalBaseOrbit 1 (intervalBaseTimeCoordinate t + C * s) := by
-  rw [← intervalBaseTimeCoordinate_intervalBaseFlow C s ht,
-    intervalBaseOrbit_one_intervalBaseTimeCoordinate (intervalBaseFlow_mem_Ioo_zero_one C s ht)]
 
 /-! ### The quartic on the cube -/
 
@@ -304,13 +180,9 @@ theorem fderiv_quarticWellSum_apply (y v : ι → ℝ) :
     fderiv_sum_comp_eval fun _ ↦ (hasDerivAt_intervalBasePotential 1 _).differentiableAt]
   simp
 
-private theorem deriv_deriv_intervalBasePotential_one (t : ℝ) :
-    deriv (deriv (intervalBasePotential 1)) t = 3 * t ^ 2 - 1 := by
-  have h := iteratedDeriv_two_intervalBasePotential 1 t
-  rwa [iteratedDeriv_succ, iteratedDeriv_one, one_mul] at h
-
 /-- **The Euclidean quartic is a Morse function**: its critical points are the points of
 `{-1, 0, 1}^ι`, all nondegenerate. -/
+@[simp]
 theorem isNondegenerateCriticalPoint_quarticWellSum_iff {y : ι → ℝ} :
     IsNondegenerateCriticalPoint quarticWellSum y ↔ ∀ i, y i = -1 ∨ y i = 0 ∨ y i = 1 := by
   rw [quarticWellSum_eq, isNondegenerateCriticalPoint_sum_comp_eval_iff
@@ -326,9 +198,11 @@ theorem morseIndex_quarticWellSum {y : ι → ℝ} (hy : ∀ i, y i = -1 ∨ y i
     morseIndex quarticWellSum y = {i | y i = 0}.ncard := by
   rw [quarticWellSum_eq,
     morseIndex_sum_comp_eval fun _ ↦ (contDiff_intervalBasePotential 1).contDiffAt]
+  have h := iteratedDeriv_two_intervalBasePotential 1
+  simp only [iteratedDeriv_succ, iteratedDeriv_zero] at h
   congr 1
   ext i
-  rw [mem_ofPred_eq, mem_ofPred_eq, deriv_deriv_intervalBasePotential_one]
+  rw [mem_ofPred_eq, mem_ofPred_eq, h]
   rcases hy i with h | h | h <;> rw [h] <;> norm_num
 
 /-- The coordinatewise flow through a point of the cube `[-1, 1]^ι` is an integral curve of the
