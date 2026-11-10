@@ -20,6 +20,7 @@ public import TauCeti.GroupTheory.QuotientGroup.PowMonoidHom
 public import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.Algebra.Group.PowMonoidHom
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Collinear
+import TauCeti.RingTheory.Ideal.Quotient.Coprime
 import TauCeti.RingTheory.Polynomial.Resultant.AdjoinRoot
 
 /-!
@@ -337,31 +338,15 @@ lemma mk_eq_mk_iff [W.IsElliptic] [W.IsCharNeTwoNF] {x : R} (hx : W.f.eval x = 0
 lemma isUnit_mk_iff {x : R} (hx : W.f.eval x = 0) {p : R[X]} :
     IsUnit (AdjoinRoot.mk W.f p) ↔
       IsUnit (p.eval x) ∧ IsUnit (AdjoinRoot.mk (W.fCofactor x) p) := by
-  have hf := W.f_eq_mul_of_eval_eq_zero hx
-  refine ⟨fun h ↦ ⟨?_, ?_⟩, fun ⟨h₁, h₂⟩ ↦ ?_⟩
-  · have hroot : (W.f).eval₂ (RingHom.id R) x = 0 := by rwa [eval₂_id]
-    simpa [AdjoinRoot.lift_mk, eval₂_id] using h.map (AdjoinRoot.lift (RingHom.id R) x hroot)
-  · have hle : Ideal.span {W.f} ≤ Ideal.span {W.fCofactor x} :=
-      Ideal.span_singleton_le_span_singleton.2 ⟨X - C x, hf⟩
-    exact h.map (Ideal.Quotient.factor hle)
-  · obtain ⟨d, hd⟩ := h₁.exists_right_inv
-    obtain ⟨w, hw⟩ := h₂.exists_right_inv
-    obtain ⟨r, rfl⟩ := AdjoinRoot.mk_surjective w
-    obtain ⟨q, hq⟩ : X - C x ∣ p - C (p.eval x) :=
-      dvd_iff_isRoot.2 (by simp)
-    obtain ⟨s, hs⟩ : W.fCofactor x ∣ p * r - 1 :=
-      AdjoinRoot.mk_eq_mk.1 (by rw [map_mul, map_one, hw])
-    have hcd : C (p.eval x) * C d = 1 := by rw [← C_mul, hd, C_1]
-    have h₁' : 1 - p * C d = (X - C x) * (-(q * C d)) := by
-      linear_combination (-C d) * hq - hcd
-    have h₂' : 1 - p * r = W.fCofactor x * (-s) := by linear_combination -hs
-    have key : AdjoinRoot.mk W.f ((1 - p * C d) * (1 - p * r)) = 0 := by
-      rw [AdjoinRoot.mk_eq_zero, h₁', h₂', hf]
-      exact ⟨q * C d * s, by ring⟩
-    simp only [map_mul, map_sub, map_one] at key
-    exact IsUnit.of_mul_eq_one (AdjoinRoot.mk W.f (C d) + AdjoinRoot.mk W.f r -
-      AdjoinRoot.mk W.f p * AdjoinRoot.mk W.f (C d) * AdjoinRoot.mk W.f r) (by
-        linear_combination -key)
+  have key (q : R[X]) : IsUnit (AdjoinRoot.mk q p) ↔ IsCoprime p q := by
+    rw [AdjoinRoot.mk]
+    exact (Ideal.Quotient.isUnit_mk_iff).trans (Ideal.sup_eq_top_iff_isCoprime _ _)
+  have hlin : IsUnit (p.eval x) ↔ IsCoprime p (X - C x) := by
+    rw [← key]
+    exact (MulEquiv.isUnit_map (quotientSpanXSubCAlgEquiv x).toRingEquiv.toMulEquiv
+      (x := AdjoinRoot.mk (X - C x) p))
+  rw [key W.f, key (W.fCofactor x), hlin, W.f_eq_mul_of_eval_eq_zero hx,
+    IsCoprime.mul_right_iff, and_comm]
 
 /-! ### Square classes of the cubic quotient algebra -/
 
@@ -504,9 +489,9 @@ lemma nonsingular_of_eval_f_eq_zero [W.IsElliptic] [W.IsCharNeTwoNF] {x : K} (hx
     (by rw [equation_iff_eval_f_eq_sq, hx]; ring)
 
 omit [Nontrivial K] in
-/-- **Every class in `W.A` is represented by a polynomial of degree at most `2`.** The bound is
-`natDegree f - 1 = 2`; this is the normal form the kernel computation reduces to before
-multiplying by a linear class. -/
+/-- **Every class in `W.A` is represented by a polynomial of degree at most `2`.** Over a
+nontrivial ring the bound is `natDegree f - 1 = 2`; over the trivial ring every class is `0`. This
+is the normal form the kernel computation reduces to before multiplying by a linear class. -/
 lemma exists_mk_quadratic_eq (a : W.A) :
     ∃ r s t, a = AdjoinRoot.mk W.f (C r * X ^ 2 + C s * X + C t) := by
   by_cases hK : Subsingleton K
@@ -520,7 +505,8 @@ lemma exists_mk_quadratic_eq (a : W.A) :
 
 omit [Nontrivial K] in
 /-- **Every class in `W.A' x` is represented by a polynomial of degree at most `1`.** This is
-`exists_mk_quadratic_eq` for the cofactor, where the bound is `natDegree (fCofactor x) - 1 = 1`. -/
+`exists_mk_quadratic_eq` for the cofactor, where over a nontrivial ring the bound is
+`natDegree (fCofactor x) - 1 = 1`. -/
 lemma exists_mk_linear_eq {x : K} (a : W.A' x) :
     ∃ r s, a = AdjoinRoot.mk (W.fCofactor x) (C r * X + C s) := by
   by_cases hK : Subsingleton K
