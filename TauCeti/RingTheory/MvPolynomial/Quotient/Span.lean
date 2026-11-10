@@ -78,17 +78,13 @@ theorem _root_.RingHom.span_range_mk_map_eq_top_iff (φ : A →+* B) (I : Ideal 
       Ideal.quotientMap_mk
     have hψ (a : A) (x : MvPolynomial n A ⧸ I) : ψ (a • x) = φ a • ψ x :=
       φ.quotientMap_mvPolynomial_smul I a x
-    have hN (x : MvPolynomial n A ⧸ I) (hx : x ∈ N) : ψ x ∈ S := by
-      induction hx using Submodule.span_induction with
-      | mem x hx =>
-        obtain ⟨i, rfl⟩ := hx
-        exact Submodule.subset_span ⟨i, by simp [ψ]⟩
-      | zero => simp
-      | add x y _ _ hx hy => simpa using add_mem hx hy
-      | smul a x _ hx => simpa [hψ] using S.smul_mem (φ a) hx
     let ψₗ : (MvPolynomial n A ⧸ I) →ₛₗ[φ]
         (MvPolynomial n B ⧸ I.map (map φ)) :=
       { ψ.toAddMonoidHom with map_smul' := hψ }
+    have hN : N ≤ S.comap ψₗ := by
+      apply Submodule.span_le.mpr
+      rintro _ ⟨i, rfl⟩
+      exact Submodule.subset_span ⟨i, hψmk (v i)⟩
     have key (f : MvPolynomial n A) : Ideal.Quotient.mk _ (map φ f) ∈ S := by
       exact ψₗ.apply_mem_of_annihilator_quotient_map_eq_top N S hN hJ
         (Ideal.Quotient.mk I f)
