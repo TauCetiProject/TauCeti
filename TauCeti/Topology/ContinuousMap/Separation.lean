@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.ContinuousMap.Basic
-public import Mathlib.Topology.Separation.Hausdorff
 
 /-!
 # Point-separating families of continuous functions make the source Hausdorff
