@@ -842,12 +842,11 @@ theorem coordinateDeriv_eq_neg_comp_of_comp_eq_id {𝕜 : Type*} [NontriviallyNo
     [NormedAlgebra ℝ 𝕜] {E₁ E₂ : Type*} [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁]
     [NormedAddCommGroup E₂] [NormedSpace 𝕜 E₂] [NormedSpace ℝ E₁] [IsScalarTower ℝ 𝕜 E₁]
     [NormedSpace ℝ E₂] [IsScalarTower ℝ 𝕜 E₂] {φ : CoordinateSpace n → E₂ →L[𝕜] E₁}
-    {ψ : CoordinateSpace n → E₁ →L[𝕜] E₂} {z : CoordinateSpace n} (hφ : ContDiff ℝ 1 φ)
-    (hψ : ContDiff ℝ 1 ψ) (hl : ∀ᶠ y in nhds z, φ y ∘L ψ y = .id 𝕜 E₁)
+    {ψ : CoordinateSpace n → E₁ →L[𝕜] E₂} {z : CoordinateSpace n} (hφ : DifferentiableAt ℝ φ z)
+    (hψ : DifferentiableAt ℝ ψ z) (hl : ∀ᶠ y in nhds z, φ y ∘L ψ y = .id 𝕜 E₁)
     (hr : ψ z ∘L φ z = .id 𝕜 E₂) (j : Fin n) :
     coordinateDeriv [j] φ z = -(φ z ∘L (coordinateDeriv [j] ψ z ∘L φ z)) :=
-  fderiv_eq_neg_comp_of_comp_eq_id (hφ.differentiable one_ne_zero z)
-    (hψ.differentiable one_ne_zero z) hl hr _
+  fderiv_eq_neg_comp_of_comp_eq_id hφ hψ hl hr _
 
 end Leibniz
 

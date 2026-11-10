@@ -253,8 +253,8 @@ private theorem eventuallyEq_coordinateDeriv_snd_cutoff_smul_inverse
   exact coordinateDeriv_eq_neg_comp_of_comp_eq_id
     (φ := fun η => χ (s⁻¹ • η) • (a.coefficient (x, η)).inverse)
     (ψ := fun η => a.coefficient (x, η))
-    ((hGs.comp (contDiff_prodMk_right x)).of_le (by exact_mod_cast le_top))
-    ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by exact_mod_cast le_top))
+    ((hGs.comp (contDiff_prodMk_right x)).differentiable (by simp) ξ)
+    ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).differentiable (by simp) ξ)
     (hη.mono fun η hη => (cutoff_smul_inverse_comp_eq_id χ hinv hs hRs
       (q := (x, η)) hη.le).1)
     (cutoff_smul_inverse_comp_eq_id χ hinv hs hRs (q := (x, ξ)) hq.le).2 j
@@ -276,8 +276,8 @@ private theorem eventuallyEq_coordinateDeriv_fst_cutoff_smul_inverse
   exact coordinateDeriv_eq_neg_comp_of_comp_eq_id
     (φ := fun y => χ (s⁻¹ • ξ) • (a.coefficient (y, ξ)).inverse)
     (ψ := fun y => a.coefficient (y, ξ))
-    ((hGs.comp (contDiff_prodMk_left ξ)).of_le (by exact_mod_cast le_top))
-    ((a.contDiff_coefficient.comp (contDiff_prodMk_left ξ)).of_le (by exact_mod_cast le_top))
+    ((hGs.comp (contDiff_prodMk_left ξ)).differentiable (by simp) x)
+    ((a.contDiff_coefficient.comp (contDiff_prodMk_left ξ)).differentiable (by simp) x)
     (Eventually.of_forall fun y => (cutoff_smul_inverse_comp_eq_id χ hinv hs hRs
       (q := (y, ξ)) hq.le).1)
     (cutoff_smul_inverse_comp_eq_id χ hinv hs hRs (q := (x, ξ)) hq.le).2 j
