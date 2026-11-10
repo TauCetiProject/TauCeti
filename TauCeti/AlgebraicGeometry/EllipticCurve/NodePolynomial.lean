@@ -199,9 +199,10 @@ lemma splits_variableChange_nodePolynomial_map_iff (φ : A →+* k) (W : Weierst
     (Polynomial.natDegree_linear hu)).symm
 
 /-- **Split criterion away from residue characteristic two.** Over a field `k` with `2 ≠ 0`, the
-node polynomial splits, i.e. the two tangent directions at the node are `k`-rational, exactly
-when `φ (-(c₄ * c₆))`, the image of its discriminant (`discrim_nodePolynomial`), is a square in `k`.
-Applied to a quadratic twist via
+node polynomial splits exactly when `φ (-(c₄ * c₆))`, the image of its discriminant
+(`discrim_nodePolynomial`), is a square in `k`. For a nodal reduction (`φ c₄ ≠ 0`) this says that
+the two tangent directions at the node are `k`-rational; when `φ c₄ = 0` the polynomial is constant
+and both sides hold. Applied to a quadratic twist via
 `-c₄' c₆' = (t² - 4n)⁵ · (-c₄ c₆)`, this criterion identifies the square class of twists that
 turns nonsplit reduction into split reduction. -/
 lemma splits_nodePolynomial_map_iff_isSquare [NeZero (2 : k)] (φ : A →+* k)
