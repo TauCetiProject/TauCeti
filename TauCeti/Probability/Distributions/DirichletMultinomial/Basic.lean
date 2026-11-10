@@ -272,18 +272,24 @@ theorem integral_map_multinomialToEuclidean_dirichletMultinomialMeasure
     ite_eq_left (Finset.mem_piAntidiag.mp hk).1]
 
 /-- Integrate a count observable by first taking its multinomial expectation, then its
-Dirichlet expectation. Any measurable choice of simplex parameters with the correct
+Dirichlet expectation. Any choice of simplex parameters with the correct
 almost-sure weights may be used. -/
 theorem integral_dirichletMultinomialMeasure_eq_integral {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] (f : (ι → ℕ) → E) {a : ι → ℝ} (n : ℕ)
-    (p : EuclideanSpace ℝ ι → StdSimplex ℝ≥0 ι) (hp : Measurable p)
+    (p : EuclideanSpace ℝ ι → StdSimplex ℝ≥0 ι)
     (hweights : ∀ᵐ x ∂dirichletMeasure a, ∀ i, ((p x).weights i : ℝ) = x i) :
     ∫ k, f k ∂dirichletMultinomialMeasure n a =
       ∫ x, ∫ k, f k ∂multinomialMeasure n (p x) ∂dirichletMeasure a := by
   have hf := integrable_dirichletMultinomialMeasure f n a
   rw [dirichletMultinomialMeasure_eq_bind n p hweights] at hf ⊢
-  exact Measure.integral_bind
-    (measurable_multinomialMeasure.comp (measurable_const.prodMk hp)).aemeasurable hf
+  refine Measure.integral_bind
+    ((measurable_dirichletMultinomialComponent n).aemeasurable.congr ?_) hf
+  filter_upwards [ae_extendWeights_dirichletMeasure (a := a)
+    (StdSimplex.single (Classical.arbitrary ι)), hweights] with x hx hpx
+  congr 2
+  apply StdSimplex.ext
+  ext i
+  exact (hx i).trans (hpx i).symm
 
 /-- The Dirichlet-multinomial family is jointly measurable in the trial count and every
 concentration coordinate, including invalid parameters. -/
