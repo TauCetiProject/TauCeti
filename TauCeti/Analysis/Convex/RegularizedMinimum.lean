@@ -39,21 +39,20 @@ private noncomputable def absoluteValueBump (δ : ℝ) (hδ : 0 < δ) : ContDiff
 noncomputable def regularizedAbs (δ : ℝ) (hδ : 0 < δ) : ℝ → ℝ :=
   (absoluteValueBump δ hδ).normed volume ⋆[lsmul ℝ ℝ, volume] (fun t : ℝ ↦ |t|)
 
-private theorem abs_lipschitz : LipschitzWith 1 (fun t : ℝ ↦ |t|) := by
-  apply LipschitzWith.of_dist_le_mul
-  intro x y
-  simpa only [Real.dist_eq, NNReal.coe_one, one_mul] using abs_abs_sub_abs_le_abs_sub x y
-
 /-- Normalized bump convolution makes the regularized absolute value smooth. -/
 theorem contDiff_regularizedAbs (δ : ℝ) (hδ : 0 < δ) :
-    ContDiff ℝ ∞ (regularizedAbs δ hδ) :=
-  (absoluteValueBump δ hδ).hasCompactSupport_normed.contDiff_convolution_left _
-    (absoluteValueBump δ hδ).contDiff_normed abs_lipschitz.continuous.locallyIntegrable
+    ContDiff ℝ ∞ (regularizedAbs δ hδ) := by
+  simpa only [regularizedAbs, ← Real.norm_eq_abs] using
+    (absoluteValueBump δ hδ).hasCompactSupport_normed.contDiff_convolution_left
+      (lsmul ℝ ℝ) (absoluteValueBump δ hδ).contDiff_normed
+      (lipschitzWith_one_norm (E := ℝ)).continuous.locallyIntegrable
 
 /-- Regularization preserves the unit Lipschitz bound of absolute value. -/
 theorem lipschitzWith_regularizedAbs (δ : ℝ) (hδ : 0 < δ) :
-    LipschitzWith 1 (regularizedAbs δ hδ) :=
-  abs_lipschitz.normed_convolution (μ := volume) (absoluteValueBump δ hδ)
+    LipschitzWith 1 (regularizedAbs δ hδ) := by
+  simpa only [regularizedAbs, ← Real.norm_eq_abs] using
+    (lipschitzWith_one_norm (E := ℝ)).normed_convolution
+      (μ := volume) (absoluteValueBump δ hδ)
 
 private theorem integral_bump_mul_id (φ : ContDiffBump (0 : ℝ)) :
     ∫ t : ℝ, φ.normed volume t * t = 0 := by
@@ -70,21 +69,14 @@ private theorem integrable_bump_mul_abs_sub (φ : ContDiffBump (0 : ℝ)) (x : �
     Integrable (fun t : ℝ ↦ φ.normed volume t * |x - t|) := by
   exact φ.hasCompactSupport_normed.convolutionExists_left_of_continuous_right
     (lsmul ℝ ℝ) (φ.contDiff_normed (n := 0)).continuous.locallyIntegrable
-    abs_lipschitz.continuous x
+    continuous_abs x
 
 /-- The even mollifier preserves symmetry under negation. -/
 theorem regularizedAbs_neg (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
     regularizedAbs δ hδ (-x) = regularizedAbs δ hδ x := by
-  let φ := absoluteValueBump δ hδ
-  change (∫ t : ℝ, φ.normed volume t * |-x - t|) =
-    ∫ t : ℝ, φ.normed volume t * |x - t|
-  rw [← integral_neg_eq_self (fun t : ℝ ↦ φ.normed volume t * |-x - t|) volume]
-  apply integral_congr_ae
-  exact Filter.Eventually.of_forall fun t ↦ by
-    dsimp only
-    rw [φ.normed_neg]
-    congr 1
-    rw [show -x - -t = -(x - t) by ring, abs_neg]
+  exact convolution_neg_of_neg_eq (lsmul ℝ ℝ)
+    (Filter.Eventually.of_forall (absoluteValueBump δ hδ).normed_neg)
+    (Filter.Eventually.of_forall abs_neg)
 
 /-- Outside the transition interval the regularization agrees exactly with absolute value. -/
 theorem regularizedAbs_eq_abs (δ : ℝ) (hδ : 0 < δ) {x : ℝ}
@@ -130,9 +122,10 @@ theorem abs_le_regularizedAbs (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
 theorem regularizedAbs_le_abs_add (δ : ℝ) (hδ : 0 < δ) (x : ℝ) :
     regularizedAbs δ hδ x ≤ |x| + δ := by
   have h := (absoluteValueBump δ hδ).dist_normed_convolution_le (μ := volume)
-    abs_lipschitz.continuous.aestronglyMeasurable (fun y hy ↦
-      (abs_lipschitz.dist_le_mul y x).trans (by
+    (lipschitzWith_one_norm (E := ℝ)).continuous.aestronglyMeasurable (fun y hy ↦
+      ((lipschitzWith_one_norm (E := ℝ)).dist_le_mul y x).trans (by
         simpa only [NNReal.coe_one, one_mul, absoluteValueBump] using (Metric.mem_ball.mp hy).le))
+  simp only [show (Norm.norm : ℝ → ℝ) = abs from funext Real.norm_eq_abs] at h
   change dist (regularizedAbs δ hδ x) (abs x) ≤ δ at h
   rw [Real.dist_eq] at h
   linarith [le_abs_self (regularizedAbs δ hδ x - |x|)]
@@ -189,28 +182,28 @@ theorem regularizedMin_add (δ : ℝ) (hδ : 0 < δ) (x y t : ℝ) :
   rw [show x + t - (y + t) = x - y by ring]
   ring
 
-private theorem min_formula (x y : ℝ) : min x y = (x + y - |x - y|) / 2 := by
-  simpa only [smul_eq_mul, div_eq_mul_inv, mul_comm, abs_sub_comm] using
-    inf_eq_half_smul_add_sub_abs_sub' ℝ x y
-
 /-- The regularized minimum lies below the actual binary minimum. -/
 theorem regularizedMin_le_min (δ : ℝ) (hδ : 0 < δ) (x y : ℝ) :
     regularizedMin δ hδ x y ≤ min x y := by
-  rw [min_formula]
+  rw [inf_eq_half_smul_add_sub_abs_sub' ℝ x y]
+  simp only [smul_eq_mul, abs_sub_comm]
   unfold regularizedMin
   linarith [abs_le_regularizedAbs δ hδ (x - y)]
 
 /-- Its lower error from the binary minimum is at most half the transition width. -/
 theorem min_sub_le_regularizedMin (δ : ℝ) (hδ : 0 < δ) (x y : ℝ) :
     min x y - δ / 2 ≤ regularizedMin δ hδ x y := by
-  rw [min_formula]
+  rw [inf_eq_half_smul_add_sub_abs_sub' ℝ x y]
+  simp only [smul_eq_mul, abs_sub_comm]
   unfold regularizedMin
   linarith [regularizedAbs_le_abs_add δ hδ (x - y)]
 
 /-- Separated inputs select the smaller input exactly. -/
 theorem regularizedMin_eq_min (δ : ℝ) (hδ : 0 < δ) {x y : ℝ}
     (hxy : δ ≤ |x - y|) : regularizedMin δ hδ x y = min x y := by
-  rw [regularizedMin, regularizedAbs_eq_abs δ hδ hxy, min_formula]
+  rw [regularizedMin, regularizedAbs_eq_abs δ hδ hxy,
+    inf_eq_half_smul_add_sub_abs_sub' ℝ x y]
+  simp only [smul_eq_mul, abs_sub_comm, div_eq_mul_inv, mul_comm]
 
 /-- Differentiation in the first input gives the first nonnegative selector weight. -/
 theorem hasDerivAt_regularizedMin_left (δ : ℝ) (hδ : 0 < δ) (x y : ℝ) :
