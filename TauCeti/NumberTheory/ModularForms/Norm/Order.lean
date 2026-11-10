@@ -17,13 +17,12 @@ import TauCeti.NumberTheory.ModularForms.Order.Orbits
 The general-level valence formula reads the level-one formula off the norm
 `ModularForm.norm`, so it needs the orders of a form to distribute over the norm's coset
 product. This file records that distribution at interior points, for a form on any subgroup
-of finite relative index: each coset factor is nonzero when the form is, and the vanishing
-order of the norm is the sum of the orders of the factors.
+of finite relative index: the vanishing order of the norm is the sum of the orders of the factors
+(each of which is nonzero when the form is, by `SlashInvariantForm.quotientFunc_eq_zero_iff` from
+`Norm/Trace.lean`).
 
 ## Main declarations
 
-* `TauCeti.SlashInvariantForm.quotientFunc_eq_zero_iff`: a coset factor of the norm of a form is
-  zero exactly when the form is.
 * `TauCeti.ModularForm.orderOfVanishingAt_norm`: the vanishing order of the norm at a point
   is the sum, over the coset space, of the vanishing orders of the coset factors.
 * `TauCeti.ModularForm.orderOfVanishingAt_quotientFunc_le_orderOfVanishingAt_norm`: each coset

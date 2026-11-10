@@ -133,6 +133,11 @@ lemma qExpansionOrderAtCusp_const (h : ℝ) (c : ℂ) : qExpansionOrderAtCusp h 
       rw [UpperHalfPlane.cuspFunction_const]
       exact hc)
 
+/-- The zero function has cusp order zero, by the junk value. -/
+@[simp]
+lemma qExpansionOrderAtCusp_zero (h : ℝ) : qExpansionOrderAtCusp h (0 : ℍ → ℂ) = 0 :=
+  qExpansionOrderAtCusp_const h 0
+
 /-- The constant-one function has cusp order zero. -/
 @[simp]
 lemma qExpansionOrderAtCusp_one (h : ℝ) : qExpansionOrderAtCusp h (1 : ℍ → ℂ) = 0 :=

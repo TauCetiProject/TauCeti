@@ -476,8 +476,7 @@ theorem qExpansionOrderAtCusp_one_norm_eq_sum_orderAtCuspTranslationOrbit (f : F
   · -- the zero form: its norm and every coset factor are zero, with junk order `0`
     have hq (c : CuspTranslationOrbit 𝒢) : quotientFunc f c.out = 0 :=
       (SlashInvariantForm.quotientFunc_eq_zero_iff _).2 hf
-    have h0 (h : ℝ) : qExpansionOrderAtCusp h (0 : ℍ → ℂ) = 0 := qExpansionOrderAtCusp_const h 0
-    simp [orderAtCuspTranslationOrbit, hq, h0, (_root_.ModularForm.norm_eq_zero_iff 𝒮ℒ f).mpr hf]
+    simp [orderAtCuspTranslationOrbit, hq, (_root_.ModularForm.norm_eq_zero_iff 𝒮ℒ f).mpr hf]
   have hne : ∀ c : CuspTranslationOrbit 𝒢,
       analyticOrderAt (cuspFunction 1
         (galoisProd (cuspTranslationOrbitWidth c) (quotientFunc f c.out))) 0 ≠ ⊤ := fun c ↦ by
