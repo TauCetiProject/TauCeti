@@ -195,8 +195,6 @@ private theorem lowerIncompleteGamma_eq_comp (hs : 0 < s) :
 
 /-- `γ(s, x)` is nonnegative, for every parameter value. -/
 theorem lowerIncompleteGamma_nonneg (s x : ℝ) : 0 ≤ lowerIncompleteGamma s x := by
-  rcases le_or_gt s 0 with hs | hs
-  · rw [lowerIncompleteGamma_eq_zero_of_nonpos_left hs]
   rcases le_or_gt x 0 with hx | hx
   · rw [lowerIncompleteGamma_eq_zero_of_nonpos_right _ hx]
   · rw [lowerIncompleteGamma_eq_integral hx.le]
