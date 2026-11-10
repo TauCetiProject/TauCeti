@@ -136,6 +136,45 @@ theorem sectionProdMap_apply (σ : Π x : M, V x × W x) (x : M) :
     sectionProdMap D₁ D₂ σ x = (D₁ (fun y ↦ (σ y).1) x).prod (D₂ (fun y ↦ (σ y).2) x) :=
   (rfl)
 
+omit [∀ x, Module ℂ (V x)] [∀ x, Module ℂ (W x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul ℝ (V x)] [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
+/-- The components of a constant multiple of a section of `V ×ᵇ W` are the constant multiples of
+its components. -/
+theorem sectionProdMap_smul {S : Type*} [∀ x, SMul S (V x)] [∀ x, SMul S (W x)] (c : S)
+    (σ : Π x : M, V x × W x) (x : M) :
+    sectionProdMap D₁ D₂ (c • σ) x =
+      (D₁ (c • fun y ↦ (σ y).1) x).prod (D₂ (c • fun y ↦ (σ y).2) x) :=
+  (rfl)
+
+omit [∀ x, Module ℂ (V x)] [∀ x, Module ℂ (W x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousSMul ℝ (V x)] [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
+/-- The components of a function multiple `g • σ` of a section of `V ×ᵇ W` are the function
+multiples of its components. -/
+theorem sectionProdMap_smul' (g : M → ℝ) (σ : Π x : M, V x × W x) (x : M) :
+    sectionProdMap D₁ D₂ (g • σ) x =
+      (D₁ (g • fun y ↦ (σ y).1) x).prod (D₂ (g • fun y ↦ (σ y).2) x) :=
+  (rfl)
+
+omit [∀ x, Module ℂ (V x)] [∀ x, Module ℂ (W x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, ContinuousSMul ℝ (W x)] in
+/-- A direct sum is additive on two sections differentiable at `x` when both summands are
+additive on sections differentiable at `x`. -/
+theorem sectionProdMap_add {x : M}
+    (h₁ : ∀ {τ τ' : Π x : M, V x}, MDiffAt (T% τ) x → MDiffAt (T% τ') x →
+      D₁ (τ + τ') x = D₁ τ x + D₁ τ' x)
+    (h₂ : ∀ {τ τ' : Π x : M, W x}, MDiffAt (T% τ) x → MDiffAt (T% τ') x →
+      D₂ (τ + τ') x = D₂ τ x + D₂ τ' x)
+    {σ σ' : Π x : M, V x × W x}
+    (hσ : MDiffAt (fun y ↦ TotalSpace.mk' (F × G) (E := V ×ᵇ W) y (σ y)) x)
+    (hσ' : MDiffAt (fun y ↦ TotalSpace.mk' (F × G) (E := V ×ᵇ W) y (σ' y)) x) :
+    sectionProdMap D₁ D₂ (σ + σ') x = sectionProdMap D₁ D₂ σ x + sectionProdMap D₁ D₂ σ' x := by
+  obtain ⟨hσ₁, hσ₂⟩ := mdifferentiableAt_section_prod_iff.1 hσ
+  obtain ⟨hσ₁', hσ₂'⟩ := mdifferentiableAt_section_prod_iff.1 hσ'
+  rw [sectionProdMap_apply, show (fun y ↦ ((σ + σ') y).1) = (fun y ↦ (σ y).1) + fun y ↦ (σ' y).1
+    from rfl, show (fun y ↦ ((σ + σ') y).2) = (fun y ↦ (σ y).2) + fun y ↦ (σ' y).2 from rfl,
+    h₁ hσ₁ hσ₁', h₂ hσ₂ hσ₂']
+  ext v <;> simp [sectionProdMap_apply]
+
 section ComplexPart
 
 variable [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)]
@@ -146,34 +185,22 @@ theorem sectionComplexLinearPart_sectionProdMap :
     sectionComplexLinearPart (V := V ×ᵇ W) (sectionProdMap D₁ D₂) =
       sectionProdMap (sectionComplexLinearPart D₁) (sectionComplexLinearPart D₂) := by
   funext σ x
-  ext v <;> simp [sectionComplexLinearPart_apply, sectionProdMap_apply] <;> rfl
+  simp only [sectionComplexLinearPart_apply, sectionProdMap_smul]
+  ext v <;> simp [sectionComplexLinearPart_apply, sectionProdMap_apply]
 
 /-- The direct sum of two complex linear operators is complex linear. -/
 theorem IsComplexLinearOperator.prod (hD₁ : IsComplexLinearOperator F D₁)
     (hD₂ : IsComplexLinearOperator G D₂) :
     IsComplexLinearOperator (F × G) (V := V ×ᵇ W) (sectionProdMap D₁ D₂) where
-  add {σ σ' x} hσ hσ' := by
-    obtain ⟨h₁, h₂⟩ := mdifferentiableAt_section_prod_iff.1 hσ
-    obtain ⟨h₁', h₂'⟩ := mdifferentiableAt_section_prod_iff.1 hσ'
-    simp only [sectionProdMap_apply]
-    rw [show (fun y ↦ ((σ + σ') y).1) = (fun y ↦ (σ y).1) + fun y ↦ (σ' y).1 from rfl,
-      show (fun y ↦ ((σ + σ') y).2) = (fun y ↦ (σ y).2) + fun y ↦ (σ' y).2 from rfl,
-      hD₁.add h₁ h₁', hD₂.add h₂ h₂']
-    ext v <;> simp
+  add hσ hσ' := sectionProdMap_add hD₁.add hD₂.add hσ hσ'
   smul_const a {σ x} hσ := by
     obtain ⟨h₁, h₂⟩ := mdifferentiableAt_section_prod_iff.1 hσ
-    simp only [sectionProdMap_apply]
-    rw [show (fun y ↦ ((a • σ) y).1) = a • fun y ↦ (σ y).1 from rfl,
-      show (fun y ↦ ((a • σ) y).2) = a • fun y ↦ (σ y).2 from rfl,
-      hD₁.smul_const a h₁, hD₂.smul_const a h₂]
-    ext v <;> simp
+    rw [sectionProdMap_smul, hD₁.smul_const a h₁, hD₂.smul_const a h₂]
+    ext v <;> simp [sectionProdMap_apply]
   complex_I_smul {σ x} hσ := by
     obtain ⟨h₁, h₂⟩ := mdifferentiableAt_section_prod_iff.1 hσ
-    simp only [sectionProdMap_apply]
-    rw [show (fun y ↦ ((Complex.I • σ) y).1) = Complex.I • fun y ↦ (σ y).1 from rfl,
-      show (fun y ↦ ((Complex.I • σ) y).2) = Complex.I • fun y ↦ (σ y).2 from rfl,
-      hD₁.complex_I_smul h₁, hD₂.complex_I_smul h₂]
-    ext v <;> simp
+    rw [sectionProdMap_smul, hD₁.complex_I_smul h₁, hD₂.complex_I_smul h₂]
+    ext v <;> simp [sectionProdMap_apply]
 
 end ComplexPart
 
@@ -187,21 +214,11 @@ theorem prod (hD₁ : IsRealCauchyRiemannOperator F j D₁)
     IsRealCauchyRiemannOperator (F × G) j (V := V ×ᵇ W) (sectionProdMap D₁ D₂) where
   isZeroOneForm σ x :=
     isZeroOneForm_prod_iff.2 ⟨hD₁.isZeroOneForm _ x, hD₂.isZeroOneForm _ x⟩
-  add {σ σ' x} hσ hσ' := by
-    obtain ⟨h₁, h₂⟩ := mdifferentiableAt_section_prod_iff.1 hσ
-    obtain ⟨h₁', h₂'⟩ := mdifferentiableAt_section_prod_iff.1 hσ'
-    simp only [sectionProdMap_apply]
-    rw [show (fun y ↦ ((σ + σ') y).1) = (fun y ↦ (σ y).1) + fun y ↦ (σ' y).1 from rfl,
-      show (fun y ↦ ((σ + σ') y).2) = (fun y ↦ (σ y).2) + fun y ↦ (σ' y).2 from rfl,
-      hD₁.add h₁ h₁', hD₂.add h₂ h₂']
-    ext v <;> simp
+  add hσ hσ' := sectionProdMap_add hD₁.add hD₂.add hσ hσ'
   leibniz {σ g x} hσ hg := by
     obtain ⟨h₁, h₂⟩ := mdifferentiableAt_section_prod_iff.1 hσ
-    simp only [sectionProdMap_apply, dbarSMulRight_prod]
-    rw [show (fun y ↦ ((g • σ) y).1) = g • fun y ↦ (σ y).1 from rfl,
-      show (fun y ↦ ((g • σ) y).2) = g • fun y ↦ (σ y).2 from rfl,
-      hD₁.leibniz h₁ hg, hD₂.leibniz h₂ hg]
-    ext v <;> simp
+    rw [sectionProdMap_smul', hD₁.leibniz h₁ hg, hD₂.leibniz h₂ hg, dbarSMulRight_prod]
+    ext v <;> simp [sectionProdMap_apply]
 
 section Difference
 
@@ -244,8 +261,8 @@ theorem antilinearPart_prod (hD₁ : IsRealCauchyRiemannOperator F j D₁)
   have k₁ := hD₁.antilinearPart_apply h₁
   have k₂ := hD₂.antilinearPart_apply h₂
   simp only [extend_apply_self] at k k₁ k₂
-  rw [k, k₁, k₂]
-  ext v <;> simp [sectionProdMap_apply] <;> rfl
+  rw [k, k₁, k₂, sectionProdMap_smul]
+  ext v <;> simp [sectionProdMap_apply]
 
 end ComplexPart
 
@@ -306,6 +323,43 @@ theorem sectionTransport_symm_sectionTransport :
   ext v
   simp [sectionTransport_apply]
 
+omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
+/-- Transport pulls a constant multiple of a section back to the constant multiple of the pulled
+back section. -/
+theorem sectionTransport_smul {S : Type*} [∀ x, SMul S (V x)] [∀ x, SMul S (W x)]
+    [∀ x, LinearMap.CompatibleSMul (W x) (V x) S ℂ] (c : S) (σ : Π x : M, W x) (x : M) :
+    sectionTransport Φ D (c • σ) x =
+      ((Φ x : V x →L[ℂ] W x).restrictScalars ℝ).comp (D (c • fun y ↦ (Φ y).symm (σ y)) x) := by
+  rw [sectionTransport_apply, show (fun y ↦ (Φ y).symm ((c • σ) y)) =
+    c • fun y ↦ (Φ y).symm (σ y) from funext fun y ↦ LinearMapClass.map_smul_of_tower _ _ _]
+
+omit [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+  [∀ x, IsTopologicalAddGroup (W x)] [∀ x, ContinuousSMul ℝ (W x)] in
+/-- Transport pulls a function multiple `g • σ` of a section back to the function multiple of the
+pulled back section. -/
+theorem sectionTransport_smul' (g : M → ℝ) (σ : Π x : M, W x) (x : M) :
+    sectionTransport Φ D (g • σ) x =
+      ((Φ x : V x →L[ℂ] W x).restrictScalars ℝ).comp (D (g • fun y ↦ (Φ y).symm (σ y)) x) := by
+  rw [sectionTransport_apply, show (fun y ↦ (Φ y).symm ((g • σ) y)) =
+    g • fun y ↦ (Φ y).symm (σ y) from funext fun y ↦ LinearMapClass.map_smul_of_tower _ _ _]
+
+omit [∀ x, ContinuousSMul ℝ (V x)] [∀ x, ContinuousSMul ℝ (W x)] in
+/-- The transport of an operator additive on sections differentiable at `x` along a fibrewise
+complex linear isomorphism preserving differentiability of sections is additive on sections
+differentiable at `x`. -/
+theorem sectionTransport_add
+    (hΦ : ∀ ⦃σ : Π x : M, W x⦄ ⦃x : M⦄, MDiffAt (T% σ) x →
+      MDiffAt (T% fun y ↦ (Φ y).symm (σ y)) x) {x : M}
+    (hD : ∀ {τ τ' : Π x : M, V x}, MDiffAt (T% τ) x → MDiffAt (T% τ') x →
+      D (τ + τ') x = D τ x + D τ' x)
+    {σ σ' : Π x : M, W x} (hσ : MDiffAt (T% σ) x) (hσ' : MDiffAt (T% σ') x) :
+    sectionTransport Φ D (σ + σ') x = sectionTransport Φ D σ x + sectionTransport Φ D σ' x := by
+  rw [sectionTransport_apply, sectionTransport_apply, sectionTransport_apply,
+    show (fun y ↦ (Φ y).symm ((σ + σ') y)) =
+      (fun y ↦ (Φ y).symm (σ y)) + fun y ↦ (Φ y).symm (σ' y) from
+      funext fun y ↦ map_add _ _ _, hD (hΦ hσ) (hΦ hσ'), ContinuousLinearMap.comp_add]
+
 section ComplexPart
 
 variable [∀ x, ContinuousSMul ℂ (V x)] [∀ x, ContinuousSMul ℂ (W x)]
@@ -315,9 +369,9 @@ theorem sectionComplexLinearPart_sectionTransport :
     sectionComplexLinearPart (sectionTransport Φ D) =
       sectionTransport Φ (sectionComplexLinearPart D) := by
   funext σ x
+  simp only [sectionComplexLinearPart_apply, sectionTransport_smul]
   ext v
   simp [sectionTransport_apply, sectionComplexLinearPart_apply]
-  rfl
 
 /-- The transport of a complex linear operator along a fibrewise complex linear isomorphism
 preserving differentiability of sections is complex linear. -/
@@ -325,20 +379,12 @@ theorem IsComplexLinearOperator.transport (hD : IsComplexLinearOperator F D)
     (hΦ : ∀ ⦃σ : Π x : M, W x⦄ ⦃x : M⦄, MDiffAt (T% σ) x →
       MDiffAt (T% fun y ↦ (Φ y).symm (σ y)) x) :
     IsComplexLinearOperator G (sectionTransport Φ D) where
-  add {σ σ' x} hσ hσ' := by
-    rw [sectionTransport_apply, sectionTransport_apply, sectionTransport_apply,
-      show (fun y ↦ (Φ y).symm ((σ + σ') y)) =
-        (fun y ↦ (Φ y).symm (σ y)) + fun y ↦ (Φ y).symm (σ' y) from
-        funext fun y ↦ map_add _ _ _, hD.add (hΦ hσ) (hΦ hσ'), ContinuousLinearMap.comp_add]
+  add hσ hσ' := sectionTransport_add hΦ hD.add hσ hσ'
   smul_const a {σ x} hσ := by
-    rw [sectionTransport_apply, sectionTransport_apply,
-      show (fun y ↦ (Φ y).symm ((a • σ) y)) = a • fun y ↦ (Φ y).symm (σ y) from
-        funext fun y ↦ LinearMapClass.map_smul_of_tower _ _ _, hD.smul_const a (hΦ hσ),
-      ContinuousLinearMap.comp_smul]
+    rw [sectionTransport_smul, hD.smul_const a (hΦ hσ), ContinuousLinearMap.comp_smul,
+      sectionTransport_apply]
   complex_I_smul {σ x} hσ := by
-    rw [sectionTransport_apply, sectionTransport_apply,
-      show (fun y ↦ (Φ y).symm ((Complex.I • σ) y)) = Complex.I • fun y ↦ (Φ y).symm (σ y) from
-        funext fun y ↦ map_smul _ _ _, hD.complex_I_smul (hΦ hσ)]
+    rw [sectionTransport_smul, hD.complex_I_smul (hΦ hσ), sectionTransport_apply]
     ext v
     simp
 
@@ -367,15 +413,9 @@ theorem transport (hD : IsRealCauchyRiemannOperator F j D)
       MDiffAt (T% fun y ↦ (Φ y).symm (σ y)) x) :
     IsRealCauchyRiemannOperator G j (sectionTransport Φ D) where
   isZeroOneForm σ x := (hD.isZeroOneForm _ x).restrictScalars_comp _
-  add {σ σ' x} hσ hσ' := by
-    rw [sectionTransport_apply, sectionTransport_apply, sectionTransport_apply,
-      show (fun y ↦ (Φ y).symm ((σ + σ') y)) =
-        (fun y ↦ (Φ y).symm (σ y)) + fun y ↦ (Φ y).symm (σ' y) from
-        funext fun y ↦ map_add _ _ _, hD.add (hΦ hσ) (hΦ hσ'), ContinuousLinearMap.comp_add]
+  add hσ hσ' := sectionTransport_add hΦ hD.add hσ hσ'
   leibniz {σ g x} hσ hg := by
-    rw [sectionTransport_apply, sectionTransport_apply,
-      show (fun y ↦ (Φ y).symm ((g • σ) y)) = g • fun y ↦ (Φ y).symm (σ y) from
-        funext fun y ↦ LinearMapClass.map_smul_of_tower _ _ _, hD.leibniz (hΦ hσ) hg,
+    rw [sectionTransport_smul', hD.leibniz (hΦ hσ) hg, sectionTransport_apply,
       ContinuousLinearMap.comp_add, ContinuousLinearMap.comp_smul,
       restrictScalars_comp_dbarSMulRight (fun x ↦ (Φ x : V x →L[ℂ] W x))]
     simp
@@ -417,9 +457,7 @@ theorem antilinearPart_transport (hD : IsRealCauchyRiemannOperator F j D)
   have k := (hD.transport hΦ).antilinearPart_apply hσ
   have k' := hD.antilinearPart_apply (hΦ hσ)
   simp only [extend_apply_self] at k k'
-  rw [k, k', sectionTransport_apply, sectionTransport_apply,
-    show (fun y ↦ (Φ y).symm ((Complex.I • extend G e) y)) =
-      Complex.I • fun y ↦ (Φ y).symm (extend G e y) from funext fun y ↦ map_smul _ _ _]
+  rw [k, k', sectionTransport_smul, sectionTransport_apply]
   ext v
   simp
 
@@ -447,16 +485,17 @@ section LineMap
 
 variable {D₀ D₁ : (Π x : M, V x) → Π x : M, TangentSpace I x →L[ℝ] V x}
 
-/-- Every point of the straight line between two complex linear operators is complex linear. -/
-theorem IsComplexLinearOperator.lineMap [∀ x, IsScalarTower ℝ ℂ (V x)]
+/-- A real linear combination `a • D₀ + b • D₁` of two complex linear operators is complex linear;
+in particular so is every point `(1 - t) • D₀ + t • D₁` of the straight line between them. -/
+theorem IsComplexLinearOperator.smul_add_smul [∀ x, IsScalarTower ℝ ℂ (V x)]
     [∀ x, ContinuousSMul ℂ (V x)] (hD₀ : IsComplexLinearOperator F D₀)
-    (hD₁ : IsComplexLinearOperator F D₁) (t : ℝ) :
-    IsComplexLinearOperator F fun σ x ↦ (1 - t) • D₀ σ x + t • D₁ σ x where
+    (hD₁ : IsComplexLinearOperator F D₁) (a b : ℝ) :
+    IsComplexLinearOperator F fun σ x ↦ a • D₀ σ x + b • D₁ σ x where
   add hσ hσ' := by
     simp only [hD₀.add hσ hσ', hD₁.add hσ hσ', smul_add]
     abel
-  smul_const a _ _ hσ := by
-    simp only [hD₀.smul_const a hσ, hD₁.smul_const a hσ, smul_add, smul_comm a]
+  smul_const c _ _ hσ := by
+    simp only [hD₀.smul_const c hσ, hD₁.smul_const c hσ, smul_add, smul_comm c]
   complex_I_smul hσ := by
     simp only [hD₀.complex_I_smul hσ, hD₁.complex_I_smul hσ, smul_add,
       smul_comm Complex.I (_ : ℝ)]
