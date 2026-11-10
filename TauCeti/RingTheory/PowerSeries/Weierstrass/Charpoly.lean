@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.Torsion.Basic
 public import Mathlib.LinearAlgebra.Charpoly.Basic
 public import Mathlib.RingTheory.PowerBasis
 public import Mathlib.RingTheory.PowerSeries.WeierstrassPreparation
@@ -46,6 +47,8 @@ factor of `g`, and `T` acts on it with characteristic polynomial that distinguis
 ## Main results
 
 * `PowerSeries.IsWeierstrassFactorizationAt.finrank_quotient`: `A⟦X⟧ ⧸ (g)` has rank `deg f`.
+* `PowerSeries.IsWeierstrassFactorizationAt.finite_of_isTorsionBy`: a finite `A⟦X⟧`-module
+  killed by `g` is finite over `A`, by restriction of scalars from `A⟦X⟧ ⧸ (g)`.
 * `PowerSeries.IsWeierstrassFactorizationAt.natCard_quotSMulTop_quotient_span_C`: for `a : A`, the
   quotient `A⟦X⟧ ⧸ (a, g)` has `#(A ⧸ (a)) ^ deg f` elements.
 * `PowerSeries.IsWeierstrassFactorizationAt.minpoly_mk_X`: the minimal polynomial of the class of
@@ -118,6 +121,20 @@ theorem free_quotient : Module.Free A (A⟦X⟧ ⧸ Ideal.span {g}) :=
 `A`-module. -/
 theorem finite_quotient : Module.Finite A (A⟦X⟧ ⧸ Ideal.span {g}) :=
   H.powerBasis.finite
+
+/-- A finite power-series module killed by a series admitting a Weierstrass factorization is
+finite over the coefficient ring. -/
+theorem finite_of_isTorsionBy {M : Type*} [AddCommGroup M] [Module A⟦X⟧ M]
+    [Module A M] [IsScalarTower A A⟦X⟧ M] [Module.Finite A⟦X⟧ M]
+    (hgM : Module.IsTorsionBy A⟦X⟧ M g) : Module.Finite A M := by
+  have hM : Module.IsTorsionBySet A⟦X⟧ M (Ideal.span {g}) :=
+    (Module.isTorsionBySet_span_singleton_iff g).mpr hgM
+  let := hM.module
+  have := H.finite_quotient
+  have : IsScalarTower A (A⟦X⟧ ⧸ Ideal.span {g}) M := hM.isScalarTower
+  have : Module.Finite (A⟦X⟧ ⧸ Ideal.span {g}) M :=
+    Module.Finite.of_restrictScalars_finite A⟦X⟧ _ M
+  exact Module.Finite.trans (A⟦X⟧ ⧸ Ideal.span {g}) M
 
 /-- For a Weierstrass factorization `g = f * h` over a nontrivial ring, the quotient `A⟦X⟧ ⧸ (g)`
 is free of rank the degree of `f`. -/
