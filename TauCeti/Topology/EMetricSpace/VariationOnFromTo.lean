@@ -14,7 +14,8 @@ public import TauCeti.Topology.EMetricSpace.BoundedVariation
 
 Cumulative signed variation controls distances between values of a metric-valued function.
 In particular, the function is constant on each fibre of cumulative variation, allowing an
-arclength factorization even when the original curve has pauses.
+arclength factorization even when the original curve has pauses. For locally bounded-variation
+functions, continuity of cumulative variation is equivalent to continuity of the function.
 
 The file also records that cumulative variation only depends on the function on `s`
 (`variationOnFromTo.eq_of_eqOn`), and the antitone counterpart
@@ -23,7 +24,7 @@ The file also records that cumulative variation only depends on the function on 
 
 public section
 
-open Set
+open Filter Set
 
 namespace variationOnFromTo
 
@@ -85,6 +86,53 @@ theorem dist_le_abs_sub_variationOnFromTo (hf : LocallyBoundedVariationOn f s)
     exact (hf x y hx hy).dist_le ⟨hx, le_rfl, hxy⟩ ⟨hy, hxy, le_rfl⟩
   · rw [variationOnFromTo.eq_of_le _ _ hyx, abs_of_nonneg ENNReal.toReal_nonneg]
     exact (hf y x hy hx).dist_le ⟨hx, hyx, le_rfl⟩ ⟨hy, le_rfl, hyx⟩
+
+end LocallyBoundedVariationOn
+
+namespace LocallyBoundedVariationOn
+
+variable {α X : Type*} [LinearOrder α] [TopologicalSpace α] [OrderTopology α]
+  [PseudoEMetricSpace X] {f : α → X} {s : Set α}
+
+/-- Cumulative variation of a locally bounded-variation function is continuous at exactly the
+points where the original function is continuous, relative to the same set. -/
+theorem continuousWithinAt_variationOnFromTo_iff
+    (hf : LocallyBoundedVariationOn f s) {a x : α} (ha : a ∈ s) (hx : x ∈ s) :
+    ContinuousWithinAt (variationOnFromTo f s a) s x ↔ ContinuousWithinAt f s x := by
+  constructor
+  · intro h
+    simp only [ContinuousWithinAt, tendsto_iff_edist_tendsto_0] at h ⊢
+    apply tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds h (by simp)
+    filter_upwards [self_mem_nhdsWithin] with y hy
+    rw [edist_eq_enorm_sub, variationOnFromTo.sub_right hf ha hy hx]
+    rcases le_total x y with hxy | hyx
+    · simpa [variationOnFromTo.eq_of_le _ _ hxy, Real.enorm_toReal (hf x y hx hy)] using
+        eVariationOn.edist_le f (s := s ∩ Icc x y) ⟨hy, hxy, le_rfl⟩ ⟨hx, le_rfl, hxy⟩
+    · simpa [variationOnFromTo.eq_of_ge _ _ hyx, Real.enorm_toReal (hf y x hy hx)] using
+        eVariationOn.edist_le f (s := s ∩ Icc y x) ⟨hy, le_rfl, hyx⟩ ⟨hx, hyx, le_rfl⟩
+  · intro h
+    apply continuousWithinAt_iff_continuous_left'_right'.mpr
+    constructor
+    · have hv := hf.tendsto_eVariationOn_Icc_left (h.mono inter_subset_left) hx
+      simp only [edist_self] at hv
+      have H := ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hv).const_sub
+        (variationOnFromTo f s a x)
+      simp only [ENNReal.toReal_zero, sub_zero] at H
+      apply H.congr'
+      filter_upwards [self_mem_nhdsWithin] with y hy
+      simp only [Function.comp_apply]
+      rw [← variationOnFromTo.eq_of_le f s hy.2.le,
+        variationOnFromTo.sub_left hf ha hx hy.1]
+    · have hv := hf.tendsto_eVariationOn_Icc_right (h.mono inter_subset_left) hx
+      simp only [edist_self] at hv
+      have H := ((ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp hv).const_add
+        (variationOnFromTo f s a x)
+      simp only [ENNReal.toReal_zero, add_zero] at H
+      apply H.congr'
+      filter_upwards [self_mem_nhdsWithin] with y hy
+      simp only [Function.comp_apply]
+      rw [← variationOnFromTo.eq_of_le f s hy.2.le,
+        variationOnFromTo.add hf ha hx hy.1]
 
 end LocallyBoundedVariationOn
 

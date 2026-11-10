@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
+public import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Topology.VectorBundle.GramSchmidt
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-import Mathlib.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.Algebra.Structures
 
 /-!
@@ -29,6 +29,10 @@ Here smooth section operations replace the coordinate calculations of the contin
 In particular, the Gram–Schmidt orthonormal basis `Bundle.Trivialization.orthonormalBasis` of a
 compatible local trivialization of a finite-rank Riemannian bundle is smooth over its base set
 (`Bundle.Trivialization.contMDiffOn_orthonormalBasis`).
+
+Orthonormalizing the local frame of a bundle trivialization shows that every point of a `C^n`
+Riemannian vector bundle with finite-dimensional model fibre has a neighbourhood carrying a `C^n`
+orthonormal local frame (`TauCeti.exists_isLocalFrameOn_orthonormal`).
 -/
 
 public section
@@ -124,6 +128,24 @@ theorem Bundle.Trivialization.contMDiffOn_orthonormalBasis [ContMDiffVectorBundl
     (hfr.linearIndependent hx) i).contMDiffWithinAt).congr (fun y hy ↦ ?_) ?_
   · exact congrArg (TotalSpace.mk' F y) (heq hy)
   · exact congrArg (TotalSpace.mk' F x) (heq hx)
+
+variable [ContMDiffVectorBundle n F V I] [FiniteDimensional ℝ F] in
+/-- Every point of a `C^n` Riemannian vector bundle with finite-dimensional model fibre `F` has an
+open neighbourhood carrying a `C^n` local frame which is orthonormal at each of its points. -/
+theorem TauCeti.exists_isLocalFrameOn_orthonormal (x₀ : M) :
+    ∃ U : Set M, IsOpen U ∧ x₀ ∈ U ∧ ∃ u : Fin (Module.finrank ℝ F) → Π x : M, V x,
+      IsLocalFrameOn I F n u U ∧ ∀ x ∈ U, Orthonormal ℝ (u · x) := by
+  let e := trivializationAt F V x₀
+  have hs := e.isLocalFrameOn_localFrame_baseSet I n (Module.finBasis ℝ F)
+  refine ⟨e.baseSet, e.open_baseSet, FiberBundle.mem_baseSet_trivializationAt' x₀,
+    fun i x ↦ gramSchmidtNormed ℝ (fun j ↦ e.localFrame (Module.finBasis ℝ F) j x) i,
+    ⟨fun hx ↦ (gramSchmidtNormed_orthonormal (hs.linearIndependent hx)).linearIndependent,
+      fun hx ↦ ?_, fun i x hx ↦ ?_⟩,
+    fun x hx ↦ gramSchmidtNormed_orthonormal (hs.linearIndependent hx)⟩
+  · rw [span_gramSchmidtNormed_range, span_gramSchmidt]
+    exact hs.generating hx
+  · exact (ContMDiffAt.gramSchmidtNormed_bundle
+      (fun j ↦ hs.contMDiffAt e.open_baseSet hx j) (hs.linearIndependent hx) i).contMDiffWithinAt
 
 section Differentiable
 

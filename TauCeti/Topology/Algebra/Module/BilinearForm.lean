@@ -44,6 +44,9 @@ use.
 
 ## Main results
 
+* `LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap`: making a finite-dimensional
+  bilinear form continuous and then forgetting continuity returns the original form.
+
 * `ContinuousLinearMap.separatingLeft_toBilinForm_iff_injective`: the bilinear form of a
   continuous linear map into the dual is left-separating if and only if the map is injective.
 * `ContinuousLinearMap.isSymm_toBilinForm_iff`: the bilinear form of a continuous linear map into
@@ -98,6 +101,17 @@ public section
 open scoped Matrix
 
 namespace TauCeti
+
+/-- Making a bilinear form on a finite-dimensional topological vector space continuous and
+then forgetting continuity returns the original form. -/
+@[simp]
+theorem _root_.LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap
+    {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+    [AddCommGroup V] [Module 𝕜 V] [TopologicalSpace V] [IsTopologicalAddGroup V]
+    [ContinuousSMul 𝕜 V] [FiniteDimensional 𝕜 V] [T2Space V]
+    (B : LinearMap.BilinForm 𝕜 V) : B.toContinuousBilinearMap.toBilinForm = B := by
+  ext v w
+  simp only [ContinuousLinearMap.toBilinForm_apply, LinearMap.toContinuousBilinearMap_apply]
 
 section
 
@@ -191,10 +205,8 @@ continuous linear map to the continuous dual exactly when the form is left-separ
 theorem isInvertible_toContinuousBilinearMap_iff_separatingLeft
     {b : LinearMap.BilinForm 𝕜 E} :
     b.toContinuousBilinearMap.IsInvertible ↔ b.SeparatingLeft := by
-  have hround : b.toContinuousBilinearMap.toBilinForm = b := by
-    ext v w
-    simp
-  rw [ContinuousLinearMap.isInvertible_iff_separatingLeft, hround]
+  rw [ContinuousLinearMap.isInvertible_iff_separatingLeft,
+    LinearMap.BilinForm.toBilinForm_toContinuousBilinearMap]
 
 end FiniteDimensional
 

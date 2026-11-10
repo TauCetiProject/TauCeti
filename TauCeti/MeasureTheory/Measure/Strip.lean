@@ -58,6 +58,13 @@ the pushforward to the `s`-axis of `f` times Lebesgue measure on the strip. -/
 noncomputable def stripMeasure : Measure ℝ :=
   ((volume.restrict ((univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1)).withDensity f).map Prod.fst
 
+/-- The strip measure is the pushforward to the `s`-axis of the density times Lebesgue measure on
+the strip. -/
+theorem stripMeasure_def :
+    stripMeasure f = ((volume.restrict ((univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1)).withDensity f).map
+      Prod.fst :=
+  (rfl)
+
 /-- The strip measure of a measurable set `A` is the integral of the density over `A × [0, 1]`. -/
 @[simp]
 theorem stripMeasure_apply {A : Set ℝ} (hA : MeasurableSet A) :
