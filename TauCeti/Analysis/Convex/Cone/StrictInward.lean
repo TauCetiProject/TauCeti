@@ -49,15 +49,35 @@ theorem strictInwardCone_mono (h : s ⊆ u) : strictInwardCone s x ⊆ strictInw
   rintro v ⟨ε, hε, δ, hδ, hv⟩
   exact ⟨ε, hε, δ, hδ, fun t ht ↦ (hv t ht).trans h⟩
 
+/-- Small positive steps along a strictly inward vector lie in the interior, without any
+convexity assumption. -/
+theorem add_smul_mem_interior_of_mem_strictInwardCone (hv : v ∈ strictInwardCone s x) :
+    ∃ δ > 0, ∀ t ∈ Ioo (0 : ℝ) δ, x + t • v ∈ interior s := by
+  obtain ⟨ε, hε, δ, hδ, h⟩ := hv
+  refine ⟨δ, hδ, fun t ht ↦ mem_interior_iff_mem_nhds.mpr ?_⟩
+  exact Filter.mem_of_superset (ball_mem_nhds _ (mul_pos hε ht.1)) (h t ht)
+
+/-- The strict inward cone at any fixed point of any set is open. -/
+theorem isOpen_strictInwardCone (s : Set E) (x : E) : IsOpen (strictInwardCone s x) := by
+  apply Metric.isOpen_iff.mpr
+  rintro v ⟨ε, hε, δ, hδ, hv⟩
+  refine ⟨ε / 2, half_pos hε, ?_⟩
+  intro w hw
+  refine ⟨ε / 2, half_pos hε, δ, hδ, fun t ht ↦ ?_⟩
+  apply Subset.trans (ball_subset_ball' ?_) (hv t ht)
+  have hd : dist (x + t • w) (x + t • v) = t * dist w v := by
+    simp [dist_eq_norm, ← smul_sub, norm_smul, Real.norm_eq_abs, abs_of_pos ht.1]
+  rw [hd]
+  have := mul_lt_mul_of_pos_left (mem_ball.mp hw) ht.1
+  linarith
+
 /-- The zero vector is strictly inward exactly at interior points. -/
 @[simp]
 theorem zero_mem_strictInwardCone_iff : (0 : E) ∈ strictInwardCone s x ↔ x ∈ interior s := by
   constructor
-  · rintro ⟨ε, hε, δ, hδ, h⟩
-    have hb := h (δ / 2) ⟨by positivity, by linarith⟩
-    simp only [smul_zero, add_zero] at hb
-    exact mem_interior_iff_mem_nhds.mpr
-      (Filter.mem_of_superset (ball_mem_nhds x (by positivity : 0 < ε * (δ / 2))) hb)
+  · intro hv
+    obtain ⟨δ, hδ, h⟩ := add_smul_mem_interior_of_mem_strictInwardCone hv
+    simpa only [smul_zero, add_zero] using h (δ / 2) ⟨by positivity, by linarith⟩
   · intro hx
     obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.mp (mem_interior_iff_mem_nhds.mp hx)
     refine ⟨r, hr, 1, zero_lt_one, fun t ht ↦ ?_⟩
@@ -147,10 +167,9 @@ interior. No closedness or finite-dimensionality is required. -/
 theorem Convex.mem_strictInwardCone_iff (hs : Convex ℝ s) (hx : x ∈ s) :
     v ∈ strictInwardCone s x ↔ ∃ t : ℝ, 0 < t ∧ x + t • v ∈ interior s := by
   constructor
-  · rintro ⟨ε, hε, δ, hδ, h⟩
-    refine ⟨δ / 2, by positivity, mem_interior_iff_mem_nhds.mpr ?_⟩
-    exact Filter.mem_of_superset (ball_mem_nhds _ (by positivity))
-      (h (δ / 2) ⟨by positivity, by linarith⟩)
+  · intro hv
+    obtain ⟨δ, hδ, h⟩ := add_smul_mem_interior_of_mem_strictInwardCone hv
+    exact ⟨δ / 2, by positivity, h (δ / 2) ⟨by positivity, by linarith⟩⟩
   · rintro ⟨T, hT, hq⟩
     obtain ⟨ε, hε, δ, hδ, h⟩ := hs.exists_uniform_ball_subset_of_add_smul_mem_interior hT hq
     exact ⟨ε, hε, δ, hδ, h.self_of_nhds hx⟩
@@ -158,11 +177,12 @@ theorem Convex.mem_strictInwardCone_iff (hs : Convex ℝ s) (hx : x ∈ s) :
 /-- The inward ball estimates can be chosen uniformly near any strictly inward point-vector
 pair, as long as the perturbed starting point stays in the convex set. -/
 theorem Convex.exists_uniform_ball_subset_of_mem_strictInwardCone (hs : Convex ℝ s)
-    (hx : x ∈ s) (hv : v ∈ strictInwardCone s x) :
+    (hv : v ∈ strictInwardCone s x) :
     ∃ ε > 0, ∃ δ > 0, ∀ᶠ p : E × E in 𝓝 (x, v), p.1 ∈ s →
       ∀ t ∈ Ioo (0 : ℝ) δ, ball (p.1 + t • p.2) (ε * t) ⊆ s := by
-  obtain ⟨T, hT, hq⟩ := (hs.mem_strictInwardCone_iff hx).mp hv
-  exact hs.exists_uniform_ball_subset_of_add_smul_mem_interior hT hq
+  obtain ⟨δ, hδ, h⟩ := add_smul_mem_interior_of_mem_strictInwardCone hv
+  exact hs.exists_uniform_ball_subset_of_add_smul_mem_interior
+    (by positivity : 0 < δ / 2) (h (δ / 2) ⟨by positivity, by linarith⟩)
 
 /-- Every interior anchor supplies a strictly inward vector at every point of a convex set. -/
 theorem Convex.sub_mem_strictInwardCone (hs : Convex ℝ s) (hx : x ∈ s)
@@ -177,25 +197,31 @@ theorem Convex.strictInwardCone_nonempty (hs : Convex ℝ s) (hx : x ∈ s)
   exact ⟨q - x, hs.sub_mem_strictInwardCone hx hq⟩
 
 /-- The strict inward cone of a convex set is convex. -/
-theorem Convex.convex_strictInwardCone (hs : Convex ℝ s) (hx : x ∈ s) :
+theorem Convex.convex_strictInwardCone (hs : Convex ℝ s) (x : E) :
     Convex ℝ (strictInwardCone s x) := by
   intro v hv w hw a b ha hb hab
-  obtain ⟨T, hT, hvT⟩ := (hs.mem_strictInwardCone_iff hx).mp hv
-  obtain ⟨U, hU, hwU⟩ := (hs.mem_strictInwardCone_iff hx).mp hw
-  let t := min T U
-  have ht : 0 < t := lt_min hT hU
-  have hv' : x + t • v ∈ interior s := by
-    have h := hs.add_smul_mem_interior hx hvT
-      ⟨div_pos ht hT, (div_le_one hT).mpr (min_le_left T U)⟩
-    simpa only [smul_smul, div_mul_cancel₀ _ hT.ne'] using h
-  have hw' : x + t • w ∈ interior s := by
-    have h := hs.add_smul_mem_interior hx hwU
-      ⟨div_pos ht hU, (div_le_one hU).mpr (min_le_right T U)⟩
-    simpa only [smul_smul, div_mul_cancel₀ _ hU.ne'] using h
-  apply (hs.mem_strictInwardCone_iff hx).mpr
-  refine ⟨t, ht, ?_⟩
-  convert hs.interior hv' hw' ha hb hab using 1
-  match_scalars <;> nlinarith
+  obtain ⟨εv, hεv, δv, hδv, hv⟩ := hv
+  obtain ⟨εw, hεw, δw, hδw, hw⟩ := hw
+  refine ⟨min εv εw, lt_min hεv hεw, min δv δw, lt_min hδv hδw, ?_⟩
+  intro t ht z hz
+  let d := z - (x + t • (a • v + b • w))
+  have hd : ‖d‖ < min εv εw * t := by simpa [d, dist_eq_norm] using hz
+  have hmem {u : E} {ε δ : ℝ}
+      (hu : ∀ t ∈ Ioo (0 : ℝ) δ, ball (x + t • u) (ε * t) ⊆ s)
+      (hδ : min δv δw ≤ δ) (hε : min εv εw ≤ ε) : x + t • u + d ∈ s := by
+    apply hu t ⟨ht.1, ht.2.trans_le hδ⟩
+    exact mem_ball.mpr (by
+      simpa only [dist_eq_norm, add_sub_cancel_left] using
+        hd.trans_le (mul_le_mul_of_nonneg_right hε ht.1.le))
+  have h := hs (hmem hv (min_le_left _ _) (min_le_left _ _))
+    (hmem hw (min_le_right _ _) (min_le_right _ _)) ha hb hab
+  have heq : a • (x + t • v + d) + b • (x + t • w + d) =
+      x + t • (a • v + b • w) + d := by
+    calc
+      _ = (a + b) • x + t • (a • v + b • w) + (a + b) • d := by module
+      _ = _ := by rw [hab, one_smul, one_smul]
+  rw [heq] at h
+  simpa only [d, add_sub_cancel] using h
 
 /-- Strict inwardness is open jointly in the base point (relative to the set) and direction. -/
 theorem Convex.isOpen_setOf_mem_strictInwardCone (hs : Convex ℝ s) :
@@ -207,12 +233,6 @@ theorem Convex.isOpen_setOf_mem_strictInwardCone (hs : Convex ℝ s) :
   rw [heq]
   exact isOpen_iUnion fun t ↦ isOpen_iUnion fun _ ↦
     isOpen_interior.preimage (by fun_prop)
-
-/-- At a fixed point of a convex set the strict inward cone is open. -/
-theorem Convex.isOpen_strictInwardCone (hs : Convex ℝ s) (hx : x ∈ s) :
-    IsOpen (strictInwardCone s x) := by
-  have hc : Continuous (fun v : E ↦ (⟨x, hx⟩, v) : E → s × E) := by fun_prop
-  exact hs.isOpen_setOf_mem_strictInwardCone.preimage hc
 
 namespace TauCeti
 
