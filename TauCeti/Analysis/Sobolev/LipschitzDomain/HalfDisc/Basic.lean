@@ -78,10 +78,12 @@ private theorem closure_halfDisc_subset (r : ℝ) :
     (isClosed_closedBall.inter (isClosed_le continuous_const
       (WithLp.prod_continuous_ofLp 2 ℝ ℝ).fst))
 
-/-- For `0 < r` the closure of the half-disc is the closed half-disc: every point of the closed
-half-disc is a limit of points of the open segment joining it to the interior point `(r / 2, 0)`. -/
+/-- For `0 < r` the closure of the half-disc is the closed half-disc
+`closedBall 0 r ∩ {x | 0 ≤ x.fst}`. -/
 theorem closure_halfDisc {r : ℝ} (hr : 0 < r) :
     closure (halfDisc r : Set (WithLp 2 (ℝ × ℝ))) = closedBall 0 r ∩ {x | 0 ≤ x.fst} := by
+  -- Every point of the closed half-disc is a limit of points of the open segment joining it to
+  -- the interior point `(r / 2, 0)`.
   refine (closure_halfDisc_subset r).antisymm fun x hx => ?_
   rw [mem_inter_iff, mem_closedBall_zero_iff, mem_ofPred_eq] at hx
   set c : WithLp 2 (ℝ × ℝ) := WithLp.toLp 2 (r / 2, 0)
