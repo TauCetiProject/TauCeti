@@ -31,8 +31,9 @@ Two invariant-subspace theorems follow, by applying the lemma to two different a
 * `IsCompactOperator.exists_hyperinvariantSubspace_of_commute`: on a complex normed space, a
   nonscalar operator `T` commuting with a nonzero compact operator has a nonzero proper closed
   *hyperinvariant* subspace, one invariant under every operator commuting with `T`. Apply the
-  lemma to the commutant of `T`; an eigenspace of `T` on the finite-dimensional `1`-eigenspace of
-  `a * K` is the required subspace. In particular every nonscalar compact operator has one
+  lemma to the commutant of `T`. The restriction of `T` to the finite-dimensional `1`-eigenspace
+  of `a * K` has an eigenvalue `μ`, and the full eigenspace `ker (T - μ)` of `T` in `E` is the
+  required subspace. In particular every nonscalar compact operator has one
   (`IsCompactOperator.exists_hyperinvariantSubspace`).
 
 No completeness of the space is needed: Schauder's theorem
