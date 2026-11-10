@@ -5,13 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.Fintype.Order
+public import Mathlib.Data.Set.Finite.Lattice
 
 /-!
 # Intervals avoiding a finite set of points
 
-A finite family of points of a directed order without a top element is bounded above, so an
-open interval beyond it contains a point.
+A finite family of points of a nonempty order without a maximal element misses a nonempty open
+interval: along a strictly increasing sequence, each point lies in at most two of the intervals
+from the sequence element of index `n` to that of index `n + 2`.
 
 A finite set of points cuts every closed interval of a linear order into finitely many closed
 pieces whose interiors avoid it. `TauCeti.Icc_induction_of_disjoint_Ioo` proves a two-endpoint
@@ -24,15 +25,23 @@ open Set
 
 namespace TauCeti
 
-/-- There is a nonempty open interval avoiding a finite family of points in a nonempty directed
-order without a maximal element. -/
-theorem exists_Ioo_disjoint_range_of_finite {α ι : Type*} [Preorder α] [IsDirectedOrder α]
-    [Nonempty α] [NoMaxOrder α] [Finite ι] (a : ι → α) :
+/-- There is a nonempty open interval avoiding a finite family of points in a nonempty preorder
+without a maximal element. -/
+theorem exists_Ioo_disjoint_range_of_finite {α ι : Type*} [Preorder α] [Nonempty α]
+    [NoMaxOrder α] [Finite ι] (a : ι → α) :
     ∃ p q x : α, (∀ i, a i ∉ Ioo p q) ∧ x ∈ Ioo p q := by
-  obtain ⟨p, hp⟩ := Finite.exists_le a
-  obtain ⟨x, hpx⟩ := exists_gt p
-  obtain ⟨q, hxq⟩ := exists_gt x
-  exact ⟨p, q, x, fun i hi => (hp i).not_gt hi.1, hpx, hxq⟩
+  obtain ⟨f, hf⟩ := Nat.exists_strictMono α
+  -- Each point lies in `Ioo (f n) (f (n + 2))` for at most two consecutive indices `n`.
+  have hfin (i : ι) : {n : ℕ | a i ∈ Ioo (f n) (f (n + 2))}.Finite := by
+    rcases {n : ℕ | a i ∈ Ioo (f n) (f (n + 2))}.eq_empty_or_nonempty with h | ⟨n₀, hn₀⟩
+    · rw [h]
+      exact Set.finite_empty
+    refine (Set.finite_le_nat (n₀ + 1)).subset fun m hm => ?_
+    by_contra hlt
+    exact (hn₀.2.trans_le (hf.monotone (Nat.succ_le_of_lt (not_le.1 hlt)))).not_gt hm.1
+  obtain ⟨n, hn⟩ := (Set.finite_iUnion hfin).exists_notMem
+  simp only [Set.mem_iUnion, not_exists] at hn
+  exact ⟨f n, f (n + 2), f (n + 1), hn, hf (Nat.lt_succ_self n), hf (Nat.lt_succ_self (n + 1))⟩
 
 /-- **Induction over closed intervals cut by a finite set.** Let `Q c d` be a property of the
 endpoints of closed intervals `[c, d]` contained in `s`. If `Q` holds on every such interval
