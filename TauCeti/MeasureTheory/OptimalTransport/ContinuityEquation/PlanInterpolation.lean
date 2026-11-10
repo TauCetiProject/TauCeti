@@ -186,15 +186,8 @@ theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_ae_injOn (π : 
         ∫⁻ z, ‖z.2 - z.1‖ₑ ^ p ∂π := by
   -- replace `S` by a measurable subset of full measure
   wlog hS : MeasurableSet S generalizing S
-  · refine this (S := (toMeasurable π Sᶜ)ᶜ) ?_
-      (hinj.mono fun t ht hmem ↦
-        (ht hmem).mono (compl_subset_comm.1 (subset_toMeasurable π Sᶜ)))
-      (measurableSet_toMeasurable _ _).compl
-    have h0 : π (toMeasurable π Sᶜ) = 0 := by
-      rw [measure_toMeasurable]
-      exact ae_iff.1 hSπ
-    rw [ae_iff]
-    simpa using h0
+  · obtain ⟨T, hTπ, hT, hTS⟩ := hSπ.exists_measurable_mem
+    exact this hTπ (hinj.mono fun t ht hmem ↦ (ht hmem).mono hTS) hT
   -- `U` is a measurable set of full measure in `(0, 1)` of times at which the interpolation is
   -- injective on `S`
   set N := toMeasurable volume
