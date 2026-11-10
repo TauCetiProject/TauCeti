@@ -137,7 +137,7 @@ theorem exists_wkp_value_ae_eq_of_forall_integral_reducedSource (hm : 0 < P.natD
     ∃ W : Wkp (volume : Measure ℂ) ⊤ 2 2,
       (Wkp.value 2 W : ℂ → ℝ) =ᵐ[volume] W1p.value u := by
   set f : ℂ → ℝ := ⇑(W1p.value u)
-  have hf : MemLp f 2 volume := W1p.memLp_value_top u
+  have hf : MemLp f 2 volume := W1p.memLp_value u
   have hS : MemLp (reducedSource P f) 2 volume := memLp_reducedSource hm u
   have hR : MemLp (f - reducedSource P f) 2 volume := hf.sub hS
   set T : 𝓢'(ℂ, ℂ) := Lp.toTemperedDistribution (ofRealCLM.compLp (hf.toLp f))

@@ -104,10 +104,11 @@ theorem mem_unitsPrincipal_iff_of_val_mul_one_sub_pow_eq_one {f : ℕ} {u : ℤ_
 when `p = 2`: the image of the orientation character `χ(x₂) = (1 - q)⁻¹`, `χ(x_i) = 1` otherwise,
 of a Demushkin group with `q = p ^ f ≠ 2` is `1 + qℤ_p`. -/
 theorem topologicalClosure_zpowers_eq_unitsPrincipal_of_val_mul_one_sub_pow_eq_one {f : ℕ}
-    (hf : 0 < f) (hf₂ : p = 2 → 2 ≤ f) {u : ℤ_[p]ˣ}
+    (hf₂ : p = 2 → 2 ≤ f) {u : ℤ_[p]ˣ}
     (hu : (u : ℤ_[p]) * (1 - (p : ℤ_[p]) ^ f) = 1) :
     (Subgroup.zpowers u).topologicalClosure = unitsPrincipal p f :=
-  topologicalClosure_zpowers_eq_unitsPrincipal hf hf₂
+  topologicalClosure_zpowers_eq_unitsPrincipal
+    (Nat.pos_of_ne_zero fun hf ↦ by simp [hf] at hu) hf₂
     ((mem_unitsPrincipal_iff_of_val_mul_one_sub_pow_eq_one hu).mpr le_rfl)
     (fun h ↦ by have := (mem_unitsPrincipal_iff_of_val_mul_one_sub_pow_eq_one hu).mp h; omega)
 

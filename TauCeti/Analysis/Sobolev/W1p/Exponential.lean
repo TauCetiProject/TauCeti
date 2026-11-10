@@ -286,7 +286,7 @@ theorem W1p.lintegral_exp_value_sub_one_sq_le (hE : finrank ℝ E = 2) (u : W1p 
       ((((Real.continuous_exp.tendsto _).comp hx).sub_const 1).pow 2)
   have hFm (i : ℕ) : AEMeasurable (F i) μ :=
     ((Real.continuous_exp.comp_aestronglyMeasurable
-      (W1p.aestronglyMeasurable_value_top (U (ns i)))).sub
+      (W1p.memLp_value (U (ns i))).aestronglyMeasurable).sub
       aestronglyMeasurable_const |>.pow 2).aemeasurable.ennreal_ofReal
   have hbound : ∀ᶠ i in atTop, ∫⁻ x, F i x ∂μ ≤ ENNReal.ofReal (4 * ‖W1p.value (U (ns i))‖ ^ 2) :=
     (hmono.tendsto_atTop.eventually hsmall).mono fun i hi ↦ by
@@ -329,7 +329,7 @@ theorem W1p.memLp_exp_value_sub_one (hE : finrank ℝ E = 2) (u : W1p μ ⊤ 2) 
           linarith
   -- `exp r - 1 ∈ L²`.
   have hrm : AEStronglyMeasurable (fun x ↦ Real.exp (W1p.value r x) - 1) μ :=
-    (Real.continuous_exp.comp_aestronglyMeasurable (W1p.aestronglyMeasurable_value_top r)).sub
+    (Real.continuous_exp.comp_aestronglyMeasurable (W1p.memLp_value r).aestronglyMeasurable).sub
       aestronglyMeasurable_const
   have hrL2 : MemLp (fun x ↦ Real.exp (W1p.value r x) - 1) 2 μ := by
     refine (memLp_two_iff_integrable_sq hrm).mpr ⟨hrm.pow 2, ?_⟩
