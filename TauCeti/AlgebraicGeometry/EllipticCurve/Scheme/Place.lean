@@ -18,11 +18,11 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.Scheme.ZeroSection
 # Points of the projective model and places of the function field
 
 Let `W` be an elliptic Weierstrass curve over a field `K` and let `E = projModel W` be its
-projective model, a smooth proper curve over `K`. This file shows that the function field of `E`
-is an algebraic function field of one variable over `K`, and identifies the codimension-one points
-of `E` with the places of the function field `K(W)` of the affine equation: a point goes to the
-place whose valuation ring is its local ring, transported along
-`WeierstrassCurve.projModelFunctionFieldEquiv`.
+projective model, a smooth proper curve over `K`. That the function field of `E` is an algebraic
+function field of one variable over `K` is imported from `Scheme/FunctionField.lean`. This file
+identifies the codimension-one points of `E` with the places of the function field `K(W)` of the
+affine equation: a point goes to the place whose valuation ring is its local ring, transported
+along `WeierstrassCurve.projModelFunctionFieldEquiv`.
 
 Under this identification the zero section `O = [0 : 1 : 0]` is the place at infinity. The
 coordinate `x` is regular at every point of the chart `D₊(Z)`, so no point of `D₊(Z)` gives the
