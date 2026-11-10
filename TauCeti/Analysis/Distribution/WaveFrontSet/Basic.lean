@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.LinearEquiv
+public import TauCeti.Analysis.Distribution.Restriction
 import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Fourier.Decay
@@ -47,6 +48,9 @@ not microlocally smooth.
   the wave front set is closed in `Ω × (E \ {0})`.
 * `Distribution.smul_mem_waveFrontSet_iff`: it is conic in the frequency variable.
 * `Distribution.waveFrontSet_subset_dsupport`: it lies over the support of `T`.
+* `Distribution.localFourier_smulLeftCLM`, `Distribution.localFourier_restrictCLM`: the localized
+  Fourier transforms of a smooth multiple and of a restriction, as localized Fourier transforms of
+  `T` with modified cutoffs.
 * `Distribution.waveFrontSet_smul`, `Distribution.waveFrontSet_conj`: nonzero scalar multiples
   have the same wave front set, and complex conjugation reflects the frequencies.
 * `Distribution.localFourier_eq_fourier`: where `T` is a locally integrable function `f`, the
@@ -146,6 +150,28 @@ theorem localFourier_smul_cutoff (T : 𝓓'(Ω, ℂ)) (c : ℂ) (φ : 𝓓(Ω, �
 @[simp]
 theorem localFourier_zero_cutoff (T : 𝓓'(Ω, ℂ)) (η : E) : T.localFourier 0 η = 0 := by
   simpa using localFourier_smul_cutoff T 0 0 η
+
+/-- The localized Fourier transform of a smooth multiple `g T` with cutoff `φ` is that of `T` with
+cutoff `g φ`. -/
+@[simp]
+theorem localFourier_smulLeftCLM (T : 𝓓'(Ω, ℂ)) {g : E → ℝ} (hg : ContDiff ℝ ∞ g)
+    (φ : 𝓓(Ω, ℂ)) (η : E) :
+    (smulLeftCLM hg T).localFourier φ η = T.localFourier (TestFunction.smulLeftCLM hg φ) η := by
+  rw [localFourier, localFourier, complexPairing_smulLeftCLM]
+  congr 1
+  ext x
+  simp [bilinLeftCLM_apply, mul_assoc]
+
+/-- The localized Fourier transform of a restriction `T|_{Ω'}` with cutoff `φ` is that of `T`
+with cutoff `φ` extended by zero. -/
+@[simp]
+theorem localFourier_restrictCLM {Ω' : Opens E} (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω', ℂ)) (η : E) :
+    (restrictCLM T : 𝓓'(Ω', ℂ)).localFourier φ η =
+      T.localFourier (TestFunction.monoCLM ℝ φ) η := by
+  rw [localFourier, localFourier, complexPairing_restrictCLM]
+  congr 1
+  ext x
+  by_cases h : Ω' ≤ Ω <;> simp [h, bilinLeftCLM_apply]
 
 /-- A complex distribution `T` is **microlocally smooth** at `(x, ξ)` if some complex test
 function `φ` with `φ x ≠ 0` has localized Fourier transform `localFourier T φ` rapidly
