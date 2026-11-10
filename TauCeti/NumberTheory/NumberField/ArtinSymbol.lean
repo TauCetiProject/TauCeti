@@ -85,12 +85,8 @@ theorem artinSymbol_eq_mk_of_isArithFrobAt {L : Type*} [Field L] [NumberField L]
         ((Ideal.LiesOver.over (p := 𝔭) (P := Q)).le.trans (Ideal.comap_mono hle))).symm
     have hQ'lies : Q'.LiesOver 𝔭 := ⟨hunder.symm⟩
     refine this Q' ?_ hQ'max.isPrime
-    intro x
-    have h := hle (hσ x)
     have hQunder : Q.under (𝓞 K) = 𝔭 := (Ideal.LiesOver.over (p := 𝔭) (P := Q)).symm
-    change _ - _ ^ Nat.card (𝓞 K ⧸ Q.under (𝓞 K)) ∈ Q' at h
-    change _ - _ ^ Nat.card (𝓞 K ⧸ Q'.under (𝓞 K)) ∈ Q'
-    rwa [hQunder, ← hunder] at h
+    exact IsArithFrobAt.of_le hσ hle (hQunder.trans hunder.symm)
   have : Q.IsPrime := hQp
   let P : 𝔭.primesOver (𝓞 L) := Classical.choice inferInstance
   let _ : P.1.IsPrime := P.2.1
