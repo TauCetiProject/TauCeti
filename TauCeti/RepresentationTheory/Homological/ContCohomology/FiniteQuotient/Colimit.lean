@@ -199,7 +199,7 @@ variable (G M)
 every transition out of that level is an isomorphism. -/
 private theorem isEventuallyConstantFrom_explicitFiniteQuotientSystem0 :
     (explicitFiniteQuotientSystem0 G M).IsEventuallyConstantFrom
-      (Opposite.op (openNormalSubgroupTop G)) := by
+      (Opposite.op (⊤ : OpenNormalSubgroup G)) := by
   intro U f
   rw [ConcreteCategory.isIso_iff_bijective]
   exact explicitFiniteQuotientTransition0_bijective (leOfHom f.unop)
@@ -212,9 +212,8 @@ level — where the comparison leg is the equivalence
 `TauCeti.ContCohomology.explicitInfl0Equiv` — already computes the colimit. -/
 noncomputable def explicitFiniteQuotientColimit0 :
     IsColimit (explicitFiniteQuotientCocone0 G M) :=
-  haveI : Nonempty (OpenNormalSubgroup G) := ⟨openNormalSubgroupTop G⟩
   haveI : IsIso ((explicitFiniteQuotientCocone0 G M).ι.app
-      (Opposite.op (openNormalSubgroupTop G))) := by
+      (Opposite.op (⊤ : OpenNormalSubgroup G))) := by
     rw [ConcreteCategory.isIso_iff_bijective]
     exact ⟨explicitInfl0_injective G M _, explicitInfl0_surjective G M _⟩
   (isEventuallyConstantFrom_explicitFiniteQuotientSystem0 G M).isColimitOfIsIso _

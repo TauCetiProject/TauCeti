@@ -66,7 +66,6 @@ theorem herbrandQuotient_ideleClassRep_eq_finrank :
     GlobalNumberFields.exists_finset_primesAbove_closure_eq_top_and_isUnramified K L
   have := finite_tateCohomology_zero_sUnitsRep (L := L) (S : Set (HeightOneSpectrum (𝓞 K)))
   have := finite_tateCohomology_negOne_sUnitsRep (L := L) (S : Set (HeightOneSpectrum (𝓞 K)))
-  have := (finite_tateCohomology_sIdelesRep (K := K) (L := L) hunram).2
   rw [herbrandQuotient_ideleClassRep L hgen,
     herbrandQuotient_sIdelesRep_eq_herbrandQuotient_ofMulAction hunram,
     herbrandQuotient_ofMulAction_places S (placeAbove L S),
