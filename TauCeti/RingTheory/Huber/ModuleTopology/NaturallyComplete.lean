@@ -158,12 +158,7 @@ theorem IsNaturallyComplete.of_projective [T2Space A] [Module.Finite A M]
     exact IsUniformInducing.id
   rw [completeSpace_iff_isComplete_range hind]
   refine IsClosed.isComplete ?_
-  have hrange : Set.range g = {x | g (f x) = x} := by
-    refine Set.ext fun x ↦ ⟨?_, fun hx ↦ ⟨f x, hx⟩⟩
-    rintro ⟨y, rfl⟩
-    simp [hfg']
-  rw [hrange]
-  exact isClosed_eq (hgc.comp hfc) continuous_id
+  exact Function.LeftInverse.isClosed_range hfg' hfc hgc
 
 /-- **A finite module embedding into a naturally complete module is naturally complete.** If
 `f : N → M` is an injective linear map, `N` is finite and `M` is naturally complete, then `N` is
