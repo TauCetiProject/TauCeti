@@ -8,9 +8,12 @@ module
 public import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 public import Mathlib.Geometry.Manifold.MFDeriv.SpecificFunctions
 public import TauCeti.Analysis.Calculus.Morse.Prod
+public import TauCeti.Geometry.Manifold.IsManifold.Prod
 public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.Morse.Hessian
 public import TauCeti.Geometry.Manifold.Morse.Index
+public import TauCeti.Geometry.Manifold.Morse.Lemma
+import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
 # Morse functions on a product manifold
@@ -30,6 +33,11 @@ boundary nor openness hypotheses, because `IsMorseOn` tests criticality in the p
 where a function which is Morse on a set has a differentiable coordinate expression at every point
 of the set.
 
+Morse charts (`TauCeti.MorseChart`) and the manifold differential `mfderiv` for the model
+`𝓘(ℝ, E × E')` are read in the product charts of `M × N` with values in the normed space `E × E'`
+(`TauCeti.chartedSpaceProd`, a local instance). In these charts, Morse charts for `f` at `x` and
+for `g` at `y` combine to a Morse chart for the separated sum at `(x, y)`.
+
 ## Main declarations
 
 * `TauCeti.isManifoldNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff` and
@@ -44,6 +52,10 @@ of the set.
 * `TauCeti.manifoldMorseIndex_comp_fst_add_comp_snd` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_comp_fst_add_comp_snd`: the
   Morse index of the separated sum is the sum of the indices.
+* `TauCeti.mfderiv_comp_fst_add_comp_snd_eq_zero_iff`: the critical points of the separated sum,
+  read in the product charts with values in `E × E'`, are the pairs of critical points.
+* `TauCeti.MorseChart.prod`: the product of Morse charts for `f` at `x` and `g` at `y` is a Morse
+  chart for the separated sum at `(x, y)`.
 
 ## References
 
@@ -184,6 +196,110 @@ theorem IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_comp_fst_add_com
   TauCeti.manifoldMorseIndex_comp_fst_add_comp_snd
     ((isManifoldNondegenerateCriticalPoint_iff I).1 hf).contDiffAt
     ((isManifoldNondegenerateCriticalPoint_iff I').1 hg).contDiffAt
+
+end TauCeti
+
+/-! ### Products of Morse charts -/
+
+namespace TauCeti
+
+variable {E E' : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E']
+  [NormedSpace ℝ E'] {M N : Type*} [TopologicalSpace M] [ChartedSpace E M] [TopologicalSpace N]
+  [ChartedSpace E' N] {f : M → ℝ} {g : N → ℝ}
+
+attribute [local instance low] chartedSpaceProd
+
+attribute [local instance] isManifold_chartedSpaceProd
+
+/-- **The critical points of a separated sum, in the product charts with values in `E × E'`.** When
+`f` is differentiable at `p.1` and `g` at `p.2`, the differential of `f ∘ Prod.fst + g ∘ Prod.snd`
+for the model `𝓘(ℝ, E × E')` vanishes at `p` exactly when the differentials of `f` at `p.1` and of
+`g` at `p.2` both vanish. -/
+theorem mfderiv_comp_fst_add_comp_snd_eq_zero_iff {p : M × N}
+    (hf : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f p.1) (hg : MDifferentiableAt 𝓘(ℝ, E') 𝓘(ℝ) g p.2) :
+    mfderiv 𝓘(ℝ, E × E') 𝓘(ℝ) (f ∘ Prod.fst + g ∘ Prod.snd) p = 0 ↔
+      mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p.1 = 0 ∧ mfderiv 𝓘(ℝ, E') 𝓘(ℝ) g p.2 = 0 := by
+  rw [← mvfderiv_eq_zero_iff, ← mvfderiv_eq_zero_iff, ← mvfderiv_eq_zero_iff,
+    modelWithCornersSelf_prod]
+  exact mvfderiv_comp_fst_add_comp_snd_eq_zero_iff hf hg
+
+variable (E E') in
+/-- The coordinates of `E × E'` in a product of Morse charts (`TauCeti.MorseChart.prod`) are
+indexed by those of `E` followed by those of `E'`. -/
+noncomputable def MorseChart.prodIndexEquiv [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] :
+    Fin (Module.finrank ℝ (E × E')) ≃ Fin (Module.finrank ℝ E) ⊕ Fin (Module.finrank ℝ E') :=
+  (finCongr Module.finrank_prod).trans finSumFinEquiv.symm
+
+namespace MorseChart
+
+variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold 𝓘(ℝ, E) ∞ M]
+  [IsManifold 𝓘(ℝ, E') ∞ N] {x : M} {y : N}
+
+/-- **The product of two Morse charts.** If `φ` is a Morse chart for `f` at a nondegenerate
+critical point `x` and `ψ` one for `g` at a nondegenerate critical point `y`, then the product chart
+`φ × ψ`, with the coordinates and weights of `φ` followed by those of `ψ`, is a Morse chart for the
+separated sum `f ∘ Prod.fst + g ∘ Prod.snd` at `(x, y)`. -/
+noncomputable def prod (φ : MorseChart E f x) (ψ : MorseChart E' g y)
+    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+    (hy : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E') g y) :
+    MorseChart (E × E') (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) where
+  toChart := φ.toChart.prod ψ.toChart
+  mem_maximalAtlas := by
+    have h := IsManifold.mem_maximalAtlas_prod φ.mem_maximalAtlas ψ.mem_maximalAtlas
+    rwa [← modelWithCornersSelf_prod] at h
+  mem_source := ⟨φ.mem_source, ψ.mem_source⟩
+  apply_self := by simp
+  coord := (φ.coord.prodCongr ψ.coord).trans
+    ((LinearEquiv.sumArrowLequivProdArrow _ _ ℝ ℝ).symm.trans
+      (LinearEquiv.funCongrLeft ℝ ℝ (prodIndexEquiv E E')))
+  weight i := Sum.elim φ.weight ψ.weight (prodIndexEquiv E E' i)
+  weight_eq_neg_one_or_eq_one i := by
+    rcases prodIndexEquiv E E' i with j | j
+    · exact φ.weight_eq_neg_one_or_eq_one j
+    · exact ψ.weight_eq_neg_one_or_eq_one j
+  ncard_weight_neg := by
+    classical
+    rw [modelWithCornersSelf_prod, hx.manifoldMorseIndex_comp_fst_add_comp_snd hy,
+      ← φ.ncard_weight_neg, ← ψ.ncard_weight_neg]
+    simp only [Set.ncard_eq_toFinset_card', Set.toFinset_ofPred, Finset.card_filter]
+    rw [← Equiv.sum_comp (prodIndexEquiv E E').symm, Fintype.sum_sum_type]
+    simp
+  eq_quadratic p hp := by
+    obtain ⟨hp₁, hp₂⟩ := hp
+    simp only [Pi.add_apply, comp_apply, φ.eq_quadratic p.1 hp₁, ψ.eq_quadratic p.2 hp₂]
+    rw [← Equiv.sum_comp (prodIndexEquiv E E').symm, Fintype.sum_sum_type]
+    simp only [LinearEquiv.trans_apply, LinearEquiv.funCongrLeft_apply, Equiv.apply_symm_apply,
+      LinearEquiv.prodCongr_apply, OpenPartialHomeomorph.prod_apply]
+    simp [LinearEquiv.sumArrowLequivProdArrow]
+    ring
+
+variable (φ : MorseChart E f x) (ψ : MorseChart E' g y)
+  (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
+  (hy : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E') g y)
+
+/-- The chart of a product of Morse charts is the product chart. -/
+@[simp]
+theorem prod_toChart : (φ.prod ψ hx hy).toChart = φ.toChart.prod ψ.toChart := by
+  rw [prod]
+
+/-- The coordinates of a product of Morse charts are those of the first chart followed by those of
+the second. -/
+@[simp]
+theorem prod_coord_apply (v : E × E') (i : Fin (Module.finrank ℝ (E × E'))) :
+    (φ.prod ψ hx hy).coord v i = Sum.elim (φ.coord v.1) (ψ.coord v.2) (prodIndexEquiv E E' i) := by
+  simp only [prod, LinearEquiv.trans_apply, LinearEquiv.funCongrLeft_apply,
+    LinearMap.funLeft_apply, LinearEquiv.prodCongr_apply]
+  generalize prodIndexEquiv E E' i = j
+  rcases j with j | j <;> rfl
+
+/-- The weights of a product of Morse charts are those of the first chart followed by those of the
+second. -/
+@[simp]
+theorem prod_weight_apply (i : Fin (Module.finrank ℝ (E × E'))) :
+    (φ.prod ψ hx hy).weight i = Sum.elim φ.weight ψ.weight (prodIndexEquiv E E' i) := by
+  rw [prod]
+
+end MorseChart
 
 end TauCeti
 

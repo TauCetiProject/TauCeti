@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.TangentCone
-import Mathlib.Analysis.Calculus.TangentCone.Prod
+import TauCeti.Analysis.Calculus.TangentCone.Prod
 
 /-!
 # Tangent cones of products of sets
@@ -14,10 +14,10 @@ import Mathlib.Analysis.Calculus.TangentCone.Prod
 The tangent cone of a product `A ×ˢ B` of subsets of manifolds `M` and `N`, at a point `(a, b)` with
 `a ∈ A` and `b ∈ B`, contains the tangent cone of `A` at `a` in the first factor and that of `B` at
 `b` in the second. So the tangent space of `A ×ˢ B`, the span of its tangent cone, contains the
-product of the tangent spaces of `A` and of `B`. This is the manifold form of Mathlib's
-`subset_tangentConeAt_prod_left` and `subset_tangentConeAt_prod_right`, read in the product of the
-preferred charts. It is what makes transversality pass to products: if `A` and `A'` are transverse
-in `M` and `B` and `B'` in `N`, then `A ×ˢ B` and `A' ×ˢ B'` are transverse in `M × N`.
+product of the tangent spaces of `A` and of `B`. This is the manifold form of
+`TauCeti.prod_span_tangentConeAt_le`, read in the product of the preferred charts. It is what makes
+transversality pass to products: if `A` and `A'` are transverse in `M` and `B` and `B'` in `N`, then
+`A ×ˢ B` and `A' ×ˢ B'` are transverse in `M × N`.
 
 ## Main results
 
@@ -51,12 +51,11 @@ theorem prod_span_mtangentConeAt_le {A : Set M} {B : Set N} {a : M} {b : N} (ha 
       PartialEquiv.prod_coe]
     tauto
   rw [mtangentConeAt_def, mtangentConeAt_def, mtangentConeAt_def, hset, extChartAt_prod,
-    PartialEquiv.prod_coe, ← LinearMap.span_inl_union_inr]
-  refine Submodule.span_mono (union_subset (subset_tangentConeAt_prod_left (subset_closure ?_))
-    (subset_tangentConeAt_prod_right (subset_closure ?_)))
-  · exact ⟨by rwa [mem_preimage, extChartAt_to_inv],
-      extChartAt_target_subset_range b (mem_extChartAt_target b)⟩
+    PartialEquiv.prod_coe]
+  refine prod_span_tangentConeAt_le (subset_closure ?_) (subset_closure ?_)
   · exact ⟨by rwa [mem_preimage, extChartAt_to_inv],
       extChartAt_target_subset_range a (mem_extChartAt_target a)⟩
+  · exact ⟨by rwa [mem_preimage, extChartAt_to_inv],
+      extChartAt_target_subset_range b (mem_extChartAt_target b)⟩
 
 end TauCeti

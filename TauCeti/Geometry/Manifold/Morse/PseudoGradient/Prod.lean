@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.IsManifold.Prod
 public import TauCeti.Geometry.Manifold.Morse.Prod
 public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
 public import TauCeti.Geometry.Manifold.VectorField.Prod
@@ -25,8 +24,9 @@ complexes of `M` and `N` (Hutchings, §3, Exercise 2).
 
 Near a critical point `(x, y)` the product field is linear in the product of Morse charts at `x`
 and at `y`, whose coordinates and weights are those of the two factors placed side by side
-(`TauCeti.MorseChart.prod`). Away from the critical points `f ∘ Prod.fst + g ∘ Prod.snd` strictly
-decreases along `(X, Y)`, because neither summand increases and one of them strictly decreases.
+(`TauCeti.MorseChart.prod`, `TauCeti.MorseChart.coord_mfderiv_prod`). Away from the critical
+points `f ∘ Prod.fst + g ∘ Prod.snd` strictly decreases along `(X, Y)`, because neither summand
+increases and one of them strictly decreases.
 
 The adapted pseudo-gradients of `TauCeti.IsAdaptedPseudoGradient` live on manifolds modelled on a
 normed space `F` with the model `𝓘(ℝ, F)`. Mathlib's product charts on `M × N` take values in the
@@ -37,8 +37,8 @@ along `modelWithCornersSelf_prod`.
 
 ## Main declarations
 
-* `TauCeti.MorseChart.prod`: the product of Morse charts for `f` at `x` and `g` at `y` is a Morse
-  chart for the separated sum at `(x, y)`.
+* `TauCeti.MorseChart.coord_mfderiv_prod`: the product of fields linear in Morse charts is linear
+  in the product Morse chart.
 * `TauCeti.IsAdaptedPseudoGradient.prod`: the product field is a pseudo-gradient adapted to the
   separated sum.
 * `TauCeti.IsAdaptedPseudoGradient.flow_prod_apply`: its flow is the product of the flows.
@@ -71,83 +71,16 @@ attribute [local instance low] chartedSpaceProd
 
 attribute [local instance] isManifold_chartedSpaceProd
 
-/-! ### Products of Morse charts -/
-
-variable (E E') in
-/-- The coordinates of `E × E'` in a product of Morse charts (`TauCeti.MorseChart.prod`) are
-indexed by those of `E` followed by those of `E'`. -/
-noncomputable def MorseChart.prodIndexEquiv [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] :
-    Fin (Module.finrank ℝ (E × E')) ≃ Fin (Module.finrank ℝ E) ⊕ Fin (Module.finrank ℝ E') :=
-  (finCongr Module.finrank_prod).trans finSumFinEquiv.symm
+/-! ### Product fields in product Morse charts -/
 
 namespace MorseChart
 
 variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold 𝓘(ℝ, E) ∞ M]
   [IsManifold 𝓘(ℝ, E') ∞ N] {f : M → ℝ} {g : N → ℝ} {x : M} {y : N}
 
-/-- **The product of two Morse charts.** If `φ` is a Morse chart for `f` at a nondegenerate
-critical point `x` and `ψ` one for `g` at a nondegenerate critical point `y`, then the product chart
-`φ × ψ`, with the coordinates and weights of `φ` followed by those of `ψ`, is a Morse chart for the
-separated sum `f ∘ Prod.fst + g ∘ Prod.snd` at `(x, y)`. -/
-noncomputable def prod (φ : MorseChart E f x) (ψ : MorseChart E' g y)
-    (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
-    (hy : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E') g y) :
-    MorseChart (E × E') (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) where
-  toChart := φ.toChart.prod ψ.toChart
-  mem_maximalAtlas := by
-    have h := IsManifold.mem_maximalAtlas_prod φ.mem_maximalAtlas ψ.mem_maximalAtlas
-    rwa [← modelWithCornersSelf_prod] at h
-  mem_source := ⟨φ.mem_source, ψ.mem_source⟩
-  apply_self := by simp
-  coord := (φ.coord.prodCongr ψ.coord).trans
-    ((LinearEquiv.sumArrowLequivProdArrow _ _ ℝ ℝ).symm.trans
-      (LinearEquiv.funCongrLeft ℝ ℝ (prodIndexEquiv E E')))
-  weight i := Sum.elim φ.weight ψ.weight (prodIndexEquiv E E' i)
-  weight_eq_neg_one_or_eq_one i := by
-    rcases prodIndexEquiv E E' i with j | j
-    · exact φ.weight_eq_neg_one_or_eq_one j
-    · exact ψ.weight_eq_neg_one_or_eq_one j
-  ncard_weight_neg := by
-    classical
-    rw [modelWithCornersSelf_prod, hx.manifoldMorseIndex_comp_fst_add_comp_snd hy,
-      ← φ.ncard_weight_neg, ← ψ.ncard_weight_neg]
-    simp only [Set.ncard_eq_toFinset_card', Set.toFinset_ofPred, Finset.card_filter]
-    rw [← Equiv.sum_comp (prodIndexEquiv E E').symm, Fintype.sum_sum_type]
-    simp
-  eq_quadratic p hp := by
-    obtain ⟨hp₁, hp₂⟩ := hp
-    simp only [Pi.add_apply, comp_apply, φ.eq_quadratic p.1 hp₁, ψ.eq_quadratic p.2 hp₂]
-    rw [← Equiv.sum_comp (prodIndexEquiv E E').symm, Fintype.sum_sum_type]
-    simp only [LinearEquiv.trans_apply, LinearEquiv.funCongrLeft_apply, Equiv.apply_symm_apply,
-      LinearEquiv.prodCongr_apply, OpenPartialHomeomorph.prod_apply]
-    simp [LinearEquiv.sumArrowLequivProdArrow]
-    ring
-
 variable (φ : MorseChart E f x) (ψ : MorseChart E' g y)
   (hx : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x)
   (hy : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E') g y)
-
-/-- The chart of a product of Morse charts is the product chart. -/
-@[simp]
-theorem prod_toChart : (φ.prod ψ hx hy).toChart = φ.toChart.prod ψ.toChart := by
-  rw [prod]
-
-/-- The coordinates of a product of Morse charts are those of the first chart followed by those of
-the second. -/
-@[simp]
-theorem prod_coord_apply (v : E × E') (i : Fin (Module.finrank ℝ (E × E'))) :
-    (φ.prod ψ hx hy).coord v i = Sum.elim (φ.coord v.1) (ψ.coord v.2) (prodIndexEquiv E E' i) := by
-  simp only [prod, LinearEquiv.trans_apply, LinearEquiv.funCongrLeft_apply,
-    LinearMap.funLeft_apply, LinearEquiv.prodCongr_apply]
-  generalize prodIndexEquiv E E' i = j
-  rcases j with j | j <;> rfl
-
-/-- The weights of a product of Morse charts are those of the first chart followed by those of the
-second. -/
-@[simp]
-theorem prod_weight_apply (i : Fin (Module.finrank ℝ (E × E'))) :
-    (φ.prod ψ hx hy).weight i = Sum.elim φ.weight ψ.weight (prodIndexEquiv E E' i) := by
-  rw [prod]
 
 /-- **The product of linear fields is linear in the product of Morse charts.** If `X` is the
 linear field `z ↦ (-wᵢ zᵢ)ᵢ` in the Morse chart `φ` and `Y` is the linear field in the Morse chart
@@ -203,31 +136,6 @@ variable [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold 𝓘(�
   [IsManifold 𝓘(ℝ, E') ∞ N] {f : M → ℝ} {g : N → ℝ} {X : (z : M) → TangentSpace 𝓘(ℝ, E) z}
   {Y : (z : N) → TangentSpace 𝓘(ℝ, E') z}
 
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] in
-/-- A smooth vector field for the product model `𝓘(ℝ, E).prod 𝓘(ℝ, E')` is smooth for the equal
-model `𝓘(ℝ, E × E')`. The tangent bundles of the two models carry their manifold instances, so the
-models are compared through an arbitrary model `I₀` equal to the product one. -/
-private theorem contMDiff_tangent_of_eq_prod {I₀ : ModelWithCorners ℝ (E × E') (E × E')}
-    (hI : I₀ = 𝓘(ℝ, E).prod 𝓘(ℝ, E')) [IsManifold I₀ 1 (M × N)]
-    {Z : (p : M × N) → TangentSpace I₀ p}
-    (h : ContMDiff (𝓘(ℝ, E).prod 𝓘(ℝ, E')) (𝓘(ℝ, E).prod 𝓘(ℝ, E')).tangent ∞
-      (fun p ↦ (⟨p, Z p⟩ : TangentBundle (𝓘(ℝ, E).prod 𝓘(ℝ, E')) (M × N)))) :
-    ContMDiff I₀ I₀.tangent ∞ (fun p ↦ (⟨p, Z p⟩ : TangentBundle I₀ (M × N))) := by
-  subst hI
-  exact h
-
-omit [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold 𝓘(ℝ, E) ∞ M]
-  [IsManifold 𝓘(ℝ, E') ∞ N] in
-/-- The critical points of a separated sum of Morse functions are the pairs of critical points. -/
-private theorem mfderiv_comp_fst_add_comp_snd_eq_zero_iff (hf : IsMorse 𝓘(ℝ, E) f)
-    (hg : IsMorse 𝓘(ℝ, E') g) (p : M × N) :
-    mfderiv 𝓘(ℝ, E × E') 𝓘(ℝ) (f ∘ Prod.fst + g ∘ Prod.snd) p = 0 ↔
-      mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p.1 = 0 ∧ mfderiv 𝓘(ℝ, E') 𝓘(ℝ) g p.2 = 0 := by
-  rw [← mvfderiv_eq_zero_iff, ← mvfderiv_eq_zero_iff, ← mvfderiv_eq_zero_iff,
-    modelWithCornersSelf_prod]
-  exact mvfderiv_comp_fst_add_comp_snd_eq_zero_iff
-    (hf.contMDiff.mdifferentiable (by simp) p.1) (hg.contMDiff.mdifferentiable (by simp) p.2)
-
 /-- **The product of adapted pseudo-gradients.** If `X` is a pseudo-gradient adapted to the Morse
 function `f` on `M` and `Y` one adapted to the Morse function `g` on `N`, then the product field
 `(X, Y)` is a pseudo-gradient adapted to the separated sum `f ∘ Prod.fst + g ∘ Prod.snd` on
@@ -235,12 +143,11 @@ function `f` on `M` and `Y` one adapted to the Morse function `g` on `N`, then t
 theorem prod (hX : IsAdaptedPseudoGradient f X) (hY : IsAdaptedPseudoGradient g Y)
     (hf : IsMorse 𝓘(ℝ, E) f) (hg : IsMorse 𝓘(ℝ, E') g) :
     IsAdaptedPseudoGradient (f ∘ Prod.fst + g ∘ Prod.snd) (Manifold.prodVectorField X Y) where
-  contMDiff := contMDiff_tangent_of_eq_prod modelWithCornersSelf_prod
-    (Manifold.contMDiff_prodVectorField hX.contMDiff hY.contMDiff)
+  contMDiff := Manifold.contMDiff_prodVectorField_chartedSpaceProd hX.contMDiff hY.contMDiff
   mvfderiv_apply_lt_zero p hp := by
     have hfp : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) f p.1 := hf.contMDiff.mdifferentiable (by simp) _
     have hgp : MDifferentiableAt 𝓘(ℝ, E') 𝓘(ℝ) g p.2 := hg.contMDiff.mdifferentiable (by simp) _
-    rw [Ne, mfderiv_comp_fst_add_comp_snd_eq_zero_iff hf hg, not_and_or] at hp
+    rw [Ne, mfderiv_comp_fst_add_comp_snd_eq_zero_iff hfp hgp, not_and_or] at hp
     rw [modelWithCornersSelf_prod, mvfderiv_add ((hfp.comp p mdifferentiableAt_fst))
       (hgp.comp p mdifferentiableAt_snd), add_apply, mvfderiv_comp_fst_apply,
       mvfderiv_comp_snd_apply, Manifold.prodVectorField_fst, Manifold.prodVectorField_snd]
@@ -249,7 +156,8 @@ theorem prod (hX : IsAdaptedPseudoGradient f X) (hY : IsAdaptedPseudoGradient g 
     · exact add_neg_of_nonpos_of_neg (hX.mvfderiv_apply_nonpos _) (hY.mvfderiv_apply_lt_zero _ hp)
   exists_morseChart p hp := by
     obtain ⟨p₁, p₂⟩ := p
-    obtain ⟨h₁, h₂⟩ := (mfderiv_comp_fst_add_comp_snd_eq_zero_iff hf hg (p₁, p₂)).1 hp
+    obtain ⟨h₁, h₂⟩ := (mfderiv_comp_fst_add_comp_snd_eq_zero_iff
+      (hf.contMDiff.mdifferentiable (by simp) p₁) (hg.contMDiff.mdifferentiable (by simp) p₂)).1 hp
     obtain ⟨φ, hφ⟩ := hX.exists_morseChart p₁ h₁
     obtain ⟨ψ, hψ⟩ := hY.exists_morseChart p₂ h₂
     refine ⟨φ.prod ψ (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero h₁)
@@ -314,7 +222,9 @@ theorem IsMorseSmale.prod (hXs : hX.IsMorseSmale) (hYs : hY.IsMorseSmale) :
     (hX.prod hY hf hg).IsMorseSmale := by
   refine IsMorseSmale.of_forall ?_
   rintro a b ⟨p₁, p₂⟩ ha hb hp
-  rw [mfderiv_comp_fst_add_comp_snd_eq_zero_iff hf hg] at ha hb
+  have hfd := hf.contMDiff.mdifferentiable (by simp)
+  have hgd := hg.contMDiff.mdifferentiable (by simp)
+  rw [mfderiv_comp_fst_add_comp_snd_eq_zero_iff (hfd _) (hgd _)] at ha hb
   rw [hX.unstableSet_prod hY hf hg, hX.stableSet_prod hY hf hg] at hp ⊢
   obtain ⟨⟨hu₁, hu₂⟩, hs₁, hs₂⟩ := hp
   rw [eq_top_iff, ← Submodule.prod_top,
