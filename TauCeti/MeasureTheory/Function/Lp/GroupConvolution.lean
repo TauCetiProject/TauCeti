@@ -7,9 +7,14 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import TauCeti.MeasureTheory.Function.Lp.LeftTranslation
+public import TauCeti.MeasureTheory.Function.Lp.RightTranslation
 import Mathlib.MeasureTheory.Function.StronglyMeasurable.Lp
+import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Function.Lp.LocallyCompact
 import TauCeti.MeasureTheory.Function.Lp.Order
 import TauCeti.MeasureTheory.Function.StronglyMeasurable.InnerRegular
+import TauCeti.MeasureTheory.Group.Convolution.Support
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Convolution by `L¹` on `Lᵖ` of a locally compact group
@@ -24,8 +29,9 @@ h ⋆ f = ∫ y, h(y) • L_y f dμ(y),        (L_y f)(x) = f (y⁻¹ * x),
 ```
 
 an `Lᵖ`-valued Bochner integral of left translates of `f`. This is the operator form of the
-classical convolution `(h ⋆ f)(x) = ∫ y, h(y) • f(y⁻¹ * x) dμ(y)`; identifying the two almost
-everywhere needs a Fubini argument and is not done here. The group need not be abelian,
+classical convolution `(h ⋆ f)(x) = ∫ y, h(y) • f(y⁻¹ * x) dμ(y)`; the two agree almost
+everywhere for compactly supported continuous `h` and `f`, by Fubini's theorem for compactly
+supported continuous integrands, which needs no σ-finiteness. The group need not be abelian,
 and neither σ-finiteness of `μ` nor second countability of `G` is assumed. The integrand is
 almost everywhere strongly measurable because `y ↦ L_y f` is continuous
 (`MeasureTheory.Lp.continuous_leftTranslation_apply`), and an integrable `h` lives on a
@@ -33,11 +39,19 @@ almost everywhere strongly measurable because `y ↦ L_y f` is continuous
 
 Since the definition never evaluates `h ⋆ f` at a point, its algebraic properties need no Fubini
 theorem. Left translation passes through the integral, and a left translation of the variable
-`y` turns `L_g (h ⋆ f)` into `(L_g h) ⋆ f`. Applied to the operator `u ↦ u ⋆ f`, which is
-continuous and linear in `u`, the same identity gives associativity. The positive cone of real
-`Lᵖ` is closed, so convolution of nonnegative functions is nonnegative. Integration over `G` is
-a continuous linear functional on `L¹` invariant under left translation, so integrals multiply.
-In particular, convolution preserves nonnegative `L¹` functions of integral one.
+`y` turns `L_g (h ⋆ f)` into `(L_g h) ⋆ f`, while on a locally compact group with a regular Haar
+measure right translation passes directly to the second factor, `R_g (h ⋆ f) = h ⋆ (R_g f)`.
+Applied to the operator `u ↦ u ⋆ f`, which is continuous and linear in `u`, left equivariance
+gives associativity. The positive cone of real `Lᵖ` is closed, so convolution of nonnegative
+functions is nonnegative. Integration over `G` is a continuous linear functional on `L¹` invariant
+under left translation, so integrals multiply. In particular, convolution preserves nonnegative
+`L¹` functions of integral one.
+
+On a locally compact group with a regular Haar measure, the modular inversion
+`(J f)(x) = c(x) • f x⁻¹` of `L¹`, where `c` is the modular character, reverses convolution:
+`J (h ⋆ k) = J k ⋆ J h`. The identity is checked against set integrals for compactly supported
+continuous `h` and `k`, and extended to all of `L¹` by density and continuity
+(`MeasureTheory.Lp.dense_setOf_continuous_hasCompactSupport`).
 
 The integrated form `ContRepresentation.integratedOperatorL1` is the corresponding construction
 for an arbitrary strongly continuous representation in place of left translation; it is stated
@@ -57,9 +71,14 @@ vector space with an additive Haar measure.
 * `MeasureTheory.Lp.integrable_smul_leftTranslation`: its integrand is integrable.
 * `MeasureTheory.Lp.norm_convolutionL_apply_le`: Young's inequality `‖h ⋆ f‖_p ≤ ‖h‖₁ ‖f‖_p`.
 * `MeasureTheory.Lp.leftTranslation_convolutionL`: `L_g (h ⋆ f) = (L_g h) ⋆ f`.
+* `MeasureTheory.Lp.rightTranslation_convolutionL`: `R_g (h ⋆ f) = h ⋆ (R_g f)`.
 * `MeasureTheory.Lp.convolutionL_assoc`: associativity, `(h ⋆ k) ⋆ f = h ⋆ (k ⋆ f)`.
 * `MeasureTheory.Lp.convolutionL_nonneg`: `h ⋆ f ≥ 0` when `h ≥ 0` and `f ≥ 0`.
 * `MeasureTheory.Lp.integral_convolutionL`: `∫ (h ⋆ f) = (∫ h) • ∫ f`.
+* `MeasureTheory.Lp.convolutionL_toL1_ae_eq`: for compactly supported continuous `h` and `f`, the
+  convolution `h ⋆ f` is represented by `x ↦ ∫ y, h y • f (y⁻¹ * x) dμ`.
+* `MeasureTheory.Lp.modularInversion_convolutionL`: the modular inversion reverses convolution,
+  `J (h ⋆ k) = J k ⋆ J h`.
 
 ## References
 
@@ -72,14 +91,19 @@ public section
 
 noncomputable section
 
-open Filter
+open Filter Function MeasureTheory.Measure TauCeti
 open scoped ENNReal
 
 namespace MeasureTheory.Lp
 
+section LeftInvariant
+
 variable {G E : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G] [MeasurableSpace G]
-  [BorelSpace G] {μ : Measure G} [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ]
-  [μ.InnerRegularCompactLTTop] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  [BorelSpace G] {μ : Measure G} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+section LeftInvariant
+
+variable [μ.IsMulLeftInvariant] [IsLocallyFiniteMeasure μ] [μ.InnerRegularCompactLTTop]
   {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 section NontriviallyNormedField
@@ -213,6 +237,133 @@ theorem integral_convolutionL [CompleteSpace E] (h : Lp 𝕜 1 μ) (f : Lp E 1 �
   simp_rw [← L1.integral_eq, L1.integral_smul, L1.integral_eq_integral, integral_leftTranslation,
     integral_smul_const]
 
+/-- For compactly supported continuous `h` and `f`, the convolution `h ⋆ f` is represented almost
+everywhere by the pointwise convolution `x ↦ ∫ y, h y • f (y⁻¹ * x) dμ`. -/
+theorem convolutionL_toL1_ae_eq [CompleteSpace E] {h : G → 𝕜} {f : G → E} (hhc : Continuous h)
+    (hhs : HasCompactSupport h) (hfc : Continuous f) (hfs : HasCompactSupport f) :
+    convolutionL μ 1 ENNReal.one_ne_top ((hhc.integrable_of_hasCompactSupport hhs).toL1 h)
+        ((hfc.integrable_of_hasCompactSupport hfs).toL1 f) =ᵐ[μ]
+      fun x => ∫ y, h y • f (y⁻¹ * x) ∂μ := by
+  have hhi := hhc.integrable_of_hasCompactSupport (μ := μ) hhs
+  have hfi := hfc.integrable_of_hasCompactSupport (μ := μ) hfs
+  set F : G → G → E := fun x y => h y • f (y⁻¹ * x)
+  have hFc : Continuous (uncurry F) :=
+    (hhc.comp continuous_snd).smul (hfc.comp (continuous_snd.inv.mul continuous_fst))
+  have hFsupp (x y : G) (hxy : F x y ≠ 0) : y ∈ tsupport h ∧ y⁻¹ * x ∈ tsupport f :=
+    ⟨subset_tsupport _ (left_ne_zero_of_smul hxy), subset_tsupport _ (right_ne_zero_of_smul hxy)⟩
+  have hFs : HasCompactSupport (uncurry F) :=
+    hasCompactSupport_uncurry_of_inv_mul_mem hhs hfs hFsupp
+  have hint : Integrable (fun x => ∫ y, F x y ∂μ) μ :=
+    (continuous_integral_of_compact_support μ hhs hFc fun x y hxy =>
+      (hFsupp x y hxy).1).integrable_of_hasCompactSupport
+      (hasCompactSupport_integral_of_inv_mul_mem μ hhs hfs hFsupp)
+  refine (L1.integrable_coeFn _).ae_eq_of_forall_setIntegral_eq _ _ hint fun s _ _ => ?_
+  -- Integration over `s` is a continuous linear functional on `L¹`.
+  let T : Lp E 1 μ →L[𝕜] E :=
+    (L1.integralCLM' (μ := μ.restrict s) 𝕜).comp (LpToLpRestrictCLM G E 𝕜 μ 1 s)
+  have hT (u : Lp E 1 μ) : T u = ∫ x in s, u x ∂μ := by
+    rw [ContinuousLinearMap.comp_apply, ← L1.integral_eq', L1.integral_eq_integral]
+    exact integral_congr_ae (LpToLpRestrictCLM_coeFn 𝕜 s u)
+  have hL (y : G) : ∫ x in s, leftTranslation μ 1 𝕜 y (hfi.toL1 f) x ∂μ =
+      ∫ x in s, f (y⁻¹ * x) ∂μ := by
+    refine integral_congr_ae (ae_restrict_of_ae ?_)
+    filter_upwards [coeFn_leftTranslation (𝕜 := 𝕜) y (hfi.toL1 f),
+      (measurePreserving_mul_left μ y⁻¹).quasiMeasurePreserving.ae hfi.coeFn_toL1] with x h₁ h₂
+    exact h₁.trans h₂
+  rw [← hT, convolutionL_toL1 hhi,
+    ← T.integral_comp_comm (integrable_smul_leftTranslation ENNReal.one_ne_top hhi _)]
+  simp_rw [map_smul, hT, hL, ← integral_smul]
+  -- Fubini's theorem for the compactly supported continuous integrand `(y, x) ↦ F x y`.
+  exact integral_integral_swap_of_hasCompactSupport (f := fun y x => F x y)
+    (hFc.comp continuous_swap) (hFs.comp_homeomorph (Homeomorph.prodComm G G))
+
 end RCLike
+
+end LeftInvariant
+
+section ModularInversion
+
+variable [LocallyCompactSpace G] [μ.IsHaarMeasure] [μ.Regular]
+
+variable {𝕜 : Type*} [RCLike 𝕜]
+
+/-- The modular inversion reverses the convolution of compactly supported continuous functions. -/
+private theorem modularInversion_convolutionL_toL1 {h k : G → 𝕜} (hhc : Continuous h)
+    (hhs : HasCompactSupport h) (hkc : Continuous k) (hks : HasCompactSupport k) :
+    modularInversion μ 1 𝕜 (convolutionL μ 1 ENNReal.one_ne_top
+        ((hhc.integrable_of_hasCompactSupport hhs).toL1 h)
+        ((hkc.integrable_of_hasCompactSupport hks).toL1 k)) =
+      convolutionL μ 1 ENNReal.one_ne_top
+        (modularInversion μ 1 𝕜 ((hkc.integrable_of_hasCompactSupport hks).toL1 k))
+        (modularInversion μ 1 𝕜 ((hhc.integrable_of_hasCompactSupport hhs).toL1 h)) := by
+  rw [modularInversion_toL1 hkc hks, modularInversion_toL1 hhc hhs]
+  refine Lp.ext ?_
+  filter_upwards [coeFn_modularInversion (𝕜 := 𝕜) (convolutionL μ 1 ENNReal.one_ne_top
+      ((hhc.integrable_of_hasCompactSupport (μ := μ) hhs).toL1 h)
+      ((hkc.integrable_of_hasCompactSupport (μ := μ) hks).toL1 k)),
+    (quasiMeasurePreserving_inv_of_regular μ).ae (convolutionL_toL1_ae_eq hhc hhs hkc hks),
+    convolutionL_toL1_ae_eq (μ := μ) hkc.modularCharacter_smul_comp_inv
+      hks.modularCharacter_smul_comp_inv hhc.modularCharacter_smul_comp_inv
+      hhs.modularCharacter_smul_comp_inv]
+    with x h₁ h₂ h₃
+  rw [h₁, h₃, h₂]
+  -- Substitute `y ↦ x * y` on the right, using left invariance of `μ`.
+  conv_rhs => rw [← integral_mul_left_eq_self _ x]
+  simp only [ENNReal.toReal_one, inv_one, Real.rpow_one, ← integral_smul]
+  refine integral_congr_ae (.of_forall fun y => ?_)
+  simp only [mul_inv_rev, inv_inv, inv_mul_cancel_right, smul_eq_mul]
+  rw [smul_mul_smul_comm, modularCharacter_mul_inv_cancel_right, mul_comm (k _)]
+
+/-- **The modular inversion reverses convolution**: `J (h ⋆ k) = J k ⋆ J h` for `h, k ∈ L¹`,
+where `(J f)(x) = c(x) • f x⁻¹` and `c` is the modular character. -/
+theorem modularInversion_convolutionL (h k : Lp 𝕜 1 μ) :
+    modularInversion μ 1 𝕜 (convolutionL μ 1 ENNReal.one_ne_top h k) =
+      convolutionL μ 1 ENNReal.one_ne_top (modularInversion μ 1 𝕜 k)
+        (modularInversion μ 1 𝕜 h) := by
+  -- Both sides are continuous in `(h, k)` and agree on compactly supported continuous functions.
+  have hJ := (modularInversion (E := 𝕜) μ 1 𝕜).continuous
+  have hconv := (convolutionL (𝕜 := 𝕜) (E := 𝕜) μ 1 ENNReal.one_ne_top).continuous₂
+  have hc₁ : Continuous fun q : Lp 𝕜 1 μ × Lp 𝕜 1 μ =>
+      modularInversion μ 1 𝕜 (convolutionL μ 1 ENNReal.one_ne_top q.1 q.2) :=
+    hJ.comp hconv
+  have hc₂ : Continuous fun q : Lp 𝕜 1 μ × Lp 𝕜 1 μ =>
+      convolutionL μ 1 ENNReal.one_ne_top (modularInversion μ 1 𝕜 q.2)
+        (modularInversion μ 1 𝕜 q.1) :=
+    hconv.comp ((hJ.comp continuous_snd).prodMk (hJ.comp continuous_fst))
+  have hD := Lp.dense_setOf_continuous_hasCompactSupport (E := 𝕜) (μ := μ) ENNReal.one_ne_top
+  refine congrFun (Continuous.ext_on (hD.prod hD) hc₁ hc₂ ?_) (h, k)
+  rintro ⟨u, v⟩ ⟨⟨f, hfc, hfs, hu⟩, ⟨g, hgc, hgs, hv⟩⟩
+  obtain rfl : u = _ :=
+    Lp.ext (hu.trans (hfc.integrable_of_hasCompactSupport (μ := μ) hfs).coeFn_toL1.symm)
+  obtain rfl : v = _ :=
+    Lp.ext (hv.trans (hgc.integrable_of_hasCompactSupport (μ := μ) hgs).coeFn_toL1.symm)
+  exact modularInversion_convolutionL_toL1 hfc hfs hgc hgs
+
+end ModularInversion
+section RightTranslation
+
+variable {G E 𝕜 : Type*} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
+  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G] {μ : Measure G}
+  [μ.IsHaarMeasure] [μ.Regular] [NormedAddCommGroup E] [NormedSpace ℝ E]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)] {hp : p ≠ ∞}
+  [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 E] [SMulCommClass ℝ 𝕜 E]
+
+/-- Convolution commutes with right translation on the second factor:
+`R_g (h ⋆ f) = h ⋆ (R_g f)`. -/
+theorem rightTranslation_convolutionL (g : G) (h : Lp 𝕜 1 μ) (f : Lp E p μ) :
+    rightTranslation μ p 𝕜 g (convolutionL μ p hp h f) =
+      convolutionL μ p hp h (rightTranslation μ p 𝕜 g f) := by
+  have hg : ⇑(rightTranslation μ p ℝ g) = ⇑(rightTranslation μ p 𝕜 (E := E) g) :=
+    funext fun u ↦ Lp.ext <| (coeFn_rightTranslation (𝕜 := ℝ) g u).trans
+      (coeFn_rightTranslation (𝕜 := 𝕜) g u).symm
+  have hcomm := (rightTranslation μ p ℝ g).toContinuousLinearEquiv.integral_comp_comm
+    (μ := μ) fun y ↦ h y • leftTranslation μ p 𝕜 y f
+  rw [LinearIsometryEquiv.coe_toContinuousLinearEquiv, hg] at hcomm
+  rw [convolutionL_apply, ← hcomm, convolutionL_apply]
+  simp_rw [map_smul, leftTranslation_rightTranslation]
+
+end RightTranslation
+
+end LeftInvariant
 
 end MeasureTheory.Lp

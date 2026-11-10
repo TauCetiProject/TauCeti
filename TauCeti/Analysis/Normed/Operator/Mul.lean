@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Normed.Operator.Mul
 This file identifies the underlying linear maps of bounded left and right multiplication,
 and evaluates their powers. These identities connect the bounded-operator API with the
 algebraic multiplication maps and allow power-series calculations on multiplication operators.
+It also records the norm of a difference of scalar-to-vector maps.
 For unital algebras we also bundle the left regular representation as a unital algebra
 homomorphism and give its inverse norm bound without assuming that the identity has norm one.
 -/
@@ -22,6 +23,14 @@ public section
 namespace ContinuousLinearMap
 
 variable {𝕜 R : Type*} [NontriviallyNormedField 𝕜]
+
+/-- The operator norm of a difference of scalar-to-vector maps is the norm of the difference
+of their defining vectors. -/
+@[simp]
+theorem norm_toSpanSingleton_sub {E : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    (a b : E) : ‖toSpanSingleton 𝕜 a - toSpanSingleton 𝕜 b‖ = ‖a - b‖ := by
+  simpa only [map_sub, toSpanSingletonLIE_apply] using
+    (toSpanSingletonLIE 𝕜 E).norm_map (a - b)
 
 section NonUnital
 

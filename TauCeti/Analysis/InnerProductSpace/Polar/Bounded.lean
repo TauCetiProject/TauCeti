@@ -149,6 +149,22 @@ theorem eq_polarFactor_iff {V : E →L[𝕜] F} :
   rintro rfl
   exact ⟨T.polarFactor_comp_modulus, fun _ ↦ T.polarFactor_apply_of_mem_ker⟩
 
+/-- The polar factor is natural under linear isometric equivalences of the source and target:
+the polar factor of `e₁ T e₂⁻¹` is `e₁ U e₂⁻¹`. In particular the polar factor commutes with
+conjugation by a linear isometric equivalence. -/
+theorem polarFactor_conj {E' F' : Type*} [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E']
+    [CompleteSpace E'] [NormedAddCommGroup F'] [InnerProductSpace 𝕜 F'] [CompleteSpace F']
+    (e₁ : F ≃ₗᵢ[𝕜] F') (e₂ : E ≃ₗᵢ[𝕜] E') (T : E →L[𝕜] F) :
+    ((e₁ : F →L[𝕜] F') ∘L T ∘L (e₂.symm : E' →L[𝕜] E)).polarFactor =
+      (e₁ : F →L[𝕜] F') ∘L T.polarFactor ∘L (e₂.symm : E' →L[𝕜] E) := by
+  refine (eq_polarFactor ?_ fun x hx ↦ ?_).symm
+  · rw [modulus_conj]
+    ext x
+    simp
+  · simp only [LinearMap.mem_ker, coe_coe, comp_apply] at hx ⊢
+    rw [T.polarFactor_apply_of_mem_ker (LinearMap.mem_ker.2 ((e₁ : F →L[𝕜] F').map_eq_zero_iff
+      e₁.injective |>.1 hx)), map_zero]
+
 /-- The polar factor of the zero operator is zero. -/
 @[simp]
 theorem polarFactor_zero : (0 : E →L[𝕜] F).polarFactor = 0 :=
@@ -218,6 +234,12 @@ theorem modulus_adjoint_apply_polarFactor_apply (x : E) :
 theorem polarFactor_eq_comp_inverse (hT : IsUnit T.modulus) :
     T.polarFactor = T ∘L Ring.inverse T.modulus :=
   factorThru_eq_comp_inverse hT
+
+/-- The polar factor of an invertible operator is invertible. -/
+@[simp]
+theorem isUnit_polarFactor (T : E →L[𝕜] E) (hT : IsUnit T) : IsUnit T.polarFactor := by
+  have hP := (T.isStrictlyPositive_modulus_of_isUnit hT).isUnit
+  exact hP.mul_right_iff.mp (by simpa only [mul_def, polarFactor_comp_modulus] using hT)
 
 /-- The polar factor `U` of an endomorphism `T` satisfies `‖T - U‖ ≤ ‖|T| - 1‖`. -/
 theorem norm_sub_polarFactor_le (T : E →L[𝕜] E) : ‖T - T.polarFactor‖ ≤ ‖T.modulus - 1‖ :=

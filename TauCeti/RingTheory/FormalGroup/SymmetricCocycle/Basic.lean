@@ -71,6 +71,8 @@ additive 2-cocycle of degree `n` is a multiple of `C_n`
   `d_n` is `p` for `n = pᵏ`, and `1` for `n ≥ 2` not a prime power.
 * `TauCeti.prime_dvd_lazardGcd_iff`: for `n ≠ 0` and a prime `p`, `p ∣ d_n` exactly when `n` is a
   power of `p`. In particular `d_n` is odd unless `n` is a power of two.
+* `TauCeti.isUnit_lazardGcd`: if `p = 0` in `A` and `n ≠ 0` is not a power of `p`, then `d_n` is
+  a unit in `A`.
 * `Nat.Prime.exists_not_dvd_choose`: if `n ≠ 0` is not a power of the prime `p`, then `p` does not
   divide some `n.choose i` with `0 < i < n`.
 * `TauCeti.gcd_choose_div_lazardGcd_eq_one`: for `n ≥ 2`, the coefficients `n.choose i / d_n`
@@ -224,6 +226,18 @@ theorem prime_dvd_lazardGcd_iff {n p : ℕ} (hp : p.Prime) (hn : n ≠ 0) :
     rintro rfl
     simp at hn1
 
+/-- If `p` is a prime with `p = 0` in `A` and `n ≠ 0` is not a power of `p`, then `d_n` is a unit
+in `A`: it is prime to `p` (`prime_dvd_lazardGcd_iff`). -/
+theorem isUnit_lazardGcd {A : Type*} [CommSemiring A] {n p : ℕ} (hp : p.Prime)
+    (hpA : (p : A) = 0) (hn : n ≠ 0) (h : ¬∃ k, n = p ^ k) : IsUnit (lazardGcd n : A) := by
+  have hcop : (lazardGcd n).Coprime p := Nat.Coprime.symm <|
+    (Nat.Prime.coprime_iff_not_dvd hp).mpr fun hdvd ↦ h ((prime_dvd_lazardGcd_iff hp hn).mp hdvd)
+  -- `d_n m = 1 + p q` for some `m` and `q`
+  obtain ⟨m, -, hm⟩ := Nat.exists_mul_mod_eq_one_of_coprime hcop hp.one_lt
+  refine .of_mul_eq_one (m : A) ?_
+  rw [← Nat.cast_mul, ← Nat.div_add_mod (lazardGcd n * m) p, hm]
+  simp [hpA]
+
 /-- `d ∣ d_n` if and only if `d` divides every `n.choose i`, `0 < i < n`. -/
 theorem dvd_lazardGcd_iff {n d : ℕ} :
     d ∣ lazardGcd n ↔ ∀ i, 0 < i → i < n → d ∣ n.choose i := by
@@ -305,6 +319,15 @@ theorem coeff_lazardCocycle (n : ℕ) (d : Fin 2 →₀ ℕ) :
   · refine Finset.sum_eq_zero fun i hi => ite_eq_right ?_
     rw [mem_Icc] at hi
     omega
+
+/-- The coefficient of `XⁱYⁿ⁻ⁱ` in `C_n`, for `0 < i < n`, is `n.choose i / d_n`. -/
+theorem coeff_single_add_single_lazardCocycle {n i : ℕ} (hi : 0 < i) (hin : i < n) :
+    (lazardCocycle n R).coeff (Finsupp.single 0 i + Finsupp.single 1 (n - i)) =
+      ((n.choose i / lazardGcd n : ℕ) : R) := by
+  rw [coeff_lazardCocycle]
+  simp only [Finsupp.add_apply, Finsupp.single_apply]
+  rw [ite_eq_left ⟨by simp; omega, by simp; omega, by simp; omega⟩]
+  simp
 
 /-- `C_n` is compatible with every change of coefficients. -/
 @[simp]
@@ -469,9 +492,8 @@ theorem smul_lazardCocycle_eq_zero_iff {n : ℕ} (hn : 2 ≤ n) {r : R} :
   rw [← Int.cast_one, ← hc, Int.cast_sum]
   refine Finset.sum_congr rfl fun i hi => ?_
   rw [mem_Icc] at hi
-  rw [Int.cast_mul, Int.cast_natCast]
-  simp [coeff_lazardCocycle, show i ≠ 0 by omega, show n - i ≠ 0 by omega,
-    show i + (n - i) = n by omega]
+  rw [Int.cast_mul, Int.cast_natCast, coeff_single_add_single_lazardCocycle (by omega) (by omega),
+    mul_comm]
 
 /-- For `n ≥ 2`, `r ↦ r • C_n` is injective. -/
 theorem smul_lazardCocycle_injective {n : ℕ} (hn : 2 ≤ n) :

@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Function.Holder
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Indicator
+public import TauCeti.MeasureTheory.Function.Lp.LinftyAlgebra
 import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
@@ -91,13 +92,13 @@ theorem multiplicationOperator_smul (c : ℂ) (a : Lp ℂ ∞ μ) :
 /-- Composing multiplication operators multiplies their symbols in the same order. -/
 theorem multiplicationOperator_comp_multiplicationOperator (a b : Lp ℂ ∞ μ) :
     multiplicationOperator (E := E) a ∘L multiplicationOperator b =
-      multiplicationOperator (a • b : Lp ℂ ∞ μ) := by
+      multiplicationOperator (a * b) := by
   ext f
   filter_upwards [multiplicationOperator_ae a (multiplicationOperator b f),
     multiplicationOperator_ae b f,
-    multiplicationOperator_ae (a • b : Lp ℂ ∞ μ) f,
-    coeFn_lpSMul (r := ∞) a b] with x ha hb hab hsmul
-  simp only [comp_apply, ha, hb, hab, hsmul, Pi.smul_apply', smul_eq_mul]
+    multiplicationOperator_ae (a * b) f,
+    coeFn_mul a b] with x ha hb hab hsmul
+  simp only [comp_apply, ha, hb, hab, hsmul, Pi.mul_apply]
   rw [smul_smul]
 
 /-- Multiplication operators commute with each other. -/

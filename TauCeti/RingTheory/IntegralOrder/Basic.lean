@@ -8,7 +8,9 @@ module
 public import Mathlib.Algebra.Module.Lattice
 public import Mathlib.Algebra.MonoidAlgebra.Module
 public import Mathlib.RingTheory.DedekindDomain.IntegralClosure
+public import TauCeti.LinearAlgebra.BilinearForm.Dual.Lattice
 public import TauCeti.RingTheory.Trace.Regular
+import TauCeti.RingTheory.IntegralClosure.TensorProduct
 
 /-!
 # Orders in finite-dimensional algebras
@@ -40,6 +42,10 @@ whose regular trace form vanishes, although the conclusion holds there via the r
 * `TauCeti.IntegralOrder.IsOrder.isIntegral`: every element of an order is integral over `R`.
 * `TauCeti.IntegralOrder.IsOrder.le_integralClosure`: in a commutative algebra, every order lies in
   the integral closure of `R`.
+* `TauCeti.IntegralOrder.toSubmodule_le_dualSubmodule_regularTraceForm`: over an integrally closed
+  `R`, a subalgebra of integral elements lies in its own dual for the regular trace form.
+* `TauCeti.IntegralOrder.toSubmodule_le_span_dualBasis`: such a subalgebra containing an `F`-basis
+  `b` of `E` lies in the `R`-span of the regular-trace dual basis of `b`.
 * `TauCeti.IntegralOrder.isOrder_of_isIntegral`: a spanning subalgebra of integral elements is an
   order when `R` is integrally closed and noetherian and the regular trace form is nondegenerate.
 * `TauCeti.IntegralOrder.mem_groupRingSubalgebra`: `x ∈ F[G]` lies in `R[G]` iff all its
@@ -54,7 +60,8 @@ whose regular trace form vanishes, although the conclusion holds there via the r
 * J. Voight, *Quaternion algebras*, Definition 10.2.1 and Lemma 10.3.7; the integrality criterion
   is proved there for separable algebras with the reduced trace, and here with the regular trace.
 
-The proof of `TauCeti.IntegralOrder.isOrder_of_isIntegral` follows Mathlib's
+`TauCeti.IntegralOrder.toSubmodule_le_span_dualBasis` and the proof of
+`TauCeti.IntegralOrder.isOrder_of_isIntegral` follow Mathlib's
 `IsIntegralClosure.range_le_span_dualBasis` and `IsIntegralClosure.isNoetherian`, which carry out
 the dual-basis bound for the integral closure in a finite separable field extension.
 -/
@@ -140,6 +147,30 @@ variable {R F E : Type*} [CommRing R] [Field F] [Ring E]
   [Algebra R F] [IsFractionRing R F] [Algebra F E] [Algebra R E] [IsScalarTower R F E]
   [FiniteDimensional F E]
 
+/-- **Integral subalgebras lie in their own trace dual.** If every element of the `R`-subalgebra `Γ`
+is integral over the integrally closed domain `R`, then the regular trace `Tr_F (x * y)` of a
+product of two elements of `Γ` lies in `R`: `Γ` lies in its dual for the regular trace form. -/
+theorem toSubmodule_le_dualSubmodule_regularTraceForm [IsIntegrallyClosed R] {Γ : Subalgebra R E}
+    (hint : ∀ x ∈ Γ, IsIntegral R x) :
+    Subalgebra.toSubmodule Γ ≤
+      (Algebra.regularTraceForm F E).dualSubmodule (Subalgebra.toSubmodule Γ) := fun x hx y hy => by
+  rw [Algebra.regularTraceForm_apply, mem_one]
+  exact IsIntegrallyClosed.isIntegral_iff.1 <|
+    Algebra.isIntegral_trace_lmul (K := F) (hint _ (Γ.mul_mem hx hy))
+
+/-- **The trace-dual bound.** Let `R` be integrally closed and let `b` be an `F`-basis of `E` lying
+in an `R`-subalgebra `Γ` of integral elements. Then `Γ` lies in the `R`-span of the basis dual to
+`b` for the (nondegenerate) regular trace form. The bound depends only on `b`, so it holds
+simultaneously for every such `Γ` containing `b`. -/
+theorem toSubmodule_le_span_dualBasis [IsIntegrallyClosed R]
+    (hB : (Algebra.regularTraceForm F E).Nondegenerate) {ι : Type*} [Finite ι] [DecidableEq ι]
+    (b : Basis ι F E) {Γ : Subalgebra R E} (hb : ∀ i, b i ∈ Γ) (hint : ∀ x ∈ Γ, IsIntegral R x) :
+    Subalgebra.toSubmodule Γ ≤
+      span R (Set.range ((Algebra.regularTraceForm F E).dualBasis hB b)) := by
+  rw [← LinearMap.BilinForm.dualSubmodule_span_of_basis]
+  exact (toSubmodule_le_dualSubmodule_regularTraceForm hint).trans <|
+    (Algebra.regularTraceForm F E).dualSubmodule_anti (span_le.2 <| Set.range_subset_iff.2 hb)
+
 /-- **Integral spanning subalgebras are orders.** Let `R` be an integrally closed noetherian domain
 with fraction field `F`, and `E` a finite-dimensional `F`-algebra whose regular trace form
 `(x, y) ↦ Tr_F (x * y)` is nondegenerate. An `R`-subalgebra of `E` spanning `E` over `F` and
@@ -148,41 +179,18 @@ theorem isOrder_of_isIntegral [IsIntegrallyClosed R] [IsNoetherianRing R]
     (hB : (Algebra.regularTraceForm F E).Nondegenerate) {Λ : Subalgebra R E}
     (hint : ∀ x ∈ Λ, IsIntegral R x) (hspan : span F (Λ : Set E) = ⊤) : IsOrder F Λ := by
   classical
-  -- an `F`-basis `b` of `E` made of elements of `Λ`, and its dual basis `d`
-  obtain ⟨s, hsΛ, hs, hli⟩ := exists_linearIndependent F (Λ : Set E)
-  have : Fintype s := hli.setFinite.fintype
-  let b : Basis s F E := Basis.mk hli (by rw [Subtype.range_coe, hs, hspan])
-  have hb : ∀ i, b i ∈ Λ := fun i => by
-    rw [Basis.mk_apply]
-    exact hsΛ i.2
-  let d := (Algebra.regularTraceForm F E).dualBasis hB b
-  -- `Λ` lies in the `R`-span of `d`: the `d`-coordinates of `x ∈ Λ` are regular traces of
-  -- elements `x * b i` of `Λ`, which are integral over `R` and lie in `F`, hence in `R`
-  have hle : Subalgebra.toSubmodule Λ ≤ span R (Set.range d) := fun x hx => by
-    rw [← d.sum_repr x]
-    refine sum_mem fun i _ => ?_
-    obtain ⟨r, hr⟩ := IsIntegrallyClosed.isIntegral_iff.1 <|
-      Algebra.isIntegral_trace_lmul (K := F) <|
-        hint _ (Λ.mul_mem hx (hb i))
-    rw [LinearMap.BilinForm.dualBasis_repr_apply, Algebra.regularTraceForm_apply, ← hr,
-      algebraMap_smul]
-    exact smul_mem _ r (subset_span ⟨i, rfl⟩)
-  exact isOrder_iff.2 ⟨Module.Finite.iff_fg.2 ((fg_span (Set.finite_range d)).of_le hle), hspan⟩
+  -- `Λ` lies in the span of the trace dual basis of an `F`-basis of `E` made of elements of `Λ`
+  let b := Basis.ofSpan hspan.ge
+  have hle := toSubmodule_le_span_dualBasis hB b (fun i => Basis.ofSpan_subset _ ⟨i, rfl⟩) hint
+  exact isOrder_iff.2 ⟨Module.Finite.iff_fg.2 ((fg_span (Set.finite_range _)).of_le hle), hspan⟩
 
 /-- **Integral closures are orders.** The integral closure of an integrally closed noetherian domain
 `R` in a finite separable extension `L` of its fraction field `F` is an `R`-order in `L`. -/
 theorem integralClosure_isOrder [IsDomain R] [IsIntegrallyClosed R] [IsNoetherianRing R]
     (L : Type*) [Field L] [Algebra F L] [Algebra R L] [IsScalarTower R F L] [FiniteDimensional F L]
     [Algebra.IsSeparable F L] : IsOrder F (integralClosure R L) := by
-  refine isOrder_iff.2 ⟨IsIntegralClosure.finite R F L (integralClosure R L),
-    eq_top_iff.2 fun x _ => ?_⟩
-  -- some nonzero `y : R` makes `y • x` integral, and then `x = y⁻¹ • (y • x)`
-  obtain ⟨y, hy, hyx⟩ := exists_integral_multiples R F (L := L) {x}
-  have hy' : algebraMap R F y ≠ 0 := (map_ne_zero_iff _ (IsFractionRing.injective R F)).2 hy
-  have hmem : y • x ∈ span F (integralClosure R L : Set L) :=
-    subset_span (hyx x (Finset.mem_singleton_self x))
-  convert smul_mem _ (algebraMap R F y)⁻¹ hmem using 1
-  rw [← algebraMap_smul F y x, smul_smul, inv_mul_cancel₀ hy', one_smul]
+  exact isOrder_iff.2 ⟨IsIntegralClosure.finite R F L (integralClosure R L),
+    span_integralClosure_eq_top⟩
 
 end Integral
 

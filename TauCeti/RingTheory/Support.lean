@@ -37,6 +37,9 @@ multiplicities of the characteristic divisor.
 
 Every prime in the support of a finite product `∏ᵢ A ⧸ 𝔭 ^ nᵢ` contains `𝔭`
 (`Module.le_of_mem_support_pi_quotient_pow`).
+
+A finite module each of whose elements is killed by an element outside a prime `P` is killed by a
+single element outside `P` (`Module.exists_notMem_forall_smul_eq_zero`).
 -/
 
 public section
@@ -124,5 +127,16 @@ theorem le_of_mem_support_pi_quotient_pow {ι : Type*} [Finite ι] {𝔭 : Ideal
   obtain ⟨i, -, hi⟩ := h
   rw [Ideal.annihilator_quotient] at hi
   exact Ideal.IsPrime.le_of_pow_le hi
+
+/-- A finite module each of whose elements is killed by an element outside the prime `P` is
+killed by a single element outside `P`: the module vanishes at `P`, so its annihilator is not
+contained in `P`. -/
+theorem exists_notMem_forall_smul_eq_zero {P : Ideal A} [P.IsPrime] (M : Type*)
+    [AddCommGroup M] [Module A M] [Module.Finite A M] (h : ∀ m : M, ∃ r ∉ P, r • m = 0) :
+    ∃ r ∉ P, ∀ m : M, r • m = 0 := by
+  have hP := (Module.notMem_support_iff' (p := ⟨P, inferInstance⟩)).mpr h
+  rw [Module.mem_support_iff_of_finite, IsConcreteLE.not_le_iff_exists] at hP
+  obtain ⟨r, hr, hrP⟩ := hP
+  exact ⟨r, hrP, Module.mem_annihilator.mp hr⟩
 
 end Module

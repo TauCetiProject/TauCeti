@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Distributions.Gaussian.Real
-public import TauCeti.Probability.Distributions.Categorical
+public import TauCeti.Probability.Distributions.Categorical.Basic
 public import TauCeti.Probability.Density
 import TauCeti.Algebra.BigOperators.Finset.WeightedVariance
 import TauCeti.Probability.Distributions.Mixture

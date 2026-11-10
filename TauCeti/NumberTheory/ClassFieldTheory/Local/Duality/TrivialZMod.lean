@@ -46,7 +46,9 @@ group acting trivially (`TauCeti.ContCohomology.dualityMap2_zmod_bijective`), an
 
 The duality maps are stated for any topological group `H` isomorphic to `G_K`, the form in which an
 open subgroup of the absolute Galois group of a smaller field, fixing a finite extension `K`,
-appears in Shapiro's lemma.
+appears in Shapiro's lemma. The actions on `ℤ/n` and on `A` are trivial, hence continuous: each
+theorem takes these continuity instances, needed to state its cohomology groups, as final arguments
+that default to proofs from triviality, so callers never need to supply them.
 
 ## Main results
 
@@ -127,14 +129,14 @@ theorem map₂_cupFp_absoluteGaloisGroup_eq_top_of_isPrimitiveRoot [Fact n.Prime
   exact Submodule.apply_mem_map₂ _ Submodule.mem_top Submodule.mem_top
 
 variable {H : Type} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
-  (φ : AbsoluteGaloisGroup K ≃ₜ* H) [DistribMulAction H (ZMod n)] [ContinuousSMul H (ZMod n)]
+  (φ : AbsoluteGaloisGroup K ≃ₜ* H) [DistribMulAction H (ZMod n)]
   (htriv : ∀ (h : H) (m : ZMod n), h • m = m)
 
 include φ htriv
 
 /-- `H²(H, ℤ/n) ≃+ ZMod n` for a topological group `H` isomorphic to `G_K`, through the local
 invariant `h2FpEquivZMod`. -/
-private noncomputable def h2ZModEquiv : H2 H (ZMod n) ≃+ ZMod n :=
+private noncomputable def h2ZModEquiv [ContinuousSMul H (ZMod n)] : H2 H (ZMod n) ≃+ ZMod n :=
   let ψ := (absoluteGaloisGroupRestrictEquiv K).trans φ
   have : LocallyCompactSpace H := ψ.symm.toHomeomorph.isOpenEmbedding.locallyCompactSpace
   (cohomFpAddEquivH2 n H htriv).symm.trans
@@ -144,7 +146,8 @@ private noncomputable def h2ZModEquiv : H2 H (ZMod n) ≃+ ZMod n :=
 `H` isomorphic to `G_K`, when the local field `K` contains a primitive `n`th root of unity:
 `H¹(H, ℤ/n) → Hom(H¹(H, Hom(ℤ/n, ℤ/n)), H²(H, ℤ/n))` is a bijection. Under evaluation at `1` it is
 the cup square, a perfect pairing by `cupFp_bijective_of_isPrimitiveRoot`. -/
-theorem dualityMap1_zmod_bijective_of_isPrimitiveRoot :
+theorem dualityMap1_zmod_bijective_of_isPrimitiveRoot
+    (_ : ContinuousSMul H (ZMod n) := continuousSMul_of_forall_smul_eq_self htriv) :
     Function.Bijective (dualityMap1 H (ZMod n) (ZMod n)) := by
   let ψ := (absoluteGaloisGroupRestrictEquiv K).trans φ
   have : LocallyCompactSpace H := ψ.symm.toHomeomorph.isOpenEmbedding.locallyCompactSpace
@@ -155,19 +158,20 @@ theorem dualityMap1_zmod_bijective_of_isPrimitiveRoot :
 `H` isomorphic to `G_K`, when the local field `K` contains a primitive `n`th root of unity:
 `H⁰(H, ℤ/n) → Hom(H²(H, Hom(ℤ/n, ℤ/n)), H²(H, ℤ/n))` is a bijection, since it is scalar
 multiplication on `H²(H, ℤ/n)`, which is `ℤ/n` by the local invariant (`h2FpEquivZMod`). -/
-theorem dualityMap0_zmod_bijective_of_isPrimitiveRoot :
+theorem dualityMap0_zmod_bijective_of_isPrimitiveRoot
+    (_ : ContinuousSMul H (ZMod n) := continuousSMul_of_forall_smul_eq_self htriv) :
     Function.Bijective (dualityMap0 H (ZMod n) (ZMod n)) :=
   dualityMap0_zmod_bijective_of_addEquiv htriv (h2ZModEquiv hζ φ htriv)
 
 /-- `H¹(H, ℤ/n)` is finite for a topological group `H` isomorphic to `G_K`, when the local field
 `K` contains a primitive `n`th root of unity. -/
-private theorem finite_H1_zmod : Finite (H1 H (ZMod n)) := by
+private theorem finite_H1_zmod [ContinuousSMul H (ZMod n)] : Finite (H1 H (ZMod n)) := by
   have : NeZero (n : K) := ⟨hζ.neZero'.out⟩
   exact Finite.of_equiv _ ((cohomFpLinearEquiv n ((absoluteGaloisGroupRestrictEquiv K).trans φ)
     1).toAddEquiv.trans (cohomFpAddEquivH1 n H htriv)).toEquiv
 
 variable (A : Type*) [AddCommGroup A] [TopologicalSpace A] [DiscreteTopology A]
-  [DistribMulAction H A] [ContinuousSMul H A] [Finite A] (hA : ∀ a : A, n • a = 0)
+  [DistribMulAction H A] [Finite A] (hA : ∀ a : A, n • a = 0)
   (hAtriv : ∀ (h : H) (a : A), h • a = a)
 
 include hA hAtriv
@@ -178,7 +182,9 @@ root of unity: for every finite discrete `H`-module `A` killed by `n` on which `
 `H⁰(H, A) → Hom(H²(H, Hom(A, ℤ/n)), H²(H, ℤ/n))` is a bijection. This is the case `A = ℤ/n`
 (`dualityMap0_zmod_bijective_of_isPrimitiveRoot` and its companions) propagated to every such `A`
 by `TauCeti.ContCohomology.dualityMap0_bijective_of_smul_eq_self`. -/
-theorem dualityMap0_bijective_of_isPrimitiveRoot :
+theorem dualityMap0_bijective_of_isPrimitiveRoot
+    (_ : ContinuousSMul H (ZMod n) := continuousSMul_of_forall_smul_eq_self htriv)
+    (_ : ContinuousSMul H A := continuousSMul_of_forall_smul_eq_self hAtriv) :
     Function.Bijective (dualityMap0 H A (ZMod n)) :=
   dualityMap0_bijective_of_smul_eq_self htriv (AddEquiv.refl _) (h2ZModEquiv hζ φ htriv)
     (dualityMap0_zmod_bijective_of_isPrimitiveRoot hζ φ htriv)
@@ -189,7 +195,9 @@ theorem dualityMap0_bijective_of_isPrimitiveRoot :
 topological group `H` isomorphic to `G_K`, when the local field `K` contains a primitive `n`th
 root of unity: for every finite discrete `H`-module `A` killed by `n` on which `H` acts trivially,
 `H¹(H, A) → Hom(H¹(H, Hom(A, ℤ/n)), H²(H, ℤ/n))` is a bijection. -/
-theorem dualityMap1_bijective_of_isPrimitiveRoot :
+theorem dualityMap1_bijective_of_isPrimitiveRoot
+    (_ : ContinuousSMul H (ZMod n) := continuousSMul_of_forall_smul_eq_self htriv)
+    (_ : ContinuousSMul H A := continuousSMul_of_forall_smul_eq_self hAtriv) :
     Function.Bijective (dualityMap1 H A (ZMod n)) :=
   have := finite_H1_zmod hζ φ htriv
   dualityMap1_bijective_of_smul_eq_self htriv (AddEquiv.refl _) (h2ZModEquiv hζ φ htriv)
@@ -201,7 +209,9 @@ theorem dualityMap1_bijective_of_isPrimitiveRoot :
 topological group `H` isomorphic to `G_K`, when the local field `K` contains a primitive `n`th
 root of unity: for every finite discrete `H`-module `A` killed by `n` on which `H` acts trivially,
 `H²(H, A) → Hom(H⁰(H, Hom(A, ℤ/n)), H²(H, ℤ/n))` is a bijection. -/
-theorem dualityMap2_bijective_of_isPrimitiveRoot :
+theorem dualityMap2_bijective_of_isPrimitiveRoot
+    (_ : ContinuousSMul H (ZMod n) := continuousSMul_of_forall_smul_eq_self htriv)
+    (_ : ContinuousSMul H A := continuousSMul_of_forall_smul_eq_self hAtriv) :
     Function.Bijective (dualityMap2 H A (ZMod n)) :=
   dualityMap2_bijective_of_smul_eq_self htriv (AddEquiv.refl _) (h2ZModEquiv hζ φ htriv)
     (dualityMap0_zmod_bijective_of_isPrimitiveRoot hζ φ htriv)

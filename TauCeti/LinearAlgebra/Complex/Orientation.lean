@@ -270,14 +270,8 @@ theorem map_prodComm_prod_complexOrientation :
           finrank_real_eq_two_mul_finrank_complex) =
       Orientation.reindex ℝ (F × E) (finCongr (add_comm _ _))
         ((complexOrientation F).prod (complexOrientation E) finrank_real_eq_two_mul_finrank_complex
-          finrank_real_eq_two_mul_finrank_complex) := by
-  -- The exchange is complex linear, so it carries the canonical orientation of `E × F` to that of
-  -- `F × E`; what remains is that `map` and the index casts commute.
-  rw [prod_complexOrientation, prod_complexOrientation,
-    (Equiv.eq_symm_apply _).2 (LinearEquiv.prodComm ℂ E F).map_complexOrientation.symm]
-  induction complexOrientation (E × F) using Module.Ray.ind with | h v hv => ?_
-  simp only [Orientation.map_apply, Orientation.reindex_apply, Orientation.reindex_symm]
-  congr 1
+          finrank_real_eq_two_mul_finrank_complex) :=
+  Orientation.map_prodComm_prod_of_even _ _ _ _ ((even_two_mul _).mul_right _)
 
 end Prod
 

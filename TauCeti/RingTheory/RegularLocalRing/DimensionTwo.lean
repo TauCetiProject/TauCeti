@@ -95,8 +95,10 @@ theorem free_of_isWeaklyRegular {M : Type*} [AddCommGroup M] [Module A M] [Modul
     (hdim : ringKrullDim A = 2) {x y : A} (hxy : span {x, y} = maximalIdeal A)
     (hM : IsWeaklyRegular M [x, y]) : Module.Free A M := by
   have hxm := mem_maximalIdeal_of_span_pair_eq_maximalIdeal hxy
-  have hx2 := notMem_sq_of_span_pair_eq_maximalIdeal hdim hxy
-  have hx0 := ne_zero_of_span_pair_eq_maximalIdeal hdim hxy
+  have hprin : ¬ (maximalIdeal A).IsPrincipal :=
+    not_isPrincipal_maximalIdeal_of_one_lt_ringKrullDim (hdim ▸ by decide)
+  have hx2 := notMem_sq_of_span_pair_eq_maximalIdeal hprin hxy
+  have hx0 := ne_zero_of_span_pair_eq_maximalIdeal hprin hxy
   -- The quotient by `x` is a discrete valuation ring with uniformizer the image of `y`.
   let Q := A ⧸ span {x}
   have : IsRegularLocalRing Q := quotient_span_singleton hxm hx2
@@ -134,10 +136,12 @@ theorem isPrincipal_of_ne_maximalIdeal (hdim : ringKrullDim A ≤ 2) {p : Ideal 
     exact IsPrincipalIdealRing.principal p
   obtain ⟨x, y, hxy⟩ := exists_span_pair_eq_maximalIdeal hdim
   have hxm := mem_maximalIdeal_of_span_pair_eq_maximalIdeal hxy
-  have hx2 := notMem_sq_of_span_pair_eq_maximalIdeal hdim hxy
-  have hx0 := ne_zero_of_span_pair_eq_maximalIdeal hdim hxy
+  have hprin : ¬ (maximalIdeal A).IsPrincipal :=
+    not_isPrincipal_maximalIdeal_of_one_lt_ringKrullDim (hdim ▸ by decide)
+  have hx2 := notMem_sq_of_span_pair_eq_maximalIdeal hprin hxy
+  have hx0 := ne_zero_of_span_pair_eq_maximalIdeal hprin hxy
   have hprime : (span {x}).IsPrime := span_singleton_isPrime_of_notMem_sq hxm hx2
-  have hy := notMem_span_singleton_of_span_pair_eq_maximalIdeal hdim hxy
+  have hy := notMem_span_singleton_of_span_pair_eq_maximalIdeal hprin hxy
   -- `p` does not contain both parameters, since it is not the maximal ideal.
   have hxy_p : x ∉ p ∨ y ∉ p := by
     by_contra! h
@@ -177,8 +181,10 @@ theorem uniqueFactorizationMonoid_of_ringKrullDim_le_two (hdim : ringKrullDim A 
   by_cases hpm : p = maximalIdeal A
   · obtain ⟨x, y, hxy⟩ := exists_span_pair_eq_maximalIdeal hdim
     have hxm := mem_maximalIdeal_of_span_pair_eq_maximalIdeal hxy
-    exact ⟨x, hpm ▸ hxm, (span_singleton_prime (ne_zero_of_span_pair_eq_maximalIdeal hdim hxy)).mp
-      (span_singleton_isPrime_of_notMem_sq hxm (notMem_sq_of_span_pair_eq_maximalIdeal hdim hxy))⟩
+    have hprin : ¬ (maximalIdeal A).IsPrincipal :=
+      not_isPrincipal_maximalIdeal_of_one_lt_ringKrullDim (hdim ▸ by decide)
+    exact ⟨x, hpm ▸ hxm, (span_singleton_prime (ne_zero_of_span_pair_eq_maximalIdeal hprin hxy)).mp
+      (span_singleton_isPrime_of_notMem_sq hxm (notMem_sq_of_span_pair_eq_maximalIdeal hprin hxy))⟩
   · obtain ⟨f, rfl⟩ := (isPrincipal_of_ne_maximalIdeal hdim.le hpm).principal
     have hf0 : f ≠ 0 := by rintro rfl; simp at hp0
     exact ⟨f, mem_span_singleton_self f, (span_singleton_prime hf0).mp hp⟩

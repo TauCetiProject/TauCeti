@@ -38,6 +38,8 @@ Gram matrix of `b`: the coefficient of `b j` along the dual vector indexed by `i
   constructed from a nonsingular integral symmetric matrix.
 * `TauCeti.IntegralLattice.inv_smul_mem_carrier_of_forall_dvd`: for `p` prime to `det L`, a vector
   pairing into `pℤ` with all of `L` lies in `p L`.
+* `TauCeti.IntegralLattice.exists_isCoprime_integralForm`: for a prime `p` prime to `det L`, a
+  vector outside `p L` pairs with some lattice vector coprimely to `p`.
 * `TauCeti.IntegralLattice.natCard_discriminantGroup_dvd_pow_finrank` and
   `TauCeti.IntegralLattice.exists_mem_dualCarrier_eq_nsmul`: a discriminant group killed by `n`
   has order dividing `n^r`, `r` the rank, and if the order is `n^r` then `L = nLᵛ`.
@@ -128,6 +130,17 @@ theorem inv_smul_mem_carrier_of_forall_dvd (L : IntegralLattice V) [L.IsNondegen
     (addOrderOf_dvd_of_nsmul_eq_zero hpx)
     ((addOrderOf_dvd_natCard x).trans (L.natCard_discriminantGroup).dvd)
   exact (L.discriminantGroup_mk_eq_zero_iff _).mp (AddMonoid.addOrderOf_eq_one_iff.mp horder)
+
+/-- **A vector outside `p L` pairs with some lattice vector coprimely to `p`** when the prime `p`
+is prime to the discriminant. -/
+theorem exists_isCoprime_integralForm (L : IntegralLattice V) [L.IsNondegenerate] {p : ℕ}
+    (hp : p.Prime) (hd : p.Coprime L.discriminant) {v : L} (hv : ∀ y : L, v ≠ (p : ℤ) • y) :
+    ∃ w : L, IsCoprime (L.integralForm v w) p := by
+  have : NeZero p := ⟨hp.ne_zero⟩
+  by_contra! h
+  have hmem := L.inv_smul_mem_carrier_of_forall_dvd hd fun w ↦ by
+    simpa [isCoprime_comm, Prime.coprime_iff_not_dvd (Nat.prime_iff_prime_int.mp hp)] using h w
+  exact hv ⟨_, hmem⟩ (Subtype.ext (by simp [← Nat.cast_smul_eq_nsmul ℚ, hp.ne_zero]))
 
 open Classical in
 /-- The discriminant group of a lattice constructed from a nonsingular integral symmetric matrix

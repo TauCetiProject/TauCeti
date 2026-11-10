@@ -10,7 +10,7 @@ public import TauCeti.Probability.Ergodic.MeanErgodic
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.Basic
 import TauCeti.Probability.Ergodic.BirkhoffLp
 import Mathlib.Dynamics.BirkhoffSum.QuasiMeasurePreserving
-import TauCeti.MeasureTheory.Function.L2ToL1Convergence
+import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
 
 /-!
 # The mean ergodic projection is conditional expectation given the invariants
@@ -171,20 +171,8 @@ theorem tendsto_integral_abs_birkhoffAverage_sub_condExp (T : Ω → Ω)
     Tendsto (fun n => ∫ ω, |birkhoffAverage ℝ T f n ω
         - μ[f | MeasurableSpace.invariants T] ω| ∂μ) atTop (𝓝 0) := by
   have hf_int : Integrable f μ := hf.integrable one_le_two
-  -- Measurability comes from the `Lᵖ` representative, through the same transfer the `L²`
-  -- statement above uses; nothing about `birkhoffAverage` is unfolded here.
-  have hBA : ∀ n : ℕ, AEStronglyMeasurable (birkhoffAverage ℝ T f n) μ := by
-    intro n
-    refine (Lp.aestronglyMeasurable (birkhoffAverage ℝ
-      (Lp.compMeasurePreservingₗᵢ ℝ T hT).toContinuousLinearMap id n (hf.toLp f))).congr ?_
-    rw [LinearIsometry.coe_toContinuousLinearMap, coe_compMeasurePreservingₗᵢ]
-    exact (coeFn_birkhoffAverage_compMeasurePreserving hT (hf.toLp f) n).trans
-      (hT.quasiMeasurePreserving.birkhoffAverage_ae_eq_of_ae_eq ℝ hf.coeFn_toLp n)
-  have hmeas : ∀ n : ℕ, AEStronglyMeasurable
-      (birkhoffAverage ℝ T f n - μ[f | MeasurableSpace.invariants T]) μ := fun n =>
-    (hBA n).sub integrable_condExp.aestronglyMeasurable
   simpa only [Pi.sub_apply, Real.norm_eq_abs] using
-    TauCeti.MeasureTheory.tendsto_integral_norm_of_tendsto_eLpNorm_two hmeas
+    TauCeti.MeasureTheory.tendsto_integral_norm_of_tendsto_eLpNorm one_le_two
       (tendsto_eLpNorm_birkhoffAverage_sub_condExp T hT hf hf_int)
 
 end Probability

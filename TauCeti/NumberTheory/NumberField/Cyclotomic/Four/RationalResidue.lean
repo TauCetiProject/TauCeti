@@ -7,7 +7,7 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Cyclotomic.Four.Basic
 public import TauCeti.NumberTheory.NumberField.PowerResidueSymbol.Cyclotomic
-import Mathlib.NumberTheory.SumTwoSquares
+import TauCeti.Data.Nat.ModEq
 import TauCeti.RingTheory.Ideal.Quotient.Coprime
 
 /-!
@@ -56,28 +56,11 @@ variable [HasEnoughRootsOfUnity (𝓞 K) 4]
 private theorem powerResidueSymbolIdeal_natCast_four_of_mod_four_ne_three {n : ℤ} {q : ℕ}
     (hq : q.Prime) (hq3 : q % 4 ≠ 3) (h : IsCoprime n q) :
     powerResidueSymbolIdeal (span {(q : 𝓞 K)}) 4 n = 1 := by
-  have := Fact.mk hq
-  obtain ⟨x, y, hxy⟩ := Nat.Prime.sq_add_sq hq3
-  have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
-  set ζ := hζ.toInteger
-  let σ := (galEquivZMod 4 K).symm (-1)
-  set τ := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ
-  have hσ : galEquivZMod 4 K σ = -1 := MulEquiv.apply_symm_apply _ _
-  -- Conjugation sends `i` to `i ^ 3 = -i`, so `q = β (τ β)` for `β = x + y i`.
-  have hτζ : τ ζ = ζ ^ 3 := by
-    have h := galEquivZMod_smul_of_pow_eq 4 K σ hζ.toInteger_isPrimitiveRoot.pow_eq_one
-    rw [hσ] at h
-    exact h
-  set β : 𝓞 K := x + y * ζ
-  have hqβ : (q : 𝓞 K) = τ β * β := by
-    have hsq := hζ.toInteger_isPrimitiveRoot.sq_eq_neg_one
-    rw [← hxy, map_add, map_mul, map_natCast, map_natCast, hτζ]
-    push_cast
-    linear_combination (-((x : 𝓞 K) * y * ζ) - (y : 𝓞 K) ^ 2 * (ζ ^ 2 - 1)) * hsq
-  have hβ : β ≠ 0 := by
-    rintro hβ
-    rw [hβ, mul_zero, Nat.cast_eq_zero] at hqβ
-    exact hq.ne_zero hqβ
+  obtain ⟨σ, hσ, hτ⟩ := TauCeti.exists_gal_apply_eq_pow_three_of_four (K := K)
+  let τ := MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ
+  obtain ⟨β, hβ, hqβ, _⟩ := TauCeti.exists_natCast_eq_mul_of_mod_four_ne_three
+    (σ := (τ : 𝓞 K →+* 𝓞 K)) hτ hq hq3
+  simp only [RingEquiv.coe_toRingHom] at hqβ
   have hcop : IsCoprime (n : 𝓞 K) (τ β * β) := by
     rw [← hqβ, ← Int.cast_natCast]
     exact h.map (Int.castRingHom (𝓞 K))
@@ -101,10 +84,8 @@ private theorem powerResidueSymbolIdeal_natCast_four_of_mod_four_eq_three {n : �
       (TauCeti.prime_natCast_of_mod_four_eq_three hq hq3)).isMaximal (by simpa using hq.ne_zero)
   -- `4 (q - 1) ∣ q² - 1 = (q - 1) (q + 1)` since `4 ∣ q + 1`.
   have hdvd : 4 * (q - 1) ∣ absNorm (span {(q : 𝓞 K)}) - 1 := by
-    obtain ⟨k, rfl⟩ : ∃ k, q = 4 * k + 3 := ⟨q / 4, by omega⟩
-    refine ⟨k + 1, ?_⟩
-    rw [hN, show 4 * k + 3 - 1 = 4 * k + 2 by omega,
-      show (4 * k + 3) ^ 2 = 4 * (4 * k + 2) * (k + 1) + 1 by ring, Nat.add_sub_cancel]
+    rw [hN]
+    exact ⟨(q + 1) / 4, TauCeti.sq_sub_one_eq_four_mul_of_mod_four_eq_three hq3⟩
   rw [powerResidueSymbolIdeal_of_isMaximal]
   exact powerResidueSymbol_intCast_eq_one hq (mem_span_singleton_self _) hdvd h
 

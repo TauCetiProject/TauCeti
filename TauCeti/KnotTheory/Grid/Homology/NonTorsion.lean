@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.Grid.Homology.KnotAlexander
+public import TauCeti.Algebra.Module.GradedModule.NonTorsionDegree
 
 /-!
 # Non-torsion classes in unblocked grid homology from rectangle parity
@@ -256,6 +257,16 @@ theorem nonTorsionDegrees_subset_Iic {a₀ : ℤ}
   rw [hzero, map_zero] at hzy
   exact (ModuleCat.mono_iff_injective (G.unblockedHomologyIso R).hom).mp inferInstance
     (hzy.symm.trans (map_zero _).symm)
+
+variable (R) in
+/-- The Alexander degrees containing a non-torsion class of `GH⁻` are bounded above. -/
+theorem bddAbove_nonTorsionDegrees_alexanderUnblockedHomologyGrading :
+    letI := hG.unblockedHomologyModule R
+    BddAbove (hG.alexanderUnblockedHomologyGrading R).nonTorsionDegrees := by
+  obtain ⟨a₀, ha₀⟩ := (Set.finite_range
+    (hG.toOddComponentGridDiagram.alexanderℤ : GridState n → ℤ)).bddAbove
+  exact ⟨a₀, hG.nonTorsionDegrees_subset_Iic (R := R)
+    fun x => ha₀ (Set.mem_range_self x)⟩
 
 end IsKnot
 

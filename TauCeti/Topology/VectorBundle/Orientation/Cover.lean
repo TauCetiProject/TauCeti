@@ -36,6 +36,11 @@ orientable if and only if its orientation double cover is disconnected
 (`TauCeti.VectorBundleOrientation.nonempty_iff_not_connectedSpace`). Applied to the tangent
 bundle this gives the orientation double cover of a manifold.
 
+A family of bases of fibres whose vectors vary continuously in the total space orients those
+fibres continuously: the induced map to the cover is continuous
+(`TauCeti.VectorBundleOrientationCover.continuous_mk_basis_orientation`), because the bases read
+in a trivialization have locally constant determinant sign.
+
 ## Main definitions
 
 * `TauCeti.VectorBundleOrientationCover F E ι`: the orientation double cover of `E`.
@@ -47,6 +52,8 @@ bundle this gives the orientation double cover of a manifold.
 ## Main results
 
 * `TauCeti.VectorBundleOrientationCover.isCoveringMap_proj`: the projection is a covering map.
+* `TauCeti.VectorBundleOrientationCover.continuous_mk_basis_orientation`: continuously varying
+  bases of the fibres give a continuous map to the cover.
 * `TauCeti.VectorBundleOrientationCover.exists_section_of_isClopen`: over a preconnected base, a
   nonempty proper clopen subset of the cover is the image of a continuous section.
 * `TauCeti.VectorBundleOrientation.nonempty_iff_exists_section`: a bundle is orientable if and
@@ -552,5 +559,44 @@ theorem nonempty_iff_not_connectedSpace [ConnectedSpace B] (hι : Fintype.card �
     exact (nonempty_iff_exists_section hι).2 ⟨s, hs, hsproj⟩
 
 end VectorBundleOrientation
+
+namespace VectorBundleOrientationCover
+
+variable {E : B → Type*} [TopologicalSpace (TotalSpace F E)] [∀ b, AddCommGroup (E b)]
+  [∀ b, Module ℝ (E b)] [∀ b, TopologicalSpace (E b)] [FiberBundle F E] [VectorBundle ℝ F E]
+
+/-- A family of bases `v x` of the fibres over `g x`, whose vectors depend continuously on `x` in
+the total space, gives a continuous map to the orientation double cover: `x` goes to the
+orientation of the fibre over `g x` determined by the basis `v x`. -/
+theorem continuous_mk_basis_orientation [Fintype ι] [DecidableEq ι] {X : Type*}
+    [TopologicalSpace X] {g : X → B} (hg : Continuous g) (v : ∀ x, Basis ι ℝ (E (g x)))
+    (hv : ∀ i, Continuous fun x ↦ (⟨g x, v x i⟩ : TotalSpace F E)) :
+    Continuous fun x ↦ (⟨g x, (v x).orientation⟩ : VectorBundleOrientationCover F E ι) := by
+  refine continuous_of_isOpen_preimage_sheet hg fun b o ↦
+    isOpen_iff_mem_nhds.2 fun x₀ ⟨h₀, hx₀⟩ ↦ ?_
+  set e := trivializationAt F E b
+  -- `w x` is the basis at `x` read in `e`; near `x₀` it has positive determinant against the
+  -- basis `c = w x₀`, so it determines the same orientation of `F`.
+  let w (x : X) (i : ι) : F := (e ⟨g x, v x i⟩).2
+  have hmap {x : X} (hx : g x ∈ e.baseSet) : ⇑((v x).map (e.linearEquivAt ℝ (g x) hx)) = w x :=
+    funext fun i ↦ by rw [Basis.map_apply, Trivialization.linearEquivAt_apply]
+  let c : Basis ι ℝ F := (v x₀).map (e.linearEquivAt ℝ (g x₀) h₀)
+  have hd : ContinuousAt (fun x ↦ c.det (w x)) x₀ := by
+    simp only [Basis.det_apply]
+    refine (continuous_id.matrix_det).continuousAt.comp <|
+      continuousAt_pi.2 fun i ↦ continuousAt_pi.2 fun j ↦ ?_
+    simp only [← c.equivFunL_apply]
+    exact (continuous_apply i).continuousAt.comp <| c.equivFunL.continuous.continuousAt.comp <|
+      continuous_snd.continuousAt.comp <| (e.continuousOn.continuousAt <|
+        e.open_source.mem_nhds (e.mem_source.2 h₀)).comp (hv j).continuousAt
+  have hd₀ : c.det (w x₀) = 1 := by rw [← hmap h₀, c.det_self]
+  filter_upwards [(e.open_baseSet.preimage hg).mem_nhds h₀,
+    hd.eventually (lt_mem_nhds (hd₀ ▸ one_pos))] with x hx hdx
+  refine ⟨hx, ?_⟩
+  rw [← hx₀, Trivialization.mapOrientation_apply, Trivialization.mapOrientation_apply,
+    ← Basis.orientation_map, ← Basis.orientation_map]
+  exact ((c.orientation_eq_iff_det_pos _).2 (by rwa [hmap hx])).symm
+
+end VectorBundleOrientationCover
 
 end TauCeti

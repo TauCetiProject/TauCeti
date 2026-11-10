@@ -5,16 +5,24 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
+import TauCeti.Geometry.Manifold.VectorBundle.Trivialization
 
 /-!
 # Restriction of scalars of tangent bundles
 
 The tangent bundle of a complex manifold and that of its underlying real manifold have
-canonically homeomorphic total spaces. The identification fixes the base and reads a tangent
-vector in the same preferred chart coordinates on both sides. It commutes with tangent maps
-of differentiable maps. In particular, realification preserves not just pointwise derivatives
-but the topology of the whole tangent bundle.
+canonically diffeomorphic total spaces over the real field. The identification fixes the base
+and reads a tangent vector in the same preferred chart coordinates on both sides. It commutes
+with tangent maps of differentiable maps. In particular, realification preserves not just
+pointwise derivatives but the smooth structure of the whole tangent bundle.
+
+`restrictScalarsDiffeomorph` upgrades `restrictScalarsHomeomorph` to any regularity `n` for the
+smaller-field product model. Only `C¹` base structures are needed to form the topological tangent
+bundles: the comparison is the identity in their bundle coordinates even when the total spaces
+are not themselves `C^n` manifolds. For a smooth complex manifold, it identifies its realified
+complex tangent bundle with the tangent bundle of the underlying real manifold.
 
 We work with arbitrary compatible normed field extensions and self-modelled manifolds.
 The comparison uses `TauCeti.tangentCoordChange_restrictScalars` on chart overlaps;
@@ -32,7 +40,7 @@ public section
 noncomputable section
 
 open Bundle Set
-open scoped Manifold
+open scoped ContDiff Manifold
 
 namespace TangentBundle
 
@@ -140,6 +148,73 @@ theorem trivializationAt_restrictScalarsHomeomorph (x : M)
     trivializationAt E (TangentSpace 𝓘(𝕜, E)) x (restrictScalarsHomeomorph 𝕜 M p) =
       trivializationAt E (TangentSpace 𝓘(𝕜', E)) x p :=
   trivializationAt_restrictScalarsEquiv 𝕜 M x p hp
+
+/-- On each bundle chart, the inverse scalar comparison is also the identity in coordinates. -/
+@[simp]
+theorem trivializationAt_restrictScalarsHomeomorph_symm (x : M)
+    (p : TangentBundle 𝓘(𝕜, E) M) (hp : p.proj ∈ (chartAt E x).source) :
+    trivializationAt E (TangentSpace 𝓘(𝕜', E)) x
+        ((restrictScalarsHomeomorph 𝕜 (𝕜' := 𝕜') M).symm p) =
+      trivializationAt E (TangentSpace 𝓘(𝕜, E)) x p := by
+  simpa only [restrictScalarsHomeomorph_symm_proj, Homeomorph.apply_symm_apply] using
+    (trivializationAt_restrictScalarsHomeomorph 𝕜 M x
+    ((restrictScalarsHomeomorph 𝕜 (𝕜' := 𝕜') M).symm p) hp).symm
+
+/-- The canonical tangent-bundle comparison is `C^n` for the smaller-field product model. -/
+theorem contMDiff_restrictScalarsHomeomorph (n : ℕ∞ω) :
+    ContMDiff (𝓘(𝕜, E).prod 𝓘(𝕜, E)) (𝓘(𝕜, E).prod 𝓘(𝕜, E)) n
+      (restrictScalarsHomeomorph 𝕜 (𝕜' := 𝕜') (E := E) M) := by
+  intro p
+  rw [contMDiffAt_totalSpace]
+  simp only [restrictScalarsHomeomorph_proj]
+  refine ⟨contMDiffAt_proj (TangentSpace 𝓘(𝕜', E)), ?_⟩
+  have h := Bundle.TotalSpace.contMDiffAt_trivializationAt_snd (IB := 𝓘(𝕜, E)) (n := n) p
+  apply h.congr_of_eventuallyEq
+  filter_upwards [(FiberBundle.continuous_proj E (TangentSpace 𝓘(𝕜', E))).continuousAt
+    ((chartAt E p.proj).open_source.mem_nhds (mem_chart_source E p.proj))] with q hq
+  exact congrArg Prod.snd (trivializationAt_restrictScalarsHomeomorph 𝕜 M p.proj q hq)
+
+/-- The inverse tangent-bundle comparison is `C^n` for the smaller-field product model. -/
+theorem contMDiff_restrictScalarsHomeomorph_symm (n : ℕ∞ω) :
+    ContMDiff (𝓘(𝕜, E).prod 𝓘(𝕜, E)) (𝓘(𝕜, E).prod 𝓘(𝕜, E)) n
+      (restrictScalarsHomeomorph 𝕜 (𝕜' := 𝕜') (E := E) M).symm := by
+  intro p
+  rw [contMDiffAt_totalSpace]
+  simp only [restrictScalarsHomeomorph_symm_proj]
+  refine ⟨contMDiffAt_proj (TangentSpace 𝓘(𝕜, E)), ?_⟩
+  have h := Bundle.TotalSpace.contMDiffAt_trivializationAt_snd (IB := 𝓘(𝕜, E)) (n := n) p
+  apply h.congr_of_eventuallyEq
+  filter_upwards [(FiberBundle.continuous_proj E (TangentSpace 𝓘(𝕜, E))).continuousAt
+    ((chartAt E p.proj).open_source.mem_nhds (mem_chart_source E p.proj))] with q hq
+  exact congrArg Prod.snd (trivializationAt_restrictScalarsHomeomorph_symm 𝕜 M p.proj q hq)
+
+/-- Restriction of scalars commutes with the tangent bundle, as a diffeomorphism over the smaller
+field. The source is the original tangent bundle with its existing bundle charts, read over
+`𝕜`; the target is the tangent bundle of the scalar-restricted manifold. -/
+def restrictScalarsDiffeomorph (n : ℕ∞ω) :
+    Diffeomorph (𝓘(𝕜, E).prod 𝓘(𝕜, E)) (𝓘(𝕜, E).prod 𝓘(𝕜, E))
+      (TangentBundle 𝓘(𝕜', E) M) (TangentBundle 𝓘(𝕜, E) M) n where
+  toEquiv := (restrictScalarsHomeomorph 𝕜 M).toEquiv
+  contMDiff_toFun := contMDiff_restrictScalarsHomeomorph 𝕜 M n
+  contMDiff_invFun := contMDiff_restrictScalarsHomeomorph_symm 𝕜 M n
+
+/-- Forgetting regularity recovers the canonical tangent-bundle homeomorphism. -/
+@[simp]
+theorem restrictScalarsDiffeomorph_toHomeomorph (n : ℕ∞ω) :
+    (restrictScalarsDiffeomorph 𝕜 (𝕜' := 𝕜') (E := E) M n).toHomeomorph =
+      restrictScalarsHomeomorph 𝕜 M := (rfl)
+
+/-- The tangent-bundle diffeomorphism has the canonical scalar-comparison map. -/
+@[simp]
+theorem coe_restrictScalarsDiffeomorph (n : ℕ∞ω) :
+    ⇑(restrictScalarsDiffeomorph 𝕜 (𝕜' := 𝕜') (E := E) M n) =
+      restrictScalarsHomeomorph 𝕜 M := (rfl)
+
+/-- The inverse diffeomorphism has the inverse scalar-comparison map. -/
+@[simp]
+theorem coe_restrictScalarsDiffeomorph_symm (n : ℕ∞ω) :
+    ⇑(restrictScalarsDiffeomorph 𝕜 (𝕜' := 𝕜') (E := E) M n).symm =
+      (restrictScalarsHomeomorph 𝕜 M).symm := (rfl)
 
 variable {M} {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   [NormedSpace 𝕜' E'] [IsScalarTower 𝕜 𝕜' E']

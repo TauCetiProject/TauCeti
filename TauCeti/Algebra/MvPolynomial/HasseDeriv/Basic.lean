@@ -14,6 +14,7 @@ public import TauCeti.Data.Finsupp.Choose
 public import TauCeti.Data.Finsupp.Interval
 
 import Mathlib.Algebra.Order.Ring.IsNonarchimedean
+import TauCeti.Algebra.Order.AbsoluteValue.Basic
 
 /-!
 # Hasse derivatives of multivariate polynomials
@@ -48,7 +49,8 @@ Roth's theorem.
   (`MvPolynomial.abv_coeff_hasseDeriv_le_of_isNonarchimedean`).
 * `MvPolynomial.hasseDeriv_zero`, `MvPolynomial.hasseDeriv_C`, `MvPolynomial.hasseDeriv_one`:
   `∂^0` is the identity and every other Hasse derivative kills constants.
-* `MvPolynomial.hasseDeriv_map`: Hasse derivatives commute with coefficient ring maps.
+* `MvPolynomial.hasseDeriv_map`, `MvPolynomial.hasseDeriv_rename`: Hasse derivatives commute with
+  coefficient ring maps and with injective variable renamings.
 * `MvPolynomial.hasseDeriv_eq_zero_of_degreeOf_lt`, `MvPolynomial.degreeOf_hasseDeriv_le`: the
   derivative lowers the degree in `Xᵢ` by `dᵢ`; in particular
   `MvPolynomial.degreeOf_hasseDeriv_le_of_le` keeps any bound `degreeOf i P ≤ L i`.
@@ -129,13 +131,10 @@ theorem hasseDeriv_coeff (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
 /-- An absolute value of a coefficient of a Hasse derivative is at most `2 ^ |m + d|` times that
 of the coefficient it comes from: `v([X^m] ∂^d P) ≤ 2 ^ |m + d| v([X^(m + d)] P)`. -/
 theorem abv_coeff_hasseDeriv_le {S : Type*} [Semiring S] [PartialOrder S] [IsOrderedRing S]
-    [IsDomain S] (abv : AbsoluteValue R S) (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
+    (abv : AbsoluteValue R S) (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
     abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (m + d).degree * abv (P.coeff (m + d)) := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · rw [Subsingleton.elim ((hasseDeriv d P).coeff m) 0, abv.map_zero]
-    exact mul_nonneg (pow_nonneg zero_le_two _) (abv.nonneg _)
-  rw [hasseDeriv_coeff, abv.map_mul]
-  refine mul_le_mul_of_nonneg_right ((abv.apply_nat_le_self _).trans ?_) (abv.nonneg _)
+  rw [hasseDeriv_coeff]
+  refine (abv.apply_natCast_mul_le _ _).trans (mul_le_mul_of_nonneg_right ?_ (abv.nonneg _))
   have h : (d.prod fun j k ↦ (m j + k).choose k) = d.prod fun j k ↦ ((m + d) j).choose k :=
     Finsupp.prod_congr fun j _ ↦ by rw [Finsupp.add_apply]
   rw [h, ← Nat.cast_ofNat, ← Nat.cast_pow]
@@ -144,7 +143,7 @@ theorem abv_coeff_hasseDeriv_le {S : Type*} [Semiring S] [PartialOrder S] [IsOrd
 /-- If `P` has partial degrees `degreeOf i P ≤ r i`, then
 `v([X^m] ∂^d P) ≤ 2 ^ ∑ᵢ rᵢ * v([X^(m + d)] P)`. -/
 theorem abv_coeff_hasseDeriv_le_of_degreeOf_le {S : Type*} [Semiring S] [PartialOrder S]
-    [IsOrderedRing S] [IsDomain S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
+    [IsOrderedRing S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
     {r : σ → ℕ} (hdeg : ∀ i, P.degreeOf i ≤ r i) (d m : σ →₀ ℕ) :
     abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (∑ i, r i) * abv (P.coeff (m + d)) := by
   by_cases hm : P.coeff (m + d) = 0
@@ -158,7 +157,7 @@ theorem abv_coeff_hasseDeriv_le_of_degreeOf_le {S : Type*} [Semiring S] [Partial
 `B`, then every coefficient of every Hasse derivative of `P` has absolute value at most
 `2 ^ ∑ᵢ rᵢ * B`. -/
 theorem abv_coeff_hasseDeriv_le_two_pow_mul {S : Type*} [Semiring S] [PartialOrder S]
-    [IsOrderedRing S] [IsDomain S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
+    [IsOrderedRing S] [Fintype σ] (abv : AbsoluteValue R S) {P : MvPolynomial σ R}
     {r : σ → ℕ} (hdeg : ∀ i, P.degreeOf i ≤ r i) {B : S} (hB : ∀ μ, abv (P.coeff μ) ≤ B)
     (d m : σ →₀ ℕ) : abv ((hasseDeriv d P).coeff m) ≤ 2 ^ (∑ i, r i) * B :=
   (abv_coeff_hasseDeriv_le_of_degreeOf_le abv hdeg d m).trans
@@ -167,14 +166,10 @@ theorem abv_coeff_hasseDeriv_le_two_pow_mul {S : Type*} [Semiring S] [PartialOrd
 /-- At a nonarchimedean absolute value the binomial coefficients of a Hasse derivative are at
 most `1`, so `v([X^m] ∂^d P) ≤ v([X^(m + d)] P)`. -/
 theorem abv_coeff_hasseDeriv_le_of_isNonarchimedean {S : Type*} [Semiring S] [LinearOrder S]
-    [IsOrderedRing S] [IsDomain S] {abv : AbsoluteValue R S} (hv : IsNonarchimedean abv)
-    (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
+    {abv : AbsoluteValue R S} (hv : IsNonarchimedean abv) (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
     abv ((hasseDeriv d P).coeff m) ≤ abv (P.coeff (m + d)) := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · simp [Subsingleton.elim ((hasseDeriv d P).coeff m) 0]
-  rw [hasseDeriv_coeff, abv.map_mul]
-  exact mul_le_of_le_one_left (abv.nonneg _)
-    (hv.apply_natCast_le_one (by simp) abv.map_one)
+  rw [hasseDeriv_coeff]
+  exact hv.nmul_le (by simp)
 
 /-- The `0`-th Hasse derivative is the identity. -/
 @[simp]
@@ -202,6 +197,20 @@ theorem hasseDeriv_map {S : Type*} [CommSemiring S] (f : R →+* S) (d : σ →�
     (P : MvPolynomial σ R) : hasseDeriv d (map f P) = map f (hasseDeriv d P) := by
   ext m
   simp [hasseDeriv_coeff, coeff_map, map_finsuppProd]
+
+/-- Hasse derivatives commute with injective variable renamings, with the derivative multi-index
+pushed forward along the renaming. -/
+theorem hasseDeriv_rename {τ : Type*} {f : σ → τ} (hf : Function.Injective f) (d : σ →₀ ℕ)
+    (P : MvPolynomial σ R) :
+    hasseDeriv (d.mapDomain f) (rename f P) = rename f (hasseDeriv d P) := by
+  classical
+  induction P using MvPolynomial.induction_on' with
+  | monomial m a =>
+    rw [rename_monomial, hasseDeriv_monomial, hasseDeriv_monomial, rename_monomial,
+      ← Finsupp.mapDomain_tsub hf, Finsupp.prod_mapDomain_index_inj hf]
+    congr 3
+    exact Finsupp.prod_congr fun i _ ↦ by rw [Finsupp.mapDomain_apply_of_injective hf]
+  | add p q hp hq => simp [hp, hq]
 
 /-- If the degree of `P` in `Xᵢ` is less than `dᵢ`, then `∂^d P = 0`. -/
 theorem hasseDeriv_eq_zero_of_degreeOf_lt {d : σ →₀ ℕ} {P : MvPolynomial σ R} {i : σ}

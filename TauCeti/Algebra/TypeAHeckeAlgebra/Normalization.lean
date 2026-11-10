@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.TypeAHeckeAlgebra.Symmetrizer
+public import TauCeti.Algebra.TypeAHeckeAlgebra.Symmetrizer.Basic
 public import TauCeti.GroupTheory.Perm.Poincare
 
 /-!
@@ -30,24 +30,15 @@ namespace TauCeti.TypeAHeckeAlgebra
 
 /-- The full weighted parabolic sum at a root of the Hecke quadratic relation squares to
 the quantum factorial at `a²` times itself, even when this scalar is zero. -/
-theorem parabolicEigenSum_univ_mul_self {R : Type*} [CommRing R] (q : Rˣ) (n : ℕ)
+theorem parabolicEigenSum_univ_mul_self_eq_prod {R : Type*} [CommRing R] (q : Rˣ) (n : ℕ)
     {a : R} (ha : a * a = ((q : R) - ↑q⁻¹) * a + 1) :
     parabolicEigenSum (permCoxeterSystem n) Set.univ a *
         parabolicEigenSum (permCoxeterSystem n) Set.univ a =
       (∏ d ∈ Finset.Icc 1 n, ∑ j ∈ Finset.range d, a ^ (2 * j)) •
         parabolicEigenSum (q := q) (permCoxeterSystem n) Set.univ a := by
-  classical
-  let _ := Fintype.ofFinite ((permCoxeterSystem n).parabolic Set.univ)
-  rw [parabolicEigenSum_mul_self _ _ ha]
+  rw [parabolicEigenSum_univ_mul_self _ ha]
   congr 1
-  calc
-    (∑ w : (permCoxeterSystem n).parabolic Set.univ,
-        a ^ (2 * (permCoxeterSystem n).length w)) =
-        ∑ w : Equiv.Perm (Fin n), a ^ (2 * (permCoxeterSystem n).length w) := by
-      exact Fintype.sum_equiv (Equiv.subtypeUnivEquiv (fun w => by
-        rw [CoxeterSystem.parabolic_univ]; exact Subgroup.mem_top w)) _ _ (fun _ => rfl)
-    _ = ∏ d ∈ Finset.Icc 1 n, ∑ j ∈ Finset.range d, a ^ (2 * j) := by
-      simpa only [pow_mul] using sum_pow_permCoxeterSystem_length (a ^ 2) n
+  simpa only [pow_mul] using sum_pow_permCoxeterSystem_length (a ^ 2) n
 
 /-- The full row q-symmetrizer squares to the quantum factorial times itself,
 including at parameters for which the quantum factorial is zero. -/
@@ -56,7 +47,7 @@ theorem parabolicEigenSum_univ_q_mul_self {R : Type*} [CommRing R] (q : Rˣ) (n 
         parabolicEigenSum (permCoxeterSystem n) Set.univ (q : R) =
       (∏ d ∈ Finset.Icc 1 n, ∑ j ∈ Finset.range d, (q : R) ^ (2 * j)) •
         parabolicEigenSum (q := q) (permCoxeterSystem n) Set.univ (q : R) := by
-  apply parabolicEigenSum_univ_mul_self
+  apply parabolicEigenSum_univ_mul_self_eq_prod
   simp [sub_mul]
 
 end TauCeti.TypeAHeckeAlgebra

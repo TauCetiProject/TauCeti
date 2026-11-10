@@ -80,6 +80,8 @@ positive root is a nonnegative integer combination of the simple coroots.
   whole Weyl group fixes it.
 * `RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone` says a member of `Q⁺` is nonnegative
   at a point of the coweight space where every simple root is nonnegative.
+  `TauCeti.toWeightBasis_repr_nonneg_of_mem_posRootCone` says its coordinates in the basis of
+  simple roots are nonnegative.
 * `TauCeti.exists_coroot_eq_sum_nat_of_mem_posRoots` says the coroot of a positive root is a
   nonnegative integer combination of the simple coroots, and
   `TauCeti.exists_coroot'_eq_sum_nat_of_mem_posRoots` restates that on the coroot functionals.
@@ -473,6 +475,19 @@ theorem _root_.RootPairing.toLinearMap_apply_nonneg_of_mem_posRootCone [Preorder
   obtain ⟨f, rfl⟩ := (mem_posRootCone P b).mp hv
   simp only [map_sum, map_nsmul, LinearMap.sum_apply, LinearMap.smul_apply]
   exact Finset.sum_nonneg fun i hi ↦ nsmul_nonneg (hx i hi) _
+
+omit [CharZero R] in
+variable {P b} in
+/-- **A member of the positive root cone has nonnegative coordinates** in the basis of simple
+roots. -/
+theorem toWeightBasis_repr_nonneg_of_mem_posRootCone [PartialOrder R] [IsOrderedRing R]
+    [P.IsRootSystem] {v : M} (hv : v ∈ posRootCone P b) (i : b.support) :
+    0 ≤ b.toWeightBasis.repr v i := by
+  obtain ⟨f, rfl⟩ := (mem_posRootCone P b).mp hv
+  rw [← Finset.sum_coe_sort b.support]
+  simp only [← RootPairing.Base.toWeightBasis_apply, map_sum, map_nsmul, Module.Basis.repr_self,
+    Finsupp.finsetSum_apply, Finsupp.smul_apply]
+  exact Finset.sum_nonneg fun j _ ↦ nsmul_nonneg (Finsupp.single_nonneg.mpr zero_le_one i) _
 
 /-- **The positive root cone is pointed**: the only member whose negative is again a member is
 zero. Expanding a member and its negative in the simple roots, the total coefficient vector is

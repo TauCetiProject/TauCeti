@@ -257,12 +257,12 @@ theorem IsNormal.comp_monoCLM (hT : IsNormal T) (h : Ω' ≤ Ω) :
     IsNormal (T ∘L (monoCLM ℝ : 𝓓(Ω', E [⋀^Fin k]→L[ℝ] F) →L[ℝ] _)) := by
   cases k with
   | zero =>
-    rw [isNormal_finZero_iff, coe_comp, mass_comp_monoCLM h]
-    exact ne_top_of_le_ne_top hT localMass_le_mass
+    rw [isNormal_finZero_iff, coe_comp]
+    exact ne_top_of_le_ne_top hT (mass_comp_monoCLM_le h)
   | succ k =>
-    rw [isNormal_succ_iff, comp_monoCLM_comp_extDerivCLM h, coe_comp, coe_comp,
-      mass_comp_monoCLM h, mass_comp_monoCLM h]
-    exact ⟨ne_top_of_le_ne_top hT.1 localMass_le_mass, ne_top_of_le_ne_top hT.2 localMass_le_mass⟩
+    rw [isNormal_succ_iff, comp_monoCLM_comp_extDerivCLM h, coe_comp, coe_comp]
+    exact ⟨ne_top_of_le_ne_top hT.1 (mass_comp_monoCLM_le h),
+      ne_top_of_le_ne_top hT.2 (mass_comp_monoCLM_le h)⟩
 
 end Restriction
 
@@ -373,5 +373,21 @@ theorem isNormal_comp_evalCLM_comp_toBoundedContinuousFunctionCLM
   simpa using (ℓ.le_opNorm (φ x)).trans (mul_le_of_le_one_right (norm_nonneg ℓ) (hφ x))
 
 end Point
+
+variable (F V)
+
+/-- Normal currents form a real submodule of the continuous linear maps on test forms. -/
+def normalCurrentSubmodule (Ω : Opens E) (k : ℕ) :
+    Submodule ℝ (𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V) where
+  carrier := {T | IsNormal T}
+  zero_mem' := isNormal_zero
+  add_mem' := IsNormal.add
+  smul_mem' a _ h := h.smul a
+
+variable {F V}
+
+@[simp] theorem mem_normalCurrentSubmodule {Ω : Opens E} {k : ℕ}
+    {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V} :
+    T ∈ normalCurrentSubmodule F V Ω k ↔ IsNormal T := Iff.rfl
 
 end Distribution

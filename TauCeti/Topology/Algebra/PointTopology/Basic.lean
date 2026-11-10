@@ -9,6 +9,7 @@ public import Mathlib.Algebra.WithConv
 public import Mathlib.RingTheory.FiniteType
 public import Mathlib.Topology.Algebra.Polynomial
 public import Mathlib.Topology.Homeomorph.Lemmas
+public import TauCeti.Algebra.MvPolynomial.Lift
 public import TauCeti.Topology.Algebra.MvPolynomial.Aeval
 
 /-!
@@ -161,24 +162,23 @@ variable (k R) in
 homeomorphism from `MvPolynomial σ k →ₐ[k] R` onto `σ → R`, with inverse `MvPolynomial.aeval`. -/
 noncomputable def mvPolynomialHomeomorph (σ : Type*) :
     (MvPolynomial σ k →ₐ[k] R) ≃ₜ (σ → R) where
-  toFun x i := x (MvPolynomial.X i)
-  invFun := MvPolynomial.aeval
-  left_inv x := (MvPolynomial.aeval_unique x).symm
-  right_inv v := funext (MvPolynomial.aeval_X v)
-  continuous_toFun := continuous_pi fun i ↦ continuous_eval (MvPolynomial.X i)
-  continuous_invFun := continuous_iff.2 MvPolynomial.continuous_aeval
+  toEquiv := (MvPolynomial.aevalEquiv σ k R).symm
+  continuous_toFun := continuous_pi fun i ↦ by
+    simpa [Equiv.toFun_as_coe] using continuous_eval (MvPolynomial.X i)
+  continuous_invFun := continuous_iff.2 fun p ↦ by
+    simpa [Equiv.invFun_as_coe] using MvPolynomial.continuous_aeval p
 
 /-- The homeomorphism `mvPolynomialHomeomorph` evaluates a point at each variable. -/
 @[simp]
 theorem mvPolynomialHomeomorph_apply {σ : Type*} (x : MvPolynomial σ k →ₐ[k] R) (i : σ) :
     mvPolynomialHomeomorph k R σ x i = x (MvPolynomial.X i) :=
-  (rfl)
+  MvPolynomial.aevalEquiv_symm_apply x i
 
 /-- The inverse of `mvPolynomialHomeomorph` sends `v` to evaluation at `v`. -/
 @[simp]
 theorem mvPolynomialHomeomorph_symm_apply {σ : Type*} (v : σ → R) :
     (mvPolynomialHomeomorph k R σ).symm v = MvPolynomial.aeval v :=
-  (rfl)
+  MvPolynomial.aevalEquiv_apply v
 
 /-- If the family `a` generates `A` as a `k`-algebra, then evaluation at `a` embeds the points
 `A →ₐ[k] R` in `ι → R`. -/

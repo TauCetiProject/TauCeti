@@ -7,7 +7,8 @@ module
 
 public import Mathlib.AlgebraicGeometry.AlgebraicCycle.Basic
 public import Mathlib.AlgebraicGeometry.OrderOfVanishing
-import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Principal
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Principal
+import TauCeti.AlgebraicGeometry.AlgebraicCycle.Basic
 
 /-!
 # Principal cycles
@@ -21,6 +22,10 @@ This file defines the principal cycle `div(r) = Σ_x ord_x(r) [x]` of a nonzero 
   Noetherian open only finitely many codimension-one points lie outside `U`.
 * `AlgebraicCycle.div r`: the principal cycle of `r`, with `div(r s) = div r + div s`,
   `div(r⁻¹) = -div r` and `div 1 = 0`.
+* `AlgebraicCycle.map_height_div_of_isIso`: the pushforward of `div r` along an isomorphism is the
+  principal cycle of the transported function.
+* `AlgebraicCycle.toAlgebraicCycle_principalDivisor`: on a Noetherian integral scheme, `div r` is
+  the principal Weil divisor of `r`, viewed as a cycle.
 -/
 
 public section
@@ -95,6 +100,36 @@ lemma div_inv (r : W.functionFieldˣ) : div r⁻¹ = -div r := by
 lemma div_one : div (1 : W.functionFieldˣ) = 0 := by
   ext x
   simp
+
+open CategoryTheory in
+/-- The pushforward of the principal cycle of `r` along an isomorphism `f : W ⟶ X` of locally
+Noetherian integral schemes is the principal cycle of the transported rational function
+`(f⁻¹)^* r`. -/
+lemma map_height_div_of_isIso {X : Scheme.{u}} [IsIntegral X] [IsLocallyNoetherian X] (f : W ⟶ X)
+    [IsIso f] (r : W.functionFieldˣ) :
+    AlgebraicCycle.map f height height (div r) =
+      div (Units.map (inv f).functionFieldMap.hom.toMonoidHom r) := by
+  ext x
+  obtain ⟨w, rfl⟩ := f.surjective x
+  rw [AlgebraicCycle.map_height_apply_of_isClosedImmersion, div_apply, div_apply, Units.coe_map]
+  refine Eq.trans ?_ (Scheme.ord_functionFieldMap (inv f) _ _).symm
+  exact congrArg _ (Scheme.hom_inv_apply (asIso f) w).symm
+
+/-- On a Noetherian integral scheme, the principal cycle of a rational function is the principal
+Weil divisor of the function, extended by zero away from codimension one. -/
+@[simp]
+lemma toAlgebraicCycle_principalDivisor {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
+    (r : X.functionFieldˣ) :
+    SchemeWeilDivisor.toAlgebraicCycle
+      ((WeilDivisor.OrderSystem.ofScheme X).principalDivisor (Additive.ofMul r)) = div r := by
+  ext x
+  by_cases hx : coheight x = 1
+  · rw [SchemeWeilDivisor.toAlgebraicCycle_apply _ ⟨x, hx⟩, div_apply]
+    -- The coefficient `coeff D x` of a Weil divisor is by definition its value `D x`.
+    refine ((WeilDivisor.OrderSystem.ofScheme X).coeff_principalDivisor _ _).trans ?_
+    simp
+  · rw [SchemeWeilDivisor.toAlgebraicCycle_apply_of_coheight_ne_one _ _ hx, div_apply,
+      Scheme.ord_eq_zero_of_coheight_neq_one hx]
 
 end AlgebraicCycle
 

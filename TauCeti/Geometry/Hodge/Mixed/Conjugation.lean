@@ -146,59 +146,39 @@ theorem map_latticeConj_deligneSplitting_le_sup_WC (p q : ℤ) :
   obtain ⟨hxConj, hxW, hxSecond⟩ := by
     simpa only [Submodule.mem_inf, and_assoc] using hx
   obtain ⟨a, ha, t, ht, hat⟩ := Submodule.mem_sup.1 hxSecond
-  have htW : t ∈ mhs.WC (p + q - 2) := by
-    exact (iSup_le fun j ↦ inf_le_right.trans (mhs.WC_monotone (by omega))) ht
-  have haW : a ∈ mhs.WC (p + q) := ha.2
-  have hxW' : x ∈ mhs.WC (p + q) := hxW
-  have hclassA : Submodule.Quotient.mk (⟨a, haW⟩ : mhs.WC (p + q)) ∈
+  have htW : t ∈ mhs.WC (p + q - 2) :=
+    (iSup_le fun j ↦ inf_le_right.trans (mhs.WC_monotone (by omega))) ht
+  have htW' : t ∈ mhs.WC (p + q - 1) := mhs.WC_monotone (by omega) htW
+  have hclassA : Submodule.Quotient.mk (⟨a, ha.2⟩ : mhs.WC (p + q)) ∈
       (mhs.complexGradedHodgeStructure (p + q)).piece q := by
-    refine mhs.mk_mem_complexGradedHodgeStructure_piece (p + q) q ⟨a, haW⟩ ha.1 ?_
-    have hax : a = x - t := by rw [← hat]; abel
+    refine mhs.mk_mem_complexGradedHodgeStructure_piece (p + q) q ⟨a, ha.2⟩ ha.1 ?_
     have haConj : a ∈ mhs.conjF p ⊔ mhs.WC (p + q - 1) := by
-      rw [hax]
-      exact Submodule.sub_mem _ (Submodule.mem_sup_left hxConj)
-        (Submodule.mem_sup_right (mhs.WC_monotone (by omega) htW))
-    have hindex : p + q - q = p := by ring
-    simpa only [mhs.conjF_def, hindex] using haConj
+      rw [show a = x - t by rw [← hat]; abel]
+      exact Submodule.sub_mem _ (Submodule.mem_sup_left hxConj) (Submodule.mem_sup_right htW')
+    simpa only [mhs.conjF_def, add_sub_cancel_right] using haConj
   have hmap := mhs.map_deligneSplitting_eq_piece q p
   rw [add_comm q p] at hmap
   rw [← hmap] at hclassA
   obtain ⟨y, hyI, hyClass⟩ := hclassA
-  have hyIAmbient : (y : Vℂ) ∈ mhs.deligneSplitting q p := hyI
-  have hyW : (y : Vℂ) ∈ mhs.WC (p + q) := y.2
-  have hyConj : (y : Vℂ) ∈ mhs.conjF p ⊔ mhs.WC (p + q - 2) := by
-    have h := mhs.deligneSplitting_le_conjF_sup_WC q p hyIAmbient
-    simpa only [add_comm q p] using h
+  have hyI' : (y : Vℂ) ∈ mhs.deligneSplitting q p := hyI
   have hdiffW : x - (y : Vℂ) ∈ mhs.WC (p + q - 1) := by
-    rw [Submodule.mkQ_apply] at hyClass
-    have hxa : x - a = t := by rw [← hat]; abel
-    have hxaW : x - a ∈ mhs.WC (p + q - 1) := by
-      rw [hxa]
-      exact mhs.WC_monotone (by omega) htW
-    have hxy : (Submodule.Quotient.mk (⟨x, hxW'⟩ : mhs.WC (p + q)) :
-          weightGradedComplex mhs.WC (p + q)) =
-        Submodule.Quotient.mk ⟨(y : Vℂ), hyW⟩ := by
-      have hxaClass : (Submodule.Quotient.mk (⟨x, hxW'⟩ : mhs.WC (p + q)) :
-            weightGradedComplex mhs.WC (p + q)) = Submodule.Quotient.mk ⟨a, haW⟩ :=
-        (weightGradedComplex_mk_eq_mk_iff mhs.WC (p + q) _ _).2 hxaW
-      exact hxaClass.trans hyClass.symm
-    exact (weightGradedComplex_mk_eq_mk_iff mhs.WC (p + q) ⟨x, hxW'⟩
-      ⟨(y : Vℂ), hyW⟩).1 hxy
-  have hdiffF : x - (y : Vℂ) ∈ mhs.F q ⊔ mhs.WC (p + q - 2) := by
-    have hxmem : x ∈ mhs.F q ⊔ mhs.WC (p + q - 2) := by
-      rw [← hat]
-      exact Submodule.add_mem _ (Submodule.mem_sup_left ha.1) (Submodule.mem_sup_right htW)
-    exact Submodule.sub_mem _ hxmem
-      (Submodule.mem_sup_left (mhs.deligneSplitting_le_F q p hyIAmbient))
-  have hdiffConj : x - (y : Vℂ) ∈ mhs.conjF p ⊔ mhs.WC (p + q - 2) :=
-    Submodule.sub_mem _ (Submodule.mem_sup_left hxConj) hyConj
+    rw [show x - (y : Vℂ) = t + (a - y) by rw [← hat]; abel]
+    exact Submodule.add_mem _ htW'
+      ((weightGradedComplex_mk_eq_mk_iff mhs.WC (p + q) ⟨a, ha.2⟩ y).1 hyClass.symm)
+  have hxF : x ∈ mhs.F q ⊔ mhs.WC (p + q - 2) := by
+    rw [← hat]
+    exact Submodule.add_mem _ (Submodule.mem_sup_left ha.1) (Submodule.mem_sup_right htW)
+  have hyConj := mhs.deligneSplitting_le_conjF_sup_WC q p hyI'
+  rw [add_comm q p] at hyConj
+  have hstep : p + q - 1 - 1 = p + q - 2 := by ring
+  have hconjIndex : p + q - 1 + 1 - q = p := by ring
   have hdrop : x - (y : Vℂ) ∈ mhs.WC (p + q - 2) := by
-    have hstep : p + q - 1 - 1 = p + q - 2 := by ring
-    have hconjIndex : p + q - 1 + 1 - q = p := by ring
-    simpa only [hstep] using mhs.mem_WC_sub_one_of_mem_F_sup_and_mem_conjF_sup
-      (p + q - 1) q hdiffW (by simpa only [hstep] using hdiffF)
-        (by simpa only [hstep, hconjIndex] using hdiffConj)
-  convert Submodule.add_mem_sup hyIAmbient hdrop using 1
+    simpa only [hstep] using mhs.mem_WC_sub_one_of_mem_F_sup_and_mem_conjF_sup (p + q - 1) q hdiffW
+      (by simpa only [hstep] using
+          Submodule.sub_mem _ hxF (Submodule.mem_sup_left (mhs.deligneSplitting_le_F q p hyI')))
+      (by simpa only [hstep, hconjIndex] using
+          Submodule.sub_mem _ (Submodule.mem_sup_left hxConj) hyConj)
+  convert Submodule.add_mem_sup hyI' hdrop using 1
   abel
 
 /-- The swapped Deligne piece lands in the conjugate of `I^{p,q}` modulo `W_{p+q-2}`.

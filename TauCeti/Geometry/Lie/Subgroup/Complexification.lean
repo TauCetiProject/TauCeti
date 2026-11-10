@@ -187,43 +187,6 @@ theorem isBaseChange_complex_GLSpecialUnitary :
   · rw [LieSubalgebra.mem_toSubmodule, LieAlgebra.SpecialLinear.mem_sl_iff] at hA
     exact (exists_specialUnitaryToMatrix_eq_iff n A).2 ⟨hskew, hA⟩
 
-/-- The complexified matrix coordinates of the Lie algebra of `SU(n)` are those of
-`TauCeti.Lie.isBaseChange_complex_GLSpecialUnitary`, read in `𝔤𝔩(n, ℂ)`. -/
-private theorem coe_liftBaseChange_specialUnitary
-    (u : ℂ ⊗[ℝ] lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n ℂ))
-      (GLSpecialUnitary n ℂ : Subgroup (Matrix n n ℂ)ˣ)) :
-    (((specialUnitaryToMatrix n : _ →ₗ[ℝ] Matrix n n ℂ).codRestrict
-        ((LieAlgebra.SpecialLinear.sl n ℂ).toSubmodule.restrictScalars ℝ)
-        (unitsLieAlgebraLieEquiv_coe_mem_sl (n := n))).liftBaseChange ℂ u : Matrix n n ℂ) =
-      (specialUnitaryToMatrix n).liftBaseChange ℂ u := by
-  induction u with
-  | tmul c X =>
-    -- The `ℂ`-action on the corestriction to `sl n ℂ` is the one transported from `sl n ℂ` by
-    -- `Submodule.restrictScalars.origModule`, and the membership proof lands in `sl n ℂ` rather
-    -- than its restriction of scalars, so `simp` cannot move the coercion inside; `rfl` unfolds
-    -- the coercion of the corestricted value by definition.
-    rw [LinearMap.liftBaseChange_tmul, LieHom.liftBaseChange_tmul]
-    rfl
-  | add u v hu hv => simp only [map_add, Submodule.coe_add, hu, hv]
-
-/-- The complexified inclusion of the Lie algebra of `SU(n)` into `𝔤𝔩(n, ℂ)` is injective. -/
-private theorem liftBaseChange_specialUnitary_injective :
-    Function.Injective ((specialUnitaryToMatrix n).liftBaseChange ℂ) := fun u v h ↦
-  (isBaseChange_complex_GLSpecialUnitary n).liftBaseChange_injective
-    (Subtype.ext (by simpa only [coe_liftBaseChange_specialUnitary] using h))
-
-/-- The complexified inclusion of the Lie algebra of `SU(n)` into `𝔤𝔩(n, ℂ)` has image
-`𝔰𝔩(n, ℂ)`. -/
-private theorem range_liftBaseChange_specialUnitary :
-    ((specialUnitaryToMatrix n).liftBaseChange ℂ).range = LieAlgebra.SpecialLinear.sl n ℂ := by
-  ext A
-  constructor
-  · rintro ⟨u, rfl⟩
-    exact coe_liftBaseChange_specialUnitary n u ▸ Subtype.prop _
-  · intro hA
-    obtain ⟨u, hu⟩ := (isBaseChange_complex_GLSpecialUnitary n).liftBaseChange_bijective.2 ⟨A, hA⟩
-    exact ⟨u, (coe_liftBaseChange_specialUnitary n u).symm.trans (congrArg Subtype.val hu)⟩
-
 /-- **The complexification of the Lie algebra of `SU(n)` is `𝔰𝔩(n, ℂ)`**: the isomorphism of
 complex Lie algebras from the Lie algebra of the special unitary group with scalars extended to
 `ℂ` onto the trace-free matrices, sending `c ⊗ X` to `c` times the matrix coordinates of `X`. -/
@@ -231,16 +194,15 @@ def specialUnitaryComplexificationLieEquiv :
     ℂ ⊗[ℝ] lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n ℂ))
         (GLSpecialUnitary n ℂ : Subgroup (Matrix n n ℂ)ˣ) ≃ₗ⁅ℂ⁆
       LieAlgebra.SpecialLinear.sl n ℂ :=
-  (LieEquiv.ofInjective _ (liftBaseChange_specialUnitary_injective n)).trans
-    (LieEquiv.ofEq _ _ (by rw [range_liftBaseChange_specialUnitary]))
+  (isBaseChange_complex_GLSpecialUnitary n).lieEquivOfCodRestrict
 
 @[simp]
 theorem coe_specialUnitaryComplexificationLieEquiv_tmul (c : ℂ)
     (X : lieSubalgebraOfSubgroup (I := 𝓘(ℝ, Matrix n n ℂ))
       (GLSpecialUnitary n ℂ : Subgroup (Matrix n n ℂ)ˣ)) :
     (specialUnitaryComplexificationLieEquiv n (c ⊗ₜ[ℝ] X) : Matrix n n ℂ) =
-      c • unitsLieAlgebraLieEquiv (R := Matrix n n ℂ) (X : LeftInvariantDerivation _ _) := by
-  simp [specialUnitaryComplexificationLieEquiv]
+      c • unitsLieAlgebraLieEquiv (R := Matrix n n ℂ) (X : LeftInvariantDerivation _ _) :=
+  (isBaseChange_complex_GLSpecialUnitary n).coe_lieEquivOfCodRestrict_tmul c X
 
 /-- The inverse isomorphism sends the matrix coordinates of `X` back to `1 ⊗ X`. -/
 theorem specialUnitaryComplexificationLieEquiv_symm_apply
@@ -249,9 +211,8 @@ theorem specialUnitaryComplexificationLieEquiv_symm_apply
     (specialUnitaryComplexificationLieEquiv n).symm
         ⟨unitsLieAlgebraLieEquiv (R := Matrix n n ℂ) (X : LeftInvariantDerivation _ _),
           unitsLieAlgebraLieEquiv_coe_mem_sl X⟩ =
-      1 ⊗ₜ[ℝ] X := by
-  rw [LieEquiv.symm_apply_eq]
-  exact Subtype.ext (by rw [coe_specialUnitaryComplexificationLieEquiv_tmul, one_smul])
+      1 ⊗ₜ[ℝ] X :=
+  (isBaseChange_complex_GLSpecialUnitary n).lieEquivOfCodRestrict_symm_apply X
 
 /-! ### Real matrix groups with skew-adjoint Lie algebras -/
 

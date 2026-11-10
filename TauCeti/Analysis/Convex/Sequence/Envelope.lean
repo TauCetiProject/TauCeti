@@ -177,6 +177,12 @@ theorem lowerConvexEnvelope_of_not_isAdmissible (ha : ¬IsAdmissible a) :
     lowerConvexEnvelope a = ⊤ := by
   rw [lowerConvexEnvelope, ite_eq_right ha]
 
+/-- A finite height of the total envelope excludes its inadmissible fallback. -/
+theorem isAdmissible_of_lowerConvexEnvelope_ne_top {n : ℕ}
+    (hn : lowerConvexEnvelope a n ≠ ⊤) : IsAdmissible a := by
+  by_contra ha
+  exact hn (congrFun (lowerConvexEnvelope_of_not_isAdmissible ha) n)
+
 /-- An admissible sequence has `lowerConvexEnvelope a` as its lower convex envelope. -/
 theorem isLowerConvexEnvelope_lowerConvexEnvelope (ha : IsAdmissible a) :
     IsLowerConvexEnvelope a (lowerConvexEnvelope a) := by

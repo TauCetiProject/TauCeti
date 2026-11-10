@@ -10,6 +10,7 @@ public import Mathlib.Data.Fintype.Pi
 public import TauCeti.Combinatorics.SimpleGraph.Density
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Tactic.Linarith
+import TauCeti.Algebra.BigOperators.Ring.Finset
 import TauCeti.Algebra.Order.BigOperators.Sum.UnitWeights
 import TauCeti.Combinatorics.SimpleGraph.Regularity.Uniform
 
@@ -119,42 +120,32 @@ private lemma abs_sum_patternWeight_sub_le (e₀₁ e₀₂ e₁₂ : Prop) [Dec
   have hc₁ := patternWeight_le_one (G := G) (𝕜 := 𝕜) e₁₂
   -- Replace the three indicators by their densities one at a time: each difference is a test of
   -- one pair against functions with values in `[0, 1]`, summed over the remaining vertex.
-  have hsplit : ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, a x y * b x z * c y z -
-      (#s₀ * #s₁ * #s₂ : 𝕜) * (p * q * r) =
-      ∑ z ∈ s₂, ∑ x ∈ s₀, ∑ y ∈ s₁, b x z * c y z * (a x y - p) +
-        p * ∑ y ∈ s₁, ∑ x ∈ s₀, ∑ z ∈ s₂, 1 * c y z * (b x z - q) +
-        p * q * ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, 1 * 1 * (c y z - r) := by
-    have e₁ : ∑ z ∈ s₂, ∑ x ∈ s₀, ∑ y ∈ s₁, b x z * c y z * (a x y - p) =
-        ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, b x z * c y z * (a x y - p) := by
-      rw [sum_comm]
-      exact sum_congr rfl fun _ _ ↦ sum_comm
-    have e₃ : (#s₀ * #s₁ * #s₂ : 𝕜) * (p * q * r) =
-        ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, p * q * r := by
-      simp only [sum_const, nsmul_eq_mul]
-      ring
-    rw [e₁, sum_comm (s := s₁), e₃]
-    simp only [mul_sum, ← sum_add_distrib, ← sum_sub_distrib]
-    refine sum_congr rfl fun x _ ↦ sum_congr rfl fun y _ ↦ sum_congr rfl fun z _ ↦ ?_
-    ring
+  have hsplit := TauCeti.sum_sum_sum_mul_sub_eq a b c p q r s₀ s₁ s₂
   have h₁ : |∑ z ∈ s₂, ∑ x ∈ s₀, ∑ y ∈ s₁, b x z * c y z * (a x y - p)| ≤
       ε * (#s₀ * #s₁ * #s₂) :=
     (abs_sum_le_card_nsmul fun z _ ↦
       h₀₁.abs_sum_sum_mul_patternWeight_sub_le e₀₁ (fun x _ ↦ hb₀ x z) (fun x _ ↦ hb₁ x z)
         (fun y _ ↦ hc₀ y z) (fun y _ ↦ hc₁ y z)).trans_eq (by rw [nsmul_eq_mul]; ring)
-  have h₂ : |p * ∑ y ∈ s₁, ∑ x ∈ s₀, ∑ z ∈ s₂, 1 * c y z * (b x z - q)| ≤
+  have h₂ : |p * ∑ y ∈ s₁, ∑ x ∈ s₀, ∑ z ∈ s₂, c y z * (b x z - q)| ≤
       ε * (#s₀ * #s₁ * #s₂) := by
     rw [abs_mul, abs_of_nonneg hp₀]
-    refine (mul_le_of_le_one_left (abs_nonneg _) hp₁).trans <|
-      (abs_sum_le_card_nsmul fun y _ ↦
+    have hy : ∀ y ∈ s₁, |∑ x ∈ s₀, ∑ z ∈ s₂, c y z * (b x z - q)| ≤ ε * #s₀ * #s₂ := fun y _ ↦ by
+      simpa only [one_mul] using
         h₀₂.abs_sum_sum_mul_patternWeight_sub_le e₀₂ (fun _ _ ↦ zero_le_one) (fun _ _ ↦ le_rfl)
-          (fun z _ ↦ hc₀ y z) (fun z _ ↦ hc₁ y z)).trans_eq (by rw [nsmul_eq_mul]; ring)
-  have h₃ : |p * q * ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, 1 * 1 * (c y z - r)| ≤
+          (fun z _ ↦ hc₀ y z) (fun z _ ↦ hc₁ y z)
+    exact (mul_le_of_le_one_left (abs_nonneg _) hp₁).trans <|
+      (abs_sum_le_card_nsmul hy).trans_eq (by rw [nsmul_eq_mul]; ring)
+  have h₃ : |p * q * (#s₀ * ∑ y ∈ s₁, ∑ z ∈ s₂, (c y z - r))| ≤
       ε * (#s₀ * #s₁ * #s₂) := by
-    rw [abs_mul, abs_of_nonneg hpq₀]
-    refine (mul_le_of_le_one_left (abs_nonneg _) hpq₁).trans <|
-      (abs_sum_le_card_nsmul fun x _ ↦
+    have hS : |∑ y ∈ s₁, ∑ z ∈ s₂, (c y z - r)| ≤ ε * #s₁ * #s₂ := by
+      simpa only [one_mul] using
         h₁₂.abs_sum_sum_mul_patternWeight_sub_le e₁₂ (fun _ _ ↦ zero_le_one) (fun _ _ ↦ le_rfl)
-          (fun _ _ ↦ zero_le_one) (fun _ _ ↦ le_rfl)).trans_eq (by rw [nsmul_eq_mul]; ring)
+          (fun _ _ ↦ zero_le_one) (fun _ _ ↦ le_rfl)
+    rw [abs_mul, abs_of_nonneg hpq₀, abs_mul, Nat.abs_cast]
+    calc p * q * (#s₀ * |∑ y ∈ s₁, ∑ z ∈ s₂, (c y z - r)|)
+        ≤ 1 * (#s₀ * (ε * #s₁ * #s₂)) := by
+          gcongr
+      _ = ε * (#s₀ * #s₁ * #s₂) := by ring
   rw [hsplit]
   refine ((abs_add_le _ _).trans (add_le_add (abs_add_le _ _) le_rfl)).trans ?_
   linarith

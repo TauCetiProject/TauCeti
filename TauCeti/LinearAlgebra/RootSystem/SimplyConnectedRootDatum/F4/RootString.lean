@@ -126,8 +126,7 @@ theorem f4_chainBotCoeff_eq_one_of_short_add_short_eq_long (α β γ : Fin 48)
       f4SimplyConnectedRootDatum.root β + f4SimplyConnectedRootDatum.root α) :
     f4SimplyConnectedRootDatum.chainBotCoeff α β = 1 :=
   f4SimplyConnectedRootDatum.chainBotCoeff_eq_one_of_short_add_short_eq_long f4Length
-    f4Length_mul_pairing_comm α β γ (fun δ _ => f4Length_eq_one_or_eq_two δ)
-    hα hβ hγ h
+    f4Length_mul_pairing_comm α β γ hα hβ hγ h
 
 /-- If two steps in a short-root direction carry a long root to another root, the Cartan
 pairings are `-2` and `-1`, and the endpoint is long. This is the root string underlying the

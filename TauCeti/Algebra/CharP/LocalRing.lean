@@ -14,15 +14,16 @@ import Mathlib.Algebra.CharP.Algebra
 
 A natural number is invertible in a commutative local ring exactly when the characteristic of the
 residue field does not divide it, since an element of a local ring is a unit exactly when its
-residue is nonzero. A local domain of positive characteristic has a residue field of the same
-characteristic, since that characteristic is prime and the residue field is nonzero.
+residue is nonzero. A local ring of prime characteristic has a residue field of the same
+characteristic, since the residue characteristic divides it and is not `1`. This applies in
+particular to a local domain of positive characteristic.
 
 ## Main results
 
 * `IsLocalRing.isUnit_natCast_iff_not_dvd`: `n` is a unit of a local ring `R` exactly when
   the residue characteristic of `R` does not divide `n`.
-* `IsLocalRing.ringChar_residueField_of_ringChar_ne_zero`: a local domain of positive
-  characteristic has a residue field of the same characteristic.
+* `IsLocalRing.ringChar_residueField_of_prime_ringChar`: a local ring of prime characteristic
+  has a residue field of the same characteristic.
 -/
 
 public section
@@ -37,11 +38,11 @@ theorem _root_.IsLocalRing.isUnit_natCast_iff_not_dvd {R : Type*} [CommRing R] [
     IsUnit (n : R) ↔ ¬ ringChar (IsLocalRing.ResidueField R) ∣ n := by
   rw [← IsLocalRing.residue_ne_zero_iff_isUnit, map_natCast, ne_eq, ← ringChar.spec]
 
-/-- A local domain of positive characteristic has a residue field of the same characteristic. -/
-theorem _root_.IsLocalRing.ringChar_residueField_of_ringChar_ne_zero {R : Type*} [CommRing R]
-    [IsDomain R] [IsLocalRing R] (h : ringChar R ≠ 0) :
+/-- A local ring of prime characteristic has a residue field of the same characteristic. -/
+theorem _root_.IsLocalRing.ringChar_residueField_of_prime_ringChar {R : Type*} [CommRing R]
+    [IsLocalRing R] (h : (ringChar R).Prime) :
     ringChar (IsLocalRing.ResidueField R) = ringChar R :=
-  have := CharP.of_ringHom_of_ne_zero (IsLocalRing.residue R) (ringChar R) h
-  ringChar.eq _ _
+  ((Nat.dvd_prime h).1 (CharP.dvd_of_ringHom (IsLocalRing.residue R) _ _)).resolve_left
+    CharP.ringChar_ne_one
 
 end TauCeti

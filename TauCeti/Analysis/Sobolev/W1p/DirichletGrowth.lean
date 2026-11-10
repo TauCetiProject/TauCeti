@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 public import TauCeti.MeasureTheory.Function.Campanato
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -86,7 +87,7 @@ theorem W1p.setAverage_norm_value_sub_setAverage_closedBall_le {x : E} {r : ℝ}
   rw [setAverage_eq, setAverage_eq, smul_eq_mul, smul_eq_mul, mul_left_comm]
   simp_rw [Real.norm_eq_abs]
   exact mul_le_mul_of_nonneg_left
-    (W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset hr hball u)
+    (W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset hball u)
     (inv_nonneg.2 measureReal_nonneg)
 
 /-- The growth condition `∫_{B(x, r)} ‖∇u‖ ≤ M r^(n - 1 + α)` makes the mean oscillation of `u`
@@ -98,7 +99,7 @@ private theorem setAverage_norm_value_sub_setAverage_closedBall_le_of_setIntegra
     ⨍ y in closedBall x r, ‖W1p.value u y - ⨍ z in closedBall x r, W1p.value u z ∂mu‖ ∂mu ≤
       2 ^ (finrank ℝ E + 1) / mu.real (ball (0 : E) 1) * M * r ^ α := by
   have hω : 0 < mu.real (ball (0 : E) 1) :=
-    ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne
+    Metric.measureReal_ball_pos mu 0 one_pos
   -- The measure of `B(x, r)` is `r^n ω`.
   have hmeas : mu.real (ball x r) = r ^ finrank ℝ E * mu.real (ball (0 : E) 1) :=
     mu.addHaar_real_ball_of_pos x hr

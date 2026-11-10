@@ -8,11 +8,14 @@ module
 public import Mathlib.Data.Nat.Cast.Order.Field
 
 /-!
-# A lower bound from a natural reciprocal below one
+# Bounds on natural casts and reciprocals in ordered fields
 
 A nonzero natural number whose reciprocal, cast into a preordered division semiring, is less than
 one is at least two. This converts the reciprocal-sum hypothesis for a hyperbolic triangle group
 into the parameter bounds needed for its trigonometric matrix representation.
+
+A natural number `b < M`, cast into a linearly ordered field, satisfies
+`b / M ≤ 1 - 1 / M`.
 -/
 
 public section
@@ -27,3 +30,13 @@ theorem two_le_of_cast_inv_lt_one {α : Type*} [DivisionSemiring α] [Preorder �
   simp at h
 
 end TauCeti
+
+namespace Nat
+
+/-- A natural number `b` below `M` satisfies `b / M ≤ 1 - 1 / M` in a linearly ordered field. -/
+lemma cast_div_le_one_sub_inv {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {b M : ℕ} (hb : b < M) : (b : α) / M ≤ 1 - 1 / M := by
+  rw [le_sub_iff_add_le, ← add_div, div_le_one (by exact_mod_cast (Nat.zero_le _).trans_lt hb)]
+  exact_mod_cast hb
+
+end Nat

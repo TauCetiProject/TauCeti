@@ -15,7 +15,7 @@ Let `A` be a symmetric matrix over a field of characteristic different from two.
 with `Xᵀ * A * X = A`, which form `Matrix.isometryMatrices A`, act transitively on the vectors `x`
 with a given nonzero value of `xᵀ A x`, by the reflection transport
 `QuadraticMap.reflectionTransport`. When `A` is moreover nondegenerate, these matrices are
-identified with the isometry group `TauCeti.BilinForm.isometryGroup` of the bilinear form with
+identified with the isometry group `LinearMap.BilinForm.isometryGroup` of the bilinear form with
 Gram matrix `A`, so the orbit–stabilizer theorem `MulAction.orbitProdStabilizerEquivGroup` gives
 `#O(A) = N(c) · #Stab(e)` for any `e` with `eᵀ A e = c ≠ 0`, where `N(c)` is the number of
 solutions of `xᵀ A x = c`. When `A` is block diagonal with last block the `1 × 1` matrix `(c)` and
@@ -89,10 +89,10 @@ theorem natCard_isometryMatrices_eq_mul_natCard_stabilizer [NeZero (2 : F)]
       LinearMap.BilinForm.toMatrix_basisFun, LinearMap.BilinForm.toMatrix'_toBilin']
   -- `X ↦ toLin' X` identifies the matrices preserving `A` with the isometry group of `B`, which
   -- acts on the coordinate vectors.
-  let φ : isometryMatrices A ≃ TauCeti.BilinForm.isometryGroup B :=
+  let φ : isometryMatrices A ≃ B.isometryGroup :=
     { toFun X := ((hmem X).mpr X.2).toIsometryGroup hB
       invFun g := ⟨LinearMap.toMatrix' (g : (ι → F) →ₗ[F] (ι → F)),
-        (hmem _).mp (by simpa using TauCeti.BilinForm.mem_isometryGroup.mp g.2)⟩
+        (hmem _).mp (by simpa using LinearMap.BilinForm.mem_isometryGroup.mp g.2)⟩
       left_inv X := Subtype.ext (by simp)
       right_inv g := Subtype.ext (LinearEquiv.toLinearMap_injective (by simp)) }
   have hφ (X : isometryMatrices A) (x : ι → F) : φ X • x = (X : Matrix ι ι F) *ᵥ x := by

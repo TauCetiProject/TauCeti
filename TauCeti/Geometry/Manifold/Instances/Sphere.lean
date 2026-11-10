@@ -16,11 +16,16 @@ import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.ArctanDeriv
 import Mathlib.Topology.MetricSpace.HausdorffDimension
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 import TauCeti.Analysis.Normed.Group.BallSphere
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -52,8 +57,8 @@ a parameter likewise acts smoothly on the sphere.
 
 Finally, the covering map `Circle.exp : ℝ → S¹` has injective derivative everywhere, so that a
 loop and its lift to `ℝ` have the same tangent lines, and its local inverse, the argument, is smooth
-away from `-1`. A differentiable loop in a sphere of dimension
-at least two omits a point, allowing the entire loop to be read in one stereographic chart.
+away from `-1`. A differentiable path or loop in a sphere of dimension at least two omits a point,
+allowing the entire path or loop to be read in one stereographic chart.
 
 ## Main results
 
@@ -61,6 +66,12 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
   stereographic charts of its unit sphere take it.
 * `TauCeti.injective_fderiv_stereoInvFunAux_comp_coe`: the inverse of stereographic projection
   from `v`, as a map from `(ℝ ∙ v)ᗮ` to the ambient space, has injective derivative.
+* `TauCeti.fact_finrank_orthogonal_span_singleton_coe_sphere`: the orthogonal complement `v^⊥` of
+  a point `v` of `Sⁿ⁺¹` has dimension `n + 1`, so its unit sphere, the sphere of unit tangent
+  vectors at `v`, is an `n`-dimensional manifold.
+* `LinearIndependent.finCons_mvfderiv_coe_sphere`: a point `u` of the sphere followed by the image
+  in the ambient space of a linearly independent family of tangent vectors at `u` is linearly
+  independent.
 * `TauCeti.chartAt_sphere`: the preferred chart at `v` is `stereographic' n (-v)`.
 * `TauCeti.extChartAt_sphere_apply_self`: the preferred extended chart at `v` sends `v` to `0`.
 * `TauCeti.isSmoothEmbedding_stereographic'_symm`: the inverse of a stereographic chart is a
@@ -86,6 +97,13 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
 * `TauCeti.toSpanSingleton_deriv_comp_circleExp`,
   `TauCeti.toSpanSingleton_deriv_chart_comp_circleExp`: the chain rule for a map of the circle read
   along `Circle.exp`, into a normed space or, through a chart, into a manifold.
+* `TauCeti.contDiffOn_chart_comp_circleExp`: a `Cⁿ` map of the circle, read in a chart of the
+  maximal atlas along `Circle.exp` on an arc, is `Cⁿ`.
+* `TauCeti.deriv_chart_comp_circleExp_eq`, `TauCeti.deriv_chart_comp_circleExp_ne_zero`: two maps
+  of the circle agreeing to first order at `exp (t i)` have the same velocity at `t` when read in a
+  chart of the maximal atlas along `Circle.exp`, and that velocity is nonzero for an immersion.
+* `TauCeti.mfderiv_eq_of_deriv_comp_circleExp_eq`: two maps of the circle into a normed space
+  with the same velocity at `t` along `Circle.exp` have the same derivative at `exp (t i)`.
 * `TauCeti.deriv_comp_circleExp_ne_zero_and_range_mfderiv`: lifting a `C¹` immersed circle
   along `Circle.exp` gives a nonzero derivative spanning its tangent line.
 * `TauCeti.injective_mfderiv_of_deriv_comp_circleExp_ne_zero`: conversely, a map of the circle
@@ -97,8 +115,17 @@ at least two omits a point, allowing the entire loop to be read in one stereogra
   `TauCeti.deriv_coe_comp_circleExp_ne_zero`: the velocity of a loop in a sphere, read along
   `Circle.exp` in the ambient space, is tangent to the sphere, and nonzero where the loop is
   immersive.
-* `TauCeti.mfderiv_eq_of_deriv_coe_comp_circleExp_eq`: two loops in a sphere through the same point
-  with the same velocity there, read along `Circle.exp`, have the same derivative.
+* `TauCeti.mfderiv_eq_of_deriv_coe_comp_circleExp_eq`,
+  `TauCeti.deriv_coe_comp_circleExp_eq_of_mfderiv_eq`: two loops in a sphere through the same point
+  have the same derivative there exactly when they have the same velocity, read along
+  `Circle.exp`.
+* `TauCeti.mfderiv_eq_of_deriv_comp_circleExp_eq_prod`: two maps of `S¹ × ℝ` into `Sⁿ × ℝ` which
+  agree on a line `{z₀} × ℝ` have the same derivative at `(z₀, t)` when their slices at time `t`
+  have the same velocity at `z₀` along `Circle.exp`.
+* `TauCeti.deriv_coe_fst_comp_circleExp_ne_zero`: for such a map which is the line `s ↦ (y, s)`
+  over `z₀` and has injective derivative, the sphere component of the slice has nonzero velocity.
+* `TauCeti.exists_contMDiff_circle_hasDerivAt`: an arbitrarily small smooth function on the circle
+  vanishing at a given point with velocity `1` there along `Circle.exp`.
 * `TauCeti.exists_notMem_range_circle_sphere`: a differentiable loop in a sphere of dimension
   at least two omits a point.
 * `TauCeti.contMDiff_coe_sphere_compl_zero`, `TauCeti.contMDiff_normalize_sphere`: the inclusion
@@ -151,8 +178,34 @@ theorem injective_fderiv_stereoInvFunAux_comp_coe {v : E} (hv : ‖v‖ = 1) (w 
 
 end Stereographic
 
+section OrthogonalComplement
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1 + 1)]
+
+/-- The orthogonal complement of a point of the unit sphere of an `(n + 2)`-dimensional space has
+dimension `n + 1`, so its own unit sphere is an `n`-dimensional manifold. Through the derivative
+of the inclusion, it is the sphere of unit tangent vectors at the point
+(`range_mvfderiv_subtypeVal`). -/
+instance fact_finrank_orthogonal_span_singleton_coe_sphere (p : sphere (0 : E) 1) :
+    Fact (finrank ℝ (ℝ ∙ (p : E))ᗮ = n + 1) :=
+  ⟨Submodule.finrank_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere p)⟩
+
+end OrthogonalComplement
+
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
   [Fact (finrank ℝ E = n + 1)]
+
+/-- A point of the sphere followed by the image of a linearly independent family of tangent
+vectors at it is linearly independent in `E`: the derivative of the inclusion is injective with
+range `u^⊥`, which does not contain `u`. -/
+theorem _root_.LinearIndependent.finCons_mvfderiv_coe_sphere (u : sphere (0 : E) 1)
+    {v : Fin n → TangentSpace (𝓡 n) u} (hv : LinearIndependent ℝ v) :
+    LinearIndependent ℝ
+      (Fin.cons (u : E) fun i ↦ mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) :=
+  LinearIndependent.finCons_orthogonal_span_singleton (ne_zero_of_mem_unit_sphere u)
+    (hv.map' _ (LinearMap.ker_eq_bot_of_injective (injective_mvfderiv_subtypeVal_sphere u)))
+    fun _ ↦ range_mvfderiv_subtypeVal (n := n) u ▸ LinearMap.mem_range_self _ _
 
 /-- The preferred chart of the sphere at `v` is the stereographic projection from `-v`. -/
 theorem chartAt_sphere (v : sphere (0 : E) 1) :
@@ -457,11 +510,8 @@ theorem contMDiffAt_circle_arg {n : WithTop ℕ∞} {z : Circle} (hz : |Complex.
   have hslit : (z : ℂ) ∈ Complex.slitPlane :=
     Complex.mem_slitPlane_iff_arg.2 ⟨fun h => by simp [h, abs_of_pos Real.pi_pos] at hz,
       Circle.coe_ne_zero z⟩
-  have h : ContDiffAt ℝ n (fun x : ℂ => (Complex.log x).im) z :=
-    Complex.imCLM.contDiff.contDiffAt.comp _ ((Complex.contDiffAt_log hslit).restrict_scalars ℝ)
   have hc : ContMDiff (𝓡 1) 𝓘(ℝ, ℂ) n (fun w : Circle => (w : ℂ)) := contMDiff_coe_sphere
-  exact (h.contMDiffAt.comp z hc.contMDiffAt).congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun w => (Complex.log_im w).symm)
+  exact (Complex.contDiffAt_arg hslit).contMDiffAt.comp z hc.contMDiffAt
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
@@ -496,6 +546,58 @@ theorem toSpanSingleton_deriv_chart_comp_circleExp {M : Type*} [TopologicalSpace
   rw [mfderiv_comp _ hφd hf] at h
   exact h
 
+section ChartAlongCircleExp
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : Type*} [TopologicalSpace M]
+  [ChartedSpace E M] {n : WithTop ℕ∞}
+
+/-- A `Cⁿ` map of the circle, read in a chart `φ` of the maximal atlas along `Circle.exp` on an arc
+mapped into `φ.source`, is `Cⁿ`. -/
+theorem contDiffOn_chart_comp_circleExp {f : Circle → M} {r : ℝ} {φ : OpenPartialHomeomorph M E}
+    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) n M) (hf : ContMDiff (𝓡 1) 𝓘(ℝ, E) n f)
+    (hfφ : ∀ t, |t| < r → f (Circle.exp t) ∈ φ.source) :
+    ContDiffOn ℝ n (fun t => φ (f (Circle.exp t))) (Ioo (-r) r) :=
+  contMDiffOn_iff_contDiffOn.1 ((contMDiffOn_of_mem_maximalAtlas hφ).comp
+    (hf.comp contMDiff_circleExp).contMDiffOn fun t ht => hfφ t (abs_lt.2 ht))
+
+/-- If two maps `K` and `L` of the circle, differentiable at `Circle.exp t`, agree to first order
+there, then read in a chart `φ` of the maximal atlas around `K (Circle.exp t)` along `Circle.exp`
+they have the same velocity at `t`. -/
+theorem deriv_chart_comp_circleExp_eq (hn : n ≠ 0) {K L : Circle → M} {t : ℝ}
+    {φ : OpenPartialHomeomorph M E} (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) n M)
+    (hK₀ : K (Circle.exp t) ∈ φ.source) (hK : MDifferentiableAt (𝓡 1) 𝓘(ℝ, E) K (Circle.exp t))
+    (hL : MDifferentiableAt (𝓡 1) 𝓘(ℝ, E) L (Circle.exp t))
+    (h₀ : K (Circle.exp t) = L (Circle.exp t))
+    (h₁ : mfderiv (𝓡 1) 𝓘(ℝ, E) K (Circle.exp t) = mfderiv (𝓡 1) 𝓘(ℝ, E) L (Circle.exp t)) :
+    deriv (fun s => φ (K (Circle.exp s))) t = deriv (fun s => φ (L (Circle.exp s))) t := by
+  have hvK := toSpanSingleton_deriv_chart_comp_circleExp hn hK hφ hK₀
+  have hvL := toSpanSingleton_deriv_chart_comp_circleExp hn hL hφ (h₀ ▸ hK₀)
+  rw [← h₁, ← h₀] at hvL
+  simpa using congrArg (fun T => T 1) (hvK.trans hvL.symm)
+
+/-- A map of the circle which is an immersion at `Circle.exp t`, read in a chart `φ` of the maximal
+atlas around its value there along `Circle.exp`, has nonzero velocity at `t`. -/
+theorem deriv_chart_comp_circleExp_ne_zero (hn : n ≠ 0) {f : Circle → M} {t : ℝ}
+    {φ : OpenPartialHomeomorph M E} (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) n M)
+    (hft : f (Circle.exp t) ∈ φ.source) (hf : IsImmersionAt (𝓡 1) 𝓘(ℝ, E) n f (Circle.exp t)) :
+    deriv (fun s => φ (f (Circle.exp s))) t ≠ 0 := fun h0 => by
+  have hv := toSpanSingleton_deriv_chart_comp_circleExp hn
+    (hf.contMDiffAt.mdifferentiableAt hn) hφ hft
+  have h1 : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ (f (Circle.exp t))
+      (mfderiv (𝓡 1) 𝓘(ℝ, E) f (Circle.exp t) (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp t (1 : ℝ))) =
+        0 := by
+    have h := (congrArg (fun T => T 1) hv).symm
+    simp only [ContinuousLinearMap.toSpanSingleton_apply, one_smul] at h
+    exact h.trans h0
+  have hφi := (φ.isLocalDiffeomorphAt_of_mem_maximalAtlas hφ hft).isDiffImmersionAt
+    hn |>.mfderiv_injective
+  have hfi := hf.mfderiv_injective hn
+  exact one_ne_zero (α := ℝ) (injective_mfderiv_circleExp t
+    ((hfi ((hφi (h1.trans (map_zero _).symm)).trans (map_zero _).symm)).trans
+      (map_zero _).symm))
+
+end ChartAlongCircleExp
+
 /-- For a `C¹` immersion `f` of the circle, the derivative of `t ↦ f (exp (t i))` is nonzero and
 spans the range of the derivative of `f`. -/
 theorem deriv_comp_circleExp_ne_zero_and_range_mfderiv {f : Circle → V}
@@ -519,6 +621,19 @@ theorem deriv_comp_circleExp_ne_zero_and_range_mfderiv {f : Circle → V}
   simp only [ContinuousLinearMap.toLinearMap_comp,
     LinearMap.range_comp_of_range_eq_top _ (LinearMap.range_eq_top.mpr he_surj)] at this
   exact this.symm
+
+/-- **The velocity along `Circle.exp` determines the derivative**, for maps of the circle into a
+real normed space. -/
+theorem mfderiv_eq_of_deriv_comp_circleExp_eq {f g : Circle → V} {t : ℝ}
+    (hf : MDifferentiableAt (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t))
+    (hg : MDifferentiableAt (𝓡 1) 𝓘(ℝ, V) g (Circle.exp t))
+    (h : deriv (f ∘ Circle.exp) t = deriv (g ∘ Circle.exp) t) :
+    mfderiv (𝓡 1) 𝓘(ℝ, V) f (Circle.exp t) = mfderiv (𝓡 1) 𝓘(ℝ, V) g (Circle.exp t) := by
+  have hD := (toSpanSingleton_deriv_comp_circleExp hf).symm.trans
+    (h ▸ toSpanSingleton_deriv_comp_circleExp hg)
+  refine ContinuousLinearMap.ext fun τ => ?_
+  obtain ⟨s, rfl⟩ := surjective_mfderiv_circleExp t τ
+  exact congrArg (fun L : ℝ →L[ℝ] V => L s) hD
 
 /-- A map `f` of the circle, differentiable at `exp (t i)`, has injective derivative there as soon
 as the curve `s ↦ f (exp (s i))` has nonzero derivative at `t`. -/
@@ -609,23 +724,165 @@ theorem mfderiv_eq_of_deriv_coe_comp_circleExp_eq
   rw [← h₀] at h
   exact injective_mvfderiv_subtypeVal_sphere _ h
 
+/-- **The derivative determines the velocity along `Circle.exp`.** Two loops in a sphere which take
+the same value and have the same derivative at `exp (t i)` have the same velocity at `t`, read along
+`Circle.exp` in the ambient space. This is the converse of
+`TauCeti.mfderiv_eq_of_deriv_coe_comp_circleExp_eq`. -/
+theorem deriv_coe_comp_circleExp_eq_of_mfderiv_eq
+    (hf : MDifferentiableAt (𝓡 1) (𝓡 n) f (Circle.exp t))
+    (hg : MDifferentiableAt (𝓡 1) (𝓡 n) g (Circle.exp t))
+    (h₀ : f (Circle.exp t) = g (Circle.exp t))
+    (h₁ : mfderiv (𝓡 1) (𝓡 n) f (Circle.exp t) = mfderiv (𝓡 1) (𝓡 n) g (Circle.exp t)) :
+    deriv (fun s => (f (Circle.exp s) : E)) t = deriv (fun s => (g (Circle.exp s) : E)) t := by
+  have e₁ := smul_deriv_coe_comp_circleExp hf 1
+  have e₂ := smul_deriv_coe_comp_circleExp hg 1
+  rw [one_smul] at e₁ e₂
+  rw [e₁, e₂]
+  congr 1
+  · rw [h₀]
+  · exact DFunLike.congr_fun h₁ _
+
 end SphereLoop
+
+/-! ### Maps of the cylinder over the circle, read along `Circle.exp` -/
+
+section CircleCylinder
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] {n : ℕ}
+  [Fact (finrank ℝ E = n + 1)]
+
+/-- **The first order of a map of the cylinder along a line.** Two maps `f` and `g` of the
+cylinder `S¹ × ℝ` into `Sⁿ × ℝ`, differentiable at `(exp (θ i), t)`, which agree on the whole line
+`{exp (θ i)} × ℝ`, and whose slices `θ' ↦ f (exp (θ' i), t)` and `θ' ↦ g (exp (θ' i), t)` have the
+same velocity at `θ` in `E × ℝ`, have the same derivative at `(exp (θ i), t)`. -/
+theorem mfderiv_eq_of_deriv_comp_circleExp_eq_prod {f g : Circle × ℝ → sphere (0 : E) 1 × ℝ}
+    {θ t : ℝ} (hf : MDifferentiableAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) f (Circle.exp θ, t))
+    (hg : MDifferentiableAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) g (Circle.exp θ, t))
+    (hline : ∀ s, f (Circle.exp θ, s) = g (Circle.exp θ, s))
+    (h₁ : deriv (fun θ' => ((f (Circle.exp θ', t)).1 : E)) θ =
+      deriv (fun θ' => ((g (Circle.exp θ', t)).1 : E)) θ)
+    (h₂ : deriv (fun θ' => (f (Circle.exp θ', t)).2) θ =
+      deriv (fun θ' => (g (Circle.exp θ', t)).2) θ) :
+    mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) f (Circle.exp θ, t) =
+      mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) g (Circle.exp θ, t) := by
+  have hslice {k : Circle × ℝ → sphere (0 : E) 1 × ℝ}
+      (hk : MDifferentiableAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) k (Circle.exp θ, t)) :
+      MDifferentiableAt (𝓡 1) ((𝓡 n).prod 𝓘(ℝ)) (fun z => k (z, t)) (Circle.exp θ) :=
+    hk.comp (Circle.exp θ) (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
+  have hf₁ := hslice hf
+  have hg₁ := hslice hg
+  rw [mfderiv_prod_eq_add_comp hf, mfderiv_prod_eq_add_comp hg]
+  congr 2
+  · -- The slices at time `t` agree to first order: compare their two components.
+    change mfderiv (𝓡 1) ((𝓡 n).prod 𝓘(ℝ)) (fun z => ((f (z, t)).1, (f (z, t)).2)) _ =
+      mfderiv (𝓡 1) ((𝓡 n).prod 𝓘(ℝ)) (fun z => ((g (z, t)).1, (g (z, t)).2)) _
+    rw [mfderiv_prodMk hf₁.fst hf₁.snd, mfderiv_prodMk hg₁.fst hg₁.snd]
+    congr 1
+    · exact mfderiv_eq_of_deriv_coe_comp_circleExp_eq hf₁.fst hg₁.fst
+        (congrArg Prod.fst (hline t)) h₁
+    · exact mfderiv_eq_of_deriv_comp_circleExp_eq hf₁.snd hg₁.snd h₂
+  · -- On the line `{exp (θ i)} × ℝ` the two maps agree.
+    rw [show (fun z : ℝ => f (Circle.exp θ, z)) = fun z => g (Circle.exp θ, z) from funext hline]
+
+/-- A map `Γ` of the cylinder `S¹ × ℝ` into `Sⁿ × ℝ` which is the line `s ↦ (y, s)` over
+`exp (θ i)`, and has injective derivative at `(exp (θ i), t)`, has a slice
+`θ' ↦ Γ (exp (θ' i), t)` whose sphere component has nonzero velocity at `θ`. Otherwise the
+derivative of `Γ` would kill a vector `(u, -c)`, with `u` tangent to the circle and `c` the time
+component of the slice velocity. -/
+theorem deriv_coe_fst_comp_circleExp_ne_zero {Γ : Circle × ℝ → sphere (0 : E) 1 × ℝ}
+    {θ t : ℝ} {y : sphere (0 : E) 1}
+    (hΓ : MDifferentiableAt ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) Γ (Circle.exp θ, t))
+    (hinj : Injective (mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) Γ (Circle.exp θ, t)))
+    (hline : ∀ s, Γ (Circle.exp θ, s) = (y, s)) :
+    deriv (fun θ' => ((Γ (Circle.exp θ', t)).1 : E)) θ ≠ 0 := by
+  intro h0
+  set u : EuclideanSpace ℝ (Fin 1) := mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp θ (1 : ℝ)
+  have hu : u ≠ 0 := fun h =>
+    one_ne_zero (show (1 : ℝ) = 0 from injective_mfderiv_circleExp θ (h.trans (map_zero _).symm))
+  have hΓ₁ : MDifferentiableAt (𝓡 1) ((𝓡 n).prod 𝓘(ℝ)) (fun z => Γ (z, t)) (Circle.exp θ) :=
+    hΓ.comp (Circle.exp θ) (mdifferentiableAt_id.prodMk mdifferentiableAt_const)
+  -- The sphere component of the slice has zero derivative in the direction `u`.
+  have h₁ : mfderiv (𝓡 1) (𝓡 n) (fun z => (Γ (z, t)).1) (Circle.exp θ) u = 0 := by
+    have h := smul_deriv_coe_comp_circleExp hΓ₁.fst 1
+    rw [h0, smul_zero] at h
+    exact injective_mvfderiv_subtypeVal_sphere _ (h.symm.trans (map_zero _).symm)
+  set c : ℝ := mfderiv (𝓡 1) 𝓘(ℝ) (fun z => (Γ (z, t)).2) (Circle.exp θ) u
+  set w : TangentSpace ((𝓡 1).prod 𝓘(ℝ)) (Circle.exp θ, t) := (u, -c)
+  -- The two components of the derivative of `Γ` in the direction `w` vanish.
+  have ha : mfderiv ((𝓡 1).prod 𝓘(ℝ)) (𝓡 n) (fun q => (Γ q).1) (Circle.exp θ, t) w = 0 := by
+    rw [mfderiv_prod_eq_add_apply hΓ.fst]
+    have hs : (fun s : ℝ => (Γ (Circle.exp θ, s)).1) = fun _ => y :=
+      funext fun s => by rw [hline]
+    rw [hs, mfderiv_const]
+    exact (add_zero _).trans h₁
+  have hb : mfderiv ((𝓡 1).prod 𝓘(ℝ)) 𝓘(ℝ) (fun q => (Γ q).2) (Circle.exp θ, t) w = 0 := by
+    rw [mfderiv_prod_eq_add_apply hΓ.snd]
+    have hs : (fun s : ℝ => (Γ (Circle.exp θ, s)).2) = fun s => s :=
+      funext fun s => by rw [hline]
+    have hid : mfderiv 𝓘(ℝ) 𝓘(ℝ) (fun s : ℝ => (Γ (Circle.exp θ, s)).2) t =
+        ContinuousLinearMap.id ℝ ℝ := by
+      rw [hs]
+      exact mfderiv_id
+    rw [hid]
+    exact add_neg_cancel c
+  have hkey : mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) Γ (Circle.exp θ, t) w = 0 := by
+    have hdecomp := mfderiv_prodMk hΓ.fst hΓ.snd
+    rw [hdecomp]
+    exact Prod.ext ha hb
+  exact hu (congrArg Prod.fst (hinj (hkey.trans (map_zero _).symm)) :)
+
+/-- A smooth real function on the circle, of absolute value at most `δ`, which vanishes at
+`exp (θ₀ i)` and has velocity `1` there along `Circle.exp`: `κ arctan (sin (θ - θ₀) / κ)` with
+`κ = δ / 2`. -/
+theorem exists_contMDiff_circle_hasDerivAt (θ₀ : ℝ) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ h : Circle → ℝ, ContMDiff (𝓡 1) 𝓘(ℝ) ∞ h ∧ h (Circle.exp θ₀) = 0 ∧
+      HasDerivAt (fun θ => h (Circle.exp θ)) 1 θ₀ ∧ ∀ z, |h z| ≤ δ := by
+  set κ := δ / 2
+  have hκ : 0 < κ := half_pos hδ
+  set g : ℂ → ℝ := fun w => κ * Real.arctan (w.im / κ)
+  have hg : ContDiff ℝ ∞ g :=
+    contDiff_const.mul (Real.contDiff_arctan.comp (Complex.imCLM.contDiff.div_const κ))
+  have hc : ContMDiff (𝓡 1) 𝓘(ℝ, ℂ) ∞ fun z : Circle => (((Circle.exp θ₀)⁻¹ * z : Circle) : ℂ) :=
+    contMDiff_coe_sphere.comp contMDiff_mul_left
+  have he (θ : ℝ) : g (((Circle.exp θ₀)⁻¹ * Circle.exp θ : Circle) : ℂ) =
+      κ * Real.arctan (Real.sin (θ - θ₀) / κ) := by
+    simp only [g, inv_mul_eq_div, ← Circle.exp_sub, Circle.coe_exp, Complex.exp_ofReal_mul_I_im]
+  refine ⟨fun z => g (((Circle.exp θ₀)⁻¹ * z : Circle) : ℂ), hg.contMDiff.comp hc, ?_, ?_,
+    fun z => ?_⟩
+  · simp [g]
+  · have hs : HasDerivAt (fun θ => Real.sin (θ - θ₀) / κ) (Real.cos (θ₀ - θ₀) * 1 / κ) θ₀ :=
+      ((Real.hasDerivAt_sin _).comp θ₀ ((hasDerivAt_id θ₀).sub_const θ₀)).div_const κ
+    have hd : HasDerivAt (fun θ => κ * Real.arctan (Real.sin (θ - θ₀) / κ)) 1 θ₀ := by
+      convert ((Real.hasDerivAt_arctan _).comp θ₀ hs).const_mul κ using 1
+      · rfl
+      · rw [sub_self, Real.sin_zero, Real.cos_zero]
+        field_simp
+        ring
+    exact hd.congr_of_eventuallyEq (Filter.Eventually.of_forall he)
+  · set x := (((Circle.exp θ₀)⁻¹ * z : Circle) : ℂ).im / κ
+    have hx : |Real.arctan x| ≤ 2 := (abs_lt.2 ⟨Real.neg_pi_div_two_lt_arctan x,
+      Real.arctan_lt_pi_div_two x⟩).le.trans (by linarith [Real.pi_le_four])
+    calc |g (((Circle.exp θ₀)⁻¹ * z : Circle) : ℂ)| = κ * |Real.arctan x| := by
+          simp only [g, abs_mul, abs_of_pos hκ, x]
+      _ ≤ κ * 2 := mul_le_mul_of_nonneg_left hx hκ.le
+      _ = δ := by simp only [κ]; ring
+
+end CircleCylinder
 
 /-! ### Points omitted by differentiable loops -/
 
-/-- A differentiable loop in a sphere of dimension at least two omits a point.
+/-- A differentiable path `ℝ → Sⁿ` in a sphere of dimension at least two omits a point.
 No immersion or injectivity assumption is needed. -/
-theorem exists_notMem_range_circle_sphere
+theorem exists_notMem_range_real_sphere
     {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     {n : ℕ} [Fact (finrank ℝ E = n + 1)] (hn : 2 ≤ n)
-    {f : Circle → sphere (0 : E) 1} (hf : MDifferentiable (𝓡 1) (𝓡 n) f) :
+    {f : ℝ → sphere (0 : E) 1} (hf : MDifferentiable 𝓘(ℝ) (𝓡 n) f) :
     ∃ p : sphere (0 : E) 1, p ∉ range f := by
-  -- The cone over the loop is the image of a differentiable map from a plane.
-  have hγ : Differentiable ℝ (fun t => (f (Circle.exp t) : E)) :=
+  -- The cone over the path is the image of a differentiable map from a plane.
+  have hγ : Differentiable ℝ (fun t => (f t : E)) :=
     mdifferentiable_iff_differentiable.mp <|
-      ((contMDiff_coe_sphere (m := 1)).mdifferentiable one_ne_zero).comp
-        (hf.comp ((contMDiff_circleExp (m := 1)).mdifferentiable one_ne_zero))
-  let F : ℝ × ℝ → E := fun q => q.1 • (f (Circle.exp q.2) : E)
+      ((contMDiff_coe_sphere (m := 1)).mdifferentiable one_ne_zero).comp hf
+  let F : ℝ × ℝ → E := fun q => q.1 • (f q.2 : E)
   have hF : Differentiable ℝ F := differentiable_fst.smul (hγ.comp differentiable_snd)
   obtain ⟨a, ha⟩ := (hF.dense_compl_range_of_finrank_lt_finrank (by
     rw [Module.finrank_prod, Module.finrank_self, (Fact.out : finrank ℝ E = n + 1)]
@@ -635,11 +892,21 @@ theorem exists_notMem_range_circle_sphere
     exact ha ⟨(0, 0), by simp [F]⟩
   have hnorm : ‖‖a‖⁻¹ • a‖ = 1 := norm_smul_inv_norm ha0
   refine ⟨⟨‖a‖⁻¹ • a, mem_sphere_zero_iff_norm.mpr hnorm⟩, ?_⟩
-  rintro ⟨z, hz⟩
-  obtain ⟨t, rfl⟩ := Circle.exp_surjective z
-  have hz' := congrArg Subtype.val hz
+  rintro ⟨t, ht⟩
   refine ha ⟨(‖a‖, t), ?_⟩
-  simp only [F, hz', smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.mpr ha0), one_smul]
+  simp only [F, ht, smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.mpr ha0), one_smul]
+
+/-- A differentiable loop in a sphere of dimension at least two omits a point.
+No immersion or injectivity assumption is needed. -/
+theorem exists_notMem_range_circle_sphere
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {n : ℕ} [Fact (finrank ℝ E = n + 1)] (hn : 2 ≤ n)
+    {f : Circle → sphere (0 : E) 1} (hf : MDifferentiable (𝓡 1) (𝓡 n) f) :
+    ∃ p : sphere (0 : E) 1, p ∉ range f := by
+  obtain ⟨p, hp⟩ := exists_notMem_range_real_sphere hn
+    (hf.comp ((contMDiff_circleExp (m := 1)).mdifferentiable one_ne_zero))
+  rw [range_comp, Circle.exp_surjective.range_eq, image_univ] at hp
+  exact ⟨p, hp⟩
 
 /-! ### The unit sphere in the punctured space -/
 

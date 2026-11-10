@@ -348,10 +348,8 @@ variable [I.Boundaryless] [FiniteDimensional ℝ E]
 theorem isImmersion_closedOrbit (hn : 1 ≤ n) :
     IsImmersion 𝓘(ℝ) (𝓘(ℝ).prod I) n (closedOrbit φ h) := by
   have hn0 : n ≠ 0 := by rintro rfl; simp at hn
-  rw [isImmersion_iff_forall_isImmersionAt]
-  intro θ
-  exact ((contMDiff_closedOrbit h).contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ
-    (mem_univ θ) hn).2 (injective_mfderiv_closedOrbit h hn0 θ)
+  exact (contMDiff_closedOrbit h).isImmersion_of_injective_mfderiv hn
+    (injective_mfderiv_closedOrbit h hn0)
 
 /-- The closed orbit is a smooth embedding of the circle exactly when its period `d` is the least
 period of `x`. -/
@@ -385,7 +383,7 @@ theorem hasMFDerivAt_closedOrbit (θ : AddCircle (d : ℝ)) :
     have hp : flow φ t (mk φ 0 x) = closedOrbit φ hx t := by simp
     beta_reduce at h
     rwa [hp, ← hc] at h
-  rw [← (AddCircle.mfderiv_comp_coe hd).symm.trans hlift.mfderiv]
+  rw [← AddCircle.mfderiv_comp_coe.symm.trans hlift.mfderiv]
   exact hd.hasMFDerivAt
 
 /-- The velocity of the closed orbit at `θ` is `T (γ θ)`. -/
@@ -423,6 +421,11 @@ theorem range_orbitTorus : range (orbitTorus φ h) = univ ×ˢ range (closedOrbi
 theorem injective_orbitTorus_iff : Injective (orbitTorus φ h) ↔ minimalPeriod φ x = d := by
   rw [← injective_closedOrbit_iff h, orbitTorus, Prod.map_injective]
   exact and_iff_right injective_id
+
+/-- The orbit torus is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_orbitTorus : Continuous (orbitTorus φ h) :=
+  continuous_id.prodMap (continuous_closedOrbit h)
 
 variable [T2Space M] [LocallyCompactSpace M] [IsManifold I n M] [Fact (0 < (d : ℝ))]
 

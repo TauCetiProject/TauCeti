@@ -13,7 +13,7 @@ public import TauCeti.MeasureTheory.Function.Lp.FiniteDimensional
 # Vector-valued local Rellich compactness
 
 For a finite-dimensional target, restriction of a weakly differentiable `Lᵖ` field to an open
-set compactly contained in its domain is compact when `1 ≤ p < ∞`. No boundary condition or
+set compactly contained in its domain is compact for every `1 ≤ p ≤ ∞`. No boundary condition or
 boundedness of the ambient domain is required. The graph-space version retains an arbitrary
 preceding space and field-selection map, so it also applies to higher weak-derivative steps.
 
@@ -24,8 +24,9 @@ projects to scalar coordinates using `toW1pL`, applies
 Finite dimensionality of the target is essential: constant fields valued in an infinite
 orthonormal sequence already obstruct local norm compactness.
 
-In particular this supplies compact restriction of `W^{1,2}(ℝ,F)` paths to bounded intervals,
-the compact error term in the Fredholm estimates for first-order trajectory operators.
+In particular this supplies compact restriction of `W^{1,2}(ℝ,F)` paths to bounded intervals
+(`TauCeti.WeakDerivStep.isCompactOperator_smul_restrictBaseL`), the compact error term in the
+Fredholm estimates for first-order trajectory operators.
 
 ## Reference
 
@@ -50,9 +51,9 @@ variable {E F X : Type*} [MeasurableSpace E] [NormedAddCommGroup E]
   {p : ENNReal} [Fact (1 ≤ p)]
 
 /-- Restriction to a compactly contained open subset is compact for a finite-dimensional target
-and `1 ≤ p < ∞`. The preceding space need not be complete. -/
+and `1 ≤ p ≤ ∞`. The preceding space need not be complete. -/
 theorem isCompactOperator_restrictBaseL [FiniteDimensional ℝ F]
-    (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (hp : p ≠ ∞)
+    (base : X →L[ℝ] Lp F p (mu.restrict Omega))
     (hVc : IsCompact (closure (V : Set E))) (hVO : closure (V : Set E) ⊆ Omega) :
     IsCompactOperator (restrictBaseL base (SetLike.coe_subset_coe.mp
       (subset_closure.trans hVO))) := by
@@ -65,7 +66,7 @@ theorem isCompactOperator_restrictBaseL [FiniteDimensional ℝ F]
       (((W1p.valueL (mu := mu) (Omega := V) (p := p)).comp
         (W1p.restrictL hV)).comp (toW1pL base (ℓ i)))
   have hC (i) : IsCompactOperator (C i) :=
-    ((W1p.isCompactOperator_valueL_restrictL hp hVc hVO).comp_clm
+    ((W1p.isCompactOperator_valueL_restrictL hVc hVO).comp_clm
       (toW1pL base (ℓ i))).clm_comp
         ((ContinuousLinearMap.toSpanSingleton ℝ (b i)).compLpL p (mu.restrict V))
   have heq : restrictBaseL base hV = ∑ i, C i := by
@@ -87,5 +88,15 @@ theorem isCompactOperator_restrictBaseL [FiniteDimensional ℝ F]
   rw [heq]
   -- Compact operators form a submodule, so finite coordinate reconstruction preserves compactness.
   exact (compactOperator (RingHom.id ℝ) _ _).sum_mem fun i _ ↦ hC i
+
+/-- Restriction of `W^{1,2}(ℝ, F)` paths to a bounded interval, scaled by a constant, is
+compact. -/
+theorem isCompactOperator_smul_restrictBaseL [FiniteDimensional ℝ F] (K R : ℝ) :
+    IsCompactOperator (K • restrictBaseL
+      (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))
+      (V := ⟨Ioo (-R) R, isOpen_Ioo⟩) le_top) := by
+  rw [FunLike.coe_smul]
+  exact (isCompactOperator_restrictBaseL _
+    (Metric.isBounded_Ioo (-R) R).isCompact_closure (by simp)).smul K
 
 end TauCeti.WeakDerivStep

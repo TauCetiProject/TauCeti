@@ -201,7 +201,7 @@ private theorem exists_lintegral_setLIntegral_edist_rpow_le [Fact (1 ≤ p)] (hp
     rw [hκ, hκ, ENNReal.coe_one, one_mul, edist_def]
   have hmom (R : Measure (WassersteinSpace p X)) [IsProbabilityMeasure R]
       (hR : HasFiniteMoment p R) : HasFiniteMoment p (κ ∘ₘ R) :=
-    hR.comp_kernel hp hp_top (x₀ := μ₀) (.of_forall fun μ ↦ hκL μ₀ μ)
+    hR.comp_kernel hp (x₀ := μ₀) (.of_forall fun μ ↦ hκL μ₀ μ)
       (by rw [hκ]; exact μ₀.hasFiniteMoment)
   have hQmom : HasFiniteMoment p Q := by
     obtain ⟨n, hn⟩ := (hPQ.eventually (gt_mem_nhds zero_lt_one)).exists

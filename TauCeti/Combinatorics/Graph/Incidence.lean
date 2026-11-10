@@ -17,6 +17,9 @@ vertex counts differ only in their treatment of loops: `Graph.incidenceCount` co
 while `Graph.nonloopIncidenceCount` discards it.  Parallel edges are always counted separately.
 Both definitions use `Set.ncard`, so they return zero when the set being counted is infinite.
 
+For finite sets of actual vertices, `Graph.neighborsIn G S T` is the set of vertices in `T`
+joined by an edge to a vertex in `S`, ignoring edge multiplicity.
+
 For finite actual edge sets, `Graph.internalEdges` and `Graph.incidentEdges` provide the finite
 sets of edges internal to, or incident with, a finite set of actual vertices.  These are the
 counting objects used by degree arguments and by orientation constraints.  The comparison with
@@ -32,6 +35,44 @@ open Set
 universe u v
 
 namespace Graph
+
+/-! ## Neighbours within a set of vertices -/
+
+section neighborsIn
+
+variable {α : Type u} {β : Type v} {G : Graph α β}
+variable {S S' T : Finset V(G)} {y : V(G)}
+
+variable (G) in
+/-- The actual vertices of `T` joined by an edge to some vertex of `S`. A vertex joined to `S` by
+several parallel edges occurs once. -/
+noncomputable def neighborsIn (S T : Finset V(G)) : Finset V(G) := by
+  classical
+  exact T.filter fun y ↦ ∃ x ∈ S, G.Adj x y
+
+@[simp]
+theorem mem_neighborsIn : y ∈ G.neighborsIn S T ↔ y ∈ T ∧ ∃ x ∈ S, G.Adj x y := by
+  classical
+  simp [neighborsIn]
+
+theorem neighborsIn_subset : G.neighborsIn S T ⊆ T :=
+  fun _ hy ↦ (mem_neighborsIn.1 hy).1
+
+@[gcongr]
+theorem neighborsIn_mono (hS : S ⊆ S') : G.neighborsIn S T ⊆ G.neighborsIn S' T := by
+  intro y hy
+  obtain ⟨hyT, x, hx, hxy⟩ := mem_neighborsIn.1 hy
+  exact mem_neighborsIn.2 ⟨hyT, x, hS hx, hxy⟩
+
+@[simp]
+theorem neighborsIn_empty_left : G.neighborsIn ∅ T = ∅ := by
+  ext; simp
+
+@[simp]
+theorem neighborsIn_empty_right : G.neighborsIn S ∅ = ∅ := by
+  ext; simp
+
+end neighborsIn
 
 variable {α : Type u} {β : Type v} (G : Graph α β)
 
@@ -321,6 +362,13 @@ theorem card_internalEdges_singleton (x : G.vertexSet) :
       rw [inter_eq_left.mpr <|
         (G.loopSet_subset_incidenceSet x.1).trans (G.incidenceSet_subset_edgeSet x.1)]
 
+/-- Summing over `S` the values of the edges incident with each vertex counts every actual edge
+once for each vertex of `S` incident with it. -/
+theorem sum_sum_incidentEdges_eq_sum_sum_filter_inc {M : Type*} [AddCommMonoid M]
+    [∀ e x, Decidable (G.Inc e x)] (S : Finset G.vertexSet) (f : G.edgeSet → M) :
+    ∑ x ∈ S, ∑ e ∈ G.incidentEdges {x}, f e = ∑ e, ∑ x ∈ S with G.Inc e.1 x.1, f e :=
+  Finset.sum_comm' fun x e ↦ by simp [and_comm]
+
 end
 
 end FiniteEdges
@@ -336,6 +384,14 @@ instance : (Graph.ofSimpleGraph H).Loopless where
     rw [Graph.IsLoopAt, Graph.ofSimpleGraph_isLink] at he
     rcases he with ⟨rfl, he⟩
     exact H.irrefl ((SimpleGraph.mem_edgeSet H).mp he)
+
+/-- An edge of `Graph.ofSimpleGraph H` is incident to a vertex exactly when it is an edge of `H`
+containing that vertex. -/
+@[simp]
+theorem inc_ofSimpleGraph {e : Sym2 α} {x : α} :
+    (Graph.ofSimpleGraph H).Inc e x ↔ e ∈ H.edgeSet ∧ x ∈ e := by
+  simp only [Graph.Inc, Graph.ofSimpleGraph_isLink, Sym2.mem_iff_exists]
+  tauto
 
 /-- The multigraph incidence set of `Graph.ofSimpleGraph H` is the usual simple-graph incidence
 set. -/

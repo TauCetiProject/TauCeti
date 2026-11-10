@@ -48,7 +48,7 @@ public section
 namespace TauCeti
 
 variable {ι M N : Type*} [AddCommGroup M] [Module ℚ M] [AddCommGroup N] [Module ℚ N]
-  {P : RootPairing ι ℚ M N} [Finite ι] [Nonempty ι] [P.IsRootSystem] [P.IsCrystallographic]
+  {P : RootPairing ι ℚ M N} [Finite ι] [Nonempty ι] [P.IsCrystallographic]
   [P.IsReduced] [P.IsIrreducible]
 
 /-- **A rational root system is isomorphic to the model of its Dynkin type, and to no other.** The

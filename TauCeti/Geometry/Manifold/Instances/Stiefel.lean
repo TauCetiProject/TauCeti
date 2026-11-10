@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.LevelSet.Manifold
+import TauCeti.Analysis.Fredholm.LevelSet.Inclusion
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Data.Sym.Card
@@ -46,6 +47,8 @@ manifold structure.
 * `TauCeti.mem_stiefel_iff`: the points of `TauCeti.stiefel E k` are the orthonormal families.
 * `TauCeti.mem_stiefel_two_iff`: the points of `TauCeti.stiefel E 2` are the pairs of orthogonal
   unit vectors.
+* `TauCeti.mem_stiefel_two_euclideanSpace_iff`: orthonormality of a pair of vectors of a Euclidean
+  space, in terms of dot products of coordinates.
 * `TauCeti.nonempty_stiefel`: the Stiefel manifold is nonempty exactly when `k ≤ finrank ℝ E`.
 * `TauCeti.gramSym2Deriv_surjective` and `TauCeti.index_gramSym2Deriv`: the Gram map is regular
   along the Stiefel manifold, with derivative of index `k n - (k + 1).choose 2`.
@@ -55,6 +58,7 @@ manifold structure.
   `Fin k → E` and the projections to the unit sphere are smooth.
 * `TauCeti.range_mfderiv_coe_stiefel`: the tangent space of the Stiefel manifold at `v`, as the
   range of the differential of the inclusion, is the kernel of the derivative of the Gram map.
+* `TauCeti.injective_mfderiv_coe_stiefel`: the differential of the inclusion is injective.
 
 ## References
 
@@ -177,6 +181,20 @@ theorem mem_stiefel_two_iff {v : Fin 2 → E} :
   simp [mem_stiefel_iff, Orthonormal, Pairwise, Fin.forall_fin_two, real_inner_comm (v 0),
     and_assoc]
 
+open WithLp in
+/-- A pair of vectors of `EuclideanSpace ℝ ι` is orthonormal exactly when the dot products of their
+coordinates are those of an orthonormal pair. -/
+theorem mem_stiefel_two_euclideanSpace_iff {ι : Type*} [Fintype ι]
+    {v : Fin 2 → EuclideanSpace ℝ ι} :
+    v ∈ stiefel (EuclideanSpace ℝ ι) 2 ↔
+      ofLp (v 0) ⬝ᵥ ofLp (v 0) = 1 ∧ ofLp (v 1) ⬝ᵥ ofLp (v 1) = 1 ∧
+        ofLp (v 0) ⬝ᵥ ofLp (v 1) = 0 := by
+  have hnorm (x : EuclideanSpace ℝ ι) : ‖x‖ = 1 ↔ ofLp x ⬝ᵥ ofLp x = 1 := by
+    rw [← pow_eq_one_iff_of_nonneg (norm_nonneg x) two_ne_zero, ← real_inner_self_eq_norm_sq,
+      EuclideanSpace.inner_eq_star_dotProduct, star_trivial]
+  rw [mem_stiefel_two_iff, hnorm, hnorm, EuclideanSpace.inner_eq_star_dotProduct, star_trivial,
+    dotProduct_comm (ofLp (v 1)) (ofLp (v 0))]
+
 /-- The vectors of a frame in the Stiefel manifold are unit vectors. -/
 theorem norm_eq_one_of_mem_stiefel {v : Fin k → E} (hv : v ∈ stiefel E k) (i : Fin k) :
     ‖v i‖ = 1 :=
@@ -245,6 +263,14 @@ theorem range_mfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k) :
   exact (LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)).trans
     (Submodule.range_subtype _)
 
+variable {E k} in
+/-- The differential of the inclusion of the Stiefel manifold into the space of `k`-families is
+injective: the inclusion is an immersion. -/
+theorem injective_mfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k) :
+    Injective (mfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) 𝓘(ℝ, Fin k → E)
+      ((↑) : stiefel E k → Fin k → E) v) :=
+  injective_mfderiv_coe_levelSet _ _ _ _ v
+
 /-- The `i`th vector of an orthonormal frame, as a point of the unit sphere. For `k = 2` and
 `i = 0` this is the projection of the unit tangent bundle of the sphere to its base. -/
 def stiefelProj (i : Fin k) (v : stiefel E k) : Metric.sphere (0 : E) 1 :=
@@ -264,6 +290,20 @@ theorem contMDiff_stiefelProj [FiniteDimensional ℝ E] {n : ℕ} [Fact (finrank
       (stiefelProj E k i) :=
   (((contDiff_apply ℝ (fun _ ↦ E) i).contMDiff).comp
     (contMDiff_coe_stiefel E k)).codRestrict_sphere _
+
+variable {E} in
+/-- **Orthonormal pairs are unit tangent vectors of the sphere.** For a point `x` of the unit
+sphere, `(x, w)` is an orthonormal pair exactly when `w` is a unit vector tangent to the sphere at
+`x`, that is, in the range of the differential of the inclusion of the sphere at `x`. So
+`TauCeti.stiefel E 2` is the unit tangent bundle of the unit sphere of `E` for the metric induced
+by the inner product of `E`. -/
+theorem mem_stiefel_two_iff_mem_range_mvfderiv {n : ℕ}
+    [Fact (finrank ℝ E = n + 1)] (x : Metric.sphere (0 : E) 1) (w : E) :
+    ![(x : E), w] ∈ stiefel E 2 ↔
+      w ∈ (mvfderiv (𝓡 n) ((↑) : Metric.sphere (0 : E) 1 → E) x).range ∧ ‖w‖ = 1 := by
+  rw [mem_stiefel_two_iff, range_mvfderiv_subtypeVal,
+    Submodule.mem_orthogonal_singleton_iff_inner_right]
+  simp [norm_eq_of_mem_sphere x, and_comm]
 
 end
 

@@ -173,8 +173,8 @@ private theorem tendsto_phaseShift_genQuot (S : StronglyContinuousSemigroup X)
   -- exponent.
   have hphaseSlope : Tendsto (fun t : ℝ => t⁻¹ • (Complex.exp (-(b * t) * Complex.I) - 1))
       (𝓝[>] (0 : ℝ)) (𝓝 (-(b * Complex.I))) :=
-    (TauCeti.tendsto_inv_smul_exp_mul_ofReal_sub_one (-(b * Complex.I))).congr fun t => by
-      ring_nf
+    ((TauCeti.tendsto_inv_smul_exp_mul_ofReal_sub_one (-(b * Complex.I))).mono_left
+      (nhdsGT_le_nhdsNE 0)).congr fun t => by ring_nf
   have hsum := (hphase.smul hgen).add (hphaseSlope.smul
     (tendsto_const_nhds : Tendsto (fun _ : ℝ => x) (𝓝[>] (0 : ℝ)) (𝓝 x)))
   have hsum' : Tendsto

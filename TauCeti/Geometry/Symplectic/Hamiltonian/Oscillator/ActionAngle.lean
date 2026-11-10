@@ -9,6 +9,9 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Oscillator.Basic
 public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.LinearAlgebra.BilinearForm.Isometry
 
 /-!
 # Action–angle coordinates of the harmonic oscillator
@@ -90,6 +93,7 @@ noncomputable section
 namespace TauCeti
 
 open Real ContinuousLinearMap
+open scoped Manifold ContDiff
 
 variable {m ν : ℝ}
 
@@ -130,6 +134,20 @@ theorem oscillatorHamiltonian_oscillatorActionAngle (hm : 0 < m) (hν : 0 < ν) 
   linear_combination 2 * m * ν * y.2 * (m * ν) * Real.sin_sq_add_cos_sq y.1 +
     2 * y.2 * Real.cos y.1 ^ 2 * (√(m * ν) ^ 2 + m * ν) * hc
 
+/-- The real action–angle parametrization is smooth wherever the action is positive. -/
+theorem contDiffOn_oscillatorActionAngle :
+    ContDiffOn ℝ ∞ (oscillatorActionAngle m ν) {y | 0 < y.2} := by
+  intro y hy
+  have hr : ContDiffAt ℝ ∞ (fun z : ℝ × ℝ ↦ √(2 * z.2)) y :=
+    (contDiffAt_const.mul contDiffAt_snd).sqrt (mul_pos two_pos hy).ne'
+  have heq : oscillatorActionAngle m ν = fun z : ℝ × ℝ ↦
+      (√(2 * z.2) / √(m * ν) * Real.sin z.1, √(m * ν) * √(2 * z.2) * Real.cos z.1) :=
+    funext (oscillatorActionAngle_apply m ν)
+  rw [heq]
+  exact ((hr.div_const _).mul (Real.contDiff_sin.contDiffAt.comp y contDiffAt_fst)).prodMk
+    ((contDiffAt_const.mul hr).mul (Real.contDiff_cos.contDiffAt.comp y contDiffAt_fst))
+    |>.contDiffWithinAt
+
 /-- The derivative of the action–angle parametrization at a point of positive action. Writing
 `r = √(2I)` and `c = √(m ν)`, it sends `(δθ, δI)` to
 `(δθ r cos θ / c + δI sin θ / (r c), -δθ c r sin θ + δI c cos θ / r)`. -/
@@ -165,6 +183,27 @@ theorem stdSymplecticForm_fderiv_oscillatorActionAngle (hm : 0 < m) (hν : 0 < �
     ContinuousLinearMap.prod_apply, add_apply, smul_apply, coe_fst', coe_snd', smul_eq_mul]
   field_simp
   linear_combination (u.1 * v.2 - u.2 * v.1) * √(2 * y.2) ^ 2 * Real.sin_sq_add_cos_sq y.1
+
+/-- At positive action the real action–angle parametrization is a local diffeomorphism. -/
+theorem isLocalDiffeomorphAt_oscillatorActionAngle (hm : 0 < m) (hν : 0 < ν)
+    {y : ℝ × ℝ} (hy : 0 < y.2) :
+    IsLocalDiffeomorphAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) ∞ (oscillatorActionAngle m ν) y := by
+  let L := fderiv ℝ (oscillatorActionAngle m ν) y
+  let ι : (stdSymplecticForm (V := ℝ)).toBilinForm →bᵢ
+      (stdSymplecticForm (V := ℝ)).toBilinForm :=
+    { toLinearMap := L.toLinearMap
+      map_app' := stdSymplecticForm_fderiv_oscillatorActionAngle hm hν hy }
+  have hinj : Function.Injective L := ι.injective (stdSymplecticForm (V := ℝ)).nondegenerate.1
+  let e := (LinearEquiv.ofBijective L.toLinearMap
+    ⟨hinj, LinearMap.injective_iff_surjective.mp hinj⟩).toContinuousLinearEquiv
+  refine isLocalDiffeomorphAt_of_mfderiv_eq
+    contDiffOn_oscillatorActionAngle.contMDiffOn (isOpen_lt continuous_const continuous_snd)
+    hy BoundarylessManifold.isInteriorPoint (by simp)
+    (e := (NormedSpace.fromTangentSpace y).trans
+      (e.trans (NormedSpace.fromTangentSpace (oscillatorActionAngle m ν y)).symm)) ?_
+  rw [mfderiv_eq_fderiv]
+  -- The self-model tangent equivalences act as identities; `ofBijective` retains L's map.
+  rfl
 
 /-- **The Hamiltonian vector field is `ν ∂_θ`**: at a point of positive action, the derivative of
 the parametrization sends `(ν, 0)` to the Hamiltonian vector field of the energy. -/

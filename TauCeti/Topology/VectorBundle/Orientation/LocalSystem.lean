@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign
+public import TauCeti.AlgebraicTopology.LocalCoefficient.Sign.Tensor
 public import TauCeti.Topology.VectorBundle.Orientation.Cover
 
 /-!
@@ -26,7 +26,9 @@ trivializes the orientation local system
 (`TauCeti.VectorBundleOrientation.signLocalSystemIso`), by evaluation at the chosen orientation of
 each fibre. Reversing the orientation negates the trivialization. This is the coefficient system
 in which Thom and Euler classes of bundles without a chosen orientation live; a chosen orientation
-identifies cohomology twisted by it with ordinary cohomology.
+identifies cohomology twisted by it with ordinary cohomology. Independently of orientability,
+`TauCeti.VectorBundleOrientationCover.signLocalSystemTensorIso` identifies its tensor square
+with the constant coefficient system: evaluate both factors at either orientation and multiply.
 
 ## Main definitions
 
@@ -126,6 +128,60 @@ theorem signLocalSystemFiberEquiv_neg {b : B} (o : Orientation ℝ (E b) ι)
     Subtype.ext (by simp [deck_apply])
   rw [signLocalSystemFiberEquiv_apply, signLocalSystemFiberEquiv_apply, ← h]
   exact mem_signFiber_iff.1 (signLocalSystemObjEquiv hι _ f).2 _
+
+section Tensor
+
+open MonoidalCategory
+open scoped TensorProduct
+
+-- The pointwise monoidal structure on `ModuleCat` requires the coefficient ring and
+-- the module fibres to live in the same universe.
+variable {S : Type (max uB uE uι)} [CommRing S]
+
+/-- The tensor square of the orientation local system is canonically constant, without a
+chosen bundle orientation. The pairing multiplies evaluations at either orientation of a fibre.
+This includes rank zero and coefficient rings of characteristic two. -/
+def signLocalSystemTensorIso :
+    signLocalSystem F E S hι ⊗ signLocalSystem F E S hι ≅
+      (LocalCoefficientSystem.constantFunctor (TopCat.of B)).obj
+        (ModuleCat.of S (ULift.{max uB uE uι} S)) :=
+  (isCoveringMap_proj hι).signLocalSystemTensorIso deck_ne_self
+    (fun _ _ h ↦ eq_or_eq_deck hι h) (surjective_proj hι)
+
+/-- At a fibre orientation, the canonical pairing is multiplication of the two evaluation
+coordinates; choosing the opposite orientation gives the same result. -/
+theorem signLocalSystemTensorIso_hom_app_tmul {b : B} (o : Orientation ℝ (E b) ι)
+    (f g : (signLocalSystem F E S hι).obj (FundamentalGroupoid.mk b)) :
+    ((signLocalSystemTensorIso (S := S) hι).hom.app (FundamentalGroupoid.mk b)).hom
+      (f ⊗ₜ[S] g) = ULift.up
+        (signLocalSystemFiberEquiv hι o f * signLocalSystemFiberEquiv hι o g) := by
+  rw [signLocalSystemFiberEquiv_apply hι o f, signLocalSystemFiberEquiv_apply hι o g]
+  -- Convert between the bundle-specific accessors and the covering-space accessors;
+  -- these wrappers are not exposed to rewriting across modules.
+  convert IsCoveringMap.signLocalSystemTensorIso_hom_app_tmul (R := S) (X := TopCat.of B)
+    (p := proj (F := F) (E := E) (ι := ι)) (isCoveringMap_proj hι)
+    (hσ := proj_comp_deck) deck_ne_self
+    (fun _ _ h ↦ eq_or_eq_deck hι h) (surjective_proj hι)
+    (FundamentalGroupoid.mk b)
+    (⟨⟨b, o⟩, rfl⟩ : (proj ⁻¹' {b} : Set (VectorBundleOrientationCover F E ι))) f g using 1
+  rfl
+
+/-- In either orientation coordinate, the inverse pairing sends `a * b` to the tensor of the
+corresponding fibre elements. In particular, either orientation generator has tensor square `1`.
+The scalars need no chosen orientation on the rest of the bundle. -/
+theorem signLocalSystemTensorIso_inv_app_mul {x : B} (o : Orientation ℝ (E x) ι) (a b : S) :
+    ((signLocalSystemTensorIso (S := S) hι).inv.app (FundamentalGroupoid.mk x)).hom
+      (ULift.up (a * b)) =
+      (signLocalSystemFiberEquiv hι o).symm a ⊗ₜ[S]
+        (signLocalSystemFiberEquiv hι o).symm b :=
+  IsCoveringMap.signLocalSystemTensorIso_inv_app_mul (R := S) (X := TopCat.of B)
+    (p := proj (F := F) (E := E) (ι := ι)) (isCoveringMap_proj hι)
+    (hσ := proj_comp_deck) deck_ne_self
+    (fun _ _ h ↦ eq_or_eq_deck hι h) (surjective_proj hι)
+    (FundamentalGroupoid.mk x)
+    (⟨⟨x, o⟩, rfl⟩ : (proj ⁻¹' {x} : Set (VectorBundleOrientationCover F E ι))) a b
+
+end Tensor
 
 end VectorBundleOrientationCover
 

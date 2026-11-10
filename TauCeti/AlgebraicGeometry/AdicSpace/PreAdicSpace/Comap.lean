@@ -600,6 +600,21 @@ theorem presentationLimitRationalGerm_comp_stalkMap_presentationLimitPreAdicSpac
 
 /-! ### Functoriality -/
 
+/-- `presentationLimitPreAdicSpaceComap` depends on `(φ, hφ, hplus)` only through `φ`. -/
+theorem presentationLimitPreAdicSpaceComap_congr
+    {φ₁ φ₂ : A →+* B} (h : φ₁ = φ₂)
+    (hφ₁ : Continuous φ₁) (hφ₂ : Continuous φ₂)
+    (hplus₁ : ∀ a ∈ Aplus, φ₁ a ∈ Bplus) (hplus₂ : ∀ a ∈ Aplus, φ₂ a ∈ Bplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+    (hP : P.ringOfDefinition ≤ Aplus) (hP' : P'.ringOfDefinition ≤ Bplus)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+      (presentationLimitPresheaf P' Bplus)) :
+    presentationLimitPreAdicSpaceComap φ₁ hφ₁ hplus₁ hAplus hBplus hP hP' hsheaf =
+      presentationLimitPreAdicSpaceComap φ₂ hφ₂ hplus₂ hAplus hBplus hP hP' hsheaf := by
+  subst h
+  rfl
+
 /-- **The identity of `A` induces the identity morphism** of `Spa(A, A⁺)`. -/
 @[simp]
 theorem presentationLimitPreAdicSpaceComap_id (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)

@@ -65,13 +65,20 @@ proof is independent of the source's.
   by `g` is inverted by `g⁻¹`.
 * `Matrix.SpecialLinearGroup.sum_comp_vecMul`: over a finite ring, this right multiplication
   leaves sums over all row vectors unchanged.
+* `Matrix.SpecialLinearGroup.vecMul_map_mul` and
+  `Matrix.SpecialLinearGroup.vecMul_map_inv_vecMul_map`: through a ring hom of the entries,
+  the right action on row vectors composes as a right action, and `g⁻¹` is undone by `g`.
 * `Matrix.SpecialLinearGroup.intCast_comp_vecCons_eq_zsmul_vecMul_inv`: the bottom row of
   `γ⁻¹` for `γ = [a, b; c, d] ∈ SL₂(ℤ)` is `(-c, a)`, in any commutative ring; and
   `Matrix.SpecialLinearGroup.neg_vecMul_inv`: replacing `γ` by `-γ` negates `v ᵥ* γ⁻¹`.
 * `Matrix.SpecialLinearGroup` is countable when its coefficient ring is.
+* `Matrix.SpecialLinearGroup.coe_ne_zero`: a square matrix of determinant one over a nontrivial
+  ring, indexed by a nonempty type, is nonzero.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
   nonassociative ring.
+* `Matrix.SpecialLinearGroup.coe_mapGL_int`: the matrix of `mapGL S` on `SL(n, ℤ)` is the
+  entrywise integer cast.
 * `Matrix.SpecialLinearGroup.coe_mapGL_fin_two`: the entrywise matrix of `mapGL S` on `SL₂(R)`,
   with `coe_mapGL_int_rat_fin_two` its `ℤ`-to-`ℚ` specialization.
 * `Matrix.SpecialLinearGroup.mul_sub_mul_eq_one_of_lowerRow`: a bottom row `(c, d)` of an
@@ -113,6 +120,12 @@ instance {R : Type*} [CommRing R] [Countable R] {n : Type*} [Fintype n] [Decidab
     Countable (SpecialLinearGroup n R) :=
   letI : Countable (Matrix n n R) := inferInstanceAs (Countable (n → n → R))
   inferInstanceAs (Countable { A : Matrix n n R // A.det = 1 })
+
+/-- A square matrix of determinant one over a nontrivial ring, indexed by a nonempty type, is
+nonzero. -/
+theorem coe_ne_zero {R : Type*} [CommRing R] [Nontrivial R] {n : Type*} [Fintype n]
+    [DecidableEq n] [Nonempty n] (A : SpecialLinearGroup n R) : (A : Matrix n n R) ≠ 0 := fun h ↦
+  A.det_ne_zero (by rw [h, det_zero])
 
 /-- **Functoriality of the induced map on special linear groups, identity law.** Base change
 along the identity ring hom is the identity. -/
@@ -193,6 +206,21 @@ theorem sum_comp_vecMul {R : Type*} [CommRing R] [Fintype R] {n : Type*} [Fintyp
       right_inv y := (vecMul_eq_iff_eq_vecMul_inv g _ y).mpr rfl }
     _ _ fun _ ↦ rfl
 
+/-- The right action of a special linear group on row vectors, through a ring homomorphism of the
+entries, composes as a right action: `r (g h) = (r g) h`. -/
+theorem vecMul_map_mul {A R : Type*} [CommRing A] [Ring R] {n : Type*} [Fintype n]
+    [DecidableEq n] (f : A →+* R) (r : n → R) (g h : SpecialLinearGroup n A) :
+    r ᵥ* (↑(g * h) : Matrix n n A).map f =
+      (r ᵥ* (g : Matrix n n A).map f) ᵥ* (h : Matrix n n A).map f := by
+  rw [vecMul_vecMul, ← Matrix.map_mul, ← coe_mul]
+
+/-- Acting on a row vector by `g⁻¹` and then by `g` gives back the row vector: `(r g⁻¹) g = r`. -/
+theorem vecMul_map_inv_vecMul_map {A R : Type*} [CommRing A] [Ring R] {n : Type*} [Fintype n]
+    [DecidableEq n] (f : A →+* R) (r : n → R) (g : SpecialLinearGroup n A) :
+    (r ᵥ* (↑g⁻¹ : Matrix n n A).map f) ᵥ* (g : Matrix n n A).map f = r := by
+  rw [← vecMul_map_mul, inv_mul_cancel, coe_one,
+    Matrix.map_one _ (map_zero _) (map_one _), vecMul_one]
+
 /-- For `γ = [a, b; c, d] ∈ SL₂(ℤ)`, the bottom row of `γ⁻¹` is `(-c, a)`: its `n`-th multiple,
 cast to any commutative ring `R`, is `n • ((0, 1) ᵥ* γ⁻¹)`. -/
 theorem intCast_comp_vecCons_eq_zsmul_vecMul_inv {R : Type*} [CommRing R] (γ : SL(2, ℤ))
@@ -218,6 +246,13 @@ lemma fin_two_mul_sub_mul_eq_one {R : Type*} [CommRing R] (g : SL(2, R)) :
 lemma intCast_fin_two_mul_sub_mul_eq_one {R : Type*} [NonAssocRing R] (g : SL(2, ℤ)) :
     ((g 0 0 : ℤ) : R) * (g 1 1 : ℤ) - (g 0 1 : ℤ) * (g 1 0 : ℤ) = 1 := by
   exact_mod_cast congrArg (Int.cast : ℤ → R) g.fin_two_mul_sub_mul_eq_one
+
+/-- The matrix of `mapGL S σ` for an integral `σ` is its entrywise integer cast: this is
+`mapGL_coe_matrix` with `algebraMap ℤ S` written as `Int.cast`. -/
+lemma coe_mapGL_int {n : Type*} [Fintype n] [DecidableEq n] {S : Type*} [CommRing S]
+    (σ : SpecialLinearGroup n ℤ) :
+    (↑(mapGL S σ) : Matrix n n S) = (σ : Matrix n n ℤ).map (Int.cast : ℤ → S) := by
+  simp [mapGL_coe_matrix, algebraMap_int_eq, RingHom.mapMatrix_apply]
 
 /-- The matrix of `mapGL S σ`, written entrywise for `σ ∈ SL₂(R)`. -/
 lemma coe_mapGL_fin_two {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]

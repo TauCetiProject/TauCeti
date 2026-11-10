@@ -109,7 +109,8 @@ theorem free_of_normal_dim_two [Module.IsTorsionFree A B] (hdim : ringKrullDim A
   have : UniqueFactorizationMonoid A :=
     TauCeti.IsRegularLocalRing.uniqueFactorizationMonoid_of_ringKrullDim_le_two hdim.le
   obtain ⟨x, y, hxy⟩ := TauCeti.IsRegularLocalRing.exists_span_pair_eq_maximalIdeal hdim
-  have hx0 := TauCeti.IsLocalRing.ne_zero_of_span_pair_eq_maximalIdeal hdim hxy
+  have hx0 := TauCeti.IsLocalRing.ne_zero_of_span_pair_eq_maximalIdeal
+    (not_isPrincipal_maximalIdeal_of_one_lt_ringKrullDim (R := A) (hdim ▸ by decide)) hxy
   refine TauCeti.IsRegularLocalRing.free_of_isWeaklyRegular hdim hxy
     ((isWeaklyRegular_cons_iff B x [y]).mpr ⟨IsSMulRegular.of_ne_zero hx0,
       (isWeaklyRegular_singleton_iff _ _).mpr

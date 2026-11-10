@@ -62,7 +62,7 @@ coprime product formula.
 
 public section
 
-open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup HeckeRing.GLn
+open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup HeckeRing.GLn TauCeti
 
 open scoped MatrixGroups ModularForm HeckeCosetModule
 

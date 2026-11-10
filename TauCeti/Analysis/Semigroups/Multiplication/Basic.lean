@@ -13,7 +13,7 @@ public import TauCeti.Topology.ContinuousMap.Bounded.Real
 public import TauCeti.Analysis.Semigroups.BoundedGenerator.Basic
 import TauCeti.Geometry.Lie.Adjoint.OperatorExponential
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import TauCeti.MeasureTheory.Integral.ExpDecay
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # The multiplication semigroup on bounded continuous functions

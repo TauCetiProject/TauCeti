@@ -213,6 +213,13 @@ private theorem integerBasis_repr_deepLatticeVector (k : Fin (Module.finrank ℚ
     rw [Algebra.smul_def, map_pow, map_natCast, coe_deepLatticeVector]
   rw [this, map_smul, Module.Basis.repr_self, Finsupp.smul_single_one]
 
+/-- `p ^ i • z` is the combination of the deep lattice vectors with the coordinates of `z`. -/
+private theorem pow_smul_eq_sum_repr_smul_deepLatticeVector (z : (𝓂[L] ^ i : Ideal 𝒪[L])) :
+    p ^ i • z = ∑ k, (integerBasis p L).repr z k • deepLatticeVector i k := by
+  apply Subtype.ext
+  rw [coe_sum_smul_deepLatticeVector, (integerBasis p L).sum_repr,
+    Submodule.coe_smul_of_tower, nsmul_eq_mul, Nat.cast_pow]
+
 section LatticeMap
 
 variable (hi : absoluteRamificationIndex L p < (p - 1) * i)
@@ -256,17 +263,15 @@ private theorem latticeMap_injective : Function.Injective (latticeMap p L hi) :=
   obtain ⟨M, hM0, hM⟩ := exists_forall_pow_eq_mem_unitFiltration_mul_zpow i
     (normalizedValuation_primeUnit_ne_one (p := p) (L := L))
   -- A `p`-adic integer `c` with `r * c ≡ 0` modulo every `p ^ m`, read on the approximations
-  -- `c.appr m`, vanishes when `r ≠ 0` (Krull's intersection theorem in `ℤ_[p]`).
+  -- `c.appr m`, vanishes when `r ≠ 0`: `r * c` maps to zero in every `ZMod (p ^ m)`, as the
+  -- kernel of `toZModPow m` is the ideal spanned by `p ^ m`, so `r * c = 0`.
   have hzero {r : ℕ} (hr : r ≠ 0) {c : ℤ_[p]}
       (h : ∀ m, ((r * c.appr m : ℕ) : ℤ_[p]) ∈ Ideal.span {(p : ℤ_[p]) ^ m}) : c = 0 := by
-    have hrc : (r : ℤ_[p]) * c ∈ ⨅ m, Ideal.span {(p : ℤ_[p])} ^ m :=
-      Submodule.mem_iInf _ |>.mpr fun m ↦ by
-        rw [Ideal.span_singleton_pow, ← sub_add_cancel c (c.appr m), mul_add]
-        exact add_mem (Ideal.mul_mem_left _ _ (PadicInt.appr_spec m c)) (by exact_mod_cast h m)
-    rw [Ideal.iInf_pow_eq_bot_of_isDomain _ (by
-      rw [← PadicInt.maximalIdeal_eq_span_p]
-      exact (IsLocalRing.maximalIdeal.isMaximal _).ne_top), Ideal.mem_bot] at hrc
-    exact (mul_eq_zero.mp hrc).resolve_left (Nat.cast_ne_zero.mpr hr)
+    refine (mul_eq_zero.mp (PadicInt.ext_of_toZModPow.mp fun m ↦ ?_)).resolve_left
+      (Nat.cast_ne_zero.mpr hr)
+    rw [map_zero, ← RingHom.mem_ker, PadicInt.ker_toZModPow, ← sub_add_cancel c (c.appr m),
+      mul_add]
+    exact add_mem (Ideal.mul_mem_left _ _ (PadicInt.appr_spec m c)) (by exact_mod_cast h m)
   refine (injective_iff_map_eq_zero _).mpr fun c hc ↦ ?_
   -- At every level `m`, the relation `latticeMap c = 0` is an equation between units of `L`.
   have key (m : ℕ) : (p ^ m : ℤ) ∣ M * (c 0).appr m ∧
@@ -317,14 +322,11 @@ private theorem exists_smul_mem_range_latticeMap :
   -- and `p ^ i • z` is a `𝒪[ℚ_[p]]`-combination of the deep lattice vectors.
   obtain ⟨w, hw, k, hk⟩ := hM u
   obtain ⟨z, rfl⟩ := exists_deepExp_eq hi hw
-  have hz : p ^ i • z = ∑ k, (integerBasis p L).repr z k • deepLatticeVector i k := by
-    apply Subtype.ext
-    rw [coe_sum_smul_deepLatticeVector, (integerBasis p L).sum_repr,
-      Submodule.coe_smul_of_tower, nsmul_eq_mul, Nat.cast_pow]
   refine ⟨Fin.cons ((k * p ^ i : ℤ) : ℤ_[p])
     fun j ↦ Padic.integerRingEquiv p ((integerBasis p L).repr z j), ?_⟩
   rw [latticeMap, Fintype.linearCombination_apply, Fin.sum_univ_succ]
-  simp only [Fin.cons_zero, Fin.cons_succ, ← deepExpClass_smul, ← map_sum, ← hz,
+  simp only [Fin.cons_zero, Fin.cons_succ, ← deepExpClass_smul, ← map_sum,
+    ← pow_smul_eq_sum_repr_smul_deepLatticeVector,
     LinearMap.smul_apply, LinearMap.id_apply, padicCompletionUnits_natCast_smul]
   have h : (M * p ^ i) • Additive.ofMul (padicCompletionUnitsOf p L u) =
       Additive.ofMul (padicCompletionUnitsOf p L (deepExp p hi (p ^ i • z))) +
@@ -344,13 +346,9 @@ private theorem pow_smul_deepExpClass (hi : absoluteRamificationIndex L p < (p -
     (z : (𝓂[L] ^ i : Ideal 𝒪[L])) :
     p ^ i • deepExpClass p hi z = latticeMap p L hi
       (Fin.cons 0 fun l ↦ Padic.integerRingEquiv p ((integerBasis p L).repr z l)) := by
-  have hz : p ^ i • z = ∑ l, (integerBasis p L).repr z l • deepLatticeVector i l := by
-    apply Subtype.ext
-    rw [coe_sum_smul_deepLatticeVector, (integerBasis p L).sum_repr,
-      Submodule.coe_smul_of_tower, nsmul_eq_mul, Nat.cast_pow]
   rw [latticeMap, Fintype.linearCombination_apply, Fin.sum_univ_succ]
   simp only [Fin.cons_zero, Fin.cons_succ, zero_smul, zero_add, ← deepExpClass_smul, ← map_sum,
-    ← hz, map_nsmul]
+    ← pow_smul_eq_sum_repr_smul_deepLatticeVector, map_nsmul]
 
 variable (p) in
 /-- **Deep units with independent logarithms are independent in `A(L)`.** Let `u` be a finite
@@ -365,8 +363,7 @@ public theorem linearIndependent_padicCompletionUnitsOf
     LinearIndependent ℤ_[p] fun o : Option ι ↦
       Additive.ofMul (padicCompletionUnitsOf p L (o.elim ϖ u)) := by
   have := Fintype.ofFinite ι
-  have hϖ' : ϖ = primeUnit p L := Units.ext hϖ
-  subst hϖ'
+  obtain rfl : ϖ = primeUnit p L := Units.ext hϖ
   -- The logarithms of the `u j`, as deep elements, and their coordinates in the integral basis.
   set x : ι → (𝓂[L] ^ i : Ideal 𝒪[L]) := fun j ↦ (deepUnitExpLogEquiv L hi ⟨u j, hu j⟩).toAdd
   have hxu (j : ι) : deepExp p hi (x j) = u j := by
@@ -375,10 +372,8 @@ public theorem linearIndependent_padicCompletionUnitsOf
     coe_deepUnitExpLogEquiv_apply hi ⟨u j, hu j⟩
   set t : ι → Fin (Module.finrank ℚ_[p] L) → ℤ_[p] :=
     fun j l ↦ Padic.integerRingEquiv p ((integerBasis p L).repr (x j) l)
-  rw [Fintype.linearIndependent_iff]
-  intro g hg
-  rw [Fintype.sum_option] at hg
-  simp only [Option.elim_none, Option.elim_some] at hg
+  refine Fintype.linearIndependent_iff.mpr fun g hg ↦ ?_
+  simp only [Fintype.sum_option, Option.elim_none, Option.elim_some] at hg
   -- Multiplying the relation by `p ^ i` turns it into a relation for the lattice map.
   have hlat : latticeMap p L hi
       (Fin.cons (p ^ i * g none) fun l ↦ ∑ j, g (some j) * t j l) = 0 := by
@@ -398,11 +393,7 @@ public theorem linearIndependent_padicCompletionUnitsOf
       ← Nat.cast_pow, Nat.cast_smul_eq_nsmul, ← smul_add, hg, smul_zero]
   have h0 := latticeMap_injective hi (hlat.trans (map_zero _).symm)
   -- The coefficient of `p` vanishes, and the coordinates of `∑ j, g j • x j` vanish.
-  have hnone : g none = 0 := by
-    have h := congrFun h0 0
-    simp only [Fin.cons_zero, Pi.zero_apply, mul_eq_zero, pow_eq_zero_iff', Nat.cast_eq_zero,
-      (Fact.out : p.Prime).ne_zero, false_and, false_or] at h
-    exact h
+  have hnone : g none = 0 := by simpa [(Fact.out : p.Prime).ne_zero] using congrFun h0 0
   have hsum : ∑ j, ((Padic.integerRingEquiv p).symm (g (some j)) • (x j : 𝒪[L])) = 0 := by
     refine (integerBasis p L).repr.injective (Finsupp.ext fun l ↦ ?_)
     apply (Padic.integerRingEquiv p).injective
@@ -420,10 +411,8 @@ public theorem linearIndependent_padicCompletionUnitsOf
     have := Fintype.linearIndependent_iff.mp hlog (fun j ↦ (g (some j) : ℚ_[p]))
       (by simpa [Algebra.smul_def] using h) j
     exact PadicInt.coe_eq_zero.mp this
-  intro o
-  cases o with
-  | none => exact hnone
-  | some j => exact hsome j
+  rintro (_ | j)
+  exacts [hnone, hsome j]
 
 variable (p L) in
 private theorem nonempty_quotient_torsion_linearEquiv_of_finitePadicExtension :
@@ -464,5 +453,6 @@ public theorem finrank_padicCompletionUnits (L : Type*) [Field L] [Algebra ℚ_[
     Module.finrank ℤ_[p] (Additive ↑(padicCompletionUnits p L)) = Module.finrank ℚ_[p] L + 1 := by
   obtain ⟨e⟩ := padicCompletionUnits_quotient_torsion_linearEquiv p L
   rw [← finrank_quotient_eq_of_le_torsion le_rfl, e.finrank_eq, Module.finrank_fin_fun]
+
 
 end TauCeti

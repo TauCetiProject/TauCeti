@@ -139,6 +139,43 @@ theorem mul_ringOfIntegersQuadraticConj_eq_mul_ringOfIntegersQuadraticConj_of_as
   rw [← algebraMap_norm_eq_mul_ringOfIntegersQuadraticConj hmin hgen x,
     ← algebraMap_norm_eq_mul_ringOfIntegersQuadraticConj hmin hgen y, ← hnx, ← hny, hnxny]
 
+/-- **Equal ideals `(x) σJ = (y) J` force `x σx = y σy`.** If `(x) σJ = (y) J` for a nonzero ideal
+`J` of a totally complex quadratic field, conjugating and cancelling `σJ` gives
+`(x σx) = (y σy)`, and the generators then have equal norms. -/
+private theorem mul_ringOfIntegersQuadraticConj_eq_of_span_mul_map_eq [IsTotallyComplex K]
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    {J : Ideal (𝓞 K)} (hJ0 : J ≠ 0) {x y : 𝓞 K} (hx : x ≠ 0) (hy : y ≠ 0)
+    (hxy : Ideal.span {x} * Ideal.map (ringOfIntegersQuadraticConj hmin hgen) J =
+      Ideal.span {y} * J) :
+    x * ringOfIntegersQuadraticConj hmin hgen x = y * ringOfIntegersQuadraticConj hmin hgen y := by
+  set σ := ringOfIntegersQuadraticConj hmin hgen
+  have hinv : Function.Involutive σ := ringOfIntegersQuadraticConj_involutive hmin hgen
+  have hJm0 : Ideal.map σ J ≠ 0 := by
+    rw [ne_eq, Ideal.zero_eq_bot, Ideal.map_eq_bot_iff_of_injective σ.injective,
+      ← Ideal.zero_eq_bot]
+    exact hJ0
+  -- Conjugating that identity gives the companion identity.
+  have hxy2 : Ideal.span {σ x} * J =
+      Ideal.span {σ y} * Ideal.map σ J := by
+    have h := congrArg (Ideal.map σ) hxy
+    rwa [Ideal.map_mul, Ideal.map_mul, Ideal.map_span, Ideal.map_span, Set.image_singleton,
+      Set.image_singleton, Ideal.map_map_of_involutive hinv] at h
+  -- Multiplying the two identities and cancelling `σJ` leaves `(x σx) = (y σy)`.
+  have hspan : Ideal.span {x * σ x} = Ideal.span ({y * σ y} : Set (𝓞 K)) := by
+    refine mul_right_cancel₀ hJm0 ?_
+    rw [← Ideal.span_singleton_mul_span_singleton, ← Ideal.span_singleton_mul_span_singleton]
+    calc Ideal.span {x} * Ideal.span {σ x} * Ideal.map σ J
+        = Ideal.span {σ x} * (Ideal.span {x} * Ideal.map σ J) := by ring
+      _ = Ideal.span {σ x} * (Ideal.span {y} * J) := by rw [hxy]
+      _ = Ideal.span {y} * (Ideal.span {σ x} * J) := by ring
+      _ = Ideal.span {y} * (Ideal.span {σ y} * Ideal.map σ J) := by rw [hxy2]
+      _ = Ideal.span {y} * Ideal.span {σ y} * Ideal.map σ J := by ring
+  exact mul_ringOfIntegersQuadraticConj_eq_mul_ringOfIntegersQuadraticConj_of_associated hmin hgen
+      (norm_pos_of_isTotallyPositive (by
+        simpa using mul_ne_zero (RingOfIntegers.coe_ne_zero_iff.mpr hx)
+          (RingOfIntegers.coe_ne_zero_iff.mpr hy)) (by simp))
+      (Ideal.span_singleton_eq_span_singleton.mp hspan)
+
 /-- **Every ambiguous ideal class of an imaginary quadratic field is the class of an ambiguous
 ideal.** Let `K` be a totally complex quadratic number field with quadratic conjugation `σ`. A
 `2`-torsion ideal class — equivalently, by
@@ -159,36 +196,11 @@ theorem exists_map_ringOfIntegersQuadraticConj_eq_self_of_sq_eq_one [IsTotallyCo
   rw [ClassGroup.mulEquiv_mk0] at hfix
   obtain ⟨x, y, hx, hy, hxy⟩ := ClassGroup.mk0_eq_mk0_iff.mp hfix
   set σ := ringOfIntegersQuadraticConj hmin hgen
-  have hinv : Function.Involutive σ := ringOfIntegersQuadraticConj_involutive hmin hgen
   have hJ0 : (J : Ideal (𝓞 K)) ≠ 0 := mem_nonZeroDivisors_iff_ne_zero.mp J.2
-  have hJm0 : Ideal.map σ (J : Ideal (𝓞 K)) ≠ 0 := by
-    rw [ne_eq, Ideal.zero_eq_bot, Ideal.map_eq_bot_iff_of_injective σ.injective,
-      ← Ideal.zero_eq_bot]
-    exact hJ0
   have hspanx : Ideal.span ({x} : Set (𝓞 K)) ≠ 0 := by
     rw [ne_eq, Ideal.zero_eq_bot, Ideal.span_singleton_eq_bot]; exact hx
-  -- Conjugating that identity gives the companion identity.
-  have hxy2 : Ideal.span {σ x} * (J : Ideal (𝓞 K)) =
-      Ideal.span {σ y} * Ideal.map σ (J : Ideal (𝓞 K)) := by
-    have h := congrArg (Ideal.map σ) hxy
-    rwa [Ideal.map_mul, Ideal.map_mul, Ideal.map_span, Ideal.map_span, Set.image_singleton,
-      Set.image_singleton, Ideal.map_map_of_involutive hinv] at h
-  -- Multiplying the two identities and cancelling `σJ` leaves `(x σx) = (y σy)`.
-  have hspan : Ideal.span {x * σ x} = Ideal.span ({y * σ y} : Set (𝓞 K)) := by
-    refine mul_right_cancel₀ hJm0 ?_
-    rw [← Ideal.span_singleton_mul_span_singleton, ← Ideal.span_singleton_mul_span_singleton]
-    calc Ideal.span {x} * Ideal.span {σ x} * Ideal.map σ (J : Ideal (𝓞 K))
-        = Ideal.span {σ x} * (Ideal.span {x} * Ideal.map σ (J : Ideal (𝓞 K))) := by ring
-      _ = Ideal.span {σ x} * (Ideal.span {y} * (J : Ideal (𝓞 K))) := by rw [hxy]
-      _ = Ideal.span {y} * (Ideal.span {σ x} * (J : Ideal (𝓞 K))) := by ring
-      _ = Ideal.span {y} * (Ideal.span {σ y} * Ideal.map σ (J : Ideal (𝓞 K))) := by rw [hxy2]
-      _ = Ideal.span {y} * Ideal.span {σ y} * Ideal.map σ (J : Ideal (𝓞 K)) := by ring
   have hnorm : x * σ x = y * σ y :=
-    mul_ringOfIntegersQuadraticConj_eq_mul_ringOfIntegersQuadraticConj_of_associated hmin hgen
-      (norm_pos_of_isTotallyPositive (by
-        simpa using mul_ne_zero (RingOfIntegers.coe_ne_zero_iff.mpr hx)
-          (RingOfIntegers.coe_ne_zero_iff.mpr hy)) (by simp))
-      (Ideal.span_singleton_eq_span_singleton.mp hspan)
+    mul_ringOfIntegersQuadraticConj_eq_of_span_mul_map_eq hmin hgen hJ0 hx hy hxy
   -- Hilbert 90 produces the twisting element.
   obtain ⟨ε, hε0, hε⟩ := exists_ne_zero_mul_eq_mul_ringOfIntegersQuadraticConj hmin hgen hx hnorm
   have hspanε : Ideal.span ({ε} : Set (𝓞 K)) ≠ 0 := by

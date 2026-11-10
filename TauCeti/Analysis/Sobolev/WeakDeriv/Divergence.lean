@@ -100,7 +100,7 @@ theorem HasWeakFDerivOn.integral_inner_gradient_eq_neg_integral_smul_trace
         Finset.sum_congr rfl fun i _ => (hdir i).integral_lineDeriv_smul_eq_neg_integral_smul φ
     _ = -∫ x, (φ : E → ℝ) x • LinearMap.trace ℝ E (G x) ∂μ := by
         rw [Finset.sum_neg_distrib, ← integral_finsetSum _ fun i _ =>
-          integrable_smul_of_locallyIntegrableOn (hdir i).locallyIntegrableOn_deriv φ]
+          φ.integrable_smul (hdir i).locallyIntegrableOn_deriv]
         congr 1
         refine integral_congr_ae (ae_of_all _ fun x => ?_)
         simp [LinearMap.trace_eq_sum_inner _ b, Finset.mul_sum]
@@ -144,8 +144,7 @@ theorem HasWeakFDerivOn.integral_divergenceCLM_smul_eq_neg_integral [OpensMeasur
         (h.hasWeakLineDerivOn (b i)).integral_lineDeriv_smul_eq_neg_integral_smul (ψ i)
     _ = -∫ x, U x (φ x) ∂μ := by
         rw [Finset.sum_neg_distrib, ← integral_finsetSum _ fun i _ =>
-          integrable_smul_of_locallyIntegrableOn
-            (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv (ψ i)]
+          TestFunction.integrable_smul (ψ i) (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv]
         congr 1
         refine integral_congr_ae (ae_of_all _ fun x => ?_)
         simp only [hψ]

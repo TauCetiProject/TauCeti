@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.GradedClass
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.DegreeOneForm
 import Mathlib.Algebra.CharP.Reduced
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
@@ -563,6 +564,22 @@ theorem exists_continuousMulEquiv_freeProPGen_zero_eq_inv_mul_demushkinWordNeTwo
 
 /-! ### The normal form `x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)` is nondegenerate -/
 
+/-- A reflexive bilinear form on the continuous dual of a free pro-`p` group on `n` generators is
+nondegenerate as soon as every character pairing to zero with all the coordinate characters takes
+the value `0` on every generator. -/
+private theorem nondegenerate_of_toAdd_freeProPGen_eq_zero
+    {B : LinearMap.BilinForm (ZMod p) (continuousZModDual p (freeProP p (Fin n)))}
+    (hB : B.IsRefl)
+    (h : ∀ χ : continuousZModDual p (freeProP p (Fin n)),
+      (∀ (j : ℕ) (hj : j < n), B χ (dualBasis p (Fin n) ⟨j, hj⟩) = 0) →
+        ∀ (k : ℕ), k < n → (χ.toMul (freeProPGen p n k)).toAdd = 0) :
+    B.Nondegenerate := by
+  refine hB.nondegenerate_iff_separatingLeft.2 fun χ hχ ↦ ?_
+  rw [(dualBasis p (Fin n)).ext_elem_iff]
+  intro i
+  rw [map_zero, Finsupp.zero_apply, dualBasis_repr, ← freeProPGen_val]
+  exact h χ (fun j hj ↦ hχ _) i i.isLt
+
 /-- The value of the degree-one form of the class of `x₁^q (x₁, x₂) ⋯ (x_{n-1}, x_n)` on a
 character and the `j`-th coordinate character. -/
 private theorem degreeOneForm_demushkinWordNeTwo_dualBasis {q : ℕ} (hq : p ∣ q)
@@ -589,24 +606,15 @@ theorem nondegenerate_degreeOneForm_demushkinWordNeTwo (hn : Even n) {q : ℕ} (
       ⟨demushkinWordNeTwo q n (freeProPGen p n),
         demushkinWordNeTwo_mem_pLowerCentralSeries_one hq n _⟩)).Nondegenerate := by
   obtain ⟨N, hN⟩ := hn
-  refine ((isRefl_degreeOneForm (gradedMk p (freeProP p (Fin n)) 1
-    ⟨demushkinWordNeTwo q n (freeProPGen p n),
-      demushkinWordNeTwo_mem_pLowerCentralSeries_one hq n _⟩)).nondegenerate_iff_separatingLeft).2
-    fun χ hχ ↦ ?_
-  rw [(dualBasis p (Fin n)).ext_elem_iff]
-  intro i
-  have hin := i.isLt
-  rw [map_zero, Finsupp.zero_apply, dualBasis_repr, ← freeProPGen_val]
-  have hχ' (j : ℕ) (hj : j < n) := hχ (dualBasis p (Fin n) ⟨j, hj⟩)
+  refine nondegenerate_of_toAdd_freeProPGen_eq_zero (isRefl_degreeOneForm _) fun χ hχ' i hin ↦ ?_
   simp only [degreeOneForm_demushkinWordNeTwo_dualBasis hq] at hχ'
   -- Pairing with the coordinate character at `x_{2a+2}` reads off the value at `x_{2a+1}`.
   have heven (a : ℕ) (ha : 2 * a < n) : (χ.toMul (freeProPGen p n (2 * a))).toAdd = 0 := by
     have h := hχ' (2 * a + 1) (by omega)
-    rw [ite_eq_right (by omega), smul_zero, smul_zero, zero_add,
-      Finset.sum_eq_single a (fun b _ hb ↦ by
-        rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero])
-      (fun ha' ↦ by rw [Finset.mem_range] at ha'; omega),
-      ite_eq_left rfl, ite_eq_right (by omega), sub_zero] at h
+    have key := sum_range_ite_pair_of_eq_add_one (fun k ↦ (χ.toMul (freeProPGen p n k)).toAdd)
+      (s := 0) (a := a) (m := n / 2) (j := 2 * a + 1) (by omega) (by omega)
+    simp only [add_zero] at key
+    rw [ite_eq_right (by omega), smul_zero, smul_zero, zero_add, key] at h
     exact h
   -- Pairing with the coordinate character at `x_{2a+1}` reads off the value at `x_{2a+2}`, once
   -- the `p`-power term, which involves only the value at `x₁`, is known to vanish.
@@ -614,13 +622,12 @@ theorem nondegenerate_degreeOneForm_demushkinWordNeTwo (hn : Even n) {q : ℕ} (
       (χ.toMul (freeProPGen p n (2 * a + 1))).toAdd = 0 := by
     have h := hχ' (2 * a) (by omega)
     have h0 : (χ.toMul (freeProPGen p n 0)).toAdd = 0 := by simpa using heven 0 (by omega)
-    rw [h0, ite_self, smul_zero, smul_zero, zero_add,
-      Finset.sum_eq_single a (fun b _ hb ↦ by
-        rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero])
-      (fun ha' ↦ by rw [Finset.mem_range] at ha'; omega),
-      ite_eq_right (by omega), ite_eq_left rfl, zero_sub, neg_eq_zero] at h
+    have key := sum_range_ite_pair_of_eq (fun k ↦ (χ.toMul (freeProPGen p n k)).toAdd)
+      (s := 0) (a := a) (m := n / 2) (j := 2 * a) (by omega) (by omega)
+    simp only [add_zero] at key
+    rw [h0, ite_self, smul_zero, smul_zero, zero_add, key, neg_eq_zero] at h
     exact h
-  rcases Nat.even_or_odd (i : ℕ) with ⟨a, ha⟩ | ⟨a, ha⟩
+  rcases Nat.even_or_odd i with ⟨a, ha⟩ | ⟨a, ha⟩
   · rw [ha, ← two_mul]
     exact heven a (by omega)
   · rw [ha]
@@ -744,31 +751,23 @@ theorem nondegenerate_degreeOneForm_demushkinWordTwoOdd (hn : Odd n) {f : ℕ} (
       ⟨demushkinWordTwoOdd f n (freeProPGen 2 n),
         demushkinWordTwoOdd_mem_pLowerCentralSeries_one hf n _⟩)).Nondegenerate := by
   obtain ⟨N, hN⟩ := hn
-  refine ((isSymm_degreeOneForm_of_two rfl _).isRefl.nondegenerate_iff_separatingLeft).2
-    fun χ hχ ↦ ?_
-  rw [(dualBasis 2 (Fin n)).ext_elem_iff]
-  intro i
-  rw [map_zero, Finsupp.zero_apply, dualBasis_repr, ← freeProPGen_val]
-  have hχ' (j : ℕ) (hj : j < n) := hχ (dualBasis 2 (Fin n) ⟨j, hj⟩)
+  refine nondegenerate_of_toAdd_freeProPGen_eq_zero (isSymm_degreeOneForm_of_two rfl _).isRefl
+    fun χ hχ' i hin ↦ ?_
+  have hχ0 := hχ'
   simp only [degreeOneForm_demushkinWordTwoOdd_dualBasis hf] at hχ'
   -- The value at `x₁`.
   have hc0 : (χ.toMul (freeProPGen 2 n 0)).toAdd = 0 := by
     rw [← degreeOneForm_gradedMk_demushkinWordTwoOdd_dualBasis_zero (by omega) hf χ]
-    exact hχ _
+    exact hχ0 0 (by omega)
   -- The value at `x_{j-1}` for `j ≥ 2` even is the pairing with the `j`-th coordinate character.
   have keyEven (j : ℕ) (hjn : j < n) (hj0 : j ≠ 0) (hj : j % 2 = 0) :
       (χ.toMul (freeProPGen 2 n (j - 1))).toAdd = 0 := by
     have h := hχ' j hjn
     rw [ite_eq_right hj0, ite_eq_right (by omega), smul_zero, add_zero, zero_add,
-      Finset.sum_eq_single (j / 2 - 1), ite_eq_left (by omega), ite_eq_right (by omega),
-      sub_zero] at h
-    · convert h using 4
-      omega
-    · intro b _ hb
-      rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero]
-    · intro hj'
-      rw [Finset.mem_range] at hj'
-      omega
+      sum_range_ite_pair_of_eq_add_one (fun k ↦ (χ.toMul (freeProPGen 2 n k)).toAdd)
+        (s := 1) (a := j / 2 - 1) (m := n / 2) (j := j) (by omega) (by omega)] at h
+    rw [show j - 1 = 2 * (j / 2 - 1) + 1 by omega]
+    exact h
   -- The value at `x_{j+1}` for `j` odd is the pairing with the `j`-th coordinate character.
   have keyOdd (j : ℕ) (hjn : j < n) (hj : j % 2 = 1) :
       (χ.toMul (freeProPGen 2 n (j + 1))).toAdd = 0 := by
@@ -778,28 +777,15 @@ theorem nondegenerate_degreeOneForm_demushkinWordTwoOdd (hn : Odd n) {f : ℕ} (
       · exact keyEven 2 (by omega) (by omega) (by omega)
       · rfl
     rw [ite_eq_right (by omega), h1, smul_zero, add_zero, zero_add,
-      Finset.sum_eq_single (j / 2), ite_eq_right (by omega), ite_eq_left (by omega), zero_sub,
-      neg_eq_zero] at h
-    · convert h using 4
-      omega
-    · intro b _ hb
-      rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero]
-    · intro hj'
-      rw [Finset.mem_range] at hj'
-      omega
-  have hin := i.isLt
-  rcases eq_or_ne (i : ℕ) 0 with h0 | h0
-  · rw [h0]
-    exact hc0
-  rcases Nat.even_or_odd (i : ℕ) with hi | hi
-  · obtain ⟨r, hr⟩ := hi
-    have := keyOdd ((i : ℕ) - 1) (by omega) (by omega)
-    -- The predecessor of `i` is an odd index whose successor is `i`.
-    have h3 : (i : ℕ) - 1 + 1 = i := by omega
-    rwa [h3] at this
-  · obtain ⟨r, hr⟩ := hi
-    have := keyEven ((i : ℕ) + 1) (by omega) (by omega) (by omega)
-    rwa [Nat.add_sub_cancel] at this
+      sum_range_ite_pair_of_eq (fun k ↦ (χ.toMul (freeProPGen 2 n k)).toAdd)
+        (s := 1) (a := j / 2) (m := n / 2) (j := j) (by omega) (by omega), neg_eq_zero] at h
+    rw [show j + 1 = 2 * (j / 2) + 1 + 1 by omega]
+    exact h
+  rcases eq_or_ne i 0 with rfl | h0
+  · exact hc0
+  rcases Nat.even_or_odd i with ⟨r, hr⟩ | ⟨r, hr⟩
+  · simpa [show i - 1 + 1 = i by omega] using keyOdd (i - 1) (by omega) (by omega)
+  · simpa using keyEven (i + 1) (by omega) (by omega) (by omega)
 
 /-- The value of the degree-one form of the class of
 `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` on a character and the `j`-th coordinate
@@ -883,8 +869,8 @@ theorem degreeOneForm_gradedMk_demushkinWordTwoEven_dualBasis_one (hn : 1 < n) {
   rw [degreeOneForm_demushkinWordTwoEven_dualBasis ha hf]
   simp only [one_ne_zero, ite_false, smul_zero, ite_true, sub_zero, zero_add, OfNat.one_ne_ofNat,
     add_zero]
-  rw [Finset.sum_eq_zero fun i _ ↦ by
-    rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero], add_zero]
+  rw [sum_range_ite_pair_of_lt (fun k ↦ (χ.toMul (freeProPGen 2 n k)).toAdd)
+    (s := 2) (m := n / 2 - 1) (j := 1) (by omega), add_zero]
 
 /-- **The degree-one form of `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` is nondegenerate
 for `n` even, `a` even and `f ≥ 1`**: pairing with the second coordinate character reads off the
@@ -898,45 +884,31 @@ theorem nondegenerate_degreeOneForm_demushkinWordTwoEven (hn : Even n) {a f : �
       ⟨demushkinWordTwoEven a f n (freeProPGen 2 n),
         demushkinWordTwoEven_mem_pLowerCentralSeries_one ha hf n _⟩)).Nondegenerate := by
   obtain ⟨N, hN⟩ := hn
-  refine ((isSymm_degreeOneForm_of_two rfl _).isRefl.nondegenerate_iff_separatingLeft).2
-    fun χ hχ ↦ ?_
-  rw [(dualBasis 2 (Fin n)).ext_elem_iff]
-  intro i
-  have hn0 : 0 < n := i.pos
-  rw [map_zero, Finsupp.zero_apply, dualBasis_repr, ← freeProPGen_val]
-  have hχ' (j : ℕ) (hj : j < n) := hχ (dualBasis 2 (Fin n) ⟨j, hj⟩)
+  refine nondegenerate_of_toAdd_freeProPGen_eq_zero (isSymm_degreeOneForm_of_two rfl _).isRefl
+    fun χ hχ' i hin ↦ ?_
+  have hn0 : 0 < n := by omega
   simp only [degreeOneForm_demushkinWordTwoEven_dualBasis ha hf] at hχ'
   -- The values at `x₁` and `x₂`.
   have hc0 : (χ.toMul (freeProPGen 2 n 0)).toAdd = 0 := by
     have h := hχ' 1 (by omega)
-    rw [ite_eq_right (by omega), smul_zero, ite_eq_left rfl, ite_eq_right (by omega), sub_zero,
-      zero_add, ite_eq_right (by omega), smul_zero, add_zero,
-      Finset.sum_eq_zero fun b _ ↦ by
-        rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero], add_zero] at h
-    exact h
+    rw [sum_range_ite_pair_of_lt (fun k ↦ (χ.toMul (freeProPGen 2 n k)).toAdd) (s := 2)
+      (m := n / 2 - 1) (j := 1) (by omega)] at h
+    simpa using h
   have hc1 : (χ.toMul (freeProPGen 2 n 1)).toAdd = 0 := by
     have h := hχ' 0 hn0
-    rw [ite_eq_left rfl, hc0, smul_zero, ite_eq_right (by omega), ite_eq_left rfl, zero_sub,
-      zero_add, ite_eq_right (by omega), smul_zero, add_zero,
-      Finset.sum_eq_zero fun b _ ↦ by
-        rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero], add_zero,
-      neg_eq_zero] at h
-    exact h
+    rw [sum_range_ite_pair_of_lt (fun k ↦ (χ.toMul (freeProPGen 2 n k)).toAdd) (s := 2)
+      (m := n / 2 - 1) (j := 0) (by omega)] at h
+    simpa [hc0] using h
   -- The value at `x_{j-1}` for `j ≥ 3` odd is the pairing with the `j`-th coordinate character.
   have keyOdd (j : ℕ) (hjn : j < n) (hj2 : 2 ≤ j) (hj : j % 2 = 1) :
       (χ.toMul (freeProPGen 2 n (j - 1))).toAdd = 0 := by
     have h := hχ' j hjn
     rw [ite_eq_right (by omega), smul_zero, ite_eq_right (by omega), ite_eq_right (by omega),
       sub_zero, ite_eq_right (by omega), smul_zero, add_zero, add_zero, zero_add,
-      Finset.sum_eq_single (j / 2 - 1), ite_eq_left (by omega), ite_eq_right (by omega),
-      sub_zero] at h
-    · convert h using 4
-      omega
-    · intro b _ hb
-      rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero]
-    · intro hj'
-      rw [Finset.mem_range] at hj'
-      omega
+      sum_range_ite_pair_of_eq_add_one (fun k ↦ (χ.toMul (freeProPGen 2 n k)).toAdd)
+        (s := 2) (a := j / 2 - 1) (m := n / 2 - 1) (j := j) (by omega) (by omega)] at h
+    rw [show j - 1 = 2 * (j / 2 - 1) + 2 by omega]
+    exact h
   -- The value at `x_{j+1}` for `j ≥ 2` even is the pairing with the `j`-th coordinate character.
   have keyEven (j : ℕ) (hjn : j < n) (hj2 : 2 ≤ j) (hj : j % 2 = 0) :
       (χ.toMul (freeProPGen 2 n (j + 1))).toAdd = 0 := by
@@ -947,31 +919,17 @@ theorem nondegenerate_degreeOneForm_demushkinWordTwoEven (hn : Even n) {a f : �
       · rfl
     rw [ite_eq_right (by omega), smul_zero, ite_eq_right (by omega), ite_eq_right (by omega),
       sub_zero, h2, smul_zero, add_zero, add_zero, zero_add,
-      Finset.sum_eq_single (j / 2 - 1), ite_eq_right (by omega), ite_eq_left (by omega),
-      zero_sub, neg_eq_zero] at h
-    · convert h using 4
-      omega
-    · intro b _ hb
-      rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero]
-    · intro hj'
-      rw [Finset.mem_range] at hj'
-      omega
-  have hin := i.isLt
-  rcases eq_or_ne (i : ℕ) 0 with h0 | h0
-  · rw [h0]
-    exact hc0
-  rcases eq_or_ne (i : ℕ) 1 with h1 | h1
-  · rw [h1]
-    exact hc1
-  rcases Nat.even_or_odd (i : ℕ) with hi | hi
-  · obtain ⟨r, hr⟩ := hi
-    have := keyOdd ((i : ℕ) + 1) (by omega) (by omega) (by omega)
-    rwa [Nat.add_sub_cancel] at this
-  · obtain ⟨r, hr⟩ := hi
-    have := keyEven ((i : ℕ) - 1) (by omega) (by omega) (by omega)
-    -- The predecessor of `i` is an even index whose successor is `i`.
-    have h3 : (i : ℕ) - 1 + 1 = i := by omega
-    rwa [h3] at this
+      sum_range_ite_pair_of_eq (fun k ↦ (χ.toMul (freeProPGen 2 n k)).toAdd)
+        (s := 2) (a := j / 2 - 1) (m := n / 2 - 1) (j := j) (by omega) (by omega), neg_eq_zero] at h
+    rw [show j + 1 = 2 * (j / 2 - 1) + 2 + 1 by omega]
+    exact h
+  rcases eq_or_ne i 0 with rfl | h0
+  · exact hc0
+  rcases eq_or_ne i 1 with rfl | h1
+  · exact hc1
+  rcases Nat.even_or_odd i with ⟨r, hr⟩ | ⟨r, hr⟩
+  · simpa using keyOdd (i + 1) (by omega) (by omega) (by omega)
+  · simpa [show i - 1 + 1 = i by omega] using keyEven (i - 1) (by omega) (by omega) (by omega)
 
 /-- **Labute's normal form modulo `λ_2`, the nonalternating case of odd rank.** Let `F` be the
 free pro-`2` group on `n` generators, `n` odd, and let `ρ ∈ gr_1(F)` have nondegenerate degree-one

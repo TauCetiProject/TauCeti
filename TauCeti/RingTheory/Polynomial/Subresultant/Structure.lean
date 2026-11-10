@@ -22,7 +22,7 @@ For consecutive entries `s` and `t` after the first:
 The two indices coincide unless the degree drops by more than one from `s` to `t`; in that case
 the indices between them form a *degree gap*. Together with the vanishing of all subresultants
 below the degree of the last entry, which divides `p` and `q`
-(`Polynomial.getLast?_sturmSeq_dvd` and
+(`TauCeti.getLast?_sturmSeq_dvd` and
 `Polynomial.subresultant_eq_zero_of_lt_natDegree_commonDivisor`), this determines every
 subresultant polynomial of `p` and `q` at an index below `n`, up to nonzero scalars. The left
 input is taken at a formal bound `m` dominating its degree, as in the rest of the subresultant

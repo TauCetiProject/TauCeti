@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Basic
 public import TauCeti.Analysis.Convex.Extrema
+import TauCeti.Analysis.Convex.MongeAmpere.Affine
 
 /-!
 # The comparison principle for the Monge–Ampère equation
@@ -27,8 +28,8 @@ The comparison principle is proved by contradiction. If `u x₀ < v x₀`, then 
 the function `w = (1 + ε) v - c` lies above `u` at `x₀` and strictly below `u` on the frontier,
 so the open set `G = {u < w}` has closure inside `Ω`, and `w ≤ u` on its frontier. By
 `TauCeti.exists_forall_add_inner_add_le_of_forall_frontier_le`, the subgradients of `w` on `G`,
-which are the `(1 + ε)`-multiples of those of `v`, are subgradients of `u` on `G`; so are their
-small perturbations, which form an open ball. Comparing measures,
+are subgradients of `u` on `G`, as are their small perturbations, which form an open ball.
+The scaling law gives `MA_w(G) = (1 + ε)^n MA_v(G)`. Comparing measures,
 `(1 + ε) ^ n MA_v(G) ≤ MA_u(G) ≤ MA_v(G)` with `0 < MA_u(G)` and `MA_v(G) < ∞`, which is
 impossible.
 
@@ -39,6 +40,8 @@ impossible.
 * `TauCeti.le_of_mongeAmpereMeasure_le_of_le_frontier` — **the comparison principle**;
 * `TauCeti.eqOn_of_mongeAmpereMeasure_eq_of_eqOn_frontier` — two convex functions with the same
   Monge–Ampère measure and the same boundary values agree.
+* `TauCeti.abs_sub_le_of_smul_le_mongeAmpereMeasure_le_smul` — two-sided measure bounds give a
+  quantitative comparison with a zero-boundary reference.
 
 ## References
 
@@ -46,6 +49,9 @@ impossible.
   Equations and Their Applications 89, Birkhäuser, 2016, §1.4.
 * A. Figalli, *The Monge–Ampère Equation and Its Applications*, Zurich Lectures in Advanced
   Mathematics, EMS, 2017, Chapter 2.
+* G. De Philippis and A. Figalli, [The Monge–Ampère equation and its link to optimal
+  transportation](https://arxiv.org/abs/1310.6167v1), §2.4, the perturbation argument.
+* The density bracketing follows the [KLS formalization](https://github.com/human-ai-mathematics/kls-lean/blob/9cde7938fc09cd017519c7c8a498bee99c12f717/formalization/FunctionalInequalities/Analysis/Convex/Alexandrov/Comparison.lean#L404).
 -/
 
 public section
@@ -179,53 +185,58 @@ theorem le_of_mongeAmpereMeasure_le_of_le_frontier (hΩo : IsOpen Ω)
     have : ¬0 < w y - u y := fun h => hy.2 ⟨hGc hy.1, h⟩
     linarith [not_lt.1 this]
   have hGb : Bornology.IsBounded G := hΩ.subset hGΩ
-  -- The `(1 + ε)`-multiples of the subgradients of `v` at points of `G`, and their perturbations
-  -- by `q` with `‖q‖ * diam G ≤ w - u`, are subgradients of `u` at points of `G`.
+  have hεpos : 0 < 1 + ε := by positivity
+  have hwconv : ConvexOn ℝ Ω w := by
+    have hscaled : ConvexOn ℝ Ω (fun y => (1 + ε) * v y) := by
+      simpa only [Pi.smul_apply, smul_eq_mul] using hv.smul hεpos.le
+    exact hscaled.add_const (-(a / 2))
+  -- The subgradients of `w` on `G` and their small perturbations belong to the image for `u`.
   set Su := ⋃ y ∈ G ∩ Ω, {p | ∀ x' ∈ Ω, u y + inner ℝ (x' - y) p ≤ u x'}
-  set Sv := ⋃ y ∈ G ∩ Ω, {p | ∀ x' ∈ Ω, v y + inner ℝ (x' - y) p ≤ v x'}
-  have key : ∀ y ∈ G, ∀ p, (∀ x' ∈ Ω, v y + inner ℝ (x' - y) p ≤ v x') →
-      ∀ q : E, ‖q‖ * diam G ≤ w y - u y → (1 + ε) • p + q ∈ Su := fun y hy p hp q hq =>
+  set Sw := ⋃ y ∈ G ∩ Ω, {p | ∀ x' ∈ Ω, w y + inner ℝ (x' - y) p ≤ w x'}
+  have key : ∀ y ∈ G, ∀ p, (∀ x' ∈ Ω, w y + inner ℝ (x' - y) p ≤ w x') →
+      ∀ q : E, ‖q‖ * diam G ≤ w y - u y → p + q ∈ Su := fun y hy p hp q hq =>
     add_mem_biUnion_of_forall_frontier_le hu hGo hGΩ hGb (huc.mono (closure_mono hGΩ))
-      (hwc.mono (closure_mono hGΩ)) hfrG hy (fun x' hx' => by
-        have := mul_le_mul_of_nonneg_left (hp x' (hGΩ hx')) (by positivity : (0 : ℝ) ≤ 1 + ε)
-        simp only [hw, real_inner_smul_right]
-        linarith) hq
-  have hscale : (1 + ε) • Sv ⊆ Su := by
-    rintro _ ⟨p, hp, rfl⟩
+      (hwc.mono (closure_mono hGΩ)) hfrG hy (fun x' hx' => hp x' (hGΩ hx')) hq
+  have hsub : Sw ⊆ Su := by
+    intro p hp
     obtain ⟨y, hy, hp⟩ := mem_iUnion₂.1 hp
     simpa using key y hy.1 p hp 0 (by simpa using hy.1.2.le)
-  -- `v` has a subgradient `p₁` at some `x₁ ∈ G`, so a ball about `(1 + ε) • p₁` consists of
-  -- subgradients of `u`, and `MA_u(G) > 0`.
+  -- A subgradient of `w` at some point of `G` gives a ball of subgradients of `u`.
   have hball : ∃ c, ∃ η > 0, ball c η ⊆ Su := by
-    obtain ⟨x₁, hx₁, p₁, hp₁⟩ := exists_mem_forall_add_inner_le hv hGo hGΩ ⟨x₀, hx₀G⟩
+    obtain ⟨x₁, hx₁, p₁, hp₁⟩ := exists_mem_forall_add_inner_le hwconv hGo hGΩ ⟨x₀, hx₀G⟩
     have hκ : 0 < w x₁ - u x₁ := hx₁.2
-    refine ⟨(1 + ε) • p₁, (w x₁ - u x₁) / (diam G + 1), by positivity, fun z hz => ?_⟩
-    have hz' : ‖z - (1 + ε) • p₁‖ * diam G ≤ w x₁ - u x₁ := by
+    refine ⟨p₁, (w x₁ - u x₁) / (diam G + 1), by positivity, fun z hz => ?_⟩
+    have hz' : ‖z - p₁‖ * diam G ≤ w x₁ - u x₁ := by
       rw [mem_ball, dist_eq_norm] at hz
-      calc ‖z - (1 + ε) • p₁‖ * diam G ≤ (w x₁ - u x₁) / (diam G + 1) * (diam G + 1) :=
+      calc ‖z - p₁‖ * diam G ≤ (w x₁ - u x₁) / (diam G + 1) * (diam G + 1) :=
             mul_le_mul hz.le (by linarith) diam_nonneg (by positivity)
         _ = w x₁ - u x₁ := div_mul_cancel₀ _ (by positivity)
     simpa using key x₁ hx₁ _ hp₁ _ hz'
   obtain ⟨c, η, hη, hcη⟩ := hball
   -- Compare `(1 + ε) ^ n MA_v(G) ≤ MA_u(G) ≤ MA_v(G)` with `0 < MA_u(G)` and `MA_v(G) < ∞`.
+  set MAv := mongeAmpereMeasure μ (fun x => if x ∈ Ω then (v x : EReal) else ⊤)
   have hSu : mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) G = μ Su :=
     mongeAmpereMeasure_ite_apply μ hΩo hu AbsolutelyContinuous.rfl hGo.measurableSet
-  have hSv : mongeAmpereMeasure μ (fun x => if x ∈ Ω then (v x : EReal) else ⊤) G = μ Sv :=
-    mongeAmpereMeasure_ite_apply μ hΩo hv AbsolutelyContinuous.rfl hGo.measurableSet
-  have h₁ : ENNReal.ofReal |(1 + ε) ^ finrank ℝ E| * μ Sv ≤ μ Su := by
-    rw [← addHaar_smul]
-    exact measure_mono hscale
-  have h₂ : μ Su ≤ μ Sv := hSu ▸ hSv ▸ Measure.le_iff'.1 hMA G
+  have hSw : mongeAmpereMeasure μ (fun x => if x ∈ Ω then (w x : EReal) else ⊤) G = μ Sw :=
+    mongeAmpereMeasure_ite_apply μ hΩo hwconv AbsolutelyContinuous.rfl hGo.measurableSet
+  have hwMA : mongeAmpereMeasure μ (fun x => if x ∈ Ω then (w x : EReal) else ⊤) =
+      ENNReal.ofReal ((1 + ε) ^ finrank ℝ E) • MAv := by
+    have hshift := mongeAmpereMeasure_ite_add_linearMap μ (U := Ω)
+      (fun y => (1 + ε) * v y) 0 (-(a / 2))
+    rw [mongeAmpereMeasure_ite_mul_of_pos μ hεpos] at hshift
+    simpa only [hw, LinearMap.zero_apply, add_zero, sub_eq_add_neg, MAv] using hshift
+  have h₁ : ENNReal.ofReal ((1 + ε) ^ finrank ℝ E) * MAv G ≤ μ Su := by
+    rw [← smul_eq_mul, ← _root_.smul_apply, ← hwMA, hSw]
+    exact measure_mono hsub
+  have h₂ : μ Su ≤ MAv G := hSu ▸ Measure.le_iff'.1 hMA G
   have h₃ : 0 < μ Su := (measure_ball_pos μ c hη).trans_le (measure_mono hcη)
-  have h₄ : μ Sv ≠ ∞ := by
-    rw [← hSv]
+  have h₄ : MAv G ≠ ∞ := by
     refine ((measure_mono subset_closure).trans_lt ?_).ne
     refine mongeAmpereMeasure_lt_top μ (convex_epigraph_ite hv) ite_ne_bot
       AbsolutelyContinuous.rfl hGb.isCompact_closure ?_
     rwa [setOf_ite_ne_top, hΩo.interior_eq]
-  have h₅ : 1 < ENNReal.ofReal |(1 + ε) ^ finrank ℝ E| := by
-    rw [abs_of_pos (by positivity), ← ENNReal.ofReal_one, ENNReal.ofReal_lt_ofReal_iff
-      (by positivity)]
+  have h₅ : 1 < ENNReal.ofReal ((1 + ε) ^ finrank ℝ E) := by
+    rw [← ENNReal.ofReal_one, ENNReal.ofReal_lt_ofReal_iff (by positivity)]
     exact one_lt_pow₀ (by linarith) finrank_pos.ne'
   have := ENNReal.mul_lt_mul_left (h₃.trans_le h₂).ne' h₄ h₅
   rw [one_mul] at this
@@ -247,5 +258,43 @@ theorem eqOn_of_mongeAmpereMeasure_eq_of_eqOn_frontier (hΩo : IsOpen Ω)
       (fun _ hy => (hfr hy).le) hx)
     (le_of_mongeAmpereMeasure_le_of_le_frontier μ hΩo hΩ hu hv huc hvc hMA.le
       (fun _ hy => (hfr hy).ge) hx)
+
+/-- **Quantitative comparison.** On a bounded open set, suppose the convex potentials `u`
+and `v` are continuous on the closure and vanish on the frontier. If the Monge–Ampère
+measure of `v` is `ν` and that of `u` lies between `(1 - ε)^n • ν` and `(1 + ε)^n • ν`
+for `0 ≤ ε < 1`, then `|u - v| ≤ ε |v|` pointwise. -/
+theorem abs_sub_le_of_smul_le_mongeAmpereMeasure_le_smul
+    (hΩ : IsOpen Ω) (hΩb : Bornology.IsBounded Ω)
+    (hu : ConvexOn ℝ Ω u) (hv : ConvexOn ℝ Ω v)
+    (huc : ContinuousOn u (closure Ω)) (hvc : ContinuousOn v (closure Ω))
+    (hu0 : ∀ x ∈ frontier Ω, u x = 0) (hv0 : ∀ x ∈ frontier Ω, v x = 0)
+    {ν : Measure E} {ε : ℝ} (hε : 0 ≤ ε) (hε1 : ε < 1)
+    (hlo : ENNReal.ofReal ((1 - ε) ^ finrank ℝ E) • ν ≤
+      mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤))
+    (hhi : mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) ≤
+      ENNReal.ofReal ((1 + ε) ^ finrank ℝ E) • ν)
+    (href : mongeAmpereMeasure μ (fun x => if x ∈ Ω then (v x : EReal) else ⊤) = ν) :
+    ∀ x ∈ Ω, |u x - v x| ≤ ε * |v x| := by
+  have hscaled (c : ℝ) (hc : 0 < c) :
+      mongeAmpereMeasure μ (fun x => if x ∈ Ω then ((c * v x : ℝ) : EReal) else ⊤) =
+        ENNReal.ofReal (c ^ finrank ℝ E) • ν := by
+    rw [mongeAmpereMeasure_ite_mul_of_pos μ hc, href]
+  have hconv (c : ℝ) (hc : 0 ≤ c) : ConvexOn ℝ Ω (fun x => c * v x) := by
+    simpa only [Pi.smul_apply, smul_eq_mul] using hv.smul hc
+  have hfront (c : ℝ) (x : E) (hx : x ∈ frontier Ω) : c * v x = u x := by
+    rw [hu0 x hx, hv0 x hx, mul_zero]
+  intro x hx
+  have hl : (1 + ε) * v x ≤ u x :=
+    le_of_mongeAmpereMeasure_le_of_le_frontier μ hΩ hΩb hu
+      (hconv (1 + ε) (by positivity)) huc (continuousOn_const.mul hvc)
+      (by simpa only [hscaled (1 + ε) (by positivity)] using hhi)
+      (fun y hy => (hfront _ y hy).le) hx
+  have hh : u x ≤ (1 - ε) * v x :=
+    le_of_mongeAmpereMeasure_le_of_le_frontier μ hΩ hΩb
+      (hconv (1 - ε) (sub_nonneg.mpr hε1.le)) hu (continuousOn_const.mul hvc) huc
+      (by simpa only [hscaled (1 - ε) (sub_pos.mpr hε1)] using hlo)
+      (fun y hy => (hfront _ y hy).ge) hx
+  have hbound := mul_le_mul_of_nonneg_left (neg_abs_le (v x)) hε
+  exact abs_le.mpr ⟨by linarith, by linarith⟩
 
 end TauCeti

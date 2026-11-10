@@ -8,6 +8,7 @@ module
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Inertia
 public import TauCeti.FieldTheory.FunctionField.Place.Filtration
 public import TauCeti.Algebra.Group.Subgroup.FiniteFiltration
+public import TauCeti.RingTheory.LocalRing.RamificationGroup
 
 /-!
 # The higher ramification groups of a place
@@ -21,9 +22,10 @@ order `i + 1`:
 
 At `i = 0` this is the condition that `σ` act trivially on the residue field, so `G_0(P)` is the
 inertia group; the groups then decrease, are normal in the decomposition group, and meet in the
-trivial group.  This is the lower numbering, and no completion is taken: the condition is read off
-the order filtration of `F'` at `P` built in
-`TauCeti/FieldTheory/FunctionField/Place/Filtration.lean`.
+trivial group.  This is the lower numbering, and no completion is taken.  The groups are the
+generic ramification filtration `TauCeti.IsLocalRing.ramificationGroup` of the decomposition group
+acting on the valuation ring `𝒪_P`; the condition above reads it off the order filtration of `F'`
+at `P` built in `TauCeti/FieldTheory/FunctionField/Place/Filtration.lean`.
 
 The structure of the successive quotients comes from a single map.  Fix a uniformizer `t` at `P`.
 For `σ ∈ G_{i+1}(P)` the function `z ↦ (σ z - z) / t^{i+2}` takes values in `𝒪_P`, and reducing it
@@ -48,7 +50,9 @@ the characteristic needs the residue extension to be separable, and is proved in
 ## Main definitions
 
 * `TauCeti.Place.ramificationGroup`: the `i`-th ramification group of a place, a subgroup of the
-  decomposition group, with `TauCeti.Place.mem_ramificationGroup_iff` for its membership.
+  decomposition group; `TauCeti.Place.ramificationGroup_def` is its definition as a local-ring
+  ramification group, and `TauCeti.Place.mem_ramificationGroup_iff` its membership in terms of the
+  order filtration.
 * `TauCeti.Place.ramificationResidueHom`: for a uniformizer `t` at `P`, the homomorphism
   `σ ↦ (z ↦ ((σ z - z) / t^{i+2})(P))` from `G_{i+1}(P)` to the additive group of functions
   `𝒪_P → F'_P`.
@@ -107,62 +111,53 @@ variable (F) (P : Place k F')
 
 /-- **The `i`-th ramification group of a place** (Stichtenoth, Definition 3.8.4): the
 automorphisms in the decomposition group of `P` that move every function integral at `P` by
-something of order at least `i + 1`.  This is the lower numbering. -/
-def ramificationGroup (i : ℕ) : Subgroup (P.integers.decompositionSubgroup F) where
-  carrier := {g | ∀ x ∈ P.integers, (g : F' ≃ₐ[F] F') x - x ∈ P.filtration (i + 1)}
-  mul_mem' {a b} ha hb x hx := by
-    have h₁ : (a : F' ≃ₐ[F] F') ((b : F' ≃ₐ[F] F') x) - (a : F' ≃ₐ[F] F') x ∈
-        P.filtration (i + 1) := by
-      rw [← map_sub]
-      exact (mem_filtration_decompositionSubgroup_apply F P a).mpr (hb x hx)
-    have h₂ := Submodule.add_mem _ h₁ (ha x hx)
-    have hcoe : ((a * b : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') x =
-        (a : F' ≃ₐ[F] F') ((b : F' ≃ₐ[F] F') x) := rfl
-    rw [hcoe]
-    convert h₂ using 1
-    ring
-  one_mem' x _ := by simp
-  inv_mem' {a} ha x hx := by
-    have hy : (a : F' ≃ₐ[F] F').symm x ∈ P.integers :=
-      (mem_integers_decompositionSubgroup_apply F P a⁻¹).mpr hx
-    have h := ha _ hy
-    rw [AlgEquiv.apply_symm_apply] at h
-    have hcoe : ((a⁻¹ : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') x =
-        (a : F' ≃ₐ[F] F').symm x := rfl
-    rw [hcoe, ← neg_sub x]
-    exact neg_mem h
+something of order at least `i + 1`.  This is the lower numbering: the generic ramification
+filtration `TauCeti.IsLocalRing.ramificationGroup` of the decomposition group acting on the
+valuation ring `𝒪_P`, whose membership `TauCeti.Place.mem_ramificationGroup_iff` reads the order
+condition on the order filtration of `F'` at `P`. -/
+def ramificationGroup (i : ℕ) : Subgroup (P.integers.decompositionSubgroup F) :=
+  IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers i
 
-/-- **Membership in the `i`-th ramification group** (Stichtenoth, Definition 3.8.4). -/
+omit [Algebra k F] [IsScalarTower k F F'] in
+/-- The ramification groups of a place are the local-ring ramification groups of its valuation
+ring under the decomposition group. -/
+theorem ramificationGroup_def (i : ℕ) :
+    ramificationGroup F P i =
+      IsLocalRing.ramificationGroup (P.integers.decompositionSubgroup F) P.integers i :=
+  (rfl)
+
+omit [Algebra k F] [IsScalarTower k F F'] in
+/-- **Membership in the `i`-th ramification group** (Stichtenoth, Definition 3.8.4): an
+automorphism lies in `G_i(P)` exactly when it moves every function integral at `P` by something of
+order at least `i + 1`. -/
 @[simp]
 theorem mem_ramificationGroup_iff {i : ℕ} {g : P.integers.decompositionSubgroup F} :
     g ∈ ramificationGroup F P i ↔
-      ∀ x ∈ P.integers, (g : F' ≃ₐ[F] F') x - x ∈ P.filtration (i + 1) :=
-  (Iff.rfl)
+      ∀ x ∈ P.integers, (g : F' ≃ₐ[F] F') x - x ∈ P.filtration (i + 1) := by
+  rw [ramificationGroup_def, IsLocalRing.mem_ramificationGroup_natCast_iff]
+  constructor
+  · intro h x hx
+    have h' := (P.mem_maximalIdeal_pow_iff_coe_mem_filtration (i + 1) _).mp (h ⟨x, hx⟩)
+    rwa [AddSubgroupClass.coe_sub, ValuationSubring.coe_decompositionSubgroup_smul,
+      Nat.cast_add, Nat.cast_one] at h'
+  · intro h x
+    rw [P.mem_maximalIdeal_pow_iff_coe_mem_filtration, AddSubgroupClass.coe_sub,
+      ValuationSubring.coe_decompositionSubgroup_smul, Nat.cast_add, Nat.cast_one]
+    exact h x x.2
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **The `0`-th ramification group is the inertia group** (Stichtenoth, Definition 3.8.4): acting
 trivially on the residue field is acting trivially to order `1` on the valuation ring. -/
 @[simp]
-theorem ramificationGroup_zero : ramificationGroup F P 0 = P.integers.inertiaSubgroup F := by
-  ext g
-  rw [mem_ramificationGroup_iff, ValuationSubring.mem_inertiaSubgroup_iff]
-  have key : ∀ x : P.integers, (IsLocalRing.residue P.integers (g • x) =
-      IsLocalRing.residue P.integers x ↔
-      (g : F' ≃ₐ[F] F') (x : F') - (x : F') ∈ P.filtration ((0 : ℕ) + 1)) := by
-    intro x
-    rw [← sub_eq_zero, ← map_sub, IsLocalRing.residue_eq_zero_iff,
-      mem_maximalIdeal_iff_valuation_lt_one, ← mem_filtration_one_iff]
-    have hsub : ((g • x - x : P.integers) : F') =
-        ((g • x : P.integers) : F') - ((x : P.integers) : F') := rfl
-    rw [hsub, ValuationSubring.coe_decompositionSubgroup_smul]
-    norm_num
-  exact ⟨fun h x ↦ (key x).mpr (h (x : F') x.2), fun h x hx ↦ (key ⟨x, hx⟩).mp (h ⟨x, hx⟩)⟩
+theorem ramificationGroup_zero : ramificationGroup F P 0 = P.integers.inertiaSubgroup F :=
+  IsLocalRing.ramificationGroup_zero_eq_inertiaSubgroup F P.integers
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- The ramification groups decrease: vanishing to higher order is a stronger condition. -/
-theorem ramificationGroup_antitone : Antitone (ramificationGroup F P) := by
-  intro i j hij g hg x hx
-  refine P.filtration_antitone ?_ (hg x hx)
-  exact_mod_cast Int.add_le_add_right (Int.ofNat_le.mpr hij) 1
+theorem ramificationGroup_antitone : Antitone (ramificationGroup F P) := fun _ _ hij ↦
+  IsLocalRing.ramificationGroup_antitone _ _ (Int.ofNat_le.mpr hij)
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- Every ramification group sits inside the inertia group. -/
 theorem ramificationGroup_le_inertiaSubgroup (i : ℕ) :
     ramificationGroup F P i ≤ P.integers.inertiaSubgroup F := by
@@ -171,19 +166,10 @@ theorem ramificationGroup_le_inertiaSubgroup (i : ℕ) :
 
 /-- **The ramification groups are normal in the decomposition group**
 (Stichtenoth, Proposition 3.8.5). -/
-instance normal_ramificationGroup (i : ℕ) : (ramificationGroup F P i).Normal where
-  conj_mem a ha b x hx := by
-    have hy : (b : F' ≃ₐ[F] F').symm x ∈ P.integers :=
-      (mem_integers_decompositionSubgroup_apply F P b⁻¹).mpr hx
-    have h := ha _ hy
-    have hb := (mem_filtration_decompositionSubgroup_apply (a := ((i : ℤ) + 1))
-      (x := (a : F' ≃ₐ[F] F') ((b : F' ≃ₐ[F] F').symm x) - (b : F' ≃ₐ[F] F').symm x) F P b).mpr h
-    rw [map_sub, AlgEquiv.apply_symm_apply] at hb
-    have hcoe : ((b * a * b⁻¹ : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') x =
-        (b : F' ≃ₐ[F] F') ((a : F' ≃ₐ[F] F') ((b : F' ≃ₐ[F] F').symm x)) := rfl
-    rw [hcoe]
-    exact hb
+instance normal_ramificationGroup (i : ℕ) : (ramificationGroup F P i).Normal :=
+  IsLocalRing.instNormalRamificationGroup _ _ _
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **The ramification groups meet in the trivial group** (Stichtenoth, Proposition 3.8.5): an
 automorphism fixing every function integral at `P` to every order is the identity, because the
 valuation ring of `P` has `F'` for its field of fractions. -/
@@ -195,13 +181,15 @@ theorem iInf_ramificationGroup_eq_bot : ⨅ i, ramificationGroup F P i = ⊥ := 
     intro x hx
     by_contra hne
     have h0 : (g : F' ≃ₐ[F] F') x - x ≠ 0 := sub_ne_zero.mpr hne
-    have hmem := hg (P.ord ((g : F' ≃ₐ[F] F') x - x)).toNat x hx
+    have hmem := (mem_ramificationGroup_iff F P).mp
+      (hg (P.ord ((g : F' ≃ₐ[F] F') x - x)).toNat) x hx
     have := (P.mem_filtration_iff_le_ord h0).mp hmem
     omega
   rw [Subgroup.mem_bot]
   exact ValuationSubring.decompositionSubgroup.ext P.integers fun x ↦
     hfix x x.2
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 /-- **The ramification groups of a place whose inertia group is finite are trivial from some index
 on** (Stichtenoth, Proposition 3.8.5). -/
 theorem exists_forall_ramificationGroup_eq_bot [Finite (ramificationGroup F P 0)] :
@@ -222,11 +210,12 @@ private theorem ord_inv_pow_add_two (ht : P.ord t = 1) (i : ℕ) :
   push_cast
   ring
 
+omit [Algebra k F] [IsScalarTower k F F'] in
 private theorem sub_mem_filtration_add_two {i : ℕ} (g : ramificationGroup F P (i + 1)) {x : F'}
     (hx : x ∈ P.integers) :
     ((g : P.integers.decompositionSubgroup F) : F' ≃ₐ[F] F') x - x ∈
       P.filtration ((i : ℤ) + 2) := by
-  have h := g.2 x hx
+  have h := (mem_ramificationGroup_iff F P).mp g.2 x hx
   -- Normalize the coerced natural-number index to the integer index used by `filtration`.
   rwa [show (((i + 1 : ℕ) : ℤ) + 1) = (i : ℤ) + 2 by push_cast; ring] at h
 
@@ -277,7 +266,7 @@ noncomputable def ramificationResidueHom (ht : P.ord t = 1) (i : ℕ) :
         have h0 : (0 : ℤ) ≤ 1 := by norm_num
         exact add_mem (P.mem_filtration_zero_iff.mp (P.filtration_antitone h0 hu1)) (one_mem _)
       have hσc : σ c - c ∈ P.filtration 1 := by
-        have h1 := g.2 c hc
+        have h1 := (mem_ramificationGroup_iff F P).mp g.2 c hc
         have h2 : (1 : ℤ) ≤ ((i + 1 : ℕ) : ℤ) + 1 := by push_cast; omega
         exact P.filtration_antitone h2 h1
       have hσcmem : σ c ∈ P.integers := (mem_integers_decompositionSubgroup_apply F P _).mpr hc

@@ -80,7 +80,7 @@ universe u v w
 section Monoid
 
 variable {k : Type u} {H : Type v} {V : Type w} [Field k] [Monoid H] [AddCommGroup V] [Module k V]
-  (p : ℕ) [ExpChar k p]
+  {p : ℕ} [ExpChar k p]
 
 /-- **In exponential characteristic `p`, a representation in which every element acts with `p`-power
 order is a representation by unipotent operators.** This is
@@ -88,7 +88,7 @@ order is a representation by unipotent operators.** This is
 the hypothesis Kolchin's theorem consumes. -/
 theorem forall_isNilpotent_sub_one_of_forall_pow_expChar_pow_eq_one (ρ : Representation k H V)
     (hρ : ∀ g : H, ∃ n : ℕ, ρ g ^ p ^ n = 1) : ∀ g : H, IsNilpotent (ρ g - 1) := fun g =>
-  (hρ g).elim fun n hn => Module.End.isNilpotent_sub_one_of_pow_expChar_pow_eq_one p n hn
+  (hρ g).elim fun _ => Module.End.isNilpotent_sub_one_of_pow_expChar_pow_eq_one
 
 /-- **A nonzero finite-dimensional representation in which every element acts with `p`-power order,
 over a field of exponential characteristic `p`, fixes a nonzero vector.** It is a representation by
@@ -101,7 +101,7 @@ theorem exists_common_fixed_vector_of_forall_pow_expChar_pow_eq_one [FiniteDimen
     [Nontrivial V] (ρ : Representation k H V) (hρ : ∀ g : H, ∃ n : ℕ, ρ g ^ p ^ n = 1) :
     ∃ v : V, v ≠ 0 ∧ ∀ g : H, ρ g v = v :=
   ρ.exists_common_fixed_vector_of_isUnipotent
-    (ρ.forall_isNilpotent_sub_one_of_forall_pow_expChar_pow_eq_one p hρ)
+    (ρ.forall_isNilpotent_sub_one_of_forall_pow_expChar_pow_eq_one hρ)
 
 /-- The fixed-line form of
 `Representation.exists_common_fixed_vector_of_forall_pow_expChar_pow_eq_one`: such a representation
@@ -111,14 +111,14 @@ theorem exists_fixed_submodule_finrank_eq_one_of_forall_pow_expChar_pow_eq_one
     (hρ : ∀ g : H, ∃ n : ℕ, ρ g ^ p ^ n = 1) :
     ∃ q : Submodule k V, Module.finrank k q = 1 ∧ ∀ g : H, ∀ y ∈ q, ρ g y = y :=
   ρ.exists_fixed_submodule_finrank_eq_one_of_isUnipotent
-    (ρ.forall_isNilpotent_sub_one_of_forall_pow_expChar_pow_eq_one p hρ)
+    (ρ.forall_isNilpotent_sub_one_of_forall_pow_expChar_pow_eq_one hρ)
 
 end Monoid
 
 section Invariants
 
 variable {k : Type u} {G : Type v} {V : Type w} [Field k] [Group G] [AddCommGroup V] [Module k V]
-  (p : ℕ) [ExpChar k p] [FiniteDimensional k V]
+  {p : ℕ} [ExpChar k p] [FiniteDimensional k V]
 
 /-- The submodule form of
 `Representation.exists_common_fixed_vector_of_forall_pow_expChar_pow_eq_one`: the invariants of such
@@ -127,7 +127,7 @@ a representation are nonzero.  This is the infinite-group counterpart of
 the module and asks instead that the group be finite. -/
 theorem invariants_ne_bot_of_forall_pow_expChar_pow_eq_one [Nontrivial V]
     (ρ : Representation k G V) (hρ : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1) : ρ.invariants ≠ ⊥ := by
-  obtain ⟨v, hv0, hv⟩ := ρ.exists_common_fixed_vector_of_forall_pow_expChar_pow_eq_one p hρ
+  obtain ⟨v, hv0, hv⟩ := ρ.exists_common_fixed_vector_of_forall_pow_expChar_pow_eq_one hρ
   exact (Submodule.ne_bot_iff _).2 ⟨v, (ρ.mem_invariants v).2 hv, hv0⟩
 
 /-- **A finite-dimensional irreducible representation in which every element acts with `p`-power
@@ -138,7 +138,7 @@ need not be finite; for a finite group the finite dimensionality is automatic (M
 theorem IsIrreducible.eq_trivial_of_forall_pow_expChar_pow_eq_one {ρ : Representation k G V}
     (h : ρ.IsIrreducible) (hρ : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1) : ρ = trivial k G V :=
   have := h.nontrivial
-  h.eq_trivial_of_invariants_ne_bot (ρ.invariants_ne_bot_of_forall_pow_expChar_pow_eq_one p hρ)
+  h.eq_trivial_of_invariants_ne_bot (ρ.invariants_ne_bot_of_forall_pow_expChar_pow_eq_one hρ)
 
 /-- **Such an irreducible representation is a line**, an irreducible representation of any other
 dimension having no nonzero invariant vector. -/
@@ -146,20 +146,19 @@ theorem IsIrreducible.finrank_eq_one_of_forall_pow_expChar_pow_eq_one
     {ρ : Representation k G V} (h : ρ.IsIrreducible)
     (hρ : ∀ g : G, ∃ n : ℕ, ρ g ^ p ^ n = 1) : Module.finrank k V = 1 :=
   have := h.nontrivial
-  h.finrank_eq_one_of_invariants_ne_bot (ρ.invariants_ne_bot_of_forall_pow_expChar_pow_eq_one p hρ)
+  h.finrank_eq_one_of_invariants_ne_bot (ρ.invariants_ne_bot_of_forall_pow_expChar_pow_eq_one hρ)
 
 /-- **A nonzero finite-dimensional representation of a `p`-group over a field of exponential
 characteristic `p` fixes a nonzero vector.** The group is not assumed finite. -/
 theorem exists_common_fixed_vector_of_isPGroup [Nontrivial V] (hG : IsPGroup p G)
     (ρ : Representation k G V) : ∃ v : V, v ≠ 0 ∧ ∀ g : G, ρ g v = v :=
-  ρ.exists_common_fixed_vector_of_forall_pow_expChar_pow_eq_one p
-    (hG.exists_pow_pow_eq_one_map ρ)
+  ρ.exists_common_fixed_vector_of_forall_pow_expChar_pow_eq_one (hG.exists_pow_pow_eq_one_map ρ)
 
 /-- The submodule form of `Representation.exists_common_fixed_vector_of_isPGroup`: the invariants
 of such a representation are nonzero. -/
 theorem invariants_ne_bot_of_isPGroup [Nontrivial V] (hG : IsPGroup p G)
     (ρ : Representation k G V) : ρ.invariants ≠ ⊥ :=
-  ρ.invariants_ne_bot_of_forall_pow_expChar_pow_eq_one p (hG.exists_pow_pow_eq_one_map ρ)
+  ρ.invariants_ne_bot_of_forall_pow_expChar_pow_eq_one (hG.exists_pow_pow_eq_one_map ρ)
 
 /-- The specialization of
 `Representation.IsIrreducible.eq_trivial_of_forall_pow_expChar_pow_eq_one` to a `p`-group: **a
@@ -167,12 +166,12 @@ finite-dimensional irreducible representation of a `p`-group in exponential char
 the trivial representation.** -/
 theorem IsIrreducible.eq_trivial_of_isPGroup {ρ : Representation k G V} (h : ρ.IsIrreducible)
     (hG : IsPGroup p G) : ρ = trivial k G V :=
-  h.eq_trivial_of_forall_pow_expChar_pow_eq_one p (hG.exists_pow_pow_eq_one_map ρ)
+  h.eq_trivial_of_forall_pow_expChar_pow_eq_one (hG.exists_pow_pow_eq_one_map ρ)
 
 /-- **Such an irreducible representation of a `p`-group is a line.** -/
 theorem IsIrreducible.finrank_eq_one_of_isPGroup {ρ : Representation k G V} (h : ρ.IsIrreducible)
     (hG : IsPGroup p G) : Module.finrank k V = 1 :=
-  h.finrank_eq_one_of_forall_pow_expChar_pow_eq_one p (hG.exists_pow_pow_eq_one_map ρ)
+  h.finrank_eq_one_of_forall_pow_expChar_pow_eq_one (hG.exists_pow_pow_eq_one_map ρ)
 
 end Invariants
 

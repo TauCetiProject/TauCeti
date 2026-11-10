@@ -55,11 +55,8 @@ noncomputable abbrev twistedIndexFiltrationFunctor :
 /-- The step `p` of `twistedIndexFiltrationFunctor` is the subcomplex `F_p`. -/
 noncomputable def twistedIndexFiltrationFunctorObjIso (p : ℤ) :
     (m.twistedIndexFiltrationFunctor dM hM).obj p ≅ m.twistedIndexCochainComplex hM p :=
-  CochainComplex.filtrationFunctorObjIso _ _ p ≪≫
-    eqToIso (congrArg (fun S : Subobject (m.twistedCochainComplex dM hM) ↦
-      (S : CochainComplex (ModuleCat.{max uP uM} R) ℤ))
-      ((CochainComplex.filtrationEInt_coe _ p).trans (m.twistedIndexSubobject_eq_mk hM p))) ≪≫
-    Subobject.underlyingIso (m.twistedIndexCochainComplexι hM p)
+  CochainComplex.filtrationFunctorObjIsoOfEqMk _ _ (m.twistedIndexCochainComplexι hM)
+    (m.twistedIndexSubobject_eq_mk hM) p
 
 /-- The identification of a step of `twistedIndexFiltrationFunctor` with `F_p` is compatible with
 the inclusions into the twisted complex. -/
@@ -67,11 +64,9 @@ the inclusions into the twisted complex. -/
 theorem twistedIndexFiltrationFunctorObjIso_hom_comp_indexFiltrationι (p : ℤ) :
     (m.twistedIndexFiltrationFunctorObjIso dM hM p).hom ≫ m.twistedIndexCochainComplexι hM p =
       (CochainComplex.filtrationFunctorObjIso _ _ p).hom ≫
-        (CochainComplex.filtrationEInt (m.twistedIndexSubobject hM) p).arrow := by
-  simp only [twistedIndexFiltrationFunctorObjIso, Iso.trans_hom, eqToIso.hom, Category.assoc,
-    Subobject.underlyingIso_hom_comp_eq_mk]
-  exact congrArg _ (Subobject.arrow_congr _ _
-    ((CochainComplex.filtrationEInt_coe _ p).trans (m.twistedIndexSubobject_eq_mk hM p)))
+        (CochainComplex.filtrationEInt (m.twistedIndexSubobject hM) p).arrow :=
+  CochainComplex.filtrationFunctorObjIsoOfEqMk_hom_comp _ _ (m.twistedIndexCochainComplexι hM)
+    (m.twistedIndexSubobject_eq_mk hM) p
 
 /-- The transition map `F_p ⟶ F_{p+1}` of `twistedIndexFiltrationFunctor` is the inclusion of
 subcomplexes `twistedIndexCochainComplexMap`. -/
@@ -81,12 +76,10 @@ theorem twistedIndexFiltrationFunctor_map_objIso_hom (p : ℤ) :
         (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : p = p) rfl)) ≫
       (m.twistedIndexFiltrationFunctorObjIso dM hM (p + 1)).hom =
     (m.twistedIndexFiltrationFunctorObjIso dM hM p).hom ≫
-      m.twistedIndexCochainComplexMap hM (Int.le_add_one le_rfl) := by
-  rw [← cancel_mono (m.twistedIndexCochainComplexι hM (p + 1))]
-  simp only [Category.assoc, twistedIndexFiltrationFunctorObjIso_hom_comp_indexFiltrationι,
-    twistedIndexCochainComplexMap_ι]
-  rw [← Category.assoc, CochainComplex.filtrationFunctor_map_comp_objIso_hom]
-  simp
+      m.twistedIndexCochainComplexMap hM (Int.le_add_one le_rfl) :=
+  CochainComplex.filtrationFunctor_map_comp_objIsoOfEqMk_hom _ _ (m.twistedIndexCochainComplexι hM)
+    (m.twistedIndexSubobject_eq_mk hM) p _
+    (m.twistedIndexCochainComplexMap_ι hM (Int.le_add_one le_rfl))
 
 /-- The graded piece `F_{p+1} / F_p` of the index filtration, the cokernel of the transition map of
 `twistedIndexFiltrationFunctor`, is the twisted complex of the zero cocycle on generators of
@@ -95,12 +88,10 @@ noncomputable def twistedIndexCokernelIso (p : ℤ) :
     cokernel ((m.twistedIndexFiltrationFunctor dM hM).map
         (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : p = p) rfl))) ≅
       (0 : TwistingCocycle 𝒜 d {x // ind x = p + 1} fun x ↦ ind x).twistedCochainComplex dM hM :=
-  cokernel.mapIso _ (m.twistedIndexCochainComplexMap hM (Int.le_add_one le_rfl))
-      (m.twistedIndexFiltrationFunctorObjIso dM hM p)
-      (m.twistedIndexFiltrationFunctorObjIso dM hM (p + 1))
-      (m.twistedIndexFiltrationFunctor_map_objIso_hom dM hM p) ≪≫
-    (colimit.isColimit _).coconePointUniqueUpToIso
-      (m.twistedIndexCochainComplexProjIsCokernel dM hM p)
+  CochainComplex.cokernelFiltrationFunctorMapIsoOfIsColimit _ _ (m.twistedIndexCochainComplexι hM)
+    (m.twistedIndexSubobject_eq_mk hM) p _
+    (m.twistedIndexCochainComplexMap_ι hM (Int.le_add_one le_rfl)) _ _
+    (m.twistedIndexCochainComplexProjIsCokernel dM hM p)
 
 /-- The graded-piece isomorphism identifies the cokernel projection with restriction to the
 generators of index `p + 1`. -/
@@ -110,12 +101,11 @@ theorem cokernel_π_comp_twistedIndexCokernelIso_hom (p : ℤ) :
         (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (rfl : p = p) rfl))) ≫
       (m.twistedIndexCokernelIso dM hM p).hom =
     (m.twistedIndexFiltrationFunctorObjIso dM hM (p + 1)).hom ≫
-      m.twistedIndexCochainComplexProj dM hM (p + 1) := by
-  rw [twistedIndexCokernelIso, Iso.trans_hom, ← Category.assoc, cokernel.mapIso_hom,
-    cokernel.π_desc, Category.assoc]
-  congr 1
-  exact IsColimit.comp_coconePointUniqueUpToIso_hom (colimit.isColimit _)
-    (m.twistedIndexCochainComplexProjIsCokernel dM hM p) WalkingParallelPair.one
+      m.twistedIndexCochainComplexProj dM hM (p + 1) :=
+  CochainComplex.π_cokernelFiltrationFunctorMapIsoOfIsColimit_hom _ _
+    (m.twistedIndexCochainComplexι hM) (m.twistedIndexSubobject_eq_mk hM) p _
+    (m.twistedIndexCochainComplexMap_ι hM (Int.le_add_one le_rfl)) _ _
+    (m.twistedIndexCochainComplexProjIsCokernel dM hM p)
 
 /-- **The first page of the index spectral sequence.** Its object at `(p, q)`, on page `2` in
 Mathlib's numbering, is the cohomology `H^{p+q}` of the twisted complex `ℳ ⊗ ⟨P_{q+1}⟩` of the zero

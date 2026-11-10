@@ -6,16 +6,22 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Cohomology.Basic
+public import TauCeti.AlgebraicGeometry.Cohomology.Module.Base
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.SymmetricAlgebra
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Basic
 import Mathlib.Algebra.Category.Grp.Zero
+import Mathlib.Data.Int.Interval
 import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 import TauCeti.AlgebraicGeometry.Cohomology.Cech.Basic
+import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.TwistingSheaf
+import TauCeti.AlgebraicGeometry.Cohomology.ProjectiveSpace.Vanishing
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.BasicOpen
 import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.TwistingSheaf.Quasicoherent
 import TauCeti.CategoryTheory.Limits.Lattice
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.MayerVietoris
+import TauCeti.Data.Fin.Basic
 import TauCeti.LinearAlgebra.Finsupp.Supported
+import TauCeti.LinearAlgebra.Matrix.Determinant.TupleSign
 import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 
 /-!
@@ -24,11 +30,13 @@ import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
 Let `M` be a free `R`-module with a basis `x₀, …, xₙ` indexed by a finite type `κ`, so that
 `Proj (Sym M) = ℙⁿ_R` is projective space over an arbitrary commutative ring `R`. This file proves
 that the twisting sheaves `𝒪(m)` have no cohomology in the intermediate degrees `0 < q < n`, for
-every `m : ℤ`, and none at all in positive degrees when `m > -n - 1`. Together with the
-computation of `H⁰` (`TauCeti.SymmetricAlgebra.free_cohomology_zero_twistingSheaf`) and the
-vanishing above degree `n` (`Module.Basis.subsingleton_cohomology_proj_of_card_le`), this describes
-`Hᵠ(ℙⁿ_R, 𝒪(m))` in every case of Hartshorne, Theorem III.5.1, except the top cohomology
-`Hⁿ(ℙⁿ_R, 𝒪(m))` for `m ≤ -n - 1`, which is nonzero whenever `R` is.
+every `m : ℤ`, and none at all in positive degrees when `m > -n - 1`. For `n ≥ 1` it shows that the
+top cohomology `Hⁿ(ℙⁿ_R, 𝒪(m))` is isomorphic to the free `R`-module on the Laurent monomials `xᵉ`
+of degree `m` all of whose exponents are negative. Together with the computation of `H⁰`
+(`TauCeti.SymmetricAlgebra.free_cohomology_zero_twistingSheaf`) and the vanishing above degree `n`
+(`Module.Basis.subsingleton_cohomology_proj_of_card_le`), this computes the groups
+`Hᵠ(ℙⁿ_R, 𝒪(m))` in every degree, and shows that for `n ≥ 1` they are finitely generated
+`R`-modules. The duality pairing of Hartshorne, Theorem III.5.1(d), is not treated here.
 
 The proof computes Čech cohomology for the standard affine cover by the charts `D₊(xᵢ)`, following
 the Stacks Project. On the chart `D₊(x_S)` of a nonempty set `S` of coordinates, with
@@ -50,16 +58,33 @@ because a monomial with all exponents negative has degree at most `-n - 1`. Fina
 (`AlgebraicGeometry.Scheme.Modules.homologyCechComplexIsoCohomology`) identifies Čech cohomology
 with the cohomology of `𝒪(m)`, the intersections of the charts being affine.
 
+In the top degree `n` the parts indexed by `T ≠ κ` still contribute nothing, and the part indexed
+by `T = κ` vanishes on every tuple of `n + 1` coordinates that is not a permutation of all of them.
+Its Čech cohomology in degree `n` consists of its cocycles, which are alternating functions on the
+orderings of the coordinates: the cocycle condition at a tuple repeating one entry two places later
+changes the sign under an adjacent transposition. Such a cocycle is determined by its value at one
+ordering, and conversely every value is attained, by the cocycle `a ↦ det(Pₐ) xᵉ`, where `Pₐ` is
+the matrix of the tuple `a` whose rows are standard basis vectors. Its cocycle condition is the
+expansion along the first column of a matrix whose first column is the sum of the others. The
+resulting identification is linear over `R`, because sections over the charts are linear in the
+Laurent coefficients.
+
 ## Main results
 
 * `Module.Basis.subsingleton_cohomology_twistingSheaf_of_lt_card`:
   `Hᵠ(ℙⁿ_R, 𝒪(m)) = 0` for `0 < q < n` and every `m : ℤ`.
 * `Module.Basis.subsingleton_cohomology_twistingSheaf_of_neg_card_lt`:
   `Hᵠ(ℙⁿ_R, 𝒪(m)) = 0` for every `q > 0` when `m > -n - 1`.
+* `Module.Basis.nonempty_linearEquiv_cohomology_top_twistingSheaf`: for `n ≥ 1`,
+  `Hⁿ(ℙⁿ_R, 𝒪(m))` is isomorphic to the free `R`-module on the exponents
+  `TauCeti.SymmetricAlgebra.negativeExponents κ m` of the Laurent monomials of degree `m` with all
+  exponents negative.
+* `Module.Basis.finite_cohomology_twistingSheaf`: for `n ≥ 1`, `Hᵠ(ℙⁿ_R, 𝒪(m))` is a finitely
+  generated `R`-module for every `q` and `m`.
 
 ## References
 
-* R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Theorem III.5.1(b) and (d).
+* R. Hartshorne, *Algebraic Geometry*, GTM 52, Springer, 1977, Theorem III.5.1(b) and (c).
 * [Stacks, Lemma 30.8.1 (01XS)](https://stacks.math.columbia.edu/tag/01XS), whose proof
   decomposes the Čech complex of the standard cover by the multidegree of Laurent monomials.
 -/
@@ -679,35 +704,633 @@ private lemma isZero_homology_laurentCech {q : ℕ} (hq : 0 < q)
 
 end Cech
 
+/-! ### Laurent monomials with all exponents negative -/
+
+/-- The exponents `e : κ → ℤ` of total degree `m` whose entries are all negative. When `κ` has at
+least two elements, the top cohomology of `𝒪(m)` on projective space with homogeneous coordinates
+indexed by `κ` is isomorphic to the free module on the Laurent monomials `xᵉ` with these
+exponents. -/
+def negativeExponents (κ : Type*) [Fintype κ] (m : ℤ) : Set (κ → ℤ) :=
+  {e | ∑ i, e i = m ∧ ∀ i, e i < 0}
+
+@[simp]
+theorem mem_negativeExponents {κ : Type*} [Fintype κ] {m : ℤ} {e : κ → ℤ} :
+    e ∈ negativeExponents κ m ↔ ∑ i, e i = m ∧ ∀ i, e i < 0 :=
+  Iff.rfl
+
+/-- There are finitely many exponents of a given degree with all entries negative, since each
+entry lies between the degree and `-1`. -/
+instance (κ : Type*) [Fintype κ] (m : ℤ) : Finite (negativeExponents κ m) := by
+  refine Set.Finite.to_subtype ((Set.Finite.pi (t := fun _ : κ ↦ Set.Icc m (-1))
+    fun _ ↦ Set.finite_Icc _ _).subset ?_)
+  classical
+  rintro e ⟨hsum, hneg⟩ i -
+  refine ⟨?_, by have := hneg i; omega⟩
+  have : ∑ j ∈ Finset.univ.erase i, e j ≤ 0 := Finset.sum_nonpos fun j _ ↦ (hneg j).le
+  rw [← Finset.add_sum_erase _ _ (Finset.mem_univ i)] at hsum
+  omega
+
+section TopCech
+
+open OrderDual in
+open scoped Classical in
+/-- The product of the charts of the coordinates of a tuple, which is the set of its entries, is
+the set of all coordinates exactly when the tuple is surjective. -/
+private lemma ofDual_pi_eq_univ_iff [Fintype κ] {q : ℕ} (a : Fin (q + 1) → κ) :
+    ofDual (∏ᶜ fun j ↦ (toDual {a j} : (Finset κ)ᵒᵈ)) = Finset.univ ↔ Function.Surjective a := by
+  rw [ofDual_pi_toDual_singleton]
+  refine ⟨fun h x ↦ ?_, Finset.image_univ_of_surjective⟩
+  have hx : x ∈ Finset.univ.image a := h ▸ Finset.mem_univ x
+  simpa using hx
+
+open Limits Opposite OrderDual TauCeti.CategoryTheory
+
+variable [Fintype κ] [DecidableEq κ] (m : ℤ)
+
+omit [DecidableEq κ] in
+private lemma negativeExponents_subset : negativeExponents κ m ⊆ chartExponents m Finset.univ :=
+  fun _ he ↦ ⟨he.1, Finset.subset_univ _⟩
+
+omit [DecidableEq κ] in
+/-- Over a chart missing a coordinate, a Laurent monomial has a nonnegative exponent. -/
+private lemma notMem_negativeExponents {S : Finset κ} (hS : S ≠ Finset.univ) {e : κ → ℤ}
+    (he : e ∈ chartExponents m S) : e ∉ negativeExponents κ m := by
+  rintro ⟨-, hneg⟩
+  obtain ⟨i, hi⟩ : ∃ i, i ∉ S := by
+    by_contra! h
+    exact hS (Finset.eq_univ_iff_forall.2 h)
+  exact hi (he.2 (mem_negSupport.2 (hneg i)))
+
+/-- The coefficients of a Laurent polynomial at the monomials of degree `m` with all exponents
+negative. -/
+private abbrev negPart : ((κ → ℤ) →₀ R) →ₗ[R] negativeExponents κ m →₀ R :=
+  Finsupp.lsubtypeDomain _
+
+/-- The Laurent polynomial with given coefficients at the monomials of degree `m` with all
+exponents negative. -/
+private abbrev negEmb : (negativeExponents κ m →₀ R) →ₗ[R] (κ → ℤ) →₀ R :=
+  Finsupp.lmapDomain R R Subtype.val
+
+omit [DecidableEq κ] in
+private lemma negPart_negEmb (f : negativeExponents κ m →₀ R) : negPart m (negEmb m f) = f := by
+  ext x
+  exact Finsupp.mapDomain_apply_of_injective Subtype.val_injective f x
+
+omit [DecidableEq κ] in
+private lemma negEmb_mem_supported (f : negativeExponents κ m →₀ R) :
+    negEmb m f ∈ Finsupp.supported R R (chartExponents m Finset.univ) := by
+  refine (Finsupp.mem_supported R _).2 fun e he ↦ ?_
+  obtain ⟨x, -, rfl⟩ := Finset.mem_image.1 (Finsupp.mapDomain_support he)
+  exact negativeExponents_subset m x.2
+
+omit [DecidableEq κ] in
+private lemma negPart_eq_zero {S : Finset κ} (hS : S ≠ Finset.univ) {w : (κ → ℤ) →₀ R}
+    (hw : w ∈ Finsupp.supported R R (chartExponents m S)) : negPart m w = 0 := by
+  ext ⟨e, he⟩
+  rw [Finsupp.lsubtypeDomain_apply, Finsupp.subtypeDomain_apply, Finsupp.coe_zero, Pi.zero_apply]
+  exact Finsupp.notMem_support_iff.1 fun h ↦
+    notMem_negativeExponents m hS ((Finsupp.mem_supported R w).1 hw h) he
+
+/-- On Laurent polynomials, restricting to the monomials with all exponents negative and back is
+the projection onto the monomials with negative support `univ`. -/
+private lemma negEmb_negPart {S : Finset κ} {w : (κ → ℤ) →₀ R}
+    (hw : w ∈ Finsupp.supported R R (chartExponents m S)) :
+    negEmb m (negPart m w) = Finsupp.filter (negSupport · = Finset.univ) w := by
+  ext e
+  by_cases he : e ∈ negativeExponents κ m
+  · rw [Finsupp.filter_apply_pos (fun x ↦ negSupport x = Finset.univ) w
+      (Finset.eq_univ_iff_forall.2 fun i ↦ mem_negSupport.2 (he.2 i))]
+    exact Finsupp.mapDomain_apply_of_injective Subtype.val_injective _
+      (⟨e, he⟩ : negativeExponents κ m)
+  · rw [Finsupp.lmapDomain_apply, Finsupp.mapDomain_of_notMem_range _ _ fun ⟨x, hx⟩ ↦ he (hx ▸ x.2)]
+    by_cases h : negSupport e = Finset.univ
+    · rw [Finsupp.filter_apply_pos (fun x ↦ negSupport x = Finset.univ) w h]
+      exact (Finsupp.notMem_support_iff.1 fun hs ↦ he ⟨((Finsupp.mem_supported R w).1 hw hs).1,
+        fun i ↦ mem_negSupport.1 (h ▸ Finset.mem_univ i)⟩).symm
+    · rw [Finsupp.filter_apply_neg (fun x ↦ negSupport x = Finset.univ) w h]
+
+/-- The factor indexed by `a` of a Čech cochain of Laurent polynomials. -/
+private abbrev cechπ {q : ℕ} (a : Fin (q + 1) → κ) :
+    (laurentCech (R := R) (κ := κ) m).X q ⟶
+      (laurentPresheaf (R := R) m).obj (op (∏ᶜ fun j ↦ (toDual {a j} : (Finset κ)ᵒᵈ))) :=
+  Pi.π _ a
+
+/-- The Čech differential of Laurent polynomials is the alternating sum of the factors indexed by
+the faces, since restriction of Laurent polynomials is an inclusion. -/
+private lemma val_cechπ_d (q : ℕ) (k : Fin (q + 2) → κ)
+    (x : (laurentCech (R := R) (κ := κ) m).X q) :
+    (cechπ m k ((laurentCech m).d q (q + 1) x)).1 =
+      ∑ p : Fin (q + 2), (-1 : ℤ) ^ (p : ℕ) • (cechπ m (k ∘ p.succAbove) x).1 := by
+  have h := ConcreteCategory.congr_hom (cechComplexFunctor_obj_d_comp_π
+    (fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)) (laurentPresheaf (R := R) m) q k) x
+  refine (congrArg Subtype.val (h.trans ((DFunLike.congr_fun
+    (map_sum AddCommGrpCat.homAddEquiv _ _) x).trans
+      (AddMonoidHom.finsetSum_apply _ _ x)))).trans ?_
+  exact (map_sum (Submodule.subtype _).toAddMonoidHom _ _).trans
+    (Finset.sum_congr rfl fun p _ ↦ rfl)
+
+end TopCech
+
+/-! ### The top Čech cohomology of the Laurent polynomials -/
+
+section TopDegree
+
+open Limits Opposite OrderDual TauCeti.CategoryTheory
+
+variable [Fintype κ] [DecidableEq κ] (m : ℤ) {n : ℕ} (e : κ ≃ Fin (n + 2))
+
+omit [Fintype κ] [DecidableEq κ] in
+include e in
+/-- A tuple of fewer coordinates than there are coordinates misses one of them. -/
+private lemma not_surjective_of_card (a : Fin (n + 1) → κ) : ¬Function.Surjective a := fun h ↦ by
+  let : Fintype κ := Fintype.ofEquiv _ e.symm
+  have := Fintype.card_le_of_surjective a h
+  rw [Fintype.card_fin, Fintype.card_congr e, Fintype.card_fin] at this
+  omega
+
+/-- The factor indexed by `a` of the alternating cochain of degree `n + 1` with value `f` at the
+ordering `e.symm` of the coordinates. -/
+private def topCochainComponent (a : Fin (n + 2) → κ) :
+    (negativeExponents κ m →₀ R) →+
+      (laurentPresheaf (R := R) m).obj (op (∏ᶜ fun j ↦ (toDual {a j} : (Finset κ)ᵒᵈ))) where
+  toFun f := ⟨e.tupleSign ℤ a • negEmb m f, by
+    by_cases ha : Function.Surjective a
+    · -- the carrier of `laurentPresheaf` at a chart is a module of Laurent polynomials by
+      -- definition, but its membership predicate is only visible after unfolding it
+      change _ ∈ Finsupp.supported R R
+        (chartExponents m (ofDual (∏ᶜ fun j ↦ (toDual {a j} : (Finset κ)ᵒᵈ))))
+      rw [(ofDual_pi_eq_univ_iff a).2 ha]
+      exact Submodule.smul_of_tower_mem _ _ (negEmb_mem_supported m f)
+    · rw [e.tupleSign_eq_zero_of_not_surjective ℤ ha, zero_smul]
+      exact zero_mem _⟩
+  -- rewriting under the subtype is blocked by the membership proof, so the equalities of
+  -- underlying Laurent polynomials are stated explicitly
+  map_zero' := Subtype.ext (show e.tupleSign ℤ a • negEmb m 0 = 0 by rw [map_zero, smul_zero])
+  map_add' f g := Subtype.ext (show e.tupleSign ℤ a • negEmb m (f + g) =
+    e.tupleSign ℤ a • negEmb m f + e.tupleSign ℤ a • negEmb m g by rw [map_add, smul_add])
+
+/-- The alternating Čech cochain of degree `n + 1` taking the value `f` at the ordering `e.symm`
+of the coordinates. -/
+private def topCochain :
+    AddCommGrpCat.of (negativeExponents κ m →₀ R) ⟶ (laurentCech (R := R) (κ := κ) m).X (n + 1) :=
+  Pi.lift fun a ↦ AddCommGrpCat.ofHom (topCochainComponent m e a)
+
+private lemma val_cechπ_topCochain (a : Fin (n + 2) → κ) (f : negativeExponents κ m →₀ R) :
+    (cechπ m a (topCochain m e f)).1 = e.tupleSign ℤ a • negEmb m f := by
+  exact congrArg Subtype.val (ConcreteCategory.congr_hom
+    (Pi.lift_comp_π (fun a ↦ AddCommGrpCat.ofHom (topCochainComponent (R := R) m e a)) a) f)
+
+/-- The coefficients at the monomials with all exponents negative of the factor of a Čech cochain
+of degree `n + 1` indexed by the ordering `e.symm` of the coordinates. -/
+private def topCoefficient :
+    (laurentCech (R := R) (κ := κ) m).X (n + 1) ⟶ AddCommGrpCat.of (negativeExponents κ m →₀ R) :=
+  cechπ m e.symm ≫ AddCommGrpCat.ofHom
+    ((negPart m).toAddMonoidHom.comp (Finsupp.supported R R _).subtype.toAddMonoidHom)
+
+private lemma topCoefficient_apply (x : (laurentCech (R := R) (κ := κ) m).X (n + 1)) :
+    topCoefficient m e x = negPart m (cechπ m e.symm x).1 :=
+  rfl
+
+private lemma topCochain_comp_topCoefficient :
+    topCochain (R := R) m e ≫ topCoefficient m e = 𝟙 _ := by
+  refine AddCommGrpCat.ext fun f ↦ ?_
+  rw [ConcreteCategory.comp_apply, topCoefficient_apply, val_cechπ_topCochain,
+    Equiv.tupleSign_symm, one_smul, negPart_negEmb]
+  rfl
+
+/-- The alternating cochain is a cocycle, by the cocycle identity for signs of tuples. -/
+private lemma topCochain_comp_d :
+    topCochain (R := R) m e ≫ (laurentCech m).d (n + 1) (n + 2) = 0 := by
+  refine Pi.hom_ext (f := fun k : Fin (n + 3) → κ ↦
+    (laurentPresheaf (R := R) m).obj (op (∏ᶜ fun j ↦ (toDual {k j} : (Finset κ)ᵒᵈ)))) _ _ fun k ↦ ?_
+  refine AddCommGrpCat.ext fun f ↦ Subtype.ext ?_
+  -- composites of morphisms of abelian groups act by composition; this exposes the factor at `k`
+  -- in the form used by `val_cechπ_d`
+  change (cechπ m k ((laurentCech m).d (n + 1) (n + 2) (topCochain m e f))).1 =
+    (cechπ m k 0).1
+  rw [map_zero, val_cechπ_d]
+  calc ∑ p : Fin (n + 3), (-1 : ℤ) ^ (p : ℕ) • (cechπ m (k ∘ p.succAbove) (topCochain m e f)).1
+      = ∑ p : Fin (n + 3), ((-1 : ℤ) ^ (p : ℕ) * e.tupleSign ℤ (k ∘ p.succAbove)) • negEmb m f :=
+        Finset.sum_congr rfl fun p _ ↦ by rw [val_cechπ_topCochain, smul_smul]
+    _ = 0 := by rw [← Finset.sum_smul, e.sum_neg_one_pow_mul_tupleSign_comp_succAbove ℤ, zero_smul]
+
+/-- Coboundaries have no coefficients at the monomials with all exponents negative: the faces of a
+tuple of `n + 2` coordinates are tuples of `n + 1` coordinates, whose charts miss a coordinate. -/
+private lemma d_comp_topCoefficient :
+    (laurentCech (R := R) (κ := κ) m).d n (n + 1) ≫ topCoefficient m e = 0 := by
+  refine AddCommGrpCat.ext fun x ↦ ?_
+  rw [ConcreteCategory.comp_apply, topCoefficient_apply, val_cechπ_d, map_sum]
+  refine Finset.sum_eq_zero fun p _ ↦ ?_
+  rw [map_zsmul, negPart_eq_zero m (mt (ofDual_pi_eq_univ_iff _).1
+    (not_surjective_of_card e _)) (cechπ m _ x).2, smul_zero]
+
+/-! ### Cocycles of top degree are alternating -/
+
+private lemma negPart_cechπ_eq_zero {c : Fin (n + 2) → κ} (hc : ¬Function.Surjective c)
+    (z : (laurentCech (R := R) (κ := κ) m).X (n + 1)) : negPart m (cechπ m c z).1 = 0 :=
+  negPart_eq_zero m (mt (ofDual_pi_eq_univ_iff c).1 hc) (cechπ m c z).2
+
+private lemma sum_negPart_cechπ {z : (laurentCech (R := R) (κ := κ) m).X (n + 1)}
+    (hz : (laurentCech m).d (n + 1) (n + 2) z = 0) (k : Fin (n + 3) → κ) :
+    ∑ p : Fin (n + 3), (-1 : ℤ) ^ (p : ℕ) • negPart m (cechπ m (k ∘ p.succAbove) z).1 = 0 := by
+  have h := congrArg (fun y ↦ negPart m (cechπ m k y).1) hz
+  simp only [val_cechπ_d, map_sum, map_zsmul] at h
+  exact h.trans (by rw [map_zero]; rfl)
+
+include e in
+/-- The coefficients of a cocycle of top degree at the monomials with all exponents negative
+change sign when two adjacent entries of the tuple are swapped: this is the cocycle condition at
+the tuple obtained by repeating the first of the two entries after the second. -/
+private lemma negPart_cechπ_comp_swap {z : (laurentCech (R := R) (κ := κ) m).X (n + 1)}
+    (hz : (laurentCech m).d (n + 1) (n + 2) z = 0) (c : Fin (n + 2) → κ) (i : Fin (n + 1)) :
+    negPart m (cechπ m (c ∘ Equiv.swap i.castSucc i.succ) z).1 = -negPart m (cechπ m c z).1 := by
+  let s : Fin (n + 3) → Fin (n + 2) := fun p ↦
+    ⟨if (p : ℕ) = i + 2 then i else if (p : ℕ) < i + 2 then p else p - 1, by
+      have := p.2; have := i.2; split_ifs <;> omega⟩
+  let p₀ : Fin (n + 3) := ⟨i, by omega⟩
+  let p₂ : Fin (n + 3) := ⟨i + 2, by omega⟩
+  have h₀ : c ∘ s ∘ p₀.succAbove = c ∘ Equiv.swap i.castSucc i.succ := by
+    funext j
+    refine congrArg c (Fin.ext ?_)
+    have hc : (i.castSucc : ℕ) = i := rfl
+    have hs : (i.succ : ℕ) = i + 1 := rfl
+    simp only [s, p₀, Function.comp_apply, Fin.val_succAbove, Equiv.swap_apply_def, Fin.ext_iff]
+    split_ifs <;> omega
+  have h₂ : c ∘ s ∘ p₂.succAbove = c := by
+    funext j
+    refine congrArg c (Fin.ext ?_)
+    simp only [s, p₂, Function.comp_apply, Fin.val_succAbove]
+    split_ifs <;> omega
+  have hzero (p : Fin (n + 3)) (hp : p ≠ p₀ ∧ p ≠ p₂) :
+      (-1 : ℤ) ^ (p : ℕ) • negPart m (cechπ m ((c ∘ s) ∘ p.succAbove) z).1 = 0 := by
+    obtain ⟨j₀, hj₀⟩ := Fin.exists_succAbove_eq hp.1.symm
+    obtain ⟨j₂, hj₂⟩ := Fin.exists_succAbove_eq hp.2.symm
+    rw [negPart_cechπ_eq_zero m (fun hsurj ↦ ?_) z, smul_zero]
+    have hinj := (Finite.injective_iff_surjective_of_equiv e.symm).2 hsurj
+    have hj : j₀ = j₂ := hinj (by
+      simp only [Function.comp_apply, hj₀, hj₂]
+      refine congrArg c (Fin.ext ?_)
+      simp [s, p₀, p₂])
+    have := congrArg Fin.val (hj₀.symm.trans (hj ▸ hj₂))
+    simp [p₀, p₂] at this
+  have hsum := sum_negPart_cechπ m hz (c ∘ s)
+  rw [Fintype.sum_eq_add p₀ p₂ (fun h ↦ by simpa [p₀, p₂] using congrArg Fin.val h) hzero,
+    Function.comp_assoc, Function.comp_assoc, h₀, h₂] at hsum
+  simp only [p₀, p₂, pow_add, neg_one_sq, mul_one, ← smul_add] at hsum
+  exact eq_neg_of_add_eq_zero_left (((isUnit_neg_one (α := ℤ)).pow _).smul_eq_zero.1 hsum)
+
+/-- The coefficients of a cocycle of top degree at the monomials with all exponents negative are
+alternating in the ordering of the coordinates, since adjacent transpositions generate the
+symmetric group. -/
+private lemma negPart_cechπ_comp_perm {z : (laurentCech (R := R) (κ := κ) m).X (n + 1)}
+    (hz : (laurentCech m).d (n + 1) (n + 2) z = 0) (σ : Equiv.Perm (Fin (n + 2))) :
+    negPart m (cechπ m (e.symm ∘ σ) z).1 =
+      (Equiv.Perm.sign σ : ℤ) • negPart m (cechπ m e.symm z).1 := by
+  induction σ using Submonoid.induction_of_closure_eq_top_right
+    (Equiv.Perm.mclosure_swap_castSucc_succ (n + 1)) with
+  | one =>
+    rw [Equiv.Perm.sign_one, Units.val_one, one_smul]
+    rfl
+  | mul_right σ τ hτ ih =>
+    obtain ⟨i, rfl⟩ := hτ
+    rw [Equiv.Perm.coe_mul, ← Function.comp_assoc, negPart_cechπ_comp_swap m e hz, ih,
+      Equiv.Perm.sign_mul, Equiv.Perm.sign_swap (Fin.castSucc_lt_succ (i := i)).ne]
+    simp
+
+/-- A cocycle of top degree is determined, at the monomials with all exponents negative, by its
+factor at the ordering `e.symm`: the factor at a tuple `c` is this one multiplied by the sign of
+`c`. -/
+private lemma negPart_cechπ_eq_tupleSign_smul {z : (laurentCech (R := R) (κ := κ) m).X (n + 1)}
+    (hz : (laurentCech m).d (n + 1) (n + 2) z = 0) (c : Fin (n + 2) → κ) :
+    negPart m (cechπ m c z).1 = e.tupleSign ℤ c • negPart m (cechπ m e.symm z).1 := by
+  by_cases hc : Function.Surjective c
+  · have hbij : Function.Bijective (e ∘ c) :=
+      e.bijective.comp ⟨(Finite.injective_iff_surjective_of_equiv e.symm).2 hc, hc⟩
+    have hσ : e.symm ∘ Equiv.ofBijective _ hbij = c := funext fun j ↦ by simp
+    rw [← hσ, negPart_cechπ_comp_perm m e hz, Equiv.tupleSign_comp_perm, Equiv.tupleSign_symm,
+      mul_one, Int.cast_id]
+  · rw [negPart_cechπ_eq_zero m hc z, e.tupleSign_eq_zero_of_not_surjective ℤ hc, zero_smul]
+
+/-! ### The homology in top degree -/
+
+/-- The chain map to the complex concentrated in degree `n + 1` taking the coefficients of the
+factor at the ordering `e.symm` at the monomials with all exponents negative. -/
+private def toTop : laurentCech (R := R) (κ := κ) m ⟶
+    (HomologicalComplex.single _ (ComplexShape.up ℕ) (n + 1)).obj
+      (AddCommGrpCat.of (negativeExponents κ m →₀ R)) :=
+  HomologicalComplex.mkHomToSingle (topCoefficient m e) fun i hi ↦ by
+    obtain rfl : i = n := by simpa using hi
+    exact d_comp_topCoefficient m e
+
+/-- The chain map from the complex concentrated in degree `n + 1` given by the alternating
+cocycles. -/
+private def fromTop :
+    (HomologicalComplex.single _ (ComplexShape.up ℕ) (n + 1)).obj
+      (AddCommGrpCat.of (negativeExponents κ m →₀ R)) ⟶ laurentCech (R := R) (κ := κ) m :=
+  HomologicalComplex.mkHomFromSingle (topCochain m e) fun k hk ↦ by
+    obtain rfl : k = n + 2 := by
+      simp only [ComplexShape.up_Rel] at hk
+      omega
+    exact topCochain_comp_d m e
+
+private lemma fromTop_comp_toTop : fromTop (R := R) m e ≫ toTop m e = 𝟙 _ := by
+  ext : 1
+  simp [toTop, fromTop, reassoc_of% topCochain_comp_topCoefficient]
+
+/-- On cocycles of top degree, the projection onto the monomials with all exponents negative is
+the alternating cocycle with the same factor at the ordering `e.symm`. -/
+private lemma iCycles_comp_negSupportProj_univ :
+    (laurentCech (R := R) (κ := κ) m).iCycles (n + 1) ≫
+        ((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
+          (negSupportProj m Finset.univ)).f (n + 1) =
+      (laurentCech m).iCycles (n + 1) ≫ (toTop m e ≫ fromTop m e).f (n + 1) := by
+  refine Pi.hom_ext (f := fun a : Fin (n + 2) → κ ↦
+    (laurentPresheaf (R := R) m).obj (op (∏ᶜ fun j ↦ (toDual {a j} : (Finset κ)ᵒᵈ)))) _ _
+    fun a ↦ AddCommGrpCat.ext fun x ↦ Subtype.ext ?_
+  have hz : (laurentCech (R := R) (κ := κ) m).d (n + 1) (n + 2)
+      ((laurentCech m).iCycles (n + 1) x) = 0 := by
+    rw [← ConcreteCategory.comp_apply, HomologicalComplex.iCycles_d]
+    rfl
+  simp only [HomologicalComplex.comp_f, toTop, fromTop, HomologicalComplex.mkHomToSingle_f,
+    HomologicalComplex.mkHomFromSingle_f, Category.assoc, Iso.inv_hom_id_assoc]
+  refine (congrArg Subtype.val (ConcreteCategory.congr_hom (cechComplexFunctor_map_f_π
+    (fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)) (laurentPresheaf (R := R) m)
+    (negSupportProj m Finset.univ) (n + 1) a) ((laurentCech m).iCycles (n + 1) x))).trans ?_
+  -- composites of morphisms of abelian groups act by composition; this states both sides in terms
+  -- of the factors of the cocycle
+  change ((negSupportProj (R := R) m Finset.univ).app _
+      (cechπ m a ((laurentCech m).iCycles (n + 1) x))).1 =
+    (cechπ m a (topCochain m e (topCoefficient m e ((laurentCech m).iCycles (n + 1) x)))).1
+  rw [val_cechπ_topCochain, topCoefficient_apply, ← map_zsmul,
+    ← negPart_cechπ_eq_tupleSign_smul m e hz, negEmb_negPart m (cechπ m a _).2]
+  exact Finsupp.filterSupported_apply _ _ _
+
+private lemma homologyMap_toTop_comp_fromTop :
+    HomologicalComplex.homologyMap (toTop (R := R) m e ≫ fromTop m e) (n + 1) = 𝟙 _ := by
+  rw [← HomologicalComplex.homologyMap_eq_of_iCycles_comp (iCycles_comp_negSupportProj_univ m e)]
+  have hsum : ∑ T : Finset κ, (cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
+      (negSupportProj (R := R) m T) = 𝟙 (laurentCech (R := R) (κ := κ) m) := by
+    rw [← Functor.map_sum, sum_negSupportProj, CategoryTheory.Functor.map_id]
+  rw [← HomologicalComplex.homologyMap_id, ← hsum, ← HomologicalComplex.homologyFunctor_map,
+    ← HomologicalComplex.homologyFunctor_map, Functor.map_sum,
+    Finset.sum_eq_single_of_mem _ (Finset.mem_univ _) fun T _ hT ↦ ?_]
+  obtain ⟨c, hc⟩ : ∃ c, c ∉ T := by
+    by_contra! hall
+    exact hT (Finset.eq_univ_iff_forall.2 hall)
+  rw [HomologicalComplex.homologyFunctor_map]
+  exact homologyMap_negSupportProj_of_notMem m hc n
+
+/-- The top Čech cohomology of the Laurent polynomials is the group of Laurent polynomials whose
+monomials have all exponents negative. -/
+private def topHomologyIso : (laurentCech (R := R) (κ := κ) m).homology (n + 1) ≅
+    AddCommGrpCat.of (negativeExponents κ m →₀ R) where
+  hom := HomologicalComplex.homologyMap (toTop m e) (n + 1) ≫
+    (HomologicalComplex.singleObjHomologySelfIso _ _ _).hom
+  inv := (HomologicalComplex.singleObjHomologySelfIso _ _ _).inv ≫
+    HomologicalComplex.homologyMap (fromTop m e) (n + 1)
+  hom_inv_id := by
+    rw [Category.assoc, Iso.hom_inv_id_assoc, ← HomologicalComplex.homologyMap_comp,
+      homologyMap_toTop_comp_fromTop]
+  inv_hom_id := by
+    rw [Category.assoc, ← Category.assoc (HomologicalComplex.homologyMap _ _),
+      ← HomologicalComplex.homologyMap_comp, fromTop_comp_toTop,
+      HomologicalComplex.homologyMap_id, Category.id_comp, Iso.inv_hom_id]
+
+end TopDegree
+
+/-! ### Comparison with the cohomology of the twisting sheaves -/
+
+open Limits OrderDual in
+open scoped Classical in
+/-- The product of the charts of the coordinates `a j` lies in the chart of their product. -/
+private lemma nonempty_pi_chartFunctor_obj_hom {n : ℕ} (a : Fin (n + 1) → κ) :
+    Nonempty ((∏ᶜ fun j ↦ (chartFunctor b).obj (toDual {a j})) ⟶
+      (chartFunctor b).obj (∏ᶜ fun j ↦ toDual {a j})) := by
+  refine ⟨homOfLE ?_⟩
+  rw [chartFunctor_obj, basicOpen_coordProd, ofDual_pi_toDual_singleton]
+  refine Finset.le_inf fun i hi ↦ ?_
+  obtain ⟨j, -, rfl⟩ := Finset.mem_image.1 hi
+  exact (leOfHom (Pi.π _ j)).trans (chartFunctor_obj_singleton b (a j)).le
+
+open _root_.AlgebraicGeometry.Scheme.Modules in
+/-- Multiplication by the constant function `r` on `𝒪(m)`. -/
+private abbrev twistingSheafSmul (m : ℤ) (r : R) :
+    Proj.twistingSheaf 𝒜 m ⟶ Proj.twistingSheaf 𝒜 m :=
+  (Proj.twistingSheaf 𝒜 m).globalSectionsSmul (baseRingToGlobalSections R (Proj 𝒜) r)
+
+open OrderDual TauCeti.CategoryTheory in
+open scoped Classical in
+/-- Indexing the Čech complex by sets of coordinates instead of charts commutes with
+multiplication by `r`. -/
+private lemma homologyMap_smul_comp_homologyMap_cechComplexCompIso_hom (m : ℤ) (q : ℕ) (r : R) :
+    HomologicalComplex.homologyMap ((cechComplexFunctor
+        fun i : κ ↦ (chartFunctor b).obj (toDual {i})).map
+          ((SheafOfModules.toSheaf _).map (twistingSheafSmul m r)).hom) q ≫
+        HomologicalComplex.homologyMap (cechComplexCompIso (chartFunctor b)
+          (fun i : κ ↦ toDual {i}) (sectionsPresheaf (R := R) (M := M) m)
+          fun _ ↦ nonempty_pi_chartFunctor_obj_hom b).hom q =
+      HomologicalComplex.homologyMap (cechComplexCompIso (chartFunctor b)
+          (fun i : κ ↦ toDual {i}) (sectionsPresheaf (R := R) (M := M) m)
+          fun _ ↦ nonempty_pi_chartFunctor_obj_hom b).hom q ≫
+        HomologicalComplex.homologyMap
+          ((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
+            (Functor.whiskerLeft (chartFunctor b).op
+              ((SheafOfModules.toSheaf _).map (twistingSheafSmul m r)).hom)) q := by
+  rw [← HomologicalComplex.homologyMap_comp, cechComplexFunctor_map_comp_cechComplexCompIso_hom,
+    HomologicalComplex.homologyMap_comp]
+
+section Comparison
+
+open Limits Opposite OrderDual TauCeti.CategoryTheory _root_.AlgebraicGeometry.Scheme.Modules
+
+variable [Fintype κ] [DecidableEq κ] (m : ℤ)
+
+/-- The cohomology of `𝒪(m)` is the Čech cohomology of the Laurent polynomials, by Leray's theorem
+for the standard cover and the description of the sections over the charts. -/
+private def cohomologyIsoHomologyLaurentCech (q : ℕ) :
+    AddCommGrpCat.of (Cohomology (Proj.twistingSheaf 𝒜 m) q) ≅
+      (laurentCech (R := R) (κ := κ) m).homology q :=
+  haveI := isIso_cechComplexFunctor_map_laurentToSections b m
+  (homologyCechComplexIsoCohomology (fun i : κ ↦ (chartFunctor b).obj (toDual {i}))
+      (isAffineOpen_inf_chartFunctor_obj_singleton b) (iSup_chartFunctor_obj_singleton b)
+      (Proj.twistingSheaf 𝒜 m) q).symm ≪≫
+    HomologicalComplex.homologyMapIso (cechComplexCompIso (chartFunctor b)
+      (fun i : κ ↦ toDual {i}) (sectionsPresheaf (R := R) (M := M) m)
+      fun _ ↦ nonempty_pi_chartFunctor_obj_hom b) q ≪≫
+    (HomologicalComplex.homologyMapIso
+      (asIso ((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
+        (laurentToSections b m))) q).symm
+
+/-- Multiplication by `r` on Laurent polynomials. -/
+private def laurentSmul (r : R) :
+    laurentPresheaf (R := R) (κ := κ) m ⟶ laurentPresheaf (R := R) m where
+  app _ := AddCommGrpCat.ofHom (DistribSMul.toAddMonoidHom _ r)
+  naturality _ _ _ := AddCommGrpCat.hom_ext (AddMonoidHom.ext fun _ ↦ rfl)
+
+/-- The Laurent monomial `(r c) xᵉ` is the multiple of `c xᵉ` by the constant function `r`. -/
+private lemma chartSectionHom_mul (S : Finset κ) (e : κ → ℤ) (r c : R) :
+    chartSectionHom b m S e (r * c) =
+      (Proj 𝒜).presheaf.map (Proj.basicOpen 𝒜 (coordProd b S)).leTop.op
+        (baseRingToGlobalSections R (Proj 𝒜) r) • chartSectionHom b m S e c := by
+  by_cases he : e ∈ chartExponents m S
+  · rw [chartSectionHom_apply b he (fun i _ ↦ le_exponentBound e i),
+      chartSectionHom_apply b he (fun i _ ↦ le_exponentBound e i)]
+    refine Proj.twistingSheaf.ext fun x ↦ Eq.trans ?_ (Proj.twistingSheaf.smul_apply _ _ x).symm
+    -- restricting a global function keeps its values, and the constant `r` is the fraction `r / 1`
+    change Localization.mk _ _ =
+      ((baseRingToGlobalSections R (Proj 𝒜) r).1 ⟨x.1, trivial⟩).val * Localization.mk _ _
+    refine Eq.trans ?_ (congrArg (· * _)
+      (val_baseRingToGlobalSections_apply (M := M) r ⟨x.1, trivial⟩)).symm
+    rw [Localization.mk_mul, one_mul, mul_smul, Algebra.smul_def]
+  · simp [chartSectionHom, he]
+
+/-- Writing sections over a chart as Laurent polynomials is linear over the base ring. -/
+private lemma chartSectionsHom_smul (S : Finset κ) (r : R)
+    (f : Finsupp.supported R R (chartExponents m S)) :
+    chartSectionsHom b m S (r • f) =
+      (Proj 𝒜).presheaf.map (Proj.basicOpen 𝒜 (coordProd b S)).leTop.op
+        (baseRingToGlobalSections R (Proj 𝒜) r) • chartSectionsHom b m S f := by
+  simp only [chartSectionsHom, AddMonoidHom.coe_comp, Function.comp_apply,
+    LinearMap.toAddMonoidHom_coe, Submodule.coe_subtype, Submodule.coe_smul,
+    Finsupp.liftAddHom_apply]
+  rw [Finsupp.sum_smul_index' fun e ↦ map_zero _, Finsupp.smul_sum]
+  exact Finsupp.sum_congr fun e _ ↦ chartSectionHom_mul b m S e r _
+
+private lemma laurentSmul_comp_laurentToSections (r : R) :
+    laurentSmul m r ≫ laurentToSections b m = laurentToSections b m ≫
+      Functor.whiskerLeft (chartFunctor b).op ((SheafOfModules.toSheaf _).map
+        ((Proj.twistingSheaf 𝒜 m).globalSectionsSmul
+          (baseRingToGlobalSections R (Proj 𝒜) r))).hom :=
+  NatTrans.ext (funext fun S ↦ AddCommGrpCat.ext fun f ↦ by
+    refine (chartSectionsHom_smul b m (ofDual S.unop) r f).trans ?_
+    -- the whiskered morphism of sheaves of abelian groups acts on sections over a chart as the
+    -- underlying morphism of sheaves of modules
+    change _ = ((Proj.twistingSheaf 𝒜 m).globalSectionsSmul
+      (baseRingToGlobalSections R (Proj 𝒜) r)).app _ (chartSectionsHom b m (ofDual S.unop) f)
+    rw [globalSectionsSmul_app]
+    rfl)
+
+omit [Fintype κ] [DecidableEq κ] in
+/-- Leray's comparison for the standard cover commutes with multiplication by `r`. -/
+private lemma homologyCechComplexIsoCohomology_inv_smul [Finite κ] (q : ℕ) (r : R)
+    (y : Cohomology (Proj.twistingSheaf 𝒜 m) q) :
+    (homologyCechComplexIsoCohomology (fun i : κ ↦ (chartFunctor b).obj (toDual {i}))
+        (isAffineOpen_inf_chartFunctor_obj_singleton b) (iSup_chartFunctor_obj_singleton b)
+        (Proj.twistingSheaf 𝒜 m) q).inv (r • y) =
+      HomologicalComplex.homologyMap ((cechComplexFunctor
+        fun i : κ ↦ (chartFunctor b).obj (toDual {i})).map
+          ((SheafOfModules.toSheaf _).map (twistingSheafSmul m r)).hom) q
+        ((homologyCechComplexIsoCohomology (fun i : κ ↦ (chartFunctor b).obj (toDual {i}))
+          (isAffineOpen_inf_chartFunctor_obj_singleton b) (iSup_chartFunctor_obj_singleton b)
+          (Proj.twistingSheaf 𝒜 m) q).inv y) := by
+  have h := homologyCechComplexIsoCohomology_hom_globalSectionsSmul _
+    (isAffineOpen_inf_chartFunctor_obj_singleton b) (iSup_chartFunctor_obj_singleton b) _ q
+    (baseRingToGlobalSections R (Proj 𝒜) r) ((homologyCechComplexIsoCohomology
+      (fun i : κ ↦ (chartFunctor b).obj (toDual {i}))
+      (isAffineOpen_inf_chartFunctor_obj_singleton b) (iSup_chartFunctor_obj_singleton b)
+      (Proj.twistingSheaf 𝒜 m) q).inv y)
+  rw [Iso.inv_hom_id_apply, ← base_smul_cohomology] at h
+  rw [← h, Iso.hom_inv_id_apply]
+
+/-- Writing sections over the charts as Laurent polynomials commutes with multiplication by
+`r`. -/
+private lemma homologyMap_smul_comp_homologyMapIso_laurentToSections_inv (q : ℕ) (r : R)
+    [IsIso ((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
+      (laurentToSections b m))] :
+    HomologicalComplex.homologyMap
+        ((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
+          (Functor.whiskerLeft (chartFunctor b).op
+            ((SheafOfModules.toSheaf _).map (twistingSheafSmul m r)).hom)) q ≫
+        (HomologicalComplex.homologyMapIso (asIso ((cechComplexFunctor
+          fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map (laurentToSections b m))) q).inv =
+      (HomologicalComplex.homologyMapIso (asIso ((cechComplexFunctor
+          fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map (laurentToSections b m))) q).inv ≫
+        HomologicalComplex.homologyMap
+          ((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
+            (laurentSmul m r)) q := by
+  rw [Iso.comp_inv_eq, Category.assoc, Iso.eq_inv_comp, HomologicalComplex.homologyMapIso_hom,
+    asIso_hom, ← HomologicalComplex.homologyMap_comp, ← HomologicalComplex.homologyMap_comp,
+    ← Functor.map_comp, ← Functor.map_comp, laurentSmul_comp_laurentToSections]
+
+/-- The comparison of the cohomology of `𝒪(m)` with the Čech cohomology of the Laurent polynomials
+is linear over the base ring. -/
+private lemma cohomologyIsoHomologyLaurentCech_hom_smul (q : ℕ) (r : R)
+    (x : Cohomology (Proj.twistingSheaf 𝒜 m) q) :
+    (cohomologyIsoHomologyLaurentCech b m q).hom (r • x) =
+      HomologicalComplex.homologyMap
+        ((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map (laurentSmul m r)) q
+          ((cohomologyIsoHomologyLaurentCech b m q).hom x) := by
+  have := isIso_cechComplexFunctor_map_laurentToSections b m
+  have h := ((reassoc_of% (homologyMap_smul_comp_homologyMap_cechComplexCompIso_hom b m q r))
+    _).trans (whisker_eq _ (homologyMap_smul_comp_homologyMapIso_laurentToSections_inv b m q r))
+  simp only [cohomologyIsoHomologyLaurentCech, Iso.trans_hom, Iso.symm_hom,
+    HomologicalComplex.homologyMapIso_hom, CategoryTheory.comp_apply]
+  rw [homologyCechComplexIsoCohomology_inv_smul]
+  exact ConcreteCategory.congr_hom h _
+
+end Comparison
+
+section TopComparison
+
+variable [Fintype κ] [DecidableEq κ] (m : ℤ) {n : ℕ} (e : κ ≃ Fin (n + 2))
+
+open Limits Opposite OrderDual TauCeti.CategoryTheory in
+private lemma topHomologyIso_hom_smul (r : R)
+    (y : (laurentCech (R := R) (κ := κ) m).homology (n + 1)) :
+    (topHomologyIso m e).hom (HomologicalComplex.homologyMap
+      ((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map (laurentSmul m r))
+        (n + 1) y) = r • (topHomologyIso m e).hom y := by
+  let ρ : AddCommGrpCat.of (negativeExponents κ m →₀ R) ⟶
+      AddCommGrpCat.of (negativeExponents κ m →₀ R) :=
+    AddCommGrpCat.ofHom (DistribSMul.toAddMonoidHom _ r)
+  have hco : ((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
+      (laurentSmul m r)).f (n + 1) ≫ topCoefficient m e = topCoefficient m e ≫ ρ := by
+    refine AddCommGrpCat.ext fun x ↦ ?_
+    refine (congrArg (fun w ↦ negPart m (Subtype.val w)) (ConcreteCategory.congr_hom
+      (cechComplexFunctor_map_f_π (fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ))
+        (laurentPresheaf (R := R) (κ := κ) m) (laurentSmul (κ := κ) m r) (n + 1) e.symm)
+          x)).trans ?_
+    exact map_smul (negPart (R := R) (κ := κ) m) r _
+  have hcomm : (cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map (laurentSmul m r) ≫
+      toTop m e = toTop m e ≫ (HomologicalComplex.single _ (ComplexShape.up ℕ) (n + 1)).map ρ := by
+    ext : 1
+    simp only [HomologicalComplex.comp_f, toTop, HomologicalComplex.mkHomToSingle_f,
+      HomologicalComplex.single_map_f_self, Category.assoc, Iso.inv_hom_id_assoc,
+      reassoc_of% hco]
+  have h : HomologicalComplex.homologyMap
+      ((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map (laurentSmul m r)) (n + 1) ≫
+        (topHomologyIso m e).hom = (topHomologyIso m e).hom ≫ ρ := by
+    simp only [topHomologyIso, ← Category.assoc, ← HomologicalComplex.homologyMap_comp, hcomm]
+    simp only [HomologicalComplex.homologyMap_comp, Category.assoc,
+      HomologicalComplex.singleObjHomologySelfIso_hom_naturality]
+  exact ConcreteCategory.congr_hom h y
+
 include b in
-open Limits OrderDual TauCeti.CategoryTheory TauCeti.AlgebraicGeometry.Scheme.Modules in
+/-- The top cohomology of `𝒪(m)` as an `R`-module, for an index type in the universe of the
+ring. -/
+private def cohomologyTopLinearEquivAux :
+    Cohomology (Proj.twistingSheaf 𝒜 m) (n + 1) ≃ₗ[R] (negativeExponents κ m →₀ R) :=
+  { (cohomologyIsoHomologyLaurentCech b m (n + 1) ≪≫
+      topHomologyIso m e).addCommGroupIsoToAddEquiv with
+    map_smul' := fun r x ↦ by
+      -- the inherited `toFun` field must be identified with the forward map of the composite
+      -- isomorphism before applying its scalar-compatibility lemmas
+      change (topHomologyIso m e).hom ((cohomologyIsoHomologyLaurentCech b m (n + 1)).hom (r • x)) =
+        r • (topHomologyIso m e).hom ((cohomologyIsoHomologyLaurentCech b m (n + 1)).hom x)
+      rw [cohomologyIsoHomologyLaurentCech_hom_smul, topHomologyIso_hom_smul] }
+
+end TopComparison
+
+include b in
 /-- The cohomology of `𝒪(m)` in degree `q > 0` vanishes when `q < n` or `m > -n - 1`, for an index
 type in the universe of the ring. -/
 private theorem subsingleton_cohomology_twistingSheaf_aux [Fintype κ] {m : ℤ} {q : ℕ} (hq : 0 < q)
     (h : q + 1 < Fintype.card κ ∨ -(Fintype.card κ : ℤ) < m) :
     Subsingleton (Cohomology (Proj.twistingSheaf 𝒜 m) q) := by
   classical
-  refine (AddCommGrpCat.isZero_iff_subsingleton (G := AddCommGrpCat.of (Cohomology _ q))).1
-    ((isZero_homology_laurentCech (R := R) (κ := κ) m hq h).of_iso ?_)
-  have := isIso_cechComplexFunctor_map_laurentToSections b m
-  -- the product of the charts of the coordinates `a j` lies in the chart of their product
-  have hG (n : ℕ) (a : Fin (n + 1) → κ) : Nonempty ((∏ᶜ fun j ↦ (chartFunctor b).obj (toDual {a j}))
-      ⟶ (chartFunctor b).obj (∏ᶜ fun j ↦ toDual {a j})) := by
-    refine ⟨homOfLE ?_⟩
-    rw [chartFunctor_obj, basicOpen_coordProd, ofDual_pi_toDual_singleton]
-    refine Finset.le_inf fun i hi ↦ ?_
-    obtain ⟨j, -, rfl⟩ := Finset.mem_image.1 hi
-    exact (leOfHom (Pi.π _ j)).trans (chartFunctor_obj_singleton b (a j)).le
-  exact (AlgebraicGeometry.Scheme.Modules.homologyCechComplexIsoCohomology
-      (fun i : κ ↦ (chartFunctor b).obj (toDual {i}))
-      (isAffineOpen_inf_chartFunctor_obj_singleton b) (iSup_chartFunctor_obj_singleton b)
-      (Proj.twistingSheaf 𝒜 m) q).symm ≪≫
-    HomologicalComplex.homologyMapIso (cechComplexCompIso (chartFunctor b)
-      (fun i : κ ↦ toDual {i}) (sectionsPresheaf (R := R) (M := M) m)
-      hG) q ≪≫
-    (HomologicalComplex.homologyMapIso
-      (asIso ((cechComplexFunctor fun i : κ ↦ (toDual {i} : (Finset κ)ᵒᵈ)).map
-        (laurentToSections b m))) q).symm
+  exact (AddCommGrpCat.isZero_iff_subsingleton (G := AddCommGrpCat.of (Cohomology _ q))).1
+    ((isZero_homology_laurentCech (R := R) (κ := κ) m hq h).of_iso
+      (cohomologyIsoHomologyLaurentCech b m q))
 
 /-! ### Main results -/
 
@@ -721,11 +1344,20 @@ private theorem subsingleton_cohomology_twistingSheaf_of_or {κ : Type*} [Fintyp
   let e : κ ≃ ULift.{u} (Fin (Fintype.card κ)) := (Fintype.equivFin κ).trans Equiv.ulift.symm
   exact subsingleton_cohomology_twistingSheaf_aux (b.reindex e) hq (by simpa using h)
 
+/-- Reindexing the coordinates identifies the exponents of degree `m` with all entries
+negative. -/
+private def negativeExponentsCongr {κ κ' : Type*} [Fintype κ] [Fintype κ'] (e : κ ≃ κ') (m : ℤ) :
+    negativeExponents κ m ≃ negativeExponents κ' m :=
+  (e.arrowCongr (Equiv.refl ℤ)).subtypeEquiv fun x ↦ and_congr
+    (by simp [Equiv.sum_comp e.symm x])
+    ⟨fun h i ↦ h _, fun h i ↦ by simpa using h (e i)⟩
+
 end TauCeti.SymmetricAlgebra
 
 namespace Module.Basis
 
-open TauCeti.SymmetricAlgebra (subsingleton_cohomology_twistingSheaf_of_or)
+open TauCeti.SymmetricAlgebra (subsingleton_cohomology_twistingSheaf_of_or negativeExponents
+  negativeExponentsCongr cohomologyTopLinearEquivAux)
 
 universe u
 
@@ -750,5 +1382,65 @@ theorem subsingleton_cohomology_twistingSheaf_of_neg_card_lt {κ : Type*} [Finty
     (b : Module.Basis κ R M) {m : ℤ} (hm : -(Fintype.card κ : ℤ) < m) {q : ℕ} (hq : 0 < q) :
     Subsingleton (Cohomology (Proj.twistingSheaf 𝒜 m) q) :=
   subsingleton_cohomology_twistingSheaf_of_or b m hq (.inr hm)
+
+/-- **The top cohomology of the twisting sheaves on projective space.** Let `M` be a free `R`-module
+with a basis `x₀, …, x_{n+1}` indexed by `κ`, so that `Proj (Sym M)` is projective space of
+dimension `n + 1 ≥ 1` over `R`. Then `H^{n+1}(Proj (Sym M), 𝒪(m))` is isomorphic, as an `R`-module,
+to the free `R`-module on the Laurent monomials `xᵉ` of degree `m` all of whose exponents are
+negative, over any commutative ring `R`. No isomorphism is singled out: the one constructed in the
+proof depends on an ordering of the coordinates. -/
+theorem nonempty_linearEquiv_cohomology_top_twistingSheaf {κ : Type*} [Fintype κ]
+    (b : Module.Basis κ R M) (m : ℤ) {n : ℕ} (hn : Fintype.card κ = n + 2) :
+    Nonempty (Cohomology (Proj.twistingSheaf 𝒜 m) (n + 1) ≃ₗ[R] (negativeExponents κ m →₀ R)) :=
+  -- reindexing by `ULift (Fin (card κ))` puts the index type in the universe of the ring
+  let e₀ : κ ≃ ULift.{u} (Fin (Fintype.card κ)) := (Fintype.equivFin κ).trans Equiv.ulift.symm
+  ⟨(cohomologyTopLinearEquivAux (b.reindex e₀) m
+      (e₀.symm.trans (Fintype.equivFinOfCardEq hn))).trans
+    (Finsupp.domLCongr (negativeExponentsCongr e₀.symm m))⟩
+
+/-- The top cohomology `H^{n+1}(ℙ^{n+1}_R, 𝒪(m))` of a twisting sheaf on projective space is a
+free `R`-module. -/
+theorem free_cohomology_top_twistingSheaf {κ : Type*} [Fintype κ] (b : Module.Basis κ R M)
+    (m : ℤ) {n : ℕ} (hn : Fintype.card κ = n + 2) :
+    Module.Free R (Cohomology (Proj.twistingSheaf 𝒜 m) (n + 1)) :=
+  have ⟨φ⟩ := b.nonempty_linearEquiv_cohomology_top_twistingSheaf m hn
+  .of_equiv φ.symm
+
+/-- The top cohomology `H^{n+1}(ℙ^{n+1}_R, 𝒪(m))` of a twisting sheaf on projective space is a
+finitely generated `R`-module, since there are finitely many monomials of degree `m` with all
+exponents negative. -/
+theorem finite_cohomology_top_twistingSheaf {κ : Type*} [Fintype κ] (b : Module.Basis κ R M)
+    (m : ℤ) {n : ℕ} (hn : Fintype.card κ = n + 2) :
+    Module.Finite R (Cohomology (Proj.twistingSheaf 𝒜 m) (n + 1)) :=
+  have ⟨φ⟩ := b.nonempty_linearEquiv_cohomology_top_twistingSheaf m hn
+  .equiv φ.symm
+
+/-- The rank of the top cohomology `H^{n+1}(ℙ^{n+1}_R, 𝒪(m))` of a twisting sheaf on projective
+space is the number of monomials of degree `m` with all exponents negative. -/
+theorem finrank_cohomology_top_twistingSheaf [Nontrivial R] {κ : Type*} [Fintype κ]
+    (b : Module.Basis κ R M) (m : ℤ) {n : ℕ} (hn : Fintype.card κ = n + 2) :
+    Module.finrank R (Cohomology (Proj.twistingSheaf 𝒜 m) (n + 1)) =
+      Nat.card (negativeExponents κ m) := by
+  have := Fintype.ofFinite (negativeExponents κ m)
+  obtain ⟨φ⟩ := b.nonempty_linearEquiv_cohomology_top_twistingSheaf m hn
+  rw [φ.finrank_eq,
+    Module.finrank_finsupp_self, Nat.card_eq_fintype_card]
+
+/-- **The cohomology of the twisting sheaves on projective space is finitely generated.** Let `M`
+be a free `R`-module with a finite basis of at least two elements, so that `Proj (Sym M)` is
+projective space of positive dimension over `R`. Then `Hᵠ(Proj (Sym M), 𝒪(m))` is a finitely
+generated `R`-module for every `q` and every `m : ℤ`, over any commutative ring `R`. -/
+theorem finite_cohomology_twistingSheaf {κ : Type*} [Finite κ] [Nontrivial κ]
+    (b : Module.Basis κ R M) (m : ℤ) (q : ℕ) :
+    Module.Finite R (Cohomology (Proj.twistingSheaf 𝒜 m) q) := by
+  have := Fintype.ofFinite κ
+  rcases q with _ | q
+  · exact TauCeti.SymmetricAlgebra.finite_cohomology_zero_twistingSheaf m b
+  rcases lt_trichotomy (q + 2) (Fintype.card κ) with h | h | h
+  · have := b.subsingleton_cohomology_twistingSheaf_of_lt_card m q.succ_pos h
+    infer_instance
+  · exact b.finite_cohomology_top_twistingSheaf m h.symm
+  · have := b.subsingleton_cohomology_proj_of_card_le (Proj.twistingSheaf 𝒜 m) (q + 1) (by omega)
+    infer_instance
 
 end Module.Basis

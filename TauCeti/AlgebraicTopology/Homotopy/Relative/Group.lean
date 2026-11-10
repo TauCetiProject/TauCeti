@@ -224,12 +224,8 @@ theorem ofGenLoop_transAt (i : N) (γ δ : Ω^ (Option N) X.pair.fst (X.pair.map
   ext ⟨s, t⟩
   rw [ofGenLoop_apply, transAt_apply, ofGenLoop_apply, ofGenLoop_apply, GenLoop.transAt,
     GenLoop.coe_copy]
-  have hupd (v : I) :
-      Function.update ((piOptionEquivProdHomeomorph fun _ => I).symm (s, t)) (some i) v =
-        (piOptionEquivProdHomeomorph fun _ => I).symm (s, Function.update t i v) := by
-    funext o
-    cases o <;> simp [Function.update_apply]
-  simp only [piOptionEquivProdHomeomorph_symm_apply_some, hupd]
+  simp only [piOptionEquivProdHomeomorph_symm_apply_some,
+    update_piOptionEquivProdHomeomorph_symm_some]
 
 end RelGenLoop
 

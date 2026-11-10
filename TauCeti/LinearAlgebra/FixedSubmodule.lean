@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Dynamics.FixedPoints.Basic
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 public import Mathlib.LinearAlgebra.FixedSubmodule
 public import Mathlib.LinearAlgebra.Pi
 
@@ -15,19 +16,28 @@ public import Mathlib.LinearAlgebra.Pi
 This file supplements Mathlib's `LinearMap.fixedSubmodule`, the submodule of vectors fixed by a
 linear endomorphism, with its behaviour under restriction to an invariant submodule and
 transport by an intertwining linear equivalence, together with fixed vectors of a componentwise
-endomorphism.
+endomorphism. Over a commutative ring the fixed submodule is the eigenspace for the eigenvalue
+`1`.
 
 ## Main results
 
 * `LinearMap.fixedSubmodulePiEquiv`: fixed vectors of a componentwise endomorphism are
   tuples of fixed vectors, without a finiteness assumption on the index type.
+* `LinearMap.fixedSubmodule_prodMap`: fixed vectors of a product map form the product of
+  the two fixed submodules.
 
 * `LinearEquiv.map_fixedSubmodule`: an intertwining equivalence maps one fixed submodule
   onto the other.
 * `LinearEquiv.fixedSubmoduleCongr`: the resulting equivalence of fixed submodules.
 
+* `LinearMap.infFixedSubmoduleEquivRestrict`: fixed vectors in an invariant submodule
+  are linearly equivalent to fixed vectors of the restricted endomorphism.
+
 * `LinearMap.fixedSubmodule_restrict`: the fixed submodule of the restriction of `f` to an
   invariant submodule `p` is the part of the fixed submodule of `f` that lies in `p`.
+
+* `Module.End.eigenspace_one_eq_fixedSubmodule`: the `1`-eigenspace of an endomorphism is its
+  fixed submodule.
 -/
 
 public section
@@ -55,6 +65,32 @@ theorem pow_apply_of_mem_fixedSubmodule {R M : Type*} [Semiring R] [AddCommMonoi
     (f ^ i) x = x := by
   rw [pow_apply_eq_iterate]
   exact Function.IsFixedPt.iterate (mem_fixedSubmodule_iff.mp hx) i
+
+section Restrict
+
+variable {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
+    (f : V →ₗ[R] V) {p : Submodule R V} (hf : ∀ x ∈ p, f x ∈ p)
+
+/-- Fixed vectors lying in an invariant submodule are fixed vectors of the restriction. -/
+def infFixedSubmoduleEquivRestrict :
+    ↥(p ⊓ f.fixedSubmodule) ≃ₗ[R] (f.restrict hf).fixedSubmodule :=
+  ((p.equivSubtypeMap (f.restrict hf).fixedSubmodule).trans
+    (LinearEquiv.ofEq _ _ (by
+      rw [fixedSubmodule_restrict, Submodule.map_comap_subtype]))).symm
+
+/-- The restriction equivalence retains the ambient vector. -/
+@[simp]
+theorem infFixedSubmoduleEquivRestrict_apply (x : ↥(p ⊓ f.fixedSubmodule)) :
+    ((f.infFixedSubmoduleEquivRestrict hf x).val : V) = x.val := by
+  simp [infFixedSubmoduleEquivRestrict]
+
+/-- The inverse restriction equivalence retains the ambient vector. -/
+@[simp]
+theorem infFixedSubmoduleEquivRestrict_symm_apply (x : (f.restrict hf).fixedSubmodule) :
+    ((f.infFixedSubmoduleEquivRestrict hf).symm x).val = (x.val : V) := by
+  simp [infFixedSubmoduleEquivRestrict]
+
+end Restrict
 
 variable {R J : Type*} {W : J → Type*} [Semiring R]
   [∀ j, AddCommMonoid (W j)] [∀ j, Module R (W j)]
@@ -90,6 +126,15 @@ theorem fixedSubmodulePiEquiv_symm_apply (g : ∀ j, W j →ₗ[R] W j)
     (u : ∀ j, (g j).fixedSubmodule) (j : J) :
     ((fixedSubmodulePiEquiv g).symm u).val j = (u j).val := by
   rfl
+
+variable {U V : Type*} [AddCommMonoid U] [AddCommMonoid V] [Module R U] [Module R V]
+
+/-- The fixed submodule of a product endomorphism is the product of its fixed submodules. -/
+@[simp]
+theorem fixedSubmodule_prodMap (f : U →ₗ[R] U) (g : V →ₗ[R] V) :
+    (f.prodMap g).fixedSubmodule = f.fixedSubmodule.prod g.fixedSubmodule := by
+  ext x
+  simp [mem_fixedSubmodule_iff, Prod.ext_iff]
 
 end LinearMap
 
@@ -135,3 +180,13 @@ theorem fixedSubmoduleCongr_symm_apply (e : U ≃ₗ[R] W)
   simp [fixedSubmoduleCongr]
 
 end LinearEquiv
+
+namespace Module.End
+
+/-- The eigenspace of an endomorphism for the eigenvalue `1` is its fixed submodule. -/
+theorem eigenspace_one_eq_fixedSubmodule {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
+    (f : End R V) : f.eigenspace 1 = f.fixedSubmodule := by
+  ext v
+  simp [LinearMap.mem_fixedSubmodule_iff]
+
+end Module.End

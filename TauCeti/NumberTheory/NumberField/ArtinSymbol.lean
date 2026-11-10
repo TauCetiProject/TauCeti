@@ -213,7 +213,7 @@ theorem artinSymbol_eq_one_iff_inertiaDeg_eq_one (𝔭 : Ideal (𝓞 K)) [𝔭.I
   obtain ⟨σ, hσ⟩ := exists_isArithFrobAt K Q hQ
   rw [artinSymbol_eq_mk_of_isArithFrobAt 𝔭 hur Q σ hσ, ConjClasses.one_eq_mk_one,
     ConjClasses.mk_eq_mk_iff_isConj, isConj_one_left, ← orderOf_eq_one_iff,
-    orderOf_eq_inertiaDeg_of_isArithFrobAt Q hQ hσ]
+    orderOf_eq_inertiaDeg_of_isArithFrobAt Q hσ]
 
 /-- **The Artin symbol is trivial exactly at the completely split primes.** For `𝔭` unramified in
 `L`, the Artin symbol of `𝔭` is the identity class if and only if `𝔭` splits completely, that is,

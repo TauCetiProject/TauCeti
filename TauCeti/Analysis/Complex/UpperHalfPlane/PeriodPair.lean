@@ -82,7 +82,11 @@ every lattice is a rescaling of `ℤ τ + ℤ` for some `τ` in the upper half-p
 * `PeriodPair.G_smul`, `PeriodPair.g₂_smul`, `PeriodPair.g₃_smul`,
   `PeriodPair.weierstrassP_smul`, `PeriodPair.derivWeierstrassP_smul`: rescaling the lattice by
   `c` rescales `G n` by `c⁻ⁿ`, `℘` by `c⁻²` and `℘'` by `c⁻³`.
-* `PeriodPair.G_eq_of_lattice_eq`: the lattice sums depend only on the lattice.
+* `PeriodPair.G_eq_of_lattice_eq`, `PeriodPair.weierstrassP_eq_of_lattice_eq`,
+  `PeriodPair.derivWeierstrassP_eq_of_lattice_eq`: the lattice sums, `℘` and `℘'` depend only on
+  the lattice.
+* `UpperHalfPlane.lattice_periodPair_smul`: the lattice of `γ z` is `(c z + d)⁻¹ (ℤ z + ℤ)`, as a
+  rescaled period pair.
 * `PeriodPair.exists_lattice_eq_smul_periodPair`: every lattice is homothetic to `ℤ τ + ℤ`.
 -/
 
@@ -633,6 +637,23 @@ lemma G_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) : L.G 
   ext n
   rw [G, G, h]
 
+/-- `℘` depends only on the lattice, not on the chosen basis. -/
+lemma weierstrassP_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) :
+    ℘[L] = ℘[L'] := by
+  ext z
+  rw [weierstrassP, weierstrassP, h]
+
+/-- `℘'` depends only on the lattice, not on the chosen basis. -/
+lemma derivWeierstrassP_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) :
+    ℘'[L] = ℘'[L'] := by
+  ext z
+  rw [derivWeierstrassP, derivWeierstrassP, h]
+
+/-- Rescaling preserves equality of lattices. -/
+lemma lattice_smul_eq_of_lattice_eq {L L' : PeriodPair} (h : L.lattice = L'.lattice) :
+    (c • L).lattice = (c • L').lattice := by
+  rw [lattice_smul, lattice_smul, h]
+
 lemma ω₁_ne_zero : L.ω₁ ≠ 0 := by
   simpa using L.indep.ne_zero 0
 
@@ -664,3 +685,17 @@ lemma exists_lattice_eq_smul_periodPair :
       mul_div_cancel₀ _ L.ω₂_ne_zero, mul_one]
 
 end PeriodPair
+
+namespace UpperHalfPlane
+
+/-- For `γ ∈ SL(2, ℤ)` the lattice `ℤ γz + ℤ` is `(c z + d)⁻¹ (ℤ z + ℤ)`. -/
+lemma lattice_periodPair_smul (γ : SL(2, ℤ)) (z : ℍ) :
+    (γ • z).periodPair.lattice =
+      ((Units.mk0 (denom γ z) (denom_ne_zero γ z))⁻¹ • z.periodPair).lattice := by
+  ext x
+  set u := Units.mk0 (denom γ z) (denom_ne_zero γ z)
+  have hx : x = ((u⁻¹ : ℂˣ) : ℂ) * (u * x) := by simp
+  rw [hx, PeriodPair.mul_mem_lattice_smul_iff, ← div_denom_mem_lattice_periodPair_smul_iff γ z]
+  simp [u, mul_div_cancel_left₀ _ (denom_ne_zero γ z)]
+
+end UpperHalfPlane

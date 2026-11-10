@@ -223,15 +223,14 @@ private theorem uniformIntegrable_limitStep :
 
 end LimitStep
 
-/-- **Cut-norm Cauchy sequences of graphons converge in cut norm.** On a countably generated
-probability carrier, a sequence of graphons that is Cauchy for the cut norm has a graphon limit
-in the cut norm.  Together with the realisation of cut-distance Cauchy sequences on one carrier,
-this is the analytic input to the compactness of the space of graphons. -/
-theorem exists_graphon_tendsto_cutNorm_of_cauchy_cutNorm (V : ℕ → Graphon Ω μ)
+/-- The limiting step graphons of a cut-norm Cauchy sequence converge in cut norm to a graphon:
+the martingale limit, symmetrised and clamped to `[0, 1]`. -/
+private theorem exists_graphon_tendsto_cutNorm_limitStep (V : ℕ → Graphon Ω μ)
     (hV : ∀ ε > 0, ∃ N, ∀ m ≥ N, ∀ n ≥ N,
       cutNorm μ ((V m).toSymmKernel - (V n).toSymmKernel) < ε) :
     ∃ U : Graphon Ω μ,
-      Tendsto (fun n ↦ cutNorm μ ((V n).toSymmKernel - U.toSymmKernel)) atTop (𝓝 0) := by
+      Tendsto (fun n ↦ cutNorm μ ((limitStep V n).toSymmKernel - U.toSymmKernel)) atTop
+        (𝓝 0) := by
   set ℱ := TauCeti.MeasureTheory.countableSquareFiltration Ω
   set A : ℕ → Ω × Ω → ℝ := fun n z ↦ limitStep V n z.1 z.2 with hA
   set U₀ : Ω × Ω → ℝ := ℱ.limitProcess A (μ.prod μ)
@@ -259,28 +258,22 @@ theorem exists_graphon_tendsto_cutNorm_of_cauchy_cutNorm (V : ℕ → Graphon Ω
       simp only [hA, Prod.swap_prod_mk, Graphon.symm]
     exact Graphon.clampSymm_apply_of_symm_of_mem μ _ _ hsymm hmem
   refine ⟨U, ?_⟩
-  -- The limiting step graphons converge to `U` in cut norm.
-  have hAU : Tendsto (fun n ↦ cutNorm μ ((limitStep V n).toSymmKernel - U.toSymmKernel)) atTop
-      (𝓝 0) := by
-    refine squeeze_zero (fun _ ↦ cutNorm_nonneg μ _) (fun n ↦ ?_) hL1
-    refine (cutNorm_le_toReal_eLpNorm μ _).trans (le_of_eq ?_)
-    congr 1
-    refine eLpNorm_congr_ae ?_
-    filter_upwards [hUae] with z hz
-    simp only [SymmKernel.coe_sub, Pi.sub_apply, Graphon.coe_toSymmKernel, hA, hz]
-  -- The cut-norm bound `cutNorm_le_toReal_eLpNorm` in the form the `L¹` block approximation gives.
-  have hVE : ∀ N, Tendsto (fun n ↦ cutNorm μ ((V N).toSymmKernel -
-      (countableStepGraphonAvg (V N) n).toSymmKernel)) atTop (𝓝 0) := by
-    intro N
-    have h := (ENNReal.tendsto_toReal ENNReal.zero_ne_top).comp
-      (tendsto_eLpNorm_countableStepGraphonAvg (V N))
-    simp only [Function.comp_def, ENNReal.toReal_zero] at h
-    refine squeeze_zero (fun _ ↦ cutNorm_nonneg μ _) (fun n ↦ ?_) h
-    refine (cutNorm_le_toReal_eLpNorm μ _).trans (le_of_eq ?_)
-    rw [← eLpNorm_neg]
-    congr 2
-    funext z
-    simp only [SymmKernel.coe_sub, Pi.sub_apply, Pi.neg_apply, Graphon.coe_toSymmKernel, neg_sub]
+  refine squeeze_zero (fun _ ↦ cutNorm_nonneg μ _) (fun n ↦ ?_) hL1
+  refine (cutNorm_le_toReal_eLpNorm μ _).trans (le_of_eq ?_)
+  congr 1
+  refine eLpNorm_congr_ae ?_
+  filter_upwards [hUae] with z hz
+  simp only [SymmKernel.coe_sub, Pi.sub_apply, Graphon.coe_toSymmKernel, hA, hz]
+
+/-- A cut-norm Cauchy sequence converges in cut norm to any graphon to which its limiting step
+graphons converge. -/
+private theorem tendsto_cutNorm_of_tendsto_limitStep (V : ℕ → Graphon Ω μ)
+    (hV : ∀ ε > 0, ∃ N, ∀ m ≥ N, ∀ n ≥ N,
+      cutNorm μ ((V m).toSymmKernel - (V n).toSymmKernel) < ε)
+    (U : Graphon Ω μ)
+    (hAU : Tendsto (fun n ↦ cutNorm μ ((limitStep V n).toSymmKernel - U.toSymmKernel)) atTop
+      (𝓝 0)) :
+    Tendsto (fun n ↦ cutNorm μ ((V n).toSymmKernel - U.toSymmKernel)) atTop (𝓝 0) := by
   rw [Metric.tendsto_atTop]
   intro ε hε
   have h5 : (0 : ℝ) < ε / 5 := by positivity
@@ -288,7 +281,8 @@ theorem exists_graphon_tendsto_cutNorm_of_cauchy_cutNorm (V : ℕ → Graphon Ω
   -- Fix a level `M` at which `V N` is well approximated by its block averages and the limiting
   -- step graphon is close to `U`, then a late index `K` whose block averages are close to that
   -- limiting step graphon.
-  obtain ⟨M, hM₁, hM₂⟩ := (((hVE N).eventually_lt_const h5).and (hAU.eventually_lt_const h5)).exists
+  have hVN := tendsto_cutNorm_sub_countableStepGraphonAvg (V N)
+  obtain ⟨M, hM₁, hM₂⟩ := ((hVN.eventually_lt_const h5).and (hAU.eventually_lt_const h5)).exists
   have hK := (tendsto_cutNorm_countableStepGraphonAvg_sub_limitStep V hV M).eventually_lt_const h5
   obtain ⟨K, hK₁, hKN⟩ := (hK.and (eventually_ge_atTop N)).exists
   refine ⟨N, fun n hn ↦ ?_⟩
@@ -316,5 +310,17 @@ theorem exists_graphon_tendsto_cutNorm_of_cauchy_cutNorm (V : ℕ → Graphon Ω
         gcongr
         exact hN n hn N le_rfl
     _ = ε := by ring
+
+/-- **Cut-norm Cauchy sequences of graphons converge in cut norm.** On a countably generated
+probability carrier, a sequence of graphons that is Cauchy for the cut norm has a graphon limit
+in the cut norm.  Together with the realisation of cut-distance Cauchy sequences on one carrier,
+this is the analytic input to the compactness of the space of graphons. -/
+theorem exists_graphon_tendsto_cutNorm_of_cauchy_cutNorm (V : ℕ → Graphon Ω μ)
+    (hV : ∀ ε > 0, ∃ N, ∀ m ≥ N, ∀ n ≥ N,
+      cutNorm μ ((V m).toSymmKernel - (V n).toSymmKernel) < ε) :
+    ∃ U : Graphon Ω μ,
+      Tendsto (fun n ↦ cutNorm μ ((V n).toSymmKernel - U.toSymmKernel)) atTop (𝓝 0) := by
+  obtain ⟨U, hU⟩ := exists_graphon_tendsto_cutNorm_limitStep V hV
+  exact ⟨U, tendsto_cutNorm_of_tendsto_limitStep V hV U hU⟩
 
 end TauCeti.DenseGraphLimits

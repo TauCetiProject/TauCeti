@@ -51,6 +51,8 @@ is equivalent to generation of the coordinate ring by matrix coefficients and th
   trivially on a faithful comodule is the identity point.
 * `TauCeti.Comodule.isClosedImmersion_coordinateGroupSchemeHom_iff_of_bases`: faithfulness is
   independent of the chosen finite basis.
+* `TauCeti.Comodule.exists_isFaithful`: an affine group of finite type over a field has a
+  faithful finite-dimensional representation.
 
 ## References
 
@@ -394,6 +396,22 @@ theorem isFaithful_iff_matrixCoefficientSubalgebra_prod_dual_eq_top
 end Dual
 
 end GroupScheme
+
+section FiniteType
+
+variable {k H : Type u} [Field k] [CommRing H] [HopfAlgebra k H] [Algebra.FiniteType k H]
+
+/-- An affine group of finite type over a field has a faithful finite-dimensional
+representation. -/
+theorem exists_isFaithful :
+    ∃ M : FGComoduleCat.{u, u, u} k H, IsFaithful (k := k) (H := H) (V := M) := by
+  obtain ⟨M, d, b, hb⟩ := exists_isClosedImmersion_coordinateGroupSchemeHom (k := k) (H := H)
+  let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup k
+  let _ : Module.Finite k M := Module.Finite.of_basis b
+  exact ⟨FGComoduleCat.of (R := k) (C := H) M,
+    (isFaithful_iff_isClosedImmersion_coordinateGroupSchemeHom b).mpr hb⟩
+
+end FiniteType
 
 end
 

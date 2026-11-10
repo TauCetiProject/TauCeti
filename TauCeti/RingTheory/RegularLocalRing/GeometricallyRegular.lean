@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Field.Shrink
 public import Mathlib.Algebra.TrivSqZeroExt.Basic
 public import Mathlib.RingTheory.Etale.Field
 public import TauCeti.FieldTheory.PurelyInseparable.TensorProduct
@@ -30,6 +31,8 @@ is a field, hence regular, but `L ⊗[k] L` is not reduced, so `L` is not geomet
 * `TauCeti.Excellence.GeometricallyRegular k B`: `B` is a geometrically regular `k`-algebra.
 * `TauCeti.Excellence.GeometricallyRegular.isRegularRing`: a geometrically regular algebra is a
   regular ring.
+* `TauCeti.Excellence.GeometricallyRegular.isRegularRing_tensorProduct'`: the base change to a
+  finite purely inseparable extension in any universe is a regular ring.
 * `AlgEquiv.geometricallyRegular`: geometric regularity is invariant under isomorphisms of
   `k`-algebras.
 * `TauCeti.Excellence.GeometricallyRegular.of_smooth`: a smooth `k`-algebra is geometrically
@@ -66,7 +69,7 @@ namespace TauCeti.Excellence
 /-- An algebra `B` over a field `k` is *geometrically regular* if `B` is Noetherian and
 `L ⊗[k] B` is a regular ring for every finite purely inseparable field extension `L / k`
 (Stacks, Definition 10.166.2, in the form of Lemma 10.166.1). The extensions `L` range over the
-universe of `k`. -/
+universe of `k`; `GeometricallyRegular.isRegularRing_tensorProduct'` removes that restriction. -/
 class GeometricallyRegular (k : Type u) (B : Type v) [Field k] [CommRing B] [Algebra k B] :
     Prop where
   /-- A geometrically regular algebra is Noetherian. -/
@@ -87,6 +90,17 @@ variable (k) in
 /-- A geometrically regular algebra is a regular ring: take `L = k`. -/
 theorem isRegularRing [GeometricallyRegular k B] : IsRegularRing B :=
   .of_ringEquiv (Algebra.TensorProduct.lid k B).toRingEquiv
+
+/-- The extensions `L` in the definition range over the universe of `k`, but the base change to a
+finite purely inseparable extension `L / k` in any universe is a regular ring: `L` has a copy
+`Shrink L` in the universe of `k`. -/
+theorem isRegularRing_tensorProduct' [GeometricallyRegular k B] (L : Type*) [Field L]
+    [Algebra k L] [Module.Finite k L] [IsPurelyInseparable k L] : IsRegularRing (L ⊗[k] B) := by
+  have : Small.{u} L := Module.Finite.small k L
+  let e : Shrink.{u} L ≃ₐ[k] L := Shrink.algEquiv k L
+  have : Module.Finite k (Shrink.{u} L) := .equiv e.symm.toLinearEquiv
+  have : IsPurelyInseparable k (Shrink.{u} L) := e.symm.isPurelyInseparable
+  exact .of_ringEquiv (Algebra.TensorProduct.congr e AlgEquiv.refl).toRingEquiv
 
 /-- Geometric regularity is invariant under isomorphisms of `k`-algebras. -/
 theorem _root_.AlgEquiv.geometricallyRegular (e : B ≃ₐ[k] B') [GeometricallyRegular k B] :
@@ -147,8 +161,8 @@ theorem not_geometricallyRegular_trivSqZeroExt (k : Type u) [Field k] :
 /-- Geometric regularity does not see an isomorphism of base fields: if `algebraMap k K` is
 bijective, then `K ⊗[k] B` is geometrically regular over `K` if and only if `B` is geometrically
 regular over `k`. -/
-theorem geometricallyRegular_tensorProduct_iff_of_bijective {k K : Type u} [Field k] [Field K]
-    [Algebra k K] (h : Function.Bijective (algebraMap k K)) (B : Type v) [CommRing B]
+theorem geometricallyRegular_tensorProduct_iff_of_bijective {k : Type u} {K : Type w} [Field k]
+    [Field K] [Algebra k K] (h : Function.Bijective (algebraMap k K)) (B : Type v) [CommRing B]
     [Algebra k B] : GeometricallyRegular K (K ⊗[k] B) ↔ GeometricallyRegular k B := by
   let e : k ≃ₐ[k] K := AlgEquiv.ofBijective (Algebra.ofId k K) h
   let φ : K ⊗[k] B ≃ₐ[k] B :=
@@ -162,6 +176,7 @@ theorem geometricallyRegular_tensorProduct_iff_of_bijective {k K : Type u} [Fiel
       congrArg (algebraMap k L) (e.symm_apply_apply x).symm
     have : Module.Finite K L := .of_restrictScalars_finite k K L
     have : IsPurelyInseparable K L := .tower_top k K L
+    have := GeometricallyRegular.isRegularRing_tensorProduct' (k := K) (B := K ⊗[k] B) L
     exact .of_ringEquiv (Algebra.TensorProduct.cancelBaseChange k K K L B).toRingEquiv
   · have := hk.isNoetherianRing
     exact isNoetherianRing_of_ringEquiv _ φ.symm.toRingEquiv
@@ -171,6 +186,7 @@ theorem geometricallyRegular_tensorProduct_iff_of_bijective {k K : Type u} [Fiel
     have : Module.Finite k L := .trans K L
     have : IsPurelyInseparable k K := e.isPurelyInseparable
     have : IsPurelyInseparable k L := .trans k K L
+    have := GeometricallyRegular.isRegularRing_tensorProduct' (k := k) (B := B) L
     exact .of_ringEquiv (Algebra.TensorProduct.cancelBaseChange k K K L B).symm.toRingEquiv
 
 /-- A localization of a field `k` is geometrically regular over `k`: it is either zero or `k`

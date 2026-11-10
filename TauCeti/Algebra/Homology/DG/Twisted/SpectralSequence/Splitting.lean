@@ -129,7 +129,7 @@ theorem shiftedModuleComplex_homologyπ_eq_zero (p n : ℤ)
   refine ((shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCat_homologyπ_eq_zero_iff (n := n)
     (m := n - 1) (by simp) _).2 ⟨b, ?_⟩
   refine (shiftedModuleComplex.{uR, uA, uM, uP} hM p).moduleCat_iCycles_injective n ?_
-  rw [← ModuleCat.comp_apply, HomologicalComplex.toCycles_i,
+  rw [HomologicalComplex.moduleCat_iCycles_toCycles_apply,
     HomologicalComplex.iCycles_moduleCatCyclesMk]
   refine (shiftedModuleComplexXEquiv hM p n).injective (Subtype.ext ?_)
   have hd := shiftedModuleComplexXEquiv_d hM p (n - 1) b

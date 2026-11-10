@@ -316,6 +316,38 @@ theorem piCongrLeft_trans_pi (σ : κ ≃ ι) (f : ∀ i, Isometry (L i) (M i)) 
   obtain ⟨k, rfl⟩ := σ.surjective i
   simp only [trans_apply, pi_apply, piCongrLeft_apply_apply]
 
+section Unique
+
+variable [Unique ι]
+
+/-- Evaluation is an isometry from a one-summand orthogonal sum to its sole summand. -/
+def piUnique : Isometry (IntegralLattice.pi L) (L default) where
+  toIsometryEquiv :=
+    { toLinearEquiv := LinearEquiv.piUnique ℚ V
+      map_app' x y := by simp [pi_form, piForm_apply] }
+  map_carrier := by
+    ext y
+    rw [Submodule.mem_map_equiv, mem_pi_carrier_iff]
+    constructor
+    · intro h
+      exact h default
+    · intro h i
+      obtain rfl := Unique.eq_default i
+      exact h
+
+/-- The one-summand isometry evaluates at the unique index. -/
+@[simp]
+theorem piUnique_apply (x : ∀ i, V i) : piUnique L x = x default := (rfl)
+
+/-- The inverse one-summand isometry places a vector in the unique coordinate. -/
+@[simp]
+theorem piUnique_symm_apply (y : V default) :
+    (piUnique L).symm y = uniqueElim y := by
+  refine EquivLike.injective (piUnique L) ?_
+  simp
+
+end Unique
+
 end Isometry
 
 end TauCeti.IntegralLattice

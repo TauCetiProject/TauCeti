@@ -46,6 +46,8 @@ The homomorphism from field automorphisms to residue-field automorphisms is Math
 * `TauCeti.integerRingSMulCommClass`: the action on `𝒪[L]` is by `𝒪[K]`-algebra automorphisms.
 * `AlgEquiv.toAlgHom_residueFieldHom`: for an automorphism, the residue-field embedding
   `AlgHom.residueFieldHom` is the induced automorphism `AlgEquiv.residueFieldEquiv`.
+* `AlgEquiv.valuation_apply_sub_pow_lt_one`: an automorphism acting on the residue field as the
+  `m`-th power map satisfies `σ x ≡ x ^ m` modulo the maximal ideal on integral elements.
 * `AlgEquiv.normalizedValuation_unitsMap`: an extension automorphism preserves the normalized
   valuation of a unit.
 
@@ -213,15 +215,26 @@ theorem toAlgHom_residueFieldHom (σ : L ≃ₐ[K] L) :
   congr 1
   exact Subtype.ext (by simp)
 
+/-- **The congruence of an automorphism acting on residues as a power map.** If `σ` acts on the
+residue field of `L` as `x ↦ x ^ m`, then `σ x ≡ x ^ m` modulo the maximal ideal for every integral
+`x`. -/
+theorem valuation_apply_sub_pow_lt_one (σ : L ≃ₐ[K] L) {m : ℕ}
+    (hσ : ∀ x : 𝓀[L], σ • x = x ^ m) {x : L} (hx : valuation L x ≤ 1) :
+    valuation L (σ x - x ^ m) < 1 := by
+  have h := hσ (IsLocalRing.residue 𝒪[L] ⟨x, hx⟩)
+  rw [← IsLocalRing.ResidueField.residue_smul, ← map_pow, ← sub_eq_zero, ← map_sub,
+    IsLocalRing.residue_eq_zero_iff] at h
+  simpa using (Valuation.mem_maximalIdeal_iff (v := valuation L)).mp h
+
 /-- Every automorphism of a finite extension of a nonarchimedean local field preserves the
 normalized valuation of a unit. The action of `σ` on `Lˣ` is `Units.map σ`, so this is also the
 statement that `normalizedValuation L (σ • x) = normalizedValuation L x`. -/
 @[simp]
 theorem normalizedValuation_unitsMap (σ : L ≃ₐ[K] L) (x : Lˣ) :
     normalizedValuation L (Units.map (σ : L →* L) x) = normalizedValuation L x := by
-  apply le_antisymm <;>
-    rw [← Multiplicative.toAdd_le, toAdd_normalizedValuation_le_iff_valuation_le] <;>
-    simp [σ.valuation_eq]
+  refine Multiplicative.toAdd.injective ?_
+  rw [toAdd_normalizedValuation_eq_iff_valuation_eq]
+  simp [σ.valuation_eq]
 
 end AlgEquiv
 

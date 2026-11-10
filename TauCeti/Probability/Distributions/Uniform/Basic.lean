@@ -52,6 +52,8 @@ therefore takes `a < b` as a hypothesis rather than assuming it silently.
 * `hasPDF_of_hasLaw_uniformMeasure` — a variable with this law satisfies `HasPDF`, i.e. its law is
   absolutely continuous; the density itself is identified by the two results above;
 * `uniformPDF_eq_ofReal_uniformPDFReal` — the bridge between that density and the real-valued one;
+* `integrable_uniformMeasure` and `integral_uniformMeasure` — integrability on the interval gives
+  integrability for the uniform law, and integrals against it are interval averages;
 * `cdf_uniformMeasure` — the cdf is `0` below `a`, `1` above `b`, and `(x - a) / (b - a)` between;
 * `integral_id_uniformMeasure` — the mean is `(a + b) / 2`;
 * `variance_id_uniformMeasure` — the variance is `(b - a) ^ 2 / 12`;
@@ -118,10 +120,11 @@ theorem uniformMeasure_eq_smul {a b : ℝ} :
     uniformMeasure a b = (ENNReal.ofReal (b - a))⁻¹ • volume.restrict (Set.Ioc a b) := by
   rw [uniformMeasure, ProbabilityTheory.cond, Real.volume_Ioc]
 
-/-- Evaluation of the uniform measure on a measurable set. -/
-theorem uniformMeasure_apply {a b : ℝ} {s : Set ℝ} (hs : MeasurableSet s) :
+/-- Evaluation of the uniform measure on a set. -/
+theorem uniformMeasure_apply {a b : ℝ} {s : Set ℝ} :
     uniformMeasure a b s = (ENNReal.ofReal (b - a))⁻¹ * volume (s ∩ Set.Ioc a b) := by
-  rw [uniformMeasure_eq_smul, _root_.smul_apply, smul_eq_mul, Measure.restrict_apply hs]
+  rw [uniformMeasure_eq_smul, _root_.smul_apply, smul_eq_mul,
+    Measure.restrict_apply' measurableSet_Ioc]
 
 /-- On a nondegenerate interval the uniform measure is a probability measure. -/
 theorem isProbabilityMeasure_uniformMeasure {a b : ℝ} (hab : a < b) :
@@ -151,7 +154,7 @@ theorem uniformMeasure_Iio {a b t : ℝ} (hab : a < b) (ht : t ≤ b) :
       exact ⟨ha, hs⟩
     · rintro ⟨ha, hs⟩
       exact ⟨hs, ha, hs.le.trans ht⟩
-  rw [uniformMeasure_apply measurableSet_Iio, hinter, Real.volume_Ioo,
+  rw [uniformMeasure_apply, hinter, Real.volume_Ioo,
     ENNReal.ofReal_div_of_pos (by linarith), ENNReal.div_eq_inv_mul]
 
 /-- The uniform measure of an upper tail `Set.Ici t` is the complementary linear fall. Only
@@ -166,7 +169,7 @@ theorem uniformMeasure_Ici {a b t : ℝ} (hab : a < b) (ht : a ≤ t) :
     · calc ENNReal.ofReal (b - t) = volume (Set.Ioc t b) := Real.volume_Ioc.symm
         _ ≤ volume (Set.Ici t ∩ Set.Ioc a b) :=
           measure_mono fun s hs => ⟨hs.1.le, ht.trans_lt hs.1, hs.2⟩
-  rw [uniformMeasure_apply measurableSet_Ici, hinter, ENNReal.ofReal_div_of_pos (by linarith),
+  rw [uniformMeasure_apply, hinter, ENNReal.ofReal_div_of_pos (by linarith),
     ENNReal.div_eq_inv_mul]
 
 /-- A random variable with the uniform law is uniform in Mathlib's sense.
@@ -266,7 +269,7 @@ theorem cdf_uniformMeasure {a b : ℝ} (hab : a < b) (x : ℝ) :
   have htop : ENNReal.ofReal (b - a) ≠ ⊤ := by simp
   have hset : Set.Iic x ∩ Set.Ioc a b = Set.Ioc a (min b x) := by
     ext y; simp [Set.mem_Iic, Set.mem_Ioc, and_comm]; tauto
-  rw [cdf_eq_real, Measure.real, uniformMeasure_apply measurableSet_Iic, hset, Real.volume_Ioc]
+  rw [cdf_eq_real, Measure.real, uniformMeasure_apply, hset, Real.volume_Ioc]
   split_ifs with h1 h2
   · -- below the interval: the truncated interval is empty
     have hxb : x ≤ b := le_trans h1 hab.le
@@ -281,6 +284,23 @@ theorem cdf_uniformMeasure {a b : ℝ} (hab : a < b) (x : ℝ) :
     rw [min_eq_right hxb, ← ENNReal.ofReal_inv_of_pos hba,
       ← ENNReal.ofReal_mul (by positivity), ENNReal.toReal_ofReal (by positivity)]
     field_simp
+
+/-- A function integrable on `Set.Ioc a b` is integrable for the uniform measure on that
+interval. No hypothesis on the endpoints is needed. -/
+theorem integrable_uniformMeasure {E : Type*} [NormedAddCommGroup E] {a b : ℝ} {g : ℝ → E}
+    (hg : IntegrableOn g (Set.Ioc a b)) : Integrable g (uniformMeasure a b) := by
+  rcases lt_or_ge a b with hab | hba
+  · rw [uniformMeasure_eq_smul]
+    exact hg.smul_measure (by simpa using hab)
+  · simp [uniformMeasure_eq_zero_of_le hba]
+
+/-- The integral against the uniform measure on `Set.Ioc a b` is the average
+`(b - a)⁻¹ • ∫ x in a..b, g x` of `g` over the interval. -/
+theorem integral_uniformMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {a b : ℝ}
+    (hab : a ≤ b) (g : ℝ → E) :
+    ∫ x, g x ∂uniformMeasure a b = (b - a)⁻¹ • ∫ x in a..b, g x := by
+  rw [uniformMeasure_eq_smul, integral_smul_measure, intervalIntegral.integral_of_le hab,
+    ENNReal.toReal_inv, ENNReal.toReal_ofReal (sub_nonneg.mpr hab)]
 
 /-- The mean of the uniform distribution on `Set.Ioc a b` is the midpoint `(a + b) / 2`. -/
 theorem integral_id_uniformMeasure {a b : ℝ} (hab : a < b) :

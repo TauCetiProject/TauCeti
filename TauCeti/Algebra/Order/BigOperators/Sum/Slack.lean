@@ -30,15 +30,13 @@ namespace Finset
 /-- **A term-by-term lower bound, summed.** If every `a i` is within `η'` below `d i` on `s`, and
 `η` dominates the accumulated slack `#s • η'`, then `∑ d - η ≤ ∑ a`.
 
-Purely additive: no multiplication, no linearity and no strict monotonicity are used, so this
-lives in an ordered additive group rather than an ordered ring. A caller working in a ring
-rewrites the `nsmul` with `nsmul_eq_mul`. -/
-theorem sum_sub_le_sum_of_forall_sub_le {ι M : Type*} [AddCommGroup M] [PartialOrder M]
+Purely additive: no multiplication, no linearity, no antisymmetry and no strict monotonicity are
+used, so this lives in a preordered additive group rather than an ordered ring. A caller working
+in a ring rewrites the `nsmul` with `nsmul_eq_mul`. -/
+theorem sum_sub_le_sum_of_forall_sub_le {ι M : Type*} [AddCommGroup M] [Preorder M]
     [IsOrderedAddMonoid M] {s : Finset ι} {d a : ι → M} {η η' : M}
-    (ha : ∀ i ∈ s, d i - η' ≤ a i) (hη : s.card • η' ≤ η) :
-    (∑ i ∈ s, d i) - η ≤ ∑ i ∈ s, a i := by
-  have hlb := Finset.sum_le_sum ha
-  rw [Finset.sum_sub_distrib, Finset.sum_const] at hlb
-  exact (sub_le_sub_left hη _).trans hlb
+    (ha : ∀ i ∈ s, d i - η' ≤ a i) (hη : #s • η' ≤ η) :
+    (∑ i ∈ s, d i) - η ≤ ∑ i ∈ s, a i :=
+  (sub_le_sub_left hη _).trans <| by simpa [sum_sub_distrib] using sum_le_sum ha
 
 end Finset

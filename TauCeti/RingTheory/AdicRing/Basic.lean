@@ -17,7 +17,7 @@ topology is part of the data. Completeness holds for every ideal of definition, 
 is Huber with the whole ring as a ring of definition.
 
 The general continuity criteria in
-`TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology` apply using the chosen finitely
+`TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic` apply using the chosen finitely
 generated ideal from `TauCeti.IsAdicRing.ideal_spec`. They test arbitrary ideals of definition
 and do not require completeness.
 

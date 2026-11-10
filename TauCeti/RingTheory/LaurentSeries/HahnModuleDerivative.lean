@@ -25,8 +25,9 @@ on `x : V((t))`, over any ring `R`. The Leibniz rule for the convolution bracket
 Lie-algebra-valued Laurent series is `HahnModule.derivative_lie`.
 
 The derivative maps the lattice `U_a(V) = t ^ a V⟦t⟧` into `U_(a - 1)(V)`, the estimate that makes
-it continuous for the topology these lattices define, and it commutes with coefficientwise linear
-maps.
+it continuous for the topology these lattices define. `HahnModule.derivativeCLM` packages it
+as a continuous linear map, commuting with continuous coefficientwise linear maps. No topology
+on the coefficient module or finite-dimensionality hypothesis is needed.
 
 For biadditive maps `Φ : V → W → M`, extended coefficientwise by
 `HahnModule.convolutionAddMonoidHom`, the derivative satisfies the Leibniz rule
@@ -38,6 +39,7 @@ For biadditive maps `Φ : V → W → M`, extended coefficientwise by
 ## Main definitions
 
 * `HahnModule.derivative R`: the derivative `D` of `V`-valued Laurent series.
+* `HahnModule.derivativeCLM R`: the derivative as a continuous linear map for the lattice topology.
 * `HahnModule.residuePairing R Φ`: the residue pairing `(x, y) ↦ Res Φ(x, D y) dt`.
 
 ## Main results
@@ -47,11 +49,14 @@ For biadditive maps `Φ : V → W → M`, extended coefficientwise by
 * `HahnModule.derivative_single`: `D (v t ^ n) = n v t ^ (n - 1)`.
 * `HahnModule.derivative_smul`: the Leibniz rule `D (f • x) = D f • x + f • D x`.
 * `HahnModule.derivative_mem_lattice`: `D` maps `U_a(V)` into `U_(a - 1)(V)`.
+* `HahnModule.continuous_derivative`: `D` is continuous for the lattice topology.
 * `HahnModule.derivative_map`: `D` commutes with coefficientwise linear maps.
 * `HahnModule.derivative_convolutionAddMonoidHom`: the Leibniz rule
   `D Φ(x, y) = Φ(D x, y) + Φ(x, D y)` for the coefficientwise extension of a biadditive map `Φ`.
 * `HahnModule.derivative_convolution`: the same Leibniz rule for the extension of a bilinear map.
 * `HahnModule.residuePairing_single_single`: the residue pairing on monomials.
+* `HahnModule.residuePairing_hahnModuleMap`: the residue pairing is natural in the coefficient
+  module.
 
 ## References
 
@@ -62,7 +67,7 @@ public section
 
 noncomputable section
 
-open Finset HahnSeries
+open Finset HahnSeries Topology
 open scoped LaurentSeries
 
 namespace HahnModule
@@ -272,6 +277,61 @@ theorem residuePairing_single_single (Φ : LinearMap.BilinForm R V) (m n : ℤ) 
     map_zsmul]
   split_ifs with h₁ h₂ h₂ <;> first | rfl | omega
 
+/-- The residue pairing is natural in the coefficient module: pairing the images of `x` and `y`
+under the coefficientwise extension of `u : V → W` by `Φ` is pairing `x` and `y` by the
+pulled-back form `(v, w) ↦ Φ (u v) (u w)`. -/
+theorem residuePairing_hahnModuleMap {W : Type*} [AddCommGroup W] [Module R W]
+    (Φ : LinearMap.BilinForm R W) (u : V →ₗ[R] W) (x y : HahnModule ℤ R V) :
+    residuePairing R Φ (u.hahnModuleMap x) (u.hahnModuleMap y) =
+      residuePairing R (Φ.comp u u) x y := by
+  simp only [residuePairing_apply, LinearMap.hahnModuleMap_apply, derivative_map,
+    convolution_apply, convolutionAddMonoidHom_map_map]
+  -- Both sides extend the biadditive map `(v, w) ↦ Φ (u v) (u w)`.
+  refine congrArg (fun Ψ ↦ (convolutionAddMonoidHom ℤ R Ψ x (derivative R y)).coeff (-1)) ?_
+  ext v w
+  simp
+
 end CommRing
+
+section Topology
+
+variable (R : Type*) {V : Type*} [Ring R] [AddCommGroup V] [Module R V]
+
+/-- Differentiation of module-valued Laurent series is continuous in the lattice topology. -/
+theorem continuous_derivative :
+    Continuous (derivative R : HahnModule ℤ R V → HahnModule ℤ R V) := by
+  apply continuous_of_continuousAt_zero (derivative R)
+  rw [ContinuousAt, map_zero]
+  refine ((TauCeti.HahnModule.hasBasis_nhds_zero_lattice R V).tendsto_iff
+    (TauCeti.HahnModule.hasBasis_nhds_zero_lattice R V)).mpr fun a _ ↦
+      ⟨a + 1, trivial, fun x hx ↦ ?_⟩
+  simpa only [SetLike.mem_coe, add_sub_cancel_right] using derivative_mem_lattice hx
+
+/-- The formal derivative of module-valued Laurent series as a continuous linear map for
+the lattice topology. -/
+def derivativeCLM : HahnModule ℤ R V →L[R] HahnModule ℤ R V :=
+  ⟨derivative R, continuous_derivative R⟩
+
+/-- Forgetting continuity recovers the algebraic derivative. -/
+@[simp]
+theorem derivativeCLM_toLinearMap :
+    (derivativeCLM R : HahnModule ℤ R V →L[R] HahnModule ℤ R V).toLinearMap = derivative R :=
+  (rfl)
+
+/-- The continuous derivative acts by the existing coefficientwise derivative. -/
+@[simp]
+theorem derivativeCLM_apply (x : HahnModule ℤ R V) : derivativeCLM R x = derivative R x :=
+  (rfl)
+
+/-- Continuous differentiation commutes with applying a linear map to every coefficient. -/
+theorem derivativeCLM_comp_hahnModuleMap {W : Type*} [AddCommGroup W] [Module R W]
+    (g : V →ₗ[R] W) :
+    (derivativeCLM R).comp g.hahnModuleMap = g.hahnModuleMap.comp (derivativeCLM R) := by
+  apply ContinuousLinearMap.ext
+  intro x
+  simpa only [ContinuousLinearMap.comp_apply, derivativeCLM_apply,
+    LinearMap.hahnModuleMap_apply] using derivative_map g x
+
+end Topology
 
 end HahnModule

@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.Basis
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
 public import TauCeti.LinearAlgebra.TensorProduct.Basic
+import Mathlib.LinearAlgebra.TensorProduct.RightExactness
 
 /-!
 # Tensor-product basis coordinates
@@ -23,10 +24,13 @@ consists of pure tensors.
 
 * `TensorProduct.tensor_eq_of_forall_tensorComponent_eq`: contractions against a projective right
   factor detect equality.
+* `Submodule.tensor_mem_range_iff_forall_tensorComponent_mem`: contractions against a projective
+  right factor detect membership in the tensor product with a submodule of the left factor.
 * `Module.Basis.equivFinsuppOfBasisLeft_lTensor_apply` and
   `Module.Basis.lTensor_eq_zero_iff_forall_equivFinsuppOfBasisLeft`: coordinates in a basis of
   the left factor commute with maps of the right factor, so such a map kills an element exactly
   when it kills every coordinate.
+* `Module.Basis.baseChange_reindex`: scalar extension of a basis commutes with reindexing it.
 * `Module.Basis.map_baseChange_repr`: applying a scalar map to a coordinate in a base-changed
   basis agrees with first mapping the tensor and then taking its coordinate.
 * `Module.Basis.eq_baseChange_repr_tmul_of_subsingleton`: over a basis with at most one index,
@@ -79,6 +83,32 @@ theorem tensor_eq_of_forall_tensorComponent_eq [Module.Projective R N] {x y : M 
 
 end TensorProduct
 
+namespace Submodule
+
+variable {R M N : Type*} [CommRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [Module.Projective R N]
+
+/-- A tensor lies in the tensor product with a submodule exactly when all its contractions
+against linear functionals on the projective right factor lie in that submodule. -/
+theorem tensor_mem_range_iff_forall_tensorComponent_mem (S : Submodule R M) (z : M ⊗[R] N) :
+    z ∈ LinearMap.range (TensorProduct.map S.subtype (LinearMap.id : N →ₗ[R] N)) ↔
+      ∀ f : N →ₗ[R] R, LinearMap.tensorComponent f z ∈ S := by
+  constructor
+  · rintro ⟨w, hw⟩ f
+    rw [← hw]
+    have h := LinearMap.tensorComponent_map f S.subtype (LinearMap.id : N →ₗ[R] N) w
+    rw [LinearMap.comp_id] at h
+    rw [h]
+    exact (LinearMap.tensorComponent f w).property
+  · intro h
+    rw [← LinearMap.rTensor_def, ← rTensor_mkQ, LinearMap.mem_ker]
+    apply TensorProduct.tensor_eq_of_forall_tensorComponent_eq
+    intro f
+    rw [map_zero, LinearMap.rTensor_def, LinearMap.tensorComponent_map, LinearMap.comp_id]
+    simpa only [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero] using h f
+
+end Submodule
+
 namespace Module.Basis
 
 universe u v w
@@ -123,6 +153,11 @@ section Repr
 
 variable {S : Type v} [Semiring S] [Algebra R S]
 variable {T : Type w} [Semiring T] [Algebra R T]
+
+/-- Scalar extension of a basis commutes with reindexing it. -/
+theorem baseChange_reindex {ι' : Type*} (b : Basis ι R M) (e : ι ≃ ι') :
+    (b.reindex e).baseChange S = (b.baseChange S).reindex e :=
+  eq_of_apply_eq fun i => by simp
 
 /-- Coordinates in a base-changed basis are natural in the scalar-extension algebra. -/
 @[simp] theorem map_baseChange_repr (b : Basis ι R M) (φ : S →ₗ[R] T)

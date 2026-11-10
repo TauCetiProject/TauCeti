@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Head
-public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective
+public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Idempotent.Projective.Basic
 public import TauCeti.Algebra.Category.GradedModuleCat.CartanMap.Matrix
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Admissible
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Projective.Graded
@@ -510,8 +510,7 @@ theorem isExhaustiveGradedIndecomposableProjectiveFamily_zigzagGradedProjective 
     exact isHomogeneous_zigzagProjective k G i
   simpa only [zigzagGradedProjective, zigzagProjective_def] using
     isExhaustiveGradedIndecomposableProjectiveFamily_of_completeOrthogonalIdempotents
-      (completeOrthogonalIdempotents_zigzagVertexIdempotent k G)
-      (zigzagVertexIdempotent_mem_zigzagIntegerGrade_zero k G) hI
+      (completeOrthogonalIdempotents_zigzagVertexIdempotent k G) hI
       (fun i => by
         simpa only [zigzagGradedProjective, zigzagProjective_def] using
           indecomposable_zigzagGradedProjective k G i)

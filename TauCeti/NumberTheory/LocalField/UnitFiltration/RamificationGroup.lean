@@ -549,7 +549,6 @@ theorem ramificationGroupGradedToResidueField_change
     unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_change n π π' hπ hπ'
       (Additive.ofMul
         (ramificationGroupGradedToUnitFiltrationGraded (G := G) (n + 1) hπ τ))
-  rw [uniformizerChangeResidueAddEquiv_apply] at hchange
   have htheta := DFunLike.congr_fun
     (ramificationGroupGradedToUnitFiltrationGraded_eq_of_irreducible
       (G := G) (i := n + 1) hπ hπ') τ

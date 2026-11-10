@@ -97,12 +97,25 @@ private theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_half {α : ℝ
     exact eventually_nhdsWithin_of_eventually_nhds (ht.eventually (eventually_lt_nhds hlam))
   obtain ⟨R, hR, hscale, hR₀⟩ := (h₁.and (h₂.and self_mem_nhdsWithin)).exists
   have hR₀ : 0 < R := hR₀
-  obtain ⟨C, hC⟩ := hball hlam hlow (toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq (a x)) hR₀
-    (by simpa only [c, mul_assoc] using hscale.le)
-    (fun i j => (hL i j).mono (closedBall_subset_ball (hR.trans_le (min_le_left _ _))))
+  have hLR (i j : Fin (n + 1)) : HolderOnWith L α (fun y => a y i j) (closedBall x R) :=
+    (hL i j).mono (closedBall_subset_ball (hR.trans_le (min_le_left _ _)))
+  -- A bound `M` for the coefficients on `closedBall x R`, where they are continuous.
+  choose Ma hMa using fun i j => (isCompact_closedBall x R).exists_bound_of_continuousOn
+    ((hLR i j).continuousOn hα)
+  set M : ℝ≥0 := ∑ i, ∑ j, (Ma i j).toNNReal
+  have hM (y : E) (hy : y ∈ closedBall x R) (i j : Fin (n + 1)) : |a y i j| ≤ M := by
+    calc |a y i j| ≤ Ma i j := by simpa only [Real.norm_eq_abs] using hMa i j y hy
+      _ ≤ (Ma i j).toNNReal := Real.le_coe_toNNReal _
+      _ ≤ M := by
+        exact_mod_cast (Finset.single_le_sum (f := fun j => (Ma i j).toNNReal)
+          (fun _ _ => zero_le) (Finset.mem_univ j)).trans
+          (Finset.single_le_sum (f := fun i => ∑ j, (Ma i j).toNNReal) (fun _ _ => zero_le)
+            (Finset.mem_univ i))
+  obtain ⟨C, hC⟩ := hball (M := M) hlam hR₀ (by simpa only [c, mul_assoc] using hscale.le)
     (half_lt_self hR₀)
   refine ⟨R, hR₀, (closedBall_subset_ball (hR.trans_le (min_le_right _ _))).trans hεΩ, C,
-    fun hu hN₀ hN₁ hN₂ hV hM => hC hu hN₀ hN₁ hN₂ hV hM⟩
+    fun hu hN₀ hN₁ hN₂ hV hK => hC hlow (toQuadraticForm'_le_norm_matrixBilinearForm_mul_sq (a x))
+      hLR hM hu hN₀ hN₁ hN₂ hV hK⟩
 
 /-- **The interior Schauder estimate for Hölder coefficients.** Let `0 < α < 1`, let
 `Ω ⊆ ℝ^{n+1}` be open and `K ⊆ Ω` compact, and let `a` be a matrix-valued coefficient which is

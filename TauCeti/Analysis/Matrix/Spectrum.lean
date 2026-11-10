@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.PosDef
+import Mathlib.Analysis.InnerProductSpace.Positive
 
 /-!
 # Eigen-coordinates and eigenvalue multisets of a Hermitian matrix
@@ -33,6 +34,11 @@ zeros. Mathlib's `Matrix.charpoly_mul_comm_of_le` gives this relation for the tw
 This is how the spectra of sample covariance matrices `X * Xᴴ` and of their companions `Xᴴ * X`
 are compared.
 
+Eigen-coordinates also bound the pseudo-inverse of `B` along eigenvectors of a matrix below it in
+the Loewner order: if `0 ≤ A ≤ B` and `u` is a unit eigenvector of `A` with eigenvalue `a > 0`,
+then `a ⟪u, B⁻¹ u⟫ ≤ 1`. This bound underlies the trace inequality `Tr (A log A) ≤ Tr (A log B)`
+for `0 ≤ A ≤ B`.
+
 ## Main results
 
 * `Matrix.IsHermitian.apply_eq_sum_eigenvalues` — the entrywise spectral expansion
@@ -56,6 +62,8 @@ are compared.
 * `Matrix.IsHermitian.eigenvalues_eq_zero_of_inner_ne_zero` — if the kernel of `B` lies in the
   kernel of a Hermitian `A`, an eigenvector of `B` with eigenvalue zero is orthogonal to every
   eigenvector of `A` with nonzero eigenvalue.
+* `Matrix.PosSemidef.eigenvalues_mul_sum_inv_mul_le_one` — if `0 ≤ A ≤ B`, a unit eigenvector `u`
+  of `A` with eigenvalue `a > 0` satisfies `a ⟪u, B⁻¹ u⟫ ≤ 1` for the pseudo-inverse of `B`.
 
 ## References
 
@@ -185,6 +193,72 @@ theorem eigenvalues_eq_zero_of_inner_ne_zero (hA : A.IsHermitian) (hB : B.IsHerm
   exact hsymm.resolve_right hij
 
 end Matrix.IsHermitian
+
+namespace Matrix
+
+open scoped ComplexOrder
+
+variable {𝕜 : Type*} [RCLike 𝕜] {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- Let `0 ≤ A ≤ B`, that is `A` and `B - A` positive semidefinite, let `u` be a unit eigenvector
+of `A` with eigenvalue `a > 0`, and let `B` have eigenvalues `bⱼ` and orthonormal eigenvectors `vⱼ`.
+Then `a ∑ⱼ bⱼ⁻¹ ‖⟪u, vⱼ⟫‖² ≤ 1`, that is `a ⟪u, B⁻¹ u⟫ ≤ 1` for the pseudo-inverse `B⁻¹` of `B`,
+with the convention `0⁻¹ = 0`. -/
+theorem PosSemidef.eigenvalues_mul_sum_inv_mul_le_one {A B : Matrix ι ι 𝕜}
+    (hA : A.PosSemidef) (hBA : (B - A).PosSemidef) (hB : B.IsHermitian) {i : ι}
+    (hi : 0 < hA.1.eigenvalues i) :
+    hA.1.eigenvalues i * ∑ j, (hB.eigenvalues j)⁻¹ *
+      ‖⟪hA.1.eigenvectorBasis i, hB.eigenvectorBasis j⟫_𝕜‖ ^ 2 ≤ 1 := by
+  set a := hA.1.eigenvalues i
+  set u := hA.1.eigenvectorBasis i
+  set v := hB.eigenvectorBasis
+  set b := hB.eigenvalues
+  set c : ι → 𝕜 := fun j ↦ ⟪v j, u⟫_𝕜
+  set s : ℝ := ∑ j, (b j)⁻¹ * ‖⟪u, v j⟫_𝕜‖ ^ 2
+  have hb (j : ι) : 0 ≤ b j := by simpa using (hA.add hBA).eigenvalues_nonneg j
+  have hcn (j : ι) : ‖c j‖ = ‖⟪u, v j⟫_𝕜‖ := by
+    simp only [c]
+    rw [← inner_conj_symm, RCLike.norm_conj]
+  -- The test vector `y = B⁻¹ u`, written in the eigenbasis of `B`, has `⟪y, B y⟫ = ⟪u, y⟫ = s`.
+  set y : EuclideanSpace 𝕜 ι := ∑ j, (((b j)⁻¹ : ℝ) * c j : 𝕜) • v j
+  have hyBy : ⟪y, B.toEuclideanLin y⟫_𝕜 = s := by
+    rw [hB.inner_toEuclideanLin_sum_smul_eigenvectorBasis]
+    have key (j : ι) :
+        b j * ‖(((b j)⁻¹ : ℝ) : 𝕜) * c j‖ ^ 2 = (b j)⁻¹ * ‖⟪u, v j⟫_𝕜‖ ^ 2 := by
+      rw [norm_mul, RCLike.norm_ofReal, abs_of_nonneg (inv_nonneg.2 (hb j)), hcn]
+      by_cases h : b j = 0
+      · simp [h]
+      · field_simp
+    simp only [s, b, ← key, RCLike.ofReal_sum, RCLike.ofReal_mul, RCLike.ofReal_pow]
+  have huy : ⟪u, y⟫_𝕜 = s := by
+    conv_lhs => rw [← v.sum_repr' u]
+    rw [v.orthonormal.inner_sum]
+    simp only [s]
+    push_cast
+    refine Finset.sum_congr rfl fun j _ ↦ ?_
+    rw [mul_left_comm, RCLike.conj_mul, hcn]
+  have hTu : A.toEuclideanLin u = (a : 𝕜) • u := by
+    rw [← RCLike.real_smul_eq_coe_smul (K := 𝕜)]
+    simp [u, a, toLpLin_apply, hA.1.mulVec_eigenvectorBasis]
+  have huu : ⟪u, u⟫_𝕜 = 1 := by
+    rw [inner_self_eq_norm_sq_to_K, hA.1.eigenvectorBasis.orthonormal.1 i]
+    simp
+  have hTyu : ⟪A.toEuclideanLin y, u⟫_𝕜 = a * s := by
+    rw [isSymmetric_toEuclideanLin_iff.mpr hA.1, hTu, inner_smul_right, ← inner_conj_symm, huy,
+      RCLike.conj_ofReal]
+  -- Positivity of `B - A` at `y` gives `re ⟪A y, y⟫ ≤ s`.
+  have hyAy : RCLike.re ⟪A.toEuclideanLin y, y⟫_𝕜 ≤ s := by
+    have h := (isPositive_toEuclideanLin_iff.2 hBA).re_inner_nonneg_left y
+    rw [map_sub, LinearMap.sub_apply, inner_sub_left, map_sub, sub_nonneg] at h
+    rwa [inner_re_symm (𝕜 := 𝕜) (B.toEuclideanLin y), hyBy, RCLike.ofReal_re] at h
+  -- Positivity of `A` at `u - a y` gives `0 ≤ a - 2 a² s + a² re ⟪A y, y⟫ ≤ a - a² s`.
+  have h := (isPositive_toEuclideanLin_iff.2 hA).re_inner_nonneg_left (u - (a : 𝕜) • y)
+  simp only [map_sub, map_smul, hTu, inner_sub_left, inner_sub_right, inner_smul_left,
+    inner_smul_right, huu, huy, hTyu, RCLike.conj_ofReal, RCLike.re_ofReal_mul, mul_one,
+    RCLike.ofReal_re] at h
+  nlinarith [mul_le_mul_of_nonneg_left hyAy (mul_nonneg hi.le hi.le)]
+
+end Matrix
 
 namespace Matrix
 

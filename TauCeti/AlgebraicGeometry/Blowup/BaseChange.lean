@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
+public import TauCeti.AlgebraicGeometry.Morphisms.Etale.Basic
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.BaseChange
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.ClosedImmersion
 public import TauCeti.RingTheory.ReesAlgebra.BaseChange
@@ -27,6 +29,11 @@ over `R`: then the blowup of `Spec S` along `V(IS)` is the base change of the bl
 along `V(I)`. In particular blowing up commutes with localizations `R ⟶ R_f` and with étale
 `R`-algebras.
 
+Over a local ring `A`, let `I = (a, b)` with `b² ∈ a I`, so that the chart `Spec A[I/a]` is the
+whole blowup. If the closed fibre of `A[I/a]` is a finite étale algebra over the residue field
+`κ`, then the base change of the blowup to a field-valued point of the closed point of `Spec A`
+is finite étale of rank `dim_κ (κ ⊗[A] A[I/a])`.
+
 ## Main definitions
 
 * `TauCeti.AlgebraicGeometry.affineBlowupBaseChangeHom I S`: the comparison morphism from the
@@ -42,6 +49,9 @@ along `V(I)`. In particular blowing up commutes with localizations `R ⟶ R_f` a
 * `TauCeti.AlgebraicGeometry.isIso_affineBlowupBaseChangeHom`: for flat `S`, it is an isomorphism.
 * `TauCeti.AlgebraicGeometry.isPullback_affineBlowup_of_flat`: for flat `S`, the square formed by
   the two blowups over `Spec S ⟶ Spec R` is cartesian.
+* `TauCeti.AlgebraicGeometry.etale_isFinite_finrank_of_isPullback_toSpecCoeff`: when a single
+  chart is the whole blowup of a local ring and its closed fibre is finite étale, the base change
+  of the blowup to a field-valued point of the closed point is finite étale of the same rank.
 
 ## References
 
@@ -138,5 +148,38 @@ theorem isPullback_affineBlowup_of_flat [Module.Flat R S] :
   refine IsPullback.of_iso_pullback ⟨?_⟩ (asIso (affineBlowupBaseChangeHom I S)) rfl
     (affineBlowupBaseChangeHom_snd I S)
   rw [← affineBlowupBaseChangeHom_snd, Category.assoc, Category.assoc, pullback.condition]
+
+section ClosedPoint
+
+open IsLocalRing
+open scoped TensorProduct
+
+variable {A L : Type u} [CommRing A] [IsLocalRing A] [Field L] [Algebra A L]
+  [IsLocalHom (algebraMap A L)]
+
+/-- Let `I = (a, b)` with `b² ∈ a I`, so that the chart `Spec A[I/a]` is the whole blowup of
+`Spec A` along `V(I)`. If the closed fibre `κ ⊗[A] A[I/a]` is a finite étale `κ`-algebra, then the
+base change of the blowup along a field-valued point of the closed point of `Spec A` is finite
+étale, of the same rank. -/
+theorem etale_isFinite_finrank_of_isPullback_toSpecCoeff {I : Ideal A} {a b : A}
+    (hI : I = Ideal.span {a, b}) (hb : b ^ 2 ∈ Ideal.span {a} * I)
+    [Algebra.Etale (ResidueField A) (ResidueField A ⊗[A] I.affineBlowup a (Localization.Away a))]
+    [Module.Finite (ResidueField A) (ResidueField A ⊗[A] I.affineBlowup a (Localization.Away a))]
+    {P : Scheme.{u}} {fst : P ⟶ Proj (grade I)} {snd : P ⟶ Spec (.of L)}
+    (h : IsPullback fst snd (Proj.toSpecCoeff (grade I))
+      (Spec.map (CommRingCat.ofHom (algebraMap A L)))) :
+    Etale snd ∧ IsFinite snd ∧ ∀ y, snd.finrank y = Module.finrank (ResidueField A)
+      (ResidueField A ⊗[A] I.affineBlowup a (Localization.Away a)) := by
+  have ha : a ∈ I := hI ▸ Ideal.subset_span (Set.mem_insert _ _)
+  have := isIso_affineBlowupι_of_sq_mem (Localization.Away a) ha hI.symm hb
+  have hι : affineBlowupι (Localization.Away a) ha ≫ Proj.toSpecCoeff (grade I) =
+      Spec.map (CommRingCat.ofHom (algebraMap A (I.affineBlowup a (Localization.Away a)))) := by
+    rw [toSpecCoeff_reesAlgebra, affineBlowupι_toSpecZero]
+  refine etale_isFinite_finrank_of_isPullback_SpecMap (fst := fst ≫ inv (affineBlowupι _ ha)) ?_
+  refine h.of_iso (Iso.refl _) (asIso (affineBlowupι _ ha)).symm (Iso.refl _) (Iso.refl _)
+    (by simp) (by simp) ?_ (by simp)
+  simp [← hι]
+
+end ClosedPoint
 
 end TauCeti.AlgebraicGeometry

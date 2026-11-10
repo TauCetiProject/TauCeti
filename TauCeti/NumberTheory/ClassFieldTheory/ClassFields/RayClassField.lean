@@ -35,6 +35,9 @@ correspondence.
   `Cl_𝔪 ≃* Gal(rayClassField 𝔪 / K)` (`rayClassArtinEquiv`), hence
   `[rayClassField 𝔪 : K] = #Cl_𝔪` (`finrank_rayClassField`).
 
+For a totally complex base, the narrow and ordinary Hilbert class fields coincide
+(`narrowHilbertClassField_eq_hilbertClassField`), since there are no real places.
+
 The **Hilbert class field** `hilbertClassField K` is the ray class field of the trivial modulus,
 and the **narrow Hilbert class field** `narrowHilbertClassField K` that of the modulus carrying
 every real place and no finite place. The Artin map identifies the class group of `K` with the
@@ -256,6 +259,13 @@ theorem hilbertClassField_le_narrowHilbertClassField :
     hilbertClassField K ≤ narrowHilbertClassField K :=
   hilbertClassField_le_rayClassField _
 
+/-- Over a totally complex number field, the narrow and ordinary Hilbert class fields coincide:
+there are no real places at which a narrow class field could allow extra ramification. -/
+@[simp]
+theorem narrowHilbertClassField_eq_hilbertClassField [IsTotallyComplex K] :
+    narrowHilbertClassField K = hilbertClassField K :=
+  congrArg rayClassField (narrowModulus_eq_one K)
+
 /-- **Reciprocity for the Hilbert class field**: the Artin map identifies the class group of `K`
 with the Galois group of the Hilbert class field: `rayClassArtinEquiv` at the trivial modulus, read
 on the class group through `oneEquivClassGroup`. -/
@@ -364,6 +374,18 @@ theorem fieldRange_le_hilbertClassField_iff (ι : L →ₐ[K] SeparableClosure K
       (∀ w : HeightOneSpectrum (𝓞 L), Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal) ∧
         IsUnramifiedAtInfinitePlaces K L := by
   rw [← isAdmissibleModulus_iff_le_rayClassField, isAdmissibleModulus_one_iff]
+
+variable {K} in
+/-- An everywhere-unramified abelian extension whose degree equals the class number is the
+Hilbert class field, for every embedding into the separable closure of the base. -/
+theorem fieldRange_eq_hilbertClassField_of_unramified_of_finrank_eq_classNumber
+    (ι : L →ₐ[K] SeparableClosure K)
+    (hfin : ∀ w : HeightOneSpectrum (𝓞 L), Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal)
+    (hinf : IsUnramifiedAtInfinitePlaces K L) (hdeg : Module.finrank K L = classNumber K) :
+    ι.fieldRange = hilbertClassField K := by
+  apply IntermediateField.eq_of_le_of_finrank_eq
+  · exact (fieldRange_le_hilbertClassField_iff ι).2 ⟨hfin, hinf⟩
+  · rw [← ι.equivFieldRange.toLinearEquiv.finrank_eq, finrank_hilbertClassField, hdeg]
 
 /-- **The narrow Hilbert class field is unramified at every finite prime**: every prime of the
 narrow Hilbert class field of `K` is unramified over `𝓞 K`. -/

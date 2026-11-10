@@ -308,6 +308,38 @@ theorem pathIntegral_mpullback {f : M → M'} (φ : RoughForm I' M' F 1) {γ : �
         (hγ t ht).mdifferentiableWithinAt
   simp only [Function.comp_apply, hv]
 
+/-- The line integral of a one-form along the curve `t ↦ u (x, t)` is the integral of the pullback
+of the form along `u` on the second coordinate vector. -/
+theorem pathIntegral_apply_snd {α : RoughForm I M F 1} {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (x a b : ℝ) :
+    pathIntegral α (fun t ↦ u (x, t)) a b =
+      ∫ t in a..b, mpullback 𝓘(ℝ, ℝ × ℝ) I u α (x, t) fun _ ↦ (0, 1) := by
+  rw [pathIntegral_eq_integral_mpullback]
+  refine intervalIntegral.integral_congr fun t _ ↦ ?_
+  have hL : HasFDerivAt (fun t : ℝ ↦ (x, t)) ((0 : ℝ →L[ℝ] ℝ).prod (ContinuousLinearMap.id ℝ ℝ))
+      t := (hasFDerivAt_const x t).prodMk (hasFDerivAt_id t)
+  have := mpullback_comp_apply_of_hasFDerivAt hL ((hu _).mdifferentiableAt one_ne_zero) α
+  simp only [Function.comp_def] at this
+  rw [this]
+  refine (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans ?_
+  congr 1
+
+/-- The line integral of a one-form along the curve `s ↦ u (s, y)` is the integral of the pullback
+of the form along `u` on the first coordinate vector. -/
+theorem pathIntegral_apply_fst {α : RoughForm I M F 1} {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (y a b : ℝ) :
+    pathIntegral α (fun s ↦ u (s, y)) a b =
+      ∫ s in a..b, mpullback 𝓘(ℝ, ℝ × ℝ) I u α (s, y) fun _ ↦ (1, 0) := by
+  rw [pathIntegral_eq_integral_mpullback]
+  refine intervalIntegral.integral_congr fun s _ ↦ ?_
+  have hL : HasFDerivAt (fun s : ℝ ↦ (s, y)) ((ContinuousLinearMap.id ℝ ℝ).prod (0 : ℝ →L[ℝ] ℝ))
+      s := (hasFDerivAt_id s).prodMk (hasFDerivAt_const y s)
+  have := mpullback_comp_apply_of_hasFDerivAt hL ((hu _).mdifferentiableAt one_ne_zero) α
+  simp only [Function.comp_def] at this
+  rw [this]
+  refine (ContinuousAlternatingMap.compContinuousLinearMap_apply _ _ _).trans ?_
+  congr 1
+
 end Pullback
 
 /-! ### The fundamental theorem of calculus -/
@@ -344,6 +376,21 @@ theorem pathIntegral_mextDeriv [IsManifold I 1 M] {ψ : RoughForm I M F 0}
   rw [RoughForm.eq_ofFunction ψ, isSmoothForm_ofFunction_iff] at hψ
   have h := pathIntegral_mextDeriv_ofFunction hψ hγ a b
   rwa [← RoughForm.eq_ofFunction] at h
+
+/-- **The fundamental theorem of calculus along a map with an exact pullback.** If a
+differentiable map `i : N → M` pulls the one-form `φ` back to the differential of a `C¹` function
+`f` on `N`, then the line integral of `φ` along `i ∘ c`, for a `C¹` curve `c` in `N`, is the
+difference of the values of `f` at the endpoints of `c`. For instance, `i` may be an exact
+Lagrangian map and `f` its primitive. -/
+theorem pathIntegral_comp_eq_sub_of_mpullback_eq {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] {φ : RoughForm I M F 1} {i : N → M} {f : N → F}
+    (hi : MDifferentiable J I i) (hf : ContMDiff J 𝓘(ℝ, F) 1 f)
+    (hφ : mpullback J I i φ = mextDeriv (RoughForm.ofFunction J f)) {c : ℝ → N}
+    (hc : ContMDiff 𝓘(ℝ, ℝ) J 1 c) (a b : ℝ) :
+    pathIntegral φ (i ∘ c) a b = f (c b) - f (c a) := by
+  rw [← pathIntegral_mpullback φ (fun t _ ↦ hi (c t))
+    (fun t _ ↦ (hc t).mdifferentiableAt one_ne_zero), hφ, pathIntegral_mextDeriv_ofFunction hf hc]
 
 end FTC
 

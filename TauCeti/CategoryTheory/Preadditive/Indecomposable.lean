@@ -128,11 +128,13 @@ theorem indecomposable_of_idempotent_eq_zero_or_id [HasBinaryBiproducts C] {X : 
 The record `φ` is asked to be injective and to preserve zero, the identity and squares. This is
 the criterion behind the Krull–Schmidt theorem: an object whose endomorphism ring is local is
 indecomposable. -/
-theorem indecomposable_of_injective_of_isLocalRing [HasBinaryBiproducts C] {X : C} (hX : ¬ IsZero X)
+theorem indecomposable_of_injective_of_isLocalRing [HasBinaryBiproducts C] {X : C}
     {R : Type*} [Ring R] [IsLocalRing R] (φ : (X ⟶ X) → R) (hφ : Function.Injective φ)
     (hzero : φ 0 = 0) (hid : φ (𝟙 X) = 1) (hsq : ∀ e : X ⟶ X, φ (e ≫ e) = φ e * φ e) :
     Indecomposable X := by
-  refine indecomposable_of_idempotent_eq_zero_or_id hX fun e he ↦ ?_
+  refine indecomposable_of_idempotent_eq_zero_or_id
+    (fun h ↦ zero_ne_one (hzero.symm.trans ((congrArg φ (h.eq_of_src 0 (𝟙 X))).trans hid)))
+    fun e he ↦ ?_
   have hidem : IsIdempotentElem (φ e) := (hsq e).symm.trans (congrArg φ he)
   rcases IsIdempotentElem.eq_zero_or_eq_one_of_isLocalRing hidem with h0 | h1
   · exact Or.inl (hφ (h0.trans hzero.symm))
@@ -286,8 +288,7 @@ theorem isLocalRing_end_of_indecomposable {R : Type*} [CommRing R] [IsArtinianRi
 `TauCeti.isLocalRing_end_of_indecomposable`. -/
 theorem indecomposable_of_isLocalRing_end [HasBinaryBiproducts C] {X : C} [IsLocalRing (End X)] :
     Indecomposable X :=
-  indecomposable_of_injective_of_isLocalRing
-    (fun h ↦ zero_ne_one (α := End X) (End.ext ((IsZero.iff_id_eq_zero X).mp h).symm)) End.of
+  indecomposable_of_injective_of_isLocalRing End.of
     (fun _ _ h ↦ congr(($h).asHom)) rfl rfl fun _ ↦ rfl
 
 end TauCeti

@@ -49,6 +49,8 @@ Kostant `ℤ`-form and the root subgroups of non-simple roots require.
 * `TauCeti.DynkinType.chevalleySystem_mem_rootSpace` and
   `TauCeti.DynkinType.lie_chevalleySystem_reflectionPerm_self`: each root vector lies in its root
   space, and the root vectors of `γ` and `-γ` bracket to the coroot of `γ`.
+* `TauCeti.DynkinType.lie_lieBasis_h_chevalleySystem`: the numbered Cartan generators act on each
+  root vector through the coordinates of its root.
 * `TauCeti.DynkinType.isSl2Triple_chevalleySystem` and
   `TauCeti.DynkinType.isNilpotent_ad_chevalleySystem`: the root vectors of `γ` and `-γ` span an
   `sl₂` triple with the coroot of `γ`, and act nilpotently.
@@ -82,11 +84,6 @@ private abbrev IsSimpleSummand (γ : Fin t.numRoots) (i : Fin t.rank) : Prop :=
     (t.rationalRootSystem ht).root (t.simpleIndex ht i) + (t.rationalRootSystem ht).root β
 
 variable {t ht}
-
-private theorem simpleIndex_mem_support (i : Fin t.rank) :
-    t.simpleIndex ht i ∈ (t.rationalBase ht).support := by
-  rw [← coe_simpleSupportEquiv]
-  exact (t.simpleSupportEquiv ht i).2
 
 /-- A positive root that is not simple is a simple root plus a root. -/
 private theorem exists_isSimpleSummand {γ : Fin t.numRoots} (hγ : (t.rationalBase ht).IsPos γ)
@@ -284,9 +281,7 @@ private theorem exists_eq_smul_of_height_pos {X y : Fin t.numRoots → t.lieAlge
   induction n using Nat.strong_induction_on generalizing γ with
   | _ n ih =>
   by_cases hs : γ ∈ (t.rationalBase ht).support
-  · obtain ⟨i, rfl⟩ : ∃ i, t.simpleIndex ht i = γ :=
-      ⟨(t.simpleSupportEquiv ht).symm ⟨γ, hs⟩, by
-        rw [← coe_simpleSupportEquiv, Equiv.apply_symm_apply]⟩
+  · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hs
     exact ⟨1, one_mul 1, by rw [hys, hXs, one_smul]⟩
   · obtain ⟨i, β, hroot, hy⟩ := hystep γ ((RootPairing.Base.isPos_iff _).2 hγ) hs
     have hroot' : (t.rationalRootSystem ht).root β =
@@ -438,6 +433,14 @@ theorem chevalleySystem_mem_rootSpace (γ : Fin t.numRoots) :
       (t.rootEquiv ht γ : Weight ℚ (t.cartanSubalgebra ht) (t.lieAlgebra ht)) :=
   ((isSl2System_extendRootFamily_iff _).1
     (t.isChevalleySystem_chevalleySystem ht).toIsSl2System).1 γ
+
+/-- **Each named root vector is a weight vector of its root**: the numbered Cartan generator `hⱼ`
+acts on `e_γ` by the `j`-th coordinate of the root `γ` of the pinned datum. -/
+theorem lie_lieBasis_h_chevalleySystem (γ : Fin t.numRoots) (j : Fin t.rank) :
+    ⁅(t.lieBasis ht).h j, t.chevalleySystem ht γ⁆ =
+      (((t.simplyConnectedRootDatum ht).root γ j : ℤ) : ℚ) • t.chevalleySystem ht γ := by
+  have h := lie_eq_smul_of_mem_rootSpace (t.chevalleySystem_mem_rootSpace ht γ) (t.cartanBasis ht j)
+  rwa [LieSubalgebra.coe_bracket_of_module, coe_cartanBasis, rootEquiv_apply_cartanBasis] at h
 
 /-- The named root vectors of `γ` and `-γ` bracket to the coroot of `γ`. -/
 theorem lie_chevalleySystem_reflectionPerm_self (γ : Fin t.numRoots) :

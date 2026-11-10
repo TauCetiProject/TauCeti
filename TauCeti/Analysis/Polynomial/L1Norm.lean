@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Polynomial.Norm
 public import Mathlib.Algebra.Polynomial.HasseDeriv
+public import Mathlib.Algebra.Polynomial.Homogenize
 public import TauCeti.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Algebra.Polynomial.Homogenize
 
 /-!
 # The coefficient l¹-norm of a polynomial
@@ -35,6 +37,8 @@ coefficients.
   norm-preserving coefficient maps.
 * `Polynomial.norm_eval_le_l1Norm_mul_of_mul_X_sub_C_pow_eq`: the values near `a` of the
   quotient of a polynomial by a power of `X - a`.
+* `Polynomial.l1Norm_aeval_homogenize_le`: the bound `‖p‖∞ (‖g‖₁ + ‖h‖₁) ^ n` after substituting
+  `g` and `h` into the homogenization of degree `n` of `p`.
 
 ## References
 
@@ -335,6 +339,34 @@ theorem norm_eval_le_l1Norm_mul_of_mul_X_sub_C_pow_eq {V W : A[X]} {a z : A} {m 
     _ = (W.comp (X + C a)).l1Norm := by
       rw [max_eq_left hz, one_pow, mul_one, ← hshift, l1Norm_mul_X_pow]
     _ ≤ W.l1Norm * (1 + ‖a‖) ^ W.natDegree := l1Norm_comp_X_add_C_le W a
+
+/-- Substituting `g` and `h` for the two variables of the homogenization of degree `n` of `p`
+gives a polynomial of coefficient l¹-norm at most `‖p‖∞ (‖g‖₁ + ‖h‖₁) ^ n`, where `‖p‖∞` is the
+coefficient sup norm of `p`. -/
+theorem l1Norm_aeval_homogenize_le (p : A[X]) (n : ℕ) (g h : A[X]) :
+    (MvPolynomial.aeval ![g, h] (p.homogenize n)).l1Norm ≤
+      p.supNorm * (g.l1Norm + h.l1Norm) ^ n := by
+  have hg := g.l1Norm_nonneg
+  have hh := h.l1Norm_nonneg
+  rw [aeval_homogenize_eq_sum]
+  refine (l1Norm_sum_le _ _).trans ?_
+  calc ∑ kl ∈ Finset.antidiagonal n,
+        (algebraMap A A[X] (p.coeff kl.1) * (g ^ kl.1 * h ^ kl.2)).l1Norm
+      ≤ ∑ kl ∈ Finset.antidiagonal n, p.supNorm * (g.l1Norm ^ kl.1 * h.l1Norm ^ kl.2) := by
+        refine Finset.sum_le_sum fun kl _ ↦ ?_
+        rw [algebraMap_eq]
+        refine (l1Norm_mul_le _ _).trans ?_
+        rw [l1Norm_C]
+        exact mul_le_mul (p.le_supNorm _) ((l1Norm_mul_le _ _).trans (mul_le_mul
+          (l1Norm_pow_le _ _) (l1Norm_pow_le _ _) (l1Norm_nonneg _) (by positivity)))
+          (l1Norm_nonneg _) p.supNorm_nonneg
+    _ ≤ p.supNorm * (g.l1Norm + h.l1Norm) ^ n := by
+        -- Each term `‖g‖₁ ^ k ‖h‖₁ ^ (n - k)` occurs in the binomial expansion.
+        rw [← Finset.mul_sum, add_pow, Finset.Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+        refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun k hk ↦ ?_) p.supNorm_nonneg
+        have h1 : (1 : ℝ) ≤ n.choose k := by
+          exact_mod_cast Nat.choose_pos (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))
+        exact le_mul_of_one_le_right (by positivity) h1
 
 end CommRing
 

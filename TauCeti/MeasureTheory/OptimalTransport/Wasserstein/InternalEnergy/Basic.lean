@@ -182,6 +182,21 @@ theorem internalEnergy_eq_potentialEnergy_add {r : ℝ} (hU : recessionConstant 
   norm_cast
   linear_combination (μ.singularPart m univ).toReal * max_zero_sub_max_neg_zero_eq_self r
 
+/-- The internal energy is the potential energy of any potential `W` whose positive and negative
+parts have the integrals of the positive and negative parts occurring in the definition of the
+internal energy. -/
+theorem internalEnergy_eq_potentialEnergy_of_lintegral_eq {W : X → ℝ}
+    (hpos : ∫⁻ x, ENNReal.ofReal (U (μ.rnDeriv m x).toReal) ∂m
+      + (recessionConstant U).toENNReal * μ.singularPart m univ = ∫⁻ x, ENNReal.ofReal (W x) ∂m)
+    (hneg : ∫⁻ x, ENNReal.ofReal (-U (μ.rnDeriv m x).toReal) ∂m
+      + (-recessionConstant U).toENNReal * μ.singularPart m univ =
+        ∫⁻ x, ENNReal.ofReal (-W x) ∂m) :
+    internalEnergy U m μ = potentialEnergy W m := by
+  rw [internalEnergy_def, hpos, hneg]
+  by_cases h : ∫⁻ x, ENNReal.ofReal (W x) ∂m = ∞
+  · simp only [h, ↓reduceIte, potentialEnergy_eq_top_iff.2 h]
+  · simp only [h, ↓reduceIte, potentialEnergy_of_lintegral_ne_top h]
+
 /-- The internal energy of the zero measure is `0` when `U 0 = 0`. -/
 @[simp]
 theorem internalEnergy_zero_measure (hU : U 0 = 0) (m : Measure X) :

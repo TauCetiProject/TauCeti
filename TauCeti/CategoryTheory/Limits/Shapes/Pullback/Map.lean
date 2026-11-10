@@ -15,7 +15,9 @@ Let `X ⟶ S` and `Y ⟶ S` be two objects over `S`, and let `X' ⟶ S'` and `Y'
 changes along `f : S' ⟶ S`. Then the fibre product `X' ×_{S'} Y'` is the base change of
 `X ×_S Y` along `f`, through the morphism `pullback.map` induced by `X' ⟶ X` and `Y' ⟶ Y`
 (`CategoryTheory.IsPullback.pullback_map`). In other words, base change preserves fibre
-products over the base.
+products over the base. The canonical comparison isomorphism
+`CategoryTheory.Limits.pullbackBaseChangeIso` has explicit projection formulas and is natural
+in both objects over the base.
 
 Fibre products over a common base also commute with each other: if `T` is the fibre product of
 `T₁` and `T₂` over `S`, and `X` that of `X₁` and `X₂`, then `T ×_S X` is the fibre product of
@@ -100,6 +102,74 @@ end Interchange
 end CategoryTheory.IsPullback
 
 namespace CategoryTheory.Limits
+
+section BaseChange
+
+variable {C : Type*} [Category* C] [HasPullbacks C] {X Y S S' : C}
+  (f : X ⟶ S) (g : Y ⟶ S) (φ : S' ⟶ S)
+
+/-- Base change of a fibre product is the fibre product of the base changes, with both
+base-changed factors regarded as objects over `S'` through their second projections. -/
+noncomputable def pullbackBaseChangeIso :
+    pullback (pullback.fst f g ≫ f) φ ≅
+      pullback (pullback.snd f φ) (pullback.snd g φ) :=
+  (((IsPullback.of_hasPullback f φ).flip.pullback_map
+    (IsPullback.of_hasPullback g φ).flip).flip.isoPullback).symm
+
+/-- The first projection of the base-change comparison is the base change of the first
+projection. -/
+@[reassoc (attr := simp)]
+theorem pullbackBaseChangeIso_hom_fst :
+    (pullbackBaseChangeIso f g φ).hom ≫ pullback.fst _ _ =
+      pullback.map (pullback.fst f g ≫ f) φ f φ (pullback.fst f g) (𝟙 S') (𝟙 S)
+        (by simp) (by simp) := by
+  apply (cancel_epi (pullbackBaseChangeIso f g φ).inv).mp
+  apply pullback.hom_ext <;> simp [pullbackBaseChangeIso]
+
+/-- The second projection of the base-change comparison is the base change of the second
+projection. -/
+@[reassoc (attr := simp)]
+theorem pullbackBaseChangeIso_hom_snd :
+    (pullbackBaseChangeIso f g φ).hom ≫ pullback.snd _ _ =
+      pullback.map (pullback.fst f g ≫ f) φ g φ (pullback.snd f g) (𝟙 S') (𝟙 S)
+        (by simp [pullback.condition]) (by simp) := by
+  apply (cancel_epi (pullbackBaseChangeIso f g φ).inv).mp
+  apply pullback.hom_ext <;> simp [pullbackBaseChangeIso, pullback.condition]
+
+/-- The inverse base-change comparison projects to the original fibre product by the
+projections from both base changes. -/
+@[reassoc (attr := simp)]
+theorem pullbackBaseChangeIso_inv_fst :
+    (pullbackBaseChangeIso f g φ).inv ≫ pullback.fst _ _ =
+      pullback.map _ _ f g (pullback.fst f φ) (pullback.fst g φ)
+        φ pullback.condition.symm pullback.condition.symm := by
+  simp [pullbackBaseChangeIso]
+
+/-- The base-change comparison is an isomorphism over the new base. -/
+@[reassoc (attr := simp)]
+theorem pullbackBaseChangeIso_inv_snd :
+    (pullbackBaseChangeIso f g φ).inv ≫ pullback.snd _ _ =
+      pullback.fst _ _ ≫ pullback.snd f φ := by
+  simp [pullbackBaseChangeIso]
+
+/-- The base-change comparison is natural in both objects over the base. -/
+@[reassoc]
+theorem pullbackBaseChangeIso_naturality {X' Y' : C}
+    (f' : X' ⟶ S) (g' : Y' ⟶ S) (a : X ⟶ X') (b : Y ⟶ Y')
+    (ha : a ≫ f' = f) (hb : b ≫ g' = g) :
+    pullback.map (pullback.fst f g ≫ f) φ (pullback.fst f' g' ≫ f') φ
+        (pullback.map f g f' g' a b (𝟙 S) (by simp [ha]) (by simp [hb]))
+        (𝟙 S') (𝟙 S) (by simp [ha]) (by simp) ≫
+        (pullbackBaseChangeIso f' g' φ).hom =
+      (pullbackBaseChangeIso f g φ).hom ≫
+        pullback.map (pullback.snd f φ) (pullback.snd g φ)
+          (pullback.snd f' φ) (pullback.snd g' φ)
+          (pullback.map f φ f' φ a (𝟙 S') (𝟙 S) (by simp [ha]) (by simp))
+          (pullback.map g φ g' φ b (𝟙 S') (𝟙 S) (by simp [hb]) (by simp))
+          (𝟙 S') (by simp) (by simp) := by
+  ext <;> simp
+
+end BaseChange
 
 /-- The inverse canonical isomorphism between a direct and an iterated pullback is natural in
 morphisms of the first factor over the common base. -/

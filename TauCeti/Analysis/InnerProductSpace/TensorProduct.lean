@@ -35,6 +35,12 @@ when endomorphisms are identified with tensors, without adding an instance on th
   identity, on either side, is `1`-Lipschitz in the operator.
 * `TauCeti.apply_self_pos_of_apply_tmul_tmul`: the tensor product of two positive definite
   Hermitian forms is positive definite.
+* `InnerProductSpace.tensorDualMetric_tmul`: on pure tensors, the metric on `F ⊗ E*` is the
+  product of the inner product of `F` and the dual metric of `E`.
+* `InnerProductSpace.tensorDualMetric_eq_trace`: evaluation carries this metric to the
+  unnormalized Hilbert–Schmidt pairing `tr(A† B)`.
+* `InnerProductSpace.isPosSemidef_tensorDualMetric` and
+  `InnerProductSpace.tensorDualMetric_self_pos`: this metric is Hermitian and positive definite.
 -/
 
 public section
@@ -162,7 +168,6 @@ theorem tensorDualMetric_eq_trace [FiniteDimensional 𝕜 F]
     | add b c hb hc => simp [hb, hc, LinearMap.comp_add]
   | add a c ha hc => simp [ha, hc, LinearMap.add_comp]
 
-open scoped ComplexOrder in
 /-- The ordinary tensor/dual metric is positive on every nonzero tensor. -/
 theorem tensorDualMetric_self_pos {a : F ⊗[𝕜] Module.Dual 𝕜 E} (ha : a ≠ 0) :
     0 < tensorDualMetric 𝕜 E F a a := by
@@ -173,21 +178,14 @@ theorem tensorDualMetric_self_pos {a : F ⊗[𝕜] Module.Dual 𝕜 E} (ha : a �
   · intro x hx
     exact RCLike.pos_iff.2 ⟨re_inner_self_pos.2 hx, inner_self_im x⟩
   · intro φ hφ
-    exact lt_of_le_of_ne ((isPosSemidef_dualMetric 𝕜 E).nonneg φ)
-      (Ne.symm ((dualMetric_self_eq_zero_iff 𝕜 E φ).not.2 hφ))
+    exact ((isPosSemidef_dualMetric 𝕜 E).nonneg φ).lt_of_ne' (by simpa using hφ)
 
 /-- Definiteness of the ordinary tensor/dual metric. -/
 @[simp]
 theorem tensorDualMetric_self_eq_zero_iff (a : F ⊗[𝕜] Module.Dual 𝕜 E) :
-    tensorDualMetric 𝕜 E F a a = 0 ↔ a = 0 := by
-  constructor
-  · intro h
-    by_contra ha
-    exact (tensorDualMetric_self_pos 𝕜 E F ha).ne' h
-  · rintro rfl
-    simp
+    tensorDualMetric 𝕜 E F a a = 0 ↔ a = 0 :=
+  ⟨not_imp_not.1 fun ha ↦ (tensorDualMetric_self_pos 𝕜 E F ha).ne', by rintro rfl; simp⟩
 
-open scoped ComplexOrder in
 /-- The ordinary tensor/dual metric is Hermitian and positive semidefinite. -/
 theorem isPosSemidef_tensorDualMetric : (tensorDualMetric 𝕜 E F).IsPosSemidef where
   eq a b := by

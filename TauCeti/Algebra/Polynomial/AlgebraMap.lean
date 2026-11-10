@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.Polynomial.AlgebraMap
 public import Mathlib.Algebra.Group.Irreducible.Lemmas
+public import Mathlib.RingTheory.Ideal.Defs
+import Mathlib.Algebra.Polynomial.Div
 
 /-!
 # Irreducibility under algebra isomorphisms and polynomials in intertwined endomorphisms
@@ -17,6 +19,9 @@ isomorphism of algebras over the coefficient ring.
 If a linear map `σ : M → F` intertwines endomorphisms `f` of `M` and `g` of `F`, that is
 `g ∘ σ = σ ∘ f`, then it intertwines `p(f)` and `p(g)` for every polynomial `p`
 (`Polynomial.aeval_comp_eq_comp_aeval`).
+
+Since `x - c` divides `p(x) - p(c)`, a congruence `(x - c) e ≡ 0` modulo an ideal gives
+`(p(x) - p(c)) e ≡ 0` for every polynomial `p` (`Polynomial.aeval_sub_algebraMap_eval_mul_mem`).
 -/
 
 public section
@@ -50,5 +55,15 @@ theorem aeval_comp_eq_comp_aeval {R M F : Type*} [CommSemiring R] [AddCommMonoid
     have hx := congr($(Module.End.commute_pow_left_of_commute hg k) x)
     simp only [LinearMap.comp_apply] at hx
     simp [aeval_monomial, hx]
+
+/-- If `(x - c) e` lies in an ideal `K`, then so does `(p(x) - p(c)) e` for every polynomial `p`,
+since `x - c` divides `p(x) - p(c)`. -/
+theorem aeval_sub_algebraMap_eval_mul_mem {R S : Type*} [CommSemiring R] [CommRing S]
+    [Algebra R S] {K : Ideal S} {x e : S} {c : R} (he : (x - algebraMap R S c) * e ∈ K)
+    (p : R[X]) : (aeval x p - algebraMap R S (p.eval c)) * e ∈ K := by
+  obtain ⟨w, hw⟩ := sub_dvd_eval_sub x (algebraMap R S c) (p.map (algebraMap R S))
+  rw [eval_map_algebraMap, eval_map_algebraMap, aeval_algebraMap_apply_eq_algebraMap_eval] at hw
+  rw [hw, mul_right_comm]
+  exact K.mul_mem_right w he
 
 end Polynomial

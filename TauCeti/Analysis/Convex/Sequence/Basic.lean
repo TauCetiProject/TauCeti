@@ -713,19 +713,6 @@ theorem IsAdmissible.map_mul {a : ℕ → WithTop ℝ} (ha : IsAdmissible a) {c 
     simp only [WithTop.map_coe, WithTop.coe_le_coe]
     nlinarith
 
-/-- Scaling the heights by a real factor does not change the finite unit edges. -/
-theorem finiteEdges_map_mul (h : ℕ → WithTop ℝ) (c : ℝ) :
-    finiteEdges (fun n => (h n).map (c * ·)) = finiteEdges h := by
-  ext n
-  simp only [mem_finiteEdges, ne_eq, WithTop.map_eq_top_iff]
-
-/-- Scaling the heights by a real factor scales every unit slope by that factor. -/
-@[simp]
-theorem unitSlope_map_mul (h : ℕ → WithTop ℝ) (c : ℝ) (n : ℕ) :
-    unitSlope (fun n => (h n).map (c * ·)) n = c * unitSlope h n := by
-  simp only [unitSlope_def, WithTop.untop₀_map_mul]
-  ring
-
 /-! ### Translation of indices -/
 
 /-- Dropping the first `k` heights preserves convexity. -/

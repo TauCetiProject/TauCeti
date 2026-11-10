@@ -311,7 +311,7 @@ theorem isClosed_setOf_apply_eq (hG : IsTopologicallyFinitelyGenerated G) (x y :
 the conjugacy class of `y` form a closed set. -/
 theorem isClosed_isConj (hG : IsTopologicallyFinitelyGenerated G) (x y : G) :
     IsClosed {φ : ContinuousAut G | IsConj (φ x) y} :=
-  (isClosed_isConj_pair G).preimage ((continuous_eval_const hG x).prodMk continuous_const)
+  isClosed_isConj_prod.preimage ((continuous_eval_const hG x).prodMk continuous_const)
 
 end Profinite
 

@@ -250,6 +250,73 @@ private theorem valuation_pow_mul_le_iff {x : closedPolydisc 1 K} {γ ρ a b : K
   rw [mul_le_mul_iff_right₀ (pow_pos (zero_lt_iff.mpr h0) _), mul_le_mul_iff_left₀ hb',
     pow_le_pow_iff_left₀ zero_le zero_le (by omega)]
 
+/-- **The case `m < n` of `isHoledDiscUnion_cell_inter`.** If `m < n`, `e ≠ 0`, and `m = 0` at
+every point of the cell where `x(T - γ)` vanishes, the inequality
+`x(T - γ)ᵐ x(c) ≤ x(T - γ)ⁿ x(e)` says `x(ρ) ≤ x(T - γ)` for `ρ ^ (n - m) = c / e`, which cuts out
+a finite union of holed discs from the cell. -/
+private theorem exists_isHoledDiscUnion_cell_inter_of_lt [IsAlgClosed K] (Z : Finset K)
+    (γ δ : K) {m n : ℕ} {c e : K} (he : e ≠ 0) (hmn : m < n)
+    (hm : ∀ x ∈ cell Z γ δ, x.1.valuation (T - C γ) = 0 → m = 0) :
+    ∃ H : Set (closedPolydisc 1 K), IsHoledDiscUnion (cell Z γ δ ∩ H) ∧
+      ∀ x ∈ cell Z γ δ, (x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
+        x.1.valuation (T - C γ) ^ n * x.1.valuation (C e) ↔ x ∈ H) := by
+  obtain ⟨ρ, hρ⟩ := IsAlgClosed.exists_pow_nat_eq (c / e) (Nat.sub_pos_of_lt hmn)
+  refine ⟨_, (isHoledDiscUnion_cell Z γ δ).inter_setOf_vle γ ρ, fun x hx ↦ ?_⟩
+  rw [Set.mem_ofPred_eq, ← valuation_le_iff]
+  by_cases h0 : x.1.valuation (T - C γ) = 0
+  · -- here `m = 0`, and `x(c) = 0 ↔ x(ρ) = 0`
+    have hm := hm x hx h0
+    rw [hm, Nat.sub_zero] at hρ
+    have hρc : ρ = 0 ↔ c = 0 := by
+      rw [← pow_eq_zero_iff (by omega : n ≠ 0), hρ, div_eq_zero_iff, or_iff_left he]
+    simp [h0, hm, zero_pow (by omega : n ≠ 0), closedPolydisc_valuation_weightedC_eq_zero_iff,
+      hρc]
+  · exact (valuation_pow_mul_le_iff hmn he hρ h0).1
+
+/-- **The case `m = n` of `isHoledDiscUnion_cell_inter`.** If `m = n` and `m = 0` at every point
+of the cell where `x(T - γ)` vanishes, the inequality `x(T - γ)ᵐ x(c) ≤ x(T - γ)ⁿ x(e)` holds
+everywhere on the cell or nowhere, according as `‖c‖ ≤ ‖e‖`. -/
+private theorem exists_isHoledDiscUnion_cell_inter_of_eq (Z : Finset K) (γ δ : K) {m n : ℕ}
+    (c e : K) (hmn : m = n) (hm : ∀ x ∈ cell Z γ δ, x.1.valuation (T - C γ) = 0 → m = 0) :
+    ∃ H : Set (closedPolydisc 1 K), IsHoledDiscUnion (cell Z γ δ ∩ H) ∧
+      ∀ x ∈ cell Z γ δ, (x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
+        x.1.valuation (T - C γ) ^ n * x.1.valuation (C e) ↔ x ∈ H) := by
+  have hiff (x) (hx : x ∈ cell Z γ δ) : x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
+      x.1.valuation (T - C γ) ^ n * x.1.valuation (C e) ↔ ‖c‖ ≤ ‖e‖ := by
+    rw [← hmn, ← closedPolydisc_valuation_weightedC_le_iff x]
+    by_cases h0 : x.1.valuation (T - C γ) = 0
+    · rw [hm x hx h0, pow_zero, one_mul, one_mul]
+    · exact mul_le_mul_iff_right₀ (pow_pos (zero_lt_iff.mpr h0) _)
+  by_cases hce : ‖c‖ ≤ ‖e‖
+  · exact ⟨Set.univ, by rw [Set.inter_univ]; exact isHoledDiscUnion_cell Z γ δ,
+      fun x hx ↦ by simpa [hce] using hiff x hx⟩
+  · exact ⟨∅, by rw [Set.inter_empty]; exact isHoledDiscUnion_empty,
+      fun x hx ↦ by simpa [hce] using hiff x hx⟩
+
+/-- **The case `n < m` of `isHoledDiscUnion_cell_inter`.** If `n < m` and `e ≠ 0`, the inequality
+`x(T - γ)ᵐ x(c) ≤ x(T - γ)ⁿ x(e)` holds everywhere on the cell if `c = 0`, and otherwise says
+`x(T - γ) ≤ x(ρ)` for `ρ ^ (m - n) = e / c`, which cuts out a finite union of holed discs from the
+cell. -/
+private theorem exists_isHoledDiscUnion_cell_inter_of_gt [IsAlgClosed K] (Z : Finset K)
+    (γ δ : K) {m n : ℕ} {c e : K} (he : e ≠ 0) (hmn : n < m) :
+    ∃ H : Set (closedPolydisc 1 K), IsHoledDiscUnion (cell Z γ δ ∩ H) ∧
+      ∀ x ∈ cell Z γ δ, (x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
+        x.1.valuation (T - C γ) ^ n * x.1.valuation (C e) ↔ x ∈ H) := by
+  by_cases hc : c = 0
+  · exact ⟨Set.univ, by rw [Set.inter_univ]; exact isHoledDiscUnion_cell Z γ δ,
+      fun x _ ↦ by simp [hc]⟩
+  obtain ⟨ρ, hρ⟩ := IsAlgClosed.exists_pow_nat_eq (e / c) (Nat.sub_pos_of_lt hmn)
+  refine ⟨_, (isHoledDiscUnion_cell Z γ δ).inter_closedSubdisc γ ρ, fun x _ ↦ ?_⟩
+  have hρ0 : ρ ≠ 0 := by
+    rintro rfl
+    rw [zero_pow (by omega), eq_comm, div_eq_zero_iff] at hρ
+    exact hρ.elim he hc
+  rw [mem_closedSubdisc, ← valuation_le_iff, and_iff_left (by
+    rwa [← map_zero C, closedPolydisc_vle_weightedC_iff, norm_zero, not_le, norm_pos_iff])]
+  by_cases h0 : x.1.valuation (T - C γ) = 0
+  · simp only [h0, zero_le, zero_pow (by omega : m ≠ 0), zero_mul]
+  · exact (valuation_pow_mul_le_iff hmn hc hρ h0).2
+
 /-- **On each cell, `X(f/g)` is a finite union of holed discs.** On the cell of `(γ, δ)`, the
 inequality `x(T - γ)ᵐ x(c) ≤ x(T - γ)ⁿ x(e)` of
 `valuation_eval₂RingHom_eq_pow_mul_of_mem_cell` holds everywhere or nowhere if `m = n`, and
@@ -269,60 +336,20 @@ private theorem isHoledDiscUnion_cell_inter [IsAlgClosed K] {Z : Finset K} {f g 
     obtain ⟨α, hα, h0⟩ := Multiset.mem_map.mp h
     exact Multiset.of_mem_filter hα (by rw [h0, norm_zero]; exact norm_nonneg _)
   -- it suffices to describe the inequality `x(T - γ)ᵐ x(c) ≤ x(T - γ)ⁿ x(e)` on the cell
-  have key (H : Set (closedPolydisc 1 K)) (hH : IsHoledDiscUnion (cell Z γ δ ∩ H))
-      (hiff : ∀ x ∈ cell Z γ δ, x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
-        x.1.valuation (T - C γ) ^ n * x.1.valuation (C e) ↔ x ∈ H) :
-      IsHoledDiscUnion (cell Z γ δ ∩ {x | x.1.toValuativeRel.vle
-        (Polynomial.eval₂RingHom C T f) (Polynomial.eval₂RingHom C T g)}) := by
+  suffices ∃ H : Set (closedPolydisc 1 K), IsHoledDiscUnion (cell Z γ δ ∩ H) ∧
+      ∀ x ∈ cell Z γ δ, (x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
+        x.1.valuation (T - C γ) ^ n * x.1.valuation (C e) ↔ x ∈ H) by
+    obtain ⟨H, hH, hiff⟩ := this
     convert hH using 1
     ext x
     simp only [Set.mem_inter_iff, Set.mem_ofPred_eq]
     exact and_congr_right fun hx ↦ (vle_iff_of_mem_cell hx hZf hZg).trans (hiff x hx)
-  have hcell := isHoledDiscUnion_cell Z γ δ
   rcases lt_trichotomy m n with hmn | hmn | hmn
-  · -- `m < n`: the inequality says `x(ρ) ≤ x(T - γ)` for `ρ ^ (n - m) = c / e`
-    obtain ⟨ρ, hρ⟩ := IsAlgClosed.exists_pow_nat_eq (c / e) (Nat.sub_pos_of_lt hmn)
-    refine key _ (hcell.inter_setOf_vle γ ρ) fun x hx ↦ ?_
-    rw [Set.mem_ofPred_eq, ← valuation_le_iff]
-    by_cases h0 : x.1.valuation (T - C γ) = 0
-    · -- here `m = 0` by coprimality, and `x(c) = 0 ↔ x(ρ) = 0`
-      have hm : m = 0 := (card_filter_eq_zero_or_of_mem_cell hx h0 hfg).resolve_right
-        (by omega)
-      rw [hm, Nat.sub_zero] at hρ
-      have hρc : ρ = 0 ↔ c = 0 := by
-        rw [← pow_eq_zero_iff (by omega : n ≠ 0), hρ, div_eq_zero_iff, or_iff_left he]
-      simp [h0, hm, zero_pow (by omega : n ≠ 0),
-        closedPolydisc_valuation_weightedC_eq_zero_iff, hρc]
-    · exact (valuation_pow_mul_le_iff hmn he hρ h0).1
-  · -- `m = n`: the inequality says `‖c‖ ≤ ‖e‖`, independently of the point
-    have hiff (x) (hx : x ∈ cell Z γ δ) : x.1.valuation (T - C γ) ^ m * x.1.valuation (C c) ≤
-        x.1.valuation (T - C γ) ^ n * x.1.valuation (C e) ↔ ‖c‖ ≤ ‖e‖ := by
-      rw [← hmn, ← closedPolydisc_valuation_weightedC_le_iff x]
-      by_cases h0 : x.1.valuation (T - C γ) = 0
-      · have hm : m = 0 := by
-          rcases card_filter_eq_zero_or_of_mem_cell hx h0 hfg with h | h
-          exacts [h, hmn.trans h]
-        rw [hm, pow_zero, one_mul, one_mul]
-      · exact mul_le_mul_iff_right₀ (pow_pos (zero_lt_iff.mpr h0) _)
-    by_cases hce : ‖c‖ ≤ ‖e‖
-    · exact key Set.univ (by rwa [Set.inter_univ]) fun x hx ↦ by simpa [hce] using hiff x hx
-    · exact key ∅ (by rw [Set.inter_empty]; exact isHoledDiscUnion_empty)
-        fun x hx ↦ by simpa [hce] using hiff x hx
-  · -- `n < m`: the inequality says `x(T - γ) ≤ x(ρ)` for `ρ ^ (m - n) = e / c`
-    by_cases hc : c = 0
-    · refine key Set.univ (by rwa [Set.inter_univ]) fun x _ ↦ ?_
-      simp [hc]
-    obtain ⟨ρ, hρ⟩ := IsAlgClosed.exists_pow_nat_eq (e / c) (Nat.sub_pos_of_lt hmn)
-    refine key _ (hcell.inter_closedSubdisc γ ρ) fun x hx ↦ ?_
-    have hρ0 : ρ ≠ 0 := by
-      rintro rfl
-      rw [zero_pow (by omega), eq_comm, div_eq_zero_iff] at hρ
-      exact hρ.elim he hc
-    rw [mem_closedSubdisc, ← valuation_le_iff, and_iff_left (by
-      rwa [← map_zero C, closedPolydisc_vle_weightedC_iff, norm_zero, not_le, norm_pos_iff])]
-    by_cases h0 : x.1.valuation (T - C γ) = 0
-    · simp only [h0, zero_le, zero_pow (by omega : m ≠ 0), zero_mul]
-    · exact (valuation_pow_mul_le_iff hmn hc hρ h0).2
+  · exact exists_isHoledDiscUnion_cell_inter_of_lt Z γ δ he hmn fun x hx h0 ↦
+      (card_filter_eq_zero_or_of_mem_cell hx h0 hfg).resolve_right (by omega)
+  · exact exists_isHoledDiscUnion_cell_inter_of_eq Z γ δ c e hmn fun x hx h0 ↦
+      (card_filter_eq_zero_or_of_mem_cell hx h0 hfg).elim id (hmn.trans ·)
+  · exact exists_isHoledDiscUnion_cell_inter_of_gt Z γ δ he hmn
 
 /-- **The domain `{x : x(f) ≤ x(g)}` of two coprime polynomials is a finite union of holed
 discs.** Let `K` be algebraically closed and `f`, `g` coprime polynomials over `K`. Then there is

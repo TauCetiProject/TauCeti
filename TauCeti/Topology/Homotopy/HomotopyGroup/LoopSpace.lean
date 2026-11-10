@@ -40,7 +40,8 @@ concatenation in the matching direction.
 * `Homeomorph.genLoopHomotopic_iff`: a homeomorphism of generalized-loop spaces preserves and
   reflects homotopy.
 * `HomotopyGroup.congrEquiv`, `HomotopyGroup.congrMulEquiv`: reindexing the cube directions
-  along `M ≃ N`, natural in the space by `HomotopyGroup.map_congrEquiv`.
+  along `M ≃ N`, natural in the space by `HomotopyGroup.map_congrEquiv` and
+  `HomotopyGroup.map_eq_congrEquiv_symm_comp`.
 * `HomotopyGroup.zerothHomotopyEquiv`: **`π_N(X, x)` is the set of path components of
   `Ω^ N X x`**, with `Path.joined_iff_homotopic` its one-dimensional form and
   `HomotopyGroup.zerothHomotopyLoopSpaceEquivFundamentalGroup` the degree-zero shift
@@ -49,6 +50,10 @@ concatenation in the matching direction.
   `π_M (Ω^ N X x) const ≃* π_(M ⊕ N) X x`.**
 * `HomotopyGroup.piLoopSpaceMulEquiv`, `HomotopyGroup.pathLoopSpaceMulEquiv`: its `π_n` forms,
   the latter for Mathlib's loop space `Ω X x`.
+* `HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv`: its degree-one form
+  `π₁(Ω X x, refl x) ≃* π₂(X, x)`, with the fundamental group of the loop space.
+* `TauCeti.zerothHomotopyDoubleLoopSpaceEquiv`: the path components of the double loop space
+  `Ω (Ω X x) (Path.refl x)` are the elements of `π₂(X, x)`.
 
 ## References
 
@@ -93,6 +98,21 @@ theorem map_congrEquiv {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (h
   -- both generalized loops are `f ∘ p ∘ (t ↦ t ∘ e)`
   refine congrArg _ (_root_.GenLoop.ext _ _ fun t => ?_)
   simp only [_root_.GenLoop.congr_apply, _root_.GenLoop.map_apply]
+
+/-- The map induced on the homotopy group indexed by `M` is the map induced on the group indexed
+by `N`, conjugated by the reindexing `e : M ≃ N` of the cube directions. -/
+theorem map_eq_congrEquiv_symm_comp {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y))
+    (hf : f x = y) (e : M ≃ N) :
+    map (N := M) f hf = (congrEquiv e).symm ∘ map f hf ∘ congrEquiv e := by
+  funext a
+  rw [Function.comp_apply, Function.comp_apply, map_congrEquiv, Equiv.symm_apply_apply]
+
+/-- Reindexing the cube directions along `e : M ≃ N` does not change whether a based map induces
+a bijection on homotopy groups. -/
+theorem bijective_map_iff_of_equiv {Y : Type*} [TopologicalSpace Y] {y : Y} (f : C(X, Y))
+    (hf : f x = y) (e : M ≃ N) :
+    Function.Bijective (map (N := M) f hf) ↔ Function.Bijective (map (N := N) f hf) := by
+  rw [map_eq_congrEquiv_symm_comp f hf e, Equiv.comp_bijective, Equiv.bijective_comp]
 
 /-- In positive dimensions, reindexing the cube directions along `e : M ≃ N` is an isomorphism
 of homotopy groups. The target index type inherits its nonemptiness, hence its group structure,
@@ -171,6 +191,13 @@ theorem _root_.genLoopHomeoOfIsEmpty_apply [IsEmpty N] (p : Ω^ N X x) :
     genLoopHomeoOfIsEmpty N x p = p 0 :=
   rfl
 
+/-- The inverse of Mathlib's homeomorphism `Ω^ N X x ≃ₜ X` for empty `N` sends a point to the
+constant zero-dimensional generalized loop at it. -/
+@[simp]
+theorem _root_.genLoopHomeoOfIsEmpty_symm_apply [IsEmpty N] (c : X) (t : I^N) :
+    (genLoopHomeoOfIsEmpty N x).symm c t = c :=
+  rfl
+
 /-- Mathlib's bijection between the homotopy group indexed by an empty type and the path
 components of `X` sends the class of a zero-dimensional generalized loop to the path component of
 its value. -/
@@ -179,6 +206,14 @@ theorem _root_.homotopyGroupEquivZerothHomotopyOfIsEmpty_mk [IsEmpty N] (p : Ω^
     homotopyGroupEquivZerothHomotopyOfIsEmpty N x (⟦p⟧ : HomotopyGroup N X x) =
       ZerothHomotopy.mk (p 0) :=
   rfl
+
+/-- The image under a based map of the class of a zero-dimensional generalized loop is the path
+component of the image of its value. -/
+theorem _root_.homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk [IsEmpty N] {Y : Type*}
+    [TopologicalSpace Y] {y : Y} (f : C(X, Y)) (hf : f x = y) (p : Ω^ N X x) :
+    homotopyGroupEquivZerothHomotopyOfIsEmpty N y (map f hf (⟦p⟧ : HomotopyGroup N X x)) =
+      ZerothHomotopy.mk (f (p 0)) := by
+  rw [map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply]
 
 /-- **Two loops at `x` are joined by a path in the loop space exactly when they are homotopic.**
 This is `GenLoop.homotopic_iff_joined` for a singleton index type, carried across the
@@ -370,6 +405,19 @@ theorem pathLoopSpaceMulEquiv_symm_mk (m : ℕ) (q : Ω^ (Fin (m + 2)) X x) :
       (piLoopSpaceMulEquiv_symm_mk m 1 q)).trans <|
       (homeomorphMulEquivOfEq_apply _ _ _).trans (map_mk _ _ _)
 
+/-- **The fundamental group of the loop space is the second homotopy group**:
+`π₁(Ω X x, refl x) ≃* π₂(X, x)`, the case `m = 0` of `pathLoopSpaceMulEquiv` read through
+`pi1MulEquivFundamentalGroup`. A loop of loops `s ↦ γ_s` at the constant loop is the square
+`(s, t) ↦ γ_s t`, which sends the boundary of the square to `x`. -/
+noncomputable def fundamentalGroupLoopSpaceMulEquiv :
+    FundamentalGroup (Ω X x) (Path.refl x) ≃* π_ 2 X x :=
+  pi1MulEquivFundamentalGroup.symm.trans (pathLoopSpaceMulEquiv 0)
+
+theorem fundamentalGroupLoopSpaceMulEquiv_apply (a : FundamentalGroup (Ω X x) (Path.refl x)) :
+    fundamentalGroupLoopSpaceMulEquiv a =
+      pathLoopSpaceMulEquiv 0 (pi1MulEquivFundamentalGroup.symm a) :=
+  by rw [fundamentalGroupLoopSpaceMulEquiv.eq_1]; rfl
+
 section Natural
 
 variable {Y : Type*} [TopologicalSpace Y] {y : Y}
@@ -457,26 +505,22 @@ theorem pathConnectedSpace_doubleLoopSpace_iff (x : X) :
   (pathConnectedSpace_loopSpace_iff_subsingleton_pi1 (Path.refl x)).trans
     (pathLoopSpaceMulEquiv (X := X) (x := x) 0).toEquiv.subsingleton_congr
 
+/-- The homotopy group `π_ k (Ω X x) (Path.refl x)` (including `k = 0`) is trivial if and only if
+`π_ (k + 1) X x` is trivial. -/
+theorem subsingleton_homotopyGroup_loopSpace_iff (x : X) (k : ℕ) :
+    Subsingleton (π_ k (Ω X x) (Path.refl x)) ↔ Subsingleton (π_ (k + 1) X x) := by
+  cases k with
+  | zero =>
+    exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (Path.refl x)).symm.trans
+      (pathConnectedSpace_loopSpace_iff_subsingleton_pi1 x)
+  | succ m => exact (pathLoopSpaceMulEquiv (X := X) (x := x) m).toEquiv.subsingleton_congr
+
 /-- All homotopy groups `π_ k (Ω X x) (Path.refl x)` (including `k = 0`) are trivial if and only if
 `π_ (n + 1) X x` is trivial for every `n : ℕ`. -/
 theorem forall_subsingleton_homotopyGroup_loopSpace_iff (x : X) :
     (∀ k : ℕ, Subsingleton (π_ k (Ω X x) (Path.refl x))) ↔
-      ∀ n : ℕ, Subsingleton (π_ (n + 1) X x) := by
-  constructor
-  · intro h n
-    cases n with
-    | zero =>
-      exact (pathConnectedSpace_loopSpace_iff_subsingleton_pi1 x).mp
-        ((pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (Path.refl x)).mpr (h 0))
-    | succ m =>
-      exact (pathLoopSpaceMulEquiv (X := X) (x := x) m).toEquiv.subsingleton_congr.mp (h (m + 1))
-  · intro h k
-    cases k with
-    | zero =>
-      exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (Path.refl x)).mp
-        ((pathConnectedSpace_loopSpace_iff_subsingleton_pi1 x).mpr (h 0))
-    | succ m =>
-      exact (pathLoopSpaceMulEquiv (X := X) (x := x) m).toEquiv.subsingleton_congr.mpr (h (m + 1))
+      ∀ n : ℕ, Subsingleton (π_ (n + 1) X x) :=
+  forall_congr' (subsingleton_homotopyGroup_loopSpace_iff x)
 
 /-- All homotopy groups of the fixed-interval double loop space `Ω (Ω X x) (Path.refl x)`
 (including `k = 0`) are trivial if and only if `π_ (n + 2) X x` is trivial for every `n : ℕ`. -/
@@ -486,5 +530,29 @@ theorem forall_subsingleton_homotopyGroup_doubleLoopSpace_iff (x : X) :
   (forall_subsingleton_homotopyGroup_loopSpace_iff (Path.refl x)).trans
     (forall_congr' fun n ↦
       (pathLoopSpaceMulEquiv (X := X) (x := x) n).toEquiv.subsingleton_congr)
+
+/-- **The path components of the double loop space are the second homotopy group.** The
+component of a double loop `γ` is sent to the class of `γ` under the loop-space shift. -/
+noncomputable def zerothHomotopyDoubleLoopSpaceEquiv (x : X) :
+    ZerothHomotopy (Ω (Ω X x) (Path.refl x)) ≃ π_ 2 X x :=
+  zerothHomotopyLoopSpaceEquivFundamentalGroup.trans fundamentalGroupLoopSpaceMulEquiv.toEquiv
+
+/-- The component of a double loop `γ` is the image of its homotopy class under
+`fundamentalGroupLoopSpaceMulEquiv`. -/
+@[simp]
+theorem zerothHomotopyDoubleLoopSpaceEquiv_mk (x : X) (γ : Ω (Ω X x) (Path.refl x)) :
+    zerothHomotopyDoubleLoopSpaceEquiv x (.mk γ) =
+      fundamentalGroupLoopSpaceMulEquiv (FundamentalGroup.fromPath (.mk γ)) :=
+  congrArg fundamentalGroupLoopSpaceMulEquiv (zerothHomotopyLoopSpaceEquivFundamentalGroup_mk γ)
+
+/-- The component of the constant double loop is the identity of `π₂(X, x)`. -/
+-- `high` priority: `simp` does not reduce the right-hand side of the general `_mk` lemma to `1`.
+@[simp high]
+theorem zerothHomotopyDoubleLoopSpaceEquiv_mk_refl (x : X) :
+    zerothHomotopyDoubleLoopSpaceEquiv x
+        (.mk (Path.refl (Path.refl x) : Ω (Ω X x) (Path.refl x))) = 1 := by
+  rw [zerothHomotopyDoubleLoopSpaceEquiv_mk]
+  -- the class of the constant path is the identity of the fundamental group
+  exact fundamentalGroupLoopSpaceMulEquiv.map_one
 
 end TauCeti

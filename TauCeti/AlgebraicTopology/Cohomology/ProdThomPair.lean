@@ -72,14 +72,16 @@ variable {k : Type*} [CommRing k] (R M : ModuleCat.{w} k) [Module.Projective k R
 
 /-- The relative Kronecker map of the Thom pair of a product bundle is bijective up to the rank,
 since the relative homology vanishes below it. -/
-private theorem singularKronecker_prodThomPair_bijective {n : ℕ} (hn : n ≤ finrank ℝ F) :
+private theorem singularKronecker_prodThomPair_bijective [Linear k (ModuleCat.{w} k)] {n : ℕ}
+    (hn : n ≤ finrank ℝ F) :
     Function.Bijective ((prodThomPair B F).singularKronecker (R := R) (M := M) k n) :=
   (prodThomPair B F).singularKronecker_bijective_of_projective_homology_lt R M n fun _ hj ↦
     (isZero_singularHomology_prodThomPair R B F (hj.trans_le hn)).projective
 
 /-- **The relative cohomology of the Thom pair of a product bundle vanishes below the rank**:
 `Hⁿ(B × F, B × (F ∖ {0}); R, M) = 0` for `n < dim F`. -/
-theorem isZero_singularCohomology_prodThomPair {n : ℕ} (hn : n < finrank ℝ F) :
+theorem isZero_singularCohomology_prodThomPair [Linear k (ModuleCat.{w} k)] {n : ℕ}
+    (hn : n < finrank ℝ F) :
     IsZero ((prodThomPair B F).singularCohomology R k M n) :=
   (prodThomPair B F).isZero_singularCohomology_of_isZero_singularHomology R M n fun _ hj ↦
     isZero_singularHomology_prodThomPair R B F (hj.trans_lt hn)
@@ -103,6 +105,23 @@ theorem prodThomPairSingularCohomologyEquiv_apply
         (prodThomPair B F).singularKronecker k _ u := by
   simp [prodThomPairSingularCohomologyEquiv, Linear.homCongr_apply]
 
+omit [Module.Projective k R] in
+variable {B F} in
+/-- Evaluating a class on relative homology and reading the result on `H₀(B; R)` is natural in
+continuous maps of the base, for any `k`-linear structure on `ModuleCat k`. -/
+private theorem prodThomPairSingularHomologyIso_inv_comp_singularKronecker_naturality
+    [Linear k (ModuleCat.{w} k)] (g : C(B, B'))
+    (u : (prodThomPair B' F).singularCohomology R k M (finrank ℝ F)) :
+    (prodThomPairSingularHomologyIso R B F 0 (finrank ℝ F)).inv ≫
+        (prodThomPair B F).singularKronecker k _
+          (TopPair.singularCohomologyMap (prodThomPairMap F g) _ u) =
+      ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj R).map (TopCat.ofHom g) ≫
+        (prodThomPairSingularHomologyIso R B' F 0 (finrank ℝ F)).inv ≫
+          (prodThomPair B' F).singularKronecker k _ u := by
+  rw [TopPair.singularKronecker_naturality, Iso.inv_comp_eq,
+    ← prodThomPairSingularHomologyIso_hom_naturality_assoc R B F g 0 (finrank ℝ F),
+    Iso.hom_inv_id_assoc]
+
 variable {B F} in
 /-- The identification `Hʳ(B × F, B × (F ∖ {0}); R, M) ≃ₗ[k] (H₀(B; R) ⟶ M)` is natural in
 continuous maps of the base. -/
@@ -112,21 +131,21 @@ theorem prodThomPairSingularCohomologyEquiv_naturality (g : C(B, B'))
         (TopPair.singularCohomologyMap (prodThomPairMap F g) _ u) =
       ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj R).map (TopCat.ofHom g) ≫
         prodThomPairSingularCohomologyEquiv R M B' F u := by
-  rw [prodThomPairSingularCohomologyEquiv_apply, prodThomPairSingularCohomologyEquiv_apply,
-    TopPair.singularKronecker_naturality, Iso.inv_comp_eq,
-    ← prodThomPairSingularHomologyIso_hom_naturality_assoc R B F g 0 (finrank ℝ F),
-    Iso.hom_inv_id_assoc]
+  rw [prodThomPairSingularCohomologyEquiv_apply, prodThomPairSingularCohomologyEquiv_apply]
+  exact prodThomPairSingularHomologyIso_inv_comp_singularKronecker_naturality R M g u
 
 variable {R M B F} in
 /-- **Classes in the top degree are determined on the fibres**: two classes of
 `Hʳ(B × F, B × (F ∖ {0}); R, M)`, `r = dim F`, whose restrictions to the fibre pair
 `(F, F ∖ {0})` over every point of `B` agree, are equal. -/
-theorem singularCohomology_prodThomPair_ext
+theorem singularCohomology_prodThomPair_ext [Linear k (ModuleCat.{w} k)]
     {u v : (prodThomPair B F).singularCohomology R k M (finrank ℝ F)}
     (h : ∀ b, TopPair.singularCohomologyMap (prodThomPairFiberMap F b) _ u =
       TopPair.singularCohomologyMap (prodThomPairFiberMap F b) _ v) : u = v := by
-  apply (prodThomPairSingularCohomologyEquiv R M B F).injective
-  refine singularHomology₀_hom_ext R fun b ↦ ?_
+  -- Compare the evaluations of `u` and `v` on relative homology, read on `H₀(B; R)`.
+  refine (singularKronecker_prodThomPair_bijective R M B F le_rfl).1 ((cancel_epi
+    (prodThomPairSingularHomologyIso R B F 0 (finrank ℝ F)).inv).1
+      (singularHomology₀_hom_ext R fun b ↦ ?_))
   -- The fibre over `b` is the Thom pair over a point, mapped in by the constant map at `b`.
   let c : C(PUnit.{w + 1}, B) := ContinuousMap.const _ b
   have hc : prodThomPairFiberMap F PUnit.unit ≫ prodThomPairMap F c = prodThomPairFiberMap F b :=
@@ -136,9 +155,10 @@ theorem singularCohomology_prodThomPair_ext
   simp only [← hc, ← ConcreteCategory.comp_apply, ← Category.assoc,
     ← TopPair.singularCohomologyMap_comp,
     prodThomPairPUnitSnd_comp_prodThomPairFiberMap, Category.id_comp] at hb
-  have hb' := congrArg (prodThomPairSingularCohomologyEquiv R M PUnit F) hb
-  rw [prodThomPairSingularCohomologyEquiv_naturality,
-    prodThomPairSingularCohomologyEquiv_naturality] at hb'
+  have hb' := congrArg (fun x ↦ (prodThomPairSingularHomologyIso R PUnit F 0 (finrank ℝ F)).inv ≫
+    (prodThomPair PUnit F).singularKronecker k _ x) hb
+  rw [prodThomPairSingularHomologyIso_inv_comp_singularKronecker_naturality,
+    prodThomPairSingularHomologyIso_inv_comp_singularKronecker_naturality] at hb'
   have hpt : singularHomology₀Section R (X := TopCat.of PUnit.{w + 1}) PUnit.unit ≫
       ((singularHomologyFunctor (ModuleCat.{w} k) 0).obj R).map (TopCat.ofHom c) =
         singularHomology₀Section R b :=

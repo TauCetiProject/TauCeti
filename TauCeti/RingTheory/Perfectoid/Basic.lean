@@ -64,7 +64,7 @@ modulo `p`.
 
 ## References
 
-* P. Scholze, *Étale cohomology of diamonds*, Definition 3.1, Remarks 3.2–3.3 and Example 3.4.
+* P. Scholze, *Étale cohomology of diamonds*, Definition 3.1 and Remarks 3.2–3.3.
 * P. Scholze, *Perfectoid spaces*, Definition 5.1 and Proposition 5.8.
 * B. Bhatt, M. Morrow, P. Scholze, *Integral p-adic Hodge theory*, Lemma 3.9 and §3.2.
 -/
@@ -229,9 +229,9 @@ private theorem IsPerfectoidTateRing.of_prod_left [IsPerfectoidTateRing p (R × 
         by simpa using pow_dvd_pow_of_dvd (dvd_zero (powerBoundedSubringProdEquiv R S ϖ).2) p⟩
     simpa using (dvd_iff_powerBoundedSubringProdEquiv.mp (hi _ hdvd)).1
 
-/-- **A product of perfectoid Tate rings is perfectoid**: if `ϖ_R` and `ϖ_S` witness the perfectoid
-condition for `R` and `S`, then `(ϖ_R, ϖ_S)` witnesses it for `R × S`, because `(R × S)° = R° × S°`
-and divisibility in it is componentwise (Scholze, *Étale cohomology of diamonds*, Example 3.4). -/
+/-- **A product of perfectoid Tate rings is perfectoid**, directly from the definition: if `ϖ_R` and
+`ϖ_S` witness the perfectoid condition for `R` and `S`, then `(ϖ_R, ϖ_S)` witnesses it for `R × S`,
+because `(R × S)° = R° × S°` and divisibility in it is componentwise. -/
 instance IsPerfectoidTateRing.prod [IsPerfectoidTateRing p R] [IsPerfectoidTateRing p S] :
     IsPerfectoidTateRing p (R × S) := by
   have := IsPerfectoidTateRing.isUniform p (R := R)

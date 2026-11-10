@@ -11,6 +11,7 @@ public import TauCeti.GroupTheory.Solvable
 public import Mathlib.GroupTheory.Perm.List
 public import Mathlib.GroupTheory.SpecificGroups.Alternating.KleinFour
 import TauCeti.Algebra.Group.Subgroup.Map
+import TauCeti.GroupTheory.GroupAction.Primitive
 
 /-!
 # Reference transitive permutation groups in degree at most five
@@ -57,7 +58,7 @@ public section
 
 namespace TauCeti
 
-open Equiv Equiv.Perm MulAction
+open Equiv Equiv.Perm _root_.MulAction TauCeti.MulAction
 
 /-- The number of reference transitive permutation groups in a supported degree.
 
@@ -280,25 +281,16 @@ private theorem isPretransitive_referenceSubgroup4_one :
   let _ : K.Normal := alternatingGroup.normal_kleinFour (by simp)
   let _ : IsPreprimitive (alternatingGroup (Fin 4)) (Fin 4) :=
     alternatingGroup.isPreprimitive_of_three_le_card (Fin 4) (by simp)
-  have hK : IsPretransitive K (Fin 4) := by
-    apply IsQuasiPreprimitive.isPretransitive_of_normal
-    rw [Set.ne_univ_iff_exists_notMem]
-    have hKne : K ≠ ⊥ := by
-      intro hKbot
-      have hcard :=
-        alternatingGroup.kleinFour_card_of_card_eq_four (α := Fin 4) (by simp)
-      have hbotcard : Nat.card (⊥ : Subgroup (alternatingGroup (Fin 4))) = 4 := by
-        rw [← hKbot]
-        exact hcard
-      simp at hbotcard
-    obtain ⟨g, hg⟩ := K.ne_bot_iff_exists_ne_one.mp hKne
-    have hg' : (g : Perm (Fin 4)) ≠ 1 := fun h ↦ hg (Subtype.ext (Subtype.ext h))
-    obtain ⟨x, hx⟩ : ∃ x, (g : Perm (Fin 4)) x ≠ x := by
-      by_contra! hfix
-      exact hg' (Equiv.ext hfix)
-    refine ⟨x, ?_⟩
-    simpa only [mem_fixedPoints, Subgroup.smul_def, not_forall] using
-      ⟨g, hx⟩
+  have hKne : K ≠ ⊥ := by
+    intro hKbot
+    have hcard :=
+      alternatingGroup.kleinFour_card_of_card_eq_four (α := Fin 4) (by simp)
+    have hbotcard : Nat.card (⊥ : Subgroup (alternatingGroup (Fin 4))) = 4 := by
+      rw [← hKbot]
+      exact hcard
+    simp at hbotcard
+  have hK : IsPretransitive K (Fin 4) :=
+    IsQuasiPreprimitive.isPretransitive_of_normal_of_ne_bot K hKne
   constructor
   intro x y
   obtain ⟨g, hg⟩ := hK.exists_smul_eq x y

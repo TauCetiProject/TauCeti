@@ -36,12 +36,19 @@ consumer instantiate it. For a short model (`a₁ = a₃ = 0`, so
 * `WeierstrassCurve.evalEval_ψ₂_sq`: on the curve, `ψ₂(x, y)² = Ψ₂Sq(x)`.
 * `WeierstrassCurve.evalEval_ψ₂_sq_eq_iff`: conversely, over a domain with `2 ≠ 0`, a solution of
   `ψ₂(x, y)² = Ψ₂Sq(x)` lies on the curve.
+* `WeierstrassCurve.eval_derivative_Ψ₂Sq_of_evalEval_ψ₂_eq_zero`: at a zero of `ψ₂`,
+  `Ψ₂Sq'(x) = -4 W_X(x, y)`, and `WeierstrassCurve.neg_evalEval_polynomialX_eq_of_Ψ₂Sq_eq`
+  computes `-W_X(e₁, t) = (e₁ - e₂)(e₁ - e₃)` from the roots `eᵢ` of `Ψ₂Sq`.
+* `WeierstrassCurve.eval_derivative_Ψ₂Sq_ne_zero`: on an elliptic curve with `2 ≠ 0` over a field,
+  the roots of `Ψ₂Sq` are simple.
 * `WeierstrassCurve.isUnit_two_of_evalEval_ψ₂_eq_zero`: if `W` is elliptic and `ψ₂` vanishes at
   two points whose `x`-coordinates differ by a unit, then `2` is a unit, since modulo `2` both `a₁`
   and `a₃` vanish and then so does `Δ`.
 
 Stated over an arbitrary commutative ring: no domain or integrality hypothesis outside
-`evalEval_ψ₂_sq_eq_iff`, and no ellipticity hypothesis outside `isUnit_two_of_evalEval_ψ₂_eq_zero`.
+`evalEval_ψ₂_sq_eq_iff`, `neg_evalEval_polynomialX_eq_of_Ψ₂Sq_eq` and
+`eval_derivative_Ψ₂Sq_ne_zero`, and no ellipticity hypothesis outside
+`isUnit_two_of_evalEval_ψ₂_eq_zero` and `eval_derivative_Ψ₂Sq_ne_zero`.
 
 ⚠ **No torsion hypothesis appears here, and no part of `lutz_nagell` is proved.** The headline is a
 statement about polynomials, usable by any caller with a common divisor in hand, and
@@ -105,6 +112,33 @@ theorem _root_.WeierstrassCurve.evalEval_ψ₂_sq_eq_iff [NoZeroDivisors R] (h2 
   rw [← Nat.cast_ofNat, evalEval_natCast]
   exact_mod_cast mul_ne_zero h2 h2
 
+/-- **The derivative of `Ψ₂Sq` at a zero of `ψ₂`**: if `ψ₂(x, y) = 2y + a₁x + a₃` vanishes, then
+`Ψ₂Sq'(x) = -4 W_X(x, y)`, for `W_X` the partial derivative of the Weierstrass polynomial in `X`. -/
+theorem _root_.WeierstrassCurve.eval_derivative_Ψ₂Sq_of_evalEval_ψ₂_eq_zero
+    (hψ : W.ψ₂.evalEval x y = 0) :
+    W.Ψ₂Sq.derivative.eval x = -4 * W.toAffine.polynomialX.evalEval x y := by
+  rw [_root_.WeierstrassCurve.ψ₂, _root_.WeierstrassCurve.Affine.evalEval_polynomialY] at hψ
+  rw [_root_.WeierstrassCurve.Affine.evalEval_polynomialX, _root_.WeierstrassCurve.Ψ₂Sq]
+  simp only [derivative_add, derivative_mul, derivative_C, derivative_X_pow, derivative_X,
+    zero_mul, zero_add, mul_one, eval_add, eval_mul, eval_C, eval_pow, eval_X, eval_zero,
+    Nat.cast_ofNat]
+  rw [_root_.WeierstrassCurve.b₂, _root_.WeierstrassCurve.b₄]
+  linear_combination (2 * W.a₁) * hψ
+
+/-- **`-W_X` at a point of order two, from the roots of `Ψ₂Sq`**: if
+`Ψ₂Sq = 4 (X - e₁)(X - e₂)(X - e₃)` and `ψ₂(e₁, t) = 0`, then `-W_X(e₁, t) = (e₁ - e₂)(e₁ - e₃)`,
+when `2 ≠ 0` in a ring without zero divisors. -/
+theorem _root_.WeierstrassCurve.neg_evalEval_polynomialX_eq_of_Ψ₂Sq_eq [NoZeroDivisors R]
+    (h2 : (2 : R) ≠ 0) {e₁ e₂ e₃ : R}
+    (h : W.Ψ₂Sq = C 4 * (X - C e₁) * (X - C e₂) * (X - C e₃)) (hψ : W.ψ₂.evalEval e₁ y = 0) :
+    -W.toAffine.polynomialX.evalEval e₁ y = (e₁ - e₂) * (e₁ - e₃) := by
+  have hd := W.eval_derivative_Ψ₂Sq_of_evalEval_ψ₂_eq_zero hψ
+  rw [h] at hd
+  simp only [derivative_mul, derivative_C, derivative_sub, derivative_X, eval_add, eval_mul,
+    eval_sub, eval_C, eval_X, eval_one, eval_zero] at hd
+  refine mul_left_cancel₀ (mul_ne_zero h2 h2) ?_
+  linear_combination -hd
+
 /-- The Bézout combination exhibiting `4Δ` from `Ψ₂Sq(x)` and `Ψ₃(x)`.
 
 `Δ` is a polynomial in the `b`-invariants, and this is the explicit certificate that `4Δ` lies in
@@ -146,6 +180,34 @@ theorem _root_.WeierstrassCurve.dvd_four_mul_Δ_of_dvd_Ψ₂Sq_of_dvd_four_mul_�
     (Dvd.dvd.mul_left (WeierstrassCurve.dvd_sq_of_dvd_Ψ₂Sq_of_dvd_four_mul_Ψ₃ W hd hΨ₃) _)
 
 end
+
+/-! ### The roots of `Ψ₂Sq` on an elliptic curve are simple -/
+
+section
+
+variable {F : Type*} [Field F] (W : _root_.WeierstrassCurve F) [W.IsElliptic] {x : F}
+
+/-- **On an elliptic curve the roots of `Ψ₂Sq` are simple**, when `2 ≠ 0`: a root `x` is the
+abscissa of the point `(x, -(a₁x + a₃) / 2)`, at which `ψ₂` vanishes, so nonsingularity forces
+`W_X ≠ 0` there, and `Ψ₂Sq'(x) = -4 W_X`. -/
+theorem _root_.WeierstrassCurve.eval_derivative_Ψ₂Sq_ne_zero (h2 : (2 : F) ≠ 0)
+    (hx : W.Ψ₂Sq.IsRoot x) : W.Ψ₂Sq.derivative.eval x ≠ 0 := by
+  set y := -(W.a₁ * x + W.a₃) / 2
+  have hψ : W.ψ₂.evalEval x y = 0 := by
+    rw [_root_.WeierstrassCurve.ψ₂, _root_.WeierstrassCurve.Affine.evalEval_polynomialY]
+    simp only [y]
+    field_simp
+    ring
+  have h : W.toAffine.Nonsingular x y :=
+    _root_.WeierstrassCurve.Affine.equation_iff_nonsingular.mp
+      ((W.evalEval_ψ₂_sq_eq_iff h2).mp (by rw [hψ, hx.eq_zero, zero_pow two_ne_zero]))
+  have hX := h.2.resolve_right (by rwa [← _root_.WeierstrassCurve.ψ₂, not_not])
+  rw [W.eval_derivative_Ψ₂Sq_of_evalEval_ψ₂_eq_zero hψ]
+  exact mul_ne_zero (neg_ne_zero.mpr (by
+    rw [show (4 : F) = 2 * 2 by norm_num]; exact mul_ne_zero h2 h2)) hX
+
+end
+
 
 /-! ### Two points of order two force `2` to be a unit -/
 

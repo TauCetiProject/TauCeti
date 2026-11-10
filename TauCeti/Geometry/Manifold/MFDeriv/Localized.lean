@@ -19,6 +19,11 @@ valued functions and also for manifolds with boundary.
 
 This local first-jet realization allows, in particular, localized Hamiltonian perturbations
 with a prescribed differential without requiring a global coordinate chart.
+
+## Main results
+
+* `TauCeti.exists_contMDiff_hasCompactSupport_mvfderiv_eq`: a compactly supported smooth function
+  with prescribed value and derivative at a point.
 -/
 
 public noncomputable section

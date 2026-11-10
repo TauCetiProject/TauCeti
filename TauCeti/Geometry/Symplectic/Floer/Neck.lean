@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # Inserting a cylindrical neck into Hamiltonian perturbation data
@@ -32,8 +33,10 @@ so its integrated curvature is controlled by that of `K` itself, uniformly in th
 
 ## Main results
 
-* `TauCeti.Floer.contDiff_uncurry_neckStretch`: inserting a neck at a line where the datum is
-  independent of `s` preserves smoothness.
+* `TauCeti.Floer.contDiff_neckStretch_family`: inserting a neck whose length depends smoothly on
+  a parameter, at a line where the datum is independent of `s`, gives a datum that is smooth
+  jointly in the parameter, the domain point and the target point;
+  `TauCeti.Floer.contDiff_uncurry_neckStretch` is the case of a fixed length.
 * `TauCeti.SymplecticForm.hamiltonianCurvature_neckStretch`: the curvature of the stretched datum
   is the curvature of the original datum pulled back along `σ × id`.
 * `TauCeti.SymplecticForm.integral_abs_hamiltonianCurvature_neckStretch_le`: for a datum that is
@@ -85,6 +88,13 @@ theorem neckCollapse_of_ge (hL : 0 ≤ L) (hs : c + L ≤ s) : neckCollapse c L 
   rw [neckCollapse_def, min_eq_right (by linarith), max_eq_left (by linarith)]
   ring
 
+/-- A neck of length zero collapses nothing. -/
+@[simp]
+theorem neckCollapse_zero (c s : ℝ) : neckCollapse c 0 s = s := by
+  rcases le_total s c with hs | hs
+  · exact neckCollapse_of_le le_rfl hs
+  · rw [neckCollapse_of_ge le_rfl (by simpa using hs), sub_zero]
+
 theorem continuous_neckCollapse (c L : ℝ) : Continuous (neckCollapse c L) := by
   unfold neckCollapse
   fun_prop
@@ -104,6 +114,12 @@ def neckStretch (c L : ℝ) (K : ℝ × ℝ → X) (z : ℝ × ℝ) : X :=
 theorem neckStretch_apply (K : ℝ × ℝ → X) (z : ℝ × ℝ) :
     neckStretch c L K z = K (neckCollapse c L z.1, z.2) :=
   (rfl)
+
+/-- Inserting a neck of length zero does not change the datum. -/
+@[simp]
+theorem neckStretch_zero (c : ℝ) (K : ℝ × ℝ → X) : neckStretch c 0 K = K := by
+  funext z
+  simp
 
 /-- If `K` is independent of `s` near the line `s = c`, then near every point `z` the stretched
 datum agrees with the translate of `K` that moves `z` to `(σ z.1, z.2)`. -/
@@ -136,23 +152,61 @@ theorem neckStretch_eventuallyEq (hL : 0 ≤ L) {K : ℝ × ℝ → X}
     have hw : w + (c - s, 0) = (w.1 + (c - s), w.2) := by ext <;> simp
     rw [neckStretch_apply, hw₁, hσ, hw, hw₂]
 
+/-- **Smoothness in the neck length.** Inserting a neck whose length `ℓ p ≥ 0` depends smoothly
+on a parameter `p`, at a line near which a smooth datum is independent of `s`, gives a datum that
+is smooth jointly in the parameter, the domain point and the target point. -/
+theorem contDiff_neckStretch_family {P E F : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n : WithTop ℕ∞} {ℓ : P → ℝ} (hℓ : ContDiff ℝ n ℓ) (hℓ₀ : ∀ p, 0 ≤ ℓ p)
+    {K : ℝ × ℝ → E → F} (hK : ∀ᶠ s in 𝓝 c, ∀ t, K (s, t) = K (c, t))
+    (hKd : ContDiff ℝ n (uncurry K)) :
+    ContDiff ℝ n fun q : P × (ℝ × ℝ) × E ↦ neckStretch c (ℓ q.1) K q.2.1 q.2.2 := by
+  refine contDiff_iff_contDiffAt.2 fun q ↦ ?_
+  obtain ⟨p, ⟨s, t⟩, x⟩ := q
+  -- Near every point the stretched datum is a translate of `K` in `s`, by a smooth amount.
+  have htrans (δ : P → ℝ) (hδ : ContDiff ℝ n δ) :
+      ContDiff ℝ n fun q : P × (ℝ × ℝ) × E ↦ K (q.2.1.1 - δ q.1, q.2.1.2) q.2.2 :=
+    hKd.comp ((((contDiff_fst.comp (contDiff_fst.comp contDiff_snd)).sub
+      (hδ.comp contDiff_fst)).prodMk (contDiff_snd.comp (contDiff_fst.comp contDiff_snd))).prodMk
+        (contDiff_snd.comp contDiff_snd))
+  have hs : Continuous fun q : P × (ℝ × ℝ) × E ↦ q.2.1.1 := by fun_prop
+  have hσ : Continuous fun q : P × (ℝ × ℝ) × E ↦ neckCollapse c (ℓ q.1) q.2.1.1 := by
+    have := hℓ.continuous
+    unfold neckCollapse
+    fun_prop
+  rcases lt_or_ge s c with hsc | hsc
+  · -- Before the neck, the datum is `K` itself.
+    refine (htrans (fun _ ↦ 0) contDiff_const).contDiffAt.congr_of_eventuallyEq ?_
+    filter_upwards [(hs.tendsto _).eventually (Iio_mem_nhds hsc)] with q hq
+    simp [neckCollapse_of_le (hℓ₀ q.1) (le_of_lt hq)]
+  rcases lt_or_ge (c + ℓ p) s with hsc' | hsc'
+  · -- After the neck, the datum is the translate of `K` by `-ℓ`.
+    refine (htrans ℓ hℓ).contDiffAt.congr_of_eventuallyEq ?_
+    have hev : ∀ᶠ q : P × (ℝ × ℝ) × E in 𝓝 (p, (s, t), x), c + ℓ q.1 < q.2.1.1 :=
+      ((continuous_const.add (hℓ.continuous.comp continuous_fst)).tendsto _).eventually_lt
+        (hs.tendsto _) hsc'
+    filter_upwards [hev] with q hq
+    simp [neckCollapse_of_ge (hℓ₀ q.1) hq.le]
+  · -- On the neck, both the datum and the translate of `K` by `c - s` are evaluations of `K`
+    -- near the line `s = c`.
+    refine (htrans (fun _ ↦ s - c) contDiff_const).contDiffAt.congr_of_eventuallyEq ?_
+    have h₁ : Tendsto (fun q : P × (ℝ × ℝ) × E ↦ neckCollapse c (ℓ q.1) q.2.1.1)
+        (𝓝 (p, (s, t), x)) (𝓝 c) := by
+      have h := hσ.tendsto (p, (s, t), x)
+      rwa [neckCollapse_of_mem_Icc ⟨hsc, hsc'⟩] at h
+    have h₂ : Tendsto (fun q : P × (ℝ × ℝ) × E ↦ q.2.1.1 - (s - c)) (𝓝 (p, (s, t), x)) (𝓝 c) :=
+      (hs.sub continuous_const).tendsto' _ c (by simp)
+    filter_upwards [h₁.eventually hK, h₂.eventually hK] with q hq₁ hq₂
+    rw [neckStretch_apply, hq₁ q.2.1.2, hq₂ q.2.1.2]
+
 /-- Inserting a neck at a line near which a smooth datum is independent of `s` gives a smooth
 datum. -/
 theorem contDiff_uncurry_neckStretch {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedAddCommGroup F] [NormedSpace ℝ F] {n : WithTop ℕ∞} (hL : 0 ≤ L)
     {K : ℝ × ℝ → E → F} (hK : ∀ᶠ s in 𝓝 c, ∀ t, K (s, t) = K (c, t))
-    (hKd : ContDiff ℝ n (uncurry K)) : ContDiff ℝ n (uncurry (neckStretch c L K)) := by
-  refine contDiff_iff_contDiffAt.2 fun p ↦ ?_
-  set v : ℝ × ℝ := (neckCollapse c L p.1.1 - p.1.1, 0)
-  have hev : uncurry (neckStretch c L K) =ᶠ[𝓝 p] fun q ↦ uncurry K (q.1 + v, q.2) := by
-    filter_upwards [(continuous_fst.tendsto p).eventually (neckStretch_eventuallyEq hL hK p.1)]
-      with q hq
-    simp only [uncurry_def]
-    exact congrFun hq q.2
-  refine ContDiffAt.congr_of_eventuallyEq ?_ hev
-  have hshift : ContDiff ℝ n fun q : (ℝ × ℝ) × E ↦ (q.1 + v, q.2) :=
-    (contDiff_fst.add contDiff_const).prodMk contDiff_snd
-  exact (hKd.comp hshift).contDiffAt
+    (hKd : ContDiff ℝ n (uncurry K)) : ContDiff ℝ n (uncurry (neckStretch c L K)) :=
+  (contDiff_neckStretch_family (P := ℝ) contDiff_const (fun _ ↦ hL) hK hKd).comp
+    ((contDiff_const (c := (0 : ℝ))).prodMk contDiff_id)
 
 end NeckStretch
 
@@ -236,29 +290,12 @@ theorem integral_abs_hamiltonianCurvature_neckStretch_le (ω : SymplecticForm V)
       rw [hf, neckCollapse_of_mem_Icc ⟨hz.1.1, hz.1.2.le⟩,
         ω.hamiltonianCurvature_eq_zero_of_cylindrical hKs hKt, abs_zero]
   -- After the neck, the stretched datum is the translate of the original one by `-L`.
-  set e : ℝ × ℝ → ℝ × ℝ := (· + (-L, 0))
-  have he : MeasurePreserving e := by
-    -- Translation invariance of `volume` on `ℝ × ℝ` is found on the product measure.
-    have : (volume : Measure (ℝ × ℝ)).IsAddRightInvariant := by
-      rw [Measure.volume_eq_prod]
-      infer_instance
-    exact measurePreserving_add_right volume (-L, 0)
-  have hemb : MeasurableEmbedding e := measurableEmbedding_addRight (-L, 0)
-  have hpre : e ⁻¹' (Icc c b.1 ×ˢ I) = Icc (c + L) (b.1 + L) ×ˢ I := by
-    ext z
-    simp only [e, mem_preimage, mem_prod, mem_Icc, Prod.fst_add, Prod.snd_add, add_zero]
-    constructor <;> rintro ⟨⟨h, h'⟩, h''⟩ <;> exact ⟨⟨by linarith, by linarith⟩, h''⟩
   have h₃ : ∫ z in Icc (c + L) (b.1 + L) ×ˢ I, f z ≤ ∫ z in Icc c b.1 ×ˢ I, M z := by
-    rw [← he.setIntegral_preimage_emb hemb M, hpre]
-    have hMe : IntegrableOn (M ∘ e) (Icc (c + L) (b.1 + L) ×ˢ I) := by
-      rw [← hpre, he.integrableOn_comp_preimage hemb]
-      exact hMi.mono_set subset_union_right
-    refine setIntegral_mono_on (hfi₂.mono_set subset_union_right) hMe hmeas fun z hz ↦ ?_
-    have hez : (neckCollapse c L z.1, z.2) = e z := by
-      ext <;> simp [e, neckCollapse_of_ge hL hz.1.1, sub_eq_add_neg]
-    have hz' : z ∈ e ⁻¹' (Icc c b.1 ×ˢ I) := hpre ▸ hz
-    rw [hf, hez]
-    exact hM (e z) (Or.inr hz') (u z)
+    refine setIntegral_Icc_prod_le_of_comp_add_le measurableSet_Icc
+      (hfi₂.mono_set subset_union_right) (hMi.mono_set subset_union_right) fun z hz ↦ ?_
+    rw [hf, Prod.fst_add, neckCollapse_of_ge hL (by linarith [hz.1.1]),
+      add_sub_cancel_right, Prod.snd_add, add_zero]
+    exact hM z (Or.inr hz) _
   linarith
 
 /-- **Uniform energy estimate for neck-stretching.** Under the hypotheses of

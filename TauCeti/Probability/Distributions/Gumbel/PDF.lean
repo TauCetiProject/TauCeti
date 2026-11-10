@@ -183,7 +183,7 @@ theorem gumbelMeasure_eq_withDensity (m s : ℝ) :
     rw [gumbelMeasure_of_nonpos hs, hpdf, withDensity_zero]
   · have hmap := TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul
       (s := Ioi (0 : ℝ)) (φ := fun e : ℝ ↦ m - s * Real.log e)
-      (φ' := fun e : ℝ ↦ -(s / e)) (f := gumbelPDF m s) measurableSet_Ioi (by fun_prop)
+      (φ' := fun e : ℝ ↦ -(s / e)) (f := gumbelPDF m s) measurableSet_Ioi
       (fun e he ↦ by
         have hderiv := ((Real.hasDerivAt_log he.ne').const_mul s).const_sub m
         simpa [div_eq_mul_inv] using hderiv.hasDerivWithinAt)

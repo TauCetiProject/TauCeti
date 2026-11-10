@@ -166,6 +166,20 @@ theorem CharacterField_le_CoefficientField_of_χ_eq [NeZero N] (f : HeckeRing.GL
     {χ : (ZMod N)ˣ →* ℂˣ} (hf : f.χ = χ) : CharacterField χ ≤ CoefficientField f :=
   hf ▸ CharacterField_le_CoefficientField f
 
+/-- Over the character field of its nebentypus, the coefficient field of a newform is generated
+by its Fourier coefficients. -/
+theorem extendScalars_CoefficientField_eq_adjoin [NeZero N] (f : HeckeRing.GL2.Newform N k)
+    {χ : (ZMod N)ˣ →* ℂˣ} (hf : f.χ = χ) :
+    IntermediateField.extendScalars (CharacterField_le_CoefficientField_of_χ_eq f hf) =
+      IntermediateField.adjoin (CharacterField χ)
+        (Set.range fun n : ℕ+ ↦ (qExpansion 1 f.toCuspForm).coeff (n : ℕ)) := by
+  have h' : CharacterField χ ≤ IntermediateField.adjoin ℚ
+      (Set.range fun n : ℕ+ ↦ (qExpansion 1 f.toCuspForm).coeff (n : ℕ)) :=
+    CoefficientField_def f ▸ CharacterField_le_CoefficientField_of_χ_eq f hf
+  ext x
+  rw [IntermediateField.mem_extendScalars, CoefficientField_def,
+    ← IntermediateField.extendScalars_adjoin h', IntermediateField.mem_extendScalars]
+
 /-- A field contains `CoefficientField f` exactly when it contains the Fourier coefficients of
 `f` at the primes and the values of its nebentypus. The coefficients at the remaining indices
 follow from the Hecke recurrences. -/

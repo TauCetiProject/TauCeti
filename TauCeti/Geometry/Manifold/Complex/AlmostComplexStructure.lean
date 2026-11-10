@@ -114,6 +114,15 @@ theorem toEndomorphism_ofComplexManifold (x : M) :
         TangentSpace 𝓘(ℝ, E) x →L[ℝ] TangentSpace 𝓘(ℝ, E) x) :=
   ContinuousLinearMap.ext fun v ↦ ofComplexManifold_apply (E := E) x v
 
+/-- On a complex normed space `E` viewed as a manifold over itself, `ofComplexManifold E E` is the
+constant smooth almost complex structure given by multiplication by `i`. -/
+theorem ofComplexManifold_self_eq_const
+    (hI : ∀ v : E, (Complex.I • ContinuousLinearMap.id ℝ E)
+      ((Complex.I • ContinuousLinearMap.id ℝ E) v) = -v) :
+    ofComplexManifold E E = const (Complex.I • ContinuousLinearMap.id ℝ E) hI := by
+  ext x v
+  exact (ofComplexManifold_apply (E := E) x v).trans (const_apply _ hI x v).symm
+
 end SmoothAlmostComplexStructure
 
 open SmoothAlmostComplexStructure

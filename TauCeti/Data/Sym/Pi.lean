@@ -13,11 +13,11 @@ import Mathlib.Basic.Finite.Sigma
 /-!
 # Unordered tuples with one point in each member of a family
 
-Given a family `A : Fin n → Set α` of subsets of a type, `TauCeti.Sym.pi A` is the set of
+Given a family `A : Fin n → Set α` of subsets of a type, `Sym.pi A` is the set of
 unordered `n`-tuples obtained by choosing one point in each `A i`. When the members of the family
 are pairwise disjoint that choice is recorded faithfully: the unordered tuple remembers which of
-its points came from which member, so `TauCeti.Sym.pi A` is parametrized by the product
-`∀ i, ↥(A i)` (`TauCeti.Sym.piEquiv`).
+its points came from which member, so `Sym.pi A` is parametrized by the product
+`∀ i, ↥(A i)` (`Sym.piEquiv`).
 
 The case to keep in mind is the pair of tori `T_α = α₁ × ⋯ × α_g` and `T_β = β₁ × ⋯ × β_g` inside
 the symmetric power `Sym^g(Σ)` of a Heegaard surface, attached to the two systems of attaching
@@ -30,27 +30,27 @@ finitely often, and its cardinality is the permanent of the matrix of intersecti
 genus-one diagram the permanent degenerates to the number of intersection points of the two curves.
 
 The parametrization by ordered tuples, its injectivity for a pairwise disjoint family, and the
-description of its range are `TauCeti.Sym.ofFn_map_injective` and
-`TauCeti.Sym.mem_range_ofFn_map`, which this file specializes to subtype coercions. Only the
+description of its range are `Sym.ofFn_map_injective` and
+`Sym.mem_range_ofFn_map`, which this file specializes to subtype coercions. Only the
 combinatorics of unordered tuples is used, so nothing here is topological; the corresponding
-statements about `TauCeti.Sym.pi A` as a subspace of the topological symmetric power are in
+statements about `Sym.pi A` as a subspace of the topological symmetric power are in
 `TauCeti/Topology/Sym/Pi.lean`.
 
 ## Main declarations
 
-* `TauCeti.Sym.pi`: the unordered tuples with one point in each member of the family, with
-  `TauCeti.Sym.pi_nonempty_iff` recording when it is inhabited.
-* `TauCeti.Sym.mem_pi_iff` and `TauCeti.Sym.mem_pi_iff_card_filter`: membership, either through an
+* `Sym.pi`: the unordered tuples with one point in each member of the family, with
+  `Sym.pi_nonempty_iff` recording when it is inhabited.
+* `Sym.mem_pi_iff` and `Sym.mem_pi_iff_card_filter`: membership, either through an
   ordered presentation or as "exactly one point in each member".
-* `TauCeti.Sym.disjoint_basepointDivisor_pi`: tuples through a point outside every member
-  of the family do not meet `TauCeti.Sym.pi A`.
-* `TauCeti.Sym.ofFn_subtypeVal_injective` and `TauCeti.Sym.piEquiv`: for a pairwise disjoint
-  family, the unordered tuples in `TauCeti.Sym.pi A` are parametrized by `∀ i, ↥(A i)`.
-* `TauCeti.Sym.matchingTuple` and `TauCeti.Sym.piInterEquiv`: the unordered tuple of a matching,
+* `Sym.disjoint_basepointDivisor_pi`: tuples through a point outside every member
+  of the family do not meet `Sym.pi A`.
+* `Sym.ofFn_subtypeVal_injective` and `Sym.piEquiv`: for a pairwise disjoint
+  family, the unordered tuples in `Sym.pi A` are parametrized by `∀ i, ↥(A i)`.
+* `Sym.matchingTuple` and `Sym.piInterEquiv`: the unordered tuple of a matching,
   and the resulting bijection between matchings and points of `pi A ∩ pi B`.
-* `TauCeti.Sym.matching_ext` and `TauCeti.Sym.matchingTuple_injective`: pointwise equality of
+* `Sym.matching_ext` and `Sym.matchingTuple_injective`: pointwise equality of
   matchings and injectivity of the unordered-tuple representation.
-* `TauCeti.Sym.finite_pi_inter_pi` and `TauCeti.Sym.natCard_pi_inter_pi`: the intersection is
+* `Sym.finite_pi_inter_pi` and `Sym.natCard_pi_inter_pi`: the intersection is
   finite when the pairwise intersections are, with cardinality the permanent of the matrix of
   their cardinalities.
 
@@ -62,8 +62,6 @@ statements about `TauCeti.Sym.pi A` as a subspace of the topological symmetric p
 -/
 
 public section
-
-namespace TauCeti
 
 namespace Sym
 
@@ -79,7 +77,7 @@ For the `g` attaching curves `α₁, …, α_g` of a Heegaard diagram on a surfa
 def pi (A : Fin n → Set α) : Set (Sym α n) :=
   Set.range fun x : ∀ i, ↥(A i) => ofFn fun i => (x i : α)
 
-/-- `TauCeti.Sym.pi A` is by definition the range of the parametrization by ordered tuples. -/
+/-- `Sym.pi A` is by definition the range of the parametrization by ordered tuples. -/
 theorem pi_eq_range (A : Fin n → Set α) :
     pi A = Set.range fun x : ∀ i, ↥(A i) => ofFn fun i => (x i : α) := (rfl)
 
@@ -100,7 +98,7 @@ each member of the family. -/
 theorem ofFn_mem_pi {x : Fin n → α} (hx : ∀ i, x i ∈ A i) : ofFn x ∈ pi A :=
   mem_pi_iff.2 ⟨x, hx, rfl⟩
 
-/-- `TauCeti.Sym.pi A` only depends on the family up to reindexing: permuting the index set
+/-- `Sym.pi A` only depends on the family up to reindexing: permuting the index set
 permutes the entries of an ordered presentation, which leaves the unordered tuple it presents
 unchanged. -/
 @[simp]
@@ -125,14 +123,14 @@ theorem pi_nonempty_iff : (pi A).Nonempty ↔ ∀ i, (A i).Nonempty := by
     choose x hx using hA
     exact ⟨ofFn x, ofFn_mem_pi hx⟩
 
-/-- `TauCeti.Sym.pi A` is the image of the product `Set.pi` of the family under the quotient map
+/-- `Sym.pi A` is the image of the product `Set.pi` of the family under the quotient map
 from ordered tuples. -/
 theorem pi_eq_image_univ_pi (A : Fin n → Set α) : pi A = ofFn '' Set.univ.pi A := by
   ext s
   simp [mem_pi_iff, Set.mem_image]
 
 /-- The unordered tuples containing a point `a` that lies in no member of the family are disjoint
-from `TauCeti.Sym.pi A`. For a basepoint `z` of a Heegaard diagram, chosen off the attaching curves,
+from `Sym.pi A`. For a basepoint `z` of a Heegaard diagram, chosen off the attaching curves,
 this says that the divisor `{z} × Sym^{g-1}(Σ)` misses the torus `T_α`. -/
 theorem disjoint_basepointDivisor_pi {a : α} (ha : ∀ i, a ∉ A i) :
     Disjoint (basepointDivisor a : Set (Sym α n)) (pi A) :=
@@ -155,7 +153,7 @@ theorem ofFn_subtypeVal_injective (h : Pairwise (Function.onFun Disjoint A)) :
     Function.Injective fun x : ∀ i, ↥(A i) => ofFn fun i => (x i : α) :=
   ofFn_map_injective _ (fun _ => Subtype.val_injective) (pairwise_disjoint_range_val h)
 
-/-- The `Set.InjOn` form of `TauCeti.Sym.ofFn_subtypeVal_injective`: for a pairwise disjoint
+/-- The `Set.InjOn` form of `Sym.ofFn_subtypeVal_injective`: for a pairwise disjoint
 family, two ordered tuples with `i`-th entry in `A i` presenting the same unordered tuple are
 equal. -/
 theorem ofFn_injOn_univ_pi (h : Pairwise (Function.onFun Disjoint A)) :
@@ -170,7 +168,7 @@ section Counting
 
 attribute [local instance] Classical.propDecidable
 
-/-- For a pairwise disjoint family, membership in `TauCeti.Sym.pi A` is the condition that
+/-- For a pairwise disjoint family, membership in `Sym.pi A` is the condition that
 **exactly one** point of the unordered tuple lies in each member of the family. -/
 theorem mem_pi_iff_card_filter (h : Pairwise (Function.onFun Disjoint A)) {s : Sym α n} :
     s ∈ pi A ↔ ∀ i, Multiset.card (Multiset.filter (· ∈ A i) (s : Multiset α)) = 1 := by
@@ -192,7 +190,7 @@ noncomputable def piEquiv (h : Pairwise (Function.onFun Disjoint A)) :
       obtain ⟨x, hx, rfl⟩ := mem_pi_iff.1 hs
       exact ⟨fun i => ⟨x i, hx i⟩, rfl⟩⟩
 
-/-- The parametrization underlying `TauCeti.Sym.piEquiv` is the one by ordered tuples. -/
+/-- The parametrization underlying `Sym.piEquiv` is the one by ordered tuples. -/
 @[simp]
 theorem coe_piEquiv_apply (h : Pairwise (Function.onFun Disjoint A)) (x : ∀ i, ↥(A i)) :
     (piEquiv h x : Sym α n) = ofFn fun i => (x i : α) := by
@@ -200,7 +198,7 @@ theorem coe_piEquiv_apply (h : Pairwise (Function.onFun Disjoint A)) (x : ∀ i,
 
 /-! ### Matchings between two families -/
 
-/-- An unordered tuple lies in both `TauCeti.Sym.pi A` and `TauCeti.Sym.pi B` as soon as it is
+/-- An unordered tuple lies in both `Sym.pi A` and `Sym.pi B` as soon as it is
 presented by an ordered tuple with `i`-th entry in `A i` and in `B (σ i)`, for a permutation `σ` of
 the index set. -/
 theorem ofFn_mem_pi_inter_pi {σ : Equiv.Perm (Fin n)} {x : Fin n → α} (hA : ∀ i, x i ∈ A i)
@@ -208,7 +206,7 @@ theorem ofFn_mem_pi_inter_pi {σ : Equiv.Perm (Fin n)} {x : Fin n → α} (hA : 
   ⟨ofFn_mem_pi hA, mem_pi_iff.2 ⟨x ∘ σ.symm, fun j => by simpa using hB (σ.symm j),
     ofFn_comp_perm σ.symm x⟩⟩
 
-/-- Conversely, an unordered tuple lying in both `TauCeti.Sym.pi A` and `TauCeti.Sym.pi B` is
+/-- Conversely, an unordered tuple lying in both `Sym.pi A` and `Sym.pi B` is
 presented by such an ordered tuple: the two presentations of it differ by a permutation. -/
 theorem exists_perm_of_mem_pi_inter_pi {s : Sym α n} (hs : s ∈ pi A ∩ pi B) :
     ∃ (σ : Equiv.Perm (Fin n)) (x : Fin n → α),
@@ -220,8 +218,8 @@ theorem exists_perm_of_mem_pi_inter_pi {s : Sym α n} (hs : s ∈ pi A ∩ pi B)
   simpa using hy (τ.symm i)
 
 /-- **The unordered tuple of a matching.** A permutation `σ` of the index set together with a point
-of `A i ∩ B (σ i)` for each `i` determines an unordered tuple lying in both `TauCeti.Sym.pi A` and
-`TauCeti.Sym.pi B`. -/
+of `A i ∩ B (σ i)` for each `i` determines an unordered tuple lying in both `Sym.pi A` and
+`Sym.pi B`. -/
 def matchingTuple (p : (σ : Equiv.Perm (Fin n)) × ∀ i, ↥(A i ∩ B (σ i))) : ↥(pi A ∩ pi B) :=
   ⟨ofFn fun i => ((p.2 i : α)),
     ofFn_mem_pi_inter_pi (fun i => (p.2 i).2.1) fun i => (p.2 i).2.2⟩
@@ -231,7 +229,7 @@ def matchingTuple (p : (σ : Equiv.Perm (Fin n)) × ∀ i, ↥(A i ∩ B (σ i))
 theorem coe_matchingTuple_apply (p : (σ : Equiv.Perm (Fin n)) × ∀ i, ↥(A i ∩ B (σ i))) :
     (matchingTuple p : Sym α n) = ofFn fun i => ((p.2 i : α)) := (rfl)
 
-/-- Every unordered tuple lying in both `TauCeti.Sym.pi A` and `TauCeti.Sym.pi B` comes from a
+/-- Every unordered tuple lying in both `Sym.pi A` and `Sym.pi B` comes from a
 matching. -/
 theorem matchingTuple_surjective :
     Function.Surjective (matchingTuple (A := A) (B := B)) := by
@@ -279,7 +277,7 @@ noncomputable def piInterEquiv (hA : Pairwise (Function.onFun Disjoint A))
     ((σ : Equiv.Perm (Fin n)) × ∀ i, ↥(A i ∩ B (σ i))) ≃ ↥(pi A ∩ pi B) :=
   Equiv.ofBijective matchingTuple ⟨matchingTuple_injective hA hB, matchingTuple_surjective⟩
 
-/-- `TauCeti.Sym.piInterEquiv` sends a matching to its unordered tuple. -/
+/-- `Sym.piInterEquiv` sends a matching to its unordered tuple. -/
 @[simp]
 theorem piInterEquiv_apply (hA : Pairwise (Function.onFun Disjoint A))
     (hB : Pairwise (Function.onFun Disjoint B))
@@ -318,5 +316,3 @@ theorem natCard_pi_inter_pi_fin_one {A B : Fin 1 → Set α} :
     Subsingleton.pairwise).symm.trans <| (Equiv.uniqueSigma _).trans (Equiv.piUnique _)
 
 end Sym
-
-end TauCeti

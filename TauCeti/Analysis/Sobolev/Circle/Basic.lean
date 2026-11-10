@@ -58,6 +58,8 @@ product when `E` has them.
   in `H^s` from convergence of the Fourier coefficients under a summable domination.
 * `TauCeti.CircleSobolev.isCompactOperator_inclusion`: for `t < s` and finite-dimensional `E`,
   the inclusion `H^s → H^t` is compact (Rellich's theorem).
+* `TauCeti.CircleSobolev.exists_norm_inclusion_le`: for `r ≤ t < s`,
+  `‖a‖_{H^t} ≤ ε ‖a‖_{H^s} + C_ε ‖a‖_{H^r}` for every `ε > 0` (Ehrling's inequality).
 * `TauCeti.CircleSobolev.tsum_norm_coeff_le`: for `s > 1/2`, the Fourier coefficients are
   absolutely summable, with `∑ₙ ‖a.coeff n‖ ≤ (∑ₙ (1 + |n|) ^ (-2 s)) ^ (1/2) ‖a‖`.
 * `TauCeti.CircleSobolev.fourierCoeff_toContinuousMap`: for `s > 1/2`, the continuous function
@@ -744,6 +746,51 @@ theorem isCompactOperator_inclusion [FiniteDimensional ℂ E] (h : t < s) :
     · simpa using isCompactOperator_zero
     · rw [ContinuousLinearMap.coe_comp]
       exact (isCompactOperator_of_locallyCompactSpace_dom (coeffCLM n)).clm_comp (single n)
+
+/-- **Ehrling's inequality** on the circle: for `r ≤ t < s`, the `H^t` norm is bounded by an
+arbitrarily small multiple of the `H^s` norm plus a multiple of the weaker `H^r` norm. -/
+theorem exists_norm_inclusion_le {r : ℝ} (hrt : r ≤ t) (hts : t < s) {ε : ℝ} (hε : 0 < ε) :
+    ∃ C, 0 ≤ C ∧ ∀ a : CircleSobolev s E,
+      ‖inclusion hts.le a‖ ≤ ε * ‖a‖ + C * ‖inclusion (hrt.trans hts.le) a‖ := by
+  -- High frequencies `|n| ≥ N` are controlled by `H^s`, the finitely many low ones by `H^r`.
+  obtain ⟨N, hN⟩ : ∃ N : ℕ, (1 + (N : ℝ)) ^ (t - s) ≤ ε := by
+    have hlim : Tendsto (fun N : ℕ ↦ (1 + (N : ℝ)) ^ (t - s)) atTop (𝓝 0) := by
+      simpa [Function.comp_def] using (tendsto_rpow_neg_atTop (sub_pos.2 hts)).comp
+        (tendsto_atTop_add_const_left _ 1 tendsto_natCast_atTop_atTop)
+    exact (hlim.eventually (ge_mem_nhds hε)).exists
+  set C := (1 + (N : ℝ)) ^ (t - r) with hC
+  have hC0 : 0 ≤ C := by positivity
+  refine ⟨C, hC0, fun a ↦ ?_⟩
+  have hpt : ∀ n, (weight t n * ‖a.coeff n‖) ^ 2 ≤
+      ε ^ 2 * (weight s n * ‖a.coeff n‖) ^ 2 + C ^ 2 * (weight r n * ‖a.coeff n‖) ^ 2 := by
+    intro n
+    have hw (u : ℝ) : 0 ≤ weight u n * ‖a.coeff n‖ :=
+      mul_nonneg (weight_nonneg u n) (norm_nonneg _)
+    have hsplit (u : ℝ) : weight t n = weight (t - u) n * weight u n := by
+      rw [← weight_add, sub_add_cancel]
+    rcases le_or_gt (N : ℝ) |(n : ℝ)| with hn | hn
+    · have h : weight t n * ‖a.coeff n‖ ≤ ε * (weight s n * ‖a.coeff n‖) := by
+        rw [hsplit s, mul_assoc]
+        exact mul_le_mul_of_nonneg_right
+          ((weight_le_of_le_abs (by linarith) hn).trans hN) (hw s)
+      calc (weight t n * ‖a.coeff n‖) ^ 2 ≤ (ε * (weight s n * ‖a.coeff n‖)) ^ 2 :=
+            pow_le_pow_left₀ (hw t) h 2
+        _ ≤ _ := by rw [mul_pow]; exact le_add_of_nonneg_right (by positivity)
+    · have h : weight t n * ‖a.coeff n‖ ≤ C * (weight r n * ‖a.coeff n‖) := by
+        rw [hsplit r, mul_assoc, weight_def, hC]
+        exact mul_le_mul_of_nonneg_right
+          (Real.rpow_le_rpow (by positivity) (by linarith) (by linarith)) (hw r)
+      calc (weight t n * ‖a.coeff n‖) ^ 2 ≤ (C * (weight r n * ‖a.coeff n‖)) ^ 2 :=
+            pow_le_pow_left₀ (hw t) h 2
+        _ ≤ _ := by rw [mul_pow]; exact le_add_of_nonneg_left (by positivity)
+  have hsum := ((hasSum_sq_weight_mul_norm_coeff a).mul_left (ε ^ 2)).add
+    ((hasSum_sq_weight_mul_norm_coeff (inclusion (hrt.trans hts.le) a)).mul_left (C ^ 2))
+  have hle := hasSum_le (fun n ↦ by simpa using hpt n)
+    (hasSum_sq_weight_mul_norm_coeff (inclusion hts.le a)) hsum
+  refine (pow_le_pow_iff_left₀ (norm_nonneg _) (by positivity) two_ne_zero).1
+    (hle.trans ?_)
+  nlinarith [mul_nonneg (mul_nonneg hε.le (norm_nonneg a)) (mul_nonneg hC0 (norm_nonneg
+    (inclusion (hrt.trans hts.le) a)))]
 
 /-! ### Absolute convergence and continuity for `s > 1/2` -/
 
