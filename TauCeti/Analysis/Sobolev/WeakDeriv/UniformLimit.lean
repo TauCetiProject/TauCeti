@@ -23,6 +23,10 @@ derivatives need not converge pointwise, but:
 * the limit is locally Lipschitz on `Ω`, with derivative bounded on every compact subset of `Ω`
   (`TauCeti.locallyLipschitzOn_of_tendsto` and `TauCeti.exists_forall_norm_fderiv_le_of_tendsto`
   in `TauCeti.Analysis.Calculus.FDeriv.LipschitzLimit`);
+* the derivatives converge to the derivative of the limit in the sense of distributions, as soon
+  as the limit is locally Lipschitz: for every test function `φ` on `Ω` and every direction `w`,
+  `∫ φ • ∂_w uᵢ → ∫ φ • ∂_w v`
+  (`TauCeti.tendsto_integral_testFunction_smul_fderiv_apply_of_tendstoLocallyUniformlyOn`);
 * the derivatives converge weakly to the derivative of the limit: for every continuous weight `a`
   with compact support in `Ω` and every direction `w`, `∫ a • ∂_w uᵢ → ∫ a • ∂_w v`
   (`TauCeti.tendsto_integral_smul_fderiv_apply_of_tendstoLocallyUniformlyOn`), and likewise
@@ -67,11 +71,15 @@ section WeakConvergence
 
 variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
-/-- The case of a test function in
-`TauCeti.tendsto_integral_smul_fderiv_apply_of_tendstoLocallyUniformlyOn`: integrating by parts,
-`∫ φ • ∂_w uᵢ = -∫ (∂_w φ) • uᵢ`, and the maps converge uniformly on the support of `φ`. -/
-private theorem tendsto_integral_testFunction_smul_fderiv_apply [FiniteDimensional ℝ F]
-    (hΩ : IsOpen Ω) (hu : ∀ i, ContDiffOn ℝ 1 (u i) Ω)
+/-- **Derivatives converge in the sense of distributions along locally uniform limits.** Let `uᵢ`
+be `C¹` maps on an open set `Ω`, converging locally uniformly on `Ω` to a map `v` that is locally
+Lipschitz on `Ω`. Then for every test function `φ` on `Ω` and every direction `w`,
+`∫ φ • ∂_w uᵢ → ∫ φ • ∂_w v`. No bound on the derivatives of the `uᵢ` is needed: integrating by
+parts, `∫ φ • ∂_w uᵢ = -∫ (∂_w φ) • uᵢ`, and the maps converge uniformly on the support of `φ`.
+See `TauCeti.tendsto_integral_smul_fderiv_apply_of_tendstoLocallyUniformlyOn` for continuous
+weights, under bounds on the derivatives. -/
+theorem tendsto_integral_testFunction_smul_fderiv_apply_of_tendstoLocallyUniformlyOn
+    [FiniteDimensional ℝ F] (hΩ : IsOpen Ω) (hu : ∀ i, ContDiffOn ℝ 1 (u i) Ω)
     (hv : LocallyLipschitzOn Ω v) (hlim : TendstoLocallyUniformlyOn u v l Ω)
     (φ : 𝓓(⟨Ω, hΩ⟩, ℝ)) (w : E) :
     Tendsto (fun i ↦ ∫ x, φ x • fderiv ℝ (u i) x w ∂μ) l (𝓝 (∫ x, φ x • fderiv ℝ v x w ∂μ)) := by
@@ -132,8 +140,8 @@ theorem tendsto_integral_smul_fderiv_apply_of_tendstoLocallyUniformlyOn [FiniteD
     image_eq_zero_of_notMem_tsupport fun h ↦ hx (self_subset_cthickening _ h)
   have hφa : ∀ x, |φ x - a x| ≤ η := fun x ↦ by simpa [Real.dist_eq] using hφ x
   have hmid := Metric.tendsto_nhds.1
-    (tendsto_integral_testFunction_smul_fderiv_apply (μ := μ) hΩ hu hv hlim φ w) (ε / 2)
-    (half_pos hε)
+    (tendsto_integral_testFunction_smul_fderiv_apply_of_tendstoLocallyUniformlyOn (μ := μ) hΩ hu
+      hv hlim φ w) (ε / 2) (half_pos hε)
   filter_upwards [hC, hmid] with i hCi hi
   have h1 := MeasureTheory.norm_integral_smul_sub_integral_smul_le hK.measure_lt_top
     ((hlocu i).integrable_smul_left_of_hasCompactSupport ha hac haΩ)
