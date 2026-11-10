@@ -274,8 +274,7 @@ theorem _root_.ContMDiffWithinAt.change_section_trivialization_of_mem_maximalAtl
       e.toOpenPartialHomeomorph.left_inv (e.mem_source.2 hy.1)
     rw [hpair, hleft] at this
     refine (congrArg Prod.snd this).trans ?_
-    change φ (e (f y)).1 _ = _
-    rw [e.coe_fst (e.mem_source.2 hy.1)]
+    simp [FiberwiseLinear.openPartialHomeomorph, e.coe_fst (e.mem_source.2 hy.1)]
   have hφp : ContMDiffWithinAt IM 𝓘(𝕜, F →L[𝕜] F) n (fun y ↦ (φ (f y).proj : F →L[𝕜] F)) s x₀ :=
     (hφ.contMDiffAt hnhds).comp_contMDiffWithinAt x₀ hp
   refine (hφp.clm_apply hf).congr_of_eventuallyEq ?_ (hcoord x₀ hxU)
