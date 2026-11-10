@@ -12,7 +12,7 @@ public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
 
 The diagonal matrix `diag(a₁,...,aₙ)` with positive natural number entries, as an element of
 `GL_n(ℚ)`. These elements name the double cosets of the arithmetic Hecke triple
-(`TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets`). Over `n = 2`, `diag(d, 1)` is also the
+(`TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Cosets`). Over `n = 2`, `diag(d, 1)` is also the
 rational form of the matrix that defines the level-raising operator on modular forms
 (`TauCeti.map_natDiagGL_d_one_eq_scaleGL`). This file keeps only the definition and its two
 defining equations, so that both uses can import it without the Hecke ring.

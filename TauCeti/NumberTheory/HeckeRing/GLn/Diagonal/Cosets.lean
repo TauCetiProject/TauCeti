@@ -6,7 +6,7 @@ Authors: Chris Birkbeck
 module
 
 public import TauCeti.NumberTheory.HeckeRing.GLn.Basic
-public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal
+public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Basic
 public import TauCeti.NumberTheory.HeckeRing.One
 
 import TauCeti.LinearAlgebra.Matrix.SmithNormalForm.Int
@@ -29,7 +29,7 @@ Chris Birkbeck), on top of the matrix-level Smith normal form
 ## Main definitions
 
 The diagonal element `natDiagGL` itself, `diag(a₁,...,aₙ)` in `GL_n(ℚ)`, is defined in
-`TauCeti.NumberTheory.HeckeRing.GLn.Diagonal`; its algebraic API is developed here.
+`TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Basic`; its algebraic API is developed here.
 
 * `IsDvdChain`: the divisibility condition `a i ∣ a j` for `i ≤ j`.
 * `diagCoset`: the double coset `SL_n(ℤ) · diag(a₁,...,aₙ) · SL_n(ℤ)`.

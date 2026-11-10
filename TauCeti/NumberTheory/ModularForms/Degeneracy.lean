@@ -13,7 +13,7 @@ public import TauCeti.NumberTheory.ModularForms.Basic
 public import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Units
 public import TauCeti.NumberTheory.ModularForms.DiamondOperators
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Diagonal.Basic
-public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal
+public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Basic
 public import TauCeti.RingTheory.PowerSeries.Support
 
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold

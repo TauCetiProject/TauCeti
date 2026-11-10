@@ -10,7 +10,7 @@ import TauCeti.Data.Int.LinearCongruence
 import TauCeti.NumberTheory.ModularForms.CongruenceSubgroups.Basic
 import TauCeti.Data.ZMod.Units
 public import TauCeti.NumberTheory.HeckeRing.GL2.Gamma0.DoubleCoset
-public import TauCeti.NumberTheory.HeckeRing.GLn.DiagonalCosets
+public import TauCeti.NumberTheory.HeckeRing.GLn.Diagonal.Cosets
 
 /-!
 # The `N`-supported determinant case of `Δ₀(N)`
