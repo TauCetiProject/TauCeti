@@ -12,6 +12,7 @@ public import TauCeti.FieldTheory.FunctionField.Place.Existence
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 import TauCeti.FieldTheory.FunctionField.AffineModel.Kummer
 import TauCeti.RingTheory.DedekindDomain.IntegralClosure
+import TauCeti.RingTheory.Valuation.RootMonic
 
 /-!
 # Kummer's theorem: places over a place, from a factorization modulo that place
@@ -258,21 +259,12 @@ private theorem mem_integers_of_valuation_integersEval_lt_one (P' : Place k' F')
   have hcoeff (a : (P'.restrict k F).integers) :
       P'.valuation (algebraMap F F' (a : F)) ≤ 1 :=
     P'.mem_integers_iff.mp ((restrict_eq_iff_integers_le k F P' _).mp rfl _ a.2)
-  rw [integersEval, coe_eval₂RingHom, eval₂_eq_sum_range, Finset.sum_range_succ,
-    hg.coeff_natDegree] at hv
-  have hlow : P'.valuation (∑ i ∈ Finset.range g.natDegree,
-      ((algebraMap F F').comp (algebraMap (P'.restrict k F).integers F)) (g.coeff i) * y ^ i) <
-      P'.valuation (((algebraMap F F').comp (algebraMap (P'.restrict k F).integers F)) 1 *
-        y ^ g.natDegree) := by
-    have hy0 : P'.valuation y ≠ 0 := (zero_lt_one.trans hy).ne'
-    rw [map_one, one_mul, map_pow]
-    refine Valuation.map_sum_lt _ (pow_ne_zero _ hy0) fun i hi ↦ ?_
-    calc _ = P'.valuation (algebraMap F F' (g.coeff i : F)) * P'.valuation y ^ i := by
-          rw [map_mul, map_pow]; rfl
-      _ ≤ P'.valuation y ^ i := mul_le_of_le_one_left' (hcoeff _)
-      _ < P'.valuation y ^ g.natDegree := pow_lt_pow_right₀ hy (Finset.mem_range.mp hi)
-  rw [Valuation.map_add_eq_of_lt_right _ hlow, map_one, one_mul, map_pow] at hv
-  exact not_lt.mpr (one_le_pow₀ hy.le) hv
+  set f := (algebraMap F F').comp (algebraMap (P'.restrict k F).integers F) with hf
+  rw [integersEval, coe_eval₂RingHom, eval₂_eq_eval_map, ← hf] at hv
+  rw [P'.valuation.map_eval_eq_of_one_lt (hg.map f) (fun i hi ↦ ?_) hy] at hv
+  · exact not_lt.mpr (one_le_pow₀ hy.le) hv
+  · rw [coeff_map]
+    exact hcoeff _
 
 /-- **Kummer's theorem at a single place, in residue-field form**: if `g` is monic over `𝒪_P` with
 irreducible reduction `γ` over the residue field `F_P`, and `g (y)` vanishes at a place `P'` of
