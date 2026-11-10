@@ -276,7 +276,7 @@ theorem snd_sphericalPendulumEnergyMomentum_eq_zero_of_sq_eq_one
 
 /-- Points of the phase space with nonzero vertical angular momentum are away from the poles: their
 height `q₃` lies in `(-1, 1)`. -/
-theorem apply_two_mem_Ioo_of_mem_sphericalPendulumPhaseSpace_of_snd_ne_zero
+theorem apply_two_mem_Ioo_of_snd_sphericalPendulumEnergyMomentum_ne_zero
     {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)}
     (hx : x ∈ sphericalPendulumPhaseSpace) (hJ : (sphericalPendulumEnergyMomentum x).2 ≠ 0) :
     x.1 2 ∈ Ioo (-1) 1 :=
@@ -613,13 +613,13 @@ theorem sphericalPendulumEnergyMomentum_eq_iff_of_isMinOn {j z₀ : ℝ} (hj : j
   -- Points with `J = j ≠ 0` are away from the poles.
   have hpole (hJ : (sphericalPendulumEnergyMomentum x).2 = j) : x.1 2 ^ 2 < 1 :=
     ((sq_lt_one_iff_abs_lt_one _).trans abs_lt).2
-      (apply_two_mem_Ioo_of_mem_sphericalPendulumPhaseSpace_of_snd_ne_zero hx (hJ ▸ hj))
+      (apply_two_mem_Ioo_of_snd_sphericalPendulumEnergyMomentum_ne_zero hx (hJ ▸ hj))
   constructor
   · intro hF
     have hJ : (sphericalPendulumEnergyMomentum x).2 = j := congrArg Prod.snd hF
     have hH : (sphericalPendulumEnergyMomentum x).1 = sphericalPendulumEffectivePotential j z₀ :=
       congrArg Prod.fst hF
-    have hzI := apply_two_mem_Ioo_of_mem_sphericalPendulumPhaseSpace_of_snd_ne_zero hx (hJ ▸ hj)
+    have hzI := apply_two_mem_Ioo_of_snd_sphericalPendulumEnergyMomentum_ne_zero hx (hJ ▸ hj)
     have hz := hpole hJ
     have hE := fst_sphericalPendulumEnergyMomentum_eq hx hz
     rw [hJ, hH] at hE

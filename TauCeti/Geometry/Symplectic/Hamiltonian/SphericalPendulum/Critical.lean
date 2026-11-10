@@ -284,7 +284,7 @@ theorem not_isRegularPoint_sphericalPendulumEnergyMomentum_iff (x : sphericalPen
   -- Away from the poles, minimizing `V_j` is the equation `j² z + (1 - z²)² = 0`.
   have hmin (hJ0 : (sphericalPendulumEnergyMomentum (q, p)).2 ≠ 0) :=
     isMinOn_sphericalPendulumEffectivePotential_iff hJ0
-      (apply_two_mem_Ioo_of_mem_sphericalPendulumPhaseSpace_of_snd_ne_zero hx hJ0)
+      (apply_two_mem_Ioo_of_snd_sphericalPendulumEnergyMomentum_ne_zero hx hJ0)
   constructor
   · intro hne
     rcases pole_or_relativeEquilibrium_of_map_ne_top hx hne with h | ⟨hJ0, hp2, hcrit⟩
@@ -323,7 +323,7 @@ theorem image_setOf_not_isRegularPoint_sphericalPendulumEnergyMomentum :
       dsimp only at hJ0 hp2 hmin ⊢
       right
       have hz : q 2 ∈ Ioo (-1) 1 :=
-        apply_two_mem_Ioo_of_mem_sphericalPendulumPhaseSpace_of_snd_ne_zero hx hJ0
+        apply_two_mem_Ioo_of_snd_sphericalPendulumEnergyMomentum_ne_zero hx hJ0
       have hH := fst_sphericalPendulumEnergyMomentum_eq hx
         (((sq_lt_one_iff_abs_lt_one _).trans abs_lt).2 hz)
       rw [hp2, zero_pow two_ne_zero, zero_div, add_zero] at hH
