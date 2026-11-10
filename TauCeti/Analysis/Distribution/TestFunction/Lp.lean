@@ -161,7 +161,7 @@ private theorem hasLocallyFiniteMass_memLp_toLp :
     (Ω.isOpen.isOpenEmbedding_subtypeVal.isInducing.isCompact_preimage' hK
       (by simpa using hKΩ)).measure_ne_top
     (fun x hx => hφK (subset_tsupport _ hx)) (norm_nonneg (φ : E →ᵇ F))
-    fun x => BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) x
+    (ae_of_all _ fun x => BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) x)
 
 variable (p μ) in
 /-- The class in `Lᵖ(μ)` of the restriction to `Ω` of a test function on `Ω`, for a measure `μ`
@@ -242,7 +242,7 @@ private theorem hasLocallyFiniteMass_memLp_ambientToLp :
     ⟨(ν K ^ p.toReal⁻¹).toReal, ENNReal.toReal_nonneg, fun φ hφK => ?_⟩
   exact MemLp.norm_toLp_le_of_support_subset _ hK.measure_ne_top
     (fun x hx => hφK (subset_tsupport _ hx)) (norm_nonneg (φ : E →ᵇ F))
-    fun x => BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) x
+    (ae_of_all _ fun x => BoundedContinuousFunction.norm_coe_le_norm (φ : E →ᵇ F) x)
 
 variable (p ν) in
 /-- The class in `Lᵖ(ν)` of a test function on `Ω`, for a measure `ν` on the ambient space `E`

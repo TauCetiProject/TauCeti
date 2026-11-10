@@ -35,14 +35,14 @@ theorem eLpNorm_le_of_ae_bound_of_support_subset {f : α → F} {s : Set α} {C 
   exact eLpNorm_le_of_ae_bound hf.restrict (ae_restrict_of_ae hfC)
 
 /-- The `Lᵖ(μ)` class of a function supported in a set `s` of finite measure and bounded by `C`
-has norm at most `μ(s)^(1/p) C`. -/
+almost everywhere has norm at most `μ(s)^(1/p) C`. -/
 theorem MemLp.norm_toLp_le_of_support_subset {f : α → F} {p : ℝ≥0∞} (hf : MemLp f p μ)
     {s : Set α} (hs : μ s ≠ ⊤) (hfs : Function.support f ⊆ s) {C : ℝ} (hC : 0 ≤ C)
-    (hfC : ∀ x, ‖f x‖ ≤ C) :
+    (hfC : ∀ᵐ x ∂μ, ‖f x‖ ≤ C) :
     ‖hf.toLp f‖ ≤ (μ s ^ p.toReal⁻¹).toReal * C := by
   rw [Lp.norm_toLp, ← ENNReal.toReal_ofReal hC, ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono
     (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity) hs) ENNReal.ofReal_ne_top)
-    (eLpNorm_le_of_ae_bound_of_support_subset hf.aestronglyMeasurable hfs (ae_of_all _ hfC))
+    (eLpNorm_le_of_ae_bound_of_support_subset hf.aestronglyMeasurable hfs hfC)
 
 end MeasureTheory
