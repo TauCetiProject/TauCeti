@@ -20,7 +20,7 @@ variations of loops near a given time while keeping them loops.
 
 ## Main declarations
 
-* `TauCeti.periodicBump`: the periodic bump.
+* `TauCeti.periodicBump`: the periodic bump, with defining formula `TauCeti.periodicBump_def`.
 * `TauCeti.contDiff_periodicBump`, `TauCeti.periodicBump_add_one`: it is smooth and `1`-periodic.
 * `TauCeti.periodicBump_eq_one`, `TauCeti.eventually_periodicBump_eq_one`: it is `1` where
   `cos (2π(t - t₀)) ≥ (1 + c)/2`, hence near its centre.
@@ -41,6 +41,11 @@ namespace TauCeti
 `cos (2π(t - t₀)) ≥ (1 + c)/2` and `0` where `cos (2π(t - t₀)) ≤ c`. -/
 def periodicBump (t₀ c t : ℝ) : ℝ :=
   smoothTransition (2 * (cos (2 * π * (t - t₀)) - c) / (1 - c))
+
+/-- The defining formula of the periodic bump. -/
+theorem periodicBump_def (t₀ c t : ℝ) :
+    periodicBump t₀ c t = smoothTransition (2 * (cos (2 * π * (t - t₀)) - c) / (1 - c)) :=
+  (rfl)
 
 /-- The periodic bump is smooth. -/
 theorem contDiff_periodicBump {n : ℕ∞} (t₀ c : ℝ) : ContDiff ℝ n (periodicBump t₀ c) :=
