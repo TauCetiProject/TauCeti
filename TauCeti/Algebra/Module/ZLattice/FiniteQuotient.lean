@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Module.ZLattice.Basic
 public import TauCeti.Algebra.Module.ZLattice.Quotient
 public import TauCeti.Topology.Algebra.Group.Quotient.Basic
 
@@ -47,13 +46,15 @@ open Module QuotientAddGroup
 
 namespace AddSubgroup
 
+/-- The preimage in `E` of a finite subgroup of the torus `E ⧸ L` is a full lattice. -/
+instance instIsZLatticeComapMk' {K : Type*} [NormedField K] {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace K E] (L : AddSubgroup E) [DiscreteTopology L] [IsZLattice K L.toIntSubmodule]
+    (F : AddSubgroup (E ⧸ L)) [Finite F] : IsZLattice K (F.comap (mk' L)).toIntSubmodule :=
+  IsZLattice.of_le (L₁ := L.toIntSubmodule) (toIntSubmodule.monotone (le_comap_mk' L F))
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   (L : AddSubgroup E) [DiscreteTopology L] [IsZLattice ℝ L.toIntSubmodule]
   (F : AddSubgroup (E ⧸ L)) [Finite F]
-
-/-- The preimage in `E` of a finite subgroup of the torus `E ⧸ L` is a full lattice. -/
-instance instIsZLatticeComapMk' : IsZLattice ℝ (F.comap (mk' L)).toIntSubmodule :=
-  IsZLattice.of_le (L₁ := L.toIntSubmodule) (toIntSubmodule.monotone (le_comap_mk' L F))
 
 /-- **A finite quotient of a torus is a product of circles.** For a finite subgroup `F` of the
 torus `E ⧸ L`, the quotient `(E ⧸ L) ⧸ F` is isomorphic as a topological group to the product of
