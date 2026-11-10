@@ -13,6 +13,7 @@ import TauCeti.Analysis.Sobolev.W1p.CompactSupport
 import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.Distribution.TestFunction.LinearEquiv
 
 /-!
 # Measure-preserving Lipschitz changes of variables in `W^{1,p}`
@@ -49,6 +50,12 @@ half-space trace to that region. Since `fderiv ℝ Φ` vanishes where `Φ` is no
   change of coordinates of a boundary chart. Its weak gradient at `x` is the inverse of the linear
   part of `g` applied to `∇u (g x)`, and it does not increase the norm. It preserves and reflects
   zero boundary values (`TauCeti.W1p.compAffineIsometryEquivL_mem_w1p0Submodule_iff`).
+* `TauCeti.W1p.setIntegral_inner_gradient_compAffineIsometryEquivL`: the Dirichlet pairing
+  `∫ ⟪∇u, ∇φ⟫` of `u` against a test function `φ` is invariant under a linear isometric change of
+  coordinates.
+* `TauCeti.W1p.setIntegral_inner_gradient_compAffineIsometryEquivL_eq_setIntegral_mul`: a weak
+  solution of `-Δu = f` stays a weak solution, of `-Δ(u ∘ e) = f ∘ e`, after a linear isometric
+  change of coordinates `e`.
 -/
 
 public section
@@ -355,6 +362,53 @@ theorem W1p.compAffineIsometryEquivL_mem_w1p0Submodule
   refine ⟨fun hu => ?_, W1p.compAffineIsometryEquivL_mem_w1p0Submodule g hUV⟩
   rw [← W1p.compAffineIsometryEquivL_symm_compAffineIsometryEquivL g hUV hVU u]
   exact W1p.compAffineIsometryEquivL_mem_w1p0Submodule g.symm hVU hu
+
+open scoped Distributions Gradient in
+/-- **The Dirichlet pairing under a linear isometry.** For a linear isometry equivalence `e` and
+`U = e⁻¹(V)`, pairing the gradient of `u ∘ e` with the gradient of a test function `φ` on `U` is
+the same as pairing the gradient of `u` with the gradient of the transported test function
+`φ ∘ e⁻¹` on `V`. -/
+theorem W1p.setIntegral_inner_gradient_compAffineIsometryEquivL (e : F ≃ₗᵢ[ℝ] F')
+    (hUV : (U : Set F) = e ⁻¹' V) (u : W1p volume V p) (φ : 𝓓(U, ℝ)) :
+    ∫ y in U, ⟪W1p.gradient (W1p.compAffineIsometryEquivL e.toAffineIsometryEquiv hUV u) y,
+      ∇ (φ : F → ℝ) y⟫_ℝ =
+      ∫ x in V, ⟪W1p.gradient u x, ∇ (e.toContinuousLinearEquiv.transportTestFunction
+        (mapsTo_iff_subset_preimage.2 hUV.subset) φ : F' → ℝ) x⟫_ℝ := by
+  set ψ := e.toContinuousLinearEquiv.transportTestFunction
+    (mapsTo_iff_subset_preimage.2 hUV.subset) φ with hψ
+  -- Pointwise, both integrands are `Dφ(y) (e⁻¹ ∇u(e y))`.
+  have hpt : ∀ y, ⟪e.symm (W1p.gradient u (e y)), ∇ (φ : F → ℝ) y⟫_ℝ =
+      ⟪W1p.gradient u (e y), ∇ (ψ : F' → ℝ) (e y)⟫_ℝ := fun y => by
+    rw [real_inner_comm, inner_gradient_left, real_inner_comm, inner_gradient_left, hψ,
+      ContinuousLinearEquiv.fderiv_transportTestFunction]
+    simp
+  calc ∫ y in U, ⟪W1p.gradient (W1p.compAffineIsometryEquivL e.toAffineIsometryEquiv hUV u) y,
+        ∇ (φ : F → ℝ) y⟫_ℝ
+      = ∫ y in e ⁻¹' V, ⟪W1p.gradient u (e y), ∇ (ψ : F' → ℝ) (e y)⟫_ℝ := by
+        rw [← hUV]
+        refine integral_congr_ae ?_
+        filter_upwards [W1p.gradient_compAffineIsometryEquivL_ae e.toAffineIsometryEquiv hUV u]
+          with y hy
+        rw [hy, ← hpt]
+        simp
+    _ = ∫ x in V, ⟪W1p.gradient u x, ∇ (ψ : F' → ℝ) x⟫_ℝ :=
+        e.measurePreserving.setIntegral_preimage_emb e.toHomeomorph.measurableEmbedding
+          (fun x => ⟪W1p.gradient u x, ∇ (ψ : F' → ℝ) x⟫_ℝ) _
+
+open scoped Distributions Gradient in
+/-- **Poisson's equation under a linear isometry.** For a linear isometry equivalence `e` and
+`U = e⁻¹(V)`, if `u` solves `-Δu = f` weakly on `V`, that is `∫_V ⟪∇u, ∇ψ⟫ = ∫_V f ψ` for every
+test function `ψ` on `V`, then `u ∘ e` solves `-Δ(u ∘ e) = f ∘ e` weakly on `U`. -/
+theorem W1p.setIntegral_inner_gradient_compAffineIsometryEquivL_eq_setIntegral_mul
+    (e : F ≃ₗᵢ[ℝ] F') (hUV : (U : Set F) = e ⁻¹' V) (u : W1p volume V p) {f : F' → ℝ}
+    (hu : ∀ ψ : 𝓓(V, ℝ),
+      ∫ x in V, ⟪W1p.gradient u x, ∇ (ψ : F' → ℝ) x⟫_ℝ = ∫ x in V, f x * ψ x)
+    (φ : 𝓓(U, ℝ)) :
+    ∫ y in U, ⟪W1p.gradient (W1p.compAffineIsometryEquivL e.toAffineIsometryEquiv hUV u) y,
+      ∇ (φ : F → ℝ) y⟫_ℝ = ∫ y in U, f (e y) * φ y := by
+  rw [W1p.setIntegral_inner_gradient_compAffineIsometryEquivL, hu,
+    ← e.measurePreserving.setIntegral_preimage_emb e.toHomeomorph.measurableEmbedding]
+  simp [hUV]
 
 end AffineIsometry
 
