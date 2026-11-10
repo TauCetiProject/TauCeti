@@ -451,8 +451,8 @@ theorem of_mul_matchedIdem (M : α → β) (φ : StrandDiagram α) (t : Finset �
 
 /-- `I(s) x I(t)` vanishes when `s` and `t` have different sizes: the diagrams of the strands
 algebra have as many starting points as end points. -/
-theorem matchedIdem_mul_mul_matchedIdem_of_card_ne (M : α → β) {s t : Finset β} (h : #s ≠ #t)
-    (x : StrandsAlgebra R α) : matchedIdem R M s * x * matchedIdem R M t = 0 := by
+theorem matchedIdem_mul_mul_matchedIdem_eq_zero_of_card_ne (M : α → β) {s t : Finset β}
+    (h : #s ≠ #t) (x : StrandsAlgebra R α) : matchedIdem R M s * x * matchedIdem R M t = 0 := by
   induction x using induction_on with
   | zero => simp
   | add x y hx hy => simp [mul_add, add_mul, hx, hy]
@@ -1149,12 +1149,19 @@ variable [DecidableEq β] in
 theorem matchedDifferential_one : matchedDifferential R M 1 = 0 :=
   Subtype.ext (by simp)
 
+/-- **The Leibniz rule** for the differential of the matched subalgebra, over a ring of
+characteristic two. -/
+theorem matchedDifferential_mul [CharP R 2] (x y : matchedSubalgebra R M) :
+    matchedDifferential R M (x * y) =
+      matchedDifferential R M x * y + x * matchedDifferential R M y :=
+  Subtype.ext (by simp [differential_mul])
+
 /-- Over a ring of characteristic two, such as `𝔽₂`, the matched subalgebra with the restricted
 differential is an ungraded differential algebra. -/
 theorem isUngradedDGAlgebra_matchedDifferential [DecidableEq β] {R : Type*} [CommRing R]
     [CharP R 2] :
     IsUngradedDGAlgebra (matchedDifferential R M) where
-  map_mul a b := Subtype.ext (by simp [differential_mul])
+  map_mul := matchedDifferential_mul
   map_map a := Subtype.ext (by simp [differential_differential])
 
 end Differential
@@ -1163,16 +1170,7 @@ end Differential
 
 section Occupancy
 
-variable {M : α → β}
-
-/-- **The Leibniz rule** for the differential of the matched subalgebra, over a ring of
-characteristic two. -/
-theorem matchedDifferential_mul [CharP R 2] (x y : matchedSubalgebra R M) :
-    matchedDifferential R M (x * y) =
-      matchedDifferential R M x * y + x * matchedDifferential R M y :=
-  Subtype.ext (by simp [differential_mul])
-
-variable [DecidableEq β]
+variable {M : α → β} [DecidableEq β]
 
 variable (R M) in
 /-- The idempotent `I(s)`, `TauCeti.StrandsAlgebra.matchedIdem R M s`, as an element of the
@@ -1201,10 +1199,10 @@ theorem matchedSubalgebraIdem_mul_matchedSubalgebraIdem (s t : Finset β) :
   split_ifs <;> simp [*]
 
 /-- `I(s) x I(t)` vanishes in the matched subalgebra when `s` and `t` have different sizes. -/
-theorem matchedSubalgebraIdem_mul_mul_matchedSubalgebraIdem_of_card_ne {s t : Finset β}
+theorem matchedSubalgebraIdem_mul_mul_matchedSubalgebraIdem_eq_zero_of_card_ne {s t : Finset β}
     (h : #s ≠ #t) (x : matchedSubalgebra R M) :
     matchedSubalgebraIdem R M s * x * matchedSubalgebraIdem R M t = 0 :=
-  Subtype.ext (by simp [matchedIdem_mul_mul_matchedIdem_of_card_ne M h])
+  Subtype.ext (by simp [matchedIdem_mul_mul_matchedIdem_eq_zero_of_card_ne M h])
 
 variable [Fintype β]
 
@@ -1291,11 +1289,12 @@ theorem matchedDifferential_mul_occupancyIdem [CharP R 2] (x : matchedSubalgebra
   simp [matchedDifferential_mul]
 
 /-- `e_i x e_j` vanishes for distinct occupancy idempotents `e_i` and `e_j`. -/
-theorem occupancyIdem_mul_mul_occupancyIdem_of_ne {i j : Fin (Fintype.card β + 1)} (h : i ≠ j)
-    (x : matchedSubalgebra R M) : occupancyIdem R M i * x * occupancyIdem R M j = 0 := by
+theorem occupancyIdem_mul_mul_occupancyIdem_eq_zero_of_ne {i j : Fin (Fintype.card β + 1)}
+    (h : i ≠ j) (x : matchedSubalgebra R M) :
+    occupancyIdem R M i * x * occupancyIdem R M j = 0 := by
   simp only [occupancyIdem_def, sum_mul, mul_sum]
   refine sum_eq_zero fun s hs ↦ sum_eq_zero fun t ht ↦
-    matchedSubalgebraIdem_mul_mul_matchedSubalgebraIdem_of_card_ne ?_ x
+    matchedSubalgebraIdem_mul_mul_matchedSubalgebraIdem_eq_zero_of_card_ne ?_ x
   rw [(mem_filter.1 hs).2, (mem_filter.1 ht).2]
   exact Fin.val_injective.ne h
 
@@ -1304,7 +1303,7 @@ theorem completeOrthogonalIdempotents_occupancyIdem :
     CompleteOrthogonalIdempotents (occupancyIdem R M) := by
   refine (CompleteOrthogonalIdempotents.iff_ortho_complete).2 ⟨fun i j hij ↦ ?_, ?_⟩
   · simpa [occupancyIdem_def, ← mul_assoc] using
-      occupancyIdem_mul_mul_occupancyIdem_of_ne (R := R) (M := M) hij 1
+      occupancyIdem_mul_mul_occupancyIdem_eq_zero_of_ne (R := R) (M := M) hij 1
   · rw [← completeOrthogonalIdempotents_matchedSubalgebraIdem.complete]
     have hlt (s : Finset β) : #s < Fintype.card β + 1 := Nat.lt_succ_of_le (card_le_univ s)
     rw [← sum_fiberwise univ (fun s ↦ (⟨#s, hlt s⟩ : Fin (Fintype.card β + 1)))
@@ -1316,19 +1315,9 @@ theorem completeOrthogonalIdempotents_occupancyIdem :
 /-- **The occupancy idempotents are central**: the products in the matched subalgebra preserve the
 number of strands. -/
 theorem isMulCentral_occupancyIdem (i : Fin (Fintype.card β + 1)) :
-    IsMulCentral (occupancyIdem R M i) := by
-  refine Set.mem_center_iff.1 (Semigroup.mem_center_iff.2 fun x ↦ ?_)
-  have he := completeOrthogonalIdempotents_occupancyIdem (R := R) (M := M)
-  -- Both products equal `e_i x e_i`, by inserting `1 = ∑ j, e_j` on the other side.
-  have h₁ : x * occupancyIdem R M i = occupancyIdem R M i * x * occupancyIdem R M i := by
-    conv_lhs => rw [← one_mul x, ← he.complete, sum_mul, sum_mul]
-    exact sum_eq_single i (fun j _ hj ↦ occupancyIdem_mul_mul_occupancyIdem_of_ne hj x)
-      (by simp)
-  have h₂ : occupancyIdem R M i * x = occupancyIdem R M i * x * occupancyIdem R M i := by
-    conv_lhs => rw [← mul_one (_ * x), ← he.complete, mul_sum]
-    exact sum_eq_single i (fun j _ hj ↦ occupancyIdem_mul_mul_occupancyIdem_of_ne hj.symm x)
-      (by simp)
-  rw [h₁, h₂, mul_assoc, (he.idem i).eq]
+    IsMulCentral (occupancyIdem R M i) :=
+  completeOrthogonalIdempotents_occupancyIdem.isMulCentral_of_mul_mul_eq_zero
+    (fun _ _ h x ↦ occupancyIdem_mul_mul_occupancyIdem_eq_zero_of_ne h x) i
 
 variable (R M) in
 /-- The occupancy summand of the matched subalgebra with `i` strands: the corner `e_i A e_i` of
@@ -1344,23 +1333,19 @@ subalgebra is the product of its occupancy summands, the corners `e_i A e_i` of 
 occupancy idempotents `e_i`. Its compatibility with the differential is
 `occupancyAlgEquiv_matchedDifferential`. -/
 def occupancyAlgEquiv : matchedSubalgebra R M ≃ₐ[R] Π i, OccupancySummand R M i :=
-  AlgEquiv.ofRingEquiv (f := completeOrthogonalIdempotents_occupancyIdem.ringEquivOfIsMulCentral
-    isMulCentral_occupancyIdem) fun r ↦ funext fun i ↦ Subtype.ext <| by
-      change occupancyIdem R M i * algebraMap R _ r * occupancyIdem R M i = r • occupancyIdem R M i
-      rw [Algebra.algebraMap_eq_smul_one, mul_smul_comm, smul_mul_assoc, mul_one,
-        (completeOrthogonalIdempotents_occupancyIdem.idem i).eq]
+  completeOrthogonalIdempotents_occupancyIdem.algEquivOfIsMulCentral R isMulCentral_occupancyIdem
 
 /-- The component of `x` in the summand with `i` strands is `e_i x e_i`. -/
 @[simp]
 theorem occupancyAlgEquiv_apply_coe (x : matchedSubalgebra R M) (i : Fin (Fintype.card β + 1)) :
     (occupancyAlgEquiv R M x i).1 = occupancyIdem R M i * x * occupancyIdem R M i :=
-  (rfl)
+  completeOrthogonalIdempotents_occupancyIdem.val_algEquivOfIsMulCentral_apply _ x i
 
 /-- An element is recovered from its occupancy components as their sum. -/
 @[simp]
 theorem occupancyAlgEquiv_symm_apply (y : Π i, OccupancySummand R M i) :
     (occupancyAlgEquiv R M).symm y = ∑ i, (y i).1 :=
-  (rfl)
+  completeOrthogonalIdempotents_occupancyIdem.algEquivOfIsMulCentral_symm_apply _ y
 
 variable (R M) in
 /-- The differential of the occupancy summand with `i` strands, over a ring of characteristic two:
