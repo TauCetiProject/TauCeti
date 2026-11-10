@@ -83,7 +83,7 @@ the kernel and the cokernel of `normGradedMap K L t` both have order `ℓ`.
   prime degree, at a positive depth `t` with `G_t = Gal(L/K)` and for `σ ∉ G_{t+1}`, the graded
   norm is `y ↦ y ^ ℓ - c ^ (ℓ - 1) y`, where `c` is the coordinate of `σ π / π`.
 * `TauCeti.normGradedMap_at_break`: in prime degree `ℓ` with an upper break at a natural number
-  `t > 0`, the kernel and the cokernel of the graded norm at depth `t` both have order `ℓ`.
+  `t`, the kernel and the cokernel of the graded norm at depth `t` both have order `ℓ`.
 
 ## References
 
@@ -571,7 +571,7 @@ nonarchimedean local fields of prime degree `ℓ` with `G_{t+1} = Gal(L/K)`, and
 `γ`, the coordinate of `σ π / π`. -/
 theorem algebraMap_unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_normGradedMap_mk
     (hℓ : (finrank K L).Prime) {t : ℕ} (hG : lowerRamificationGroup K L (t + 1) = ⊤)
-    {π : 𝒪[L]} (hπ : Irreducible π) (hπK : Irreducible (Algebra.norm 𝒪[K] π))
+    {π : 𝒪[L]} (hπK : Irreducible (Algebra.norm 𝒪[K] π))
     {σ : L ≃ₐ[K] L} (hσ : σ ∉ lowerRamificationGroup K L (t + 2)) {γ : 𝒪[L]}
     (hγ : σ • π - π = γ * π ^ (t + 2)) (x : unitFiltration L (psiNat K L (t + 1))) {a : 𝒪[L]}
     (hxa : ((x : Lˣ) : L) = 1 + a * π ^ (t + 1)) :
@@ -583,6 +583,8 @@ theorem algebraMap_unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_normGr
     exists_unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_normGradedMap_mk_eq_residue
       hπK x hxa
   rw [hb]
+  have hπ : Irreducible π :=
+    (irreducible_and_inertiaDegree_eq_one_of_norm π _ hπK (coe_norm_integerRing π).symm).1
   exact algebraMap_residue_eq_of_norm_one_add_mul_pow_eq hℓ (by omega : 0 < t + 1) hG hπ
     (by exact_mod_cast hσ) hγ hab
 
@@ -638,7 +640,7 @@ private theorem natCard_ker_normGradedMap_succ_eq (hℓ : (finrank K L).Prime) {
     push_cast
     ring
   rw [hE, MonoidHom.mem_ker,
-    ← algebraMap_unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_normGradedMap_mk hℓ hG hπ
+    ← algebraMap_unitFiltrationGradedSuccEquivResidueFieldOfUniformizer_normGradedMap_mk hℓ hG
       hπK hσ hγ x hxa, map_eq_zero_iff _ (algebraMap 𝓀[K] 𝓀[L]).injective,
     EmbeddingLike.map_eq_zero_iff, ofMul_eq_zero]
 
@@ -664,16 +666,23 @@ private theorem index_range_normGradedMap_succ_eq_finrank (h : IsTotallyRamified
   rw [← hcard_ker]
   nlinarith
 
-/-- **The graded norm at a positive break.** Let `L/K` be a Galois extension of nonarchimedean
+/-- **The graded norm at a break.** Let `L/K` be a Galois extension of nonarchimedean
 local fields of prime degree `ℓ` whose upper ramification filtration breaks at a natural number
-`t > 0`. Then the kernel of the graded norm `normGradedMap K L t` has order `ℓ`, and its image has
-index `ℓ`. This is the regime `v = t > 0`, in which `L/K` is totally ramified and `ℓ` is the
-residue characteristic. -/
-theorem normGradedMap_at_break (hℓ : (finrank K L).Prime) {t : ℕ} (ht0 : 0 < t)
+`t`. Then the kernel of the graded norm `normGradedMap K L t` has order `ℓ`, and its image has
+index `ℓ`. This is the regime `v = t`, in which `L/K` is totally ramified; for `t > 0`, `ℓ` is the
+residue characteristic, and for `t = 0` the extension is tame. -/
+theorem normGradedMap_at_break (hℓ : (finrank K L).Prime) {t : ℕ}
     (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
     Nat.card (normGradedMap K L t).ker = finrank K L ∧
       (normGradedMap K L t).range.index = finrank K L := by
-  obtain ⟨s, rfl⟩ : ∃ s, t = s + 1 := ⟨t - 1, by omega⟩
+  rcases t with _ | s
+  · have htotal : IsTotallyRamified K L :=
+      (lowerRamificationGroup_zero_eq_top_iff K L).1
+        (by simpa using lowerRamificationGroup_natCast_eq_top_of_upperJump K L hℓ ht)
+    have htame : IsTamelyRamified K L :=
+      (lowerRamificationGroup_one_eq_bot_iff_isTamelyRamified K L).1
+        (by simpa using lowerRamificationGroup_natCast_add_one_eq_bot_of_upperJump K L hℓ ht)
+    exact normGradedMap_tame_break_zero htotal htame
   have hG : lowerRamificationGroup K L ((s + 1 : ℕ) : ℤ) = ⊤ :=
     lowerRamificationGroup_natCast_eq_top_of_upperJump K L hℓ ht
   have hGi (i : ℤ) (hi : i ≤ s + 1) : lowerRamificationGroup K L i = ⊤ :=
