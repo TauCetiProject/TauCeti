@@ -10,7 +10,6 @@ public import Mathlib.Data.Fintype.Sum
 public import Mathlib.Data.Nat.Factorial.DoubleFactorial
 public import TauCeti.GroupTheory.Perm.OrbitCount.Basic
 public import TauCeti.GroupTheory.Perm.Cycle.Reversal
-import Mathlib.Data.Fintype.Pigeonhole
 import TauCeti.Algebra.GroupAction.OrbitRelQuotient
 import TauCeti.GroupTheory.Perm.SwapFactors
 
@@ -646,20 +645,6 @@ theorem IsPerfectMatching.sign_eq [Fintype α] [DecidableEq α] {f : Equiv.Perm 
   have hfix : Fintype.card (Function.fixedPoints f) = 0 :=
     Fintype.card_eq_zero_iff.mpr ⟨fun a => hf.2 a a.2⟩
   rw [Equiv.Perm.sign_of_pow_two_eq_one hsq, hfix, Nat.sub_zero]
-
-/-- An involutive permutation of an infinite type has infinitely many orbits, since each orbit has
-at most two points. -/
-theorem _root_.Equiv.Perm.infinite_quotient_sameCycle_of_involutive [Infinite α]
-    {f : Equiv.Perm α} (hf : Function.Involutive f) :
-    Infinite (Quotient (Equiv.Perm.SameCycle.setoid f)) := by
-  by_contra hQ
-  rw [not_infinite_iff_finite] at hQ
-  obtain ⟨q, hq⟩ := Finite.exists_infinite_fiber
-    (Quotient.mk (Equiv.Perm.SameCycle.setoid f) : α → _)
-  refine (Set.infinite_coe_iff.mp hq) ((Set.toFinite {q.out, f q.out}).subset fun a ha => ?_)
-  have hq' : f.SameCycle q.out a :=
-    Quotient.exact (s := Equiv.Perm.SameCycle.setoid f) (q.out_eq.trans ha.symm)
-  exact (hf.sameCycle_iff a q.out).mp hq'.symm
 
 /-- **A perfect matching has half as many orbits as points**: its orbits are its pairs. -/
 theorem IsPerfectMatching.two_mul_orbitCount {f : Equiv.Perm α}
