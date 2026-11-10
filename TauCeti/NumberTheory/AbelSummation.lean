@@ -278,12 +278,23 @@ private lemma sum_Icc_zero_mul_ite (g c : ℕ → ℝ) (m : ℕ) :
   simp [hn0]
 
 /-- The Abel-summation identity `sum_mul_eq_sub_integral_mul₀` for the weight `t ^ τ`:
-`∑_{1 ≤ n ≤ x} n ^ τ c n = x ^ τ S(x) - τ ∫ t in 1..x, t ^ (τ - 1) S(t)` for `x ≥ 1`, where
-`S(t) = ∑_{1 ≤ n ≤ t} c n`. -/
-theorem sum_Icc_rpow_mul_eq (c : ℕ → ℝ) (τ : ℝ) {x : ℝ} (hx : 1 ≤ x) :
+`∑_{1 ≤ n ≤ x} n ^ τ c n = x ^ τ S(x) - τ ∫ t in 1..x, t ^ (τ - 1) S(t)`, where
+`S(t) = ∑_{1 ≤ n ≤ t} c n`. For `x < 1` both sides are `0`. -/
+theorem sum_Icc_rpow_mul_eq (c : ℕ → ℝ) (τ : ℝ) (x : ℝ) :
     ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, (n : ℝ) ^ τ * c n =
       x ^ τ * ∑ n ∈ Finset.Icc 1 ⌊x⌋₊, c n -
         τ * ∫ t in (1 : ℝ)..x, t ^ (τ - 1) * ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n := by
+  rcases lt_or_ge x 1 with hx | hx
+  · -- the sums are empty and the integrand vanishes off the single point `1`
+    have h0 : ⌊x⌋₊ = 0 := Nat.floor_eq_zero.2 hx
+    have hint : ∫ t in (1 : ℝ)..x, t ^ (τ - 1) * ∑ n ∈ Finset.Icc 1 ⌊t⌋₊, c n = 0 := by
+      refine (intervalIntegral.integral_congr_ae (g := fun _ ↦ 0) ?_).trans (by simp)
+      filter_upwards [(Set.countable_singleton (1 : ℝ)).ae_notMem MeasureTheory.volume] with t ht
+        ht'
+      rw [Set.uIoc_of_ge hx.le] at ht'
+      have ht1 : t < 1 := lt_of_le_of_ne ht'.2 ht
+      simp [Nat.floor_eq_zero.2 ht1]
+    simp [h0, hint]
   have hderiv : deriv (fun u : ℝ ↦ u ^ τ) = fun t ↦ τ * t ^ (τ - 1) :=
     funext fun t ↦ Real.deriv_rpow_const t τ
   have habel := sum_mul_eq_sub_integral_mul₀ (f := fun u : ℝ ↦ u ^ τ)
@@ -362,7 +373,7 @@ theorem tendsto_rpow_inv_mul_sum_Icc_rpow_mul {c : ℕ → ℝ} {κ τ : ℝ} (h
     rw [Real.rpow_sub_one ht0.ne']
     field_simp
     ring
-  rw [sum_Icc_rpow_mul_eq c τ hx, hsplit, Real.rpow_add_one hx0.ne']
+  rw [sum_Icc_rpow_mul_eq c τ x, hsplit, Real.rpow_add_one hx0.ne']
   field_simp
   ring
 

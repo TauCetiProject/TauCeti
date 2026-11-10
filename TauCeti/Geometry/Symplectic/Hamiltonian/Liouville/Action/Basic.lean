@@ -49,7 +49,10 @@ The angle map and its pullback of the symplectic form are treated in
 
 ## Main results
 
-All in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
+* `TauCeti.fderiv_apply_eq_of_hasFDerivAt_action`: the differential of an action function,
+  `dA = (2π)⁻¹ ∑ⱼ λⱼ dcⱼ`, evaluated on a vector.
+
+The remaining results are in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
 
 * `fderiv_dotProduct_comm_of_mem_hamiltonianFlowStabilizer`: the period one-forms are closed.
 * `exists_forall_hasFDerivAt_of_mem_hamiltonianFlowStabilizer`: on a convex open set, a period
@@ -74,6 +77,15 @@ open ContinuousLinearMap (proj)
 open scoped Manifold ContDiff Matrix
 
 namespace TauCeti
+
+/-- **The differential of an action function.** If `f` has differential
+`(2π)⁻¹ ∑ⱼ vⱼ dcⱼ` at `c`, then `df_c(w) = (2π)⁻¹ (v ⬝ᵥ w)`. -/
+theorem fderiv_apply_eq_of_hasFDerivAt_action {ι : Type*} [Fintype ι] {f : (ι → ℝ) → ℝ}
+    {v c : ι → ℝ} (hf : HasFDerivAt f ((2 * π)⁻¹ • ∑ j, v j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c)
+    (w : ι → ℝ) :
+    fderiv ℝ f c w = (2 * π)⁻¹ * (v ⬝ᵥ w) := by
+  rw [hf.fderiv]
+  simp [dotProduct, Finset.mul_sum, mul_comm]
 
 namespace SmoothTwoForm
 
@@ -160,6 +172,7 @@ the connected component of `x` in its level `F⁻¹(F x)` be compact and consist
 there are functions `λ⁽ⁱ⁾` and a map `A : (ι → ℝ) → (ι → ℝ)`, a local diffeomorphism at `F x`,
 such that for every `c` near `F x`:
 
+* the functions `λ⁽ⁱ⁾` are smooth at `c`;
 * the vectors `λ⁽ⁱ⁾ c` are linearly independent and generate the period lattice of `s c`;
 * the differential of `Aᵢ` at `c` is `(2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ(c) dcⱼ`;
 * a vector `v` is a period of `s c` exactly when `v ⬝ᵥ dc = 2π ∑ᵢ nᵢ dAᵢ` for some integers `nᵢ`,
@@ -173,7 +186,7 @@ theorem exists_isLocalDiffeomorphAt_action_of_isCompact (hdim : 2 * Fintype.card
     (hsx : s (F x) = x) (hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I ∞ s t) (hFs : ∀ c ∈ t, F (s c) = c) :
     ∃ (p : ι → (ι → ℝ) → ι → ℝ) (A : (ι → ℝ) → ι → ℝ),
       IsLocalDiffeomorphAt 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) ∞ A (F x) ∧ ∀ᶠ c in 𝓝 (F x),
-        LinearIndependent ℝ (fun i ↦ p i c) ∧
+        (∀ i, ContDiffAt ℝ ∞ (p i) c) ∧ LinearIndependent ℝ (fun i ↦ p i c) ∧
         hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) =
           AddSubgroup.closure (range fun i ↦ p i c) ∧
         (∀ i, HasFDerivAt (fun c ↦ A c i)
@@ -198,13 +211,13 @@ theorem exists_isLocalDiffeomorphAt_action_of_isCompact (hdim : 2 * Fintype.card
       HasFDerivAt (fun c i ↦ A i c) (ContinuousLinearMap.pi fun i ↦ α i c) c :=
     hasFDerivAt_pi.2 fun i ↦ hA i c hc
   refine ⟨p, fun c i ↦ A i c, ?_, eventually_of_mem (Metric.ball_mem_nhds _ hε)
-    fun c hc ↦ ⟨(hball hc).1.2.1, (hball hc).1.2.2, fun i ↦ hA i c hc, fun v ↦ ?_⟩⟩
+    fun c hc ↦ ⟨(hball hc).1.1, (hball hc).1.2.1, (hball hc).1.2.2, fun i ↦ hA i c hc,
+      fun v ↦ ?_⟩⟩
   swap
   · -- The periods are the integral combinations of the `p i c`, and `dAᵢ = (2π)⁻¹ ⟨p i c, ·⟩`.
     have hd (i : ι) (w : ι → ℝ) :
-        fderiv ℝ (fun c ↦ A i c) c w = (2 * π)⁻¹ * (p i c ⬝ᵥ w) := by
-      rw [(hA i c hc).fderiv]
-      simp [dotProduct, Finset.mul_sum]
+        fderiv ℝ (fun c ↦ A i c) c w = (2 * π)⁻¹ * (p i c ⬝ᵥ w) :=
+      fderiv_apply_eq_of_hasFDerivAt_action (hA i c hc) w
     simp_rw [hd, (hball hc).1.2.2, AddSubgroup.mem_closure_range_iff_of_fintype]
     constructor
     · rintro ⟨n, rfl⟩
