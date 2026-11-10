@@ -43,7 +43,7 @@ then recovers the original finite-comodule component.
   vectors in a free module.
 * `TauCeti.Comodule.eq_of_baseChange_matrixCoefficientHom_eq`: joint separation after
   scalar extension.
-* `TauCeti.Comodule.matrixCoefficientSubcoalgebraHom`: corestriction to the finite coefficient
+* `TauCeti.Comodule.matrixCoefficientSubcoalgebraHom`: corestriction to the coefficient
   subcoalgebra.
 * `TauCeti.Comodule.iSup_range_matrixCoefficientHom_eq`: the ranges of the coefficient
   morphisms generate the coefficient subcoalgebra as a regular subcomodule.
@@ -190,16 +190,16 @@ theorem eq_of_baseChange_matrixCoefficientHom_eq {x y : A ⊗[R] M}
 
 end BaseChange
 
-section Finite
+section Free
 
-variable [Module.Free R M] [Module.Finite R M]
+variable [Module.Free R M]
 
 section Corestrict
 
 variable [Module.Flat R C]
 
 /-- A matrix-coefficient morphism corestricted to the coefficient subcoalgebra, viewed as a
-finite regular subcomodule. -/
+regular subcomodule. -/
 noncomputable def matrixCoefficientSubcoalgebraHom (φ : Module.Dual R M) :
     Hom R C M
     (matrixCoefficientSubcoalgebra (R := R) (C := C) (M := M)).toRegularSubcomodule :=
@@ -255,6 +255,6 @@ theorem iSup_range_matrixCoefficientHom_eq :
   rw [← Subcomodule.mem_toSubmodule, ← Subcomodule.mem_toSubmodule,
     TauCeti.Subcoalgebra.toRegularSubcomodule_toSubmodule, hsub]
 
-end Finite
+end Free
 
 end TauCeti.Comodule
