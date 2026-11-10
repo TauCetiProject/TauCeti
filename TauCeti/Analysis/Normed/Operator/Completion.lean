@@ -59,16 +59,19 @@ variable {𝕜 𝕜₂ E F : Type*} [NontriviallyNormedField 𝕜] [Nontrivially
   {σ₁₂ : 𝕜 →+* 𝕜₂} [RingHomIsometric σ₁₂] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
   [SeminormedAddCommGroup F] [NormedSpace 𝕜₂ F]
 
+omit [RingHomIsometric σ₁₂] in
 /-- Extending a bounded semilinear map to the completions of its domain and codomain preserves
 its operator norm. -/
 @[simp]
 theorem norm_completion (f : E →SL[σ₁₂] F) : ‖f.completion‖ = ‖f‖ := by
-  refine le_antisymm (opNorm_le_bound _ (norm_nonneg f) fun x ↦ ?_)
-    (opNorm_le_bound _ (norm_nonneg _) fun x ↦ ?_)
+  rw [norm_def, norm_def]
+  congr 1
+  ext c
+  refine and_congr_right fun _ ↦ ⟨fun h x ↦ ?_, fun h x ↦ ?_⟩
+  · simpa only [completion_apply_coe, Completion.norm_coe] using h x
   · induction x using Completion.induction_on with
     | hp => exact isClosed_le (by fun_prop) (by fun_prop)
-    | ih x => simpa only [completion_apply_coe, Completion.norm_coe] using f.le_opNorm x
-  · simpa only [completion_apply_coe, Completion.norm_coe] using f.completion.le_opNorm x
+    | ih x => simpa only [completion_apply_coe, Completion.norm_coe] using h x
 
 /-- Extending a bounded semilinear map into a complete Hausdorff space to the completion of its
 domain preserves its operator norm. -/
