@@ -17,11 +17,11 @@ Let `C` be an abelian category, `A ⟶ B` a flat map of commutative rings, `F` a
 with an action `ρ : A →+* End F` of `A`, and `G` an object with an action `σ : B →+* End G` of
 `B`, together with a morphism `η : F ⟶ G` intertwining the two actions. For every object `P`
 the groups `Ext P F n` and `Ext P G n` are modules over `A` and `B`
-(`CategoryTheory.Abelian.Ext.WithAction`), and there is a `B`-linear base change map
+(`TauCeti.Abelian.Ext.WithAction`), and there is a `B`-linear base change map
 ```
   B ⊗[A] Ext P F n ⟶ Ext P G n,   b ⊗ x ↦ b • η_* x
 ```
-(`CategoryTheory.Abelian.Ext.WithAction.baseChange`). We show that the class of objects `P` for
+(`TauCeti.Abelian.Ext.WithAction.baseChange`). We show that the class of objects `P` for
 which these maps are bijective in all degrees is closed under isomorphisms, binary biproducts and
 cokernels of monomorphisms between its members. The last point is the five lemma applied to the
 long exact sequences of `Ext`-groups, the first of which stays exact after `B ⊗[A] -` since `B`
@@ -33,9 +33,9 @@ where `P` runs through the free abelian sheaves `ℤ_U` on opens `U` and a short
 
 ## Main statements
 
-- `CategoryTheory.Abelian.Ext.WithAction.bijective_baseChange_of_iso`,
-  `CategoryTheory.Abelian.Ext.WithAction.bijective_baseChange_biprod`,
-  `CategoryTheory.Abelian.Ext.WithAction.bijective_baseChange_of_shortExact`: the closure
+- `TauCeti.Abelian.Ext.WithAction.bijective_baseChange_of_iso`,
+  `TauCeti.Abelian.Ext.WithAction.bijective_baseChange_biprod`,
+  `TauCeti.Abelian.Ext.WithAction.bijective_baseChange_of_shortExact`: the closure
   properties of the objects for which the base change maps are bijective.
 -/
 
@@ -43,9 +43,9 @@ public section
 
 universe w v u
 
-open CategoryTheory Limits TensorProduct
+open CategoryTheory Limits TensorProduct CategoryTheory.Abelian CategoryTheory.Abelian.Ext
 
-namespace CategoryTheory.Abelian.Ext
+namespace TauCeti.Abelian.Ext
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C]
 
@@ -70,21 +70,25 @@ noncomputable def smulEnd (P : C) (n : ℕ) : A →+* AddMonoid.End (Ext P F n) 
   toFun a := (mk₀ (ρ a).asHom).postcomp P (add_zero n)
   map_one' := by
     ext x
+    -- AddMonoid.End.one evaluates to the identity, and postcomp evaluates to Ext.comp.
     change x.comp (mk₀ (ρ 1).asHom) (add_zero n) = x
     rw [map_one, End.one_asHom]
     exact comp_mk₀_id x
   map_mul' a b := by
     ext x
+    -- Endomorphism multiplication is composition; postcomp exposes its two Ext factors.
     change x.comp (mk₀ (ρ (a * b)).asHom) (add_zero n) =
       (x.comp (mk₀ (ρ b).asHom) (add_zero n)).comp (mk₀ (ρ a).asHom) (add_zero n)
     rw [map_mul, End.mul_asHom, comp_assoc_of_third_deg_zero, mk₀_comp_mk₀]
   map_zero' := by
     ext x
+    -- The zero endomorphism evaluates to zero, while postcomp evaluates to Ext.comp.
     change x.comp (mk₀ (ρ 0).asHom) (add_zero n) = 0
     rw [map_zero, End.zero_asHom, mk₀_zero]
     exact comp_zero _ _ _ _ _
   map_add' a b := by
     ext x
+    -- Addition of endomorphisms is pointwise, and each postcomp evaluates to Ext.comp.
     change x.comp (mk₀ (ρ (a + b)).asHom) (add_zero n) =
       x.comp (mk₀ (ρ a).asHom) (add_zero n) + x.comp (mk₀ (ρ b).asHom) (add_zero n)
     rw [map_add, End.add_asHom, mk₀_add]
@@ -332,4 +336,4 @@ end FlatBaseChange
 
 end WithAction
 
-end CategoryTheory.Abelian.Ext
+end TauCeti.Abelian.Ext
