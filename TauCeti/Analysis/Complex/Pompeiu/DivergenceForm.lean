@@ -55,7 +55,8 @@ closure of an open set `U ⋐ Ω`: since `f, g ∈ Lʳ_loc(Ω)`, the data is com
   decomposition `ξ = ξ₀ + v` on every `U ⋐ Ω` for finite-dimensional real coefficients, with
   `ξ₀ ∈ Lʳ_loc` and `v` harmonic.
 * `TauCeti.exists_ae_eq_add_harmonicOnNhd_norm_fderiv_le_of_integral_laplacian_smul_eq`: on a
-  ball, together with the mean-value bounds on `v` and its derivative on a smaller closed ball.
+  ball, together with the mean-value bounds on `v` and its derivative on a smaller closed ball,
+  with a constant independent of the data.
 * `TauCeti.exists_integral_laplacian_smul_re_cauchyTransform_ne`: the factor `½` cannot be
   dropped.
 
@@ -318,36 +319,38 @@ theorem exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq {V : 
 of radius `R` about `c` lies in `Ω` and `ρ < R`, then on the open ball `ξ = ξ₀ + v` almost
 everywhere, with `ξ₀` locally `Lʳ` solving `Δ ξ₀ = ∂ₛ f + ∂ₜ g` weakly on the ball and `v`
 harmonic there, and by the mean value property `v` and its derivative are bounded on the closed
-ball of radius `ρ` by a constant times the `L¹` norm of `ξ - ξ₀` on the ball of radius `R`. -/
+ball of radius `ρ` by a constant times the `L¹` norm of `ξ - ξ₀` on the ball of radius `R`. The
+constant depends only on `c`, `ρ` and `R`, not on `ξ`, `f` or `g`. -/
 theorem exists_ae_eq_add_harmonicOnNhd_norm_fderiv_le_of_integral_laplacian_smul_eq {V : Type*}
     [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] {Ω : Opens ℂ} {c : ℂ}
-    {ρ R : ℝ} (hρR : ρ < R) (hRΩ : closedBall c R ⊆ Ω) {r : ℝ≥0∞} (hr : 1 ≤ r) {ξ f g : ℂ → V}
-    (hξ : LocallyIntegrableOn ξ Ω) (hf : MemLpLoc r Ω f) (hg : MemLpLoc r Ω g)
-    (hdiv : ∀ φ : 𝓓(Ω, ℝ), ∫ z, Δ (φ : ℂ → ℝ) z • ξ z =
-      -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z)) :
-    ∃ C : ℝ≥0, ∃ ξ₀ v : ℂ → V, MemLpLoc r univ ξ₀ ∧
-      (∀ φ : 𝓓(⟨ball c R, isOpen_ball⟩, ℝ), ∫ z, Δ (φ : ℂ → ℝ) z • ξ₀ z =
-        -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z)) ∧
-      HarmonicOnNhd v (ball c R) ∧ ξ =ᵐ[volume.restrict (ball c R)] ξ₀ + v ∧
-      ∀ x ∈ closedBall c ρ,
-        ‖v x‖ ≤ C * ∫ z in ball c R, ‖ξ z - ξ₀ z‖ ∧
-          ‖fderiv ℝ v x‖ ≤ C * ∫ z in ball c R, ‖ξ z - ξ₀ z‖ := by
+    {ρ R : ℝ} (hρR : ρ < R) (hRΩ : closedBall c R ⊆ Ω) {r : ℝ≥0∞} (hr : 1 ≤ r) :
+    ∃ C : ℝ≥0, ∀ {ξ f g : ℂ → V}, LocallyIntegrableOn ξ Ω → MemLpLoc r Ω f → MemLpLoc r Ω g →
+      (∀ φ : 𝓓(Ω, ℝ), ∫ z, Δ (φ : ℂ → ℝ) z • ξ z =
+        -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z)) →
+      ∃ ξ₀ v : ℂ → V, MemLpLoc r univ ξ₀ ∧
+        (∀ φ : 𝓓(⟨ball c R, isOpen_ball⟩, ℝ), ∫ z, Δ (φ : ℂ → ℝ) z • ξ₀ z =
+          -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z)) ∧
+        HarmonicOnNhd v (ball c R) ∧ ξ =ᵐ[volume.restrict (ball c R)] ξ₀ + v ∧
+        ∀ x ∈ closedBall c ρ,
+          ‖v x‖ ≤ C * ∫ z in ball c R, ‖ξ z - ξ₀ z‖ ∧
+            ‖fderiv ℝ v x‖ ≤ C * ∫ z in ball c R, ‖ξ z - ξ₀ z‖ := by
   let B : Opens ℂ := ⟨ball c R, isOpen_ball⟩
   have hBc : IsCompact (closure (B : Set ℂ)) :=
     (isCompact_closedBall c R).of_isClosed_subset isClosed_closure closure_ball_subset_closedBall
   have hBΩ : closure (B : Set ℂ) ⊆ Ω := closure_ball_subset_closedBall.trans hRΩ
-  obtain ⟨ξ₀, hξ₀, hid, hwh, -⟩ :=
-    exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq hBc hBΩ hr hξ hf hg hdiv
   obtain ⟨C, hC⟩ :=
     WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_norm_and_norm_fderiv_le_integral_norm (F := V)
       (μ := volume) (Ω := B) c hρR subset_rfl
+  refine ⟨C, fun {ξ f g} hξ hf hg hdiv ↦ ?_⟩
+  obtain ⟨ξ₀, hξ₀, hid, hwh, -⟩ :=
+    exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq hBc hBΩ hr hξ hf hg hdiv
   have hint : IntegrableOn (ξ - ξ₀) (ball c R) :=
     ((hξ.integrableOn_compact_subset hRΩ (isCompact_closedBall c R)).mono_set
       ball_subset_closedBall).sub
       (((hξ₀.locallyIntegrableOn hr isClosed_univ.isLocallyClosed).integrableOn_compact_subset
         (subset_univ _) (isCompact_closedBall c R)).mono_set ball_subset_closedBall)
   obtain ⟨v, hv, hξv, hN⟩ := hC hwh hint
-  exact ⟨C, ξ₀, v, hξ₀, hid, hv, hξv.mono fun z hz ↦ by
+  exact ⟨ξ₀, v, hξ₀, hid, hv, hξv.mono fun z hz ↦ by
     simp only [Pi.add_apply, ← hz, Pi.sub_apply, add_sub_cancel], fun x hx ↦ hN x hx⟩
 
 /-- **Check: the factor `½` is needed.** Without it, `Re (T h)` does not solve the
