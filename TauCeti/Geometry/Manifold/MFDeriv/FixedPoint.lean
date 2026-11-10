@@ -453,9 +453,9 @@ theorem isNondegenerateFixedPt_iff_det_id_sub_ne_zero [FiniteDimensional 𝕜 E]
   exact ⟨fun h v hv ↦ h.eq_zero_of_mfderiv_apply_eq (sub_eq_zero.1 hv).symm,
     fun h ↦ ⟨x.2, hf, fun v hv ↦ h v (sub_eq_zero.2 hv.symm)⟩⟩
 
-/-- On a compact manifold over a complete field (whose model space is then finite-dimensional), a
-continuous map that is differentiable at its fixed points, with `det (1 - df_x) ≠ 0` at each of
-them, has only finitely many fixed points. -/
+/-- On a compact manifold over a complete field (whose model space is then finite-dimensional when
+the manifold is nonempty), a continuous map that is differentiable at its fixed points, with
+`det (1 - df_x) ≠ 0` at each of them, has only finitely many fixed points. -/
 theorem finite_fixedPoints_of_det_id_sub_ne_zero [CompleteSpace 𝕜]
     [CompactSpace M] [T2Space M] (hf : Continuous f)
     (hdf : ∀ x : {x // f x = x}, MDifferentiableAt I I f x.1)
