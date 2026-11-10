@@ -36,14 +36,13 @@ open scoped Topology NNReal InnerProductSpace
 
 namespace ProbabilityTheory.IsPreBrownianReal
 
-variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} [IsProbabilityMeasure P]
+variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
   {B : ℝ≥0 → Ω → ℝ}
 
 /-- Brownian evaluation as a native real `L²` class. -/
 def toL2 (hB : IsPreBrownianReal B P) (t : ℝ≥0) : Lp ℝ 2 P :=
   ((hB.hasLaw_eval t).memLp (memLp_id_gaussianReal 2)).toLp (B t)
 
-omit [IsProbabilityMeasure P] in
 /-- The `L²` evaluation class represents the original evaluation almost surely. -/
 theorem coeFn_toL2 (hB : IsPreBrownianReal B P) (t : ℝ≥0) :
     ⇑(hB.toL2 t) =ᵐ[P] B t :=
@@ -53,6 +52,7 @@ theorem coeFn_toL2 (hB : IsPreBrownianReal B P) (t : ℝ≥0) :
 @[simp]
 theorem inner_toL2 (hB : IsPreBrownianReal B P) (s t : ℝ≥0) :
     ⟪hB.toL2 s, hB.toL2 t⟫_ℝ = (min s t : ℝ≥0) := by
+  have := (hB.hasLaw_eval 0).isProbabilityMeasure
   rw [L2.inner_def]
   simp only [RCLike.inner_apply, conj_trivial]
   trans ∫ ω, B t ω * B s ω ∂P
@@ -96,7 +96,6 @@ Real time is mapped to nonnegative time; only intervals with nonnegative endpoin
 def leftRiemannError (hB : IsPreBrownianReal B P) (a b : ℝ≥0) : Lp ℝ 2 P :=
   ∫ u in (a : ℝ)..b, hB.toL2 a - hB.toL2 u.toNNReal
 
-omit [IsProbabilityMeasure P] in
 /-- A zero-length cell has zero quadrature error. -/
 @[simp]
 theorem leftRiemannError_self (hB : IsPreBrownianReal B P) (a : ℝ≥0) :
