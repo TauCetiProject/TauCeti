@@ -24,7 +24,7 @@ Adapted from `yuma-mizuno-lean/Mei`, commit
 
 public section
 
-open Set
+open Set Filter Topology
 
 namespace TauCeti.Toric
 
@@ -37,12 +37,19 @@ ambient space that are locally given by an integral affine self-equivalence. -/
 abbrev integralAffineGroupoid : StructureGroupoid V :=
   smulGroupoid (IntegralAffineEquiv h h) V
 
+/-- A partial homeomorphism lies in the integral affine groupoid iff it agrees near each point of
+its source with an integral affine self-equivalence. -/
+theorem mem_integralAffineGroupoid_iff {e : OpenPartialHomeomorph V V} :
+    e ∈ integralAffineGroupoid h ↔
+      ∀ x ∈ e.source, ∃ a : IntegralAffineEquiv h h, e =ᶠ[𝓝 x] a := by
+  simp only [integralAffineGroupoid, mem_smulGroupoid_iff, IntegralAffineEquiv.smul_def]
+
 /-- A connected nonempty chart-change domain has a unique global integral affine extension. -/
 theorem existsUnique_extension_of_mem_integralAffineGroupoid
     {e : OpenPartialHomeomorph V V} (he : e ∈ integralAffineGroupoid h)
     (hc : IsConnected e.source) :
     ∃! a : IntegralAffineEquiv h h, EqOn e a e.source :=
-  IntegralAffineEquiv.existsUnique_extension (mem_smulGroupoid_iff.mp he)
+  IntegralAffineEquiv.existsUnique_extension (mem_integralAffineGroupoid_iff.mp he)
     e.open_source hc
 
 /-- Each connected component of the source of a chart change has a unique global integral
@@ -51,7 +58,7 @@ theorem existsUnique_extension_connectedComponentIn_of_mem_integralAffineGroupoi
     {e : OpenPartialHomeomorph V V} (he : e ∈ integralAffineGroupoid h) {x : V}
     (hx : x ∈ e.source) :
     ∃! a : IntegralAffineEquiv h h, EqOn e a (connectedComponentIn e.source x) :=
-  IntegralAffineEquiv.existsUnique_extension_connectedComponentIn (mem_smulGroupoid_iff.mp he)
-    e.open_source hx
+  IntegralAffineEquiv.existsUnique_extension_connectedComponentIn
+    (mem_integralAffineGroupoid_iff.mp he) e.open_source hx
 
 end TauCeti.Toric

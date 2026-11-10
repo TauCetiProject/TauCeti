@@ -203,13 +203,18 @@ theorem inv_def (e : IntegralAffineEquiv h h) : e⁻¹ = e.symm := (rfl)
 
 /-- A product acts by composing the actions. -/
 @[simp]
-theorem coe_mul (e f : IntegralAffineEquiv h h) (x : V) : (e * f) x = e (f x) := by
+theorem mul_apply (e f : IntegralAffineEquiv h h) (x : V) : (e * f) x = e (f x) := by
   rw [mul_def, trans_apply]
 
 /-- The identity of the group acts as the identity map. -/
 @[simp]
-theorem coe_one (x : V) : (1 : IntegralAffineEquiv h h) x = x := by
+theorem one_apply (x : V) : (1 : IntegralAffineEquiv h h) x = x := by
   rw [one_def, refl_apply]
+
+/-- The affine equivalence underlying an inverse is the inverse affine equivalence. -/
+@[simp]
+theorem inv_toAffineEquiv (e : IntegralAffineEquiv h h) :
+    (e⁻¹).toAffineEquiv = e.toAffineEquiv.symm := (rfl)
 
 /-- The lattice equivalence of a product is the composite of the lattice equivalences. -/
 @[simp]
@@ -231,8 +236,8 @@ theorem inv_latticeEquiv (e : IntegralAffineEquiv h h) :
 /-- Integral affine self-equivalences act on the ambient space by evaluation. -/
 instance : MulAction (IntegralAffineEquiv h h) V where
   smul e x := e x
-  one_smul x := coe_one x
-  mul_smul e f x := coe_mul e f x
+  one_smul x := one_apply x
+  mul_smul e f x := mul_apply e f x
 
 /-- The action of an integral affine self-equivalence on the ambient space is evaluation. -/
 @[simp]
