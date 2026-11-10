@@ -9,6 +9,7 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 public import Mathlib.Analysis.Matrix.Spectrum
 
 import TauCeti.Analysis.Complex.Basic
+import TauCeti.Analysis.Matrix.L2OpNorm
 
 /-!
 # Resolvents of Hermitian matrices
@@ -216,10 +217,7 @@ theorem l2_opNorm_one_add_sub_conj_smul_inv_sub_smul_one_le (hA : A.IsHermitian)
     (z : ℂ) : ‖1 + (z - conj z) • (A - z • 1)⁻¹‖ ≤ 1 := by
   rcases eq_or_ne z.im 0 with hz | hz
   · rw [Complex.conj_eq_iff_im.2 hz, sub_self, zero_smul, add_zero]
-    rcases subsingleton_or_nontrivial (Matrix n n ℂ) with h | h
-    · rw [Subsingleton.elim (1 : Matrix n n ℂ) 0, norm_zero]
-      exact zero_le_one
-    · exact CStarRing.norm_one.le
+    exact Matrix.l2_opNorm_one_le
   rw [hA.inv_sub_smul_one_eq_conjStarAlgAut_diagonal
     (hA.notMem_spectrum_of_im_ne_zero hz)]
   simp only [RCLike.ofReal_eq_complex_ofReal]
