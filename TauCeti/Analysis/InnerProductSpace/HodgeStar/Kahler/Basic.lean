@@ -190,8 +190,8 @@ theorem norm_kahlerForm_sq : ‖J.kahlerForm‖ ^ 2 = finrank ℝ V / 2 := by
 /-- `‖v ∧ J v‖² = ‖v‖⁴` for an orthogonal `J`, since `J v` is orthogonal to `v` and has the same
 norm. -/
 theorem norm_ιMulti_apply_sq (v : V) : ‖ιMulti ℝ 2 ![v, J v]‖ ^ 2 = ‖v‖ ^ 4 := by
-  rw [← real_inner_self_eq_norm_sq, inner_ιMulti_two, hJ, real_inner_comm, inner_apply_self hJ,
-    real_inner_self_eq_norm_sq]
+  rw [← real_inner_self_eq_norm_sq, inner_ιMulti_two, hJ, real_inner_comm,
+    inner_apply_self_eq_zero hJ, real_inner_self_eq_norm_sq]
   ring
 
 /-- The derivation action of `J` on two-forms kills the Kähler form: `D_J ω = 0`. -/
@@ -317,7 +317,7 @@ theorem exists_orthonormalBasis_apply_zero_eq {ξ : V} (hξ : ‖ξ‖ = 1) :
       J (e' 0) = e' 1 ∧ J (e' 2) = e' 3 := by
   classical
   have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
-  have hself (v : V) : ⟪v, J v⟫ = 0 := by rw [real_inner_comm, inner_apply_self hJ]
+  have hself (v : V) : ⟪v, J v⟫ = 0 := by rw [real_inner_comm, inner_apply_self_eq_zero hJ]
   -- The frame is `(ξ, J ξ, η, J η)` for a unit vector `η` orthogonal to `ξ` and `J ξ`.
   obtain ⟨η, hη, hηK⟩ := exists_norm_eq_one_forall_inner_eq_zero_of_card_lt_finrank (𝕜 := ℝ)
     ({ξ, J ξ} : Finset V) (by
