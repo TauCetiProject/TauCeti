@@ -10,33 +10,33 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Real
 /-!
 # Summability of products over a finite power
 
-If `f : β → ℝ` is nonnegative and summable, then so is `k ↦ ∏ i, f (k i)` on `ι → β` for a
-finite type `ι`. For instance a weight `∏ᵢ (1 + |kᵢ|)⁻²` on the lattice `ℤⁿ` is summable because
-`(1 + |m|)⁻²` is summable on `ℤ`.
+If `f i : κ i → ℝ` is nonnegative and summable for every `i` in a finite type `ι`, then so is
+`k ↦ ∏ i, f i (k i)` on `∀ i, κ i`. For instance a weight `∏ᵢ (1 + |kᵢ|)⁻²` on the lattice `ℤⁿ`
+is summable because `(1 + |m|)⁻²` is summable on `ℤ`.
 
 ## Main results
 
-* `Summable.prod_pi_of_nonneg`: the summability of `k ↦ ∏ i, f (k i)`.
+* `Summable.prod_pi_of_nonneg`: the summability of `k ↦ ∏ i, f i (k i)`.
 -/
 
 public section
 
 open Finset
 
-/-- If `f : β → ℝ` is nonnegative and summable, then so is `k ↦ ∏ i, f (k i)` on `ι → β` for a
-finite type `ι`. -/
-theorem Summable.prod_pi_of_nonneg {ι β : Type*} [Fintype ι] {f : β → ℝ} (hf : Summable f)
-    (h0 : 0 ≤ f) : Summable fun k : ι → β ↦ ∏ i, f (k i) := by
+/-- If `f i : κ i → ℝ` is nonnegative and summable for every `i` in a finite type `ι`, then so is
+`k ↦ ∏ i, f i (k i)` on `∀ i, κ i`. -/
+protected theorem Summable.prod_pi_of_nonneg {ι : Type*} {κ : ι → Type*} [Fintype ι]
+    {f : ∀ i, κ i → ℝ} (hf : ∀ i, Summable (f i)) (h0 : ∀ i, 0 ≤ f i) :
+    Summable fun k : ∀ i, κ i ↦ ∏ i, f i (k i) := by
   classical
-  refine summable_of_sum_le (c := (∑' b, f b) ^ Fintype.card ι)
-    (fun k ↦ prod_nonneg fun i _ ↦ h0 _) fun s ↦ ?_
-  calc ∑ k ∈ s, ∏ i, f (k i)
-      ≤ ∑ k ∈ Fintype.piFinset fun i ↦ s.image (· i), ∏ i, f (k i) :=
+  refine summable_of_sum_le (c := ∏ i, ∑' b, f i b)
+    (fun k ↦ prod_nonneg fun i _ ↦ h0 i _) fun s ↦ ?_
+  calc ∑ k ∈ s, ∏ i, f i (k i)
+      ≤ ∑ k ∈ Fintype.piFinset fun i ↦ s.image (· i), ∏ i, f i (k i) :=
         sum_le_sum_of_subset_of_nonneg
           (fun k hk ↦ Fintype.mem_piFinset.2 fun i ↦ mem_image_of_mem _ hk)
-          fun k _ _ ↦ prod_nonneg fun i _ ↦ h0 _
-    _ = ∏ i, ∑ b ∈ s.image (· i), f b := (prod_univ_sum _ _).symm
-    _ ≤ ∏ _i : ι, ∑' b, f b :=
-        prod_le_prod₀ (fun i _ ↦ sum_nonneg fun b _ ↦ h0 b)
-          fun i _ ↦ hf.sum_le_tsum _ fun b _ ↦ h0 b
-    _ = (∑' b, f b) ^ Fintype.card ι := by rw [prod_const, card_univ]
+          fun k _ _ ↦ prod_nonneg fun i _ ↦ h0 i _
+    _ = ∏ i, ∑ b ∈ s.image (· i), f i b := (prod_univ_sum _ _).symm
+    _ ≤ ∏ i, ∑' b, f i b :=
+        prod_le_prod₀ (fun i _ ↦ sum_nonneg fun b _ ↦ h0 i b)
+          fun i _ ↦ (hf i).sum_le_tsum _ fun b _ ↦ h0 i b

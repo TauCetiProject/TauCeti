@@ -93,8 +93,8 @@ private theorem latticeWeight_nonneg {n : ℕ} (d : Fin n → ℤ) : 0 ≤ latti
   prod_nonneg fun _ _ ↦ by positivity
 
 private theorem summable_latticeWeight {n : ℕ} : Summable (latticeWeight (n := n)) := by
-  refine Summable.prod_pi_of_nonneg (ι := Fin n) (f := fun m : ℤ ↦ ((1 + |(m : ℝ)|) ^ 2)⁻¹) ?_
-    fun m ↦ by positivity
+  refine Summable.prod_pi_of_nonneg (ι := Fin n) (f := fun _ (m : ℤ) ↦ ((1 + |(m : ℝ)|) ^ 2)⁻¹)
+    (fun _ ↦ ?_) fun _ m ↦ by positivity
   rw [summable_int_iff_summable_nat_and_neg]
   have h : Summable fun m : ℕ ↦ (((m + 1 : ℕ) : ℝ) ^ 2)⁻¹ :=
     (summable_nat_add_iff 1).2 (Real.summable_nat_pow_inv.2 one_lt_two)
