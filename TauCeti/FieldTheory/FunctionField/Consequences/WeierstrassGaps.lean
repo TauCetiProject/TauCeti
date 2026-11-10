@@ -165,7 +165,7 @@ theorem isPoleNumber_iff_dim_lt (hF : IsFunctionField k F) (P : Place k F) {n : 
     let _ := finiteDimensional_riemannRochSpace hF D
     simpa only [E, D, Divisor.dim_def] using Submodule.finrank_lt_finrank_of_lt hlt
   · intro hdim
-    exact P.exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_dim_lt hF hdim
+    exact P.exists_ord_eq_neg_and_forall_ne_ord_nonneg_of_dim_lt hdim
 
 /-- A positive integer is a gap exactly when the corresponding consecutive Riemann--Roch
 dimensions are equal. -/
