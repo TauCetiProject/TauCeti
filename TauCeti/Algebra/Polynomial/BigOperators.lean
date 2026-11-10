@@ -119,8 +119,10 @@ end ProductGrouping
 expected degree in characteristic zero. -/
 theorem natDegree_geom_sum₂ {S : Type*} [CommSemiring S] [CharZero S]
     {p q : S[X]} (hp : p.Monic) (hq : q.Monic)
-    (hdeg : p.natDegree = q.natDegree) {n : ℕ} (hn : 0 < n) :
+    (hdeg : p.natDegree = q.natDegree) (n : ℕ) :
     (∑ i ∈ range n, p ^ i * q ^ (n - 1 - i)).natDegree = (n - 1) * p.natDegree := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp
   have hd (i : ℕ) (hi : i ∈ range n) :
       (p ^ i * q ^ (n - 1 - i)).natDegree = (n - 1) * p.natDegree := by
     rw [(hp.pow i).natDegree_mul (hq.pow _), hp.natDegree_pow,
