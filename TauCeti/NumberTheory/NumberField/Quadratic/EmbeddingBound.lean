@@ -11,31 +11,32 @@ public import Mathlib.RingTheory.Norm.Defs
 public import TauCeti.NumberTheory.NumberField.Quadratic.ComplexEmbedding
 
 /-!
-# The two complex embeddings of `ℚ(√r)` and the coordinate bound
+# The two complex algebra maps of `ℚ[√r]` and the coordinate bound
 
-For every rational `r`, the model `QuadraticAlgebra ℚ r 0` of `ℚ(√r)` has two `ℚ`-algebra maps
-to `ℂ`, sending the generator `ω` to the two complex square roots `±s` of `r`, where
-`s = QuadraticAlgebra.sqrtRadicand r` is `√r` for `r ≥ 0` and `√(-r) · i` for `r < 0`. Every
-`ℚ`-algebra map to `ℂ` is one of them, for every `r`, since it sends `ω` to a square root of `r`.
-They are injective exactly when `r` is not a square in `ℚ`.
+For every rational `r`, the quadratic algebra `QuadraticAlgebra ℚ r 0 = ℚ[ω]/(ω² - r)` has two
+`ℚ`-algebra maps to `ℂ`, `σ₊` and `σ₋`, sending the generator `ω` to the two complex square roots
+`±s` of `r`, where `s = QuadraticAlgebra.sqrtRadicand r` is `√r` for `r ≥ 0` and `√(-r) · i` for
+`r < 0`. Every `ℚ`-algebra map to `ℂ` is one of them, for every `r`, since it sends `ω` to a
+square root of `r`. The two maps are distinct exactly when `r ≠ 0`, and they are injective exactly
+when `r` is not a square in `ℚ`. Only in that case is `QuadraticAlgebra ℚ r 0` the quadratic field
+`ℚ(√r)` and are `σ₊`, `σ₋` its two complex embeddings.
 
 The main result is the archimedean coordinate bound: for every `ℚ`-algebra map
 `σ : QuadraticAlgebra ℚ r 0 →ₐ[ℚ] ℂ` and every `z = u + vω`, `‖σ z‖ ≤ |u| + |v| √|r|`. It needs
 no nonsquare hypothesis, and specializes to the presented order `ℤ[√r]` for an integer `r`
 through the inclusion `QuadraticAlgebra ℤ r 0 → QuadraticAlgebra ℚ r 0`. Conversely the
-coordinates are recovered from the two embeddings, with `|u|` and `|v| √|r|` bounded by the mean
+coordinates are recovered from the two maps, with `|u|` and `|v| √|r|` bounded by the mean
 of `‖σ₊ z‖` and `‖σ₋ z‖`.
 
-For `r ≤ 0` the embedding `σ₊` is the distinguished embedding
-`QuadraticAlgebra.complexEmbedding`, and `σ₋` is its complex conjugate. For `r ≥ 0` both take
-real values, and they are exchanged by the quadratic involution `star`, which is then not complex
-conjugation.
+For `r ≤ 0` the map `σ₊` is the distinguished map `QuadraticAlgebra.complexEmbedding`, and `σ₋`
+is its complex conjugate. For `r ≥ 0` both take real values, and they are exchanged by the
+quadratic involution `star`, which is then not complex conjugation.
 
 ## Main definitions and results
 
 * `QuadraticAlgebra.sqrtRadicand r`: the complex square root of `r` used for `σ₊`.
-* `QuadraticAlgebra.sqrtEmbedding r`, `QuadraticAlgebra.negSqrtEmbedding r`: the embeddings
-  `σ₊ : ω ↦ s` and `σ₋ : ω ↦ -s`.
+* `QuadraticAlgebra.sqrtEmbedding r`, `QuadraticAlgebra.negSqrtEmbedding r`: the algebra maps
+  `σ₊ : ω ↦ s` and `σ₋ : ω ↦ -s`, which coincide at `r = 0`.
 * `QuadraticAlgebra.norm_embedding_le`: `‖σ z‖ ≤ |u| + |v| √|r|` for every `ℚ`-algebra map `σ`.
 * `QuadraticAlgebra.norm_embedding_algebraMap_le`: the same bound on `ℤ[√r]`.
 * `QuadraticAlgebra.algHom_eq_sqrtEmbedding_or_eq_negSqrtEmbedding`: every `ℚ`-algebra map to
@@ -46,9 +47,12 @@ conjugation.
 * `QuadraticAlgebra.sqrtEmbedding_mul_negSqrtEmbedding`,
   `QuadraticAlgebra.sqrtEmbedding_add_negSqrtEmbedding`: `σ₊ z · σ₋ z = norm z` and
   `σ₊ z + σ₋ z = trace z`; by `QuadraticAlgebra.sqrtEmbedding_mul_negSqrtEmbedding_eq_algebraNorm`
-  the product is also the field norm `Algebra.norm ℚ z`.
+  the product is also the algebra norm `Algebra.norm ℚ z`, which for nonsquare `r` is the field
+  norm of `ℚ(√r)/ℚ`.
 * `QuadraticAlgebra.abs_re_le`, `QuadraticAlgebra.abs_im_le`: coordinate recovery bounds.
-* `QuadraticAlgebra.isReal_sqrtEmbedding`: for `r ≥ 0` the embedding `σ₊` is real.
+* `QuadraticAlgebra.sqrtEmbedding_ne_negSqrtEmbedding`: `σ₊ ≠ σ₋` for `r ≠ 0`.
+* `QuadraticAlgebra.isReal_sqrtEmbedding`: for a nonsquare `r ≥ 0` the embedding `σ₊` of the
+  field `ℚ(√r)` is real.
 * `QuadraticAlgebra.forall_norm_sq_sqrtEmbedding_eq_norm_iff`: `‖σ₊ z‖² = norm z` for every `z`
   exactly when `r ≤ 0`.
 -/
@@ -59,8 +63,8 @@ open Complex ComplexConjugate NumberField
 
 namespace QuadraticAlgebra
 
-/-- The complex square root of a rational number `r` used to embed `ℚ(√r)`: `√r` if `r ≥ 0` and
-`√(-r) · i` if `r < 0`. Both formulas give `0` at `r = 0`. -/
+/-- The complex square root of a rational number `r` used to map `QuadraticAlgebra ℚ r 0` to `ℂ`:
+`√r` if `r ≥ 0` and `√(-r) · i` if `r < 0`. Both formulas give `0` at `r = 0`. -/
 noncomputable def sqrtRadicand (r : ℚ) : ℂ :=
   if 0 ≤ r then (√(r : ℝ) : ℂ) else (√(-(r : ℝ)) : ℂ) * I
 
@@ -79,12 +83,9 @@ variable (r) in
   rcases le_total 0 r with hr | hr
   · rw [sqrtRadicand_of_nonneg hr, ← ofReal_mul, Real.mul_self_sqrt (by exact_mod_cast hr)]
     simp
-  · rw [sqrtRadicand_of_nonpos hr]
-    have h : (√(-(r : ℝ)) : ℂ) * (√(-(r : ℝ)) : ℂ) = -(r : ℂ) := by
-      rw [← ofReal_mul, Real.mul_self_sqrt (by simpa using hr)]
-      push_cast
-      ring
-    linear_combination (I * I) * h - I_mul_I * (r : ℂ)
+  · rw [sqrtRadicand_of_nonpos hr, ← complexEmbedding_omega hr, ← map_mul,
+      omega_mul_omega_eq_algebraMap]
+    simp
 
 variable (r) in
 @[simp] theorem norm_sqrtRadicand : ‖sqrtRadicand r‖ = √|(r : ℝ)| := by
@@ -101,20 +102,22 @@ variable (r) in
     Rat.cast_eq_zero]
 
 /-- For `r ≥ 0` the chosen square root is real. -/
-theorem im_sqrtRadicand (hr : 0 ≤ r) : (sqrtRadicand r).im = 0 := by
+@[simp] theorem im_sqrtRadicand (hr : 0 ≤ r) : (sqrtRadicand r).im = 0 := by
   simp [sqrtRadicand_of_nonneg hr]
 
 /-- For `r ≤ 0` the chosen square root is purely imaginary. -/
-theorem conj_sqrtRadicand (hr : r ≤ 0) : conj (sqrtRadicand r) = -sqrtRadicand r := by
+@[simp] theorem conj_sqrtRadicand (hr : r ≤ 0) : conj (sqrtRadicand r) = -sqrtRadicand r := by
   simp [sqrtRadicand_of_nonpos hr]
 
 variable (r)
 
-/-- The embedding `σ₊ : ℚ(√r) → ℂ` sending `ω` to `sqrtRadicand r`. -/
+/-- The `ℚ`-algebra map `σ₊ : QuadraticAlgebra ℚ r 0 → ℂ` sending `ω` to `sqrtRadicand r`. It is
+an embedding of the field `ℚ(√r)` when `r` is not a square. -/
 noncomputable def sqrtEmbedding : QuadraticAlgebra ℚ r 0 →ₐ[ℚ] ℂ :=
   lift ⟨sqrtRadicand r, by simp [Rat.smul_def]⟩
 
-/-- The embedding `σ₋ : ℚ(√r) → ℂ` sending `ω` to `-sqrtRadicand r`. -/
+/-- The `ℚ`-algebra map `σ₋ : QuadraticAlgebra ℚ r 0 → ℂ` sending `ω` to `-sqrtRadicand r`. It
+is an embedding of the field `ℚ(√r)` when `r` is not a square, and equals `σ₊` when `r = 0`. -/
 noncomputable def negSqrtEmbedding : QuadraticAlgebra ℚ r 0 →ₐ[ℚ] ℂ :=
   lift ⟨-sqrtRadicand r, by simp [Rat.smul_def]⟩
 
@@ -146,13 +149,12 @@ theorem negSqrtEmbedding_apply_eq_sqrtEmbedding_star (z : QuadraticAlgebra ℚ r
 /-- **`σ₊ z · σ₋ z = norm z`**, for every `r`. -/
 theorem sqrtEmbedding_mul_negSqrtEmbedding (z : QuadraticAlgebra ℚ r 0) :
     sqrtEmbedding r z * negSqrtEmbedding r z = ((QuadraticAlgebra.norm z : ℚ) : ℂ) := by
-  rw [sqrtEmbedding_apply, negSqrtEmbedding_apply, norm_def]
-  push_cast
-  linear_combination (-(z.im : ℂ) ^ 2) * sqrtRadicand_mul_self r
+  rw [negSqrtEmbedding_apply_eq_sqrtEmbedding_star, ← map_mul, ← algebraMap_norm_eq_mul_star,
+    AlgHom.commutes, eq_ratCast]
 
-/-- **`σ₊ z · σ₋ z` is the field norm.** The product of the two embeddings is
-`Algebra.norm ℚ z`, the determinant of multiplication by `z`, which for nonsquare `r` is the norm
-of the field extension `ℚ(√r)/ℚ`. -/
+/-- **`σ₊ z · σ₋ z` is the algebra norm.** The product of the two maps is `Algebra.norm ℚ z`,
+the determinant of multiplication by `z`, which for nonsquare `r` is the norm of the field
+extension `ℚ(√r)/ℚ`. -/
 theorem sqrtEmbedding_mul_negSqrtEmbedding_eq_algebraNorm (z : QuadraticAlgebra ℚ r 0) :
     sqrtEmbedding r z * negSqrtEmbedding r z = (Algebra.norm ℚ z : ℂ) := by
   have h : Algebra.norm ℚ z = QuadraticAlgebra.norm z := by
@@ -163,9 +165,8 @@ theorem sqrtEmbedding_mul_negSqrtEmbedding_eq_algebraNorm (z : QuadraticAlgebra 
 /-- **`σ₊ z + σ₋ z = trace z`**, for every `r`. -/
 theorem sqrtEmbedding_add_negSqrtEmbedding (z : QuadraticAlgebra ℚ r 0) :
     sqrtEmbedding r z + negSqrtEmbedding r z = ((QuadraticAlgebra.trace z : ℚ) : ℂ) := by
-  rw [sqrtEmbedding_apply, negSqrtEmbedding_apply, trace_def]
-  push_cast
-  ring
+  rw [negSqrtEmbedding_apply_eq_sqrtEmbedding_star, ← map_add, ← algebraMap_trace_eq_add_star,
+    AlgHom.commutes, eq_ratCast]
 
 /-- Coordinate recovery for the first coordinate: `u = (σ₊ z + σ₋ z) / 2`. -/
 theorem re_eq_sqrtEmbedding_add_negSqrtEmbedding (z : QuadraticAlgebra ℚ r 0) :
@@ -188,7 +189,7 @@ theorem im_eq_sqrtEmbedding_sub_negSqrtEmbedding (hr : r ≠ 0) (z : QuadraticAl
   rw [eq_div_iff (mul_ne_zero two_ne_zero hs), sqrtEmbedding_apply, negSqrtEmbedding_apply]
   ring
 
-/-- The first coordinate is bounded by the mean of the two embeddings: `|u| ≤ (‖σ₊ z‖ + ‖σ₋ z‖)/2`.
+/-- The first coordinate is bounded by the mean of the two maps: `|u| ≤ (‖σ₊ z‖ + ‖σ₋ z‖)/2`.
 -/
 theorem abs_re_le (z : QuadraticAlgebra ℚ r 0) :
     |(z.re : ℝ)| ≤ (‖sqrtEmbedding r z‖ + ‖negSqrtEmbedding r z‖) / 2 := by
@@ -196,7 +197,7 @@ theorem abs_re_le (z : QuadraticAlgebra ℚ r 0) :
   gcongr
   exact norm_add_le _ _
 
-/-- The second coordinate, scaled by `√|r|`, is bounded by the mean of the two embeddings:
+/-- The second coordinate, scaled by `√|r|`, is bounded by the mean of the two maps:
 `|v| √|r| ≤ (‖σ₊ z‖ + ‖σ₋ z‖)/2`. -/
 theorem abs_im_mul_sqrt_le (z : QuadraticAlgebra ℚ r 0) :
     |(z.im : ℝ)| * √|(r : ℝ)| ≤ (‖sqrtEmbedding r z‖ + ‖negSqrtEmbedding r z‖) / 2 := by
@@ -205,7 +206,7 @@ theorem abs_im_mul_sqrt_le (z : QuadraticAlgebra ℚ r 0) :
   gcongr
   exact norm_sub_le _ _
 
-/-- For `r ≠ 0`, the second coordinate is bounded by the two embeddings:
+/-- For `r ≠ 0`, the second coordinate is bounded by the two maps:
 `|v| ≤ (‖σ₊ z‖ + ‖σ₋ z‖)/(2 √|r|)`. -/
 theorem abs_im_le (hr : r ≠ 0) (z : QuadraticAlgebra ℚ r 0) :
     |(z.im : ℝ)| ≤ (‖sqrtEmbedding r z‖ + ‖negSqrtEmbedding r z‖) / (2 * √|(r : ℝ)|) := by
@@ -213,8 +214,8 @@ theorem abs_im_le (hr : r ≠ 0) (z : QuadraticAlgebra ℚ r 0) :
   rw [le_div_iff₀ (by positivity)]
   linarith [abs_im_mul_sqrt_le z]
 
-/-- **Every `ℚ`-algebra map `ℚ(√r) → ℂ` is `σ₊` or `σ₋`**, for every rational `r`: it sends `ω`
-to a square root of `r`. -/
+/-- **Every `ℚ`-algebra map `QuadraticAlgebra ℚ r 0 → ℂ` is `σ₊` or `σ₋`**, for every rational
+`r`: it sends `ω` to a square root of `r`. -/
 theorem algHom_eq_sqrtEmbedding_or_eq_negSqrtEmbedding (σ : QuadraticAlgebra ℚ r 0 →ₐ[ℚ] ℂ) :
     σ = sqrtEmbedding r ∨ σ = negSqrtEmbedding r := by
   have hσ : σ ω * σ ω = sqrtRadicand r * sqrtRadicand r := by
@@ -224,13 +225,13 @@ theorem algHom_eq_sqrtEmbedding_or_eq_negSqrtEmbedding (σ : QuadraticAlgebra �
   · exact Or.inl (algHom_ext (by simp [h]))
   · exact Or.inr (algHom_ext (by simp [h]))
 
-/-- A `ℚ`-algebra map `ℚ(√r) → ℂ` sends `ω` to a complex number of norm `√|r|`. -/
+/-- A `ℚ`-algebra map `QuadraticAlgebra ℚ r 0 → ℂ` sends `ω` to a complex number of norm `√|r|`. -/
 theorem norm_apply_omega (σ : QuadraticAlgebra ℚ r 0 →ₐ[ℚ] ℂ) : ‖σ ω‖ = √|(r : ℝ)| := by
   rcases algHom_eq_sqrtEmbedding_or_eq_negSqrtEmbedding σ with rfl | rfl <;> simp
 
-/-- **The coordinate bound for a complex embedding.** For every `ℚ`-algebra map
-`σ : ℚ(√r) → ℂ` and every `z = u + vω`, `‖σ z‖ ≤ |u| + |v| √|r|`. No nonsquare hypothesis is
-needed. -/
+/-- **The coordinate bound for a complex algebra map.** For every `ℚ`-algebra map
+`σ : QuadraticAlgebra ℚ r 0 → ℂ` and every `z = u + vω`, `‖σ z‖ ≤ |u| + |v| √|r|`. No nonsquare
+hypothesis is needed. -/
 theorem norm_embedding_le (σ : QuadraticAlgebra ℚ r 0 →ₐ[ℚ] ℂ) (z : QuadraticAlgebra ℚ r 0) :
     ‖σ z‖ ≤ |(z.re : ℝ)| + |(z.im : ℝ)| * √|(r : ℝ)| := by
   have hz : σ z = (z.re : ℂ) + z.im * σ ω := by
@@ -241,8 +242,8 @@ theorem norm_embedding_le (σ : QuadraticAlgebra ℚ r 0 →ₐ[ℚ] ℂ) (z : Q
   exact norm_add_le _ _
 
 /-- **The coordinate bound on `ℤ[√r]`.** For an integer `r`, every `ℚ`-algebra map
-`σ : ℚ(√r) → ℂ` and every `z = u + vω` in the presented order `QuadraticAlgebra ℤ r 0`,
-`‖σ z‖ ≤ |u| + |v| √|r|`. -/
+`σ : QuadraticAlgebra ℚ r 0 → ℂ` and every `z = u + vω` in the presented order
+`QuadraticAlgebra ℤ r 0`, `‖σ z‖ ≤ |u| + |v| √|r|`. -/
 theorem norm_embedding_algebraMap_le {r : ℤ} (σ : QuadraticAlgebra ℚ r 0 →ₐ[ℚ] ℂ)
     (z : QuadraticAlgebra ℤ r 0) :
     ‖σ (algebraMap (QuadraticAlgebra ℤ r 0) (QuadraticAlgebra ℚ r ((0 : ℤ) : ℚ)) z)‖ ≤
@@ -252,8 +253,9 @@ theorem norm_embedding_algebraMap_le {r : ℤ} (σ : QuadraticAlgebra ℚ r 0 �
     norm_embedding_le σ _
   simpa only [Rat.cast_intCast] using h
 
-/-- **Injectivity of the embeddings.** A `ℚ`-algebra map `ℚ(√r) → ℂ` is injective exactly when
-`r` is not a square in `ℚ`. For a square `r = t²` it sends `ω - t` or `ω + t` to `0`. -/
+/-- **Injectivity of the algebra maps.** A `ℚ`-algebra map `QuadraticAlgebra ℚ r 0 → ℂ` is
+injective exactly when `r` is not a square in `ℚ`. For a square `r = t²` it sends `ω - t` or
+`ω + t` to `0`. -/
 theorem algHom_injective_iff (σ : QuadraticAlgebra ℚ r 0 →ₐ[ℚ] ℂ) :
     Function.Injective σ ↔ ¬ IsSquare r := by
   refine ⟨fun hσ ⟨t, ht⟩ => ?_, fun hr => ?_⟩
@@ -275,18 +277,17 @@ theorem negSqrtEmbedding_injective [Fact (¬ IsSquare r)] :
     Function.Injective (negSqrtEmbedding r) :=
   (algHom_injective_iff _).mpr Fact.out
 
-/-- For a nonsquare `r`, the two embeddings are distinct. -/
-theorem sqrtEmbedding_ne_negSqrtEmbedding [Fact (¬ IsSquare r)] :
+/-- For `r ≠ 0`, the two algebra maps are distinct; at `r = 0` they coincide. -/
+theorem sqrtEmbedding_ne_negSqrtEmbedding (hr : r ≠ 0) :
     sqrtEmbedding r ≠ negSqrtEmbedding r := by
   intro h
   have h0 : sqrtRadicand r = -sqrtRadicand r := by
     simpa using AlgHom.congr_fun h ω
-  have hr : r ≠ 0 := fun hr => Fact.out (p := ¬ IsSquare r) (hr ▸ ⟨0, by simp⟩)
   exact sqrtRadicand_eq_zero_iff.not.mpr hr (CharZero.eq_neg_self_iff.mp h0)
 
-/-! ### Comparison with complex conjugation and the distinguished embedding -/
+/-! ### Comparison with complex conjugation and the distinguished algebra map -/
 
-/-- For `r ≤ 0`, `σ₊` is the distinguished embedding `complexEmbedding`. -/
+/-- For `r ≤ 0`, `σ₊` is the distinguished algebra map `complexEmbedding`. -/
 theorem sqrtEmbedding_eq_complexEmbedding (hr : r ≤ 0) :
     sqrtEmbedding r = complexEmbedding hr :=
   algHom_ext (by simp [sqrtRadicand_of_nonpos hr])
@@ -297,12 +298,12 @@ theorem negSqrtEmbedding_apply_eq_conj (hr : r ≤ 0) (z : QuadraticAlgebra ℚ 
   simp [sqrtEmbedding_apply, negSqrtEmbedding_apply, conj_sqrtRadicand hr, sub_eq_add_neg]
 
 /-- For `r ≥ 0`, `σ₊` takes real values. -/
-theorem im_sqrtEmbedding (hr : 0 ≤ r) (z : QuadraticAlgebra ℚ r 0) :
+@[simp] theorem im_sqrtEmbedding (hr : 0 ≤ r) (z : QuadraticAlgebra ℚ r 0) :
     (sqrtEmbedding r z).im = 0 := by
   simp [sqrtEmbedding_apply, im_sqrtRadicand hr]
 
 /-- For `r ≥ 0`, `σ₋` takes real values. -/
-theorem im_negSqrtEmbedding (hr : 0 ≤ r) (z : QuadraticAlgebra ℚ r 0) :
+@[simp] theorem im_negSqrtEmbedding (hr : 0 ≤ r) (z : QuadraticAlgebra ℚ r 0) :
     (negSqrtEmbedding r z).im = 0 := by
   simp [negSqrtEmbedding_apply, im_sqrtRadicand hr]
 
