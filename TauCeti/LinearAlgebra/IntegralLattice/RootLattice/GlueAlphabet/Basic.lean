@@ -308,7 +308,9 @@ not. -/
 theorem isNondegenerate_glueAlphabet (t : DynkinType) (ht : t.IsSimplyLaced) :
     (t.glueAlphabet ht).IsNondegenerate := by
   cases t with
-  | A n => exact isNondegenerate_typeAStandardQuadraticModule n
+  | A n =>
+    rw [glueAlphabet_A n ht]
+    exact isNondegenerate_typeAStandardQuadraticModule n
   | D n =>
     by_cases hn : Even n
     · rw [glueAlphabet_D_of_even n ht hn]

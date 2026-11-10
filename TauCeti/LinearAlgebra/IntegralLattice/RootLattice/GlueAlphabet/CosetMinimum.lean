@@ -275,11 +275,13 @@ theorem quadratic_glueAlphabet_D_of_even (n : ℕ) (ht : (D n).IsSimplyLaced) (h
   rcases (by decide : ∀ z : ZMod 2, z = 0 ∨ z = 1) x with rfl | rfl <;>
     rcases (by decide : ∀ z : ZMod 2, z = 0 ∨ z = 1) y with rfl | rfl
   · exact (QuadraticMap.map_zero _).trans (by simp)
-  · simp [Prod.ext_iff, checkerboardStandardQuadraticModule_quadratic_zero_one]
+  · simp only [checkerboardStandardQuadraticModule_quadratic_zero_one, Prod.ext_iff, Prod.fst_zero,
+      Prod.snd_zero, one_ne_zero, and_false, ↓reduceIte, zero_ne_one, and_self]
     congr 1
     ring
   · simp
-  · simp [Prod.ext_iff, checkerboardStandardQuadraticModule_quadratic_one_one]
+  · simp only [checkerboardStandardQuadraticModule_quadratic_one_one, Prod.ext_iff, Prod.fst_zero,
+      one_ne_zero, Prod.snd_zero, and_self, ↓reduceIte, and_false]
     congr 1
     ring
 
@@ -295,17 +297,18 @@ theorem quadratic_glueAlphabet_D_of_odd (n : ℕ) (ht : (D n).IsSimplyLaced) (hn
     ← (FiniteQuadraticModule.Isometry.ofEq (glueAlphabet_D_of_odd n ht hn)).map_app a, hb]
   rcases (by decide : ∀ z : ZMod 4, z = 0 ∨ z = 1 ∨ z = 2 ∨ z = 3) b with rfl | rfl | rfl | rfl
   · exact (QuadraticMap.map_zero _).trans (by simp)
-  · simp [checkerboardCyclicQuadraticModule_quadratic_one,
-      show (1 : ZMod 4) ≠ 0 by decide, show (1 : ZMod 4) ≠ 2 by decide]
+  · simp only [checkerboardCyclicQuadraticModule_quadratic_one, show (1 : ZMod 4) ≠ 0 by decide,
+      ↓reduceIte, show (1 : ZMod 4) ≠ 2 by decide]
     congr 1
     ring
-  · simp [checkerboardCyclicQuadraticModule_quadratic_two n hn, show (2 : ZMod 4) ≠ 0 by decide]
+  · simp only [checkerboardCyclicQuadraticModule_quadratic_two n hn, one_div,
+      show (2 : ZMod 4) ≠ 0 by decide, ↓reduceIte]
   · have h3 : (checkerboardCyclicQuadraticModule n).quadratic (3 : ZMod 4) =
         (checkerboardCyclicQuadraticModule n).quadratic (1 : ZMod 4) := by
       rw [show (3 : ZMod 4) = -1 by decide]
       exact QuadraticMap.map_neg _ _
     rw [h3, checkerboardCyclicQuadraticModule_quadratic_one]
-    simp [show (3 : ZMod 4) ≠ 0 by decide, show (3 : ZMod 4) ≠ 2 by decide]
+    simp only [show (3 : ZMod 4) ≠ 0 by decide, ↓reduceIte, show (3 : ZMod 4) ≠ 2 by decide]
     congr 1
     ring
 
@@ -315,7 +318,8 @@ theorem quadratic_glueAlphabet_E6 (ht : E6.IsSimplyLaced) (a : ZMod 3) :
       ((E6.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) := by
   rcases (by decide : ∀ z : ZMod 3, z = 0 ∨ z = 1 ∨ z = 2) a with rfl | rfl | rfl
   · exact (QuadraticMap.map_zero _).trans (by simp)
-  · simp [typeE₆StandardQuadraticModule_quadratic_one, show (1 : ZMod 3) ≠ 0 by decide]
+  · simp only [typeE₆StandardQuadraticModule_quadratic_one, glueMinimum_E6,
+      show (1 : ZMod 3) ≠ 0 by decide, ↓reduceIte]
     congr 1
     norm_num
   · have h2 : typeE₆StandardQuadraticModule.quadratic (2 : ZMod 3) =
@@ -323,7 +327,7 @@ theorem quadratic_glueAlphabet_E6 (ht : E6.IsSimplyLaced) (a : ZMod 3) :
       rw [show (2 : ZMod 3) = -1 by decide]
       exact QuadraticMap.map_neg _ _
     rw [h2, typeE₆StandardQuadraticModule_quadratic_one]
-    simp [show (2 : ZMod 3) ≠ 0 by decide]
+    simp only [glueMinimum_E6, show (2 : ZMod 3) ≠ 0 by decide, ↓reduceIte]
     congr 1
     norm_num
 
@@ -333,7 +337,8 @@ theorem quadratic_glueAlphabet_E7 (ht : E7.IsSimplyLaced) (a : ZMod 2) :
       ((E7.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) := by
   rcases (by decide : ∀ z : ZMod 2, z = 0 ∨ z = 1) a with rfl | rfl
   · exact (QuadraticMap.map_zero _).trans (by simp)
-  · simp [typeE₇StandardQuadraticModule_quadratic_one, show (1 : ZMod 2) ≠ 0 by decide]
+  · simp only [typeE₇StandardQuadraticModule_quadratic_one, glueMinimum_E7,
+      show (1 : ZMod 2) ≠ 0 by decide, ↓reduceIte]
     congr 1
     norm_num
 
@@ -344,6 +349,8 @@ named by `a` (`isLeast_glueMinimum`). -/
 theorem quadratic_glueAlphabet_eq_glueMinimum_div_two (t : DynkinType) (ht : t.IsSimplyLaced)
     (a : t.glueAlphabet ht) :
     (t.glueAlphabet ht).quadratic a = ((t.glueMinimum ht a / 2 : ℚ) : AddCircle (1 : ℚ)) := by
+  -- The glue alphabets of `A n`, `E6` and `E7` are the standard models by `rfl`
+  -- (`glueAlphabet_A`, `glueAlphabet_E6`, `glueAlphabet_E7`), so `a` lies in the standard model.
   cases t with
   | A n => exact quadratic_glueAlphabet_A n ht a
   | D n =>
