@@ -40,6 +40,7 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
 * `TemperedDistribution.MemSobolev.smul_of_tower`: `H^{s,p}` is closed under scalar
   multiplication by scalars acting through `ℂ`, such as real numbers.
 * `TemperedDistribution.MemSobolev.toBesselPotentialSpace_add`,
+  `TemperedDistribution.MemSobolev.toBesselPotentialSpace_neg`,
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_sub`,
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_smul`,
   `TemperedDistribution.MemSobolev.toBesselPotentialSpace_sum`: the element of `H^{s,p}` defined
@@ -140,6 +141,14 @@ theorem MemSobolev.toBesselPotentialSpace_add {s : ℝ} {p : ENNReal} [Fact (1 �
     {f g : 𝓢'(E, F)} (hf : MemSobolev s p f) (hg : MemSobolev s p g)
     (h : MemSobolev s p (f + g)) :
     h.toBesselPotentialSpace = hf.toBesselPotentialSpace + hg.toBesselPotentialSpace :=
+  BesselPotentialSpace.ext (by simp)
+
+/-- The element of `H^{s,p}` defined by a negation is the negation of the element defined by
+`f`. -/
+@[simp]
+theorem MemSobolev.toBesselPotentialSpace_neg {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
+    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) (h : MemSobolev s p (-f)) :
+    h.toBesselPotentialSpace = -hf.toBesselPotentialSpace :=
   BesselPotentialSpace.ext (by simp)
 
 /-- The element of `H^{s,p}` defined by a difference is the difference of the elements defined
