@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Datum.Steinberg
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Closure
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.DiagramAutomorphism.CharacterMap
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Steinberg
 import all TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
@@ -174,12 +172,29 @@ theorem scSteinberg_pow_twistOrder :
       (d.1.dynkinType.scWeightBasis d.1.dynkinType_valid)
       (d.1.dynkinType.scWeight d.1.dynkinType_valid) A)
   let φ := MulDistribMulAction.toMonoidEnd (MulAut G) G
+  -- The evaluation action forgets only the inverse, so its image is the underlying
+  -- endomorphism whose power occurs in the generic Steinberg power law.
+  have hφ : φ γ = (show _root_.Monoid.End G from γ.toMonoidHom) := rfl
   have hp := (φ.map_pow γ d.twistOrder).symm.trans ((congrArg φ hγ).trans φ.map_one)
-  change (show _root_.Monoid.End _ from γ.toMonoidHom) ^ d.twistOrder = 1 at hp
+  simp only [hφ] at hp
+  -- Identify the generic numbered symmetry with the indexed diagram action, so that
+  -- the transported twist-order relation applies to the graph factor of that law.
+  have hsym : kostantNumberedSymmetryPoints
+      (d.1.dynkinType.scLattice d.1.dynkinType_valid).toAddSubgroup
+      (d.1.dynkinType.scWeightBasis d.1.dynkinType_valid)
+      (d.1.dynkinType.scModuleDiagramEquiv d.1.dynkinType_valid
+        d.diagramPerm_mem_diagramSymmetry)
+      (fun _ => d.1.dynkinType.scModuleDiagramEquiv_mem_scLattice_iff
+        d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry) A _
+      (map_kostantToralPointsSubgroup_conj_numberedSymmetryMatrix
+        _ _ _ _ _ _ _ _ (DynkinType.diagramRootGeneratorPerm d.diagramPerm) _ _
+        (d.1.dynkinType.scModuleDiagramEquiv_representation_rootGenerator
+          d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry)
+        (DynkinType.diagramRootGeneratorPerm d.diagramPerm).surjective d.diagramPerm
+        (fun _ _ hxy => d.1.dynkinType.scWeight_apply_eq_of_repr_scModuleDiagramEquiv_ne_zero
+          d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry hxy) A) = γ := rfl
   dsimp only [scSteinberg]
-  simp only [kostantToralSteinberg_pow]
-  change (show _root_.Monoid.End _ from γ.toMonoidHom) ^ d.twistOrder * _ = _
-  simp only [hp]
+  simp only [kostantToralSteinberg_pow, hsym, hp]
   exact one_mul _
 
 end
