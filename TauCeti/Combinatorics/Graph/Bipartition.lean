@@ -213,6 +213,78 @@ theorem target_mem {L R : Finset V(G)} (hLR : G.IsBipartition L R) {x y : V(G)}
 
 end BipartiteHom
 
+/-- Orienting each edge from the left side gives exactly one bipartite arrow per actual edge. -/
+noncomputable def IsBipartition.bipartiteEdgeEquiv (hLR : G.IsBipartition L R) :
+    (Σ x, Σ y, G.BipartiteHom L x y) ≃ E(G) :=
+  Equiv.ofBijective (fun a ↦ a.2.2.edge) ⟨by
+    rintro ⟨x, y, a⟩ ⟨z, w, b⟩ hab
+    have hab' : a.edge = b.edge := hab
+    have hxz : x = z := by
+      obtain ⟨v, hv, hvu⟩ := hLR.existsUnique_mem_left_inc a.edge
+      exact (hvu x ⟨a.source_mem, a.isLink.inc_left⟩).trans
+        (hvu z ⟨b.source_mem, hab' ▸ b.isLink.inc_left⟩).symm
+    subst z
+    have hyw : y = w := Subtype.ext (a.isLink.right_unique (hab' ▸ b.isLink))
+    subst w
+    exact congrArg (fun e : G.BipartiteHom L x y ↦
+      (⟨x, y, e⟩ : Σ x, Σ y, G.BipartiteHom L x y)) (BipartiteHom.ext hab'), by
+    intro e
+    obtain ⟨x, hx, -⟩ := hLR.existsUnique_mem_left_inc e
+    exact ⟨⟨x, ⟨hx.2.other, hx.2.isLink_other.right_mem⟩,
+      ⟨e, hx.2.isLink_other, hx.1⟩⟩, rfl⟩⟩
+
+@[simp]
+theorem IsBipartition.bipartiteEdgeEquiv_apply (hLR : G.IsBipartition L R)
+    (a : Σ x, Σ y, G.BipartiteHom L x y) :
+    hLR.bipartiteEdgeEquiv a = a.2.2.edge :=
+  (rfl)
+
+section Sums
+
+variable [Fintype V(G)] [Fintype E(G)] {M : Type*} [AddCommMonoid M]
+
+/-- At a vertex in the left side, the outgoing bipartite arrows count each incident edge once. -/
+theorem sum_bipartiteHom_out (f : E(G) → M) {x : V(G)} (hx : x ∈ L) :
+    ∑ y, ∑ e : G.BipartiteHom L x y, f e.edge =
+      ∑ e ∈ G.incidentEdges {x}, f e := by
+  classical
+  rw [← Fintype.sum_sigma (fun a : Σ y, G.BipartiteHom L x y ↦ f a.2.edge)]
+  refine sum_bij (fun a _ ↦ a.2.edge) (fun a _ ↦ ?_) (fun a _ b _ hab ↦ ?_)
+    (fun e he ↦ ?_) (fun _ _ ↦ rfl)
+  · exact (mem_incidentEdges G).2 ⟨x, by simp, a.2.isLink.inc_left⟩
+  · obtain ⟨y, a⟩ := a
+    obtain ⟨z, b⟩ := b
+    have hyz : y = z := Subtype.ext (a.isLink.right_unique (hab ▸ b.isLink))
+    subst z
+    exact congrArg (Sigma.mk y) (BipartiteHom.ext hab)
+  · obtain ⟨v, hv, hev⟩ := (mem_incidentEdges G).1 he
+    obtain rfl := mem_singleton.1 hv
+    exact ⟨⟨⟨hev.other, hev.isLink_other.right_mem⟩, ⟨e, hev.isLink_other, hx⟩⟩,
+      mem_univ _, rfl⟩
+
+/-- At a vertex in the right side, the incoming bipartite arrows count each incident edge once. -/
+theorem IsBipartition.sum_bipartiteHom_in (hLR : G.IsBipartition L R) (f : E(G) → M)
+    {x : V(G)} (hx : x ∈ R) :
+    ∑ y, ∑ e : G.BipartiteHom L y x, f e.edge =
+      ∑ e ∈ G.incidentEdges {x}, f e := by
+  classical
+  rw [← Fintype.sum_sigma (fun a : Σ y, G.BipartiteHom L y x ↦ f a.2.edge)]
+  refine sum_bij (fun a _ ↦ a.2.edge) (fun a _ ↦ ?_) (fun a _ b _ hab ↦ ?_)
+    (fun e he ↦ ?_) (fun _ _ ↦ rfl)
+  · exact (mem_incidentEdges G).2 ⟨x, by simp, a.2.isLink.inc_right⟩
+  · obtain ⟨y, a⟩ := a
+    obtain ⟨z, b⟩ := b
+    have hyz : y = z := Subtype.ext (a.isLink.left_unique (hab ▸ b.isLink))
+    subst z
+    exact congrArg (Sigma.mk y) (BipartiteHom.ext hab)
+  · obtain ⟨v, hv, hev⟩ := (mem_incidentEdges G).1 he
+    obtain rfl := mem_singleton.1 hv
+    let y : V(G) := ⟨hev.other, hev.isLink_other.right_mem⟩
+    have hy : y ∈ L := hLR.mem_left_of_isLink hev.isLink_other hx
+    exact ⟨⟨y, ⟨e, hev.isLink_other.symm, hy⟩⟩, mem_univ _, rfl⟩
+
+end Sums
+
 end Graph
 
 namespace SimpleGraph
