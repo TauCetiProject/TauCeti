@@ -138,15 +138,17 @@ section Subgroup
 
 variable (H K : Subgroup G)
 
+omit [Finite G] in
 /-- **The subgroup form of the classification.** The trivial representations of two subgroups `H`
-and `K` of a finite group induce to equivalent representations of `G`, over a field of
+and `K` of finite index in a group `G` induce to equivalent representations of `G`, over a field of
 characteristic zero, exactly when every `g : G` fixes as many cosets of `H` as of `K`.
 
 The induced representations are the permutation representations on the coset spaces
 (`TauCeti.indTrivialEquiv`), so this is
 `TauCeti.nonempty_equiv_ofMulAction_iff_forall_natCard_fixedBy_eq` at `X = G ⧸ H` and
 `Y = G ⧸ K`. -/
-theorem nonempty_equiv_ind_trivial_iff_forall_natCard_fixedBy_eq [CharZero k] :
+theorem nonempty_equiv_ind_trivial_iff_forall_natCard_fixedBy_eq [CharZero k]
+    [Finite (G ⧸ H)] [Finite (G ⧸ K)] :
     Nonempty (((Representation.trivial k H k).ind H.subtype).Equiv
         ((Representation.trivial k K k).ind K.subtype)) ↔
       ∀ g : G, Nat.card (fixedBy (G ⧸ H) g) = Nat.card (fixedBy (G ⧸ K) g) := by
