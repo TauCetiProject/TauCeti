@@ -16,7 +16,7 @@ import TauCeti.Topology.Semicontinuity.CompactInfimum
 /-!
 # Local-to-global homotopy lifting over numerable covers
 
-Dold's local-to-global theorem for fibrations: let `p : E → B` be a continuous map and
+Dold's local-to-global theorem for fibrations: let `p : E → B` be a map and
 `(U i)_{i ∈ ι}` a numerable cover of `B`, meaning there exists a locally finite partition of unity
 `ρ : PartitionOfUnity ι B` with `support (ρ i) ⊆ U i` for all `i`. If for a space `A` each
 restriction `p ⁻¹' U i → U i` has the homotopy lifting property with respect to every open subset
@@ -32,7 +32,7 @@ Hurewicz fibration (`TauCeti.isHurewiczFibration_of_isOpenCover`).
 
 ## Implementation notes
 
-Given a homotopy `H : C(I × A, B)` starting at `p ∘ f` on a nonempty space `A`:
+Given a homotopy `H : C(I × A, B)` starting at `p ∘ f` on a space `A`:
 
 1. For each subdivision number `m + 1` and tuple `α : Fin (m + 1) → ι`, define the tube weight
    `η m α a = ⨅ k, ⨅ t ∈ [k/(m+1), (k+1)/(m+1)], ρ (α k) (H (t, a))`. Compactness of the segments
@@ -65,7 +65,6 @@ Given a homotopy `H : C(I × A, B)` starting at `p ∘ f` on a nonempty space `A
 
 * A. Dold, *Partitions of unity in the theory of fibrations*, Ann. of Math. (2) 78 (1963),
   223–255, Theorem 4.8.
-* A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf), Theorem 4.42.
 -/
 
 public section
