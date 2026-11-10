@@ -81,9 +81,7 @@ theorem IsPoissonRandomMeasure.hasLaw_eval_pi (h : IsPoissonRandomMeasure P N Λ
   intro i
   by_cases hi : Λ (A i) = ∞
   · simp only [hi, ↓reduceIte]
-    have hc : HasLaw (fun _ : Ω => (∞ : ℝ≥0∞)) (Measure.dirac ∞) P := by
-      exact ⟨measurable_const.aemeasurable, by simp⟩
-    exact hc.congr (h.ae_eq_top (hA i) hi)
+    exact hasLaw_dirac_of_ae_eq (h.ae_eq_top (hA i) hi)
   · simpa only [hi, ↓reduceIte] using h.hasLaw (hA i) (lt_top_iff_ne_top.mpr hi)
 
 /-- Poisson random measures with the same intensity have the same law, including on
