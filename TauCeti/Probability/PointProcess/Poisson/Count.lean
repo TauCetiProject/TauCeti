@@ -42,7 +42,6 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 namespace IsPoissonRandomMeasure
 
 /-- Each natural-valued cumulative count of a Poisson random measure is measurable. -/
-@[fun_prop]
 theorem measurable_nat_count (h : IsPoissonRandomMeasure P M Λ) (t : ℝ≥0) :
     Measurable (fun ω ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊) :=
   ((Measure.measurable_coe measurableSet_Ioc).comp h.measurable).ennreal_toNNReal.nat_floor
