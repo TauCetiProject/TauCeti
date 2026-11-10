@@ -80,20 +80,20 @@ variable {K : X →L[𝕜] X}
 
 namespace IsCompactOperator
 
-/-- A bounded sequence whose `(1 - K)`-images tend to `0` has a subsequence converging to a point
-of `ker (1 - K)`. -/
-private theorem _root_.IsCompactOperator.exists_subseq_tendsto_mem_ker (hK : IsCompactOperator K)
-    {R : ℝ} {v : ℕ → X} (hvle : ∀ n, ‖v n‖ ≤ R)
-    (hAtendsto : Tendsto (fun n => (1 - K : X →L[𝕜] X) (v n)) atTop (𝓝 0)) :
+/-- A bounded sequence whose `(1 - K)`-images tend to `z` has a subsequence converging to a point
+`y` with `(1 - K) y = z`. -/
+private theorem _root_.IsCompactOperator.exists_subseq_tendsto_one_sub_apply_eq
+    (hK : IsCompactOperator K) {R : ℝ} {v : ℕ → X} (hvle : ∀ n, ‖v n‖ ≤ R) {z : X}
+    (hAtendsto : Tendsto (fun n => (1 - K : X →L[𝕜] X) (v n)) atTop (𝓝 z)) :
     ∃ (y : X) (ψ : ℕ → ℕ), StrictMono ψ ∧ Tendsto (fun k => v (ψ k)) atTop (𝓝 y) ∧
-      y ∈ LinearMap.ker ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) := by
+      (1 - K : X →L[𝕜] X) y = z := by
   obtain ⟨y, ψ, hψ, hψy⟩ := IsCompactOperator.exists_subseq_tendsto hK hvle
   have hAψ := hAtendsto.comp hψ.tendsto_atTop
   -- `v = (1 - K) v + K v`, and both summands converge along the subsequence.
-  have hvsub : Tendsto (fun k => v (ψ k)) atTop (𝓝 y) := by
+  have hvsub : Tendsto (fun k => v (ψ k)) atTop (𝓝 (z + y)) := by
     simpa [Function.comp_def] using hAψ.add hψy
-  exact ⟨y, ψ, hψ, hvsub, LinearMap.mem_ker.mpr <|
-    tendsto_nhds_unique (((1 - K : X →L[𝕜] X).continuous.tendsto y).comp hvsub) hAψ⟩
+  exact ⟨z + y, ψ, hψ, hvsub,
+    tendsto_nhds_unique (((1 - K : X →L[𝕜] X).continuous.tendsto (z + y)).comp hvsub) hAψ⟩
 
 /-- On a closed subspace `M` meeting `ker (1 - K)` only in `0`, the operator `1 - K` is bounded
 below. Unlike the general compact-error estimate theorem, this does not require a complete
@@ -118,10 +118,10 @@ theorem _root_.IsCompactOperator.exists_pos_mul_norm_le_of_disjoint_ker (hK : Is
       _ = 1 / (n + 1) * ‖d • u‖ := by rw [norm_smul]; ring
       _ ≤ 1 / (n + 1) := mul_le_of_le_one_right (by positivity) hdlt.le
   choose v hvM hvle hvge hAv using hshell
-  obtain ⟨y, ψ, -, hvsub, hyker⟩ := IsCompactOperator.exists_subseq_tendsto_mem_ker hK hvle
+  obtain ⟨y, ψ, -, hvsub, hyker⟩ := hK.exists_subseq_tendsto_one_sub_apply_eq hvle
     (squeeze_zero_norm hAv tendsto_one_div_add_atTop_nhds_zero_nat)
   have hyM : y ∈ M := hM.mem_of_tendsto hvsub (.of_forall fun k => hvM (ψ k))
-  have hy0 : y = 0 := by simpa using hdisj.le_bot ⟨hyker, hyM⟩
+  have hy0 : y = 0 := by simpa using hdisj.le_bot ⟨LinearMap.mem_ker.2 hyker, hyM⟩
   have hyge : ‖c‖⁻¹ ≤ ‖y‖ := ge_of_tendsto' hvsub.norm fun k => hvge (ψ k)
   rw [hy0, norm_zero] at hyge
   exact hyge.not_gt (by positivity)
@@ -154,28 +154,25 @@ private theorem _root_.IsCompactOperator.exists_eq_succ_of_chain (hK : IsCompact
 
 variable [IsRCLikeNormedField 𝕜]
 
-/-- Every power of a compact perturbation of the identity has closed range. -/
-theorem _root_.IsCompactOperator.isClosed_range_pow_one_sub
-    (hK : IsCompactOperator K) (n : ℕ) :
-    IsClosed (LinearMap.range (((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ^ n) : Set X) := by
+/-- A compact perturbation of the identity has closed range. No completeness of `X` is needed. -/
+theorem _root_.IsCompactOperator.isClosed_range_one_sub (hK : IsCompactOperator K) :
+    IsClosed (LinearMap.range ((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) : Set X) := by
   have : CompleteSpace 𝕜 := by
     let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
     infer_instance
-  set A : X →L[𝕜] X := (1 - K) ^ n with hA
-  have hK' : IsCompactOperator (1 - A : X →L[𝕜] X) := hK.isCompactOperator_one_sub_pow n
-  have hbound : ∀ x, ‖x‖ ≤ 1 * ‖A x‖ + ‖(1 - A : X →L[𝕜] X) x‖ :=
-    fun x ↦ by simpa using norm_le_norm_add_norm_sub' x (A x)
-  have := A.finiteDimensional_ker_of_compact_estimate hK' hbound
+  obtain ⟨A, hA⟩ : ∃ A : X →L[𝕜] X, A = 1 - K := ⟨_, rfl⟩
+  rw [← hA]
+  have hbound : ∀ x, ‖x‖ ≤ 1 * ‖A x‖ + ‖K x‖ :=
+    fun x ↦ by simpa [hA] using norm_le_norm_add_norm_sub' x (A x)
+  have := A.finiteDimensional_ker_of_compact_estimate hK hbound
   obtain ⟨M, hMclosed, hMcompl⟩ :=
     (Submodule.ClosedComplemented.of_finiteDimensional A.ker).exists_isClosed_isCompl
-  obtain ⟨c, hcpos, hc⟩ := hK'.exists_pos_mul_norm_le_of_disjoint_ker hMclosed
-    (by simpa using hMcompl.disjoint)
+  obtain ⟨c, hcpos, hc⟩ := hK.exists_pos_mul_norm_le_of_disjoint_ker hMclosed
+    (by rw [← hA]; simpa using hMcompl.disjoint)
+  rw [← hA] at hc
   have hrange : (A.range : Set X) = A '' M := by
     rw [← Submodule.map_eq_range_iff.mpr hMcompl.codisjoint.symm, Submodule.map_coe]
-    rfl
-  have hpow : LinearMap.range (((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ^ n) = A.range := by
-    rw [hA, ContinuousLinearMap.toLinearMap_pow]
-  rw [hpow]
+    simp only [ContinuousLinearMap.coe_coe]
   refine isSeqClosed_iff_isClosed.mp fun y z hy hyz ↦ ?_
   rw [hrange] at hy ⊢
   choose x hxM hxy using hy
@@ -183,14 +180,16 @@ theorem _root_.IsCompactOperator.isClosed_range_pow_one_sub
   have hxle : ∀ k, ‖x k‖ ≤ R / c := fun k ↦ by
     rw [le_div_iff₀ hcpos, mul_comm]
     exact (hc _ (hxM k)).trans (by simpa [hxy k] using hR ⟨k, rfl⟩)
-  obtain ⟨w, ψ, hψ, hw⟩ := hK'.exists_subseq_tendsto hxle
-  have hsub : Tendsto (fun k ↦ x (ψ k)) atTop (𝓝 (z + w)) := by
-    have := (hyz.comp hψ.tendsto_atTop).add hw
-    simpa [Function.comp_def, hxy] using this
-  have hxM' : z + w ∈ M := hMclosed.mem_of_tendsto hsub (.of_forall fun k ↦ hxM (ψ k))
-  refine ⟨z + w, hxM', ?_⟩
-  exact tendsto_nhds_unique ((A.continuous.tendsto _).comp hsub)
-    (by simpa [Function.comp_def, hxy] using hyz.comp hψ.tendsto_atTop)
+  obtain ⟨w, ψ, -, hsub, hAw⟩ := hK.exists_subseq_tendsto_one_sub_apply_eq hxle
+    (by rw [← hA]; simpa [hxy] using hyz)
+  exact ⟨w, hMclosed.mem_of_tendsto hsub (.of_forall fun k ↦ hxM (ψ k)), by rwa [hA]⟩
+
+/-- Every power of a compact perturbation of the identity has closed range. -/
+theorem _root_.IsCompactOperator.isClosed_range_pow_one_sub
+    (hK : IsCompactOperator K) (n : ℕ) :
+    IsClosed (LinearMap.range (((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ^ n) : Set X) := by
+  have h := (hK.isCompactOperator_one_sub_pow n).isClosed_range_one_sub
+  rwa [sub_sub_cancel, ContinuousLinearMap.toLinearMap_pow] at h
 
 /-- The ranges of powers of a compact perturbation of the identity eventually stabilise. -/
 theorem _root_.IsCompactOperator.exists_range_pow_succ_eq_one_sub
@@ -205,6 +204,21 @@ theorem _root_.IsCompactOperator.exists_range_pow_succ_eq_one_sub
     obtain ⟨z, rfl⟩ := hx
     refine ⟨z, ?_⟩
     simp [pow_succ', mul_apply_eq_comp]
+
+/-- The kernel of every power of a compact perturbation of the identity is finite dimensional. -/
+theorem _root_.IsCompactOperator.finiteDimensional_ker_pow_one_sub (hK : IsCompactOperator K)
+    (n : ℕ) :
+    FiniteDimensional 𝕜 (LinearMap.ker (((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ^ n)) := by
+  have : CompleteSpace 𝕜 := by
+    let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+    infer_instance
+  set A : X →L[𝕜] X := 1 - K with hA
+  have hKp : IsCompactOperator (1 - A ^ n : X →L[𝕜] X) := by
+    simpa only [hA] using hK.isCompactOperator_one_sub_pow n
+  have h := (A ^ n).finiteDimensional_ker_of_compact_estimate hKp (C := 1)
+    (fun x ↦ by simpa using norm_le_norm_add_norm_sub' x ((A ^ n) x))
+  rw [← ContinuousLinearMap.toLinearMap_pow]
+  exact h
 
 /-- The cokernel of a compact perturbation of the identity is finite dimensional. -/
 theorem _root_.IsCompactOperator.finiteDimensional_quotient_range_one_sub
@@ -221,13 +235,7 @@ theorem _root_.IsCompactOperator.finiteDimensional_quotient_range_one_sub
     refine (LinearMap.codisjoint_ker_pow_range_pow_of_range_pow_succ_eq hp).mono_right ?_
     rw [← hp, pow_succ', Module.End.mul_eq_comp]
     exact LinearMap.range_comp_le_range _ _
-  have hkerfin : FiniteDimensional 𝕜 (LinearMap.ker ((A : X →ₗ[𝕜] X) ^ p)) := by
-    have hKp : IsCompactOperator (1 - A ^ p : X →L[𝕜] X) := by
-      simpa only [hA] using hK.isCompactOperator_one_sub_pow p
-    have h := (A ^ p).finiteDimensional_ker_of_compact_estimate hKp (C := 1)
-      (fun x ↦ by simpa using norm_le_norm_add_norm_sub' x ((A ^ p) x))
-    rw [← ContinuousLinearMap.toLinearMap_pow]
-    exact h
+  have hkerfin := hK.finiteDimensional_ker_pow_one_sub p
   exact Submodule.FG.cofg_of_codisjoint hcod (Module.Finite.iff_fg.mp hkerfin)
 
 end IsCompactOperator

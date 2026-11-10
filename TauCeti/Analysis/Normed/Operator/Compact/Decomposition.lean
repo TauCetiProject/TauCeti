@@ -70,7 +70,7 @@ theorem exists_ker_pow_succ_eq_one_sub (hK : IsCompactOperator K) :
   rw [dist_eq_norm'] at hlt
   exact (hsep m n hmn).not_gt hlt
 
-variable [IsRCLikeNormedField 𝕜] [CompleteSpace X]
+variable [IsRCLikeNormedField 𝕜]
 
 /-- **The stable Riesz splitting at `1`.** For a compact operator `K`, the kernels and ranges
 of powers of `1 - K` are constant from some stage onward, and their stable values are
@@ -113,9 +113,12 @@ theorem exists_stable_ker_range_pow_one_sub (hK : IsCompactOperator K) :
     LinearMap.codisjoint_ker_pow_range_pow_of_range_pow_succ_eq
       (hstable (p + 1) (Nat.le_succ p)).2
   have hc : IsCompl (LinearMap.ker (f ^ p)) (LinearMap.range (f ^ p)) := ⟨hdisj, hcod⟩
-  refine ⟨p, hstable, hc.isTopCompl_of_isClosed ?_ ?_⟩
-  · simpa only [ContinuousLinearMap.toLinearMap_pow] using (A ^ p).isClosed_ker
-  · exact hK.isClosed_range_pow_one_sub p
+  have : CompleteSpace 𝕜 := by
+    let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
+    infer_instance
+  have := hK.finiteDimensional_ker_pow_one_sub p
+  exact ⟨p, hstable,
+    (hc.symm.isTopCompl_of_isClosed_of_finiteDimensional (hK.isClosed_range_pow_one_sub p)).symm⟩
 
 /-- **The stable Riesz splitting at a nonzero scalar.** The kernels and ranges of powers of
 `K - μ • 1` stabilise and are topological complements. No eigenvalue hypothesis is needed:
