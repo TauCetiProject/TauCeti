@@ -77,11 +77,11 @@ theorem IsCompleteBernsteinFunction.exists_isCompleteBernsteinFunction_eqOn_div
     rw [ofReal_div, ← h.ofReal_mul_stieltjesExtension ht,
       div_mul_cancel_left₀ (ofReal_ne_zero.mpr ht.ne')]
   refine exists_isCompleteBernsteinFunction_eqOn_of_analyticOnNhd
-    ((analyticOnNhd_stieltjesExtension hμ).inv hS) hSt (fun z hz => ?_)
+    (analyticOnNhd_stieltjesExtension.inv hS) hSt (fun z hz => ?_)
     fun t ht => div_nonneg ht.le (hf.isBernsteinFunction.nonneg ht.le)
   have hz' : 0 < z.im := hz
   have hSim : (stieltjesExtension μ a b z).im ≤ 0 :=
-    nonpos_of_mul_nonpos_right (im_mul_im_stieltjesExtension_nonpos hμ
+    nonpos_of_mul_nonpos_right (im_mul_im_stieltjesExtension_nonpos
       (mem_slitPlane_iff.mpr (Or.inr hz'.ne'))) hz'
   rw [Pi.inv_apply, inv_im]
   exact div_nonneg (neg_nonneg.mpr hSim) (normSq_nonneg _)
