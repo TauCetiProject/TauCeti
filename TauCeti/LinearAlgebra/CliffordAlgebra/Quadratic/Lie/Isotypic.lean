@@ -49,6 +49,8 @@ the Weyl dimension formula. The two divisions by two are exact, since `d = l + 2
 * `CliffordAlgebra.kostant_isotypic`: any two irreducible submodules are isomorphic.
 * `CliffordAlgebra.kostant_multiplicity`: the decomposition into copies of an irreducible submodule,
   with no choice of Cartan subalgebra or base in the statement.
+* `CliffordAlgebra.kostant_multiplicity_of_finrank_eq_three`: in dimension three, Kostant's
+  module is four copies of a two-dimensional irreducible module.
 
 ## References
 
@@ -158,5 +160,19 @@ theorem kostant_multiplicity :
     ⟨E.trans (DirectSum.lieModuleEquivCongrRight fun _ ↦ e.symm)⟩⟩
   rw [e.toLinearEquiv.finrank_eq, finrank_irreducibleQuotient_weylVector,
     H.rank_eq_finrank_cartan]
+
+/-- **Kostant's module in dimension three is four copies of a two-dimensional irreducible.** For a
+three-dimensional Killing-semisimple Lie algebra over an algebraically closed field of
+characteristic zero, the left-regular action on the eight-dimensional Clifford algebra of the
+Killing form is a direct sum of four copies of one irreducible submodule of dimension two. This is
+`CliffordAlgebra.kostant_multiplicity` at `d = 3` and `l = 1`; contrast
+`CliffordAlgebra.exists_lieModuleEquiv_commutator_of_finrank_eq_three` for the commutator action
+on the same carrier. -/
+theorem kostant_multiplicity_of_finrank_eq_three (h : finrank K L = 3) :
+    ∃ S : LieSubmodule K L (CliffordAlgebra (killingQuadraticForm K L)),
+      IsIrreducible K L S ∧ finrank K S = 2 ∧
+        Nonempty (CliffordAlgebra (killingQuadraticForm K L) ≃ₗ⁅K,L⁆ ⨁ _ : Fin 4, S) := by
+  have hk := kostant_multiplicity (K := K) (L := L)
+  rwa [h, rank_eq_one_of_finrank_eq_three h] at hk
 
 end CliffordAlgebra

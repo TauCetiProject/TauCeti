@@ -218,14 +218,10 @@ theorem rank_eq_one_of_finrank_eq_three (h : finrank K L = 3) : LieAlgebra.rank 
     have hmem (x : L) : x ∈ H := by
       rw [← LieSubalgebra.mem_toSubmodule, htop]
       exact Submodule.mem_top
-    -- The Cartan subalgebra is abelian, so `L` is abelian, and its centre vanishes.
-    have hzero (x : L) : x = 0 := by
-      have hx : x ∈ center K L := by
-        rw [center, mem_maxTrivSubmodule]
-        intro y
-        simpa using congrArg Subtype.val (trivial_lie_zero H H ⟨y, hmem y⟩ ⟨x, hmem x⟩)
-      rwa [center_eq_bot, LieSubmodule.mem_bot] at hx
-    have : Subsingleton L := ⟨fun x y ↦ (hzero x).trans (hzero y).symm⟩
+    -- The Cartan subalgebra is abelian, so `L` is abelian, hence zero.
+    have : IsLieAbelian L :=
+      ⟨fun x y ↦ by simpa using congrArg Subtype.val (trivial_lie_zero H H ⟨x, hmem x⟩ ⟨y, hmem y⟩)⟩
+    have := (IsKilling.isLieAbelian_iff_subsingleton K L).mp this
     rw [finrank_zero_of_subsingleton] at h
     omega
   omega

@@ -13,7 +13,6 @@ public import TauCeti.Algebra.Lie.Prod
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Isotypic
 import TauCeti.Algebra.Lie.Basic
 import TauCeti.Algebra.Lie.GeneralLinear.Finrank
-import TauCeti.Algebra.Lie.Weights.Rank
 import TauCeti.LinearAlgebra.CliffordAlgebra.Dimension
 import TauCeti.LinearAlgebra.CliffordAlgebra.Grading
 import TauCeti.LinearAlgebra.CliffordAlgebra.Quadratic.Lie.Casimir
@@ -67,8 +66,6 @@ of one two-dimensional irreducible module.
   isotypic.
 * `CliffordAlgebra.exists_lieModuleEquiv_commutator_of_finrank_eq_three`: in dimension three,
   the commutator module is `1 ⊕ L ⊕ L ⊕ 1`.
-* `CliffordAlgebra.kostant_multiplicity_of_finrank_eq_three`: in dimension three, Kostant's
-  module is four copies of a two-dimensional irreducible module.
 * `CliffordAlgebra.nonempty_lieModuleEquiv_commutator_sl_fin_two` and
   `CliffordAlgebra.kostant_multiplicity_sl_fin_two`: the two decompositions for `𝔰𝔩₂`.
 
@@ -351,20 +348,6 @@ section Kostant
 open scoped CliffordAlgebra DirectSum
 
 variable {K L} [CharZero K] [IsAlgClosed K]
-
-/-- **Kostant's module in dimension three is four copies of a two-dimensional irreducible.** For a
-three-dimensional Killing-semisimple Lie algebra over an algebraically closed field of
-characteristic zero, the left-regular action on the eight-dimensional Clifford algebra of the
-Killing form is a direct sum of four copies of one irreducible submodule of dimension two. This is
-`CliffordAlgebra.kostant_multiplicity` at `d = 3` and `l = 1`; contrast
-`CliffordAlgebra.exists_lieModuleEquiv_commutator_of_finrank_eq_three` for the commutator action
-on the same carrier. -/
-theorem kostant_multiplicity_of_finrank_eq_three (h : finrank K L = 3) :
-    ∃ S : LieSubmodule K L (CliffordAlgebra (killingQuadraticForm K L)),
-      IsIrreducible K L S ∧ finrank K S = 2 ∧
-        Nonempty (CliffordAlgebra (killingQuadraticForm K L) ≃ₗ⁅K,L⁆ ⨁ _ : Fin 4, S) := by
-  have hk := kostant_multiplicity (K := K) (L := L)
-  rwa [h, TauCeti.rank_eq_one_of_finrank_eq_three h] at hk
 
 open _root_.LieAlgebra.SpecialLinear in
 /-- **Kostant's module for `𝔰𝔩₂`** is four copies of a two-dimensional irreducible module. -/
