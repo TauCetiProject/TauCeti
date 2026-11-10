@@ -167,25 +167,6 @@ variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L] {h : L}
   (hh : DirectSum.IsInternal fun j : ℤ ↦ (ad K L h).eigenspace (j : K))
 
-omit [FiniteDimensional K L] in
-include hh in
-/-- **In positive characteristic the grading forces `L` to be trivial.** In characteristic `q > 0`,
-the eigenspaces of `ad h` at the integers `j` and `j + q` coincide for every `j`, so independence of
-the integer eigenspaces makes them all trivial, and `L` is trivial. -/
-theorem subsingleton_of_charP_pos {q : ℕ} [CharP K q] (hq : 0 < q) : Subsingleton L := by
-  -- The eigenspaces at the integers `j` and `j + q` coincide, so independence kills them all.
-  have hbot (j : ℤ) : (ad K L h).eigenspace (j : K) = ⊥ := by
-    have hne : j ≠ j + q := by omega
-    have hcoe : (((j + q : ℤ)) : K) = (j : K) := by
-      push_cast
-      rw [CharP.cast_eq_zero, add_zero]
-    have hd := hh.submodule_iSupIndep.pairwiseDisjoint hne
-    simp only [Function.onFun, hcoe] at hd
-    exact disjoint_self.mp hd
-  have htop := hh.submodule_iSup_eq_top
-  simp only [hbot, iSup_bot] at htop
-  exact (Submodule.subsingleton_iff K).mp (subsingleton_of_bot_eq_top htop)
-
 include hh in
 /-- **The transposes of the grading automorphisms fix the polynomial functions killed by `h`.**
 If `L` is the internal direct sum of the integer eigenspaces of `ad h`, then the algebra
@@ -205,7 +186,7 @@ theorem map_dualMap_gradingAut_apply {p : _root_.SymmetricAlgebra K (Dual K L)}
     obtain ⟨q, hq⟩ := CharP.exists K
     rcases q.eq_zero_or_pos with rfl | hq0
     · exact (CharP.charP_zero_iff_charZero K).mp hq
-    · exact absurd (subsingleton_of_charP_pos hh hq0) (not_subsingleton L)
+    · exact absurd (subsingleton_of_isInternal_eigenspace_of_charP_pos hh hq0) (not_subsingleton L)
   -- A functional of weight `j` for the coadjoint action of `h` vanishes outside `L(-j)`, so the
   -- transpose of the grading automorphism at `s` scales it by `s⁻¹ ^ j`.
   have hg (j : ℤ) (φ : Dual K L)
