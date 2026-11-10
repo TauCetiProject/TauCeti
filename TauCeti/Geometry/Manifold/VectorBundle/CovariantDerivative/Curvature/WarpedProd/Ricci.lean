@@ -20,9 +20,9 @@ For the metric `g_M + f² g_N`, the Ricci tensor has horizontal block
 Here `Δ = div grad`, and all quantities on the right use the original factor metrics.
 These contractions turn the horizontal, mixed and vertical curvature formulas into
 criteria for Ricci curvature of warped metrics. The formulas allow zero-dimensional
-factors. The horizontal and vertical block formulas hold unconditionally, also at points where
-the warping function vanishes; the mixed block formulas and the full formula require the warping
-function to be nonzero at the point evaluated.
+factors. All block formulas and the full formula hold without a nonvanishing hypothesis on the
+warping function: at a point where it vanishes, the warped inner product is degenerate on the
+vertical vectors, so a vertical tangent vector of the (positive definite) product metric is zero.
 
 ## References
 
@@ -85,10 +85,15 @@ theorem IsWarpedProduct.ricciTensor_horizontal
 -- Use this as a rewrite lemma in named tangent-product coordinates; `simp` expands the equivalence.
 theorem IsWarpedProduct.ricciTensor_horizontal_vertical
     (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (p : M × N) (hp : f p.1 ≠ 0) (u : TangentSpace I p.1) (v : TangentSpace J p.2) :
+    (p : M × N) (u : TangentSpace I p.1) (v : TangentSpace J p.2) :
     (leviCivitaConnection (I.prod J) (M × N)).ricciTensor p
         ((tangentSpaceProdEquiv p).symm (u, 0))
         ((tangentSpaceProdEquiv p).symm (0, v)) = 0 := by
+  by_cases hp : f p.1 = 0
+  · -- there are no vertical vectors where the warping function vanishes
+    obtain rfl := h.eq_zero_of_warping_eq_zero hp v
+    simp only [Prod.mk_zero_zero, map_zero]
+  replace hp : f p.1 ≠ 0 := hp
   set e := tangentSpaceProdEquiv (I := I) (J := J) p with he
   set cov := leviCivitaConnection (I.prod J) (M × N) with hcov
   have hh (w : TangentSpace I p.1) :
@@ -157,7 +162,7 @@ theorem IsWarpedProduct.ricciTensor_vertical
 /-- The vertical-horizontal Ricci block vanishes as well. -/
 theorem IsWarpedProduct.ricciTensor_vertical_horizontal
     (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (p : M × N) (hp : f p.1 ≠ 0) (u : TangentSpace J p.2) (v : TangentSpace I p.1) :
+    (p : M × N) (u : TangentSpace J p.2) (v : TangentSpace I p.1) :
     (leviCivitaConnection (I.prod J) (M × N)).ricciTensor p
         ((tangentSpaceProdEquiv p).symm (0, u))
         ((tangentSpaceProdEquiv p).symm (v, 0)) = 0 := by
@@ -165,13 +170,13 @@ theorem IsWarpedProduct.ricciTensor_vertical_horizontal
     (leviCivitaConnection (I.prod J) (M × N))
     (isMetricCompatible_leviCivitaConnection (I.prod J))
     (torsion_leviCivitaConnection_eq_zero (I.prod J))]
-  exact h.ricciTensor_horizontal_vertical hf p hp v u
+  exact h.ricciTensor_horizontal_vertical hf p v u
 
 /-- The full Ricci transformation law for a warped metric, on arbitrary tangent vectors.
 The horizontal and vertical entries are read using the canonical tangent-product equivalence. -/
 theorem IsWarpedProduct.ricciTensor_eq
     (h : IsWarpedProduct I J N f) (hf : ContMDiff I 𝓘(ℝ) ∞ f)
-    (p : M × N) (hp : f p.1 ≠ 0) (u v : TangentSpace (I.prod J) p) :
+    (p : M × N) (u v : TangentSpace (I.prod J) p) :
     (leviCivitaConnection (I.prod J) (M × N)).ricciTensor p u v =
       (leviCivitaConnection I M).ricciTensor p.1
           (tangentSpaceProdEquiv p u).1 (tangentSpaceProdEquiv p v).1 -
@@ -190,7 +195,7 @@ theorem IsWarpedProduct.ricciTensor_eq
   conv_lhs => rw [hsplit u, hsplit v]
   simp only [map_add, LinearMap.add_apply, e,
     h.ricciTensor_horizontal hf p, h.ricciTensor_vertical hf p,
-    h.ricciTensor_horizontal_vertical hf p hp, h.ricciTensor_vertical_horizontal hf p hp,
+    h.ricciTensor_horizontal_vertical hf p, h.ricciTensor_vertical_horizontal hf p,
     add_zero, zero_add]
   ring
 
