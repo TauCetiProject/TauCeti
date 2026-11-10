@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Kernel.Basic
 import Mathlib.Analysis.Calculus.ContDiff.FiniteDimension
 import Mathlib.Analysis.Calculus.ParametricIntegral
+import TauCeti.Analysis.Fourier.PhaseSMulDeriv
 import TauCeti.Analysis.Pseudodifferential.Symbol.Frequency
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
