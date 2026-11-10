@@ -158,8 +158,7 @@ instance isFractionRing_intermediateRing (φ : Isogeny W₁ W₂) :
   have h : ∀ x, algebraMap W₂.CoordinateRing W₁.FunctionField x = φ.pullback x :=
     φ.pullback.algebraMap_toAlgebra_apply
   have : IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField :=
-    IsScalarTower.of_algebraMap_eq fun x ↦ by
-      rw [h, φ.fieldPullback.algebraMap_toAlgebra_apply, fieldPullback_algebraMap]
+    φ.isScalarTower_coordinateRing_of_algebraMap_eq_pullback h
   have : IsScalarTower W₂.CoordinateRing φ.intermediateRing W₁.FunctionField :=
     φ.isScalarTower_intermediateRing rfl h
   have := φ.isIntegralClosure_intermediateRing h
@@ -186,9 +185,8 @@ theorem finrank_intermediateRing_eq_degree (φ : Isogeny W₁ W₂)
   -- the function-field algebra structure is local, as `IntermediateRing/Basic.lean` prescribes
   let _ := φ.fieldPullback.toRingHom.toAlgebra
   have : IsScalarTower W₂.CoordinateRing W₂.FunctionField W₁.FunctionField :=
-    IsScalarTower.of_algebraMap_eq fun x ↦ by
-      rw [h, φ.fieldPullback.algebraMap_toAlgebra_apply, fieldPullback_algebraMap]
-  rw [φ.degree_eq_finrank (φ.algebraMap_functionField_eq_fieldPullback h)]
+    φ.isScalarTower_coordinateRing_of_algebraMap_eq_pullback h
+  rw [φ.degree_eq_finrank φ.fieldPullback.algebraMap_toAlgebra_apply]
   exact (IsFractionRing.finrank_eq W₂.CoordinateRing W₂.FunctionField φ.intermediateRing
     W₁.FunctionField).symm
 
