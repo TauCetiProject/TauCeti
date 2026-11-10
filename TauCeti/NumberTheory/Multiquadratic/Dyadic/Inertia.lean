@@ -314,7 +314,7 @@ private theorem card_inertia_le_two
 /-- In the cases of ramification index `4`, the inertia group above `2` has exactly four
 elements: it negates the roots `y`, `z` tested in the upper bound, and `y z`, each of which
 generates a quadratic field ramified at `2`. -/
-private theorem card_inertia_eq_four [Finite ι]
+private theorem card_inertia_eq_four
     (hcond : (∃ i j, d i % 4 = 3 ∧ 2 ∣ d j) ∨ ∃ i j, d i % 8 = 2 ∧ d j % 8 = 6) :
     Nat.card (Q.inertia (K ≃ₐ[ℚ] K)) = 4 := by
   have := isGalois_rat hr htop
@@ -368,7 +368,7 @@ theorem card_inertia_le_four : Nat.card (Q.inertia (K ≃ₐ[ℚ] K)) ≤ 4 := b
 /-- **The ramification index above `2` is at most `4`.** Let `K` be generated over `ℚ` by square
 roots of integers not divisible by `4`, and let `Q` be a prime of `𝓞 K` above `2`. Then the
 ramification index of `Q` over `2` is at most `4`. -/
-theorem ramificationIdx_le_four [Finite ι] : Q.ramificationIdx ℤ ≤ 4 := by
+theorem ramificationIdx_le_four : Q.ramificationIdx ℤ ≤ 4 := by
   have := isGalois_rat hr htop
   rw [← Ideal.card_inertia_eq_ramificationIdx ℤ (K ≃ₐ[ℚ] K) Q]
   exact card_inertia_le_four hr htop hd Q
@@ -377,7 +377,7 @@ theorem ramificationIdx_le_four [Finite ι] : Q.ramificationIdx ℤ ≤ 4 := by
 integers `d i` not divisible by `4`, and let `Q` be a prime of `𝓞 K` above `2`. Then the
 ramification index of `Q` over `2` is `4` exactly when some `d i` is `3` modulo `4` and some
 `d j` is even, or some `d i` is `2` and some `d j` is `6` modulo `8`. -/
-theorem ramificationIdx_eq_four_iff [Finite ι] :
+theorem ramificationIdx_eq_four_iff :
     Q.ramificationIdx ℤ = 4 ↔
       (∃ i j, d i % 4 = 3 ∧ 2 ∣ d j) ∨ ∃ i j, d i % 8 = 2 ∧ d j % 8 = 6 := by
   have := isGalois_rat hr htop
@@ -390,7 +390,7 @@ theorem ramificationIdx_eq_four_iff [Finite ι] :
 /-- **Trivial inertia above `2`.** Let `K` be generated over `ℚ` by square roots of integers
 `d i` not divisible by `4`, and let `Q` be a prime of `𝓞 K` above `2`. Then the inertia group of
 `Q` is trivial exactly when every `d i` is `1` modulo `4`. -/
-theorem inertia_eq_bot_iff_forall_mod_four_eq_one [Finite ι] :
+theorem inertia_eq_bot_iff_forall_mod_four_eq_one :
     Q.inertia (K ≃ₐ[ℚ] K) = ⊥ ↔ ∀ i, d i % 4 = 1 := by
   have := isGalois_rat hr htop
   constructor
@@ -410,7 +410,7 @@ integers `d i` not divisible by `4`, and let `Q` be a prime of `𝓞 K` above `2
 ramification index of `Q` over `2` is `2` exactly when some `d i` is not `1` modulo `4` (so
 that `2` ramifies) but the criterion of `TauCeti.Multiquadratic.ramificationIdx_eq_four_iff`
 fails. -/
-theorem ramificationIdx_eq_two_iff_of_liesOver_two [Finite ι] :
+theorem ramificationIdx_eq_two_iff_of_liesOver_two :
     Q.ramificationIdx ℤ = 2 ↔ (∃ i, d i % 4 ≠ 1) ∧
       ¬ ((∃ i j, d i % 4 = 3 ∧ 2 ∣ d j) ∨ ∃ i j, d i % 8 = 2 ∧ d j % 8 = 6) := by
   have := isGalois_rat hr htop

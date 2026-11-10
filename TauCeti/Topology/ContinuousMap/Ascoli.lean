@@ -9,16 +9,18 @@ public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.UniformSpace.Ascoli
 public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Topology.MetricSpace.Pseudo.Real
-public import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
 public import Mathlib.Topology.EMetricSpace.Lipschitz
+public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
+public import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
 public import Mathlib.Topology.UnitInterval
 
 import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
+import Mathlib.Topology.MetricSpace.IsometricSMul
+import Mathlib.Topology.MetricSpace.Lipschitz
 import Mathlib.Topology.MetricSpace.UniformConvergence
 import Mathlib.Topology.UniformSpace.Completion
 import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.Topology.UniformSpace.Ascoli
-import Mathlib.Topology.MetricSpace.UniformConvergence
 
 /-!
 # The Arzelà–Ascoli theorem in `C(X, Y)`
@@ -47,6 +49,8 @@ and adds companion statements used for compactness and finite approximation of f
   `ℝ →ᵤ M`.
 * The `C`-Lipschitz paths `I → Y` starting at a point `x` form a compact subset of `C(I, Y)` when
   the closed ball of radius `C` about `x` is compact, in particular when `Y` is proper.
+* The translates `(s, t) ↦ u(s + σₙ, t)`, `σₙ → ∞`, of a Lipschitz map on a half-plane `s ≥ b`
+  with values in a compact set have a subsequence converging locally uniformly on the plane.
 
 The pointwise hypothesis cannot be replaced by equicontinuity and a common starting point when `Y`
 is not proper. The curves `γₙ(t) = t • eₙ`, `t ∈ [0, 1]`, along the standard basis vectors of
@@ -74,6 +78,9 @@ endpoints `eₙ` stay at distance at least `1` from each other
   paths with a common starting point form a compact set, with
   `TauCeti.isCompact_setOf_lipschitzWith_apply_zero_eq_of_isCompact_closedBall` its form for a
   compact closed ball.
+* `TauCeti.exists_subseq_tendstoLocallyUniformly_comp_add`: translates `u(s + σₙ, t)`, `σₙ → ∞`,
+  of a Lipschitz map on a half-plane `s ≥ b` with values in a compact set have a locally
+  uniformly convergent subsequence.
 
 ## References
 
@@ -305,5 +312,46 @@ theorem isCompact_setOf_lipschitzWith_apply_zero_eq [ProperSpace Y] (C : ℝ≥0
     (isCompact_closedBall x C)
 
 end Lipschitz
+
+/-- **Arzelà–Ascoli for translates along an end.** Let `u` be Lipschitz on the half-plane
+`s ≥ b` of `ℝ × ℝ`, with values there in a compact subset of a pseudometric space, and let
+`σₙ → ∞`. A subsequence of the translates `(s, t) ↦ u(s + σₙ, t)` converges locally uniformly on
+`ℝ × ℝ` to a continuous map. -/
+theorem exists_subseq_tendstoLocallyUniformly_comp_add {M : Type*} [PseudoMetricSpace M]
+    {K : Set M} (hK : IsCompact K) {u : ℝ × ℝ → M} {b : ℝ} {L : NNReal}
+    (hL : LipschitzOnWith L u (Ici b ×ˢ univ)) (huK : MapsTo u (Ici b ×ˢ univ) K) {σ : ℕ → ℝ}
+    (hσ : Tendsto σ atTop atTop) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ g : C(ℝ × ℝ, M),
+      TendstoLocallyUniformly (fun n z ↦ u (z + (σ (φ n), 0))) g atTop := by
+  -- The translates, cut off at `s = b`, are uniformly Lipschitz on the whole plane.
+  set p : ℕ → ℝ × ℝ → ℝ × ℝ := fun k z ↦ (max (z.1 + σ k) b, z.2)
+  have hp (k : ℕ) : LipschitzWith 1 (p k) := by
+    simpa using ((((IsometryEquiv.addRight (σ k)).isometry.lipschitzWith.comp
+      LipschitzWith.prod_fst).max_const b).prodMk LipschitzWith.prod_snd)
+  have hpb (k : ℕ) (z : ℝ × ℝ) : p k z ∈ Ici b ×ˢ univ :=
+    ⟨mem_Ici.2 (le_max_right _ _), mem_univ _⟩
+  set w : ℕ → ℝ × ℝ → M := fun k ↦ u ∘ p k
+  have hw (k : ℕ) : LipschitzWith L (w k) := by
+    have h := hL.comp ((hp k).lipschitzOnWith (s := univ)) fun z _ ↦ hpb k z
+    rwa [mul_one, lipschitzOnWith_univ] at h
+  -- A subsequence converges in `C(ℝ × ℝ, M)`.
+  set G : ℕ → C(ℝ × ℝ, M) := fun k ↦ ⟨w k, (hw k).continuous⟩
+  obtain ⟨g, -, φ, hφ, hlim⟩ := (ArzelaAscoli.isCompact_closure_range_of_equicontinuous
+    (f := G) (LipschitzWith.uniformEquicontinuous w L hw).equicontinuous
+    fun z ↦ ⟨K, hK, fun k ↦ huK (hpb k z)⟩).tendsto_subseq
+    (fun n ↦ subset_closure (mem_range_self n))
+  have hgw := ContinuousMap.tendsto_iff_tendstoLocallyUniformly.1 hlim
+  refine ⟨φ, hφ, g, ?_⟩
+  -- On each compact set the cut-off translates are eventually the translates.
+  rw [tendstoLocallyUniformly_iff_forall_isCompact] at hgw ⊢
+  intro C hC
+  obtain ⟨m, hm⟩ := (hC.image continuous_fst).bddBelow
+  refine (hgw C hC).congr ?_
+  filter_upwards [(hσ.comp hφ.tendsto_atTop).eventually_ge_atTop (b - m)] with n hn z hz
+  have hmz : m ≤ z.1 := hm (mem_image_of_mem _ hz)
+  simp only [G, ContinuousMap.coe_mk, w, p, Function.comp_apply,
+    max_eq_left (by simp only [Function.comp_apply] at hn; linarith : b ≤ z.1 + σ (φ n))]
+  congr 1
+  ext <;> simp
 
 end TauCeti

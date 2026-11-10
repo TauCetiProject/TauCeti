@@ -28,6 +28,10 @@ Rescaling an involution by a scalar `μ` with `μ * μ = 1` gives an endomorphis
 (`Module.End.smul_mul_smul_self_eq_one`).
 
 A finite nontrivial module has more than one endomorphism (`Module.End.one_lt_natCard`).
+
+An endomorphism acting as a scalar `a` from a monoid acting on the module has `k`-th power acting
+as `a ^ k` (`Module.End.pow_apply_eq_pow_smul`), so it is `1` once `a ^ k = 1`
+(`Module.End.pow_eq_one_of_apply_eq_smul`).
 -/
 
 public section
@@ -85,5 +89,17 @@ theorem one_lt_natCard {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
     [Finite M] : 1 < Nat.card (Module.End R M) := by
   have : Finite (Module.End R M) := Finite.of_injective _ DFunLike.coe_injective
   exact Finite.one_lt_card
+
+/-- The `k`-th power of an endomorphism acting as the scalar `a` acts as `a ^ k`. -/
+theorem pow_apply_eq_pow_smul {R M X : Type*} [Semiring R] [AddCommMonoid X] [Module R X]
+    [Monoid M] [MulAction M X] {a : M} (S : Module.End R X) (hS : ∀ x, S x = a • x) (k : ℕ)
+    (x : X) : (S ^ k) x = a ^ k • x := by
+  rw [pow_apply_eq_iterate, show ⇑S = fun x ↦ a • x from funext hS, smul_iterate_apply]
+
+/-- An endomorphism acting as the scalar `a` satisfies `S ^ k = 1` whenever `a ^ k = 1`. -/
+theorem pow_eq_one_of_apply_eq_smul {R M X : Type*} [Semiring R] [AddCommMonoid X] [Module R X]
+    [Monoid M] [MulAction M X] {a : M} (S : Module.End R X) (hS : ∀ x, S x = a • x) {k : ℕ}
+    (hk : a ^ k = 1) : S ^ k = 1 :=
+  LinearMap.ext fun x ↦ by rw [pow_apply_eq_pow_smul S hS, hk, one_smul, one_apply_eq_self]
 
 end Module.End

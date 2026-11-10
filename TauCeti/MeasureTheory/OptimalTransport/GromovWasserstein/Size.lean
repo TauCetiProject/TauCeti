@@ -60,11 +60,11 @@ theorem edist_gromovWassersteinSize_le_gromovWassersteinEDist
   let ω₀ : Unit × Unit → Z := fun _ ↦ z₀
   have hμ : gromovWassersteinEDist p μ ωX (Measure.dirac ()) ω₀ =
       gromovWassersteinSize p μ ωX z₀ := by
-    rw [gromovWassersteinEDist_dirac_right () ω₀ hωX]
+    rw [gromovWassersteinEDist_dirac_right () ω₀]
     rfl
   have hμ' : gromovWassersteinEDist p ν ωY (Measure.dirac ()) ω₀ =
       gromovWassersteinSize p ν ωY z₀ := by
-    rw [gromovWassersteinEDist_dirac_right () ω₀ hωY]
+    rw [gromovWassersteinEDist_dirac_right () ω₀]
     rfl
   have htri₁ := gromovWassersteinEDist_triangle (p := p) (μ := μ) (ν := ν)
     (ρ := Measure.dirac ()) (ωX := ωX) (ωY := ωY) (ωW := ω₀) hp hωX hωY
