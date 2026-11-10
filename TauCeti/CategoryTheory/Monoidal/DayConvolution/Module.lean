@@ -232,6 +232,7 @@ abbrev dayMk (G : C ⊛⥤ V) (a : F.functor ⊠ G.functor ⟶ tensor C ⋙ G.fu
         simpa [← comp_whiskerRight_assoc, ← whiskerLeft_comp_assoc] using assoc p q r }
 
 /-- The structure maps of `dayMk G a unit assoc` are the given maps `a`. -/
+@[simp]
 lemma dayStructureMap_dayMk (G : C ⊛⥤ V) (a : F.functor ⊠ G.functor ⟶ tensor C ⋙ G.functor)
     (unit assoc) (p q : C) : (dayMk G a unit assoc).dayStructureMap p q = a.app (p, q) :=
   DayFunctor.η_comp_tensorDesc_app a p q
