@@ -27,10 +27,8 @@ namespace TauCeti
 
 The restriction `2 ≤ n` is needed because `Ã₁` has two edges between its vertices and is not a
 simple graph. -/
-def affineADiagram (n : ℕ) (hn : 2 ≤ n) : SimpleGraph (Fin (n + 1)) := by
-  by_cases h : 2 ≤ n
-  · exact SimpleGraph.cycleGraph (n + 1)
-  · exact False.elim (h hn)
+def affineADiagram (n : ℕ) (_hn : 2 ≤ n) : SimpleGraph (Fin (n + 1)) :=
+  SimpleGraph.cycleGraph (n + 1)
 
 namespace affineADiagram
 
@@ -41,24 +39,22 @@ def affineVertex (n : ℕ) (_hn : 2 ≤ n) : Fin (n + 1) := 0
 @[simp]
 theorem affineVertex_eq_zero (n : ℕ) (hn : 2 ≤ n) : affineVertex n hn = 0 := (rfl)
 
-/-- The affine `A` diagram is the cycle graph, for ranks at least two. -/
+/-- The affine `A` diagram is the cycle graph on `n + 1` vertices. -/
 @[simp]
-theorem affineADiagram_eq_cycleGraph (n : ℕ) (hn : 2 ≤ n) :
-    affineADiagram n hn = SimpleGraph.cycleGraph (n + 1) := by
-  simp [affineADiagram, hn]
+theorem eq_cycleGraph (n : ℕ) (hn : 2 ≤ n) :
+    affineADiagram n hn = SimpleGraph.cycleGraph (n + 1) := (rfl)
 
 /-- The graph underlying `Ãₙ` is connected. -/
 theorem connected (n : ℕ) (hn : 2 ≤ n) : (affineADiagram n hn).Connected := by
-  rw [affineADiagram_eq_cycleGraph n hn]
-  exact SimpleGraph.connected_cycleGraph_add_one (n := n)
+  rw [eq_cycleGraph]
+  exact SimpleGraph.connected_cycleGraph_add_one
 
-/-- Adjacency in the affine `A` diagram is characterized by neighboring vertices. -/
+/-- Two vertices of the affine `A` diagram are adjacent exactly when they differ by `1` in
+`Fin (n + 1)`, in either order. -/
 theorem adj_iff (n : ℕ) (hn : 2 ≤ n) (i j : Fin (n + 1)) :
-    (affineADiagram n hn).Adj i j ↔
-      (i - j).val = 1 ∨ (j - i).val = 1 :=
-  by
-    rw [affineADiagram_eq_cycleGraph n hn]
-    exact SimpleGraph.cycleGraph_adj'
+    (affineADiagram n hn).Adj i j ↔ (i - j).val = 1 ∨ (j - i).val = 1 := by
+  rw [eq_cycleGraph]
+  exact SimpleGraph.cycleGraph_adj'
 
 end affineADiagram
 end TauCeti
