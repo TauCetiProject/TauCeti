@@ -52,8 +52,8 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   `p / 2`.
 * `AddCircle.addOrderOf_period_div_of_ne_zero`: for a nonzero period and positive `n`, the class
   of `p / n` has additive order `n`.
-* `AddCircle.infinite_of_neZero`: for a nonzero period in characteristic zero, `AddCircle p` is
-  infinite.
+* `AddCircle.infinite_of_neZero`: the instance that `AddCircle p` is infinite for a nonzero
+  period in characteristic zero.
 * `AddCircle.natCard_torsionBy`: for positive `n`, the `n`-torsion of `AddCircle p` has exactly `n`
   elements; for `n = 0` the statement holds only through the junk value `Nat.card = 0` of the
   infinite group.
@@ -291,7 +291,7 @@ theorem addOrderOf_period_div_of_ne_zero (hn : 0 < n) :
 
 /-- For a nonzero period in characteristic zero, `AddCircle p` is infinite: the classes of
 `p / (k + 1)` have pairwise distinct additive orders. -/
-theorem infinite_of_neZero : Infinite (AddCircle p) :=
+instance infinite_of_neZero : Infinite (AddCircle p) :=
   Infinite.of_injective (fun k : ℕ ↦ ((p / (k + 1 : ℕ) : 𝕜) : AddCircle p)) fun a b h ↦ by
     have := congrArg addOrderOf h
     rw [addOrderOf_period_div_of_ne_zero p (Nat.succ_pos _),
@@ -302,8 +302,7 @@ theorem infinite_of_neZero : Infinite (AddCircle p) :=
 `Nat.card = 0` of the infinite group `AddCircle p`. -/
 theorem natCard_torsionBy : Nat.card ((AddCircle p)[(n : ℤ)]) = n := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
-  · have := infinite_of_neZero p
-    simp [Nat.card_eq_zero_of_infinite]
+  · simp [Nat.card_eq_zero_of_infinite]
   rw [torsionBy_eq_zmultiples p (Nat.cast_ne_zero.mpr hn.ne'), Nat.card_zmultiples,
     addOrderOf_period_div_of_ne_zero p hn]
 
