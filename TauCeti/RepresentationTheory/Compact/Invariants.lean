@@ -210,11 +210,20 @@ theorem isProj_haarAverageMap :
   map_mem := haarAverageMap_invariant π hπ
   map_id _ hv := haarAverageMap_id π hπ hv
 
-/-- The Haar average is idempotent. -/
+omit [CompleteSpace V] in
+/-- The Haar average is idempotent. If `V` is not complete the average is zero, by the junk value
+of the Bochner integral. -/
 @[simp]
 theorem haarAverageMap_comp_self :
-    (haarAverageMap π hπ).comp (haarAverageMap π hπ) = haarAverageMap π hπ :=
-  ContinuousLinearMap.coe_injective (isProj_haarAverageMap π hπ).isIdempotentElem
+    (haarAverageMap π hπ).comp (haarAverageMap π hπ) = haarAverageMap π hπ := by
+  by_cases hV : CompleteSpace V
+  · exact ContinuousLinearMap.coe_injective (isProj_haarAverageMap π hπ).isIdempotentElem
+  · have h0 : haarAverageMap π hπ = 0 := by
+      ext v
+      rw [haarAverageMap_apply, integral_of_not_completeSpace hV]
+      rfl
+    rw [h0]
+    simp
 
 /-- The range of the Haar average is exactly the invariant subspace. -/
 @[simp]
@@ -249,6 +258,7 @@ theorem trace_haarAverageMap :
   rw [haarAverageMap, trace_integratedOperator]
   simp
 
+omit [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V] in
 /-- **The Haar integral of the character is the dimension of the invariants**,
 `∫ g, χ_π g ∂(haarProb G) = dim V^G`.
 
@@ -258,8 +268,11 @@ projection onto the invariants. This is the compact-group form of the finite-gro
 `dim V^G = |G|⁻¹ ∑ g, χ_π g`, and the tool that turns character integrals into dimensions. -/
 theorem integral_character_eq_finrank_invariants :
     ∫ g, character π hπ g ∂haarProb G = (Module.finrank 𝕜 π.invariants : 𝕜) := by
+  let : NormedSpace ℝ V := NormedSpace.restrictScalars ℝ 𝕜 V
+  have : SMulCommClass ℝ 𝕜 V := inferInstance
   rw [← trace_haarAverageMap π hπ, (isProj_haarAverageMap π hπ).trace]
 
+omit [NormedSpace ℝ V] [SMulCommClass ℝ 𝕜 V] in
 /-- **The character integral vanishes exactly when there is no nonzero invariant vector.** -/
 theorem integral_character_eq_zero_iff :
     ∫ g, character π hπ g ∂haarProb G = 0 ↔ π.invariants = ⊥ := by
