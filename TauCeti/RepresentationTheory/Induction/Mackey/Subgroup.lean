@@ -358,19 +358,46 @@ theorem card_doubleCoset_mul_card_mackeySubgroup (s : G) (H K : Subgroup G) :
 
 /-- **The double-coset size formula, as an index**: `|KsH| = |K| · [sHs⁻¹ : K ⊓ sHs⁻¹]`.
 
-Finiteness of `H` makes the conjugate subgroup `sHs⁻¹` finite, so the relative index
-`[sHs⁻¹ : K ⊓ sHs⁻¹]` is a finite count of cosets. -/
-theorem card_doubleCoset_eq_card_mul_relIndex (s : G) (H K : Subgroup G) [Finite H] :
+With `Nat.card`'s convention that an infinite type has cardinality `0` and the relative index
+being `0` when it is infinite, this holds without any finiteness hypothesis: if `H` is infinite,
+both sides are `0`. -/
+theorem card_doubleCoset_eq_card_mul_relIndex (s : G) (H K : Subgroup G) :
     Nat.card (DoubleCoset.doubleCoset s (K : Set G) (H : Set G)) =
       Nat.card K * K.relIndex (MulAut.conj s • H) := by
-  -- `[sHs⁻¹ : K ⊓ sHs⁻¹] · |K ⊓ sHs⁻¹| = |sHs⁻¹| = |H|`, and `K ⊓ sHs⁻¹` is the Mackey subgroup.
-  have hrel : K.relIndex (MulAut.conj s • H) * Nat.card (mackeySubgroup s H K) = Nat.card H := by
-    rw [mackeySubgroup_def, Subgroup.relIndex_mul_card]
-    exact Nat.card_congr (Subgroup.equivSMul (MulAut.conj s) H).toEquiv.symm
-  have hpos : 0 < Nat.card (mackeySubgroup s H K) :=
-    Nat.pos_of_ne_zero fun h => Nat.card_pos.ne' (by rw [← hrel, h, mul_zero])
-  refine Nat.eq_of_mul_eq_mul_right hpos ?_
-  rw [card_doubleCoset_mul_card_mackeySubgroup, mul_assoc, hrel]
+  by_cases hH : Finite H
+  · -- `[sHs⁻¹ : K ⊓ sHs⁻¹] · |K ⊓ sHs⁻¹| = |sHs⁻¹| = |H|`, and `K ⊓ sHs⁻¹` is the Mackey
+    -- subgroup.
+    have hrel : K.relIndex (MulAut.conj s • H) * Nat.card (mackeySubgroup s H K) =
+        Nat.card H := by
+      rw [mackeySubgroup_def, Subgroup.relIndex_mul_card]
+      exact Nat.card_congr (Subgroup.equivSMul (MulAut.conj s) H).toEquiv.symm
+    have hpos : 0 < Nat.card (mackeySubgroup s H K) :=
+      Nat.pos_of_ne_zero fun h => Nat.card_pos.ne' (by rw [← hrel, h, mul_zero])
+    refine Nat.eq_of_mul_eq_mul_right hpos ?_
+    rw [card_doubleCoset_mul_card_mackeySubgroup, mul_assoc, hrel]
+  · -- `H` is infinite: the double coset contains a translate of `H`, so both sides vanish.
+    have hHinf : Infinite H := not_finite_iff_infinite.1 hH
+    have hdc : Nat.card (DoubleCoset.doubleCoset s (K : Set G) (H : Set G)) = 0 := by
+      have : Infinite (DoubleCoset.doubleCoset s (K : Set G) (H : Set G)) :=
+        Infinite.of_injective
+          (fun h : H => (⟨s * h, DoubleCoset.mem_doubleCoset.2 ⟨1, K.one_mem, h, h.2, by simp⟩⟩ :
+            DoubleCoset.doubleCoset s (K : Set G) (H : Set G)))
+          fun a b hab => Subtype.ext (mul_left_cancel (congrArg Subtype.val hab))
+      exact Nat.card_eq_zero_of_infinite
+    rw [hdc]
+    by_cases hK : Finite K
+    · -- `K ⊓ sHs⁻¹` is finite and nonempty while `|sHs⁻¹| = |H| = 0`, so the index is `0`.
+      have hrel := Subgroup.relIndex_mul_card K (MulAut.conj s • H)
+      have hconj : Nat.card (MulAut.conj s • H : Subgroup G) = 0 := by
+        rw [← Nat.card_congr (Subgroup.equivSMul (MulAut.conj s) H).toEquiv]
+        exact Nat.card_eq_zero_of_infinite
+      have hfin : Finite (K ⊓ MulAut.conj s • H : Subgroup G) :=
+        Finite.of_injective (fun x => (⟨x.1, x.2.1⟩ : K)) fun a b h =>
+          Subtype.ext (Subtype.mk.inj h)
+      rw [hconj] at hrel
+      rw [(mul_eq_zero.1 hrel).resolve_right Nat.card_pos.ne', mul_zero]
+    · have : Infinite K := not_finite_iff_infinite.1 hK
+      rw [Nat.card_eq_zero_of_infinite (α := K), zero_mul]
 
 /-- The index of the Mackey subgroup in `K` depends only on the double coset `KsH`, not on the
 representative `s` chosen inside it: the two subgroups are conjugate by an element of `K`
