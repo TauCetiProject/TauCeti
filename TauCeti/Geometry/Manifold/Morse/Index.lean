@@ -106,8 +106,9 @@ theorem manifoldMorseIndex_modelSpace {V : Type*} [NormedAddCommGroup V] [Normed
   simp only [manifoldMorseIndex, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
     PartialEquiv.refl_coe, Function.comp_id, id_eq]
 
-/-- The manifold Morse index is at most the dimension of a finite-dimensional model space. -/
-theorem manifoldMorseIndex_le_finrank [FiniteDimensional ℝ E] :
+/-- The manifold Morse index is at most the dimension of the model space. For a model space that
+is not finite the dimension is `0` by convention, and so is the index. -/
+theorem manifoldMorseIndex_le_finrank :
     manifoldMorseIndex I f x ≤ Module.finrank ℝ E :=
   morseIndex_le_finrank
 
@@ -150,8 +151,9 @@ theorem manifoldMorseIndex_transContinuousLinearEquiv (e : E ≃L[ℝ] E') :
       (hessianQuadraticForm g (e.symm (e a))) e.symm.toLinearEquiv⟩).symm
 
 /-- If the preferred-chart Hessian is nondegenerate, the manifold Morse indices of a function and
-its negation add to the dimension of the model space. -/
-theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank [FiniteDimensional ℝ E]
+its negation add to the dimension of the model space. For a space that is not finite both sides are
+`0` by convention. -/
+theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     (h : (hessianQuadraticForm (f ∘ (extChartAt I x).symm)
       (extChartAt I x x)).Nondegenerate) :
     manifoldMorseIndex I (-f) x + manifoldMorseIndex I f x = Module.finrank ℝ E := by
@@ -164,8 +166,8 @@ theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank [FiniteDimensio
 namespace IsManifoldNondegenerateCriticalPoint
 
 /-- At a nondegenerate critical point, the Morse indices of a function and its negation add to
-the dimension of the manifold. -/
-theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank [FiniteDimensional ℝ E]
+the dimension of the manifold. For a space that is not finite both sides are `0` by convention. -/
+theorem manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
     (h : IsManifoldNondegenerateCriticalPoint I f x) :
     manifoldMorseIndex I (-f) x + manifoldMorseIndex I f x = Module.finrank ℝ E := by
   exact TauCeti.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
