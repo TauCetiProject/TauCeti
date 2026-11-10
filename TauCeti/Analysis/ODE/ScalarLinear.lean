@@ -28,6 +28,8 @@ inequality for closed plane curves.
 For a continuous, time-dependent real coefficient `g`, a differentiable solution of `P' = g • P`
 on an open interval `J` is `P t = exp (∫ₛᵗ g) • P s` for all `s, t ∈ J`
 (`TauCeti.eq_exp_integral_smul_of_hasDerivAt_smul`), by the integrating factor `exp (-∫ₛᵘ g)`.
+On a closed interval `[a, b]`, one-sided derivatives within the interval suffice
+(`TauCeti.eq_exp_integral_smul_of_hasDerivWithinAt_smul`).
 -/
 
 public section
@@ -137,5 +139,34 @@ theorem eq_exp_integral_smul_of_hasDerivAt_smul {J : Set ℝ} (hJo : IsOpen J)
     rw [smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
   rw [hconst] at hPt
   exact hPt
+
+/-- **Integrating factor on a closed interval.** If `P` solves the linear equation `P' = g • P`
+on `[a, b]`, with derivatives taken within the interval and a continuous real coefficient `g`,
+then `P b = exp (∫ₐᵇ g) • P a`. -/
+theorem eq_exp_integral_smul_of_hasDerivWithinAt_smul {a b : ℝ} (hab : a ≤ b) {g : ℝ → ℝ}
+    (hg : ContinuousOn g (Icc a b)) {P : ℝ → V}
+    (hP : ∀ u ∈ Icc a b, HasDerivWithinAt P (g u • P u) (Icc a b) u) :
+    P b = Real.exp (∫ u in a..b, g u) • P a := by
+  -- Extend `g` continuously to `ℝ`, so that its primitive `G` is differentiable everywhere.
+  set g' : ℝ → ℝ := IccExtend hab ((Icc a b).domRestrict g)
+  have hg' : Continuous g' := (continuousOn_iff_continuous_domRestrict.1 hg).Icc_extend'
+  have hgg' (u : ℝ) (hu : u ∈ Icc a b) : g' u = g u := IccExtend_of_mem hab _ hu
+  set G : ℝ → ℝ := fun u ↦ ∫ τ in a..u, g' τ
+  -- `u ↦ e^{-G u} P u` has zero derivative within `[a, b]`, so it is constant there.
+  have hderiv (u : ℝ) (hu : u ∈ Icc a b) :
+      HasDerivWithinAt (fun u ↦ Real.exp (-G u) • P u) 0 (Icc a b) u := by
+    refine (((hg'.integral_hasStrictDerivAt a u).hasDerivAt.neg.exp).hasDerivWithinAt.smul
+      (hP u hu)).congr_deriv ?_
+    rw [hgg' u hu]
+    module
+  have hconst := constant_of_has_deriv_right_zero
+    (fun u hu ↦ (hderiv u hu).continuousWithinAt)
+    (fun u hu ↦ (hderiv u (Ico_subset_Icc_self hu)).mono_of_mem_nhdsWithin
+      (Icc_mem_nhdsGE_of_mem hu)) b ⟨hab, le_rfl⟩
+  have hG0 : G a = 0 := intervalIntegral.integral_same
+  rw [hG0, neg_zero, Real.exp_zero, one_smul] at hconst
+  have hGb : G b = ∫ u in a..b, g u :=
+    intervalIntegral.integral_congr fun u hu ↦ hgg' u (by rwa [uIcc_of_le hab] at hu)
+  rw [← hGb, ← hconst, smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
 
 end TauCeti
