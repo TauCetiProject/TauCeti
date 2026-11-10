@@ -319,9 +319,6 @@ omit hω₂ in
 theorem coe_quadraticTwoForm_of_cliffordProjection_apply_eq_self {ψ : positiveHalfSpinors o ρ}
     (hψ : cliffordProjection o ρ ω ψ = ψ) :
     (quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V) = (‖ψ‖ ^ 2 / 4) • ω := by
-  rcases eq_or_ne ψ 0 with rfl | hψ₀
-  · simp
-  have hω₂ := norm_sq_eq_two_of_cliffordProjection_apply_eq_self o ρ hQ hkl hω hψ₀ hψ
   have : Nontrivial (positiveHalfSpinors o ρ) := Module.nontrivial_of_finrank_eq_succ h₂
   have hsd : o.hodgeStar hkl ((quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V) - (‖ψ‖ ^ 2 / 4) • ω) =
       (quadraticTwoForm o ρ hkl ψ : ⋀[ℝ]^2 V) - (‖ψ‖ ^ 2 / 4) • ω := by
