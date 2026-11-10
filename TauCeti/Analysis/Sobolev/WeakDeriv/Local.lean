@@ -31,8 +31,9 @@ required by the weak-derivative predicate.
 In a finite-dimensional domain with its Borel measurable space, local weak Fréchet derivative
 fields need not be given by a fixed global candidate: uniqueness makes them agree almost
 everywhere on overlaps, and they assemble into a global weak derivative. A countable subcover
-suffices even when the original cover is uncountable. This uniqueness-based gluing is the only part
-that needs finite dimension.
+suffices even when the original cover is uncountable. Among the locality and gluing results, this
+uniqueness-based gluing is the only one that needs finite dimension; the cutoff theorem
+`HasWeakFDerivOn.exists_open_memLp_indicator` below also assumes it.
 
 ## Main results
 
