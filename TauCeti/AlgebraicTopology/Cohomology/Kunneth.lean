@@ -22,12 +22,6 @@ For topological spaces `X` and `Y`, the cohomology cross products
 (`TopCat.singularCohomologyKunneth`), whose source is the degree `n` part of the tensor product of
 the graded `k`-modules `H*(X; R, M)` and `H*(Y; S, N)`.
 
-For any commutative ring `k` of coefficients, the cohomology cross product is the cup product of
-the pullbacks along the two projections, so `⟨pr₁^* a ⌣ pr₂^* b, z⟩ = ⟨a, x⟩ ⟨b, y⟩` for the class
-`z ∈ Hₙ(X × Y; k)` corresponding to the homology cross product of `x` and `y`
-(`TopCat.exists_singularKronecker_singularCup_fst_snd_eq_mul`). This detects nonzero cup products
-on products of spaces over any commutative ring, without a Künneth isomorphism.
-
 With coefficients in a commutative ring `k` itself, suppose that the homology modules `Hₚ(X; k)`
 are projective, and finitely generated for `p ≤ n`. Then the Kronecker map
 `Hᵖ(X; k) ⟶ Hom(Hₚ(X; k), k)` is an isomorphism
@@ -59,8 +53,6 @@ cross product, and the pairing `k ⊗ k ⟶ k` is multiplication.
 * `TopCat.singularCohomologyKunneth`: the cohomology Künneth map, characterized on summands by
   `TopCat.singularCohomologyKunneth_ιTensorObj_tmul`, with
   `TopCat.singularCohomologyKunneth_naturality` its naturality in both spaces.
-* `TopCat.exists_singularKronecker_singularCup_fst_snd_eq_mul`: the cup product of pullbacks
-  along the projections evaluates multiplicatively on homology cross products.
 * `TopCat.singularCohomologyKunnethIso`, `TopCat.isIso_singularCohomologyKunneth` and
   `TopCat.singularCohomologyKunneth_bijective`: the Künneth theorem for cohomology over a
   commutative ring, when the homology of one factor is projective and finitely generated.
@@ -132,60 +124,6 @@ lemma singularCohomologyKunneth_naturality {X Y X' Y' : TopCat.{w}} (f : X ⟶ X
   simp [TauCeti.singularCross_naturality]
 
 end Kunneth
-
-section CupProduct
-
-variable {k : Type w} [CommRing k] (X Y : TopCat.{w})
-
-/-- **The cup product of pullbacks along the projections evaluates multiplicatively on a homology
-cross product.** For `a ∈ Hᵖ(X; k)`, `b ∈ H^q(Y; k)`, `x ∈ Hₚ(X; k)` and `y ∈ H_q(Y; k)`, some
-class `z ∈ Hₙ(X × Y; k)`, namely the homology cross product of `x` and `y` read with
-coefficients `k` instead of `k ⊗ k`, satisfies `⟨pr₁^* a ⌣ pr₂^* b, z⟩ = ⟨a, x⟩ ⟨b, y⟩`. The
-cup product is the one of the commutative ring `k`, with the unitors of `ModuleCat k` as
-diagonal and multiplication. -/
-theorem exists_singularKronecker_singularCup_fst_snd_eq_mul {p q n : ℕ} (h : p + q = n)
-    (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
-    (b : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q)
-    (x : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ (ModuleCat.{w} k))).obj X)
-    (y : ((singularHomologyFunctor (ModuleCat.{w} k) q).obj (𝟙_ (ModuleCat.{w} k))).obj Y) :
-    ∃ z : ((singularHomologyFunctor (ModuleCat.{w} k) n).obj (𝟙_ (ModuleCat.{w} k))).obj (X ⊗ Y),
-      (X ⊗ Y).singularKronecker k n ((X ⊗ Y).singularCup k (λ_ _).inv (λ_ _).hom p q n h
-        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst X Y) p a)
-        (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd X Y) q b)) z =
-      X.singularKronecker k p a x * Y.singularKronecker k q b y := by
-  -- Changing the chain coefficients along `λ⁻¹ : k ⟶ k ⊗ k` turns the cross product, whose
-  -- Alexander–Whitney diagonal has coefficients `k ⊗ k`, into the cup product with coefficients
-  -- `k`.
-  let e := ((SSet.chainComplexFunctor (ModuleCat.{w} k)).map (λ_ (𝟙_ (ModuleCat.{w} k))).inv).app
-    (toSSet.obj (X ⊗ Y))
-  have hcup := TauCeti.ChainComplex.cup_precomp (k := k)
-    ((X ⊗ Y).alexanderWhitneyDiagonal (𝟙 (𝟙_ (ModuleCat.{w} k) ⊗ 𝟙_ (ModuleCat.{w} k))))
-    (λ_ (𝟙_ (ModuleCat.{w} k))).hom e p q n h
-    (TopCat.singularCohomologyMap (CartesianMonoidalCategory.fst X Y) p a)
-    (TopCat.singularCohomologyMap (CartesianMonoidalCategory.snd X Y) q b)
-  have hD : e ≫ (X ⊗ Y).alexanderWhitneyDiagonal
-      (𝟙 (𝟙_ (ModuleCat.{w} k) ⊗ 𝟙_ (ModuleCat.{w} k))) =
-      (X ⊗ Y).alexanderWhitneyDiagonal (λ_ (𝟙_ (ModuleCat.{w} k))).inv := by
-    simp [e, TauCeti.alexanderWhitneyDiagonal_def]
-  rw [hD, ← TauCeti.singularCup_def, ← TauCeti.singularCup_def,
-    ← TauCeti.singularCross_eq_singularCup] at hcup
-  have hxy := ConcreteCategory.congr_hom
-    (singularHomologyCross_comp_singularKronecker_singularCross
-      (μ := (λ_ (𝟙_ (ModuleCat.{w} k))).hom) (k := k) X Y p q n h a b) (x ⊗ₜ y)
-  simp only [ConcreteCategory.comp_apply, singularKronecker_def] at hxy
-  -- The coefficient change `e` is an isomorphism, so the homology cross product of `x` and `y`
-  -- comes from a class with coefficients `k`.
-  obtain ⟨z, hz⟩ := (ConcreteCategory.bijective_of_isIso (homologyMap e n)).2
-    (singularHomologyCross X Y (𝟙_ (ModuleCat.{w} k)) (𝟙_ (ModuleCat.{w} k)) p q n h (x ⊗ₜ y))
-  refine ⟨z, ?_⟩
-  rw [hcup, singularKronecker_def]
-  refine (ConcreteCategory.congr_hom (TauCeti.ChainComplex.kronecker_naturality e n _) _).trans ?_
-  rw [ConcreteCategory.comp_apply, hz]
-  refine hxy.trans ?_
-  simp [ModuleCat.MonoidalCategory.tensorHom_tmul, ModuleCat.MonoidalCategory.leftUnitor_hom_apply,
-    singularKronecker_def]
-
-end CupProduct
 
 section ProjectiveHomology
 

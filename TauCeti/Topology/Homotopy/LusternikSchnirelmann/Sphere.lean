@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cohomology.Kunneth
+public import TauCeti.AlgebraicTopology.Cohomology.CrossProduct
 public import TauCeti.AlgebraicTopology.Cohomology.Sphere
 public import TauCeti.AlgebraicTopology.Sphere.Contractible
 public import TauCeti.AlgebraicTopology.Sphere.Puncture
@@ -207,6 +207,7 @@ end Detected
 /-- **The cup length of a positive-dimensional sphere is `1`** over every nontrivial commutative
 ring: its top cohomology class is nonzero, and the normalized category `1` bounds the cup length
 above. -/
+@[simp]
 theorem lsCupLength_sphere {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [FiniteDimensional ℝ E] (hE : 2 ≤ finrank ℝ E) (R : Type u) [CommRing R] [Nontrivial R] :
     lsCupLength (sphere (0 : E) 1) R = 1 := by
