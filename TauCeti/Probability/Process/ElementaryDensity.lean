@@ -51,7 +51,7 @@ theorem ae_eq_zero_of_setIntegral_elementarySets_eq_zero
   let : MeasurableSpace (ι × Ω) := ℱ.predictable
   obtain ⟨v, hv, hcover⟩ := ℱ.isCountablySpanning_elementarySets
   exact TauCeti.ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem
-    ℱ.predictable_eq_generateFrom_elementarySets.symm ℱ.isPiSystem_elementarySets
+    ℱ.predictable_eq_generateFrom_elementarySets ℱ.isPiSystem_elementarySets
     v hv hcover (fun n ↦ hf _ (hv n)) helem
 
 /-- Testing integrals against bounded predictable rectangles determines a function integrable

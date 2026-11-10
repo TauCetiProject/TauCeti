@@ -122,7 +122,7 @@ theorem topologicalClosure_span_indicatorConstLp_eq_top_of_isPiSystem
   have hfi : ∀ s ∈ S, IntegrableOn f s μ := fun s hs =>
     integrableOn_Lp_of_measure_ne_top f (by norm_num) (hfin s hs)
   obtain ⟨v, hv, hcover⟩ := hcover
-  refine (ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem hgen.symm hpi v hv hcover
+  refine (ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem hgen hpi v hv hcover
     (fun n ↦ hfi _ (hv n)) ?_).trans (Lp.coeFn_zero ℝ 2 μ).symm
   intro s hs
   rw [← L2.inner_indicatorConstLp_one

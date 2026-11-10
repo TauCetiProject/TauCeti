@@ -52,7 +52,7 @@ theorem ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem
     {X E κ : Type*} {m : MeasurableSpace X} [Countable κ]
     [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
     {μ : Measure X} {C : Set (Set X)}
-    (hgen : MeasurableSpace.generateFrom C = m) (hpi : IsPiSystem C)
+    (hgen : m = MeasurableSpace.generateFrom C) (hpi : IsPiSystem C)
     (s : κ → Set X) (hs : ∀ n, s n ∈ C) (hcover : ⋃ n, s n = Set.univ)
     {f : X → E} (hf : ∀ n, IntegrableOn f (s n) μ)
     (hzero : ∀ R ∈ C, ∫ x in R, f x ∂μ = 0) : f =ᵐ[μ] 0 := by
@@ -64,7 +64,7 @@ theorem ae_eq_zero_of_setIntegral_eq_zero_of_isPiSystem
   intro n
   apply (hf n).ae_eq_zero_of_forall_setIntegral_eq_zero
   intro R hR _
-  refine setIntegral_eq_zero_of_isPiSystem le_rfl hgen.symm hpi (hf n) ?_ ?_ R hR
+  refine setIntegral_eq_zero_of_isPiSystem le_rfl hgen hpi (hf n) ?_ ?_ R hR
   · simpa only [Measure.restrict_univ] using hzero _ (hs n)
   · intro Q hQ
     rw [Measure.restrict_restrict (hmeas hQ)]
