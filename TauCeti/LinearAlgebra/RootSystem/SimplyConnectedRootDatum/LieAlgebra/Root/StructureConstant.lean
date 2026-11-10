@@ -52,6 +52,8 @@ to the Chevalley commutator formula for the root subgroups `x_α(u) = Σₙ uⁿ
 * `TauCeti.DynkinType.structureConstant_skew`: `N_{β,α} = -N_{α,β}`.
 * `TauCeti.DynkinType.structureConstant_reflectionPerm_self_reflectionPerm_self`:
   `N_{-α,-β} = -N_{α,β}`.
+* `TauCeti.DynkinType.two_dvd_structureConstant_mul_structureConstant`: `N_{α,β} N_{α,α+β}` is
+  even.
 * `TauCeti.DynkinType.lie_chevalleySystem_eq_zero`: `⁅e_α, e_β⁆ = 0` when `α + β` is neither a
   root nor zero.
 * `TauCeti.DynkinType.lie_chevalleySystem_eq_zero_of_add_eq`: if `γ = α + β` is a root and

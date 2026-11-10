@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
-public import TauCeti.Combinatorics.Graph.Incidence
+public import TauCeti.Combinatorics.Graph.Incidence.Basic
 public import TauCeti.Combinatorics.Graph.VertexCover
 
 /-!
@@ -27,6 +27,7 @@ usage of either side by edge multiplicities equals their sum.
 
 * `Graph.IsBipartition G L R`: the finite sets `L` and `R` of actual vertices form a bipartition of
   `G`.
+* `Graph.BipartiteHom G L`: one arrow for every actual edge, directed from `L` to its other end.
 
 ## Main results
 
@@ -164,6 +165,53 @@ end IsBipartition
 /-- A bipartition is symmetric in its two sides. -/
 theorem isBipartition_comm : G.IsBipartition L R ↔ G.IsBipartition R L :=
   ⟨IsBipartition.symm, IsBipartition.symm⟩
+
+/-! ### Bipartite arrow family -/
+
+/-- The arrow family obtained by directing every actual edge of `G` from its end in `L` to its
+other end. Under a bipartition by `L, R`, these are exactly the edges directed from `L` to `R`. -/
+@[expose] def BipartiteHom (G : Graph α β) (L : Finset V(G)) (x y : V(G)) : Type v :=
+  {e : E(G) // G.IsLink e x y ∧ x ∈ L}
+
+instance [Finite E(G)] (L : Finset V(G)) (x y : V(G)) : Finite (G.BipartiteHom L x y) := by
+  unfold BipartiteHom
+  infer_instance
+
+noncomputable instance [Fintype E(G)] (L : Finset V(G)) (x y : V(G)) :
+    Fintype (G.BipartiteHom L x y) :=
+  Fintype.ofFinite (G.BipartiteHom L x y)
+
+namespace BipartiteHom
+
+/-- The original edge underlying an arrow of the bipartite arrow family. -/
+@[expose] def edge {L : Finset V(G)} {x y : V(G)} (e : G.BipartiteHom L x y) : E(G) := e.1
+
+@[simp]
+theorem edge_mk {L : Finset V(G)} {x y : V(G)} (e : E(G))
+    (h : G.IsLink e x y ∧ x ∈ L) : edge (⟨e, h⟩ : G.BipartiteHom L x y) = e :=
+  rfl
+
+/-- The edge underlying a bipartite arrow links its source to its target. -/
+theorem isLink {L : Finset V(G)} {x y : V(G)} (e : G.BipartiteHom L x y) :
+    G.IsLink e.edge x y :=
+  e.2.1
+
+/-- Bipartite arrows are equal when their underlying edges are equal. -/
+@[ext]
+theorem ext {L : Finset V(G)} {x y : V(G)} {e e' : G.BipartiteHom L x y}
+    (h : e.edge = e'.edge) : e = e' :=
+  Subtype.ext h
+
+/-- The source of every bipartite arrow belongs to `L`. -/
+theorem source_mem {L : Finset V(G)} {x y : V(G)} (e : G.BipartiteHom L x y) : x ∈ L :=
+  e.2.2
+
+/-- The target of every bipartite arrow belongs to `R`. -/
+theorem target_mem {L R : Finset V(G)} (hLR : G.IsBipartition L R) {x y : V(G)}
+    (e : G.BipartiteHom L x y) : y ∈ R :=
+  hLR.mem_right_of_isLink e.isLink e.source_mem
+
+end BipartiteHom
 
 end Graph
 

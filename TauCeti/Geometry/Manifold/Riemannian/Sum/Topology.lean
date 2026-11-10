@@ -64,7 +64,7 @@ theorem chartMetric_sumTangentSpace_inl
     simpa [ChartedSpace.sum_chartAt_inl] using hy
   simp only [← Trivialization.symmL_apply (R := ℝ) _ hbase',
     ← Trivialization.symmL_apply (R := ℝ) _ hbase,
-    TauCeti.Manifold.symmL_trivializationAt_sumInl hy]
+    TauCeti.Manifold.symmL_trivializationAt_sumInl]
   exact sumTangentSpace_inner_inl g h _ _ _
 
 /-- In a chart centred in the right summand, the disjoint-union metric has the same coordinate
@@ -90,7 +90,7 @@ theorem chartMetric_sumTangentSpace_inr
     simpa [ChartedSpace.sum_chartAt_inr] using hy
   simp only [← Trivialization.symmL_apply (R := ℝ) _ hbase',
     ← Trivialization.symmL_apply (R := ℝ) _ hbase,
-    TauCeti.Manifold.symmL_trivializationAt_sumInr hy]
+    TauCeti.Manifold.symmL_trivializationAt_sumInr]
   exact sumTangentSpace_inner_inr g h _ _ _
 
 variable [I.Boundaryless]

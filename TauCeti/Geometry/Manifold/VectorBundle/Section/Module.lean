@@ -70,6 +70,17 @@ instance instIsScalarTowerContMDiffMap : IsScalarTower 𝕜 C^n⟮I, M; 𝕜⟯ 
 instance instSMulCommClassContMDiffMap : SMulCommClass 𝕜 C^n⟮I, M; 𝕜⟯ Cₛ^n⟮I; F, V⟯ where
   smul_comm c f s := by ext x; simp [smul_comm c (f x)]
 
+variable (I F n V) in
+/-- Evaluation of sections at a point as a ground-field linear map. -/
+def evalLinearMap (x : M) : Cₛ^n⟮I; F, V⟯ →ₗ[𝕜] V x where
+  toFun s := s x
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+
+@[simp]
+theorem evalLinearMap_apply (x : M) (s : Cₛ^n⟮I; F, V⟯) : evalLinearMap I F n V x s = s x :=
+  (rfl)
+
 end Module
 
 section Pullback

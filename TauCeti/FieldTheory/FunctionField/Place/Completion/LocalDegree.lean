@@ -135,8 +135,7 @@ theorem span_completionIntegers_eq_top [Finite ι] (u : ι → P'.integers)
   refine surjective_of_mkQ_comp_surjective
     (I := maximalIdeal (P'.restrict k F).completionPlace.integers) fun y ↦ ?_
   obtain ⟨y, rfl⟩ := Submodule.mkQ_surjective _ y
-  obtain ⟨y₀, hy₀⟩ := P'.exists_filtration_sub_completionEmbedding_mem
-    (a := 0) (b := ramificationIdx F P') (by positivity)
+  obtain ⟨y₀, hy₀⟩ := P'.exists_filtration_sub_completionEmbedding_mem (ramificationIdx F P')
     ⟨y, P'.completionPlace.mem_filtration_zero_iff.mpr y.2⟩
   obtain ⟨c, hc⟩ := exists_sub_sum_mem_filtration k F P' u hu (y := y₀) (by simpa using ht)
     (ramificationIdx F P') (P'.mem_filtration_zero_iff.mp y₀.2)
@@ -247,8 +246,7 @@ private theorem exists_ord_sum_completion_eq_mul [Fintype ι] (u : ι → P'.int
       c i / c i₀ - (P'.restrict k F).completionEmbedding d ∈
         (P'.restrict k F).completionPlace.filtration 1 := by
     intro i
-    obtain ⟨d, hd⟩ := (P'.restrict k F).exists_filtration_sub_completionEmbedding_mem
-      (a := 0) (b := 1) zero_le_one
+    obtain ⟨d, hd⟩ := (P'.restrict k F).exists_filtration_sub_completionEmbedding_mem 1
       ⟨c i / c i₀, (P'.restrict k F).completionPlace.mem_filtration_zero_iff.mpr (hdiv i)⟩
     exact ⟨⟨d, (P'.restrict k F).mem_filtration_zero_iff.mp d.2⟩, hd⟩
   choose d hd using happrox

@@ -161,15 +161,15 @@ theorem isExactLagrangianMap_iff_isLocallyConstant_sub (hL : hσ.IsExactLagrangi
     rw [hh', mextDeriv_ofFunction_add hhd hcd, (mextDeriv_ofFunction_eq_zero_iff hcd).mpr hc,
       add_zero, hL.mpullback_eq]
 
+omit [IsManifold J 1 N] in
 /-- Adding a constant to the primitive of an exact Lagrangian map gives another primitive. -/
 theorem add_const (hL : hσ.IsExactLagrangianMap J θ f h) (c : ℝ) :
     hσ.IsExactLagrangianMap J θ f (fun x ↦ h x + c) :=
-  hL.isExactLagrangianMap_iff_isLocallyConstant_sub.mpr <| by
-    have hsub : (fun x ↦ h x + c) - h = fun _ ↦ c := by
-      funext x
-      simp
-    rw [hsub]
-    exact IsLocallyConstant.const c
+  ⟨hL.isLagrangianMap, hL.contMDiff_primitive.add contMDiff_const, by
+    rw [hL.mpullback_eq]
+    exact funext fun x ↦ (mextDeriv_ofFunction_eq_of_eventuallyEq_add_const
+      (hL.contMDiff_primitive.mdifferentiableAt (by simp))
+      (Filter.Eventually.of_forall fun _ ↦ rfl)).symm⟩
 
 /-- **Primitives differ by a constant on a connected source.** Two primitives of the same exact
 Lagrangian map from a preconnected manifold differ by a constant. -/
@@ -219,11 +219,12 @@ variable {E₂ H₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [T
 Lagrangian maps for `θ₂`, with the same primitive, when it pulls `θ₂` back to `θ`. -/
 theorem _root_.Diffeomorph.isExactLagrangianMap_comp_iff_of_mpullback_eq (ψ : M ≃ₘ⟮I, I₂⟯ M₂)
     (hψ : SmoothForm.mpullback ψ ψ.contMDiff σ₂ = σ)
-    (hψθ : SmoothForm.mpullback ψ ψ.contMDiff θ₂ = θ) (hf : MDifferentiable J I f) :
+    (hψθ : SmoothForm.mpullback ψ ψ.contMDiff θ₂ = θ) :
     hσ₂.IsExactLagrangianMap J θ₂ (ψ ∘ f) h ↔ hσ.IsExactLagrangianMap J θ f h := by
   have hpull : mpullback J I₂ (ψ ∘ f) θ₂.1 = mpullback J I f θ.1 := by
-    rw [mpullback_comp hf (ψ.mdifferentiable (by simp)), ← SmoothForm.coe_mpullback ψ ψ.contMDiff,
-      hψθ]
+    rw [mpullback_comp_of_mdifferentiableAt_comp_iff (ψ.mdifferentiable (by simp))
+      fun _ ↦ ψ.mdifferentiableAt_comp_iff (by simp),
+      ← SmoothForm.coe_mpullback ψ ψ.contMDiff, hψθ]
   rw [isExactLagrangianMap_iff, isExactLagrangianMap_iff,
     isLagrangianMap_diffeomorph_comp_iff (hσ := hσ) ψ hψ, hpull]
 
@@ -236,8 +237,7 @@ theorem _root_.Diffeomorph.isExactLagrangianMap_comp_iff (ψ : M ≃ₘ⟮I, I�
     (hψθ : mpullback I I₂ ψ θ₂.1 = θ.1 + mextDeriv (RoughForm.ofFunction I g))
     (hf : ContMDiff J I ∞ f) :
     hσ₂.IsExactLagrangianMap J θ₂ (ψ ∘ f) (h + g ∘ f) ↔ hσ.IsExactLagrangianMap J θ f h := by
-  rw [ψ.isExactLagrangianMap_comp_iff_of_mpullback_eq hψ rfl
-      (hf.mdifferentiable (by simp)),
+  rw [ψ.isExactLagrangianMap_comp_iff_of_mpullback_eq hψ rfl,
     isExactLagrangianMap_add_mextDeriv_iff (θ' := SmoothForm.mpullback ψ ψ.contMDiff θ₂) hf hg
       ((SmoothForm.coe_mpullback ..).trans hψθ)]
 

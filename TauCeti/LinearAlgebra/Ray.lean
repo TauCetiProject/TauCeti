@@ -22,9 +22,11 @@ the final value. The explicit-partition induction follows the pattern of the Apa
 formalization, revision `24f32e4d600878bfaac6bc2f2f9324175571c321`, as used in
 `TauCeti/Geometry/Manifold/Riemannian/EDistComparison.lean`.
 
-Scaling a ray by a unit commutes with negating it (`Module.Ray.units_smul_neg`), complementing
-Mathlib's `Module.Ray.neg_units_smul`, and with transporting it along a linear equivalence
-(`Module.Ray.map_units_smul`).
+Negating a ray twice gives it back (`Module.Ray.neg_neg`), in a form that `rw` and `simp` find on
+orientations. Scaling a ray by a unit commutes with negating it (`Module.Ray.units_smul_neg`),
+complementing Mathlib's `Module.Ray.neg_units_smul`, and with transporting it along a linear
+equivalence (`Module.Ray.map_units_smul`). Over a linearly ordered ring, any map of rays
+commuting with negation also commutes with scaling by units (`Module.Ray.units_smul_of_map_neg`).
 
 Two nonzero vectors in the same ray cannot cancel: their sum is again nonzero. This is the
 non-degeneracy needed to merge adjacent segments of a piecewise-linear path that point in the same
@@ -115,12 +117,33 @@ section Neg
 variable {R M : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R]
   [AddCommGroup M] [Module R M]
 
+/-- Negating a ray twice produces the original ray. This is Mathlib's `neg_neg` stated with the
+instance `Neg (Module.Ray R M)`, so that `rw` and `simp` also find it on orientations, where the
+generic lemma does not match. -/
+theorem Module.Ray.neg_neg (v : Module.Ray R M) : - -v = v :=
+  _root_.neg_neg v
+
 /-- Scaling a ray by a unit commutes with negating it. -/
 theorem Module.Ray.units_smul_neg (u : Rˣ) (v : Module.Ray R M) : u • -v = -(u • v) := by
   induction v using Module.Ray.ind with | h v hv =>
     simp only [neg_rayOfNeZero, smul_rayOfNeZero, Units.smul_def, smul_neg]
 
 end Neg
+
+section LinearOrder
+
+variable {R M N : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- A map of rays commuting with negation commutes with scaling by units, since a unit acts on rays
+as the identity or as negation according to its sign. -/
+theorem Module.Ray.units_smul_of_map_neg {F : Module.Ray R M → Module.Ray R N}
+    (hF : ∀ v, F (-v) = -F v) (u : Rˣ) (v : Module.Ray R M) : F (u • v) = u • F v := by
+  rcases lt_or_gt_of_ne u.ne_zero with hu | hu
+  · rw [units_smul_of_neg u hu, units_smul_of_neg u hu, hF]
+  · rw [units_smul_of_pos u hu, units_smul_of_pos u hu]
+
+end LinearOrder
 
 variable {R M : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R] [IsDomain R]
   [AddCommGroup M] [Module R M] [IsTorsionFree R M] {x y z : M}
