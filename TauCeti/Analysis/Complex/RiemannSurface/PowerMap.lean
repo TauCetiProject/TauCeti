@@ -38,6 +38,8 @@ points.
 * `TauCeti.RiemannSurface.FiniteHolomorphicMap.spherePow`: the power map as a finite holomorphic
   map of the Riemann sphere.
 * `TauCeti.RiemannSurface.degree_onePointMap_pow`: it has degree `n`.
+* `TauCeti.RiemannSurface.ramificationDegree_onePointMap_pow`: it has ramification degree
+  `2 (n - 1)`.
 * `TauCeti.RiemannSurface.FiniteHolomorphicMap.branchValues_spherePow_subset`: its branch values
   lie in `{0, ∞}`.
 
@@ -129,5 +131,24 @@ theorem degree_onePointMap_pow (hn : n ≠ 0) :
     degree (OnePoint.map fun z : ℂ ↦ z ^ n) = n := by
   rw [← onePointMap_eval_X_pow, degree_onePointMap_eval (by simp [Nat.pos_iff_ne_zero, hn]),
     natDegree_X_pow]
+
+/-- The power map `z ↦ z ^ n` of the Riemann sphere has ramification degree `2 (n - 1)`: it
+has local multiplicity `n` at `0` and at `∞`, and `1` everywhere else. -/
+@[simp]
+theorem ramificationDegree_onePointMap_pow (hn : n ≠ 0) :
+    ramificationDegree (OnePoint.map fun z : ℂ ↦ z ^ n) = 2 * (n - 1) := by
+  classical
+  have hsupp : (support fun x ↦ localMultiplicity (OnePoint.map fun z : ℂ ↦ z ^ n) x - 1) ⊆
+      (({((0 : ℂ) : OnePoint ℂ), ∞} : Finset (OnePoint ℂ)) : Set (OnePoint ℂ)) := by
+    intro x hx
+    induction x using OnePoint.rec with
+    | infty => simp
+    | coe z =>
+      by_cases hz : z = 0
+      · simp [hz]
+      · simp [localMultiplicity_onePointMap_pow_coe_of_ne_zero hn hz] at hx
+  rw [ramificationDegree_def, finsum_eq_sum_of_support_subset _ hsupp,
+    Finset.sum_pair (coe_ne_infty 0)]
+  simp [hn, two_mul]
 
 end TauCeti.RiemannSurface
