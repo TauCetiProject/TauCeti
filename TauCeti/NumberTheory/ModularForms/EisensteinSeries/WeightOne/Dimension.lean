@@ -507,24 +507,9 @@ Eisenstein subspace of `M₁(N, χ)` that is a cusp form is zero. -/
 theorem disjoint_weightOneEisensteinSubspace_range_cuspToModFormCharSpace
     (χ : (ZMod N)ˣ →* ℂˣ) :
     Disjoint (weightOneEisensteinSubspace χ) (LinearMap.range (cuspToModFormCharSpace 1 χ)) := by
-  rw [Submodule.disjoint_def]
-  intro f hfE hfS
-  have hcusp := (mem_range_cuspToModFormCharSpace_iff 1 χ f).mp hfS
-  rw [mem_cuspFormSubmodule_iff_constantTermAt_eq_zero] at hcusp
-  let _ := Fintype.ofFinite {a : CharIndex N 1 // a.nebentypus = χ ∧ a.psi (-1) = 1}
-  obtain ⟨c, hc⟩ := (Submodule.mem_span_range_iff_exists_fun ℂ).mp
-    (weightOneEisensteinSubspace_le_span χ hfE)
-  -- the constant terms of `f` are a combination of those of the series
-  have h0 : ∑ a, c a • constantTerms a.1.weightOneForm = 0 := by
-    ext γ
-    have := congrArg (fun f : modFormCharSpace 1 χ ↦
-      constantTermAt γ (f : ModularForm ((Gamma1 N).map (mapGL ℝ)) 1)) hc
-    simp only [Submodule.coe_sum, Submodule.coe_smul, map_sum, _root_.map_smul] at this
-    simpa [hcusp γ] using this
-  have hc0 := Fintype.linearIndependent_iff.mp
-    (CharIndex.linearIndependent_constantTerms_weightOneForm χ) c h0
-  rw [← hc]
-  simp [hc0]
+  rw [range_cuspToModFormCharSpace_eq_ker_constantTerms]
+  refine (Submodule.range_ker_disjoint ?_).mono_left (weightOneEisensteinSubspace_le_span χ)
+  simpa [Function.comp_def] using CharIndex.linearIndependent_constantTerms_weightOneForm χ
 
 /-- The weight-one Eisenstein subspace of `M₁(N, χ)` consists of the forms of nebentypus `χ` in the
 span of all the weight-one Eisenstein series in `M₁(Γ₁(N))`. -/
