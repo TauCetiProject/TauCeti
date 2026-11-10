@@ -94,6 +94,18 @@ theorem norm_sub_one_le_norm_sub_one_mul_add {R : Type*} [SeminormedRing R] [Nor
       _ ≤ _ := by gcongr
   nlinarith [mul_nonneg (sub_nonneg.2 hw₂) (sub_nonneg.2 hr), norm_nonneg (w - 1)]
 
+/-- A nonempty finite product is bounded by the product of the norms, in any seminormed
+commutative ring. This is Mathlib's `Finset.norm_prod_le'`, which assumes `NormedCommRing`,
+proved by induction on the finite set; it is the nonempty counterpart of
+`TauCeti.norm_prod_le_prod_norm`. -/
+theorem norm_prod_le_prod_norm_of_nonempty {ι R : Type*} [SeminormedCommRing R]
+    {s : Finset ι} (hs : s.Nonempty) (f : ι → R) : ‖∏ i ∈ s, f i‖ ≤ ∏ i ∈ s, ‖f i‖ := by
+  induction hs using Finset.Nonempty.cons_induction with
+  | singleton a => simp
+  | cons a s ha hs ih =>
+    rw [Finset.prod_cons, Finset.prod_cons]
+    exact (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ih (norm_nonneg _))
+
 end TauCeti
 
 end
