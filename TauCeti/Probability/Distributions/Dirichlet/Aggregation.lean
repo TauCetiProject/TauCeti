@@ -90,12 +90,17 @@ theorem map_euclideanFiberSum_dirichletMeasure [DecidableEq κ] {f : ι → κ}
       ← Measure.map_map measurable_dirichletNormalize hmap,
       map_funOnFinite_map_pi_gammaMeasure hf ha one_pos]
 
-/-- Reindexing a Dirichlet vector by an equivalence reindexes its concentration vector. -/
-theorem map_reindex_dirichletMeasure {e : ι ≃ κ} {a : ι → ℝ}
-    (ha : ∀ i, 0 < a i) :
+/-- Reindexing a Dirichlet vector by an equivalence reindexes its concentration vector. For
+invalid concentration vectors both sides are the zero measure. -/
+theorem map_reindex_dirichletMeasure {e : ι ≃ κ} {a : ι → ℝ} :
     (dirichletMeasure a).map (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e) =
       dirichletMeasure (a ∘ e.symm) := by
   classical
+  by_cases ha : ∀ i, 0 < a i
+  swap
+  · rw [dirichletMeasure_eq_zero_of_invalid fun h ↦ ha h.2,
+      dirichletMeasure_eq_zero_of_invalid fun h ↦ ha fun i ↦ by simpa using h.2 (e i),
+      Measure.map_zero]
   have h := map_euclideanFiberSum_dirichletMeasure e.surjective ha
   have hf : euclideanFiberSum e = LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ e := by
     funext x
