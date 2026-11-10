@@ -86,14 +86,19 @@ namespace TauCeti.SymplecticForm
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   (ω : SymplecticForm V) {F : V → ℝ} {p : V}
 
-/-- **The linearized Hamiltonian field has the kernel of the Hessian.** Where `dF` is
-differentiable, `dX_F(x) u = 0` exactly when `d²F(x)(u, ·) = 0`, because
-`ω(dX_F(x) u, v) = d²F(x)(u, v)` and `ω` is nondegenerate. -/
-theorem fderiv_hamiltonianVectorField_apply_eq_zero_iff {x : V}
-    (hF : DifferentiableAt ℝ (fderiv ℝ F) x) (u : V) :
-    fderiv ℝ (ω.hamiltonianVectorField F) x u = 0 ↔ ∀ v, fderiv ℝ (fderiv ℝ F) x u v = 0 := by
-  simp_rw [← ω.apply_fderiv_hamiltonianVectorField hF u]
-  exact ⟨fun h v ↦ by rw [h]; exact LinearMap.map_zero₂ _ v, ω.separatingLeft _⟩
+/-- At a critical point of `F` the Hamiltonian vector field of `εF` vanishes, so the constant curve
+is an integral curve. -/
+private theorem hasDerivAt_const_hamiltonianVectorField_const_mul (hp : fderiv ℝ F p = 0)
+    (ε r : ℝ) : HasDerivAt (fun _ : ℝ ↦ p) (ω.hamiltonianVectorField (fun y ↦ ε * F y) p) r := by
+  rw [ω.hamiltonianVectorField_const_mul, (ω.hamiltonianVectorField_eq_zero_iff F p).2 hp,
+    smul_zero]
+  exact hasDerivAt_const r p
+
+omit [FiniteDimensional ℝ V] in
+/-- The derivative of a `C²` function is differentiable. -/
+private theorem differentiableAt_fderiv_of_contDiff_two (hF : ContDiff ℝ 2 F) (x : V) :
+    DifferentiableAt ℝ (fderiv ℝ F) x :=
+  (hF.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero x
 
 /-- **The linearized evolution at a critical point.** If `p` is a critical point of a `C²`
 function `F`, the derivative at `p` of the Hamiltonian evolution of `εF` from time `s` to time `t`
@@ -104,16 +109,11 @@ theorem fderiv_timeDependentHamiltonianFlow_const_mul (hF : ContDiff ℝ 2 F)
     (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension fun _ y ↦ ε * F y)) (s t : ℝ) :
     fderiv ℝ (ω.timeDependentHamiltonianFlow (fun _ y ↦ ε * F y) hX s t) p =
       exp (((t - s) * ε) • fderiv ℝ (ω.hamiltonianVectorField F) p) := by
-  have hX0 : ω.hamiltonianVectorField F p = 0 := by
-    rw [hamiltonianVectorField_eq_zero_iff, hp]
   have hεX : ω.hamiltonianVectorField (fun y ↦ ε * F y) = ε • ω.hamiltonianVectorField F :=
     funext fun y ↦ ω.hamiltonianVectorField_const_mul ε F y
-  have horbit (r : ℝ) :
-      HasDerivAt (fun _ : ℝ ↦ p) (ω.hamiltonianVectorField (fun y ↦ ε * F y) p) r := by
-    rw [hεX, Pi.smul_apply, hX0, smul_zero]
-    exact hasDerivAt_const r p
   rw [ω.fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft hX
-    (contDiff_const.mul (hF.comp contDiff_snd)) horbit, hεX, fderiv_const_smul_field,
+    (contDiff_const.mul (hF.comp contDiff_snd))
+    (ω.hasDerivAt_const_hamiltonianVectorField_const_mul hp ε), hεX, fderiv_const_smul_field,
     dysonSeriesLeft_const, Pi.smul_apply, smul_smul]
 
 /-- The constant orbit at a critical point of `F` is fixed by every time map of the evolution of
@@ -121,12 +121,8 @@ theorem fderiv_timeDependentHamiltonianFlow_const_mul (hF : ContDiff ℝ 2 F)
 theorem isFixedPt_timeDependentHamiltonianFlow_const_mul (hp : fderiv ℝ F p = 0) (ε : ℝ)
     {K : ℝ≥0} (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension fun _ y ↦ ε * F y))
     (s t : ℝ) : IsFixedPt (ω.timeDependentHamiltonianFlow (fun _ y ↦ ε * F y) hX s t) p := by
-  have horbit (r : ℝ) :
-      HasDerivAt (fun _ : ℝ ↦ p) (ω.hamiltonianVectorField (fun y ↦ ε * F y) p) r := by
-    rw [ω.hamiltonianVectorField_const_mul, (ω.hamiltonianVectorField_eq_zero_iff F p).2 hp,
-      smul_zero]
-    exact hasDerivAt_const r p
-  exact (ω.eq_timeDependentHamiltonianFlow _ hX horbit s t).symm
+  exact (ω.eq_timeDependentHamiltonianFlow _ hX
+    (ω.hasDerivAt_const_hamiltonianVectorField_const_mul hp ε) s t).symm
 
 /-- The constant orbit at a critical point of `F` is a nondegenerate fixed point of the evolution
 of `εF` from `s` to `t` exactly when `exp ((t - s) ε dX_F(p))` fixes no nonzero vector. -/
@@ -157,12 +153,11 @@ theorem isNondegenerateCriticalPoint_of_isNondegenerateFixedPt (hF : ContDiff �
     (h : IsNondegenerateFixedPt 𝓘(ℝ, V)
       (ω.timeDependentHamiltonianFlow (fun _ y ↦ ε * F y) hX s t) p) :
     IsNondegenerateCriticalPoint F p := by
-  have hd : DifferentiableAt ℝ (fderiv ℝ F) p :=
-    (hF.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero p
   refine isNondegenerateCriticalPoint_iff_separatingLeft.2
     ⟨hF.contDiffAt, hp, fun u hu ↦ ?_⟩
   have hA : fderiv ℝ (ω.hamiltonianVectorField F) p u = 0 :=
-    (ω.fderiv_hamiltonianVectorField_apply_eq_zero_iff hd u).2 hu
+    (ω.fderiv_hamiltonianVectorField_apply_eq_zero_iff
+      (differentiableAt_fderiv_of_contDiff_two hF p) u).2 hu
   refine (ω.isNondegenerateFixedPt_timeDependentHamiltonianFlow_const_mul_iff_exp hF hp ε hX s t).1
     h u ?_
   simpa using ContinuousLinearMap.exp_apply_of_apply_eq_smul (μ := (0 : ℝ)) _
@@ -181,8 +176,6 @@ theorem isNondegenerateFixedPt_timeDependentHamiltonianFlow_const_mul_iff (hF : 
         (ω.timeDependentHamiltonianFlow (fun _ y ↦ ε * F y) hX s t) p ↔
       IsNondegenerateCriticalPoint F p := by
   refine ⟨ω.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt hF hp hX, fun h ↦ ?_⟩
-  have hd : DifferentiableAt ℝ (fderiv ℝ F) p :=
-    (hF.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero p
   rw [ω.isNondegenerateFixedPt_timeDependentHamiltonianFlow_const_mul_iff_exp hF hp ε hX s t]
   intro v hv
   have hB : ‖((t - s) * ε) • fderiv ℝ (ω.hamiltonianVectorField F) p‖ < Real.log 2 := by
@@ -190,7 +183,8 @@ theorem isNondegenerateFixedPt_timeDependentHamiltonianFlow_const_mul_iff (hF : 
   rw [ContinuousLinearMap.exp_apply_eq_self_iff hB, _root_.smul_apply,
     smul_eq_zero, mul_comm (t - s)] at hv
   exact h.separatingLeft v
-    ((ω.fderiv_hamiltonianVectorField_apply_eq_zero_iff hd v).1 (hv.resolve_left hε))
+    ((ω.fderiv_hamiltonianVectorField_apply_eq_zero_iff
+      (differentiableAt_fderiv_of_contDiff_two hF p) v).1 (hv.resolve_left hε))
 
 /-- **Small multiples of a function have nondegenerate constant orbits at its nondegenerate
 critical points, uniformly on compact sets.** For a `C²` function `F` and a compact set `C`, there

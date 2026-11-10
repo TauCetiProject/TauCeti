@@ -117,14 +117,14 @@ theorem _root_.ContinuousLinearMap.exp_apply_of_apply_eq_smul (B : X →L[𝕜] 
   exact hop.unique hscalar
 
 /-- **The fixed vectors of a small exponential are the kernel.** If `‖B‖ < log 2`, then `exp B`
-fixes `x` exactly when `B x = 0`. The proof factors `exp B - 1` as `φ(-B) * B`, where
-`φ(a) = (1 - exp (-a)) / a` is the series `oneSubExpNegDivSelf`, which is invertible in this
-range. The bound is needed: a rotation by angle `2π` of the plane is fixed by its exponential but
-has no kernel. -/
+fixes `x` exactly when `B x = 0`. The bound is needed: for `B = 2π J`, the generator of the
+rotations of the plane, `exp B = 1` fixes every vector while `B` has trivial kernel. -/
 theorem _root_.ContinuousLinearMap.exp_apply_eq_self_iff {B : X →L[𝕜] X} (hB : ‖B‖ < Real.log 2)
     {x : X} : exp B x = x ↔ B x = 0 := by
   refine ⟨fun h ↦ ?_, fun h ↦ by
     simpa using B.exp_apply_of_apply_eq_smul (μ := 0) (by rw [h, zero_smul])⟩
+  -- Factor `exp B - 1` as `φ(-B) * B`, where `φ(a) = (1 - exp (-a)) / a` is the series
+  -- `oneSubExpNegDivSelf`, which is invertible in this range.
   obtain ⟨u, hu⟩ := isUnit_oneSubExpNegDivSelf (𝕂 := 𝕜) (a := -B) (by rwa [norm_neg])
   have hfac : (u : X →L[𝕜] X) * B = exp B - 1 := by
     have h := oneSubExpNegDivSelf_mul (𝕂 := 𝕜) (-B)
