@@ -73,7 +73,7 @@ unstable sets of `q` are the coordinate planes on a cube of radius larger than `
 trajectories cross the entrance and exit faces of the box at points `y₁` and `y₂` of the
 coordinate planes. -/
 private theorem exists_morseBox_of_broken (hX : IsAdaptedPseudoGradient f X)
-    (hf : IsMorse 𝓘(ℝ, E) f) {p q r a₁ a₂ : M} (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
+    (hf : IsMorse 𝓘(ℝ, E) f) {p q r a₁ a₂ : M}
     (hpq : p ≠ q) (hqr : q ≠ r) (ha₁ : a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
     (ha₂ : a₂ ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r) :
     ∃ (φ : MorseChart E f q) (ε ρ T₁ T₂ : ℝ) (y₁ y₂ : M),
@@ -88,6 +88,7 @@ private theorem exists_morseBox_of_broken (hX : IsAdaptedPseudoGradient f X)
       ‖(φ.splitCoord (φ.coord (φ.toChart y₁))).fst‖ = ε ∧
       (φ.splitCoord (φ.coord (φ.toChart y₂))).fst = 0 ∧
       ‖(φ.splitCoord (φ.coord (φ.toChart y₂))).snd‖ = ε := by
+  have hq := hX.mfderiv_eq_zero_of_mem_stableSet ha₁.2
   have hfd : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   have hnd := hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hq
   obtain ⟨φ, hφ⟩ := hX.exists_morseChart q hq
@@ -180,8 +181,6 @@ to `r` on the levels of `flow T₁ a₁` and `flow T₂ a₂` near this pair lie
 some `B s` with `s` below the end of the arc. -/
 private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
     (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p q r a₁ a₂ : M}
-    (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
-    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
     (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
     (hqr : manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
     (ha₁ : a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
@@ -206,7 +205,7 @@ private theorem IsMorseSmale.exists_gluingArc {hX : IsAdaptedPseudoGradient f X}
   have hqr' : q ≠ r := by rintro rfl; omega
   have hpr' : p ≠ r := by rintro rfl; omega
   obtain ⟨φ, ε, ρ, T₁, T₂, y₁, y₂, hφ, hε, hερ, hε₂, hloc, hT₁, hT₂, hy₁φ, hy₂φ, hy₁s, hy₁ε,
-    hy₂u, hy₂ε⟩ := hX.exists_morseBox_of_broken hf hq hpq' hqr' ha₁ ha₂
+    hy₂u, hy₂ε⟩ := hX.exists_morseBox_of_broken hf hpq' hqr' ha₁ ha₂
   set Φ : M → WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) :=
     fun w ↦ φ.splitCoord (φ.coord (φ.toChart w)) with hΦdef
   set Ψ : WithLp 2 (({i // φ.weight i = 1} → ℝ) × ({i // ¬φ.weight i = 1} → ℝ)) → M :=
@@ -428,7 +427,6 @@ recorded on two levels, and every broken trajectory is a limit of unbroken ones.
 theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
     {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
     {p q r a₁ a₂ : M}
-    (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0) (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
     (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
     (hqr : manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
     (ha₁ : a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
@@ -447,7 +445,7 @@ theorem IsMorseSmale.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet
   have hqr' : q ≠ r := by rintro rfl; omega
   have hpr' : p ≠ r := by rintro rfl; omega
   obtain ⟨T₁, T₂, δ, hδ, B, hBc, hB₀, hBS, hBinj, hBfwd⟩ :=
-    h.exists_gluingArc hf hq hr hpq hqr ha₁ ha₂
+    h.exists_gluingArc hf hpq hqr ha₁ ha₂
   set S := {w : M × M | w.1 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r ∧
     f w.1 = f a₁ ∧ f w.2 = f a₂ ∧ ∃ t, hX.flow t w.1 = w.2} with hSdef
   have hfa₁ := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hfd hpq' ha₁
@@ -604,8 +602,7 @@ recording a trajectory broken at `q` lies in the closure of the pairs recording 
 trajectories from `p` to `r` on the same two levels. -/
 theorem IsMorseSmale.mem_closure_of_mem_unstableSet_inter_stableSet
     {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
-    {p q r a₁ a₂ : M} (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
-    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
+    {p q r a₁ a₂ : M}
     (hpq : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1)
     (hqr : manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1)
     (ha₁ : a₁ ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q)
@@ -613,7 +610,7 @@ theorem IsMorseSmale.mem_closure_of_mem_unstableSet_inter_stableSet
     (a₁, a₂) ∈ closure {w : M × M | w.1 ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r ∧
       f w.1 = f a₁ ∧ f w.2 = f a₂ ∧ ∃ t, hX.flow t w.1 = w.2} := by
   obtain ⟨N, δ, hδ, e, he₀, hN, -⟩ :=
-    h.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet hf hq hr hpq hqr ha₁ ha₂
+    h.exists_homeomorph_Ico_of_mem_unstableSet_inter_stableSet hf hpq hqr ha₁ ha₂
   -- The points of the half-open interval `δ / (n + 2)` tend to `0`, and their images are unbroken.
   set u : ℕ → Ico (0 : ℝ) δ := fun n ↦ ⟨δ / (n + 2), by positivity,
     (div_lt_self hδ (by linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]))⟩ with hudef

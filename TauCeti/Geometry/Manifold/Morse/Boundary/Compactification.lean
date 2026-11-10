@@ -268,20 +268,17 @@ variable {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 
 include h hf in
 /-- **Finitely many broken trajectories.** Under the Morse–Smale condition, the pairs of points of
 broken index-two trajectories on two levels form a finite set. -/
-theorem finite_morseBrokenTrajectoryPairs {p r : M} (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0)
-    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0) (c₁ c₂ : ℝ) :
+theorem finite_morseBrokenTrajectoryPairs {p r : M} (c₁ c₂ : ℝ) :
     (hX.morseBrokenTrajectoryPairs p r c₁ c₂).Finite := by
-  have hcrit {q : M} : q ∈ criticalPoints 𝓘(ℝ, E) f ↔ mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0 :=
-    mem_criticalPoints_iff_mfderiv_eq_zero
   -- Sort the broken trajectories by their intermediate critical point `q`.
   refine ((hf.finite_criticalPoints.inter_of_left {q |
       manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1 ∧
         manifoldMorseIndex 𝓘(ℝ, E) f q = manifoldMorseIndex 𝓘(ℝ, E) f r + 1}).biUnion
     fun q hq ↦
-      (h.finite_unstableSet_inter_stableSet_inter_level hf hp (hcrit.1 hq.1) hq.2.1 c₁).prod
-        (h.finite_unstableSet_inter_stableSet_inter_level hf (hcrit.1 hq.1) hr hq.2.2 c₂)).subset ?_
+      (h.finite_unstableSet_inter_stableSet_inter_level hf hq.2.1 c₁).prod
+        (h.finite_unstableSet_inter_stableSet_inter_level hf hq.2.2 c₂)).subset ?_
   rintro w ⟨q, hq, hpq, hqr, hy, hyc, hz, hzc⟩
-  exact mem_biUnion ⟨hcrit.2 hq, hpq, hqr⟩ ⟨⟨hy, hyc⟩, hz, hzc⟩
+  exact mem_biUnion ⟨mem_criticalPoints_iff_mfderiv_eq_zero.2 hq, hpq, hqr⟩ ⟨⟨hy, hyc⟩, hz, hzc⟩
 
 include h hf in
 /-- **The limits of trajectories are trajectories or broken trajectories.** Let `p` and `r` be
@@ -349,7 +346,7 @@ theorem finite_closure_diff_morseTrajectoryPairs {p r : M} (hp : mfderiv 𝓘(�
     (hr₂ : f r < c₂) (h₂₁ : c₂ < c₁) (h₁p : c₁ < f p)
     (hgap : ∀ x ∈ criticalPoints 𝓘(ℝ, E) f, f x ∈ Ioo (f r) (f p) → f x ∈ Ioo c₂ c₁) :
     (closure (hX.morseTrajectoryPairs p r c₁ c₂) \ hX.morseTrajectoryPairs p r c₁ c₂).Finite :=
-  (h.finite_morseBrokenTrajectoryPairs hf hp hr c₁ c₂).subset fun _ hw ↦
+  (h.finite_morseBrokenTrajectoryPairs hf c₁ c₂).subset fun _ hw ↦
     (h.closure_morseTrajectoryPairs_subset hf hp hr hind hr₂ h₂₁ h₁p hgap hw.1).resolve_left hw.2
 
 include h hf in
