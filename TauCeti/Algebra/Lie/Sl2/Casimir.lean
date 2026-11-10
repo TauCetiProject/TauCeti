@@ -114,13 +114,12 @@ end Defs
 
 section Commute
 
-variable {K : Type*} [Field K] [NeZero (2 : K)]
+variable {K : Type*} [Field K]
 variable {L : Type*} [LieRing L] [LieAlgebra K L]
 variable {M : Type*} [AddCommGroup M] [Module K M] [LieRingModule L M] [LieModule K L M]
 variable {h e f : L} (t : IsSl2Triple h e f)
 include t
 
-omit [NeZero (2 : K)] in
 /-- The Casimir operator commutes with the action of the Cartan element `h`. Each of the three
 terms is separately preserved: `h` raises the weight by `2` on passing `e` and lowers it by `2` on
 passing `f`, and each term of `e f + f e + h²/2` pairs a raising with a lowering step. -/
@@ -142,8 +141,6 @@ calculation that fixes the coefficient `1 / 2` on `h²`: moving `e` past `e f + 
 `⁅e, ⁅h, m⁆⁆ + ⁅h, ⁅e, m⁆⁆`, and moving it past `h² / 2` produces exactly the negative of that. -/
 theorem lie_e_sl2Casimir (m : M) :
     ⁅e, sl2Casimir K h e f M m⁆ = sl2Casimir K h e f M ⁅e, m⁆ := by
-  have htwo : ∀ y : M, (2 : K)⁻¹ • ((2 : K) • y) = y := fun y ↦ by
-    rw [smul_smul, inv_mul_cancel₀ (two_ne_zero : (2 : K) ≠ 0), one_smul]
   have heh : ⁅e, h⁆ = -((2 : K) • e) := by rw [← lie_skew e h, t.lie_h_e_smul K]
   have h₁ : ⁅e, ⁅e, ⁅f, m⁆⁆⁆ = ⁅e, ⁅h, m⁆⁆ + ⁅e, ⁅f, ⁅e, m⁆⁆⁆ := by
     rw [leibniz_lie e f m, t.lie_e_f, lie_add]
@@ -157,8 +154,15 @@ theorem lie_e_sl2Casimir (m : M) :
     rw [hinner, lie_add, lie_neg, lie_smul]
   have h₃ : (2 : K)⁻¹ • ⁅e, ⁅h, ⁅h, m⁆⁆⁆
       = -⁅e, ⁅h, m⁆⁆ + (-⁅h, ⁅e, m⁆⁆ + (2 : K)⁻¹ • ⁅h, ⁅h, ⁅e, m⁆⁆⁆) := by
-    rw [hA, hB]
-    simp only [smul_add, smul_neg, htwo]
+    rcases eq_or_ne (2 : K) 0 with h2 | h2
+    · -- In characteristic two both sides vanish: `h` commutes with `e` and `2 • y = 0`.
+      have h2' (y : M) : (2 : K) • y = 0 := by rw [h2, zero_smul]
+      rw [h2, inv_zero, zero_smul, zero_smul, add_zero, hinner, h2', neg_zero, zero_add,
+        ← neg_add, ← two_smul K, h2', neg_zero]
+    · have htwo (y : M) : (2 : K)⁻¹ • ((2 : K) • y) = y := by
+        rw [smul_smul, inv_mul_cancel₀ h2, one_smul]
+      rw [hA, hB]
+      simp only [smul_add, smul_neg, htwo]
   simp only [sl2Casimir_apply, lie_add, lie_smul, h₁, h₂, h₃]
   abel
 
@@ -185,7 +189,7 @@ end Commute
 
 section Hom
 
-variable {K : Type*} [Field K] [NeZero (2 : K)]
+variable {K : Type*} [Field K]
 variable {L : Type*} [LieRing L] [LieAlgebra K L]
 variable {h e f : L}
 
