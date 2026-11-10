@@ -54,6 +54,9 @@ importing this file alone lets typeclass inference recognize `A ⊗[K] B` as a c
 `K`-algebra whenever `A` and `B` are. With Mathlib's matrix instances that reads
 `Mₘ(K) ⊗[K] Mₙ(K)` off with no glue; that is the worked example checked at the end of the file.
 
+The file also records `nontrivial_of_nontrivial_tensorProduct_mulOpposite`: `A` is nontrivial when
+`M ⊗[K] Aᵐᵒᵖ` is.
+
 ## Implementation notes
 
 The minimal-length argument for simplicity is run in the coordinates of
@@ -227,6 +230,18 @@ instance tensorProduct_of_isCentral_right [IsSimpleRing A] [Algebra.IsCentral K 
   .of_ringEquiv (Algebra.TensorProduct.comm K B A).toRingEquiv (tensorProduct K B A)
 
 end IsSimpleRing
+
+section Nontrivial
+
+/-- A ring `A` is nontrivial as soon as `M ⊗[K] Aᵐᵒᵖ` is nontrivial for some `K`-algebra `M`: were
+`A` trivial, the tensor product would be trivial too (`TensorProduct.uniqueRight`). -/
+theorem nontrivial_of_nontrivial_tensorProduct_mulOpposite {K A : Type*} [CommRing K] [Ring A]
+    [Algebra K A] (M : Type*) [Ring M] [Algebra K M] [Nontrivial (M ⊗[K] Aᵐᵒᵖ)] :
+    Nontrivial A :=
+  not_subsingleton_iff_nontrivial.1 fun _ =>
+    not_subsingleton (M ⊗[K] Aᵐᵒᵖ) TensorProduct.uniqueRight.instSubsingleton
+
+end Nontrivial
 
 section Examples
 
