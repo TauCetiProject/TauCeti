@@ -57,6 +57,12 @@ blocks `Δⱼ u`.
   no other block.
 * `ContDiffBump.integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ`: the dyadic kernels
   `𝓕⁻ ψⱼ`, `j ≥ 1`, all have the same `L¹` norm.
+* `ContDiffBump.integral_fourierInv_inhomogeneousLittlewoodPaley_succ`: the dyadic kernels have
+  integral zero, and
+  `ContDiffBump.integral_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ`: their
+  `α`-th moments `∫ ‖x‖ ^ α ‖𝓕⁻ ψ_{j+1} x‖` are `2^{-jα}` times that of `𝓕⁻ ψ₁`.
+* `ContDiffBump.inhomogeneousLittlewoodPaleySchwartzMap`: the piece `ψⱼ` as a complex Schwartz
+  function.
 * `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le`: the blocks are bounded on
   `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`.
 
@@ -89,6 +95,47 @@ theorem integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ (j : ℕ) :
   simp_rw [φ.inhomogeneousLittlewoodPaley_succ_apply_eq_one_apply j]
   exact TauCeti.integral_norm_fourierInv_comp_smul
     (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) (inv_ne_zero (pow_ne_zero _ two_ne_zero))
+
+/-- **The moments of the dyadic kernels decay geometrically.** Since `𝓕⁻ ψ_{j+1}` is the
+`L¹`-normalised dilate of `𝓕⁻ ψ₁` by `2^j`, its `α`-th moment is `2^{-jα}` times that of
+`𝓕⁻ ψ₁`. -/
+theorem integral_rpow_mul_norm_fourierInv_inhomogeneousLittlewoodPaley_succ (α : ℝ) (j : ℕ) :
+    ∫ x, ‖x‖ ^ α * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) x‖ =
+      (2 ^ (α * j))⁻¹ *
+        ∫ x, ‖x‖ ^ α * ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) x‖ := by
+  simp_rw [φ.inhomogeneousLittlewoodPaley_succ_apply_eq_one_apply j]
+  rw [TauCeti.integral_rpow_mul_norm_fourierInv_comp_smul
+    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) (inv_ne_zero (pow_ne_zero _ two_ne_zero)),
+    abs_of_pos (by positivity), Real.inv_rpow (by positivity), ← Real.rpow_natCast,
+    ← Real.rpow_mul zero_le_two, mul_comm (j : ℝ)]
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The piece `ψⱼ` of the inhomogeneous Littlewood–Paley partition, as a complex Schwartz
+function. -/
+noncomputable def inhomogeneousLittlewoodPaleySchwartzMap (j : ℕ) : 𝓢(E, ℂ) :=
+  ((φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).comp_left Complex.ofReal_zero).toSchwartzMap
+    (Complex.ofRealCLM.contDiff.comp (φ.contDiff_inhomogeneousLittlewoodPaley j))
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- The Schwartz function `inhomogeneousLittlewoodPaleySchwartzMap φ j` is the piece `ψⱼ`. -/
+@[simp]
+theorem coe_inhomogeneousLittlewoodPaleySchwartzMap (j : ℕ) :
+    (φ.inhomogeneousLittlewoodPaleySchwartzMap j : E → ℂ) =
+      fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
+  funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+
+/-- **The dyadic kernels have integral zero.** For `j ≥ 1`, `∫ 𝓕⁻ ψⱼ = ψⱼ 0 = 0`, since `ψⱼ`
+vanishes near the origin. -/
+theorem integral_fourierInv_inhomogeneousLittlewoodPaley_succ (j : ℕ) :
+    ∫ x, 𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) x = 0 := by
+  set σ := φ.inhomogeneousLittlewoodPaleySchwartzMap (j + 1)
+  have h : ∫ x, 𝓕⁻ (σ : E → ℂ) x = σ 0 := by
+    have h0 := congrFun (σ.continuous.fourier_fourierInv_eq σ.integrable
+      (by simpa only [SchwartzMap.fourier_coe] using (𝓕 σ).integrable)) 0
+    rw [Real.fourier_eq] at h0
+    simpa using h0
+  rw [← coe_inhomogeneousLittlewoodPaleySchwartzMap, h, coe_inhomogeneousLittlewoodPaleySchwartzMap]
+  simp [inhomogeneousLittlewoodPaley_succ_apply]
 
 end ContDiffBump
 
@@ -254,14 +301,9 @@ theorem exists_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] :
     · exact le_max_left _ _
     · exact (φ.integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ j).le.trans
         (le_max_right _ _)
-  -- The symbol `ψⱼ` is smooth and compactly supported, hence a Schwartz function.
-  have hσ := (φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).comp_left Complex.ofReal_zero
-  set σ : 𝓢(E, ℂ) :=
-    hσ.toSchwartzMap (Complex.ofRealCLM.contDiff.comp (φ.contDiff_inhomogeneousLittlewoodPaley j))
-  have hσ_coe : (σ : E → ℂ) = fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
-    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
-  obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ f
-  rw [hσ_coe] at hg hgf
+  obtain ⟨g, hg, hgf⟩ :=
+    exists_fourierMultiplierCLM_eq_and_norm_le (φ.inhomogeneousLittlewoodPaleySchwartzMap j) f
+  rw [φ.coe_inhomogeneousLittlewoodPaleySchwartzMap] at hg hgf
   exact ⟨g, hg, hgf.trans (mul_le_mul_of_nonneg_right hK (norm_nonneg f))⟩
 
 end Lp

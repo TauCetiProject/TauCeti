@@ -28,6 +28,7 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
 * `SchwartzMap.integrable_one_add_norm_sq_rpow_mul_norm`: `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is integrable
   for every real `r`.
+* `SchwartzMap.integrable_rpow_mul_norm`: `‖x‖ ^ r ‖f x‖` is integrable for every real `r ≥ 0`.
 * `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
   against any measure of temperate growth.
 * `SchwartzMap.integrable_norm_iteratedFDeriv`: `‖D^k f x‖` is integrable.
@@ -166,6 +167,25 @@ theorem integrable_one_add_norm_sq_rpow_mul_norm {V : Type*} [NormedAddCommGroup
     (.of_forall fun x ↦ ?_)
   dsimp only
   rw [smulLeftCLM_apply_apply hg, norm_smul, Real.norm_of_nonneg (by positivity)]
+
+/-- For a Schwartz function `f` and every real `r ≥ 0`, the moment `‖x‖ ^ r ‖f x‖` is
+integrable. -/
+theorem integrable_rpow_mul_norm {V : Type*} [NormedAddCommGroup V]
+    [InnerProductSpace ℝ V] [MeasurableSpace V] [BorelSpace V] [SecondCountableTopology V]
+    {ν : Measure V} [ν.HasTemperateGrowth] {r : ℝ} (hr : 0 ≤ r) (f : 𝓢(V, F)) :
+    Integrable (fun x ↦ ‖x‖ ^ r * ‖f x‖) ν := by
+  -- `‖x‖ ^ r = (‖x‖ ^ 2) ^ (r / 2) ≤ (1 + ‖x‖ ^ 2) ^ (r / 2)`.
+  refine (f.integrable_one_add_norm_sq_rpow_mul_norm (ν := ν) (r / 2)).mono'
+    ((continuous_norm.rpow_const fun _ ↦ Or.inr hr).mul f.continuous.norm).aestronglyMeasurable
+    (ae_of_all _ fun x ↦ ?_)
+  rw [Real.norm_of_nonneg (by positivity)]
+  gcongr
+  calc ‖x‖ ^ r = (‖x‖ ^ 2) ^ (r / 2) := by
+        rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg x)]
+        congr 1
+        push_cast
+        ring
+    _ ≤ (1 + ‖x‖ ^ 2) ^ (r / 2) := by gcongr; linarith
 
 omit [SecondCountableTopology E] in
 /-- For a Schwartz function `f` and real `c`, `m`, the function
