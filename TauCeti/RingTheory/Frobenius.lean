@@ -93,6 +93,18 @@ theorem _root_.IsArithFrobAt.eq_of_isUnramifiedAt
   apply MulSemiringAction.toAlgHom_injective R S
   exact AlgHom.IsArithFrobAt.eq_of_isUnramifiedAt hσ hτ hQ
 
+/-- **An arithmetic Frobenius at `Q` is one at every larger ideal over the same prime of the
+base.** The defining congruence at `Q` implies the one at `Q'`, whose exponent is the same because
+`Q` and `Q'` have the same contraction to `R`. -/
+theorem _root_.IsArithFrobAt.of_le {R S G : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    [Monoid G] [MulSemiringAction G S] [SMulCommClass G R S] {Q Q' : Ideal S} {σ : G}
+    (H : _root_.IsArithFrobAt R σ Q) (hle : Q ≤ Q') (hu : Q.under R = Q'.under R) :
+    _root_.IsArithFrobAt R σ Q' := by
+  intro x
+  have h := hle (H x)
+  rw [hu] at h
+  exact h
+
 /-- **A prime carrying an arithmetic Frobenius over an infinite base is nonzero.** The defining
 congruence has the cardinality of `R ⧸ Q ∩ R` as its exponent, so it forces that residue ring to
 be finite; over an infinite `R` this rules out `Q = ⊥`. -/
