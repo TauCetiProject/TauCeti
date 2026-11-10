@@ -385,13 +385,14 @@ cube: the fractional parts of the coordinates of any representative. -/
 theorem exists_mem_Icc_mk_eq (z : CotangentBundle I B) :
     ∃ c ∈ Set.pi univ fun _ : ι ↦ Icc (0 : ℝ) 1,
       mk hα ⟨z.proj, ∑ i, c i • SmoothForm.degreeOneEquiv (α i) z.proj⟩ = mk hα z := by
-  set b := hα.toBasisAt (mem_univ z.proj)
-  set a : ι → ℝ := fun i ↦ b.repr z.2 i
+  obtain ⟨x, v⟩ := z
+  set b := hα.toBasisAt (mem_univ x)
+  set a : ι → ℝ := fun i ↦ b.repr v i
   refine ⟨fun i ↦ Int.fract (a i), fun i _ ↦ ⟨Int.fract_nonneg _, (Int.fract_lt_one _).le⟩, ?_⟩
-  rw [show z = ⟨z.proj, z.2⟩ from rfl, mk_mk_eq_mk_mk_iff]
+  rw [mk_mk_eq_mk_mk_iff]
   refine ⟨fun i ↦ -⌊a i⌋, ?_⟩
-  have hz : z.2 = ∑ i, a i • SmoothForm.degreeOneEquiv (α i) z.proj := by
-    simpa [b, a] using (b.sum_repr z.2).symm
+  have hz : v = ∑ i, a i • SmoothForm.degreeOneEquiv (α i) x := by
+    simpa [b, a] using (b.sum_repr v).symm
   rw [hz, ← Finset.sum_add_distrib]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [← add_smul, Int.cast_neg, ← sub_eq_add_neg, Int.self_sub_floor]
@@ -565,13 +566,9 @@ theorem isLagrangian_ker_mfderiv_proj (hclosed : ∀ i, (α i).IsClosed) (y : La
   have hker : (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (proj hα) (mk hα z)).ker =
       (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (TotalSpace.proj : CotangentBundle I B → B) z).ker.map
         e.toLinearEquiv.toLinearMap := by
-    ext v
-    have h : mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (TotalSpace.proj : CotangentBundle I B → B) z
-        (e.symm v) = mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (proj hα) (mk hα z) v := by
-      rw [hcomp]
-      exact congrArg _ (e.apply_symm_apply v)
-    rw [LinearMap.mem_ker, Submodule.mem_map_equiv, LinearMap.mem_ker]
-    exact ⟨fun hv ↦ h.trans hv, fun hv ↦ h.symm.trans hv⟩
+    refine (Submodule.map_comap_eq_of_surjective e.surjective _).symm.trans (congrArg _ ?_)
+    rw [← LinearMap.ker_comp]
+    exact congrArg (fun f : _ →L[ℝ] _ ↦ f.toLinearMap.ker) hcomp.symm
   rw [hker, ← hsymp, SymplecticForm.isLagrangian_map_transport_iff]
   exact CotangentBundle.isLagrangian_ker_mfderiv_proj z
 

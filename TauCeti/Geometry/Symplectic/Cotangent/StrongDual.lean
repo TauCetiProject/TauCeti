@@ -12,7 +12,6 @@ public import TauCeti.Geometry.Symplectic.Cotangent.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
-import TauCeti.Geometry.Symplectic.Lagrangian.Constructions
 
 /-!
 # The canonical symplectic form on a continuous-dual cotangent space
@@ -36,8 +35,8 @@ composition and inverses.
 * `TauCeti.strongDualCotangentSymplecticForm`: the canonical symplectic form on
   `V × StrongDual ℝ V`.
 * `TauCeti.strongDualCotangentZeroSection`: the zero section of `V × StrongDual ℝ V`.
-* `TauCeti.strongDualCotangentFiber`: the vertical subspace `{0} × V*`, which is Lagrangian in
-  finite dimension (`TauCeti.isLagrangian_strongDualCotangentFiber`).
+* `TauCeti.strongDualCotangentFiber`: the vertical subspace `{0} × V*`, which is Lagrangian
+  (`TauCeti.isLagrangian_strongDualCotangentFiber`).
 * `TauCeti.strongDualCotangentEquiv`: the finite-dimensional identification with
   `V × Module.Dual ℝ V`.
 * `TauCeti.isSymplectomorphism_strongDualCotangentEquiv`: that identification is a
@@ -130,6 +129,20 @@ theorem ker_fst_eq_strongDualCotangentFiber :
     LinearMap.ker (LinearMap.fst ℝ V (StrongDual ℝ V)) = strongDualCotangentFiber :=
   LinearMap.ker_fst ℝ V (StrongDual ℝ V)
 
+/-- The vertical subspace `{0} × V*` is Lagrangian for the canonical symplectic form on the
+continuous-dual model. A vector `ω`-orthogonal to every vertical vector has base coordinate killed
+by every continuous functional, so it vanishes by Hahn--Banach; no finite dimension is needed. -/
+theorem isLagrangian_strongDualCotangentFiber :
+    strongDualCotangentSymplecticForm.IsLagrangian (strongDualCotangentFiber (V := V)) := by
+  rw [SymplecticForm.isLagrangian_iff, SymplecticForm.isIsotropic_iff,
+    SymplecticForm.isCoisotropic_iff]
+  refine ⟨fun v hv w hw ↦ ?_, fun z hz ↦ ?_⟩
+  · simp [(mem_strongDualCotangentFiber_iff v).1 hv, (mem_strongDualCotangentFiber_iff w).1 hw]
+  · rw [SymplecticForm.mem_orthogonal_iff'] at hz
+    rw [mem_strongDualCotangentFiber_iff]
+    exact SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun β ↦ by
+      simpa using hz (0, β) (by simp)
+
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ V]
@@ -160,17 +173,6 @@ lemma isSymplectomorphism_strongDualCotangentEquiv :
   rw [SymplecticForm.isSymplectomorphism_iff]
   intro x y
   simp
-
-/-- In finite dimension, the vertical subspace `{0} × V*` is Lagrangian for the canonical
-symplectic form on the continuous-dual model. -/
-theorem isLagrangian_strongDualCotangentFiber :
-    strongDualCotangentSymplecticForm.IsLagrangian (strongDualCotangentFiber (V := V)) := by
-  rw [← SymplecticForm.isLagrangian_map_transport_iff (e := strongDualCotangentEquiv),
-    SymplecticForm.isSymplectomorphism_iff_transport_eq.1
-      isSymplectomorphism_strongDualCotangentEquiv]
-  convert SymplecticForm.isLagrangian_cotangentFiber (V := V) using 1
-  ext x
-  simp [Submodule.mem_map_equiv]
 
 end FiniteDimensional
 

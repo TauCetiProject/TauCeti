@@ -392,7 +392,8 @@ theorem continuousOn_coeff_totalSpace [VectorBundle 𝕜 F V] [FiniteDimensional
     continuous_snd.comp_continuousOn (hs.trivialization hU b).continuousOn_toFun
   have heq (q : TotalSpace F V) (hq : q ∈ π F V ⁻¹' U) :
       hs.coeff i q.proj q.2 = b.coord i (hs.trivialization hU b q).2 := by
-    rw [show q = ⟨q.proj, q.2⟩ from rfl, hs.trivialization_apply hU b hq]
+    obtain ⟨x, v⟩ := q
+    rw [hs.trivialization_apply hU b hq]
     simp [IsLocalFrameOn.coeff, mem_preimage.mp hq, Basis.coord_apply, Basis.equiv]
   exact (((b.coord i).toContinuousLinearMap.continuous.comp_continuousOn htriv) p hp).congr
     heq (heq p hp)

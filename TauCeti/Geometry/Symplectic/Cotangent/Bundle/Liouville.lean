@@ -366,7 +366,7 @@ theorem symplecticFormAt_symplecticForm (z : CotangentBundle I M) :
 /-- **The fibres of a cotangent bundle are Lagrangian.** At every covector, the vertical tangent
 space, the kernel of the differential of the projection `T*M → M`, is a Lagrangian subspace for the
 canonical symplectic form. -/
-theorem isLagrangian_ker_mfderiv_proj [FiniteDimensional ℝ E] (z : CotangentBundle I M) :
+theorem isLagrangian_ker_mfderiv_proj (z : CotangentBundle I M) :
     ((isSymplectic_symplecticForm (I := I) (M := M)).isNondegenerate.symplecticFormAt
         z).IsLagrangian
       (mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) I (TotalSpace.proj : CotangentBundle I M → M) z).ker := by
