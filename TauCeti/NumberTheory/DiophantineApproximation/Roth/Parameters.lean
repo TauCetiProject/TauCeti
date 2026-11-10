@@ -27,8 +27,8 @@ polynomial in the range of Roth's index estimate. They are stated for an arbitra
 * `TauCeti.floor_div_le_mul_floor_div`: if `σ M ≥ 2`, then `r (k + 1) ≤ σ r k`.
 * `TauCeti.inv_mul_add_le_floor_div_mul`: if `L ≥ σ⁻¹ (5 C₁ / 2 + 5 n)` and a height `H` is
   at most `C₁ ∑_{j < n} r j`, then `σ⁻¹ (H + 4 n r 0) ≤ r k h k`.
-* `TauCeti.floor_div_bounds`: for `D = h (n - 1) / ε`, `5 h i ≤ D`, `r i > 0` and
-  `(1 - ε) D ≤ r i * h i ≤ D`.
+* `TauCeti.floor_div_bounds`: for `0 < x ≤ ε D` and `ε ≤ 1 / 5`, `5 x ≤ D`, `⌊D / x⌋₊ > 0` and
+  `(1 - ε) D ≤ ⌊D / x⌋₊ * x ≤ D`.
 * `TauCeti.two_mul_mul_rpow_inv_two_pow`: `2 n σ ^ (1 / 2 ^ (n - 1)) = 5 n ε / 2` for
   `σ = (5 ε / 4) ^ 2 ^ (n - 1)`.
 
@@ -113,20 +113,18 @@ theorem inv_mul_add_le_floor_div_mul {n k : ℕ} {h : ℕ → ℝ} {D L M σ C�
     _ = σ * (4 / 5 * D) := by field_simp
     _ ≤ σ * (⌊D / h k⌋₊ * h k) := mul_le_mul_of_nonneg_left (by linarith) hσ.le
 
-/-- The degree bounds `⌊D / h i⌋₊` of Roth's auxiliary polynomial, for `D = h (n - 1) / ε` and a
-positive monotone sequence `h`: they are positive, `⌊D / h i⌋₊ * h i` lies between `(1 - ε) D`
-and `D`, and `5 h i ≤ D`. -/
-theorem floor_div_bounds {n : ℕ} {ε : ℝ} (hε : ε ≤ 1 / 5) {h : ℕ → ℝ}
-    (hpos : ∀ k, 0 < h k) (hmono : Monotone h) {D : ℝ} (hD₀ : 0 < D) (hεD : ε * D = h (n - 1))
-    (i : Fin n) : 5 * h i ≤ D ∧ 0 < ⌊D / h i⌋₊ ∧ (⌊D / h i⌋₊ : ℝ) * h i ≤ D ∧
-      (1 - ε) * D ≤ ⌊D / h i⌋₊ * h i := by
-  have hhD : h i ≤ ε * D := hεD ▸ hmono (by omega)
-  have h5D : 5 * h i ≤ D := by nlinarith [hpos i]
-  refine ⟨h5D, Nat.floor_pos.2 ((one_le_div (hpos i)).2 (by linarith [hpos i])),
-    (le_div_iff₀ (hpos i)).1 (Nat.floor_le (div_pos hD₀ (hpos i)).le), ?_⟩
-  have hlt := Nat.lt_floor_add_one (D / h i)
-  have hmul : D / h i * h i = D := div_mul_cancel₀ D (hpos i).ne'
-  nlinarith [hpos i]
+/-- The degree bound `⌊D / x⌋₊` of Roth's auxiliary polynomial, for a positive scalar `x ≤ ε D`
+with `ε ≤ 1 / 5`: it is positive, `⌊D / x⌋₊ * x` lies between `(1 - ε) D` and `D`, and
+`5 x ≤ D`. -/
+theorem floor_div_bounds {ε x D : ℝ} (hε : ε ≤ 1 / 5) (hx : 0 < x) (hD₀ : 0 < D)
+    (hxD : x ≤ ε * D) :
+    5 * x ≤ D ∧ 0 < ⌊D / x⌋₊ ∧ (⌊D / x⌋₊ : ℝ) * x ≤ D ∧ (1 - ε) * D ≤ ⌊D / x⌋₊ * x := by
+  have h5D : 5 * x ≤ D := by nlinarith
+  refine ⟨h5D, Nat.floor_pos.2 ((one_le_div hx).2 (by linarith)),
+    (le_div_iff₀ hx).1 (Nat.floor_le (div_pos hD₀ hx).le), ?_⟩
+  have hlt := Nat.lt_floor_add_one (D / x)
+  have hmul : D / x * x = D := div_mul_cancel₀ D hx.ne'
+  nlinarith
 
 /-- The exponent `2 n σ ^ (1 / 2 ^ (n - 1))` for `σ = (5 ε / 4) ^ 2 ^ (n - 1)` equals
 `5 n ε / 2`. -/
