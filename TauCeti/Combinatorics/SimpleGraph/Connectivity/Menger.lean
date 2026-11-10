@@ -240,18 +240,17 @@ theorem exists_paths_vertexSeparator_card_eq [Finite V] (hst : s ≠ t) (hadj : 
     fun h ↦ hX (reachable_induce_compl_iff.1 h), hk⟩
 
 /-- **Menger's theorem for internally vertex-disjoint paths, predicate form.** Let `s` and `t` be
-nonadjacent vertices of a simple graph on a finite vertex type. Then `t` stays reachable
+vertices of a simple graph on a finite vertex type. Then `t` stays reachable
 from `s` after deleting any fewer than `k` vertices other than `s` and `t` exactly when there are
 `k` paths from `s` to `t` pairwise sharing no vertex other than `s` and `t`. -/
-theorem forall_reachable_induce_iff_exists_paths [Finite V] (hadj : ¬G.Adj s t) (k : ℕ) :
+theorem forall_reachable_induce_iff_exists_paths [Finite V] (k : ℕ) :
     (∀ (X : Finset V) (hs : s ∉ X) (ht : t ∉ X), #X < k →
         (G.induce (X : Set V)ᶜ).Reachable ⟨s, hs⟩ ⟨t, ht⟩) ↔
       ∃ P : Fin k → G.Walk s t, (∀ i, (P i).IsPath) ∧
         Pairwise fun i j ↦ (P i).InternallyDisjoint (P j) := by
   refine ⟨fun h ↦ ?_, fun ⟨P, _, hP⟩ X hs ht hX ↦ ?_⟩
-  · obtain ⟨P, hP, hdisj⟩ := (forall_reachableAvoiding_iff_exists_paths (Q := G.AdjHom)
-      (isEmpty_plift.2 (isEmpty_Prop.2 hadj)) k).1 fun X hs ht hX ↦
-        reachable_induce_compl_iff.1 (h X hs ht hX)
+  · obtain ⟨P, hP, hdisj⟩ := (forall_reachableAvoiding_iff_exists_paths (Q := G.AdjHom) k).1
+      fun X hs ht hX ↦ reachable_induce_compl_iff.1 (h X hs ht hX)
     exact ⟨fun i ↦ (P i).toWalk, fun i ↦ by simpa using hP i,
       fun _ _ hij ↦ by simpa using hdisj hij⟩
   · by_contra h
