@@ -30,8 +30,6 @@ place at infinity, where `x` has a pole; the complement of `D₊(Z)` is the sing
 
 ## Main declarations
 
-* `WeierstrassCurve.isFunctionField_functionField_projModel`: `K(E)` is a function field over
-  `K`;
 * `WeierstrassCurve.projModelCodimensionOnePointEquivPlace`: the codimension-one points of
   `projModel W` are the places of `K(W)`;
 * `WeierstrassCurve.mem_integers_projModelCodimensionOnePointEquivPlace_iff`: the valuation ring
@@ -75,16 +73,6 @@ theorem projModelFunctionFieldEquiv_algebraMap (c : K) :
     projModelFunctionFieldEquiv_baseRingToFunctionField, RingEquiv.refl_apply]
 
 variable [W.IsElliptic]
-
-omit [W.IsElliptic] in
-/-- The function field of the projective model of a Weierstrass curve is an algebraic function
-field of one variable over the base field. -/
-theorem isFunctionField_functionField_projModel :
-    IsFunctionField K W.projModel.functionField := by
-  have := W.toAffine.isFunctionField.essFiniteType
-  have := (Algebra.EssFiniteType.iff_of_algEquiv W.projModelFunctionFieldBaseAlgEquiv).2 this
-  rw [isFunctionField_iff_trdeg_eq_one, W.projModelFunctionFieldBaseAlgEquiv.trdeg_eq]
-  exact W.toAffine.isFunctionField.trdeg_eq_one
 
 /-- **The codimension-one points of the projective model are the places of `K(W)`.** A
 codimension-one point of `E = projModel W` goes to the place of `K(E)` whose valuation ring is its
