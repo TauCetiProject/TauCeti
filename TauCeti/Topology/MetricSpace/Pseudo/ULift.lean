@@ -27,7 +27,7 @@ variable {X : Type*} [PseudoMetricSpace X]
 
 /-- The closed ball of `ULift X` about `x` is homeomorphic to the closed ball of `X` about
 `x.down` of the same radius, by forgetting the universe lift. -/
-@[expose] def uliftClosedBall (x : ULift X) (r : ℝ) : closedBall x r ≃ₜ closedBall x.down r :=
+def uliftClosedBall (x : ULift X) (r : ℝ) : closedBall x r ≃ₜ closedBall x.down r :=
   Homeomorph.ulift.subtype fun _ ↦ Iff.rfl
 
 @[simp]

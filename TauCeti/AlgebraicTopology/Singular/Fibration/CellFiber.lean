@@ -94,7 +94,7 @@ omit [T2Space B] in
 @[simp]
 lemma cellULiftMap_apply (n : ℕ) (j : cell C n) (x : closedBall (0 : ULift.{u} (Fin n → ℝ)) 1) :
     cellULiftMap C n j x = map n j (x : ULift.{u} (Fin n → ℝ)).down :=
-  (rfl)
+  congrArg (map n j) (coe_uliftClosedBall_apply 0 1 x)
 
 variable (p C) in
 /-- The pair `(Pⱼ, ∂Pⱼ)`: the pullback `Pⱼ` of `p` along the characteristic map of the `n`-cell
@@ -254,7 +254,9 @@ def cellDiskPullbackFiberHomeomorph (n : ℕ) (j : cell C n) :
   toFun x := ⟨x.1.1.2, by
     have hx : (x.1.1.1 : ULift.{u} (Fin n → ℝ)) = 0 := x.2
     rw [mem_preimage, mem_singleton_iff, ← x.1.2, cellULiftMap_apply, hx, ULift.zero_down]⟩
-  invFun e := ⟨⟨(⟨0, mem_closedBall_self zero_le_one⟩, e.1), e.2.symm⟩, rfl⟩
+  invFun e := ⟨⟨(⟨0, mem_closedBall_self zero_le_one⟩, e.1), by
+    rw [cellULiftMap_apply, ULift.zero_down]
+    exact e.2.symm⟩, rfl⟩
   left_inv x := by
     obtain ⟨⟨⟨⟨b, hb⟩, e⟩, h⟩, hx⟩ := x
     have hb0 : b = 0 := hx
@@ -263,6 +265,23 @@ def cellDiskPullbackFiberHomeomorph (n : ℕ) (j : cell C n) :
   right_inv e := rfl
   continuous_toFun := by fun_prop
   continuous_invFun := by fun_prop
+
+omit [T2Space B] in
+/-- The identification of the fibres keeps the point of the total space. -/
+lemma coe_cellDiskPullbackFiberHomeomorph_apply (n : ℕ) (j : cell C n)
+    (x : (_root_.TopCat.pullbackFst (cellULiftMap C n j) p ⁻¹'
+        {x | (x : ULift.{u} (Fin n → ℝ)) = 0} : Set (cellDiskPullbackPair p C n j).fst)) :
+    (cellDiskPullbackFiberHomeomorph p C n j x : E) = x.1.1.2 :=
+  (rfl)
+
+omit [T2Space B] in
+/-- The inverse identification of the fibres puts a point of the fibre of `p` over the centre of
+the disk. -/
+lemma coe_cellDiskPullbackFiberHomeomorph_symm_apply (n : ℕ) (j : cell C n)
+    (e : (p ⁻¹' {map n j 0} : Set E)) :
+    ((cellDiskPullbackFiberHomeomorph p C n j).symm e).1.1 =
+      (⟨0, mem_closedBall_self zero_le_one⟩, e.1) :=
+  (rfl)
 
 end CellDisk
 
