@@ -47,6 +47,8 @@ difference of dimensions of spaces of square-integrable solutions is
   linearly equivalent to `TauCeti.squareIntegrableSolutions A`.
 * `TauCeti.WeakDerivStep.finrank_ker_trajectoryOperator`: the kernel of `D_A` on
   `W^{1,2}(ℝ, F)` has the dimension of `TauCeti.squareIntegrableSolutions A`.
+* `TauCeti.WeakDerivStep.finiteDimensional_ker_trajectoryOperator`: that kernel is finite
+  dimensional when `F` is.
 * `TauCeti.WeakDerivStep.ker_trajectoryOperator_eq_bot_iff`: `D_A` is injective on
   `W^{1,2}(ℝ, F)` exactly when `v' + A v = 0` has no nonzero square-integrable solution.
 
@@ -359,6 +361,14 @@ theorem finrank_ker_trajectoryOperator (hA : Continuous A)
     Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker =
       Module.finrank ℝ (squareIntegrableSolutions A) :=
   (kerTrajectoryOperatorEquiv hA AL hAL).finrank_eq
+
+/-- The kernel of the trajectory operator `D_A u = u' + A u` on `W^{1,2}(ℝ, F)` is finite
+dimensional when `F` is: it embeds into the initial values of the solutions of `v' + A v = 0`. -/
+theorem finiteDimensional_ker_trajectoryOperator [FiniteDimensional ℝ F] (hA : Continuous A)
+    (AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    FiniteDimensional ℝ (trajectoryOperator (p := 2) AL).ker :=
+  (kerTrajectoryOperatorEquiv hA AL hAL).symm.finiteDimensional
 
 /-- **Injectivity of the trajectory operator.** For a continuous family `A` of bounded operators on
 a real Banach space `F`, the trajectory operator `D_A u = u' + A u` on `W^{1,2}(ℝ, F)` is injective
