@@ -7,13 +7,16 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Calculus.FDeriv.Norm
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 
 /-!
 # Derivatives and norms
 
 A map whose norm is locally constant has derivative orthogonal to its value. In particular, the
-derivative of a map into a sphere is tangent to the sphere.
+derivative of a map into a sphere is tangent to the sphere. Away from the origin, a vanishing
+derivative of a norm-composition forces the one-dimensional profile derivative to vanish.
 
 The squared norm of the derivative of a map from `ℂ` to a Euclidean space is at most twice the
 sum of the squared partial derivatives of its components along `1` and `I`
@@ -26,6 +29,22 @@ open Filter
 open scoped Topology RealInnerProductSpace
 
 namespace TauCeti
+
+/-- Away from the origin, a vanishing totalized derivative of a radial function forces its
+one-dimensional profile derivative to vanish. The profile need not be differentiable. -/
+theorem deriv_eq_zero_of_fderiv_comp_norm_eq_zero
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    {v : ℝ → ℝ} {x : E} (hx : x ≠ 0)
+    (hcrit : fderiv ℝ (fun y : E ↦ v ‖y‖) x = 0) : deriv v ‖x‖ = 0 := by
+  have : Nontrivial E := ⟨⟨x, 0, hx⟩⟩
+  by_contra hv
+  have hvd := differentiableAt_of_deriv_ne_zero hv
+  have hn : DifferentiableAt ℝ (fun y : E ↦ ‖y‖) x := differentiableAt_id.norm ℝ hx
+  have hd := hvd.hasDerivAt.comp_hasFDerivAt x hn.hasFDerivAt
+  have hz : deriv v ‖x‖ • fderiv ℝ (fun y : E ↦ ‖y‖) x = 0 := hd.fderiv.symm.trans hcrit
+  have hnorm := norm_fderiv_norm hn
+  rw [(smul_eq_zero.mp hz).resolve_left hv, norm_zero] at hnorm
+  exact zero_ne_one hnorm
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
@@ -67,5 +86,10 @@ theorem norm_fderiv_sq_le_two_mul_sum_sq {ι : Type*} [Fintype ι] (u : ℂ → 
     rw [h.fderiv]
     rfl
   rwa [hcomp, hcomp, ← Finset.sum_add_distrib] at hD
+
+/-- The Fréchet derivative of `y ↦ ‖y - x₀‖ ^ 2` at `x` is `2 • innerSL ℝ (x - x₀)`. -/
+theorem hasFDerivAt_norm_sq_sub {G : Type*} [NormedAddCommGroup G] [InnerProductSpace ℝ G]
+    (x₀ x : G) : HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • innerSL ℝ (x - x₀)) x := by
+  simpa using ((hasFDerivAt_id x).sub_const x₀).norm_sq
 
 end TauCeti

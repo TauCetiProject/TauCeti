@@ -15,7 +15,8 @@ In an additive monoid with one of exponential characteristic `p`, the natural-nu
 additive monoid with one in which `1 ≠ 0` some prime, `2` or `3`, has a nonzero cast; this is how
 one picks a prime `ℓ` different from the characteristic of a field. In a nontrivial ring only the
 characteristic can vanish among the primes, so there are arbitrarily large primes with nonzero
-cast. Without zero divisors, `4` is nonzero whenever `2` is.
+cast. Without zero divisors, `4` is nonzero whenever `2` is. A natural number prime to the
+characteristic of a nontrivial ring is nonzero.
 
 In a ring of exponential characteristic `p`, raising to the power `q = p ^ n` commutes with
 negation. Mathlib records the special case `(-1) ^ q = -1` (`neg_one_pow_expChar_pow`) and the
@@ -32,6 +33,8 @@ law.
 * `TauCeti.exists_prime_lt_natCast_ne_zero`: in a nontrivial ring, arbitrarily large primes have
   nonzero cast.
 * `TauCeti.four_ne_zero_of_two_ne_zero`: without zero divisors, `2 ≠ 0` implies `4 ≠ 0`.
+* `TauCeti.ne_zero_of_coprime_ringChar`: a natural number prime to the characteristic of a
+  nontrivial ring is nonzero.
 * `TauCeti.neg_pow_expChar_pow`: `(-x) ^ p ^ n = -x ^ p ^ n`.
 -/
 
@@ -63,6 +66,12 @@ theorem exists_prime_natCast_ne_zero (R : Type*) [AddMonoidWithOne R] [NeZero (1
   · refine ⟨3, Nat.prime_three, fun h3 ↦ one_ne_zero (α := R) ?_⟩
     simpa only [h2, zero_add] using (Nat.cast_succ (R := R) 2).symm.trans h3
   · exact ⟨2, Nat.prime_two, h2⟩
+
+/-- A natural number prime to the characteristic of a nontrivial ring is nonzero. -/
+theorem ne_zero_of_coprime_ringChar {R : Type*} [NonAssocSemiring R] [Nontrivial R] {m : ℕ}
+    (hm : m.Coprime (ringChar R)) : m ≠ 0 := by
+  rintro rfl
+  exact CharP.ringChar_ne_one (Nat.coprime_zero_left _ |>.1 hm)
 
 /-- **Arbitrarily large primes have nonzero cast** in a nontrivial ring: a prime with zero cast is
 divisible by the characteristic, so it is the characteristic. -/

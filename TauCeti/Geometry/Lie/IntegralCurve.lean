@@ -82,7 +82,7 @@ end IsMIntegralCurve
 /-- Every left-invariant vector field on a real Lie group modeled on a complete space has a global
 integral curve through every point. -/
 theorem exists_isMIntegralCurve_mulInvariantVectorField [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) (x : G) :
     ∃ γ : ℝ → G, γ 0 = x ∧ IsMIntegralCurve γ (mulInvariantVectorField v) := by
   let V := mulInvariantVectorField v
@@ -104,7 +104,7 @@ theorem exists_isMIntegralCurve_mulInvariantVectorField [CompleteSpace E]
 /-- Every left-invariant vector field on a real Lie group modeled on a complete space has a unique
 global integral curve through every point. -/
 theorem existsUnique_isMIntegralCurve_mulInvariantVectorField [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) (x : G) :
     ∃! γ : ℝ → G, γ 0 = x ∧ IsMIntegralCurve γ (mulInvariantVectorField v) := by
   obtain ⟨γ, hγ0, hγ⟩ := exists_isMIntegralCurve_mulInvariantVectorField v x
@@ -116,21 +116,21 @@ theorem existsUnique_isMIntegralCurve_mulInvariantVectorField [CompleteSpace E]
 
 /-- The unique global integral curve of a left-invariant vector field through a given point. -/
 noncomputable def mulInvariantIntegralCurve [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) (x : G) : ℝ → G :=
   (existsUnique_isMIntegralCurve_mulInvariantVectorField v x).choose
 
 /-- The canonical invariant integral curve starts at its specified point. -/
 @[simp]
 theorem mulInvariantIntegralCurve_zero [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) (x : G) :
     mulInvariantIntegralCurve v x 0 = x :=
   (existsUnique_isMIntegralCurve_mulInvariantVectorField v x).choose_spec.1.1
 
 /-- The canonical invariant curve is a global integral curve of its left-invariant vector field. -/
 theorem isMIntegralCurve_mulInvariantIntegralCurve [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) (x : G) :
     IsMIntegralCurve (mulInvariantIntegralCurve v x) (mulInvariantVectorField v) :=
   (existsUnique_isMIntegralCurve_mulInvariantVectorField v x).choose_spec.1.2
@@ -138,7 +138,7 @@ theorem isMIntegralCurve_mulInvariantIntegralCurve [CompleteSpace E]
 /-- In the extended chart at the identity, the canonical invariant curve through the identity has
 initial velocity equal to its generator. -/
 theorem hasDerivAt_extChartAt_mulInvariantIntegralCurve_zero [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : E) :
     HasDerivAt
       ((extChartAt I (1 : G)) ∘
@@ -176,7 +176,7 @@ end SmoothInvariantIntegralCurve
 /-- Any global integral curve of a left-invariant vector field is the canonical one determined by
 its value at zero. -/
 theorem eq_mulInvariantIntegralCurve [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) (x : G) {γ : ℝ → G}
     (hγ0 : γ 0 = x) (hγ : IsMIntegralCurve γ (mulInvariantVectorField v)) :
     γ = mulInvariantIntegralCurve v x :=
@@ -186,7 +186,7 @@ theorem eq_mulInvariantIntegralCurve [CompleteSpace E]
 /-- The canonical invariant integral curve through `x` is the left translate by `x` of the
 canonical curve through the identity. -/
 theorem mulInvariantIntegralCurve_eq_const_mul [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) (x : G) :
     mulInvariantIntegralCurve v x = fun t ↦ x * mulInvariantIntegralCurve v 1 t := by
   symm
@@ -199,7 +199,7 @@ theorem mulInvariantIntegralCurve_eq_const_mul [CompleteSpace E]
 /-- The canonical invariant curve through the identity satisfies the one-parameter subgroup law. -/
 @[simp]
 theorem mulInvariantIntegralCurve_add [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) (s t : ℝ) :
     mulInvariantIntegralCurve v 1 (s + t) =
       mulInvariantIntegralCurve v 1 s * mulInvariantIntegralCurve v 1 t := by
@@ -215,7 +215,7 @@ theorem mulInvariantIntegralCurve_add [CompleteSpace E]
 
 /-- Scaling an invariant vector field rescales time along its canonical integral curves. -/
 theorem mulInvariantIntegralCurve_smul [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) (x : G) (t s : ℝ) :
     mulInvariantIntegralCurve (t • v) x s = mulInvariantIntegralCurve v x (s * t) := by
   let γ := mulInvariantIntegralCurve v x
@@ -231,7 +231,7 @@ theorem mulInvariantIntegralCurve_smul [CompleteSpace E]
 /-- The canonical invariant curve through the identity, bundled as a continuous one-parameter
 subgroup. -/
 noncomputable def mulInvariantOneParameterSubgroup [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) :
     ContinuousMonoidHom (Multiplicative ℝ) G where
   toFun t := mulInvariantIntegralCurve v 1 (Multiplicative.toAdd t)
@@ -245,7 +245,7 @@ noncomputable def mulInvariantOneParameterSubgroup [CompleteSpace E]
 curve through the identity. -/
 @[simp]
 theorem mulInvariantOneParameterSubgroup_apply [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G]
     [BoundarylessManifold I G] (v : GroupLieAlgebra I G) (t : ℝ) :
     mulInvariantOneParameterSubgroup v (Multiplicative.ofAdd t) =
       mulInvariantIntegralCurve v 1 t :=

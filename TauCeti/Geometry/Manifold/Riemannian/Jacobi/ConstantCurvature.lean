@@ -214,9 +214,9 @@ theorem IsJacobiFieldOn.norm_sq_eq
   have hm := isMetricCompatible_leviCivitaConnection (I := I) (M := M)
   have hγ := h.isGeodesicCurveOn.mdifferentiableOn
   -- The parallel fields `P = φ' J - φ DJ` and `Q = ψ' J - ψ DJ` keep their inner products.
-  have hPP := hm.inner_eq_of_alongCurveWithin_eq_zero h.uniqueDiffOn hs hγ hPd hPd hP hP ht ha
-  have hPQ := hm.inner_eq_of_alongCurveWithin_eq_zero h.uniqueDiffOn hs hγ hPd hQd hP hQ ht ha
-  have hQQ := hm.inner_eq_of_alongCurveWithin_eq_zero h.uniqueDiffOn hs hγ hQd hQd hQ hQ ht ha
+  have hPP := hm.inner_eq_of_alongCurveWithin_eq_zero hs hγ hPd hPd hP hP ht ha
+  have hPQ := hm.inner_eq_of_alongCurveWithin_eq_zero hs hγ hPd hQd hP hQ ht ha
+  have hQQ := hm.inner_eq_of_alongCurveWithin_eq_zero hs hγ hQd hQd hQ hQ ht ha
   simp only [hφa, hφ'a, hψa, hψ'a, zero_smul, one_smul, sub_zero, zero_sub] at hPP hPQ hQQ
   have hw := wronskian_eq_one_of_hasDerivAt hφ hφ' hψ hψ' hφa hφ'a hψa hψ'a t
   have hVt : V t = ψ t • (φ' t • V t - φ t • alongCurveWithin (leviCivitaConnection I M) γ V s t) -

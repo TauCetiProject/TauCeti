@@ -80,7 +80,7 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Filter Function Metric Set TopologicalSpace TestFunction
+open _root_.MeasureTheory Filter Function Metric Set TopologicalSpace TestFunction
 open scoped ENNReal NNReal ContDiff Distributions Topology symmDiff
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]

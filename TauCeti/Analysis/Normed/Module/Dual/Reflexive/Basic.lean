@@ -12,9 +12,9 @@ public import TauCeti.Analysis.Normed.Module.Dual.Adjoint
 # Reflexivity and the continuous dual
 
 A normed space is reflexive when its canonical map into the continuous bidual is
-surjective. This file proves that reflexivity passes to the continuous dual, that
-the converse holds for Banach spaces, and that bounded linear equivalences preserve
-reflexivity. Reflexivity is expressed directly as surjectivity of
+surjective. This file proves that finite-dimensional spaces are reflexive, that reflexivity
+passes to the continuous dual, that the converse holds for Banach spaces, and that bounded
+linear equivalences preserve reflexivity. Reflexivity is expressed directly as surjectivity of
 `NormedSpace.inclusionInDoubleDual`.
 
 The forward implication needs no completeness. Reflexivity itself implies completeness
@@ -53,6 +53,24 @@ theorem surjective_inclusionInDoubleDual_strongDual
   rfl
 
 end Dual
+
+section FiniteDimensional
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+
+/-- A finite-dimensional normed space is reflexive: every functional on the continuous dual is a
+functional on the algebraic dual, which is evaluation at a point (`Module.bijective_dual_eval`). -/
+theorem surjective_inclusionInDoubleDual_of_finiteDimensional :
+    Surjective (inclusionInDoubleDual 𝕜 E) := by
+  intro χ
+  let e : Module.Dual 𝕜 E ≃ₗ[𝕜] StrongDual 𝕜 E := LinearMap.toContinuousLinearMap
+  obtain ⟨x, hx⟩ := (Module.bijective_dual_eval 𝕜 E).2 (χ.toLinearMap ∘ₗ e.toLinearMap)
+  refine ⟨x, ContinuousLinearMap.ext fun f ↦ ?_⟩
+  have := LinearMap.congr_fun hx (e.symm f)
+  rwa [LinearMap.comp_apply, LinearEquiv.coe_coe, e.apply_symm_apply] at this
+
+end FiniteDimensional
 
 section Complete
 

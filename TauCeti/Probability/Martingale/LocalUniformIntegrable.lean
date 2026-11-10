@@ -9,6 +9,7 @@ public import Mathlib.Probability.Martingale.Basic
 public import Mathlib.Probability.Process.LocalProperty
 public import Mathlib.MeasureTheory.Function.UniformIntegrable
 import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
+import TauCeti.Probability.Martingale.LpLimit
 
 /-!
 # Uniformly integrable localizations of martingales
@@ -99,16 +100,6 @@ theorem martingale_of_uniformIntegrable_stoppedProcess
   have hconv₁ (t : ι) :
       Tendsto (fun n ↦ eLpNorm (Y n t - X t) 1 P) atTop (𝓝 0) :=
     TauCeti.MeasureTheory.tendsto_eLpNorm_one_of_tendsto_eLpNorm hp (hconv t)
-  refine ⟨hX, fun s t hst ↦ ?_⟩
-  -- Test the conditional identity on each measurable event, then pass to L¹ limits.
-  refine (ae_eq_condExp_of_forall_setIntegral_eq (ℱ.le s)
-    ((hLp t).integrable hp) (fun _ _ _ ↦ ((hLp s).integrable hp).integrableOn)
-    ?_ (hX s).aestronglyMeasurable).symm
-  intro A hA _
-  exact tendsto_nhds_unique
-    (tendsto_setIntegral_of_L1' (X s) (Eventually.of_forall fun n ↦ (hM n).integrable s)
-      (hconv₁ s) A)
-    ((tendsto_setIntegral_of_L1' (X t) (Eventually.of_forall fun n ↦ (hM n).integrable t)
-      (hconv₁ t) A).congr fun n ↦ ((hM n).setIntegral_eq hst hA).symm)
+  exact martingale_of_tendsto_eLpNorm_one hM hX hconv₁
 
 end MeasureTheory.StronglyAdapted
