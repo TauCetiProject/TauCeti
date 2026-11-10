@@ -369,7 +369,7 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_measurableSet
   have hlim : Tendsto (fun n => ENNReal.ofReal (K / μ.real (S ∩ V n)) * T +
       μ Ω * ‖(⨍ y in S ∩ V n, u y ∂μ) - a‖ₑ) atTop
       (𝓝 (ENNReal.ofReal (K / μ.real S) * T)) := by
-    simpa using tendsto_ofReal_div_mul_add_mul_enorm_sub (by positivity) hSpos hmeas havg hΩfin
+    simpa using tendsto_ofReal_div_mul_add_mul_enorm_sub hSpos hmeas havg hΩfin
   rw [mul_assoc]
   exact setLIntegral_le_of_forall_inter_le hVmono (hVunion ▸ hA) hlim hpiece
 
