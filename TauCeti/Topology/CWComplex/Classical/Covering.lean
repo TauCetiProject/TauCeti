@@ -13,6 +13,7 @@ public import TauCeti.Topology.CWComplex.Classical.FiniteCWType
 public import TauCeti.Topology.CWComplex.Classical.Map
 public import TauCeti.Topology.Covering.Convex
 public import TauCeti.Topology.SeparatedMap
+import TauCeti.SetTheory.Cardinal.Finite
 import TauCeti.Topology.CWComplex.Comparison
 import TauCeti.Topology.Covering.Pullback
 
@@ -470,8 +471,11 @@ theorem nat_card_cell_preimage [RelCWComplex.FiniteType C] (hfin : ∀ b, Finite
   have := Fintype.ofFinite (cell C n)
   rw [Nat.card_congr (cellPreimageEquiv C hp n), Nat.card_sigma, finsum_eq_sum_of_fintype]
 
-/-- **Cells of a `d`-sheeted cover.** If every fibre of `p` over `C` has `d` points, the lift of `C`
-along `p` has `d` times as many `n`-cells as `C`. -/
+/-- **Cells of a cover with fibres of cardinality `d`.** If every fibre of `p` over `C` has
+`Nat.card` equal to `d`, then `Nat.card` of the `n`-cells of the lift of `C` along `p` is `d` times
+`Nat.card` of the `n`-cells of `C`. For finite fibres and finitely many `n`-cells this says that
+the lift has `d` times as many `n`-cells as `C` (a `d`-sheeted cover); otherwise `Nat.card` is the
+junk value `0` on infinite types, and the equation holds with both sides `0`. -/
 theorem nat_card_cell_preimage_of_card_fiber {d : ℕ}
     (hd : ∀ b ∈ C, Nat.card ↥(p ⁻¹' {b}) = d) :
     letI := cwComplexPreimage C hp
@@ -479,31 +483,7 @@ theorem nat_card_cell_preimage_of_card_fiber {d : ℕ}
   have hc (i : cell C n) : Nat.card ↥(p ⁻¹' {map n i 0}) = d :=
     hd _ (closedCell_subset_complex n i (map_zero_mem_closedCell n i))
   rw [Nat.card_congr (cellPreimageEquiv C hp n)]
-  by_cases hfib : ∀ i : cell C n, _root_.Finite ↥(p ⁻¹' {map n i 0})
-  · by_cases hcell : _root_.Finite (cell C n)
-    · have := Fintype.ofFinite (cell C n)
-      rw [Nat.card_sigma]
-      simp [hc, mul_comm]
-    · have := not_finite_iff_infinite.1 hcell
-      rw [Nat.card_eq_zero_of_infinite (α := cell C n), mul_zero]
-      rcases Nat.eq_zero_or_pos d with rfl | hpos
-      · have hempty (i : cell C n) : IsEmpty ↥(p ⁻¹' {map n i 0}) :=
-          (Nat.card_eq_zero.1 (hc i)).resolve_right (not_infinite_iff_finite.2 (hfib i))
-        have : IsEmpty (Σ i : cell C n, ↥(p ⁻¹' {map n i 0})) :=
-          ⟨fun c ↦ (hempty c.1).false c.2⟩
-        exact Nat.card_of_isEmpty
-      · have hne (i : cell C n) : Nonempty ↥(p ⁻¹' {map n i 0}) :=
-          (Nat.card_pos_iff.1 (hc i ▸ hpos)).1
-        have : Infinite (Σ i : cell C n, ↥(p ⁻¹' {map n i 0})) :=
-          Infinite.of_surjective Sigma.fst fun i ↦ ⟨⟨i, (hne i).some⟩, rfl⟩
-        exact Nat.card_eq_zero_of_infinite
-  · obtain ⟨i, hi⟩ := not_forall.1 hfib
-    have := not_finite_iff_infinite.1 hi
-    have hd0 : d = 0 := (hc i).symm.trans Nat.card_eq_zero_of_infinite
-    have : Infinite (Σ i : cell C n, ↥(p ⁻¹' {map n i 0})) :=
-      Infinite.of_injective (Sigma.mk i) sigma_mk_injective
-    rw [hd0, zero_mul]
-    exact Nat.card_eq_zero_of_infinite
+  exact Nat.card_sigma_of_forall_card_eq hc
 
 end Structure
 
