@@ -52,7 +52,8 @@ one-dimensional motion between two simple turning points.
   integrands that are in general unbounded at the endpoints.
 * `TauCeti.exists_pos_forall_mul_mul_sub_mul_sub_le` and
   `TauCeti.intervalIntegrable_one_div_sqrt_of_hasDerivWithinAt`: domination by the quadratic and
-  integrability of `1 / √g` for a function `g` with simple zeros at both ends.
+  integrability of `1 / √g` for a function `g` with nonzero one-sided derivatives at both ends,
+  in particular with simple zeros there.
 * `TauCeti.hasDerivAt_arcsin_two_mul_sub_sub_div_sub`,
   `TauCeti.hasDerivAt_arcsin_add_mul_sub_div_sub_mul` and
   `TauCeti.hasDerivAt_sqrt_mul_sub_mul_sub`: the derivatives of the antiderivatives on `(a, b)`.
@@ -386,11 +387,30 @@ open scoped Interval
 
 variable {g : ℝ → ℝ} {ga gb : ℝ}
 
-/-- At a simple zero `a` to the right of which `g` is positive on `(a, b)`, `g` dominates a
-positive multiple of `(x - a) (b - x)` on some interval `(a, u)`. -/
+/-- If `g` is positive on `(a, b)` and has a nonzero right derivative at `a`, then `g` dominates a
+positive multiple of `(x - a) (b - x)` on some interval `(a, u)`: at a zero `a` this is the simple
+zero, and otherwise `g a > 0` by continuity. -/
 private theorem exists_pos_forall_mul_le_of_left (hab : a < b)
-    (hpos : ∀ x ∈ Ioo a b, 0 < g x) (ha : g a = 0) (hga : HasDerivWithinAt g ga (Ici a) a)
+    (hpos : ∀ x ∈ Ioo a b, 0 < g x) (hga : HasDerivWithinAt g ga (Ici a) a)
     (hga0 : ga ≠ 0) : ∃ c > 0, ∃ u > a, ∀ x ∈ Ioo a u, c * ((x - a) * (b - x)) ≤ g x := by
+  have hcont : Tendsto g (𝓝[>] a) (𝓝 (g a)) := hga.continuousWithinAt.mono Ioi_subset_Ici_self
+  have hg0 : 0 ≤ g a := ge_of_tendsto hcont (by
+    filter_upwards [Ioo_mem_nhdsGT hab] with x hx using (hpos x hx).le)
+  rcases hg0.eq_or_lt with ha | ha
+  swap
+  · -- `g a > 0`: `g` stays above `g a / 2` near `a`, while `(x - a) (b - x) ≤ (b - a) ^ 2`.
+    obtain ⟨u, hu, hsub⟩ := mem_nhdsGT_iff_exists_Ioo_subset.mp
+      (inter_mem (hcont.eventually (lt_mem_nhds (half_lt_self ha))) (Ioo_mem_nhdsGT hab))
+    have hba := sub_pos.2 hab
+    refine ⟨g a / (2 * (b - a) ^ 2), by positivity, u, hu, fun x hx ↦ ?_⟩
+    obtain ⟨hlt, hx'⟩ := hsub hx
+    rw [mem_ofPred_eq] at hlt
+    have hq : (x - a) * (b - x) ≤ (b - a) ^ 2 := by nlinarith [hx'.1, hx'.2]
+    calc g a / (2 * (b - a) ^ 2) * ((x - a) * (b - x))
+        ≤ g a / (2 * (b - a) ^ 2) * (b - a) ^ 2 := by gcongr
+      _ = g a / 2 := by field_simp
+      _ ≤ g x := hlt.le
+  replace ha : g a = 0 := ha.symm
   have ht : Tendsto (slope g a) (𝓝[>] a) (𝓝 ga) :=
     (hasDerivWithinAt_iff_tendsto_slope' (lt_irrefl a)).mp hga.Ioi_of_Ici
   have hslope : ∀ x ∈ Ioo a b, slope g a x = g x / (x - a) := fun x _ ↦ by
@@ -409,11 +429,30 @@ private theorem exists_pos_forall_mul_le_of_left (hab : a < b)
   rw [div_mul_eq_mul_div, div_le_iff₀ (by linarith)]
   nlinarith [mul_pos (mul_pos hga' hxa) hxa]
 
-/-- At a simple zero `b` to the left of which `g` is positive on `(a, b)`, `g` dominates a
-positive multiple of `(x - a) (b - x)` on some interval `(u, b)`. -/
+/-- If `g` is positive on `(a, b)` and has a nonzero left derivative at `b`, then `g` dominates a
+positive multiple of `(x - a) (b - x)` on some interval `(u, b)`: at a zero `b` this is the simple
+zero, and otherwise `g b > 0` by continuity. -/
 private theorem exists_pos_forall_mul_le_of_right (hab : a < b)
-    (hpos : ∀ x ∈ Ioo a b, 0 < g x) (hb : g b = 0) (hgb : HasDerivWithinAt g gb (Iic b) b)
+    (hpos : ∀ x ∈ Ioo a b, 0 < g x) (hgb : HasDerivWithinAt g gb (Iic b) b)
     (hgb0 : gb ≠ 0) : ∃ c > 0, ∃ u < b, ∀ x ∈ Ioo u b, c * ((x - a) * (b - x)) ≤ g x := by
+  have hcont : Tendsto g (𝓝[<] b) (𝓝 (g b)) := hgb.continuousWithinAt.mono Iio_subset_Iic_self
+  have hg0 : 0 ≤ g b := ge_of_tendsto hcont (by
+    filter_upwards [Ioo_mem_nhdsLT hab] with x hx using (hpos x hx).le)
+  rcases hg0.eq_or_lt with hb | hb
+  swap
+  · -- `g b > 0`: `g` stays above `g b / 2` near `b`, while `(x - a) (b - x) ≤ (b - a) ^ 2`.
+    obtain ⟨u, hu, hsub⟩ := mem_nhdsLT_iff_exists_Ioo_subset.mp
+      (inter_mem (hcont.eventually (lt_mem_nhds (half_lt_self hb))) (Ioo_mem_nhdsLT hab))
+    have hba := sub_pos.2 hab
+    refine ⟨g b / (2 * (b - a) ^ 2), by positivity, u, hu, fun x hx ↦ ?_⟩
+    obtain ⟨hlt, hx'⟩ := hsub hx
+    rw [mem_ofPred_eq] at hlt
+    have hq : (x - a) * (b - x) ≤ (b - a) ^ 2 := by nlinarith [hx'.1, hx'.2]
+    calc g b / (2 * (b - a) ^ 2) * ((x - a) * (b - x))
+        ≤ g b / (2 * (b - a) ^ 2) * (b - a) ^ 2 := by gcongr
+      _ = g b / 2 := by field_simp
+      _ ≤ g x := hlt.le
+  replace hb : g b = 0 := hb.symm
   have ht : Tendsto (slope g b) (𝓝[<] b) (𝓝 gb) :=
     (hasDerivWithinAt_iff_tendsto_slope' (lt_irrefl b)).mp hgb.Iio_of_Iic
   have hslope : ∀ x ∈ Ioo a b, slope g b x = -(g x / (b - x)) := fun x _ ↦ by
@@ -433,17 +472,17 @@ private theorem exists_pos_forall_mul_le_of_right (hab : a < b)
   rw [div_mul_eq_mul_div, div_le_iff₀ (by linarith)]
   nlinarith [mul_pos (mul_pos (neg_pos.2 hgb') hbx) hbx]
 
-/-- **A function with simple zeros at both ends of an interval dominates the quadratic with the
-same zeros.** If `g` is continuous on `[a, b]`, positive on `(a, b)`, and vanishes at `a` and `b`
-with nonzero one-sided derivatives there, then `c (x - a) (b - x) ≤ g x` on `[a, b]` for some
-`c > 0`. -/
+/-- **A function with nonzero one-sided derivatives at both ends of an interval dominates the
+quadratic with the same zeros.** If `g` is continuous on `[a, b]`, positive on `(a, b)`, and has
+nonzero one-sided derivatives at `a` and `b`, then `c (x - a) (b - x) ≤ g x` on `[a, b]` for some
+`c > 0`. At a zero of `g` this is a simple zero. -/
 theorem exists_pos_forall_mul_mul_sub_mul_sub_le (hab : a < b) (hg : ContinuousOn g (Icc a b))
-    (hpos : ∀ x ∈ Ioo a b, 0 < g x) (ha : g a = 0) (hb : g b = 0)
+    (hpos : ∀ x ∈ Ioo a b, 0 < g x)
     (hga : HasDerivWithinAt g ga (Ici a) a) (hga0 : ga ≠ 0)
     (hgb : HasDerivWithinAt g gb (Iic b) b) (hgb0 : gb ≠ 0) :
     ∃ c > 0, ∀ x ∈ Icc a b, c * ((x - a) * (b - x)) ≤ g x := by
-  obtain ⟨c₁, hc₁, u₁, hu₁, h₁⟩ := exists_pos_forall_mul_le_of_left hab hpos ha hga hga0
-  obtain ⟨c₂, hc₂, u₂, hu₂, h₂⟩ := exists_pos_forall_mul_le_of_right hab hpos hb hgb hgb0
+  obtain ⟨c₁, hc₁, u₁, hu₁, h₁⟩ := exists_pos_forall_mul_le_of_left hab hpos hga hga0
+  obtain ⟨c₂, hc₂, u₂, hu₂, h₂⟩ := exists_pos_forall_mul_le_of_right hab hpos hgb hgb0
   -- On the compact middle part `[u₁, u₂]`, `g` is bounded below by a positive constant `c₀`,
   -- while `(x - a) (b - x) ≤ (b - a)²`.
   obtain ⟨c₃, hc₃, h₃⟩ : ∃ c > 0, ∀ x ∈ Icc u₁ u₂, c * ((x - a) * (b - x)) ≤ g x := by
@@ -462,11 +501,15 @@ theorem exists_pos_forall_mul_mul_sub_mul_sub_le (hab : a < b) (hg : ContinuousO
   refine ⟨min c₁ (min c₂ c₃), lt_min hc₁ (lt_min hc₂ hc₃), fun x hx ↦ ?_⟩
   have hq : 0 ≤ (x - a) * (b - x) := mul_nonneg (sub_nonneg.2 hx.1) (sub_nonneg.2 hx.2)
   rcases eq_or_lt_of_le hx.1 with rfl | hax
-  · simp [ha]
+  · have hg0 : 0 ≤ g a := ge_of_tendsto (hga.continuousWithinAt.mono Ioi_subset_Ici_self) (by
+      filter_upwards [Ioo_mem_nhdsGT hab] with x hx using (hpos x hx).le)
+    simpa using hg0
   rcases lt_or_ge x u₁ with hx₁ | hx₁
   · exact (mul_le_mul_of_nonneg_right (min_le_left _ _) hq).trans (h₁ x ⟨hax, hx₁⟩)
   rcases eq_or_lt_of_le hx.2 with rfl | hxb
-  · simp [hb]
+  · have hg0 : 0 ≤ g x := ge_of_tendsto (hgb.continuousWithinAt.mono Iio_subset_Iic_self) (by
+      filter_upwards [Ioo_mem_nhdsLT hab] with y hy using (hpos y hy).le)
+    simpa using hg0
   rcases lt_or_ge u₂ x with hx₂ | hx₂
   · exact (mul_le_mul_of_nonneg_right ((min_le_right _ _).trans (min_le_left _ _)) hq).trans
       (h₂ x ⟨hx₂, hxb⟩)
@@ -474,15 +517,15 @@ theorem exists_pos_forall_mul_mul_sub_mul_sub_le (hab : a < b) (hg : ContinuousO
       (h₃ x ⟨hx₁, hx₂⟩)
 
 /-- **Quadratures across simple zeros converge.** If `g` is continuous on `[a, b]`, positive on
-`(a, b)`, and vanishes at `a` and `b` with nonzero one-sided derivatives there, then
-`x ↦ 1 / √(g x)` is interval integrable on `[a, b]`, although it is unbounded at both ends. -/
+`(a, b)`, and has nonzero one-sided derivatives at `a` and `b`, then `x ↦ 1 / √(g x)` is interval
+integrable on `[a, b]`, although it is unbounded at an end where `g` vanishes. -/
 theorem intervalIntegrable_one_div_sqrt_of_hasDerivWithinAt (hab : a < b)
-    (hg : ContinuousOn g (Icc a b)) (hpos : ∀ x ∈ Ioo a b, 0 < g x) (ha : g a = 0) (hb : g b = 0)
+    (hg : ContinuousOn g (Icc a b)) (hpos : ∀ x ∈ Ioo a b, 0 < g x)
     (hga : HasDerivWithinAt g ga (Ici a) a) (hga0 : ga ≠ 0)
     (hgb : HasDerivWithinAt g gb (Iic b) b) (hgb0 : gb ≠ 0) :
     IntervalIntegrable (fun x => 1 / √(g x)) volume a b := by
   obtain ⟨c, hc, hle⟩ :=
-    exists_pos_forall_mul_mul_sub_mul_sub_le hab hg hpos ha hb hga hga0 hgb hgb0
+    exists_pos_forall_mul_mul_sub_mul_sub_le hab hg hpos hga hga0 hgb hgb0
   have hI : Ι a b = Ioc a b := uIoc_of_le hab.le
   have hae : volume.restrict (Ioc a b) = volume.restrict (Ioo a b) :=
     Measure.restrict_congr_set Ioo_ae_eq_Ioc.symm

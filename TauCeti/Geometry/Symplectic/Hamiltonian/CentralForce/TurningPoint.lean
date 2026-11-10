@@ -84,13 +84,13 @@ section Convergence
 
 variable {d₁ d₂ : ℝ}
 
-/-- **The time quadrature converges at simple turning points.** Let `0 < r₁ < r₂` be turning
-points of energy `E`, `U_ℓ(r₁) = U_ℓ(r₂) = E`, with `U_ℓ < E` in between, at which the effective
-potential has nonzero one-sided derivatives. Then `r ↦ m / |p_r|` is interval integrable on
-`[r₁, r₂]`, although it is unbounded at both turning points. -/
+/-- **The time quadrature converges at simple turning points.** Let `0 < r₁ < r₂` with
+`U_ℓ < E` in between, where the effective potential has nonzero one-sided derivatives at `r₁` and
+`r₂`; at turning points of energy `E`, `U_ℓ(r₁) = U_ℓ(r₂) = E`, these are simple zeros of
+`E - U_ℓ`. Then `r ↦ m / |p_r|` is interval integrable on `[r₁, r₂]`, although it is unbounded at
+a turning point. -/
 theorem intervalIntegrable_div_absRadialMomentum (hm : 0 < m) (hr₁ : 0 < r₁) (h₁₂ : r₁ < r₂)
-    (hU : ContinuousOn U (Icc r₁ r₂)) (hE₁ : effectivePotential m ℓ U r₁ = E)
-    (hE₂ : effectivePotential m ℓ U r₂ = E)
+    (hU : ContinuousOn U (Icc r₁ r₂))
     (hlt : ∀ r ∈ Ioo r₁ r₂, effectivePotential m ℓ U r < E)
     (hd₁ : HasDerivWithinAt (effectivePotential m ℓ U) d₁ (Ici r₁) r₁) (hd₁0 : d₁ ≠ 0)
     (hd₂ : HasDerivWithinAt (effectivePotential m ℓ U) d₂ (Iic r₂) r₂) (hd₂0 : d₂ ≠ 0) :
@@ -104,7 +104,6 @@ theorem intervalIntegrable_div_absRadialMomentum (hm : 0 < m) (hr₁ : 0 < r₁)
       fun r hr ↦ by have := hr₁.trans_le hr.1; positivity
   have h := intervalIntegrable_one_div_sqrt_of_hasDerivWithinAt h₁₂ hcont
     (fun r hr ↦ mul_pos (by positivity) (sub_pos.2 (hlt r hr)))
-    (by rw [hE₁, sub_self, mul_zero]) (by rw [hE₂, sub_self, mul_zero])
     ((hd₁.const_sub E).const_mul (2 * m)) (by simp [hm.ne', hd₁0])
     ((hd₂.const_sub E).const_mul (2 * m)) (by simp [hm.ne', hd₂0])
   convert h.const_mul m using 2 with r
@@ -114,13 +113,12 @@ theorem intervalIntegrable_div_absRadialMomentum (hm : 0 < m) (hr₁ : 0 < r₁)
 `TauCeti.intervalIntegrable_div_absRadialMomentum`, `r ↦ ℓ / (r² |p_r|)` is interval integrable on
 `[r₁, r₂]`. -/
 theorem intervalIntegrable_div_sq_mul_absRadialMomentum (hm : 0 < m) (hr₁ : 0 < r₁)
-    (h₁₂ : r₁ < r₂) (hU : ContinuousOn U (Icc r₁ r₂)) (hE₁ : effectivePotential m ℓ U r₁ = E)
-    (hE₂ : effectivePotential m ℓ U r₂ = E)
+    (h₁₂ : r₁ < r₂) (hU : ContinuousOn U (Icc r₁ r₂))
     (hlt : ∀ r ∈ Ioo r₁ r₂, effectivePotential m ℓ U r < E)
     (hd₁ : HasDerivWithinAt (effectivePotential m ℓ U) d₁ (Ici r₁) r₁) (hd₁0 : d₁ ≠ 0)
     (hd₂ : HasDerivWithinAt (effectivePotential m ℓ U) d₂ (Iic r₂) r₂) (hd₂0 : d₂ ≠ 0) :
     IntervalIntegrable (fun r ↦ ℓ / (r ^ 2 * absRadialMomentum m U ℓ E r)) volume r₁ r₂ := by
-  have h := (intervalIntegrable_div_absRadialMomentum hm hr₁ h₁₂ hU hE₁ hE₂ hlt hd₁ hd₁0 hd₂
+  have h := (intervalIntegrable_div_absRadialMomentum hm hr₁ h₁₂ hU hlt hd₁ hd₁0 hd₂
     hd₂0).continuousOn_mul (g := fun r ↦ ℓ / (m * r ^ 2)) <| by
       rw [uIcc_of_le h₁₂.le]
       exact continuousOn_const.div (continuousOn_const.mul (continuousOn_id.pow 2))
