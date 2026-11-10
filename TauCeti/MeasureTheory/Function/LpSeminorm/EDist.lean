@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+public import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 
 /-!
 # The `Lᵖ` seminorm of a displacement is that of the distance
@@ -22,6 +23,10 @@ which `MeasureTheory.eLpNorm_congr_enorm_ae` needs.
 
 On a pseudometric space, `MeasureTheory.memLp_dist_iff_memLp_edist` likewise identifies membership
 in `Lᵖ` of the real distance to a basepoint with that of the extended distance.
+
+The Minkowski estimate `MeasureTheory.eLpNorm_edist_le_add` bounds the `Lᵖ` seminorm of
+`x ↦ edist (f' x) (g' x)` by that of `x ↦ edist (f x) (g x)` plus the seminorms of the two
+displacements `x ↦ edist (f x) (f' x)` and `x ↦ edist (g x) (g' x)`.
 -/
 
 public section
@@ -55,5 +60,30 @@ theorem memLp_dist_iff_memLp_edist {X : Type*} [PseudoMetricSpace X] [Measurable
   refine ⟨fun h ↦ (key h.aestronglyMeasurable).1 h, fun h ↦ (key ?_).2 h⟩
   exact h.aestronglyMeasurable.aemeasurable.ennreal_toReal.aestronglyMeasurable.congr
     (.of_forall fun y ↦ by simp only [← dist_edist, dist_comm])
+
+/-- **Minkowski bound for distances.** For maps `f g f' g' : α → Y` into a pseudo-emetric space
+and `1 ≤ p`, the `Lᵖ(μ)` seminorm of `x ↦ edist (f' x) (g' x)` is at most that of
+`x ↦ edist (f x) (g x)` plus those of the two displacements `x ↦ edist (f x) (f' x)` and
+`x ↦ edist (g x) (g' x)`. -/
+theorem eLpNorm_edist_le_add {α Y : Type*} {m : MeasurableSpace α} [PseudoEMetricSpace Y]
+    {p : ℝ≥0∞} {μ : Measure α} {f g f' g' : α → Y} (hp1 : 1 ≤ p)
+    (hmeas : AEStronglyMeasurable (fun x ↦ edist (f' x) (g' x)) μ) :
+    eLpNorm (fun x ↦ edist (f' x) (g' x)) p μ ≤
+      eLpNorm (fun x ↦ edist (f x) (g x)) p μ +
+        (eLpNorm (fun x ↦ edist (f x) (f' x)) p μ + eLpNorm (fun x ↦ edist (g x) (g' x)) p μ) := by
+  calc eLpNorm (fun x ↦ edist (f' x) (g' x)) p μ
+      ≤ eLpNorm ((fun x ↦ edist (f x) (g x)) +
+          ((fun x ↦ edist (f x) (f' x)) + fun x ↦ edist (g x) (g' x))) p μ := by
+        refine eLpNorm_mono_enorm hmeas fun x ↦ ?_
+        simp only [enorm_eq_self, Pi.add_apply]
+        calc edist (f' x) (g' x)
+            ≤ edist (f' x) (f x) + edist (f x) (g x) + edist (g x) (g' x) :=
+              edist_triangle4 _ _ _ _
+          _ = edist (f x) (g x) + (edist (f x) (f' x) + edist (g x) (g' x)) := by
+              rw [edist_comm (f' x)]
+              ring
+    _ ≤ eLpNorm (fun x ↦ edist (f x) (g x)) p μ +
+          (eLpNorm (fun x ↦ edist (f x) (f' x)) p μ + eLpNorm (fun x ↦ edist (g x) (g' x)) p μ) :=
+        (eLpNorm_add_le hp1).trans (add_le_add le_rfl (eLpNorm_add_le hp1))
 
 end MeasureTheory
