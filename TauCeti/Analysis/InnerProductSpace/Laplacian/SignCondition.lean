@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Deriv
-public import Mathlib.Analysis.InnerProductSpace.Laplacian
+public import TauCeti.Analysis.InnerProductSpace.Laplacian.Trigonometric
 
 /-!
 # Necessity of the zeroth-order sign condition in the maximum principle
@@ -19,7 +18,10 @@ principle fails for every negative constant coefficient.
 Let `c < 0` and `a = √(-c)`. On the interval `[0, π / a]`, the function `u(x) = sin (a x)` is
 positive in the interior, vanishes on the frontier, and satisfies
 
-`Δ u = c u`.
+`Δ u = c u`,
+
+by the eigenvalue identity `TauCeti.laplacian_sin_const_mul` of
+`TauCeti.Analysis.InnerProductSpace.Laplacian.Trigonometric`.
 
 Thus `u` and the zero function are distinct solutions of the homogeneous Dirichlet problem for
 `-Δ + c`, and the boundary estimate `u ≤ 0` fails in the interior. In particular, both the weak
@@ -28,8 +30,6 @@ coefficient. Here `u` is the first Dirichlet eigenfunction of `-Δ` on `[0, π /
 
 ## Main declarations
 
-* `TauCeti.laplacian_sin_const_mul`: the one-dimensional identity
-  `Δ (sin (a ·)) x = -a ^ 2 * sin (a x)`.
 * `TauCeti.exists_laplacian_eq_mul_eqOn_frontier_pos_of_neg`: for every negative constant `c`, a
   fully quantified counterexample to dropping the nonnegativity assumption from the zeroth-order
   maximum principle.
@@ -42,18 +42,6 @@ noncomputable section
 namespace TauCeti
 
 open InnerProductSpace Laplacian Set
-
-/-- On the real line, `x ↦ sin (a * x)` is an eigenfunction of the Laplacian with eigenvalue
-`-a ^ 2`. -/
-theorem laplacian_sin_const_mul (a x : ℝ) :
-    Δ (fun y => Real.sin (a * y)) x = -a ^ 2 * Real.sin (a * x) := by
-  rw [laplacian_eq_iteratedDeriv_real, iteratedDeriv_comp_const_mul Real.contDiff_sin]
-  simp
-
-/-- On the real line, `sin` is an eigenfunction of the Laplacian with eigenvalue `-1`. -/
-theorem laplacian_sin (x : ℝ) : Δ Real.sin x = -Real.sin x := by
-  rw [laplacian_eq_iteratedDeriv_real]
-  simp
 
 /-- Every negative constant zeroth-order coefficient violates the weak maximum principle.
 
