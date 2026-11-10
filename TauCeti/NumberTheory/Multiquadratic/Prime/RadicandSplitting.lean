@@ -63,13 +63,13 @@ theorem ncard_primesOver_sqrt_primes_iff {ι : Type*} (p : ι → ℕ)
 
 /-- The character condition for the radicands `2` and `3`, with the `√2` condition expanded
 using the supplementary law for `2`. -/
-private theorem forall_legendreSym_two_three_eq_one_iff_mod_eight {q : ℕ} [Fact q.Prime]
-    (htwo : q ≠ 2) : (∀ i : Fin 2, legendreSym q ((![2, 3] : Fin 2 → ℕ) i : ℤ) = 1) ↔
+private theorem forall_legendreSym_two_three_eq_one_iff_mod_eight {q : ℕ} [Fact q.Prime] :
+    (∀ i : Fin 2, legendreSym q ((![2, 3] : Fin 2 → ℕ) i : ℤ) = 1) ↔
       (q % 8 = 1 ∨ q % 8 = 7) ∧ legendreSym q (3 : ℤ) = 1 := by
   simp only [Fin.forall_fin_two]
   simpa [TauCeti.Multiquadratic.evenPrimeDiscriminantRadicand_eight] using
     (TauCeti.Multiquadratic.legendreSym_evenPrimeDiscriminantRadicand_eight_eq_one_iff
-      (q := q) htwo).and Iff.rfl
+      (q := q)).and Iff.rfl
 
 /-- **Complete splitting for `ℚ(√2, √3)`.** Let `K` be generated over `ℚ` by square roots of
 `2` and `3`. A rational prime `q` different from `2` and `3` splits completely in `K` exactly
@@ -96,7 +96,7 @@ theorem ncard_primesOver_sqrt_two_three_iff_mod_eight (r : Fin 2 → K)
       (q % 8 = 1 ∨ q % 8 = 7) ∧ legendreSym q (3 : ℤ) = 1 := by
   have h := ncard_primesOver_sqrt_primes_iff (![2, 3] : Fin 2 → ℕ) (by decide) r hr htop htwo
     (fun i => by fin_cases i <;> simp [htwo, hthree])
-  exact h.trans (forall_legendreSym_two_three_eq_one_iff_mod_eight htwo)
+  exact h.trans (forall_legendreSym_two_three_eq_one_iff_mod_eight)
 
 open TauCeti.Multiquadratic in
 /-- **Exactly one prime lies above `2` in `ℚ(√2, √3)`.** Let `K` be generated over `ℚ` by square
