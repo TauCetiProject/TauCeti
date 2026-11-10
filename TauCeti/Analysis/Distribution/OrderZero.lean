@@ -293,7 +293,7 @@ private lemma bddAbove_extendₗ_image_Icc (f : C_c(Ω, ℝ)) :
 
 /-! ### The Radon representation -/
 
-omit hT in
+omit hT [FiniteDimensional ℝ E] in
 /-- **A distribution of order zero is a signed Radon measure.** A linear functional `T` on the
 test functions of `Ω` is bounded on each compact `K ⊆ Ω` in the sup norm, `|T φ| ≤ C_K ‖φ‖_∞` for
 the test functions `φ` supported in `K`, if and only if there are regular measures `ν₁` and `ν₂`
@@ -307,6 +307,14 @@ theorem forall_exists_abs_le_iff_exists_regular [MeasurableSpace E] [BorelSpace 
       |T φ| ≤ C * ‖(φ : E →ᵇ ℝ)‖) ↔
     ∃ ν₁ ν₂ : Measure Ω, ν₁.Regular ∧ ν₂.Regular ∧
       ∀ φ : 𝓓(Ω, ℝ), T φ = ∫ x, φ x ∂ν₁ - ∫ x, φ x ∂ν₂ := by
+  by_cases hE : FiniteDimensional ℝ E
+  swap
+  · -- In an infinite-dimensional space every test function vanishes.
+    have h0 (φ : 𝓓(Ω, ℝ)) : φ = 0 :=
+      TestFunction.ext <| congrFun <|
+        (φ.hasCompactSupport.eq_zero_or_finiteDimensional ℝ φ.contDiff.continuous).resolve_right hE
+    exact iff_of_true (fun K _ _ => ⟨0, fun φ _ => by simp [h0 φ]⟩)
+      ⟨0, 0, inferInstance, inferInstance, fun φ => by simp [h0 φ]⟩
   refine ⟨fun hT => ?_, ?_⟩
   · have := Ω.isOpen.locallyCompactSpace
     obtain ⟨ν₁, ν₂, h₁, h₂, h⟩ :=
