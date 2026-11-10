@@ -14,11 +14,12 @@ public import Mathlib.Topology.MetricSpace.Holder
 The `i`-th iterated derivative of the `m`-th iterated derivative of a function has the same norm
 as its `(i + m)`-th iterated derivative. This extends Mathlib's `norm_iteratedFDeriv_fderiv`, the
 case `m = 1`, and lets bounds on all iterated derivatives of a function transfer to its iterated
-derivative fields. The file also supplies the two-variable currying isometry used to identify
-continuous multilinear second derivatives with curried bilinear maps, and the corresponding
-exact comparison for differences of second derivatives, which transfers Hölder bounds between
-the two forms of the second derivative. Where a function `ζ` equals one on a neighbourhood of a
-point, every iterated derivative of `ζ * u` there is that of `u`
+derivative fields. The file also identifies the first iterated derivative with the Fréchet
+derivative through Mathlib's one-variable currying isometry, supplies the two-variable currying
+isometry used to identify continuous multilinear second derivatives with curried bilinear maps,
+and the corresponding exact comparison for differences of second derivatives, which transfers
+Hölder bounds between the two forms of the second derivative. Where a function `ζ` equals one on
+a neighbourhood of a point, every iterated derivative of `ζ * u` there is that of `u`
 (`Filter.EventuallyEq.iteratedFDeriv_mul_eq`).
 -/
 
@@ -58,6 +59,13 @@ end CurryFin2
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
+/-- The Fréchet derivative is the first iterated derivative, curried, including at points where
+these derivatives are junk-valued. -/
+theorem fderiv_eq_continuousMultilinearCurryFin1_comp (f : E → F) :
+    fderiv 𝕜 f = continuousMultilinearCurryFin1 𝕜 E F ∘ iteratedFDeriv 𝕜 1 f := by
+  ext x v
+  simp [continuousMultilinearCurryFin1_apply]
+
 /-- Currying the second iterated derivative gives the Fréchet derivative of the first
 Fréchet derivative, including at points where these derivatives are junk-valued. -/
 theorem continuousMultilinearCurryFin2_iteratedFDeriv_two (f : E → F) (x : E) :
@@ -66,6 +74,12 @@ theorem continuousMultilinearCurryFin2_iteratedFDeriv_two (f : E → F) (x : E) 
   ext v w
   simp only [continuousMultilinearCurryFin2_apply, iteratedFDeriv_two_apply,
     Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+
+/-- The curried second Fréchet derivative is the second iterated derivative, curried, including at
+points where these derivatives are junk-valued. -/
+theorem fderiv_fderiv_eq_continuousMultilinearCurryFin2_comp (f : E → F) :
+    fderiv 𝕜 (fderiv 𝕜 f) = continuousMultilinearCurryFin2 𝕜 E F ∘ iteratedFDeriv 𝕜 2 f :=
+  funext fun x ↦ (continuousMultilinearCurryFin2_iteratedFDeriv_two f x).symm
 
 /-- Differences of curried second derivatives and multilinear second derivatives have
 exactly the same norm, without differentiability assumptions. -/

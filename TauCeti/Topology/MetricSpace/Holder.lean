@@ -33,8 +33,8 @@ This is how an almost-everywhere Hölder estimate becomes a Hölder continuous r
 of full measure for a measure that is positive on open sets is dense.
 
 Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants.
-Postcomposition with an isometry keeps the constant and the exponent. A function bounded by `M` is
-Hölder of exponent zero with constant `2 M`.
+Postcomposition with an isometry keeps the constant and the exponent, and so does not change the
+Hölder seminorm. A function bounded by `M` is Hölder of exponent zero with constant `2 M`.
 
 Finally, on a metric space the infimum defining Mathlib's extended Hölder seminorm `eHolderNorm r f`
 is attained, so the seminorm is the best constant in the Hölder inequality. Equivalently, it is the
@@ -66,6 +66,9 @@ By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölde
   function on the whole space.
 * `Isometry.comp_holderOnWith`, `Isometry.comp_holderWith`: postcomposition with an isometry
   preserves Hölder bounds.
+* `Isometry.holderWith_comp_iff`, `Isometry.eHolderNorm_comp`, `Isometry.nnHolderNorm_comp`:
+  postcomposition with an isometry preserves global Hölder bounds in both directions, hence the
+  Hölder seminorm.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
 * `holderWith_zero_of_nnnorm_le`: a function bounded by `M` is Hölder of exponent zero with
@@ -160,6 +163,25 @@ theorem Isometry.comp_holderWith {X Y Z : Type*} [PseudoEMetricSpace X] [PseudoE
     [PseudoEMetricSpace Z] {g : Y → Z} (hg : Isometry g) {C r : ℝ≥0} {f : X → Y}
     (hf : HolderWith C r f) : HolderWith C r (g ∘ f) :=
   holderOnWith_univ.mp (hg.comp_holderOnWith (hf.holderOnWith univ))
+
+/-- Postcomposition with an isometry neither creates nor destroys a global Hölder bound: `g ∘ f`
+is Hölder with constant `C` and exponent `r` exactly when `f` is. -/
+theorem Isometry.holderWith_comp_iff {X Y Z : Type*} [PseudoEMetricSpace X]
+    [PseudoEMetricSpace Y] [PseudoEMetricSpace Z] {g : Y → Z} (hg : Isometry g) {C r : ℝ≥0}
+    {f : X → Y} : HolderWith C r (g ∘ f) ↔ HolderWith C r f := by
+  simp only [HolderWith, Function.comp_apply, hg.edist_eq]
+
+/-- Postcomposition with an isometry preserves the extended Hölder seminorm. -/
+theorem Isometry.eHolderNorm_comp {X Y Z : Type*} [PseudoEMetricSpace X] [PseudoEMetricSpace Y]
+    [PseudoEMetricSpace Z] {g : Y → Z} (hg : Isometry g) (r : ℝ≥0) (f : X → Y) :
+    eHolderNorm r (g ∘ f) = eHolderNorm r f := by
+  simp only [eHolderNorm, hg.holderWith_comp_iff]
+
+/-- Postcomposition with an isometry preserves the Hölder seminorm. -/
+theorem Isometry.nnHolderNorm_comp {X Y Z : Type*} [PseudoEMetricSpace X]
+    [PseudoEMetricSpace Y] [PseudoEMetricSpace Z] {g : Y → Z} (hg : Isometry g) (r : ℝ≥0)
+    (f : X → Y) : nnHolderNorm r (g ∘ f) = nnHolderNorm r f := by
+  rw [nnHolderNorm, nnHolderNorm, hg.eHolderNorm_comp]
 
 /-- A function that satisfies the Hölder bound with constant `K` and exponent `r` between points of
 `s` at distance less than `δ > 0`, and whose values on `s` lie within distance `D` of each other,
