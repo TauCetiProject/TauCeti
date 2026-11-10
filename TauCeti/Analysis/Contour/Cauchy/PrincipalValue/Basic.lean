@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.Analysis.Complex.Basic
+import TauCeti.Topology.Algebra.Group.LimUnder
 import Mathlib.Topology.Order.Compact
 import TauCeti.Analysis.Contour.Curve.Distance
 
@@ -780,24 +781,10 @@ no existence hypothesis: if the limit does not exist for either orientation, bot
 junk value of `limUnder`. -/
 theorem cauchyPVAt_eq_zero_symm {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}
     (h : cauchyPVAt γ a b f z₀ = 0) : cauchyPVAt γ b a f z₀ = 0 := by
-  have key : ∀ G : ℝ → ℂ, limUnder (𝓝[>] (0 : ℝ)) G = 0 →
-      limUnder (𝓝[>] (0 : ℝ)) (fun ε ↦ -G ε) = 0 := by
-    intro G hG
-    by_cases hex : ∃ L, Tendsto G (𝓝[>] (0 : ℝ)) (𝓝 L)
-    · obtain ⟨L, hL⟩ := hex
-      rw [hL.limUnder_eq] at hG
-      rw [hG] at hL
-      simpa using hL.neg.limUnder_eq
-    · have hex' : ¬ ∃ L, Tendsto (fun ε ↦ -G ε) (𝓝[>] (0 : ℝ)) (𝓝 L) :=
-        fun ⟨L, hL⟩ ↦ hex ⟨-L, by simpa using hL.neg⟩
-      refine Eq.trans ?_ hG
-      unfold limUnder lim
-      congr 1
-      ext x
-      exact ⟨fun hx ↦ (hex' ⟨x, hx⟩).elim, fun hx ↦ (hex ⟨x, hx⟩).elim⟩
   unfold cauchyPVAt at h ⊢
   simpa only [intervalIntegral.integral_symm a b] using
-    key (fun ε ↦ ∫ t in a..b, if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0) h
+    Filter.limUnder_neg_eq_zero (f := 𝓝[>] (0 : ℝ)) (G := fun ε ↦ ∫ t in a..b,
+      if ‖γ t - z₀‖ > ε then f (γ t) * deriv γ t else 0) h
 
 /-- Existence form of `HasCauchyPVAt.concat`. -/
 theorem CauchyPVExistsAt.concat {γ : ℝ → ℂ} {a b c : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}

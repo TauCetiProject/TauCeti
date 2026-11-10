@@ -54,8 +54,8 @@ theorem windingNumber_symm (h : CauchyPVExistsAt γ a b κ[z₀] z₀) :
   ring
 
 /-- Pointwise vanishing of a winding number is preserved by reversing the interval orientation.
-No existence hypothesis is needed: if the principal value does not exist, both winding numbers are
-the junk value of `limUnder`. -/
+No existence hypothesis is needed: if the principal value does not exist, both winding numbers
+are the same normalized junk value of `limUnder`, so vanishing is preserved. -/
 theorem windingNumber_eq_zero_symm (hzero : windingNumber γ a b z₀ = 0) :
     windingNumber γ b a z₀ = 0 := by
   rw [windingNumber_eq_cauchyPVAt, mul_eq_zero] at hzero ⊢
