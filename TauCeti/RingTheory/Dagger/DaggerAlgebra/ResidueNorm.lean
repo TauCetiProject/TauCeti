@@ -7,8 +7,9 @@ module
 
 public import TauCeti.RingTheory.Dagger.DaggerAlgebra.Completion
 public import TauCeti.RingTheory.Dagger.ClosedIdeal
-public import TauCeti.RingTheory.Affinoid.QuotientNorm
-public import TauCeti.RingTheory.Dagger.Noetherian
+
+import TauCeti.Analysis.Normed.Ring.Quotient
+import TauCeti.Topology.Algebra.Ring.MaximalIdeals
 
 /-!
 # The residue norm of a dagger algebra and its completion
@@ -28,19 +29,14 @@ residue norm playing the role of the Gauss norm. It is the prerequisite for the 
 topology of dagger algebras: the uniqueness of the topology rests on the automatic continuity
 of arbitrary `K`-algebra homomorphisms of dagger algebras, which is established separately.
 
-## What this file does and does not do
+## The chosen residue norm
 
-It shows that `τ : A → Â` is an isometry with dense range for the residue norm, in the
-presentation-independent form `isometry_toCompletion`. Note that the residue norm is not an
-instance: it depends on the chosen presentation of `A`, so no global `NormedCommRing A`
-instance can be declared, and statements that need the residue norm carry it explicitly
-via a `letI`. For this reason the literal statement `UniformSpace.Completion A ≃ₐ[K]
-completion K A` cannot be formulated with typeclass instances in this file; the isometry
-and density results above are the usable content of the comparison.
-
-The residue norm depends on the chosen minimal presentation, so it is carried by the
-`residueNormedCommRing` structure rather than by an instance, exactly as
-`TauCeti.IsAffinoidAlgebra.residueNormedCommRing` is for affinoid algebras.
+The isometry `isometry_toCompletion` compares the residue norm transported along the chosen
+minimal presentation with the quotient Gauss norm on `completion K A`. The residue norm is
+carried explicitly by `residueNormedCommRing` and the local `letI` declarations in the results,
+rather than by a global instance. With these structures installed locally, one can formulate
+an algebra equivalence from `UniformSpace.Completion A` to `completion K A`; this file provides
+the isometry and dense range used for that comparison, but does not construct the equivalence.
 
 ## Main definitions
 
@@ -102,7 +98,7 @@ noncomputable abbrev residueNormedAlgebra :
   NormedAlgebra.induced K A _ (residueAlgEquiv K A)
 
 /-- `TauCeti.Dagger.residueAlgEquiv` preserves the residue norm. -/
-theorem norm_residueAlgEquiv (x : A) :
+@[simp↓] theorem norm_residueAlgEquiv (x : A) :
     letI := residueNormedCommRing K A
     ‖residueAlgEquiv K A x‖ = ‖x‖ :=
   rfl
@@ -118,7 +114,7 @@ theorem isUltrametricDist_residueNormedCommRing :
 
 omit [CompleteSpace K] in
 /-- The residue isomorphism sends the image of a series to its quotient class. -/
-theorem residueAlgEquiv_presentation (f : W) :
+@[simp] theorem residueAlgEquiv_presentation (f : W) :
     residueAlgEquiv K A (presentation K A f) = Ideal.Quotient.mk _ f := by
   have h := Ideal.quotientKerAlgEquivOfSurjective_mk (presentation_surjective K A) f
   simp only [residueAlgEquiv, ← h, AlgEquiv.symm_apply_apply]
@@ -186,82 +182,21 @@ theorem residueNorm_le_norm_toCompletion (a : A) :
   have hmem : h - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f ∈
       Ideal.map (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K) I := by
     rwa [Ideal.Quotient.eq] at heq
-  -- `I` is finitely generated; pick a generating set `S`.
-  obtain ⟨S, hSfin, hS⟩ := Submodule.fg_def.mp
-    ((isNoetherianRing_iff_ideal_fg W).mp inferInstance I)
-  have hmap : Ideal.map (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K) I =
-      Ideal.span (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K '' S) := by
-    rw [← hS, Ideal.map_span]
-  rw [hmap] at hmem
-  -- Write the difference as a finite combination of the images of the generators.
-  obtain ⟨m, c, s, hsum⟩ := Submodule.mem_span_set'.mp hmem
-  -- Choose, for each `s i`, a generator `s₀ i ∈ S` mapping to it, and approximate the
-  -- coefficient `c i` by an overconvergent series within `δ`, with `δ` small compared to
-  -- `C = ∑ ‖s₀ i‖`.
-  set C := ∑ i, ‖(s i).1‖ with hC_def
-  have hC : 0 ≤ C := Finset.sum_nonneg fun i _ ↦ norm_nonneg _
-  set δ := ε / (1 + C) with hδ_def
-  have hδ : 0 < δ := by positivity
-  have hδC : δ * C ≤ ε := by
-    rw [hδ_def]
-    have hle : C ≤ 1 + C := by linarith
-    calc ε / (1 + C) * C ≤ ε / (1 + C) * (1 + C) := by gcongr
-      _ = ε := by field_simp
-  have step : ∀ i : Fin m, ∃ (s₀ : W) (hs₀ : s₀ ∈ S)
-      (wᵢ : W), washnitzerAlgebra.toTate (Fin (presentationDim K A)) K s₀ = (s i).1 ∧
-        ‖c i - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K wᵢ‖ < δ := by
-    intro i
-    obtain ⟨s₀, hs₀, htoTate⟩ := (s i).2
-    obtain ⟨wᵢ, hwᵢ⟩ := Metric.denseRange_iff.mp washnitzerAlgebra.denseRange_toTate
-      (c i) δ hδ
-    have hnorm : ‖c i - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K wᵢ‖ < δ := by
-      rw [← dist_eq_norm]
-      exact hwᵢ
-    exact ⟨s₀, hs₀, wᵢ, htoTate, hnorm⟩
-  choose s₀ hs₀ w htoTate hw using step
-  -- Assemble the overconvergent series `f' = f + ∑ᵢ (w i) * (s₀ i)` representing `a`.
-  set f' := f + ∑ i, w i * s₀ i with hf'_def
-  have hzero : ∀ i, presentation K A (s₀ i) = 0 := fun i ↦ by
-    have hs₀i : s₀ i ∈ I :=
-      hS ▸ Submodule.subset_span (hs₀ i)
-    exact RingHom.mem_ker.mp hs₀i
+  -- Approximate the difference by the image of an element of `I`.
+  have hclosure := Ideal.map_subset_closure_image_of_denseRange
+    washnitzerAlgebra.denseRange_toTate I hmem
+  obtain ⟨_, ⟨g, hg, rfl⟩, hdist⟩ := Metric.mem_closure_iff.mp hclosure ε hε
+  let f' := f + g
   have hf' : presentation K A f' = a := by
-    rw [hf'_def, map_add, map_sum, hf]
-    have hz : ∀ i, presentation K A (w i * s₀ i) = 0 := fun i ↦ by
-      rw [map_mul, hzero i, mul_zero]
-    simp [hz]
-  -- Bound the defect `h - toTate f'` term by term.
+    rw [map_add, hf, RingHom.mem_ker.mp hg, add_zero]
   have hdefect :
-      ‖h - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f'‖ ≤ δ * C := by
-    have hsub : h - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f' =
-        ∑ i, (c i - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K (w i)) *
-          (s i).1 := by
-      have h1 : washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f' =
-          washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f +
-            ∑ i, washnitzerAlgebra.toTate (Fin (presentationDim K A)) K (w i) *
-              (s i).1 := by
-        rw [hf'_def, map_add, map_sum]
-        congr 1
-        exact Finset.sum_congr rfl fun i _ ↦ by rw [map_mul, htoTate i]
-      have h2 : h - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f =
-          ∑ i, c i * (s i).1 := by
-        rw [← hsum]
-        exact Finset.sum_congr rfl fun i _ ↦ smul_eq_mul _ _
-      rw [h1, sub_add_eq_sub_sub, h2,
-        ← Finset.sum_sub_distrib (fun i ↦ c i * (s i).1)
-          (fun i ↦ washnitzerAlgebra.toTate (Fin (presentationDim K A)) K (w i) * (s i).1)]
-      exact Finset.sum_congr rfl fun i _ ↦
-        (sub_mul (c i) (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K (w i))
-          (s i).1).symm
-    rw [hsub]
-    calc ‖∑ i, (c i - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K (w i)) *
-          (s i).1‖ ≤ ∑ i, ‖(c i - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K (w i)) *
-              (s i).1‖ := norm_sum_le _ _
-      _ ≤ ∑ i, ‖c i - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K (w i)‖ *
-              ‖(s i).1‖ := Finset.sum_le_sum fun i _ ↦ norm_mul_le _ _
-      _ ≤ ∑ i, δ * ‖(s i).1‖ := Finset.sum_le_sum fun i _ ↦
-          mul_le_mul_of_nonneg_right (hw i).le (norm_nonneg _)
-      _ = δ * C := by rw [hC_def, Finset.mul_sum]
+      ‖h - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f'‖ ≤ ε := by
+    have heq : h - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f' =
+        (h - washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f) -
+          washnitzerAlgebra.toTate (Fin (presentationDim K A)) K g := by
+      rw [map_add]
+      abel
+    simpa only [heq, dist_eq_norm, norm_sub_rev] using hdist.le
   calc ‖a‖ ≤ ‖f'‖ := hf' ▸ norm_presentation_le K A f'
     _ = ‖washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f'‖ :=
         (washnitzerAlgebra.norm_toTate f').symm
@@ -269,14 +204,14 @@ theorem residueNorm_le_norm_toCompletion (a : A) :
         congr 1; abel
     _ ≤ max ‖h‖ ‖washnitzerAlgebra.toTate (Fin (presentationDim K A)) K f' - h‖ :=
         IsUltrametricDist.norm_add_le_max _ _
-    _ ≤ max (M + ε) (δ * C) :=
+    _ ≤ max (M + ε) ε :=
         max_le_max hnorm.le (by rwa [norm_sub_rev])
     _ ≤ M + ε :=
-        max_le le_rfl (by have hM : 0 ≤ M := norm_nonneg (toCompletion K A a); linarith [hδC, hM])
+        max_le le_rfl (by have hM : 0 ≤ M := norm_nonneg (toCompletion K A a); linarith)
 
 /-- The completion map is an isometry for the residue norm on `A` and the quotient Gauss
 norm on `Â`. -/
-theorem norm_toCompletion (a : A) :
+@[simp↓] theorem norm_toCompletion (a : A) :
     letI := residueNormedCommRing K A
     ‖toCompletion K A a‖ = ‖a‖ :=
   le_antisymm (norm_toCompletion_le K A a) (residueNorm_le_norm_toCompletion K A a)
