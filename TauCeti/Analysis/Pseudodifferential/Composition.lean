@@ -29,8 +29,8 @@ function `Op(b) u`. The composition symbol is the starting point of the symbol c
 composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic expansion
 `∑_α (1 / α!) ∂_ξ^α a D_x^α b`, whose leading term is the pointwise composition `Symbol.comp`.
 This file proves the first step of that expansion: `a # b - a ∘ b` is a symbol of order
-`m' + m - 1`, so for classical symbols the principal symbol of `a # b` is the composition of the
-principal symbols.
+`m' + m - 1`, so for classical symbols `a # b` agrees with the cut-off composition
+`χ(ξ) (σ(a) ∘ σ(b))` of the principal symbols up to a symbol of order `m' + m - 1`.
 
 ## Main results
 
