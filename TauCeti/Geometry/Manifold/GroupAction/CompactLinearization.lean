@@ -12,6 +12,7 @@ import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral
+import TauCeti.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.ContMDiff.PartialDeriv
 import TauCeti.Geometry.Manifold.GroupAction.Linearization
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
@@ -86,31 +87,6 @@ variable {E H M EG HG G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Com
   [Group G] [IsTopologicalGroup G] [CompactSpace G] [MulAction G M] {n : ℕ∞}
   [IsManifold I n M] [IsManifold IG n G]
 
-omit [CompleteSpace E] [I.Boundaryless] [IG.Boundaryless] [IsTopologicalGroup G] [CompactSpace G]
-  [IsManifold I n M] [IsManifold IG n G] in
-/-- In the coordinates of a chart `χ`, the action is a jointly `C^n` map `(w, g) ↦ χ (g • χ.symm w)`
-on the open set of pairs for which it is defined. -/
-private theorem isOpen_and_contMDiffOn_chart_smul [ContMDiffSMul IG I n G M]
-    {χ : OpenPartialHomeomorph M E} (hχ : ContMDiffOn I 𝓘(ℝ, E) n χ χ.source)
-    (hχs : ContMDiffOn 𝓘(ℝ, E) I n χ.symm χ.target) :
-    IsOpen {p : E × G | p.1 ∈ χ.target ∧ p.2 • χ.symm p.1 ∈ χ.source} ∧
-      ContMDiffOn (𝓘(ℝ, E).prod IG) 𝓘(ℝ, E) n (fun p : E × G ↦ χ (p.2 • χ.symm p.1))
-        {p : E × G | p.1 ∈ χ.target ∧ p.2 • χ.symm p.1 ∈ χ.source} := by
-  have hsmooth : ContMDiff (IG.prod I) I n fun p : G × M ↦ p.1 • p.2 :=
-    ContMDiffSMul.contMDiff_smul (I := IG) (I' := I) (n := n) (G := G) (M := M)
-  have hj : ContMDiffOn (𝓘(ℝ, E).prod IG) (IG.prod I) n (fun p : E × G ↦ (p.2, χ.symm p.1))
-      (χ.target ×ˢ univ) :=
-    contMDiffOn_snd.prodMk (hχs.comp contMDiffOn_fst fun p hp ↦ hp.1)
-  have hjW : ContMDiffOn (𝓘(ℝ, E).prod IG) (IG.prod I) n (fun p : E × G ↦ (p.2, χ.symm p.1))
-      {p : E × G | p.1 ∈ χ.target ∧ p.2 • χ.symm p.1 ∈ χ.source} :=
-    hj.mono fun p hp ↦ ⟨hp.1, mem_univ _⟩
-  refine ⟨?_, hχ.comp (hsmooth.comp_contMDiffOn hjW) fun p hp ↦ hp.2⟩
-  have h := (hsmooth.continuous.comp_continuousOn hj.continuousOn).isOpen_inter_preimage
-    (χ.open_target.prod isOpen_univ) χ.open_source
-  convert h using 1
-  ext p
-  simp [and_comm]
-
 omit [I.Boundaryless] [IsManifold I n M] in
 variable (IG) in
 /-- **The Bochner average in a chart.** Let `χ` be a chart at a fixed point `x` in which `g • ·`
@@ -135,7 +111,8 @@ private theorem contDiffOn_and_hasFDerivAt_chart_average [MeasurableSpace G] [Bo
   -- chart variable `w` and the group element `h`.
   let Ψ : E × G → E := fun p ↦ χ (p.2 • χ.symm p.1) - χ x
   let W : Set (E × G) := {p | p.1 ∈ χ.target ∧ p.2 • χ.symm p.1 ∈ χ.source}
-  obtain ⟨hW, hΨ₀⟩ := isOpen_and_contMDiffOn_chart_smul (IG := IG) (G := G) hχ hχs
+  have hW : IsOpen W := χ.isOpen_setOf_mem_target_smul_symm_mem_source
+  have hΨ₀ := ContMDiffSMul.contMDiffOn_comp_smul_symm (I := IG) (I' := I) (G := G) hχ hχs
   have hΨ : ContMDiffOn (𝓘(ℝ, E).prod IG) 𝓘(ℝ, E) n Ψ W :=
     (contDiff_id.sub contDiff_const).contMDiff.comp_contMDiffOn hΨ₀
   -- The averaged integrand `Φ (w, g) = σ g (Ψ (w, g⁻¹))` on the open set `U` of chart points

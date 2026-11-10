@@ -328,66 +328,47 @@ theorem hasFDerivAt_integral_smul_of_continuousOn_fderiv {G : Type*} [NormedAddC
     exact mul_le_mul_of_nonneg_left (hx y).2 (norm_nonneg _)
   · exact ae_of_all _ fun y x hx ↦ (hderiv (x, y) (hx y).1).const_smul (g y)
 
-private theorem contDiffOn_integral_smul_nat_of_continuousOn {G : Type max u v}
-    [NormedAddCommGroup G] [NormedSpace ℝ G] (m : ℕ) {F : E × α → G} (hg : Integrable g μ)
-    (hU : IsOpen U) (hF : ∀ y, ContDiffOn ℝ m (fun x ↦ F (x, y)) U)
-    (hcont : ∀ k ≤ m, ContinuousOn
-      (fun p : E × α ↦ iteratedFDeriv ℝ k (fun x ↦ F (x, p.2)) p.1) (U ×ˢ univ)) :
-    ContDiffOn ℝ m (fun x ↦ ∫ y, g y • F (x, y) ∂μ) U := by
-  have hF₀ : ContinuousOn F (U ×ˢ univ) :=
-    continuousOn_iteratedFDeriv_zero_partial_iff.1 (hcont 0 (Nat.zero_le m))
-  induction m generalizing G with
-  | zero =>
-      exact contDiffOn_zero.2 fun x hx ↦
-        (continuousAt_integral_smul_of_continuousOn hg continuous_id (hU.prod isOpen_univ) hF₀
-          fun y ↦ ⟨hx, mem_univ y⟩).continuousWithinAt
-  | succ m ih =>
-      have hcontD : ∀ k ≤ m, ContinuousOn (fun p : E × α ↦
-          iteratedFDeriv ℝ k (fderiv ℝ fun x ↦ F (x, p.2)) p.1) (U ×ˢ univ) := fun k hk ↦
-        continuousOn_iteratedFDeriv_fderiv_partial (hcont (k + 1) (by omega))
-      have hD : ContinuousOn (fun p : E × α ↦ fderiv ℝ (fun x ↦ F (x, p.2)) p.1)
-          (U ×ˢ univ) :=
-        continuousOn_iteratedFDeriv_zero_partial_iff.1 (hcontD 0 (Nat.zero_le m))
-      have hderiv : ∀ x ∈ U, HasFDerivAt (fun x ↦ ∫ y, g y • F (x, y) ∂μ)
-          (∫ y, g y • fderiv ℝ (fun x ↦ F (x, y)) x ∂μ) x :=
-        fun x hx ↦ hasFDerivAt_integral_smul_of_continuousOn_fderiv hg hU hF₀
-        (fun y ↦ (hF y).differentiableOn (by simp)) hD hx
-      rw [Nat.cast_add, Nat.cast_one, contDiffOn_succ_iff_fderiv_of_isOpen hU]
-      refine ⟨fun x hx ↦ (hderiv x hx).differentiableAt.differentiableWithinAt,
-        fun h ↦ absurd h (by simp), ?_⟩
-      refine (ih (F := fun p ↦ fderiv ℝ (fun x ↦ F (x, p.2)) p.1)
-        (fun y ↦ (hF y).fderiv_of_isOpen hU le_rfl) hcontD hD).congr fun x hx ↦
-        (hderiv x hx).fderiv
-
 /-- **Smoothness of integrals with continuous partial derivatives.** Let `F` be `C^n` in `x` on
 the open set `U` for every parameter `y` of the compact space `α`, with partial derivatives in `x`
 of every order `k ≤ n` jointly continuous on `U × α`. Then integrating `F (x, y)` against an
 integrable weight `g` is `C^n` in `x` on `U`. -/
-theorem contDiffOn_integral_smul_of_continuousOn_iteratedFDeriv {G : Type v}
+theorem contDiffOn_integral_smul_of_continuousOn_iteratedFDeriv {G : Type*}
     [NormedAddCommGroup G] [NormedSpace ℝ G] {n : ℕ∞} {F : E × α → G} (hg : Integrable g μ)
     (hU : IsOpen U) (hF : ∀ y, ContDiffOn ℝ n (fun x ↦ F (x, y)) U)
     (hcont : ∀ k : ℕ, (k : ℕ∞) ≤ n → ContinuousOn
       (fun p : E × α ↦ iteratedFDeriv ℝ k (fun x ↦ F (x, p.2)) p.1) (U ×ˢ univ)) :
     ContDiffOn ℝ n (fun x ↦ ∫ y, g y • F (x, y) ∂μ) U := by
-  let eG : Type max u v := ULift.{u} G
-  let isoG : eG ≃L[ℝ] G := ContinuousLinearEquiv.ulift
-  have he : ContDiffOn ℝ n (fun x ↦ ∫ y, g y • isoG.symm (F (x, y)) ∂μ) U := by
-    rw [contDiffOn_iff_forall_nat_le]
-    intro m hm
-    have hm' : (m : ℕ∞) ≤ n := by exact_mod_cast hm
-    refine contDiffOn_integral_smul_nat_of_continuousOn (F := fun p ↦ isoG.symm (F p)) m hg hU
-      (fun y ↦ isoG.symm.contDiff.comp_contDiffOn ((hF y).of_le (by exact_mod_cast hm)))
-      fun k hk ↦ ?_
-    have hkn : (k : ℕ∞) ≤ n := (Nat.cast_le.mpr hk).trans hm'
-    exact continuousOn_iteratedFDeriv_partial_clm_apply (L := fun _ ↦ (isoG.symm : G →L[ℝ] eG))
-      continuousOn_const
-      (fun p hp ↦ ((hF p.2).contDiffAt (hU.mem_nhds hp.1)).of_le (by exact_mod_cast hkn))
-      (hcont k hkn)
-  refine (isoG.contDiff.comp_contDiffOn he).congr fun x _ ↦ ?_
-  have hsmul : ∀ y, g y • isoG.symm (F (x, y)) = isoG.symm (g y • F (x, y)) :=
-    fun y ↦ (map_smul _ _ _).symm
-  simp only [Function.comp_apply, hsmul, ContinuousLinearEquiv.integral_comp_comm,
-    ContinuousLinearEquiv.apply_symm_apply]
+  rw [contDiffOn_iff_forall_nat_le]
+  intro m hm
+  have hkn : ∀ k ≤ m, (k : ℕ∞) ≤ n := fun k hk ↦ (Nat.cast_le.mpr hk).trans hm
+  refine contDiffOn_of_locally_contDiffOn fun x₀ hx₀ ↦ ?_
+  -- Near `x₀`, the partial derivatives of every order `k ≤ m` are bounded uniformly in `y`.
+  have hW : IsOpen (U ×ˢ (univ : Set α)) := hU.prod isOpen_univ
+  have hmem : ∀ y, (x₀, id y) ∈ U ×ˢ (univ : Set α) := fun y ↦ ⟨hx₀, mem_univ y⟩
+  choose C hC using fun k : Iic m ↦ isCompact_univ.exists_eventually_norm_le hW
+    (fun y _ ↦ (hcont k (hkn k k.2)).continuousAt (hW.mem_nhds (hmem y))) (fun y _ ↦ hmem y)
+  obtain ⟨V, hV, hVo, hx₀V⟩ := mem_nhds_iff.1 (eventually_all.2 hC)
+  refine ⟨V, hVo, hx₀V, ?_⟩
+  have hs : IsOpen (U ∩ V) := hU.inter hVo
+  have hUV : ∀ x ∈ U ∩ V, ∀ y, (x, id y) ∈ U ×ˢ (univ : Set α) := fun x hx y ↦ ⟨hx.1, mem_univ y⟩
+  -- The weighted Taylor series of the integrand, in the form required by Mathlib.
+  have hT (y : α) : HasFTaylorSeriesUpToOn m (fun x ↦ g y • F (x, y))
+      (fun x k ↦ g y • iteratedFDeriv ℝ k (fun x ↦ F (x, y)) x) (U ∩ V) :=
+    ((((hF y).of_le (by exact_mod_cast hm)).mono inter_subset_left).ftaylorSeriesWithin
+      hs.uniqueDiffOn |>.continuousLinearMap_comp (g y • ContinuousLinearMap.id ℝ G)).congr_series
+      fun k _ x hx ↦ by
+        ext v
+        simp [ftaylorSeriesWithin, iteratedFDerivWithin_of_isOpen k hs hx]
+  have hInt := hasFTaylorSeriesUpToOn_integral_of_le_bound (μ := μ) (n := (m : ℕ∞))
+    (bound := fun k y ↦ ‖g y‖ * if hk : k ≤ m then C ⟨k, hk⟩ else 0) hs
+    (fun x hx k hk ↦ (integrable_smul_of_continuousOn (F := fun p : E × α ↦
+      iteratedFDeriv ℝ k (fun x ↦ F (x, p.2)) p.1) hg continuous_id
+      (hcont k (hkn k (by exact_mod_cast hk))) (hUV x hx)).aestronglyMeasurable)
+    (ae_of_all _ fun y x hx k hk ↦ ?_) (fun k _ ↦ hg.norm.mul_const _) (ae_of_all _ hT)
+  · exact hInt.contDiffOn
+  · have hk' : k ≤ m := by exact_mod_cast hk
+    simp only [norm_smul, hk', ↓reduceDIte]
+    exact mul_le_mul_of_nonneg_left ((hV hx.2 ⟨k, hk'⟩ y (mem_univ y)).2) (norm_nonneg _)
 
 end PartialDerivatives
 
