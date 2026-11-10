@@ -129,9 +129,11 @@ theorem eq_covariancePseudoInverse_of_penrose {C D : Matrix ι ι ℝ} (hC : C.P
   toEuclideanLin.injective ((isMoorePenroseInverse_toEuclideanLin_of_penrose h₁ h₂ h₃ h₄).unique
     (isMoorePenroseInverse_covariancePseudoInverse hC))
 
-/-- The covariance pseudoinverse of a positive multiple scales by the reciprocal. -/
-theorem covariancePseudoInverse_smul (C : Matrix ι ι ℝ) {c : ℝ} (hc : 0 < c) :
+/-- The covariance pseudoinverse of a nonnegative multiple scales by the reciprocal. -/
+theorem covariancePseudoInverse_smul (C : Matrix ι ι ℝ) {c : ℝ} (hc : 0 ≤ c) :
     (c • C).covariancePseudoInverse = c⁻¹ • C.covariancePseudoInverse := by
+  rcases hc.eq_or_lt with rfl | hc
+  · simp [covariancePseudoInverse_zero]
   by_cases hC : C.PosSemidef
   · have hc' : c * c⁻¹ = 1 := mul_inv_cancel₀ hc.ne'
     have hc'' : c⁻¹ * c = 1 := inv_mul_cancel₀ hc.ne'

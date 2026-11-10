@@ -235,7 +235,7 @@ theorem gaussianCondKernel_inv_smul (m : EuclideanSpace ℝ (ι ⊕ κ))
   rw [gaussianCondKernel_apply, gaussianCondMean_def, gaussianCondMean_def,
     Matrix.gaussianCondCov_def, Matrix.gaussianCondCov_def]
   simp only [Matrix.submatrix_smul, Pi.smul_apply,
-    Matrix.covariancePseudoInverse_smul _ (inv_pos.mpr hτ), inv_inv]
+    Matrix.covariancePseudoInverse_smul _ (inv_pos.mpr hτ).le, inv_inv]
   congr 2
   · simp only [Matrix.smul_mul, Matrix.mul_smul, smul_smul, mul_inv_cancel₀ hτ.ne', one_smul]
   · simp only [Matrix.smul_mul, Matrix.mul_smul, smul_smul, smul_sub, mul_inv_cancel₀ hτ.ne',
