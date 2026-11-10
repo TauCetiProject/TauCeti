@@ -27,10 +27,11 @@ Every member of the family has dimension vector `(1, 1)`. So on a quiver with at
 the dimension vector of a finite-dimensional indecomposable **does not determine it**, and its
 Tits value is `2 - #arrows`, not `1`. Both facts are sharpness statements: the Gabriel injection
 `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable` and the real-root property
-`TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic` are proved for an acyclic
-quiver whose Tits form is *positive definite*, and every generalized Kronecker quiver is acyclic,
-so neither survives the weakening of that hypothesis to acyclicity alone. Already the *smallest*
-such weakening fails, at the Kronecker quiver `• ⇉ •` of exactly two arrows: its Tits form
+`TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_posDef` are proved for a
+quiver whose Tits form is *positive definite* (which forces it to be acyclic), and every
+generalized Kronecker quiver is acyclic, so neither survives the weakening of that hypothesis to
+acyclicity alone. Already the *smallest* such weakening fails, at the Kronecker quiver `• ⇉ •` of
+exactly two arrows: its Tits form
 `TauCeti.Quiver.Kronecker.titsForm_apply` is there the square `(a - b) ^ 2` of
 `TauCeti.Quiver.Kronecker.titsForm_eq_sq`, hence positive semidefinite but not positive definite,
 which is the threshold `TauCeti.Quiver.Kronecker.titsForm_nonneg` records. That threshold is the
@@ -494,7 +495,7 @@ theorem exists_indecomposable_dimVector_eq_not_nonempty_iso_kronecker (k : Type 
 /-- **The Tits value of the dimension vector of a line representation is `2 - #arrows`.** It is
 `1` exactly for the `A₂` quiver of a single arrow, and `0` for the Kronecker quiver `• ⇉ •`.
 
-This is the sharpness of `TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic`: over
+This is the sharpness of `TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_posDef`: over
 an acyclic quiver whose Tits form is not assumed positive definite, the dimension vector of an
 indecomposable need not have Tits value `1`, that is, need not be a *real* root. It remains a root
 of the Kronecker quiver, an imaginary one: on exactly two arrows -- the boundary case, where the

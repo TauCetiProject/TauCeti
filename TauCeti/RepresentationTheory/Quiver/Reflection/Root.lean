@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Quiver.Acyclic.TitsForm
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Composite
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Descent
 
@@ -50,8 +51,8 @@ itself.
   the Coxeter functor to annihilate every finite-dimensional indecomposable representation.
 * `TauCeti.titsForm_dimVector_eq_one_of_indecomposable`: **the dimension vector of a
   finite-dimensional indecomposable representation is a root of the Tits form**, with
-  `TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic` the same statement over an
-  acyclic quiver, where the ordering is chosen internally and so does not appear.
+  `TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_posDef` the same statement without an
+  ordering, which is chosen internally (a positive definite Tits form forces acyclicity).
 
 ## Implementation notes
 
@@ -253,17 +254,18 @@ theorem titsForm_dimVector_eq_one_of_indecomposable (q : _root_.Quiver.{w} V)
   obtain ⟨N, hN⟩ := exists_isZero_coxeterFunctor_iterate q hq hnd hall hl hpd M hM hfd
   exact titsForm_dimVector_eq_one_of_isZero_iterate q hq hnd hall hl N M hM hfd hN
 
-/-- **The dimension vector of a finite-dimensional indecomposable representation of an acyclic
-quiver with positive definite Tits form is a root.** This is the consumer-facing form of
-`TauCeti.titsForm_dimVector_eq_one_of_indecomposable`: acyclicity produces a sink-admissible
-ordering by `TauCeti.Quiver.IsAcyclic.exists_isSinkAdmissible`, and since the conclusion does not
-mention the ordering, the choice is made here rather than by the caller. -/
-theorem titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic [q : _root_.Quiver.{w} V]
-    [hq : ∀ a b : V, Fintype (a ⟶ b)] (hac : Quiver.IsAcyclic V) (hpd : (titsForm V).PosDef)
+/-- **The dimension vector of a finite-dimensional indecomposable representation of a quiver with
+positive definite Tits form is a root.** This is the consumer-facing form of
+`TauCeti.titsForm_dimVector_eq_one_of_indecomposable`: a quiver with positive definite Tits form is
+acyclic (`TauCeti.isAcyclic_of_titsForm_posDef`), which produces a sink-admissible ordering by
+`TauCeti.Quiver.IsAcyclic.exists_isSinkAdmissible`, and since the conclusion does not mention the
+ordering, the choice is made here rather than by the caller. -/
+theorem titsForm_dimVector_eq_one_of_indecomposable_of_posDef [q : _root_.Quiver.{w} V]
+    [hq : ∀ a b : V, Fintype (a ⟶ b)] (hpd : (titsForm V).PosDef)
     (M : QuiverRep.{u, v, w, max v w x} k V) (hM : Indecomposable M)
     (hfd : IsFinDim.{u, v, w, max v w x} k V M) :
     titsForm V (fun j : V ↦ (dimVector M j : ℤ)) = 1 := by
-  obtain ⟨l, hnd, hall, hl⟩ := hac.exists_isSinkAdmissible
+  obtain ⟨l, hnd, hall, hl⟩ := (isAcyclic_of_titsForm_posDef hpd).exists_isSinkAdmissible
   exact titsForm_dimVector_eq_one_of_indecomposable q hq hnd hall hl hpd M hM hfd
 
 end TauCeti
