@@ -108,13 +108,21 @@ theorem nextCrossing_cons_cons_of_mem {p : Fin n}
 /-- Skipping the two newly inserted crossings recovers the old successor. On an affected
 position this includes a position with just one old crossing; on an unaffected position nothing
 is skipped. -/
-theorem nextCrossing_cons_cons_skip_pair {p : Fin n}
-    {j : Fin v.length} (hj : j ∈ v.crossingsAt p) :
+theorem nextCrossing_cons_cons_skip_pair {p : Fin n} (j : Fin v.length) :
     let w : BraidWord n := (i, ε) :: (i, η) :: v
     (if w.nextCrossing p j.succ.succ = 0 then
       w.nextCrossing p (w.nextCrossing p (w.nextCrossing p j.succ.succ))
     else w.nextCrossing p j.succ.succ) = (v.nextCrossing p j).succ.succ := by
   dsimp only
+  by_cases hj : j ∈ v.crossingsAt p
+  swap
+  · -- an old crossing outside the list at `p` is fixed by both successor permutations
+    set w : BraidWord n := (i, ε) :: (i, η) :: v with hw
+    have hjw : j.succ.succ ∉ w.crossingsAt p := fun hmem ↦
+      hj ((mem_crossingsAt (w := v)).mpr (by simpa [hw] using (mem_crossingsAt (w := w)).mp hmem))
+    rw [nextCrossing_def, List.formPerm_apply_of_notMem hjw, nextCrossing_def v,
+      List.formPerm_apply_of_notMem hj]
+    simp
   by_cases hp : p = strand i ∨ p = strandSucc i
   · rw [nextCrossing_cons_cons_of_mem v i ε η hp hj]
     by_cases h : v.nextCrossing p j = (v.crossingsAt p).head (List.ne_nil_of_mem hj)
