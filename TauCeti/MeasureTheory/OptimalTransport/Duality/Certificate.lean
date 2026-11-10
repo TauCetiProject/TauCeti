@@ -506,23 +506,17 @@ theorem transportCost_eq_lintegral_of_ae_mem_dualContactSet
     (hφ : Integrable φ μ) (hψ : Integrable ψ ν)
     (hae : ∀ᵐ x ∂μ, (x, T x) ∈ dualContactSet c φ ψ) :
     transportCost c μ ν = ∫⁻ x, c (x, T x) ∂μ := by
-  have hf := aemeasurable_prodMk_self hT.aemeasurable
-  have hint := (isCoupling_graphPlan hT).integrable_add_split hφ hψ
-  have hint' : Integrable (fun x ↦ φ x + ψ (T x)) μ :=
-    (integrable_map_measure (g := fun z : X × Y ↦ φ z.1 + ψ z.2)
-      (by simpa only [graphPlan_def] using hint.aestronglyMeasurable) hf).1
-      (by simpa only [graphPlan_def] using hint)
+  have hψT : Integrable (fun x ↦ ψ (T x)) μ := hT.integrable_comp hψ
+  have hint' : Integrable (fun x ↦ φ x + ψ (T x)) μ := hφ.add hψT
   have hV : kantorovichDualValue μ ν φ ψ = ∫ x, (φ x + ψ (T x)) ∂μ := by
-    rw [kantorovichDualValue_eq_integral (isCoupling_graphPlan hT) hφ hψ, graphPlan_def,
-      integral_map hf (by simpa only [graphPlan_def] using hint.aestronglyMeasurable)]
+    rw [kantorovichDualValue_def, integral_add hφ hψT]
+    exact congrArg _ (hT.integral_comp hψ.aestronglyMeasurable).symm
   have hup : ∫⁻ x, c (x, T x) ∂μ = ENNReal.ofReal (kantorovichDualValue μ ν φ ψ) := by
     rw [hV, ofReal_integral_eq_lintegral_ofReal hint'
       (hae.mono fun x hx ↦ add_nonneg_of_mem_dualContactSet hx)]
     exact lintegral_congr_ae (hae.mono fun x hx ↦ (ofReal_eq_of_mem_dualContactSet hx).symm)
   refine le_antisymm ?_ (hup ▸ hfeas.ofReal_kantorovichDualValue_le_transportCost hφ hψ)
-  calc transportCost c μ ν ≤ ∫⁻ z, c z ∂graphPlan T μ :=
-        transportCost_le_lintegral (isCoupling_graphPlan hT) c
-    _ ≤ ∫⁻ x, c (x, T x) ∂μ := by rw [graphPlan_def]; exact lintegral_map_le _ hf
+  exact transportCost_le_lintegral_of_hasLaw hT c
 
 end Monge
 
