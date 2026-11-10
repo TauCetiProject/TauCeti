@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Bott
 public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Geometry.Manifold.Immersion.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
@@ -168,25 +169,6 @@ private theorem ker_fderiv_fderiv_comp_le_range_inl (hi : i.IsNondegenerateCriti
     hi.ker_criticalHessian hn s, LinearMap.finrank_range_of_inj LinearMap.inl_injective]
   exact (LinearMap.finrank_range_of_inj (i.isImmersion.mfderiv_injective hn s)).le
 
-omit [FiniteDimensional ℝ E] [I.Boundaryless] [IsManifold I 2 M] [J.Boundaryless] in
-/-- In slice charts `h` of `i` at `s`, the points of the zero section over the chart of `S` are the
-points of the submanifold: for `b` in the target of `φ = h.domChart.extend J`, the point
-`i (φ⁻¹ b)` lies in the chart `e = h.codChart` and corresponds to `h.equiv (b, 0)`. -/
-private theorem mem_codChart_source_and_extend_eq (h : IsImmersionAtOfComplement F J I n i s)
-    {b : E'} (hb : b ∈ (h.domChart.extend J).target) :
-    i ((h.domChart.extend J).symm b) ∈ h.codChart.source ∧
-      h.codChart.extend I (i ((h.domChart.extend J).symm b)) = h.equiv (b, 0) ∧
-      (h.codChart.extend I).symm (h.equiv (b, 0)) = i ((h.domChart.extend J).symm b) ∧
-      h.equiv (b, 0) ∈ (h.codChart.extend I).target := by
-  have hsrc : (h.domChart.extend J).symm b ∈ h.domChart.source := by
-    simpa using (h.domChart.extend J).map_target hb
-  have hy : i ((h.domChart.extend J).symm b) ∈ h.codChart.source :=
-    h.source_subset_preimage_source hsrc
-  have hw : h.codChart.extend I (i ((h.domChart.extend J).symm b)) = h.equiv (b, 0) :=
-    h.writtenInCharts hb
-  refine ⟨hy, hw, ?_, h.target_subset_preimage_target hb⟩
-  rw [← hw, (h.codChart.extend I).left_inv (by simpa using hy)]
-
 /-- In slice charts `h` of a Morse–Bott critical submanifold at `s`, with `i` of class `C²`, write
 `a = h.domChart.extend J s` and `g = f ∘ (h.codChart.extend I).symm ∘ h.equiv`. Then `i s` lies in
 the chart of `M` and corresponds to `(a, 0)`, `g` is `C²` at `(a, 0)`, the zero section is critical
@@ -211,12 +193,12 @@ private theorem sliceChart_criticalZeroSection (hi : i.IsNondegenerateCriticalSu
     IsManifold.maximalAtlas_subset_of_le (by norm_num) he2
   have hsφ : s ∈ φ.source := by simpa [hφ] using h.mem_domChart_source
   have haφ : a ∈ φ.target := φ.map_source hsφ
-  have hx := mem_codChart_source_and_extend_eq h haφ
+  have hx := h.mem_codChart_source_and_extend_eq haφ
   rw [ha, φ.left_inv hsφ] at hx
   -- The zero section consists of critical points of `g`.
   have hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ g (b, 0) = 0 := by
     filter_upwards [h.domChart.isOpen_extend_target.mem_nhds haφ] with b hb
-    obtain ⟨hy, hw, -, -⟩ := mem_codChart_source_and_extend_eq h hb
+    obtain ⟨hy, hw, -, -⟩ := h.mem_codChart_source_and_extend_eq hb
     have hzero : fderiv ℝ (f ∘ ξ.symm) (ξ (i (φ.symm b))) = 0 :=
       (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he1 hy).mp
         (mem_criticalPoints.mp (hi.mem_criticalPoints (φ.symm b)))
@@ -274,7 +256,7 @@ theorem exists_morseBott_chart (hi : i.IsNondegenerateCriticalSubmanifold f)
   have hsec {b : E'} (hb : b ∈ φ.target) :
       i (φ.symm b) ∈ h.codChart.source ∧ ξ (i (φ.symm b)) = L (b, 0) ∧
         ξ.symm (L (b, 0)) = i (φ.symm b) ∧ L (b, 0) ∈ ξ.target :=
-    mem_codChart_source_and_extend_eq h hb
+    h.mem_codChart_source_and_extend_eq hb
   have hx := hsec haφ
   rw [ha, φ.left_inv hsφ] at hx
   -- The coordinate expression of `f` in the chart of `M` is `C^{k+2}` near `L (a, 0)`.
@@ -445,7 +427,7 @@ theorem eventually_mem_range_of_mem_criticalPoints (hi : i.IsNondegenerateCritic
     h.codChart.open_source.mem_nhds hxe] with x hxz hxφ hxe hcx
   have hz : L.symm (ξ x) = ((L.symm (ξ x)).1, 0) :=
     Prod.ext rfl (hxz.1 ((hcrit_iff hxe).1 hcx))
-  obtain ⟨hy, hw, -, -⟩ := mem_codChart_source_and_extend_eq h hxφ
+  obtain ⟨hy, hw, -, -⟩ := h.mem_codChart_source_and_extend_eq hxφ
   refine ⟨φ.symm (L.symm (ξ x)).1, ξ.injOn (by simpa [hφ, hξ] using hy)
     (by simpa [hξ] using hxe) ?_⟩
   rw [hw, ← hz, L.apply_symm_apply]
