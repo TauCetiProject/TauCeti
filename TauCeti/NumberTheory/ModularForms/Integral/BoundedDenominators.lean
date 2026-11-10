@@ -161,8 +161,7 @@ private theorem exists_integral_multiple_qExpansion_coeff_of_two_le (hk : 2 ≤ 
     (Submodule.apply_mem_span_image_of_mem_span toModularFormₗ
       ((HeckeRing.GL2.Newform.span_levelRaise_eq_top N k).symm ▸ Submodule.mem_top)) hf
   rintro _ ⟨_, ⟨M, d, _, _, h, g, rfl⟩, rfl⟩ n
-  rw [hcoe, hw, CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map M)
-    (one_mem_strictPeriods_Gamma1_map N)]
+  rw [hcoe, hw, CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map M)]
   split_ifs
   · exact g.isIntegral_qExpansion_coeff hk _
   · exact isIntegral_zero
