@@ -53,6 +53,8 @@ theorem support_bernoulliMeasure (x y : X) (p : unitInterval) :
     rw [h, add_zero] at hsum
     simpa using congrArg (fun q : ℝ≥0 ↦ (q : ℝ)) hsum
   rw [bernoulliMeasure_def, Measure.support_add]
+  -- The decomposition uses the ℝ≥0 action, while the support lemma uses the definitionally
+  -- equal ℝ≥0∞ action after coercion.
   change
     ((unitInterval.toNNReal p : ℝ≥0∞) • Measure.dirac x).support ∪
         ((unitInterval.toNNReal (unitInterval.symm p) : ℝ≥0∞) • Measure.dirac y).support = _
