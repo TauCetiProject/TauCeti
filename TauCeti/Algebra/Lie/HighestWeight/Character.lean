@@ -63,6 +63,8 @@ every weight in the orbit occurs, and occurs simply.
 ## Main results
 
 * `TauCeti.isWeylInvariant_formalCharacter`: **the formal character is Weyl-invariant.**
+* `TauCeti.genWeightSpace_weylGroup_smul_ne_bot_of_ne_bot`: **the weights of a finite-dimensional
+  module are stable under the Weyl group.**
 * `TauCeti.isDotAlternating_formalCharacter_mul_weylDenominator`: **the formal character times the
   Weyl denominator is alternating for the dot action.**
 * `TauCeti.sub_mem_posRootCone_of_coeff_formalCharacter_mul_weylDenominator_ne_zero`: for a highest
@@ -70,9 +72,10 @@ every weight in the orbit occurs, and occurs simply.
 * `coeff_formalCharacter_mul_weylDenominator_eq_one_of_isHighestWeightVector_of_lieSpan_eq_top`:
   and its **coefficient at `lam` is `1`**.
 * `TauCeti.formalCharacter_coeff_weylGroup_smul_eq_one_of_isHighestWeightVector_of_lieSpan_eq_top`:
-  **the whole Weyl orbit of the highest weight carries the coefficient `1`**, with
-  `TauCeti.genWeightSpace_weylGroup_smul_ne_bot_of_isHighestWeightVector` the
-  same statement read as the nonvanishing of a weight space.
+  **the whole Weyl orbit of the highest weight carries the coefficient `1`**.
+* `TauCeti.genWeightSpace_weylGroup_smul_ne_bot_of_isHighestWeightVector`: **every Weyl translate of
+  the highest weight is a weight**, for any module with a highest weight vector, with no generation
+  assumption.
 * `TauCeti.formalCharacter_mul_weylDenominator_eq_of_forall_coeff_isDominantIntegral_eq`: **that
   product is determined by its coefficients at the dominant integral weights**, with
   `TauCeti.exists_intCast_eq_coroot'_of_sub_mem_posRootCone` the integrality of the weights below
@@ -106,6 +109,16 @@ a weight is unchanged by the linear action of the Weyl group. This is
 theorem isWeylInvariant_formalCharacter :
     IsWeylInvariant (IsKilling.rootSystem H) (formalCharacter K H M) :=
   (isWeylInvariant_iff _ _).mpr fun w chi ↦ formalCharacter_coeff_weylGroup_smul w chi
+
+/-- **The weights of a finite-dimensional module are stable under the Weyl group**: if a linear form
+is a weight of `M`, so is each of its Weyl translates. This is the Weyl invariance of weight
+multiplicities, read as the nonvanishing of a weight space. -/
+theorem genWeightSpace_weylGroup_smul_ne_bot_of_ne_bot (w : (IsKilling.rootSystem H).weylGroup)
+    {chi : Dual K H} (h : genWeightSpace M (chi : H → K) ≠ ⊥) :
+    genWeightSpace M ((w • chi : Dual K H) : H → K) ≠ ⊥ := fun hbot ↦ by
+  have h' := formalCharacter_coeff_eq_zero_iff.mpr hbot
+  rw [formalCharacter_coeff_weylGroup_smul, formalCharacter_coeff_eq_zero_iff] at h'
+  exact h h'
 
 /-- **The formal character of a finite-dimensional module times the Weyl denominator is alternating
 for the dot action.**
@@ -160,10 +173,8 @@ omit hgen in
 is contained in the set of weights of a module with a highest weight vector of weight `lam`. -/
 theorem genWeightSpace_weylGroup_smul_ne_bot_of_isHighestWeightVector
     (w : (IsKilling.rootSystem H).weylGroup) :
-    genWeightSpace M ((w • lam : Dual K H) : H → K) ≠ ⊥ := fun hbot ↦ by
-  have h := formalCharacter_coeff_eq_zero_iff.mpr hbot
-  rw [formalCharacter_coeff_weylGroup_smul, formalCharacter_coeff_eq_zero_iff] at h
-  exact hv.genWeightSpace_ne_bot h
+    genWeightSpace M ((w • lam : Dual K H) : H → K) ≠ ⊥ :=
+  genWeightSpace_weylGroup_smul_ne_bot_of_ne_bot w hv.genWeightSpace_ne_bot
 
 /-- **The two factors of `ch M · Δ` are supported downwards from `lam` and from `0`**: if
 `chi = chi₁ + chi₂` with `chi₁` a weight of `M` and `chi₂` in the support of the denominator, then

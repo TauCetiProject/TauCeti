@@ -76,11 +76,11 @@ At the zero weight the count is complete: `TauCeti.isMinuscule_zero` proves `0` 
 
 * `TauCeti.finrank_eq_card_orbit_of_isHighestWeightVector_of_lieSpan_eq_top`: **a highest weight
   module whose weights lie in one Weyl orbit has the dimension of that orbit**, the substance of
-  the file. It rests on the fact that the orbit of the highest weight consists of weights, all of
-  them simple
-  (`formalCharacter_coeff_weylGroup_smul_eq_one_of_isHighestWeightVector_of_lieSpan_eq_top`), and
-  hence that the orbit condition makes the weights exactly the orbit
-  (`genWeightSpace_ne_bot_iff_mem_orbit_of_isHighestWeightVector`).
+  the file. It rests on two facts. The orbit of the highest weight consists of weights, and the
+  orbit condition makes the weights exactly the orbit, for any module with a highest weight vector
+  (`genWeightSpace_ne_bot_iff_mem_orbit_of_isHighestWeightVector`). Those weights are all simple
+  (`formalCharacter_coeff_weylGroup_smul_eq_one_of_isHighestWeightVector_of_lieSpan_eq_top`, which
+  needs the generation assumption), and simplicity feeds the dimension count.
 * `TauCeti.le_one_of_apply_coroot_eq_intCast_of_forall_mem_orbit`: **every weight of a module
   supported on a single Weyl orbit pairs with every coroot to at most `1`.**
 * `TauCeti.IsMinuscule.finrank_irreducibleQuotient_eq_card_orbit`: **`dim L(mu) = |W · mu|`**, the
