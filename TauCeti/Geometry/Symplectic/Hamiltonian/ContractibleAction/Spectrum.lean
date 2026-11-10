@@ -17,15 +17,18 @@ import TauCeti.Topology.Order.IntermediateValue
 
 Let `σ` be a two-form on a manifold `M` and `H : ℝ → M → ℝ` a time-dependent Hamiltonian. The
 **contractible action spectrum** of `H` (`TauCeti.SmoothTwoForm.contractibleActionSpectrum`) is
-the set of actions `A_H(γ) = ∫ u^* σ - ∫₀¹ H(t, γ(t)) dt` (`TauCeti.contractibleLoopAction`) of
-the contractible `1`-periodic orbits `γ` of the Hamiltonian vector field `X_H` that bound a `C²`
-cap `u`. For a continuous weakly exact form the action does not depend on the cap, so these are
-the critical values of the action functional on contractible loops. Spectral invariants of
-Floer homology take their values in this set.
+the set of capped actions `A_H(γ, u) = ∫ u^* σ - ∫₀¹ H(t, γ(t)) dt` (`TauCeti.cylinderAction`) of
+the contractible `1`-periodic orbits `γ` of the Hamiltonian vector field `X_H`, over all `C²` caps
+`u` of `γ`. For a continuous weakly exact form the action does not depend on the cap, so the
+spectrum is the set of actions `TauCeti.contractibleLoopAction` of these orbits
+(`TauCeti.SmoothTwoForm.contractibleActionSpectrum_eq_image`), the critical values of the action
+functional on contractible loops. Spectral invariants of Floer homology take their values in this
+set.
 
-On a closed manifold, a Hamiltonian whose contractible `1`-periodic orbits are all nondegenerate
-has a finite spectrum
-(`TauCeti.SmoothTwoForm.IsNondegenerate.finite_contractibleActionSpectrum`).
+On a closed manifold with a weakly exact form, a Hamiltonian whose contractible `1`-periodic
+orbits are all nondegenerate has a finite spectrum
+(`TauCeti.SmoothTwoForm.IsNondegenerate.finite_contractibleActionSpectrum`). Without weak
+exactness, recapping an orbit by spheres of nonzero area makes the spectrum infinite.
 
 **Autonomous Hamiltonians without fast orbits.** Let `F : M → ℝ` be autonomous and `s > 0`. The
 `1`-periodic orbits of `s F` are the orbits of `X_F` of period `s`, run at speed `s`. Suppose that
@@ -53,8 +56,10 @@ the `π₁`-sensitive Hofer–Zehnder capacity.
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.contractibleActionSpectrum_eq_image`: for a weakly exact form, the
+  spectrum is the set of actions of the capped contractible `1`-periodic orbits.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.finite_contractibleActionSpectrum`: the spectrum of a
-  Hamiltonian with nondegenerate contractible orbits on a closed manifold is finite.
+  Hamiltonian with nondegenerate contractible orbits on a closed weakly exact manifold is finite.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.contractibleActionSpectrum_smul_eq`: the spectrum of
   `s F` for an autonomous `F` without fast contractible orbits.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.exists_mem_criticalPoints_forall_eq_neg_mul`: a
@@ -88,39 +93,55 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 variable (σ) in
 /-- The **contractible action spectrum** of a time-dependent Hamiltonian `H` for a two-form `σ`:
-the actions `A_H(γ)` (`TauCeti.contractibleLoopAction`) of the contractible `1`-periodic orbits `γ`
-of the Hamiltonian vector field of `H` that bound a `C²` cap. -/
+the capped actions `A_H(γ, u)` (`TauCeti.cylinderAction`) of the contractible `1`-periodic orbits
+`γ` of the Hamiltonian vector field of `H`, over all `C²` caps `u` of `γ`. -/
 def contractibleActionSpectrum (Ham : ℝ → M → ℝ) : Set ℝ :=
-  contractibleLoopAction σ.1 Ham ''
-    {γ ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (Ham t)) 1 |
-      ∃ u, IsCap I u γ}
+  {a | ∃ γ ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (Ham t)) 1,
+    ∃ u, IsCap I u γ ∧ cylinderAction σ.1 Ham u = a}
 
 /-- A value lies in the contractible action spectrum exactly when it is the action of a contractible
-`1`-periodic orbit with a cap. -/
+`1`-periodic orbit capped by one of its caps. -/
 @[simp]
 theorem mem_contractibleActionSpectrum {Ham : ℝ → M → ℝ} {a : ℝ} :
     a ∈ σ.contractibleActionSpectrum Ham ↔
       ∃ γ ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (Ham t)) 1,
-        (∃ u, IsCap I u γ) ∧ contractibleLoopAction σ.1 Ham γ = a := by
-  simp only [contractibleActionSpectrum, mem_image, mem_sep_iff, and_assoc]
+        ∃ u, IsCap I u γ ∧ cylinderAction σ.1 Ham u = a :=
+  Iff.rfl
+
+/-- For a weakly exact form the capped action does not depend on the cap, so the contractible
+action spectrum is the set of actions `A_H(γ)` (`TauCeti.contractibleLoopAction`) of the
+contractible `1`-periodic orbits `γ` that bound a cap. -/
+theorem contractibleActionSpectrum_eq_image (hω : IsWeaklyExact σ.1) (Ham : ℝ → M → ℝ) :
+    σ.contractibleActionSpectrum Ham = contractibleLoopAction σ.1 Ham ''
+      {γ ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (Ham t)) 1 |
+        ∃ u, IsCap I u γ} := by
+  have hω₀ : IsSmoothForm I 0 σ.1 := σ.isSmoothForm.of_le (by simp)
+  ext a
+  constructor
+  · rintro ⟨γ, hγ, u, hu, rfl⟩
+    exact ⟨γ, ⟨hγ, u, hu⟩, hω.contractibleLoopAction_eq hω₀ Ham hu⟩
+  · rintro ⟨γ, ⟨hγ, u, hu⟩, rfl⟩
+    exact ⟨γ, hγ, u, hu, (hω.contractibleLoopAction_eq hω₀ Ham hu).symm⟩
 
 namespace IsNondegenerate
 
 variable [FiniteDimensional ℝ E]
 
-/-- **The spectrum of a nondegenerate Hamiltonian is finite.** Let `σ` be a nondegenerate two-form
-on a compact boundaryless manifold modelled on a finite-dimensional space, and `H` a time-dependent
-Hamiltonian, jointly `C²` and `1`-periodic in time, whose contractible `1`-periodic orbits are all
-nondegenerate. Then the contractible action spectrum of `H` is finite. -/
+/-- **The spectrum of a nondegenerate Hamiltonian is finite.** Let `σ` be a nondegenerate weakly
+exact two-form on a compact boundaryless manifold modelled on a finite-dimensional space, and `H`
+a time-dependent Hamiltonian, jointly `C²` and `1`-periodic in time, whose contractible
+`1`-periodic orbits are all nondegenerate. Then the contractible action spectrum of `H` is
+finite. -/
 theorem finite_contractibleActionSpectrum [CompactSpace M] [T2Space M] [BoundarylessManifold I M]
-    (h : σ.IsNondegenerate) {Ham : ℝ → M → ℝ}
+    (h : σ.IsNondegenerate) (hω : IsWeaklyExact σ.1) {Ham : ℝ → M → ℝ}
     (hH : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 2 (uncurry Ham)) (hP : Periodic Ham 1)
     (hnd : ∀ γ ∈ contractiblePeriodicSolutions (fun t ↦ σ.hamiltonianVectorField (Ham t)) 1,
       IsNondegenerateFixedPt I
         (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (Ham t)) 0 1) (γ 0)) :
     (σ.contractibleActionSpectrum Ham).Finite :=
-  ((h.finite_contractiblePeriodicSolutions_hamiltonianVectorField hH hP hnd).subset
-    (sep_subset _ _)).image _
+  contractibleActionSpectrum_eq_image hω Ham ▸
+    ((h.finite_contractiblePeriodicSolutions_hamiltonianVectorField hH hP hnd).subset
+      (sep_subset _ _)).image _
 
 variable {F : M → ℝ} {s : ℝ}
 
@@ -175,19 +196,19 @@ theorem contractibleActionSpectrum_smul_eq (h : σ.IsNondegenerate) (hω : IsWea
   have haction (x : M) :
       contractibleLoopAction σ.1 (fun _ ↦ s • F) (fun _ ↦ x) = -(s * F x) := by
     simp [hω.contractibleLoopAction_const hω₀]
+  rw [contractibleActionSpectrum_eq_image hω]
   ext a
-  rw [mem_contractibleActionSpectrum]
   constructor
-  · rintro ⟨γ, hγ, -, rfl⟩
+  · rintro ⟨γ, ⟨hγ, -⟩, rfl⟩
     have hconst := eq_const_of_mem_contractiblePeriodicSolutions h hF hs hno hγ
     have hint := (mem_periodicSolutions_const_iff.1 (contractiblePeriodicSolutions_subset hγ)).1
     rw [hconst] at hint
     exact ⟨γ 0, (isMIntegralCurve_const_smul_iff h hs.ne').1 hint, by rw [hconst, haction]⟩
   · rintro ⟨x, hx, rfl⟩
-    refine ⟨fun _ ↦ x, mem_contractiblePeriodicSolutions.2 ⟨mem_periodicSolutions_const_iff.2
+    refine ⟨fun _ ↦ x, ⟨mem_contractiblePeriodicSolutions.2 ⟨mem_periodicSolutions_const_iff.2
       ⟨(isMIntegralCurve_const_smul_iff h hs.ne').2 hx, fun _ ↦ rfl⟩,
       ContinuousMap.const _ x, ⟨x, ContinuousMap.Homotopic.refl _⟩, fun _ ↦ rfl⟩,
-      ⟨_, (isLoopCylinder_const x).isCap⟩, haction x⟩
+      _, (isLoopCylinder_const x).isCap⟩, haction x⟩
 
 /-- **Continuous selections of the spectra of `s F`.** Let `σ` be a nondegenerate weakly exact
 two-form on a boundaryless second countable manifold modelled on a finite-dimensional space, and
