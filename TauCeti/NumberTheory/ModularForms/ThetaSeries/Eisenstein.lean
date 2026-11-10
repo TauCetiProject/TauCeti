@@ -96,10 +96,12 @@ theorem thetaForm_eq_E₄ (hL : IsEven L) (hU : IsUnimodular L) (h8 : finrank �
     thetaForm hL hU (k := 4) h8 = E₄ :=
   hL.thetaForm_eq_of_qExpansion_coeff_zero hU h8 (by norm_num) (E_qExpansion_coeff_zero _ ⟨2, rfl⟩)
 
+omit [FiniteDimensional ℝ E] in
 /-- The theta series of an even unimodular lattice of rank `8` is the Eisenstein series `E₄`, as
 a function on the upper half-plane. -/
 theorem thetaSeries_eq_E₄ (hL : IsEven L) (hU : IsUnimodular L) (h8 : finrank ℝ E = 8) :
     thetaSeries L = E₄ := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   rw [← coe_thetaForm hL hU (k := 4) h8, hL.thetaForm_eq_E₄ hU h8]
 
 /-- **Representation numbers in rank `8`**: an even unimodular lattice of rank `8` has
@@ -112,10 +114,12 @@ theorem representationNumber_two_mul_of_finrank_eq_eight (hL : IsEven L) (hU : I
   rw [show bernoulli 4 = -1 / 30 by decide +kernel] at h
   exact_mod_cast h.trans (by norm_num : _ = ((240 * σ 3 m : ℕ) : ℂ))
 
+omit [FiniteDimensional ℝ E] in
 /-- The **kissing number** of an even unimodular lattice of rank `8` is `240`: it has `240`
 vectors of squared norm `2`. -/
 theorem representationNumber_two_of_finrank_eq_eight (hL : IsEven L) (hU : IsUnimodular L)
     (h8 : finrank ℝ E = 8) : representationNumber L 2 = 240 := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   simpa using hL.representationNumber_two_mul_of_finrank_eq_eight hU h8 one_ne_zero
 
 /-! ### Rank `16` -/
@@ -128,10 +132,12 @@ theorem thetaForm_eq_E₄_mul_E₄ (hL : IsEven L) (hU : IsUnimodular L) (h16 : 
     have hE := E_qExpansion_coeff_zero (by norm_num : 3 ≤ 4) ⟨2, rfl⟩
     simp_all [ModularForm.qExpansion_mul one_pos one_mem_strictPeriods_SL]
 
+omit [FiniteDimensional ℝ E] in
 /-- The theta series of an even unimodular lattice of rank `16` is `E₄²`, as a function on the
 upper half-plane. -/
 theorem thetaSeries_eq_E₄_sq (hL : IsEven L) (hU : IsUnimodular L) (h16 : finrank ℝ E = 16) :
     thetaSeries L = E₄ ^ 2 := by
+  have : FiniteDimensional ℝ E := Module.finite_of_finrank_pos (by omega)
   rw [← coe_thetaForm hL hU (k := 8) h16, hL.thetaForm_eq_E₄_mul_E₄ hU h16, coe_mcast, coe_mul,
     sq]
 
