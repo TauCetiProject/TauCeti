@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.CartanWeights
 public import TauCeti.RepresentationTheory.Spin.Polarization.TypeD.Serre.Relations
 
-import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.Eigenspace.Binomial
 import TauCeti.RingTheory.DividedPowers.Associative
 
@@ -154,34 +153,6 @@ theorem typeDSpinRep_serreF_eq_spinAction (i : Fin n) :
         (_root_.UniversalEnvelopingAlgebra.ι ℚ (TauCeti.serreF ℚ (CartanMatrix.D n) i)) =
       spinAction Q P (P.typeDSimpleNegativeRootBivector b (by omega) i) := by
   rw [P.typeDSpinRep_ι b hn, P.typeDSpinSerreRepresentation_serreF b hn]
-
-/-- Every vector of `W` shifts the exterior parity by one. -/
-private theorem cliffordOperator_coe_W_mem_evenOdd (x : P.W) {j : ZMod 2}
-    {s : ExteriorAlgebra ℚ P.W} (hs : s ∈ evenOdd (0 : QuadraticForm ℚ P.W) j) :
-    P.cliffordOperator (x : V) s ∈ evenOdd (0 : QuadraticForm ℚ P.W) (j + 1) := by
-  rw [P.cliffordOperator_coe_W, P.wedge_apply, ← add_comm (1 : ZMod 2) j]
-  exact SetLike.mul_mem_graded (ι_mem_evenOdd_one (0 : QuadraticForm ℚ P.W) x) hs
-
-/-- Every vector of `W'` shifts the exterior parity by one. -/
-private theorem cliffordOperator_coe_W'_mem_evenOdd (y : P.W') {j : ZMod 2}
-    {s : ExteriorAlgebra ℚ P.W} (hs : s ∈ evenOdd (0 : QuadraticForm ℚ P.W) j) :
-    P.cliffordOperator (y : V) s ∈ evenOdd (0 : QuadraticForm ℚ P.W) (j + 1) := by
-  rw [P.cliffordOperator_coe_W', P.contract_apply]
-  exact CliffordAlgebra.contractLeft_mem_evenOdd _ hs
-
-/-- A product of two vectors that each shift the exterior parity by one preserves it. -/
-private theorem spinAction_ι_mul_ι_mem_evenOdd {u v : V}
-    (hu : ∀ {j : ZMod 2} {s : ExteriorAlgebra ℚ P.W},
-      s ∈ evenOdd (0 : QuadraticForm ℚ P.W) j →
-        P.cliffordOperator u s ∈ evenOdd (0 : QuadraticForm ℚ P.W) (j + 1))
-    (hv : ∀ {j : ZMod 2} {s : ExteriorAlgebra ℚ P.W},
-      s ∈ evenOdd (0 : QuadraticForm ℚ P.W) j →
-        P.cliffordOperator v s ∈ evenOdd (0 : QuadraticForm ℚ P.W) (j + 1))
-    {j : ZMod 2} {s : ExteriorAlgebra ℚ P.W} (hs : s ∈ evenOdd (0 : QuadraticForm ℚ P.W) j) :
-    spinAction Q P (ι Q u * ι Q v) s ∈ evenOdd (0 : QuadraticForm ℚ P.W) j := by
-  have htwice : ∀ c : ZMod 2, c + 1 + 1 = c := by decide
-  rw [map_mul, mul_apply_eq_comp, spinAction_ι, spinAction_ι, ← htwice j]
-  exact hu (hv hs)
 
 /-- **The represented root generators preserve exterior parity.** Each acts through a
 simple-root Clifford bivector, a product of two vectors of `W` or `W'`, which maps each
