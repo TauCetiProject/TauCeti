@@ -74,30 +74,25 @@ theorem exists_mem_frontier_isMaxOn_of_le_setAverage_ball {K : Set E} (hK : IsCo
     hA.exists_isMaxOn (f := fun y ↦ dist y z₀) ⟨z₀, hz₀K, rfl⟩
       (continuous_id.dist continuous_const).continuousOn
   simp only [mem_preimage, mem_singleton_iff] at hzM
-  refine ⟨z, ?_, fun y hy ↦ by rw [hzM]; exact hz₀ hy⟩
+  have hzmax : IsMaxOn u K z := fun y hy ↦ hzM ▸ hz₀ hy
+  refine ⟨z, ?_, hzmax⟩
   rw [hK.isClosed.frontier_eq]
   refine ⟨hzK, fun hzint ↦ ?_⟩
   -- If `z` were interior, the sub-mean-value property would hold on a ball `ball z r ⊆ K`.
-  obtain ⟨ε, hε, hεK⟩ := nhds_basis_closedBall.mem_iff.1 (mem_interior_iff_mem_nhds.1 hzint)
+  obtain ⟨ε, hε, hεK⟩ := nhds_basis_ball.mem_iff.1 (mem_interior_iff_mem_nhds.1 hzint)
   obtain ⟨r, hmean, hr, hrε⟩ := ((hsub z hzint).and_eventually (Ioo_mem_nhdsGT hε)).exists
-  have hrK : closedBall z r ⊆ K := (closedBall_subset_closedBall hrε.le).trans hεK
-  have hballK : ball z r ⊆ K := ball_subset_closedBall.trans hrK
+  have hballK : ball z r ⊆ K := (ball_subset_ball hrε.le).trans hεK
   have hle : u ≤ᵐ[μ.restrict (ball z r)] fun _ ↦ u z :=
-    (ae_restrict_iff' measurableSet_ball).2 (ae_of_all _ fun y hy ↦ by
-      rw [hzM]
-      exact hz₀ (hballK hy))
+    ae_restrict_of_forall_mem measurableSet_ball fun y hy ↦ hzmax (hballK hy)
   -- Compactness of `K` supplies finite measure and integrability on the smaller ball.
   have hμfin : μ (ball z r) ≠ ⊤ :=
     ne_top_of_le_ne_top hK.measure_ne_top (measure_mono hballK)
-  have : IsFiniteMeasure (μ.restrict (ball z r)) :=
-    isFiniteMeasure_restrict.2 hμfin
   have hi : IntegrableOn u (ball z r) μ := (hu.integrableOn_compact hK).mono_set hballK
-  have hc : Integrable (fun _ : E ↦ u z) (μ.restrict (ball z r)) := integrable_const _
+  have hc : IntegrableOn (fun _ ↦ u z) (ball z r) μ := integrableOn_const hμfin
   -- Equality in integral monotonicity makes `u` constant almost everywhere on the ball.
   have hmean' : ∫ _ in ball z r, u z ∂μ ≤ ∫ y in ball z r, u y ∂μ := by
     rw [setIntegral_const, ← measure_smul_setAverage u hμfin]
-    simp only [smul_eq_mul]
-    exact mul_le_mul_of_nonneg_left hmean ENNReal.toReal_nonneg
+    gcongr
   have hae := (integral_eq_iff_of_ae_le hi hc hle).1
     (le_antisymm (integral_mono_ae hi hc hle) hmean')
   have hball := Measure.eqOn_open_of_ae_eq hae isOpen_ball (hu.mono hballK) continuousOn_const

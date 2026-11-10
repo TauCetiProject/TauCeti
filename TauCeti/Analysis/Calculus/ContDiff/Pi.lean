@@ -18,6 +18,12 @@ transition maps of product charts of finitely many manifolds are `C^n`.
 ## Main declarations
 
 * `ContDiffOn.piMap`: a finite product of maps `C^n` on sets is `C^n` on the product set.
+
+Replacing one coordinate by a function of the whole argument also preserves smoothness
+(`ContDiff.update_self`). This extends the coordinate-replacement argument in
+[KLS](https://github.com/human-ai-mathematics/kls-lean), commit
+`65810c73f9dd7945fc646ab484cb19d673f5291d`,
+`formalization/FunctionalInequalities/Analysis/Sard/CoordinateChange.lean`.
 -/
 
 public section
@@ -33,3 +39,16 @@ theorem ContDiffOn.piMap {f : ∀ i, E i → F i} {s : ∀ i, Set (E i)}
     (hf : ∀ i, ContDiffOn 𝕜 n (f i) (s i)) : ContDiffOn 𝕜 n (Pi.map f) (univ.pi s) :=
   contDiffOn_pi.2 fun i ↦ (hf i).comp (contDiff_apply 𝕜 (F' := E) i).contDiffOn
     fun _ hx ↦ hx i (mem_univ i)
+
+open scoped ContDiff
+
+/-- Replacing one coordinate of the argument by a `C^r` function preserves `C^r` regularity. -/
+theorem ContDiff.update_self {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {ι : Type*} [Fintype ι] [DecidableEq ι] {E : ι → Type*}
+    [∀ j, NormedAddCommGroup (E j)] [∀ j, NormedSpace 𝕜 (E j)]
+    {r : ℕ∞ω} (i : ι) {w : (∀ j, E j) → E i} (hw : ContDiff 𝕜 r w) :
+    ContDiff 𝕜 r (fun x ↦ Function.update x i (w x)) := by
+  refine contDiff_pi.2 fun j ↦ ?_
+  rcases eq_or_ne j i with rfl | hji
+  · simpa using hw
+  · simpa [Function.update_apply, hji] using contDiff_apply (𝕜 := 𝕜) (F' := E) j

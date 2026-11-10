@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Borel.Basic
 public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.Quotient
 
 /-!

@@ -27,9 +27,10 @@ one prime at a time and all at once, since the primes of `f` are distinct.
 
 * `Nat.mul_dvd_iff_forall_not_pow_dvd`: `f * d ∣ h` as non-divisibility of `d` by a
   prime power at each prime of `f`.
-* `Nat.pow_factorization_sub_factorization_add_one_dvd`: the tested prime power divides `h`.
+* `Nat.pow_factorization_sub_factorization_add_one_dvd`: the tested prime power divides `h`
+  whenever `p` does.
 * `Nat.prod_pow_factorization_sub_factorization_add_one_dvd`: so does their product over the
-  primes of `f`.
+  primes of `f`, once every prime of `f` divides `h`.
 -/
 
 public section
@@ -47,72 +48,52 @@ already gives `v_p d ≤ v_p h`. -/
 theorem mul_dvd_iff_forall_not_pow_dvd {f d h : ℕ} (hh : h ≠ 0) (hf : f ∣ h) (hd : d ∣ h) :
     f * d ∣ h ↔
       ∀ p ∈ f.primeFactors, ¬p ^ (h.factorization p - f.factorization p + 1) ∣ d := by
-  have hf0 : f ≠ 0 := fun h0 => hh (zero_dvd_iff.mp (h0 ▸ hf))
-  have hd0 : d ≠ 0 := fun h0 => hh (zero_dvd_iff.mp (h0 ▸ hd))
-  have hfh : ∀ p, f.factorization p ≤ h.factorization p :=
-    fun p => (Nat.factorization_le_iff_dvd hf0 hh).mpr hf p
-  have hdh : ∀ p, d.factorization p ≤ h.factorization p :=
-    fun p => (Nat.factorization_le_iff_dvd hd0 hh).mpr hd p
-  rw [← Nat.factorization_le_iff_dvd (Nat.mul_ne_zero hf0 hd0) hh, Finsupp.le_def,
-    Nat.factorization_mul hf0 hd0]
-  simp only [Finsupp.coe_add, Pi.add_apply]
-  constructor
-  · intro hle p hp hdvd
-    have _ : 0 < f.factorization p :=
-      (Nat.Prime.factorization_pos_of_dvd (Nat.prime_of_mem_primeFactors hp) hf0
-        (Nat.dvd_of_mem_primeFactors hp))
-    have := ((Nat.prime_of_mem_primeFactors hp).pow_dvd_iff_le_factorization hd0).mp hdvd
-    have := hle p
-    have := hfh p
+  have hf0 := ne_zero_of_dvd_ne_zero hh hf
+  have hd0 := ne_zero_of_dvd_ne_zero hh hd
+  rw [← factorization_le_iff_dvd (mul_ne_zero hf0 hd0) hh, factorization_mul hf0 hd0,
+    Finsupp.le_def]
+  refine forall_congr' fun p => ?_
+  have hfh := (factorization_le_iff_dvd hf0 hh).2 hf p
+  by_cases hp : p ∈ f.primeFactors
+  · rw [(prime_of_mem_primeFactors hp).pow_dvd_iff_le_factorization hd0]
+    simp only [Finsupp.coe_add, Pi.add_apply, hp, forall_const]
     omega
-  · intro hp p
-    by_cases hmem : p ∈ f.primeFactors
-    · have _ : 0 < f.factorization p :=
-        (Nat.Prime.factorization_pos_of_dvd (Nat.prime_of_mem_primeFactors hmem) hf0
-          (Nat.dvd_of_mem_primeFactors hmem))
-      have hlt : ¬(h.factorization p - f.factorization p + 1 ≤ d.factorization p) :=
-        fun hle => hp p hmem
-          (((Nat.prime_of_mem_primeFactors hmem).pow_dvd_iff_le_factorization hd0).mpr hle)
-      have := hfh p
-      omega
-    · have : f.factorization p = 0 := by
-        rw [← Nat.support_factorization] at hmem
-        exact Finsupp.notMem_support_iff.mp hmem
-      have := hdh p
-      omega
+  · have : f.factorization p = 0 := by rwa [← Finsupp.notMem_support_iff, support_factorization]
+    simpa [hp, this] using (factorization_le_iff_dvd hd0 hh).2 hd p
 
-/-- **The prime power tested by `mul_dvd_iff_forall_not_pow_dvd` divides `h`.** For `f`
-dividing `h` and `p` a prime of `f`, the exponent `v_p h - v_p f + 1` does not exceed `v_p h`,
-because `f` contributes at least one power of `p`. -/
-theorem pow_factorization_sub_factorization_add_one_dvd {f h : ℕ} (hf : f ∣ h) {p : ℕ}
-    (hp : p ∈ f.primeFactors) :
+/-- **The prime power tested by `mul_dvd_iff_forall_not_pow_dvd` divides `h`.** Let `p` be a
+prime of `f` that divides `h`. Every power of `p` divides `h = 0`. For `h ≠ 0`, the exponent
+`v_p h - v_p f + 1` does not exceed `v_p h`: `f` contributes at least one power of `p`, and `h`
+has at least one. -/
+theorem pow_factorization_sub_factorization_add_one_dvd {f h p : ℕ}
+    (hp : p ∈ f.primeFactors) (hph : p ∣ h) :
     p ^ (h.factorization p - f.factorization p + 1) ∣ h := by
   rcases eq_or_ne h 0 with rfl | hh
   · exact dvd_zero _
-  have hprime := Nat.prime_of_mem_primeFactors hp
-  have hf0 : f ≠ 0 := (Nat.mem_primeFactors.mp hp).2.2
-  have hpos : 0 < f.factorization p :=
-    hprime.factorization_pos_of_dvd hf0 (Nat.dvd_of_mem_primeFactors hp)
-  have hle : f.factorization p ≤ h.factorization p := (Nat.factorization_le_iff_dvd hf0 hh).mpr hf p
-  refine (hprime.pow_dvd_iff_le_factorization hh).mpr ?_
+  have hprime := prime_of_mem_primeFactors hp
+  have : f.factorization p ≠ 0 := by rwa [← Finsupp.mem_support_iff, support_factorization]
+  have := hprime.factorization_pos_of_dvd hh hph
+  rw [hprime.pow_dvd_iff_le_factorization hh]
   omega
 
 /-- **The product of the prime powers tested by `mul_dvd_iff_forall_not_pow_dvd` divides `h`.**
-The primes of `f` are distinct, so the prime powers `p ^ (v_p h - v_p f + 1)` occur at distinct
-primes and their product still divides `h`: it is the product of prime powers read off a finitely
+Suppose every prime of `f` divides `h` (for instance when `f ∣ h`). Everything divides `h = 0`.
+For `h ≠ 0`, the prime powers `p ^ (v_p h - v_p f + 1)` occur at distinct primes and each divides
+`h`, so their product still divides `h`: it is the product of prime powers read off a finitely
 supported exponent function bounded by the factorization of `h`. -/
-theorem prod_pow_factorization_sub_factorization_add_one_dvd {f h : ℕ} (hf : f ∣ h) :
+theorem prod_pow_factorization_sub_factorization_add_one_dvd {f h : ℕ}
+    (hf : ∀ p ∈ f.primeFactors, p ∣ h) :
     (∏ p ∈ f.primeFactors, p ^ (h.factorization p - f.factorization p + 1)) ∣ h := by
   classical
   rcases eq_or_ne h 0 with rfl | hh
   · exact dvd_zero _
   rw [← Finsupp.prod_indicator_index (fun p => h.factorization p - f.factorization p + 1)
     (h := (· ^ ·)) fun _ _ => pow_zero _]
-  refine Nat.prod_pow_dvd_of_le_factorization fun p => ?_
+  refine prod_pow_dvd_of_le_factorization fun p => ?_
   rw [Finsupp.indicator_apply]
   split_ifs with hp
-  · exact ((Nat.prime_of_mem_primeFactors hp).pow_dvd_iff_le_factorization hh).mp
-      (pow_factorization_sub_factorization_add_one_dvd hf hp)
-  · exact Nat.zero_le _
+  · exact ((prime_of_mem_primeFactors hp).pow_dvd_iff_le_factorization hh).mp
+      (pow_factorization_sub_factorization_add_one_dvd hp (hf p hp))
+  · exact zero_le _
 
 end Nat

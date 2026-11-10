@@ -419,7 +419,7 @@ theorem hasSum_laurentQExpansion (hh : 0 < h) (hfper : Periodic (f ∘ ofComplex
   have hk := neg_cuspPoleOrder_le h f
   obtain ⟨r, hr, hrF⟩ := (analyticAt_cuspFunction_qParam_pow_mul hh hf hk).exists_ball_analyticOnNhd
   have hFper : Periodic ((fun τ : ℍ ↦ 𝕢 h τ ^ k * f τ) ∘ ofComplex) h := fun z ↦ by
-    simpa using congrArg₂ (fun a b ↦ a ^ k * b) (periodic_qParam_comp_ofComplex hh.ne' z) (hfper z)
+    simpa using congrArg₂ (fun a b ↦ a ^ k * b) (periodic_qParam_comp_ofComplex z) (hfper z)
   filter_upwards [(qParam_tendsto_atImInfty hh).eventually (Metric.ball_mem_nhds 0 hr)] with τ hτ
   have hq : 𝕢 h τ ≠ 0 := Periodic.qParam_ne_zero _
   have hsum := Complex.hasSum_taylorSeries_on_ball hrF.differentiableOn hτ
@@ -481,7 +481,7 @@ theorem laurentQExpansion_pnat_mul (hh : 0 < h) (hfper : Periodic (f ∘ ofCompl
   have han : AnalyticAt ℂ (cuspFunction h g) 0 :=
     analyticAt_cuspFunction_qParam_pow_mul hh hf (neg_cuspPoleOrder_le h f)
   have hgper : Periodic (g ∘ ofComplex) h := fun z ↦ by
-    simpa [g] using congrArg₂ (fun a b ↦ a ^ k * b) (periodic_qParam_comp_ofComplex hh.ne' z)
+    simpa [g] using congrArg₂ (fun a b ↦ a ^ k * b) (periodic_qParam_comp_ofComplex z)
       (hfper z)
   -- twisting by `𝕢 (d * h) ^ (d * k) = 𝕢 h ^ k` at period `d * h` gives the same function `g`
   have hg : (fun τ : ℍ ↦ 𝕢 ((d : ℕ) * h) τ ^ ((d : ℕ) * k) * f τ) = g := by
@@ -514,7 +514,7 @@ theorem laurentQExpansion_eq_upperHalfPlane_laurentQExpansion (D : Γ.CuspDatum)
       UpperHalfPlane.laurentQExpansion D.width fun z ↦ f (D.scaling⁻¹ • z) := by
   have hk : k ≤ (k.toNat : ℤ) := Int.self_le_toNat k
   have han := analyticAt_twistedExtension_zero D k.toNat f hf (.of_forall fun z ↦ hhol _)
-    (TauCeti.UpperHalfPlane.isBigO_exp_of_le D.width D.width_pos (by exact_mod_cast hk) hbound)
+    (TauCeti.UpperHalfPlane.isBigO_exp_of_le D.width_pos.le (by exact_mod_cast hk) hbound)
   simp only [twistedExtension_def, cuspExtension_def, cuspTwist_inv_smul, zpow_natCast] at han
   rw [laurentQExpansion_eq_of_le D f hk hf hhol hbound,
     UpperHalfPlane.laurentQExpansion_eq_of_analyticAt_qParam_pow_mul D.width_pos han,

@@ -13,6 +13,7 @@ import Mathlib.MeasureTheory.Constructions.HaarToSphere
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.MeasureTheory.Group.Integral
+import TauCeti.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The integral and the moments of the Japanese bracket
@@ -400,10 +401,7 @@ theorem integral_rpow_neg_one_add_norm_sq {r : ℝ} (hr : (finrank ℝ V : ℝ) 
   rcases subsingleton_or_nontrivial V with hV | hV
   · -- In dimension zero the integral is the value at the only point, of volume one.
     have hvol : volume.real (univ : Set V) = 1 := by
-      have h := (stdOrthonormalBasis ℝ V).volume_parallelepiped
-      rw [Subsingleton.eq_univ_of_nonempty
-        ⟨0, (mem_parallelepiped_iff _ _).2 ⟨0, ⟨le_rfl, zero_le_one⟩, by simp⟩⟩] at h
-      rw [measureReal_def, h, ENNReal.toReal_one]
+      rw [measureReal_def, volume_eq_one_of_subsingleton univ_nonempty, ENNReal.toReal_one]
     have : Unique V := uniqueOfSubsingleton 0
     rw [integral_unique, hvol, finrank_zero_of_subsingleton, Subsingleton.elim (default : V) 0]
     simp [(Gamma_pos_of_pos (half_pos hr0)).ne']

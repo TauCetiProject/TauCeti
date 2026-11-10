@@ -44,8 +44,8 @@ Morse index is the negative index of inertia of the critical Hessian.
   computes the Hessian against the value of the vector field `Y`.
 * `TauCeti.criticalHessian_mfderiv_apply_eq_zero`: the critical Hessian vanishes on directions
   tangent to a family of critical points.
-* `TauCeti.criticalHessian_comp_snd_apply`: the critical Hessian of `(x, v) ↦ q v` on `M × V` at a
-  critical point of `q` is the second derivative of `q` on the second components.
+* `TauCeti.criticalHessian_comp_snd_apply`: the critical Hessian of `(x, v) ↦ q v` on `M × V` is the
+  second derivative of `q` on the second components.
 * `TauCeti.criticalHessian_mfderiv_eq_zero` and `TauCeti.range_mfderiv_le_radical_criticalHessian`:
   tangent vectors to a family of critical points lie in the kernel of the critical Hessian, which is
   the radical of its quadratic form (`TauCeti.radical_toQuadraticMap_toBilinForm_criticalHessian`).
@@ -59,7 +59,7 @@ Morse index is the negative index of inertia of the critical Hessian.
 * `TauCeti.isMorseOn_iff_of_mem_maximalAtlas`: being Morse on a subset of a chart source, read in
   that chart.
 * `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_zero_iff` and
-  `TauCeti.IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_finrank_iff`: definiteness
+  `TauCeti.manifoldMorseIndex_eq_finrank_iff`: definiteness
   tests for the extreme indices.
 * `Module.Basis.criticalHessianMatrix`: the Gram matrix of the critical Hessian in a
   tangent-space basis, with determinant, inertia, and definiteness comparisons
@@ -317,15 +317,19 @@ theorem exists_posDef_subspace_finrank_eq_manifoldMorseIndex_neg :
   rw [manifoldMorseIndex_neg_eq_sigPos_criticalHessian]
   exact exists_finrank_eq_sigPos_and_posDef _
 
-/-- At a nondegenerate critical point, a tangent subspace on which the critical Hessian is positive
-definite has dimension at most the complementary index. -/
-theorem IsManifoldNondegenerateCriticalPoint.finrank_add_manifoldMorseIndex_le_of_posDef_restrict
-    (h : IsManifoldNondegenerateCriticalPoint I f x)
+/-- A tangent subspace on which the critical Hessian is positive definite has dimension at most the
+dimension of the manifold minus the Morse index. -/
+theorem finrank_add_manifoldMorseIndex_le_of_posDef_criticalHessian
     {W : Submodule ℝ (TangentSpace I x)}
     (hW : ((criticalHessian I f x).toBilinForm.toQuadraticMap.restrict W).PosDef) :
     Module.finrank ℝ W + manifoldMorseIndex I f x ≤ Module.finrank ℝ E := by
-  rw [← h.manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank]
-  exact Nat.add_le_add_right (finrank_le_manifoldMorseIndex_neg_of_posDef_criticalHessian hW) _
+  have h := finrank_le_manifoldMorseIndex_neg_of_posDef_criticalHessian hW
+  have hsum := QuadraticForm.sigPos_add_sigNeg_add_radical
+    (Q := (criticalHessian I f x).toBilinForm.toQuadraticMap)
+  rw [manifoldMorseIndex_neg_eq_sigPos_criticalHessian] at h
+  rw [manifoldMorseIndex_eq_sigNeg_criticalHessian]
+  have : Module.finrank ℝ (TangentSpace I x) = Module.finrank ℝ E := rfl
+  lia
 
 /-- At a nondegenerate critical point there is a positive-definite tangent subspace of dimension
 the dimension of the manifold minus the Morse index. -/
@@ -355,13 +359,10 @@ theorem IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_zero_iff
   -- The two sides differ only in reading the model space `E` as `TangentSpace I x`.
   rfl
 
-/-- At a nondegenerate critical point the Morse index is the dimension exactly when the critical
-Hessian is negative definite. -/
-theorem IsManifoldNondegenerateCriticalPoint.manifoldMorseIndex_eq_finrank_iff
-    (h : IsManifoldNondegenerateCriticalPoint I f x) :
+/-- The Morse index is the dimension exactly when the critical Hessian is negative definite. -/
+theorem manifoldMorseIndex_eq_finrank_iff :
     manifoldMorseIndex I f x = Module.finrank ℝ E ↔ ∀ v ≠ 0, criticalHessian I f x v v < 0 := by
-  rw [manifoldMorseIndex_def, ← ((isManifoldNondegenerateCriticalPoint_iff I).mp
-    h).neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank]
+  rw [manifoldMorseIndex_def, ← neg_hessianQuadraticForm_posDef_iff_morseIndex_eq_finrank]
   simp only [QuadraticMap.PosDef, neg_apply, hessianQuadraticForm_apply, neg_pos]
   -- The two sides differ only in reading the model space `E` as `TangentSpace I x`.
   rfl
@@ -372,10 +373,10 @@ section Prod
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- The critical Hessian of `q ∘ Prod.snd` at a point `(x, y)` where `q` is critical is the
-second derivative of `q` at `y` on the second components. -/
-theorem criticalHessian_comp_snd_apply {q : V → ℝ} {y : V} (hq : ContDiffAt ℝ 2 q y)
-    (hq₀ : fderiv ℝ q y = 0) (x : M) (v w : TangentSpace (I.prod 𝓘(ℝ, V)) (x, y)) :
+/-- The critical Hessian of `q ∘ Prod.snd` at a point `(x, y)` is the second derivative of `q` at
+`y` on the second components. -/
+theorem criticalHessian_comp_snd_apply {q : V → ℝ} {y : V} (hq : ContDiffAt ℝ 2 q y) (x : M)
+    (v w : TangentSpace (I.prod 𝓘(ℝ, V)) (x, y)) :
     criticalHessian (I.prod 𝓘(ℝ, V)) (q ∘ Prod.snd) (x, y) v w =
       fderiv ℝ (fderiv ℝ q) y v.2 w.2 := by
   have hcomp : (q ∘ Prod.snd) ∘ (extChartAt (I.prod 𝓘(ℝ, V)) (x, y)).symm = q ∘ Prod.snd := by
@@ -386,11 +387,17 @@ theorem criticalHessian_comp_snd_apply {q : V → ℝ} {y : V} (hq : ContDiffAt 
       id_eq]
   rw [criticalHessian_def, hcomp]
   have hsnd : (extChartAt (I.prod 𝓘(ℝ, V)) (x, y) (x, y)).2 = y := by simp
-  have key := fderiv_fderiv_comp_apply_of_fderiv_eq_zero (φ := Prod.snd)
-    (b := extChartAt (I.prod 𝓘(ℝ, V)) (x, y) (x, y)) (hsnd ▸ hq) contDiff_snd.contDiffAt
-    (hsnd ▸ hq₀) v w
+  have key := fderiv_fderiv_comp_apply (φ := Prod.snd)
+    (b := extChartAt (I.prod 𝓘(ℝ, V)) (x, y) (x, y)) (hsnd ▸ hq) contDiff_snd.contDiffAt v w
   refine key.trans ?_
-  simp only [fderiv_snd, hsnd, ContinuousLinearMap.coe_snd']
+  have hfst : fderiv ℝ (Prod.snd : E × V → V) = fun _ ↦ ContinuousLinearMap.snd ℝ E V :=
+    funext fun _ ↦ fderiv_snd
+  have hd : fderiv ℝ (fderiv ℝ (Prod.snd : E × V → V)) = 0 := by
+    rw [hfst]
+    exact funext fun z ↦ congrFun (fderiv_fun_const (ContinuousLinearMap.snd ℝ E V)) z
+  simp only [fderiv_snd, hd, hsnd, ContinuousLinearMap.coe_snd', Pi.zero_apply]
+  exact (congrArg (fderiv ℝ (fderiv ℝ q) y v.2 w.2 + ·) (map_zero (fderiv ℝ q y))).trans
+    (add_zero _)
 
 end Prod
 
@@ -433,10 +440,10 @@ theorem isManifoldNondegenerateCriticalPoint_iff_criticalHessian :
   refine ⟨fun h ↦ ?_, fun ⟨hf, hcrit, hinv⟩ ↦ ?_⟩
   · have hf := hsmooth.2 h.contDiffAt
     refine ⟨hf, ?_, h.isInvertible⟩
-    rw [(hf.mdifferentiableAt two_ne_zero).mvfderiv_eq_fderiv_comp_extChartAt_symm]
+    rw [TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
     exact h.fderiv_eq_zero
   · refine ⟨hsmooth.1 hf, ?_, hinv⟩
-    rwa [← (hf.mdifferentiableAt two_ne_zero).mvfderiv_eq_fderiv_comp_extChartAt_symm]
+    rwa [← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
 
 section Matrix
 
@@ -486,16 +493,6 @@ theorem _root_.Module.Basis.isManifoldNondegenerateCriticalPoint_iff_det_critica
 
 end Matrix
 
-/-- A function with a nondegenerate critical point on a boundaryless manifold is `C²` there. -/
-theorem IsManifoldNondegenerateCriticalPoint.contMDiffAt
-    (h : IsManifoldNondegenerateCriticalPoint I f x) : ContMDiffAt I 𝓘(ℝ) 2 f x :=
-  (isManifoldNondegenerateCriticalPoint_iff_criticalHessian.mp h).1
-
-/-- The differential of a function vanishes at a nondegenerate critical point. -/
-theorem IsManifoldNondegenerateCriticalPoint.mvfderiv_eq_zero
-    (h : IsManifoldNondegenerateCriticalPoint I f x) : mvfderiv I f x = 0 :=
-  (isManifoldNondegenerateCriticalPoint_iff_criticalHessian.mp h).2.1
-
 /-- At a critical point, differentiating `df(Y)` in a tangent direction computes the critical
 Hessian against `Y x`. The derivative of the vector field contributes nothing because `df = 0`.
 In particular this expression depends only on the value of `Y` at the point. -/
@@ -529,8 +526,8 @@ theorem criticalHessian_apply_eq_mvfderiv [IsManifold I 2 M]
   have hmd : MDifferentiableAt I 𝓘(ℝ) (fun y ↦ mvfderiv I f y (Y y)) x :=
     ((hf.contMDiffAt_mvfderiv_apply (m := 1) (by norm_num)).mdifferentiableAt one_ne_zero).comp x hY
   have hzero : fderiv ℝ g (ψ x) = 0 := by
-    rwa [← (hf.mdifferentiableAt two_ne_zero).mvfderiv_eq_fderiv_comp_extChartAt_symm]
-  rw [criticalHessian_def, hmd.mvfderiv_eq_fderiv_comp_extChartAt_symm, ← heq.fderiv_eq,
+    rwa [← TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm]
+  rw [criticalHessian_def, TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm, ← heq.fderiv_eq,
     fderiv_clm_apply hDg hV]
   have hVx : V (ψ x) = Y x := VectorField.mpullbackWithin_extChartAt_symm_self Y x
   simp only [hzero, ContinuousLinearMap.zero_comp, zero_add, hVx]
@@ -646,7 +643,8 @@ private theorem exists_transition :
   have he1 : e ∈ IsManifold.maximalAtlas I 1 M :=
     IsManifold.maximalAtlas_subset_of_le (by norm_num) he
   have hext := e.contMDiffAt_extend he hx
-  have hD := ((hext.mdifferentiableAt two_ne_zero).mvfderiv_eq_fderiv_comp_extChartAt_symm).symm
+  have hD := (TauCeti.mvfderiv_eq_fderiv_comp_extChartAt_symm (I := I) (f := e.extend I)
+    (x := x)).symm
   have hinv : (mvfderiv I (e.extend I) x).IsInvertible := by
     -- `mvfderiv` is `mfderiv` followed by the identification `fromTangentSpace` of the tangent
     -- space of `E` with `E`; both factors are invertible.
@@ -676,8 +674,7 @@ theorem criticalHessian_apply_eq_of_mem_maximalAtlas (hf : ContMDiffAt I 𝓘(�
   obtain ⟨φ, hφx, hφ, hDφ, -, hfg, hreg⟩ := exists_transition he hx
   have key := fderiv_fderiv_comp_apply_of_fderiv_eq_zero (hreg f hf) hφ
     (hφx ▸ (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
-      (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx
-      (hf.mdifferentiableAt two_ne_zero)).mp hcrit) v w
+      (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx).mp hcrit) v w
   rw [← (hfg f).fderiv.fderiv_eq, hDφ, hφx] at key
   exact key
 
@@ -716,8 +713,7 @@ theorem manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas (hf : ContMDiffAt I
   obtain ⟨φ, hφx, hφ, -, hinv, hfg, hreg⟩ := exists_transition he hx
   rw [manifoldMorseIndex_def, morseIndex_congr_of_eventuallyEq (hfg f),
     morseIndex_comp (hreg f hf) hφ (hφx ▸ (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
-      (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx
-      (hf.mdifferentiableAt two_ne_zero)).mp hcrit) hinv, hφx]
+      (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) hx).mp hcrit) hinv, hφx]
 
 omit hx in
 /-- At a nondegenerate critical point in a chart's target, the coordinate Morse index equals
@@ -731,7 +727,7 @@ theorem manifoldMorseIndex_symm_eq_morseIndex_of_mem_maximalAtlas
     simpa only [OpenPartialHomeomorph.extend_source] using (e.extend I).map_target hv
   have hnd := isManifoldNondegenerateCriticalPoint_symm_of_mem_maximalAtlas he hv h
   rw [manifoldMorseIndex_eq_morseIndex_of_mem_maximalAtlas he hs hnd.contMDiffAt
-    hnd.mvfderiv_eq_zero, (e.extend I).right_inv hv]
+    (mem_criticalPoints.1 hnd.mem_criticalPoints), (e.extend I).right_inv hv]
 
 omit hx in
 /-- **Morse in a chart.** On a boundaryless manifold, a function `f` smooth at every point of a
@@ -746,8 +742,7 @@ theorem isMorseOn_iff_of_mem_maximalAtlas {s : Set M} (hf : ∀ x ∈ s, ContMDi
   -- Criticality and nondegeneracy at a point of `s` may be read in the chart `e`.
   have hcrit {x : M} (hx : x ∈ s) :
       x ∈ criticalPoints I f ↔ fderiv ℝ (f ∘ (e.extend I).symm) (e.extend I x) = 0 :=
-    mem_criticalPoints.trans (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he₁ (hs hx)
-      ((hf x hx).mdifferentiableAt (by simp)))
+    mem_criticalPoints.trans (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero he₁ (hs hx))
   rw [isMorseOn_iff_criticalPoints, hasNondegenerateCriticalPointsOn_iff]
   refine ⟨fun h ↦ ?_, fun h ↦ ⟨fun x hx ↦ (hf x hx).contMDiffWithinAt, fun x hx hx₀ ↦ ?_⟩⟩
   · rintro _ ⟨x, hx, rfl⟩ hx₀

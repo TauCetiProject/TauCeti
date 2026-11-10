@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.ConditionalExpectation.PullOut
-public import TauCeti.Probability.Finance.SimpleStrategy
+public import TauCeti.Probability.Finance.SimpleStrategy.Basic
 
 /-!
 # Arbitrage and martingale measures for simple strategies
@@ -19,7 +19,7 @@ unit of account (`TauCeti.Finance.isArbitrage_mul_iff`). An arbitrage with integ
 wealth has positive expected terminal wealth (`TauCeti.Finance.IsArbitrage.integral_pos`).
 
 This file proves the easy half of the fundamental theorem of asset pricing for the simple
-strategies of `TauCeti.Probability.Finance.SimpleStrategy`. Suppose that, under a measure `Q`,
+strategies of `TauCeti.Probability.Finance.SimpleStrategy.Basic`. Suppose that, under a measure `Q`,
 the discounted stock price `X = S / β` is a martingale along the trading dates `τ 0, …, τ n`:
 each `X (τ j)` is integrable and `ℱ (τ j)`-measurable, and `E_Q[X (τ (j + 1)) | ℱ (τ j)] = X (τ j)`.
 Then for a stock holding `a j` chosen at `τ j` with integrable trading gains:

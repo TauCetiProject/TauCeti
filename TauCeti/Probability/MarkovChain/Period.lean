@@ -8,7 +8,7 @@ module
 public import Mathlib.Dynamics.PeriodicPts.Defs
 public import Mathlib.Probability.Kernel.Irreducible
 public import TauCeti.NumberTheory.FrobeniusNumber
-public import TauCeti.Probability.Kernel.Composition.Power
+public import TauCeti.Probability.Kernel.ClosedClass.Basic
 
 /-!
 # The period of a state of a Markov chain
@@ -84,6 +84,21 @@ noncomputable def period (x : α) : ℕ := Nat.setGcd (κ.returnLengths x)
 
 /-- The defining equation of the period: the gcd of the return lengths. -/
 theorem period_def : κ.period x = Nat.setGcd (κ.returnLengths x) := (rfl)
+
+/-- Restriction to a closed set preserves the positive return lengths of each state. -/
+@[simp]
+theorem returnLengths_subtype {s : Set α} (hs : MeasurableSet s)
+    (hclosed : κ.IsClosedSet s) (x : s) :
+    (κ.subtype hs).returnLengths x = κ.returnLengths x.val := by
+  ext n
+  simp only [mem_returnLengths, subtype_pow_apply κ hs hclosed, Set.image_singleton]
+
+/-- Restriction to a closed set preserves the period of each state. -/
+@[simp]
+theorem period_subtype {s : Set α} (hs : MeasurableSet s)
+    (hclosed : κ.IsClosedSet s) (x : s) :
+    (κ.subtype hs).period x = κ.period x.val := by
+  simp only [period_def, returnLengths_subtype hs hclosed]
 
 /-- The period divides every return length. -/
 theorem period_dvd_of_mem_returnLengths (h : n ∈ κ.returnLengths x) : κ.period x ∣ n :=

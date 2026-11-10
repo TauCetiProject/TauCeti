@@ -83,27 +83,10 @@ the singular locus of `X`. For the closed subschemes, see
 `AlgebraicGeometry.Scheme.isPullback_singularLocus_subschemeι_of_etale`. -/
 theorem _root_.AlgebraicGeometry.Scheme.singularLocus_eq_comap_of_etale :
     X'.singularLocus R = (X.singularLocus R).comap g := by
-  -- Compare both ideal sheaves on a cover of `X'` by affine opens mapping into affine opens.
-  have charts (x : X') : ∃ (U : X.Opens) (V : X'.Opens),
-      IsAffineOpen U ∧ IsAffineOpen V ∧ x ∈ V ∧ V ≤ g ⁻¹ᵁ U := by
-    obtain ⟨U, hU, hxU, -⟩ := TopologicalSpace.Opens.isBasis_iff_nbhd.mp X.isBasis_affineOpens
-      (U := ⊤) (x := g x) (by simp)
-    obtain ⟨V, hV, hxV, hVU⟩ := TopologicalSpace.Opens.isBasis_iff_nbhd.mp
-      X'.isBasis_affineOpens (U := g ⁻¹ᵁ U) (x := x) hxU
-    exact ⟨U, V, hU, hV, hxV, hVU⟩
-  choose U V hU hV hx e using charts
-  let 𝒰 : X'.OpenCover := Scheme.Cover.mkOfCovers X' (fun x ↦ Spec Γ(X', V x))
-    (fun x ↦ (hV x).fromSpec) (fun x ↦ ⟨x, by
-      have hmem : x ∈ Set.range (hV x).fromSpec := (hV x).range_fromSpec.symm ▸ hx x
-      simpa only [Set.mem_range] using hmem⟩)
-  refine Scheme.IdealSheafData.ext_of_comap_openCover 𝒰 fun x ↦ ?_
-  -- `rw` cannot reduce the cover's dependent index and object projections together, so restate
-  -- the goal using the chosen chart maps.
-  change (X'.singularLocus R).comap (hV x).fromSpec =
-    ((X.singularLocus R).comap g).comap (hV x).fromSpec
-  rw [Scheme.IdealSheafData.comap_fromSpec_eq_ofIdealTop,
-    Scheme.IdealSheafData.comap_comap_fromSpec_eq_ofIdealTop _ g (hU x) (hV x) (e x),
-    Scheme.singularLocus_ideal_eq_map_of_etale g ⟨U x, hU x⟩ ⟨V x, hV x⟩ (e x)]
+  refine Scheme.IdealSheafData.ext_of_comap_fromSpec_over g fun U V e ↦ ?_
+  rw [Scheme.IdealSheafData.comap_fromSpec_eq_ofIdealTop (X'.singularLocus R) V.2,
+    Scheme.IdealSheafData.comap_comap_fromSpec_eq_ofIdealTop _ g U.2 V.2 e,
+    Scheme.singularLocus_ideal_eq_map_of_etale g U V e]
 
 /-- **The singular subscheme commutes with étale morphisms.** If `g : X' ⟶ X` is an étale
 morphism of relative curves over `Spec R`, then `Sing(X'/R)` is the base change

@@ -28,7 +28,8 @@ namespace MonoidHom
 
 variable {G M : Type*} [Group G] [Monoid M]
 
-/-- Membership in the equality locus of two group homomorphisms is pointwise equality. -/
+/-- Membership in the equality locus of two monoid homomorphisms out of a group is pointwise
+equality. -/
 @[to_additive (attr := simp)]
 theorem mem_eqLocus {f g : G →* M} {x : G} : x ∈ f.eqLocus g ↔ f x = g x :=
   Iff.rfl
@@ -37,15 +38,16 @@ theorem mem_eqLocus {f g : G →* M} {x : G} : x ∈ f.eqLocus g ↔ f x = g x :
 @[to_additive /-- Precomposition with a surjective additive group homomorphism does not change the
 range. -/]
 theorem range_comp_of_surjective {N P : Type*} [Group N] [Group P] (g : N →* P) (f : G →* N)
-    (hf : Function.Surjective f) : (g.comp f).range = g.range := by
-  rw [range_comp, range_eq_top_of_surjective f hf, ← range_eq_map]
+    (hf : Function.Surjective f) : (g.comp f).range = g.range :=
+  SetLike.coe_injective <| by simpa only [coe_range, coe_comp] using hf.range_comp g
 
 /-- The pointwise inverse of a homomorphism into a commutative group has the same range. -/
 @[to_additive (attr := simp) /-- The pointwise negation of a homomorphism into a commutative
 additive group has the same range. -/]
 theorem range_inv {H : Type*} [CommGroup H] (f : G →* H) : f⁻¹.range = f.range := by
-  ext y
-  refine ⟨fun ⟨x, hx⟩ ↦ ⟨x⁻¹, ?_⟩, fun ⟨x, hx⟩ ↦ ⟨x⁻¹, ?_⟩⟩ <;> simpa using hx
+  ext
+  simp only [mem_range]
+  exact inv_surjective.exists.trans (by simp)
 
 /-- The pointwise inverse of a homomorphism into a commutative group has the same kernel. -/
 @[to_additive (attr := simp) /-- The pointwise negation of a homomorphism into a commutative

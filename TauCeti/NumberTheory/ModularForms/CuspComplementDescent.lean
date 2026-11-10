@@ -117,8 +117,11 @@ variable [NeZero N] {Γ : Subgroup SL(2, ℤ)}
   {E : Submodule ℂ (ModularForm ((Gamma N).map (mapGL ℝ)) k)}
 
 /-- Restricted back to `Γ(N)`, the trace from `Γ(N)` to a larger subgroup `Γ` of `SL(2, ℤ)` maps
-a subspace stable under slashing by `Γ` into itself: it is a sum of slashes by elements of `Γ`. -/
-theorem restrict_traceₗ_mem (hE : ∀ γ ∈ Γ, ∀ f ∈ E, gammaSlashₗ γ f ∈ E)
+an additive submonoid stable under slashing by `Γ`, such as a subspace, into itself: it is a sum
+of slashes by elements of `Γ`. -/
+theorem restrict_traceₗ_mem {S : Type*} [SetLike S (ModularForm ((Gamma N).map (mapGL ℝ)) k)]
+    [AddSubmonoidClass S (ModularForm ((Gamma N).map (mapGL ℝ)) k)] {E : S}
+    (hE : ∀ γ ∈ Γ, ∀ f ∈ E, gammaSlashₗ γ f ∈ E)
     (hΓ : Gamma N ≤ Γ) {f : ModularForm ((Gamma N).map (mapGL ℝ)) k} (hf : f ∈ E) :
     ModularForm.restrict (Subgroup.map_mono hΓ) (traceₗ (Γ.map (mapGL ℝ)) f) ∈ E := by
   classical
@@ -138,7 +141,7 @@ theorem restrict_traceₗ_mem (hE : ∀ γ ∈ Γ, ∀ f ∈ E, gammaSlashₗ γ
     rw [ModularForm.coe_restrict, traceₗ_apply, ModularForm.coe_trace, FunLike.coe_sum]
     simp_rw [hγ]
   rw [htrace]
-  exact Submodule.sum_mem _ fun q _ ↦ hE (γ q) (hγΓ q) f hf
+  exact sum_mem fun q _ ↦ hE (γ q) (hγΓ q) f hf
 
 /-- **Descent of a complement of the cusp forms.** Let `Γ ⊇ Γ(N)` be a subgroup of `SL(2, ℤ)`. If
 `E` is a complement of the cusp forms in `M_k(Γ(N))` stable under slashing by `Γ`, then the forms

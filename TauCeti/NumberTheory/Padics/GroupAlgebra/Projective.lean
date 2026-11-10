@@ -15,6 +15,7 @@ import Mathlib.RepresentationTheory.Maschke
 import Mathlib.RingTheory.Finiteness.Cardinality
 import TauCeti.Algebra.Module.Projective.Lift
 import TauCeti.Algebra.Module.Projective.Reduction
+import TauCeti.Algebra.MonoidAlgebra.Basic
 import TauCeti.NumberTheory.Padics.GroupAlgebra.Reduction
 import TauCeti.RingTheory.AdicCompletion.Finite
 import TauCeti.RingTheory.Ideal.Operations
@@ -130,8 +131,6 @@ instance instFiniteQuotientJacobsonPadicIntMonoidAlgebra :
   have hker : RingHom.ker π ≤ Ring.jacobson (MonoidAlgebra ℤ_[p] G) := by
     rw [ker_padicMonoidAlgebraReduction p G]
     exact span_p_le_jacobson_padicInt_monoidAlgebra p G
-  have : Finite (G →₀ ZMod p) := Finite.of_injective _ DFunLike.coe_injective
-  have : Finite (MonoidAlgebra (ZMod p) G) := Finite.of_injective _ MonoidAlgebra.coeff_injective
   have : Finite (MonoidAlgebra ℤ_[p] G ⧸ RingHom.ker π) :=
     Finite.of_equiv _ (padicMonoidAlgebraQuotientEquiv p G).symm.toEquiv
   exact Finite.of_surjective _ (Ideal.Quotient.factor_surjective hker)

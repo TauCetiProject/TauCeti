@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Compactification.OnePoint.ProjectiveLine
+-- `NontriviallyNormedField` occurs in `Matrix.GeneralLinearGroup.dense_setOf_add_ne_zero`.
+public import Mathlib.Analysis.Normed.Field.Basic
 -- `Matrix.ProjGenLinGroup.mulActionOfGL` descends the `GL₂` action to `PGL₂` below, and
 -- `PGL(2, K)` occurs in the statements.
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Projective
@@ -44,6 +46,8 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
 
 * `OnePoint.smul_some_eq_infty_iff`: `g • (k : OnePoint K) = ∞` exactly when the denominator
   `g 1 0 * k + g 1 1` vanishes.
+* `Matrix.GeneralLinearGroup.dense_setOf_add_ne_zero`: over a nontrivially normed field, the
+  points where that denominator does not vanish are dense.
 * `TauCeti.scalar_smul_onePoint_eq_self` and `TauCeti.mem_center_of_smul_zero_one_infty_eq_self`:
   a scalar matrix fixes every point of the projective line, and a matrix fixing `0`, `1` and `∞`
   is scalar, whence `TauCeti.ker_toPermHom_onePoint_eq_center`, the kernel of the permutation
@@ -106,6 +110,25 @@ lemma smul_some_eq_infty_iff {g : GL (Fin 2) K} {k : K} :
   · simp [hz]
 
 end OnePoint
+
+namespace Matrix.GeneralLinearGroup
+
+/-- The points of `𝕜` that the Möbius transformation of `g = !![a, b; c, d]` does not send to `∞`
+are dense: the only one it does send to `∞` is `-d / c`. -/
+theorem dense_setOf_add_ne_zero {𝕜 : Type*} [NontriviallyNormedField 𝕜] (g : GL (Fin 2) 𝕜) :
+    Dense {z : 𝕜 | g 1 0 * z + g 1 1 ≠ 0} := by
+  refine (dense_compl_singleton (-(g 1 1 / g 1 0))).mono fun z hz hz' ↦
+    Set.mem_compl_singleton_iff.1 hz ?_
+  have hc : g 1 0 ≠ 0 := by
+    rintro hc
+    rw [hc, zero_mul, zero_add] at hz'
+    apply g.det_ne_zero
+    rw [det_fin_two, hc, hz']
+    ring
+  field_simp
+  linear_combination hz'
+
+end Matrix.GeneralLinearGroup
 
 namespace TauCeti
 

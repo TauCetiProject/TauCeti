@@ -201,4 +201,22 @@ theorem isOrthonormalBasis_amiceTerm :
     IsOrthonormalBasis ℤ_[p] fun n ↦ amiceTerm p h n (1 : ℤ_[p]) := by
   simpa using (amiceEquiv p h ℤ_[p] (E := ℤ_[p])).symm.isOrthonormalBasis_symm_single
 
+/-- Continuous linear maps out of an analytic stage agreeing on Amice's polynomials are
+equal. -/
+theorem continuousLinearMap_ext_amiceTerm {R M : Type*} [NormedCommRing R]
+    [Algebra ℤ_[p] R] [IsBoundedSMul ℤ_[p] R] [IsUltrametricDist R] [CompleteSpace R]
+    [AddCommMonoid M] [Module R M] [TopologicalSpace M] [T2Space M]
+    {φ ψ : AnalyticStage p h R →L[R] M}
+    (H : ∀ n, φ (amiceTerm p h n 1) = ψ (amiceTerm p h n 1)) : φ = ψ := by
+  have heq : φ ∘L (amiceEquiv p h R).toContinuousLinearEquiv.toContinuousLinearMap =
+      ψ ∘L (amiceEquiv p h R).toContinuousLinearEquiv.toContinuousLinearMap := by
+    apply continuousLinearMap_ext_single_one
+    intro n
+    simpa only [ContinuousLinearMap.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+      ContinuousLinearEquiv.coe_coe, amiceEquiv_apply, amiceMap_single] using H n
+  ext c
+  simpa only [ContinuousLinearMap.comp_apply, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.apply_symm_apply] using
+    DFunLike.congr_fun heq ((amiceEquiv p h R).symm c)
+
 end TauCeti.AnalyticStage

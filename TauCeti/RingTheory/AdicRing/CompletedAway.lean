@@ -191,7 +191,7 @@ theorem algebraMap_mem_pow_iff (n : ℕ) {x : Localization.Away f} :
         (IsAdicRing.ideal A).map (algebraMap A (CompletedAway A f)) ^ n ↔
       x ∈ (IsAdicRing.ideal A).map (algebraMap A (Localization.Away f)) ^ n := by
   rw [map_algebraMap_eq, ← Ideal.map_pow]
-  exact AdicCompletion.algebraMap_mem_map_pow_iff (fg_map A f) n
+  exact AdicCompletion.algebraMap_mem_map_pow_iff n
 
 /-- The image of `A_f` in the completed localisation `A_{f}` is dense. -/
 theorem denseRange_algebraMap :

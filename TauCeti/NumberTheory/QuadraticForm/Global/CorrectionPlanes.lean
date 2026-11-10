@@ -135,7 +135,7 @@ theorem finiteHasse_weightedSumSquares_neg_self_mul (a b : Kˣ)
   have hneg : v.unitAtFinitePlace (-(a * b)) =
       -(v.unitAtFinitePlace a * v.unitAtFinitePlace b) := Units.ext (by simp)
   have := finiteHasse_weightedSumSquares_binary a (-(a * b)) (by simpa using h) v
-  rw [hneg, hilbertSymbol_neg_self_mul two_ne_zero] at this
+  rw [hneg, hilbertSymbol_neg_self_mul] at this
   simpa using this
 
 /-- The real Hasse sign of the scaled norm plane `⟨α, -αβ⟩` at a real place `w` is the

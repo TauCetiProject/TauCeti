@@ -171,9 +171,14 @@ theorem measurable_uncurry_chiPDF :
 theorem measurable_chiPDF (k s : ℝ) : Measurable (chiPDF k s) := by
   exact measurable_uncurry_chiPDF.comp (show Measurable fun x : ℝ ↦ ((k, s), x) by fun_prop)
 
-/-- At positive degrees and scale the chi law has its named Lebesgue density. -/
-theorem chiMeasure_eq_withDensity (hk : 0 < k) (hs : 0 < s) :
+/-- At positive degrees the chi law has its named Lebesgue density, at every scale (both sides
+vanish at nonpositive scale). -/
+theorem chiMeasure_eq_withDensity (hk : 0 < k) :
     chiMeasure k s = volume.withDensity (chiPDF k s) := by
+  by_cases hs : 0 < s
+  swap
+  · have hz : chiPDF k s = 0 := funext fun x ↦ chiPDF_of_not_pos (by tauto)
+    simp [chiMeasure_of_scale_nonpos (le_of_not_gt hs), hz]
   have hstandard : (chiSquaredMeasure k).map Real.sqrt =
       volume.withDensity (chiPDF k 1) := by
     rw [map_sqrt_chiSquaredMeasure hk, ← withDensity_indicator measurableSet_Ioi]
@@ -215,7 +220,7 @@ theorem measurable_chiMeasure : Measurable fun p : ℝ × ℝ ↦ chiMeasure p.1
     · by_cases hk : p.1 = 0
       · simp [hs, hk, chiMeasure_zero hs]
       · by_cases hk' : 0 < p.1
-        · simp [hs, hk, chiMeasure_eq_withDensity hk' hs]
+        · simp [hs, hk, chiMeasure_eq_withDensity hk']
         · simp only [ite_eq_left hs, ite_eq_right hk,
             chiMeasure_of_neg (lt_of_le_of_ne (le_of_not_gt hk') hk)]
           have hz : chiPDF p.1 p.2 = 0 := by
@@ -232,21 +237,21 @@ theorem measurable_chiMeasure : Measurable fun p : ℝ × ℝ ↦ chiMeasure p.1
 variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω} {X : Ω → ℝ}
 
 /-- A random variable with a positive-degree chi law has a density. -/
-theorem hasPDF_of_hasLaw_chiMeasure (hk : 0 < k) (hs : 0 < s)
+theorem hasPDF_of_hasLaw_chiMeasure (hk : 0 < k)
     (hX : HasLaw X (chiMeasure k s) P) : HasPDF X P := by
-  rw [chiMeasure_eq_withDensity hk hs] at hX
+  rw [chiMeasure_eq_withDensity hk] at hX
   exact hasPDF_of_hasLaw_withDensity (measurable_chiPDF k s).aemeasurable hX
 
 /-- The canonical density of a chi variable agrees almost everywhere with `chiPDF`. -/
-theorem pdf_eq_chiPDF_of_hasLaw_chiMeasure (hk : 0 < k) (hs : 0 < s)
+theorem pdf_eq_chiPDF_of_hasLaw_chiMeasure (hk : 0 < k)
     (hX : HasLaw X (chiMeasure k s) P) : pdf X P =ᵐ[volume] chiPDF k s := by
-  rw [chiMeasure_eq_withDensity hk hs] at hX
+  rw [chiMeasure_eq_withDensity hk] at hX
   exact pdf_eq_of_hasLaw_withDensity (measurable_chiPDF k s).aemeasurable hX
 
 /-- The Radon–Nikodym derivative of a positive-degree chi law is its named density. -/
-theorem rnDeriv_chiMeasure (hk : 0 < k) (hs : 0 < s) :
+theorem rnDeriv_chiMeasure (hk : 0 < k) :
     (chiMeasure k s).rnDeriv volume =ᵐ[volume] chiPDF k s := by
-  rw [chiMeasure_eq_withDensity hk hs]
+  rw [chiMeasure_eq_withDensity hk]
   exact Measure.rnDeriv_withDensity _ (measurable_chiPDF k s)
 
 /-- Positive-degree chi laws are carried by the positive half-line. -/

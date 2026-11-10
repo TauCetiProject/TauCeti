@@ -52,6 +52,7 @@ and column integrals are only required almost everywhere.
 * `TauCeti.eLpNorm_lintegral_mul_le`: Schur's test as an `Lᵖ` bound, including `p = ∞`.
 * `TauCeti.rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top`: the constant
   `A ^ (1 - 1/p) * B ^ (1/p)` of this bound is finite for finite `A` and `B`.
+* `TauCeti.memLp_lintegral_mul`: hence the kernel maps `Lᵖ` to `Lᵖ` for finite `A` and `B`.
 
 ## References
 
@@ -236,5 +237,18 @@ theorem eLpNorm_lintegral_mul_le [SFinite μ] [SFinite ν] {k : α → β → �
         rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity),
           ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul, one_div,
           show (p.toReal - 1) * p.toReal⁻¹ = 1 - p.toReal⁻¹ by field_simp]
+
+/-- **Schur's test** as `Lᵖ` membership: if the kernel `k` has row integrals `∫⁻ y, k x y ∂ν` at
+most `A < ∞` for almost every `x` and column integrals `∫⁻ x, k x y ∂μ` at most `B < ∞` for almost
+every `y`, then for `1 ≤ p ≤ ∞` and `g ∈ Lᵖ(ν)` the function `x ↦ ∫⁻ y, k x y * g y ∂ν` is in
+`Lᵖ(μ)`. -/
+theorem memLp_lintegral_mul [SFinite μ] [SFinite ν] {k : α → β → ℝ≥0∞}
+    (hk : AEMeasurable (Function.uncurry k) (μ.prod ν)) {p : ℝ≥0∞} {g : β → ℝ≥0∞}
+    (hg : MemLp g p ν) (hp : 1 ≤ p) {A B : ℝ≥0} (hA : ∀ᵐ x ∂μ, ∫⁻ y, k x y ∂ν ≤ A)
+    (hB : ∀ᵐ y ∂ν, ∫⁻ x, k x y ∂μ ≤ B) :
+    MemLp (fun x ↦ ∫⁻ y, k x y * g y ∂ν) p μ :=
+  (eLpNorm_lintegral_mul_le hk hg.aestronglyMeasurable.aemeasurable hp hA hB).trans_lt
+    (ENNReal.mul_lt_top (rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top hp A B)
+      hg.eLpNorm_lt_top)
 
 end TauCeti

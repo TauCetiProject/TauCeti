@@ -227,9 +227,6 @@ theorem perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ} {l t�
     exists_exit_times_truncated_integral_split hlt htu h_at hγ_cont hL_R hL_L
       h_tendsto_R h_tendsto_L h_unique (fun z => (z - s)⁻¹)
       (fun ε hε a b ha hab hb => intervalIntegrable_inv_sub_truncated
-        (hγ_cont.mono (by
-          rw [uIcc_of_le hab]
-          exact Icc_subset_Icc (by linarith) (by linarith)))
         (hderiv_int.mono_set (by
           rw [uIcc_of_le hab, uIcc_of_le (by linarith)]
           exact Icc_subset_Icc (by linarith) (by linarith))) hε)
