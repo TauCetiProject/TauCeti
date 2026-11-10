@@ -1,0 +1,185 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.Calculus.ContDiff.Comp
+
+/-!
+# Equality of finite jets in nonlinear bundle coordinates
+
+`TauCeti.SameJetAt` means equality of values and all Fréchet derivatives through a
+specified finite order. The composition theorem uses Mathlib's Faà di Bruno formula;
+in particular it retains all derivatives of nonlinear coordinate changes.
+
+For local sections, `SameJetAt.coordChange` treats simultaneous base changes and
+base-dependent nonlinear fibre changes. The converse, `sameJetAt_coordChange_iff`,
+uses inverse changes defined only as germs. Thus equality of finite jets of smooth
+local sections is independent of the bundle coordinates. Iterated derivatives of
+smooth maps are symmetric multilinear maps: ordered arguments here are evaluations
+of one derivative, not independent ordered-index jet coordinates.
+
+This file concerns equivalence of local sections in charts. It does not construct
+the global jet bundle, its smooth atlas, or realization of prescribed derivative tuples.
+
+## References
+
+* Ian M. Anderson, *The Variational Bicomplex*, Chapter 1, §A.
+* Kolář, Michor and Slovák, *Natural Operations in Differential Geometry*, Chapter 12.
+-/
+
+public section
+
+open scoped ContDiff Topology
+
+namespace TauCeti
+
+variable {𝕜 E E' F G : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedAddCommGroup G] [NormedSpace 𝕜 G]
+
+/-- Two maps have the same finite jet at a point if their derivatives, including
+order zero (the value), agree through the specified order. Smoothness is imposed
+separately by the calculus theorems. -/
+def SameJetAt (𝕜 : Type*) [NontriviallyNormedField 𝕜]
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] (n : ℕ) (f g : E → F) (x : E) : Prop :=
+  ∀ i, i ≤ n → iteratedFDeriv 𝕜 i f x = iteratedFDeriv 𝕜 i g x
+
+/-- The derivative characterization of equality of finite jets. -/
+theorem sameJetAt_iff {n : ℕ} {f g : E → F} {x : E} :
+    SameJetAt 𝕜 n f g x ↔
+      ∀ i, i ≤ n → iteratedFDeriv 𝕜 i f x = iteratedFDeriv 𝕜 i g x := Iff.rfl
+
+namespace SameJetAt
+
+variable {n m : ℕ} {f f' : E → F} {g g' : F → G} {x : E}
+
+/-- Equality of finite jets is reflexive. -/
+@[simp]
+theorem refl (f : E → F) (x : E) : SameJetAt 𝕜 n f f x := fun _ _ ↦ rfl
+
+/-- Equality of finite jets is symmetric. -/
+@[symm]
+theorem symm (h : SameJetAt 𝕜 n f f' x) : SameJetAt 𝕜 n f' f x :=
+  fun i hi ↦ (h i hi).symm
+
+/-- Equality of finite jets is transitive. -/
+@[trans]
+theorem trans {f'' : E → F} (h : SameJetAt 𝕜 n f f' x)
+    (h' : SameJetAt 𝕜 n f' f'' x) : SameJetAt 𝕜 n f f'' x :=
+  fun i hi ↦ (h i hi).trans (h' i hi)
+
+/-- Truncation preserves equality of jets. -/
+theorem mono (h : SameJetAt 𝕜 n f f' x) (hmn : m ≤ n) : SameJetAt 𝕜 m f f' x :=
+  fun i hi ↦ h i (hi.trans hmn)
+
+/-- Equal jets have equal field values, also at order zero. -/
+theorem eq (h : SameJetAt 𝕜 n f f' x) : f x = f' x := by
+  have h0 := congrArg (fun A ↦ A (fun i : Fin 0 ↦ Fin.elim0 i)) (h 0 (Nat.zero_le n))
+  simpa only [iteratedFDeriv_zero_apply] using h0
+
+/-- The jet depends only on the germ of a local section. -/
+theorem _root_.Filter.EventuallyEq.sameJetAt (h : f =ᶠ[𝓝 x] f') : SameJetAt 𝕜 n f f' x :=
+  fun i _ ↦ (h.iteratedFDeriv 𝕜 i).eq_of_nhds
+
+/-- Equality of jets is unchanged by choosing other extensions of the local sections. -/
+theorem congr {a b : E → F} (h : SameJetAt 𝕜 n f f' x)
+    (ha : f =ᶠ[𝓝 x] a) (hb : f' =ᶠ[𝓝 x] b) : SameJetAt 𝕜 n a b x :=
+  ha.sameJetAt.symm.trans (h.trans hb.sameJetAt)
+
+/-- The finite jet of a composite depends only on the two finite jets being composed. -/
+theorem comp (hf : SameJetAt 𝕜 n f f' x) (hg : SameJetAt 𝕜 n g g' (f x))
+    (hcf : ContDiffAt 𝕜 n f x) (hcf' : ContDiffAt 𝕜 n f' x)
+    (hcg : ContDiffAt 𝕜 n g (f x)) (hcg' : ContDiffAt 𝕜 n g' (f' x)) :
+    SameJetAt 𝕜 n (g ∘ f) (g' ∘ f') x := by
+  intro i hi
+  rw [iteratedFDeriv_comp hcg hcf (by exact_mod_cast hi),
+    iteratedFDeriv_comp hcg' hcf' (by exact_mod_cast hi), ← hf.eq]
+  simp only [FormalMultilinearSeries.taylorComp]
+  apply Finset.sum_congr rfl
+  intro c _
+  simp only [FormalMultilinearSeries.compAlongOrderedFinpartition, ftaylorSeries]
+  rw [hg c.length (c.length_le.trans hi)]
+  congr 1
+  funext j
+  exact hf (c.partSize j) ((c.partSize_le j).trans hi)
+
+/-- Pairing sections preserves equality of finite jets. -/
+theorem prodMk {a a' : E → G} (hf : SameJetAt 𝕜 n f f' x)
+    (ha : SameJetAt 𝕜 n a a' x)
+    (hcf : ContDiffAt 𝕜 n f x) (hcf' : ContDiffAt 𝕜 n f' x)
+    (hca : ContDiffAt 𝕜 n a x) (hca' : ContDiffAt 𝕜 n a' x) :
+    SameJetAt 𝕜 n (fun y ↦ (f y, a y)) (fun y ↦ (f' y, a' y)) x := by
+  intro i hi
+  rw [iteratedFDeriv_prodMk hcf hca (by exact_mod_cast hi),
+    iteratedFDeriv_prodMk hcf' hca' (by exact_mod_cast hi), hf i hi, ha i hi]
+
+/-- A base change and a base-dependent nonlinear fibre change preserve equality of
+finite jets of local sections. No linearity in the fibre is assumed. -/
+theorem coordChange {h : E' → E} {a : E' × F → G} {y : E'}
+    (hf : SameJetAt 𝕜 n f f' (h y))
+    (hcf : ContDiffAt 𝕜 n f (h y)) (hcf' : ContDiffAt 𝕜 n f' (h y))
+    (hh : ContDiffAt 𝕜 n h y) (ha : ContDiffAt 𝕜 n a (y, f (h y))) :
+    SameJetAt 𝕜 n (fun z ↦ a (z, f (h z))) (fun z ↦ a (z, f' (h z))) y := by
+  have hp := (refl h y).comp hf hh hh hcf hcf'
+  have hpair := (refl (id : E' → E') y).prodMk hp
+    contDiffAt_id contDiffAt_id (hcf.comp y hh) (hcf'.comp y hh)
+  exact hpair.comp (refl a _) (contDiffAt_id.prodMk (hcf.comp y hh))
+    (contDiffAt_id.prodMk (hcf'.comp y hh)) ha
+    (by simpa only [hf.eq, Function.comp_apply, id_eq] using ha)
+
+end SameJetAt
+
+/-- An order-zero jet records exactly the field value. -/
+@[simp]
+theorem sameJetAt_zero_iff {f g : E → F} {x : E} : SameJetAt 𝕜 0 f g x ↔ f x = g x := by
+  constructor
+  · exact SameJetAt.eq
+  · intro h i hi
+    obtain rfl : i = 0 := Nat.le_zero.mp hi
+    ext v
+    simp only [iteratedFDeriv_zero_apply, h]
+
+/-- Equality of finite jets is independent of smooth bundle coordinates. The base
+and fibre inverse identities are needed only as germs near the original point
+and field value; no global inverse or fibre-linear change is required. -/
+theorem sameJetAt_coordChange_iff {n : ℕ} {h : E' → E} {k : E → E'}
+    {a : E' × F → G} {b : E × G → F} {f f' : E → F} {y : E'}
+    (hcf : ContDiffAt 𝕜 n f (h y)) (hcf' : ContDiffAt 𝕜 n f' (h y))
+    (hh : ContDiffAt 𝕜 n h y) (hk : ContDiffAt 𝕜 n k (h y))
+    (ha : ContDiffAt 𝕜 n a (y, f (h y)))
+    (ha' : ContDiffAt 𝕜 n a (y, f' (h y)))
+    (hb : ContDiffAt 𝕜 n b (h y, a (y, f (h y))))
+    (hbase : h ∘ k =ᶠ[𝓝 (h y)] id) (hpoint : k (h y) = y)
+    (hfibre : (fun p : E × F ↦ b (p.1, a (k p.1, p.2))) =ᶠ[𝓝 (h y, f (h y))] Prod.snd)
+    (hfibre' : (fun p : E × F ↦ b (p.1, a (k p.1, p.2))) =ᶠ[𝓝 (h y, f' (h y))] Prod.snd) :
+    SameJetAt 𝕜 n (fun z ↦ a (z, f (h z))) (fun z ↦ a (z, f' (h z))) y ↔
+      SameJetAt 𝕜 n f f' (h y) := by
+  constructor
+  · intro hj
+    have ht := hj
+    rw [← hpoint] at ht
+    have hback := ht.coordChange
+      (by simpa only [hpoint, Function.comp_def, id_eq] using
+        ha.comp y (contDiffAt_id.prodMk (hcf.comp y hh)))
+      (by simpa only [hpoint, Function.comp_def, id_eq] using
+        ha'.comp y (contDiffAt_id.prodMk (hcf'.comp y hh)))
+      hk (by simpa only [hpoint] using hb)
+    have recover (s : E → F) (hs : ContDiffAt 𝕜 n s (h y))
+        (hinv : (fun p : E × F ↦ b (p.1, a (k p.1, p.2))) =ᶠ[𝓝 (h y, s (h y))] Prod.snd) :
+        (fun z ↦ b (z, a (k z, s (h (k z))))) =ᶠ[𝓝 (h y)] s := by
+      have hsbase : (fun z ↦ s (h (k z))) =ᶠ[𝓝 (h y)] s :=
+        hbase.mono fun z hz ↦ congrArg s hz
+      have hinv' := (continuousAt_id.prodMk hs.continuousAt).eventually hinv
+      filter_upwards [hsbase, hinv'] with z hz hzi
+      simpa only [hz, id_eq] using hzi
+    exact hback.congr (recover f hcf hfibre) (recover f' hcf' hfibre')
+  · intro hj
+    exact hj.coordChange hcf hcf' hh ha
+
+end TauCeti
