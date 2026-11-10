@@ -19,6 +19,8 @@ Interval integrals of elementary functions in closed form or as series, continui
 
 ## Main declarations
 
+* `TauCeti.integral_div_pow`: `∫ s in 0..c, (s / c)^m = c / (m + 1)` for every real `c`.
+
 * `TauCeti.intervalIntegrable_sub_const_rpow`: the weight `(x - c)^r` is interval integrable on
   every interval, for `r > -1`;
 * `TauCeti.integral_sub_const_rpow`: `∫ x in a..b, (x - a)^r = (b - a)^(r + 1) / (r + 1)` for
