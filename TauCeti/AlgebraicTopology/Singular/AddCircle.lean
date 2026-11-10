@@ -17,11 +17,11 @@ import Mathlib.Analysis.Convex.PathConnected
 # The integral class of a positive circuit of an additive circle
 
 The loop `t ↦ [t * p]` defines `AddCircle.fundamentalClass p` in the first integral singular
-homology of `AddCircle p`. For positive `p`, a loop winding `n` times represents `n` times this
-class. Reduction from a circle of length `k * p` to one of length `p` therefore multiplies
+homology of `AddCircle p`. For every period `p`, a loop winding `n` times represents `n` times
+this class. Reduction from a circle of length `k * p` to one of length `p` therefore multiplies
 the circuit class by `k`. This keeps track of traversal multiplicity when closed curves are
-parametrized by circles of different lengths. Likewise, the map `θ ↦ n • θ` of a positive-period
-circle multiplies the circuit class by `n`, and the rescaling homeomorphism between circles of
+parametrized by circles of different lengths. Likewise, the map `θ ↦ n • θ` of a circle
+multiplies the circuit class by `n`, and the rescaling homeomorphism between circles of
 nonzero periods `p` and `q` sends one circuit class to the other. Rotations of a circle are
 homotopic to the identity, so they act trivially on its singular homology; in particular the
 circuit class does not depend on the starting point of the circuit.
@@ -54,9 +54,17 @@ theorem fundamentalClass_def :
     fundamentalClass p = H₁AddEquivHomology _
       (loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 1)) := (rfl)
 
+/-- The loop winding `n` times around `AddCircle p` at time `t` is the image of the real number
+`n * p * t`. -/
+theorem zsmulLoop_zero_apply_eq_coe (n : ℤ) (t : unitInterval) :
+    zsmulLoop p 0 n t = (((n : ℝ) * p * t : ℝ) : AddCircle p) := by
+  rw [zsmulLoop_apply, ← coe_zsmul, coe_zero, add_zero, zsmul_eq_mul]
+  congr 1
+  ring
+
 /-- Winding `a + b` times around a circle is homologous to winding `a` times and then `b` times:
 in the universal cover the two paths have the same endpoints. -/
-private theorem loopClass_zsmulLoop_add (a b : ℤ) :
+theorem loopClass_zsmulLoop_add (a b : ℤ) :
     loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 (a + b)) =
       loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 a) +
         loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 b) := by
@@ -70,71 +78,36 @@ private theorem loopClass_zsmulLoop_add (a b : ℤ) :
   have h1 : (zsmulLoop p 0 (a + b)).toContinuousMap =
       ((Path.segment 0 y).map π.continuous).toContinuousMap := by
     refine ContinuousMap.ext fun t ↦ ?_
-    change zsmulLoop p 0 (a + b) t = π (Path.segment 0 y t)
-    rw [zsmulLoop_apply]
-    simp only [π, Path.segment_apply, AffineMap.lineMap_apply_module, smul_eq_mul, y,
-      ContinuousMap.coe_mk]
-    rw [← coe_zsmul, ← coe_add]
+    simp only [Path.coe_toContinuousMap, Path.map_coe, Function.comp_apply,
+      zsmulLoop_zero_apply_eq_coe, π, Path.segment_apply, AffineMap.lineMap_apply_module,
+      smul_eq_mul, ContinuousMap.coe_mk, y]
     congr 1
-    simp only [zsmul_eq_mul]
-    push_cast
     ring
   have h2 : ((zsmulLoop p 0 a).trans (zsmulLoop p 0 b)).toContinuousMap =
       (L.map π.continuous).toContinuousMap := by
     refine ContinuousMap.ext fun t ↦ ?_
-    change ((zsmulLoop p 0 a).trans (zsmulLoop p 0 b)) t = π (L t)
-    simp only [Path.trans_apply, L]
+    simp only [Path.coe_toContinuousMap, Path.map_coe, Function.comp_apply, Path.trans_apply, L]
     have hap : ((a * p : ℝ) : AddCircle p) = 0 := by
       rw [← zsmul_eq_mul, coe_zsmul, coe_period, smul_zero]
     split_ifs with ht
-    · rw [zsmulLoop_apply]
-      simp only [π, Path.segment_apply, AffineMap.lineMap_apply_module, smul_eq_mul,
-        ContinuousMap.coe_mk]
-      rw [← coe_zsmul, ← coe_add]
+    · simp only [zsmulLoop_zero_apply_eq_coe, π, Path.segment_apply,
+        AffineMap.lineMap_apply_module, smul_eq_mul, ContinuousMap.coe_mk]
       congr 1
-      simp only [zsmul_eq_mul]
       ring
-    · rw [zsmulLoop_apply]
-      simp only [π, Path.segment_apply, AffineMap.lineMap_apply_module, smul_eq_mul,
-        ContinuousMap.coe_mk]
-      rw [← coe_zsmul, ← coe_add]
+    · simp only [zsmulLoop_zero_apply_eq_coe, π, Path.segment_apply,
+        AffineMap.lineMap_apply_module, smul_eq_mul, ContinuousMap.coe_mk]
       have : (1 - (2 * (t : ℝ) - 1)) * ((a : ℝ) * p) + (2 * (t : ℝ) - 1) * y =
-          (a : ℝ) * p + (b • ((2 * (t : ℝ) - 1) * p) + 0) := by
-        simp only [y, zsmul_eq_mul]
+          (a : ℝ) * p + (b : ℝ) * p * (2 * (t : ℝ) - 1) := by
+        simp only [y]
         push_cast
         ring
-      rw [this]
-      simp [hap]
+      rw [this, coe_add, hap, zero_add]
   rw [h1, h2]
   exact pathChain_sub_mem_boundaries₁_of_homotopy hhom.some
 
-/-- Winding `n` times around a positive-period circle multiplies its circuit class by `n`.
-Negative windings reverse orientation. -/
-@[simp]
-theorem H₁AddEquivHomology_loopClass_zsmulLoop [Fact (0 < p)] (n : ℤ) :
-    H₁AddEquivHomology _ (loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 n)) =
-      n • fundamentalClass p := by
-  have hpow : FundamentalGroup.fromPath (.mk (zsmulLoop p 0 n)) =
-      (FundamentalGroup.fromPath (.mk (zsmulLoop p 0 1))) ^ n := by
-    apply (windingNumberIso ((0 : ℝ) : AddCircle p)).injective
-    apply Multiplicative.toAdd.injective
-    have hwinding : windingNumber (x := ((0 : ℝ) : AddCircle p))
-        (FundamentalGroup.fromPath (.mk (zsmulLoop p 0 n))) =
-        n • windingNumber (x := ((0 : ℝ) : AddCircle p))
-          (FundamentalGroup.fromPath (.mk (zsmulLoop p 0 1))) := by
-      simp [windingNumber_zsmulLoop (p := p)]
-    simp only [map_zpow, toAdd_zpow]
-    exact hwinding
-  have h := congrArg
-    (fun g ↦ (hurewicz₁ (TopCat.of (AddCircle p)) ((0 : ℝ) : AddCircle p) g).toAdd) hpow
-  have hclass : loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 n) =
-      n • loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 1) := by
-    simpa [hurewicz₁_mk (X := TopCat.of (AddCircle p))] using h
-  rw [hclass, map_zsmul, fundamentalClass_def]
-
 /-- Winding `n` times around a circle of any length multiplies the class of the loop winding once
 by `n`. -/
-private theorem loopClass_zsmulLoop (n : ℤ) :
+theorem loopClass_zsmulLoop (n : ℤ) :
     loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 n) =
       n • loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 1) := by
   induction n using Int.induction_on with
@@ -148,9 +121,17 @@ private theorem loopClass_zsmulLoop (n : ℤ) :
     rw [sub_zsmul, one_zsmul]
     exact (eq_sub_of_add_eq this.symm).trans (sub_eq_add_neg _ _)
 
+/-- Winding `n` times around a circle multiplies its circuit class by `n`.
+Negative windings reverse orientation. -/
+@[simp]
+theorem H₁AddEquivHomology_loopClass_zsmulLoop (n : ℤ) :
+    H₁AddEquivHomology _ (loopClass (X := TopCat.of (AddCircle p)) (zsmulLoop p 0 n)) =
+      n • fundamentalClass p := by
+  rw [loopClass_zsmulLoop, map_zsmul, fundamentalClass_def]
+
 variable {p} {q : ℝ} (h : p ∈ AddSubgroup.zmultiples q)
 
-/-- A reduction map from a circle of length `p = k * q` to the positive-period circle of
+/-- A reduction map from a circle of length `p = k * q` to the circle of
 length `q` sends one circuit to `k` circuits. -/
 theorem singularHomologyMap_coverMap_fundamentalClass (k : ℤ)
     (hp : p = k * q) :
@@ -179,9 +160,9 @@ theorem singularHomologyMap_addRight (R : Type) [Ring R] (n : ℕ) (a : AddCircl
   rw [← ContinuousMap.singularHomologyMap_eq_of_homotopic R n
     (PathConnectedSpace.joined 0 a).homotopic_id_addRight, ContinuousMap.singularHomologyMap_id]
 
-/-- The map `θ ↦ n • θ` of a positive-period circle multiplies its circuit class by `n`. -/
+/-- The map `θ ↦ n • θ` of a circle multiplies its circuit class by `n`. -/
 @[simp]
-theorem singularHomologyMap_zsmul_fundamentalClass [Fact (0 < p)] (n : ℤ) :
+theorem singularHomologyMap_zsmul_fundamentalClass (n : ℤ) :
     ContinuousMap.singularHomologyMap ℤ 1 ⟨fun θ : AddCircle p ↦ n • θ, continuous_zsmul n⟩
       (fundamentalClass p) = n • fundamentalClass p := by
   rw [← H₁AddEquivHomology_loopClass_zsmulLoop, fundamentalClass_def,
