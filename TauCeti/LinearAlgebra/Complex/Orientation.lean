@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.AlgebraTower
 public import TauCeti.LinearAlgebra.Complex.Determinant
 public import TauCeti.LinearAlgebra.Complex.Finrank
 public import TauCeti.LinearAlgebra.Complex.Module
+public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 public import TauCeti.LinearAlgebra.Orientation.Prod
 
 /-!
@@ -244,14 +245,7 @@ open TauCeti
 
 variable {E F : Type*} [AddCommGroup E] [Module ℂ E] [Module ℝ E] [IsScalarTower ℝ ℂ E]
   [AddCommGroup F] [Module ℂ F] [Module ℝ F] [IsScalarTower ℝ ℂ F]
-
-/-- A conjugate-linear equivalence preserves the complex dimension. -/
-theorem finrank_eq_of_conj (f : E ≃ₗ⋆[ℂ] F) : finrank ℂ E = finrank ℂ F := by
-  have := f.toRealLinearEquiv.finrank_eq
-  rw [finrank_real_eq_two_mul_finrank_complex, finrank_real_eq_two_mul_finrank_complex] at this
-  omega
-
-variable [FiniteDimensional ℂ E] [FiniteDimensional ℂ F]
+  [FiniteDimensional ℂ E] [FiniteDimensional ℂ F]
 
 /-- A conjugate-linear equivalence carries the canonical real orientation of its source to
 `(-1) ^ n` times that of its target, where `n` is the complex dimension, after identifying the
@@ -259,7 +253,7 @@ index types through the equality of complex dimensions. -/
 theorem map_toRealLinearEquiv_complexOrientation (f : E ≃ₗ⋆[ℂ] F) :
     Orientation.map _ f.toRealLinearEquiv (complexOrientation E) =
       (-1 : ℝˣ) ^ finrank ℂ E •
-        Orientation.reindex ℝ F (finCongr (by rw [finrank_eq_of_conj f]))
+        Orientation.reindex ℝ F (finCongr (by rw [f.finrank_eq_of_semilinear]))
           (complexOrientation F) := by
   set b := finBasis ℂ E
   -- The images `f bᵢ` form a complex basis `c` of `F`, since `f` is conjugate-linear.
@@ -267,23 +261,24 @@ theorem map_toRealLinearEquiv_complexOrientation (f : E ≃ₗ⋆[ℂ] F) :
     b.linearIndependent.map_of_surjective_injectiveₛ (starRingEnd ℂ) f.toAddMonoidHom
       (starRingEnd ℂ).surjective f.injective fun r m ↦ map_smulₛₗ f r m
   set c : Basis (Fin (finrank ℂ E)) ℂ F := basisOfLinearIndependentOfCardEqFinrank' _ hli
-    (by rw [Fintype.card_fin]; exact finrank_eq_of_conj f)
+    (by rw [Fintype.card_fin]; exact f.finrank_eq_of_semilinear)
   have hc : ∀ i, c i = f (b i) := fun i ↦ by simp [c]
   -- The `n` sign changes of `b.complexToReal_map_toRealLinearEquiv` multiply to `(-1) ^ n`.
   have hw : (∏ k : Fin (finrank ℂ E) × Fin 2, (-1 : ℝˣ) ^ (k.2 : ℕ)) = (-1) ^ finrank ℂ E := by
     rw [Fintype.prod_prod_type]
     simp [Fin.prod_univ_two]
-  have hbasis : c.complexToReal.reindex (complexRealIndexEquiv (finrank ℂ E)) =
-      ((c.complexToReal.reindex
-        ((finCongr (finrank_eq_of_conj f)).prodCongr (Equiv.refl _))).reindex
-          (complexRealIndexEquiv _)).reindex (finCongr (by rw [finrank_eq_of_conj f])) := by
+  -- Up to the sign, the image basis `(cᵢ, I • cᵢ)` induces the canonical orientation of `F`.
+  have key : Orientation.reindex ℝ F (complexRealIndexEquiv _) c.complexToReal.orientation =
+      Orientation.reindex ℝ F (finCongr (by rw [f.finrank_eq_of_semilinear]))
+        (complexOrientation F) := by
+    rw [(c.reindex (finCongr f.finrank_eq_of_semilinear)).complexOrientation_eq]
+    simp only [← Basis.orientation_reindex, Basis.complexToReal_reindex]
+    congr 1
     refine Basis.eq_of_apply_eq fun j ↦ ?_
-    obtain ⟨⟨i, k⟩, rfl⟩ := (complexRealIndexEquiv (finrank ℂ E)).surjective j
+    obtain ⟨⟨i, k⟩, rfl⟩ := (complexRealIndexEquiv _).surjective j
     simp
-  rw [b.complexOrientation_eq, (c.reindex (finCongr (finrank_eq_of_conj f))).complexOrientation_eq,
-    Orientation.map_reindex, ← Basis.orientation_map, b.complexToReal_map_toRealLinearEquiv c f hc,
-    Basis.orientation_unitsSMul, hw, Basis.complexToReal_reindex, ← Basis.orientation_reindex,
-    ← Basis.orientation_reindex, ← hbasis, Basis.orientation_reindex]
+  rw [b.complexOrientation_eq, Orientation.map_reindex, ← Basis.orientation_map,
+    b.complexToReal_map_toRealLinearEquiv c f hc, Basis.orientation_unitsSMul, hw, ← key]
   rcases Nat.even_or_odd (finrank ℂ E) with h | h <;>
     simp [h.neg_one_pow, Module.Ray.neg_units_smul, Orientation.reindex_neg]
 

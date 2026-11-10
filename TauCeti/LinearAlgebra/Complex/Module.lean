@@ -175,8 +175,8 @@ def toRealLinearEquiv (f : V ≃ₗ⋆[ℂ] W) : V ≃ₗ[ℝ] W where
   invFun := f.symm
   map_add' := map_add f
   map_smul' r v := by
-    rw [← algebraMap_smul ℂ r v, map_smulₛₗ, Complex.coe_algebraMap, Complex.conj_ofReal,
-      RingHom.id_apply, ← Complex.coe_algebraMap, algebraMap_smul]
+    simp only [← algebraMap_smul ℂ r, map_smulₛₗ, Complex.coe_algebraMap, Complex.conj_ofReal,
+      RingHom.id_apply]
   left_inv := f.left_inv
   right_inv := f.right_inv
 
