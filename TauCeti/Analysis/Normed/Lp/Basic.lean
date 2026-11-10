@@ -15,8 +15,8 @@ import TauCeti.Analysis.Normed.Operator.Dense
 
 The characteristic equation for Mathlib's bundled coordinate evaluation lets users compute
 with `lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is
-the sum of the norms of the coordinates (`lp.hasSum_norm_one`); for `1 ≤ p` it bounds the
-`ℓ^p` norm (`lp.norm_le_tsum_norm`). The scalar
+the sum of the norms of the coordinates (`lp.hasSum_norm_one`, and `lp.hasSum_enorm_one` for
+extended norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). The scalar
 coordinate vectors are linearly independent, and vectors in their span vanish outside the
 corresponding indices. These algebraic facts hold over normed rings at every exponent. In `ℓ²`,
 the squared norm of a finite sum of single-coordinate vectors is the sum of the squared norms of
@@ -24,6 +24,10 @@ its coordinates (`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the exte
 follows that the operators `v ↦ (aᵢ v)ᵢ` from `F` to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to
 `F`, for finitely many scalars `aᵢ`, have norm at most `‖(aᵢ)‖_{ℓ²}`
 (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
+
+For a finite exponent `p` and a countable index type, `lp E p` is separable as soon as every
+`E i` is (`lp.separableSpace`): the finite sums of coordinate vectors with entries in countable
+dense subsets are dense.
 
 For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
 operators on `lp E p` that converges on every `single i x` converges at every vector
@@ -73,6 +77,26 @@ theorem norm_le_tsum_norm [Fact (1 ≤ p)] (f : lp E p)
         exact hf.sum_le_tsum s fun i _ ↦ norm_nonneg _
     _ = (∑' i, ‖f i‖) ^ p.toReal := by
         rw [← Real.rpow_one_add' hC (by linarith), add_sub_cancel]
+
+/-- The extended ℓ¹ norm is the sum of the extended norms of the coordinates. -/
+theorem hasSum_enorm_one (y : lp E 1) : HasSum (fun i ↦ ‖y i‖ₑ) ‖y‖ₑ := by
+  simp only [enorm_eq_nnnorm]
+  exact ENNReal.hasSum_coe.2 (NNReal.hasSum_coe.1 (hasSum_norm_one y))
+
+/-- For a finite exponent and a countable index type, `lp E p` is separable when every `E i` is.
+-/
+theorem separableSpace [Countable ι] [∀ i, TopologicalSpace.SeparableSpace (E i)]
+    [Fact (1 ≤ p)] (hp : p ≠ ⊤) : TopologicalSpace.SeparableSpace (lp E p) := by
+  classical
+  set S : Set (lp E p) := ⋃ i, Set.range (lp.single p i)
+  have hS : TopologicalSpace.IsSeparable S :=
+    .iUnion fun i ↦ TopologicalSpace.isSeparable_range (lp.isometry_single i).continuous
+  rw [← TopologicalSpace.isSeparable_univ_iff]
+  -- Every element is the limit of the finite sums of its coordinate vectors, which lie in the
+  -- additive span of `S`.
+  refine (hS.span (R := ℕ)).closure.mono fun f _ ↦
+    mem_closure_of_tendsto (lp.hasSum_single hp f) (Filter.Eventually.of_forall fun s ↦ ?_)
+  exact Submodule.sum_mem _ fun i _ ↦ Submodule.subset_span (Set.mem_iUnion.2 ⟨i, f i, rfl⟩)
 
 section Single
 
