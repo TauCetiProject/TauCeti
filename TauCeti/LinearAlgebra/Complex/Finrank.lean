@@ -12,7 +12,8 @@ public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 This file records the tower-law dimension formula for a complex module whose real scalar
 structure is the ambient one. It is the linear-algebra input for almost-complex even-dimensionality
-results, but has no symplectic hypotheses.
+results, but has no symplectic hypotheses. Consequently a real-linear isomorphism between two such
+modules preserves the complex dimension (`LinearEquiv.finrank_complex_eq`).
 -/
 
 public section
@@ -31,3 +32,13 @@ theorem finrank_real_eq_two_mul_finrank_complex [Module ℂ V] [IsScalarTower �
   rw [← Module.finrank_mul_finrank ℝ ℂ V, Complex.finrank_real_complex]
 
 end TauCeti
+
+/-- Real-linearly isomorphic complex modules have the same complex dimension, since the real
+dimension is twice the complex one (`TauCeti.finrank_real_eq_two_mul_finrank_complex`). -/
+theorem LinearEquiv.finrank_complex_eq {V W : Type*} [AddCommGroup V] [Module ℝ V] [Module ℂ V]
+    [IsScalarTower ℝ ℂ V] [AddCommGroup W] [Module ℝ W] [Module ℂ W] [IsScalarTower ℝ ℂ W]
+    (g : V ≃ₗ[ℝ] W) : Module.finrank ℂ V = Module.finrank ℂ W := by
+  have := g.finrank_eq
+  rw [TauCeti.finrank_real_eq_two_mul_finrank_complex,
+    TauCeti.finrank_real_eq_two_mul_finrank_complex] at this
+  omega

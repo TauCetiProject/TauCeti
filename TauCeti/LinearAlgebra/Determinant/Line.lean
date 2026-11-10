@@ -53,6 +53,12 @@ carried out here. This file sets up the pointwise object:
   finite-dimensional kernel and cokernel has dimension one.
 * `LinearMap.detLineCongr_refl`, `LinearMap.detLineCongr_trans` and `LinearMap.detLineCongr_symm`:
   transport along commuting squares is functorial.
+* `LinearEquiv.detLineCongr_apply_of_forall_eq_smul`: multiplication by a scalar `r` acts on the
+  determinant line of a module of rank `n` as multiplication by `r ^ n`.
+* `LinearMap.detLineCongr_apply_of_forall_eq_smul`, `LinearMap.detLineCongr_neg_apply`:
+  multiplication by a unit `u` on both sides of `f` acts on its determinant line as
+  `u ^ k * u⁻¹ ^ c`, where `k` and `c` are the ranks of the kernel and the cokernel; for negation
+  this is `(-1) ^ (k + c)`.
 
 ## References
 
@@ -132,6 +138,18 @@ theorem detLineCongr_symm (e : V ≃ₗ[R] W) : (detLineCongr e).symm = detLineC
   refine LinearEquiv.ext fun x ↦ ?_
   rw [LinearEquiv.symm_apply_eq, ← LinearEquiv.trans_apply, ← detLineCongr_trans]
   simp
+
+/-- An automorphism acting as multiplication by a scalar `r` acts on the determinant line as
+multiplication by `r ^ n`, `n = finrank R V`. -/
+theorem detLineCongr_apply_of_forall_eq_smul {e : V ≃ₗ[R] V} {r : R} (he : ∀ v, e v = r • v)
+    (x : detLine R V) : detLineCongr e x = r ^ finrank R V • x := by
+  suffices (detLineCongr e).toLinearMap = r ^ finrank R V • LinearMap.id from congr($this x)
+  refine LinearMap.ext_on (exteriorPower.ιMulti_span R _ V) ?_
+  rintro _ ⟨v, rfl⟩
+  have hv : e ∘ v ∘ Fin.cast e.finrank_eq.symm = fun i ↦ r • v i := funext fun i ↦ by simp [he]
+  rw [LinearEquiv.coe_coe, detLineCongr_ιMulti, hv, AlternatingMap.map_smul_univ,
+    Finset.prod_const, Finset.card_univ, Fintype.card_fin, LinearMap.smul_apply,
+    LinearMap.id_apply]
 
 end LinearEquiv
 
@@ -296,6 +314,45 @@ theorem detLineCongr_symm (f : M →ₗ[R] N) {g : M' →ₗ[R] N'} (e₁ : M �
   refine LinearEquiv.ext fun z ↦ ?_
   rw [LinearEquiv.symm_apply_eq, ← LinearEquiv.trans_apply, ← detLineCongr_trans]
   simp
+
+/-- Transport along a commuting square whose two isomorphisms are multiplication by the same unit
+`u` acts on the determinant line `det (ker f) ⊗ (det (coker f))^*` as multiplication by
+`u ^ k * u⁻¹ ^ c`, where `k` and `c` are the ranks of the kernel and the cokernel. -/
+theorem detLineCongr_apply_of_forall_eq_smul (f : M →ₗ[R] N) {e₁ : M ≃ₗ[R] M} {e₂ : N ≃ₗ[R] N}
+    (h : f ∘ₗ e₁.toLinearMap = e₂.toLinearMap ∘ₗ f) {u : Rˣ} (he₁ : ∀ x, e₁ x = u • x)
+    (he₂ : ∀ y, e₂ y = u • y) (z : f.detLine) :
+    f.detLineCongr e₁ e₂ h z = (u ^ finrank R (ker f) * u⁻¹ ^ finrank R (N ⧸ range f)) • z := by
+  have hk (x : ker f) : e₁.ofSubmodules _ _ (f.map_ker_eq_ker_of_comp_eq e₁.surjective
+      e₂.injective h) x = (u : R) • x :=
+    Subtype.ext (by simp [he₁, Units.smul_def])
+  have hc (y : N ⧸ range f) : (Submodule.Quotient.equiv _ _ e₂
+      (f.map_range_eq_range_of_comp_eq e₁.surjective h)).symm y = ((u⁻¹ : Rˣ) : R) • y := by
+    rw [LinearEquiv.symm_apply_eq]
+    induction y using Submodule.Quotient.induction_on with
+    | H y => simp [← Submodule.Quotient.mk_smul, he₂, smul_smul, Units.smul_def]
+  induction z using TensorProduct.inductionOn with
+  | tmul x φ =>
+    have hφ : φ ∘ₗ (LinearEquiv.detLineCongr (Submodule.Quotient.equiv _ _ e₂
+        (f.map_range_eq_range_of_comp_eq e₁.surjective h))).symm.toLinearMap =
+        ((u⁻¹ : Rˣ) : R) ^ finrank R (N ⧸ range f) • φ := by
+      refine LinearMap.ext fun w ↦ ?_
+      rw [LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.detLineCongr_symm,
+        LinearEquiv.detLineCongr_apply_of_forall_eq_smul hc, map_smul, LinearMap.smul_apply]
+    rw [detLineCongr_tmul, LinearEquiv.detLineCongr_apply_of_forall_eq_smul hk, hφ,
+      smul_tmul_smul, Units.smul_def, Units.val_mul, Units.val_pow_eq_pow_val,
+      Units.val_pow_eq_pow_val]
+  | add a b ha hb => rw [map_add, ha, hb, smul_add]
+
+/-- Transport along the negation of both sides of a linear map acts on its determinant line as
+multiplication by `(-1) ^ (k + c)`, where `k` and `c` are the ranks of the kernel and the
+cokernel. -/
+theorem detLineCongr_neg_apply (f : M →ₗ[R] N)
+    (h : f ∘ₗ (LinearEquiv.neg R).toLinearMap = (LinearEquiv.neg R).toLinearMap ∘ₗ f)
+    (z : f.detLine) :
+    f.detLineCongr (.neg R) (.neg R) h z =
+      (-1 : R) ^ (finrank R (ker f) + finrank R (N ⧸ range f)) • z := by
+  rw [f.detLineCongr_apply_of_forall_eq_smul h (u := -1) (by simp) (by simp), Units.smul_def]
+  simp [pow_add]
 
 end CommRing
 
