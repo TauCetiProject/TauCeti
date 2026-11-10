@@ -37,8 +37,8 @@ taken as given, and the transfer covers the zero-density case `δ = 0` as well.
 * `TauCeti.primeCount_sub_mul_logIntegral_isLittleO`: the transfer itself, stated so that it covers
   the density `δ = 0` as well.
 * `TauCeti.primeCount_asymptotic_of_primeTheta`: the quotient form `ϑ(x) ∼ δx ⟹ π(x) ∼ δ Li(x)`
-  for `δ ≠ 0`, and `TauCeti.primeCount_isLittleO_logIntegral` for the zero-density case, where an
-  asymptotic equivalence would be false and the correct statement is `π(x) = o(Li x)`.
+  for every `δ`, and `TauCeti.primeCount_isLittleO_logIntegral` for the zero-density case, where
+  `π(x) = o(Li x)` is the meaningful statement.
 
 ## References
 
@@ -130,12 +130,33 @@ theorem primeCount_isLittleO_logIntegral (h : primeTheta K S =o[atTop] id) :
     primeCount_sub_mul_logIntegral_isLittleO (by simpa using h)
   simpa using h0.trans_isBigO Real.logIntegral_isEquivalent_div_log.isBigO_symm
 
-/-- **`ϑ(x) ∼ δx` implies `π(x) ∼ δ Li(x)`,** for a nonzero density `δ`.  This is the transfer the
-prime-number-theorem chain consumes: Layer 10 produces the asymptotic for `ϑ` from a Tauberian
-theorem, and this turns it into one for `π`. -/
-theorem primeCount_asymptotic_of_primeTheta (hδ : δ ≠ 0)
+/-- If `ϑ(x)` vanishes at a cutoff, so does `π(x)`: a prime of `S` below the cutoff would contribute
+a positive logarithm to `ϑ(x)`. -/
+theorem primeCount_eq_zero_of_primeTheta_eq_zero {x : ℝ} (h : primeTheta K S x = 0) :
+    primeCount K S x = 0 := by
+  rw [primeTheta_apply, Finset.sum_eq_zero_iff_of_nonneg fun v _ ↦ Set.indicator_nonneg
+    (fun v _ ↦ log_absNorm_asIdeal_nonneg v) v] at h
+  rw [primeCount_apply]
+  refine Finset.sum_eq_zero fun v hv ↦ ?_
+  by_contra hne
+  have hvS : v ∈ S := by
+    by_contra hvS
+    exact hne (Set.indicator_of_notMem hvS _)
+  have hlog := h v hv
+  rw [Set.indicator_of_mem hvS] at hlog
+  exact (Real.log_pos (by exact_mod_cast NumberField.HeightOneSpectrum.one_lt_absNorm v)).ne' hlog
+
+/-- **`ϑ(x) ∼ δx` implies `π(x) ∼ δ Li(x)`.**  This is the transfer the prime-number-theorem chain
+consumes: Layer 10 produces the asymptotic for `ϑ` from a Tauberian theorem, and this turns it into
+one for `π`.  For `δ = 0` both asymptotic equivalences say that the counts vanish eventually. -/
+theorem primeCount_asymptotic_of_primeTheta
     (h : primeTheta K S ~[atTop] fun x ↦ δ * x) :
     primeCount K S ~[atTop] fun x ↦ δ * Real.logIntegral x := by
+  rcases eq_or_ne δ 0 with rfl | hδ
+  · simp only [zero_mul] at h ⊢
+    exact isEquivalent_zero_iff_eventually_zero.2
+      ((isEquivalent_zero_iff_eventually_zero.1 h).mono
+        fun x hx ↦ primeCount_eq_zero_of_primeTheta_eq_zero hx)
   have hlin : (fun x : ℝ ↦ δ * x) =O[atTop] (id : ℝ → ℝ) :=
     (isBigO_refl (id : ℝ → ℝ) atTop).const_mul_left δ
   have h' : (fun x ↦ primeTheta K S x - δ * x) =o[atTop] id :=
