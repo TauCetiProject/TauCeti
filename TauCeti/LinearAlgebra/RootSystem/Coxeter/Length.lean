@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
-public import TauCeti.GroupTheory.Coxeter.Length
 
 /-!
 # Length and descents in the marked Weyl presentation
@@ -15,8 +14,8 @@ The isomorphism stored in `TauCeti.weylCoxeterSystem` identifies the Weyl group 
 abstract Coxeter group of its base. Its inverse is the original `TauCeti.weylCoxeterHom`,
 not an isomorphism with an unspecified permutation of the simple generators.
 
-This file gives the generator and word equations in the reverse direction and identifies
-abstract presentation length with the number of positive roots sent negative. Reduced words
+This file identifies abstract presentation length with the number of positive roots sent
+negative. Reduced words
 and right descents are preserved and reflected; in particular a right descent is detected
 by the sign of the image of the corresponding positive simple root. The length function
 also agrees with that of any other Coxeter system with the same marked simple reflections,
@@ -42,62 +41,6 @@ variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
   [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   (P : RootPairing ι R M N) [Finite ι] [CharZero R] [IsDomain R]
   [P.IsCrystallographic] [P.IsReduced] (b : P.Base)
-
-/-- The inverse of the isomorphism stored in the Weyl Coxeter system is the original
-homomorphism from the presentation, with the same marking of generators. -/
-@[simp]
-theorem weylCoxeterSystem_mulEquiv_symm_apply
-    (w : (coxeterMatrixOfBase P b).Group) :
-    (weylCoxeterSystem P b).mulEquiv.symm w = weylCoxeterHom P b w := by
-  have h : (weylCoxeterSystem P b).mulEquiv.symm.toMonoidHom = weylCoxeterHom P b := by
-    apply (coxeterMatrixOfBase P b).toCoxeterSystem.ext_simple
-    intro i
-    simp only [MulEquiv.coe_toMonoidHom, CoxeterMatrix.toCoxeterSystem_simple]
-    -- By definition, a Coxeter system's simple reflection is its inverse stored equivalence
-    -- applied to the matrix generator, so the left side is exactly its simple reflection.
-    exact (weylCoxeterSystem_simple P b i).trans (weylCoxeterHom_apply_simple P b i).symm
-  exact DFunLike.congr_fun h w
-
-/-- The stored isomorphism cancels the specified presentation homomorphism. -/
-@[simp]
-theorem weylCoxeterSystem_mulEquiv_weylCoxeterHom
-    (w : (coxeterMatrixOfBase P b).Group) :
-    (weylCoxeterSystem P b).mulEquiv (weylCoxeterHom P b w) = w := by
-  rw [← weylCoxeterSystem_mulEquiv_symm_apply, MulEquiv.apply_symm_apply]
-
-/-- The specified presentation homomorphism cancels the stored isomorphism. -/
-@[simp]
-theorem weylCoxeterHom_weylCoxeterSystem_mulEquiv (w : P.weylGroup) :
-    weylCoxeterHom P b ((weylCoxeterSystem P b).mulEquiv w) = w := by
-  rw [← weylCoxeterSystem_mulEquiv_symm_apply, MulEquiv.symm_apply_apply]
-
-/-- Transporting the presented Coxeter system through the inverse stored isomorphism gives
-exactly the Weyl Coxeter system, including its indexed simple reflections. -/
-theorem toCoxeterSystem_map_weylCoxeterSystem_mulEquiv_symm :
-    (coxeterMatrixOfBase P b).toCoxeterSystem.map
-      (weylCoxeterSystem P b).mulEquiv.symm = weylCoxeterSystem P b := by
-  apply CoxeterSystem.simple_determines_coxeterSystem
-  funext i
-  simp only [CoxeterSystem.map_simple, weylCoxeterSystem_mulEquiv_symm_apply,
-    CoxeterMatrix.toCoxeterSystem_simple, weylCoxeterHom_apply_simple,
-    weylCoxeterSystem_simple]
-
-/-- The inverse marking sends an actual simple root reflection to its own abstract generator. -/
-@[simp]
-theorem weylCoxeterSystem_mulEquiv_ofIdx (i : b.support) :
-    (weylCoxeterSystem P b).mulEquiv (weylGroup.ofIdx P (i : ι)) =
-      (coxeterMatrixOfBase P b).simple i := by
-  apply (weylCoxeterSystem P b).mulEquiv.symm.injective
-  simp
-
-/-- Passing from a word in actual simple root reflections to the presentation retains
-its ordered list of letters. -/
-@[simp]
-theorem weylCoxeterSystem_mulEquiv_wordProd (l : List b.support) :
-    (weylCoxeterSystem P b).mulEquiv (wordProd P b l) =
-      (coxeterMatrixOfBase P b).toCoxeterSystem.wordProd l := by
-  apply (weylCoxeterSystem P b).mulEquiv.symm.injective
-  simp
 
 /-- Length in the abstract presented group is the number of positive roots made negative
 by its image under the specified presentation homomorphism. -/

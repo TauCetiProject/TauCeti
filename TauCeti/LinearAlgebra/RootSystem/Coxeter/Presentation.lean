@@ -50,6 +50,13 @@ its simple root is an inversion of the word, and the reflection in it deletes a 
 * `TauCeti.weylCoxeterHom_injective`: **Tits' theorem**, the canonical homomorphism is injective.
 * `TauCeti.weylCoxeterSystem_simple` and `TauCeti.weylCoxeterSystem_wordProd`: the simple
   reflections of the Coxeter system are the simple root reflections.
+* `RootPairing.weylCoxeterSystem_mulEquiv_symm_apply`: the inverse stored isomorphism agrees
+  with the canonical presentation homomorphism.
+* `RootPairing.weylCoxeterSystem_mulEquiv_ofIdx` and
+  `RootPairing.weylCoxeterSystem_mulEquiv_wordProd`: the stored isomorphism preserves the
+  marking of generators and words.
+* `RootPairing.toCoxeterSystem_map_weylCoxeterSystem_mulEquiv_symm`: transporting the
+  presented Coxeter system gives exactly the marked Weyl Coxeter system.
 * `TauCeti.length_weylCoxeterSystem_eq`: the Coxeter length of a Weyl-group element is its number of
   inversions.
 * `TauCeti.isReduced_weylCoxeterSystem_iff`: a word is reduced exactly when the element it spells
@@ -232,3 +239,72 @@ theorem _root_.RootPairing.bruhatStep_ofIdx_mul_iff_mem_inversions (w : P.weylGr
   rwa [← mul_assoc, RootPairing.weylGroup.ofIdx_mul_self, one_mul] at hstep
 
 end TauCeti
+
+namespace RootPairing
+
+open TauCeti
+
+universe u v w x
+
+variable {ι : Type u} {R : Type v} {M : Type w} {N : Type x}
+  [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  (P : RootPairing ι R M N) [Finite ι] [CharZero R] [IsDomain R]
+  [P.IsCrystallographic] [P.IsReduced] (b : P.Base)
+
+/-- The inverse of the isomorphism stored in the Weyl Coxeter system is the original
+homomorphism from the presentation, with the same marking of generators. -/
+@[simp]
+theorem weylCoxeterSystem_mulEquiv_symm_apply
+    (w : (coxeterMatrixOfBase P b).Group) :
+    (weylCoxeterSystem P b).mulEquiv.symm w = weylCoxeterHom P b w := by
+  have h : (weylCoxeterSystem P b).mulEquiv.symm.toMonoidHom = weylCoxeterHom P b := by
+    apply (coxeterMatrixOfBase P b).toCoxeterSystem.ext_simple
+    intro i
+    simp only [MulEquiv.coe_toMonoidHom, CoxeterMatrix.toCoxeterSystem_simple]
+    -- By definition, a Coxeter system's simple reflection is its inverse stored equivalence
+    -- applied to the matrix generator, so the left side is exactly its simple reflection.
+    exact (weylCoxeterSystem_simple P b i).trans (weylCoxeterHom_apply_simple P b i).symm
+  exact DFunLike.congr_fun h w
+
+/-- The stored isomorphism cancels the specified presentation homomorphism. -/
+@[simp]
+theorem weylCoxeterSystem_mulEquiv_weylCoxeterHom
+    (w : (coxeterMatrixOfBase P b).Group) :
+    (weylCoxeterSystem P b).mulEquiv (weylCoxeterHom P b w) = w := by
+  rw [← weylCoxeterSystem_mulEquiv_symm_apply, MulEquiv.apply_symm_apply]
+
+/-- The specified presentation homomorphism cancels the stored isomorphism. -/
+@[simp]
+theorem weylCoxeterHom_weylCoxeterSystem_mulEquiv (w : P.weylGroup) :
+    weylCoxeterHom P b ((weylCoxeterSystem P b).mulEquiv w) = w := by
+  rw [← weylCoxeterSystem_mulEquiv_symm_apply, MulEquiv.symm_apply_apply]
+
+/-- Transporting the presented Coxeter system through the inverse stored isomorphism gives
+exactly the Weyl Coxeter system, including its indexed simple reflections. -/
+theorem toCoxeterSystem_map_weylCoxeterSystem_mulEquiv_symm :
+    (coxeterMatrixOfBase P b).toCoxeterSystem.map
+      (weylCoxeterSystem P b).mulEquiv.symm = weylCoxeterSystem P b := by
+  apply CoxeterSystem.simple_determines_coxeterSystem
+  funext i
+  simp only [CoxeterSystem.map_simple, weylCoxeterSystem_mulEquiv_symm_apply,
+    CoxeterMatrix.toCoxeterSystem_simple, weylCoxeterHom_apply_simple,
+    weylCoxeterSystem_simple]
+
+/-- The inverse marking sends an actual simple root reflection to its own abstract generator. -/
+@[simp]
+theorem weylCoxeterSystem_mulEquiv_ofIdx (i : b.support) :
+    (weylCoxeterSystem P b).mulEquiv (weylGroup.ofIdx P (i : ι)) =
+      (coxeterMatrixOfBase P b).simple i := by
+  apply (weylCoxeterSystem P b).mulEquiv.symm.injective
+  simp
+
+/-- Passing from a word in actual simple root reflections to the presentation retains
+its ordered list of letters. -/
+@[simp]
+theorem weylCoxeterSystem_mulEquiv_wordProd (l : List b.support) :
+    (weylCoxeterSystem P b).mulEquiv (wordProd P b l) =
+      (coxeterMatrixOfBase P b).toCoxeterSystem.wordProd l := by
+  apply (weylCoxeterSystem P b).mulEquiv.symm.injective
+  simp
+
+end RootPairing
