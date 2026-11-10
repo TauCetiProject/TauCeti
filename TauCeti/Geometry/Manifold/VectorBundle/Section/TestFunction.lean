@@ -15,7 +15,8 @@ A smooth coordinate chart subordinate to a smooth bundle frame sends a native te
 on its target to a compactly supported smooth section. On the chart source the section is
 obtained by applying the inverse frame to the test function's value in coordinates; elsewhere
 it is zero. Its closed support is exactly the inverse chart image of the test function's closed
-support. In particular this map is injective and preserves fixed compact support stages.
+support. In particular this map is injective and sends support bounds `tsupport φ ⊆ K`
+to support bounds in `c.symm '' K`.
 
 These are algebraic chart extension maps for constructing locally convex test-section spaces.
 No topology on compactly supported sections is installed here. The chart only needs to be
@@ -60,6 +61,11 @@ private theorem testSection_eq_zero (φ : 𝓓^{n}(⟨c.target, c.open_target⟩
     simp [testSection, hs, image_eq_zero_of_notMem_tsupport hφ]
   · simp [testSection, hs]
 
+omit [T2Space M] in
+private theorem isCompact_symm_image_tsupport (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
+    IsCompact (c.symm '' tsupport φ) :=
+  φ.hasCompactSupport.image_of_continuousOn (c.continuousOn_symm.mono φ.tsupport_subset)
+
 include hc hce in
 private theorem contMDiff_testSection (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
     ContMDiff I (I.prod 𝓘(ℝ, F)) n (fun x ↦ TotalSpace.mk' F x (testSection e c φ x)) := by
@@ -72,15 +78,20 @@ private theorem contMDiff_testSection (φ : 𝓓^{n}(⟨c.target, c.open_target�
     rw [testSection_of_mem e c φ hy, ← e.continuousLinearMapAt_apply_of_mem (R := ℝ) (hce hy),
       e.continuousLinearMapAt_symmL (hce hy)]
     rfl
-  · have hclosed := (φ.hasCompactSupport.image_of_continuousOn
-      (c.continuousOn_symm.mono φ.tsupport_subset)).isClosed
+  · have hclosed := (isCompact_symm_image_tsupport c φ).isClosed
     have hx' : x ∉ c.symm '' tsupport φ := by
       rintro ⟨y, hy, rfl⟩
       exact hx (c.map_target (φ.tsupport_subset hy))
     refine (Bundle.contMDiff_zeroSection ℝ V x).congr_of_eventuallyEq ?_
     filter_upwards [hclosed.isOpen_compl.mem_nhds hx'] with y hy
     rw [testSection_eq_zero e c φ hy]
-    rfl
+    simp [Bundle.zeroSection]
+
+private theorem tsupport_testSection_subset (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
+    (⟨testSection e c φ, contMDiff_testSection e c hc hce φ⟩ : Cₛ^n⟮I; F, V⟯).tsupport ⊆
+      c.symm '' tsupport φ := by
+  apply (ContMDiffSection.tsupport_subset_iff (isCompact_symm_image_tsupport c φ).isClosed).2
+  exact fun x hx ↦ testSection_eq_zero e c φ hx
 
 /-- Extend a native test function through a coordinate chart and a bundle frame, by zero
 outside the chart source. The codomain is the existing compactly supported section submodule;
@@ -90,13 +101,8 @@ def chartTestSection : 𝓓^{n}(⟨c.target, c.open_target⟩, F) →ₗ[ℝ]
   toFun φ := by
     let s : Cₛ^n⟮I; F, V⟯ := ⟨testSection e c φ, contMDiff_testSection e c hc hce φ⟩
     refine ⟨s, ContMDiffSection.mem_compactlySupported.2 ?_⟩
-    rw [ContMDiffSection.tsupport_def]
-    have hK := φ.hasCompactSupport.image_of_continuousOn
-      (c.continuousOn_symm.mono φ.tsupport_subset)
-    exact hK.of_isClosed_subset isClosed_closure
-      (closure_minimal (fun x hx ↦ by
-        by_contra h
-        exact hx (testSection_eq_zero e c φ h)) hK.isClosed)
+    exact (isCompact_symm_image_tsupport c φ).of_isClosed_subset s.isClosed_tsupport
+      (tsupport_testSection_subset e c hc hce φ)
   map_add' φ ψ := by
     apply Subtype.ext
     ext x
@@ -141,10 +147,7 @@ theorem chartTestSection_injective : Function.Injective (e.chartTestSection c hc
 theorem tsupport_chartTestSection (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) :
     (e.chartTestSection c hc hce φ).1.tsupport = c.symm '' tsupport φ := by
   apply le_antisymm
-  · apply (ContMDiffSection.tsupport_subset_iff
-      (φ.hasCompactSupport.image_of_continuousOn
-        (c.continuousOn_symm.mono φ.tsupport_subset)).isClosed).2
-    exact fun x hx ↦ testSection_eq_zero e c φ hx
+  · exact tsupport_testSection_subset e c hc hce φ
   · rw [ContMDiffSection.tsupport_def]
     rintro _ ⟨y, hy, rfl⟩
     have hcont : ContinuousWithinAt c.symm (Function.support φ) y :=
@@ -163,8 +166,7 @@ theorem tsupport_chartTestSection_subset_source (φ : 𝓓^{n}(⟨c.target, c.op
   rw [tsupport_chartTestSection]
   exact image_subset_iff.2 fun _ hy ↦ c.map_target (φ.tsupport_subset hy)
 
-/-- A native fixed-compact support bound becomes the corresponding inverse-chart support
-bound, with no enlargement of the compact set. -/
+/-- A support bound in an arbitrary set `K` becomes a support bound in `c.symm '' K`. -/
 theorem chartTestSection_mem_supportedIn (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F))
     {K : Set E} (hφ : tsupport φ ⊆ K) :
     (e.chartTestSection c hc hce φ).1 ∈ ContMDiffSection.supportedIn I F n V (c.symm '' K) := by
@@ -174,7 +176,7 @@ theorem chartTestSection_mem_supportedIn (φ : 𝓓^{n}(⟨c.target, c.open_targ
 /-- In a second bundle frame, the extended section has the actual vector-bundle transition
 applied to its defining coefficients. -/
 theorem continuousLinearMapAt_chartTestSection_eq_coordChangeL
-    (e' : Trivialization F (π F V)) [MemTrivializationAtlas e']
+    (e' : Trivialization F (π F V)) [e'.IsLinear ℝ]
     (φ : 𝓓^{n}(⟨c.target, c.open_target⟩, F)) {x : M}
     (hx : x ∈ c.source) (hx' : x ∈ e'.baseSet) :
     e'.continuousLinearMapAt ℝ x ((e.chartTestSection c hc hce φ).1 x) =
