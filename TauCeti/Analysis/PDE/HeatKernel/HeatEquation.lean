@@ -127,11 +127,9 @@ private theorem aestronglyMeasurable_of_aestronglyMeasurable_heatKernel_smul_sub
     (x : E) (h : AEStronglyMeasurable fun y => heatKernel t y • g (x - y)) :
     AEStronglyMeasurable g := by
   have h1 : AEStronglyMeasurable fun y => g (x - y) := by
-    have hinv : AEStronglyMeasurable fun y : E => (heatKernel t y)⁻¹ :=
-      ((contDiff_heatKernel (k := 0) t).continuous.inv₀
-        fun y => (heatKernel_pos ht y).ne').aestronglyMeasurable
-    refine (hinv.smul h).congr (ae_of_all _ fun y => ?_)
-    simp [smul_smul, inv_mul_cancel₀ (heatKernel_pos ht y).ne']
+    exact (aestronglyMeasurable_fun_smul_iff₀
+      (contDiff_heatKernel (k := 0) t).continuous.aestronglyMeasurable
+      (ae_of_all _ fun y => (heatKernel_pos ht y).ne')).mp h
   simpa [Function.comp_def] using h1.comp_quasiMeasurePreserving
     (quasiMeasurePreserving_sub_left_of_right_invariant (volume : Measure E) x)
 
@@ -142,12 +140,6 @@ private theorem heatKernel_convolution_of_not_aestronglyMeasurable (ht : 0 < t)
   funext x
   refine integral_non_aestronglyMeasurable fun h => hg ?_
   exact aestronglyMeasurable_of_aestronglyMeasurable_heatKernel_smul_sub ht x (by simpa using h)
-
-/-- If `F` is not complete, `K_t ⋆ g = 0`, by the junk value of the Bochner integral. -/
-private theorem heatKernel_convolution_of_not_completeSpace (hF : ¬CompleteSpace F) (t : ℝ)
-    (g : E → F) : heatKernel t ⋆ g = fun _ => 0 := by
-  funext x
-  exact integral_of_not_completeSpace hF
 
 /-- **Smoothing by the heat kernel.** For `t > 0` and `g` essentially bounded, `K_t ⋆ g` is
 smooth. -/
@@ -255,7 +247,7 @@ theorem iteratedFDeriv_heatKernel_convolution_eq_integral_sub (ht : 0 < t)
   by_cases hF : CompleteSpace F
   swap
   · ext v
-    rw [heatKernel_convolution_of_not_completeSpace hF,
+    rw [convolution_of_not_completeSpace _ _ _ _ hF,
       ContinuousMultilinearMap.integral_apply
         (integrable_smulRight_iteratedFDeriv_heatKernel_sub ht hg hM m x) v]
     simp [integral_of_not_completeSpace hF]
@@ -282,10 +274,14 @@ with constant `H`, then for `m ≥ 1` and `t > 0`,
 `TauCeti.exists_integral_norm_iteratedFDeriv_heatKernel_mul_rpow_le` the right side is
 `O(H t^((α - m) / 2))`, which for `m = 2` is integrable in time near `t = 0` when `α > 0`. -/
 theorem norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith (ht : 0 < t)
-    (hg : AEStronglyMeasurable g) (hM : ∀ᵐ y, ‖g y‖ ≤ M) {H α : ℝ≥0} (hH : HolderWith H α g)
+    (hM : ∀ᵐ y, ‖g y‖ ≤ M) {H α : ℝ≥0} (hH : HolderWith H α g)
     {m : ℕ} (hm : m ≠ 0) (x : E) :
     ‖iteratedFDeriv ℝ m (heatKernel t ⋆ g) x‖ ≤
       H * ∫ z, ‖iteratedFDeriv ℝ m (heatKernel t : E → ℝ) z‖ * ‖z‖ ^ (α : ℝ) := by
+  by_cases hg : AEStronglyMeasurable g
+  swap
+  · rw [heatKernel_convolution_of_not_aestronglyMeasurable ht hg]
+    simpa using mul_nonneg H.coe_nonneg (integral_nonneg fun z => by positivity)
   rw [iteratedFDeriv_heatKernel_convolution_eq_integral_sub ht hg hM hm, ← integral_const_mul]
   refine norm_integral_le_of_norm_le
     ((integrable_norm_iteratedFDeriv_heatKernel_mul_rpow ht m α.coe_nonneg).const_mul _)
@@ -295,14 +291,13 @@ theorem norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith (ht : 0 < t)
 of a bounded `α`-Hölder function with constant `H` is `O(H τ^((α - 2)/2))`, uniformly in the
 function. -/
 theorem exists_norm_laplacian_heatKernel_convolution_le {α : ℝ≥0} :
-    ∃ C ≥ 0, ∀ {g : E → F} {M τ : ℝ} {H : ℝ≥0}, AEStronglyMeasurable g → (∀ᵐ y, ‖g y‖ ≤ M) →
+    ∃ C ≥ 0, ∀ {g : E → F} {M τ : ℝ} {H : ℝ≥0}, (∀ᵐ y, ‖g y‖ ≤ M) →
       HolderWith H α g → 0 < τ → ∀ x,
         ‖Δ (heatKernel τ ⋆ g) x‖ ≤ C * H * τ ^ (((α : ℝ) - 2) / 2) := by
   obtain ⟨C, hC₀, hC⟩ :=
     exists_integral_norm_iteratedFDeriv_heatKernel_mul_rpow_le (E := E) 2 α.coe_nonneg
-  refine ⟨finrank ℝ E * C, by positivity, fun {g M τ H} hg hM hH hτ x => ?_⟩
-  have h₁ := norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith hτ hg hM hH
-    two_ne_zero x
+  refine ⟨finrank ℝ E * C, by positivity, fun {g M τ H} hM hH hτ x => ?_⟩
+  have h₁ := norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith hτ hM hH two_ne_zero x
   have h₂ := mul_le_mul_of_nonneg_left (hC τ hτ) H.coe_nonneg
   push_cast at h₂
   have h₃ : ‖fderiv ℝ (fderiv ℝ (heatKernel τ ⋆ g)) x‖ =
@@ -321,11 +316,16 @@ theorem exists_norm_laplacian_heatKernel_convolution_le {α : ℝ≥0} :
 `TauCeti.exists_integral_norm_iteratedFDeriv_heatKernel_sub_mul_rpow_le` the right side is
 `O(H (b - a) a^((α - m - 2) / 2))` when `a ≤ b ≤ 2a`. -/
 theorem norm_iteratedFDeriv_heatKernel_convolution_sub_le_of_holderWith
-    {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (hg : AEStronglyMeasurable g) (hM : ∀ᵐ y, ‖g y‖ ≤ M)
+    {a b : ℝ} (ha : 0 < a) (hb : 0 < b) (hM : ∀ᵐ y, ‖g y‖ ≤ M)
     {H α : ℝ≥0} (hH : HolderWith H α g) {m : ℕ} (hm : m ≠ 0) (x : E) :
     ‖iteratedFDeriv ℝ m (heatKernel b ⋆ g) x - iteratedFDeriv ℝ m (heatKernel a ⋆ g) x‖ ≤
       H * ∫ z, ‖iteratedFDeriv ℝ m (heatKernel b : E → ℝ) z -
         iteratedFDeriv ℝ m (heatKernel a) z‖ * ‖z‖ ^ (α : ℝ) := by
+  by_cases hg : AEStronglyMeasurable g
+  swap
+  · rw [heatKernel_convolution_of_not_aestronglyMeasurable hb hg,
+      heatKernel_convolution_of_not_aestronglyMeasurable ha hg]
+    simpa using mul_nonneg H.coe_nonneg (integral_nonneg fun z => by positivity)
   have hw : Integrable fun z : E => ‖iteratedFDeriv ℝ m (heatKernel b : E → ℝ) z -
       iteratedFDeriv ℝ m (heatKernel a) z‖ * ‖z‖ ^ (α : ℝ) := by
     refine ((integrable_norm_iteratedFDeriv_heatKernel_mul_rpow hb m α.coe_nonneg).add
@@ -357,7 +357,7 @@ theorem laplacian_heatKernel_convolution (ht : 0 < t)
     Δ (heatKernel t ⋆ g) x = (Δ (heatKernel t : E → ℝ) ⋆ g) x := by
   by_cases hF : CompleteSpace F
   swap
-  · rw [heatKernel_convolution_of_not_completeSpace hF, laplacian_const]
+  · rw [convolution_of_not_completeSpace _ _ _ _ hF, laplacian_const]
     exact (integral_of_not_completeSpace hF).symm
   have hD₂ := integrable_iteratedFDeriv_heatKernel (E := E) ht 2
   -- The Laplacian is a continuous linear functional of the Hessian.
@@ -376,7 +376,7 @@ theorem hasDerivAt_heatKernel_convolution (ht : 0 < t) (hM : ∀ᵐ y, ‖g y‖
     HasDerivAt (fun s => (heatKernel s ⋆ g) x) (Δ (heatKernel t ⋆ g) x) t := by
   by_cases hF : CompleteSpace F
   swap
-  · simp only [heatKernel_convolution_of_not_completeSpace hF, laplacian_const, Pi.zero_apply]
+  · simp only [convolution_of_not_completeSpace _ _ _ _ hF, laplacian_const, Pi.zero_apply]
     exact hasDerivAt_const t (0 : F)
   by_cases hg : AEStronglyMeasurable g
   swap

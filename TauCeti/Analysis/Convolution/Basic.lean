@@ -73,6 +73,8 @@ integrals of increments of `f`; when `ψ` has integral `1`, is bounded by `M` an
 * `MeasureTheory.convolution_lsmul_assoc_of_integrable_of_ae_norm_le`: pointwise associativity
   for two integrable kernels and an essentially bounded function.
 * `ContinuousLinearMap.convolution_lsmul_comp_comm`: `ρ ⋆ (L ∘ f) = L (ρ ⋆ f)`.
+* `MeasureTheory.convolution_of_not_completeSpace`: into an incomplete space, the convolution is
+  `0` by the junk value of the Bochner integral.
 * `MeasureTheory.le_convolution_lsmul_of_forall_le` and
   `MeasureTheory.convolution_lsmul_le_of_forall_le`: one-sided bounds on a ball pass to the
   mollification at its centre.
@@ -444,6 +446,22 @@ theorem integral_mul_convolution_eq_integral_mul_integral_left_comp_sub [SFinite
     (hK.locallyIntegrableOn Set.univ) fun _ _ _ _ ↦ Set.mem_univ _
 
 end Fubini
+
+section NotCompleteSpace
+
+variable {𝕜 G E E' F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+  [NormedAddCommGroup E'] [NormedAddCommGroup F] [NormedSpace 𝕜 E] [NormedSpace 𝕜 E']
+  [NormedSpace 𝕜 F] [NormedSpace ℝ F] [MeasurableSpace G] [Sub G]
+
+/-- **Convolution into an incomplete space is zero.** The Bochner integral of a function with
+values in an incomplete space takes the junk value `0`, so every convolution with values in such a
+space is the zero function. -/
+theorem convolution_of_not_completeSpace (L : E →L[𝕜] E' →L[𝕜] F) (f : G → E) (g : G → E')
+    (μ : Measure G) (hF : ¬CompleteSpace F) : f ⋆[L, μ] g = fun _ ↦ 0 := by
+  funext x
+  exact integral_of_not_completeSpace hF
+
+end NotCompleteSpace
 
 section ZeroIntegral
 

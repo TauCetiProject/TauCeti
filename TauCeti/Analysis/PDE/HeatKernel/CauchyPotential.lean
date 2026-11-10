@@ -54,7 +54,8 @@ space `C^{2+α,1+α/2}`, where they are applied to the second spatial derivative
 of the datum. For this the derivatives pass under the integral sign: if `g` has a bounded
 continuous derivative, then `D_x u` is the Cauchy potential of `Dg`, so for a `C²` datum with
 bounded derivatives `Δu(t, ·)` is the Cauchy potential of `Δg`. If `g` is moreover bounded, then
-`∂ₜu = Δu` for `t > 0`, and the one-sided time derivative at `t = 0` is `Δg`.
+`∂ₜu = Δu` for `t > 0`, and the one-sided time derivative at `t = 0` is the Cauchy potential of
+`Δg` at time `0`, which is `Δg` when `F` is complete (for incomplete `F` the potential is `0`).
 
 ## Main declarations
 
@@ -74,10 +75,10 @@ bounded derivatives `Δu(t, ·)` is the Cauchy potential of `Δg`. If `g` is mor
   derivative is the Cauchy potential of the derivative.
 * `TauCeti.laplacian_heatCauchyPotential`: the Laplacian is the Cauchy potential of the Laplacian.
 * `TauCeti.hasDerivAt_heatCauchyPotential`: **the heat equation** `∂ₜu = Δu` for `t > 0`, and
-  `TauCeti.hasDerivAt_heatCauchyPotential_of_aestronglyMeasurable`, its form for merely measurable
+  `TauCeti.hasDerivAt_heatCauchyPotential_of_ae_norm_le`, its form for merely measurable
   and essentially bounded data.
 * `TauCeti.hasDerivWithinAt_heatCauchyPotential`: the time derivative within `[0, ∞)`, including
-  the one-sided derivative `Δg` at the initial time.
+  the one-sided derivative at the initial time, which is `Δg` when `F` is complete.
 * `TauCeti.exists_norm_laplacian_heatCauchyPotential_le`: for Hölder data, the Laplacian at
   time `t > 0`, hence the time derivative, is `O(H t^(α/2 - 1))`.
 * `TauCeti.exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul`: for Hölder data, the
@@ -407,7 +408,7 @@ theorem laplacian_heatCauchyPotential (hg : ContDiff ℝ 2 g)
 /-- **The heat equation for rough data.** For `g` essentially bounded and `t > 0`, the time
 derivative of the Cauchy potential is the Laplacian of its time slice,
 `∂ₜu(t, x) = Δ (u(t, ·)) x`. No regularity of the datum is needed at positive times. -/
-theorem hasDerivAt_heatCauchyPotential_of_aestronglyMeasurable
+theorem hasDerivAt_heatCauchyPotential_of_ae_norm_le
     (hM : ∀ᵐ y, ‖g y‖ ≤ M) {t : ℝ} (ht : 0 < t) (x : E) :
     HasDerivAt (fun s => heatCauchyPotential g s x) (Δ (heatCauchyPotential g t) x) t := by
   have h := hasDerivAt_heatKernel_convolution ht hM x
@@ -425,13 +426,14 @@ theorem hasDerivAt_heatCauchyPotential (hg : ContDiff ℝ 2 g)
     (h₀ : ∀ y, ‖g y‖ ≤ M₀) (h₁ : ∀ y, ‖fderiv ℝ g y‖ ≤ M₁)
     (h₂ : ∀ y, ‖fderiv ℝ (fderiv ℝ g) y‖ ≤ M₂) {t : ℝ} (ht : 0 < t) (x : E) :
     HasDerivAt (fun s => heatCauchyPotential g s x) (heatCauchyPotential (Δ g) t x) t := by
-  have h := hasDerivAt_heatCauchyPotential_of_aestronglyMeasurable
+  have h := hasDerivAt_heatCauchyPotential_of_ae_norm_le
     (ae_of_all _ h₀) ht x
   rwa [laplacian_heatCauchyPotential hg h₁ h₂] at h
 
 /-- **The heat equation up to the initial time.** For a bounded `C²` function with bounded first
 and second derivatives, the Cauchy potential has time derivative `heatCauchyPotential (Δ g) t x`
-within `[0, ∞)` at every `t ≥ 0`. At `t = 0` this is the one-sided derivative `Δ g x`. -/
+within `[0, ∞)` at every `t ≥ 0`. At `t = 0` this is the one-sided derivative `Δ g x` when `F` is
+complete; for incomplete `F` the potential, and so its derivative, is `0`. -/
 theorem hasDerivWithinAt_heatCauchyPotential (hg : ContDiff ℝ 2 g)
     (h₀ : ∀ y, ‖g y‖ ≤ M₀) (h₁ : ∀ y, ‖fderiv ℝ g y‖ ≤ M₁)
     (h₂ : ∀ y, ‖fderiv ℝ (fderiv ℝ g) y‖ ≤ M₂) {t : ℝ} (ht : 0 ≤ t) (x : E) :
@@ -455,21 +457,21 @@ theorem hasDerivWithinAt_heatCauchyPotential (hg : ContDiff ℝ 2 g)
 /-! ### The time-Lipschitz bound away from the initial time -/
 
 /-- **The Laplacian of the Cauchy potential of Hölder data.** There is a constant `C ≥ 0`,
-depending only on `α` and the dimension, with the following property. If `g` is measurable,
+depending only on `α` and the dimension, with the following property. If `g` is
 essentially bounded and `α`-Hölder with constant `H`, then for `t > 0`,
 `‖Δu(t, ·)(x)‖ ≤ C H t^(α/2 - 1)`. By the heat equation
-(`TauCeti.hasDerivAt_heatCauchyPotential_of_aestronglyMeasurable`) this also bounds the time
+(`TauCeti.hasDerivAt_heatCauchyPotential_of_ae_norm_le`) this also bounds the time
 derivative. The bound on `g` does not enter the estimate. -/
 theorem exists_norm_laplacian_heatCauchyPotential_le :
-    ∃ C ≥ 0, ∀ {g : E → F} {M : ℝ} {H : ℝ≥0}, AEStronglyMeasurable g → (∀ᵐ y, ‖g y‖ ≤ M) →
+    ∃ C ≥ 0, ∀ {g : E → F} {M : ℝ} {H : ℝ≥0}, (∀ᵐ y, ‖g y‖ ≤ M) →
       HolderWith H α g → ∀ {t : ℝ}, 0 < t → ∀ x : E,
         ‖Δ (heatCauchyPotential g t) x‖ ≤ C * H * t ^ ((α : ℝ) / 2 - 1) := by
   obtain ⟨C₂, hC₂₀, hC₂⟩ :=
     exists_integral_norm_iteratedFDeriv_heatKernel_mul_rpow_le (E := E) 2 α.coe_nonneg
   set n : ℝ := (Module.finrank ℝ E : ℝ)
   have hn : 0 ≤ n := Nat.cast_nonneg _
-  refine ⟨n * C₂, by positivity, fun {g M H} hg hM hH {t} ht x => ?_⟩
-  have h2 := norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith ht hg hM hH two_ne_zero x
+  refine ⟨n * C₂, by positivity, fun {g M H} hM hH {t} ht x => ?_⟩
+  have h2 := norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith ht hM hH two_ne_zero x
   have h3 := mul_le_mul_of_nonneg_left (hC₂ t ht) H.coe_nonneg
   have hexp : ((α : ℝ) - (2 : ℕ)) / 2 = α / 2 - 1 := by push_cast; ring
   rw [hexp] at h3
@@ -532,9 +534,9 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul
   · -- At positive times the time derivative is the Laplacian, of size `O(H r^(β - 1))`.
     have := norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt (u := u)
       (f' := fun r => Δ (heatCauchyPotential g r) x) (D := C₂ * H) hβ₀ hβ₁
-      (fun r hr => hasDerivAt_heatCauchyPotential_of_aestronglyMeasurable
+      (fun r hr => hasDerivAt_heatCauchyPotential_of_ae_norm_le
         (ae_of_all _ hM) hr x)
-      (fun r hr => hC₂ hgc.aestronglyMeasurable (ae_of_all _ hM) hg hr x) ha hb
+      (fun r hr => hC₂ (ae_of_all _ hM) hg hr x) ha hb
     calc ‖u b - u a‖ ≤ 2 * (C₂ * H) * (|b - a| * a ^ (β - 1)) := this
       _ = 2 * C₂ * (H * (|b - a| * a ^ (β - 1))) := by ring
       _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * a ^ (β - 1))) := by

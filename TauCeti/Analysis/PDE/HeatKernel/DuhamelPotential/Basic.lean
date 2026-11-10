@@ -347,7 +347,6 @@ private theorem exists_ae_norm_iteratedFDeriv_heatKernel_convolution_le {α : �
   filter_upwards [ae_mem_Ioo_and_ae_norm_le ht.le hfM, hH'] with s hs hsH x
   have hts : 0 < t - s := sub_pos.2 hs.1.2
   refine (norm_iteratedFDeriv_heatKernel_convolution_le_of_holderWith hts
-    (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable
     hs.2 hsH hm x).trans ?_
   have := mul_le_mul_of_nonneg_left (hC (t - s) hts) H.coe_nonneg
   linarith
@@ -630,8 +629,7 @@ private theorem exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_tim
   obtain ⟨hsM, hsH⟩ := hs ⟨hsI.1, by linarith [hsI.2]⟩
   have ha : 0 < t' - s := by linarith [hsI.2]
   refine (norm_iteratedFDeriv_heatKernel_convolution_sub_le_of_holderWith ha (by linarith)
-    (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable hsM hsH two_ne_zero
-    x).trans ?_
+    hsM hsH two_ne_zero x).trans ?_
   have := mul_le_mul_of_nonneg_left
     (hK (t' - s) (t - s) ha (by linarith) (by linarith [hsI.2])) H.coe_nonneg
   have hexp : ((α : ℝ) - (2 : ℕ) - 2) / 2 = ((α : ℝ) - 4) / 2 := by

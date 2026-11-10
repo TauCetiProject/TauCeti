@@ -26,7 +26,8 @@ is the Cauchy potential of `Δg`, also at the initial time `t = 0` when `a = 0`.
 bounds then follow from the maximum principle `TauCeti.norm_heatCauchyPotential_le`, and the
 parabolic Hölder seminorms of the two top-order fields from the parabolic Hölder estimate
 `TauCeti.holderWith_heatCauchyPotential` applied to `D²g` and `Δg`. In particular `u` solves the
-heat equation `∂ₜu = Δu` on the closed slab, and when `a = 0` its initial trace is `g`.
+heat equation `∂ₜu = Δu` on the closed slab, and when `a = 0` and `F` is complete its initial trace
+is `g`.
 
 This is the initial-data part of the solution operator of the Cauchy problem
 `∂ₜu - Δu = f`, `u(·, 0) = g` in parabolic Hölder spaces, whose solution is the sum of the Cauchy
@@ -39,7 +40,8 @@ potential of `g` and the Duhamel potential of `f`.
 * `TauCeti.heatCauchyPotentialL_apply` and its companions: the four fields of the potential.
 * `TauCeti.timeDerivL_heatCauchyPotentialL_eq_laplacian`: the heat equation `∂ₜu = Δu`.
 * `TauCeti.norm_heatCauchyPotentialL_le`: the operator-norm bound `(1 + dim E) (1 + M_α)`.
-* `TauCeti.spatialTrace_heatCauchyPotentialL_left`: the initial trace of the potential is `g`.
+* `TauCeti.spatialTrace_heatCauchyPotentialL_left`: for complete `F`, the initial trace of the
+  potential is `g`.
 
 ## References
 
