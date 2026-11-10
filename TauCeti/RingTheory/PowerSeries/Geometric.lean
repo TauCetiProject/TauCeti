@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Polynomial.Derivative
+public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.PowerSeries.WellKnown
+import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.BigOperators.Finset.Range
 
 /-!
@@ -28,6 +30,8 @@ connected oriented surface acting by `P` on its first cohomology.
 
 * `TauCeti.powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one`:
   `(∑ aⁿ Xⁿ) * (1 - a X) = 1`.
+* `TauCeti.powerSeries_X_mul_derivative_mk_pow`: the logarithmic derivative of the geometric
+  series, `X g' = g · a X g` for `g = ∑ aⁿ Xⁿ`.
 * `TauCeti.powerSeries_one_sub_C_mul_X_mul_mk_sum_smul_pow`,
   `TauCeti.powerSeries_mk_sum_smul_pow_mul_one_sub_C_mul_X`: for scalars `c k` in a commutative
   ring `R` and an element `a` of an `R`-algebra, multiplying the series with coefficients
@@ -52,6 +56,24 @@ theorem powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one {R : Type*} [Ring R] (a : 
   cases n with
   | zero => simp
   | succ n => simp [pow_succ]
+
+/-- **The logarithmic derivative of the geometric series** `g = ∑ aⁿ Xⁿ = (1 - a X)⁻¹`:
+`X g' = g · a X g`, that is `X g' / g = a X / (1 - a X)`. -/
+theorem powerSeries_X_mul_derivative_mk_pow {R : Type*} [CommRing R] (a : R) :
+    PowerSeries.X * PowerSeries.derivative (R := R) (PowerSeries.mk fun n => a ^ n) =
+      (PowerSeries.mk fun n => a ^ n) *
+        (PowerSeries.C a * PowerSeries.X * PowerSeries.mk fun n => a ^ n) := by
+  set g : PowerSeries R := PowerSeries.mk fun n => a ^ n
+  have hg : g * (1 - PowerSeries.C a * PowerSeries.X) = 1 :=
+    powerSeries_mk_pow_mul_one_sub_C_mul_X_eq_one a
+  -- Differentiating `g (1 - a X) = 1` gives `(1 - a X) g' = a g`.
+  have hd : (1 - PowerSeries.C a * PowerSeries.X) * PowerSeries.derivative (R := R) g =
+      PowerSeries.C a * g := by
+    have h := congrArg (PowerSeries.derivative (R := R)) hg
+    simp only [Derivation.leibniz, Derivation.map_one_eq_zero, map_sub, PowerSeries.derivative_X,
+      PowerSeries.derivative_C, smul_eq_mul, mul_one, mul_zero, add_zero] at h
+    linear_combination h
+  linear_combination PowerSeries.X * g * hd - PowerSeries.X * PowerSeries.derivative (R := R) g * hg
 
 /-- **Convolution with the geometric series.** For scalars `c k` and an element `a` of an
 algebra, the series with coefficients `∑ k ∈ range (m + 1), c k • a ^ (m - k)` is carried by
