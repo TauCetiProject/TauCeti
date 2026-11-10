@@ -88,15 +88,6 @@ section Euclidean
 
 variable {h k : EuclideanSpace ℝ (Fin 2) → ℝ}
 
-/-- A `C¹` function is Lipschitz and bounded on a compact convex set. -/
-private theorem _root_.ContDiff.exists_lipschitzOnWith_and_norm_le {E F : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {f : E → F} {s : Set E} (hf : ContDiff ℝ 1 f) (hs : Convex ℝ s) (hsc : IsCompact s) :
-    ∃ L M : ℝ≥0, LipschitzOnWith L f s ∧ ∀ x ∈ s, ‖f x‖ ≤ M := by
-  obtain ⟨L, hL⟩ := hf.contDiffOn.exists_lipschitzOnWith one_ne_zero hs hsc
-  obtain ⟨M, hM⟩ := hsc.exists_bound_of_continuousOn hf.continuous.continuousOn
-  exact ⟨L, M.toNNReal, hL, fun x hx => (hM x hx).trans (Real.le_coe_toNNReal M)⟩
-
 /-- On a ball, the nonlinearity `-(h (exp (2u) - 1) / 8 + k)` of a bounded `β`-Hölder function `u`
 with `C¹` coefficients is `β`-Hölder. -/
 private theorem exists_holderOnWith_nonlinearity (hh : ContDiff ℝ 1 h) (hk : ContDiff ℝ 1 k)
@@ -106,20 +97,24 @@ private theorem exists_holderOnWith_nonlinearity (hh : ContDiff ℝ 1 h) (hk : C
     ∃ K, HolderOnWith K β (fun x => -(h x * (Real.exp (2 * u x) - 1) / 8 + k x)) (ball c ρ) := by
   have hball : ∀ f : EuclideanSpace ℝ (Fin 2) → ℝ, ContDiff ℝ 1 f →
       ∃ K M : ℝ≥0, HolderOnWith K β f (ball c ρ) ∧ ∀ x ∈ ball c ρ, ‖f x‖ ≤ M := fun f hf => by
-    obtain ⟨L, M, hL, hM⟩ :=
-      hf.exists_lipschitzOnWith_and_norm_le (convex_closedBall c ρ) (isCompact_closedBall c ρ)
-    have hMb : ∀ x ∈ ball c ρ, ‖f x‖ ≤ M := fun x hx => hM x (ball_subset_closedBall hx)
-    exact ⟨_, M, (hL.mono ball_subset_closedBall).holderOnWith_of_norm_le hMb hβ, hMb⟩
+    obtain ⟨L, hL⟩ := hf.contDiffOn.exists_lipschitzOnWith one_ne_zero (convex_closedBall c ρ)
+      (isCompact_closedBall c ρ)
+    obtain ⟨M, hM⟩ :=
+      (isCompact_closedBall c ρ).exists_bound_of_continuousOn hf.continuous.continuousOn
+    have hMb : ∀ x ∈ ball c ρ, ‖f x‖ ≤ M.toNNReal := fun x hx =>
+      (hM x (ball_subset_closedBall hx)).trans (Real.le_coe_toNNReal M)
+    exact ⟨_, _, (hL.mono ball_subset_closedBall).holderOnWith_of_norm_le hMb hβ, hMb⟩
   obtain ⟨Kh, Mh, hHh, hMh⟩ := hball h hh
   obtain ⟨Kk, -, hHk, -⟩ := hball k hk
-  obtain ⟨LΦ, MΦ, hLΦ, hMΦ⟩ :=
-    (show ContDiff ℝ 1 fun t : ℝ => -(Real.exp (2 * t) - 1) / 8 by fun_prop)
-      |>.exists_lipschitzOnWith_and_norm_le (convex_Icc (-M) M) isCompact_Icc
+  have hΦ : ContDiff ℝ 1 fun t : ℝ => -(Real.exp (2 * t) - 1) / 8 := by fun_prop
+  obtain ⟨LΦ, hLΦ⟩ := hΦ.contDiffOn.exists_lipschitzOnWith one_ne_zero (convex_Icc (-M) M)
+    isCompact_Icc
+  obtain ⟨MΦ, hMΦ⟩ := isCompact_Icc.exists_bound_of_continuousOn hΦ.continuous.continuousOn
   have hmaps : MapsTo u (ball c ρ) (Icc (-M) M) := fun x hx => abs_le.1 (huM x hx)
   have hE := hLΦ.holderOnWith.comp hu hmaps
   rw [one_mul] at hE
   have hprod := (ContinuousLinearMap.mul ℝ ℝ).holderOnWith_comp₂ hHh hE hMh
-    fun x hx => hMΦ _ (hmaps hx)
+    (Mg := MΦ.toNNReal) fun x hx => (hMΦ _ (hmaps hx)).trans (Real.le_coe_toNNReal MΦ)
   have hneg : HolderOnWith Kk β (fun x => -k x) (ball c ρ) :=
     HolderOnWith.of_dist_le fun x hx y hy => by
       rw [dist_neg_neg]
@@ -331,11 +326,7 @@ private theorem weak_compAffineIsometryEquivL {F : Type*} [NormedAddCommGroup F]
   have hemb : MeasurableEmbedding g.symm := g.symm.toHomeomorph.measurableEmbedding
   -- The gradient of `φ ∘ g` at `z` is `g⁻¹ (∇φ (g z))`.
   have hinner : ∀ z a, ⟪∇ (φ ∘ g) z, a⟫ = ⟪∇ φ (g z), g a⟫ := fun z a => by
-    have hd : HasFDerivAt (φ ∘ g) ((fderiv ℝ φ (g z)).comp (g : E →L[ℝ] F)) z :=
-      ((hφ.differentiable (by simp)) (g z)).hasFDerivAt.comp z
-        g.toContinuousLinearEquiv.hasFDerivAt
-    rw [gradient, gradient, hd.fderiv, toDual_symm_apply, toDual_symm_apply,
-      ContinuousLinearMap.comp_apply, LinearIsometryEquiv.coe_coe'']
+    rw [gradient_comp_linearIsometryEquiv_right, ← g.inner_map_map, g.apply_symm_apply]
   -- Test the equation for `u` against `φ ∘ g`, and change variables by `g⁻¹`.
   have hψ := hu (φ ∘ g) (hφ.comp g.contDiff) (hφc.comp_homeomorph g.toHomeomorph)
   rw [← hmp.integral_comp hemb, ← hmp.integral_comp hemb] at hψ
