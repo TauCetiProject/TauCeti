@@ -175,10 +175,13 @@ theorem exists_ae_eq_const_of_ae_prod_eq [SFinite ν] {δ : Type*} {f : α → �
 
 /-- **A rectangle bound for an integral against a product of conditional laws.** If `f` is bounded
 by `b` on `s ×ˢ t`, then its lower Lebesgue integral against the product of the laws of `μ` and `ν`
-conditioned on `s` and on `t` is at most `b`: conditioning confines each coordinate to its own set
-almost surely, so the bound holds almost everywhere on the product. The sets need not be
-measurable, and their measures may be zero or infinite: either case makes the corresponding
-conditional measure zero. -/
+conditioned on `s` and on `t` is at most `b`. The proof passes to a measurable minorant `g ≤ f`
+with the same integral: the set `{b < g}` is measurable, and each of its sections at a point of
+`s` misses `t`, hence is null for the conditional law of `ν`, so the set is null for the product.
+Arbitrary conditioning sets need not carry full conditional measure in the almost-everywhere sense,
+so the bound is on the lower integral and not an almost-everywhere bound for `f` itself. The sets
+need not be measurable, and their measures may be zero or infinite: either case makes the
+corresponding conditional measure zero. -/
 theorem lintegral_cond_prod_le {s : Set α} {t : Set β} {f : α × β → ℝ≥0∞} {b : ℝ≥0∞}
     (hf : ∀ x ∈ s, ∀ y ∈ t, f (x, y) ≤ b) :
     ∫⁻ z, f z ∂((μ[|s]).prod (ν[|t])) ≤ b := by
