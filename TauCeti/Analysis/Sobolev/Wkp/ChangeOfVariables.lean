@@ -296,7 +296,7 @@ theorem Wkp.norm_iteratedGradient_le_of_ae_eq_adjoint_comp_comp {A : E →L[ℝ]
       ((Lp.aestronglyMeasurable _).comp_quasiMeasurePreserving hqmp) ?_ p
     filter_upwards [hD] with y hy
     rw [hy, Function.comp_apply]
-    exact e.norm_le_inv_mul_norm_adjoint_comp_comp hlam he (Wkp.iteratedGradient 1 u (e y))
+    exact e.norm_le_inv_mul_norm_adjoint_comp_comp he (Wkp.iteratedGradient 1 u (e y))
   -- Back to real norms, cancelling `δ`.
   have hδr : 0 < δ.toReal := by
     rw [hδ, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (abs_nonneg _)]

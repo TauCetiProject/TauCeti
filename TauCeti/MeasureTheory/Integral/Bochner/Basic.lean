@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Algebra.Polynomial.Roots
+import TauCeti.Analysis.SpecialFunctions.Sqrt
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.Mul
 import Mathlib.MeasureTheory.Measure.Haar.Unique
@@ -42,6 +43,8 @@ for set and probability integrals.
 
 * `ofReal_integral_le_lintegral_ofReal` bounds the positive part of a real-valued
   function's integral by the integral of its pointwise positive part.
+* `ofReal_integral_sq_div_le_lintegral_enorm` bounds `∫ h² / C` by the `L¹` norm `∫⁻ ‖h‖ₑ` of
+  a real-valued function `h` with `|h| ≤ C` almost everywhere.
 * `lintegral_ofReal_eq_one` gives a probability density (almost everywhere nonnegative, with
   integral one) total extended mass one.
 * `ofReal_integral_add_ofReal_integral_le` adds the positive parts of two integrals whose
@@ -411,6 +414,24 @@ theorem ofReal_integral_le_lintegral_ofReal {Ω : Type*} [MeasurableSpace Ω]
   · rw [integral_undef hf]
     simp
 
+/-- For a real-valued function bounded by `C` almost everywhere, the integral of its square
+divided by `C` is at most its `L¹` norm. No integrability, measurability or sign assumption is
+needed: for `C ≤ 0` the left-hand side vanishes. -/
+theorem ofReal_integral_sq_div_le_lintegral_enorm {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} {h : Ω → ℝ} {C : ℝ} (hb : ∀ᵐ x ∂μ, |h x| ≤ C) :
+    ENNReal.ofReal ((∫ x, h x ^ 2 ∂μ) / C) ≤ ∫⁻ x, ‖h x‖ₑ ∂μ := by
+  rcases le_or_gt C 0 with hC | hC
+  · rw [ENNReal.ofReal_of_nonpos
+      (div_nonpos_of_nonneg_of_nonpos (integral_nonneg fun x => sq_nonneg _) hC)]
+    exact zero_le
+  rw [← integral_div]
+  refine ofReal_integral_le_lintegral_ofReal.trans (lintegral_mono_ae ?_)
+  filter_upwards [hb] with x hx
+  rw [Real.enorm_eq_ofReal_abs]
+  refine ENNReal.ofReal_le_ofReal ?_
+  rw [div_le_iff₀ hC, ← sq_abs]
+  nlinarith [abs_nonneg (h x)]
+
 /-- The integral of the pointwise minimum of two integrable functions is at most the integral of
 the first one. -/
 theorem integral_min_le_left {α : Type*} [MeasurableSpace α] {μ : Measure α} {f g : α → ℝ}
@@ -676,6 +697,40 @@ theorem nonpos_nonneg_of_mem_Icc_of_integral_eq_zero {Ω : Type*} [mΩ : Measura
   constructor
   · simpa [hmean] using integral_mono_ae (integrable_const a) hX (hbound.mono fun ω h => h.1)
   · simpa [hmean] using integral_mono_ae hX (integrable_const b) (hbound.mono fun ω h => h.2)
+
+/-- If `|u - g| ≤ W` almost everywhere for a finite measure `ν`, then
+`∫ g² ≤ 2 ∫ u² + 2 W² ν(univ)`, since `g² ≤ 2 u² + 2 (u - g)²`. -/
+theorem integral_sq_le_two_mul_integral_sq_add {α : Type*} [MeasurableSpace α] {ν : Measure α}
+    [IsFiniteMeasure ν] {u g : α → ℝ} {W : ℝ} (hu : Integrable (fun x => u x ^ 2) ν)
+    (h : ∀ᵐ x ∂ν, |u x - g x| ≤ W) :
+    ∫ x, g x ^ 2 ∂ν ≤ 2 * ∫ x, u x ^ 2 ∂ν + 2 * W ^ 2 * ν.real Set.univ := by
+  have hrhs : ∫ x, (2 * u x ^ 2 + 2 * W ^ 2) ∂ν =
+      2 * ∫ x, u x ^ 2 ∂ν + 2 * W ^ 2 * ν.real Set.univ := by
+    rw [integral_add (hu.const_mul 2) (integrable_const _), integral_const_mul, integral_const,
+      smul_eq_mul]
+    ring
+  rw [← hrhs]
+  refine integral_mono_of_nonneg (Eventually.of_forall fun _ => sq_nonneg _)
+    ((hu.const_mul 2).add (integrable_const _)) ?_
+  filter_upwards [h] with x hx
+  have habs : |u x - g x| ^ 2 ≤ W ^ 2 := pow_le_pow_left₀ (abs_nonneg _) hx 2
+  rw [sq_abs] at habs
+  nlinarith [sq_nonneg (u x + (u x - g x))]
+
+/-- If `|u - g| ≤ W` almost everywhere for a finite measure `ν`, then
+`√∫ g² ≤ √2 √∫ u² + √2 W √(ν univ)`. -/
+theorem sqrt_integral_sq_le_of_ae_abs_sub_le {α : Type*} [MeasurableSpace α] {ν : Measure α}
+    [IsFiniteMeasure ν] {u g : α → ℝ} {W : ℝ} (hW : 0 ≤ W)
+    (hu : Integrable (fun x => u x ^ 2) ν) (h : ∀ᵐ x ∂ν, |u x - g x| ≤ W) :
+    √(∫ x, g x ^ 2 ∂ν) ≤ √2 * √(∫ x, u x ^ 2 ∂ν) + √2 * W * √(ν.real Set.univ) := by
+  calc √(∫ x, g x ^ 2 ∂ν)
+      ≤ √(2 * ∫ x, u x ^ 2 ∂ν + 2 * W ^ 2 * ν.real Set.univ) :=
+        Real.sqrt_le_sqrt (integral_sq_le_two_mul_integral_sq_add hu h)
+    _ ≤ √(2 * ∫ x, u x ^ 2 ∂ν) + √(2 * W ^ 2 * ν.real Set.univ) :=
+        Real.sqrt_add_le_add_sqrt _ _
+    _ = _ := by
+        rw [Real.sqrt_mul zero_le_two, Real.sqrt_mul (by positivity), Real.sqrt_mul zero_le_two,
+          Real.sqrt_sq hW]
 
 /-- A measure against which an integrable, almost everywhere positive function has integral zero
 is zero. -/
