@@ -40,7 +40,9 @@ and `C¹` maps it obeys the following laws.
   sphere (`TauCeti.cylinderAction_sub_cylinderAction`).
 
 For a closed `C¹` form the action is moreover unchanged along a `C²` homotopy of caps fixing the
-loop (`TauCeti.cylinderAction_eq_of_homotopy`).
+loop (`TauCeti.cylinderAction_eq_of_homotopy`). The capped action `TauCeti.cappedLoopAction` of
+capped Floer theory uses the opposite orientation and sign
+(`TauCeti.cappedLoopAction_comp_prodMap_one_sub_eq_neg_cylinderAction`).
 
 The action depends on the reference cylinder in general. It only depends on the loop:
 
