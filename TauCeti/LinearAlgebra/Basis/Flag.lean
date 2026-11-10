@@ -280,29 +280,39 @@ theorem flagPivots_eq_image_iff {r : ℕ} {p : Fin r → Fin n} (hp : StrictMono
   refine forall_congr' fun j ↦ ?_
   rw [filter_image, card_image_of_injective _ hp.injective]
 
-/-- A vector of `W` whose coordinates at the pivots of `W` all vanish is zero. -/
-theorem eq_zero_of_repr_flagPivots_eq_zero {x : V} (hx : x ∈ W)
-    (h : ∀ i ∈ b.flagPivots W, b.repr x i = 0) : x = 0 := by
-  by_contra hx₀
-  have hs : (b.repr x).support.Nonempty := by
-    simpa [Finsupp.support_nonempty_iff] using hx₀
-  set i := (b.repr x).support.max' hs
-  have hi : b.repr x i ≠ 0 := Finsupp.mem_support_iff.mp ((b.repr x).support.max'_mem hs)
-  refine hi (h i (mem_flagPivots.mpr ⟨x, hx, ?_, hi⟩))
+/-- The last index in the support of the coordinates of a vector of `W` is a pivot of `W`. -/
+theorem max_support_mem_flagPivots {x : V} (hx : x ∈ W) (hs : (b.repr x).support.Nonempty) :
+    (b.repr x).support.max' hs ∈ b.flagPivots W := by
+  refine mem_flagPivots.mpr ⟨x, hx, ?_,
+    Finsupp.mem_support_iff.mp ((b.repr x).support.max'_mem hs)⟩
   rw [mem_flag_iff_repr_eq_zero]
   intro j hj
   by_contra hj'
   exact (Fin.castSucc_lt_iff_succ_le.mpr hj).not_ge
     (Fin.castSucc_le_castSucc_iff.mpr ((b.repr x).support.le_max' j (by simpa using hj')))
 
-/-- For a pivot `i` of `W`, there is a unique vector of `W ⊓ b.flag i.succ` whose coordinates at
-the pivots of `W` are those of `b i`: the row with pivot `i` of the reduced echelon basis of `W`
-adapted to the flag. -/
-theorem existsUnique_flagEchelon {i : Fin n} (hi : i ∈ b.flagPivots W) :
+/-- A vector of `W` whose coordinates at the pivots of `W` all vanish is zero. -/
+theorem eq_zero_of_repr_flagPivots_eq_zero {x : V} (hx : x ∈ W)
+    (h : ∀ i ∈ b.flagPivots W, b.repr x i = 0) : x = 0 := by
+  by_contra hx₀
+  have hs : (b.repr x).support.Nonempty := by
+    simpa [Finsupp.support_nonempty_iff] using hx₀
+  exact (Finsupp.mem_support_iff.mp ((b.repr x).support.max'_mem hs))
+    (h _ (max_support_mem_flagPivots hx hs))
+
+/-- There is a unique vector of `W ⊓ b.flag i.succ` whose coordinates at the pivots of `W` are
+those of `b i`. For a pivot `i` of `W` it is the row with pivot `i` of the reduced echelon basis of
+`W` adapted to the flag; otherwise it is `0`. -/
+theorem existsUnique_flagEchelon (i : Fin n) :
     ∃! x, x ∈ W ⊓ b.flag i.succ ∧ ∀ j ∈ b.flagPivots W, b.repr x j = Finsupp.single i 1 j := by
   have := Module.Finite.of_basis b
   refine existsUnique_of_exists_of_unique ?_ fun x y hx hy ↦ ?_
-  · -- The coordinates at the pivots up to `i` form an isomorphism on `W ⊓ b.flag i.succ`.
+  · by_cases hi : i ∉ b.flagPivots W
+    · exact ⟨0, zero_mem _, fun j hj ↦ by
+        rw [map_zero, Finsupp.coe_zero, Pi.zero_apply,
+          Finsupp.single_eq_of_ne fun h : j = i ↦ hi (h ▸ hj)]⟩
+    rw [not_not] at hi
+    -- The coordinates at the pivots up to `i` form an isomorphism on `W ⊓ b.flag i.succ`.
     set T : Finset (Fin n) := {j ∈ b.flagPivots W | j.castSucc < i.succ}
     let φ : ↥(W ⊓ b.flag i.succ) →ₗ[K] (T → K) :=
       LinearMap.pi fun j ↦ (b.coord j).comp (Submodule.subtype _)
@@ -352,41 +362,61 @@ variable (b W) in
 unique vector of `W ⊓ b.flag i.succ` whose coordinates at the pivots of `W` are those of `b i`
 (see `Module.Basis.existsUnique_flagEchelon`); it is `0` at an index which is not a pivot. -/
 noncomputable def flagEchelon (i : Fin n) : V :=
-  if hi : i ∈ b.flagPivots W then (existsUnique_flagEchelon hi).exists.choose else 0
+  if i ∈ b.flagPivots W then (existsUnique_flagEchelon (b := b) (W := W) i).exists.choose else 0
 
 private theorem flagEchelon_spec {i : Fin n} (hi : i ∈ b.flagPivots W) :
     b.flagEchelon W i ∈ W ⊓ b.flag i.succ ∧
       ∀ j ∈ b.flagPivots W, b.repr (b.flagEchelon W i) j = Finsupp.single i 1 j := by
-  rw [flagEchelon, dite_eq_left hi]
-  exact (existsUnique_flagEchelon hi).exists.choose_spec
+  rw [flagEchelon, ite_eq_left_iff.mpr fun h ↦ (h hi).elim]
+  exact (existsUnique_flagEchelon (b := b) (W := W) i).exists.choose_spec
 
 theorem flagEchelon_mem (i : Fin n) : b.flagEchelon W i ∈ W := by
   by_cases hi : i ∈ b.flagPivots W
   · exact (flagEchelon_spec hi).1.1
   · simp [flagEchelon, hi]
 
-theorem flagEchelon_mem_flag {i : Fin n} (hi : i ∈ b.flagPivots W) :
-    b.flagEchelon W i ∈ b.flag i.succ :=
-  (flagEchelon_spec hi).1.2
+theorem flagEchelon_mem_flag (i : Fin n) : b.flagEchelon W i ∈ b.flag i.succ := by
+  by_cases hi : i ∈ b.flagPivots W
+  · exact (flagEchelon_spec hi).1.2
+  · simp [flagEchelon, hi]
 
 @[simp]
-theorem repr_flagEchelon {i j : Fin n} (hi : i ∈ b.flagPivots W) (hj : j ∈ b.flagPivots W) :
-    b.repr (b.flagEchelon W i) j = Finsupp.single i 1 j :=
-  (flagEchelon_spec hi).2 j hj
+theorem repr_flagEchelon {i j : Fin n} (hj : j ∈ b.flagPivots W) :
+    b.repr (b.flagEchelon W i) j = Finsupp.single i 1 j := by
+  by_cases hi : i ∈ b.flagPivots W
+  · exact (flagEchelon_spec hi).2 j hj
+  · have h0 : b.flagEchelon W i = 0 := by simp [flagEchelon, hi]
+    rw [h0, map_zero, Finsupp.coe_zero, Pi.zero_apply,
+      Finsupp.single_eq_of_ne fun h : j = i ↦ hi (h ▸ hj)]
 
 @[simp]
 theorem flagEchelon_of_notMem {i : Fin n} (hi : i ∉ b.flagPivots W) : b.flagEchelon W i = 0 := by
   simp [flagEchelon, hi]
 
 /-- The characterization of the reduced echelon basis vectors. -/
-theorem eq_flagEchelon {i : Fin n} (hi : i ∈ b.flagPivots W) {x : V} (hx : x ∈ W)
-    (hxF : x ∈ b.flag i.succ) (h : ∀ j ∈ b.flagPivots W, b.repr x j = Finsupp.single i 1 j) :
-    x = b.flagEchelon W i :=
-  (existsUnique_flagEchelon hi).unique ⟨⟨hx, hxF⟩, h⟩ (flagEchelon_spec hi)
+theorem eq_flagEchelon {i : Fin n} {x : V} (hx : x ∈ W)
+    (h : ∀ j ∈ b.flagPivots W, b.repr x j = Finsupp.single i 1 j) : x = b.flagEchelon W i := by
+  by_cases hi : i ∈ b.flagPivots W
+  · -- A coordinate beyond `i` vanishes: the last one in the support would be another pivot.
+    have hxF : x ∈ b.flag i.succ := by
+      rw [mem_flag_iff_repr_eq_zero]
+      intro j hj
+      by_contra hj'
+      have hs : (b.repr x).support.Nonempty := ⟨j, by simpa using hj'⟩
+      have hk := h _ (max_support_mem_flagPivots hx hs)
+      have hij : i < j := Fin.succ_le_castSucc_iff.mp hj
+      have hjk : j ≤ (b.repr x).support.max' hs :=
+        (b.repr x).support.le_max' j (by simpa using hj')
+      rw [Finsupp.single_eq_of_ne (hij.trans_le hjk).ne'] at hk
+      exact (Finsupp.mem_support_iff.mp ((b.repr x).support.max'_mem hs)) hk
+    exact (existsUnique_flagEchelon (b := b) (W := W) i).unique ⟨⟨hx, hxF⟩, h⟩ (flagEchelon_spec hi)
+  · rw [flagEchelon_of_notMem hi]
+    exact eq_zero_of_repr_flagPivots_eq_zero hx fun j hj ↦ by
+      rw [h j hj, Finsupp.single_eq_of_ne (fun e : j = i ↦ hi (e ▸ hj))]
 
 theorem linearIndependent_flagEchelon :
     LinearIndependent K fun i : b.flagPivots W ↦ b.flagEchelon W i :=
-  linearIndependent_of_repr_eq_single fun i _ hj ↦ repr_flagEchelon i.2 hj
+  linearIndependent_of_repr_eq_single fun _ _ hj ↦ repr_flagEchelon hj
 
 /-- The reduced echelon basis vectors of `W` span `W`. -/
 theorem span_flagEchelon : span K (Set.range fun i : b.flagPivots W ↦ b.flagEchelon W i) = W := by
@@ -462,22 +492,20 @@ noncomputable def flagCellEquiv (S : Finset (Fin n)) :
     -- The row built from the free entries of the echelon basis vector is that vector.
     refine b.repr.injective (Finsupp.ext fun j ↦ ?_)
     by_cases hj : j ∈ b.flagPivots W
-    · rw [repr_echelonRow_of_mem _ _ hj, repr_flagEchelon s.2 hj]
+    · rw [repr_echelonRow_of_mem _ _ hj, repr_flagEchelon hj]
     rw [repr_echelonRow, ite_eq_right (fun h : j = s ↦ hj (h ▸ s.2))]
     split_ifs with h
     · rfl
     · have hsj : (s : Fin n) < j := lt_of_not_ge fun hjs ↦ h (mem_echelonFreeEntries.mpr
         ⟨s.2, lt_of_le_of_ne hjs fun h' : j = s ↦ hj (h' ▸ s.2), hj⟩)
-      exact ((b.mem_flag_iff_repr_eq_zero.mp (flagEchelon_mem_flag s.2)) j
+      exact ((b.mem_flag_iff_repr_eq_zero.mp (flagEchelon_mem_flag s)) j
         (Fin.succ_le_castSucc_iff.mpr hsj)).symm
   right_inv a := by
     funext ⟨⟨s, j⟩, hx⟩
     have hs : s ∈ S := (mem_echelonFreeEntries.mp hx).1
     have hS := flagPivots_span_echelonRow (b := b) S a
-    have hsU : s ∈ b.flagPivots (span K (Set.range fun s : S ↦ b.echelonRow S a s)) := by
-      rwa [hS]
-    have h := eq_flagEchelon hsU (subset_span ⟨⟨s, hs⟩, rfl⟩) (echelonRow_mem_flag S a s)
-      fun t ht ↦ repr_echelonRow_of_mem a s (by rwa [hS] at ht)
+    have h := eq_flagEchelon (W := span K (Set.range fun s : S ↦ b.echelonRow S a s))
+      (subset_span ⟨⟨s, hs⟩, rfl⟩) fun t ht ↦ repr_echelonRow_of_mem a s (by rwa [hS] at ht)
     dsimp only
     rw [← h, repr_echelonRow, ite_eq_right (mem_echelonFreeEntries.mp hx).2.1.ne,
       dite_eq_left hx]
