@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Basic
+public import Mathlib.Analysis.Complex.Convex
 
 /-!
 # Geometry of the complex slit plane
@@ -21,6 +21,8 @@ half-plane lies in the slit plane as well, and positive real scaling preserves i
 
 Translating a point of the slit plane by a nonnegative real number keeps it in the slit plane,
 and translating a point of `slitPlane ∪ {0}` by a positive one lands in the slit plane.
+If `1 - z` lies in the slit plane, so does `1 - zt` for `t ∈ [0, 1]`; this fixes the
+branch of the power factors in Euler-type integrals.
 The module also records a locally uniform lower bound for the distance from a point of the slit
 plane to the closed negative half-axis. This bound locally dominates slit-plane kernels and thus
 supports differentiation and holomorphy arguments for parameter-dependent Stieltjes integrals.
@@ -262,5 +264,16 @@ theorem exists_norm_inv_ofReal_add_le {p : ℂ} (hp : p ∈ slitPlane) :
   exact inv_anti₀ (by positivity) (h t ht)
 
 end TauCeti
+
+namespace Complex
+
+/-- Along the segment from `0` to a point of the cut plane, `1 - zt` stays in the slit
+plane. This keeps the principal powers in Euler-type integrals on a single branch. -/
+theorem one_sub_mul_ofReal_mem_slitPlane {z : ℂ} (hz : 1 - z ∈ slitPlane)
+    {t : ℝ} (ht : t ∈ Set.Icc 0 1) : 1 - z * (t : ℂ) ∈ slitPlane := by
+  simpa only [sub_eq_add_neg, Complex.real_smul, mul_neg, mul_comm] using
+    starConvex_one_slitPlane.add_smul_mem (y := -z) hz ht.1 ht.2
+
+end Complex
 
 end
