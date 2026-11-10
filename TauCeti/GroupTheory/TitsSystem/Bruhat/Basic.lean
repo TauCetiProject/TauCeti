@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.GroupTheory.DoubleCoset.Basic
 public import TauCeti.GroupTheory.DoubleCoset.Identity
 public import TauCeti.GroupTheory.TitsSystem.Basic
 
@@ -190,26 +191,13 @@ private theorem doubleCoset_subset_mul_doubleCoset_of_mem (B C D : Subgroup G) {
     exact DoubleCoset.mem_doubleCoset.mpr
       ⟨c₁, hc₁, c₂ * b₂, D.mul_mem hc₂ hb₂, by simp [mul_assoc]⟩
 
-/-- The double coset of a product occurs in the product of the corresponding double cosets. -/
-theorem doubleCoset_mul_subset_mul_doubleCoset (B C D : Subgroup G) (r w : G) :
-    DoubleCoset.doubleCoset (r * w) B D ⊆
-      DoubleCoset.doubleCoset r B C * DoubleCoset.doubleCoset w C D := by
-  rintro x hx
-  obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hx
-  refine ⟨b₁ * r, ?_, w * b₂, ?_, ?_⟩
-  · exact DoubleCoset.mem_doubleCoset.mpr
-      ⟨b₁, hb₁, 1, C.one_mem, by simp⟩
-  · exact DoubleCoset.mem_doubleCoset.mpr
-      ⟨1, C.one_mem, b₂, hb₂, by simp⟩
-  · simp only [mul_assoc]
-
 /-- The adjacent cell always occurs in the product of cells on the right. -/
 theorem subset_bruhatCell_mul_right (w s : T.WeylGroup) :
     T.bruhatCell (w * s) ⊆ T.bruhatCell w * T.bruhatCell s := by
   obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective w
   obtain ⟨m, rfl⟩ := QuotientGroup.mk_surjective s
   rw [← QuotientGroup.mk_mul, T.bruhatCell_mk, T.bruhatCell_mk, T.bruhatCell_mk]
-  exact doubleCoset_mul_subset_mul_doubleCoset T.subgroupB T.subgroupB T.subgroupB _ _
+  exact DoubleCoset.doubleCoset_mul_subset_mul_doubleCoset T.subgroupB T.subgroupB T.subgroupB _ _
 
 /-- **Multiplication by a simple Bruhat cell.** If `r` represents a simple reflection and `w`
 lies in `N`, then `(B r B)(B w B)` is either the adjacent cell `B (r w) B` or the union of that
@@ -245,7 +233,7 @@ private theorem mul_doubleCoset_eq_or_eq_union_of_mem_simple {s : T.WeylGroup}
   let D := DoubleCoset.doubleCoset (w : G) T.subgroupB T.subgroupB
   have hC : C ⊆ A := by
     simpa only [C, A, Subgroup.coe_mul] using
-      doubleCoset_mul_subset_mul_doubleCoset T.subgroupB T.subgroupB T.subgroupB
+      DoubleCoset.doubleCoset_mul_subset_mul_doubleCoset T.subgroupB T.subgroupB T.subgroupB
         (r₀ : G) (w : G)
   have hsubset' : A ⊆ C ∪ D := hsubset w
   by_cases hw : (w : G) ∈ A
