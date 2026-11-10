@@ -85,7 +85,8 @@ theorem IsLatticeSpan.tendsto_renewalMeasure_real_mul (ha : F.IsLatticeSpan a)
   simpa only [← hmass, hrateReal] using hlim
 
 /-- **Lattice Blackwell theorem.** At greatest span `a`, the increase in expected renewal
-count from `n * a` to `(n + 1) * a` tends to `a / μ`, with reciprocal taken in `ℝ≥0∞`.
+count from `n * a` to `(n + 1) * a` tends to `a` times the real value of the reciprocal
+(in `ℝ≥0∞`) of the mean `∫⁻ t, (t : ℝ≥0∞) ∂F`.
 The initial artificial arrival is excluded from the renewal function, while genuine
 zero-time arrivals are retained. Infinite mean gives limit zero. -/
 theorem IsLatticeSpan.tendsto_renewalFunction_succ_mul_sub (ha : F.IsLatticeSpan a)
