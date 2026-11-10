@@ -32,6 +32,11 @@ and so separate points.
   `Module.Dual.finrank_ker_add_one_of_ne_zero`.
 * `Module.Dual.finrank_quotient_ker_eq_one_of_ne_zero`: the kernel of a nonzero functional has
   codimension one.
+* `Module.Dual.apply_smul_eq_apply_smul_of_finrank_eq_one`: any two functionals on a line are
+  proportional, `c w • ψ = ψ w • c`.
+* `Module.Dual.smul_evalEquiv_symm_dualMap`: on a line `L`, the vector whose pairings are
+  `ψ ↦ β (C.symm ψ)` for `C : P ≃ L^*` is `β p / C p w` times `w`, in the multiplied-out form
+  `C p w • x = β p • w`.
 * `Module.Dual.linearIndependent_sub_div_smul` and `Module.Dual.span_sub_div_smul_eq_ker`: if
   `X` is a basis and `f (X j) ≠ 0`, the vectors `X i - (f (X i) / f (X j)) • X j`, `i ≠ j`, form a
   basis of `ker f`.
@@ -94,9 +99,11 @@ theorem finrank_ker_inf_add_one {f : Dual K V} {U : Submodule K V} [FiniteDimens
   rwa [hker, (Submodule.comapSubtypeEquivOfLe inf_le_right).finrank_eq] at hfin
 
 /-- A hyperplane contained in the kernel of a nonzero functional equals that kernel. -/
-theorem ker_eq_of_le_of_finrank_add_one [FiniteDimensional K V] (f : Dual K V)
+theorem ker_eq_of_le_of_finrank_add_one (f : Dual K V)
     (hf : f ≠ 0) {S : Submodule K V} (hle : S ≤ LinearMap.ker f)
     (hdim : finrank K S + 1 = finrank K V) : LinearMap.ker f = S := by
+  -- the hypothesis `hdim` forces `V` to be finite-dimensional
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
   apply (Submodule.eq_of_le_of_finrank_eq hle ?_).symm
   have hker := finrank_ker_add_one_of_ne_zero hf
   omega
@@ -123,12 +130,15 @@ theorem linearIndependent_sub_div_smul (f : Dual K V) {ι : Type*} {X : ι → V
 /-- If `X` is a family of `finrank K V` linearly independent vectors and `f (X j) ≠ 0`, the vectors
 `X i - (f (X i) / f (X j)) • X j`, `i ≠ j`, span the kernel of `f`. Together with
 `Module.Dual.linearIndependent_sub_div_smul`, they form a basis of `ker f`. -/
-theorem span_sub_div_smul_eq_ker [FiniteDimensional K V] (f : Dual K V) {ι : Type*} [Fintype ι]
+theorem span_sub_div_smul_eq_ker (f : Dual K V) {ι : Type*} [Fintype ι]
     {X : ι → V} (hX : LinearIndependent K X) (hcard : Fintype.card ι = finrank K V) {j : ι}
     (hj : f (X j) ≠ 0) :
     Submodule.span K (Set.range fun i : {i // i ≠ j} ↦ X i - (f (X i) / f (X j)) • X j) =
       LinearMap.ker f := by
   classical
+  -- the index `j` makes `ι` nonempty, so `hcard` forces `V` to be finite-dimensional
+  have : FiniteDimensional K V :=
+    Module.finite_of_finrank_pos (hcard ▸ Fintype.card_pos_iff.2 ⟨j⟩)
   have hli := f.linearIndependent_sub_div_smul hX j
   refine Submodule.eq_of_le_of_finrank_eq ?_ ?_
   · rw [Submodule.span_le]
@@ -161,6 +171,31 @@ theorem finrank_span_restrict_add_finrank_inf_iInf_ker (L : ι → Dual K V)
   rw [hA, (Submodule.comapSubtypeEquivOfLe
     (inf_le_left : U ⊓ ⨅ i ∈ s, LinearMap.ker (L i) ≤ U)).finrank_eq] at h
   exact h
+
+/-- Any two functionals on a line are proportional: `c w • ψ = ψ w • c` for every vector `w`. -/
+theorem apply_smul_eq_apply_smul_of_finrank_eq_one (hV : finrank K V = 1) (c ψ : Dual K V)
+    (w : V) : c w • ψ = ψ w • c := by
+  obtain ⟨e, -, he⟩ := finrank_eq_one_iff'.mp hV
+  ext z
+  obtain ⟨s, rfl⟩ := he w
+  obtain ⟨t, rfl⟩ := he z
+  simp only [LinearMap.smul_apply, map_smul, smul_eq_mul]
+  ring
+
+/-- In a line `L`, let `x` be the vector with pairings `ψ x = β (C.symm ψ)`, for an isomorphism
+`C : P ≃ L^*` and a functional `β` on `P`. Then `C p w • x = β p • w` for all `p` and `w`. -/
+theorem smul_evalEquiv_symm_dualMap {L P : Type*} [AddCommGroup L] [Module K L]
+    [FiniteDimensional K L] [AddCommGroup P] [Module K P] (hL : finrank K L = 1)
+    (C : P ≃ₗ[K] Dual K L) (β : Dual K P) (p : P) (w : L) :
+    C p w • (evalEquiv K L).symm (C.symm.dualMap β) = β p • w := by
+  rw [← sub_eq_zero]
+  refine (forall_dual_apply_eq_zero_iff K _).mp fun ψ ↦ ?_
+  -- Applying `β ∘ C.symm` to the proportionality `C p w • ψ = ψ w • C p` of functionals on `L`.
+  have h := congrArg (fun q ↦ β (C.symm q))
+    ((C p).apply_smul_eq_apply_smul_of_finrank_eq_one hL ψ w)
+  simp only [map_smul, LinearEquiv.symm_apply_apply, smul_eq_mul] at h
+  simp only [map_sub, map_smul, apply_evalEquiv_symm_apply, LinearEquiv.dualMap_apply, smul_eq_mul,
+    h, mul_comm, sub_self]
 
 end Field
 

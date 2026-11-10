@@ -218,6 +218,15 @@ def IsDirichletEigenvalue (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMe
     energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
       kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ
 
+/-- Unfolding `TauCeti.PDE.IsDirichletEigenvalue`: a nonzero `u ∈ H¹₀(Ω)` with
+`a(u, v) = κ ⟪u, v⟫_{L²(Ω)}` for every `v ∈ H¹₀(Ω)`. -/
+theorem isDirichletEigenvalue_iff (kappa : ℝ) :
+    IsDirichletEigenvalue mu Omega a b c kappa ↔
+      ∃ u : W1p0 mu Omega 2, u ≠ 0 ∧ ∀ v : W1p0 mu Omega 2,
+        energyFormH1 a b c (u : W1p mu Omega 2) (v : W1p mu Omega 2) =
+          kappa * ⟪W1p.value (u : W1p mu Omega 2), W1p.value (v : W1p mu Omega 2)⟫_ℝ :=
+  Iff.rfl
+
 /-- Being a Dirichlet eigenvalue, written out as the integral identity
 `a(u, v) = κ ∫_Ω u v`. -/
 theorem isDirichletEigenvalue_iff_setIntegral (kappa : ℝ) :
@@ -647,7 +656,7 @@ theorem le_of_isDirichletEigenvalue_of_subset_ball
     (fun _x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
   exact le_of_isDirichletEigenvalue hcoeff
     (isCoercive_energyFormH1L0 hcoeff
-      (energyFormH1_poincare_constant_pos h.pos hbeta (by linarith) hsmall)
+      (energyFormH1_poincare_constant_pos hbeta (by linarith) hsmall)
       (fun w ↦ mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc hb_bound hc_bound
         hc_nonneg hball w.2))
     (fun w ↦ mul_norm_sq_le_energyFormH1_self_of_subset_ball h ha hb hc hb_bound hc_bound

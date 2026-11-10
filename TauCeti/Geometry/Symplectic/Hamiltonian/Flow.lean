@@ -14,9 +14,11 @@ import Mathlib.Analysis.Calculus.MeanValue
 # Autonomous Hamiltonian flows
 
 A globally Lipschitz Hamiltonian vector field on a finite-dimensional symplectic vector space
-has a canonical global flow. The Hamiltonian is constant along each orbit. For a `C²`
-Hamiltonian, every time map preserves the symplectic form on tangent vectors: differentiating
-the pairing of two variations and using symmetry of the Hessian gives zero.
+has a canonical global flow. This applies in particular to every `C²` Hamiltonian with compact
+support (`TauCeti.SymplecticForm.exists_lipschitzWith_hamiltonianVectorField`). The Hamiltonian
+is constant along each orbit. For a `C²` Hamiltonian, every time map preserves the symplectic
+form on tangent vectors: differentiating the pairing of two variations and using symmetry of the
+Hessian gives zero.
 
 The construction and variational equation reuse `TauCeti.flowOfLipschitz`.
 See McDuff--Salamon, *Introduction to Symplectic Topology*, Hamiltonian flows.
