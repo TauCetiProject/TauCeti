@@ -10,6 +10,8 @@ public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 -- Non-public: measurability of the sections `ν.map (Prod.mk a)` is used only inside a proof.
 import Mathlib.MeasureTheory.Measure.Prod
+-- Non-public: `Kernel.sum` supplies measurability of countable sums inside a proof.
+import Mathlib.Probability.Kernel.Defs
 
 /-!
 # Measurability of measure-valued maps
@@ -56,10 +58,9 @@ namespace MeasureTheory
 theorem measurable_sum_measure {β ι α : Type*} [MeasurableSpace β] [MeasurableSpace α]
     [Countable ι] {μ : β → ι → Measure α}
     (h : ∀ i, Measurable fun b => μ b i) :
-    Measurable fun b => Measure.sum (μ b) := by
-  refine Measure.measurable_measure.2 fun s hs => ?_
-  simp only [Measure.sum_apply _ hs]
-  exact Measurable.tsum fun i => (Measure.measurable_coe hs).comp (h i)
+    Measurable fun b => Measure.sum (μ b) :=
+  (ProbabilityTheory.Kernel.sum fun i =>
+    (⟨fun b => μ b i, h i⟩ : ProbabilityTheory.Kernel β α)).measurable
 
 /-- A countable mixture of Dirac measures at fixed atoms `g i` is measurable in the weights.
 
