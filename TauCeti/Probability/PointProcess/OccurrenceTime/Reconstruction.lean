@@ -37,6 +37,30 @@ open scoped ENNReal NNReal Topology
 
 namespace MeasureTheory.Measure
 
+/-- The measure with one occurrence at every finite entry of a time sequence.
+Repeated entries retain their multiplicity, including at zero; infinite entries
+contribute no mass. No ordering or nonaccumulation hypothesis is required. -/
+noncomputable def ofOccurrenceTimes (t : ℕ → ℝ≥0∞) : Measure ℝ≥0 :=
+  Measure.sum fun n => if t n = ∞ then 0 else Measure.dirac (t n).toNNReal
+
+/-- Expand the measure associated to a sequence as a sum of its finite occurrences. -/
+theorem ofOccurrenceTimes_def (t : ℕ → ℝ≥0∞) :
+    ofOccurrenceTimes t =
+      Measure.sum (fun n => if t n = ∞ then 0 else Measure.dirac (t n).toNNReal) := (rfl)
+
+/-- Forming the measure of finite occurrences is measurable in the entire time sequence. -/
+@[fun_prop]
+theorem measurable_ofOccurrenceTimes : Measurable ofOccurrenceTimes := by
+  apply Measure.measurable_of_measurable_coe
+  intro A hA
+  simp only [ofOccurrenceTimes_def, Measure.sum_apply _ hA]
+  have hm (n : ℕ) : Measurable (fun t : ℕ → ℝ≥0∞ =>
+      if t n = ∞ then (0 : Measure ℝ≥0) else Measure.dirac (t n).toNNReal) :=
+    Measurable.ite (measurableSet_eq_fun (measurable_pi_apply n) measurable_const)
+      measurable_const (Measure.measurable_dirac.comp
+        (ENNReal.measurable_toNNReal.comp (measurable_pi_apply n)))
+  exact Measurable.tsum fun n => (Measure.measurable_coe hA).comp (hm n)
+
 variable {μ ν : Measure ℝ≥0}
 
 /-- The cumulative mass counts the ordered occurrence times, including the right endpoint
@@ -55,11 +79,10 @@ theorem IsIntegerValued.apply_Iic_eq_tsum_occurrenceTime [IsLocallyFiniteMeasure
 
 /-- Every locally finite counting measure is reconstructed from its ordered finite
 occurrence times. Multiplicities are retained, and infinite times contribute no mass. -/
-theorem IsIntegerValued.eq_sum_dirac_occurrenceTime [IsLocallyFiniteMeasure μ]
-    (hμ : μ.IsIntegerValued) :
-    μ = Measure.sum (fun n : ℕ => if μ.occurrenceTime n = ∞ then 0
-      else Measure.dirac (μ.occurrenceTime n).toNNReal) := by
+theorem IsIntegerValued.eq_ofOccurrenceTimes [IsLocallyFiniteMeasure μ]
+    (hμ : μ.IsIntegerValued) : μ = ofOccurrenceTimes μ.occurrenceTime := by
   classical
+  rw [ofOccurrenceTimes_def]
   apply Measure.ext_of_Iic' μ _ (fun _ => (measure_Iic_lt_top (μ := μ)).ne)
   intro t
   rw [hμ.apply_Iic_eq_tsum_occurrenceTime, Measure.sum_apply _ measurableSet_Iic]
@@ -75,12 +98,12 @@ theorem IsIntegerValued.eq_sum_dirac_occurrenceTime [IsLocallyFiniteMeasure μ]
 /-- On locally finite counting measures, equality of ordered occurrence sequences is
 equivalent to equality of measures. The integrality assumption is essential. -/
 @[simp]
-theorem IsIntegerValued.occurrenceTime_eq_iff [IsLocallyFiniteMeasure μ]
+theorem IsIntegerValued.occurrenceTime_inj [IsLocallyFiniteMeasure μ]
     [IsLocallyFiniteMeasure ν] (hμ : μ.IsIntegerValued) (hν : ν.IsIntegerValued) :
     μ.occurrenceTime = ν.occurrenceTime ↔ μ = ν := by
   constructor
   · intro h
-    rw [hμ.eq_sum_dirac_occurrenceTime, hν.eq_sum_dirac_occurrenceTime, h]
+    rw [hμ.eq_ofOccurrenceTimes, hν.eq_ofOccurrenceTimes, h]
   · rintro rfl
     rfl
 
@@ -91,6 +114,13 @@ namespace ProbabilityTheory.IdentDistrib
 variable {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω']
   {P : Measure Ω} {P' : Measure Ω'} {N : Ω → Measure ℝ≥0} {N' : Ω' → Measure ℝ≥0}
 
+private theorem ofOccurrenceTimes_occurrenceTime_ae_eq
+    (hN : ∀ᵐ ω ∂P, IsLocallyFiniteMeasure (N ω) ∧ (N ω).IsIntegerValued) :
+    Measure.ofOccurrenceTimes ∘ (fun ω => (N ω).occurrenceTime) =ᵐ[P] N := by
+  filter_upwards [hN] with ω hω
+  have hloc : IsLocallyFiniteMeasure (N ω) := hω.1
+  exact hω.2.eq_ofOccurrenceTimes.symm
+
 /-- Equality in law of the whole ordered occurrence sequence implies equality in law of
 the temporal counting measures. Local finiteness and integrality are required only on
 full-measure events. Neither simplicity nor infinitely many occurrences is assumed. -/
@@ -100,29 +130,10 @@ theorem of_occurrenceTime
     (hN : ∀ᵐ ω ∂P, IsLocallyFiniteMeasure (N ω) ∧ (N ω).IsIntegerValued)
     (hN' : ∀ᵐ ω ∂P', IsLocallyFiniteMeasure (N' ω) ∧ (N' ω).IsIntegerValued) :
     IdentDistrib N N' P P' := by
-  classical
-  let R (t : ℕ → ℝ≥0∞) : Measure ℝ≥0 :=
-    Measure.sum fun n => if t n = ∞ then 0 else Measure.dirac (t n).toNNReal
-  have hR : Measurable R := by
-    apply Measure.measurable_of_measurable_coe
-    intro A hA
-    simp only [R, Measure.sum_apply _ hA]
-    have hm (n : ℕ) : Measurable (fun t : ℕ → ℝ≥0∞ =>
-        if t n = ∞ then (0 : Measure ℝ≥0) else Measure.dirac (t n).toNNReal) :=
-      Measurable.ite (measurableSet_eq_fun (measurable_pi_apply n) measurable_const)
-        measurable_const (Measure.measurable_dirac.comp
-          (ENNReal.measurable_toNNReal.comp (measurable_pi_apply n)))
-    exact Measurable.tsum fun n => (Measure.measurable_coe hA).comp (hm n)
-  have hRlaw := h.comp hR
-  have heq : R ∘ (fun ω => (N ω).occurrenceTime) =ᵐ[P] N := by
-    filter_upwards [hN] with ω hω
-    have := hω.1
-    exact hω.2.eq_sum_dirac_occurrenceTime.symm
-  have heq' : R ∘ (fun ω => (N' ω).occurrenceTime) =ᵐ[P'] N' := by
-    filter_upwards [hN'] with ω hω
-    have := hω.1
-    exact hω.2.eq_sum_dirac_occurrenceTime.symm
-  exact (IdentDistrib.of_ae_eq hRlaw.aemeasurable_fst heq).symm.trans
-    (hRlaw.trans (IdentDistrib.of_ae_eq hRlaw.aemeasurable_snd heq'))
+  have hRlaw := h.comp Measure.measurable_ofOccurrenceTimes
+  exact (IdentDistrib.of_ae_eq hRlaw.aemeasurable_fst
+    (ofOccurrenceTimes_occurrenceTime_ae_eq hN)).symm.trans
+      (hRlaw.trans (IdentDistrib.of_ae_eq hRlaw.aemeasurable_snd
+        (ofOccurrenceTimes_occurrenceTime_ae_eq hN')))
 
 end ProbabilityTheory.IdentDistrib
