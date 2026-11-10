@@ -51,8 +51,9 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
   there are a neighbourhood `U` of `x` and an open cone `Γ` around `ξ` such that every cutoff
   supported in `U` has localized Fourier transform rapidly decreasing on `Γ`.
 * `Distribution.exists_isOpen_cone_forall_decay_of_isCompact`: the same holds uniformly over a
-  compact set of points of microlocal smoothness, for cutoffs supported near that set away from
-  the support of `T`.
+  compact set `K` of points of microlocal smoothness: there is an open `W ⊇ K` such that it holds
+  for every cutoff supported in `W ∪ (dsupport T)ᶜ`, that is, whose support meets the support of
+  `T` only inside `W`.
 * `Distribution.IsMicrolocallySmoothAt.add`, `Distribution.waveFrontSet_add_subset`,
   `Distribution.waveFrontSet_sub_subset`, `Distribution.waveFrontSet_sum_subset`: the wave front
   set of a sum lies in the union of the wave front sets.
@@ -265,8 +266,8 @@ theorem IsMicrolocallySmoothAt.exists_nhds_cone {T : 𝓓'(Ω, ℂ)} {x ξ : E}
 
 /-- **Uniform decay over a compact set.** If `T` is microlocally smooth at `(x, ξ)` for every `x` in
 a compact set `K`, then there are an open set `W` containing `K` and an open cone `Γ` containing
-`ξ` such that every cutoff `ψ` whose support lies in `W` away from the support of `T` has localized
-Fourier transform rapidly decreasing on `Γ`. -/
+`ξ` such that every cutoff `ψ` supported in `W ∪ (dsupport T)ᶜ`, that is, whose support meets the
+support of `T` only inside `W`, has localized Fourier transform rapidly decreasing on `Γ`. -/
 theorem exists_isOpen_cone_forall_decay_of_isCompact {T : 𝓓'(Ω, ℂ)} {K : Set E} {ξ : E}
     (hK : IsCompact K) (h : ∀ x ∈ K, T.IsMicrolocallySmoothAt x ξ) :
     ∃ W : Set E, IsOpen W ∧ K ⊆ W ∧ ∃ Γ : Set E, IsOpen Γ ∧ ξ ∈ Γ ∧

@@ -31,9 +31,11 @@ to such a cutoff. Since `Aᵀ η ≠ 0`, the frequencies `η'` near the ray of `
 `‖η'‖ ≤ c ‖Aᵀ η'‖`, so decay in `Aᵀ η'` is decay in `η'`.
 
 The covectors with `Aᵀ η = 0` cannot be omitted, even for smooth `T`: along a constant map with
-value `c` the pushforward of `T` is the multiple `T χ` of the point mass at `c`, whose wave front
-set is `{c} × (E' \ {0})` (`Distribution.waveFrontSet_cutoffPushforwardCLM_const`). When `A` is
-surjective, `Aᵀ` is injective and these covectors do not occur.
+value `c` the pushforward of `T` is the multiple `T χ` of the point mass at `c`, and when `T χ ≠ 0`
+its wave front set is `{c} × (E' \ {0})` (`Distribution.waveFrontSet_cutoffPushforwardCLM_const`).
+The differential of a constant map has zero transpose; for `c = 0` the constant map is the linear
+map `0`, to which the bound above applies through its term `Aᵀ η = 0`. When `A` is surjective,
+`Aᵀ` is injective and these covectors do not occur.
 
 ## Main results
 
@@ -63,9 +65,13 @@ open scoped Distributions Topology RealInnerProductSpace InnerProduct
 
 namespace Distribution
 
-variable {E E' : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
-  {Ω : Opens E} {Ω' : Opens E'} {χ : 𝓓(Ω, ℝ)}
+variable {E E' : Type*} [NormedAddCommGroup E'] [InnerProductSpace ℝ E'] [FiniteDimensional ℝ E']
+  {Ω' : Opens E'}
+
+section Linear
+
+variable [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  {Ω : Opens E} {χ : 𝓓(Ω, ℝ)}
 
 /-- **Localized Fourier transforms of a pushforward.** The localized Fourier transform of the
 pushforward `A_* T` along a linear map `A`, with cutoff `f`, at the frequency `η`, is that of `T`
@@ -118,7 +124,7 @@ theorem IsMicrolocallySmoothAt.cutoffPushforwardCLM {A : E →L[ℝ] E'} {T : �
   refine isMicrolocallySmoothAt_iff.2 ⟨f, by simp [hfy],
     (A†) ⁻¹' Γ₀ ∩ {η' | ‖η'‖ * ‖ξ₀‖ < 2 * ‖η‖ * ‖(A†) η'‖},
     (hΓ₀.preimage (A†).continuous).inter (isOpen_lt (by fun_prop) (by fun_prop)),
-    ⟨hξ₀, show ‖η‖ * ‖ξ₀‖ < 2 * ‖η‖ * ‖ξ₀‖ by nlinarith⟩, fun t ht η' ⟨h1, h2⟩ => ⟨?_, ?_⟩,
+    ⟨hξ₀, by rw [mem_ofPred_eq]; nlinarith⟩, fun t ht η' ⟨h1, h2⟩ => ⟨?_, ?_⟩,
     fun N => ?_⟩
   · simpa using hcone₀ t ht _ h1
   · simp only [mem_ofPred_eq, map_smul, norm_smul, Real.norm_eq_abs, abs_of_pos ht] at h2 ⊢
@@ -176,11 +182,17 @@ theorem waveFrontSet_cutoffPushforwardCLM_subset_of_surjective {A : E →L[ℝ] 
   rw [h0, inner_zero_left, hz] at h
   exact inner_self_eq_zero.1 h.symm
 
-omit [FiniteDimensional ℝ E] in
+end Linear
+
+section Const
+
+variable [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E} {χ : 𝓓(Ω, ℝ)}
+
 /-- **The zero covectors cannot be omitted.** Pushing `T` forward along the constant map with
 value `c ∈ Ω'` gives the multiple `T χ` of the point mass at `c`; if `T χ ≠ 0`, its wave front set
-is `{c} × (E' \ {0})`, whatever the wave front set of `T`. The transpose of the constant map is
-zero, so all these covectors come from the term `Aᵀ η = 0` of
+is `{c} × (E' \ {0})`, whatever the wave front set of `T`. The differential of a constant map is
+zero, so the transpose of the differential kills every covector. For `c = 0` the constant map is
+the linear map `0`, and all these covectors come from the term `Aᵀ η = 0` of
 `Distribution.waveFrontSet_cutoffPushforwardCLM_subset`. -/
 theorem waveFrontSet_cutoffPushforwardCLM_const (T : 𝓓'(Ω, ℂ)) (hT : T χ ≠ 0) {c : E'}
     (hc : c ∈ Ω') :
@@ -192,5 +204,7 @@ theorem waveFrontSet_cutoffPushforwardCLM_const (T : 𝓓'(Ω, ℂ)) (hT : T χ 
     rw [cutoffPushforwardCLM_const_apply]
     simp [mul_comm]
   rw [h, waveFrontSet_smul hT, waveFrontSet_delta hc]
+
+end Const
 
 end Distribution
