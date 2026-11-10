@@ -17,7 +17,7 @@ import Mathlib.Algebra.Order.BigOperators.Ring.Finset
 # Theorems of the alternative for nonnegative vectors
 
 This file proves the classical theorems of the alternative of Gordan, Stiemke and Tucker over an
-arbitrary linearly ordered field, and Tucker's theorem for finite free `ℤ`-modules.
+arbitrary linearly ordered field, and Tucker's theorem for free `ℤ`-modules.
 
 For a finite family of vectors `a j` in a vector space over a linearly ordered field `K`,
 *Gordan's theorem* says that either some linear functional is strictly positive on every `a j`,
@@ -32,7 +32,7 @@ the family, such that `x j + y (a j) > 0` for every `j`. Unlike Mathlib's separa
 lemma `ProperCone.hyperplane_separation`, these results apply over `ℚ`.
 
 Clearing denominators in rational coordinates turns Tucker's theorem into a statement about a
-finite family in a finite free `ℤ`-module, with a relation with natural-number coefficients and an
+finite family in a free `ℤ`-module, with a relation with natural-number coefficients and an
 integer-valued functional. In toric geometry this integral form produces the character separating
 two cones along their common face.
 
@@ -48,7 +48,7 @@ lemmas of Heegaard Floer theory.
 * `TauCeti.exists_nonneg_sum_smul_eq_zero_and_coeff_add_dual_pos_at`: Tucker's key lemma.
 * `TauCeti.exists_nonneg_sum_smul_eq_zero_and_forall_coeff_add_dual_pos`: Tucker's theorem.
 * `TauCeti.exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos`: Tucker's theorem for a
-  finite family in a finite free `ℤ`-module.
+  finite family in a free `ℤ`-module.
 * `TauCeti.exists_forall_dual_pos_iff`: Gordan's theorem.
 * `Submodule.exists_pos_dotProduct_eq_zero_iff`: Stiemke's theorem for a subspace of
   `ι → K`.
