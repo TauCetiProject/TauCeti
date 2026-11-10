@@ -138,12 +138,6 @@ theorem repr_sum_of_apply (s : Finset (StrandDiagram α)) (ψ : StrandDiagram α
 
 variable [Fintype α]
 
-/-- The coefficient of `φ` in the basis element of `ψ` is `1` if `ψ = φ` and `0` otherwise. -/
-@[simp]
-theorem repr_of_apply (ψ φ : StrandDiagram α) :
-    (basis R α).repr (of ψ) φ = if ψ = φ then 1 else 0 := by
-  rw [← basis_apply, Module.Basis.repr_self, Finsupp.single_apply]
-
 /-- The strands product: on basis elements, the composite of two diagrams if they are composable,
 and zero otherwise, extended bilinearly. -/
 instance : Mul (StrandsAlgebra R α) :=

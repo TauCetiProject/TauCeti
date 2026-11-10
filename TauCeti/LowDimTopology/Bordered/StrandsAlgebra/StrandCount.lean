@@ -310,12 +310,12 @@ theorem oneStrandFamily_mem_matchedSubalgebra (i : Set.range M ⊕ {p : α × α
   · exact matchedIdem_mem_matchedSubalgebra M _
   · rw [oneStrandFamily_inr, mem_matchedSubalgebra]
     refine ⟨fun φ hφ ↦ ?_, fun φ a b _ ↦ ?_⟩
-    · rw [repr_of_apply, ne_eq, ite_eq_right_iff, not_imp] at hφ
+    · rw [basis_repr_of, Finsupp.single_apply, ne_eq, ite_eq_right_iff, not_imp] at hφ
       rw [← hφ.1, source_single, target_single, coe_singleton, coe_singleton]
       exact ⟨Set.injOn_singleton _ _, Set.injOn_singleton _ _⟩
     · -- A single moving strand is fixed by moving horizontal strands, so moving them permutes the
       -- other diagrams.
-      rw [repr_of_apply, repr_of_apply]
+      rw [basis_repr_of, Finsupp.single_apply, Finsupp.single_apply]
       refine if_congr ⟨fun he ↦ ?_, fun he ↦ ?_⟩ rfl rfl
       · rw [← swapHorizontal_swapHorizontal φ a b, ← he, swapHorizontal_single h]
       · rw [← he, swapHorizontal_single h]
