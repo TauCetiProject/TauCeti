@@ -185,8 +185,8 @@ theorem memLpLoc_inter_setOf_im_nonneg_iff {Ω : Opens ℂ} :
     refine (memLpLoc_iff.1 hf _ (Set.inter_subset_inter_left _ hWΩ) hK).mono_measure
       (Measure.restrict_mono ?_ le_rfl)
     intro z hz
-    rw [Opens.coe_upperHalf] at hz
-    exact ⟨subset_closure hz.1, le_of_lt (show 0 < z.im from hz.2)⟩
+    obtain ⟨hzW, hz0⟩ := Opens.mem_upperHalf.1 hz
+    exact ⟨subset_closure hzW, hz0.le⟩
   · obtain ⟨W, hWo, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen
       (hKU.trans Set.inter_subset_left)
     refine (h ⟨W, hWo⟩ hWc hWΩ).mono_measure (Measure.restrict_mono_ae ?_)
