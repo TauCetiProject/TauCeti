@@ -22,7 +22,7 @@ series, such as Tate algebras, then inherit `IsDomain` from Mathlib's subring in
 
 * `MvPowerSeries.X_sub_X_mem_nonZeroDivisors`: for `i ≠ j`, the difference `X i - X j` is a
   non-zero-divisor of `MvPowerSeries σ R` over an arbitrary commutative ring.
-* `MvPowerSeries.isDomain_of_isDomain`: a commutative ring whose power series ring is a domain is
+* `MvPowerSeries.isDomain_of_isDomain`: a semiring whose power series ring is a domain is
   a domain.
 
 ## Implementation notes
@@ -46,13 +46,13 @@ variable {σ R : Type*}
 instance [Ring R] [IsDomain R] : IsDomain (MvPowerSeries σ R) :=
   NoZeroDivisors.to_isDomain _
 
-variable [CommRing R]
-
 variable (σ) in
-/-- A commutative ring `R` is a domain as soon as its power series ring is: the constant-coefficient
+/-- A semiring `R` is a domain as soon as its power series ring is: the constant-coefficient
 embedding `C` is injective. This is the converse of the `IsDomain (MvPowerSeries σ R)` instance. -/
-theorem isDomain_of_isDomain [IsDomain (MvPowerSeries σ R)] : IsDomain R :=
+theorem isDomain_of_isDomain [Semiring R] [IsDomain (MvPowerSeries σ R)] : IsDomain R :=
   Function.Injective.isDomain (C (σ := σ) (R := R)) C_injective
+
+variable [CommRing R]
 
 /-- **The difference of two distinct variables is a non-zero-divisor**, over an arbitrary
 commutative ring: `f * (X i - X j) = 0` forces `f = 0`, with no hypothesis on `R`.
