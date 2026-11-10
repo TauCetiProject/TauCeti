@@ -46,7 +46,7 @@ example : IsLocallySpectralMap ((↑) : ℕ → OnePoint ℕ) ∧
     fun _ _ _ ↦ (toFinite _).isCompact⟩, fun h ↦ ?_⟩
   · rw [← image_singleton]
     exact OnePoint.isOpen_image_coe.mpr (isOpen_discrete _)
-  · have hc := (isLocallyProConstructible_iff.mp h).isCompact
+  · have hc := (isLocallyProConstructible_iff_isProConstructible.mp h).isCompact
     rw [OnePoint.isOpenEmbedding_coe.isEmbedding.isCompact_iff.symm,
       isCompact_iff_finite] at hc
     exact infinite_univ hc
