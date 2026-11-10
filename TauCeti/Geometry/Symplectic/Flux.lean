@@ -359,14 +359,6 @@ section Homotopy
 
 variable {Ψ : Diffeotopy J ∞ M} {G : (M × unitInterval) × unitInterval → M}
 
-omit [IsManifold J ∞ M] in
-/-- If the motion of `Φ` is joined to the motion of `Ψ` by a homotopy `G` that is stationary at the
-final time, then `Φ` and `Ψ` have the same final diffeomorphism. -/
-theorem final_eq_of_homotopy (hG₁ : ∀ p, G (p, 1) = Ψ.cylinderMap p)
-    (h₁ : ∀ x s, G ((x, 1), s) = Φ.final x) : Ψ.final = Φ.final :=
-  _root_.Diffeomorph.ext fun x ↦ by
-    rw [final_apply, ← cylinderMap_apply Ψ (x, 1), ← hG₁, h₁]
-
 /-- **Homotopy invariance of the flux form.** Let `G` be a smooth homotopy from the motion of a
 diffeotopy `Φ` to the motion of a diffeotopy `Ψ` that fixes both time ends: `G (x, 0, s) = x` and
 `G (x, 1, s) = φ₁ x` for every `s`. Then for a closed two-form `σ` the flux forms of `Φ` and `Ψ`
