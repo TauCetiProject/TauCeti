@@ -10,6 +10,8 @@ public import TauCeti.MeasureTheory.Integral.CalderonZygmund.InnerProductSpace
 import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
+import TauCeti.MeasureTheory.Function.Lp.IntegralBoundedSmul
+import TauCeti.MeasureTheory.Integral.KernelPairing
 import TauCeti.MeasureTheory.Integral.RpowLaplace
 
 /-!
@@ -22,7 +24,7 @@ of its argument it is the singular integral operator with kernel
 
 `K_v(z) = c_n ⟪z, v⟫ / ‖z‖ ^ (n + 1)`, `c_n = Γ((n + 1) / 2) / π ^ ((n + 1) / 2)`
 
-(`TauCeti.rieszKernel`). If `f ∈ L²` vanishes off a compact set `s`, then
+(`TauCeti.rieszKernel`, `TauCeti.rieszConst`). If `f ∈ L²` vanishes off a compact set `s`, then
 `R_v f (x) = ∫ K_v(x - y) f(y) dy` for almost every `x ∉ s`
 (`TauCeti.ae_rieszTransform_eq_integral`). The kernel satisfies the standard size and smoothness
 estimates `|K_v(z)| ≤ c_n ‖v‖ ‖z‖⁻ⁿ` and `|K_v(a) - K_v(b)| ≤ C ‖v‖ ‖a - b‖ ‖b‖⁻ⁿ⁻¹` for
@@ -68,20 +70,46 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
+variable (E) in
+/-- The constant `c_n = Γ((n + 1) / 2) / π ^ ((n + 1) / 2)` of the Riesz kernel, where `n` is the
+dimension of `E`. -/
+def rieszConst : ℝ :=
+  Real.Gamma ((finrank ℝ E + 1) / 2) / π ^ (((finrank ℝ E : ℝ) + 1) / 2)
+
+variable (E) in
+theorem rieszConst_pos : 0 < rieszConst E :=
+  div_pos (Real.Gamma_pos_of_pos (by positivity)) (by positivity)
+
+variable (E) in
+theorem rieszConst_nonneg : 0 ≤ rieszConst E :=
+  (rieszConst_pos E).le
+
 /-- The kernel `c_n ⟪z, v⟫ / ‖z‖ ^ (n + 1)` of the Riesz transform in the direction `v`, where
-`n` is the dimension of `E` and `c_n = Γ((n + 1) / 2) / π ^ ((n + 1) / 2)`. At the origin it
-takes the value `0`. -/
+`n` is the dimension of `E` and `c_n = Γ((n + 1) / 2) / π ^ ((n + 1) / 2)` is `rieszConst E`. At
+the origin it takes the value `0`. -/
 def rieszKernel (v z : E) : ℝ :=
-  Real.Gamma ((finrank ℝ E + 1) / 2) / π ^ (((finrank ℝ E : ℝ) + 1) / 2) * ⟪z, v⟫ /
-    ‖z‖ ^ (finrank ℝ E + 1)
+  rieszConst E * ⟪z, v⟫ / ‖z‖ ^ (finrank ℝ E + 1)
 
 theorem rieszKernel_apply (v z : E) :
-    rieszKernel v z = Real.Gamma ((finrank ℝ E + 1) / 2) / π ^ (((finrank ℝ E : ℝ) + 1) / 2) *
-      ⟪z, v⟫ / ‖z‖ ^ (finrank ℝ E + 1) := (rfl)
+    rieszKernel v z = rieszConst E * ⟪z, v⟫ / ‖z‖ ^ (finrank ℝ E + 1) := (rfl)
 
 @[simp]
 theorem rieszKernel_zero_right (v : E) : rieszKernel v 0 = 0 := by
   simp [rieszKernel]
+
+@[simp]
+theorem rieszKernel_zero_left (z : E) : rieszKernel 0 z = 0 := by
+  simp [rieszKernel]
+
+theorem rieszKernel_add_left (v w z : E) :
+    rieszKernel (v + w) z = rieszKernel v z + rieszKernel w z := by
+  simp only [rieszKernel_apply, inner_add_right]
+  ring
+
+theorem rieszKernel_smul_left (c : ℝ) (v z : E) :
+    rieszKernel (c • v) z = c * rieszKernel v z := by
+  simp only [rieszKernel_apply, real_inner_smul_right]
+  ring
 
 @[fun_prop]
 theorem measurable_rieszKernel [MeasurableSpace E] [BorelSpace E] (v : E) :
@@ -91,17 +119,14 @@ theorem measurable_rieszKernel [MeasurableSpace E] [BorelSpace E] (v : E) :
 
 /-- **Size estimate** for the Riesz kernel: `|K_v(z)| ≤ c_n ‖v‖ / ‖z‖ ^ n`. -/
 theorem abs_rieszKernel_le (v z : E) :
-    |rieszKernel v z| ≤ Real.Gamma ((finrank ℝ E + 1) / 2) /
-      π ^ (((finrank ℝ E : ℝ) + 1) / 2) * ‖v‖ / ‖z‖ ^ finrank ℝ E := by
-  have hc : 0 ≤ Real.Gamma ((finrank ℝ E + 1) / 2) / π ^ (((finrank ℝ E : ℝ) + 1) / 2) :=
-    div_nonneg (Real.Gamma_nonneg_of_nonneg (by positivity)) (by positivity)
+    |rieszKernel v z| ≤ rieszConst E * ‖v‖ / ‖z‖ ^ finrank ℝ E := by
   rcases eq_or_ne z 0 with rfl | hz
-  · simpa using div_nonneg (mul_nonneg hc (norm_nonneg v)) (by positivity)
+  · simpa using div_nonneg (mul_nonneg (rieszConst_nonneg E) (norm_nonneg v)) (by positivity)
   have hz' : 0 < ‖z‖ := norm_pos_iff.2 hz
-  rw [rieszKernel, abs_div, abs_mul, abs_of_nonneg hc, abs_of_pos (pow_pos hz' _),
-    div_le_div_iff₀ (pow_pos hz' _) (pow_pos hz' _)]
-  calc _ ≤ Real.Gamma ((finrank ℝ E + 1) / 2) / π ^ (((finrank ℝ E : ℝ) + 1) / 2) *
-        (‖z‖ * ‖v‖) * ‖z‖ ^ finrank ℝ E := by
+  rw [rieszKernel, abs_div, abs_mul, abs_of_nonneg (rieszConst_nonneg E),
+    abs_of_pos (pow_pos hz' _), div_le_div_iff₀ (pow_pos hz' _) (pow_pos hz' _)]
+  calc _ ≤ rieszConst E * (‖z‖ * ‖v‖) * ‖z‖ ^ finrank ℝ E := by
+        have := rieszConst_nonneg E
         gcongr
         exact abs_real_inner_le_norm _ _
     _ = _ := by ring
@@ -109,8 +134,7 @@ theorem abs_rieszKernel_le (v z : E) :
 /-- The two first-order terms of the increment `⟪a, v⟫ / ‖a‖ ^ m - ⟪b, v⟫ / ‖b‖ ^ m`. -/
 private theorem rieszKernel_sub_eq (v : E) {a b : E} (ha : a ≠ 0) (hb : b ≠ 0) :
     rieszKernel v a - rieszKernel v b =
-      Real.Gamma ((finrank ℝ E + 1) / 2) / π ^ (((finrank ℝ E : ℝ) + 1) / 2) *
-        (⟪a - b, v⟫ / ‖a‖ ^ (finrank ℝ E + 1) + ⟪b, v⟫ * (‖b‖ ^ (finrank ℝ E + 1) -
+      rieszConst E * (⟪a - b, v⟫ / ‖a‖ ^ (finrank ℝ E + 1) + ⟪b, v⟫ * (‖b‖ ^ (finrank ℝ E + 1) -
           ‖a‖ ^ (finrank ℝ E + 1)) / (‖a‖ ^ (finrank ℝ E + 1) * ‖b‖ ^ (finrank ℝ E + 1))) := by
   have ha' : ‖a‖ ^ (finrank ℝ E + 1) ≠ 0 := pow_ne_zero _ (norm_ne_zero_iff.2 ha)
   have hb' : ‖b‖ ^ (finrank ℝ E + 1) ≠ 0 := pow_ne_zero _ (norm_ne_zero_iff.2 hb)
@@ -150,12 +174,11 @@ private theorem abs_inner_mul_pow_sub_pow_div_le (v : E) (n : ℕ)
 /-- **Smoothness estimate** for the Riesz kernel: if `2 ‖a - b‖ < ‖b‖`, then
 `|K_v(a) - K_v(b)| ≤ c_n (n + 2) 4 ^ (n + 1) ‖v‖ ‖a - b‖ / ‖b‖ ^ (n + 1)`. -/
 theorem abs_rieszKernel_sub_le (v : E) {a b : E} (h : 2 * ‖a - b‖ < ‖b‖) :
-    |rieszKernel v a - rieszKernel v b| ≤ Real.Gamma ((finrank ℝ E + 1) / 2) /
-      π ^ (((finrank ℝ E : ℝ) + 1) / 2) * ((finrank ℝ E + 2) * 4 ^ (finrank ℝ E + 1)) * ‖v‖ *
-        ‖a - b‖ / ‖b‖ ^ (finrank ℝ E + 1) := by
+    |rieszKernel v a - rieszKernel v b| ≤ rieszConst E *
+      ((finrank ℝ E + 2) * 4 ^ (finrank ℝ E + 1)) * ‖v‖ * ‖a - b‖ / ‖b‖ ^ (finrank ℝ E + 1) := by
   set n := finrank ℝ E
-  set c : ℝ := Real.Gamma ((n + 1) / 2) / π ^ (((n : ℝ) + 1) / 2)
-  have hc : 0 ≤ c := div_nonneg (Real.Gamma_nonneg_of_nonneg (by positivity)) (by positivity)
+  set c := rieszConst E
+  have hc : 0 ≤ c := rieszConst_nonneg E
   have hε := norm_nonneg (a - b)
   have hβ : 0 < ‖b‖ := by linarith
   have htri : ‖b‖ ≤ ‖a‖ + ‖a - b‖ := by
@@ -188,23 +211,6 @@ theorem abs_rieszKernel_sub_le (v : E) {a b : E} (h : 2 * ‖a - b‖ < ‖b‖)
         have h0 : 0 ≤ c * ‖v‖ * ‖a - b‖ := by positivity
         nlinarith [mul_le_mul_of_nonneg_left this h0]
 
-/-! ### A Gamma integral -/
-
-/-- `∫₀^∞ t^(-1/2) e^(-r t) dt = √(π / r)`, in the form used for the symbol. -/
-private theorem integral_rpow_neg_half_mul_exp {r : ℝ} (hr : 0 < r) :
-    ∫ t in Ioi (0 : ℝ), t ^ (-(1 / 2) : ℝ) * Real.exp (-(r * t)) = (1 / r) ^ (1 / 2 : ℝ) * √π := by
-  have h := Real.integral_rpow_mul_exp_neg_mul_Ioi (a := 1 / 2) (by norm_num) hr
-  rw [Real.Gamma_one_half_eq] at h
-  rw [← h]
-  norm_num
-
-private theorem integrableOn_rpow_neg_half_mul_exp {r : ℝ} (hr : 0 < r) :
-    IntegrableOn (fun t : ℝ ↦ t ^ (-(1 / 2) : ℝ) * Real.exp (-(r * t))) (Ioi 0) := by
-  refine (integrableOn_rpow_mul_exp_neg_mul_rpow (p := 1) (s := -(1 / 2)) (by norm_num) one_pos
-    hr).congr_fun
-    (fun t _ ↦ ?_) measurableSet_Ioi
-  simp [neg_mul]
-
 /-! ### Derivatives of Gaussians -/
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
@@ -232,11 +238,8 @@ private theorem rieszGaussian_apply (v : E) {t : ℝ} (ht : 0 < t) (z : E) :
       Complex.ofRealCLM.hasFDerivAt.comp z (hasStrictFDerivAt_norm_sq z).hasFDerivAt
     have h2 := (h1.const_mul (-(((π / t : ℝ)) : ℂ))).cexp
     simpa only [Complex.ofReal_pow] using h2
-  rw [rieszGaussian, smul_apply, SchwartzMap.lineDerivOp_apply_eq_fderiv]
-  have hfun : ((SchwartzMap.gaussian (re_pi_div_pos ht) : 𝓢(E, ℂ)) : E → ℂ) =
-      fun x : E ↦ Complex.exp (-(((π / t : ℝ)) : ℂ) * ‖x‖ ^ 2) :=
-    funext fun x ↦ SchwartzMap.gaussian_apply _ x
-  rw [hfun, hder.fderiv]
+  rw [rieszGaussian, smul_apply, SchwartzMap.lineDerivOp_apply_eq_fderiv,
+    SchwartzMap.coe_gaussian, hder.fderiv]
   simp only [smul_apply, ContinuousLinearMap.comp_apply,
     Complex.ofRealCLM_apply, innerSL_apply_apply, smul_eq_mul]
   have ht' : (t : ℝ) ^ (-((finrank ℝ E : ℝ) + 2) / 2) = t ^ (-(finrank ℝ E : ℝ) / 2) * t⁻¹ := by
@@ -254,18 +257,14 @@ private theorem fourier_rieszGaussian_apply (v : E) {t : ℝ} (ht : 0 < t) (ξ :
   have hg : (inner ℝ · v : E → ℝ).HasTemperateGrowth := ((innerSL ℝ).flip v).hasTemperateGrowth
   rw [rieszGaussian, FourierTransform.fourier_smul, smul_apply,
     SchwartzMap.fourier_lineDerivOp_eq, smul_apply,
-    SchwartzMap.smulLeftCLM_apply_apply hg, SchwartzMap.fourier_coe]
-  have hfun : ((SchwartzMap.gaussian (re_pi_div_pos ht) : 𝓢(E, ℂ)) : E → ℂ) =
-      fun x : E ↦ Complex.exp (-(((π / t : ℝ)) : ℂ) * ‖x‖ ^ 2) :=
-    funext fun x ↦ SchwartzMap.gaussian_apply _ x
-  rw [hfun, fourier_gaussian_innerProductSpace (re_pi_div_pos ht)]
+    SchwartzMap.smulLeftCLM_apply_apply hg, SchwartzMap.fourier_coe, SchwartzMap.coe_gaussian,
+    fourier_gaussian_innerProductSpace (re_pi_div_pos ht)]
   have hπt : (π : ℂ) / (((π / t : ℝ)) : ℂ) = (t : ℂ) := by
     push_cast
     field_simp
   have hcpow : (t : ℂ) ^ ((finrank ℝ E : ℂ) / 2) = ((t ^ ((finrank ℝ E : ℝ) / 2) : ℝ) : ℂ) := by
-    rw [Complex.ofReal_cpow ht.le]
-    push_cast
-    rfl
+    rw [Complex.ofReal_cpow ht.le, Complex.ofReal_div, Complex.ofReal_natCast,
+      Complex.ofReal_ofNat]
   rw [hπt, hcpow]
   have hexp : -(π : ℂ) ^ 2 * (‖ξ‖ : ℂ) ^ 2 / (((π / t : ℝ)) : ℂ) =
       ((-(π * ‖ξ‖ ^ 2 * t) : ℝ) : ℂ) := by
@@ -287,9 +286,17 @@ omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [Bo
 private theorem integral_symbolProfile {ξ : E} (hξ : ξ ≠ 0) :
     ∫ t in Ioi (0 : ℝ), t ^ (-(1 / 2) : ℝ) * Real.exp (-(π * ‖ξ‖ ^ 2 * t)) = ‖ξ‖⁻¹ := by
   have hr : 0 < π * ‖ξ‖ ^ 2 := by positivity
-  rw [integral_rpow_neg_half_mul_exp hr, one_div, Real.inv_rpow hr.le, Real.mul_rpow Real.pi_pos.le
+  have h := Real.integral_rpow_mul_exp_neg_mul_Ioi (a := 1 / 2) one_half_pos hr
+  rw [show (1 / 2 : ℝ) - 1 = -(1 / 2) by norm_num, Real.Gamma_one_half_eq] at h
+  rw [h, one_div, Real.inv_rpow hr.le, Real.mul_rpow Real.pi_pos.le
     (by positivity), ← Real.sqrt_eq_rpow, ← Real.sqrt_eq_rpow, Real.sqrt_sq (norm_nonneg _),
     mul_inv, mul_comm, ← mul_assoc, mul_inv_cancel₀ (Real.sqrt_pos.2 Real.pi_pos).ne', one_mul]
+
+/-- The powers of `t` in the kernel-side profile combine to `t ^ (-((n + 1) / 2 + 1))`. -/
+private theorem rpow_neg_half_mul_rpow_mul {t : ℝ} (ht : 0 < t) (n e : ℝ) :
+    t ^ (-(1 / 2) : ℝ) * (t ^ (-(n + 2) / 2) * e) = t ^ (-((n + 1) / 2 + 1)) * e := by
+  rw [← mul_assoc, ← Real.rpow_add ht]
+  ring_nf
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- The kernel-side profile `t ↦ t^(-1/2) t^(-(n+2)/2) exp(-π ‖z‖² / t)` averages to
@@ -297,15 +304,12 @@ omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private theorem integral_kernelProfile {z : E} (hz : z ≠ 0) :
     ∫ t in Ioi (0 : ℝ), t ^ (-(1 / 2) : ℝ) *
         (t ^ (-((finrank ℝ E : ℝ) + 2) / 2) * Real.exp (-(π * ‖z‖ ^ 2 / t))) =
-      Real.Gamma ((finrank ℝ E + 1) / 2) / π ^ (((finrank ℝ E : ℝ) + 1) / 2) /
-        ‖z‖ ^ (finrank ℝ E + 1) := by
+      rieszConst E / ‖z‖ ^ (finrank ℝ E + 1) := by
   have hr : 0 < π * ‖z‖ ^ 2 := by positivity
   have ha : (0 : ℝ) < ((finrank ℝ E : ℝ) + 1) / 2 := by positivity
   rw [← setIntegral_congr_fun measurableSet_Ioi (f := fun t : ℝ ↦
-      t ^ (-(((finrank ℝ E : ℝ) + 1) / 2 + 1)) * Real.exp (-(π * ‖z‖ ^ 2 / t))) fun t ht ↦ by
-    simp only
-    rw [← mul_assoc, ← Real.rpow_add (mem_Ioi.1 ht)]
-    ring_nf,
+      t ^ (-(((finrank ℝ E : ℝ) + 1) / 2 + 1)) * Real.exp (-(π * ‖z‖ ^ 2 / t))) fun t ht ↦
+      (rpow_neg_half_mul_rpow_mul (mem_Ioi.1 ht) _ _).symm,
     integral_rpow_mul_exp_neg_div_Ioi ha hr, one_div, Real.inv_rpow hr.le,
     Real.mul_rpow Real.pi_pos.le (by positivity)]
   have hz' : (‖z‖ ^ 2) ^ (((finrank ℝ E : ℝ) + 1) / 2) = ‖z‖ ^ (finrank ℝ E + 1) := by
@@ -313,7 +317,7 @@ private theorem integral_kernelProfile {z : E} (hz : z ≠ 0) :
     congr 1
     push_cast
     ring
-  rw [hz']
+  rw [hz', rieszConst]
   field_simp
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
@@ -323,9 +327,7 @@ private theorem integrableOn_kernelProfile {z : E} (hz : z ≠ 0) :
   refine (integrableOn_rpow_mul_exp_neg_div_Ioi (a := ((finrank ℝ E : ℝ) + 1) / 2)
     (by positivity) (by positivity : 0 < π * ‖z‖ ^ 2)).congr_fun (fun t ht ↦ ?_)
     measurableSet_Ioi
-  simp only
-  rw [← mul_assoc, ← Real.rpow_add (mem_Ioi.1 ht)]
-  ring_nf
+  exact (rpow_neg_half_mul_rpow_mul (mem_Ioi.1 ht) _ _).symm
 
 /-! ### The pairing on the Fourier side -/
 
@@ -360,8 +362,10 @@ private theorem integral_neg_two_pi_mul_rieszSymbol_mul [Nontrivial E] (v : E) {
     refine ⟨?_, ?_⟩
     · filter_upwards [Measure.ae_ne volume 0] with ξ hξ
       simp only [Function.uncurry_apply_pair, G]
-      exact ((integrableOn_rpow_neg_half_mul_exp (by positivity : 0 < π * ‖ξ‖ ^ 2)).ofReal
-        ).const_mul _
+      have h := integrableOn_rpow_mul_exp_neg_mul_Ioi one_half_pos
+        (by positivity : 0 < π * ‖ξ‖ ^ 2)
+      rw [show (1 / 2 : ℝ) - 1 = -(1 / 2) by norm_num] at h
+      exact h.ofReal.const_mul _
     · refine Integrable.congr (f := fun ξ ↦ 2 * π * |⟪ξ, v⟫| * ‖ξ‖⁻¹ * ‖Φ ξ‖) ?_ ?_
       · refine hΦ.norm.bdd_mul (c := 2 * π * ‖v‖) (by fun_prop) (.of_forall fun ξ ↦ ?_)
         rcases eq_or_ne ξ 0 with rfl | hξ
@@ -384,42 +388,6 @@ private theorem integral_neg_two_pi_mul_rieszSymbol_mul [Nontrivial E] (v : E) {
 
 /-! ### The pairing in space -/
 
-/-- Pairing `g` with a kernel integral of `f` is the integral of the kernel against
-`⟪g x, f y⟫` over the product, as soon as the kernel is bounded where `g x ≠ 0` and `f y ≠ 0`. -/
-private theorem integral_inner_integral_smul {F : Type*} [NormedAddCommGroup F]
-    [InnerProductSpace ℂ F] [CompleteSpace F] {k : E → ℂ} (hk : Measurable k) {f g : E → F}
-    (hf : Integrable f) (hg : Integrable g) {B : ℝ}
-    (hB : ∀ x y, g x ≠ 0 → f y ≠ 0 → ‖k (x - y)‖ ≤ B) :
-    ∫ x, inner ℂ (g x) (∫ y, k (x - y) • f y) =
-      ∫ p : E × E, k (p.1 - p.2) * inner ℂ (g p.1) (f p.2) := by
-  have hB' : ∀ x y, ‖k (x - y) * inner ℂ (g x) (f y)‖ ≤ B * (‖g x‖ * ‖f y‖) := fun x y ↦ by
-    by_cases hx : g x = 0
-    · simp [hx]
-    by_cases hy : f y = 0
-    · simp [hy]
-    rw [norm_mul]
-    exact mul_le_mul (hB x y hx hy) (norm_inner_le_norm _ _) (norm_nonneg _)
-      ((norm_nonneg _).trans (hB x y hx hy))
-  have hint : Integrable (fun p : E × E ↦ k (p.1 - p.2) * inner ℂ (g p.1) (f p.2))
-      (volume.prod volume) := by
-    refine ((hg.norm.mul_prod hf.norm).const_mul B).mono' ?_ (.of_forall fun p ↦ hB' p.1 p.2)
-    exact ((hk.comp (by fun_prop)).aestronglyMeasurable).mul
-      (hg.1.comp_fst.inner hf.1.comp_snd)
-  rw [Measure.volume_eq_prod, integral_prod _ hint]
-  refine integral_congr_ae (.of_forall fun x ↦ ?_)
-  by_cases hx : g x = 0
-  · simp [hx]
-  have hxint : Integrable fun y ↦ k (x - y) • f y := by
-    refine (hf.norm.const_mul B).mono' ((hk.comp (by fun_prop)).aestronglyMeasurable.smul hf.1)
-      (.of_forall fun y ↦ ?_)
-    by_cases hy : f y = 0
-    · simp [hy]
-    rw [norm_smul]
-    exact mul_le_mul_of_nonneg_right (hB x y hx hy) (norm_nonneg _)
-  simp only
-  rw [← integral_inner hxint]
-  simp_rw [inner_smul_right]
-
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- Averaging the Gaussian kernels `-2π ⟪z, v⟫ t^(-(n+2)/2) exp(-π ‖z‖² / t)` against
 `t^(-1/2) dt` gives `-2π` times the Riesz kernel. -/
@@ -439,8 +407,6 @@ private theorem integral_abs_kernelSubordination (v z : E) :
       2 * π * |rieszKernel v z| := by
   rcases eq_or_ne z 0 with rfl | hz
   · simp
-  have hc : 0 ≤ Real.Gamma ((finrank ℝ E + 1) / 2) / π ^ (((finrank ℝ E : ℝ) + 1) / 2) :=
-    div_nonneg (Real.Gamma_nonneg_of_nonneg (by positivity)) (by positivity)
   rw [← setIntegral_congr_fun measurableSet_Ioi (f := fun t ↦ |-(2 * π) * ⟪z, v⟫| *
       (t ^ (-(1 / 2) : ℝ) * (t ^ (-((finrank ℝ E : ℝ) + 2) / 2) *
         Real.exp (-(π * ‖z‖ ^ 2 / t))))) fun t (ht : 0 < t) ↦ by
@@ -448,7 +414,7 @@ private theorem integral_abs_kernelSubordination (v z : E) :
         (mul_nonneg (Real.rpow_nonneg ht.le _) (Real.exp_pos _).le))],
     integral_const_mul, integral_kernelProfile hz, rieszKernel_apply, abs_mul (-(2 * π)),
     abs_neg, abs_of_pos (by positivity : (0 : ℝ) < 2 * π), abs_div, abs_mul _ ⟪z, v⟫,
-    abs_of_nonneg hc, abs_of_pos (pow_pos (norm_pos_iff.2 hz) _)]
+    abs_of_nonneg (rieszConst_nonneg E), abs_of_pos (pow_pos (norm_pos_iff.2 hz) _)]
   ring
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
@@ -469,8 +435,6 @@ private theorem integral_neg_two_pi_mul_rieszKernel_mul {F : Type*} [NormedAddCo
           Real.exp (-(π * ‖p.1 - p.2‖ ^ 2 / t)))) : ℝ) : ℂ) * inner ℂ (g p.1) (f p.2) =
       ∫ p : E × E, ((-(2 * π) * rieszKernel v (p.1 - p.2) : ℝ) : ℂ) *
         inner ℂ (g p.1) (f p.2) := by
-  set c : ℝ := Real.Gamma ((finrank ℝ E + 1) / 2) / π ^ (((finrank ℝ E : ℝ) + 1) / 2)
-  have hc : 0 ≤ c := div_nonneg (Real.Gamma_nonneg_of_nonneg (by positivity)) (by positivity)
   set q : ℝ → E → ℝ := fun t z ↦ -(2 * π) * ⟪z, v⟫ * (t ^ (-(1 / 2) : ℝ) *
     (t ^ (-((finrank ℝ E : ℝ) + 2) / 2) * Real.exp (-(π * ‖z‖ ^ 2 / t))))
   set H : ℝ → E × E → ℂ := fun t p ↦ (q t (p.1 - p.2) : ℂ) * inner ℂ (g p.1) (f p.2)
@@ -489,8 +453,8 @@ private theorem integral_neg_two_pi_mul_rieszKernel_mul {F : Type*} [NormedAddCo
       exact ((integrableOn_kernelSubordination v _).ofReal (𝕜 := ℂ)).mul_const _
     simp only [Function.uncurry_apply_pair, H, norm_mul, Complex.norm_real, Real.norm_eq_abs]
     simp_rw [integral_mul_const, q, integral_abs_kernelSubordination]
-    refine ((hg.norm.mul_prod hf.norm).const_mul (2 * π * (c * ‖v‖ / δ ^ finrank ℝ E))).mono'
-      ?_ (.of_forall fun p ↦ ?_)
+    refine ((hg.norm.mul_prod hf.norm).const_mul
+      (2 * π * (rieszConst E * ‖v‖ / δ ^ finrank ℝ E))).mono' ?_ (.of_forall fun p ↦ ?_)
     · have hm : Measurable fun p : E × E ↦ 2 * π * |rieszKernel v (p.1 - p.2)| :=
         measurable_const.mul (continuous_abs.measurable.comp
           ((measurable_rieszKernel v).comp (measurable_fst.sub measurable_snd)))
@@ -499,13 +463,15 @@ private theorem integral_neg_two_pi_mul_rieszKernel_mul {F : Type*} [NormedAddCo
     · simp [hx]
     by_cases hy : f p.2 = 0
     · simp [hy]
-    have hK : |rieszKernel v (p.1 - p.2)| ≤ c * ‖v‖ / δ ^ finrank ℝ E :=
-      (abs_rieszKernel_le v _).trans (div_le_div_of_nonneg_left (by positivity)
+    have hK : |rieszKernel v (p.1 - p.2)| ≤ rieszConst E * ‖v‖ / δ ^ finrank ℝ E :=
+      (abs_rieszKernel_le v _).trans (div_le_div_of_nonneg_left
+        (mul_nonneg (rieszConst_nonneg E) (norm_nonneg _))
         (by positivity) (pow_le_pow_left₀ hδ.le (hsep p.1 p.2 hx hy) _))
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
     calc 2 * π * |rieszKernel v (p.1 - p.2)| * ‖inner ℂ (g p.1) (f p.2)‖
         = 2 * π * (|rieszKernel v (p.1 - p.2)| * ‖inner ℂ (g p.1) (f p.2)‖) := by ring
-      _ ≤ 2 * π * ((c * ‖v‖ / δ ^ finrank ℝ E) * (‖g p.1‖ * ‖f p.2‖)) := by
+      _ ≤ 2 * π * ((rieszConst E * ‖v‖ / δ ^ finrank ℝ E) * (‖g p.1‖ * ‖f p.2‖)) := by
+        have := rieszConst_nonneg E
         gcongr
         exact norm_inner_le_norm _ _
       _ = _ := by ring
@@ -559,14 +525,13 @@ private theorem inner_rieszTransform_eq_integral [Nontrivial E] (v : E)
   set Φ : E → ℂ := fun ξ ↦ inner ℂ ((𝓕 g : Lp F 2 (volume : Measure E)) ξ)
     ((𝓕 f : Lp F 2 (volume : Measure E)) ξ)
   have hΦ : Integrable Φ := L2.integrable_inner (𝓕 g) (𝓕 f)
-  set c : ℝ := Real.Gamma ((finrank ℝ E + 1) / 2) / π ^ (((finrank ℝ E : ℝ) + 1) / 2)
-  have hc : 0 ≤ c := div_nonneg (Real.Gamma_nonneg_of_nonneg (by positivity)) (by positivity)
   -- The kernel side, `∫ ⟪g x, ∫ K(x - y) f y dy⟫ dx = ∫ K(x - y) ⟪g x, f y⟫ d(x, y)`.
   have hK := integral_inner_integral_smul (k := fun z ↦ (rieszKernel v z : ℂ)) (by fun_prop)
-    hf' hg' (B := c * ‖v‖ / δ ^ finrank ℝ E) fun x y hx hy ↦ by
+    hf' hg' (B := rieszConst E * ‖v‖ / δ ^ finrank ℝ E) fun x y hx hy ↦ by
       rw [Complex.norm_real, Real.norm_eq_abs]
       exact (abs_rieszKernel_le v _).trans (div_le_div_of_nonneg_left
-        (mul_nonneg hc (norm_nonneg _)) (by positivity) (pow_le_pow_left₀ hδ.le (hsep x y hx hy) _))
+        (mul_nonneg (rieszConst_nonneg E) (norm_nonneg _)) (by positivity)
+        (pow_le_pow_left₀ hδ.le (hsep x y hx hy) _))
   refine mul_left_cancel₀ (by simp [Real.pi_ne_zero] : (-(2 * π) : ℂ) ≠ 0) ?_
   calc (-(2 * π) : ℂ) * inner ℂ g (rieszTransform F v f)
       = ∫ ξ, (-(2 * π) * rieszSymbol v ξ) * Φ ξ := by
@@ -607,33 +572,13 @@ private theorem inner_rieszTransform_eq_integral [Nontrivial E] (v : E)
         push_cast
         ring
 
-omit [CompleteSpace F] in
-/-- Away from the set `s` off which `f` vanishes, the kernel integral of `f` is bounded. -/
-private theorem norm_integral_rieszKernel_smul_le (v : E) {f : E → F} (hf : Integrable f)
-    {s : Set E} (hf0 : ∀ y, f y ≠ 0 → y ∈ s) {δ : ℝ} (hδ : 0 < δ) {x : E}
-    (hx : ∀ y ∈ s, δ ≤ ‖x - y‖) :
-    ‖∫ y, rieszKernel v (x - y) • f y‖ ≤ Real.Gamma ((finrank ℝ E + 1) / 2) /
-      π ^ (((finrank ℝ E : ℝ) + 1) / 2) * ‖v‖ / δ ^ finrank ℝ E * ∫ y, ‖f y‖ := by
-  have hc : 0 ≤ Real.Gamma ((finrank ℝ E + 1) / 2) / π ^ (((finrank ℝ E : ℝ) + 1) / 2) :=
-    div_nonneg (Real.Gamma_nonneg_of_nonneg (by positivity)) (by positivity)
-  refine (norm_integral_le_integral_norm _).trans ?_
-  rw [← integral_const_mul]
-  refine integral_mono_of_nonneg (.of_forall fun _ ↦ norm_nonneg _) (hf.norm.const_mul _)
-    (.of_forall fun y ↦ ?_)
-  by_cases hy : f y = 0
-  · simp [hy]
-  dsimp only
-  rw [norm_smul, Real.norm_eq_abs]
-  exact mul_le_mul_of_nonneg_right ((abs_rieszKernel_le v _).trans
-    (div_le_div_of_nonneg_left (mul_nonneg hc (norm_nonneg _)) (by positivity)
-      (pow_le_pow_left₀ hδ.le (hx y (hf0 y hy)) _))) (norm_nonneg _)
-
 /-- The kernel representation on a compact set `U` at distance at least `δ > 0` from the set `s`
 off which `f` vanishes. Pairing `R_v f - K f` with its own restriction to `U` gives, by
 `inner_rieszTransform_eq_integral`, `∫_U ‖R_v f - K f‖² = 0`. -/
 private theorem ae_rieszTransform_eq_integral_of_isCompact [Nontrivial E] (v : E)
     (f : Lp F 2 (volume : Measure E)) {f' : E → F} (hff' : (f : E → F) =ᵐ[volume] f')
-    (hf' : Integrable f') {s U : Set E} (hf'0 : ∀ y, f' y ≠ 0 → y ∈ s) (hUc : IsCompact U)
+    (hf' : Integrable f') {s U : Set E} (hs : IsCompact s) (hf'0 : ∀ y, f' y ≠ 0 → y ∈ s)
+    (hUc : IsCompact U)
     {δ : ℝ} (hδ : 0 < δ) (hsep : ∀ x ∈ U, ∀ y ∈ s, δ ≤ ‖x - y‖) :
     ∀ᵐ x, x ∈ U → rieszTransform F v f x = ∫ y, rieszKernel v (x - y) • f' y := by
   set K : E → F := fun x ↦ ∫ y, rieszKernel v (x - y) • f' y
@@ -643,10 +588,20 @@ private theorem ae_rieszTransform_eq_integral_of_isCompact [Nontrivial E] (v : E
         (volume.prod volume)).integral_prod_right'
   have hUm : MeasurableSet U := hUc.measurableSet
   have : IsFiniteMeasure (volume.restrict U) := isFiniteMeasure_restrict.2 hUc.measure_lt_top.ne
-  set B : ℝ := Real.Gamma ((finrank ℝ E + 1) / 2) / π ^ (((finrank ℝ E : ℝ) + 1) / 2) * ‖v‖ /
-    δ ^ finrank ℝ E * ∫ y, ‖f' y‖
+  -- `K` is bounded on `U`, since the kernel is bounded on `U - s`.
+  set B : ℝ := rieszConst E * ‖v‖ / δ ^ finrank ℝ E *
+    (volume s ^ (1 - 1 / (1 : ℝ≥0∞).toReal) * eLpNorm f' 1 volume).toReal
   have hKB : ∀ x ∈ U, ‖K x‖ ≤ B := fun x hx ↦
-    norm_integral_rieszKernel_smul_le v hf' hf'0 hδ (hsep x hx)
+    (integrable_smul_and_norm_integral_smul_le hs.measure_lt_top.ne
+      (by positivity [rieszConst_nonneg E])
+      ((measurable_rieszKernel v).comp (measurable_const.sub measurable_id)).aestronglyMeasurable
+      (ae_restrict_of_forall_mem hs.measurableSet fun y hy ↦ by
+        rw [Real.norm_eq_abs]
+        exact (abs_rieszKernel_le v _).trans (div_le_div_of_nonneg_left
+          (mul_nonneg (rieszConst_nonneg E) (norm_nonneg _)) (by positivity)
+          (pow_le_pow_left₀ hδ.le (hsep x hx y hy) _)))
+      le_rfl (memLp_one_iff_integrable.2 hf')
+      (.of_forall fun y hy ↦ by_contra fun h ↦ hy (hf'0 y h))).2
   -- The restriction `d` of `w = R_v f - K` to `U` is in `L²`, and is integrable.
   set w : E → F := fun x ↦ rieszTransform F v f x - K x
   set d : E → F := U.indicator w
@@ -702,19 +657,15 @@ private theorem ae_rieszTransform_eq_integral_of_isCompact [Nontrivial E] (v : E
 /-- In dimension zero the Riesz symbol vanishes, and so does the Riesz transform. -/
 private theorem rieszTransform_eq_zero_of_subsingleton [Subsingleton E] (v : E) :
     rieszTransform F v = 0 := by
-  have h0 : rieszSymbolLp v = 0 := by
-    apply Lp.ext
-    filter_upwards [coeFn_rieszSymbolLp v, Lp.coeFn_zero ℂ ∞ (volume : Measure E)] with ξ h₁ h₂
-    rw [h₁, h₂, Subsingleton.elim ξ 0, rieszSymbol_zero_right, Pi.zero_apply]
-  rw [rieszTransform_def, h0, Lp.fourierMultiplierCLM_zero]
+  rw [Subsingleton.elim v 0, rieszTransform_zero]
 
 /-- **The kernel of the Riesz transform.** Let `f ∈ L²(E, F)` vanish almost everywhere off a
 compact set `s`. Then for almost every `x ∉ s`
 
 `R_v f (x) = ∫ K_v(x - y) f(y) dy`, where `K_v(z) = c_n ⟪z, v⟫ / ‖z‖ ^ (n + 1)`
 
-(`TauCeti.rieszKernel`) and `c_n = Γ((n + 1) / 2) / π ^ ((n + 1) / 2)`. The integral converges
-absolutely, since the kernel is bounded for `y ∈ s` and `x` away from `s`. -/
+(`TauCeti.rieszKernel`) and `c_n = Γ((n + 1) / 2) / π ^ ((n + 1) / 2)` (`TauCeti.rieszConst`).
+The integral converges absolutely, since the kernel is bounded for `y ∈ s` and `x` away from `s`. -/
 theorem ae_rieszTransform_eq_integral (v : E) (f : Lp F 2 (volume : Measure E)) {s : Set E}
     (hs : IsCompact s) (hf : ∀ᵐ x, x ∉ s → f x = 0) :
     ∀ᵐ x, x ∉ s → rieszTransform F v f x = ∫ y, rieszKernel v (x - y) • f y := by
@@ -739,7 +690,7 @@ theorem ae_rieszTransform_eq_integral (v : E) (f : Lp F 2 (volume : Measure E)) 
   -- The representation holds on the compact sets `U k`, at distance `1 / (k + 1)` from `s`.
   have hU : ∀ k : ℕ, ∀ᵐ x, x ∈ closedBall (0 : E) k \ thickening (1 / ((k : ℝ) + 1)) s →
       rieszTransform F v f x = ∫ y, rieszKernel v (x - y) • f' y := fun k ↦
-    ae_rieszTransform_eq_integral_of_isCompact v f hff' hf' hf'0
+    ae_rieszTransform_eq_integral_of_isCompact v f hff' hf' hs hf'0
       ((isCompact_closedBall 0 _).diff isOpen_thickening) Nat.one_div_pos_of_nat
         fun x hx y hy ↦ by
         rw [← dist_eq_norm]
@@ -771,8 +722,8 @@ theorem exists_mul_volume_lt_enorm_rieszTransform_le [Nontrivial E] (v : E) :
     ∃ A : ℝ≥0, ∀ (f : Lp F 2 (volume : Measure E)) (t : ℝ≥0∞),
       t * volume {x | t < ‖rieszTransform F v f x‖ₑ} ≤ A * ∫⁻ x, ‖f x‖ₑ := by
   set n := finrank ℝ E
-  set c : ℝ := Real.Gamma ((n + 1) / 2) / π ^ (((n : ℝ) + 1) / 2)
-  have hc : 0 ≤ c := div_nonneg (Real.Gamma_nonneg_of_nonneg (by positivity)) (by positivity)
+  set c := rieszConst E
+  have hc : 0 ≤ c := rieszConst_nonneg E
   set k : E → E → F →L[ℝ] F := fun x y ↦ rieszKernel v (x - y) • ContinuousLinearMap.id ℝ F
   have hkm : StronglyMeasurable (Function.uncurry k) :=
     ((measurable_rieszKernel v).comp

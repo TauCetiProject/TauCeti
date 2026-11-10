@@ -163,6 +163,12 @@ def rieszSymbolLp (v : E) : Lp ℂ ∞ (volume : Measure E) :=
 theorem coeFn_rieszSymbolLp (v : E) : rieszSymbolLp v =ᵐ[volume] rieszSymbol v :=
   (memLp_rieszSymbol v volume).coeFn_toLp
 
+@[simp]
+theorem rieszSymbolLp_zero : rieszSymbolLp (0 : E) = 0 := by
+  apply Lp.ext
+  filter_upwards [coeFn_rieszSymbolLp (0 : E), Lp.coeFn_zero ℂ ∞ (volume : Measure E)] with ξ h₁ h₂
+  rw [h₁, h₂, rieszSymbol_zero_left, Pi.zero_apply]
+
 theorem rieszSymbolLp_add (v w : E) :
     rieszSymbolLp (v + w) = rieszSymbolLp v + rieszSymbolLp w := by
   apply Lp.ext
@@ -224,9 +230,7 @@ theorem fourier_rieszTransform (v : E) (f : Lp F 2 (volume : Measure E)) :
 
 @[simp]
 theorem rieszTransform_zero : rieszTransform F (0 : E) = 0 := by
-  have h : rieszSymbolLp (0 : E) = 0 := by
-    simpa using rieszSymbolLp_smul (E := E) 0 0
-  rw [rieszTransform, h, Lp.fourierMultiplierCLM_zero]
+  rw [rieszTransform, rieszSymbolLp_zero, Lp.fourierMultiplierCLM_zero]
 
 theorem rieszTransform_add (v w : E) :
     rieszTransform F (v + w) = rieszTransform F v + rieszTransform F w := by
