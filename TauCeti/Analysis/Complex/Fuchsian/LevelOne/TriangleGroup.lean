@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Fuchsian.TriangleOrder.Group
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 import TauCeti.Analysis.Complex.UpperHalfPlane.PSL.Translation
 import TauCeti.Analysis.Complex.UpperHalfPlane.Rho
+import TauCeti.NumberTheory.Modular.Generators
 
 /-!
 # The level-one modular group as the triangle group `Δ(3, 2, ∞)`
@@ -261,20 +262,11 @@ private theorem interiorAngle_triangle_two_eq_angle :
     triangle.interiorAngle 2 = TriangleOrder.cusp.angle := by
   rw [interiorAngle_triangle_two, TriangleOrder.angle_cusp]
 
-/-- `S T` has order dividing `3` in `PSL(2, ℤ)`: it is the transformation at the vertex `ρ` of the
-modular triangle, whose angle is `π / 3`. -/
-private theorem S_mul_T_pow_three :
-    ((_root_.ModularGroup.S : PSL(2, ℤ)) * _root_.ModularGroup.T) ^ 3 = 1 := by
-  apply psl2zToPSL2R_injective
-  have h := triangle.orderOf_vertexReflectionComp_of_interiorAngle_eq (i := 0) (m := 3)
-    (by rw [interiorAngle_triangle_zero, Nat.cast_ofNat])
-  rw [map_pow, map_one, ← vertexReflectionComp_triangle_zero]
-  exact orderOf_dvd_iff_pow_eq_one.1 h.dvd
-
 /-- The homomorphism `Δ(3, 2, ∞) →* PSL(2, ℤ)` sending `x`, `y`, `z` to `S T`, `S` and `T⁻¹`. -/
 private def triangleGroupHom : TriangleGroup 3 2 0 →* PSL(2, ℤ) :=
   TriangleGroup.lift ((_root_.ModularGroup.S : PSL(2, ℤ)) * _root_.ModularGroup.T)
-    _root_.ModularGroup.S (_root_.ModularGroup.T : PSL(2, ℤ))⁻¹ S_mul_T_pow_three
+    _root_.ModularGroup.S (_root_.ModularGroup.T : PSL(2, ℤ))⁻¹
+    (by simpa [R_def, QuotientGroup.mk_mul] using coe_R_pow_three)
     (by rw [pow_two, ModularGroup.S_mul_S_PSL2Z]) (pow_zero _)
     (by rw [← mul_assoc, mul_assoc _ _ (_root_.ModularGroup.S : PSL(2, ℤ)),
       ModularGroup.S_mul_S_PSL2Z, mul_one, inv_mul_cancel])
