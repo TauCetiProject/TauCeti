@@ -22,9 +22,11 @@ product of the two diagonal double cosets is again a single diagonal coset,
 
 The two levels differ in what they assume. The set-level statement `mul_mem_doubleCoset_of_coprime`
 needs only coprimality: a zero entry in one tuple forces the other tuple to be all ones (a zero
-entry makes that determinant `0`, and `Nat.Coprime 0 m` holds only for `m = 1`), and then both
-sides are the junk value `1` of `natDiagGL`. Only its private supporting lemmas, which are about
-genuine diagonal representatives, still carry `∀ i, 0 < a i`. The **ring-level** theorem
+entry makes that determinant `0`, and `Nat.Coprime 0 m` holds only for `m = 1`), so both
+diagonal representatives are `1` (the junk value of `natDiagGL` on the tuple with a zero entry,
+and `natDiagGL` of the all-ones tuple), and the claim reduces to `mapGL ℚ τ ∈ SLnZ n`. Only its
+private supporting lemmas, which are about genuine diagonal representatives, still carry
+`∀ i, 0 < a i`. The **ring-level** theorem
 `diagElem_mul_of_coprime` likewise needs no positivity at all: on a tuple with a zero entry both
 sides degenerate, so the identity survives.
 Both levels hold for every rank `n`.
@@ -163,7 +165,8 @@ section CoprimeCosets
 /-- **The set-level coprime product** (Shimura, Proposition 3.16, key step): sandwiching any
 `τ ∈ SL_n(ℤ)` between the diagonals of `a` and `b` stays inside the double coset of the
 diagonal of `a * b`, when the determinants are coprime. If an entry is zero, the other tuple
-is `1` and everything is the junk value `1`. -/
+is `1`, so both diagonal representatives are `1` and the claim reduces to
+`mapGL ℚ τ ∈ SLnZ n`. -/
 lemma mul_mem_doubleCoset_of_coprime (a b : Fin n → ℕ)
     (hcop : Nat.Coprime (∏ i, a i) (∏ i, b i)) (τ : SpecialLinearGroup (Fin n) ℤ) :
     natDiagGL n a * mapGL ℚ τ * natDiagGL n b ∈
