@@ -53,6 +53,10 @@ quadratic forms with the subgroup preserving both summands.
   `LinearMap.fiberProductAssoc_symm_apply_fst`, `LinearMap.fiberProductAssoc_symm_apply_snd`.
 * `LinearMap.injective_prodMap`: a product of injective linear maps is injective, stated for the
   coercion of `f.prodMap g`.
+* `LinearMap.surjective_coprod_neg_assoc_inner`, `LinearMap.surjective_coprod_neg_assoc_outer`
+  and their converses `LinearMap.surjective_coprod_neg_assoc_symm_inner`,
+  `LinearMap.surjective_coprod_neg_assoc_symm_outer`: transversality of one bracketing of an
+  iterated fibre product gives transversality of the other.
 * `LinearMap.axes_of_commute_neg_snd`: a linear endomorphism of `R × R × R` preserving the third
   coordinate and commuting with `(x, y, z) ↦ (x, -y, 0)` preserves the first two coordinate axes
   and fixes the third basis vector.
@@ -316,6 +320,74 @@ theorem prodMap_subtype_fiberProductAssoc_apply
       LinearEquiv.prodAssoc R X Y Z
         ((ker (α.coprod (-β))).subtype.prodMap LinearMap.id (r : ker (α.coprod (-β)) × Z)) :=
   (rfl)
+
+/-- Transversality of the left bracketing `(X ×_T Y) ×_S Z` gives transversality of the inner
+fibre product `Y ×_S Z` of the right bracketing: `γ` and `δ` are transverse. -/
+theorem surjective_coprod_neg_assoc_inner
+    (h₁₂ : Function.Surjective
+      ((γ ∘ₗ snd R X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ))) :
+    Function.Surjective (γ.coprod (-δ)) := by
+  intro σ
+  obtain ⟨⟨⟨⟨_, η⟩, _⟩, ζ⟩, hw⟩ := h₁₂ σ
+  exact ⟨(η, ζ), by simpa using hw⟩
+
+/-- Transversality of the left bracketing `(X ×_T Y) ×_S Z` gives transversality of the outer
+fibre product `X ×_T (Y ×_S Z)` of the right bracketing: `α` and `β` restricted to `Y ×_S Z` are
+transverse. -/
+theorem surjective_coprod_neg_assoc_outer (h₁ : Function.Surjective (α.coprod (-β)))
+    (h₁₂ : Function.Surjective
+      ((γ ∘ₗ snd R X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ))) :
+    Function.Surjective (α.coprod (-(β ∘ₗ fst R Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype))) := by
+  -- Correct a solution `(ξ, η)` of `α ξ - β η = τ` by a point `(ξ₀, η₀)` of `X ×_T Y` with
+  -- `γ η₀ - δ ζ₀ = γ η`, so that `η - η₀` satisfies `γ (η - η₀) = δ (-ζ₀)`.
+  intro τ
+  obtain ⟨⟨ξ, η⟩, hτ⟩ := h₁ τ
+  obtain ⟨⟨⟨⟨ξ₀, η₀⟩, h₀⟩, ζ₀⟩, hw⟩ := h₁₂ (γ η)
+  simp only [coprod_apply, LinearMap.neg_apply, ← sub_eq_add_neg] at hτ
+  simp only [mem_ker, coprod_apply, LinearMap.neg_apply, ← sub_eq_add_neg, sub_eq_zero] at h₀
+  simp only [coprod_apply, comp_apply, Submodule.subtype_apply, snd_apply, LinearMap.neg_apply,
+    ← sub_eq_add_neg] at hw
+  refine ⟨(ξ - ξ₀, ⟨(η - η₀, -ζ₀), ?_⟩), ?_⟩
+  · simp only [mem_ker, coprod_apply, LinearMap.neg_apply, map_sub, map_neg, ← hw]
+    abel
+  · simp only [coprod_apply, comp_apply, Submodule.subtype_apply, fst_apply, LinearMap.neg_apply,
+      map_sub,
+      h₀, ← hτ]
+    abel
+
+/-- Transversality of the right bracketing `X ×_T (Y ×_S Z)` gives transversality of the inner
+fibre product `X ×_T Y` of the left bracketing: `α` and `β` are transverse. -/
+theorem surjective_coprod_neg_assoc_symm_inner
+    (h₂₂ : Function.Surjective
+      (α.coprod (-(β ∘ₗ fst R Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)))) :
+    Function.Surjective (α.coprod (-β)) := by
+  intro τ
+  obtain ⟨⟨ξ, ⟨⟨η, _⟩, _⟩⟩, hw⟩ := h₂₂ τ
+  exact ⟨(ξ, η), by simpa using hw⟩
+
+/-- Transversality of the right bracketing `X ×_T (Y ×_S Z)` gives transversality of the outer
+fibre product `(X ×_T Y) ×_S Z` of the left bracketing: `γ` restricted to `X ×_T Y` and `δ` are
+transverse. -/
+theorem surjective_coprod_neg_assoc_symm_outer (h₂ : Function.Surjective (γ.coprod (-δ)))
+    (h₂₂ : Function.Surjective
+      (α.coprod (-(β ∘ₗ fst R Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)))) :
+    Function.Surjective ((γ ∘ₗ snd R X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ)) := by
+  -- Correct a solution `(η, ζ)` of `γ η - δ ζ = σ` by a point `(η₀, ζ₀)` of `Y ×_S Z` with
+  -- `α ξ₀ - β η₀ = β η`, so that `η + η₀` satisfies `α ξ₀ = β (η + η₀)`.
+  intro σ
+  obtain ⟨⟨η, ζ⟩, hσ⟩ := h₂ σ
+  obtain ⟨⟨ξ₀, ⟨⟨η₀, ζ₀⟩, h₀⟩⟩, hw⟩ := h₂₂ (β η)
+  simp only [coprod_apply, LinearMap.neg_apply, ← sub_eq_add_neg] at hσ
+  simp only [mem_ker, coprod_apply, LinearMap.neg_apply, ← sub_eq_add_neg, sub_eq_zero] at h₀
+  simp only [coprod_apply, comp_apply, Submodule.subtype_apply, fst_apply, LinearMap.neg_apply,
+    ← sub_eq_add_neg] at hw
+  refine ⟨(⟨(ξ₀, η + η₀), ?_⟩, ζ + ζ₀), ?_⟩
+  · simp only [mem_ker, coprod_apply, LinearMap.neg_apply, map_add, ← hw]
+    abel
+  · simp only [coprod_apply, comp_apply, Submodule.subtype_apply, snd_apply, LinearMap.neg_apply,
+      map_add,
+      h₀, ← hσ]
+    abel
 
 end Assoc
 

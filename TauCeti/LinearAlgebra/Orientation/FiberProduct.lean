@@ -222,13 +222,12 @@ open LinearMap in
 and `δ : Z → S`, the reassociation `(X ×_T Y) ×_S Z ≃ X ×_T (Y ×_S Z)`
 (`LinearMap.fiberProductAssoc`) carries the fibre product orientation of `X ×_T Y` and `Z` to
 that of `X` and `Y ×_S Z`, with no sign: in the formal notation `[X][T]^∨[Y]`, both are
-`[X][T]^∨[Y][S]^∨[Z]`. -/
+`[X][T]^∨[Y][S]^∨[Z]`. Only transversality of the left bracketing is assumed; that of the right
+bracketing follows (`LinearMap.surjective_coprod_neg_assoc_inner`,
+`LinearMap.surjective_coprod_neg_assoc_outer`). -/
 theorem map_fiberProduct_assoc (h₁ : Function.Surjective (α.coprod (-β)))
     (h₁₂ : Function.Surjective
       ((γ ∘ₗ snd K X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ)))
-    (h₂ : Function.Surjective (γ.coprod (-δ)))
-    (h₂₂ : Function.Surjective
-      (α.coprod (-(β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype))))
     (ox : Orientation K X (Fin x)) (oy : Orientation K Y (Fin y)) (oz : Orientation K Z (Fin z))
     (ot : Orientation K T (Fin t)) (os : Orientation K S (Fin s)) (hx : finrank K X = x)
     (hy : finrank K Y = y) (hz : finrank K Z = z) (ht : finrank K T = t) (hs : finrank K S = s)
@@ -237,8 +236,13 @@ theorem map_fiberProduct_assoc (h₁ : Function.Surjective (α.coprod (-β)))
     map (Fin r) (fiberProductAssoc α β γ δ)
         (fiberProduct h₁₂ (fiberProduct h₁ ox oy ot hx hy ht hq₁) oz os
           (by have := finrank_ker_coprod_neg_add h₁; omega) hz hs hr₁) =
-      fiberProduct h₂₂ ox (fiberProduct h₂ oy oz os hy hz hs hq₂) ot hx
-        (by have := finrank_ker_coprod_neg_add h₂; omega) ht hr₂ := by
+      fiberProduct (β := β ∘ₗ fst K Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)
+        (surjective_coprod_neg_assoc_outer h₁ h₁₂) ox
+        (fiberProduct (surjective_coprod_neg_assoc_inner h₁₂) oy oz os hy hz hs hq₂) ot hx
+        (by have := finrank_ker_coprod_neg_add (surjective_coprod_neg_assoc_inner h₁₂); omega) ht
+        hr₂ := by
+  have h₂ := surjective_coprod_neg_assoc_inner h₁₂
+  have h₂₂ := surjective_coprod_neg_assoc_outer h₁ h₁₂
   have hQ₁ := finrank_ker_coprod_neg h₁ hx hy ht hq₁
   have hQ₂ := finrank_ker_coprod_neg h₂ hy hz hs hq₂
   have hR₁ := finrank_ker_coprod_neg h₁₂ hQ₁ hz hs hr₁
