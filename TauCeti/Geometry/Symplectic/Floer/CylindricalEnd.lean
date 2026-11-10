@@ -71,8 +71,9 @@ window `[p.1 - r, p.1 + r] × [0, 1]` bounds `du(p)`
 
 This gives **convergence to an orbit along windows of vanishing energy**
 (`exists_subseq_periodic_hasDerivAt_tendstoLocallyUniformly_of_tendsto_setLIntegral`).
-Let `u_k` be Floer solutions on `S × ℝ`, and let `σ_k` be translation parameters such that the
-energy of `u_k` over every window `[a + σ_k, b + σ_k] × [0, 1]` tends to zero. Then there are a
+Let `u_k` be Floer solutions on `S × ℝ`, and let `σ_k` be translation parameters such that every
+interval `[a + σ_k, b + σ_k]` eventually lies in `S` and the energy of `u_k` over every window
+`[a + σ_k, b + σ_k] × [0, 1]` tends to zero. Then there are a
 subsequence `φ` and a `1`-periodic orbit `x` of `X_{H_t}` such that the translates
 `(s, t) ↦ u_(φ n)(s + σ_(φ n), t)` converge to the stationary cylinder `(s, t) ↦ x(t)`, locally
 uniformly on `ℝ × ℝ`. On each band `[-m, m] × ℝ` the translates are eventually uniformly

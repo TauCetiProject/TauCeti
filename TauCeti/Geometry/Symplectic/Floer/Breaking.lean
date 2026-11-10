@@ -338,24 +338,6 @@ theorem eq_of_tendstoLocallyUniformlyOn_comp_add
   · exact (key hr t ht).symm
   · exact key hr t ht
 
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- If the translates of `u_k` converge uniformly on the window `[0, 1] × [0, 1]` to a continuous
-`v`, then the values of a continuous vector field `Φ`, evaluated at the translates together with
-the `t`-coordinate, converge uniformly there too. -/
-private theorem tendstoUniformlyOn_comp_snd_prodMk {Φ : ℝ × V → V} (hΦ : Continuous Φ)
-    (hUC : TendstoUniformlyOn (fun k z ↦ u k (z + (s k, 0))) v atTop (Icc 0 1 ×ˢ Icc 0 1))
-    (hvK : ContinuousOn v (Icc 0 1 ×ˢ Icc 0 1)) :
-    TendstoUniformlyOn (fun k z ↦ Φ (z.2, u k (z + (s k, 0)))) (fun z ↦ Φ (z.2, v z))
-      atTop (Icc 0 1 ×ˢ Icc 0 1) := by
-  have hpair : TendstoUniformlyOn (fun k z ↦ (z.2, u k (z + (s k, 0)))) (fun z ↦ (z.2, v z))
-      atTop (Icc 0 1 ×ˢ Icc 0 1) := by
-    rw [Metric.tendstoUniformlyOn_iff] at hUC ⊢
-    intro ε hε
-    filter_upwards [hUC ε hε] with k hk z hz
-    simpa [Prod.dist_eq] using hk z hz
-  exact ((isCompact_Icc.prod isCompact_Icc).image_of_continuousOn
-    (continuousOn_snd.prodMk hvK)).comp_tendstoUniformlyOn (fun _ _ ↦ hΦ.continuousAt) hpair
-
 omit [FiniteDimensional ℝ V] in
 /-- The defect of the integral equation of the Hamiltonian flow along the limit path `v (0, ·)` is
 eventually, for almost every `r ∈ [0, 1]`, at most `ε` more than the defect of `u_k` along the
@@ -432,9 +414,15 @@ private theorem sub_sub_integral_eq_zero_of_tendstoLocallyUniformlyOn_comp_add
   have hΦ : Continuous Φ := ω.continuous_uncurry_hamiltonianVectorField hH
   obtain ⟨hUC, hFc, hvK⟩ := tendstoUniformlyOn_Icc_prod_comp_add_and_continuousOn isCompact_Icc
     (Eventually.of_forall fun k ↦ (hu k).continuousOn.mono hEU) (hW 0 1) hv
-  -- The vector field along the translates converges uniformly on `[0, 1] × [0, 1]`, since `Φ` is
-  -- continuous on the compact set of values of the limit.
-  have hΦUC := tendstoUniformlyOn_comp_snd_prodMk hΦ hUC hvK
+  -- The vector field along the translates converges uniformly on `[0, 1] × [0, 1]`, since the
+  -- graphs of the translates converge uniformly to the compact graph of the limit.
+  have hΦUC : TendstoUniformlyOn (fun k z ↦ Φ (z.2, u k (z + (s k, 0)))) (fun z ↦ Φ (z.2, v z))
+      atTop (Icc 0 1 ×ˢ Icc 0 1) :=
+    ((isCompact_Icc.prod isCompact_Icc).image_of_continuousOn
+      (continuousOn_id.prodMk hvK)).comp_tendstoUniformlyOn
+      (g := fun p : (ℝ × ℝ) × V ↦ Φ (p.1.2, p.2)) (fun _ _ ↦
+        (hΦ.comp ((continuous_snd.comp continuous_fst).prodMk continuous_snd)).continuousAt)
+      hUC.graph
   set A := v (0, t₂) - v (0, t₁) - ∫ t in t₁..t₂, Φ (t, v (0, t))
   -- The defects of the `u_k` along the segments `{r} × [t₁, t₂]` tend to zero in `L¹`, and
   -- they converge uniformly in `r ∈ [0, 1]` to the defect `A` of the limit.
