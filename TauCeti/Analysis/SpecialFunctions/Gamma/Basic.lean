@@ -53,6 +53,8 @@ summability and moment arguments for discrete laws with Beta-function masses.
   `a < b`.
 * `Complex.norm_inv_Gamma_add_natCast_le` — `‖1 / Γ(s + k)‖ ≤ ‖1 / Γ(s)‖ / k!` for `1 ≤ Re s`, the
   complex counterpart of the half-line bound used for series with coefficients `1 / Γ(b + k)`.
+* `Complex.sum_range_neg_one_pow_div_factorial_mul_Gamma` — the alternating sum
+  `∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))` for `a ∉ −ℕ`.
 -/
 
 public section
@@ -250,5 +252,37 @@ theorem norm_inv_Gamma_add_natCast_le {s : ℂ} (hs : 1 ≤ s.re) (k : ℕ) :
         ≤ ‖(Gamma (s + (k + 1 : ℕ)))⁻¹‖ * (‖s + k‖ * k !) := by gcongr
       _ = ‖(Gamma (s + k))⁻¹‖ * k ! := by rw [hrec]; ring
       _ ≤ ‖(Gamma s)⁻¹‖ := (le_div_iff₀ (by positivity)).1 ih
+
+open Finset in
+/-- A finite alternating sum of reciprocal Gamma values: for `a ∉ −ℕ`,
+`∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))`. This is the coefficient
+identity behind the expansion of Tricomi's incomplete Gamma function in powers of `−z`
+(DLMF 8.7.1). -/
+theorem sum_range_neg_one_pow_div_factorial_mul_Gamma {a : ℂ} (ha : ∀ n : ℕ, a ≠ -n)
+    (m : ℕ) :
+    ∑ i ∈ range (m + 1), (-1 : ℂ) ^ i / (i ! * Gamma (a + (m - i : ℕ) + 1)) =
+      (-1) ^ m / (m ! * (a + m)) * (Gamma a)⁻¹ := by
+  induction m generalizing a with
+  | zero =>
+    have ha0 : a ≠ 0 := by simpa using ha 0
+    simp [Gamma_add_one a ha0, mul_comm]
+  | succ m ih =>
+    have ha1 : ∀ n : ℕ, a + 1 ≠ -n := fun n h => ha (n + 1) (by push_cast; linear_combination h)
+    have ha0 : a ≠ 0 := by simpa using ha 0
+    have ham : a + (m + 1 : ℕ) ≠ 0 := fun h => ha (m + 1) (by linear_combination h)
+    have hΓ : Gamma a ≠ 0 := Gamma_ne_zero ha
+    rw [sum_range_succ, Nat.sub_self, Nat.cast_zero, add_zero]
+    have hsum : ∑ i ∈ range (m + 1), (-1 : ℂ) ^ i / (i ! * Gamma (a + (m + 1 - i : ℕ) + 1)) =
+        ∑ i ∈ range (m + 1), (-1 : ℂ) ^ i / (i ! * Gamma (a + 1 + (m - i : ℕ) + 1)) := by
+      refine sum_congr rfl fun i hi => ?_
+      rw [Nat.sub_add_comm (Nat.lt_succ_iff.1 (mem_range.1 hi))]
+      push_cast
+      ring_nf
+    rw [hsum, ih ha1, Gamma_add_one a ha0, Nat.factorial_succ]
+    push_cast at ham ⊢
+    have hm : (m : ℂ) + 1 ≠ 0 := by norm_cast
+    have ham' : a + 1 + m ≠ 0 := fun h => ham (by linear_combination h)
+    field_simp
+    ring
 
 end Complex

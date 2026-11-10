@@ -249,35 +249,6 @@ theorem differentiable_tricomiIncompleteGamma_left (z : ℂ) :
 
 /-! ### The series in powers of `−z` and the integral -/
 
-/-- The coefficient identity behind the second form of DLMF 8.7.1: for `a ∉ −ℕ`,
-`∑_{i ≤ m} (−1)ⁱ / (i! Γ(a + m − i + 1)) = (−1)ᵐ / (m! (a + m) Γ(a))`. -/
-private theorem sum_range_neg_one_pow_div_factorial_mul_Gamma {a : ℂ} (ha : ∀ n : ℕ, a ≠ -n)
-    (m : ℕ) :
-    ∑ i ∈ range (m + 1), (-1 : ℂ) ^ i / (i ! * Gamma (a + (m - i : ℕ) + 1)) =
-      (-1) ^ m / (m ! * (a + m)) * (Gamma a)⁻¹ := by
-  induction m generalizing a with
-  | zero =>
-    have ha0 : a ≠ 0 := by simpa using ha 0
-    simp [Gamma_add_one a ha0, mul_comm]
-  | succ m ih =>
-    have ha1 : ∀ n : ℕ, a + 1 ≠ -n := fun n h => ha (n + 1) (by push_cast; linear_combination h)
-    have ha0 : a ≠ 0 := by simpa using ha 0
-    have ham : a + (m + 1 : ℕ) ≠ 0 := fun h => ha (m + 1) (by linear_combination h)
-    have hΓ : Gamma a ≠ 0 := Gamma_ne_zero ha
-    rw [sum_range_succ, Nat.sub_self, Nat.cast_zero, add_zero]
-    have hsum : ∑ i ∈ range (m + 1), (-1 : ℂ) ^ i / (i ! * Gamma (a + (m + 1 - i : ℕ) + 1)) =
-        ∑ i ∈ range (m + 1), (-1 : ℂ) ^ i / (i ! * Gamma (a + 1 + (m - i : ℕ) + 1)) := by
-      refine sum_congr rfl fun i hi => ?_
-      rw [Nat.sub_add_comm (Nat.lt_succ_iff.1 (mem_range.1 hi))]
-      push_cast
-      ring_nf
-    rw [hsum, ih ha1, Gamma_add_one a ha0, Nat.factorial_succ]
-    push_cast at ham ⊢
-    have hm : (m : ℂ) + 1 ≠ 0 := by norm_cast
-    have ham' : a + 1 + m ≠ 0 := fun h => ham (by linear_combination h)
-    field_simp
-    ring
-
 /-- The power series of Tricomi's function in `−z` (DLMF 8.7.1): for `a ∉ −ℕ`,
 `γ*(a, z) = Γ(a)⁻¹ ∑ (−z)ᵏ / (k! (a + k))`. -/
 theorem hasSum_tricomiIncompleteGamma_of_ne_neg_natCast {a : ℂ} (ha : ∀ n : ℕ, a ≠ -n)
