@@ -70,8 +70,8 @@ theorem MemWkpLoc.memLpLoc_of_holderTriple (hp : 2 < p) (hqp : q ≤ p) [Fact (1
   obtain ⟨Dg, hDg, hDq⟩ := hg.exists_weakFDeriv_of_isOpen
   obtain ⟨C, hC⟩ := W1p.exists_eLpNorm_le_of_holderTriple (μ := volume) (Ω := ⟨W, hWo⟩)
     (G := G) (r := r) (by simpa using hp) hqp hK hKW
-  have hgW := hg.memLpLoc.memLp_of_closure hWΩ hWc
-  have hDW := (memWkpLoc_zero_iff.1 hDq).memLp_of_closure hWΩ hWc
+  have hgW := hg.memLpLoc.memLp_of_closure_subset hWc hWΩ
+  have hDW := (memWkpLoc_zero_iff.1 hDq).memLp_of_closure_subset hWc hWΩ
   exact (hC g Dg (hDg.mono (subset_closure.trans hWΩ)) hgW hDW).trans_lt
     (ENNReal.mul_lt_top ENNReal.coe_lt_top
       (ENNReal.add_lt_top.2 ⟨hgW.eLpNorm_lt_top, hDW.eLpNorm_lt_top⟩))
@@ -86,8 +86,8 @@ theorem MemLpLoc.bilin_of_memWkpLoc (B : F →L[ℝ] G →L[ℝ] H) (hp : 2 < p)
   obtain ⟨Dg, hDg, hDq⟩ := hg.exists_weakFDeriv_of_isOpen
   obtain ⟨C, hC⟩ := W1p.exists_eLpNorm_bilin_le (μ := volume) (Ω := ⟨W, hWo⟩)
     (F := F) (G := G) (H := H) (by simpa using hp) hqp hK hKW
-  have hgW := hg.memLpLoc.memLp_of_closure hWΩ hWc
-  have hDW := (memWkpLoc_zero_iff.1 hDq).memLp_of_closure hWΩ hWc
+  have hgW := hg.memLpLoc.memLp_of_closure_subset hWc hWΩ
+  have hDW := (memWkpLoc_zero_iff.1 hDq).memLp_of_closure_subset hWc hWΩ
   have hfK := memLpLoc_iff.1 hf K hKΩ hK
   exact (hC B f g Dg hfK.aestronglyMeasurable (hDg.mono (subset_closure.trans hWΩ)) hgW
     hDW).trans_lt

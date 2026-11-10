@@ -41,12 +41,16 @@ attaching map `∂D^k → M_{c-ε}`. These are the maps out of which the compari
 `M_{c-ε}` with cells attached along the attaching maps and the sublevel `M_{c+ε}` is built, as
 the map induced on the pushout by the inclusion of `M_{c-ε}` and the characteristic maps.
 
-Two normal-form charts of the same index may parametrize the cell differently. When the
+Two normal-form charts of the same index may parametrize the cell differently. Suppose the
 characteristic map `χ₁` of one is homotopic as a map of pairs to `χ₀ ∘ g` for the characteristic
-map `χ₀` of the other and an orthogonal map `g` of determinant `1` (in Milnor's comparison of two
-charts, the polar factor of the negative block of the transition, when it preserves orientation),
-`g` can be removed: it is joined to the identity in the special orthogonal group, so `χ₁` is
-homotopic to `χ₀` as a map of pairs, and the two attaching maps are homotopic.
+map `χ₀` of the other and an orthogonal map `g` (in Milnor's comparison of two charts, the polar
+factor of the negative block of the transition). Then the attaching map `α₁` is homotopic to
+`α₀ ∘ g`. If `det g = 1`, then `g` can be removed: it is joined to the identity in the special
+orthogonal group, so `χ₁` is homotopic to `χ₀` as a map of pairs, and the two attaching maps are
+homotopic. If the cell has index `1` and `det g = -1`, then `g = -1`, and `α₁` is homotopic to
+`α₀` composed with the swap of the two points of `∂D¹ = {-1, 1}`. In every index, `det g = -1`
+changes the sign of the attaching map in reduced homology
+(`TauCeti.reducedSingularHomologyFunctor_map_morseAttachingMap_of_det_eq_neg_one`).
 
 ## Main definitions
 
@@ -72,10 +76,15 @@ homotopic to `χ₀` as a map of pairs, and the two attaching maps are homotopic
   `TauCeti.mapsTo_range_diskBoundaryInclusion_of_homotopy_morseCharacteristicMap`: for `0 < ε`, a
   self-map `h` of the disc such that `χ ∘ h` sends the boundary sphere into the lower sublevel, for
   instance the end of a homotopy of maps of pairs, preserves the boundary sphere.
+* `TauCeti.homotopic_morseAttachingMap_diskBoundaryMap_comp`: a homotopy of pairs from `χ₁` to
+  `χ₀ ∘ g` gives a homotopy from `α₁` to `α₀ ∘ g`.
 * `TauCeti.exists_homotopy_morseCharacteristicMap_of_det_eq_one`,
   `TauCeti.homotopic_morseAttachingMap_of_det_eq_one`: an orthogonal change of parametrization of
   determinant `1` is removed from a homotopy of characteristic maps, and the attaching maps are
   then homotopic.
+* `TauCeti.homotopic_morseAttachingMap_diskBoundaryNeg_comp_of_det_eq_neg_one`: for a cell of
+  index `1`, an orthogonal change of parametrization of determinant `-1` swaps the two attaching
+  points.
 
 ## References
 
@@ -425,6 +434,30 @@ theorem exists_homotopy_morseCharacteristicMap_of_det_eq_one (hg : LinearMap.det
   split_ifs
   exacts [hK _ s, hH _ s]
 
+/-- **A homotopy of characteristic maps restricts to the attaching maps.** If the characteristic
+map `χ₁` of one normal-form chart is homotopic, as a map of pairs into `(M_{c+ε}, M_{c-ε})`, to
+`χ₀ ∘ g` for the characteristic map `χ₀` of another chart of the same index and a linear isometry
+`g`, then the attaching map `α₁ : ∂D^k → M_{c-ε}` is homotopic to `α₀ ∘ g`, where `g` acts on the
+boundary sphere by `LinearIsometryEquiv.diskBoundaryMap`. -/
+theorem homotopic_morseAttachingMap_diskBoundaryMap_comp
+    (K : (ψ₁.morseCharacteristicMap hk hε hball₁ hf₁).hom.Homotopy
+      (g.diskMap ≫ ψ₀.morseCharacteristicMap hk hε hball₀ hf₀).hom)
+    (hK : ∀ t (s : TopCat.diskBoundary.{u} k),
+      f (K (t, TopCat.diskBoundaryInclusion k s)) ≤ c - ε) :
+    (ψ₁.morseAttachingMap hk hε hball₁ hf₁).hom.Homotopic
+      (g.diskBoundaryMap ≫ ψ₀.morseAttachingMap hk hε hball₀ hf₀).hom :=
+  ⟨{ toFun p := ⟨K (p.1, TopCat.diskBoundaryInclusion k p.2), hK p.1 p.2⟩
+     continuous_toFun := (continuous_subtype_val.comp (K.continuous.comp
+       (continuous_fst.prodMk ((TopCat.diskBoundaryInclusion k).hom.continuous.comp
+         continuous_snd)))).subtype_mk _
+     map_zero_left s := Subtype.ext ((congrArg Subtype.val (K.apply_zero _)).trans
+       (OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion hball₁ hf₁ hk hε s))
+     map_one_left s := Subtype.ext ((congrArg Subtype.val (K.apply_one _)).trans
+       ((congrArg (fun w ↦ (ψ₀.morseCharacteristicMap hk hε hball₀ hf₀ w : M))
+         (LinearIsometryEquiv.diskMap_diskBoundaryInclusion g s)).trans
+         (OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion hball₀ hf₀ hk hε
+           _))) }⟩
+
 /-- **Orientation-preserving changes of chart give homotopic attaching maps.** If the
 characteristic map `χ₁` of one normal-form chart is homotopic, as a map of pairs into
 `(M_{c+ε}, M_{c-ε})`, to `χ₀ ∘ g` for the characteristic map `χ₀` of another chart of the same
@@ -437,19 +470,38 @@ theorem homotopic_morseAttachingMap_of_det_eq_one (hg : LinearMap.det g.toLinear
       f (K (t, TopCat.diskBoundaryInclusion k s)) ≤ c - ε) :
     (ψ₁.morseAttachingMap hk hε hball₁ hf₁).hom.Homotopic
       (ψ₀.morseAttachingMap hk hε hball₀ hf₀).hom := by
-  obtain ⟨K', hK'⟩ := exists_homotopy_morseCharacteristicMap_of_det_eq_one hk hε hball₀ hball₁ hf₀
-    hf₁ hg K hK
-  exact ⟨
-    { toFun p := ⟨K' (p.1, TopCat.diskBoundaryInclusion k p.2), hK' p.1 p.2⟩
-      continuous_toFun := (continuous_subtype_val.comp (K'.continuous.comp
-        (continuous_fst.prodMk ((TopCat.diskBoundaryInclusion k).hom.continuous.comp
-          continuous_snd)))).subtype_mk _
-      map_zero_left s := Subtype.ext ((congrArg Subtype.val (K'.apply_zero _)).trans
-        (OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion hball₁ hf₁ hk hε s))
-      map_one_left s := Subtype.ext ((congrArg Subtype.val (K'.apply_one _)).trans
-        (OpenPartialHomeomorph.coe_morseCharacteristicMap_diskBoundaryInclusion hball₀ hf₀ hk
-          hε s)) }⟩
+  have h := (ContinuousMap.Homotopic.refl (ψ₀.morseAttachingMap hk hε hball₀ hf₀).hom).comp
+    (TopCat.homotopic_diskBoundaryMap_id_of_det_eq_one.{u} hg)
+  rw [ContinuousMap.comp_id, ← TopCat.hom_comp] at h
+  exact (homotopic_morseAttachingMap_diskBoundaryMap_comp hk hε hball₀ hball₁ hf₀ hf₁ K hK).trans h
 
 end Orientation
+
+section IndexOne
+
+variable {M : Type u} [TopologicalSpace M] {n : ℕ} {f : M → ℝ} {c ε : ℝ}
+  {ψ₀ ψ₁ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))} (hk : 1 ≤ n)
+  (hε : 0 ≤ ε) (hball₀ : closedBall 0 √ε ⊆ ψ₀.target) (hball₁ : closedBall 0 √ε ⊆ ψ₁.target)
+  (hf₀ : ∀ y ∈ ψ₀.source, f y = c + ∑ j, (if j.val < 1 then -1 else 1) * ψ₀ y j ^ 2)
+  (hf₁ : ∀ y ∈ ψ₁.source, f y = c + ∑ j, (if j.val < 1 then -1 else 1) * ψ₁ y j ^ 2)
+  {g : EuclideanSpace ℝ (Fin 1) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin 1)}
+
+/-- **An orientation-reversing change of chart swaps the attaching points of a cell of index
+`1`.** If the characteristic map `χ₁` of one normal-form chart of index `1` is homotopic, as a map
+of pairs into `(M_{c+ε}, M_{c-ε})`, to `χ₀ ∘ g` for the characteristic map `χ₀` of another and a
+linear isometry `g` of `ℝ` with `det g = -1`, then the attaching map `α₁` is homotopic to `α₀`
+composed with the antipodal map of `∂D¹ = {-1, 1}`, which swaps the two points. -/
+theorem homotopic_morseAttachingMap_diskBoundaryNeg_comp_of_det_eq_neg_one
+    (hg : LinearMap.det g.toLinearMap = -1)
+    (K : (ψ₁.morseCharacteristicMap hk hε hball₁ hf₁).hom.Homotopy
+      (g.diskMap ≫ ψ₀.morseCharacteristicMap hk hε hball₀ hf₀).hom)
+    (hK : ∀ t (s : TopCat.diskBoundary.{u} 1),
+      f (K (t, TopCat.diskBoundaryInclusion 1 s)) ≤ c - ε) :
+    (ψ₁.morseAttachingMap hk hε hball₁ hf₁).hom.Homotopic
+      (diskBoundaryNeg 1 ≫ ψ₀.morseAttachingMap hk hε hball₀ hf₀).hom := by
+  simpa only [TopCat.diskBoundaryMap_eq_diskBoundaryNeg_of_det_eq_neg_one hg] using
+    homotopic_morseAttachingMap_diskBoundaryMap_comp hk hε hball₀ hball₁ hf₀ hf₁ K hK
+
+end IndexOne
 
 end TauCeti

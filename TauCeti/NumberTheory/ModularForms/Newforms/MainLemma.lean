@@ -81,13 +81,11 @@ theorem exists_mem_qSupportedOnDvdSubmodule_and_qExpansion_coeff_sub_eq_zero (hp
   refine ⟨CuspForm.levelRaise p (Gamma1_map_le_conjAct_scaleGL_of_dvd hdvd) F, ?_, ?_,
     fun n hn ↦ ?_⟩
   · exact mem_qSupportedOnDvdSubmodule.mpr (qExpansionSupportedOnDvd_iff.mpr
-      (CuspForm.isSupportedOnDvd_qExpansion_levelRaise (one_mem_strictPeriods_Gamma1_map _)
-        (one_mem_strictPeriods_Gamma1_map _) _ F))
+      (CuspForm.isSupportedOnDvd_qExpansion_levelRaise (one_mem_strictPeriods_Gamma1_map _) _ F))
   · rw [hcomp]
     exact CuspForm.levelRaise_mem_cuspFormCharSpace_of_dvd hdvd χ₀ hF
   · rw [FunLike.coe_sub, ModularForm.qExpansion_sub one_pos (one_mem_strictPeriods_Gamma1_map _),
-      map_sub, CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map _)
-        (one_mem_strictPeriods_Gamma1_map _)]
+      map_sub, CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map _)]
     by_cases hpn : p ∣ n
     · obtain ⟨m, rfl⟩ := hpn
       rw [ite_eq_left (dvd_mul_right p m), Nat.mul_div_cancel_left m hp.pos,

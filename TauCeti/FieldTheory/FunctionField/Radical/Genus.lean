@@ -114,6 +114,7 @@ variable (S : Finset (Place k F)) (hS : ∀ P ∉ S, (n : ℤ) ∣ P.ord u)
 
 include hF hgen hy hn hu hS
 
+omit hu in
 /-- **The different of a radical extension** (Stichtenoth, Proposition 3.7.3(b)): for
 `F' = F(y)` with `y ^ n = u`, the different multiplied by `n` is the conorm of the divisor
 `∑_{P ∈ S} (n - r_P) P`, where `r_P = gcd(n, ord_P u)` and `S` is any finite set of places outside
@@ -126,8 +127,8 @@ theorem Divisor.nsmul_different_eq_conorm_of_pow_eq :
   refine WeilDivisor.ext fun P' ↦ ?_
   rw [WeilDivisor.coeff_nsmul, Divisor.coeff_different, Divisor.coeff_conorm,
     WeilDivisor.coeff_ofFinsetWithMultiplicity,
-    Place.ramificationIdx_eq_of_pow_eq k F (P' := P') hgen hy hn hu]
-  have hd := Place.differentExponent_add_one_eq_of_pow_eq k F (P' := P') hgen hy hn hu
+    Place.ramificationIdx_eq_of_pow_eq k F (P' := P') hgen hy hn]
+  have hd := Place.differentExponent_add_one_eq_of_pow_eq k F (P' := P') hgen hy hn
   set r := Int.gcd n ((P'.restrict k F).ord u)
   have hn0 : n ≠ 0 := by
     rintro rfl
@@ -155,6 +156,7 @@ theorem Divisor.nsmul_different_eq_conorm_of_pow_eq :
     have : Place.differentExponent k F P' = 0 := by omega
     simp [this]
 
+omit hu in
 /-- **The degree of the different of a radical extension**, cross-multiplied: for `F' = F(y)` with
 `y ^ n = u`, `n · [k' : k] · deg Diff(F'/F) = [F' : F] · ∑_{P ∈ S} (n - r_P) deg P`, where
 `r_P = gcd(n, ord_P u)` and `S` is any finite set of places outside which `n` divides `ord_P u`.
@@ -164,7 +166,7 @@ theorem Divisor.natCast_mul_finrank_mul_degree_different_of_pow_eq (hF' : IsFunc
       Module.finrank F F' * ∑ P ∈ S, ((n : ℤ) - Int.gcd n (P.ord u)) * P.degree := by
   let _ : FiniteDimensional k k' := hF.finiteDimensional_baseExtension hF'
   have h := congrArg Divisor.degree
-    (Divisor.nsmul_different_eq_conorm_of_pow_eq (k' := k') (F' := F') hF hgen hy hn hu S hS)
+    (Divisor.nsmul_different_eq_conorm_of_pow_eq (k' := k') (F' := F') hF hgen hy hn S hS)
   rw [map_nsmul, nsmul_eq_mul] at h
   have hcon := Divisor.finrank_mul_degree_conorm_of_isSeparable (k' := k') (F' := F')
     (WeilDivisor.ofFinsetWithMultiplicity S fun P ↦ n - Int.gcd n (P.ord u))
@@ -177,6 +179,7 @@ theorem Divisor.natCast_mul_finrank_mul_degree_different_of_pow_eq (hF' : IsFunc
   simp_rw [Nat.cast_sub (hle _)] at hcon
   rw [mul_left_comm, h, hcon]
 
+omit hu in
 /-- **The genus formula for radical extensions** (Stichtenoth, Proposition 3.7.3(b) with
 Theorem 3.4.13): for `F' = F(y)` of degree `n` over `F` with `y ^ n = u`, `n` invertible in `k`,
 exact constant fields `k` of `F` and `k'` of `F'`, and `k' / k` separable,
@@ -191,7 +194,7 @@ theorem genus_formula_of_pow_eq [Algebra.IsSeparable k k'] (hF' : IsFunctionFiel
   have hn0 : (n : ℤ) ≠ 0 := by
     rintro h
     exact hn (by exact_mod_cast congrArg (Int.cast : ℤ → k) h)
-  have h := Divisor.natCast_mul_finrank_mul_degree_different_of_pow_eq hF hgen hy hn hu S hS hF'
+  have h := Divisor.natCast_mul_finrank_mul_degree_different_of_pow_eq hF hgen hy hn S hS hF'
   rw [hfin] at h
   rw [hurwitz_genus_formula hF hF' hex hex', hfin, mul_left_cancel₀ hn0 h]
 
@@ -230,7 +233,7 @@ theorem genus_formula_of_pow_eq_of_isPrimitiveRoot [Algebra.IsSeparable k k']
   have hfin := finrank_eq_of_pow_eq_of_adjoin_eq_top hζ hnd hy hgen
   have : FiniteDimensional F F' := Module.finite_of_finrank_pos (hfin.symm ▸ NeZero.pos n)
   have : Algebra.IsSeparable F F' := isSeparable_of_pow_eq_of_adjoin_eq_top hnF hu hy hgen
-  exact genus_formula_of_pow_eq hF hgen hy hn hu S hS hF' hex hex' hfin
+  exact genus_formula_of_pow_eq hF hgen hy hn S hS hF' hex hex' hfin
 
 end Kummer
 
@@ -296,7 +299,7 @@ theorem two_mul_genus_sub_two_eq_of_pow_eq_of_gcd_ord_eq_one (hF : IsFunctionFie
     finrank_eq_and_isSeparable_of_pow_eq_of_gcd_ord_eq_one hgen hy hn hu P hP
   have hex' := isIntegrallyClosedIn_of_pow_eq_of_gcd_ord_eq_one hF hex hgen hy hn hu P hP
   simpa only [Module.finrank_self, Nat.cast_one, one_mul] using
-    genus_formula_of_pow_eq (k' := k) hF hgen hy hn hu S hS hF.finite_extension hex hex' hfin
+    genus_formula_of_pow_eq (k' := k) hF hgen hy hn S hS hF.finite_extension hex hex' hfin
 
 end Coprime
 

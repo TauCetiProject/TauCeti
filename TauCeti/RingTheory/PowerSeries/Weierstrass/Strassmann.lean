@@ -35,8 +35,9 @@ polynomial `P` with `f = u * P`, `u` a unit of the ring of series restricted at 
 degree at most `s`, lies in the closed disc, so over an algebraically closed `K` the bound is an
 equality: the zeros of `f` in the closed disc, counted with multiplicity, number exactly `s`.
 
-As a consequence, a series restricted at `c` that vanishes on an infinite subset of the closed disc
-of radius `c` is zero. The bound is sharp: `X ^ p - X` over `ℚ_p` is distinguished of degree `p` at
+As a consequence, a nonzero series restricted at `c` has only finitely many zeros in the closed disc
+of radius `c`, so a series restricted at `c` that vanishes on an infinite subset of that disc is
+zero. The bound is sharp: `X ^ p - X` over `ℚ_p` is distinguished of degree `p` at
 the unit radius and vanishes at the `p` Teichmüller representatives in `ℤ_p`.
 
 The identity principle extends to series with coefficients in a normed space `E` over `K` that
@@ -53,6 +54,8 @@ field extensions of `K`: each `φⱼ` turns such a series into a restricted seri
 * `TauCeti.PowerSeries.IsDistinguished.exists_card_eq_isGoodZero`: over an algebraically closed
   field, a series distinguished of degree `s` at `c > 0` has exactly `s` zeros in the closed disc,
   counted with multiplicity.
+* `PowerSeries.IsRestricted.finite_setOf_norm_le_and_evalAt_eq_zero`: a nonzero restricted
+  series has finitely many zeros in the closed disc.
 * `PowerSeries.IsRestricted.eq_zero_of_infinite_of_evalAt_eq_zero`: the identity principle for
   restricted series.
 * `TauCeti.PowerSeries.eq_zero_of_hasSum_pow_smul`: the identity principle for series with
@@ -181,6 +184,14 @@ open TauCeti.PowerSeries
 variable {K L : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
   [NormedField L] [NormedAlgebra K L] [CompleteSpace L] {c : ℝ} {f : PowerSeries K}
 
+/-- A nonzero power series over a complete ultrametric normed field, restricted at a radius
+`c > 0`, has only finitely many zeros of norm at most `c` in any complete normed field
+extension. -/
+theorem IsRestricted.finite_setOf_norm_le_and_evalAt_eq_zero (hfr : f.IsRestricted c)
+    (hc : 0 < c) (hf0 : f ≠ 0) : {x : L | ‖x‖ ≤ c ∧ f.evalAt x = 0}.Finite := by
+  obtain ⟨s, hs⟩ := exists_isDistinguished hc hfr hf0
+  exact Set.finite_of_encard_le_coe (hs.encard_setOf_evalAt_eq_zero_le hc hfr)
+
 /-- **Identity principle for restricted series.** A power series over a complete ultrametric
 normed field, restricted at a radius `c > 0`, that vanishes on an infinite set of points of norm at
 most `c` in a complete normed field extension is zero. -/
@@ -188,11 +199,8 @@ theorem IsRestricted.eq_zero_of_infinite_of_evalAt_eq_zero (hfr : f.IsRestricted
     {S : Set L} (hS : S.Infinite) (hSc : ∀ x ∈ S, ‖x‖ ≤ c) (hfS : ∀ x ∈ S, f.evalAt x = 0) :
     f = 0 := by
   by_contra hf0
-  obtain ⟨s, hs⟩ := exists_isDistinguished hc hfr hf0
-  have h := (Set.encard_le_encard (t := {x : L | ‖x‖ ≤ c ∧ f.evalAt x = 0})
-    fun x hx ↦ ⟨hSc x hx, hfS x hx⟩).trans (hs.encard_setOf_evalAt_eq_zero_le hc hfr)
-  rw [hS.encard_eq] at h
-  exact ENat.natCast_ne_top s (top_le_iff.mp h)
+  exact hS ((hfr.finite_setOf_norm_le_and_evalAt_eq_zero hc hf0).subset
+    fun x hx ↦ ⟨hSc x hx, hfS x hx⟩)
 
 end PowerSeries
 

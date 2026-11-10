@@ -69,11 +69,11 @@ theorem memLpLoc_iff : MemLpLoc p U f ↔
 theorem MemLpLoc.mono_set (hf : MemLpLoc p U f) (hVU : V ⊆ U) : MemLpLoc p V f :=
   fun K hK hc => hf K (hK.trans hVU) hc
 
-/-- Local `Lᵖ` membership on `U` gives `Lᵖ` membership on any set whose closure is compact and
+/-- Local `Lᵖ` membership on `U` gives `Lᵖ` membership on every set whose closure is compact and
 contained in `U`. -/
-theorem MemLpLoc.memLp_of_closure (hf : MemLpLoc p U f) (hVU : closure V ⊆ U)
-    (hVc : IsCompact (closure V)) : MemLp f p (volume.restrict V) :=
-  (hf _ hVU hVc).mono_measure (Measure.restrict_mono_set volume subset_closure)
+theorem MemLpLoc.memLp_of_closure_subset (hf : MemLpLoc p U f) (hV : IsCompact (closure V))
+    (hVU : closure V ⊆ U) : MemLp f p (volume.restrict V) :=
+  (hf _ hVU hV).mono_measure (Measure.restrict_mono subset_closure le_rfl)
 
 /-- Almost-everywhere equality on `U` preserves local `Lᵖ` membership. -/
 theorem MemLpLoc.congr_ae (hf : MemLpLoc p U f)
