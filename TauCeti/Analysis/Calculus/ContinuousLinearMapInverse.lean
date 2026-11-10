@@ -34,6 +34,9 @@ curve through `1` with the constant `C`; the latter involves no inversion.
 * `ContinuousLinearMap.isInvertible_of_mul_norm_sub_lt`: the perturbation criterion phrased through
   an a priori estimate `‖x‖ ≤ C * ‖L x‖`, `C * ‖M - L‖ < 1`, as used in the method of
   continuity.
+* `ContinuousLinearMap.IsInvertible.add` and
+  `ContinuousLinearMap.IsInvertible.norm_inverse_add_le`: `L + T` is invertible when
+  `‖L⁻¹‖ * ‖T‖ < 1`, with `‖(L + T)⁻¹‖ ≤ ‖L⁻¹‖ / (1 - ‖L⁻¹‖ * ‖T‖)`.
 * `HasDerivAt.clm_inverse`: differentiates `(A t)⁻¹`.
 * `HasDerivAt.clm_inverse_apply`: differentiates `(A t)⁻¹ (w t)`.
 * `ContDiffWithinAt.clm_inverse`, `ContDiffAt.clm_inverse`, `ContDiffOn.clm_inverse`: the
@@ -136,6 +139,34 @@ theorem ContinuousLinearMap.isInvertible_of_mul_norm_sub_lt [CompleteSpace E]
   push_cast
   calc ‖M - e‖ < C⁻¹ := by simpa using (lt_inv_mul_iff₀ hC0).2 hM
     _ ≤ ‖(e.symm : F →L[𝕜] E)‖⁻¹ := inv_anti₀ hsymm0 hsymm
+
+/-- An invertible map `L` stays invertible under a perturbation `T` with `‖L⁻¹‖ * ‖T‖ < 1`. -/
+theorem ContinuousLinearMap.IsInvertible.add [CompleteSpace E] {L T : E →L[𝕜] F}
+    (hL : L.IsInvertible) (h : ‖L.inverse‖ * ‖T‖ < 1) : (L + T).IsInvertible :=
+  isInvertible_of_mul_norm_sub_lt hL.surjective
+    (fun x ↦ by simpa [hL.inverse_apply_self] using L.inverse.le_opNorm (L x))
+    (by rwa [add_sub_cancel_left])
+
+/-- **The inverse of a perturbation.** If `L` is invertible and `‖L⁻¹‖ * ‖T‖ < 1`, then
+`‖(L + T)⁻¹‖ ≤ ‖L⁻¹‖ / (1 - ‖L⁻¹‖ * ‖T‖)`. -/
+theorem ContinuousLinearMap.IsInvertible.norm_inverse_add_le [CompleteSpace E] {L T : E →L[𝕜] F}
+    (hL : L.IsInvertible) (h : ‖L.inverse‖ * ‖T‖ < 1) :
+    ‖(L + T).inverse‖ ≤ ‖L.inverse‖ / (1 - ‖L.inverse‖ * ‖T‖) := by
+  have hLT := hL.add h
+  -- `L⁻¹ = (L + T)⁻¹ + L⁻¹ T (L + T)⁻¹`, so `‖(L + T)⁻¹‖ ≤ ‖L⁻¹‖ + ‖L⁻¹‖ ‖T‖ ‖(L + T)⁻¹‖`.
+  have key : (L + T).inverse = L.inverse - L.inverse ∘L T ∘L (L + T).inverse := by
+    ext y
+    have h₁ := congrArg L.inverse (hLT.self_apply_inverse y)
+    rw [add_apply, map_add, hL.inverse_apply_self] at h₁
+    rw [sub_apply, comp_apply, comp_apply]
+    exact eq_sub_of_add_eq h₁
+  have hle : ‖(L + T).inverse‖ ≤ ‖L.inverse‖ + ‖L.inverse‖ * ‖T‖ * ‖(L + T).inverse‖ := by
+    calc ‖(L + T).inverse‖ ≤ ‖L.inverse‖ + ‖L.inverse ∘L T ∘L (L + T).inverse‖ :=
+          (congrArg norm key).trans_le (norm_sub_le _ _)
+      _ ≤ ‖L.inverse‖ + ‖L.inverse‖ * ‖T‖ * ‖(L + T).inverse‖ := by
+          grw [opNorm_comp_le, opNorm_comp_le, mul_assoc]
+  rw [le_div_iff₀ (by linarith)]
+  linarith
 
 end Perturbation
 
