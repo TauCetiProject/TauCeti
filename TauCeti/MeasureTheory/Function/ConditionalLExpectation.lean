@@ -56,8 +56,9 @@ theorem trim_withDensity_eq_withDensity_condLExp (hm : m ≤ m₀)
   rw [trim_measurableSet_eq hm hs, withDensity_apply _ hs,
     setLIntegral_condLExp_trim hm P Z hs, withDensity_apply _ (hm s hs)]
 
-/-- A measurable nonnegative weight can be tested against the conditional expectation
-or the original function with the same result, including infinite integrals. -/
+/-- A nonnegative weight measurable with respect to the conditioning sigma-algebra `m`
+can be tested against the conditional expectation or the original function with the same
+result, including infinite integrals. -/
 theorem lintegral_mul_condLExp (hm : m ≤ m₀) [SigmaFinite (P.trim hm)]
     (hZ : AEMeasurable[m₀] Z P) (hG : Measurable[m] G) :
     ∫⁻ ω, G ω * P⁻[Z | m] ω ∂P = ∫⁻ ω, G ω * Z ω ∂P := by
@@ -83,7 +84,7 @@ theorem setLIntegral_mul_condLExp (hm : m ≤ m₀) [SigmaFinite (P.trim hm)]
   simpa only [← Set.indicator_mul_left, lintegral_indicator (hm s hs)] using
     lintegral_mul_condLExp hm hZ (hG.indicator hs)
 
-/-- Pull an arbitrary nonnegative measurable factor out of conditional expectation.
+/-- Pull a nonnegative `m`-measurable factor out of conditional expectation.
 Neither boundedness nor integrability of the factor is required. -/
 theorem condLExp_mul_of_measurable_left (hm : m ≤ m₀) [SigmaFinite (P.trim hm)]
     (hG : Measurable[m] G) (hX : AEMeasurable[m₀] X P) :
