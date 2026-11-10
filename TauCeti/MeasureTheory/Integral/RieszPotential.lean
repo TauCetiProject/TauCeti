@@ -212,17 +212,20 @@ theorem setLIntegral_enorm_sub_rpow_le {κ : ℝ} (hκ : 0 < κ) (hκ1 : κ ≤ 
       rw [Subsingleton.elim y 0]; exact mem_ball_self one_pos
     have hω : 0 < μ.real (ball (0 : E) 1) := ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne'
       measure_ball_lt_top.ne
+    have huniv : μ univ = ENNReal.ofReal (μ.real (ball (0 : E) 1)) := by
+      rw [← hball, ofReal_measureReal measure_ball_lt_top.ne]
+    have hreal : μ.real (ball (0 : E) 1) ≤
+        κ⁻¹ * μ.real (ball (0 : E) 1) ^ (1 - κ) * μ.real (ball (0 : E) 1) ^ κ := by
+      rw [mul_assoc, ← Real.rpow_add hω, sub_add_cancel, Real.rpow_one]
+      exact le_mul_of_one_le_left hω.le ((one_le_inv₀ hκ).2 hκ1)
     rw [finrank_zero_of_subsingleton, Nat.cast_zero, zero_mul]
     simp_rw [ENNReal.rpow_zero]
     rcases Ω.eq_empty_or_nonempty with rfl | hne
     · simp
-    · rw [Subsingleton.eq_univ_of_nonempty hne, setLIntegral_univ, lintegral_const, one_mul, hball,
-        ← ofReal_measureReal (hball ▸ measure_ball_lt_top.ne), ← hball,
+    · rw [Subsingleton.eq_univ_of_nonempty hne, setLIntegral_univ, lintegral_const, one_mul, huniv,
         ENNReal.ofReal_rpow_of_nonneg measureReal_nonneg hκ.le,
         ← ENNReal.ofReal_mul (by positivity)]
-      refine ENNReal.ofReal_le_ofReal ?_
-      rw [mul_assoc, ← Real.rpow_add hω, sub_add_cancel, Real.rpow_one]
-      exact le_mul_of_one_le_left hω.le ((one_le_inv₀ hκ).2 hκ1)
+      exact ENNReal.ofReal_le_ofReal hreal
   set n := finrank ℝ E
   have hn : (0 : ℝ) < n := by exact_mod_cast finrank_pos
   set ω := μ.real (ball (0 : E) 1)
