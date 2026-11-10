@@ -84,9 +84,9 @@ def derivative (h : s + 1 ≤ t) : CircleSobolev t E →L[ℂ] CircleSobolev s E
   LinearMap.mkContinuous
     { toFun a := ⟨fun n ↦ (2 * π * I * n / T : ℂ) • a.coeff n,
         memℓp_of_forall_le fun n ↦ weight_mul_norm_derivFactor_le T h n (a.coeff n)⟩
-      map_add' a b := CircleSobolev.ext (funext fun n ↦ smul_add _ _ _)
-      map_smul' c a := CircleSobolev.ext (funext fun n ↦ smul_comm _ c _) }
-    (2 * π / T) fun a ↦ norm_le_of_forall_le (div_nonneg (by positivity) hT.out.le)
+      map_add' a b := CircleSobolev.ext (funext fun n ↦ smul_add _ (a.coeff n) (b.coeff n))
+      map_smul' c a := CircleSobolev.ext (funext fun n ↦ smul_comm _ c (a.coeff n)) }
+    (2 * π / T) fun a ↦ norm_le_of_forall_le (C := 2 * π / T)
       fun n ↦ weight_mul_norm_derivFactor_le T h n (a.coeff n)
 
 @[simp]
@@ -97,8 +97,7 @@ theorem coeff_derivative (h : s + 1 ≤ t) (a : CircleSobolev t E) (n : ℤ) :
 /-- Differentiation costs one order of regularity: `‖derivative T h a‖ ≤ 2π/T ‖a‖`. -/
 theorem norm_derivative_le (h : s + 1 ≤ t) (a : CircleSobolev t E) :
     ‖derivative T h a‖ ≤ 2 * π / T * ‖a‖ :=
-  norm_le_of_forall_le (div_nonneg (by positivity) hT.out.le)
-    fun n ↦ weight_mul_norm_derivFactor_le T h n (a.coeff n)
+  norm_le_of_forall_le fun n ↦ weight_mul_norm_derivFactor_le T h n (a.coeff n)
 
 theorem opNorm_derivative_le (h : s + 1 ≤ t) :
     ‖(derivative T h : CircleSobolev t E →L[ℂ] CircleSobolev s E)‖ ≤ 2 * π / T :=
