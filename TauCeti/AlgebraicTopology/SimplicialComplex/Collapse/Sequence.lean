@@ -19,6 +19,9 @@ contractible. Polyhedra are the support-defined subspaces of any containing weak
 vertices removed by a collapse are absent from the target. Neither finiteness of the ambient
 complex nor local finiteness is required.
 
+More generally, a complex onto which a collapsible complex collapses has contractible
+realization, even when it is not collapsible itself.
+
 The construction composes the elementary deformations from
 `ElementaryCollapsesTo.exists_strong_deformation_retraction`, keeping the terminal
 polyhedron fixed at every time, including along the empty collapse sequence.
@@ -141,5 +144,34 @@ theorem Collapsible.contractibleSpace_realization
     eq_univ_of_forall fun x => support_mem _ x
   have := h.contractibleSpace le_rfl
   exact ((Homeomorph.setCongr huniv).trans (Homeomorph.Set.univ _)).symm.contractibleSpace
+
+/-- If a collapsible complex collapses onto an abstract simplicial complex `L`, then the
+realization of `L` is contractible, although `L` itself need not be collapsible. The polyhedron of
+`L` is a strong deformation retract of the contractible polyhedron of the collapsible complex. -/
+theorem CollapsesTo.contractibleSpace_realization {L : AbstractSimplicialComplex ι}
+    (h : CollapsesTo K L.toPreAbstractSimplicialComplex) (hK : Collapsible K) :
+    ContractibleSpace (Realization L) := by
+  let T : AbstractSimplicialComplex ι := ⊤
+  have hKT : K ≤ T.toPreAbstractSimplicialComplex := le_top
+  have hLT : L ≤ T := le_top
+  have := hK.contractibleSpace hKT
+  obtain ⟨r, hr, hR⟩ := h.exists_strong_deformation_retraction hKT
+  have hri : r.comp (ContinuousMap.inclusion fun _ hx => h.le hx) = ContinuousMap.id _ :=
+    ContinuousMap.ext hr
+  -- The retraction and the inclusion are mutually inverse homotopy equivalences.
+  let e : ContinuousMap.HomotopyEquiv
+      {x : Realization T | x.1.support ∈ L.toPreAbstractSimplicialComplex}
+      {x : Realization T | x.1.support ∈ K} :=
+    { toFun := ContinuousMap.inclusion fun _ hx => h.le hx
+      invFun := r
+      left_inv := hri ▸ ContinuousMap.Homotopic.refl _
+      right_inv := hR.homotopic.symm }
+  have := e.contractibleSpace
+  have hrange : range (realizationMap hLT) =
+      {x : Realization T | x.1.support ∈ L.toPreAbstractSimplicialComplex} := by
+    ext x
+    exact mem_range_realizationMap hLT x
+  exact ((isClosedEmbedding_realizationMap hLT).isEmbedding.toHomeomorph.trans
+    (Homeomorph.setCongr hrange)).contractibleSpace
 
 end PreAbstractSimplicialComplex

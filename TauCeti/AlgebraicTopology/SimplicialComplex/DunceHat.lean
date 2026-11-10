@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Zeeman
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Collapse.Certificate
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Product.Cylinder
-import Mathlib.Data.Finset.Grade
 
 /-!
 # The dunce hat
@@ -100,14 +99,6 @@ theorem card_of_mem_dunceHatTriangles {t : Finset (Fin 8)} (ht : t ∈ dunceHatT
   revert t
   decide +kernel
 
-/-- Every edge of a triangle of the dunce hat lies in a second triangle. -/
-private theorem exists_ne_mem_dunceHatTriangles {t e : Finset (Fin 8)}
-    (ht : t ∈ dunceHatTriangles) (he : e ⊆ t) (hcard : e.card = 2) :
-    ∃ t' ∈ dunceHatTriangles, t' ≠ t ∧ e ⊆ t' := by
-  have key : ∀ t ∈ dunceHatTriangles, ∀ e ∈ t.powersetCard 2,
-      ∃ t' ∈ dunceHatTriangles, t' ≠ t ∧ e ⊆ t' := by decide +kernel
-  exact key t ht e (Finset.mem_powersetCard.mpr ⟨he, hcard⟩)
-
 /-- The dunce hat has finitely many faces. -/
 theorem finite_faces_dunceHat : dunceHat.faces.Finite :=
   Set.toFinite _
@@ -123,39 +114,25 @@ theorem dimension_dunceHat : dimension dunceHat = 2 := by
     simpa [card_of_mem_dunceHatTriangles ht] using
       AbstractSimplicialComplex.le_dimension (mem_dunceHat_of_mem_dunceHatTriangles ht)
 
-/-- **The dunce hat has no free face.** Every edge lies in at least two triangles, and the
-triangles are its maximal faces. -/
+/-- **The dunce hat has no free face.** Every edge of a triangle lies in a second triangle. -/
 theorem not_isFreePair_dunceHat (σ τ : Finset (Fin 8)) :
     ¬ IsFreePair dunceHat.toPreAbstractSimplicialComplex σ τ := by
-  intro h
-  obtain ⟨-, t, ht, hτt⟩ := mem_dunceHat.mp h.upper_mem
-  have htτ : t = τ := h.upper_maximal (mem_dunceHat_of_mem_dunceHatTriangles ht) hτt
-  subst htτ
-  obtain ⟨a, haσ, hins⟩ := Finset.covBy_iff_exists_insert.mp h.covBy
-  have hσcard : σ.card = 2 := by
-    have := Finset.card_insert_of_notMem haσ
-    rw [hins, card_of_mem_dunceHatTriangles ht] at this
-    omega
-  obtain ⟨t', ht', hne, hσt'⟩ :=
-    exists_ne_mem_dunceHatTriangles ht h.lower_ssubset_upper.subset hσcard
-  rcases h.eq_lower_or_eq_upper (mem_dunceHat_of_mem_dunceHatTriangles ht') hσt' with rfl | rfl
-  · rw [card_of_mem_dunceHatTriangles ht'] at hσcard
-    exact absurd hσcard (by decide)
-  · exact hne rfl
+  have hT : ∀ t ∈ dunceHatTriangles, ∀ a ∈ t,
+      ∃ t' ∈ dunceHatTriangles, t' ≠ t ∧ t.erase a ⊂ t' := by
+    decide +kernel
+  exact not_isFreePair_of_forall_erase_ssubset (T := ↑dunceHatTriangles)
+    (fun _ => mem_dunceHat) hT σ τ
 
 /-- **The dunce hat is not collapsible**: it has no free face to start a collapse. -/
 theorem not_collapsible_dunceHat :
     ¬ PreAbstractSimplicialComplex.Collapsible dunceHat.toPreAbstractSimplicialComplex := by
   intro hcol
-  obtain ⟨v, hv⟩ := collapsible_iff.mp hcol
-  rcases hv.eq_or_exists_head with h | ⟨P, hP, -⟩
-  · have hmem : ({0, 1} : Finset (Fin 8)) ∈ dunceHat.toPreAbstractSimplicialComplex :=
-      mem_dunceHat.mpr ⟨by decide, {0, 1, 3}, by decide, by decide⟩
-    rw [h, mem_point] at hmem
-    have := congrArg Finset.card hmem
-    simp at this
-  · obtain ⟨σ, τ, hfree, -⟩ := hP.exists_pair
-    exact not_isFreePair_dunceHat σ τ hfree
+  obtain ⟨v, hv⟩ := hcol.exists_eq_point_of_forall_not_isFreePair not_isFreePair_dunceHat
+  have hmem : ({0, 1} : Finset (Fin 8)) ∈ dunceHat.toPreAbstractSimplicialComplex :=
+    mem_dunceHat.mpr ⟨by decide, {0, 1, 3}, by decide, by decide⟩
+  rw [hv, mem_point] at hmem
+  have := congrArg Finset.card hmem
+  simp at this
 
 /-- Bit masks of the fifty-one staircase tetrahedra of the ordered cylinder on the dunce hat, with
 the vertex `(v, i)` encoded as bit `i + 2 * v`. -/

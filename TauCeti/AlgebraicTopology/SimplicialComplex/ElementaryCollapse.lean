@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.LinkStar
+import Mathlib.Data.Finset.Grade
 
 /-!
 # Elementary collapses of simplicial complexes
@@ -87,6 +88,27 @@ theorem mem_deletion_of_not_subset_upper (h : IsFreePair K σ τ) {ω : Finset �
   mem_deletion.mpr ⟨hω, fun hσω => hωτ (h.subset_upper_of_lower_subset hω hσω)⟩
 
 end IsFreePair
+
+/-- A complex whose faces are the nonempty subsets of the members of `T` has no free pair when
+each codimension-one face of a member of `T` lies properly in a second member of `T`. For a pure
+two-dimensional complex given by its triangles, this says that every edge lies in at least two
+triangles. -/
+theorem not_isFreePair_of_forall_erase_ssubset [DecidableEq ι]
+    {K : _root_.PreAbstractSimplicialComplex ι} {T : Set (Finset ι)}
+    (hK : ∀ σ, σ ∈ K ↔ σ.Nonempty ∧ ∃ t ∈ T, σ ⊆ t)
+    (hT : ∀ t ∈ T, ∀ a ∈ t, ∃ t' ∈ T, t' ≠ t ∧ t.erase a ⊂ t') (σ τ : Finset ι) :
+    ¬ IsFreePair K σ τ := by
+  intro h
+  obtain ⟨hτ, t, ht, hτt⟩ := (hK τ).mp h.upper_mem
+  obtain rfl : t = τ := h.upper_maximal ((hK t).mpr ⟨hτ.mono hτt, t, ht, subset_rfl⟩) hτt
+  obtain ⟨a, haσ, rfl⟩ := Finset.covBy_iff_exists_insert.mp h.covBy
+  obtain ⟨t', ht', hne, hσt'⟩ := hT _ ht a (Finset.mem_insert_self a σ)
+  rw [Finset.erase_insert haσ] at hσt'
+  have hσ : σ.Nonempty := ((hK σ).mp h.lower_mem).1
+  rcases h.eq_lower_or_eq_upper ((hK t').mpr ⟨hσ.mono hσt'.subset, t', ht', subset_rfl⟩)
+      hσt'.subset with rfl | rfl
+  · exact hσt'.ne rfl
+  · exact hne rfl
 
 /-- Deleting the lower face of a free pair retains exactly the original faces other than the
 lower and upper faces. -/
