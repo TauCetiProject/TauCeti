@@ -59,6 +59,10 @@ theorem map_eq_span_of_span_eq_top (p : Submodule R M) {v : ι → p}
   conv_lhs => rw [← (span_range_subtype_eq_top_iff p fun i ↦ (v i).2).1 hv]
   rw [map_span, ← Set.range_comp, Function.comp_def]
 
+/-- The image of the line spanned by `x` is the line spanned by `f x`. -/
+theorem map_span_singleton (f : M →ₛₗ[σ₁₂] M₂) (x : M) : (R ∙ x).map f = R₂ ∙ f x := by
+  rw [map_span, Set.image_singleton]
+
 /-- The inverse of `Submodule.mapIic` takes the inverse image along the inclusion.  This is the
 `symm`-side counterpart of Mathlib's `Submodule.coe_mapIic_apply`.
 
