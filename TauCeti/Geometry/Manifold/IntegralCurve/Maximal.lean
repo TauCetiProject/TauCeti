@@ -179,6 +179,8 @@ theorem isPreconnected_maximalIntegralCurveInterval :
     IsPreconnected (maximalIntegralCurveInterval v x) :=
   ordConnected_maximalIntegralCurveInterval.isPreconnected
 
+namespace TauCeti
+
 /-- The maximal interval of existence is nonempty exactly when it contains the initial time: every
 witness interval straddles `0`. -/
 theorem zero_mem_maximalIntegralCurveInterval_of_nonempty
@@ -187,12 +189,14 @@ theorem zero_mem_maximalIntegralCurveInterval_of_nonempty
   obtain ⟨_, γ, a, b, hγ, hx, h0, -⟩ := h
   exact ⟨γ, a, b, hγ, hx, h0, h0⟩
 
+end TauCeti
+
 /-- The maximal interval of existence contains an open interval with the same right endpoint and a
 negative left endpoint. In particular a finite least upper bound of the interval is positive. -/
 theorem exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB
     (hb : IsLUB (maximalIntegralCurveInterval v x) b) :
     ∃ a < (0 : ℝ), 0 < b ∧ Ioo a b ⊆ maximalIntegralCurveInterval v x := by
-  have h0 := zero_mem_maximalIntegralCurveInterval_of_nonempty hb.nonempty
+  have h0 := TauCeti.zero_mem_maximalIntegralCurveInterval_of_nonempty hb.nonempty
   obtain ⟨ε, hε, hball⟩ :=
     Metric.isOpen_iff.mp (isOpen_maximalIntegralCurveInterval (v := v) (x := x)) 0 h0
   rw [Real.ball_eq_Ioo, zero_sub, zero_add] at hball
@@ -209,7 +213,7 @@ negative. -/
 theorem exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB
     (ha : IsGLB (maximalIntegralCurveInterval v x) a) :
     ∃ b > (0 : ℝ), a < 0 ∧ Ioo a b ⊆ maximalIntegralCurveInterval v x := by
-  have h0 := zero_mem_maximalIntegralCurveInterval_of_nonempty ha.nonempty
+  have h0 := TauCeti.zero_mem_maximalIntegralCurveInterval_of_nonempty ha.nonempty
   obtain ⟨ε, hε, hball⟩ :=
     Metric.isOpen_iff.mp (isOpen_maximalIntegralCurveInterval (v := v) (x := x)) 0 h0
   rw [Real.ball_eq_Ioo, zero_sub, zero_add] at hball
@@ -404,7 +408,7 @@ theorem not_mapClusterPt_nhdsLT_maximalIntegralCurve [CompleteSpace E]
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (hb : IsLUB (maximalIntegralCurveInterval v x) b) (y : M) :
     ¬ MapClusterPt y (𝓝[<] b) (maximalIntegralCurve v x) := by
-  have h0 := zero_mem_maximalIntegralCurveInterval_of_nonempty hb.nonempty
+  have h0 := TauCeti.zero_mem_maximalIntegralCurveInterval_of_nonempty hb.nonempty
   obtain ⟨a, ha, hb0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isLUB hb
   intro hy
   obtain ⟨c, hc, δ, hδ, hδeq⟩ :=
@@ -435,7 +439,7 @@ theorem not_mapClusterPt_nhdsGT_maximalIntegralCurve [CompleteSpace E]
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (ha : IsGLB (maximalIntegralCurveInterval v x) a) (y : M) :
     ¬ MapClusterPt y (𝓝[>] a) (maximalIntegralCurve v x) := by
-  have h0 := zero_mem_maximalIntegralCurveInterval_of_nonempty ha.nonempty
+  have h0 := TauCeti.zero_mem_maximalIntegralCurveInterval_of_nonempty ha.nonempty
   obtain ⟨b, hb, ha0, hsub⟩ := exists_Ioo_subset_maximalIntegralCurveInterval_of_isGLB ha
   intro hy
   obtain ⟨c, hc, δ, hδ, hδeq⟩ :=
@@ -466,10 +470,7 @@ theorem maximalIntegralCurveInterval_eq_univ_of_not_bddAbove_not_bddBelow
     (hup : ¬ BddAbove (maximalIntegralCurveInterval v x))
     (hlow : ¬ BddBelow (maximalIntegralCurveInterval v x)) :
     maximalIntegralCurveInterval v x = univ := by
-  refine eq_univ_of_forall fun t ↦ ?_
-  obtain ⟨s, hs, hts⟩ := not_bddAbove_iff.mp hup t
-  obtain ⟨s', hs', hs't⟩ := not_bddBelow_iff.mp hlow t
-  exact ordConnected_maximalIntegralCurveInterval.out hs' hs ⟨hs't.le, hts.le⟩
+  exact isPreconnected_maximalIntegralCurveInterval.eq_univ_of_unbounded hlow hup
 
 /-- **A maximal integral curve whose forward part is confined to a compact set is defined for all
 positive time.** A finite right endpoint of the maximal interval is impossible, since the escape
