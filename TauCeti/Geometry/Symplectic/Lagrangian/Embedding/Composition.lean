@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Lagrangian.Composition
+public import TauCeti.Geometry.Symplectic.Lagrangian.Composition.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
 
 /-!
@@ -13,7 +13,7 @@ public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
 
 Let `f : L₁ → M₁ × M₂` and `g : L₂ → M₂ × M₃` be Lagrangian maps for the twisted products, and let
 `a : C → L₁`, `b : C → L₂` present their fibre product as in
-`TauCeti.Geometry.Symplectic.Lagrangian.Composition`. When the composite map
+`TauCeti.Geometry.Symplectic.Lagrangian.Composition.Basic`. When the composite map
 `h c = ((f (a c)).1, (g (b c)).2)` is a smooth embedding, it is a Lagrangian correspondence
 `M₁ ⇝ M₃`
 (`TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianMap.isLagrangianEmbedding_relComp`).

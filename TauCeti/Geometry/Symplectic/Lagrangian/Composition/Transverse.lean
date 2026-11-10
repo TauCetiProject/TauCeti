@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.FiberProduct.Manifold
-public import TauCeti.Geometry.Symplectic.Lagrangian.Composition
+public import TauCeti.Geometry.Symplectic.Lagrangian.Composition.Basic
 public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
 import TauCeti.Geometry.Manifold.Immersion.Differential
 
