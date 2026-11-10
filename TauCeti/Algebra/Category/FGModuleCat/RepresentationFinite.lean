@@ -12,6 +12,8 @@ public import TauCeti.CategoryTheory.Preadditive.Radical.IrreducibleComposite
 public import Mathlib.Algebra.Category.FGModuleCat.Abelian
 public import Mathlib.RingTheory.Artinian.Defs
 public import Mathlib.RingTheory.Length
+public import TauCeti.CategoryTheory.Preadditive.KrullSchmidt.AdditiveGenerator
+public import TauCeti.Algebra.Category.FGModuleCat.Basic
 import Mathlib.RingTheory.HopkinsLevitzki
 import TauCeti.Algebra.Category.FGModuleCat.KrullSchmidt
 import TauCeti.Algebra.Category.ModuleCat.Algebra
@@ -40,7 +42,9 @@ idempotent complete, and its morphism modules are finitely generated over `R`
 (`FGModuleCat.finite_hom`). Representation-finiteness provides finitely many modules `P i` that
 represent every indecomposable object (`TauCeti.IsRepresentationFinite.exists_indecomposable_iso`),
 so the finitely generated indecomposable modules have bounded length
-(`TauCeti.IsRepresentationFinite.exists_length_le`).
+(`TauCeti.IsRepresentationFinite.exists_length_le`). Since `FGModuleCat A` is Krull-Schmidt,
+representation-finiteness is the existence of an additive generator
+(`TauCeti.isRepresentationFinite_iff_exists_isAdditiveGenerator`).
 
 ## References
 
@@ -93,7 +97,6 @@ theorem IsRepresentationFinite.exists_length_le [IsArtinianRing A]
   refine ⟨Finset.univ.sup fun i ↦ (Module.length A (P i).obj).toNat, fun M hf hi ↦ ?_⟩
   let X : FGModuleCat.{w} A := ⟨M, (ModuleCat.isFG_iff _).mpr hf⟩
   have : IsLocalRing (End X) := FGModuleCat.isLocalRing_end_of_indecomposable hi
-  have : HasFiniteBiproducts (FGModuleCat.{w} A) := .of_hasFiniteProducts
   obtain ⟨j, ⟨e⟩⟩ := hP X indecomposable_of_isLocalRing_end
   have he : Module.length A M = Module.length A (P j).obj :=
     ((ObjectProperty.ι _).mapIso e).toLinearEquiv.length_eq
@@ -103,6 +106,30 @@ theorem IsRepresentationFinite.exists_length_le [IsArtinianRing A]
   rw [he, ← ENat.natCast_toNat hfin]
   exact_mod_cast Finset.le_sup (f := fun i ↦ (Module.length A (P i).obj).toNat) (Finset.mem_univ j)
 
+/-- **Representation-finiteness is the existence of an additive generator** (Auslander): a left
+Artinian ring `A`, for instance an Artin algebra, is representation-finite exactly when
+`mod A = FGModuleCat A` has an additive generator. -/
+theorem isRepresentationFinite_iff_exists_isAdditiveGenerator [IsArtinianRing A] :
+    IsRepresentationFinite.{w} A ↔ ∃ G : FGModuleCat.{w} A, IsAdditiveGenerator G := by
+  rw [exists_isAdditiveGenerator_iff]
+  refine ⟨fun h ↦ h.exists_indecomposable_iso, fun ⟨m, P, hP⟩ ↦ ?_⟩
+  rw [isRepresentationFinite_iff]
+  let Q : ObjectProperty (ModuleCat.{w} A) := fun M ↦ Module.Finite A M ∧ Indecomposable M
+  let S := Q.FullSubcategory
+  -- Each isomorphism class of finitely generated indecomposable modules contains some `P i`.
+  have hS (y : Skeleton S) : ∃ i, Nonempty (((fromSkeleton S).obj y).obj ≅ (P i).obj) := by
+    let Y := (fromSkeleton S).obj y
+    have : Module.Finite A Y.obj := Y.property.1
+    let X : FGModuleCat.{w} A := ⟨Y.obj, (ModuleCat.isFG_iff _).mpr Y.property.1⟩
+    have : IsLocalRing (End X) := FGModuleCat.isLocalRing_end_of_indecomposable Y.property.2
+    obtain ⟨i, ⟨e⟩⟩ := hP X indecomposable_of_isLocalRing_end
+    exact ⟨i, ⟨(ObjectProperty.ι _).mapIso e⟩⟩
+  choose f hf using hS
+  -- Classes with the same representative are equal, so there are at most `m` classes.
+  refine Finite.of_injective f fun y y' h ↦ skeleton_skeletal S ⟨(fromSkeleton S).preimageIso
+    (Q.fullyFaithfulι.preimageIso ((hf y).some ≪≫ eqToIso (congrArg (fun i ↦ (P i).obj) h) ≪≫
+      (hf y').some.symm))⟩
+
 open ModuleCat.Algebra in
 include R in
 /-- **The radical of a representation-finite Artin algebra is nilpotent**: some power of the
@@ -111,7 +138,6 @@ theorem IsRepresentationFinite.exists_jacobsonRadicalIdeal_pow_eq_bot
     (h : IsRepresentationFinite.{w} A) :
     ∃ N : ℕ, jacobsonRadicalIdeal (FGModuleCat.{w} A) ^ N = ⊥ := by
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
-  have : HasFiniteBiproducts (FGModuleCat.{w} A) := .of_hasFiniteProducts
   obtain ⟨m, P, hP⟩ := h.exists_indecomposable_iso
   exact exists_jacobsonRadicalIdeal_pow_eq_bot_of_finite_indecomposables R P hP
 
@@ -126,7 +152,6 @@ theorem IsRepresentationFinite.mem_closure_isIrreducibleComposite
     (hY : Indecomposable Y.obj) {f : X ⟶ Y} (hf : ¬ IsIso f) :
     f ∈ AddSubgroup.closure {g : X ⟶ Y | IsIrreducibleComposite g} := by
   have : IsArtinianRing A := IsArtinianRing.of_finite R A
-  have : HasFiniteBiproducts (FGModuleCat.{w} A) := .of_hasFiniteProducts
   obtain ⟨m, P, hP⟩ := h.exists_indecomposable_iso
   -- Indecomposability in `ModuleCat A` gives a local endomorphism ring in `FGModuleCat A`.
   have := FGModuleCat.isLocalRing_end_of_indecomposable hX
