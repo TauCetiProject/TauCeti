@@ -10,6 +10,9 @@ public import TauCeti.GroupTheory.SpecificGroups.CFSG.Closure
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.SimplyConnected
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.DiagramAutomorphism.CharacterMap
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Steinberg
+import all TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
+import all TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Steinberg
+import all TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.DiagramAutomorphism.ToralClosure
 
 /-!
 # Indexed Steinberg maps on simply connected full-weight points
@@ -105,13 +108,10 @@ theorem scSteinberg_rootSubgroup (i : Fin d.1.rank ⊕ Fin d.1.rank) (u : Multip
       kostantToralRootSubgroupPoints _ _ _ _ _ _ _ _
         (DynkinType.diagramRootGeneratorPerm d.diagramPerm i) A
         (Multiplicative.ofAdd (Multiplicative.toAdd u ^ d.1.fieldOrder)) := by
-  apply Subtype.ext
-  simp only [coe_scSteinberg, coe_kostantToralRootSubgroupPoints,
-    map_iterateFrobenius_kostantRootSubgroupMatrix, d.1.fieldOrder_eq_characteristic_pow]
-  exact kostantNumberedSymmetryMatrix_conj_kostantRootSubgroupMatrix _ _ _ _ _ _ _
-    (DynkinType.diagramRootGeneratorPerm d.diagramPerm) _ _
-    (d.1.dynkinType.scModuleDiagramEquiv_representation_rootGenerator
-      d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry) A i _
+  simpa only [scSteinberg, kostantToralRootSubgroupPoints,
+    MonoidHom.codRestrict_apply, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
+    d.1.fieldOrder_eq_characteristic_pow] using
+    kostantToralSteinberg_kostantRootSubgroupMatrix _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ i u
 
 /-- The character pullback is precisely the native root-datum Steinberg weight map.
 In particular, triality acts contravariantly, rather than by the source-node permutation. -/
@@ -121,7 +121,13 @@ theorem isCharacterMap_scSteinberg :
   have h : IsCharacterMap (kostantToralWeightTorusPoints _ _ _ _ _ _ _ _ A)
       (d.scSteinberg A)
       ((d.1.characteristic ^ d.1.fieldExponent : ℕ) • LinearMap.funLeft ℤ ℤ d.diagramPerm) :=
-    isCharacterMap_kostantToralSteinberg _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+    isCharacterMap_kostantNumberedSymmetryPoints_comp_frobenius
+      _ _ _ _ _ _ _ _ (DynkinType.diagramRootGeneratorPerm d.diagramPerm) _ _
+      (d.1.dynkinType.scModuleDiagramEquiv_representation_rootGenerator
+        d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry)
+      (DynkinType.diagramRootGeneratorPerm d.diagramPerm).surjective d.diagramPerm
+      (fun _ _ hxy => d.1.dynkinType.scWeight_apply_eq_of_repr_scModuleDiagramEquiv_ne_zero
+        d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry hxy) _ _ _
   have hw : ((d.1.characteristic ^ d.1.fieldExponent : ℕ) •
       LinearMap.funLeft ℤ ℤ d.diagramPerm) = d.datumSteinberg.weightMap := by
     simp only [datumSteinberg_weightMap, datumGraphAut_def,
@@ -152,22 +158,29 @@ theorem scSteinberg_pow_twistOrder :
     (show _root_.Monoid.End _ from d.scSteinberg A) ^ d.twistOrder =
       kostantToralFrobenius _ _ _ _ _ _ _ _ d.1.characteristic
         (d.1.fieldExponent * d.twistOrder) A := by
-  apply kostantToralSteinberg_pow_eq_kostantToralFrobenius_of_numberedSymmetryMatrix_pow_eq_one
-  let θ : d.1.dynkinType.diagramSymmetry →*
-      (d.1.dynkinType.scModule d.1.dynkinType_valid ≃ₗ[ℚ]
-        d.1.dynkinType.scModule d.1.dynkinType_valid) :=
-    { toFun := fun s => d.1.dynkinType.scModuleDiagramEquiv d.1.dynkinType_valid s.property
-      map_one' := d.1.dynkinType.scModuleDiagramEquiv_one d.1.dynkinType_valid
-      map_mul' := fun s r => d.1.dynkinType.scModuleDiagramEquiv_mul
-        d.1.dynkinType_valid s.property r.property }
-  have hperm : (⟨d.diagramPerm, d.diagramPerm_mem_diagramSymmetry⟩ :
-      d.1.dynkinType.diagramSymmetry) ^ d.twistOrder = 1 :=
-    Subtype.ext d.diagramPerm_pow_twistOrder
-  have hθ : θ ⟨d.diagramPerm, d.diagramPerm_mem_diagramSymmetry⟩ ^ d.twistOrder = 1 :=
-    (map_pow θ _ _).symm.trans ((congrArg θ hperm).trans (map_one θ))
-  apply kostantNumberedSymmetryMatrix_pow_eq_one
-  intro x
-  exact congrArg (fun f => f x) hθ
+  let γ := d.1.dynkinType.scToralDiagramAutPoints
+    d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry A
+  have hγ : γ ^ d.twistOrder = 1 :=
+    d.1.dynkinType.scToralDiagramAutPoints_pow_eq_one
+      d.1.dynkinType_valid d.diagramPerm_mem_diagramSymmetry A d.diagramPerm_pow_twistOrder
+  let G := ↥(kostantToralPointsSubgroup
+      (d.1.dynkinType.lieBasis d.1.dynkinType_valid).rootGenerator
+      (d.1.dynkinType.lieBasis d.1.dynkinType_valid).h
+      (representation ℚ (d.1.dynkinType.lieAlgebra d.1.dynkinType_valid)
+        (d.1.dynkinType.scModule d.1.dynkinType_valid))
+      (d.1.dynkinType.scLattice d.1.dynkinType_valid).toAddSubgroup
+      (d.1.dynkinType.kostantForm_apply_mem_scLattice d.1.dynkinType_valid)
+      (d.1.dynkinType.isNilpotent_representation_scModule_rootGenerator d.1.dynkinType_valid)
+      (d.1.dynkinType.scWeightBasis d.1.dynkinType_valid)
+      (d.1.dynkinType.scWeight d.1.dynkinType_valid) A)
+  let φ := MulDistribMulAction.toMonoidEnd (MulAut G) G
+  have hp := (φ.map_pow γ d.twistOrder).symm.trans ((congrArg φ hγ).trans φ.map_one)
+  change (show _root_.Monoid.End _ from γ.toMonoidHom) ^ d.twistOrder = 1 at hp
+  dsimp only [scSteinberg]
+  simp only [kostantToralSteinberg_pow]
+  change (show _root_.Monoid.End _ from γ.toMonoidHom) ^ d.twistOrder * _ = _
+  simp only [hp]
+  exact one_mul _
 
 end
 
