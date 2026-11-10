@@ -36,9 +36,9 @@ namespace TauCeti.SerreGraph
 variable {Γ : SerreGraph} {O F : Set Γ.E} {R : Type*} [Ring R]
 
 /-- Taking integer coefficients into a ring commutes with the signed incidence boundary. -/
-theorem incidenceBoundary_intCast (Γ : SerreGraph) (O : Set Γ.E) (c : O →₀ ℤ) :
+theorem incidenceBoundary_mapRange_intCast (Γ : SerreGraph) (O : Set Γ.E) (c : O →₀ ℤ) :
     Γ.incidenceBoundary O R (c.mapRange (Int.cast : ℤ → R) Int.cast_zero) =
-      (Γ.integralCycleBoundary O c).mapRange (Int.cast : ℤ → R) Int.cast_zero := by
+      (Γ.incidenceBoundary O ℤ c).mapRange (Int.cast : ℤ → R) Int.cast_zero := by
   classical
   induction c using Finsupp.induction_linear with
   | zero => simp
@@ -52,10 +52,10 @@ theorem incidenceBoundary_intCast (Γ : SerreGraph) (O : Set Γ.E) (c : O →₀
 
 /-- The chain obtained by taking the coefficients of an integral cycle into a ring
 is again a cycle. -/
-theorem intCast_mem_ker_incidenceBoundary (Γ : SerreGraph) (O : Set Γ.E)
+theorem mapRange_intCast_mem_ker_incidenceBoundary (Γ : SerreGraph) (O : Set Γ.E)
     (c : (Γ.incidenceBoundary O ℤ).ker) :
     c.val.mapRange (Int.cast : ℤ → R) Int.cast_zero ∈ (Γ.incidenceBoundary O R).ker := by
-  rw [LinearMap.mem_ker, Γ.incidenceBoundary_intCast, LinearMap.mem_ker.mp c.property]
+  rw [LinearMap.mem_ker, Γ.incidenceBoundary_mapRange_intCast, LinearMap.mem_ker.mp c.property]
   simp
 
 /-- Extension of scalars identifies the integral cycle lattice with the incidence kernel
@@ -67,32 +67,35 @@ noncomputable def cycleBaseChangeEquiv (Γ : SerreGraph) (O : Set Γ.E)
   let hF := (Γ.exists_spanningForest O).choose_spec
   ((hF.cycleBasis ℤ).baseChange R).repr.trans (hF.cycleEquiv R).symm
 
+/-- On pure tensors, the comparison scales the cycle obtained by casting its coefficients. -/
+theorem cycleBaseChangeEquiv_tmul_eq (r : R) (c : (Γ.incidenceBoundary O ℤ).ker) :
+    Γ.cycleBaseChangeEquiv O R (r ⊗ₜ[ℤ] c) =
+      r • (⟨c.val.mapRange (Int.cast : ℤ → R) Int.cast_zero,
+        Γ.mapRange_intCast_mem_ker_incidenceBoundary O c⟩ :
+          (Γ.incidenceBoundary O R).ker) := by
+  let hF := (Γ.exists_spanningForest O).choose_spec
+  have hcoord : hF.cycleEquiv R
+      (Γ.cycleBaseChangeEquiv O R (r ⊗ₜ[ℤ] c)) =
+      ((hF.cycleBasis ℤ).baseChange R).repr (r ⊗ₜ[ℤ] c) :=
+    (hF.cycleEquiv R).apply_symm_apply _
+  apply hF.cycleChordCoordinates_injective
+  ext f
+  rw [cycleChordCoordinates_apply, ← hF.cycleEquiv_apply, hcoord]
+  rw [Module.Basis.baseChange_repr_tmul]
+  simp only [IsSpanningForest.cycleBasis_repr, cycleChordCoordinates_apply,
+    map_smul, Finsupp.smul_apply, Finsupp.mapRange_apply,
+    smul_eq_mul, zsmul_eq_mul]
+  exact Int.cast_commute _ _
+
 /-- The comparison is coefficientwise on pure tensors, including on forest edges. -/
 @[simp] theorem cycleBaseChangeEquiv_tmul (r : R)
     (c : (Γ.incidenceBoundary O ℤ).ker) (e : O) :
     (Γ.cycleBaseChangeEquiv O R (r ⊗ₜ[ℤ] c)).val e = r * (c.val e : R) := by
-  let hF := (Γ.exists_spanningForest O).choose_spec
-  have h : Γ.cycleBaseChangeEquiv O R (r ⊗ₜ[ℤ] c) =
-      r • (⟨c.val.mapRange (Int.cast : ℤ → R) Int.cast_zero,
-        Γ.intCast_mem_ker_incidenceBoundary O c⟩ : (Γ.incidenceBoundary O R).ker) := by
-    have hcoord : hF.cycleEquiv R
-        (Γ.cycleBaseChangeEquiv O R (r ⊗ₜ[ℤ] c)) =
-        ((hF.cycleBasis ℤ).baseChange R).repr (r ⊗ₜ[ℤ] c) :=
-      (hF.cycleEquiv R).apply_symm_apply _
-    apply hF.cycleChordCoordinates_injective
-    ext f
-    rw [cycleChordCoordinates_apply, ← hF.cycleEquiv_apply, hcoord]
-    rw [Module.Basis.baseChange_repr_tmul]
-    simp only [IsSpanningForest.cycleBasis_repr, cycleChordCoordinates_apply,
-      map_smul, Finsupp.smul_apply, Finsupp.mapRange_apply,
-      smul_eq_mul, zsmul_eq_mul]
-    exact Int.cast_commute _ _
-  rw [h]
-  simp
+  simp [cycleBaseChangeEquiv_tmul_eq]
 
 /-- An integral fundamental cycle becomes the fundamental cycle on the same chord after
 extension of scalars. This also expresses compatibility with any choice of spanning forest. -/
-@[simp] theorem IsSpanningForest.cycleBaseChangeEquiv_basis
+@[simp] theorem IsSpanningForest.cycleBaseChangeEquiv_one_tmul_cycleBasis
     (hF : Γ.IsSpanningForest O F) (e : ↥(O \ F)) :
     Γ.cycleBaseChangeEquiv O R (1 ⊗ₜ[ℤ] hF.cycleBasis ℤ e) =
       hF.cycleBasis R e := by
@@ -113,9 +116,9 @@ noncomputable def cycleLatticeModTwoEquiv (Γ : SerreGraph) (O : Set Γ.E) :
     (Γ.cycleBaseChangeEquiv O (ZMod 2))).trans
       (LinearEquiv.ofEq _ _ modTwoCycleSpace_def.symm)
 
-/-- Tensoring an integral cycle with one reduces each of its coefficients modulo two. -/
-@[simp] theorem cycleLatticeModTwoEquiv_one_tmul (c : Γ.cycleLattice O) (e : O) :
-    (Γ.cycleLatticeModTwoEquiv O (1 ⊗ₜ[ℤ] c)).val e = (c.val e : ZMod 2) := by
+/-- On pure tensors, the binary comparison scales the coefficientwise reduction modulo two. -/
+@[simp] theorem cycleLatticeModTwoEquiv_tmul (r : ZMod 2) (c : Γ.cycleLattice O) (e : O) :
+    (Γ.cycleLatticeModTwoEquiv O (r ⊗ₜ[ℤ] c)).val e = r * (c.val e : ZMod 2) := by
   simp [cycleLatticeModTwoEquiv]
 
 end TauCeti.SerreGraph
