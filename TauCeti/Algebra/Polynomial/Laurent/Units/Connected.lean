@@ -54,15 +54,16 @@ theorem isClopen_basicOpen_coeff_of_isUnit (f : R[T;T⁻¹]) (hf : IsUnit f) (n 
   · intro p _
     obtain ⟨i, hi, -⟩ := f.existsUnique_coeff_notMem_prime_of_isUnit hf p
     by_cases h : i = n
-    · exact Or.inl (h ▸ hi)
-    · exact Or.inr (Set.mem_iUnion.mpr ⟨⟨i, h⟩, hi⟩)
+    · exact Or.inl ((PrimeSpectrum.mem_basicOpen _ _).mpr (h ▸ hi))
+    · exact Or.inr (Set.mem_iUnion.mpr ⟨⟨i, h⟩, (PrimeSpectrum.mem_basicOpen _ _).mpr hi⟩)
   · exact hopen n
   · exact isOpen_iUnion fun i ↦ hopen i
   · rw [Set.disjoint_left]
     intro p hn hp
     obtain ⟨i, hi⟩ := Set.mem_iUnion.mp hp
     obtain ⟨j, hj, huniq⟩ := f.existsUnique_coeff_notMem_prime_of_isUnit hf p
-    exact i.2 ((huniq i hi).trans (huniq n hn).symm)
+    exact i.2 ((huniq i ((PrimeSpectrum.mem_basicOpen _ _).mp hi)).trans
+      (huniq n ((PrimeSpectrum.mem_basicOpen _ _).mp hn)).symm)
 
 /-- Over a ring with preconnected spectrum, a Laurent unit has a unit coefficient and all
 other coefficients are nilpotent. No nontriviality or reducedness assumption is needed. -/
@@ -73,12 +74,12 @@ theorem exists_isUnit_coeff_of_isUnit [PreconnectedSpace (PrimeSpectrum R)]
   · exact ⟨0, isUnit_of_subsingleton _, fun i _ ↦ ⟨1, Subsingleton.elim _ _⟩⟩
   · obtain ⟨p⟩ := (PrimeSpectrum.nonempty_iff_nontrivial (R := R)).mpr inferInstance
     obtain ⟨n, hn, -⟩ := f.existsUnique_coeff_notMem_prime_of_isUnit hf p
-    have htop := (f.isClopen_basicOpen_coeff_of_isUnit hf n).eq_univ ⟨p, hn⟩
+    have htop := (f.isClopen_basicOpen_coeff_of_isUnit hf n).eq_univ
+      ⟨p, (PrimeSpectrum.mem_basicOpen _ _).mpr hn⟩
     have hall (q : PrimeSpectrum R) : f.coeff n ∉ q.asIdeal := by
-      have : q ∈ (PrimeSpectrum.basicOpen (f.coeff n) : Set (PrimeSpectrum R)) := by
-        rw [htop]
-        trivial
-      exact this
+      apply (PrimeSpectrum.mem_basicOpen _ _).mp
+      rw [← SetLike.mem_coe, htop]
+      exact Set.mem_univ q
     refine ⟨n, ?_, fun i hi ↦ ?_⟩
     · rw [← Ideal.span_singleton_eq_top, ← PrimeSpectrum.zeroLocus_empty_iff_eq_top,
         PrimeSpectrum.zeroLocus_span]

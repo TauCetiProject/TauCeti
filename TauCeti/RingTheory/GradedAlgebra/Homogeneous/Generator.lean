@@ -18,9 +18,7 @@ grading, using Mathlib's `SetLike.GradedSMul`.
 
 The Laurent polynomial recording the homogeneous components of `1` is a unit, without any
 connectedness hypothesis. On a connected spectrum, a coefficient of that unit is itself a
-unit, hence is the required homogeneous generator. This allows the classification by shifts
-to apply to all gradings of the free module of rank one, not just those already supplied with
-a homogeneous generator. The zero ring is included.
+unit, hence is the required homogeneous generator. The zero ring is included.
 -/
 
 public section
