@@ -88,19 +88,35 @@ theorem integral_sub_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
   rw [intervalIntegral.integral_comp_sub_left (fun x => x ^ r), sub_self,
     integral_rpow (Or.inl hr), Real.zero_rpow (by linarith : r + 1 ≠ 0), sub_zero]
 
+open MeasureTheory Set in
 /-- Away from the singularity, the weight `(b - x)^r` with `r < -1` has integral at most
-`c^(r + 1) / -(r + 1)` over `[a, b - c]`, uniformly in `a`. -/
-theorem integral_sub_rpow_le_of_lt_neg_one {r a b c : ℝ} (hr : r < -1) (hc : 0 < c)
-    (hcb : c ≤ b - a) :
+`c^(r + 1) / -(r + 1)` over `[a, b - c]`, uniformly in `a`. (If `a ≥ b`, the pole `x = b` lies in
+the interval of integration, the integrand is not integrable and the integral is `0`.) -/
+theorem integral_sub_rpow_le_of_lt_neg_one {r a b c : ℝ} (hr : r < -1) (hc : 0 < c) :
     ∫ x in a..b - c, (b - x) ^ r ≤ c ^ (r + 1) / -(r + 1) := by
-  have hval : ∫ x in a..b - c, (b - x) ^ r = (c ^ (r + 1) - (b - a) ^ (r + 1)) / -(r + 1) := by
-    rw [intervalIntegral.integral_comp_sub_left (fun x => x ^ r), sub_sub_cancel,
-      integral_rpow (Or.inr ⟨by linarith, Set.notMem_uIcc_of_lt hc (hc.trans_le hcb)⟩),
-      div_neg, ← neg_div, neg_sub]
   have hr₁ : 0 < -(r + 1) := by linarith
-  rw [hval]
-  gcongr
-  exact sub_le_self _ (Real.rpow_nonneg (hc.le.trans hcb) _)
+  rcases lt_or_ge 0 (b - a) with hba | hba
+  · have hval : ∫ x in a..b - c, (b - x) ^ r = (c ^ (r + 1) - (b - a) ^ (r + 1)) / -(r + 1) := by
+      rw [intervalIntegral.integral_comp_sub_left (fun x => x ^ r), sub_sub_cancel,
+        integral_rpow (Or.inr ⟨by linarith, Set.notMem_uIcc_of_lt hc hba⟩),
+        div_neg, ← neg_div, neg_sub]
+    rw [hval]
+    gcongr
+    exact sub_le_self _ (Real.rpow_nonneg hba.le _)
+  · -- the pole `x = b` lies in the interval of integration, so the integral is the junk value `0`
+    have hnot : ¬ IntervalIntegrable (fun x => (b - x) ^ r) volume a (b - c) := by
+      intro h
+      have h1 := (h.comp_sub_left b)
+      simp only [sub_sub_cancel] at h1
+      have h2 : IntervalIntegrable (fun x : ℝ => x ^ r) volume 0 c :=
+        h1.mono_set (by
+          rw [uIcc_of_le hc.le, uIcc_of_le (hba.trans hc.le)]
+          exact Icc_subset_Icc hba le_rfl)
+      rw [intervalIntegrable_iff_integrableOn_Ioo_of_le hc.le,
+        intervalIntegral.integrableOn_Ioo_rpow_iff hc] at h2
+      linarith
+    rw [intervalIntegral.integral_undef hnot]
+    positivity
 
 /-- For `-1 < T`, a nonnegative constant `c` and `0 ≤ δ`, the integral of `c * t ^ T` over
 `[δ, 1]` is at most `c / (T + 1)`. -/
@@ -139,7 +155,7 @@ theorem norm_integral_le_of_ae_norm_le_mul_sub_rpow {G : Type*} [NormedAddCommGr
   calc A * h * ∫ s in 0..t' - h, (t' - s) ^ ((α - 4) / 2)
       ≤ A * h * (h ^ ((α - 4) / 2 + 1) / -((α - 4) / 2 + 1)) := by
         gcongr
-        exact integral_sub_rpow_le_of_lt_neg_one (by linarith) hh (by linarith)
+        exact integral_sub_rpow_le_of_lt_neg_one (by linarith) hh
     _ = 2 / (2 - α) * A * h ^ (α / 2) := by
         rw [← hpow, show -((α - 4) / 2 + 1) = (2 - α) / 2 by ring]
         field_simp
@@ -391,11 +407,10 @@ theorem integral_comp_sin_sq_add_int_mul_pi (G : ℝ → ℝ)
         ring
 
 /-- For `S < -1`, the integral of `(r + s) ^ S` over `[0, β]` is at most `r ^ (S + 1) / -(S + 1)`,
-uniformly in `β ≥ 0`. -/
-theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hβ : 0 ≤ β) (hS : S < -1) :
+uniformly in `β`. -/
+theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S < -1) :
     ∫ s in (0 : ℝ)..β, (r + s) ^ S ≤ r ^ (S + 1) / -(S + 1) := by
   have h := integral_sub_rpow_le_of_lt_neg_one (a := 0) (b := r + β) (c := r) hS hr
-    (by linarith)
   rw [intervalIntegral.integral_comp_sub_left (fun x : ℝ => x ^ S) (r + β)] at h
   rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
   convert h using 2 <;> ring

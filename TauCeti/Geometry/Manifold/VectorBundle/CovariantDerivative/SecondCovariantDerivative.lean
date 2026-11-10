@@ -163,19 +163,10 @@ private theorem secondDerivAux_congr (hσ : CMDiff ∞ (T% σ)) (x : M)
     {Y Y' : Π y : M, TangentSpace I y} (hY : CMDiff ∞ (T% Y)) (hY' : CMDiff ∞ (T% Y'))
     (hYY' : Y x = Y' x) (u : TangentSpace I x) :
     secondDerivAux cov covT σ x Y u = secondDerivAux cov covT σ x Y' u := by
-  refine TauCeti.Manifold.eq_of_contMDiff_tensorial (I := I)
-    (fun Z ↦ secondDerivAux cov covT σ x Z u) x ?_
+  exact TauCeti.Manifold.eq_of_contMDiff_tensorial (I := I)
+    (fun Z ↦ secondDerivAux cov covT σ x Z u) x
     (fun hZ hZ' ↦ secondDerivAux_add cov covT hσ x hZ hZ' u)
     (fun hf hZ ↦ secondDerivAux_smul cov covT hσ x hf hZ u) hY hY' hYY'
-  intro Z Z' hZ hZ' hZZ'
-  have hnhds : Set.univ ∈ nhds x := Filter.univ_mem
-  have hZσ : ∀ᶠ y in nhds x, cov σ y (Z y) = cov σ y (Z' y) := hZZ'.mono fun y hy ↦ by rw [hy]
-  simp only [secondDerivAux,
-    cov.isCovariantDerivativeOnUniv.congr_of_eventuallyEq
-      ((cov.contMDiff_apply hZ hσ).mdifferentiable (by simp) x)
-      ((cov.contMDiff_apply hZ' hσ).mdifferentiable (by simp) x) hnhds hZσ,
-    covT.isCovariantDerivativeOnUniv.congr_of_eventuallyEq
-      (hZ.mdifferentiable (by simp) x) (hZ'.mdifferentiable (by simp) x) hnhds hZZ']
 
 /-- The value of `∇²σ` at `(u, v)`, computed with a chosen smooth extension of `v`. -/
 private def secondDerivValue (σ : Π y : M, V y) (x : M) (u v : TangentSpace I x) : V x :=
