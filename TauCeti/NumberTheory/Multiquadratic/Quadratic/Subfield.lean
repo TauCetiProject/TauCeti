@@ -151,12 +151,12 @@ section QuadraticSubfield
 
 /-- The subset-product root of `S`, as an element of the multiquadratic field
 `M = K(rootᵢ : i)`. -/
-@[expose] def prodRootMem (root : ι → L) (S : Finset ι) :
+def prodRootMem (root : ι → L) (S : Finset ι) :
     ↥(adjoin K (Set.range root)) :=
   ⟨∏ i ∈ S, root i, prod_root_mem_adjoin S⟩
 
 @[simp] theorem prodRootMem_coe (S : Finset ι) :
-    (prodRootMem (K := K) root S : L) = ∏ i ∈ S, root i := rfl
+    (prodRootMem (K := K) root S : L) = ∏ i ∈ S, root i := (rfl)
 
 /-- **The square of a subset-product root, computed inside `M`.** The `M`-level companion of
 `prod_root_sq`: `prodRootMem root S` squares to the image under `K → M` of the radicand product
