@@ -25,9 +25,9 @@ with the infinitesimal change of the group adjoint action, over any commutative 
 
 public section
 
-namespace TauCeti
+namespace Derivation
 
-open WithConv TrivSqZeroExt
+open TauCeti WithConv TrivSqZeroExt
 
 variable {R H B : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
   [CommRing B] [Algebra R B]
@@ -36,7 +36,7 @@ variable {R H B : Type*} [CommRing R] [CommRing H] [HopfAlgebra R H]
 is `e + ε[d,e]`. Thus the differential of the group adjoint action is the Lie bracket. -/
 -- Apply before the general adjoint and coefficient-map evaluation rules expand the input.
 @[simp↓]
-theorem _root_.Derivation.adDerivation_dualNumber_apply
+theorem adDerivation_dualNumber_apply
     (d e : Derivation R H (Bialgebra.CounitAlgebra R H B)) (a : H) :
     (Bialgebra.CounitAlgebra.algEquivSelf R H
       (DualNumber (Bialgebra.CounitAlgebra R H B)))
@@ -107,4 +107,4 @@ theorem _root_.Derivation.adDerivation_dualNumber_apply
       Derivation.coeFn_coe, snd_add, snd_inl, snd_inr, zero_add] using
         DFunLike.congr_fun hprodS a
 
-end TauCeti
+end Derivation
