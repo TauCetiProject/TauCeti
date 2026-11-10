@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
 public import TauCeti.Analysis.Calculus.ParametricFDeriv
 public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Geometry.Symplectic.Cayley.Tangent
 
 /-!
 # Local-coordinate Cauchy–Riemann linearization
@@ -114,6 +115,26 @@ theorem cauchyRiemannLinearization_apply (j : U →L[ℝ] U) (J : V → V →L[�
       fderiv ℝ ξ x (j v) - J (u x) (fderiv ℝ ξ x v) -
         fderiv ℝ J (u x) (ξ x) (fderiv ℝ u x v) :=
   (rfl)
+
+/-- At a pseudoholomorphic map, the linearization takes values in complex-antilinear
+covectors, even when the target almost complex structure is not integrable. -/
+theorem isComplexAntilinear_cauchyRiemannLinearization
+    [FiniteDimensional ℝ U] [FiniteDimensional ℝ V]
+    (j : AlmostComplexStructure U) (J : V → AlmostComplexStructure V)
+    (u ξ : U → V) (x : U) (hu : IsJHolomorphicAt (fun _ ↦ j) J u x)
+    (hJ : DifferentiableAt ℝ (fun y ↦ (J y).toLinearMap.toContinuousLinearMap) (u x)) :
+    IsComplexAntilinear j.toLinearMap (J (u x)).toLinearMap
+      (cauchyRiemannLinearization j.toLinearMap.toContinuousLinearMap
+        (fun y ↦ (J y).toLinearMap.toContinuousLinearMap) u ξ x).toLinearMap := by
+  have hT := AlmostComplexStructure.mem_tangentSpace_iff_apply.1
+    (AlmostComplexStructure.mem_tangentSpace_of_hasFDerivAt hJ.hasFDerivAt (ξ x))
+  simp only [ContinuousLinearMap.coe_coe] at hT
+  apply isComplexAntilinear_of_apply
+  intro v
+  simp only [ContinuousLinearMap.coe_coe, cauchyRiemannLinearization_apply,
+    LinearMap.coe_toContinuousLinearMap', j.apply_apply, map_neg, hu.fderiv_apply_commute,
+    hT, AlmostComplexStructure.apply_sub, AlmostComplexStructure.apply_apply]
+  abel
 
 /-- The local-coordinate linearization is additive on differentiable directions. -/
 @[simp]
