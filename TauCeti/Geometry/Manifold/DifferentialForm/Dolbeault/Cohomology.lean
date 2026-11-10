@@ -130,6 +130,11 @@ private def holomorphicEquivOfCompactSpace : C^∞⟮𝓘(ℂ, E), M; 𝓘(ℂ, 
     MDifferentiable.apply_eq_of_compactSpace (g.contMDiff.mdifferentiable (by simp)) _ _
   right_inv _ := rfl
 
+omit [FiniteDimensional ℂ E] [CompleteSpace F] in
+private theorem holomorphicEquivOfCompactSpace_apply (g : C^∞⟮𝓘(ℂ, E), M; 𝓘(ℂ, F), F⟯) :
+    holomorphicEquivOfCompactSpace M g = g (Classical.arbitrary M) :=
+  rfl
+
 variable (E M F) in
 /-- **`H^(0,0)` of a compact connected complex manifold is the space of constants.** The
 holomorphic functions on a compact connected complex manifold with finite-dimensional model are
@@ -142,7 +147,8 @@ complex manifold is the value of that function at any point. This is not a `simp
 point `x` is free on the right. -/
 theorem zeroZeroEquivOfCompactSpace_mk (φ : closedForms E M F 0 0) (x : M) :
     zeroZeroEquivOfCompactSpace E M F (mk 0 0 φ) = φ.1.1.1 x 0 := by
-  rw [← zeroZeroEquiv_mk]
+  rw [← zeroZeroEquiv_mk, zeroZeroEquivOfCompactSpace, LinearEquiv.trans_apply,
+    holomorphicEquivOfCompactSpace_apply]
   exact MDifferentiable.apply_eq_of_compactSpace
     ((zeroZeroEquiv E M F (mk 0 0 φ)).contMDiff.mdifferentiable (by simp)) _ _
 

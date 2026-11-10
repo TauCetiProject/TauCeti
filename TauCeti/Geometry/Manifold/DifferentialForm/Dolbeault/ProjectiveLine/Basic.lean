@@ -54,7 +54,8 @@ of `ℂ` and of the projective line. -/
 theorem isPseudoholomorphic_affineParam (i : Fin 2) :
     IsPseudoholomorphic (ofComplexManifold ℂ ℂ)
       (ofComplexManifold (Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ))) (affineParam i) :=
-  isPseudoholomorphic_ofComplexManifold_iff.2 ((contMDiff_affineParam i).mdifferentiable (by simp))
+  isPseudoholomorphic_ofComplexManifold_iff.2
+    ((contMDiff_affineParam (n := 1) i).mdifferentiable one_ne_zero)
 
 /-- Near a nonzero point `s`, the affine coordinate `i` is the affine coordinate `j` composed with
 `y ↦ 1 / y`, so a form pulled back along the coordinate `i` is, at `s`, the pullback along
@@ -70,7 +71,7 @@ theorem coe_mpullback_affineParam_apply_of_ne_zero {F : Type*} [NormedAddCommGro
   have hinv := (hasDerivAt_inv hs).hasFDerivAt.restrictScalars ℝ
   rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, heq.mpullback_eq,
     mpullback_comp_at hinv.differentiableAt.mdifferentiableAt
-      ((contMDiff_affineParam_real j _).mdifferentiableAt (by simp))]
+      ((contMDiff_affineParam_real (n := 1) j _).mdifferentiableAt one_ne_zero)]
 
 /-- A smooth form on the projective line is determined by its pullback along one affine
 coordinate: that coordinate covers all points but one, and the forms are continuous. -/

@@ -30,8 +30,8 @@ a polynomial with analytic coefficients, known to be analytic off a hyperplane a
 it, are shown to be analytic across it.
 
 The file also records the one-variable removable singularity at infinity used to extend
-functions to the Riemann sphere: if a smooth map `u : ℂ → E` is holomorphic near infinity and
-tends to `0` there, then `s ↦ u (1 / s)`, extended by `0` at `s = 0`, is smooth
+functions to the Riemann sphere: if a `C^n` map `u : ℂ → E` is holomorphic near infinity and
+tends to `0` there, then `s ↦ u (1 / s)`, extended by `0` at `s = 0`, is `C^n`
 (`TauCeti.contDiff_update_comp_inv`). For compactly supported `u` this holds without
 holomorphy, since then `s ↦ u (1 / s)` vanishes near `0`
 (`HasCompactSupport.contDiff_update_comp_inv`).
@@ -218,11 +218,11 @@ private theorem update_comp_inv_eventuallyEq {G : Type*} [Zero G] {u : ℂ → G
     update (fun y ↦ u y⁻¹) 0 0 =ᶠ[𝓝 s] fun y ↦ u y⁻¹ := by
   filter_upwards [eventually_ne_nhds hs] with y hy using update_of_ne hy _ _
 
-/-- **A removable singularity at infinity.** If a smooth map `u` is holomorphic near infinity and
-tends to `0` there, then `s ↦ u (1 / s)`, extended by `0` at `s = 0`, is smooth. -/
-theorem contDiff_update_comp_inv {u : ℂ → E} (hu : ContDiff ℝ ∞ u) {R : ℝ}
-    (hhol : ∀ w, R < ‖w‖ → DifferentiableAt ℂ u w) (hlim : Tendsto u (cobounded ℂ) (𝓝 0)) :
-    ContDiff ℝ ∞ (update (fun s ↦ u s⁻¹) 0 0) := by
+/-- **A removable singularity at infinity.** If a `C^n` map `u` is holomorphic near infinity and
+tends to `0` there, then `s ↦ u (1 / s)`, extended by `0` at `s = 0`, is `C^n`. -/
+theorem contDiff_update_comp_inv {n : WithTop ℕ∞} {u : ℂ → E} (hu : ContDiff ℝ n u)
+    {R : ℝ} (hhol : ∀ w, R < ‖w‖ → DifferentiableAt ℂ u w) (hlim : Tendsto u (cobounded ℂ) (𝓝 0)) :
+    ContDiff ℝ n (update (fun s ↦ u s⁻¹) 0 0) := by
   rw [contDiff_iff_contDiffAt]
   intro s
   rcases eq_or_ne s 0 with rfl | hs
@@ -243,11 +243,12 @@ theorem contDiff_update_comp_inv {u : ℂ → E} (hu : ContDiff ℝ ∞ u) {R : 
   · exact (hu.contDiffAt.comp s ((contDiffAt_inv ℂ hs).restrict_scalars ℝ)).congr_of_eventuallyEq
       (update_comp_inv_eventuallyEq hs)
 
-/-- If a smooth map `u` on `ℂ` is compactly supported, then `s ↦ u (1 / s)`, extended by `0` at
-`s = 0`, is smooth: it vanishes near `s = 0`. -/
+/-- If a `C^n` map `u` on `ℂ` is compactly supported, then `s ↦ u (1 / s)`, extended by `0` at
+`s = 0`, is `C^n`: it vanishes near `s = 0`. -/
 theorem _root_.HasCompactSupport.contDiff_update_comp_inv {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {u : ℂ → G} (hc : HasCompactSupport u) (hu : ContDiff ℝ ∞ u) :
-    ContDiff ℝ ∞ (update (fun s ↦ u s⁻¹) 0 0) := by
+    [NormedSpace ℝ G] {n : WithTop ℕ∞} {u : ℂ → G} (hc : HasCompactSupport u)
+    (hu : ContDiff ℝ n u) :
+    ContDiff ℝ n (update (fun s ↦ u s⁻¹) 0 0) := by
   rw [contDiff_iff_contDiffAt]
   intro s
   rcases eq_or_ne s 0 with rfl | hs

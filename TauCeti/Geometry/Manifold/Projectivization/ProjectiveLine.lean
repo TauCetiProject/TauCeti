@@ -21,8 +21,8 @@ inverse of the corresponding affine chart and misses exactly one point
 (`TauCeti.ProjectiveLine.injective_mfderiv_affineParam` and
 `TauCeti.ProjectiveLine.surjective_mfderiv_affineParam`), and together the two coordinates detect
 smoothness of functions (`TauCeti.ProjectiveLine.contMDiff_of_contDiff_comp_affineParam`).
-A smooth function `u` on `ℂ` with `s ↦ u (1 / s)` smooth across `s = 0` after setting it to `0`
-there, read in one affine chart and extended by `0` at the remaining point, is smooth on the
+A `C^n` function `u` on `ℂ` with `s ↦ u (1 / s)` of class `C^n` across `s = 0` after setting it
+to `0` there, read in one affine chart and extended by `0` at the remaining point, is `C^n` on the
 projective line (`TauCeti.ProjectiveLine.contMDiff_indicator_affineOpen`).
 
 ## References
@@ -86,15 +86,15 @@ theorem affineParam_affineChart {i : Fin 2} {x : ℙ ℂ (Fin 2 → ℂ)}
   rw [affineParam, h']
   exact (affineChart i).left_inv (by rwa [affineChart_source])
 
-/-- The affine coordinates of the projective line are holomorphic. -/
-theorem contMDiff_affineParam (i : Fin 2) :
-    ContMDiff 𝓘(ℂ, ℂ) 𝓘(ℂ, Fin 1 → ℂ) ∞ (affineParam i) :=
-  (contMDiff_affineChart_symm i ∞).comp (contDiff_pi.2 fun _ ↦ contDiff_id).contMDiff
+/-- The affine coordinates of the projective line are holomorphic, hence `C^n` for every `n`. -/
+theorem contMDiff_affineParam {n : WithTop ℕ∞} (i : Fin 2) :
+    ContMDiff 𝓘(ℂ, ℂ) 𝓘(ℂ, Fin 1 → ℂ) n (affineParam i) :=
+  (contMDiff_affineChart_symm i n).comp (contDiff_pi.2 fun _ ↦ contDiff_id).contMDiff
 
-/-- The affine coordinates of the projective line are smooth maps of the underlying real
-manifolds. -/
-theorem contMDiff_affineParam_real (i : Fin 2) :
-    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, Fin 1 → ℂ) ∞ (affineParam i) := by
+/-- The affine coordinates of the projective line are `C^n` maps of the underlying real
+manifolds, for every `n`. -/
+theorem contMDiff_affineParam_real {n : WithTop ℕ∞} (i : Fin 2) :
+    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, Fin 1 → ℂ) n (affineParam i) := by
   simpa only [modelWithCornersSelf_restrictScalars] using
     (contMDiff_affineParam i).restrictScalars ℝ
 
@@ -111,7 +111,8 @@ theorem injective_mfderiv_affineParam (i : Fin 2) (t : ℂ) :
     have := (((contMDiffOn_affineChart (𝕜 := ℂ) (n := 1) i ∞).contMDiffAt
       ((isOpen_affineOpen i).mem_nhds (affineParam_mem_affineOpen i t))).restrictScalars ℝ)
     simpa only [modelWithCornersSelf_restrictScalars] using this.mdifferentiableAt (by simp)
-  have key := mfderiv_comp t hchart ((contMDiff_affineParam_real i t).mdifferentiableAt (by simp))
+  have key := mfderiv_comp t hchart
+    ((contMDiff_affineParam_real (n := 1) i t).mdifferentiableAt one_ne_zero)
   rw [hcomp, mfderiv_eq_fderiv, e.fderiv] at key
   refine Injective.of_comp (f := mfderiv 𝓘(ℝ, Fin 1 → ℂ) 𝓘(ℝ, Fin 1 → ℂ)
     (affineChart (K := ℂ) (n := 1) i) (affineParam i t)) ?_
@@ -127,19 +128,20 @@ theorem affineParam_zero_notMem_affineOpen {i j : Fin 2} (hij : i ≠ j) :
   rw [affineParam_eq, mk_mem_affineOpen_iff, not_not]
   fin_cases i <;> fin_cases j <;> simp_all
 
-/-- A function on the projective line whose compositions with both affine coordinates are smooth
-is smooth. -/
+/-- A function on the projective line whose compositions with both affine coordinates are `C^n`
+is `C^n`. -/
 theorem contMDiff_of_contDiff_comp_affineParam {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {f : ℙ ℂ (Fin 2 → ℂ) → G} (hf : ∀ i, ContDiff ℝ ∞ (f ∘ affineParam i)) :
-    ContMDiff 𝓘(ℝ, Fin 1 → ℂ) 𝓘(ℝ, G) ∞ f := by
+    [NormedSpace ℝ G] {n : WithTop ℕ∞} {f : ℙ ℂ (Fin 2 → ℂ) → G}
+    (hf : ∀ i, ContDiff ℝ n (f ∘ affineParam i)) :
+    ContMDiff 𝓘(ℝ, Fin 1 → ℂ) 𝓘(ℝ, G) n f := by
   intro x
   obtain ⟨i, hi⟩ := exists_mem_affineOpen x
-  have hchart : ContMDiffAt 𝓘(ℝ, Fin 1 → ℂ) 𝓘(ℝ, Fin 1 → ℂ) ∞
+  have hchart : ContMDiffAt 𝓘(ℝ, Fin 1 → ℂ) 𝓘(ℝ, Fin 1 → ℂ) n
       (affineChart (K := ℂ) (n := 1) i) x := by
     simpa only [modelWithCornersSelf_restrictScalars] using
-      ((contMDiffOn_affineChart (𝕜 := ℂ) (n := 1) i ∞).contMDiffAt
+      ((contMDiffOn_affineChart (𝕜 := ℂ) (n := 1) i n).contMDiffAt
         ((isOpen_affineOpen i).mem_nhds hi)).restrictScalars ℝ
-  have hG : ContDiff ℝ ∞ fun z : Fin 1 → ℂ ↦ (f ∘ affineParam i) (z 0) :=
+  have hG : ContDiff ℝ n fun z : Fin 1 → ℂ ↦ (f ∘ affineParam i) (z 0) :=
     (hf i).comp (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 1 ↦ ℂ) 0).contDiff
   refine (hG.contMDiff.contMDiffAt.comp x hchart).congr_of_eventuallyEq ?_
   filter_upwards [(isOpen_affineOpen i).mem_nhds hi] with y hy
@@ -180,12 +182,13 @@ theorem indicator_affineOpen_comp_affineParam_of_ne [Zero G] {i j : Fin 2} (hij 
     · rw [comp_apply, affineParam_inv hij.symm hs, update_of_ne hs]
       simp
 
-/-- **Extension by zero from an affine chart.** If `u` is smooth on `ℂ` and `s ↦ u (1 / s)`,
-extended by `0` at `s = 0`, is smooth, then `u` read in the affine chart `i` and extended by `0`
-off the affine open `i` is a smooth function on the projective line. -/
-theorem contMDiff_indicator_affineOpen [NormedAddCommGroup G] [NormedSpace ℝ G] (i : Fin 2)
-    {u : ℂ → G} (hu : ContDiff ℝ ∞ u) (hinv : ContDiff ℝ ∞ (update (fun s ↦ u s⁻¹) 0 0)) :
-    ContMDiff 𝓘(ℝ, Fin 1 → ℂ) 𝓘(ℝ, G) ∞
+/-- **Extension by zero from an affine chart.** If `u` is `C^n` on `ℂ` and `s ↦ u (1 / s)`,
+extended by `0` at `s = 0`, is `C^n`, then `u` read in the affine chart `i` and extended by `0`
+off the affine open `i` is a `C^n` function on the projective line. -/
+theorem contMDiff_indicator_affineOpen [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {n : WithTop ℕ∞} (i : Fin 2) {u : ℂ → G} (hu : ContDiff ℝ n u)
+    (hinv : ContDiff ℝ n (update (fun s ↦ u s⁻¹) 0 0)) :
+    ContMDiff 𝓘(ℝ, Fin 1 → ℂ) 𝓘(ℝ, G) n
       ((affineOpen (K := ℂ) i).indicator fun x ↦ u (affineChart (K := ℂ) (n := 1) i x 0)) := by
   obtain ⟨j, hij⟩ : ∃ j, i ≠ j := by fin_cases i <;> simp
   refine contMDiff_of_contDiff_comp_affineParam fun l ↦ ?_
