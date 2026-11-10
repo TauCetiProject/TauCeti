@@ -5,29 +5,26 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Distribution.ComplexPairing
+public import TauCeti.Analysis.Distribution.SmulLeft
 
 /-!
 # Restriction of distributions to open subsets
 
-A test function on an open set `Ω'` extends by zero to a test function on any larger open set `Ω`;
-this is Mathlib's `TestFunction.monoCLM`. Transposing it, a distribution `T` on `Ω` restricts to
-the distribution `T|Ω' : φ ↦ T φ` on `Ω'`. Restriction is how distributions are localized: it is
-the operation along which local properties of distributions, such as smoothness near a point or
-the wave front set over an open set, are compared.
-
-As for `TestFunction.monoCLM`, the restriction is defined for every pair of open sets and is the
-zero map unless `Ω' ≤ Ω`.
+A test function on an open set `Ω' ⊆ Ω`, extended by zero, is a test function on `Ω`
+(`TestFunction.monoCLM`). Transposing, a distribution `T` on `Ω` restricts to the distribution
+`T|_{Ω'} : φ ↦ T φ` on `Ω'`. This file packages the restriction as a continuous linear map
+`Distribution.restrictCLM`, which, like `TestFunction.monoCLM`, is zero when `Ω'` is not contained
+in `Ω`. Restriction is what makes distributions a sheaf on open sets; the gluing half of the sheaf
+property is `Distribution.existsUnique_gluing`.
 
 ## Main declarations
 
-* `Distribution.restrictCLM Ω'`: the restriction `𝓓'^{n}(Ω, F) →L[ℝ] 𝓓'^{n}(Ω', F)`.
-* `Distribution.restrictCLM_apply`: it pairs a test function on `Ω'` with `T` through its
-  extension by zero.
-* `Distribution.restrictCLM_self`, `Distribution.restrictCLM_restrictCLM`: restricting to `Ω`
-  itself does nothing, and restricting twice is restricting once.
-* `Distribution.complexPairing_restrictCLM`: the complex-linear extension of `T|Ω'` to complex
-  test functions is that of `T`, through extension by zero.
+* `Distribution.restrictCLM`: the restriction `T|_{Ω'}`, with `Distribution.restrictCLM_apply`.
+* `Distribution.restrictCLM_self`, `Distribution.restrictCLM_restrictCLM`: restriction to `Ω`
+  itself is the identity, and restrictions compose.
+* `Distribution.restrictCLM_smulLeftCLM`: restriction commutes with multiplication by smooth
+  functions.
+* `Distribution.complexPairing_restrictCLM`: the pairing of `T|_{Ω'}` with a complex test function.
 
 ## References
 
@@ -38,57 +35,60 @@ public section
 
 noncomputable section
 
-open Complex TopologicalSpace TestFunction
+open Complex Set TopologicalSpace
 open scoped Distributions
 
 namespace Distribution
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω Ω' Ω'' : Opens E} {n : ℕ∞}
-  {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω Ω' Ω'' : Opens E} {n : ℕ∞}
+  [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] [IsTopologicalAddGroup F]
   [ContinuousSMul ℝ F]
 
-variable (Ω') in
-/-- The **restriction** of distributions on `Ω` to the open set `Ω'`: the transpose
-`T ↦ (φ ↦ T φ)` of the extension by zero of test functions on `Ω'`. It is the zero map unless
-`Ω' ≤ Ω`, since `TestFunction.monoCLM` is. -/
+/-- The **restriction** `T|_{Ω'}` of a distribution `T` on `Ω` to an open set `Ω'`, defined by
+`T|_{Ω'} φ = T φ` for test functions `φ` on `Ω'` extended by zero. It is zero unless `Ω' ≤ Ω`. -/
 def restrictCLM : 𝓓'^{n}(Ω, F) →L[ℝ] 𝓓'^{n}(Ω', F) :=
-  (monoCLM ℝ : 𝓓^{n}(Ω', ℝ) →L[ℝ] 𝓓^{n}(Ω, ℝ)).precompCompactConvergenceCLM F
+  (TestFunction.monoCLM ℝ : 𝓓^{n}(Ω', ℝ) →L[ℝ] 𝓓^{n}(Ω, ℝ)).precompCompactConvergenceCLM F
 
-/-- The restriction of `T` pairs a test function on `Ω'` with `T` through its extension by zero
-to `Ω`. -/
 @[simp]
 theorem restrictCLM_apply (T : 𝓓'^{n}(Ω, F)) (φ : 𝓓^{n}(Ω', ℝ)) :
-    restrictCLM Ω' T φ = T (monoCLM ℝ φ) :=
+    restrictCLM T φ = T (TestFunction.monoCLM ℝ φ) :=
   (rfl)
 
-/-- Restricting a distribution to its own domain gives it back. -/
+/-- Restricting a distribution on `Ω` to `Ω` itself does nothing. -/
 @[simp]
-theorem restrictCLM_self (T : 𝓓'^{n}(Ω, F)) : restrictCLM Ω T = T := by
+theorem restrictCLM_self (T : 𝓓'^{n}(Ω, F)) : (restrictCLM T : 𝓓'^{n}(Ω, F)) = T := by
   ext φ
   rw [restrictCLM_apply]
   congr 1
   ext x
   simp
 
-/-- Restricting to `Ω'` and then to `Ω''` is restricting to `Ω''`. -/
-theorem restrictCLM_restrictCLM (h' : Ω'' ≤ Ω') (h : Ω' ≤ Ω) (T : 𝓓'^{n}(Ω, F)) :
-    restrictCLM Ω'' (restrictCLM Ω' T) = restrictCLM Ω'' T := by
+/-- Restricting from `Ω` to `Ω'` and then to `Ω'' ≤ Ω'` is restricting from `Ω` to `Ω''`. -/
+theorem restrictCLM_restrictCLM (h₁ : Ω'' ≤ Ω') (h₂ : Ω' ≤ Ω) (T : 𝓓'^{n}(Ω, F)) :
+    (restrictCLM (restrictCLM T : 𝓓'^{n}(Ω', F)) : 𝓓'^{n}(Ω'', F)) = restrictCLM T := by
   ext φ
   simp only [restrictCLM_apply]
   congr 1
   ext x
-  simp [h, h', h'.trans h]
+  simp [h₁, h₂, h₁.trans h₂]
 
-/-- The complex-linear extension of the restriction `T|Ω'` pairs a complex test function on `Ω'`
-with `T` through its extension by zero to `Ω`. -/
+/-- Restriction commutes with multiplication by a smooth function. -/
 @[simp]
-theorem complexPairing_restrictCLM (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω', ℂ)) :
-    (restrictCLM Ω' T).complexPairing φ = T.complexPairing (monoCLM ℝ φ) := by
-  have hmono (L : ℂ →L[ℝ] ℝ) :
-      (monoCLM ℝ (postcompCLM (𝕜 := ℝ) L φ) : 𝓓^{n}(Ω, ℝ)) =
-        postcompCLM (𝕜 := ℝ) L (monoCLM ℝ φ) := by
+theorem restrictCLM_smulLeftCLM {g : E → ℝ} (hg : ContDiff ℝ n g) (T : 𝓓'^{n}(Ω, F)) :
+    (restrictCLM (smulLeftCLM hg T) : 𝓓'^{n}(Ω', F)) = smulLeftCLM hg (restrictCLM T) := by
+  ext φ
+  simp
+
+/-- The complex-linear extension of `T|_{Ω'}` pairs it with a complex test function `ψ` on `Ω'`
+as `T` with the extension of `ψ` by zero. -/
+@[simp]
+theorem complexPairing_restrictCLM (T : 𝓓'^{n}(Ω, ℂ)) (ψ : 𝓓^{n}(Ω', ℂ)) :
+    (restrictCLM T).complexPairing ψ = T.complexPairing (TestFunction.monoCLM ℝ ψ) := by
+  have hpart (L : ℂ →L[ℝ] ℝ) :
+      TestFunction.postcompCLM (𝕜 := ℝ) L (TestFunction.monoCLM ℝ ψ : 𝓓^{n}(Ω, ℂ)) =
+        TestFunction.monoCLM ℝ (TestFunction.postcompCLM (𝕜 := ℝ) L ψ) := by
     ext x
     by_cases h : Ω' ≤ Ω <;> simp [h]
-  simp only [complexPairing_apply, restrictCLM_apply, hmono]
+  simp [complexPairing_apply, hpart]
 
 end Distribution
