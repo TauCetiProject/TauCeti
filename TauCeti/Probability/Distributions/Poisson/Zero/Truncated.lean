@@ -113,14 +113,13 @@ theorem cdf_map_cast_poissonMeasure_cond_compl_zero_of_lt_one (hr : r ≠ 0) {x 
     (hx : x < 1) : cdf ((Po(r)[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)) x = 0 :=
   Measure.cdf_map_natCast_cond_compl_zero_of_lt_one _ (poissonMeasure_singleton_zero_ne_one hr) hx
 
-/-- At an interior level `u`, the quantile of the zero-truncated Poisson law of positive rate is
+/-- At an interior level `u`, the quantile of the zero-truncated Poisson law is
 the Poisson quantile at the rescaled level `exp (-r) + u (1 - exp (-r))`. -/
-theorem quantile_map_cast_poissonMeasure_cond_compl_zero (hr : r ≠ 0) {u : ℝ}
+theorem quantile_map_cast_poissonMeasure_cond_compl_zero {u : ℝ}
     (hu : u ∈ Ioo 0 1) :
     ((Po(r)[|{0}ᶜ]).map (Nat.cast : ℕ → ℝ)).quantile u =
       Po(ℝ, r).quantile (exp (-(r : ℝ)) + u * (1 - exp (-(r : ℝ)))) := by
-  rw [Measure.quantile_map_natCast_cond_compl_zero _ (poissonMeasure_singleton_zero_ne_one hr) hu,
-    poissonMeasure_real_singleton_zero]
+  rw [Measure.quantile_map_natCast_cond_compl_zero _ hu, poissonMeasure_real_singleton_zero]
 
 /-- A natural number is the quantile of the zero-truncated Poisson law of positive rate at an
 interior level `u` exactly when it is the least index whose Poisson upper tail
@@ -132,7 +131,7 @@ theorem quantile_map_cast_poissonMeasure_cond_compl_zero_eq_iff (hr : r ≠ 0) {
   have hexp := one_sub_exp_neg_pos hr
   have hv : exp (-(r : ℝ)) + u * (1 - exp (-(r : ℝ))) ∈ Ioo 0 1 :=
     ⟨by nlinarith [exp_pos (-(r : ℝ)), hu.1], by nlinarith [hu.2]⟩
-  rw [quantile_map_cast_poissonMeasure_cond_compl_zero hr hu,
+  rw [quantile_map_cast_poissonMeasure_cond_compl_zero hu,
     quantile_map_cast_poissonMeasure_eq_iff_regularizedGamma r hv,
     show 1 - (exp (-(r : ℝ)) + u * (1 - exp (-(r : ℝ)))) = (1 - u) * (1 - exp (-(r : ℝ))) by ring]
 

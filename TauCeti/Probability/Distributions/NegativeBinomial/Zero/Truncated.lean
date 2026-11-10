@@ -141,8 +141,7 @@ theorem quantile_map_cast_negativeBinomialMeasure_cond_compl_zero (hr : 0 < r) (
       ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)).quantile
         (p ^ r + u * (1 - p ^ r)) := by
   let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1.le
-  rw [Measure.quantile_map_natCast_cond_compl_zero _
-      (negativeBinomialMeasure_singleton_zero_ne_one hr hp hp1) hu,
+  rw [Measure.quantile_map_natCast_cond_compl_zero _ hu,
     negativeBinomialMeasure_real_singleton_zero hr.le hp hp1.le]
 
 /-- A natural number is the quantile of the zero-truncated negative-binomial law at an interior

@@ -102,10 +102,22 @@ theorem integrableExpSet_id_map_natCast_cond_compl_zero_atomMixture_zero :
 
 /-- Every nonzero natural moment of the real cast of the hurdle law is the corresponding moment of
 `ν` rescaled by `(1 - w) / (1 - ν.real {0})`. -/
-theorem integral_pow_map_natCast_cond_compl_zero_atomMixture_zero {n : ℕ} (hn : n ≠ 0)
-    (hν : Integrable (fun x : ℝ => x ^ n) (ν.map (Nat.cast : ℕ → ℝ))) :
+theorem integral_pow_map_natCast_cond_compl_zero_atomMixture_zero {n : ℕ} (hn : n ≠ 0) :
     ∫ x, x ^ n ∂((ν[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ) =
       (1 - (w : ℝ)) * (∫ x, x ^ n ∂ν.map (Nat.cast : ℕ → ℝ)) / (1 - ν.real {0}) := by
+  by_cases hν : Integrable (fun x : ℝ => x ^ n) (ν.map (Nat.cast : ℕ → ℝ))
+  swap
+  · -- Both moments are non-integrable (or the mixture is the point mass at zero): all vanish.
+    rw [integral_undef hν, mul_zero, zero_div, map_natCast_atomMixture_zero]
+    by_cases hw : w = 1
+    · simp [hw, hn]
+    refine integral_undef fun h ↦ hν ?_
+    rw [← integrable_map_natCast_cond_compl_zero_iff ν]
+    have h1 : 0 < 1 - (w : ℝ) := sub_pos.2 (lt_of_le_of_ne (unitInterval.le_one w)
+      (fun h' ↦ hw (Subtype.ext h')))
+    rw [Measure.atomMixture_def] at h
+    exact (integrable_smul_measure (ENNReal.ofReal_pos.2 h1).ne' ENNReal.ofReal_ne_top).1
+      (h.mono_measure (Measure.le_add_left le_rfl))
   rw [map_natCast_atomMixture_zero,
     integral_atomMixture _ _ _ _ (integrable_map_natCast_cond_compl_zero_iff ν |>.2 hν),
     integral_pow_map_natCast_cond_compl_zero ν hn, smul_eq_mul, smul_eq_mul, zero_pow hn,
@@ -113,13 +125,10 @@ theorem integral_pow_map_natCast_cond_compl_zero_atomMixture_zero {n : ℕ} (hn 
 
 /-- The mean of the real cast of the hurdle law is the mean of `ν` rescaled by
 `(1 - w) / (1 - ν.real {0})`. -/
-theorem integral_id_map_natCast_cond_compl_zero_atomMixture_zero
-    (hν : Integrable id (ν.map (Nat.cast : ℕ → ℝ))) :
+theorem integral_id_map_natCast_cond_compl_zero_atomMixture_zero :
     ∫ x, x ∂((ν[|{0}ᶜ]).atomMixture 0 w).map (Nat.cast : ℕ → ℝ) =
       (1 - (w : ℝ)) * (∫ x, x ∂ν.map (Nat.cast : ℕ → ℝ)) / (1 - ν.real {0}) := by
-  rw [map_natCast_atomMixture_zero,
-    integral_id_atomMixture _ _ _ (integrable_map_natCast_cond_compl_zero_iff ν |>.2 hν),
-    integral_id_map_natCast_cond_compl_zero, mul_zero, zero_add, mul_div_assoc]
+  simpa using integral_pow_map_natCast_cond_compl_zero_atomMixture_zero ν w one_ne_zero
 
 /-- The variance of the real cast of the hurdle law, in terms of the first two moments of `ν`. -/
 theorem variance_id_map_natCast_cond_compl_zero_atomMixture_zero
@@ -142,8 +151,8 @@ theorem variance_id_map_natCast_cond_compl_zero_atomMixture_zero
     exact Integrable.atomMixture (integrable_map_natCast_cond_compl_zero_iff ν |>.2 hν) _ _
   rw [variance_eq_sub hmem']
   simp only [Pi.pow_apply, id_eq]
-  rw [integral_pow_map_natCast_cond_compl_zero_atomMixture_zero ν w two_ne_zero hν,
-    integral_id_map_natCast_cond_compl_zero_atomMixture_zero ν w (hmem.integrable one_le_two)]
+  rw [integral_pow_map_natCast_cond_compl_zero_atomMixture_zero ν w two_ne_zero,
+    integral_id_map_natCast_cond_compl_zero_atomMixture_zero]
 
 /-- At a nonnegative point, the cdf of the real cast of the hurdle law is `w` plus the cdf of the
 real cast of `ν` with its atom at zero removed and the rest rescaled by `1 - w`. -/
@@ -189,7 +198,7 @@ theorem quantile_map_natCast_cond_compl_zero_atomMixture_zero (h : ν {0} ≠ 1)
   split_ifs with hle
   · rfl
   have hden : 0 < 1 - (w : ℝ) := by linarith [lt_of_not_ge hle, hu.2]
-  exact quantile_map_natCast_cond_compl_zero ν h ⟨div_pos (by linarith [lt_of_not_ge hle]) hden,
+  exact quantile_map_natCast_cond_compl_zero ν ⟨div_pos (by linarith [lt_of_not_ge hle]) hden,
     (div_lt_one hden).2 (by linarith [hu.2])⟩
 
 end MeasureTheory.Measure
