@@ -13,6 +13,7 @@ public import TauCeti.AlgebraicTopology.Sphere.Zero
 public import TauCeti.Analysis.Normed.Module.Ball
 public import TauCeti.Analysis.Normed.Module.Normalize
 public import TauCeti.Geometry.Sphere.Equator
+public import TauCeti.LinearAlgebra.Dimension.FinrankOne
 
 /-!
 # The equator of a unit sphere
@@ -34,7 +35,7 @@ When `E` is two-dimensional, the equator is a zero-sphere, so the circle minus `
 consists of two open arcs: for any point `x` of it, the path components of `x` and of `-x` are
 distinct and are the only two path components. In any dimension, every point of the sphere minus
 `p` and `-p` lies in the path component of `x` or of `-x`: in dimension at least three the equator
-is path-connected, and in lower dimensions the punctured sphere is empty.
+is path-connected, and in dimensions at most one the punctured sphere is empty.
 
 ## Main declarations
 
@@ -223,21 +224,13 @@ private lemma zerothHomotopy_mk_equatorHomotopyEquiv_symm
       ZerothHomotopy.mk x :=
   ZerothHomotopy.sound ((equatorHomotopyEquiv p).left_inv.some.evalAt x)
 
-/-- A real normed space with a unit vector and `finrank ≠ 1` has rank greater than `1`. -/
-private lemma one_lt_rank_of_finrank_ne_one {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (v : sphere (0 : F) 1) (h : finrank ℝ F ≠ 1) : 1 < Module.rank ℝ F := by
-  have : Nontrivial F := ⟨v, 0, by simpa using (ne_zero_of_mem_unit_sphere v)⟩
-  by_cases hfin : Module.Finite ℝ F
-  · exact one_lt_rank_of_one_lt_finrank (by have := Module.finrank_pos (R := ℝ) (M := F); omega)
-  · exact Cardinal.one_lt_aleph0.trans_le (not_lt.1 (mt Module.rank_lt_aleph0_iff.1 hfin))
-
 variable {p} in
 /-- **A punctured sphere has no third arc.** On the unit sphere of a real inner product space
 minus two antipodal points `p` and `-p`, every point lies in the path component of `x` or in that
 of `-x`. In dimension two these are the two distinct arcs of the circle
 (`TauCeti.zerothHomotopy_mk_neg_ne_of_finrank_eq_two`); in dimension at least three, including
 infinite dimension, the equator is a path-connected sphere and the path component of `x` is
-everything; in lower dimensions the punctured sphere is empty. -/
+everything; in dimensions at most one the punctured sphere is empty. -/
 theorem zerothHomotopy_mk_eq_or_eq_neg {x : sphere (0 : E) 1}
     (hx : x ∈ ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E) 1)))
     (y : ({p}ᶜ ∩ {-p}ᶜ : Set (sphere (0 : E) 1))) :
@@ -259,7 +252,9 @@ theorem zerothHomotopy_mk_eq_or_eq_neg {x : sphere (0 : E) 1}
           (coe_neg_sphere _).symm)]
   · -- Otherwise the equator is a connected sphere, so the retractions of `x` and `y` are joined.
     left
-    have hrank := one_lt_rank_of_finrank_ne_one (equatorHomotopyEquiv p ⟨x, hx⟩) hE
+    have : Nontrivial (ℝ ∙ (p : E))ᗮ :=
+      ⟨equatorHomotopyEquiv p ⟨x, hx⟩, 0, by simpa using ne_zero_of_mem_unit_sphere _⟩
+    have hrank := one_lt_rank_of_finrank_ne_one (K := ℝ) hE
     have : PathConnectedSpace (sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :=
       isPathConnected_iff_pathConnectedSpace.1 (isPathConnected_sphere hrank 0 zero_le_one)
     rw [← zerothHomotopy_mk_equatorHomotopyEquiv_symm p ⟨x, hx⟩]
