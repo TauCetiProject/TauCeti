@@ -140,11 +140,11 @@ theorem discreteLaplaceMeasure_singleton (m : ℤ) {q : ℝ} (hq0 : 0 ≤ q) (k 
   rw [discreteLaplaceMeasure_eq_sum_dirac m hq0]
   exact Measure.sum_smul_dirac_singleton
 
-/-- The real singleton mass of the discrete Laplace law in its valid parameter range. -/
-theorem discreteLaplaceMeasure_real_singleton (m : ℤ) {q : ℝ} (hq0 : 0 ≤ q) (hq1 : q < 1)
+/-- The real singleton mass of the discrete Laplace law for `0 ≤ q ≤ 1`. -/
+theorem discreteLaplaceMeasure_real_singleton (m : ℤ) {q : ℝ} (hq0 : 0 ≤ q) (hq1 : q ≤ 1)
     (k : ℤ) : (discreteLaplaceMeasure m q).real {k} = discreteLaplaceWeightReal m q k := by
   rw [measureReal_def, discreteLaplaceMeasure_singleton m hq0,
-    ENNReal.toReal_ofReal (discreteLaplaceWeightReal_nonneg m hq0 hq1.le k)]
+    ENNReal.toReal_ofReal (discreteLaplaceWeightReal_nonneg m hq0 hq1 k)]
 
 /-! ### Boundary and support -/
 
