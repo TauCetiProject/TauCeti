@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.AlgClosed.Basic
 public import Mathlib.AlgebraicGeometry.Noetherian
+import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import TauCeti.AlgebraicGeometry.Morphisms.FiniteType
 public import TauCeti.Topology.Constructible.Jacobson
 
@@ -35,7 +36,7 @@ and `Scheme.Hom.image_closedPoints_eq_range_inter_closedPoints` for closed-point
 
 public section
 
-open CategoryTheory Topology
+open CategoryTheory Limits Topology
 
 namespace AlgebraicGeometry.Scheme.Hom
 
@@ -43,31 +44,36 @@ universe u
 
 variable {k : Type u} [Field k] [IsAlgClosed k] {X Y Z : Scheme.{u}}
 
-/-- A rational point in the image of a morphism between locally finite-type schemes over
-an algebraically closed field lifts to a rational point. Any lift is automatically over the
-base, since its composite with the morphism is the specified rational point. -/
+/-- A nonempty locally closed subset of a locally finite-type scheme over an algebraically
+closed field contains a rational point. -/
+theorem _root_.IsLocallyClosed.exists_rationalPoint_mem {s : Set Y} (hs : IsLocallyClosed s)
+    (π : Y ⟶ Spec (.of k)) [LocallyOfFiniteType π] (hne : s.Nonempty) :
+    ∃ p : Spec (.of k) ⟶ Y, p ≫ π = 𝟙 _ ∧ p (IsLocalRing.closedPoint k) ∈ s := by
+  let : JacobsonSpace Y := LocallyOfFiniteType.jacobsonSpace π
+  obtain ⟨y, hys, hyc⟩ := nonempty_inter_closedPoints hne hs
+  have hyclosed : IsClosed {y} := mem_closedPoints_iff.mp hyc
+  exact ⟨pointOfClosedPoint π y hyclosed, pointOfClosedPoint_comp π y hyclosed,
+    (pointOfClosedPoint_apply π y hyclosed _).symm ▸ hys⟩
+
+/-- A rational point in the image of a morphism whose composite with a morphism to the spectrum of
+an algebraically closed field is locally of finite type lifts to a rational point. Any lift is
+automatically over the base, since its composite with the morphism is the specified rational
+point. -/
 theorem exists_comp_eq_iff_mem_range (f : X ⟶ Y) (π : Y ⟶ Spec (.of k))
-    [LocallyOfFiniteType π] [LocallyOfFiniteType (f ≫ π)]
+    [LocallyOfFiniteType (f ≫ π)]
     (p : Spec (.of k) ⟶ Y) (hp : p ≫ π = 𝟙 _) :
     (∃ q : Spec (.of k) ⟶ X, q ≫ f = p) ↔ p (IsLocalRing.closedPoint k) ∈ Set.range f := by
   let : LocallyOfFiniteType f := locallyOfFiniteType_of_comp f π
-  let : JacobsonSpace Y := LocallyOfFiniteType.jacobsonSpace π
   constructor
   · rintro ⟨q, rfl⟩
     exact ⟨q (IsLocalRing.closedPoint k), (q.comp_apply f _).symm⟩
-  · intro h
-    have hpc : IsClosed {p (IsLocalRing.closedPoint k)} :=
-      mem_closedPoints_iff.mp ((pointEquivClosedPoint π) ⟨p, hp⟩).property
-    obtain ⟨x, hxc, hx⟩ :=
-      (f.image_closedPoints_eq_range_inter_closedPoints ▸ ⟨h, hpc⟩ :
-        p (IsLocalRing.closedPoint k) ∈ f '' closedPoints X)
-    have hxc : IsClosed {x} := mem_closedPoints_iff.mp hxc
-    refine ⟨pointOfClosedPoint (f ≫ π) x hxc, ?_⟩
-    apply ext_of_apply_closedPoint_eq π
-    · exact pointOfClosedPoint_comp (f ≫ π) x hxc
-    · exact hp
-    · exact (Scheme.Hom.comp_apply _ _ _).trans
-        ((congrArg f (pointOfClosedPoint_apply (f ≫ π) x hxc _)).trans hx)
+  · rintro ⟨x, hx⟩
+    obtain ⟨z, -, -⟩ := Scheme.Pullback.exists_preimage_pullback (f := f) (g := p) x
+      (IsLocalRing.closedPoint k) hx
+    obtain ⟨s, hs, -⟩ := IsLocallyClosed.exists_rationalPoint_mem (Y := pullback f p)
+      (isOpen_univ.isLocallyClosed) (pullback.snd f p) ⟨z, trivial⟩
+    exact ⟨s ≫ pullback.fst f p, by
+      rw [Category.assoc, pullback.condition, ← Category.assoc, hs, Category.id_comp]⟩
 
 /-- Inclusion between constructible subsets of a locally finite-type scheme over an
 algebraically closed field can be tested on rational points. -/
@@ -97,21 +103,10 @@ theorem _root_.Topology.IsConstructible.eq_iff_forall_rationalPoint
   exact ⟨fun h p hp ↦ ⟨h.1 p hp, h.2 p hp⟩,
     fun h ↦ ⟨fun p hp ↦ (h p hp).mp, fun p hp ↦ (h p hp).mpr⟩⟩
 
-/-- A nonempty locally closed subset of a locally finite-type scheme over an algebraically
-closed field contains a rational point. -/
-theorem _root_.IsLocallyClosed.exists_rationalPoint_mem {s : Set Y} (hs : IsLocallyClosed s)
-    (π : Y ⟶ Spec (.of k)) [LocallyOfFiniteType π] (hne : s.Nonempty) :
-    ∃ p : Spec (.of k) ⟶ Y, p ≫ π = 𝟙 _ ∧ p (IsLocalRing.closedPoint k) ∈ s := by
-  let : JacobsonSpace Y := LocallyOfFiniteType.jacobsonSpace π
-  obtain ⟨y, hys, hyc⟩ := nonempty_inter_closedPoints hne hs
-  have hyclosed : IsClosed {y} := mem_closedPoints_iff.mp hyc
-  exact ⟨pointOfClosedPoint π y hyclosed, pointOfClosedPoint_comp π y hyclosed,
-    (pointOfClosedPoint_apply π y hyclosed _).symm ▸ hys⟩
-
 section FiniteType
 
 variable (f : X ⟶ Y) (π : Y ⟶ Spec (.of k))
-  [LocallyOfFiniteType π] [LocallyOfFiniteType (f ≫ π)] [CompactSpace X] [CompactSpace Y]
+  [LocallyOfFiniteType π] [LocallyOfFiniteType (f ≫ π)] [CompactSpace X]
 
 /-- Inclusions between the full images of morphisms of finite-type schemes over an
 algebraically closed field can be tested by lifting rational points. -/
@@ -125,13 +120,18 @@ theorem range_subset_range_iff_forall_rationalPoint (g : Z ⟶ Y)
   let : LocallyOfFiniteType f := locallyOfFiniteType_of_comp f π
   let : LocallyOfFiniteType g := locallyOfFiniteType_of_comp g π
   have hf : IsConstructible (Set.range f) := by
-    simpa using f.isConstructible_image IsConstructible.univ
+    simpa using (f.isLocallyConstructible_image (s := Set.univ)
+      IsLocallyConstructible.univ).isConstructible_of_subset_of_isCompact
+        (Set.image_univ ▸ subset_rfl) (Set.image_univ ▸ isCompact_univ.image f.continuous)
   have hg : IsConstructible (Set.range g) := by
-    simpa using g.isConstructible_image IsConstructible.univ
+    simpa using (g.isLocallyConstructible_image (s := Set.univ)
+      IsLocallyConstructible.univ).isConstructible_of_subset_of_isCompact
+        (Set.image_univ ▸ subset_rfl) (Set.image_univ ▸ isCompact_univ.image g.continuous)
   rw [hf.subset_iff_forall_rationalPoint π hg]
   exact forall_congr' fun p ↦ forall_congr' fun hp ↦ by
     rw [f.exists_comp_eq_iff_mem_range π p hp, g.exists_comp_eq_iff_mem_range π p hp]
 
+variable [CompactSpace Y] in
 /-- A morphism between finite-type schemes over an algebraically closed field is
 surjective on all scheme points exactly when every rational point has a rational lift. -/
 theorem surjective_iff_forall_rationalPoint :
