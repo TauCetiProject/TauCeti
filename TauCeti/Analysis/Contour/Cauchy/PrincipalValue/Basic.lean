@@ -12,6 +12,7 @@ import Mathlib.Analysis.Calculus.Deriv.Mul
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 public import Mathlib.Analysis.Complex.Basic
 import Mathlib.Topology.Order.Compact
+import TauCeti.Analysis.Contour.Curve.Distance
 
 /-!
 # The Cauchy principal value of a contour integral at a point (Hungerbühler–Wasem)
@@ -322,14 +323,6 @@ private theorem integral_excise_eventuallyEq {γ : ℝ → ℂ} {z₀ : ℂ} {f 
   refine intervalIntegral.integral_congr fun t ht => ?_
   rw [ite_eq_left (lt_of_lt_of_le hε.2 (h_far t ht))]
 
-/-- A continuous curve that avoids `z₀` on `[a, b]` keeps a positive distance from it. -/
-private theorem exists_pos_le_norm_sub_of_avoidance {γ : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ}
-    (h_cont : ContinuousOn γ (Set.uIcc a b)) (h_avoid : ∀ t ∈ Set.uIcc a b, γ t ≠ z₀) :
-    ∃ m : ℝ, 0 < m ∧ ∀ t ∈ Set.uIcc a b, m ≤ ‖γ t - z₀‖ := by
-  obtain ⟨t₀, ht₀, ht₀_min⟩ := isCompact_uIcc.exists_isMinOn
-    Set.nonempty_uIcc (h_cont.sub continuousOn_const).norm
-  exact ⟨_, norm_pos_iff.mpr (sub_ne_zero.mpr (h_avoid t₀ ht₀)), fun t ht => ht₀_min ht⟩
-
 /-- **Away from the pole the principal value is the ordinary integral.** On an interval where the
 curve keeps distance `≥ m > 0` from `z₀`, every small enough truncation leaves the integrand
 untouched, so the principal value at `z₀` is the plain integral. Continuity of the curve is not
@@ -582,7 +575,7 @@ theorem HasCauchyPVAt.of_avoidance {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → �
     (h_cont : ContinuousOn γ (Set.uIcc a b)) (h_avoid : ∀ t ∈ Set.uIcc a b, γ t ≠ z₀)
     (hf_int : IntervalIntegrable (fun t => f (γ t) * deriv γ t) MeasureTheory.volume a b) :
     HasCauchyPVAt γ a b f z₀ (∫ t in a..b, f (γ t) * deriv γ t) := by
-  obtain ⟨m, hm, hfar⟩ := exists_pos_le_norm_sub_of_avoidance h_cont h_avoid
+  obtain ⟨m, hm, hfar⟩ := exists_curve_dist_lower_bound h_cont h_avoid
   refine .of_dist_lower_bound hm hfar ?_
   filter_upwards [Ioo_mem_nhdsGT hm] with ε hε
   refine (intervalIntegrable_congr fun t ht => ?_).mpr hf_int
@@ -594,7 +587,7 @@ raw principal value is the ordinary contour integral, whether or not the integra
 theorem cauchyPVAt_eq_integral_of_avoidance {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}
     (h_cont : ContinuousOn γ (Set.uIcc a b)) (h_avoid : ∀ t ∈ Set.uIcc a b, γ t ≠ z₀) :
     cauchyPVAt γ a b f z₀ = ∫ t in a..b, f (γ t) * deriv γ t := by
-  obtain ⟨m, hm, hfar⟩ := exists_pos_le_norm_sub_of_avoidance h_cont h_avoid
+  obtain ⟨m, hm, hfar⟩ := exists_curve_dist_lower_bound h_cont h_avoid
   exact (tendsto_const_nhds.congr' (integral_excise_eventuallyEq hm hfar).symm).limUnder_eq
 
 /-- **Concatenation.** The principal values along adjacent subcurves `[a, b]` and `[b, c]` add to
