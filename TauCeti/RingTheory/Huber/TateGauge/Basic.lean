@@ -106,8 +106,11 @@ theorem tateGauge_le_zpow (ha : 0 ≤ a) {x : A} {n : ℤ}
   csInf_le (bddBelow_tateGauge_radii ha _ _) ⟨n, hn, rfl⟩
 
 /-- An element of `A₀` has Tate gauge at most one. -/
-theorem tateGauge_le_one (ha : 0 ≤ a) {x : A} (hx : x ∈ A₀) : tateGauge A₀ ϖ a x ≤ 1 := by
-  simpa using tateGauge_le_zpow (A₀ := A₀) (ϖ := ϖ) ha (n := 0) (by simpa using hx)
+theorem tateGauge_le_one {x : A} (hx : x ∈ A₀) : tateGauge A₀ ϖ a x ≤ 1 := by
+  by_cases hb : BddBelow ((fun n : ℤ ↦ a ^ (-n)) '' {n | ((ϖ ^ (-n) : Aˣ) : A) * x ∈ A₀})
+  · exact (csInf_le hb ⟨0, by simpa using hx, rfl⟩).trans_eq (zpow_zero _)
+  · rw [tateGauge_def, Real.sInf_of_not_bddBelow hb]
+    exact zero_le_one
 
 /-- The Tate gauge is below `r` exactly when `x ∈ ϖ ^ n A₀` for some `n` with `a ^ (-n) < r`,
 provided some power of `ϖ` moves `x` into `A₀`. -/
@@ -405,18 +408,34 @@ theorem t2Space_iff_forall_tateGauge_eq_zero_iff [SeparatelyContinuousMul A]
   exact ⟨fun h x ↦ ⟨h x, fun hx ↦ hx ▸ subset_closure rfl⟩, fun h x ↦ (h x).1⟩
 
 /-- If the sets `ϖ ^ n A₀`, `n ≥ 0`, form a neighbourhood basis of zero in a nonzero T₁ ring
-with separately continuous multiplication and `ϖ ∈ A₀`, then the Tate gauge of one is one. -/
-theorem tateGauge_one [SeparatelyContinuousMul A] [T1Space A] [Nontrivial A] (ha : 1 < a)
+with `ϖ ∈ A₀`, then the Tate gauge of one is one. -/
+theorem tateGauge_one [T1Space A] [Nontrivial A] (ha : 1 < a)
     (hϖ : (ϖ : A) ∈ A₀) : tateGauge A₀ ϖ a 1 = 1 := by
-  have hA := exists_zpow_mul_mem_of_hasBasis hb
   have ha₀ : 0 ≤ a := zero_le_one.trans ha.le
-  rw [← coe_tateSeminorm hϖ hA ha]
-  apply (RingSeminorm.seminorm_one_eq_one_iff_ne_zero _
-    (tateGauge_le_one ha₀ A₀.one_mem)).2
-  intro h
-  have h1 : tateGauge A₀ ϖ a 1 = 0 := by
-    simpa using RingSeminorm.eq_zero_iff.1 h 1
-  simpa using (tateGauge_eq_zero_iff hb ha hϖ).1 h1
+  refine le_antisymm (tateGauge_le_one A₀.one_mem) (not_lt.1 fun hlt ↦ ?_)
+  obtain ⟨n, hn, hn'⟩ := (tateGauge_lt_iff ha₀ ⟨0, by simp⟩).1 hlt
+  have hnpos : 0 < n := by
+    by_contra h
+    exact absurd hn' (not_lt.2 (one_le_zpow₀ ha.le (by omega)))
+  have key (m : ℕ) : ((ϖ ^ (-(m : ℤ)) : Aˣ) : A) * 1 ∈ A₀ := by
+    have h1 : ((ϖ ^ (-n) : Aˣ) : A) ∈ A₀ := by simpa using hn
+    have h2 : ((ϖ ^ (-(n * m : ℤ)) : Aˣ) : A) ∈ A₀ := by
+      rw [show -(n * m : ℤ) = -n * m by ring, zpow_mul, zpow_natCast, Units.val_pow_eq_pow_val]
+      exact pow_mem h1 m
+    have h3 : ((ϖ ^ ((n * m - m : ℤ).toNat) : Aˣ) : A) ∈ A₀ := by
+      rw [Units.val_pow_eq_pow_val]
+      exact pow_mem hϖ _
+    have e : ϖ ^ (-(n * m : ℤ)) * ϖ ^ ((n * m - m : ℤ).toNat) = ϖ ^ (-(m : ℤ)) := by
+      rw [← zpow_natCast, Int.toNat_of_nonneg (by nlinarith), ← zpow_add]
+      congr 1
+      ring
+    rw [mul_one, ← e, Units.val_mul]
+    exact A₀.mul_mem h2 h3
+  have h1 : (1 : A) ∈ closure ({0} : Set A) := by
+    rw [R0Space.closure_singleton, hb.ker]
+    simpa using key
+  rw [closure_singleton] at h1
+  exact one_ne_zero h1
 
 end Topology
 
