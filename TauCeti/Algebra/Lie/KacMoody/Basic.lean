@@ -21,9 +21,10 @@ space `H` together with elements `eᵢ`, `fᵢ`, subject to
 * `⁅eᵢ, fᵢ⁆ = hᵢ` and `⁅eᵢ, fⱼ⁆ = 0` for `i ≠ j`;
 * Serre's relations `(ad eᵢ) ^ (-Aᵢⱼ) ⁅eᵢ, eⱼ⁆ = 0` and `(ad fᵢ) ^ (-Aᵢⱼ) ⁅fᵢ, fⱼ⁆ = 0`.
 
-For a symmetrizable generalized Cartan matrix and a minimal realization this is the Kac–Moody
-algebra `𝔤(A)` of Kac's book, by the Gabber–Kac theorem [Kac, Theorem 9.11], which is not proved
-here; a larger realization adds central directions. For a generalized Cartan matrix and `i ≠ j`
+Over a field of characteristic zero, for a symmetrizable generalized Cartan matrix and a minimal
+realization, this is the Kac–Moody algebra `𝔤(A)` of Kac's book, by the Gabber–Kac theorem
+[Kac, Theorem 9.11], which is not proved here and is not claimed in other characteristics; a
+larger realization adds central directions. For a generalized Cartan matrix and `i ≠ j`
 the last relations are `(ad eᵢ) ^ (1 - Aᵢⱼ) eⱼ = 0` and its lowering analogue; the exponent is
 truncated at zero exactly as in Mathlib's `Matrix.ToLieAlgebra`, so that the derived algebra below
 is compared with that presentation relator by relator.
@@ -60,7 +61,8 @@ relators, so that `TauCeti.KacMoody.cartanElement` is a linear map.
 
 * V. G. Kac, *Infinite-dimensional Lie algebras*, third edition, §1.2 (the auxiliary algebra on
   a realization), §1.3 (the algebra `𝔤(A)`, its derived algebra and `𝔤(A) = 𝔤'(A) + 𝔥`) and
-  Theorem 9.11 (the presentation of `𝔤(A)` by Serre's relations in the symmetrizable case).
+  Theorem 9.11 (the presentation of `𝔤(A)` by Serre's relations in the symmetrizable case, stated
+  over the complex numbers and used here only in characteristic zero).
 -/
 
 public section
