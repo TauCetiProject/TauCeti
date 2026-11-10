@@ -249,6 +249,25 @@ theorem H0π_eq_iff {M : Rep R G} (y z : M.ρ.invariants) :
     (dsimp% only (H0π M y = H0π M z)) ↔ y - z ∈ (range M.ρ.norm).submoduleOf M.ρ.invariants := by
   rw [← sub_eq_zero, ← map_sub, H0π_eq_zero_iff]
 
+/-- The invariants have as many elements as the image of the norm times degree zero Tate
+cohomology, as `Nat.card`s (which are `0` for infinite types). -/
+theorem _root_.Rep.natCard_invariants_eq_natCard_range_norm_mul_natCard_tateCohomology_zero
+    (M : Rep R G) :
+    Nat.card M.ρ.invariants =
+      Nat.card (range M.ρ.norm) * Nat.card (tateCohomology M 0) := by
+  have hnorm_le : range M.ρ.norm ≤ M.ρ.invariants := by
+    rintro _ ⟨x, rfl⟩
+    exact fun a ↦ M.ρ.self_norm_apply a x
+  calc
+    Nat.card M.ρ.invariants =
+        Nat.card ((range M.ρ.norm).submoduleOf M.ρ.invariants) *
+          Nat.card (M.ρ.invariants ⧸
+            (range M.ρ.norm).submoduleOf M.ρ.invariants) :=
+      Submodule.card_eq_card_quotient_mul_card _
+    _ = Nat.card (range M.ρ.norm) * Nat.card (tateCohomology M 0) := by
+      rw [Nat.card_congr (Submodule.submoduleOfEquivOfLe hnorm_le).toEquiv,
+        ← Nat.card_congr (H0IsoNormQuotient M).toLinearEquiv.toEquiv]
+
 /-- Every degree-zero Tate cohomology class is represented by an invariant, so a property of all
 classes follows from the property of the classes of invariants. -/
 @[elab_as_elim]
@@ -343,6 +362,27 @@ theorem HNegOneπ_eq_iff {M : Rep R G} (x y : ker M.ρ.norm) :
     (dsimp% only (HNegOneπ M x = HNegOneπ M y)) ↔
       x - y ∈ (Representation.Coinvariants.ker M.ρ).submoduleOf (ker M.ρ.norm) := by
   rw [← sub_eq_zero, ← map_sub, HNegOneπ_eq_zero_iff]
+
+/-- The kernel of the norm has as many elements as the kernel of the coinvariants projection
+times degree `-1` Tate cohomology, as `Nat.card`s (which are `0` for infinite types). -/
+theorem _root_.Rep.natCard_ker_norm_eq_natCard_coinvariantsKer_mul_natCard_tateCohomology_negOne
+    (M : Rep R G) :
+    Nat.card (ker M.ρ.norm) =
+      Nat.card (Representation.Coinvariants.ker M.ρ) *
+        Nat.card (tateCohomology M (-1)) := by
+  calc
+    Nat.card (ker M.ρ.norm) =
+        Nat.card ((Representation.Coinvariants.ker M.ρ).submoduleOf (ker M.ρ.norm)) *
+          Nat.card (ker M.ρ.norm ⧸
+            (Representation.Coinvariants.ker M.ρ).submoduleOf (ker M.ρ.norm)) :=
+      Submodule.card_eq_card_quotient_mul_card _
+    _ = Nat.card (Representation.Coinvariants.ker M.ρ) *
+        Nat.card (tateCohomology M (-1)) := by
+      rw [Nat.card_congr (Submodule.submoduleOfEquivOfLe (by
+        rw [← range_d₁₀_eq_coinvariantsKer]
+        exact LinearMap.range_le_ker_iff.mpr
+          (ModuleCat.hom_ext_iff.mp (Rep.comp_eq_zero M)))).toEquiv,
+        ← Nat.card_congr (HNegOneIsoNormKernelQuotient M).toLinearEquiv.toEquiv]
 
 /-- Every degree `-1` Tate cohomology class is represented by a norm-zero element, so a property
 of all classes follows from the property of the classes of norm-zero elements. -/

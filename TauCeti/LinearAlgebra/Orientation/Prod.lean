@@ -157,6 +157,17 @@ theorem prod_neg_neg (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
   rw [prod_neg_left, prod_neg_right]
   exact neg_neg (prod o p hm hn)
 
+/-- Recasting the index types of the factors along equalities `m = m'` and `n = n'` recasts the
+index type of the product orientation along `m + n = m' + n'`. -/
+theorem prod_reindex_finCongr {m' n' : ℕ} (o : Orientation R E (Fin m))
+    (p : Orientation R F (Fin n)) (h : m = m') (h' : n = n') (hm : Module.finrank R E = m')
+    (hn : Module.finrank R F = n') :
+    prod (reindex R E (finCongr h) o) (reindex R F (finCongr h') p) hm hn =
+      reindex R (E × F) (finCongr (by rw [h, h']))
+        (prod o p (hm.trans h.symm) (hn.trans h'.symm)) := by
+  subst h h'
+  simp only [finCongr_refl, reindex_refl, Equiv.refl_apply]
+
 /-- The relative sign in a product basis is the product of the two relative factor signs. -/
 theorem signBasis_prod (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
     (hm : Module.finrank R E = m) (hn : Module.finrank R F = n)

@@ -31,6 +31,8 @@ with `F`. The canonical identification relates their vanishing, injectivity and 
   manifold-valued map on a normed space.
 * `TauCeti.continuous_fderiv_of_contMDiff`: the derivative in the domain variable of a `C¹`
   family along a `C¹` manifold-valued map is continuous.
+* `TauCeti.mfderiv_apply_eq_zero_of_const_line`: the derivative of a map from a normed space
+  vanishes on a direction along which the map is constant.
 * `TauCeti.mvfderiv_apply`: the derivative of a component of a function into a finite product is
   the component of its derivative.
 * `mvfderiv_apply_eq_mfderiv_apply`: evaluating `mvfderiv` agrees with evaluating `mfderiv`.
@@ -294,5 +296,28 @@ theorem mvfderiv_apply {ι : Type*} [Fintype ι] {F'' : ι → Type*}
   ext v
   -- The component `fun y ↦ Φ y i` is `proj i ∘ Φ` by definition of the projection.
   exact (ContinuousLinearMap.proj (R := 𝕜) (φ := F'') i).mvfderiv_comp_apply hΦ v
+
+/-- The derivative of a map from a normed space vanishes on a direction `w` along which the map is
+constant. -/
+theorem mfderiv_apply_eq_zero_of_const_line {f : F → M} {z w : F}
+    (hconst : ∀ t : 𝕜, f (z + t • w) = f z) : mfderiv 𝓘(𝕜, F) I f z w = 0 := by
+  by_cases hd : MDifferentiableAt 𝓘(𝕜, F) I f z
+  · let c : 𝕜 → F := fun t ↦ z + t • w
+    have hc : HasFDerivAt c ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w) 0 :=
+      ((hasFDerivAt_id (0 : 𝕜)).smul_const w).const_add z
+    have hmc : mfderiv 𝓘(𝕜, 𝕜) 𝓘(𝕜, F) c 0 = (1 : 𝕜 →L[𝕜] 𝕜).smulRight w := by
+      rw [mfderiv_eq_fderiv, hc.fderiv]
+      -- Mathlib identifies model-space tangent spaces definitionally with the model spaces.
+      rfl
+    have hmc' : mfderiv 𝓘(𝕜, 𝕜) 𝓘(𝕜, F) c 0 (1 : 𝕜) = w := by
+      rw [hmc]
+      -- Read the tangent spaces of the model spaces as the model spaces.
+      change ((1 : 𝕜 →L[𝕜] 𝕜).smulRight w) (1 : 𝕜) = w
+      simp
+    rw [← hmc', ← mfderiv_comp_apply_of_eq (0 : 𝕜) hd hc.differentiableAt.mdifferentiableAt
+      (by simp [c]) (1 : 𝕜), show f ∘ c = fun _ ↦ f z from funext hconst, mfderiv_const]
+    rfl
+  · rw [mfderiv_zero_of_not_mdifferentiableAt hd]
+    rfl
 
 end TauCeti

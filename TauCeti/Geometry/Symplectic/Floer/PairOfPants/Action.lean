@@ -84,18 +84,20 @@ open scoped Topology
 
 namespace TauCeti
 
+/-- For the constants `h_q = ∓B_q`, the one-sided constant `∑ q, ε_q ∫₀¹ h_q` of the action
+bounds is `-(B_0 + B_1 + B_∞)`. -/
+theorem ThricePuncturedSphere.Puncture.sum_endSign_mul_integral_neg_endSign_mul
+    (B : Puncture → ℝ) :
+    ∑ q, q.endSign * ∫ _ in (0 : ℝ)..1, -(q.endSign * B q) = -∑ q, B q := by
+  simp_rw [intervalIntegral.integral_const, sub_zero, one_smul]
+  exact sum_endSign_mul_neg_endSign_mul B
+
 namespace SymplecticForm
 
 open Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ}
-
-/-- The truncations, in real coordinates, are measurable. -/
-private theorem measurableSet_truncation (R : ℝ) :
-    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
-  ((isCompact_truncation R).isClosed.preimage
-    Complex.equivRealProdCLM.symm.continuous).measurableSet
 
 /-- Stokes' formula `TauCeti.SymplecticForm.integral_fderiv_apply_truncation` in the real
 coordinates `ℝ × ℝ ≃ ℂ` of the energy identity. -/
@@ -161,16 +163,8 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_ha
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
-    refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
-      ((isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
-        (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)).measurableSet
-      (fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩) fun z hz ↦ ?_
-    obtain ⟨q, hq⟩ : ∃ q : Puncture,
-        R < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re := by
-      by_contra! h
-      exact hz.2 (mem_truncation.2 ⟨hz.1.1, hz.1.2, h⟩)
-    exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hz.1
-      (by linarith) _
+    exact setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation fun z hz q hq ↦
+      ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs hz (by linarith) _
   rw [hcurv, integral_floerEnergyDensity_pairOfPantsPerturbation_truncation ω hH hHs
       (hu.of_le one_le_two) (by linarith : (1 : ℝ) ≤ R),
     integral_symplecticForm_fderiv_truncation ω hu (by linarith),
@@ -247,7 +241,7 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq (ω : Symplectic
   set T : ℕ → Set (ℝ × ℝ) := fun n ↦ Complex.equivRealProdCLM.symm ⁻¹' truncation (n + 2)
   have hTS (n : ℕ) : T n ⊆ {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
       Complex.equivRealProdCLM.symm z ≠ 1} :=
-    fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
+    preimage_truncation_subset_thricePuncturedSphereReal _
   have hmono : Monotone T := fun m n hmn z hz ↦ by
     obtain ⟨h₀, h₁, h⟩ := mem_truncation.1 hz
     exact mem_truncation.2 ⟨h₀, h₁, fun q ↦ (h q).trans (by gcongr)⟩
@@ -271,7 +265,7 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq (ω : Symplectic
       u z) :=
     (ofReal_integral_eq_lintegral_ofReal
       (integrableOn_truncation_pairOfPantsPerturbation ω hH hHs (hu.of_le one_le_two) _).1
-      (ae_restrict_of_forall_mem (measurableSet_truncation _) fun z hz ↦
+      (ae_restrict_of_forall_mem (measurableSet_preimage_truncation _) fun z hz ↦
         ω.floerEnergyDensity_nonneg (hJ z (hTS n hz)) (hfloer z (hTS n hz)))).symm
   have hlim : Tendsto (fun n ↦ ∫⁻ z in T n, ENNReal.ofReal (ω.floerEnergyDensity
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
@@ -288,22 +282,6 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq (ω : Symplectic
   simp only [hE]
   exact (ENNReal.continuous_ofReal.tendsto _).comp
     (tendsto_integral_floerEnergyDensity_truncation ω hH hHs hu ha)
-
-/-- The integrated curvature of the pair-of-pants perturbation over `S` is at most
-`B_0 + B_1 + B_∞` in absolute value, if `|H_q| ≤ B_q`. -/
-private theorem abs_integral_hamiltonianCurvature_le (ω : SymplecticForm V)
-    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (u : ℝ × ℝ → V) :
-    |∫ z in {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
-        Complex.equivRealProdCLM.symm z ≠ 1}, ω.hamiltonianCurvature
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z (u z)| ≤ ∑ q, B q := by
-  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 0)
-  rw [← ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg fun q _ => hB₀ q),
-    ← Real.enorm_eq_ofReal_abs, ENNReal.ofReal_sum_of_nonneg fun q _ => hB₀ q]
-  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
-    (lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u))
 
 /-- **The energy and the actions on a truncated pair of pants.** If the end Hamiltonians are
 bounded, `|H_q| ≤ B_q`, then for every `R ≥ 2` the Floer energy of `u` over the truncation `S_R`
@@ -323,7 +301,7 @@ theorem abs_integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_sub_s
         (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))| ≤ ∑ q, B q := by
   rw [integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
     ω hH hHs hu hR, sub_sub_cancel_left, abs_neg]
-  exact abs_integral_hamiltonianCurvature_le ω hH hHs hB u
+  exact abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u _
 
 /-! ### One-sided action bounds -/
 
@@ -388,7 +366,7 @@ theorem hamiltonianAction_le_add_add_sub_sum (ω : SymplecticForm V)
           (one.cylindricalEndLift (↑R + ↑t * Complex.I)))) -
         ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, h q t := by
   -- The energy over `S_R` is nonnegative.
-  have hE := setIntegral_nonneg (μ := volume) (measurableSet_truncation R) fun z hz ↦
+  have hE := setIntegral_nonneg (μ := volume) (measurableSet_preimage_truncation R) fun z hz ↦
     ω.floerEnergyDensity_nonneg (hJ z hz) (hfloer z hz)
   have hle := integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_le_sum_sub_sum
     ω hH hHs hh hhH hu hR
@@ -463,27 +441,13 @@ theorem le_add_add_sub_sum_of_tendsto_hamiltonianAction (ω : SymplecticForm V)
   simp only [endSign_zero, endSign_one, endSign_inf, one_mul, neg_one_mul] at h₀ h₁ hinf
   exact le_of_tendsto_of_tendsto hinf ((h₀.add h₁).sub_const _) <| eventually_atTop.2
     ⟨2, fun R hR ↦ hamiltonianAction_le_add_add_sub_sum ω hH hHs hh hhH hu hR
-      (fun z hz ↦ hJ z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩)
-      fun z hz ↦ hfloer z ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩⟩
+      (fun z hz ↦ hJ z (preimage_truncation_subset_thricePuncturedSphereReal R hz))
+      fun z hz ↦ hfloer z (preimage_truncation_subset_thricePuncturedSphereReal R hz)⟩
 
 /-! ### Action bounds for bounded Hamiltonians
 
 If `|H_q| ≤ B_q`, the constants `h_q = ∓B_q` satisfy the one-sided bounds `±h_q ≤ ±H_q`, and the
 one-sided constant `-∫₀¹ h_0 - ∫₀¹ h_1 + ∫₀¹ h_∞` becomes `B_0 + B_1 + B_∞`. -/
-
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- Bounds `|H_q| ≤ B_q` give the one-sided bounds `±h_q ≤ ±H_q` for the constants
-`h_q = ∓B_q`. -/
-private theorem endSign_mul_neg_endSign_mul_le {B : Puncture → ℝ}
-    (hB : ∀ q t x, |H q t x| ≤ B q) (q : Puncture) (t : ℝ) (x : V) :
-    q.endSign * -(q.endSign * B q) ≤ q.endSign * H q t x := by
-  rw [mul_neg, ← mul_assoc, endSign_mul_self, one_mul]
-  exact neg_le_of_abs_le (by rw [abs_mul, abs_endSign, one_mul]; exact hB q t x)
-
-/-- For the constants `h_q = ∓B_q`, the one-sided constant is `B_0 + B_1 + B_∞`. -/
-private theorem sum_endSign_mul_integral_neg_endSign_mul (B : Puncture → ℝ) :
-    ∑ q, q.endSign * ∫ _ in (0 : ℝ)..1, -(q.endSign * B q) = -∑ q, B q := by
-  simp [mul_neg, ← mul_assoc, Finset.sum_neg_distrib]
 
 /-- **The energy bound for a pair of pants.** Under the hypotheses of
 `SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_eq`, if moreover
