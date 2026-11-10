@@ -349,8 +349,8 @@ vanishes on `ker T` is the canonical factor of `T` through `A`. -/
 theorem eq_factorThru_of_isStarNormal (hA : IsStarNormal A)
     {V : E →L[𝕜] F} (hV : V ∘L A = T) (hV₀ : ∀ y ∈ T.ker, V y = 0) : V = T.factorThru A :=
   eq_factorThru hV fun y hy ↦ hV₀ y <| by
-    rw [IsStarNormal.orthogonal_range hA] at hy
-    rw [LinearMap.mem_ker, coe_coe, ← hV, comp_apply, show A y = 0 from hy, map_zero]
+    rw [IsStarNormal.orthogonal_range hA, LinearMap.mem_ker, coe_coe] at hy
+    rw [LinearMap.mem_ker, coe_coe, ← hV, comp_apply, hy, map_zero]
 
 end Normed
 
