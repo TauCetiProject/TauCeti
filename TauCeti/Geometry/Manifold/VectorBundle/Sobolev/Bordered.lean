@@ -6,17 +6,16 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
-public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import TauCeti.Analysis.Sobolev.Local.Coordinates
-public import TauCeti.Analysis.Sobolev.Wkp.Basic
 public import TauCeti.Geometry.Manifold.Complex.ClosedUpperHalfPlane
-public import TauCeti.Geometry.Manifold.VectorBundle.FiniteBundleAtlas
+public import TauCeti.Geometry.Manifold.VectorBundle.Sobolev.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.MeasureTheory.Function.LpSeminorm.LpNorm
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.Sobolev.Wkp.Chain
 import TauCeti.Analysis.Sobolev.Wkp.Classical
+import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Sobolev spaces of sections over surfaces with boundary
@@ -33,22 +32,21 @@ The charts are fixed by a finite bundle atlas
 open subset of the closed upper half-plane; in `ℂ` it is `A.halfClosedImage i = Ω ∩ {0 ≤ im}` for
 an open set `Ω`, and its interior is the open set
 `A.halfImage i = Ω ∩ {0 < im}`. In chart `i` a section `s` is read as the `F`-valued function
-`A.halfCoord i s` on `ℂ`. Fixing a basis of `F`, an element of the space is a tuple of scalar
-Sobolev functions `w i j ∈ W^{k,p}(A.halfImage i)` with respect to Lebesgue measure, one for each
-chart and each basis vector, that are the components of a single section: there is a section `s`
-with `A.halfChartValueL p k i w = A.halfCoord i s` almost everywhere on `A.halfImage i` for every
-`i`. These tuples form the submodule `TauCeti.borderedSobolevSections A p k` of the finite product
-of scalar Sobolev spaces, and `TauCeti.BorderedSobolevSection A p k` carries the product norm. The
-real axis is a Lebesgue null set, so nothing is lost by recording the components on the interiors
-of the chart images.
+`A.halfCoord i s` on `ℂ`. Recording these readings on the interiors `A.halfImage i` gives the
+chart data `A.halfSectionChartData`, and the space is the general construction of
+`TauCeti.SectionChartData.sobolevSections` for them, with respect to Lebesgue measure: an element
+is a tuple of scalar Sobolev functions `w i j ∈ W^{k,p}(A.halfImage i)`, one for each chart and
+each basis vector of `F`, that are the components of a single section. The real axis is a
+Lebesgue null set, so nothing is lost by recording the components on the interiors of the chart
+images.
 
-Being the components of a section is equivalent to the cocycle relation on every overlap
-(`TauCeti.FiniteBundleAtlas.mem_borderedSobolevSections_iff_forall_halfCompatible`). Reading the
-relation off from a section needs that chart transitions carry interior points to interior points
-(`TauCeti.ClosedUpperHalfPlane.im_pos_iff_of_mem_contDiffGroupoid`) and, being `C¹` on the
-interiors of the overlaps, carry null sets to null sets
-(`TauCeti.FiniteBundleAtlas.ae_restrict_halfOverlap_halfTransition`). Each relation is closed, so
-the space is complete (`TauCeti.BorderedSobolevSection.instCompleteSpace`).
+The general construction gives the cocycle characterization, closedness and the lower-order
+inclusion once chart transitions carry null sets to null sets
+(`TauCeti.FiniteBundleAtlas.aeTransition_halfSectionChartData`). This needs that chart transitions
+carry interior points to interior points
+(`TauCeti.ClosedUpperHalfPlane.im_pos_iff_of_mem_contDiffGroupoid`) and are `C¹` on the interiors
+of the overlaps (`TauCeti.FiniteBundleAtlas.ae_restrict_halfOverlap_halfTransition`). So the space
+is complete (`TauCeti.BorderedSobolevSection.instCompleteSpace`).
 
 A `Cᵏ` section has `Cᵏ` chart coordinates up to the real axis, so their derivatives through order
 `k` are bounded on the chart images, which are relatively compact; this gives the injective linear
@@ -62,20 +60,16 @@ Conversely, the chart expression of every element lies in the local Sobolev clas
 * `TauCeti.FiniteBundleAtlas.halfImage`, `TauCeti.FiniteBundleAtlas.halfClosedImage`: the
   interior in `ℂ` of the image of a chart, and the image itself.
 * `TauCeti.FiniteBundleAtlas.halfCoord`: a section read in a chart, as a function on `ℂ`.
-* `TauCeti.FiniteBundleAtlas.halfChartValueL`: the `F`-valued `Lᵖ` function on `A.halfImage i`
-  assembled from the chart-`i` Sobolev components of a tuple.
-* `TauCeti.borderedSobolevSections A p k`: the tuples of chartwise components of sections.
+* `TauCeti.FiniteBundleAtlas.halfSectionChartData`: the chart data on the interiors of the chart
+  images.
 * `TauCeti.BorderedSobolevSection A p k`: the Banach space `W^{k,p}(V)`.
-* `TauCeti.BorderedSobolevSection.lowerOrderL`: the inclusion `W^{k+1,p}(V) → W^{k,p}(V)`.
 * `TauCeti.BorderedSobolevSection.ofContMDiffSection`: `Cᵏ` sections as Sobolev sections.
 
 ## Main results
 
-* `TauCeti.FiniteBundleAtlas.mem_borderedSobolevSections_iff_forall_halfCompatible`: a tuple
-  consists of the components of a section exactly when its chart data satisfy the cocycle
-  relations.
-* `TauCeti.isClosed_borderedSobolevSections`, `TauCeti.BorderedSobolevSection.instCompleteSpace`:
-  completeness.
+* `TauCeti.FiniteBundleAtlas.aeTransition_halfSectionChartData`: chart transitions preserve null
+  sets.
+* `TauCeti.BorderedSobolevSection.instCompleteSpace`: completeness.
 * `TauCeti.BorderedSobolevSection.norm_ofContMDiffSection_le`,
   `TauCeti.BorderedSobolevSection.ofContMDiffSection_injective`: the norm bound and injectivity of
   the inclusion of `Cᵏ` sections.
@@ -98,14 +92,6 @@ open Bundle Filter MeasureTheory Module Set TopologicalSpace
 open scoped Manifold Topology ENNReal ContDiff
 
 namespace TauCeti
-
-/-- The real axis is a Lebesgue null set in `ℂ`. -/
-private theorem volume_setOf_im_eq_zero : volume {z : ℂ | z.im = 0} = 0 := by
-  have h := Measure.addHaar_submodule (volume : Measure ℂ) (LinearMap.ker Complex.imLm) fun h ↦ by
-    have : Complex.I ∈ LinearMap.ker Complex.imLm := h ▸ Submodule.mem_top
-    simp at this
-  have hker : (LinearMap.ker Complex.imLm : Set ℂ) = {z : ℂ | z.im = 0} := by ext z; simp
-  rwa [hker] at h
 
 section Atlas
 
@@ -153,9 +139,8 @@ theorem interior_halfClosedImage (i : Fin A.n) :
 /-- The points of the image of chart `i` in `ℂ` that are not in its interior lie on the real
 axis, so the image and its interior differ by a null set. -/
 theorem halfClosedImage_ae_le_halfImage (i : Fin A.n) :
-    A.halfClosedImage i ≤ᵐ[volume] (A.halfImage i : Set ℂ) := by
-  refine ae_le_set.2 (measure_mono_null (fun z hz ↦ ?_) volume_setOf_im_eq_zero)
-  exact le_antisymm (not_lt.1 fun h ↦ hz.2 ⟨hz.1.1, h⟩) hz.1.2
+    A.halfClosedImage i ≤ᵐ[volume] (A.halfImage i : Set ℂ) :=
+  (EventuallyEqSet.inter EventuallyEq.rfl (Complex.setOf_le_im_ae_eq 0)).le
 
 /-- Every point of the image of chart `i` in `ℂ`, including the points on the real axis, is a
 limit of points of its interior. -/
@@ -335,18 +320,6 @@ namespace FiniteBundleAtlas
 
 variable (A : FiniteBundleAtlas ClosedUpperHalfPlane M F V)
 
-theorem halfCoord_add (i : Fin A.n) (s t : ∀ x, V x) {z : ℂ} (hz : z ∈ A.halfImage i) :
-    A.halfCoord i (s + t) z = A.halfCoord i s z + A.halfCoord i t z :=
-  A.coord_add i s t hz.1
-
-theorem halfCoord_smul (i : Fin A.n) (c : ℝ) (s : ∀ x, V x) {z : ℂ} (hz : z ∈ A.halfImage i) :
-    A.halfCoord i (c • s) z = c • A.halfCoord i s z :=
-  A.coord_smul i c s hz.1
-
-theorem halfCoord_zero (i : Fin A.n) {z : ℂ} (hz : z ∈ A.halfImage i) :
-    A.halfCoord i (0 : ∀ x, V x) z = 0 :=
-  A.coord_zero i hz.1
-
 /-- **The chart coordinates of a `Cᵏ` section are `Cᵏ` up to the boundary**, on the relatively open
 subset `A.halfChartSet i` of the closed upper half-plane. -/
 theorem contDiffOn_halfCoord {k : ℕ} [IsManifold closedUpperHalfPlaneModel k M]
@@ -370,6 +343,44 @@ theorem halfCoord_eq_coordChange {i i' : Fin A.n} (s : ∀ x, V x) {z : ℂ}
   rw [halfCoord, halfCoord, symm_halfTransition]
   exact A.coord_eq_coordChange s hz.1
 
+/-- The chart data of a finite bundle atlas over a base with boundary: a section is read in chart
+`i` as `A.halfCoord i s` on the interior `A.halfImage i` of the image of the chart in `ℂ`. At each
+point the gluing of a family of functions is read off from the function of any chart containing
+the point. -/
+@[expose] def halfSectionChartData : SectionChartData ℂ F (∀ x, V x) where
+  n := A.n
+  image := A.halfImage
+  overlap := A.halfOverlap
+  isOpen_overlap := A.isOpen_halfOverlap
+  overlap_subset_image := A.halfOverlap_subset_halfImage
+  transition := A.halfTransition
+  coordChange i i' z :=
+    (A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm (closedUpperHalfPlaneModel.symm z))
+  coord := A.halfCoord
+  coord_add i s t _ hz := by
+    simp only [halfCoord]; exact A.coord_add i s t (A.mem_halfImage.1 hz).1
+  coord_smul i c s _ hz := by
+    simp only [halfCoord]; exact A.coord_smul i c s (A.mem_halfImage.1 hz).1
+  coord_eq_coordChange _ _ s _ hz := A.halfCoord_eq_coordChange s hz
+  exists_glue f := by
+    classical
+    let idx : M → Fin A.n := fun x ↦ (A.exists_mem_dom x).choose
+    have hidx (x : M) : x ∈ A.dom (idx x) := (A.exists_mem_dom x).choose_spec
+    refine ⟨fun x ↦ (A.triv (idx x)).symm x (f (idx x) (A.chart (idx x) x : ℂ)),
+      fun i' z hz ↦ ?_⟩
+    obtain ⟨hzU, hz0⟩ := hz
+    obtain ⟨x, hx, hxz⟩ := A.mem_image.1 hzU
+    have hz0 : 0 < z.im := hz0
+    have hz' : z = (A.chart i' x : ℂ) := by
+      rw [hxz, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz0.le]
+    have hov : z ∈ A.halfOverlap (idx x) i' :=
+      ⟨by rw [mem_preimage, ← hxz]; exact A.chart_mem_overlap (hidx x) hx, hz0⟩
+    refine ⟨idx x, hov, ?_⟩
+    rw [A.halfCoord_eq_coordChange _ hov, hz', A.halfTransition_coe_chart hx,
+      A.halfCoord_coe_chart _ (hidx x),
+      (A.triv (idx x)).apply_mk_symm (A.dom_subset_baseSet _ (hidx x))]
+    rfl
+
 end FiniteBundleAtlas
 
 end Linear
@@ -377,255 +388,30 @@ end Linear
 section Sobolev
 
 variable {M : Type*} [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
-  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [TopologicalSpace (TotalSpace F V)] [∀ x, AddCommGroup (V x)]
   [∀ x, Module ℝ (V x)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
 
 variable (A : FiniteBundleAtlas ClosedUpperHalfPlane M F V) (p : ℝ≥0∞) [Fact (1 ≤ p)] (k : ℕ)
 
-/-- Tuples of scalar Sobolev functions of order `k`, one on the interior of the image of each chart
-for each vector of the standard basis `Module.finBasis ℝ F` of the model fibre. -/
-abbrev BorderedSobolevData : Type :=
-  ∀ (i : Fin A.n) (_ : Fin (finrank ℝ F)), Wkp volume (A.halfImage i) p k
+/-- **Chart transitions preserve null sets** on the interiors of the chart images. -/
+theorem FiniteBundleAtlas.aeTransition_halfSectionChartData
+    [IsManifold closedUpperHalfPlaneModel 1 M] : A.halfSectionChartData.AETransition volume :=
+  fun _ _ _ h ↦ A.ae_restrict_halfOverlap_halfTransition h
 
-namespace FiniteBundleAtlas
-
-/-- The `F`-valued `Lᵖ` function on the interior of the image of chart `i` whose components in the
-basis `Module.finBasis ℝ F` are the values of the chart-`i` entries of a tuple of Sobolev
-functions. -/
-def halfChartValueL (i : Fin A.n) :
-    BorderedSobolevData A p k →L[ℝ] Lp F p (volume.restrict (A.halfImage i : Set ℂ)) :=
-  ∑ j, ((ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (finBasis ℝ F j)).compLpL p _).comp
-    ((Wkp.valueL k).comp ((ContinuousLinearMap.proj (R := ℝ)
-      (φ := fun _ : Fin (finrank ℝ F) ↦ Wkp volume (A.halfImage i) p k) j).comp
-      (ContinuousLinearMap.proj (R := ℝ)
-        (φ := fun i : Fin A.n ↦ ∀ _ : Fin (finrank ℝ F), Wkp volume (A.halfImage i) p k) i)))
-
-omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
-/-- Almost everywhere on the interior of the image of chart `i`, the chart data of a tuple are the
-combination of the basis vectors of `F` with the values of its chart-`i` components. -/
-theorem halfChartValueL_apply_ae (i : Fin A.n) (w : BorderedSobolevData A p k) :
-    ∀ᵐ z ∂volume.restrict (A.halfImage i : Set ℂ),
-      A.halfChartValueL p k i w z = ∑ j, Wkp.value k (w i j) z • finBasis ℝ F j := by
-  have heq : A.halfChartValueL p k i w = ∑ j,
-      (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (finBasis ℝ F j)).compLpL p _
-        (Wkp.value k (w i j)) := by
-    simp [halfChartValueL]
-  have hsum := Lp.coeFn_finsetSum (μ := volume.restrict (A.halfImage i : Set ℂ)) (p := p)
-    Finset.univ fun j ↦ (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ)
-      (finBasis ℝ F j)).compLpL p _ (Wkp.value k (w i j))
-  have hj (j : Fin (finrank ℝ F)) := ContinuousLinearMap.coeFn_compLpL (p := p)
-    (μ := volume.restrict (A.halfImage i : Set ℂ))
-    (ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (finBasis ℝ F j)) (Wkp.value k (w i j))
-  filter_upwards [hsum, ae_all_iff.2 hj] with y hy hy'
-  rw [heq, hy, Finset.sum_apply]
-  exact Finset.sum_congr rfl fun j _ ↦ by simp [hy' j]
-
-omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
-/-- Forgetting the highest derivative of every component does not change the chart data. -/
-theorem halfChartValueL_lowerOrderL (i : Fin A.n) (w : BorderedSobolevData A p (k + 1)) :
-    A.halfChartValueL p k i (fun i j ↦ Wkp.lowerOrderL k (w i j)) =
-      A.halfChartValueL p (k + 1) i w := by
-  simp only [halfChartValueL, FunLike.coe_sum, Finset.sum_apply, ContinuousLinearMap.coe_comp,
-    Function.comp_apply, ContinuousLinearMap.proj_apply]
-  refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [Wkp.valueL_apply, Wkp.valueL_apply, Wkp.value_succ, Wkp.lowerOrderL_apply]
-
-/-- The chart-`i'` data of a tuple are related to its chart-`i` data by the coordinate change of
-the bundle on the interior of the overlap of the two charts, almost everywhere. -/
-def HalfCompatible (w : BorderedSobolevData A p k) (i i' : Fin A.n) : Prop :=
-  ∀ᵐ z ∂volume.restrict (A.halfOverlap i i'), A.halfChartValueL p k i' w z =
-    (A.triv i).coordChangeL ℝ (A.triv i') ((A.chart i').symm (closedUpperHalfPlaneModel.symm z))
-      (A.halfChartValueL p k i w (A.halfTransition i i' z))
-
-theorem halfCompatible_iff {w : BorderedSobolevData A p k} {i i' : Fin A.n} :
-    A.HalfCompatible p k w i i' ↔ ∀ᵐ z ∂volume.restrict (A.halfOverlap i i'),
-      A.halfChartValueL p k i' w z = (A.triv i).coordChangeL ℝ (A.triv i')
-        ((A.chart i').symm (closedUpperHalfPlaneModel.symm z))
-        (A.halfChartValueL p k i w (A.halfTransition i i' z)) :=
-  Iff.rfl
-
-end FiniteBundleAtlas
-
-open FiniteBundleAtlas
-
-/-- The tuples of chartwise Sobolev components of sections of `V` over a base with boundary: a
-tuple `w` belongs to it when some section `s` has, in every chart `i`, coordinates equal almost
-everywhere on `A.halfImage i` to the function assembled from the chart-`i` components of `w`. -/
-def borderedSobolevSections : Submodule ℝ (BorderedSobolevData A p k) where
-  carrier := {w | ∃ s : ∀ x, V x, ∀ i,
-    A.halfChartValueL p k i w =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s}
-  add_mem' {w w'} := by
-    rintro ⟨s, hs⟩ ⟨t, ht⟩
-    refine ⟨s + t, fun i ↦ ?_⟩
-    filter_upwards [hs i, ht i, ae_restrict_mem (A.halfImage i).isOpen.measurableSet,
-      Lp.coeFn_add (A.halfChartValueL p k i w) (A.halfChartValueL p k i w')]
-      with y hy ht hyU hadd
-    rw [map_add, hadd, Pi.add_apply, hy, ht, A.halfCoord_add i s t hyU]
-  zero_mem' := ⟨0, fun i ↦ by
-    filter_upwards [ae_restrict_mem (A.halfImage i).isOpen.measurableSet,
-      Lp.coeFn_zero F p (volume.restrict (A.halfImage i : Set ℂ))] with y hyU h0
-    rw [map_zero, h0, Pi.zero_apply, A.halfCoord_zero i hyU]⟩
-  smul_mem' c w := by
-    rintro ⟨s, hs⟩
-    refine ⟨c • s, fun i ↦ ?_⟩
-    filter_upwards [hs i, ae_restrict_mem (A.halfImage i).isOpen.measurableSet,
-      Lp.coeFn_smul c (A.halfChartValueL p k i w)] with y hy hyU hsmul
-    rw [map_smul, hsmul, Pi.smul_apply, hy, A.halfCoord_smul i c s hyU]
-
-theorem mem_borderedSobolevSections_iff {w : BorderedSobolevData A p k} :
-    w ∈ borderedSobolevSections A p k ↔ ∃ s : ∀ x, V x, ∀ i,
-      A.halfChartValueL p k i w =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s :=
-  Iff.rfl
-
-namespace FiniteBundleAtlas
-
-variable {A p k}
-
-/-- The components of a section satisfy the cocycle relation on every overlap. -/
-theorem halfCompatible_of_mem [IsManifold closedUpperHalfPlaneModel 1 M]
-    {w : BorderedSobolevData A p k} (hw : w ∈ borderedSobolevSections A p k) (i i' : Fin A.n) :
-    A.HalfCompatible p k w i i' := by
-  obtain ⟨s, hs⟩ := hw
-  filter_upwards [ae_restrict_of_ae_restrict_of_subset (A.halfOverlap_subset_halfImage i i')
-    (hs i'), A.ae_restrict_halfOverlap_halfTransition (i' := i') (hs i),
-    ae_restrict_mem (A.isOpen_halfOverlap i i').measurableSet] with y h' h hy
-  rw [h', h, A.halfCoord_eq_coordChange s hy]
-
-/-- **Gluing.** Chart data satisfying the cocycle relation on every overlap are the components of
-a section. At each point the section is read off from the data of any chart containing it. -/
-theorem mem_borderedSobolevSections_of_forall_halfCompatible {w : BorderedSobolevData A p k}
-    (hw : ∀ i i', A.HalfCompatible p k w i i') : w ∈ borderedSobolevSections A p k := by
-  classical
-  let idx : M → Fin A.n := fun x ↦ (A.exists_mem_dom x).choose
-  have hidx (x : M) : x ∈ A.dom (idx x) := (A.exists_mem_dom x).choose_spec
-  let s : ∀ x, V x := fun x ↦
-    (A.triv (idx x)).symm x (A.halfChartValueL p k (idx x) w (A.chart (idx x) x : ℂ))
-  refine ⟨s, fun i' ↦ ?_⟩
-  have hall : ∀ᵐ z ∂volume.restrict (A.halfImage i' : Set ℂ), ∀ i, z ∈ A.halfOverlap i i' →
-      A.halfChartValueL p k i' w z = (A.triv i).coordChangeL ℝ (A.triv i')
-        ((A.chart i').symm (closedUpperHalfPlaneModel.symm z))
-        (A.halfChartValueL p k i w (A.halfTransition i i' z)) := by
-    rw [ae_all_iff]
-    intro i
-    exact ae_restrict_of_ae
-      ((ae_restrict_iff' (A.isOpen_halfOverlap i i').measurableSet).1 (hw i i'))
-  filter_upwards [hall, ae_restrict_mem (A.halfImage i').isOpen.measurableSet] with z hz hzU
-  obtain ⟨hzU, hz0⟩ := hzU
-  obtain ⟨x, hx, hxz⟩ := A.mem_image.1 hzU
-  have hz0 : 0 < z.im := hz0
-  have hxi := hidx x
-  have hz' : z = (A.chart i' x : ℂ) := by
-    rw [hxz, coe_closedUpperHalfPlaneModel_symm_of_im_nonneg hz0.le]
-  have hov : z ∈ A.halfOverlap (idx x) i' :=
-    ⟨by rw [mem_preimage, ← hxz]; exact A.chart_mem_overlap hxi hx, hz0⟩
-  rw [hz (idx x) hov, A.halfCoord_eq_coordChange s hov, hz', A.halfTransition_coe_chart hx,
-    A.halfCoord_coe_chart s hxi]
-  simp only [s]
-  rw [(A.triv (idx x)).apply_mk_symm (A.dom_subset_baseSet _ hxi)]
-
-variable [IsManifold closedUpperHalfPlaneModel 1 M]
-
-/-- A tuple consists of the chartwise Sobolev components of a section exactly when its chart data
-satisfy the cocycle relation on every overlap. -/
-theorem mem_borderedSobolevSections_iff_forall_halfCompatible {w : BorderedSobolevData A p k} :
-    w ∈ borderedSobolevSections A p k ↔ ∀ i i', A.HalfCompatible p k w i i' :=
-  ⟨halfCompatible_of_mem, mem_borderedSobolevSections_of_forall_halfCompatible⟩
-
-/-- Each cocycle relation is a closed condition on tuples of Sobolev functions: convergence in
-`Lᵖ` gives almost everywhere convergence along a subsequence. -/
-theorem isClosed_setOf_halfCompatible (i i' : Fin A.n) :
-    IsClosed {w : BorderedSobolevData A p k | A.HalfCompatible p k w i i'} := by
-  refine IsSeqClosed.isClosed fun {w w₀} hw hlim ↦ ?_
-  have hc (j : Fin A.n) : Tendsto (fun m ↦ A.halfChartValueL p k j (w m)) atTop
-      (𝓝 (A.halfChartValueL p k j w₀)) :=
-    ((A.halfChartValueL p k j).continuous.tendsto w₀).comp hlim
-  -- Almost everywhere convergence of the chart-`i'` data along a subsequence, then of the
-  -- chart-`i` data along a further subsequence.
-  obtain ⟨ns, hns, hae'⟩ := (tendstoInMeasure_of_tendsto_Lp (hc i')).exists_seq_tendsto_ae
-  obtain ⟨ms, hms, hae⟩ := (tendstoInMeasure_of_tendsto_Lp
-    ((hc i).comp hns.tendsto_atTop)).exists_seq_tendsto_ae
-  have hrel : ∀ᵐ z ∂volume.restrict (A.halfOverlap i i'), ∀ m,
-      A.halfChartValueL p k i' (w m) z = (A.triv i).coordChangeL ℝ (A.triv i')
-        ((A.chart i').symm (closedUpperHalfPlaneModel.symm z))
-        (A.halfChartValueL p k i (w m) (A.halfTransition i i' z)) :=
-    ae_all_iff.2 fun m ↦ by simpa only [mem_ofPred_eq, halfCompatible_iff] using hw m
-  simp only [mem_ofPred_eq, halfCompatible_iff]
-  filter_upwards [hrel, ae_restrict_of_ae_restrict_of_subset
-    (A.halfOverlap_subset_halfImage i i') hae',
-    A.ae_restrict_halfOverlap_halfTransition (i' := i') hae] with z hz h' h
-  refine tendsto_nhds_unique (h'.comp hms.tendsto_atTop) ?_
-  refine ((((A.triv i).coordChangeL ℝ (A.triv i')
-    ((A.chart i').symm (closedUpperHalfPlaneModel.symm z))).continuous.tendsto _).comp h).congr
-      fun m ↦ ?_
-  exact (hz (ns (ms m))).symm
-
-end FiniteBundleAtlas
-
-/-- The chartwise Sobolev components of sections form a closed subspace of the product of scalar
-Sobolev spaces. -/
-theorem isClosed_borderedSobolevSections [IsManifold closedUpperHalfPlaneModel 1 M] :
-    IsClosed (borderedSobolevSections A p k : Set (BorderedSobolevData A p k)) := by
-  have : (borderedSobolevSections A p k : Set (BorderedSobolevData A p k)) =
-      ⋂ i, ⋂ i', {w | A.HalfCompatible p k w i i'} := by
-    ext w
-    simp only [SetLike.mem_coe, mem_borderedSobolevSections_iff_forall_halfCompatible, mem_iInter,
-      mem_ofPred_eq]
-  rw [this]
-  exact isClosed_iInter fun i ↦ isClosed_iInter fun i' ↦ isClosed_setOf_halfCompatible i i'
+variable [FiniteDimensional ℝ F]
 
 /-- The Sobolev space `W^{k,p}(V)` of sections of `V` over a base with boundary, with respect to
-the finite bundle atlas `A`: the tuples of chartwise Sobolev components of sections, with the
-maximum of the component norms. -/
+the finite bundle atlas `A`: the tuples of chartwise Sobolev components of sections on the
+interiors of the chart images, with the maximum of the component norms. -/
 abbrev BorderedSobolevSection : Type :=
-  borderedSobolevSections A p k
+  A.halfSectionChartData.sobolevSections volume p k
 
 /-- **Completeness.** The Sobolev space of sections of a vector bundle over a base with boundary
 is a Banach space. -/
 instance BorderedSobolevSection.instCompleteSpace [IsManifold closedUpperHalfPlaneModel 1 M] :
     CompleteSpace (BorderedSobolevSection A p k) :=
-  (isClosed_borderedSobolevSections A p k).completeSpace_coe
-
-namespace BorderedSobolevSection
-
-/-- An element of `W^{k,p}(V)` consists of the chartwise components of a section. -/
-theorem exists_section (w : BorderedSobolevSection A p k) :
-    ∃ s : ∀ x, V x, ∀ i,
-      A.halfChartValueL p k i w =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s :=
-  w.2
-
-/-- Two elements of `W^{k,p}(V)` are equal when their components have equal values. -/
-theorem ext {w w' : BorderedSobolevSection A p k}
-    (h : ∀ i j, Wkp.value k ((w : BorderedSobolevData A p k) i j) =
-      Wkp.value k ((w' : BorderedSobolevData A p k) i j)) : w = w' :=
-  Subtype.ext <| funext fun i ↦ funext fun j ↦ Wkp.ext k (h i j)
-
-/-- The continuous inclusion `W^{k+1,p}(V) → W^{k,p}(V)`, forgetting the highest derivative of
-every component. -/
-def lowerOrderL : BorderedSobolevSection A p (k + 1) →L[ℝ] BorderedSobolevSection A p k :=
-  ((ContinuousLinearMap.pi fun i ↦ ContinuousLinearMap.pi fun j ↦ (Wkp.lowerOrderL k).comp
-    ((ContinuousLinearMap.proj (R := ℝ)
-      (φ := fun _ : Fin (finrank ℝ F) ↦ Wkp volume (A.halfImage i) p (k + 1)) j).comp
-      (ContinuousLinearMap.proj (R := ℝ)
-        (φ := fun i : Fin A.n ↦ ∀ _ : Fin (finrank ℝ F), Wkp volume (A.halfImage i) p (k + 1))
-          i))).comp
-    (borderedSobolevSections A p (k + 1)).subtypeL).codRestrict (borderedSobolevSections A p k)
-      fun w ↦ by
-        obtain ⟨s, hs⟩ := w.2
-        refine ⟨s, fun i ↦ ?_⟩
-        convert hs i using 2
-        rw [← A.halfChartValueL_lowerOrderL p k i w]
-        rfl
-
-@[simp]
-theorem lowerOrderL_apply (w : BorderedSobolevSection A p (k + 1)) (i : Fin A.n)
-    (j : Fin (finrank ℝ F)) :
-    (lowerOrderL A p k w : BorderedSobolevData A p k) i j =
-      Wkp.lowerOrder k ((w : BorderedSobolevData A p (k + 1)) i j) := by
-  rw [← Wkp.lowerOrderL_apply]
-  rfl
-
-end BorderedSobolevSection
+  SectionChartData.completeSpace_sobolevSections A.aeTransition_halfSectionChartData
 
 end Sobolev
 
@@ -675,69 +461,15 @@ private theorem exists_value_ae_eq_halfCoord (s : Cₛ^k⟮closedUpperHalfPlaneM
       (A.halfImage_subset_halfChartSet i))).of_le (by exact_mod_cast hl))
     (A.halfImage_subset_halfChartSet i hz)
 
-/-- The tuple of chartwise `W^{k,p}` components of a `Cᵏ` section. -/
-private def toBorderedSobolevData (s : Cₛ^k⟮closedUpperHalfPlaneModel; F, V⟯) :
-    BorderedSobolevData A p k :=
-  fun i j ↦ (exists_value_ae_eq_halfCoord A p k s i j).choose
-
-private theorem value_toBorderedSobolevData_ae (s : Cₛ^k⟮closedUpperHalfPlaneModel; F, V⟯)
-    (i : Fin A.n) (j : Fin (finrank ℝ F)) :
-    (Wkp.value k (toBorderedSobolevData A p k s i j) : ℂ → ℝ)
-      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)]
-        fun z ↦ (finBasis ℝ F).coord j (A.halfCoord i s z) :=
-  (exists_value_ae_eq_halfCoord A p k s i j).choose_spec
-
-private theorem halfChartValueL_toBorderedSobolevData_ae
-    (s : Cₛ^k⟮closedUpperHalfPlaneModel; F, V⟯) (i : Fin A.n) :
-    A.halfChartValueL p k i (toBorderedSobolevData A p k s)
-      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s := by
-  filter_upwards [A.halfChartValueL_apply_ae p k i (toBorderedSobolevData A p k s),
-    ae_all_iff.2 (value_toBorderedSobolevData_ae A p k s i)] with y hy hj
-  rw [hy]
-  simp_rw [hj, Basis.coord_apply]
-  exact (finBasis ℝ F).sum_repr _
-
 /-- **`Cᵏ` sections are Sobolev sections.** The linear map sending a `Cᵏ` section `s` of `V` to the
 element of `W^{k,p}(V)` whose components in chart `i` are the components of `A.halfCoord i s` in
 the basis `Module.finBasis ℝ F`. -/
 def ofContMDiffSection :
-    Cₛ^k⟮closedUpperHalfPlaneModel; F, V⟯ →ₗ[ℝ] BorderedSobolevSection A p k where
-  toFun s := ⟨toBorderedSobolevData A p k s, (mem_borderedSobolevSections_iff A p k).2
-    ⟨s, halfChartValueL_toBorderedSobolevData_ae A p k s⟩⟩
-  map_add' s t := ext A p k fun i j ↦ Lp.ext <| by
-    filter_upwards [value_toBorderedSobolevData_ae A p k (s + t) i j,
-      value_toBorderedSobolevData_ae A p k s i j, value_toBorderedSobolevData_ae A p k t i j,
-      Wkp.value_add k (toBorderedSobolevData A p k s i j) (toBorderedSobolevData A p k t i j) ▸
-        Lp.coeFn_add _ _, ae_restrict_mem (A.halfImage i).isOpen.measurableSet]
-      with y h h₁ h₂ hadd hy
-    simp only [Submodule.coe_add, Pi.add_apply] at hadd ⊢
-    rw [h, hadd, h₁, h₂, ContMDiffSection.coe_add, A.halfCoord_add i s t hy, map_add]
-  map_smul' c s := ext A p k fun i j ↦ Lp.ext <| by
-    filter_upwards [value_toBorderedSobolevData_ae A p k (c • s) i j,
-      value_toBorderedSobolevData_ae A p k s i j,
-      Wkp.value_smul k c (toBorderedSobolevData A p k s i j) ▸ Lp.coeFn_smul _ _,
-      ae_restrict_mem (A.halfImage i).isOpen.measurableSet] with y h h₁ hsmul hy
-    simp only [Submodule.coe_smul, Pi.smul_apply, RingHom.id_apply] at hsmul ⊢
-    rw [h, hsmul, h₁, ContMDiffSection.coe_smul, A.halfCoord_smul i c s hy, map_smul,
-      smul_eq_mul]
-
-/-- The components in chart `i` of the Sobolev section of a `Cᵏ` section `s` are the components
-of `A.halfCoord i s` in the basis `Module.finBasis ℝ F`, almost everywhere on the interior of the
-image of the chart. -/
-theorem value_ofContMDiffSection_ae (s : Cₛ^k⟮closedUpperHalfPlaneModel; F, V⟯) (i : Fin A.n)
-    (j : Fin (finrank ℝ F)) :
-    (Wkp.value k ((ofContMDiffSection A p k s : BorderedSobolevData A p k) i j) : ℂ → ℝ)
-      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)]
-        fun z ↦ (finBasis ℝ F).coord j (A.halfCoord i s z) :=
-  value_toBorderedSobolevData_ae A p k s i j
-
-/-- The chart data in chart `i` of the Sobolev section of a `Cᵏ` section `s` are the coordinates
-`A.halfCoord i s`, almost everywhere on the interior of the image of the chart. -/
-theorem halfChartValueL_ofContMDiffSection_ae (s : Cₛ^k⟮closedUpperHalfPlaneModel; F, V⟯)
-    (i : Fin A.n) :
-    A.halfChartValueL p k i (ofContMDiffSection A p k s)
-      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s :=
-  halfChartValueL_toBorderedSobolevData_ae A p k s i
+    Cₛ^k⟮closedUpperHalfPlaneModel; F, V⟯ →ₗ[ℝ] BorderedSobolevSection A p k :=
+  A.halfSectionChartData.ofComponents volume p k
+    { toFun := fun s ↦ s, map_add' := ContMDiffSection.coe_add,
+      map_smul' := ContMDiffSection.coe_smul }
+    (exists_value_ae_eq_halfCoord A p k)
 
 /-- **Norm bound.** The norm of the Sobolev section of a `Cᵏ` section `s` is at most the sum, over
 all charts `i` and basis vectors `j`, of the `Lᵖ` norms on `A.halfImage i` of the classical
@@ -745,29 +477,11 @@ derivatives of orders `0` through `k` of the components of `A.halfCoord i s`. -/
 theorem norm_ofContMDiffSection_le (s : Cₛ^k⟮closedUpperHalfPlaneModel; F, V⟯) :
     ‖ofContMDiffSection A p k s‖ ≤ ∑ i, ∑ j, ∑ l ∈ Finset.range (k + 1),
       lpNorm (iteratedFDeriv ℝ l fun z ↦ (finBasis ℝ F).coord j (A.halfCoord i s z)) p
-        (volume.restrict (A.halfImage i : Set ℂ)) := by
-  have hcomp (i : Fin A.n) (j : Fin (finrank ℝ F)) :
-      ‖(ofContMDiffSection A p k s : BorderedSobolevData A p k) i j‖ ≤
-        ∑ l ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ l
-          fun z ↦ (finBasis ℝ F).coord j (A.halfCoord i s z)) p
-            (volume.restrict (A.halfImage i : Set ℂ)) :=
+        (volume.restrict (A.halfImage i : Set ℂ)) :=
+  A.halfSectionChartData.norm_le_sum_of_norm_le volume p k fun i j ↦
     Wkp.norm_le_sum_lpNorm_iteratedFDeriv_of_contDiffOn k _
       ((contDiffOn_coord_halfCoord A k s i j).mono (A.halfImage_subset_halfChartSet i))
-      (value_ofContMDiffSection_ae A p k s i j)
-  have hnonneg (i : Fin A.n) (j : Fin (finrank ℝ F)) :
-      0 ≤ ∑ l ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv ℝ l
-        fun z ↦ (finBasis ℝ F).coord j (A.halfCoord i s z)) p
-          (volume.restrict (A.halfImage i : Set ℂ)) :=
-    Finset.sum_nonneg fun _ _ ↦ lpNorm_nonneg
-  -- The norm of a tuple is the maximum of the component norms, bounded by their sum.
-  refine (pi_norm_le_iff_of_nonneg (Finset.sum_nonneg fun i _ ↦
-    Finset.sum_nonneg fun j _ ↦ hnonneg i j)).2 fun i ↦ ?_
-  refine ((pi_norm_le_iff_of_nonneg (Finset.sum_nonneg fun j _ ↦ hnonneg i j)).2 fun j ↦
-    (hcomp i j).trans (Finset.single_le_sum (fun j _ ↦ hnonneg i j) (Finset.mem_univ j))).trans
-      (Finset.single_le_sum (f := fun i ↦ ∑ j, ∑ l ∈ Finset.range (k + 1), lpNorm (iteratedFDeriv
-        ℝ l fun z ↦ (finBasis ℝ F).coord j (A.halfCoord i s z)) p
-          (volume.restrict (A.halfImage i : Set ℂ)))
-        (fun i _ ↦ Finset.sum_nonneg fun j _ ↦ hnonneg i j) (Finset.mem_univ i))
+      (A.halfSectionChartData.value_ofComponents_ae volume p k _ _ s i j)
 
 /-- **Injectivity.** A `Cᵏ` section whose Sobolev section vanishes is zero: its chart coordinates
 vanish almost everywhere on the interiors of the chart images, hence everywhere there by
@@ -778,13 +492,13 @@ theorem ofContMDiffSection_injective : Function.Injective (ofContMDiffSection A 
   have hcont : ContinuousOn (A.halfCoord i s) (A.halfChartSet i) :=
     (A.contDiffOn_halfCoord s.contMDiff i).continuousOn
   -- The chart data of the zero tuple vanish, so `A.halfCoord i s` vanishes almost everywhere.
-  have h0 : A.halfChartValueL p k i
-      (ofContMDiffSection A p k s : BorderedSobolevData A p k) = 0 := by
+  have h0 : A.halfSectionChartData.chartValueL volume p k i
+      (ofContMDiffSection A p k s : A.halfSectionChartData.SobolevData volume p k) = 0 := by
     rw [hs, ZeroMemClass.coe_zero, map_zero]
-  have hz := Lp.coeFn_zero F p (volume.restrict (A.halfImage i : Set ℂ))
+  have hz := Lp.coeFn_zero F p (volume.restrict (A.halfSectionChartData.image i : Set ℂ))
   rw [← h0] at hz
   have hae : A.halfCoord i s =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] fun _ ↦ 0 :=
-    (halfChartValueL_ofContMDiffSection_ae A p k s i).symm.trans hz
+    (A.halfSectionChartData.chartValueL_ofComponents_ae volume p k _ _ s i).symm.trans hz
   have hzero : EqOn (A.halfCoord i s) 0 (A.halfImage i) :=
     Measure.eqOn_open_of_ae_eq hae (A.halfImage i).isOpen
       (hcont.mono (A.halfImage_subset_halfChartSet i)) continuousOn_const
@@ -859,18 +573,18 @@ namespace BorderedSobolevSection
 
 open FiniteBundleAtlas
 
-omit [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] in
 /-- The components of the chart data of a tuple of Sobolev functions are the values of its
 entries: if the chart data in chart `i` agree with `A.halfCoord i s`, then the `j`th component of
 `A.halfCoord i s` in the basis `Module.finBasis ℝ F` is the value of the entry `w i j`, almost
 everywhere on `A.halfImage i`. -/
-private theorem value_ae_eq_repr_halfCoord {w : BorderedSobolevData A p k} {s : ∀ x, V x}
-    {i : Fin A.n}
-    (hs : A.halfChartValueL p k i w =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s)
+private theorem value_ae_eq_repr_halfCoord {w : A.halfSectionChartData.SobolevData volume p k}
+    {s : ∀ x, V x} {i : Fin A.n}
+    (hs : A.halfSectionChartData.chartValueL volume p k i w
+      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s)
     (j : Fin (finrank ℝ F)) :
     (Wkp.value k (w i j) : ℂ → ℝ) =ᵐ[volume.restrict (A.halfImage i : Set ℂ)]
       fun z ↦ (finBasis ℝ F).repr (A.halfCoord i s z) j := by
-  filter_upwards [A.halfChartValueL_apply_ae p k i w, hs] with y hy hy'
+  filter_upwards [A.halfSectionChartData.chartValueL_apply_ae volume p k i w, hs] with y hy hy'
   rw [← hy', hy, (finBasis ℝ F).repr_sum_self]
 
 /-- **Localization up to the boundary.** If the chart data of an element `w` of `W^{k,p}(V)` are
@@ -878,8 +592,8 @@ the coordinates of the section `s`, then in every chart `i` the chart expression
 lies in the local Sobolev class `MemWkpLoc p (A.halfClosedImage i) k` on the image of the chart in
 the closed upper half-plane, with `Lᵖ` bounds on compact sets reaching the real axis. -/
 theorem memWkpLoc_halfCoord (w : BorderedSobolevSection A p k) {s : ∀ x, V x}
-    (hs : ∀ i, A.halfChartValueL p k i w =ᵐ[volume.restrict (A.halfImage i : Set ℂ)]
-      A.halfCoord i s)
+    (hs : ∀ i, A.halfSectionChartData.chartValueL volume p k i w
+      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s)
     (i : Fin A.n) : MemWkpLoc p (A.halfClosedImage i) k (A.halfCoord i s) :=
   (finBasis ℝ F).memWkpLoc_iff.2 fun j ↦
     (memWkpLoc_value_of_ae_le (A.interior_halfClosedImage i) (A.halfClosedImage_ae_le_halfImage i)
@@ -890,9 +604,10 @@ theorem memWkpLoc_halfCoord (w : BorderedSobolevSection A p k) {s : ∀ x, V x}
 of a section whose chart expression in every chart `i` lies in the local Sobolev class
 `MemWkpLoc p (A.halfClosedImage i) k`. -/
 theorem exists_section_memWkpLoc (w : BorderedSobolevSection A p k) :
-    ∃ s : ∀ x, V x, (∀ i, A.halfChartValueL p k i w =ᵐ[volume.restrict (A.halfImage i : Set ℂ)]
-      A.halfCoord i s) ∧ ∀ i, MemWkpLoc p (A.halfClosedImage i) k (A.halfCoord i s) := by
-  obtain ⟨s, hs⟩ := exists_section A p k w
+    ∃ s : ∀ x, V x, (∀ i, A.halfSectionChartData.chartValueL volume p k i w
+      =ᵐ[volume.restrict (A.halfImage i : Set ℂ)] A.halfCoord i s) ∧
+        ∀ i, MemWkpLoc p (A.halfClosedImage i) k (A.halfCoord i s) := by
+  obtain ⟨s, hs⟩ := A.halfSectionChartData.exists_section volume p k w
   exact ⟨s, hs, memWkpLoc_halfCoord w hs⟩
 
 end BorderedSobolevSection
