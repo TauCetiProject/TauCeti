@@ -40,15 +40,16 @@ open scoped Topology
 
 namespace ProbabilityTheory.Kernel
 
-variable {α : Type*} [MeasurableSpace α] [Countable α] [MeasurableSingletonClass α]
+variable {α : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
   {κ : Kernel α α} [IsMarkovKernel κ] [IsIrreducible Measure.count κ]
   {π : Measure α} [IsProbabilityMeasure π]
 
-/-- **Convergence to equilibrium.** For an irreducible aperiodic countable-state kernel,
+/-- **Convergence to equilibrium.** For an irreducible aperiodic kernel,
 an invariant probability attracts every initial probability in total variation. -/
 theorem Invariant.tendsto_tvDist_pow_comp (hπ : κ.Invariant π) (hκ : κ.IsAperiodic)
     (ν : Measure α) [IsProbabilityMeasure ν] :
     Tendsto (fun n : ℕ => tvDist ((κ ^ n : Kernel α α) ∘ₘ ν) π) atTop (𝓝 0) := by
+  have := countable_of_isIrreducible_count (κ := κ)
   obtain ⟨x, hx⟩ : ∃ x : α, π {x} ≠ 0 := by
     by_contra h
     have hzero : π = 0 := Measure.ext_iff_singleton.mpr (fun x => by simpa using not_exists.mp h x)
@@ -65,17 +66,18 @@ end ProbabilityTheory.Kernel
 
 namespace ProbabilityTheory.HasLaw
 
-variable {α Ω : Type*} [MeasurableSpace α] [Countable α] [MeasurableSingletonClass α]
+variable {α Ω : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
   [MeasurableSpace Ω] {P : Measure Ω} {X : ℕ → Ω → α}
   {κ : Kernel α α} [IsMarkovKernel κ] [Kernel.IsIrreducible Measure.count κ]
   {π ν : Measure α} [IsProbabilityMeasure π] [IsProbabilityMeasure ν]
 
-/-- The coordinate laws of any realization of an irreducible aperiodic countable-state
+/-- The coordinate laws of any realization of an irreducible aperiodic
 chain converge to its invariant probability. No topology on the sample space is needed. -/
 theorem tendsto_tvDist_map_of_invariant
     (hX : HasLaw (fun ω n => X n ω) (markovChainLaw ν κ) P)
     (hπ : κ.Invariant π) (hκ : κ.IsAperiodic) :
     Tendsto (fun n : ℕ => tvDist (P.map (X n)) π) atTop (𝓝 0) := by
+  have := Kernel.countable_of_isIrreducible_count (κ := κ)
   simpa only [(hX.eval_markovChainLaw ν κ _).map_eq] using hπ.tendsto_tvDist_pow_comp hκ ν
 
 end ProbabilityTheory.HasLaw

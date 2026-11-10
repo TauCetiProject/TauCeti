@@ -72,16 +72,17 @@ theorem tendsto_pow_comp_real_singleton_of_parallelComp_isRecurrent
     (fun _ => measureReal_nonneg) hshift hb
     (fun n k _ => κ.sum_range_pow_comp_real_singleton_div_le ν y n k)
 
-/-- **Pointwise decay at an infinite-mean state.** For a countable-state irreducible
+/-- **Pointwise decay at an infinite-mean state.** For an irreducible
 aperiodic Markov kernel, if the expected first positive return time to `y` is infinite,
 then the time-`n` mass of `{y}` tends to zero from every initial probability law `ν`.
 The mean assigns infinity to nonreturn, so no recurrence assumption is needed. -/
 theorem tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top
-    [Countable α] [IsIrreducible Measure.count κ] (hκ : κ.IsAperiodic) {y : α}
+    [IsIrreducible Measure.count κ] (hκ : κ.IsAperiodic) {y : α}
     (hy : (∫⁻ x, (hittingAfter (fun n x => x n) {y} 1 x).recTopCoe ⊤
       (fun n => (n : ℝ≥0∞)) ∂markovChainLaw (Measure.dirac y) κ) = ⊤)
     (ν : Measure α) [IsProbabilityMeasure ν] :
     Tendsto (fun n : ℕ => ((κ ^ n) ∘ₘ ν).real {y}) atTop (𝓝 0) := by
+  have := countable_of_isIrreducible_count (κ := κ)
   by_cases hr : (κ ∥ₖ κ).IsRecurrent (y, y)
   · let := hκ.isIrreducible_parallelComp hκ
     have hm : κ.meanReturnTime y = ⊤ := by
@@ -100,10 +101,10 @@ end ProbabilityTheory.Kernel
 
 namespace ProbabilityTheory.HasLaw
 
-/-- On any realization of an irreducible aperiodic countable-state chain, the probability
+/-- On any realization of an irreducible aperiodic chain, the probability
 of occupying an infinite-mean state tends to zero. -/
 theorem tendsto_measureReal_apply_eq_of_isAperiodic_of_lintegral_return_eq_top
-    {α Ω : Type*} [MeasurableSpace α] [MeasurableSingletonClass α] [Countable α]
+    {α Ω : Type*} [MeasurableSpace α] [MeasurableSingletonClass α]
     [MeasurableSpace Ω] {κ : Kernel α α} [IsMarkovKernel κ]
     [Kernel.IsIrreducible Measure.count κ] {ν : Measure α} [IsProbabilityMeasure ν]
     {P : Measure Ω} {X : ℕ → Ω → α}
@@ -115,6 +116,7 @@ theorem tendsto_measureReal_apply_eq_of_isAperiodic_of_lintegral_return_eq_top
   have heq (n : ℕ) : P.real {ω | X n ω = y} = ((κ ^ n) ∘ₘ ν).real {y} :=
     (hX.eval_markovChainLaw ν κ n).measureReal_eq (measurableSet_singleton y)
   simp_rw [heq]
+  have := Kernel.countable_of_isIrreducible_count (κ := κ)
   exact κ.tendsto_pow_comp_real_singleton_of_isAperiodic_of_lintegral_return_eq_top hκ hy ν
 
 end ProbabilityTheory.HasLaw
