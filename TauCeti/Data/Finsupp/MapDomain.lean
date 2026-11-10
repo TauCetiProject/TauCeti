@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.Finsupp.Basic
 public import Mathlib.Data.Finsupp.Lex
+import Mathlib.LinearAlgebra.Finsupp.Supported
 
 /-!
 # Injective relabeling as extension by zero
@@ -42,22 +43,11 @@ supported functions vanishing outside the range of `f`. Mathlib's `Finsupp.mem_r
 is the case of an injective `f`; this one needs no injectivity. -/
 theorem mem_range_mapDomain_iff' {α β M : Type*} [AddCommMonoid M] (f : α → β) (x : β →₀ M) :
     x ∈ Set.range (mapDomain f) ↔ ∀ b ∉ Set.range f, x b = 0 := by
-  refine ⟨?_, fun h ↦ ?_⟩
-  · rintro ⟨y, rfl⟩ b hb
-    exact mapDomain_of_notMem_range y b hb
-  · rcases isEmpty_or_nonempty α with hα | hα
-    · refine ⟨0, ?_⟩
-      ext b
-      exact (h b (by simp)).symm
-    · -- Pull `x` back along a section `Function.invFun f` of `f` on its range.
-      refine ⟨mapDomain (Function.invFun f) x, ?_⟩
-      rw [← mapDomain_comp]
-      conv_rhs => rw [← mapDomain_id (v := x)]
-      refine mapDomain_congr fun b hb ↦ ?_
-      by_contra hne
-      by_cases hr : b ∈ Set.range f
-      · exact hne (Function.invFun_eq hr)
-      · exact (Finsupp.mem_support_iff.mp hb) (h b hr)
+  have h : LinearMap.range (lmapDomain M ℕ f) = supported M ℕ (Set.range f) := by
+    simpa only [supported_univ, Submodule.map_top, Set.image_univ] using
+      lmapDomain_supported M ℕ f Set.univ
+  simpa only [LinearMap.mem_range, lmapDomain_apply, mem_supported', Set.mem_range] using
+    SetLike.ext_iff.1 h x
 
 /-- A finitely supported function supported on a set `s` is the push-forward along the inclusion
 of its restriction to `s`. -/
