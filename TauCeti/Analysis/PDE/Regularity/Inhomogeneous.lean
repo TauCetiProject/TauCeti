@@ -65,8 +65,8 @@ All in the namespace `TauCeti.PDE`.
 * `exists_holderOnWith_preciseRepresentative_of_memLp`: **De Giorgi's theorem with a right-hand
   side**, the Hölder continuity of the precise representative.
 * `continuousOn_preciseRepresentative_of_forall_memLp`: for a weak solution with a right-hand
-  side in `Lʳ` on compact subsets of `Ω`, `r ≥ 2`, the precise representative is continuous on
-  `Ω`.
+  side in `Lʳ` on compact subsets of `Ω`, `r ≥ 2` and `r > n/2`, the precise representative is
+  continuous on `Ω`.
 * `exists_continuousOn_ae_eq_of_forall_integral_inner_gradient_eq`: the same for Poisson's equation
   `-Δu = f` on an open subset of a finite-dimensional real inner product space.
 
@@ -697,7 +697,6 @@ theorem exists_continuousOn_ae_eq_of_forall_integral_inner_gradient_eq {E : Type
   -- Orthonormal coordinates `e : E ≃ ℝⁿ`, with inverse `g`, and `Ω' = e(Ω)`.
   let e : E ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n) := (stdOrthonormalBasis ℝ E).repr
   let g : EuclideanSpace ℝ (Fin n) ≃ᵃⁱ[ℝ] E := e.symm.toAffineIsometryEquiv
-  have hge : ∀ y, e (g y) = y := fun y => by simp [g]
   have heg : ∀ x, g (e x) = x := fun x => by simp [g]
   let Ω' : Opens (EuclideanSpace ℝ (Fin n)) := ⟨g ⁻¹' Omega, Omega.isOpen.preimage g.continuous⟩
   have hΩ : (Omega : Set E) = e ⁻¹' Ω' := by ext x; simp [Ω', heg]
@@ -705,9 +704,6 @@ theorem exists_continuousOn_ae_eq_of_forall_integral_inner_gradient_eq {E : Type
     simpa [g] using e.symm.measurePreserving
   have hgemb : MeasurableEmbedding g := g.toHomeomorph.measurableEmbedding
   set u' := W1p.compAffineIsometryEquivL g (U := Ω') rfl u
-  have hgrad : W1p.gradient u' =ᵐ[volume.restrict Ω'] fun y => e (W1p.gradient u (g y)) := by
-    filter_upwards [W1p.gradient_compAffineIsometryEquivL_ae g (U := Ω') rfl u] with y hy
-    simpa [g] using hy
   have hf' : ∀ K, IsCompact K → K ⊆ (Ω' : Set (EuclideanSpace ℝ (Fin n))) →
       MemLp (f ∘ g) r (volume.restrict K) := by
     intro K hK hKΩ
@@ -717,33 +713,21 @@ theorem exists_continuousOn_ae_eq_of_forall_integral_inner_gradient_eq {E : Type
       (hg.restrict_preimage hgK.isClosed.measurableSet)
   have hu' : ∀ φ' : 𝓓(Ω', ℝ), energyFormH1 (fun _ => (1 : Matrix (Fin n) (Fin n) ℝ)) 0 0 u'
       (W1p.ofTestFunctionₗ volume Ω' 2 φ') = ∫ y in Ω', (f ∘ g) y * φ' y := by
-    -- The weak equation on `Ω'`, tested against `φ'`, is the one on `Ω` tested against `φ' ∘ e`.
+    -- The weak equation on `Ω'`, tested against `φ'`, is the one on `Ω` tested against the
+    -- transported test function `φ' ∘ e`.
     intro φ'
-    let φ : 𝓓(Omega, ℝ) := ⟨φ' ∘ e, φ'.contDiff.comp e.contDiff,
-      φ'.hasCompactSupport.comp_homeomorph e.toHomeomorph,
-      (tsupport_comp_eq_preimage _ e.toHomeomorph).subset.trans
-        (hΩ ▸ preimage_mono φ'.tsupport_subset)⟩
-    have hφc : (φ : E → ℝ) = φ' ∘ e := TestFunction.coe_mk
-    have hφ : ∀ y, φ (g y) = φ' y := fun y => by rw [hφc, Function.comp_apply, hge]
-    -- Pointwise, both integrands are `Dφ'(y) (e ∇u(g y))`.
-    have hpt : ∀ y, ⟪W1p.gradient u (g y), ∇ (φ : E → ℝ) (g y)⟫_ℝ =
-        ⟪e (W1p.gradient u (g y)), ∇ (φ' : EuclideanSpace ℝ (Fin n) → ℝ) y⟫_ℝ := fun y => by
-      rw [real_inner_comm, inner_gradient_left, real_inner_comm, inner_gradient_left]
-      have hD : HasFDerivAt (φ : E → ℝ)
-          ((fderiv ℝ φ' (e (g y))).comp (e.toContinuousLinearEquiv : E →L[ℝ] _)) (g y) :=
-        hφc ▸ (φ'.contDiff.differentiable (by simp) _).hasFDerivAt.comp (g y)
-          e.toContinuousLinearEquiv.hasFDerivAt
-      rw [hD.fderiv]
-      simp [hge]
+    let φ : 𝓓(Omega, ℝ) :=
+      e.symm.toContinuousLinearEquiv.transportTestFunction (fun _ hy => hy) φ'
+    have hφ : ∀ y, φ (g y) = φ' y := fun y => by simp [φ, g]
     rw [energyFormH1_one_zero_zero_eq_inner, L2.inner_def]
     calc ∫ y in Ω', ⟪W1p.gradient u' y, W1p.gradient (W1p.ofTestFunctionₗ volume Ω' 2 φ') y⟫_ℝ
-        = ∫ y in g ⁻¹' Omega, ⟪W1p.gradient u (g y), ∇ (φ : E → ℝ) (g y)⟫_ℝ := by
+        = ∫ y in Ω', ⟪W1p.gradient u' y, ∇ (φ' : EuclideanSpace ℝ (Fin n) → ℝ) y⟫_ℝ := by
           refine integral_congr_ae ?_
-          filter_upwards [hgrad, gradientTestFunctionLp_apply_ae (mu := volume) (Omega := Ω') 2 φ']
-            with y hy hφy
-          rw [W1p.gradient_ofTestFunctionₗ, hφy, hy, hpt]
+          filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) (Omega := Ω') 2 φ']
+            with y hφy
+          rw [W1p.gradient_ofTestFunctionₗ, hφy]
       _ = ∫ x in Omega, ⟪W1p.gradient u x, ∇ (φ : E → ℝ) x⟫_ℝ :=
-          hg.setIntegral_preimage_emb hgemb (fun x => ⟪W1p.gradient u x, ∇ (φ : E → ℝ) x⟫_ℝ) _
+          W1p.setIntegral_inner_gradient_compAffineIsometryEquivL e.symm rfl u φ'
       _ = ∫ x in Omega, f x * φ x := hu φ
       _ = ∫ y in Ω', (f ∘ g) y * φ' y := by
           rw [← hg.setIntegral_preimage_emb hgemb (fun x => f x * φ x)]
