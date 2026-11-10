@@ -173,13 +173,6 @@ theorem IsIntegral.integralForm_cast {L : Submodule ℤ E} (hL : IsIntegral L) (
   exact LinearMap.BilinForm.dualSubmodulePairing_spec (innerₗ E)
     (Submodule.inclusion (hL.trans (dual_def L).le) x) y
 
-/-- An integral lattice is discrete: a nonzero vector has squared norm at least `1`. -/
-theorem IsIntegral.discreteTopology {L : Submodule ℤ E} (hL : IsIntegral L) :
-    DiscreteTopology L :=
-  discreteTopology_of_norm_sq_mem_int_mul (c := 1) le_rfl fun x hx ↦ by
-    obtain ⟨m, hm⟩ := isIntegral_iff.mp hL x hx x hx
-    exact ⟨m, by rw [← real_inner_self_eq_norm_sq, hm, one_mul]⟩
-
 /-- The integer-valued inner product of an integral lattice is symmetric. -/
 theorem IsIntegral.isSymm_integralForm {L : Submodule ℤ E} (hL : IsIntegral L) :
     hL.integralForm.IsSymm :=
