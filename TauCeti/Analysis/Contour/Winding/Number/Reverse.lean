@@ -12,7 +12,8 @@ public import TauCeti.Analysis.Contour.NullHomologous
 
 This file records the basic orientation-reversal API for the generalized winding number.
 Reversing the interval orientation negates the single-point Cauchy principal value defining
-`Contour.windingNumber`, so the winding number itself changes sign.
+`Contour.windingNumber` whenever that principal value exists, so under that hypothesis the winding
+number itself changes sign. Vanishing of the winding number is preserved unconditionally.
 
 These lemmas are bookkeeping for curves and cycles. Cycles are oriented formal combinations of
 curves, and finite decompositions of curves into avoiding pieces and model sectors need both
@@ -21,7 +22,7 @@ concatenation and orientation reversal.
 ## Main results
 
 * `Contour.windingNumber_symm` — the generalized winding number changes sign when the interval is
-  reversed.
+  reversed, provided the principal value defining it exists.
 * `Contour.windingNumber_eq_zero_symm`, `Contour.IsNullHomologous.symm` — vanishing of the winding
   number, and hence null-homology, is preserved by reversing orientation.
 
@@ -54,8 +55,8 @@ theorem windingNumber_symm (h : CauchyPVExistsAt γ a b κ[z₀] z₀) :
   ring
 
 /-- Pointwise vanishing of a winding number is preserved by reversing the interval orientation.
-No existence hypothesis is needed: if the principal value does not exist, both winding numbers
-are the same normalized junk value of `limUnder`, so vanishing is preserved. -/
+No existence hypothesis is needed: if the limit of the truncated integrals fails to exist, both
+orientations use the same normalized junk value of `limUnder`, so vanishing is preserved. -/
 theorem windingNumber_eq_zero_symm (hzero : windingNumber γ a b z₀ = 0) :
     windingNumber γ b a z₀ = 0 := by
   rw [windingNumber_eq_cauchyPVAt, mul_eq_zero] at hzero ⊢
