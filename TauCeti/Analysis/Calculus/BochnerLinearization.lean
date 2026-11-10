@@ -440,6 +440,7 @@ theorem exists_equivariant_chart (χ : OpenPartialHomeomorph X E) {x : X} (hxχ 
   · exact fun y hy => (e₀.restrInvariant_source_subset hy).1
   · exact hasStrictFDerivAt_bochnerChart_comp_symm hA (χ.map_source hxχ)
 
+omit [CompleteSpace E] in
 /-- **The derivative representation detects the ineffective kernel.** In the setting of
 `OpenPartialHomeomorph.exists_equivariant_chart`, an element of `G` acts as the identity near the
 fixed point `x`, that is, lies in the germ kernel `TauCeti.MulAction.germKernel G x`, exactly when
@@ -450,10 +451,31 @@ theorem map_eq_one_iff_mem_germKernel (χ : OpenPartialHomeomorph X E) {x : X}
     σ g = 1 ↔ g ∈ TauCeti.MulAction.germKernel G x := by
   rw [TauCeti.MulAction.mem_germKernel]
   refine ⟨fun h => ?_, fun h => ?_⟩
-  · -- the equivariant chart turns `g • y = y` into `σ g (e y) = e y`
-    obtain ⟨e, hxe, -, -, he, -⟩ := χ.exists_equivariant_chart hxχ hx σ hσ
-    filter_upwards [e.open_source.mem_nhds hxe] with y hy
-    exact e.injOn (he g y hy).1 hy (by rw [(he g y hy).2, h, one_apply_eq_self])
+  · -- the Bochner average `a` is equivariant, and injective near `χ x` in the coordinates `χ`
+    set a := σ.bochnerAverage (fun y => χ y - χ x)
+    have hA : HasStrictFDerivAt (a ∘ χ.symm)
+        ((ContinuousLinearEquiv.refl 𝕜 E : E ≃L[𝕜] E) : E →L[𝕜] E) (χ x) := by
+      refine ContRepresentation.hasStrictFDerivAt_bochnerAverage_comp_of_intertwining fun g => ?_
+      simpa using (hσ g).sub_const (χ x)
+    obtain ⟨s, hs, hinj⟩ : ∃ s ∈ 𝓝 (χ x), InjOn (a ∘ χ.symm) s := by
+      rcases (ContinuousLinearEquiv.refl 𝕜 E).subsingleton_or_nnnorm_symm_pos with hE | hpos
+      · obtain ⟨s, hs, happ⟩ := hA.approximates_deriv_on_nhds (c := 0) (Or.inl hE)
+        exact ⟨s, hs, happ.injOn (Or.inl hE)⟩
+      · obtain ⟨s, hs, happ⟩ := hA.approximates_deriv_on_nhds
+          (c := (‖((ContinuousLinearEquiv.refl 𝕜 E).symm : E →L[𝕜] E)‖₊)⁻¹ / 2)
+          (Or.inr (half_pos (inv_pos.2 hpos)))
+        exact ⟨s, hs, happ.injOn (Or.inr (half_lt_self (inv_pos.2 hpos)))⟩
+    have hgx : g • x ∈ χ.source := by rwa [hx g]
+    have hcont : ContinuousAt (fun y => χ (g • y)) x :=
+      (χ.continuousAt hgx).comp_of_eq (continuous_const_smul g).continuousAt rfl
+    filter_upwards [χ.open_source.mem_nhds hxχ, (χ.continuousAt hxχ).eventually_mem hs,
+      (continuous_const_smul g).continuousAt.eventually_mem
+        (by rw [hx g]; exact χ.open_source.mem_nhds hxχ),
+      hcont.eventually_mem (by rw [hx g]; exact hs)] with y hy hys hgy hgys
+    have hay : a (g • y) = a y := by
+      simp only [a, ContRepresentation.bochnerAverage_smul, h, one_apply_eq_self]
+    refine χ.injOn hgy hy (hinj hgys hys ?_)
+    simp [hay, χ.left_inv hy, χ.left_inv hgy]
   · -- the conjugated map `χ ∘ (g • ·) ∘ χ.symm` agrees with the identity near `χ x`
     have hev : χ ∘ (g • ·) ∘ χ.symm =ᶠ[𝓝 (χ x)] id := by
       have hsymm : ∀ᶠ w in 𝓝 (χ x), g • χ.symm w = χ.symm w :=

@@ -139,7 +139,7 @@ private theorem seminormAux_smul_le (K : Compacts (CoordinateSpace n)) (α β : 
   seminormAux_le_bound K α β _ (mul_nonneg (norm_nonneg c) (seminormAux_nonneg K α β a))
     fun x hx ξ => by
       rw [coefficient_smul]
-      exact norm_mixedDeriv_smul_le a.contDiff_coefficient c (le_seminormAux K α β a hx ξ)
+      exact norm_mixedDeriv_smul_le c (le_seminormAux K α β a hx ξ)
 
 /-- The seminorm `p_{K,α,β}` on the symbols of order `m`: the best constant `C` in the estimate
 `‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C ⟨ξ⟩^(m - |β|)` for all positions `x ∈ K` and all frequencies `ξ`,

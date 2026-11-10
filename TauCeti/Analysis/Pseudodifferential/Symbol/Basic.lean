@@ -286,7 +286,7 @@ instance : SMul ℂ (Symbol n V W m) where
       exists_bound := fun K hK α β => by
         obtain ⟨C, hC, ha⟩ := a.exists_bound K hK α β
         exact ⟨‖c‖ * C, mul_nonneg (norm_nonneg c) hC, fun x hx ξ =>
-          norm_mixedDeriv_smul_le a.contDiff_coefficient c (ha x hx ξ)⟩ }
+          norm_mixedDeriv_smul_le c (ha x hx ξ)⟩ }
 
 instance : Neg (Symbol n V W m) where
   neg a :=
@@ -367,7 +367,7 @@ theorem IsUniform.smul {a : Symbol n V W m} (ha : a.IsUniform) (c : ℂ) : (c �
   intro α β
   obtain ⟨C, hC, hCa⟩ := ha α β
   exact ⟨‖c‖ * C, mul_nonneg (norm_nonneg c) hC, fun x ξ =>
-    norm_mixedDeriv_smul_le a.contDiff_coefficient c (hCa x ξ)⟩
+    norm_mixedDeriv_smul_le c (hCa x ξ)⟩
 
 theorem isUniform_zero : (0 : Symbol n V W m).IsUniform :=
   fun _ _ => ⟨0, le_rfl, fun x ξ => by simp⟩

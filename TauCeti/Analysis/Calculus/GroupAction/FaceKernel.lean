@@ -47,6 +47,7 @@ variable {𝕜 G X E F : Type*} [NontriviallyNormedField 𝕜] [Group G] [Fintyp
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
 
+omit [CompleteSpace E] in
 /-- For a finite action fixing `x`, an element preserving linear normal coordinates in a chart
 centred at `x` has identity germ on the common coordinate kernel if and only if it has identity
 ambient germ. The test set `s` in the kernel need only have unique derivatives at zero,

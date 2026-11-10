@@ -811,9 +811,31 @@ theorem norm_mixedDeriv_add_le (ha : ContDiff ℝ ∞ a) (hb : ContDiff ℝ ∞ 
 /-- A bound `C * w` on a mixed derivative of smooth `a` gives the bound `(‖c‖ * C) * w` on the
 mixed derivative of `c • a`. -/
 theorem norm_mixedDeriv_smul_le {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 A]
-    [SMulCommClass ℝ 𝕜 A] (ha : ContDiff ℝ ∞ a) (c : 𝕜) (haC : ‖mixedDeriv α β a x ξ‖ ≤ C * w) :
+    [SMulCommClass ℝ 𝕜 A] (c : 𝕜) (haC : ‖mixedDeriv α β a x ξ‖ ≤ C * w) :
     ‖mixedDeriv α β (c • a) x ξ‖ ≤ (‖c‖ * C) * w := by
-  rw [mixedDeriv_const_smul ha, norm_smul, mul_assoc]
+  -- Scalar multiples commute with `fderiv ℝ`, with no smoothness assumption: for `c = 0` both
+  -- sides vanish, and otherwise `c` is invertible.
+  have hcd (γ : List (Fin n)) (f : CoordinateSpace n → A) :
+      coordinateDeriv γ (c • f) = c • coordinateDeriv γ f := by
+    induction γ generalizing f with
+    | nil => rfl
+    | cons j js ih =>
+      funext x
+      rw [coordinateDeriv_cons, ih, Pi.smul_apply, coordinateDeriv_cons]
+      rcases eq_or_ne c 0 with rfl | hc
+      · simp
+      · let := invertibleOfNonzero hc
+        rw [fderiv_const_smul_of_invertible]
+        rfl
+  have h : mixedDeriv α β (c • a) x ξ = c • mixedDeriv α β a x ξ := by
+    have h1 : (fun y => coordinateDeriv β (fun η => (c • a) (y, η)) ξ) =
+        c • fun y => coordinateDeriv β (fun η => a (y, η)) ξ := by
+      funext y
+      exact congrFun (hcd β fun η => a (y, η)) ξ
+    simp only [mixedDeriv_def]
+    rw [h1, hcd α]
+    rfl
+  rw [h, norm_smul, mul_assoc]
   exact mul_le_mul_of_nonneg_left haC (norm_nonneg c)
 
 end Linear

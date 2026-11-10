@@ -18,8 +18,8 @@ directional derivative along the segment joining them. It is the multi-dimension
 Mathlib's one-dimensional `enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc`, obtained by
 composing with the affine parametrization `t ↦ x + t • h` of the segment.
 
-The hypotheses of the first estimate are local to the segment: differentiability at each of its
-points and continuity of the directional derivative along it. The normalized real-valued estimate
+The hypothesis of the first estimate is local to the segment: differentiability at each of its
+points. The normalized real-valued estimate
 instead assumes continuity of the function along the unit-speed parameterized segment,
 differentiability at interior parameters, and interval integrability of the norm of the full
 Fréchet derivative rather than continuity merely of its fixed directional evaluation; for a
@@ -53,22 +53,53 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 along the segment from `x` to `x + h` of the norm of the directional derivative
 `Du(x + t • h) h`. -/
 theorem enorm_sub_le_lintegral_enorm_fderiv_apply (x h : E)
-    (hd : ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ u (x + t • h))
-    (hc : ContinuousOn (fun t : ℝ => fderiv ℝ u (x + t • h) h) (Icc 0 1)) :
+    (hd : ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ u (x + t • h)) :
     ‖u (x + h) - u x‖ₑ ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ := by
-  have hline : ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ (fun s : ℝ => u (x + s • h)) t :=
+  set G : ℝ → F := fun s => u (x + s • h)
+  have hline : ∀ t ∈ Icc (0 : ℝ) 1, DifferentiableAt ℝ G t :=
     fun t ht => (hd t ht).comp t (by fun_prop)
-  have hderiv : ∀ t ∈ Icc (0 : ℝ) 1,
-      derivWithin (fun s : ℝ => u (x + s • h)) (Icc 0 1) t =
-        fderiv ℝ u (x + t • h) h := by
+  have hderiv : ∀ t ∈ Icc (0 : ℝ) 1, deriv G t = fderiv ℝ u (x + t • h) h := fun t ht =>
+    (hd t ht).deriv_comp_add_smul
+  by_cases hJ : ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ = ∞
+  · rw [hJ]
+    exact le_top
+  -- Measurability of the derivative is checked in the completion of `F`.
+  set Gc : ℝ → UniformSpace.Completion F := fun s => (G s : UniformSpace.Completion F)
+  have hGc : ∀ t ∈ Icc (0 : ℝ) 1, ‖deriv Gc t‖ = ‖fderiv ℝ u (x + t • h) h‖ := by
     intro t ht
-    rw [(hline t ht).derivWithin ((uniqueDiffOn_Icc zero_lt_one).uniqueDiffWithinAt ht),
-      (hd t ht).deriv_comp_add_smul]
-  have hC1 : ContDiffOn ℝ 1 (fun s : ℝ => u (x + s • h)) (Icc 0 1) := by
-    rw [contDiffOn_one_iff_derivWithin (uniqueDiffOn_Icc zero_lt_one)]
-    exact ⟨fun t ht => (hline t ht).differentiableWithinAt, hc.congr hderiv⟩
-  simpa using (enorm_sub_le_lintegral_derivWithin_Icc_of_contDiffOn_Icc hC1 zero_le_one).trans_eq
-    (setLIntegral_congr_fun measurableSet_Icc fun t ht => by rw [hderiv t ht])
+    have hcoe : HasFDerivAt (𝕜 := ℝ) ((↑) : F → UniformSpace.Completion F)
+        UniformSpace.Completion.toComplL (G t) := by
+      rw [← UniformSpace.Completion.coe_toComplL (S := ℝ)]
+      exact (UniformSpace.Completion.toComplL (α := F) (S := ℝ)).hasFDerivAt
+    rw [show Gc = ((↑) : F → UniformSpace.Completion F) ∘ G from rfl,
+      (hcoe.comp_hasDerivAt t (hline t ht).hasDerivAt).deriv,
+      UniformSpace.Completion.coe_toComplL, UniformSpace.Completion.norm_coe, hderiv t ht]
+  have hmeas : AEStronglyMeasurable (fun t : ℝ => ‖deriv Gc t‖) volume :=
+    (aestronglyMeasurable_deriv Gc volume).norm
+  have hint : IntegrableOn (fun t : ℝ => ‖fderiv ℝ u (x + t • h) h‖) (Ioc (0 : ℝ) 1) := by
+    have hnorm : IntegrableOn (fun t : ℝ => ‖deriv Gc t‖) (Ioc (0 : ℝ) 1) := by
+      refine ⟨hmeas.restrict, ?_⟩
+      simp only [HasFiniteIntegral, enorm_norm]
+      refine lt_of_le_of_lt ?_ (lt_top_iff_ne_top.2 hJ)
+      refine (lintegral_mono_set Ioc_subset_Icc_self).trans_eq' ?_
+      exact setLIntegral_congr_fun measurableSet_Ioc fun t ht => by
+        rw [← ofReal_norm, ← ofReal_norm (deriv Gc t), hGc t (Ioc_subset_Icc_self ht)]
+    exact hnorm.congr_fun (fun t ht => hGc t (Ioc_subset_Icc_self ht)) measurableSet_Ioc
+  have hmain := norm_sub_le_integral_of_norm_deriv_le_of_le (f := G) (a := 0) (b := 1)
+    (B := fun t => ‖fderiv ℝ u (x + t • h) h‖) zero_le_one
+    (fun t ht => (hline t ht).continuousAt.continuousWithinAt)
+    (fun t ht => (hline t (Ioo_subset_Icc_self ht)).differentiableWithinAt)
+    (.of_forall fun t ht => by rw [hderiv t (Ioo_subset_Icc_self ht)])
+    ((intervalIntegrable_iff_integrableOn_Ioc_of_le zero_le_one).2 hint)
+  rw [intervalIntegral.integral_of_le zero_le_one] at hmain
+  calc ‖u (x + h) - u x‖ₑ = ENNReal.ofReal ‖G 1 - G 0‖ := by simp [G]
+    _ ≤ ENNReal.ofReal (∫ t in Ioc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖) :=
+        ENNReal.ofReal_le_ofReal hmain
+    _ = ∫⁻ t in Ioc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ := by
+        rw [ofReal_integral_eq_lintegral_ofReal hint (.of_forall fun t => norm_nonneg _)]
+        simp only [ofReal_norm]
+    _ ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ :=
+        lintegral_mono_set Ioc_subset_Icc_self
 
 /-- The oscillation of a function along a segment is bounded by the integrated norm of its
 Fréchet derivative along that segment, traversed at unit speed: the function is continuous along

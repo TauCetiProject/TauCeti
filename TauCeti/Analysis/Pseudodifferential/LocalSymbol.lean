@@ -156,7 +156,7 @@ instance : SMul ℂ (LocalSymbol U V W m) where
           filter_upwards [hfa] with y hy η
           rw [Pi.smul_apply, Pi.smul_apply, hy]
         rw [mixedDeriv_congr_of_eventually hcf]
-        refine norm_mixedDeriv_smul_le hf c ?_
+        refine norm_mixedDeriv_smul_le c ?_
         rw [mixedDeriv_congr_of_eventually hfa]
         exact ha x hx ξ }
 
