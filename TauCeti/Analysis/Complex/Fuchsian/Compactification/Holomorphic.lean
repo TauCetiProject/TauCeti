@@ -38,8 +38,8 @@ private theorem mdifferentiableAt_compactifiedQuotientMap_of_mem_cuspNhd
     {A : ℝ} (hD : D.width ≤ A) {x : Δ.CompactifiedQuotient} (hx : x ∈ cuspNhd D A) :
     MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (compactifiedQuotientMap h) x := by
   have hc : D.cusp = E.cusp := D.cusp_eq_of_scaling_eq E hσ
-  let n := widthIndex h D E hc hσ
-  have hw : D.width = n * E.width := width_eq_widthIndex_mul h D E hc hσ
+  let n := widthIndex h D E hσ
+  have hw : D.width = n * E.width := width_eq_widthIndex_mul h D E hσ
   have hE : E.width ≤ A := width_le_of_width_eq_nat_mul D E hw hD
   let e := cuspChart D hD
   let e' := cuspChart E hE

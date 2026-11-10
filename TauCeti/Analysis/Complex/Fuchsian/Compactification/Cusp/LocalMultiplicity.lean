@@ -38,11 +38,11 @@ theorem localMultiplicity_compactifiedQuotientMap_ofCusp_eq_widthIndex [Discrete
     (hσ : D.scaling = E.scaling) :
     letI : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
     localMultiplicity (compactifiedQuotientMap h) (ofCusp D.cuspOrbit) =
-      widthIndex h D E (D.cusp_eq_of_scaling_eq E hσ) hσ := by
+      widthIndex h D E hσ := by
   have : DiscreteTopology Δ := DiscreteTopology.of_subset ‹DiscreteTopology Γ› h
   let hc : D.cusp = E.cusp := D.cusp_eq_of_scaling_eq E hσ
-  let n := widthIndex h D E hc hσ
-  have hw : D.width = n * E.width := width_eq_widthIndex_mul h D E hc hσ
+  let n := widthIndex h D E hσ
+  have hw : D.width = n * E.width := width_eq_widthIndex_mul h D E hσ
   have hD : D.width ≤ D.width := le_rfl
   have hE : E.width ≤ D.width := width_le_of_width_eq_nat_mul D E hw hD
   let e := cuspChart D hD

@@ -42,22 +42,23 @@ theorem width_factor_tower (D : Δ.CuspDatum) (E : Γ.CuspDatum) (F : Θ.CuspDat
   simp only [Nat.cast_mul, mul_assoc]
 
 /-- The positive integer by which the cusp width grows under a subgroup inclusion, for
-normalized cusp data with the same representative and scaling. -/
+normalized cusp data with the same scaling (and hence the same representative,
+`TauCeti.Subgroup.CuspDatum.cusp_eq_of_scaling_eq`). -/
 def widthIndex (h : Δ ≤ Γ) (D : Δ.CuspDatum) (E : Γ.CuspDatum)
-    (hc : D.cusp = E.cusp) (hσ : D.scaling = E.scaling) : ℕ :=
-  (exists_width_eq_nat_mul h D E hc hσ).choose
+    (hσ : D.scaling = E.scaling) : ℕ :=
+  (exists_width_eq_nat_mul h D E hσ).choose
 
 /-- The cusp width ratio is positive. -/
 theorem widthIndex_pos (h : Δ ≤ Γ) (D : Δ.CuspDatum) (E : Γ.CuspDatum)
-    (hc : D.cusp = E.cusp) (hσ : D.scaling = E.scaling) :
-    0 < widthIndex h D E hc hσ :=
-  (exists_width_eq_nat_mul h D E hc hσ).choose_spec.1
+    (hσ : D.scaling = E.scaling) :
+    0 < widthIndex h D E hσ :=
+  (exists_width_eq_nat_mul h D E hσ).choose_spec.1
 
 /-- The smaller group's width is the cusp index times the larger group's width. -/
 theorem width_eq_widthIndex_mul (h : Δ ≤ Γ) (D : Δ.CuspDatum) (E : Γ.CuspDatum)
-    (hc : D.cusp = E.cusp) (hσ : D.scaling = E.scaling) :
-    D.width = widthIndex h D E hc hσ * E.width :=
-  (exists_width_eq_nat_mul h D E hc hσ).choose_spec.2
+    (hσ : D.scaling = E.scaling) :
+    D.width = widthIndex h D E hσ * E.width :=
+  (exists_width_eq_nat_mul h D E hσ).choose_spec.2
 
 /-- **The cusp width index is the index of the cusp stabilizers.** For compatible normalized
 cusp data, the factor by which the width grows under `Δ ≤ Γ` is the relative index of `Δ` in the
@@ -65,14 +66,15 @@ stabilizer of the cusp in `Γ`, that is, `[stabilizer Γ c : stabilizer Δ c]`. 
 `Δ` is the `n`-th power of the generator for `Γ`, and the infinite cyclic stabilizer for `Γ`
 contains its subgroup of `n`-th powers with index `n`. -/
 theorem widthIndex_eq_relIndex (h : Δ ≤ Γ) (D : Δ.CuspDatum) (E : Γ.CuspDatum)
-    (hc : D.cusp = E.cusp) (hσ : D.scaling = E.scaling) :
-    widthIndex h D E hc hσ = (Δ.subgroupOf Γ).relIndex (stabilizer Γ E.cusp) := by
-  set n := widthIndex h D E hc hσ
+    (hσ : D.scaling = E.scaling) :
+    widthIndex h D E hσ = (Δ.subgroupOf Γ).relIndex (stabilizer Γ E.cusp) := by
+  have hc := D.cusp_eq_of_scaling_eq E hσ
+  set n := widthIndex h D E hσ
   have hgen : (⟨D.generator, h D.generator.2⟩ : Γ) = E.generator ^ (n : ℤ) := by
     refine Subtype.ext ((MulAut.conj E.scaling).injective ?_)
     rw [MulAut.conj_apply, MulAut.conj_apply, Subgroup.coe_zpow,
       E.scaling_mul_generator_zpow_mul_inv, ← hσ, Subgroup.coe_mk,
-      D.scaling_mul_generator_mul_inv, width_eq_widthIndex_mul h D E hc hσ, Int.cast_natCast]
+      D.scaling_mul_generator_mul_inv, width_eq_widthIndex_mul h D E hσ, Int.cast_natCast]
   -- the elements of `Δ` fixing the cusp are the powers of the generator for `Δ`
   have hinf : Δ.subgroupOf Γ ⊓ stabilizer Γ E.cusp =
       Subgroup.zpowers (E.generator ^ (n : ℤ)) := by
@@ -94,21 +96,20 @@ theorem widthIndex_eq_relIndex (h : Δ ≤ Γ) (D : Δ.CuspDatum) (E : Γ.CuspDa
 /-- The cusp index of the identity inclusion is one. -/
 @[simp]
 theorem widthIndex_self (D : Δ.CuspDatum) :
-    widthIndex (le_refl Δ) D D rfl rfl = 1 := by
-  apply width_factor_unique D D (width_eq_widthIndex_mul (le_refl Δ) D D rfl rfl)
+    widthIndex (le_refl Δ) D D rfl = 1 := by
+  apply width_factor_unique D D (width_eq_widthIndex_mul (le_refl Δ) D D rfl)
   simp
 
 /-- The cusp ramification index multiplies in a tower of subgroup inclusions. -/
 theorem widthIndex_tower (h : Δ ≤ Γ) (k : Γ ≤ Θ)
     (D : Δ.CuspDatum) (E : Γ.CuspDatum) (F : Θ.CuspDatum)
-    (hcDE : D.cusp = E.cusp) (hcEF : E.cusp = F.cusp)
     (hσDE : D.scaling = E.scaling) (hσEF : E.scaling = F.scaling) :
-    widthIndex (h.trans k) D F (hcDE.trans hcEF) (hσDE.trans hσEF) =
-      widthIndex h D E hcDE hσDE * widthIndex k E F hcEF hσEF := by
+    widthIndex (h.trans k) D F (hσDE.trans hσEF) =
+      widthIndex h D E hσDE * widthIndex k E F hσEF := by
   apply width_factor_unique D F
-    (width_eq_widthIndex_mul (h.trans k) D F (hcDE.trans hcEF) (hσDE.trans hσEF))
+    (width_eq_widthIndex_mul (h.trans k) D F (hσDE.trans hσEF))
   exact width_factor_tower D E F
-    (width_eq_widthIndex_mul h D E hcDE hσDE)
-    (width_eq_widthIndex_mul k E F hcEF hσEF)
+    (width_eq_widthIndex_mul h D E hσDE)
+    (width_eq_widthIndex_mul k E F hσEF)
 
 end TauCeti.Subgroup.CuspDatum
