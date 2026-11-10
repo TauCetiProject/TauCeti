@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Group.Subgroup.Map
 public import Mathlib.Algebra.Module.ZMod
 public import TauCeti.NumberTheory.Multiquadratic.Galois.Group
+public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Subfield
 
 /-!
 # The subfield lattice of a multiquadratic field
@@ -124,16 +125,62 @@ sign patterns lie in that subspace. -/
       rw [galoisGroupEquiv_apply] at happ
       simpa [Multiplicative.ofAdd.injective happ] using hv)
 
+/-- **An infinite family of roots gives infinitely many quadratic subfields.** If the index type is
+infinite, the fields `K(root i)` are pairwise distinct quadratic intermediate fields of the
+multiquadratic field `M = K(rootᵢ : i)`. -/
+theorem infinite_quadratic_intermediateField [Infinite ι] [NeZero (2 : K)]
+    (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
+    (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) :
+    Infinite {F : IntermediateField K (adjoin K (Set.range root)) // Module.finrank K F = 2} := by
+  let x : ι → adjoin K (Set.range root) := fun i => ⟨root i, subset_adjoin K _ ⟨i, rfl⟩⟩
+  have hfin : ∀ i, Module.finrank K (adjoin K {x i}) = 2 := fun i => by
+    rw [LinearEquiv.finrank_eq (liftAlgEquiv (adjoin K {x i})).toLinearEquiv, lift_adjoin_simple]
+    exact IntermediateField.finrank_adjoin_simple_eq_two_of_not_isSquare (hroot i)
+      (by simpa using hindep {i} (Finset.singleton_nonempty i))
+  refine Infinite.of_injective (fun i => ⟨adjoin K {x i}, hfin i⟩) fun i j h => ?_
+  have h' := congrArg (fun F => IntermediateField.lift F.1) h
+  simp only [lift_adjoin_simple] at h'
+  simpa using adjoin_prod_root_injective (K := K) hroot hindep
+    (a₁ := {i}) (a₂ := {j}) (by simpa [x] using h')
+
+/-- **Infinitely many subspaces.** For an infinite index type, `ι → 𝔽₂` has infinitely many
+`𝔽₂`-subspaces: the lines spanned by the coordinate vectors are pairwise distinct. -/
+private theorem infinite_submodule_zmod_two_pi [Infinite ι] :
+    Infinite (Submodule (ZMod 2) (ι → ZMod 2)) := by
+  classical
+  refine Infinite.of_injective (fun i => Submodule.span (ZMod 2) {Pi.single i (1 : ZMod 2)})
+    fun i j h => ?_
+  simp only at h
+  by_contra hij
+  have hmem : (Pi.single i (1 : ZMod 2) : ι → ZMod 2) ∈
+      Submodule.span (ZMod 2) {Pi.single j (1 : ZMod 2)} := by
+    rw [← h]
+    exact Submodule.subset_span rfl
+  obtain ⟨a, ha⟩ := Submodule.mem_span_singleton.mp hmem
+  have := congrFun ha i
+  simp [hij] at this
+
 /-- **The number of subfields of a multiquadratic field.** Under square-class independence, the
 intermediate fields of `M = K(rootᵢ : i)` over `K` are in bijection with the `𝔽₂`-subspaces of
 `ι → ℤ/2`, so there are exactly as many of them. (For `|ι| = n` this count is the number of
-subspaces of `𝔽₂ⁿ`, the Galois number `Gₙ`.) -/
-theorem card_intermediateField_adjoin_range [Finite ι] [NeZero (2 : K)]
+subspaces of `𝔽₂ⁿ`, the Galois number `Gₙ`.) For an infinite index type both sides are `0`, by
+the convention for the cardinality of an infinite type. -/
+theorem card_intermediateField_adjoin_range [NeZero (2 : K)]
     (hroot : ∀ i, root i ^ 2 = algebraMap K L (d i))
     (hindep : ∀ S : Finset ι, S.Nonempty → ¬ IsSquare (∏ i ∈ S, d i)) :
     Nat.card (IntermediateField K (adjoin K (Set.range root)))
-      = Nat.card (Submodule (ZMod 2) (ι → ZMod 2)) :=
-  Nat.card_congr <|
+      = Nat.card (Submodule (ZMod 2) (ι → ZMod 2)) := by
+  by_cases hι : Finite ι
+  swap
+  · have := not_finite_iff_infinite.mp hι
+    have := infinite_submodule_zmod_two_pi (ι := ι)
+    have : Infinite (IntermediateField K (adjoin K (Set.range root))) :=
+      haveI := infinite_quadratic_intermediateField hroot hindep
+      Infinite.of_injective (Subtype.val :
+        {F : IntermediateField K (adjoin K (Set.range root)) // Module.finrank K F = 2} → _)
+        Subtype.val_injective
+    rw [Nat.card_eq_zero_of_infinite, Nat.card_eq_zero_of_infinite]
+  exact Nat.card_congr <|
     (intermediateFieldEquivSubmodule hroot hindep).toEquiv.trans
       (OrderDual.toDual (α := Submodule (ZMod 2) (ι → ZMod 2))).symm
 

@@ -83,6 +83,7 @@ fixed field of the automorphisms whose sign patterns lie in that subspace. -/
 
 include hD hinj heven hroot
 
+omit [Finite ι] in
 /-- **The number of subfields from prime-discriminant radicands.** Under the prime-discriminant
 independence hypotheses, the intermediate fields are counted by the `𝔽₂`-subspaces of
 `ι → ℤ/2`. -/

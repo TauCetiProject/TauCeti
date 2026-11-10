@@ -69,6 +69,7 @@ field of the automorphisms whose sign patterns lie in that subspace. -/
   mem_intermediateFieldEquivSubmodule_symm_apply_iff (fun i => sq_sqrt_natCast (p i))
     (not_isSquare_prod_primes_of_injective p hp hinj) U x
 
+omit [Finite ι] in
 /-- **The number of subfields of `ℚ(√p₁, …, √pₙ)`.** For a finite family of distinct primes, the
 intermediate fields of `ℚ(√p₁, …, √pₙ)/ℚ` are in bijection with the `𝔽₂`-subspaces of `ι → ℤ/2`. -/
 theorem card_intermediateField_adjoin_sqrt_primes :
