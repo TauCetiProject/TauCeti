@@ -72,7 +72,8 @@ has finitely generated projective homology.
 * `TauCeti.ChainComplex.slant`: the slant product on homology and cohomology, with
   `TauCeti.ChainComplex.slant_homologyπ` computing it on classes of cycles and cocycles.
 * `TauCeti.ChainComplex.kronecker_slant`: the evaluation law `⟨φ / x, y⟩ = ⟨φ, D_*(x × y)⟩`.
-* `TauCeti.ChainComplex.slant_naturality`: naturality.
+* `TauCeti.ChainComplex.slant_naturality`: naturality; `TauCeti.ChainComplex.slant_comp`: slanting
+  along a composite.
 * `TauCeti.ChainComplex.slant_linearYonedaObjMap`: naturality in the coefficients.
 * `TauCeti.ChainComplex.slant_homologyπ_zero_homologyMap`: the slant product by a cycle of degree
   zero along which `D` restricts to a chain map.
@@ -509,6 +510,16 @@ lemma slant_naturality {K' L' T' : ChainComplex (ModuleCat.{u} k) ℕ} [K'.HasTe
   rw [iCycles_slantCycles, iCycles_cyclesMap_linearYonedaFunctor_map_apply,
     iCycles_cyclesMap_linearYonedaFunctor_map_apply, iCycles_slantCycles, hfi]
   exact slantCochain_naturality D D' f g e hD p q n h _ _
+
+/-- **The slant product along a composite**: for a chain map `e : T ⟶ T'`, slanting along
+`D ≫ e` is slanting along `D` after pulling the cochain back along `e`. -/
+lemma slant_comp {T' : ChainComplex (ModuleCat.{u} k) ℕ} (e : T ⟶ T') (p q n : ℕ)
+    (h : p + q = n) (x : K.homology p) (φ : (T'.linearYonedaObj k P).homology n) :
+    slant k (D ≫ e) p q n h x φ =
+      slant k D p q n h x
+        (homologyMap (K := T'.linearYonedaObj k P) (L := T.linearYonedaObj k P)
+          ((linearYonedaFunctor k P).map e.op) n φ) := by
+  simpa using (slant_naturality (D ≫ e) D (𝟙 K) (𝟙 L) e (by simp) p q n h x φ).symm
 
 /-- The slant product of chains and cochains commutes with changing the coefficients of the
 cochain along `g : P ⟶ P'`. -/

@@ -214,15 +214,10 @@ lemma singularSlant_comp (X Y : TopCat.{w}) (u : R ⊗ S ⟶ T) {T' : ModuleCat.
       singularSlant k M X Y u p q n h x
         (homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
           (((SSet.chainComplexFunctor _).map c).app (toSSet.obj (X ⊗ Y))).op) n φ) := by
-  rw [singularSlant_def, singularSlant_def]
-  refine Eq.trans ?_ (TauCeti.ChainComplex.slant_naturality
-    (shuffle X Y R S ≫ ((SSet.chainComplexFunctor _).map (u ≫ c)).app (toSSet.obj (X ⊗ Y)))
-    (shuffle X Y R S ≫ ((SSet.chainComplexFunctor _).map u).app (toSSet.obj (X ⊗ Y)))
-    (𝟙 _) (𝟙 _) (((SSet.chainComplexFunctor _).map c).app (toSSet.obj (X ⊗ Y)))
-    (by simp) p q n h x φ (P := M)).symm
-  -- the identity maps induce identities; `simp` leaves `x` against `id x`
-  simp
-  rfl
+  rw [singularSlant_def, singularSlant_def, Functor.map_comp, NatTrans.comp_app]
+  exact TauCeti.ChainComplex.slant_comp (shuffle X Y R S ≫
+    ((SSet.chainComplexFunctor _).map u).app (toSSet.obj (X ⊗ Y)))
+    (((SSet.chainComplexFunctor _).map c).app (toSSet.obj (X ⊗ Y))) p q n h x φ
 
 /-- **A class pulled back from the first factor has no slant products in positive codegree**: for
 `a ∈ Hⁿ(X; T, M)` and `x ∈ Hₚ(X; R)` with `p + q = n` and `q ≠ 0`, `pr₁^* a / x = 0`. In particular
