@@ -22,6 +22,8 @@ plane, where densities of this kind arise as coefficients of two-forms.
 
 * `TauCeti.integral_image_eq_integral_of_eq_abs_det_smul`: the Bochner integral of a density
   scaling by `|det dφ|`.
+* `TauCeti.integrableOn_image_iff_of_eq_abs_det_smul`: the integrability of a density scaling by
+  `|det dφ|`.
 * `TauCeti.lintegral_enorm_image_eq_lintegral_enorm_of_eq_det_smul`: the lower Lebesgue integral
   of the size of a density scaling by `det dφ`.
 * `TauCeti.lintegral_ofReal_image_eq_lintegral_ofReal_of_eq_abs_det_mul`: the lower Lebesgue
@@ -49,6 +51,20 @@ theorem integral_image_eq_integral_of_eq_abs_det_smul (hs : MeasurableSet s) (hi
   rw [integral_image_eq_integral_abs_det_fderiv_smul volume hs
     (fun w hw ↦ (hφ w hw).hasFDerivAt.hasFDerivWithinAt) hinj]
   exact setIntegral_congr_fun hs fun w hw ↦ (hf w hw).symm
+
+/-- **Change of variables for the integrability of a density.** If a density `f` on a measurable
+set `s` is `|det dφ|` times `g ∘ φ`, for a change of coordinates `φ` that is injective and
+differentiable on `s`, then `g` is integrable over `φ '' s` if and only if `f` is integrable over
+`s`. -/
+theorem integrableOn_image_iff_of_eq_abs_det_smul (hs : MeasurableSet s) (hinj : InjOn φ s)
+    (hφ : ∀ w ∈ s, DifferentiableAt ℝ φ w)
+    (hf : ∀ w ∈ s, f w = |(fderiv ℝ φ w).det| • g (φ w)) :
+    IntegrableOn g (φ '' s) ↔ IntegrableOn f s := by
+  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
+  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
+  rw [integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume hs
+    (fun w hw ↦ (hφ w hw).hasFDerivAt.hasFDerivWithinAt) hinj]
+  exact integrableOn_congr_fun (fun w hw ↦ (hf w hw).symm) hs
 
 /-- **Change of variables for the size of a density.** If a density `f` on a measurable set `s`
 is `det dφ` times `g ∘ φ`, for a change of coordinates `φ` that is injective and differentiable

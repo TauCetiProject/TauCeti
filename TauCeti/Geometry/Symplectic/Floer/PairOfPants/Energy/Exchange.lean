@@ -9,7 +9,10 @@ public import TauCeti.Analysis.Complex.ThricePuncturedSphere.Exchange
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Exchange
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
+import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
 import TauCeti.LinearAlgebra.Determinant.Prod
+import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Calculus.InverseFunctionTheorem.ApproximatesLinearOn
 
@@ -53,6 +56,28 @@ pair of pants, the constant can be replaced by the one-sided constant
 Hamiltonians (`SymplecticForm.hamiltonianAction_le_add_add_sub_sum_of_exchangePerturbation`,
 `SymplecticForm.le_add_add_sub_sum_of_tendsto_hamiltonianAction_exchangePerturbation`).
 
+The same identity holds on a finite-dimensional manifold `M` with a nondegenerate two-form `ω`,
+such as a closed symplectic manifold, for a map `u` which is `C¹` on `S` and period-one `C¹`
+Hamiltonians on `M`. There a loop has no action without a cap, and the identity is stated with
+the symplectic area over the truncation and the Hamiltonian terms on its boundary circles:
+
+`∫ E = ∫ u^*ω + ∫₀¹ H_0(t, ℓ_0(R)(t)) dt + ∫₀¹ H_1(t, ℓ_1(R)(t)) dt - ∫₀¹ H_∞(t, ℓ^c_∞(R)(t)) dt
+  - ∫_S R_{K_c}(u)`
+
+(`IsNondegenerate.integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation` in
+`SmoothTwoForm`). If the loops `ℓ_q(R)` and `ℓ^c_∞(R)` converge pointwise to loops `x_q` as
+`R → ∞` and the energy and area densities are integrable over `S`, the identity on the whole of
+`S` is
+
+`∫_S E = ∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, x_q(t)) dt - ∫_S R_{K_c}(u)`
+
+(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_exchangePerturbation`). With the
+curvature bound, the energy differs from the topological part by at most `B₀ + B₁ + B_∞`, and for a
+Floer solution with tamed almost complex structures the topological part is at least
+`-(B₀ + B₁ + B_∞)`, uniformly in `c`
+(`SmoothTwoForm.IsNondegenerate.neg_sum_le_integral_add_sum_of_exchangePerturbation` and its
+truncated version).
+
 The member `c` of the family is the pullback of the pair-of-pants datum `K_0` along an
 orientation-preserving diffeomorphism `Φ_c` of the plane, `Φ_c(s, t) = (s + c (1 - μ(|w|)), t)` for
 `w = s + i t` and a smooth radial cutoff `μ` equal to `1` for `|w| ≤ 3` and to `0` for `|w| ≥ 8`,
@@ -76,7 +101,7 @@ energy identity, which holds for every map, is transported.
 
 public section
 
-open Set Real Function MeasureTheory Filter TauCeti.ThricePuncturedSphere
+open Set Real Function MeasureTheory Filter Manifold TauCeti.ThricePuncturedSphere
   TauCeti.ThricePuncturedSphere.Puncture
 open scoped Topology NNReal
 
@@ -473,30 +498,445 @@ private theorem exchangeMap_cylindricalEndLift_inf (c : ℝ) {R : ℝ} (hR : 1 �
 
 end Floer
 
+namespace SmoothTwoForm
+
+open Floer
+
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
+  {H : Puncture → ℝ → M → ℝ} {c : ℝ}
+
+omit [IsManifold I ⊤ M] in
+/-- The components of the member `c` of the family in real coordinates are differentiable in the
+domain point, at points of `S`, for `C¹` Hamiltonians on a manifold. -/
+private theorem differentiableAt_exchangePerturbation_domain (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (c : ℝ) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) (x : M) (v : ℂ) :
+    DifferentiableAt ℝ (fun z ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x v)
+      z := by
+  have hK : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 (fun w ↦ exchangePerturbation H c w x)
+      (Complex.equivRealProdCLM.symm z) :=
+    (contMDiffAt_exchangePerturbation hH hHs c ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp
+      (f := fun w : ℂ ↦ (c, (w, x))) _
+      (contMDiffAt_const.prodMk (contMDiffAt_id.prodMk contMDiffAt_const))
+  exact ((hK.contDiffAt.differentiableAt one_ne_zero).comp z
+    Complex.equivRealProdCLM.symm.differentiableAt).clm_apply (differentiableAt_const v)
+
+omit [IsManifold I ⊤ M] in
+/-- The components of the member `c` of the family are differentiable in the target point, at
+points of `S`, for `C¹` Hamiltonians on a manifold. -/
+private theorem mdifferentiableAt_exchangePerturbation_target (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (c : ℝ) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) (x : M) (v : ℂ) :
+    MDifferentiableAt I 𝓘(ℝ)
+      (fun y ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) y v) x :=
+  (((contMDiffAt_exchangePerturbation hH hHs c ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp
+    (f := fun y : M ↦ (c, (Complex.equivRealProdCLM.symm z, y))) x
+    (contMDiffAt_const.prodMk (contMDiffAt_const.prodMk contMDiffAt_id))).clm_apply
+      contMDiffAt_const).mdifferentiableAt one_ne_zero
+
+/-- The energy density of `u ∘ Φ_c` for the pair-of-pants datum is the Jacobian of `Φ_c` times
+the energy density of `u` for `K_c` at `Φ_c w`. -/
+private theorem floerEnergyDensity_comp_exchangeMap (ω : SmoothTwoForm I M)
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    {w : ℝ × ℝ} (hw : w ∈ thricePuncturedSphereReal) :
+    ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        (u ∘ exchangeMap c) w =
+      |(fderiv ℝ (exchangeMap c) w).det| • ω.floerEnergyDensity
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u (exchangeMap c w) := by
+  have hS := (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
+  rw [smul_eq_mul, abs_of_nonneg (det_fderiv_exchangeMap_nonneg (abs_le.2 ⟨by linarith, hc₁⟩) w),
+    ← perturbationPullback_exchangeMap_stdComplexLineReal hc₀ hc₁,
+    ← perturbationPullback_exchangeMap_stdComplexLineImag hc₀ hc₁]
+  exact ω.floerEnergyDensity_perturbationPullback
+    ((contDiff_exchangeMap c).differentiable two_ne_zero w)
+    ((hu.contMDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hS)).mdifferentiableAt
+      one_ne_zero)
+    (mdifferentiableAt_exchangePerturbation_target hH hHs c hS _ _)
+    (mdifferentiableAt_exchangePerturbation_target hH hHs c hS _ _)
+
+/-- The symplectic area density of `u ∘ Φ_c` is the Jacobian of `Φ_c` times the area density of
+`u` at `Φ_c w`. -/
+private theorem eval₂_comp_exchangeMap (ω : SmoothTwoForm I M) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    {w : ℝ × ℝ} (hw : w ∈ thricePuncturedSphereReal) :
+    (SmoothBundleForm.eval₂ ω ((u ∘ exchangeMap c) w)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ exchangeMap c) w stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I (u ∘ exchangeMap c) w stdComplexLineImag) : ℝ) =
+      |(fderiv ℝ (exchangeMap c) w).det| • SmoothBundleForm.eval₂ ω (u (exchangeMap c w))
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u (exchangeMap c w) stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u (exchangeMap c w) stdComplexLineImag) := by
+  have hS := (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
+  -- The area density is the energy density of the zero datum, whose pullback is zero.
+  have h₀ (v : ℝ × ℝ) : perturbationPullback (exchangeMap c) (fun (_ : ℝ × ℝ) (_ : M) ↦ (0 : ℝ))
+      (fun _ _ ↦ 0) v = fun _ _ ↦ 0 := by
+    funext w x
+    simp [perturbationPullback_apply]
+  have h := ω.floerEnergyDensity_perturbationPullback (Ks := fun _ _ ↦ 0) (Kt := fun _ _ ↦ 0)
+    ((contDiff_exchangeMap c).differentiable two_ne_zero w)
+    ((hu.contMDiffAt (isOpen_thricePuncturedSphereReal.mem_nhds hS)).mdifferentiableAt
+      one_ne_zero) mdifferentiableAt_const mdifferentiableAt_const
+  rw [h₀, h₀, floerEnergyDensity_zero, floerEnergyDensity_zero] at h
+  rw [h, smul_eq_mul, abs_of_nonneg (det_fderiv_exchangeMap_nonneg (abs_le.2 ⟨by linarith, hc₁⟩) w)]
+
+/-- The integrated curvature of `K_c` along `u` is that of the pair-of-pants datum along
+`u ∘ Φ_c`, for a manifold target. -/
+private theorem integral_hamiltonianCurvature_exchangePerturbation_eq (ω : SmoothTwoForm I M)
+    (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) (u : ℝ × ℝ → M) :
+    ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z) =
+      ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z ((u ∘ exchangeMap c) z) := by
+  have hc : |c| ≤ 1 := abs_le.2 ⟨by linarith, hc₁⟩
+  have hS {w : ℝ × ℝ} (hw : w ∈ thricePuncturedSphereReal) :
+      exchangeMap c w ∈ thricePuncturedSphereReal :=
+    (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
+  conv_lhs => rw [← image_exchangeMap_thricePuncturedSphereReal hc₀ hc₁]
+  rw [ω.integral_hamiltonianCurvature_image isOpen_thricePuncturedSphereReal.measurableSet
+    (injective_exchangeMap hc).injOn (fun w _ ↦ (contDiff_exchangeMap c).contDiffAt)
+    (fun w _ ↦ det_fderiv_exchangeMap_nonneg hc w)
+    (fun w hw ↦ differentiableAt_exchangePerturbation_domain hH hHs c (hS hw) _ _)
+    (fun w hw ↦ differentiableAt_exchangePerturbation_domain hH hHs c (hS hw) _ _)
+    (fun w hw ↦ mdifferentiableAt_exchangePerturbation_target hH hHs c (hS hw) _ _)
+    (fun w hw ↦ mdifferentiableAt_exchangePerturbation_target hH hHs c (hS hw) _ _),
+    perturbationPullback_exchangeMap_stdComplexLineReal hc₀ hc₁,
+    perturbationPullback_exchangeMap_stdComplexLineImag hc₀ hc₁]
+  simp only [comp_apply]
+
+section Energy
+
+variable [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M}
+
+namespace IsNondegenerate
+
+/-- **The energy identity of the input-exchange family, for a manifold target.** Let `K_c` be
+the member `c ∈ [0, 1]` of the input-exchange family of period-one `C¹` Hamiltonians `H_q` on a
+finite-dimensional manifold with a nondegenerate two-form, with components `K_s(z) = K_c(z)(1)`
+and `K_t(z) = K_c(z)(i)` in the global coordinate `z = s + i t` of `ℂ`, and let `u` be a map
+which is `C¹` on `S = ℂ ∖ {0, 1}`. For `R ≥ 2`, the Floer energy of `u` over the truncation of `S`
+with output end recentred at `c` is the symplectic area over that truncation, plus the integrals
+of `H_0` and `H_1` along the loops `ℓ_q(t) = u(φ_q(R + i t))` on the boundary circles of the input
+ends, minus the integral of `H_∞` along the loop `ℓ^c_∞(t) = u(c + φ_∞(-R + i t))` on the boundary
+circle of the recentred output end, minus the integrated curvature over `S`:
+
+`∫ E = ∫ u^*ω + ∫₀¹ H_0(t, ℓ_0(t)) dt + ∫₀¹ H_1(t, ℓ_1(t)) dt - ∫₀¹ H_∞(t, ℓ^c_∞(t)) dt
+  - ∫_S R_{K_c}(u)`. -/
+theorem integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) (hc₀ : 0 ≤ c)
+    (hc₁ : c ≤ 1) {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    {R : ℝ} (hR : 2 ≤ R) :
+    ∫ z in Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R, ω.floerEnergyDensity
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
+      (∫ z in Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        ((∫ t in (0 : ℝ)..1, H zero t (u (Complex.equivRealProdCLM
+            (zero.cylindricalEndLift (↑R + ↑t * Complex.I))))) +
+          (∫ t in (0 : ℝ)..1, H one t (u (Complex.equivRealProdCLM
+            (one.cylindricalEndLift (↑R + ↑t * Complex.I))))) -
+          ∫ t in (0 : ℝ)..1, H inf t (u (Complex.equivRealProdCLM
+            (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I))))) -
+        ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z) := by
+  have hc : |c| ≤ 1 := abs_le.2 ⟨by linarith, hc₁⟩
+  set T := Complex.equivRealProdCLM.symm ⁻¹' truncation R
+  have hTm : MeasurableSet T := measurableSet_preimage_truncation R
+  have hTS : T ⊆ thricePuncturedSphereReal := preimage_truncation_subset_thricePuncturedSphereReal R
+  -- The map `u ∘ Φ_c` is `C¹` on `S`, and the energy identity of the pair of pants applies to it.
+  have hv : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 (u ∘ exchangeMap c) thricePuncturedSphereReal :=
+    hu.comp ((contDiff_exchangeMap c).contMDiff.of_le (by norm_num)).contMDiffOn
+      fun w hw ↦ (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
+  have hP := hω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation hH hHs hv
+    (by linarith : (1 : ℝ) ≤ R)
+  rw [smoothTransition.one_of_one_le (by linarith), one_mul] at hP
+  -- The curvature of the pair-of-pants datum vanishes beyond the collars, so its integral over
+  -- `S_R` is its integral over `S`.
+  rw [← setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation fun z hz q hq ↦
+    ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs
+      (mem_thricePuncturedSphereReal_iff.1 hz) (by linarith) _] at hP
+  -- Change variables along `Φ_c` in the energy, the area and the curvature.
+  rw [← integral_image_eq_integral_of_eq_abs_det_smul hTm (injective_exchangeMap hc).injOn
+      (fun w _ ↦ (contDiff_exchangeMap c).differentiable two_ne_zero w)
+      fun w hw ↦ floerEnergyDensity_comp_exchangeMap ω hH hHs hc₀ hc₁ hu (hTS hw),
+    ← integral_image_eq_integral_of_eq_abs_det_smul (g := fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ))
+      hTm (injective_exchangeMap hc).injOn
+      (fun w _ ↦ (contDiff_exchangeMap c).differentiable two_ne_zero w)
+      fun w hw ↦ eval₂_comp_exchangeMap ω hc₀ hc₁ hu (hTS hw),
+    ← integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁,
+    image_exchangeMap_truncation hc₀ hc₁ (by linarith)] at hP
+  rw [hP]
+  -- The boundary loops of `u ∘ Φ_c` are those of `u` on the recentred ends.
+  simp only [Puncture.sum_univ, endSign_zero, endSign_one, endSign_inf, one_mul, neg_one_mul,
+    comp_apply, exchangeMap_cylindricalEndLift c (q := zero) (by decide) (by linarith : 0 ≤ R),
+    exchangeMap_cylindricalEndLift c (q := one) (by decide) (by linarith : 0 ≤ R),
+    exchangeMap_cylindricalEndLift_inf c (by linarith : (1 : ℝ) ≤ R)]
+  ring
+
+/-- **The energy bound of the input-exchange family, for a manifold target.** If the end
+Hamiltonians are bounded, `|H_q| ≤ B_q`, then for every `c ∈ [0, 1]` and `R ≥ 2` the Floer energy
+of `u` for the member `c` of the family over the truncation with recentred output end differs from
+the symplectic area over that truncation plus the Hamiltonian terms on its boundary circles by at
+most `B_0 + B_1 + B_∞`, uniformly in `c` and `R`. -/
+theorem abs_integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation_sub_le
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    {R : ℝ} (hR : 2 ≤ R) :
+    |(∫ z in Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R, ω.floerEnergyDensity
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) u z) -
+      (∫ z in Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) -
+        ((∫ t in (0 : ℝ)..1, H zero t (u (Complex.equivRealProdCLM
+            (zero.cylindricalEndLift (↑R + ↑t * Complex.I))))) +
+          (∫ t in (0 : ℝ)..1, H one t (u (Complex.equivRealProdCLM
+            (one.cylindricalEndLift (↑R + ↑t * Complex.I))))) -
+          ∫ t in (0 : ℝ)..1, H inf t (u (Complex.equivRealProdCLM
+            (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I)))))| ≤ ∑ q, B q := by
+  have hsub (a b d : ℝ) : a + b - d - a - b = -d := by ring
+  rw [hω.integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation hH hHs hc₀ hc₁ hu hR,
+    hsub, abs_neg, integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁]
+  exact abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB _ _
+
+/-- **The topological energy along the input-exchange family is bounded below, for a manifold
+target.** Let `u` solve the Floer equation `(du - X_K)^{0,1} = 0` for the member `c ∈ [0, 1]` of
+the family on the truncation with recentred output end, `R ≥ 2`, for almost complex structures
+`J z` on the tangent spaces `T_{u(z)} M` tamed by the two-form, under the hypotheses of
+`abs_integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation_sub_le`. Since its energy
+is nonnegative, its symplectic area over the truncation plus the Hamiltonian terms on the boundary
+circles is at least `-(B_0 + B_1 + B_∞)`, whatever `c`. On a vector-space target, where Stokes'
+formula turns the area into loop areas, the corresponding action bound is
+`SymplecticForm.hamiltonianAction_le_add_add_sum_of_exchangePerturbation`. -/
+theorem neg_sum_le_integral_add_of_exchangePerturbation_exchangeTruncation
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    {R : ℝ} (hR : 2 ≤ R) {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R,
+      (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedMFDeriv
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z).toLinearMap) :
+    -∑ q, B q ≤
+      (∫ z in Complex.equivRealProdCLM.symm ⁻¹' exchangeTruncation c R,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        ((∫ t in (0 : ℝ)..1, H zero t (u (Complex.equivRealProdCLM
+            (zero.cylindricalEndLift (↑R + ↑t * Complex.I))))) +
+          (∫ t in (0 : ℝ)..1, H one t (u (Complex.equivRealProdCLM
+            (one.cylindricalEndLift (↑R + ↑t * Complex.I))))) -
+          ∫ t in (0 : ℝ)..1, H inf t (u (Complex.equivRealProdCLM
+            (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I))))) := by
+  have hpos := setIntegral_nonneg (μ := volume) ((isClosed_exchangeTruncation c R).preimage
+    Complex.equivRealProdCLM.symm.continuous).measurableSet
+      fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
+  have h := abs_le.1
+    (hω.abs_integral_floerEnergyDensity_exchangePerturbation_exchangeTruncation_sub_le hH hHs hB
+      hc₀ hc₁ hu hR)
+  linarith [h.2]
+
+/-- **The energy identity of the input-exchange family on the whole pair of pants, for a manifold
+target.** Let `K_c` be the member `c ∈ [0, 1]` of the input-exchange family of bounded period-one
+`C¹` Hamiltonians `H_q` on a finite-dimensional manifold with a nondegenerate two-form. Let `u` be
+a map which is `C¹` on `S = ℂ ∖ {0, 1}`, whose loops `t ↦ u(φ_q(R + i t))` on the input ends and
+`t ↦ u(c + φ_∞(-R + i t))` on the recentred output end converge pointwise to loops `x_q` as
+`R → ∞`, and whose Floer energy density for `K_c` and symplectic area density are integrable over
+`S`. Then
+
+`∫_S E = ∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, x_q(t)) dt - ∫_S R_{K_c}(u)`,
+
+with the sign `+` on the input ends `0`, `1` and `-` on the output end `∞`. -/
+theorem integral_floerEnergyDensity_exchangePerturbation
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    {x : Puncture → ℝ → M}
+    (hx₀ : ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (zero.cylindricalEndLift (↑R + ↑t * Complex.I)))) atTop (𝓝 (x zero t)))
+    (hx₁ : ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (one.cylindricalEndLift (↑R + ↑t * Complex.I)))) atTop (𝓝 (x one t)))
+    (hx : ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I)))) atTop (𝓝 (x inf t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity
+      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+      thricePuncturedSphereReal)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal) :
+    ∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
+      (∫ z in thricePuncturedSphereReal,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        (∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t)) -
+        ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z) := by
+  have hc : |c| ≤ 1 := abs_le.2 ⟨by linarith, hc₁⟩
+  have hSm : MeasurableSet thricePuncturedSphereReal :=
+    isOpen_thricePuncturedSphereReal.measurableSet
+  have hv : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 (u ∘ exchangeMap c) thricePuncturedSphereReal :=
+    hu.comp ((contDiff_exchangeMap c).contMDiff.of_le (by norm_num)).contMDiffOn
+      fun w hw ↦ (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
+  have hdiff : ∀ w ∈ thricePuncturedSphereReal, DifferentiableAt ℝ (exchangeMap c) w :=
+    fun w _ ↦ (contDiff_exchangeMap c).differentiable two_ne_zero w
+  have hE' := fun w (hw : w ∈ thricePuncturedSphereReal) ↦
+    floerEnergyDensity_comp_exchangeMap ω hH hHs hc₀ hc₁ hu hw
+  have hA' := fun w (hw : w ∈ thricePuncturedSphereReal) ↦ eval₂_comp_exchangeMap ω hc₀ hc₁ hu hw
+  -- The area density of `u`, as a function to change variables in.
+  set A : ℝ × ℝ → ℝ := fun z ↦ SmoothBundleForm.eval₂ ω (u z)
+    (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag)
+  -- The loops of `u ∘ Φ_c` on the circles of the ends are those of `u` on the recentred ends.
+  have hxv : ∀ q t, Tendsto (fun R : ℝ ↦ (u ∘ exchangeMap c) (Complex.equivRealProdCLM
+      (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) atTop (𝓝 (x q t)) := by
+    rintro (_ | _ | _) t
+    · refine (hx₀ t).congr' ?_
+      filter_upwards [eventually_ge_atTop 0] with R hR
+      rw [endSign_zero, one_mul, comp_apply,
+        exchangeMap_cylindricalEndLift c (q := zero) (by decide) hR]
+    · refine (hx₁ t).congr' ?_
+      filter_upwards [eventually_ge_atTop 0] with R hR
+      rw [endSign_one, one_mul, comp_apply,
+        exchangeMap_cylindricalEndLift c (q := one) (by decide) hR]
+    · refine (hx t).congr' ?_
+      filter_upwards [eventually_ge_atTop 1] with R hR
+      rw [endSign_inf, neg_one_mul, comp_apply, exchangeMap_cylindricalEndLift_inf c hR]
+  -- Change variables along `Φ_c`, which maps `S` onto itself.
+  rw [← image_exchangeMap_thricePuncturedSphereReal hc₀ hc₁] at hE hA
+  have hP := hω.integral_floerEnergyDensity_pairOfPantsPerturbation hH hHs hB hv hxv
+    ((integrableOn_image_iff_of_eq_abs_det_smul hSm (injective_exchangeMap hc).injOn hdiff
+      hE').1 hE)
+    ((integrableOn_image_iff_of_eq_abs_det_smul (g := A) hSm (injective_exchangeMap hc).injOn
+      hdiff hA').1 hA)
+  rw [← integral_image_eq_integral_of_eq_abs_det_smul hSm (injective_exchangeMap hc).injOn hdiff
+      hE',
+    ← integral_image_eq_integral_of_eq_abs_det_smul (g := A) hSm (injective_exchangeMap hc).injOn
+      hdiff hA',
+    ← integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁,
+    image_exchangeMap_thricePuncturedSphereReal hc₀ hc₁] at hP
+  exact hP
+
+/-- **The energy bound of the input-exchange family on the whole pair of pants, for a manifold
+target.** Under the hypotheses of `integral_floerEnergyDensity_exchangePerturbation`, the Floer
+energy of `u` for the member `c ∈ [0, 1]` of the family differs from its topological part, the
+symplectic area plus the Hamiltonian terms at the asymptotic orbits, by at most
+`B_0 + B_1 + B_∞`, uniformly in `c`. -/
+theorem abs_integral_floerEnergyDensity_exchangePerturbation_sub_le
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    {x : Puncture → ℝ → M}
+    (hx₀ : ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (zero.cylindricalEndLift (↑R + ↑t * Complex.I)))) atTop (𝓝 (x zero t)))
+    (hx₁ : ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (one.cylindricalEndLift (↑R + ↑t * Complex.I)))) atTop (𝓝 (x one t)))
+    (hx : ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I)))) atTop (𝓝 (x inf t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity
+      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+      thricePuncturedSphereReal)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal) :
+    |(∫ z in thricePuncturedSphereReal, ω.floerEnergyDensity
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) u z) -
+      (∫ z in thricePuncturedSphereReal,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) -
+        ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t)| ≤ ∑ q, B q := by
+  have hsub (a b d : ℝ) : a + b - d - a - b = -d := by ring
+  rw [hω.integral_floerEnergyDensity_exchangePerturbation hH hHs hB hc₀ hc₁ hu hx₀ hx₁ hx hE hA,
+    hsub, abs_neg, integral_hamiltonianCurvature_exchangePerturbation_eq ω hH hHs hc₀ hc₁]
+  exact abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB _ _
+
+/-- **The topological energy of a solution along the input-exchange family is bounded below, for
+a manifold target.** Let `u` solve the Floer equation `(du - X_K)^{0,1} = 0` on `S` for the member
+`c ∈ [0, 1]` of the family, for almost complex structures `J z` on the tangent spaces `T_{u(z)} M`
+tamed by the two-form, under the hypotheses of
+`integral_floerEnergyDensity_exchangePerturbation`. Since its energy is nonnegative, its
+symplectic area plus the Hamiltonian terms at the asymptotic orbits is at least
+`-(B_0 + B_1 + B_∞)`, whatever `c`. -/
+theorem neg_sum_le_integral_add_sum_of_exchangePerturbation
+    (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (hc₀ : 0 ≤ c) (hc₁ : c ≤ 1)
+    {u : ℝ × ℝ → M} (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u thricePuncturedSphereReal)
+    {x : Puncture → ℝ → M}
+    (hx₀ : ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (zero.cylindricalEndLift (↑R + ↑t * Complex.I)))) atTop (𝓝 (x zero t)))
+    (hx₁ : ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (one.cylindricalEndLift (↑R + ↑t * Complex.I)))) atTop (𝓝 (x one t)))
+    (hx : ∀ t : ℝ, Tendsto (fun R : ℝ ↦ u (Complex.equivRealProdCLM
+      (↑c + inf.cylindricalEndLift (↑(-R) + ↑t * Complex.I)))) atTop (𝓝 (x inf t)))
+    (hE : IntegrableOn (ω.floerEnergyDensity
+      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+      thricePuncturedSphereReal)
+    (hA : IntegrableOn (fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) thricePuncturedSphereReal)
+    {J : ∀ z, AlmostComplexStructure (TangentSpace I (u z))}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, (hω.symplecticFormAt (u z)).Tames (J z))
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+        (ω.perturbedMFDeriv
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x Complex.I)
+          u z).toLinearMap) :
+    -∑ q, B q ≤
+      (∫ z in thricePuncturedSphereReal,
+          (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+            (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) +
+        ∑ q, q.endSign * ∫ t in (0 : ℝ)..1, H q t (x q t) := by
+  have hpos := setIntegral_nonneg (μ := volume) isOpen_thricePuncturedSphereReal.measurableSet
+    fun z hz ↦ floerEnergyDensity_nonneg hω (hJ z hz) (hfloer z hz)
+  have h := abs_le.1 (hω.abs_integral_floerEnergyDensity_exchangePerturbation_sub_le hH hHs hB hc₀
+    hc₁ hu hx₀ hx₁ hx hE hA)
+  linarith [h.2]
+
+end IsNondegenerate
+
+end Energy
+
+end SmoothTwoForm
+
 namespace SymplecticForm
 
 open Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {H : Puncture → ℝ → V → ℝ} {c : ℝ}
-
-omit [FiniteDimensional ℝ V] in
-private theorem differentiableAt_exchangePerturbation_target (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (c : ℝ) {z : ℝ × ℝ}
-    (hz : z ∈ thricePuncturedSphereReal) (x : V) (v : ℂ) :
-    DifferentiableAt ℝ (fun x ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x v)
-      x :=
-  ((contDiffAt_uncurry_exchangePerturbation hH hHs c hz x v).comp x
-    (contDiffAt_const.prodMk contDiffAt_id)).differentiableAt one_ne_zero
-
-omit [FiniteDimensional ℝ V] in
-private theorem differentiableAt_exchangePerturbation_domain (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (c : ℝ) {z : ℝ × ℝ}
-    (hz : z ∈ thricePuncturedSphereReal) (x : V) (v : ℂ) :
-    DifferentiableAt ℝ (fun z ↦ exchangePerturbation H c (Complex.equivRealProdCLM.symm z) x v)
-      z :=
-  ((contDiffAt_uncurry_exchangePerturbation hH hHs c hz x v).comp z
-    (contDiffAt_id.prodMk contDiffAt_const)).differentiableAt one_ne_zero
 
 /-- The energy of `u` for `K_c` over the truncation with recentred output end is the energy of
 `u ∘ Φ_c` for the pair-of-pants datum over the truncation `S_R`. -/
@@ -511,22 +951,15 @@ private theorem integral_floerEnergyDensity_exchangeTruncation_eq (ω : Symplect
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         (u ∘ exchangeMap c) z := by
-  have hc : |c| ≤ 1 := abs_le.2 ⟨by linarith, hc₁⟩
-  have hS {w : ℝ × ℝ} (hw : w ∈ Complex.equivRealProdCLM.symm ⁻¹' truncation R) :
-      exchangeMap c w ∈ thricePuncturedSphereReal :=
-    (exchangeMap_mem_iff hc₀ hc₁ w).2 ⟨(mem_truncation.1 hw).1, (mem_truncation.1 hw).2.1⟩
-  rw [← image_exchangeMap_truncation hc₀ hc₁ hR, integral_floerEnergyDensity_image ω
-    ((isCompact_truncation R).isClosed.preimage
-      Complex.equivRealProdCLM.symm.continuous).measurableSet
-    (injective_exchangeMap hc).injOn
-    (fun w _ ↦ (contDiff_exchangeMap c).differentiable two_ne_zero w)
-    (fun w _ ↦ det_fderiv_exchangeMap_nonneg hc w)
-    (fun w hw ↦ (hu.differentiableOn two_ne_zero _ (hS hw)).differentiableAt
-      (isOpen_thricePuncturedSphereReal.mem_nhds (hS hw)))
-    (fun w hw ↦ differentiableAt_exchangePerturbation_target hH hHs c (hS hw) _ _)
-    (fun w hw ↦ differentiableAt_exchangePerturbation_target hH hHs c (hS hw) _ _),
-    perturbationPullback_exchangeMap_stdComplexLineReal hc₀ hc₁,
-    perturbationPullback_exchangeMap_stdComplexLineImag hc₀ hc₁]
+  rw [← image_exchangeMap_truncation hc₀ hc₁ hR]
+  refine integral_image_eq_integral_of_eq_abs_det_smul (measurableSet_preimage_truncation R)
+    (injective_exchangeMap (abs_le.2 ⟨by linarith, hc₁⟩)).injOn
+    (fun w _ ↦ (contDiff_exchangeMap c).differentiable two_ne_zero w) fun w hw ↦ ?_
+  simpa only [floerEnergyDensity_constSmooth] using
+    ω.constSmooth.floerEnergyDensity_comp_exchangeMap hH
+      (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) hc₀ hc₁
+      (contMDiffOn_iff_contDiffOn.mpr (hu.of_le one_le_two))
+      (preimage_truncation_subset_thricePuncturedSphereReal R hw)
 
 /-- The integrated curvature of `K_c` along `u` is that of the pair-of-pants datum along
 `u ∘ Φ_c`. -/
@@ -541,19 +974,9 @@ private theorem integral_hamiltonianCurvature_exchangePerturbation_eq (ω : Symp
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z ((u ∘ exchangeMap c) z) := by
-  have hc : |c| ≤ 1 := abs_le.2 ⟨by linarith, hc₁⟩
-  have hS {w : ℝ × ℝ} (hw : w ∈ thricePuncturedSphereReal) :
-      exchangeMap c w ∈ thricePuncturedSphereReal :=
-    (exchangeMap_mem_iff hc₀ hc₁ w).2 hw
-  conv_lhs => rw [← image_exchangeMap_thricePuncturedSphereReal hc₀ hc₁]
-  rw [integral_hamiltonianCurvature_image ω isOpen_thricePuncturedSphereReal.measurableSet
-    (injective_exchangeMap hc).injOn (fun w _ ↦ (contDiff_exchangeMap c).contDiffAt)
-    (fun w _ ↦ det_fderiv_exchangeMap_nonneg hc w)
-    (fun w hw ↦ differentiableAt_exchangePerturbation_domain hH hHs c (hS hw) _ _)
-    (fun w hw ↦ differentiableAt_exchangePerturbation_domain hH hHs c (hS hw) _ _),
-    perturbationPullback_exchangeMap_stdComplexLineReal hc₀ hc₁,
-    perturbationPullback_exchangeMap_stdComplexLineImag hc₀ hc₁]
-  simp only [comp_apply]
+  simpa only [hamiltonianCurvature_constSmooth] using
+    ω.constSmooth.integral_hamiltonianCurvature_exchangePerturbation_eq hH
+      (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) hc₀ hc₁ u
 
 /-- **The energy identity of the input-exchange family.** Let `K_c` be the member `c ∈ [0, 1]`
 of the input-exchange family of period-one `C¹` Hamiltonians `H_q`, with components
