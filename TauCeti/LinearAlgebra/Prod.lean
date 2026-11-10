@@ -47,6 +47,11 @@ quadratic forms with the subgroup preserving both summands.
   `LinearMap.surjective_coprod_neg_comm`: the exchange of factors negates `(ξ, η) ↦ α ξ - β η`,
   identifies the fibre product `{(ξ, η) | α ξ = β η}` of `α` and `β` with that of `β`
   and `α`, and transversality, the surjectivity of `(ξ, η) ↦ α ξ - β η`, is symmetric.
+* `LinearMap.fiberProductAssoc`: the reassociation `(X ×_T Y) ×_S Z ≃ X ×_T (Y ×_S Z)` of iterated
+  fibre products of linear maps.
+* `LinearMap.injective_comp`, `LinearMap.surjective_comp`, `LinearMap.injective_prodMap`:
+  injectivity and surjectivity of composites and products, stated for the coercions of `f ∘ₗ g`
+  and `f.prodMap g`.
 * `LinearMap.axes_of_commute_neg_snd`: a linear endomorphism of `R × R × R` preserving the third
   coordinate and commuting with `(x, y, z) ↦ (x, -y, 0)` preserves the first two coordinate axes
   and fixes the third basis vector.
@@ -209,6 +214,23 @@ theorem coprod_comp_prodComm (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₃)
     f.coprod g ∘ₗ (LinearEquiv.prodComm R M₂ M₁).toLinearMap = g.coprod f := by
   ext <;> simp
 
+variable {M₄ : Type*} [AddCommMonoid M₄] [Module R M₄]
+
+/-- A composite of injective linear maps is injective, stated for the coercion of `f ∘ₗ g`. -/
+theorem injective_comp {f : M₂ →ₗ[R] M₃} {g : M₁ →ₗ[R] M₂} (hf : Function.Injective f)
+    (hg : Function.Injective g) : Function.Injective (f ∘ₗ g) :=
+  hf.comp hg
+
+/-- A composite of surjective linear maps is surjective, stated for the coercion of `f ∘ₗ g`. -/
+theorem surjective_comp {f : M₂ →ₗ[R] M₃} {g : M₁ →ₗ[R] M₂} (hf : Function.Surjective f)
+    (hg : Function.Surjective g) : Function.Surjective (f ∘ₗ g) :=
+  hf.comp hg
+
+/-- A product of injective linear maps is injective, stated for the coercion of `f.prodMap g`. -/
+theorem injective_prodMap {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₄} (hf : Function.Injective f)
+    (hg : Function.Injective g) : Function.Injective (f.prodMap g) :=
+  hf.prodMap hg
+
 end Semiring
 
 section Ring
@@ -240,6 +262,43 @@ theorem surjective_coprod_neg_comm (h : Function.Surjective (α.coprod (-β))) :
   have hw' := LinearMap.congr_fun (coprod_neg_comp_prodComm α β) w
   simp only [coe_comp, LinearEquiv.coe_coe, Function.comp_apply, LinearMap.neg_apply] at hw'
   rw [hw', hw, neg_neg]
+
+section Assoc
+
+variable {R X Y Z T S : Type*} [Ring R] [AddCommGroup X] [Module R X] [AddCommGroup Y]
+  [Module R Y] [AddCommGroup Z] [Module R Z] [AddCommGroup T] [Module R T] [AddCommGroup S]
+  [Module R S] (α : X →ₗ[R] T) (β : Y →ₗ[R] T) (γ : Y →ₗ[R] S) (δ : Z →ₗ[R] S)
+
+/-- The reassociation `(X ×_T Y) ×_S Z ≃ X ×_T (Y ×_S Z)` of iterated fibre products, for
+`α : X → T`, `β : Y → T`, `γ : Y → S` and `δ : Z → S`: both sides consist of the triples
+`(ξ, η, ζ)` with `α ξ = β η` and `γ η = δ ζ`, and the equivalence regroups them. On the left the
+second fibre product is taken along `γ` restricted to `X ×_T Y`, and on the right the first is
+taken along `β` restricted to `Y ×_S Z`. -/
+def fiberProductAssoc :
+    ker ((γ ∘ₗ snd R X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ)) ≃ₗ[R]
+      ker (α.coprod (-(β ∘ₗ fst R Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype))) where
+  toFun r := ⟨(r.1.1.1.1, ⟨(r.1.1.1.2, r.1.2), mem_ker.2 (mem_ker.1 r.2)⟩),
+    mem_ker.2 (mem_ker.1 r.1.1.2)⟩
+  invFun r := ⟨(⟨(r.1.1, r.1.2.1.1), mem_ker.2 (mem_ker.1 r.2)⟩, r.1.2.1.2),
+    mem_ker.2 (mem_ker.1 r.1.2.2)⟩
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+variable {α β γ δ}
+
+/-- The reassociation is the restriction of `(X × Y) × Z ≃ X × (Y × Z)`: viewed in `X × (Y × Z)`,
+the image of `((ξ, η), ζ)` is `(ξ, (η, ζ))`. -/
+theorem prodMap_subtype_fiberProductAssoc_apply
+    (r : ker ((γ ∘ₗ snd R X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ))) :
+    (LinearMap.id.prodMap (ker (γ.coprod (-δ))).subtype)
+        (fiberProductAssoc α β γ δ r : X × ker (γ.coprod (-δ))) =
+      LinearEquiv.prodAssoc R X Y Z
+        ((ker (α.coprod (-β))).subtype.prodMap LinearMap.id (r : ker (α.coprod (-β)) × Z)) :=
+  (rfl)
+
+end Assoc
 
 end Ring
 

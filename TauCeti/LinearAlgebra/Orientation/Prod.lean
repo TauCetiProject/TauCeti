@@ -18,6 +18,9 @@ import TauCeti.LinearAlgebra.Ray
 
 The canonical product orientation places the first factor before the second. Its construction
 uses relative basis signs and actual product-basis determinants, including empty factor bases.
+It is compatible with scaling either factor by a unit and with recasting the index types of the
+factors (`Orientation.prod_units_smul_left`, `Orientation.prod_reindex_left` and their right-hand
+versions).
 
 Exchanging factors of dimensions `m` and `n` multiplies a product orientation by `(-1) ^ (m * n)`
 (`Orientation.map_prodComm_prod`): the exchange moves each of the `m` basis vectors of the first
@@ -156,6 +159,36 @@ theorem prod_neg_neg (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
     prod (-o) (-p) hm hn = prod o p hm hn := by
   rw [prod_neg_left, prod_neg_right]
   exact neg_neg (prod o p hm hn)
+
+/-- Scaling the first factor by a unit scales the product orientation. -/
+@[simp]
+theorem prod_units_smul_left (u : Rˣ) (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
+    (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) :
+    prod (u • o) p hm hn = u • prod o p hm hn :=
+  Module.Ray.units_smul_of_map_neg (F := (prod · p hm hn)) (prod_neg_left · p hm hn) u o
+
+/-- Scaling the second factor by a unit scales the product orientation. -/
+@[simp]
+theorem prod_units_smul_right (u : Rˣ) (o : Orientation R E (Fin m))
+    (p : Orientation R F (Fin n)) (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) :
+    prod o (u • p) hm hn = u • prod o p hm hn :=
+  Module.Ray.units_smul_of_map_neg (F := (prod o · hm hn)) (prod_neg_right o · hm hn) u p
+
+/-- Recasting the index type of the first factor recasts that of the product. -/
+theorem prod_reindex_left {m' : ℕ} (e : m = m') (o : Orientation R E (Fin m))
+    (p : Orientation R F (Fin n)) (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) :
+    prod (reindex R E (finCongr e) o) p (hm.trans e) hn =
+      reindex R (E × F) (finCongr (congrArg (· + n) e)) (prod o p hm hn) := by
+  subst e
+  simp [finCongr_refl, reindex_refl]
+
+/-- Recasting the index type of the second factor recasts that of the product. -/
+theorem prod_reindex_right {n' : ℕ} (e : n = n') (o : Orientation R E (Fin m))
+    (p : Orientation R F (Fin n)) (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) :
+    prod o (reindex R F (finCongr e) p) hm (hn.trans e) =
+      reindex R (E × F) (finCongr (congrArg (m + ·) e)) (prod o p hm hn) := by
+  subst e
+  simp [finCongr_refl, reindex_refl]
 
 /-- The relative sign in a product basis is the product of the two relative factor signs. -/
 theorem signBasis_prod (o : Orientation R E (Fin m)) (p : Orientation R F (Fin n))
