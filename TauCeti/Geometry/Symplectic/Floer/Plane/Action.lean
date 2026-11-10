@@ -80,15 +80,6 @@ open Floer Floer.PSSPlane
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {p : PSSPlane} {H : ℝ → V → ℝ}
 
-/-- The end lift sends the circle `s = ε R` of the end to the circle of radius `exp (2πR)`,
-run through with angle `2π ε t`. -/
-private theorem cylindricalEndLift_eq_circleMap (p : PSSPlane) (R t : ℝ) :
-    p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I) =
-      circleMap 0 (Real.exp (2 * π * R)) (p.endSign * (2 * π * t)) := by
-  rw [cylindricalEndLift_def, circleMap, zero_add, Complex.ofReal_exp, ← Complex.exp_add]
-  congr 1
-  cases p <;> push_cast [endSign_positive, endSign_negative] <;> ring
-
 /-- **The symplectic area of a disc of a PSS plane.** For a `C²` map `u`, the symplectic area over
 the disc `‖w‖ ≤ exp (2πR)` is `ε` times the loop area of the loop `ℓ_R(t) = u(φ(ε R + i t))`
 along its boundary circle. -/
