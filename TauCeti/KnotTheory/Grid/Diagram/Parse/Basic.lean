@@ -134,60 +134,6 @@ private def edgeBoardOfChars {width height : Nat}
     Option (Vector (Vector BoxEdgePresence width) height) :=
   Vector.ofFnM fun row ↦ Vector.ofFnM fun col ↦ decodeDrawingChar ((chars.get row).get col)
 
-private def horizontalEdgesAtOverpasses {width height : Nat}
-    (chars : Vector (Vector Char width) height)
-    (board : Vector (Vector BoxEdgePresence width) height) :
-    Vector (Vector BoxEdgePresence width) height :=
-  Vector.ofFn fun row ↦ Vector.ofFn fun col ↦
-    let edges := (board.get row).get col
-    if (chars.get row).get col == '\u2502' &&
-        (if h : 0 < col.val then
-          let prevCol : Fin width := ⟨col.val - 1, by omega⟩
-          let prevChar := (chars.get row).get prevCol
-          let prevEdges := (board.get row).get prevCol
-          !isLabelChar prevChar && prevEdges.right
-        else false) &&
-        (if h : col.val + 1 < width then
-          let nextCol : Fin width := ⟨col.val + 1, h⟩
-          let nextChar := (chars.get row).get nextCol
-          let nextEdges := (board.get row).get nextCol
-          !isLabelChar nextChar && nextEdges.left
-        else false) then
-      { edges with left := true, right := true }
-    else
-      edges
-
-private def edgeConnectionsMatch {width height : Nat}
-    (chars : Vector (Vector Char width) height)
-    (board : Vector (Vector BoxEdgePresence width) height) : Bool :=
-  let board := horizontalEdgesAtOverpasses chars board
-  (List.finRange height).all fun row ↦
-    (List.finRange width).all fun col ↦
-      let ch := (chars.get row).get col
-      let edges := (board.get row).get col
-      if isLabelChar ch then
-        true
-      else
-        let left := col.val != 0 || !edges.left
-        let right :=
-          if h : col.val + 1 < width then
-            let nextCol : Fin width := ⟨col.val + 1, h⟩
-            let nextChar := (chars.get row).get nextCol
-            let nextEdges := (board.get row).get nextCol
-            isLabelChar nextChar || edges.right == nextEdges.left
-          else
-            !edges.right
-        let down := row.val != 0 || !edges.down
-        let up :=
-          if h : row.val + 1 < height then
-            let nextRow : Fin height := ⟨row.val + 1, h⟩
-            let nextChar := (chars.get nextRow).get col
-            let nextEdges := (board.get nextRow).get col
-            isLabelChar nextChar || edges.up == nextEdges.down
-          else
-            !edges.up
-        left && right && down && up
-
 private def cornersInColumn {width height : Nat} (ends : Vector (Vector Bool width) height)
     (col : Fin width) : List (Point height width) :=
   (List.finRange height).filterMap fun row ↦
@@ -379,7 +325,6 @@ private def reprMatchesDrawing {width height : Nat} (chars : Vector (Vector Char
 private def parseGrid {width height : Nat} (chars : Vector (Vector Char width) height) :
     Option (Σ n : ℕ, GridDiagram n) := do
   let board ← edgeBoardOfChars chars
-  guard (edgeConnectionsMatch chars board)
   let horizontal := horizontalEnds board
   let vertical := verticalEnds board
   let corners := cornersFromEnds horizontal vertical
