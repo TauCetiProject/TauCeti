@@ -27,6 +27,8 @@ a function of temperate growth. By duality this is the Leibniz rule for Schwartz
 
 ## Main results
 
+* `TemperedDistribution.smulLeftCLM_of_not_hasTemperateGrowth`: for a symbol without temperate
+  growth, `smulLeftCLM` is the junk value `0`.
 * `TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq`: multiplication by `g` on
   tempered distributions extends multiplication by `g` on Schwartz functions.
 * `TemperedDistribution.lineDerivOp_smulLeftCLM`: the Leibniz rule for the product of a tempered
@@ -44,6 +46,15 @@ section Deriv
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
   [NormedSpace ℂ F]
+
+/-- Multiplication by a function without temperate growth is the junk value `0`, because
+`SchwartzMap.smulLeftCLM` is `0` for such a function. -/
+@[simp]
+theorem smulLeftCLM_of_not_hasTemperateGrowth {g : E → ℂ} (hg : ¬ g.HasTemperateGrowth) :
+    smulLeftCLM F g = 0 := by
+  refine ContinuousLinearMap.ext fun u => ?_
+  ext f'
+  simp [SchwartzMap.smulLeftCLM, hg]
 
 /-- **The Leibniz rule for tempered distributions**: for `g` of temperate growth,
 `∂_v (g f) = (∂_v g) f + g ∂_v f`, where `∂_v g` is the classical derivative `x ↦ Dg(x) v`. -/

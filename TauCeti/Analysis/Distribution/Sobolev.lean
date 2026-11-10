@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.Sobolev
+import TauCeti.Analysis.Distribution.TemperedDistribution.FourierMultiplier
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Fourier.MihlinHormander
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
@@ -107,17 +108,6 @@ theorem besselPotential_two_eq_sub_laplacian (f : 𝓢'(E, F)) :
     rw [laplacian_eq_fourierMultiplierCLM, smul_smul, mul_neg,
       inv_mul_cancel₀ (by positivity), neg_one_smul]
   rw [hsplit, hΔ, sub_neg_eq_add]
-
-/-- The Fourier multiplier of a symbol without temperate growth is the junk value `0`, because
-`SchwartzMap.smulLeftCLM` is `0` for such a symbol. -/
-@[simp]
-theorem fourierMultiplierCLM_of_not_hasTemperateGrowth {g : E → ℂ} (hg : ¬ g.HasTemperateGrowth) :
-    fourierMultiplierCLM F g = 0 := by
-  refine ContinuousLinearMap.ext fun f => ?_
-  have h0 (u : 𝓢'(E, F)) : smulLeftCLM F g u = 0 := by
-    ext f'
-    simp [SchwartzMap.smulLeftCLM, hg]
-  rw [fourierMultiplierCLM_apply, h0, FourierTransform.fourierInv_zero, zero_apply]
 
 variable [CompleteSpace F]
 
