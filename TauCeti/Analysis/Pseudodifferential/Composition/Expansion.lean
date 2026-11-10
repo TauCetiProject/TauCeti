@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Pseudodifferential.AsymptoticSum
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Fourier.Inversion
-import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 
 /-!
 # The asymptotic expansion of the composition symbol
@@ -182,76 +181,6 @@ section Scaled
 
 variable {a : Symbol n W U m'} {b : Symbol n V W m}
 
-variable (a b) in
-/-- The integrand `exp(2πi ⟪η, x⟫) a(x, ξ + sη) ∘ b̂(η, ξ)` of the interpolating family, with the
-frequency shift `2πη` of the composition symbol scaled to `sη`. -/
-private def shiftIntegrand (s : ℝ) (x ξ η : CoordinateSpace n) : V →L[ℂ] U :=
-  (𝐞 ⟪η, x⟫ : ℂ) • (a.coefficient (x, ξ + s • η)).comp (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)
-
-/-- The integrand decays like `⟨η⟩ ^ (-(n + 1))`, with the weight `⟨ξ⟩ ^ (m' + m)` in the
-frequency, uniformly for positions in a compact set and shifts `|s| ≤ 4π`. -/
-private theorem exists_norm_shiftIntegrand_le (hb : b.HasCompactSpatialSupport)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
-    ∃ C, 0 ≤ C ∧ ∀ s : ℝ, |s| ≤ 4 * π → ∀ x ∈ K, ∀ ξ η : CoordinateSpace n,
-      ‖shiftIntegrand a b s x ξ η‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
-  obtain ⟨Ca, hCa0, hCa⟩ := a.exists_bound_coefficient K hK
-  obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_slice_le ((n : ℝ) + 1 + |m'|)
-  refine ⟨Ca * 2 ^ (|m'| / 2) * (4 * π) ^ |m'| * Cb, by positivity, fun s hs x hx ξ η ↦ ?_⟩
-  have h4π : (1 : ℝ) ≤ 4 * π := by linarith [Real.two_le_pi]
-  have hpeetre := one_add_norm_add_sq_rpow_le_mul m' ξ (s • η)
-  -- `⟨sη⟩ ^ |m'| ≤ (4π) ^ |m'| ⟨η⟩ ^ |m'|` since `‖sη‖ ≤ ‖4π η‖`.
-  have hsη : (1 + ‖s • η‖ ^ 2) ^ (|m'| / 2) ≤ (4 * π) ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2) := by
-    have hle : ‖s • η‖ ≤ ‖(4 * π) • η‖ := by
-      rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_of_nonneg (by positivity)]
-      gcongr
-    have h := one_add_norm_smul_sq_rpow_le h4π |m'| η
-    rw [abs_abs] at h
-    exact (Real.rpow_le_rpow (by positivity) (by gcongr) (by positivity)).trans h
-  have hξ : (1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) =
-      (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
-    rw [← Real.rpow_add (by positivity)]
-    ring_nf
-  have hη : (1 + ‖η‖ ^ 2) ^ (|m'| / 2) * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1 + |m'|) / 2) =
-      (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2) := by
-    rw [← Real.rpow_add (by positivity)]
-    ring_nf
-  calc ‖shiftIntegrand a b s x ξ η‖
-      ≤ ‖a.coefficient (x, ξ + s • η)‖ * ‖𝓕 (fun y ↦ b.coefficient (y, ξ)) η‖ := by
-        rw [shiftIntegrand, norm_smul, Circle.norm_coe, one_mul]
-        exact ContinuousLinearMap.opNorm_comp_le _ _
-    _ ≤ (Ca * (2 ^ (|m'| / 2) * (1 + ‖ξ‖ ^ 2) ^ (m' / 2) *
-          ((4 * π) ^ |m'| * (1 + ‖η‖ ^ 2) ^ (|m'| / 2)))) *
-        (Cb * (1 + ‖ξ‖ ^ 2) ^ (m / 2) * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1 + |m'|) / 2)) := by
-        gcongr
-        · refine (hCa x hx _).trans ?_
-          gcongr
-          exact hpeetre.trans (by gcongr)
-        · exact hCb η ξ
-    _ = Ca * 2 ^ (|m'| / 2) * (4 * π) ^ |m'| * Cb *
-          ((1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) *
-          ((1 + ‖η‖ ^ 2) ^ (|m'| / 2) * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1 + |m'|) / 2)) := by ring
-    _ = _ := by rw [hξ, hη]
-
-private theorem continuous_shiftIntegrand (hb : b.HasCompactSpatialSupport) (s : ℝ)
-    (x ξ : CoordinateSpace n) : Continuous (shiftIntegrand a b s x ξ) := by
-  have hB : Continuous fun η : CoordinateSpace n ↦ 𝓕 (fun y ↦ b.coefficient (y, ξ)) η := by
-    have h := hb.continuous_fourier_slice.comp
-      (continuous_id'.prodMk continuous_const : Continuous fun η : CoordinateSpace n ↦ (η, ξ))
-    simpa only [Function.comp_def] using h
-  have ha : Continuous fun η : CoordinateSpace n ↦ a.coefficient (x, ξ + s • η) :=
-    a.contDiff_coefficient.continuous.comp (by fun_prop)
-  have he : Continuous fun η : CoordinateSpace n ↦ (𝐞 ⟪η, x⟫ : ℂ) := by fun_prop
-  unfold shiftIntegrand
-  exact he.smul (ha.clm_comp hB)
-
-private theorem integrable_shiftIntegrand (hb : b.HasCompactSpatialSupport) {s : ℝ}
-    (hs : |s| ≤ 4 * π) (x ξ : CoordinateSpace n) : Integrable (shiftIntegrand a b s x ξ) := by
-  obtain ⟨C, -, hC⟩ := exists_norm_shiftIntegrand_le (a := a) hb (isCompact_singleton (x := x))
-  exact ((integrable_rpow_neg_one_add_norm_sq (by simp)).const_mul _).mono'
-    (continuous_shiftIntegrand hb s x ξ).aestronglyMeasurable
-    (.of_forall fun η ↦ hC s hs x rfl ξ η)
-
 /-- The frequency shifts `2πtη` of the family with `|t| ≤ 2` are at most `4π ‖η‖`. -/
 private theorem abs_mul_two_pi_le {t : ℝ} (ht : |t| ≤ 2) : |t * (2 * π)| ≤ 4 * π := by
   rw [abs_mul, abs_of_pos two_pi_pos]
@@ -259,11 +188,11 @@ private theorem abs_mul_two_pi_le {t : ℝ} (ht : |t| ≤ 2) : |t * (2 * π)| �
 
 /-- **Differentiation in the parameter** of the integrand: since `2π ηⱼ b̂ = -i (∂_{xⱼ} b)^`,
 `d/dt` of the integrand of `C_t(a, b)` is `-i ∑ⱼ` the integrand of `C_t(∂_{ξⱼ} a, ∂_{xⱼ} b)`. -/
-private theorem hasDerivAt_shiftIntegrand (hb : b.HasCompactSpatialSupport) (t : ℝ)
+private theorem hasDerivAt_sharpIntegrand (hb : b.HasCompactSpatialSupport) (t : ℝ)
     (x ξ η : CoordinateSpace n) :
-    HasDerivAt (fun t ↦ shiftIntegrand a b (t * (2 * π)) x ξ η)
+    HasDerivAt (fun t ↦ sharpIntegrand a b (t * (2 * π)) (x, ξ) η)
       (∑ j, (-Complex.I) •
-        shiftIntegrand (frequencyDeriv j a) (spatialDeriv j b) (t * (2 * π)) x ξ η) t := by
+        sharpIntegrand (frequencyDeriv j a) (spatialDeriv j b) (t * (2 * π)) (x, ξ) η) t := by
   have hD : HasFDerivAt (fun ζ ↦ a.coefficient (x, ζ))
       (fderiv ℝ (fun ζ ↦ a.coefficient (x, ζ)) (ξ + (t * (2 * π)) • η))
       (ξ + (t * (2 * π)) • η) :=
@@ -276,9 +205,9 @@ private theorem hasDerivAt_shiftIntegrand (hb : b.HasCompactSpatialSupport) (t :
       (𝓕 (fun y ↦ b.coefficient (y, ξ)) η)
   have h := (Ψ.hasFDerivAt.comp_hasDerivAt t (hD.comp_hasDerivAt t hl)).const_smul
     (𝐞 ⟪η, x⟫ : ℂ)
-  have hf : (fun t ↦ shiftIntegrand a b (t * (2 * π)) x ξ η) =
+  have hf : (fun t ↦ sharpIntegrand a b (t * (2 * π)) (x, ξ) η) =
       fun t ↦ (𝐞 ⟪η, x⟫ : ℂ) • Ψ (a.coefficient (x, ξ + (t * (2 * π)) • η)) :=
-    funext fun t ↦ by simp [shiftIntegrand, Ψ]
+    funext fun t ↦ by simp [sharpIntegrand_apply, Ψ]
   rw [hf]
   refine h.congr_deriv ?_
   -- On the coordinate vectors the derivative of `ζ ↦ a(x, ζ)` is a frequency derivative.
@@ -288,7 +217,7 @@ private theorem hasDerivAt_shiftIntegrand (hb : b.HasCompactSpatialSupport) (t :
     rw [coefficient_frequencyDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
   rw [ContinuousLinearMap.apply_eq_sum_single, map_sum, Finset.smul_sum]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  simp only [map_smul, hDj, shiftIntegrand, hb.fourier_spatialDeriv_slice, Ψ,
+  simp only [map_smul, hDj, sharpIntegrand_apply, hb.fourier_spatialDeriv_slice, Ψ,
     ContinuousLinearMap.flip_apply, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
     ContinuousLinearMap.compL_apply, ContinuousLinearMap.comp_smul,
     EuclideanSpace.inner_single_right, conj_trivial, one_mul, PiLp.smul_apply, smul_eq_mul,
@@ -301,28 +230,20 @@ variable (a b) in
 /-- The family `C_t(x, ξ) = ∫ exp(2πi ⟪η, x⟫) a(x, ξ + 2πtη) ∘ b̂(η, ξ) dη` interpolating between
 the pointwise composition (`t = 0`) and the composition symbol (`t = 1`). -/
 private def scaledSharp (t : ℝ) (x ξ : CoordinateSpace n) : V →L[ℂ] U :=
-  ∫ η, shiftIntegrand a b (t * (2 * π)) x ξ η
+  ∫ η, sharpIntegrand a b (t * (2 * π)) (x, ξ) η
 
 /-- `‖C_t(x, ξ)‖ ≤ C ⟨ξ⟩ ^ (m' + m)`, uniformly for positions in a compact set and `|t| ≤ 2`. -/
 private theorem exists_norm_scaledSharp_le (hb : b.HasCompactSpatialSupport)
     {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
     ∃ C, 0 ≤ C ∧ ∀ t : ℝ, |t| ≤ 2 → ∀ x ∈ K, ∀ ξ : CoordinateSpace n,
       ‖scaledSharp a b t x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
-  obtain ⟨C, hC0, hC⟩ := exists_norm_shiftIntegrand_le (a := a) hb hK
-  set I := ∫ η : CoordinateSpace n, (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)
-  have hI : 0 ≤ I := integral_nonneg fun η ↦ by positivity
-  refine ⟨C * I, mul_nonneg hC0 hI, fun t ht x hx ξ ↦ ?_⟩
-  refine (norm_integral_le_of_norm_le
-    ((integrable_rpow_neg_one_add_norm_sq (by simp)).const_mul
-      (C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2)))
-    (.of_forall fun η ↦ hC _ (abs_mul_two_pi_le ht) x hx ξ η)).trans_eq ?_
-  rw [integral_const_mul]
-  ring
+  obtain ⟨C, hC0, hC⟩ := exists_norm_integral_sharpIntegrand_le (a := a) hb hK (4 * π)
+  exact ⟨C, hC0, fun t ht x hx ξ ↦ hC _ (abs_mul_two_pi_le ht) x hx ξ⟩
 
 /-- At `t = 1` the family is the composition symbol. -/
 private theorem scaledSharp_one (hb : b.HasCompactSpatialSupport) (x ξ : CoordinateSpace n) :
     scaledSharp a b 1 x ξ = (a.sharp b hb).coefficient (x, ξ) := by
-  simp only [scaledSharp, shiftIntegrand, one_mul, coefficient_sharp]
+  simp only [scaledSharp, sharpIntegrand_apply, one_mul, coefficient_sharp]
 
 /-- **Differentiation in the parameter** under the integral sign:
 `d/dt C_t(a, b) = -i ∑ⱼ C_t(∂_{ξⱼ} a, ∂_{xⱼ} b)`. -/
@@ -332,18 +253,20 @@ private theorem hasDerivAt_scaledSharp (hb : b.HasCompactSpatialSupport) {t₀ :
       ((-Complex.I) • ∑ j, scaledSharp (frequencyDeriv j a) (spatialDeriv j b) t₀ x ξ) t₀ := by
   have hb' (j : Fin n) := hb.spatialDeriv j
   choose C hC0 hC using fun j ↦
-    exists_norm_shiftIntegrand_le (a := frequencyDeriv j a) (hb' j) (isCompact_singleton (x := x))
+    exists_norm_sharpIntegrand_le (a := frequencyDeriv j a) (hb' j) (isCompact_singleton (x := x))
+      (4 * π) ((n : ℝ) + 1)
   have hball : ∀ t ∈ Metric.ball t₀ 1, |t * (2 * π)| ≤ 4 * π := fun t ht ↦ by
     rw [Metric.mem_ball, Real.dist_eq] at ht
     have := abs_sub_abs_le_abs_sub t t₀
     exact abs_mul_two_pi_le (by linarith)
   set F' : ℝ → CoordinateSpace n → V →L[ℂ] U := fun t η ↦
-    ∑ j, (-Complex.I) • shiftIntegrand (frequencyDeriv j a) (spatialDeriv j b) (t * (2 * π)) x ξ η
+    ∑ j, (-Complex.I) •
+      sharpIntegrand (frequencyDeriv j a) (spatialDeriv j b) (t * (2 * π)) (x, ξ) η
   set bound : CoordinateSpace n → ℝ := fun η ↦
     ∑ j, C j * (1 + ‖ξ‖ ^ 2) ^ ((m' - 1 + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)
   have hint (j : Fin n) : Integrable fun η ↦ (-Complex.I) •
-      shiftIntegrand (frequencyDeriv j a) (spatialDeriv j b) (t₀ * (2 * π)) x ξ η :=
-    (integrable_shiftIntegrand (hb' j) (abs_mul_two_pi_le (by linarith)) x ξ).fun_smul _
+      sharpIntegrand (frequencyDeriv j a) (spatialDeriv j b) (t₀ * (2 * π)) (x, ξ) η :=
+    (integrable_sharpIntegrand (hb' j) _ (x, ξ)).fun_smul _
   have hbound : ∀ᵐ η ∂(volume : Measure (CoordinateSpace n)), ∀ t ∈ Metric.ball t₀ 1,
       ‖F' t η‖ ≤ bound η := .of_forall fun η t ht ↦ by
     refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
@@ -351,20 +274,21 @@ private theorem hasDerivAt_scaledSharp (hb : b.HasCompactSpatialSupport) {t₀ :
     exact hC j _ (hball t ht) x rfl ξ η
   have hbound_int : Integrable bound :=
     integrable_finsetSum _ fun j _ ↦ (integrable_rpow_neg_one_add_norm_sq (by simp)).const_mul _
-  have hc (j : Fin n) := continuous_shiftIntegrand (a := frequencyDeriv j a) (hb' j)
-    (t₀ * (2 * π)) x ξ
+  have hc (j : Fin n) : Continuous fun η ↦
+      sharpIntegrand (frequencyDeriv j a) (spatialDeriv j b) (t₀ * (2 * π)) (x, ξ) η :=
+    (continuous_sharpIntegrand (hb' j) _).comp (continuous_const.prodMk continuous_id)
   have hF'meas : AEStronglyMeasurable (F' t₀) := by
     refine Continuous.aestronglyMeasurable ?_
     simp only [F']
     fun_prop
   have hderiv : ∀ᵐ η ∂(volume : Measure (CoordinateSpace n)), ∀ t ∈ Metric.ball t₀ 1,
-      HasDerivAt (fun t ↦ shiftIntegrand a b (t * (2 * π)) x ξ η) (F' t η) t :=
-    .of_forall fun η t _ ↦ hasDerivAt_shiftIntegrand hb t x ξ η
+      HasDerivAt (fun t ↦ sharpIntegrand a b (t * (2 * π)) (x, ξ) η) (F' t η) t :=
+    .of_forall fun η t _ ↦ hasDerivAt_sharpIntegrand hb t x ξ η
   obtain ⟨-, h⟩ := hasDerivAt_integral_of_dominated_loc_of_deriv_le
-    (F := fun t η ↦ shiftIntegrand a b (t * (2 * π)) x ξ η) (F' := F')
+    (F := fun t η ↦ sharpIntegrand a b (t * (2 * π)) (x, ξ) η) (F' := F')
     (Metric.ball_mem_nhds t₀ one_pos)
-    (.of_forall fun t ↦ (continuous_shiftIntegrand hb _ x ξ).aestronglyMeasurable)
-    (integrable_shiftIntegrand hb (abs_mul_two_pi_le (by linarith)) x ξ)
+    (.of_forall fun t ↦ (integrable_sharpIntegrand hb _ (x, ξ)).aestronglyMeasurable)
+    (integrable_sharpIntegrand hb _ (x, ξ))
     hF'meas hbound hbound_int hderiv
   refine h.congr_deriv ?_
   simp only [F', integral_finsetSum _ fun j _ ↦ hint j, integral_smul, Finset.smul_sum,
@@ -390,12 +314,12 @@ private theorem scaledSharp_zero (hb : b.HasCompactSpatialSupport) (x ξ : Coord
   set L : (V →L[ℂ] W) →L[ℂ] V →L[ℂ] U :=
     ContinuousLinearMap.compL ℂ V W U (a.coefficient (x, ξ))
   calc scaledSharp a b 0 x ξ = ∫ η, L ((𝐞 ⟪η, x⟫ : ℂ) • 𝓕 f η) := by
-        simp only [scaledSharp, shiftIntegrand, zero_mul, zero_smul, add_zero, L,
+        simp only [scaledSharp, sharpIntegrand_apply, zero_mul, zero_smul, add_zero, L,
           ContinuousLinearMap.compL_apply, ContinuousLinearMap.comp_smul, f]
     _ = L (𝓕⁻ (𝓕 f) x) := by
         rw [L.integral_comp_comm hint', Real.fourierInv_eq]
         simp only [Circle.smul_def]
-    _ = _ := by rw [hinv]; rfl
+    _ = _ := by rw [hinv, ContinuousLinearMap.compL_apply]
 
 end Scaled
 
@@ -532,57 +456,22 @@ variable [CompleteSpace W] [CompleteSpace U]
 /-- The symbol estimates of order `m' + m - N` for the remainder: every mixed derivative of the
 remainder for `a` and `b` is a sum of remainders for derivatives of `a` and `b`, and a frequency
 derivative lowers the order of one of them by one. -/
-private theorem exists_bound_remainderSymbol (N D : ℕ) :
-    ∀ {m m' : ℝ} {a : Symbol n W U m'} {b : Symbol n V W m} (hb : b.HasCompactSpatialSupport)
-      (α β : List (Fin n)), α.length + β.length = D → ∀ {K : Set (CoordinateSpace n)},
-        IsCompact K → ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
-          ‖mixedDeriv α β (remainderSymbol a b hb N).coefficient x ξ‖ ≤
-            C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - N - β.length) / 2) := by
-  induction D with
-  | zero =>
-    intro m m' a b hb α β hD K hK
-    obtain ⟨rfl, rfl⟩ : α = [] ∧ β = [] := by
-      simpa [List.length_eq_zero_iff] using hD
-    obtain ⟨C, hC0, hC⟩ := exists_norm_remainderAt_le N (a := a) hb hK
+private theorem exists_bound_remainderSymbol (N : ℕ) (hb : b.HasCompactSpatialSupport)
+    (α β : List (Fin n)) {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (remainderSymbol a b hb N).coefficient x ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - N - β.length) / 2) := by
+  refine exists_norm_mixedDeriv_le_of_leibniz N
+    (fun a b hb ↦ (remainderSymbol a b hb N).coefficient)
+    (fun a b hb ↦ (remainderSymbol a b hb N).contDiff_coefficient)
+    (fun a b hb j x ξ ↦ ?_) (fun a b hb j x ξ ↦ ?_) (fun a b hb K hK ↦ ?_) a b hb α β hK
+  · rw [← coefficient_spatialDeriv, spatialDeriv_remainderSymbol, coefficient_add, Pi.add_apply]
+  · rw [← coefficient_frequencyDeriv]
+    exact coefficient_frequencyDeriv_remainderSymbol hb N j (x, ξ)
+  · obtain ⟨C, hC0, hC⟩ := exists_norm_remainderAt_le N (a := a) hb hK
     refine ⟨C, hC0, fun x hx ξ ↦ ?_⟩
-    simpa [coefficient_remainderSymbol] using hC 1 ⟨zero_le_one, le_rfl⟩ x hx ξ
-  | succ D ih =>
-    intro m m' a b hb α β hD K hK
-    rcases List.eq_nil_or_concat' β with rfl | ⟨β', j, rfl⟩
-    · rcases List.eq_nil_or_concat' α with rfl | ⟨α', j, rfl⟩
-      · simp at hD
-      · have hlen : α'.length + ([] : List (Fin n)).length = D := by
-          simp only [List.length_append, List.length_singleton, List.length_nil] at hD ⊢
-          omega
-        obtain ⟨C₁, hC₁0, hC₁⟩ := ih (a := spatialDeriv j a) hb α' [] hlen hK
-        obtain ⟨C₂, hC₂0, hC₂⟩ := ih (a := a) (hb.spatialDeriv j) α' [] hlen hK
-        refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
-        rw [← mixedDeriv_spatialDeriv, spatialDeriv_remainderSymbol, coefficient_add]
-        exact norm_mixedDeriv_add_le (remainderSymbol _ _ _ _).contDiff_coefficient
-          (remainderSymbol _ _ _ _).contDiff_coefficient (hC₁ x hx ξ) (hC₂ x hx ξ)
-    · have hlen : α.length + β'.length = D := by
-        simp only [List.length_append, List.length_singleton] at hD
-        omega
-      obtain ⟨C₁, hC₁0, hC₁⟩ := ih (a := frequencyDeriv j a) hb α β' hlen hK
-      obtain ⟨C₂, hC₂0, hC₂⟩ := ih (a := a) (hb.frequencyDeriv j) α β' hlen hK
-      refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
-      have hfun : (frequencyDeriv j (remainderSymbol a b hb N)).coefficient =
-          (remainderSymbol (frequencyDeriv j a) b hb N).coefficient +
-            (remainderSymbol a (frequencyDeriv j b) (hb.frequencyDeriv j) N).coefficient :=
-        funext fun p ↦ coefficient_frequencyDeriv_remainderSymbol hb N j p
-      have e₁ : (m' - 1 + m - N - β'.length) / 2 = (m' + m - N - (β' ++ [j]).length) / 2 := by
-        simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
-        ring
-      have e₂ : (m' + (m - 1) - N - β'.length) / 2 = (m' + m - N - (β' ++ [j]).length) / 2 := by
-        simp only [List.length_append, List.length_singleton, Nat.cast_add, Nat.cast_one]
-        ring
-      have h₁ := hC₁ x hx ξ
-      have h₂ := hC₂ x hx ξ
-      rw [e₁] at h₁
-      rw [e₂] at h₂
-      rw [← mixedDeriv_frequencyDeriv, hfun]
-      exact norm_mixedDeriv_add_le (remainderSymbol _ _ _ _).contDiff_coefficient
-        (remainderSymbol _ _ _ _).contDiff_coefficient h₁ h₂
+    rw [coefficient_remainderSymbol]
+    exact hC 1 ⟨zero_le_one, le_rfl⟩ x hx ξ
 
 variable (a b) in
 /-- The remainder `a # b - ∑_{k < N} sharpTerm a b k` of the composition expansion after `N`
@@ -590,7 +479,7 @@ terms, a symbol of order `m' + m - N` (`sharp_eq_sum_sharpTerm_add_sharpRemainde
 def sharpRemainder (hb : b.HasCompactSpatialSupport) (N : ℕ) : Symbol n V U (m' + m - N) where
   coefficient := (remainderSymbol a b hb N).coefficient
   contDiff_coefficient := (remainderSymbol a b hb N).contDiff_coefficient
-  exists_bound _ hK α β := exists_bound_remainderSymbol N _ (a := a) hb α β rfl hK
+  exists_bound _ hK α β := exists_bound_remainderSymbol N hb α β hK
 
 @[simp]
 theorem coefficient_sharpRemainder (hb : b.HasCompactSpatialSupport) (N : ℕ) :
