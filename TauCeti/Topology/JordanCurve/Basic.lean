@@ -11,6 +11,7 @@ public import Mathlib.Topology.Homeomorph.Lemmas
 public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Topology.LocallyConnected
 import Mathlib.Analysis.Convex.GaugeRescale
+import TauCeti.Topology.Homeomorph.CompactQuotient
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
 
 /-!
@@ -48,9 +49,9 @@ transporting the property back to a compact set from an image already known to b
   `TauCeti.IsJordanCurve.nonempty` and `TauCeti.IsJordanCurve.not_subsingleton` — a Jordan curve is
   a nonempty compact path-connected set with more than one point.
 * `TauCeti.IsJordanCurve.image` and `TauCeti.IsJordanCurve.of_image` — being a Jordan curve
-  transfers in both directions along a map that is continuous and injective on the set, provided
-  the codomain is Hausdorff (and, in the direction that transports the property back from the
-  image, the source set is known to be compact).
+  transfers in both directions along a map that is continuous and injective on the set. Carrying a
+  Jordan curve forward (`image`) requires a Hausdorff codomain; carrying the property back from the
+  image (`of_image`) requires a compact source set but no separation axiom on the ambient space.
 * `TauCeti.IsJordanCurve.image_homeomorph` and `TauCeti.isJordanCurve_image_homeomorph_iff` — being
   a Jordan curve is invariant under a homeomorphism of the ambient spaces; no separation axiom is
   needed.
@@ -109,15 +110,6 @@ def IsJordanCurve (C : Set X) : Prop := Nonempty (C ≃ₜ Circle)
 /-- A set is a Jordan curve exactly when it is homeomorphic to the circle. This is the interface
 to `TauCeti.IsJordanCurve` outside its defining module. -/
 theorem isJordanCurve_iff : IsJordanCurve C ↔ Nonempty (C ≃ₜ Circle) := Iff.rfl
-
-/-- A continuous injection defined on a compact set is a homeomorphism onto its image, when the
-image is Hausdorff. This is the set-level form of `Continuous.homeoOfEquivCompactToT2`, and the
-engine of both transfer lemmas below. -/
-private noncomputable def imageHomeomorphOfIsCompact (hC : IsCompact C) {g : X → Y}
-    (hg : ContinuousOn g C) (hgi : InjOn g C) [T2Space (g '' C)] : C ≃ₜ g '' C :=
-  haveI : CompactSpace C := isCompact_iff_compactSpace.mp hC
-  Continuous.homeoOfEquivCompactToT2 (f := hgi.bijOn_image.equiv g)
-    (hg.mapsToRestrict hgi.bijOn_image.mapsTo)
 
 /-- A Jordan curve is compact: the circle is. -/
 theorem IsJordanCurve.isCompact (h : IsJordanCurve C) : IsCompact C := by
