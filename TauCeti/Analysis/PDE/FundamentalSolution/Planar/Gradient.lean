@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Basic
+import Mathlib.Analysis.Calculus.Deriv.Add
 public import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # Gradient of the planar Newtonian kernel
