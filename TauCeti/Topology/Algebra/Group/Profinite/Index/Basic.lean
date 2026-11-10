@@ -190,15 +190,10 @@ theorem _root_.OpenSubgroup.profiniteIndex_eq_ofNat_index (U : OpenSubgroup G) :
       Supernatural.ofNat
         (⟨U.toSubgroup.index,
           Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+) := by
-  rw [Subgroup.profiniteIndex_eq_iSup_openSubgroup]
-  apply le_antisymm
-  · refine iSup_le fun V ↦ ?_
-    exact Supernatural.ofNat_le_ofNat_iff.mpr <|
-      PNat.dvd_iff.mpr (Subgroup.index_dvd_of_le V.2)
-  · exact le_iSup (fun V : {V : OpenSubgroup G // U.toSubgroup ≤ V.toSubgroup} ↦
-      Supernatural.ofNat
-        (⟨V.1.toSubgroup.index,
-          Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ : ℕ+)) ⟨U, le_rfl⟩
+  ext ℓ
+  rw [U.profiniteIndex_apply_eq_padicValNat Subgroup.index_ne_zero_of_finite]
+  exact (Supernatural.ofNat_apply
+    ⟨U.toSubgroup.index, Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ ℓ).symm
 
 omit [CompactSpace G] in
 /-- **An open subgroup of prime-power index has that supernatural prime power as its index.**
