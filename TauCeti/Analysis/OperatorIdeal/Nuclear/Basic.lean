@@ -23,7 +23,7 @@ laws needed to construct the trace-class operator ideal.
 
 The gauge is lower semicontinuous in operator norm. Finite gauge forces approximation
 numbers to tend to zero. Over a locally compact scalar field this implies compactness
-when the target is complete, and the identity on an infinite-dimensional Banach space
+when the target is complete, and the identity on an infinite-dimensional normed space
 has infinite gauge.
 Finite-rank operators have finite gauge, computed by any prefix beyond their rank.
 
@@ -174,15 +174,31 @@ end Compact
 
 section Identity
 
-variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
-  [LocallyCompactSpace 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
-/-- The identity on an infinite-dimensional Banach space has infinite nuclear gauge. -/
+/-- The identity on an infinite-dimensional normed space has infinite nuclear gauge. -/
 theorem nuclearENorm_id_eq_top (hE : ¬ FiniteDimensional 𝕜 E) :
     (ContinuousLinearMap.id 𝕜 E).nuclearENorm = ∞ := by
   by_contra h
-  exact hE (FiniteDimensional.of_isCompactOperator_id
-    ((ContinuousLinearMap.id 𝕜 E).isCompactOperator_of_nuclearENorm_ne_top h))
+  have hs := (nuclearENorm_ne_top_iff_summable _).1 h
+  obtain ⟨n, hn⟩ := ((NNReal.tendsto_atTop_zero_of_summable hs).eventually
+    (gt_mem_nhds one_pos)).exists
+  obtain ⟨R, hR, hlt⟩ := exists_rank_le_nnnorm_sub_lt hn
+  have hfin : Module.Finite 𝕜 (LinearMap.range (R : E →ₗ[𝕜] E)) := by
+    rw [← Module.rank_lt_aleph0_iff]
+    exact lt_of_le_of_lt hR Cardinal.natCast_lt_aleph0
+  obtain ⟨x, hx0, hRx⟩ : ∃ x : E, x ≠ 0 ∧ R x = 0 := by
+    by_contra hne
+    push Not at hne
+    have hinj : Function.Injective (R : E →ₗ[𝕜] E).rangeRestrict :=
+      (LinearMap.injective_rangeRestrict_iff _).2 ((injective_iff_map_eq_zero R).2 fun x hx ↦
+        by_contra fun hx0 ↦ hne x hx0 hx)
+    exact hE (Module.Finite.of_injective _ hinj)
+  have hx : 0 < ‖x‖ := norm_pos_iff.2 hx0
+  have h1 : ‖ContinuousLinearMap.id 𝕜 E - R‖ < 1 := by exact_mod_cast hlt
+  have h2 := (ContinuousLinearMap.id 𝕜 E - R).le_opNorm x
+  simp only [sub_apply, id_apply, hRx, sub_zero] at h2
+  nlinarith
 
 end Identity
 
