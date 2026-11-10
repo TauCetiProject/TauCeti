@@ -274,7 +274,7 @@ theorem conjugateGalEquiv_abelianizationCongr_one :
           (MulEquiv.cast (M := fun K : NormalLayer G ↦ K.Gal)
             L.conjugate_one).abelianizationCongr =
         MulEquiv.refl (Group.Abelianization L.Gal) := by
-    rw [abelianizationCongr_trans, L.conjugateGalEquiv_one, abelianizationCongr_refl]
+    rw [Group.abelianizationCongr_trans, L.conjugateGalEquiv_one, Group.abelianizationCongr_refl]
   simpa only [AddEquiv.trans_apply,
     MulEquiv.toAdditive_apply_apply, MonoidHom.toAdditive_apply_apply,
     MulEquiv.coe_toMonoidHom, MulEquiv.trans_apply, MulEquiv.refl_apply, AddEquiv.refl_apply,
@@ -298,7 +298,7 @@ theorem conjugateGalEquiv_abelianizationCongr_trans :
         (L.conjugateGalEquiv (g * h)).abelianizationCongr.trans
           (MulEquiv.cast (M := fun K : NormalLayer G ↦ K.Gal)
             (L.conjugate_conjugate g h).symm).abelianizationCongr := by
-    simpa only [abelianizationCongr_trans] using congrArg MulEquiv.abelianizationCongr
+    simpa only [Group.abelianizationCongr_trans] using congrArg MulEquiv.abelianizationCongr
       (L.conjugateGalEquiv_trans_conjugateGalEquiv g h)
   simpa only [AddEquiv.trans_apply,
     MulEquiv.toAdditive_apply_apply, MonoidHom.toAdditive_apply_apply,

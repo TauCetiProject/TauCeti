@@ -123,6 +123,7 @@ theorem isSuspension_suspensionTaylor (G : InternalGrading R A)
     rw [G.koszulTwist_apply_of_mem (hx i i.isLt), negOnePowCast_eq_intCast]
   rw [htwist, MultilinearMap.map_smul_univ, evalNat_suspend, evalNat_def, suspExp_def,
     negOnePowCast_sum, ← Fin.prod_univ_eq_prod_range (fun i ↦ negOnePowCast R _) n]
+  simp only [RingHom.id_apply]
 
 /-- Two Taylor maps which suspend the same operations are equal.  Thus retaining both the
 suspended Taylor map and the unsuspended operations does not add unconstrained data. -/

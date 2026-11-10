@@ -51,7 +51,7 @@ variable {K : Type*} [Field K]
 
 /-- The conductor exponent of `θ` divides `n` exactly when `n` lies in the conductor of
 `ℤ[θ]`. -/
-theorem exponent_dvd_iff (θ : 𝓞 K) {n : ℕ} : exponent θ ∣ n ↔ (n : 𝓞 K) ∈ conductor ℤ θ := by
+theorem exponent_dvd_iff (θ : 𝓞 K) {n : ℕ} : NumberField.RingOfIntegers.exponent θ ∣ n ↔ (n : 𝓞 K) ∈ conductor ℤ θ := by
   rw [← Int.natCast_dvd_natCast, exponent, ← Int.cast_mem_ideal_iff, Int.cast_natCast]
 
 end RingOfIntegers
@@ -63,7 +63,7 @@ variable {K : Type*} [Field K] [NumberField K]
 -- The comparison of the index with the conductor exponent follows the human-authored
 -- specification `TauCetiRoadmap/NumberFieldArithmetic/Suggested.lean`, Layers 3.4–3.5.
 /-- The conductor exponent of `θ` divides the index `[𝓞 K : ℤ[θ]]`. -/
-theorem exponent_dvd_index (θ : IntegralPrimitiveElement K) : exponent θ.1 ∣ θ.index := by
+theorem exponent_dvd_index (θ : IntegralPrimitiveElement K) : NumberField.RingOfIntegers.exponent θ.1 ∣ θ.index := by
   rw [exponent_dvd_iff, mem_conductor_iff]
   intro b
   rw [← adjoin_def, ← nsmul_mkQ_eq_zero_iff, index_def]
@@ -71,7 +71,7 @@ theorem exponent_dvd_index (θ : IntegralPrimitiveElement K) : exponent θ.1 ∣
 
 /-- A prime dividing the index `[𝓞 K : ℤ[θ]]` divides the conductor exponent of `θ`. -/
 theorem dvd_exponent_of_dvd_index (θ : IntegralPrimitiveElement K) {p : ℕ} [Fact p.Prime]
-    (hp : p ∣ θ.index) : p ∣ exponent θ.1 := by
+    (hp : p ∣ θ.index) : p ∣ NumberField.RingOfIntegers.exponent θ.1 := by
   classical
   have : Fintype θ.Quotient := Fintype.ofFinite _
   rw [index_def, Nat.card_eq_fintype_card] at hp
@@ -87,7 +87,7 @@ theorem dvd_exponent_of_dvd_index (θ : IntegralPrimitiveElement K) {p : ℕ} [F
 /-- **Index and exponent have the same prime divisors.** A prime divides the index
 `[𝓞 K : ℤ[θ]]` exactly when it divides the conductor exponent of `θ`. -/
 theorem dvd_index_iff_dvd_exponent (θ : IntegralPrimitiveElement K) {p : ℕ} [Fact p.Prime] :
-    p ∣ θ.index ↔ p ∣ exponent θ.1 :=
+    p ∣ θ.index ↔ p ∣ NumberField.RingOfIntegers.exponent θ.1 :=
   ⟨θ.dvd_exponent_of_dvd_index, fun h => h.trans θ.exponent_dvd_index⟩
 
 /-- The prime case of `not_dvd_index_of_conductor_sup_span_eq_top`. -/
@@ -101,13 +101,13 @@ private theorem not_dvd_index_of_conductor_sup_span_eq_top_of_prime
   obtain ⟨a, rfl⟩ := Ideal.mem_span_singleton'.mp hm
   -- `e' = c e' + a · exponent θ` lies in the conductor, so the exponent divides `e'`.
   have hmem : (e' : 𝓞 K) ∈ conductor ℤ θ.1 := by
-    have : (e' : 𝓞 K) = c * e' + a * (exponent θ.1 : 𝓞 K) := by
+    have : (e' : 𝓞 K) = c * e' + a * (NumberField.RingOfIntegers.exponent θ.1 : 𝓞 K) := by
       rw [he', Nat.cast_mul]
       linear_combination -(e' : 𝓞 K) * hcm
     rw [this]
     exact (conductor ℤ θ.1).add_mem ((conductor ℤ θ.1).mul_mem_right _ hc)
       ((conductor ℤ θ.1).mul_mem_left _ ((exponent_dvd_iff θ.1).mp dvd_rfl))
-  have hdvd : exponent θ.1 ∣ e' := (exponent_dvd_iff θ.1).mpr hmem
+  have hdvd : NumberField.RingOfIntegers.exponent θ.1 ∣ e' := (exponent_dvd_iff θ.1).mpr hmem
   have he0 : e' ≠ 0 := by
     rintro rfl
     rw [mul_zero] at he'
@@ -130,7 +130,7 @@ theorem not_dvd_index_of_conductor_sup_span_eq_top (θ : IntegralPrimitiveElemen
 /-- **The checkable Kummer–Dedekind hypothesis.** A natural number not dividing the discriminant
 of `minpoly ℤ θ` does not divide the conductor exponent of `θ`. -/
 theorem not_dvd_exponent_of_not_dvd_discr_minpoly (θ : IntegralPrimitiveElement K) {p : ℕ}
-    (hp : ¬ (p : ℤ) ∣ (minpoly ℤ θ.1).discr) : ¬ p ∣ exponent θ.1 := by
+    (hp : ¬ (p : ℤ) ∣ (minpoly ℤ θ.1).discr) : ¬ p ∣ NumberField.RingOfIntegers.exponent θ.1 := by
   intro h
   apply hp
   rw [θ.discr_minpoly_eq_index_sq_mul_discr]
