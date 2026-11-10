@@ -71,8 +71,6 @@ structure ImmersedLieSubgroupData
     {G : Type w} [TopologicalSpace G] [ChartedSpace H G] [Group G]
     [LieGroup I ∞ G]
     (K : Subgroup G) where
-  /-- The smooth manifold structure on the ambient group. -/
-  [ambientIsManifold : IsManifold I ∞ G]
   /-- The connected Lie group which parametrizes the immersed subgroup. -/
   X : Type w
   /-- The group structure on the source. -/
@@ -95,9 +93,8 @@ structure ImmersedLieSubgroupData
   I' : ModelWithCorners ℝ E' H'
   /-- The charted-space structure on the source. -/
   [chartedSpace : ChartedSpace H' X]
-  /-- The smooth manifold structure on the source. -/
-  [isManifold : IsManifold I' ∞ X]
-  /-- The smooth Lie-group structure on the source. -/
+  /-- The smooth Lie-group structure on the source, which includes its smooth manifold
+  structure. -/
   [lieGroup : LieGroup I' ∞ X]
   /-- The source is connected. -/
   [connectedSpace : ConnectedSpace X]
@@ -121,8 +118,7 @@ variable {K L M : Subgroup G}
 attribute [local instance] ImmersedLieSubgroupData.group
   ImmersedLieSubgroupData.topologicalSpace ImmersedLieSubgroupData.normedAddCommGroup
   ImmersedLieSubgroupData.normedSpace ImmersedLieSubgroupData.modelTopology
-  ImmersedLieSubgroupData.chartedSpace ImmersedLieSubgroupData.isManifold
-  ImmersedLieSubgroupData.lieGroup
+  ImmersedLieSubgroupData.chartedSpace ImmersedLieSubgroupData.lieGroup
 
 /-- The homomorphism presenting an immersed Lie subgroup is smooth. -/
 theorem contMDiff_toHom (d : ImmersedLieSubgroupData I K) :
@@ -138,19 +134,16 @@ theorem injective_mfderiv_toHom (d : ImmersedLieSubgroupData I K) (x : d.X) :
 /-- The canonical algebraic factorization between presentations of included subgroups. -/
 noncomputable def homOfLe (d : ImmersedLieSubgroupData I K)
     (e : ImmersedLieSubgroupData I L) (h : K ≤ L) : d.X →* e.X :=
-  let hr : d.toHom.range ≤ e.toHom.range := by
-    rw [d.range_eq, e.range_eq]
-    exact h
   (MonoidHom.ofInjective e.injective).symm.toMonoidHom.comp
-    ((Subgroup.inclusion hr).comp d.toHom.rangeRestrict)
+    ((Subgroup.inclusion (d.range_eq.trans_le (h.trans e.range_eq.ge))).comp
+      d.toHom.rangeRestrict)
 
 /-- The canonical algebraic factorization commutes with the ambient injections. -/
 @[simp]
 theorem toHom_homOfLe_apply (d : ImmersedLieSubgroupData I K)
     (e : ImmersedLieSubgroupData I L) (h : K ≤ L) (x : d.X) :
     e.toHom (d.homOfLe e h x) = d.toHom x := by
-  simp only [homOfLe, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
-    MonoidHom.apply_ofInjective_symm, Subgroup.coe_inclusion, MonoidHom.coe_rangeRestrict]
+  simp [homOfLe]
 
 /-- The ambient commuting diagram determines an algebraic factorization uniquely. -/
 theorem eq_homOfLe (d : ImmersedLieSubgroupData I K)
@@ -164,19 +157,14 @@ theorem eq_homOfLe (d : ImmersedLieSubgroupData I K)
 assumption is required for uniqueness. -/
 theorem existsUnique_monoidHom_of_le (d : ImmersedLieSubgroupData I K)
     (e : ImmersedLieSubgroupData I L) (h : K ≤ L) :
-    ∃! φ : d.X →* e.X, ∀ x, e.toHom (φ x) = d.toHom x := by
-  refine ⟨d.homOfLe e h, d.toHom_homOfLe_apply e h, ?_⟩
-  intro φ hφ
-  exact d.eq_homOfLe e h φ hφ
+    ∃! φ : d.X →* e.X, ∀ x, e.toHom (φ x) = d.toHom x :=
+  ⟨d.homOfLe e h, d.toHom_homOfLe_apply e h, d.eq_homOfLe e h⟩
 
 /-- Factoring a presentation through itself gives the identity homomorphism. -/
 @[simp]
 theorem homOfLe_refl (d : ImmersedLieSubgroupData I K) :
-    d.homOfLe d le_rfl = MonoidHom.id d.X := by
-  symm
-  apply d.eq_homOfLe d le_rfl
-  intro x
-  rfl
+    d.homOfLe d le_rfl = MonoidHom.id d.X :=
+  (d.eq_homOfLe d le_rfl _ fun _ ↦ rfl).symm
 
 /-- Canonical factorizations compose according to subgroup inclusion. -/
 @[simp]
@@ -184,30 +172,23 @@ theorem homOfLe_comp (d : ImmersedLieSubgroupData I K)
     (e : ImmersedLieSubgroupData I L) (f : ImmersedLieSubgroupData I M)
     (hKL : K ≤ L) (hLM : L ≤ M) :
     (e.homOfLe f hLM).comp (d.homOfLe e hKL) = d.homOfLe f (hKL.trans hLM) := by
-  apply d.eq_homOfLe f (hKL.trans hLM)
-  intro x
-  simp only [MonoidHom.comp_apply, toHom_homOfLe_apply]
+  exact d.eq_homOfLe f (hKL.trans hLM) _ fun x ↦ by simp
 
 /-- Successive canonical factorizations evaluate as the factorization of the composed inclusion. -/
 @[simp]
 theorem homOfLe_homOfLe (d : ImmersedLieSubgroupData I K)
     (e : ImmersedLieSubgroupData I L) (f : ImmersedLieSubgroupData I M)
     (hKL : K ≤ L) (hLM : L ≤ M) (x : d.X) :
-    e.homOfLe f hLM (d.homOfLe e hKL x) = d.homOfLe f (hKL.trans hLM) x := by
-  simpa only [MonoidHom.comp_apply] using
-    DFunLike.congr_fun (d.homOfLe_comp e f hKL hLM) x
+    e.homOfLe f hLM (d.homOfLe e hKL x) = d.homOfLe f (hKL.trans hLM) x :=
+  DFunLike.congr_fun (d.homOfLe_comp e f hKL hLM) x
 
 /-- The canonical algebraic group equivalence between presentations of equal subgroups. -/
 noncomputable def mulEquivOfEq (d : ImmersedLieSubgroupData I K)
     (e : ImmersedLieSubgroupData I L) (h : K = L) : d.X ≃* e.X where
   toFun := d.homOfLe e h.le
   invFun := e.homOfLe d h.ge
-  left_inv x := by
-    apply d.injective
-    simp only [toHom_homOfLe_apply]
-  right_inv x := by
-    apply e.injective
-    simp only [toHom_homOfLe_apply]
+  left_inv x := d.injective (by simp)
+  right_inv x := e.injective (by simp)
   map_mul' := (d.homOfLe e h.le).map_mul
 
 /-- The canonical equivalence commutes with the ambient injections. -/
@@ -249,11 +230,8 @@ theorem mulEquivOfEq_symm (d : ImmersedLieSubgroupData I K)
 /-- The canonical equivalence of a presentation with itself is the identity. -/
 @[simp]
 theorem mulEquivOfEq_refl (d : ImmersedLieSubgroupData I K) :
-    d.mulEquivOfEq d rfl = MulEquiv.refl d.X := by
-  symm
-  apply d.eq_mulEquivOfEq d rfl
-  intro x
-  rfl
+    d.mulEquivOfEq d rfl = MulEquiv.refl d.X :=
+  (d.eq_mulEquivOfEq d rfl _ fun _ ↦ rfl).symm
 
 /-- Canonical equivalences compose according to equality of the underlying subgroups. -/
 @[simp]
@@ -261,9 +239,7 @@ theorem mulEquivOfEq_trans (d : ImmersedLieSubgroupData I K)
     (e : ImmersedLieSubgroupData I L) (f : ImmersedLieSubgroupData I M)
     (hKL : K = L) (hLM : L = M) :
     (d.mulEquivOfEq e hKL).trans (e.mulEquivOfEq f hLM) = d.mulEquivOfEq f (hKL.trans hLM) := by
-  apply d.eq_mulEquivOfEq f (hKL.trans hLM)
-  intro x
-  simp only [MulEquiv.trans_apply, toHom_mulEquivOfEq_apply]
+  exact d.eq_mulEquivOfEq f (hKL.trans hLM) _ fun x ↦ by simp
 
 /-- Successive canonical equivalences evaluate as the equivalence of the transitive equality. -/
 @[simp]
@@ -271,9 +247,8 @@ theorem mulEquivOfEq_mulEquivOfEq (d : ImmersedLieSubgroupData I K)
     (e : ImmersedLieSubgroupData I L) (f : ImmersedLieSubgroupData I M)
     (hKL : K = L) (hLM : L = M) (x : d.X) :
     e.mulEquivOfEq f hLM (d.mulEquivOfEq e hKL x) =
-      d.mulEquivOfEq f (hKL.trans hLM) x := by
-  simpa only [MulEquiv.trans_apply] using
-    DFunLike.congr_fun (d.mulEquivOfEq_trans e f hKL hLM) x
+      d.mulEquivOfEq f (hKL.trans hLM) x :=
+  DFunLike.congr_fun (d.mulEquivOfEq_trans e f hKL hLM) x
 
 end ImmersedLieSubgroupData
 
@@ -296,14 +271,12 @@ theorem ImmersedLieSubgroupData.isImmersedLieSubgroup {K : Subgroup G}
 /-- A connected Lie group is an immersed Lie subgroup of itself via the identity homomorphism. -/
 @[simp 1100]
 theorem isImmersedLieSubgroup_top [FiniteDimensional ℝ E] [ConnectedSpace G] :
-    IsImmersedLieSubgroup (I := I) (⊤ : Subgroup G) := by
-  exact ⟨{
-    ambientIsManifold := IsManifold.mk' I ∞ G
+    IsImmersedLieSubgroup (I := I) (⊤ : Subgroup G) :=
+  ⟨{
     X := G
     E' := E
     H' := H
     I' := I
-    isManifold := IsManifold.mk' I ∞ G
     toHom := MonoidHom.id G
     injective := Function.injective_id
     range_eq := MonoidHom.range_eq_top.mpr Function.surjective_id
