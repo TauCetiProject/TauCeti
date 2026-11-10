@@ -30,7 +30,8 @@ Their finiteness hypotheses on arrows are found by instance search: `Decidable (
 
 * `Digraph.exists_paths_vertexSeparator_card_eq`: local vertex Menger for nonadjacent terminals.
 * `Digraph.exists_paths_vertexSeparator_sum_eq`: its vertex-capacitated version.
-* `Digraph.forall_reachableAvoiding_iff_exists_paths`: its threshold form.
+* `Digraph.forall_reachableAvoiding_iff_exists_paths`: its threshold form, which holds for
+  arbitrary `s` and `t`.
 
 ## References
 

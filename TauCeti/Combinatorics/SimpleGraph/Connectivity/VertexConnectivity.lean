@@ -27,8 +27,9 @@ which `G` is vertex-connected; it is `0` on the empty vertex type and finite on 
 Adjacent vertices are `k`-vertex-reachable for every `k`, since no deletion of other vertices can
 separate them. Vertex reachability is therefore not transitive, and for adjacent vertices it
 says nothing beyond the single edge. On a finite vertex type, Menger's theorem identifies
-`k`-vertex-reachability of nonadjacent vertices with the existence of `k` paths pairwise sharing
-no vertex other than their ends. On a finite graph with more than `k` vertices,
+`k`-vertex-reachability of any two vertices with the existence of `k` paths pairwise sharing
+no vertex other than their ends; both sides hold trivially for equal or adjacent vertices. On a
+finite graph with more than `k` vertices,
 `k`-vertex-connectivity is the existence of `k` such paths between every two distinct vertices,
 adjacent ones included.
 

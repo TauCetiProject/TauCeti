@@ -36,8 +36,8 @@ deleting vertices.
   included, against its capacity.
 
 Each form comes with weak duality, which needs no finiteness, and a witness form giving a path
-family and a separator of equal size. The local form for nonadjacent vertices and the set-to-set
-form also have predicate forms.
+family and a separator of equal size. The local form and the set-to-set form also have predicate
+forms; the predicate form of the local form holds for arbitrary vertices `s` and `t`.
 
 ## Main definitions
 
