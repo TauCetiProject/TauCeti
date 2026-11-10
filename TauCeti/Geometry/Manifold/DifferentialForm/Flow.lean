@@ -266,8 +266,8 @@ theorem mpullback_flowOf_apply_of_mextDeriv_interior_eq_zero {β : SmoothForm I 
   -- Cartan's formula: `L_Z β = d(ι_Z β) = 0`, a zero multiple of `β`.
   have hL : mlieDerivForm Z β.1 = fun y ↦ (fun _ : M ↦ (0 : ℝ)) y • β.1 y := by
     rw [SmoothForm.mlieDerivForm_eq_mextDeriv_interior (hZ.mdifferentiable two_ne_zero) hβ, hZβ]
-    simp only [zero_smul]
-    rfl
+    funext y
+    simp
   simpa only [intervalIntegral.integral_zero, Real.exp_zero, one_smul] using
     mpullback_flowOf_apply_eq_exp_integral_smul hZ continuous_const β.mdifferentiable hL hx
 

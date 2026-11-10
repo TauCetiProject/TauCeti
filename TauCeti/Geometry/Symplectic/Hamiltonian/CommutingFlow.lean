@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.Complete
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Hamiltonian flows are symplectic, and Poisson-commuting flows commute
@@ -162,13 +163,8 @@ theorem IsNondegenerate.apply_globalFlow_hamiltonianVectorField (h : σ.IsNondeg
     φ (globalFlow _ hv hc t x) = globalFlow _ hv hc t (φ x) := by
   -- Since `φ^* σ = σ` and `σ` is nondegenerate, every differential of `φ` is injective, hence
   -- surjective in finite dimension.
-  have hφd (y : M) : Surjective (mfderiv I I φ y) := by
-    have hinj : Injective (mfderiv I I φ y) :=
-      (injective_iff_map_eq_zero (mfderiv I I φ y)).2 fun u hu ↦
-        isNondegenerate_iff_separatingLeft.1 h y u fun w ↦ by
-          rw [← hφσ, SmoothForm.eval₂_mpullback φ hφ, hu, ← flat_apply, map_zero, zero_apply]
-    exact (LinearMap.injective_iff_surjective
-      (f := ((mfderiv I I φ y).toLinearMap : E →ₗ[ℝ] E))).1 hinj
+  have hφd (y : M) : Surjective (mfderiv I I φ y) :=
+    h.surjective_of_eval₂_map fun u v ↦ by rw [← SmoothForm.eval₂_mpullback φ hφ, hφσ]
   -- `t ↦ φ (ψₜ x)` is an integral curve of `X_g`, because `dφ (X_g) = X_{g ∘ φ} ∘ φ = X_g ∘ φ`.
   have hγ := isMIntegralCurve_iff_isMIntegralCurveOn.2
     (((isMIntegralCurve_globalFlow hv hc x).isMIntegralCurveOn Set.univ).map_of_mfderiv_eq
@@ -336,19 +332,8 @@ theorem mfderiv_flowOf_apply_hamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 
       (mem_flowDomain.1 hy)
   have hdg (v : TangentSpace I x) : mvfderiv I g (φ x) (D v) = mvfderiv I g x v := by
     rw [← mvfderiv_comp_apply x (hg (φ x)) hφ v, hgφ.mvfderiv_eq]
-  -- Since `σ` is nondegenerate, `D` is injective, hence surjective in finite dimension.
-  have hsurj : Function.Surjective D := by
-    have hinj : Function.Injective D :=
-      (injective_iff_map_eq_zero D).2 fun u hu ↦
-        isNondegenerate_iff_separatingLeft.1 hσ.isNondegenerate x u fun w ↦ by
-          rw [← hσφ, hu, ← flat_apply, map_zero, zero_apply]
-    exact (LinearMap.injective_iff_surjective (f := (D.toLinearMap : E →ₗ[ℝ] E))).1 hinj
-  -- Both sides pair with every `D u` to `dg(D u)`.
-  refine (hσ.isNondegenerate.isInvertible_flat (φ x)).injective
-    (ContinuousLinearMap.ext fun w ↦ ?_)
-  obtain ⟨u, rfl⟩ := hsurj w
-  rw [flat_apply, flat_apply, hσφ, hσ.isNondegenerate.eval₂_hamiltonianVectorField,
-    hσ.isNondegenerate.eval₂_hamiltonianVectorField, hdg]
+  exact hσ.isNondegenerate.map_hamiltonianVectorField_of_eval₂ hσ.isNondegenerate
+    (hσ.isNondegenerate.surjective_of_eval₂_map hσφ) hσφ hdg
 
 /-- **Poisson-commuting local Hamiltonian flows commute.** Let `σ` be symplectic, let `f` be a
 `C³` function and let `g` be a `C²` first integral of `f`, `{g, f} = 0`, and write `φ` and `ψ`
@@ -382,21 +367,10 @@ theorem flowOf_flowOf_comm (hf : ContMDiff I 𝓘(ℝ) 3 f) (hg : ContMDiff I �
       (isOpen_flowDomain hY).preimage (continuous_id.prodMk continuous_const)
     exact (continuousOn_const.prodMk
       (isMIntegralCurveOn_flowOf hY x).continuousOn).isOpen_inter_preimage hA (isOpen_flowDomain hX)
-  -- Hence some open interval `(a, b) ⊆ J` contains `[0, t] = [min 0 t, max 0 t]`.
-  have hmin : min 0 t ∈ Set.uIcc 0 t := ⟨le_rfl, min_le_max⟩
-  have hmax : max 0 t ∈ Set.uIcc 0 t := ⟨min_le_max, le_rfl⟩
-  obtain ⟨a, ha, haJ⟩ := exists_Ioc_subset_of_mem_nhds (hJ.mem_nhds (h _ hmin))
-    ⟨min 0 t - 1, by linarith⟩
-  obtain ⟨b, hb, hbJ⟩ := exists_Ico_subset_of_mem_nhds (hJ.mem_nhds (h _ hmax))
-    ⟨max 0 t + 1, by linarith⟩
-  have hab : Set.Ioo a b ⊆ J := fun u hu ↦ by
-    by_cases hu₁ : u ≤ min 0 t
-    · exact haJ ⟨hu.1, hu₁⟩
-    by_cases hu₂ : max 0 t ≤ u
-    · exact hbJ ⟨hu₂, hu.2⟩
-    exact h u ⟨(not_le.1 hu₁).le, (not_le.1 hu₂).le⟩
-  have h0 : (0 : ℝ) ∈ Set.Ioo a b := ⟨ha.trans_le (min_le_left _ _), (le_max_left _ _).trans_lt hb⟩
-  have ht : t ∈ Set.Ioo a b := ⟨ha.trans_le (min_le_right _ _), (le_max_right _ _).trans_lt hb⟩
+  -- Hence some open interval `(a, b) ⊆ J` contains `[0, t]`.
+  obtain ⟨a, b, hsub, hab⟩ := hJ.exists_Ioo_subset_of_uIcc_subset h
+  have h0 : (0 : ℝ) ∈ Set.Ioo a b := hsub Set.left_mem_uIcc
+  have ht : t ∈ Set.Ioo a b := hsub Set.right_mem_uIcc
   -- On `(a, b)`, the curve `u ↦ φₛ (ψᵤ x)` is an integral curve of `Y` starting at `φₛ x`,
   -- because the differential of `φₛ` carries `Y` to `Y`.
   have hγ : IsMIntegralCurveOn (flowOf X s ∘ fun u ↦ flowOf Y u x) Y (Set.Ioo a b) :=
