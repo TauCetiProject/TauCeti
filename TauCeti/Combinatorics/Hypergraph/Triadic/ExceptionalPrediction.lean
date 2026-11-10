@@ -208,12 +208,8 @@ theorem exceptional_route_prediction_mass_le {ε : ℝ}
     obtain ⟨φ⟩ := hne
     have hk : 0 < F.k := Nat.pos_of_ne_zero fun h ↦ hc2 (by simp [h])
     have hA := φ.vertexCell_mem ⟨0, hk⟩
-    have := PairSkeleton3.isPairColorRegular_iff.1 hreg ⟨0, Nat.pos_of_ne_zero hm⟩ _ hA _ hA _
-      le_rfl _ le_rfl
-      (by nlinarith [(Nat.cast_nonneg #(φ.vertexCell ⟨0, hk⟩) : (0 : ℝ) ≤ _)])
-      (by nlinarith [(Nat.cast_nonneg #(φ.vertexCell ⟨0, hk⟩) : (0 : ℝ) ≤ _)])
-    simp at this
-    linarith
+    have : Nonempty (Fin C.pairColorCount) := ⟨⟨0, Nat.pos_of_ne_zero hm⟩⟩
+    exact hε0.not_ge (hreg.isRegularPair hA hA).nonneg
   -- The error terms are nonnegative, and bounded by the corresponding terms for all routes.
   have hnn (φ : PatternPlacement3 C F) :
       0 ≤ (#{ψ : PairColorPlacement3 φ | ¬ψ.IsTopRegularRoute H η r} : ℝ) *
