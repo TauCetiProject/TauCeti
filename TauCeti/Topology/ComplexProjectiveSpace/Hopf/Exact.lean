@@ -20,8 +20,14 @@ import TauCeti.Topology.Homotopy.HomotopyGroup.Basic
 
 The Hopf fibration `S²ⁿ⁺¹ → CPⁿ`, `v ↦ [v]`, is a Serre fibration whose fibre over `[v]` is the
 unit circle, through `u ↦ u • v` (`TauCeti.ComplexProjectiveSpace.mk_mem_serreFibrations`,
-`TauCeti.ComplexProjectiveSpace.hopfFiberHomeomorph`). Since the circle is path connected and
-has no homotopy groups above degree one, its exact homotopy sequence gives:
+`TauCeti.ComplexProjectiveSpace.hopfFiberHomeomorph`). This file reads off its exact homotopy
+sequence, with the fibre replaced by the circle and the fibre inclusion by the orbit map
+`u ↦ u • v`:
+
+`⋯ → π_{k+1}(S²ⁿ⁺¹) → π_{k+1}(CPⁿ) → π_k(S¹) → π_k(S²ⁿ⁺¹) → π_k(CPⁿ) → ⋯`,
+
+with boundary map `TauCeti.ComplexProjectiveSpace.hopfBoundary`. Since the circle is path
+connected and has no homotopy groups above degree one, the sequence gives:
 
 * for `k ≥ 3`, the projection induces isomorphisms `π_k(S²ⁿ⁺¹) ≅ π_k(CPⁿ)`
   (`TauCeti.ComplexProjectiveSpace.hopfHomotopyGroupMulEquiv`);
@@ -40,6 +46,8 @@ are based at a unit vector `v` and at its class `[v]`; in the circle the base po
 ## Main definitions
 
 * `TauCeti.ComplexProjectiveSpace.hopfBoundary`: the boundary map `π_{k+1}(CPⁿ, [v]) → π_k(S¹, 1)`.
+* `TauCeti.ComplexProjectiveSpace.hopfBoundaryHom`: for `k ≥ 1`, the boundary map as a group
+  homomorphism.
 * `TauCeti.ComplexProjectiveSpace.hopfHomotopyGroupMulEquiv`: for `k ≥ 3`, the isomorphism
   `π_k(S²ⁿ⁺¹, v) ≃* π_k(CPⁿ, [v])` induced by the projection.
 * `TauCeti.ComplexProjectiveSpace.hopfBoundaryMulEquiv`: for `1 ≤ k < 2n`, the boundary map as an
@@ -47,6 +55,13 @@ are based at a unit vector `v` and at its class `[v]`; in the circle the base po
 
 ## Main results
 
+* `TauCeti.ComplexProjectiveSpace.hopfBoundary_apply`: the boundary map is the boundary map of the
+  Serre fibration `S²ⁿ⁺¹ → CPⁿ`, read in the circle.
+* `TauCeti.ComplexProjectiveSpace.mem_range_homotopyGroupMap_mk_iff`: exactness at
+  `π_{k+1}(CPⁿ)`.
+* `TauCeti.ComplexProjectiveSpace.mem_range_hopfBoundary_iff`: exactness at `π_k(S¹)`.
+* `TauCeti.ComplexProjectiveSpace.mem_range_homotopyGroupMap_smul_iff`: exactness at
+  `π_k(S²ⁿ⁺¹)`.
 * `TauCeti.ComplexProjectiveSpace.bijective_homotopyGroupMap_mk`: for `k ≥ 3`, the projection
   induces a bijection `π_k(S²ⁿ⁺¹, v) → π_k(CPⁿ, [v])`.
 * `TauCeti.ComplexProjectiveSpace.instSimplyConnectedSpace`: `CPⁿ` is simply connected.
@@ -165,6 +180,18 @@ private theorem fiberEquiv_mk_const :
     fiberEquiv v N ⟦GenLoop.const⟧ = (⟦GenLoop.const⟧ : HomotopyGroup N (sphere (0 : ℂ) 1) 1) :=
   congrArg _ (GenLoop.map_const _ _)
 
+/-- The inverse of `fiberEquiv` followed by the fibre inclusion is the map induced by the orbit map
+`u ↦ u • v`. -/
+private theorem map_fiberι_fiberEquiv_symm (c : HomotopyGroup N (sphere (0 : ℂ) 1) 1) :
+    HomotopyGroup.map ((hopfHom n).fiberι _).hom
+        (TopCat.Hom.fiberι_apply (hopfHom n) _ (fiberPoint v)) ((fiberEquiv v N).symm c) =
+      HomotopyGroup.map ⟨fun u : sphere (0 : ℂ) 1 ↦ u • v, continuous_id.smul continuous_const⟩
+        (one_smul _ v) c := by
+  rw [fiberEquiv, HomotopyGroup.homeomorphEquivOfEq_symm_apply, HomotopyGroup.map_comp_apply]
+  exact HomotopyGroup.map_congr
+    (ContinuousMap.ext fun u ↦ (TopCat.Hom.fiberι_apply (hopfHom n) _
+      (hopfFiberHomeomorph v u)).trans (coe_hopfFiberHomeomorph_apply v u)) _ _ c
+
 /-- The **boundary map** `π_{k+1}(CPⁿ, [v]) → π_k(S¹, 1)` of the Hopf fibration, where `k` is the
 cardinality of `N`. It is the boundary map of the Serre fibration `S²ⁿ⁺¹ → CPⁿ`
 (`TauCeti.TopCat.fibrationBoundary`), read in the circle through the identification
@@ -175,6 +202,25 @@ def hopfBoundary (N : Type*) [Finite N] :
   fiberEquiv v N ∘ TopCat.fibrationBoundary (mk_mem_serreFibrations n) (fiberPoint v)
 
 variable [Finite N]
+
+/-- The boundary map of the Hopf fibration is the boundary map of the Serre fibration
+`S²ⁿ⁺¹ → CPⁿ`, read in the circle through the identification
+`TauCeti.ComplexProjectiveSpace.hopfFiberHomeomorph` of the circle with the fibre. -/
+theorem hopfBoundary_apply (a : HomotopyGroup (Option N) (ComplexProjectiveSpace n) (mk n v)) :
+    hopfBoundary v N a =
+      HomotopyGroup.homeomorphEquivOfEq (hopfFiberHomeomorph v).symm
+        ((hopfFiberHomeomorph v).symm_apply_eq.2 (hopfFiberHomeomorph_one v).symm)
+        (TopCat.fibrationBoundary (mk_mem_serreFibrations n) ⟨v, rfl⟩ a) :=
+  (rfl)
+
+/-- The boundary map of the Hopf fibration sends the class of the constant loop to the class of
+the constant loop. -/
+@[simp]
+theorem hopfBoundary_const :
+    hopfBoundary v N
+        (⟦GenLoop.const⟧ : HomotopyGroup (Option N) (ComplexProjectiveSpace n) (mk n v)) =
+      ⟦GenLoop.const⟧ :=
+  (congrArg (fiberEquiv v N) (TopCat.fibrationBoundary_const _)).trans (fiberEquiv_mk_const v)
 
 /-- For `k ≥ 1`, the boundary map of the Hopf fibration is multiplicative. -/
 theorem hopfBoundary_mul [DecidableEq N] [Nonempty N]
@@ -187,6 +233,39 @@ theorem hopfBoundary_mul [DecidableEq N] [Nonempty N]
   erw [TopCat.fibrationBoundary_mul]
   exact HomotopyGroup.map_mul _ _ _ _
 
+/-- For `k ≥ 1`, the boundary map `π_{k+1}(CPⁿ, [v]) → π_k(S¹, 1)` of the Hopf fibration as a group
+homomorphism. -/
+def hopfBoundaryHom (N : Type*) [Finite N] [DecidableEq N] [Nonempty N] :
+    HomotopyGroup (Option N) (ComplexProjectiveSpace n) (mk n v) →*
+      HomotopyGroup N (sphere (0 : ℂ) 1) 1 :=
+  MonoidHom.mk' (hopfBoundary v N) (hopfBoundary_mul v)
+
+@[simp]
+theorem coe_hopfBoundaryHom [DecidableEq N] [Nonempty N] :
+    ⇑(hopfBoundaryHom v N) = hopfBoundary v N :=
+  (rfl)
+
+/-- For `k ≥ 1`, the boundary map of the Hopf fibration sends the identity to the identity. -/
+@[simp]
+theorem hopfBoundary_one [DecidableEq N] [Nonempty N] : hopfBoundary v N 1 = 1 :=
+  map_one (hopfBoundaryHom v N)
+
+/-- For `k ≥ 1`, the boundary map of the Hopf fibration commutes with powers. -/
+@[simp]
+theorem hopfBoundary_pow [DecidableEq N] [Nonempty N]
+    (a : HomotopyGroup (Option N) (ComplexProjectiveSpace n) (mk n v)) (k : ℕ) :
+    hopfBoundary v N (a ^ k) = hopfBoundary v N a ^ k :=
+  map_pow (hopfBoundaryHom v N) a k
+
+/-- For `k ≥ 1`, the boundary map of the Hopf fibration commutes with inverses. -/
+@[simp]
+theorem hopfBoundary_inv [DecidableEq N] [Nonempty N]
+    (a : HomotopyGroup (Option N) (ComplexProjectiveSpace n) (mk n v)) :
+    hopfBoundary v N a⁻¹ = (hopfBoundary v N a)⁻¹ :=
+  map_inv (hopfBoundaryHom v N) a
+
+/-! ### Exactness -/
+
 /-- **Exactness at `π_{k+1}(CPⁿ)`.** A class of `π_{k+1}(CPⁿ, [v])` comes from `S²ⁿ⁺¹` exactly
 when its boundary in `π_k(S¹)` is trivial. -/
 theorem mem_range_homotopyGroupMap_mk_iff
@@ -195,6 +274,33 @@ theorem mem_range_homotopyGroupMap_mk_iff
       hopfBoundary v N a = (⟦GenLoop.const⟧ : HomotopyGroup N (sphere (0 : ℂ) 1) 1) :=
   (TopCat.mem_range_homotopyGroupMap_iff_fibrationBoundary_eq _).trans
     ((fiberEquiv v N).injective.eq_iff' (fiberEquiv_mk_const v)).symm
+
+/-- **Exactness at `π_k(S¹)`.** A class of `π_k(S¹, 1)` is a boundary exactly when it becomes
+trivial in `π_k(S²ⁿ⁺¹, v)` under the orbit map `u ↦ u • v`. -/
+theorem mem_range_hopfBoundary_iff {c : HomotopyGroup N (sphere (0 : ℂ) 1) 1} :
+    c ∈ range (hopfBoundary v N) ↔
+      HomotopyGroup.map ⟨fun u : sphere (0 : ℂ) 1 ↦ u • v, continuous_id.smul continuous_const⟩
+          (one_smul _ v) c =
+        (⟦GenLoop.const⟧ : HomotopyGroup N (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) v) := by
+  rw [hopfBoundary, range_comp, mem_image_equiv, ← map_fiberι_fiberEquiv_symm]
+  exact TopCat.mem_range_fibrationBoundary_iff _
+
+/-- **Exactness at `π_k(S²ⁿ⁺¹)`.** A class of `π_k(S²ⁿ⁺¹, v)` comes from the circle under the orbit
+map `u ↦ u • v` exactly when it becomes trivial in `π_k(CPⁿ, [v])`. -/
+theorem mem_range_homotopyGroupMap_smul_iff
+    {d : HomotopyGroup N (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) v} :
+    d ∈ range (HomotopyGroup.map (N := N) (x := 1)
+        ⟨fun u : sphere (0 : ℂ) 1 ↦ u • v, continuous_id.smul continuous_const⟩ (one_smul _ v)) ↔
+      HomotopyGroup.map ⟨mk n, continuous_mk n⟩ rfl d =
+        (⟦GenLoop.const⟧ : HomotopyGroup N (ComplexProjectiveSpace n) (mk n v)) := by
+  have h : range (HomotopyGroup.map (N := N) (x := 1)
+      ⟨fun u : sphere (0 : ℂ) 1 ↦ u • v, continuous_id.smul continuous_const⟩ (one_smul _ v)) =
+      range (HomotopyGroup.map ((hopfHom n).fiberι _).hom
+        (TopCat.Hom.fiberι_apply (hopfHom n) _ (fiberPoint v))) := by
+    rw [← (fiberEquiv v N).symm.surjective.range_comp]
+    exact congrArg range (funext fun c ↦ (map_fiberι_fiberEquiv_symm v c).symm)
+  rw [h]
+  exact TopCat.mem_range_homotopyGroupMap_fiberι_iff (mk_mem_serreFibrations n)
 
 /-- **The boundary map `π_{k+1}(CPⁿ) → π_k(S¹)` is bijective for `1 ≤ k < 2n`.** In particular
 `π₂(CPⁿ) ≅ π₁(S¹)` for `n ≥ 1`. -/
@@ -205,9 +311,8 @@ theorem bijective_hopfBoundary [Nonempty N] (hN : Nat.card N < 2 * n) :
   refine ⟨?_, fun c ↦ ?_⟩
   · -- The kernel of the boundary is the image of `π_{k+1}(S²ⁿ⁺¹)`, which is trivial.
     have := subsingleton_homotopyGroup_sphere (N := Option N) (by simp; omega) v
-    refine (injective_iff_map_eq_one (MonoidHom.mk' (hopfBoundary v N) (hopfBoundary_mul v))).2
-      fun a ha ↦ ?_
-    rw [MonoidHom.mk'_apply, _root_.HomotopyGroup.one_def] at ha
+    refine (injective_iff_map_eq_one (hopfBoundaryHom v N)).2 fun a ha ↦ ?_
+    rw [coe_hopfBoundaryHom, _root_.HomotopyGroup.one_def] at ha
     obtain ⟨b, rfl⟩ := (mem_range_homotopyGroupMap_mk_iff v).2 ha
     rw [Subsingleton.elim b 1, HomotopyGroup.map_one]
   · -- Every class of the fibre dies in `π_k(S²ⁿ⁺¹)`, which is trivial, so it is a boundary.
@@ -221,8 +326,7 @@ theorem bijective_hopfBoundary [Nonempty N] (hN : Nat.card N < 2 * n) :
 def hopfBoundaryMulEquiv [DecidableEq N] [Nonempty N] (hN : Nat.card N < 2 * n) :
     HomotopyGroup (Option N) (ComplexProjectiveSpace n) (mk n v) ≃*
       HomotopyGroup N (sphere (0 : ℂ) 1) 1 :=
-  MulEquiv.ofBijective (MonoidHom.mk' (hopfBoundary v N) (hopfBoundary_mul v))
-    (bijective_hopfBoundary v hN)
+  MulEquiv.ofBijective (hopfBoundaryHom v N) (bijective_hopfBoundary v hN)
 
 @[simp]
 theorem hopfBoundaryMulEquiv_apply [DecidableEq N] [Nonempty N] (hN : Nat.card N < 2 * n)
