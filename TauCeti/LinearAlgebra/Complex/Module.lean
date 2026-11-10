@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Complex.Module
 import Mathlib.Algebra.Ring.Action.ConjAct
+import Mathlib.Tactic.FastInstance
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -29,7 +30,8 @@ A a real-bilinear map vanishing at `(1, I)` and
 Multiplication by `I` and by `-I` are mutually inverse on any complex multiplication action.
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
-linear (`LinearMap.complexOfMapISmul`).
+linear (`LinearMap.complexOfMapISmul`). The non-instance `RestrictScalars.realModule` normalizes
+the restricted real module at the additive-group parent for use in constructions on real modules.
 
 Likewise an `ℝ`-algebra map out of the complex plane is determined by its value at `I`, so a
 conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds everywhere once it holds
@@ -40,6 +42,15 @@ half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`).
 -/
 
 public section
+
+/-- The restricted real module indexed by the inherited additive-group parent.
+This normalizes the inherited additive-monoid instance of the scalar-restriction type alias. -/
+@[expose, instance_reducible]
+noncomputable def RestrictScalars.realModule (M : Type*) [AddCommGroup M] [Module ℂ M] :
+    @Module ℝ (RestrictScalars ℝ ℂ M) Real.semiring
+      (instAddCommGroupRestrictScalars ℝ ℂ M).toAddCommMonoid :=
+  fast_instance% RestrictScalars.module ℝ ℂ M
+
 
 namespace LinearMap
 
