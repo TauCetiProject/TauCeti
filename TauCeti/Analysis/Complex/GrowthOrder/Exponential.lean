@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Complex.GrowthOrder
 public import TauCeti.Analysis.Complex.Liouville
 public import TauCeti.Analysis.Complex.BorelCaratheodory
 public import TauCeti.Analysis.Complex.BranchLogRoot
-public import Mathlib.Analysis.Convex.Contractible
+public import TauCeti.Analysis.Convex.SimplyConnected
 
 /-!
 # Exponential rigidity at order at most one
@@ -23,11 +23,12 @@ product additionally requires a growth bound on the quotient.
 
 * `TauCeti.OrderLE.eq_affine_of_cexp` identifies the exponent by its value and derivative
   at zero.
+* `TauCeti.OrderLE.exists_eq_cexp_add_logDeriv_mul` writes a zero-free entire function of
+  order at most one as `exp (a + b z)`, with `b` its logarithmic derivative at zero.
 * `TauCeti.OrderLE.exists_eq_cexp_affine_of_forall_ne_zero` classifies zero-free entire
   functions of order at most one.
-* `TauCeti.orderLE_cexp_comp_iff` characterizes the entire exponents with order-one exponential.
-* `TauCeti.OrderLE.exists_eq_cexp_add_logDeriv_mul` identifies the linear coefficient
-  with the logarithmic derivative at zero.
+* `TauCeti.orderLE_cexp_comp_iff` characterizes the entire exponents whose exponential has
+  order at most one (exactly the affine ones).
 
 ## References
 
@@ -63,40 +64,28 @@ theorem OrderLE.eq_affine_of_cexp {H : ℂ → ℂ}
     isBigO_of_le _ (fun z ↦ by simp [norm_pow])
   exact hH.eq_affine_of_isLittleO_sq (hg.trans_isLittleO (hr.trans_isBigO hnorm))
 
-/-- A zero-free entire function of order at most one is the exponential
-of an affine function. -/
-theorem OrderLE.exists_eq_cexp_affine_of_forall_ne_zero {f : ℂ → ℂ}
-    (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : ∀ z, f z ≠ 0) :
-    ∃ a b : ℂ, ∀ z, f z = exp (a + b * z) := by
-  have hU : IsSimplyConnected (Set.univ : Set ℂ) := by
-    have : ContractibleSpace (Set.univ : Set ℂ) :=
-      Convex.contractibleSpace convex_univ Set.univ_nonempty
-    exact SimplyConnectedSpace.ofContractible _
-  obtain ⟨H, hH, heq⟩ := exists_differentiableOn_eqOn_exp_comp hU isOpen_univ
-    hf.differentiableOn
-    (by simpa only [Set.mem_image, Set.mem_univ, true_and, not_exists] using hf0)
-  have hHd : Differentiable ℂ H := differentiableOn_univ.mp hH
-  have he : (fun z ↦ exp (H z)) = f := funext fun z ↦ heq (Set.mem_univ z)
-  have hcomp : OrderLE (fun z ↦ exp (H z)) 1 := he.symm ▸ h
-  have hHa := hcomp.eq_affine_of_cexp hHd
-  exact ⟨H 0, deriv H 0, fun z ↦ (heq (Set.mem_univ z)).symm.trans (congrArg exp (hHa z))⟩
-
 /-- A zero-free entire function of order at most one has affine exponential form with
 linear coefficient given by its logarithmic derivative at zero. -/
 theorem OrderLE.exists_eq_cexp_add_logDeriv_mul {f : ℂ → ℂ}
     (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : ∀ z, f z ≠ 0) :
     ∃ a : ℂ, exp a = f 0 ∧ ∀ z, f z = exp (a + logDeriv f 0 * z) := by
-  obtain ⟨a, b, h⟩ := h.exists_eq_cexp_affine_of_forall_ne_zero hf hf0
-  have he : f = fun z ↦ exp (a + b * z) := funext h
-  have h0 : f 0 = exp a := by simpa using h 0
-  have hd : HasDerivAt f (b * exp a) 0 := by
-    rw [he]
-    convert ((hasDerivAt_const (0 : ℂ) a).add ((hasDerivAt_id 0).const_mul b)).cexp using 1 <;>
-      simp [mul_comm]
-  have hb : logDeriv f 0 = b := by
-    rw [logDeriv_apply, hd.deriv, h0]
-    exact mul_div_cancel_right₀ b (exp_ne_zero a)
-  exact ⟨a, h0.symm, fun z ↦ by rw [hb]; exact h z⟩
+  obtain ⟨H, hH, heq⟩ := exists_differentiableOn_eqOn_exp_comp
+    (convex_univ.isSimplyConnected Set.univ_nonempty) isOpen_univ hf.differentiableOn
+    (by simpa only [Set.mem_image, Set.mem_univ, true_and, not_exists] using hf0)
+  have he : (fun z ↦ exp (H z)) = f := funext fun z ↦ heq (Set.mem_univ z)
+  have hHa := (he.symm ▸ h : OrderLE (fun z ↦ exp (H z)) 1).eq_affine_of_cexp
+    (differentiableOn_univ.mp hH)
+  rw [deriv_eq_logDeriv_of_eqOn_exp_comp isOpen_univ hH heq (Set.mem_univ 0)] at hHa
+  exact ⟨H 0, heq (Set.mem_univ 0),
+    fun z ↦ (heq (Set.mem_univ z)).symm.trans (congrArg exp (hHa z))⟩
+
+/-- A zero-free entire function of order at most one is the exponential
+of an affine function. -/
+theorem OrderLE.exists_eq_cexp_affine_of_forall_ne_zero {f : ℂ → ℂ}
+    (h : OrderLE f 1) (hf : Differentiable ℂ f) (hf0 : ∀ z, f z ≠ 0) :
+    ∃ a b : ℂ, ∀ z, f z = exp (a + b * z) :=
+  let ⟨a, _, ha⟩ := h.exists_eq_cexp_add_logDeriv_mul hf hf0
+  ⟨a, logDeriv f 0, ha⟩
 
 /-- The exponential of an entire function has order at most one exactly when its exponent
 is affine. -/
