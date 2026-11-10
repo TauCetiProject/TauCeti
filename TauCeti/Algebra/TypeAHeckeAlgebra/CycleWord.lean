@@ -98,10 +98,13 @@ theorem cycleWord_mem_stage (m : ℕ) : cycleWord q m ∈ stage R q m := by
 
 /-- The descending product `T (n - 1) * ⋯ * T a` is the rescaled shift by `a` of the cycle word
 on `n + 1 - a` strands. -/
-theorem cosetRep_eq_smul_shift_cycleWord {a n : ℕ} (han : a ≤ n) :
+theorem cosetRep_eq_smul_shift_cycleWord {a n : ℕ} :
     cosetRep q n a = (↑q⁻¹ : R) ^ (n - a) • shift R q a (cycleWord q (n + 1 - a)) := by
-  simp [cycleWord_def, show n + 1 - a - 1 = n - a by omega, Nat.sub_add_cancel han, smul_smul,
-    ← mul_pow]
+  by_cases han : a ≤ n
+  · simp [cycleWord_def, show n + 1 - a - 1 = n - a by omega, Nat.sub_add_cancel han, smul_smul,
+      ← mul_pow]
+  · simp [cosetRep_of_le (show n ≤ a by omega), show n - a = 0 by omega,
+      show n + 1 - a = 0 by omega]
 
 end CycleWord
 
