@@ -98,10 +98,10 @@ theorem degree_pontryaginThomSphereMap_comp_eq_one_or_eq_neg_one (h : IsFramedTu
   exact o.degree_eq_one_or_eq_neg_one_of_isLocalHomeomorphOn o' hE finrank_euclideanSpace_fin
     (map_continuous _).isProperMap hfib hσ (mem_singleton x)
 
-/-- **A sphere meeting the core once retracts onto `Sᵏ` with degree `±1`.** For `k ≥ 2`, let
-`σ : Sᵏ → Q` meet the core of a framed tube with fibre `ℝᵏ` in the single point `x`. If the
-composite of `σ` with the Pontryagin–Thom collapse onto `Sᵏ` is a local homeomorphism at `x`, then
-this composite induces a bijection on `Hₖ(Sᵏ; ℤ)`. -/
+/-- **The collapse of a sphere meeting the core once is bijective on `Hₖ(Sᵏ; ℤ)`.** For
+`k ≥ 2`, let `σ : Sᵏ → Q` meet the core of a framed tube with fibre `ℝᵏ` in the single point `x`.
+If the composite of `σ` with the Pontryagin–Thom collapse onto `Sᵏ` is a local homeomorphism at
+`x`, then this composite induces a bijection on `Hₖ(Sᵏ; ℤ)`. -/
 theorem bijective_singularHomologyMap_pontryaginThomSphereMap_comp (h : IsFramedTube f τ)
     (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) (hk : 2 ≤ k)
     (σ : C(sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1, Q)) {x : sphere (0 : EuclideanSpace ℝ
