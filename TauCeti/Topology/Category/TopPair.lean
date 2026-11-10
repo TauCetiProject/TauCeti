@@ -271,25 +271,15 @@ lemma isIso_of_isIso_fst_of_surjective_snd [IsIso (Hom.fst f)]
     (hf : Function.Surjective (Hom.snd f)) : IsIso f := by
   let e := TopCat.homeoOfIso (asIso (Hom.fst f))
   let g : Q.snd → P.snd := Function.surjInv hf
-  have hg (b : Q.snd) : Hom.snd f (g b) = b := Function.surjInv_eq hf b
   have hmap (b : Q.snd) : P.map (g b) = e.symm (Q.map b) :=
-    (e.symm_apply_eq.2 ((congrArg Q.map (hg b)).symm.trans (Hom.w_apply f (g b)))).symm
+    (e.symm_apply_eq.2 ((congrArg Q.map (Function.surjInv_eq hf b)).symm.trans
+      (Hom.w_apply f (g b)))).symm
   have hgc : Continuous g := by
     rw [P.isEmbedding_map.isInducing.continuous_iff, show P.map ∘ g = e.symm ∘ Q.map from
       funext hmap]
     fun_prop
-  refine ⟨TopPair.ofHom (inv (Hom.fst f)) (TopCat.ofHom ⟨g, hgc⟩)
-    (by ext b; exact hmap b), ?_, ?_⟩
-  · ext a : 2
-    · refine P.isEmbedding_map.injective ?_
-      -- The subspace component of the composite sends `a` to `g (Hom.snd f a)`.
-      change P.map (g (Hom.snd f a)) = P.map a
-      rw [hmap, Hom.w_apply]
-      exact e.symm_apply_apply _
-    · exact e.symm_apply_apply a
-  · ext b : 2
-    · exact hg b
-    · exact e.apply_symm_apply b
+  exact ⟨TopPair.ofHom (inv (Hom.fst f)) (TopCat.ofHom ⟨g, hgc⟩) (by ext b; exact hmap b),
+    hom_ext_of_fst _ (IsIso.hom_inv_id _), hom_ext_of_fst _ (IsIso.inv_hom_id _)⟩
 
 end isIso
 
