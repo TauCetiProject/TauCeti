@@ -321,8 +321,9 @@ theorem isCoprime_signedDiscr_of_isCoprime_level {d : ℤ} (hd : IsCoprime d (le
   exact Int.isCoprime_iff_gcd_eq_one.mp hd
 
 omit [IsZLattice ℝ L] in
-/-- **The signed discriminant of an even full lattice of even rank is a discriminant**, congruent
-to `0` or `1` modulo `4`. -/
+/-- **The signed discriminant of an even lattice in a space of even dimension is a discriminant**,
+congruent to `0` or `1` modulo `4`. For a lattice that does not span the space, the discriminant
+group is infinite, so `Nat.card` and the signed discriminant are `0`. -/
 theorem IsEven.signedDiscr_modEq_zero_or_one (hL : IsEven L) (hE : Even (finrank ℝ E)) :
     signedDiscr L ≡ 0 [ZMOD 4] ∨ signedDiscr L ≡ 1 [ZMOD 4] := by
   obtain ⟨k, hk⟩ := hE
@@ -346,8 +347,9 @@ theorem IsIntegral.signedDiscr_sqrt_smul_ne_zero (h : IsIntegral L) {m : ℕ} (h
   exact (h.sqrt_smul m).signedDiscr_ne_zero
 
 omit [IsZLattice ℝ L] in
-/-- For an even full lattice `L` of even rank and `m ≠ 0`, `signedDiscr (√m • L)` is congruent to
-`0` or `1` modulo `4`. -/
+/-- For an even lattice `L` in a space of even dimension and `m ≠ 0`, `signedDiscr (√m • L)` is
+congruent to `0` or `1` modulo `4`; if `L` does not span the space, the signed discriminant is
+`0`. -/
 theorem IsEven.signedDiscr_sqrt_smul_modEq_zero_or_one (hL : IsEven L) (hE : Even (finrank ℝ E))
     {m : ℕ} (hm : m ≠ 0) :
     signedDiscr (√(m : ℝ) • L) ≡ 0 [ZMOD 4] ∨ signedDiscr (√(m : ℝ) • L) ≡ 1 [ZMOD 4] := by

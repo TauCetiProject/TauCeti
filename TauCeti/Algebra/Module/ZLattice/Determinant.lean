@@ -181,9 +181,7 @@ theorem infinite_discriminantGroup_of_span_ne_top [FiniteDimensional ℝ E]
     (h : span ℝ (L : Set E) ≠ ⊤) : Infinite (DiscriminantGroup L) := by
   have : Nontrivial (span ℝ (L : Set E))ᗮ :=
     Submodule.nontrivial_iff_ne_bot.2 (by rwa [Ne, Submodule.orthogonal_eq_bot_iff])
-  obtain ⟨w₀, hw₀⟩ := exists_ne (0 : (span ℝ (L : Set E))ᗮ)
-  have : Infinite (span ℝ (L : Set E))ᗮ :=
-    Infinite.of_injective (fun t : ℝ ↦ t • w₀) (smul_left_injective ℝ hw₀)
+  have : Infinite (span ℝ (L : Set E))ᗮ := Module.Free.infinite ℝ _
   have hmem (w : (span ℝ (L : Set E))ᗮ) : (w : E) ∈ dual L := mem_dual.2 fun y hy ↦
     ⟨0, by simpa [real_inner_comm] using
       Submodule.inner_right_of_mem_orthogonal (subset_span hy) w.2⟩
@@ -332,10 +330,13 @@ theorem IsIntegral.det_toMatrix_integralForm (h : IsIntegral L) {ι : Type*} [Fi
   simp [LinearMap.BilinForm.toMatrix_apply, Matrix.gram_apply]
 
 omit [MeasurableSpace E] [BorelSpace E] [IsZLattice ℝ L] in
-/-- **The signed determinant of an even lattice is a discriminant.** For an even lattice `L` of
-even rank `2k`, the signed determinant `(-1)^k det L` is an integer congruent to `0` or `1`
-modulo `4`. Here `det L` appears as the order of the discriminant group, which it equals
-(`ZLattice.IsIntegral.det_eq_card_discriminantGroup`). -/
+/-- **The signed determinant of an even lattice is a discriminant.** For an even lattice `L` in a
+real inner product space of even dimension `2k`, the signed determinant `(-1)^k det L` is an
+integer congruent to `0` or `1` modulo `4`. Here `det L` appears as the order of the discriminant
+group, which for a full lattice it equals (`ZLattice.IsIntegral.det_eq_card_discriminantGroup`). If
+`L` does not span `E`, its discriminant group is infinite
+(`ZLattice.infinite_discriminantGroup_of_span_ne_top`), so `Nat.card` is `0` and the statement is
+trivial. -/
 theorem IsEven.neg_one_pow_mul_card_discriminantGroup_modEq_zero_or_one (h : IsEven L) {k : ℕ}
     (hk : finrank ℝ E = 2 * k) :
     (-1) ^ k * (Nat.card (DiscriminantGroup L) : ℤ) ≡ 0 [ZMOD 4] ∨
