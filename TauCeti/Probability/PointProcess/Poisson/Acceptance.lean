@@ -60,9 +60,9 @@ theorem IsPoissonRandomMeasure.acceptance_le
     measurableSet_le measurable_snd.coe_nnreal_ennreal (hf.comp measurable_fst)
   simpa only [preimage_ofPred_eq, nnvolume_setOf_coe_le] using hM.acceptance hA
 
-/-- Ordered measurable densities admit an ordered Poisson coupling driven by the given
-product-intensity Poisson measure. The domination holds for every sample, not just almost
-surely. -/
+/-- Ordered measurable densities admit an ordered Poisson coupling on the sample space of
+the given product-intensity Poisson measure. The domination holds for every sample, not just
+almost surely. -/
 theorem IsPoissonRandomMeasure.exists_monotone_coupling
     {M : Ω → Measure (X × ℝ≥0)}
     (hM : IsPoissonRandomMeasure P M (Λ.prod nnvolume))
