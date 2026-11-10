@@ -32,10 +32,11 @@ The main results are:
   whose characteristic polynomial is again independent of the choices
   (`TauCeti.charpoly_pow_normalReturnDerivative_eq`).
 * `TauCeti.charpoly_mfderiv_flowOf_eq_X_sub_one_mul`: the derivative `DΦ_{T₀}` of the time-`T₀`
-  map of the flow at `p`, the monodromy of the first variational equation along the orbit, fixes
-  `v p` and has characteristic polynomial `(X - 1) * charpoly N`. Thus every eigenvalue
-  `μ ≠ 1` of the monodromy is an eigenvalue of `N` and conversely
-  (`TauCeti.hasEigenvalue_normalReturnDerivative_iff_of_ne_one`).
+  map of the flow at `p`, the monodromy of the first variational equation along the orbit, has
+  characteristic polynomial `(X - 1) * charpoly N`; the factor `X - 1` comes from `DΦ_{T₀}` fixing
+  `v p` (`TauCeti.mfderiv_flowOf_apply_self`). Thus every eigenvalue `μ ≠ 1` of the monodromy is
+  an eigenvalue of `N` and conversely
+  (`TauCeti.hasEigenvalue_normalReturnDerivative_iff_hasEigenvalue_mfderiv_flowOf`).
 
 As in `TauCeti.Geometry.Manifold.Flow.ReturnDerivative`, `T₀` need not be the least period, and the
 return branch need not be the first return to the section.
@@ -61,20 +62,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
   {v : (x : M) → TangentSpace I x} {g g' : M → ℝ} {T T₀ : ℝ} {p q : M}
 
-omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M] in
-/-- The derivative of `g` is onto `ℝ`, since it does not vanish on `v p`. -/
-private theorem surjective_mvfderiv (hgv : mvfderiv I g p (v p) ≠ 0) :
-    Surjective (mvfderiv I g p) := fun c ↦
-  ⟨(c / mvfderiv I g p (v p)) • v p, by rw [map_smul, smul_eq_mul, div_mul_cancel₀ _ hgv]⟩
-
-/-- The normal return derivative is the restriction of the linearized return map. -/
-private theorem normalReturnDerivative_eq_restrict
-    {h : LinearMap.range (returnDerivative v g T₀ p) ≤
-      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)} :
-    normalReturnDerivative v g T₀ p h =
-      (returnDerivative v g T₀ p).restrict fun w _ ↦ h (LinearMap.mem_range_self _ w) :=
-  LinearMap.ext fun w ↦ Subtype.ext (coe_normalReturnDerivative_apply w)
-
 /-- **The linearized return map splits off the normal return derivative.** If the linearized
 return map of a section transverse to `v` takes values in the tangent space `ker dg_p` of the
 section, its characteristic polynomial is `X` times that of the normal return derivative. -/
@@ -91,11 +78,13 @@ theorem charpoly_returnDerivative_eq_X_mul (hgv : mvfderiv I g p (v p) ≠ 0)
     simp only [LinearMap.coe_comp, comp_apply, Submodule.mkQ_apply, Submodule.mapQ_apply,
       LinearMap.zero_apply, Submodule.Quotient.mk_eq_zero]
     exact h (LinearMap.mem_range_self A w)
+  have hsurj : Surjective (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ) :=
+    LinearMap.surjective_of_ne_zero fun h0 ↦ hgv (LinearMap.congr_fun h0 (v p))
   have hrank : Module.finrank ℝ (TangentSpace I p ⧸ K) = 1 :=
     ((mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ).quotKerEquivOfSurjective
-      (surjective_mvfderiv hgv)).finrank_eq.trans (Module.finrank_self ℝ)
+      hsurj).finrank_eq.trans (Module.finrank_self ℝ)
   rw [LinearMap.charpoly_eq_charpoly_restrict_mul_charpoly_mapQ K A hK, hQ, LinearMap.charpoly_zero,
-    hrank, pow_one, mul_comm, normalReturnDerivative_eq_restrict]
+    hrank, pow_one, mul_comm, normalReturnDerivative_def]
 
 /-- **The time-`0` transition is the identity on the section to first order.** For a section
 through `p` transverse to `v`, the normal derivative of the time-`0` transition is the identity. -/
@@ -124,13 +113,13 @@ theorem normalReturnDerivative_natCast_mul (k : ℕ)
     {hk : LinearMap.range (returnDerivative v g (k * T₀) p) ≤
       LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)} :
     normalReturnDerivative v g (k * T₀) p hk = normalReturnDerivative v g T₀ p h ^ k := by
-  ext w
-  rw [coe_normalReturnDerivative_apply, normalReturnDerivative_eq_restrict (h := h),
-    Module.End.pow_restrict, LinearMap.coe_restrict_apply]
   rcases eq_or_ne k 0 with rfl | hk0
-  · rw [pow_zero, one_apply_eq_self, Nat.cast_zero, zero_mul, returnDerivative_apply]
-    exact mfderiv_flowTransition_zero_apply_of_mvfderiv_eq_zero hv hg hgv (LinearMap.mem_ker.1 w.2)
-  · rw [returnDerivative_natCast_mul hv hP hp hg hgv hk0]
+  · simp_rw [Nat.cast_zero, zero_mul, pow_zero]
+    exact normalReturnDerivative_zero hv hg hgv
+  ext w
+  rw [coe_normalReturnDerivative_apply, normalReturnDerivative_def (h := h),
+    Module.End.pow_restrict, LinearMap.coe_restrict_apply,
+    returnDerivative_natCast_mul hv hP hp hg hgv hk0]
 
 /-- **Iterates of the normal return derivative.** For every `k`, the `k`-th powers of the normal
 return derivatives at time `T₀` of a section through `p` and of a section through `q = flowOf v T p`
@@ -154,9 +143,9 @@ theorem charpoly_pow_normalReturnDerivative_eq (hT : (T, p) ∈ flowDomain v)
   exact charpoly_normalReturnDerivative_eq hv hT hq hkP hkp hg hgv hg' hg'v
 
 /-- **The monodromy and the normal return derivative.** If `p` returns to itself at time `T₀`, the
-derivative `DΦ_{T₀}` at `p` of the time-`T₀` map of the flow fixes `v p`, and its characteristic
-polynomial is `X - 1` times that of the normal return derivative of any transverse section
-through `p`. -/
+characteristic polynomial of the derivative `DΦ_{T₀}` at `p` of the time-`T₀` map of the flow is
+`X - 1` times that of the normal return derivative of any transverse section through `p`. The
+factor `X - 1` comes from `DΦ_{T₀}` fixing `v p` (`TauCeti.mfderiv_flowOf_apply_self`). -/
 theorem charpoly_mfderiv_flowOf_eq_X_sub_one_mul
     {h : LinearMap.range (returnDerivative v g T₀ p) ≤
       LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)} :
@@ -164,12 +153,7 @@ theorem charpoly_mfderiv_flowOf_eq_X_sub_one_mul
       (X - 1) * (normalReturnDerivative v g T₀ p h).charpoly := by
   set K := LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)
   let Mo : Module.End ℝ (TangentSpace I p) := (mfderiv I I (flowOf v T₀) p).toLinearMap
-  -- The tangent spaces at `flowOf v T₀ p` and at `p` are both the model space, so this equation
-  -- is well typed; it holds by substituting `flowOf v T₀ p = p`.
-  have hvp : ∀ x, x = p → v x = v p := by
-    rintro x rfl
-    rfl
-  have hfix : Mo (v p) = v p := (mfderiv_flowOf_apply_self hv hP).trans (hvp _ hp)
+  have hfix : Mo (v p) = v p := (mfderiv_flowOf_apply_self hv hP).trans (congrArg v hp)
   have hv0 : v p ≠ 0 := fun h ↦ hgv (by rw [h, map_zero])
   set L := ℝ ∙ v p
   have hL : L ≤ L.comap Mo := by
@@ -188,7 +172,7 @@ theorem charpoly_mfderiv_flowOf_eq_X_sub_one_mul
   have hconj : e.conj (L.mapQ L Mo hL) = normalReturnDerivative v g T₀ p h := by
     ext w
     have hform := mfderiv_flowTransition_apply hv hP (by rwa [hp]) (by rwa [hp]) w
-    rw [hvp _ hp] at hform
+    rw [congrArg v hp] at hform
     simp only [e, LinearEquiv.conj_apply, LinearMap.coe_comp, LinearEquiv.coe_coe, comp_apply,
       Submodule.quotientEquivOfIsCompl_symm_apply, Submodule.mapQ_apply,
       Submodule.quotientEquivOfIsCompl_apply_mk]
@@ -211,7 +195,7 @@ theorem charpoly_mfderiv_flowOf_eq_X_sub_one_mul
 derivative.** If `p` returns to itself at time `T₀`, every `μ ≠ 1` is an eigenvalue of the normal
 return derivative exactly when it is an eigenvalue of the derivative `DΦ_{T₀}` at `p` of the
 time-`T₀` map of the flow. -/
-theorem hasEigenvalue_normalReturnDerivative_iff_of_ne_one
+theorem hasEigenvalue_normalReturnDerivative_iff_hasEigenvalue_mfderiv_flowOf
     {h : LinearMap.range (returnDerivative v g T₀ p) ≤
       LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)} {μ : ℝ} (hμ : μ ≠ 1) :
     (normalReturnDerivative v g T₀ p h).HasEigenvalue μ ↔

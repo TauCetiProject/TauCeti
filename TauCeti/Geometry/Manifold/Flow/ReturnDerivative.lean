@@ -171,6 +171,14 @@ theorem coe_normalReturnDerivative_apply
     (normalReturnDerivative v g T₀ p h w : TangentSpace I p) = returnDerivative v g T₀ p w :=
   (rfl)
 
+/-- The normal return derivative is the restriction of the linearized return map to `ker dg_p`. -/
+theorem normalReturnDerivative_def
+    {h : LinearMap.range (returnDerivative v g T₀ p) ≤
+      LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)} :
+    normalReturnDerivative v g T₀ p h =
+      (returnDerivative v g T₀ p).restrict fun w _ ↦ h (LinearMap.mem_range_self _ w) :=
+  (rfl)
+
 /-- **The normal return derivative has the nonzero eigenvalues of the linearized return map.** -/
 theorem hasEigenvalue_normalReturnDerivative_iff
     {h : LinearMap.range (returnDerivative v g T₀ p) ≤
@@ -196,15 +204,10 @@ theorem mfderiv_flowTransition_apply_eq_zero :
   have hconst : flowTransition v g T p ∘ (fun s ↦ flowOf v s p) =ᶠ[𝓝 0]
       fun _ ↦ flowOf v T p :=
     eventually_flowTransition_flowOf hv hT hg hgv
-  -- The tangent spaces at `x` and at `p` are both the model space, so this equation is well
-  -- typed; it holds by substituting `x = p`.
-  have hvp : ∀ x, x = p → v x = v p := by
-    rintro x rfl
-    rfl
   -- The velocity of the trajectory at time `0` is `v p`.
   have hvel : mfderiv 𝓘(ℝ) I (fun s ↦ flowOf v s p) 0 (1 : ℝ) = v p :=
     Manifold.curveVelocity_apply.symm.trans <|
-      (curveVelocity_flowOf hv (mem_flowDomain_zero hv p)).trans (hvp _ (flowOf_zero hv p))
+      (curveVelocity_flowOf hv (mem_flowDomain_zero hv p)).trans (congrArg v (flowOf_zero hv p))
   have hzero : mfderiv 𝓘(ℝ) I (flowTransition v g T p ∘ fun s ↦ flowOf v s p) 0 (1 : ℝ) = 0 := by
     rw [hconst.mfderiv_eq, mfderiv_const, ContinuousLinearMap.comp_zero]
     exact zero_apply _

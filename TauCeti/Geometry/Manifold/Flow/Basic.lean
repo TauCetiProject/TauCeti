@@ -163,12 +163,11 @@ theorem mfderiv_flowOf_trajectory_apply [IsManifold I 1 M] {v : (x : M) → Tang
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {t : ℝ} {x : M}
     (ht : (t, x) ∈ flowDomain v) (a : ℝ) :
     mfderiv 𝓘(ℝ) I (fun s ↦ flowOf v s x) t a = a • v (flowOf v t x) := by
-  have hdom : {s | (s, x) ∈ flowDomain v} ∈ 𝓝 t := by
-    simpa only [mem_flowDomain, ofPred_mem_eq] using
-      isOpen_maximalIntegralCurveInterval.mem_nhds (mem_flowDomain.mp ht)
-  rw [((isMIntegralCurveOn_flowOf hv x).isMIntegralCurveAt hdom).hasMFDerivAt.mfderiv]
-  -- `smulRight 1 w` sends `a` to `a • w`, reading `TangentSpace 𝓘(ℝ) t` as `ℝ`.
-  rfl
+  -- Reading `TangentSpace 𝓘(ℝ) t` as `ℝ`, the derivative sends `a = a • 1` to `a` times the
+  -- velocity.
+  rw [← curveVelocity_flowOf hv ht, Manifold.curveVelocity_apply]
+  exact (congrArg (mfderiv 𝓘(ℝ) I (fun s ↦ flowOf v s x) t) (mul_one a).symm).trans
+    ((mfderiv 𝓘(ℝ) I (fun s ↦ flowOf v s x) t).map_smul a (1 : ℝ))
 
 /-- On a complete normed model space, the domain of the maximal flow is jointly open in time
 and initial point. -/
@@ -348,12 +347,7 @@ theorem mfderiv_flowOf_apply_self [IsManifold I 1 M] {v : (x : M) → TangentSpa
   -- The velocity at time `0` of the trajectory through `y` is `v y`.
   have hvel : ∀ y, mfderiv 𝓘(ℝ) I (fun s ↦ flowOf v s y) 0 (1 : ℝ) = v y := fun y ↦ by
     rw [mfderiv_flowOf_trajectory_apply hv (mem_flowDomain_zero hv y), one_smul]
-    -- The tangent spaces at `flowOf v 0 y` and at `y` are both the model space, so this
-    -- equation is well typed; it holds by substituting `flowOf v 0 y = y`.
-    have hvy : ∀ z, z = y → v z = v y := by
-      rintro z rfl
-      rfl
-    exact hvy _ (flowOf_zero hv y)
+    exact congrArg v (flowOf_zero hv y)
   have hcurve : ContinuousAt (fun s ↦ flowOf v s x) 0 :=
     (mdifferentiableAt_flowOf hv (mem_flowDomain_zero hv x)).continuousAt
   -- Near `s = 0`, flowing for time `s` and then `t` is flowing for time `t` and then `s`.
