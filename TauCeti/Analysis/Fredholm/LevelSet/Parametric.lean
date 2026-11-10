@@ -375,14 +375,14 @@ Here criticality is defined intrinsically for the local parameter map;
 `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap`
 rewrites it as failure of regularity of the original equation.
 
-The regularity hypothesis `hn` accepts either threshold of local Sard--Smale: the quadratic one
-`(dim ker D₁)² + 1` of `TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints`, or,
-when `D₁` has index `i ≤ 2`, Smale's sharp threshold `k > max (i, 0)` of
-`TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two`. The
-derivative of the local parameter map at the chart origin is `D₁.parameterProj D₂`, whose kernel
-has the dimension of `ker D₁` and whose index is that of `D₁`, so either threshold transfers to
-it. The sharp threshold does not depend on the kernel, whose dimension can jump between
-solutions: for index at most two it is a uniform bound `C³`, and `C¹` for negative index. -/
+The regularity hypothesis `hn` accepts either the quadratic threshold `(dim ker D₁)² + 1` or
+Smale's threshold `k > max (i, 0)` for the index `i` of `D₁`, stated together with `i ≤ 2`. Both
+imply the threshold `k > max (i, 0)` of
+`TauCeti.exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints`, since `i ≤ dim ker D₁`.
+The derivative of the local parameter map at the chart origin is `D₁.parameterProj D₂`, whose
+index is that of `D₁`, so the threshold transfers to it. Smale's threshold does not depend on the
+kernel, whose dimension can jump between solutions: for index at most two it is a uniform bound
+`C³`, and `C¹` for negative index. -/
 theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetParameterMap
     {n : ℕ∞ω} {U : Set (D₁.coprod D₂).ker}
     (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
@@ -412,17 +412,17 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetPar
     (hD₁.closedComplemented_ker_coprod hD) hxl).open_target.mem_nhds
       (mem_levelSetChart_target hf (LinearMap.range_eq_top.mpr hD)
         (hD₁.closedComplemented_ker_coprod hD) hxl)
-  rcases hn with hn | ⟨hindex, hn⟩
-  · have hn' :
-        ((finrank ℝ (D₁.parameterProj D₂).ker * finrank ℝ (D₁.parameterProj D₂).ker + 1 : ℕ) :
-          ℕ∞ω) ≤ n := by
-      simpa only [ContinuousLinearMap.finrank_ker_parameterProj] using hn
-    rw [← hg'] at hn'
-    exact exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints hg hFred hn'
-      (Filter.inter_mem hU htarget)
-  · have hi := index_fderiv_levelSetParameterMap hf hD (hD₁.closedComplemented_ker_coprod hD) hxl
-    exact exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two hg hFred
-      (hi ▸ hindex) (hi ▸ hn) (Filter.inter_mem hU htarget)
+  have hi := index_fderiv_levelSetParameterMap hf hD (hD₁.closedComplemented_ker_coprod hD) hxl
+  have hn' : ((D₁.index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n := by
+    rcases hn with hn | ⟨-, hn⟩
+    · refine le_trans ?_ hn
+      have hD₁i := D₁.index_eq_finrank_sub
+      have hle : D₁.index.toNat ≤ finrank ℝ D₁.ker := by omega
+      exact_mod_cast (show D₁.index.toNat + 1 ≤ finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 by
+        nlinarith)
+    · exact hn
+  exact exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints hg hFred (hi ▸ hn')
+    (Filter.inter_mem hU htarget)
 
 /-- **Local parametric transversality.** Near a regular solution of a parametrized equation whose
 fixed-parameter linearization is Fredholm, the parameters carrying a nearby solution at which the

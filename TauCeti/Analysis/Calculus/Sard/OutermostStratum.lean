@@ -52,26 +52,20 @@ hyperplane. No regularity is lost in the descent, since the inverse function the
 local inverse as smooth as the map, and the difference `finrank ℝ E - finrank ℝ F` of the two
 dimensions is unchanged. The whole theorem therefore holds at every regularity at which the
 vanishing-derivative locus has null image, in every pair of dimensions reached by the descent.
-Two such inputs are available. With `TauCeti.addHaar_image_eq_zero_of_fderiv_eq_zero` the
-regularity is `finrank ℝ E * finrank ℝ E + 1`, a sufficient bound valid in all dimensions. With
-`TauCeti.addHaar_image_eq_zero_of_fderiv_eq_zero_of_finrank_le_add_two` it is the sharp exponent
-`max 1 (finrank ℝ E - finrank ℝ F + 1)` of the Morse--Sard theorem, provided
-`finrank ℝ E ≤ finrank ℝ F + 2`.
+`TauCeti.addHaar_image_eq_zero_of_fderiv_eq_zero` supplies this at the sharp exponent
+`max 1 (finrank ℝ E - finrank ℝ F + 1)` of the Morse--Sard theorem, in all dimensions.
 
 ## Main results
 
 * `TauCeti.addHaar_image_criticalPoints_eq_zero`: the critical values taken on a set where the map
-  is sufficiently smooth at every point form a null set.
+  is `C^k` at every point, with `k ≥ max 1 (finrank ℝ E - finrank ℝ F + 1)`, form a null set.
 * `ContDiff.addHaar_image_criticalPoints_eq_zero`: **the Morse--Sard theorem**, its global
   form.
-* `TauCeti.addHaar_image_criticalPoints_eq_zero_of_finrank_le_add_two`: the Morse--Sard theorem
-  at the sharp regularity `max 1 (finrank ℝ E - finrank ℝ F + 1)`, when
-  `finrank ℝ E ≤ finrank ℝ F + 2`.
 * `ContDiff.dense_compl_image_criticalPoints`: the regular values are dense, without requiring a
   measurable structure on the target.
+* `ContDiff.ae_forall_surjective_fderiv`: almost every point of the target is a regular value.
 * `TauCeti.interior_image_criticalPoints_eq_empty`: the measure-free restatement, that the
-  critical values have empty interior, and
-  `TauCeti.interior_image_criticalPoints_eq_empty_of_finrank_le_add_two` its sharp form.
+  critical values have empty interior.
 
 Finite-dimensional Sard supplies the fibrewise step in Sard--Smale and the regular values used
 in transversality arguments.
@@ -102,9 +96,8 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensio
   {F : Type v} [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [MeasurableSpace F] [BorelSpace F] {U : Set E} {f : E → F} (ν : Measure F) [IsAddHaarMeasure ν]
 
-/-- The induction behind `TauCeti.addHaar_image_criticalPoints_eq_zero` and
-`TauCeti.addHaar_image_criticalPoints_eq_zero_of_finrank_le_add_two`, on the dimension `n` of the
-source. The vanishing-derivative case `hvan` is an input, available for every pair of
+/-- The induction behind `TauCeti.addHaar_image_criticalPoints_eq_zero`, on the dimension `n` of
+the source. The vanishing-derivative case `hvan` is an input, available for every pair of
 dimensions satisfying a condition `P` that is inherited from `(a + 1, b + 1)` by `(a, b)`: the
 outermost stratum passes from the source and target to hyperplanes of each, at the same
 regularity `k`. Both spaces are quantified inside the statement because the induction step
@@ -381,47 +374,42 @@ private theorem addHaar_image_criticalPoints_eq_zero_of_forall_fderiv_eq_zero
   exact fun _ hx ↦ ⟨hx.2, hx.1.2⟩
 
 /-- **The Morse--Sard theorem** on a set. The values taken at the points of `U` where the Fréchet
-derivative is not surjective form a set of additive Haar measure zero, provided the map is
-sufficiently smooth at every point of `U`. The set need not be open, and no relation between the
-two finite dimensions is required. -/
-theorem addHaar_image_criticalPoints_eq_zero {n : ℕ∞ω}
-    (hf : ∀ x ∈ U, ContDiffAt ℝ n f x)
-    (hk : ((finrank ℝ E * finrank ℝ E + 1 : ℕ) : ℕ∞ω) ≤ n) :
-    ν (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) = 0 :=
-  addHaar_image_criticalPoints_eq_zero_of_forall_fderiv_eq_zero ν
-    (fun a _ ↦ a * a + 1 ≤ finrank ℝ E * finrank ℝ E + 1) (fun a _ h ↦ by nlinarith) _
-    (by omega) (fun _ _ _ _ _ _ _ _ _ _ ν' _ _ h _ _ hg hs ↦
-      addHaar_image_eq_zero_of_fderiv_eq_zero ν' (mod_cast h) hg hs)
-    le_rfl fun x hx ↦ (hf x hx).of_le hk
-
-/-- **The Morse--Sard theorem at the sharp regularity, in codimension at most two.** If
-`finrank ℝ E ≤ finrank ℝ F + 2` and the map is `C^n` at every point of `U` with
-`finrank ℝ E - finrank ℝ F < n`, then the values taken at the points of `U` where the Fréchet
-derivative is not surjective form a set of additive Haar measure zero. The set need not be open.
+derivative is not surjective form a set of additive Haar measure zero, provided the map is `C^n` at
+every point of `U` with `finrank ℝ E - finrank ℝ F < n`. The set need not be open, and no
+relation between the two finite dimensions is required.
 
 This is the regularity of Sard's theorem. It cannot be lowered in general: Whitney's `C¹`
 function on the plane that is not constant along a connected arc of critical points has critical
 values of positive measure. -/
-theorem addHaar_image_criticalPoints_eq_zero_of_finrank_le_add_two {n : ℕ∞ω}
-    (hf : ∀ x ∈ U, ContDiffAt ℝ n f x) (hcodim : finrank ℝ E ≤ finrank ℝ F + 2)
+theorem addHaar_image_criticalPoints_eq_zero {n : ℕ∞ω}
+    (hf : ∀ x ∈ U, ContDiffAt ℝ n f x)
     (hk : ((finrank ℝ E - finrank ℝ F + 1 : ℕ) : ℕ∞ω) ≤ n) :
     ν (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) = 0 :=
   addHaar_image_criticalPoints_eq_zero_of_forall_fderiv_eq_zero ν
-    (fun a b ↦ a ≤ b + 2 ∧ a - b + 1 ≤ finrank ℝ E - finrank ℝ F + 1)
-    (fun _ _ h ↦ ⟨by omega, by omega⟩) _ (by omega)
+    (fun a b ↦ a - b + 1 ≤ finrank ℝ E - finrank ℝ F + 1) (fun _ _ h ↦ by omega) _ (by omega)
     (fun _ _ _ _ _ _ _ _ _ _ ν' _ _ h _ _ hg hs ↦
-      addHaar_image_eq_zero_of_fderiv_eq_zero_of_finrank_le_add_two ν' h.1 (mod_cast h.2) hg hs)
-    ⟨hcodim, le_rfl⟩ fun x hx ↦ (hf x hx).of_le hk
+      addHaar_image_eq_zero_of_fderiv_eq_zero ν' (mod_cast h) hg hs)
+    le_rfl fun x hx ↦ (hf x hx).of_le hk
 
-/-- **The Morse--Sard theorem.** The critical values of a sufficiently smooth map between
-finite-dimensional real normed spaces, that is the values it takes at the points where its Fréchet
-derivative is not surjective, form a set of additive Haar measure zero. No relation between the
-two dimensions is required. -/
+/-- **The Morse--Sard theorem.** The critical values of a `C^n` map between finite-dimensional
+real normed spaces with `finrank ℝ E - finrank ℝ F < n`, that is the values it takes at the points
+where its Fréchet derivative is not surjective, form a set of additive Haar measure zero. -/
 theorem _root_.ContDiff.addHaar_image_criticalPoints_eq_zero {n : ℕ∞ω} (hf : ContDiff ℝ n f)
-    (hk : ((finrank ℝ E * finrank ℝ E + 1 : ℕ) : ℕ∞ω) ≤ n) :
+    (hk : ((finrank ℝ E - finrank ℝ F + 1 : ℕ) : ℕ∞ω) ≤ n) :
     ν (f '' {x | ¬ Surjective (fderiv ℝ f x)}) = 0 := by
   simpa using TauCeti.addHaar_image_criticalPoints_eq_zero (U := univ) ν
     (fun x _ ↦ hf.contDiffAt) hk
+
+/-- Almost every point of the target of a `C^n` map with `finrank ℝ E - finrank ℝ F < n` is a
+regular value: the derivative is surjective at every point of its fibre. -/
+theorem _root_.ContDiff.ae_forall_surjective_fderiv {n : ℕ∞ω} (hf : ContDiff ℝ n f)
+    (hk : ((finrank ℝ E - finrank ℝ F + 1 : ℕ) : ℕ∞ω) ≤ n) :
+    ∀ᵐ y ∂ν, ∀ x, f x = y → Surjective (fderiv ℝ f x) := by
+  rw [ae_iff]
+  refine measure_mono_null (fun y hy ↦ ?_) (hf.addHaar_image_criticalPoints_eq_zero ν hk)
+  push Not at hy
+  obtain ⟨x, hxy, hx⟩ := hy
+  exact ⟨x, hx, hxy⟩
 
 end MorseSard
 
@@ -432,36 +420,25 @@ variable {E : Type u} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensio
   {U : Set E} {f : E → F}
 
 /-- **The Morse--Sard theorem**, in the form that carries no measure-theoretic data: the critical
-values taken on a set where the map is sufficiently smooth at every point have empty interior.
-The measure structure used to prove it is chosen inside the proof, so the target here carries no
-`MeasurableSpace` instance; this is the shape in which Sard is fed to the fibrewise step of the
-Sard--Smale theorem, where the target is a complement subspace with no measurable structure of
-its own. -/
+values taken on a set where the map is `C^n` at every point, with `finrank ℝ E - finrank ℝ F < n`,
+have empty interior. The measure structure used to prove it is chosen inside the proof, so the
+target here carries no `MeasurableSpace` instance; this is the shape in which Sard is fed to the
+fibrewise step of the Sard--Smale theorem, where the target is a complement subspace with no
+measurable structure of its own. -/
 theorem interior_image_criticalPoints_eq_empty {n : ℕ∞ω}
     (hf : ∀ x ∈ U, ContDiffAt ℝ n f x)
-    (hk : ((finrank ℝ E * finrank ℝ E + 1 : ℕ) : ℕ∞ω) ≤ n) :
+    (hk : ((finrank ℝ E - finrank ℝ F + 1 : ℕ) : ℕ∞ω) ≤ n) :
     interior (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) = ∅ := by
   borelize F
   exact Measure.interior_eq_empty_of_null
     (TauCeti.addHaar_image_criticalPoints_eq_zero (ν := addHaar) hf hk)
 
-/-- **The Morse--Sard theorem at the sharp regularity, in codimension at most two**, in the form
-that carries no measure-theoretic data: if `finrank ℝ E ≤ finrank ℝ F + 2` and the map is `C^n`
-at every point of `U` with `finrank ℝ E - finrank ℝ F < n`, then the critical values taken on `U`
-have empty interior. -/
-theorem interior_image_criticalPoints_eq_empty_of_finrank_le_add_two {n : ℕ∞ω}
-    (hf : ∀ x ∈ U, ContDiffAt ℝ n f x) (hcodim : finrank ℝ E ≤ finrank ℝ F + 2)
-    (hk : ((finrank ℝ E - finrank ℝ F + 1 : ℕ) : ℕ∞ω) ≤ n) :
-    interior (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) = ∅ := by
-  borelize F
-  exact Measure.interior_eq_empty_of_null
-    (addHaar_image_criticalPoints_eq_zero_of_finrank_le_add_two (ν := addHaar) hf hcodim hk)
-
-/-- The regular values of a sufficiently smooth map between finite-dimensional real normed spaces
-are dense. This form of the Morse--Sard theorem needs no measurable structure on the target and
-supplies the regular values used in transversality arguments. -/
+/-- The regular values of a `C^n` map between finite-dimensional real normed spaces with
+`finrank ℝ E - finrank ℝ F < n` are dense. This form of the Morse--Sard theorem needs no
+measurable structure on the target and supplies the regular values used in transversality
+arguments. -/
 theorem _root_.ContDiff.dense_compl_image_criticalPoints {n : ℕ∞ω} (hf : ContDiff ℝ n f)
-    (hk : ((finrank ℝ E * finrank ℝ E + 1 : ℕ) : ℕ∞ω) ≤ n) :
+    (hk : ((finrank ℝ E - finrank ℝ F + 1 : ℕ) : ℕ∞ω) ≤ n) :
     Dense (f '' {x | ¬ Surjective (fderiv ℝ f x)})ᶜ := by
   apply interior_eq_empty_iff_dense_compl.1
   simpa using interior_image_criticalPoints_eq_empty (U := univ)

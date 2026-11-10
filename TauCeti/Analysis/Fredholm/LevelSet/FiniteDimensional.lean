@@ -48,10 +48,11 @@ null set. The global step is `TauCeti.measure_image_null_of_locally_null`: the e
 parameters are the projection to `Λ` of the non-regular solutions in `U`, a Lindelöf set, and a
 set whose projection is null near each of its points has null projection.
 
-The regularity threshold is the one of the Morse--Sard theorem in Tau Ceti, `(dim)² + 1` with
-`dim = dim E + dim Λ − dim F` the dimension of the source of the parameter map: the kernel of the
-*total* linearization, which has this dimension at every solution by rank--nullity since the
-total linearization is surjective there. This is coarser than Sard's sharp threshold, and it
+The regularity threshold is `(dim)² + 1` with `dim = dim E + dim Λ − dim F` the dimension of the
+source of the parameter map: the kernel of the *total* linearization, which has this dimension at
+every solution by rank--nullity since the total linearization is surjective there. It implies the
+threshold `k > dim − dim Λ` of the Morse--Sard theorem for the parameter map, but it is coarser
+than that sharp threshold, and it
 differs from the thresholds of the Sard--Smale route, `(dim ker D₁)² + 1` or, in index at most two,
 `max (index D₁, 0) + 1`, which are in terms of the *fixed-parameter* linearization `D₁`.
 
@@ -133,9 +134,9 @@ theorem exists_mem_nhds_addHaar_setOf_exists_not_surjective_fderiv_comp_inl_eq_z
   -- Morse--Sard for the parameter map on a neighbourhood of the chart origin.
   obtain ⟨V, hVC, hVopen, hV0⟩ :=
     eventually_nhds_iff.1 ((hgC.of_le hn).eventually hkω)
-  have hkV : ((finrank ℝ (D₁.coprod D₂).ker * finrank ℝ (D₁.coprod D₂).ker + 1 : ℕ) : ℕ∞ω) ≤
-      (k : ℕ∞ω) := by
+  have hkV : ((finrank ℝ (D₁.coprod D₂).ker - finrank ℝ Λ + 1 : ℕ) : ℕ∞ω) ≤ (k : ℕ∞ω) := by
     rw [hcop, hrank, hkdef]
+    exact_mod_cast Nat.add_le_add_right ((Nat.sub_le _ _).trans (Nat.le_mul_self _)) 1
   have hnull : ν (g '' (V ∩ {y | ¬ Surjective (fderiv ℝ g y)})) = 0 :=
     TauCeti.addHaar_image_criticalPoints_eq_zero ν (fun y hy ↦ hVC y hy) hkV
   -- Near the chart origin, criticality of the parameter map is failure of regularity; pull both

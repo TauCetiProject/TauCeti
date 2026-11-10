@@ -340,19 +340,19 @@ private theorem hasDecompRel_self : ∀ (k n : ℕ) (A : Set (Fin n → ℝ)), H
         · exact Or.inl hxU
         · exact Or.inr ⟨hx, hxU⟩)
 
-/-- **The Morse criticality lemma.**  The set on which a `C^(k+1)` function is critical is covered
-by a countable set and countably many bounded pieces, on each of which the function has a uniform
-`o(‖y - x‖ ^ (k + 1))` modulus.  Neither the set nor the pieces are assumed measurable. -/
-theorem _root_.TauCeti.exists_cover_of_critical (A : Set (Fin n → ℝ)) {f : (Fin n → ℝ) → ℝ}
-    (hf : ContDiff ℝ (k + 1) f) (hA : ∀ x ∈ A, fderiv ℝ f x = 0) :
+/-- **The Morse criticality lemma.**  The set on which a `C^(k+1)` map to a finite power of `ℝ` is
+critical is covered by a countable set and countably many bounded pieces, on each of which the map
+has a uniform `o(‖y - x‖ ^ (k + 1))` modulus.  Neither the set nor the pieces are assumed
+measurable.  The pieces come from the Morse decomposition of the critical set alone, so they serve
+all coordinates of the map at once. -/
+theorem _root_.TauCeti.exists_cover_of_critical {ι : Type*} [Fintype ι] (A : Set (Fin n → ℝ))
+    {f : (Fin n → ℝ) → ι → ℝ} (hf : ContDiff ℝ (k + 1) f) (hA : ∀ x ∈ A, fderiv ℝ f x = 0) :
     ∃ (A₀ : Set (Fin n → ℝ)) (P : Set (Set (Fin n → ℝ))), A₀.Countable ∧ P.Countable ∧
       A ⊆ A₀ ∪ ⋃₀ P ∧
       ∀ S ∈ P, Bornology.IsBounded S ∧ ∀ ε : ℝ, 0 < ε → ∃ δ : ℝ, 0 < δ ∧
-        ∀ x ∈ S, ∀ y ∈ S, ‖y - x‖ < δ → |f y - f x| ≤ ε * ‖y - x‖ ^ (k + 1) := by
+        ∀ x ∈ S, ∀ y ∈ S, ‖y - x‖ < δ → ‖f y - f x‖ ≤ ε * ‖y - x‖ ^ (k + 1) := by
   classical
   obtain ⟨A₀, P, hA₀, hP, hcov, hcar, hflat⟩ := MorseSard.hasDecompRel_self k n A
-  have hfd : ContDiff ℝ k (fderiv ℝ f) := hf.fderiv_right (by exact_mod_cast le_rfl)
-  have hdiff : Differentiable ℝ f := hf.differentiable (by simp)
   refine ⟨A₀, (fun q : MorseSard.Piece n => q.carrier) '' P, hA₀, hP.image _, ?_, ?_⟩
   · rw [sUnion_image]
     exact hcov
@@ -360,25 +360,46 @@ theorem _root_.TauCeti.exists_cover_of_critical (A : Set (Fin n → ℝ)) {f : (
     obtain ⟨hq1, hq2, κ, hdisk⟩ := hcar q hq
     have hbody : IsCompact (q.parametrization '' closedBall (0 : Fin q.dimension → ℝ) 1) :=
       (isCompact_closedBall _ _).image ((isDisk_iff.mp hdisk).1.continuous)
-    refine ⟨hbody.isBounded.subset hq2, ?_⟩
-    have hcoord : ∀ j : Fin n,
-        MorseSard.FlatAlong q.parametrization q.carrier k
-          fun x ↦ fderiv ℝ f x (Pi.single j (1 : ℝ)) := by
-      intro j
-      refine hflat _ (hfd.clm_apply contDiff_const) (fun x hx => ?_) q hq
-      rw [hA x hx]
-      simp
-    intro ε hε
-    obtain ⟨δ, hδ, hδspec⟩ := MorseSard.abs_sub_le_of_flat_fderiv hdisk hdiff hcoord ε hε
-    refine ⟨δ, hδ, ?_⟩
-    intro x hx y hy hxy
-    obtain ⟨a, ha, rfl⟩ := hq2 hx
-    obtain ⟨b, hb, rfl⟩ := hq2 hy
-    have hb' : a + (1 : ℝ) • (b - a) = b := by module
-    have hlt : ‖q.parametrization a - q.parametrization b‖ < δ := by rwa [norm_sub_rev]
-    have := hδspec a ha b hb hx hy hlt 1 ⟨zero_le_one, le_refl 1⟩
-    rw [hb'] at this
-    rw [norm_sub_rev]
-    exact this
+    refine ⟨hbody.isBounded.subset hq2, fun ε hε ↦ ?_⟩
+    -- Each coordinate of `f` is a `C^(k+1)` function critical on `A`, so it has the modulus on the
+    -- piece for all small enough `δ`.
+    have hev : ∀ i, ∀ᶠ δ in 𝓝[>] (0 : ℝ), ∀ x ∈ q.carrier, ∀ y ∈ q.carrier, ‖y - x‖ < δ →
+        |f y i - f x i| ≤ ε * ‖y - x‖ ^ (k + 1) := by
+      intro i
+      have hfi : ContDiff ℝ (k + 1) fun x ↦ f x i := contDiff_pi.1 hf i
+      have hfd : ContDiff ℝ k (fderiv ℝ fun x ↦ f x i) :=
+        hfi.fderiv_right (by exact_mod_cast le_rfl)
+      have hdiff : Differentiable ℝ fun x ↦ f x i := hfi.differentiable (by simp)
+      have hAi : ∀ x ∈ A, fderiv ℝ (fun x ↦ f x i) x = 0 := by
+        intro x hx
+        have hfx : HasFDerivAt f (fderiv ℝ f x) x :=
+          (hf.differentiable (by simp) x).hasFDerivAt
+        have h := ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : ι ↦ ℝ) i).hasFDerivAt.comp x
+          hfx).fderiv
+        rw [hA x hx, ContinuousLinearMap.comp_zero] at h
+        exact h
+      have hcoord : ∀ j : Fin n,
+          MorseSard.FlatAlong q.parametrization q.carrier k
+            fun x ↦ fderiv ℝ (fun x ↦ f x i) x (Pi.single j (1 : ℝ)) := by
+        intro j
+        refine hflat _ (hfd.clm_apply contDiff_const) (fun x hx => ?_) q hq
+        rw [hAi x hx]
+        simp
+      obtain ⟨δ, hδ, hδspec⟩ := MorseSard.abs_sub_le_of_flat_fderiv hdisk hdiff hcoord ε hε
+      filter_upwards [Ioc_mem_nhdsGT hδ] with δ' hδ' x hx y hy hxy
+      obtain ⟨a, ha, rfl⟩ := hq2 hx
+      obtain ⟨b, hb, rfl⟩ := hq2 hy
+      have hb' : a + (1 : ℝ) • (b - a) = b := by module
+      have hlt : ‖q.parametrization a - q.parametrization b‖ < δ := by
+        rw [norm_sub_rev]
+        exact hxy.trans_le hδ'.2
+      have := hδspec a ha b hb hx hy hlt 1 ⟨zero_le_one, le_refl 1⟩
+      rw [hb'] at this
+      rw [norm_sub_rev]
+      exact this
+    obtain ⟨δ, hall, hδ⟩ := ((eventually_all.2 hev).and self_mem_nhdsWithin).exists
+    refine ⟨δ, hδ, fun x hx y hy hxy ↦ (pi_norm_le_iff_of_nonneg (by positivity)).2 fun i ↦ ?_⟩
+    rw [Pi.sub_apply, Real.norm_eq_abs]
+    exact hall i x hx y hy hxy
 
 end TauCeti.MorseSard
