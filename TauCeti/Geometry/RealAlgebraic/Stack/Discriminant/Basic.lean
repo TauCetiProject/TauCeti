@@ -34,9 +34,9 @@ delineability conclusion, not a theorem about ambient order on the root sections
 
 public section
 
-open Filter Metric Polynomial Topology
+open Filter Metric Polynomial Topology TauCeti
 
-namespace TauCeti
+namespace Polynomial
 
 variable {σ ι : Type*} [Fintype σ] [Fintype ι]
 
@@ -48,7 +48,7 @@ positive-radius ball around `a`, and all root sections admit analytic extensions
 
 The formal leading coefficient of `p` may vanish at `a`, so the constant degree of the fibers can
 be smaller than the formal degree at which the discriminant is taken. -/
-theorem _root_.Polynomial.exists_delineation_of_orderAt_discr_eq
+theorem exists_delineation_of_orderAt_discr_eq
     (p : Polynomial (MvPolynomial σ ℝ)) {φ : (ι → ℝ) → σ → ℝ} {a : ι → ℝ} {d m : ℕ}
     (hφ : AnalyticAt ℝ φ a) (hp : p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ a)) ≠ 0)
     (hd : ∀ᶠ x in 𝓝 a, (p.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) (φ x))).natDegree = d)
@@ -72,4 +72,4 @@ theorem _root_.Polynomial.exists_delineation_of_orderAt_discr_eq
   obtain ⟨j, hj⟩ := hD i
   exact ⟨s j, (hs j).mono hεU, hj⟩
 
-end TauCeti
+end Polynomial
