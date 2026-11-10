@@ -132,7 +132,8 @@ section Transitivity
 variable [GrpObj G] [ModObj G X] [LocallyOfFiniteType G.hom]
   [LocallyOfFiniteType X.hom]
 
-/-- Over an algebraically closed field, with `G` and `X` locally of finite type, any two closed
+omit [LocallyOfFiniteType X.hom] in
+/-- Over an algebraically closed field, with `G` locally of finite type, any two closed
 points of the geometric orbit of `x` are related by translation by a rational point of `G`. -/
 theorem exists_translation_eq_of_mem_orbit_inter_closedPoints
     (x : 𝟙_ (Over (Spec (.of k))) ⟶ X) {p q : X.left}
@@ -140,9 +141,32 @@ theorem exists_translation_eq_of_mem_orbit_inter_closedPoints
     (hq : q ∈ orbit G x ∩ closedPoints X.left) :
     ∃ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, (translation X g).hom.left p = q := by
   let := translationMulAction G X
-  rw [orbit_inter_closedPoints] at hp hq
-  obtain ⟨g, a, rfl⟩ := Set.mem_iUnion.mp hp
-  obtain ⟨h, b, rfl⟩ := Set.mem_iUnion.mp hq
+  have : JacobsonSpace G.left := LocallyOfFiniteType.jacobsonSpace G.hom
+  -- A closed point of `X` in the orbit is the image of a closed point of `G`, hence the
+  -- underlying point of a translate of `x` by a rational point of `G`.
+  have key {p : X.left} (hp : p ∈ orbit G x ∩ closedPoints X.left) :
+      ∃ (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) (a : (𝟙_ (Over (Spec (.of k)))).left),
+        (g • x).left a = p := by
+    obtain ⟨hpo, hpc⟩ := hp
+    obtain ⟨z, rfl⟩ := (mem_orbit G x p).mp hpo
+    obtain ⟨c, hcz, hc⟩ := nonempty_inter_closedPoints (Z := closure {z})
+      ⟨z, subset_closure rfl⟩ isClosed_closure.isLocallyClosed
+    have hfc : (orbitMap G x).left c = (orbitMap G x).left z := by
+      have h := map_mem_closure (orbitMap G x).left.continuous hcz
+        (Set.mapsTo_singleton.mpr (Set.mem_singleton _) : Set.MapsTo (orbitMap G x).left {z}
+          {(orbitMap G x).left z})
+      rwa [(mem_closedPoints_iff.mp hpc).closure_eq] at h
+    let g : 𝟙_ (Over (Spec (.of k))) ⟶ G :=
+      Over.homMk (U := 𝟙_ _) (V := G) (pointOfClosedPoint G.hom c (mem_closedPoints_iff.mp hc))
+        (pointOfClosedPoint_comp G.hom c _)
+    refine ⟨g, IsLocalRing.closedPoint k, ?_⟩
+    have h := congrArg (fun f ↦ f.left) (comp_orbitMap G g x)
+    simp only [toUnit_unit, Category.id_comp, Over.comp_left, g, Over.homMk_left] at h
+    rw [← h]
+    refine (Scheme.Hom.comp_apply _ _ _).trans ?_
+    exact (congrArg _ (pointOfClosedPoint_apply G.hom c _ _)).trans hfc
+  obtain ⟨g, a, rfl⟩ := key hp
+  obtain ⟨h, b, rfl⟩ := key hq
   obtain rfl : b = a := Subsingleton.elim (α := Spec (.of k)) _ _
   refine ⟨h * g⁻¹, ?_⟩
   rw [← translationMulAction_smul, translationMulAction_smul_apply,

@@ -67,6 +67,7 @@ variable (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj 
   [LocallyOfFiniteType G.hom] [CompactSpace G.left] [LocallyOfFiniteType X.hom]
   [CompactSpace X.left]
 
+omit [CompactSpace G.left] [CompactSpace X.left] in
 /-- A closed subset of `X` stable under translation by the rational points of `G` contains the
 geometric orbit of a rational point `y`, including its nonclosed points, exactly when it contains
 `y`. -/
@@ -74,20 +75,34 @@ theorem orbit_subset_iff_of_isClosed {Z : Set X.left} (hZ : IsClosed Z)
     (hinv : ∀ g : 𝟙_ (Over (Spec (.of k))) ⟶ G, Set.MapsTo (translation X g).hom.left Z Z)
     (y : 𝟙_ (Over (Spec (.of k))) ⟶ X) (a : (𝟙_ (Over (Spec (.of k)))).left) :
     orbit G y ⊆ Z ↔ y.left a ∈ Z := by
-  have : JacobsonSpace X.left := LocallyOfFiniteType.jacobsonSpace X.hom
+  have : JacobsonSpace G.left := LocallyOfFiniteType.jacobsonSpace G.hom
   refine ⟨fun h ↦ h ((left_apply_mem_orbit_iff G y y a).mpr ⟨1, one_smul _ _⟩), fun hy ↦ ?_⟩
-  -- The closed points of the locally closed orbit are dense in it, and they are the rational
-  -- translates of `y`.
-  refine subset_closure.trans ?_
-  rw [← JacobsonSpace.closure_inter_closedPoints_eq_closure (isLocallyClosed_orbit G y),
-    hZ.closure_subset_iff, orbit_inter_closedPoints]
-  refine Set.iUnion_subset fun g ↦ ?_
-  rintro _ ⟨b, rfl⟩
-  obtain rfl : b = a := Subsingleton.elim (α := Spec (.of k)) _ _
-  let := translationMulAction G X
-  rw [← translationMulAction_smul_apply, translationMulAction_smul]
-  exact hinv g hy
+  -- The preimage of `Z` in `G` is closed and contains every closed point, which is a rational
+  -- point of `G`; closed points are dense in the Jacobson scheme `G`.
+  have hcl : IsClosed ((orbitMap G y).left ⁻¹' Z) := hZ.preimage (orbitMap G y).left.continuous
+  have hall : (orbitMap G y).left ⁻¹' Z = Set.univ := by
+    refine Set.eq_univ_of_univ_subset ?_
+    rw [← closure_closedPoints (X := G.left), hcl.closure_subset_iff]
+    intro c hc
+    let g : 𝟙_ (Over (Spec (.of k))) ⟶ G :=
+      Over.homMk (U := 𝟙_ _) (V := G) (pointOfClosedPoint G.hom c (mem_closedPoints_iff.mp hc))
+        (pointOfClosedPoint_comp G.hom c _)
+    have h := congrArg (fun f ↦ f.left) (comp_orbitMap G g y)
+    simp only [toUnit_unit, Category.id_comp, Over.comp_left, g, Over.homMk_left] at h
+    have hc' : (orbitMap G y).left c = (g • y).left a := by
+      obtain rfl : a = IsLocalRing.closedPoint k := Subsingleton.elim (α := Spec (.of k)) _ _
+      rw [← h]
+      exact ((Scheme.Hom.comp_apply _ _ _).trans
+        (congrArg _ (pointOfClosedPoint_apply G.hom c _ _))).symm
+    change (orbitMap G y).left c ∈ Z
+    let := translationMulAction G X
+    rw [hc', ← translationMulAction_smul_apply, translationMulAction_smul]
+    exact hinv g hy
+  intro p hp
+  obtain ⟨z, rfl⟩ := (mem_orbit G y p).mp hp
+  exact (Set.ext_iff.mp hall z).mpr trivial
 
+omit [CompactSpace G.left] [CompactSpace X.left] in
 /-- A closed subset of `X` stable under translation by the rational points of `G` contains the
 orbit closure of a rational point `y` exactly when it contains `y`. -/
 theorem orbitClosure_subset_iff_of_isClosed {Z : Set X.left} (hZ : IsClosed Z)
@@ -97,6 +112,7 @@ theorem orbitClosure_subset_iff_of_isClosed {Z : Set X.left} (hZ : IsClosed Z)
   rw [orbitClosure_def, hZ.closure_subset_iff]
   exact orbit_subset_iff_of_isClosed G hZ hinv y a
 
+omit [CompactSpace G.left] [CompactSpace X.left] in
 /-- The orbit closure of a rational point `y` lies in the orbit closure of `x` exactly when `y`
 does. -/
 theorem orbitClosure_subset_orbitClosure_iff (x y : 𝟙_ (Over (Spec (.of k))) ⟶ X)
