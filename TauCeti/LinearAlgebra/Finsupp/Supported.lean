@@ -39,8 +39,6 @@ A finitely generated submodule of `ℕ →₀ M` consists of functions supported
   function supported on a prescribed set.
 * `Finsupp.map_mem_supported_of_forall_single_mem`: a linear map that sends the basis vectors
   over `s` into `supported N R t` maps `supported M R s` into it.
-* `Finsupp.mem_range_mapDomain_iff'`: the range of `Finsupp.mapDomain f` for an arbitrary index
-  map `f` consists of the functions vanishing outside the range of `f`.
 * `Submodule.FG.exists_le_supported_Iio`: a finitely generated submodule of `ℕ →₀ M` is
   supported on some initial segment.
 -/
@@ -147,16 +145,5 @@ theorem map_mem_supported_of_forall_single_mem [AddCommMonoid M] [Module R M] [A
     (hv : v ∈ supported M R s) : f v ∈ supported N R t := by
   rw [← sum_single v, map_finsuppSum]
   exact Submodule.sum_mem _ fun j hj ↦ hf j ((mem_supported R v).1 hv hj) _
-
-/-- **The range of `Finsupp.mapDomain f` for an arbitrary index map `f`** consists of the finitely
-supported functions vanishing outside the range of `f`. Mathlib's `Finsupp.mem_range_mapDomain_iff`
-is the case of an injective `f`; this one needs no injectivity. -/
-theorem mem_range_mapDomain_iff' [AddCommMonoid M] (f : α → β) (x : β →₀ M) :
-    x ∈ Set.range (mapDomain f) ↔ ∀ b ∉ Set.range f, x b = 0 := by
-  have h := lmapDomain_supported M ℕ f Set.univ
-  rw [supported_univ, Submodule.map_top, Set.image_univ] at h
-  have hx := SetLike.ext_iff.mp h x
-  simpa only [LinearMap.mem_range, lmapDomain_apply, mem_supported', Set.mem_range, not_exists]
-    using hx
 
 end Finsupp

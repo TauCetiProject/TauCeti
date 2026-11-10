@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.CrossedProduct.Noncommutative.Basic
 public import Mathlib.Algebra.Algebra.Subalgebra.Basic
-import TauCeti.LinearAlgebra.Finsupp.Supported
+import TauCeti.Data.Finsupp.MapDomain
 
 /-!
 # Restriction of noncommutative crossed systems
