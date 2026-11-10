@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Quotient
-public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
-public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Quotient
+public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
 public import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 
 /-!
@@ -22,20 +20,22 @@ common home for all the Lebesgue spaces of one measure space, and is where inter
 places them (Bergh–Löfström, §2.3 and Chapter 5), so that `L^{p₀}` and `L^{p₁}` form a compatible
 couple (`TauCeti.CompatibleCouple.lebesgue`).
 
-It is realised as the quotient of the `ℓ¹` product `L¹ × L^∞` by the pairs `(g, h)` with
-`g + h = 0` almost everywhere. That subspace is closed, because convergence in `L¹` and in `L^∞`
-both imply convergence in measure, whose limits are unique almost everywhere
-(`TauCeti.isClosed_ker_l1AddLinftyMap`). The quotient is thus a normed space, with norm
-`‖u‖ = inf {‖g‖₁ + ‖h‖_∞ | u = g + h}`, and a Banach space when `E` is complete.
+It is realised as the sum space of the compatible couple `(L¹, L^∞)`
+(`TauCeti.CompatibleCouple.l1Linfty`), whose ambient space is `α →ₘ[μ] E` with the indiscrete
+topology (`TauCeti.L1AddLinfty.Ambient`): the quotient of the `ℓ¹` product `L¹ × L^∞` by the pairs
+`(g, h)` with `g + h = 0` almost everywhere. That subspace is closed, because convergence in `L¹`
+and in `L^∞` both imply convergence in measure, whose limits are unique almost everywhere
+(`TauCeti.CompatibleCouple.isClosed_sumKer_l1Linfty`). The quotient is thus a normed space, with
+norm `‖u‖ = inf {‖g‖₁ + ‖h‖_∞ | u = g + h}`, and a Banach space when `E` is complete; the general
+`TauCeti.CompatibleCouple.SumSpace` API applies to it.
 
 ## Main declarations
 
-* `TauCeti.L1AddLinfty 𝕜 E μ`: the space `L¹ + L^∞`.
-* `TauCeti.L1AddLinfty.mk`: the element `g + h` for `g ∈ L¹`, `h ∈ L^∞`, with
-  `TauCeti.L1AddLinfty.mk_eq_mk_iff` and `TauCeti.L1AddLinfty.norm_lt_iff`.
-* `TauCeti.L1AddLinfty.toAEEqFun`: the injective linear map to `α →ₘ[μ] E`, `g + h ↦ g + h`.
+* `TauCeti.CompatibleCouple.l1Linfty 𝕜 E μ`: the couple `(L¹, L^∞)` in `α →ₘ[μ] E`.
+* `TauCeti.L1AddLinfty 𝕜 E μ`: the space `L¹ + L^∞`, the sum space of that couple.
 * `TauCeti.L1AddLinfty.ofLp`: the continuous injective inclusion `Lᵖ → L¹ + L^∞`, of norm at most
-  `2` (`TauCeti.L1AddLinfty.norm_ofLp_le`) and at most `1` for `p = 1` and `p = ∞`.
+  `2` (`TauCeti.L1AddLinfty.norm_ofLp_le`), equal to the inclusions of the couple for `p = 1` and
+  `p = ∞` (`TauCeti.L1AddLinfty.ofLp_eq_fstToSum`, `TauCeti.L1AddLinfty.ofLp_eq_sndToSum`).
 
 ## References
 
@@ -60,23 +60,91 @@ namespace TauCeti
 variable (𝕜 E : Type*) {α : Type*} {mα : MeasurableSpace α} (μ : Measure α) [NormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 
-/-- The addition map `(g, h) ↦ g + h` from the `ℓ¹` product `L¹ × L^∞` to the space
-`α →ₘ[μ] E` of almost-everywhere equivalence classes of strongly measurable functions. -/
-def l1AddLinftyMap : WithLp 1 (Lp E 1 μ × Lp E ∞ μ) →ₗ[𝕜] α →ₘ[μ] E where
-  toFun x := (x.fst : α →ₘ[μ] E) + (x.snd : α →ₘ[μ] E)
-  map_add' x y := by simp only [add_fst, add_snd, AddSubgroup.coe_add]; abel
+namespace L1AddLinfty
+
+/-- The space `α →ₘ[μ] E` of almost-everywhere equivalence classes of strongly measurable
+functions, with the indiscrete topology. It is the ambient space of the couple `(L¹, L^∞)`
+(`TauCeti.CompatibleCouple.l1Linfty`): every linear map into it is continuous, and the closedness
+of the kernel of addition, which this topology does not give, is proved directly
+(`TauCeti.CompatibleCouple.isClosed_sumKer_l1Linfty`). -/
+def Ambient : Type _ :=
+  α →ₘ[μ] E
+
+instance : AddCommGroup (Ambient E μ) :=
+  inferInstanceAs (AddCommGroup (α →ₘ[μ] E))
+
+instance : Module 𝕜 (Ambient E μ) :=
+  inferInstanceAs (Module 𝕜 (α →ₘ[μ] E))
+
+instance : TopologicalSpace (Ambient E μ) :=
+  ⊤
+
+instance : ContinuousAdd (Ambient E μ) :=
+  ⟨continuous_top⟩
+
+variable {E μ} {p q : ℝ≥0∞} [Fact (1 ≤ p)] [Fact (1 ≤ q)]
+
+/-- The class of a function of `Lᵖ` in `TauCeti.L1AddLinfty.Ambient`. -/
+def lpToAmbient : Lp E p μ →L[𝕜] Ambient E μ where
+  toFun f := (f : α →ₘ[μ] E)
+  map_add' _ _ := rfl
   -- The scalar action on `Lp E p μ` is the restriction of that on `α →ₘ[μ] E`.
-  map_smul' c x := by simp only [smul_fst, smul_snd, RingHom.id_apply, smul_add]; rfl
+  map_smul' _ _ := rfl
+  cont := continuous_top
+
+theorem lpToAmbient_eq_lpToAmbient_iff {f : Lp E p μ} {g : Lp E q μ} :
+    lpToAmbient 𝕜 f = lpToAmbient 𝕜 g ↔ ⇑f =ᵐ[μ] ⇑g :=
+  AEEqFun.ext_iff
+
+theorem lpToAmbient_injective : Function.Injective (lpToAmbient 𝕜 : Lp E p μ → Ambient E μ) :=
+  fun _ _ h => Lp.ext ((lpToAmbient_eq_lpToAmbient_iff 𝕜).1 h)
+
+variable {r s : ℝ≥0∞} [Fact (1 ≤ r)] [Fact (1 ≤ s)]
+
+/-- The sum of the classes of `f` and `g` is the class of `h` exactly when `f + g = h` almost
+everywhere. -/
+theorem lpToAmbient_add_lpToAmbient_eq_iff {f : Lp E p μ} {g : Lp E q μ} {h : Lp E r μ} :
+    lpToAmbient 𝕜 f + lpToAmbient 𝕜 g = lpToAmbient 𝕜 h ↔ ⇑f + ⇑g =ᵐ[μ] ⇑h := by
+  change (f : α →ₘ[μ] E) + (g : α →ₘ[μ] E) = (h : α →ₘ[μ] E) ↔ _
+  rw [AEEqFun.ext_iff, (AEEqFun.coeFn_add _ _).congr_left]
+
+/-- Two sums of classes of `Lᵖ` functions agree exactly when the sums of the functions agree almost
+everywhere. -/
+theorem lpToAmbient_add_lpToAmbient_eq_add_iff {f₀ : Lp E p μ} {f₁ : Lp E q μ} {g₀ : Lp E r μ}
+    {g₁ : Lp E s μ} :
+    lpToAmbient 𝕜 f₀ + lpToAmbient 𝕜 f₁ = lpToAmbient 𝕜 g₀ + lpToAmbient 𝕜 g₁ ↔
+      ⇑f₀ + ⇑f₁ =ᵐ[μ] ⇑g₀ + ⇑g₁ :=
+  AEEqFun.add_eq_add_iff_ae_eq
+
+end L1AddLinfty
+
+namespace CompatibleCouple
+
+/-- The couple `(L¹, L^∞)`, with both spaces embedded in the space of almost-everywhere
+equivalence classes `TauCeti.L1AddLinfty.Ambient E μ`. Its sum is `L¹ + L^∞`
+(`TauCeti.L1AddLinfty`). -/
+def l1Linfty : CompatibleCouple 𝕜 (Lp E 1 μ) (Lp E ∞ μ) (L1AddLinfty.Ambient E μ) where
+  embed₀ := L1AddLinfty.lpToAmbient 𝕜
+  embed₁ := L1AddLinfty.lpToAmbient 𝕜
+  embed₀_injective := L1AddLinfty.lpToAmbient_injective 𝕜
+  embed₁_injective := L1AddLinfty.lpToAmbient_injective 𝕜
+
+variable {𝕜 E μ}
 
 @[simp]
-theorem l1AddLinftyMap_apply (x : WithLp 1 (Lp E 1 μ × Lp E ∞ μ)) :
-    l1AddLinftyMap 𝕜 E μ x = (x.fst : α →ₘ[μ] E) + (x.snd : α →ₘ[μ] E) :=
+theorem l1Linfty_embed₀ : (l1Linfty 𝕜 E μ).embed₀ = L1AddLinfty.lpToAmbient 𝕜 :=
   (rfl)
+
+@[simp]
+theorem l1Linfty_embed₁ : (l1Linfty 𝕜 E μ).embed₁ = L1AddLinfty.lpToAmbient 𝕜 :=
+  (rfl)
+
+variable (𝕜 E μ)
 
 /-- The pairs `(g, h)` in `L¹ × L^∞` with `g + h = 0` almost everywhere form a closed subspace.
 Convergence in `L¹` and in `L^∞` both imply convergence in measure, whose limits are unique. -/
-instance isClosed_ker_l1AddLinftyMap :
-    IsClosed (LinearMap.ker (l1AddLinftyMap 𝕜 E μ) : Set (WithLp 1 (Lp E 1 μ × Lp E ∞ μ))) := by
+instance isClosed_sumKer_l1Linfty :
+    IsClosed ((l1Linfty 𝕜 E μ).sumKer : Set (WithLp 1 (Lp E 1 μ × Lp E ∞ μ))) := by
   refine isClosed_of_closure_subset fun x hx => ?_
   obtain ⟨u, hu, hux⟩ := mem_closure_iff_seq_limit.1 hx
   have h₀ : TendstoInMeasure μ (fun n => ⇑(u n).fst) atTop x.fst :=
@@ -86,141 +154,90 @@ instance isClosed_ker_l1AddLinftyMap :
       ((((sndL 1 𝕜 _ _).continuous.tendsto x).comp hux).neg)
   have hu' (n : ℕ) : ((u n).fst : α →ₘ[μ] E) = ((-(u n).snd : Lp E ∞ μ) : α →ₘ[μ] E) := by
     have := hu n
-    simp only [SetLike.mem_coe, LinearMap.mem_ker, l1AddLinftyMap_apply] at this
+    simp only [SetLike.mem_coe, mem_sumKer_iff, l1Linfty_embed₀, l1Linfty_embed₁] at this
+    change ((u n).fst : α →ₘ[μ] E) + ((u n).snd : α →ₘ[μ] E) = 0 at this
     rw [AddSubgroup.coe_neg, eq_neg_iff_add_eq_zero, this]
   have hx' : ⇑x.fst =ᵐ[μ] ⇑(-x.snd) :=
     tendstoInMeasure_ae_unique h₀ (h₁.congr_left fun n => by rw [hu' n])
-  simp only [SetLike.mem_coe, LinearMap.mem_ker, l1AddLinftyMap_apply]
+  simp only [SetLike.mem_coe, mem_sumKer_iff, l1Linfty_embed₀, l1Linfty_embed₁]
+  change (x.fst : α →ₘ[μ] E) + (x.snd : α →ₘ[μ] E) = 0
   rw [AEEqFun.ext hx', AddSubgroup.coe_neg, neg_add_cancel]
 
-/-- The space `L¹ + L^∞` of functions `g + h` with `g ∈ L¹` and `h ∈ L^∞`, normed by
-`‖u‖ = inf {‖g‖₁ + ‖h‖_∞ | u = g + h}`. It is the quotient of the `ℓ¹` product `L¹ × L^∞` by the
-closed subspace of pairs adding to zero almost everywhere, a Banach space when `E` is complete.
-It embeds injectively into `α →ₘ[μ] E` by `TauCeti.L1AddLinfty.toAEEqFun`, and every `Lᵖ`,
+end CompatibleCouple
+
+/-- The space `L¹ + L^∞` of functions `g + h` with `g ∈ L¹` and `h ∈ L^∞`: the sum space of the
+couple `(L¹, L^∞)` (`TauCeti.CompatibleCouple.l1Linfty`), normed by
+`‖u‖ = inf {‖g‖₁ + ‖h‖_∞ | u = g + h}`, a Banach space when `E` is complete. Every `Lᵖ`,
 `1 ≤ p ≤ ∞`, embeds continuously into it by `TauCeti.L1AddLinfty.ofLp`. -/
 abbrev L1AddLinfty : Type _ :=
-  WithLp 1 (Lp E 1 μ × Lp E ∞ μ) ⧸ LinearMap.ker (l1AddLinftyMap 𝕜 E μ)
+  (CompatibleCouple.l1Linfty 𝕜 E μ).SumSpace
 
 namespace L1AddLinfty
 
-variable {𝕜 E μ}
+open CompatibleCouple
 
-/-- The element `g + h` of `L¹ + L^∞`, for `g ∈ L¹` and `h ∈ L^∞`. -/
-def mk : WithLp 1 (Lp E 1 μ × Lp E ∞ μ) →L[𝕜] L1AddLinfty 𝕜 E μ :=
-  (LinearMap.ker (l1AddLinftyMap 𝕜 E μ)).mkQL
-
-theorem mk_surjective : Function.Surjective (mk : _ → L1AddLinfty 𝕜 E μ) :=
-  Submodule.mkQ_surjective _
-
-theorem norm_mk_le (x : WithLp 1 (Lp E 1 μ × Lp E ∞ μ)) :
-    ‖(mk x : L1AddLinfty 𝕜 E μ)‖ ≤ ‖x.fst‖ + ‖x.snd‖ :=
-  (Submodule.Quotient.norm_mk_le _ x).trans_eq (prod_norm_eq_of_L1 x)
-
-/-- The injective map from `L¹ + L^∞` to almost-everywhere equivalence classes, `g + h ↦ g + h`. -/
-def toAEEqFun : L1AddLinfty 𝕜 E μ →ₗ[𝕜] α →ₘ[μ] E :=
-  (LinearMap.ker (l1AddLinftyMap 𝕜 E μ)).liftQ (l1AddLinftyMap 𝕜 E μ) le_rfl
-
-@[simp]
-theorem toAEEqFun_mk (x : WithLp 1 (Lp E 1 μ × Lp E ∞ μ)) :
-    toAEEqFun (mk x : L1AddLinfty 𝕜 E μ) = (x.fst : α →ₘ[μ] E) + (x.snd : α →ₘ[μ] E) :=
-  (rfl)
-
-theorem toAEEqFun_injective : Function.Injective (toAEEqFun : L1AddLinfty 𝕜 E μ → _) :=
-  LinearMap.ker_eq_bot.1 (Submodule.ker_liftQ_eq_bot _ _ _ le_rfl)
-
-@[ext]
-theorem ext {u v : L1AddLinfty 𝕜 E μ} (h : toAEEqFun u = toAEEqFun v) : u = v :=
-  toAEEqFun_injective h
-
-theorem mk_eq_mk_iff {x y : WithLp 1 (Lp E 1 μ × Lp E ∞ μ)} :
-    (mk x : L1AddLinfty 𝕜 E μ) = mk y ↔ ⇑x.fst + ⇑x.snd =ᵐ[μ] ⇑y.fst + ⇑y.snd := by
-  rw [← toAEEqFun_injective.eq_iff, toAEEqFun_mk, toAEEqFun_mk]
-  exact AEEqFun.add_eq_add_iff_ae_eq
-
-theorem mk_eq_zero_iff {x : WithLp 1 (Lp E 1 μ × Lp E ∞ μ)} :
-    (mk x : L1AddLinfty 𝕜 E μ) = 0 ↔ ⇑x.fst + ⇑x.snd =ᵐ[μ] 0 := by
-  have h0 : ⇑(0 : WithLp 1 (Lp E 1 μ × Lp E ∞ μ)).fst +
-      ⇑(0 : WithLp 1 (Lp E 1 μ × Lp E ∞ μ)).snd =ᵐ[μ] 0 := by
-    simp only [zero_fst, zero_snd]
-    filter_upwards [Lp.coeFn_zero E 1 μ, Lp.coeFn_zero E ∞ μ] with a h₁ h₂
-    rw [Pi.add_apply, h₁, h₂, Pi.zero_apply, add_zero]
-  rw [← map_zero mk, mk_eq_mk_iff]
-  exact ⟨fun h => h.trans h0, fun h => h.trans h0.symm⟩
-
-/-- The norm of `L¹ + L^∞` is the infimum of `‖g‖₁ + ‖h‖_∞` over the decompositions `u = g + h`:
-strict upper bounds. -/
-theorem norm_lt_iff {u : L1AddLinfty 𝕜 E μ} {r : ℝ} :
-    ‖u‖ < r ↔ ∃ x, mk x = u ∧ ‖x.fst‖ + ‖x.snd‖ < r := by
-  refine ⟨fun h => ?_, ?_⟩
-  · obtain ⟨x, hx, hxr⟩ := QuotientAddGroup.norm_lt_iff.1 h
-    exact ⟨x, hx, (prod_norm_eq_of_L1 x).symm.trans_lt hxr⟩
-  · rintro ⟨x, rfl, h⟩
-    exact (norm_mk_le x).trans_lt h
-
-/-- The norm of `L¹ + L^∞` is the infimum of `‖g‖₁ + ‖h‖_∞` over the decompositions `u = g + h`:
-lower bounds. -/
-theorem le_norm_iff {u : L1AddLinfty 𝕜 E μ} {r : ℝ} :
-    r ≤ ‖u‖ ↔ ∀ x, mk x = u → r ≤ ‖x.fst‖ + ‖x.snd‖ := by
-  simp only [← not_lt, norm_lt_iff, not_exists, not_and]
-
-section ofLp
-
-variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
+variable {𝕜 E μ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- Every `f ∈ Lᵖ` is the image of an element of `L¹ + L^∞` of norm at most `2 ‖f‖_p`. -/
-private theorem exists_toAEEqFun_eq_and_norm_le (f : Lp E p μ) :
-    ∃ u : L1AddLinfty 𝕜 E μ, toAEEqFun u = (f : α →ₘ[μ] E) ∧ ‖u‖ ≤ 2 * ‖f‖ := by
+private theorem exists_sumSpaceEmbed_eq_and_norm_le (f : Lp E p μ) :
+    ∃ u : L1AddLinfty 𝕜 E μ,
+      (l1Linfty 𝕜 E μ).sumSpaceEmbed u = lpToAmbient 𝕜 f ∧ ‖u‖ ≤ 2 * ‖f‖ := by
   obtain ⟨g, h, hgh, hg, hh⟩ := Lp.exists_add_ae_eq_of_le_of_le f (Fact.out : 1 ≤ p) le_top
-  refine ⟨mk (toLp 1 (g, h)), ?_, (norm_mk_le _).trans ?_⟩
-  · rw [toAEEqFun_mk, toLp_fst, toLp_snd]
-    exact AEEqFun.ext ((AEEqFun.coeFn_add _ _).trans hgh)
-  · rw [toLp_fst, toLp_snd]
-    linarith
+  refine ⟨(l1Linfty 𝕜 E μ).fstToSum g + (l1Linfty 𝕜 E μ).sndToSum h, ?_,
+    (norm_fstToSum_add_sndToSum_le _ _ _).trans (by linarith)⟩
+  rw [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, l1Linfty_embed₀, l1Linfty_embed₁,
+    lpToAmbient_add_lpToAmbient_eq_iff]
+  exact hgh
 
 /-- The inclusion `Lᵖ → L¹ + L^∞` for `1 ≤ p ≤ ∞`: `f` is sent to `g + h` for any decomposition
 `f = g + h` with `g ∈ L¹` and `h ∈ L^∞`. It is injective (`TauCeti.L1AddLinfty.ofLp_injective`)
 of norm at most `2` (`TauCeti.L1AddLinfty.norm_ofLp_le`). -/
 def ofLp : Lp E p μ →L[𝕜] L1AddLinfty 𝕜 E μ :=
   LinearMap.mkContinuous
-    { toFun f := (exists_toAEEqFun_eq_and_norm_le f).choose
-      map_add' f g := toAEEqFun_injective <| by
-        rw [map_add, (exists_toAEEqFun_eq_and_norm_le (f + g)).choose_spec.1,
-          (exists_toAEEqFun_eq_and_norm_le f).choose_spec.1,
-          (exists_toAEEqFun_eq_and_norm_le g).choose_spec.1, AddSubgroup.coe_add]
-      map_smul' c f := toAEEqFun_injective <| by
-        rw [map_smul, (exists_toAEEqFun_eq_and_norm_le (c • f)).choose_spec.1,
-          (exists_toAEEqFun_eq_and_norm_le f).choose_spec.1]
-        -- The scalar action on `Lp E p μ` is the restriction of that on `α →ₘ[μ] E`.
-        rfl }
-    2 fun f => (exists_toAEEqFun_eq_and_norm_le f).choose_spec.2
+    { toFun f := (exists_sumSpaceEmbed_eq_and_norm_le f).choose
+      map_add' f g := sumSpace_ext _ <|
+        (exists_sumSpaceEmbed_eq_and_norm_le (f + g)).choose_spec.1.trans <| by
+          simp only [map_add, (exists_sumSpaceEmbed_eq_and_norm_le f).choose_spec.1,
+            (exists_sumSpaceEmbed_eq_and_norm_le g).choose_spec.1]
+      map_smul' c f := sumSpace_ext _ <|
+        (exists_sumSpaceEmbed_eq_and_norm_le (c • f)).choose_spec.1.trans <| by
+          simp only [RingHom.id_apply, map_smul,
+            (exists_sumSpaceEmbed_eq_and_norm_le f).choose_spec.1] }
+    2 fun f => (exists_sumSpaceEmbed_eq_and_norm_le f).choose_spec.2
 
 @[simp]
-theorem toAEEqFun_ofLp (f : Lp E p μ) :
-    toAEEqFun (ofLp f : L1AddLinfty 𝕜 E μ) = (f : α →ₘ[μ] E) :=
-  (exists_toAEEqFun_eq_and_norm_le f).choose_spec.1
+theorem sumSpaceEmbed_ofLp (f : Lp E p μ) :
+    (l1Linfty 𝕜 E μ).sumSpaceEmbed (ofLp f) = lpToAmbient 𝕜 f :=
+  (exists_sumSpaceEmbed_eq_and_norm_le f).choose_spec.1
 
 theorem norm_ofLp_le (f : Lp E p μ) : ‖(ofLp f : L1AddLinfty 𝕜 E μ)‖ ≤ 2 * ‖f‖ :=
-  (exists_toAEEqFun_eq_and_norm_le f).choose_spec.2
+  (exists_sumSpaceEmbed_eq_and_norm_le f).choose_spec.2
 
 theorem ofLp_eq_ofLp_iff {q : ℝ≥0∞} [Fact (1 ≤ q)] {f : Lp E p μ} {g : Lp E q μ} :
     (ofLp f : L1AddLinfty 𝕜 E μ) = ofLp g ↔ ⇑f =ᵐ[μ] ⇑g := by
-  rw [← toAEEqFun_injective.eq_iff, toAEEqFun_ofLp, toAEEqFun_ofLp, AEEqFun.ext_iff]
+  rw [← (l1Linfty 𝕜 E μ).sumSpaceEmbed_injective.eq_iff, sumSpaceEmbed_ofLp, sumSpaceEmbed_ofLp,
+    lpToAmbient_eq_lpToAmbient_iff]
 
 theorem ofLp_injective : Function.Injective (ofLp : Lp E p μ → L1AddLinfty 𝕜 E μ) :=
   fun _ _ h => Lp.ext (ofLp_eq_ofLp_iff.1 h)
 
-/-- An element `g + h` of `L¹ + L^∞` is the sum of the images of `g` and `h`. -/
-theorem mk_eq_ofLp_add_ofLp (x : WithLp 1 (Lp E 1 μ × Lp E ∞ μ)) :
-    (mk x : L1AddLinfty 𝕜 E μ) = ofLp x.fst + ofLp x.snd :=
-  toAEEqFun_injective <| by simp
+/-- On `L¹`, the inclusion into `L¹ + L^∞` is the inclusion of the first space of the couple. -/
+theorem ofLp_eq_fstToSum (f : Lp E 1 μ) :
+    (ofLp f : L1AddLinfty 𝕜 E μ) = (l1Linfty 𝕜 E μ).fstToSum f :=
+  sumSpace_ext _ (by simp)
+
+/-- On `L^∞`, the inclusion into `L¹ + L^∞` is the inclusion of the second space of the couple. -/
+theorem ofLp_eq_sndToSum (f : Lp E ∞ μ) :
+    (ofLp f : L1AddLinfty 𝕜 E μ) = (l1Linfty 𝕜 E μ).sndToSum f :=
+  sumSpace_ext _ (by simp)
 
 theorem norm_ofLp_one_le (f : Lp E 1 μ) : ‖(ofLp f : L1AddLinfty 𝕜 E μ)‖ ≤ ‖f‖ := by
-  simpa [mk_eq_ofLp_add_ofLp] using norm_mk_le (𝕜 := 𝕜) (toLp 1 (f, (0 : Lp E ∞ μ)))
+  rw [ofLp_eq_fstToSum]
+  exact norm_fstToSum_le _ f
 
 theorem norm_ofLp_top_le (f : Lp E ∞ μ) : ‖(ofLp f : L1AddLinfty 𝕜 E μ)‖ ≤ ‖f‖ := by
-  simpa [mk_eq_ofLp_add_ofLp] using norm_mk_le (𝕜 := 𝕜) (toLp 1 ((0 : Lp E 1 μ), f))
-
-end ofLp
+  rw [ofLp_eq_sndToSum]
+  exact norm_sndToSum_le _ f
 
 end L1AddLinfty
 

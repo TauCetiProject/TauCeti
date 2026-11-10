@@ -81,9 +81,9 @@ theorem lebesgue_fstToSum_add_sndToSum_eq_iff {f₀ g₀ : Lp E p₀ μ} {f₁ g
       ⇑f₀ + ⇑f₁ =ᵐ[μ] ⇑g₀ + ⇑g₁ := by
   rw [← (lebesgue 𝕜 E μ p₀ p₁).sumSpaceEmbed_injective.eq_iff, map_add, map_add,
     sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, sumSpaceEmbed_fstToSum,
-    sumSpaceEmbed_sndToSum, ← L1AddLinfty.toAEEqFun_injective.eq_iff, map_add, map_add]
-  simp only [lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.toAEEqFun_ofLp]
-  exact AEEqFun.add_eq_add_iff_ae_eq
+    sumSpaceEmbed_sndToSum, ← (l1Linfty 𝕜 E μ).sumSpaceEmbed_injective.eq_iff, map_add, map_add]
+  simp only [lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.sumSpaceEmbed_ofLp]
+  exact L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_add_iff 𝕜
 
 section Intermediate
 
@@ -95,10 +95,10 @@ private theorem exists_sumSpaceEmbed_eq_and_norm_le (h₀ : p₀ ≤ p) (h₁ : 
   obtain ⟨g, h, hgh, hg, hh⟩ := Lp.exists_add_ae_eq_of_le_of_le f h₀ h₁
   refine ⟨(lebesgue 𝕜 E μ p₀ p₁).fstToSum g + (lebesgue 𝕜 E μ p₀ p₁).sndToSum h, ?_,
     (norm_fstToSum_add_sndToSum_le _ _ _).trans (by linarith)⟩
-  apply L1AddLinfty.toAEEqFun_injective
+  apply (l1Linfty 𝕜 E μ).sumSpace_ext
   rw [map_add, sumSpaceEmbed_fstToSum, sumSpaceEmbed_sndToSum, map_add]
-  simp only [lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.toAEEqFun_ofLp]
-  exact AEEqFun.ext ((AEEqFun.coeFn_add _ _).trans hgh)
+  simp only [lebesgue_embed₀, lebesgue_embed₁, L1AddLinfty.sumSpaceEmbed_ofLp]
+  exact (L1AddLinfty.lpToAmbient_add_lpToAmbient_eq_iff 𝕜).2 hgh
 
 /-- The inclusion `Lᵖ → L^{p₀} + L^{p₁}` for `p₀ ≤ p ≤ p₁`, of norm at most `2`
 (`TauCeti.CompatibleCouple.norm_lpToLebesgueSum_le`): `f` is sent to `g + h` for a decomposition
