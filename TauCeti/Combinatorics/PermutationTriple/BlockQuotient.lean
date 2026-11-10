@@ -604,15 +604,13 @@ theorem genus_blockQuotient_le (htc : t.IsConnected) :
   rcases B.eq_empty_or_nonempty with rfl | hBne
   · -- the only translate of the empty set is itself, so the quotient has degree one
     have hsub : Subsingleton (orbit t.monodromyGroup (∅ : Set (Fin n))) :=
-      ⟨fun x y ↦ Subtype.ext (by
-        obtain ⟨g, hg⟩ := mem_orbit_iff.1 x.2
-        obtain ⟨g', hg'⟩ := mem_orbit_iff.1 y.2
-        rw [← hg, ← hg', Set.smul_set_empty, Set.smul_set_empty])⟩
+      (MulAction.subsingleton_orbit_iff_mem_fixedPoints.2 fun _ ↦ Set.smul_set_empty).coe_sort
     have hm : Subsingleton (Fin m) := e.symm.subsingleton
-    rw [Subsingleton.elim (t.blockQuotient ∅ e) 1]
     have hm1 : m = 1 :=
       le_antisymm (Fin.subsingleton_iff_le_one.1 hm) (Fin.pos (e ⟨∅, mem_orbit_self _⟩))
-    simp [genus_def, eulerChar_one, hm1]
+    subst hm1
+    rw [genus_of_degree_one]
+    exact Nat.zero_le _
   have hχ := eulerChar_le_ncard_mul_eulerChar_blockQuotient e htc.isPretransitive hB hBne
   rw [← htc.two_sub_two_mul_genus,
     ← (t.isConnected_blockQuotient B e).two_sub_two_mul_genus] at hχ
