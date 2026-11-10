@@ -142,8 +142,7 @@ lemma quotientFunc_TSL_zpow_smul (f : F) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮�
     slash_T_zpow_apply]
   norm_num
 
-/-- Integer translation of a coset does not change its constant term: translation by a real
-number maps the filter `atImInfty` onto itself. -/
+/-- Integer translation of a coset does not change its constant term. -/
 lemma valueAtInfty_quotientFunc_TSL_zpow_smul (f : F) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) (j : ℤ) :
     valueAtInfty (quotientFunc f (TSL ^ j • q)) = valueAtInfty (quotientFunc f q) := by
   have hshift (r : ℝ) : Tendsto (fun τ : ℍ ↦ r +ᵥ τ) atImInfty atImInfty := by

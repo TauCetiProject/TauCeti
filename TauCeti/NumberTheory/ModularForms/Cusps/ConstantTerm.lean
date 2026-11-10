@@ -24,8 +24,9 @@ representatives; the common vanishing condition is intrinsic.  Bundling all of t
 linear map `ModularForm.constantTerms` to `SL₂(ℤ) → ℂ`.
 
 For any subgroup of finite relative index in `SL₂(ℤ)`, constant terms are also indexed by
-`CuspTranslationOrbit`, using the full-coset convention. For modular forms they are independent
-of the representative coset and equal the zeroth q-expansion coefficients in the orbit widths.
+`CuspTranslationOrbit`, using the full-coset convention. For slash-invariant forms they are
+independent of the representative coset; for modular forms they equal the zeroth q-expansion
+coefficients in the orbit widths.
 At arithmetic determinant-one levels their common kernel is the cusp-form submodule.
 
 The constant term at `γ` depends only on the cusp `γ ∞` and on the sign of `γ`: it is unchanged
