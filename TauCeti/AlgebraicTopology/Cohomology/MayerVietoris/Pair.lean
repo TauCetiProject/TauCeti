@@ -162,22 +162,6 @@ private lemma mayerVietorisCochainFromBiprod_eq (n : ℕ) :
         (HomologicalComplex.homologyMap (-cochainComplexMap (R := R) (k := k) (M := M) l) n) := by
   rw [mayerVietorisCochainFromBiprod, HomologicalComplex.homologyMap_neg]
 
-/-- The comparison square of the relative cochain Mayer–Vietoris sequence: the map `(r^*, b^*)`
-followed by the identification `Hom(C(P₂), M) ⊞ Hom(C(P₃), M) ≅ Hom(C(P₂) ⊞ C(P₃), M)` is
-`Hom(-, M)` of the map `C(P₂) ⊞ C(P₃) ⟶ C(P₄)`. -/
-private lemma biprod_lift_cochainComplexMap_comp_inv :
-    biprod.lift (cochainComplexMap (R := R) (k := k) (M := M) r) (cochainComplexMap b) ≫
-        ((linearYonedaFunctor k M).mapIso (biprod.opIso _ _) ≪≫
-          (linearYonedaFunctor k M).mapBiprod _ _).inv =
-      (linearYonedaFunctor k M).map
-        (biprod.desc (chainComplexMap r R) (chainComplexMap b R)).op := by
-  have he := (linearYonedaFunctor k M).mapIso_biprod_opIso_trans_mapBiprod_inv
-    (P₂.chainComplex R) (P₃.chainComplex R)
-  rw [he]
-  simp only [linearYonedaFunctor_obj, cochainComplexMap, biprod.desc_eq, op_add, op_comp,
-    Functor.map_add, Functor.map_comp]
-  exact biprod.lift_desc
-
 variable (sqL : IsPushout t.left l.left r.left b.left) [Mono t.left]
   (sqR : IsPushout t.right l.right r.right b.right) [Mono t.right]
 
@@ -211,7 +195,7 @@ lemma shortExact_mayerVietorisCochainShortComplex :
   · rw [Iso.symm_hom]
     dsimp [ShortComplex.op, -linearYonedaFunctor_obj]
     rw [Category.id_comp]
-    exact (biprod_lift_cochainComplexMap_comp_inv R k M (r := r) (b := b)).symm
+    exact (Functor.biprod_lift_map_op_comp_mapIso_biprod_opIso_trans_mapBiprod_inv _ _ _).symm
   · rw [Iso.symm_hom, he]
     dsimp [ShortComplex.op, -linearYonedaFunctor_obj]
     apply biprod.hom_ext' <;>
@@ -275,18 +259,9 @@ sequence is a monomorphism. -/
 lemma mono_mayerVietorisCochainToBiprod_zero :
     Mono (mayerVietorisCochainToBiprod R k M r b 0) := by
   have hepi := epi_biprod_desc_chainComplexMap R (r := r) (b := b) sqR
-  have hmono : Mono ((linearYonedaFunctor k M).map
-      (biprod.desc (chainComplexMap r R) (chainComplexMap b R)).op) :=
-    mono_linearYonedaFunctor_map_op_of_epi_f k M _ fun i ↦ inferInstance
-  have hf : Mono (biprod.lift (cochainComplexMap (R := R) (k := k) (M := M) r)
-      (cochainComplexMap b)) := by
-    have hcomp : Mono (biprod.lift (cochainComplexMap (R := R) (k := k) (M := M) r)
-        (cochainComplexMap b) ≫ ((linearYonedaFunctor k M).mapIso (biprod.opIso _ _) ≪≫
-          (linearYonedaFunctor k M).mapBiprod _ _).inv) := by
-      rw [biprod_lift_cochainComplexMap_comp_inv R k M]
-      exact hmono
-    exact mono_of_mono _ ((linearYonedaFunctor k M).mapIso (biprod.opIso _ _) ≪≫
-      (linearYonedaFunctor k M).mapBiprod _ _).inv
+  have : Mono (biprod.lift (cochainComplexMap (R := R) (k := k) (M := M) r)
+      (cochainComplexMap b)) :=
+    mono_biprod_lift_linearYonedaFunctor_map_op_of_epi_f k M _ _ fun i ↦ inferInstance
   have : Mono (HomologicalComplex.homologyMap (biprod.lift
       (cochainComplexMap (R := R) (k := k) (M := M) r) (cochainComplexMap b)) 0) :=
     HomologicalComplex.mono_homologyMap_of_mono_of_not_rel _ 0 fun i h ↦ by

@@ -99,22 +99,6 @@ abbrev mayerVietorisCochainShortComplex (sq : CommSq t l r b) :
     (biprod.desc (cochainComplexMap t) (-cochainComplexMap l))
     (by simp [← cochainComplexMap_comp, sq.w])
 
-/-- The comparison square of the cochain Mayer–Vietoris sequence: the map `(r^*, b^*)` followed by
-the identification `Hom(C(X₂), M) ⊞ Hom(C(X₃), M) ≅ Hom(C(X₂) ⊞ C(X₃), M)` is `Hom(-, M)` of the
-map `C(X₂) ⊞ C(X₃) ⟶ C(X₄)`. -/
-private lemma biprod_lift_cochainComplexMap_comp_inv :
-    biprod.lift (cochainComplexMap (R := R) (k := k) (M := M) r) (cochainComplexMap b) ≫
-        ((linearYonedaFunctor k M).mapIso (biprod.opIso _ _) ≪≫
-          (linearYonedaFunctor k M).mapBiprod _ _).inv =
-      (linearYonedaFunctor k M).map
-        (biprod.desc (chainComplexMap r R) (chainComplexMap b R)).op := by
-  have he := (linearYonedaFunctor k M).mapIso_biprod_opIso_trans_mapBiprod_inv
-    (X₂.chainComplex R) (X₃.chainComplex R)
-  rw [he]
-  simp only [linearYonedaFunctor_obj, cochainComplexMap, biprod.desc_eq, op_add, op_comp,
-    Functor.map_add, Functor.map_comp]
-  exact biprod.lift_desc
-
 /-- **The cochain Mayer–Vietoris short exact sequence.** For a pushout square of simplicial sets
 whose top map is a monomorphism, the cochain Mayer–Vietoris sequence is short exact. -/
 lemma shortExact_mayerVietorisCochainShortComplex (sq : IsPushout t l r b) [Mono t] :
@@ -140,7 +124,7 @@ lemma shortExact_mayerVietorisCochainShortComplex (sq : IsPushout t l r b) [Mono
   · rw [Iso.symm_hom]
     dsimp [ShortComplex.op, -linearYonedaFunctor_obj]
     rw [Category.id_comp]
-    exact (biprod_lift_cochainComplexMap_comp_inv R k M (r := r) (b := b)).symm
+    exact (Functor.biprod_lift_map_op_comp_mapIso_biprod_opIso_trans_mapBiprod_inv _ _ _).symm
   · rw [Iso.symm_hom, he]
     dsimp [ShortComplex.op, -linearYonedaFunctor_obj]
     apply biprod.hom_ext' <;>
@@ -281,18 +265,9 @@ monomorphism. -/
 lemma mono_mayerVietorisCochainToBiprod_zero : Mono (mayerVietorisCochainToBiprod R k M r b 0) := by
   have hepi : Epi (biprod.desc (chainComplexMap r R) (chainComplexMap b R)) :=
     (sq.map ((chainComplexFunctor C).obj R)).epi_shortComplex_g
-  have hmono : Mono ((linearYonedaFunctor k M).map
-      (biprod.desc (chainComplexMap r R) (chainComplexMap b R)).op) :=
-    mono_linearYonedaFunctor_map_op_of_epi_f k M _ fun i ↦ inferInstance
-  have hf : Mono (biprod.lift (cochainComplexMap (R := R) (k := k) (M := M) r)
-      (cochainComplexMap b)) := by
-    have hcomp : Mono (biprod.lift (cochainComplexMap (R := R) (k := k) (M := M) r)
-        (cochainComplexMap b) ≫ ((linearYonedaFunctor k M).mapIso (biprod.opIso _ _) ≪≫
-          (linearYonedaFunctor k M).mapBiprod _ _).inv) := by
-      rw [biprod_lift_cochainComplexMap_comp_inv R k M]
-      exact hmono
-    exact mono_of_mono _ ((linearYonedaFunctor k M).mapIso (biprod.opIso _ _) ≪≫
-      (linearYonedaFunctor k M).mapBiprod _ _).inv
+  have : Mono (biprod.lift (cochainComplexMap (R := R) (k := k) (M := M) r)
+      (cochainComplexMap b)) :=
+    mono_biprod_lift_linearYonedaFunctor_map_op_of_epi_f k M _ _ fun i ↦ inferInstance
   have : Mono (HomologicalComplex.homologyMap (biprod.lift
       (cochainComplexMap (R := R) (k := k) (M := M) r) (cochainComplexMap b)) 0) :=
     HomologicalComplex.mono_homologyMap_of_mono_of_not_rel _ 0 fun i h ↦ by
