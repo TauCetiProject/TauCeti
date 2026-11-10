@@ -98,12 +98,14 @@ section Dimension
 variable {F : Type u} [Field F] {V : Type v} [AddCommGroup V] [Module F V]
   [FiniteDimensional F V] {Q : QuadraticForm F V} (P : SpinPolarizationData Q)
 
+omit [FiniteDimensional F V] in
 /-- **The spinor module has dimension `2 ^ l`** when the polarized quadratic space has dimension
 `2 * l + 1`. The isotropic summand has dimension `l` in odd dimension as well as in even
 dimension, the extra dimension being taken up by the anisotropic remainder, so the two parities
 give spinor modules of the same size. -/
 theorem finrank_exteriorAlgebra_W_of_finrank_eq_two_mul_add_one {l : ℕ}
     (hV : finrank F V = 2 * l + 1) : finrank F (ExteriorAlgebra F P.W) = 2 ^ l := by
+  have : FiniteDimensional F V := Module.finite_of_finrank_pos (by omega)
   rw [TauCeti.ExteriorAlgebra.finrank_eq_two_pow, P.finrank_W_eq_of_finrank_eq_two_mul_add_one hV]
 
 /-- **The even Clifford subalgebra and the operator algebra of the spinor module have equal
@@ -175,6 +177,7 @@ theorem nonempty_algEquiv_even_matrix_of_finrank_eq_two_mul_add_one {l : ℕ}
     ⟨(LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f := ψ.toLinearMap) hdim).2 hψ,
       hψ⟩⟩
 
+omit [FiniteDimensional F V] in
 /-- **The structure theorem in odd dimension**: over a separably closed field of characteristic not
 two, the Clifford algebra of a nondegenerate quadratic form on a space of dimension `2 * l + 1` is
 the product of two copies of the matrix algebra `M_{2^l}(F)`.
@@ -188,6 +191,7 @@ theorem nonempty_algEquiv_matrix_prod_of_finrank_eq_two_mul_add_one {l : ℕ}
     (hQ : Q.Nondegenerate) (hV : finrank F V = 2 * l + 1) :
     Nonempty (CliffordAlgebra Q ≃ₐ[F]
       (Matrix (Fin (2 ^ l)) (Fin (2 ^ l)) F × Matrix (Fin (2 ^ l)) (Fin (2 ^ l)) F)) := by
+  have : FiniteDimensional F V := Module.finite_of_finrank_pos (by omega)
   have _ : Invertible (2 : F) := invertibleOfNonzero (NeZero.ne (2 : F))
   obtain ⟨e⟩ := nonempty_algEquiv_even_prod_of_odd_finrank hQ (hV ▸ ⟨l, by ring⟩)
   obtain ⟨f⟩ := nonempty_algEquiv_even_matrix_of_finrank_eq_two_mul_add_one hQ hV

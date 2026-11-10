@@ -519,7 +519,7 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul [Complete
   rcases le_or_gt (a / 2) b with hb | hb
   · -- At positive times the time derivative is the Laplacian, of size `O(H r^(β - 1))`.
     have := norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt (u := u)
-      (f' := fun r => Δ (heatCauchyPotential g r) x) (D := C₂ * H) hβ₀ hβ₁ (by positivity)
+      (f' := fun r => Δ (heatCauchyPotential g r) x) (D := C₂ * H) hβ₀ hβ₁
       (fun r hr => hasDerivAt_heatCauchyPotential_of_aestronglyMeasurable
         hgc.aestronglyMeasurable (ae_of_all _ hM) hr x)
       (fun r hr => hC₂ hgc.aestronglyMeasurable (ae_of_all _ hM) hg hr x) ha hb

@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Field.ZMod
 public import TauCeti.FieldTheory.RatFunc.PIndependent
 public import TauCeti.FieldTheory.FunctionField.Place.RatFunc.Basic
-public import TauCeti.RingTheory.DiscreteValuationRing.FierceBiquadratic
+public import TauCeti.RingTheory.DiscreteValuationRing.FierceBiquadratic.Basic
 
 /-!
 # A fierce biquadratic extension over explicit constants

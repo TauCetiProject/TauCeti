@@ -11,7 +11,7 @@ public import Mathlib.CategoryTheory.Monoidal.Limits.Preserves
 public import Mathlib.CategoryTheory.Monoidal.Subcategory
 public import TauCeti.Algebra.Category.ModuleCat.Monoidal.Unit
 public import TauCeti.CategoryTheory.GradedObject.Module
-public import TauCeti.CategoryTheory.GradedObject.Twisted
+public import TauCeti.CategoryTheory.GradedObject.Twisted.Basic
 
 /-!
 # Finitely supported cocycle-twisted graded vector spaces

@@ -28,6 +28,9 @@ When every object has projective dimension at most one, the criterion shows that
 boundaries of a complex of projective objects are projective. Surjections onto these boundaries
 then split, so the cycles split off the terms.
 
+The chosen projective presentation `0 ⟶ ker π ⟶ P ⟶ X ⟶ 0` of an object is short exact
+(`CategoryTheory.Projective.kernelShortComplex_shortExact`).
+
 When coproducts indexed by `ι` are exact, for instance for direct sums of modules, a coproduct of
 objects of projective dimension at most `n` has projective dimension at most `n`
 (`CategoryTheory.hasProjectiveDimensionLT_of_isColimit_cofan`). The index type is arbitrary, so
@@ -83,6 +86,20 @@ theorem forall_hasProjectiveDimensionLE_one_iff_projective_of_mono :
       { exact := ShortComplex.exact_of_f_is_kernel _ (kernelIsKernel P.f) }
     exact hS.hasProjectiveDimensionLT_X₃ 1 inferInstance inferInstance
 
+variable {C} in
+/-- The short complex `ker π ⟶ P ⟶ X` of the chosen projective presentation `π : P ⟶ X`. -/
+noncomputable abbrev Projective.kernelShortComplex (X : C) : ShortComplex C :=
+  ShortComplex.mk (kernel.ι (Projective.π X)) (Projective.π X) (kernel.condition _)
+
+variable {C} in
+/-- The chosen projective presentation `0 ⟶ ker π ⟶ P ⟶ X ⟶ 0` is short exact. -/
+theorem Projective.kernelShortComplex_shortExact (X : C) :
+    (Projective.kernelShortComplex X).ShortExact :=
+  { exact := ShortComplex.exact_of_f_is_kernel _ (kernelIsKernel _) }
+
+instance (X : C) : Projective (Projective.kernelShortComplex X).X₂ :=
+  inferInstanceAs (Projective (Projective.over X))
+
 section Coproducts
 
 variable {C} {ι : Type*} [HasColimitsOfShape (Discrete ι) C]
@@ -101,9 +118,7 @@ theorem hasProjectiveDimensionLT_of_isColimit_cofan {X : ι → C} {c : Cofan X}
     · have (i : ι) : Projective (X i) := projective_iff_hasProjectiveDimensionLT_one.2 (h i)
       exact projective_iff_hasProjectiveDimensionLT_one.1 (Projective.of_isColimit_cofan hc)
     -- Cover every summand by a projective object; the kernels have projective dimension `< n + 1`.
-    have hK (i : ι) : (ShortComplex.mk (kernel.ι (Projective.π (X i))) (Projective.π (X i))
-        (kernel.condition _)).ShortExact :=
-      { exact := ShortComplex.exact_of_f_is_kernel _ (kernelIsKernel _) }
+    have hK (i : ι) := Projective.kernelShortComplex_shortExact (X i)
     let T : ShortComplex (Discrete ι ⥤ C) :=
       ShortComplex.mk (X₁ := Discrete.functor fun i ↦ kernel (Projective.π (X i)))
         (X₂ := Discrete.functor fun i ↦ Projective.over (X i)) (X₃ := Discrete.functor X)

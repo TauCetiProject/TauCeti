@@ -57,7 +57,7 @@ private lemma one_le_singleton_low_quantile {μ : Measure ℝ} [IsFiniteMeasure 
     · exact (inv_lt_one₀ (by positivity)).2 (by linarith)⟩
   have hscale (s : Set ℝ) : ν.real s = (μ.real univ)⁻¹ * μ.real s := by
     simp [ν, ENNReal.toReal_inv, Measure.real]
-  have hlo := ν.measureReal_Iio_quantile_le p.2.1 p.2.2
+  have hlo := ν.measureReal_Iio_quantile_le p.2.1
   have hhi := ν.le_cdf_quantile p.2.2
   rw [hscale] at hlo
   rw [ProbabilityTheory.cdf_eq_real, hscale] at hhi

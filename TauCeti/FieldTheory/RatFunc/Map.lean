@@ -35,6 +35,8 @@ absolute Galois group, acts on the rational function field.
   to `X` maps a polynomial over `K` to the polynomial with its coefficients mapped to `L`.
 * `RatFunc.mapRingEquiv_algebraMap_ratFunc`: for such an algebra map from `K(X)` to `L(X)`, the
   coefficient map of an automorphism of `L` fixing the image of `K` fixes the image of `K(X)`.
+* `RatFunc.mapRingHom_algebraMap`: Mathlib's `RatFunc.mapRingHom φ` restricts to `φ` on
+  polynomials.
 -/
 
 public section
@@ -172,6 +174,13 @@ namespace RatFunc
 
 open TauCeti.RatFunc
 open scoped Polynomial
+
+/-- On polynomials, Mathlib's coefficient map `RatFunc.mapRingHom φ` is `φ`. -/
+@[simp]
+theorem mapRingHom_algebraMap {K R : Type*} [CommRing K] [IsDomain K] [CommRing R] [IsDomain R]
+    (φ : K[X] →+* R[X]) (hφ : nonZeroDivisors K[X] ≤ (nonZeroDivisors R[X]).comap φ) (p : K[X]) :
+    mapRingHom φ hφ (algebraMap K[X] (RatFunc K) p) = algebraMap R[X] (RatFunc R) (φ p) := by
+  simpa [coe_mapRingHom_eq_coe_map] using map_apply_div φ hφ p 1
 
 variable {F K : Type*} [Field F] [Field K] [Algebra F K] [Algebra (RatFunc F) (RatFunc K)]
   [IsScalarTower F (RatFunc F) (RatFunc K)]

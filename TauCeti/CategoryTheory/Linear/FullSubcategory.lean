@@ -22,6 +22,8 @@ morphism is Mathlib's `CategoryTheory.ObjectProperty.zero_hom`.
   `CategoryTheory.ObjectProperty.sub_hom`: the underlying morphism of a morphism built from the
   preadditive structure.
 * `CategoryTheory.ObjectProperty.smul_hom`: the underlying morphism of a scalar multiple.
+* `CategoryTheory.ObjectProperty.nsmul_hom`, `CategoryTheory.ObjectProperty.zsmul_hom`:
+  the underlying morphism of a natural or integer multiple in a preadditive category.
 -/
 
 public section
@@ -47,6 +49,14 @@ morphism. -/
 /-- The underlying morphism of a difference in a full subcategory is the difference of the
 underlying morphisms. -/
 @[simp] theorem sub_hom (f g : X ⟶ Y) : (f - g).hom = f.hom - g.hom := rfl
+
+/-- The underlying morphism of a natural multiple in a full subcategory is the natural
+multiple of the underlying morphism. -/
+@[simp] theorem nsmul_hom (n : ℕ) (f : X ⟶ Y) : (n • f).hom = n • f.hom := rfl
+
+/-- The underlying morphism of an integer multiple in a full subcategory is the integer
+multiple of the underlying morphism. -/
+@[simp] theorem zsmul_hom (n : ℤ) (f : X ⟶ Y) : (n • f).hom = n • f.hom := rfl
 
 end Preadditive
 

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Stable.Breaking
 import Mathlib.Geometry.Manifold.Metrizable
+import TauCeti.Data.Fin.Basic
 import TauCeti.Dynamics.Flow.Lyapunov
 import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
 
@@ -222,17 +223,7 @@ theorem exists_subseq_tendsto_broken_of_mem_level (h : hX.IsMorseSmale)
     rw [hxk, ← (hu 0).2]
     exact Flow.le_of_mem_stableSet_of_antitone (hu 0).1.2 hdf.continuous.continuousAt
       (hX.antitone_flow hdf _)
-  obtain ⟨i, hlo, hhi⟩ : ∃ i : Fin k, f (x i.succ) < c ∧ c < f (x i.castSucc) := by
-    let S := Finset.univ.filter fun i ↦ c < f (x i)
-    have hS : S.Nonempty := ⟨0, by simpa [S] using hcp⟩
-    have hmS := S.max'_mem hS
-    have hm : S.max' hS ≠ Fin.last k := fun he ↦ by
-      rw [he] at hmS
-      exact (hcr.trans (by simpa [S] using hmS)).false
-    obtain ⟨i, hi⟩ := Fin.exists_castSucc_eq.2 hm
-    refine ⟨i, lt_of_le_of_ne (not_lt.1 fun hlt ↦ ?_) (hxc' _), by simpa [S, hi] using hmS⟩
-    exact (Fin.castSucc_lt_succ : i.castSucc < i.succ).not_ge
-      (hi ▸ S.le_max' _ (by simpa [S] using hlt))
+  obtain ⟨i, hlo, hhi⟩ := Fin.exists_succ_lt_lt_castSucc (g := fun i ↦ f (x i)) hxc' hcp hcr
   -- The point `y` where this component crosses the level `c`. Shifting every time by `τ` moves
   -- the points `z i'` along their orbits, and makes `y` the point of this component.
   obtain ⟨τ, hτ, -⟩ :=
@@ -253,9 +244,10 @@ theorem exists_subseq_tendsto_broken_of_mem_level (h : hX.IsMorseSmale)
     simp only [w, ← Flow.map_add, neg_add_cancel, Flow.map_zero_apply]
   have hσ := hX.tendsto_zero_of_flow_eq_of_mem_unstableSet_inter_stableSet hdf (hne i) hy hw
     (σ := fun j ↦ -σ j) fun j ↦ by rw [huw, (hu (n j)).2, hτ]
-  have hlim := (hX.contMDiff_flow_uncurry.continuous.tendsto ((0 : ℝ), y)).comp
-    (hσ.prodMk_nhds hw)
-  simp only [Flow.map_zero_apply] at hlim
+  have hlim := hX.tendsto_flow_of_flow_eq_of_mem_unstableSet_inter_stableSet hdf (hne i) hy
+    (σ := 0) (by rw [Flow.map_zero_apply, hτ]) hw (s := fun j ↦ -σ j)
+    fun j ↦ by rw [huw, (hu (n j)).2]
+  rw [Flow.map_zero_apply] at hlim
   refine ⟨k, x, fun i' ↦ hX.flow τ (z i'), fun i' j ↦ s i' j + τ, n, hn, hx0, hxk, hxc, hxi,
     fun i' ↦ ⟨Flow.isInvariant_unstableSet _ _ τ (hz i').1,
       Flow.isInvariant_stableSet _ _ τ (hz i').2⟩,

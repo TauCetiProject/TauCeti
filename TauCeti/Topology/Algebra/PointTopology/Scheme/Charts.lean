@@ -21,6 +21,9 @@ The overlap argument refines a neighbourhood of the image of the closed point to
 principal open. Its points form an open subspace by the localization theorem. This
 also shows why locality of the coefficient ring matters: containing the closed point
 ensures that the entire scheme-valued point factors through that principal open.
+The same overlap argument gives `continuous_chartPoint_of_isLocalRing`: continuity on
+points for any morphism from an affine scheme over the base, not just an open immersion.
+This is what makes arbitrary scheme morphisms act continuously on points.
 
 ## References
 
@@ -131,5 +134,21 @@ theorem isOpenEmbedding_chartPoint (A : CommAlgCat.{u} k) (i : Spec (.of A) ⟶ 
     IsOpenEmbedding (chartPoint (R := R) f A i hi) :=
   .of_continuous_injective_isOpenMap (continuous_chartPoint f A i hi)
     (chartPoint_injective f A i hi) (isOpenMap_chartPoint f A i hi)
+
+/-- A morphism from an affine scheme is continuous on points over a local topological
+ring with open units and continuous inversion on the units. Unlike `continuous_chartPoint`,
+the morphism need not be an open immersion. -/
+theorem continuous_chartPoint_of_isLocalRing (A : CommAlgCat.{u} k)
+    (i : Spec (.of A) ⟶ X) (hi : i ≫ f = Spec.algebraMap k A) :
+    Continuous (chartPoint (R := R) f A i hi) := by
+  refine continuous_def.2 fun s hs ↦ isOpen_iff_forall_mem_open.2 fun x hx ↦ ?_
+  obtain ⟨B, j, hj, _, y, hy⟩ :=
+    exists_mem_range_chartPoint f (chartPoint f A i hi x)
+  refine ⟨chartPoint f A i hi ⁻¹' (chartPoint f B j hj ''
+    (chartPoint f B j hj ⁻¹' s)), ?_, ?_, ?_⟩
+  · exact Set.preimage_mono (Set.image_preimage_subset _ _)
+  · exact isOpen_preimage_chartPoint_image f B A j i hj hi
+      (hs.preimage (continuous_chartPoint f B j hj))
+  · exact ⟨y, by simpa only [Set.mem_preimage, hy] using hx, hy⟩
 
 end TauCeti.SchemePointTopology

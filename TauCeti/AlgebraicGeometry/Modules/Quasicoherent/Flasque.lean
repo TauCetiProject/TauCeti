@@ -9,7 +9,7 @@ public import Mathlib.AlgebraicGeometry.Modules.Tilde
 public import Mathlib.RingTheory.Spectrum.Prime.Noetherian
 public import Mathlib.Topology.Sheaves.Flasque
 public import TauCeti.Algebra.Module.Injective.Noetherian
-public import TauCeti.Algebra.Module.LocalizedModule.Away
+public import TauCeti.Algebra.Module.LocalizedModule.Away.Basic
 
 /-!
 # The sheaf of an injective module over a Noetherian ring is flasque

@@ -38,6 +38,8 @@ underlying real manifold.
 * `SetLike.contMDiffConstSMul`: a subobject, such as a submonoid, a subgroup or a submodule, of
   a type acting by `C^n` maps also acts by `C^n` maps.
 * `ContMDiffSMul.contMDiff_smul_const`: the orbit maps `g ↦ g • x` of a `C^n` action are `C^n`.
+* `ContMDiffSMul.mdifferentiableAt_smul_const`: the orbit maps of a `C^1` action are
+  differentiable.
 * `ContinuousLinearEquiv.contMDiffConstSMul_transContinuousLinearEquiv_iff`: a linear change of
   the model vector space does not change whether an action is by `C^n` maps.
 * `ContMDiffConstSMul.restrictScalars`: an action by maps that are `C^n` over `𝕜'` is by maps that
@@ -87,6 +89,18 @@ theorem ContMDiffSMul.contMDiff_smul_const {𝕜 : Type*} [NontriviallyNormedFie
     {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M] {n : ℕ∞ω}
     [ContMDiffSMul I I' n G M] (x : M) : ContMDiff I I' n fun g : G ↦ g • x :=
   contMDiff_id.smul contMDiff_const
+
+/-- The orbit map `g ↦ g • x` of a `C^1` action is differentiable. -/
+@[to_additive /-- The orbit map `g ↦ g +ᵥ x` of a `C^1` additive action is differentiable. -/]
+theorem ContMDiffSMul.mdifferentiableAt_smul_const {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
+    {G : Type*} [TopologicalSpace G] [ChartedSpace H G]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [SMul G M]
+    [ContMDiffSMul I I' 1 G M] (x : M) (g : G) : MDifferentiableAt I I' (fun h : G ↦ h • x) g :=
+  (contMDiff_smul_const (n := 1) x).mdifferentiableAt one_ne_zero
 
 /-! ### Changes of model -/
 

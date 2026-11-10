@@ -38,6 +38,8 @@ interval indexed by `⌊x / δ⌋`, and an interval meeting `[-R, R]` has its in
   `m ∈ [⌈-R / δ⌉ - 1, ⌊R / δ⌋]`.
 * `TauCeti.exists_finset_forall_exists_le_lt_add`: finitely many families round up, by less
   than `δ` in each entry, every family with entries in `[-R, R]`.
+* `TauCeti.abs_sub_lt_one_div_of_natFloor_mul_eq`: for `t > 0`, nonnegative elements `a`, `b`
+  with `⌊a * t⌋₊ = ⌊b * t⌋₊` differ by less than `1 / t`.
 -/
 
 public section
@@ -105,5 +107,17 @@ theorem exists_finset_forall_exists_le_lt_add {κ : Type*} [Finite κ] (hδ : 0 
   · dsimp only
     rw [mul_comm, ← lt_div_iff₀ hδ, add_div, div_self hδ.ne']
     exact Int.ceil_lt_add_one _
+
+/-- For `t > 0`, two nonnegative elements `a`, `b` of an ordered field with the same natural
+floor of `x * t` differ by less than `1 / t`: on the nonnegative half-line the cells of the grid of
+scale `t` have side `1 / t`. -/
+theorem abs_sub_lt_one_div_of_natFloor_mul_eq {a b t : K} (ht : 0 < t) (ha : 0 ≤ a) (hb : 0 ≤ b)
+    (h : ⌊a * t⌋₊ = ⌊b * t⌋₊) : |a - b| < 1 / t := by
+  have hcell := Int.abs_sub_lt_one_of_floor_eq_floor (a := a * t) (b := b * t) <| by
+    rw [← Int.natCast_floor_eq_floor (by positivity), ← Int.natCast_floor_eq_floor (by positivity),
+      h]
+  rw [← sub_mul, abs_mul, abs_of_pos ht] at hcell
+  rw [lt_div_iff₀ ht]
+  exact hcell
 
 end TauCeti

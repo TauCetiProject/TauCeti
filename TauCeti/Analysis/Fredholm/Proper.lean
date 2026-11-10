@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.InverseFunctionTheorem.FDeriv
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
 public import TauCeti.Analysis.Normed.Operator.ClosedRange
+import TauCeti.Topology.MetricSpace.Antilipschitz
 
 /-!
 # A map with upper semi-Fredholm derivative is proper near the point
@@ -96,16 +97,6 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
     (Metric.closedBall_subset_ball (by linarith)).trans hball
   have happN : ApproximatesLinearOn f f' N ε := happ.mono_set hNs
   have hcontOn : ContinuousOn f N := happN.continuousOn
-  -- the two-sided bound on `N`
-  have hCε : C * (ε : ℝ) = 1 / 2 := by rw [hεcoe]; field_simp
-  have key : ∀ x ∈ N, ∀ y ∈ N,
-      ‖x - y‖ ≤ 2 * (C * ‖f x - f y‖) + 2 * ‖P x - P y‖ := by
-    intro x hx y hy
-    have h := happN.one_sub_mul_norm_sub_le (P := P) hC.le (fun z _ ↦ hest z) hx hy
-    rw [hCε] at h
-    linarith
-  refine ⟨N, Metric.closedBall_mem_nhds a (by linarith), fun L hL => ?_⟩
-  -- the compact box the projection lands in
   have hPmem : ∀ x, P x ∈ f'.ker := by
     intro x
     rw [← hPrange]
@@ -113,27 +104,34 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
   let _ : FiniteDimensional 𝕜 f'.ker := hfinite
   have : ProperSpace f'.ker := FiniteDimensional.proper 𝕜 f'.ker
   let Pker : E →L[𝕜] f'.ker := P.codRestrict f'.ker hPmem
+  -- the two-sided bound on `N`
+  have hCε : C * (ε : ℝ) = 1 / 2 := by rw [hεcoe]; field_simp
+  have key : ∀ x ∈ N, ∀ y ∈ N,
+      ‖x - y‖ ≤ 2 * (C * ‖f x - f y‖) + 2 * ‖Pker x - Pker y‖ := by
+    intro x hx y hy
+    have h := happN.one_sub_mul_norm_sub_le (P := P) hC.le (fun z _ ↦ hest z) hx hy
+    rw [hCε] at h
+    have hP : ‖Pker x - Pker y‖ = ‖P x - P y‖ := by
+      -- `Pker` coerces back to `P`, since it is `P` with its codomain restricted to `f'.ker`
+      simp only [Pker, ← Submodule.norm_coe, Submodule.coe_sub,
+        ContinuousLinearMap.coe_codRestrict_apply]
+    rw [hP]
+    linarith
+  refine ⟨N, Metric.closedBall_mem_nhds a (by linarith), fun L hL => ?_⟩
+  -- the compact box the projection lands in
   let Kp := closure (Pker '' N)
   have hKpc : IsCompact Kp :=
     (Pker.lipschitzWith.isBounded_image Metric.isBounded_closedBall).isCompact_closure
   have hPN : ∀ x ∈ N, Pker x ∈ Kp := fun x hx => subset_closure ⟨x, hx, rfl⟩
   -- the anti-Lipschitz coordinate on `N`
-  set Θ : N → F × f'.ker := fun x => (f (x : E), Pker (x : E))
-  have hanti : AntilipschitzWith (.mk (2 * C + 2) (by positivity)) Θ := by
-    refine AntilipschitzWith.of_le_mul_dist fun x y => ?_
-    have hf : ‖f (x : E) - f (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
-      simpa only [Prod.fst_sub, Θ] using norm_fst_le (Θ x - Θ y)
-    -- The kernel coordinate has the norm induced from `E`, and `Pker` coerces to `P`.
-    have hP : ‖P (x : E) - P (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
-      simpa only [Prod.snd_sub, Θ, ← Submodule.norm_coe, Submodule.coe_sub, Pker,
-        ContinuousLinearMap.coe_codRestrict_apply] using norm_snd_le (Θ x - Θ y)
-    have hfC := mul_le_mul_of_nonneg_left hf hC.le
-    rw [Subtype.dist_eq, dist_eq_norm, dist_eq_norm, NNReal.coe_mk]
-    nlinarith [key (x : E) x.2 (y : E) y.2]
-  have hΘcont : UniformContinuous Θ :=
-    happN.lipschitzWith.uniformContinuous.prodMk
-      (Pker.lipschitzWith.uniformContinuous.comp uniformContinuous_subtype_val)
-  have hind : IsUniformInducing Θ := hanti.isUniformInducing hΘcont
+  have hind : IsUniformInducing fun x : N => (f (x : E), Pker (x : E)) := by
+    have hC2 : ((2 * C).toNNReal : ℝ) = 2 * C := Real.coe_toNNReal _ hCpos.le
+    refine (AntilipschitzWith.prodMk_of_dist_le (f := N.domRestrict f) (g := N.domRestrict Pker)
+      (A := (2 * C).toNNReal) (B := 2) fun x y ↦ ?_).isUniformInducing
+      (happN.lipschitzWith.uniformContinuous.prodMk
+        (Pker.lipschitzWith.uniformContinuous.comp uniformContinuous_subtype_val))
+    simpa only [Subtype.dist_eq, Set.domRestrict_apply, dist_eq_norm, hC2, NNReal.coe_ofNat,
+      mul_assoc] using key x x.2 y y.2
   -- total boundedness, then compactness
   have htb : TotallyBounded
       ((Subtype.val : N → E) '' (Subtype.val : N → E) ⁻¹' (f ⁻¹' L)) := by

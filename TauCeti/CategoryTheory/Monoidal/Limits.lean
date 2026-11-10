@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Category
-public import Mathlib.CategoryTheory.Limits.Preserves.Basic
+public import Mathlib.CategoryTheory.Adjunction.Limits
 
 /-!
 # Limits and colimits under tensoring
 
-The left unitor identifies tensoring on the left by the tensor unit with the identity functor.
-Thus this functor preserves colimits, without any closedness assumption on the monoidal category.
-This allows constructions that require tensoring to preserve coproducts to be used with the unit.
+The left and right unitors identify tensoring by the tensor unit on either side with the identity
+functor. Thus these functors are equivalences, and in particular preserve, reflect and create all
+limits and colimits, without any closedness assumption on the monoidal category. This allows
+constructions that require tensoring to preserve coproducts to be used with the unit.
 
 When tensoring with an object `U` on one side preserves a limit `c`, morphisms into the tensor
 product of `U` with `c.pt` are determined by their composites with the whiskered legs of `c`;
@@ -28,11 +29,17 @@ universe w w' v u
 
 namespace TauCeti
 
-/-- Tensoring on the left with the tensor unit preserves colimits, via
+variable (C : Type u) [Category.{v} C] [MonoidalCategory C]
+
+/-- Tensoring on the left with the tensor unit is an equivalence, via
 `MonoidalCategory.leftUnitorNatIso`. -/
-instance preservesColimits_tensorUnitLeft (C : Type u) [Category.{v} C] [MonoidalCategory C] :
-    PreservesColimitsOfSize.{w, w'} (tensorUnitLeft C) :=
-  preservesColimits_of_natIso (leftUnitorNatIso C).symm
+instance isEquivalence_tensorUnitLeft : (tensorUnitLeft C).IsEquivalence :=
+  Functor.isEquivalence_of_iso (leftUnitorNatIso C).symm
+
+/-- Tensoring on the right with the tensor unit is an equivalence, via
+`MonoidalCategory.rightUnitorNatIso`. -/
+instance isEquivalence_tensorUnitRight : (tensorUnitRight C).IsEquivalence :=
+  Functor.isEquivalence_of_iso (rightUnitorNatIso C).symm
 
 end TauCeti
 

@@ -24,18 +24,20 @@ between two objects, and two members `X i`, `X j` of a family have the greatest 
 `X i ⊓ X j`. So a family of elements is compatible exactly when the restrictions of `x i` and
 `x j` to `X i ⊓ X j` agree.
 
-The sheaf condition for a presieve on `X` reads a presheaf only at objects mapping to `X`. So a
-natural transformation `P ⟶ P'` that is bijective at those objects carries the sheaf condition
-from `P'` back to `P`, even if `P` and `P'` differ elsewhere. This is how a sheaf condition on an
-open subspace is compared with one on the ambient space.
+Every natural transformation `P ⟶ P'` carries compatible families for a presieve `R` on `X` to
+compatible families. So it carries the sheaf condition for `R` from `P'` back to `P` as soon as it
+is bijective at `X` and injective at the sources of the arrows of `R`, whatever it does at other
+objects. This is how a sheaf condition on an open subspace is compared with one on the ambient
+space.
 
 ## Main results
 
 * `CategoryTheory.Presieve.Arrows.compatible_iff_of_isTerminal`: the characterisation above.
 * `CategoryTheory.Presieve.Arrows.compatible_homOfLE_iff`: compatibility in a meet-semilattice is
   agreement on pairwise meets.
-* `CategoryTheory.Presieve.isSheafFor_of_bijective_app`: the sheaf condition for a presieve on `X`
-  passes back along a natural transformation that is bijective at the objects over `X`.
+* `CategoryTheory.Presieve.isSheafFor_of_bijective_app`: the sheaf condition for a presieve `R` on
+  `X` passes back along a natural transformation that is bijective at `X` and injective at the
+  sources of the arrows of `R`.
 * `CategoryTheory.Presieve.isSheafFor_ofArrows_of_factorsThru`: the sheaf condition for a family of
   arrows follows from that of a finer presieve `S` (one factoring through the arrows), once
   separated presieves on the sources of the arrows refine `S` along them.
@@ -93,17 +95,18 @@ namespace CategoryTheory.Presieve
 
 variable {C : Type u} [Category.{v} C] {P P' : Cᵒᵖ ⥤ Type w}
 
-/-- **The sheaf condition for a presieve on `X` only involves the objects over `X`.** If a natural
-transformation `α : P ⟶ P'` is bijective at every object admitting a morphism to `X`, then `P`
-satisfies the sheaf condition for a presieve `R` on `X` whenever `P'` does. Unlike
-`CategoryTheory.Presieve.isSheafFor_of_nat_equiv`, nothing is assumed away from `X`. -/
+/-- **Transferring the sheaf condition along a natural transformation.** If a natural
+transformation `α : P ⟶ P'` is bijective at `X` and injective at the source of every arrow of a
+presieve `R` on `X`, then `P` satisfies the sheaf condition for `R` whenever `P'` does. Unlike
+`CategoryTheory.Presieve.isSheafFor_of_nat_equiv`, nothing is assumed at other objects. -/
 theorem isSheafFor_of_bijective_app (α : P ⟶ P') {X : C} {R : Presieve X}
-    (hα : ∀ ⦃Y : C⦄, (Y ⟶ X) → Function.Bijective (α.app (op Y))) (h : IsSheafFor P' R) :
-    IsSheafFor P R := by
+    (hX : Function.Bijective (α.app (op X)))
+    (hR : ∀ ⦃Y : C⦄ ⦃f : Y ⟶ X⦄, R f → Function.Injective (α.app (op Y)))
+    (h : IsSheafFor P' R) : IsSheafFor P R := by
   intro x hx
   obtain ⟨t', ht', hu⟩ := h (x.map α) (hx.map α)
-  obtain ⟨t, rfl⟩ := (hα (𝟙 X)).2 t'
-  refine ⟨t, fun Y f hf ↦ (hα f).1 ?_, fun t₁ ht₁ ↦ (hα (𝟙 X)).1 (hu _ (ht₁.map α))⟩
+  obtain ⟨t, rfl⟩ := hX.2 t'
+  refine ⟨t, fun Y f hf ↦ hR hf ?_, fun t₁ ht₁ ↦ hX.1 (hu _ (ht₁.map α))⟩
   rw [NatTrans.naturality_apply]
   exact ht' f hf
 
@@ -116,9 +119,7 @@ theorem isSheafFor_ofArrows_of_factorsThru {W : C} {ι : Type*} {X : ι → C} (
     (T : ∀ i, Presieve (X i)) (hsep : ∀ i, (T i).IsSeparatedFor P) {S : Presieve W}
     (hS : S.IsSheafFor P) (hfac : S.FactorsThru (ofArrows X f))
     (href : ∀ i, (T i).FactorsThruAlong S (f i)) :
-    (ofArrows X f).IsSheafFor P := by
-  refine isSheafFor_of_factorsThru _ hfac hS fun Z e he ↦ ?_
-  obtain ⟨i⟩ := he
-  exact ⟨T i, hsep i, href i⟩
+    (ofArrows X f).IsSheafFor P :=
+  isSheafFor_of_factorsThru _ hfac hS fun _ _ ⟨i⟩ ↦ ⟨T i, hsep i, href i⟩
 
 end CategoryTheory.Presieve

@@ -10,6 +10,8 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Log
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Topology.UnitInterval
 import TauCeti.Analysis.Contour.Curve.Distance
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Continuous argument lift for a point-avoiding curve
@@ -37,8 +39,6 @@ API does not expose.
   on `[a, b]`, for a curve continuous there and avoiding `w`, plus a monotone partition witness.
 * `TauCeti.Contour.segRatio` and its evaluation lemmas — the segment-ratio building block used to
   assemble the index integral downstream.
-* `TauCeti.Contour.div_norm_eq_exp_arg_mul_I` — the unit direction of a nonzero complex number
-  in polar form, shared with the sector-resonance bridges.
 * `TauCeti.Contour.exp_mul_I_congr_angle` — equal real angles have equal unit complex
   exponentials.
 * `ContinuousOn.exists_continuousOn_circleMap_comp_eqOn` — a curve in a circle `sphere c r` is
@@ -279,13 +279,6 @@ private theorem continuousOn_im_log_segRatio {γ : ℝ → ℂ} {a b : ℝ}
 
 /-! ### The unit direction in polar form -/
 
-/-- **A nonzero complex number over its norm is the exponential of its argument**:
-`w / ↑‖w‖ = exp(arg w · I)`. -/
-theorem div_norm_eq_exp_arg_mul_I {w : ℂ} (hw : w ≠ 0) :
-    w / (‖w‖ : ℂ) = Complex.exp ((Complex.arg w : ℂ) * Complex.I) := by
-  rw [div_eq_iff (Complex.ofReal_ne_zero.mpr (norm_ne_zero_iff.mpr hw)), mul_comm]
-  exact (Complex.norm_mul_exp_arg_mul_I w).symm
-
 /-- Two real representatives of the same `Real.Angle` have the same unit complex exponential.
 This is the coercion bridge from the quotient-valued angle API to complex polar form. -/
 theorem exp_mul_I_congr_angle {x y : ℝ} (h : (x : Real.Angle) = (y : Real.Angle)) :
@@ -296,7 +289,7 @@ theorem exp_mul_I_congr_angle {x y : ℝ} (h : (x : Real.Angle) = (y : Real.Angl
 /-- For a nonzero complex number `z`, `exp(I · Im(log z)) = z / ↑‖z‖`. -/
 private lemma exp_I_log_im_eq_div_norm {z : ℂ} (hz : z ≠ 0) :
     Complex.exp (Complex.I * ((Complex.log z).im : ℂ)) = z / (‖z‖ : ℂ) := by
-  rw [Complex.log_im, mul_comm, ← div_norm_eq_exp_arg_mul_I hz]
+  rw [Complex.log_im, mul_comm, Complex.exp_arg_mul_I hz]
 
 /-! ### Polar form of a product -/
 
@@ -518,30 +511,7 @@ theorem monotoneOn_and_eq_add_two_pi_or_antitoneOn_and_eq_add_two_pi {θ : ℝ �
       · simp [h, periodic_circleMap c r (θ t)])
     subst hta
     rcases h with h | h <;> linarith [Real.pi_pos]
-  -- The angles at the endpoints differ: otherwise the angle at the midpoint would be taken
-  -- twice by the intermediate value theorem.
-  have hne : θ a ≠ θ b := by
-    intro hab'
-    set m := (a + b) / 2 with hm_def
-    have hm : m ∈ Ioo a b := ⟨by linarith, by linarith⟩
-    have hθm : θ m ≠ θ a := fun h ↦ hm.1.ne' (hθinj ⟨hm.1.le, hm.2⟩ ha h)
-    set v := (θ a + θ m) / 2 with hv_def
-    have hva : v ≠ θ a := fun h ↦ hθm (by linarith)
-    have hvm : v ≠ θ m := fun h ↦ hθm (by linarith)
-    have hv : v ∈ [[θ a, θ m]] := mem_uIcc.2 (by
-      rcases le_total (θ a) (θ m) with h | h <;> [left; right] <;> constructor <;> linarith)
-    obtain ⟨s, hs, hsv⟩ := intermediate_value_uIcc
-      (hθ.mono (by rw [uIcc_of_le hm.1.le]; exact Icc_subset_Icc le_rfl hm.2.le)) hv
-    obtain ⟨t, ht, htv⟩ := intermediate_value_uIcc
-      (hθ.mono (by rw [uIcc_of_le hm.2.le]; exact Icc_subset_Icc hm.1.le le_rfl))
-      (show v ∈ [[θ m, θ b]] by rwa [← hab', uIcc_comm])
-    rw [uIcc_of_le hm.1.le] at hs
-    rw [uIcc_of_le hm.2.le] at ht
-    have htb : t ≠ b := by rintro rfl; exact hva (htv.symm.trans hab'.symm)
-    have hst : s = t := hθinj ⟨hs.1, hs.2.trans_lt hm.2⟩ ⟨hm.1.le.trans ht.1, ht.2.lt_of_ne htb⟩
-      (hsv.trans htv.symm)
-    have hsm : s = m := le_antisymm hs.2 (hst ▸ ht.1)
-    exact hvm (hsv.symm.trans (congrArg θ hsm))
+  have hne : θ a ≠ θ b := hθ.apply_ne_apply_of_injOn_Ico hab hθinj
   have hθinj' : InjOn θ (Icc a b) := by
     rw [← Ico_insert_right hab.le, injOn_insert fun h : b ∈ Ico a b ↦ h.2.false]
     refine ⟨hθinj, ?_⟩

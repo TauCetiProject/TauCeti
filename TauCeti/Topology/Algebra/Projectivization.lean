@@ -59,6 +59,8 @@ of projective space.
 * `Projectivization.isOpen_affineOpen`: the standard affine opens are open.
 * `Projectivization.affineOpenPartialHomeomorph`: the standard affine chart as an open partial
   homeomorphism from `U_i` onto `Fin n → K`.
+* `Projectivization.interAffineOpenHomeomorph`: the affine chart identifies the part `X ∩ U_i` of a
+  set `X` with its image in `Fin n → K`.
 -/
 
 public section
@@ -232,10 +234,11 @@ theorem continuous_affineChart_symm (i : Fin (n + 1)) :
 
 variable [ContinuousMul K] [ContinuousInv₀ K] [T1Space K]
 
+omit [T1Space K] in
 /-- The standard affine chart of projective space is continuous on its domain. -/
 theorem continuousOn_affineChart (i : Fin (n + 1)) :
     ContinuousOn (affineChart (K := K) i) (affineOpen i) := by
-  refine (isOpen_affineOpen i).continuousOn_iff.2 fun x hx ↦ ?_
+  refine fun x hx ↦ ContinuousAt.continuousWithinAt ?_
   obtain ⟨v, rfl⟩ := isOpenQuotientMap_mk'.surjective x
   rw [mk'_eq_mk, mk_mem_affineOpen_iff] at hx
   -- Composed with the quotient map, the chart is a family of ratios of coordinates.
@@ -271,6 +274,30 @@ theorem coe_affineOpenPartialHomeomorph (i : Fin (n + 1)) :
 theorem coe_affineOpenPartialHomeomorph_symm (i : Fin (n + 1)) :
     ⇑(affineOpenPartialHomeomorph (K := K) i).symm = (affineChart i).symm :=
   (rfl)
+
+/-- **The affine part of a subset of projective space.** The standard affine chart at the
+coordinate `i` restricts to a homeomorphism from the part `X ∩ U_i` of a set `X` inside the affine
+open `U_i = {[v] | v i ≠ 0}` onto its image `Z` in `Fin n → K`. -/
+noncomputable def interAffineOpenHomeomorph {X : Set (ℙ K (Fin (n + 1) → K))} {i : Fin (n + 1)}
+    {Z : Set (Fin n → K)} (hZ : affineChart i '' (X ∩ affineOpen i) = Z) :
+    ↥(X ∩ affineOpen i) ≃ₜ Z :=
+  (affineOpenPartialHomeomorph i).homeomorphOfImageSubsetSource (by simp) (by simpa using hZ)
+
+/-- The homeomorphism `Projectivization.interAffineOpenHomeomorph` is the affine chart. -/
+@[simp]
+theorem coe_interAffineOpenHomeomorph_apply {X : Set (ℙ K (Fin (n + 1) → K))} {i : Fin (n + 1)}
+    {Z : Set (Fin n → K)} (hZ : affineChart i '' (X ∩ affineOpen i) = Z)
+    (y : ↥(X ∩ affineOpen i)) :
+    (interAffineOpenHomeomorph hZ y : Fin n → K) = affineChart i y := by
+  simp [interAffineOpenHomeomorph]
+
+/-- The inverse of `Projectivization.interAffineOpenHomeomorph` is the inverse affine chart. -/
+@[simp]
+theorem coe_interAffineOpenHomeomorph_symm_apply {X : Set (ℙ K (Fin (n + 1) → K))}
+    {i : Fin (n + 1)} {Z : Set (Fin n → K)} (hZ : affineChart i '' (X ∩ affineOpen i) = Z)
+    (z : Z) :
+    ((interAffineOpenHomeomorph hZ).symm z : ℙ K (Fin (n + 1) → K)) = (affineChart i).symm z := by
+  simp [interAffineOpenHomeomorph]
 
 end AffineChart
 
