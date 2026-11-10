@@ -271,7 +271,7 @@ theorem exists_eq_smul_add_smul (hV : finrank ℝ V = 2) {q p : V} (h : ω q p =
 
 /-- In a symplectic plane, two linear maps agreeing on a pair `(q, p)` with `ω(q, p) = 1` are
 equal. -/
-theorem ext_of_apply_eq_one (hV : finrank ℝ V = 2) {q p : V} (h : ω q p = 1)
+theorem linearMap_ext_of_apply_eq_one (hV : finrank ℝ V = 2) {q p : V} (h : ω q p = 1)
     {f g : V →ₗ[ℝ] W} (hq : f q = g q) (hp : f p = g p) : f = g := by
   ext v
   obtain ⟨x, y, rfl⟩ := exists_eq_smul_add_smul hV h v
@@ -336,7 +336,8 @@ theorem exists_isSymplectomorphism_forall_apply_eq_of_pair (hV : finrank ℝ V =
     ∃ e : V ≃ₗ[ℝ] W, IsSymplectomorphism ω ω' e ∧ ∀ v, e (A v) = B (e v) := by
   obtain ⟨e, he, heq, hep⟩ := exists_isSymplectomorphism_apply_eq hV hW h h'
   refine ⟨e, he, fun v ↦ ?_⟩
-  have := ext_of_apply_eq_one hV h (f := e.toLinearMap ∘ₗ A) (g := B ∘ₗ e.toLinearMap)
+  have := linearMap_ext_of_apply_eq_one hV h (f := e.toLinearMap ∘ₗ A)
+    (g := B ∘ₗ e.toLinearMap)
     (by simp [hAq, heq, hep, hBq]) (by simp [hAp, heq, hep, hBp])
   exact LinearMap.congr_fun this v
 

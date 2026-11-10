@@ -197,7 +197,7 @@ theorem exists_isSymplectomorphism_forall_apply_eq_iff (hV : finrank ℝ V = 2)
       ((∃ v, 0 < ω (A v) v) ↔ ∃ w, 0 < ω' (B w) w) ∧
       ((∃ v, ω (A v) v < 0) ↔ ∃ w, ω' (B w) w < 0) := by
   refine ⟨fun ⟨e, he, hAB⟩ ↦ ⟨Module.End.mul_self_eq_smul_one_iff_of_forall_apply_eq hAB,
-    exists_iff_of_forall_apply_eq he hAB (0 < ·), exists_iff_of_forall_apply_eq he hAB (· < 0)⟩,
+    he.exists_iff_of_forall_apply_eq hAB (0 < ·), he.exists_iff_of_forall_apply_eq hAB (· < 0)⟩,
     ?_⟩
   -- Conversely, `A² = κ` for some `κ`, and according to the sign of `κ` both `A` and `B` have
   -- normal pairs of the same elliptic, parabolic or hyperbolic type with the same parameter, or
