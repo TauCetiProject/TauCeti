@@ -36,6 +36,8 @@ The general statement `TauCeti.le_geom_of_le_mul_pow_mul_rpow` only asks for a r
 
 * `TauCeti.le_geom_of_le_mul_pow_mul_rpow`: geometric bound `Y n ≤ q ^ n * Y 0` for a
   superlinear recurrence from a small start.
+* `TauCeti.rpow_neg_inv_pow_ratio_conditions`: at the classical threshold, the ratio `b ^ (-α⁻¹)`
+  satisfies the two scalar conditions of the general bound.
 * `TauCeti.le_rpow_neg_inv_pow_mul_of_le_mul_pow_mul_rpow`: the same bound at the classical
   threshold `Y 0 ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)`, with ratio `b ^ (-α⁻¹)`.
 * `TauCeti.tendsto_atTop_zero_of_le_mul_pow_mul_rpow_of_ratio_lt_one`: for `q < 1`, the sequence
@@ -132,7 +134,11 @@ theorem le_geom_of_le_mul_pow_mul_rpow {Y : ℕ → ℝ} {C b q α : ℝ} (hY : 
     | 1 => simpa using hY1
     | k + 2 => rw [hY']; positivity
 
-private theorem rpow_neg_inv_pow_ratio_conditions {Y₀ C b α : ℝ}
+/-- **The classical threshold gives the ratio conditions.** For `b > 0` and `α > 0`, a starting
+value `Y₀ ≥ 0` with `Y₀ ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)` satisfies the two scalar conditions of
+`le_geom_of_le_mul_pow_mul_rpow` for the ratio `q = b ^ (-α⁻¹)`: `b * q ^ α ≤ 1` and
+`C * Y₀ ^ α ≤ q`. -/
+theorem rpow_neg_inv_pow_ratio_conditions {Y₀ C b α : ℝ}
     (hY₀ : 0 ≤ Y₀) (hb : 0 < b) (hα : 0 < α)
     (h0 : Y₀ ≤ C ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)) :
     b * (b ^ (-α⁻¹)) ^ α ≤ 1 ∧ C * Y₀ ^ α ≤ b ^ (-α⁻¹) := by
