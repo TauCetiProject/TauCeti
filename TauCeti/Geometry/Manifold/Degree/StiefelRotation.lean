@@ -37,14 +37,16 @@ involution, the orientation signs at the two preimages differ by the orientation
 involution. That sign is computed from the frame reflection `(u, v) ↦ (u, -v)` of the Stiefel
 manifold, of sign `(-1)ⁿ⁺¹` for the normal orientations `O.stiefelTwoOrientation`, and from complex
 conjugation on `S¹`, which reverses its orientation. So it is `(-1)ⁿ`, and the degree of `τ` at a
-regular value is `±(1 + (-1)ⁿ)` (`TauCeti.degreeAtRegularValue_stiefelRotationFamily`), for every
-orientation of the target: `±2` when the fibre sphere `Sⁿ` has even dimension and `0` when it has
+regular value is `±(1 + (-1)ⁿ)`
+(`TauCeti.exists_degreeAtRegularValue_stiefelRotationFamily_eq`), for every orientation of the
+target:`±2` when the fibre sphere `Sⁿ` has even dimension and `0` when it has
 odd dimension. This is the degree computation of the proof of Proposition 6.17 (for the
 even-dimensional sphere `Sⁿ⁺²` of the paper's `H_{2m−3}(Ω²Sᵐ)`, `m = n + 2`), together with the
 vanishing of its footnote 16.
 
 ## Main declarations
 
+* `TauCeti.mvfderiv_stiefel_coe_fst_apply`: the derivative of a frame vector, read in `E`.
 * `TauCeti.mvfderiv_coe_fst_stiefelRotationFamily_apply`,
   `TauCeti.mvfderiv_coe_snd_stiefelRotationFamily_apply`: the derivative, read in `E`.
 * `TauCeti.injective_mfderiv_stiefelRotationFamily`,
@@ -52,7 +54,8 @@ vanishing of its footnote 16.
   `Im z ≠ 0`.
 * `TauCeti.isRegularValue_stiefelRotationFamily`: points `(u, q)` with `q ≠ ±u` are regular values.
 * `TauCeti.orientationSign_stiefelRotationInvolution`: the involution has orientation sign `(-1)ⁿ`.
-* `TauCeti.degreeAtRegularValue_stiefelRotationFamily`: the degree is `±(1 + (-1)ⁿ)` there.
+* `TauCeti.exists_degreeAtRegularValue_stiefelRotationFamily_eq`: the degree is `±(1 + (-1)ⁿ)`
+  there.
 * `TauCeti.abs_degreeAtRegularValue_stiefelRotationFamily_of_even`,
   `TauCeti.degreeAtRegularValue_stiefelRotationFamily_of_odd`: it is `±2` for even `n` and `0` for
   odd `n`.
@@ -84,19 +87,30 @@ local notation "𝓢" => 𝓘(ℝ, Fin (2 * finrank ℝ E - Nat.choose (2 + 1) 2
 
 /-! ### The derivative -/
 
+/-- Read in `E`, the derivative of the `i`th frame vector `((u₀, u₁), z) ↦ uᵢ` sends a tangent
+vector `(t, c)` to the `i`th vector of `t`, read in `Fin 2 → E`. -/
+theorem mvfderiv_stiefel_coe_fst_apply (x : stiefel E 2 × sphere (0 : ℂ) 1)
+    (p : TangentSpace ((𝓢).prod (𝓡 1)) x) (i : Fin 2) :
+    mvfderiv ((𝓢).prod (𝓡 1)) (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ (y.1 : Fin 2 → E) i) x p =
+      mvfderiv 𝓢 ((↑) : stiefel E 2 → Fin 2 → E) x.1 (Manifold.tangentSpaceProdEquiv x p).1 i := by
+  have hι := ((contMDiff_coe_stiefel E 2 (r := 1)) x.1).mdifferentiableAt one_ne_zero
+  have hf : (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ (y.1 : Fin 2 → E) i) =
+      ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ E) i) ∘
+        ((↑) : stiefel E 2 → Fin 2 → E)) ∘ Prod.fst := rfl
+  rw [hf, mvfderiv_comp_fst_apply, Manifold.tangentSpaceProdEquiv_apply]
+  exact (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ E) i).mvfderiv_comp_apply hι p.1
+
 /-- Read in `E`, the derivative of the first component `((u, v), z) ↦ u` of the Stiefel rotation
 family sends a tangent vector `(t, c)` to the first vector of `t`, read in `Fin 2 → E`. -/
 theorem mvfderiv_coe_fst_stiefelRotationFamily_apply (x : stiefel E 2 × sphere (0 : ℂ) 1)
     (p : TangentSpace ((𝓢).prod (𝓡 1)) x) :
     mvfderiv ((𝓢).prod (𝓡 1)) (fun y ↦ ((stiefelRotationFamily y).1 : E)) x p =
       mvfderiv 𝓢 ((↑) : stiefel E 2 → Fin 2 → E) x.1 (Manifold.tangentSpaceProdEquiv x p).1 0 := by
-  have hι := ((contMDiff_coe_stiefel E 2 (r := 1)) x.1).mdifferentiableAt one_ne_zero
   have hf : (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ ((stiefelRotationFamily y).1 : E)) =
-      ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ E) 0) ∘
-        ((↑) : stiefel E 2 → Fin 2 → E)) ∘ Prod.fst :=
+      fun y ↦ (y.1 : Fin 2 → E) 0 :=
     funext fun y ↦ coe_fst_stiefelRotationFamily y
-  rw [hf, mvfderiv_comp_fst_apply, Manifold.tangentSpaceProdEquiv_apply]
-  exact (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ E) 0).mvfderiv_comp_apply hι p.1
+  rw [hf]
+  exact mvfderiv_stiefel_coe_fst_apply x p 0
 
 /-- **The derivative of the Stiefel rotation family.** Read in `E`, the derivative of the second
 component `((u, v), z) ↦ Re z • u + Im z • v` sends a tangent vector `(t, c)` at `((u, v), z)` to
@@ -122,15 +136,6 @@ theorem mvfderiv_coe_snd_stiefelRotationFamily_apply (x : stiefel E 2 × sphere 
   have hL (L : ℂ →L[ℝ] ℝ) : MDifferentiableAt ((𝓢).prod (𝓡 1)) 𝓘(ℝ)
       (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) x :=
     (L.mdifferentiableAt.comp x.2 hκ).comp x mdifferentiableAt_snd
-  have hv' (i : Fin 2) : mvfderiv ((𝓢).prod (𝓡 1))
-      (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ (y.1 : Fin 2 → E) i) x p =
-      mvfderiv 𝓢 ((↑) : stiefel E 2 → Fin 2 → E) x.1 (Manifold.tangentSpaceProdEquiv x p).1 i := by
-    have hf : (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ (y.1 : Fin 2 → E) i) =
-        ((ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ E) i) ∘
-          ((↑) : stiefel E 2 → Fin 2 → E)) ∘ Prod.fst := rfl
-    rw [hf, mvfderiv_comp_fst_apply, Manifold.tangentSpaceProdEquiv_apply]
-    exact (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ E) i).mvfderiv_comp_apply hι
-      p.1
   have hL' (L : ℂ →L[ℝ] ℝ) : mvfderiv ((𝓢).prod (𝓡 1))
       (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ L (y.2 : ℂ)) x p =
       L (mvfderiv (𝓡 1) ((↑) : sphere (0 : ℂ) 1 → ℂ) x.2
@@ -149,7 +154,8 @@ theorem mvfderiv_coe_snd_stiefelRotationFamily_apply (x : stiefel E 2 × sphere 
   rw [hf, mvfderiv_add ((hL _).smul (hv 0)) ((hL _).smul (hv 1)),
     mvfderiv_smul (hL _) (hv 0), mvfderiv_smul (hL _) (hv 1)]
   simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply]
-  rw [hL' Complex.reCLM, hL' Complex.imCLM, hv' 0, hv' 1]
+  rw [hL' Complex.reCLM, hL' Complex.imCLM, mvfderiv_stiefel_coe_fst_apply,
+    mvfderiv_stiefel_coe_fst_apply]
   simp only [Complex.reCLM_apply, Complex.imCLM_apply]
   abel
 
@@ -197,11 +203,7 @@ theorem injective_mfderiv_stiefelRotationFamily {x : stiefel E 2 × sphere (0 : 
   change T 0 = 0 at h₁
   change γ.re • x.1.1 0 + γ.im • x.1.1 1 + ((x.2 : ℂ).re • T 0 + (x.2 : ℂ).im • T 1) = 0 at h₂
   -- `T` is tangent to the Stiefel manifold.
-  have hT : gramSym2Deriv E 2 x.1.1 T = 0 := by
-    have h : T ∈ LinearMap.range
-        (mfderiv 𝓢 𝓘(ℝ, Fin 2 → E) ((↑) : stiefel E 2 → Fin 2 → E) x.1).toLinearMap :=
-      ⟨t, rfl⟩
-    rwa [range_mfderiv_coe_stiefel] at h
+  have hT : gramSym2Deriv E 2 x.1.1 T = 0 := gramSym2Deriv_mfderiv_coe_stiefel x.1 t
   have h01 := congrFun hT s(0, 1)
   have h11 := congrFun hT s(1, 1)
   simp only [gramSym2Deriv_apply_mk, h₁, inner_zero_left, add_zero, Pi.zero_apply] at h01 h11
@@ -281,7 +283,7 @@ family `T¹Sⁿ⁺¹ × S¹ → Sⁿ⁺¹ × Sⁿ⁺¹` has degree `±(1 + (-1)�
 `O.stiefelTwoOrientation` of `T¹Sⁿ⁺¹`, the standard orientation of `S¹`, and any orientation of the
 target. The two preimages of `(u, q)` are exchanged by an involution of orientation sign `(-1)ⁿ`
 that leaves the map unchanged, so they contribute `s` and `(-1)ⁿ s` with `s = ±1`. -/
-theorem degreeAtRegularValue_stiefelRotationFamily
+theorem exists_degreeAtRegularValue_stiefelRotationFamily_eq
     (O : _root_.Orientation ℝ (Fin 2 → E) (Fin (2 * n + 4)))
     (o : Manifold.Orientation ((𝓡 (n + 1)).prod (𝓡 (n + 1)))
       (sphere (0 : E) 1 × sphere (0 : E) 1) (Fin (2 * n + 1 + 1)))
@@ -333,7 +335,7 @@ theorem abs_degreeAtRegularValue_stiefelRotationFamily_of_even (hn : Even n)
     {y : sphere (0 : E) 1 × sphere (0 : E) 1} (hy : y.2 ≠ y.1) (hy' : y.2 ≠ -y.1) :
     |degreeAtRegularValue (O.stiefelTwoOrientation.prod Complex.orientation.sphereOrientation)
       o stiefelRotationFamily y| = 2 := by
-  obtain ⟨s, hs, h⟩ := degreeAtRegularValue_stiefelRotationFamily O o hy hy'
+  obtain ⟨s, hs, h⟩ := exists_degreeAtRegularValue_stiefelRotationFamily_eq O o hy hy'
   rw [h, hn.neg_one_pow]
   rcases hs with rfl | rfl <;> norm_num
 
@@ -346,7 +348,7 @@ theorem degreeAtRegularValue_stiefelRotationFamily_of_odd (hn : Odd n)
     {y : sphere (0 : E) 1 × sphere (0 : E) 1} (hy : y.2 ≠ y.1) (hy' : y.2 ≠ -y.1) :
     degreeAtRegularValue (O.stiefelTwoOrientation.prod Complex.orientation.sphereOrientation)
       o stiefelRotationFamily y = 0 := by
-  obtain ⟨s, -, h⟩ := degreeAtRegularValue_stiefelRotationFamily O o hy hy'
+  obtain ⟨s, -, h⟩ := exists_degreeAtRegularValue_stiefelRotationFamily_eq O o hy hy'
   rw [h, hn.neg_one_pow]
   ring
 

@@ -57,7 +57,8 @@ manifold structure.
 * `TauCeti.contMDiff_coe_stiefel` and `TauCeti.contMDiff_stiefelProj`: the inclusion into
   `Fin k → E` and the projections to the unit sphere are smooth.
 * `TauCeti.range_mfderiv_coe_stiefel`: the tangent space of the Stiefel manifold at `v`, as the
-  range of the differential of the inclusion, is the kernel of the derivative of the Gram map.
+  range of the differential of the inclusion, is the kernel of the derivative of the Gram map;
+  `TauCeti.gramSym2Deriv_mfderiv_coe_stiefel` is the inclusion of the range in the kernel.
 * `TauCeti.injective_mfderiv_coe_stiefel`: the differential of the inclusion is injective.
 * `ContMDiff.codRestrict_stiefel`: smooth maps with orthonormal values are smooth maps into
   the Stiefel manifold.
@@ -269,6 +270,15 @@ theorem range_mfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k) :
   rw [h.mfderiv]
   exact (LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)).trans
     (Submodule.range_subtype _)
+
+variable {E k} in
+/-- A tangent vector to the Stiefel manifold at `v`, read in the space of `k`-families, is killed
+by the derivative `TauCeti.gramSym2Deriv E k v` of the Gram map. -/
+theorem gramSym2Deriv_mfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k)
+    (t : TangentSpace 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) v) :
+    gramSym2Deriv E k v (mfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ)
+      𝓘(ℝ, Fin k → E) ((↑) : stiefel E k → Fin k → E) v t) = 0 :=
+  (range_mfderiv_coe_stiefel v).le (LinearMap.mem_range_self _ t)
 
 variable {E k} in
 /-- The differential of the inclusion of the Stiefel manifold into the space of `k`-families is

@@ -224,12 +224,7 @@ private theorem isUnit_det_stiefelNormalCons (v : stiefel E 2)
   have hli := linearIndependent_stiefelNormalCons v.2
     (b.linearIndependent.map' _ (LinearMap.ker_eq_bot_of_injective
       (injective_mfderiv_coe_stiefel v)))
-    fun i ↦ by
-      have h := LinearMap.mem_range_self (mfderiv
-        𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ) 𝓘(ℝ, Fin 2 → E)
-        ((↑) : stiefel E 2 → Fin 2 → E) v).toLinearMap (b i)
-      rw [range_mfderiv_coe_stiefel] at h
-      exact LinearMap.mem_ker.1 h
+    fun i ↦ gramSym2Deriv_mfderiv_coe_stiefel v (b i)
   exact e.is_basis_iff_det.1 ⟨hli, hli.span_eq_top_of_card_eq_finrank'
     (by rw [Fintype.card_fin, finrank_fin_two_fun (n := n)])⟩
 
