@@ -312,21 +312,12 @@ to isometry. -/
 theorem presentedForm_tmul_one (p : RegularFormPresentation K) :
     (presentedForm (p.tmul (RegularFormPresentation.one (K := K)))).Equivalent
       (presentedForm p) := by
-  let e : Fin p.1 ≃ Fin (p.tmul (RegularFormPresentation.one (K := K))).1 :=
-    finCongr (mul_one p.1).symm
-  refine ⟨{ toLinearEquiv := LinearEquiv.funCongrLeft K K e, map_app' := fun x => ?_ }⟩
-  rw [presentedForm_apply, presentedForm_apply, ← Equiv.sum_comp e]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  let j : Fin (RegularFormPresentation.one (K := K)).1 :=
-    Fin.cast RegularFormPresentation.fst_one.symm 0
-  have h := RegularFormPresentation.tmul_apply p (RegularFormPresentation.one (K := K)) i j
-  have hi : Fin.cast (RegularFormPresentation.fst_tmul p RegularFormPresentation.one).symm
-      (finProdFinEquiv (i, j)) = e i :=
-    Fin.ext (by simp [e, j, finProdFinEquiv, finCongr]; rfl)
-  rw [hi] at h
-  change _ * (x (e i) * x (e i)) = _ * (x (e i) * x (e i))
-  rw [h]
-  simp [RegularFormPresentation.one]
+  rw [presentedForm_eq_weightedSumSquares, presentedForm_eq_weightedSumSquares]
+  refine QuadraticForm.equivalent_weightedSumSquares_of_comp_eq (finCongr (mul_one p.1)) ?_
+  funext i
+  simp only [RegularFormPresentation.one, RegularFormPresentation.tmul, finProdFinEquiv,
+    Equiv.symm_mk, Equiv.coe_fn_mk, mul_one]
+  exact congrArg p.2 (Fin.ext (by simp [Fin.divNat]; rfl))
 
 /-- Tensor product of isometry classes. -/
 instance : Mul (RegularFormClass K) :=

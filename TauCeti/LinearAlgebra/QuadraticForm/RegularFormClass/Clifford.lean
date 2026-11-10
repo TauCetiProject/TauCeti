@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Even
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Brauer
 public import TauCeti.LinearAlgebra.QuadraticForm.RegularFormClass.Hasse.BaseChange
+import TauCeti.Algebra.Subalgebra.Center
 import Mathlib.LinearAlgebra.CliffordAlgebra.Equivs
 import TauCeti.Algebra.BrauerGroup.Splitting
 import TauCeti.Algebra.Quaternion.Binary
@@ -98,6 +99,8 @@ invariant, so it depends only on the Witt class.
   Clifford and Hasse invariants in every rank.
 * `TauCeti.RegularFormClass.cliffordInvariant_eq_hasseInvariant_mul_of_signedDiscr_eq_zero`: its
   form `c = s · [(-1,-1)]^C(m,2)` in rank `2m` with trivial signed discriminant.
+* `TauCeti.RegularFormClass.cliffordInvariant_mk_rankOne_mul_of_odd`: in odd rank the Clifford
+  invariant is unchanged by scaling.
 * `TauCeti.RegularFormClass.cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero`: on a class
   with trivial signed discriminant the Clifford invariant is unchanged by scaling.
 * `TauCeti.RegularFormClass.cliffordInvariant_add_of_signedDiscr_eq_zero`: `c(x ⊥ y) = c(x) · c(y)`
@@ -204,12 +207,8 @@ theorem cliffordInvariant_formClass_eq_mk (Q : QuadraticForm K V) (hQ : Q.Nondeg
   have h : Even (finrank K V) := by
     by_contra hodd
     have _ : NeZero (2 : K) := ⟨Invertible.ne_zero _⟩
-    refine CliffordAlgebra.not_isCentral_of_odd_finrank (Q := Q)
-      (Nat.not_even_iff_odd.mp hodd) ⟨fun x hx => ?_⟩
-    -- `Algebra.IsCentral.of_algEquiv` needs both algebras in one universe.
-    obtain ⟨k, hk⟩ := (inferInstance : Algebra.IsCentral K A).1
-      ((MulEquivClass.apply_mem_center_iff e).mpr hx)
-    exact ⟨k, by simpa [Algebra.ofId] using congr(e.symm $hk)⟩
+    exact CliffordAlgebra.not_isCentral_of_odd_finrank (Q := Q)
+      (Nat.not_even_iff_odd.mp hodd) (Algebra.IsCentral.of_algEquiv' K e.symm)
   obtain ⟨p, ⟨f⟩⟩ := exists_presentedForm_equivalent Q hQ
   rw [formClass_mk Q hQ p ⟨f⟩]
   have hp : finrank K V = p.1 := by simpa using f.toLinearEquiv.finrank_eq
@@ -630,7 +629,7 @@ theorem cliffordInvariant_hyperbolicClass : cliffordInvariant (hyperbolicClass K
 
 /-- In odd rank the Clifford invariant is a similarity invariant: scaling a form by a unit
 preserves its even Clifford algebra. -/
-private theorem cliffordInvariant_mk_rankOne_mul_of_odd (t : Kˣ) {x : RegularFormClass K}
+theorem cliffordInvariant_mk_rankOne_mul_of_odd (t : Kˣ) {x : RegularFormClass K}
     (hx : Odd x.rank) :
     cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x) =
       cliffordInvariant x := by
@@ -649,8 +648,10 @@ private theorem cliffordInvariant_mk_rankOne_mul_of_odd (t : Kˣ) {x : RegularFo
     rw [hform]
     exact (CliffordAlgebra.evenEquivEvenSMul (presentedForm p) t).symm
 
-/-- **On the square of the fundamental ideal the Clifford invariant is a similarity invariant**:
-for a class `x` with trivial signed discriminant, `c(⟨t⟩ ⊗ x) = c(x)`. -/
+/-- **Scaling preserves the Clifford invariant of a class with trivial signed discriminant**:
+for a class `x` with trivial signed discriminant, `c(⟨t⟩ ⊗ x) = c(x)`. In even rank this says
+that the Witt class lies in the square of the fundamental ideal; in odd rank it is
+`cliffordInvariant_mk_rankOne_mul_of_odd`. -/
 theorem cliffordInvariant_mk_rankOne_mul_of_signedDiscr_eq_zero (t : Kˣ)
     {x : RegularFormClass K} (hd : signedDiscr x = 0) :
     cliffordInvariant (Quotient.mk (regularFormSetoid K) ⟨1, fun _ => t⟩ * x) =
