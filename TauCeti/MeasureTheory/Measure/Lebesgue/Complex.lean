@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Integral.IntegrableOn
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 public import TauCeti.Analysis.Complex.Coordinates
 public import TauCeti.Analysis.Complex.Euclidean.Space
+import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.Topology.Order.Compact
 
 /-!
@@ -16,7 +18,9 @@ import Mathlib.Topology.Order.Compact
 The set `s ×ℂ t = {z | z.re ∈ s ∧ z.im ∈ t}` is measurable when `s` and `t` are
 (`MeasurableSet.reProdIm`).
 Coordinate lines and continuous graphs over compact intervals have zero planar Lebesgue measure.
-Interchanging the real and imaginary coordinates preserves planar area.
+Interchanging the real and imaginary coordinates preserves planar area. On a rectangle
+`s ×ℂ t`, planar measure is the product of the restrictions to the sides, so a function of the
+imaginary part integrable on a rectangle of positive width is integrable on the vertical side.
 Splitting complex vectors into real and imaginary blocks preserves product volume, using
 Mathlib's `Complex.volume_preserving_equiv_real_prod` coordinatewise and
 `PiLp.volume_preserving_toLp` for the Euclidean volume normalization.
@@ -85,6 +89,26 @@ theorem setOf_le_im_ae_eq (c : ℝ) : {z : ℂ | c ≤ z.im} =ᵐ[volume] {z : �
     exact le_antisymm (not_lt.1 h2) h1
   · have h1 : c < z.im := hz.1
     exact absurd h1.le hz.2
+
+/-- Restricted to a rectangle, planar Lebesgue measure is the product of the restrictions to its
+sides. -/
+theorem measurePreserving_measurableEquivRealProd_reProdIm {s t : Set ℝ} (hs : MeasurableSet s)
+    (ht : MeasurableSet t) :
+    MeasurePreserving measurableEquivRealProd (volume.restrict (s ×ℂ t))
+      ((volume.restrict s).prod (volume.restrict t)) := by
+  have h := volume_preserving_equiv_real_prod.restrict_preimage (hs.prod ht)
+  rw [Measure.volume_eq_prod, ← Measure.prod_restrict] at h
+  exact h
+
+/-- A function of the imaginary part integrable on a rectangle of positive width is integrable
+on the vertical side. -/
+theorem integrableOn_of_integrableOn_comp_im_reProdIm {E : Type*} [NormedAddCommGroup E]
+    {s t : Set ℝ} (hs : MeasurableSet s) (ht : MeasurableSet t) (hs0 : volume s ≠ 0) {g : ℝ → E}
+    (h : IntegrableOn (fun z : ℂ => g z.im) (s ×ℂ t)) : IntegrableOn g t := by
+  refine Integrable.of_comp_snd (μ := volume.restrict s) ?_ (by simpa using hs0)
+  refine ((measurePreserving_measurableEquivRealProd_reProdIm hs ht).integrable_comp_emb
+    (MeasurableEquiv.measurableEmbedding _) (g := fun q : ℝ × ℝ => g q.2)).1 ?_
+  simpa only [Function.comp_def, measurableEquivRealProd_apply, IntegrableOn] using h
 
 /-- Interchanging the coordinates preserves planar area. -/
 theorem measurePreserving_coordinateSwapCLE :

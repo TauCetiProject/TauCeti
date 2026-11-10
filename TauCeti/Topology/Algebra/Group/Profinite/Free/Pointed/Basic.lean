@@ -86,11 +86,11 @@ def IsAdmissible (U : OpenNormalSubgroup (freeProC C X)) : Prop :=
     freeProC.of x₀ ∈ U.toSubgroup
 
 /-- The whole group is admissible. -/
-private theorem isAdmissible_top : IsAdmissible C x₀ (openNormalSubgroupTop (freeProC C X)) := by
-  have : Subsingleton (freeProC C X ⧸ (openNormalSubgroupTop (freeProC C X)).toSubgroup) :=
-    QuotientGroup.subsingleton_iff.mpr (openNormalSubgroupTop_toSubgroup _)
+private theorem isAdmissible_top : IsAdmissible C x₀ ⊤ := by
+  have : Subsingleton (freeProC C X ⧸ (⊤ : OpenNormalSubgroup (freeProC C X)).toSubgroup) :=
+    QuotientGroup.subsingleton_iff.mpr OpenNormalSubgroup.toSubgroup_top
   refine ⟨(continuous_const (y := (1 : freeProC C X ⧸ _))).congr fun _ ↦ Subsingleton.elim _ _, ?_⟩
-  rw [openNormalSubgroupTop_toSubgroup]
+  rw [OpenNormalSubgroup.toSubgroup_top]
   exact Subgroup.mem_top _
 
 variable {C x₀}

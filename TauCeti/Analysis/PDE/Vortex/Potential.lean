@@ -22,7 +22,7 @@ This file treats it as an extended nonnegative integral on real `L²(ℂ)`, for 
 plane. It is weakly lower semicontinuous, including at functions where it is infinite, and finite
 on continuous compactly supported corrections. Thus passage to a weak limit does not lose the
 nonlinear potential in the variational existence argument
-(`TauCeti.Vortex.exists_isMinOn_sobolevReducedFunctional`).
+(`TauCeti.Vortex.exists_forall_sobolevReducedFunctional_le`).
 
 ## References
 
