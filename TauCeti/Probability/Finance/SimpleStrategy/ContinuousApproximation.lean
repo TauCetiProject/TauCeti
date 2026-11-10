@@ -15,16 +15,16 @@ import Mathlib.MeasureTheory.Function.L2Space
 /-!
 # Left-endpoint approximation in expected square energy
 
-Left-endpoint samples of a continuous predictable process converge in expected square energy
+Left-endpoint samples of a left-continuous predictable process converge in expected square energy
 along arbitrary deterministic vanishing-mesh grids on a fixed finite horizon. An L² random
 bound on the whole path supplies domination. This identifies the particular elementary
 integrands occurring in stochastic Riemann sums, rather than merely choosing some dense
 sequence of elementary integrands. No stochastic integral is assumed or constructed here.
 
-The grids may have repeated dates and need not be nested. Continuity is needed only almost
-surely, simultaneously on the horizon; fixed-time modifications alone do not suffice. The
-origin, at which a simple holding vanishes, has zero time mass. Zero horizons and empty grids
-are allowed. All energies use the native finite-horizon time-product measure.
+The grids may have repeated dates and need not be nested. Left continuity is needed only almost
+surely, simultaneously at positive times on the horizon; fixed-time modifications alone do not
+suffice. The origin, at which a simple holding vanishes, has zero time mass. Zero horizons and
+empty grids are allowed. All energies use the native finite-horizon time-product measure.
 
 ## References
 
@@ -128,7 +128,7 @@ theorem memLp_simpleHolding_sub_of_bound (hH : IsStronglyPredictable ℱ H)
     Measure.quasiMeasurePreserving_snd.ae hbound] with p ht hb
   exact norm_simpleHolding_sub_le_of_bound hτ hzero hlast ht p.2 hb
 
-/-- Left-endpoint samples converge in expected square energy for an almost surely continuous
+/-- Left-endpoint samples converge in expected square energy for an almost surely left-continuous
 predictable process dominated on the horizon by an L² random variable. This applies on raw
 filtrations and to arbitrary vanishing-mesh families with a countably generated index filter.
 The preceding membership theorem ensures that these are genuine finite energies. -/
@@ -139,7 +139,7 @@ theorem tendsto_integral_sq_simpleHolding_sub (hH : IsStronglyPredictable ℱ H)
     (hzero : ∀ k, grid k 0 = 0) (hlast : ∀ k, grid k (N k) = T)
     {δ : ι → ℝ} (hmesh : ∀ k j, j < N k →
       (grid k (j + 1) : ℝ) - grid k j ≤ δ k) (hδ : Tendsto δ l (𝓝 0))
-    (hcont : ∀ᵐ ω ∂P, ContinuousOn (H · ω) (Icc 0 T))
+    (hcont : ∀ᵐ ω ∂P, ∀ t ∈ Ioc 0 T, ContinuousWithinAt (H · ω) (Iic t) t)
     {C : Ω → ℝ} (hC : MemLp C 2 P)
     (hbound : ∀ᵐ ω ∂P, ∀ t ∈ Icc 0 T, ‖H t ω‖ ≤ C ω) :
     Tendsto (fun k ↦ ∫ p : ℝ≥0 × Ω,
@@ -166,10 +166,8 @@ theorem tendsto_integral_sq_simpleHolding_sub (hH : IsStronglyPredictable ℱ H)
       pow_le_pow_left₀ (norm_nonneg _) hnorm 2
   · filter_upwards [Measure.quasiMeasurePreserving_fst.ae htime,
       Measure.quasiMeasurePreserving_snd.ae hcont] with p ht hc
-    have hc' : ContinuousWithinAt (H · p.2) (Iic p.1) p.1 :=
-      (hc p.1 ⟨ht.1.le, ht.2⟩).mono (fun s hs ↦ ⟨bot_le, hs.trans ht.2⟩)
     have h := tendsto_simpleHolding_of_continuousWithinAt
-      hgrid hzero hlast hmesh hδ ht p.2 hc'
+      hgrid hzero hlast hmesh hδ ht p.2 (hc p.1 ht)
     simpa using (h.sub (tendsto_const_nhds (x := H p.1 p.2) (f := l))).pow 2
 
 /-- Native L²-seminorm convergence of the left-endpoint integrands. This is the form used
@@ -181,7 +179,7 @@ theorem tendsto_eLpNorm_simpleHolding_sub (hH : IsStronglyPredictable ℱ H)
     (hzero : ∀ k, grid k 0 = 0) (hlast : ∀ k, grid k (N k) = T)
     {δ : ι → ℝ} (hmesh : ∀ k j, j < N k →
       (grid k (j + 1) : ℝ) - grid k j ≤ δ k) (hδ : Tendsto δ l (𝓝 0))
-    (hcont : ∀ᵐ ω ∂P, ContinuousOn (H · ω) (Icc 0 T))
+    (hcont : ∀ᵐ ω ∂P, ∀ t ∈ Ioc 0 T, ContinuousWithinAt (H · ω) (Iic t) t)
     {C : Ω → ℝ} (hC : MemLp C 2 P)
     (hbound : ∀ᵐ ω ∂P, ∀ t ∈ Icc 0 T, ‖H t ω‖ ≤ C ω) :
     Tendsto (fun k ↦ eLpNorm (fun p : ℝ≥0 × Ω ↦
