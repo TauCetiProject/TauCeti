@@ -33,7 +33,7 @@ squaring `√(1 - (b / a)²)` recovers its argument, as needed for AGM evaluatio
 * `Real.sqrt_le_sqrt_two_mul`: `√x ≤ √(2 * x)`.
 * `Real.inv_sqrt_pow_mul_pow`: `(√a)⁻¹ ^ n * a ^ p = (√a)⁻¹ ^ (n - 2p)` for `0 < a` and `2p ≤ n`.
 * `Real.one_sub_sq_two_mul_sqrt_div_one_add`: the complementary square of `2√k / (1 + k)`.
-* `Real.sq_two_mul_sqrt_div_one_add_lt_one`: this square is less than `1` for `0 ≤ k ≠ 1`.
+* `Real.sq_two_mul_sqrt_div_one_add_lt_one`: this square is less than `1` for `k ≠ 1`.
 * `Real.two_mul_sqrt_div_one_add_eq_abs`: the two rational square-root transformations
   compose to the absolute value on `[-1, 1]`.
 * `Real.sq_sqrt_one_sub_sq`: `√(1 - t²)² = 1 - t²` for `|t| ≤ 1`.
@@ -78,9 +78,13 @@ theorem one_sub_sq_two_mul_sqrt_div_one_add {k : ℝ} (hk : 0 ≤ k) :
   rw [sq_sqrt hk]
   ring
 
-/-- For `0 ≤ k ≠ 1`, the square of `2√k / (1 + k)` is strictly less than `1`. -/
-theorem sq_two_mul_sqrt_div_one_add_lt_one {k : ℝ} (hk₀ : 0 ≤ k) (hk₁ : k ≠ 1) :
+/-- For `k ≠ 1`, the square of `2√k / (1 + k)` is strictly less than `1`. For negative `k` it is
+`0`, since `√k = 0`. -/
+theorem sq_two_mul_sqrt_div_one_add_lt_one {k : ℝ} (hk₁ : k ≠ 1) :
     (2 * √k / (1 + k)) ^ 2 < 1 := by
+  rcases lt_or_ge k 0 with hk | hk₀
+  · rw [sqrt_eq_zero_of_nonpos hk.le]
+    norm_num
   have hp : 0 < 1 + k := by linarith
   have hne : (1 - k) / (1 + k) ≠ 0 := div_ne_zero (sub_ne_zero.2 hk₁.symm) hp.ne'
   have hsq := one_sub_sq_two_mul_sqrt_div_one_add hk₀
