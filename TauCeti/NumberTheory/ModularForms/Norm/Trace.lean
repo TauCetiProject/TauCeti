@@ -20,6 +20,8 @@ translates of `f` times a `1`-periodic remainder analytic at `∞`.
 
 ## Main declarations
 
+* `TauCeti.SlashInvariantForm.quotientFunc_eq_zero_iff`: a coset factor of the norm vanishes
+  exactly when the form does.
 * `TauCeti.SlashInvariantForm.mdifferentiable_quotientFunc`.
 * `TauCeti.SlashInvariantForm.isBoundedAtImInfty_quotientFunc`.
 * `TauCeti.ModularForm.normRest`, with `TauCeti.ModularForm.periodic_normRest`,
