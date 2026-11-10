@@ -1,0 +1,68 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.NumberTheory.LFunctions.Continued.Basic
+public import TauCeti.NumberTheory.LFunctions.Data.RiemannZeta
+
+/-!
+# The continued uncompleted function of the zeta record
+
+Removing the archimedean factor from the Riemann zeta record gives Mathlib's
+`riemannZeta` at every point. In particular the removable extension has value
+`-1 / 2` at zero, rather than the zero of the raw product. At one the pole is
+not removable and the chosen total representative is retained.
+-/
+
+public section
+
+open Complex Filter Topology
+
+namespace TauCeti.LFunctions
+
+private theorem continuedL_eventuallyEq_riemannZeta (s : ℂ) :
+    riemannZetaData.continuedL =ᶠ[𝓝[≠] s] riemannZeta := by
+  have h0 : ∀ᶠ z : ℂ in 𝓝[≠] s, z ≠ 0 := by
+    by_cases hs : s = 0
+    · subst s
+      exact self_mem_nhdsWithin
+    · exact nhdsWithin_le_nhds (eventually_ne_nhds hs)
+  filter_upwards [riemannZetaData_hasMeromorphicContinuation.continuedL_eventuallyEq s, h0]
+    with z hz hz0
+  simpa [riemannZetaData_conductor, riemannZetaData_completed,
+    AnalyticLFunctionData.invGammaFactor_def, riemannZetaData_gammaFactor,
+    ← div_eq_mul_inv, ← riemannZeta_def_of_ne_zero hz0] using hz
+
+/-- Removing the conductor and gamma factors from the zeta record recovers the
+native Riemann zeta function, including the removable value at zero. -/
+@[simp]
+theorem continuedL_riemannZetaData : riemannZetaData.continuedL = riemannZeta := by
+  funext s
+  have heq := continuedL_eventuallyEq_riemannZeta s
+  by_cases hs : s = 1
+  · subst s
+    have ho : meromorphicOrderAt riemannZetaData.continuedL 1 = (-1 : ℤ) := by
+      rw [riemannZetaData_hasMeromorphicContinuation.meromorphicOrderAt_continuedL,
+        riemannZetaData_completed, meromorphicOrderAt_completedRiemannZeta_one]
+      rw [funext riemannZetaData_gammaFactor,
+        (meromorphicOrderAt_Gammaℝ_eq_zero_iff 1).mpr (by rw [Gammaℝ_one]; exact one_ne_zero)]
+      simp
+    rw [riemannZetaData_hasMeromorphicContinuation.continuedL_eq_of_order_neg
+      (by rw [ho]; exact_mod_cast (by norm_num : (-1 : ℤ) < 0))]
+    simp [riemannZetaData_conductor, riemannZetaData_completed,
+      AnalyticLFunctionData.invGammaFactor_def, riemannZetaData_gammaFactor,
+      riemannZeta_def_of_ne_zero one_ne_zero, div_eq_mul_inv]
+  · have hζ := analyticOn_riemannZeta s hs
+    have ha := riemannZetaData_hasMeromorphicContinuation.analyticAt_continuedL
+      (s := s) (by rw [meromorphicOrderAt_congr heq]; exact hζ.meromorphicOrderAt_nonneg)
+    exact ((ha.continuousAt.eventuallyEq_nhds_iff_eventuallyEq_nhdsNE hζ.continuousAt).mp
+      heq).eq_of_nhds
+
+-- The cancelled pole at zero is filled with the genuine value of zeta, not zero.
+example : riemannZetaData.continuedL 0 = -1 / 2 := by
+  simp [riemannZeta_zero]
+
+end TauCeti.LFunctions
