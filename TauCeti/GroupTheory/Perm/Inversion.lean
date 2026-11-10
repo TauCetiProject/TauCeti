@@ -66,19 +66,14 @@ theorem card_inversion_decomposeFin'Symm {n : ℕ} (σ : Perm (Fin (n + 1)))
     simp only [Fin.succAbove_lt_iff]
     rw [Equiv.sum_comp σ (fun j => if j.castSucc < i then (1 : ℕ) else 0), sum_boole]
     exact hcount
-  have hzero : (∑ y : Fin (n + 2), if (0 : Fin (n + 2)) < y ∧
-      decomposeFin'Symm i σ y < decomposeFin'Symm i σ 0 then 1 else 0) = i.val := by
-    rw [Fin.sum_univ_succ]
-    simpa using hfirst
-  have hsucc (x : Fin (n + 1)) :
-      (∑ y : Fin (n + 2), if x.succ < y ∧
-        decomposeFin'Symm i σ y < decomposeFin'Symm i σ x.succ then 1 else 0) =
-      ∑ y : Fin (n + 1), if x < y ∧ σ y < σ x then 1 else 0 := by
-    rw [Fin.sum_univ_succ]
-    simp
-  simp only [card_filter, Fintype.sum_prod_type]
-  rw [Fin.sum_univ_succ, hzero]
-  simp_rw [hsucc]
+  have h := card_univ_inversions_eq_comp_succAbove (decomposeFin'Symm i σ) 0
+  simp only [inversions_univ, card_filter] at h
+  simp only [Function.comp_apply, Fin.zero_succAbove, decomposeFin'Symm_succ,
+    decomposeFin'Symm_zero, Fin.succAbove_lt_succAbove_iff, Fin.not_lt_zero, false_and,
+    ite_false, sum_const_zero, add_zero] at h
+  rw [Fin.sum_univ_succ] at h
+  simpa only [card_filter, lt_self_iff_false, false_and, ite_false, zero_add, add_zero,
+    Fin.succ_pos, true_and, decomposeFin'Symm_succ, hfirst, add_comm] using h
 
 end Equiv.Perm
 
