@@ -255,7 +255,8 @@ theorem T_mul_shuffleInvWord_of_mem_of_mem {i : Fin (k + l - 1)} {S : ShuffleMas
     -- `γ` is the last step of a shuffle path to `S`.
     have hca : (γ : ℕ) ≠ i := fun h ↦ hc (by convert ha using 2; ext; simp [h])
     have hcb : (γ : ℕ) ≠ i + 1 := fun h ↦ hc (by convert hb using 2; ext; simp [h])
-    rcases (show (γ : ℕ) + 1 = i ∨ (γ : ℕ) + 2 ≤ i ∨ (i : ℕ) + 2 ≤ γ by omega) with hγ | hγ
+    have hγi : (γ : ℕ) + 1 = i ∨ (γ : ℕ) + 2 ≤ i ∨ (i : ℕ) + 2 ≤ γ := by omega
+    rcases hγi with hγ | hγ
     · exact T_mul_shuffleInvWord_of_mem_of_mem_of_succ_eq hγ hc ha hb
         fun S' hS' h₁ h₂ ↦ ih S' hS' h₁ h₂
     -- Otherwise `γ` does not move the positions crossed by `T i`.
@@ -338,7 +339,8 @@ theorem T_mul_shuffleInvWord_of_notMem_of_notMem {i : Fin (k + l - 1)} {S : Shuf
     -- `γ` is the last step of a shuffle path to `S`.
     have hca : (γ : ℕ) ≠ i := fun h ↦ hb (by convert hd using 2; ext; simp [h])
     have hcb : (γ : ℕ) + 1 ≠ i := fun h ↦ ha (by convert hd using 2; ext; simp [h])
-    rcases (show (i : ℕ) + 1 = γ ∨ (γ : ℕ) + 2 ≤ i ∨ (i : ℕ) + 2 ≤ γ by omega) with hγ | hγ
+    have hγi : (i : ℕ) + 1 = γ ∨ (γ : ℕ) + 2 ≤ i ∨ (i : ℕ) + 2 ≤ γ := by omega
+    rcases hγi with hγ | hγ
     · exact T_mul_shuffleInvWord_of_notMem_of_notMem_of_succ_eq hγ hd ha hb
         fun S' hS' h₁ h₂ ↦ ih S' hS' h₁ h₂
     -- Otherwise `γ` does not move the positions crossed by `T i`.
@@ -462,14 +464,15 @@ theorem shuffleRep_hom_ext {F F' : (ShuffleMask k l → U) →ₗ[R] N}
 
 variable {ρ σ} in
 /-- **Uniqueness of the extension.** A map of Hecke modules out of the shuffle module agreeing with
-a compatible `f` on the initial mask is the extension `shuffleLift σ f`. -/
-theorem eq_shuffleLift {f : U →ₗ[R] N}
-    (hsel : ∀ i : Fin (k + l - 1), (i : ℕ) + 1 < k → σ (T q i) ∘ₗ f = (q : R) • f)
-    (hrest : ∀ j : Fin (l - 1), σ (T q ⟨k + j, by omega⟩) ∘ₗ f = f ∘ₗ ρ (T q j))
-    {F : (ShuffleMask k l → U) →ₗ[R] N} (hF : ∀ x, F ∘ₗ shuffleRep k ρ x = σ x ∘ₗ F)
-    (hFf : ∀ u, F (Pi.single ShuffleMask.initial u) = f u) : F = shuffleLift σ f :=
-  shuffleRep_hom_ext ρ σ hF (shuffleLift_comp_shuffleRep ρ hsel hrest) fun u ↦ by
-    rw [hFf, shuffleLift_single_initial]
+`f` on the initial mask is the extension `shuffleLift σ f`. -/
+theorem eq_shuffleLift {f : U →ₗ[R] N} {F : (ShuffleMask k l → U) →ₗ[R] N}
+    (hF : ∀ x, F ∘ₗ shuffleRep k ρ x = σ x ∘ₗ F)
+    (hFf : ∀ u, F (Pi.single ShuffleMask.initial u) = f u) : F = shuffleLift σ f := by
+  refine LinearMap.pi_ext fun S u ↦ ?_
+  have h := LinearMap.congr_fun (hF (shuffleInvWord q S)) (Pi.single ShuffleMask.initial u)
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, shuffleRep_shuffleInvWord_single_initial,
+    map_smul, hFf] at h
+  rw [shuffleLift_single, ← h, smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
 
 end Lift
 
