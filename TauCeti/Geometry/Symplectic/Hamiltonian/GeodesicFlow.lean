@@ -75,6 +75,7 @@ theorem kineticLagrangian_apply (g : E → E →L[ℝ] E →L[ℝ] ℝ) (x : E �
 
 /-- The momentum of the kinetic Lagrangian `L(q, v) = g_q(v, v) / 2` of a symmetric bilinear form
 `g_q` is the covector `g_q(v, ·)`. -/
+@[simp]
 theorem fderiv_kineticLagrangian_snd {q : E} (hsymm : (g q).toBilinForm.IsSymm) (v : E) :
     fderiv ℝ (fun u ↦ kineticLagrangian g (q, u)) v = g q v := by
   simp_rw [kineticLagrangian_apply, div_eq_mul_inv]
@@ -85,6 +86,7 @@ theorem fderiv_kineticLagrangian_snd {q : E} (hsymm : (g q).toBilinForm.IsSymm) 
 
 /-- The derivative in the position of the kinetic Lagrangian `L(q, v) = g_q(v, v) / 2` is
 `u ↦ Dg_q(u)(v, v) / 2`. -/
+@[simp]
 theorem fderiv_kineticLagrangian_fst {q : E} (hg : DifferentiableAt ℝ g q) (v u : E) :
     fderiv ℝ (fun y ↦ kineticLagrangian g (y, v)) q u = fderiv ℝ g q u v v / 2 := by
   simp_rw [kineticLagrangian_apply, div_eq_mul_inv]
@@ -102,6 +104,7 @@ theorem _root_.DifferentiableAt.kineticLagrangian {x : E × E} (hg : Differentia
 
 /-- The Legendre map of the kinetic Lagrangian `L(q, v) = g_q(v, v) / 2` of a symmetric bilinear
 form `g_q` sends `(q, v)` to `(q, g_q(v, ·))`. -/
+@[simp]
 theorem linearLegendreMap_kineticLagrangian {q : E} (hsymm : (g q).toBilinForm.IsSymm) (v : E) :
     linearLegendreMap (kineticLagrangian g) (q, v) = (q, g q v) :=
   Prod.ext (linearLegendreMap_fst _ _) (by
@@ -149,6 +152,7 @@ theorem eulerLagrange_kineticLagrangian_iff [FiniteDimensional ℝ E]
 kinetic Lagrangian `L(q, v) = g_q(v, v) / 2` is the kinetic energy of covectors
 `H(q, p) = p(g_q⁻¹ p) / 2`. Where `g_q` is not invertible both sides vanish, since the inverse is
 then zero by convention. -/
+@[simp]
 theorem legendreHamiltonian_kineticLagrangian (z : E × StrongDual ℝ E) :
     legendreHamiltonian (kineticLagrangian g) (fun z ↦ (g z.1).inverse z.2) z =
       z.2 ((g z.1).inverse z.2) / 2 := by
