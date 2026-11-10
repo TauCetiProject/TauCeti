@@ -140,7 +140,7 @@ theorem exists_norm_eq_neg_one_of_sq_sub_mul_sq_eq_neg_one (hmin : minpoly ℤ �
     rw [← Algebra.coe_norm_int, hxdef, TauCeti.NumberField.norm_int_add_mul_gen hmin hgen, hab]
     norm_num
   have hunit : IsUnit x := by
-    rw [NumberField.isUnit_iff_norm, RingOfIntegers.coe_norm, hnorm]
+    rw [NumberField.isUnit_iff_norm, NumberField.RingOfIntegers.coe_norm, hnorm]
     norm_num
   exact ⟨hunit.unit, by rwa [IsUnit.unit_spec]⟩
 

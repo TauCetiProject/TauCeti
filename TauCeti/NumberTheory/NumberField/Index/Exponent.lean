@@ -14,7 +14,7 @@ import Mathlib.GroupTheory.Perm.Cycle.Type
 
 For an integral primitive element `θ` of a number field `K`, two integers measure how far the
 order `ℤ[θ]` is from `𝓞 K`: the index `[𝓞 K : ℤ[θ]]` (`IntegralPrimitiveElement.index`) and the
-conductor exponent `RingOfIntegers.exponent θ`, the least positive integer `e` with
+conductor exponent `NumberField.RingOfIntegers.exponent θ`, the least positive integer `e` with
 `e • 𝓞 K ⊆ ℤ[θ]`. They are different integers in general, but they have the same prime
 divisors: the exponent divides the index, since the finite group `𝓞 K / ℤ[θ]` is killed by its
 order, and every prime dividing the order of that group divides its exponent, by Cauchy's

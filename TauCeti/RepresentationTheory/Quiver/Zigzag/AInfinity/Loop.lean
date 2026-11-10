@@ -236,7 +236,7 @@ private noncomputable def loopOps (c : (Fin n → G.Dart) →₀ k) (m : ℕ) :
     MultilinearMap (RingHom.id k) (fun _ : Fin m ↦ nonisolatedZigzagQuotient k G)
       (nonisolatedZigzagQuotient k G) :=
   if h₂ : m = 2 then
-    ((MultilinearMap.ofSubsingletonₗ k k (nonisolatedZigzagQuotient k G)
+    ((MultilinearMap.ofSubsingletonₗ k (RingHom.id k) (nonisolatedZigzagQuotient k G)
       (nonisolatedZigzagQuotient k G) (0 : Fin 1) ∘ₗ
         LinearMap.mul k (nonisolatedZigzagQuotient k G)).uncurryLeft).domDomCongr
       (finCongr h₂.symm)

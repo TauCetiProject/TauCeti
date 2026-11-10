@@ -160,7 +160,7 @@ theorem artinMap_restrict (L : Type*) [Field L] [Algebra K L] [FiniteDimensional
   rw [localArtinMap_apply, localArtinEquiv_mk, ← hground,
     ← (localClassFormation K).abelianizationRestrict_absoluteArtinMap, habs,
     abelianizationRestrict_mk V ⟨_, hmem⟩, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
-    abelianizationCongr_of, layerGalEquiv_mk]
+    Group.abelianizationCongr_of, layerGalEquiv_mk]
 
 /-- **An Artin symbol that fixes a finite Galois extension comes from a norm.** If
 `σ ∈ Gal(AlgebraicClosure K/K)` represents the absolute Artin symbol of `x ∈ Kˣ` and fixes
@@ -351,7 +351,7 @@ private theorem abelianizationRestrict_absoluteArtinMap_normUnits
   refine (congrArg T.inclusionHom ((artinMap_localFormationLayerEquiv K L iota _ _).trans
     (congrArg _ hL))).trans ?_
   refine Eq.trans ?_ (abelianizationRestrict_mk V ⟨localFormationHom K L iota τ, by simp⟩).symm
-  rw [MulEquiv.toAdditive_apply_apply, toMul_ofMul, abelianizationCongr_of,
+  rw [MulEquiv.toAdditive_apply_apply, toMul_ofMul, Group.abelianizationCongr_of,
     localFormationLayerEquiv_galEquiv_mk K L iota _ _ ⟨_, hτs⟩ rfl,
     LayerRestriction.inclusionHom_of, LayerRestriction.galHom_mk]
   exact congrArg (fun w ↦ Additive.ofMul (Group.Abelianization.of
