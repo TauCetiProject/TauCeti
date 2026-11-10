@@ -13,6 +13,8 @@ import TauCeti.Analysis.Normed.Algebra.Basic
 public import TauCeti.Analysis.SpecialFunctions.Exponential.Map
 public import TauCeti.Analysis.SpecialFunctions.Exp.DividedDifference
 
+import TauCeti.Analysis.Normed.Algebra.Exponential
+
 /-!
 # The derivative of the exponential at Hermitian matrices
 
@@ -54,8 +56,8 @@ theorem expFDeriv_diagonal (d : n → ℝ) (Y : Matrix n n 𝕜) :
       MeasureTheory.volume 0 1 := Continuous.intervalIntegrable (by fun_prop) _ _
   have heval := (entryLinearMap 𝕜 𝕜 i j).toContinuousLinearMap.intervalIntegral_comp_comm hi
   have hexp (x : ℝ) : exp (x : 𝕜) = (Real.exp x : 𝕜) := by
-    simpa only [RCLike.algebraMap_eq_ofReal, ← Real.exp_eq_exp_ℝ] using
-      (NormedSpace.algebraMap_exp_comm (𝔸 := 𝕜) x).symm
+    simpa only [RCLike.real_smul_eq_coe_mul, mul_one] using
+      (NormedSpace.exp_real_smul_one (A := 𝕜) x)
   have hint : (fun t : ℝ ↦ (exp ((1 - t) • D) * Y * exp (t • D)) i j) =
       fun t ↦ (Real.exp ((1 - t) * d i + t * d j) : 𝕜) * Y i j := by
     funext t

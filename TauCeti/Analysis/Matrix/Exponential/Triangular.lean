@@ -65,46 +65,32 @@ section Coefficient
 
 variable [DecidableEq n]
 
-/-- The exponential-weight coefficient acting on the last column of an upper block matrix. -/
+/-- The matrix `∫₀¹ exp(t d) • exp((1 - t) • A) dt`. For the upper block matrix
+`M = fromBlocks A B 0 (d • 1)`, its product with `B` is the upper-right block of `exp M`;
+see `Matrix.toBlocks₁₂_exp_fromBlocks_real_smul_one`. -/
 def expColumnCoefficient (A : Matrix n n R) (d : ℝ) : Matrix n n R :=
   ∫ t in (0 : ℝ)..1, Real.exp (t * d) • exp ((1 - t) • A)
 
-/-- Each coefficient entry is the scalar integral of the corresponding exponential entry. -/
-@[simp]
+/-- The coefficient integrand is interval integrable for the operator norm. -/
+private theorem intervalIntegrable_expColumnCoefficient_integrand
+    (A : Matrix n n R) (d : ℝ) :
+    letI : ENormedAddMonoid (Matrix n n R) := NormedAddGroup.toENormedAddMonoid
+    IntervalIntegrable (fun t : ℝ ↦ Real.exp (t * d) • exp ((1 - t) • A)) volume 0 1 := by
+  let : ENormedAddMonoid (Matrix n n R) := NormedAddGroup.toENormedAddMonoid
+  exact Continuous.intervalIntegrable (by fun_prop) _ _
+
+/-- Each coefficient entry is the scalar integral of the corresponding exponential entry.
+This is an explicit rewrite: structural laws retain the named coefficient as normal form. -/
 theorem expColumnCoefficient_apply (A : Matrix n n R) (d : ℝ) (i j : n) :
     expColumnCoefficient A d i j =
       ∫ t in (0 : ℝ)..1, Real.exp (t * d) • exp ((1 - t) • A) i j := by
+  -- Use the extended norm induced by the operator norm rather than the entrywise instance.
   let : ENormedAddMonoid (Matrix n n R) := NormedAddGroup.toENormedAddMonoid
-  have hi : IntervalIntegrable
-      (fun t : ℝ ↦ Real.exp (t * d) • exp ((1 - t) • A)) volume 0 1 :=
-    Continuous.intervalIntegrable (by fun_prop) _ _
+  have hi := intervalIntegrable_expColumnCoefficient_integrand A d
   let e : Matrix n n R →L[ℝ] R :=
     { toLinearMap := entryLinearMap ℝ R i j
       cont := continuous_id.matrix_elem i j }
   exact (e.intervalIntegral_comp_comm hi).symm
-
-/-- Exponentiating a real scalar matrix gives the corresponding positive scalar matrix. -/
-private theorem exp_real_smul_one (x : ℝ) :
-    exp (x • (1 : Matrix n n R)) = Real.exp x • 1 := by
-  have h : exp (x • (1 : R)) = Real.exp x • (1 : R) := by
-    simpa only [Algebra.algebraMap_eq_smul_one, ← Real.exp_eq_exp_ℝ] using
-      (NormedSpace.algebraMap_exp_comm (𝔸 := R) x).symm
-  rw [← diagonal_one, ← diagonal_smul, exp_diagonal, ← diagonal_smul]
-  congr 1
-  funext i
-  simpa only [Pi.coe_exp, Pi.smul_apply] using h
-
-/-- The column coefficient is a block of a matrix exponential. This explicit rewrite gives
-access to the regularity of the exponential without differentiating its integral formula. -/
-theorem expColumnCoefficient_eq_toBlocks₁₂_exp (A : Matrix n n R) (d : ℝ) :
-    expColumnCoefficient A d =
-      (exp (fromBlocks A (1 : Matrix n n R) (0 : Matrix n n R)
-        (d • (1 : Matrix n n R)))).toBlocks₁₂ := by
-  symm
-  rw [toBlocks₁₂_exp_fromBlocks_zero₂₁, expColumnCoefficient]
-  congr 1
-  funext t
-  simp only [smul_smul, exp_real_smul_one, mul_one, mul_smul_comm]
 
 /-- With a real scalar final diagonal block, the upper-right exponential block is the
 column coefficient times the original rectangular block. Empty block sizes are allowed. -/
@@ -112,64 +98,84 @@ theorem toBlocks₁₂_exp_fromBlocks_real_smul_one {m : Type*} [Fintype m] [Dec
     (A : Matrix n n R) (B : Matrix n m R) (d : ℝ) :
     (exp (fromBlocks A B 0 (d • (1 : Matrix m m R)))).toBlocks₁₂ =
       expColumnCoefficient A d * B := by
+  -- Use the extended norm induced by the operator norm rather than the entrywise instance.
   let : ENormedAddMonoid (Matrix n n R) := NormedAddGroup.toENormedAddMonoid
-  have hi : IntervalIntegrable
-      (fun t : ℝ ↦ Real.exp (t * d) • exp ((1 - t) • A)) volume 0 1 :=
-    Continuous.intervalIntegrable (by fun_prop) _ _
+  have hi := intervalIntegrable_expColumnCoefficient_integrand A d
   let L : Matrix n n R →L[ℝ] Matrix n m R :=
     { toLinearMap := mulRightLinearMap n ℝ B
       cont := continuous_id.matrix_mul continuous_const }
   have h : (∫ t in (0 : ℝ)..1, (Real.exp (t * d) • exp ((1 - t) • A)) * B) =
       (∫ t in (0 : ℝ)..1, Real.exp (t * d) • exp ((1 - t) • A)) * B := by
     exact L.intervalIntegral_comp_comm hi
+  have hexp (x : ℝ) : exp (x • (1 : Matrix m m R)) = Real.exp x • 1 :=
+    NormedSpace.exp_real_smul_one x
   rw [toBlocks₁₂_exp_fromBlocks_zero₂₁, expColumnCoefficient]
-  simp only [smul_smul, exp_real_smul_one, Matrix.mul_smul, Matrix.mul_one]
+  simp only [smul_smul, hexp, Matrix.mul_smul, Matrix.mul_one]
   simpa only [Matrix.smul_mul] using h
+
+/-- The column coefficient is a block of a matrix exponential. This explicit rewrite gives
+access to the regularity of the exponential without differentiating its integral formula. -/
+theorem expColumnCoefficient_eq_toBlocks₁₂_exp (A : Matrix n n R) (d : ℝ) :
+    expColumnCoefficient A d =
+      (exp (fromBlocks A (1 : Matrix n n R) (0 : Matrix n n R)
+        (d • (1 : Matrix n n R)))).toBlocks₁₂ := by
+  rw [toBlocks₁₂_exp_fromBlocks_real_smul_one, Matrix.mul_one]
+
+/-- The linear part of the block insertion defining the coefficient. -/
+private def coefficientBlockCLM : (Matrix n n R × ℝ) →L[ℝ] Matrix (n ⊕ n) (n ⊕ n) R where
+  toLinearMap :=
+    { toFun := fun p ↦ fromBlocks p.1 0 0 (p.2 • (1 : Matrix n n R))
+      map_add' := by
+        intro p q
+        simp only [Prod.fst_add, Prod.snd_add, add_smul, fromBlocks_add, add_zero]
+      map_smul' := by
+        intro c p
+        simp only [Prod.smul_fst, Prod.smul_snd, RingHom.id_apply,
+          fromBlocks_smul, smul_zero, smul_smul, smul_eq_mul] }
+  cont := continuous_matrix fun i j ↦ by
+    cases i with
+    | inl i =>
+      cases j with
+      | inl j => exact continuous_fst.matrix_elem i j
+      | inr j => exact continuous_const
+    | inr i =>
+      cases j with
+      | inl j => exact continuous_const
+      | inr j => exact (continuous_snd.smul continuous_const).matrix_elem i j
+
+omit [Fintype n] [CompleteSpace R] in
+@[simp] private theorem coefficientBlockCLM_apply (p : Matrix n n R × ℝ) :
+    coefficientBlockCLM p = fromBlocks p.1 0 0 (p.2 • (1 : Matrix n n R)) := rfl
+
+/-- Projection onto the upper-right block. -/
+private def coefficientProjectionCLM : Matrix (n ⊕ n) (n ⊕ n) R →L[ℝ] Matrix n n R where
+  toLinearMap :=
+    { toFun := toBlocks₁₂
+      map_add' := fun _ _ ↦ rfl
+      map_smul' := fun _ _ ↦ rfl }
+  cont := continuous_matrix fun i j ↦ continuous_id.matrix_elem (Sum.inl i) (Sum.inr j)
+
+omit [Fintype n] [CompleteSpace R] [DecidableEq n] in
+@[simp] private theorem coefficientProjectionCLM_apply
+    (A : Matrix (n ⊕ n) (n ⊕ n) R) : coefficientProjectionCLM A = A.toBlocks₁₂ := rfl
 
 /-- The last-column exponential coefficient is jointly smooth in the leading block and
 its final real diagonal entry, with arbitrary finite, smooth, or analytic regularity. -/
 @[fun_prop]
 theorem contDiff_expColumnCoefficient (m : ℕ∞ω) : ContDiff ℝ m
     (fun p : Matrix n n R × ℝ ↦ expColumnCoefficient p.1 p.2) := by
-  let T : (Matrix n n R × ℝ) →L[ℝ] Matrix (n ⊕ n) (n ⊕ n) R :=
-    { toLinearMap :=
-      { toFun := fun p ↦ fromBlocks p.1 0 0 (p.2 • (1 : Matrix n n R))
-        map_add' := by
-          intro p q
-          simp only [Prod.fst_add, Prod.snd_add, add_smul, fromBlocks_add, add_zero]
-        map_smul' := by
-          intro c p
-          simp only [Prod.smul_fst, Prod.smul_snd, RingHom.id_apply,
-            fromBlocks_smul, smul_zero, smul_smul, smul_eq_mul] }
-      cont := continuous_matrix fun i j ↦ by
-        cases i with
-        | inl i =>
-          cases j with
-          | inl j => exact continuous_fst.matrix_elem i j
-          | inr j => exact continuous_const
-        | inr i =>
-          cases j with
-          | inl j => exact continuous_const
-          | inr j => exact (continuous_snd.smul continuous_const).matrix_elem i j }
-  let P : Matrix (n ⊕ n) (n ⊕ n) R →L[ℝ] Matrix n n R :=
-    { toLinearMap :=
-      { toFun := toBlocks₁₂
-        map_add' := fun _ _ ↦ rfl
-        map_smul' := fun _ _ ↦ rfl }
-      cont := continuous_matrix fun i j ↦ continuous_id.matrix_elem (Sum.inl i) (Sum.inr j) }
   have he : ContDiff ℝ m (exp : Matrix (n ⊕ n) (n ⊕ n) R → _) := contDiff_exp ℝ
-  have hT : ContDiff ℝ m (fun p ↦ T p) := T.contDiff
-  have hP : ContDiff ℝ m (fun A ↦ P A) := P.contDiff
+  have hT : ContDiff ℝ m (fun p : Matrix n n R × ℝ ↦ coefficientBlockCLM p) :=
+    (coefficientBlockCLM (n := n) (R := R)).contDiff
+  have hP : ContDiff ℝ m (fun A : Matrix (n ⊕ n) (n ⊕ n) R ↦ coefficientProjectionCLM A) :=
+    (coefficientProjectionCLM (n := n) (R := R)).contDiff
   have h := hP.comp (he.comp (hT.add
     (contDiff_const (c := fromBlocks (0 : Matrix n n R) (1 : Matrix n n R) 0 0))))
-  have hTapp (p : Matrix n n R × ℝ) :
-      T p = fromBlocks p.1 0 0 (p.2 • (1 : Matrix n n R)) := rfl
   have hid (p : Matrix n n R × ℝ) :
-      T p + fromBlocks (0 : Matrix n n R) (1 : Matrix n n R) 0 0 =
+      coefficientBlockCLM p + fromBlocks (0 : Matrix n n R) (1 : Matrix n n R) 0 0 =
         fromBlocks p.1 1 0 (p.2 • (1 : Matrix n n R)) := by
-    simp only [hTapp, fromBlocks_add, add_zero, zero_add]
-  have hPapp (A : Matrix (n ⊕ n) (n ⊕ n) R) : P A = A.toBlocks₁₂ := rfl
-  simpa only [Function.comp_def, hid, hPapp,
+    simp only [coefficientBlockCLM_apply, fromBlocks_add, add_zero, zero_add]
+  simpa only [Function.comp_def, hid, coefficientProjectionCLM_apply,
     ← Matrix.expColumnCoefficient_eq_toBlocks₁₂_exp] using h
 
 end Coefficient
@@ -202,8 +208,8 @@ theorem IsUpperTriangular.expColumnCoefficient_apply_diag {A : Matrix n n 𝕜}
   have hscaled (t : ℝ) : ((1 - t) • A).IsUpperTriangular :=
     (blockTriangularSubalgebra ℝ 𝕜 id).smul_mem hA (1 - t)
   have hexp (x : ℝ) : exp (x : 𝕜) = (Real.exp x : 𝕜) := by
-    simpa only [RCLike.algebraMap_eq_ofReal, ← Real.exp_eq_exp_ℝ] using
-      (NormedSpace.algebraMap_exp_comm (𝔸 := 𝕜) x).symm
+    simpa only [RCLike.real_smul_eq_coe_mul, mul_one] using
+      (NormedSpace.exp_real_smul_one (A := 𝕜) x)
   have he (t : ℝ) : exp ((1 - t) • A) i i = (Real.exp ((1 - t) * a) : 𝕜) := by
     rw [(hscaled t).exp_apply_diag, Matrix.smul_apply, hii,
       RCLike.real_smul_eq_coe_mul, ← RCLike.ofReal_mul, hexp]

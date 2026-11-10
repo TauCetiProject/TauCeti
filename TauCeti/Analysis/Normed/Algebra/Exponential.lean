@@ -28,6 +28,7 @@ Baker--Campbell--Hausdorff expansion.
 
 ## Main results
 
+* `NormedSpace.exp_real_smul_one`: the exponential of a real scalar multiple of the unit.
 * `NormedSpace.contDiff_exp`: the exponential is smooth of every order, including analytic.
 * `NormedSpace.tendsto_exp_nhds_zero_nhds_one`: the exponential tends to `1` at the origin.
 * `NormedSpace.expSeries_partialSum_three`: the third partial sum of the exponential series is
@@ -68,6 +69,13 @@ theorem expSeries_partialSum_three (x : A) :
     Nat.factorial]
 
 end Algebra
+
+/-- Exponentiating a real scalar multiple of the unit gives the real exponential
+multiple of the unit in every real normed algebra. -/
+theorem exp_real_smul_one {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] (x : ℝ) :
+    exp (x • (1 : A)) = Real.exp x • 1 := by
+  simpa only [Algebra.algebraMap_eq_smul_one, ← Real.exp_eq_exp_ℝ] using
+    (NormedSpace.algebraMap_exp_comm (𝔸 := A) x).symm
 
 variable (𝕂 : Type*) {A : Type*} [NontriviallyNormedField 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A]
   [CharZero 𝕂] [ContinuousSMul ℚ 𝕂] [CompleteSpace A]
