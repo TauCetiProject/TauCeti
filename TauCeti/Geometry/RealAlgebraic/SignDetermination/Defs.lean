@@ -373,10 +373,11 @@ section Field
 
 variable {R : Type*} [Field R] [LinearOrder R]
 
-/-- **Clearing the leading coefficient of the root polynomial.** The distinct roots of the monic
-polynomial `p.integralNormalization` are those of `p` multiplied by the leading coefficient `a`
-of `p`. Hence a Tarski query of `p` equals one of `p.integralNormalization` against any `r`
-whose sign at `a * x` agrees with the sign of `q` at each root `x` of `p`. -/
+/-- **Clearing the leading coefficient of the root polynomial.** For `p ≠ 0`, the distinct roots of
+the monic polynomial `p.integralNormalization` are those of `p` multiplied by the leading
+coefficient `a` of `p`. Hence a Tarski query of `p` equals one of `p.integralNormalization` against
+any `r` whose sign at `a * x` agrees with the sign of `q` at each root `x` of `p`. For `p = 0` there
+are no roots to compare: `p.integralNormalization` is again `0`, and both queries vanish. -/
 theorem tarskiQuery_integralNormalization {p q r : R[X]}
     (h : ∀ x, p.eval x = 0 → sign (r.eval (p.leadingCoeff * x)) = sign (q.eval x)) :
     tarskiQuery p.integralNormalization r = tarskiQuery p q := by
