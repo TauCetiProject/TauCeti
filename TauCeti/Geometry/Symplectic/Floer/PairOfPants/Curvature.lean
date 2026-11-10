@@ -101,9 +101,6 @@ integrable, this is the estimate of Schwarz.
 * `SmoothTwoForm.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation`,
   `SymplecticForm.integrableOn_hamiltonianCurvature_pairOfPantsPerturbation`: the curvature along a
   map continuous on `S` is integrable over `S`.
-* `SmoothTwoForm.IsNondegenerate.integrableOn_floerEnergyDensity_of_integrableOn`: for a map and a
-  perturbation which are `C¹` near a compact set, the Floer energy density is integrable over it
-  wherever the curvature is.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation`:
   the energy identity on the truncated pair of pants, for a manifold target; the vector-space case
   is `SymplecticForm.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation`.
@@ -719,41 +716,6 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_endPiece
     simp only [h, neg_mul, one_mul, neg_neg, sub_self, smoothTransition.zero, zero_mul,
       intervalIntegral.integral_zero, zero_sub, intervalIntegral.integral_const_mul]
     ring
-
-/-- Over a compact set `D` on which the curvature along `u` is integrable, the Floer energy
-density is integrable, if `u` and the components of `K` are `C¹` on an open neighbourhood `U` of
-`D`: it differs from the symplectic area density and the exterior derivative `d(K(u))`, both
-continuous on `U`, by the curvature. -/
-theorem IsNondegenerate.integrableOn_floerEnergyDensity_of_integrableOn
-    (hω : ω.IsNondegenerate) {Ks Kt : ℝ × ℝ → M → ℝ} {u : ℝ × ℝ → M} {U D : Set (ℝ × ℝ)}
-    (hU : IsOpen U) (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
-    (hKs : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks) (U ×ˢ univ))
-    (hKt : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt) (U ×ˢ univ))
-    (hD : IsCompact D) (hDU : D ⊆ U)
-    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) D) :
-    IntegrableOn (ω.floerEnergyDensity Ks Kt u) D := by
-  have hmem : MapsTo (fun w ↦ (w, u w)) U (U ×ˢ (univ : Set M)) := fun _ hz ↦ ⟨hz, mem_univ _⟩
-  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hU hu
-    stdComplexLineReal stdComplexLineImag
-  simp only [← SmoothBundleForm.eval₂_apply] at harea
-  -- Each pulled-back component `K(u)` is `C¹` on `U`, so its derivative is continuous on `U`.
-  have hd {K : ℝ × ℝ → M → ℝ}
-      (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) (e : ℝ × ℝ) :
-      IntegrableOn (fun z ↦ fderiv ℝ (fun w ↦ K w (u w)) z e) D := by
-    have hK' : ContDiffOn ℝ 1 (fun w ↦ K w (u w)) U :=
-      contMDiffOn_iff_contDiffOn.mp (hK.comp (contMDiffOn_id.prodMk hu) hmem)
-    exact (((hK'.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply
-      continuousOn_const).mono hDU).integrableOn_compact hD
-  refine ((((harea.mono hDU).integrableOn_compact hD).add
-    ((hd hKt stdComplexLineReal).sub (hd hKs stdComplexLineImag))).sub hR).congr_fun
-      (fun z hz ↦ ?_) hD.isClosed.measurableSet
-  have hzU' : (z, u z) ∈ U ×ˢ (univ : Set M) := hmem (hDU hz)
-  have hK {K : ℝ × ℝ → M → ℝ}
-      (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) :=
-    (hK.contMDiffAt ((hU.prod isOpen_univ).mem_nhds hzU')).mdifferentiableAt one_ne_zero
-  rw [hω.floerEnergyDensity_eq ((hu.contMDiffAt (hU.mem_nhds (hDU hz))).mdifferentiableAt
-    one_ne_zero) (hK hKs) (hK hKt)]
-  rfl
 
 /-- **The energy identity on the truncated pair of pants, for a manifold target.** Let `K` be the
 pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_q` on a finite-dimensional manifold
