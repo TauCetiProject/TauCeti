@@ -104,7 +104,8 @@ theorem summable_mul_rpow_of_count_growth {ι : Type*} (r w : ι → ℝ)
   -- Partition the radii into dyadic annuli, each with a finite index set.
   let bin (i : ι) : ℕ := ⌊Real.logb 2 (r i)⌋₊
   have hb (i : ι) : (2 : ℝ) ^ bin i ≤ r i ∧ r i < (2 : ℝ) ^ (bin i + 1) :=
-    Real.pow_nat_floor_logb_bounds (by norm_num : (1 : ℝ) < 2) (hr i)
+    ⟨Real.pow_natFloor_logb_le_self (by norm_num) (hr i),
+      Real.lt_pow_natFloor_logb_add_one (by norm_num) (by linarith [hr i])⟩
   have hbinfinite (n : ℕ) : {i | bin i = n}.Finite :=
     (hfinite ((2 : ℝ) ^ (n + 1))).subset (fun i hi ↦ by
       have hi' : bin i = n := hi

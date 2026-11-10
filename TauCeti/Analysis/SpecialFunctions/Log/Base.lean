@@ -24,8 +24,8 @@ convergence estimates.
 * `Real.pow_le_pow_iff_div_le_logb_of_base_lt_one`: `x ^ n ≤ b ^ m ↔ m / n ≤ logb b x`.
 * `Real.pow_le_pow_iff_logb_le_div_of_base_lt_one`: `b ^ m ≤ x ^ n ↔ logb b x ≤ m / n`.
 * `Real.le_floor_logb_iff_zpow_le_of_base_lt_one`: `n ≤ ⌊logb b x⌋ ↔ x ≤ b ^ n` for `n : ℤ`.
-* `Real.pow_nat_floor_logb_bounds`: `b ^ ⌊logb b x⌋₊ ≤ x < b ^ (⌊logb b x⌋₊ + 1)`
-  for `1 < b` and `1 ≤ x`.
+* `Real.pow_natFloor_logb_le_self`: `b ^ ⌊logb b x⌋₊ ≤ x` for `1 < b` and `1 ≤ x`.
+* `Real.lt_pow_natFloor_logb_add_one`: `x < b ^ (⌊logb b x⌋₊ + 1)` for `1 < b` and `0 < x`.
 -/
 
 public section
@@ -54,18 +54,19 @@ theorem le_floor_logb_iff_zpow_le_of_base_lt_one (b_pos : 0 < b) (b_lt_one : b <
     (hx : 0 < x) (n : ℤ) : n ≤ ⌊logb b x⌋ ↔ x ≤ b ^ n := by
   rw [Int.le_floor, le_logb_iff_rpow_le_of_base_lt_one b_pos b_lt_one hx, rpow_intCast]
 
-/-- For `b > 1` and `x ≥ 1`, the natural floor of `logb b x` locates `x` between two
-consecutive natural powers of `b`. -/
-theorem pow_nat_floor_logb_bounds (hb : 1 < b) (hx : 1 ≤ x) :
-    b ^ ⌊logb b x⌋₊ ≤ x ∧ x < b ^ (⌊logb b x⌋₊ + 1) := by
-  have h0 : 0 < x := zero_lt_one.trans_le hx
-  have hl : 0 ≤ logb b x := logb_nonneg hb hx
-  constructor
-  · simpa only [rpow_natCast] using
-      (le_logb_iff_rpow_le hb h0).mp (Nat.floor_le hl)
-  · rw [← rpow_natCast]
-    apply (logb_lt_iff_lt_rpow hb h0).mp
-    push_cast
-    exact Nat.lt_floor_add_one (logb b x)
+/-- For `b > 1` and `x ≥ 1`, the power of `b` at the natural floor of `logb b x` is at most
+`x`. -/
+theorem pow_natFloor_logb_le_self (hb : 1 < b) (hx : 1 ≤ x) : b ^ ⌊logb b x⌋₊ ≤ x := by
+  simpa only [rpow_natCast] using
+    (le_logb_iff_rpow_le hb (zero_lt_one.trans_le hx)).mp (Nat.floor_le (logb_nonneg hb hx))
+
+/-- For `b > 1` and `0 < x`, `x` is less than the power of `b` one past the natural floor of
+`logb b x`. -/
+theorem lt_pow_natFloor_logb_add_one (hb : 1 < b) (hx : 0 < x) :
+    x < b ^ (⌊logb b x⌋₊ + 1) := by
+  rw [← rpow_natCast]
+  apply (logb_lt_iff_lt_rpow hb hx).mp
+  push_cast
+  exact Nat.lt_floor_add_one (logb b x)
 
 end Real
