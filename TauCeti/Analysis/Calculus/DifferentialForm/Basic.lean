@@ -37,6 +37,12 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {n : ℕ} {ω : E → E [⋀^Fin n]→L[𝕜] F} {s t : Set E} {x : E}
 
+/-- The exterior derivative of a form vanishes at a point where the form is not differentiable,
+because `fderiv` takes the junk value `0` there. -/
+lemma extDeriv_of_not_differentiableAt (h : ¬ DifferentiableAt 𝕜 ω x) : extDeriv ω x = 0 := by
+  simp only [extDeriv, fderiv_zero_of_not_differentiableAt h]
+  exact map_zero _
+
 /-- The alternatization of a continuous linear map into one-forms, on an ordered pair:
 `alternatizeUncurryFin f (v, w) = f v (w) - f w (v)`. -/
 theorem ContinuousAlternatingMap.alternatizeUncurryFin_apply_pair
