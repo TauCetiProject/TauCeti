@@ -218,7 +218,7 @@ theorem tprod_one_sub_pow_mul_inv_eq {q : 𝕜} (hq : ‖q‖ < 1) (hq₀ : q �
 
 omit [CompleteSpace 𝕜] in
 /-- If the factors `1 - qⁿ⁺¹ w` are nonzero, so is `∏_{n ≥ 1} (1 - qⁿ w)`. If the product is not
-multipliable, it is `1` by convention; otherwise it is computed in the completion of `𝕜`. -/
+multipliable, it is `1` by convention. -/
 theorem tprod_one_sub_pow_mul_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) {w : 𝕜}
     (h : ∀ n : ℕ, 1 - q ^ (n + 1) * w ≠ 0) : ∏' n : ℕ, (1 - q ^ (n + 1) * w) ≠ 0 := by
   by_cases hm : Multipliable fun n : ℕ ↦ 1 - q ^ (n + 1) * w
@@ -226,6 +226,7 @@ theorem tprod_one_sub_pow_mul_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) {w : 𝕜}
   · rw [tprod_eq_one_of_not_multipliable hm]
     exact one_ne_zero
   intro h0
+  -- transport the product along the isometric embedding of `𝕜` into its completion
   let ι : 𝕜 →+* UniformSpace.Completion 𝕜 := UniformSpace.Completion.coeRingHom
   have hι : Continuous ι := UniformSpace.Completion.continuous_coe 𝕜
   have hmap := (hm.hasProd.map ι hι).tprod_eq
@@ -277,6 +278,7 @@ theorem norm_qTheta_le {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
   swap
   · rw [tprod_eq_one_of_not_multipliable hm, norm_one]
     exact Real.one_le_exp (div_nonneg (by positivity) (sub_nonneg.2 hq.le))
+  -- transport the product along the isometric embedding of `𝕜` into its completion
   let ι : 𝕜 →+* UniformSpace.Completion 𝕜 := UniformSpace.Completion.coeRingHom
   have hι : Continuous ι := UniformSpace.Completion.continuous_coe 𝕜
   have hnorm : ∀ x : 𝕜, ‖ι x‖ = ‖x‖ := UniformSpace.Completion.norm_coe
@@ -293,8 +295,7 @@ theorem norm_qTheta_le {q : 𝕜} (hq : ‖q‖ < 1) (w : 𝕜) :
 
 omit [CompleteSpace 𝕜] in
 /-- For `‖q‖ < 1` the theta product `θ_q(w)` is nonzero when `w` is not an integral power of
-`q`. If the defining product is not multipliable, it is `1` by convention; otherwise it is
-computed in the completion of `𝕜`. -/
+`q`. If the defining product is not multipliable, it is `1` by convention. -/
 theorem qTheta_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) {w : 𝕜} (hw : ∀ k : ℤ, w ≠ q ^ k) :
     qTheta q w ≠ 0 := by
   rw [qTheta_def]
@@ -310,6 +311,7 @@ theorem qTheta_ne_zero {q : 𝕜} (hq : ‖q‖ < 1) {w : 𝕜} (hw : ∀ k : �
     rw [zpow_natCast, ← inv_inj]
     exact eq_inv_of_mul_eq_one_right (sub_eq_zero.mp h).symm)
   intro h0
+  -- transport the product along the isometric embedding of `𝕜` into its completion
   let ι : 𝕜 →+* UniformSpace.Completion 𝕜 := UniformSpace.Completion.coeRingHom
   have hι : Continuous ι := UniformSpace.Completion.continuous_coe 𝕜
   have hq' : ‖ι q‖ < 1 := by
