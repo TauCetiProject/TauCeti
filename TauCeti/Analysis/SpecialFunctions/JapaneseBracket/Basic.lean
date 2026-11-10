@@ -263,10 +263,12 @@ variable [NormedSpace ℝ V] [FiniteDimensional ℝ V]
 
 /-! ### Truncated moments at the logarithmic endpoint
 
-For `p + d = 2 m`, the moment `∫ ‖x‖ ^ p (2 t / (t² + ‖x‖²)) ^ m` of the `m`-th power of the
-rescaled bracket profile diverges logarithmically when `d > 0`, and the moments truncated to a ball
-are computed instead. In polar coordinates about the centre, the integrand is
-`r ^ (2 m - 1) (2 t / (t² + r²)) ^ m`. With `w = r² / (t² + r²)`, its antiderivative is
+For `p + d = 2 m` with `m > 0` and `t ≠ 0`, the moment `∫ ‖x‖ ^ p (2 t / (t² + ‖x‖²)) ^ m` of the
+`m`-th power of the rescaled bracket profile diverges logarithmically when `d > 0`, and the moments
+truncated to a ball are computed instead. At `t = 0` the profile vanishes identically, so every
+moment is zero and both sides of the truncated-moment formulas below are zero. In polar coordinates
+about the centre, the integrand is `r ^ (2 m - 1) (2 t / (t² + r²)) ^ m`. For `t ≠ 0` and
+`w = r² / (t² + r²)`, its antiderivative is
 `(2 t) ^ m / 2 (log (t² + r²) - ∑_{k < m - 1} w ^ (k + 1) / (k + 1))`: the derivative of the
 partial logarithmic series is a geometric sum in `w`. -/
 
@@ -329,8 +331,8 @@ theorem integral_pow_mul_div_add_sq_pow {t : ℝ} (m : ℕ) (R : ℝ) :
 dimension `n`, a natural number `m ≠ 0` and an order `p` with `p + n = 2 m`, the moment of order `p`
 of the `m`-th power of the bubble profile `y ↦ 2 t / (t² + ‖y - b‖²)` over the ball `B(b, R)` is
 `n |B(0, 1)| 2 ^ (m - 1) t ^ m (log (1 + (R / t)²) - ∑_{k < m - 1} w ^ (k + 1) / (k + 1))`,
-with `w = R² / (t² + R²)`. When `V` is nontrivial, the integral over the whole space diverges
-logarithmically. -/
+with `w = R² / (t² + R²)`. When `t = 0` both sides are zero. When `V` is nontrivial and `t ≠ 0`, the
+integral over the whole space diverges logarithmically. -/
 theorem setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow
     (μ : Measure V) [μ.IsAddHaarMeasure] {m : ℕ} (hm : m ≠ 0) {p : ℝ}
     (hp : p + finrank ℝ V = 2 * m) {t : ℝ} {R : ℝ} (hR : 0 ≤ R) (b : V) :
