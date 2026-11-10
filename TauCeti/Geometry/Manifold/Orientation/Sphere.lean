@@ -47,7 +47,9 @@ antipodal preimage, the antipodal map has degree `(-1)^(n+1)` at every value.
 
 * `Orientation.sphereTopForm`: the nowhere-vanishing outward-normal top form
   `(v₁, …, vₙ) ↦ vol(u, v₁, …, vₙ)` of the unit sphere, with `Orientation.sphereTopForm_apply`,
-  `Orientation.isSmoothForm_sphereTopForm` and `Orientation.sphereTopForm_ne_zero`.
+  `Orientation.isSmoothForm_sphereTopForm`, `Orientation.sphereTopForm_ne_zero`,
+  `Orientation.sphereTopForm_neg` and its antipodal pullback
+  `Orientation.mpullback_neg_sphereTopForm`.
 * `Orientation.sphereOrientation`: the outward-normal orientation of the unit sphere.
 * `Orientation.orientation_eq_orientationAt_sphereOrientation_iff`: a tangent basis at `u` is
   positive exactly when `u` followed by its image in `E` has positive volume, and
@@ -130,6 +132,14 @@ theorem _root_.Orientation.sphereTopForm_ne_zero (o : Orientation ℝ E (Fin (n 
   exact Orientation.volumeForm_apply_ne_zero_iff.2
     (LinearIndependent.finCons_mvfderiv_coe_sphere u b.linearIndependent) (by simpa using hb)
 
+/-- Reversing the orientation of `E` negates the outward-normal top form. -/
+@[simp]
+theorem _root_.Orientation.sphereTopForm_neg (o : Orientation ℝ E (Fin (n + 1))) :
+    (-o).sphereTopForm = -o.sphereTopForm := by
+  funext u
+  ext v
+  simp [Orientation.sphereTopForm_apply, Orientation.volumeForm_neg_orientation]
+
 /-- The **outward-normal orientation** of the unit sphere `Sⁿ` of an oriented real inner product
 space `E` of dimension `n + 1`: a tangent basis `v₁, …, vₙ` at `u` is positive exactly when
 `u, v₁, …, vₙ` is a positive basis of `E`
@@ -190,12 +200,13 @@ theorem _root_.Orientation.sphereOrientation_neg (o : Orientation ℝ E (Fin (n 
     rw [← hpos, hv]
     exact (neg_neg (G := Orientation ℝ (TangentSpace (𝓡 n) u) (Fin n)) _).symm
 
-/-- The antipodal map `u ↦ -u` pulls the top form `(v₁, …, vₙ) ↦ vol(u, v₁, …, vₙ)` of the sphere
-back to `(-1)^(n+1)` times itself: it negates both the point and the tangent vectors. -/
-private theorem mpullback_neg_sphereTopForm (o : Orientation ℝ E (Fin (n + 1)))
-    (u : sphere (0 : E) 1) :
-    mpullback (𝓡 n) (𝓡 n) (fun y : sphere (0 : E) 1 ↦ -y) o.sphereTopForm u =
-      ((-1 : ℝ) ^ (n + 1)) • o.sphereTopForm u := by
+/-- The antipodal map `u ↦ -u` pulls the outward-normal top form
+`(v₁, …, vₙ) ↦ vol(u, v₁, …, vₙ)` of the sphere back to `(-1)^(n+1)` times itself: it negates
+both the point and the tangent vectors. -/
+theorem _root_.Orientation.mpullback_neg_sphereTopForm (o : Orientation ℝ E (Fin (n + 1))) :
+    mpullback (𝓡 n) (𝓡 n) (fun y : sphere (0 : E) 1 ↦ -y) o.sphereTopForm =
+      ((-1 : ℝ) ^ (n + 1)) • o.sphereTopForm := by
+  funext u
   have hneg : MDifferentiableAt (𝓡 n) (𝓡 n) (fun y : sphere (0 : E) 1 ↦ -y) u :=
     (contMDiff_neg_sphere (m := 1)).mdifferentiableAt one_ne_zero
   have hcoe : MDifferentiableAt (𝓡 n) 𝓘(ℝ, E) ((↑) : sphere (0 : E) 1 → E) (-u) :=
@@ -208,8 +219,8 @@ private theorem mpullback_neg_sphereTopForm (o : Orientation ℝ E (Fin (n + 1))
       funext fun y ↦ coe_neg_sphere y
     rw [← mvfderiv_comp_apply u hcoe hneg, hcomp, mvfderiv_neg, neg_apply]
   ext v
-  rw [mpullback_apply, Orientation.sphereTopForm_apply, ContinuousAlternatingMap.smul_apply,
-    Orientation.sphereTopForm_apply, coe_neg_sphere]
+  rw [mpullback_apply, Orientation.sphereTopForm_apply, Pi.smul_apply,
+    ContinuousAlternatingMap.smul_apply, Orientation.sphereTopForm_apply, coe_neg_sphere]
   simp_rw [hd]
   have hcons : (Fin.cons (-(u : E))
       (fun i ↦ -mvfderiv (𝓡 n) ((↑) : sphere (0 : E) 1 → E) u (v i)) : Fin (n + 1) → E) =
@@ -227,7 +238,7 @@ theorem _root_.Orientation.isOrientationPreservingAt_neg_sphere
       (fun y ↦ -y) u := by
   rw [Orientation.sphereOrientation]
   refine Manifold.Orientation.isOrientationPreservingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _
-    ?_ (mpullback_neg_sphereTopForm o u)
+    ?_ (congrFun o.mpullback_neg_sphereTopForm u)
   rw [hn.add_one.neg_one_pow]
   exact one_pos
 
@@ -239,7 +250,7 @@ theorem _root_.Orientation.isOrientationReversingAt_neg_sphere
       (fun y ↦ -y) u := by
   rw [Orientation.sphereOrientation]
   refine Manifold.Orientation.isOrientationReversingAt_ofTopForm_of_mpullback_eq_smul _ _ _ _ _ _
-    ?_ (mpullback_neg_sphereTopForm o u)
+    ?_ (congrFun o.mpullback_neg_sphereTopForm u)
   rw [hn.add_one.neg_one_pow]
   exact neg_one_lt_zero
 

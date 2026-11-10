@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.LinearAlgebra.CrossProduct
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Orientation.Sphere
@@ -41,8 +40,6 @@ whose total integral is one (`OnePoint.integral_fubiniStudyDensity`).
 
 ## Main results
 
-* `EuclideanSpace.volumeForm_eq_dotProduct_cross`: the volume form of the standard orientation of
-  `ℝ³` is the triple product.
 * `Orientation.integralTopForm_sphereOrientation_sphereTopForm`: the outward-normal area form of
   the unit sphere of `ℝ³` integrates to `4π`.
 
@@ -65,16 +62,6 @@ attribute [local instance] TauCeti.finrank_euclideanSpace_fin_succ_fact
 local notation "ℝ²" => EuclideanSpace ℝ (Fin 2)
 local notation "ℝ³" => EuclideanSpace ℝ (Fin 3)
 local notation "S²" => sphere (0 : ℝ³) 1
-
-/-- **The volume form of `ℝ³` is the triple product.** For the standard orientation of
-`EuclideanSpace ℝ (Fin 3)`, `vol(u, a, b) = u ⬝ᵥ (a ⨯₃ b)`. -/
-theorem EuclideanSpace.volumeForm_eq_dotProduct_cross (u a b : ℝ³) :
-    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.volumeForm ![u, a, b] =
-      u.ofLp ⬝ᵥ a.ofLp ⨯₃ b.ofLp := by
-  rw [Orientation.volumeForm_robust _ (EuclideanSpace.basisFun (Fin 3) ℝ) rfl,
-    Module.Basis.det_apply, Matrix.det_fin_three]
-  simp [Module.Basis.toMatrix_apply, cross_apply, dotProduct, Fin.sum_univ_three]
-  ring
 
 namespace TauCeti
 
@@ -127,11 +114,13 @@ private theorem stereoParam_eq (z : ℝ²) :
     field_simp
     ring
 
-private theorem stereoParam_mem_sphere (z : ℝ²) : stereoParam z ∈ S² := by
-  refine stereoInvFunAux_mem norm_southPoleVec ?_
+private theorem planeEmbed_mem_orthogonal (z : ℝ²) : planeEmbed z ∈ (ℝ ∙ southPoleVec)ᗮ := by
   rw [Submodule.mem_orthogonal_singleton_iff_inner_right,
     EuclideanSpace.inner_eq_star_dotProduct]
   simp [planeEmbed_apply, southPoleVec, dotProduct, Fin.sum_univ_three]
+
+private theorem stereoParam_mem_sphere (z : ℝ²) : stereoParam z ∈ S² :=
+  stereoInvFunAux_mem norm_southPoleVec (planeEmbed_mem_orthogonal z)
 
 private theorem contDiff_stereoParam : ContDiff ℝ ∞ stereoParam :=
   contDiff_stereoInvFunAux.comp planeEmbed.contDiff
@@ -139,10 +128,13 @@ private theorem contDiff_stereoParam : ContDiff ℝ ∞ stereoParam :=
 private theorem fderiv_stereoParam_apply (z a : ℝ²) :
     fderiv ℝ stereoParam z a =
       fderiv ℝ (stereoInvFunAux southPoleVec) (planeEmbed z) (planeEmbed a) := by
-  have h := ((contDiff_stereoInvFunAux (v := southPoleVec) (m := 1)).differentiable
-    one_ne_zero _).hasFDerivAt.comp z planeEmbed.hasFDerivAt
-  rw [show stereoParam = stereoInvFunAux southPoleVec ∘ planeEmbed from rfl, h.fderiv]
-  rfl
+  -- `stereoParam` is by definition the composite `stereoInvFunAux southPoleVec ∘ planeEmbed`,
+  -- so the chain rule for that composite is its derivative.
+  have h : HasFDerivAt stereoParam
+      ((fderiv ℝ (stereoInvFunAux southPoleVec) (planeEmbed z)).comp planeEmbed) z :=
+    ((contDiff_stereoInvFunAux (v := southPoleVec) (m := 1)).differentiable
+      one_ne_zero _).hasFDerivAt.comp z planeEmbed.hasFDerivAt
+  rw [h.fderiv, ContinuousLinearMap.comp_apply]
 
 /-- The triple product of the parametrization with its two partial derivatives is the area
 density `4 / (1 + x² + y²)²`. -/
@@ -245,79 +237,47 @@ private theorem map_stereoDerivEquiv_orientation (z : ℝ²) :
 
 /-! ### The image of the parametrization -/
 
-private theorem one_add_stereoParam_apply_two (z : ℝ²) :
-    1 + stereoParam z 2 = 2 / (1 + z 0 ^ 2 + z 1 ^ 2) := by
-  have hs : 1 + z 0 ^ 2 + z 1 ^ 2 ≠ 0 := by positivity
-  simp only [stereoParam_eq, stereoVec, PiLp.toLp_apply, Matrix.cons_val_two, Matrix.tail_cons,
-    Matrix.head_cons]
-  field_simp
-  ring
+/-- The identification `z ↦ (2 z₀, 2 z₁, 0)` of `ℝ²` with the plane orthogonal to the south
+pole. -/
+private def planeMk (z : ℝ²) : (ℝ ∙ southPoleVec)ᗮ :=
+  ⟨planeEmbed z, planeEmbed_mem_orthogonal z⟩
 
-/-- Stereographic projection from the south pole inverts the parametrization:
-`zᵢ = qᵢ(z) / (1 + q₂(z))`. -/
-private theorem stereoParam_apply_div (z : ℝ²) (i : Fin 2) :
-    stereoParam z (Fin.castSucc i) / (1 + stereoParam z 2) = z i := by
-  have hs : 1 + z 0 ^ 2 + z 1 ^ 2 ≠ 0 := by positivity
-  rw [one_add_stereoParam_apply_two]
-  fin_cases i <;>
-  · simp [stereoParam_eq, stereoVec]
-    field_simp
+private theorem injective_planeMk : Function.Injective planeMk := by
+  intro z w h
+  have h' (i : Fin 3) := congrArg (fun p : (ℝ ∙ southPoleVec)ᗮ ↦ (p : ℝ³) i) h
+  ext i
+  fin_cases i
+  · simpa [planeMk, planeEmbed_apply] using h' 0
+  · simpa [planeMk, planeEmbed_apply] using h' 1
+
+private theorem surjective_planeMk : Function.Surjective planeMk := by
+  rintro ⟨w, hw⟩
+  rw [Submodule.mem_orthogonal_singleton_iff_inner_right,
+    EuclideanSpace.inner_eq_star_dotProduct] at hw
+  have hw2 : w 2 = 0 := by simpa [southPoleVec, dotProduct, Fin.sum_univ_three] using hw
+  refine ⟨WithLp.toLp 2 ![w 0 / 2, w 1 / 2], Subtype.ext ?_⟩
+  ext i
+  fin_cases i <;> simp [planeMk, planeEmbed_apply, hw2, mul_div_cancel₀]
+
+/-- The parametrization is Mathlib's inverse stereographic projection from the south pole, read
+on `ℝ²` through `planeMk`. -/
+private theorem stereoSphere_eq_comp :
+    stereoSphere = (stereographic norm_southPoleVec).symm ∘ planeMk :=
+  rfl
 
 private theorem injective_stereoSphere : Function.Injective stereoSphere := by
-  intro z w h
-  have h' : stereoParam z = stereoParam w := congrArg Subtype.val h
-  ext i
-  rw [← stereoParam_apply_div z i, ← stereoParam_apply_div w i, h']
+  rw [stereoSphere_eq_comp]
+  exact (isOpenEmbedding_stereographic_symm norm_southPoleVec).injective.comp injective_planeMk
 
 /-- The south pole `(0, 0, -1)` of the unit sphere. -/
 private def southPole : S² :=
   ⟨southPoleVec, mem_sphere_zero_iff_norm.2 norm_southPoleVec⟩
 
-private theorem sq_add_sq_add_sq_of_mem_sphere (u : S²) :
-    u.1 0 ^ 2 + u.1 1 ^ 2 + u.1 2 ^ 2 = 1 := by
-  have h := u.2
-  rw [mem_sphere_zero_iff_norm, EuclideanSpace.norm_eq, Real.sqrt_eq_one] at h
-  simpa [Fin.sum_univ_three] using h
-
 /-- The parametrization covers exactly the sphere minus the south pole. -/
 private theorem range_stereoSphere : Set.range stereoSphere = {southPole}ᶜ := by
-  ext u
-  simp only [Set.mem_range, Set.mem_compl_iff, Set.mem_singleton_iff]
-  constructor
-  · rintro ⟨z, rfl⟩ h
-    -- The last coordinate `(1 - x² - y²) / (1 + x² + y²)` is never `-1`.
-    have hs : (0 : ℝ) < 1 + z 0 ^ 2 + z 1 ^ 2 := by positivity
-    have h2 : (1 - z 0 ^ 2 - z 1 ^ 2) / (1 + z 0 ^ 2 + z 1 ^ 2) = -1 := by
-      simpa [stereoSphere, stereoParam_eq, stereoVec, southPole, southPoleVec] using
-        congrArg (fun v : S² ↦ (v : ℝ³) 2) h
-    rw [div_eq_iff hs.ne'] at h2
-    linarith
-  · intro hu
-    have hsq := sq_add_sq_add_sq_of_mem_sphere u
-    have h2 : 1 + u.1 2 ≠ 0 := by
-      intro h2
-      apply hu
-      have hu2 : u.1 2 = -1 := by linarith
-      have h01 : u.1 0 ^ 2 + u.1 1 ^ 2 = 0 := by rw [hu2] at hsq; linarith
-      have h0 : u.1 0 = 0 := by nlinarith [sq_nonneg (u.1 0), sq_nonneg (u.1 1)]
-      have h1 : u.1 1 = 0 := by nlinarith [sq_nonneg (u.1 0), sq_nonneg (u.1 1)]
-      apply Subtype.ext
-      ext i
-      fin_cases i <;> simp [southPole, southPoleVec, h0, h1, hu2]
-    -- The preimage is the stereographic projection `(u₀, u₁) / (1 + u₂)` of `u`.
-    refine ⟨WithLp.toLp 2 ![u.1 0 / (1 + u.1 2), u.1 1 / (1 + u.1 2)], ?_⟩
-    apply Subtype.ext
-    ext i
-    fin_cases i
-    · simp [stereoSphere, stereoParam_eq, stereoVec]
-      field_simp
-      linear_combination (-u.1 0) * hsq
-    · simp [stereoSphere, stereoParam_eq, stereoVec]
-      field_simp
-      linear_combination (-u.1 1) * hsq
-    · simp [stereoSphere, stereoParam_eq, stereoVec]
-      field_simp
-      linear_combination (-1 - u.1 2) * hsq
+  rw [stereoSphere_eq_comp, Set.range_comp, surjective_planeMk.range_eq, Set.image_univ,
+    range_stereographic_symm]
+  rfl
 
 /-! ### The area -/
 
@@ -373,11 +333,7 @@ theorem Orientation.integralTopForm_sphereOrientation_sphereTopForm
     with rfl | rfl
   · exact TauCeti.integralTopForm_sphereTopForm_basisFun
   · -- Reversing `o` reverses both the orientation of the sphere and the sign of the form.
-    have hneg : (-(EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation).sphereTopForm =
-        (-1 : ℝ) • (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereTopForm := by
-      funext u
-      ext v
-      simp [Orientation.sphereTopForm_apply, Orientation.volumeForm_neg_orientation]
-    rw [Orientation.sphereOrientation_neg, hneg, TauCeti.integralTopForm_neg,
-      TauCeti.integralTopForm_smul, TauCeti.integralTopForm_sphereTopForm_basisFun]
+    rw [Orientation.sphereOrientation_neg, Orientation.sphereTopForm_neg, ← neg_one_smul ℝ,
+      TauCeti.integralTopForm_neg, TauCeti.integralTopForm_smul,
+      TauCeti.integralTopForm_sphereTopForm_basisFun]
     ring

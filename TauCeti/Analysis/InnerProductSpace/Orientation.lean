@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Analysis.InnerProductSpace.Orientation
 public import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import Mathlib.LinearAlgebra.Alternating.Curry
+public import Mathlib.LinearAlgebra.CrossProduct
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 import TauCeti.Analysis.InnerProductSpace.Projection.Basic
@@ -35,6 +36,9 @@ normal: a basis of `(ℝ ∙ p)ᗮ` is positive exactly when `p` followed by it 
 the whole space (`Orientation.orthogonalSpanSingleton`,
 `Orientation.orientation_eq_orthogonalSpanSingleton_iff`). This orients the tangent hyperplanes of
 spheres.
+
+For the standard orientation of `ℝ³ = EuclideanSpace ℝ (Fin 3)`, the volume form is the triple
+product `vol(u, a, b) = u ⬝ᵥ (a ⨯₃ b)` (`EuclideanSpace.volumeForm_eq_dotProduct_cross`).
 -/
 
 public section
@@ -219,3 +223,14 @@ theorem orientation_eq_orthogonalSpanSingleton_iff (o : Orientation ℝ E (Fin (
 end OrthogonalSpanSingleton
 
 end Orientation
+
+open Matrix in
+/-- **The volume form of `ℝ³` is the triple product.** For the standard orientation of
+`EuclideanSpace ℝ (Fin 3)`, `vol(u, a, b) = u ⬝ᵥ (a ⨯₃ b)`. -/
+theorem EuclideanSpace.volumeForm_eq_dotProduct_cross (u a b : EuclideanSpace ℝ (Fin 3)) :
+    (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.volumeForm ![u, a, b] =
+      u.ofLp ⬝ᵥ a.ofLp ⨯₃ b.ofLp := by
+  rw [Orientation.volumeForm_robust _ (EuclideanSpace.basisFun (Fin 3) ℝ) rfl,
+    Module.Basis.det_apply, Matrix.det_fin_three]
+  simp [Module.Basis.toMatrix_apply, cross_apply, dotProduct, Fin.sum_univ_three]
+  ring
