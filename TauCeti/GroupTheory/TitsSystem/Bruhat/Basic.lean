@@ -47,6 +47,8 @@ simple cells are developed in `TauCeti.GroupTheory.TitsSystem.Bruhat.Subword`.
   cell does.
 * `TauCeti.TitsSystem.bruhatCell_mul_self_eq_union_of_mem_simple`: the square of a simple cell is
   its union with the identity cell.
+* `TauCeti.TitsSystem.subset_bruhatCell_mul_right`: the adjacent cell always occurs in the product
+  of cells on the right.
 * `TauCeti.TitsSystem.exists_mem_doubleCoset`: every group element lies in a cell represented
   by `N`.
 * `TauCeti.TitsSystem.doubleCosetMk_surjective`: the induced map `N → B \ G / B` is
@@ -189,7 +191,7 @@ private theorem doubleCoset_subset_mul_doubleCoset_of_mem (B C D : Subgroup G) {
       ⟨c₁, hc₁, c₂ * b₂, D.mul_mem hc₂ hb₂, by simp [mul_assoc]⟩
 
 /-- The double coset of a product occurs in the product of the corresponding double cosets. -/
-private theorem doubleCoset_mul_subset_mul_doubleCoset (B C D : Subgroup G) (r w : G) :
+theorem doubleCoset_mul_subset_mul_doubleCoset (B C D : Subgroup G) (r w : G) :
     DoubleCoset.doubleCoset (r * w) B D ⊆
       DoubleCoset.doubleCoset r B C * DoubleCoset.doubleCoset w C D := by
   rintro x hx
@@ -200,6 +202,14 @@ private theorem doubleCoset_mul_subset_mul_doubleCoset (B C D : Subgroup G) (r w
   · exact DoubleCoset.mem_doubleCoset.mpr
       ⟨1, C.one_mem, b₂, hb₂, by simp⟩
   · simp only [mul_assoc]
+
+/-- The adjacent cell always occurs in the product of cells on the right. -/
+theorem subset_bruhatCell_mul_right (w s : T.WeylGroup) :
+    T.bruhatCell (w * s) ⊆ T.bruhatCell w * T.bruhatCell s := by
+  obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective w
+  obtain ⟨m, rfl⟩ := QuotientGroup.mk_surjective s
+  rw [← QuotientGroup.mk_mul, T.bruhatCell_mk, T.bruhatCell_mk, T.bruhatCell_mk]
+  exact doubleCoset_mul_subset_mul_doubleCoset T.subgroupB T.subgroupB T.subgroupB _ _
 
 /-- **Multiplication by a simple Bruhat cell.** If `r` represents a simple reflection and `w`
 lies in `N`, then `(B r B)(B w B)` is either the adjacent cell `B (r w) B` or the union of that
