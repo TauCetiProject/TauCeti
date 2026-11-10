@@ -86,8 +86,14 @@ theorem injective_liftBaseChange_iff_primaryComponent_and_localized (f : M →�
       apply (injective_iff_map_eq_zero _).mp (hloc g hg)
       simp [hx]
     have hxtors : x ∈ (I.map (algebraMap R S)).primaryComponent (S ⊗[R] M) := by
-      rw [Ideal.map_span, ← Finset.coe_image, Ideal.mem_primaryComponent_span_iff_localized]
-      simpa only [Finset.forall_mem_image] using hxloc
+      rw [Ideal.map_span, ← Finset.coe_image, Ideal.mem_primaryComponent_span_iff]
+      intro s hs
+      obtain ⟨g, hg, rfl⟩ := Finset.mem_image.mp hs
+      obtain ⟨a, ha⟩ := (IsLocalizedModule.eq_zero_iff (.powers (algebraMap R S g))
+        (LocalizedModule.mkLinearMap (.powers (algebraMap R S g)) (S ⊗[R] M))).mp
+          (hxloc g hg)
+      obtain ⟨n, hn⟩ := a.2
+      exact ⟨n, by simpa only [Submonoid.smul_def, ← hn] using ha⟩
     obtain ⟨m, hm⟩ := e.surjective ⟨x, hxtors⟩
     have hmx : (1 : S) ⊗ₜ[R] (m : M) = x := by
       simpa only [e, TauCeti.coe_primaryComponentEquivTensorProduct_apply] using
