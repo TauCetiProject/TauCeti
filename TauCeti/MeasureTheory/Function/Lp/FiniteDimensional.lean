@@ -19,14 +19,14 @@ The same decomposition bounds the `Lᵖ` seminorm of a function by those of its 
 
 public section
 
-namespace TauCeti
-
 open MeasureTheory
 
 variable {α 𝕜 F ι : Type*} [MeasurableSpace α]
   [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F] [Fintype ι]
   {p : ENNReal} [Fact (1 ≤ p)] {μ : Measure α}
+
+namespace TauCeti
 
 /-- Reconstruct an `Lᵖ` function from its coordinates in a finite basis. -/
 theorem eq_sum_basis_compLpL (b : Module.Basis ι 𝕜 F) (f : Lp F p μ) :
@@ -48,6 +48,10 @@ theorem eq_sum_basis_compLpL (b : Module.Basis ι 𝕜 F) (f : Lp F p μ) :
     ae_all_iff.mpr hcoord] with x hsum hcoords
   simpa only [hsum, hcoords, Module.Basis.coord_apply] using (b.sum_repr (f x)).symm
 
+end TauCeti
+
+namespace Module.Basis
+
 /-- The `Lᵖ` seminorm of a function with values in a space with a finite basis is controlled
 by the `Lᵖ` seminorms of its coordinates. -/
 theorem eLpNorm_le_sum_enorm_mul_eLpNorm_coord (b : Module.Basis ι 𝕜 F)
@@ -68,4 +72,4 @@ theorem eLpNorm_le_sum_enorm_mul_eLpNorm_coord (b : Module.Basis ι 𝕜 F)
           hg).smul_const (b i)
       · rw [enorm_smul, mul_comm]
 
-end TauCeti
+end Module.Basis

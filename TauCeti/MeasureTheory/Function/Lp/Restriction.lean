@@ -10,7 +10,6 @@ public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import TauCeti.MeasureTheory.Function.LpSeminorm.CompareExp
-public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 /-!
 # Restriction and set integration on finite-measure sets
@@ -23,7 +22,6 @@ useful whenever an `Lᵖ` identity is tested against integrals on finite-measure
 
 * `TauCeti.tendsto_setLIntegral_enorm_sub_of_tendsto_Lp`: convergence of representatives on a
   finite-measure set.
-* `TauCeti.tendsto_setLIntegral_enorm_add_sub`: convergence of sums of representatives on a set.
 * `MeasureTheory.MemLp.coeFn_toLp_indicator_restrict`: recover a function from its zero extension
   on a measurable subset.
 
@@ -245,19 +243,6 @@ theorem tendsto_setLIntegral_enorm_sub_of_tendsto_Lp
   refine lintegral_congr_ae ?_
   filter_upwards [ae_restrict_of_ae (ha n), ha₀] with x h₁ h₂
   rw [Pi.sub_apply, h₁, h₂]
-
-/-- If two families converge in `L¹` on `W`, so does their sum. Only the errors of the first
-family need to be almost everywhere strongly measurable. -/
-theorem tendsto_setLIntegral_enorm_add_sub {E H ι : Type*} [MeasurableSpace E]
-    [NormedAddCommGroup H] {μ : Measure E} {W : Set E} {l : Filter ι}
-    {a b : ι → E → H} {a₀ b₀ : E → H}
-    (ha : ∀ n, AEStronglyMeasurable (fun x => a n x - a₀ x) (μ.restrict W))
-    (h₁ : Tendsto (fun n => ∫⁻ x in W, ‖a n x - a₀ x‖ₑ ∂μ) l (𝓝 0))
-    (h₂ : Tendsto (fun n => ∫⁻ x in W, ‖b n x - b₀ x‖ₑ ∂μ) l (𝓝 0)) :
-    Tendsto (fun n => ∫⁻ x in W, ‖a n x + b n x - (a₀ x + b₀ x)‖ₑ ∂μ) l (𝓝 0) :=
-  tendsto_lintegral_zero_of_le_add (μ := μ.restrict W)
-    (fun n x => by rw [add_sub_add_comm]; exact enorm_add_le _ _)
-    (fun n => (ha n).enorm) h₁ h₂
 
 end TauCeti
 

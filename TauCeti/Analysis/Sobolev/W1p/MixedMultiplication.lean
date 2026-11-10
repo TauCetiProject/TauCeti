@@ -273,7 +273,7 @@ theorem W1p.exists_eLpNorm_le_of_holderTriple (hp : (finrank ℝ E : ℝ≥0) < 
   calc
     eLpNorm g r (μ.restrict K)
         ≤ ∑ i, ‖b i‖ₑ * eLpNorm (fun x ↦ b.coord i (g x)) r (μ.restrict K) :=
-      eLpNorm_le_sum_enorm_mul_eLpNorm_coord b (hgq.aestronglyMeasurable.mono_measure hKm)
+      b.eLpNorm_le_sum_enorm_mul_eLpNorm_coord (hgq.aestronglyMeasurable.mono_measure hKm)
     _ ≤ ∑ i, ‖b i‖ₑ * (‖S‖ₑ * ‖P‖ₑ * X) := by
       gcongr with i
       exact key i
