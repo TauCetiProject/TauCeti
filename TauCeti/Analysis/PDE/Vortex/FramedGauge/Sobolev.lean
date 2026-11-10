@@ -34,9 +34,10 @@ has coefficients in `H^s`. Its product with `i` is the connection increment `u�
 action `(a, α) ↦ (a - u⁻¹ du, u α)`, so the `C¹` elements of `G_(s+1)` preserve the connection
 part of `A_m^s`.
 
-No topology or Banach Lie group charts on `G_s` are constructed here, and the action on the
-section part of `A_m^s`, which needs multiplication of `H^s` by the bounded reference section,
-is not treated.
+The exponential chart `f ↦ exp (i f)` of `G_s` at the identity is constructed in
+`TauCeti.Analysis.PDE.Vortex.FramedGauge.Exponential`. No topology on `G_s` is constructed here,
+and the action on the section part of `A_m^s`, which needs multiplication of `H^s` by the bounded
+reference section, is not treated.
 
 ## Main definitions
 
@@ -50,8 +51,8 @@ is not treated.
   infinity.
 * `TauCeti.Vortex.mem_sobolevGaugeGroup_inf_framedGaugeGroup`: the smooth subgroup of `G_s` is
   `G_s ⊓ framedGaugeGroup`.
-* `TauCeti.Vortex.mem_sobolevGaugeGroup_of_hasCompactSupport`,
-  `TauCeti.Vortex.exp_mem_sobolevGaugeGroup`: compactly supported smooth gauges lie in `G_s`.
+* `TauCeti.Vortex.mem_sobolevGaugeGroup_of_hasCompactSupport`: compactly supported smooth gauges
+  lie in `G_s`.
 * `TauCeti.Vortex.gaugeForm_apply_mem_realSobolevFunctions`: for a `C¹` gauge in `G_(s+1)`,
   `Im (u⁻¹ du)` has coefficients in `H^s`.
 
@@ -189,14 +190,6 @@ theorem mem_sobolevGaugeGroup_of_hasCompactSupport {s : ℝ} (hs : 1 < s) {u : �
       (hc.comp_left (g := im) zero_im) s using 1
     ext z
     simp
-
-/-- A smooth compactly supported phase `f` gives the gauge `exp (i f)` in every `G_s`. -/
-theorem exp_mem_sobolevGaugeGroup {s : ℝ} (hs : 1 < s) {f : ℂ → ℝ} (hf : ContDiff ℝ ∞ f)
-    (hc : HasCompactSupport f) : (fun w ↦ Circle.exp (f w)) ∈ sobolevGaugeGroup hs := by
-  refine mem_sobolevGaugeGroup_of_hasCompactSupport hs ?_ ?_
-  · exact ((mem_framedGaugeGroup _).1 (exp_mem_framedGaugeGroup hf hc.is_zero_at_infty)).1
-  · simpa only [Function.comp_def, Circle.coe_exp] using
-      hc.comp_left (g := fun t : ℝ ↦ Complex.exp (t * I) - 1) (by simp)
 
 /-- **The connection increment of a Sobolev gauge.** For `s > 1` and a `C¹` gauge `u ∈ G_(s+1)`,
 the real one-form `Im (u⁻¹ du)` has coefficients in `H^s`: in each direction `v`,
