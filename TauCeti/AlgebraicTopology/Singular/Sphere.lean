@@ -118,6 +118,8 @@ Coefficients are an object `R` of an abelian category with coproducts.
 * `ModuleCat.finrank_singularHomology_sphere`: with coefficients in a free module `M` of finite
   rank, `H_q(Sᵈ; M)` is free of rank `rank M` for `q = 0` and for `q = d` (of rank `2 rank M`
   when `d = q = 0`), and vanishes otherwise.
+  `ModuleCat.finrank_singularHomology_sphere_of_finrank_eq_succ` gives the same ranks for the unit
+  sphere of a real normed space of dimension `d + 1`.
 
 ## References
 
@@ -947,6 +949,22 @@ theorem finrank_singularHomology_sphere [StrongRankCondition k] [Module.Free k M
       (if q = d then Module.finrank k M else 0) + if q = 0 then Module.finrank k M else 0 := by
   rw [finrank_singularHomology_eq_finrank_reducedSingularHomology_add,
     finrank_reducedSingularHomology_sphere]
+
+/-- **The homology of the unit sphere of a normed space.** If the real normed space `E` has
+dimension `d + 1`, then with coefficients in a free module `M` of finite rank, `H_q(S(E); M)` has
+rank `rank M` in degree `d`, plus `rank M` in degree zero, as for `TopCat.sphere d`
+(`ModuleCat.finrank_singularHomology_sphere`). -/
+theorem finrank_singularHomology_sphere_of_finrank_eq_succ [StrongRankCondition k]
+    [Module.Free k M] [Module.Finite k M] {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {d : ℕ} (hE : Module.finrank ℝ E = d + 1) (q : ℕ) :
+    Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj
+      (TopCat.of (Metric.sphere (0 : E) 1))) =
+      (if q = d then Module.finrank k M else 0) + if q = 0 then Module.finrank k M else 0 := by
+  rw [← finrank_singularHomology_sphere M d q]
+  exact (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).mapIso (TopCat.isoOfHomeo
+    ((sphereHomeomorphOfFinrankEq
+        (hE.trans (finrank_euclideanSpace_ulift_fin.{w} (d + 1)).symm)).trans
+      (diskBoundaryHomeomorph (d + 1)).symm))).toLinearEquiv.finrank_eq
 
 end Free
 
