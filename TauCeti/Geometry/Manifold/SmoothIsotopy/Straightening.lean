@@ -82,9 +82,9 @@ private theorem splice_of_le_abs {k l : ℝ → E} {δ : ℝ} (hδ : 0 < δ) (s 
     (ht : 2 * δ ≤ |t|) : splice k l δ s t = k t :=
   spliceAlong_of_le_abs hδ ht
 
-private theorem splice_one_of_abs_le {k l : ℝ → E} {δ : ℝ} (hδ : 0 < δ) {t : ℝ}
+private theorem splice_one_of_abs_le {k l : ℝ → E} {δ : ℝ} {t : ℝ}
     (ht : |t| ≤ δ) : splice k l δ 1 t = l t := by
-  rw [splice, spliceAlong_of_abs_le hδ ht, one_smul, add_sub_cancel]
+  rw [splice, spliceAlong_of_abs_le ht, one_smul, add_sub_cancel]
 
 /-- For `s ∈ [0, 1]` the spliced curve is a convex combination of the two curves, so it stays in
 any convex set containing both. -/
@@ -104,9 +104,9 @@ private theorem contDiffOn_splice {k l : ℝ → E} {T : Set ℝ}
 
 /-- **The velocity of a spliced curve.** If the velocities `k'` and `l'` of `k` and `l` at `t` are
 within `ε` of `v`, `‖l t - k t‖ ≤ 2 ε |t|`, and `B` bounds the derivative of the cutoff, then at
-every scale `δ > 0` and weight `s ∈ [0, 1]` the spliced curve is differentiable at `t` with velocity
+every scale `δ` and weight `s ∈ [0, 1]` the spliced curve is differentiable at `t` with velocity
 within `(3 + 4 B) ε` of `v`. -/
-private theorem norm_deriv_splice_sub_le {k l : ℝ → E} {k' l' v : E} {δ s t ε B : ℝ} (hδ : 0 < δ)
+private theorem norm_deriv_splice_sub_le {k l : ℝ → E} {k' l' v : E} {δ s t ε B : ℝ}
     (hs : s ∈ Icc (0 : ℝ) 1) (hB : ∀ x, |deriv spliceCutoff x| ≤ B) (hk : HasDerivAt k k' t)
     (hl : HasDerivAt l l' t) (hk' : ‖k' - v‖ ≤ ε) (hl' : ‖l' - v‖ ≤ ε)
     (hlk : ‖l t - k t‖ ≤ 2 * ε * |t|) :
@@ -121,7 +121,7 @@ private theorem norm_deriv_splice_sub_le {k l : ℝ → E} {k' l' v : E} {δ s t
   have hlks : ‖(k t + s • (l t - k t)) - k t‖ ≤ 2 * ε * |t| := by
     rw [add_sub_cancel_left, norm_smul, Real.norm_eq_abs, abs_of_nonneg hs.1]
     exact (mul_le_of_le_one_left (norm_nonneg _) hs.2).trans hlk
-  obtain ⟨h', hh', hh'v⟩ := exists_hasFDerivAt_spliceAlong_sub_le hδ
+  obtain ⟨h', hh', hh'v⟩ := exists_hasFDerivAt_spliceAlong_sub_le
     ContinuousLinearMap.norm_id_le hB hk.hasFDerivAt hls.hasFDerivAt
     (by simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using hk')
     (by simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using hls')
@@ -213,7 +213,7 @@ private theorem exists_pos_deriv_splice {k l : ℝ → E} {r : ℝ} (hr : 0 < r)
     (hl.contDiffAt (isOpen_Ioo.mem_nhds ht)).differentiableAt one_ne_zero
   refine ⟨ℓ, ρ, hρ0, hρr, fun δ hδ s hs t ht => ?_⟩
   obtain ⟨htI, hk₁, hl₁, hlk⟩ := hρ t ht
-  obtain ⟨hD, hDv⟩ := norm_deriv_splice_sub_le hδ hs hB (hdk t htI).hasDerivAt
+  obtain ⟨hD, hDv⟩ := norm_deriv_splice_sub_le hs hB (hdk t htI).hasDerivAt
     (hdl t htI).hasDerivAt hk₁.le hl₁.le hlk
   refine ⟨hD, ?_⟩
   set D := deriv (splice k l δ s) t
@@ -550,7 +550,7 @@ private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
       ((Circle.mem_centeredArc (by linarith)).2 (by simpa using hδ))] with z hz
     have hz' := (Circle.mem_centeredArc (by linarith)).1 hz
     simp only [K', SmoothEmbedding.ofIsSmoothEmbedding_apply, Icc.coe_one]
-    rw [spliceMap_of_abs_lt (by linarith), splice_one_of_abs_le hδ hz'.le,
+    rw [spliceMap_of_abs_lt (by linarith), splice_one_of_abs_le hz'.le,
       φ.left_inv (hLφ _ (by linarith)), Circle.exp_arg]
   · -- Off `U` the motion is stationary.
     have hzr : r ≤ |arg z| := not_lt.1 fun h => hz (hrU ((Circle.mem_centeredArc hrπ).2 h))
