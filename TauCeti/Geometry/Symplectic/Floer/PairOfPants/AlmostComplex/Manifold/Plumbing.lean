@@ -80,17 +80,12 @@ theorem pairOfPantsAlmostComplex_plumbingMap (hab : Jb q = Ja inf) {w : ℂ}
     (hw : w ≠ 0 ∧ w ≠ 1) (hψ : q.plumbingMap L w ≠ 0 ∧ q.plumbingMap L w ≠ 1)
     (h₁ : (inf.endCoord w).re ≤ -2) (h₂ : 2 ≤ q.endSign * ((inf.endCoord w).re + L)) :
     hᵦ.pairOfPantsAlmostComplex Jb hJb hJbp hJbs ⟨q.plumbingMap L w, hψ⟩ =
-      hₐ.pairOfPantsAlmostComplex Ja hJa hJap hJas ⟨w, hw⟩ := by
-  ext x v
-  have heq : (hᵦ.pairOfPantsAlmostComplex Jb hJb hJbp hJbs
-        ⟨q.plumbingMap L w, hψ⟩).almostComplexStructureAt x =
-      (hₐ.pairOfPantsAlmostComplex Ja hJa hJap hJas ⟨w, hw⟩).almostComplexStructureAt x := by
+      hₐ.pairOfPantsAlmostComplex Ja hJa hJap hJas ⟨w, hw⟩ :=
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
     rw [almostComplexStructureAt_pairOfPantsAlmostComplex,
       almostComplexStructureAt_pairOfPantsAlmostComplex]
     exact Floer.pairOfPantsAlmostComplex_plumbingMap (hₐ.compatibleAt x) (hᵦ.compatibleAt x)
       (by simp only [hab]) h₁ h₂ ()
-  simpa only [SmoothAlmostComplexStructure.almostComplexStructureAt_apply] using
-    congrArg (fun A : AlmostComplexStructure (TangentSpace I x) => A v) heq
 
 /-- Almost complex data on the tangent bundle over the four-punctured sphere `ℂ ∖ {0, 1, ψ(1)}`
 obtained by plumbing the output of the first pair of pants into the input `q` of the second, with
@@ -151,13 +146,11 @@ receiving pair of pants. -/
 theorem plumbedAlmostComplex_of_re_endCoord_le (hq : q ≠ inf) (hab : Jb q = Ja inf) {w : ℂ}
     (hw : (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1) (hle : (q.endCoord w).re ≤ L - 2) :
     hₐ.plumbedAlmostComplex hᵦ Ja Jb hJa hJb hJap hJas hJbp hJbs q L w hw =
-      hᵦ.pairOfPantsAlmostComplex Jb hJb hJbp hJbs ⟨w, hw.1⟩ := by
-  ext x v
-  rw [← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
-    ← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
-    almostComplexStructureAt_plumbedAlmostComplex,
-    almostComplexStructureAt_pairOfPantsAlmostComplex,
-    Floer.plumbedAlmostComplex_of_re_endCoord_le _ _ hq (by simp only [hab]) hle]
+      hᵦ.pairOfPantsAlmostComplex Jb hJb hJbp hJbs ⟨w, hw.1⟩ :=
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
+    rw [almostComplexStructureAt_plumbedAlmostComplex,
+      almostComplexStructureAt_pairOfPantsAlmostComplex,
+      Floer.plumbedAlmostComplex_of_re_endCoord_le _ _ hq (by simp only [hab]) hle]
 
 /-- Outside the width-two collar at the inserted cut, the glued structure pulls back along the
 plumbing map to the structure of the inserted pair of pants. -/
@@ -167,13 +160,11 @@ theorem plumbedAlmostComplex_plumbingMap (hq : q ≠ inf) (hab : Jb q = Ja inf) 
       q.plumbingMap L w ≠ q.plumbingMap L 1)
     (h : 2 - L ≤ (inf.endCoord w).re) :
     hₐ.plumbedAlmostComplex hᵦ Ja Jb hJa hJb hJap hJas hJbp hJbs q L (q.plumbingMap L w) hψ =
-      hₐ.pairOfPantsAlmostComplex Ja hJa hJap hJas ⟨w, hw⟩ := by
-  ext x v
-  rw [← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
-    ← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
-    almostComplexStructureAt_plumbedAlmostComplex,
-    almostComplexStructureAt_pairOfPantsAlmostComplex,
-    Floer.plumbedAlmostComplex_plumbingMap _ _ hq (by simp only [hab]) hw.1 h]
+      hₐ.pairOfPantsAlmostComplex Ja hJa hJap hJas ⟨w, hw⟩ :=
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
+    rw [almostComplexStructureAt_plumbedAlmostComplex,
+      almostComplexStructureAt_pairOfPantsAlmostComplex,
+      Floer.plumbedAlmostComplex_plumbingMap _ _ hq (by simp only [hab]) hw.1 h]
 
 /-- Deep in the receiving end, the glued structure is the inserted structure in the affine
 plumbing coordinate. This formula holds on an open set independent of the neck length. -/
@@ -182,13 +173,11 @@ theorem plumbedAlmostComplex_eq_inserted (hq : q ≠ inf) (hab : Jb q = Ja inf) 
     hₐ.plumbedAlmostComplex hᵦ Ja Jb hJa hJb hJap hJas hJbp hJbs q L w hw =
       hₐ.pairOfPantsAlmostComplex Ja hJa hJap hJas
         ⟨(w - q.endCenter) / q.plumbingFactor L,
-          q.sub_endCenter_div_plumbingFactor_ne_zero_and_ne_one L hw⟩ := by
-  ext x v
-  rw [← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
-    ← SmoothAlmostComplexStructure.almostComplexStructureAt_apply,
-    almostComplexStructureAt_plumbedAlmostComplex,
-    almostComplexStructureAt_pairOfPantsAlmostComplex,
-    Floer.plumbedAlmostComplex_eq_inserted _ _ hq (by simp only [hab]) h2]
+          q.sub_endCenter_div_plumbingFactor_ne_zero_and_ne_one L hw⟩ :=
+  SmoothAlmostComplexStructure.ext_almostComplexStructureAt fun x => by
+    rw [almostComplexStructureAt_plumbedAlmostComplex,
+      almostComplexStructureAt_pairOfPantsAlmostComplex,
+      Floer.plumbedAlmostComplex_eq_inserted _ _ hq (by simp only [hab]) h2]
 
 /-- **Joint smoothness of the plumbed structure.** For neck lengths `L > 4`, the plumbed structure
 is `C^n` jointly in the neck length, the domain point and the target point, along any `C^n`
