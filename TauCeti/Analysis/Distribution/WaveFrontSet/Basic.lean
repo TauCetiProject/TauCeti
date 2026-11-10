@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.LinearEquiv
+public import TauCeti.Analysis.Distribution.SingularSupport
 import TauCeti.Analysis.Distribution.Support
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Fourier.Decay
@@ -51,8 +52,8 @@ not microlocally smooth.
   have the same wave front set, and complex conjugation reflects the frequencies.
 * `Distribution.localFourier_eq_fourier`: where `T` is a locally integrable function `f`, the
   localized Fourier transform is the Fourier transform of `φ f`.
-* `Distribution.isMicrolocallySmoothAt_of_apply_eq_integral`: there is no wave front set over an
-  open set on which `T` is a smooth function; in particular
+* `Distribution.IsSmoothAt.isMicrolocallySmoothAt`: there is no wave front set over a point near
+  which `T` is a smooth function; in particular
   `Distribution.waveFrontSet_ofFun_eq_empty` for a function smooth on `Ω`.
 * `Distribution.waveFrontSet_delta`: the point mass at `x₀ ∈ Ω` has wave front set
   `{x₀} × (E \ {0})`.
@@ -404,13 +405,12 @@ theorem localFourier_ofFun {f : E → ℂ} (hf : MeasureTheory.LocallyIntegrable
     (ofFun Ω f MeasureTheory.volume ⊤).localFourier φ η = 𝓕 (fun x => φ x * f x) η :=
   localFourier_eq_fourier Ω.isOpen hf (fun _ _ => ofFun_apply hf) φ.tsupport_subset η
 
-/-- **Microlocal smoothness over the smooth part.** If `T` coincides on an open set `U` with a
-function `f` smooth on `U`, in the sense that `T φ = ∫ φ • f` for every real test function `φ`
-supported in `U`, then `T` is microlocally smooth at every point of `U ∩ Ω` in every direction. -/
-theorem isMicrolocallySmoothAt_of_apply_eq_integral {T : 𝓓'(Ω, ℂ)} {U : Set E} (hU : IsOpen U)
-    {f : E → ℂ} (hf : ContDiffOn ℝ ∞ f U)
-    (hT : ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ y, φ y • f y) {x : E} (hxU : x ∈ U)
+/-- **Microlocal smoothness over the smooth part.** If `T` is smooth at `x ∈ Ω`, that is, near `x`
+it coincides with a smooth function `f` in the sense that `T φ = ∫ φ • f` for every real test
+function `φ` supported near `x`, then `T` is microlocally smooth at `(x, ξ)` for every `ξ`. -/
+theorem IsSmoothAt.isMicrolocallySmoothAt {T : 𝓓'(Ω, ℂ)} {x : E} (hs : T.IsSmoothAt x)
     (hxΩ : x ∈ Ω) (ξ : E) : T.IsMicrolocallySmoothAt x ξ := by
+  obtain ⟨U, hU, hxU, f, hf, hT⟩ := isSmoothAt_iff.1 hs
   obtain ⟨φ, hφ, hφx⟩ := exists_tsupport_subset_apply_eq (n := ⊤)
     (inter_mem (hU.mem_nhds hxU) (Ω.isOpen.mem_nhds hxΩ)) inter_subset_right (1 : ℂ)
   have hφU : tsupport φ ⊆ U := hφ.trans inter_subset_left
@@ -430,8 +430,8 @@ theorem isMicrolocallySmoothAt_of_apply_eq_integral {T : 𝓓'(Ω, ℂ)} {U : Se
 /-- A function smooth on `Ω` is microlocally smooth at every point of `Ω` in every direction. -/
 theorem isMicrolocallySmoothAt_ofFun {f : E → ℂ} (hf : ContDiffOn ℝ ∞ f Ω) {x : E}
     (hx : x ∈ Ω) (ξ : E) : (ofFun Ω f MeasureTheory.volume ⊤).IsMicrolocallySmoothAt x ξ :=
-  isMicrolocallySmoothAt_of_apply_eq_integral Ω.isOpen hf
-    (fun _ _ => ofFun_apply (hf.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet)) hx hx ξ
+  (isSmoothAt_ofFun (hf.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet) Ω.isOpen hf
+    hx).isMicrolocallySmoothAt hx ξ
 
 /-- A function smooth on `Ω` has empty wave front set. -/
 theorem waveFrontSet_ofFun_eq_empty {f : E → ℂ} (hf : ContDiffOn ℝ ∞ f Ω) :

@@ -21,13 +21,13 @@ the points `x` over which `T` has some wave front covector `(x, ξ)` are exactly
 `Prod.fst '' waveFrontSet T = singularSupport T`.
 
 Where `T` is smooth, its localized Fourier transforms decay rapidly in every direction, so there is
-no wave front set over the smooth part (`Distribution.isMicrolocallySmoothAt_of_apply_eq_integral`).
+no wave front set over the smooth part (`Distribution.IsSmoothAt.isMicrolocallySmoothAt`).
 Conversely, suppose `T` is microlocally smooth at `(x, ξ)` for every `ξ ≠ 0`. Each such `ξ` has a
 neighbourhood `U_ξ` of `x` and an open cone `Γ_ξ` such that every cutoff supported in `U_ξ` has
 localized Fourier transform rapidly decreasing on `Γ_ξ`. Finitely many of these cones cover the
 unit sphere, so a single cutoff `ψ`, equal to one near `x` and supported in the intersection of the
 corresponding `U_ξ`, has localized Fourier transform rapidly decreasing in all directions. Then
-`ψ T` is a smooth function (`Distribution.isSmoothAt_of_forall_decay`): on the support of `ψ`,
+`T` is smooth near `x` (`Distribution.isSmoothAt_of_forall_decay`): on the support of `ψ`,
 expand a test function in the Fourier series of a lattice `L` whose nonzero translates move the
 support of `ψ` off itself (`ContDiffMapSupportedIn.hasSum_fourier_smul_modulate`). Pairing with
 `T` and resumming, `T φ = ∫ φ g` for every test function `φ` supported where `ψ = 1`, where
@@ -38,8 +38,6 @@ is a lattice Fourier series with rapidly decreasing coefficients, hence a smooth
 
 ## Main results
 
-* `Distribution.IsSmoothAt.isMicrolocallySmoothAt`: a distribution smooth at `x` is
-  microlocally smooth at `(x, ξ)` in every direction.
 * `Distribution.exists_hasSum_apply_localFourier`: on the set where a cutoff `ψ` equals one, `T`
   is the sum of a lattice Fourier series whose coefficients are values of the localized Fourier
   transform with cutoff `ψ`.
@@ -51,8 +49,8 @@ is a lattice Fourier series with rapidly decreasing coefficients, hence a smooth
   support.
 * `Distribution.waveFrontSet_eq_empty_iff`: the wave front set is empty exactly when the singular
   support is.
-* `Distribution.singularSupport_delta`: the singular support of the point mass at `x₀ ∈ Ω` is
-  `{x₀}`.
+* `Distribution.singularSupport_delta`: on a nontrivial space `E`, the singular support of the
+  point mass at `x₀ ∈ Ω` is `{x₀}`.
 
 ## References
 
@@ -71,12 +69,6 @@ namespace Distribution
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {Ω : Opens E}
-
-/-- A distribution smooth at `x ∈ Ω` is microlocally smooth at `(x, ξ)` for every `ξ`. -/
-theorem IsSmoothAt.isMicrolocallySmoothAt {T : 𝓓'(Ω, ℂ)} {x : E} (hs : T.IsSmoothAt x)
-    (hx : x ∈ Ω) (ξ : E) : T.IsMicrolocallySmoothAt x ξ :=
-  have ⟨_, hU, hxU, _, hf, hT⟩ := isSmoothAt_iff.1 hs
-  isMicrolocallySmoothAt_of_apply_eq_integral hU hf hT hxU hx ξ
 
 /-- **The Fourier series of a distribution where a cutoff equals one.** For every cutoff `ψ`
 there is a full lattice `L` such that, for every real test function `φ` supported in the set where
@@ -250,7 +242,7 @@ theorem waveFrontSet_eq_empty_iff {T : 𝓓'(Ω, ℂ)} :
     T.waveFrontSet = ∅ ↔ T.singularSupport = ∅ := by
   rw [← fst_image_waveFrontSet, image_eq_empty]
 
-/-- The singular support of the point mass at `x₀ ∈ Ω` is `{x₀}`. -/
+/-- On a nontrivial space `E`, the singular support of the point mass at `x₀ ∈ Ω` is `{x₀}`. -/
 theorem singularSupport_delta [Nontrivial E] {x₀ : E} (hx₀ : x₀ ∈ Ω) :
     (mapCLM ofRealCLM (delta x₀ : 𝓓'(Ω, ℝ))).singularSupport = {x₀} := by
   obtain ⟨ξ, hξ⟩ := exists_ne (0 : E)
