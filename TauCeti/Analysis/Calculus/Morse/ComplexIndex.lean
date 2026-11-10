@@ -11,12 +11,14 @@ public import TauCeti.Geometry.Symplectic.QuadraticForm
 /-!
 # Morse index bounds from complex positivity
 
-For a real-valued function on a finite-dimensional real normed space with an almost complex
-structure `J`, positivity of
+For a real-valued function on a real normed space with an almost complex structure `J`,
+positivity of
 
 `Hess f(v, v) + Hess f(Jv, Jv)`
 
-away from zero bounds the Morse index by the complex dimension. This file states the result using
+away from zero bounds the Morse index by the complex dimension. The space need not be
+finite-dimensional: in the infinite-dimensional case `Module.finrank` and the complex dimension
+are `0`, and the bounds are stated with these zero values. This file states the result using
 Tau Ceti's actual Hessian quadratic form and Morse index. The hypothesis is the pointwise
 quadratic-form identity supplied by strict Levi positivity at a critical point.
 
