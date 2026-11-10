@@ -14,6 +14,7 @@ public import TauCeti.Algebra.DualNumber.Basic
 public import TauCeti.CategoryTheory.Exact.YonedaExt.AlmostSplit
 public import TauCeti.CategoryTheory.Functor.RingEquivEnd
 public import TauCeti.RingTheory.LocalRing.Module
+import TauCeti.Algebra.Category.FGModuleCat.Basic
 import TauCeti.CategoryTheory.Exact.Abelian
 
 /-!
@@ -109,6 +110,33 @@ noncomputable abbrev residueSequence (hm : maximalIdeal R = .span {ε}) (hε : �
   .mk (X₁ := residueFG R) (X₂ := FGModuleCat.of R R) (X₃ := residueFG R)
     (FGModuleCat.ofHom (residueMul hm hε)) (FGModuleCat.ofHom (Submodule.mkQ (maximalIdeal R)))
     (FGModuleCat.hom_ext (LinearMap.ext (exact_residueMul hm hε).apply_apply_eq_zero))
+
+omit [IsNoetherianRing R] in
+/-- **Every morphism `R/𝔪 ⟶ R` is a multiple of multiplication by `ε`**: it sends `1` into the
+annihilator of `ε`, which is `𝔪 = (ε)` because `ε ≠ 0`. -/
+theorem exists_eq_smul_residueSequence_f (hm : maximalIdeal R = .span {ε}) (hε : ε * ε = 0)
+    (hε₀ : ε ≠ 0) (u : residueFG R ⟶ FGModuleCat.of R R) :
+    ∃ y : R, u = y • (residueSequence hm hε).f := by
+  have hkill : ε • (1 : R ⧸ maximalIdeal R) = 0 := by
+    rw [Algebra.smul_def, mul_one, Ideal.Quotient.algebraMap_eq, Ideal.Quotient.eq_zero_iff_mem,
+      hm]
+    exact Ideal.mem_span_singleton_self ε
+  have hx : ε * u.hom.hom 1 = 0 := by rw [← smul_eq_mul, ← map_smul, hkill, map_zero]
+  have hmem : u.hom.hom 1 ∈ maximalIdeal R :=
+    (mem_maximalIdeal _).2 fun hu => hε₀ (hu.mul_left_eq_zero.1 hx)
+  obtain ⟨y, hy⟩ : ∃ y, y * ε = u.hom.hom 1 :=
+    Ideal.mem_span_singleton'.1 (by rw [← hm]; exact hmem)
+  refine ⟨y, FGModuleCat.hom_ext (Submodule.linearMap_qext _ (LinearMap.ext_ring ?_))⟩
+  simpa [FGModuleCat.hom_hom_smul] using hy.symm
+
+omit [IsNoetherianRing R] in
+/-- **Every morphism `R ⟶ R/𝔪` is a multiple of the quotient map**, being determined by the image
+of `1`. -/
+theorem exists_eq_smul_residueSequence_g (hm : maximalIdeal R = .span {ε}) (hε : ε * ε = 0)
+    (u : FGModuleCat.of R R ⟶ residueFG R) : ∃ y : R, u = y • (residueSequence hm hε).g := by
+  obtain ⟨y, hy⟩ := Ideal.Quotient.mk_surjective (u.hom.hom 1)
+  refine ⟨y, FGModuleCat.hom_ext (LinearMap.ext_ring ?_)⟩
+  simpa [FGModuleCat.hom_hom_smul, Algebra.smul_def] using hy.symm
 
 private theorem shortExact_residueSequence (hm : maximalIdeal R = .span {ε}) (hε : ε * ε = 0)
     (hε₀ : ε ≠ 0) : (residueSequence hm hε).ShortExact := by
