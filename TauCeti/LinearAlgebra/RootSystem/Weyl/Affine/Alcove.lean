@@ -10,7 +10,6 @@ public import TauCeti.LinearAlgebra.RootSystem.Weyl.Affine.Basic
 import Mathlib.Data.Int.Interval
 import TauCeti.LinearAlgebra.RootSystem.CoweightLattice
 import TauCeti.LinearAlgebra.RootSystem.Inversions.DominantChamber
-import TauCeti.LinearAlgebra.RootSystem.Lowering
 
 /-!
 # The affine Weyl group acts simply transitively on the alcoves
@@ -226,13 +225,13 @@ private lemma isAffinePos_wallPerm_highestRoot {p : ι × ℤ} (hp₁ : p ≠ (b
     (hp₂ : p ≠ (P.reflectionPerm b.highestRoot b.highestRoot, -1)) :
     IsAffinePos b (wallPerm P b.highestRoot 1 p) ↔ IsAffinePos b p := by
   obtain ⟨j, k⟩ := p
-  simp only [wallPerm, mul_one, IsAffinePos, TauCeti.height_reflectionPerm P b b.highestRoot j]
+  simp only [wallPerm, mul_one, IsAffinePos, b.height_reflectionPerm b.highestRoot j]
   have hθ : 0 < b.height b.highestRoot := b.isPos_highestRoot
   have hlo := b.neg_height_highestRoot_le_height j
   have hhi := b.height_le_height_highestRoot j
   have hlo' := b.neg_height_highestRoot_le_height (P.reflectionPerm b.highestRoot j)
   have hhi' := b.height_le_height_highestRoot (P.reflectionPerm b.highestRoot j)
-  rw [TauCeti.height_reflectionPerm P b b.highestRoot j] at hlo' hhi'
+  rw [b.height_reflectionPerm b.highestRoot j] at hlo' hhi'
   have h₀ := b.height_ne_zero j
   have htop' : b.height j = b.height b.highestRoot → k ≠ 1 := fun h hk ↦ hp₁ <| by
     rw [hk, not_ne_iff.mp fun hne ↦ (b.height_lt_height_highestRoot hne).ne h]

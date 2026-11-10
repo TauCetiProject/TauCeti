@@ -23,12 +23,12 @@ For counting measure, singleton-supported vectors separate L² functions and det
 continuous linear maps out of L². On a compact space with a finite measure, the L² pairing of an
 L² function with a continuous function is an integral
 (`MeasureTheory.L2.inner_toLp_continuousMap`), extending Mathlib's `ContinuousMap.inner_toLp`.
+More generally, the L² pairing of an L² function with the class of any square-integrable
+function is the integral of their pointwise inner product (`MeasureTheory.L2.inner_toLp`).
+The integral of `⟪f x, c⟫` is `⟪∫ f, c⟫` (`integral_inner_left`), the counterpart of Mathlib's
+`integral_inner` with the integrand in the left slot.
 Indicators of any countably spanning generating π-system of finite-measure sets have
 dense real linear span in L².
-
-Mathlib's `integral_inner` integrates a function in the right slot of an inner product with a
-constant vector, `∫ ⟪c, f x⟫ = ⟪c, ∫ f⟫`; `MeasureTheory.integral_inner_left` is the version
-with the function in the left slot, `∫ ⟪f x, c⟫ = ⟪∫ f, c⟫`.
 
 For a complex inner product space `F` regarded as a real one (`InnerProductSpace.complexToReal`),
 the real inner product on `L²(α, F)` is the real part of the complex one
@@ -39,6 +39,7 @@ coordinate `i` (`MeasureTheory.L2.inner_evalCLM_compLpL`).
 
 public section
 
+open MeasureTheory
 open scoped ComplexConjugate InnerProductSpace
 
 namespace MeasureTheory
@@ -60,12 +61,6 @@ theorem MemLp.integrable_inner_toEuclideanLin {ι : Type*} [Fintype ι] [Decidab
     Integrable (fun x ↦ ⟪B.toEuclideanLin (f x), f x⟫_𝕜) μ :=
   (hf.continuousLinearMap_comp (LinearMap.toContinuousLinearMap B.toEuclideanLin)).integrable_inner
     hf
-
-/-- The integral of `⟪f x, c⟫` is the inner product of the integral of `f` with `c`. -/
-theorem integral_inner_left [CompleteSpace E] [NormedSpace ℝ E] {f : α → E}
-    (hf : Integrable f μ) (c : E) : ∫ x, ⟪f x, c⟫_𝕜 ∂μ = ⟪∫ x, f x ∂μ, c⟫_𝕜 := by
-  rw [← inner_conj_symm, ← integral_inner hf c, ← integral_conj]
-  simp_rw [inner_conj_symm]
 
 /-- A counting-measure L² function orthogonal to every singleton-supported vector is zero.
 No countability of the underlying measurable space is needed. -/
@@ -115,6 +110,15 @@ theorem L2.inner_evalCLM_compLpL {ι : Type*} [DecidableEq ι] {G : ι → Type*
   rw [h₁, h₂, lp.singleContinuousLinearMap_apply, lp.inner_single_right]
   rfl
 
+/-- The L² inner product of an L² function `f` with the class of a square-integrable function
+`g` is the integral of their pointwise inner product. -/
+theorem L2.inner_toLp (f : Lp E 2 μ) {g : α → E} (hg : MemLp g 2 μ) :
+    ⟪f, hg.toLp g⟫_𝕜 = ∫ x, ⟪f x, g x⟫_𝕜 ∂μ := by
+  rw [L2.inner_def]
+  refine integral_congr_ae ?_
+  filter_upwards [hg.coeFn_toLp] with x hx
+  rw [hx]
+
 end MeasureTheory
 
 namespace ContinuousLinearMap
@@ -141,6 +145,20 @@ theorem eq_zero_of_apply_indicatorConstLp_singleton
     _ = 0 := by rw [ht, map_zero]
 
 end ContinuousLinearMap
+
+section IntegralInner
+
+variable {α 𝕜 E : Type*} [MeasurableSpace α] {μ : Measure α} [RCLike 𝕜]
+  [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E] [NormedSpace ℝ E]
+
+/-- Integration commutes with the inner product against a fixed vector in the right slot:
+`∫ ⟪f x, c⟫ = ⟪∫ f, c⟫`. This is `integral_inner` with the integrand in the left slot. -/
+theorem integral_inner_left {f : α → E} (hf : Integrable f μ) (c : E) :
+    ∫ x, ⟪f x, c⟫_𝕜 ∂μ = ⟪∫ x, f x ∂μ, c⟫_𝕜 := by
+  simpa only [innerSLFlip_apply_apply] using
+    (innerSLFlip 𝕜 c).integral_comp_commSL RCLike.conj_smul hf
+
+end IntegralInner
 
 namespace TauCeti
 
