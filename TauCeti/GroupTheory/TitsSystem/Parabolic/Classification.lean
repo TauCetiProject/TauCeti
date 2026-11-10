@@ -82,12 +82,19 @@ theorem bruhatCell_subset_of_wordLength_lt {P : Subgroup G} (hB : T.subgroupB �
   obtain ⟨a, ha, b, hb, rfl⟩ := T.subset_bruhatCell_mul_of_mem_simple hs w hx
   exact P.mul_mem (hsP ha) (hw hb)
 
-/-- The Bruhat cell of every letter of a reduced word lies in a subgroup containing `B` if
-the cell of that word lies in the subgroup. -/
-theorem bruhatCell_subset_of_mem_reduced_word {P : Subgroup G} (hB : T.subgroupB ≤ P)
+/-- The Bruhat cell of every letter of a reduced word lies in a subgroup if the cell of that word
+lies in the subgroup. -/
+theorem bruhatCell_subset_of_mem_reduced_word {P : Subgroup G}
     {l : List T.WeylGroup} (hl : ∀ s ∈ l, s ∈ T.simple)
     (hlen : l.length = ℓ l.prod) (hP : T.bruhatCell l.prod ⊆ P) :
     ∀ s ∈ l, T.bruhatCell s ⊆ P := by
+  have hB : T.subgroupB ≤ P := by
+    obtain ⟨n, _, hn⟩ := T.exists_mem_bruhatCell l.prod
+    intro b hb
+    have hnb : (n : G) * b ∈ T.bruhatCell l.prod := by
+      rw [← T.bruhatCell_mul_subgroupB l.prod]
+      exact Set.mul_mem_mul hn hb
+    simpa using P.mul_mem (P.inv_mem (hP hn)) (hP hnb)
   induction l with
   | nil => simp
   | cons s l ih =>
@@ -118,7 +125,7 @@ theorem standardParabolic_eq_of_subgroupB_le {P : Subgroup G} (hB : T.subgroupB 
   · intro g hg
     obtain ⟨w, hw, _⟩ := T.existsUnique_mem_bruhatCell g
     obtain ⟨l, hl, hlen, rfl⟩ := T.exists_prod_eq_of_wordLength w
-    have hletters := T.bruhatCell_subset_of_mem_reduced_word hB hl hlen
+    have hletters := T.bruhatCell_subset_of_mem_reduced_word hl hlen
       (T.bruhatCell_subset_of_mem hB hw hg)
     apply T.bruhatCell_subset_standardParabolic_of_mem_closure (w := l.prod) ?_ hw
     apply Subgroup.list_prod_mem
