@@ -25,7 +25,7 @@ It is built from a presentation of `A` by cells, following Hatcher:
    `(n + 1)`-connected, so by the Hurewicz theorem `πₙ₊₂(W) ≅ Hₙ₊₂(W; ℤ)`, and `Hₙ₊₂(W; ℤ)` is free
    on the cells (`TauCeti.nonempty_singularHomology_cellAttachment_iso_sigma`). Sending the cell of
    `a` to `a` gives a surjection `ψ : Hₙ₊₂(W; ℤ) → A`
-   (`TauCeti.EilenbergMacLane.exists_surjective_wedge`).
+   (`TauCeti.EilenbergMacLane.exists_surjective_singularHomology_wedge`).
 2. Attach an `(n + 3)`-cell along every map `g : Sⁿ⁺² → W` whose class `g_*[Sⁿ⁺²]` lies in the
    kernel of `ψ`. The result `Y = TauCeti.EilenbergMacLane.presentation A n ψ` is still
    `(n + 1)`-connected. By `TauCeti.ker_singularHomologyMap_cellAttachmentIncl`, the kernel of
@@ -112,7 +112,7 @@ variable [AddCommGroup A]
 
 /-- **The homology of the wedge surjects onto `A`.** There is a surjection `Hₙ₊₂(W; ℤ) → A` from
 the homology of the wedge of `(n + 2)`-spheres. -/
-theorem exists_surjective_wedge :
+theorem exists_surjective_singularHomology_wedge :
     ∃ ψ : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).obj
       (wedge A n) →ₗ[ℤ] A, Function.Surjective ψ := by
   obtain ⟨e⟩ := nonempty_singularHomology_cellAttachment_iso_sigma (wedgeAttach A n) ℤ
@@ -240,7 +240,7 @@ at least `n + 4` killing the higher homotopy groups. -/
 theorem exists_isEilenbergMacLaneSpace (A : Type) [AddCommGroup A] (n : ℕ) :
     ∃ (X : Type) (_ : TopologicalSpace X) (x : X), T2Space X ∧
       IsEilenbergMacLaneSpace (Multiplicative A) (n + 2) X x := by
-  obtain ⟨ψ, hψ⟩ := exists_surjective_wedge A n
+  obtain ⟨ψ, hψ⟩ := exists_surjective_singularHomology_wedge A n
   exact ⟨_, inferInstance, _, inferInstance,
     isEilenbergMacLaneSpace_killHomotopyGroups_presentation A n ψ hψ⟩
 
