@@ -16,11 +16,12 @@ Let `g : E →L[𝕜] G` and `f : E →L[𝕜] F` be bounded operators with `‖
 closure of that range, with the same bound. Conversely, any such factorization gives the bound.
 
 The factor on the range is Mathlib's `LinearMap.compLeftInverse` and its extension to the closure
-is `LinearMap.extendOfNorm`. This file records the operator-norm bound for the former and the two
-factorization criteria.
+is `LinearMap.extendOfNorm`. This file records the pointwise and operator-norm bounds for the
+former and the two factorization criteria.
 
 ## Main results
 
+* `LinearMap.norm_compLeftInverse_apply_le`: the pointwise bound `C` for `f.compLeftInverse g`.
 * `LinearMap.opNorm_compLeftInverse_le`: the norm of `f.compLeftInverse g` is at most `C`.
 * `ContinuousLinearMap.exists_eq_comp_rangeRestrict_iff`: `f` factors through the range of `g`
   with a factor of norm at most `C` iff `‖f x‖ ≤ C ‖g x‖` for all `x`.
@@ -39,13 +40,18 @@ variable [AddCommGroup E] [Module 𝕜 E] [SeminormedAddCommGroup G] [NormedSpac
   [NormedAddCommGroup F] [NormedSpace 𝕜₂ F]
 
 /-- If `‖f x‖ ≤ C ‖g x‖` for all `x`, the factor `f.compLeftInverse g` of `f` through the range
+of `g` satisfies `‖f.compLeftInverse g y‖ ≤ C ‖y‖` on that range. -/
+theorem norm_compLeftInverse_apply_le {f : E →ₛₗ[σ₁₂] F} {g : E →ₗ[𝕜] G} {C : ℝ}
+    (h : ∀ x, ‖f x‖ ≤ C * ‖g x‖) (y : range g) : ‖f.compLeftInverse g y‖ ≤ C * ‖(y : G)‖ := by
+  obtain ⟨_, x, rfl⟩ := y
+  rw [compLeftInverse_apply_of_bdd f g ⟨C, h⟩ x _ rfl]
+  exact h x
+
+/-- If `‖f x‖ ≤ C ‖g x‖` for all `x`, the factor `f.compLeftInverse g` of `f` through the range
 of `g` has operator norm at most `C`. -/
 theorem opNorm_compLeftInverse_le {f : E →ₛₗ[σ₁₂] F} {g : E →ₗ[𝕜] G} {C : ℝ} (hC : 0 ≤ C)
     (h : ∀ x, ‖f x‖ ≤ C * ‖g x‖) : ‖f.compLeftInverse g‖ ≤ C :=
-  ContinuousLinearMap.opNorm_le_bound _ hC fun y ↦ by
-    obtain ⟨_, x, rfl⟩ := y
-    rw [compLeftInverse_apply_of_bdd f g ⟨C, h⟩ x _ rfl]
-    exact h x
+  ContinuousLinearMap.opNorm_le_bound _ hC (norm_compLeftInverse_apply_le h)
 
 end LinearMap
 
