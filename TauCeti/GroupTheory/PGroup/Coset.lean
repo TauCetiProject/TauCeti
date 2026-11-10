@@ -30,12 +30,10 @@ theorem exists_le_map_conj_of_not_dvd_index (hA : IsPGroup p A) (H : Subgroup G)
   obtain ⟨x, hx⟩ := hA.nonempty_fixed_point_of_prime_not_dvd_card (G ⧸ H)
     (by simpa only [H.index_eq_card] using hH)
   obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective x
-  refine ⟨g, fun a ha => ?_⟩
-  have hfix := MulAction.mem_fixedPoints.mp hx (⟨a, ha⟩ : A)
-  have hcoset : (g : G ⧸ H) = ((a * g : G) : G ⧸ H) := by
-    simpa only [Subgroup.smul_def, MulAction.Quotient.smul_coe, smul_eq_mul] using hfix.symm
-  have hmem : g⁻¹ * a * g ∈ H := by
-    simpa only [mul_assoc] using QuotientGroup.eq.mp hcoset
-  exact ⟨g⁻¹ * a * g, hmem, by simp [MulAut.conj_apply, mul_assoc]⟩
+  refine ⟨g, ?_⟩
+  rw [← MulAction.stabilizer_quotient H,
+    ← MulAction.stabilizer_smul_eq_stabilizer_map_conj,
+    MulAction.Quotient.smul_coe, smul_eq_mul, mul_one]
+  exact fun a ha => MulAction.mem_fixedPoints.mp hx (⟨a, ha⟩ : A)
 
 end IsPGroup
