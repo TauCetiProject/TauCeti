@@ -42,6 +42,9 @@ its norm has finite integral over the half-cylinder `(a, ∞) × [0, 1]`, then:
 
 Together these give a periodic solution and a sequence `s_n → ∞` along which the loops converge
 to it uniformly (`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_ne_top`).
+The same results apply on a half-cylinder `s < a` through the reflected map `(s, t) ↦ u(-s, t)`,
+which has the same loops and the same squared defect integral
+(`TauCeti.setLIntegral_norm_sq_sliceDefect_comp_neg_fst`).
 
 The second statement is an application of the Arzelà–Ascoli theorem, in the form for periodic
 loops with a common modulus of continuity
@@ -149,6 +152,50 @@ theorem sub_eq_integral_add_integral_sliceDefect [CompleteSpace V]
   exact (intervalIntegral.integral_eq_sub_of_hasDerivAt
     (fun t _ ↦ hasDerivAt_slice_add_sliceDefect (hu.differentiableOn one_ne_zero) hs t)
     ((hXc.add hd).intervalIntegrable _ _)).symm
+
+section Reflection
+
+/-- The reflection `(s, t) ↦ (-s, t)` as a continuous linear equivalence. -/
+private noncomputable def negFst : (ℝ × ℝ) ≃L[ℝ] (ℝ × ℝ) :=
+  (ContinuousLinearEquiv.neg ℝ).prodCongr (ContinuousLinearEquiv.refl ℝ ℝ)
+
+private theorem negFst_apply (z : ℝ × ℝ) : negFst z = (-z.1, z.2) :=
+  (rfl)
+
+/-- Reflecting the `s`-coordinate does not change the `t`-slices: the defect of
+`(s, t) ↦ u(-s, t)` at `z` is the defect of `u` at `(-z.1, z.2)`. -/
+theorem sliceDefect_comp_neg_fst {z : ℝ × ℝ} :
+    sliceDefect X (fun w ↦ u (-w.1, w.2)) z = sliceDefect X u (-z.1, z.2) := by
+  have h : (fun w : ℝ × ℝ ↦ u (-w.1, w.2)) = u ∘ negFst := (rfl)
+  simp only [h, sliceDefect_def, negFst.comp_right_fderiv, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, negFst_apply, neg_zero, Function.comp_apply]
+
+/-- **The defect at the negative end.** Reflecting the `s`-coordinate turns the half-cylinder
+`(-∞, a) × [0, 1]` into `(-a, ∞) × [0, 1]` and preserves the squared defect integral, so the
+results on the half-cylinder `s > a` apply at the negative end of `u` through the reflected map
+`(s, t) ↦ u(-s, t)`. -/
+theorem setLIntegral_norm_sq_sliceDefect_comp_neg_fst :
+    ∫⁻ z in Ioi (-a) ×ˢ Icc 0 1,
+        ENNReal.ofReal (‖sliceDefect X (fun w ↦ u (-w.1, w.2)) z‖ ^ 2) =
+      ∫⁻ z in Iio a ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2) := by
+  -- The reflection preserves Lebesgue measure and carries `(-a, ∞) × [0, 1]` onto
+  -- `(-∞, a) × [0, 1]`.
+  have hmp : MeasurePreserving negFst :=
+    (Measure.measurePreserving_neg (volume : Measure ℝ)).prod
+      (MeasurePreserving.id (volume : Measure ℝ))
+  have hpre : negFst ⁻¹' (Iio a ×ˢ Icc 0 1) = Ioi (-a) ×ˢ Icc 0 1 := by
+    ext z
+    simp [negFst_apply, neg_lt]
+  simp_rw [sliceDefect_comp_neg_fst, ← negFst_apply]
+  rw [← hpre]
+  exact hmp.setLIntegral_comp_preimage_emb negFst.toHomeomorph.measurableEmbedding
+    (fun z ↦ ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2)) _
+
+private theorem contDiffOn_comp_negFst {n : WithTop ℕ∞} (hu : ContDiffOn ℝ n u (Iio a ×ˢ univ)) :
+    ContDiffOn ℝ n (fun z ↦ u (-z.1, z.2)) (Ioi (-a) ×ˢ univ) :=
+  hu.comp negFst.contDiff.contDiffOn fun _ hz ↦ ⟨neg_lt.1 hz.1, trivial⟩
+
+end Reflection
 
 section Selection
 
@@ -595,41 +642,6 @@ The defect only involves the `t`-derivative of `u`, so it is unchanged by the re
 the reflected map `(s, t) ↦ u(-s, t)` on the half-cylinder `s > -a`, with the same defects, and the
 results above transfer to the negative end `s → -∞`. -/
 
-/-- The reflection `(s, t) ↦ (-s, t)` as a continuous linear equivalence. -/
-private noncomputable def negFst : (ℝ × ℝ) ≃L[ℝ] (ℝ × ℝ) :=
-  (ContinuousLinearEquiv.neg ℝ).prodCongr (ContinuousLinearEquiv.refl ℝ ℝ)
-
-private theorem negFst_apply (z : ℝ × ℝ) : negFst z = (-z.1, z.2) :=
-  (rfl)
-
-/-- The defect is invariant under the reflection `(s, t) ↦ (-s, t)`: the defect of
-`(s, t) ↦ u(-s, t)` at `(s, t)` is the defect of `u` at `(-s, t)`. -/
-theorem sliceDefect_comp_neg_fst (X : ℝ → V → V) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
-    sliceDefect X (fun z ↦ u (-z.1, z.2)) z = sliceDefect X u (-z.1, z.2) := by
-  have h : (fun z : ℝ × ℝ ↦ u (-z.1, z.2)) = u ∘ negFst := (rfl)
-  simp only [h, sliceDefect_def, negFst.comp_right_fderiv, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, negFst_apply, neg_zero, Function.comp_apply]
-
-private theorem contDiffOn_comp_negFst {n : WithTop ℕ∞} (hu : ContDiffOn ℝ n u (Iio a ×ˢ univ)) :
-    ContDiffOn ℝ n (fun z ↦ u (-z.1, z.2)) (Ioi (-a) ×ˢ univ) :=
-  hu.comp negFst.contDiff.contDiffOn fun _ hz ↦ ⟨neg_lt.1 hz.1, trivial⟩
-
-private theorem lintegral_sliceDefect_comp_negFst :
-    ∫⁻ z in Ioi (-a) ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X (fun z ↦ u (-z.1, z.2)) z‖ ^ 2) =
-      ∫⁻ z in Iio a ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2) := by
-  -- The reflection preserves Lebesgue measure and carries `(-a, ∞) × [0, 1]` onto
-  -- `(-∞, a) × [0, 1]`.
-  have hmp : MeasurePreserving negFst :=
-    (Measure.measurePreserving_neg (volume : Measure ℝ)).prod
-      (MeasurePreserving.id (volume : Measure ℝ))
-  have hpre : negFst ⁻¹' (Iio a ×ˢ Icc 0 1) = Ioi (-a) ×ˢ Icc 0 1 := by
-    ext z
-    simp [negFst_apply, neg_lt]
-  simp_rw [sliceDefect_comp_neg_fst, ← negFst_apply]
-  rw [← hpre]
-  exact hmp.setLIntegral_comp_preimage_emb negFst.toHomeomorph.measurableEmbedding
-    (fun z ↦ ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2)) _
-
 /-- **Loops with square-integrable defect accumulate at periodic orbits at the negative end.** Let
 `X` be a continuous, `1`-periodic time-dependent vector field and let `u` be `C¹` on the
 half-cylinder `s < a`, with `1`-periodic loops `t ↦ u(s, t)` in a compact set. If the squared norm
@@ -649,7 +661,7 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_Iio_ne_top [Com
   obtain ⟨x, hxper, hx, φ, hφa, hφ, hux, hdef⟩ :=
     exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_ne_top (contDiffOn_comp_negFst hu)
       (fun s hs ↦ hper (-s) (neg_lt.1 hs)) hK (fun s hs ↦ huK (-s) (neg_lt.1 hs)) hX hXper
-      (by rwa [lintegral_sliceDefect_comp_negFst])
+      (by rwa [setLIntegral_norm_sq_sliceDefect_comp_neg_fst])
   refine ⟨x, hxper, hx, fun n ↦ -φ n, fun n ↦ neg_lt.2 (hφa n),
     tendsto_neg_atTop_atBot.comp hφ, ?_, ?_⟩
   · simpa [negFst_apply] using hux
@@ -687,7 +699,7 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atBot [CompleteSpace V] {K :
   obtain ⟨x, hxper, hx, hux⟩ :=
     exists_periodic_hasDerivAt_tendstoUniformly_atTop (contDiffOn_comp_negFst hu)
       (fun s hs ↦ hper (-s) (neg_lt.1 hs)) hK (fun s hs ↦ huK (-s) (neg_lt.1 hs)) hX hXper
-      (by rwa [lintegral_sliceDefect_comp_negFst]) hC' hiso
+      (by rwa [setLIntegral_norm_sq_sliceDefect_comp_neg_fst]) hC' hiso
   refine ⟨x, hxper, hx, Metric.tendstoUniformly_iff.2 fun ε hε ↦ ?_⟩
   simpa [negFst_apply] using
     tendsto_neg_atBot_atTop.eventually (Metric.tendstoUniformly_iff.1 hux ε hε)
