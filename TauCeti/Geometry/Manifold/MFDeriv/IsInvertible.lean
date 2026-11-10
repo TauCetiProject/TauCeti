@@ -19,10 +19,11 @@ manifolds is assumed.
 
 Between manifolds modelled on finite-dimensional spaces of the same dimension over a complete
 field, an injective manifold derivative is invertible (`isInvertible_mfderiv_of_injective`).
-Conversely, if the middle and target manifolds are modelled on finite-dimensional spaces of the
-same dimension, and a composite of differentiable maps has invertible manifold derivative, then so
-do both factors (`isInvertible_mfderiv_of_isInvertible_mfderiv_comp`); neither completeness of the
-field nor finite-dimensionality of the source model is needed.
+Conversely, if the middle manifold is modelled on a finite-dimensional space and the target model
+has the same dimension, and a composite of differentiable maps has invertible manifold derivative,
+then so do both factors (`isInvertible_mfderiv_of_isInvertible_mfderiv_comp`); neither completeness
+of the field nor finite-dimensionality of the source or target model is assumed (the target is a
+quotient of the middle space).
 
 If the source is modelled on a finite-dimensional space over a complete field and the derivative
 carries a tangent basis `b` onto a basis `b'`, then it is the continuous linear equivalence mapping
@@ -64,12 +65,12 @@ theorem isInvertible_mfderiv_of_injective [CompleteSpace 𝕜] [FiniteDimensiona
     ⟨hinj, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).1 hinj⟩
     ).toContinuousLinearEquiv, ContinuousLinearMap.ext fun _ ↦ rfl⟩
 
-/-- Between manifolds whose middle and target models are finite-dimensional of the same
+/-- Between manifolds whose middle model is finite-dimensional and whose target model has the same
 dimension, if a composite of differentiable maps has invertible manifold derivative, then so do
-both factors. The source model need not be finite-dimensional, and the field need not be
-complete. -/
+both factors. The source and target models need not be assumed finite-dimensional (the target is a
+quotient of the middle space), and the field need not be complete. -/
 theorem isInvertible_mfderiv_of_isInvertible_mfderiv_comp
-    [FiniteDimensional 𝕜 E'] [FiniteDimensional 𝕜 E'']
+    [FiniteDimensional 𝕜 E']
     {f : M → M'} {g : M' → M''} {x : M}
     (hdim : Module.finrank 𝕜 E' = Module.finrank 𝕜 E'')
     (hg : MDifferentiableAt I' I'' g (f x)) (hf : MDifferentiableAt I I' f x)
@@ -79,6 +80,9 @@ theorem isInvertible_mfderiv_of_isInvertible_mfderiv_comp
   -- The derivative of `g` is surjective since the composite is bijective, hence injective between
   -- spaces of the same finite dimension.
   have hsurj : Function.Surjective (mfderiv I' I'' g (f x)) := .of_comp h.surjective
+  have : FiniteDimensional 𝕜 E'' :=
+    Module.Finite.of_surjective (mfderiv I' I'' g (f x) :
+      TangentSpace I' (f x) →ₗ[𝕜] TangentSpace I'' (g (f x))) hsurj
   have hinj : Function.Injective (mfderiv I' I'' g (f x)) :=
     (LinearMap.injective_iff_surjective_of_finrank_eq_finrank (f := (mfderiv I' I'' g (f x) :
       TangentSpace I' (f x) →ₗ[𝕜] TangentSpace I'' (g (f x)))) hdim).2 hsurj
