@@ -38,6 +38,8 @@ integrals of cusp forms along geodesics between cusps.
 * `UpperHalfPlane.resToImagAxis_slash_two_of_diagonal`: in weight `2`, the restriction of
   `F ∣[2] d` for a positive diagonal rational matrix `d = diag(a, b)` at `t` is `r` times the
   restriction of `F` at `r t`, where `r = a / b`.
+* `UpperHalfPlane.resToImagAxis_slash_negDiag`: in weight `2`, the restriction of `F ∣[2] d` for
+  `d = diag(-1, 1)` is the complex conjugate of the restriction of `F`.
 * `UpperHalfPlane.exists_isBigO_rat_slash_exp`: for a cusp form `f` on an arithmetic subgroup
   and `g ∈ GL(2, ℚ)`, `f ∣[k] g` is `O(exp (-c Im τ))` at `i∞` for some `c > 0`, and
   `UpperHalfPlane.exists_isBigO_resToImagAxis_rat_slash_exp`: its restriction to the imaginary axis
@@ -182,6 +184,27 @@ theorem resToImagAxis_slash_two_of_diagonal (F : ℍ → ℂ) {d : GL (Fin 2) �
     push_cast
     field_simp
   rw [hsmul, hden, hdetd, abs_of_pos (by exact_mod_cast hd'), mul_assoc, hc, mul_comm]
+
+open scoped ComplexConjugate in
+/-- The weight-`2` slash by `diag(-1, 1)` restricts to the imaginary axis as complex conjugation:
+the matrix fixes the points of the axis and its determinant is `-1`. -/
+theorem resToImagAxis_slash_negDiag (G : ℍ → ℂ) {D : GL (Fin 2) ℚ}
+    (hD : (D : Matrix (Fin 2) (Fin 2) ℚ) = !![-1, 0; 0, 1]) (t : ℝ) :
+    resToImagAxis (G ∣[(2 : ℤ)] D) t = conj (resToImagAxis G t) := by
+  have hDJ : Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) D = J := by
+    ext i j
+    fin_cases i <;> fin_cases j <;> simp [hD, J]
+  by_cases ht : 0 < t
+  · simp only [resToImagAxis_of_pos _ ht]
+    rw [ModularForm.rat_slash, hDJ, ModularForm.slash_apply]
+    have hJ : J • (⟨Complex.I * t, by simpa using ht⟩ : ℍ) =
+        ⟨Complex.I * t, by simpa using ht⟩ := by
+      ext
+      rw [coe_J_smul]
+      simp
+    rw [hJ]
+    simp
+  · simp [resToImagAxis_of_nonpos _ (not_lt.mp ht)]
 
 open Asymptotics Filter in
 /-- **A cusp form slashed by a rational matrix decays exponentially at `i∞`**: `f ∣[k] g` is a

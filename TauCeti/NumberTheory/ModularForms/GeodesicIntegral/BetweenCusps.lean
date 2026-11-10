@@ -387,26 +387,6 @@ theorem cuspIntegral_smul (c : ℂ) (F : ℍ → ℂ) (a b : OnePoint ℚ) :
 theorem cuspIntegral_zero (a b : OnePoint ℚ) : cuspIntegral (0 : ℍ → ℂ) a b = 0 := by
   simpa only [zero_smul, zero_mul] using cuspIntegral_smul 0 (0 : ℍ → ℂ) a b
 
-/-- The weight-`2` slash by `diag(-1, 1)` restricts to the imaginary axis as complex conjugation:
-the matrix fixes the points of the axis and its determinant is `-1`. -/
-private lemma resToImagAxis_slash_negDiag (G : ℍ → ℂ) {D : GL (Fin 2) ℚ}
-    (hD : (D : Matrix (Fin 2) (Fin 2) ℚ) = !![-1, 0; 0, 1]) (t : ℝ) :
-    resToImagAxis (G ∣[(2 : ℤ)] D) t = conj (resToImagAxis G t) := by
-  have hDJ : Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) D = J := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [hD, J]
-  by_cases ht : 0 < t
-  · simp only [resToImagAxis_of_pos _ ht]
-    rw [ModularForm.rat_slash, hDJ, ModularForm.slash_apply]
-    have hJ : J • (⟨Complex.I * t, by simpa using ht⟩ : ℍ) =
-        ⟨Complex.I * t, by simpa using ht⟩ := by
-      ext
-      rw [coe_J_smul]
-      simp
-    rw [hJ]
-    simp
-  · simp [resToImagAxis_of_nonpos _ (not_lt.mp ht)]
-
 /-- Every rational matrix `g` can be replaced by one of positive determinant with the same
 cusps `g • 0` and `g • ∞`, namely `g` itself or `g * diag(-1, 1)`, and integrability of the
 restriction of `F ∣[2] g` to the imaginary axis is preserved, because `diag(-1, 1)` acts on it as
