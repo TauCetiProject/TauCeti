@@ -11,9 +11,11 @@ public import TauCeti.Algebra.Homology.Ext.Basic
 /-!
 # Exact adjunctions and Ext with fixed coefficients
 
-For an adjunction `F ⊣ G` between exact functors of abelian categories, if the unit
-`Y → G(F(Y))` is an isomorphism, then `F` induces a bijection on `Extⁿ(X, Y)` for every
-`X` and every degree. Neither functor needs to be fully faithful on the whole category.
+For an adjunction `F ⊣ G` between exact functors of abelian categories, bijectivity of the
+map on `Extⁿ(X, Y)` is equivalent to bijectivity of postcomposition with the unit
+`Y → G(F(Y))`. In particular, if this unit is an isomorphism, then `F` induces a bijection on
+`Extⁿ(X, Y)` for every `X` and every degree. Neither functor needs to be fully faithful on the
+whole category.
 
 This criterion applies, for example, to extension of scalars along a flat ring map
 which leaves a particular coefficient module unchanged.
@@ -36,6 +38,19 @@ variable {C : Type u} [Category.{v} C] [Abelian C]
   {F : C ⥤ D} {G : D ⥤ C} [F.Additive] [G.Additive]
   [PreservesFiniteLimits F] [PreservesFiniteColimits F]
   [PreservesFiniteLimits G] [PreservesFiniteColimits G]
+
+/-- Under an exact adjunction, bijectivity of the map on Ext is equivalent to bijectivity of
+postcomposition with the adjunction unit on the coefficient object. -/
+theorem mapExt_bijective_iff_postcomp_unit_app (adj : F ⊣ G) (X Y : C) (n : ℕ) :
+    Function.Bijective (F.mapExtAddHom.{w, w'} X Y n) ↔
+      Function.Bijective ((Ext.mk₀ (adj.unit.app Y)).postcomp X (add_zero n)) := by
+  have he : adj.extEquiv.symm ∘
+      (Ext.mk₀ (adj.unit.app Y)).postcomp X (add_zero n) = F.mapExtAddHom X Y n := by
+    funext a
+    simp [Adjunction.extEquiv_symm_apply, Ext.mapExactFunctor_comp,
+      Ext.mapExactFunctor_mk₀]
+  rw [← he]
+  exact adj.extEquiv.symm.bijective.of_comp_iff' _
 
 /-- For an adjunction `F ⊣ G` between exact functors, `F` preserves Ext bijectively with
 coefficients in any object on which the unit is an isomorphism. The source object is
