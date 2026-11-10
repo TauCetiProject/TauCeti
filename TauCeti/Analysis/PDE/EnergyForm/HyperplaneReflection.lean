@@ -62,7 +62,8 @@ the restriction of `φ - φ ∘ ρ`, which lies in `H¹₀(U ∩ H)`; so it equa
 * `TauCeti.PDE.energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL`: the odd reflection
   of a weak solution vanishing on the flat boundary is a weak solution of the reflected equation.
 * `TauCeti.PDE.UniformlyEllipticOn.reflectPrincipal`: the reflected principal coefficient is
-  uniformly elliptic and bounded with the constants of `a`.
+  uniformly elliptic and bounded with the constants of `a`, and
+  `TauCeti.PDE.norm_reflectDrift_le`: the reflected drift keeps the bound of `b`.
 
 ## References
 
@@ -232,6 +233,29 @@ theorem UniformlyEllipticOn.reflectPrincipal [Nonempty ι] (hν : ν ≠ 0)
   simp only [one_mul, one_pow, div_one, mul_one] at hpb
   rw [reflectPrincipal_of_lt hlt]
   exact (uniformlyEllipticOn_iff.1 hpb).2.2 rfl
+
+/-- **The reflected drift keeps the bound of `b`**: if `‖b‖ ≤ β` on the part of a set `s` in the
+closed half-space `{x | c₀ ≤ ⟪x, ν⟫}`, and the reflection maps `s` into itself, then the
+reflected drift satisfies `‖b'‖ ≤ β` on all of `s`, since the reflection is an isometry. -/
+theorem norm_reflectDrift_le (hν : ν ≠ 0) {s : Set (EuclideanSpace ℝ ι)} {beta : ℝ}
+    (hb : ∀ x ∈ {x | x ∈ s ∧ c₀ ≤ ⟪x, ν⟫_ℝ}, ‖b x‖ ≤ beta)
+    (hs : MapsTo (hyperplaneReflection ν c₀) s s) {x : EuclideanSpace ℝ ι} (hx : x ∈ s) :
+    ‖reflectDrift ν c₀ b x‖ ≤ beta := by
+  by_cases hle : c₀ ≤ ⟪x, ν⟫_ℝ
+  · rw [reflectDrift_of_le hle]
+    exact hb x ⟨hx, hle⟩
+  -- Below the hyperplane, the drift is pulled back from `ρ x`, which lies above it.
+  have hlt := not_le.1 hle
+  have hpb := norm_pullbackDrift_le (U := ⊤) (V := ⊤) (Ψ := hyperplaneReflection ν c₀) (L := 1)
+    (L' := 1) (differentiable_hyperplaneReflection ν c₀).differentiableOn (mapsTo_univ _ _)
+    (differentiable_hyperplaneReflection ν c₀).differentiableOn
+    (fun y _ => hyperplaneReflection_hyperplaneReflection ν c₀ y)
+    (fun y _ => hyperplaneReflection_hyperplaneReflection ν c₀ y) b (x := x) trivial
+    (AffineIsometryEquiv.norm_fderiv_le _ x) (AffineIsometryEquiv.norm_fderiv_le _ _)
+  rw [reflectDrift_of_lt hlt]
+  refine hpb.trans ?_
+  rw [one_pow, one_mul, one_mul]
+  exact hb _ ⟨hs hx, by rw [inner_hyperplaneReflection hν]; linarith⟩
 
 end Coefficients
 
@@ -436,16 +460,8 @@ theorem energyFormH1_reflectPrincipal_sub_compHyperplaneReflectionL (hν : ν �
     energyFormH1 (reflectPrincipal ν c₀ a) (reflectDrift ν c₀ b) (reflectDensity ν c₀ c)
         (u - W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU u) (φ : W1p mu U 2) =
       ℓ (W1p0.restrictSubCompHyperplaneReflectionL ENNReal.ofNat_ne_top hH hU φ) := by
-  have hsub (v w : W1p mu U 2) :
-      energyFormH1 (reflectPrincipal ν c₀ a) (reflectDrift ν c₀ b) (reflectDensity ν c₀ c) u v -
-          energyFormH1 (reflectPrincipal ν c₀ a) (reflectDrift ν c₀ b) (reflectDensity ν c₀ c)
-            u w =
-        energyFormH1 (reflectPrincipal ν c₀ a) (reflectDrift ν c₀ b) (reflectDensity ν c₀ c)
-          u (v - w) := by
-    rw [← energyFormH1L_apply hcoeff u v, ← energyFormH1L_apply hcoeff u w,
-      ← energyFormH1L_apply hcoeff u (v - w), map_sub]
   rw [energyFormH1_sub_left hcoeff, energyFormH1_reflectPrincipal_compHyperplaneReflectionL hν hU,
-    hsub (φ : W1p mu U 2) (W1p.compHyperplaneReflectionL ENNReal.ofNat_ne_top ν c₀ hU φ),
+    ← energyFormH1_sub_right hcoeff,
     ← hu (W1p0.restrictSubCompHyperplaneReflectionL ENNReal.ofNat_ne_top hH hU φ)]
   exact (energyFormH1_reflectPrincipal_eq_restrictL hν hH hu0 _).trans (congrArg _
     (W1p0.coe_restrictSubCompHyperplaneReflectionL ENNReal.ofNat_ne_top hH hU φ).symm)

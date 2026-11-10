@@ -224,7 +224,7 @@ private theorem restrictL_sub_compHyperplaneReflectionL_ofTestFunction_mem (hp :
     · filter_upwards [W1p.value_restrictL_ae hΩ w,
         ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hΩ) hwg] with x h1 h2
       rw [h1, h2]
-  refine W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact (U := B) hp ?_ hK hKB hmemΩ ?_ ?_
+  refine W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact (U := B) ?_ hK hKB hmemΩ ?_ ?_
   · ext x
     simp only [Ω, Opens.coe_inf, mem_inter_iff]
     tauto

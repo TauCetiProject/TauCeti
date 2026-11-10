@@ -20,9 +20,9 @@ For a vector `ν` and a real number `c`, `TauCeti.hyperplaneReflection ν c` is 
 
 of a real inner product space, the reflection in the hyperplane `{x | ⟪x, ν⟫ = c}` when `ν ≠ 0`
 (for `ν = 0` it is the identity). Its linear part is the reflection `(ℝ ∙ ν)ᗮ.reflection` in the
-parallel hyperplane through the origin, so it is also its own derivative at every point. It is an
-involution, fixes the hyperplane pointwise and exchanges the two open half-spaces
-`{x | c < ⟪x, ν⟫}` and `{x | ⟪x, ν⟫ < c}`, since `⟪ρ x, ν⟫ = 2c - ⟪x, ν⟫`.
+parallel hyperplane through the origin, so its derivative at every point is this linear
+reflection. It is an involution, fixes the hyperplane pointwise and exchanges the two open
+half-spaces `{x | c < ⟪x, ν⟫}` and `{x | ⟪x, ν⟫ < c}`, since `⟪ρ x, ν⟫ = 2c - ⟪x, ν⟫`.
 
 This is the reflection used to extend functions defined on one side of a flat boundary to the
 other side, by odd or even reflection. It is Mathlib's `EuclideanGeometry.reflection` in the
@@ -126,8 +126,8 @@ theorem inner_hyperplaneReflection_lt_iff {ν : F} (hν : ν ≠ 0) (c : ℝ) {x
   rw [inner_hyperplaneReflection hν]
   constructor <;> intro h <;> linarith
 
-/-- The hyperplane reflection is its own derivative: an affine map has its linear part as
-derivative at every point. -/
+/-- The derivative of the hyperplane reflection at every point is its linear part
+`(ℝ ∙ ν)ᗮ.reflection`. -/
 theorem hasFDerivAt_hyperplaneReflection (ν : F) (c : ℝ) (x : F) :
     HasFDerivAt (hyperplaneReflection ν c) ((ℝ ∙ ν)ᗮ.reflection : F →L[ℝ] F) x := by
   rw [funext (hyperplaneReflection_eq_reflection_add ν c)]
@@ -167,7 +167,10 @@ theorem measurePreserving_restrict_hyperplaneReflection [FiniteDimensional ℝ F
     [MeasurableSpace F] [BorelSpace F] {μ : Measure F} [μ.IsAddHaarMeasure] {ν : F} {c : ℝ}
     {V : Set F} (hV : Set.MapsTo (hyperplaneReflection ν c) V V) (hVm : MeasurableSet V) :
     MeasurePreserving (hyperplaneReflection ν c) (μ.restrict V) (μ.restrict V) := by
-  simpa only [hV.preimage_eq_of_involutive (hyperplaneReflection_involutive ν c)] using
+  have hpre : hyperplaneReflection ν c ⁻¹' V = V :=
+    (congrFun (hyperplaneReflection_involutive ν c).image_eq_preimage_symm V).symm.trans
+      (hV.image_eq_of_involutive (hyperplaneReflection_involutive ν c))
+  simpa only [hpre] using
     (measurePreserving_hyperplaneReflection μ ν c).restrict_preimage hVm
 
 end TauCeti

@@ -55,6 +55,8 @@ design of the additive API follows that of Mathlib's `HahnSeries` in
 * `TauCeti.NovikovSeries.bddBelow_image_support` and
   `TauCeti.NovikovSeries.exists_isLeast_image_support`: the periods of the support are bounded
   below, and a nonzero series attains a least period on its support.
+* `TauCeti.NovikovSeries.finite_support_of_bddAbove_image`: a Novikov series whose periods are
+  bounded above on its support has finite support.
 * `TauCeti.NovikovSeries.isLeast_order`: the order of a nonzero series is the least period of its
   support.
 * `TauCeti.NovikovSeries.min_order_le_order_add`: the order of a nonzero sum is at least the
@@ -127,6 +129,13 @@ theorem forall_finite_lt_iff_forall_finite_le (f : H → R) :
 theorem finite_le (a : NovikovSeries R H N) (C : ℝ) :
     {h | a.coeff h ≠ 0 ∧ N h ≤ C}.Finite :=
   (forall_finite_lt_iff_forall_finite_le a.coeff).1 a.finite_lt C
+
+/-- If the periods are bounded above on the support of a Novikov series, for instance if they
+vanish, the series has finite support: a single period cutoff lies above all of its exponents. -/
+theorem finite_support_of_bddAbove_image {a : NovikovSeries R H N}
+    (h : BddAbove (N '' a.support)) : a.support.Finite := by
+  obtain ⟨C, hC⟩ := h
+  exact (a.finite_le C).subset fun h hh => ⟨hh, hC ⟨h, hh, rfl⟩⟩
 
 /-- The periods of the support of a Novikov series are bounded below. -/
 theorem bddBelow_image_support (a : NovikovSeries R H N) : BddBelow (N '' a.support) := by
@@ -496,6 +505,13 @@ theorem single_eq_zero_iff {h : H} {r : R} : (single h r : NovikovSeries R H N) 
 instance [Nontrivial R] : Nontrivial (NovikovSeries R H N) := by
   obtain ⟨r, hr⟩ := exists_ne (0 : R)
   exact ⟨⟨single 0 r, 0, single_eq_zero_iff.not.2 hr⟩⟩
+
+/-- Over a trivial exponent group every Novikov series is the constant monomial of its
+coefficient at `0`. -/
+@[simp]
+theorem single_zero_coeff_zero [Subsingleton H] (a : NovikovSeries R H N) :
+    single 0 (a.coeff 0) = a :=
+  ext fun h => by rw [Subsingleton.elim h 0, coeff_single_same]
 
 end Zero
 
