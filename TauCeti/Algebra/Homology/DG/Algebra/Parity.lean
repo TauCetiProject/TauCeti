@@ -44,7 +44,7 @@ variable {R A : Type*} [Semiring R] [AddCommMonoid A] [Module R A]
 theorem map_mem_parityGrading_of_map_mem
     (hd : ∀ {p : ℤ} {a : A}, a ∈ 𝒜 p → d a ∈ 𝒜 (p + 1)) {i : ZMod 2} {a : A}
     (ha : a ∈ parityGrading 𝒜 i) : d a ∈ parityGrading 𝒜 (i + 1) := by
-  have h1 : Int.castAddHom (ZMod 2) 1 = 1 := Int.cast_one
+  have h1 : Int.castAddHom (ZMod 2) 1 = 1 := by simp only [Int.coe_castAddHom, Int.cast_one]
   have := ((LinearMap.isHomogeneous_def.2 fun _ _ hx ↦ hd hx).coarsenGrading
     (Int.castAddHom (ZMod 2))).map_mem ha
   rwa [h1] at this
