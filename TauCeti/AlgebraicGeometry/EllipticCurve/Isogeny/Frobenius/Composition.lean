@@ -101,13 +101,7 @@ theorem frobenius_comp_injective :
   rw [ofIsogeny_comp_ofIsogeny, ofIsogeny_comp_ofIsogeny] at h
   have h' := ofIsogeny_injective h
   congr 1
-  apply Isogeny.ext
-  apply AlgHom.ext
-  intro x
-  refine (frobeniusIsogeny W₁).fieldPullback.injective ?_
-  have hz := congrArg (fun χ : Isogeny W₁ W ↦ χ.fieldPullback (algebraMap _ _ x)) h'
-  simpa only [comp_fieldPullback, AlgHom.comp_apply, fieldPullback_frobeniusIsogeny_apply,
-    fieldPullback_algebraMap, map_pow, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using hz
+  exact Isogeny.comp_right_injective (frobeniusIsogeny W₁) h'
 
 omit [W.IsElliptic] in
 /-- **Two morphisms agree exactly when they agree after composition with Frobenius.** -/

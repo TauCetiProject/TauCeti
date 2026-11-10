@@ -47,6 +47,16 @@ namespace TauCeti.Isogeny.Hom
 variable {F K : Type*} [Field F] [Finite F] [Field K] [Algebra F K]
   (W : WeierstrassCurve.Affine F) [W.IsElliptic]
 
+/-- **Base change preserves the degree of `1 - π`, read on `W⁄K`.** The base change `W⁄K` unfolds
+to `W.map (algebraMap F K)` only up to definitional equality, so the scalar-extension lemma
+`TauCeti.Isogeny.Hom.degree_map` is transported to `W⁄K` here, once, instead of by a bare `rfl` in
+each proof that needs it. -/
+private theorem degree_one_sub_ofIsogeny_baseChangeFrobenius :
+    (1 - ofIsogeny (baseChangeFrobenius K W)).degree =
+      (1 - ofIsogeny (frobeniusIsogeny W)).degree := by
+  rw [← degree_map _ (algebraMap F K), map_sub, map_one, ofIsogeny_map, ← baseChangeFrobenius_def]
+  rfl
+
 /-- **`deg (id - π) = #E(𝔽_q)`**: over an extension of the finite base, the degree
 of `id - π` is the number of rational points of `W`, the point at infinity included. Here `π` is
 the base-changed Frobenius endomorphism of `W⁄K`; compare
@@ -54,10 +64,9 @@ the base-changed Frobenius endomorphism of `W⁄K`; compare
 isogeny of `W` over `𝔽_q` itself. -/
 theorem degree_id_sub_ofIsogeny_baseChangeFrobenius_eq_pointCount :
     (id (W⁄K).toAffine - ofIsogeny (baseChangeFrobenius K W)).degree = W.pointCount := by
-  rw [← one_def, ← degree_oneSubFrobeniusIsogeny_eq_pointCount W,
-    ← degree_ofIsogeny, ofIsogeny_oneSubFrobeniusIsogeny, ← degree_map _ (algebraMap F K),
-    map_sub, map_one, ofIsogeny_map, ← baseChangeFrobenius_def]
-  rfl
+  rw [← one_def, ← degree_oneSubFrobeniusIsogeny_eq_pointCount W, ← degree_ofIsogeny,
+    ofIsogeny_oneSubFrobeniusIsogeny]
+  exact degree_one_sub_ofIsogeny_baseChangeFrobenius W
 
 /-- **The middle coefficient of the Frobenius pencil's degree form is the Frobenius trace.** Over a
 separably closed extension, `deg (r π - s) = q r² - a_q r s + s²`. Compare
