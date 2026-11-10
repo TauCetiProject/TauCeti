@@ -278,7 +278,8 @@ form `subst_formalW_ne_zero` is actually used in. -/
 theorem algebraMap_subst_formalW_ne_zero {q : MvPowerSeries σ O}
     (hq : constantCoeff q = 0) (hq0 : q ≠ 0) :
     algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst q (formalW W)) ≠ 0 := fun h ↦ by
-  have : IsDomain O := MvPowerSeries.isDomain_of_isFractionRing σ KK
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
   exact W.subst_formalW_ne_zero hq hq0
     (IsFractionRing.injective (MvPowerSeries σ O) KK (by rw [h, map_zero]))
 
@@ -324,7 +325,8 @@ private theorem thetaPoint_add_eq_some (hΔ : (fracCurve W σ KK).Δ ≠ 0)
           algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst Tp (formalW W))) /
         algebraMap (MvPowerSeries σ O) KK (PowerSeries.subst Tp (formalW W))),
       W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = Affine.Point.some _ _ h₃ := by
-  have : IsDomain O := MvPowerSeries.isDomain_of_isFractionRing σ KK
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
   classical
   set ρ := algebraMap (MvPowerSeries σ O) KK
   have hinj : Function.Injective ρ := IsFractionRing.injective (MvPowerSeries σ O) KK
@@ -538,7 +540,8 @@ private theorem pair_intercept_ne_zero_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0
     (hne₂ : q₁ ≠ PowerSeries.subst q₂ (formalInverse W)) :
     subst (pairSubstitution q₁ q₂)
       (formalIntercept W) ≠ 0 := by
-  have : IsDomain O := MvPowerSeries.isDomain_of_isFractionRing σ KK
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
   classical
   intro h0
   set ρ := algebraMap (MvPowerSeries σ O) KK
@@ -588,7 +591,8 @@ private theorem thetaPoint_add_of_ne (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     (hF0 : subst (pairSubstitution q₁ q₂)
       (formalAdd W) ≠ 0) :
     W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 := by
-  have : IsDomain O := MvPowerSeries.isDomain_of_isFractionRing σ KK
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
   have hN := W.pair_intercept_ne_zero_of_ne hΔ h₁ h₂ hq₁0 hq₂0 hne₁ hne₂
   refine W.thetaPoint_add hΔ h₁ h₂ hq₁0 hq₂0 hN ?_ hF hF0
   rw [subst_pair_formalIntercept_mul_sub W h₁ h₂]
@@ -611,7 +615,8 @@ theorem thetaPoint_add_of_subst_separates (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     (hF0 : subst (pairSubstitution q₁ q₂)
       (formalAdd W) ≠ 0) :
     W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 := by
-  have : IsDomain O := MvPowerSeries.isDomain_of_isFractionRing σ KK
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
   exact W.thetaPoint_add_of_ne hΔ h₁ h₂ hq₁0 hq₂0 (ne_of_subst_eq_X_of_subst_eq_zero hg₁ hg₂)
     (ne_of_subst_eq_X_of_subst_eq_zero hg₁ (subst_subst_formalInverse_eq_zero W hg h₂ hg₂)) hF hF0
 
@@ -639,7 +644,8 @@ private theorem subst_formalAdd_assoc_of_subst_separates (hΔ : (fracCurve W σ 
     (hg'2 : subst g' q₂ = PowerSeries.X) (hg'3 : subst g' q₃ = 0) :
     subst (pairSubstitution (subst (pairSubstitution q₁ q₂) (formalAdd W)) q₃) (formalAdd W) =
       subst (pairSubstitution q₁ (subst (pairSubstitution q₂ q₃) (formalAdd W))) (formalAdd W) := by
-  have : IsDomain O := MvPowerSeries.isDomain_of_isFractionRing σ KK
+  have := IsDomain.of_faithfulSMul (MvPowerSeries σ O) KK
+  have := MvPowerSeries.isDomain_of_isDomain (σ := σ) (R := O)
   classical
   -- the two inner sums
   set F₁₂ := subst (pairSubstitution q₁ q₂) (formalAdd W)
