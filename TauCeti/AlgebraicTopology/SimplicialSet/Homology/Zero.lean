@@ -26,10 +26,10 @@ open CategoryTheory Limits Simplicial
 
 universe w v u
 
-namespace TauCeti.SSet
+namespace SSet
 
 variable {C : Type u} [Category.{v} C] [HasCoproducts.{w} C] [Preadditive C]
-  [CategoryWithHomology C] {X Y : _root_.SSet.{w}} (R : C)
+  [CategoryWithHomology C] {X Y : SSet.{w}} (R : C)
 
 /-- The class in zeroth homology of a vertex, with coefficients in `R`. -/
 def ιHomology₀ (x : X _⦋0⦌) : R ⟶ X.homology R 0 :=
@@ -37,7 +37,7 @@ def ιHomology₀ (x : X _⦋0⦌) : R ⟶ X.homology R 0 :=
     (X.chainComplex R).homologyπ 0
 
 /-- A vertex class is the homology class of the cycle given by the vertex. -/
-lemma ιHomology₀_eq (x : X _⦋0⦌) :
+lemma ιHomology₀_def (x : X _⦋0⦌) :
     ιHomology₀ R x = (X.chainComplex R).liftCycles (X.ιChainComplex x) 0 (by simp) (by simp) ≫
       (X.chainComplex R).homologyπ 0 := by
   rw [ιHomology₀]
@@ -46,7 +46,7 @@ lemma ιHomology₀_eq (x : X _⦋0⦌) :
 @[reassoc (attr := simp)]
 lemma ιHomology₀_homology₀Iso_hom (x : X _⦋0⦌) :
     ιHomology₀ R x ≫ (X.homology₀Iso R).hom =
-      Sigma.ι (fun _ : _root_.SSet.π₀ X ↦ R) (_root_.SSet.π₀.mk x) := by
+      Sigma.ι (fun _ : π₀ X ↦ R) (π₀.mk x) := by
   simp [ιHomology₀]
 
 /-- Vertex classes generate zeroth homology. -/
@@ -55,7 +55,7 @@ lemma homology₀_hom_ext {T : C} {f g : X.homology R 0 ⟶ T}
     (h : ∀ x, ιHomology₀ R x ≫ f = ιHomology₀ R x ≫ g) : f = g := by
   apply (cancel_epi ((X.chainComplex R).homologyπ 0)).1
   apply (cancel_epi ((X.chainComplex R).cycles₀Iso.inv)).1
-  apply _root_.SSet.chainComplex_hom_ext
+  apply chainComplex_hom_ext
   intro x
   have hx : X.ιChainComplex x ≫ (X.chainComplex R).cycles₀Iso.inv =
       (X.chainComplex R).liftCycles (X.ιChainComplex x) 0 (by simp) (by simp) := by
@@ -66,11 +66,8 @@ lemma homology₀_hom_ext {T : C} {f g : X.homology R 0 ⟶ T}
 /-- The homology map of a simplicial map sends a vertex class to the class of its image. -/
 @[reassoc (attr := simp)]
 lemma ιHomology₀_homologyMap (f : X ⟶ Y) (x : X _⦋0⦌) :
-    ιHomology₀ R x ≫ _root_.SSet.homologyMap f R 0 =
-      ιHomology₀ R (f.app _ x) := by
-  simp only [ιHomology₀, _root_.SSet.homologyMap, Category.assoc,
-    HomologicalComplex.homologyπ_naturality,
-    HomologicalComplex.liftCycles_comp_cyclesMap_assoc, _root_.SSet.ι_chainComplexMap_f]
+    ιHomology₀ R x ≫ SSet.homologyMap f R 0 = ιHomology₀ R (f.app _ x) := by
+  simp [ιHomology₀]
 
 /-- The augmentation sends each vertex class to the identity of the coefficient object. -/
 @[reassoc (attr := simp)]
@@ -81,9 +78,8 @@ lemma ιHomology₀_homology₀ε (x : X _⦋0⦌) :
 /-- The augmentation of zeroth homology commutes with maps of simplicial sets. -/
 @[reassoc (attr := simp)]
 lemma homologyMap_homology₀ε (f : X ⟶ Y) :
-    _root_.SSet.homologyMap f R 0 ≫ Y.homology₀ε R = X.homology₀ε R := by
-  apply homology₀_hom_ext
-  intro x
+    SSet.homologyMap f R 0 ≫ Y.homology₀ε R = X.homology₀ε R := by
+  ext
   simp
 
-end TauCeti.SSet
+end SSet

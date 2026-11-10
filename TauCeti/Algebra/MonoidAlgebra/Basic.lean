@@ -32,6 +32,7 @@ none of the further theory built on it.
 * The `IsAddTorsionFree (MonoidAlgebra R M)` and `HasUniqueDiv (MonoidAlgebra R M)` instances:
   `R[M]` inherits the absence of additive torsion from its coefficients, as `M →₀ R` does in
   Mathlib.
+* The `Finite (MonoidAlgebra R M)` instance: `R[M]` is finite when `R` and `M` are.
 * `MonoidAlgebra.singleOneUnit`: in a group algebra, `single g 1` as a unit with inverse
   `single g⁻¹ 1`, and `MonoidAlgebra.coeff_single_mul_mul_single_inv`: conjugating by it
   conjugates the indices of the coefficients.
@@ -185,6 +186,13 @@ instance instHasUniqueDiv [HasUniqueDiv R] : HasUniqueDiv (MonoidAlgebra R M) :=
     coeffAddEquiv.injective
 
 end TorsionFree
+
+/-- A monoid algebra over a finite semiring is finite when the monoid is. -/
+@[to_additive
+/-- An additive monoid algebra over a finite semiring is finite when the additive monoid is. -/]
+instance instFinite {R M : Type*} [Semiring R] [Finite R] [Finite M] :
+    Finite (MonoidAlgebra R M) :=
+  .of_injective (fun x ↦ ⇑x.coeff) (DFunLike.coe_injective.comp coeff_injective)
 
 /-- The basis element `single g 1` of a group algebra, as a unit with inverse `single g⁻¹ 1`. -/
 noncomputable def singleOneUnit (g : G) : (MonoidAlgebra R G)ˣ :=

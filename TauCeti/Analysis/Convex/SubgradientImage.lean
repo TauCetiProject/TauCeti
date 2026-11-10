@@ -404,8 +404,9 @@ theorem eventually_biUnion_subset_of_tendstoLocallyUniformlyOn {ι : Type*} {l :
       ∀ x ∈ K, |F k x - u x| < (i.2 : ℝ) / 2 := by
     refine (Filter.eventually_all_finset t).2 fun i _ => ?_
     have hi : 0 < (i.2 : ℝ) / 2 := half_pos i.2.2
-    filter_upwards [hFu.eventually_forall_abs_sub_lt isCompact_singleton
-      (singleton_subset_iff.2 i.1.2) hi, hFu.eventually_forall_abs_sub_lt hK hKΩ hi] with k h₁ h₂
+    filter_upwards [hFu.eventually_forall_dist_lt isCompact_singleton
+      (singleton_subset_iff.2 i.1.2) hi, hFu.eventually_forall_dist_lt hK hKΩ hi] with k h₁ h₂
+    simp only [Real.dist_eq] at h₁ h₂
     exact ⟨h₁ _ rfl, h₂⟩
   filter_upwards [hbd, hclose] with k hk hk' y hy
   obtain ⟨x, hx, hxy⟩ := mem_iUnion₂.1 hy

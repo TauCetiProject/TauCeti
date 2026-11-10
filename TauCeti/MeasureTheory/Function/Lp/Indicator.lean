@@ -37,6 +37,8 @@ sets, and equals the constant one at `univ`.
   disjoint sets.
 * `TauCeti.eq_sum_indicatorConstLp_fiber`: an `Lᵖ` class represented by `φ ∘ G`, for a simple
   function `G`, as a sum of indicator classes of the fibres of `G`.
+* `MeasureTheory.SimpleFunc.memLp_indicator`, `MeasureTheory.SimpleFunc.integrable_indicator`: a
+  simple function cut off to a measurable set of finite measure lies in every `Lᵖ`.
 * `TauCeti.linftyIndicator μ s hs`: the class in `L∞(μ)` of the indicator of a measurable set.
 * `MeasureTheory.SimpleFunc.toLpTop_piecewise_const_zero`: the class of a simple function
   `c • 1_s` is `c • linftyIndicator μ s hs`.
@@ -121,6 +123,34 @@ theorem eq_sum_indicatorConstLp_fiber {F : Type*} {G : SimpleFunc α F} {φ : F 
     simp [hw]
 
 end Disjoint
+
+section IndicatorContinuousOn
+
+variable [TopologicalSpace α] [OpensMeasurableSpace α] [SecondCountableTopologyEither α E]
+
+/-- A function that is continuous and bounded on a measurable set of finite measure, extended by
+zero outside it, lies in every `L^p` space. -/
+theorem memLp_indicator_of_continuousOn_of_norm_le (hs : MeasurableSet s) (hμs : μ s ≠ ∞)
+    {g : α → E} (hg : ContinuousOn g s) {M : ℝ} (hM : ∀ x ∈ s, ‖g x‖ ≤ M) :
+    MemLp (s.indicator g) p μ := by
+  have : IsFiniteMeasure (μ.restrict s) :=
+    ⟨by simpa [Measure.restrict_apply_univ] using hμs.lt_top⟩
+  refine (memLp_indicator_iff_restrict hs.nullMeasurableSet).2
+    (MemLp.of_bound (hg.aestronglyMeasurable hs) M ?_)
+  exact (ae_restrict_iff' hs).2 (ae_of_all _ hM)
+
+end IndicatorContinuousOn
+
+/-- A simple function cut off to a measurable set of finite measure lies in every `Lᵖ` space. -/
+theorem _root_.MeasureTheory.SimpleFunc.memLp_indicator (g : SimpleFunc α E)
+    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) : MemLp (s.indicator g) p μ := by
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hμs
+  exact (memLp_indicator_iff_restrict hs.nullMeasurableSet).2 (g.memLp_of_isFiniteMeasure p _)
+
+/-- A simple function cut off to a measurable set of finite measure is integrable. -/
+theorem _root_.MeasureTheory.SimpleFunc.integrable_indicator (g : SimpleFunc α E)
+    (hs : MeasurableSet s) (hμs : μ s ≠ ∞) : Integrable (s.indicator g) μ :=
+  memLp_one_iff_integrable.1 (g.memLp_indicator hs hμs)
 
 end TauCeti
 

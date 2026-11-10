@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.InnerProductSpace.Compression
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Operator.Basic
+import Mathlib.Analysis.Normed.Affine.MazurUlam
 
 /-!
 # Adjoints of linear maps
@@ -20,7 +21,9 @@ An operator on a Hilbert space is invertible exactly when its adjoint is
 (`ContinuousLinearMap.isUnit_adjoint_iff`), and inversion commutes with the adjoint
 (`ContinuousLinearMap.ringInverse_adjoint`). An operator on a Hilbert space that is bounded below
 by `M⁻¹` and has injective adjoint is invertible with `‖T⁻¹‖ ≤ M`
-(`ContinuousLinearMap.isUnit_and_norm_ringInverse_le_of_forall_norm_le`).
+(`ContinuousLinearMap.isUnit_and_norm_ringInverse_le_of_forall_norm_le`). If an invertible
+operator satisfies `‖x‖ ≤ M ‖T x‖`, every vector is `T† z` with `‖z‖ ≤ M ‖y‖`
+(`ContinuousLinearMap.exists_adjoint_apply_eq_and_norm_le`).
 For a continuous linear equivalence between complete inner product spaces, the adjoint is
 bijective (`ContinuousLinearEquiv.adjoint_bijective`).
 Its adjoint gives an equivalence in the reverse direction (`ContinuousLinearEquiv.adjointEquiv`),
@@ -38,6 +41,8 @@ Compression is its inverse on this corner, and extension preserves composition a
 * `LinearIsometry.cornerEmbedding`: extension by zero `T ↦ e T e†`, an isometric embedding
   of operator spaces along an isometric inclusion.
 * `ContinuousLinearEquiv.adjointEquiv`: the adjoint as a continuous linear equivalence.
+* `ContinuousLinearMap.adjointRealCLM`: the adjoint `T ↦ T†` of operators between complex
+  Hilbert spaces as a real-linear continuous map.
 
 ## Further results
 
@@ -118,7 +123,36 @@ theorem ringInverse_adjoint (A : E →L[𝕜] E) :
     Ring.inverse (adjoint A) = adjoint (Ring.inverse A) := by
   simpa only [star_eq_adjoint] using Ring.inverse_star A
 
+/-- If an invertible operator `T` on a Hilbert space is bounded below, `‖x‖ ≤ M * ‖T x‖`, then
+every vector `y` is `T† z` for some `z` with `‖z‖ ≤ M * ‖y‖`, namely `z = (T⁻¹)† y`. -/
+theorem exists_adjoint_apply_eq_and_norm_le {T : E →L[𝕜] E} (hT : IsUnit T) {M : ℝ}
+    (hM : 0 ≤ M) (h : ∀ x, ‖x‖ ≤ M * ‖T x‖) (y : E) :
+    ∃ z, adjoint T z = y ∧ ‖z‖ ≤ M * ‖y‖ := by
+  refine ⟨adjoint (Ring.inverse T) y, ?_, le_of_opNorm_le _ ?_ y⟩
+  · rw [← ringInverse_adjoint, apply_ringInverse_apply (isUnit_adjoint_iff.2 hT)]
+  · rw [LinearIsometryEquiv.norm_map]
+    exact norm_ringInverse_le_of_forall_norm_le hT hM h
+
 end Inverse
+
+section RealAdjoint
+
+variable {V W : Type*} [NormedAddCommGroup V] [InnerProductSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [InnerProductSpace ℂ W] [CompleteSpace W]
+
+/-- The Hilbert space adjoint `T ↦ T†`, as a real-linear map: the conjugate-linear isometry
+`ContinuousLinearMap.adjoint` is real-linear by the Mazur-Ulam theorem. -/
+noncomputable def adjointRealCLM : (V →L[ℂ] W) →L[ℝ] (W →L[ℂ] V) :=
+  (IsometryEquiv.toRealLinearIsometryEquivOfMapZero
+    (adjoint (𝕜 := ℂ) (E := V) (F := W)).toIsometryEquiv (by simp)).toContinuousLinearEquiv
+
+@[simp]
+theorem adjointRealCLM_apply (T : V →L[ℂ] W) : adjointRealCLM T = adjoint T := by
+  rw [adjointRealCLM, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    IsometryEquiv.coe_toRealLinearIsometryEquivOfMapZero, LinearIsometryEquiv.coe_toIsometryEquiv]
+
+end RealAdjoint
 
 end ContinuousLinearMap
 
