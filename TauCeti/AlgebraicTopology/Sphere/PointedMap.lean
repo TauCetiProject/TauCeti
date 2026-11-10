@@ -23,9 +23,9 @@ on `πₙ₊₂(X, x)` by the Hurewicz theorem. So two pointed maps inducing the
 
 For `X = Sⁿ⁺²` this is the pointed form of Hopf's theorem for self-maps of a sphere of dimension at
 least two: the homotopy class of a pointed self-map is determined by its degree. In particular a
-pointed self-map `δ` of degree `±1`, that is, one inducing a bijection on `Hₙ₊₂(Sⁿ⁺²; ℤ) ≅ ℤ`,
+pointed self-map `δ` of degree `±1`, that is, one inducing a surjection on `Hₙ₊₂(Sⁿ⁺²; ℤ) ≅ ℤ`,
 satisfies `δ ∘ δ ≃ id` relative to the north pole
-(`ContinuousMap.homotopicRel_comp_self_id_of_bijective_singularHomologyMap`): the induced map on
+(`ContinuousMap.homotopicRel_comp_self_id_of_surjective_singularHomologyMap`): the induced map on
 `ℤ` is multiplication by `±1`, so its square is the identity. Barraud, Damian, Humilière and Oancea
 use this to retract the double loop space of a sphere off that of a manifold in the proof of
 their Lemma 7.6.
@@ -35,7 +35,7 @@ their Lemma 7.6.
 * `ContinuousMap.homotopicRel_of_singularHomologyMap_eq`: pointed maps from `Sⁿ⁺²` to an
   `(n + 1)`-connected space are homotopic relative to the north pole when they agree on
   `Hₙ₊₂(-; ℤ)`.
-* `ContinuousMap.homotopicRel_comp_self_id_of_bijective_singularHomologyMap`: a pointed self-map
+* `ContinuousMap.homotopicRel_comp_self_id_of_surjective_singularHomologyMap`: a pointed self-map
   of `Sⁿ⁺²` of degree `±1` squares to the identity up to pointed homotopy.
 
 ## References
@@ -83,26 +83,26 @@ theorem homotopicRel_of_singularHomologyMap_eq
   simpa only [hp, hq] using GenLoop.homotopic_iff_toSphere.1 (Quotient.exact hpq)
 
 /-- **A pointed self-map of a sphere of degree `±1` is an involution up to pointed homotopy.** If
-a pointed self-map `δ` of `Sⁿ⁺²` induces a bijection on `Hₙ₊₂(Sⁿ⁺²; ℤ) ≅ ℤ`, then `δ ∘ δ` is
+a pointed self-map `δ` of `Sⁿ⁺²` induces a surjection on `Hₙ₊₂(Sⁿ⁺²; ℤ) ≅ ℤ`, then `δ ∘ δ` is
 homotopic to the identity relative to the north pole. -/
-theorem homotopicRel_comp_self_id_of_bijective_singularHomologyMap
+theorem homotopicRel_comp_self_id_of_surjective_singularHomologyMap
     {δ : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1,
       sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1)}
     (hδ : δ (sphereNorthPole (n + 2)) = sphereNorthPole (n + 2))
-    (h : Function.Bijective (singularHomologyMap ℤ (n + 2) δ)) :
+    (h : Function.Surjective (singularHomologyMap ℤ (n + 2) δ)) :
     (δ.comp δ).HomotopicRel (ContinuousMap.id _) {sphereNorthPole (n + 2)} := by
   refine homotopicRel_of_singularHomologyMap_eq
     (fun k hk ↦
       subsingleton_homotopyGroup_sphere_of_lt (n := n + 2) (by simp) (by simpa using hk) _)
     (by rw [comp_apply, hδ, hδ]) (id_apply _) ?_
   -- The Hurewicz class of the tautological loop generates `Hₙ₊₂(Sⁿ⁺²; ℤ)`, which is therefore
-  -- infinite cyclic, so the bijection `δ_*` on it squares to the identity.
+  -- infinite cyclic, so the surjection `δ_*` on it squares to the identity.
   let ι := GenLoop.hurewicz (ModuleCat.of ℤ ℤ) (sphereGenLoop (n + 2))
   have hg : Function.Bijective fun k : ℤ ↦ k • ι.hom 1 := by
     convert (ConcreteCategory.bijective_of_isIso ι) using 1
     funext k
     rw [← map_zsmul, smul_eq_mul, mul_one]
-  have hinv := (singularHomologyMap ℤ (n + 2) δ).toAddMonoidHom.involutive_of_surjective hg h.2
+  have hinv := (singularHomologyMap ℤ (n + 2) δ).toAddMonoidHom.involutive_of_surjective hg h
   ext y
   rw [singularHomologyMap_comp, singularHomologyMap_id]
   exact hinv y

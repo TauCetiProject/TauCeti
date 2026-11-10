@@ -19,12 +19,12 @@ loop functor (`TauCeti.MooreLoopSpace.homotopicRel_comp_map_id`), `Ω²r ∘ Ω�
 the identity (`TauCeti.MooreLoopSpace.injective_singularHomologyMap_map_map_of_homotopicRel`).
 
 The case of interest is a sphere. Let `s : Sⁿ⁺² → Q` be a pointed map and `c : Q → Sⁿ⁺²` a
-pointed map such that `c ∘ s` has degree `±1`, that is, induces a bijection on
+pointed map such that `c ∘ s` has degree `±1`, that is, induces a surjection on
 `Hₙ₊₂(Sⁿ⁺²; ℤ) ≅ ℤ`. By Hopf's theorem for pointed self-maps of the sphere,
 `(c ∘ s) ∘ (c ∘ s) ≃ id`
-(`ContinuousMap.homotopicRel_comp_self_id_of_bijective_singularHomologyMap`), so `(c ∘ s) ∘ c` is
+(`ContinuousMap.homotopicRel_comp_self_id_of_surjective_singularHomologyMap`), so `(c ∘ s) ∘ c` is
 a left homotopy inverse of `s`, and `(Ω²s)_* : H_*(Ω²Sⁿ⁺²) → H_*(Ω²Q)` is injective
-(`TauCeti.MooreLoopSpace.injective_singularHomologyMap_map_map_of_bijective_singularHomologyMap`).
+(`TauCeti.MooreLoopSpace.injective_singularHomologyMap_map_map_of_surjective_singularHomologyMap`).
 
 This is the homotopy-theoretic part of Lemma 7.6 of Barraud, Damian, Humilière and Oancea. There
 `s` embeds `Sᵏ` in a closed manifold `Q`, meeting transversely and in a single point a closed
@@ -35,7 +35,7 @@ fibre sphere of a tubular neighbourhood `Y × Dᵏ`, so that `c ∘ s` has degre
 
 * `TauCeti.MooreLoopSpace.injective_singularHomologyMap_map_map_of_homotopicRel`: the double loops
   of a map with a pointed left homotopy inverse are injective on singular homology.
-* `TauCeti.MooreLoopSpace.injective_singularHomologyMap_map_map_of_bijective_singularHomologyMap`:
+* `TauCeti.MooreLoopSpace.injective_singularHomologyMap_map_map_of_surjective_singularHomologyMap`:
   the double loops of a pointed map `s : Sⁿ⁺² → Q` are injective on singular homology when some
   pointed `c : Q → Sⁿ⁺²` makes `c ∘ s` of degree `±1`.
 
@@ -68,15 +68,15 @@ theorem injective_singularHomologyMap_map_map_of_homotopicRel {X Q : Type u} [To
       (map_one (map r hr))).homotopic
 
 /-- **Double loops of a sphere mapping with degree `±1` back onto it.** Let `s : Sⁿ⁺² → Q` and
-`c : Q → Sⁿ⁺²` be pointed maps such that `c ∘ s` induces a bijection on `Hₙ₊₂(Sⁿ⁺²; ℤ)`. Then
+`c : Q → Sⁿ⁺²` be pointed maps such that `c ∘ s` induces a surjection on `Hₙ₊₂(Sⁿ⁺²; ℤ)`. Then
 `Ω²s : Ω²Sⁿ⁺² → Ω²Q`, on Moore double loop spaces, is injective on singular homology in every
 degree and with any coefficients. -/
-theorem injective_singularHomologyMap_map_map_of_bijective_singularHomologyMap {Q : Type}
+theorem injective_singularHomologyMap_map_map_of_surjective_singularHomologyMap {Q : Type}
     [TopologicalSpace Q] {q : Q} {n : ℕ}
     {s : C(sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1, Q)}
     {c : C(Q, sphere (0 : EuclideanSpace ℝ (Fin (n + 3))) 1)}
     (hs : s (sphereNorthPole (n + 2)) = q) (hc : c q = sphereNorthPole (n + 2))
-    (h : Function.Bijective (ContinuousMap.singularHomologyMap ℤ (n + 2) (c.comp s)))
+    (h : Function.Surjective (ContinuousMap.singularHomologyMap ℤ (n + 2) (c.comp s)))
     (k : Type) [Ring k] (m : ℕ) :
     Function.Injective (ContinuousMap.singularHomologyMap k m
       (map (map s hs : C(MooreLoopSpace _ (sphereNorthPole (n + 2)), MooreLoopSpace Q q))
@@ -88,6 +88,6 @@ theorem injective_singularHomologyMap_map_map_of_bijective_singularHomologyMap {
   -- `(c ∘ s) ∘ c` is a pointed left homotopy inverse of `s`.
   refine injective_singularHomologyMap_map_map_of_homotopicRel hs
     (r := (c.comp s).comp c) (by rw [ContinuousMap.comp_apply, hc, hδ]) ?_ k m
-  exact ContinuousMap.homotopicRel_comp_self_id_of_bijective_singularHomologyMap hδ h
+  exact ContinuousMap.homotopicRel_comp_self_id_of_surjective_singularHomologyMap hδ h
 
 end TauCeti.MooreLoopSpace
