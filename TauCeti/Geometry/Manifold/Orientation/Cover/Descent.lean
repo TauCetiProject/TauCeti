@@ -31,6 +31,9 @@ compactly supported de Rham cohomology of a connected nonorientable manifold van
   smooth forms, with a smooth form on `M`.
 * `TauCeti.Manifold.OrientationCover.exists_mpullback_proj_eq_invariantPart`: the deck-invariant
   part of every form on the cover descends to `M`.
+* `TauCeti.Manifold.OrientationCover.exists_mextDerivₗ_eq_of_mextDerivₗ_eq_mpullback_proj`: a form
+  whose pullback to the orientation cover is exact is exact, with a primitive pulling back to the
+  deck-invariant part of the given one.
 
 ## References
 
@@ -98,5 +101,50 @@ theorem exists_smoothForm_mpullback_proj_eq_iff [NormedAddCommGroup F] [NormedSp
       (VectorBundleOrientationCover.surjective_proj (Fintype.card_fin _))
       (σ := fun _ : Unit ↦ VectorBundleOrientationCover.deck) (fun _ ↦ contMDiff_deck)
       (fun _ ↦ funext VectorBundleOrientationCover.proj_deck) fun _ _ ↦ eq_or_exists_deck_eq
+
+section Primitive
+
+variable [NormedAddCommGroup F] [NormedSpace ℝ F] [IsManifold I ∞ M]
+
+/-- Pullback along the orientation-cover projection is injective on smooth forms. -/
+theorem smoothForm_mpullback_proj_injective :
+    Function.Injective (SmoothForm.mpullback (F := F) (k := k)
+      (VectorBundleOrientationCover.proj : OrientationCover I M → M) contMDiff_proj) :=
+  SmoothForm.mpullback_injective_of_surjective contMDiff_proj
+    (VectorBundleOrientationCover.surjective_proj (Fintype.card_fin _)) fun p ↦
+      ((isLocalDiffeomorph_proj (n := 1)).isInvertible_mfderiv one_ne_zero p).surjective
+
+/-- **Descent of primitives along the orientation cover.** If the pullback of a smooth
+`(k + 1)`-form `φ` on `M` to the orientation double cover is the exterior derivative of a smooth
+form `η`, then `φ` is the exterior derivative of a smooth form `ψ` on `M`, whose pullback to the
+cover is the deck-invariant part `(η + τ^*η) / 2` of `η`. -/
+theorem exists_mextDerivₗ_eq_of_mextDerivₗ_eq_mpullback_proj {φ : SmoothForm I M F (k + 1)}
+    {η : SmoothForm I (OrientationCover I M) F k}
+    (hη : mextDerivₗ I k η =
+      SmoothForm.mpullback VectorBundleOrientationCover.proj contMDiff_proj φ) :
+    ∃ ψ : SmoothForm I M F k, mextDerivₗ I k ψ = φ ∧
+      mpullback I I VectorBundleOrientationCover.proj ψ.1 =
+        invariantPart (F := F) (k := k) VectorBundleOrientationCover.deck η.1 := by
+  let τ : OrientationCover I M → OrientationCover I M := VectorBundleOrientationCover.deck
+  -- The deck-invariant part of `η`, as a smooth form.
+  let η' : SmoothForm I (OrientationCover I M) F k :=
+    (2 : ℝ)⁻¹ • (η + SmoothForm.mpullback τ contMDiff_deck η)
+  have hη' : η'.1 = invariantPart (I := I) (F := F) (k := k) τ η.1 := by
+    rw [invariantPart_def, ← SmoothForm.coe_mpullback τ contMDiff_deck, SetLike.val_smul,
+      Submodule.coe_add]
+  have hτη' : SmoothForm.mpullback τ contMDiff_deck η' = η' := Subtype.ext <| by
+    rw [SmoothForm.coe_mpullback, hη']
+    exact mpullback_invariantPart (I := I) (F := F) (k := k) VectorBundleOrientationCover.deck_deck
+      (contMDiff_deck.mdifferentiable one_ne_zero) η.1
+  obtain ⟨ψ, hψ⟩ := exists_smoothForm_mpullback_proj_eq_iff.mpr hτη'
+  refine ⟨ψ, smoothForm_mpullback_proj_injective ?_, by
+    rw [← SmoothForm.coe_mpullback _ contMDiff_proj, hψ, hη']⟩
+  -- Pullbacks along the projection are deck-invariant, so the averaged primitive still works.
+  have hτφ := exists_smoothForm_mpullback_proj_eq_iff.mp ⟨φ, rfl⟩
+  rw [← SmoothForm.mextDerivₗ_mpullback, hψ, map_smul, map_add, SmoothForm.mextDerivₗ_mpullback,
+    hη, hτφ]
+  module
+
+end Primitive
 
 end TauCeti.Manifold.OrientationCover

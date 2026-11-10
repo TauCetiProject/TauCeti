@@ -327,6 +327,11 @@ theorem derivationEquivSmoothVectorField_apply_apply
     derivationEquivSmoothVectorField δ x = δ.vectorField x :=
   (rfl)
 
+/-- The equivalence sends a derivation to its vector field, as functions. -/
+theorem coe_derivationEquivSmoothVectorField (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯) :
+    ⇑(derivationEquivSmoothVectorField δ) = δ.vectorField :=
+  (rfl)
+
 end Derivation
 
 namespace ContMDiffSection

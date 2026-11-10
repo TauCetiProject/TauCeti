@@ -9,6 +9,8 @@ public import Mathlib.Algebra.Lie.Ideal
 public import Mathlib.Algebra.Lie.SemiDirect
 public import Mathlib.RingTheory.Finiteness.Prod
 public import TauCeti.Algebra.Lie.Solvable.Basic
+public import TauCeti.Algebra.Lie.Subalgebra.Normalizer
+import TauCeti.LinearAlgebra.Submodule.Compl
 
 /-!
 # Recognising a semidirect sum from an ideal and a complementary subalgebra
@@ -54,6 +56,10 @@ product, and solvable when both factors are, because it is an extension of `L` b
 * `LieIdeal.nonempty_lieEquiv_semiDirectSum` and `LieIdeal.exists_lieEquiv_semiDirectSum`:
   **the recognition theorem**, in the `Nonempty (L ≃ₗ⁅R⁆ ↥S ⋊⁅ψ⁆ ↥H)` form that consumers of a
   splitting hypothesis take as input.
+* `LieSubalgebra.isCompl_idealOfLeNormalizer_comap_incl`: the ideal
+  `LieSubalgebra.idealOfLeNormalizer` of a subalgebra `T'` normalizing `T` is complemented by `H`
+  when `T'` is the sum of `T` and a subalgebra `H` disjoint from `T`, the input that the
+  recognition isomorphism consumes.
 * `LieIdeal.semiDirectSumEquiv_symm_apply_right_eq_zero_iff` and
   `LieIdeal.semiDirectSumEquiv_symm_apply_left_eq_zero_iff`: the recognition isomorphism carries
   `S` and `H` onto the two factors, which is what lets a statement about the left factor be read
@@ -247,6 +253,34 @@ theorem exists_lieEquiv_semiDirectSum (h : IsCompl S.toSubmodule H.toSubmodule) 
 end Internal
 
 end LieIdeal
+
+namespace LieSubalgebra
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+variable {T T' H : LieSubalgebra R L}
+
+/-- If `T'` is the sum of `T` and a Lie subalgebra `H` disjoint from `T`, then the ideal
+`T.idealOfLeNormalizer hT'` of `T'` is complemented by `H`, read inside `T'`. -/
+theorem isCompl_idealOfLeNormalizer_comap_incl (hT' : T' ≤ T.normalizer)
+    (hsup : T.toSubmodule ⊔ H.toSubmodule = T'.toSubmodule)
+    (hdisj : Disjoint T.toSubmodule H.toSubmodule) :
+    IsCompl (T.idealOfLeNormalizer hT').toSubmodule (H.comap T'.incl).toSubmodule := by
+  have hTT' : T.toSubmodule ≤ T'.toSubmodule := hsup ▸ le_sup_left
+  have hHT' : H.toSubmodule ≤ T'.toSubmodule := hsup ▸ le_sup_right
+  have hI : (T.idealOfLeNormalizer hT').toSubmodule =
+      T.toSubmodule.comap T'.toSubmodule.subtype := by
+    ext x
+    exact mem_idealOfLeNormalizer hT'
+  have hH : (H.comap T'.incl).toSubmodule = H.toSubmodule.comap T'.toSubmodule.subtype := by
+    ext x
+    exact Iff.rfl
+  rw [hI, hH]
+  refine TauCeti.Submodule.isCompl_comap_subtype (U := T'.toSubmodule) hdisj ?_
+  rw [inf_eq_right.mpr hTT', inf_eq_right.mpr hHT']
+  exact hsup.ge
+
+end LieSubalgebra
 
 namespace LieAlgebra.SemiDirectSum
 
