@@ -378,13 +378,11 @@ theorem contDiffOn_integral_smul_of_continuousOn_iteratedFDeriv {G : Type v}
     refine contDiffOn_integral_smul_nat_of_continuousOn (F := fun p ↦ isoG.symm (F p)) m hg hU
       (fun y ↦ isoG.symm.contDiff.comp_contDiffOn ((hF y).of_le (by exact_mod_cast hm)))
       fun k hk ↦ ?_
-    refine ((isoG.symm : G →L[ℝ] eG).compContinuousMultilinearMapL ℝ _ _ _ |>.continuous
-      |>.comp_continuousOn (hcont k ((Nat.cast_le.mpr hk).trans hm'))).congr
-      fun p hp ↦ ?_
-    have hFp : ContDiffAt ℝ n (fun x ↦ F (x, p.2)) p.1 :=
-      (hF p.2).contDiffAt (hU.mem_nhds hp.1)
-    exact (isoG.symm : G →L[ℝ] eG).iteratedFDeriv_comp_left hFp
-      (by exact_mod_cast (Nat.cast_le.mpr hk).trans hm')
+    have hkn : (k : ℕ∞) ≤ n := (Nat.cast_le.mpr hk).trans hm'
+    exact continuousOn_iteratedFDeriv_partial_clm_apply (L := fun _ ↦ (isoG.symm : G →L[ℝ] eG))
+      continuousOn_const
+      (fun p hp ↦ ((hF p.2).contDiffAt (hU.mem_nhds hp.1)).of_le (by exact_mod_cast hkn))
+      (hcont k hkn)
   refine (isoG.contDiff.comp_contDiffOn he).congr fun x _ ↦ ?_
   have hsmul : ∀ y, g y • isoG.symm (F (x, y)) = isoG.symm (g y • F (x, y)) :=
     fun y ↦ (map_smul _ _ _).symm

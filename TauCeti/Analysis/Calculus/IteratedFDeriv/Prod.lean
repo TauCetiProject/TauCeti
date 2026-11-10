@@ -208,6 +208,19 @@ theorem continuousOn_iteratedFDeriv_zero_partial_iff {P G : Type*} [TopologicalS
     simp
   rw [h, LinearIsometryEquiv.comp_continuousOn_iff]
 
+/-- The iterated partial derivatives of `F` in `x` stay continuous after composing with a
+continuous linear map `L p.2` that depends continuously on the parameter. -/
+theorem continuousOn_iteratedFDeriv_partial_clm_apply {P G G' : Type*} [TopologicalSpace P]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedAddCommGroup G'] [NormedSpace ℝ G']
+    {F : E × P → G} {L : P → G →L[ℝ] G'} {W : Set (E × P)} {k : ℕ}
+    (hL : ContinuousOn (fun p : E × P ↦ L p.2) W)
+    (hF : ∀ p ∈ W, ContDiffAt ℝ k (fun x ↦ F (x, p.2)) p.1)
+    (h : ContinuousOn (fun p : E × P ↦ iteratedFDeriv ℝ k (fun x ↦ F (x, p.2)) p.1) W) :
+    ContinuousOn (fun p : E × P ↦ iteratedFDeriv ℝ k (fun x ↦ L p.2 (F (x, p.2))) p.1) W := by
+  refine (((ContinuousLinearMap.compContinuousMultilinearMapL ℝ (fun _ : Fin k ↦ E) G
+    G').continuous.comp_continuousOn hL).clm_apply h).congr fun p hp ↦ ?_
+  exact (L p.2).iteratedFDeriv_comp_left (hF p hp) le_rfl
+
 /-- The iterated partial derivatives of the partial derivative of `F` in `x` are continuous
 wherever those of `F` of one order higher are. -/
 theorem continuousOn_iteratedFDeriv_fderiv_partial {P G : Type*} [TopologicalSpace P]
@@ -241,9 +254,7 @@ private theorem ContDiffOn.continuousOn_iteratedFDeriv_partial_aux {G : Type max
     (hF : ContDiffOn ℝ k F W) (hW : IsOpen W) :
     ContinuousOn (fun p : E × P ↦ iteratedFDeriv ℝ k (fun x ↦ F (x, p.2)) p.1) W := by
   induction k generalizing G with
-  | zero =>
-      exact ((continuousMultilinearCurryFin0 ℝ E G).symm.continuous.comp_continuousOn
-        hF.continuousOn).congr fun p _ ↦ by ext; simp
+  | zero => exact TauCeti.continuousOn_iteratedFDeriv_zero_partial_iff.2 hF.continuousOn
   | succ k ih =>
       have hD := ih (ContDiffOn.fderiv_partial_of_isOpen (m := k) (by exact_mod_cast hF) hW)
       refine ((continuousMultilinearCurryRightEquiv' ℝ k E G).symm.continuous.comp_continuousOn
@@ -259,18 +270,13 @@ theorem ContDiffOn.continuousOn_iteratedFDeriv_partial {G : Type v} [NormedAddCo
     ContinuousOn (fun p : E × P ↦ iteratedFDeriv ℝ k (fun x ↦ F (x, p.2)) p.1) W := by
   let eG : Type max u v := ULift.{u} G
   let isoG : eG ≃L[ℝ] G := ContinuousLinearEquiv.ulift
-  have he := ContDiffOn.continuousOn_iteratedFDeriv_partial_aux k
-    (isoG.symm.contDiff.comp_contDiffOn (hF.of_le hk)) hW
-  refine ((isoG : eG →L[ℝ] G).compContinuousMultilinearMapL ℝ _ _ _ |>.continuous
-    |>.comp_continuousOn he).congr fun p hp ↦ ?_
-  have hFp : ContDiffAt ℝ k (fun x ↦ isoG.symm (F (x, p.2))) p.1 := by
-    have h₁ : ContDiffAt ℝ k (fun q ↦ isoG.symm (F q)) p :=
-      (isoG.symm.contDiff.comp_contDiffOn (hF.of_le hk)).contDiffAt (hW.mem_nhds hp)
-    exact h₁.comp (g := fun q ↦ isoG.symm (F q)) (f := fun x : E ↦ (x, p.2)) p.1
-      (contDiffAt_id.prodMk contDiffAt_const)
-  have h := (isoG : eG →L[ℝ] G).iteratedFDeriv_comp_left hFp le_rfl
-  simp only [Function.comp_def, ContinuousLinearEquiv.coe_coe,
-    ContinuousLinearEquiv.apply_symm_apply] at h
-  simp [h]
+  have hF' : ContDiffOn ℝ k (fun q ↦ isoG.symm (F q)) W :=
+    isoG.symm.contDiff.comp_contDiffOn (hF.of_le hk)
+  have hFp (p : E × P) (hp : p ∈ W) : ContDiffAt ℝ k (fun x ↦ isoG.symm (F (x, p.2))) p.1 :=
+    (hF'.contDiffAt (hW.mem_nhds hp)).comp (g := fun q ↦ isoG.symm (F q))
+      (f := fun x : E ↦ (x, p.2)) p.1 (contDiffAt_id.prodMk contDiffAt_const)
+  simpa only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply] using
+    TauCeti.continuousOn_iteratedFDeriv_partial_clm_apply (L := fun _ ↦ (isoG : eG →L[ℝ] G))
+      continuousOn_const hFp (ContDiffOn.continuousOn_iteratedFDeriv_partial_aux k hF' hW)
 
 end PartialDerivatives

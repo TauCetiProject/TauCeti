@@ -10,10 +10,10 @@ public import TauCeti.Geometry.Manifold.GroupAction.TangentRepresentation
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
-import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricIntegral
 import TauCeti.Geometry.Manifold.ContMDiff.PartialDeriv
+import TauCeti.Geometry.Manifold.GroupAction.Linearization
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.RepresentationTheory.Compact.Averaging
 import TauCeti.Topology.Algebra.ConstMulAction
@@ -152,16 +152,12 @@ private theorem contDiffOn_and_hasFDerivAt_chart_average [MeasurableSpace G] [Bo
   have hΦU (g : G) : ContDiffOn ℝ n (fun w ↦ Φ (w, g)) U :=
     (σ g).contDiff.comp_contDiffOn (hΨU g⁻¹)
   have hΦcont (k : ℕ) (hk : (k : ℕ∞) ≤ n) : ContinuousOn
-      (fun p : E × G ↦ iteratedFDeriv ℝ k (fun w ↦ Φ (w, p.2)) p.1) (U ×ˢ univ) := by
-    have hD : ContinuousOn
-        (fun p : E × G ↦ iteratedFDeriv ℝ k (fun w ↦ Ψ (w, p.2⁻¹)) p.1) (U ×ˢ univ) :=
-      (hΨ.continuousOn_iteratedFDeriv_partial hW (by exact_mod_cast hk)).comp
-        (continuous_fst.prodMk continuous_snd.inv).continuousOn fun p hp ↦ hUW hp.1 p.2⁻¹
-    refine (((ContinuousLinearMap.compContinuousMultilinearMapL ℝ (fun _ : Fin k ↦ E) E
-      E).continuous.comp (hσcont.comp continuous_snd)).continuousOn.clm_apply hD).congr
-      fun p hp ↦ ?_
-    exact (σ p.2).iteratedFDeriv_comp_left
-      ((hΨU p.2⁻¹).contDiffAt (hU.mem_nhds hp.1)) (by exact_mod_cast hk)
+      (fun p : E × G ↦ iteratedFDeriv ℝ k (fun w ↦ Φ (w, p.2)) p.1) (U ×ˢ univ) :=
+    continuousOn_iteratedFDeriv_partial_clm_apply (F := fun p ↦ Ψ (p.1, p.2⁻¹))
+      (L := fun g ↦ σ g) (hσcont.comp continuous_snd).continuousOn
+      (fun p hp ↦ ((hΨU p.2⁻¹).contDiffAt (hU.mem_nhds hp.1)).of_le (by exact_mod_cast hk))
+      ((hΨ.continuousOn_iteratedFDeriv_partial hW (by exact_mod_cast hk)).comp
+        (continuous_fst.prodMk continuous_snd.inv).continuousOn fun p hp ↦ hUW hp.1 p.2⁻¹)
   refine ⟨hU, hxU, ?_, ?_⟩
   · simpa only [one_smul] using contDiffOn_integral_smul_of_continuousOn_iteratedFDeriv
       (g := fun _ ↦ (1 : ℝ)) (integrable_const (1 : ℝ)) hU hΦU hΦcont
@@ -238,18 +234,12 @@ theorem exists_equivariant_contMDiff_chart_of_compactSpace [ContMDiffSMul IG I n
   have hA'x : A' (χ x) = 0 := by
     simp [A', χ.left_inv hxχ, hx]
   -- The inverse function theorem turns the average into a chart.
-  obtain ⟨Θ, hΘ, hxΘ, hΘU, hΘsymm⟩ :=
-    TauCeti.ContDiffOn.exists_openPartialHomeomorph hA'smooth hU hxU hn'
-      (e := ContinuousLinearEquiv.refl ℝ E) hA'deriv.fderiv.symm
+  obtain ⟨Θ, hΘ, hxΘ, -, he₀smooth, he₀symm⟩ :=
+    exists_contMDiffOn_trans_of_hasFDerivAt hχsmooth hχsymm hA'smooth hU hxU hn' hA'deriv
   let e₀ := χ.trans Θ
   have he₀ {y : M} (hy : y ∈ e₀.source) : e₀ y = A y := by
     simp only [e₀, OpenPartialHomeomorph.coe_trans, comp_apply, hΘ]
     exact hA'A hy.1
-  have he₀smooth : ContMDiffOn I 𝓘(ℝ, E) n e₀ e₀.source :=
-    ((hΘ ▸ hA'smooth.mono hΘU).contMDiffOn).comp
-      (hχsmooth.mono inter_subset_left) inter_subset_right
-  have he₀symm : ContMDiffOn 𝓘(ℝ, E) I n e₀.symm e₀.target :=
-    hχsymm.comp (hΘsymm.contMDiffOn.mono inter_subset_left) inter_subset_right
   -- Restrict to the largest invariant open subset of the source.
   let S : Set M := {y | ∀ g : G, g • y ∈ e₀.source}
   have hS : IsOpen S := isOpen_setOf_forall_smul_mem (G := G) e₀.open_source

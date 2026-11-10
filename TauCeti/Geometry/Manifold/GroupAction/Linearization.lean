@@ -123,6 +123,25 @@ variable {𝕜 E H M G : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpac
   [TopologicalSpace M] [ChartedSpace H M] [Group G] [Finite G] [MulAction G M]
   {n : WithTop ℕ∞} [IsManifold I n M]
 
+omit [I.Boundaryless] [IsManifold I n M] in
+/-- **Charts from an averaged map.** Let `χ` be a `C^n` partial homeomorphism from `M` to `E`
+with `C^n` inverse, and let `A` be `C^n` on an open set `V` of coordinates, with derivative the
+identity at `χ x ∈ V`, `1 ≤ n`. Then `A` is a partial homeomorphism `Θ` near `χ x` with source in
+`V`, and `χ.trans Θ` is `C^n` with `C^n` inverse. This turns a Bochner average into a chart. -/
+theorem exists_contMDiffOn_trans_of_hasFDerivAt {χ : OpenPartialHomeomorph M E}
+    (hχ : ContMDiffOn I 𝓘(𝕜, E) n χ χ.source) (hχs : ContMDiffOn 𝓘(𝕜, E) I n χ.symm χ.target)
+    {A : E → E} {V : Set E} (hA : ContDiffOn 𝕜 n A V) (hV : IsOpen V) {x : M} (hxV : χ x ∈ V)
+    (hn : 1 ≤ n) (hAx : HasFDerivAt A (ContinuousLinearMap.id 𝕜 E) (χ x)) :
+    ∃ Θ : OpenPartialHomeomorph E E, (Θ : E → E) = A ∧ χ x ∈ Θ.source ∧ Θ.source ⊆ V ∧
+      ContMDiffOn I 𝓘(𝕜, E) n (χ.trans Θ) (χ.trans Θ).source ∧
+      ContMDiffOn 𝓘(𝕜, E) I n (χ.trans Θ).symm (χ.trans Θ).target := by
+  obtain ⟨Θ, hΘ, hxΘ, hΘV, hΘsymm⟩ :=
+    TauCeti.ContDiffOn.exists_openPartialHomeomorph hA hV hxV hn
+      (e := ContinuousLinearEquiv.refl 𝕜 E) hAx.fderiv.symm
+  exact ⟨Θ, hΘ, hxΘ, hΘV,
+    ((hΘ ▸ hA.mono hΘV).contMDiffOn).comp (hχ.mono inter_subset_left) inter_subset_right,
+    hχs.comp (hΘsymm.contMDiffOn.mono inter_subset_left) inter_subset_right⟩
+
 /-- **Smooth Bochner linearization.** A finite group acting by `C^n` maps, `1 ≤ n`, has an
 invariant chart at a common fixed point in which its action is linear. The chart and its
 inverse are `C^n` on their whole domains, and the representation detects the germ kernel. -/
@@ -168,15 +187,9 @@ theorem exists_equivariant_contMDiff_chart
         (fun z hz => χ.mem_restrInvariant_source_iff.mp hz.2 g)
     exact hg.contDiffOn.sub contDiffOn_const
   -- The smooth inverse function theorem supplies smoothness on the entire target.
-  obtain ⟨Θ, hΘ, hxΘ, hΘV, hΘsymm⟩ :=
-    TauCeti.ContDiffOn.exists_openPartialHomeomorph hAsmooth hV hxV hn
-      (e := ContinuousLinearEquiv.refl 𝕜 E) hA.hasFDerivAt.fderiv.symm
+  obtain ⟨Θ, hΘ, hxΘ, -, he₀smooth, he₀symm⟩ :=
+    exists_contMDiffOn_trans_of_hasFDerivAt hχsmooth hχsymm hAsmooth hV hxV hn hA.hasFDerivAt
   let e₀ := χ.trans Θ
-  have he₀smooth : ContMDiffOn I 𝓘(𝕜, E) n e₀ e₀.source :=
-    ((hΘ ▸ hAsmooth.mono hΘV).contMDiffOn).comp
-      (hχsmooth.mono inter_subset_left) inter_subset_right
-  have he₀symm : ContMDiffOn 𝓘(𝕜, E) I n e₀.symm e₀.target :=
-    hχsymm.comp (hΘsymm.contMDiffOn.mono inter_subset_left) inter_subset_right
   -- Use the common Bochner restriction to retain equivariance without losing smoothness.
   let e := e₀.restrInvariant G
   have hΘeq : EqOn Θ (A ∘ χ.symm) Θ.source := fun z _ => congrFun hΘ z
