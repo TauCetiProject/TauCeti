@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Measure.FiniteMeasureExt
 import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 public import Mathlib.MeasureTheory.Measure.Tight
+import TauCeti.Topology.ContinuousMap.Separation
 
 /-!
 # Finite measures are determined by separating test functions
@@ -102,16 +103,6 @@ theorem ext_of_forall_mem_submonoid_integral_eq_of_polish [PolishSpace E] [Borel
   | smul c a _ ha =>
     simp only [_root_.smul_apply, smul_eq_mul]
     rw [integral_const_mul, integral_const_mul, ha]
-
-/-- Continuous functions into a Hausdorff space that separate points make the source Hausdorff. -/
-private theorem t2Space_of_separatesPoints {X F : Type*} [TopologicalSpace X] [TopologicalSpace F]
-    [T2Space F] {B : Set C(X, F)}
-    (h : Set.SeparatesPoints ((fun b : C(X, F) => (b : X → F)) '' B)) : T2Space X := by
-  refine T2Space.of_injective_continuous (f := fun x (b : B) => b.1 x) (fun x y hxy => ?_)
-    (continuous_pi fun b => b.1.continuous)
-  by_contra hne
-  obtain ⟨_, ⟨b, hb, rfl⟩, hbxy⟩ := h hne
-  exact hbxy (congrFun hxy ⟨b, hb⟩)
 
 section Tight
 
