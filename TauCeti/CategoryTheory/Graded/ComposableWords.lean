@@ -331,12 +331,11 @@ theorem prepend_mem_nonComposableWords {u : TotalHom R C}
   induction hw using Submodule.span_induction with
   | mem w hw =>
     obtain ⟨n, hn, a, b, z, hz, hab, rfl⟩ := hw
-    induction u using DirectSum.induction_on with
+    induction u using totalHom_induction with
     | zero => simp
-    | of p f =>
-      obtain ⟨Y, Z⟩ := p
-      have hu : DirectSum.of _ (Y, Z) f ∈ LinearMap.range (homInclusion (R := R) Y Z) :=
-        ⟨f, by rw [homInclusion_eq_lof, DirectSum.lof_eq_of]⟩
+    | homInclusion Y Z f =>
+      have hu : homInclusion (R := R) Y Z f ∈ LinearMap.range (homInclusion (R := R) Y Z) :=
+        ⟨f, rfl⟩
       rw [prepend_of_tprod_cons]
       exact of_tprod_mem_nonComposableWords _ (cons_mem hz hu)
         (not_isComposableString_cons hab Y Z)
