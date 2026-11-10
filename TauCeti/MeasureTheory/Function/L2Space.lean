@@ -105,8 +105,9 @@ theorem L2.not_finiteDimensional_of_pairwise_disjoint {A : ℕ → Set α}
     (linearIndependent_of_ne_zero_of_inner_eq_zero (𝕜 := 𝕜) (fun k hk ↦ ?_) fun j k hjk ↦ ?_)
   · have h := L2.inner_indicatorConstLp_one_indicatorConstLp_one (𝕜 := 𝕜) (hA k) (hA k) (hfin k)
       (hfin k)
-    simp [hk] at h
-    exact hpos k ((measureReal_eq_zero_iff (hfin k)).1 (RCLike.ofReal_eq_zero.1 h.symm))
+    rw [hk, inner_zero_left, Set.inter_self, eq_comm, RCLike.ofReal_eq_zero,
+      measureReal_eq_zero_iff (hfin k)] at h
+    exact hpos k h
   · refine (L2.inner_indicatorConstLp_one_indicatorConstLp_one (hA j) (hA k) (hfin j)
       (hfin k)).trans ?_
     rw [(hdisj hjk).inter_eq, measureReal_empty, RCLike.ofReal_zero]
