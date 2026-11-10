@@ -407,14 +407,6 @@ private theorem exists_eq_of_mem_coordSimplex (σ : Face K) {w : ι → ℝ}
   rw [← range_standardSimplex_coe] at hw
   exact hw
 
-/-- Distances in the coordinate image of `|K|` are distances of barycentric coordinates. -/
-private theorem dist_eq_norm_realizationHomeomorphRange_symm
-    (p q : range fun x : Realization K => (x.1 : ι → ℝ)) :
-    dist p q = ‖(((K.realizationHomeomorphRange (Set.toFinite K.faces)).symm p).1 : ι → ℝ) -
-      ((K.realizationHomeomorphRange (Set.toFinite K.faces)).symm q).1‖ := by
-  rw [Subtype.dist_eq, dist_eq_norm, coe_realizationHomeomorphRange_symm_apply,
-    coe_realizationHomeomorphRange_symm_apply]
-
 /-- The hypotheses of `exists_pos_mul_norm_sub_le` for coordinate extensions of a star immersion
 on two closed simplices: the extensions agree on the common face, so do their derivatives along
 it, and their differentials at common points are jointly injective. -/

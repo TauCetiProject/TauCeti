@@ -155,6 +155,17 @@ theorem continuous_of_continuousOn_coordinates {X : Type*} [TopologicalSpace X]
 theorem standardSimplexHomeomorph_symm_val (σ : Finset α) (w : Convexity.StdSimplex ℝ σ) :
     ((standardSimplexHomeomorph σ).symm w : α →₀ ℝ) = w.weights.mapDomain Subtype.val := (rfl)
 
+/-- Extending the finite coordinate vector of a point of a closed coordinate simplex by zero
+recovers its barycentric coordinates. -/
+theorem extend_val_standardSimplex (x : StandardSimplex σ) :
+    Function.extend (Subtype.val : σ → α) (fun a => x.1 a) 0 = x.1 := by
+  ext a
+  by_cases ha : a ∈ σ
+  · exact Subtype.val_injective.extend_apply (fun b : σ => x.1 b) 0 ⟨a, ha⟩
+  · rw [Function.extend_apply' _ _ _ (by simpa using ha)]
+    exact (Finsupp.notMem_support_iff.mp
+      (fun h => ha (StandardSimplex.support_subset x h))).symm
+
 /-- The barycentric coordinates of a point of a closed coordinate simplex sum to one. -/
 theorem sum_standardSimplex_eq_one (y : StandardSimplex σ) : ∑ a : σ, y.1 a = 1 := by
   simpa using (standardSimplexHomeomorph σ y).total_of_fintype

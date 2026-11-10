@@ -49,6 +49,15 @@ namespace TauCeti
 variable {ι E : Type*} [LinearOrder ι] [Fintype ι] [NormedAddCommGroup E] [NormedSpace ℝ E]
   {K : AbstractSimplicialComplex ι} {f : Realization K → E}
 
+omit [LinearOrder ι] in
+/-- Distances in the coordinate image of `|K|` are distances of barycentric coordinates. -/
+theorem dist_eq_norm_realizationHomeomorphRange_symm
+    (p q : range fun x : Realization K => (x.1 : ι → ℝ)) :
+    dist p q = ‖(((K.realizationHomeomorphRange (Set.toFinite K.faces)).symm p).1 : ι → ℝ) -
+      ((K.realizationHomeomorphRange (Set.toFinite K.faces)).symm q).1‖ := by
+  rw [Subtype.dist_eq, dist_eq_norm, coe_realizationHomeomorphRange_symm_apply,
+    coe_realizationHomeomorphRange_symm_apply]
+
 /-- **Secant maps of anti-Lipschitz maps are uniformly anti-Lipschitz.** Let `f` be a map of the
 realization of a complex on a finite vertex type which is `C¹` on every closed simplex and
 anti-Lipschitz in barycentric coordinates. There is a constant `C'` such that for all
@@ -88,9 +97,7 @@ theorem exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub_of_antilipschit
   have hdist (x y : Realization (K.edgewiseSubdivision k)) : dist (Ψ x) (Ψ y) =
       ‖((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) -
         (edgewiseSubdivisionRealizationMap K k y).1‖ := by
-    rw [Subtype.dist_eq, dist_eq_norm,
-      ← K.coe_realizationHomeomorphRange_symm_apply (Set.toFinite K.faces) (Ψ x),
-      ← K.coe_realizationHomeomorphRange_symm_apply (Set.toFinite K.faces) (Ψ y), hΨ, hΨ]
+    rw [dist_eq_norm_realizationHomeomorphRange_symm, hΨ, hΨ]
   have hlip : LipschitzWith (2 * C₁)⁻¹ (s ∘ Ψ.symm - f ∘ e.symm) :=
     LipschitzWith.of_dist_le_mul fun p q => by
       obtain ⟨x, rfl⟩ := Ψ.surjective p
@@ -155,12 +162,8 @@ theorem eventually_isClosedEmbedding_secantMap_edgewiseSubdivision
     let L := (Function.ExtendByZero.linearMap ℝ ℝ (Subtype.val : σ.1 → ι)).toContinuousLinearMap
     have hL (x : StandardSimplex σ.1) : L (fun a => x.1 a) = (x.1 : ι → ℝ) := by
       ext i
-      rw [LinearMap.coe_toContinuousLinearMap', Function.ExtendByZero.linearMap_apply]
-      by_cases hi : i ∈ σ.1
-      · exact Subtype.val_injective.extend_apply (fun a : σ.1 => x.1 a) 0 ⟨i, hi⟩
-      · rw [Function.extend_apply' _ _ _ (by simpa using hi)]
-        exact (Finsupp.notMem_support_iff.mp
-          (fun h => hi (StandardSimplex.support_subset x h))).symm
+      rw [LinearMap.coe_toContinuousLinearMap', Function.ExtendByZero.linearMap_apply,
+        extend_val_standardSimplex]
     have hmap : MapsTo L (range fun t : Convexity.StdSimplex ℝ σ.1 => ⇑t.weights)
         (range fun t : Convexity.StdSimplex ℝ ι => ⇑t.weights) := by
       rw [← Finset.range_standardSimplex_coordinates]
