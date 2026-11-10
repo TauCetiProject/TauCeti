@@ -35,7 +35,7 @@ variable {G B B' F : Type*} [TopologicalSpace B] [TopologicalSpace B']
   [FiberBundle G P] [∀ b, Nonempty (P b)]
   [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]
   [TopologicalSpace F] [MulAction G F] [ContinuousSMul G F]
-  (f : C(B', B))
+  {K : Type*} [FunLike K B' B] [ContinuousMapClass K B' B] (f : K)
 
 /-- The fibrewise comparison between associating after pullback and pulling back after
 associating. On classes it sends `[p,v]` to `[p,v]`. -/
@@ -73,7 +73,7 @@ theorem pullbackEquiv_symm_mk (x : B') (p : P (f x)) (v : F) :
 
 /-- In associated charts the pullback comparison reads the original chart at the image
 base point. -/
-theorem trivializationAt_pullbackEquiv {x₀ x : B'}
+theorem trivializationAt_pullbackEquiv_snd {x₀ x : B'}
     (hx : f x ∈ (trivializationAt G P (f x₀)).baseSet)
     (v : AssociatedBundle G ((f : B' → B) *ᵖ P) F x) :
     (trivializationAt F (AssociatedBundle G ((f : B' → B) *ᵖ P) F) x₀ ⟨x, v⟩).2 =
@@ -84,8 +84,7 @@ theorem trivializationAt_pullbackEquiv {x₀ x : B'}
   rw [pullbackEquiv_mk,
     trivializationAt_mk_snd (G := G) (P := (f : B' → B) *ᵖ P) (b' := x₀) (b := x) hx p w,
     trivializationAt_mk_snd (G := G) (P := P) hx p w]
-  simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
-    Trivialization.pullback_apply, Pullback.lift]
+  rw [Pullback.trivializationAt_snd, Pullback.lift_mk]
 
 /-- Associating commutes with pullback, as a homeomorphism of the native total spaces. -/
 def pullbackHomeomorph :
@@ -116,11 +115,11 @@ def pullbackHomeomorph :
         using mem_baseSet_trivializationAt G P (f z.proj))).comp
         (Pullback.continuous_lift F (AssociatedBundle G P F) f).continuousAt
     refine hcoord.snd.congr_of_eventuallyEq ?_
-    filter_upwards [((f.continuous.comp
+    filter_upwards [(((map_continuous f).comp
       (Pullback.continuous_proj F (AssociatedBundle G P F) f)).continuousAt)
       ((trivializationAt G P (f z.proj)).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt G P (f z.proj)))] with y hy
-    exact (trivializationAt_pullbackEquiv f hy
+    exact (trivializationAt_pullbackEquiv_snd f hy
       ((pullbackEquiv f y.proj).symm y.2)).trans (by simp [Pullback.lift])
 
 /-- The total-space comparison acts by the fibre comparison. -/

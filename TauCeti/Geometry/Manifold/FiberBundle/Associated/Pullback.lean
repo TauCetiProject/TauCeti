@@ -17,8 +17,11 @@ through the fibre. The family criterion below also applies within arbitrary subs
 
 The comparison itself only needs a continuous base map: the two chart systems agree even
 before smoothness of their transitions is established. When the principal bundle, action and
-base map are smooth, the existing smooth associated-bundle and pullback instances make these
-charted spaces smooth manifolds. No linearity of the fibre action is needed.
+base map are smooth, install the theorem `TauCeti.AssociatedBundle.contMDiffFiberBundle`
+as a local instance (for example with `haveI`). Together with the instance
+`TauCeti.ContMDiffFiberBundle.pullback`, it supplies `C^n` bundle structures on both sides
+and hence `C^n` manifold structures on their total spaces. No linearity of the fibre action
+is needed.
 
 ## References
 
@@ -47,31 +50,29 @@ variable {n : ℕ∞ω} {𝕜 B B' G F M : Type*} [NontriviallyNormedField 𝕜]
   {P : B → Type*} [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
   [FiberBundle G P] [∀ b, Nonempty (P b)]
   [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]
-  [∀ b, Nonempty (AssociatedBundle G P F b)] (f : C(B', B))
+  [∀ b, Nonempty (AssociatedBundle G P F b)]
+  {K : Type*} [FunLike K B' B] [ContinuousMapClass K B' B] (f : K)
 
 /-- A family is `C^n` in the associated pullback bundle exactly when its image under the
 canonical comparison is `C^n` in the pullback associated bundle. -/
-theorem contMDiffWithinAt_pullbackEquiv_iff
+theorem contMDiffWithinAt_pullbackHomeomorph_iff
     {q : M → TotalSpace F (AssociatedBundle G ((f : B' → B) *ᵖ P) F)}
     {s : Set M} {x₀ : M} :
     ContMDiffWithinAt IM (IB'.prod IF) n
         (fun x ↦ ManifoldTotalSpace.homeomorph F _ (q x)) s x₀ ↔
       ContMDiffWithinAt IM (IB'.prod IF) n
         (fun x ↦ ManifoldTotalSpace.homeomorph F _ (pullbackHomeomorph f (q x))) s x₀ := by
-  simp only [pullbackHomeomorph_apply, ManifoldTotalSpace.contMDiffWithinAt_iff]
+  simp only [pullbackHomeomorph_apply, ManifoldTotalSpace.contMDiffWithinAt_iff,
+    Pullback.trivializationAt_snd]
   refine and_congr_right fun hbase ↦ ?_
   apply Filter.EventuallyEq.contMDiffWithinAt_iff
-  · filter_upwards [((f.continuous.continuousAt.comp_continuousWithinAt
+  · filter_upwards [(((map_continuous f).continuousAt.comp_continuousWithinAt
       hbase.continuousWithinAt))
       ((trivializationAt G P (f (q x₀).proj)).open_baseSet.mem_nhds
         (mem_baseSet_trivializationAt G P (f (q x₀).proj)))] with x hx
-    rw [trivializationAt_pullbackEquiv f hx]
-    simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
-      Trivialization.pullback_apply, Pullback.lift]
-  · rw [trivializationAt_pullbackEquiv f
-      (mem_baseSet_trivializationAt G P (f (q x₀).proj))]
-    simp only [trivializationAt, FiberBundle.pullback_trivializationAt',
-      Trivialization.pullback_apply, Pullback.lift]
+    exact trivializationAt_pullbackEquiv_snd f hx _
+  · exact trivializationAt_pullbackEquiv_snd f
+      (mem_baseSet_trivializationAt G P (f (q x₀).proj)) _
 
 /-- The canonical pullback homeomorphism is a diffeomorphism in the charts through the fibre. -/
 def pullbackDiffeomorph :
@@ -81,7 +82,7 @@ def pullbackDiffeomorph :
     ((pullbackHomeomorph f).trans (ManifoldTotalSpace.homeomorph F _))).toEquiv
   contMDiff_toFun := by
     intro x
-    apply (contMDiffWithinAt_univ.mp <| (contMDiffWithinAt_pullbackEquiv_iff
+    apply (contMDiffWithinAt_univ.mp <| (contMDiffWithinAt_pullbackHomeomorph_iff
       (IB' := IB') (IF := IF) f).mp ?_)
     convert (contMDiffWithinAt_id :
       ContMDiffWithinAt (IB'.prod IF) (IB'.prod IF) n id univ x) using 1
@@ -89,7 +90,7 @@ def pullbackDiffeomorph :
     exact (ManifoldTotalSpace.homeomorph F _).apply_symm_apply y
   contMDiff_invFun := by
     intro x
-    apply (contMDiffWithinAt_univ.mp <| (contMDiffWithinAt_pullbackEquiv_iff
+    apply (contMDiffWithinAt_univ.mp <| (contMDiffWithinAt_pullbackHomeomorph_iff
       (IB' := IB') (IF := IF) f).mpr ?_)
     convert (contMDiffWithinAt_id :
       ContMDiffWithinAt (IB'.prod IF) (IB'.prod IF) n id univ x) using 1
@@ -97,6 +98,7 @@ def pullbackDiffeomorph :
     exact ((pullbackHomeomorph f).trans (ManifoldTotalSpace.homeomorph F _)).apply_symm_apply y
 
 /-- The diffeomorphism is the canonical homeomorphism read through the total-space type copies. -/
+@[simp]
 theorem pullbackDiffeomorph_apply
     (z : TotalSpace F (AssociatedBundle G ((f : B' → B) *ᵖ P) F)) :
     pullbackDiffeomorph (n := n) (IB' := IB') (IF := IF) (G := G) (P := P) f
@@ -106,6 +108,7 @@ theorem pullbackDiffeomorph_apply
   simp [pullbackDiffeomorph, Homeomorph.trans_apply]
 
 /-- The inverse diffeomorphism is the inverse canonical homeomorphism in the same charts. -/
+@[simp]
 theorem pullbackDiffeomorph_symm_apply
     (z : TotalSpace F ((f : B' → B) *ᵖ (AssociatedBundle G P F))) :
     (pullbackDiffeomorph (n := n) (IB' := IB') (IF := IF) (G := G) (P := P) f).symm
