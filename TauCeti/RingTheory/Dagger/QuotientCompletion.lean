@@ -54,6 +54,12 @@ theorem denseRange_quotientMap_toTate (I : Ideal (washnitzerAlgebra σ K)) :
   rintro _ ⟨g, rfl⟩
   exact ⟨Quotient.mk I g, rfl⟩
 
+/-- The canonical map from a dagger presentation quotient to its affinoid quotient preserves
+residue Gauss distances. No reducedness hypothesis is needed. -/
+theorem isometry_quotientMap_toTate (I : Ideal (washnitzerAlgebra σ K)) :
+    Isometry (quotientMapₐ (I.map (toTate σ K)) (toTate σ K) le_comap_map) :=
+  RingHom.isometry_quotientMap (toTate σ K).toRingHom isometry_toTate denseRange_toTate I
+
 end Density
 
 variable {σ K : Type*} [Finite σ] [NontriviallyNormedField K] [IsUltrametricDist K]
@@ -61,12 +67,6 @@ variable {σ K : Type*} [Finite σ] [NontriviallyNormedField K] [IsUltrametricDi
 
 local notation "W" => washnitzerAlgebra σ K
 local notation "T" => IsRestricted.subring (R := K) (fun _ : σ ↦ (1 : ℝ))
-
-/-- The canonical map from a dagger presentation quotient to its affinoid quotient preserves
-residue Gauss distances. No reducedness hypothesis is needed. -/
-theorem isometry_quotientMap_toTate (I : Ideal W) :
-    Isometry (quotientMapₐ (I.map (toTate σ K)) (toTate σ K) le_comap_map) :=
-  RingHom.isometry_quotientMap (toTate σ K).toRingHom isometry_toTate denseRange_toTate I
 
 private def washnitzerCompletionHom (I : Ideal W) :
     Completion (W ⧸ I) →ₐ[K] T ⧸ I.map (toTate σ K) where
