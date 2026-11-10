@@ -37,6 +37,8 @@ compute the first-order dependence of the flow on parameters of the vector field
   `Flow.fderivUnit`, `Flow.ringInverse_fderiv`: for a flow whose time maps are
   differentiable at the relevant points, `Dϕ_{s+t}(x) = Dϕ_s(ϕ_t x) ∘ Dϕ_t(x)`, and `Dϕ_t(x)` is
   invertible with inverse `Dϕ_{-t}(ϕ_t x)`.
+* `Flow.map_neg_apply_map`, `Flow.map_apply_map_neg`: the time-`(-t)` map undoes the time-`t` map
+  and conversely.
 * `Flow.fderiv_apply_of_hasDerivAt`: the derivative of a flow carries its velocity field
   along.
 * `TauCeti.continuous_fderiv_flowOfLipschitz`, `TauCeti.continuous_fderiv_flowOfLipschitz_neg`:
@@ -153,6 +155,21 @@ end TauCeti
 
 namespace Flow
 
+section Cancel
+
+variable {τ α : Type*} [TopologicalSpace τ] [AddGroup τ] [TopologicalSpace α]
+  (ϕ : Flow τ α)
+
+/-- The time-`(-t)` map undoes the time-`t` map. -/
+theorem map_neg_apply_map (t : τ) (x : α) : ϕ (-t) (ϕ t x) = x := by
+  rw [← ϕ.map_add, neg_add_cancel, ϕ.map_zero_apply]
+
+/-- The time-`t` map undoes the time-`(-t)` map. -/
+theorem map_apply_map_neg (t : τ) (x : α) : ϕ t (ϕ (-t) x) = x := by
+  rw [← ϕ.map_add, add_neg_cancel, ϕ.map_zero_apply]
+
+end Cancel
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {ϕ : Flow ℝ E} {s t : ℝ} {x : E}
 
 /-- **The chain rule for the group law of a flow**: `Dϕ_{s+t}(x) = Dϕ_s(ϕ_t x) ∘ Dϕ_t(x)`. -/
@@ -175,7 +192,7 @@ theorem fderiv_neg_comp (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
 theorem fderiv_comp_neg (hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x))
     (ht : DifferentiableAt ℝ (ϕ t) x) :
     (fderiv ℝ (ϕ t) x).comp (fderiv ℝ (ϕ (-t)) (ϕ t x)) = ContinuousLinearMap.id ℝ E := by
-  have hx : ϕ (-t) (ϕ t x) = x := by rw [← ϕ.map_add, neg_add_cancel, Flow.map_zero_apply]
+  have hx : ϕ (-t) (ϕ t x) = x := ϕ.map_neg_apply_map t x
   have := Flow.fderiv_add (s := t) (t := -t) (x := ϕ t x) (by rw [hx]; exact ht) hs
   rw [add_neg_cancel, Flow.map_zero, fderiv_id, hx] at this
   exact this.symm
@@ -215,25 +232,22 @@ time map is not differentiable at `ϕ t x`, and both sides are `0`. -/
 @[simp]
 theorem ringInverse_fderiv (ht : DifferentiableAt ℝ (ϕ t) x) :
     Ring.inverse (fderiv ℝ (ϕ t) x) = fderiv ℝ (ϕ (-t)) (ϕ t x) := by
-  have hx : ϕ (-t) (ϕ t x) = x := by rw [← ϕ.map_add, neg_add_cancel, Flow.map_zero_apply]
-  by_cases hu : IsUnit (fderiv ℝ (ϕ t) x)
-  · obtain ⟨u, hu⟩ := hu
-    have hs : HasFDerivAt (ϕ (-t)) ((ContinuousLinearEquiv.unitsEquiv ℝ E u).symm : E →L[ℝ] E)
-        (ϕ t x) := by
-      refine HasFDerivAt.of_local_left_inverse (f := ϕ t)
-        (f' := ContinuousLinearEquiv.unitsEquiv ℝ E u) ?_ ?_ ?_
-      · exact (ϕ.continuous continuous_const continuous_id).continuousAt
-      · rw [hx, show ((ContinuousLinearEquiv.unitsEquiv ℝ E u : E ≃L[ℝ] E) : E →L[ℝ] E) =
-          fderiv ℝ (ϕ t) x from hu]
-        exact ht.hasFDerivAt
-      · exact Filter.Eventually.of_forall fun y ↦ by rw [← ϕ.map_add, add_neg_cancel,
-          Flow.map_zero_apply]
-    rw [hs.fderiv, ← hu]
-    exact Ring.inverse_unit u ▸ rfl
-  · rw [Ring.inverse_non_unit _ hu]
-    by_cases hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x)
-    · exact absurd ⟨Flow.fderivUnit hs ht, rfl⟩ hu
-    · exact (fderiv_zero_of_not_differentiableAt hs).symm
+  by_cases hs : DifferentiableAt ℝ (ϕ (-t)) (ϕ t x)
+  · exact Ring.inverse_unit (Flow.fderivUnit hs ht)
+  · -- If the reverse time map were not differentiable, `Dϕ_t(x)` cannot be a unit.
+    rw [fderiv_zero_of_not_differentiableAt hs, Ring.inverse_non_unit]
+    rintro ⟨u, hu⟩
+    have hcoe : ((ContinuousLinearEquiv.unitsEquiv ℝ E u : E ≃L[ℝ] E) : E →L[ℝ] E) =
+        fderiv ℝ (ϕ t) x := by
+      rw [← hu]
+      ext v
+      simp
+    refine hs (HasFDerivAt.of_local_left_inverse (f := ϕ t)
+      (f' := ContinuousLinearEquiv.unitsEquiv ℝ E u) ?_ ?_ ?_).differentiableAt
+    · exact (ϕ.continuous continuous_const continuous_id).continuousAt
+    · rw [ϕ.map_neg_apply_map, hcoe]
+      exact ht.hasFDerivAt
+    · exact Filter.Eventually.of_forall fun y ↦ ϕ.map_apply_map_neg t y
 
 /-- **The derivative of a flow carries its velocity field along**: if the orbits of `x` and of
 `ϕ t x` have velocities `a` and `b` at time `0`, then `Dϕ_t(x) a = b`. -/
