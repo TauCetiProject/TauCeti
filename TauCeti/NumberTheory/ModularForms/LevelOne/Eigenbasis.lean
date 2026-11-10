@@ -48,8 +48,9 @@ comparison we obtain:
 * the Hecke eigenform equation `Tₙ(E_k) = σ_{k-1}(n) E_k` for the normalized Eisenstein series
   `ModularForm.E hk` at weight `k ≥ 3` (`heckeTLevelOne_E`), deduced from the multiplicativity
   and prime-power recurrence of `σ_{k-1}` via `forall_heckeTCompositeGamma0_eq_coeff_smul_iff`,
-  together with the direct-sum decomposition `M_k(SL(2, ℤ)) = S_k(SL(2, ℤ)) ⊕ ℂ · E_k` and the
-  resulting trace identity `Tr(Tₙ | M_k) = Tr(Tₙ | S_k) + σ_{k-1}(n)`.
+  together with the direct-sum decomposition `M_k(SL(2, ℤ)) = S_k(SL(2, ℤ)) ⊕ ℂ · E_k` at weight
+  `k ≥ 3`, and, for even `k ≥ 4`, the resulting trace identity
+  `Tr(Tₙ | M_k) = Tr(Tₙ | S_k) + σ_{k-1}(n)`.
 
 ## Main definitions
 
@@ -73,8 +74,8 @@ comparison we obtain:
 * `TauCeti.heckeTCuspLevelOne_one`, `TauCeti.heckeTCuspLevelOne_prime_pow_add_two`: `T₁ = 1` and
   the recurrence `T_{p^{r+2}} = Tₚ T_{p^{r+1}} - p^{k-1} T_{p^r}` on `CuspForm 𝒮ℒ k`.
 * `TauCeti.heckeTLevelOne_E`, `TauCeti.isCompl_cuspFormSubmodule_span_E`,
-  `TauCeti.trace_heckeTLevelOne`: the Eisenstein Hecke eigenvalue, the cusp/Eisenstein complement,
-  and the trace of `Tₙ` on `ModularForm 𝒮ℒ k`.
+  `TauCeti.trace_heckeTLevelOne`: the Eisenstein Hecke eigenvalue and the cusp/Eisenstein
+  complement (weight `k ≥ 3`), and the trace of `Tₙ` on `ModularForm 𝒮ℒ k` (even weight `k ≥ 4`).
 
 ## References
 
