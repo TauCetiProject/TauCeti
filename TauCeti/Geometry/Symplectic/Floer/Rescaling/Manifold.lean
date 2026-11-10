@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import TauCeti.Geometry.Manifold.DifferentialForm.Continuity
 import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import TauCeti.MeasureTheory.Function.Jacobian.Plane
+import TauCeti.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Topology.VectorBundle.Trivialization
 
 /-!
@@ -408,11 +409,8 @@ theorem lintegral_eval₂_le_liminf_of_tendsto_rescale (ω : SmoothTwoForm I M) 
       exact aemeasurable_const
     have he : AEMeasurable (B.indicator (ω.floerEnergyDensity Ks Kt (u i))) :=
       (aemeasurable_indicator_iff Metric.isOpen_ball.measurableSet).2 (hmeas i)
-    have hφ : QuasiMeasurePreserving (fun w : ℝ × ℝ ↦ c i + ε i • w) :=
-      (measurePreserving_add_left volume (c i)).quasiMeasurePreserving.comp
-        (Measure.quasiMeasurePreserving_smul volume h0)
-    exact ENNReal.measurable_ofReal.comp_aemeasurable
-      (aemeasurable_const.mul (he.comp_quasiMeasurePreserving hφ))
+    exact ENNReal.measurable_ofReal.comp_aemeasurable (aemeasurable_const.mul
+      (he.comp_quasiMeasurePreserving (Measure.quasiMeasurePreserving_add_smul volume (c i) h0)))
   -- Pointwise, the cut-off densities converge to the area density of the limit `v`.
   have hlim (w : ℝ × ℝ) : Tendsto (fun i ↦ g i w) l (𝓝 (ENNReal.ofReal
       (SmoothBundleForm.eval₂ ω (v w) (mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineReal)
