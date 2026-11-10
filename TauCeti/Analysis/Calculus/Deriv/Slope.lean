@@ -1,12 +1,11 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Basic
-public import Mathlib.LinearAlgebra.AffineSpace.Slope
+public import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -23,10 +22,13 @@ zero and continuous nonnegative-rational scalar multiplication, so that `t / n` 
 both real and complex scalars qualify. This limit feeds the exponential power limit behind the
 Trotter product formula.
 
+A negative right derivative at `x` forces nearby values to the right to lie strictly below `f x`.
+
 ## Main results
 
 * `HasDerivAtFilter.tendsto_slope`: slopes converge to the derivative away from the base point.
 * `HasDerivAt.tendsto_nsmul_sub_add_div`: `n • (f (x + t / n) - f x)` tends to `t • f'`.
+* `HasDerivWithinAt.eventually_lt_of_neg`: `f t < f x` eventually for `t` to the right of `x`.
 -/
 
 public section
@@ -65,3 +67,13 @@ theorem HasDerivAt.tendsto_nsmul_sub_add_div {𝕜 E : Type*} [NontriviallyNorme
   refine (((HasDerivAtFilter.tendsto_slope hf).comp hlim).const_smul t).congr' ?_
   filter_upwards [eventually_ne_atTop 0] with n hn
   simp [slope_def_module, smul_smul, mul_div_cancel₀ _ ht, Nat.cast_smul_eq_nsmul]
+
+/-- A negative right derivative at `x` forces `f t < f x` for all `t > x` sufficiently close
+to `x`. -/
+theorem HasDerivWithinAt.eventually_lt_of_neg {f : ℝ → ℝ} {a x : ℝ}
+    (hf : HasDerivWithinAt f a (Ioi x) x) (ha : a < 0) :
+    ∀ᶠ t in 𝓝[>] x, f t < f x := by
+  filter_upwards [hf.limsup_slope_le' (lt_irrefl x) ha, self_mem_nhdsWithin]
+    with t ht hxt
+  rw [slope_def_field, div_lt_iff₀ (sub_pos.mpr hxt), zero_mul] at ht
+  exact sub_neg.mp ht
