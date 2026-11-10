@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.BoxIntegral.IntervalIntegral
 public import TauCeti.Analysis.BoxIntegral.HenstockPartition
 public import Mathlib.Algebra.BigOperators.Intervals
+import Mathlib.Analysis.Normed.Module.Completion
 
 /-!
 # Oriented Henstock integrals on real intervals
@@ -242,6 +243,25 @@ theorem hasHenstockIntervalIntegral_zero (a b : ℝ) :
     HasHenstockIntervalIntegral (0 : ℝ → E) a b 0 := by
   simpa only [Pi.zero_def, smul_zero] using hasHenstockIntervalIntegral_const (0 : E) a b
 
+/-- A linear isometry `e : E →ₗᵢ[ℝ] F` does not change the existence or the value of an oriented
+Henstock integral: the integral sums of `e ∘ f` are the images of those of `f`. -/
+theorem hasHenstockIntervalIntegral_map_iff {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (e : E →ₗᵢ[ℝ] F) :
+    HasHenstockIntervalIntegral (fun t ↦ e (f t)) a b (e y) ↔
+      HasHenstockIntervalIntegral f a b y := by
+  have hbox {I : Box (Fin 1)} {g : (Fin 1 → ℝ) → E} {z : E} :
+      HasIntegral I IntegrationParams.Henstock (fun x ↦ e (g x)) BoxAdditiveMap.volume (e z) ↔
+        HasIntegral I IntegrationParams.Henstock g BoxAdditiveMap.volume z := by
+    have hsum (π : TaggedPrepartition I) :
+        integralSum (fun x ↦ e (g x)) BoxAdditiveMap.volume π =
+          e (integralSum g BoxAdditiveMap.volume π) := by
+      simp [integralSum, BoxAdditiveMap.volume, map_sum]
+    simp only [hasIntegral_iff, hsum, LinearIsometry.dist_map]
+  rcases lt_trichotomy a b with hab | rfl | hba
+  · simp only [hasHenstockIntervalIntegral_iff_of_lt hab, hbox]
+  · simp only [hasHenstockIntervalIntegral_same, map_eq_zero_iff e e.injective]
+  · simp only [hasHenstockIntervalIntegral_iff_of_gt hba, ← map_neg, hbox]
+
 variable [CompleteSpace E]
 
 /-- Bochner integrability supplies the genuine oriented Henstock value, including zero and
@@ -397,14 +417,23 @@ private theorem trans_forward (h₁ : HasHenstockIntervalIntegral f a c y)
     have hv' : v = y + z := by rw [hu'] at huv; exact eq_add_of_neg_add_eq huv
     simpa only [hv'] using hv
 
-/-- Local conditional Henstock integrals glue across any intermediate parameter, including
-backtracking beyond either endpoint. No integrability on the whole interval is assumed. -/
-theorem HasHenstockIntervalIntegral.trans (h₁ : HasHenstockIntervalIntegral f a c y)
+private theorem trans_of_completeSpace (h₁ : HasHenstockIntervalIntegral f a c y)
     (h₂ : HasHenstockIntervalIntegral f c b z) : HasHenstockIntervalIntegral f a b (y + z) := by
   rcases le_total a b with hab | hba
   · exact trans_forward h₁ h₂ hab
   · simpa only [neg_add, neg_neg, add_comm] using
       (trans_forward h₂.symm h₁.symm hba).symm
+
+omit [CompleteSpace E] in
+/-- Local conditional Henstock integrals glue across any intermediate parameter, including
+backtracking beyond either endpoint. No integrability on the whole interval is assumed, and the
+space need not be complete: the statement is transferred to the completion. -/
+theorem HasHenstockIntervalIntegral.trans (h₁ : HasHenstockIntervalIntegral f a c y)
+    (h₂ : HasHenstockIntervalIntegral f c b z) : HasHenstockIntervalIntegral f a b (y + z) := by
+  let e := UniformSpace.Completion.toComplₗᵢ (𝕜 := ℝ) (E := E)
+  have h := trans_of_completeSpace ((hasHenstockIntervalIntegral_map_iff e).2 h₁)
+    ((hasHenstockIntervalIntegral_map_iff e).2 h₂)
+  rwa [← map_add, hasHenstockIntervalIntegral_map_iff] at h
 
 
 /-- Any finite subdivision whose nodes lie in the endpoint interval admits actual gauge values
@@ -428,6 +457,7 @@ theorem HasHenstockIntervalIntegral.split_fin {N : ℕ} {s : Fin (N + 1) → ℝ
         simpa only [hIic, Fin.succ_last] using Fin.sum_Iic_sub (Fin.last n) F
     rw [htel, (hF (Fin.last N)).unique h, hasHenstockIntervalIntegral_same.mp (hF 0), sub_zero]
 
+omit [CompleteSpace E] in
 /-- Gauge integrability on adjacent parameter intervals glues, including backtracking. -/
 theorem HenstockIntervalIntegrable.trans (h₁ : HenstockIntervalIntegrable f a c)
     (h₂ : HenstockIntervalIntegrable f c b) : HenstockIntervalIntegrable f a b := by
@@ -435,12 +465,14 @@ theorem HenstockIntervalIntegrable.trans (h₁ : HenstockIntervalIntegrable f a 
   obtain ⟨z, hz⟩ := henstockIntervalIntegrable_iff.mp h₂
   exact (hy.trans hz).henstockIntervalIntegrable
 
+omit [CompleteSpace E] in
 /-- The oriented additivity identity holds at any intermediate parameter, including backtracking. -/
 theorem HasHenstockIntervalIntegral.add_eq (h : HasHenstockIntervalIntegral f a b y)
     {y₁ y₂ : E} (h₁ : HasHenstockIntervalIntegral f a c y₁) (h₂ : HasHenstockIntervalIntegral f
       c b y₂) :
     y₁ + y₂ = y := (h₁.trans h₂).unique h
 
+omit [CompleteSpace E] in
 /-- Conditional Henstock integrals on a finite sequence of parameter intervals glue to the
 sum of their values. The nodes may repeat, reverse direction, and leave the endpoint interval. -/
 theorem hasHenstockIntervalIntegral_of_subdivision {N : ℕ} {s : Fin (N + 1) → ℝ} {v : Fin N → E}

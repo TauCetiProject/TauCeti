@@ -27,9 +27,8 @@ namespace TauCeti.BoxIntegral
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
 
-/-- The oriented Henstock fundamental theorem for a continuous primitive differentiable
-outside a countable exceptional set in the interval interior. -/
-theorem hasHenstockIntervalIntegral_of_hasDerivAt_off_countable {a b : ℝ} {f f' : ℝ → E} {s : Set ℝ}
+private theorem hasHenstockIntervalIntegral_of_hasDerivAt_off_countable_of_completeSpace
+    {a b : ℝ} {f f' : ℝ → E} {s : Set ℝ}
     (hs : s.Countable) (hc : ContinuousOn f (uIcc a b))
     (hd : ∀ x ∈ uIoo a b \ s, HasDerivAt f (f' x) x) :
     HasHenstockIntervalIntegral f' a b (f b - f a) := by
@@ -43,6 +42,21 @@ theorem hasHenstockIntervalIntegral_of_hasDerivAt_off_countable {a b : ℝ} {f f
     exact hasIntegral_Henstock_of_hasDerivAt_off_countable hba hs
       (by simpa only [uIcc_of_ge hba.le] using hc)
       (by simpa only [uIoo_of_ge hba.le] using hd)
+
+omit [CompleteSpace E] in
+/-- The oriented Henstock fundamental theorem for a continuous primitive differentiable
+outside a countable exceptional set in the interval interior. The space need not be complete: the
+statement is transferred to the completion. -/
+theorem hasHenstockIntervalIntegral_of_hasDerivAt_off_countable {a b : ℝ} {f f' : ℝ → E} {s : Set ℝ}
+    (hs : s.Countable) (hc : ContinuousOn f (uIcc a b))
+    (hd : ∀ x ∈ uIoo a b \ s, HasDerivAt f (f' x) x) :
+    HasHenstockIntervalIntegral f' a b (f b - f a) := by
+  let e := UniformSpace.Completion.toComplₗᵢ (𝕜 := ℝ) (E := E)
+  have h := hasHenstockIntervalIntegral_of_hasDerivAt_off_countable_of_completeSpace
+    (f := fun t ↦ e (f t)) (f' := fun t ↦ e (f' t)) hs (e.continuous.comp_continuousOn hc)
+    fun x hx ↦ e.toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt x (hd x hx)
+  rw [← map_sub] at h
+  exact (hasHenstockIntervalIntegral_map_iff e).1 h
 
 /-- Oriented substitution for continuous integrands and continuous scalar parametrizations
 with countably many derivative exceptions. The parameter may reverse direction or backtrack. -/
