@@ -112,7 +112,7 @@ theorem infDist_positiveCone_cutoffCurrent_le (hJ : ∀ v w, ⟪J v, J w⟫ = �
           (‖covariantDBar J b α x‖ * ‖covariantDeriv b α x‖) := by
   have h := AlmostComplexStructure.infDist_positiveCone_le_of_inner_ιMulti_eq hJ
     (sub_nonneg.2 hχ₁) (mul_nonneg zero_le_two hχ')
-    (covariantDeriv_sub_covariantDBar_apply_apply J b α x)
+    (covariantDeriv_sub_covariantDBar_isComplexLinear J b α x)
     (Θ := (alternatingFormEquiv V 2).symm (cutoffCurrent χ b α x))
     (F := (alternatingFormEquiv V 2).symm (-extDeriv b x)) fun u w ↦ by
       rw [inner_alternatingFormEquiv_symm_ιMulti, inner_alternatingFormEquiv_symm_ιMulti,
@@ -268,7 +268,8 @@ private theorem infDist_positiveCone_le_add_add {Θ F η : ⋀[ℝ]^2 V}
     (hΘ : ∀ u w, ⟪Θ, ιMulti ℝ 2 ![u, w]⟫ =
       (1 - χ (‖φ‖ ^ 2)) * ⟪F, ιMulti ℝ 2 ![u, w]⟫ +
         2 * deriv χ (‖φ‖ ^ 2) * (conj (Dα u) * Dα w).im)
-    (hJlin : ∀ v, (Dα - Dbar) (J v) = Complex.I * (Dα - Dbar) v)
+    (hJlin : IsComplexLinear J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ Complex.I)
+      ((Dα - Dbar : V →L[ℝ] ℂ) : V →ₗ[ℝ] ℂ))
     (hDα' : ‖Dα - Dbar‖ ≤ ‖Dα‖)
     (hφβ : ‖φ‖ ^ 2 + ‖β‖ ^ 2 ≤ 1 + C / r)
     (hβK : ‖β‖ ^ 2 ≤ C / r * max (1 - ‖φ‖ ^ 2) 0 + C / r ^ 2) :
@@ -345,7 +346,8 @@ theorem integral_infDist_positiveCone_le [IsFiniteMeasure μ] {F η Θ : X → �
     (hΘ : ∀ᵐ x ∂μ, ∀ u w, ⟪Θ x, ιMulti ℝ 2 ![u, w]⟫ =
       (1 - χ (‖φ x‖ ^ 2)) * ⟪F x, ιMulti ℝ 2 ![u, w]⟫ +
         2 * deriv χ (‖φ x‖ ^ 2) * (conj (Dα x u) * Dα x w).im)
-    (hJlin : ∀ᵐ x ∂μ, ∀ v, (Dα x - Dbar x) (J v) = Complex.I * (Dα x - Dbar x) v)
+    (hJlin : ∀ᵐ x ∂μ, IsComplexLinear J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ Complex.I)
+      ((Dα x - Dbar x : V →L[ℝ] ℂ) : V →ₗ[ℝ] ℂ))
     (hDα' : ∀ᵐ x ∂μ, ‖Dα x - Dbar x‖ ≤ ‖Dα x‖)
     (hδ : Integrable (fun x ↦ 1 - ‖φ x‖ ^ 2 - ‖β x‖ ^ 2) μ)
     (hβ2 : Integrable (fun x ↦ ‖β x‖ ^ 2) μ) (hDα2 : Integrable (fun x ↦ ‖Dα x‖ ^ 2) μ)

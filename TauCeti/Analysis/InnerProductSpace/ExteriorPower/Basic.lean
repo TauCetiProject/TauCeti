@@ -238,6 +238,7 @@ noncomputable def gradientWedge (P : E →L[ℝ] ℂ) : ⋀[ℝ]^2 E :=
 
 /-- **The two-form `Im (conj (P u) P w)` is represented by the two-vector `p₁ ∧ p₂`** of the
 gradients of the real and imaginary parts of `P`. -/
+@[simp]
 theorem inner_gradientWedge_ιMulti (P : E →L[ℝ] ℂ) (u w : E) :
     ⟪P.gradientWedge, ιMulti ℝ 2 ![u, w]⟫ = (conj (P u) * P w).im := by
   rw [gradientWedge, inner_ιMulti_two, inner_reGradient, inner_reGradient, inner_imGradient,

@@ -326,22 +326,27 @@ theorem mul_norm_le_inner_add_mul_infDist_positiveCone {Ω : ⋀[ℝ]^2 V} {c₀
 /-! ### The two-form of a complex-valued covector -/
 
 /-- **The two-form `Im (conj (P u) P w)` is nearly a positive `(1,1)`-form.** Let `P` be a
-real-linear map `V → ℂ` and `Q` its `J`-antilinear part, in the sense that `P - Q` is `J`-linear,
-`(P - Q)(J v) = i (P - Q)(v)`. The two-form `Y(u, w) = Im (conj (P u) P w)` is then at distance
-at most `‖Q‖ (‖P‖ + ‖P - Q‖)` from the positive cone. For `Q = 0`, `Y` is the positive form
+real-linear map `V → ℂ` and `Q` its `J`-antilinear part, in the sense that `P - Q` is `J`-linear
+(`TauCeti.IsComplexLinear`), `(P - Q)(J v) = i (P - Q)(v)`. The two-form
+`Y(u, w) = Im (conj (P u) P w)` is then at distance at most `‖Q‖ (‖P‖ + ‖P - Q‖)` from the
+positive cone. For `Q = 0`, `Y` is the positive form
 `p ∧ J p` with `p` the gradient of `Re P`. For a section `α` of a Hermitian line, with `P = ∇_a α`
 and `Q = ∂bar_a α`, this is the term `Im (conj ∇_a α ∧ ∇_a α)` of the curvature of the cutoff
 current. -/
 theorem infDist_positiveCone_le_of_inner_ιMulti_eq_im {P Q : V →L[ℝ] ℂ}
-    (hPQ : ∀ v, (P - Q) (J v) = Complex.I * (P - Q) v) {Y : ⋀[ℝ]^2 V}
+    (hPQ : IsComplexLinear J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ Complex.I)
+      ((P - Q : V →L[ℝ] ℂ) : V →ₗ[ℝ] ℂ)) {Y : ⋀[ℝ]^2 V}
     (hY : ∀ u w, ⟪Y, ιMulti ℝ 2 ![u, w]⟫ = (starRingEnd ℂ (P u) * P w).im) :
     infDist Y (J.positiveCone : Set (⋀[ℝ]^2 V)) ≤ ‖Q‖ * (‖P‖ + ‖P - Q‖) := by
   set R := P - Q
   -- The two-vector of the `J`-linear part `R` is `a ∧ J a` with `a` the gradient of `Re R`.
   have hJR : R.imGradient = J R.reGradient := by
     refine ext_inner_right ℝ fun v ↦ ?_
+    have hRv : R (J v) = Complex.I * R v := by
+      simpa only [ContinuousLinearMap.coe_coe, DistribSMul.toLinearMap_apply, smul_eq_mul]
+        using hPQ.apply v
     rw [ContinuousLinearMap.inner_imGradient, inner_apply_left hJ,
-      ContinuousLinearMap.inner_reGradient, hPQ, Complex.mul_re,
+      ContinuousLinearMap.inner_reGradient, hRv, Complex.mul_re,
       Complex.I_re, Complex.I_im]
     ring
   have hmem : ιMulti ℝ 2 ![R.reGradient, R.imGradient] ∈ J.positiveCone := by
@@ -381,7 +386,9 @@ two-form `Θ` is `a F + c Im (conj (P u) P w)` with `a, c ≥ 0`, then
 For the cutoff current of Taubes's analysis, `a = 1 - χ(|α|²)`, `F = i F_a`, `c = 2 χ'(|α|²)`,
 `P = ∇_a α` and `Q = ∂bar_a α`. -/
 theorem infDist_positiveCone_le_of_inner_ιMulti_eq {Θ F : ⋀[ℝ]^2 V} {P Q : V →L[ℝ] ℂ} {a c : ℝ}
-    (ha : 0 ≤ a) (hc : 0 ≤ c) (hPQ : ∀ v, (P - Q) (J v) = Complex.I * (P - Q) v)
+    (ha : 0 ≤ a) (hc : 0 ≤ c)
+    (hPQ : IsComplexLinear J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ Complex.I)
+      ((P - Q : V →L[ℝ] ℂ) : V →ₗ[ℝ] ℂ))
     (hΘ : ∀ u w, ⟪Θ, ιMulti ℝ 2 ![u, w]⟫ =
       a * ⟪F, ιMulti ℝ 2 ![u, w]⟫ + c * (starRingEnd ℂ (P u) * P w).im) :
     infDist Θ (J.positiveCone : Set (⋀[ℝ]^2 V)) ≤

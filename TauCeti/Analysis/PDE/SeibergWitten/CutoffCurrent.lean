@@ -19,6 +19,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
+import TauCeti.LinearAlgebra.Complex.Module
 import TauCeti.Topology.Algebra.GroupWithZero.DivId
 
 /-!
@@ -583,14 +584,27 @@ theorem covariantDBar_apply_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E
   rw [← coe_covariantDBar_eq_complexAntilinearPart, DistribSMul.toLinearMap_apply] at h
   rw [h, smul_eq_mul, neg_mul]
 
+/-- `∂_a α = ∇_a α - ∂bar_a α` is the complex-linear part `TauCeti.complexLinearPart` of
+`∇_a α`, for the structure `J` on `E` and multiplication by `I` on `ℂ`. -/
+theorem coe_covariantDeriv_sub_covariantDBar_eq_complexLinearPart (b : E → E [⋀^Fin 1]→L[ℝ] ℝ)
+    (α : E → ℂ) (x : E) :
+    ((covariantDeriv b α x - covariantDBar J b α x : E →L[ℝ] ℂ) : E →ₗ[ℝ] ℂ) =
+      complexLinearPart J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ I)
+        (covariantDeriv b α x : E →ₗ[ℝ] ℂ) := by
+  ext v
+  simp only [ContinuousLinearMap.coe_coe, _root_.sub_apply, covariantDBar_apply,
+    complexLinearPart_apply, DistribSMul.toLinearMap_apply, smul_eq_mul, real_smul, ofReal_inv,
+    ofReal_ofNat]
+  ring
+
 /-- The `J`-linear part `∂_a α = ∇_a α - ∂bar_a α` of the covariant derivative is `J`-linear:
 `∂_a α (J v) = i ∂_a α v`. -/
-theorem covariantDeriv_sub_covariantDBar_apply_apply (b : E → E [⋀^Fin 1]→L[ℝ] ℝ) (α : E → ℂ)
-    (x v : E) :
-    (covariantDeriv b α x - covariantDBar J b α x) (J v) =
-      I * (covariantDeriv b α x - covariantDBar J b α x) v := by
-  simp only [_root_.sub_apply, covariantDBar_apply, J.apply_apply, map_neg]
-  linear_combination covariantDeriv b α x (J v) / 2 * I_sq
+theorem covariantDeriv_sub_covariantDBar_isComplexLinear (b : E → E [⋀^Fin 1]→L[ℝ] ℝ)
+    (α : E → ℂ) (x : E) :
+    IsComplexLinear J.toLinearMap (DistribSMul.toLinearMap ℝ ℂ I)
+      ((covariantDeriv b α x - covariantDBar J b α x : E →L[ℝ] ℂ) : E →ₗ[ℝ] ℂ) := by
+  rw [coe_covariantDeriv_sub_covariantDBar_eq_complexLinearPart]
+  exact complexLinearPart_isComplexLinear J.square_neg Complex.toLinearMap_I_comp_toLinearMap_I _
 
 /-- If `J` preserves the norm, then `‖∂_a α‖ ≤ ‖∇_a α‖`, since
 `∂_v α = (∇_v α - i ∇_{J v} α) / 2`. -/
