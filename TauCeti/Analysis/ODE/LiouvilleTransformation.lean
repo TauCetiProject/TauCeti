@@ -132,7 +132,6 @@ noncomputable def liouvillePotential (z q : ℝ → ℝ) (ξ : ℝ) : ℝ :=
   (deriv z ξ) ^ 2 * q (z ξ) + Real.sqrt (deriv z ξ) *
     deriv (deriv (fun t => (Real.sqrt (deriv z t))⁻¹)) ξ
 
-@[simp]
 theorem liouvillePotential_apply (z q : ℝ → ℝ) (ξ : ℝ) :
     liouvillePotential z q ξ = (deriv z ξ) ^ 2 * q (z ξ) + Real.sqrt (deriv z ξ) *
       deriv (deriv (fun t => (Real.sqrt (deriv z t))⁻¹)) ξ := (rfl)
@@ -140,7 +139,7 @@ theorem liouvillePotential_apply (z q : ℝ → ℝ) (ξ : ℝ) :
 @[simp]
 theorem liouvillePotential_id (q : ℝ → ℝ) : liouvillePotential id q = q := by
   ext ξ
-  simp
+  simp [liouvillePotential_apply]
 
 /-- The transformed potential in terms of the first three derivatives of the coordinate
 change. In particular it does not involve derivatives of the original potential. -/
