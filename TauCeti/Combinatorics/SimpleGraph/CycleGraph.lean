@@ -52,7 +52,7 @@ two. -/
 theorem eq_or_eq_or_eq_of_cycleGraph_adj {i j j' j'' : Fin m} (h : (cycleGraph m).Adj i j)
     (h' : (cycleGraph m).Adj i j') (h'' : (cycleGraph m).Adj i j'') :
     j = j' ∨ j' = j'' ∨ j'' = j := by
-  have : NeZero m := ⟨fun hm ↦ by subst hm; exact i.elim0⟩
+  have : NeZero m := i.neZero
   rcases eq_add_one_or_eq_add_one_of_cycleGraph_adj h with hj | hj <;>
     rcases eq_add_one_or_eq_add_one_of_cycleGraph_adj h' with hj' | hj' <;>
       rcases eq_add_one_or_eq_add_one_of_cycleGraph_adj h'' with hj'' | hj''
