@@ -80,6 +80,21 @@ noncomputable def powPullbackPeriod : rootsOfUnityBall m r → Λ →ₗ[ℤ] E 
 @[simp] theorem powPullbackPeriod_apply (z : rootsOfUnityBall m r) :
     powPullbackPeriod m r P z = P (rootsOfUnityBall.powMap m r z) := (rfl)
 
+/-- Pulling back periods preserves discreteness of their ranges. -/
+instance [TopologicalSpace E] [∀ t, DiscreteTopology (LinearMap.range (P t))] (z) :
+    DiscreteTopology (LinearMap.range (powPullbackPeriod m r P z)) := by
+  rw [powPullbackPeriod_apply]
+  infer_instance
+
+/-- Pulling back periods preserves the full-lattice property of their ranges. -/
+instance {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (P : Metric.ball (0 : ℂ) (r ^ m) → Λ →ₗ[ℤ] F)
+    [∀ t, DiscreteTopology (LinearMap.range (P t))]
+    [∀ t, IsZLattice ℝ (LinearMap.range (P t))] (z) :
+    IsZLattice ℝ (LinearMap.range (powPullbackPeriod m r P z)) := by
+  simpa only [powPullbackPeriod_apply] using
+    (inferInstance : IsZLattice ℝ (LinearMap.range (P (rootsOfUnityBall.powMap m r z))))
+
 /-- The pulled-back periods are invariant under the rotations. This is the period-equivariance
 law of `TauCeti.torusFamilyAffineMulAction` for the trivial linear part and the trivial
 representation on `Λ`. -/
