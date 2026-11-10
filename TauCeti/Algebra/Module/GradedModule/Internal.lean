@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Binomial
 public import Mathlib.RingTheory.Finiteness.Basic
 public import TauCeti.LinearAlgebra.Graded.LinearMap
 import TauCeti.Algebra.DirectSum.Internal
+import TauCeti.Algebra.Module.NatInt
 import TauCeti.Algebra.Module.Submodule.Finite
 
 /-!
@@ -724,7 +725,7 @@ variable {R : Type u} {A : Type v} [Ring R]
 /-- **The Koszul twist of a graded algebra is multiplicative**: degrees add under multiplication,
 so the signs `(-1) ^ (q |a|)` multiply. -/
 theorem koszulTwist_ofDecomposition_mul [NonUnitalNonAssocSemiring A] [Module R A]
-    [IsScalarTower R A A] [SMulCommClass R A A] {𝒜 : ℤ → Submodule R A} [SetLike.GradedMul 𝒜]
+    {𝒜 : ℤ → Submodule R A} [SetLike.GradedMul 𝒜]
     [DirectSum.Decomposition 𝒜] (q : ℤ) (a b : A) :
     (ofDecomposition 𝒜).koszulTwist q (a * b) =
       (ofDecomposition 𝒜).koszulTwist q a * (ofDecomposition 𝒜).koszulTwist q b := by
@@ -740,8 +741,8 @@ theorem koszulTwist_ofDecomposition_mul [NonUnitalNonAssocSemiring A] [Module R 
       obtain ⟨b, hbq⟩ := b
       rw [koszulTwist_ofDecomposition_apply_of_mem _ (SetLike.GradedMul.mul_mem hap hbq),
         koszulTwist_ofDecomposition_apply_of_mem _ hap,
-        koszulTwist_ofDecomposition_apply_of_mem _ hbq, smul_mul_smul_comm, mul_add,
-        Int.negOnePow_add, Units.val_mul, Int.cast_mul]
+        koszulTwist_ofDecomposition_apply_of_mem _ hbq, intUnits_smul_mul_smul, mul_add,
+        Int.negOnePow_add]
 
 /-- The Koszul twist of a graded algebra fixes the unit, which has degree zero. -/
 @[simp]

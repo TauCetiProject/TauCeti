@@ -62,8 +62,9 @@ criterion for a one-periodic orbit of any jointly `C¹` one-periodic vector fiel
 space, with `S_t = D(v_t)(x(t))` (`Floer.isNondegenerateFixedPt_timeDependentFlow_iff`).
 
 Operators on cylindrical ends act on maps decaying like `e^{-δ s}`. Conjugation by the weight
-turns `D` into the operator `∂s + A - δ` (`Floer.stationaryCylinderOperator_exp_smul`), and
-`A - δ` is the asymptotic operator of `S_t - δ J_t` (`Floer.asymptoticOperator_sub_smul`). For
+turns `D` into the operator `∂s + A - δ` (`Floer.stationaryCylinderOperator_exp_smul`). This is
+the stationary cylinder operator of `S_t - δ J_t` (`Floer.stationaryCylinderOperator_sub_smul`),
+and `A - δ` is the asymptotic operator of `S_t - δ J_t` (`Floer.asymptoticOperator_sub_smul`). For
 continuous one-periodic `S` and `J` the weights `δ` at which `A - δ` has a nonzero one-periodic
 kernel element form a closed set (`Floer.isClosed_setOf_exists_asymptoticOperator_eq_smul`),
 because the return map of `S_t - δ J_t` depends continuously on `δ`. In particular, if `A` is
@@ -414,6 +415,18 @@ private theorem fderiv_add_one_snd (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (
 
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V}
 
+/-- **Shifting the stationary cylinder operator by a weight.** Replacing `S_t` by `S_t - δ J_t`
+shifts the stationary cylinder operator by `-δ`. -/
+theorem stationaryCylinderOperator_sub_smul (δ : ℝ) (ξ : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    stationaryCylinderOperator J
+        (fun t ↦ S t - δ • LinearMap.toContinuousLinearMap (J t).toLinearMap) ξ z =
+      stationaryCylinderOperator J S ξ z - δ • ξ z := by
+  have h : J z.2 (J z.2 (ξ z)) = -ξ z := AlmostComplexStructure.apply_apply _ _
+  simp only [stationaryCylinderOperator_def, sub_apply, smul_apply,
+    LinearMap.coe_toContinuousLinearMap', sub_sub_eq_add_sub, map_add, map_sub, map_smul] at h ⊢
+  rw [h]
+  module
+
 /-- **The weighted end operator.** Conjugating the stationary cylinder operator by the weight
 `e^{δ s}` shifts it by `-δ`: `D(e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`, where `D - δ` is the stationary
 cylinder operator of `S_t - δ J_t`. Hence `D` on maps of the form `e^{-δ s} ξ` is the operator
@@ -438,7 +451,7 @@ theorem stationaryCylinderOperator_exp_smul (δ : ℝ) (hξ : DifferentiableAt �
 
 /-- For continuously varying `J_t`, the norm `g_t(f, f)` of a continuous map `f` of the cylinder
 for `g_t = ω(·, J_t ·)` is continuous. -/
-private theorem continuous_associatedBilinForm_apply_self
+theorem continuous_associatedBilinForm_apply_self
     (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) {f : ℝ × ℝ → V} (hf : Continuous f) :
     Continuous fun z ↦ ω.associatedBilinForm (J z.2) (f z) (f z) :=
   ω.continuous_apply_comp hf (hJc.comp (continuous_snd.prodMk hf))
@@ -446,7 +459,7 @@ private theorem continuous_associatedBilinForm_apply_self
 /-- For continuously varying `J_t` and `S_t` and a `C¹` map `ξ`, the energy density
 `g(∂s ξ, ∂s ξ) + g(∂t ξ - S ξ, ∂t ξ - S ξ)` of the cylinder is continuous, where
 `g_t = ω(·, J_t ·)`. -/
-private theorem continuous_associatedBilinForm_add_apply_self
+theorem continuous_associatedBilinForm_add_apply_self
     (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) (hSc : Continuous S) (hξ : ContDiff ℝ 1 ξ) :
     Continuous fun z : ℝ × ℝ ↦
       ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)

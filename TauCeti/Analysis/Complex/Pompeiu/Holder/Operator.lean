@@ -83,32 +83,34 @@ private theorem cauchyDerivativeHolder_apply [FiniteDimensional ℂ F]
     BoundedContinuousFunction.mkOfCompact_apply]
   exact domRestrict_apply _ _ _
 
-omit [IsScalarTower ℝ ℂ F] in
-private theorem integrable_cauchy_source {α : ℝ≥0} {c : ℂ} {r : ℝ}
-    (f : supportedHolderSubmodule (Y := F) α (closedBall c r)) (w : ℂ) :
-    Integrable (fun z ↦ (w - z)⁻¹ • (f : HolderSpace α ℂ F) z) :=
-  (Complex.locallyIntegrable_sub_inv w).integrable_smul_right_of_hasCompactSupport
-    (HolderSpace.continuous f.1)
-    (HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall c r)
-      (support_subset_of_mem_supportedHolderSubmodule f.property))
+omit [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F] in
+private theorem hasCompactSupport_cauchy_source {α : ℝ≥0} {c : ℂ} {r : ℝ}
+    (f : supportedHolderSubmodule (Y := F) α (closedBall c r)) :
+    HasCompactSupport (f : HolderSpace α ℂ F) :=
+  HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall c r)
+    (support_subset_of_mem_supportedHolderSubmodule f.property)
 
-omit [IsScalarTower ℝ ℂ F] in
 private theorem normalizedCauchy_add {α : ℝ≥0} {c : ℂ} {r : ℝ}
     (f g : supportedHolderSubmodule (Y := F) α (closedBall c r)) :
     normalizedCauchy (f + g : supportedHolderSubmodule (Y := F) α (closedBall c r)) =
       fun w ↦ normalizedCauchy f w + normalizedCauchy g w := by
+  -- With the induced real action, `normalizedCauchy` is the Cauchy transform.
+  cases NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := F)
+  have h := cauchyTransform_add (HolderSpace.continuous f.1) (hasCompactSupport_cauchy_source f)
+    (HolderSpace.continuous g.1) (hasCompactSupport_cauchy_source g)
   funext w
-  simp only [normalizedCauchy, Submodule.coe_add, HolderSpace.add_apply, smul_add]
-  rw [integral_add (integrable_cauchy_source f w) (integrable_cauchy_source g w), smul_add]
+  simpa only [normalizedCauchy, cauchyTransform_apply, Submodule.coe_add, HolderSpace.add_apply,
+    Pi.add_apply] using congrFun h w
 
 private theorem normalizedCauchy_smul {α : ℝ≥0} {c : ℂ} {r : ℝ}
     (a : ℝ) (f : supportedHolderSubmodule (Y := F) α (closedBall c r)) :
     normalizedCauchy (a • f : supportedHolderSubmodule (Y := F) α (closedBall c r)) =
       fun w ↦ a • normalizedCauchy f w := by
+  -- With the induced real action, `normalizedCauchy` is the Cauchy transform.
+  cases NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := F)
   funext w
-  simp only [normalizedCauchy, Submodule.coe_smul, HolderSpace.smul_apply]
-  simp_rw [smul_comm (w - _)⁻¹ a]
-  rw [integral_smul, smul_comm]
+  simpa only [normalizedCauchy, cauchyTransform_apply, Submodule.coe_smul, HolderSpace.smul_apply,
+    Pi.smul_apply] using congrFun (cauchyTransform_smul a (f : HolderSpace α ℂ F)) w
 
 private theorem source_differentiableAt [FiniteDimensional ℂ F]
     {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)

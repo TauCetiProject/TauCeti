@@ -219,27 +219,40 @@ theorem eq_or_eq_neg [PreconnectedSpace M] (o o' : Orientation I M ι) :
     rw [orientationAt_neg]
     exact congrArg (fun v ↦ v x) h
 
+omit [IsManifold I 1 M] in
 /-- An orientation differs from its opposite on every nonempty manifold. -/
 theorem neg_ne_self [Nonempty M] (o : Orientation I M ι) : -o ≠ o := by
+  induction o using Orientation.inductionOn with | h l =>
   intro h
-  have hx := congrArg (fun v ↦ orientationAt v (Classical.arbitrary M)) h
-  rw [orientationAt_neg] at hx
-  exact Module.Ray.ne_neg_self _ hx.symm
+  rw [neg_mk, mk_eq_mk_iff] at h
+  rcases h with h | h
+  · exact Module.Ray.ne_neg_self _ (congrArg OrientationLift.modelOrientation h).symm
+  · -- The signs of `-l` are those of `l`, while those of `l.flip` are their negatives.
+    have hs := congrArg (fun l' : OrientationLift I M ι ↦
+      l'.sign (Classical.arbitrary M) ⟨_, mem_chart_source H (Classical.arbitrary M)⟩) h
+    simp only [OrientationLift.neg_sign, OrientationLift.flip_sign] at hs
+    exact units_ne_neg_self _ hs
 
+omit [IsManifold I 1 M] in
 protected theorem neg_neg (o : Orientation I M ι) : - -o = o := by
-  apply ext
-  intro x
-  rw [orientationAt_neg, orientationAt_neg]
-  exact _root_.neg_neg (orientationAt o x)
+  induction o using Orientation.inductionOn with | h l =>
+  rw [neg_mk, neg_mk, OrientationLift.neg_neg]
 
+omit [IsManifold I 1 M] in
 instance : InvolutiveNeg (Orientation I M ι) where
   neg_neg := Orientation.neg_neg
 
+omit [IsManifold I 1 M] in
 @[simp]
 theorem reindex_neg {ι' : Type*} [Fintype ι'] (e : ι ≃ ι') (o : Orientation I M ι) :
-    (-o).reindex e = -o.reindex e :=
-  ext fun x ↦ by
-    simp only [orientationAt_reindex, orientationAt_neg, _root_.Orientation.reindex_neg]
+    (-o).reindex e = -o.reindex e := by
+  induction o using Orientation.inductionOn with | h l =>
+  rw [neg_mk, reindex_mk, reindex_mk, neg_mk]
+  exact congrArg mk (OrientationLift.ext (by
+    simp only [OrientationLift.reindex_modelOrientation, OrientationLift.neg_modelOrientation,
+      _root_.Orientation.reindex_neg])
+    (funext fun α ↦ funext fun x ↦ by
+      simp only [OrientationLift.reindex_sign, OrientationLift.neg_sign]))
 
 /-- Construct a manifold orientation from a locally constant orientation of its tangent bundle.
 The choice of model orientation affects only its representative lift. -/

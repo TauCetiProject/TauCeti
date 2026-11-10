@@ -137,7 +137,7 @@ private theorem norm_gradientIntegrand_le (hM : ∀ s y, ‖f s y‖ ≤ M) (p :
 
 /-- The integral of the cut-off integrand over `[0, T]` is continuous in `(t, x)`. -/
 private theorem continuous_integral_gradientIntegrand (hf : Continuous (Function.uncurry f))
-    (hM : ∀ s y, ‖f s y‖ ≤ M) {T : ℝ} (hT : 0 ≤ T) :
+    (hM : ∀ s y, ‖f s y‖ ≤ M) (T : ℝ) :
     Continuous fun p : ℝ × E => ∫ τ in 0..T, gradientIntegrand f p τ := by
   have hΨ := continuous_integral_smulRight hf hM 1
   have hcont (τ : ℝ) : Continuous fun p : ℝ × E => (√τ)⁻¹ • ∫ y,
@@ -157,10 +157,10 @@ private theorem continuous_integral_gradientIntegrand (hf : Continuous (Function
     refine IntervalIntegrable.mul_const ?_ _
     refine (intervalIntegral.intervalIntegrable_rpow' (r := -1 / 2) (by norm_num)).mono_fun'
       continuous_sqrt.measurable.inv.aestronglyMeasurable ?_
-    filter_upwards [ae_restrict_mem measurableSet_uIoc] with τ hτ
-    rw [uIoc_of_le hT] at hτ
+    refine ae_of_all _ fun τ ↦ ?_
+    dsimp only
     rw [norm_inv, norm_of_nonneg (sqrt_nonneg τ)]
-    simpa using (inv_sqrt_pow_eq_rpow hτ.1.le 1).le
+    exact (inv_sqrt_eq_rpow τ).le
   · -- Away from `τ = p₀.1` the cut-off is locally constant in `p`.
     filter_upwards [Measure.ae_ne volume p₀.1] with τ hτ _
     rcases hτ.lt_or_gt with hlt | hlt
@@ -183,9 +183,8 @@ theorem continuousOn_fderiv_heatDuhamelPotential [CompleteSpace F]
     simp [continuousMultilinearCurryFin1_apply]
   rintro p₀ ⟨hp₀, -⟩
   set T := p₀.1 + 1
-  have hT : 0 ≤ T := by linarith [mem_Ici.1 hp₀]
   have hR := ((continuousMultilinearCurryFin1 ℝ E F).continuous.comp
-    (continuous_integral_gradientIntegrand hf hM hT)).continuousAt (x := p₀)
+    (continuous_integral_gradientIntegrand hf hM T)).continuousAt (x := p₀)
   refine (hR.continuousWithinAt.congr_of_eventuallyEq ?_ ?_)
   · have hmem : Icc 0 T ×ˢ (univ : Set E) ∈ 𝓝[Ici 0 ×ˢ univ] p₀ := by
       rw [nhdsWithin_prod_eq, nhdsWithin_univ, ← Ici_inter_Iic]

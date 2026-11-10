@@ -96,7 +96,7 @@ theorem exists_testFunction_eq_intervalIntegral
       (F := fun p : E × ℝ => g (p.1 - p.2 • h)) (μ := (volume : Measure unitInterval))
       (integrable_const (1 : ℝ)) continuous_subtype_val isOpen_univ
       (g.contDiff.comp (contDiff_fst.sub (contDiff_snd.smul contDiff_const))).contDiffOn
-      isOpen_univ fun _ _ _ => mem_univ _).congr fun y _ => ?_
+      fun _ _ _ => mem_univ _).congr fun y _ => ?_
     simp [hΦ_def, intervalIntegral_eq_integral_unitInterval]
   -- `Φ` vanishes off the compact set `C ⊆ Omega` swept out by `tsupport g` along `[0, 1] h`.
   set C : Set E := (fun p : E × ℝ => p.1 + p.2 • h) '' (tsupport g ×ˢ Icc 0 1)

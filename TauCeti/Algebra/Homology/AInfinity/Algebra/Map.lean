@@ -70,7 +70,7 @@ noncomputable def map (𝒜 : AInfinityAlgebra R A) (e : A ≃ₗ[R] B) : AInfin
     (fun n hn d x hx ↦ e.symm.injective <| by
       rw [← LinearEquiv.coe_coe, AInfinity.map_stasheffSum _ d x e.symm.toLinearMap 𝒜.m
         (fun k y ↦ by simp), map_zero]
-      exact 𝒜.stasheff n hn d _ fun i hi ↦ (InternalGrading.mem_map_piece_iff _ _ _ _).1 (hx i hi))
+      exact 𝒜.stasheff n d _ fun i hi ↦ (InternalGrading.mem_map_piece_iff _ _ _ _).1 (hx i hi))
 
 section Map
 
@@ -129,7 +129,7 @@ noncomputable def comap : AInfinityAlgebra R A :=
     _ (AInfinity.isSuspension_suspensionTaylor _ _)
     (fun n hn d x hx ↦ hf <| by
       rw [AInfinity.map_stasheffSum _ d x f ℬ.m (apply_comapOperation ℬ f hf hm), map_zero]
-      exact ℬ.stasheff n hn d _ fun i hi ↦ (hG _ _).2 (hx i hi))
+      exact ℬ.stasheff n d _ fun i hi ↦ (hG _ _).2 (hx i hi))
 
 /-- The grading of the pullback of an `A∞` algebra is the given grading. -/
 @[simp]
