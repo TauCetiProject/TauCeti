@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Topology.Compactness.LocallyCompact
 public import Mathlib.Topology.GDelta.Basic
+public import Mathlib.Topology.Separation.Hausdorff
 public import Mathlib.Topology.LocallyClosed
 
 /-!
@@ -17,6 +19,9 @@ a nonempty space covered by finitely many locally closed sets has one of them wi
 interior (`TauCeti.nonempty_interior_of_iUnion_of_isLocallyClosed`). This is the finite analogue
 of the Baire category argument `nonempty_interior_of_iUnion_of_closed`, valid in every
 topological space.
+
+Conversely, a locally compact subspace of a Hausdorff space is locally closed
+(`isLocallyClosed_of_locallyCompactSpace`), the converse of `IsLocallyClosed.locallyCompactSpace`.
 
 A set with empty interior need not be nowhere dense: the rationals have empty interior and are
 dense in the real line. They are not locally closed.
@@ -43,6 +48,22 @@ theorem IsLocallyClosed.isNowhereDense_iff (hs : IsLocallyClosed s) :
     isOpen_interior.inter (isLocallyClosed_iff_isOpen_coborder.1 hs)
   have hy : y ∈ interior s := interior_maximal hsub hopen ⟨hyU, subset_coborder hys⟩
   simp [h] at hy
+
+/-- **A locally compact subspace of a Hausdorff space is locally closed.** This is the converse of
+`IsLocallyClosed.locallyCompactSpace`. -/
+theorem isLocallyClosed_of_locallyCompactSpace [T2Space X] [LocallyCompactSpace s] :
+    IsLocallyClosed s := by
+  rw [isLocallyClosed_iff_isLocallyClosedAt]
+  intro x hx
+  rw [isLocallyClosedAt_iff_exists_inter_closure_subset]
+  obtain ⟨K, hK, -, hKc⟩ := local_compact_nhds (x := (⟨x, hx⟩ : s)) (n := univ) Filter.univ_mem
+  obtain ⟨V, hV, hVK⟩ := mem_nhds_subtype _ _ _ |>.1 hK
+  refine ⟨interior V, interior_mem_nhds.2 hV, fun y hy ↦ ?_⟩
+  have hKcl := (hKc.image continuous_subtype_val).isClosed
+  have h1 : interior V ∩ s ⊆ Subtype.val '' K := fun z ⟨hz, hzu⟩ ↦
+    ⟨⟨z, hzu⟩, hVK (show z ∈ V from interior_subset hz), rfl⟩
+  obtain ⟨z, -, rfl⟩ := closure_minimal h1 hKcl (isOpen_interior.inter_closure hy)
+  exact z.2
 
 namespace TauCeti
 
