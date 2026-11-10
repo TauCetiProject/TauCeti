@@ -173,17 +173,6 @@ theorem MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top {q q' : ℝ�
     _ ≤ ε / 2 + (C + ε / 2) := by gcongr
     _ = C + ε := by rw [add_comm, add_assoc, ENNReal.add_halves]
 
-/-- If `‖h' x‖ₑ > t` on a set of positive measure, then some bounded slice `‖h' x‖ₑ ≤ N` of that
-set has positive measure. -/
-private theorem exists_pos_measure_inter_enorm_le {E : Type*} [NormedAddCommGroup E] {h' : α → E}
-    {t : ℝ≥0∞} (hpos : 0 < μ {x | t < ‖h' x‖ₑ}) :
-    ∃ N : ℕ, 0 < μ ({x | t < ‖h' x‖ₑ} ∩ {x | ‖h' x‖ₑ ≤ N}) := by
-  by_contra! hN
-  refine hpos.ne' (measure_mono_null (fun x hx => ?_)
-    (measure_iUnion_null fun N => nonpos_iff_eq_zero.1 (hN N)))
-  obtain ⟨N, hN⟩ := ENNReal.exists_nat_gt (enorm_ne_top (x := h' x))
-  exact Set.mem_iUnion.2 ⟨N, hx, hN.le⟩
-
 /-- **Norming by simple functions, `q = ∞`.** On a σ-finite measure space, let `h` be almost
 everywhere strongly measurable. If `h` satisfies
 `‖∫ h g‖ ≤ C ‖g‖₁` for every simple function `g ∈ L¹`, then `‖h‖_∞ ≤ C`. In particular `h ∈ L^∞`
@@ -210,7 +199,12 @@ theorem AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le [Sig
     filter_upwards [hhh', measure_eq_zero_iff_ae_notMem.1 hnull] with x hx hx'
     rw [hx]
     simpa using hx'
-  obtain ⟨N, hNpos⟩ := exists_pos_measure_inter_enorm_le hpos
+  -- some bounded slice `{t < ‖h' x‖ₑ} ∩ {‖h' x‖ₑ ≤ N}` has positive measure
+  have hcover : {x | t < ‖h' x‖ₑ} ⊆ ⋃ N : ℕ, {x | t < ‖h' x‖ₑ} ∩ {x | ‖h' x‖ₑ ≤ N} := fun x hx ↦ by
+    obtain ⟨N, hN⟩ := ENNReal.exists_nat_gt (enorm_ne_top (x := h' x))
+    exact Set.mem_iUnion.2 ⟨N, hx, hN.le⟩
+  obtain ⟨N, hNpos⟩ := exists_measure_pos_of_not_measure_iUnion_null
+    (hpos.trans_le (measure_mono hcover)).ne'
   obtain ⟨F, hFm, hFE, hFpos, hFtop⟩ :=
     Measure.exists_subset_measure_lt_top (hE.inter (hG N)) hNpos
   -- The case `q = 1`, applied to `1_F h`, bounds `∫_F ‖h‖` by `C μ(F)`.
