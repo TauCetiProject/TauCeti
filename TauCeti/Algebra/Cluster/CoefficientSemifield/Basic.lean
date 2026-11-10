@@ -144,7 +144,7 @@ variable {F : Type*} [Semifield F] [Subsingleton (AddUnits F)]
 
 /-- The auxiliary addition of units of a semifield is the addition of the semifield. -/
 @[simp, norm_cast]
-theorem val_add (a b : Fˣ) : ((a + b : Fˣ) : F) = a + b :=
+theorem val_add_of_subsingleton_addUnits (a b : Fˣ) : ((a + b : Fˣ) : F) = a + b :=
   (rfl)
 
 end Units
