@@ -1158,17 +1158,16 @@ theorem horizontalCompletion_mem_matchedSubalgebra (hρ : IsMatchedGenerator M �
   obtain ⟨hUh, hUinj⟩ := mem_matchedChoices.1 hU
   have key {S : Finset α} (hS : Set.InjOn M S) (hSh : Disjoint (S.image M) h) :
       Set.InjOn M ↑(S ∪ U) := by
-    rw [coe_union, Set.injOn_union (disjoint_coe.2 (disjoint_of_subset_right hUh.le hSh
-      ).of_image_finset)]
-    refine ⟨hS, hUinj, fun x hx y hy hxy ↦ disjoint_left.1 hSh (mem_image_of_mem M hx) ?_⟩
-    rw [hxy, ← hUh]
-    exact mem_image_of_mem M hy
+    rw [coe_union]
+    exact hS.union_of_disjoint_image hUinj
+      (by rw [← coe_image, ← coe_image, disjoint_coe, hUh]; exact hSh)
   rw [horizontalCompletion_eq_matchedSum hρ hU]
   refine matchedSum_mem_matchedSubalgebra ?_ ?_
   · rw [StrandDiagram.source_addHorizontal (hρ.disjoint_target_of_image_subset hUh.le)]
     exact key hρ.injOn_source hρ.disjoint_source
   · rw [StrandDiagram.target_addHorizontal (hρ.disjoint_source_of_image_subset hUh.le)]
     exact key hρ.injOn_target hρ.disjoint_target
+
 /-- The span of the generators `a(ρ, h)` lies in the matched subalgebra. -/
 theorem matchedAlgebra_le_matchedSubalgebra : matchedAlgebra R M ≤ matchedSubalgebra R M :=
   fun _ hx ↦ by
