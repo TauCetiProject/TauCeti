@@ -16,7 +16,7 @@ Juxtaposition arguments apply it to families of two-step domains whose members c
 than their rectangles: a hexagon and a rectangle, say, counted with a weight. This file isolates the
 cancellation step shared by these arguments.
 
-Let `S` be a finite family of domains from `x` to `z ≠ x`, each with an underlying decomposition by
+Let `S` be a finite family of domains from `x` to `z`, each with an underlying decomposition by
 two empty rectangles, such that a member is determined by its decomposition and members
 repartitioning the same squares have the same weight. A member whose rectangles share a side
 column and whose recut is again the decomposition of a member has a unique such partner, which
@@ -44,18 +44,22 @@ namespace GridRectangleDecomposition
 variable {n : ℕ} {x z : GridState n} {α M : Type*} [AddCommMonoid M]
 
 open scoped Classical in
-/-- **Recut cancellation.** Let `S` be a finite family of domains from `x` to `z ≠ x`, with
+/-- **Recut cancellation.** Let `S` be a finite family of domains from `x` to `z`, with
 underlying decompositions `f D` by two empty rectangles, such that `f` is injective on `S` and the
 weight `w` agrees on members whose decompositions repartition the same squares. If `m + m = 0` for
 every weight `m`, as in characteristic two, the members whose rectangles share a side column have
 the total weight of those among them whose recut is the decomposition of no member. -/
 theorem sum_filter_not_hasDisjointSides_eq_sum_filter_forall_not_isRecut (S : Finset α)
-    (f : α → GridRectangleDecomposition x z) (w : α → M) (hM : ∀ m : M, m + m = 0) (hzx : z ≠ x)
+    (f : α → GridRectangleDecomposition x z) (w : α → M) (hM : ∀ m : M, m + m = 0)
     (hempty : ∀ D ∈ S, (f D).first.IsEmpty ∧ (f D).second.IsEmpty) (hinj : Set.InjOn f S)
     (hw : ∀ D ∈ S, ∀ E ∈ S, (f D).IsRepartition (f E) → w D = w E) :
     ∑ D ∈ S.filter (fun D => ¬(f D).HasDisjointSides), w D =
       ∑ D ∈ S.filter (fun D => ¬(f D).HasDisjointSides ∧ ∀ E ∈ S, ¬(f D).IsRecut (f E)),
         w D := by
+  by_cases hzx : z = x
+  · -- On the diagonal no recut relation holds, so both filters agree.
+    refine Finset.sum_congr (Finset.filter_congr fun D _ => ?_) fun _ _ => rfl
+    exact ⟨fun h => ⟨h, fun E _ hE => hE.target_ne_source hzx⟩, fun h => h.1⟩
   set T := S.filter (fun D => ¬(f D).HasDisjointSides)
   set p := fun D => ∃ E ∈ S, (f D).IsRecut (f E)
   -- A recut partner of a member of `T` lies in `T`, has the member as its own partner, carries the
