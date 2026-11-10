@@ -7,11 +7,11 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Divisor
 public import Mathlib.LinearAlgebra.Dimension.Finrank
+public import Mathlib.Data.Multiset.Fintype
 import TauCeti.Analysis.Complex.Wirtinger.DolbeaultLemma
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
-import Mathlib.Data.Multiset.Fintype
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
@@ -38,13 +38,16 @@ zeros of `α`, of order at most their multiplicities. At a zero `a` of multiplic
 principal part of `δα / α` is recorded by the derivatives `H⁽ʲ⁾(a)`, `j < n(a)`:
 
 * they do not depend on the decomposition
-  (`TauCeti.Vortex.iteratedDeriv_eq_of_sectionValue_mul_add_exp_mul_eq`);
+  (`TauCeti.Vortex.principalPart_eq_iteratedDeriv`, from
+  `TauCeti.IsZeroMultiplicity.iteratedDeriv_eq_of_eventually_mul_add_mul_eq`);
 * they all vanish exactly when `δα = α η` for a function `η` of class `Cᵏ`, and already when
   `δα = α η` for a continuous `η` (`TauCeti.Vortex.tfae_exists_sectionValue_eq_mul`).
 
 For a framed vortex of degree `m` the zeros of `α` have total multiplicity `m`, so these
-derivatives form `m` complex numbers. Consequently a real vector space of such variations in which
-every variation with `δα = α η`, `η` of class `Cᵏ`, is zero has real dimension at most `2 m`
+derivatives form `m` complex numbers: the values of the real-linear principal-part map
+(`TauCeti.Vortex.principalPartMap`). On a real vector space of such variations in which every
+variation with `δα = α η`, `η` of class `Cᵏ`, is zero, this map is injective
+(`TauCeti.Vortex.principalPartMap_injective`), so the space has real dimension at most `2 m`
 (`TauCeti.Vortex.finiteDimensional_of_forall_sectionValue_eq_mul_eq_zero`,
 `TauCeti.Vortex.finrank_le_two_mul_of_forall_sectionValue_eq_mul_eq_zero`). For the kernel of the
 gauge-fixed operator `L_x` at a framed vortex, `2 m` is the real dimension of the tangent space of
@@ -80,35 +83,10 @@ theorem conjWirtingerDeriv_apply_one_sectionValue_of_linearizedEquation_eq_zero 
     conjWirtingerDeriv (sectionValue y) z 1 =
       ((x z 1 : ℂ) - I * x z 0) / 2 * sectionValue y z +
         ((y z 1 : ℂ) - I * y z 0) / 2 * sectionValue x z := by
-  have hP := Complex.ofRealCLM.hasFDerivAt.comp z hp.hasFDerivAt
-  have hQ := Complex.ofRealCLM.hasFDerivAt.comp z hq.hasFDerivAt
-  have hA := (hP.fun_add (hQ.mul_const I)).const_mul (2 : ℂ)
-  simp only [Function.comp_def, Complex.ofRealCLM_apply] at hA
-  have hsec : sectionValue y = fun w ↦ 2 * ((y w 2 : ℂ) + (y w 3 : ℂ) * I) :=
-    funext (sectionValue_apply y)
-  rw [conjWirtingerDeriv_apply, hsec, hA.fderiv]
+  rw [conjWirtingerDeriv_apply_one_sectionValue hp hq, sectionValue_apply, sectionValue_apply]
   rw [linearizedEquation_apply_one] at h₁
   rw [linearizedEquation_apply_two] at h₂
-  simp only [sectionValue_apply]
-  apply Complex.ext <;>
-    simp [smul_eq_mul, Complex.ofRealCLM_apply] <;> linarith
-
-/-- The coefficient `(b₂ - i b₁) / 2` is as regular as the connection. -/
-private theorem contDiff_connectionCoeff {k : ℕ∞} (hb₁ : ContDiff ℝ k (fun w ↦ x w 0))
-    (hb₂ : ContDiff ℝ k (fun w ↦ x w 1)) :
-    ContDiff ℝ k fun w ↦ ((x w 1 : ℂ) - I * x w 0) / 2 :=
-  ((ofRealCLM.contDiff.comp hb₂).sub (contDiff_const.mul (ofRealCLM.contDiff.comp hb₁))).div_const 2
-
-/-- The holomorphicity rows say `∂bar α = c α` with `c = (b₂ - i b₁) / 2`. -/
-private theorem conjWirtingerDeriv_apply_one_sectionValue {z : ℂ}
-    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
-    (h₁ : equation x z 1 = 0) (h₂ : equation x z 2 = 0) :
-    conjWirtingerDeriv (sectionValue x) z 1 =
-      ((x z 1 : ℂ) - I * x z 0) / 2 * sectionValue x z := by
-  have hsec : sectionValue x = fun w ↦ 2 * ((x w 2 : ℂ) + I * x w 3) :=
-    funext fun w ↦ by rw [sectionValue_apply, mul_comm (x w 3 : ℂ) I]
-  rw [hsec]
-  exact conjWirtingerDeriv_apply_one_section_eq_mul hp hq h₁ h₂
+  apply Complex.ext <;> simp <;> linarith
 
 /-- **The global similarity principle for a vortex section.** If `∂bar ν = (b₂ - i b₁) / 2` on the
 plane, then `exp (-ν) α` is entire, so `α = e^ν f` with `f` entire. Such a `ν` exists, of class
@@ -122,7 +100,7 @@ theorem differentiable_exp_neg_mul_sectionValue {ν : ℂ → ℂ}
   differentiableAt_exp_neg_mul_of_conjWirtingerDeriv_apply_one_eq_mul
     (a := fun w ↦ ((x w 1 : ℂ) - I * x w 0) / 2) (hν w)
     (differentiableAt_sectionValue (hp w) (hq w)) (hνeq w)
-    (conjWirtingerDeriv_apply_one_sectionValue (hp w) (hq w) (hhol w).1 (hhol w).2)
+    (conjWirtingerDeriv_apply_one_section_eq_mul (hp w) (hq w) (hhol w).1 (hhol w).2)
 
 /-! ### The decomposition `δα = α G + e^ν H` -/
 
@@ -160,7 +138,7 @@ theorem exists_sectionValue_eq_mul_add_exp_mul {k : ℕ∞} (hk : 1 ≤ k) {ν :
     simp only [sub_apply, add_apply, smul_apply, smul_eq_mul, hGeq w,
       conjWirtingerDeriv_apply_one_sectionValue_of_linearizedEquation_eq_zero (hyp w) (hyq w)
         (hylin w).1 (hylin w).2,
-      conjWirtingerDeriv_apply_one_sectionValue (hp w) (hq w) (hhol w).1 (hhol w).2]
+      conjWirtingerDeriv_apply_one_section_eq_mul (hp w) (hq w) (hhol w).1 (hhol w).2]
     simp only [Pi.sub_apply]
     ring
   refine ⟨G, hG, fun w ↦ exp (-ν w) * F w, fun w ↦
@@ -171,39 +149,30 @@ theorem exists_sectionValue_eq_mul_add_exp_mul {k : ℕ∞} (hk : 1 ≤ k) {ν :
 
 /-! ### The principal-part data -/
 
-/-- **The principal-part data do not depend on the decomposition.** If
-`α G₁ + e^ν H₁ = α G₂ + e^ν H₂` with `G₁`, `G₂`, `ν` continuous and `H₁`, `H₂` entire, then at
-every `z` the derivatives of `H₁` and `H₂` of order below the zero multiplicity `n z` of `α`
-agree. -/
-theorem iteratedDeriv_eq_of_sectionValue_mul_add_exp_mul_eq {n : ℂ → ℕ}
-    (hα : IsZeroMultiplicity (sectionValue x) n) {ν G₁ G₂ H₁ H₂ : ℂ → ℂ} (hν : Continuous ν)
-    (hG₁ : Continuous G₁) (hG₂ : Continuous G₂) (hH₁ : Differentiable ℂ H₁)
-    (hH₂ : Differentiable ℂ H₂)
-    (h : ∀ z, sectionValue x z * G₁ z + exp (ν z) * H₁ z =
-      sectionValue x z * G₂ z + exp (ν z) * H₂ z)
-    (z : ℂ) {j : ℕ} (hj : j < n z) : iteratedDeriv j H₁ z = iteratedDeriv j H₂ z := by
-  -- `H₁ - H₂ = α u` with `u = e^(-ν) (G₂ - G₁)` continuous, so it vanishes to order `n z`.
-  have hord : (n z : ℕ∞) ≤ analyticOrderAt (H₁ - H₂) z :=
-    hα.natCast_le_analyticOrderAt_of_eventually_eq_mul (u := fun w ↦ exp (-ν w) * (G₂ w - G₁ w))
-      ((hH₁.sub hH₂).analyticAt z) (by fun_prop) (Eventually.of_forall fun w ↦ by
-        have hexp : exp (-ν w) * exp (ν w) = 1 := by rw [← exp_add, neg_add_cancel, exp_zero]
-        simp only [Pi.sub_apply]
-        linear_combination exp (-ν w) * sub_eq_zero.2 (h w) - (H₁ w - H₂ w) * hexp)
-  have hzero := (natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero
-    ((hH₁.sub hH₂).analyticAt z)).1 hord j hj
-  rwa [iteratedDeriv_sub ((hH₁.contDiff (n := j)).contDiffAt)
-    ((hH₂.contDiff (n := j)).contDiffAt), sub_eq_zero] at hzero
+/-- **The principal-part data of a variation.** For an integrating factor `ν`, if the section
+variation of `y` decomposes as `δα = α G + e^ν H` with `G` continuous and `H` entire, then
+`principalPart x ν y z j` is the derivative `H⁽ʲ⁾(z)` for one such decomposition (and `0` if there
+is none). For `j` below the zero multiplicity of `α` at `z` it does not depend on the decomposition
+(`TauCeti.Vortex.principalPart_eq_iteratedDeriv`); these values record the principal part of
+`δα / α` at `z`. -/
+def principalPart (x : ℂ → EuclideanSpace ℝ (Fin 4)) (ν : ℂ → ℂ)
+    (y : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) (j : ℕ) : ℂ :=
+  iteratedDeriv j (Classical.epsilon fun H : ℂ → ℂ ↦ Differentiable ℂ H ∧
+    ∃ G : ℂ → ℂ, Continuous G ∧ ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w) z
 
-/-- If `α G + e^ν H = 0` with `G`, `ν` continuous and `H` entire, then the derivatives of `H` of
-order below the zero multiplicities of `α` vanish. -/
-private theorem iteratedDeriv_eq_zero_of_sectionValue_mul_add_exp_mul_eq_zero {n : ℂ → ℕ}
-    (hα : IsZeroMultiplicity (sectionValue x) n) {ν G H : ℂ → ℂ} (hν : Continuous ν)
-    (hG : Continuous G) (hH : Differentiable ℂ H)
-    (h : ∀ z, sectionValue x z * G z + exp (ν z) * H z = 0) (z : ℂ) {j : ℕ} (hj : j < n z) :
-    iteratedDeriv j H z = 0 := by
-  have := iteratedDeriv_eq_of_sectionValue_mul_add_exp_mul_eq (G₂ := fun _ ↦ 0) (H₂ := fun _ ↦ 0)
-    hα hν hG continuous_const hH (differentiable_const 0) (fun w ↦ by rw [h w]; simp) z hj
-  simpa using this
+/-- **The principal-part data do not depend on the decomposition.** If `δα = α G + e^ν H` with
+`G`, `ν` continuous and `H` entire, then below the zero multiplicity `n z` of `α` at `z` the
+principal-part data of `y` at `z` are the derivatives of `H`. -/
+theorem principalPart_eq_iteratedDeriv {n : ℂ → ℕ} (hα : IsZeroMultiplicity (sectionValue x) n)
+    {ν G H : ℂ → ℂ} (hν : Continuous ν) (hG : Continuous G) (hH : Differentiable ℂ H)
+    (hy : ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w) {z : ℂ} {j : ℕ}
+    (hj : j < n z) : principalPart x ν y z j = iteratedDeriv j H z := by
+  obtain ⟨hH', G', hG', hy'⟩ := Classical.epsilon_spec (p := fun H : ℂ → ℂ ↦
+    Differentiable ℂ H ∧ ∃ G : ℂ → ℂ, Continuous G ∧
+      ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w) ⟨H, hH, G, hG, hy⟩
+  exact hα.iteratedDeriv_eq_of_eventually_mul_add_mul_eq hν.cexp.continuousAt (exp_ne_zero _)
+    hG'.continuousAt hG.continuousAt (hH'.analyticAt z) (hH.analyticAt z)
+    (Eventually.of_forall fun w ↦ by rw [← hy' w, hy w]) hj
 
 /-- **Divisibility of a holomorphic deformation by the section.** Let `x` have `Cᵏ` connection
 coefficients (`k ≥ 1`) and differentiable section, satisfy the holomorphicity rows, and have
@@ -222,9 +191,11 @@ theorem tfae_exists_sectionValue_eq_mul {k : ℕ∞} (hk : 1 ≤ k)
       ∃ η : ℂ → ℂ, Continuous η ∧ ∀ z, sectionValue y z = sectionValue x z * η z,
       ∀ z, ∀ j < n z, iteratedDeriv j H z = 0].TFAE := by
   tfae_have 1 → 2 := fun ⟨η, hη, hyη⟩ ↦ ⟨η, hη.continuous, hyη⟩
-  tfae_have 2 → 3 := fun ⟨η, hη, hyη⟩ z j hj ↦
-    iteratedDeriv_eq_zero_of_sectionValue_mul_add_exp_mul_eq_zero hα hν.continuous
-      (hG.continuous.sub hη) hH (fun w ↦ by rw [Pi.sub_apply, mul_sub, ← hyη w, hy w]; ring) z hj
+  tfae_have 2 → 3 := fun ⟨η, hη, hyη⟩ z j hj ↦ by
+    simpa using hα.iteratedDeriv_eq_of_eventually_mul_add_mul_eq (H₂ := fun _ ↦ 0)
+      hν.continuous.cexp.continuousAt (exp_ne_zero _) hG.continuous.continuousAt hη.continuousAt
+      (hH.analyticAt z) analyticAt_const
+      (Eventually.of_forall fun w ↦ by rw [← hy w, hyη w, mul_zero, add_zero]) hj
   tfae_have 3 → 1 := by
     intro hjet
     -- Local `Cᵏ` factorizations `α = (w - z) ^ n z * v_z` of the section.
@@ -262,8 +233,82 @@ theorem tfae_exists_sectionValue_eq_mul {k : ℕ∞} (hk : 1 ≤ k)
 
 /-! ### The real dimension bound -/
 
-/-- The principal-part data give an injective real-linear map into `ι → ℂ` with `ι` of
-cardinality `m`. -/
+/-- **The principal-part map.** Let `D` be the divisor of zeros of `α`, so that `count z D` is the
+zero multiplicity of `α` at `z`, let `ν` be continuous, and let `V` be a real vector space of
+variations whose section variations decompose as `δα = α G + e^ν H` with `G` continuous and `H`
+entire. The principal-part data `H⁽ʲ⁾(a)` at the points `⟨a, j⟩`, `j < count a D`, of `D` form a
+real-linear map from `V` to `D → ℂ`. -/
+@[expose] def principalPartMap {D : Multiset ℂ}
+    (hα : IsZeroMultiplicity (sectionValue x) fun z ↦ Multiset.count z D) {ν : ℂ → ℂ}
+    (hν : Continuous ν) {V : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4))}
+    (hV : ∀ y ∈ V, ∃ G : ℂ → ℂ, Continuous G ∧ ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
+      ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w) :
+    V →ₗ[ℝ] Multiset.ToType D → ℂ where
+  toFun y i := principalPart x ν y i.1 i.2
+  map_add' y y' := funext fun i ↦ by
+    obtain ⟨G, hG, H, hH, hy⟩ := hV y y.2
+    obtain ⟨G', hG', H', hH', hy'⟩ := hV y' y'.2
+    rw [Pi.add_apply, principalPart_eq_iteratedDeriv hα hν hG hH hy i.2.2,
+      principalPart_eq_iteratedDeriv hα hν hG' hH' hy' i.2.2,
+      principalPart_eq_iteratedDeriv hα hν (hG.add hG') (hH.add hH')
+        (fun w ↦ by
+          simp only [Submodule.coe_add, sectionValue_add, hy w, hy' w, Pi.add_apply]
+          ring) i.2.2,
+      iteratedDeriv_add hH.contDiff.contDiffAt hH'.contDiff.contDiffAt]
+  map_smul' t y := funext fun i ↦ by
+    obtain ⟨G, hG, H, hH, hy⟩ := hV y y.2
+    rw [Pi.smul_apply, RingHom.id_apply, principalPart_eq_iteratedDeriv hα hν hG hH hy i.2.2,
+      principalPart_eq_iteratedDeriv hα hν (G := fun w ↦ (t : ℂ) * G w)
+        (H := fun w ↦ (t : ℂ) * H w) (continuous_const.mul hG) ((differentiable_const _).mul hH)
+        (fun w ↦ by simp only [Submodule.coe_smul, sectionValue_smul, hy w]; ring) i.2.2,
+      iteratedDeriv_const_mul_field, Complex.real_smul]
+
+/-- The principal-part map evaluated at the point `⟨a, j⟩` of `D` is `principalPart x ν y a j`. -/
+@[simp]
+theorem principalPartMap_apply {D : Multiset ℂ}
+    (hα : IsZeroMultiplicity (sectionValue x) fun z ↦ Multiset.count z D) {ν : ℂ → ℂ}
+    (hν : Continuous ν) {V : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4))}
+    (hV : ∀ y ∈ V, ∃ G : ℂ → ℂ, Continuous G ∧ ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
+      ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w)
+    (y : V) (i : Multiset.ToType D) :
+    principalPartMap hα hν hV y i = principalPart x ν y i.1 i.2 := rfl
+
+/-- **Injectivity of the principal-part map.** Let `x` have `Cᵏ` connection coefficients
+(`k ≥ 1`) and differentiable section, satisfy the holomorphicity rows and have zero divisor `D`,
+and let `∂bar ν = (b₂ - i b₁) / 2` with `ν` of class `Cᵏ`. Let `V` be a real vector space of
+variations with `Cᵏ` connection coefficients and differentiable sections satisfying the
+holomorphicity rows of the linearized equation at `x`. If every `y ∈ V` with `δα = α η`, `η` of
+class `Cᵏ`, is zero, then the principal-part map on `V` is injective. -/
+theorem principalPartMap_injective {k : ℕ∞} (hk : 1 ≤ k)
+    (hb₁ : ContDiff ℝ k (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ k (fun w ↦ x w 1))
+    (hp : Differentiable ℝ (fun w ↦ x w 2)) (hq : Differentiable ℝ (fun w ↦ x w 3))
+    (hhol : ∀ w, equation x w 1 = 0 ∧ equation x w 2 = 0) {D : Multiset ℂ}
+    (hα : IsZeroMultiplicity (sectionValue x) fun z ↦ Multiset.count z D) {ν : ℂ → ℂ}
+    (hν : ContDiff ℝ k ν) (hνeq : ∀ w, conjWirtingerDeriv ν w 1 = ((x w 1 : ℂ) - I * x w 0) / 2)
+    {V : Submodule ℝ (ℂ → EuclideanSpace ℝ (Fin 4))}
+    (hV : ∀ y ∈ V, ContDiff ℝ k (fun w ↦ y w 0) ∧ ContDiff ℝ k (fun w ↦ y w 1) ∧
+      Differentiable ℝ (fun w ↦ y w 2) ∧ Differentiable ℝ (fun w ↦ y w 3) ∧
+      ∀ w, linearizedEquation x y w 1 = 0 ∧ linearizedEquation x y w 2 = 0)
+    (hdec : ∀ y ∈ V, ∃ G : ℂ → ℂ, Continuous G ∧ ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
+      ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w)
+    (hdiv : ∀ y ∈ V, ∀ η : ℂ → ℂ, ContDiff ℝ k η →
+      (∀ z, sectionValue y z = sectionValue x z * η z) → y = 0) :
+    Function.Injective (principalPartMap hα hν.continuous hdec) := by
+  have hk0 : (k : WithTop ℕ∞) ≠ 0 := by
+    exact_mod_cast (ne_of_gt (lt_of_lt_of_le zero_lt_one hk))
+  refine (injective_iff_map_eq_zero _).2 fun y hy ↦ ?_
+  obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := hV y y.2
+  obtain ⟨G, hG, H, hH, hGH⟩ := exists_sectionValue_eq_mul_add_exp_mul hk hp hq hhol
+    (hν.differentiable hk0) hνeq h₁ h₂ h₃ h₄ h₅
+  -- If all principal-part data vanish, then `δα = α η` with `η` of class `Cᵏ`.
+  have hjet (z : ℂ) (j : ℕ) (hj : j < Multiset.count z D) : iteratedDeriv j H z = 0 := by
+    rw [← principalPart_eq_iteratedDeriv hα hν.continuous hG.continuous hH hGH hj]
+    exact congrFun hy ⟨z, ⟨j, hj⟩⟩
+  obtain ⟨η, hη, hyη⟩ := ((tfae_exists_sectionValue_eq_mul (y := y) hk hb₁ hb₂ hp hq hhol hα
+    hν hG hH hGH).out 3 1).1 hjet
+  exact Subtype.ext (hdiv y y.2 η hη hyη)
+
+/-- The principal-part map on `V`, for the zero divisor `D` of `α`, which has `m` points. -/
 private theorem exists_injective_linearMap {k : ℕ∞} (hk : 1 ≤ k) {m : ℕ}
     (hb₁ : ContDiff ℝ k (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ k (fun w ↦ x w 1))
     (hp : Differentiable ℝ (fun w ↦ x w 2)) (hq : Differentiable ℝ (fun w ↦ x w 3))
@@ -277,7 +322,6 @@ private theorem exists_injective_linearMap {k : ℕ∞} (hk : 1 ≤ k) {m : ℕ}
       (∀ z, sectionValue y z = sectionValue x z * η z) → y = 0) :
     ∃ (ι : Type) (_ : Fintype ι) (Φ : V →ₗ[ℝ] ι → ℂ), Function.Injective Φ ∧
       Fintype.card ι = m := by
-  classical
   have hk0 : (k : WithTop ℕ∞) ≠ 0 := by
     exact_mod_cast (ne_of_gt (lt_of_lt_of_le zero_lt_one hk))
   -- The zero divisor `D` of `α` and an integrating factor `ν`.
@@ -288,48 +332,15 @@ private theorem exists_injective_linearMap {k : ℕ∞} (hk : 1 ≤ k) {m : ℕ}
       exact ⟨v, hv.continuousAt, hv₀, hvf⟩
   obtain ⟨ν, hν, hνeq⟩ :=
     exists_contDiff_conjWirtingerDeriv_apply_one_eq hk (contDiff_connectionCoeff hb₁ hb₂)
-  -- A decomposition `δα = α G + e^ν H` of every element of `V`.
-  have hdec (y : V) : ∃ G : ℂ → ℂ, ContDiff ℝ k G ∧ ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
-      ∀ z, sectionValue y z = sectionValue x z * G z + exp (ν z) * H z := by
-    obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := hV y y.2
-    exact exists_sectionValue_eq_mul_add_exp_mul hk hp hq hhol (hν.differentiable hk0) hνeq
-      h₁ h₂ h₃ h₄ h₅
-  choose G hG H hH hGH using hdec
-  -- Comparison of the principal-part data of two decompositions of the same section.
-  have huniq (y : V) {G' H' : ℂ → ℂ} (hG' : Continuous G') (hH' : Differentiable ℂ H')
-      (h : ∀ z, sectionValue y z = sectionValue x z * G' z + exp (ν z) * H' z) (z : ℂ) {j : ℕ}
-      (hj : j < Multiset.count z (D : Multiset ℂ)) :
-      iteratedDeriv j (H y) z = iteratedDeriv j H' z :=
-    iteratedDeriv_eq_of_sectionValue_mul_add_exp_mul_eq hα hν.continuous (hG y).continuous hG'
-      (hH y) hH' (fun w ↦ by rw [← hGH y w, h w]) z hj
-  -- The principal-part data are indexed by the points `⟨a, j⟩`, `j < count a D`, of `D`.
-  let Φ : V →ₗ[ℝ] Multiset.ToType (D : Multiset ℂ) → ℂ :=
-    { toFun := fun y i ↦ iteratedDeriv i.2 (H y) i.1
-      map_add' := fun y y' ↦ funext fun i ↦ by
-        rw [huniq (y + y') ((hG y).continuous.add (hG y').continuous) ((hH y).add (hH y'))
-          (fun w ↦ by
-            rw [Submodule.coe_add, sectionValue_add, hGH y w, hGH y' w]
-            simp only [Pi.add_apply]
-            ring) i.1 i.2.2,
-          iteratedDeriv_add ((hH y).contDiff.contDiffAt) ((hH y').contDiff.contDiffAt),
-          Pi.add_apply]
-      map_smul' := fun t y ↦ funext fun i ↦ by
-        rw [huniq (t • y) (G' := fun w ↦ (t : ℂ) * G y w) (H' := fun w ↦ (t : ℂ) * H y w)
-          (continuous_const.mul (hG y).continuous) ((differentiable_const _).mul (hH y))
-          (fun w ↦ by
-            rw [Submodule.coe_smul, sectionValue_smul, hGH y w]
-            ring) i.1 i.2.2,
-          iteratedDeriv_const_mul_field, RingHom.id_apply, Pi.smul_apply, Complex.real_smul] }
-  refine ⟨Multiset.ToType (D : Multiset ℂ), inferInstance, Φ,
-    (injective_iff_map_eq_zero Φ).2 fun y hy ↦ ?_, ?_⟩
-  · -- If all principal-part data vanish, then `δα = α η` with `η` of class `Cᵏ`.
-    have hjet (z : ℂ) (j : ℕ) (hj : j < Multiset.count z (D : Multiset ℂ)) :
-        iteratedDeriv j (H y) z = 0 :=
-      congrFun hy (⟨z, ⟨j, hj⟩⟩ : Multiset.ToType (D : Multiset ℂ))
-    obtain ⟨η, hη, hyη⟩ := ((tfae_exists_sectionValue_eq_mul (y := y) hk hb₁ hb₂ hp hq hhol hα
-      hν (hG y) (hH y) (hGH y)).out 3 1).1 hjet
-    exact Subtype.ext (hdiv y y.2 η hη hyη)
-  · rw [Multiset.card_coe, Sym.card_coe]
+  have hdec (y) (hy : y ∈ V) : ∃ G : ℂ → ℂ, Continuous G ∧ ∃ H : ℂ → ℂ, Differentiable ℂ H ∧
+      ∀ w, sectionValue y w = sectionValue x w * G w + exp (ν w) * H w := by
+    obtain ⟨h₁, h₂, h₃, h₄, h₅⟩ := hV y hy
+    obtain ⟨G, hG, H, hH, hGH⟩ := exists_sectionValue_eq_mul_add_exp_mul hk hp hq hhol
+      (hν.differentiable hk0) hνeq h₁ h₂ h₃ h₄ h₅
+    exact ⟨G, hG.continuous, H, hH, hGH⟩
+  exact ⟨Multiset.ToType (D : Multiset ℂ), inferInstance, principalPartMap hα hν.continuous hdec,
+    principalPartMap_injective hk hb₁ hb₂ hp hq hhol hα hν hνeq hV hdec hdiv,
+    by rw [Multiset.card_coe, Sym.card_coe]⟩
 
 /-- **Finite dimensionality from the principal-part data.** Let `x` be a field with `Cᵏ`
 connection coefficients (`k ≥ 1`) and differentiable section, satisfying the holomorphicity rows

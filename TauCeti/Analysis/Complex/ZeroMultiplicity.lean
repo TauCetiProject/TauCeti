@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.Roots
 public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
 import TauCeti.Analysis.Analytic.Order
 import TauCeti.Analysis.Complex.Wirtinger.Similarity
 import Mathlib.Data.Finsupp.Multiset
@@ -54,6 +55,9 @@ Divisibility of a holomorphic function `H` by `f` near `z` is measured by the an
 vanishes to order at least `n` and `f = (w - z) ^ n v` with `v` of class `Cᵏ` at `z` and nonzero
 there, then `H = f K` near `z` with `K` of class `Cᵏ` at `z`
 (`TauCeti.exists_contDiffAt_eventually_eq_mul_of_natCast_le_analyticOrderAt`).
+Consequently, if `f G₁ + E H₁ = f G₂ + E H₂` near `z` with `G₁`, `G₂`, `E` continuous at `z`,
+`E z ≠ 0` and `H₁`, `H₂` holomorphic at `z`, then `H₁` and `H₂` have the same derivatives at `z` of
+order below `n z` (`TauCeti.IsZeroMultiplicity.iteratedDeriv_eq_of_eventually_mul_add_mul_eq`).
 -/
 
 public section
@@ -165,6 +169,25 @@ theorem natCast_le_analyticOrderAt_of_eventually_eq_mul (h : IsZeroMultiplicity 
     (hv.mul hu) ?_
   filter_upwards [heq, hfv] with w hw hwv
   rw [hw, hwv, smul_eq_mul, mul_assoc]
+
+/-- **Uniqueness of the holomorphic part modulo `f`.** If `f G₁ + E H₁ = f G₂ + E H₂` near `z`, with
+`G₁`, `G₂`, `E` continuous at `z`, `E z ≠ 0` and `H₁`, `H₂` holomorphic at `z`, then the
+derivatives of `H₁` and `H₂` at `z` of order below the zero multiplicity `n z` of `f` agree. -/
+theorem iteratedDeriv_eq_of_eventually_mul_add_mul_eq (h : IsZeroMultiplicity f n)
+    {E G₁ G₂ H₁ H₂ : ℂ → ℂ} {z : ℂ} (hE : ContinuousAt E z) (hE₀ : E z ≠ 0)
+    (hG₁ : ContinuousAt G₁ z) (hG₂ : ContinuousAt G₂ z) (hH₁ : AnalyticAt ℂ H₁ z)
+    (hH₂ : AnalyticAt ℂ H₂ z)
+    (heq : ∀ᶠ w in 𝓝 z, f w * G₁ w + E w * H₁ w = f w * G₂ w + E w * H₂ w) {j : ℕ}
+    (hj : j < n z) : iteratedDeriv j H₁ z = iteratedDeriv j H₂ z := by
+  -- `H₁ - H₂ = f u` with `u = (G₂ - G₁) / E` continuous at `z`.
+  have hord : (n z : ℕ∞) ≤ analyticOrderAt (H₁ - H₂) z :=
+    h.natCast_le_analyticOrderAt_of_eventually_eq_mul (u := fun w ↦ (G₂ w - G₁ w) / E w)
+      (hH₁.sub hH₂) ((hG₂.sub hG₁).div hE hE₀) <| by
+        filter_upwards [heq, hE.eventually_ne hE₀] with w hw hEw
+        rw [Pi.sub_apply, eq_comm, mul_div_assoc', div_eq_iff hEw]
+        linear_combination -hw
+  have hzero := (natCast_le_analyticOrderAt_iff_iteratedDeriv_eq_zero (hH₁.sub hH₂)).1 hord j hj
+  rwa [iteratedDeriv_sub hH₁.contDiffAt hH₂.contDiffAt, sub_eq_zero] at hzero
 
 end IsZeroMultiplicity
 
