@@ -117,7 +117,7 @@ variable {M : Type*} [TopologicalSpace M]
   [IsManifold (𝓡∂ (1 + 1)) ∞ M] [T2Space M] [CompactSpace M]
 
 local instance boundaryComponentsIsManifold : IsManifold 𝓘(ℝ, E) ∞ ((𝓡∂ (1 + 1)).boundary M) :=
-  isManifold_boundary M (by simp)
+  isManifold_boundary M
 
 local instance boundaryComponentsCompactSpace : CompactSpace ((𝓡∂ (1 + 1)).boundary M) :=
   isCompact_iff_compactSpace.mp

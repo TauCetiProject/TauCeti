@@ -37,7 +37,7 @@ variable {M : Type*} [TopologicalSpace M]
   [IsManifold (𝓡∂ (1 + 1)) ∞ M] [T2Space M] [SigmaCompactSpace M]
 
 local instance smoothBoundaryIsManifold : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 1)) ∞
-    ((𝓡∂ (1 + 1)).boundary M) := isManifold_boundary M (by simp)
+    ((𝓡∂ (1 + 1)).boundary M) := isManifold_boundary M
 
 local instance smoothBoundarySigmaCompactSpace : SigmaCompactSpace ((𝓡∂ (1 + 1)).boundary M) :=
   ((𝓡∂ (1 + 1)).isClosed_boundary (by simp : (∞ : ℕ∞ω) ≠ 0)).sigmaCompactSpace

@@ -29,7 +29,6 @@ namespace TauCeti
 
 variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M]
-  [IsManifold (𝓡∂ (n + 1)) 1 M]
   {F : Type*} [AddCommGroup F] [Module ℝ F] [TopologicalSpace F] {j : ℕ}
 
 /-- Restrict a rough form on a half-space manifold to its boundary manifold by pulling it back
@@ -88,7 +87,8 @@ theorem tsupport_boundaryRestriction_subset (φ : RoughForm (𝓡∂ (n + 1)) M 
   RoughForm.tsupport_mpullback_subset_preimage continuous_subtype_val φ
 
 /-- Restriction of a compactly supported form to the closed boundary remains compactly supported. -/
-theorem isCompact_tsupport_boundaryRestriction {φ : RoughForm (𝓡∂ (n + 1)) M F j}
+theorem isCompact_tsupport_boundaryRestriction [IsManifold (𝓡∂ (n + 1)) 1 M]
+    {φ : RoughForm (𝓡∂ (n + 1)) M F j}
     (hc : IsCompact (_root_.tsupport (α := (EuclideanSpace ℝ (Fin (n + 1))) [⋀^Fin _]→L[ℝ] F) φ))
     : IsCompact (_root_.tsupport (α := (EuclideanSpace ℝ (Fin n)) [⋀^Fin j]→L[ℝ] F)
         (boundaryRestriction φ)) :=

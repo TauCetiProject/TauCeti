@@ -42,7 +42,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M]
 
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
-    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M one_ne_zero
+    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M
 
 /-- Restriction of the source signs to boundary charts, with the outward-first model orientation. -/
 def boundary (l : OrientationLift (𝓡∂ (n + 1)) M (Fin (n + 1))) :
@@ -109,7 +109,7 @@ variable {n : ℕ} {M : Type*} [TopologicalSpace M]
   [ChartedSpace (EuclideanHalfSpace (n + 1)) M] [IsManifold (𝓡∂ (n + 1)) 1 M]
 
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) 1
-    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M one_ne_zero
+    ((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M
 
 /-- The canonical boundary orientation, with the outward vector first. -/
 def boundaryOrientation (o : Manifold.Orientation (𝓡∂ (n + 1)) M (Fin (n + 1))) :
@@ -209,7 +209,7 @@ variable {M : Type*} [TopologicalSpace M] [ChartedSpace (EuclideanHalfSpace (0 +
   [IsManifold (𝓡∂ (0 + 1)) 1 M]
 
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1 ((𝓡∂ (0 + 1)).boundary M) :=
-  isManifold_boundary M one_ne_zero
+  isManifold_boundary M
 
 /-- The boundary sign at `x`, read against any basis `e` of the zero-dimensional tangent space,
 is `1` exactly when an outward tangent vector at `x`, taken as a basis of the tangent line, is

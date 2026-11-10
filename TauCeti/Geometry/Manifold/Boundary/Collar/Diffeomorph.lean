@@ -122,7 +122,7 @@ private theorem contMDiff_homeomorphProdOpens (h : IsProductCollarChart k φ V �
   let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
     IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hk)
   let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) k
-      ↥((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M hk
+      ↥((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M
   have hretractVal : ContMDiff (𝓡∂ (n + 1)) (𝓡∂ (n + 1)) k
       (fun y : h.sourceOpens ↦
         (((h.homeomorphProdOpens y).1 : ↥((𝓡∂ (n + 1)).boundary M)) : M)) := by
@@ -156,7 +156,7 @@ private theorem contMDiff_homeomorphProdOpens_symm (h : IsProductCollarChart k �
   let _ : IsManifold (𝓡∂ (n + 1)) 1 M :=
     IsManifold.of_le (ENat.one_le_iff_ne_zero_withTop.2 hk)
   let _ : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin n)) k
-      ↥((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M hk
+      ↥((𝓡∂ (n + 1)).boundary M) := isManifold_boundary M
   have hboundaryVal : ContMDiff ((𝓡 n).prod (𝓡∂ 1)) (𝓡∂ (n + 1)) k
       (fun p : h.sourceBoundaryOpens × EuclideanHalfSpace.normalIioOpens ε ↦ (p.1.1 : M)) :=
     (isSmoothEmbedding_subtypeVal_boundary (n := n) (k := k) M hk).contMDiff.comp

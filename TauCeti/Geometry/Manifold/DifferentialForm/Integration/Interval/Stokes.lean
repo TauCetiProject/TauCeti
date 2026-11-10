@@ -71,7 +71,7 @@ local instance : IsManifold (𝓡∂ (0 + 1)) ∞ (Icc a b) := instIsManifoldIcc
 
 
 local instance : IsManifold 𝓘(ℝ, EuclideanSpace ℝ (Fin 0)) 1
-    ((𝓡∂ (0 + 1)).boundary (Icc a b)) := isManifold_boundary (n := 0) (Icc a b) one_ne_zero
+    ((𝓡∂ (0 + 1)).boundary (Icc a b)) := isManifold_boundary (n := 0) (Icc a b)
 
 /-- Direct integration over the zero-dimensional interval boundary: its right endpoint has
 mass +1 and its left endpoint mass -1. No regularity of the endpoint function is needed. -/

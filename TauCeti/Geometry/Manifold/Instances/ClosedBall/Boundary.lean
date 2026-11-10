@@ -35,7 +35,7 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 local instance : IsManifold (𝓡 n) ω
     ((𝓡∂ (n + 1)).boundary (closedBall (0 : E) 1)) :=
-  isManifold_boundary (n := n) (closedBall (0 : E) 1) (by simp)
+  isManifold_boundary (n := n) (closedBall (0 : E) 1)
 
 /-- The standard unit sphere is analytically diffeomorphic to the actual intrinsic boundary
 of the closed unit ball. The map preserves the underlying ambient point. -/

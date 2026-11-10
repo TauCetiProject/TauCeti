@@ -38,7 +38,7 @@ local notation "B" => ModelWithCorners.boundary (I := (𝓡∂ (1 + 1))) D
 local notation "S" => (sphereDiffeomorphBoundaryClosedBall (E := ℂ) (n := 1) :
   Circle ≃ₘ^ω⟮𝓡 1, 𝓡 1⟯ B)
 
-local instance : IsManifold (𝓡 1) ω B := isManifold_boundary (n := 1) D (by simp)
+local instance : IsManifold (𝓡 1) ω B := isManifold_boundary (n := 1) D
 
 private theorem exp_pi_eq_exp_neg_pi : Circle.exp π = Circle.exp (-π) := by
   convert Circle.periodic_exp (-π) using 1
