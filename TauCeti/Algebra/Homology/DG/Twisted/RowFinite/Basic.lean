@@ -96,6 +96,20 @@ theorem mem_rowFiniteTotalGrading_iff {n : ℤ} {f : P →₀ A} :
     f ∈ rowFiniteTotalGrading 𝒜 ind n ↔ ∀ x, f x ∈ 𝒜 (n + ind x) :=
   (Iff.rfl)
 
+/-- Relabelling the generators along an injective map that preserves their indices preserves
+total degrees, and so does its inverse. -/
+theorem mapDomain_mem_rowFiniteTotalGrading_iff {P' : Type uP'} {ind' : P' → ℤ} {e : P → P'}
+    (he : Function.Injective e) (hind : ∀ x, ind' (e x) = ind x) {n : ℤ} {f : P →₀ A} :
+    Finsupp.mapDomain e f ∈ rowFiniteTotalGrading 𝒜 ind' n ↔
+      f ∈ rowFiniteTotalGrading 𝒜 ind n := by
+  simp only [mem_rowFiniteTotalGrading_iff]
+  refine ⟨fun h x ↦ by simpa [Finsupp.mapDomain_apply_of_injective he, hind] using h (e x),
+    fun h y ↦ ?_⟩
+  by_cases hy : y ∈ Set.range e
+  · obtain ⟨x, rfl⟩ := hy
+    simpa [Finsupp.mapDomain_apply_of_injective he, hind] using h x
+  · simp [Finsupp.mapDomain_of_notMem_range _ _ hy]
+
 /-- The actual finite direct-sum/function equivalence preserves total degrees. -/
 theorem mem_rowFiniteTotalGrading_iff_twistedTotalGrading [Finite P] (n : ℤ) (f : P →₀ A) :
     f ∈ rowFiniteTotalGrading 𝒜 ind n ↔
