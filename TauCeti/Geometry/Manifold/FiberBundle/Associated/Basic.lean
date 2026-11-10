@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.FiberBundle.GroupCocycle
-public import TauCeti.Topology.FiberBundle.Associated
+public import TauCeti.Topology.FiberBundle.Associated.Basic
 
 /-!
 # Smooth associated bundles
