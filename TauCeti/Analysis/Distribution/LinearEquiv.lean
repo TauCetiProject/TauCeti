@@ -46,7 +46,9 @@ transforms under them.
 * `Distribution.transportCLM e h`: for a continuous linear equivalence `e : E' ≃L[ℝ] E` between
   possibly different spaces, the transport `T ↦ (φ ↦ T (φ ∘ e⁻¹))` without Jacobian factor, with
   its support `Distribution.dsupport_transportCLM_subset` and its complex-linear extension
-  `Distribution.complexPairing_transportCLM`.
+  `Distribution.complexPairing_transportCLM`, and functoriality
+  `Distribution.transportCLM_trans`, `Distribution.transportCLM_symm_transportCLM`,
+  `Distribution.transportCLM_transportCLM_symm`.
 
 ## References
 
@@ -180,6 +182,34 @@ def transportCLM (e : E' ≃L[ℝ] E) (h : MapsTo e Ω' V) :
 theorem transportCLM_apply (e : E' ≃L[ℝ] E) (h : MapsTo e Ω' V) (T : 𝓓'^{n}(V, F))
     (φ : 𝓓^{n}(Ω', ℝ)) : transportCLM e h T φ = T (e.transportTestFunction h φ) :=
   (rfl)
+
+/-- Transporting along a composite of continuous linear equivalences is transporting along each
+in turn. The hypothesis `h` on the composite follows from `h₁` and `h₂` as `h₂.comp h₁`. -/
+theorem transportCLM_trans {E'' : Type*} [NormedAddCommGroup E''] [NormedSpace ℝ E'']
+    {Ω'' : Opens E''} (e₁ : E'' ≃L[ℝ] E') (e₂ : E' ≃L[ℝ] E) (h₁ : MapsTo e₁ Ω'' Ω')
+    (h₂ : MapsTo e₂ Ω' V) (h : MapsTo (e₁.trans e₂) Ω'' V) (T : 𝓓'^{n}(V, F)) :
+    transportCLM (e₁.trans e₂) h T = transportCLM e₁ h₁ (transportCLM e₂ h₂ T) := by
+  ext φ
+  simp only [transportCLM_apply, ContinuousLinearEquiv.transportTestFunction_trans e₁ e₂ h₁ h₂ h]
+
+/-- Transporting along `e` and then along `e⁻¹` gives back the original distribution. -/
+@[simp]
+theorem transportCLM_symm_transportCLM (e : E' ≃L[ℝ] E) (h : MapsTo e Ω' V)
+    (h' : MapsTo e.symm V Ω') (T : 𝓓'^{n}(V, F)) :
+    transportCLM e.symm h' (transportCLM e h T) = T := by
+  ext φ
+  simp
+
+/-- Transporting along `e⁻¹` and then along `e` gives back the original distribution. -/
+@[simp]
+theorem transportCLM_transportCLM_symm (e : E' ≃L[ℝ] E) (h : MapsTo e Ω' V)
+    (h' : MapsTo e.symm V Ω') (T : 𝓓'^{n}(Ω', F)) :
+    transportCLM e h (transportCLM e.symm h' T) = T := by
+  ext φ
+  rw [transportCLM_apply, transportCLM_apply]
+  congr 1
+  ext y
+  simp
 
 /-- The pullback along an automorphism `e` of `E` is `|det e|⁻¹` times the transport along
 `e`. -/
