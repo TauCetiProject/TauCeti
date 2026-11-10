@@ -50,6 +50,8 @@ family with upper barriers.
   subharmonicity depends only on the values of the function, and it is a local property.
 * `ConvexOn.subharmonicOn`: a convex function on an open set is subharmonic, by Jensen's
   inequality, since the centre of a ball is its barycentre.
+* `TauCeti.subharmonicOn_of_laplacian_nonneg`: a `C²` function with nonnegative Laplacian on an
+  open set is subharmonic.
 * `TauCeti.SubharmonicOn.sup`: the pointwise maximum of two subharmonic functions is subharmonic.
 * `TauCeti.SubharmonicOn.const_smul`: a nonnegative multiple of a subharmonic function is
   subharmonic.
@@ -138,6 +140,20 @@ theorem _root_.ConvexOn.subharmonicOn {g : E → ℝ} (hg : ConvexOn ℝ U g) (h
     (((hgc.mono hrU).integrableOn_compact (isCompact_closedBall x r)).mono_set
       ball_subset_closedBall)
   rwa [setAverage_ball_id (measure_ball_pos volume x hr.1).ne' measure_ball_lt_top.ne] at hJ
+
+open Laplacian in
+/-- **A function with nonnegative Laplacian is subharmonic.** If `u` is `C²` on the open set `U`
+and `0 ≤ Δu` there, then `u` is subharmonic on `U`, by the sub-mean-value inequality on the
+balls whose closure lies in `U`. -/
+theorem subharmonicOn_of_laplacian_nonneg (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U)
+    (hΔ : ∀ x ∈ U, 0 ≤ Δ u x) : SubharmonicOn u U := by
+  refine ⟨hu.continuousOn, fun x hx ↦ ?_⟩
+  obtain ⟨ε, hε, hεU⟩ := nhds_basis_closedBall.mem_iff.1 (hU.mem_nhds hx)
+  refine Eventually.frequently ?_
+  filter_upwards [Ioo_mem_nhdsGT hε] with r hr
+  have hrU : closedBall x r ⊆ U := (closedBall_subset_closedBall hr.2.le).trans hεU
+  exact le_setAverage_ball_of_laplacian_nonneg (hu.mono (ball_subset_closedBall.trans hrU))
+    (hu.continuousOn.mono hrU) (fun y hy ↦ hΔ y (hrU (ball_subset_closedBall hy))) hr.1
 
 /-- A function `w`, continuous on the open set `U`, that lies above a subharmonic function `v` on
 `U` and touches it at `x ∈ U` satisfies the sub-mean-value inequality at `x`. -/
