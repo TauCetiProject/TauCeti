@@ -12,10 +12,11 @@ public import TauCeti.Combinatorics.Graph.VertexCover.SimpleGraph
 # Unit-capacity matchings and the vertex cover number
 
 For a loopless multigraph, the size of a unit-capacity matching is at most the vertex cover
-number of its underlying simple graph. On a bipartite multigraph the bound is attained.
+number of its underlying simple graph. Given a finite covering bipartition, the bound is attained.
 Thus the matching side retains actual edge identities, while the cover optimum uses Mathlib's
 canonical `SimpleGraph.vertexCoverNum` interface. Parallel edges and isolated vertices are
-allowed, and finiteness concerns only the actual edge type.
+allowed. Weak duality requires only finitely many actual edges; attainment also requires two
+finite bipartition sides covering every actual vertex.
 
 The attainment result specializes the multiset capacitated Kőnig theorem proved in
 `TauCeti.Combinatorics.Graph.Matching.Capacitated`.
@@ -47,8 +48,9 @@ theorem IsCapacitatedMatching.sum_le_vertexCoverNum [G.Loopless]
     exact (Nat.cast_le.mpr h).trans_eq (by simpa [hCf.encard_eq_coe_toFinset_card] using hCnum)
   · simp [← hCnum, Set.Infinite.encard_eq hCf]
 
-/-- **Kőnig's theorem with the simple-graph cover number.** A bipartite multigraph has a
-unit-capacity matching whose size is the vertex cover number of its simplification. -/
+/-- **Kőnig's theorem with the simple-graph cover number.** A multigraph with finitely many
+actual edges and a finite covering bipartition has a unit-capacity matching whose size is the
+vertex cover number of its simplification. -/
 theorem IsBipartition.exists_isCapacitatedMatching_sum_eq_vertexCoverNum
     {L R : Finset V(G)} (hLR : G.IsBipartition L R) :
     ∃ x : E(G) → ℕ, G.IsCapacitatedMatching (fun _ ↦ 1) x ∧
