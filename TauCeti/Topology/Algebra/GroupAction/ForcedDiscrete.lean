@@ -51,10 +51,11 @@ itself) is a type synonym of `ForcedDiscrete M` carrying that action.
 
 ## Implementation notes
 
-Mathlib's `WithTopology M ⊥` also puts the discrete topology on a copy of `M`, but it is a
-one-field structure that transfers order structure and no algebraic structure. A coefficient module
-needs the group structure and the action, so this file uses a `def` synonym, as the other
-coefficient modules of the project do, and transfers both with `inferInstanceAs`.
+Mathlib's `WithDiscreteTopology M` (that is, `WithTopology M ⊥`) also puts the discrete topology
+on a copy of `M`, but it is a one-field structure that transfers order structure and no algebraic
+structure. A coefficient module needs the group structure and the action, so this file uses a
+`def` synonym, as the other coefficient modules of the project do, and transfers both with
+`inferInstanceAs`.
 -/
 
 public section
@@ -69,13 +70,15 @@ so the topology `⊥` lives on it and no topology on `M` itself is ever used. -/
 
 namespace ForcedDiscrete
 
-variable (M : Type u) [AddCommGroup M]
-
-instance : AddCommGroup (ForcedDiscrete M) := inferInstanceAs (AddCommGroup M)
+variable (M : Type u)
 
 instance : TopologicalSpace (ForcedDiscrete M) := ⊥
 
 instance : DiscreteTopology (ForcedDiscrete M) := ⟨rfl⟩
+
+variable [AddCommGroup M]
+
+instance : AddCommGroup (ForcedDiscrete M) := inferInstanceAs (AddCommGroup M)
 
 /-- The identification of `M` with `ForcedDiscrete M`. -/
 @[expose] def addEquiv : M ≃+ ForcedDiscrete M := AddEquiv.refl M

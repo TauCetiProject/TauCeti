@@ -127,6 +127,17 @@ def disjointWindow (c : ℕ) : ∀ n : ℕ, Fin (n + 1) → ℕ :=
 theorem disjointWindow_apply (c n : ℕ) (j : Fin (n + 1)) :
     disjointWindow c n j = window (n + 1) c (j : ℕ) := (rfl)
 
+/-- The product of block averages over the disjoint windows is a plain average over tuples. -/
+theorem prod_blockAverage_disjointWindow_eq_smul_sum {r : ℕ} (Y : Fin r → ℕ → Ω → ℝ)
+    (n : ℕ) :
+    (fun ω => ∏ i : Fin r, blockAverage (Y i) (disjointWindow (i : ℕ) n) ω) =
+      ((Fintype.card (Fin r → Fin (n + 1)) : ℝ))⁻¹ •
+        ∑ js : Fin r → Fin (n + 1), fun ω => ∏ i, Y i (window (n + 1) (i : ℕ) (js i : ℕ)) ω := by
+  funext ω
+  have hexp := prod_blockAverage_window_eq_expect (N := n + 1) Y ω
+  rw [Fintype.expect_eq_sum_div_card, div_eq_inv_mul] at hexp
+  simpa using hexp
+
 /-- Each disjoint window is an injective selection at each length. -/
 theorem disjointWindow_injective (c n : ℕ) : Function.Injective (disjointWindow c n) := by
   intro a b hab

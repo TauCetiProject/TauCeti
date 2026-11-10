@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Algebra.MvPolynomial.PDeriv
 
+import TauCeti.Algebra.MvPolynomial.Eval
+
 /-!
 # Partial derivatives of multivariate polynomials: chain rule, degree and coefficients
 
@@ -17,10 +19,17 @@ with respect to `Y_j` obeys the chain rule
 
 where the sum runs over any finite set of indices containing the variables of `p`.
 
-Partial differentiation lowers the total degree by at least one, so the `k`-th iterated partial
-derivative of a polynomial of total degree less than `k` vanishes, and it keeps the coefficients
-in any additive submonoid of the coefficient ring, such as a subring. These are the facts needed
-to clear the denominators of derivatives of polynomials evaluated at algebraic points.
+Partial differentiation lowers the total degree, and the degree in the differentiated variable,
+by at least one, so the `k`-th iterated partial derivative along `Xᵢ` of a polynomial of degree
+less than `k` in `Xᵢ` vanishes; it also keeps the coefficients in any additive submonoid of the
+coefficient ring, such as a subring. These are the facts needed to clear the denominators of
+derivatives of polynomials evaluated at algebraic points.
+
+Over a commutative ring the gradient at a point `t` linearises a polynomial up to a divisibility
+error: if `d ∣ xᵢ - tᵢ`, `d ∣ e` and `e ∣ x'ᵢ - xᵢ`, then `p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ)` is
+divisible by `d * e`. This is the several-variable form of
+`Polynomial.mul_dvd_eval_sub_eval_sub_mul` and the estimate behind Newton's method with an
+approximately invertible Jacobian.
 
 ## Main results
 
@@ -29,16 +38,23 @@ to clear the denominators of derivatives of polynomials evaluated at algebraic p
   the variables of `p`.
 * `MvPolynomial.totalDegree_iterate_pderiv_le`: the `k`-th iterated partial derivative has total
   degree at most `totalDegree p - k`.
-* `MvPolynomial.iterate_pderiv_eq_zero_of_totalDegree_lt`: it vanishes when `totalDegree p < k`.
+* `MvPolynomial.degreeOf_iterate_pderiv_le`: the `k`-th iterated partial derivative along `Xᵢ` has
+  degree at most `degreeOf i p - k` in `Xᵢ`.
+* `MvPolynomial.iterate_pderiv_eq_zero_of_degreeOf_lt`: the `k`-th iterated partial derivative
+  along `Xᵢ` vanishes when `degreeOf i p < k`.
 * `MvPolynomial.coeff_iterate_pderiv_mem`: iterated partial derivatives keep the coefficients in
   an additive submonoid.
 * `MvPolynomial.iterate_pderiv_prod_aeval_X`: on a separated product `∏ⱼ Qⱼ(Xⱼ)` of one-variable
   polynomials, the `k`-th iterated partial derivative along `Xᵢ` is `Qᵢ⁽ᵏ⁾(Xᵢ) ∏_{j ≠ i} Qⱼ(Xⱼ)`.
+* `MvPolynomial.mul_dvd_eval_sub_eval_sub_sum_pderiv`: Taylor's estimate
+  `d * e ∣ p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ)`.
 -/
 
 public section
 
 namespace MvPolynomial
+
+section CommSemiring
 
 variable {R σ τ : Type*} [CommSemiring R]
 
@@ -51,13 +67,8 @@ theorem pderiv_aeval [Fintype σ] (f : σ → MvPolynomial τ R) (j : τ) (p : M
   | C a => simp
   | add p q hp hq => simp [hp, hq, add_mul, Finset.sum_add_distrib]
   | mul_X p i hp =>
-    simp only [map_mul, aeval_X, Derivation.leibniz, smul_eq_mul, hp, pderiv_X, map_add,
-      add_mul, Finset.sum_add_distrib, Finset.mul_sum]
-    congr 1
-    · rw [Finset.sum_eq_single i (fun m _ hm ↦ by simp [hm]) (by simp)]
-      simp [mul_comm]
-    · refine Finset.sum_congr rfl fun m _ ↦ ?_
-      ring
+    simp [Derivation.leibniz, hp, add_mul, Finset.sum_add_distrib, Finset.mul_sum, Pi.single_apply,
+      apply_ite, mul_assoc]
 
 /-- **The chain rule** over an arbitrary type of variables:
 `∂/∂Y_j (p(f)) = ∑ᵢ (∂p/∂Xᵢ)(f) · ∂fᵢ/∂Y_j`, the sum running over any finite set `s` containing the
@@ -93,13 +104,36 @@ theorem totalDegree_iterate_pderiv_le (i : σ) (k : ℕ) (p : MvPolynomial σ R)
     have := totalDegree_pderiv_le i ((pderiv i)^[k] p)
     omega
 
-/-- The `k`-th iterated partial derivative of a polynomial of total degree less than `k`
-vanishes. -/
-theorem iterate_pderiv_eq_zero_of_totalDegree_lt {i : σ} {k : ℕ} {p : MvPolynomial σ R}
-    (h : p.totalDegree < k) : (pderiv i)^[k] p = 0 := by
+/-- Partial differentiation along `Xᵢ` lowers the degree in `Xᵢ` by at least one. -/
+theorem degreeOf_pderiv_le (i : σ) (p : MvPolynomial σ R) :
+    (pderiv i p).degreeOf i ≤ p.degreeOf i - 1 := by
+  classical
+  refine degreeOf_le_iff.2 fun m hm ↦ ?_
+  rw [mem_support_iff, coeff_pderiv] at hm
+  have h := monomial_le_degreeOf i (mem_support_iff.2 (left_ne_zero_of_mul hm))
+  simp only [Finsupp.coe_add, Pi.add_apply, Finsupp.single_eq_same] at h
+  omega
+
+/-- The `k`-th iterated partial derivative along `Xᵢ` lowers the degree in `Xᵢ` by at least
+`k`. -/
+theorem degreeOf_iterate_pderiv_le (i : σ) (k : ℕ) (p : MvPolynomial σ R) :
+    ((pderiv i)^[k] p).degreeOf i ≤ p.degreeOf i - k := by
+  induction k with
+  | zero => simp
+  | succ k ih =>
+    rw [Function.iterate_succ_apply']
+    have := degreeOf_pderiv_le i ((pderiv i)^[k] p)
+    omega
+
+/-- The `k`-th iterated partial derivative along `Xᵢ` of a polynomial of degree less than `k` in
+`Xᵢ` vanishes. -/
+theorem iterate_pderiv_eq_zero_of_degreeOf_lt {i : σ} {k : ℕ} {p : MvPolynomial σ R}
+    (h : p.degreeOf i < k) : (pderiv i)^[k] p = 0 := by
   obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt h
-  rw [Function.iterate_succ_apply', totalDegree_eq_zero_iff_eq_C.1 (Nat.le_zero.1
-    ((totalDegree_iterate_pderiv_le i _ p).trans (by omega))), pderiv_C]
+  rw [Function.iterate_succ_apply']
+  refine pderiv_eq_zero_of_notMem_vars fun hi ↦ mem_vars_iff_degreeOf_ne_zero.1 hi ?_
+  have := degreeOf_iterate_pderiv_le i (p.degreeOf i + k) p
+  omega
 
 /-- Partial differentiation keeps the coefficients in an additive submonoid of the coefficient
 ring, such as a subring. -/
@@ -137,25 +171,56 @@ theorem iterate_pderiv_prod_aeval_X [DecidableEq σ] {s : Finset σ} {i : σ} (h
     (pderiv i)^[k] (∏ j ∈ s, Polynomial.aeval (X j : MvPolynomial σ R) (Q j)) =
       Polynomial.aeval (X i) (Polynomial.derivative^[k] (Q i)) *
         ∏ j ∈ s.erase i, Polynomial.aeval (X j) (Q j) := by
-  set g := ∏ j ∈ s.erase i, Polynomial.aeval (X j : MvPolynomial σ R) (Q j)
-  have hg : pderiv i g = 0 := by
-    have key : ∀ t : Finset σ, i ∉ t →
-        pderiv i (∏ j ∈ t, Polynomial.aeval (X j : MvPolynomial σ R) (Q j)) = 0 := by
-      intro t
-      induction t using Finset.induction_on with
-      | empty => simp
-      | insert j t hj ih =>
-        intro hit
-        rw [Finset.mem_insert, not_or] at hit
-        rw [Finset.prod_insert hj, Derivation.leibniz, ih hit.2, Derivation.map_aeval,
-          pderiv_X_of_ne (Ne.symm hit.1)]
-        simp
-    exact key _ (Finset.notMem_erase i s)
-  rw [← Finset.mul_prod_erase s _ hi, ← iterate_pderiv_aeval_X_self]
+  -- The factors other than the `i`-th do not involve `Xᵢ`, so their product is a constant for
+  -- `∂/∂Xᵢ`.
+  have hg : pderiv i (∏ j ∈ s.erase i, Polynomial.aeval (X j : MvPolynomial σ R) (Q j)) = 0 :=
+    Finset.prod_induction _ (fun g ↦ pderiv i g = 0)
+      (fun a b ha hb ↦ by simp [Derivation.leibniz, ha, hb]) pderiv_one
+      fun j hj ↦ by simp [Derivation.map_aeval, pderiv_X_of_ne (Finset.ne_of_mem_erase hj)]
+  rw [← Finset.mul_prod_erase s _ hi]
   induction k with
   | zero => rfl
   | succ k ih =>
-    rw [Function.iterate_succ_apply', ih, Derivation.leibniz, Function.iterate_succ_apply']
-    simp [hg, mul_comm]
+    simp [Function.iterate_succ_apply', ih, Derivation.leibniz, Derivation.map_aeval, hg, mul_comm]
+
+end CommSemiring
+
+section CommRing
+
+variable {R σ : Type*} [CommRing R]
+
+/-- **Taylor's estimate in several variables.** If `d ∣ xᵢ - tᵢ`, `d ∣ e` and `e ∣ x'ᵢ - xᵢ` for
+every `i`, then the gradient at `t` linearises `p` from `x` to `x'` up to an error divisible by
+`d * e`. -/
+theorem mul_dvd_eval_sub_eval_sub_sum_pderiv [Fintype σ] (p : MvPolynomial σ R) {d e : R}
+    {t x x' : σ → R} (hx : ∀ i, d ∣ x i - t i) (hde : d ∣ e) (hxx' : ∀ i, e ∣ x' i - x i) :
+    d * e ∣ eval x' p - eval x p - ∑ j, eval t (pderiv j p) * (x' j - x j) := by
+  induction p using MvPolynomial.induction_on with
+  | C a => simp
+  | add p q hp hq =>
+    convert dvd_add hp hq using 1
+    simp only [map_add, add_mul, Finset.sum_add_distrib]
+    ring
+  | mul_X p i hp =>
+    classical
+    set S := ∑ j, eval t (pderiv j p) * (x' j - x j)
+    have hS : e ∣ S := Finset.dvd_sum fun j _ ↦ dvd_mul_of_dvd_right (hxx' j) _
+    have hx'i : d ∣ x' i - t i := by
+      simpa using dvd_add (hde.trans (hxx' i)) (hx i)
+    -- By the Leibniz rule, the gradient term of `p * Xᵢ` is `tᵢ S + p(t) (x'ᵢ - xᵢ)`.
+    have hsum : ∑ j, eval t (pderiv j (p * X i)) * (x' j - x j) =
+        t i * S + eval t p * (x' i - x i) := by
+      simp only [Derivation.leibniz, pderiv_X, smul_eq_mul, map_add, map_mul, eval_X, add_mul,
+        Finset.sum_add_distrib, S, Finset.mul_sum, Pi.single_apply]
+      simp only [apply_ite (eval t), map_one, map_zero, mul_ite, ite_mul, mul_one, mul_zero,
+        zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ↓reduceIte, mul_assoc]
+      ring
+    convert dvd_add (dvd_add (dvd_mul_of_dvd_left hp (x' i)) (mul_dvd_mul hx'i hS))
+      (mul_dvd_mul (dvd_eval_sub_eval p hx) (hxx' i)) using 1
+    rw [hsum]
+    simp only [map_mul, eval_X]
+    ring
+
+end CommRing
 
 end MvPolynomial

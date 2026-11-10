@@ -7,10 +7,17 @@ module
 
 public import Mathlib.NumberTheory.NumberField.Units.Regulator
 public import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
+public import TauCeti.NumberTheory.NumberField.Units.Dirichlet
 public import TauCeti.NumberTheory.NumberField.Units.Log.Embedding
 
 /-!
 # Evaluating and bounding the regulator
+
+In unit rank zero the regulator is evaluated exactly. When the unit rank is zero (equivalently,
+there is a single infinite place, so the field is `ℚ` or imaginary quadratic), the unit lattice
+lives in the zero-dimensional log space, and its covolume is the empty determinant `1`
+(`NumberField.Units.regulator_eq_one_of_rank_eq_zero`). Mathlib defines the regulator and proves
+it positive (`NumberField.Units.regulator_pos`) but does not evaluate it in the rank-zero case.
 
 For a number field of unit rank one, a unit generating the units modulo torsion computes the
 regulator at any infinite place `w` as `w.mult * |Real.log (w u)|`. In particular, at a place
@@ -54,6 +61,39 @@ public section
 
 open NumberField NumberField.Units NumberField.InfinitePlace
 open scoped NumberField
+
+namespace NumberField.Units
+
+open Module
+open NumberField.Units.dirichletUnitTheorem (w₀)
+
+variable (K : Type*) [Field K] [NumberField K]
+
+/-- **The regulator of a number field of unit rank zero is `1`.** When the unit rank is zero,
+the unit lattice sits inside the zero-dimensional log space, and the regulator, its covolume,
+is the determinant of an empty matrix. -/
+@[simp]
+theorem regulator_eq_one_of_rank_eq_zero (h : rank K = 0) : regulator K = 1 := by
+  classical
+  -- A rank-zero field has no infinite place other than the distinguished `w₀`, so the matrix
+  -- whose determinant is the regulator is the empty matrix.
+  have : IsEmpty {w : InfinitePlace K // w ≠ w₀} := by
+    rw [← Fintype.card_eq_zero_iff, ← Fintype.card_congr (equivFinRank K), Fintype.card_fin, h]
+  rw [regulator_eq_det', Matrix.det_isEmpty, abs_one]
+
+/-- **The regulator of `ℚ` is `1`.** The rational field has rank zero, so its regulator is the
+empty determinant. -/
+@[simp]
+theorem regulator_rat_eq_one : regulator ℚ = 1 :=
+  regulator_eq_one_of_rank_eq_zero ℚ (rank_eq_zero_of_finrank_eq_one ℚ (finrank_self ℚ))
+
+/-- **The regulator of an imaginary quadratic field is `1`**, the rank-zero case on a
+degree-two totally complex field. -/
+theorem regulator_eq_one_of_isTotallyComplex_of_finrank_eq_two
+    [IsTotallyComplex K] (h : finrank ℚ K = 2) : regulator K = 1 :=
+  regulator_eq_one_of_rank_eq_zero K (rank_eq_zero_of_isTotallyComplex_of_finrank_eq_two K h)
+
+end NumberField.Units
 
 namespace TauCeti.NumberField.Units
 

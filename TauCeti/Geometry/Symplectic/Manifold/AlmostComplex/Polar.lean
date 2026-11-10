@@ -6,10 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
+public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Pullback
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.PolarCompatible
 import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Smooth
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.Riemannian.Invariant
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 import TauCeti.Geometry.Symplectic.Manifold.Flat
 
@@ -34,6 +36,20 @@ The construction is natural in the metric: if `g` is the compatible metric `σ(�
 smooth almost complex structure `J`, the polar normalization of `σ` is `J` itself
 (`TauCeti.SmoothTwoForm.IsNondegenerate.polarComplexStructure_eq_of_inner_eq`).
 
+It is also natural under maps preserving both the metric and the form: a map between manifolds of
+the same dimension whose differentials preserve them is complex linear for the two polar
+normalizations
+(`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_polarComplexStructure_apply`), and such a
+diffeomorphism pulls one polar normalization back to the other
+(`TauCeti.SmoothTwoForm.IsNondegenerate.pullback_polarComplexStructure`). This is what produces
+almost complex structures invariant under a group of symplectomorphisms: averaging an arbitrary
+compatible `J` over the group does not preserve `J² = -1`, but averaging a metric gives an
+invariant metric, whose polar normalization is then invariant. For a finite group acting smoothly
+by symplectomorphisms, averaging the pullbacks of a smooth metric
+(`TauCeti.averageRiemannianMetric`) thus gives a compatible smooth almost complex structure for
+which every action map is complex linear
+(`TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible_mfderiv_smul_apply`).
+
 Smoothness is checked in a trivialization of the tangent bundle. There `g` and `σ` become smooth
 families of bilinear forms on a model fibre, and the polar normalization becomes the expression of
 `TauCeti.SymplecticForm.conjContinuousAlgEquiv_toContinuousLinearMap_polarComplexStructure`,
@@ -57,6 +73,11 @@ inversion, each of which depends smoothly on its argument.
   structure whose compatible metric is the metric of `M`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible`: every nondegenerate smooth two-form on
   a σ-compact Hausdorff manifold admits a compatible smooth almost complex structure.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_polarComplexStructure_apply`,
+  `TauCeti.SmoothTwoForm.IsNondegenerate.pullback_polarComplexStructure`: maps preserving the
+  metric and the form intertwine the polar normalizations.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.exists_compatible_mfderiv_smul_apply`: a finite group
+  acting smoothly by symplectomorphisms preserves some compatible smooth almost complex structure.
 
 ## References
 
@@ -260,6 +281,52 @@ theorem polarComplexStructure_eq_of_inner_eq (h : σ.IsNondegenerate)
             hJ]]
     exact J.almostComplexStructureAt_apply x v
 
+section Naturality
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [FiniteDimensional ℝ E']
+  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [IsManifold I' ∞ N] {τ : SmoothTwoForm I' N} [RiemannianBundle (fun y : N ↦ TangentSpace I' y)]
+  [IsContMDiffRiemannianBundle I' ∞ E' (fun y : N ↦ TangentSpace I' y)]
+
+/-- **Naturality of polar normalization.** Let `f : M → N` be a map between manifolds of the same
+dimension. If its differential at `x` carries the metric and the form `σ` of `M` at `x` to the
+metric and the form `τ` of `N` at `f x`, then it intertwines their polar normalizations:
+`df_x ∘ J_x = J_(f x) ∘ df_x`. -/
+theorem mfderiv_polarComplexStructure_apply (h : σ.IsNondegenerate) (hτ : τ.IsNondegenerate)
+    (hE : finrank ℝ E = finrank ℝ E') {f : M → N} {x : M}
+    (hg : ∀ u v : TangentSpace I x, ⟪mfderiv I I' f x u, mfderiv I I' f x v⟫ = ⟪u, v⟫)
+    (hσ : ∀ u v : TangentSpace I x,
+      τ.eval₂ (f x) (mfderiv I I' f x u) (mfderiv I I' f x v) = σ.eval₂ x u v)
+    (v : TangentSpace I x) :
+    mfderiv I I' f x (h.polarComplexStructure x v) =
+      hτ.polarComplexStructure (f x) (mfderiv I I' f x v) := by
+  -- The differential is a linear isometry between spaces of equal dimension, hence a linear
+  -- isometric equivalence, and it is a linear symplectomorphism.
+  let e : TangentSpace I x ≃ₗᵢ[ℝ] TangentSpace I' (f x) :=
+    ((mfderiv I I' f x).toLinearMap.isometryOfInner hg).toLinearIsometryEquiv hE
+  have he : SymplecticForm.IsSymplectomorphism (h.symplecticFormAt x)
+      (hτ.symplecticFormAt (f x)) e.toLinearEquiv :=
+    SymplecticForm.isSymplectomorphism_iff.2 fun u w ↦ by
+      rw [symplecticFormAt_apply, symplecticFormAt_apply]
+      exact hσ u w
+  rw [polarComplexStructure_apply, polarComplexStructure_apply]
+  exact (he.polarComplexStructure_apply v).symm
+
+/-- **Naturality of polar normalization under diffeomorphisms.** A diffeomorphism `ψ : M → N`
+which pulls `τ` back to `σ` and is an isometry pulls the polar normalization of `τ` back to the
+polar normalization of `σ`. In particular, symplectic isometries of `M` preserve the polar
+normalization of its form. -/
+theorem pullback_polarComplexStructure (h : σ.IsNondegenerate) (hτ : τ.IsNondegenerate)
+    (ψ : M ≃ₘ⟮I, I'⟯ N) (hψ : SmoothForm.mpullback ψ ψ.contMDiff τ = σ)
+    (hg : ∀ (x : M) (u v : TangentSpace I x), ⟪mfderiv I I' ψ x u, mfderiv I I' ψ x v⟫ = ⟪u, v⟫) :
+    hτ.polarComplexStructure.pullback ψ = h.polarComplexStructure :=
+  ((SmoothAlmostComplexStructure.eq_pullback_iff ψ _).2 fun x v ↦
+    h.mfderiv_polarComplexStructure_apply hτ
+      (ψ.mfderivToContinuousLinearEquiv (by simp) x).toLinearEquiv.finrank_eq (hg x)
+      (fun u w ↦ by rw [← SmoothForm.eval₂_mpullback ψ ψ.contMDiff τ, hψ]) v).symm
+
+end Naturality
+
 end Metric
 
 /-- **Existence of compatible almost complex structures.** On a Hausdorff σ-compact manifold
@@ -274,6 +341,31 @@ theorem exists_compatible [T2Space M] [SigmaCompactSpace M] (h : σ.IsNondegener
   let : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
     Bundle.instIsContMDiffRiemannianBundle g
   exact ⟨h.polarComplexStructure, h.compatible_polarComplexStructure⟩
+
+/-- **Existence of invariant compatible almost complex structures for finite groups.** If a finite
+group acts smoothly on a Hausdorff σ-compact manifold by maps preserving a fiberwise nondegenerate
+smooth two-form `σ`, then `σ` admits a compatible smooth almost complex structure `J` for which
+every action map is complex linear: `d(a •)_x ∘ J_x = J_(a • x) ∘ d(a •)_x`. It is the polar
+normalization of `σ` for the average of the pullbacks of a smooth Riemannian metric. -/
+theorem exists_compatible_mfderiv_smul_apply [T2Space M] [SigmaCompactSpace M] {G : Type*}
+    [Group G] [Finite G] [MulAction G M] [ContMDiffConstSMul I ∞ G M] (h : σ.IsNondegenerate)
+    (hσ : ∀ (a : G) (x : M) (u v : TangentSpace I x),
+      σ.eval₂ (a • x) (mfderiv I I (a • ·) x u) (mfderiv I I (a • ·) x v) = σ.eval₂ x u v) :
+    ∃ J : SmoothAlmostComplexStructure I M, σ.Compatible J ∧
+      ∀ (a : G) (x : M) (v : TangentSpace I x),
+        mfderiv I I (a • ·) x (J x v) = J (a • x) (mfderiv I I (a • ·) x v) := by
+  -- The averaged metric is smooth when the action maps are `C^(∞ + 1)`, that is, smooth.
+  have : ENat.LEInfty ((∞ : ℕ∞ω) + 1) := ⟨by simp⟩
+  have := Fintype.ofFinite G
+  obtain ⟨g⟩ := nonempty_contMDiffRiemannianMetric (IB := I) (n := ⊤) (F := E)
+    (E := fun x : M ↦ TangentSpace I x)
+  let : RiemannianBundle (fun x : M ↦ TangentSpace I x) :=
+    ⟨(averageRiemannianMetric G g).toRiemannianMetric⟩
+  let : IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x) :=
+    Bundle.instIsContMDiffRiemannianBundle (averageRiemannianMetric G g)
+  exact ⟨h.polarComplexStructure, h.compatible_polarComplexStructure, fun a x v ↦
+    h.mfderiv_polarComplexStructure_apply h rfl (averageRiemannianMetric_inner_mfderiv G g a x)
+      (hσ a x) v⟩
 
 end SmoothTwoForm.IsNondegenerate
 

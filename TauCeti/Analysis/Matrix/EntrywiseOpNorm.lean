@@ -36,6 +36,47 @@ open Matrix
 
 open scoped BigOperators
 
+/-- If every entry in row `i` of a finite matrix is bounded by `ε ≥ 0`, the `i`-th coordinate of
+its Euclidean action has norm at most `ε * (√(card κ) * ‖x‖)`. -/
+theorem _root_.Matrix.norm_toEuclideanLin_apply_le_of_entry_le {𝕜 ι κ : Type*} [RCLike 𝕜]
+    [Fintype κ] [DecidableEq κ]
+    {A : Matrix ι κ 𝕜} {ε : ℝ} (heps : 0 ≤ ε) (i : ι) (hentry : ∀ j, ‖A i j‖ ≤ ε)
+    (x : EuclideanSpace 𝕜 κ) :
+    ‖(Matrix.toEuclideanLin A x) i‖ ≤ ε * (Real.sqrt (Fintype.card κ) * ‖x‖) := by
+  calc
+    ‖(Matrix.toEuclideanLin A x) i‖ = ‖∑ j : κ, A i j * x j‖ := by
+      -- `toEuclideanLin` is `toLpLin 2 2`: unwrap `WithLp` explicitly, then expand `mulVec`;
+      -- the closing `rfl` of `rw` identifies `ofLp x j` with `x j`.
+      rw [show (Matrix.toEuclideanLin A x) i = (A *ᵥ WithLp.ofLp x) i from
+        congrArg (fun y : EuclideanSpace 𝕜 ι => y i) (Matrix.toLpLin_apply (p := 2) (q := 2) A x),
+        Matrix.mulVec_apply_eq_sum]
+    _ ≤ ∑ j : κ, ‖A i j * x j‖ := norm_sum_le _ _
+    _ = ∑ j : κ, ‖A i j‖ * ‖x j‖ := by simp only [norm_mul]
+    _ ≤ ∑ j : κ, ε * ‖x j‖ :=
+      Finset.sum_le_sum fun j _ =>
+        mul_le_mul_of_nonneg_right (hentry j) (norm_nonneg _)
+    _ = ε * ∑ j : κ, ‖x j‖ := by rw [Finset.mul_sum]
+    _ ≤ ε * (Real.sqrt (Fintype.card κ) * ‖x‖) :=
+      mul_le_mul_of_nonneg_left (PiLp.sum_norm_le_sqrt_card_mul_norm x) heps
+
+/-- Squared form of the entrywise bound on the Euclidean action of a finite matrix with entries
+bounded by `ε ≥ 0`. -/
+private theorem _root_.Matrix.norm_toEuclideanLin_sq_le_of_entry_le {𝕜 ι κ : Type*} [RCLike 𝕜]
+    [Fintype ι] [Fintype κ] [DecidableEq κ]
+    {A : Matrix ι κ 𝕜} {ε : ℝ} (heps : 0 ≤ ε) (hentry : ∀ i j, ‖A i j‖ ≤ ε)
+    (x : EuclideanSpace 𝕜 κ) :
+    ‖Matrix.toEuclideanLin A x‖ ^ 2 ≤
+      (Fintype.card ι : ℝ) * (ε * (Real.sqrt (Fintype.card κ) * ‖x‖)) ^ 2 := by
+  rw [EuclideanSpace.norm_sq_eq]
+  calc
+    ∑ i : ι, ‖(Matrix.toEuclideanLin A x) i‖ ^ 2
+        ≤ ∑ _i : ι, (ε * (Real.sqrt (Fintype.card κ) * ‖x‖)) ^ 2 :=
+      Finset.sum_le_sum fun i _ =>
+        pow_le_pow_left₀ (norm_nonneg _)
+          (Matrix.norm_toEuclideanLin_apply_le_of_entry_le heps i (hentry i) x) 2
+    _ = (Fintype.card ι : ℝ) * (ε * (Real.sqrt (Fintype.card κ) * ‖x‖)) ^ 2 := by
+      rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+
 /-- If every entry of a finite rectangular matrix is bounded by `ε`, its Euclidean
 action has norm at most `√(card ι) * ε * √(card κ)` times the input norm.
 
@@ -52,55 +93,18 @@ theorem _root_.Matrix.norm_toEuclideanLin_le_of_entry_le {𝕜 ι κ : Type*} [R
     · obtain ⟨i₀⟩ := hrows
       obtain ⟨j₀⟩ := hcols
       have heps : 0 ≤ ε := (norm_nonneg (A i₀ j₀)).trans (hentry i₀ j₀)
-      have hrow : ∀ i : ι,
-          ‖(Matrix.toEuclideanLin A x) i‖ ≤
-            ε * (Real.sqrt (Fintype.card κ) * ‖x‖) := by
-        intro i
-        have happ : (Matrix.toEuclideanLin A x) i = ∑ j : κ, A i j * x j := by
-          -- `toEuclideanLin` abbreviates `toLpLin 2 2`; use its public evaluation
-          -- theorem instead of reducing the `EuclideanSpace`/`WithLp` implementation.
-          calc
-            _ = (WithLp.toLp 2 (A *ᵥ WithLp.ofLp x)) i :=
-              congrArg (fun y : EuclideanSpace 𝕜 ι => y i)
-                (Matrix.toLpLin_apply (p := 2) (q := 2) A x)
-            _ = ∑ j : κ, A i j * x j := by
-              simp [Matrix.mulVec, dotProduct]
-        calc
-          ‖(Matrix.toEuclideanLin A x) i‖ = ‖∑ j : κ, A i j * x j‖ := by rw [happ]
-          _ ≤ ∑ j : κ, ‖A i j * x j‖ := norm_sum_le _ _
-          _ = ∑ j : κ, ‖A i j‖ * ‖x j‖ := by simp only [norm_mul]
-          _ ≤ ∑ j : κ, ε * ‖x j‖ :=
-            Finset.sum_le_sum fun j _ =>
-              mul_le_mul_of_nonneg_right (hentry i j) (norm_nonneg _)
-          _ = ε * ∑ j : κ, ‖x j‖ := by rw [Finset.mul_sum]
-          _ ≤ ε * (Real.sqrt (Fintype.card κ) * ‖x‖) := by
-            exact mul_le_mul_of_nonneg_left
-              (PiLp.sum_norm_le_sqrt_card_mul_norm x) heps
-      have hnorm_sq : ‖Matrix.toEuclideanLin A x‖ ^ 2
-          ≤ (Fintype.card ι : ℝ) *
-            (ε * (Real.sqrt (Fintype.card κ) * ‖x‖)) ^ 2 := by
-        rw [EuclideanSpace.norm_sq_eq]
-        calc
-          ∑ i : ι, ‖(Matrix.toEuclideanLin A x) i‖ ^ 2
-              ≤ ∑ _i : ι, (ε * (Real.sqrt (Fintype.card κ) * ‖x‖)) ^ 2 := by
-            exact Finset.sum_le_sum fun i _ =>
-              pow_le_pow_left₀ (norm_nonneg _) (hrow i) 2
-          _ = (Fintype.card ι : ℝ) *
-                (ε * (Real.sqrt (Fintype.card κ) * ‖x‖)) ^ 2 := by
-            rw [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
       have hs : (Real.sqrt (Fintype.card ι)) ^ 2 = (Fintype.card ι : ℝ) :=
         Real.sq_sqrt (by positivity)
-      have hsq_eq :
-          (Real.sqrt (Fintype.card ι) * ε * Real.sqrt (Fintype.card κ) * ‖x‖) ^ 2 =
-            (Fintype.card ι : ℝ) *
-              (ε * (Real.sqrt (Fintype.card κ) * ‖x‖)) ^ 2 := by
-        simp only [mul_pow, hs]
-        ring
       have hle : ‖Matrix.toEuclideanLin A x‖ ^ 2
           ≤ (Real.sqrt (Fintype.card ι) * ε *
               Real.sqrt (Fintype.card κ) * ‖x‖) ^ 2 := by
-        rw [hsq_eq]
-        exact hnorm_sq
+        calc ‖Matrix.toEuclideanLin A x‖ ^ 2
+            ≤ (Fintype.card ι : ℝ) *
+              (ε * (Real.sqrt (Fintype.card κ) * ‖x‖)) ^ 2 :=
+              Matrix.norm_toEuclideanLin_sq_le_of_entry_le heps hentry x
+          _ = _ := by
+            simp only [mul_pow, hs]
+            ring
       exact (abs_le_of_sq_le_sq' hle (by positivity)).2
     · have hx : x = 0 := by
         ext j

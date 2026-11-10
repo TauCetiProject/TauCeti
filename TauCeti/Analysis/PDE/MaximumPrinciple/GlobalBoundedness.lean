@@ -194,15 +194,14 @@ private theorem toReal_eLpNorm_posPartAbove_le
     rwa [ENNReal.toReal_mul, ENNReal.coe_toReal, toReal_enorm] at this
   -- Hölder's inequality on the superlevel set `{u > l}`, off which `w` vanishes.
   set A := {x | l < W1p.value u x}
-  have hA : MeasurableSet A :=
-    measurableSet_lt measurable_const (Lp.stronglyMeasurable _).measurable
   have : IsFiniteMeasure ν := isFiniteMeasure_restrict.2 hOmega
   have hwA : ∀ᵐ x ∂ν, x ∉ A → W1p.value w x = 0 := by
     filter_upwards [hval] with x hx hxA
     rw [hx, max_eq_right (sub_nonpos.2 (not_lt.1 hxA))]
-  have hholder := (le_abs_self _).trans <|
-    MeasureTheory.abs_integral_mul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow hr hs hrs hf hwLp hA
+  have hholder := (Real.le_norm_self _).trans <|
+    MeasureTheory.norm_integral_smul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow hr hs hrs hf hwLp
       (measure_ne_top ν A) hwA
+  simp only [smul_eq_mul] at hholder
   -- Absorb one factor of `‖w‖_{Lˢ}`.
   set W := (eLpNorm (W1p.value w) s ν).toReal
   set F := (eLpNorm f r ν).toReal
@@ -659,16 +658,15 @@ private theorem toReal_eLpNorm_posPartAbove_le_divergence
     rw [← Real.norm_eq_abs]
     exact norm_integral_le_of_norm_le hint (ae_of_all _ fun x => norm_inner_le_norm _ _)
   set A := {x | l < W1p.value u x}
-  have hA : MeasurableSet A :=
-    measurableSet_lt measurable_const (Lp.stronglyMeasurable _).measurable
   have hwA : ∀ᵐ x ∂ν, x ∉ A → ‖W1p.gradient w x‖ = 0 := by
     filter_upwards [W1p.gradient_posPartAbove_ae (by norm_num) hl u] with x hx hxA
     rw [hx, indicator_of_notMem hxA, norm_zero]
   have hq0 : 0 < q := by exact_mod_cast two_pos.trans_le hq
-  have hholder := (le_abs_self _).trans <|
-    MeasureTheory.abs_integral_mul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow (s := 2) hq0
+  have hholder := (Real.le_norm_self _).trans <|
+    MeasureTheory.norm_integral_smul_le_eLpNorm_mul_eLpNorm_mul_measureReal_rpow (s := 2) hq0
       two_pos (by rw [NNReal.coe_ofNat]; linarith [inv_anti₀ two_pos hq]) hF.norm
-      (by simpa using (Lp.memLp (W1p.gradient w)).norm) hA (measure_ne_top ν A) hwA
+      (by simpa using (Lp.memLp (W1p.gradient w)).norm) (measure_ne_top ν A) hwA
+  simp only [smul_eq_mul] at hholder
   -- Hölder's exponent for the measure of `{u > l}`, with `‖F‖` in `L^q` and `‖∇w‖` in `L²`.
   have hexp : 1 - (q : ℝ)⁻¹ - ((2 : ℝ≥0) : ℝ)⁻¹ = 2⁻¹ - (q : ℝ)⁻¹ := by
     rw [NNReal.coe_ofNat]

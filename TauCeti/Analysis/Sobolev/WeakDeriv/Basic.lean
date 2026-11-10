@@ -165,6 +165,8 @@ weaken them for no gain.
   containing it.
 * `TauCeti.HasWeakLineDerivOn.ae_eq` and `TauCeti.HasWeakFDerivOn.ae_eq`: uniqueness almost
   everywhere on `Ω`.
+* `TauCeti.HasWeakLineDerivOn.ae_eq_zero_of_isOpen`: a weak line derivative vanishes almost
+  everywhere on an open set where the function does.
 * `TauCeti.HasWeakLineDerivOn.ae_eq_lineDeriv` and `TauCeti.HasWeakFDerivOn.ae_eq_fderiv`: where
   the classical derivative exists and is locally integrable on `Ω`, the weak one agrees with it
   almost everywhere.
@@ -845,6 +847,26 @@ theorem HasWeakLineDerivOn.ae_eq {u₁' u₂' : E → F} (h₁ : HasWeakLineDeri
   rw [Filter.EventuallyEq, ae_restrict_iff' Ω.isOpen.measurableSet]
   filter_upwards [hzero] with x hx hxΩ
   simpa [sub_eq_zero] using hx hxΩ
+
+/-- **A weak derivative vanishes where the function does.** If `u` has weak derivative `u'` in the
+direction `v` on `Ω` and `u` vanishes almost everywhere on `Ω ∩ t` for an open set `t`, then so does
+`u'`. The set `t` need not lie in `Ω`. With `t = Kᶜ` for a closed set `K`, this supplies the
+vanishing of the derivative required by the relative extension by zero
+`TauCeti.HasWeakLineDerivOn.indicator_of_isClosed`. -/
+theorem HasWeakLineDerivOn.ae_eq_zero_of_isOpen {u' : E → F}
+    (h : HasWeakLineDerivOn μ Ω u u' v) {t : Set E} (ht : IsOpen t)
+    (hu : ∀ᵐ x ∂μ.restrict Ω, x ∈ t → u x = 0) :
+    ∀ᵐ x ∂μ.restrict Ω, x ∈ t → u' x = 0 := by
+  have := h.completeSpace
+  let W : Opens E := Ω ⊓ ⟨t, ht⟩
+  have hWm : MeasurableSet (W : Set E) := W.isOpen.measurableSet
+  have huW : u =ᵐ[μ.restrict W] 0 := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset inf_le_left hu, ae_restrict_mem hWm]
+      with x hx hxW using hx hxW.2
+  have hW := (ae_restrict_iff' hWm).1
+    (((h.mono inf_le_left).congr_ae huW).ae_eq hasWeakLineDerivOn_zero)
+  filter_upwards [ae_restrict_mem Ω.isOpen.measurableSet, ae_restrict_of_ae hW]
+    with x hxΩ hx hxt using hx ⟨hxΩ, hxt⟩
 
 /-- **A weak Fréchet derivative is unique almost everywhere.** Two weak derivatives of `u` on `Ω`
 agree almost everywhere on `Ω`.

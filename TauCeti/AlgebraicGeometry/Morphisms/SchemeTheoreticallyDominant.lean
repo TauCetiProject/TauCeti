@@ -7,6 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.SchemeTheoreticallyDominant
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
+import TauCeti.AlgebraicGeometry.IdealSheaf.Locality
 import Mathlib.RingTheory.RingHom.Injective
 
 /-!
@@ -127,9 +128,8 @@ theorem IsSchemeTheoreticallyDominant.of_openCover {f : X ⟶ Y} (𝒰 : Y.OpenC
     IsSchemeTheoreticallyDominant f := by
   -- the kernels of the members of an open cover of `Y` have trivial intersection, so it suffices
   -- that each of them contains the kernel of `f`
-  rw [isSchemeTheoreticallyDominant_iff, eq_bot_iff, ← Scheme.Hom.ker_eq_bot_of_isIso (𝟙 Y),
-    ← Scheme.Hom.iInf_ker_openCover_map_comp (𝟙 Y) 𝒰]
-  refine le_iInf fun i ↦ ?_
+  rw [isSchemeTheoreticallyDominant_iff, eq_bot_iff, ← Scheme.Hom.ker_eq_bot_of_isIso (𝟙 Y)]
+  refine Scheme.Hom.le_ker_of_openCover (𝟙 Y) _ 𝒰 fun i ↦ ?_
   -- the base change of `f` to a member of the cover has trivial kernel, so following it by the
   -- member gives a morphism with the kernel of the member, and this morphism factors through `f`
   rw [Category.comp_id, ← Scheme.IdealSheafData.map_bot (𝒰.f i), ← (h i).ker_eq_bot,

@@ -62,7 +62,8 @@ for real seminormed spaces, giving a Taylor seminorm. Definiteness is needed onl
   homeomorphic to `ι → ℂ`.
 * `ContinuousLinearMap.complexify` and `ContinuousLinearEquiv.complexify`: the complex-linear
   extension of bounded real operators and equivalences, with
-  `ContinuousLinearMap.norm_complexify` and `ContinuousLinearMap.complexifyAlgHom`.
+  `ContinuousLinearMap.norm_complexify` and the continuous algebra homomorphism
+  `ContinuousLinearMap.complexifyAlgHom` (`ContinuousLinearMap.continuous_complexifyAlgHom`).
 * `TauCeti.Complexification.ext_ofReal`: complex-linear maps out of `X_ℂ` are determined on `X`,
   so `T.complexify` is the unique complex-linear extension of `T`.
 
@@ -130,6 +131,9 @@ def ofReal [Zero X] (x : X) : Complexification X := ⟨x, 0⟩
 
 @[simp] theorem ofReal_re [Zero X] (x : X) : (ofReal x).re = x := (rfl)
 @[simp] theorem ofReal_im [Zero X] (x : X) : (ofReal x).im = 0 := (rfl)
+
+/-- The real embedding sends zero to zero. -/
+@[simp] theorem ofReal_zero [Zero X] : ofReal (0 : X) = 0 := (rfl)
 
 variable [AddCommGroup X] [Module ℝ X]
 
@@ -501,6 +505,10 @@ theorem complexifyₗᵢ_apply (T : X →L[ℝ] Y) : complexifyₗᵢ X Y T = T.
 
 @[simp]
 theorem complexifyAlgHom_apply (T : X →L[ℝ] X) : complexifyAlgHom X T = T.complexify := (rfl)
+
+/-- Complexification of bounded endomorphisms is continuous, being an isometry. -/
+theorem continuous_complexifyAlgHom : Continuous (complexifyAlgHom X) :=
+  (complexifyₗᵢ X X).continuous
 
 /-- Complexification preserves natural powers of bounded endomorphisms. -/
 @[simp]

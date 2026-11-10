@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height
+public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Height.Basic
 import Mathlib.Algebra.CharP.Two
 import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 

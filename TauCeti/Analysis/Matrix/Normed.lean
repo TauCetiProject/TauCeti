@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Matrix.Normed
 public import Mathlib.Topology.Instances.Matrix
+import Mathlib.Topology.UniformSpace.Matrix
 
 /-!
 # Topologies from matrix norms
@@ -20,11 +21,15 @@ operator topology agrees with it definitionally (`Matrix.linftyOpTopologicalSpac
 not syntactically the same instance, so continuity of the conjugate transpose is transported along
 that equality to the topology selected here.
 
+The operator uniformity also agrees with the complete product uniformity when the entries are
+complete. Its completeness instance is activated by `Matrix.Norms.Operator`, alongside the norm.
+
 ## Main declarations
 
 * `Matrix.linftyOpTopologicalSpace`: the topology induced by the `L∞` operator norm.
 * `Matrix.linftyOpTopologicalSpace_eq`: that topology is the entrywise topology on matrices.
 * `Matrix.linftyOpContinuousStar`: conjugate transposition is continuous for that topology.
+* `Matrix.linftyOpCompleteSpace`: completeness for the operator uniformity, scoped with the norm.
 -/
 
 public section
@@ -48,6 +53,18 @@ theorem linftyOpTopologicalSpace_eq (m n : Type*) [Fintype m] [Fintype n]
     (α : Type*) [SeminormedAddCommGroup α] :
     Matrix.linftyOpTopologicalSpace m n α = (inferInstance : TopologicalSpace (Matrix m n α)) :=
   rfl
+
+/-- Finite matrices over a complete normed additive group are complete for the
+operator uniformity. -/
+protected theorem linftyOpCompleteSpace {R p q : Type*} [NormedAddCommGroup R]
+    [CompleteSpace R] [Fintype p] [Fintype q] :
+    @CompleteSpace (Matrix p q R)
+      (Matrix.linftyOpNormedAddCommGroup (m := p) (n := q) (α := R)).toUniformSpace :=
+  inferInstanceAs (CompleteSpace (p → q → R))
+
+namespace Norms.Operator
+attribute [scoped instance] Matrix.linftyOpCompleteSpace
+end Norms.Operator
 
 section
 

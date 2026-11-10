@@ -67,7 +67,7 @@ def realSpinDiffeomorphUnitsRange (n : ℕ) :
 @[simp]
 theorem realSpinDiffeomorphUnitsRange_apply (n : ℕ) (s : spinGroup (realCliffordForm n 0)) :
     realSpinDiffeomorphUnitsRange n s = realCliffordSpinContinuousMulEquivUnitsRange n s :=
-  congrFun TauCeti.coe_diffeomorphOfBijective s
+  congrFun (IsLocalDiffeomorph.coe_diffeomorphOfBijective _ _) s
 
 /-- The inverse smooth comparison is the inverse continuous group equivalence. -/
 @[simp]

@@ -25,8 +25,11 @@ symmetric form of a simply-laced Cartan matrix.
 ## Main results
 
 * `RootPairing.isReduced_of_pairing_comm`: a root pairing with symmetric pairings is reduced.
+* `RootPairing.flip_isReduced`: a reduced root pairing on a finite index type has reduced coroots.
 * `RootPairing.ne_neg_of_root_eq_add_nsmul`: in a reduced root pairing, a root string through a
   root `j ≠ -s` in the direction `s` never reaches `-s`.
+* `RootPairing.root_ne_and_root_ne_neg_of_root_eq_add`: in a reduced root pairing, a summand of a
+  root that is a sum of two roots is neither that root nor its negative.
 -/
 
 public section
@@ -72,5 +75,32 @@ lemma ne_neg_of_root_eq_add_nsmul [CharZero R] [HasUniqueDiv M] [P.IsReduced] (s
     simp [← hkroot, -indexNeg_neg]
   · have _i : (n + 1).AtLeastTwo := ⟨by omega⟩
     exact P.nsmul_notMem_range_root (n := n + 1) (i := s) ⟨-j, hkroot⟩
+
+section Sum
+
+variable [P.IsReduced]
+
+omit [Module.IsTorsionFree R M] in
+/-- If a root is the sum of two roots, then each summand is neither that root nor its negative. -/
+theorem root_ne_and_root_ne_neg_of_root_eq_add [CharZero R] {i j k : ι}
+    (hk : P.root k = P.root i + P.root j) :
+    P.root i ≠ P.root k ∧ P.root i ≠ -P.root k := by
+  have hadd : P.root i + P.root j ∈ Set.range P.root := ⟨k, hk⟩
+  have hlin := P.linearIndependent_of_add_mem_range_root' hadd
+  refine ⟨fun h ↦ P.ne_zero j (by simpa [hk] using h), fun h ↦ ?_⟩
+  have hrel : (2 : R) • P.root i + (1 : R) • P.root j = 0 := by
+    rw [one_smul, two_smul, add_assoc, ← hk, h, neg_add_cancel]
+  exact one_ne_zero (hlin.eq_zero_of_pair hrel).2
+
+end Sum
+
+omit [NeZero (2 : R)] [Module.IsTorsionFree R M] in
+/-- A reduced root pairing has reduced coroots: both the weight and the coweight module are
+reflexive, being perfectly paired with each other, hence torsion free, which is what
+`RootPairing.instFlipIsReduced` needs. So `P.flip.IsReduced` need not be assumed separately. -/
+theorem flip_isReduced [Finite ι] [CharZero R] [P.IsReduced] : P.flip.IsReduced :=
+  have : Module.IsReflexive R M := .of_isPerfPair P.toLinearMap
+  have : Module.IsReflexive R N := .of_isPerfPair P.flip.toLinearMap
+  inferInstance
 
 end RootPairing

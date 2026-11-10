@@ -23,7 +23,9 @@ formalization, revision `24f32e4d600878bfaac6bc2f2f9324175571c321`, as used in
 `TauCeti/Geometry/Manifold/Riemannian/EDistComparison.lean`.
 
 Scaling a ray by a unit commutes with negating it (`Module.Ray.units_smul_neg`), complementing
-Mathlib's `Module.Ray.neg_units_smul`.
+Mathlib's `Module.Ray.neg_units_smul`, and with transporting it along a linear equivalence
+(`Module.Ray.map_units_smul`). Over a linearly ordered ring, any map of rays commuting with negation
+also commutes with scaling by units (`Module.Ray.units_smul_of_map_neg`).
 
 Two nonzero vectors in the same ray cannot cancel: their sum is again nonzero. This is the
 non-degeneracy needed to merge adjacent segments of a piecewise-linear path that point in the same
@@ -53,6 +55,13 @@ variable {R M : Type*} [CommSemiring R] [PartialOrder R] [IsStrictOrderedRing R]
 theorem SameRay.trans_of_ne_zero (hxy : SameRay R x y) (hyz : SameRay R y z) (hy : y ≠ 0) :
     SameRay R x z :=
   hxy.trans hyz fun h ↦ absurd h hy
+
+/-- Transporting a ray along a linear equivalence commutes with scaling it by a unit. -/
+@[simp]
+theorem Module.Ray.map_units_smul {N : Type*} [AddCommMonoid N] [Module R N] (f : M ≃ₗ[R] N)
+    (u : Rˣ) (v : Module.Ray R M) : Module.Ray.map f (u • v) = u • Module.Ray.map f v := by
+  induction v using Module.Ray.ind with | h v hv =>
+    simp only [smul_rayOfNeZero, Module.Ray.map_apply, Units.smul_def, map_smul]
 
 end Semiring
 
@@ -113,6 +122,21 @@ theorem Module.Ray.units_smul_neg (u : Rˣ) (v : Module.Ray R M) : u • -v = -(
     simp only [neg_rayOfNeZero, smul_rayOfNeZero, Units.smul_def, smul_neg]
 
 end Neg
+
+section LinearOrder
+
+variable {R M N : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+
+/-- A map of rays commuting with negation commutes with scaling by units, since a unit acts on rays
+as the identity or as negation according to its sign. -/
+theorem Module.Ray.units_smul_of_map_neg {F : Module.Ray R M → Module.Ray R N}
+    (hF : ∀ v, F (-v) = -F v) (u : Rˣ) (v : Module.Ray R M) : F (u • v) = u • F v := by
+  rcases lt_or_gt_of_ne u.ne_zero with hu | hu
+  · rw [units_smul_of_neg u hu, units_smul_of_neg u hu, hF]
+  · rw [units_smul_of_pos u hu, units_smul_of_pos u hu]
+
+end LinearOrder
 
 variable {R M : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R] [IsDomain R]
   [AddCommGroup M] [Module R M] [IsTorsionFree R M] {x y z : M}

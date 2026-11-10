@@ -367,6 +367,22 @@ theorem differential_of (φ : StrandDiagram α) :
 theorem differential_idem (s : Finset α) : differential R α (idem s) = 0 := by
   simp [idem_def, differential_of]
 
+/-- The coefficient of `χ` in the differential of `x` is the sum of the coefficients of the
+diagrams having `χ` as the resolution of a resolvable crossing. -/
+theorem repr_differential_apply [Fintype (StrandDiagram α)] (x : StrandsAlgebra R α)
+    (χ : StrandDiagram α) :
+    (basis R α).repr (differential R α x) χ = ∑ φ, ∑ q : α × α,
+      if q ∈ φ.resolvableInversions ∧ φ.resolve q = χ then (basis R α).repr x φ else 0 := by
+  conv_lhs => rw [← (basis R α).sum_repr x]
+  simp only [map_sum, map_smul, basis_apply, differential_of, Finset.sum_apply',
+    Finsupp.smul_apply, smul_eq_mul, mul_sum]
+  refine sum_congr rfl fun φ _ ↦ ?_
+  simp only [ite_and]
+  rw [Fintype.sum_ite_mem]
+  refine sum_congr rfl fun q _ ↦ ?_
+  rw [← basis_apply, Module.Basis.repr_self, Finsupp.single_apply]
+  split_ifs <;> simp
+
 /-- A sum over the resolvable crossings of `σ` as a sum over all increasing pairs of starting
 points. -/
 private theorem sum_resolvableInversions_eq {M : Type*} [AddCommMonoid M] (σ : StrandDiagram α)

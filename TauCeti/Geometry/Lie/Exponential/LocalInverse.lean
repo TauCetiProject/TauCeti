@@ -48,7 +48,6 @@ noncomputable section
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [IsManifold I 1 G]
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 
 private theorem smoothOrder_ne_zero : (∞ : ℕ∞ω) ≠ 0 := by
@@ -523,17 +522,9 @@ private theorem exists_mulInvariantExpChartPartialDiffeomorph [FiniteDimensional
     obtain ⟨A, hA⟩ := hx.2.2
     rw [hψF]
     exact ⟨ContinuousLinearEquiv.ofUnit A, hA⟩
-  -- The partial diffeomorphism has the underlying partial equivalence of `ψ`, so its source and
-  -- coercion are those of `ψ`.
-  have hd := TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv ψ hψsmooth
-    hψsymmSmooth
-  have hdsrc : (TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψsmooth hψsymmSmooth).source
-      = ψ.source := congrArg PartialEquiv.source hd
-  have hdcoe : ⇑(TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψsmooth hψsymmSmooth) =
-      ψ := congrArg (⇑) hd
   refine ⟨TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψsmooth hψsymmSmooth,
-    hdsrc ▸ hzeroψ, fun x hx => ?_, hψF.symm.trans hdcoe.symm⟩
-  rw [hdsrc, hsrc] at hx
+    by simpa using hzeroψ, fun x hx => ?_, by simpa using hψF.symm⟩
+  simp only [TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv, hsrc] at hx
   exact hx.2.1
 
 /-- The fully charted exponential is a smooth local diffeomorphism at zero. -/
@@ -647,7 +638,8 @@ theorem exists_contMDiffMap_eventually_apply_lieExp_eq [FiniteDimensional ℝ E]
   have h1 : (1 : G) ∈ hd.localInverse.source := by
     simpa only [lieExp_zero] using hd.localInverse_mem_source
   obtain ⟨f, hf⟩ := (hφ.contMDiff.comp_contMDiffOn
-    hd.contMDiffOn_localInverse).exists_contMDiffMap_eventuallyEq hd.localInverse_open_source h1
+    hd.contMDiffOn_localInverse).exists_contMDiffMap_eventuallyEq
+      (hd.localInverse_open_source.mem_nhds h1)
   refine ⟨f, ?_⟩
   have hexp : Tendsto (lieExp (I := I) (G := G)) (𝓝 0) (𝓝 1) := by
     simpa only [lieExp_zero] using

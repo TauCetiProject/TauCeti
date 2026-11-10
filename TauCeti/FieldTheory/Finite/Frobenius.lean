@@ -153,10 +153,13 @@ theorem frobeniusEquiv_involutive (hK : Nat.card K = p ^ 2) :
   simpa only [coe_frobeniusEquiv, pow_two, RingHom.mul_def, RingHom.comp_apply, RingHom.one_def,
     RingHom.id_apply] using DFunLike.congr_fun (FiniteField.frobenius_pow hcard) x
 
+omit [Finite K] in
 /-- On a field of order `p ^ (2 n)`, the iterated Frobenius `x ↦ x ^ p ^ n` is an involution. For
 the field with `q²` elements, `q = p ^ n`, this is the involution `x ↦ x ^ q`. -/
 theorem iterateFrobenius_involutive {n : ℕ} (hK : Nat.card K = p ^ (n * 2)) :
     Function.Involutive (iterateFrobenius K p n) := by
+  have : Finite K := Nat.finite_of_card_ne_zero
+    (by rw [hK]; exact (pow_pos (Fact.out : p.Prime).pos _).ne')
   let := Fintype.ofFinite K
   intro x
   rw [iterateFrobenius_def, iterateFrobenius_def, ← pow_mul, ← pow_add, ← mul_two, ← hK,

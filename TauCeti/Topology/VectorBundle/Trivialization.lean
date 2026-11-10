@@ -27,7 +27,9 @@ More generally, any linear trivialization sends a vector over its base set to a 
 exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`). For two linear
 trivializations whose base sets contain `b`, the fibre equivalence `E_b ≃ F` of the second is that
 of the first followed by the coordinate change from the first to the second
-(`Bundle.Trivialization.continuousLinearEquivAt_trans_coordChangeL`).
+(`Bundle.Trivialization.continuousLinearEquivAt_trans_coordChangeL`). Convergence in the total
+space of a vector bundle is convergence of base points and of fibre coordinates in any linear
+trivialization over the limit point (`Bundle.Trivialization.tendsto_mk_nhds_mk_iff`).
 
 exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`). We also record
 the product trivialization's fibrewise inverse (`Bundle.Trivialization.prod_symm_apply'`), the
@@ -42,6 +44,7 @@ public section
 noncomputable section
 
 open Bundle
+open scoped Topology
 
 namespace Bundle.Trivialization
 
@@ -100,6 +103,22 @@ theorem homeomorphTrivial_symm_apply_eq_continuousLinearEquivAt (he : e.baseSet 
       ((e.continuousLinearEquivAt 𝕜 w.proj (he ▸ Set.mem_univ _)).symm w.2) := by
   rw [Homeomorph.symm_apply_eq, homeomorphTrivial_apply_eq_continuousLinearEquivAt 𝕜]
   exact congrArg (TotalSpace.mk' F w.proj) (ContinuousLinearEquiv.apply_symm_apply _ _).symm
+
+/-- **Convergence in a vector bundle, read in a linear trivialization.** Vectors `ξ i` over points
+`x i` converge in the total space to a vector `ξ₀` over a point `x₀` of the base set of `e`
+exactly when `x i → x₀` and the fibre coordinates `e (x i) (ξ i)` converge to those of `ξ₀`. -/
+theorem tendsto_mk_nhds_mk_iff {ι : Type*} {l : Filter ι} {x : ι → B} {x₀ : B}
+    {ξ : ∀ i, E (x i)} {ξ₀ : E x₀} (hx₀ : x₀ ∈ e.baseSet) :
+    Filter.Tendsto (fun i ↦ TotalSpace.mk' F (x i) (ξ i)) l (𝓝 (TotalSpace.mk' F x₀ ξ₀)) ↔
+      Filter.Tendsto x l (𝓝 x₀) ∧ Filter.Tendsto (fun i ↦ e.continuousLinearMapAt 𝕜 (x i) (ξ i))
+        l (𝓝 (e.continuousLinearMapAt 𝕜 x₀ ξ₀)) := by
+  rw [e.tendsto_nhds_iff (e.mem_source.2 hx₀)]
+  refine and_congr_right fun hx ↦ ?_
+  -- Eventually `x i` lies in the base set, where the fibre coordinate is `continuousLinearMapAt`.
+  have hb : ∀ᶠ i in l, x i ∈ e.baseSet := hx (e.open_baseSet.mem_nhds hx₀)
+  rw [e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hx₀]
+  exact Filter.tendsto_congr' (hb.mono fun i hi ↦
+    (e.continuousLinearMapAt_apply_of_mem (R := 𝕜) hi _).symm)
 
 variable (e' : Trivialization F (π F E)) [e'.IsLinear 𝕜] {b : B}
 
