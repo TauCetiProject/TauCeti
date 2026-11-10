@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 public import Mathlib.Analysis.Calculus.BumpFunction.Normed
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
+import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Distribution.TestFunction
@@ -40,7 +41,9 @@ nonnegative is monotone: if `∫ x, deriv ψ x * f x ≤ 0` for every nonnegativ
 the interval, then `f` is monotone there. For `x ≤ y` in the interval, take `ψ` to be the
 difference of the primitives of two copies of a narrow bump of integral one, centred at `x` and at
 `y`; then `ψ ≥ 0`, and `∫ ψ' f` is the difference of the averages of `f` against the two bumps,
-which are close to `f x` and `f y` by continuity.
+which are close to `f x` and `f y` by continuity. For a merely locally integrable `f`, the same
+averages converge to `f x` and `f y` at almost every pair of points by the Lebesgue
+differentiation theorem, so `f` is monotone on a subset of the interval of full measure.
 
 ## Main declarations
 
@@ -52,6 +55,9 @@ which are close to `f x` and `f y` by continuity.
   functions.
 * `ContinuousOn.monotoneOn_of_integral_deriv_mul_nonpos`: a continuous function with nonnegative
   distributional derivative is monotone.
+* `MeasureTheory.LocallyIntegrableOn.exists_monotoneOn_of_integral_deriv_mul_nonpos`: a locally
+  integrable function with nonnegative distributional derivative is monotone on a subset of full
+  measure.
 -/
 
 public section
@@ -322,5 +328,105 @@ theorem _root_.ContinuousOn.monotoneOn_of_integral_deriv_mul_nonpos {a b : ℝ} 
   simp_rw [hψd, sub_mul] at h0
   rw [integral_sub hIx hIy] at h0
   linarith
+
+open scoped Convolution in
+/-- The monotone du Bois-Reymond lemma for a function integrable on the interval: the averages of
+`f` against two narrow bumps centred at `x ≤ y` are ordered, and they converge to `f x` and `f y`
+at almost every pair of points, by the Lebesgue differentiation theorem. -/
+private theorem exists_monotoneOn_of_integrableOn_of_integral_deriv_mul_nonpos {a b : ℝ}
+    {f : ℝ → ℝ} (hf : IntegrableOn f (Ioo a b))
+    (h : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b → (∀ x, 0 ≤ ψ x) →
+      ∫ x, deriv ψ x * f x ≤ 0) :
+    ∃ s ⊆ Ioo a b, volume (Ioo a b \ s) = 0 ∧ MonotoneOn f s := by
+  set g := (Ioo a b).indicator f with hg_def
+  have hg : Integrable g := (integrable_indicator_iff measurableSet_Ioo).2 hf
+  -- Bumps of outer radius `1 / (n + 1)` and inner radius half of it.
+  let β : ℕ → ContDiffBump (0 : ℝ) := fun n ↦
+    ⟨1 / (2 * ((n : ℝ) + 1)), 1 / ((n : ℝ) + 1), by positivity, by
+      rw [div_lt_div_iff_of_pos_left one_pos (by positivity) (by positivity)]; linarith⟩
+  have hβr : Tendsto (fun n ↦ (β n).rOut) atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
+  have hβr' : ∀ᶠ n in atTop, (β n).rOut ≤ 2 * (β n).rIn := Eventually.of_forall fun n ↦ by
+    simp only [β]
+    rw [mul_one_div, ← div_div, div_self two_ne_zero]
+  -- The averages of `g` against the bumps converge to `g` almost everywhere.
+  set T := {x | Tendsto
+    (fun n ↦ ((β n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] g) x) atTop (𝓝 (g x))}
+  have hT : volume Tᶜ = 0 := ae_iff.1
+    (ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable hβr hβr' hg.locallyIntegrable)
+  refine ⟨Ioo a b ∩ T, inter_subset_left,
+    measure_mono_null (t := Tᶜ) (fun x hx hxT ↦ hx.2 ⟨hx.1, hxT⟩) hT, fun x hx y hy hxy ↦ ?_⟩
+  have hconv (n : ℕ) (z : ℝ) : ((β n).normed volume ⋆[ContinuousLinearMap.lsmul ℝ ℝ, volume] g) z =
+      ∫ t, (β n).normed volume (t - z) * g t := by
+    rw [convolution_eq_swap]
+    refine integral_congr_ae (Eventually.of_forall fun t ↦ ?_)
+    simp only [ContinuousLinearMap.lsmul_apply, smul_eq_mul]
+    rw [← (β n).normed_neg, neg_sub]
+  have hint (n : ℕ) (z : ℝ) : Integrable fun t ↦ (β n).normed volume (t - z) * g t := by
+    have hc : Continuous fun t ↦ (β n).normed volume (t - z) :=
+      ((β n).continuous_normed (μ := volume)).comp (continuous_sub_right z)
+    obtain ⟨C, hC⟩ := hc.bounded_above_of_compact_support
+      (((β n).hasCompactSupport_normed (μ := volume)).comp_homeomorph (Homeomorph.subRight z))
+    exact hg.bdd_mul hc.aestronglyMeasurable (Eventually.of_forall hC)
+  have hlim : Tendsto (fun n ↦ (∫ t, (β n).normed volume (t - x) * g t) -
+      ∫ t, (β n).normed volume (t - y) * g t) atTop (𝓝 (g x - g y)) := by
+    simpa only [hconv] using hx.2.sub hy.2
+  -- For small bumps, the difference of the two averages is a pairing with a test function.
+  have hr : 0 < min (x - a) (b - y) := lt_min (sub_pos.2 hx.1.1) (sub_pos.2 hy.1.2)
+  have hev : ∀ᶠ n in atTop, (∫ t, (β n).normed volume (t - x) * g t) -
+      ∫ t, (β n).normed volume (t - y) * g t ≤ 0 := by
+    filter_upwards [hβr.eventually (gt_mem_nhds hr)] with n hn
+    have hβ0 : ∀ t, (β n).rOut ≤ |t| → (β n).normed volume t = 0 := fun t ht ↦
+      Function.notMem_support.mp <| by simpa [(β n).support_normed_eq] using ht
+    obtain ⟨ψ, hψ, hψnn, hψs, hψd⟩ := exists_nonneg_deriv_eq_sub_bump (β n).contDiff_normed
+      (β n).nonneg_normed hβ0 (β n).integral_normed hxy
+    have hψs' : tsupport ψ ⊆ Ioo a b := hψs.trans (Icc_subset_Ioo
+      (by linarith [min_le_left (x - a) (b - y)]) (by linarith [min_le_right (x - a) (b - y)]))
+    have h0 := h ψ hψ hψs' hψnn
+    have hfg : ∫ t, deriv ψ t * f t = ∫ t, deriv ψ t * g t := by
+      refine integral_congr_ae (Eventually.of_forall fun t ↦ ?_)
+      by_cases ht : t ∈ Ioo a b
+      · simp only [hg_def, indicator_of_mem ht]
+      · have : deriv ψ t = 0 := Function.notMem_support.1 fun h' ↦
+          ht (hψs' (support_deriv_subset h'))
+        simp [this]
+    rw [hfg] at h0
+    simp_rw [hψd, sub_mul] at h0
+    rwa [integral_sub (hint n x) (hint n y)] at h0
+  have hle := le_of_tendsto hlim hev
+  simp only [hg_def, indicator_of_mem hx.1, indicator_of_mem hy.1] at hle
+  linarith
+
+/-- **The monotone du Bois-Reymond lemma.** A real function locally integrable on an open interval
+whose distributional derivative is nonnegative, in the sense that `∫ x, deriv ψ x * f x ≤ 0` for
+every nonnegative test function `ψ` on the interval, is monotone on a subset of the interval of full
+measure. -/
+theorem _root_.MeasureTheory.LocallyIntegrableOn.exists_monotoneOn_of_integral_deriv_mul_nonpos
+    {a b : ℝ} {f : ℝ → ℝ} (hf : LocallyIntegrableOn f (Ioo a b))
+    (h : ∀ ψ : ℝ → ℝ, ContDiff ℝ ∞ ψ → tsupport ψ ⊆ Ioo a b → (∀ x, 0 ≤ ψ x) →
+      ∫ x, deriv ψ x * f x ≤ 0) :
+    ∃ s ⊆ Ioo a b, volume (Ioo a b \ s) = 0 ∧ MonotoneOn f s := by
+  -- Exhaust the interval by the intervals `(a + ε n, b - ε n)`, `ε n = 1 / (n + 1)`, on which `f`
+  -- is integrable.
+  set ε : ℕ → ℝ := fun n ↦ 1 / ((n : ℝ) + 1)
+  have hε (n : ℕ) : 0 < ε n := by positivity
+  have hsub (n : ℕ) : Ioo (a + ε n) (b - ε n) ⊆ Ioo a b :=
+    Ioo_subset_Ioo (by linarith [hε n]) (by linarith [hε n])
+  choose s hs hs0 hsm using fun n ↦ exists_monotoneOn_of_integrableOn_of_integral_deriv_mul_nonpos
+    ((hf.integrableOn_compact_subset (Icc_subset_Ioo (by linarith [hε n]) (by linarith [hε n]))
+      isCompact_Icc).mono_set (Ioo_subset_Icc_self (a := a + ε n) (b := b - ε n)))
+    fun ψ hψ hψs hψn ↦ h ψ hψ (hψs.trans (hsub n)) hψn
+  -- The points lying in all but finitely many of the sets `s n`.
+  refine ⟨{x | ∃ N, ∀ n ≥ N, x ∈ s n}, fun x ⟨N, hN⟩ ↦ hsub N (hs N (hN N le_rfl)), ?_,
+    fun x ⟨Nx, hx⟩ y ⟨Ny, hy⟩ hxy ↦
+      hsm (max Nx Ny) (hx _ (le_max_left _ _)) (hy _ (le_max_right _ _)) hxy⟩
+  refine measure_mono_null (t := ⋃ n, Ioo (a + ε n) (b - ε n) \ s n) (fun x ⟨hx, hxs⟩ ↦ ?_)
+    (measure_iUnion_null hs0)
+  obtain ⟨N, hN⟩ := eventually_atTop.1 (tendsto_one_div_add_atTop_nhds_zero_nat.eventually
+    (gt_mem_nhds (lt_min (sub_pos.2 hx.1) (sub_pos.2 hx.2))))
+  simp only [mem_ofPred_eq, not_exists, not_forall, exists_prop] at hxs
+  obtain ⟨n, hn, hxn⟩ := hxs N
+  have hεn : ε n < min (x - a) (b - x) := hN n hn
+  exact mem_iUnion.2 ⟨n, ⟨by linarith [min_le_left (x - a) (b - x)],
+    by linarith [min_le_right (x - a) (b - x)]⟩, hxn⟩
 
 end TauCeti
