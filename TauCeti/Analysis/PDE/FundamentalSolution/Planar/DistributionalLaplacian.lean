@@ -301,11 +301,11 @@ section LogNorm
 open scoped Distributions Gradient
 
 /-- **The weak gradient of `log ‖z‖`.** On every open subset of the plane, `log ‖z‖` has weak
-derivative `v ↦ ⟪z, v⟫ / ‖z‖²`, that is, weak gradient `z / ‖z‖²`; the derivative is set to `0`
-at the origin. -/
+derivative `‖z‖⁻² ⟪z, ·⟫`, that is, weak gradient `z / ‖z‖²`, matching its classical derivative
+away from the origin (`hasFDerivAt_log_norm_of_ne`); the derivative is `0` at the origin. -/
 theorem hasWeakFDerivOn_log_norm (Ω : Opens ℂ) :
     HasWeakFDerivOn volume Ω (fun z : ℂ ↦ Real.log ‖z‖)
-      fun z ↦ innerSL ℝ ((‖z‖ ^ 2)⁻¹ • z) := by
+      fun z ↦ (‖z‖ ^ 2)⁻¹ • innerSL ℝ z := by
   have h := (hasWeakFDerivOn_planarNewtonianKernel Ω).const_smul (-(2 * Real.pi))
   have hu : (-(2 * Real.pi)) • planarNewtonianKernel = fun z : ℂ ↦ Real.log ‖z‖ := by
     funext z
@@ -316,7 +316,7 @@ theorem hasWeakFDerivOn_log_norm (Ω : Opens ℂ) :
   filter_upwards [ae_restrict_of_ae (volume.ae_ne (0 : ℂ))] with z hz
   ext v
   simp only [Pi.smul_apply, smul_apply, fderiv_planarNewtonianKernel_apply hz,
-    innerSL_apply_apply, real_inner_smul_left, smul_eq_mul]
+    innerSL_apply_apply, smul_eq_mul]
   field_simp
 
 /-- **The weak divergence-form identity for `log ‖z‖`.** For every test function `φ` on an open
@@ -326,7 +326,10 @@ theorem integral_log_norm_mul_laplacian (Ω : Opens ℂ) (φ : 𝓓(Ω, ℝ)) :
     ∫ z, Real.log ‖z‖ * Δ (φ : ℂ → ℝ) z =
       -∫ z, (z.re / ‖z‖ ^ 2 * fderiv ℝ (φ : ℂ → ℝ) z 1 +
         z.im / ‖z‖ ^ 2 * fderiv ℝ (φ : ℂ → ℝ) z Complex.I) := by
-  have h := (hasWeakFDerivOn_log_norm Ω).integral_laplacian_smul_eq_neg_integral_inner φ
+  have hD : HasWeakFDerivOn volume Ω (fun z : ℂ ↦ Real.log ‖z‖)
+      fun z ↦ innerSL ℝ ((‖z‖ ^ 2)⁻¹ • z) := by
+    simpa only [map_smul] using hasWeakFDerivOn_log_norm Ω
+  have h := hD.integral_laplacian_smul_eq_neg_integral_inner φ
   simp only [smul_eq_mul] at h
   simp_rw [mul_comm (Real.log _)]
   rw [h]

@@ -47,7 +47,7 @@ at most `|x - Re e| ^ s`.
   closed ball.
 * `TauCeti.integral_norm_sub_rpow_one_sub_finrank_le`: the translated-ball bound, for `s = 1 - d`.
 * `TauCeti.memLp_norm_inv_restrict`, `TauCeti.not_memLp_norm_inv_closedBall`: `‖x‖⁻¹` is
-  `Lʳ` on compact sets for `0 < r < dim E`, and not near the origin for `r ≥ dim E`.
+  `Lʳ` on compact sets for `r < dim E`, and not near the origin for `r ≥ dim E`.
 * `Complex.setLIntegral_closedBall_enorm_ofReal_sub_rpow_lt_top`: for `e ∈ ℂ` and `s > -1`,
   `∫⁻ x in closedBall c R, ‖(x : ℂ) - e‖ₑ ^ s < ∞` over the real line.
 
@@ -306,9 +306,11 @@ section Inverse
 
 open scoped ENNReal
 
-/-- On a compact set, `‖x‖⁻¹` is `Lʳ` for every positive exponent `r < dim E`. -/
-theorem memLp_norm_inv_restrict {K : Set E} (hK : IsCompact K) {r : ℝ≥0∞} (hr0 : r ≠ 0)
+/-- On a compact set, `‖x‖⁻¹` is `Lʳ` for every exponent `r < dim E`. -/
+theorem memLp_norm_inv_restrict {K : Set E} (hK : IsCompact K) {r : ℝ≥0∞}
     (hr : r < Module.finrank ℝ E) : MemLp (fun x : E => ‖x‖⁻¹) r (mu.restrict K) := by
+  rcases eq_or_ne r 0 with rfl | hr0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 (by fun_prop)
   obtain ⟨R, hR⟩ := hK.isBounded.subset_ball 0
   have hrtop : r ≠ ∞ := (hr.trans_le le_top).ne
   refine MemLp.mono_measure (Measure.restrict_mono hR le_rfl) ?_
