@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Basic
 public import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
+public import TauCeti.Analysis.Sobolev.Wkp.Mollification
 import TauCeti.Analysis.InnerProductSpace.WeakOperatorTopology
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
@@ -103,13 +104,13 @@ section Approximation
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {u : E → ℝ} {Ω : Set E} {x y : E} {m : ℝ}
 
-/-- **The pointwise limit of the contact integrands.** In the setting of
-`mem_upperContactSet_of_frequently`, let `y ∈ Ω` be a point at which the Hessians of the `C²`
-functions `v k` converge to `H`. Then the upper limit of `|det D²(v k)(y)|` restricted to the
+/-- **The pointwise limit of the contact integrands.** Let `C²` functions `v k` converge to `u`
+uniformly on open sets `U k ⊆ Ω` which eventually contain a ball around each point of `Ω`, with
+`|u| ≤ M` on `Ω`, and let `y ∈ Ω` be a point at which the Hessians of the `v k` converge to `H`. Then the upper limit of `|det D²(v k)(y)|` restricted to the
 contact sets of `v k` is at most `|det H|`, restricted to the contact set of `u` and to the
 points where `H` is symmetric and nonpositive. -/
 private theorem limsup_indicator_upperContactSet_le {U : ℕ → Set E} {v : ℕ → E → ℝ}
-    {H : E → E →L[ℝ] E} (hu : ContinuousOn u Ω) (hUo : ∀ k, IsOpen (U k))
+    {H : E → E →L[ℝ] E} {M : ℝ} (hu : ∀ z ∈ Ω, |u z| ≤ M) (hUo : ∀ k, IsOpen (U k))
     (hUΩ : ∀ k, U k ⊆ Ω) (hUball : ∀ z ∈ Ω, ∃ r > 0, ∀ᶠ k in atTop, closedBall z r ⊆ U k)
     (hv : ∀ k, ContDiff ℝ 2 (v k))
     (hvu : ∀ ε > 0, ∀ᶠ k in atTop, ∀ z ∈ U k, |v k z - u z| ≤ ε)
@@ -119,7 +120,25 @@ private theorem limsup_indicator_upperContactSet_le {U : ℕ → Set E} {v : ℕ
     (upperContactSet u Ω ∩ {y | (-H y).IsPositive}).indicator
       (fun y => ENNReal.ofReal |(H y).det|) y := by
   by_cases hfreq : ∃ᶠ k in atTop, y ∈ upperContactSet (v k) (U k)
-  · have hyΓ := mem_upperContactSet_of_frequently hu hUΩ hUball hvu hfreq
+  · obtain ⟨k₀, hk₀⟩ := hfreq.exists
+    have hyΩ : y ∈ Ω := hUΩ k₀ (upperContactSet_subset hk₀)
+    obtain ⟨r, hr, hball⟩ := hUball y hyΩ
+    -- The `v k` converge to `u` pointwise on `Ω` and are eventually bounded on `U k`.
+    have hconv (z : E) (hz : z ∈ Ω) : Tendsto (fun k => v k z) atTop (𝓝 (u z)) := by
+      obtain ⟨s, hs, hsb⟩ := hUball z hz
+      refine Metric.tendsto_nhds.2 fun ε hε => ?_
+      filter_upwards [hsb, hvu (ε / 2) (half_pos hε)] with k hk hk'
+      rw [Real.dist_eq]
+      exact (hk' z (hk (mem_closedBall_self hs.le))).trans_lt (half_lt_self hε)
+    have hyΓ := mem_upperContactSet_of_frequently (M := M + 1) hr
+      (hball.mono fun k hk => ball_subset_closedBall.trans hk)
+      (fun z hz => (hUball z hz).elim fun s ⟨hs, hsb⟩ =>
+        hsb.mono fun k hk => hk (mem_closedBall_self hs.le))
+      ((hvu 1 one_pos).mono fun k hk z hz => by
+        have h1 := abs_le.1 (hk z hz)
+        have h2 := abs_le.1 (hu z (hUΩ k hz))
+        exact abs_le.2 ⟨by linarith, by linarith⟩)
+      hconv hyΩ hfreq
     have hT := hT (upperContactSet_subset hyΓ)
     have hHN : H y ∈ {T : E →L[ℝ] E | (-T).IsPositive} :=
       ((ContinuousLinearMapWOT.isClosed_setOf_isPositive.preimage
@@ -214,14 +233,14 @@ private theorem addHaar_ball_sub_le_lintegral [Nontrivial E] (hΩb : Bornology.I
         div_le_div_of_nonneg_right (by linarith [(abs_le.1 hvx).1]) hdU.le
 
 /-- **The Aleksandrov measure estimate under `C²` approximation.** Let `Ω` be bounded and open,
-`u` continuous on `Ω`, and `x ∈ Ω`. Let `U k ⊆ Ω` be open sets which eventually contain a ball
+`|u| ≤ M` on `Ω`, and `x ∈ Ω`. Let `U k ⊆ Ω` be open sets which eventually contain a ball
 around each point of `Ω`, and let `v k` be `C²` functions with `v k → u` uniformly on `U k`,
 `v k ≤ m + o(1)` on the frontier of `U k`, and Hessians converging to `H` in `Lⁿ`, where
 `‖H‖ ∈ Lⁿ(Ω)` and `n` is the dimension. Then `μ (ball 0 ((u x - m) / diam Ω)) ≤ ∫ |det H|`
 over the points of the upper contact set of `u` on `Ω` at which `H` is symmetric and
 nonpositive. -/
 private theorem addHaar_ball_le_of_tendsto [Nontrivial E] (hΩb : Bornology.IsBounded Ω)
-    (hΩ : IsOpen Ω) (hu : ContinuousOn u Ω) (hx : x ∈ Ω)
+    (hΩ : IsOpen Ω) {M : ℝ} (hu : ∀ z ∈ Ω, |u z| ≤ M) (hx : x ∈ Ω)
     {U : ℕ → Set E} (hUo : ∀ k, IsOpen (U k)) (hUΩ : ∀ k, U k ⊆ Ω)
     (hUball : ∀ z ∈ Ω, ∃ r > 0, ∀ᶠ k in atTop, closedBall z r ⊆ U k)
     {v : ℕ → E → ℝ} (hv : ∀ k, ContDiff ℝ 2 (v k))
@@ -319,7 +338,7 @@ private theorem tendsto_setLIntegral_hessianOperator_smoothField_sub
   refine (setLIntegral_congr_fun (hUo k).measurableSet fun y hy => ?_).trans_le
     (lintegral_mono_set (hUΩ k))
   rw [← fderiv_gradient,
-    Wkp.fderiv_gradient_smoothField u (φ k) (((hUo k).eventually_mem hy).mono (hball k)),
+    Wkp.fderiv_gradient_smoothField_value u (φ k) (((hUo k).eventually_mem hy).mono (hball k)),
     Pi.sub_apply]
 
 /-- **The Aleksandrov measure estimate for `W^{2,n}` functions** (Gilbarg–Trudinger, Lemma 9.2
@@ -360,10 +379,14 @@ theorem addHaar_ball_le_lintegral_abs_det_iteratedGradient {p : ℝ≥0∞} [Fac
   -- where `dist(·, Ωᶜ) = δ k`.
   have hclose : ∀ ε > 0, ∀ᶠ k in atTop, ∀ y, closedBall y (φ k).rOut ⊆ Ω → |v k y - ū y| ≤ ε := by
     intro ε hε
-    obtain ⟨ρ, hρ, h⟩ := Wkp.exists_pos_forall_dist_smoothField_le
-      ((hΩb.isCompact_closure.uniformContinuousOn_of_continuous hcont).mono subset_closure) hū hε
+    obtain ⟨ρ, hρ, h⟩ := Metric.uniformContinuousOn_iff.1
+      (hΩb.isCompact_closure.uniformContinuousOn_of_continuous hcont) ε hε
     filter_upwards [hφ0.eventually (gt_mem_nhds hρ)] with k hk y hy
-    exact Real.dist_eq _ _ ▸ h _ hk y hy
+    have hyΩ : y ∈ (Ω : Set E) := hy (mem_closedBall_self (φ k).rOut_pos.le)
+    rw [← Real.dist_eq]
+    exact Wkp.dist_smoothField_le (φ k) hū (ball_subset_closedBall.trans hy) fun z hz =>
+      (h z (subset_closure (hy (ball_subset_closedBall hz))) y (subset_closure hyΩ)
+        (hz.trans hk)).le
   have hvm : ∀ ε > 0, ∀ᶠ k in atTop, ∀ z ∈ frontier (U k), v k z ≤ m + ε := by
     intro ε hε
     obtain ⟨d, hd, hdm⟩ := Ω.isOpen.exists_pos_forall_lt_add_of_infDist_lt hΩb
@@ -378,7 +401,9 @@ theorem addHaar_ball_le_lintegral_abs_det_iteratedGradient {p : ℝ≥0∞} [Fac
     rw [lintegral_enorm_pow_eq_eLpNorm_pow (Nat.one_le_iff_ne_zero.1 hn1)
       (Lp.aestronglyMeasurable _)]
     exact ENNReal.pow_ne_top (Lp.eLpNorm_lt_top _).ne
-  exact addHaar_ball_le_of_tendsto μ hΩb Ω.isOpen (hcont.mono subset_closure) hx hUo hUΩ
+  obtain ⟨C, hC⟩ := hΩb.isCompact_closure.exists_bound_of_continuousOn hcont
+  exact addHaar_ball_le_of_tendsto μ hΩb Ω.isOpen
+    (fun z hz => Real.norm_eq_abs (ū z) ▸ hC z (subset_closure hz)) hx hUo hUΩ
     (fun z hz => Ω.isOpen.exists_eventually_closedBall_subset_setOf_lt_infDist
       (nonempty_of_mem hΩb.compl) hδ0 hz)
     (fun k => contDiff_infty.1 (Wkp.contDiff_smoothField _ _) 2)
@@ -448,11 +473,8 @@ theorem le_add_mul_eLpNorm_negPart_div_det_rpow_of_wkp
     have h := (Fact.out : 1 ≤ p)
     rw [hp] at h
     exact_mod_cast h)
-  refine le_add_div_mul_toReal_of_volume_ball_le
-    (diam_pos (infinite_of_mem_nhds x (Ω.isOpen.mem_nhds hx)).nontrivial hΩb)
-    hg.eLpNorm_lt_top.ne ?_
-  rw [← setLIntegral_negPart_div_det_eq_mul_eLpNorm_pow ha hg.aestronglyMeasurable]
-  exact volume_ball_le_setLIntegral_upperContactSet_of_wkp hΩb hp u hcont hū ha hf hm hx
+  exact le_add_mul_eLpNorm_negPart_div_det_rpow_of_volume_ball_le hΩb Ω.isOpen hx ha hg
+    (volume_ball_le_setLIntegral_upperContactSet_of_wkp hΩb hp u hcont hū ha hf hm hx)
 
 end Operator
 

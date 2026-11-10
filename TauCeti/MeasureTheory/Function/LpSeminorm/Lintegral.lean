@@ -22,6 +22,10 @@ exponent `n ≠ 0` and measurable `f` the identity reads `∫⁻ ‖f‖ₑ ^ n 
 
 Consequently a function in `Lᵖ` for `p ≠ 0` is finite almost everywhere
 (`MeasureTheory.MemLp.ae_enorm_lt_top`), including for `p = ∞`.
+
+The same identification gives monotone convergence for the seminorm: the `Lᵖ` seminorm of the
+supremum of an increasing sequence of functions with values in `[0, ∞]` is the supremum of their
+seminorms (`MeasureTheory.eLpNorm_iSup_eq_iSup_eLpNorm`), also for `p = ∞`.
 -/
 
 public section
@@ -51,6 +55,39 @@ theorem lintegral_enorm_pow_eq_eLpNorm_pow {n : ℕ} (hn : n ≠ 0) {f : α → 
     (eLpNorm_nnreal_pow_eq_lintegral (p := (n : ℝ≥0)) (Nat.cast_ne_zero.2 hn) hf).symm
 
 end TauCeti
+
+namespace MeasureTheory
+
+/-- **Monotone convergence for the `Lᵖ` seminorm.** The `Lᵖ` seminorm of the pointwise supremum
+of an almost everywhere increasing sequence of almost everywhere measurable functions with values
+in `[0, ∞]` is the supremum of their `Lᵖ` seminorms. -/
+theorem eLpNorm_iSup_eq_iSup_eLpNorm {f : ℕ → α → ℝ≥0∞} (hf : ∀ n, AEMeasurable (f n) μ)
+    (hmono : ∀ᵐ x ∂μ, Monotone fun n ↦ f n x) {p : ℝ≥0∞} :
+    eLpNorm (fun x ↦ ⨆ n, f n x) p μ = ⨆ n, eLpNorm (f n) p μ := by
+  rcases eq_or_ne p ∞ with rfl | hp
+  · -- At `p = ∞` each `f n` is bounded almost everywhere by its essential supremum.
+    refine le_antisymm ?_ (iSup_le fun n ↦
+      eLpNorm_mono_enorm (hf n).aestronglyMeasurable fun x ↦ ?_)
+    · rw [eLpNorm_exponent_top (AEMeasurable.iSup hf).aestronglyMeasurable, eLpNormEssSup]
+      refine essSup_le_of_ae_le _ ?_
+      filter_upwards [ae_all_iff.2 fun n ↦ ae_le_eLpNormEssSup (f := f n) (μ := μ)] with x hx
+      simp only [enorm_eq_self] at hx ⊢
+      exact iSup_mono fun n ↦
+        (hx n).trans_eq (eLpNorm_exponent_top (hf n).aestronglyMeasurable).symm
+    · simpa only [enorm_eq_self] using le_iSup (fun n ↦ f n x) n
+  rcases eq_or_ne p 0 with rfl | hp0
+  · simp only [eLpNorm_exponent_zero (AEMeasurable.iSup hf).aestronglyMeasurable,
+      eLpNorm_exponent_zero (hf _).aestronglyMeasurable, iSup_const]
+  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  simp_rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp
+      (AEMeasurable.iSup hf).aestronglyMeasurable,
+    eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp (hf _).aestronglyMeasurable, enorm_eq_self,
+    ENNReal.iSup_rpow_of_pos hr]
+  rw [lintegral_iSup' (fun n ↦ (hf n).pow_const _)
+    (hmono.mono fun x hx m n hmn ↦ ENNReal.rpow_le_rpow (hx hmn) hr.le),
+    ENNReal.iSup_rpow_of_pos (by positivity)]
+
+end MeasureTheory
 
 namespace MeasureTheory.MemLp
 

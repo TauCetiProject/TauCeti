@@ -95,30 +95,20 @@ private theorem snd_tangentPoint_conjugate {B : Type*} [CommRing B] [Algebra R B
     (Bialgebra.CounitAlgebra R H B)).restrictScalars R
   let D := toConv (↑d : H →ₗ[R] Bialgebra.CounitAlgebra R H B)
   let G := toConv g.ofConv.toLinearMap
-  have hqF : F ∘ₗ q.ofConv.toLinearMap = g.ofConv.toLinearMap := by
-    ext x
-    simp [F, q, AlgHom.mapValue_apply]
-  have hqS : S ∘ₗ q.ofConv.toLinearMap = 0 := by
-    ext x
-    simp [S, q, AlgHom.mapValue_apply]
-  have hpF : F ∘ₗ p.ofConv.toLinearMap = (1 : WithConv (H →ₗ[R] _)).ofConv := by
-    ext x
-    exact fst_apply_of_mem_tangentKer
-      (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd d)).2 x
-  have hpS : S ∘ₗ p.ofConv.toLinearMap = D.ofConv := by
-    ext x
-    exact derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd d) x
+  have hqF := WithConv.fstHom_comp_mapValue_inlAlgHom (R := R) (A := H)
+    (C := Bialgebra.CounitAlgebra R H B) g
+  have hqS := WithConv.sndHom_comp_mapValue_inlAlgHom (R := R) (A := H)
+    (C := Bialgebra.CounitAlgebra R H B) g
+  have hpF := Derivation.fstHom_comp_derivationMulEquivTangentKer (R := R) (A := H) (B := B) d
+  have hpS := Derivation.sndHom_comp_derivationMulEquivTangentKer (R := R) (A := H) (B := B) d
   have hpinv : p⁻¹ = (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd (-d))).val := by
     rw [ofAdd_neg, map_inv, Subgroup.coe_inv]
-  have hpinvF : F ∘ₗ (p⁻¹).ofConv.toLinearMap = (1 : WithConv (H →ₗ[R] _)).ofConv := by
-    rw [hpinv]
-    ext x
-    exact fst_apply_of_mem_tangentKer
-      (derivationMulEquivTangentKer R H B (Multiplicative.ofAdd (-d))).2 x
-  have hpinvS : S ∘ₗ (p⁻¹).ofConv.toLinearMap = -D.ofConv := by
-    rw [hpinv]
-    ext x
-    exact derivationMulEquivTangentKer_apply_snd (Multiplicative.ofAdd (-d)) x
+  have hpinvF := Derivation.fstHom_comp_derivationMulEquivTangentKer (R := R) (A := H) (B := B)
+    (-d)
+  have hpinvS := Derivation.sndHom_comp_derivationMulEquivTangentKer (R := R) (A := H) (B := B)
+    (-d)
+  rw [← hpinv] at hpinvF hpinvS
+  replace hpinvS : S ∘ₗ (p⁻¹).ofConv.toLinearMap = -D.ofConv := hpinvS
   -- Negation passes through convolution; `mul_neg` does not apply because the convolution ring
   -- and the pointwise additive group of `WithConv` expose different negation instances.
   have hneg : G * -D = -(G * D) := by
@@ -235,6 +225,36 @@ private theorem lid_map_conjugationAlgHom (d : Derivation R H (Bialgebra.CounitA
     rfl
   exact LinearMap.congr_fun hmaps _
 
+/-- A derivation kills the coefficients of the conjugation defect of `h` exactly when the
+convolution commutator of its scalar extension with the universal point of `D(X)` vanishes at
+`h`. -/
+private theorem forall_map_centralizerCoefficient_eq_zero_iff
+    (d : Derivation R H (Bialgebra.CounitAlgebra R H R)) (h : H) :
+    (∀ χ, d (centralizerCoefficient π h χ) = 0) ↔
+      (toConv (↑(Derivation.mapValue (Algebra.ofId R (CommAlgCat.of R (MonoidAlgebra R X))) d) :
+            H →ₗ[R] Bialgebra.CounitAlgebra R H (CommAlgCat.of R (MonoidAlgebra R X))) *
+          toConv (Derivation.pointInCounitAlgebra (CommAlgCat.of R (MonoidAlgebra R X))
+            (toConv π.toAlgHom)).ofConv.toLinearMap -
+        toConv (Derivation.pointInCounitAlgebra (CommAlgCat.of R (MonoidAlgebra R X))
+            (toConv π.toAlgHom)).ofConv.toLinearMap *
+          toConv (↑(Derivation.mapValue (Algebra.ofId R
+            (CommAlgCat.of R (MonoidAlgebra R X))) d) :
+            H →ₗ[R] Bialgebra.CounitAlgebra R H (CommAlgCat.of R (MonoidAlgebra R X)))).ofConv h
+        = 0 := by
+  have hcoeff : (∀ χ, d (centralizerCoefficient π h χ) = 0) ↔
+      TensorProduct.map ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ
+          (d : H →ₗ[R] Bialgebra.CounitAlgebra R H R)) LinearMap.id
+        (centralizerDefect π h) = 0 := by
+    rw [map_centralizerDefect_eq_zero_iff]
+    simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe,
+      EmbeddingLike.map_eq_zero_iff]
+  rw [hcoeff, ← (TensorProduct.lid R (MonoidAlgebra R X)).map_eq_zero_iff,
+    centralizerDefect_def, map_sub, map_sub, TensorProduct.map_algebraTensorProduct_map,
+    AlgHom.toLinearMap_id, LinearMap.comp_id, LinearMap.id_comp, lid_map_conjugationAlgHom,
+    TensorProduct.map_tmul]
+  simp only [LinearMap.comp_apply, Derivation.coeFn_coe, Derivation.map_one_eq_zero, map_zero,
+    TensorProduct.zero_tmul, sub_zero, EmbeddingLike.map_eq_zero_iff]
+
 variable [Module.Finite R (Bialgebra.CotangentSpace R H)]
 variable [Module.Projective R (Bialgebra.CotangentSpace R H)]
 
@@ -270,20 +290,8 @@ theorem cotangentLinearEquiv_mem_lieSubalgebra_centralizerHopfIdeal_iff
   -- Killing the coefficients of the conjugation defect is vanishing of the commutator of `d`
   -- with the universal point of `D(X)`.
   have hgen (h : H) :
-      (∀ χ, d (centralizerCoefficient π h χ) = 0) ↔ (D * P - P * D).ofConv h = 0 := by
-    have hcoeff : (∀ χ, d (centralizerCoefficient π h χ) = 0) ↔
-        TensorProduct.map ((Bialgebra.CounitAlgebra.algEquivSelf R H R).toLinearMap ∘ₗ
-            (d : H →ₗ[R] Bialgebra.CounitAlgebra R H R)) LinearMap.id
-          (centralizerDefect π h) = 0 := by
-      rw [map_centralizerDefect_eq_zero_iff]
-      simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply, Derivation.coeFn_coe,
-        EmbeddingLike.map_eq_zero_iff]
-    rw [hcoeff, ← (TensorProduct.lid R (MonoidAlgebra R X)).map_eq_zero_iff,
-      centralizerDefect_def, map_sub, map_sub, TensorProduct.map_algebraTensorProduct_map,
-      AlgHom.toLinearMap_id, LinearMap.comp_id, LinearMap.id_comp, lid_map_conjugationAlgHom,
-      TensorProduct.map_tmul]
-    simp only [LinearMap.comp_apply, Derivation.coeFn_coe, Derivation.map_one_eq_zero, map_zero,
-      TensorProduct.zero_tmul, sub_zero, EmbeddingLike.map_eq_zero_iff, D, P, d', p, A]
+      (∀ χ, d (centralizerCoefficient π h χ) = 0) ↔ (D * P - P * D).ofConv h = 0 :=
+    forall_map_centralizerCoefficient_eq_zero_iff π d h
   rw [forall_congr' hgen]
   have hPP' : P * P' = 1 := by
     rw [← AlgHom.toLinearMap_convMul, mul_inv_cancel, AlgHom.toLinearMap_convOne]
