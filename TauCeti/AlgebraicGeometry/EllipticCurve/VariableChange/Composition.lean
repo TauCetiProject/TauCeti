@@ -95,6 +95,27 @@ theorem composition_target : composition ≫ target = second ≫ target := by
   simp only [composition_def, second_def, target_def, ← Spec.map_comp, ← CommRingCat.ofHom_comp,
     coproduct_comp_rightUnit]
 
+/-- Compute a parametrized composite using any pair with the specified projections. -/
+theorem composition_lift_eq {X : Scheme} (f g : X ⟶ Spec (.of ArrowRing))
+    (hfg : f ≫ target = g ≫ source) (p : X ⟶ ComposablePairs)
+    (hf : p ≫ first = f) (hg : p ≫ second = g) :
+    isPullback_first_second.lift f g hfg ≫ composition = p ≫ composition := by
+  have hp : isPullback_first_second.lift f g hfg = p :=
+    isPullback_first_second.hom_ext (by simpa using hf.symm) (by simpa using hg.symm)
+  rw [hp]
+
+/-- A parametrized composite has the source of its first arrow. -/
+theorem composition_lift_source {X : Scheme} (f g : X ⟶ Spec (.of ArrowRing))
+    (hfg : f ≫ target = g ≫ source) :
+    (isPullback_first_second.lift f g hfg ≫ composition) ≫ source = f ≫ source := by
+  simp
+
+/-- A parametrized composite has the target of its second arrow. -/
+theorem composition_lift_target {X : Scheme} (f g : X ⟶ Spec (.of ArrowRing))
+    (hfg : f ≫ target = g ≫ source) :
+    (isPullback_first_second.lift f g hfg ≫ composition) ≫ target = g ≫ target := by
+  simp
+
 /-- Pair an identity arrow with the arrow following it. -/
 def identityFirst : Spec (.of ArrowRing) ⟶ ComposablePairs :=
   isPullback_first_second.lift (source ≫ identity) (𝟙 _) (by simp)
@@ -301,25 +322,21 @@ composability, so this statement retains arbitrary scheme-valued points. -/
 theorem composition_lift_assoc {X : Scheme} (f g h : X ⟶ Spec (.of ArrowRing))
     (hfg : f ≫ target = g ≫ source) (hgh : g ≫ target = h ≫ source) :
     isPullback_first_second.lift
-        (isPullback_first_second.lift f g hfg ≫ composition) h (by
-          simp only [Category.assoc, composition_target, isPullback_first_second.lift_snd_assoc]
-          exact hgh) ≫ composition =
+        (isPullback_first_second.lift f g hfg ≫ composition) h
+        ((composition_lift_target f g hfg).trans hgh) ≫ composition =
       isPullback_first_second.lift f
-        (isPullback_first_second.lift g h hgh ≫ composition) (by
-          simp only [Category.assoc, composition_source, isPullback_first_second.lift_fst_assoc]
-          exact hfg) ≫ composition := by
+        (isPullback_first_second.lift g h hgh ≫ composition)
+        (hfg.trans (composition_lift_source g h hgh).symm) ≫ composition := by
   let t := isPullback_initialPair_last.lift (isPullback_first_second.lift f g hfg) h (by
     simp only [isPullback_first_second.lift_snd_assoc]
     exact hgh)
   have hp : t ≫ composePrefix = isPullback_first_second.lift
-      (isPullback_first_second.lift f g hfg ≫ composition) h (by
-        simp only [Category.assoc, composition_target, isPullback_first_second.lift_snd_assoc]
-        exact hgh) := by
+      (isPullback_first_second.lift f g hfg ≫ composition) h
+      ((composition_lift_target f g hfg).trans hgh) := by
     apply isPullback_first_second.hom_ext <;> simp [t, Category.assoc]
   have hs : t ≫ composeSuffix = isPullback_first_second.lift f
-      (isPullback_first_second.lift g h hgh ≫ composition) (by
-        simp only [Category.assoc, composition_source, isPullback_first_second.lift_fst_assoc]
-        exact hfg) := by
+      (isPullback_first_second.lift g h hgh ≫ composition)
+      (hfg.trans (composition_lift_source g h hgh).symm) := by
     have hts : t ≫ suffix = isPullback_first_second.lift g h hgh := by
       apply isPullback_first_second.hom_ext <;> simp [t, Category.assoc]
     apply isPullback_first_second.hom_ext <;> simp [Category.assoc, ← hts, t]

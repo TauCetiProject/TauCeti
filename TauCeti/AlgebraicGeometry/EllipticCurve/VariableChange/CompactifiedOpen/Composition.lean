@@ -109,23 +109,30 @@ def compactifiedCompose (f g : X ⟶ compactifiedArrowOpen)
     (hfg : f ≫ compactifiedTarget = g ≫ compactifiedSource) : X ⟶ compactifiedArrowOpen :=
   pullback.lift f g hfg ≫ compactifiedComposition
 
+/-- Inclusion preserves composability of parametrized smooth-or-nodal arrows. -/
+theorem compactifiedComposable_ι (f g : X ⟶ compactifiedArrowOpen)
+    (hfg : f ≫ compactifiedTarget = g ≫ compactifiedSource) :
+    (f ≫ compactifiedArrowOpen.ι) ≫ target = (g ≫ compactifiedArrowOpen.ι) ≫ source := by
+  simpa only [Category.assoc, compactifiedTarget_ι, compactifiedSource_ι] using
+    congrArg (· ≫ _root_.WeierstrassCurve.Universal.compactifiedOpen.ι) hfg
+
+/-- Inclusion commutes with the lift of a parametrized composable pair. -/
+@[reassoc (attr := simp)]
+theorem lift_compactifiedPairInclusion (f g : X ⟶ compactifiedArrowOpen)
+    (hfg : f ≫ compactifiedTarget = g ≫ compactifiedSource) :
+    pullback.lift f g hfg ≫ compactifiedPairInclusion =
+      isPullback_first_second.lift (f ≫ compactifiedArrowOpen.ι)
+        (g ≫ compactifiedArrowOpen.ι) (compactifiedComposable_ι f g hfg) := by
+  apply isPullback_first_second.hom_ext <;> simp
+
 /-- Inclusion of a test-scheme composite is the composite of the included arrows. -/
 @[reassoc (attr := simp)]
 theorem compactifiedCompose_ι (f g : X ⟶ compactifiedArrowOpen)
     (hfg : f ≫ compactifiedTarget = g ≫ compactifiedSource) :
     compactifiedCompose f g hfg ≫ compactifiedArrowOpen.ι =
       isPullback_first_second.lift (f ≫ compactifiedArrowOpen.ι)
-        (g ≫ compactifiedArrowOpen.ι) (by
-          simpa only [Category.assoc, compactifiedTarget_ι, compactifiedSource_ι] using
-            congrArg (· ≫ _root_.WeierstrassCurve.Universal.compactifiedOpen.ι) hfg) ≫
-        composition := by
-  have hp : pullback.lift f g hfg ≫ compactifiedPairInclusion =
-      isPullback_first_second.lift (f ≫ compactifiedArrowOpen.ι)
-        (g ≫ compactifiedArrowOpen.ι) (by
-          simpa only [Category.assoc, compactifiedTarget_ι, compactifiedSource_ι] using
-            congrArg (· ≫ _root_.WeierstrassCurve.Universal.compactifiedOpen.ι) hfg) := by
-    apply isPullback_first_second.hom_ext <;> simp
-  rw [compactifiedCompose, Category.assoc, compactifiedComposition_ι, ← Category.assoc, hp]
+        (g ≫ compactifiedArrowOpen.ι) (compactifiedComposable_ι f g hfg) ≫ composition := by
+  simp [compactifiedCompose]
 
 /-- A parametrized composite starts at the source of the first arrow. -/
 @[reassoc (attr := simp)]
@@ -157,25 +164,16 @@ theorem comp_compactifiedCompose {Y : Scheme} (a : Y ⟶ X)
 @[simp]
 theorem compactifiedCompose_identity_first (f : X ⟶ compactifiedArrowOpen) :
     compactifiedCompose (f ≫ compactifiedSource ≫ compactifiedIdentity) f (by simp) = f := by
-  rw [← cancel_mono compactifiedArrowOpen.ι, compactifiedCompose_ι]
-  have hp : isPullback_first_second.lift
-      ((f ≫ compactifiedSource ≫ compactifiedIdentity) ≫ compactifiedArrowOpen.ι)
-      (f ≫ compactifiedArrowOpen.ι) (by simp) =
-        f ≫ compactifiedArrowOpen.ι ≫ identityFirst := by
-    apply isPullback_first_second.hom_ext <;> simp
-  rw [hp]
+  rw [← cancel_mono compactifiedArrowOpen.ι, compactifiedCompose_ι,
+    composition_lift_eq _ _ _ (f ≫ compactifiedArrowOpen.ι ≫ identityFirst) (by simp) (by simp)]
   simp
 
 /-- An arrow followed by the identity at its target is that arrow. -/
 @[simp]
 theorem compactifiedCompose_identity_second (f : X ⟶ compactifiedArrowOpen) :
     compactifiedCompose f (f ≫ compactifiedTarget ≫ compactifiedIdentity) (by simp) = f := by
-  rw [← cancel_mono compactifiedArrowOpen.ι, compactifiedCompose_ι]
-  have hp : isPullback_first_second.lift (f ≫ compactifiedArrowOpen.ι)
-      ((f ≫ compactifiedTarget ≫ compactifiedIdentity) ≫ compactifiedArrowOpen.ι) (by simp) =
-        f ≫ compactifiedArrowOpen.ι ≫ identitySecond := by
-    apply isPullback_first_second.hom_ext <;> simp
-  rw [hp]
+  rw [← cancel_mono compactifiedArrowOpen.ι, compactifiedCompose_ι,
+    composition_lift_eq _ _ _ (f ≫ compactifiedArrowOpen.ι ≫ identitySecond) (by simp) (by simp)]
   simp
 
 /-- An arrow followed by its inverse is the identity at its source. -/
@@ -183,12 +181,8 @@ theorem compactifiedCompose_identity_second (f : X ⟶ compactifiedArrowOpen) :
 theorem compactifiedCompose_arrow_inverse (f : X ⟶ compactifiedArrowOpen) :
     compactifiedCompose f (f ≫ compactifiedInversion.hom) (by simp) =
       f ≫ compactifiedSource ≫ compactifiedIdentity := by
-  rw [← cancel_mono compactifiedArrowOpen.ι, compactifiedCompose_ι]
-  have hp : isPullback_first_second.lift (f ≫ compactifiedArrowOpen.ι)
-      ((f ≫ compactifiedInversion.hom) ≫ compactifiedArrowOpen.ι) (by simp) =
-        f ≫ compactifiedArrowOpen.ι ≫ arrowInverse := by
-    apply isPullback_first_second.hom_ext <;> simp
-  rw [hp]
+  rw [← cancel_mono compactifiedArrowOpen.ι, compactifiedCompose_ι,
+    composition_lift_eq _ _ _ (f ≫ compactifiedArrowOpen.ι ≫ arrowInverse) (by simp) (by simp)]
   simp
 
 /-- The inverse followed by the original arrow is the identity at its target. -/
@@ -196,13 +190,8 @@ theorem compactifiedCompose_arrow_inverse (f : X ⟶ compactifiedArrowOpen) :
 theorem compactifiedCompose_inverse_arrow (f : X ⟶ compactifiedArrowOpen) :
     compactifiedCompose (f ≫ compactifiedInversion.hom) f (by simp) =
       f ≫ compactifiedTarget ≫ compactifiedIdentity := by
-  rw [← cancel_mono compactifiedArrowOpen.ι, compactifiedCompose_ι]
-  have hp : isPullback_first_second.lift
-      ((f ≫ compactifiedInversion.hom) ≫ compactifiedArrowOpen.ι)
-      (f ≫ compactifiedArrowOpen.ι) (by simp) =
-        f ≫ compactifiedArrowOpen.ι ≫ inverseArrow := by
-    apply isPullback_first_second.hom_ext <;> simp
-  rw [hp]
+  rw [← cancel_mono compactifiedArrowOpen.ι, compactifiedCompose_ι,
+    composition_lift_eq _ _ _ (f ≫ compactifiedArrowOpen.ι ≫ inverseArrow) (by simp) (by simp)]
   simp
 
 /-- Composition on the smooth-or-nodal open is associative on every test scheme. -/
