@@ -14,8 +14,9 @@ public import Mathlib.Analysis.SpecificLimits.Normed
 
 The canonical left action of `Unitization 𝕜 A` on `A` is Mathlib's
 `Unitization.lift (NonUnitalAlgHom.Lmul 𝕜 A)`. It sends `(z, a)` to `z • id + L_a`.
-If `A` has no two-sided identity, the scalar coordinate is bounded by the operator norm
-of this action. When `A` is a regular normed algebra, the action is therefore isometric
+If `A` has no left identity (or is a star ring with no two-sided identity), the scalar
+coordinate is bounded by the operator norm of this action. When `A` is a regular normed
+algebra, the action is therefore isometric
 for the minimal unitization norm and has closed image. In particular, this applies to
 complex C⋆-algebras with their C⋆-unitization norm.
 
@@ -41,12 +42,12 @@ namespace Unitization
 
 variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜]
   [NonUnitalNormedRing A] [NormedSpace 𝕜 A] [IsScalarTower 𝕜 A A]
-  [SMulCommClass 𝕜 A A] [StarRing A] [CompleteSpace A]
+  [SMulCommClass 𝕜 A A] [CompleteSpace A]
 
-/-- For a complete star algebra without a two-sided identity, the scalar coordinate is bounded
-by the operator norm of the left action. No C⋆-identity is needed for this inequality. -/
-theorem norm_fst_le_norm_lift_Lmul
-    (hA : ¬ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b) (u : Unitization 𝕜 A) :
+/-- For a complete normed algebra without a left identity, the scalar coordinate is bounded
+by the operator norm of the left action. -/
+theorem norm_fst_le_norm_lift_Lmul_of_no_left_identity
+    (hA : ¬ ∃ e : A, ∀ b : A, e * b = b) (u : Unitization 𝕜 A) :
     ‖u.fst‖ ≤ ‖lift (NonUnitalAlgHom.Lmul 𝕜 A) u‖ := by
   by_contra! h
   have hz : u.fst ≠ 0 := norm_pos_iff.mp ((norm_nonneg _).trans_lt h)
@@ -66,6 +67,17 @@ theorem norm_fst_le_norm_lift_Lmul
   have hleft (b : A) : e * b = b := by
     apply hinj
     simp only [mul_apply', ← mul_assoc, hae]
+  exact hA ⟨e, hleft⟩
+
+variable [StarRing A]
+
+/-- For a complete star algebra without a two-sided identity, the scalar coordinate is bounded
+by the operator norm of the left action. No C⋆-identity is needed for this inequality. -/
+theorem norm_fst_le_norm_lift_Lmul
+    (hA : ¬ ∃ e : A, ∀ b : A, e * b = b ∧ b * e = b) (u : Unitization 𝕜 A) :
+    ‖u.fst‖ ≤ ‖lift (NonUnitalAlgHom.Lmul 𝕜 A) u‖ := by
+  apply norm_fst_le_norm_lift_Lmul_of_no_left_identity (u := u)
+  rintro ⟨e, hleft⟩
   have hright (b : A) : b * star e = b := by
     simpa only [star_mul, star_star] using congrArg star (hleft (star b))
   have heStar : e = star e := (hright e).symm.trans (hleft (star e))
