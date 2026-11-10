@@ -95,13 +95,19 @@ theorem Subgraph.mem_toGraphEdgeSet {S : H.Subgraph} {e : E(Graph.ofSimpleGraph 
 edge set. -/
 theorem Subgraph.edgeSet_matchingSubgraph_toGraphEdgeSet (S : H.Subgraph) :
     (H.matchingSubgraph S.toGraphEdgeSet).edgeSet = S.edgeSet := by
-  rw [edgeSet_matchingSubgraph]
-  ext p
-  constructor
-  · rintro ⟨e, he, rfl⟩
-    exact he
-  · intro hp
-    exact ⟨⟨p, S.edgeSet_subset hp⟩, hp, rfl⟩
+  rw [edgeSet_matchingSubgraph, Subgraph.toGraphEdgeSet]
+  change Subtype.val '' (Subtype.val ⁻¹' S.edgeSet) = S.edgeSet
+  rw [Subtype.image_preimage_coe]
+  exact Set.inter_eq_right.mpr S.edgeSet_subset
+
+/-- Converting selected multigraph edge identities to a subgraph and back recovers the selected
+edge set. -/
+@[simp]
+theorem toGraphEdgeSet_matchingSubgraph (M : Set E(Graph.ofSimpleGraph H)) :
+    (H.matchingSubgraph M).toGraphEdgeSet = M := by
+  rw [Subgraph.toGraphEdgeSet, edgeSet_matchingSubgraph]
+  change Subtype.val ⁻¹' (Subtype.val '' M) = M
+  rw [Set.preimage_image_eq _ Subtype.val_injective]
 
 /-- Converting a simple-graph subgraph's edges to multigraph edge identities preserves their
 cardinality. -/
@@ -148,6 +154,7 @@ theorem matchingSubgraph_isMatching_iff (M : Set E(Graph.ofSimpleGraph H)) :
     exact hfz.symm.trans ((congrArg Subtype.val hef).symm.trans hey)
 
 /-- A matching subgraph is recovered by tracing its multigraph edge identities. -/
+@[simp]
 theorem Subgraph.matchingSubgraph_toGraphEdgeSet (S : H.Subgraph) (hS : S.IsMatching) :
     H.matchingSubgraph S.toGraphEdgeSet = S := by
   apply Subgraph.ext
@@ -184,17 +191,7 @@ def matchingEquiv (H : SimpleGraph V) :
       exact S.2⟩
   left_inv M := by
     apply Subtype.ext
-    ext e
-    constructor
-    · intro he
-      change (e : Sym2 V) ∈ (H.matchingSubgraph M).edgeSet at he
-      rw [edgeSet_matchingSubgraph] at he
-      obtain ⟨f, hf, hfe⟩ := he
-      exact Subtype.ext hfe ▸ hf
-    · intro he
-      change (e : Sym2 V) ∈ (H.matchingSubgraph M).edgeSet
-      rw [edgeSet_matchingSubgraph]
-      exact ⟨e, he, rfl⟩
+    exact toGraphEdgeSet_matchingSubgraph M.1
   right_inv S := by
     apply Subtype.ext
     exact Subgraph.matchingSubgraph_toGraphEdgeSet S.1 S.2
