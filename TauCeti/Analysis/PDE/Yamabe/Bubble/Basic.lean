@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The Euclidean Yamabe bubbles
@@ -184,18 +185,6 @@ theorem contDiff_bubble (t : ℝ) (b : E) {m : WithTop ℕ∞} : ContDiff ℝ m 
 theorem bubble_zero_sub (t : ℝ) (b x : E) : bubble t 0 (x - b) = bubble t b x := by
   rw [bubble_apply, bubble_apply, sub_zero]
 
-/-- A positive factor splits off a real power, whatever the sign of the other factor. -/
-private theorem mul_rpow_of_pos_right (a : ℝ) {c : ℝ} (hc : 0 < c) (k : ℝ) :
-    (a * c) ^ k = a ^ k * c ^ k := by
-  rcases lt_trichotomy a 0 with ha | rfl | ha
-  · rw [Real.rpow_def_of_neg ha, Real.rpow_def_of_neg (mul_neg_of_neg_of_pos ha hc),
-      Real.rpow_def_of_pos hc, Real.log_mul ha.ne hc.ne', add_mul, Real.exp_add]
-    ring
-  · by_cases hk : k = 0
-    · simp [hk]
-    · simp [Real.zero_rpow hk]
-  · exact Real.mul_rpow ha.le hc.le
-
 /-- The bubble of scale `t` centred at the origin is the rescaled standard bubble:
 `U_{t,0}(t x) = t ^ (-(n - 2) / 2) U_{1,0}(x)`. For `t = 0` both sides are the constant
 `0 ^ ((n - 2) / 2)`, and for `t < 0` the real powers of negative numbers agree as well. -/
@@ -206,11 +195,11 @@ theorem bubble_zero_smul (t : ℝ) (x : E) :
     · simp [bubble_apply, hk]
     · have hk' : -(((Module.finrank ℝ E : ℝ) - 2) / 2) ≠ 0 := neg_ne_zero.2 hk
       simp [bubble_apply, Real.zero_rpow hk, Real.zero_rpow hk']
-  have hbase : 2 * t / (t ^ 2 + ‖t • x - 0‖ ^ 2) = t⁻¹ * (2 * 1 / (1 ^ 2 + ‖x - 0‖ ^ 2)) := by
+  have hbase : 2 * t / (t ^ 2 + ‖t • x - 0‖ ^ 2) = (2 * 1 / (1 ^ 2 + ‖x - 0‖ ^ 2)) * t⁻¹ := by
     rw [sub_zero, sub_zero, norm_smul, Real.norm_eq_abs, mul_pow, sq_abs]
     field_simp
-  rw [bubble_apply, bubble_apply, hbase, mul_rpow_of_pos_right _ (by positivity),
-    ← Real.rpow_neg_eq_inv_rpow]
+  rw [bubble_apply, bubble_apply, hbase, Real.mul_rpow_of_pos_left (by positivity),
+    ← Real.rpow_neg_eq_inv_rpow, mul_comm]
 
 /-- The square of a bubble under translation and dilation:
 `U_{t,b}(b + t x)² = t ^ (-(n - 2)) U_{1,0}(x)²`. -/
@@ -378,8 +367,8 @@ theorem laplacian_div_add_norm_sub_sq_rpow (t k : ℝ) (b x : E) :
   have hUF : (fun y : E ↦ ((2 * t / (t ^ 2 + ‖y - b‖ ^ 2)) ^ k : ℝ)) =
       (fun s ↦ (2 * t) ^ k * s ^ (-k)) ∘ fun y ↦ t ^ 2 + ‖y - b‖ ^ 2 := by
     funext y
-    rw [Function.comp_apply, div_eq_mul_inv, mul_rpow_of_pos_right _ (inv_pos.2 (hqpos y)),
-      Real.inv_rpow (hqpos y).le, Real.rpow_neg (hqpos y).le]
+    rw [Function.comp_apply, Real.div_rpow_of_pos_right (hqpos y), Real.rpow_neg (hqpos y).le,
+      div_eq_mul_inv]
   have hFd : deriv (fun s : ℝ ↦ (2 * t) ^ k * s ^ (-k)) =
       fun s ↦ (2 * t) ^ k * (-k * s ^ (-k - 1)) := by
     funext s
