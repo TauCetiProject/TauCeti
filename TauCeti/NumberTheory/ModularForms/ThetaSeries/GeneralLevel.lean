@@ -100,15 +100,6 @@ theorem thetaFormOfLevel_mem_modFormCharSpace (hL : IsEven L) (hk : finrank ℝ 
     TauCeti.Matrix.SpecialLinearGroup.coe_GL_eq_mapGL] using
     hL.thetaSeries_slash_of_mem_Gamma0 hk A.property
 
-/-- Every diamond operator acts on the theta form by the theta character. -/
-theorem diamondOp_thetaFormOfLevel (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
-    (d : (ZMod (level L))ˣ) :
-    TauCeti.diamondOp k d (thetaFormOfLevel hL hk) =
-      (hL.thetaCharacter ⟨k, by omega⟩ (d : ZMod (level L))) • thetaFormOfLevel hL hk := by
-  simpa only [MulChar.coe_equivToUnitHom] using
-    TauCeti.diamondOp_apply_of_mem_modFormCharSpace _ _ d
-      (thetaFormOfLevel_mem_modFormCharSpace hL hk)
-
 /-- The coefficients of the theta form in `q = exp (2 π i τ)` are representation numbers. -/
 theorem qExpansion_thetaFormOfLevel_coeff (hL : IsEven L) (hk : finrank ℝ E = 2 * k)
     (m : ℕ) :
