@@ -981,7 +981,8 @@ theorem trivializationAt_opens_model_space_symmL (x y : U) (u : E) :
     (trivializationAt E (TangentSpace 𝓘(𝕜, E) : U → Type _) x).symmL 𝕜 y u = u := by
   rw [TangentBundle.symmL_trivializationAt_eq_core (by
     simpa using mem_trivializationAt_opens_model_space_baseSet (𝕜 := 𝕜) x y)]
-  rw [show achart E x = achart E y from Subtype.ext (Opens.chartAt_opens_model_space_eq x y)]
+  have hxy : achart E x = achart E y := Subtype.ext (Opens.chartAt_opens_model_space_eq x y)
+  rw [hxy]
   exact (tangentBundleCore 𝓘(𝕜, E) U).coordChange_self _ _ (mem_achart_source E y) u
 
 /-- On an open subset of a normed space, a field of bilinear maps on the tangent spaces is a
@@ -1365,11 +1366,10 @@ theorem mfderiv_opensHomothety (t : Icc (0 : ℝ) 1) (v : U) :
 /-- A homothety of nonzero ratio has invertible differential. -/
 theorem isInvertible_mfderiv_opensHomothety (t : Icc (0 : ℝ) 1) (ht : (t : ℝ) ≠ 0) (v : U) :
     (mfderiv 𝓘(ℝ, V) 𝓘(ℝ, V) (hU.opensHomothety t) v).IsInvertible := by
-  have h : ((t : ℝ) • ContinuousLinearMap.id ℝ V).IsInvertible :=
-    .of_inverse (g := (t : ℝ)⁻¹ • ContinuousLinearMap.id ℝ V)
-      (ContinuousLinearMap.ext fun u ↦ by simp [smul_smul, ht])
-      (ContinuousLinearMap.ext fun u ↦ by simp [smul_smul, ht])
-  rw [hU.mfderiv_opensHomothety t v]
-  exact h
+  have h : ((ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (Units.mk0 (t : ℝ) ht) : V ≃L[ℝ] V) :
+      V →L[ℝ] V) = (t : ℝ) • ContinuousLinearMap.id ℝ V :=
+    ContinuousLinearMap.ext fun u ↦ rfl
+  rw [hU.mfderiv_opensHomothety t v, ← h]
+  exact ContinuousLinearMap.isInvertible_equiv
 
 end StarConvex

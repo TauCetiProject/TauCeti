@@ -118,9 +118,10 @@ theorem blowUp_zero_inner (v : U) :
 /-- At scale `1` the blow-up is the metric itself. -/
 @[simp]
 theorem blowUp_one : h.blowUp hU 1 = h := by
-  ext ⟨v, hv⟩ u w
-  exact congrArg (fun p : U ↦ (show V →L[ℝ] V →L[ℝ] ℝ from h.inner p) u w)
-    (Subtype.ext ((hU.coe_opensHomothety 1 ⟨v, hv⟩).trans (one_smul ℝ v)))
+  ext v u w
+  have hv : hU.opensHomothety 1 v = v :=
+    Subtype.ext ((hU.coe_opensHomothety 1 v).trans (one_smul ℝ (v : V)))
+  rw [blowUp_inner, hv]
 
 /-- In coordinates, the blow-up at scale `t` reads the chart metric of `h` at `t • z`. -/
 theorem chartMetric_blowUp (t : Icc (0 : ℝ) 1) (x₀ : U) {z : V} (hz : z ∈ U) :
