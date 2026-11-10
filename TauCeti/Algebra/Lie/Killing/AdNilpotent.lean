@@ -7,9 +7,8 @@ module
 
 public import Mathlib.Algebra.Lie.Killing
 public import TauCeti.Algebra.Lie.TraceForm
--- Non-public: these appear only inside proofs, never in the type of an exported declaration.
+-- Non-public: this appears only inside proofs, never in the type of an exported declaration.
 import TauCeti.Algebra.Lie.Killing.Basic
-import TauCeti.LinearAlgebra.Trace.Basic
 
 /-!
 # Ad-nilpotent elements of a Killing Lie algebra as brackets with themselves
@@ -228,9 +227,7 @@ representation. -/
 theorem killingForm_eq_zero_of_isNilpotent_ad_of_lie_lie_eq_zero {x z : L}
     (hx : IsNilpotent (ad K L x)) (hz : ⁅x, ⁅x, z⁆⁆ = 0) :
     killingForm K L x z = 0 := by
-  by_cases hL : Module.Finite K L
-  · exact traceForm_eq_zero_of_isNilpotent_of_lie_lie_eq_zero hx hz
-  · simp [LieModule.traceForm_apply_apply, LinearMap.trace_eq_zero_of_not_finite hL]
+  exact traceForm_eq_zero_of_isNilpotent_of_lie_lie_eq_zero hx hz
 
 variable [LieAlgebra.IsKilling K L]
 

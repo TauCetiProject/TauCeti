@@ -11,6 +11,7 @@ public import TauCeti.Algebra.Lie.Weights.Borel
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
 public import TauCeti.Algebra.Lie.Weights.Projection
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.Homogeneous
+import TauCeti.Algebra.Lie.Weights.Basic
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Semilinear
 
 /-!
@@ -81,26 +82,6 @@ namespace TauCeti
 
 open LieAlgebra LieAlgebra.IsKilling _root_.LieModule Module
 
-/-- **A nonzero generalized weight space lies in the positive Fitting component.** If a nilpotent
-Lie algebra acts on a finite-dimensional module and `χ ≠ 0`, some `z` has `χ z ≠ 0`, so `z` acts
-invertibly on the `χ`-weight space, which therefore lies in the image of every power of `z`. -/
-theorem genWeightSpace_le_posFittingComp_of_ne_zero {K L M : Type*} [Field K] [LieRing L]
-    [LieAlgebra K L] [LieRing.IsNilpotent L] [AddCommGroup M] [Module K M] [LieRingModule L M]
-    [LieModule K L M] [FiniteDimensional K M] {χ : L → K} (hχ : χ ≠ 0) :
-    genWeightSpace M χ ≤ posFittingComp K L M := by
-  obtain ⟨z, hz⟩ := Function.ne_iff.mp hχ
-  replace hz : χ z ≠ 0 := hz
-  have hunit : IsUnit (toEnd K L (genWeightSpace M χ) z) := by
-    simpa using (isNilpotent_toEnd_sub_algebraMap M χ z).isUnit_add_left_of_commute
-      ((isUnit_iff_ne_zero.mpr hz).map (algebraMap K (Module.End K (genWeightSpace M χ))))
-      (Algebra.commutes _ _).symm
-  intro x hx
-  refine posFittingCompOf_le_posFittingComp K L M z ?_
-  rw [mem_posFittingCompOf]
-  intro k
-  obtain ⟨n, hn⟩ := (Module.End.isUnit_iff _ |>.mp (hunit.pow k)).2 ⟨x, hx⟩
-  exact ⟨n, by rw [← LieSubmodule.coe_toEnd_pow, hn]⟩
-
 variable {K L : Type*} [Field K] [LieRing L] [LieAlgebra K L] [IsKilling K L]
   (H : LieSubalgebra K L) [H.IsCartanSubalgebra]
 
@@ -170,7 +151,8 @@ variable {H} in
 `χ` is Killing-orthogonal to `H`, the root space of `0`. -/
 theorem killingCartanProjection_eq_zero_of_mem_rootSpace {χ : H → K}
     (hχ : χ ≠ 0) {x : L} (hx : x ∈ rootSpace H χ) : killingCartanProjection H x = 0 := by
-  have hmem : x ∈ posFittingComp K H L := genWeightSpace_le_posFittingComp_of_ne_zero hχ hx
+  have hmem : x ∈ posFittingComp K H L :=
+    LieModule.genWeightSpace_le_posFittingComp_of_ne_zero hχ hx
   refine ((eq_killingCartanProjection_iff H).mpr fun h ↦ ?_).symm
   rw [ZeroMemClass.coe_zero, map_zero, LinearMap.zero_apply, traceForm_comm]
   exact (killingForm_eq_zero_of_mem_zeroRoot_mem_posFitting K L H
