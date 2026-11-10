@@ -58,18 +58,22 @@ theorem fppfHomogeneousQuotientTranslation_hom_comp_map {J : HopfIdeal R H}
     (fppfHomogeneousQuotientTranslation H I g).hom ≫ fppfHomogeneousQuotientMap H hJI =
       fppfHomogeneousQuotientMap H hJI ≫ (fppfHomogeneousQuotientTranslation H J g).hom := by
   apply fppfHomogeneousQuotient_hom_ext
-  ext A x
-  obtain ⟨x⟩ := x
-  let x' : HopfAlgebra.points (R := R) (H := H) A.unop.unop := x
+  ext A ⟨(x : HopfAlgebra.points (R := R) (H := H) A.unop.unop)⟩
   have hmap (y : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :=
     congrArg (fun f ↦ f.app A (ULift.up y))
       (fppfHomogeneousQuotientProjection_comp_map H hJI)
-  have h := (congrArg ((fppfHomogeneousQuotientMap H hJI).hom.app A)
-    (fppfHomogeneousQuotientTranslation_hom_app_projection H I g A x')).trans
-    ((hmap (HopfAlgebra.extendPoint H A.unop.unop g * x')).trans
-      ((fppfHomogeneousQuotientTranslation_hom_app_projection H J g A x').symm.trans
-        (congrArg ((fppfHomogeneousQuotientTranslation H J g).hom.hom.app A) (hmap x').symm)))
-  exact h
+  simp only [ObjectProperty.FullSubcategory.comp_hom, NatTrans.comp_app,
+    ConcreteCategory.comp_apply, TypeCat.Fun.toFun_apply] at hmap ⊢
+  -- Compute on a projected point: translate, project to the larger subgroup, then translate.
+  calc
+    _ = (fppfHomogeneousQuotientMap H hJI).hom.app A
+        ((fppfHomogeneousQuotientProjection H I).app A
+          (ULift.up (HopfAlgebra.extendPoint H A.unop.unop g * x))) := by
+      rw [fppfHomogeneousQuotientTranslation_hom_app_projection]
+    _ = (fppfHomogeneousQuotientProjection H J).app A
+        (ULift.up (HopfAlgebra.extendPoint H A.unop.unop g * x)) := hmap _
+    _ = _ := by
+      rw [hmap, fppfHomogeneousQuotientTranslation_hom_app_projection]
 
 /-- Over an algebraically closed field, the rational-point/coset comparison intertwines
 left translation on the fppf quotient with the usual left action on cosets. -/

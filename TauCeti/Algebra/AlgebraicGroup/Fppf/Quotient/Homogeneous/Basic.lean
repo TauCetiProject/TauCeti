@@ -399,47 +399,49 @@ theorem isIso_fppfHomogeneousQuotientHomEquiv_symm
   · exact Presheaf.isLocallySurjective_of_isLocallySurjective_fac J
       (fppfHomogeneousQuotientHomEquiv_symm_apply H I F f hf)
 
+private def homogeneousQuotientPresheafTranslationHom
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    homogeneousQuotientPresheaf H I ⟶ homogeneousQuotientPresheaf H I where
+  app A := ↾fun q ↦ ULift.up (HopfAlgebra.extendPoint H A.unop.unop g • q.down)
+  naturality {A B} χ := by
+    ext q
+    induction q using homogeneousQuotientPresheaf_induction_on H I with
+    | h x =>
+      -- Present the naturality square through its coset and universe-lift wrappers.
+      change ULift.up (QuotientGroup.mk (HopfAlgebra.extendPoint H B.unop.unop g *
+        HopfAlgebra.mapPoints (H := H) χ.unop.unop x)) =
+          ULift.up (QuotientGroup.mk (HopfAlgebra.mapPoints (H := H) χ.unop.unop
+            (HopfAlgebra.extendPoint H A.unop.unop g * x)))
+      rw [map_mul, HopfAlgebra.mapPoints_extendPoint]
+
+@[simp]
+private theorem homogeneousQuotientPresheafTranslationHom_app_mk
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
+    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+    (x : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
+    (homogeneousQuotientPresheafTranslationHom H I g).app A
+        (homogeneousQuotientPresheafMk H I A x) =
+      homogeneousQuotientPresheafMk H I A (HopfAlgebra.extendPoint H A.unop.unop g * x) :=
+  (rfl)
+
+private theorem homogeneousQuotientPresheafTranslationHom_comp_inv
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    homogeneousQuotientPresheafTranslationHom H I g ≫
+      homogeneousQuotientPresheafTranslationHom H I g⁻¹ = 𝟙 _ := by
+  ext A q
+  induction q using homogeneousQuotientPresheaf_induction_on H I with
+  | h x => simp
+
 /-- Left translation on the coset presheaf by a ground-ring-valued group point.
 The point is extended along the structure map of each value algebra. -/
 def homogeneousQuotientPresheafTranslation
     (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
     homogeneousQuotientPresheaf H I ≅ homogeneousQuotientPresheaf H I where
-  hom :=
-    { app := fun A ↦ ↾fun q ↦ ULift.up (HopfAlgebra.extendPoint H A.unop.unop g • q.down)
-      naturality := fun {A B} χ ↦ by
-        ext q
-        induction q using homogeneousQuotientPresheaf_induction_on H I with
-        | h x =>
-          -- Present the naturality square through its coset and universe-lift wrappers.
-          change ULift.up (QuotientGroup.mk (HopfAlgebra.extendPoint H B.unop.unop g *
-            HopfAlgebra.mapPoints (H := H) χ.unop.unop x)) =
-            ULift.up (QuotientGroup.mk (HopfAlgebra.mapPoints (H := H) χ.unop.unop
-              (HopfAlgebra.extendPoint H A.unop.unop g * x)))
-          rw [map_mul, HopfAlgebra.mapPoints_extendPoint] }
-  inv :=
-    { app := fun A ↦ ↾fun q ↦ ULift.up (HopfAlgebra.extendPoint H A.unop.unop g⁻¹ • q.down)
-      naturality := fun {A B} χ ↦ by
-        ext q
-        induction q using homogeneousQuotientPresheaf_induction_on H I with
-        | h x =>
-          -- Present the naturality square through its coset and universe-lift wrappers.
-          change ULift.up (QuotientGroup.mk (HopfAlgebra.extendPoint H B.unop.unop g⁻¹ *
-            HopfAlgebra.mapPoints (H := H) χ.unop.unop x)) =
-            ULift.up (QuotientGroup.mk (HopfAlgebra.mapPoints (H := H) χ.unop.unop
-              (HopfAlgebra.extendPoint H A.unop.unop g⁻¹ * x)))
-          rw [map_mul, HopfAlgebra.mapPoints_extendPoint] }
-  hom_inv_id := by
-    ext A ⟨q⟩
-    -- Evaluate the composite through the universe lifts before applying the action law.
-    change ULift.up (HopfAlgebra.extendPoint H A.unop.unop g⁻¹ •
-      (HopfAlgebra.extendPoint H A.unop.unop g • q)) = ULift.up q
-    simp
+  hom := homogeneousQuotientPresheafTranslationHom H I g
+  inv := homogeneousQuotientPresheafTranslationHom H I g⁻¹
+  hom_inv_id := homogeneousQuotientPresheafTranslationHom_comp_inv H I g
   inv_hom_id := by
-    ext A ⟨q⟩
-    -- Evaluate the composite through the universe lifts before applying the action law.
-    change ULift.up (HopfAlgebra.extendPoint H A.unop.unop g •
-      (HopfAlgebra.extendPoint H A.unop.unop g⁻¹ • q)) = ULift.up q
-    simp
+    simpa only [inv_inv] using homogeneousQuotientPresheafTranslationHom_comp_inv H I g⁻¹
 
 /-- Translation carries the coset of `x` to the coset of `g * x`, with `g` extended to the
 value algebra. -/
@@ -451,6 +453,18 @@ theorem homogeneousQuotientPresheafTranslation_hom_app_mk
     (homogeneousQuotientPresheafTranslation H I g).hom.app A
         (homogeneousQuotientPresheafMk H I A x) =
       homogeneousQuotientPresheafMk H I A (HopfAlgebra.extendPoint H A.unop.unop g * x) :=
+  (rfl)
+
+/-- Inverse translation carries the coset of `x` to the coset of `g⁻¹ * x`, with the
+inverse point extended to the value algebra. -/
+@[simp]
+theorem homogeneousQuotientPresheafTranslation_inv_app_mk
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
+    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+    (x : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
+    (homogeneousQuotientPresheafTranslation H I g).inv.app A
+        (homogeneousQuotientPresheafMk H I A x) =
+      homogeneousQuotientPresheafMk H I A (HopfAlgebra.extendPoint H A.unop.unop g⁻¹ * x) :=
   (rfl)
 
 /-- Translation by the identity point fixes the coset presheaf. -/
@@ -514,13 +528,14 @@ theorem fppfHomogeneousQuotientTranslation_hom_app_projection
         ((fppfHomogeneousQuotientProjection H I).app A (ULift.up x)) =
       (fppfHomogeneousQuotientProjection H I).app A
         (ULift.up (HopfAlgebra.extendPoint H A.unop.unop g * x)) := by
-  have h := congrArg
-    (fun f ↦ f.app A (homogeneousQuotientPresheafMk H I A x))
-    (toSheafify_naturality (CommAlgCat.fppfTopology R)
-      (homogeneousQuotientPresheafTranslation H I g).hom).symm
+  have h := congrArg (fun f ↦ f.app A (homogeneousQuotientPresheafMk H I A x))
+    (toSheafify_comp_fppfHomogeneousQuotientTranslation H I g)
   simp only [NatTrans.comp_app, ConcreteCategory.comp_apply,
     homogeneousQuotientPresheafTranslation_hom_app_mk] at h
-  -- The quotient projection is the coset projection followed by sheafification.
+  -- Explicitly identify the quotient projection with the sheafified coset projection.
+  rw [fppfHomogeneousQuotientProjection_def]
+  dsimp only [NatTrans.comp_app, homogeneousQuotientPresheafProjection,
+    homogeneousQuotientPresheafMk] at h ⊢
   exact h
 
 /-- Translation by the identity point fixes the fppf homogeneous quotient. -/
@@ -551,6 +566,34 @@ theorem fppfHomogeneousQuotientTranslation_inv
   rw [fppfHomogeneousQuotientTranslation, homogeneousQuotientPresheafTranslation_inv,
     Functor.mapIso_symm]
   rfl
+
+/-- Sheafification also intertwines inverse translations on cosets and on the fppf quotient. -/
+@[reassoc]
+theorem toSheafify_comp_fppfHomogeneousQuotientTranslation_inv
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R)) :
+    (toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I) ≫
+      eqToHom (fppfHomogeneousQuotient_obj H I).symm) ≫
+        (fppfHomogeneousQuotientTranslation H I g).inv.hom =
+      (homogeneousQuotientPresheafTranslation H I g).inv ≫
+        toSheafify (CommAlgCat.fppfTopology R) (homogeneousQuotientPresheaf H I) ≫
+          eqToHom (fppfHomogeneousQuotient_obj H I).symm := by
+  rw [← Iso.symm_hom, ← fppfHomogeneousQuotientTranslation_inv,
+    ← Iso.symm_hom, ← homogeneousQuotientPresheafTranslation_inv]
+  exact toSheafify_comp_fppfHomogeneousQuotientTranslation H I g⁻¹
+
+/-- On projected group points, inverse translation is left multiplication by the extended
+inverse point. -/
+@[simp]
+theorem fppfHomogeneousQuotientTranslation_inv_app_projection
+    (g : HopfAlgebra.points (R := R) (H := H) (CommAlgCat.of R R))
+    (A : ((CommAlgCat.{u} R)ᵒᵖ)ᵒᵖ)
+    (x : HopfAlgebra.points (R := R) (H := H) A.unop.unop) :
+    dsimp% (fppfHomogeneousQuotientTranslation H I g).inv.hom.app A
+        ((fppfHomogeneousQuotientProjection H I).app A (ULift.up x)) =
+      (fppfHomogeneousQuotientProjection H I).app A
+        (ULift.up (HopfAlgebra.extendPoint H A.unop.unop g⁻¹ * x)) := by
+  rw [← Iso.symm_hom, ← fppfHomogeneousQuotientTranslation_inv]
+  exact fppfHomogeneousQuotientTranslation_hom_app_projection H I g⁻¹ A x
 
 end
 
