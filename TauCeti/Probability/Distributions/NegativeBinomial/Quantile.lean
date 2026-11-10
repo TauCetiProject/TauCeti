@@ -39,24 +39,6 @@ namespace TauCeti.Probability
 
 variable {r p u : ℝ}
 
-/-- A natural number is the lower quantile of a positive-shape negative-binomial law exactly
-when it is the least index whose incomplete-beta cumulative mass reaches the level. -/
-@[simp]
-theorem quantile_map_cast_negativeBinomialMeasure_eq_iff (hr : 0 < r) (hp : 0 < p)
-    (hu : u ∈ Ioo 0 1) (k : ℕ) :
-    ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)).quantile u = k ↔
-      IsLeast {j : ℕ | u ≤ regularizedIncompleteBeta r (j + 1) p} k := by
-  by_cases hp1 : p ≤ 1
-  · let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
-    rw [Measure.quantile_map_natCast_eq_iff _ hu]
-    simp only [negativeBinomialMeasure_real_Iic hr hp hp1]
-  · have hI (j : ℕ) : regularizedIncompleteBeta r (j + 1) p = 1 :=
-      regularizedIncompleteBeta_eq_one_of_one_le hr.le (by positivity) (not_le.1 hp1).le
-    rw [negativeBinomialMeasure_eq_zero_of_invalid (fun h ↦ hp1 h.2.2), Measure.map_zero,
-      Measure.quantile_zero]
-    -- Every index qualifies, so the set is everything and its least element is `0`.
-    simp [hI, hu.2.le, isLeast_univ_iff, eq_comm]
-
 /-- At shape zero, every valid negative-binomial law is concentrated at zero, so its lower
 quantiles are zero, at every level and also at invalid success probabilities. -/
 @[simp]
@@ -67,6 +49,30 @@ theorem quantile_map_cast_negativeBinomialMeasure_zero :
     exact Measure.quantile_dirac_zero u
   · rw [negativeBinomialMeasure_eq_zero_of_invalid (fun h' ↦ h h'.2), Measure.map_zero,
       Measure.quantile_zero]
+
+/-- A natural number is the lower quantile of a negative-binomial law of nonnegative shape exactly
+when it is the least index whose incomplete-beta cumulative mass reaches the level. -/
+@[simp]
+theorem quantile_map_cast_negativeBinomialMeasure_eq_iff (hr : 0 ≤ r) (hp : 0 < p)
+    (hu : u ∈ Ioo 0 1) (k : ℕ) :
+    ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)).quantile u = k ↔
+      IsLeast {j : ℕ | u ≤ regularizedIncompleteBeta r (j + 1) p} k := by
+  rcases hr.eq_or_lt with rfl | hr
+  · -- At shape zero every index qualifies, so the set is everything and its least element is `0`.
+    have hI (j : ℕ) : regularizedIncompleteBeta 0 (j + 1) p = 1 :=
+      regularizedIncompleteBeta_zero_left (by positivity) hp.le
+    rw [quantile_map_cast_negativeBinomialMeasure_zero]
+    simp [hI, hu.2.le, isLeast_univ_iff, eq_comm]
+  by_cases hp1 : p ≤ 1
+  · let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
+    rw [Measure.quantile_map_natCast_eq_iff _ hu]
+    simp only [negativeBinomialMeasure_real_Iic hr hp hp1]
+  · have hI (j : ℕ) : regularizedIncompleteBeta r (j + 1) p = 1 :=
+      regularizedIncompleteBeta_eq_one_of_one_le hr.le (by positivity) (not_le.1 hp1).le
+    rw [negativeBinomialMeasure_eq_zero_of_invalid (fun h ↦ hp1 h.2.2), Measure.map_zero,
+      Measure.quantile_zero]
+    -- Every index qualifies, so the set is everything and its least element is `0`.
+    simp [hI, hu.2.le, isLeast_univ_iff, eq_comm]
 
 /-- At success probability one, every valid negative-binomial law is concentrated at zero, so
 its lower quantiles are zero, at every level and also at invalid shapes. -/
@@ -126,7 +132,7 @@ theorem tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsLT_one (hr : 0 ≤
     refine tendsto_atTop.2 fun b ↦ ?_
     have hb : cdf ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) b < 1 := by
       by_cases hb0 : 0 ≤ b
-      · rw [cdf_map_cast_negativeBinomialMeasure hr0 hp hb0]
+      · rw [cdf_map_cast_negativeBinomialMeasure hr0.le hp hb0]
         exact (regularizedIncompleteBeta_lt_one_iff hr0 (by positivity)).2 hp1'
       · rw [Measure.cdf_map_natCast_of_neg _ (lt_of_not_ge hb0)]
         exact zero_lt_one

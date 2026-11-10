@@ -99,11 +99,25 @@ theorem negativeBinomialMeasure_real_Iic_zero (hp : 0 < p) (hp1 : p ≤ 1) (k : 
 
 /-! ### The cast law -/
 
+/-- At shape zero, the cdf of the real-valued negative-binomial law is the step function at the
+origin, also at invalid success probabilities, where the law is zero. -/
+@[simp]
+theorem cdf_map_cast_negativeBinomialMeasure_zero (x : ℝ) :
+    cdf ((negativeBinomialMeasure 0 p).map (Nat.cast : ℕ → ℝ)) x =
+      if 0 ≤ x then 1 else 0 := by
+  by_cases h : 0 < p ∧ p ≤ 1
+  · rw [negativeBinomialMeasure_zero h.1 h.2, Measure.map_dirac, Nat.cast_zero, cdf_dirac]
+  · rw [negativeBinomialMeasure_eq_zero_of_invalid (fun h' ↦ h h'.2), Measure.map_zero, cdf_zero]
+
 /-- The cdf of the real-valued negative-binomial law at a nonnegative point is the regularized
 incomplete beta function evaluated at the natural floor of that point. -/
-theorem cdf_map_cast_negativeBinomialMeasure (hr : 0 < r) (hp : 0 < p) {x : ℝ} (hx : 0 ≤ x) :
+theorem cdf_map_cast_negativeBinomialMeasure (hr : 0 ≤ r) (hp : 0 < p) {x : ℝ} (hx : 0 ≤ x) :
     cdf ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) x =
       regularizedIncompleteBeta r (⌊x⌋₊ + 1) p := by
+  rcases hr.eq_or_lt with rfl | hr
+  · rw [cdf_map_cast_negativeBinomialMeasure_zero,
+      regularizedIncompleteBeta_zero_left (by positivity) hp.le]
+    simp only [hx, ↓reduceIte]
   by_cases hp1 : p ≤ 1
   · let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
     rw [Measure.cdf_map_natCast _ hx, negativeBinomialMeasure_real_Iic hr hp hp1]
@@ -121,16 +135,6 @@ theorem cdf_map_cast_negativeBinomialMeasure_of_neg {x : ℝ} (hx : x < 0) :
     exact Measure.cdf_map_natCast_of_neg _ hx
   · rw [negativeBinomialMeasure_eq_zero_of_invalid h, Measure.map_zero, cdf_zero,
       ite_eq_right (not_le.2 hx)]
-
-/-- At shape zero, the cdf of the real-valued negative-binomial law is the step function at the
-origin, also at invalid success probabilities, where the law is zero. -/
-@[simp]
-theorem cdf_map_cast_negativeBinomialMeasure_zero (x : ℝ) :
-    cdf ((negativeBinomialMeasure 0 p).map (Nat.cast : ℕ → ℝ)) x =
-      if 0 ≤ x then 1 else 0 := by
-  by_cases h : 0 < p ∧ p ≤ 1
-  · rw [negativeBinomialMeasure_zero h.1 h.2, Measure.map_dirac, Nat.cast_zero, cdf_dirac]
-  · rw [negativeBinomialMeasure_eq_zero_of_invalid (fun h' ↦ h h'.2), Measure.map_zero, cdf_zero]
 
 /-! ### Random-variable corollary -/
 

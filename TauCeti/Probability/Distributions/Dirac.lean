@@ -85,6 +85,7 @@ theorem upperQuantile_dirac (a : ℝ) {t : ℝ} (h0 : 0 ≤ t) (h1 : t < 1) :
 
 /-- At every level, including those outside `Ioc 0 1` where the junk values of the quantile
 function apply, the quantile function of the Dirac law at `0` is `0`. -/
+@[simp]
 theorem quantile_dirac_zero (t : ℝ) : (dirac (0 : ℝ)).quantile t = 0 := by
   rcases le_or_gt t 0 with h0 | h0
   · exact quantile_of_nonpos _ h0
