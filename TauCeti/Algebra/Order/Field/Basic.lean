@@ -79,6 +79,7 @@ solve the second estimate for `Y` and substitute it into the first.
   (r / 2) ^ n)` for `0 < r`, `1 ≤ n` and `L / (2 r) < m + 1`.
 * `TauCeti.add_le_mul_add_mul_of_le_of_le`: `U + Y ≤ (2 + (2 M² + 1) (2 / c) (a + b)) (Z + W)` from
   `U ≤ 2 Z + 2 M² Y` and `c / 2 * Y ≤ a Z + b W`.
+* `TauCeti.le_two_mul_of_le_add_mul`: `J ≤ 2 * Y` from `J ≤ Y + X * J`, `X ≤ 1 / 2` and `0 ≤ J`.
 -/
 
 public section
@@ -264,6 +265,12 @@ theorem add_le_mul_add_mul_of_le_of_le {α : Type*} [Field α] [LinearOrder α]
   nlinarith [mul_le_mul_of_nonneg_left hY' (by positivity : (0 : α) ≤ 2 * M ^ 2 + 1),
     mul_nonneg (mul_nonneg hk hb) hZ, mul_nonneg (mul_nonneg hk ha) hW,
     mul_nonneg (mul_nonneg hk ha) hZ, mul_nonneg (mul_nonneg hk hb) hW]
+
+/-- Absorbing the term `X * J` with `X ≤ 1 / 2` into the left side: `J ≤ Y + X * J` gives
+`J ≤ 2 * Y` for `0 ≤ J`. -/
+theorem le_two_mul_of_le_add_mul {α : Type*} [Field α] [LinearOrder α] [IsStrictOrderedRing α]
+    {J X Y : α} (hJ : 0 ≤ J) (hX : X ≤ 1 / 2) (h : J ≤ Y + X * J) : J ≤ 2 * Y := by
+  nlinarith [mul_le_mul_of_nonneg_right hX hJ]
 
 end TauCeti
 

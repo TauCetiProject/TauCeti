@@ -121,7 +121,7 @@ private theorem range_relBrInfl_unramifiedExtension_le
   -- fields `restrict le_sup_left` and `restrict le_sup_right`, by definition of the algebra
   -- structures, and they lift to `E` and `Kₙ` in `Kˢ`.
   have hadj : adjoin E (Set.range (IsScalarTower.toAlgHom K (𝓤 n) M)) = ⊤ := by
-    refine TauCeti.IntermediateField.adjoin_range_eq_top_of_fieldRange_sup_fieldRange_eq_top _
+    refine (AlgHom.adjoin_range_eq_top_iff_fieldRange_sup_fieldRange_eq_top _).2
       (lift_injective M ?_)
     rw [lift_sup, lift_top]
     exact congrArg₂ (· ⊔ ·) (lift_restrict le_sup_left) (lift_restrict le_sup_right)
