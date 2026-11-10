@@ -291,6 +291,33 @@ theorem glCasimir_eigenvalue_glHalfStaircase
       field_simp [h4]
       ring
 
+/-- Lowering the `t`-th entry of the half-shifted staircase changes the Casimir sum by
+`-3 N + 2 * (1 / 2) + 2 + 4 t`. The constant is written as `2 * (1 / 2) + 2` (which is `3`), so
+that no invertibility of `2` is needed in the proof. -/
+theorem glCasimir_sum_glHalfStaircase_sub_single
+    {F : Type*} [Field F] (N : ℕ) (t : Fin N) :
+    (∑ i : Fin N, (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i *
+      ((glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i +
+        (N : F) - 1 - 2 * (i : F))) =
+      (∑ i : Fin N, glHalfStaircase F N i *
+        (glHalfStaircase F N i + (N : F) - 1 - 2 * (i : F))) +
+        (-3 * (N : F) + 2 * (1 / 2 : F) + 2 + 4 * (t : F)) := by
+  have hterm (i : Fin N) :
+      (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i *
+          ((glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i +
+            (N : F) - 1 - 2 * (i : F)) =
+        glHalfStaircase F N i *
+            (glHalfStaircase F N i + (N : F) - 1 - 2 * (i : F)) +
+          if i = t then -3 * (N : F) + 2 * (1 / 2 : F) + 2 + 4 * (t : F) else 0 := by
+    by_cases hit : i = t
+    · subst i
+      simp only [Pi.sub_apply, Pi.single_eq_same, glHalfStaircase_apply, ite_true]
+      ring
+    · simp [hit]
+  simp_rw [hterm, Finset.sum_add_distrib]
+  rw [Finset.sum_ite_eq' Finset.univ t]
+  simp only [Finset.mem_univ, ite_true]
+
 /-- Lowering the `t`-th entry of the half-shifted staircase changes the Casimir scalar by
 `-3 N + 3 + 4 t`. -/
 theorem glCasimir_eigenvalue_glHalfStaircase_sub_single
@@ -299,23 +326,9 @@ theorem glCasimir_eigenvalue_glHalfStaircase_sub_single
       ((glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i +
         (N : F) - 1 - 2 * (i : F))) =
         (N : F) * (2 * (N : F) ^ 2 - 1) / 4 - 3 * (N : F) + 3 + 4 * (t : F) := by
-  have hterm (i : Fin N) :
-      (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i *
-          ((glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i +
-            (N : F) - 1 - 2 * (i : F)) =
-        glHalfStaircase F N i *
-            (glHalfStaircase F N i + (N : F) - 1 - 2 * (i : F)) +
-          if i = t then -3 * (N : F) + 3 + 4 * (t : F) else 0 := by
-    by_cases hit : i = t
-    · subst i
-      simp [glHalfStaircase_apply]
-      have h2 : (2 : F) ≠ 0 := Invertible.ne_zero (2 : F)
-      field_simp [h2]
-      ring
-    · simp [hit]
-  simp_rw [hterm, Finset.sum_add_distrib]
-  rw [Finset.sum_ite_eq' Finset.univ t]
-  simp only [Finset.mem_univ, ite_true, glCasimir_eigenvalue_glHalfStaircase]
+  have h2 : (2 : F) ≠ 0 := Invertible.ne_zero (2 : F)
+  rw [glCasimir_sum_glHalfStaircase_sub_single, glCasimir_eigenvalue_glHalfStaircase]
+  field_simp [h2]
   ring
 
 /-- The difference of the lowered half-shifted staircase Casimir scalars is `4 (t - s)`. -/
@@ -328,29 +341,7 @@ theorem glCasimir_eigenvalue_glHalfStaircase_sub_single_diff
       ((glHalfStaircase F N - (Pi.single s (1 : F) : Fin N → F)) i +
         (N : F) - 1 - 2 * (i : F))) =
       4 * ((t : F) - (s : F)) := by
-  have key (t : Fin N) :
-      (∑ i : Fin N, (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i *
-        ((glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i +
-          (N : F) - 1 - 2 * (i : F))) =
-        (∑ i : Fin N, glHalfStaircase F N i *
-          (glHalfStaircase F N i + (N : F) - 1 - 2 * (i : F))) +
-          (-3 * (N : F) + 2 * (1 / 2 : F) + 2 + 4 * (t : F)) := by
-    have hterm (i : Fin N) :
-        (glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i *
-            ((glHalfStaircase F N - (Pi.single t (1 : F) : Fin N → F)) i +
-              (N : F) - 1 - 2 * (i : F)) =
-          glHalfStaircase F N i *
-              (glHalfStaircase F N i + (N : F) - 1 - 2 * (i : F)) +
-            if i = t then -3 * (N : F) + 2 * (1 / 2 : F) + 2 + 4 * (t : F) else 0 := by
-      by_cases hit : i = t
-      · subst i
-        simp only [Pi.sub_apply, Pi.single_eq_same, glHalfStaircase_apply, ite_true]
-        ring
-      · simp [hit]
-    simp_rw [hterm, Finset.sum_add_distrib]
-    rw [Finset.sum_ite_eq' Finset.univ t]
-    simp only [Finset.mem_univ, ite_true]
-  rw [key t, key s]
+  rw [glCasimir_sum_glHalfStaircase_sub_single N t, glCasimir_sum_glHalfStaircase_sub_single N s]
   ring
 
 /-- The lowered half-shifted staircase Casimir scalars are distinct at distinct indices. -/

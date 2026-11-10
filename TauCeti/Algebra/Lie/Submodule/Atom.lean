@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.Quotient
 public import Mathlib.Algebra.Lie.Semisimple.Basic
+public import Mathlib.Algebra.Module.Torsion.Basic
 
 /-!
 # Irreducible Lie submodules are the atoms of the submodule lattice
@@ -40,6 +41,9 @@ coatom statement runs the same way along the projection `LieSubmodule.Quotient.m
   generates the quotient.
 * `TauCeti.isIrreducible_quotient_iff_isCoatom`: the quotient of a Lie module by a Lie submodule is
   irreducible exactly when that submodule is a coatom of the lattice of Lie submodules.
+* `TauCeti.isTorsion_or_isTorsionFree_of_isIrreducible`: an irreducible Lie module over a
+  domain is either torsion or torsion-free, because the torsion submodule is a Lie
+  submodule.
 -/
 
 public section
@@ -184,5 +188,24 @@ theorem isIrreducible_quotient_iff_isCoatom {N : LieSubmodule R L M} :
       have hx : x ∈ P.comap (LieSubmodule.Quotient.mk' N) := LieSubmodule.mem_comap.mpr hq
       rw [← heq] at hx
       exact (LieSubmodule.Quotient.mk_eq_zero _).mpr hx
+
+/-- **An irreducible Lie module is torsion or torsion-free.** The torsion submodule of a Lie module
+over a domain is stable under the action of the Lie algebra, so by irreducibility it is
+either trivial or everything. -/
+theorem isTorsion_or_isTorsionFree_of_isIrreducible [IsDomain R]
+    [LieModule.IsIrreducible R L M] :
+    Module.IsTorsion R M ∨ Module.IsTorsionFree R M := by
+  let T : LieSubmodule R L M :=
+    { Submodule.torsion R M with
+      lie_mem := fun {y m} hm ↦ by
+        obtain ⟨a, ha⟩ := (Submodule.mem_torsion_iff _).1 hm
+        refine (Submodule.mem_torsion_iff _).2 ⟨a, ?_⟩
+        rw [Submonoid.smul_def, ← lie_smul, ← Submonoid.smul_def, ha, lie_zero] }
+  rcases IsSimpleOrder.eq_bot_or_eq_top T with hbot | htop
+  · exact Or.inr (Submodule.isTorsionFree_iff_torsion_eq_bot.2
+      (by simpa [T, LieSubmodule.ext_iff, SetLike.ext_iff] using hbot))
+  · refine Or.inl fun m ↦ ?_
+    have hm : m ∈ T := htop ▸ LieSubmodule.mem_top m
+    exact (Submodule.mem_torsion_iff _).1 hm
 
 end TauCeti

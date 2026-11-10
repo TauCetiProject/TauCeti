@@ -639,24 +639,10 @@ Torsion-freeness of `M` is not needed: an irreducible torsion module has rank ze
 theorem finrank_le_of_isGlHighestWeightVector [LieModule.IsIrreducible R (Matrix n n R) M]
     [Module.Finite R M'] (hv : IsGlHighestWeightVector mu v)
     (hv' : IsGlHighestWeightVector mu v') : finrank R M ≤ finrank R M' := by
-  by_cases hM : Module.IsTorsionFree R M
-  swap
-  · let T : LieSubmodule R (Matrix n n R) M :=
-      { Submodule.torsion R M with
-        lie_mem := fun {y m} hm ↦ by
-          obtain ⟨a, ha⟩ := (Submodule.mem_torsion_iff _).1 hm
-          refine (Submodule.mem_torsion_iff _).2 ⟨a, ?_⟩
-          rw [Submonoid.smul_def, ← lie_smul, ← Submonoid.smul_def, ha, lie_zero] }
-    have hT : T ≠ ⊥ := fun h ↦ hM (Submodule.isTorsionFree_iff_torsion_eq_bot.2
-      (by simpa [T, LieSubmodule.ext_iff, SetLike.ext_iff] using h))
-    have htop : T = ⊤ := (IsSimpleOrder.eq_bot_or_eq_top T).resolve_left hT
-    have htors : Module.IsTorsion R M := fun m ↦ by
-      have hm : m ∈ T := htop ▸ LieSubmodule.mem_top m
-      obtain ⟨a, ha⟩ := (Submodule.mem_torsion_iff _).1 hm
-      exact ⟨a, ha⟩
-    rw [Module.IsTorsion.finrank_eq_zero htors]
+  rcases isTorsion_or_isTorsionFree_of_isIrreducible (R := R) (L := Matrix n n R) (M := M) with
+    htors | hM
+  · rw [Module.IsTorsion.finrank_eq_zero htors]
     exact Nat.zero_le _
-  have := hM
   let D := LieSubmodule.lieSpan R (Matrix n n R) {(v, v')}
   have hinj : Function.Injective D.prodSnd := injective_prodSnd hv hv'
   have hsurj : Function.Surjective D.prodFst :=
