@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Operations
-public import Mathlib.RingTheory.Idempotents
 public import TauCeti.Data.Finset.Image
 public import TauCeti.Data.Set.Function
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.AddHorizontal
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Differential
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Horizontal
+public import TauCeti.RingTheory.Idempotents.Corner.Basic
 import TauCeti.Data.Finset.Basic
 
 /-!
@@ -62,13 +62,13 @@ ungraded differential algebra, over which type `D` structures are defined.
 
 The idempotents `I(s)` form a complete family of orthogonal idempotents of the matched subalgebra.
 Grouping them by the number `i` of strands gives the occupancy idempotents, which are central
-because products preserve the number of strands. As a ring, the matched subalgebra is therefore the
-product of the corners `e_i A e_i` of the occupancy idempotents, its occupancy summands
-(`TauCeti.StrandsAlgebra.OccupancySummand`); for a pointed matched circle these are the summands
-`A(Z, j)` of Lipshitz, Ozsváth and Thurston. This ring isomorphism does not itself carry the
-`R`-action. Over a ring of characteristic two, the differential preserves each summand
+because products preserve the number of strands. As an `R`-algebra, the matched subalgebra is
+therefore the product of the corners `e_i A e_i` of the occupancy idempotents, its occupancy
+summands (`TauCeti.StrandsAlgebra.OccupancySummand`); for a pointed matched circle these are the
+summands `A(Z, j)` of Lipshitz, Ozsváth and Thurston. Over a ring of characteristic two, the
+differential preserves each summand and makes it an ungraded differential algebra
 (`TauCeti.StrandsAlgebra.occupancyDifferential`), and the isomorphism intertwines the differentials
-(`TauCeti.StrandsAlgebra.occupancyRingEquiv_matchedDifferential`).
+(`TauCeti.StrandsAlgebra.occupancyAlgEquiv_matchedDifferential`).
 
 ## Main definitions
 
@@ -93,8 +93,8 @@ product of the corners `e_i A e_i` of the occupancy idempotents, its occupancy s
 * `TauCeti.StrandsAlgebra.occupancyIdem R M i`: the idempotent of the summand with `i` strands.
 * `TauCeti.StrandsAlgebra.OccupancySummand R M i`: the summand with `i` strands, the corner of
   `occupancyIdem R M i`.
-* `TauCeti.StrandsAlgebra.occupancyRingEquiv R M`: as a ring, the matched subalgebra is the
-  product of its occupancy summands.
+* `TauCeti.StrandsAlgebra.occupancyAlgEquiv R M`: as an `R`-algebra, the matched subalgebra is
+  the product of its occupancy summands.
 * `TauCeti.StrandsAlgebra.occupancyDifferential R M i`: the differential of the summand with `i`
   strands.
 
@@ -126,10 +126,12 @@ product of the corners `e_i A e_i` of the occupancy idempotents, its occupancy s
   are central and form a complete family of orthogonal idempotents.
 * `TauCeti.StrandsAlgebra.occupancyIdem_mul_eq_self_iff`: an element lies in the summand with `i`
   strands exactly when all of its diagrams have `i` strands.
-* `TauCeti.StrandsAlgebra.occupancyRingEquiv_apply_coe`,
-  `TauCeti.StrandsAlgebra.occupancyRingEquiv_symm_apply`: the components of the occupancy
+* `TauCeti.StrandsAlgebra.occupancyAlgEquiv_apply_coe`,
+  `TauCeti.StrandsAlgebra.occupancyAlgEquiv_symm_apply`: the components of the occupancy
   decomposition are the corners `e_i x e_i`, and an element is the sum of its components.
-* `TauCeti.StrandsAlgebra.occupancyRingEquiv_matchedDifferential`: in characteristic two the
+* `TauCeti.StrandsAlgebra.isUngradedDGAlgebra_occupancyDifferential`: over a ring of
+  characteristic two, each occupancy summand is an ungraded differential algebra.
+* `TauCeti.StrandsAlgebra.occupancyAlgEquiv_matchedDifferential`: in characteristic two the
   occupancy decomposition intertwines the differentials.
 
 ## References
@@ -1330,30 +1332,34 @@ theorem isMulCentral_occupancyIdem (i : Fin (Fintype.card β + 1)) :
 
 variable (R M) in
 /-- The occupancy summand of the matched subalgebra with `i` strands: the corner `e_i A e_i` of
-the occupancy idempotent `e_i`, a ring with unit `e_i`. For the matching of a pointed matched
-circle with `4k` points, `i = k + j` strands give the summand `A(Z, j)` of Lipshitz, Ozsváth and
-Thurston. -/
+the occupancy idempotent `e_i`, an `R`-algebra with unit `e_i`. For the matching of a pointed
+matched circle with `4k` points, `i = k + j` strands give the summand `A(Z, j)` of Lipshitz,
+Ozsváth and Thurston. -/
 abbrev OccupancySummand (i : Fin (Fintype.card β + 1)) : Type _ :=
   ((completeOrthogonalIdempotents_occupancyIdem (R := R) (M := M)).idem i).Corner
 
 variable (R M) in
-/-- **The occupancy decomposition of the matched subalgebra.** As a ring, the matched subalgebra
-is the product of its occupancy summands, the corners `e_i A e_i` of its central occupancy
-idempotents `e_i`. This equivalence does not record the `R`-action; its compatibility with the
-differential is `occupancyRingEquiv_matchedDifferential`. -/
-def occupancyRingEquiv : matchedSubalgebra R M ≃+* Π i, OccupancySummand R M i :=
-  completeOrthogonalIdempotents_occupancyIdem.ringEquivOfIsMulCentral isMulCentral_occupancyIdem
+/-- **The occupancy decomposition of the matched subalgebra.** As an `R`-algebra, the matched
+subalgebra is the product of its occupancy summands, the corners `e_i A e_i` of its central
+occupancy idempotents `e_i`. Its compatibility with the differential is
+`occupancyAlgEquiv_matchedDifferential`. -/
+def occupancyAlgEquiv : matchedSubalgebra R M ≃ₐ[R] Π i, OccupancySummand R M i :=
+  AlgEquiv.ofRingEquiv (f := completeOrthogonalIdempotents_occupancyIdem.ringEquivOfIsMulCentral
+    isMulCentral_occupancyIdem) fun r ↦ funext fun i ↦ Subtype.ext <| by
+      change occupancyIdem R M i * algebraMap R _ r * occupancyIdem R M i = r • occupancyIdem R M i
+      rw [Algebra.algebraMap_eq_smul_one, mul_smul_comm, smul_mul_assoc, mul_one,
+        (completeOrthogonalIdempotents_occupancyIdem.idem i).eq]
 
 /-- The component of `x` in the summand with `i` strands is `e_i x e_i`. -/
 @[simp]
-theorem occupancyRingEquiv_apply_coe (x : matchedSubalgebra R M) (i : Fin (Fintype.card β + 1)) :
-    (occupancyRingEquiv R M x i).1 = occupancyIdem R M i * x * occupancyIdem R M i :=
+theorem occupancyAlgEquiv_apply_coe (x : matchedSubalgebra R M) (i : Fin (Fintype.card β + 1)) :
+    (occupancyAlgEquiv R M x i).1 = occupancyIdem R M i * x * occupancyIdem R M i :=
   (rfl)
 
 /-- An element is recovered from its occupancy components as their sum. -/
 @[simp]
-theorem occupancyRingEquiv_symm_apply (y : Π i, OccupancySummand R M i) :
-    (occupancyRingEquiv R M).symm y = ∑ i, (y i).1 :=
+theorem occupancyAlgEquiv_symm_apply (y : Π i, OccupancySummand R M i) :
+    (occupancyAlgEquiv R M).symm y = ∑ i, (y i).1 :=
   (rfl)
 
 variable (R M) in
@@ -1361,13 +1367,13 @@ variable (R M) in
 the restriction of the differential of the matched subalgebra, which preserves the corner
 `e_i A e_i` because `e_i` is a cycle. -/
 def occupancyDifferential [CharP R 2] (i : Fin (Fintype.card β + 1)) :
-    OccupancySummand R M i →+ OccupancySummand R M i where
+    OccupancySummand R M i →ₗ[R] OccupancySummand R M i where
   toFun y := ⟨matchedDifferential R M y.1, by
     obtain ⟨r, hr⟩ := y.2
     exact ⟨matchedDifferential R M r, by
       rw [← hr, matchedDifferential_mul_occupancyIdem, matchedDifferential_occupancyIdem_mul]⟩⟩
-  map_zero' := Subtype.ext (map_zero (matchedDifferential R M))
   map_add' y z := Subtype.ext (map_add (matchedDifferential R M) y.1 z.1)
+  map_smul' r y := Subtype.ext (map_smul (matchedDifferential R M) r y.1)
 
 @[simp]
 theorem occupancyDifferential_apply_coe [CharP R 2] (i : Fin (Fintype.card β + 1))
@@ -1389,12 +1395,20 @@ theorem occupancyDifferential_mul [CharP R 2] (i : Fin (Fintype.card β + 1))
       occupancyDifferential R M i y * z + y * occupancyDifferential R M i z :=
   Subtype.ext (matchedDifferential_mul y.1 z.1)
 
+/-- Over a ring of characteristic two, each occupancy summand with its differential is an ungraded
+differential algebra. -/
+theorem isUngradedDGAlgebra_occupancyDifferential {R : Type*} [CommRing R] [CharP R 2]
+    (i : Fin (Fintype.card β + 1)) :
+    IsUngradedDGAlgebra (occupancyDifferential R M i) where
+  map_mul := occupancyDifferential_mul i
+  map_map := occupancyDifferential_occupancyDifferential i
+
 /-- Over a ring of characteristic two, the occupancy decomposition intertwines the differential of
 the matched subalgebra with the differentials of its occupancy summands. -/
-theorem occupancyRingEquiv_matchedDifferential [CharP R 2] (x : matchedSubalgebra R M)
+theorem occupancyAlgEquiv_matchedDifferential [CharP R 2] (x : matchedSubalgebra R M)
     (i : Fin (Fintype.card β + 1)) :
-    occupancyRingEquiv R M (matchedDifferential R M x) i =
-      occupancyDifferential R M i (occupancyRingEquiv R M x i) :=
+    occupancyAlgEquiv R M (matchedDifferential R M x) i =
+      occupancyDifferential R M i (occupancyAlgEquiv R M x i) :=
   Subtype.ext (by
     simp [matchedDifferential_mul_occupancyIdem, matchedDifferential_occupancyIdem_mul])
 
