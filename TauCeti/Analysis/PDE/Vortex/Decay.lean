@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.ScalarEquation
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
-import TauCeti.MeasureTheory.Integral.ExpDecay
+import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # Exponential decay of the curvature of a plane vortex

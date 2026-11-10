@@ -187,20 +187,9 @@ theorem map_symmetricCongruenceLinearMap_nonsingularWishartMeasure
       _ = M * Rm * (M * Rm)ᵀ := by
           rw [Matrix.transpose_mul]
           simp only [Matrix.mul_assoc]
-  obtain ⟨Q, hQ, hQfac⟩ := Matrix.exists_mul_conjTranspose_eq_one_and_eq_mul_submatrix (M * Rm)
-    (Fin.castLE_injective hqp) (Matrix.GeneralLinearGroup.det_ne_zero T) (by simpa using hMRT)
-  rw [Matrix.conjTranspose_eq_transpose_of_trivial] at hQ
-  have hMR : M * Rm = Tm * (E * Q) := by
-    have hsel : (1 : Matrix (Fin p) (Fin p) ℝ).submatrix (Fin.castLE hqp) id * Q =
-        Q.submatrix (Fin.castLE hqp) id := by
-      simpa using Matrix.one_submatrix_mul (Fin.castLE hqp) (Equiv.refl (Fin p)) Q
-    rw [hE, hsel, hQfac]
-  have hQdet : Q.det ≠ 0 := by
-    have hdet : Q.det * Q.det = 1 := by
-      simpa [Matrix.det_transpose] using congrArg Matrix.det hQ
-    intro h
-    rw [h, mul_zero] at hdet
-    exact zero_ne_one hdet
+  obtain ⟨Q, hQ, hQdet, hMR'⟩ := Matrix.exists_orthogonal_mul_eq_mul_submatrix_one
+    (Fin.castLE_injective hqp) (M * Rm) Tm (Matrix.GeneralLinearGroup.det_ne_zero T) hMRT
+  have hMR : M * Rm = Tm * (E * Q) := hMR'
   -- The four congruences: by `Rm`, which builds the scale `S`; by the orthogonal `Q`, which fixes
   -- the standard law; by `E`, which selects coordinates; and by `Tm`, which builds the new scale.
   have hmeas : ∀ {a b : ℕ} (N : Matrix (Fin a) (Fin b) ℝ),

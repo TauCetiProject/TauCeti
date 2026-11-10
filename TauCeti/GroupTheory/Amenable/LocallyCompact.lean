@@ -140,7 +140,8 @@ theorem norm_convolutionL_sub_le_of_rightTranslation {h k : Lp ℝ 1 μ} (hk : 0
   rw [convolutionL_eq_integral_smul_rightTranslation, ← mul_one C,
     ← (L1.norm_eq_integral_of_nonneg hk).trans hk₁]
   exact norm_integral_smul_sub_le hk₁ hkU
-    (integrable_smul_rightTranslation_inv (L1.integrable_coeFn k) h).aestronglyMeasurable hC
+    (integrable_smul_rightTranslation_inv (L1.integrable_coeFn k) h).aestronglyMeasurable
+    (ae_of_all _ hC)
 
 /-- **Right approximate identity**, quantitatively. For `h ∈ L¹(G, μ)` and `ε > 0` there is a
 neighbourhood `U` of `1` such that `‖h ⋆ k - h‖₁ ≤ ε` for every nonnegative `k ∈ L¹(G, μ)` of
@@ -173,7 +174,8 @@ theorem IsLeftInvariant.integral_mul_apply_convolutionUCB {m : Mean G} (hm : m.I
       ≤ (|a| + |b|) * ‖φ‖ * δ := by
     obtain ⟨U₁, hU₁, hh⟩ := Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le (μ := μ) h hδ
     obtain ⟨U₂, hU₂, hk⟩ := Lp.exists_mem_nhds_one_forall_norm_convolutionL_sub_le (μ := μ) k hδ
-    obtain ⟨e, he, he₁, heU⟩ := exists_nonneg_integral_eq_one μ (x₀ := 1) (inter_mem hU₁ hU₂)
+    obtain ⟨e, he, he₁, -, heU⟩ :=
+      exists_nonneg_integral_eq_one_norm_eq_one μ (x₀ := 1) (inter_mem hU₁ hU₂)
     have hU (U : Set G) (hU : U₁ ∩ U₂ ⊆ U) : ∀ᵐ z ∂μ, z ∉ U → e z = 0 := by
       filter_upwards [heU] with z hz hzU using hz fun hz' => hzU (hU hz')
     have close (u : Lp ℝ 1 μ)
@@ -206,7 +208,7 @@ theorem IsLeftInvariant.integral_mul_apply_convolutionUCB {m : Mean G} (hm : m.I
 theorem IsLeftInvariant.apply_convolutionUCB_eq_of_integral_eq {m : Mean G}
     (hm : m.IsLeftInvariant) {h k : Lp ℝ 1 μ} (hhk : ∫ x, h x ∂μ = ∫ x, k x ∂μ)
     (φ : Lp ℝ ∞ μ) : m (Lp.convolutionUCB h φ) = m (Lp.convolutionUCB k φ) := by
-  obtain ⟨e, -, he₁, -⟩ := exists_nonneg_integral_eq_one μ (x₀ := 1) univ_mem
+  obtain ⟨e, -, he₁, -⟩ := exists_nonneg_integral_eq_one_norm_eq_one μ (x₀ := 1) univ_mem
   have hh := hm.integral_mul_apply_convolutionUCB h e φ
   have hk := hm.integral_mul_apply_convolutionUCB k e φ
   rw [he₁, one_mul] at hh hk
@@ -264,7 +266,7 @@ theorem Amenable.exists_lpTop_invariant [Amenable G] :
     ∃ M : Lp ℝ ∞ μ →ₚ[ℝ] ℝ, M 1 = 1 ∧
       ∀ g φ, M (Lp.leftTranslation μ ∞ ℝ g φ) = M φ := by
   obtain ⟨m, hm⟩ := (amenable_iff G).1 ‹_›
-  obtain ⟨k, hk, hk₁, -⟩ := exists_nonneg_integral_eq_one μ (x₀ := 1) univ_mem
+  obtain ⟨k, hk, hk₁, -⟩ := exists_nonneg_integral_eq_one_norm_eq_one μ (x₀ := 1) univ_mem
   exact ⟨m.convolutionLpTop hk, (m.convolutionLpTop_one hk).trans hk₁,
     hm.convolutionLpTop_leftTranslation hk⟩
 

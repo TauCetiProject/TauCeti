@@ -406,12 +406,12 @@ action of `Gal(L/K)`. -/
 def quotSMulTopUnitsPowerClassRepresentationEquiv (n : ℕ) :
     ((Representation.ofDistribMulAction ℤ Gal(L/K) (Additive Lˣ)).quotSMulTop
       (n : ℤ)).Equiv
-        (powerClassRepresentation (K := K) (L := L) n).restrictScalarsInt where
+        ((powerClassRepresentation (K := K) (L := L) n).restrictScalars ℤ) where
   toLinearEquiv := (quotSMulTopPowerClassEquiv n).toIntLinearEquiv
   isIntertwining' tau := by
     refine LinearMap.ext fun x ↦ ?_
     simp only [LinearMap.coe_comp, Function.comp_apply, Representation.quotSMulTop_apply,
-      Representation.restrictScalarsInt_apply, powerClassRepresentation_apply]
+      Representation.restrictScalars_apply, powerClassRepresentation_apply]
     -- On `Additive Lˣ`, the action of `tau` is the map induced by `Units.map tau`.
     exact quotSMulTopPowerClassEquiv_map n (Units.map (tau : L →* L)) x
 
@@ -535,12 +535,12 @@ def torsionByUnitsEquivKummerCoeff
     (hN : ∀ g : AbsoluteGaloisGroup K, g ∈ sigma.fieldRange.fixingSubgroup →
       ∀ xi : KummerCoeff K n, g • xi = xi) :
     ((Representation.ofDistribMulAction ℤ Gal(L/K) (Additive Lˣ)).torsionBy n).Equiv
-      (kummerCoeffFiniteRepresentation sigma n hN).restrictScalarsInt := by
+      ((kummerCoeffFiniteRepresentation sigma n hN).restrictScalars ℤ) := by
   refine .mk (AddEquiv.ofBijective _ (bijective_torsionByUnitsToKummerCoeff sigma n hN)
     ).toIntLinearEquiv fun tau ↦ LinearMap.ext fun x ↦ ?_
   obtain ⟨g, rfl⟩ := sigma.restrictNormalHom_surjective tau
   simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, AddEquiv.coe_toIntLinearEquiv,
-    AddEquiv.ofBijective_apply, Representation.restrictScalarsInt_apply]
+    AddEquiv.ofBijective_apply, Representation.restrictScalars_apply]
   rw [kummerCoeffFiniteRepresentation_restrictNormalHom]
   apply Additive.toMul.injective
   ext

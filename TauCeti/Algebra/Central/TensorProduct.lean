@@ -41,7 +41,7 @@ The companion simplicity statement, `IsSimpleRing.tensorProduct`, is in
 multiplication on Brauer classes. Note that the centrality proved here is centrality over the base
 `K`: for a scalar extension `L ⊗[K] A` along a field extension `L / K` the statement wanted is
 centrality over `L`, which is a different statement, proved as
-`TauCeti.Algebra.IsCentral.baseChange` in `TauCeti/Algebra/Central/BaseChange.lean`.
+`Algebra.IsCentral.baseChange` in `TauCeti/Algebra/Central/BaseChange.lean`.
 
 ## References
 

@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.RankOne.Basi
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.RankOne
 
 /-!
 # Rank-one maps into the doubled E₆ minuscule carrier
@@ -173,16 +174,13 @@ private theorem rankOneMatrix_mem_of_root_mem {H : Subgroup (GL (Fin 54) K)}
       GL (Fin 54) K) ∈ H)
     (hneg : ∀ t : K, (rootSubgroupPoints (.inr i) K (Multiplicative.ofAdd t) :
       GL (Fin 54) K) ∈ H) (g : SL(2, K)) : rankOneMatrix K i g ∈ H := by
-  induction g using Matrix.SL2.transvection_induction with
-  | htransvec a b hab t =>
-    fin_cases a <;> fin_cases b
-    · exact (hab rfl).elim
-    · rw [rankOneMatrix_upper_transvection]
-      exact hpos t
-    · rw [rankOneMatrix_lower_transvection]
-      exact hneg t
-    · exact (hab rfl).elim
-  | hmul g h hg hh => simpa only [map_mul] using H.mul_mem hg hh
+  refine (rankOneMatrix K i).sl2_range_le_of_transvection_mem ?_ ?_ ⟨g, rfl⟩
+  · intro t
+    rw [rankOneMatrix_upper_transvection]
+    exact hpos t
+  · intro t
+    rw [rankOneMatrix_lower_transvection]
+    exact hneg t
 
 /-- The numbered rank-one homomorphism into the doubled minuscule carrier over a field. -/
 def rankOnePoints : SL(2, K) →* points K :=
@@ -232,23 +230,12 @@ theorem rankOnePoints_diag2nUnit (u : Kˣ) :
 theorem range_rankOnePoints : (rankOnePoints K i).range =
     Subgroup.closure (Set.range (rootSubgroupPoints (.inl i) K) ∪
       Set.range (rootSubgroupPoints (.inr i) K)) := by
-  apply le_antisymm
-  · rintro _ ⟨g, rfl⟩
-    rw [← Subgroup.mem_map_iff_mem (points K).subtype_injective, Subgroup.subtype_apply,
-      coe_rankOnePoints]
-    apply rankOneMatrix_mem_of_root_mem K i
-    · intro t
-      exact Subgroup.mem_map.mpr ⟨_, Subgroup.subset_closure
-        (Set.mem_union_left _ (Set.mem_range_self (Multiplicative.ofAdd t))), rfl⟩
-    · intro t
-      exact Subgroup.mem_map.mpr ⟨_, Subgroup.subset_closure
-        (Set.mem_union_right _ (Set.mem_range_self (Multiplicative.ofAdd t))), rfl⟩
-  · rw [Subgroup.closure_le]
-    rintro _ (⟨t, rfl⟩ | ⟨t, rfl⟩)
-    · exact ⟨Matrix.SpecialLinearGroup.transvection
-        (by decide : (0 : Fin 2) ≠ 1) (Multiplicative.toAdd t), by simp⟩
-    · exact ⟨Matrix.SpecialLinearGroup.transvection
-        (by decide : (1 : Fin 2) ≠ 0) (Multiplicative.toAdd t), by simp⟩
+  rw [(rankOnePoints K i).sl2_range_eq_closure]
+  congr 2 <;>
+    simpa only [Function.comp_def, rankOnePoints_upper_transvection,
+      rankOnePoints_lower_transvection] using
+      (Multiplicative.ofAdd : K ≃ Multiplicative K).surjective.range_comp
+        (rootSubgroupPoints _ K)
 
 end
 

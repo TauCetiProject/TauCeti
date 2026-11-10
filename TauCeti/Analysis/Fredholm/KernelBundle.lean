@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.Stabilization
-public import TauCeti.Topology.VectorBundle.Kernel
+public import TauCeti.Geometry.Manifold.VectorBundle.Kernel
+import TauCeti.Geometry.Manifold.ContMDiff.NormedSpace
 
 /-!
 # Local bundles of stabilized Fredholm kernels
@@ -23,6 +24,8 @@ product of the neighbourhood and `E × S`.
 This supplies the kernel bundles whose top exterior powers enter the local
 construction of Fredholm determinant lines. The unstabilized kernels may
 jump in dimension; no bundle assertion about those kernels is made.
+For a `C^n` family, the stabilized kernel bundle and its inclusion into the
+ambient product are `C^n`.
 
 ## References
 
@@ -36,6 +39,7 @@ The stabilizer and complementary coordinate come from
 public section
 
 open Bundle Set Topology
+open scoped Manifold ContDiff
 
 namespace ContinuousLinearMap
 
@@ -72,5 +76,48 @@ theorem IsFredholm.exists_stabilization_kernel_vectorBundle (hT₀ : IsFredholm 
     TauCeti.kernelVectorBundle (X := U)
       ((hT.comp continuous_subtype_val).continuousLinearMapCoprod continuous_const)
       (fun x ↦ hinv x x.property)⟩
+
+variable {EX HX : Type*} [NormedAddCommGroup EX] [NormedSpace 𝕜 EX]
+  [TopologicalSpace HX] {I : ModelWithCorners 𝕜 EX HX}
+  [ChartedSpace HX X] {n : ℕ∞ω}
+
+/-- A `C^n` family Fredholm at one point has a finite target stabilizer inside any
+prescribed dense subspace `D`, on an open neighbourhood, with a `C^n` finite-rank
+kernel bundle and `C^n` inclusion
+into the ambient product. The topology and charts are the native split-kernel
+ones. No constant-rank hypothesis on the unstabilized kernels is required. -/
+theorem IsFredholm.exists_stabilization_kernel_contMDiffVectorBundle
+    (hT₀ : IsFredholm (T x₀)) (hT : ContMDiff I 𝓘(𝕜, E →L[𝕜] F) n T)
+    {D : Submodule 𝕜 F} (hD : Dense (D : Set F)) :
+    ∃ S : Submodule 𝕜 F, S ≤ D ∧ ∃ hS : FiniteDimensional 𝕜 S,
+      letI := hS
+      letI := FiniteDimensional.complete 𝕜 S
+      ∃ _ : FiniteDimensional 𝕜 ((T x₀).coprod S.subtypeL).ker,
+        ∃ q : (E × S) →L[𝕜] ((T x₀).coprod S.subtypeL).ker,
+          ∃ U : TopologicalSpace.Opens X, x₀ ∈ U ∧
+            ∃ h : ∀ x : U, (((T x).coprod S.subtypeL).prod q).IsInvertible,
+              ∃ hA : ContMDiff I 𝓘(𝕜, (E × S) →L[𝕜] F) n
+                  (fun x : U ↦ (T x).coprod S.subtypeL),
+                letI := TauCeti.kernelFiberBundle hA.continuous h
+                letI := TauCeti.kernelVectorBundle hA.continuous h
+                ContMDiffVectorBundle n ((T x₀).coprod S.subtypeL).ker
+                    (fun x : U ↦ ((T x).coprod S.subtypeL).ker) I ∧
+                  ContMDiff (I.prod 𝓘(𝕜, ((T x₀).coprod S.subtypeL).ker))
+                    (I.prod 𝓘(𝕜, E × S)) n
+                    (fun p : TotalSpace ((T x₀).coprod S.subtypeL).ker
+                      (fun x : U ↦ ((T x).coprod S.subtypeL).ker) ↦
+                        (p.proj, (p.2 : E × S))) := by
+  obtain ⟨S, hSD, -, hS, q, U, hU, hx₀, hinv⟩ :=
+    hT₀.exists_stabilization_kernel_coordinates hT.continuous.continuousAt hD
+  let := hS
+  let := FiniteDimensional.complete 𝕜 S
+  let V : TopologicalSpace.Opens X := ⟨U, hU⟩
+  have hA : ContMDiff I 𝓘(𝕜, (E × S) →L[𝕜] F) n
+      (fun x : V ↦ (T x).coprod S.subtypeL) :=
+    (hT.comp contMDiff_subtype_val).clm_coprod contMDiff_const
+  exact ⟨S, hSD, hS, (hT₀.coprod_of_finiteDimensional S.subtypeL).finite_ker,
+    q, V, hx₀, fun x ↦ hinv x x.property, hA,
+    TauCeti.kernelContMDiffVectorBundle hA.continuous _,
+    TauCeti.contMDiff_kernel_inclusion hA _⟩
 
 end ContinuousLinearMap

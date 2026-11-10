@@ -147,6 +147,31 @@ def normalSpaceTrivialization (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
   rw [NormalChartData.baseSet_trivialization]
   exact (normalChartData f hn hdim x).mem_baseSet
 
+/-- The preferred intrinsic normal coordinates at `x₀` invert by one fixed complementary
+representative: their base set lies in the source and ambient charts at `x₀`, and over it the
+normal vector with coordinates `w` is the normal class of the ambient tangent vector whose
+coordinates in the tangent chart at `f x₀` are `B w`, for a fixed `B : P →L[𝕜] V`. -/
+theorem exists_normalSpaceTrivialization_symm_apply
+    (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)
+    (hdim : Module.finrank 𝕜 P = Module.finrank 𝕜 V - Module.finrank 𝕜 E) (x₀ : M) :
+    ∃ B : P →L[𝕜] V,
+      (f.normalSpaceTrivialization hn hdim x₀).baseSet ⊆
+        (chartAt H x₀).source ∩ f ⁻¹' (chartAt G (f x₀)).source ∧
+      ∀ x ∈ (f.normalSpaceTrivialization hn hdim x₀).baseSet, ∀ w : P,
+        (f.normalSpaceTrivialization hn hdim x₀).symm x w =
+          f.normalClass x hn ((trivializationAt V (TangentSpace J) (f x₀)).symm (f x) (B w)) := by
+  let d := normalChartData f hn hdim x₀
+  have hbase : (f.normalSpaceTrivialization hn hdim x₀).baseSet = d.baseSet :=
+    d.baseSet_trivialization f hn
+  refine ⟨d.complement, hbase ▸ d.subset_charts, fun x hx w ↦ ?_⟩
+  rw [hbase] at hx
+  -- Compare the total-space points: both are the inverse chart applied to `(x, w)`.
+  apply TotalSpace.mk_injective x
+  rw [Trivialization.mk_symm _ (hbase ▸ hx)]
+  exact (f.normalSpaceTrivializationOfComplement_symm_apply hn x₀ d.baseSet d.isOpen_baseSet
+    d.subset_charts d.complement d.invertible _ (x, w) hx).trans
+      (by rw [normalSpaceEquivOfComplement_symm_apply])
+
 /-- Preferred intrinsic normal coordinates are linear on each fibre. -/
 instance instIsLinearNormalSpaceTrivialization
     (f : SmoothEmbedding I J n M N) (hn : n ≠ 0)

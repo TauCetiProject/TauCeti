@@ -11,7 +11,8 @@ public import TauCeti.Analysis.Complex.Wirtinger.Holder
 /-!
 # Hölder bounds for the complex derivative of the Cauchy transform
 
-The complex-linear derivative `∂T` of the actual normalized Cauchy integral has a fixed-disc
+For finite-dimensional complex normed targets, the complex-linear derivative `∂T` of the
+actual normalized Cauchy integral has a fixed-disc
 Hölder and supremum bound depending only on the source Hölder norm. This is the derivative
 form of the Beurling estimate; identifying it with the principal-value kernel is a separate
 singular-integral statement.
@@ -27,16 +28,18 @@ namespace TauCeti
 /-- The complex-linear derivative of the actual Cauchy transform is bounded in `C^{0,α}` on
 each fixed output disc, while its conjugate Wirtinger derivative is the original source. -/
 theorem exists_holderOnWith_wirtingerDeriv_pi_inv_smul_integral_sub_inv_smul
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [FiniteDimensional ℂ F]
     {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) (c : ℂ) {r R : ℝ}
     (hr : 0 ≤ r) (hR : 0 ≤ R) :
-    ∃ C : ℝ≥0, ∀ {f : ℂ → ℂ} {H M : ℝ≥0},
+    ∃ C : ℝ≥0, ∀ {f : ℂ → F} {H M : ℝ≥0},
       Function.support f ⊆ closedBall c r → HolderWith H α f → (∀ x, ‖f x‖ ≤ M) →
-      let T : ℂ → ℂ := fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z
+      let T : ℂ → F := fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z
       HolderOnWith (C * (H + M)) α (fun x ↦ wirtingerDeriv T x 1) (closedBall c R) ∧
         (∀ x ∈ closedBall c R, ‖wirtingerDeriv T x 1‖ ≤ C * (H + M)) ∧
         ∀ x ∈ ball c (R + 1), conjWirtingerDeriv T x 1 = f x := by
   obtain ⟨C, hC⟩ :=
-    exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul hα hα1 c hr hR
+    exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
+      (F := F) hα hα1 c hr hR
   refine ⟨C, fun {f H M} hs hf hM ↦ ?_⟩
   obtain ⟨-, hH, hN, hI⟩ := hC hs hf hM
   refine ⟨by simpa only [nnnorm_one, mul_one] using hH.wirtingerDeriv_apply 1, ?_, hI⟩

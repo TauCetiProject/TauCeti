@@ -142,6 +142,30 @@ private theorem coe_lineBasis_apply (J : AlmostComplexStructure V) {q : V} (hq :
     (k : Fin 1 × Fin 2) : (lineBasis J hq k : V) = ![q, J q] k.2 := by
   simp [lineBasis, Basis.span_apply]
 
+/-- The symplectic complement of a complex line `span(q, J q)` of a nonzero vector has smaller
+dimension than the ambient space. -/
+private theorem finrank_orthogonal_span_pair_lt [FiniteDimensional ℝ V] {q : V} (hq : q ≠ 0) :
+    finrank ℝ (ω.orthogonal (Submodule.span ℝ {q, J q})) < finrank ℝ V := by
+  rw [ω.finrank_orthogonal]
+  have hUpos : 0 < finrank ℝ V := Module.finrank_pos_iff_exists_ne_zero.2 ⟨q, hq⟩
+  have hPpos : 0 < finrank ℝ (Submodule.span ℝ {q, J q}) :=
+    Module.finrank_pos_iff_exists_ne_zero.2
+      ⟨⟨q, Submodule.subset_span (by simp)⟩, by simpa using hq⟩
+  omega
+
+/-- The basis `(q, J q)` of a complex line with `ω(q, J q) = 1` is a Darboux basis of the
+restriction of `ω` to the line, whenever the line has a symplectic complement. -/
+private theorem isDarbouxBasis_restrict_lineBasis {q : V} (hq : q ≠ 0) (hqJq : ω q (J q) = 1)
+    (hcompl : IsCompl (Submodule.span ℝ {q, J q}) (ω.orthogonal (Submodule.span ℝ {q, J q}))) :
+    (ω.restrict (Submodule.span ℝ {q, J q})
+      (ω.toBilinForm.nondegenerate_restrict_of_disjoint_orthogonal ω.isRefl
+        hcompl.disjoint)).IsDarbouxBasis (lineBasis J hq) := by
+  refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩
+  · simp [coe_lineBasis_apply]
+  · simp [coe_lineBasis_apply]
+  · obtain rfl := Subsingleton.elim i j
+    simp [coe_lineBasis_apply, hqJq]
+
 /-- The induction on the dimension behind
 `TauCeti.SymplecticForm.exists_isDarbouxBasis_forall_apply_eq_of_pairwise_commute`: split off the
 complex line of a joint eigenvector and recurse on its symplectic complement. -/
@@ -164,9 +188,7 @@ private theorem exists_isDarbouxBasis_aux {ι : Type*} (n : ℕ) :
   -- symplectic complement of that line are invariant, and the complement is again a symplectic
   -- space with a compatible complex structure, of smaller dimension.
   obtain ⟨c, q, hqJq, hcq⟩ := exists_jointEigenvector_apply_eq_one hJ f hcomm hfJ
-  have hq : q ≠ 0 := by
-    rintro rfl
-    simp at hqJq
+  have hq : q ≠ 0 := fun h ↦ by simp [h] at hqJq
   -- The line `span(q, J q)` and its symplectic complement `W`, invariant under `J` and `f`.
   have hcompl : IsCompl (Submodule.span ℝ {q, J q}) (ω.orthogonal (Submodule.span ℝ {q, J q})) :=
     (LinearMap.BilinForm.isCompl_orthogonal_iff_disjoint ω.isRefl).2
@@ -179,28 +201,13 @@ private theorem exists_isDarbouxBasis_aux {ι : Type*} (n : ℕ) :
   let fW (i : ι) := (f i).restrict (hWf i)
   have hJW : ωW.Compatible JW := hJ.restrict _ _ hWJ
   have hcommW : Pairwise fun i j ↦ Commute (fW i) (fW j) := fun i j hij ↦
-    LinearMap.ext fun x ↦ Subtype.ext (LinearMap.congr_fun (hcomm hij).eq x)
+    LinearMap.restrict_commute (hcomm hij) (hWf i) (hWf j)
   have hfJW (i : ι) : IsComplexLinearMap JW JW (fW i) :=
-    (isComplexLinearMap_iff_apply _ _ _).2 fun x ↦
-      Subtype.ext (by simp [JW, fW, (isComplexLinearMap_iff_apply _ _ _).1 (hfJ i)])
-  have hqP : q ∈ Submodule.span ℝ {q, J q} := Submodule.subset_span (by simp)
-  have hlt : finrank ℝ (ω.orthogonal (Submodule.span ℝ {q, J q})) < finrank ℝ U := by
-    rw [ω.finrank_orthogonal]
-    have hUpos : 0 < finrank ℝ U := Module.finrank_pos_iff_exists_ne_zero.2 ⟨q, hq⟩
-    have hPpos : 0 < finrank ℝ (Submodule.span ℝ {q, J q}) :=
-      Module.finrank_pos_iff_exists_ne_zero.2 ⟨⟨q, hqP⟩, by simpa using hq⟩
-    omega
+    (hfJ i).restrict hWJ (hWf i)
   obtain ⟨m, bW, hbW, hJbW, hrotW⟩ :=
-    ih _ (lt_of_lt_of_le hlt hn) ωW JW fW hJW hcommW (fun i x y ↦ hf i x y) hfJW le_rfl
-  -- The basis `(q, J q)` of the line is a Darboux basis of the restriction of `ω`.
-  have hbP : (ω.restrict (Submodule.span ℝ {q, J q})
-      (ω.toBilinForm.nondegenerate_restrict_of_disjoint_orthogonal ω.isRefl
-        hcompl.disjoint)).IsDarbouxBasis (lineBasis J hq) := by
-    refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩
-    · simp [coe_lineBasis_apply]
-    · simp [coe_lineBasis_apply]
-    · obtain rfl := Subsingleton.elim i j
-      simp [coe_lineBasis_apply, hqJq]
+    ih _ (lt_of_lt_of_le (finrank_orthogonal_span_pair_lt hq) hn) ωW JW fW hJW hcommW
+      (fun i x y ↦ hf i x y) hfJW le_rfl
+  have hbP := isDarbouxBasis_restrict_lineBasis hq hqJq hcompl
   -- Concatenate the bases of the line and of `W` along their direct sum.
   let σ : (Fin 1 × Fin 2) ⊕ (Fin m × Fin 2) ≃ Fin (1 + m) × Fin 2 :=
     (Equiv.sumProdDistrib _ _ _).symm.trans (finSumFinEquiv.prodCongr (Equiv.refl _))

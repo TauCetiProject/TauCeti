@@ -47,6 +47,24 @@ variable {n : ℕ} [NeZero n] {P : ConvexPolygon n} (σ : P.SidePairing)
 /-- The smaller side in each pair, including every side paired with itself. -/
 abbrev SideRepresentative := {i : Fin n // i ≤ σ.pair i}
 
+/-- There is one representative for each pair of sides, so twice the number of representatives
+is the number of sides plus the number of self-paired sides. -/
+theorem two_mul_natCard_sideRepresentative :
+    2 * Nat.card σ.SideRepresentative = n + Nat.card {i : Fin n // σ.pair i = i} := by
+  classical
+  have hlt : Nat.card {i : Fin n // ¬ i ≤ σ.pair i} = Nat.card {i : Fin n // i < σ.pair i} :=
+    Nat.card_congr (σ.pair.subtypeEquiv fun i ↦ by rw [not_le, σ.pair_pair])
+  have hle : Nat.card σ.SideRepresentative =
+      Nat.card {i : Fin n // i < σ.pair i} + Nat.card {i : Fin n // σ.pair i = i} := by
+    simp only [Nat.card_eq_fintype_card]
+    rw [← Fintype.card_subtype_or_disjoint _ _ fun p hlt heq i hi ↦
+      (hlt i hi).ne (heq i hi).symm]
+    exact Fintype.card_congr (Equiv.subtypeEquivRight fun i ↦ by rw [le_iff_lt_or_eq, eq_comm])
+  have hsum : Nat.card σ.SideRepresentative + Nat.card {i : Fin n // ¬ i ≤ σ.pair i} = n := by
+    rw [← Nat.card_sum, Nat.card_congr (Equiv.sumCompl _), Nat.card_eq_fintype_card,
+      Fintype.card_fin]
+  omega
+
 private abbrev DiscardedSide := {i : Fin n // ¬ i ≤ σ.pair i}
 
 private def sideSplit : Fin n ≃ σ.SideRepresentative ⊕ σ.DiscardedSide :=

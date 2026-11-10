@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.BesselI
 public import TauCeti.Probability.Distributions.VonMisesFisher.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 import TauCeti.Probability.Distributions.Uniform.Sphere.Coordinate
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
 

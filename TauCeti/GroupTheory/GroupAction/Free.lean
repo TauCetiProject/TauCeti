@@ -96,20 +96,9 @@ action of `G` is a copy of `G`. No finiteness is needed, as `Nat.card` vanishes 
 and a free action on a nonempty finite type is by a finite group. -/
 theorem natCard_dvd_natCard_of_isCancelSMul [IsCancelSMul G X] :
     Nat.card G ∣ Nat.card X := by
-  classical
-  rcases finite_or_infinite X with hX | hX
-  swap
-  · simp
-  rcases isEmpty_or_nonempty X with hX | ⟨⟨x⟩⟩
-  · simp
-  have : Finite G := .of_injective (· • x) fun _ _ ↦ IsCancelSMul.right_cancel _ _ x
-  let Ω := orbitRel.Quotient G X
-  let _ : Fintype Ω := Fintype.ofFinite Ω
-  let _ (ω : Ω) : Finite (G ⧸ stabilizer G ω.out) := Quotient.finite _
-  rw [Nat.card_congr (selfEquivSigmaOrbitsQuotientStabilizer G X), Nat.card_sigma]
-  simp_rw [IsCancelSMul.stabilizer_eq_bot]
-  rw [Nat.card_congr QuotientGroup.quotientBot.toEquiv]
-  simp
+  rw [Nat.card_congr (selfEquivOrbitsQuotientProd (G := G) (X := X)
+    IsCancelSMul.stabilizer_eq_bot), Nat.card_prod]
+  exact Dvd.intro_left _ rfl
 
 /-- For a free action, the inverse of the orbit decomposition `selfEquivOrbitsQuotientProd'`
 attached to a choice `φ` of orbit representatives sends `(q, g)` to `g • φ q`. -/

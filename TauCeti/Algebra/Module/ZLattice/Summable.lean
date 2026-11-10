@@ -30,7 +30,11 @@ majorant used to sum Fourier coefficients on the torus `(ℝ / ℤ)^d`.
 
 * `ZLattice.summable_exp_neg_mul_norm_add_sq`: `∑ v ∈ L, exp (-c ‖x + v‖²)` converges for
   `0 < c`.
+* `ZLattice.summable_one_add_norm_pow_inv`: `∑ ℓ ∈ L, (1 + ‖ℓ‖) ^ (-r)` converges once the
+  natural number `r` exceeds the rank of `L`.
 * `TauCeti.summable_pi_int_norm_rpow`: `∑ n : d → ℤ, ‖n‖ ^ r` converges for `r < -card d`.
+* `TauCeti.summable_pi_int_inv_one_add_norm_pow`: `∑ n : d → ℤ, (1 + ‖n‖) ^ (-(card d + 1))`
+  converges.
 -/
 
 public section
@@ -59,6 +63,18 @@ theorem summable_exp_neg_mul_norm_add_sq {c : ℝ} (hc : 0 < c) (x : E) :
     |>.comp_tendsto htend)
   simpa [Function.comp_def, sub_neg_eq_add, add_comm] using key
 
+/-- On a discrete subgroup `L` of a finite-dimensional real normed space, `(1 + ‖ℓ‖) ^ (-r)` is
+summable as soon as `r` exceeds the rank of `L`. -/
+theorem summable_one_add_norm_pow_inv {r : ℕ} (hr : Module.finrank ℤ L < r) :
+    Summable fun ℓ : L ↦ ((1 + ‖(ℓ : E)‖) ^ r)⁻¹ := by
+  refine Summable.of_norm_bounded_eventually (summable_norm_pow_inv L r hr) ?_
+  -- Away from `0`, `(1 + ‖ℓ‖) ^ (-r) ≤ ‖ℓ‖ ^ (-r)`.
+  filter_upwards [Set.Finite.compl_mem_cofinite (Set.finite_singleton (0 : L))] with ℓ hℓ
+  have hℓ : 0 < ‖(ℓ : E)‖ := by simpa using hℓ
+  rw [norm_inv, norm_pow, Real.norm_of_nonneg (by positivity), ← inv_pow]
+  gcongr
+  simp
+
 end ZLattice
 
 namespace TauCeti
@@ -79,5 +95,16 @@ theorem summable_pi_int_norm_rpow {d : Type*} [Fintype d] (r : ℝ) (hr : r < -F
   refine ((ZLattice.summable_norm_rpow L r (hrank ▸ hr)).comp_injective hinj).congr fun n ↦ ?_
   have hn (i : d) : ‖(n i : ℝ)‖₊ = ‖n i‖₊ := NNReal.eq (Int.norm_cast_real _)
   simp [Pi.norm_def, hn]
+
+/-- The series `∑ n, (1 + ‖n‖) ^ (-(card d + 1))` over the integer vectors `n : d → ℤ`, with the
+sup norm, converges. -/
+theorem summable_pi_int_inv_one_add_norm_pow {d : Type*} [Fintype d] :
+    Summable fun n : d → ℤ ↦ ((1 + ‖n‖) ^ (Fintype.card d + 1))⁻¹ := by
+  refine Summable.of_norm_bounded_eventually
+    (summable_pi_int_norm_rpow (-((Fintype.card d + 1 : ℕ) : ℝ)) (by push_cast; linarith)) ?_
+  filter_upwards [(Set.finite_singleton (0 : d → ℤ)).compl_mem_cofinite] with n hn
+  have hpos : 0 < ‖n‖ := norm_pos_iff.2 hn
+  rw [Real.norm_of_nonneg (by positivity), Real.rpow_neg hpos.le, Real.rpow_natCast]
+  exact inv_anti₀ (by positivity) (pow_le_pow_left₀ hpos.le (by linarith) _)
 
 end TauCeti

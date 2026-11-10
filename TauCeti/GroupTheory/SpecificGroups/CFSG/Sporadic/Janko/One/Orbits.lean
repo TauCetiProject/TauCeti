@@ -12,19 +12,23 @@ import Mathlib.Data.Fin.VecNotation
 import Mathlib.Data.Nat.Bits
 
 /-!
-# The first two basic orbits of the first Janko model
+# Basic orbits and a base of the first Janko model
 
 The ATLAS permutation model `TauCeti.Sporadic.J1` is transitive on its 266 points. The
 stabilizer of `0` has an orbit of length 110 containing `1`. Consequently the order of `J1`
-is 29260 times the order of its pointwise stabilizer of `{0, 1}`. These are the first two
-factors in an order calculation along the points `0, 1, 2`.
+is 29260 times the order of its pointwise stabilizer of `{0, 1}`. That stabilizer has an
+orbit of length six containing `2`, and only the identity fixes all three points. Thus
+`0, 1, 2` is a base, with basic-orbit lengths `266, 110, 6`.
 
-Explicit words in the ATLAS generators witness both lower bounds. For the second upper bound,
-a binary relation is checked to be invariant under both generators, hence under their closure.
-Its row at `0` contains exactly the 110 points reached by the second set of words. The relation
-and words are finite proof data; neither the group order nor the orbit computation is assumed.
-All finite checks are performed in the Lean kernel. The proof follows the same method as
-`TauCeti.GroupTheory.SpecificGroups.Sporadic.HigmanSims.Orbits`.
+Explicit words in the ATLAS generators witness the orbit lower bounds. For the second upper
+bound, a binary relation is checked to be invariant under both generators, hence under their
+closure. Its row at `0` contains exactly the 110 points reached by the second set of words.
+Common-neighbor counts in this relation force the two-point stabilizer to fix `242`, bounding
+the third orbit by six points. For an element fixing `0, 1, 2`, four common-neighbor counts
+and the relation pattern first force `59` to be fixed and then distinguish every point.
+The relation, counts and words are finite proof data; neither the group order nor the orbit
+computation is assumed. All finite checks are performed in the Lean kernel. The orbit proofs
+follow the same method as `TauCeti.GroupTheory.SpecificGroups.Sporadic.HigmanSims.Orbits`.
 
 ## References
 
@@ -519,5 +523,196 @@ theorem card_eq_29260_mul_card_stabilizerChain :
     h0, h1, ncard_orbit_stabilizerChain_zero, ncard_orbit_stabilizerChain_one,
     Nat.reduceMul] using
     (J1.prod_ncard_orbit_mul_card_stabilizerChain pointSequence 2).symm
+
+/-! ### Common-neighbor counts and rigidity -/
+
+-- Counts of common neighbors are preserved by every automorphism of the relation.
+private def commonCount (l : List (Fin 266)) (x : Fin 266) : ℕ :=
+  (Finset.univ.filter fun y => related x y = true ∧ ∀ z ∈ l, related z y = true).card
+
+private theorem commonCount_apply {g : Equiv.Perm (Fin 266)} (hg : g ∈ J1)
+    {l : List (Fin 266)} (hl : ∀ z ∈ l, g z = z) (x : Fin 266) :
+    commonCount l (g x) = commonCount l x := by
+  symm
+  apply Finset.card_equiv g
+  intro y
+  have h (z : Fin 266) (hz : z ∈ l) : related z (g y) = related z y := by
+    simpa only [hl z hz] using related_apply hg z y
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and, related_apply hg]
+  exact and_congr_right fun _ => forall_congr' fun z => forall_congr' fun hz => by rw [h z hz]
+
+-- Four counts, in base 64, for the anchor lists [0,1], [0,2], [1,2], [0,1,2].
+-- The table is only an evaluation shortcut; commonCounts_eq checks every entry against
+-- the actual finite set of common neighbors.
+private def commonCountsCode (x : Fin 266) : ℕ :=
+  ((#[
+    #[4529005, 4641901, 4643665, 1643730, 1651983, 1913940, 2442644,
+      1922067, 2442576, 2167892, 1905810, 1385681, 1643668, 2176275],
+    #[1381460, 2184336, 2180372, 1651857, 2180050, 2692312, 1905745,
+      1905555, 2184533, 1381452, 1373457, 2442387, 1643792, 2176084],
+    #[2963033, 1647699, 1377361, 2180367, 1389521, 1639568, 1914065,
+      1389586, 1643730, 2442516, 1647764, 2180177, 1918096, 1385551],
+    #[2442643, 2172500, 1905746, 1643795, 2700817, 1389585, 1373329,
+      1131791, 2163987, 1643665, 1373266, 2176148, 1643412, 2442835],
+    #[2720846, 1905939, 1918161, 2700499, 1381330, 2172175, 2438425,
+      1381456, 1373073, 1381456, 2696530, 1393745, 2987225, 1655954],
+    #[1918095, 1655886, 1647697, 2172178, 1909780, 2438293, 1914003,
+      2725017, 1647890, 1377427, 2725458, 1381519, 1918161, 1909971],
+    #[1655951, 1389647, 1647700, 1377234, 1909905, 2442644, 1655763,
+      1643791, 1914004, 1373396, 2172052, 1643794, 1381522, 2450708],
+    #[1938516, 2696341, 2180307, 2438418, 2180249, 1369167, 2434387,
+      1381393, 861073, 1901842, 2688601, 1909842, 2725456, 1905939],
+    #[1913940, 1635412, 2159892, 1631505, 1909841, 1381584, 1385425,
+      2171925, 1913934, 2176210, 1639631, 1381583, 1369169, 2172179],
+    #[1647632, 1918036, 2446546, 2426133, 1385554, 1381460, 1901781,
+      2172114, 1635539, 1905940, 2442518, 1393619, 1909906, 1938703],
+    #[1914003, 2438420, 1381394, 857230, 1893585, 1385552, 2172051,
+      2180306, 2446356, 1917913, 1373393, 1635602, 2180372, 2725076],
+    #[2720851, 2180242, 1918161, 1651664, 1119379, 1647572, 2442518,
+      2450708, 1905745, 1914066, 1914065, 1905745, 1651919, 1360977],
+    #[844882, 2442515, 1897746, 2442516, 2438422, 1651796, 2708626,
+      1656017, 2176020, 1914192, 1898068, 1909716, 1918545, 1651667],
+    #[2704979, 1377552, 2462932, 1377425, 2696793, 1381332, 1385617,
+      1381523, 1905875, 1635540, 1377363, 1111316, 1913940, 1647699],
+    #[1639442, 1381331, 1655825, 2200850, 2176146, 2442451, 1655890,
+      2450644, 1910035, 2438356, 1381649, 1381649, 2164050, 1639508],
+    #[1393743, 2180372, 1655953, 1131476, 1377361, 2168083, 2180305,
+      1389839, 1385680, 1913939, 2434260, 1381137, 1651857, 2176212],
+    #[1127506, 1918225, 1909971, 1381265, 1393680, 2462995, 1123537,
+      2700569, 1393745, 1905939, 2180052, 1385487, 1377300, 1914066],
+    #[1381454, 2680337, 1373267, 1381326, 2691992, 1905945, 2172115,
+      2724889, 2438740, 1913939, 2438419, 2442452, 2442457, 2987603],
+    #[1381393, 2159764, 1389650, 1643602, 2168081, 1635347, 2176147,
+      1905875, 1918162, 1905809, 2180304, 1373328, 1655761, 1647889]
+  ] : Array (Array ℕ)).getD (x.val / 14) #[]).getD (x.val % 14) 0
+
+private def commonCounts (x : Fin 266) (j : Fin 4) : ℕ :=
+  commonCountsCode x / 64 ^ j.val % 64
+
+private theorem commonCounts_eq : ∀ (x : Fin 266) (j : Fin 4),
+    commonCounts x j = commonCount (![[0, 1], [0, 2], [1, 2], [0, 1, 2]] j) x := by
+  decide +kernel
+
+private theorem commonCounts_zero_apply {g : Equiv.Perm (Fin 266)} (hg : g ∈ J1)
+    (h0 : g 0 = 0) (h1 : g 1 = 1) (x : Fin 266) :
+    commonCounts (g x) 0 = commonCounts x 0 := by
+  simp only [commonCounts_eq, Matrix.cons_val_zero]
+  exact commonCount_apply hg (by simp_all) x
+
+private theorem fixed242 {g : Equiv.Perm (Fin 266)} (hg : g ∈ J1)
+    (h0 : g 0 = 0) (h1 : g 1 = 1) : g 242 = 242 := by
+  have unique : ∀ x : Fin 266, related 0 x = related 0 242 →
+      related 1 x = related 1 242 → commonCounts x 0 = commonCounts 242 0 → x = 242 := by
+    decide +kernel
+  apply unique
+  · simpa only [h0] using related_apply hg 0 242
+  · simpa only [h1] using related_apply hg 1 242
+  · exact commonCounts_zero_apply hg h0 h1 242
+
+-- The relation pattern and four common-neighbor counts distinguish 59; adding
+-- relatedness to this newly fixed anchor then distinguishes every point.
+private def signature (x : Fin 266) : Bool × Bool × Bool × ℕ × ℕ × ℕ × ℕ :=
+  (related 0 x, related 1 x, related 2 x,
+    commonCounts x 0, commonCounts x 1, commonCounts x 2, commonCounts x 3)
+
+private theorem signature_apply {g : Equiv.Perm (Fin 266)} (hg : g ∈ J1)
+    (h0 : g 0 = 0) (h1 : g 1 = 1) (h2 : g 2 = 2) (x : Fin 266) :
+    signature (g x) = signature x := by
+  have hc (j : Fin 4) : commonCounts (g x) j = commonCounts x j := by
+    rw [commonCounts_eq, commonCounts_eq]
+    apply commonCount_apply hg
+    fin_cases j <;> simp_all
+  have hr0 := related_apply hg 0 x
+  have hr1 := related_apply hg 1 x
+  have hr2 := related_apply hg 2 x
+  simp only [h0] at hr0
+  simp only [h1] at hr1
+  simp only [h2] at hr2
+  simp only [signature, hr0, hr1, hr2, hc]
+
+private theorem signature_unique59 : ∀ x, signature x = signature 59 → x = 59 := by
+  simp only [signature, Prod.mk.injEq]
+  decide +kernel
+
+private theorem signature_injective :
+    Function.Injective (fun x : Fin 266 => (signature x, related 59 x)) := by
+  unfold Function.Injective
+  simp only [signature, Prod.mk.injEq]
+  decide +kernel
+
+/-- The points `0, 1, 2` form a base of the ATLAS first Janko model. -/
+theorem stabilizerChain_three_eq_bot : J1.stabilizerChain pointSequence 3 = ⊥ := by
+  apply (Subgroup.eq_bot_iff_forall _).mpr
+  intro g hg
+  obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp hg
+  have h0 : g 0 = 0 := hfix 0 (by decide)
+  have h1 : g 1 = 1 := hfix 1 (by decide)
+  have h2 : g 2 = 2 := hfix 2 (by decide)
+  have h59 : g 59 = 59 := signature_unique59 _ (signature_apply hg h0 h1 h2 59)
+  apply Equiv.Perm.ext
+  intro x
+  apply signature_injective
+  exact Prod.ext (signature_apply hg h0 h1 h2 x)
+    (by simpa only [h59, Equiv.Perm.one_apply] using related_apply hg 59 x)
+
+/-! ### The last basic orbit -/
+
+private theorem thirdOrbit_bound : ∀ x : Fin 266,
+    related 0 x = related 0 2 → related 1 x = related 1 2 →
+      related 242 x = related 242 2 → commonCounts x 0 = commonCounts 2 0 →
+        x ∈ ({2, 17, 216, 222, 239, 264} : Finset (Fin 266)) := by
+  decide +kernel
+
+-- Collisions in a breadth-first search on ordered pairs give words fixing 0 and 1.
+-- The sentinel/bit convention is the same as for orbitWords above.
+private def thirdWords (x : Fin 266) : ℕ :=
+  if x = 17 then 7518106099347311
+  else if x = 216 then 408515538268387038
+  else if x = 222 then 8280795175116507
+  else if x = 239 then 15766591936069063401182
+  else if x = 264 then 192365425092705718
+  else 1
+
+private theorem thirdWords_apply : ∀ x ∈ ({2, 17, 216, 222, 239, 264} : Finset (Fin 266)),
+    wordValue (thirdWords x) 0 = 0 ∧ wordValue (thirdWords x) 1 = 1 ∧
+      wordValue (thirdWords x) 2 = x := by
+  decide +kernel
+
+/-- The orbit of `2` under the pointwise stabilizer of `{0, 1}` has precisely six points. -/
+theorem orbit_stabilizerChain_two :
+    orbit (J1.stabilizerChain pointSequence 2) (2 : Fin 266) =
+      (↑({2, 17, 216, 222, 239, 264} : Finset (Fin 266)) : Set (Fin 266)) := by
+  ext x
+  constructor
+  · rintro ⟨g, rfl⟩
+    obtain ⟨hg, hfix⟩ := (Subgroup.mem_stabilizerChain_iff _ _).mp g.2
+    have h0 : (g : Equiv.Perm (Fin 266)) 0 = 0 := hfix 0 (by decide)
+    have h1 : (g : Equiv.Perm (Fin 266)) 1 = 1 := hfix 1 (by decide)
+    apply thirdOrbit_bound
+    · simpa only [Subgroup.smul_def, Equiv.Perm.smul_def, h0] using related_apply hg 0 2
+    · simpa only [Subgroup.smul_def, Equiv.Perm.smul_def, h1] using related_apply hg 1 2
+    · simpa only [Subgroup.smul_def, Equiv.Perm.smul_def, fixed242 hg h0 h1] using
+        related_apply hg 242 2
+    · exact commonCounts_zero_apply hg h0 h1 2
+  · intro hx
+    obtain ⟨h0, h1, h2⟩ := thirdWords_apply x hx
+    refine mem_orbit_iff.mpr ⟨⟨wordValue (thirdWords x), ?_⟩, h2⟩
+    apply (Subgroup.mem_stabilizerChain_iff _ _).mpr
+    refine ⟨wordValue_mem _, fun j hj => ?_⟩
+    interval_cases j <;> assumption
+
+/-- The last basic orbit along the base `0, 1, 2` has length six. -/
+@[simp]
+theorem ncard_orbit_stabilizerChain_two :
+    (orbit (J1.stabilizerChain pointSequence 2) (2 : Fin 266)).ncard = 6 := by
+  rw [orbit_stabilizerChain_two, Set.ncard_coe_finset]
+  decide
+
+/-- The pointwise stabilizer of `{0, 1}` in the ATLAS first Janko model has order six. -/
+theorem card_stabilizerChain_two : Nat.card (J1.stabilizerChain pointSequence 2) = 6 := by
+  simpa only [Nat.reduceAdd, pointSequence_apply, Fin.reduceOfNat,
+    ncard_orbit_stabilizerChain_two, stabilizerChain_three_eq_bot,
+    Subgroup.card_bot, mul_one] using
+    (J1.ncard_orbit_mul_card_stabilizerChain_succ pointSequence 2).symm
 
 end TauCeti.Sporadic.J1

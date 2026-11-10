@@ -72,10 +72,8 @@ theorem exists_homeomorph_stellarSubdivision (hσ : σ ∈ K) (hv : ({v} : Finse
   have hmem (P : PreAbstractSimplicialComplex ι) (hP : P ≤ A.toPreAbstractSimplicialComplex)
       (y : ι →₀ ℝ) (hy : y ∈ (Geometry.SimplicialComplex.onFinsupp (𝕜 := ℝ) P).space) :
       y ∈ (standardGeometricComplex A).space ∧ y.support ∈ P := by
-    obtain ⟨hypos, hysum, hyface⟩ := Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mp hy
-    refine ⟨mem_realization_iff.mpr ⟨y.support, hP hyface, ?_⟩, hyface⟩
-    simpa only [Finset.coe_image] using mem_standardSimplex_iff.mpr
-      ⟨hypos, hysum, Finset.Subset.refl _⟩
+    obtain ⟨h₁, h₂, h₃⟩ := Geometry.SimplicialComplex.mem_space_onFinsupp_iff.mp hy
+    exact ⟨TauCeti.mem_standardGeometricComplex_space_iff.mpr ⟨h₁, h₂, hP h₃⟩, h₃⟩
   have hb := bijOn_stellarSubdivisionLinearMap hσ hv
   let f : S → T := fun x =>
     ⟨⟨Finset.stellarSubdivisionLinearMap σ v x.1.1,

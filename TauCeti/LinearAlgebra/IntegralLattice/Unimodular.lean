@@ -182,42 +182,30 @@ theorem IsUnimodular.isPerfPair_integralForm {L : IntegralLattice V} (hL : L.IsU
 
 section DeterminantCriteria
 
-variable (L : IntegralLattice V) [L.IsNondegenerate]
+variable (L : IntegralLattice V)
 
-/-- A nondegenerate integral lattice is unimodular exactly when its basis-independent
-discriminant is one. -/
+/-- An integral lattice is unimodular exactly when its basis-independent discriminant is one.
+Both sides force the ambient form to be nondegenerate. -/
 theorem isUnimodular_iff_discriminant_eq_one :
     L.IsUnimodular ↔ L.discriminant = 1 := by
-  rw [L.isUnimodular_iff_natCard_discriminantGroup_eq_one,
-    L.natCard_discriminantGroup]
+  by_cases hL : L.IsNondegenerate
+  · rw [L.isUnimodular_iff_natCard_discriminantGroup_eq_one, L.natCard_discriminantGroup]
+  · exact iff_of_false (fun h ↦ hL ⟨h.nondegenerate⟩) fun h ↦
+      hL ⟨(L.discriminant_pos_iff).mp (by omega)⟩
 
-/-- A nondegenerate integral lattice is unimodular exactly when its signed determinant is a unit
-of `ℤ`. -/
+/-- An integral lattice is unimodular exactly when its signed determinant is a unit of `ℤ`. -/
 theorem isUnimodular_iff_isUnit_determinant :
     L.IsUnimodular ↔ IsUnit L.determinant := by
   rw [L.isUnimodular_iff_discriminant_eq_one, L.discriminant_def,
     ← Int.isUnit_iff_natAbs_eq]
 
-omit [L.IsNondegenerate] in
 /-- In every carrier basis, unimodularity is equivalent to the Gram determinant having absolute
 value one. -/
 theorem isUnimodular_iff_natAbs_gramDet_eq_one {ι : Type v} [Fintype ι] [DecidableEq ι]
     (e : Basis ι ℤ L) :
     L.IsUnimodular ↔ (L.gramDet e).natAbs = 1 := by
-  by_cases hL : L.IsNondegenerate
-  · let : L.IsNondegenerate := hL
-    rw [L.isUnimodular_iff_discriminant_eq_one, L.discriminant_eq_natAbs_gramDet e]
-  · constructor
-    · intro h
-      exact (hL ⟨h.nondegenerate⟩).elim
-    · intro h
-      apply (hL ?_).elim
-      constructor
-      apply (L.gramDet_ne_zero_iff e).mp
-      intro hz
-      simp [hz] at h
+  rw [L.isUnimodular_iff_discriminant_eq_one, L.discriminant_eq_natAbs_gramDet e]
 
-omit [L.IsNondegenerate] in
 /-- In every carrier basis, unimodularity is equivalent to the signed Gram determinant being a
 unit of `ℤ`; in particular, determinant `-1` is allowed. -/
 theorem isUnimodular_iff_isUnit_gramDet {ι : Type v} [Fintype ι] [DecidableEq ι]

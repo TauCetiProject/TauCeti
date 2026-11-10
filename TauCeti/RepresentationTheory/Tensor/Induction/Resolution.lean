@@ -96,12 +96,12 @@ open scoped TensorProduct
 
 universe u v w
 
-namespace TauCeti
-
 variable {R : Type u} [CommRing R] [TopologicalSpace R] [DiscreteTopology R]
   {G : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   (U : Subgroup G) (hU : IsOpen (U : Set G)) (s : U.LeftTransversal) [U.FiniteIndex]
   [CompactSpace U]
+
+namespace TauCeti
 
 /-- Tensor induction from `U` to `G` of the total shifted coinduced resolution, functorially in
 the smooth discrete coefficient object. -/
@@ -129,6 +129,46 @@ theorem smoothTensorInducedGradedResolutionFunctor_map
     (smoothTensorInducedGradedResolutionFunctor U hU s).map f =
       (smoothTensorInductionFunctor R G U hU s).map (smoothGradedResolutionFunctor.map f) :=
   rfl
+
+end TauCeti
+
+namespace Subgroup
+
+open TauCeti
+
+/-- On carriers, the induced morphism of tensor-induced total resolutions applies the total
+resolution map in each tensor factor. -/
+theorem smoothTensorInducedGradedResolutionFunctor_map_hom_hom_apply
+    {A B : SmoothDiscreteTopRep.{u, v, max v w} R U} (f : A ⟶ B)
+    (x : ⨂[R] _ : G ⧸ U, A.obj.gradedResolutionModule) :
+    ((smoothTensorInducedGradedResolutionFunctor U hU s).map f).hom.hom x =
+      PiTensorProduct.map (fun _ ↦
+        TopRep.gradedResolutionMap (ContinuousMonoidHom.id U) f.hom) x := by
+  have hg : (smoothGradedResolutionFunctor.map f).hom.hom.toLinearMap =
+      TopRep.gradedResolutionMap (ContinuousMonoidHom.id U) f.hom := by
+    rw [smoothGradedResolutionFunctor_map]
+    exact LinearMap.ext (TopRep.gradedResolutionTopRepMap_apply f.hom)
+  exact (smoothTensorInductionFunctor_map_hom_hom_apply R G U hU s
+    (smoothGradedResolutionFunctor.map f) x).trans
+      (congrArg (fun g ↦ PiTensorProduct.map (fun _ : G ⧸ U ↦ g) x) hg)
+
+/-- On a pure tensor, the induced morphism applies the total resolution map in each coset
+coordinate. -/
+-- Evaluate pure tensors before the functor-map simp rules expand the smooth-discrete dictionary.
+@[simp↓]
+theorem smoothTensorInducedGradedResolutionFunctor_map_hom_hom_apply_tprod
+    {A B : SmoothDiscreteTopRep.{u, v, max v w} R U} (f : A ⟶ B)
+    (x : G ⧸ U → A.obj.gradedResolutionModule) :
+    ((smoothTensorInducedGradedResolutionFunctor U hU s).map f).hom.hom
+        (PiTensorProduct.tprod R x) =
+      PiTensorProduct.tprod R fun i ↦
+        TopRep.gradedResolutionMap (ContinuousMonoidHom.id U) f.hom (x i) :=
+  (smoothTensorInducedGradedResolutionFunctor_map_hom_hom_apply U hU s f _).trans
+    (PiTensorProduct.map_tprod _ _)
+
+end Subgroup
+
+namespace TauCeti
 
 /-- The action of `G` on the tensor-induced total resolution is tensor induction of the action of
 `U` on the total resolution. -/

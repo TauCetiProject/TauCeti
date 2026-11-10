@@ -59,6 +59,31 @@ variable {κ κ₂ κ₂' V : Type*} [Fintype V] [DecidableEq V] [DecidableEq κ
   {S : PairSkeleton3 κ₂ V} {S' : PairSkeleton3 κ₂' V} {P : Polyad3 S} {P' : Polyad3 S'}
   {H : Colored3Graph κ V} {δ ε η : ℝ} {r : ℕ}
 
+/-- The size bookkeeping in the change-of-support transfer: removing at most `η * p'` triples
+from a set of size at least `ε * p'` leaves at least `δ * p` triples, when `p'` is at least
+`(1 - η) * p` and `δ + 2 * η + η / ε ≤ ε`. -/
+private theorem mul_le_of_card_sdiff_le {δ ε η p p' s u t : ℝ} (hδ : 0 ≤ δ) (hε : 0 < ε)
+    (hε₁ : ε < 1) (hη : 0 ≤ η) (hbudget : δ + 2 * η + η / ε ≤ ε) (hp : 0 ≤ p)
+    (hPP' : (1 - η) * p ≤ p') (hs : s ≤ η * p') (hsum : s + u = t) (ht : ε * p' ≤ t) :
+    δ * p ≤ u := by
+  have hηε : 0 ≤ η / ε := div_nonneg hη hε.le
+  have hεη : 0 ≤ ε - η := by linarith
+  calc δ * p ≤ (ε - η) * (1 - η) * p := by
+        gcongr
+        nlinarith
+    _ ≤ (ε - η) * p' := by rw [mul_assoc]; gcongr
+    _ ≤ _ := by linarith
+
+/-- The four-term triangle inequality used to compare densities over `Q`, its restriction, and
+the two supports. -/
+private theorem abs_sub_le_four (a b c d e : ℝ) :
+    |a - d| ≤ |a - b| + |b - c| + |c - e| + |d - e| := by
+  have h₁ := abs_sub_le a b d
+  have h₂ := abs_sub_le b c d
+  have h₃ := abs_sub_le c e d
+  rw [abs_sub_comm e d] at h₃
+  linarith
+
 /-- **Top regularity under a change of support.** If `H` is `(δ, r)`-top-regular over `P`, and
 the supports of `P` and `P'` each have at most an `η`-fraction of their triples outside the
 other, then `H` is `(ε, r)`-top-regular over `P'` whenever `δ + 2η + η / ε ≤ ε`. The polyads may
@@ -92,15 +117,10 @@ theorem IsTopRegularOverPolyad.of_card_sdiff_support_le (h : H.IsTopRegularOverP
     linarith
   have hsize : δ * #P.support ≤ #(unionSupport fun i ↦ (Q i).restrict P) := by
     have h := card_sdiff_add_card_eq_card hUsub
-    have hU' : (#(unionSupport Q \ unionSupport fun i ↦ (Q i).restrict P) : ℝ) +
-        #(unionSupport fun i ↦ (Q i).restrict P) = #(unionSupport Q) := by exact_mod_cast h
-    have hP₀ : (0 : ℝ) ≤ #P.support := Nat.cast_nonneg _
-    have hεη : 0 ≤ ε - η := by linarith
-    calc δ * #P.support ≤ (ε - η) * (1 - η) * #P.support := by
-          gcongr
-          nlinarith
-      _ ≤ (ε - η) * #P'.support := by rw [mul_assoc]; gcongr
-      _ ≤ _ := by linarith
+    refine mul_le_of_card_sdiff_le (s := (#(unionSupport Q \ unionSupport fun i ↦
+      (Q i).restrict P) : ℝ)) (t := #(unionSupport Q)) hδ hε hε₁ hη hbudget
+      (Nat.cast_nonneg _) hPP' hcardU ?_ hQ
+    exact_mod_cast h
   -- Compare the four densities.
   have d₁ := H.abs_relDensityOn_sub_le_div_of_card_sdiff_le c hUsub hε hη hQ hcardU
   have d₂ := isTopRegularOverPolyad_iff.1 h c (fun i ↦ (Q i).restrict P) hsize
@@ -112,23 +132,11 @@ theorem IsTopRegularOverPolyad.of_card_sdiff_support_le (h : H.IsTopRegularOverP
     (by rwa [sdiff_inter_self_right])
   rw [div_one] at d₃ d₄
   rw [relativeDensity_def] at d₂ ⊢
-  calc _ ≤ |(H.relDensityOn c (unionSupport Q) : ℝ) -
-          H.relDensityOn c (unionSupport fun i ↦ (Q i).restrict P)| +
-        |(H.relDensityOn c (unionSupport fun i ↦ (Q i).restrict P) : ℝ) -
-          H.relDensityOn c P.support| +
-        |(H.relDensityOn c P.support : ℝ) - H.relDensityOn c (P.support ∩ P'.support)| +
-        |(H.relDensityOn c P'.support : ℝ) - H.relDensityOn c (P.support ∩ P'.support)| := by
-        have := abs_sub_le (H.relDensityOn c (unionSupport Q) : ℝ)
-          (H.relDensityOn c (unionSupport fun i ↦ (Q i).restrict P))
-          (H.relDensityOn c P'.support)
-        have := abs_sub_le (H.relDensityOn c (unionSupport fun i ↦ (Q i).restrict P) : ℝ)
-          (H.relDensityOn c P.support) (H.relDensityOn c P'.support)
-        have := abs_sub_le (H.relDensityOn c P.support : ℝ)
-          (H.relDensityOn c (P.support ∩ P'.support)) (H.relDensityOn c P'.support)
-        rw [abs_sub_comm (H.relDensityOn c (P.support ∩ P'.support) : ℝ)] at this
-        linarith
-    _ ≤ η / ε + δ + η + η := by linarith
-    _ ≤ ε := by linarith
+  refine (abs_sub_le_four (H.relDensityOn c (unionSupport Q) : ℝ)
+    (H.relDensityOn c (unionSupport fun i ↦ (Q i).restrict P))
+    (H.relDensityOn c P.support) (H.relDensityOn c P'.support)
+    (H.relDensityOn c (P.support ∩ P'.support))).trans ?_
+  linarith
 
 section Injective
 

@@ -32,6 +32,10 @@ import TauCeti.Data.Set.PowersetCard
 * `TauCeti.card_even_card_finset` and `TauCeti.card_odd_card_finset` count the finsets of a
   nonempty finite type by the parity of their cardinality: each parity accounts for exactly half
   of them.
+* `Finset.filter_lt_eq_insert_of_forall_lt` splits the elements of a finite set after `s` into its
+  first such element and the elements after a later point.
+* `Finset.convex_filter_erase_le` shows that the elements of a finite set up to a given point, other
+  than its least element, contain every element of the set between two of them.
 * `Finset.sum_powerset_neg_one_pow_card_of_ring` evaluates the alternating sum over the subsets of
   a finset in an arbitrary ring.
 * `Finset.sum_powerset_neg_one_pow_mul_eq_zero` pairs subsets that differ by one element
@@ -80,8 +84,6 @@ import TauCeti.Data.Set.PowersetCard
   from a set of exceptional elements, and a comparison at the exceptional elements.
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
-* `Finset.sum_eq_four` reduces a double sum over a pair of finite types to the values of its
-  summand at the four cells of a rectangle where it is supported.
 * `Finset.filter_ne_product_of_disjoint` says that every pair in the product of disjoint finsets
   has distinct coordinates, `Finset.card_filter_ne_product` counts the pairs with distinct
   coordinates in any product by their first coordinate, `Finset.card_filter_ne_product_comm`
@@ -89,11 +91,17 @@ import TauCeti.Data.Set.PowersetCard
   `Finset.card_mul_card_le_two_mul_card_filter_ne_product` says that these pairs make up at least
   half of the product when the second factor has two elements, and
   `Finset.card_filter_ne_product_mul_card_le` bounds the proportion of these pairs in a
-  subproduct of the product of two equal or disjoint finsets.
+  subproduct of the product of two equal or disjoint finsets. Likewise
+  `Finset.sq_mul_card_filter_ne_product_le` says that a rectangle with `ε`-fraction sides carries
+  an `ε²`-fraction of the distinct pairs of a disjoint block, and `Finset.card_offDiag_le_sq`
+  states `#s.offDiag ≤ #s ^ 2`.
 * `TauCeti.sum_piecewise_eq_sum_update_of_card_eq_succ` reindexes a sum of `Finset.piecewise` terms
   over the subsets of size one less than `card ι` as a sum of `Function.update` terms over `ι`. It
   is what turns a formula indexed by "all but one point" into one indexed by the omitted point, as
   in the change-origin and derivative computations for multilinear series.
+* `Finset.injOn_insert_erase` keeps a map injective on a finset when one point is replaced by
+  another point with the same image, and `Finset.injOn_insert_erase_iff` shows that such a
+  replacement by a point outside the finset does not change injectivity.
 -/
 
 public section
@@ -210,6 +218,24 @@ theorem filter_ne_product_of_disjoint {s t : Finset α} [DecidableEq α] (hst : 
     (s ×ˢ t).filter (fun p => p.1 ≠ p.2) = s ×ˢ t :=
   filter_true_of_mem fun _ hp =>
     hst.forall_ne_finset (mem_product.mp hp).1 (mem_product.mp hp).2
+
+/-- A rectangle `X ×ˢ Y` inside a block `A ×ˢ B` of disjoint sets, with sides carrying an
+`ε`-fraction of `A` and `B`, carries an `ε²`-fraction of the ordered distinct pairs of the block. -/
+theorem sq_mul_card_filter_ne_product_le {α R : Type*} [DecidableEq α] [CommSemiring R]
+    [LinearOrder R] [IsStrictOrderedRing R] {ε : R} {A B X Y : Finset α} (hε : 0 ≤ ε)
+    (hAB : Disjoint A B) (hX : X ⊆ A) (hY : Y ⊆ B) (hXc : ε * #A ≤ #X) (hYc : ε * #B ≤ #Y) :
+    ε ^ 2 * #((A ×ˢ B).filter fun p => p.1 ≠ p.2) ≤
+      (#((X ×ˢ Y).filter fun p => p.1 ≠ p.2) : R) := by
+  rw [filter_ne_product_of_disjoint hAB, filter_ne_product_of_disjoint (hAB.mono hX hY),
+    card_product, card_product]
+  push_cast
+  calc ε ^ 2 * (#A * #B : R) = (ε * #A) * (ε * #B) := by ring
+    _ ≤ #X * #Y := mul_le_mul hXc hYc (by positivity) (Nat.cast_nonneg _)
+
+/-- A finset has at most `#s ^ 2` ordered pairs of distinct elements. -/
+theorem card_offDiag_le_sq (s : Finset α) : #s.offDiag ≤ #s ^ 2 := by
+  rw [offDiag_card, sq]
+  exact Nat.sub_le _ _
 
 /-- Counting the pairs with distinct coordinates in `s ×ˢ t` by their first coordinate: each
 `u ∈ s` is paired with the elements of `t` other than `u`. -/
@@ -466,6 +492,16 @@ theorem sum_filter_le_sum_filter_le {α M : Type*} [Fintype α] [LE α] [AddComm
     _ = _ := by
         rw [sum_comm]
         exact sum_congr rfl fun c _ => (sum_filter _ _).symm
+
+/-- The positions of `s` other than the least one `m`, up to a position `y`, contain every
+position of `s` between two of them. -/
+theorem convex_filter_erase_le {α : Type*} [LinearOrder α] {s : Finset α} {m : α}
+    (hmin : ∀ z ∈ s, m ≤ z) (y : α) :
+    ∀ a ∈ {z ∈ s.erase m | z ≤ y}, ∀ c ∈ {z ∈ s.erase m | z ≤ y}, ∀ b ∈ s,
+      a < b → b < c → b ∈ {z ∈ s.erase m | z ≤ y} := by
+  intro a ha c hc b hb hab hbc
+  simp only [mem_filter, mem_erase] at ha hc ⊢
+  exact ⟨⟨((hmin a ha.1.2).trans_lt hab).ne', hb⟩, hbc.le.trans hc.2⟩
 
 /-- **The alternating sum over the subsets of a finset** is `1` for the empty finset and `0`
 otherwise, in an arbitrary ring. Mathlib's `Finset.sum_powerset_neg_one_pow_card` is the case of
@@ -774,27 +810,43 @@ theorem _root_.StrictMono.exists_image_eq_of_subset_Ioo {α β : Type*} [LinearO
   have := mem_Ioo.1 (hS (mem_image_of_mem _ hs))
   exact mem_Ioo.2 ⟨he.lt_iff_lt.1 this.1, he.lt_iff_lt.1 this.2⟩
 
-/-- The double sum over a pair of finite types of a function that vanishes outside the four cells
-of the rectangle `i`, `i'` by `j`, `j'` is the sum of its four values there. -/
-theorem sum_eq_four {ι κ M : Type*} [Fintype ι] [Fintype κ] [AddCommMonoid M] (g : ι → κ → M)
-    (i i' : ι) (j j' : κ) (hi'ne : i ≠ i') (hj'ne : j ≠ j')
-    (h0 : ∀ x y, ¬(x = i ∧ y = j) → ¬(x = i ∧ y = j') → ¬(x = i' ∧ y = j)
-      → ¬(x = i' ∧ y = j') → g x y = 0) :
-    (∑ x, ∑ y, g x y) = g i j + g i j' + g i' j + g i' j' := by
-  classical
-  have hzero (x : ι) (hx : x ≠ i) (hx' : x ≠ i') : (∑ y, g x y) = 0 := by
-    apply Finset.sum_eq_zero
-    intro y _
-    exact h0 x y (fun h => hx h.1) (fun h => hx h.1) (fun h => hx' h.1) (fun h => hx' h.1)
-  calc (∑ x, ∑ y, g x y) = (∑ y, g i y) + (∑ y, g i' y) :=
-        Fintype.sum_eq_add i i' hi'ne (fun x hx => hzero x hx.1 hx.2)
-    _ = (g i j + g i j') + (g i' j + g i' j') := by
-        rw [Fintype.sum_eq_add j j' hj'ne (f := g i) (fun y hy => h0 i y (fun h => hy.1 h.2)
-              (fun h => hy.2 h.2) (fun h => hi'ne h.1) (fun h => hi'ne h.1)),
-            Fintype.sum_eq_add j j' hj'ne (f := g i') (fun y hy => h0 i' y
-              (fun h => hi'ne h.1.symm) (fun h => hi'ne h.1.symm) (fun h => hy.1 h.2)
-              (fun h => hy.2 h.2))]
-    _ = g i j + g i j' + g i' j + g i' j' := by simp only [add_assoc]
+/-- If `c` is the first element of a finite set `S` after `s`, and no element of `S` lies in
+`(c, t₂]`, then the elements of `S` after `s` are `c` and the elements after `t₂`. -/
+theorem filter_lt_eq_insert_of_forall_lt {α : Type*} [LinearOrder α] {S : Finset α} {s c t₂ : α}
+    (hc : c ∈ S) (hsc : s < c) (hcmin : ∀ t ∈ S, s < t → c ≤ t) (hct : c < t₂)
+    (hgap : ∀ t ∈ S, c < t → t₂ < t) :
+    {t ∈ S | s < t} = insert c {t ∈ S | t₂ < t} := by
+  ext t
+  simp only [Finset.mem_filter, Finset.mem_insert]
+  constructor
+  · rintro ⟨htS, hst⟩
+    rcases (hcmin t htS hst).eq_or_lt with h | h
+    · exact Or.inl h.symm
+    · exact Or.inr ⟨htS, hgap t htS h⟩
+  · rintro (rfl | ⟨htS, ht⟩)
+    · exact ⟨hc, hsc⟩
+    · exact ⟨htS, hsc.trans (hct.trans ht)⟩
+
+/-- Replacing a point `a` of a finset on which `f` is injective by a point `b` with the same
+image keeps `f` injective. -/
+theorem injOn_insert_erase {α β : Type*} [DecidableEq α] {f : α → β} {s : Finset α} {a b : α}
+    (hs : Set.InjOn f s) (ha : a ∈ s) (hab : f a = f b) :
+    Set.InjOn f ↑(insert b (s.erase a)) := by
+  have hb : b ∉ (s.erase a : Set α) := fun h ↦
+    (mem_erase.1 h).1 (hs (mem_erase.1 h).2 ha hab.symm)
+  rw [coe_insert, Set.injOn_insert hb]
+  refine ⟨hs.mono (coe_subset.2 (erase_subset a s)), ?_⟩
+  rintro ⟨c, hc, hcb⟩
+  exact (mem_erase.1 hc).1 (hs (mem_erase.1 hc).2 ha (hcb.trans hab.symm))
+
+/-- Replacing a point `a` of a finset by a point `b` outside it with the same image under `f`
+does not change whether `f` is injective on it. -/
+theorem injOn_insert_erase_iff {α β : Type*} [DecidableEq α] {f : α → β} {s : Finset α}
+    {a b : α} (ha : a ∈ s) (hb : b ∉ s) (hab : f a = f b) :
+    Set.InjOn f ↑(insert b (s.erase a)) ↔ Set.InjOn f s := by
+  refine ⟨fun h ↦ ?_, fun h ↦ injOn_insert_erase h ha hab⟩
+  have h' := injOn_insert_erase h (mem_insert_self b _) hab.symm
+  rwa [erase_insert fun h ↦ hb (mem_of_mem_erase h), insert_erase ha] at h'
 
 end Finset
 

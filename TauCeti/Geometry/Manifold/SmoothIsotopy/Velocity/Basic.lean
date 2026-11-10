@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Topology.Compactness.LocallyCompact
-import TauCeti.Geometry.Manifold.MFDeriv.Parametric
+import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.Instances.Icc
 

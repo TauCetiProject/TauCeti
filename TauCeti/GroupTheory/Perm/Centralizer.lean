@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.Perm.Basic
-public import Mathlib.GroupTheory.GroupAction.Quotient
+public import Mathlib.GroupTheory.Subgroup.Centralizer
 public import Mathlib.SetTheory.Cardinal.NatCard
+import TauCeti.GroupTheory.GroupAction.Free
 
 /-!
 # The centralizer of a transitive group of permutations
@@ -31,9 +32,8 @@ action.
 * `Subgroup.card_centralizer_dvd`: the `Nat.card` of that centralizer divides the `Nat.card` of
   the letters.
 
-The counting step is orbit-stabilizer: a set on which a group acts freely is in bijection with the
-product of its orbit space with the acting group, so the number of letters is the number of orbits
-times the order of the centralizer.
+The counting step is `MulAction.natCard_dvd_natCard_of_isCancelSMul`: every orbit of a free action
+is a copy of the acting group, so the order of the centralizer divides the number of letters.
 -/
 
 public section
@@ -68,11 +68,8 @@ letters**, the centralizer acting freely on them. Since `Nat.card` is `0` on an 
 this bounds the order of the centralizer only on a finite set of letters. -/
 theorem _root_.Subgroup.card_centralizer_dvd
     {G : Subgroup (Equiv.Perm α)} (hG : MulAction.IsPretransitive G α) :
-    Nat.card (Subgroup.centralizer (G : Set (Equiv.Perm α))) ∣ Nat.card α := by
+    Nat.card (Subgroup.centralizer (G : Set (Equiv.Perm α))) ∣ Nat.card α :=
   have := Subgroup.isCancelSMul_centralizer hG
-  have hcard := Nat.card_congr (MulAction.selfEquivOrbitsQuotientProd
-    (X := α) (G := Subgroup.centralizer (G : Set (Equiv.Perm α))) IsCancelSMul.stabilizer_eq_bot)
-  rw [Nat.card_prod] at hcard
-  exact Dvd.intro_left _ hcard.symm
+  MulAction.natCard_dvd_natCard_of_isCancelSMul
 
 end TauCeti

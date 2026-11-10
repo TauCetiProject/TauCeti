@@ -24,7 +24,10 @@ model `model A B`, over a field in which `2 ≠ 0` and for `B ≠ 0`, with no el
 assumption: applied to the coordinate pairs of `P`, `Q` and `P - Q`, its output has vanishing
 cross difference with the coordinate pair of `P + Q`, and it is nonzero exactly when `P - Q` is
 neither the point at infinity nor the distinguished point of order two `(0, 0)`. Every other point
-of order two is therefore a non-exceptional difference. The theorems
+of order two is therefore a non-exceptional difference: with infinity as second point, differential
+addition scales the first pair `P` by `4 X_P Z_P` (`diffAdd_one_zero`), so it is nonzero at every
+affine point `(x, y)` with `x ≠ 0`, in particular at every point `(r, 0)` of order two with
+`r ≠ 0` (`diffAdd_coordinates_some_ne_zero`). The theorems
 `diffAdd_cross_eq_zero_of_cross_eq_zero` and `diffAdd_ne_zero_iff_of_cross_eq_zero` extend this to
 arbitrary representatives, which is the form a Montgomery ladder uses; the first of them needs no
 assumption on the characteristic, since in characteristic two the output is always `(0, 0)`.
@@ -43,6 +46,9 @@ coordinate `±1`.
 
 * `TauCeti.Montgomery.diffAdd_coordinates`: correctness of differential addition on native points,
   with its exact exceptional set.
+* `TauCeti.Montgomery.diffAdd_coordinates_zero_right` and
+  `TauCeti.Montgomery.diffAdd_coordinates_some_ne_zero`: adding infinity, and the
+  non-exceptional points of order two.
 * `TauCeti.Montgomery.diffAdd_cross_eq_zero_of_cross_eq_zero` and
   `TauCeti.Montgomery.diffAdd_ne_zero_iff_of_cross_eq_zero`: the same for arbitrary
   representatives of the coordinate pairs.
@@ -115,6 +121,16 @@ theorem diffAdd_smul_diff (c : R) (P Q D : Pair R) :
     diffAdd P Q (c • D) = c • diffAdd P Q D := by
   ext <;> simp only [diffAdd, Pair.smul_x, Pair.smul_z] <;> ring
 
+/-- Differential addition with the infinity pair `(1, 0)` as second point and `P` itself as
+difference scales `P` by `4 X_P Z_P`. -/
+@[simp]
+theorem diffAdd_one_zero (P : Pair R) : diffAdd P ⟨1, 0⟩ P = (4 * P.x * P.z) • P := by
+  ext
+  · simp only [diffAdd_x, Pair.smul_x]
+    ring
+  · simp only [diffAdd_z, Pair.cross_def, Pair.smul_z]
+    ring
+
 /-- Differential addition commutes with any change of coefficient ring. -/
 @[simp]
 theorem map_diffAdd (f : R →+* S) (P Q D : Pair R) :
@@ -123,29 +139,44 @@ theorem map_diffAdd (f : R →+* S) (P Q D : Pair R) :
 
 end CommRing
 
-section Field
+section Domain
 
-variable {K : Type*} [Field K] {A B : K}
+variable {R : Type*} [CommRing R] [NoZeroDivisors R] {A B : R}
 
-/-- Differential addition with infinity as first point, on the coordinate pair of `Q` taken as both
-the second point and the difference. -/
-private theorem diffAdd_one_zero_coordinates (h₄ : (4 : K) ≠ 0) (hB : B ≠ 0)
-    (Q : (model A B).toAffine.Point) :
-    (diffAdd ⟨1, 0⟩ (coordinates A B Q) (coordinates A B Q)).cross (coordinates A B Q) = 0 ∧
-      (diffAdd ⟨1, 0⟩ (coordinates A B Q) (coordinates A B Q) ≠ 0 ↔
-        Q ≠ 0 ∧ Q ≠ twoTorsionPoint A hB) := by
-  have hQ : diffAdd ⟨1, 0⟩ (coordinates A B Q) (coordinates A B Q) =
-      (4 * (coordinates A B Q).x * (coordinates A B Q).z) • coordinates A B Q := by
-    ext
-    · simp only [diffAdd_x, Pair.smul_x]
-      ring
-    · simp only [diffAdd_z, Pair.cross_def, Pair.smul_z]
-      ring
-  rw [hQ, Pair.smul_cross, Pair.cross_self, mul_zero, Ne, Pair.smul_eq_zero,
-    or_iff_left (coordinates_ne_zero hB Q)]
+/-- **Differential addition of a point and infinity.** Over a commutative ring without zero
+divisors in which `2 ≠ 0`, and for `B ≠ 0`, differential addition of the coordinate pairs of `P`,
+infinity and `P` has vanishing cross difference with the coordinate pair of `P`, and it is nonzero
+exactly when `P` is neither the point at infinity nor the distinguished point of order two
+`(0, 0)`. In particular every other point of order two, an affine point `(r, 0)` with `r ≠ 0`, is a
+non-exceptional difference. -/
+theorem diffAdd_coordinates_zero_right (h₂ : (2 : R) ≠ 0) (hB : B ≠ 0)
+    (P : (model A B).toAffine.Point) :
+    (diffAdd (coordinates A B P) ⟨1, 0⟩ (coordinates A B P)).cross (coordinates A B P) = 0 ∧
+      (diffAdd (coordinates A B P) ⟨1, 0⟩ (coordinates A B P) ≠ 0 ↔
+        P ≠ 0 ∧ P ≠ twoTorsionPoint A hB) := by
+  have h₄ : (4 : R) ≠ 0 := by
+    convert mul_ne_zero h₂ h₂ using 1
+    norm_num
+  rw [diffAdd_one_zero, Pair.smul_cross, Pair.cross_self, mul_zero, Ne, Pair.smul_eq_zero,
+    or_iff_left (coordinates_ne_zero hB P)]
   simp [h₄, not_or, coordinates_x_eq_zero_iff hB, coordinates_z_eq_zero_iff hB, and_comm]
 
-variable [DecidableEq K]
+/-- **An affine point other than `(0, 0)` is a non-exceptional difference.** Over a commutative
+ring without zero divisors in which `2 ≠ 0`, and for `B ≠ 0`, differential addition of the
+coordinate pairs of an affine point `(x, y)` with `x ≠ 0`, infinity and `(x, y)` is nonzero.
+This includes every point `(r, 0)` of order two with `r ≠ 0`, so the distinguished point `(0, 0)`
+is the only point of order two that is an exceptional difference. -/
+theorem diffAdd_coordinates_some_ne_zero (h₂ : (2 : R) ≠ 0) (hB : B ≠ 0) {x y : R}
+    (h : (model A B).toAffine.Nonsingular x y) (hx : x ≠ 0) :
+    diffAdd (coordinates A B (.some x y h)) ⟨1, 0⟩ (coordinates A B (.some x y h)) ≠ 0 :=
+  (diffAdd_coordinates_zero_right h₂ hB _).2.mpr
+    ⟨Affine.Point.some_ne_zero h, (some_eq_twoTorsionPoint_iff hB h).not.mpr hx⟩
+
+end Domain
+
+section Field
+
+variable {K : Type*} [Field K] [DecidableEq K] {A B : K}
 
 /-- Montgomery's relation `x(P + Q) x(P - Q) (x₁ - x₂)² = (x₁ x₂ - B²)²` for affine points of the
 monic model with distinct `x`-coordinates `x₁ ≠ x₂`. -/
@@ -206,9 +237,10 @@ theorem diffAdd_coordinates (h₂ : (2 : K) ≠ 0) (hB : B ≠ 0) (P Q : (model 
   · simp [← Affine.Point.zero_def, h₀]
   · rw [← Affine.Point.zero_def, zero_sub, zero_add, coordinates_neg, coordinates_zero]
     simp only [ne_eq, neg_eq_iff_eq_neg, neg_twoTorsionPoint]
-    exact diffAdd_one_zero_coordinates h₄ hB _
-  · rw [← Affine.Point.zero_def, sub_zero, add_zero, coordinates_zero, diffAdd_comm]
-    exact diffAdd_one_zero_coordinates h₄ hB _
+    rw [diffAdd_comm]
+    exact diffAdd_coordinates_zero_right h₂ hB _
+  · rw [← Affine.Point.zero_def, sub_zero, add_zero, coordinates_zero]
+    exact diffAdd_coordinates_zero_right h₂ hB _
   by_cases hx : x₁ = x₂
   · rcases Affine.Point.X_eq_iff.mp hx with h | h
     · rw [h, sub_self, coordinates_zero]

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.Lagrangian
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.GlueAlphabet.Roots
+public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.Roots
 
 /-!
 # The rootful rank-24 lattices glued from the table
@@ -38,6 +39,11 @@ norm-`2` vectors of `R_r`, and its root sublattice is literally the carrier of `
 root-system statement is derived from the glue minima, not from evenness, unimodularity or a root
 count.
 
+Two numerical invariants of the root sublattice, preserved by every isometry, then separate the 23
+lattices: the number of roots, which is the displayed root count `∑ numRoots` of the row, and the
+index of the root sublattice, which is the displayed glue order `|H|`.  Hence the 23 lattices are
+pairwise non-isometric (`nonempty_isometry_lattice_iff`).
+
 Each of the 23 lattices also has a stable name, such as `TauCeti.niemeierD24`, which is a reducible
 abbreviation of `r.lattice` for its row, so the uniform theorems apply to it directly.
 
@@ -60,6 +66,11 @@ abbreviation of `r.lattice` for its row, so the uniform theorems apply to it dir
   `TauCeti.RootfulNiemeierType.mem_rootLattice_carrier_of_form_self_eq_two`,
   `TauCeti.RootfulNiemeierType.span_vectorsOfNorm_two_lattice`: unimodularity, the norm-`2`
   vectors and the root sublattice of every row.
+* `TauCeti.RootfulNiemeierType.representationNumber_lattice_two`,
+  `TauCeti.RootfulNiemeierType.index_span_vectorsOfNorm_two_lattice`: the number of roots of `N_r`
+  and the index of its root sublattice.
+* `TauCeti.RootfulNiemeierType.nonempty_isometry_lattice_iff`: the 23 lattices are pairwise
+  non-isometric.
 * `TauCeti.niemeierD24`, …, `TauCeti.niemeierA1TwentyFourth`: the 23 lattices by name.
 
 ## References
@@ -249,6 +260,61 @@ theorem mem_rootLattice_carrier_of_form_self_eq_two (r : RootfulNiemeierType)
   rw [image_vectorsOfNorm_two_lattice] at hx2
   obtain ⟨y, -, rfl⟩ := hx2
   exact y.2
+
+/-! ### Isometry invariants and pairwise non-isometry -/
+
+/-- **`R_r` has the displayed number of roots**: the number of its norm-`2` vectors is the sum of
+the root counts of the components, which is the displayed root count of the row. -/
+@[simp]
+theorem representationNumber_rootLattice_two (r : RootfulNiemeierType) :
+    r.rootLattice.representationNumber 2 = r.rootCount := by
+  rw [representationNumber_pi_two (fun i ↦ (r.componentType i).isPosDef_rootLattice _)
+    (fun i ↦ (r.componentType i).isEven_rootLattice _)]
+  simp only [DynkinType.representationNumber_rootLattice_two _ _ (r.valid_componentType _)]
+  cases r <;> decide
+
+/-- **`N_r` has the displayed number of roots**: gluing adds no roots, so `N_r` has as many norm-`2`
+vectors as `R_r`. -/
+@[simp]
+theorem representationNumber_lattice_two (r : RootfulNiemeierType) :
+    r.lattice.representationNumber 2 = r.rootCount := by
+  have himage := congrArg Set.ncard r.image_vectorsOfNorm_two_lattice
+  rw [Set.ncard_image_of_injective _ Subtype.val_injective,
+    Set.ncard_image_of_injective _ Subtype.val_injective] at himage
+  rw [representationNumber_def, himage, ← representationNumber_def,
+    representationNumber_rootLattice_two]
+
+/-- **The root sublattice of `N_r` has index `|H|`**: the sublattice of `N_r` spanned by its
+norm-`2` vectors is `R_r`, of index the displayed glue order of the row. -/
+@[simp]
+theorem index_span_vectorsOfNorm_two_lattice (r : RootfulNiemeierType) :
+    (Submodule.span ℤ (r.lattice.vectorsOfNorm 2)).toAddSubgroup.index = r.glueOrder := by
+  have hmap : (Submodule.span ℤ (r.lattice.vectorsOfNorm 2)).map r.lattice.carrier.subtype =
+      r.rootLattice.carrier := by
+    rw [Submodule.map_span]
+    exact r.span_vectorsOfNorm_two_lattice
+  have hcomap : Submodule.span ℤ (r.lattice.vectorsOfNorm 2) =
+      r.rootLattice.carrier.comap r.lattice.carrier.subtype := by
+    rw [← hmap, Submodule.comap_map_eq_of_injective (Submodule.injective_subtype _)]
+  rw [hcomap, ← natCard_glueSubgroup, ← relIndex_rootLattice_lattice]
+  -- The comap of `R_r` along the inclusion of `N_r` is, as an additive subgroup, the subgroup
+  -- `addSubgroupOf` whose index defines the relative index.
+  rfl
+
+/-- **The 23 lattices are pairwise non-isometric.**  An isometry `N_r ≅ N_s` preserves the number
+of roots and the index of the root sublattice, and these two numbers, the displayed root count and
+glue order, already separate the rows. -/
+@[simp]
+theorem nonempty_isometry_lattice_iff {r s : RootfulNiemeierType} :
+    Nonempty (Isometry r.lattice s.lattice) ↔ r = s := by
+  refine ⟨fun ⟨e⟩ ↦ ?_, fun h ↦ h ▸ ⟨Isometry.refl _⟩⟩
+  have hinj : Function.Injective fun r : RootfulNiemeierType ↦ (r.rootCount, r.glueOrder) := by
+    decide
+  have hroots := e.representationNumber_eq 2
+  have hindex := e.index_span_vectorsOfNorm_eq 2
+  rw [representationNumber_lattice_two, representationNumber_lattice_two] at hroots
+  rw [index_span_vectorsOfNorm_two_lattice, index_span_vectorsOfNorm_two_lattice] at hindex
+  exact hinj (Prod.ext hroots hindex)
 
 end RootfulNiemeierType
 

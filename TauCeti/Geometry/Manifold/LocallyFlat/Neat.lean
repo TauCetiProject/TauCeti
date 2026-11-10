@@ -152,18 +152,17 @@ theorem exists_isSliceChart_of_isImmersionAtOfComplement_of_straightening (hf : 
   -- Restrict to the part of the domain chart that the straightened chart sees, and cut that part of
   -- the image out of `range f` by an open set, using that `f` is an embedding.
   set D : Set M := h.domChart.source ∩ f ⁻¹' Ψ.source
-  have hD : IsOpen D := h.domChart.open_source.inter (Ψ.open_source.preimage hf.continuous)
-  obtain ⟨W, hW, hWf⟩ := hf.isInducing.isOpen_iff.1 hD
-  have hmemW : ∀ y : M, f y ∈ W ↔ y ∈ D := fun y => by rw [← hWf]; exact Iff.rfl
+  obtain ⟨W, hW, hWf⟩ := hf.isInducing.isOpen_iff.1
+    (h.domChart.open_source.inter (Ψ.open_source.preimage hf.continuous) : IsOpen D)
+  have hmemW : ∀ y : M, f y ∈ W ↔ y ∈ D := fun y => Set.ext_iff.1 hWf y
   set V : Set N := (Ψ.source ∩ Ψ ⁻¹' (h.domChart.target ×ˢ (univ : Set F))) ∩ W
   have hVopen : IsOpen V :=
     (Ψ.isOpen_inter_preimage (h.domChart.open_target.prod isOpen_univ)).inter hW
   have hx : x ∈ h.domChart.source := h.mem_domChart_source
   have hfx : f x ∈ Ψ.source := (hΨ_source _).2 ⟨h.mem_codChart_source, hxO⟩
-  have hfxV : f x ∈ V := by
-    refine ⟨⟨hfx, ?_⟩, (hmemW x).2 ⟨hx, hfx⟩⟩
+  have hfxV : f x ∈ V := ⟨⟨hfx, by
     rw [mem_preimage, key x hx]
-    exact ⟨h.domChart.map_source hx, mem_univ _⟩
+    exact ⟨h.domChart.map_source hx, mem_univ _⟩⟩, (hmemW x).2 ⟨hx, hfx⟩⟩
   refine ⟨Ψ.restrOpen V hVopen, ⟨hfx, hfxV⟩, isSliceChart_iff.2 fun p hp => ?_⟩
   rw [OpenPartialHomeomorph.restrOpen_source] at hp
   simp only [OpenPartialHomeomorph.coe_restrOpen]
@@ -175,11 +174,8 @@ theorem exists_isSliceChart_of_isImmersionAtOfComplement_of_straightening (hf : 
   · -- Conversely a point of the slice lying over the domain chart's target is such an image.
     rintro ⟨-, hps⟩
     have hpt : (Ψ p).1 ∈ h.domChart.target := hp.2.1.2.1
-    have hy : h.domChart.symm (Ψ p).1 ∈ h.domChart.source := h.domChart.map_target hpt
     obtain ⟨hpsrc, hpO⟩ := (hΨ_source p).1 hp.1
-    have hvI : (A (h.codChart.extend J p)).1 ∈ range I := (hA _ hpO).1 (by
-      rw [OpenPartialHomeomorph.extend_coe]
-      exact mem_range_self _)
+    have hvI : (A (h.codChart.extend J p)).1 ∈ range I := (hA _ hpO).1 (mem_range_self _)
     have hAv : A (h.codChart.extend J p) = (I (Ψ p).1, 0) := by
       rw [hΨ_apply, I.right_inv hvI, ← (hps : (Ψ p).2 = 0), hΨ_apply]
     have hmem : I (Ψ p).1 ∈ (h.domChart.extend I).target := by
@@ -192,7 +188,7 @@ theorem exists_isSliceChart_of_isImmersionAtOfComplement_of_straightening (hf : 
       rw [hw, hAL, hAv]
     refine ⟨_, (h.codChart.extend J).injOn ?_ ?_ hfy⟩
     · rw [h.codChart.extend_source]
-      exact h.source_subset_preimage_source hy
+      exact h.source_subset_preimage_source (h.domChart.map_target hpt)
     · rwa [h.codChart.extend_source]
 
 end Straightening
@@ -241,16 +237,15 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {k m : ℕ} [NeZ
   {N : Type*} [TopologicalSpace N] [ChartedSpace (EuclideanHalfSpace m) N]
   {n : ℕ∞ω} {f : M → N}
 
-/-- **The slice chart of a neat embedding.** Let `f` be a topological embedding between charted
-spaces modelled on Euclidean half-spaces, which is a `C^n` immersion at `x`, `n ≠ 0`, with
-complement `F` and meets the boundary of `N` exactly in the boundary of `M`. Then around `f x`
-there is an ambient chart valued in `EuclideanHalfSpace k × F` carrying `Set.range f` exactly onto
-`EuclideanHalfSpace k × {0}`. -/
-theorem exists_isSliceChart_of_isImmersionAtOfComplement_of_preimage_boundary (hn : n ≠ 0)
-    (hf : IsEmbedding f) (hb : f ⁻¹' (𝓡∂ m).boundary N = (𝓡∂ k).boundary M) {x : M}
+/-- **The half-space coordinate of the ambient chart.** Let `f` be a neat immersion between
+half-space charted spaces, and let `L` be the linear model of the immersion. For `u` in the target
+of the domain chart, the boundary coordinate `L (u, 0) 0` is nonnegative, and is positive exactly
+when `u 0` is. -/
+private theorem pos_apply_zero_iff_and_nonneg_of_isImmersionAtOfComplement (hn : n ≠ 0)
+    (hb : f ⁻¹' (𝓡∂ m).boundary N = (𝓡∂ k).boundary M) {x : M}
     (h : IsImmersionAtOfComplement F (𝓡∂ k) (𝓡∂ m) n f x) :
-    ∃ Φ : OpenPartialHomeomorph N (EuclideanHalfSpace k × F), f x ∈ Φ.source ∧
-      IsSliceChart Φ (univ ×ˢ ({0} : Set F)) (range f) := by
+    ∀ u ∈ (h.domChart.extend (𝓡∂ k)).target,
+      (0 < u 0 ↔ 0 < h.equiv (u, 0) 0) ∧ 0 ≤ h.equiv (u, 0) 0 := by
   set T := (h.domChart.extend (𝓡∂ k)).target
   set L := h.equiv
   -- Neatness, read in the charts of the immersion: a point of the domain chart is interior exactly
@@ -284,12 +279,31 @@ theorem exists_isSliceChart_of_isImmersionAtOfComplement_of_preimage_boundary (h
       rw [← hcoord u hu, OpenPartialHomeomorph.extend_coe]
       exact mem_range_self _
     rwa [range_modelWithCornersEuclideanHalfSpace] at hmem
+  exact fun u hu => ⟨hiff u hu, hnonneg u hu⟩
+
+/-- **The slice chart of a neat embedding.** Let `f` be a topological embedding between charted
+spaces modelled on Euclidean half-spaces, which is a `C^n` immersion at `x`, `n ≠ 0`, with
+complement `F` and meets the boundary of `N` exactly in the boundary of `M`. Then around `f x`
+there is an ambient chart valued in `EuclideanHalfSpace k × F` carrying `Set.range f` exactly onto
+`EuclideanHalfSpace k × {0}`. -/
+theorem exists_isSliceChart_of_isImmersionAtOfComplement_of_preimage_boundary (hn : n ≠ 0)
+    (hf : IsEmbedding f) (hb : f ⁻¹' (𝓡∂ m).boundary N = (𝓡∂ k).boundary M) {x : M}
+    (h : IsImmersionAtOfComplement F (𝓡∂ k) (𝓡∂ m) n f x) :
+    ∃ Φ : OpenPartialHomeomorph N (EuclideanHalfSpace k × F), f x ∈ Φ.source ∧
+      IsSliceChart Φ (univ ×ˢ ({0} : Set F)) (range f) := by
+  set T := (h.domChart.extend (𝓡∂ k)).target
+  set L := h.equiv
+  have hiff : ∀ u ∈ T, (0 < u 0 ↔ 0 < L (u, 0) 0) := fun u hu =>
+    (pos_apply_zero_iff_and_nonneg_of_isImmersionAtOfComplement hn hb h u hu).1
+  have hnonneg : ∀ u ∈ T, 0 ≤ L (u, 0) 0 := fun u hu =>
+    (pos_apply_zero_iff_and_nonneg_of_isImmersionAtOfComplement hn hb h u hu).2
   set p := h.domChart.extend (𝓡∂ k) x
   have hx : x ∈ h.domChart.source := h.mem_domChart_source
   have hpT : p ∈ T := (h.domChart.extend (𝓡∂ k)).map_source (by rwa [h.domChart.extend_source])
   have hxp : (h.domChart.extend (𝓡∂ k)).symm p = x := (h.domChart.extend (𝓡∂ k)).left_inv
     (by rwa [h.domChart.extend_source])
-  have hfx : h.codChart.extend (𝓡∂ m) (f x) = L (p, 0) := by rw [← hcoord p hpT, hxp]
+  have hfx : h.codChart.extend (𝓡∂ m) (f x) = L (p, 0) :=
+    (congrArg (fun y => h.codChart.extend (𝓡∂ m) (f y)) hxp).symm.trans (h.writtenInCharts hpT)
   by_cases hp : 0 < p 0
   · -- At an interior point both half-space conditions hold strictly near the point, and `L⁻¹`
     -- straightens the ambient chart there.

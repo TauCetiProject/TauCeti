@@ -238,6 +238,108 @@ private theorem fderiv_pos_of_add_mul_hopfBarrier_le {u : E → ℝ} {y e : E} {
     mul_pos hε (mul_pos (by linarith) (Real.rpow_pos_of_pos hR _))
   linarith
 
+/-- A function continuous on `closedBall y R` and below `M` on the open ball stays a uniform
+margin `δ` below `M` on the sphere of half the radius. -/
+private theorem exists_forall_sphere_le_sub_of_lt_ball {u : E → ℝ} {y : E} {R M : ℝ} (hR : 0 < R)
+    (hucont : ContinuousOn u (closedBall y R)) (hlt : ∀ x ∈ ball y R, u x < M) :
+    ∃ δ, 0 < δ ∧ ∀ w ∈ sphere y (R / 2), u w ≤ M - δ := by
+  have hhalfpos : (0 : ℝ) < R / 2 := by linarith
+  obtain ⟨z, hzball, hzmax⟩ := (isCompact_closedBall y (R / 2)).exists_isMaxOn
+    (nonempty_closedBall.mpr hhalfpos.le)
+    (hucont.mono (closedBall_subset_closedBall (by linarith)))
+  have hzlt : u z < M := hlt z (closedBall_subset_ball (by linarith) hzball)
+  refine ⟨M - u z, sub_pos.mpr hzlt, fun w hw ↦ ?_⟩
+  have hwz : u w ≤ u z := hzmax (sphere_subset_closedBall hw)
+  linarith
+
+/-- The perturbation `u + ε • hopfBarrier y R p` of a subsolution `u` of `-Δ - b·∇ + c` is still a
+subsolution at a point `w ≠ y` with `‖w - y‖ ≤ R`, once the barrier exponent `p` is negative
+enough. -/
+private theorem mul_add_mul_hopfBarrier_le_laplacian_add_fderiv [Nontrivial E] {u c : E → ℝ}
+    {b : E → E} {y w : E} {R β γ p ε : ℝ} (hε : 0 < ε)
+    (hp : p ≤ -((Module.finrank ℝ E : ℝ) + β * R + γ * R ^ 2)) (hne : w ≠ y)
+    (hwR : ‖w - y‖ ≤ R) (hu : ContDiffAt ℝ 2 u w) (hb : ‖b w‖ ≤ β)
+    (hc : 0 ≤ c w) (hcγ : c w ≤ γ) (hsub : c w * u w ≤ Δ u w + fderiv ℝ u w (b w)) :
+    c w * (u w + ε * hopfBarrier y R p w) ≤ Δ (fun z : E ↦ u z + ε * hopfBarrier y R p z) w +
+      fderiv ℝ (fun z : E ↦ u z + ε * hopfBarrier y R p z) w (b w) := by
+  have hcd : ContDiffAt ℝ 2 (fun z : E ↦ ε * hopfBarrier y R p z) w :=
+    (contDiffAt_hopfBarrier (y := y) (R := R) (p := p) hne).const_smul ε
+  have hlapv : Δ (fun z : E ↦ u z + ε * hopfBarrier y R p z) w =
+      Δ u w + ε * Δ (hopfBarrier y R p) w := by
+    have hfun : (fun z : E ↦ ε * hopfBarrier y R p z) = ε • hopfBarrier y R p := by
+      funext z
+      simp only [Pi.smul_apply, smul_eq_mul]
+    have h1 : Δ (fun z : E ↦ u z + ε * hopfBarrier y R p z) w =
+        Δ u w + Δ (fun z : E ↦ ε * hopfBarrier y R p z) w := hu.laplacian_add hcd
+    rw [h1, hfun,
+      laplacian_smul ε (contDiffAt_hopfBarrier (y := y) (R := R) (p := p) hne), smul_eq_mul]
+  have hderv : fderiv ℝ (fun z : E ↦ u z + ε * hopfBarrier y R p z) w (b w) =
+      fderiv ℝ u w (b w) + ε * fderiv ℝ (hopfBarrier y R p) w (b w) := by
+    have hw' := hasFDerivAt_hopfBarrier y R p hne
+    have h : HasFDerivAt (fun z : E ↦ u z + ε * hopfBarrier y R p z)
+        (fderiv ℝ u w + ε • (p * ‖w - y‖ ^ (p - 2)) • innerSL ℝ (w - y)) w :=
+      (hu.differentiableAt (by norm_num)).hasFDerivAt.add (hw'.const_mul ε)
+    rw [h.fderiv, hw'.fderiv]
+    simp only [add_apply, smul_apply, smul_eq_mul]
+  have hbar := mul_hopfBarrier_le_laplacian_add_fderiv (v := b w) hne hwR hb hc hcγ hp
+  have hbar' := mul_le_mul_of_nonneg_left hbar hε.le
+  rw [hlapv, hderv]
+  nlinarith [hsub]
+
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] in
+/-- On the frontier of `closedBall y R \ ball y (R / 2)`, the perturbation
+`u + ε * hopfBarrier y R p` of a function `u` with `u ≤ M` on `sphere y R` and `u ≤ M - δ` on
+`sphere y (R / 2)` stays at most `M`, provided `ε * (R / 2) ^ p = δ / 2`. -/
+private theorem add_mul_hopfBarrier_le_of_mem_frontier {u : E → ℝ} {y : E} {R p δ ε M : ℝ}
+    (hR : 0 < R) (hε : 0 < ε) (hδ : 0 < δ) (hεδ : ε * (R / 2) ^ p = δ / 2)
+    (hsph : ∀ w ∈ sphere y (R / 2), u w ≤ M - δ) (hle : ∀ x ∈ sphere y R, u x ≤ M) {w : E}
+    (hnrm : R / 2 ≤ ‖w - y‖ ∧ ‖w - y‖ ≤ R) (hw : w ∈ frontier (closedBall y R \ ball y (R / 2))) :
+    u w + ε * hopfBarrier y R p w ≤ M := by
+  set K : Set E := closedBall y R \ ball y (R / 2) with hKdef
+  have hwK : w ∈ K := by
+    simp only [hKdef, Set.mem_sdiff, mem_ball, mem_closedBall, dist_eq_norm]
+    exact ⟨hnrm.2, not_lt.mpr hnrm.1⟩
+  -- `K` has the open annulus as interior, so a frontier point is on the outer or inner sphere.
+  have hannulus_int : ball y R \ closedBall y (R / 2) ⊆ interior K :=
+    interior_maximal (fun w hw ↦ by
+      rw [hKdef, Set.mem_sdiff]
+      exact ⟨ball_subset_closedBall hw.1, fun h ↦ hw.2 (ball_subset_closedBall h)⟩)
+      (isOpen_ball.inter isClosed_closedBall.isOpen_compl)
+  rcases eq_or_lt_of_le hnrm.2 with houter | hinner
+  · rw [hopfBarrier_eq_zero_of_mem_sphere (mem_sphere_iff_norm.mpr houter), mul_zero, add_zero]
+    exact hle w (mem_sphere_iff_norm.mpr houter)
+  · have hinner' : ‖w - y‖ = R / 2 := by
+      by_contra hne'
+      have hlt : R / 2 < ‖w - y‖ := lt_of_le_of_ne hnrm.1 (Ne.symm hne')
+      refine (mem_frontier_iff_notMem_interior hwK).mp hw (hannulus_int ⟨?_, ?_⟩)
+      · rw [mem_ball, dist_eq_norm]
+        exact hinner
+      · rw [mem_closedBall, dist_eq_norm]
+        exact not_le.mpr hlt
+    have h1 := hsph w (mem_sphere_iff_norm.mpr hinner')
+    have h2 : hopfBarrier y R p w ≤ (R / 2) ^ p := by
+      rw [hopfBarrier, hinner']
+      have := (Real.rpow_pos_of_pos hR p).le
+      linarith
+    have h3 : ε * hopfBarrier y R p w ≤ ε * (R / 2) ^ p :=
+      mul_le_mul_of_nonneg_left h2 hε.le
+    linarith
+
+omit [FiniteDimensional ℝ E] in
+/-- The points `x₀ - h e` of the inward ray from `x₀ = y + R e`, for `0 < h ≤ R / 2`, lie in the
+annulus `closedBall y R \ ball y (R / 2)`. -/
+private theorem add_smul_sub_smul_mem_closedBall_sdiff_ball {y e : E} {R h : ℝ} (he : ‖e‖ = 1)
+    (hh : h ∈ Set.Ioc (0 : ℝ) (R / 2)) :
+    y + R • e - h • e ∈ closedBall y R \ ball y (R / 2) := by
+  have hnorm : ‖(y + R • e - h • e) - y‖ = R - h := by
+    have hsub : (y + R • e - h • e) - y = (R - h) • e := by
+      rw [sub_smul]
+      abel
+    rw [hsub, norm_smul, Real.norm_eq_abs, he, mul_one, abs_of_nonneg (by linarith [hh.1, hh.2])]
+  rw [Set.mem_sdiff]
+  simp only [mem_closedBall, mem_ball, dist_eq_norm, hnorm]
+  exact ⟨by linarith [hh.1], by linarith [hh.2]⟩
+
 /-- **Hopf's boundary-point lemma for `-Δ - b·∇ + c`.** Let `B = ball y R` be a ball in a
 finite-dimensional real inner product space, let `e` be a unit vector, and let `x₀ = y + R • e` be
 the point where the outward ray in direction `e` meets the sphere `∂B`. Let the drift satisfy
@@ -276,21 +378,8 @@ theorem fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere {u c :
   have hpneg : p < 0 := by
     rw [hpdef]
     nlinarith [mul_nonneg hβ hR.le, mul_nonneg hγ (sq_nonneg R)]
-  have hhalfpos : (0 : ℝ) < R / 2 := by linarith
   -- The inner sphere carries a uniform positive margin below the maximum `u x₀`.
-  obtain ⟨z, hzball, hzmax⟩ := (isCompact_closedBall y (R / 2)).exists_isMaxOn
-    (nonempty_closedBall.mpr hhalfpos.le)
-    (hucont.mono (closedBall_subset_closedBall (by linarith)))
-  have hzlt : u z < u x₀ := hlt z (closedBall_subset_ball (by linarith) hzball)
-  set δ : ℝ := u x₀ - u z with hδdef
-  have hδpos : 0 < δ := by
-    rw [hδdef]
-    linarith
-  have hsphere_le : ∀ w ∈ sphere y (R / 2), u w ≤ u x₀ - δ := by
-    intro w hw
-    have hwz : u w ≤ u z := hzmax (sphere_subset_closedBall hw)
-    rw [hδdef]
-    linarith
+  obtain ⟨δ, hδpos, hsphere_le⟩ := exists_forall_sphere_le_sub_of_lt_ball hR hucont hlt
   -- The closed annulus on which the barrier is controlled.
   set K : Set E := closedBall y R \ ball y (R / 2) with hKdef
   have hKsub : K ⊆ closedBall y R := sdiff_subset
@@ -300,30 +389,15 @@ theorem fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere {u c :
     intro w hw
     simp only [hKdef, Set.mem_sdiff, mem_ball, mem_closedBall, dist_eq_norm] at hw
     exact ⟨not_lt.mp hw.2, hw.1⟩
-  have hKne : ∀ w ∈ K, w ≠ y := by
-    intro w hw h
+  have hKne : ∀ w ∈ K, w ≠ y := fun w hw h ↦ by
     have h1 := (hKnorm w hw).1
     rw [h, sub_self, norm_zero] at h1
     linarith
-  have hKball : ∀ w ∈ interior K, w ∈ ball y R := by
-    intro w hw
-    have h1 : w ∈ interior (closedBall y R) := interior_mono hKsub hw
-    rwa [interior_closedBall y hR.ne'] at h1
-  -- `K` has the open annulus as interior, so a frontier point is either on the outer sphere or
-  -- on the inner sphere.
-  have hannulus_int : ball y R \ closedBall y (R / 2) ⊆ interior K :=
-    interior_maximal (fun w hw ↦ by
-      rw [hKdef, Set.mem_sdiff]
-      exact ⟨ball_subset_closedBall hw.1, fun h ↦ hw.2 (ball_subset_closedBall h)⟩)
-      (isOpen_ball.inter isClosed_closedBall.isOpen_compl)
+  have hKball : ∀ w ∈ interior K, w ∈ ball y R := fun w hw ↦ by
+    simpa only [interior_closedBall y hR.ne'] using interior_mono hKsub hw
   -- The perturbation coefficient: small enough that the barrier dominates the margin.
-  set ε : ℝ := δ / (2 * (R / 2) ^ p) with hεdef
-  have hεpos : 0 < ε := by
-    rw [hεdef]
-    exact div_pos hδpos (by positivity)
-  have hεbound : ε * (R / 2) ^ p = δ / 2 := by
-    rw [hεdef]
-    field_simp
+  obtain ⟨ε, hεpos, hεbound⟩ : ∃ ε : ℝ, 0 < ε ∧ ε * (R / 2) ^ p = δ / 2 :=
+    ⟨δ / (2 * (R / 2) ^ p), by positivity, by field_simp⟩
   set v : E → ℝ := fun w ↦ u w + ε * hopfBarrier y R p w with hvdef
   have hvcont : ContinuousOn v K := by
     intro w hw
@@ -334,77 +408,20 @@ theorem fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere {u c :
     (huinterior w (hKball w hw)).add
       ((contDiffAt_hopfBarrier (hKne w (interior_subset hw))).const_smul ε)
   -- The perturbation is still a subsolution on the open annulus.
-  have hvsub : ∀ ⦃w⦄, w ∈ interior K → c w * v w ≤ Δ v w + fderiv ℝ v w (b w) := by
-    intro w hw
-    have hwK : w ∈ K := interior_subset hw
-    have hne : w ≠ y := hKne w hwK
-    have hwball : w ∈ ball y R := hKball w hw
-    have hcd : ContDiffAt ℝ 2 (fun z : E ↦ ε * hopfBarrier y R p z) w :=
-      (contDiffAt_hopfBarrier (y := y) (R := R) (p := p) hne).const_smul ε
-    have hlapv : Δ v w = Δ u w + ε * Δ (hopfBarrier y R p) w := by
-      have hfun : (fun z : E ↦ ε * hopfBarrier y R p z) = ε • hopfBarrier y R p := by
-        funext z
-        simp only [Pi.smul_apply, smul_eq_mul]
-      have h1 : Δ (fun z : E ↦ u z + ε * hopfBarrier y R p z) w =
-          Δ u w + Δ (fun z : E ↦ ε * hopfBarrier y R p z) w :=
-        (huinterior w hwball).laplacian_add hcd
-      rw [hvdef, h1, hfun,
-        laplacian_smul ε (contDiffAt_hopfBarrier (y := y) (R := R) (p := p) hne), smul_eq_mul]
-    have hderv : fderiv ℝ v w (b w) =
-        fderiv ℝ u w (b w) + ε * fderiv ℝ (hopfBarrier y R p) w (b w) := by
-      have hw' := hasFDerivAt_hopfBarrier y R p hne
-      have h : HasFDerivAt (fun z : E ↦ u z + ε * hopfBarrier y R p z)
-          (fderiv ℝ u w + ε • (p * ‖w - y‖ ^ (p - 2)) • innerSL ℝ (w - y)) w :=
-        ((huinterior w hwball).differentiableAt (by norm_num)).hasFDerivAt.add (hw'.const_mul ε)
-      rw [hvdef, h.fderiv, hw'.fderiv]
-      simp only [add_apply, smul_apply, smul_eq_mul]
-    have hbar := mul_hopfBarrier_le_laplacian_add_fderiv (v := b w) hne (hKnorm w hwK).2
-      (hb w hwball) (hc w hwball) (hcγ w hwball) le_rfl
-    have hbar' := mul_le_mul_of_nonneg_left hbar hεpos.le
-    rw [hlapv, hderv]
-    simp only [hvdef]
-    nlinarith [hsub w hwball]
-  have hvbdry : ∀ ⦃w⦄, w ∈ frontier K → v w ≤ u x₀ := by
-    intro w hwfr
-    have hwK : w ∈ K := hKcompact.isClosed.frontier_subset hwfr
-    have hnrm := hKnorm w hwK
-    rcases eq_or_lt_of_le hnrm.2 with houter | hinner
-    · simp only [hvdef]
-      rw [hopfBarrier_eq_zero_of_mem_sphere (mem_sphere_iff_norm.mpr houter), mul_zero,
-        add_zero]
-      exact hle w (mem_sphere_iff_norm.mpr houter)
-    · have hinner' : ‖w - y‖ = R / 2 := by
-        by_contra hne'
-        have hlt : R / 2 < ‖w - y‖ := lt_of_le_of_ne hnrm.1 (Ne.symm hne')
-        refine (mem_frontier_iff_notMem_interior hwK).mp hwfr (hannulus_int ⟨?_, ?_⟩)
-        · rw [mem_ball, dist_eq_norm]
-          exact hinner
-        · rw [mem_closedBall, dist_eq_norm]
-          exact not_le.mpr hlt
-      have h1 : u w ≤ u x₀ - δ := hsphere_le w (mem_sphere_iff_norm.mpr hinner')
-      have h2 : hopfBarrier y R p w ≤ (R / 2) ^ p := by
-        rw [hopfBarrier, hinner']
-        have := (Real.rpow_pos_of_pos hR p).le
-        linarith
-      have h3 : ε * hopfBarrier y R p w ≤ ε * (R / 2) ^ p :=
-        mul_le_mul_of_nonneg_left h2 hεpos.le
-      simp only [hvdef]
-      linarith [h1, h3, hεbound]
+  have hvsub : ∀ ⦃w⦄, w ∈ interior K → c w * v w ≤ Δ v w + fderiv ℝ v w (b w) := fun w hw ↦
+    mul_add_mul_hopfBarrier_le_laplacian_add_fderiv hεpos le_rfl (hKne w (interior_subset hw))
+      (hKnorm w (interior_subset hw)).2 (huinterior w (hKball w hw)) (hb w (hKball w hw))
+      (hc w (hKball w hw)) (hcγ w (hKball w hw)) (hsub w (hKball w hw))
+  have hvbdry : ∀ ⦃w⦄, w ∈ frontier K → v w ≤ u x₀ := fun w hw ↦
+    add_mul_hopfBarrier_le_of_mem_frontier hR hεpos hδpos hεbound hsphere_le hle
+      (hKnorm w (hKcompact.isClosed.frontier_subset hw)) hw
   -- The weak maximum principle bounds the perturbation on the whole annulus, in particular
   -- along the inward ray from `x₀`.
   have hKmax : ∀ ⦃w⦄, w ∈ K → v w ≤ u x₀ :=
     le_of_mul_le_laplacian_add_fderiv_le_frontier hKcompact hnonneg hvcont hvcd
       (fun w hw ↦ hc w (hKball w hw)) (fun w hw ↦ hb w (hKball w hw)) hvsub hvbdry
-  refine fderiv_pos_of_add_mul_hopfBarrier_le hR he hpneg hεpos hhalfpos hderiv fun h hh ↦
-    hKmax ?_
-  have hnorm : ‖(x₀ - h • e) - y‖ = R - h := by
-    have hsub : (x₀ - h • e) - y = (R - h) • e := by
-      rw [hx₀def, sub_smul]
-      abel
-    rw [hsub, norm_smul, Real.norm_eq_abs, he, mul_one, abs_of_nonneg (by linarith [hh.2])]
-  rw [hKdef, Set.mem_sdiff]
-  simp only [mem_closedBall, mem_ball, dist_eq_norm, ← hx₀def, hnorm]
-  exact ⟨by linarith [hh.1], by linarith [hh.2]⟩
+  exact fderiv_pos_of_add_mul_hopfBarrier_le hR he hpneg hεpos (by linarith) hderiv fun h hh ↦
+    hKmax (add_smul_sub_smul_mem_closedBall_sdiff_ball he hh)
 
 /-- **Hopf's boundary-point lemma for `-Δ - b·∇ + c`, minimum form.** The mirror image of
 `TauCeti.fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere` for supersolutions

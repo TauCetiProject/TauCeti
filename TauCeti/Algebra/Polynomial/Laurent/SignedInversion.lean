@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Polynomial.Laurent.Symmetric
-public import TauCeti.Algebra.Polynomial.Dickson
+public import TauCeti.RingTheory.Polynomial.Dickson
 import TauCeti.Algebra.Polynomial.Laurent.Basic
 
 /-!
@@ -114,9 +114,9 @@ theorem signedInvert_eq_self_iff_exists_eval₂ (p : R[T;T⁻¹]) :
   have hpair (n : ℕ) :
       Polynomial.eval₂ C (T 1 - T (-1)) (Polynomial.dickson 1 (-1 : R) n) =
         T (n : ℤ) + C ((-1 : R) ^ n) * T (-(n : ℤ)) := by
-    have h := Polynomial.dickson_one_eval₂_add C (-1 : R)
-      (T 1 : R[T;T⁻¹]) (-T (-1)) (by rw [mul_neg, ← T_add]; simp) n
-    rw [neg_pow, T_pow, T_pow] at h
+    have h := Polynomial.dickson_one_eval_add (x := (T 1 : R[T;T⁻¹])) (y := -T (-1))
+      (a := C (-1 : R)) (by rw [mul_neg, ← T_add]; simp) n
+    rw [← Polynomial.map_dickson, ← Polynomial.eval₂_eq_eval_map, neg_pow, T_pow, T_pow] at h
     simpa only [sub_eq_add_neg, neg_one_mul, Int.one_mul, neg_mul,
       map_pow, map_neg, map_one, mul_one, mul_neg_one] using h
   have hpoly (q : R[X]) : ∃ q' : R[X],

@@ -362,6 +362,60 @@ private lemma mul_demazureOperator_ji_B2 (hij : P.pairing i j = -1) (hji : P.pai
     (1 - a ^ 2 * b) * h4 + (-a * (1 - a * b)) * h5 + (a * b ^ 2 * (1 - a)) * h6 + h7 + (-b) * h8 +
     (a ^ 3 * b) * h9 + (-a ^ 3 * b ^ 3) * h10
 
+/-- The expansion of `Dᵢ Dⱼ Dᵢ Dⱼ Y` in type `G₂` for an element `Y` fixed by `sᵢ`, cleared of the
+denominators `1 - e^{-β}` for the positive roots `β` of the rank-two subsystem. -/
+private lemma mul_demazureOperator_ijij_G2 (hij : P.pairing i j = -1) (hji : P.pairing j i = -3)
+    {a b : AddMonoidAlgebra ℤ M} (ha : single (-P.root i) 1 = a)
+    (hb : single (-P.root j) 1 = b) {S T : AddMonoidAlgebra ℤ M ≃+* AddMonoidAlgebra ℤ M}
+    (hS : mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv = S)
+    (hT : mapDomainRingEquiv ℤ (P.reflection j).toAddEquiv = T) {Y : AddMonoidAlgebra ℤ M}
+    (hY : S Y = Y) :
+    (1 - b) * (1 - a) * (1 - a * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b) * (1 - a ^ 3 * b ^ 2) *
+      P.demazureOperator i (P.demazureOperator j (P.demazureOperator i (P.demazureOperator j Y))) =
+      ((1 - a) * (1 - a ^ 6 * b ^ 4)) * Y - (b * (1 - a * b) * (1 - a ^ 6 * b ^ 3)) * T Y +
+        (a ^ 4 * b * (1 - a ^ 2 * b) * (1 - a ^ 3 * b ^ 3)) * S (T Y) -
+        (a ^ 4 * b ^ 4 * (1 - a ^ 2 * b) * (1 - a ^ 3 * b)) * T (S (T Y)) +
+        (a ^ 9 * b ^ 4 * (1 - b) * (1 - a * b)) * S (T (S (T Y))) := by
+  have iS (Y) : S (P.demazureOperator i Y) = P.demazureOperator i Y :=
+    hS ▸ P.mapDomainRingEquiv_reflection_demazureOperator i Y
+  have iT (Y) : T (P.demazureOperator j Y) = P.demazureOperator j Y :=
+    hT ▸ P.mapDomainRingEquiv_reflection_demazureOperator j Y
+  have h1 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hS (P.demazureOperator j
+      (P.demazureOperator i (P.demazureOperator j Y))) (c := a)
+    (by subst ha hb hS hT; simp)
+  have h2 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hT (P.demazureOperator i
+      (P.demazureOperator j Y)) (c := b)
+    (by subst ha hb hS hT; simp)
+  have h3 := P.one_sub_mul_map_demazureOperator S hT (P.demazureOperator i
+      (P.demazureOperator j Y)) (c := a ^ 3 * b)
+    (by subst ha hb hS hT; simp [reflection_apply_root, hji]; congr 1; module)
+  have h4 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hS (P.demazureOperator j Y)
+    (c := a) (by subst ha hb hS hT; simp)
+  have h5 := P.one_sub_mul_map_demazureOperator T hS (P.demazureOperator j Y) (c := a * b)
+    (by subst ha hb hS hT; simp [reflection_apply_root, hij]; congr 1; module)
+  have h6 := P.one_sub_mul_map_demazureOperator (T.trans S) hS (P.demazureOperator j Y)
+    (c := a ^ 2 * b)
+    (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
+  have h7 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hT Y (c := b)
+    (by subst ha hb hS hT; simp)
+  have h8 := P.one_sub_mul_map_demazureOperator S hT Y (c := a ^ 3 * b)
+    (by subst ha hb hS hT; simp [reflection_apply_root, hji]; congr 1; module)
+  have h9 := P.one_sub_mul_map_demazureOperator (S.trans T) hT Y (c := a ^ 3 * b ^ 2)
+    (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
+  have h10 := P.one_sub_mul_map_demazureOperator ((S.trans T).trans S) hT Y (c := a ^ 3 * b ^ 2)
+    (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
+  simp only [RingEquiv.refl_apply, RingEquiv.trans_apply, iS, iT, hY] at *
+  linear_combination ((1 - b) * (1 - a * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b) *
+    (1 - a ^ 3 * b ^ 2)) * h1 + ((1 - a * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b) *
+    (1 - a ^ 3 * b ^ 2)) * h2 + (-a * (1 - b) * (1 - a * b) * (1 - a ^ 2 * b) *
+    (1 - a ^ 3 * b ^ 2)) * h3 + ((1 + a * b + a ^ 2 * b) * (1 - a * b) * (1 - a ^ 2 * b) *
+    (1 - a ^ 3 * b ^ 2)) * h4 + (-b * (1 - a ^ 2 * b) * (1 - a ^ 3 * b) *
+    (1 - a ^ 3 * b ^ 2)) * h5 + (a ^ 4 * b * (1 - b) * (1 - a * b) * (1 - a ^ 3 * b ^ 2)) * h6 +
+    ((1 + a ^ 2 * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b ^ 2)) * h7 +
+    ((-a - a ^ 2 * b) * (1 - a * b) * (1 - a ^ 3 * b ^ 2)) * h8 +
+    (a * b ^ 2 * (1 - a ^ 2 * b) * (1 - a ^ 3 * b)) * h9 +
+    (-a ^ 6 * b ^ 2 * (1 - b) * (1 - a * b)) * h10
+
 /-- The expansion of `Dᵢ Dⱼ Dᵢ Dⱼ Dᵢ Dⱼ` in type `G₂`, cleared of the denominators
 `1 - e^{-β}` for the positive roots `β` of the rank-two subsystem. -/
 private lemma mul_demazureOperator_ij_G2 (hij : P.pairing i j = -1) (hji : P.pairing j i = -3)
@@ -381,82 +435,96 @@ private lemma mul_demazureOperator_ij_G2 (hij : P.pairing i j = -1) (hji : P.pai
     hS ▸ P.mapDomainRingEquiv_reflection_demazureOperator i Y
   have iT (Y) : T (P.demazureOperator j Y) = P.demazureOperator j Y :=
     hT ▸ P.mapDomainRingEquiv_reflection_demazureOperator j Y
-  have h1 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hS (P.demazureOperator j
-      (P.demazureOperator i (P.demazureOperator j (P.demazureOperator i
-      (P.demazureOperator j f))))) (c := a)
-    (by subst ha hb hS hT; simp)
-  have h2 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hT (P.demazureOperator i
-      (P.demazureOperator j (P.demazureOperator i (P.demazureOperator j f)))) (c := b)
-    (by subst ha hb hS hT; simp)
-  have h3 := P.one_sub_mul_map_demazureOperator S hT (P.demazureOperator i (P.demazureOperator j
-      (P.demazureOperator i (P.demazureOperator j f)))) (c := a ^ 3 * b)
-    (by subst ha hb hS hT; simp [reflection_apply_root, hji]; congr 1; module)
-  have h4 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hS (P.demazureOperator j
-      (P.demazureOperator i (P.demazureOperator j f))) (c := a)
-    (by subst ha hb hS hT; simp)
-  have h5 := P.one_sub_mul_map_demazureOperator T hS (P.demazureOperator j (P.demazureOperator i
-      (P.demazureOperator j f))) (c := a * b)
-    (by subst ha hb hS hT; simp [reflection_apply_root, hij]; congr 1; module)
-  have h6 := P.one_sub_mul_map_demazureOperator (T.trans S) hS (P.demazureOperator j
-      (P.demazureOperator i (P.demazureOperator j f))) (c := a ^ 2 * b)
-    (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h7 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hT (P.demazureOperator i
-      (P.demazureOperator j f)) (c := b)
-    (by subst ha hb hS hT; simp)
-  have h8 := P.one_sub_mul_map_demazureOperator S hT (P.demazureOperator i
-      (P.demazureOperator j f)) (c := a ^ 3 * b)
-    (by subst ha hb hS hT; simp [reflection_apply_root, hji]; congr 1; module)
-  have h9 := P.one_sub_mul_map_demazureOperator (S.trans T) hT (P.demazureOperator i
-      (P.demazureOperator j f)) (c := a ^ 3 * b ^ 2)
-    (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h10 := P.one_sub_mul_map_demazureOperator ((S.trans T).trans S) hT (P.demazureOperator i
-      (P.demazureOperator j f)) (c := a ^ 3 * b ^ 2)
-    (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h11 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hS
+  have h0 := P.mul_demazureOperator_ijij_G2 hij hji ha hb hS hT
+    (iS (P.demazureOperator j f))
+  have h1 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hS
       (P.demazureOperator j f) (c := a)
     (by subst ha hb hS hT; simp)
-  have h12 := P.one_sub_mul_map_demazureOperator T hS (P.demazureOperator j f) (c := a * b)
+  have h2 := P.one_sub_mul_map_demazureOperator T hS (P.demazureOperator j f) (c := a * b)
     (by subst ha hb hS hT; simp [reflection_apply_root, hij]; congr 1; module)
-  have h13 := P.one_sub_mul_map_demazureOperator (T.trans S) hS
+  have h3 := P.one_sub_mul_map_demazureOperator (T.trans S) hS
       (P.demazureOperator j f) (c := a ^ 2 * b)
     (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h14 := P.one_sub_mul_map_demazureOperator ((T.trans S).trans T) hS
+  have h4 := P.one_sub_mul_map_demazureOperator ((T.trans S).trans T) hS
       (P.demazureOperator j f) (c := a ^ 2 * b)
     (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h15 := P.one_sub_mul_map_demazureOperator (((T.trans S).trans T).trans S) hS
+  have h5 := P.one_sub_mul_map_demazureOperator (((T.trans S).trans T).trans S) hS
       (P.demazureOperator j f) (c := a * b)
     (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h16 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hT f (c := b)
+  have h6 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hT f (c := b)
     (by subst ha hb hS hT; simp)
-  have h17 := P.one_sub_mul_map_demazureOperator S hT f (c := a ^ 3 * b)
+  have h7 := P.one_sub_mul_map_demazureOperator S hT f (c := a ^ 3 * b)
     (by subst ha hb hS hT; simp [reflection_apply_root, hji]; congr 1; module)
-  have h18 := P.one_sub_mul_map_demazureOperator (S.trans T) hT f (c := a ^ 3 * b ^ 2)
+  have h8 := P.one_sub_mul_map_demazureOperator (S.trans T) hT f (c := a ^ 3 * b ^ 2)
     (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h19 := P.one_sub_mul_map_demazureOperator ((S.trans T).trans S) hT f (c := a ^ 3 * b ^ 2)
+  have h9 := P.one_sub_mul_map_demazureOperator ((S.trans T).trans S) hT f (c := a ^ 3 * b ^ 2)
     (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h20 := P.one_sub_mul_map_demazureOperator (((S.trans T).trans S).trans T) hT
+  have h10 := P.one_sub_mul_map_demazureOperator (((S.trans T).trans S).trans T) hT
       f (c := a ^ 3 * b)
     (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h21 := P.one_sub_mul_map_demazureOperator ((((S.trans T).trans S).trans T).trans S) hT
+  have h11 := P.one_sub_mul_map_demazureOperator ((((S.trans T).trans S).trans T).trans S) hT
       f (c := b)
     (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
   simp only [RingEquiv.refl_apply, RingEquiv.trans_apply, iS, iT] at *
-  linear_combination
-    ((1 - b) * (1 - a * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b) * (1 - a ^ 3 * b ^ 2)) * h1 +
-    ((1 - a * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b) * (1 - a ^ 3 * b ^ 2)) * h2 +
-    (-a * (1 - b) * (1 - a * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b ^ 2)) * h3 +
-    ((1 + a * b + a ^ 2 * b) * (1 - a * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b ^ 2)) * h4 +
-    (-b * (1 - a ^ 2 * b) * (1 - a ^ 3 * b) * (1 - a ^ 3 * b ^ 2)) * h5 +
-    (a ^ 4 * b * (1 - b) * (1 - a * b) * (1 - a ^ 3 * b ^ 2)) * h6 +
+  linear_combination h0 + ((1 + a ^ 3 * b ^ 2) * (1 - a ^ 3 * b ^ 2)) * h1 +
+    ((-b - a ^ 2 * b ^ 2 - a ^ 4 * b ^ 3) * (1 - a ^ 2 * b)) * h2 +
+    ((a ^ 4 * b + a ^ 5 * b ^ 2 + a ^ 6 * b ^ 3) * (1 - a * b)) * h3 +
+    (-a ^ 4 * b ^ 4 * (1 - a ^ 3 * b)) * h4 + (a ^ 9 * b ^ 4 * (1 - b)) * h5 + h6 + (-a) * h7 +
+    (a * b ^ 2) * h8 + (-a ^ 6 * b ^ 2) * h9 + (a ^ 6 * b ^ 5) * h10 + (-a ^ 10 * b ^ 5) * h11
+
+/-- The expansion of `Dⱼ Dᵢ Dⱼ Dᵢ Y` in type `G₂` for an element `Y` fixed by `sⱼ`, cleared of the
+denominators `1 - e^{-β}` for the positive roots `β` of the rank-two subsystem. -/
+private lemma mul_demazureOperator_jiji_G2 (hij : P.pairing i j = -1) (hji : P.pairing j i = -3)
+    {a b : AddMonoidAlgebra ℤ M} (ha : single (-P.root i) 1 = a)
+    (hb : single (-P.root j) 1 = b) {S T : AddMonoidAlgebra ℤ M ≃+* AddMonoidAlgebra ℤ M}
+    (hS : mapDomainRingEquiv ℤ (P.reflection i).toAddEquiv = S)
+    (hT : mapDomainRingEquiv ℤ (P.reflection j).toAddEquiv = T) {Y : AddMonoidAlgebra ℤ M}
+    (hY : T Y = Y) :
+    (1 - b) * (1 - a) * (1 - a * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b) * (1 - a ^ 3 * b ^ 2) *
+      P.demazureOperator j (P.demazureOperator i (P.demazureOperator j (P.demazureOperator i Y))) =
+      ((1 - b) * (1 - a ^ 4 * b ^ 2)) * Y - (a * (1 - a ^ 3 * b) * (1 - a ^ 3 * b ^ 2)) * S Y +
+        (a * b ^ 2 * (1 - a ^ 3 * b) * (1 - a ^ 3 * b ^ 2)) * T (S Y) -
+        (a ^ 6 * b ^ 2 * (1 - a * b) * (1 - a ^ 3 * b ^ 2)) * S (T (S Y)) +
+        (a ^ 6 * b ^ 5 * (1 - a) * (1 - a ^ 3 * b)) * T (S (T (S Y))) := by
+  have iS (Y) : S (P.demazureOperator i Y) = P.demazureOperator i Y :=
+    hS ▸ P.mapDomainRingEquiv_reflection_demazureOperator i Y
+  have iT (Y) : T (P.demazureOperator j Y) = P.demazureOperator j Y :=
+    hT ▸ P.mapDomainRingEquiv_reflection_demazureOperator j Y
+  have h1 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hT (P.demazureOperator i
+      (P.demazureOperator j (P.demazureOperator i Y))) (c := b)
+    (by subst ha hb hS hT; simp)
+  have h2 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hS (P.demazureOperator j
+      (P.demazureOperator i Y)) (c := a)
+    (by subst ha hb hS hT; simp)
+  have h3 := P.one_sub_mul_map_demazureOperator T hS (P.demazureOperator j
+      (P.demazureOperator i Y)) (c := a * b)
+    (by subst ha hb hS hT; simp [reflection_apply_root, hij]; congr 1; module)
+  have h4 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hT (P.demazureOperator i Y)
+    (c := b) (by subst ha hb hS hT; simp)
+  have h5 := P.one_sub_mul_map_demazureOperator S hT (P.demazureOperator i Y) (c := a ^ 3 * b)
+    (by subst ha hb hS hT; simp [reflection_apply_root, hji]; congr 1; module)
+  have h6 := P.one_sub_mul_map_demazureOperator (S.trans T) hT (P.demazureOperator i Y)
+    (c := a ^ 3 * b ^ 2)
+    (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
+  have h7 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hS Y (c := a)
+    (by subst ha hb hS hT; simp)
+  have h8 := P.one_sub_mul_map_demazureOperator T hS Y (c := a * b)
+    (by subst ha hb hS hT; simp [reflection_apply_root, hij]; congr 1; module)
+  have h9 := P.one_sub_mul_map_demazureOperator (T.trans S) hS Y (c := a ^ 2 * b)
+    (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
+  have h10 := P.one_sub_mul_map_demazureOperator ((T.trans S).trans T) hS Y (c := a ^ 2 * b)
+    (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
+  simp only [RingEquiv.refl_apply, RingEquiv.trans_apply, iS, iT, hY] at *
+  linear_combination ((1 - a) * (1 - a * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b) *
+    (1 - a ^ 3 * b ^ 2)) * h1 + ((1 - a * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b) *
+    (1 - a ^ 3 * b ^ 2)) * h2 + (-b * (1 - a) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b) *
+    (1 - a ^ 3 * b ^ 2)) * h3 + ((1 - a ^ 2 * b) * (1 - a ^ 3 * b) * (1 - a ^ 3 * b ^ 2)) * h4 +
+    (-a * (1 - a * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b ^ 2)) * h5 +
+    (a * b ^ 2 * (1 - a) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b)) * h6 +
     ((1 + a ^ 2 * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b ^ 2)) * h7 +
-    ((-a - a ^ 2 * b) * (1 - a * b) * (1 - a ^ 3 * b ^ 2)) * h8 +
-    (a * b ^ 2 * (1 - a ^ 2 * b) * (1 - a ^ 3 * b)) * h9 +
-    (-a ^ 6 * b ^ 2 * (1 - b) * (1 - a * b)) * h10 +
-    ((1 + a ^ 3 * b ^ 2) * (1 - a ^ 3 * b ^ 2)) * h11 +
-    ((-b - a ^ 2 * b ^ 2 - a ^ 4 * b ^ 3) * (1 - a ^ 2 * b)) * h12 +
-    ((a ^ 4 * b + a ^ 5 * b ^ 2 + a ^ 6 * b ^ 3) * (1 - a * b)) * h13 +
-    (-a ^ 4 * b ^ 4 * (1 - a ^ 3 * b)) * h14 + (a ^ 9 * b ^ 4 * (1 - b)) * h15 + h16 + (-a) * h17 +
-    (a * b ^ 2) * h18 + (-a ^ 6 * b ^ 2) * h19 + (a ^ 6 * b ^ 5) * h20 + (-a ^ 10 * b ^ 5) * h21
+    ((-b - a ^ 2 * b ^ 2) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b)) * h8 +
+    (a ^ 4 * b * (1 - a * b) * (1 - a ^ 3 * b ^ 2)) * h9 +
+    (-a ^ 4 * b ^ 4 * (1 - a) * (1 - a ^ 3 * b)) * h10
 
 /-- The expansion of `Dⱼ Dᵢ Dⱼ Dᵢ Dⱼ Dᵢ` in type `G₂`, cleared of the denominators
 `1 - e^{-β}` for the positive roots `β` of the rank-two subsystem. -/
@@ -477,79 +545,40 @@ private lemma mul_demazureOperator_ji_G2 (hij : P.pairing i j = -1) (hji : P.pai
     hS ▸ P.mapDomainRingEquiv_reflection_demazureOperator i Y
   have iT (Y) : T (P.demazureOperator j Y) = P.demazureOperator j Y :=
     hT ▸ P.mapDomainRingEquiv_reflection_demazureOperator j Y
-  have h1 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hT (P.demazureOperator i
-      (P.demazureOperator j (P.demazureOperator i (P.demazureOperator j
-      (P.demazureOperator i f))))) (c := b)
-    (by subst ha hb hS hT; simp)
-  have h2 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hS (P.demazureOperator j
-      (P.demazureOperator i (P.demazureOperator j (P.demazureOperator i f)))) (c := a)
-    (by subst ha hb hS hT; simp)
-  have h3 := P.one_sub_mul_map_demazureOperator T hS (P.demazureOperator j (P.demazureOperator i
-      (P.demazureOperator j (P.demazureOperator i f)))) (c := a * b)
-    (by subst ha hb hS hT; simp [reflection_apply_root, hij]; congr 1; module)
-  have h4 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hT (P.demazureOperator i
-      (P.demazureOperator j (P.demazureOperator i f))) (c := b)
-    (by subst ha hb hS hT; simp)
-  have h5 := P.one_sub_mul_map_demazureOperator S hT (P.demazureOperator i (P.demazureOperator j
-      (P.demazureOperator i f))) (c := a ^ 3 * b)
-    (by subst ha hb hS hT; simp [reflection_apply_root, hji]; congr 1; module)
-  have h6 := P.one_sub_mul_map_demazureOperator (S.trans T) hT (P.demazureOperator i
-      (P.demazureOperator j (P.demazureOperator i f))) (c := a ^ 3 * b ^ 2)
-    (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h7 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hS (P.demazureOperator j
-      (P.demazureOperator i f)) (c := a)
-    (by subst ha hb hS hT; simp)
-  have h8 := P.one_sub_mul_map_demazureOperator T hS (P.demazureOperator j
-      (P.demazureOperator i f)) (c := a * b)
-    (by subst ha hb hS hT; simp [reflection_apply_root, hij]; congr 1; module)
-  have h9 := P.one_sub_mul_map_demazureOperator (T.trans S) hS (P.demazureOperator j
-      (P.demazureOperator i f)) (c := a ^ 2 * b)
-    (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h10 := P.one_sub_mul_map_demazureOperator ((T.trans S).trans T) hS (P.demazureOperator j
-      (P.demazureOperator i f)) (c := a ^ 2 * b)
-    (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h11 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hT
+  have h0 := P.mul_demazureOperator_jiji_G2 hij hji ha hb hS hT
+    (iT (P.demazureOperator i f))
+  have h1 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hT
       (P.demazureOperator i f) (c := b)
     (by subst ha hb hS hT; simp)
-  have h12 := P.one_sub_mul_map_demazureOperator S hT (P.demazureOperator i f) (c := a ^ 3 * b)
+  have h2 := P.one_sub_mul_map_demazureOperator S hT (P.demazureOperator i f) (c := a ^ 3 * b)
     (by subst ha hb hS hT; simp [reflection_apply_root, hji]; congr 1; module)
-  have h13 := P.one_sub_mul_map_demazureOperator (S.trans T) hT
+  have h3 := P.one_sub_mul_map_demazureOperator (S.trans T) hT
       (P.demazureOperator i f) (c := a ^ 3 * b ^ 2)
     (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h14 := P.one_sub_mul_map_demazureOperator ((S.trans T).trans S) hT
+  have h4 := P.one_sub_mul_map_demazureOperator ((S.trans T).trans S) hT
       (P.demazureOperator i f) (c := a ^ 3 * b ^ 2)
     (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h15 := P.one_sub_mul_map_demazureOperator (((S.trans T).trans S).trans T) hT
+  have h5 := P.one_sub_mul_map_demazureOperator (((S.trans T).trans S).trans T) hT
       (P.demazureOperator i f) (c := a ^ 3 * b)
     (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h16 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hS f (c := a)
+  have h6 := P.one_sub_mul_map_demazureOperator (RingEquiv.refl _) hS f (c := a)
     (by subst ha hb hS hT; simp)
-  have h17 := P.one_sub_mul_map_demazureOperator T hS f (c := a * b)
+  have h7 := P.one_sub_mul_map_demazureOperator T hS f (c := a * b)
     (by subst ha hb hS hT; simp [reflection_apply_root, hij]; congr 1; module)
-  have h18 := P.one_sub_mul_map_demazureOperator (T.trans S) hS f (c := a ^ 2 * b)
+  have h8 := P.one_sub_mul_map_demazureOperator (T.trans S) hS f (c := a ^ 2 * b)
     (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h19 := P.one_sub_mul_map_demazureOperator ((T.trans S).trans T) hS f (c := a ^ 2 * b)
+  have h9 := P.one_sub_mul_map_demazureOperator ((T.trans S).trans T) hS f (c := a ^ 2 * b)
     (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h20 := P.one_sub_mul_map_demazureOperator (((T.trans S).trans T).trans S) hS f (c := a * b)
+  have h10 := P.one_sub_mul_map_demazureOperator (((T.trans S).trans T).trans S) hS f (c := a * b)
     (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
-  have h21 := P.one_sub_mul_map_demazureOperator ((((T.trans S).trans T).trans S).trans T) hS
+  have h11 := P.one_sub_mul_map_demazureOperator ((((T.trans S).trans T).trans S).trans T) hS
       f (c := a)
     (by subst ha hb hS hT; simp [reflection_apply_root, hij, hji]; congr 1; module)
   simp only [RingEquiv.refl_apply, RingEquiv.trans_apply, iS, iT] at *
-  linear_combination
-    ((1 - a) * (1 - a * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b) * (1 - a ^ 3 * b ^ 2)) * h1 +
-    ((1 - a * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b) * (1 - a ^ 3 * b ^ 2)) * h2 +
-    (-b * (1 - a) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b) * (1 - a ^ 3 * b ^ 2)) * h3 +
-    ((1 - a ^ 2 * b) * (1 - a ^ 3 * b) * (1 - a ^ 3 * b ^ 2)) * h4 +
-    (-a * (1 - a * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b ^ 2)) * h5 +
-    (a * b ^ 2 * (1 - a) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b)) * h6 +
-    ((1 + a ^ 2 * b) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b ^ 2)) * h7 +
-    ((-b - a ^ 2 * b ^ 2) * (1 - a ^ 2 * b) * (1 - a ^ 3 * b)) * h8 +
-    (a ^ 4 * b * (1 - a * b) * (1 - a ^ 3 * b ^ 2)) * h9 +
-    (-a ^ 4 * b ^ 4 * (1 - a) * (1 - a ^ 3 * b)) * h10 + ((1 + a ^ 2 * b) * (1 - a ^ 2 * b)) * h11 +
-    (-a * (1 - a ^ 3 * b ^ 2)) * h12 + (a * b ^ 2 * (1 - a ^ 3 * b)) * h13 +
-    (-a ^ 6 * b ^ 2 * (1 - a * b)) * h14 + (a ^ 6 * b ^ 5 * (1 - a)) * h15 + h16 + (-b) * h17 +
-    (a ^ 4 * b) * h18 + (-a ^ 4 * b ^ 4) * h19 + (a ^ 9 * b ^ 4) * h20 + (-a ^ 9 * b ^ 6) * h21
+  linear_combination h0 + ((1 + a ^ 2 * b) * (1 - a ^ 2 * b)) * h1 +
+    (-a * (1 - a ^ 3 * b ^ 2)) * h2 + (a * b ^ 2 * (1 - a ^ 3 * b)) * h3 +
+    (-a ^ 6 * b ^ 2 * (1 - a * b)) * h4 + (a ^ 6 * b ^ 5 * (1 - a)) * h5 + h6 + (-b) * h7 +
+    (a ^ 4 * b) * h8 + (-a ^ 4 * b ^ 4) * h9 + (a ^ 9 * b ^ 4) * h10 + (-a ^ 9 * b ^ 6) * h11
 
 /-! ### The braid relations -/
 

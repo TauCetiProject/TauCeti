@@ -90,6 +90,86 @@ theorem inversions_univ [Fintype α] (f : α → β) :
 theorem inversions_id (s : Finset α) : s.inversions id = ∅ :=
   inversions_eq_empty_of_monotone monotone_id s
 
+/-- The inversions of `f` on `s` only depend on the values of `f` on `s`. -/
+theorem inversions_congr {f g : α → β} {s : Finset α} (h : ∀ a ∈ s, f a = g a) :
+    s.inversions f = s.inversions g := by
+  ext p
+  simp only [mem_inversions]
+  constructor <;> rintro ⟨h₁, h₂, h₃, h₄⟩ <;> exact ⟨h₁, h₂, h₃, by simpa [h _ h₁, h _ h₂] using h₄⟩
+
+/-- **Exchanging the values at an inversion lowers the inversion count.** If `(i, j)` is an
+inversion of `f` on `s`, then `f ∘ swap i j`, which takes the value `f j` at `i` and `f i` at `j`,
+has strictly fewer inversions on `s` than `f`. -/
+theorem card_inversions_comp_swap_lt {f : α → β} {s : Finset α} {i j : α}
+    (h : (i, j) ∈ s.inversions f) :
+    #(s.inversions (f ∘ Equiv.swap i j)) < #(s.inversions f) := by
+  obtain ⟨hi, hj, hij, hfij⟩ := mem_inversions.1 h
+  set τ := Equiv.swap i j with hτ
+  have hτs (x : α) (hx : x ∈ s) : τ x ∈ s := by
+    rcases eq_or_ne x i with rfl | hxi
+    · simpa [hτ] using hj
+    rcases eq_or_ne x j with rfl | hxj
+    · simpa [hτ] using hi
+    simpa [hτ, Equiv.swap_apply_of_ne_of_ne hxi hxj] using hx
+  -- An inversion of `f ∘ τ` is sent to its image under `τ` when `τ` keeps the pair in order, and
+  -- to itself otherwise; either way the result is an inversion of `f` other than `(i, j)`.
+  let m : α × α → α × α := fun p ↦ if τ p.1 < τ p.2 then (τ p.1, τ p.2) else p
+  have hmaps : ∀ p ∈ s.inversions (f ∘ τ), m p ∈ (s.inversions f).erase (i, j) := by
+    rintro ⟨x, y⟩ hp
+    obtain ⟨hx, hy, hxy, hfxy⟩ := mem_inversions.1 hp
+    simp only [Function.comp_apply] at hfxy
+    simp only [m, mem_erase, mem_inversions, ne_eq]
+    split_ifs with hτxy
+    · refine ⟨fun he ↦ ?_, hτs x hx, hτs y hy, hτxy, hfxy⟩
+      simp only [Prod.mk.injEq] at he
+      have hx' : x = j := by simpa [hτ] using congrArg τ he.1
+      have hy' : y = i := by simpa [hτ] using congrArg τ he.2
+      exact (hij.trans (hx' ▸ hy' ▸ hxy)).false
+    · refine ⟨fun he ↦ ?_, hx, hy, hxy, ?_⟩
+      · simp only [Prod.mk.injEq] at he
+        obtain ⟨rfl, rfl⟩ := he
+        simp [hτ] at hfxy
+        exact (hfxy.trans hfij).false
+      · rcases eq_or_ne x i with rfl | hxi
+        · have hyj : y ≠ j := by
+            rintro rfl
+            simp [hτ] at hfxy
+            exact (hfxy.trans hfij).false
+          have hyx : y ≠ x := hxy.ne'
+          simp only [hτ, Equiv.swap_apply_left, Equiv.swap_apply_of_ne_of_ne hyx hyj] at hfxy
+          exact hfxy.trans hfij
+        rcases eq_or_ne x j with rfl | hxj
+        · have hyi : y ≠ i := (hij.trans hxy).ne'
+          have hyj : y ≠ x := hxy.ne'
+          simp only [hτ, Equiv.swap_apply_right, Equiv.swap_apply_of_ne_of_ne hyi hyj] at hτxy
+          exact absurd (hij.trans hxy) hτxy
+        rcases eq_or_ne y i with rfl | hyi
+        · simp only [hτ, Equiv.swap_apply_left, Equiv.swap_apply_of_ne_of_ne hxi hxj] at hτxy
+          exact absurd (hxy.trans hij) hτxy
+        rcases eq_or_ne y j with rfl | hyj
+        · simp only [hτ, Equiv.swap_apply_right, Equiv.swap_apply_of_ne_of_ne hxi hxj] at hfxy
+          exact hfij.trans hfxy
+        simp only [hτ, Equiv.swap_apply_of_ne_of_ne hxi hxj,
+          Equiv.swap_apply_of_ne_of_ne hyi hyj] at hτxy
+        exact absurd hxy hτxy
+  have hinj : Set.InjOn m (s.inversions (f ∘ τ)) := by
+    rintro ⟨x, y⟩ hp ⟨x', y'⟩ hp' he
+    have hxy := (mem_inversions.1 hp).2.2.1
+    have hxy' := (mem_inversions.1 hp').2.2.1
+    simp only [m] at he
+    split_ifs at he with h₁ h₂ h₂ <;> simp only [Prod.mk.injEq] at he
+    · simp [τ.injective he.1, τ.injective he.2]
+    · obtain ⟨rfl, rfl⟩ := he
+      simp [hτ] at h₂
+      exact (h₂.trans_lt hxy).false.elim
+    · obtain ⟨rfl, rfl⟩ := he
+      simp [hτ] at h₁
+      exact (h₁.trans_lt hxy').false.elim
+    · simp [he.1, he.2]
+  calc #(s.inversions (f ∘ τ)) ≤ #((s.inversions f).erase (i, j)) :=
+        card_le_card_of_injOn m hmaps hinj
+    _ < #(s.inversions f) := card_erase_lt_of_mem h
+
 /-- Adjoining a new element `a` to `s` adds the inversions `(b, a)` with `b < a` and the
 inversions `(a, b)` with `a < b`. -/
 theorem card_inversions_insert (f : α → β) {s : Finset α} {a : α} (ha : a ∉ s) :

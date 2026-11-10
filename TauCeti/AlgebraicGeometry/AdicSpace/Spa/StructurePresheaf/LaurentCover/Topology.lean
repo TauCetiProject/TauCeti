@@ -56,6 +56,60 @@ variable {A : Type v} [CommRing A] [UniformSpace A] [IsTopologicalRing A]
   (S : Type v) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
   (hden : HasDenominatorPower P T s S)
 
+/-- **Restriction to a Laurent piece commutes with rational localization.** The isomorphisms
+`presentationLimitLocIso` at the rational open `R(T/s)` and at its intersection with a Laurent
+piece, composed with the transports along the identifications `locOpensComap_spaBasicOpen_self`
+and `locOpensComap_inf_laurentCoverOpen`, carry the restriction map over `A` to the restriction
+map of the Laurent piece over `A⟨T/s⟩`. -/
+private theorem presentationLimitMap_comp_locIso_eqToIso_hom
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A)) (f : A) (b : Bool)
+    (hrat : spaBasicOpen Aplus T s ∈ spaRationalOpens Aplus)
+    (hU : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ∈ spaRationalOpens Aplus) :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    presentationLimitMap (P := P)
+        (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _) ≫
+      (presentationLimitLocIso P Aplus T s S hden hAplus hT _ hU inf_le_left ≪≫
+        eqToIso (congrArg (presentationLimit (P := completionLocalization P T s S hden)
+          (completedPlusSubring P Aplus T s S hden))
+          (locOpensComap_inf_laurentCoverOpen P Aplus T s S hden f b))).hom =
+    (presentationLimitLocIso P Aplus T s S hden hAplus hT _ hrat le_rfl ≪≫
+      eqToIso (congrArg (presentationLimit (P := completionLocalization P T s S hden)
+        (completedPlusSubring P Aplus T s S hden))
+        (locOpensComap_spaBasicOpen_self P Aplus T s S hden))).hom ≫
+      presentationLimitMap (P := completionLocalization P T s S hden)
+        (le_top : laurentCoverOpen (completedPlusSubring P Aplus T s S hden)
+          (toCompletionLoc P T s S hden f) b ≤ ⊤) := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have hn := presentationLimitMap_comp_presentationLimitLocIso_hom
+    P Aplus T s S hden hAplus hT hrat hU le_rfl
+    (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)
+  have ht :
+      presentationLimitMap (P := completionLocalization P T s S hden)
+          (locOpensComap_mono P Aplus T s S hden
+            (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)) ≫
+        eqToHom (congrArg (presentationLimit (P := completionLocalization P T s S hden)
+          (completedPlusSubring P Aplus T s S hden))
+          (locOpensComap_inf_laurentCoverOpen P Aplus T s S hden f b)) =
+      eqToHom (congrArg (presentationLimit (P := completionLocalization P T s S hden)
+          (completedPlusSubring P Aplus T s S hden))
+          (locOpensComap_spaBasicOpen_self P Aplus T s S hden)) ≫
+        presentationLimitMap (P := completionLocalization P T s S hden)
+          (le_top : laurentCoverOpen (completedPlusSubring P Aplus T s S hden)
+            (toCompletionLoc P T s S hden f) b ≤ ⊤) := by
+    rw [eqToHom_presentationLimit
+      (locOpensComap_inf_laurentCoverOpen P Aplus T s S hden f b) _,
+      eqToHom_presentationLimit (locOpensComap_spaBasicOpen_self P Aplus T s S hden) _]
+    simp only [presentationLimitMap_comp]
+  simp only [Iso.trans_hom, eqToIso.hom, ← Category.assoc]
+  rw [hn]
+  simp only [Category.assoc]
+  rw [ht]
+
 /-- **Topological Laurent restriction transported along rational localization.** If restriction
 to the two Laurent pieces is a closed embedding on the completed coordinate ring `A⟨T/s⟩`,
 then restriction from `R(T/s)` to its two Laurent pieces is a closed embedding. This is the
@@ -123,28 +177,12 @@ theorem isClosedEmbedding_presentationLimitMap_inf_laurentCoverOpen_of_locOpensC
             (le_top : laurentCoverOpen Bplus g false ≤ ⊤)).hom.1 x)) ∘ d by
     rw [heq]
     exact hclosed
-  -- Naturality of rational localization compares the restriction maps before equality transport.
-  have hn (b : Bool) := presentationLimitMap_comp_presentationLimitLocIso_hom
-    P Aplus T s S hden hAplus hT hrat (hU b) le_rfl
-    (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)
-  have ht (b : Bool) :
-      presentationLimitMap (P := Q)
-          (locOpensComap_mono P Aplus T s S hden
-            (inf_le_left : spaBasicOpen Aplus T s ⊓ laurentCoverOpen Aplus f b ≤ _)) ≫
-        eqToHom (congrArg (presentationLimit (P := Q) Bplus)
-          (locOpensComap_inf_laurentCoverOpen P Aplus T s S hden f b)) =
-      eqToHom (congrArg (presentationLimit (P := Q) Bplus)
-          (locOpensComap_spaBasicOpen_self P Aplus T s S hden)) ≫
-        presentationLimitMap (P := Q) (le_top : laurentCoverOpen Bplus g b ≤ ⊤) := by
-    rw [eqToHom_presentationLimit
-      (locOpensComap_inf_laurentCoverOpen P Aplus T s S hden f b) _,
-      eqToHom_presentationLimit (locOpensComap_spaBasicOpen_self P Aplus T s S hden) _]
-    simp only [presentationLimitMap_comp]
-  -- Combine naturality with the equality-transport calculation in each Laurent coordinate.
   funext x
-  apply Prod.ext
-  · exact ConcreteCategory.congr_hom (((reassoc_of% hn true) _).trans (by rw [ht true])) x
-  · exact ConcreteCategory.congr_hom (((reassoc_of% hn false) _).trans (by rw [ht false])) x
+  refine Prod.ext ?_ ?_
+  · exact ConcreteCategory.congr_hom (presentationLimitMap_comp_locIso_eqToIso_hom P Aplus T s S
+      hden hAplus hT f true hrat (hU true)) x
+  · exact ConcreteCategory.congr_hom (presentationLimitMap_comp_locIso_eqToIso_hom P Aplus T s S
+      hden hAplus hT f false hrat (hU false)) x
 
 end Transport
 

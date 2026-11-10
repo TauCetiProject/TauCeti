@@ -138,6 +138,34 @@ theorem smulCommutator_mul (a b : A) (D : M →ₗ[R] N) :
     smul_smul, mul_comm b a]
   abel
 
+theorem smulCommutator_smul (r : R) (a : A) :
+    smulCommutator R (r • a) = (r • smulCommutator R a : Module.End R (M →ₗ[R] N)) := by
+  ext D x
+  simp [smul_assoc, smul_sub]
+
+/-- The commutator with `a` commutes with multiplying the values of an operator by `g : A`. -/
+theorem smulCommutator_apply_smul (a g : A) (D : M →ₗ[R] N) :
+    smulCommutator R a (g • D) = g • smulCommutator R a D := by
+  ext x
+  simp [smul_sub, smul_comm g a]
+
+/-- An iterated commutator commutes with each further commutator. -/
+theorem commute_smulCommutator_list_prod {m : ℕ} (b : A) (a : Fin m → A) :
+    Commute (smulCommutator R b : Module.End R (M →ₗ[R] N))
+      (List.ofFn fun i ↦ smulCommutator R (a i)).prod :=
+  Commute.list_prod_right _ _ fun _ hc ↦ by
+    obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hc
+    exact commute_smulCommutator _ _
+
+/-- Iterated commutators commute with multiplying the values of an operator by `g : A`. -/
+theorem list_prod_smulCommutator_apply_smul {m : ℕ} (a : Fin m → A) (g : A) (D : M →ₗ[R] N) :
+    (List.ofFn fun i ↦ smulCommutator R (a i)).prod (g • D) =
+      g • (List.ofFn fun i ↦ smulCommutator R (a i)).prod D := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    simp only [List.ofFn_succ, List.prod_cons, mul_apply_eq_comp, ih, smulCommutator_apply_smul]
+
 /-- The Leibniz rule for commutators of a composition:
 `[P ∘ Q, a] = P ∘ [Q, a] + [P, a] ∘ Q`. -/
 theorem smulCommutator_comp (a : A) (P : N →ₗ[R] O) (Q : M →ₗ[R] N) :
@@ -219,6 +247,20 @@ theorem differentialOperators_le_succ (m : ℕ) :
 theorem differentialOperators_mono : Monotone (differentialOperators R A M N) :=
   monotone_nat_of_le_succ differentialOperators_le_succ
 
+/-- Multiplying the values of a differential operator by `g : A` preserves its order. -/
+theorem smul_mem_differentialOperators (g : A) {D : M →ₗ[R] N} {m : ℕ}
+    (hD : D ∈ differentialOperators R A M N m) : g • D ∈ differentialOperators R A M N m := by
+  induction m generalizing D with
+  | zero =>
+    rw [mem_differentialOperators_zero_iff_smulCommutator] at hD ⊢
+    intro a
+    rw [smulCommutator_apply_smul, hD, smul_zero]
+  | succ m ih =>
+    rw [mem_differentialOperators_succ_iff] at hD ⊢
+    intro a
+    rw [smulCommutator_apply_smul]
+    exact ih (hD a)
+
 /-- A differential operator has order at most `m` exactly when all its `(m + 1)`-fold iterated
 commutators with multiplication by elements of `A` vanish. -/
 theorem mem_differentialOperators_iff_forall_list_prod {D : M →ₗ[R] N} {m : ℕ} :
@@ -234,13 +276,9 @@ theorem mem_differentialOperators_iff_forall_list_prod {D : M →ₗ[R] N} {m : 
     refine forall_congr' fun c ↦ ?_
     rw [ih]
     refine forall_congr' fun v ↦ ?_
-    have hc : Commute (smulCommutator R c : Module.End R (M →ₗ[R] N))
-        (List.ofFn fun i ↦ smulCommutator R (v i)).prod :=
-      Commute.list_prod_right _ _ fun _ hb ↦ by
-        obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hb
-        exact commute_smulCommutator _ _
     conv_rhs => rw [List.ofFn_succ, List.prod_cons]
-    simp only [Fin.cons_zero, Fin.cons_succ, hc.eq, mul_apply_eq_comp]
+    simp only [Fin.cons_zero, Fin.cons_succ, (commute_smulCommutator_list_prod c v).eq,
+      mul_apply_eq_comp]
 
 theorem smulCommutator_pow_mem_differentialOperators {D : M →ₗ[R] N} {m j : ℕ}
     (hD : D ∈ differentialOperators R A M N (m + j)) (a : A) :
@@ -250,6 +288,17 @@ theorem smulCommutator_pow_mem_differentialOperators {D : M →ₗ[R] N} {m j : 
   | succ j ih =>
     rw [pow_succ, mul_apply_eq_comp]
     exact ih (smulCommutator_mem_differentialOperators hD a)
+
+/-- An `m`-fold iterated commutator lowers the order by `m`. -/
+theorem list_prod_smulCommutator_mem_differentialOperators {D : M →ₗ[R] N} {m k : ℕ}
+    (hD : D ∈ differentialOperators R A M N (k + m)) (a : Fin m → A) :
+    (List.ofFn fun i ↦ smulCommutator R (a i)).prod D ∈ differentialOperators R A M N k := by
+  induction m generalizing k D with
+  | zero => simpa using hD
+  | succ m ih =>
+    rw [List.ofFn_succ, List.prod_cons, (commute_smulCommutator_list_prod _ _).eq,
+      mul_apply_eq_comp]
+    exact ih (smulCommutator_mem_differentialOperators (by rwa [← add_assoc] at hD) _) _
 
 /-- The `j`-fold commutator of an operator of order at most `m` vanishes when `m < j`. -/
 theorem smulCommutator_pow_eq_zero {D : M →ₗ[R] N} {m j : ℕ}

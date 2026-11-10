@@ -191,6 +191,55 @@ private theorem isFixedPt_gluing_snd_splitPassage {z : WithLp 2 (Eₛ × Eᵤ)}
   rw [Function.IsFixedPt, hvz, ← hzg, ← fst_splitPassage hsrc]
   exact hzk.symm
 
+/-- For `0 < ε` and `Kk * Kg * r₀ ^ 2 < 1`, Banach's fixed-point theorem gives, for each gluing
+parameter `r ∈ [0, r₀]`, a fixed point `w r` of the gluing map `v ↦ k (r • g (r • v))` in the closed
+ball of radius `ε`. -/
+private theorem exists_fixedPt_gluing [CompleteSpace Eᵤ]
+    (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * ε)))
+    (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g y‖ = ε)
+    (hk : LipschitzOnWith Kk k (closedBall 0 (r₀ * ε)))
+    (hkε : ∀ x ∈ closedBall 0 (r₀ * ε), ‖k x‖ = ε) (hε : 0 < ε) (hK : Kk * Kg * r₀ ^ 2 < 1) :
+    ∃ w : ℝ → Eᵤ, ∀ r ∈ Icc 0 r₀, w r ∈ closedBall 0 ε ∧ k (r • g (r • w r)) = w r := by
+  have hchoice (r : ℝ) : ∃ v, r ∈ Icc 0 r₀ → v ∈ closedBall 0 ε ∧ k (r • g (r • v)) = v := by
+    by_cases hr : r ∈ Icc 0 r₀
+    · obtain ⟨v, hv, hfv, -⟩ := (contractingWith_gluing hg hgε hk hK hr
+        (mapsTo_gluing hgε hkε hr)).exists_fixedPoint' isClosed_closedBall.isComplete
+        (mapsTo_gluing hgε hkε hr) (mem_closedBall_self hε.le) (edist_ne_top _ _)
+      exact ⟨v, fun _ ↦ ⟨hv, hfv⟩⟩
+    · exact ⟨0, fun h ↦ absurd h hr⟩
+  choose w hw using hchoice
+  exact ⟨w, hw⟩
+
+/-- A point `z` of the graph of `g` in the entrance face with `‖z.snd‖ ≤ r₀ * ε` whose passage lies
+on the graph of `k` is `(g (r • w r), r • w r)` for the gluing parameter `r = ‖z.snd‖ / ε`, where
+`w r` is the fixed point of the gluing map: the exit coordinate of `z` is a fixed point, hence
+equals `w r`. -/
+private theorem toLp_mem_image_of_mem_graph
+    (hg : LipschitzOnWith Kg g (closedBall 0 (r₀ * ε)))
+    (hgε : ∀ y ∈ closedBall 0 (r₀ * ε), ‖g y‖ = ε)
+    (hk : LipschitzOnWith Kk k (closedBall 0 (r₀ * ε)))
+    (hkε : ∀ x ∈ closedBall 0 (r₀ * ε), ‖k x‖ = ε) (hε : 0 < ε) (hK : Kk * Kg * r₀ ^ 2 < 1)
+    {w : ℝ → Eᵤ} (hw : ∀ r ∈ Icc 0 r₀, w r ∈ closedBall 0 ε ∧ k (r • g (r • w r)) = w r)
+    {z : WithLp 2 (Eₛ × Eᵤ)} (hsrc : z ∈ (splitPassage ε).source) (hzr₀ : ‖z.snd‖ ≤ r₀ * ε)
+    (hzg : z.fst = g z.snd) (hzk : (splitPassage ε z).snd = k (splitPassage ε z).fst) :
+    z ∈ (fun r ↦ WithLp.toLp 2 (g (r • w r), r • w r)) '' Ioc 0 r₀ := by
+  have hy : 0 < ‖z.snd‖ := norm_pos_iff.2 (mem_splitPassage_source.1 hsrc).2.1
+  have hr : ‖z.snd‖ / ε ∈ Ioc 0 r₀ := ⟨div_pos hy hε, (div_le_iff₀ hε).2 hzr₀⟩
+  have hr' := Ioc_subset_Icc_self hr
+  obtain ⟨hfv, hvz⟩ := isFixedPt_gluing_snd_splitPassage hsrc hzg hzk
+  have hv : (splitPassage ε z).snd ∈ closedBall 0 ε := mem_closedBall_zero_iff.2
+    (mem_splitPassage_target.1 ((splitPassage ε).map_source hsrc)).1.le
+  have hf := contractingWith_gluing hg hgε hk hK hr' (mapsTo_gluing hgε hkε hr')
+  have hvw : (splitPassage ε z).snd = w (‖z.snd‖ / ε) :=
+    Subtype.ext_iff.1 (hf.fixedPoint_unique' (x := ⟨_, hv⟩) (y := ⟨_, (hw _ hr').1⟩)
+      (Subtype.ext hfv) (Subtype.ext (hw _ hr').2))
+  refine ⟨_, hr, ?_⟩
+  apply WithLp.ofLp_injective
+  ext
+  · simp only [← hvw, hvz]
+    simpa using hzg.symm
+  · simpa [← hvw] using hvz
+
 /-- **Gluing transverse discs through the split hyperbolic box.** Let `y ↦ (g y, y)` be a disc in
 the entrance face `‖x‖ = ε` over the closed ball of radius `r₀ * ε` of the expanding factor, and
 `x ↦ (x, k x)` a disc in the exit face `‖y‖ = ε` over the closed ball of radius `r₀ * ε` of the
@@ -225,17 +274,7 @@ theorem exists_setOf_mem_splitPassage_source_graph_eq_image [CompleteSpace Eᵤ]
     rw [Ioc_eq_empty hr₀0.not_gt, image_empty, eq_empty_iff_forall_notMem]
     rintro z ⟨-, hz, -⟩
     exact (norm_nonneg _).not_gt (hz.trans_lt (mul_neg_of_neg_of_pos hr₀0 hε))
-  set s : Set Eᵤ := closedBall 0 ε
-  have hmaps {r : ℝ} (hr : r ∈ Icc 0 r₀) := mapsTo_gluing hgε hkε hr
-  have hf {r : ℝ} (hr : r ∈ Icc 0 r₀) := contractingWith_gluing hg hgε hk hK hr (hmaps hr)
-  -- Banach's fixed-point theorem on the closed ball of radius `ε`.
-  have hchoice (r : ℝ) : ∃ v, r ∈ Icc 0 r₀ → v ∈ s ∧ k (r • g (r • v)) = v := by
-    by_cases hr : r ∈ Icc 0 r₀
-    · obtain ⟨v, hv, hfv, -⟩ := (hf hr).exists_fixedPoint' isClosed_closedBall.isComplete
-        (hmaps hr) (mem_closedBall_self hε.le) (edist_ne_top _ _)
-      exact ⟨v, fun _ ↦ ⟨hv, hfv⟩⟩
-    · exact ⟨0, fun h ↦ absurd h hr⟩
-  choose w hw using hchoice
+  obtain ⟨w, hw⟩ := exists_fixedPt_gluing hg hgε hk hkε hε hK
   have hwnorm (r : ℝ) (hr : r ∈ Icc 0 r₀) : ‖w r‖ = ε := by
     rw [← (hw r hr).2]
     exact norm_gluing_eq hgε hkε hr (mem_closedBall_zero_iff.1 (hw r hr).1)
@@ -246,24 +285,8 @@ theorem exists_setOf_mem_splitPassage_source_graph_eq_image [CompleteSpace Eᵤ]
     exact h.symm
   · ext z
     constructor
-    · -- A point of the set has gluing parameter `r = ‖z.snd‖ / ε`, and its exit coordinate is a
-      -- fixed point of the gluing map, hence equals `w r`.
-      rintro ⟨hsrc, hzr₀, hzg, hzk⟩
-      have hy : 0 < ‖z.snd‖ := norm_pos_iff.2 (mem_splitPassage_source.1 hsrc).2.1
-      have hr : ‖z.snd‖ / ε ∈ Ioc 0 r₀ := ⟨div_pos hy hε, (div_le_iff₀ hε).2 hzr₀⟩
-      have hr' := Ioc_subset_Icc_self hr
-      obtain ⟨hfv, hvz⟩ := isFixedPt_gluing_snd_splitPassage hsrc hzg hzk
-      have hv : (splitPassage ε z).snd ∈ s := mem_closedBall_zero_iff.2
-        (mem_splitPassage_target.1 ((splitPassage ε).map_source hsrc)).1.le
-      have hvw : (splitPassage ε z).snd = w (‖z.snd‖ / ε) :=
-        Subtype.ext_iff.1 ((hf hr').fixedPoint_unique' (x := ⟨_, hv⟩) (y := ⟨_, (hw _ hr').1⟩)
-          (Subtype.ext hfv) (Subtype.ext (hw _ hr').2))
-      refine ⟨_, hr, ?_⟩
-      apply WithLp.ofLp_injective
-      ext
-      · simp only [← hvw, hvz]
-        simpa using hzg.symm
-      · simpa [← hvw] using hvz
+    · rintro ⟨hsrc, hzr₀, hzg, hzk⟩
+      exact toLp_mem_image_of_mem_graph hg hgε hk hkε hε hK hw hsrc hzr₀ hzg hzk
     · -- Conversely, the point with gluing parameter `r` exits the box at `(r • g (r • w r), w r)`,
       -- which lies on the graph of `k` because `w r` is a fixed point.
       rintro ⟨r, hr, rfl⟩
