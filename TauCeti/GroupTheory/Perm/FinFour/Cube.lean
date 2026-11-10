@@ -87,25 +87,26 @@ matrix. -/
 theorem mem_cubeRotationGroup_iff {A : SpecialLinearGroup (Fin 3) ℤ} :
     A ∈ cubeRotationGroup ↔ ∃ σ : Perm (Fin 3), ∃ ε : Fin 3 → ℤˣ,
       ∀ i j, A i j = if σ j = i then (ε j : ℤ) else 0 := by
-  -- The matrix of the monomial transformation `monomialEquiv ε σ` is the signed permutation
-  -- matrix with signs `ε` and permutation `σ`.
+  -- `A` acts as `monomialEquiv ε σ` exactly when it is the matrix of `monomialEquiv ε σ`.
   have key (ε : Fin 3 → ℤˣ) (σ : Perm (Fin 3)) : monomialEquiv ε σ = SpecialLinearGroup.toLin' A ↔
       ∀ i j, A i j = if σ j = i then (ε j : ℤ) else 0 := by
     rw [eq_comm, ← LinearEquiv.toLinearMap_inj, SpecialLinearGroup.toLin'_to_linearMap,
       ← LinearMap.toMatrix'.injective.eq_iff, LinearMap.toMatrix'_toLin', ← Matrix.ext_iff]
-    refine forall₂_congr fun i j ↦ ?_
-    rw [LinearMap.toMatrix'_apply, LinearEquiv.coe_coe, monomialEquiv_apply]
-    obtain rfl | h := eq_or_ne (σ j) i
-    · simp
-    · simp [h, Equiv.symm_apply_eq, Ne.symm h]
+    simp only [toMatrix'_monomialEquiv]
   simp only [cubeRotationGroup, Subgroup.mem_comap, mem_monomialGroup, key]
   exact exists_comm
+
+/-- A rotation of the cube acts on `ℤ³` as a monomial transformation. -/
+theorem exists_monomialEquiv_eq_of_mem_cubeRotationGroup {A : SpecialLinearGroup (Fin 3) ℤ}
+    (hA : A ∈ cubeRotationGroup) :
+    ∃ (ε : Fin 3 → ℤˣ) (σ : Perm (Fin 3)), monomialEquiv ε σ = SpecialLinearGroup.toLin' A :=
+  mem_monomialGroup.mp (Subgroup.mem_comap.mp hA)
 
 /-- A rotation of the cube sends a vertex to a vertex: the coordinates of `A v` are signs. -/
 theorem mulVec_mul_self_of_mem_cubeRotationGroup {A : SpecialLinearGroup (Fin 3) ℤ}
     (hA : A ∈ cubeRotationGroup) (v : Fin 3 → ℤˣ) (i : Fin 3) :
     (A *ᵥ fun j ↦ (v j : ℤ)) i * (A *ᵥ fun j ↦ (v j : ℤ)) i = 1 := by
-  obtain ⟨ε, σ, h⟩ := mem_monomialGroup.mp (Subgroup.mem_comap.mp hA)
+  obtain ⟨ε, σ, h⟩ := exists_monomialEquiv_eq_of_mem_cubeRotationGroup hA
   rw [← Matrix.toLin'_apply, ← SpecialLinearGroup.toLin'_apply, ← h, monomialEquiv_apply,
     ← Units.val_mul, ← Units.val_mul, Int.units_mul_self, Units.val_one]
 
@@ -152,7 +153,7 @@ changes their signs. -/
 @[simp]
 theorem hammingDist_cubeRotationGroup_smul (A : cubeRotationGroup) (v w : Fin 3 → ℤˣ) :
     hammingDist (A • v) (A • w) = hammingDist v w := by
-  obtain ⟨ε, σ, h⟩ := mem_monomialGroup.mp (Subgroup.mem_comap.mp A.2)
+  obtain ⟨ε, σ, h⟩ := exists_monomialEquiv_eq_of_mem_cubeRotationGroup A.2
   have hval (u : Fin 3 → ℤˣ) :
       (fun i ↦ ((A • u) i : ℤ)) = monomialEquiv ε σ (fun i ↦ (u i : ℤ)) := by
     funext i
@@ -279,7 +280,7 @@ theorem cubeBodyDiagonalHom_apply_cubeBodyDiagonalIndex (A : cubeRotationGroup)
 needed: the antipodal map `-1` fixes every diagonal. -/
 theorem cubeBodyDiagonalHom_injective : Function.Injective cubeBodyDiagonalHom := by
   refine (injective_iff_map_eq_one _).mpr fun A hA ↦ ?_
-  obtain ⟨ε, σ, h⟩ := mem_monomialGroup.mp (Subgroup.mem_comap.mp A.2)
+  obtain ⟨ε, σ, h⟩ := exists_monomialEquiv_eq_of_mem_cubeRotationGroup A.2
   have hfix : ∀ k, cubeBodyDiagonalIndex (fun i ↦ ε (σ.symm i) * cubeBodyDiagonal k (σ.symm i)) =
       k := fun k ↦ by
     rw [← funext (cubeRotationGroup_smul_apply_of_monomialEquiv h (cubeBodyDiagonal k))]
@@ -292,10 +293,12 @@ theorem cubeBodyDiagonalHom_injective : Function.Injective cubeBodyDiagonalHom :
     rw [← h, OneMemClass.coe_one, map_one]
     exact LinearEquiv.ext fun x ↦ funext fun i ↦ by simp [← Perm.inv_def]
   · -- The antipodal map `-1` has determinant `-1`, so it is not in `SL(3, ℤ)`.
-    have hA1 : (A.1 : Matrix (Fin 3) (Fin 3) ℤ) = -1 :=
-      Matrix.toLin'.injective <| LinearMap.ext fun w ↦ funext fun i ↦ by
-        rw [← SpecialLinearGroup.toLin'_to_linearMap, LinearEquiv.coe_coe, ← h]
-        simp [← Perm.inv_def]
+    have hA1 : (A.1 : Matrix (Fin 3) (Fin 3) ℤ) = -1 := by
+      rw [← LinearMap.toMatrix'_toLin' (A.1 : Matrix (Fin 3) (Fin 3) ℤ),
+        ← SpecialLinearGroup.toLin'_to_linearMap, ← h]
+      ext i j
+      rw [toMatrix'_monomialEquiv]
+      simp [Matrix.one_apply, eq_comm, apply_ite Neg.neg]
     have hdet := A.1.2
     rw [hA1, Matrix.det_neg, Matrix.det_one] at hdet
     simp at hdet
