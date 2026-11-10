@@ -55,9 +55,9 @@ exponent `3 / 2`, through the Frey curve
 * `TauCeti.abcConjecture_iff_forall_finite`: the conjecture is the statement that, for every
   `ε > 0`, only finitely many triples have `rad(a b c) ^ (1 + ε) < c`.
 * `TauCeti.AbcConjectureWithExponent.mono`: a larger exponent gives a weaker statement.
-* `TauCeti.abcConjectureWithExponent_iff_nat`: for `κ ≥ 0`, the abc conjecture with exponent `κ` is
-  its form for coprime positive integers, of which `TauCeti.abcConjecture_iff_nat` is the case
-  `κ = 1`.
+* `TauCeti.abcConjectureWithExponent_iff_nat`: for every real `κ`, the abc conjecture with
+  exponent `κ` is its form for coprime positive integers, of which
+  `TauCeti.abcConjecture_iff_nat` is the case `κ = 1`.
 
 ## References
 
@@ -126,10 +126,10 @@ theorem AbcConjectureWithExponent.mono {κ κ' : ℝ} (h : AbcConjectureWithExpo
         mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_exponent_le hR (by linarith))
           (le_max_right C 0)
 
-/-- **The abc conjecture with exponent `κ ≥ 0` for positive integers**: it is equivalent to ask, for
+/-- **The abc conjecture with exponent `κ` for positive integers**: it is equivalent to ask, for
 every `ε > 0`, for a constant `C` with `c ≤ C · rad(a b c) ^ (κ + ε)` for all coprime positive
 integers `a` and `b` with `a + b = c`. -/
-theorem abcConjectureWithExponent_iff_nat (κ : ℝ) (hκ : 0 ≤ κ) : AbcConjectureWithExponent κ ↔
+theorem abcConjectureWithExponent_iff_nat (κ : ℝ) : AbcConjectureWithExponent κ ↔
     ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ a b c : ℕ, 0 < a → 0 < b → a.Coprime b → a + b = c →
       (c : ℝ) ≤ C * ((radical (a * b * c) : ℕ) : ℝ) ^ (κ + ε) := by
   refine forall₂_congr fun ε hε ↦ ⟨fun ⟨C, hC⟩ ↦ ⟨C, fun a b c _ _ hab habc ↦ ?_⟩,
@@ -139,9 +139,8 @@ theorem abcConjectureWithExponent_iff_nat (κ : ℝ) (hκ : 0 ≤ κ) : AbcConje
     rwa [← Nat.cast_mul, ← Nat.cast_mul, Int.natAbs_natCast, Int.natAbs_natCast,
       Int.natAbs_natCast, show max (max a b) c = c by omega] at h
   · have hxy : a.natAbs.Coprime b.natAbs := Int.isCoprime_iff_nat_coprime.mp hab
-    have hR := one_le_radical_rpow (a.natAbs * b.natAbs * c.natAbs) (by linarith : 0 ≤ κ + ε)
     have hR₀ : 0 ≤ ((radical (a.natAbs * b.natAbs * c.natAbs) : ℕ) : ℝ) ^ (κ + ε) :=
-      zero_le_one.trans hR
+      Real.rpow_nonneg (Nat.cast_nonneg _) _
     rw [Int.natAbs_mul, Int.natAbs_mul]
     by_cases h₀ : a.natAbs = 0 ∨ b.natAbs = 0 ∨ c.natAbs = 0
     · -- if one entry vanishes, the other two are `±1`
@@ -153,6 +152,9 @@ theorem abcConjectureWithExponent_iff_nat (κ : ℝ) (hκ : 0 ≤ κ) : AbcConje
           omega
         · rw [show b.natAbs = a.natAbs by omega, Nat.coprime_self] at hxy
           omega
+      have hprod : a.natAbs * b.natAbs * c.natAbs = 0 := by rcases h₀ with h | h | h <;> simp [h]
+      have hR : (1 : ℝ) ≤ ((radical (a.natAbs * b.natAbs * c.natAbs) : ℕ) : ℝ) ^ (κ + ε) := by
+        simp [hprod]
       exact (Nat.cast_le_one.mpr hle).trans (one_le_mul_of_one_le_of_one_le (le_max_right _ _) hR)
     -- otherwise the triple of absolute values is a positive triple `x + y = z` in some order
     refine le_trans ?_ (mul_le_mul_of_nonneg_right (le_max_left C 1) hR₀)
@@ -175,7 +177,7 @@ with `a + b = c`. -/
 theorem abcConjecture_iff_nat : AbcConjecture ↔
     ∀ ε : ℝ, 0 < ε → ∃ C : ℝ, ∀ a b c : ℕ, 0 < a → 0 < b → a.Coprime b → a + b = c →
       (c : ℝ) ≤ C * ((radical (a * b * c) : ℕ) : ℝ) ^ (1 + ε) :=
-  abcConjectureWithExponent_iff_nat 1 zero_le_one
+  abcConjectureWithExponent_iff_nat 1
 
 /-- **The abc conjecture as finitely many exceptions**, the form of `ABC.abc` in the
 `formal-conjectures` project: it is equivalent to ask that, for every `ε > 0`, only finitely many
