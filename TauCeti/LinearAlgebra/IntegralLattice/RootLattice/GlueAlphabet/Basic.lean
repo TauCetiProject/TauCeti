@@ -303,9 +303,8 @@ theorem glueAlphabetIsometry_ofEq {t s : DynkinType} (h : t = s) (hv : t.Valid) 
   -- Both sides are `t.glueAlphabetIsometry hv ht x`, the validity proofs being equal.
   rfl
 
-/-- **The glue alphabet of a simply-laced type is nondegenerate**: for `Aₙ` and `Dₙ` this is the
-nondegeneracy of the standard models, which hold for every rank, and for `E₆`, `E₇`, `E₈` the
-alphabet is isometric to the discriminant form of a nondegenerate lattice. -/
+/-- **The glue alphabet of a simply-laced type is nondegenerate**, for every rank, valid or
+not. -/
 theorem isNondegenerate_glueAlphabet (t : DynkinType) (ht : t.IsSimplyLaced) :
     (t.glueAlphabet ht).IsNondegenerate := by
   cases t with
