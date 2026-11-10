@@ -69,10 +69,11 @@ what ties the sequence to the arrows of the Auslander-Reiten quiver.
 * `TauCeti.IsLeftAlmostSplit.isLocalRing_end` and `TauCeti.IsRightAlmostSplit.isLocalRing_end`:
   in a preadditive category, **the source of a left almost split morphism and the target of a
   right almost split morphism have local endomorphism rings**, with no finiteness hypothesis.
-* `TauCeti.IsRightAlmostSplit.mem_jacobsonRadical` and
-  `TauCeti.isRightAlmostSplit_iff_mem_jacobsonRadical_and_forall`: a right almost split morphism is
-  radical, and if the target has a local endomorphism ring, a morphism into it is right almost split
-  exactly when it is radical and every radical morphism into the target factors through it.
+* `TauCeti.IsLeftAlmostSplit.mem_jacobsonRadical`, `TauCeti.IsRightAlmostSplit.mem_jacobsonRadical`
+  and `TauCeti.isRightAlmostSplit_iff_mem_jacobsonRadical_and_forall`: a left or right almost split
+  morphism is radical, and if the target has a local endomorphism ring, a morphism into it is
+  right almost split exactly when it is radical and every radical morphism into the target
+  factors through it.
 * `TauCeti.IsLeftAlmostSplit.isIso_of_isSplitMono_of_comm` and
   `TauCeti.IsRightAlmostSplit.isIso_of_isSplitEpi_of_comm`: in a commutative square whose lower
   map is left almost split and whose upper map is not a split monomorphism, a split monomorphism
@@ -611,11 +612,17 @@ theorem IsRightAlmostSplit.isLocalRing_end (hf : IsRightAlmostSplit f) :
 
 end LocalRing
 
-/-! ### Right almost split morphisms and the radical -/
+/-! ### Almost split morphisms and the radical -/
 
 section Radical
 
 variable [Preadditive C]
+
+/-- A left almost split morphism is radical. -/
+theorem IsLeftAlmostSplit.mem_jacobsonRadical (hf : IsLeftAlmostSplit f) :
+    f ∈ jacobsonRadical X Y :=
+  have := hf.isLocalRing_end
+  mem_jacobsonRadical_iff_not_isSplitMono.2 hf.not_isSplitMono
 
 /-- A right almost split morphism is radical. -/
 theorem IsRightAlmostSplit.mem_jacobsonRadical (hf : IsRightAlmostSplit f) :
