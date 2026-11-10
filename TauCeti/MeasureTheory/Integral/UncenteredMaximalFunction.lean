@@ -141,7 +141,7 @@ theorem uncenteredMaximalFunction_le_two_pow_mul_maximalFunction (μ : Measure E
         rw [hvol, ENNReal.mul_div_cancel_right (Metric.measure_ball_pos μ y hr).ne'
           measure_ball_lt_top.ne]
         gcongr
-        exact setLAverage_le_maximalFunction μ f x (by positivity)
+        exact setLAverage_le_maximalFunction μ f x
 
 /-- For `x` in a ball `B` and `k ≥ 0`, the average of `‖h‖ ^ k` over `B` is at most `2ⁿ` times the
 maximal function of `‖h‖ₑ ^ k` at `x`, for an additive Haar measure on a real normed space of

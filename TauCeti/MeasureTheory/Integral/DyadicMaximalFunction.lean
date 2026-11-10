@@ -130,7 +130,7 @@ theorem dyadicMaximalFunction_le_two_pow_mul_maximalFunction (f : (ι → ℝ) �
         rw [hvol, ENNReal.mul_div_cancel_right (volume_dyadicCube_pos k m).ne'
           (volume_dyadicCube_ne_top k m)]
         gcongr
-        exact setLAverage_le_maximalFunction volume f x hk
+        exact setLAverage_le_maximalFunction volume f x
 
 /-- In positive dimension, the superlevel set of the dyadic maximal function of a function with
 finite `L¹` norm at a height `t ≠ 0` is the union of the Calderón–Zygmund cubes of `‖f‖` at

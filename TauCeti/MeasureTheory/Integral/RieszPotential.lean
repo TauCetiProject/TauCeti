@@ -531,7 +531,7 @@ private theorem ofReal_rpow_mul_setLIntegral_ball_le_maximalFunction [Nontrivial
       ≤ ENNReal.ofReal (r ^ (α - finrank ℝ E)) *
           (μ (ball x (2 * r)) * maximalFunction μ f x) := by
         gcongr
-        exact setLIntegral_ball_le_measure_mul_maximalFunction (by positivity)
+        exact setLIntegral_ball_le_measure_mul_maximalFunction
           measure_ball_lt_top.ne
     _ = ENNReal.ofReal (2 ^ finrank ℝ E * r ^ α) * μ (ball 0 1) * maximalFunction μ f x := by
         rw [Measure.addHaar_ball μ x (by positivity), ← mul_assoc, ← mul_assoc,
@@ -695,7 +695,7 @@ private theorem rieszPotential_le_hedbergConst [FiniteDimensional ℝ E] [μ.IsA
   -- If `M f (x) = 0`, every ball integral around `x` vanishes.
   rcases eq_or_ne M 0 with hM | hM
   · rw [rieszPotential_eq_zero_of_forall_setLIntegral_ball hαd fun r hr => le_antisymm
-      ((setLIntegral_ball_le_measure_mul_maximalFunction hr measure_ball_lt_top.ne).trans_eq
+      ((setLIntegral_ball_le_measure_mul_maximalFunction measure_ball_lt_top.ne).trans_eq
         (by rw [← hM_def, hM, mul_zero])) zero_le]
     exact zero_le
   have hMθ : M ^ (1 - θ) ≠ 0 := by

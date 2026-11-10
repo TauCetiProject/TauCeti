@@ -184,18 +184,20 @@ theorem maximalFunction_def (μ : Measure X) (f : X → F) (x : X) :
     maximalFunction μ f x = ⨆ r > 0, ⨍⁻ y in ball x r, ‖f y‖ₑ ∂μ := (rfl)
 
 /-- Every ball average is at most the maximal function: the introduction rule. -/
-theorem setLAverage_le_maximalFunction (μ : Measure X) (f : X → F) (x : X) (hr : 0 < r) :
+theorem setLAverage_le_maximalFunction (μ : Measure X) (f : X → F) (x : X) :
     ⨍⁻ y in ball x r, ‖f y‖ₑ ∂μ ≤ maximalFunction μ f x := by
-  rw [maximalFunction_def]
-  exact le_iSup₂ (f := fun r (_ : 0 < r) => ⨍⁻ y in ball x r, ‖f y‖ₑ ∂μ) r hr
+  rcases lt_or_ge 0 r with hr | hr
+  · rw [maximalFunction_def]
+    exact le_iSup₂ (f := fun r (_ : 0 < r) => ⨍⁻ y in ball x r, ‖f y‖ₑ ∂μ) r hr
+  · simp [Metric.ball_eq_empty.2 hr]
 
 /-- The integral of `‖f‖ₑ` over a ball of finite measure is at most the measure of the ball times
 the maximal function at its centre. -/
-theorem setLIntegral_ball_le_measure_mul_maximalFunction (hr : 0 < r) (hμ : μ (ball x r) ≠ ∞) :
+theorem setLIntegral_ball_le_measure_mul_maximalFunction (hμ : μ (ball x r) ≠ ∞) :
     ∫⁻ y in ball x r, ‖f y‖ₑ ∂μ ≤ μ (ball x r) * maximalFunction μ f x := by
   rw [← measure_mul_setLAverage _ hμ]
   gcongr
-  exact setLAverage_le_maximalFunction μ f x hr
+  exact setLAverage_le_maximalFunction μ f x
 
 /-- A bound holding for every ball average bounds the maximal function: the elimination rule. -/
 theorem maximalFunction_le (h : ∀ r > 0, ⨍⁻ y in ball x r, ‖f y‖ₑ ∂μ ≤ a) :
@@ -212,8 +214,8 @@ theorem lt_maximalFunction_iff :
 /-- If `‖f‖ₑ ≤ ‖g‖ₑ` almost everywhere, then `M f ≤ M g`. -/
 theorem maximalFunction_mono_ae (h : ∀ᵐ y ∂μ, ‖f y‖ₑ ≤ ‖g y‖ₑ) :
     maximalFunction μ f x ≤ maximalFunction μ g x :=
-  maximalFunction_le fun _ hr =>
-    (setLAverage_mono_ae _ h).trans (setLAverage_le_maximalFunction μ g x hr)
+  maximalFunction_le fun _ _ =>
+    (setLAverage_mono_ae _ h).trans (setLAverage_le_maximalFunction μ g x)
 
 /-- Functions whose norms agree almost everywhere have the same maximal function. -/
 theorem maximalFunction_congr_ae (h : ∀ᵐ y ∂μ, ‖f y‖ₑ = ‖g y‖ₑ) :
@@ -243,7 +245,7 @@ theorem maximalFunction_const (μ : Measure X) [μ.IsOpenPosMeasure] [IsLocallyF
     (eLpNormEssSup_le_of_ae_eNorm_bound (.of_forall fun _ => le_rfl))) ?_
   obtain ⟨r, hr, hfinite⟩ := (μ.finiteAt_nhds x).exists_mem_basis nhds_basis_ball
   exact (setLAverage_const (measure_ball_pos μ x hr).ne' hfinite.ne ‖c‖ₑ).ge.trans
-    (setLAverage_le_maximalFunction μ _ x hr)
+    (setLAverage_le_maximalFunction μ _ x)
 
 /-- The maximal inequality, with constant `1`, in the degenerate case of a space with at most one
 point, where every positive-radius ball is the whole space. -/
@@ -285,7 +287,7 @@ theorem maximalFunction_zero (μ : Measure X) (x : X) : maximalFunction μ (0 : 
 first summand need be measurable. -/
 theorem maximalFunction_add_le (hf : AEMeasurable (fun y => ‖f y‖ₑ) μ) (x : X) :
     maximalFunction μ (f + g) x ≤ maximalFunction μ f x + maximalFunction μ g x := by
-  refine maximalFunction_le fun r hr => ?_
+  refine maximalFunction_le fun r _ => ?_
   calc ⨍⁻ y in ball x r, ‖(f + g) y‖ₑ ∂μ
       ≤ ⨍⁻ y in ball x r, (‖f y‖ₑ + ‖g y‖ₑ) ∂μ :=
         setLAverage_mono_ae _ (.of_forall fun y => eNorm_add_le (f y) (g y))
@@ -293,8 +295,8 @@ theorem maximalFunction_add_le (hf : AEMeasurable (fun y => ‖f y‖ₑ) μ) (x
         rw [setLAverage_eq, setLAverage_eq, setLAverage_eq, lintegral_add_left' hf.restrict,
           ENNReal.add_div]
     _ ≤ maximalFunction μ f x + maximalFunction μ g x :=
-        add_le_add (setLAverage_le_maximalFunction μ f x hr)
-          (setLAverage_le_maximalFunction μ g x hr)
+        add_le_add (setLAverage_le_maximalFunction μ f x)
+          (setLAverage_le_maximalFunction μ g x)
 
 end Sublinear
 
@@ -330,7 +332,7 @@ theorem setLIntegral_ball_le_two_pow_mul_measure_mul_maximalFunction (μ : Measu
       ENNReal.ofReal_pow zero_le_two, ENNReal.ofReal_ofNat]
   calc ∫⁻ y in ball c r, ‖f y‖ₑ ∂μ ≤ ∫⁻ y in ball x (2 * r), ‖f y‖ₑ ∂μ := lintegral_mono_set hsub
     _ ≤ μ (ball x (2 * r)) * maximalFunction μ f x :=
-        setLIntegral_ball_le_measure_mul_maximalFunction (by positivity) measure_ball_lt_top.ne
+        setLIntegral_ball_le_measure_mul_maximalFunction measure_ball_lt_top.ne
     _ = 2 ^ finrank ℝ E * μ (ball c r) * maximalFunction μ f x := by rw [hμ]
 
 /-- **The Vitali covering estimate.** If every point of `S` is the centre of a ball of radius at
@@ -390,7 +392,7 @@ theorem lowerSemicontinuous_maximalFunction (μ : Measure E) [μ.IsAddHaarMeasur
   have hs_pos : 0 < s := hr.trans hrs'
   -- Every centre within `s - r` of `x` then has a ball average exceeding `t`.
   filter_upwards [ball_mem_nhds x (sub_pos.mpr hrs')] with y hy
-  refine lt_of_lt_of_le ?_ (setLAverage_le_maximalFunction μ f y hs_pos)
+  refine lt_of_lt_of_le ?_ (setLAverage_le_maximalFunction (r := s) μ f y)
   rw [setLAverage_eq, Measure.addHaar_ball_of_pos μ y hs_pos,
     ENNReal.lt_div_iff_mul_lt (.inl (hpos s hs_pos)) (.inl (hne s))]
   refine hs.trans_le (lintegral_mono_set (ball_subset_ball' ?_))
@@ -453,9 +455,20 @@ theorem mul_measure_lt_maximalFunction_le (μ : Measure E) [μ.IsAddHaarMeasure]
   exact mul_measure_le_of_forall_exists_ball fun x hx => ⟨r x, hR x hx, (hrlt x hx).le⟩
 
 /-- **The Hardy–Littlewood maximal inequality**, in quotient form. -/
-theorem measure_lt_maximalFunction_le (μ : Measure E) [μ.IsAddHaarMeasure] (f : E → F)
-    (ht : t ≠ 0) :
+theorem measure_lt_maximalFunction_le (μ : Measure E) [μ.IsAddHaarMeasure] (f : E → F) :
     μ {x | t < maximalFunction μ f x} ≤ 4 ^ finrank ℝ E * (∫⁻ x, ‖f x‖ₑ ∂μ) / t := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · -- at level `0` the quotient is `∞` unless `f` vanishes a.e., where every superlevel set is null
+    rcases eq_or_ne (∫⁻ x, ‖f x‖ₑ ∂μ) 0 with hI | hI
+    · have hS : {x | 0 < maximalFunction μ f x} ⊆
+          ⋃ n : ℕ, {x | ((n : ℝ≥0∞))⁻¹ < maximalFunction μ f x} := fun x hx ↦
+        mem_iUnion.2 (ENNReal.exists_inv_nat_lt (pos_iff_ne_zero.1 hx))
+      refine (measure_mono_null hS (measure_iUnion_null fun n ↦ ?_)).le.trans bot_le
+      have := mul_measure_lt_maximalFunction_le μ f ((n : ℝ≥0∞)⁻¹)
+      rw [hI, mul_zero, nonpos_iff_eq_zero, mul_eq_zero] at this
+      exact this.resolve_left (by simp)
+    · rw [ENNReal.div_zero (by simp [hI])]
+      exact le_top
   rcases eq_or_ne t ∞ with rfl | ht_top
   · -- the superlevel set at `∞` is empty
     simp
@@ -699,9 +712,8 @@ theorem ae_enorm_eq_zero_of_maximalFunction_eq_zero {f : E → F}
     ∀ᵐ x ∂μ, ‖f x‖ₑ = 0 := by
   rw [← Measure.restrict_univ (μ := μ), ← iUnion_ball_nat_succ x₀, ae_restrict_iUnion_iff]
   intro n
-  have hn : (0 : ℝ) < n + 1 := by positivity
   have hav : ⨍⁻ y in ball x₀ (n + 1), ‖f y‖ₑ ∂μ = 0 :=
-    le_antisymm (hx₀ ▸ setLAverage_le_maximalFunction μ f x₀ hn) bot_le
+    le_antisymm (hx₀ ▸ setLAverage_le_maximalFunction μ f x₀) bot_le
   rw [setLAverage_eq, ENNReal.div_eq_zero_iff] at hav
   exact (lintegral_eq_zero_iff' hf.restrict).1 (hav.resolve_right measure_ball_lt_top.ne)
 
@@ -729,7 +741,7 @@ private theorem setLIntegral_closedBall_four_mul_le (w : E → ℝ≥0∞) {x y 
         (measure_mul_setLAverage _ measure_ball_lt_top.ne).symm
     _ ≤ μ (ball y (5 * r)) * maximalFunction μ w y := by
         gcongr
-        simpa only [eNorm_eq_self] using setLAverage_le_maximalFunction μ w y h5
+        simpa only [eNorm_eq_self] using setLAverage_le_maximalFunction μ w y
     _ = 5 ^ finrank ℝ E * μ (ball x r) * maximalFunction μ w y := by rw [hμ]
 
 /-- **The weighted maximal inequality of Fefferman and Stein**, weak type `(1, 1)`: for every weight
