@@ -205,14 +205,21 @@ theorem discreteTopology_of_finiteType [DiscreteTopology R] [Algebra.FiniteType 
   exact (isEmbedding_eval_generators (a := ((↑) : s → A)) (by simpa using hs)).discreteTopology
 
 /-- Without finite type, points over a discrete ring need not be discrete: for infinitely many
-variables and a nontrivial compact coefficient ring, such as `𝔽₂` with the discrete topology, the
-points of affine space are an infinite compact space, hence not discrete. -/
-theorem not_discreteTopology_mvPolynomial (σ : Type*) [Infinite σ] [Nontrivial R]
-    [CompactSpace R] : ¬DiscreteTopology (MvPolynomial σ k →ₐ[k] R) := fun _ ↦ by
+variables and a nontrivial coefficient ring, such as `𝔽₂` with the discrete topology, the points of
+affine space are not discrete, since every basic open set constrains only finitely many
+coordinates. -/
+theorem not_discreteTopology_mvPolynomial (σ : Type*) [Infinite σ] [Nontrivial R] :
+    ¬DiscreteTopology (MvPolynomial σ k →ₐ[k] R) := fun _ ↦ by
   have : DiscreteTopology (σ → R) :=
     (mvPolynomialHomeomorph k R σ).symm.isEmbedding.discreteTopology
-  have : Finite (σ → R) := finite_of_compact_of_discrete
-  exact not_finite (σ → R)
+  classical
+  obtain ⟨I, u, hu, hsub⟩ := isOpen_pi_iff.1 (isOpen_discrete ({0} : Set (σ → R))) 0 rfl
+  obtain ⟨j, hj⟩ := Infinite.exists_notMem_finset I
+  have hmem : Function.update (0 : σ → R) j 1 ∈ (I : Set σ).pi u := fun i hi ↦ by
+    rw [Function.update_of_ne (by rintro rfl; exact hj hi)]
+    exact (hu i hi).2
+  have := congrFun (hsub hmem) j
+  simp at this
 
 end CommSemiring
 
