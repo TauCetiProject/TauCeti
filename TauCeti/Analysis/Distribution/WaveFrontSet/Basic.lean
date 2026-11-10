@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Distribution.ComplexPairing
 public import TauCeti.Analysis.Distribution.LinearEquiv
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.Support
+import TauCeti.Analysis.Distribution.TensorProduct
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Fourier.Decay
 import TauCeti.Analysis.Fourier.Inversion
@@ -43,6 +45,8 @@ not microlocally smooth.
 
 ## Main results
 
+* `Distribution.contDiff_localFourier`: the localized Fourier transform is a smooth function of
+  the frequency.
 * `Distribution.isOpen_setOf_isMicrolocallySmoothAt`, `Distribution.isOpen_diff_waveFrontSet`:
   the wave front set is closed in `Ω × (E \ {0})`.
 * `Distribution.smul_mem_waveFrontSet_iff`: it is conic in the frequency variable.
@@ -317,6 +321,52 @@ theorem localFourier_delta (x₀ : E) (φ : 𝓓(Ω, ℂ)) (η : E) :
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ E]
+
+/-- **Smoothness of the localized Fourier transform.** The Fourier transform `η ↦ T (φ e_η)` of the
+compactly supported distribution `φ T` is a smooth function of the frequency. -/
+theorem contDiff_localFourier (T : 𝓓'(Ω, ℂ)) (φ : 𝓓(Ω, ℂ)) :
+    ContDiff ℝ ∞ (T.localFourier φ) := by
+  refine contDiff_iff_contDiffAt.2 fun η₀ => ?_
+  -- A cutoff `χ` in the frequency, equal to one near `η₀`.
+  obtain ⟨χ, hχ, -, hχ1, hχc, -⟩ :=
+    (isCompact_singleton (x := η₀)).exists_contDiff_cutoff_eventuallyEq_one isOpen_univ
+      (subset_univ _)
+  -- The test function `(η, y) => χ η φ y e_η y` on `E × Ω`.
+  let V : Opens (E × E) := ⟨univ ×ˢ (Ω : Set E), isOpen_univ.prod Ω.isOpen⟩
+  have hV : (V : Set (E × E)) ⊆ ((⊤ : Opens E) : Set E) ×ˢ (Ω : Set E) := subset_rfl
+  let f : E × E → ℂ := fun p => (χ p.1 : ℂ) * φ p.2 * 𝐞 (-⟪p.2, p.1⟫)
+  have hf : ContDiff ℝ ∞ f := by
+    simp only [f, Real.fourierChar_apply]
+    exact ((ofRealCLM.contDiff.comp (hχ.comp contDiff_fst)).mul (φ.contDiff.comp contDiff_snd)).mul
+      (Complex.contDiff_exp.comp ((ofRealCLM.contDiff.comp (contDiff_const.mul
+        (contDiff_inner.comp (contDiff_snd.prodMk contDiff_fst)).neg)).mul contDiff_const))
+  have hsupp : tsupport f ⊆ tsupport χ ×ˢ tsupport φ := by
+    refine closure_minimal (fun p hp => ⟨subset_tsupport _ ?_, subset_tsupport _ ?_⟩)
+      ((isClosed_tsupport _).prod (isClosed_tsupport _))
+    · simpa using left_ne_zero_of_mul (left_ne_zero_of_mul hp)
+    · exact right_ne_zero_of_mul (left_ne_zero_of_mul hp)
+  let Φ : 𝓓(V, ℂ) :=
+    ⟨f, hf, (hχc.isCompact.prod φ.hasCompactSupport.isCompact).of_isClosed_subset
+      (isClosed_tsupport _) hsupp, hsupp.trans (prod_mono (subset_univ _) φ.tsupport_subset)⟩
+  let P : E → ℂ := fun η => T.partialPairing hV (postcompCLM (𝕜 := ℝ) reCLM Φ) η +
+    I * T.partialPairing hV (postcompCLM (𝕜 := ℝ) imCLM Φ) η
+  have hP : ContDiff ℝ ∞ P :=
+    ((T.partialPairing hV _).contDiff).add (contDiff_const.mul (T.partialPairing hV _).contDiff)
+  have hPη (η : E) : P η = χ η * T.localFourier φ η := by
+    -- The slices of `Φ` are the modulated cutoffs `χ η φ e_η`.
+    have hslice (L : ℂ →L[ℝ] ℝ) :
+        sliceRight (mapsTo_snd_prod.mono_left hV) (postcompCLM (𝕜 := ℝ) L Φ) η =
+          postcompCLM (𝕜 := ℝ) L (bilinLeftCLM (ContinuousLinearMap.mul ℝ ℂ)
+            (TauCeti.contDiff_fourierAtom η) ((χ η : ℂ) • φ)) := by
+      ext y
+      simp [Φ, f, TestFunction.coe_mk, sliceRight_apply, bilinLeftCLM_apply,
+        TauCeti.fourierAtom_eq_fourierChar, -TauCeti.fourierAtom_apply,
+        ← Complex.real_smul]
+    rw [← localFourier_smul_cutoff, localFourier, complexPairing_apply]
+    simp only [P, partialPairing_apply, hslice]
+  refine (hP.contDiffAt).congr_of_eventuallyEq ?_
+  filter_upwards [hχ1 η₀ rfl] with η hη
+  rw [hPη, hη, ofReal_one, one_mul]
 
 /-- A distribution is microlocally smooth in every direction at a point of `Ω` outside its
 support. -/

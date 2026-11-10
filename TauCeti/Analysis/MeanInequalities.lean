@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.MeanInequalities
+import Mathlib.Analysis.MeanInequalitiesPow
 import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
@@ -60,6 +61,8 @@ of a higher-order Sobolev space.
   by positive scalars, with the strict form.
 * `Real.sqrt_sum_sq_add_sum_sq_le_sum_sqrt`: the triangle inequality in the plane for finite
   sums of coordinate pairs.
+* `ENNReal.add_sq_le`: `(a + b) ^ 2 ≤ 2 (a ^ 2 + b ^ 2)` in `ℝ≥0∞`, the form of `add_sq_le` for
+  this semiring, which is not strictly ordered.
 * `ENNReal.geom_mean_le_arith_mean2_weighted_ofReal`: two-point weighted AM-GM in `ℝ≥0∞` with
   the real weights `1 - θ` and `θ`.
 * `ENNReal.Lp_add_le_tsum`: Minkowski's inequality for unconditional sums in `ℝ≥0∞`.
@@ -159,6 +162,12 @@ end Real
 namespace ENNReal
 
 open scoped ENNReal
+
+/-- `(a + b) ^ 2 ≤ 2 (a ^ 2 + b ^ 2)` in `ℝ≥0∞`. -/
+protected theorem add_sq_le (a b : ℝ≥0∞) : (a + b) ^ 2 ≤ 2 * (a ^ 2 + b ^ 2) := by
+  have h := rpow_add_le_mul_rpow_add_rpow a b (p := 2) one_le_two
+  norm_num [rpow_two] at h
+  exact h
 
 /-- The weighted AM-GM inequality in `ℝ≥0∞` for the real weights `1 - θ` and `θ`:
 `a ^ (1 - θ) * b ^ θ ≤ ofReal (1 - θ) * a + ofReal θ * b` for `0 ≤ θ ≤ 1`. -/

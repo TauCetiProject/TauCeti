@@ -47,6 +47,8 @@ decays rapidly, and the remaining terms are controlled by the rapid decay of `a_
 * `Distribution.exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul`: decay of each order
   of the localized Fourier transform on a set `Γ` survives multiplication of the cutoff by a smooth
   function, on any set `Γ'` whose conic neighbourhoods `closedBall η (c ‖η‖)` lie in `Γ`.
+* `Distribution.exists_nhds_forall_exists_contDiff_eq_mul`: near a point where `φ ≠ 0`, every
+  test function is `φ g` for a smooth function `g`.
 * `Distribution.IsMicrolocallySmoothAt.exists_nhds_cone`: at a point of microlocal smoothness
   there are a neighbourhood `U` of `x` and an open cone `Γ` around `ξ` such that every cutoff
   supported in `U` has localized Fourier transform rapidly decreasing on `Γ`.
@@ -225,6 +227,34 @@ theorem exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul {T : 𝓓'(Ω
     (v := fun m : L ↦ (m : E)) ha hF hc hΓ' hdecay
   exact ⟨C, fun η hη ↦ hC η hη _ (hsum η)⟩
 
+/-- Near a point `x` with `φ x ≠ 0`, every test function is a smooth multiple of `φ`: there is a
+neighbourhood `U` of `x` such that every test function `ψ` supported in `U` is `φ g` for a smooth
+function `g`. -/
+theorem exists_nhds_forall_exists_contDiff_eq_mul (φ : 𝓓(Ω, ℂ)) {x : E} (hφx : φ x ≠ 0) :
+    ∃ U ∈ 𝓝 x, ∀ ψ : 𝓓(Ω, ℂ), tsupport ψ ⊆ U →
+      ∃ g : E → ℂ, ContDiff ℝ ∞ g ∧ ∀ y, ψ y = φ y * g y := by
+  -- A cutoff `χ` equal to one near `x`, supported where `φ ≠ 0`.
+  obtain ⟨χ, hχ, -, hχ1, -, hχs⟩ := (isCompact_singleton (x := x)).exists_contDiff_cutoff
+    (isOpen_ne_fun φ.continuous continuous_const) (singleton_subset_iff.2 hφx)
+  refine ⟨interior (χ ⁻¹' {1}), isOpen_interior.mem_nhds (hχ1 rfl), fun ψ hψ ↦ ?_⟩
+  -- Write `ψ = φ (θ ψ)` with the smooth function `θ = χ / φ`.
+  let θ : E → ℂ := fun y ↦ (χ y : ℂ) * (φ y)⁻¹
+  have hθ : ContDiff ℝ ∞ θ := by
+    refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
+    by_cases hy : φ y = 0
+    · have hy' : y ∉ tsupport χ := fun h ↦ hχs h hy
+      refine (contDiffAt_const (c := (0 : ℂ))).congr_of_eventuallyEq ?_
+      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hy'] with z hz
+      simp [θ, hz]
+    · exact (ofRealCLM.contDiff.comp hχ).contDiffAt.mul (φ.contDiff.contDiffAt.fun_inv hy)
+  refine ⟨fun y ↦ θ y * ψ y, hθ.mul ψ.contDiff, fun y ↦ ?_⟩
+  by_cases hψy : ψ y = 0
+  · simp [hψy]
+  · have hχy : χ y = 1 := interior_subset (hψ (subset_tsupport _ hψy))
+    have hφy : φ y ≠ 0 := hχs (subset_tsupport _ (by simp [hχy]))
+    simp only [θ, hχy, ofReal_one]
+    field_simp
+
 /-- **Independence of the cutoff.** If `T` is microlocally smooth at `(x, ξ)`, then there are a
 neighbourhood `U` of `x` and an open cone `Γ` containing `ξ` such that for *every* test function
 `ψ` supported in `U`, the localized Fourier transform of `T` with cutoff `ψ` decays rapidly on
@@ -236,29 +266,11 @@ theorem IsMicrolocallySmoothAt.exists_nhds_cone {T : 𝓓'(Ω, ℂ)} {x ξ : E}
         ∀ N : ℕ, ∃ C, ∀ η ∈ Γ, (1 + ‖η‖) ^ N * ‖T.localFourier ψ η‖ ≤ C := by
   obtain ⟨φ, hφx, Γ, hΓ, hξ, hcone, hdecay⟩ := isMicrolocallySmoothAt_iff.1 h
   obtain ⟨Γ', hΓ'o, hξ', hcone', c, hc, hΓ'⟩ := hΓ.exists_cone_closedBall_subset hcone hξ
-  -- A cutoff `χ` equal to one near `x`, supported where `φ ≠ 0`.
-  obtain ⟨χ, hχ, -, hχ1, -, hχs⟩ := (isCompact_singleton (x := x)).exists_contDiff_cutoff
-    (isOpen_ne_fun φ.continuous continuous_const) (singleton_subset_iff.2 hφx)
-  refine ⟨interior (χ ⁻¹' {1}), isOpen_interior.mem_nhds (hχ1 rfl), Γ', hΓ'o, hξ', hcone',
-    fun ψ hψ N ↦ ?_⟩
-  -- Write `ψ = φ (θ ψ)` with the smooth function `θ = χ / φ`.
-  let θ : E → ℂ := fun y ↦ (χ y : ℂ) * (φ y)⁻¹
-  have hθ : ContDiff ℝ ∞ θ := by
-    refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
-    by_cases hy : φ y = 0
-    · have hy' : y ∉ tsupport χ := fun h ↦ hχs h hy
-      refine (contDiffAt_const (c := (0 : ℂ))).congr_of_eventuallyEq ?_
-      filter_upwards [notMem_tsupport_iff_eventuallyEq.1 hy'] with z hz
-      simp [θ, hz]
-    · exact (ofRealCLM.contDiff.comp hχ).contDiffAt.mul (φ.contDiff.contDiffAt.fun_inv hy)
-  refine exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul (hθ.mul ψ.contDiff).contDiffOn
-    (fun y ↦ ?_) hc hΓ' (hdecay N)
-  by_cases hψy : ψ y = 0
-  · simp [hψy]
-  · have hχy : χ y = 1 := interior_subset (hψ (subset_tsupport _ hψy))
-    have hφy : φ y ≠ 0 := hχs (subset_tsupport _ (by simp [hχy]))
-    simp only [θ, hχy, ofReal_one]
-    field_simp
+  obtain ⟨U, hU, hUψ⟩ := exists_nhds_forall_exists_contDiff_eq_mul φ hφx
+  refine ⟨U, hU, Γ', hΓ'o, hξ', hcone', fun ψ hψ N ↦ ?_⟩
+  obtain ⟨g, hg, hψg⟩ := hUψ ψ hψ
+  exact exists_one_add_norm_pow_mul_norm_localFourier_le_of_eq_mul hg.contDiffOn hψg hc hΓ'
+    (hdecay N)
 
 /-- The sum of two distributions microlocally smooth at `(x, ξ)` is microlocally smooth there. -/
 theorem IsMicrolocallySmoothAt.add {S T : 𝓓'(Ω, ℂ)} {x ξ : E}
