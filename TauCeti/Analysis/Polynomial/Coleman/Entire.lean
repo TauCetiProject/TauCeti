@@ -88,13 +88,13 @@ theorem tendsto_coeff_colemanDBounded_trunc (hB : B.IsEntire) (hF : F.IsEntire)
 products of the Coleman majorants of `B`. -/
 theorem norm_coeff_colemanDEntire_le {ρ : ℕ → ℝ} (hρ₀ : ∀ i, 0 ≤ ρ i)
     (hρ : Antitone ρ) (hbound : ∀ j, ‖coeff j F‖ ≤ ∏ i ∈ range j, ρ i)
-    (hB : B.IsEntire) (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1)
+    (hB : ∀ i, B.IsRestricted (ρ i)) (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1)
     (k : ℕ) : ‖coeff k (colemanDEntire B F)‖ ≤ ∏ i ∈ range k, colemanMajorant B (ρ i) := by
   rw [coeff_colemanDEntire]
   exact le_of_tendsto (cauchySeq_coeff_colemanDBounded_trunc hρ₀ hρ hbound hF₀
-      (fun i ↦ hB.isRestricted _) hB₀ k).tendsto_limUnder.norm
+      hB hB₀ k).tendsto_limUnder.norm
     (Eventually.of_forall fun p ↦ norm_coeff_colemanDBounded_trunc_le hρ₀ hρ hbound
-      (fun i ↦ hB.isRestricted _) hB₀ p.1 p.2 (p.2 + 1) (p.1 + 1) k)
+      hB hB₀ p.1 p.2 (p.2 + 1) (p.1 + 1) k)
 
 /-- Coleman's transform of normalized entire input along a zero-constant entire function is
 entire over a complete ultrametric norm-one coefficient ring. -/
@@ -103,7 +103,8 @@ theorem isEntire_colemanDEntire (hB : B.IsEntire) (hF : F.IsEntire)
   obtain ⟨ρ, hρ₀, hρ, hlim, hbound⟩ := hF.exists_newtonMajorant (by simp [hF₀])
   exact isEntire_of_norm_coeff_le_prod
     (tendsto_colemanMajorant (hB.isRestricted 1) zero_lt_one (fun i ↦ (hρ₀ i).le) hlim)
-    (norm_coeff_colemanDEntire_le (fun i ↦ (hρ₀ i).le) hρ hbound hB hB₀ hF₀)
+    (norm_coeff_colemanDEntire_le (fun i ↦ (hρ₀ i).le) hρ hbound (fun i ↦ hB.isRestricted _) hB₀
+      hF₀)
 
 /-- The finite transforms converge in the Gauss norm of every radius, with the two
 truncation orders tending to infinity independently. -/
@@ -136,7 +137,8 @@ theorem tendsto_gaussNorm_colemanDBounded_trunc_sub_colemanDEntire
     exact (hsub _ _).trans (max_le
       (norm_coeff_colemanDBounded_trunc_le (fun i ↦ (hρ₀ i).le) hρ hbound
         (fun i ↦ hB.isRestricted _) hB₀ p.1 p.2 (p.2 + 1) (p.1 + 1) k)
-      (norm_coeff_colemanDEntire_le (fun i ↦ (hρ₀ i).le) hρ hbound hB hB₀ hF₀ k))
+      (norm_coeff_colemanDEntire_le (fun i ↦ (hρ₀ i).le) hρ hbound
+        (fun i ↦ hB.isRestricted _) hB₀ hF₀ k))
   · simpa only [coeff_mk, Real.norm_eq_abs,
       abs_of_nonneg (prod_nonneg fun i _ ↦ hβ₀ i)] using
       (isRestricted_iff' |r| _).mp (hprod.isRestricted |r|)
