@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
+import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
@@ -23,10 +24,15 @@ zero and continuous nonnegative-rational scalar multiplication, so that `t / n` 
 both real and complex scalars qualify. This limit feeds the exponential power limit behind the
 Trotter product formula.
 
+Comparing the slopes of two curves leaving a common point with the same right derivative shows
+that they do not separate linearly: their distance is `o(s - t)` at parameter `s`.
+
 ## Main results
 
 * `HasDerivAtFilter.tendsto_slope`: slopes converge to the derivative away from the base point.
 * `HasDerivAt.tendsto_nsmul_sub_add_div`: `n • (f (x + t / n) - f x)` tends to `t • f'`.
+* `HasDerivWithinAt.nonpos_of_mul_le_norm_sub`: two curves with the same right derivative at a
+  common point do not separate linearly.
 -/
 
 public section
@@ -65,3 +71,16 @@ theorem HasDerivAt.tendsto_nsmul_sub_add_div {𝕜 E : Type*} [NontriviallyNorme
   refine (((HasDerivAtFilter.tendsto_slope hf).comp hlim).const_smul t).congr' ?_
   filter_upwards [eventually_ne_atTop 0] with n hn
   simp [slope_def_module, smul_smul, mul_div_cancel₀ _ ht, Nat.cast_smul_eq_nsmul]
+
+/-- Two curves leaving a common point with the same right derivative do not separate linearly:
+if `(s - t) * a ≤ ‖γ₁ s - γ₂ s‖` for all `s > t` close to `t`, then `a ≤ 0`. -/
+theorem HasDerivWithinAt.nonpos_of_mul_le_norm_sub {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {γ₁ γ₂ : ℝ → E} {u : E} {t a : ℝ}
+    (h₁ : HasDerivWithinAt γ₁ u (Ioi t) t) (h₂ : HasDerivWithinAt γ₂ u (Ioi t) t)
+    (h0 : γ₁ t = γ₂ t) (hle : ∀ᶠ s in 𝓝[>] t, (s - t) * a ≤ ‖γ₁ s - γ₂ s‖) : a ≤ 0 := by
+  have hslope := (hasDerivWithinAt_iff_tendsto_slope' (lt_irrefl t)).mp (h₁.sub h₂)
+  rw [sub_self] at hslope
+  refine ge_of_tendsto (by simpa using hslope.norm) ?_
+  filter_upwards [hle, self_mem_nhdsWithin] with s hs (hst : t < s)
+  simpa [slope_def_module, h0, norm_smul, abs_of_pos (sub_pos.2 hst),
+    le_inv_mul_iff₀ (sub_pos.2 hst)] using hs
