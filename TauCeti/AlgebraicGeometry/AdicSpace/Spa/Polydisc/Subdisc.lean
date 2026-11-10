@@ -178,14 +178,17 @@ section NormedField
 
 variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
 
+omit [IsUltrametricDist K] in
 /-- A disc `D(a, |c|)` of nonzero radius is cut out by its defining inequality
 `v(T - a) ≤ v(c)` alone: the nonvanishing condition `v(c) ≠ 0` is automatic. -/
 theorem closedSubdisc_eq_setOf_vle (a : K) {c : K} (hc : c ≠ 0) :
     closedSubdisc a c = {v | v.1.toValuativeRel.vle (T - C a) (C c)} := by
   ext v
-  rw [mem_closedSubdisc, Set.mem_ofPred_eq, and_iff_left_iff_imp, ← map_zero C,
-    closedPolydisc_vle_weightedC_iff, norm_zero, norm_le_zero_iff]
-  exact fun _ ↦ hc
+  rw [mem_closedSubdisc, Set.mem_ofPred_eq, and_iff_left_iff_imp]
+  intro _ h
+  have h1 := v.1.toValuativeRel.mul_vle_mul_left h (C c⁻¹)
+  rw [← map_mul, mul_inv_cancel₀ hc, zero_mul, map_one] at h1
+  exact v.1.toValuativeRel.not_vle_one_zero h1
 
 /-- **Nested discs**: `D(a, |c|) ⊆ D(b, |d|)` whenever `‖a - b‖ ≤ ‖d‖` and `‖c‖ ≤ ‖d‖`. -/
 theorem closedSubdisc_subset_closedSubdisc {a b c d : K} (hab : ‖a - b‖ ≤ ‖d‖)
@@ -408,13 +411,17 @@ theorem closedSubdisc_subset_closedSubdisc_iff {a c : K} (ha : ‖a‖ ≤ 1) (h
   exact (discPoint_mem_closedSubdisc_iff a ha hc hc₁ b d).mp
     (h ((discPoint_mem_closedSubdisc_iff a ha hc hc₁ a c).mpr (by simp)))
 
-/-- **Equality of discs**: for centres in the closed unit disc and radius parameters of norm in
-`(0, 1]`, `D(a, |c|) = D(b, |d|)` exactly when `‖c‖ = ‖d‖` and `‖a - b‖ ≤ ‖c‖`. -/
+/-- **Equality of discs**: for centres in the closed unit disc, a radius parameter `c` of norm in
+`(0, 1]` and a radius parameter `d` of norm at most `1`, `D(a, |c|) = D(b, |d|)` exactly when
+`‖c‖ = ‖d‖` and `‖a - b‖ ≤ ‖c‖`. -/
 theorem closedSubdisc_eq_closedSubdisc_iff {a b c d : K} (ha : ‖a‖ ≤ 1) (hb : ‖b‖ ≤ 1)
-    (hc₀ : c ≠ 0) (hc₁ : ‖c‖ ≤ 1) (hd₀ : d ≠ 0) (hd₁ : ‖d‖ ≤ 1) :
+    (hc₀ : c ≠ 0) (hc₁ : ‖c‖ ≤ 1) (hd₁ : ‖d‖ ≤ 1) :
     closedSubdisc a c = closedSubdisc b d ↔ ‖c‖ = ‖d‖ ∧ ‖a - b‖ ≤ ‖c‖ := by
-  rw [Set.Subset.antisymm_iff, closedSubdisc_subset_closedSubdisc_iff ha hc₀ hc₁,
-    closedSubdisc_subset_closedSubdisc_iff hb hd₀ hd₁, norm_sub_rev b a]
+  rw [Set.Subset.antisymm_iff, closedSubdisc_subset_closedSubdisc_iff ha hc₀ hc₁]
+  by_cases hd₀ : d = 0
+  · subst hd₀
+    simp only [norm_zero, norm_le_zero_iff, norm_eq_zero, hc₀, and_false, false_and]
+  rw [closedSubdisc_subset_closedSubdisc_iff hb hd₀ hd₁, norm_sub_rev b a]
   constructor
   · rintro ⟨⟨-, hcd⟩, hba, hdc⟩
     exact ⟨le_antisymm hcd hdc, hba⟩
