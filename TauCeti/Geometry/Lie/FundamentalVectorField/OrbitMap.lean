@@ -117,20 +117,6 @@ theorem finrank_isotropy_fundamental_smul (g : G) (x : M) :
   exact (LieSubalgebra.equivMapOfInjective _ _
     (Lie.tangentAd (I := I) g).injective).toLinearEquiv.finrank_eq.symm
 
-/-- The action is locally free at `g • x` exactly when it is locally free at `x`. -/
-@[simp]
-theorem isotropy_fundamental_smul_eq_bot_iff (g : G) (x : M) :
-    (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) = ⊥ ↔
-      (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
-  rw [isotropy_fundamental_smul, LieSubalgebra.eq_bot_iff, LieSubalgebra.eq_bot_iff]
-  constructor
-  · intro h η hη
-    exact (Lie.tangentAd (I := I) g).injective
-      ((h _ ((LieSubalgebra.mem_map _ _ _).mpr ⟨η, hη, rfl⟩)).trans (map_zero _).symm)
-  · intro h ξ hξ
-    obtain ⟨η, hη, rfl⟩ := (LieSubalgebra.mem_map _ _ _).mp hξ
-    rw [h η hη, map_zero]
-
 /-- **The orbit tangent spaces along an orbit correspond**: the differential of `y ↦ g • y` at `x`
 carries the orbit tangent space at `x` onto that at `g • x`. -/
 theorem orbitTangent_fundamental_smul (g : G) (x : M) :
@@ -230,7 +216,7 @@ theorem injective_mfderiv_smul_const_iff (x : M) (g : G) :
     Injective (mfderiv I I' (fun h : G ↦ h • x) g) ↔
       (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
   -- Up to the bijection `ξ ↦ ξ^R(g)`, the differential at `g` is evaluation at `g • x`.
-  rw [← isotropy_fundamental_smul_eq_bot_iff g, InfinitesimalAction.isotropy_eq_bot_iff,
+  rw [← isotropy_smul_eq_bot_iff (g := g), InfinitesimalAction.isotropy_eq_bot_iff,
     ← Injective.of_comp_iff' _ (bijective_mulRightInvariantVectorField (I := I) g)]
   congr! 1
   ext ξ

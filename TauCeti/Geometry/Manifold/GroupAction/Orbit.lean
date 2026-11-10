@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import Mathlib.Topology.Algebra.ProperAction.Basic
 public import TauCeti.Geometry.Lie.Subgroup.Stabilizer
+import TauCeti.Geometry.Lie.FundamentalVectorField.OrbitMap
 import TauCeti.Geometry.Manifold.Immersion.Differential
 import TauCeti.Topology.Algebra.ProperAction.Orbit
 
@@ -21,14 +22,15 @@ act smoothly on the left on a manifold `M`, and fix `x : M`. This file studies t
 Its derivative at `g` is computed from the derivative at the identity of the orbit map of `g • x`,
 since `h • x = (h * g⁻¹) • (g • x)` and right translations are diffeomorphisms
 (`TauCeti.mfderiv_smul_const_apply`). At the identity it
-is `ξ ↦ ξ_M(x)`, by definition of the fundamental vector fields. Hence:
+is `ξ ↦ ξ_M(x)`, by definition of the fundamental vector fields. By
+`TauCeti.Geometry.Lie.FundamentalVectorField.OrbitMap`:
 
 * the image of the derivative at `g` is the orbit tangent space `𝔤 · (g • x)`
   (`TauCeti.range_mfderiv_smul_const`);
-* the derivative at `g` is injective exactly when the isotropy algebra `𝔤_{g • x}` is trivial
+* the derivative at `g` is injective exactly when the isotropy algebra `𝔤_x` is trivial
   (`TauCeti.injective_mfderiv_smul_const_iff`).
 
-The isotropy algebras along an orbit are conjugate, so the orbit map is an **immersion** exactly
+Hence the orbit map is an **immersion** exactly
 when the action is locally free at `x`, that is, `𝔤_x = 0`
 (`TauCeti.isImmersion_smul_const_iff`). For finite-dimensional `G`, by
 `TauCeti.Lie.discreteTopology_stabilizer_iff_isotropy_eq_bot` this means that the stabilizer `G_x`
@@ -80,40 +82,6 @@ theorem mfderiv_smul_const_apply (g : G) (x : M) (v : TangentSpace I g) :
     ((contMDiff_mul_right (a := g⁻¹) (n := ∞)).contMDiffAt.mdifferentiableAt (by simp))
     (mul_inv_cancel g) v
 
-/-- **The tangent space of an orbit.** The image of the derivative at `g` of the orbit map
-`h ↦ h • x` is the orbit tangent space `𝔤 · (g • x)` spanned by the fundamental vector fields. -/
-theorem range_mfderiv_smul_const (g : G) (x : M) :
-    (mfderiv I I' (fun h : G ↦ h • x) g).range =
-      (InfinitesimalAction.fundamental I G I' M).orbitTangent (g • x) := by
-  ext v
-  rw [LinearMap.mem_range, InfinitesimalAction.mem_orbitTangent_iff]
-  simp only [InfinitesimalAction.fundamental_apply]
-  constructor
-  · rintro ⟨w, rfl⟩
-    exact ⟨mfderiv I I (· * g⁻¹) g w,
-      (fundamentalVectorField_apply _ _).trans (mfderiv_smul_const_apply g x w).symm⟩
-  · rintro ⟨ξ, rfl⟩
-    exact ⟨mulRightInvariantVectorField ξ g, mfderiv_smul_mulRightInvariantVectorField ξ g x⟩
-
-/-- The derivative at `g` of the orbit map `h ↦ h • x` is injective exactly when the isotropy
-algebra `𝔤_{g • x}` is trivial, that is, when `ξ ↦ ξ_M(g • x)` is injective. -/
-theorem injective_mfderiv_smul_const_iff (g : G) (x : M) :
-    Injective (mfderiv I I' (fun h : G ↦ h • x) g) ↔
-      (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) = ⊥ := by
-  rw [InfinitesimalAction.isotropy_eq_bot_iff]
-  simp only [Injective, InfinitesimalAction.eval_apply, InfinitesimalAction.fundamental_apply]
-  constructor
-  · intro hinj ξ η hξη
-    refine injective_mfderiv_mul_right (I := I) (𝕜 := ℝ) g 1 (hinj ?_)
-    simpa only [← mulRightInvariantVectorField_apply, mfderiv_smul_mulRightInvariantVectorField]
-      using hξη
-  · intro hinj v w hvw
-    rw [mfderiv_smul_const_apply, mfderiv_smul_const_apply] at hvw
-    refine injective_mfderiv_mul_right (I := I) (𝕜 := ℝ) g⁻¹ g
-      (hinj (a₁ := mfderiv I I (· * g⁻¹) g v) (a₂ := mfderiv I I (· * g⁻¹) g w) ?_)
-    exact (fundamentalVectorField_apply _ _).trans
-      (hvw.trans (fundamentalVectorField_apply _ _).symm)
-
 variable [FiniteDimensional ℝ E'] [I.Boundaryless] [I'.Boundaryless]
 
 /-- **Orbit maps of locally free points are immersions.** The orbit map `g ↦ g • x` of a smooth
@@ -124,11 +92,11 @@ theorem isImmersion_smul_const_iff {x : M} :
       (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
   constructor
   · intro h
-    simpa only [one_smul] using (injective_mfderiv_smul_const_iff 1 x).1
+    exact (injective_mfderiv_smul_const_iff x 1).1
       ((h.isImmersionAt 1).mfderiv_injective (by simp))
   · intro hx
     exact (ContMDiffSMul.contMDiff_smul_const x).isImmersion_of_injective_mfderiv (by simp)
-      fun g ↦ (injective_mfderiv_smul_const_iff g x).2 (isotropy_smul_eq_bot_iff.2 hx)
+      fun g ↦ (injective_mfderiv_smul_const_iff x g).2 hx
 
 variable [FiniteDimensional ℝ E]
 
