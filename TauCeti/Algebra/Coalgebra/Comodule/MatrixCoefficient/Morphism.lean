@@ -25,12 +25,12 @@ from `M` to the regular right comodule `C`. Applying the counit recovers `φ`, s
 linear dual separates vectors, these morphisms do too. For a free module, they continue to
 separate vectors after extending scalars to any commutative algebra.
 
-For a finite free comodule, every coefficient morphism lands in the finite coefficient
-subcoalgebra, viewed as a regular subcomodule. Conversely, the ranges of all coefficient
-morphisms generate that regular subcomodule. This supplies an intended downstream naturality
-bridge for Tannakian reconstruction: for each finite comodule, naturality along these corestricted
-maps compares its component with components on finite regular subcomodules, and joint separation
-then recovers the original finite-comodule component.
+For a free comodule, every coefficient morphism lands in the coefficient subcoalgebra, viewed as a
+regular subcomodule (a finite one when the comodule is finite). Conversely, the ranges of all
+coefficient morphisms generate that regular subcomodule. This supplies an intended downstream
+naturality bridge for Tannakian reconstruction: for each finite comodule, naturality along these
+corestricted maps compares its component with components on finite regular subcomodules, and joint
+separation then recovers the original finite-comodule component.
 
 ## Main declarations
 

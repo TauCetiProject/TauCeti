@@ -105,6 +105,23 @@ theorem comul_matrixCoefficient (φ : Module.Dual R M) (m : M) :
       simp only [coassoc_simps]
 
 omit [Coalgebra R C] [Comodule R C M] in
+/-- The `i`-th coordinate of a tensor in `M ⊗ C`, for a basis of `M`, is its contraction
+against the `i`-th coordinate functional. -/
+private theorem equivFinsuppOfBasisLeft_apply_eq_lid {ι : Type x} [DecidableEq ι] (b : Basis ι R M)
+    (x : M ⊗[R] C) (i : ι) :
+    TensorProduct.equivFinsuppOfBasisLeft (N := C) b x i =
+      TensorProduct.lid R C (TensorProduct.map (b.coord i) LinearMap.id x) := by
+  rw [TensorProduct.equivFinsuppOfBasisLeft_apply]
+  simp only [LinearMap.rTensor]
+
+omit [Coalgebra R C] [Comodule R C M] in
+/-- A family of tensors `vᵢ ⊗ fᵢ` vanishes wherever its right factors do. -/
+private theorem support_tmul_subset {ι : Type x} (v : ι → M) (f : ι → C) :
+    Function.support (fun i => v i ⊗ₜ[R] f i) ⊆ Function.support f :=
+  Function.support_subset_iff'.2 fun i hi => by
+    rw [Function.notMem_support.1 hi, TensorProduct.tmul_zero]
+
+omit [Coalgebra R C] [Comodule R C M] in
 private theorem tensor_eq_finsum_basis_tmul {ι : Type x} (b : Basis ι R M) (x : M ⊗[R] C) :
     x =
       ∑ᶠ i, b i ⊗ₜ[R]
@@ -112,28 +129,25 @@ private theorem tensor_eq_finsum_basis_tmul {ι : Type x} (b : Basis ι R M) (x 
           (TensorProduct.map (b.coord i) LinearMap.id x) := by
   classical
   let e := TensorProduct.equivFinsuppOfBasisLeft (N := C) b
-  have he (i : ι) :
-      e x i = TensorProduct.lid R C (TensorProduct.map (b.coord i) LinearMap.id x) := by
-    rw [TensorProduct.equivFinsuppOfBasisLeft_apply]
-    simp only [LinearMap.rTensor]
   calc
     x = e.symm (e x) := (e.symm_apply_apply x).symm
     _ = ∑ i ∈ (e x).support, b i ⊗ₜ[R] (e x i) :=
       TensorProduct.equivFinsuppOfBasisLeft_symm_apply b (e x)
     _ = ∑ᶠ i, b i ⊗ₜ[R] (e x i) :=
-      (finsum_eq_sum_of_support_subset _ (Function.support_subset_iff'.2 fun i hi => by
-        rw [Finsupp.notMem_support_iff.1 hi, TensorProduct.tmul_zero])).symm
-    _ = _ := by simp only [he]
+      (finsum_eq_sum_of_support_subset _
+        ((support_tmul_subset _ _).trans (Finsupp.fun_support_eq _).subset)).symm
+    _ = _ := by simp only [e, equivFinsuppOfBasisLeft_apply_eq_lid]
 
 /-- For a basis `(eᵢ)`, only finitely many matrix coefficients `c(eⁱ, m)` are nonzero. -/
 theorem finite_support_matrixCoefficient_coord {ι : Type x} (b : Basis ι R M) (m : M) :
     (Function.support fun i =>
       matrixCoefficient (R := R) (C := C) (b.coord i) m).Finite := by
   classical
-  refine (TensorProduct.equivFinsuppOfBasisLeft (N := C) b
-    (coact (R := R) (C := C) (M := M) m)).support.finite_toSet.subset fun i hi => ?_
-  simpa [matrixCoefficient_def, TensorProduct.equivFinsuppOfBasisLeft_apply,
-    LinearMap.rTensor] using hi
+  have h : (fun i => matrixCoefficient (R := R) (C := C) (b.coord i) m) =
+      ⇑(TensorProduct.equivFinsuppOfBasisLeft (N := C) b (coact (R := R) (C := C) (M := M) m)) :=
+    funext fun i => by rw [equivFinsuppOfBasisLeft_apply_eq_lid, matrixCoefficient_def]
+  rw [h, Finsupp.fun_support_eq]
+  exact Finset.finite_toSet _
 
 /-- The coaction of a comodule with a basis `(eᵢ)` expands as the finite sum
 `ρ(m) = ∑ᶠ i, eᵢ ⊗ c(eⁱ, m)` in matrix coefficients. -/
@@ -162,8 +176,7 @@ theorem comul_matrixCoefficient_eq_finsum {ι : Type x}
         matrixCoefficient (R := R) (C := C) (b.coord i) m := by
   rw [comul_matrixCoefficient, coact_eq_finsum_basis_matrixCoefficient (C := C) b,
     map_finsum _ ((finite_support_matrixCoefficient_coord (C := C) b m).subset
-      (Function.support_subset_iff'.2 fun i hi => by
-        rw [Function.notMem_support.1 hi, TensorProduct.tmul_zero]))]
+      (support_tmul_subset _ _))]
   simp only [TensorProduct.map_tmul, LinearMap.id_apply,
     matrixCoefficientLinear_apply]
 
