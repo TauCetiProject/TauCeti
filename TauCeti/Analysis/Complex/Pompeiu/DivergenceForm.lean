@@ -48,8 +48,6 @@ closure of an open set `U ⋐ Ω`: since `f, g ∈ Lʳ_loc(Ω)`, the data is com
   `Δ u = ∂ₛ f + ∂ₜ g` weakly where `h = f + i g`.
 * `TauCeti.weaklyHarmonicOn_sub_half_re_cauchyTransform`: the remainder `ξ - ½ Re (T h)` is
   weakly harmonic.
-* `TauCeti.memLpLoc_cauchyTransform`: the Cauchy transform of compactly supported `Lᵖ` data is
-  locally `Lᵖ`.
 * `TauCeti.exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq`: the
   decomposition `ξ = ξ₀ + v` on every `U ⋐ Ω` for finite-dimensional real coefficients, with
   `ξ₀ ∈ Lʳ_loc` and `v` harmonic.
@@ -163,20 +161,6 @@ theorem weaklyHarmonicOn_sub_half_re_cauchyTransform {Ω Ω'' : Opens ℂ} (hΩ 
   rw [integral_laplacian_smul_half_re_cauchyTransform hh hfg φ]
   simpa only [TestFunction.monoCLM_apply, le_refl, hΩ, and_self, ite_true] using
     hdiv (TestFunction.monoCLM ℝ φ)
-
-/-- The Cauchy transform of compactly supported `Lᵖ` data, `1 ≤ p ≤ ∞`, is locally `Lᵖ` on every
-subset of the plane. -/
-theorem memLpLoc_cauchyTransform {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-    {p : ℝ≥0∞} (hp : 1 ≤ p) {h : ℂ → F} (hh : MemLp h p) (hc : HasCompactSupport h)
-    {U : Set ℂ} : MemLpLoc p U (cauchyTransform h) := by
-  have hball (s : Set ℂ) (hs : Bornology.IsBounded s) : ∃ R : ℝ≥0, s ⊆ closedBall 0 R := by
-    obtain ⟨R, hR⟩ := (isBounded_iff_subset_closedBall 0).1 hs
-    exact ⟨R.toNNReal, hR.trans (closedBall_subset_closedBall (Real.le_coe_toNNReal R))⟩
-  obtain ⟨r, hr⟩ := hball _ hc.isCompact.isBounded
-  refine memLpLoc_iff.2 fun K _ hK ↦ ?_
-  obtain ⟨R, hR⟩ := hball K hK.isBounded
-  exact (memLp_cauchyTransform (R := R) hp (hh.restrict _)
-    ((subset_tsupport h).trans hr)).mono_measure (Measure.restrict_mono hR le_rfl)
 
 /-- **Divergence-form Laplace equation: decomposition.** Let `V` be a finite-dimensional real
 normed space, `1 ≤ r ≤ ∞`, and let `ξ`, locally integrable on `Ω`, solve `Δ ξ = ∂ₛ f + ∂ₜ g`
