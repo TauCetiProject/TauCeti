@@ -84,6 +84,46 @@ theorem fderiv_log_normSq_apply_I {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : 
     neg_div', div_sub' hα, div_eq_div_iff (mul_ne_zero four_ne_zero hα) hα]
   linear_combination (8 * (x z 2 ^ 2 + x z 3 ^ 2)) * (x z 2 * h₂ - x z 3 * h₁)
 
+/-- Where `α ≠ 0` and `∂bar_a α = 0` holds near `z`, the connection components `b₁, b₂` are
+determined by the section: `b₁ (p² + q²) = q (∂_s p - ∂_t q) - p (∂_s q + ∂_t p)` and
+`b₂ (p² + q²) = p (∂_s p - ∂_t q) + q (∂_s q + ∂_t p)`. So they are differentiable at `z` as soon
+as the section components are `C²` at `z`. -/
+theorem differentiableAt_connection_of_equation {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : ContDiffAt ℝ 2 (fun w ↦ x w 2) z) (hq : ContDiffAt ℝ 2 (fun w ↦ x w 3) z)
+    (hα : x z 2 ^ 2 + x z 3 ^ 2 ≠ 0)
+    (hsol : ∀ᶠ w in 𝓝 z, equation x w 1 = 0 ∧ equation x w 2 = 0) :
+    DifferentiableAt ℝ (fun w ↦ x w 0) z ∧ DifferentiableAt ℝ (fun w ↦ x w 1) z := by
+  have hR : ContinuousAt (fun w ↦ x w 2 ^ 2 + x w 3 ^ 2) z :=
+    (hp.continuousAt.pow 2).add (hq.continuousAt.pow 2)
+  have hev := ((hp.eventually (by simp)).and ((hq.eventually (by simp)).and
+    ((hR.eventually_ne hα).and hsol)))
+  have hp' := hp.differentiableAt (by norm_num)
+  have hq' := hq.differentiableAt (by norm_num)
+  have hdp := (hp.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
+  have hdq := (hq.fderiv_right (m := 1) (by norm_num)).differentiableAt one_ne_zero
+  have hpart (v : ℂ) : DifferentiableAt ℝ (fun w ↦ fderiv ℝ (fun w ↦ x w 2) w v) z :=
+    hdp.clm_apply (differentiableAt_const _)
+  have hqart (v : ℂ) : DifferentiableAt ℝ (fun w ↦ fderiv ℝ (fun w ↦ x w 3) w v) z :=
+    hdq.clm_apply (differentiableAt_const _)
+  have hR' : DifferentiableAt ℝ (fun w ↦ x w 2 ^ 2 + x w 3 ^ 2) z := (hp'.pow 2).add (hq'.pow 2)
+  have hP := (hpart 1).sub (hqart I)
+  have hQ := (hqart 1).add (hpart I)
+  refine ⟨?_, ?_⟩
+  · refine (((hP.mul hq').sub (hQ.mul hp')).mul (hR'.inv hα)).congr_of_eventuallyEq ?_
+    filter_upwards [hev] with w ⟨_, _, hαw, h₁, h₂⟩
+    rw [equation_apply_one] at h₁
+    rw [equation_apply_two] at h₂
+    simp only [Pi.mul_apply, Pi.add_apply, Pi.sub_apply, Pi.inv_apply]
+    rw [eq_mul_inv_iff_mul_eq₀ hαw]
+    linear_combination (-(x w 3)) * h₁ + (x w 2) * h₂
+  · refine (((hP.mul hp').add (hQ.mul hq')).mul (hR'.inv hα)).congr_of_eventuallyEq ?_
+    filter_upwards [hev] with w ⟨_, _, hαw, h₁, h₂⟩
+    rw [equation_apply_one] at h₁
+    rw [equation_apply_two] at h₂
+    simp only [Pi.mul_apply, Pi.add_apply, Pi.sub_apply, Pi.inv_apply]
+    rw [eq_mul_inv_iff_mul_eq₀ hαw]
+    linear_combination (-(x w 2)) * h₁ - (x w 3) * h₂
+
 /-- If `∂bar_a α = 0` near a point `z` where `α ≠ 0`, then
 `Δ (log |α|²) = (|α|² - 1) / 4 - 2 E` at `z`, where `E = equation x z 0` is the defect in the
 curvature equation `*iF_a = (1 - |α|²) / 8`. The section components are `C²` at `z`; the
@@ -120,28 +160,7 @@ theorem laplacian_log_normSq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
     hdp.clm_apply (differentiableAt_const _)
   have hqart (v : ℂ) : DifferentiableAt ℝ (fun w ↦ fderiv ℝ (fun w ↦ x w 3) w v) z :=
     hdq.clm_apply (differentiableAt_const _)
-  -- The connection components are determined by the section where `α ≠ 0`:
-  -- `b₁ (p² + q²) = q (∂_s p - ∂_t q) - p (∂_s q + ∂_t p)` and
-  -- `b₂ (p² + q²) = p (∂_s p - ∂_t q) + q (∂_s q + ∂_t p)`.
-  have hR' : DifferentiableAt ℝ (fun w ↦ x w 2 ^ 2 + x w 3 ^ 2) z := (hp'.pow 2).add (hq'.pow 2)
-  have hP := (hpart 1).sub (hqart I)
-  have hQ := (hqart 1).add (hpart I)
-  have hb₁ : DifferentiableAt ℝ (fun w ↦ x w 0) z := by
-    refine (((hP.mul hq').sub (hQ.mul hp')).mul (hR'.inv hα)).congr_of_eventuallyEq ?_
-    filter_upwards [hev] with w ⟨_, _, hαw, h₁, h₂⟩
-    rw [equation_apply_one] at h₁
-    rw [equation_apply_two] at h₂
-    simp only [Pi.mul_apply, Pi.add_apply, Pi.sub_apply, Pi.inv_apply]
-    rw [eq_mul_inv_iff_mul_eq₀ hαw]
-    linear_combination (-(x w 3)) * h₁ + (x w 2) * h₂
-  have hb₂ : DifferentiableAt ℝ (fun w ↦ x w 1) z := by
-    refine (((hP.mul hp').add (hQ.mul hq')).mul (hR'.inv hα)).congr_of_eventuallyEq ?_
-    filter_upwards [hev] with w ⟨_, _, hαw, h₁, h₂⟩
-    rw [equation_apply_one] at h₁
-    rw [equation_apply_two] at h₂
-    simp only [Pi.mul_apply, Pi.add_apply, Pi.sub_apply, Pi.inv_apply]
-    rw [eq_mul_inv_iff_mul_eq₀ hαw]
-    linear_combination (-(x w 2)) * h₁ - (x w 3) * h₂
+  obtain ⟨hb₁, hb₂⟩ := differentiableAt_connection_of_equation hp hq hα hsol
   have hRh := (hp'.hasFDerivAt.pow 2).fun_add (hq'.hasFDerivAt.pow 2)
   have hinv := (hasDerivAt_inv hα).comp_hasFDerivAt z hRh
   simp only [Function.comp_def] at hinv

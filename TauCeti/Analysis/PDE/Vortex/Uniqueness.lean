@@ -17,9 +17,10 @@ import Mathlib.Analysis.Calculus.ContDiff.WithLp
 
 In the coordinates of `TauCeti.Vortex.equation`, a field `x = (b₁, b₂, p, q)` has connection
 `a = i (b₁ ds + b₂ dt)` and section `α = 2 (p + i q)`. Let `x` and `y` be solutions of the plane
-vortex equation on the whole plane with differentiable connections, `C²` sections and `|α| → 1` at
-infinity, and suppose that their sections differ by a nowhere-vanishing `C²` factor, `α_x = h α_y`,
-while the zero set of `α_y` has empty interior. Then `x` is the phase gauge transform of `y` by a
+vortex equation on the whole plane with differentiable connections and `|α| → 1` at infinity,
+where the sections of `y` are `C²`, and suppose that their sections differ by a nowhere-vanishing
+`C²` factor, `α_x = h α_y` (so the sections of `x` are `C²` too), while the zero set of `α_y` has
+empty interior. Then `x` is the phase gauge transform of `y` by a
 `C²` phase `f` with `h = exp (i f)`
 (`TauCeti.Vortex.exists_eq_phaseGauge_of_forall_section_eq_mul`).
 
@@ -164,10 +165,11 @@ theorem norm_eq_one_of_forall_section_eq_mul {x y : ℂ → EuclideanSpace ℝ (
     (Real.eq_one_of_pos_of_log_eq_zero (lt_of_le_of_ne (by positivity) (hh₀' z).symm) hw₀)
 
 /-- **Uniqueness of plane vortices with the same zeros, modulo gauge.** Let `x` and `y` be
-solutions of the vortex equation on the plane with differentiable connections, `C²` sections and
-`|α| → 1` at infinity, whose sections satisfy `α_x = h α_y` for a nowhere-vanishing `C²` function
-`h`, and suppose the zero set of `α_y` has empty interior. Then `h = exp (i f)` for a `C²` real
-phase `f`, and `x` is the phase gauge transform of `y` by `f`. -/
+solutions of the vortex equation on the plane with differentiable connections and `|α| → 1` at
+infinity, where the sections of `y` are `C²`, whose sections satisfy `α_x = h α_y` for a
+nowhere-vanishing `C²` function `h` (so the sections of `x` are `C²` too, being the real and
+imaginary parts of `h α_y`), and suppose the zero set of `α_y` has empty interior. Then
+`h = exp (i f)` for a `C²` real phase `f`, and `x` is the phase gauge transform of `y` by `f`. -/
 theorem exists_eq_phaseGauge_of_forall_section_eq_mul {x y : ℂ → EuclideanSpace ℝ (Fin 4)}
     {h : ℂ → ℂ}
     (hxb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hxb₂ : Differentiable ℝ (fun w ↦ x w 1))
