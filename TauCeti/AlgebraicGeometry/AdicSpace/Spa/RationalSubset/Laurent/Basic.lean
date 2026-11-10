@@ -102,8 +102,7 @@ variable {A : Type*} [CommRing A] [TopologicalSpace A] {ι : Type*}
 with `J` the set of indices of sign `εᵢ = -1`.
 
 As with `rationalSubset`, nothing is assumed of `A`, `A⁺` or the family; the pieces are rational
-subsets when the family is finite and `A` is a Huber ring
-(`val_preimage_laurentPiece_mem_spaRationalFamily`). -/
+subsets when the family is finite (`val_preimage_laurentPiece_mem_spaRationalFamily`). -/
 def laurentPiece (Aplus : Subring A) (f : ι → A) (J : Set ι) : Set (Spv A) :=
   {v | v ∈ spa Aplus ∧ ∀ i, (i ∈ J → v.toValuativeRel.vle 1 (f i)) ∧
     (i ∉ J → v.toValuativeRel.vle (f i) 1)}
