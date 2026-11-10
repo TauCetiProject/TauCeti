@@ -81,6 +81,22 @@ theorem followsOrientation_reverse (p : G.Walk x y) :
   | cons e h p ih =>
     simp [reverse_cons, IsLink.toWalk_eq_cons, ih, and_comm, and_left_comm]
 
+/-- Whether a walk follows an orientation depends only on the directions chosen for the edges
+traversed by that walk. -/
+theorem FollowsOrientation.congr {o' : G.Orientation} {p : G.Walk x y}
+    (hp : p.FollowsOrientation o)
+    (h : ∀ e : G.edgeSet, e.1 ∈ p.edges → o.head e = o'.head e) :
+    p.FollowsOrientation o' := by
+  induction p with
+  | nil => simp
+  | @cons x y z e he p ih =>
+      have hhead := h ⟨e, he.edge_mem⟩ (by simp)
+      have htail : o.tail ⟨e, he.edge_mem⟩ = o'.tail ⟨e, he.edge_mem⟩ :=
+        Orientation.tail_eq_of_head_eq hhead
+      rw [followsOrientation_cons] at hp ⊢
+      exact ⟨by simpa [htail] using hp.1, by simpa [hhead] using hp.2.1,
+        ih hp.2.2 fun f hf ↦ h f (by simp [hf])⟩
+
 /-- A walk following an orientation, viewed as a directed walk on the actual vertices. -/
 def toOriented : {x y : α} → (p : G.Walk x y) → (hp : p.FollowsOrientation o) →
     (hx : x ∈ V(G)) → ArrowWalk o.Hom ⟨x, hx⟩ ⟨y, p.end_mem_vertexSet hx⟩
