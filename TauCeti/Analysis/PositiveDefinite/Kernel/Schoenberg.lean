@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Basic
-public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import TauCeti.LinearAlgebra.Matrix.CondNegSemidef
+import TauCeti.Analysis.Matrix.PosSemidef.Exponential
 import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Analysis.Bochner.Gaussian.Basic
@@ -35,8 +35,6 @@ zero the quadratic form of `(exp (-t ψ) - 1) / t` is nonnegative and tends to t
 
 ## Main declarations
 
-* `Matrix.PosSemidef.map_cexp`: the entrywise exponential of a positive-semidefinite kernel is
-  positive semidefinite.
 * `Matrix.CondNegSemidef.posSemidef_cexp_neg_mul`: the forward direction of Schoenberg's theorem.
 * `Matrix.condNegSemidef_iff_forall_posSemidef_cexp_neg_mul`: **Schoenberg's theorem**.
 * `Matrix.condNegSemidef_sq_norm_sub`: the squared distance `‖f a - f b‖²` along a map into a
@@ -54,22 +52,11 @@ zero the quadratic form of `(exp (-t ψ) - 1) / t` is nonnegative and tends to t
 public section
 
 open Filter Topology
-open scoped ComplexOrder Nat
+open scoped ComplexOrder
 
 namespace Matrix
 
 variable {n : Type*}
-
-/-- The entrywise exponential of a positive-semidefinite kernel is positive semidefinite: it is
-the sum of the Schur powers `K ^ k / k!`. -/
-theorem PosSemidef.map_cexp {K : Matrix n n ℂ} (hK : K.PosSemidef) :
-    (K.map Complex.exp).PosSemidef := by
-  have hsum : HasSum (fun k : ℕ ↦ (k ! : ℂ)⁻¹ • (of fun a b ↦ K a b ^ k)) (K.map Complex.exp) := by
-    refine Pi.hasSum.mpr fun a ↦ Pi.hasSum.mpr fun b ↦ ?_
-    simpa [Complex.exp_eq_exp_ℂ, div_eq_inv_mul] using
-      NormedSpace.expSeries_div_hasSum_exp (K a b)
-  refine PosSemidef.of_hasSum hsum fun k ↦ PosSemidef.smul ?_ (by positivity)
-  exact hK.hadamard_pow k
 
 /-- **Schoenberg's theorem**, forward direction. If `ψ` is conditionally negative semidefinite,
 then `(a, b) ↦ exp (-t ψ(a, b))` is positive semidefinite for every `t ≥ 0`. -/

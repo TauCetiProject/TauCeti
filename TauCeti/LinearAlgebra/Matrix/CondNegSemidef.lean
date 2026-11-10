@@ -31,6 +31,7 @@ is positive semidefinite.
 ## Main declarations
 
 * `Matrix.CondNegSemidef`: conditionally negative semidefinite matrices.
+* `Matrix.condNegSemidef_def`: the defining characterization by finitely supported vectors.
 * `Matrix.condNegSemidef_iff_finite_sum`: the characterization by finite families with
   repetitions.
 * `Matrix.PosSemidef.neg_condNegSemidef`, `Matrix.CondNegSemidef.add`,
@@ -62,6 +63,13 @@ entries sum to zero. -/
 def CondNegSemidef (M : Matrix n n R) : Prop :=
   M.IsHermitian ∧ ∀ x : n →₀ R, (x.sum fun _ xi ↦ xi) = 0 →
     (x.sum fun i xi ↦ x.sum fun j xj ↦ star xi * M i j * xj) ≤ 0
+
+/-- Unfold `CondNegSemidef` into its defining conjunction: Hermitian, with a nonpositive quadratic
+form on finitely supported vectors whose entries sum to zero. -/
+theorem condNegSemidef_def {M : Matrix n n R} :
+    M.CondNegSemidef ↔ M.IsHermitian ∧ ∀ x : n →₀ R, (x.sum fun _ xi ↦ xi) = 0 →
+      (x.sum fun i xi ↦ x.sum fun j xj ↦ star xi * M i j * xj) ≤ 0 :=
+  Iff.rfl
 
 /-- A conditionally negative semidefinite matrix is Hermitian. -/
 theorem CondNegSemidef.isHermitian {M : Matrix n n R} (hM : M.CondNegSemidef) : M.IsHermitian :=
