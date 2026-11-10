@@ -59,12 +59,11 @@ injective map `H¹(Y; M) → H¹(Y; M')`, because `H₀(Y; k)` is free and so
 `H¹(Y; M) = Hom(H₁(Y; k), M)`
 (`TopCat.injective_homologyMap_linearYonedaObjMap_of_projective_homology_lt`). Since slant
 products commute with coefficient changes (`TopCat.singularSlant_coefficient_naturality`), a class
-`φ ∈ H²(S¹ × Y; M)` whose image in `H²(S¹ × Y; M')` is pulled back from `Y` is itself pulled back
-from `Y` (`TopCat.mem_range_singularCohomologyMap_snd_sphere_two_of_injective`, the case `d = 0`,
-`n = 1` of `TopCat.mem_range_singularCohomologyMap_snd_sphere_of_injective`, which asks for `g` to
-be injective on `Hⁿ(Y; -)`). For
-`ℤ → ℝ`: an integral class of `S¹ × Y` whose real class is pulled back from `Y` is pulled back from
-`Y` integrally.
+`φ ∈ H¹⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M)` whose image in `H¹⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M')` is pulled back from `Y` is itself
+pulled back from `Y` (`TopCat.mem_range_singularCohomologyMap_snd_sphere_one_add_of_injective`, the
+case `n = 1` of `TopCat.mem_range_singularCohomologyMap_snd_sphere_of_injective`, which asks for
+`g` to be injective on `Hⁿ(Y; -)`). For `d = 0` and `ℤ → ℝ`: an integral class of `H²(S¹ × Y)`
+whose real class is pulled back from `Y` is pulled back from `Y` integrally.
 
 ## References
 
@@ -384,22 +383,26 @@ theorem mem_range_singularCohomologyMap_snd_sphere_of_injective (Y : TopCat.{w})
   rw [mem_range_singularCohomologyMap_snd_sphere_iff]
   exact hg (hφ.trans (map_zero _).symm)
 
-/-- **Degree-two classes of `S¹ × Y` pulled back after an injective change of coefficients**: if
-`g : M ⟶ M'` is injective and the image of `φ ∈ H²(S¹ × Y; M)` in `H²(S¹ × Y; M')` is pulled back
-from `Y`, then so is `φ`. For `ℤ → ℝ`: an integral class whose real class is pulled back from `Y`
-is pulled back from `Y` integrally, because the cross quotient `H¹(Y; ℤ)` is torsion-free. -/
-theorem mem_range_singularCohomologyMap_snd_sphere_two_of_injective (Y : TopCat.{w})
-    {M' : ModuleCat.{w} k} (g : M ⟶ M') (hg : Function.Injective g)
-    (φ : (TopCat.sphere.{w} 1 ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M 2)
-    (hφ : homologyMap (((toSSet.obj (TopCat.sphere.{w} 1 ⊗ Y)).chainComplex
-        (𝟙_ (ModuleCat.{w} k))).linearYonedaObjMap k g) 2 φ ∈
+/-- **Classes of `Sᵈ⁺¹ × Y` pulled back after an injective change of coefficients**: if
+`g : M ⟶ M'` is injective and the image of `φ ∈ H¹⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M)` in `H¹⁺ᵈ⁺¹(Sᵈ⁺¹ × Y; M')` is
+pulled back from `Y`, then so is `φ`. For `d = 0` and `ℤ → ℝ`: an integral class of `H²(S¹ × Y)`
+whose real class is pulled back from `Y` is pulled back from `Y` integrally, because the cross
+quotient `H¹(Y; ℤ)` is torsion-free. -/
+theorem mem_range_singularCohomologyMap_snd_sphere_one_add_of_injective (Y : TopCat.{w})
+    {d : ℕ} {M' : ModuleCat.{w} k} (g : M ⟶ M') (hg : Function.Injective g)
+    (φ : (TopCat.sphere.{w} (d + 1) ⊗ Y).singularCohomology (𝟙_ (ModuleCat.{w} k)) k M
+      (1 + (d + 1)))
+    (hφ : homologyMap (((toSSet.obj (TopCat.sphere.{w} (d + 1) ⊗ Y)).chainComplex
+        (𝟙_ (ModuleCat.{w} k))).linearYonedaObjMap k g) (1 + (d + 1)) φ ∈
       LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
-        (M := M') (CartesianMonoidalCategory.snd (TopCat.sphere.{w} 1) Y) 2).hom) :
+        (M := M') (CartesianMonoidalCategory.snd (TopCat.sphere.{w} (d + 1)) Y)
+        (1 + (d + 1))).hom) :
     φ ∈ LinearMap.range (TopCat.singularCohomologyMap (R := 𝟙_ (ModuleCat.{w} k)) (k := k)
-        (M := M) (CartesianMonoidalCategory.snd (TopCat.sphere.{w} 1) Y) 2).hom := by
+        (M := M) (CartesianMonoidalCategory.snd (TopCat.sphere.{w} (d + 1)) Y)
+        (1 + (d + 1))).hom := by
   have : Projective (𝟙_ (ModuleCat.{w} k)) := inferInstanceAs (Projective (ModuleCat.of k k))
   -- `H₀(Y; k)` is free, so `H¹(Y; M) = Hom(H₁(Y; k), M)` and `g` is injective on it
-  exact mem_range_singularCohomologyMap_snd_sphere_of_injective (d := 0) (n := 1) Y g
+  exact mem_range_singularCohomologyMap_snd_sphere_of_injective (n := 1) Y g
     (Y.injective_homologyMap_linearYonedaObjMap_of_projective_homology_lt g hg 1 fun j hj ↦ by
       obtain rfl : j = 0 := by omega
       exact ModuleCat.projective_of_free (Module.Free.chooseBasis k
