@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Composition.Basic
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
-import TauCeti.Analysis.Calculus.Taylor
+import TauCeti.Analysis.Calculus.Taylor.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Peetre
 

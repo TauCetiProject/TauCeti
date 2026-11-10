@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Renewal.Excess.Basic
 public import TauCeti.Probability.Independence.DisjointBlocks
+import TauCeti.MeasureTheory.Measure.Restrict
 
 /-!
 # Unused increments at a renewal observation time
@@ -172,11 +173,9 @@ private theorem measure_renewalUnusedTail_inter_slice (hT : ∀ n, Measurable (T
       {ω | renewalCountNat T t ω = n} = A ∩ {ω | renewalCountNat T t ω = n} := by
     ext ω
     by_cases hn : renewalCountNat T t ω = n <;> simp [A, renewalExcess_def, hn]
-  have h := congrArg (fun μ : Measure (ℕ → ℝ≥0) ↦ μ B)
+  have h := measure_preimage_inter_eq_of_map_restrict_eq_smul
+    (measurable_renewalUnusedTail hT t) hB
     (map_renewalUnusedTail_restrict_renewalCountNat hT hindep hid hzero t n hA)
-  have hU := measurable_renewalUnusedTail hT t
-  rw [Measure.map_apply hU hB, Measure.restrict_apply (hU hB),
-    smul_apply, smul_eq_mul] at h
   simpa only [inter_assoc, heq] using h
 
 /-- The increments strictly after the straddling increment are independent of both the
