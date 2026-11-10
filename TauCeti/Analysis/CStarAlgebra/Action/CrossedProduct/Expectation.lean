@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Fourier
 public import Mathlib.Analysis.InnerProductSpace.StarOrder
-import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.Indicator
 
 /-!
 # Positivity and faithfulness of the identity Fourier coefficient

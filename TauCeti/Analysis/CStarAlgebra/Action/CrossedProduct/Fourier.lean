@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.CStarAlgebra.Action.CrossedProduct.Regular
 public import TauCeti.Analysis.CStarAlgebra.Action.Covariant.Discrete
 import TauCeti.MeasureTheory.Function.L2Space
+import TauCeti.MeasureTheory.Function.Lp.Indicator
 import Mathlib.Analysis.Normed.Operator.Extend
 
 /-!
