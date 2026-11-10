@@ -14,25 +14,26 @@ public import TauCeti.CategoryTheory.Triangulated.FullSubcategory
 
 Let `C` be an abelian category with enough projectives. Every object of the singularity category
 `D_sg(C) = Dᵇ(C) / Perf(C)` is isomorphic to an object `M` of `C` placed in some degree. Moreover,
-for every `d`, the object `M` can be chosen to be a `d`-th syzygy: it has no higher extensions
-`Ext^{i+1}(M, Y)` into objects `Y` of injective dimension at most `d`.
+for every `d`, the object `M` can be chosen to be a `d`-th syzygy
+(`CategoryTheory.ObjectProperty.IsSyzygy`); in particular it has no higher extensions
+`Ext^{i+1}(M, Y)` into objects `Y` of injective dimension at most `d`
+(`CategoryTheory.ObjectProperty.IsSyzygy.ext_eq_zero_of_hasInjectiveDimensionLE`).
 
 Represent an object of `Dᵇ(C)` by a bounded above complex `K` of projective objects, exact below
 some degree `a`. For `m` far below `a`, the canonical truncation `K.truncGE m` is quasi-isomorphic
 to `K`. Its terms are projective except in degree `m`, where it is `K.opcycles m`, so it is an
 extension of `K.opcycles m` placed in degree `m` by a bounded complex of projectives, which is
 perfect. Hence `K ≅ (K.opcycles m)[-m]` in the singularity category. Since `K` is exact around
-`m`, `K.opcycles m` is the module of cycles `Zᵐ⁺¹`, and the short exact sequences
-`0 ⟶ Zʲ ⟶ Kʲ ⟶ Zʲ⁺¹ ⟶ 0` with projective middle terms shift `Ext^{i+1}(Zᵐ⁺¹, Y)` into
-`Ext^{i+1+d}(Zᵐ⁺¹⁺ᵈ, Y)`, which vanishes when `Y` has injective dimension at most `d`.
+`m`, `K.opcycles m` is the module of cycles `Zᵐ⁺¹`, which is a `d`-th syzygy along the short exact
+sequences `0 ⟶ Zʲ ⟶ Kʲ ⟶ Zʲ⁺¹ ⟶ 0` with projective middle terms
+(`CochainComplex.isSyzygy_cycles`).
 
 The identification of the opcycles with the cycles is
-`HomologicalComplex.isIso_opcyclesToCycles`, and the dimension shifting is
-`CochainComplex.ext_cycles_eq_zero_of_hasInjectiveDimensionLE`.
+`HomologicalComplex.isIso_opcyclesToCycles`.
 
 ## Main results
 
-* `TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_obj`: every object of the
+* `TauCeti.SingularityCategory.exists_iso_Q_obj_singleFunctor_obj_isSyzygy`: every object of the
   singularity category is isomorphic to a `d`-th syzygy placed in some degree.
 
 ## References
@@ -46,7 +47,7 @@ public section
 open CategoryTheory CategoryTheory.Limits CategoryTheory.Abelian CategoryTheory.Pretriangulated
   ZeroObject
 
-universe w' w v u
+universe w v u
 
 namespace TauCeti.SingularityCategory
 
@@ -55,12 +56,10 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [HasDerivedCategory.{w} C]
 open _root_.DerivedCategory in
 /-- **Objects of the singularity category are shifted syzygies**: in an abelian category with
 enough projectives, every object of the singularity category is isomorphic to an object `M` of `C`
-placed in some degree, where `M` can be chosen with `Ext^{i+1}(M, Y) = 0` for all objects `Y` of
-injective dimension at most a given `d`. -/
-theorem exists_iso_Q_obj_singleFunctor_obj [EnoughProjectives C] [HasExt.{w'} C]
+placed in some degree, where `M` can be chosen to be a `d`-th syzygy, for any given `d`. -/
+theorem exists_iso_Q_obj_singleFunctor_obj_isSyzygy [EnoughProjectives C]
     (X : _root_.DerivedCategory.Bounded C) (d : ℕ) :
-    ∃ (M : C) (n : ℤ), (∀ (Y : C) [HasInjectiveDimensionLE Y d] (i : ℕ)
-        (e : Ext.{w'} M Y (i + 1)), e = 0) ∧
+    ∃ (M : C) (n : ℤ), (isProjective C).IsSyzygy d M ∧
       Nonempty ((Q C).obj X ≅ (Q C).obj ((DerivedCategory.Bounded.singleFunctor C n).obj M)) := by
   obtain ⟨K, a, b, _, _, hK, ⟨e⟩⟩ := exists_projective_isGE_isStrictlyLE_of_bounded X
   -- Truncate `K` in a degree `m` such that `K` is exact in degrees `m, …, m + d + 1`.
@@ -142,9 +141,8 @@ theorem exists_iso_Q_obj_singleFunctor_obj [EnoughProjectives C] [HasExt.{w'} C]
     (ObjectProperty.fullyFaithfulι _).preimageIso (Triangle.π₃.mapIso φ ≪≫
       _root_.DerivedCategory.Q.mapIso ((HomologicalComplex.single C (.up ℤ) m).mapIso eM) ≪≫
       ((singleFunctorIsoCompQ C m).app (K.cycles (m + 1))).symm)
-  refine ⟨K.cycles (m + 1), m, fun Y _ i e' ↦ ?_,
+  exact ⟨K.cycles (m + 1), m, CochainComplex.isSyzygy_cycles (m + 1) d (fun _ _ ↦ hK _)
+      (fun l hl ↦ K.exactAt_of_isGE a _ (by lia)),
     ⟨(Q C).mapIso eX.symm ≪≫ asIso ((Q C).map T'.mor₂) ≪≫ (Q C).mapIso eS⟩⟩
-  exact CochainComplex.ext_cycles_eq_zero_of_hasInjectiveDimensionLE d (m + 1)
-    (fun _ _ ↦ hK _) (fun l hl ↦ K.exactAt_of_isGE a _ (by lia)) i e'
 
 end TauCeti.SingularityCategory

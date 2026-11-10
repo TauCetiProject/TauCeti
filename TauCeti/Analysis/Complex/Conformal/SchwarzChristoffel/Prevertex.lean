@@ -114,12 +114,9 @@ theorem tendsto_sub_mul_nhdsNE_of_eqOn_add_cpow {φ f h : ℂ → ℂ} {x r : �
   have hfilter : 𝓝[upperHalfPlaneSet ∩ U] ((x : ℝ) : ℂ) = 𝓝[upperHalfPlaneSet] ((x : ℝ) : ℂ) := by
     rw [inter_comm]
     exact nhdsWithin_inter_of_mem (mem_nhdsWithin_of_mem_nhds (hU.mem_nhds hxU))
-  have hne : (𝓝[upperHalfPlaneSet ∩ U] ((x : ℝ) : ℂ)).NeBot := by
-    rw [hfilter]
-    exact Real.nhdsWithin_upperHalfPlaneSet_neBot x
   -- The corner asymptotic, taken along the part of the upper half-plane inside `U`.
   have hcorner := tendsto_sub_mul_logDeriv_deriv_of_eqOn_add_cpow hU hxU hh hhx hdh
-    (isOpen_upperHalfPlaneSet.inter hU) hne inter_subset_right hslit hβ hf
+    (isOpen_upperHalfPlaneSet.inter hU) inter_subset_right hslit hβ hf
   have hcornerφ : Tendsto (fun z => (z - (x : ℂ)) * φ z)
       (𝓝[upperHalfPlaneSet ∩ U] ((x : ℝ) : ℂ)) (𝓝 (β - 1)) := hcorner.congr' (by
     filter_upwards [self_mem_nhdsWithin] with z hz
@@ -331,7 +328,6 @@ affine image `A * F + B` of the normalized Schwarz--Christoffel primitive `F` fo
 `e`, with `A` and `B` read off at the normalization point. -/
 theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_tendsto {ι : Type*} [Fintype ι]
     (a e : ι → ℝ) (ha : Function.Injective a) (z₀ : UpperHalfPlane) {f φ : ℂ → ℂ}
-    (hf : DifferentiableOn ℂ f upperHalfPlaneSet)
     (hfn : ∀ z ∈ upperHalfPlaneSet, deriv f z ≠ 0)
     (hφ : DifferentiableOn ℂ φ (range fun i => ((a i : ℝ) : ℂ))ᶜ)
     (hφf : EqOn φ (logDeriv (deriv f)) upperHalfPlaneSet)
@@ -366,7 +362,7 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_tendsto {ι : Type*} [
     simp only [hS]
     rw [Finset.sum_image fun i _ j _ hij => (hcast i j).mp hij]
     exact Finset.sum_congr rfl fun i _ => by rw [hcval i]
-  exact eqOn_const_mul_schwarzChristoffelPrimitive_add_of_logDeriv_deriv_eqOn a e z₀ hf hfn hpre
+  exact eqOn_const_mul_schwarzChristoffelPrimitive_add_of_logDeriv_deriv_eqOn a e z₀ hfn hpre
 
 end TauCeti
 

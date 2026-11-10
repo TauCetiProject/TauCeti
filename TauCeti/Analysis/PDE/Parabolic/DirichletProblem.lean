@@ -167,7 +167,7 @@ private theorem ae_norm_energyFormH1_le :
       ‖energyFormH1 (a t) (b t) (c t) (u : W1p mu Omega 2) (v : W1p mu Omega 2)‖ ≤
         (Lam + |beta| + |gamma|) * (‖u‖ * ‖v‖) := by
   filter_upwards [hell, hb_bound, hc_bound] with t hellt hbt hct u v
-  exact hellt.norm_energyFormH1_le (abs_nonneg _) (abs_nonneg _)
+  exact hellt.norm_energyFormH1_le
     (fun x hx => (hbt x hx).trans (le_abs_self _))
     (fun x hx => (hct x hx).trans (le_abs_self _)) (u : W1p mu Omega 2) (v : W1p mu Omega 2)
 

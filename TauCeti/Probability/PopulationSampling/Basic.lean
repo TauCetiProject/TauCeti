@@ -16,10 +16,11 @@ the population and the selection are drawn independently: for a population law
 `ρ : Measure (κ → α)` and a selection law `σ : Measure (ι → κ)`, `samplePopulation σ ρ` is the
 pushforward of `σ.prod ρ` along `(k, x) ↦ x ∘ k`.
 
-The population index is countable with measurable singletons, which is what makes the reindexing
-map measurable for an arbitrary state space `α`. Finite sampling with and without replacement are
-the cases where `σ` is uniform on all index maps, respectively on the injective ones
-(`TauCeti.Probability.sampleWithReplacement`, `TauCeti.Probability.sampleWithoutReplacement`).
+Its evaluation and mixture lemmas take the population index countable with measurable
+singletons, which is what makes the reindexing map measurable for an arbitrary state space `α`.
+Finite sampling with and without replacement are the cases where `σ` is uniform on all index maps,
+respectively on the injective ones (`TauCeti.Probability.sampleWithReplacement`,
+`TauCeti.Probability.sampleWithoutReplacement`).
 
 ## Main declarations
 
@@ -56,12 +57,7 @@ theorem measurable_reindexPopulation {ι κ : Type*} [Countable κ] [MeasurableS
 
 section SamplePopulation
 
-variable {ι κ : Type*} [Countable κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
-
-/-- Reading a fixed population along a varying selection is measurable. -/
-theorem measurable_readPopulation (x : κ → α) :
-    Measurable (fun k : ι → κ => fun i => x (k i)) :=
-  measurable_reindexPopulation.comp measurable_prodMk_right
+variable {ι κ : Type*} [MeasurableSpace κ]
 
 /-- Sampling a random population along an independent random selection of its indices.
 
@@ -70,28 +66,18 @@ law `σ`; then return the sample `i ↦ x (k i)`. Sampling without replacement
 (`sampleWithoutReplacement`) and with replacement (`sampleWithReplacement`) are the cases where
 `σ` is uniform on the injective index maps, respectively on all of them.
 
-The population index is countable with measurable singletons because that is what
-`measurable_reindexPopulation` uses to make the reindexing map measurable for an arbitrary `α`;
-the definition is the pushforward along that measurable map. -/
+The definition is the pushforward `Measure.map` of `σ.prod ρ` along `(k, x) ↦ x ∘ k`. Following
+`Measure.map`, when that map is not almost everywhere measurable the result is an arbitrary Dirac
+mass, or zero if `σ.prod ρ = 0`. When the population index is countable with measurable singletons
+the map is measurable for an arbitrary `α` (`measurable_reindexPopulation`), and the evaluation
+and mixture lemmas below assume this. -/
 def samplePopulation (σ : Measure (ι → κ)) (ρ : Measure (κ → α)) : Measure (ι → α) :=
-  let ν := σ.prod ρ
-  let f := fun p : (ι → κ) × (κ → α) => fun i => p.2 (p.1 i)
-  let hf : AEMeasurable f ν := measurable_reindexPopulation.aemeasurable
-  Measure.mapₗ (hf.mk f) ν
+  (σ.prod ρ).map fun p i => p.2 (p.1 i)
 
 /-- The defining pushforward form of `samplePopulation`. -/
 theorem samplePopulation_def (σ : Measure (ι → κ)) (ρ : Measure (κ → α)) :
     samplePopulation σ ρ = (σ.prod ρ).map fun p i => p.2 (p.1 i) :=
-  Measure.mapₗ_mk_apply_of_aemeasurable measurable_reindexPopulation.aemeasurable
-
-/-- Sampling a deterministic population is the pushforward of the selection law by reading
-that population at the selected indices. -/
-@[simp]
-theorem samplePopulation_dirac (σ : Measure (ι → κ)) [SFinite σ] (x : κ → α) :
-    samplePopulation σ (Measure.dirac x) = σ.map (fun k i => x (k i)) := by
-  rw [samplePopulation_def, Measure.prod_dirac,
-    Measure.map_map measurable_reindexPopulation measurable_prodMk_right]
-  rfl
+  (rfl)
 
 /-- Sampling a finite population law along a finite selection law gives a finite law. -/
 instance isFiniteMeasure_samplePopulation (σ : Measure (ι → κ)) (ρ : Measure (κ → α))
@@ -106,6 +92,22 @@ instance isProbabilityMeasure_samplePopulation (σ : Measure (ι → κ)) (ρ : 
     IsProbabilityMeasure (samplePopulation σ ρ) := by
   rw [samplePopulation_def]
   infer_instance
+
+variable [Countable κ] [MeasurableSingletonClass κ]
+
+/-- Reading a fixed population along a varying selection is measurable. -/
+theorem measurable_readPopulation (x : κ → α) :
+    Measurable (fun k : ι → κ => fun i => x (k i)) :=
+  measurable_reindexPopulation.comp measurable_prodMk_right
+
+/-- Sampling a deterministic population is the pushforward of the selection law by reading
+that population at the selected indices. -/
+@[simp]
+theorem samplePopulation_dirac (σ : Measure (ι → κ)) [SFinite σ] (x : κ → α) :
+    samplePopulation σ (Measure.dirac x) = σ.map (fun k i => x (k i)) := by
+  rw [samplePopulation_def, Measure.prod_dirac,
+    Measure.map_map measurable_reindexPopulation measurable_prodMk_right]
+  rfl
 
 /-- Evaluating a sampled law by conditioning first on the selection: it averages the laws of the
 selected entries of the population over the selection law. -/

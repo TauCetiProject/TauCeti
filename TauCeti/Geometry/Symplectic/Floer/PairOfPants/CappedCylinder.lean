@@ -267,19 +267,13 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedCylinderComponent_le (ω : Sy
     (q := one) (y := endChart zero w) (by simp) hHb hHbs hL
     (by rw [equivRealProdCLM_symm_endChart]; exact cylindricalEndLift_zero_eq_endCenter_one_or _)
     (u' (endChart zero w)) v).differentiableAt one_ne_zero
-  -- Differentiability in the domain point and in the target point separately.
+  -- Differentiability in the domain point.
   have hdom (v : ℂ) (w : ℝ × ℝ) : DifferentiableAt ℝ
       (fun z ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
         (Complex.equivRealProdCLM.symm z) (u' (endChart zero w)) v) (endChart zero w) := by
     have hg : DifferentiableAt ℝ (fun z : ℝ × ℝ ↦ (z, u' (endChart zero w))) (endChart zero w) := by
       fun_prop
     exact (hdiff v w).comp (endChart zero w) hg
-  have htgt (v : ℂ) (w : ℝ × ℝ) : DifferentiableAt ℝ
-      (fun x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
-        (Complex.equivRealProdCLM.symm (endChart zero w)) x v) (u' (endChart zero w)) := by
-    have hg : DifferentiableAt ℝ (fun x : V ↦ (endChart zero w, x)) (u' (endChart zero w)) := by
-      fun_prop
-    exact (hdiff v w).comp (u' (endChart zero w)) hg
   have h := ω.lintegral_enorm_hamiltonianCurvature_image (u := u')
     (Ks := fun z x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
       (Complex.equivRealProdCLM.symm z) x 1)
@@ -287,7 +281,7 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedCylinderComponent_le (ω : Sy
       (Complex.equivRealProdCLM.symm z) x Complex.I)
     (MeasurableSet.univ.prod measurableSet_Ico) hinj
     (fun w _ ↦ (contDiff_endChart zero 2).contDiffAt) (fun w _ ↦ hdom 1 w)
-    (fun w _ ↦ hdom Complex.I w) (fun w _ ↦ htgt 1 w) (fun w _ ↦ htgt Complex.I w)
+    (fun w _ ↦ hdom Complex.I w)
   rw [perturbationPullback_endChart_zero_plumbedPerturbation,
     perturbationPullback_endChart_zero_plumbedPerturbation] at h
   have h₁ : Complex.equivRealProdCLM.symm stdComplexLineReal = 1 := by

@@ -121,7 +121,7 @@ private theorem range_relBrInfl_unramifiedExtension_le
   -- fields `restrict le_sup_left` and `restrict le_sup_right`, by definition of the algebra
   -- structures, and they lift to `E` and `Kₙ` in `Kˢ`.
   have hadj : adjoin E (Set.range (IsScalarTower.toAlgHom K (𝓤 n) M)) = ⊤ := by
-    refine TauCeti.IntermediateField.adjoin_range_eq_top_of_fieldRange_sup_fieldRange_eq_top _
+    refine (AlgHom.adjoin_range_eq_top_iff_fieldRange_sup_fieldRange_eq_top _).2
       (lift_injective M ?_)
     rw [lift_sup, lift_top]
     exact congrArg₂ (· ⊔ ·) (lift_restrict le_sup_left) (lift_restrict le_sup_right)
@@ -135,7 +135,7 @@ private theorem range_relBrInfl_unramifiedExtension_le
   let _ := algebraicExtensionNormedFieldTopology K (𝓤 n)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 n)
   have := algebraicExtension_valuativeExtension K (𝓤 n)
-  have : IsUnramified K (𝓤 n) := isUnramified_unramifiedExtension hn
+  have : IsUnramified K (𝓤 n) := isUnramified_unramifiedExtension
   let _ := algebraicExtensionValuativeRel K E
   let _ := algebraicExtensionNormedFieldTopology K E
   have := finiteExtension_isNonarchimedeanLocalField K E
@@ -165,7 +165,7 @@ theorem range_relBrInfl_eq_range_relBrInfl_unramifiedExtension
   let _ := algebraicExtensionNormedFieldTopology K (𝓤 n)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 n)
   have := algebraicExtension_valuativeExtension K (𝓤 n)
-  have : IsUnramified K (𝓤 n) := isUnramified_unramifiedExtension hn
+  have : IsUnramified K (𝓤 n) := isUnramified_unramifiedExtension
   let _ := algebraicExtensionValuativeRel K E
   let _ := algebraicExtensionNormedFieldTopology K E
   have := finiteExtension_isNonarchimedeanLocalField K E
@@ -282,12 +282,12 @@ theorem invMap_brRes (x : Br K) :
   let _ := algebraicExtensionNormedFieldTopology K (𝓤 f)
   have := finiteExtension_isNonarchimedeanLocalField K (𝓤 f)
   have := algebraicExtension_valuativeExtension K (𝓤 f)
-  have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension f.ne_zero
+  have : IsUnramified K (𝓤 f) := isUnramified_unramifiedExtension
   let _ := algebraicExtensionValuativeRel L (𝓥 f)
   let _ := algebraicExtensionNormedFieldTopology L (𝓥 f)
   have := finiteExtension_isNonarchimedeanLocalField L (𝓥 f)
   have := algebraicExtension_valuativeExtension L (𝓥 f)
-  have : IsUnramified L (𝓥 f) := isUnramified_unramifiedExtension f.ne_zero
+  have : IsUnramified L (𝓥 f) := isUnramified_unramifiedExtension
   have : ValuativeExtension K (𝓥 f) := ValuativeExtension.trans K L (𝓥 f)
   have : ValuativeExtension (𝓤 f) (𝓥 f) := ι.valuativeExtension
   rw [← brBaseChange_eq_brRes K L σ,

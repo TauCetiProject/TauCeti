@@ -11,6 +11,7 @@ public import TauCeti.Data.Set.Function
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.AddHorizontal
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Differential
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Horizontal
+import TauCeti.Data.Finset.Basic
 
 /-!
 # The matched subalgebra of the strands algebra
@@ -46,6 +47,18 @@ Common horizontal strands do not affect composability
 (`TauCeti.StrandDiagram.composable_addHorizontal_iff`), so the nonzero products are indexed by the
 choices over `h ∩ k` and sum to a single generator.
 
+Two diagrams are related by `TauCeti.StrandDiagram.matchedSetoid M` when they differ only in the
+positions of their horizontal strands within matched classes. The coefficients of an element of
+the matched subalgebra are constant on these classes, so the subalgebra is also spanned by the
+matched completion sums `TauCeti.StrandsAlgebra.matchedSum`, the sums over the classes of diagrams
+with no two matched starting points and no two matched end points.
+
+The unit `∑ₛ I(s)` is also the sum of the idempotents `I(S)` of the sets `S` with no two matched
+points, and it is a unit for the matched subalgebra too. When `R` is nontrivial and `M` identifies
+two points it differs from the unit of the strands algebra. With this unit the matched subalgebra
+is an `R`-algebra, and over a ring of characteristic two the restricted differential makes it an
+ungraded differential algebra, over which type `D` structures are defined.
+
 ## Main definitions
 
 * `TauCeti.StrandsAlgebra.matchedSubalgebra R M`: the matched subalgebra, a non-unital subalgebra
@@ -57,7 +70,13 @@ choices over `h ∩ k` and sum to a single generator.
 * `TauCeti.StrandsAlgebra.horizontalCompletion M ρ h`: the generator `a(ρ, h)`.
 * `TauCeti.StrandsAlgebra.matchedAlgebra R M`: the span of the `a(ρ, h)`, a non-unital subalgebra
   of the strands algebra.
-* `TauCeti.StrandsAlgebra.matchedOne R M`: the unit `∑ₛ I(s)` of `matchedAlgebra R M`.
+* `TauCeti.StrandsAlgebra.matchedOne R M`: the unit `∑ₛ I(s)` of `matchedAlgebra R M` and of
+  `matchedSubalgebra R M`.
+* `TauCeti.StrandDiagram.matchedSetoid M`: diagrams differing by moving horizontal strands within
+  matched classes.
+* `TauCeti.StrandsAlgebra.matchedSum R M φ`: the matched completion sum of a diagram.
+* `TauCeti.StrandsAlgebra.matchedDifferential R M`: the differential restricted to the matched
+  subalgebra.
 
 ## Main results
 
@@ -72,6 +91,14 @@ choices over `h ∩ k` and sum to a single generator.
   generators.
 * `TauCeti.StrandsAlgebra.matchedOne_mul`, `TauCeti.StrandsAlgebra.mul_matchedOne`: `∑ₛ I(s)` is
   a two-sided unit for `matchedAlgebra R M`.
+* `TauCeti.StrandsAlgebra.matchedSum_mem_matchedSubalgebra`,
+  `TauCeti.StrandsAlgebra.span_matchedSum`: the matched completion sums lie in the matched
+  subalgebra and span it.
+* `TauCeti.StrandsAlgebra.matchedOne_mul_of_mem_matchedSubalgebra`,
+  `TauCeti.StrandsAlgebra.mul_matchedOne_of_mem_matchedSubalgebra`: `∑ₛ I(s)` is a two-sided unit
+  for the matched subalgebra.
+* `TauCeti.StrandsAlgebra.isUngradedDGAlgebra_matchedDifferential`: over a ring of characteristic
+  two, the matched subalgebra is an ungraded differential algebra.
 
 ## References
 
@@ -87,6 +114,74 @@ noncomputable section
 open Finset
 
 namespace TauCeti
+
+namespace StrandDiagram
+
+variable {α β : Type*} [LinearOrder α] [Fintype α] {M : α → β} {φ ψ : StrandDiagram α} {a b : α}
+
+/-- Moving a horizontal strand to a matched point does not change whether the starting points are
+pairwise unmatched. -/
+theorem injOn_source_swapHorizontal_iff (hab : M a = M b) :
+    Set.InjOn M ((φ.swapHorizontal a b).source : Set α) ↔ Set.InjOn M (φ.source : Set α) := by
+  wlog h : φ.CanMoveHorizontal a b generalizing a b
+  · by_cases h' : φ.CanMoveHorizontal b a
+    · rw [swapHorizontal_comm]
+      exact this hab.symm h'
+    · rw [swapHorizontal_of_not h h']
+  rw [source_swapHorizontal h]
+  exact Finset.injOn_insert_erase_iff (mem_source.2 ⟨a, h.mem⟩) h.notMem_source hab
+
+/-- Moving a horizontal strand to a matched point does not change whether the end points are
+pairwise unmatched. -/
+theorem injOn_target_swapHorizontal_iff (hab : M a = M b) :
+    Set.InjOn M ((φ.swapHorizontal a b).target : Set α) ↔ Set.InjOn M (φ.target : Set α) := by
+  wlog h : φ.CanMoveHorizontal a b generalizing a b
+  · by_cases h' : φ.CanMoveHorizontal b a
+    · rw [swapHorizontal_comm]
+      exact this hab.symm h'
+    · rw [swapHorizontal_of_not h h']
+  rw [target_swapHorizontal h]
+  exact Finset.injOn_insert_erase_iff (mem_target.2 ⟨a, h.mem⟩) h.notMem_target hab
+
+variable (M) in
+/-- Two strand diagrams are related for a matching `M : α → β` when one is obtained from the other
+by moving horizontal strands to points with the same image under `M`, so that they differ only in
+the positions of their horizontal strands within matched classes. -/
+def matchedSetoid : Setoid (StrandDiagram α) :=
+  Relation.EqvGen.setoid fun φ ψ ↦ ∃ a b, M a = M b ∧ φ.swapHorizontal a b = ψ
+
+/-- Two diagrams are related by `TauCeti.StrandDiagram.matchedSetoid M` exactly when they are
+related by the equivalence relation generated by moving a horizontal strand to a point with the
+same image under `M`. -/
+theorem matchedSetoid_iff : matchedSetoid M φ ψ ↔
+    Relation.EqvGen (fun φ ψ ↦ ∃ a b, M a = M b ∧ φ.swapHorizontal a b = ψ) φ ψ :=
+  Iff.rfl
+
+/-- Moving a horizontal strand to a point with the same image under `M` gives a diagram related by
+`TauCeti.StrandDiagram.matchedSetoid M`. -/
+theorem matchedSetoid_swapHorizontal (hab : M a = M b) :
+    matchedSetoid M φ (φ.swapHorizontal a b) :=
+  matchedSetoid_iff.2 (.rel _ _ ⟨a, b, hab, rfl⟩)
+
+/-- A function on strand diagrams that is unchanged by moving a horizontal strand to a point with
+the same image under `M` is constant on the classes of `TauCeti.StrandDiagram.matchedSetoid M`. -/
+theorem apply_eq_of_matchedSetoid {γ : Type*} {f : StrandDiagram α → γ}
+    (hf : ∀ φ a b, M a = M b → f (φ.swapHorizontal a b) = f φ) (h : matchedSetoid M φ ψ) :
+    f φ = f ψ :=
+  Setoid.ker_def.1 <| Setoid.le_def.1 (Setoid.eqvGen_le (s := Setoid.ker f)
+    fun φ _ ⟨a, b, hab, e⟩ ↦ Setoid.ker_def.2 <| e ▸ (hf φ a b hab).symm) h
+
+/-- Diagrams related by `TauCeti.StrandDiagram.matchedSetoid M` both have, or both fail to have,
+pairwise unmatched starting points and pairwise unmatched end points. -/
+theorem injOn_source_and_target_iff_of_matchedSetoid (h : matchedSetoid M φ ψ) :
+    Set.InjOn M (φ.source : Set α) ∧ Set.InjOn M (φ.target : Set α) ↔
+      Set.InjOn M (ψ.source : Set α) ∧ Set.InjOn M (ψ.target : Set α) :=
+  (apply_eq_of_matchedSetoid (f := fun φ : StrandDiagram α ↦
+    Set.InjOn M (φ.source : Set α) ∧ Set.InjOn M (φ.target : Set α))
+      (fun _ _ _ hab ↦ propext (by
+        rw [injOn_source_swapHorizontal_iff hab, injOn_target_swapHorizontal_iff hab])) h).to_iff
+
+end StrandDiagram
 
 namespace StrandsAlgebra
 
@@ -308,6 +403,89 @@ theorem isIdempotentElem_matchedIdem (M : α → β) (s : Finset β) :
   simp [IsIdempotentElem, matchedIdem_mul_matchedIdem]
 
 end Idempotents
+
+/-! ### The matched completion sums -/
+
+section MatchedSum
+
+variable {M : α → β}
+
+/-- The coefficients of an element of the matched subalgebra agree on diagrams related by moving
+horizontal strands to matched points. -/
+theorem repr_eq_of_matchedSetoid {x : StrandsAlgebra R α} (hx : x ∈ matchedSubalgebra R M)
+    {φ ψ : StrandDiagram α} (h : matchedSetoid M φ ψ) :
+    (basis R α).repr x φ = (basis R α).repr x ψ :=
+  apply_eq_of_matchedSetoid (mem_matchedSubalgebra.1 hx).2 h
+
+variable (R M) in
+/-- The **matched completion sum** of a strand diagram `φ`: the sum of the diagrams obtained from
+`φ` by moving horizontal strands to points matched with them. When `φ` has no two matched starting
+points and no two matched end points, it is the sum over all ways of placing each horizontal
+strand of `φ` at any free point of its matched class, keeping the other strands; these sums span
+the matched subalgebra. -/
+def matchedSum (φ : StrandDiagram α) : StrandsAlgebra R α :=
+  ∑ ψ ∈ (Set.toFinite {ψ | matchedSetoid M φ ψ}).toFinset, of ψ
+
+open scoped Classical in
+/-- The coefficients of a matched completion sum: `1` on the diagrams related to `φ` and `0`
+elsewhere. -/
+theorem repr_matchedSum_apply (φ ψ : StrandDiagram α) :
+    (basis R α).repr (matchedSum R M φ) ψ = if matchedSetoid M φ ψ then 1 else 0 := by
+  rw [matchedSum, repr_sum_of_apply]
+  simp
+
+/-- The matched completion sum of a diagram with no two matched starting points and no two matched
+end points lies in the matched subalgebra. -/
+theorem matchedSum_mem_matchedSubalgebra {φ : StrandDiagram α}
+    (hS : Set.InjOn M (φ.source : Set α)) (hT : Set.InjOn M (φ.target : Set α)) :
+    matchedSum R M φ ∈ matchedSubalgebra R M := by
+  classical
+  refine mem_matchedSubalgebra.2 ⟨fun ψ hψ ↦ ?_, fun ψ a b hab ↦ ?_⟩
+  · rw [repr_matchedSum_apply] at hψ
+    exact (injOn_source_and_target_iff_of_matchedSetoid (ite_ne_right_iff.1 hψ).1).1 ⟨hS, hT⟩
+  · have h : matchedSetoid M ψ (ψ.swapHorizontal a b) := matchedSetoid_swapHorizontal hab
+    have h' : matchedSetoid M φ (ψ.swapHorizontal a b) ↔ matchedSetoid M φ ψ :=
+      ⟨fun h' ↦ (matchedSetoid M).iseqv.trans h' ((matchedSetoid M).iseqv.symm h),
+        fun h' ↦ (matchedSetoid M).iseqv.trans h' h⟩
+    simp only [repr_matchedSum_apply, h']
+
+/-- **The matched completion sums span the matched subalgebra.** The sums
+`TauCeti.StrandsAlgebra.matchedSum` of the diagrams with no two matched starting points and no two
+matched end points span the matched subalgebra as an `R`-module. -/
+theorem span_matchedSum :
+    Submodule.span R (matchedSum R M ''
+      {φ | Set.InjOn M (φ.source : Set α) ∧ Set.InjOn M (φ.target : Set α)}) =
+      (matchedSubalgebra R M).toSubmodule := by
+  refine le_antisymm (Submodule.span_le.2 ?_) fun x hx ↦ ?_
+  · rintro _ ⟨φ, ⟨hS, hT⟩, rfl⟩
+    exact matchedSum_mem_matchedSubalgebra hS hT
+  classical
+  let := Fintype.ofFinite (StrandDiagram α)
+  let := Fintype.ofFinite (Quotient (matchedSetoid M))
+  rw [NonUnitalSubalgebra.mem_toSubmodule] at hx
+  -- Grouping the basis expansion of `x` by classes of diagrams writes `x` as a combination of
+  -- the matched completion sums of class representatives.
+  have key : x = ∑ C : Quotient (matchedSetoid M),
+      (basis R α).repr x C.out • matchedSum R M C.out := by
+    conv_lhs => rw [← (basis R α).sum_repr x]
+    rw [← sum_fiberwise univ fun φ ↦ (⟦φ⟧ : Quotient (matchedSetoid M))]
+    refine sum_congr rfl fun C _ ↦ ?_
+    rw [matchedSum, smul_sum]
+    refine sum_congr ?_ fun φ hφ ↦ ?_
+    · ext φ
+      simp only [mem_filter, mem_univ, true_and, Set.Finite.mem_toFinset, Set.mem_ofPred_eq,
+        Quotient.mk_eq_iff_out]
+      exact ⟨(matchedSetoid M).iseqv.symm, (matchedSetoid M).iseqv.symm⟩
+    · rw [Set.Finite.mem_toFinset] at hφ
+      rw [basis_apply, repr_eq_of_matchedSetoid hx hφ]
+  rw [key]
+  refine Submodule.sum_mem _ fun C _ ↦ ?_
+  by_cases h : (basis R α).repr x C.out = 0
+  · simp [h]
+  · exact Submodule.smul_mem _ _
+      (Submodule.subset_span ⟨C.out, (mem_matchedSubalgebra.1 hx).1 _ h, rfl⟩)
+
+end MatchedSum
 
 /-! ### The generators `a(ρ, h)` and their products -/
 
@@ -784,6 +962,134 @@ theorem mul_matchedOne {x : StrandsAlgebra R α} (hx : x ∈ matchedAlgebra R M)
   | smul r x _ hx => rw [smul_mul_assoc, hx]
 
 end Unit
+
+/-! ### The unit of the matched subalgebra -/
+
+section SubalgebraUnit
+
+variable [DecidableEq β] {M : α → β}
+
+open scoped Classical in
+/-- The unit `∑ₛ I(s)` is the sum of the idempotents `I(S)` over the sets `S` with no two matched
+points. -/
+theorem matchedOne_eq_sum_idem :
+    matchedOne R M = ∑ S ∈ univ.filter fun S : Finset α ↦ Set.InjOn M (S : Set α), idem S := by
+  symm
+  rw [matchedOne_def, ← sum_fiberwise_of_maps_to fun S _ ↦
+    mem_powerset.2 (image_subset_image (f := M) (subset_univ S))]
+  refine sum_congr rfl fun s _ ↦ sum_congr ?_ fun _ _ ↦ rfl
+  ext S
+  simp only [mem_filter, mem_univ, true_and, ← card_image_iff]
+  constructor
+  · rintro ⟨h, rfl⟩
+    exact ⟨rfl, h.symm⟩
+  · rintro ⟨rfl, h⟩
+    exact ⟨h.symm, rfl⟩
+
+/-- The unit `TauCeti.StrandsAlgebra.matchedOne R M` lies in the matched subalgebra. -/
+theorem matchedOne_mem_matchedSubalgebra : matchedOne R M ∈ matchedSubalgebra R M :=
+  sum_mem fun s _ ↦ matchedIdem_mem_matchedSubalgebra M s
+
+/-- The unit of the matched subalgebra is a cycle. -/
+@[simp]
+theorem differential_matchedOne : differential R α (matchedOne R M) = 0 := by
+  simp [matchedOne_def]
+
+/-- The unit of the matched subalgebra fixes a diagram with no two matched starting points. -/
+theorem matchedOne_mul_of {φ : StrandDiagram α} (h : Set.InjOn M (φ.source : Set α)) :
+    matchedOne R M * of φ = of φ := by
+  classical
+  simp [matchedOne_eq_sum_idem, sum_mul, idem_mul_of, h]
+
+/-- The unit of the matched subalgebra fixes a diagram with no two matched end points. -/
+theorem of_mul_matchedOne {φ : StrandDiagram α} (h : Set.InjOn M (φ.target : Set α)) :
+    of φ * matchedOne R M = of φ := by
+  classical
+  simp [matchedOne_eq_sum_idem, mul_sum, of_mul_idem, h]
+
+/-- `TauCeti.StrandsAlgebra.matchedOne` is a left identity on the elements of the matched
+subalgebra. -/
+theorem matchedOne_mul_of_mem_matchedSubalgebra {x : StrandsAlgebra R α}
+    (hx : x ∈ matchedSubalgebra R M) : matchedOne R M * x = x := by
+  let := Fintype.ofFinite (StrandDiagram α)
+  conv_rhs => rw [← (basis R α).sum_repr x]
+  conv_lhs => rw [← (basis R α).sum_repr x]
+  rw [mul_sum]
+  refine sum_congr rfl fun φ _ ↦ ?_
+  by_cases hφ : (basis R α).repr x φ = 0
+  · simp [hφ]
+  · rw [mul_smul_comm, basis_apply, matchedOne_mul_of ((mem_matchedSubalgebra.1 hx).1 φ hφ).1]
+
+/-- `TauCeti.StrandsAlgebra.matchedOne` is a right identity on the elements of the matched
+subalgebra. -/
+theorem mul_matchedOne_of_mem_matchedSubalgebra {x : StrandsAlgebra R α}
+    (hx : x ∈ matchedSubalgebra R M) : x * matchedOne R M = x := by
+  let := Fintype.ofFinite (StrandDiagram α)
+  conv_rhs => rw [← (basis R α).sum_repr x]
+  conv_lhs => rw [← (basis R α).sum_repr x]
+  rw [sum_mul]
+  refine sum_congr rfl fun φ _ ↦ ?_
+  by_cases hφ : (basis R α).repr x φ = 0
+  · simp [hφ]
+  · rw [smul_mul_assoc, basis_apply, of_mul_matchedOne ((mem_matchedSubalgebra.1 hx).1 φ hφ).2]
+
+instance : One (matchedSubalgebra R M) :=
+  ⟨⟨matchedOne R M, matchedOne_mem_matchedSubalgebra⟩⟩
+
+/-- The unit of the matched subalgebra is `TauCeti.StrandsAlgebra.matchedOne`, which differs from
+the unit of the strands algebra when `R` is nontrivial and `M` identifies two points. -/
+@[simp]
+theorem coe_matchedSubalgebra_one :
+    ((1 : matchedSubalgebra R M) : StrandsAlgebra R α) = matchedOne R M :=
+  (rfl)
+
+/-- The matched subalgebra is a unital algebra, with unit `TauCeti.StrandsAlgebra.matchedOne`. -/
+instance : Semiring (matchedSubalgebra R M) where
+  __ := (matchedSubalgebra R M).toNonUnitalSemiring
+  one_mul x := Subtype.ext (matchedOne_mul_of_mem_matchedSubalgebra x.2)
+  mul_one x := Subtype.ext (mul_matchedOne_of_mem_matchedSubalgebra x.2)
+
+instance {R : Type*} [CommRing R] : Ring (matchedSubalgebra R M) where
+  __ := (inferInstance : Semiring (matchedSubalgebra R M))
+  __ := (matchedSubalgebra R M).toNonUnitalRing
+
+instance : Algebra R (matchedSubalgebra R M) :=
+  Algebra.ofModule smul_mul_assoc mul_smul_comm
+
+end SubalgebraUnit
+
+/-! ### The differential of the matched subalgebra -/
+
+section Differential
+
+variable {M : α → β}
+
+variable (R M) in
+/-- The differential of the strands algebra restricted to the matched subalgebra. -/
+def matchedDifferential : matchedSubalgebra R M →ₗ[R] matchedSubalgebra R M :=
+  (differential R α).restrict (p := (matchedSubalgebra R M).toSubmodule)
+    (q := (matchedSubalgebra R M).toSubmodule) fun _ hx ↦ differential_mem_matchedSubalgebra hx
+
+@[simp]
+theorem coe_matchedDifferential (x : matchedSubalgebra R M) :
+    (matchedDifferential R M x : StrandsAlgebra R α) = differential R α x :=
+  (rfl)
+
+variable [DecidableEq β] in
+/-- The unit of the matched subalgebra is a cycle. -/
+@[simp]
+theorem matchedDifferential_one : matchedDifferential R M 1 = 0 :=
+  Subtype.ext (by simp)
+
+/-- Over a ring of characteristic two, such as `𝔽₂`, the matched subalgebra with the restricted
+differential is an ungraded differential algebra. -/
+theorem isUngradedDGAlgebra_matchedDifferential [DecidableEq β] {R : Type*} [CommRing R]
+    [CharP R 2] :
+    IsUngradedDGAlgebra (matchedDifferential R M) where
+  map_mul a b := Subtype.ext (by simp [differential_mul])
+  map_map a := Subtype.ext (by simp [differential_differential])
+
+end Differential
 
 end StrandsAlgebra
 

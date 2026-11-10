@@ -404,6 +404,10 @@ lemma coe_le_coe_of_eq_add_one {i₁ i₂ q : ℤ} (hi₁ : i₁ = q) (hi₂ : i
     (i₁ : EInt) ≤ i₂ := by
   simp [hi₁, hi₂]
 
+/-- The morphism `a ⟶ b` of `EInt` between integers `a ≤ b`. -/
+abbrev _root_.TauCeti.eIntHomOfLE {a b : ℤ} (h : a ≤ b) : (a : EInt) ⟶ (b : EInt) :=
+  homOfLE (WithBotTop.coe_le_coe.mpr h)
+
 variable (F : EInt ⥤ CochainComplex C ℤ)
 
 /-- The spectral sequence of a functor `F : EInt ⥤ CochainComplex C ℤ`, starting on page `2`
