@@ -30,7 +30,7 @@ object of the higher (cubic, quartic and Eisenstein) reciprocity laws.
 ## Main definitions and results
 
 * `Ideal.powerResidueSymbol P n`: the `n`-th power residue symbol at `P`.
-* `Ideal.mk_powerResidueSymbol`: `(x / P)_n ≡ x ^ ((N P - 1) / n) (mod P)` for `x ≠ 0`.
+* `Ideal.mk_powerResidueSymbol`: `(x / P)_n ≡ x ^ ((N P - 1) / n) (mod P)`.
 * `Ideal.powerResidueSymbol_pow_eq_one`: `(x / P)_n` is an `n`-th root of unity for `x ≠ 0`.
 * `Ideal.powerResidueSymbol_eq_iff`: `(x / P)_n` is the only `n`-th root of unity of `𝓞 K`
   congruent to `x ^ ((N P - 1) / n)`.
@@ -93,32 +93,52 @@ private theorem powerResidueSymbol_coe_unit (hP : (absNorm P).Coprime n) (u : (�
   rw [powerResidueSymbol, dite_eq_left hP, MulChar.ofUnitHom_coe]
   simp [MonoidHom.codRestrict_apply]
 
-/-- **The defining congruence of the power residue symbol.** If `N P` is prime to `n` and
-`x ≠ 0`, then `(x / P)_n ≡ x ^ ((N P - 1) / n) (mod P)`. -/
-theorem mk_powerResidueSymbol (hP : (absNorm P).Coprime n) {x : 𝓞 K ⧸ P} (hx : x ≠ 0) :
+/-- If `N P` is prime to `n`, the exponent `(N P - 1) / n` of the power residue symbol is
+positive. -/
+private theorem absNorm_sub_one_div_ne_zero (hP : (absNorm P).Coprime n) :
+    (absNorm P - 1) / n ≠ 0 := by
+  let _ := Ideal.Quotient.field P
+  have hN : absNorm P - 1 ≠ 0 := by
+    rw [absNorm_eq_natCard, ← Nat.card_units]
+    exact Nat.card_pos.ne'
+  exact (Nat.div_ne_zero_iff_of_dvd (dvd_absNorm_sub_one hP)).mpr ⟨hN, NeZero.ne n⟩
+
+/-- **The defining congruence of the power residue symbol.** If `N P` is prime to `n`, then
+`(x / P)_n ≡ x ^ ((N P - 1) / n) (mod P)`. Both sides vanish at `x = 0`. -/
+theorem mk_powerResidueSymbol (hP : (absNorm P).Coprime n) {x : 𝓞 K ⧸ P} :
     Ideal.Quotient.mk P (powerResidueSymbol P n x) = x ^ ((absNorm P - 1) / n) := by
   let _ := Ideal.Quotient.field P
+  obtain rfl | hx := eq_or_ne x 0
+  · rw [MulChar.map_zero, map_zero, zero_pow (absNorm_sub_one_div_ne_zero hP)]
   lift x to (𝓞 K ⧸ P)ˣ using hx.isUnit
   rw [powerResidueSymbol_coe_unit hP, mk_coe_rootsOfUnityEquivQuot_symm_apply,
     Units.val_pow_eq_pow_val]
 
-/-- If `N P` is prime to `n` and `x ≠ 0`, then `(x / P)_n` is an `n`-th root of unity. -/
-theorem powerResidueSymbol_pow_eq_one (hP : (absNorm P).Coprime n) {x : 𝓞 K ⧸ P} (hx : x ≠ 0) :
+/-- If `x ≠ 0`, then `(x / P)_n` is an `n`-th root of unity. At a prime whose norm is not prime
+to `n` the symbol is trivial by convention. -/
+theorem powerResidueSymbol_pow_eq_one {x : 𝓞 K ⧸ P} (hx : x ≠ 0) :
     powerResidueSymbol P n x ^ n = 1 := by
   let _ := Ideal.Quotient.field P
-  lift x to (𝓞 K ⧸ P)ˣ using hx.isUnit
-  rw [powerResidueSymbol_coe_unit hP, ← Units.val_pow_eq_pow_val,
-    (mem_rootsOfUnity _ _).mp (SetLike.coe_mem _), Units.val_one]
+  by_cases hP : (absNorm P).Coprime n
+  · lift x to (𝓞 K ⧸ P)ˣ using hx.isUnit
+    rw [powerResidueSymbol_coe_unit hP, ← Units.val_pow_eq_pow_val,
+      (mem_rootsOfUnity _ _).mp (SetLike.coe_mem _), Units.val_one]
+  · rw [powerResidueSymbol_of_not_coprime hP, MulChar.one_apply hx.isUnit, one_pow]
 
-/-- **Characterisation of the power residue symbol.** If `N P` is prime to `n` and `x ≠ 0`, then
-`(x / P)_n` is the unique `n`-th root of unity of `𝓞 K` congruent to `x ^ ((N P - 1) / n)`
-modulo `P`. -/
-theorem powerResidueSymbol_eq_iff (hP : (absNorm P).Coprime n) {x : 𝓞 K ⧸ P} (hx : x ≠ 0)
+/-- **Characterisation of the power residue symbol.** If `N P` is prime to `n`, then `(x / P)_n`
+is the unique `n`-th root of unity of `𝓞 K` congruent to `x ^ ((N P - 1) / n)` modulo `P`. -/
+theorem powerResidueSymbol_eq_iff (hP : (absNorm P).Coprime n) {x : 𝓞 K ⧸ P}
     {μ : 𝓞 K} (hμ : μ ^ n = 1) :
     powerResidueSymbol P n x = μ ↔ Ideal.Quotient.mk P μ = x ^ ((absNorm P - 1) / n) := by
-  refine ⟨fun h ↦ h ▸ mk_powerResidueSymbol hP hx, fun h ↦ ?_⟩
-  exact eq_of_pow_eq_one_of_mk_eq IsPrime.ne_top' hP (powerResidueSymbol_pow_eq_one hP hx) hμ
-    (by rw [mk_powerResidueSymbol hP hx, h])
+  refine ⟨fun h ↦ h ▸ mk_powerResidueSymbol hP, fun h ↦ ?_⟩
+  obtain rfl | hx := eq_or_ne x 0
+  · -- Both sides are false: `μ` is a unit, so it is neither `0` nor in the proper ideal `P`.
+    let _ := Ideal.Quotient.field P
+    have hμu : IsUnit μ := IsUnit.of_pow_eq_one hμ (NeZero.ne n)
+    rw [zero_pow (absNorm_sub_one_div_ne_zero hP)] at h
+    exact absurd h ((hμu.map (Ideal.Quotient.mk P)).ne_zero)
+  exact eq_of_pow_eq_one_of_mk_eq IsPrime.ne_top' hP (powerResidueSymbol_pow_eq_one hx) hμ
+    (by rw [mk_powerResidueSymbol hP, h])
 
 /-- **The power residue symbol of a root of unity.** If `N P` is prime to `n` and `ζ` is an
 `n`-th root of unity of `𝓞 K`, then `(ζ / P)_n = ζ ^ ((N P - 1) / n)`. -/
@@ -127,7 +147,7 @@ theorem powerResidueSymbol_mk_of_pow_eq_one (hP : (absNorm P).Coprime n) {ζ : �
     powerResidueSymbol P n (Ideal.Quotient.mk P ζ) = ζ ^ ((absNorm P - 1) / n) := by
   have hx : Ideal.Quotient.mk P ζ ≠ 0 :=
     ((IsUnit.of_pow_eq_one hζ (NeZero.ne n)).map (Ideal.Quotient.mk P)).ne_zero
-  rw [powerResidueSymbol_eq_iff hP hx (by rw [← pow_mul, mul_comm, pow_mul, hζ, one_pow]),
+  rw [powerResidueSymbol_eq_iff hP (by rw [← pow_mul, mul_comm, pow_mul, hζ, one_pow]),
     map_pow]
 
 /-- **Compatibility with divisors of `n`.** If `d ∣ n` and `N P` is prime to `n`, then
@@ -139,9 +159,9 @@ theorem powerResidueSymbol_pow_div (hP : (absNorm P).Coprime n) {d : ℕ} [NeZer
   · rw [MulChar.map_zero, MulChar.map_zero,
       zero_pow (Nat.div_ne_zero_iff_of_dvd hd |>.mpr ⟨NeZero.ne n, NeZero.ne d⟩)]
   have hPd : (absNorm P).Coprime d := hP.coprime_dvd_right hd
-  refine ((powerResidueSymbol_eq_iff hPd hx ?_).mpr ?_).symm
-  · rw [← pow_mul, Nat.div_mul_cancel hd, powerResidueSymbol_pow_eq_one hP hx]
-  · rw [map_pow, mk_powerResidueSymbol hP hx, ← pow_mul,
+  refine ((powerResidueSymbol_eq_iff hPd ?_).mpr ?_).symm
+  · rw [← pow_mul, Nat.div_mul_cancel hd, powerResidueSymbol_pow_eq_one hx]
+  · rw [map_pow, mk_powerResidueSymbol hP, ← pow_mul,
       Nat.div_mul_div (dvd_absNorm_sub_one hP) hd]
 
 /-- **The power residue symbol has order `n`** when `N P` is prime to `n`. -/
@@ -169,7 +189,7 @@ theorem orderOf_powerResidueSymbol (hP : (absNorm P).Coprime n) :
   refine Nat.dvd_antisymm (orderOf_dvd_of_pow_eq_one ?_) (hξ.dvd_of_pow_eq_one _ ?_)
   · ext u
     rw [MulChar.pow_apply_coe, MulChar.one_apply_coe,
-      powerResidueSymbol_pow_eq_one hP u.ne_zero]
+      powerResidueSymbol_pow_eq_one u.ne_zero]
   · rw [← MulChar.pow_apply_coe, pow_orderOf_eq_one, MulChar.one_apply_coe]
 
 /-- The first power residue symbol is the trivial character. -/
@@ -211,7 +231,7 @@ theorem powerResidueSymbol_intCast_eq_one {q : ℕ} (hq : q.Prime)
     exact zero_ne_one hpow
   by_cases hP : (absNorm P).Coprime n
   · obtain ⟨k, hk⟩ := hdvd
-    rw [powerResidueSymbol_eq_iff hP hm0 (one_pow n), map_one, hk, mul_assoc,
+    rw [powerResidueSymbol_eq_iff hP (one_pow n), map_one, hk, mul_assoc,
       Nat.mul_div_cancel_left _ (NeZero.pos n), pow_mul, hpow, one_pow]
   · rw [powerResidueSymbol_of_not_coprime hP, MulChar.one_apply hm0.isUnit]
 
@@ -234,9 +254,9 @@ theorem map_powerResidueSymbol (P : Ideal (𝓞 K)) [P.IsMaximal] (σ : 𝓞 K �
   · obtain rfl | hx := eq_or_ne x 0
     · rw [MulChar.map_zero, map_zero, map_zero, MulChar.map_zero]
     -- `σ ((x / P)_n)` is an `n`-th root of unity congruent to `τ x ^ ((N P - 1) / n)`.
-    refine ((powerResidueSymbol_eq_iff (hN ▸ hP) (τ.map_ne_zero_iff.mpr hx) ?_).mpr ?_).symm
-    · rw [← map_pow, powerResidueSymbol_pow_eq_one hP hx, map_one]
-    · rw [← quotientEquiv_mk P (P.map σ) σ rfl, mk_powerResidueSymbol hP hx, map_pow, hN]
+    refine ((powerResidueSymbol_eq_iff (hN ▸ hP) ?_).mpr ?_).symm
+    · rw [← map_pow, powerResidueSymbol_pow_eq_one hx, map_one]
+    · rw [← quotientEquiv_mk P (P.map σ) σ rfl, mk_powerResidueSymbol hP, map_pow, hN]
   · rw [powerResidueSymbol_of_not_coprime hP, powerResidueSymbol_of_not_coprime (hN ▸ hP),
       MulChar.map_one_apply σ τ]
 
@@ -273,11 +293,11 @@ theorem powerResidueSymbol_ringHomComp_eq_pow (P : Ideal (𝓞 K)) [P.IsMaximal]
   -- Both sides are `n`-th roots of unity of `𝓞 L` congruent to `u ^ ((N P - 1) / n)` modulo `𝔓`.
   have h𝔓 : (absNorm 𝔓).Coprime n := absNorm_pow_inertiaDeg P 𝔓 ▸ hP.pow_left _
   refine eq_of_pow_eq_one_of_mk_eq IsPrime.ne_top' h𝔓 ?_ ?_ ?_
-  · rw [MulChar.ringHomComp_apply, ← map_pow, powerResidueSymbol_pow_eq_one hP u.ne_zero, map_one]
+  · rw [MulChar.ringHomComp_apply, ← map_pow, powerResidueSymbol_pow_eq_one u.ne_zero, map_one]
   · rw [MulChar.pow_apply_coe, ← pow_mul, hk, ← map_pow, ← Units.val_pow_eq_pow_val,
       pow_absNorm_sub_one_eq_one, Units.val_one, MulChar.map_one]
   · rw [MulChar.ringHomComp_apply, MulChar.pow_apply_coe, map_pow, hω,
-      ← Quotient.algebraMap_mk_of_liesOver (P := 𝔓) (p := P), mk_powerResidueSymbol hP u.ne_zero,
+      ← Quotient.algebraMap_mk_of_liesOver (P := 𝔓) (p := P), mk_powerResidueSymbol hP,
       map_pow]
 
 end Extension
