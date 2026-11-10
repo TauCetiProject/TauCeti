@@ -60,9 +60,10 @@ theorem choose_middle_mul_sqrt_le_two_pow (k : ℕ) :
       ring
     have hsqrt : √((2 * n + 1 : ℝ) + 1) ≤ √(2 * (n + 1) + 1) :=
       Real.sqrt_le_sqrt (by linarith)
+    have hdiv : (2 * n + 1) / 2 = n := by omega
     have h := centralBinom_mul_sqrt_le_four_pow (n + 1)
     rw [hchoose, _root_.pow_succ', mul_assoc] at h
-    rw [show (2 * n + 1) / 2 = n by omega, _root_.pow_succ, _root_.pow_mul]
+    rw [hdiv, _root_.pow_succ, _root_.pow_mul]
     norm_num at h ⊢
     nlinarith [mul_le_mul_of_nonneg_left hsqrt (Nat.cast_nonneg ((2 * n + 1).choose n))]
 
