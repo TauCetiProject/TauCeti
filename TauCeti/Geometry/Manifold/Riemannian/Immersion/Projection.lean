@@ -67,6 +67,7 @@ theorem ContMDiffAt.starProjection_range_mfderiv_apply
     ContMDiffAt I (J.prod 𝓘(ℝ, F)) n
       (fun y ↦ TotalSpace.mk' F (f y) ((mfderiv I J f y).range.starProjection (W y))) x := by
   classical
+  -- Push a source frame forward, apply Gram–Schmidt, then sum the projections onto its lines.
   -- At arbitrary n this is a lemma, not an instance; it uses IsManifold I (n + 1) M.
   let := TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := n)
   let e := trivializationAt E (TangentSpace I) x
@@ -108,11 +109,7 @@ theorem ContMDiffAt.starProjection_range_mfderiv_apply
   have hspan : Submodule.span ℝ (Set.range (fun i ↦ g i y)) =
       (mfderiv I J f y).range := by
     rw [InnerProductSpace.span_gramSchmidt]
-    change Submodule.span ℝ
-      (Set.range ((mfderiv I J f y).toLinearMap ∘ (fun i ↦ e.localFrame b i y))) = _
-    rw [Set.range_comp, ← Submodule.map_span,
-      top_le_iff.mp ((e.isLocalFrameOn_localFrame_baseSet I n b).generating hy),
-      Submodule.map_top]
+    exact e.span_range_localFrame_map b (mfderiv I J f y).toLinearMap hy
   rw [Submodule.starProjection_eq_sum_of_orthogonal _ (fun i ↦ g i y)
     (InnerProductSpace.gramSchmidt_pairwise_orthogonal ℝ (fun i ↦ v i y)) hspan]
   congr 1
