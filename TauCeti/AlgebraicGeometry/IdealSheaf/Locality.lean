@@ -90,12 +90,8 @@ theorem IdealSheafData.ext_of_comap_fromSpec_over
     {Y : Scheme.{u}} {I J : X.IdealSheafData} (f : X ⟶ Y)
     (h : ∀ (U : Y.affineOpens) (V : X.affineOpens), V.1 ≤ f ⁻¹ᵁ U.1 →
       I.comap V.2.fromSpec = J.comap V.2.fromSpec) : I = J := by
-  let 𝒰 : X.OpenCover := Scheme.Cover.mkOfCovers
-    {V : X.affineOpens // ∃ U : Y.affineOpens, V.1 ≤ f ⁻¹ᵁ U.1}
-    (fun V ↦ Spec Γ(X, V.1)) (fun V ↦ V.1.2.fromSpec) (fun x ↦ by
-      obtain ⟨V, hxV⟩ := TopologicalSpace.Opens.mem_iSup.mp
-        (f.iSup_affineOpens_le_preimage_eq_top.ge (Set.mem_univ x))
-      exact ⟨V, V.1.2.range_fromSpec.ge hxV⟩) fun V ↦ V.1.2.isOpenImmersion_fromSpec
-  exact ext_of_comap_openCover 𝒰 fun V ↦ V.2.elim fun U hVU ↦ h U V.1 hVU
+  exact ext_of_comap_openCover (Scheme.AffineOpenCover.ofIsOpenCover _
+    f.iSup_affineOpens_le_preimage_eq_top fun V ↦ V.1.2).openCover
+    fun V ↦ V.2.elim fun U hVU ↦ h U V.1 hVU
 
 end AlgebraicGeometry.Scheme
