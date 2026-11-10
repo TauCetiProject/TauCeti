@@ -24,7 +24,8 @@ the `m`-cells of `W` together with the indices `i` with `n i = m`
 maps, followed by the closed embedding of `W` into the adjunction space
 (`TauCeti.sigmaDiskAdjunctionCWComplex_map_inl`), and the new cells have the characteristic maps
 of the disks (`TauCeti.sigmaDiskAdjunctionCWComplex_map_inr`). The image of `W` is a subcomplex,
-made of the cells of `W` (`TauCeti.sigmaDiskAdjunctionSubcomplex`).
+made of the cells of `W` (`TauCeti.sigmaDiskAdjunctionSubcomplex`). Attaching finitely many cells
+to a finite CW complex gives a finite CW complex (`TauCeti.finite_sigmaDiskAdjunctionCWComplex`).
 
 Every map of a sphere into a CW complex can be moved into the required skeleton by a homotopy
 (`ContinuousMap.exists_homotopic_mapsTo_skeletonLT_diskBoundary`), by cellular approximation for
@@ -38,6 +39,11 @@ the attachment `Z ∪_a ⨆ᵢ Dⁿⁱ` has a CW model whose cells are the cells
 with their characteristic maps, and one new `n i`-cell for each `i`. Iterating this is how a space
 built by successive cell attachments, such as the sublevels of a Morse function across their
 critical levels, receives a CW model.
+
+Such attachments are often built in `TopCat` as the pushout of `∐ᵢ a i : ∐ᵢ ∂Dⁿⁱ ⟶ Z` along the
+coproduct of the boundary inclusions `∐ᵢ ∂Dⁿⁱ ⟶ ∐ᵢ Dⁿⁱ`. That pushout is homeomorphic to the
+adjunction space `Z ∪_a ⨆ᵢ Dⁿⁱ` used here, compatibly with the inclusions of `Z` and of the disks
+(`TauCeti.sigmaDiskAdjunctionIsoPushout`).
 
 The CW structure is the composite (`TauCeti.relCWComplexTrans`) of the relative CW structure of the
 attachment over `W` (`TauCeti.relativeCWPushout`) with the CW structure of `W`, carried to the
@@ -53,9 +59,13 @@ homotopy `h ∘ b ≃ a` (`CategoryTheory.IsPushout.exists_homotopicRel_id_of_ho
 * `TauCeti.sigmaDiskAdjunctionCWComplexCellEquiv`: its `m`-cells are those of `W` and the indices
   `i` with `n i = m`.
 * `TauCeti.sigmaDiskAdjunctionSubcomplex`: `W` as a subcomplex of `W ∪_b ⨆ᵢ Dⁿⁱ`.
+* `TauCeti.sigmaDiskAdjunctionIsoPushout`: `Z ∪_a ⨆ᵢ Dⁿⁱ` is the pushout of `∐ᵢ a i` along
+  `∐ᵢ ∂Dⁿⁱ ⟶ ∐ᵢ Dⁿⁱ`.
 
 ## Main results
 
+* `TauCeti.finite_sigmaDiskAdjunctionCWComplex`: attaching finitely many cells to a finite CW
+  complex gives a finite CW complex.
 * `ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_sigmaDiskAdjunction`: **CW models of cell
   attachments.**
 
@@ -193,6 +203,21 @@ def sigmaDiskAdjunctionCWComplexCellEquiv (m : ℕ) :
     (Equiv.sumCongr ((isClosedEmbedding_pushout_inr_relCWBaseInclusion
       (sigmaDiskAttachingMap b)).relCWComplexCellEquiv image_univ (image_empty _) m)
         (sigmaDiskAdjunctionSpaceCellEquiv b m))
+
+/-- Attaching finitely many cells to a finite CW complex gives a finite CW complex. -/
+theorem finite_sigmaDiskAdjunctionCWComplex [Finite ι] [RelCWComplex.Finite (univ : Set W)] :
+    letI := sigmaDiskRelCWComplex n
+    letI := sigmaDiskAdjunctionCWComplex n b hb
+    RelCWComplex.Finite (univ : Set (relCWAdjunctionSpace
+      (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))) (sigmaDiskAttachingMap b))) :=
+  letI := sigmaDiskRelCWComplex n
+  letI := sigmaDiskAdjunctionCWComplex n b hb
+  have := RelCWComplex.finite_cells_of_finite (C := (univ : Set W))
+  -- The cells are those of `W`, of all dimensions, together with one cell for each `i`.
+  RelCWComplex.finite_of_finite_cells (.of_equiv ((Σ m, cell (univ : Set W) m) ⊕ ι)
+    ((Equiv.sumCongr (.refl _) (Equiv.sigmaFiberEquiv n).symm).trans
+      ((Equiv.sigmaSumDistrib _ _).symm.trans
+        (Equiv.sigmaCongrRight fun m ↦ (sigmaDiskAdjunctionCWComplexCellEquiv n b hb m).symm))))
 
 /-- The characteristic map of a cell of `W`, as a cell of `W ∪_b ⨆ᵢ Dⁿⁱ`, is its characteristic
 map in `W` followed by the inclusion of `W`. -/
@@ -354,5 +379,98 @@ theorem _root_.ContinuousMap.HomotopyEquiv.exists_homotopyEquiv_sigmaDiskAdjunct
   have h₁ : F (pushout.inr i₀ ab w) = pushout.inr i₀ (ab ≫ f) (h w) :=
     ConcreteCategory.congr_hom (hP.inr_desc _ _ hw) w
   exact (congrArg φ h₁).trans (ConcreteCategory.congr_hom hφ (h w))
+
+section Pushout
+
+variable {ι : Type u} (n : ι → ℕ) {Z : TopCat.{u}}
+
+/-- The disjoint union of the disks `Dⁿⁱ`, as the subset `univ.sigma fun i ↦ univ` of
+`Σ i, Dⁿⁱ`, is their coproduct in `TopCat`. -/
+private def sigmaDiskIsoCoproduct :
+    TopCat.of (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))) ≅
+      ∐ fun i ↦ TopCat.disk.{u} (n i) :=
+  TopCat.isoOfHomeo ((Homeomorph.setCongr (sigma_univ.trans preimage_univ)).trans
+      (Homeomorph.Set.univ (Σ i, TopCat.disk.{u} (n i)))) ≪≫
+    (TopCat.sigmaIsoSigma _).symm
+
+/-- The disjoint union of the boundary spheres `∂Dⁿⁱ`, as a subset of `Σ i, Dⁿⁱ`, is their
+coproduct in `TopCat`. -/
+private def sigmaDiskBoundaryIsoCoproduct :
+    TopCat.of (univ.sigma fun i ↦ range (TopCat.diskBoundaryInclusion.{u} (n i))) ≅
+      ∐ fun i ↦ TopCat.diskBoundary.{u} (n i) :=
+  TopCat.isoOfHomeo (sigmaDiskBoundaryHomeomorph n) ≪≫ (TopCat.sigmaIsoSigma _).symm
+
+variable {n}
+
+/-- The pushout of the attaching maps `∐ᵢ ∂Dⁿⁱ ⟶ Z` along the coproduct of the boundary
+inclusions `∐ᵢ ∂Dⁿⁱ ⟶ ∐ᵢ Dⁿⁱ` is also a pushout of the inclusion of the boundary spheres into the
+disjoint union of disks, as subsets of `Σ i, Dⁿⁱ`. -/
+private theorem isPushout_relCWBaseInclusion_sigmaDiskAttachingMap
+    (a : ∀ i, TopCat.diskBoundary.{u} (n i) ⟶ Z) :
+    letI := sigmaDiskRelCWComplex n
+    IsPushout (relCWBaseInclusion (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))))
+      (TopCat.ofHom (sigmaDiskAttachingMap fun i ↦ (a i).hom))
+      ((sigmaDiskIsoCoproduct n).hom ≫
+        pushout.inr (Sigma.desc a) (Limits.Sigma.map fun i ↦ TopCat.diskBoundaryInclusion (n i)))
+      (pushout.inl (Sigma.desc a) (Limits.Sigma.map fun i ↦ TopCat.diskBoundaryInclusion (n i))) :=
+  letI := sigmaDiskRelCWComplex n
+  (IsPushout.of_hasPushout (Sigma.desc a)
+    (Limits.Sigma.map fun i ↦ TopCat.diskBoundaryInclusion (n i))).flip.of_iso
+    (sigmaDiskBoundaryIsoCoproduct n).symm (sigmaDiskIsoCoproduct n).symm (.refl _) (.refl _)
+    (Sigma.hom_ext _ _ fun i ↦ by
+      refine ConcreteCategory.hom_ext _ _ fun s ↦ Subtype.ext ?_
+      simp [sigmaDiskBoundaryIsoCoproduct, sigmaDiskIsoCoproduct]
+      -- `Homeomorph.setCongr` and `Homeomorph.Set.univ` keep the underlying point, and have no
+      -- `simp` lemmas saying so.
+      rfl)
+    (Sigma.hom_ext _ _ fun i ↦ by
+      ext s
+      simp [sigmaDiskBoundaryIsoCoproduct])
+    (by simp) (by simp)
+
+/-- **Cell attachments as adjunction spaces.** The adjunction space `Z ∪_a ⨆ᵢ Dⁿⁱ` of the disjoint
+union of disks relative to their boundary spheres is homeomorphic to the pushout of the attaching
+maps `∐ᵢ ∂Dⁿⁱ ⟶ Z` along the coproduct of the boundary inclusions `∐ᵢ ∂Dⁿⁱ ⟶ ∐ᵢ Dⁿⁱ`, the form in
+which cell attachments are built in `TopCat`, by a homeomorphism compatible with the inclusions of
+`Z` (`TauCeti.inr_sigmaDiskAdjunctionIsoPushout_hom`). -/
+def sigmaDiskAdjunctionIsoPushout (a : ∀ i, TopCat.diskBoundary.{u} (n i) ⟶ Z) :
+    letI := sigmaDiskRelCWComplex n
+    relCWAdjunctionSpace (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i))))
+        (sigmaDiskAttachingMap fun i ↦ (a i).hom) ≅
+      pushout (Sigma.desc a) (Limits.Sigma.map fun i ↦ TopCat.diskBoundaryInclusion.{u} (n i)) :=
+  (isPushout_relCWBaseInclusion_sigmaDiskAttachingMap a).isoPushout.symm
+
+/-- The homeomorphism `TauCeti.sigmaDiskAdjunctionIsoPushout` is compatible with the inclusions
+of `Z`. -/
+@[reassoc (attr := simp)]
+theorem inr_sigmaDiskAdjunctionIsoPushout_hom (a : ∀ i, TopCat.diskBoundary.{u} (n i) ⟶ Z) :
+    letI := sigmaDiskRelCWComplex n
+    pushout.inr (relCWBaseInclusion (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))))
+        (TopCat.ofHom (sigmaDiskAttachingMap fun i ↦ (a i).hom)) ≫
+          (sigmaDiskAdjunctionIsoPushout a).hom =
+      pushout.inl (Sigma.desc a) (Limits.Sigma.map fun i ↦ TopCat.diskBoundaryInclusion (n i)) :=
+  (isPushout_relCWBaseInclusion_sigmaDiskAttachingMap a).inr_isoPushout_inv
+
+/-- The homeomorphism `TauCeti.sigmaDiskAdjunctionIsoPushout` is compatible with the inclusions
+of the disks. -/
+@[simp]
+theorem sigmaDiskAdjunctionIsoPushout_hom_inl_apply (a : ∀ i, TopCat.diskBoundary.{u} (n i) ⟶ Z)
+    (i : ι) (x : TopCat.disk.{u} (n i)) :
+    letI := sigmaDiskRelCWComplex n
+    (sigmaDiskAdjunctionIsoPushout a).hom
+        (pushout.inl (relCWBaseInclusion (univ.sigma fun i ↦ (univ : Set (TopCat.disk.{u} (n i)))))
+          (TopCat.ofHom (sigmaDiskAttachingMap fun i ↦ (a i).hom))
+          ⟨⟨i, x⟩, mem_univ _, mem_univ _⟩) =
+      pushout.inr (Sigma.desc a) (Limits.Sigma.map fun i ↦ TopCat.diskBoundaryInclusion (n i))
+        (Sigma.ι (fun i ↦ TopCat.disk.{u} (n i)) i x) := by
+  let := sigmaDiskRelCWComplex n
+  rw [sigmaDiskAdjunctionIsoPushout, Iso.symm_hom, ← ConcreteCategory.comp_apply,
+    (isPushout_relCWBaseInclusion_sigmaDiskAttachingMap a).inl_isoPushout_inv]
+  simp only [sigmaDiskIsoCoproduct, Iso.trans_hom, Iso.symm_hom, ConcreteCategory.comp_apply]
+  -- `Homeomorph.setCongr` and `Homeomorph.Set.univ` keep the underlying point, and have no `simp`
+  -- lemmas saying so.
+  exact congrArg _ (TopCat.sigmaIsoSigma_inv_apply (fun i ↦ TopCat.disk.{u} (n i)) i x)
+
+end Pushout
 
 end TauCeti

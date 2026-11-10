@@ -98,6 +98,24 @@ theorem categoricalMeasure_singleton (p : StdSimplex NNReal I) (i : I) :
   rw [categoricalMeasure_def, _root_.sum_apply]
   simp [Pi.single_apply]
 
+/-- Every probability measure on a finite type with measurable singletons is categorical. -/
+theorem _root_.MeasureTheory.Measure.exists_categoricalMeasure_eq
+    (μ : Measure I) [IsProbabilityMeasure μ] :
+    ∃ p : StdSimplex ℝ≥0 I, categoricalMeasure p = μ := by
+  classical
+  let p : StdSimplex ℝ≥0 I :=
+    { weights := Finsupp.equivFunOnFinite.symm fun i => (μ {i}).toNNReal
+      nonneg := fun _ => bot_le
+      total := by
+        rw [Finsupp.sum_fintype _ _ (by simp)]
+        simp only [Finsupp.coe_equivFunOnFinite_symm]
+        apply ENNReal.coe_injective
+        push_cast
+        simp only [ENNReal.coe_toNNReal (measure_ne_top μ _)]
+        rw [sum_measure_singleton, Finset.coe_univ, measure_univ] }
+  refine ⟨p, Measure.ext_of_singleton fun i => ?_⟩
+  simp [categoricalMeasure_singleton, p, ENNReal.coe_toNNReal]
+
 /-- The real mass of a category under its categorical law is its simplex weight. -/
 @[simp]
 theorem categoricalMeasure_real_singleton (p : StdSimplex NNReal I) (i : I) :
