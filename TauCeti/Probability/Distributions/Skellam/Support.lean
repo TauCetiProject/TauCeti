@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.Skellam.Basic
 public import TauCeti.Probability.Distributions.Poisson.Support
+import Mathlib.Data.Nat.Cast.SetInterval
 import Mathlib.Topology.Instances.Int
 
 /-!
@@ -48,26 +49,18 @@ theorem support_skellamMeasure (r₁ r₂ : ℝ≥0) :
         Measure.support_map_eq_closure_image _ Measure.support_mem_ae (by fun_prop),
         support_poissonMeasure]
       simp only [h₂, ↓reduceIte, image_univ, (isClosed_discrete _).closure_eq]
+      rw [range_comp' Neg.neg (Nat.cast : ℕ → ℤ), Nat.range_cast_int, image_neg_Ici]
       ext k
-      simp only [mem_range, mem_ofPred_eq, true_implies, false_implies, and_true]
-      constructor
-      · rintro ⟨n, rfl⟩
-        omega
-      · intro hk
-        exact ⟨(-k).toNat, by omega⟩
+      simp
   · by_cases h₂ : r₂ = 0
     · subst r₂
       rw [skellamMeasure_zero_right,
         Measure.support_map_eq_closure_image _ Measure.support_mem_ae (by fun_prop),
         support_poissonMeasure]
-      simp only [h₁, ↓reduceIte, image_univ, (isClosed_discrete _).closure_eq]
+      simp only [h₁, ↓reduceIte, image_univ, (isClosed_discrete _).closure_eq,
+        Nat.range_cast_int]
       ext k
-      simp only [mem_range, mem_ofPred_eq, false_implies, true_and, true_implies]
-      constructor
-      · rintro ⟨n, rfl⟩
-        omega
-      · intro hk
-        exact ⟨k.toNat, by omega⟩
+      simp
     · rw [Measure.support_eq_setOf_singleton_ne_zero]
       ext k
       simp only [mem_ofPred_eq, h₁, h₂, false_implies, and_self, iff_true]
