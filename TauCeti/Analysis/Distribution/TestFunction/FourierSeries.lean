@@ -60,6 +60,8 @@ the resulting double series converge.
   smooth function supported in `K` decays rapidly along a lattice.
 * `ContDiffMapSupportedIn.hasSum_fourier_smul_modulate`: the Fourier expansion of a smooth
   function supported in `K`, converging in `𝓓_{K}(E, ℂ)`.
+* `TauCeti.contDiff_tsum_mul_cexp`: conversely, a trigonometric series with rapidly decreasing
+  coefficients is smooth.
 
 ## References
 
@@ -123,6 +125,27 @@ private theorem one_add_two_pi_mul_pow_le {a : ℝ} (ha : 0 ≤ a) (k : ℕ) :
   rw [← mul_pow]
   gcongr
   nlinarith [Real.two_le_pi]
+
+/-- A trigonometric series `x ↦ ∑ i, a i exp (2πi ⟪x, v i⟫)` is smooth when its coefficients
+decay faster than every power of the frequencies, in the sense that `∑ i, (1 + ‖v i‖) ^ k ‖a i‖`
+converges for every `k`. -/
+theorem _root_.TauCeti.contDiff_tsum_mul_cexp {ι : Type*} {v : ι → E} {a : ι → ℂ}
+    (ha : ∀ k : ℕ, Summable fun i ↦ (1 + ‖v i‖) ^ k * ‖a i‖) :
+    ContDiff ℝ ∞ fun x ↦ ∑' i, a i * cexp (2 * π * I * ⟪x, v i⟫) := by
+  simp only [← phase_apply, ← smul_eq_mul (a := a _)]
+  refine contDiff_tsum (N := ⊤) (fun i ↦ (contDiff_exp_phase (v i)).const_smul (a i))
+    (v := fun k i ↦ (2 * π) ^ k * ((1 + ‖v i‖) ^ k * ‖a i‖)) (fun k _ ↦ (ha k).mul_left _)
+    fun k i x _ ↦ ?_
+  rw [iteratedFDeriv_const_smul_apply' ((contDiff_exp_phase (v i)).contDiffAt.of_le
+    (mod_cast le_top)), norm_smul]
+  calc ‖a i‖ * ‖iteratedFDeriv ℝ k (fun y ↦ cexp (phase (v i) y)) x‖
+      ≤ ‖a i‖ * ((2 * π) ^ k * (1 + ‖v i‖) ^ k) := by
+        gcongr
+        refine (norm_iteratedFDeriv_exp_phase_le (v i) x k).trans <|
+          le_trans ?_ (one_add_two_pi_mul_pow_le (norm_nonneg (v i)) k)
+        gcongr
+        linarith
+    _ = (2 * π) ^ k * ((1 + ‖v i‖) ^ k * ‖a i‖) := by ring
 
 /-! ### Modulated cutoffs -/
 
