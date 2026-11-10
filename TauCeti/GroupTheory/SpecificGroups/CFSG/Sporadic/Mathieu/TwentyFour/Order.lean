@@ -328,8 +328,10 @@ private theorem siftCheck_0_ge_three : [3, 4, 5, 6].all (fun j ↦ (transversal 
   decide +kernel
 
 private theorem siftCheck_0 : TauCeti.siftCheck (Fin.ofNat 24) transversal 7 0 = true := by
-  have h := Bool.and_eq_true_iff.2 ⟨siftCheck_0_lt_three, siftCheck_0_ge_three⟩
-  rwa [← List.all_append] at h
+  have hrange : (List.range 7).filter (0 ≤ ·) = [0, 1, 2] ++ [3, 4, 5, 6] := by decide
+  unfold TauCeti.siftCheck
+  rw [hrange, Nat.sub_zero, List.all_append, Bool.and_eq_true]
+  exact ⟨siftCheck_0_lt_three, siftCheck_0_ge_three⟩
 
 private theorem siftCheck_1 : TauCeti.siftCheck (Fin.ofNat 24) transversal 7 1 = true := by
   decide +kernel
