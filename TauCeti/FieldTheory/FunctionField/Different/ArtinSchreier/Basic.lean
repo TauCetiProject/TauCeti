@@ -56,6 +56,18 @@ variable [Algebra k k'] [Algebra k F] [Algebra k' F'] [Algebra F F'] [Algebra k 
 variable [IsScalarTower k k' F'] [IsScalarTower k F F']
 variable [FiniteDimensional F F']
 
+omit [FiniteDimensional F F'] in
+/-- In characteristic zero (`p = 0`), an Artin--Schreier generator forces `F' = F`: the equation
+`y ^ 0 - y = algebraMap F F' a` says `y = 1 - a`. -/
+private theorem finrank_eq_one_of_pow_zero_sub_self_eq {y : F'} {a : F} (hgen : F⟮y⟯ = ⊤)
+    (hy : y ^ 0 - y = algebraMap F F' a) : Module.finrank F F' = 1 := by
+  rw [← IntermediateField.bot_eq_top_iff_finrank_eq_one, ← hgen, eq_comm,
+    IntermediateField.adjoin_simple_eq_bot_iff, IntermediateField.mem_bot]
+  refine ⟨1 - a, ?_⟩
+  simp only [pow_zero] at hy
+  rw [map_sub, map_one, ← hy]
+  ring
+
 variable (k F) {P' : Place k' F'}
 
 section Separable
@@ -72,13 +84,8 @@ theorem differentExponent_eq_zero_of_pow_sub_self_eq_of_mem_integers
     differentExponent k F P' = 0 := by
   rcases CharP.char_is_prime_or_zero F p with hp | rfl
   swap
-  · apply differentExponent_eq_zero_of_finrank_eq_one k F
-    rw [← IntermediateField.bot_eq_top_iff_finrank_eq_one, ← hgen, eq_comm,
-      IntermediateField.adjoin_simple_eq_bot_iff, IntermediateField.mem_bot]
-    refine ⟨1 - a, ?_⟩
-    simp only [pow_zero] at hy
-    rw [map_sub, map_one, ← hy]
-    ring
+  · exact differentExponent_eq_zero_of_finrank_eq_one k F P'
+      (finrank_eq_one_of_pow_zero_sub_self_eq hgen hy)
   have : Fact p.Prime := ⟨hp⟩
   let ψ : F[X] := X ^ p - (X + C a)
   have hmonic : ψ.Monic := by
@@ -122,13 +129,8 @@ theorem differentExponent_eq_zero_of_exists_sub_pow_sub_self_mem_integers
   obtain ⟨w, hw⟩ := hreg
   rcases CharP.char_is_prime_or_zero F p with hp | rfl
   swap
-  · apply differentExponent_eq_zero_of_finrank_eq_one k F
-    rw [← IntermediateField.bot_eq_top_iff_finrank_eq_one, ← hgen, eq_comm,
-      IntermediateField.adjoin_simple_eq_bot_iff, IntermediateField.mem_bot]
-    refine ⟨1 - u, ?_⟩
-    simp only [pow_zero] at hy
-    rw [map_sub, map_one, ← hy]
-    ring
+  · exact differentExponent_eq_zero_of_finrank_eq_one k F P'
+      (finrank_eq_one_of_pow_zero_sub_self_eq hgen hy)
   have : Fact p.Prime := ⟨hp⟩
   have hadj : F⟮y - algebraMap F F' w⟯ = F⟮y⟯ := by
     simpa [sub_eq_add_neg] using IntermediateField.adjoin_simple_add_algebraMap y (-w)
