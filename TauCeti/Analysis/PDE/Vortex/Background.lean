@@ -117,6 +117,11 @@ theorem backgroundWeight_nonneg (f : ℂ → ℂ) (z : ℂ) : 0 ≤ backgroundWe
   rw [backgroundWeight_def]
   positivity
 
+/-- The coefficient `h = ‖f‖² / (1 + ‖f‖²)` is at most `1`. -/
+theorem backgroundWeight_le_one (f : ℂ → ℂ) (z : ℂ) : backgroundWeight f z ≤ 1 := by
+  rw [backgroundWeight_def, div_le_one (by positivity)]
+  linarith
+
 theorem continuous_backgroundWeight (hf : Continuous f) : Continuous (backgroundWeight f) := by
   have hh : backgroundWeight f = fun z ↦ ‖f z‖ ^ 2 / (1 + ‖f z‖ ^ 2) :=
     funext (backgroundWeight_def f)

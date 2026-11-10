@@ -150,8 +150,9 @@ private theorem le_div_two_add_of_pow_four_le {x D M : ℝ} (hD : 0 ≤ D) (hM :
 where `h = ‖P‖² / (1 + ‖P‖²)` and `g = 2 ‖P'‖² / (1 + ‖P‖²)²`. The first two terms are finite for
 every `u`. The potential is a nonnegative extended integral, so `I(u) = ⊤` exactly when it is not
 integrable (`TauCeti.Vortex.sobolevReducedFunctional_eq_coe`,
-`TauCeti.Vortex.sobolevReducedFunctional_eq_top`). On compactly supported `C¹` functions this is
-`TauCeti.Vortex.reducedFunctional`
+`TauCeti.Vortex.sobolevReducedFunctional_eq_top`,
+`TauCeti.Vortex.sobolevReducedFunctional_ne_top_iff`). On compactly supported `C¹` functions this
+is `TauCeti.Vortex.reducedFunctional`
 (`TauCeti.Vortex.sobolevReducedFunctional_eq_reducedFunctional`). -/
 def sobolevReducedFunctional (P : Polynomial ℂ) (u : W1p (volume : Measure ℂ) ⊤ 2) : EReal :=
   ((‖W1p.gradient u‖ ^ 2 / 2 + ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
@@ -171,7 +172,7 @@ theorem sobolevReducedFunctional_def (P : Polynomial ℂ) (u : W1p (volume : Mea
 variable {P : Polynomial ℂ}
 
 /-- The value of an element of `H¹(ℂ)` is square integrable for Lebesgue measure. -/
-private theorem memLp_value (u : W1p (volume : Measure ℂ) ⊤ 2) :
+theorem memLp_value (u : W1p (volume : Measure ℂ) ⊤ 2) :
     MemLp (W1p.value u : ℂ → ℝ) 2 := by
   have h := Lp.memLp (W1p.value u)
   simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at h
@@ -232,6 +233,13 @@ theorem sobolevReducedFunctional_eq_top {u : W1p (volume : Measure ℂ) ⊤ 2}
       (ae_of_all _ (potential_nonneg _))).2 (lt_top_iff_ne_top.2 hne)⟩
   rw [sobolevReducedFunctional_def, hinf, ENNReal.top_div_of_ne_top (by norm_num),
     EReal.coe_ennreal_top, EReal.coe_add_top]
+
+/-- Taubes's functional on `H¹(ℂ)` is finite exactly when its potential is integrable. -/
+theorem sobolevReducedFunctional_ne_top_iff {u : W1p (volume : Measure ℂ) ⊤ 2} :
+    sobolevReducedFunctional P u ≠ ⊤ ↔ Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
+      (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) :=
+  ⟨fun hu ↦ by_contra fun h ↦ hu (sobolevReducedFunctional_eq_top h),
+    fun hu ↦ by rw [sobolevReducedFunctional_eq_coe hu]; exact EReal.coe_ne_top _⟩
 
 /-- Taubes's functional vanishes at `0`. -/
 @[simp]

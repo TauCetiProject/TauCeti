@@ -68,24 +68,6 @@ open scoped ENNReal Gradient RealInnerProductSpace
 
 variable {P : Polynomial ℂ}
 
-/-- The weight `h = ‖P‖² / (1 + ‖P‖²)` is continuous. -/
-private theorem continuous_weight (P : Polynomial ℂ) :
-    Continuous fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) := by
-  fun_prop (disch := intro z; positivity)
-
-/-- The weight `h = ‖P‖² / (1 + ‖P‖²)` lies in `[0, 1]`. -/
-private theorem weight_mem_Icc (P : Polynomial ℂ) (z : ℂ) :
-    ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ∈ Icc (0 : ℝ) 1 :=
-  ⟨by positivity, (div_le_one (by positivity)).2 (by linarith)⟩
-
-/-- If Taubes's functional is finite at `u ∈ H¹(ℂ)`, its potential is integrable. -/
-private theorem integrable_potential_of_ne_top {u : W1p (volume : Measure ℂ) ⊤ 2}
-    (hu : sobolevReducedFunctional P u ≠ ⊤) :
-    Integrable fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-      (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z) := by
-  by_contra h
-  exact hu (sobolevReducedFunctional_eq_top h)
-
 /-- **Local integrability of `h exp (2u)`.** If Taubes's functional is finite at `u ∈ H¹(ℂ)`, then
 `h exp (2u)`, with `h = ‖P‖² / (1 + ‖P‖²)`, is integrable on every set of finite measure. -/
 theorem integrableOn_mul_exp_of_sobolevReducedFunctional_ne_top
@@ -94,27 +76,20 @@ theorem integrableOn_mul_exp_of_sobolevReducedFunctional_ne_top
     IntegrableOn (fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
       Real.exp (2 * W1p.value u z)) K := by
   have : IsFiniteMeasure (volume.restrict K) := isFiniteMeasure_restrict.2 hK
-  have hua : MemLp (W1p.value u : ℂ → ℝ) 2 := by simpa using Lp.memLp (W1p.value u)
-  have ha : IntegrableOn (W1p.value u : ℂ → ℝ) K := (hua.restrict K).integrable one_le_two
+  have ha : IntegrableOn (W1p.value u : ℂ → ℝ) K :=
+    ((memLp_value u).restrict K).integrable one_le_two
   have hlin : IntegrableOn (fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
       (1 + 2 * W1p.value u z)) K :=
     ((integrable_const 1).add (ha.const_mul 2)).bdd_mul
-      (continuous_weight P).aestronglyMeasurable
+      ((continuous_backgroundWeight P.continuous).congr
+        (backgroundWeight_def _)).aestronglyMeasurable
       (ae_of_all _ fun z ↦ by
-        rw [Real.norm_eq_abs, abs_of_nonneg (weight_mem_Icc P z).1]
-        exact (weight_mem_Icc P z).2)
-  refine ((integrable_potential_of_ne_top hu).integrableOn.add hlin).congr
+        rw [Real.norm_eq_abs, ← backgroundWeight_def (P.eval ·),
+          abs_of_nonneg (backgroundWeight_nonneg _ z)]
+        exact backgroundWeight_le_one _ z)
+  refine ((sobolevReducedFunctional_ne_top_iff.1 hu).integrableOn.add hlin).congr
     (ae_of_all _ fun z ↦ ?_)
   simp only [Pi.add_apply]
-  ring
-
-/-- The expansion `φ(s + r) = φ(s) + φ'(s) r + exp (2s) φ(r)` of Taubes's potential, multiplied by
-a weight `x` and by `16`. -/
-private theorem mul_exp_sub_one_sub_add (x s r : ℝ) :
-    x * (Real.exp (2 * (s + r)) - 1 - 2 * (s + r)) =
-      x * (Real.exp (2 * s) - 1 - 2 * s) + 2 * (x * (Real.exp (2 * s) - 1)) * r +
-        16 * (x * Real.exp (2 * s)) * taubesPotential r := by
-  rw [taubesPotential_def, mul_add, Real.exp_add]
   ring
 
 /-- Let `x` be a weight with values in `[0, 1]` and `x exp (2a)` be integrable on a measurable set
@@ -208,8 +183,10 @@ private theorem integral_mul_exp_sub_one_sub_add_le {x a b : ℂ → ℝ} {K : S
       fun z ↦ (x z * (Real.exp (2 * a z) - 1 - 2 * a z) +
         t * (2 * (x z * (Real.exp (2 * a z) - 1)) * b z)) + r z := by
     funext z
-    rw [mul_exp_sub_one_sub_add]
-    ring
+    have h := taubesPotential_add (a z) (t * b z)
+    rw [taubesPotential_def (a z + t * b z), taubesPotential_def (a z)] at h
+    simp only [hr]
+    linear_combination 16 * x z * h
   have hsum : Integrable fun z ↦ x z * (Real.exp (2 * a z) - 1 - 2 * a z) +
       t * (2 * (x z * (Real.exp (2 * a z) - 1)) * b z) :=
     hpot.add (hvar.const_mul t)
@@ -225,26 +202,27 @@ private theorem integral_mul_exp_sub_one_sub_add_le {x a b : ℂ → ℝ} {K : S
   linarith
 
 /-- **Taubes's functional along a line.** Let `I(u)` be finite and let `v ∈ H¹(ℂ)` have value
-bounded by `M 1_K` for a measurable set `K` of finite measure. If `|t| M ≤ 1 / 2`,
-then `I(u + t v) ≤ I(u) + t L + t² C`, where `L` is the first variation
-`⟪∇u, ∇v⟫ + (1 / 16) ∫ 2 h (exp (2u) - 1) v + ∫ (g - (1 + ‖P‖²)⁻¹ / 8) v` and
+bounded by `M 1_K` for a measurable set `K` of finite measure. Then there is `C` such that
+`I(u + t v) ≤ I(u) + t L + t² C` whenever `|t| M ≤ 1 / 2`, where `L` is the first variation
+`⟪∇u, ∇v⟫ + (1 / 16) ∫ 2 h (exp (2u) - 1) v + ∫ (g - (1 + ‖P‖²)⁻¹ / 8) v`. One can take
 `C = ‖∇v‖² / 2 + (M² / 4) ∫_K h exp (2u)`. -/
 private theorem sobolevReducedFunctional_add_smul_le (hm : 0 < P.natDegree)
     {u v : W1p (volume : Measure ℂ) ⊤ 2} (hu : sobolevReducedFunctional P u ≠ ⊤) {K : Set ℂ}
-    (hK : MeasurableSet K) (hKfin : volume K ≠ ∞) {M t : ℝ}
-    (hvI : ∀ᵐ z, |W1p.value v z| ≤ M * K.indicator (fun _ ↦ (1 : ℝ)) z) (htM : |t| * M ≤ 1 / 2) :
-    sobolevReducedFunctional P (u + t • v) ≤ sobolevReducedFunctional P u +
-      ((t * (⟪W1p.gradient u, W1p.gradient v⟫ +
+    (hK : MeasurableSet K) (hKfin : volume K ≠ ∞) {M : ℝ}
+    (hvI : ∀ᵐ z, |W1p.value v z| ≤ M * K.indicator (fun _ ↦ (1 : ℝ)) z) :
+    ∃ L C : ℝ, L = ⟪W1p.gradient u, W1p.gradient v⟫ +
           (∫ z, 2 * (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
             (Real.exp (2 * W1p.value u z) - 1)) * W1p.value v z) / 16 +
           ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
-            (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value v z) +
-        t ^ 2 * (‖W1p.gradient v‖ ^ 2 / 2 + 4 * M ^ 2 * (∫ z in K,
-          ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * Real.exp (2 * W1p.value u z)) / 16) : ℝ) :
-        EReal) := by
-  have hua : MemLp (W1p.value u : ℂ → ℝ) 2 := by simpa using Lp.memLp (W1p.value u)
-  have hva : MemLp (W1p.value v : ℂ → ℝ) 2 := by simpa using Lp.memLp (W1p.value v)
-  have hpot := integrable_potential_of_ne_top hu
+            (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value v z ∧
+      ∀ t : ℝ, |t| * M ≤ 1 / 2 → sobolevReducedFunctional P (u + t • v) ≤
+        sobolevReducedFunctional P u + ((t * L + t ^ 2 * C : ℝ) : EReal) := by
+  refine ⟨_, ‖W1p.gradient v‖ ^ 2 / 2 + 4 * M ^ 2 * (∫ z in K,
+    ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * Real.exp (2 * W1p.value u z)) / 16, rfl,
+    fun t htM ↦ ?_⟩
+  have hua := memLp_value u
+  have hva := memLp_value v
+  have hpot := sobolevReducedFunctional_ne_top_iff.1 hu
   have hc := memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm
   have hca : Integrable fun z ↦ (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
       (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value u z := hc.integrable_mul hua
@@ -261,8 +239,10 @@ private theorem sobolevReducedFunctional_add_smul_le (hm : 0 < P.natDegree)
   have hgrad : W1p.gradient (u + t • v) = W1p.gradient u + t • W1p.gradient v := by
     rw [← W1p.gradientL_apply, map_add, map_smul, W1p.gradientL_apply, W1p.gradientL_apply]
   -- The potential, the linear term and the Dirichlet energy along the line.
-  obtain ⟨hint, hle⟩ := integral_mul_exp_sub_one_sub_add_le (continuous_weight P)
-    (weight_mem_Icc P) hua.aestronglyMeasurable
+  obtain ⟨hint, hle⟩ := integral_mul_exp_sub_one_sub_add_le
+    ((continuous_backgroundWeight P.continuous).congr (backgroundWeight_def _))
+    (fun z ↦ backgroundWeight_def (P.eval ·) z ▸
+      ⟨backgroundWeight_nonneg _ z, backgroundWeight_le_one _ z⟩) hua.aestronglyMeasurable
     hva.aestronglyMeasurable hK hKfin hpot
     (integrableOn_mul_exp_of_sobolevReducedFunctional_ne_top hu hKfin) hvI htM
   have hpot' : (fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
@@ -318,26 +298,18 @@ theorem integral_inner_gradient_add_integral_mul_value_eq_zero (hm : 0 < P.natDe
     · simpa [indicator_of_mem hz] using hzM
     · simp [indicator_of_notMem hz, hzK fun h ↦ hz (subset_toMeasurable _ _ h)]
   have hM : 0 ≤ M := (abs_nonneg _).trans hvM.exists.choose_spec
-  have hua : MemLp (W1p.value u : ℂ → ℝ) 2 := by simpa using Lp.memLp (W1p.value u)
-  have hva : MemLp (W1p.value v : ℂ → ℝ) 2 := by simpa using Lp.memLp (W1p.value v)
+  obtain ⟨L, C, hLdef, hLC⟩ := sobolevReducedFunctional_add_smul_le hm hu0 hK' hK'fin hvI
   -- By minimality, the quadratic `t L + t² C` has a local minimum at `0`.
-  have hmin : IsLocalMin (fun t : ℝ ↦ t * (⟪W1p.gradient u, W1p.gradient v⟫ +
-          (∫ z, 2 * (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-            (Real.exp (2 * W1p.value u z) - 1)) * W1p.value v z) / 16 +
-          ∫ z, (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
-            (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value v z) +
-        t ^ 2 * (‖W1p.gradient v‖ ^ 2 / 2 + 4 * M ^ 2 * (∫ z in toMeasurable volume K,
-          ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) * Real.exp (2 * W1p.value u z)) / 16)) 0 := by
+  have hmin : IsLocalMin (fun t : ℝ ↦ t * L + t ^ 2 * C) 0 := by
     have hδ : (0 : ℝ) < 1 / (2 * (M + 1)) := by positivity
     filter_upwards [Metric.closedBall_mem_nhds (0 : ℝ) hδ] with t ht
     rw [Metric.mem_closedBall, dist_zero_right, Real.norm_eq_abs] at ht
     have htM : |t| * M ≤ 1 / 2 := by
       calc |t| * M ≤ 1 / (2 * (M + 1)) * (M + 1) := by gcongr; linarith
         _ = 1 / 2 := by field_simp
-    have hle := (hu (u + t • v)).trans
-      (sobolevReducedFunctional_add_smul_le hm hu0 hK' hK'fin hvI htM)
-    rw [sobolevReducedFunctional_eq_coe (integrable_potential_of_ne_top hu0), ← EReal.coe_add,
-      EReal.coe_le_coe_iff] at hle
+    have hle := (hu (u + t • v)).trans (hLC t htM)
+    rw [sobolevReducedFunctional_eq_coe (sobolevReducedFunctional_ne_top_iff.1 hu0),
+      ← EReal.coe_add, EReal.coe_le_coe_iff] at hle
     linarith
   -- Its derivative at `0`, the first variation `L`, therefore vanishes.
   have hquad (L C : ℝ) : HasDerivAt (fun t : ℝ ↦ t * L + t ^ 2 * C) L 0 := by
@@ -347,19 +319,23 @@ theorem integral_inner_gradient_add_integral_mul_value_eq_zero (hm : 0 < P.natDe
       simpa using (hasDerivAt_pow 2 (0 : ℝ)).mul_const C
     have := h1.add h2
     rwa [add_zero] at this
-  have hL := hmin.hasDerivAt_eq_zero (hquad _ _)
+  have hL := hmin.hasDerivAt_eq_zero (hquad L C)
+  rw [hLdef] at hL
   -- Rewrite the first variation as the weak form of the reduced equation.
   have hinner : ⟪W1p.gradient u, W1p.gradient v⟫ =
       ∫ z, ⟪W1p.gradient u z, W1p.gradient v z⟫ := by
     rw [L2.inner_def]
     simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
-  have hvar := integrable_mul_exp_sub_one_mul (continuous_weight P) (weight_mem_Icc P)
-    hua.aestronglyMeasurable hva.aestronglyMeasurable hK' hK'fin
+  have hvar := integrable_mul_exp_sub_one_mul
+    ((continuous_backgroundWeight P.continuous).congr (backgroundWeight_def _))
+    (fun z ↦ backgroundWeight_def (P.eval ·) z ▸
+      ⟨backgroundWeight_nonneg _ z, backgroundWeight_le_one _ z⟩)
+    (memLp_value u).aestronglyMeasurable (memLp_value v).aestronglyMeasurable hK' hK'fin
     (integrableOn_mul_exp_of_sobolevReducedFunctional_ne_top hu0 hK'fin) hvI
   have hcb : Integrable fun z ↦ (2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 -
       (1 + ‖P.eval z‖ ^ 2)⁻¹ / 8) * W1p.value v z :=
     (memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm).integrable_mul
-      hva
+      (memLp_value v)
   rw [hinner, ← integral_div, add_assoc, ← integral_add (hvar.div_const 16) hcb] at hL
   rw [← hL]
   congr 1
