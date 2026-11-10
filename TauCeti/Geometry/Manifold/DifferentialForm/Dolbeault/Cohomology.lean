@@ -355,6 +355,7 @@ variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℂ E']
   (hJ : IsPseudoholomorphic (ofComplexManifold E M) (ofComplexManifold E' M') f)
 
 /-- Coefficient change commutes with holomorphic pullback on closed type forms. -/
+@[simp]
 theorem Dolbeault.closedForms.mpullback_mapCoeff (L : F →L[ℂ] G) (p q : ℕ)
     (φ : closedForms E' M' F p q) :
     closedForms.mpullback hf hJ p q (closedForms.mapCoeff L p q φ) =
@@ -365,6 +366,7 @@ theorem Dolbeault.closedForms.mpullback_mapCoeff (L : F →L[ℂ] G) (p q : ℕ)
   exact SmoothForm.mpullback_mapCoeff (L.restrictScalars ℝ) f hf φ.1.1
 
 /-- Coefficient change commutes with holomorphic pullback on Dolbeault cohomology. -/
+@[simp]
 theorem dolbeaultCohomology.map_mapCoeff (L : F →L[ℂ] G) (p q : ℕ)
     (c : dolbeaultCohomology E' M' F p q) :
     map hf hJ p q (mapCoeff L p q c) = mapCoeff L p q (map hf hJ p q c) := by
