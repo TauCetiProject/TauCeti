@@ -297,14 +297,11 @@ private theorem exists_cancellation
   · -- In dimension zero, a function of mean zero is zero, so the condition is vacuous.
     classical
     refine ⟨0, ENNReal.zero_ne_top, fun f y r _ hmean => ?_⟩
-    let x0 : ι → ℝ := fun i => isEmptyElim i
-    have hvol : (volume : Measure (ι → ℝ)) = Measure.dirac x0 := by
-      rw [volume_pi, Measure.pi_of_empty]
-    have h0 := integral_dirac (fun x => (f : (ι → ℝ) → E) x) x0
-    rw [← hvol, hmean] at h0
+    have h0 := integral_dirac (fun x => (f : (ι → ℝ) → E) x) isEmptyElim
+    rw [← Measure.volume_pi_eq_dirac, hmean] at h0
     have hf : f = 0 := Lp.ext <| by
       filter_upwards [Lp.coeFn_zero E 2 (volume : Measure (ι → ℝ))] with x hx
-      rw [hx, Subsingleton.elim x x0]
+      rw [hx, Subsingleton.elim x isEmptyElim]
       exact h0.symm
     subst hf
     simp
