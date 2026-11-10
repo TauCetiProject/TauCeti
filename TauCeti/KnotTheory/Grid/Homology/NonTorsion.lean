@@ -131,9 +131,10 @@ theorem eval_one_eq_zero_of_smul_single_mem_range {p : MvPolynomial (Fin n) R}
 
 /-- If every grid state has an even number of counted rectangles into `z`, then no monomial
 multiple of the generator `z` is a boundary. -/
-theorem monomial_smul_single_notMem_range [Nontrivial R] (e : Fin n →₀ ℕ) :
+theorem monomial_smul_single_notMem_range (e : Fin n →₀ ℕ) :
     (monomial e (1 : R)) • (Finsupp.single z 1 : GridChainMinus R n) ∉
       LinearMap.range (G.unblockedDifferential R) := by
+  have := CharP.nontrivial_of_char_ne_one (R := R) (v := 2) (by decide)
   intro h
   have h1 := G.eval_one_eq_zero_of_smul_single_mem_range R hz h
   rw [eval_monomial] at h1
@@ -172,7 +173,6 @@ no monomial in the grid variables kills its class in `GH⁻`. -/
 theorem monomial_smul_XMarkingClass_ne_zero
     (hX : ∀ x : GridState n, Even (G.unblockedRectangles x G.X).card) (e : Fin n →₀ ℕ) :
     (monomial e (1 : R)) • G.XMarkingClass R ≠ 0 := by
-  have := CharP.nontrivial_of_char_ne_one (R := R) (v := 2) (by decide)
   intro h
   rw [XMarkingClass_def, ← map_smul, unblockedHomologyClass_eq_zero_iff, Submodule.coe_smul,
     coe_XMarkingCycle] at h
