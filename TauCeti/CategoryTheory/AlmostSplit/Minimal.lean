@@ -111,10 +111,11 @@ theorem isIso_of_comp_g_eq (hS : S.IsAlmostSplit) (b : S.X₂ ⟶ S.X₂) (hb : 
   have := hS.isLeftAlmostSplit_f.isLocalRing_end
   hS.shortExact.isIso_of_comp_g_eq hS.isLeftAlmostSplit_f.not_isSplitMono b hb
 
-/-- The initial map of an almost-split sequence is left minimal when the right-hand end has
-a local endomorphism ring. -/
-theorem isIso_of_f_comp_eq (hS : S.IsAlmostSplit) [IsLocalRing (End S.X₃)]
-    (b : S.X₂ ⟶ S.X₂) (hb : S.f ≫ b = S.f) : IsIso b :=
+/-- The initial map of an almost-split sequence is left minimal. The right-hand end has a local
+endomorphism ring because the final map is right almost split. -/
+theorem isIso_of_f_comp_eq (hS : S.IsAlmostSplit) (b : S.X₂ ⟶ S.X₂) (hb : S.f ≫ b = S.f) :
+    IsIso b :=
+  have := hS.isRightAlmostSplit_g.isLocalRing_end
   hS.shortExact.isIso_of_f_comp_eq hS.isRightAlmostSplit_g.not_isSplitEpi b hb
 
 end IsAlmostSplit
