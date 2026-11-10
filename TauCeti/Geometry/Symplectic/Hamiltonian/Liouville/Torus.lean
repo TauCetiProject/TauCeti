@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Algebra.Module.ZLattice.Quotient
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Arnold
+import TauCeti.Geometry.Symplectic.Hamiltonian.LiouvilleArnold.Torus
 import TauCeti.Topology.Algebra.Module.CompactQuotient
+import TauCeti.Topology.Algebra.Module.Quotient
 
 /-!
 # Compact regular components are Liouville tori
@@ -22,6 +24,12 @@ with the quotient of `ι → ℝ` by its discrete stabilizer `Λ`
 compact, this quotient is compact, so `Λ` spans `ι → ℝ` and is a full lattice. A lattice basis
 then identifies `L` with the torus `(ℝ / ℤ)ⁿ`.
 
+The flows need only be complete along `L`, which they are automatically since `L` is compact. A
+compact regular component is the image of a Lagrangian embedding of a torus `(ι → ℝ) / Λ` without
+any completeness hypothesis on `M`
+(`TauCeti.SmoothTwoForm.IsSymplectic.exists_isLagrangianEmbedding_of_isCompact`), so it is
+homeomorphic to `(ℝ / ℤ)ⁿ` without that hypothesis too.
+
 Other components of the level need not be regular. The smooth identification and action-angle
 coordinates near `L` are not treated here.
 
@@ -30,7 +38,7 @@ coordinates near `L` are not treated here.
 * `TauCeti.SmoothTwoForm.IsSymplectic.span_hamiltonianFlowStabilizer_eq_top`: the stabilizer of a
   point of a compact regular component spans `ι → ℝ`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.nonempty_homeomorph_unitAddTorus`: a compact regular
-  component of a level is homeomorphic to `(ℝ / ℤ)ⁿ`.
+  component of a level is homeomorphic to `(ℝ / ℤ)ⁿ`, with no completeness hypothesis.
 
 ## References
 
@@ -73,24 +81,23 @@ theorem span_hamiltonianFlowStabilizer_eq_top
   have := hσ.compactSpace_quotient_hamiltonianFlowStabilizer hF hcomm hc hdim hreg hK
   exact AddSubgroup.span_eq_top_of_compactSpace_quotient _
 
-include hσ hF hcomm hc in
+include hσ hF hcomm in
 /-- **Compact regular components are tori** (the topological part of the Liouville–Arnold
-theorem). Let `F` be a family of `n` Poisson-commuting functions with complete Hamiltonian vector
-fields on a `2n`-dimensional symplectic manifold. If the connected component of `x` in its common
-level `F⁻¹(F x)` is compact and consists of regular points of `F`, then it is homeomorphic to the
-torus `(ℝ / ℤ)ⁿ`. -/
+theorem). Let `F` be a family of `n` Poisson-commuting functions on a `2n`-dimensional symplectic
+manifold. If the connected component of `x` in its common level `F⁻¹(F x)` is compact and consists
+of regular points of `F`, then it is homeomorphic to the torus `(ℝ / ℤ)ⁿ`. The Hamiltonian vector
+fields of the `Fᵢ` need not be complete. -/
 theorem nonempty_homeomorph_unitAddTorus
     (hreg : ∀ y ∈ connectedComponentIn (F ⁻¹' {F x}) x, IsRegularPoint I 𝓘(ℝ, ι → ℝ) F y)
     (hdim : 2 * Fintype.card ι = finrank ℝ E)
     (hK : IsCompact (connectedComponentIn (F ⁻¹' {F x}) x)) :
     Nonempty (connectedComponentIn (F ⁻¹' {F x}) x ≃ₜ UnitAddTorus ι) := by
-  set Λ := hσ.hamiltonianFlowStabilizer hF hcomm hc x
-  have : DiscreteTopology Λ := hσ.discreteTopology_hamiltonianFlowStabilizer hF hcomm hc
-    (hreg x (mem_connectedComponentIn (by simp)))
-  have : IsZLattice ℝ Λ.toIntSubmodule :=
-    ⟨hσ.span_hamiltonianFlowStabilizer_eq_top hF hcomm hc hreg hdim hK⟩
-  exact ⟨(hσ.quotientHamiltonianFlowStabilizerHomeomorph hF hcomm hc hdim hreg).symm.trans
-    (IsZLattice.basis Λ.toIntSubmodule).quotientLatticeEquiv.toHomeomorph⟩
+  obtain ⟨Λ, _, f, _, hf, hrange⟩ :=
+    hσ.exists_isLagrangianEmbedding_of_isCompact hF hcomm hdim hreg hK
+  exact ⟨(Homeomorph.setCongr hrange.symm).trans <|
+    hf.isSmoothEmbedding.isEmbedding.toHomeomorph.symm.trans <|
+      (Submodule.orbitRelQuotientContinuousAddEquiv _).toHomeomorph.trans
+        (IsZLattice.basis Λ.toIntSubmodule).quotientLatticeEquiv.toHomeomorph⟩
 
 end IsSymplectic
 

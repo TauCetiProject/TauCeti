@@ -302,8 +302,7 @@ theorem nonempty_homeomorph_unitAddTorus_keplerBoundPhaseSpace [FiniteDimensiona
   refine ((SymplecticForm.isSymplectic_constSmooth _).mpullback_subtype_val
     (keplerBoundPhaseSpace b m κ)).nonempty_homeomorph_unitAddTorus
     (contMDiff_centralForceEnergyMomentum_keplerBoundPhaseSpace b)
-    (poissonBracket_centralForceEnergyMomentum_keplerBoundPhaseSpace b)
-    (isCompleteVectorField_hamiltonianVectorField_keplerBoundPhaseSpace b hm hκ) (fun y hy ↦ ?_)
+    (poissonBracket_centralForceEnergyMomentum_keplerBoundPhaseSpace b) (fun y hy ↦ ?_)
     ?_ ((isCompact_keplerBoundPhaseSpace_preimage_singleton b hm hκ
       x).connectedComponentIn x)
   · -- A state of the level has the energy and angular momentum of `x`, so it is regular.
