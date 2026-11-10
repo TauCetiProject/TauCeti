@@ -20,7 +20,7 @@ The result comes from one map. The dimension vector is constant on isomorphism c
 descends to the skeleton of the finite-dimensional indecomposables as
 `TauCeti.isoClassDimVector`. That map
 lands in the positive roots, by `TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic`,
-and is injective, by `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic`; a
+and is injective, by `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable`; a
 positive definite integral quadratic form takes the value `1` only finitely often, by
 `QuadraticMap.PosDef.finite_setOf_apply_eq`, so the skeleton is finite.
 
@@ -104,7 +104,7 @@ theorem titsForm_isoClassDimVector_eq_one (hpd : (titsForm V).PosDef)
 
 /-- **The Gabriel injection.** Over a finite quiver with positive definite Tits form, two
 isomorphism classes of finite-dimensional indecomposable representations with the same dimension
-vector coincide. This is `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic`,
+vector coincide. This is `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable`,
 transported to the skeleton. -/
 theorem isoClassDimVector_injective (hpd : (titsForm V).PosDef) :
     Function.Injective (isoClassDimVector.{u, v, w, x} (k := k) (V := V)) := by
@@ -114,8 +114,7 @@ theorem isoClassDimVector_injective (hpd : (titsForm V).PosDef) :
     have hj := congrFun hXY j
     rw [isoClassDimVector_apply, isoClassDimVector_apply] at hj
     exact_mod_cast hj
-  have hiso := nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic
-    (isAcyclic_of_titsForm_posDef hpd) hpd
+  have hiso := nonempty_iso_of_dimVector_eq_of_indecomposable hpd
     ((fromSkeleton _).obj X).obj ((fromSkeleton _).obj Y).obj
     ((fromSkeleton _).obj X).property.2 ((fromSkeleton _).obj Y).property.2
     ((fromSkeleton _).obj X).property.1 ((fromSkeleton _).obj Y).property.1 hd

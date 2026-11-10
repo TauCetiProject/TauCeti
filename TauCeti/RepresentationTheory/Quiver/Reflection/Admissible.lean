@@ -37,8 +37,8 @@ in the quiver obtained after all the reflections.
   forwards, whose entries carry no loop and emit no arrow off the list, is sink-admissible, with
   `TauCeti.Quiver.isSinkAdmissible_of_pairwise_of_forall_mem` the case of a list of all the
   vertices, where the last hypothesis — that no arrow leaves the list — is automatic.
-* `TauCeti.Quiver.IsSinkAdmissible.isEmpty_hom_self`: no vertex of a repetition-free
-  sink-admissible list carries a loop.
+* `TauCeti.Quiver.IsSinkAdmissible.isEmpty_hom_self`: no vertex of a sink-admissible list carries
+  a loop.
 * `TauCeti.Quiver.IsSinkAdmissible.isSourceAdmissible_reverse` and
   `TauCeti.Quiver.IsSourceAdmissible.isSinkAdmissible_reverse`: reversing an admissible list gives a
   list admissible for the opposite kind of vertex in the fully reflected quiver.
@@ -291,18 +291,23 @@ theorem isSinkAdmissible_of_pairwise_of_forall_mem (q : _root_.Quiver.{v} V) {l 
 
 /-! ### Loops along a sink-admissible ordering -/
 
-/-- **No vertex of a repetition-free sink-admissible list carries a loop.** At its own stage the
-vertex is a sink of the reflected quiver, so it carries no loop there; and reflecting along a
-repetition-free prefix leaves the loops at any vertex alone
-(`TauCeti.Quiver.hom_reflectList`), because both ends of a loop lie on the same side of the
-prefix. This is the looplessness hypothesis under which the composite of the simple reflections
-along the list preserves the Tits form. -/
-theorem IsSinkAdmissible.isEmpty_hom_self {q : _root_.Quiver.{v} V} {l : List V} (hnd : l.Nodup)
+/-- **No vertex of a sink-admissible list carries a loop.** At its first occurrence in the list the
+vertex is a sink of the reflected quiver, so it carries no loop there; and reflecting at any other
+vertex leaves the loops at a vertex alone (`TauCeti.Quiver.reflectHom_of_ne_of_ne`), because both
+ends of a loop lie on the same side of the reflection. This is the looplessness hypothesis under
+which the composite of the simple reflections along the list preserves the Tits form. -/
+theorem IsSinkAdmissible.isEmpty_hom_self {q : _root_.Quiver.{v} V} {l : List V}
     (hl : IsSinkAdmissible q l) {i : V} (hi : i ∈ l) :
     IsEmpty (@_root_.Quiver.Hom V q i i) := by
-  obtain ⟨t, u, rfl⟩ := List.append_of_mem hi
-  rw [← hom_reflectList q (List.Nodup.of_append_left hnd) (a := i) (b := i) Iff.rfl]
-  exact @IsSink.isEmpty_hom_self V (reflectList q t) i (hl t u i rfl)
+  induction l generalizing q with
+  | nil => simp at hi
+  | cons j l ih =>
+    rw [isSinkAdmissible_cons] at hl
+    by_cases hij : i = j
+    · subst hij
+      exact @IsSink.isEmpty_hom_self V q i hl.1
+    · have h := ih hl.2 ((List.mem_cons.1 hi).resolve_left hij)
+      rwa [hom_reflectAt, reflectHom_of_ne_of_ne hij hij] at h
 
 /-! ### Existence for a finite acyclic quiver -/
 

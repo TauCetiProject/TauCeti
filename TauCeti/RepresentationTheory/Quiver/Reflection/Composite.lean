@@ -498,7 +498,7 @@ theorem titsForm_dimVector_coxeterFunctor_obj (q : _root_.Quiver.{w} V)
     ⟨-, h2⟩ | h
   · rw [h2]
     exact @titsForm_vertexPreReflectionList V q fV hq _ l
-      (fun i hi ↦ hl.isEmpty_hom_self hnd hi) _
+      (fun i hi ↦ hl.isEmpty_hom_self hi) _
   · exact absurd h hne
 
 end TauCeti

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Quiver.Acyclic.TitsForm
 public import TauCeti.RepresentationTheory.Quiver.Reflection.Root
 
 /-!
@@ -51,9 +52,8 @@ where it is concentrated at the sink.
 ## Main results
 
 * `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable`: **two finite-dimensional
-  indecomposable representations with the same dimension vector are isomorphic**, with
-  `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic` the same statement over an
-  acyclic quiver, where the sink-admissible ordering is chosen internally.
+  indecomposable representations with the same dimension vector are isomorphic**; the
+  sink-admissible ordering is chosen internally.
 * `TauCeti.nonempty_iso_iff_dimVector_eq_of_indecomposable`: the resulting characterization of
   isomorphism of indecomposables by equality of dimension vectors.
 
@@ -198,52 +198,38 @@ private theorem nonempty_iso_of_dimVector_eq_of_isZero_iterate
           hl M).mp h0))
 
 /-- **An indecomposable representation is determined by its dimension vector.** For a quiver with
-positive definite Tits form -- the numerical form of the ADE condition -- and any sink-admissible
-ordering of its vertices, two indecomposable representations with finite-dimensional vertex spaces
-and the same dimension vector are isomorphic.
+positive definite Tits form -- the numerical form of the ADE condition -- two indecomposable
+representations with finite-dimensional vertex spaces and the same dimension vector are
+isomorphic. The quiver is acyclic by `TauCeti.isAcyclic_of_titsForm_posDef`, which produces a
+sink-admissible ordering by `TauCeti.Quiver.IsAcyclic.exists_isSinkAdmissible`; since the
+conclusion does not mention the ordering, the choice is made here rather than by the caller.
 
 This is the injectivity half of the Gabriel correspondence; that the dimension vector of an
 indecomposable is a positive root is
 `TauCeti.titsForm_dimVector_eq_one_of_indecomposable`. -/
-theorem nonempty_iso_of_dimVector_eq_of_indecomposable (q : _root_.Quiver.{w} V)
-    (hq : ∀ a b : V, Fintype (@_root_.Quiver.Hom V q a b)) {l : List V} (hnd : l.Nodup)
-    (hall : ∀ v : V, v ∈ l) (hl : Quiver.IsSinkAdmissible q l)
-    (hpd : (@titsForm V q fV hq).PosDef) (M N : @QuiverRep.{u, v, w, max v w x} k V _ q)
-    (hM : Indecomposable M) (hN : Indecomposable N)
-    (hfdM : @IsFinDim.{u, v, w, max v w x} k V fld q M)
-    (hfdN : @IsFinDim.{u, v, w, max v w x} k V fld q N)
-    (hd : @dimVector k V fld q M = @dimVector k V fld q N) :
-    Nonempty (M ≅ N) := by
-  obtain ⟨n, hn⟩ := exists_isZero_coxeterFunctor_iterate q hq hnd hall hl hpd M hM hfdM
-  exact nonempty_iso_of_dimVector_eq_of_isZero_iterate q hq hnd hall hl n M N hM hN hfdM hfdN hd hn
-
-/-- **An indecomposable representation of an acyclic quiver with positive definite Tits form is
-determined by its dimension vector.** This is the consumer-facing form of
-`TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable`: acyclicity produces a sink-admissible
-ordering by `TauCeti.Quiver.IsAcyclic.exists_isSinkAdmissible`, and since the conclusion does not
-mention the ordering, the choice is made here rather than by the caller. -/
-theorem nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic
-    [q : _root_.Quiver.{w} V] [hq : ∀ a b : V, Fintype (a ⟶ b)] (hac : Quiver.IsAcyclic V)
+theorem nonempty_iso_of_dimVector_eq_of_indecomposable
+    [q : _root_.Quiver.{w} V] [hq : ∀ a b : V, Fintype (a ⟶ b)]
     (hpd : (titsForm V).PosDef) (M N : QuiverRep.{u, v, w, max v w x} k V)
     (hM : Indecomposable M) (hN : Indecomposable N)
     (hfdM : IsFinDim.{u, v, w, max v w x} k V M) (hfdN : IsFinDim.{u, v, w, max v w x} k V N)
     (hd : dimVector M = dimVector N) :
     Nonempty (M ≅ N) := by
-  obtain ⟨l, hnd, hall, hl⟩ := hac.exists_isSinkAdmissible
-  exact nonempty_iso_of_dimVector_eq_of_indecomposable q hq hnd hall hl hpd M N hM hN hfdM hfdN hd
+  obtain ⟨l, hnd, hall, hl⟩ := (isAcyclic_of_titsForm_posDef hpd).exists_isSinkAdmissible
+  obtain ⟨n, hn⟩ := exists_isZero_coxeterFunctor_iterate q hq hnd hall hl hpd M hM hfdM
+  exact nonempty_iso_of_dimVector_eq_of_isZero_iterate q hq hnd hall hl n M N hM hN hfdM hfdN hd hn
 
-/-- **Indecomposable representations of an acyclic quiver with positive definite Tits form are
-isomorphic exactly when their dimension vectors agree.** The forward direction is
+/-- **Indecomposable representations of a quiver with positive definite Tits form are isomorphic
+exactly when their dimension vectors agree.** The forward direction is
 `TauCeti.dimVector_eq_of_iso` and needs none of the hypotheses; the converse is
-`TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic`. -/
+`TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable`. -/
 theorem nonempty_iso_iff_dimVector_eq_of_indecomposable
-    [_root_.Quiver.{w} V] [∀ a b : V, Fintype (a ⟶ b)] (hac : Quiver.IsAcyclic V)
+    [_root_.Quiver.{w} V] [∀ a b : V, Fintype (a ⟶ b)]
     (hpd : (titsForm V).PosDef) (M N : QuiverRep.{u, v, w, max v w x} k V)
     (hM : Indecomposable M) (hN : Indecomposable N)
     (hfdM : IsFinDim.{u, v, w, max v w x} k V M) (hfdN : IsFinDim.{u, v, w, max v w x} k V N) :
     Nonempty (M ≅ N) ↔ dimVector M = dimVector N :=
   ⟨fun ⟨e⟩ ↦ dimVector_eq_of_iso e, fun hd ↦
-    nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic hac hpd M N hM hN hfdM hfdN hd⟩
+    nonempty_iso_of_dimVector_eq_of_indecomposable hpd M N hM hN hfdM hfdN hd⟩
 
 end Uniqueness
 

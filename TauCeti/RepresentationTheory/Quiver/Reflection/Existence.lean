@@ -196,7 +196,7 @@ omit [DecidableEq Q] in
 /-- **Every positive root of a quiver with positive definite Tits form is the dimension vector of a
 finite-dimensional indecomposable representation.** This is the surjective half of the Gabriel
 correspondence; the injective half — that an indecomposable is determined by its dimension vector —
-is `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable_of_isAcyclic`, and that the dimension
+is `TauCeti.nonempty_iso_of_dimVector_eq_of_indecomposable`, and that the dimension
 vector of an indecomposable *is* a positive root is
 `TauCeti.titsForm_dimVector_eq_one_of_indecomposable_of_isAcyclic`. -/
 theorem exists_indecomposable_dimVector_eq [q : _root_.Quiver.{w} Q]
