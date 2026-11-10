@@ -62,7 +62,7 @@ theorem exists_isPushout_of_finitePresentation {T : CommRingCat.{ringUniverse}}
     rintro ⟨i, hp⟩
     exact Set.mem_of_eq_of_mem (hp.symm.trans (hr i))
       (Finset.mem_coe.mpr i.2)
-  obtain ⟨g, pushout⟩ := exists_isPushout_quotient_span (S := cocone.pt)
+  obtain ⟨g, pushout⟩ := exists_isPushout_quotient_span (S := cocone.pt) (σ := Fin n)
     (cocone.ι.app stage) r π hπ
       (by rw [← hspan, hrange])
   refine ⟨stage, _, _, ?_, g, pushout⟩

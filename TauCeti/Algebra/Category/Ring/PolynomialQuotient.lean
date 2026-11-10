@@ -16,7 +16,7 @@ Extension of coefficients carries a quotient by relations to the corresponding p
 
 public section
 
-universe ringUniverse
+universe ringUniverse variableUniverse
 
 open CategoryTheory Limits
 
@@ -25,25 +25,25 @@ namespace CommRingCat
 /-- Relations defined over the source ring give a pushout presentation of the quotient after
 extending coefficients. -/
 lemma exists_isPushout_quotient_span
-    {R S T : CommRingCat.{ringUniverse}}
-    (f : R ⟶ S) {n : ℕ}
-    {ι : Type*} (r : ι → MvPolynomial (Fin n) R)
-    (π : of (MvPolynomial (Fin n) S) ⟶ T)
+    {R S T : CommRingCat.{max ringUniverse variableUniverse}}
+    (f : R ⟶ S) {σ : Type variableUniverse}
+    {ι : Type*} (r : ι → MvPolynomial σ R)
+    (π : of (MvPolynomial σ S) ⟶ T)
     (hπ : Function.Surjective π)
     (hker : RingHom.ker π.hom = Ideal.span
       (Set.range fun i ↦ MvPolynomial.map f.hom (r i))) :
-    ∃ g : of (MvPolynomial (Fin n) R ⧸
+    ∃ g : of (MvPolynomial σ R ⧸
         Ideal.span (Set.range r)) ⟶ T,
       IsPushout f
         (ofHom MvPolynomial.C ≫ ofHom (Ideal.Quotient.mk (Ideal.span (Set.range r))))
         (ofHom MvPolynomial.C ≫ π) g := by
-  set I : Ideal (MvPolynomial (Fin n) R) :=
+  set I : Ideal (MvPolynomial σ R) :=
     Ideal.span (Set.range r) with hI
-  set q : of (MvPolynomial (Fin n) R) ⟶
-      of (MvPolynomial (Fin n) R ⧸ I) :=
+  set q : of (MvPolynomial σ R) ⟶
+      of (MvPolynomial σ R ⧸ I) :=
     ofHom (Ideal.Quotient.mk I) with hq
-  set φ : of (MvPolynomial (Fin n) R) ⟶
-      of (MvPolynomial (Fin n) S) :=
+  set φ : of (MvPolynomial σ R) ⟶
+      of (MvPolynomial σ S) :=
     ofHom (MvPolynomial.map f.hom) with hφ
   have relations_mem_kernel : I ≤ RingHom.ker (φ ≫ π).hom := by
     rw [hI, Ideal.span_le]
@@ -54,11 +54,11 @@ lemma exists_isPushout_quotient_span
     exact Ideal.subset_span ⟨i, rfl⟩
   refine ⟨ofHom (Ideal.Quotient.lift I (φ ≫ π).hom
     fun p membership ↦ RingHom.mem_ker.mp (relations_mem_kernel membership)), ?_⟩
-  set g : of (MvPolynomial (Fin n) R ⧸ I) ⟶ T :=
+  set g : of (MvPolynomial σ R ⧸ I) ⟶ T :=
     ofHom (Ideal.Quotient.lift I (φ ≫ π).hom
       fun p membership ↦ RingHom.mem_ker.mp (relations_mem_kernel membership))
     with hg
-  have hgq : ∀ p : MvPolynomial (Fin n) R,
+  have hgq : ∀ p : MvPolynomial σ R,
       g.hom (q.hom p) =
         π.hom (MvPolynomial.map f.hom p) := by
     intro p
@@ -69,11 +69,11 @@ lemma exists_isPushout_quotient_span
     rw [hq]
     exact Ideal.Quotient.eq_zero_iff_mem.mpr
       (hI ▸ Ideal.subset_span ⟨i, rfl⟩)
-  have eval_map : ∀ (D : CommRingCat.{ringUniverse})
+  have eval_map : ∀ (D : CommRingCat.{max ringUniverse variableUniverse})
       (u : S ⟶ D)
-      (v : of (MvPolynomial (Fin n) R ⧸ I) ⟶ D),
+      (v : of (MvPolynomial σ R ⧸ I) ⟶ D),
       f ≫ u = (ofHom MvPolynomial.C ≫ q) ≫ v →
-      ∀ p : MvPolynomial (Fin n) R,
+      ∀ p : MvPolynomial σ R,
         MvPolynomial.eval₂ u.hom
           (fun i ↦ v.hom (q.hom (MvPolynomial.X i)))
           (MvPolynomial.map f.hom p) =
@@ -94,9 +94,9 @@ lemma exists_isPushout_quotient_span
       rw [← MvPolynomial.comp_eval₂Hom, hevalq]
     rw [hcoeff]
     simpa using DFunLike.congr_fun hevalv p
-  have hevalker : ∀ (D : CommRingCat.{ringUniverse})
+  have hevalker : ∀ (D : CommRingCat.{max ringUniverse variableUniverse})
       (u : S ⟶ D)
-      (v : of (MvPolynomial (Fin n) R ⧸ I) ⟶ D),
+      (v : of (MvPolynomial σ R ⧸ I) ⟶ D),
       f ≫ u = (ofHom MvPolynomial.C ≫ q) ≫ v →
       RingHom.ker π.hom ≤ RingHom.ker
         (MvPolynomial.eval₂Hom u.hom
@@ -109,19 +109,19 @@ lemma exists_isPushout_quotient_span
       (fun j ↦ v.hom (q.hom (MvPolynomial.X j)))
       (MvPolynomial.map f.hom (r i)) = 0
     rw [eval_map _ u v huv, hqr, map_zero]
-  set desc : ∀ (D : CommRingCat.{ringUniverse})
+  set desc : ∀ (D : CommRingCat.{max ringUniverse variableUniverse})
       (u : S ⟶ D)
-      (v : of (MvPolynomial (Fin n) R ⧸ I) ⟶ D),
+      (v : of (MvPolynomial σ R ⧸ I) ⟶ D),
       f ≫ u = (ofHom MvPolynomial.C ≫ q) ≫ v →
       (T ⟶ D) :=
     fun D u v huv ↦ ofHom
       (RingHom.liftOfSurjective π.hom hπ
         ⟨_, hevalker D u v huv⟩) with hdesc
-  have hdescπ : ∀ (D : CommRingCat.{ringUniverse})
+  have hdescπ : ∀ (D : CommRingCat.{max ringUniverse variableUniverse})
       (u : S ⟶ D)
-      (v : of (MvPolynomial (Fin n) R ⧸ I) ⟶ D)
+      (v : of (MvPolynomial σ R ⧸ I) ⟶ D)
       (huv : f ≫ u = (ofHom MvPolynomial.C ≫ q) ≫ v)
-      (p : MvPolynomial (Fin n) S),
+      (p : MvPolynomial σ S),
       (desc D u v huv).hom (π.hom p) =
         MvPolynomial.eval₂ u.hom
           (fun i ↦ v.hom (q.hom (MvPolynomial.X i))) p := by
