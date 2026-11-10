@@ -84,14 +84,32 @@ theorem frobenius_comp_add (f g : Hom W₁ W₂) :
         (ofIsogeny (frobeniusIsogeny W₂)).comp g := by
   rw [frobenius_comp, add_comp, ← frobenius_comp, ← frobenius_comp]
 
+omit [W.IsElliptic] in
 /-- **Composition with Frobenius cancels**: `f ↦ π ∘ f` is injective on morphisms. -/
 theorem frobenius_comp_injective :
-    Function.Injective fun f : Hom W₁ W ↦ (ofIsogeny (frobeniusIsogeny W)).comp f :=
-  -- `f ↦ π ∘ f` is additive, and a composite vanishes only when a factor does
-  (injective_iff_map_eq_zero (AddMonoidHom.mk'
-    (fun f : Hom W₁ W ↦ (ofIsogeny (frobeniusIsogeny W)).comp f) frobenius_comp_add)).2 fun _ hf ↦
-    (comp_eq_zero_iff.1 hf).resolve_left (ofIsogeny_ne_zero _)
+    Function.Injective fun f : Hom W₁ W ↦ (ofIsogeny (frobeniusIsogeny W)).comp f := by
+  intro f g h
+  simp only at h
+  rw [frobenius_comp, frobenius_comp] at h
+  -- a composite vanishes only when a factor does, and nonzero morphisms are isogenies
+  rcases f.eq_zero_or_exists_ofIsogeny with rfl | ⟨φ, rfl⟩
+  · rw [zero_comp] at h
+    exact (comp_eq_zero_iff.1 h.symm).resolve_right (ofIsogeny_ne_zero _) |>.symm
+  rcases g.eq_zero_or_exists_ofIsogeny with rfl | ⟨ψ, rfl⟩
+  · rw [zero_comp] at h
+    exact (comp_eq_zero_iff.1 h).resolve_right (ofIsogeny_ne_zero _)
+  rw [ofIsogeny_comp_ofIsogeny, ofIsogeny_comp_ofIsogeny] at h
+  have h' := ofIsogeny_injective h
+  congr 1
+  apply Isogeny.ext
+  apply AlgHom.ext
+  intro x
+  refine (frobeniusIsogeny W₁).fieldPullback.injective ?_
+  have hz := congrArg (fun χ : Isogeny W₁ W ↦ χ.fieldPullback (algebraMap _ _ x)) h'
+  simpa only [comp_fieldPullback, AlgHom.comp_apply, fieldPullback_frobeniusIsogeny_apply,
+    fieldPullback_algebraMap, map_pow, AlgHom.toRingHom_eq_coe, RingHom.coe_coe] using hz
 
+omit [W.IsElliptic] in
 /-- **Two morphisms agree exactly when they agree after composition with Frobenius.** -/
 @[simp]
 theorem frobenius_comp_inj {f g : Hom W₁ W} :
