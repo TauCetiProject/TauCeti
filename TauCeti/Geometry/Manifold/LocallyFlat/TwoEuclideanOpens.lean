@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
 public import TauCeti.Geometry.Manifold.Boundary.BallExterior
 import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
+import TauCeti.Geometry.Manifold.LocallyFlat.Separation
 import TauCeti.Topology.ConnectedComponents
 
 /-!
@@ -271,15 +272,13 @@ private theorem closure_image_preimage_compl_closedBall [CompactSpace X] [T2Spac
     (hj : IsOpenEmbedding j) :
     closure (j '' (Subtype.val ⁻¹' ((Subtype.val ∘ eU.symm) '' closedBall (0 : E) (R + 1))ᶜ)) =
       j '' (Subtype.val ⁻¹' ballExterior (Subtype.val ∘ eU.symm) (R + 1)) := by
-  have hb := (isBicollar_coordinateSphereBicollar eU hR hU hV hR0).isOpenEmbedding_comp hj
-  rw [image_preimage_ballExterior_eq_union eU hR hR0]
-  refine (closure_minimal subset_union_left ?_).antisymm (union_subset subset_closure ?_)
-  · rw [← image_preimage_ballExterior_eq_union eU hR hR0]
-    exact (isCompact_image_preimage_ballExterior eU hR hU hUV hj.continuous).isClosed
-  rintro _ ⟨x, rfl⟩
-  refine closure_mono ?_ (hb.apply_mem_closure_image (s := Ioi 0) (by simp) x)
-  rintro _ ⟨p, hp, rfl⟩
-  exact mem_image_of_mem j (coordinateSphereBicollar_notMem_closedBall eU hR hR0 p hp.2)
+  have hC := isCompact_image_preimage_ballExterior eU hR hU hUV hj.continuous
+  have hcompl := compl_range_coordinateSphereBicollar_eq_union eU hR hR0 hj.injective
+  rw [image_preimage_ballExterior_eq_union eU hR hR0] at hC hcompl ⊢
+  exact ((isBicollar_coordinateSphereBicollar eU hR hU hV hR0).isOpenEmbedding_comp
+    hj).closure_eq_union_range hC.isClosed.isOpen_compl
+    (disjoint_compl_right_iff_subset.2 subset_union_left) hcompl (s := Ioi 0) (by simp)
+    fun p hp ↦ mem_image_of_mem j (coordinateSphereBicollar_notMem_closedBall eU hR hR0 p hp.2)
 
 end Separation
 
