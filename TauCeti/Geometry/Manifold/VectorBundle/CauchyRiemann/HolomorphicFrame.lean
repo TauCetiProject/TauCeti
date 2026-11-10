@@ -179,34 +179,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   [VectorBundle ℂ ℂ V] [VectorBundle ℝ ℂ V]
   {D : (Π x : M, V x) → Π x : M, TangentSpace 𝓘(ℝ, E) x →L[ℝ] V x}
 
-omit [∀ x, Module ℝ (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] [VectorBundle ℝ ℂ V] in
-/-- In a line bundle, the ratio of two vectors read in a trivialization. -/
-private def trivRatio (e : Trivialization ℂ (π ℂ V)) [e.IsLinear ℂ] {x : M} (v w : V x) : ℂ :=
-  e.continuousLinearMapAt ℂ x w / e.continuousLinearMapAt ℂ x v
-
-omit [∀ x, Module ℝ (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] [VectorBundle ℂ ℂ V]
-  [VectorBundle ℝ ℂ V] in
-private theorem eq_trivRatio_smul (e : Trivialization ℂ (π ℂ V)) [e.IsLinear ℂ] {x : M}
-    (hx : x ∈ e.baseSet) {v : V x} (hv : v ≠ 0) (w : V x) :
-    w = trivRatio e v w • v := by
-  have hinj : Function.Injective (e.continuousLinearMapAt ℂ x) := fun a b hab ↦ by
-    rw [← e.symmL_continuousLinearMapAt (R := ℂ) hx a, hab,
-      e.symmL_continuousLinearMapAt (R := ℂ) hx b]
-  have hv' : e.continuousLinearMapAt ℂ x v ≠ 0 := fun h ↦ hv (hinj (h.trans (map_zero _).symm))
-  apply hinj
-  rw [map_smul, trivRatio, smul_eq_mul, div_mul_cancel₀ _ hv']
-
-omit [∀ x, Module ℝ (V x)] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
-  [∀ x, IsScalarTower ℝ ℂ (V x)] [∀ x, ContinuousSMul ℂ (V x)] [VectorBundle ℂ ℂ V]
-  [VectorBundle ℝ ℂ V] in
-private theorem trivRatio_eq (e : Trivialization ℂ (π ℂ V)) [e.IsLinear ℂ] {x : M}
-    (hx : x ∈ e.baseSet) {v : V x} (hv : v ≠ 0) {w : V x} {c : ℂ} (hw : w = c • v) :
-    trivRatio e v w = c := by
-  subst hw
-  exact (smul_left_injective ℂ hv (eq_trivRatio_smul e hx hv (c • v))).symm
-
 namespace IsRealCauchyRiemannOperator
 
 variable (hD : IsRealCauchyRiemannOperator ℂ (ofComplexManifold E M) D)
@@ -222,9 +194,9 @@ theorem exists_mdifferentiableOn_eq_smul {σ τ : Π x : M, V x} {U : Set M}
     (hτ : ∀ x ∈ U, MDifferentiableAt 𝓘(ℝ, E) (𝓘(ℝ, E).prod 𝓘(ℝ, ℂ)) (T% τ) x)
     (hDτ : ∀ x ∈ U, D τ x = 0) :
     ∃ h : M → ℂ, MDifferentiableOn 𝓘(ℂ, E) 𝓘(ℂ, ℂ) h U ∧ ∀ x ∈ U, τ x = h x • σ x := by
-  let h : M → ℂ := fun x ↦ trivRatio (trivializationAt ℂ V x) (σ x) (τ x)
+  let h : M → ℂ := fun x ↦ (trivializationAt ℂ V x).coordRatio (σ x) (τ x)
   have hτh : ∀ x ∈ U, τ x = h x • σ x := fun x hx ↦
-    eq_trivRatio_smul _ (mem_baseSet_trivializationAt ℂ V x) (hσ.ne_zero x hx) _
+    Trivialization.eq_coordRatio_smul _ (mem_baseSet_trivializationAt ℂ V x) (hσ.ne_zero x hx) _
   refine ⟨h, fun x₀ hx₀ ↦ ?_, hτh⟩
   set e₀ := trivializationAt ℂ V x₀
   have hx₀e : x₀ ∈ e₀.baseSet := mem_baseSet_trivializationAt ℂ V x₀
@@ -233,7 +205,7 @@ theorem exists_mdifferentiableOn_eq_smul {σ τ : Π x : M, V x} {U : Set M}
     filter_upwards [hU.mem_nhds hx₀, e₀.open_baseSet.mem_nhds hx₀e] with x hx hxe
     rw [← e₀.continuousLinearMapAt_apply_of_mem (R := ℂ) hxe,
       ← e₀.continuousLinearMapAt_apply_of_mem (R := ℂ) hxe]
-    exact (trivRatio_eq e₀ hxe (hσ.ne_zero x hx) (hτh x hx)).symm
+    exact (e₀.coordRatio_eq_of_eq_smul hxe (hσ.ne_zero x hx) (hτh x hx)).symm
   have hnum := (mdifferentiableAt_section 𝓘(ℝ, E) τ).1 (hτ x₀ hx₀)
   have hden := (mdifferentiableAt_section 𝓘(ℝ, E) σ).1 (hσ.mdifferentiableAt hU hx₀)
   have hden0 : (e₀ ⟨x₀, σ x₀⟩).2 ≠ 0 := by
@@ -481,10 +453,9 @@ theorem exists_isNonvanishingHolomorphicOn (x₀ : M)
     rw [conjWirtingerDeriv_apply] at hcw
     have key : D (f • s) y (L (1 : ℂ)) = 0 := by
       apply hinj _ hx.1.2
-      rw [map_zero, hval, map_add, map_smul, hBz,
-        RCLike.real_smul_eq_coe_smul (K := ℂ) (E := V y) (2⁻¹ : ℝ), map_smul, map_add, map_smul,
-        map_smul, map_smul, hs1 y hx.1.2, hchain 1, hdI, hfz, hfd]
-      simp only [smul_apply, smul_eq_mul, mul_one] at hcw ⊢
+      rw [map_zero, hval, RCLike.real_smul_eq_coe_smul (K := ℂ) (E := V y) (2⁻¹ : ℝ)]
+      simp only [map_add, map_smul, hBz, hs1 y hx.1.2, hchain 1, hdI, hfz, hfd, smul_apply,
+        smul_eq_mul, mul_one] at hcw ⊢
       push_cast
       linear_combination Complex.exp (G z) * hcw
     -- A `(0,1)`-form vanishing on `dφ⁻¹ 1` vanishes on the image of `dφ⁻¹`, which is everything.

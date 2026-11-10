@@ -31,6 +31,10 @@ out of a finite-dimensional space is recovered from its values on a basis by
 constructions of connections produce smoothness of the vector fields `∇_X σ` one direction `X` at
 a time.
 
+Finally, in a bundle with model fibre `𝕜`, over the base set of a trivialization any two vectors
+`v ≠ 0` and `w` of a fibre satisfy `w = c • v` for the ratio `c` of their coordinates in the
+trivialization.
+
 ## Main results
 
 * `TauCeti.Manifold.localFrameCoeff_basisAt`: the coefficient functionals are dual to the basis
@@ -55,6 +59,10 @@ a time.
   bundle are.
 * `Bundle.Trivialization.exists_contMDiff_eventuallyEq_localFrame`: near a point of its base set,
   the local frame of a trivialization agrees with a family of globally smooth sections.
+* `Bundle.Trivialization.coordRatio`, `Bundle.Trivialization.eq_coordRatio_smul`,
+  `Bundle.Trivialization.coordRatio_eq_of_eq_smul`: in a bundle with model fibre `𝕜`, over the
+  base set of a trivialization, every vector is the multiple of a nonzero vector by their ratio
+  read in the trivialization.
 -/
 
 public section
@@ -246,5 +254,40 @@ theorem exists_contMDiff_eventuallyEq_localFrame
       (e.contMDiffOn_localFrame_baseSet _ b i)
   · filter_upwards [ρ.eventuallyEq_one] with y hy
     simp [hy]
+
+/-! ### Ratios of vectors in a line bundle -/
+
+section LineBundle
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {B : Type*} [TopologicalSpace B]
+  {L : B → Type*} [TopologicalSpace (TotalSpace 𝕜 L)] [∀ x, TopologicalSpace (L x)]
+  [∀ x, AddCommMonoid (L x)] [∀ x, Module 𝕜 (L x)] [FiberBundle 𝕜 L]
+  (e : Trivialization 𝕜 (π 𝕜 L)) [e.IsLinear 𝕜] {x : B}
+
+/-- In a bundle with model fibre `𝕜`, the ratio `w / v` of two vectors of a fibre, read in a
+trivialization `e`. Over `e.baseSet` it is the scalar `c` with `w = c • v`, for `v ≠ 0`. -/
+@[expose] def coordRatio (v w : L x) : 𝕜 :=
+  e.continuousLinearMapAt 𝕜 x w / e.continuousLinearMapAt 𝕜 x v
+
+/-- Over the base set of a trivialization of a bundle with model fibre `𝕜`, every vector `w` is
+the multiple of a nonzero vector `v` by their ratio read in the trivialization. -/
+theorem eq_coordRatio_smul (hx : x ∈ e.baseSet) {v : L x} (hv : v ≠ 0) (w : L x) :
+    w = e.coordRatio v w • v := by
+  have hinj : Function.Injective (e.continuousLinearMapAt 𝕜 x) := fun a b hab ↦ by
+    rw [← e.symmL_continuousLinearMapAt (R := 𝕜) hx a, hab,
+      e.symmL_continuousLinearMapAt (R := 𝕜) hx b]
+  have hv' : e.continuousLinearMapAt 𝕜 x v ≠ 0 := fun h ↦ hv (hinj (h.trans (map_zero _).symm))
+  apply hinj
+  rw [map_smul, coordRatio, smul_eq_mul, div_mul_cancel₀ _ hv']
+
+/-- Over the base set of a trivialization of a bundle with model fibre `𝕜`, the ratio of
+`w = c • v` to a nonzero vector `v`, read in the trivialization, is `c`. -/
+theorem coordRatio_eq_of_eq_smul (hx : x ∈ e.baseSet) {v : L x} (hv : v ≠ 0) {w : L x} {c : 𝕜}
+    (hw : w = c • v) : e.coordRatio v w = c := by
+  have hv' : e.continuousLinearMapAt 𝕜 x v ≠ 0 := fun h ↦
+    hv (by rw [← e.symmL_continuousLinearMapAt (R := 𝕜) hx v, h, map_zero])
+  rw [coordRatio, hw, map_smul, smul_eq_mul, mul_div_assoc, div_self hv', mul_one]
+
+end LineBundle
 
 end Bundle.Trivialization
