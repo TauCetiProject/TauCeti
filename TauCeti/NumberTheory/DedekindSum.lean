@@ -101,6 +101,7 @@ theorem dedekindSum_emod (d c : ℤ) : dedekindSum (d % c) c = dedekindSum d c :
   exact (dedekindSum_add_mul_self _ _ _).symm
 
 /-- For `d` coprime to `c`, the Dedekind sum is odd in `d`: `s(-d, c) = -s(d, c)`. -/
+@[simp]
 theorem dedekindSum_neg {d c : ℤ} (hdc : IsCoprime d c) :
     dedekindSum (-d) c = -dedekindSum d c := by
   rw [dedekindSum, dedekindSum, ← sum_neg_distrib]
@@ -123,10 +124,10 @@ theorem dedekindSum_neg {d c : ℤ} (hdc : IsCoprime d c) :
   ring
 
 /-- The Dedekind sum `s(d, c)` is the empty sum for `c ≤ 1`. -/
+@[simp]
 theorem dedekindSum_of_le_one (d : ℤ) {c : ℤ} (hc : c ≤ 1) : dedekindSum d c = 0 := by
   exact sum_eq_zero fun r hr ↦ absurd hr (by rw [mem_Ioo]; omega)
 
-@[simp]
 theorem dedekindSum_one_right (d : ℤ) : dedekindSum d 1 = 0 :=
   dedekindSum_of_le_one d le_rfl
 
@@ -212,7 +213,7 @@ theorem dedekindSum_add_dedekindSum {h c : ℤ} (hh : 0 < h) (hc : 0 < c) (hhc :
 theorem dedekindSum_one_left {c : ℤ} (hc : 0 ≤ c) :
     dedekindSum 1 c = (c - 1) * (c - 2) / (12 * c) := by
   obtain rfl | hc := hc.eq_or_lt
-  · simp [dedekindSum_of_le_one]
+  · simp
   have h := dedekindSum_add_dedekindSum one_pos hc isCoprime_one_left
   rw [dedekindSum_one_right, add_zero] at h
   have hc' : (c : ℚ) ≠ 0 := by positivity
