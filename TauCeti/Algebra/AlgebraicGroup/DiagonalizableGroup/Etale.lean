@@ -32,7 +32,6 @@ universe u v
 
 variable (R : Type u) [CommRing R]
 variable {M N : Type v} [CommGroup M] [CommGroup N] (p : M →* N)
-variable [Finite (N ⧸ p.range)]
 
 /-- A diagonalizable-group kernel is étale when the order of the character cokernel
 is invertible in the base ring. -/
