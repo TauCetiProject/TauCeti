@@ -71,12 +71,10 @@ theorem exists_integerRing_eq_div_of_sq_eq {x : L} {a b s : K} {t c : 𝒪[K]}
   have hs : s ≠ 0 := by
     rintro rfl
     have hab : a = b ^ 2 := by linear_combination -hbc
-    have hprod : (x - algebraMap K L b) * (x + algebraMap K L b) = 0 := by
-      rw [hab, map_pow] at hx2
-      linear_combination hx2
-    rcases mul_eq_zero.1 hprod with h | h
-    · exact hx ⟨b, (sub_eq_zero.1 h).symm⟩
-    · exact hx ⟨-b, by rw [map_neg]; exact (eq_neg_of_add_eq_zero_left h).symm⟩
+    rw [hab, map_pow] at hx2
+    rcases sq_eq_sq_iff_eq_or_eq_neg.1 hx2 with h | h
+    · exact hx ⟨b, h.symm⟩
+    · exact hx ⟨-b, by rw [map_neg, h]⟩
   set y := (x - algebraMap K L b) / algebraMap K L s
   have hy : y = algebraMap K L (-b / s) + algebraMap K L s⁻¹ * x := by
     simp only [y, map_div₀, map_neg, map_inv₀]
