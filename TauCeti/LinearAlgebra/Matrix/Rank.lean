@@ -28,6 +28,10 @@ self-adjoint for the Hermitian form making the basis orthonormal.
 
 * `Matrix.linearIndependent_row_iff_exists_det_submatrix_ne_zero`: over an integral domain, the
   rows are linearly independent exactly when some maximal minor is nonzero.
+* `Matrix.det_submatrix_ne_zero_of_map`: a minor whose image under a ring homomorphism is nonzero
+  is nonzero, and `Matrix.det_submatrix_map_ne_zero_iff` is the converse for an injective one.
+* `Matrix.linearIndependent_row_of_map`: row independence over a domain lifts along every ring
+  homomorphism of domains, such as a reduction `ℤ → ZMod ℓ`.
 * `Matrix.le_rank_iff_exists_det_submatrix_ne_zero` and
   `Matrix.rank_le_iff_forall_det_submatrix_eq_zero`: over a field, the rank is at least `p`
   exactly when some `p × p` minor is nonzero, and at most `p` exactly when every
@@ -107,6 +111,24 @@ theorem linearIndependent_map_algebraMap_row_iff {S : Type*} [CommRing R] [CommR
   -- The rows of `A.map (algebraMap R S)` are the rows of `A` mapped entrywise (`row_map`).
   linearIndependent_algebraMap_comp_iff
 
+omit [Fintype m] [DecidableEq m] [Finite n] in
+/-- **A nonzero minor lifts along a ring homomorphism.** If the minor of `A.map f` on rows `r` and
+columns `c` is nonzero, so is the minor of `A` on the same rows and columns. No injectivity of `f`
+is needed: the image of the minor of `A` is the minor of `A.map f` (`RingHom.map_det_submatrix`). -/
+theorem det_submatrix_ne_zero_of_map {S l : Type*} [Fintype l] [DecidableEq l] [CommRing R]
+    [CommRing S] (f : R →+* S) {A : Matrix m n R} {r : l → m} {c : l → n}
+    (h : ((A.map f).submatrix r c).det ≠ 0) : (A.submatrix r c).det ≠ 0 := by
+  rw [← f.map_det_submatrix] at h
+  exact ne_of_apply_ne f (by rwa [map_zero])
+
+omit [Fintype m] [DecidableEq m] [Finite n] in
+/-- Along an injective ring homomorphism `f`, a minor of `A.map f` is nonzero exactly when the
+minor of `A` on the same rows and columns is nonzero. -/
+theorem det_submatrix_map_ne_zero_iff {S l : Type*} [Fintype l] [DecidableEq l] [CommRing R]
+    [CommRing S] {f : R →+* S} (hf : Function.Injective f) {A : Matrix m n R} {r : l → m}
+    {c : l → n} : ((A.map f).submatrix r c).det ≠ 0 ↔ (A.submatrix r c).det ≠ 0 := by
+  rw [← f.map_det_submatrix, map_ne_zero_iff f hf]
+
 /-- Over an integral domain, the rows of a matrix are linearly independent exactly when some
 maximal minor is nonzero. -/
 theorem linearIndependent_row_iff_exists_det_submatrix_ne_zero [CommRing R] [IsDomain R]
@@ -115,8 +137,23 @@ theorem linearIndependent_row_iff_exists_det_submatrix_ne_zero [CommRing R] [IsD
   let K := FractionRing R
   rw [← linearIndependent_map_algebraMap_row_iff (S := K),
     linearIndependent_row_iff_exists_det_submatrix_ne_zero_of_field]
-  simp only [submatrix_map, ← RingHom.mapMatrix_apply, ← RingHom.map_det,
-    map_ne_zero_iff _ (IsFractionRing.injective R K)]
+  simp only [det_submatrix_map_ne_zero_iff (IsFractionRing.injective R K)]
+
+omit [Fintype m] [DecidableEq m] in
+/-- **Row independence lifts along a ring homomorphism of domains.** If the rows of `A.map f` are
+linearly independent over `S`, then the rows of `A` are linearly independent over `R`, for every
+ring homomorphism `f`, injective or not (for instance the reduction `ℤ → ZMod ℓ`): a nonzero
+maximal minor of `A.map f` lifts to a nonzero maximal minor of `A` on the same columns.
+`Matrix.linearIndependent_map_algebraMap_row_iff` is the converse for a faithful scalar extension
+to a domain. -/
+theorem linearIndependent_row_of_map {S : Type*} [Finite m] [CommRing R] [IsDomain R]
+    [CommRing S] [IsDomain S] (f : R →+* S) {A : Matrix m n R}
+    (h : LinearIndependent S (A.map f).row) : LinearIndependent R A.row := by
+  have := Fintype.ofFinite m
+  classical
+  obtain ⟨e, he⟩ := linearIndependent_row_iff_exists_det_submatrix_ne_zero.1 h
+  exact linearIndependent_row_iff_exists_det_submatrix_ne_zero.2
+    ⟨e, det_submatrix_ne_zero_of_map f he⟩
 
 omit [Fintype m] [DecidableEq m] [Finite n] in
 /-- **Rank and minors.** Over a field, a matrix has rank at least `p` exactly when one of its
@@ -157,8 +194,7 @@ its entries, since the images of its minors are the minors of its image. -/
 theorem rank_map {K L : Type*} [Field K] [Field L] [Finite m] [Fintype n] (A : Matrix m n K)
     (φ : K →+* L) : (A.map φ).rank = A.rank :=
   eq_of_forall_le_iff fun p ↦ by
-    simp only [le_rank_iff_exists_det_submatrix_ne_zero, submatrix_map, ← RingHom.mapMatrix_apply,
-      ← RingHom.map_det, map_ne_zero]
+    simp only [le_rank_iff_exists_det_submatrix_ne_zero, det_submatrix_map_ne_zero_iff φ.injective]
 
 omit [Fintype m] [DecidableEq m] in
 /-- The rows of an integer matrix are linearly independent over `ℚ` exactly when they are linearly
