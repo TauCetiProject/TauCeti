@@ -132,8 +132,7 @@ theorem IsManifoldNondegenerateCriticalPoint.exists_criticalPoint_perturbation_m
   · simpa only [Function.comp_apply, e.extend_left_inv hx] using hval
   · rintro _ ⟨z, hz, rfl⟩ hcrit
     have hzero := (mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
-      (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) (hsource hz)
-      ((hg _ (mem_image_of_mem _ hz)).mdifferentiableAt two_ne_zero)).1
+      (IsManifold.maximalAtlas_subset_of_le (by norm_num) he) (hsource hz)).1
         (TauCeti.mem_criticalPoints.1 hcrit)
     rw [hright hz] at hzero
     rw [huniq z hz hzero]
@@ -283,7 +282,6 @@ private theorem exists_mem_nhds_eventually_forall_isManifoldNondegenerateCritica
       y ∈ criticalPoints I g ↔ fderiv ℝ (g ∘ φ.symm) (φ y) = 0 :=
     mem_criticalPoints.trans <| mvfderiv_eq_zero_iff_fderiv_comp_extend_symm_eq_zero
       (IsManifold.maximalAtlas_subset_of_le (by norm_num) he₂) (hsrc hy)
-      ((g.contMDiff.of_le (one_le_two.trans hn)).mdifferentiableAt one_ne_zero)
   have hnd (g : C^n⟮I, M; 𝓘(ℝ), ℝ⟯) {y : M} (hy : y ∈ φ.source) :
       IsManifoldNondegenerateCriticalPoint I g y ↔
         IsNondegenerateCriticalPoint (g ∘ φ.symm) (φ y) :=
