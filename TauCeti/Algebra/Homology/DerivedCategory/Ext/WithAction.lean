@@ -17,11 +17,11 @@ Let `C` be an abelian category, `A ⟶ B` a flat map of commutative rings, `F` a
 with an action `ρ : A →+* End F` of `A`, and `G` an object with an action `σ : B →+* End G` of
 `B`, together with a morphism `η : F ⟶ G` intertwining the two actions. For every object `P`
 the groups `Ext P F n` and `Ext P G n` are modules over `A` and `B`
-(`TauCeti.Abelian.Ext.WithAction`), and there is a `B`-linear base change map
+(`TauCeti.Abelian.ExtWithAction`), and there is a `B`-linear base change map
 ```
   B ⊗[A] Ext P F n ⟶ Ext P G n,   b ⊗ x ↦ b • η_* x
 ```
-(`TauCeti.Abelian.Ext.WithAction.baseChange`). We show that the class of objects `P` for
+(`TauCeti.Abelian.ExtWithAction.baseChange`). We show that the class of objects `P` for
 which these maps are bijective in all degrees is closed under isomorphisms, binary biproducts and
 cokernels of monomorphisms between its members. The last point is the five lemma applied to the
 long exact sequences of `Ext`-groups, the first of which stays exact after `B ⊗[A] -` since `B`
@@ -33,9 +33,9 @@ where `P` runs through the free abelian sheaves `ℤ_U` on opens `U` and a short
 
 ## Main statements
 
-- `TauCeti.Abelian.Ext.WithAction.bijective_baseChange_of_iso`,
-  `TauCeti.Abelian.Ext.WithAction.bijective_baseChange_biprod`,
-  `TauCeti.Abelian.Ext.WithAction.bijective_baseChange_of_shortExact`: the closure
+- `TauCeti.Abelian.ExtWithAction.bijective_baseChange_of_iso`,
+  `TauCeti.Abelian.ExtWithAction.bijective_baseChange_biprod`,
+  `TauCeti.Abelian.ExtWithAction.bijective_baseChange_of_shortExact`: the closure
   properties of the objects for which the base change maps are bijective.
 -/
 
@@ -45,7 +45,7 @@ universe w v u
 
 open CategoryTheory Limits TensorProduct CategoryTheory.Abelian CategoryTheory.Abelian.Ext
 
-namespace TauCeti.Abelian.Ext
+namespace TauCeti.Abelian
 
 variable {C : Type u} [Category.{v} C] [Abelian C] [HasExt.{w} C]
 
@@ -57,11 +57,11 @@ variable {A : Type*} [Semiring A] {F : C} (ρ : A →+* End F)
 `a • x = ρ(a)_* x`. -/
 -- Expose the synonym so its inherited additive and scalar instances share the Ext carrier.
 @[expose]
-def WithAction (_ρ : A →+* End F) (P : C) (n : ℕ) : Type w := Ext P F n
+def ExtWithAction (_ρ : A →+* End F) (P : C) (n : ℕ) : Type w := Ext P F n
 
-namespace WithAction
+namespace ExtWithAction
 
-noncomputable instance (P : C) (n : ℕ) : AddCommGroup (WithAction ρ P n) :=
+noncomputable instance (P : C) (n : ℕ) : AddCommGroup (ExtWithAction ρ P n) :=
   inferInstanceAs (AddCommGroup (Ext P F n))
 
 /-- The action of `A` on `Ext P F n` induced by `ρ`, as a ring homomorphism to the additive
@@ -94,32 +94,32 @@ noncomputable def smulEnd (P : C) (n : ℕ) : A →+* AddMonoid.End (Ext P F n) 
     rw [map_add, End.add_asHom, mk₀_add]
     exact comp_add _ _ _ _
 
-noncomputable instance (P : C) (n : ℕ) : Module A (WithAction ρ P n) :=
+noncomputable instance (P : C) (n : ℕ) : Module A (ExtWithAction ρ P n) :=
   Module.compHom (Ext P F n) (smulEnd ρ P n)
 
-/-- The identification of `WithAction ρ P n` with `Ext P F n`. -/
-noncomputable def toExt {P : C} {n : ℕ} : WithAction ρ P n ≃+ Ext P F n := AddEquiv.refl _
+/-- The identification of `ExtWithAction ρ P n` with `Ext P F n`. -/
+noncomputable def toExt {P : C} {n : ℕ} : ExtWithAction ρ P n ≃+ Ext P F n := AddEquiv.refl _
 
 @[simp]
-lemma toExt_smul {P : C} {n : ℕ} (a : A) (x : WithAction ρ P n) :
+lemma toExt_smul {P : C} {n : ℕ} (a : A) (x : ExtWithAction ρ P n) :
     toExt ρ (a • x) = (toExt ρ x).comp (mk₀ (ρ a).asHom) (add_zero n) :=
   (rfl)
 
 /-- Precomposition with `α : Ext P P' m` is `A`-linear. -/
 noncomputable def precompLinearMap {P P' : C} {m : ℕ} (α : Ext P P' m) {n n' : ℕ} (h : m + n = n') :
-    WithAction ρ P' n →ₗ[A] WithAction ρ P n' where
+    ExtWithAction ρ P' n →ₗ[A] ExtWithAction ρ P n' where
   toFun x := (toExt ρ).symm (α.comp (toExt ρ x) h)
   map_add' x y := comp_add α (toExt ρ x) (toExt ρ y) h
   map_smul' a x := (comp_assoc_of_third_deg_zero α (toExt ρ x) (mk₀ (ρ a).asHom) h).symm
 
 @[simp]
 lemma toExt_precompLinearMap {P P' : C} {m : ℕ} (α : Ext P P' m) {n n' : ℕ} (h : m + n = n')
-    (x : WithAction ρ P' n) : toExt ρ (precompLinearMap ρ α h x) = α.comp (toExt ρ x) h :=
+    (x : ExtWithAction ρ P' n) : toExt ρ (precompLinearMap ρ α h x) = α.comp (toExt ρ x) h :=
   (rfl)
 
 /-- Precomposition with an isomorphism, as an `A`-linear equivalence. -/
 noncomputable def precompLinearEquiv {P P' : C} (e : P ≅ P') (n : ℕ) :
-    WithAction ρ P' n ≃ₗ[A] WithAction ρ P n :=
+    ExtWithAction ρ P' n ≃ₗ[A] ExtWithAction ρ P n :=
   LinearEquiv.ofLinearMap (precompLinearMap ρ (mk₀ e.hom) (zero_add n))
     (precompLinearMap ρ (mk₀ e.inv) (zero_add n))
     (LinearMap.ext fun x ↦ by
@@ -134,12 +134,12 @@ noncomputable def precompLinearEquiv {P P' : C} (e : P ≅ P') (n : ℕ) :
       rw [← comp_assoc_of_second_deg_zero, mk₀_comp_mk₀, e.inv_hom_id, mk₀_id_comp])
 
 @[simp]
-lemma toExt_precompLinearEquiv {P P' : C} (e : P ≅ P') (n : ℕ) (x : WithAction ρ P' n) :
+lemma toExt_precompLinearEquiv {P P' : C} (e : P ≅ P') (n : ℕ) (x : ExtWithAction ρ P' n) :
     toExt ρ (precompLinearEquiv ρ e n x) = (mk₀ e.hom).comp (toExt ρ x) (zero_add n) :=
   (rfl)
 
 @[simp]
-lemma toExt_precompLinearEquiv_symm {P P' : C} (e : P ≅ P') (n : ℕ) (x : WithAction ρ P n) :
+lemma toExt_precompLinearEquiv_symm {P P' : C} (e : P ≅ P') (n : ℕ) (x : ExtWithAction ρ P n) :
     toExt ρ ((precompLinearEquiv ρ e n).symm x) =
       (mk₀ e.inv).comp (toExt ρ x) (zero_add n) :=
   (rfl)
@@ -163,11 +163,11 @@ lemma exact_precompLinearMap_extClass_mk₀_g {S : ShortComplex C} (hS : S.Short
   (ShortComplex.ab_exact_iff_function_exact _).1
     (contravariant_sequence_exact₃' hS F n (n + 1) (add_comm 1 n))
 
-end WithAction
+end ExtWithAction
 
 end Action
 
-namespace WithAction
+namespace ExtWithAction
 
 section BaseChange
 
@@ -178,9 +178,9 @@ variable {A B : Type*} [CommSemiring A] [CommSemiring B] [Algebra A B] {F G : C}
 /-- Base change of target actions on `Ext`: the linear extension of postcomposition with `η`.
 On pure tensors it sends `b ⊗ x` to `b • η_* x`. -/
 noncomputable def baseChange (P : C) (n : ℕ) :
-    B ⊗[A] WithAction ρ P n →ₗ[B] WithAction σ P n := by
-  letI : Module A (WithAction σ P n) := Module.compHom _ (algebraMap A B)
-  letI : IsScalarTower A B (WithAction σ P n) := .of_algebraMap_smul fun _ _ ↦ rfl
+    B ⊗[A] ExtWithAction ρ P n →ₗ[B] ExtWithAction σ P n := by
+  letI : Module A (ExtWithAction σ P n) := Module.compHom _ (algebraMap A B)
+  letI : IsScalarTower A B (ExtWithAction σ P n) := .of_algebraMap_smul fun _ _ ↦ rfl
   exact LinearMap.liftBaseChange B
     { toFun := fun x ↦ (toExt σ).symm ((toExt ρ x).comp (mk₀ η) (add_zero n))
       map_add' := fun x y ↦ add_comp _ _ _ (add_zero n)
@@ -193,7 +193,7 @@ noncomputable def baseChange (P : C) (n : ℕ) :
           mk₀_comp_mk₀, mk₀_comp_mk₀, hη] }
 
 @[simp]
-lemma baseChange_tmul (P : C) (n : ℕ) (b : B) (x : WithAction ρ P n) :
+lemma baseChange_tmul (P : C) (n : ℕ) (b : B) (x : ExtWithAction ρ P n) :
     toExt σ (baseChange ρ σ η hη P n (b ⊗ₜ x)) =
       (toExt ρ x).comp (mk₀ (η ≫ (σ b).asHom)) (add_zero n) := by
   -- The tensor lift applies the target action after postcomposition with `η`.
@@ -216,7 +216,7 @@ lemma baseChange_comp_lTensor_precompLinearMap {P P' : C} {m : ℕ} (α : Ext P 
     exact comp_assoc_of_third_deg_zero _ _ _ _
 
 lemma baseChange_lTensor_precompLinearMap_apply {P P' : C} {m : ℕ} (α : Ext P P' m) {n n' : ℕ}
-    (h : m + n = n') (z : B ⊗[A] WithAction ρ P' n) :
+    (h : m + n = n') (z : B ⊗[A] ExtWithAction ρ P' n) :
     baseChange ρ σ η hη P n' ((precompLinearMap ρ α h).lTensor B z) =
       precompLinearMap σ α h (baseChange ρ σ η hη P' n z) :=
   DFunLike.congr_fun (baseChange_comp_lTensor_precompLinearMap ρ σ η hη α h) z
@@ -238,18 +238,18 @@ lemma bijective_baseChange_biprod {P₁ P₂ : C} {n : ℕ}
     (h₁ : Function.Bijective (baseChange ρ σ η hη P₁ n))
     (h₂ : Function.Bijective (baseChange ρ σ η hη P₂ n)) :
     Function.Bijective (baseChange ρ σ η hη (P₁ ⊞ P₂) n) := by
-  let πF : WithAction ρ (P₁ ⊞ P₂) n →ₗ[A] WithAction ρ P₁ n × WithAction ρ P₂ n :=
+  let πF : ExtWithAction ρ (P₁ ⊞ P₂) n →ₗ[A] ExtWithAction ρ P₁ n × ExtWithAction ρ P₂ n :=
     (precompLinearMap ρ (mk₀ biprod.inl) (zero_add n)).prod
       (precompLinearMap ρ (mk₀ biprod.inr) (zero_add n))
   have hπF : Function.Bijective πF := (biprodAddEquiv (Y := F) (n := n)).bijective
-  let πG : WithAction σ (P₁ ⊞ P₂) n → WithAction σ P₁ n × WithAction σ P₂ n :=
+  let πG : ExtWithAction σ (P₁ ⊞ P₂) n → ExtWithAction σ P₁ n × ExtWithAction σ P₂ n :=
     fun x ↦ (precompLinearMap σ (mk₀ biprod.inl) (zero_add n) x,
       precompLinearMap σ (mk₀ biprod.inr) (zero_add n) x)
   have hπG : Function.Bijective πG := (biprodAddEquiv (Y := G) (n := n)).bijective
   have key : πG ∘ ⇑(baseChange ρ σ η hη (P₁ ⊞ P₂) n) =
       Prod.map (baseChange ρ σ η hη P₁ n) (baseChange ρ σ η hη P₂ n) ∘
         ⇑(TensorProduct.prodRight A A B _ _) ∘ ⇑(πF.lTensor B) := by
-    have hprod (z : B ⊗[A] WithAction ρ (P₁ ⊞ P₂) n) :
+    have hprod (z : B ⊗[A] ExtWithAction ρ (P₁ ⊞ P₂) n) :
         TensorProduct.prodRight A A B _ _ (πF.lTensor B z) =
           ((precompLinearMap ρ (mk₀ biprod.inl) (zero_add n)).lTensor B z,
             (precompLinearMap ρ (mk₀ biprod.inr) (zero_add n)).lTensor B z) := by
@@ -334,6 +334,6 @@ lemma bijective_baseChange_of_shortExact {S : ShortComplex C} (hS : S.ShortExact
 
 end FlatBaseChange
 
-end WithAction
+end ExtWithAction
 
-end TauCeti.Abelian.Ext
+end TauCeti.Abelian
