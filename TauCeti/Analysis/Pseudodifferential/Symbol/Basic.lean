@@ -346,11 +346,6 @@ instance : Module ℂ (Symbol n V W m) :=
   coefficient_injective.module ℂ ⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩
     coefficient_smul
 
-@[simp]
-theorem coefficient_sum {ι : Type*} (s : Finset ι) (a : ι → Symbol n V W m) :
-    (∑ i ∈ s, a i).coefficient = ∑ i ∈ s, (a i).coefficient :=
-  map_sum (⟨⟨coefficient, coefficient_zero⟩, coefficient_add⟩ : Symbol n V W m →+ _) a s
-
 /-- A finite sum of coefficients of symbols, possibly of different orders, is smooth. -/
 theorem contDiff_sum_coefficient {ι : Type*} (s : Finset ι) {d : ι → ℝ}
     (a : (i : ι) → Symbol n V W (d i)) : ContDiff ℝ ∞ (∑ i ∈ s, (a i).coefficient) := by
