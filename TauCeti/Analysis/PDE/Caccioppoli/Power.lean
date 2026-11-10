@@ -331,14 +331,8 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_of_ae_eq_rpow
       fun x => (p / 2 * W1p.value u x ^ (p / 2 - 1)) • W1p.gradient u x := by
     obtain ⟨w', hw'v, hw'g⟩ := W1p.exists_value_gradient_ae_eq_rpow (by simp) hε
       (by linarith : p / 2 ≤ 1) hεu
-    have h0 : ∀ᵐ x ∂mu.restrict (Omega : Set (EuclideanSpace ℝ ι)),
-        W1p.value (w - w') x = 0 := by
-      filter_upwards [W1p.value_sub_ae w w', hwv, hw'v] with x h1 h2 h3
-      rw [h1, Pi.sub_apply, h2, h3, sub_self]
-    filter_upwards [W1p.gradient_ae_eq_zero_of_value_ae_eq_zero le_rfl h0, hw'g,
-      Lp.coeFn_sub (W1p.gradient w) (W1p.gradient w')] with x h1 h2 h3
-    rw [W1p.gradient_sub, h3, Pi.sub_apply, sub_eq_zero] at h1
-    exact h1.trans h2
+    have hww' := W1p.ext_value (Lp.ext (hwv.trans hw'v.symm))
+    simpa only [hww'] using hw'g
   -- Both sides in terms of `u`: `‖∇w‖² = (p/2)² u^{p-2} ‖∇u‖²` and `w² = u^p`.
   have hl : ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu = (p / 2) ^ 2 *
       ∫ x in Omega, ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2) ∂mu := by
