@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
-public import TauCeti.Analysis.InnerProductSpace.SpectralProjection
+public import TauCeti.Analysis.InnerProductSpace.Spectral.ContinuousFunctionalCalculus
 
 /-!
 # Spectral projections of self-adjoint Fredholm operators
@@ -17,7 +17,7 @@ projection `cfc ((Icc (-a) a).indicator 1) S` has finite rank equal to the dimen
 of `T`. This combines the spectral gap of `T` at `0`, the identification of its spectral projection
 with the projection onto its kernel, and the local constancy of the rank of spectral projections,
 all proved for general self-adjoint operators in
-`TauCeti.Analysis.InnerProductSpace.SpectralProjection`.
+`TauCeti.Analysis.InnerProductSpace.Spectral.ContinuousFunctionalCalculus`.
 This is the local input in Phillips' construction of the spectral flow: the spectral flow of a path
 counts, along a partition, the changes of the ranks of the spectral projections for `[0, a]`.
 
