@@ -34,6 +34,11 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 
 ## Main results
 
+* `TauCeti.Floer.preimage_truncation_subset_thricePuncturedSphereReal`,
+  `TauCeti.Floer.exists_lt_endSign_mul_re_endCoord_of_notMem_truncation`: in real coordinates the
+  truncation `S_R` lies in `S`, and every other point of `S` lies beyond `R` on some end.
+* `TauCeti.Floer.setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation`: the integral over
+  `S` of a function vanishing beyond `R` on every end is its integral over `S_R`.
 * `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`: in real coordinates, the
   components of the perturbation are `Cⁿ` on `S × V` for `Cⁿ` Hamiltonians.
 * `TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, `TauCeti.Floer.re_endCoord_endChart`:
@@ -45,6 +50,8 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 * `TauCeti.Floer.pairwise_disjoint_image_endChart`: the images of the three strips are disjoint.
 * `TauCeti.Floer.mem_image_endChart`: they contain every point of `S` with signed longitudinal
   coordinate greater than `1/2` on some end.
+* `TauCeti.Floer.injOn_endChart_univ_prod_Ico`: the end chart is injective on every band of
+  angular width one.
 * `TauCeti.Floer.perturbationPullback_endChart_eq_cylindricalEndLift`: the pullback of a
   perturbation along the end chart is the perturbation evaluated on the image of a tangent vector
   under the end lift.
@@ -84,6 +91,40 @@ theorem isOpen_thricePuncturedSphereReal : IsOpen thricePuncturedSphereReal :=
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
 
+/-- The truncation `S_R`, in real coordinates, is measurable. -/
+theorem measurableSet_preimage_truncation (R : ℝ) :
+    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
+  ((isCompact_truncation R).isClosed.preimage
+    Complex.equivRealProdCLM.symm.continuous).measurableSet
+
+/-- The truncation `S_R`, in real coordinates, lies in `S`. -/
+theorem preimage_truncation_subset_thricePuncturedSphereReal (R : ℝ) :
+    Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal :=
+  fun _ hz ↦ mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1,
+    (mem_truncation.1 hz).2.1⟩
+
+/-- A point of `S` outside the truncation `S_R` lies beyond `R` on some end. -/
+theorem exists_lt_endSign_mul_re_endCoord_of_notMem_truncation {R : ℝ} {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) (hzR : Complex.equivRealProdCLM.symm z ∉ truncation R) :
+    ∃ q : Puncture, R < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re := by
+  by_contra! h
+  exact hzR (mem_truncation.2 ⟨(mem_thricePuncturedSphereReal_iff.1 hz).1,
+    (mem_thricePuncturedSphereReal_iff.1 hz).2, h⟩)
+
+/-- The integral over `S` of a function vanishing at every point of `S` beyond `R` on some end is
+its integral over the truncation `S_R`. -/
+theorem setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ × ℝ → E} {R : ℝ}
+    (hf : ∀ z ∈ thricePuncturedSphereReal, ∀ q : Puncture,
+      R < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re → f z = 0) :
+    ∫ z in thricePuncturedSphereReal, f z =
+      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, f z := by
+  refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
+    isOpen_thricePuncturedSphereReal.measurableSet
+    (preimage_truncation_subset_thricePuncturedSphereReal R) fun z hz ↦ ?_
+  obtain ⟨q, hq⟩ := exists_lt_endSign_mul_re_endCoord_of_notMem_truncation hz.1 hz.2
+  exact hf z hz.1 q hq
+
 /-- In the real coordinates of `S`, the components of the pair-of-pants perturbation are `Cⁿ`
 jointly in the domain and target points, for `Cⁿ` Hamiltonians. -/
 theorem contDiffAt_uncurry_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
@@ -121,9 +162,8 @@ theorem equivRealProdCLM_symm_endChart (q : Puncture) (z : ℝ × ℝ) :
 /-- The longitudinal coordinate of the end `q` at the image of `(s, t)` is `s`. -/
 theorem re_endCoord_endChart (q : Puncture) (z : ℝ × ℝ) :
     (q.endCoord (Complex.equivRealProdCLM.symm (endChart q z))).re = z.1 := by
-  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm z)
-  rw [equivRealProdCLM_symm_endChart, hk]
-  simp
+  rw [equivRealProdCLM_symm_endChart, re_endCoord_cylindricalEndLift]
+  simp [Complex.equivRealProdCLM_symm_apply]
 
 /-- The end chart sends the part `±s > 0` of the end into `S`. -/
 theorem endChart_mem_thricePuncturedSphereReal {q : Puncture} {z : ℝ × ℝ}
@@ -215,13 +255,19 @@ theorem perturbationPullback_endChart (q : Puncture) (v : ℝ × ℝ) :
   funext z x
   rw [pairOfPantsEndComponent_def, Complex.equivRealProdCLM_symm_apply, ← Complex.mk_eq_add_mul_I]
 
-/-- The end lift is injective on the strip `endStrip q`, whose angular coordinate ranges over one
-period. -/
-theorem injOn_endChart (q : Puncture) : InjOn (endChart q) (endStrip q) := by
+/-- The end chart is injective on every band `ℝ × [t₀, t₀ + 1)` of angular width one: two points
+with the same image differ by an integer multiple of `i`. -/
+theorem injOn_endChart_univ_prod_Ico (q : Puncture) (t₀ : ℝ) :
+    InjOn (endChart q) (univ ×ˢ Ico t₀ (t₀ + 1)) := by
   intro a ha b hb hab
-  have h := q.injOn_cylindricalEndLift (by simpa using ha.2) (by simpa using hb.2)
+  have h := q.injOn_cylindricalEndLift t₀ (by simpa using ha.2) (by simpa using hb.2)
     (Complex.equivRealProdCLM.injective hab)
   exact Complex.equivRealProdCLM.symm.injective h
+
+/-- The end lift is injective on the strip `endStrip q`, whose angular coordinate ranges over one
+period. -/
+theorem injOn_endChart (q : Puncture) : InjOn (endChart q) (endStrip q) :=
+  (injOn_endChart_univ_prod_Ico q (-1 / 2)).mono (prod_mono (subset_univ _) (by norm_num))
 
 /-- Every point of `S` where some end has signed longitudinal coordinate greater than `1/2` is the
 image of a point of that end's strip. -/

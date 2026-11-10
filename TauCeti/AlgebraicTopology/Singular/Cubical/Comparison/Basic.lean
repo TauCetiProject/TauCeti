@@ -431,7 +431,7 @@ theorem singularCubicalHomologyIso_hom_singularHomology₀Section {X : TopCat.{u
       (by rw [HomologicalComplex.shape _ _ _ (by simp)]; exact Limits.comp_zero)
   have hx : (singularHomology₀Section (ModuleCat.of k k) x).hom 1 =
       ((singularChains k).obj X).homologyπ 0 (z 1) := by
-    rw [singularHomology₀Section_def, SSet.ιHomology₀_eq]
+    rw [singularHomology₀Section_def, SSet.ιHomology₀_def]
     -- `(singularChains k).obj X` is by definition the chain complex
     -- `(TopCat.toSSet.obj X).chainComplex k` of the singular simplicial set.
     exact ModuleCat.comp_apply _ _ _
@@ -443,8 +443,7 @@ theorem singularCubicalHomologyIso_hom_singularHomology₀Section {X : TopCat.{u
     HomologicalComplex.homologyπ_naturality, ModuleCat.comp_apply]
   congr 1
   apply HomologicalComplex.moduleCat_iCycles_injective
-  rw [iCycles_cubicalCycleOfPoint, ← ModuleCat.comp_apply,
-    HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply, hi]
+  rw [iCycles_cubicalCycleOfPoint, HomologicalComplex.moduleCat_iCycles_cyclesMap_apply, hi]
   rw [singularToCubical_app_f_zero_simplexChain, Equiv.apply_symm_apply,
     normalizedCubicalChainComplexXEquiv_symm_apply]
 

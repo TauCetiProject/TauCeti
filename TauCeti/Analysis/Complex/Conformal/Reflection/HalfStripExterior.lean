@@ -71,8 +71,9 @@ private theorem im_model_ge {ζ : ℂ} (him : 0 ≤ ζ.im) (hre : 1 ≤ ζ.re) (
     Real.pi + (1 - Real.pi / 4) * ζ.im ≤ (model ζ).im := by
   -- Jordan's inequality `arg ζ ≤ π / 2 * sin (arg ζ)`, with `sin (arg ζ) = im ζ / ‖ζ‖`.
   have harg : ζ.arg ≤ Real.pi / 2 * (ζ.im / ‖ζ‖) :=
-    le_pi_div_two_mul_of_sin_eq (arg_nonneg_iff.mpr him)
-      (abs_le.mp (abs_arg_le_pi_div_two_iff.mpr (zero_le_one.trans hre))).2 (sin_arg ζ)
+    (le_pi_div_two_mul_sin (arg_nonneg_iff.mpr him)
+      (abs_le.mp (abs_arg_le_pi_div_two_iff.mpr (zero_le_one.trans hre))).2).trans_eq
+      (by rw [sin_arg])
   have : ζ.im / ‖ζ‖ ≤ ζ.im / 2 := div_le_div_of_nonneg_left him two_pos hζ
   have := Real.pi_pos
   rw [im_model]
@@ -87,7 +88,7 @@ private theorem im_model_le {ζ : ℂ} (him : 0 ≤ ζ.im) (hre : ζ.re ≤ -1) 
     rwa [not_le, abs_of_nonneg (arg_nonneg_iff.mpr him)] at h
   -- Jordan's inequality for `π - arg ζ ∈ [0, π / 2]`, whose sine is `im ζ / ‖ζ‖`.
   have harg' : Real.pi - ζ.arg ≤ Real.pi / 2 * (ζ.im / ‖ζ‖) :=
-    le_pi_div_two_mul_of_sin_eq (by linarith [arg_le_pi ζ]) (by linarith)
+    (le_pi_div_two_mul_sin (by linarith [arg_le_pi ζ]) (by linarith)).trans_eq
       (by rw [Real.sin_pi_sub, sin_arg])
   have : ζ.im / ‖ζ‖ ≤ ζ.im / 2 := div_le_div_of_nonneg_left him two_pos hζ
   have := Real.pi_pos
@@ -456,7 +457,8 @@ private theorem continuousOn_update_neg_inv_invFunOn {A : Set ℂ} {c b : ℂ} {
           inf_le_left)).mono_left
             (nhdsWithin_mono _ (sdiff_subset_sdiff_left inter_subset_right))
       · exact eventually_nhdsWithin_of_forall fun s hs => hfAq s hs.1.1 hs.1.2 hs.2
-    simpa using (tendsto_inv₀_cobounded.comp ((tendsto_invFunOn_cobounded hA hfc).comp hq)).neg
+    have hφ := (tendsto_invFunOn_cobounded_cocompact hA hfc).mono_right cobounded_eq_cocompact.ge
+    simpa using (tendsto_inv₀_cobounded.comp (hφ.comp hq)).neg
 
 /-- The comparison map is holomorphic on the open upper half-disc, where `f⁻¹` agrees with the
 holomorphic inverse of `f` on the open set `T`. -/
@@ -548,9 +550,10 @@ private theorem exists_comparison_of_halfStripExterior {R ρ : ℝ} {c b : ℂ} 
   have hH : ∀ s ∈ upperHalfPlaneSet, s ≠ 0 := fun s (hs : 0 < s.im) h => by simp [h] at hs
   -- `f` is a closed embedding of `A`; `φ` is its continuous inverse on the closed image.
   set φ := invFunOn f A
-  have hfA : IsClosed (f '' A) := isClosed_image_of_tendsto_cobounded hA hfc hp
+  have hp' : Tendsto f (cocompact ℂ ⊓ 𝓟 A) (cobounded ℂ) := by rwa [← cobounded_eq_cocompact]
+  have hfA : IsClosed (f '' A) := isClosed_image_of_tendsto_cobounded hA hfc hp'
   have hφc : ContinuousOn φ (f '' A) :=
-    continuousOn_of_leftInvOn_of_tendsto_cobounded hA hfc hfi.leftInvOn_invFunOn hp
+    continuousOn_of_leftInvOn_of_tendsto_cobounded hA hfc hfi.leftInvOn_invFunOn hp'
   have hφA : ∀ y ∈ f '' A, φ y ∈ A ∧ f (φ y) = y := fun y hy => ⟨invFunOn_mem hy, invFunOn_eq hy⟩
   have hφU : ∀ y ∈ f '' T, φ y ∈ T ∧ φ y = invFunOn f T y := by
     rintro y ⟨z, hz, rfl⟩
@@ -589,11 +592,6 @@ private theorem exists_comparison_of_halfStripExterior {R ρ : ℝ} {c b : ℂ} 
     rw [update_of_ne (hH s hs.2)]
     exact im_neg_inv_pos.mpr (hφU _ (hUp s hs.1 hs.2)).1.1
 
-private theorem differentiableOn_const_add_mul_model (c b : ℂ) :
-    DifferentiableOn ℂ (fun ζ => c + b * model ζ) upperHalfPlaneSet := fun _ hζ =>
-  (((hasDerivAt_model (mem_slitPlane_iff.mpr (Or.inr (ne_of_gt hζ)))).const_mul b).const_add
-    c).differentiableAt.differentiableWithinAt
-
 /-- The model's derivative `b * (ζ - ζ⁻¹)` does not vanish on the upper half-plane. -/
 private theorem deriv_const_add_mul_model_ne_zero {c b : ℂ} (hb : b ≠ 0) {ζ : ℂ}
     (hζ : ζ ∈ upperHalfPlaneSet) : deriv (fun ζ => c + b * model ζ) ζ ≠ 0 := by
@@ -629,9 +627,9 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_halfStripExterior {ρ : 
   obtain ⟨r, hr, g, hgq, hg0, hcont, hholo, hreal, hupper, hinj⟩ :=
     exists_comparison_of_halfStripExterior le_rfl hb (by rwa [hT]) (by rwa [hA]) (by rwa [hA])
       (by rwa [hA]) (fun z hz => by rw [hT, hfU]; exact hU z hz)
-  exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv hr hf
+  exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv hr
     (fun z hz => deriv_ne_zero_of_injOn hf isOpen_upperHalfPlaneSet (hfi.mono hH0) hz)
-    (differentiableOn_const_add_mul_model c b) (fun ζ hζ => deriv_const_add_mul_model_ne_zero hb hζ)
+    (fun ζ hζ => deriv_const_add_mul_model_ne_zero hb hζ)
     (tendsto_mul_logDeriv_deriv_const_add_mul_model hb) hgq hg0 hcont hholo hreal hupper hinj
 
 /-- The coordinate change `ζ ↦ x - ζ⁻¹` carries the far part of the closed upper half-plane into
@@ -719,8 +717,7 @@ theorem tendsto_sub_mul_logDeriv_deriv_nhdsWithin_of_halfStripExterior {x r ρ :
       (fun w hw => by rw [← image_image, hmT]; exact hU w hw)
   -- Since `m (-(g s)⁻¹) = x + g s`, the translate `w ↦ f (x + w)` is compared with the model.
   have hlim := tendsto_mul_logDeriv_deriv_nhdsWithin_of_eqOn_comp (F := fun w => f (x + w))
-    hr₀ (differentiableOn_const_add_mul_model c b)
-    (fun ζ hζ => deriv_const_add_mul_model_ne_zero hb hζ)
+    hr₀ (fun ζ hζ => deriv_const_add_mul_model_ne_zero hb hζ)
     (tendsto_mul_logDeriv_deriv_const_add_mul_model hb)
     (fun s hs => by simpa [m, sub_eq_add_neg] using hgq hs) hg0 hcont hholo hreal hupper hinj
   have hshift : Tendsto (fun z : ℂ => z - x) (𝓝[upperHalfPlaneSet] (x : ℂ))

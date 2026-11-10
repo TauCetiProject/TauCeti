@@ -39,7 +39,7 @@ graded `k[X]`-modules:
   long as the source has a homogeneous non-torsion element and the non-torsion degrees of the
   target are bounded above (`InternalGrading.supNonTorsionDegree_add_le`). This applies in
   particular when the map has a left inverse up to multiplication by a nonzerodivisor such as a
-  power of `X` (`TauCeti.Submodule.comap_torsion_le_of_comp_eq_smul`), the shape of the bounds on
+  power of `X` (`TauCeti.Submodule.comap_torsion_of_comp_eq_smul`), the shape of the bounds on
   `τ` coming from crossing changes and cobordisms; a graded isomorphism preserves the invariant
   (`InternalGrading.supNonTorsionDegree_eq_of_linearEquiv`).
 
@@ -188,7 +188,7 @@ omit [IsScalarTower k k[X] M] [IsScalarTower k k[X] N] in
 at least `δ`, provided the source has a homogeneous non-torsion element and the non-torsion
 degrees of the target are bounded above (for instance by `bddAbove_nonTorsionDegrees` when the
 target is finitely generated and `X` lowers degree on it). By
-`Submodule.comap_torsion_le_of_comp_eq_smul`, torsion is reflected as soon as the map has a left
+`Submodule.comap_torsion_of_comp_eq_smul`, torsion is reflected as soon as the map has a left
 inverse up to multiplication by a power of `X`. -/
 theorem supNonTorsionDegree_add_le (hne : G.nonTorsionDegrees.Nonempty)
     (hbdd : BddAbove H.nonTorsionDegrees) {f : M →ₗ[k[X]] N} {δ : ℤ}
@@ -208,12 +208,12 @@ theorem nonTorsionDegrees_eq_of_linearEquiv (e : M ≃ₗ[k[X]] N)
   constructor
   · rintro ⟨x, hx, hxt⟩
     refine ⟨e.toLinearMap x, by simpa only [add_zero] using he.map_mem hx, fun het ↦ hxt ?_⟩
-    exact Submodule.comap_torsion_le_of_comp_eq_smul (f := e.toLinearMap)
-      (g := e.symm.toLinearMap) (one_mem _) (by simp) het
+    exact (Submodule.comap_torsion_of_comp_eq_smul (f := e.toLinearMap)
+      (g := e.symm.toLinearMap) (one_mem _) (by simp)).le het
   · rintro ⟨y, hy, hyt⟩
     refine ⟨e.symm.toLinearMap y, by simpa only [add_zero] using he'.map_mem hy, fun het ↦ hyt ?_⟩
-    exact Submodule.comap_torsion_le_of_comp_eq_smul (f := e.symm.toLinearMap)
-      (g := e.toLinearMap) (one_mem _) (by simp) het
+    exact (Submodule.comap_torsion_of_comp_eq_smul (f := e.symm.toLinearMap)
+      (g := e.toLinearMap) (one_mem _) (by simp)).le het
 
 omit [IsScalarTower k k[X] M] [IsScalarTower k k[X] N] in
 /-- A graded isomorphism of graded `k[X]`-modules preserves the supremal non-torsion degree. -/

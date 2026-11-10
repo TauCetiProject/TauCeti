@@ -16,6 +16,8 @@ public import TauCeti.Analysis.Calculus.Gradient
 public import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
 import Mathlib.Topology.MetricSpace.Lipschitz
+import TauCeti.Analysis.Matrix.PosSemidef.Determinant
+import TauCeti.Analysis.Normed.Field.Lipschitz
 
 /-!
 # Uniform ellipticity for divergence-form PDE coefficients
@@ -54,6 +56,9 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   `C¹` entries on an open set has locally Lipschitz bilinear forms there.
 * `TauCeti.PDE.lipschitzOnWith_matrixBilinearForm_apply_apply`: the entries `⟪p, a(x) q⟫` of a
   coefficient field with Lipschitz bilinear forms are Lipschitz.
+* `TauCeti.PDE.exists_lipschitzOnWith_inv_matrixBilinearForm_self`: for a uniformly elliptic
+  coefficient field with Lipschitz bilinear forms, the reciprocal of the quadratic form of a
+  nonzero vector is bounded and Lipschitz.
 * `TauCeti.PDE.exists_lipschitzWith_matrixBilinearForm_eqOn`: a coefficient field with
   Lipschitz bilinear forms on a set agrees there with one that is Lipschitz on the whole space.
 * `TauCeti.PDE.matrixBilinearFormLinear`: the coefficient matrix-to-bilinear-form map as a
@@ -72,6 +77,8 @@ and Lax--Milgram arguments: constants are parameters, not hidden existential dat
   boundedness of the bilinear form attached to a uniformly elliptic coefficient field.
 * `TauCeti.PDE.UniformlyEllipticOn.isBounded_image_matrixBilinearForm`: these bilinear forms
   are bounded uniformly over the domain.
+* `TauCeti.PDE.UniformlyEllipticOn.pow_card_le_det`: a symmetric uniformly elliptic coefficient
+  matrix has determinant at least `λⁿ`.
 * `TauCeti.PDE.uniformlyEllipticOn_const`: a constant matrix with a lower quadratic bound is
   uniformly elliptic.
 * `TauCeti.PDE.continuousOn_of_continuousOn_matrixBilinearForm` and
@@ -575,6 +582,18 @@ lemma quadraticForm_nonneg (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : 
     0 ≤ (a x).toQuadraticForm' ξ := by
   exact (mul_nonneg h.pos.le (sq_nonneg ‖ξ‖)).trans (h.lower_bound hx ξ)
 
+/-- The diagonal entries of a uniformly elliptic coefficient matrix are at most the upper
+constant, so its trace is at most `card n * Λ`. -/
+lemma trace_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) :
+    (a x).trace ≤ Fintype.card n * Lam := by
+  have hdiag (i : n) : a x i i ≤ Lam := by
+    have h1 : |a x i i| ≤ Lam := by
+      simpa using h.upper_bound hx (EuclideanSpace.single i 1) (EuclideanSpace.single i 1)
+    exact (le_abs_self _).trans h1
+  calc (a x).trace = ∑ i, a x i i := rfl
+    _ ≤ ∑ _i : n, Lam := Finset.sum_le_sum fun i _ ↦ hdiag i
+    _ = Fintype.card n * Lam := by simp
+
 /-- Uniform ellipticity gives a positive quadratic form on every nonzero vector. -/
 lemma quadraticForm_pos (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω)
     {ξ : EuclideanSpace ℝ n} (hξ : ξ ≠ 0) :
@@ -648,6 +667,28 @@ lemma abs_apply_le (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω
     |a x i j| ≤ Lam := by
   simpa [dotProduct, Matrix.mulVec, Pi.single_apply] using
     h.upper_bound hx (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
+
+/-- A symmetric uniformly elliptic coefficient matrix is positive definite. -/
+lemma posDef (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω) (hsymm : (a x).IsSymm) :
+    (a x).PosDef :=
+  Matrix.PosDef.of_toQuadraticForm' hsymm fun ξ hξ => by
+    simpa using h.quadraticForm_pos hx (ξ := WithLp.toLp 2 ξ) (by simpa using hξ)
+
+open scoped MatrixOrder in
+/-- A symmetric uniformly elliptic coefficient matrix has determinant at least `λⁿ`. -/
+lemma pow_card_le_det (h : UniformlyEllipticOn Ω a lam Lam) {x : X} (hx : x ∈ Ω)
+    (hsymm : (a x).IsSymm) : lam ^ Fintype.card n ≤ (a x).det := by
+  have h1 : (lam • (1 : Matrix n n ℝ)).PosSemidef := PosSemidef.one.smul h.pos.le
+  have h2 : lam • (1 : Matrix n n ℝ) ≤ a x := by
+    rw [Matrix.le_iff]
+    refine PosSemidef.of_dotProduct_mulVec_nonneg ?_ fun ξ => ?_
+    · exact isHermitian_iff_isSymm.2 (hsymm.sub (isSymm_one.smul lam))
+    · have := h.lower_bound hx (WithLp.toLp 2 ξ)
+      simp only [toQuadraticForm'_apply, EuclideanSpace.norm_sq_eq] at this
+      simp only [star_trivial, sub_mulVec, dotProduct_sub, smul_mulVec, one_mulVec,
+        dotProduct_smul, smul_eq_mul, sub_nonneg]
+      simpa [dotProduct, Real.norm_eq_abs, sq_abs, sq] using this
+  simpa [det_smul] using h1.det_le_det h2
 
 /-- On the domain, the bilinear forms attached to a uniformly elliptic coefficient field form a
 bounded set, of operator norm at most the upper ellipticity constant. -/
@@ -954,6 +995,32 @@ theorem lipschitzOnWith_matrixBilinearForm_apply_apply {X : Type*} [PseudoEMetri
     (ContinuousLinearMap.lipschitzWith_apply p)).comp_lipschitzOnWith hK
   have hc : ‖q‖₊ * ‖p‖₊ * K = K * ‖p‖₊ * ‖q‖₊ := by ring
   rwa [hc] at h
+
+/-- If `a` is uniformly elliptic and bounded on `s` and `x ↦ a(x)` is Lipschitz on `s` as a bilinear
+form, then for `w ≠ 0` the form `a(x)(w, w)` is nonzero on `s` and its reciprocal is bounded and
+Lipschitz on `s`. -/
+theorem exists_lipschitzOnWith_inv_matrixBilinearForm_self {X : Type*} [PseudoMetricSpace X]
+    [DecidableEq n] {a : X → Matrix n n ℝ} {s : Set X} {K : ℝ≥0} {lam Lam : ℝ}
+    (ha : UniformlyEllipticOn s a lam Lam)
+    (hK : LipschitzOnWith K (fun x => matrixBilinearForm (a x)) s)
+    {w : EuclideanSpace ℝ n} (hw : w ≠ 0) :
+    ∃ (L : ℝ≥0) (B : ℝ),
+      LipschitzOnWith L (fun x => (matrixBilinearForm (a x) w w)⁻¹) s ∧
+      (∀ x ∈ s, ‖(matrixBilinearForm (a x) w w)⁻¹‖ ≤ B) ∧
+      ∀ x ∈ s, matrixBilinearForm (a x) w w ≠ 0 := by
+  have hβL := lipschitzOnWith_matrixBilinearForm_apply_apply hK
+  set m : ℝ := lam * ‖w‖ ^ 2
+  have hm : 0 < m := mul_pos ha.pos (pow_pos (norm_pos_iff.2 hw) 2)
+  have hcm : ∀ x ∈ s, m ≤ matrixBilinearForm (a x) w w :=
+    fun x hx => by simpa only [m, matrixBilinearForm_self] using ha.lower_bound hx w
+  have hrL : LipschitzOnWith (K * ‖w‖₊ * ‖w‖₊ / ⟨m, hm.le⟩ ^ 2)
+      (fun x => (matrixBilinearForm (a x) w w)⁻¹) s :=
+    (hβL w w).inv_of_le_norm hm fun x hx =>
+      (hcm x hx).trans (Real.le_norm_self (matrixBilinearForm (a x) w w))
+  refine ⟨_, m⁻¹, hrL, fun x hx => ?_, fun x hx => (hm.trans_le (hcm x hx)).ne'⟩
+  have hx' := hm.trans_le (hcm x hx)
+  rw [Real.norm_eq_abs, abs_inv, abs_of_pos hx']
+  exact inv_anti₀ hm (hcm x hx)
 
 /-- **A field that is Lipschitz on a set extends to a Lipschitz field on the whole space.** If
 `x ↦ a x` is Lipschitz on `S` in the operator norm of its bilinear forms, then `a` agrees on `S`

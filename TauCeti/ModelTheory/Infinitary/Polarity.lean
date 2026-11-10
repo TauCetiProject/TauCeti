@@ -393,6 +393,15 @@ theorem relationsInSigned_constantsVarsEquiv {γ : Type uγ} (s : Bool)
   exact ((Function.injective_id.sigma_map fun _ =>
     (L.lhomWithConstants_injective γ).onRelation).preimage_image _).symm
 
+/-- Abstracting one constant preserves each relation polarity exactly. -/
+@[simp]
+theorem relationsInSigned_abstractConst {γ : Type uγ} [DecidableEq γ] (s : Bool)
+    (c : γ) (φ : L[[γ]].BoundedFormulaInf ι α n) :
+    (abstractConst c φ).relationsInSigned s = φ.relationsInSigned s := by
+  rw [abstractConst_def, relationsInSigned_constantsVarsEquiv_symm, relationsInSigned_mapBound,
+    relationsInSigned_relabel, ← relationsInSigned_constantsVarsEquiv_symm s (constantsVarsEquiv φ),
+    constantsVarsEquiv.symm_apply_apply]
+
 /-! ### Polarity monotonicity of realization -/
 
 /-- **Polarity monotonicity of realization.** On a single carrier `M`, if two `L`-structures `S`

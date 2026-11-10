@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
+import TauCeti.Analysis.PDE.Vortex.Multiplier
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import TauCeti.Analysis.Sobolev.Wkp.ContDiffRepresentative
@@ -51,6 +52,8 @@ theorem nor the quotient is treated.
 
 ## Main results
 
+* `TauCeti.Vortex.exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup`: for `u ∈ G_s`, the complex
+  function `u - 1` lies in `H^s(ℂ; ℂ)`.
 * `TauCeti.Vortex.tendsto_cocompact_of_mem_sobolevGaugeGroup`: elements of `G_s` tend to one at
   infinity.
 * `TauCeti.Vortex.contDiff_of_mem_sobolevGaugeGroup`: elements of `G_s` are `Cʲ` for
@@ -123,6 +126,20 @@ theorem mem_sobolevGaugeGroup {s : ℝ} (hs : 1 < s) (u : ℂ → Circle) :
       (fun z ↦ (u z : ℂ).re - 1) ∈ realSobolevFunctions ℂ s 2 ∧
       (fun z ↦ (u z : ℂ).im) ∈ realSobolevFunctions ℂ s 2 :=
   Iff.rfl
+
+open MeasureTheory in
+open scoped SchwartzMap in
+/-- **Elements of `G_s` are `1 + h` with `h ∈ H^s(ℂ; ℂ)`.** For `u ∈ G_s`, the complex function
+`u - 1` agrees almost everywhere with an `L²` function in Mathlib's Bessel-potential space
+`H^s(ℂ; ℂ)`. -/
+theorem exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : ℂ → Circle}
+    (hu : u ∈ sobolevGaugeGroup hs) :
+    ∃ h : Lp ℂ 2 (volume : Measure ℂ), h =ᵐ[volume] (fun z ↦ (u z : ℂ) - 1) ∧
+      MemSobolev s 2 (h : 𝓢'(ℂ, ℂ)) := by
+  obtain ⟨-, h₁, h₂⟩ := (mem_sobolevGaugeGroup hs u).1 hu
+  obtain ⟨h, hae, hh⟩ := exists_memSobolev_ae_eq_of_mem_realSobolevFunctions h₁ h₂
+  refine ⟨h, hae.trans (Eventually.of_forall fun z ↦ ?_), hh⟩
+  apply Complex.ext <;> simp
 
 /-- The Sobolev gauge groups decrease as the order increases: `G_s ≤ G_s'` for `1 < s' ≤ s`. -/
 theorem sobolevGaugeGroup_mono {s s' : ℝ} (hs' : 1 < s') (h : s' ≤ s) :
@@ -277,23 +294,17 @@ theorem gaugeTransform_mem_framedFieldSpace {k : ℕ} (hk : 1 < k) {hs : 1 < (k 
   have hs' : (1 : ℝ) < k := by linarith
   have hC : ContDiff ℝ 1 (fun z ↦ (u z : ℂ)) :=
     contDiff_of_mem_sobolevGaugeGroup hu (j := 1) (by push_cast; linarith)
-  have hmul {g h : ℂ → ℝ} (hg : g ∈ realSobolevFunctions ℂ k 2)
-      (hh : h ∈ realSobolevFunctions ℂ k 2) : g * h ∈ realSobolevFunctions ℂ k 2 :=
-    mul_mem_realSobolevFunctions (finrank_real_complex_lt_two_mul hs') hg hh
   have hω (v : ℂ) := gaugeForm_apply_mem_realSobolevFunctions hs' hu hC v
+  -- Products of section coordinates of `x` with `H^k` functions stay in `H^k`.
+  have hmul (i : Fin 4) {g : ℂ → ℝ} (hg : g ∈ realSobolevFunctions ℂ k 2) :
+      (fun z ↦ x z i * g z) ∈ realSobolevFunctions ℂ k 2 :=
+    mul_mem_realSobolevFunctions_of_mem_framedFieldSpace hk hx i hg
   rw [mem_framedFieldSpace, mem_sobolevFields] at hx ⊢
   obtain ⟨-, hA, hB⟩ := (mem_sobolevGaugeGroup _ u).1 hu
   have hmono := realSobolevFunctions_mono (E := ℂ) (p := 2) (by norm_num) (by norm_num)
     (lt_add_one (k : ℝ)).le
   replace hA := hmono hA
   replace hB := hmono hB
-  have href (L : ℂ →L[ℝ] ℝ) {g : ℂ → ℝ} (hg : g ∈ realSobolevFunctions ℂ k 2) :
-      (L ∘ referenceSection f m) * g ∈ realSobolevFunctions ℂ k 2 :=
-    comp_referenceSection_mul_mem_realSobolevFunctions (by norm_num) (by norm_num) f m L k hg
-  have hσA := href ((1 / 2 : ℝ) • reCLM) hA
-  have hσB := href ((1 / 2 : ℝ) • reCLM) hB
-  have hτA := href ((1 / 2 : ℝ) • imCLM) hA
-  have hτB := href ((1 / 2 : ℝ) • imCLM) hB
   intro i
   fin_cases i
   · convert sub_mem (hx 0) (hω 1) using 1
@@ -304,15 +315,13 @@ theorem gaugeTransform_mem_framedFieldSpace {k : ℕ} (hk : 1 < k) {hs : 1 < (k 
     ext z
     simp [gaugeTransform_apply]
     ring
-  · convert sub_mem (add_mem (add_mem hσA (hx 2)) (hmul hA (hx 2)))
-      (add_mem hτB (hmul hB (hx 3))) using 1
+  · convert sub_mem (add_mem (hx 2) (hmul 2 hA)) (hmul 3 hB) using 1
     ext z
-    simp [gaugeTransform_apply, referenceField_apply]
+    simp [gaugeTransform_apply]
     ring
-  · convert add_mem (add_mem (add_mem hσB (hx 3)) (hmul hB (hx 2)))
-      (add_mem hτA (hmul hA (hx 3))) using 1
+  · convert add_mem (add_mem (hx 3) (hmul 3 hA)) (hmul 2 hB) using 1
     ext z
-    simp [gaugeTransform_apply, referenceField_apply]
+    simp [gaugeTransform_apply]
     ring
 
 /-- For `k ≥ 2`, the Sobolev gauge group `G_(k+1)` acts on the affine field space `A_m^k` by the

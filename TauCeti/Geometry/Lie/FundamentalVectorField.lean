@@ -51,7 +51,8 @@ constructions, such as the defining equation `d⟨μ, ξ⟩ = ι_{ξ_M} ω` of a
 * `TauCeti.mlieBracket_fundamentalVectorField`: `[ξ_M, η_M] = -⁅ξ, η⁆_M`, so `ξ ↦ ξ_M` is an
   antihomomorphism of Lie algebras.
 * `TauCeti.adjointContinuousLinearMap_mem_isotropy_smul_iff`: the isotropy algebras along an orbit
-  are conjugate, `Ad_g ξ ∈ 𝔤_{g • x}` exactly when `ξ ∈ 𝔤_x`.
+  are conjugate, `Ad_g ξ ∈ 𝔤_{g • x}` exactly when `ξ ∈ 𝔤_x`; in particular they vanish
+  together (`TauCeti.isotropy_smul_eq_bot_iff`).
 
 ## References
 
@@ -340,7 +341,7 @@ theorem mfderiv_smul_fundamentalVectorField [LieGroup I 1 G] (g : G) (ξ : Group
 /-- **The exponential flow.** For every `x`, the curve `t ↦ exp(t ξ) • x` is an integral curve of
 the fundamental vector field `ξ_M`. -/
 theorem isMIntegralCurve_mulInvariantExp_smul_smul [CompleteSpace E]
-    [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G] [BoundarylessManifold I G]
+    [LieGroup I (minSmoothness ℝ 3) G] [T2Space G] [BoundarylessManifold I G]
     (ξ : GroupLieAlgebra I G) (x : M) :
     IsMIntegralCurve (fun t : ℝ => mulInvariantExp (t • ξ) • x) (fundamentalVectorField I' ξ) := by
   have horbit (y : M) (h : G) : MDifferentiableAt I I' (fun k : G => k • y) h :=
@@ -381,7 +382,7 @@ section OneParameter
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {G : Type*} [TopologicalSpace G] [ChartedSpace H G] [Group G]
-  [LieGroup I (minSmoothness ℝ 3) G] [IsManifold I 1 G] [T2Space G] [BoundarylessManifold I G]
+  [LieGroup I (minSmoothness ℝ 3) G] [T2Space G] [BoundarylessManifold I G]
   {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H' M] [MulAction G M]
@@ -486,6 +487,25 @@ theorem adjointContinuousLinearMap_mem_isotropy_smul_iff {g : G} {ξ : GroupLieA
   have := key g⁻¹ _ _ h
   rwa [inv_smul_smul, ← ContinuousLinearMap.comp_apply, ← Lie.adjointContinuousLinearMap_mul,
     inv_mul_cancel, Lie.adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply] at this
+
+/-- The isotropy algebras along an orbit vanish together: `𝔤_{g • x} = 0` exactly when
+`𝔤_x = 0`, as the isotropy algebras are conjugate under `Ad_g`. So the action is locally free at
+`x` exactly when it is locally free along the orbit of `x`. -/
+theorem isotropy_smul_eq_bot_iff {g : G} {x : M} :
+    (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) = ⊥ ↔
+      (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
+  -- Pull an element of one isotropy algebra back along `Ad_g` or forward along `Ad_g⁻¹`.
+  have hAd (k : G) (ξ : GroupLieAlgebra I G) :
+      Lie.adjointContinuousLinearMap (I := I) k (Lie.adjointContinuousLinearMap (I := I) k⁻¹ ξ) =
+        ξ := by
+    rw [← ContinuousLinearMap.comp_apply, ← Lie.adjointContinuousLinearMap_mul, mul_inv_cancel,
+      Lie.adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
+  simp only [LieSubalgebra.eq_bot_iff]
+  refine ⟨fun h ξ hξ ↦ ?_, fun h ξ hξ ↦ ?_⟩
+  · have := h _ (adjointContinuousLinearMap_mem_isotropy_smul_iff.2 hξ)
+    rw [← hAd g⁻¹ ξ, inv_inv, this, map_zero]
+  · have := h _ (adjointContinuousLinearMap_mem_isotropy_smul_iff.1 ((hAd g ξ).symm ▸ hξ))
+    rw [← hAd g ξ, this, map_zero]
 
 end InfinitesimalAction
 

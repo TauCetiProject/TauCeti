@@ -9,6 +9,7 @@ public import TauCeti.Analysis.PDE.Caccioppoli.LowerOrder
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.DeGiorgi
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import Mathlib.Order.SuccPred.IntervalSucc
+import TauCeti.MeasureTheory.Measure.OpenPos
 
 /-!
 # Decay of upper level sets of weak subsolutions (De Giorgi)
@@ -107,7 +108,7 @@ private theorem sq_measureReal_le_of_setIntegral_le
   have hV : 0 < V := by
     rw [hVeq]
     exact mul_pos (pow_pos hR n)
-      (ENNReal.toReal_pos (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne)
+      (Metric.measureReal_ball_pos mu 0 one_pos)
   have hiso := W1p.sq_sub_mul_measureReal_mul_measureReal_le_of_ball_subset hR.le hball u hll' hwl
   rw [show mu.real (ball 0 1) * (2 * R) ^ (n + 1) = 2 ^ (n + 1) * R * V by rw [hVeq]; ring]
     at hiso
@@ -165,7 +166,7 @@ theorem sqrt_mul_measureReal_le_mul_measureReal_ball_of_forall_setIntegral_le
   set lev : ℕ → ℝ := fun j => M - d / 2 ^ j
   set A : ℕ → ℝ := fun j => nu.real {x | lev j ≤ W1p.value u x}
   set D : ℕ → ℝ := fun j => nu.real (W1p.value u ⁻¹' Ioo (lev j) (lev (j + 1)))
-  have hV : 0 < V := ENNReal.toReal_pos (measure_ball_pos mu x₀ hR).ne' measure_ball_lt_top.ne
+  have hV : 0 < V := Metric.measureReal_ball_pos mu x₀ hR
   -- The energy bound at the level `k` forces `Q ≥ 0`.
   have hQ : 0 ≤ Q := by
     have h0 := (integral_nonneg fun x => sq_nonneg _).trans (henergy k le_rfl hkM hwLp)

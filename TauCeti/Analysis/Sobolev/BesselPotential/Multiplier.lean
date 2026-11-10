@@ -21,8 +21,7 @@ background which is not itself integrable.
 
 The result uses the whole-space equality `W^{k,p}_0 = W^{k,p}`, the bounded multiplier
 `TauCeti.Wkp0.contDiffSMulL`, and the weak-derivative/Bessel-potential comparison. It provides
-an actual `Lᵖ` representative of the product, not merely a distributional existence statement;
-`mul_mem_realSobolevFunctions_natCast` restates it for pointwise representatives.
+an actual `Lᵖ` representative of the product, not merely a distributional existence statement.
 Only derivatives through the specified integer order are required to be bounded. No bound in
 the Bessel-potential norm, or statement for noninteger orders, is asserted here.
 
@@ -77,17 +76,27 @@ theorem exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
     rw [hvx, hwx]
 
 /-- A smooth real coefficient whose derivatives through order `k` are bounded preserves the
-pointwise representatives of real integer-order `H^{k,p}` functions, for `1 < p < ∞`. The
-coefficient need not decay or be integrable. -/
-theorem mul_mem_realSobolevFunctions_natCast {p : ENNReal} [Fact (1 ≤ p)] (hp : 1 < p)
-    (hp_top : p ≠ ⊤) (k : ℕ) {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) {M : ℝ} (hM : 0 ≤ M)
-    (hbound : ∀ j ≤ k, ∀ x, ‖iteratedFDeriv ℝ j ψ x‖ ≤ M) {g : E → ℝ}
-    (hg : g ∈ realSobolevFunctions E k p) : ψ * g ∈ realSobolevFunctions E k p := by
-  obtain ⟨u, hu, huS⟩ := mem_realSobolevFunctions.1 hg
-  obtain ⟨w, hwS, hw⟩ := exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
-    hp hp_top k hψ hM hbound (mem_realSobolevSubmodule.2 huS)
-  refine mem_realSobolevFunctions_of_ae_eq (coeFn_mem_realSobolevFunctions hwS) ?_
-  filter_upwards [hw, hu] with x hx hx₁
-  rw [hx, hx₁, Pi.mul_apply]
+pointwise representatives of real integer-order `H^{k,p}` functions. The bound on each
+derivative may depend on its order. -/
+theorem mul_mem_realSobolevFunctions_of_bounded_derivatives
+    {p : ENNReal} [Fact (1 ≤ p)] (hp : 1 < p) (hp_top : p ≠ ⊤) (k : ℕ)
+    {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ)
+    (hbound : ∀ j ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ j ψ x‖ ≤ C)
+    {f : E → ℝ} (hf : f ∈ realSobolevFunctions E k p) :
+    (fun x ↦ ψ x * f x) ∈ realSobolevFunctions E k p := by
+  -- Combine the bounds of the finitely many orders `j ≤ k` into one.
+  choose! C hC using fun j (hj : j ∈ Finset.range (k + 1)) ↦
+    hbound j (Nat.lt_succ_iff.1 (Finset.mem_range.1 hj))
+  have hM : ∀ j ≤ k, ∀ x, ‖iteratedFDeriv ℝ j ψ x‖ ≤ ∑ i ∈ Finset.range (k + 1), |C i| :=
+    fun j hj x ↦ (hC j (Finset.mem_range.2 (Nat.lt_succ_of_le hj)) x).trans <|
+      (le_abs_self _).trans <| Finset.single_le_sum (fun i _ ↦ abs_nonneg (C i))
+        (Finset.mem_range.2 (Nat.lt_succ_of_le hj))
+  obtain ⟨u, huf, hu⟩ := mem_realSobolevFunctions.1 hf
+  obtain ⟨v, hv, hvu⟩ := exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives hp
+    hp_top k hψ (Finset.sum_nonneg fun i _ ↦ abs_nonneg (C i)) hM
+    (mem_realSobolevSubmodule.2 hu)
+  refine mem_realSobolevFunctions_of_ae_eq (coeFn_mem_realSobolevFunctions hv) ?_
+  filter_upwards [hvu, huf] with x hx hux
+  rw [hx, hux]
 
 end TemperedDistribution
