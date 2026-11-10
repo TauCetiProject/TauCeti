@@ -43,7 +43,7 @@ Reversing time reverses the phase: `exp(i(-t)ω(D)) = exp(it(-ω)(D))`
   Fourier side.
 * `TauCeti.phasePropagator_zero`, `TauCeti.phasePropagator_add`: the group law.
 * `TauCeti.norm_phasePropagator_apply`, `TauCeti.inner_phasePropagator_apply`,
-  `TauCeti.adjoint_phasePropagator`: unitarity.
+  `TauCeti.adjoint_phasePropagator`, `TauCeti.phasePropagator_comp_adjoint`: unitarity.
 * `TauCeti.continuous_phasePropagator_apply`: strong continuity.
 * `TauCeti.phaseGroup`, `TauCeti.isUnitary_phaseGroup`: the unitary C₀-group.
 
@@ -225,6 +225,12 @@ theorem adjoint_phasePropagator (t : ℝ) :
   filter_upwards [Lp.coeFn_star ((memLp_phaseSymbol ω t).toLp _),
     (memLp_phaseSymbol ω t).coeFn_toLp, (memLp_phaseSymbol ω (-t)).coeFn_toLp] with ξ h₁ h₂ h₃
   rw [h₁, Pi.star_apply, h₂, h₃, star_phaseSymbol]
+
+/-- `exp(isω(D)) exp(itω(D))* = exp(i(s - t)ω(D))`. -/
+theorem phasePropagator_comp_adjoint (s t : ℝ) :
+    phasePropagator F ω s ∘L ContinuousLinearMap.adjoint (phasePropagator (E := E) F ω t) =
+      phasePropagator F ω (s - t) := by
+  rw [adjoint_phasePropagator, sub_eq_add_neg, phasePropagator_add]
 
 /-- `exp(itω(D))` preserves the `L²` inner product. -/
 @[simp]

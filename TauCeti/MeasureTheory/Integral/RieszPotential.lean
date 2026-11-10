@@ -109,6 +109,8 @@ Hardy–Littlewood–Sobolev inequality when `p > 1`. The strong-type bound fail
 * `TauCeti.exists_rieszPotential_le_mul_maximalFunction_rpow_mul_eLpNorm_rpow`: Hedberg's
   inequality.
 * `TauCeti.exists_eLpNorm_rieszPotential_le`: the Hardy–Littlewood–Sobolev inequality.
+* `TauCeti.exists_lintegral_mul_rieszPotential_le`: its bilinear form
+  `∫ g I_α f ≤ C ‖g‖_{q'} ‖f‖_p`.
 * `TauCeti.enorm_integral_norm_sub_rpow_smul_le_rieszPotential`,
   `TauCeti.exists_eLpNorm_integral_norm_sub_rpow_smul_le`: the potential of a vector-valued `f`
   is dominated by `I_α f`, so it satisfies the Hardy–Littlewood–Sobolev inequality too.
@@ -851,6 +853,34 @@ theorem exists_eLpNorm_rieszPotential_le [FiniteDimensional ℝ E] (μ : Measure
     exact le_top
   have hf := aestronglyMeasurable_of_eLpNorm_ne_top hN
   exact eLpNorm_rieszPotential_le_mul hα hp.le hαp hqp hq hf (hK₁ f hf.enorm)
+
+/-- **The Hardy–Littlewood–Sobolev inequality, bilinear form**: for `0 < α`, `1 < p`,
+`1 / q = 1 / p - α / n` and `q'` the Hölder conjugate of `q`,
+
+`∫ g I_α f dμ ≤ C ‖g‖_{q'} ‖f‖_p`
+
+for every `g : E → ℝ≥0∞`, with `C` depending only on `μ`, `α` and `p`. Unfolding `I_α`, the left
+side is the double integral `∫∫ g(x) ‖x - y‖ ^ (α - n) ‖f y‖ dμ(y) dμ(x)`. -/
+theorem exists_lintegral_mul_rieszPotential_le [FiniteDimensional ℝ E] (μ : Measure E)
+    [μ.IsAddHaarMeasure] (hα : 0 < α) {p q : ℝ≥0} (hp : 1 < p)
+    (hpq : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - α / finrank ℝ E) {q' : ℝ≥0∞}
+    [(q : ℝ≥0∞).HolderConjugate q'] :
+    ∃ C : ℝ≥0, ∀ (f : E → F) (g : E → ℝ≥0∞),
+      ∫⁻ x, g x * rieszPotential μ α f x ∂μ ≤ C * eLpNorm g q' μ * eLpNorm f p μ := by
+  obtain ⟨C, hC⟩ := exists_eLpNorm_rieszPotential_le (F := F) μ hα hp hpq
+  refine ⟨C, fun f g => ?_⟩
+  calc ∫⁻ x, g x * rieszPotential μ α f x ∂μ
+      ≤ eLpNorm (fun x => g x * rieszPotential μ α f x) 1 μ := by
+        simpa only [enorm_eq_self] using
+          lintegral_enorm_le_eLpNorm_one (f := fun x => g x * rieszPotential μ α f x)
+    _ ≤ 1 * eLpNorm g q' μ * eLpNorm (rieszPotential μ α f) q μ :=
+        eLpNorm_le_eLpNorm_mul_eLpNorm_of_enorm_of_pos (· * ·) 1
+          (fun hg hI => (hg.aemeasurable.mul hI.aemeasurable).aestronglyMeasurable)
+          (ae_of_all _ fun x => by simp) zero_lt_one
+    _ ≤ C * eLpNorm g q' μ * eLpNorm f p μ := by
+        rw [one_mul, mul_comm (C : ℝ≥0∞), mul_assoc]
+        gcongr
+        exact hC f
 
 section VectorValued
 
