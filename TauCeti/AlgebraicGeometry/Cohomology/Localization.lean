@@ -263,7 +263,7 @@ private lemma localizesAt_sup {U V : X.Opens} (hUV : IsCompact ((U ⊔ V : X.Ope
 
 private lemma localizesAt_of_isCompact {U : X.Opens} (hU : IsCompact (U : Set X))
     (hU' : IsQuasiSeparated (U : Set X)) : LocalizesAt M g U := by
-  refine Scheme.induction_on_isCompact_isQuasiSeparated U hU hU'
+  refine Scheme.Opens.induction_on_isCompact_isQuasiSeparated U hU hU'
     (fun _ h ↦ localizesAt_of_isAffineOpen M g h) ?_
   intro V W hV hW hVW hPV hPW hPVW
   exact localizesAt_sup M g (hV.union hW) hVW hPV hPW hPVW

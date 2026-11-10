@@ -1,12 +1,13 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: Axel Delaval, Jie Xu, Shitan Xu
+Authors: The Tau Ceti contributors, Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 import TauCeti.AlgebraicGeometry.Scheme.Opens
+import TauCeti.Order.SupClosed
 
 /-!
 # Mayer–Vietoris induction on quasi-compact quasi-separated opens
@@ -18,13 +19,19 @@ Only the open under consideration needs to be quasi-separated; the ambient schem
 This form of induction applies to cohomological properties propagated by a Mayer–Vietoris
 sequence. Intersections of affine opens need not be affine, so the proof first handles
 quasi-compact subopens of a single affine open.
+
+## References
+
+* Stacks Project, [Section 30.4, tag 01XH](https://stacks.math.columbia.edu/tag/01XH).
+  The two-stage induction is extracted from the cohomology localization proof in
+  `TauCeti.AlgebraicGeometry.Cohomology.Localization`.
 -/
 
 public section
 
 open CategoryTheory Limits TopologicalSpace
 
-namespace AlgebraicGeometry.Scheme
+namespace AlgebraicGeometry.Scheme.Opens
 
 universe u
 
@@ -39,26 +46,27 @@ theorem induction_on_isCompact_isQuasiSeparated {X : Scheme.{u}} {P : X.Opens �
       IsQuasiSeparated (V ⊔ W : Set X) → P V → P W → P (V ⊓ W) → P (V ⊔ W)) : P U := by
   classical
   have hfin {V : X.Opens} (hV : IsAffineOpen V) {ι : Type u} (s : Finset ι)
-      (f : ι → Γ(X, V)) :
-      IsCompact ((s.sup fun i ↦ X.basicOpen (f i) : X.Opens) : Set X) ∧
-        P (s.sup fun i ↦ X.basicOpen (f i)) := by
-    induction s using Finset.induction_on generalizing f with
-    | empty => exact ⟨isCompact_empty, h_aff _ (isAffineOpen_bot X)⟩
-    | insert a s _ ih =>
-      rw [Finset.sup_insert]
-      obtain ⟨hc, hs⟩ := ih f
-      have ha := hV.basicOpen (f a)
-      refine ⟨ha.isCompact.union hc,
-        h_sup _ _ ha.isCompact hc (hV.isQuasiSeparated.of_subset ?_)
-          (h_aff _ ha) hs ?_⟩
-      · exact sup_le (X.basicOpen_le _) (Finset.sup_le fun i _ ↦ X.basicOpen_le _)
-      · rw [Finset.sup_inf_distrib_left]
-        simpa only [Scheme.basicOpen_mul] using (ih fun i ↦ f a * f i).2
+      (f : ι → Γ(X, V)) : P (s.sup fun i ↦ X.basicOpen (f i)) := by
+    let Q (W : X.Opens) := W ≤ V ∧ IsCompact (W : Set X) ∧ P W
+    have hQ : Q ((s.image fun i ↦ X.basicOpen (f i)).sup id) := by
+      apply TauCeti.finset_sup_of_inf_closed Q
+        (fun _ hU _ hW ↦ Scheme.inf_mem_range_basicOpen _ hU _ hW)
+      · exact ⟨bot_le, isCompact_empty, h_aff _ (isAffineOpen_bot X)⟩
+      · rintro _ ⟨g, rfl⟩
+        exact ⟨X.basicOpen_le g, (hV.basicOpen g).isCompact, h_aff _ (hV.basicOpen g)⟩
+      · intro W Z hW hZ hWZ
+        exact ⟨sup_le hW.1 hZ.1, hW.2.1.union hZ.2.1,
+          h_sup W Z hW.2.1 hZ.2.1 (hV.isQuasiSeparated.of_subset (sup_le hW.1 hZ.1))
+            hW.2.2 hZ.2.2 hWZ.2.2⟩
+      · intro W hW
+        obtain ⟨i, _, rfl⟩ := Finset.mem_image.mp hW
+        exact ⟨f i, rfl⟩
+    simpa only [Q, Finset.sup_image, Function.comp_def, id_eq] using hQ.2.2
   have hcpt {V : X.Opens} (hV : IsAffineOpen V) {W : X.Opens} (hWV : W ≤ V)
       (hW : IsCompact (W : Set X)) : P W := by
     obtain ⟨s, hsW⟩ := hV.exists_finset_sup_basicOpen_eq hW hWV
     rw [← hsW]
-    exact (hfin hV s fun i ↦ i.1).2
+    exact hfin hV s fun i ↦ i.1
   revert hU'
   refine compact_open_induction_on
     (P := fun V ↦ IsQuasiSeparated (V : Set X) → P V) U hU
@@ -69,4 +77,4 @@ theorem induction_on_isCompact_isQuasiSeparated {X : Scheme.{u}} {P : X.Opens �
   exact hVW _ _ Set.subset_union_left V.isOpen hV
     Set.subset_union_right W.1.isOpen W.2.isCompact
 
-end AlgebraicGeometry.Scheme
+end AlgebraicGeometry.Scheme.Opens
