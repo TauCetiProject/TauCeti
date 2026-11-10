@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Module.Normalize
 public import TauCeti.Topology.Algebra.GroupAction.OrbitTrivialization
 public import TauCeti.Topology.ComplexProjectiveSpace.Charts
 public import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
+import all TauCeti.Topology.ComplexProjectiveSpace.Basic
 
 /-!
 # The Hopf fibration `S¹ → S²ⁿ⁺¹ → CPⁿ`
