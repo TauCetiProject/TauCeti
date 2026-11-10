@@ -44,8 +44,11 @@ in `TauCeti.Geometry.Manifold.DeRham.LogDeriv`.
 * `TauCeti.mlogDeriv_eq_of_eventuallyEq_mul_exp`: near a point, if `u = c exp g` then
   `dlog u = dg` there.
 * `TauCeti.isSmoothForm_mlogDeriv`: `dlog u` is a `C^n` form for a nowhere-vanishing `C^(n+1)`
-  function `u`.
-* `TauCeti.mextDeriv_mlogDeriv`: `dlog u` is closed for a nowhere-vanishing `C²` function `u`.
+  function `u`; `TauCeti.contMDiffAt_mlogDeriv` is the pointwise statement at a point where `u`
+  does not vanish.
+* `TauCeti.mextDeriv_mlogDeriv`: `dlog u` is closed for a nowhere-vanishing `C²` function `u`;
+  `TauCeti.mextDeriv_mlogDeriv_apply` is the pointwise statement at a point where `u` does not
+  vanish.
 * `TauCeti.mlogDeriv_eq_zero_iff`: where `u` does not vanish, `dlog u` vanishes exactly when `du`
   does; `TauCeti.mlogDeriv_const`: constants have vanishing logarithmic derivative.
 * `TauCeti.mlogDeriv_eq_zero_iff_eq_const`: on a connected manifold the kernel of `dlog` on
@@ -197,30 +200,41 @@ section Regularity
 
 variable [IsManifold I 2 M]
 
-/-- The logarithmic derivative of a nowhere-vanishing `C^(n+1)` function is a `C^n` form. -/
-theorem isSmoothForm_mlogDeriv {n : WithTop ℕ∞} {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, ℂ) (n + 1) u)
-    (hu₀ : ∀ x, u x ≠ 0) : IsSmoothForm I n (mlogDeriv I u) := by
-  rw [isSmoothForm_def]
-  intro x
-  obtain ⟨V, hV, hxV, g, hg, -, hdg⟩ := exists_mlogDeriv_eq_mextDerivWithin (by simp) hu (hu₀ x)
+/-- At a point where it does not vanish, the logarithmic derivative of a `C^(n+1)` function is a
+`C^n` section of the bundle of `1`-forms. -/
+theorem contMDiffAt_mlogDeriv {n : WithTop ℕ∞} {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, ℂ) (n + 1) u)
+    {x : M} (hx : u x ≠ 0) :
+    ContMDiffAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℂ)) n
+      (fun y ↦ Bundle.TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℂ) y (mlogDeriv I u y)) x := by
+  obtain ⟨V, hV, hxV, g, hg, -, hdg⟩ := exists_mlogDeriv_eq_mextDerivWithin (by simp) hu hx
   have hd := contMDiffOn_mextDerivWithin (RoughForm.ofFunction I g)
     (fun y hy ↦ (contMDiffAt_ofFunction_iff.mpr (hg y hy)).contMDiffWithinAt) hV.uniqueMDiffOn
     (hV.interior_eq.symm ▸ subset_closure)
   exact (hd.contMDiffAt (hV.mem_nhds hxV)).congr_of_eventuallyEq
     (eventually_of_mem (hV.mem_nhds hxV) fun y hy ↦ by simp only [hdg y hy])
 
-/-- **The logarithmic derivative is closed**: `d (dlog u) = 0` for a nowhere-vanishing `C²`
-function `u`. -/
-@[simp]
-theorem mextDeriv_mlogDeriv {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, ℂ) 2 u) (hu₀ : ∀ x, u x ≠ 0) :
-    mextDeriv (mlogDeriv I u) = 0 := by
-  funext x
-  obtain ⟨V, hV, hxV, g, hg, -, hdg⟩ := exists_mlogDeriv_eq_mextDerivWithin (by simp) hu (hu₀ x)
+/-- The logarithmic derivative of a nowhere-vanishing `C^(n+1)` function is a `C^n` form. -/
+theorem isSmoothForm_mlogDeriv {n : WithTop ℕ∞} {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, ℂ) (n + 1) u)
+    (hu₀ : ∀ x, u x ≠ 0) : IsSmoothForm I n (mlogDeriv I u) :=
+  (isSmoothForm_def n _).mpr fun x ↦ contMDiffAt_mlogDeriv hu (hu₀ x)
+
+/-- The logarithmic derivative of a `C²` function is closed at every point where the function does
+not vanish. -/
+theorem mextDeriv_mlogDeriv_apply {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, ℂ) 2 u) {x : M}
+    (hx : u x ≠ 0) : mextDeriv (mlogDeriv I u) x = 0 := by
+  obtain ⟨V, hV, hxV, g, hg, -, hdg⟩ := exists_mlogDeriv_eq_mextDerivWithin (by simp) hu hx
   rw [mextDeriv_congr_of_eventuallyEq (eventually_of_mem (hV.mem_nhds hxV) hdg),
     ← mextDerivWithin_of_isOpen hV hxV]
   exact mextDerivWithin_mextDerivWithin _
     (fun y hy ↦ (contMDiffAt_ofFunction_iff.mpr (hg y hy)).contMDiffWithinAt) hV.uniqueMDiffOn
     (hV.interior_eq.symm ▸ subset_closure) hxV
+
+/-- **The logarithmic derivative is closed**: `d (dlog u) = 0` for a nowhere-vanishing `C²`
+function `u`. -/
+@[simp]
+theorem mextDeriv_mlogDeriv {u : M → ℂ} (hu : ContMDiff I 𝓘(ℝ, ℂ) 2 u) (hu₀ : ∀ x, u x ≠ 0) :
+    mextDeriv (mlogDeriv I u) = 0 :=
+  funext fun x ↦ mextDeriv_mlogDeriv_apply hu (hu₀ x)
 
 end Regularity
 
