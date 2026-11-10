@@ -104,14 +104,14 @@ theorem measure_le_renewalCountNat_of_expMeasure (hindep : iIndepFun T P)
 
 /-- **Poisson counts.** For independent exponential increments of rate `r`, the number of
 arrivals in `[0, t]` has the Poisson law of mean `r * t`. -/
-theorem hasLaw_renewalCountNat_poissonMeasure (hT : ∀ n, Measurable (T n))
-    (hindep : iIndepFun T P)
+theorem hasLaw_renewalCountNat_poissonMeasure (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) (t : ℝ≥0) :
     HasLaw (renewalCountNat T t) (poissonMeasure (r * t)) P := by
   have := hindep.isProbabilityMeasure
-  have hm := measurable_renewalCountNat hT t
-  refine ⟨hm.aemeasurable, Measure.ext_of_Ici _ _ fun n ↦ ?_⟩
-  rw [Measure.map_apply hm measurableSet_Ici]
+  have hm := aemeasurable_renewalCountNat
+    (fun n ↦ ((hlaw n).identDistrib_nnreal (hlaw 0)).aemeasurable_fst) t
+  refine ⟨hm, Measure.ext_of_Ici _ _ fun n ↦ ?_⟩
+  rw [Measure.map_apply_of_aemeasurable hm measurableSet_Ici]
   cases n with
   | zero => simp
   | succ m =>
@@ -125,38 +125,35 @@ theorem hasLaw_renewalCountNat_poissonMeasure (hT : ∀ n, Measurable (T n))
 
 /-- For independent exponential increments of rate `r`, the count at time `t` equals `n` with
 the Poisson probability `exp (-(r * t)) * (r * t) ^ n / n!`. -/
-theorem measureReal_renewalCountNat_eq_of_expMeasure (hT : ∀ n, Measurable (T n))
-    (hindep : iIndepFun T P)
+theorem measureReal_renewalCountNat_eq_of_expMeasure (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) (t : ℝ≥0) (n : ℕ) :
     P.real {ω | renewalCountNat T t ω = n} =
       Real.exp (-(r * t)) * (r * t) ^ n / n.factorial := by
-  rw [(hasLaw_renewalCountNat_poissonMeasure hT hindep hlaw t).measureReal_eq
+  rw [(hasLaw_renewalCountNat_poissonMeasure hindep hlaw t).measureReal_eq
     (p := fun k ↦ k = n) .of_discrete, ofPred_eq_eq_singleton, poissonMeasure_real_singleton]
   simp
 
 /-- **The renewal function of exponential increments.** For independent exponential increments of
 rate `r`, the expected number of arrivals in `[0, t]` is `r * t`. -/
-theorem lintegral_renewalCount_of_expMeasure (hT : ∀ n, Measurable (T n))
-    (hindep : iIndepFun T P)
+theorem lintegral_renewalCount_of_expMeasure (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) (t : ℝ≥0) :
     ∫⁻ ω, renewalCount T t ω ∂P = r * t := by
   have hae : ∀ᵐ ω ∂P, (renewalCountNat T t ω : ℝ≥0∞) = renewalCount T t ω := by
     filter_upwards [ae_tendsto_arrival_atTop_of_expMeasure hindep hlaw] with ω hω
     exact natCast_renewalCountNat hω t
   rw [← lintegral_congr_ae hae,
-    (hasLaw_renewalCountNat_poissonMeasure hT hindep hlaw t).lintegral_comp
+    (hasLaw_renewalCountNat_poissonMeasure hindep hlaw t).lintegral_comp
       (f := fun k : ℕ ↦ (k : ℝ≥0∞)) .of_discrete,
     lintegral_natCast_poissonMeasure]
   simp
 
 /-- The real-valued form of `TauCeti.Probability.lintegral_renewalCount_of_expMeasure`: the
 natural-valued count at time `t` has mean `r * t`. -/
-theorem integral_renewalCountNat_of_expMeasure (hT : ∀ n, Measurable (T n))
-    (hindep : iIndepFun T P)
+theorem integral_renewalCountNat_of_expMeasure (hindep : iIndepFun T P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) (t : ℝ≥0) :
     ∫ ω, (renewalCountNat T t ω : ℝ) ∂P = r * t := by
   rw [← Function.comp_def (fun k : ℕ ↦ (k : ℝ)),
-    (hasLaw_renewalCountNat_poissonMeasure hT hindep hlaw t).integral_comp
+    (hasLaw_renewalCountNat_poissonMeasure hindep hlaw t).integral_comp
       .of_discrete,
     integral_natCast_poissonMeasure]
   simp
@@ -165,11 +162,23 @@ theorem integral_renewalCountNat_of_expMeasure (hT : ∀ n, Measurable (T n))
 increments of rate `r`, the count per unit time converges almost surely to `r`. The convergence
 holds along all nonnegative real times on one event of probability one, not just along integer
 times. The law hypotheses supply a.e. measurability and force `r > 0`. -/
-theorem ae_tendsto_renewalCountNat_div_of_expMeasure [IsProbabilityMeasure P]
+theorem ae_tendsto_renewalCountNat_div_of_expMeasure
     (hindep : Pairwise fun i j ↦ IndepFun (T i) (T j) P)
     (hlaw : ∀ n, HasLaw (fun ω ↦ (T n ω : ℝ)) (expMeasure r) P) :
     ∀ᵐ ω ∂P, Tendsto (fun t : ℝ≥0 ↦ (renewalCountNat T t ω : ℝ) / (t : ℝ)) atTop
       (𝓝 (r : ℝ)) := by
+  -- If `r = 0` then `expMeasure r = 0`, forcing `P = 0`; otherwise `P` is a probability measure.
+  by_cases hr0 : 0 < r
+  swap
+  · have h0 : P = 0 := by
+      have h := (hlaw 0).map_eq
+      rw [expMeasure_of_nonpos (by exact_mod_cast not_lt.1 hr0)] at h
+      have h' := congrArg (· Set.univ) h
+      rw [Measure.map_apply_of_aemeasurable (hlaw 0).aemeasurable MeasurableSet.univ] at h'
+      simpa using h'
+    simp [h0]
+  have : IsProbabilityMeasure P :=
+    (hlaw 0).isProbabilityMeasure_iff.2 (isProbabilityMeasure_expMeasure (by exact_mod_cast hr0))
   have hr : 0 < (r : ℝ) := by exact_mod_cast pos_of_hasLaw_expMeasure (hlaw 0)
   have hmean : (∫⁻ ω, (T 0 ω : ℝ≥0∞) ∂P).toReal = (r : ℝ)⁻¹ := by
     have h := integral_eq_lintegral_of_nonneg_ae
