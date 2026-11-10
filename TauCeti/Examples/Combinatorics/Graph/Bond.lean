@@ -125,18 +125,16 @@ theorem not_isBridge_of_ne_two {e : Fin 3} (he : e ≠ 2) : ¬graph.IsBridge e :
   intro h
   have hepair : e ∈ ({0, 1} : Set (Fin 3)) := by
     fin_cases e <;> simp_all
-  have hsub : ({0, 1} : Set (Fin 3)) ⊆ {e} :=
-    isBond_parallel_pair.2 ⟨h.isBond_singleton.isEdgeCut, by simp⟩ (by simpa using hepair)
-  have h0 := hsub (by simp : (0 : Fin 3) ∈ ({0, 1} : Set (Fin 3)))
-  have h1 := hsub (by simp : (1 : Fin 3) ∈ ({0, 1} : Set (Fin 3)))
-  simp only [Set.mem_singleton_iff] at h0 h1
-  exact (by decide : (0 : Fin 3) ≠ 1) (h0.trans h1.symm)
+  have heq : ({e} : Set (Fin 3)) = {0, 1} :=
+    isBond_parallel_pair.eq_of_subset ⟨h.isBond_singleton.isEdgeCut, by simp⟩
+      (by simpa using hepair)
+  simpa using congrArg Set.ncard heq
 
 /-- All three edges form a cut, but not a bond: they properly contain the pendant bond. -/
 theorem not_isBond_all : ¬graph.IsBond Set.univ := by
   intro h
   have hsub : (Set.univ : Set (Fin 3)) ⊆ {2} :=
-    h.2 ⟨isBond_pendant.isEdgeCut, by simp⟩ (by simp)
+    h.le_of_le ⟨isBond_pendant.isEdgeCut, by simp⟩ (by simp)
   have h0 := hsub (Set.mem_univ (0 : Fin 3))
   simp at h0
 
