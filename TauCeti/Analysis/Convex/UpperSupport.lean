@@ -6,11 +6,6 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 module
 
 public import TauCeti.Analysis.Calculus.DerivativeTest
-public import TauCeti.Analysis.Calculus.Deriv.Second
-public import Mathlib.Analysis.Calculus.IteratedDeriv.Lemmas
-public import Mathlib.Analysis.Calculus.Deriv.Pow
-public import Mathlib.Analysis.InnerProductSpace.Calculus
-public import TauCeti.Analysis.Calculus.Taylor.Integral
 
 /-!
 # Concavity from second-order upper supports
