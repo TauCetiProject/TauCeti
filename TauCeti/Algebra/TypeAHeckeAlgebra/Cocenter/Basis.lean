@@ -6,13 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter.Basic
-import Mathlib.Algebra.MvPolynomial.Funext
-import Mathlib.Algebra.MvPolynomial.Supported
-import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 import Mathlib.Tactic.LinearCombination
 import TauCeti.Algebra.TypeAHeckeAlgebra.AtomicModel.Block
 import TauCeti.RingTheory.MvPolynomial.Ideal
 import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
+import TauCeti.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 
 /-!
 # The cycle-block words form a basis of the cocenter of a Hecke stage
@@ -47,8 +45,8 @@ So the lowest-degree part of `γₘ` is `[m]_Q * X m`, and the lowest-degree par
 as the `Q`-integers `[d]_Q`, `d ≤ n`, are nonzero
 (`MvPolynomial.linearIndependent_of_sub_monomial_mem_pow_idealOfVars`). Finally, the elementary
 symmetric functions of `n` variables are algebraically independent, and a polynomial over an
-infinite domain is determined by its values, so a linear relation among the classes of the `ζ_λ`
-gives the same relation among the `γ_λ`.
+infinite domain is determined by its values (`MvPolynomial.eq_zero_of_aeval_esymm_eq_zero`), so
+a linear relation among the classes of the `ζ_λ` gives the same relation among the `γ_λ`.
 
 ## Main results
 
@@ -190,8 +188,9 @@ private theorem cycleValue_C_X_mem_idealOfVars (Q : K) (m : ℕ) :
 /-- The lowest-degree part of the universal cycle value `γₘ` is `[m]_Q * X m`. -/
 private theorem cycleValue_C_X_sub_mem (Q : K) (m : ℕ) :
     cycleValue (C Q) X m - C (∑ i ∈ range m, Q ^ i) * X m ∈ idealOfVars ℕ K ^ 2 := by
-  rw [cycleValue_eq, show (∑ i ∈ range m, C Q ^ i : MvPolynomial ℕ K) =
-      C (∑ i ∈ range m, Q ^ i) by simp [map_sum], sub_sub_cancel_left, pow_two]
+  have hC : C (∑ i ∈ range m, Q ^ i) = ∑ i ∈ range m, (C Q : MvPolynomial ℕ K) ^ i := by
+    simp [map_sum]
+  rw [cycleValue_eq, ← hC, sub_sub_cancel_left, pow_two]
   exact neg_mem (sum_mem fun i _ ↦
     Ideal.mul_mem_mul (cycleValue_C_X_mem_idealOfVars Q i) (Ideal.subset_span ⟨_, rfl⟩))
 
@@ -213,8 +212,8 @@ private theorem prod_cycleValue_C_X_mem (Q : K) (l : Multiset ℕ) :
     refine ⟨by rw [pow_succ']; exact Ideal.mul_mem_mul (cycleValue_C_X_mem_idealOfVars Q a) h₁, ?_⟩
     have hA : (cycleValue (C Q) X a - C (∑ i ∈ range a, Q ^ i) * X a) * Γ ∈
         idealOfVars ℕ K ^ (Multiset.card l + 1 + 1) := by
-      rw [show Multiset.card l + 1 + 1 = 2 + Multiset.card l by omega, pow_add]
-      exact Ideal.mul_mem_mul (cycleValue_C_X_sub_mem Q a) h₁
+      have h := Ideal.mul_mem_mul (cycleValue_C_X_sub_mem Q a) h₁
+      rwa [← pow_add, add_comm] at h
     have hB : C (∑ i ∈ range a, Q ^ i) * X a * (Γ - κ * Y) ∈
         idealOfVars ℕ K ^ (Multiset.card l + 1 + 1) := by
       rw [pow_succ']
@@ -236,12 +235,8 @@ private theorem linearIndependent_prod_cycleValue [IsDomain K] {Q : K} {n : ℕ}
     | cons a l ih =>
       rw [Multiset.map_cons, Multiset.prod_cons, ih, ← Multiset.singleton_add,
         Multiset.toFinsupp_add, Multiset.toFinsupp_singleton, monomial_single_add, pow_one]
-  have hdeg (l : Multiset ℕ) : (Multiset.toFinsupp l).degree = Multiset.card l := by
-    induction l using Multiset.induction_on with
-    | empty => simp
-    | cons a l ih =>
-      rw [← Multiset.singleton_add, Multiset.toFinsupp_add, map_add, Multiset.toFinsupp_singleton,
-        Finsupp.degree_single, ih, Multiset.card_add, Multiset.card_singleton, add_comm]
+  have hdeg (l : Multiset ℕ) : (Multiset.toFinsupp l).degree = Multiset.card l :=
+    Multiset.toFinsupp_sum_eq l
   refine linearIndependent_of_sub_monomial_mem_pow_idealOfVars
     (s := fun μ : n.Partition ↦ Multiset.toFinsupp μ.parts)
     (c := fun μ ↦ (μ.parts.map fun m ↦ ∑ i ∈ range m, Q ^ i).prod)
@@ -271,27 +266,6 @@ private theorem cycleValue_C_X_mem_supported [Nontrivial K] (Q : K) {n : ℕ} :
       (sum_mem fun i hi ↦ mul_mem (ih i (mem_range.mp hi) (by grind)) ?_)
     · simpa [MvPolynomial.algebraMap_eq] using (supported K (Set.Icc 1 n)).algebraMap_mem Q
     · exact X_mem_supported.mpr ⟨by grind, by omega⟩
-
-/-- A polynomial in the variables `X 1, …, X n` over an infinite domain vanishes as soon as it
-vanishes after substituting, for every `p : Fin n → K`, the elementary symmetric functions of the
-`p i` for the variables. -/
-private theorem eq_zero_of_aeval_esymm_eq_zero [IsDomain K] [Infinite K] {n : ℕ}
-    {P : MvPolynomial ℕ K} (hP : P ∈ supported K (Set.Icc 1 n))
-    (h : ∀ p : Fin n → K, aeval (fun k ↦ (univ.val.map p).esymm k) P = 0) : P = 0 := by
-  obtain ⟨P', rfl⟩ := exists_rename_eq_of_vars_subset_range P (fun i : Fin n ↦ (i : ℕ) + 1)
-    (fun i j hij ↦ Fin.ext (by simpa using hij)) fun k hk ↦ by
-      obtain ⟨hk₁, hk₂⟩ := mem_supported.mp hP hk
-      exact ⟨⟨k - 1, by omega⟩, by simp only; omega⟩
-  -- Substituting the elementary symmetric polynomials gives the zero polynomial.
-  have hzero : (esymmAlgHom (Fin n) K n P' : MvPolynomial (Fin n) K) = 0 := by
-    rw [esymmAlgHom_apply]
-    refine MvPolynomial.funext fun p ↦ ?_
-    rw [map_zero, ← h p, aeval_rename, ← aeval_eq_eval, ← AlgHom.comp_apply, comp_aeval]
-    simp [Function.comp_def, aeval_esymm_eq_multiset_esymm]
-  rw [esymmAlgHom_fin_injective K le_rfl
-    (show esymmAlgHom (Fin n) K n P' = esymmAlgHom (Fin n) K n 0 by
-      rw [map_zero]
-      exact Subtype.ext hzero), map_zero]
 
 end Polynomial
 
