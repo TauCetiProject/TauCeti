@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.Calculus.FDeriv.Const
+import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Normed.Group.Bounded
 import Mathlib.MeasureTheory.Function.LocallyIntegrable
 import Mathlib.MeasureTheory.Integral.IntegrableOn
@@ -28,6 +29,9 @@ compact support. A weighted squared defect `c z * ‖fderiv w z e₁ + A z (fder
 integrable when it vanishes off a compact set on which `c` and `A` are continuous, so they need
 not be continuous elsewhere.
 
+Integrability of the squared norm of the derivative implies integrability of the squared norm of
+the derivative applied to any fixed vector.
+
 On a Euclidean product `ℝ × V`, the derivative of such a function in a fixed direction is also
 integrable on the product of a half-line with `V`.
 
@@ -41,6 +45,8 @@ integrable on the product of a half-line with `V`.
   `TauCeti.integrable_norm_fderiv_sq_add`, `TauCeti.integrable_cutoff_sq_mul_norm_fderiv_sq`,
   `TauCeti.integrable_mul_norm_defect_sq`: integrability of the derivative energy densities
   in two directions.
+* `TauCeti.integrable_norm_fderiv_apply_sq`: integrability of `‖fderiv 𝕜 u z v‖ ^ 2` from
+  integrability of `‖fderiv 𝕜 u z‖ ^ 2`.
 * `TauCeti.integrable_fderiv_apply_prod`: the directional derivative of a compactly supported
   `C¹` function on `ℝ × V` is integrable on the product of `Ioi a` with `V`.
 -/
@@ -129,6 +135,20 @@ theorem integrable_mul_norm_defect_sq (e₁ e₂ : E) {w : E → F} {c : E → �
   exact (integrableOn_iff_integrable_of_support_subset hsub).mp <|
     (hc.mul (((hdw.clm_apply continuousOn_const).add
       (hA.clm_apply (hdw.clm_apply continuousOn_const))).norm.pow 2)).integrableOn_compact hS
+
+/-- If the squared norm of the derivative of a map into a complete space is integrable, then so is
+the squared norm of the derivative applied to any fixed vector `v`: it is bounded by
+`‖v‖ ^ 2 * ‖fderiv 𝕜 u z‖ ^ 2`. -/
+theorem integrable_norm_fderiv_apply_sq [CompleteSpace F] {ν : Measure E} {u : E → F}
+    (h : Integrable (fun z ↦ ‖fderiv 𝕜 u z‖ ^ 2) ν) (v : E) :
+    Integrable (fun z ↦ ‖fderiv 𝕜 u z v‖ ^ 2) ν := by
+  borelize F
+  refine (h.const_mul (‖v‖ ^ 2)).mono'
+    ((measurable_fderiv_apply_const 𝕜 u v).norm.pow_const 2).aestronglyMeasurable
+    (.of_forall fun z ↦ ?_)
+  rw [norm_pow, norm_norm, ← mul_pow, mul_comm]
+  gcongr
+  exact (fderiv 𝕜 u z).le_opNorm v
 
 end Energy
 section Prod

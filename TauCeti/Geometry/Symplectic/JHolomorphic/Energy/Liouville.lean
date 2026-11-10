@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Convergence
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Energy.Decay
+import TauCeti.Analysis.Calculus.FDeriv.Integrable
 import TauCeti.Analysis.Complex.OperatorNorm
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Normed.Module.Connected
@@ -87,19 +88,6 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
   [FiniteDimensional ℝ V] {ω : SymplecticForm V} {J₀ : AlmostComplexStructure V}
   {u : ℂ → V} {J : V → V →L[ℝ] V} {z₀ : ℂ} {c M : ℝ}
 
-/-- The energy of a map is at least its real-direction energy, so finite energy gives finite
-real-direction energy. -/
-private theorem integrable_norm_fderiv_one_sq
-    (henergy : Integrable fun z ↦ ‖fderiv ℝ u z‖ ^ 2) :
-    Integrable fun z ↦ ‖fderiv ℝ u z 1‖ ^ 2 := by
-  borelize V
-  refine henergy.mono
-    ((measurable_fderiv_apply_const ℝ u 1).norm.pow_const 2).aestronglyMeasurable
-    (Eventually.of_forall fun z ↦ ?_)
-  simp only [norm_pow, norm_norm]
-  gcongr
-  simpa using (fderiv ℝ u z).le_opNorm 1
-
 /-- **Finite-energy planes have no energy on discs about the puncture.** If a finite-energy
 solution of `∂ₜu = J(u) ∂ₛu` on the plane punctured at `z₀` is uniformly tamed by `ω`, then its
 energy vanishes on every disc about `z₀`: letting the outer radius `b` tend to infinity in the
@@ -121,8 +109,9 @@ private theorem integral_norm_fderiv_one_sq_ball_eq_zero_of_integrable
     refine (ω.integral_norm_fderiv_one_sq_ball_le_rpow hg hc (R := b + 1)
       (hu.mono fun z hz ↦ hz.2) (fun z hz ↦ hCR z hz.2) (fun z hz ↦ htame z hz.2)
       (fun z hz ↦ hJ z hz.2) henergy.integrableOn hr hb (by linarith)).trans
-      (mul_le_mul_of_nonneg_right (setIntegral_le_integral (integrable_norm_fderiv_one_sq henergy)
-        (Eventually.of_forall fun _ ↦ sq_nonneg _))
+      (mul_le_mul_of_nonneg_right
+        (setIntegral_le_integral (integrable_norm_fderiv_apply_sq henergy 1)
+          (Eventually.of_forall fun _ ↦ sq_nonneg _))
         (Real.rpow_nonneg (div_nonneg hr.le (hr.le.trans hb)) _))
   -- `E (r / b)^α = E r^α b^(-α)` tends to zero as `b → ∞`.
   have hlim : Tendsto (fun b : ℝ ↦ E * (r / b) ^ α) atTop (𝓝 0) := by
@@ -153,7 +142,7 @@ theorem fderiv_eq_zero_of_integrable
   have hzr : z ∈ ball z₀ r ∩ {z₀}ᶜ := ⟨by simp [r, dist_eq_norm], hz⟩
   have hae := (setIntegral_eq_zero_iff_of_nonneg_ae
     (Eventually.of_forall fun _ ↦ sq_nonneg _)
-    (integrable_norm_fderiv_one_sq henergy).integrableOn).1
+    (integrable_norm_fderiv_apply_sq henergy 1).integrableOn).1
     (integral_norm_fderiv_one_sq_ball_eq_zero_of_integrable hg hc hu hCR htame hJ henergy r)
   have h1 : fderiv ℝ u z 1 = 0 := by
     simpa using Measure.eqOn_open_of_ae_eq (ae_restrict_of_ae_restrict_of_subset
