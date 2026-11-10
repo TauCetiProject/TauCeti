@@ -49,8 +49,8 @@ namespace MeasureTheory.Measure
 
 variable (μ : Measure ℝ)
 
-/-- The cdf of `μ` conditioned on a measurable event is the proportion of that event lying below
-the cdf argument. -/
+/-- The cdf of `μ` conditioned on an event of nonzero mass is the proportion of that event lying
+below the cdf argument. -/
 theorem cdf_cond [IsFiniteMeasure μ] {A : Set ℝ} (hμA : μ A ≠ 0) (x : ℝ) :
     cdf (ProbabilityTheory.cond μ A) x = μ.real (A ∩ Iic x) / μ.real A := by
   have := ProbabilityTheory.cond_isProbabilityMeasure hμA
