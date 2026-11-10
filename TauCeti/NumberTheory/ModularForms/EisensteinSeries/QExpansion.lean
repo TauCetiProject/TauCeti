@@ -56,6 +56,7 @@ The coefficient-identification argument follows Mathlib's
 
 * `TauCeti.EisensteinSeries.qExpansion_identity_zmod`: the Lipschitz formula for a function of
   residues modulo `v`.
+* `TauCeti.EisensteinSeries.charRow_eq_zero_of_lt_two`: for `k < 2` every row vanishes.
 * `TauCeti.EisensteinSeries.summable_charRow`: the rows are summable (for `k ≥ 2` they decay
   exponentially, for `k < 2` they vanish).
 * `TauCeti.EisensteinSeries.qExpansion_coeff_of_apply_eq_tsum_charRow`,
@@ -314,41 +315,16 @@ private lemma summable_norm_charTerm (z : ℍ) :
         gcongr
     _ = _ := by ring
 
-/-- In weight `k < 2` the inner series of a row is not summable, along the residue class `d ≡ 1`
-modulo `v` its terms decay no faster than `1 / n`; so the row is zero. -/
-private lemma charRow_eq_zero_of_lt_two (hk : k < 2) (z : ℍ) (c : ℤ) :
-    charRow ψ φ k z c = 0 := by
-  rw [charRow_def, tsum_eq_zero_of_not_summable, mul_zero]
-  intro h
-  set w : ℂ := ((v * c : ℤ) : ℂ) * z + 1 with hw
-  have hv : (0 : ℝ) < v := Nat.cast_pos.mpr (NeZero.pos v)
-  have h1 : Summable fun n : ℕ ↦ ‖(w + (v : ℂ) * n) ^ (-(k : ℤ))‖ := by
-    have := (h.comp_injective (i := fun n : ℕ ↦ (1 + v * n : ℤ)) fun m n hmn ↦
-      (by simpa using hmn : m = n ∨ v = 0).resolve_right (NeZero.ne v)).norm
-    simpa [Function.comp_def, hw, add_assoc] using this
-  have hne (n : ℕ) : w + (v : ℂ) * n ≠ 0 := by
-    intro h0
-    have him := congrArg Complex.im h0
-    have hre := congrArg Complex.re h0
-    simp only [hw, Complex.add_im, Complex.mul_im, Complex.intCast_re, Complex.intCast_im,
-      Complex.one_im, Complex.natCast_im, Complex.natCast_re, Complex.mul_re, Complex.add_re,
-      Complex.one_re, Complex.zero_im, Complex.zero_re] at him hre
-    push_cast at him hre
-    have hz := z.2
-    have hc : c = 0 := by
-      by_contra hc
-      have : (v : ℝ) * c * (z : ℂ).im = 0 := by linarith
-      rcases mul_eq_zero.mp this with h | h
-      · exact (mul_ne_zero hv.ne' (by exact_mod_cast hc)) h
-      · exact hz.ne' h
-    subst hc
-    have : (0 : ℝ) ≤ (v : ℝ) * n := by positivity
-    simp at hre
-    linarith
+/-- Along a nonvanishing arithmetic progression `w + v n`, the norms of the inverse `k`-th powers
+are not summable for `k < 2`: they are bounded below by a multiple of the harmonic series. -/
+private lemma not_summable_norm_zpow_neg_add_mul (hk : k < 2) {w : ℂ}
+    (hne : ∀ n : ℕ, w + (v : ℂ) * n ≠ 0) :
+    ¬ Summable fun n : ℕ ↦ ‖(w + (v : ℂ) * n) ^ (-(k : ℤ))‖ := by
+  intro h1
+  have hv : (1 : ℝ) ≤ v := Nat.one_le_cast.mpr (NeZero.pos v)
   set C : ℝ := ‖w‖ + v with hC
-  have hC1 : 1 ≤ C := by
-    have : (1 : ℝ) ≤ v := Nat.one_le_cast.mpr (NeZero.pos v)
-    linarith [norm_nonneg w]
+  have hC1 : 1 ≤ C := by linarith [norm_nonneg w]
+  -- the harmonic lower bound `‖w + v n‖ ≤ C (n + 1)`, hence `1 / (C (n + 1)) ≤ ‖(w + v n)⁻ᵏ‖`
   have hbound (n : ℕ) : 1 / (C * (n + 1)) ≤ ‖(w + (v : ℂ) * n) ^ (-(k : ℤ))‖ := by
     have hpos : 0 < ‖w + (v : ℂ) * n‖ := norm_pos_iff.mpr (hne n)
     have hle : ‖w + (v : ℂ) * n‖ ≤ C * (n + 1) := by
@@ -373,6 +349,32 @@ private lemma charRow_eq_zero_of_lt_two (hk : k < 2) (z : ℍ) (c : ℤ) :
     push_cast
     field_simp
   exact Real.not_summable_one_div_natCast ((summable_nat_add_iff 1).mp h3)
+
+/-- In weight `k < 2` the inner series of a row is not summable, along the residue class `d ≡ 1`
+modulo `v` its terms decay no faster than `1 / n`; so the row is zero. -/
+theorem charRow_eq_zero_of_lt_two (hk : k < 2) (z : ℍ) (c : ℤ) :
+    charRow ψ φ k z c = 0 := by
+  rw [charRow_def, tsum_eq_zero_of_not_summable, mul_zero]
+  intro h
+  set w : ℂ := ((v * c : ℤ) : ℂ) * z + 1 with hw
+  -- the row restricted to `d = 1 + v n` is the progression `w + v n`
+  have h1 : Summable fun n : ℕ ↦ ‖(w + (v : ℂ) * n) ^ (-(k : ℤ))‖ := by
+    have := (h.comp_injective (i := fun n : ℕ ↦ (1 + v * n : ℤ)) fun m n hmn ↦
+      (by simpa using hmn : m = n ∨ v = 0).resolve_right (NeZero.ne v)).norm
+    simpa [Function.comp_def, hw, add_assoc] using this
+  -- the progression avoids `0`, since the vector `(v c, 1 + v n)` is nonzero
+  have hne (n : ℕ) : w + (v : ℂ) * n ≠ 0 := by
+    have hpos : (0 : ℝ) < 1 + v * n := by positivity
+    have hcd : (![(v : ℝ) * c, 1 + v * n] : Fin 2 → ℝ) ≠ 0 := fun h0 ↦ by
+      have := congrFun h0 1
+      simp only [Matrix.cons_val_one, Matrix.cons_val_fin_one, Pi.zero_apply] at this
+      linarith
+    have := UpperHalfPlane.linear_ne_zero z hcd
+    convert this using 1
+    simp only [hw, Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
+    push_cast
+    ring
+  exact not_summable_norm_zpow_neg_add_mul hk hne h1
 
 /-- **The rows are summable.** The rows `ψ(c) ∑_d φ⁻¹(d) (c v z + d)^(-k)` of the Eisenstein
 series with character form a summable family in `c ∈ ℤ`. For `k ≥ 2` they decay exponentially in

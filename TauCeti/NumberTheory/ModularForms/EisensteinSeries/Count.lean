@@ -151,22 +151,24 @@ private theorem card_eq_sum_of_neZero :
 
 end NeZero
 
+/-- At level `0` there is an Eisenstein index of every weight: the trivial pair for even `k`, and
+for odd `k` the odd primitive character induced by `ZMod.χ₄` paired with the trivial one. -/
+private theorem nonempty_charIndex_zero : Nonempty (CharIndex 0 k) := by
+  rcases Nat.even_or_odd k with hk | hk
+  · exact ⟨one hk⟩
+  · let ψ₀ : DirichletCharacter ℂ 4 := ZMod.χ₄.ringHomComp (Int.castRingHom ℂ)
+    have hψ₀ : ψ₀ (-1) = -1 := by
+      have : (-1 : ZMod 4) = ((3 : ℕ) : ZMod 4) := by decide
+      simp [ψ₀, this]
+    refine ⟨⟨ψ₀.conductor, 1, 0, ψ₀.primitiveCharacter, 1, ψ₀.primitiveCharacter_isPrimitive,
+      DirichletCharacter.isPrimitive_one_level_one, ?_, dvd_zero _⟩⟩
+    rw [← changeLevel_apply_neg_one ψ₀.conductor_dvd_level, changeLevel_primitiveCharacter]
+    simp [hψ₀, hk.natCast.neg_one_zpow]
+
 /-- At level `0` there are infinitely many Eisenstein indices, since the raising parameter `t` is
 unconstrained. -/
 private theorem infinite_charIndex_zero : Infinite (CharIndex 0 k) := by
-  have hne : Nonempty (CharIndex 0 k) := by
-    rcases Nat.even_or_odd k with hk | hk
-    · exact ⟨one hk⟩
-    · let ψ₀ : DirichletCharacter ℂ 4 := ZMod.χ₄.ringHomComp (Int.castRingHom ℂ)
-      have hψ₀ : ψ₀ (-1) = -1 := by
-        have : (-1 : ZMod 4) = ((3 : ℕ) : ZMod 4) := by decide
-        simp [ψ₀, this]
-      refine ⟨⟨ψ₀.conductor, 1, 0, ψ₀.primitiveCharacter, 1, ψ₀.primitiveCharacter_isPrimitive,
-        DirichletCharacter.isPrimitive_one_level_one, ?_, dvd_zero _⟩⟩
-      rw [← changeLevel_apply_neg_one ψ₀.conductor_dvd_level, changeLevel_primitiveCharacter,
-        hψ₀, show (-1 : ZMod 1) = 1 from Subsingleton.elim _ _, MulChar.map_one, mul_one,
-        hk.natCast.neg_one_zpow]
-  obtain ⟨b⟩ := hne
+  obtain ⟨b⟩ := nonempty_charIndex_zero (k := k)
   exact Infinite.of_injective (fun n : ℕ ↦ ({ b with t := n, level_dvd := dvd_zero _ } :
     CharIndex 0 k)) fun m n h ↦ congrArg CharIndex.t h
 

@@ -94,15 +94,8 @@ theorem nonempty_gammaSet_intCast_iff (x : Fin 2 → ℤ) :
     ext i
     fin_cases i <;> simp [ha₀, hc₀]
 
-/-- The absolute value of the integer `ZMod.cast` of a residue is its least nonnegative
-representative. -/
-private theorem natAbs_zmod_cast (x : ZMod N) : (ZMod.cast x : ℤ).natAbs = x.val := by
-  rcases N with _ | N
-  · rfl
-  · rw [ZMod.cast_eq_val, Int.natAbs_natCast]
-
-/-- A residue pair lifts to a coprime integer pair exactly when the gcd of its least nonnegative
-representatives is prime to `N`. -/
+/-- A residue pair lifts to a coprime integer pair exactly when the gcd of its `ZMod.val`s (the
+least nonnegative representatives for `N ≠ 0`, the absolute values at level `0`) is prime to `N`. -/
 theorem nonempty_gammaSet_iff_coprime_val (a : Fin 2 → ZMod N) :
     Nonempty (gammaSet N 1 a) ↔ Nat.Coprime ((a 0).val.gcd (a 1).val) N := by
   have h := nonempty_gammaSet_intCast_iff (N := N) fun i ↦ ZMod.cast (a i)
@@ -110,17 +103,18 @@ theorem nonempty_gammaSet_iff_coprime_val (a : Fin 2 → ZMod N) :
     ext i
     simp
   rw [ha] at h
-  rw [h, Int.gcd_eq_natAbs, natAbs_zmod_cast, natAbs_zmod_cast]
+  rw [h, Int.gcd_eq_natAbs, ZMod.natAbs_cast, ZMod.natAbs_cast]
 
 /-- The multiple `k a` of a residue pair lifts to a coprime integer pair exactly when `k` times
-the gcd of the least nonnegative representatives of `a` is prime to `N`. -/
+the gcd of the `ZMod.val`s of `a` (the least nonnegative representatives for `N ≠ 0`, the absolute
+values at level `0`) is prime to `N`. -/
 theorem nonempty_gammaSet_natCast_smul_iff (k : ℕ) (a : Fin 2 → ZMod N) :
     Nonempty (gammaSet N 1 ((k : ZMod N) • a)) ↔ Nat.Coprime (k * (a 0).val.gcd (a 1).val) N := by
   have h : ((↑) : ℤ → ZMod N) ∘ (fun i ↦ (k : ℤ) * ZMod.cast (a i)) = (k : ZMod N) • a := by
     ext i
     simp
   rw [← h, nonempty_gammaSet_intCast_iff, Int.gcd_mul_left, Int.natAbs_natCast,
-    Int.gcd_eq_natAbs, natAbs_zmod_cast, natAbs_zmod_cast]
+    Int.gcd_eq_natAbs, ZMod.natAbs_cast, ZMod.natAbs_cast]
 
 /-- The residues of coprime integer pairs are closed under negation. -/
 theorem nonempty_gammaSet_neg_iff (a : Fin 2 → ZMod N) :

@@ -25,6 +25,9 @@ Results connecting unit and coprimality data over `ZMod d`, independent of one a
   `TauCeti/Data/Int/LinearCongruence.lean`, which needs the other direction.
 * `ZMod.isUnit_intCast_two_pow_of_odd` — an odd integer is a unit modulo every power
   of two, including the trivial modulus at exponent zero.
+* `ZMod.natAbs_cast` — the absolute value of the integer cast of a residue is its `ZMod.val`, at
+  every level including `0`; its consumer is the Eisenstein series lifting lemma
+  `TauCeti.EisensteinSeries.nonempty_gammaSet_iff_coprime_val`.
 * `IsCoprime.exists_int_lifts` — a *pair* of coprime residues mod `d` lifts to a coprime pair
   of integers. Ported from the AINTLIB `LeanModularForms` project
   (`LeanModularForms/HeckeRIngs/GLn/SL2Surjection.lean`, Chris Birkbeck); its consumer is the
@@ -90,6 +93,16 @@ theorem ZMod.isUnit_intCast_two_pow_of_odd (n : ℕ) {a : ℤ} (ha : Odd a) :
     IsUnit (a : ZMod (2 ^ n)) := by
   apply (ZMod.isUnit_intCast_iff_isCoprime a (2 ^ n)).mpr
   simpa only [Nat.cast_pow, Nat.cast_ofNat] using (ha.isCoprime_two.pow_right (n := n)).symm
+
+/-- The absolute value of the integer `ZMod.cast` of a residue is its `ZMod.val`: for `d ≠ 0` the
+cast is the least nonnegative representative, and at level `0` the cast is the identity on `ℤ` and
+`ZMod.val` is `Int.natAbs`. -/
+theorem ZMod.natAbs_cast (x : ZMod d) : (ZMod.cast x : ℤ).natAbs = x.val := by
+  rcases d with _ | d
+  · -- level `0`: `ZMod 0` is `ℤ` by definition, `ZMod.cast` is the identity and `ZMod.val` is
+    -- `Int.natAbs`
+    rfl
+  · rw [ZMod.cast_eq_val, Int.natAbs_natCast]
 
 private lemma isCoprime_emod {a₁ c₁ : ℤ}
     (hac : IsCoprime (a₁ : ZMod d) (c₁ : ZMod d)) :
