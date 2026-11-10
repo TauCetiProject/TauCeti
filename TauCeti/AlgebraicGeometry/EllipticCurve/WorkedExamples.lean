@@ -13,7 +13,8 @@ public import Mathlib.AlgebraicGeometry.EllipticCurve.Affine.Basic
 This file defines integral Weierstrass equations of elliptic curves over `ℚ` that are used across
 several worked examples, together with the affine equations of their points over an arbitrary
 commutative ring, their basic invariants, and the fact that they are elliptic over every
-commutative `ℚ`-algebra:
+commutative ring in which the prime dividing the discriminant is invertible, in particular over
+every commutative `ℚ`-algebra:
 
 | LMFDB label | Cremona label | `[a₁, a₂, a₃, a₄, a₆]` | `Δ` | `c₄` |
 |---|---|---|---|---|
@@ -57,13 +58,20 @@ theorem Δ_curve11a2 : curve11a2.Δ = -11 ^ 5 := by
 theorem c₄_curve11a2 : curve11a2.c₄ = 496 := by
   simp [c₄, b₂, b₄]
 
+/-- 11.a2 is an elliptic curve over every commutative ring in which `11` is invertible. -/
+theorem isElliptic_baseChange_curve11a2_of_isUnit {R : Type*} [CommRing R]
+    (h : IsUnit (11 : R)) : (curve11a2.baseChange R).IsElliptic := by
+  rw [isElliptic_iff, WeierstrassCurve.baseChange, map_Δ, Δ_curve11a2, map_neg, map_pow,
+    map_ofNat, IsUnit.neg_iff]
+  exact h.pow 5
+
 /-- 11.a2 is an elliptic curve over every commutative `ℚ`-algebra, in particular over `ℚ` and
 over every field of characteristic zero. -/
 instance instIsEllipticBaseChangeCurve11a2 {R : Type*} [CommRing R] [Algebra ℚ R] :
-    (curve11a2.baseChange R).IsElliptic := by
-  rw [isElliptic_iff, WeierstrassCurve.baseChange, map_Δ, Δ_curve11a2, map_neg, map_pow,
-    map_ofNat, IsUnit.neg_iff, ← map_ofNat (algebraMap ℚ R)]
-  exact ((IsUnit.mk0 (11 : ℚ) (by norm_num)).map _).pow 5
+    (curve11a2.baseChange R).IsElliptic :=
+  isElliptic_baseChange_curve11a2_of_isUnit <| by
+    rw [← map_ofNat (algebraMap ℚ R)]
+    exact (IsUnit.mk0 (11 : ℚ) (by norm_num)).map _
 
 /-! ### The curve 37.a1 -/
 
@@ -89,12 +97,17 @@ theorem Δ_curve37a1 : curve37a1.Δ = 37 := by
 theorem c₄_curve37a1 : curve37a1.c₄ = 48 := by
   simp [c₄, b₂, b₄]
 
+/-- 37.a1 is an elliptic curve over every commutative ring in which `37` is invertible. -/
+theorem isElliptic_baseChange_curve37a1_of_isUnit {R : Type*} [CommRing R]
+    (h : IsUnit (37 : R)) : (curve37a1.baseChange R).IsElliptic := by
+  rwa [isElliptic_iff, WeierstrassCurve.baseChange, map_Δ, Δ_curve37a1, map_ofNat]
+
 /-- 37.a1 is an elliptic curve over every commutative `ℚ`-algebra, in particular over `ℚ` and
 over every field of characteristic zero. -/
 instance instIsEllipticBaseChangeCurve37a1 {R : Type*} [CommRing R] [Algebra ℚ R] :
-    (curve37a1.baseChange R).IsElliptic := by
-  rw [isElliptic_iff, WeierstrassCurve.baseChange, map_Δ, Δ_curve37a1, map_ofNat,
-    ← map_ofNat (algebraMap ℚ R)]
-  exact (IsUnit.mk0 (37 : ℚ) (by norm_num)).map _
+    (curve37a1.baseChange R).IsElliptic :=
+  isElliptic_baseChange_curve37a1_of_isUnit <| by
+    rw [← map_ofNat (algebraMap ℚ R)]
+    exact (IsUnit.mk0 (37 : ℚ) (by norm_num)).map _
 
 end TauCeti.WorkedExamples
