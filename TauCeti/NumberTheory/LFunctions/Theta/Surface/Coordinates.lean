@@ -50,11 +50,21 @@ theorem surfaceScale_one (x : realSpace K) : surfaceScale x 1 = x := by
   ext w
   simp
 
-/-- Successive nonnegative radial scalings multiply their norm coordinates. -/
-theorem surfaceScale_surfaceScale (x : realSpace K) {s t : ℝ} (hs : 0 ≤ s) (ht : 0 ≤ t) :
+/-- Successive radial scalings multiply their norm coordinates, the first being nonnegative. -/
+theorem surfaceScale_surfaceScale (x : realSpace K) {s : ℝ} (hs : 0 ≤ s) (t : ℝ) :
     surfaceScale (surfaceScale x s) t = surfaceScale x (s * t) := by
   ext w
-  simp [Real.mul_rpow hs ht, mul_assoc]
+  rw [surfaceScale_apply, surfaceScale_apply, surfaceScale_apply, mul_assoc]
+  congr 1
+  rcases hs.eq_or_lt with rfl | hs
+  · rcases eq_or_ne (1 / (Module.finrank ℚ K : ℝ)) 0 with hq | hq
+    · simp only [hq, Real.rpow_zero, mul_one]
+    · simp only [zero_mul, Real.zero_rpow hq]
+  rcases le_or_gt 0 t with ht | ht
+  · exact (Real.mul_rpow hs.le ht).symm
+  · rw [Real.rpow_def_of_neg ht, Real.rpow_def_of_neg (mul_neg_of_pos_of_neg hs ht),
+      Real.rpow_def_of_pos hs, Real.log_mul hs.ne' ht.ne, add_mul, Real.exp_add]
+    ring
 
 theorem surfaceScale_pos {x : realSpace K} (hx : ∀ w, 0 < x w) {t : ℝ} (ht : 0 < t)
     (w : InfinitePlace K) : 0 < surfaceScale x t w :=
@@ -101,7 +111,7 @@ theorem surfacePart_of_mem_normOneSurface {x : realSpace K} (hx : x ∈ normOneS
 theorem surfaceScale_surfacePart {y : realSpace K} (hy : ∀ w, 0 < y w) :
     surfaceScale (surfacePart y) (archNorm y) = y := by
   have hN := archNorm_pos hy
-  rw [surfacePart_def, surfaceScale_surfaceScale _ (inv_nonneg.mpr hN.le) hN.le,
+  rw [surfacePart_def, surfaceScale_surfaceScale _ (inv_nonneg.mpr hN.le),
     inv_mul_cancel₀ hN.ne', surfaceScale_one]
 
 /-- A positive radial scaling does not change the surface coordinate. -/
@@ -109,7 +119,7 @@ theorem surfaceScale_surfacePart {y : realSpace K} (hy : ∀ w, 0 < y w) :
 theorem surfacePart_surfaceScale {x : realSpace K} (hx : x ∈ normOneSurface K)
     {t : ℝ} (ht : 0 < t) : surfacePart (surfaceScale x t) = x := by
   rw [surfacePart_def, archNorm_surfaceScale _ ht.le, (mem_normOneSurface.mp hx).2, one_mul,
-    surfaceScale_surfaceScale _ ht.le (inv_nonneg.mpr ht.le), mul_inv_cancel₀ ht.ne',
+    surfaceScale_surfaceScale _ ht.le, mul_inv_cancel₀ ht.ne',
     surfaceScale_one]
 
 /-- The norm of a scaled surface point is its radial coordinate. -/
@@ -121,12 +131,16 @@ theorem archNorm_surfaceScale_of_mem_normOneSurface {x : realSpace K}
 
 /-- Uniqueness of the norm-one/radial decomposition, without choosing a surface representative. -/
 theorem surfaceScale_eq_iff {x y : realSpace K} (hx : x ∈ normOneSurface K)
-    (hy : ∀ w, 0 < y w) {t : ℝ} (ht : 0 < t) :
+    {t : ℝ} (ht : 0 < t) :
     surfaceScale x t = y ↔ surfacePart y = x ∧ archNorm y = t := by
   constructor
   · rintro rfl
     exact ⟨surfacePart_surfaceScale hx ht, archNorm_surfaceScale_of_mem_normOneSurface hx ht.le⟩
   · rintro ⟨hpart, hnorm⟩
+    have hy : ∀ w, 0 < y w := fun w ↦ by
+      have h := (mem_normOneSurface.mp hx).1 w
+      rw [← hpart, surfacePart_def, surfaceScale_apply, hnorm] at h
+      exact (mul_pos_iff_of_pos_right (Real.rpow_pos_of_pos (inv_pos.mpr ht) _)).mp h
     rw [← hpart, ← hnorm, surfaceScale_surfacePart hy]
 
 /-- Joint continuity of radial scaling on all real radial coordinates. -/
@@ -150,18 +164,18 @@ theorem measurable_surfacePart : Measurable (surfacePart : realSpace K → realS
   Measurable.of_eval fun w ↦ (measurable_pi_apply w).mul
     ((continuous_archNorm.measurable.inv).pow_const _)
 
-/-- Scaling a parameter of nonnegative norm by `c > 0` does not change its surface part. -/
-theorem surfacePart_smul {c : ℝ} (hc : 0 < c) {y : realSpace K} (hy : 0 ≤ archNorm y) :
+/-- Scaling a parameter by `c > 0` does not change its surface part. -/
+theorem surfacePart_smul {c : ℝ} (hc : 0 < c) {y : realSpace K} :
     surfacePart (c • y) = surfacePart y := by
   have hn : (Module.finrank ℚ K : ℝ) ≠ 0 :=
     Nat.cast_ne_zero.mpr (ne_of_gt (Module.finrank_pos (R := ℚ) (M := K)))
-  have hcy : 0 ≤ archNorm (c • y) := by
-    rw [archNorm_smul]
-    positivity
-  ext w
-  rw [surfacePart_apply _ hcy, surfacePart_apply _ hy, archNorm_smul,
-    Real.mul_rpow (by positivity) hy, ← Real.rpow_natCast, ← Real.rpow_mul hc.le,
-    mul_one_div_cancel hn, Real.rpow_one, Pi.smul_apply, smul_eq_mul, mul_div_mul_left _ _ hc.ne']
+  have hcn : 0 < c ^ Module.finrank ℚ K := pow_pos hc _
+  have hsmul : c • y = surfaceScale y (c ^ Module.finrank ℚ K) := by
+    ext w
+    rw [surfaceScale_apply, ← Real.rpow_natCast, ← Real.rpow_mul hc.le, mul_one_div_cancel hn,
+      Real.rpow_one, Pi.smul_apply, smul_eq_mul, mul_comm]
+  rw [surfacePart_def, surfacePart_def, hsmul, surfaceScale_surfaceScale _ hcn.le, ← hsmul,
+    archNorm_smul, mul_inv, ← mul_assoc, mul_inv_cancel₀ hcn.ne', one_mul]
 
 variable (K) in
 /-- Positive archimedean parameters are the product of the norm-one hypersurface and the
