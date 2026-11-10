@@ -30,8 +30,8 @@ fields on a product manifold.
   of a tangent vector.
 * `TauCeti.mvfderiv_comp_fst_apply` and `TauCeti.mvfderiv_comp_snd_apply`: the same for
   vector-valued functions, applied to a tangent vector.
-* `ContinuousLinearMap.mvfderiv_comp_snd_apply`: the derivative of a continuous linear map
-  applied to a vector-valued function of the second factor.
+* `ContinuousLinearMap.mvfderiv_comp_fst_apply` and `ContinuousLinearMap.mvfderiv_comp_snd_apply`:
+  the derivative of a continuous linear map applied to a vector-valued function of one factor.
 * `TauCeti.mvfderiv_comp_fst_mul_comp_snd_apply`: the product rule for a function of the first
   factor times a function of the second factor.
 * `TauCeti.mvfderiv_comp_snd_apply_eq_smul_deriv`: for a scalar second factor, the same in terms of
@@ -147,6 +147,16 @@ theorem mvfderiv_comp_snd_apply (g : N → F) (p : M × N) (v : TangentSpace (I.
   -- The identifications `NormedSpace.fromTangentSpace` at `(g ∘ Prod.snd) p` and at `g p.2` agree,
   -- as these points are equal by definition.
   rfl
+
+/-- The derivative of a continuous linear map applied to a vector-valued function of the first
+factor, read on a product: the derivative of `y ↦ L (g y.1)` is `L` applied to the derivative of
+`g` on the first component. -/
+theorem _root_.ContinuousLinearMap.mvfderiv_comp_fst_apply {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace 𝕜 F'] (L : F →L[𝕜] F') {g : M → F} {p : M × N}
+    (hg : MDifferentiableAt I 𝓘(𝕜, F) g p.1) (v : TangentSpace (I.prod J) p) :
+    mvfderiv (I.prod J) (fun y ↦ L (g y.1)) p v = L (mvfderiv I g p.1 v.1) := by
+  -- The map is `(L ∘ g) ∘ Prod.fst` by definition.
+  exact (TauCeti.mvfderiv_comp_fst_apply (L ∘ g) p v).trans (L.mvfderiv_comp_apply hg _)
 
 /-- The derivative of a continuous linear map applied to a vector-valued function of the second
 factor, read on a product: the derivative of `y ↦ L (g y.2)` is `L` applied to the derivative of

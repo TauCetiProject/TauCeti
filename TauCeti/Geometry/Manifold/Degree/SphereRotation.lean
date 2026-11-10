@@ -162,11 +162,9 @@ theorem mvfderiv_coe_sphereRotationFamily_apply (p : sphere (0 : E) 1)
         ((y.1 : (ℝ ∙ (p : E))ᗮ) : E)) x w =
       ((mvfderiv (𝓡 m) ((↑) : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 → (ℝ ∙ (p : E))ᗮ) x.1
         (Manifold.tangentSpaceProdEquiv x w).1 : (ℝ ∙ (p : E))ᗮ) : E) := by
-    have h := (ℝ ∙ (p : E))ᗮ.subtypeL.mvfderiv_comp_apply hι (Manifold.tangentSpaceProdEquiv x w).1
-    rw [Manifold.tangentSpaceProdEquiv_apply] at h ⊢
+    rw [Manifold.tangentSpaceProdEquiv_apply]
     -- The inclusion `Sᵐ ⊆ E` is the inclusion into `p^⊥` followed by `subtypeL` by definition.
-    exact (mvfderiv_comp_fst_apply
-      (fun v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 ↦ ((v : (ℝ ∙ (p : E))ᗮ) : E)) x w).trans h
+    exact (ℝ ∙ (p : E))ᗮ.subtypeL.mvfderiv_comp_fst_apply hι w
   -- Write the map as a sum of products of scalar and vector-valued functions.
   rw [show (fun y ↦ (sphereRotationFamily p y : E)) =
     ((fun y : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1 ↦ Complex.reCLM (y.2 : ℂ)) •

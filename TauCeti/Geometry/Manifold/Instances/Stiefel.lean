@@ -62,6 +62,9 @@ manifold structure.
 * `TauCeti.injective_mfderiv_coe_stiefel`: the differential of the inclusion is injective.
 * `TauCeti.gramSym2Deriv_mvfderiv_coe_stiefel_eq_zero`: tangent vectors, read in the space of
   `k`-families, lie in the kernel of the derivative of the Gram map.
+* `TauCeti.inner_mvfderiv_coe_stiefel_add_inner_eq_zero` and
+  `TauCeti.inner_mvfderiv_coe_stiefel_self_eq_zero`: the same, written with inner products; in
+  particular each vector of a tangent vector is orthogonal to the corresponding frame vector.
 
 ## References
 
@@ -288,6 +291,28 @@ theorem gramSym2Deriv_mvfderiv_coe_stiefel_eq_zero [FiniteDimensional ℝ E] (v 
     exact LinearMap.mem_range_self _ w
   rw [mvfderiv_apply_eq_mfderiv_apply]
   exact h
+
+variable {E k} in
+/-- A tangent vector `a` at `v` to the Stiefel manifold, read in the space of `k`-families,
+satisfies `⟪v i, a j⟫ + ⟪a i, v j⟫ = 0` for all `i` and `j`. -/
+theorem inner_mvfderiv_coe_stiefel_add_inner_eq_zero [FiniteDimensional ℝ E] (v : stiefel E k)
+    (w : TangentSpace 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) v) (i j : Fin k) :
+    ⟪(v : Fin k → E) i, mvfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ)
+        ((↑) : stiefel E k → Fin k → E) v w j⟫ +
+      ⟪mvfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ)
+        ((↑) : stiefel E k → Fin k → E) v w i, (v : Fin k → E) j⟫ = 0 := by
+  rw [← gramSym2Deriv_apply_mk, gramSym2Deriv_mvfderiv_coe_stiefel_eq_zero, Pi.zero_apply]
+
+variable {E k} in
+/-- A tangent vector `a` at `v` to the Stiefel manifold, read in the space of `k`-families,
+satisfies `⟪v i, a i⟫ = 0` for all `i`. -/
+theorem inner_mvfderiv_coe_stiefel_self_eq_zero [FiniteDimensional ℝ E] (v : stiefel E k)
+    (w : TangentSpace 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) v) (i : Fin k) :
+    ⟪(v : Fin k → E) i, mvfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ)
+        ((↑) : stiefel E k → Fin k → E) v w i⟫ = 0 := by
+  have h := inner_mvfderiv_coe_stiefel_add_inner_eq_zero v w i i
+  rw [real_inner_comm ((v : Fin k → E) i)] at h
+  linarith
 
 /-- The `i`th vector of an orthonormal frame, as a point of the unit sphere. For `k = 2` and
 `i = 0` this is the projection of the unit tangent bundle of the sphere to its base. -/

@@ -121,13 +121,10 @@ private theorem mvfderiv_frameVector_apply (x : stiefel E 2 × sphere (0 : ℂ) 
         (fun y : stiefel E 2 × sphere (0 : ℂ) 1 ↦ y.1.1 i) x w =
       mvfderiv 𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ)
         ((↑) : stiefel E 2 → Fin 2 → E) x.1 (Manifold.tangentSpaceProdEquiv x w).1 i := by
-  have hι := ((contMDiff_coe_stiefel E 2 (r := 1)) x.1).mdifferentiableAt one_ne_zero
-  have h := (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ E) i).mvfderiv_comp_apply hι
-    (Manifold.tangentSpaceProdEquiv x w).1
-  rw [Manifold.tangentSpaceProdEquiv_apply] at h ⊢
-  -- The map is `proj i ∘ Subtype.val ∘ Prod.fst` by definition.
-  exact (mvfderiv_comp_fst_apply
-    (⇑(ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ E) i) ∘ Subtype.val) x w).trans h
+  rw [Manifold.tangentSpaceProdEquiv_apply]
+  -- The map is `y ↦ proj i (y.1 : Fin 2 → E)` by definition.
+  exact (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ E) i).mvfderiv_comp_fst_apply
+    (((contMDiff_coe_stiefel E 2 (r := 1)) x.1).mdifferentiableAt one_ne_zero) w
 
 /-- The derivative of the first component of the rotation family of the unit tangent bundle, read
 in `E`: a tangent vector `(a, b)` at `((u, v), z)` is sent to the first vector `a₀` of `a`, where
@@ -213,15 +210,11 @@ theorem injective_mfderiv_stiefelRotationFamily {x : stiefel E 2 × sphere (0 : 
     (Manifold.tangentSpaceProdEquiv x w).2 with hb
   rw [h₁', smul_zero, add_zero] at h₂'
   -- `a` is tangent to the Stiefel manifold, so `a₁` is orthogonal to `u` and to `v`.
-  have hker :=
-    gramSym2Deriv_mvfderiv_coe_stiefel_eq_zero x.1 (Manifold.tangentSpaceProdEquiv x w).1
-  rw [← ha] at hker
-  have h01 := congrFun hker s(0, 1)
-  have h11 := congrFun hker s(1, 1)
-  simp only [gramSym2Deriv_apply_mk, h₁', inner_zero_left, add_zero, Pi.zero_apply] at h01 h11
-  have h11' : ⟪x.1.1 1, a 1⟫ = 0 := by
-    rw [real_inner_comm (x.1.1 1) (a 1)] at h11
-    linarith
+  have h01 := inner_mvfderiv_coe_stiefel_add_inner_eq_zero x.1
+    (Manifold.tangentSpaceProdEquiv x w).1 0 1
+  have h11' := inner_mvfderiv_coe_stiefel_self_eq_zero x.1 (Manifold.tangentSpaceProdEquiv x w).1 1
+  rw [← ha, h₁', inner_zero_left, add_zero] at h01
+  rw [← ha] at h11'
   obtain ⟨hu, hv, huv⟩ := mem_stiefel_two_iff.1 x.1.2
   have hu' : ⟪x.1.1 0, x.1.1 0⟫ = 1 := by rw [real_inner_self_eq_norm_sq, hu, one_pow]
   have hv' : ⟪x.1.1 1, x.1.1 1⟫ = 1 := by rw [real_inner_self_eq_norm_sq, hv, one_pow]
