@@ -32,12 +32,12 @@ function along the support of `T`, and it has finite order on each compact set.
 * `Distribution.complexPairing`: the complex-linear extension of `T : 𝓓'^{n}(Ω, ℂ)` to complex
   test functions, as a continuous complex-linear map.
 * `Distribution.complexPairing_postcompCLM_ofRealCLM`: on real test functions it is `T`.
+* `Distribution.complexPairing_lineDerivOp`: it turns derivatives of `T` into derivatives of the
+  test function, `(∂_{v} T) φ = - T (∂_{v} φ)`.
 * `Distribution.complexPairing_mapCLM_ofRealCLM_delta`: for the complex point mass at `x` it is
   evaluation at `x`.
 * `Distribution.complexPairing_eq_integral`, `Distribution.complexPairing_ofFun`: where `T` is
   integration against a locally integrable function, so is its extension.
-* `Distribution.complexPairing_lineDerivOp`: the extension of a derivative `∂_v T` pairs `T` with
-  `-∂_v φ`.
 * `Distribution.complexPairing_eq_of_eventuallyEq`: it depends only on the germ of the test
   function along `dsupport T`.
 * `Distribution.exists_norm_complexPairing_le`: it has finite order on each compact set.
@@ -51,8 +51,7 @@ public section
 
 noncomputable section
 
-open Complex Filter Set TopologicalSpace TestFunction
-open LineDeriv
+open Complex Filter Set TopologicalSpace TestFunction LineDeriv
 open scoped Distributions Topology
 
 namespace Distribution
@@ -115,6 +114,14 @@ theorem complexPairing_smul (c : ℂ) (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω
   simp
   ring
 
+/-- The complex-linear extension of a derivative of `T` is minus the extension of `T` applied to
+the derivative of the test function: `(∂_{v} T) φ = - T (∂_{v} φ)` on complex test functions. -/
+theorem complexPairing_lineDerivOp (T : 𝓓'(Ω, ℂ)) (v : E) (φ : 𝓓(Ω, ℂ)) :
+    (∂_{v} T).complexPairing φ = -T.complexPairing (∂_{v} φ) := by
+  simp only [complexPairing_apply, lineDerivOp_apply_apply, map_neg,
+    TestFunction.lineDerivOp_eq_lineDerivCLM ℝ, lineDerivCLM_postcompCLM]
+  ring
+
 /-- The complex-linear extension of the complex point mass at `x` evaluates a complex test
 function at `x`. -/
 @[simp]
@@ -158,16 +165,6 @@ theorem complexPairing_ofFun [MeasurableSpace E] [OpensMeasurableSpace E] {f : E
     (φ : 𝓓^{n}(Ω, ℂ)) :
     (ofFun Ω f μ n).complexPairing φ = ∫ x, φ x * f x ∂μ :=
   complexPairing_eq_integral Ω.isOpen hf (fun _ _ => ofFun_apply hf) φ.tsupport_subset
-
-/-- The complex-linear extension of the derivative `∂_v T` pairs `T` with `-∂_v φ`, as the
-derivative itself does on real test functions. -/
-@[simp]
-theorem complexPairing_lineDerivOp (T : 𝓓'(Ω, ℂ)) (v : E) (φ : 𝓓(Ω, ℂ)) :
-    (∂_{v} T).complexPairing φ = -T.complexPairing (∂_{v} φ) := by
-  simp only [complexPairing_apply, lineDerivOp_apply_apply, map_neg,
-    TestFunction.lineDerivOp_eq_lineDerivCLM ℝ,
-    TestFunction.lineDerivCLM_postcompCLM]
-  ring
 
 /-- **The complex-linear extension has finite order on each compact set.** For a compact `K ⊆ Ω`
 there are an order `N` and a constant `C` such that `‖T.complexPairing φ‖ ≤ C * M` for every

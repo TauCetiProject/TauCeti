@@ -16,6 +16,7 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 import TauCeti.Analysis.Fourier.Wirtinger
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.Analysis.Normed.Module.Completion
 import Mathlib.Topology.Order.LeftRightNhds
 
 /-!
@@ -543,11 +544,17 @@ theorem exists_mul_circleLIntegral_lt_of_lintegral_ne_top (hg : Measurable g)
 bounded by the operator norm of the bilinear map times the angular energy. -/
 theorem norm_integral_apply_apply_circleMap_le {V G : Type*} [NormedAddCommGroup V]
     [InnerProductSpace ℝ V] [FiniteDimensional ℝ V] [NormedAddCommGroup G] [NormedSpace ℝ G]
-    [CompleteSpace G] (u : ℂ → V) {B : V →L[ℝ] V →L[ℝ] G} (z₀ : ℂ) (r : ℝ)
+    (u : ℂ → V) {B : V →L[ℝ] V →L[ℝ] G} (z₀ : ℂ) (r : ℝ)
     (hu : ∀ θ, ContDiffAt ℝ 1 u (circleMap z₀ r θ)) :
     ‖∫ θ in -π..π, B (u (circleMap z₀ r θ))
       (deriv (fun θ ↦ u (circleMap z₀ r θ)) θ)‖ ≤
       ‖B‖ * ∫ θ in -π..π, ‖deriv (fun θ ↦ u (circleMap z₀ r θ)) θ‖ ^ 2 := by
+  by_cases hG : CompleteSpace G
+  swap
+  · rw [intervalIntegral.integral_of_le (by linarith [Real.pi_pos]),
+      integral_of_not_completeSpace hG, norm_zero]
+    exact mul_nonneg (norm_nonneg B) (intervalIntegral.integral_nonneg
+      (by linarith [Real.pi_pos]) fun _ _ => by positivity)
   have : CompleteSpace V := FiniteDimensional.complete ℝ V
   have hc : ContDiff ℝ 1 (fun θ ↦ u (circleMap z₀ r θ)) :=
     contDiff_iff_contDiffAt.mpr fun θ ↦
@@ -676,7 +683,7 @@ theorem integrableOn_norm_fderiv_one_sq_puncturedClosedDisc {V : Type*}
 /-- Finite square-integral of the differential on a punctured disc gives arbitrarily small
 angular energies on shrinking circles. No extension over the puncture is assumed. -/
 theorem exists_integral_norm_deriv_comp_circleMap_sq_lt {V : Type*}
-    [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    [NormedAddCommGroup V] [NormedSpace ℝ V]
     {u : ℂ → V} (ζ : ℂ) {b R ε : ℝ}
     (hR : 0 < R) (hRb : R ≤ b) (hε : 0 < ε)
     (hu : ∀ z ∈ {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b}, DifferentiableAt ℝ u z)
@@ -687,8 +694,18 @@ theorem exists_integral_norm_deriv_comp_circleMap_sq_lt {V : Type*}
   let D := {z : ℂ | 0 < ‖z - ζ‖ ∧ ‖z - ζ‖ ≤ b}
   have hD : MeasurableSet D := measurableSet_puncturedClosedDisc ζ b
   let g : ℂ → ℝ≥0∞ := D.indicator (fun z ↦ ENNReal.ofReal (‖fderiv ℝ u z‖ ^ 2))
-  have hg : Measurable g :=
-    (ENNReal.measurable_ofReal.comp ((measurable_fderiv ℝ u).norm.pow_const 2)).indicator hD
+  have hg : Measurable g := by
+    -- measurability of `fderiv` needs a complete target: embed `V` in its completion
+    let ι : V →ₗᵢ[ℝ] UniformSpace.Completion V := UniformSpace.Completion.toComplₗᵢ
+    have hgι : g = D.indicator
+        (fun z ↦ ENNReal.ofReal (‖fderiv ℝ (ι ∘ u) z‖ ^ 2)) := by
+      refine indicator_congr fun z hz ↦ ?_
+      have hd : fderiv ℝ (ι ∘ u) z = ι.toContinuousLinearMap.comp (fderiv ℝ u z) :=
+        (ι.toContinuousLinearMap.hasFDerivAt.comp z (hu z hz).hasFDerivAt).fderiv
+      rw [hd, LinearIsometry.norm_toContinuousLinearMap_comp]
+    rw [hgι]
+    exact (ENNReal.measurable_ofReal.comp
+      ((measurable_fderiv ℝ (ι ∘ u)).norm.pow_const 2)).indicator hD
   have hfin : (∫⁻ z, g z) ≠ ∞ := by
     rw [lintegral_indicator hD]
     have h := henergy.hasFiniteIntegral

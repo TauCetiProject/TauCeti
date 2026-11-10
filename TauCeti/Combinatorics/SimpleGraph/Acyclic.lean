@@ -12,11 +12,13 @@ import Mathlib.Tactic.Linarith
 /-!
 # Paths and degrees in acyclic simple graphs
 
-This file records consequences of acyclicity for paths and bounds the degree of a
-nonempty finite regular forest.
+This file records consequences of acyclicity for paths, bounds the degree of a
+nonempty finite regular forest, and gives a height criterion for acyclicity.
 
 ## Main results
 
+* `SimpleGraph.isAcyclic_of_forall_adj_le_eq`: a graph with a height function for which every
+  vertex has at most one neighbour of height at most its own is acyclic.
 * `SimpleGraph.IsAcyclic.degree_le_one_of_isRegularOfDegree`: a nonempty finite regular
   forest has degree at most one.
 * `SimpleGraph.IsAcyclic.not_adj_getVert_of_add_one_lt`: nonconsecutive vertices of a path
@@ -29,11 +31,32 @@ nonempty finite regular forest.
 
 public section
 
-namespace TauCeti
+namespace SimpleGraph
+
+/-- **A height criterion for acyclicity.** If `f` is a height function on the vertices such that
+every vertex has at most one neighbour whose height is at most its own, then the graph is
+acyclic: on a cycle, a vertex of greatest height would have two distinct such neighbours. -/
+theorem isAcyclic_of_forall_adj_le_eq {V α : Type*} [LinearOrder α]
+    {G : SimpleGraph V} (f : V → α)
+    (h : ∀ ⦃v u w : V⦄, G.Adj v u → G.Adj v w → f u ≤ f v → f w ≤ f v → u = w) :
+    G.IsAcyclic := by
+  classical
+  rw [SimpleGraph.isAcyclic_iff_forall_not_isCycle]
+  intro v c hc
+  -- Rotate the cycle so that it starts at a vertex `w` of greatest height.
+  obtain ⟨w, hw, hmax⟩ := c.support.toFinset.exists_max_image f ⟨v, by simp⟩
+  rw [List.mem_toFinset] at hw
+  have hc' := hc.rotate hw
+  have hle : ∀ i, f ((c.rotate w hw).getVert i) ≤ f w := fun i =>
+    hmax _ (List.mem_toFinset.mpr ((c.mem_support_rotate_iff w hw).mp
+      ((c.rotate w hw).getVert_mem_support i)))
+  -- Its second and penultimate vertices are distinct neighbours of `w` of height at most `f w`.
+  exact hc'.snd_ne_penultimate <| h ((c.rotate w hw).adj_snd hc'.not_nil)
+    ((c.rotate w hw).adj_penultimate hc'.not_nil).symm (hle _) (hle _)
 
 /-- A path in an acyclic graph has no chord: vertices separated by at least one intermediate
 vertex cannot be adjacent. -/
-theorem _root_.SimpleGraph.IsAcyclic.not_adj_getVert_of_add_one_lt {V : Type*}
+theorem IsAcyclic.not_adj_getVert_of_add_one_lt {V : Type*}
     {G : SimpleGraph V} {u v : V}
     (hG : G.IsAcyclic) {p : G.Walk u v} (hp : p.IsPath) {i j : ℕ} (hij : i + 1 < j)
     (hj : j ≤ p.length) : ¬G.Adj (p.getVert i) (p.getVert j) := by
@@ -50,7 +73,7 @@ theorem _root_.SimpleGraph.IsAcyclic.not_adj_getVert_of_add_one_lt {V : Type*}
 /-- **An off-path neighbour of a path's start differs from every neighbour of its end.** In an
 acyclic graph, for a path with distinct endpoints. Only the start-side vertex is required to lie
 off the path; the end-side one is unconstrained. -/
-theorem _root_.SimpleGraph.IsAcyclic.ne_of_adj_start_of_adj_end {V : Type*} {G : SimpleGraph V}
+theorem IsAcyclic.ne_of_adj_start_of_adj_end {V : Type*} {G : SimpleGraph V}
     {u v : V} (hG : G.IsAcyclic) (huv : u ≠ v) {q : G.Walk u v} (hq : q.IsPath)
     {a b : V} (ha : G.Adj u a) (ha' : a ∉ q.support) (hb : G.Adj v b) : a ≠ b := fun hab ↦
   -- `a = b` makes `a` adjacent to the far end `v` of the path `a — u — … — v`, so acyclicity
@@ -62,7 +85,7 @@ theorem _root_.SimpleGraph.IsAcyclic.ne_of_adj_start_of_adj_end {V : Type*} {G :
 /-- **Neighbours of a path's two ends, both lying off the path, are not adjacent.** In an acyclic
 graph, no edge joins a vertex adjacent to the start of a path to one adjacent to its end. Here
 both are required to lie off the path, unlike in `ne_of_adj_start_of_adj_end`. -/
-theorem _root_.SimpleGraph.IsAcyclic.not_adj_of_adj_start_of_adj_end {V : Type*}
+theorem IsAcyclic.not_adj_of_adj_start_of_adj_end {V : Type*}
     {G : SimpleGraph V} {u v : V} (hG : G.IsAcyclic) {q : G.Walk u v} (hq : q.IsPath)
     {a b : V} (ha : G.Adj u a) (ha' : a ∉ q.support) (hb : G.Adj v b) (hb' : b ∉ q.support) :
     ¬G.Adj a b := by
@@ -74,7 +97,7 @@ theorem _root_.SimpleGraph.IsAcyclic.not_adj_of_adj_start_of_adj_end {V : Type*}
   simp [hadj.ne', hb'] at hmem
 
 /-- A nonempty finite regular forest has degree at most one. -/
-theorem _root_.SimpleGraph.IsAcyclic.degree_le_one_of_isRegularOfDegree
+theorem IsAcyclic.degree_le_one_of_isRegularOfDegree
     {V : Type*} {G : SimpleGraph V} [DecidableRel G.Adj] [Fintype V] [Nonempty V] {d : ℕ}
     (hG : G.IsAcyclic) (hd : G.IsRegularOfDegree d) : d ≤ 1 := by
   classical
@@ -86,4 +109,4 @@ theorem _root_.SimpleGraph.IsAcyclic.degree_le_one_of_isRegularOfDegree
   have hv : 0 < Nat.card V := Nat.card_pos
   nlinarith
 
-end TauCeti
+end SimpleGraph

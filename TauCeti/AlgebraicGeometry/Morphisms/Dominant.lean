@@ -95,6 +95,12 @@ theorem Scheme.Hom.irreducibleSpace_of_isDominant {X Y : Scheme.{u}} [Irreducibl
   refine (irreducibleSpace_def Y).mpr ?_
   simpa only [Set.top_eq_univ, f.denseRange.closure_eq] using himage.closure
 
+/-- The preimage of a nonempty open under a dominant morphism is nonempty. -/
+instance Scheme.Hom.nonempty_preimage_of_isDominant {X Y : Scheme.{u}} (f : X ⟶ Y)
+    [IsDominant f] (U : Y.Opens) [Nonempty U] : Nonempty (f ⁻¹ᵁ U) := by
+  obtain ⟨x, hx⟩ := f.denseRange.exists_mem_open U.2 ⟨_, (Classical.arbitrary U).2⟩
+  exact ⟨⟨x, hx⟩⟩
+
 variable {X Y Z : Scheme.{u}} [IrreducibleSpace X] [IrreducibleSpace Y]
 
 /-- A dominant morphism of irreducible schemes sends the generic point to the generic point. -/
@@ -133,29 +139,14 @@ pullback of rational functions along `f` (`Scheme.Hom.eq_functionFieldMap_iff`).
 theorem isDominant_of_SpecMap_fromSpecStalk (f : X ⟶ Y) (φ : Y.functionField ⟶ X.functionField)
     (h : Spec.map φ ≫ Y.fromSpecStalk (genericPoint Y) = X.fromSpecStalk (genericPoint X) ≫ f) :
     IsDominant f := by
-  -- evaluate both sides of `h` at the closed point of `Spec K(X)`
-  refine isDominant_iff_genericPoint_eq.mpr <| calc
-    f (genericPoint X)
-      = f (X.fromSpecStalk (genericPoint X) (IsLocalRing.closedPoint X.functionField)) :=
-        congrArg _ Scheme.fromSpecStalk_closedPoint.symm
-    _ = (X.fromSpecStalk (genericPoint X) ≫ f) (IsLocalRing.closedPoint X.functionField) :=
-        (Scheme.Hom.comp_apply _ _ _).symm
-    _ = (Spec.map φ ≫ Y.fromSpecStalk (genericPoint Y)) (IsLocalRing.closedPoint X.functionField) :=
-        congrArg (fun g ↦ g (IsLocalRing.closedPoint X.functionField)) h.symm
-    -- every point of `Spec K(Y)` maps to a generization of the generic point, hence to it
-    _ = genericPoint Y := by
-      have hmem : (Spec.map φ ≫ Y.fromSpecStalk (genericPoint Y))
-          (IsLocalRing.closedPoint X.functionField) ∈
-          Set.range (Y.fromSpecStalk (genericPoint Y)) :=
-        ⟨_, (Scheme.Hom.comp_apply _ _ _).symm⟩
-      rw [Scheme.range_fromSpecStalk] at hmem
-      exact (hmem.antisymm (genericPoint_specializes _)).eq
-
-/-- The preimage of a nonempty open under a dominant morphism is nonempty. -/
-instance nonempty_preimage_of_isDominant {X Y : Scheme.{u}} (f : X ⟶ Y) [IsDominant f]
-    (U : Y.Opens) [Nonempty U] : Nonempty (f ⁻¹ᵁ U) := by
-  obtain ⟨x, hx⟩ := f.denseRange.exists_mem_open U.2 ⟨_, (Classical.arbitrary U).2⟩
-  exact ⟨⟨x, hx⟩⟩
+  -- evaluating `h` at the closed point of `Spec K(X)`, `f` sends the generic point of `X` into the
+  -- image of `Spec K(Y)`, whose points are generizations of the generic point, hence equal to it
+  have hf : f (genericPoint X) ∈ Set.range (Y.fromSpecStalk (genericPoint Y)) :=
+    ⟨Spec.map φ (IsLocalRing.closedPoint _), (Scheme.Hom.comp_apply _ _ _).symm.trans <|
+      congr($h _).trans <| (Scheme.Hom.comp_apply _ _ _).trans
+        (congrArg f Scheme.fromSpecStalk_closedPoint)⟩
+  rw [Scheme.range_fromSpecStalk] at hf
+  exact isDominant_iff_genericPoint_eq.mpr (hf.antisymm (genericPoint_specializes _)).eq
 
 /-- The **pullback of rational functions** `f^* : K(Y) ⟶ K(X)` along a dominant morphism
 `f : X ⟶ Y` of irreducible schemes: the map of stalks of `f` at the generic point of `X`, which `f`

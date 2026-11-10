@@ -201,12 +201,8 @@ theorem IsMicrolocallySmoothAt.lineDerivOp (h : T.IsMicrolocallySmoothAt x ξ) (
     (∂_{v} T).IsMicrolocallySmoothAt x ξ := by
   obtain ⟨ψ, hψx, Γ, hΓ, hξ, hcone, hdecay⟩ := h.exists_cutoff_cone
   refine isMicrolocallySmoothAt_iff.2 ⟨ψ, by simp [hψx], Γ, hΓ, hξ, hcone, fun N ↦ ?_⟩
-  have hdψ : tsupport ⇑(∂_{v} ψ : 𝓓(Ω, ℂ)) ⊆ tsupport ψ := by
-    rw [TestFunction.lineDerivOp_eq_lineDerivCLM ℝ, coe_lineDerivCLM]
-    refine (tsupport_fderiv_apply_subset ℝ v).trans_eq' (congrArg tsupport (funext fun y ↦ ?_))
-    exact ((ψ.contDiff.differentiable (by simp)).differentiableAt).lineDeriv_eq_fderiv.symm
   obtain ⟨C₁, hC₁⟩ := hdecay ψ subset_rfl (N + 1)
-  obtain ⟨C₂, hC₂⟩ := hdecay (∂_{v} ψ) hdψ N
+  obtain ⟨C₂, hC₂⟩ := hdecay (∂_{v} ψ) (TestFunction.tsupport_lineDerivOp_subset ψ v) N
   refine ⟨2 * Real.pi * ‖v‖ * C₁ + C₂, fun η hη ↦ ?_⟩
   have h₁ := hC₁ η hη
   have h₂ := hC₂ η hη

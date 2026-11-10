@@ -10,14 +10,16 @@ public import TauCeti.Analysis.SpecialFunctions.Complex.Circle.Basic
 import Mathlib.Analysis.Fourier.FiniteAbelian.PontryaginDuality
 
 /-!
-# Character modules of finite abelian groups
+# Character modules of abelian groups
 
 The characters `CharacterModule M = M →+ AddCircle (1 : ℚ)` of an abelian group `M` separate its
-points, and when `M` is finite its character module is finite with as many elements as `M`:
+points, and when `M` is finite its character module is finite with as many elements as `M`; when
+`M` is infinite, so is its character module:
 
 * `TauCeti.CharacterModule.eval_injective`: evaluation embeds `M` in its double character module;
 * an instance `Finite (CharacterModule M)` for finite `M`;
-* `TauCeti.natCard_characterModule`: `Nat.card (CharacterModule M) = Nat.card M`.
+* `TauCeti.natCard_characterModule`: `Nat.card (CharacterModule M) = Nat.card M` for every abelian
+  group `M`; when `M` is infinite both sides are `0`.
 
 A finite-order element can moreover be detected by a single character with a prescribed value:
 
@@ -59,10 +61,23 @@ theorem CharacterModule.eval_injective (M : Type*) [AddCommGroup M] :
     rw [map_sub, hc, sub_self]
   exact sub_eq_zero.mp (CharacterModule.eq_zero_of_character_apply h)
 
-/-- The cardinality of the character module equals the cardinality of the group. -/
+/-- A finite abelian group and its character module have the same cardinality. For infinite `M`
+both `M` and its character module are infinite, so both `Nat.card`s are `0`. -/
 @[simp]
-theorem natCard_characterModule (M : Type*) [AddCommGroup M] [Finite M] :
+theorem natCard_characterModule (M : Type*) [AddCommGroup M] :
     Nat.card (CharacterModule M) = Nat.card M := by
+  by_cases hM : Finite M
+  swap
+  · -- both sides vanish: an infinite group has an infinite character module, since it embeds in
+    -- the double character module, which is finite as soon as the character module is
+    have hinf : Infinite (CharacterModule M) := by
+      refine ⟨fun hc ↦ hM ?_⟩
+      have := hc
+      have : Finite (CharacterModule (CharacterModule M)) := inferInstance
+      exact Finite.of_injective (β := CharacterModule (CharacterModule M)) _
+        (CharacterModule.eval_injective M)
+    have : Infinite M := not_finite_iff_infinite.mp hM
+    rw [Nat.card_eq_zero_of_infinite, Nat.card_eq_zero_of_infinite]
   cases nonempty_fintype M
   have : Fintype (CharacterModule M) := Fintype.ofFinite _
   have : Fintype (CharacterModule (CharacterModule M)) := Fintype.ofFinite _

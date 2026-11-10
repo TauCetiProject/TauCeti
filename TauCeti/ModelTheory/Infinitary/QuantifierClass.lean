@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.ModelTheory.Infinitary.ConstantAbstraction
 public import TauCeti.ModelTheory.Infinitary.SubstBounds
 
 /-!
@@ -18,7 +19,7 @@ existential even when its witnesses cannot be collected into a finite quantifier
 Universal formulas descend along structure embeddings, and existential formulas ascend.
 Both statements allow function symbols and empty structures; the branching carrier and all
 universes are arbitrary. The syntax classes are unchanged by substitution, variable renaming,
-carrier recoding, and language translation.
+carrier recoding, language translation, and the abstraction of constants into variables.
 
 ## References
 
@@ -29,7 +30,7 @@ carrier recoding, and language translation.
 
 public section
 
-universe u v u' v' uα uβ uι uκ w w'
+universe u v u' v' uα uβ uγ uι uκ w w'
 
 namespace FirstOrder.Language
 namespace BoundedFormulaInf
@@ -248,6 +249,35 @@ theorem universalSigned_relabel {β : Type uβ} {m : ℕ} (s : Bool) (g : α →
   | all φ ih => simp [ih]
   | iSup φs ih => simp [ih]
   | iInf φs ih => simp [ih]
+
+/-- Turning the added constants into free variables preserves quantifier polarity. -/
+@[simp]
+theorem universalSigned_constantsVarsEquiv {γ : Type uγ} (s : Bool)
+    (φ : L[[γ]].BoundedFormulaInf ι α n) :
+    universalSigned s (constantsVarsEquiv φ) ↔ universalSigned s φ := by
+  induction φ generalizing s with
+  | falsum => simp
+  | equal => simp
+  | rel => simp
+  | imp φ ψ ihφ ihψ => simp [ihφ, ihψ]
+  | all φ ih => simp [ih]
+  | iSup φs ih => simp [ih]
+  | iInf φs ih => simp [ih]
+
+/-- Turning free variables back into constants preserves quantifier polarity. -/
+@[simp]
+theorem universalSigned_constantsVarsEquiv_symm {γ : Type uγ} (s : Bool)
+    (φ : L.BoundedFormulaInf ι (γ ⊕ α) n) :
+    universalSigned s (constantsVarsEquiv.symm φ) ↔ universalSigned s φ := by
+  rw [← universalSigned_constantsVarsEquiv, constantsVarsEquiv.apply_symm_apply]
+
+/-- Abstracting one constant into a new bound position preserves quantifier polarity. -/
+@[simp]
+theorem universalSigned_abstractConst {γ : Type uγ} [DecidableEq γ] (s : Bool) (c : γ)
+    (φ : L[[γ]].BoundedFormulaInf ι α n) :
+    universalSigned s (abstractConst c φ) ↔ universalSigned s φ := by
+  rw [abstractConst_def, universalSigned_constantsVarsEquiv_symm, universalSigned_mapBound,
+    universalSigned_relabel, universalSigned_constantsVarsEquiv]
 
 end BoundedFormulaInf
 
