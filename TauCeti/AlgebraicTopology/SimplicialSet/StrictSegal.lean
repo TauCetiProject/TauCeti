@@ -93,6 +93,7 @@ theorem map_eq_of_isStrictSegal {n : ℕ} (r : ⦋n + 1⦌ ⟶ ⦋n + 1⦌)
   have hedge (f : ⦋1⦌ ⟶ ⦋n + 1⦌) (hf : ∀ a, f a ≠ Fin.last (n + 1)) :
       X.map f.op σ = X.map (SimplexCategory.const ⦋1⦌ ⦋0⦌ 0).op x := by
     rw [← SimplexCategory.factor_δ_spec f (Fin.last (n + 1)) hf, op_comp, Functor.map_comp_apply]
+    -- `X.δ i σ` is by definition `X.map (δ i).op σ`, so the face of `σ` appears syntactically
     change X.map _ (X.δ _ σ) = _
     rw [hσ, ← Functor.map_comp_apply, ← op_comp,
       Subsingleton.elim (SimplexCategory.factor_δ f (Fin.last (n + 1)) ≫ _)]
@@ -108,6 +109,8 @@ theorem map_eq_of_isStrictSegal {n : ℕ} (r : ⦋n + 1⦌ ⟶ ⦋n + 1⦌)
       ((r.toOrderHom.monotone ha).trans_eq hr).trans_lt (Fin.castSucc_lt_last _) |>.ne
     have hle (a : Fin 2) : mkOfSucc j.castSucc a ≤ (Fin.last n).castSucc := by
       fin_cases a
+      -- the two vertices of `mkOfSucc i` are `i.castSucc` and `i.succ`
+      -- (`SimplexCategory.mkOfSucc_homToOrderHom_zero`, `_one`, both `rfl`)
       · change j.castSucc.castSucc ≤ _
         rw [Fin.le_def]; simp
       · change j.castSucc.succ ≤ _
