@@ -24,14 +24,20 @@ open scoped ContDiff Matrix.Norms.Elementwise
 
 namespace ContinuousLinearMap
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- A real continuous linear map of positive determinant admits a smooth path from the identity
-through linear maps of positive determinant, on the whole real parameter line. -/
+through linear maps of positive determinant, on the whole real parameter line. In an
+infinite-dimensional space every determinant is `1` by convention, and the affine path works. -/
 theorem exists_contDiff_det_pos (L : E →L[ℝ] E) (hL : 0 < L.det) :
     ∃ γ : ℝ → E →L[ℝ] E, ContDiff ℝ ∞ γ ∧ γ 0 = ContinuousLinearMap.id ℝ E ∧
       γ 1 = L ∧ ∀ t, 0 < (γ t).det := by
   classical
+  by_cases hfin : FiniteDimensional ℝ E
+  swap
+  · refine ⟨fun t => (1 - t) • ContinuousLinearMap.id ℝ E + t • L, by fun_prop, by simp, by simp,
+      fun t => ?_⟩
+    simp [ContinuousLinearMap.det, LinearMap.det_eq_one_of_not_module_finite hfin]
   let b := Module.finBasis ℝ E
   let T := ((Matrix.toLin b b).trans LinearMap.toContinuousLinearMap).toContinuousLinearEquiv
   -- Compute the locally constructed transport through the chosen finite basis.
