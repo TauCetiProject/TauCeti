@@ -118,18 +118,24 @@ theorem finrank_quotient_jacobsonRadicalSubmodule_congr {X X' Y Y' : C} (e : X �
   (Submodule.Quotient.equiv _ _ (Linear.homCongr k e e')
     (jacobsonRadicalSubmodule_map_homCongr k e e')).finrank_eq
 
-/-- **Between non-isomorphic objects with local endomorphism rings nothing survives modulo the
-radical**: every morphism is radical (`TauCeti.jacobsonRadical_eq_top`). -/
-theorem finrank_quotient_jacobsonRadicalSubmodule_eq_zero {X Y : C} [IsLocalRing (End X)]
+/-- **Between non-isomorphic objects with local endomorphism rings the quotient by the radical is
+trivial**: every morphism is radical (`TauCeti.jacobsonRadical_eq_top`). -/
+theorem subsingleton_quotient_jacobsonRadicalSubmodule {X Y : C} [IsLocalRing (End X)]
     [IsLocalRing (End Y)] (h : IsEmpty (X ≅ Y)) :
-    Module.finrank k ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) = 0 := by
+    Subsingleton ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) := by
   have htop : jacobsonRadicalSubmodule k X Y = ⊤ := by
     refine Submodule.eq_top_iff'.2 fun f ↦ ?_
     rw [mem_jacobsonRadicalSubmodule, jacobsonRadical_eq_top h]
     exact AddSubgroup.mem_top f
-  have : Subsingleton ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) :=
-    Submodule.Quotient.subsingleton_iff.2 htop
-  exact Module.finrank_zero_of_subsingleton
+  exact Submodule.Quotient.subsingleton_iff.2 htop
+
+/-- **Between non-isomorphic objects with local endomorphism rings nothing survives modulo the
+radical**: the quotient is trivial, so it has dimension zero. -/
+theorem finrank_quotient_jacobsonRadicalSubmodule_eq_zero {X Y : C} [IsLocalRing (End X)]
+    [IsLocalRing (End Y)] (h : IsEmpty (X ≅ Y)) :
+    Module.finrank k ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) = 0 :=
+  have := subsingleton_quotient_jacobsonRadicalSubmodule k h
+  Module.finrank_zero_of_subsingleton
 
 /-- **An object with a local, finite-dimensional endomorphism ring survives modulo the radical**:
 the identity is invertible, hence not radical, so `(X ⟶ X) / rad(X, X)` is nonzero. -/
@@ -187,11 +193,18 @@ theorem finrank_quotient_jacobsonRadicalSubmodule_comm_of_iso_biproduct {J : Typ
     {X Y : C} [IsLocalRing (End X)] (P : J → C) [HasBiproduct P]
     [∀ j, IsLocalRing (End (P j))]
     [∀ j, FiniteDimensional k ((P j ⟶ X) ⧸ jacobsonRadicalSubmodule k (P j) X)]
-    [∀ j, FiniteDimensional k ((X ⟶ P j) ⧸ jacobsonRadicalSubmodule k X (P j))]
     (e : Y ≅ ⨁ P) :
     Module.finrank k ((X ⟶ Y) ⧸ jacobsonRadicalSubmodule k X Y) =
       Module.finrank k ((Y ⟶ X) ⧸ jacobsonRadicalSubmodule k Y X) := by
   let := Fintype.ofFinite J
+  have (j : J) : FiniteDimensional k ((X ⟶ P j) ⧸ jacobsonRadicalSubmodule k X (P j)) := by
+    by_cases h : Nonempty (X ≅ P j)
+    · obtain ⟨e⟩ := h
+      exact Module.Finite.equiv (Submodule.Quotient.equiv _ _ (Linear.homCongr k e e.symm)
+        (jacobsonRadicalSubmodule_map_homCongr k e e.symm)).symm
+    · have := subsingleton_quotient_jacobsonRadicalSubmodule k (X := X) (Y := P j)
+        ⟨fun e ↦ h ⟨e⟩⟩
+      infer_instance
   rw [finrank_quotient_jacobsonRadicalSubmodule_congr k (Iso.refl X) e,
     finrank_quotient_jacobsonRadicalSubmodule_congr k e (Iso.refl X),
     finrank_quotient_jacobsonRadicalSubmodule_biproduct_right,
