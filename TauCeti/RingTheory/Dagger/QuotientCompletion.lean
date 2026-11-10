@@ -128,12 +128,8 @@ theorem isometry_washnitzerCompletionAlgEquiv (I : Ideal W) :
 @[simp]
 theorem norm_washnitzerCompletionAlgEquiv (I : Ideal W) (x : Completion (W ⧸ I)) :
     ‖I.washnitzerCompletionAlgEquiv x‖ = ‖x‖ := by
-  have h := I.isometry_washnitzerCompletionAlgEquiv.dist_eq x 0
-  have hz : I.washnitzerCompletionAlgEquiv 0 = 0 := map_zero _
-  have hn : dist (I.washnitzerCompletionAlgEquiv x) 0 =
-      ‖I.washnitzerCompletionAlgEquiv x‖ := dist_zero_right (I.washnitzerCompletionAlgEquiv x)
-  rw [hz, hn, dist_zero_right] at h
-  exact h
+  exact Isometry.norm_map_of_map_zero (E := Completion (W ⧸ I))
+    (F := T ⧸ I.map (toTate σ K)) I.isometry_washnitzerCompletionAlgEquiv (map_zero _) x
 
 end Ideal
 
