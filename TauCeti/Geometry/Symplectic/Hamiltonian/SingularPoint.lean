@@ -90,16 +90,11 @@ section Kernel
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [NormedAddCommGroup G] [NormedSpace ℝ G] (ω : SymplecticForm E) {F : E → G} {x : E}
 
-omit [FiniteDimensional ℝ E] in
-/-- The derivative of `ℓ ∘ F` at a point of differentiability of `F`. -/
-private theorem fderiv_clm_comp (ℓ : G →L[ℝ] ℝ) (hF : DifferentiableAt ℝ F x) :
-    fderiv ℝ (ℓ ∘ F) x = ℓ.comp (fderiv ℝ F x) :=
-  (ℓ.hasFDerivAt.comp x hF.hasFDerivAt).fderiv
-
 /-- The Hamiltonian vector `X_{ℓ ∘ F}(x)` pairs with `v` to `ℓ (dF_x v)`. -/
 theorem apply_hamiltonianVectorField_comp (ℓ : G →L[ℝ] ℝ) (hF : DifferentiableAt ℝ F x) (v : E) :
     ω (ω.hamiltonianVectorField (ℓ ∘ F) x) v = ℓ (fderiv ℝ F x v) := by
-  rw [apply_hamiltonianVectorField, fderiv_clm_comp ℓ hF, ContinuousLinearMap.comp_apply]
+  rw [apply_hamiltonianVectorField, fderiv_comp x ℓ.differentiableAt hF, ContinuousLinearMap.fderiv,
+    ContinuousLinearMap.comp_apply]
 
 /-- The symplectic complement of the span of the Hamiltonian vectors `X_{ℓ ∘ F}(x)` is the kernel
 of `dF_x`. -/
@@ -108,21 +103,10 @@ theorem orthogonal_span_hamiltonianVectorField_comp (hF : DifferentiableAt ℝ F
         (Set.range fun ℓ : G →L[ℝ] ℝ ↦ ω.hamiltonianVectorField (ℓ ∘ F) x)) =
       (fderiv ℝ F x).ker := by
   ext v
-  rw [mem_orthogonal_iff, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
-  constructor
-  · intro h
-    refine SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ) fun ℓ ↦ ?_
-    rw [← apply_hamiltonianVectorField_comp ω ℓ hF]
-    exact h _ (Submodule.subset_span ⟨ℓ, rfl⟩)
-  · intro h y hy
-    induction hy using Submodule.span_induction with
-    | mem y hy =>
-      obtain ⟨ℓ, rfl⟩ := hy
-      rw [apply_hamiltonianVectorField_comp ω ℓ hF]
-      exact (congrArg ℓ h).trans (map_zero ℓ)
-    | zero => simp
-    | add y z _ _ hy hz => simp [hy, hz]
-    | smul c y _ hy => simp [hy]
+  rw [mem_orthogonal_span_iff, Set.forall_mem_range, LinearMap.mem_ker,
+    ContinuousLinearMap.coe_coe]
+  simp only [apply_hamiltonianVectorField_comp ω _ hF]
+  exact ⟨SeparatingDual.eq_zero_of_forall_dual_eq_zero (R := ℝ), fun h ℓ ↦ by rw [h, map_zero]⟩
 
 /-- **The symplectic complement of `ker dF_x`** is spanned by the Hamiltonian vectors
 `X_{ℓ ∘ F}(x)` of the functions `ℓ ∘ F`, for `ℓ` a continuous linear functional on `G`. -/
@@ -180,7 +164,8 @@ theorem polar_hessianQuadraticForm_eq_zero_of_mem_orthogonal (hF : ContDiffAt �
   | mem y hy =>
     obtain ⟨ℓ', rfl⟩ := hy
     exact ω.polar_hessianQuadraticForm_hamiltonianVectorField_eq_zero
-      (ℓ.contDiff.contDiffAt.comp x hF) (by rw [fderiv_clm_comp ℓ hd, hℓ])
+      (ℓ.contDiff.contDiffAt.comp x hF)
+      (by rw [fderiv_comp x ℓ.differentiableAt hd, ContinuousLinearMap.fderiv, hℓ])
       (ℓ'.contDiff.contDiffAt.comp x hF) (hcomm ℓ') v
   | zero => simp
   | add y z _ _ hy hz => rw [QuadraticMap.polar_add_left, hy, hz, add_zero]
