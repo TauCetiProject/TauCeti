@@ -76,9 +76,9 @@ private theorem map_normUnits_unitFiltration_inf_succ_before_break
       ((psiNat_strictMono K L).monotone v.le_succ)))
       (map_normUnits_unitFiltration_psiNat_le K L (v + 1))
 
-/-- The norms of integer units that lie in `U(K,v)` are exactly norms from the Herbrand-shifted
-step `U(L, ψℕ(v))`, at every depth `v` (up to a prime-degree break by induction, and above it by
-surjectivity of the norm). -/
+/-- For a Galois extension of prime degree with an upper break at a natural number `t`, the norms of
+integer units that lie in `U(K,v)` are exactly the norms from the Herbrand-shifted step
+`U(L, ψℕ(v))`, at every natural depth `v`. -/
 theorem map_normUnits_unitFiltration_zero_inf
     (hℓ : (Module.finrank K L).Prime) {v t : ℕ}
     (ht : UpperJump K L ⟨t, Nat.cast_mem_ramificationIndexDomain t⟩) :
