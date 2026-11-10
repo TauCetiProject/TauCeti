@@ -8,6 +8,7 @@ module
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
+import TauCeti.Algebra.Algebra.Hom
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.Kummer.Extension
@@ -83,22 +84,13 @@ namespace TauCeti.IsDiscreteValuationRing
 
 variable {A : Type*} [CommRing A] [IsDomain A] [IsDiscreteValuationRing A] {π : A} {n : ℕ}
 
-omit [IsDomain A] [IsDiscreteValuationRing A] in
-/-- An `n`-th root of a uniformizer `π` of `A`, in an `A`-algebra in which `A` embeds, exists only
-for `n ≠ 0`, since `π` is not `1`. -/
-private theorem ne_zero_of_pow_eq_of_irreducible_of_injective {L : Type*} [Semiring L] [Algebra A L]
-    (hinj : Function.Injective (algebraMap A L)) {α : L} (hπ : Irreducible π)
-    (hα : α ^ n = algebraMap A L π) : n ≠ 0 := by
-  rintro rfl
-  exact hπ.ne_one (hinj (by rw [map_one]; simpa using hα.symm))
-
 /-- The minimal polynomial over a discrete valuation ring `A` of an `n`-th root of a uniformizer
 `π` of `A`, in a torsion-free domain `A`-algebra, is `X ^ n - π`. -/
 theorem minpoly_eq_of_pow_eq_of_irreducible {L : Type*} [CommRing L] [IsDomain L] [Algebra A L]
     [Module.IsTorsionFree A L] {α : L} (hπ : Irreducible π)
     (hα : α ^ n = algebraMap A L π) : minpoly A α = X ^ n - C π := by
-  have hn := ne_zero_of_pow_eq_of_irreducible_of_injective
-    (Module.isTorsionFree_iff_algebraMap_injective.mp inferInstance) hπ hα
+  have hn := Algebra.ne_zero_of_pow_eq_algebraMap_of_injective
+    (Module.isTorsionFree_iff_algebraMap_injective.mp inferInstance) hπ.ne_one hα
   have hmonic := monic_X_pow_sub_C π hn
   refine eq_of_monic_of_associated
     (minpoly.monic (IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap)))
@@ -117,7 +109,8 @@ for `n ≠ 0`. -/
 private theorem ne_zero_of_pow_eq_of_irreducible (hπ : Irreducible π)
     (hα : α ^ n = algebraMap A L π) : n ≠ 0 :=
   have := FaithfulSMul.trans A K L
-  ne_zero_of_pow_eq_of_irreducible_of_injective (FaithfulSMul.algebraMap_injective A L) hπ hα
+  Algebra.ne_zero_of_pow_eq_algebraMap_of_injective (FaithfulSMul.algebraMap_injective A L)
+    hπ.ne_one hα
 
 include K in
 /-- If `α` is an `n`-th root of a uniformizer of a discrete valuation ring `A`, then the field
@@ -176,7 +169,7 @@ theorem integralClosure_eq_adjoin_of_pow_eq_of_irreducible (hπ : Irreducible π
     IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap)
   set B := Algebra.adjoin A {α}
   have := FaithfulSMul.trans A K L
-  obtain ⟨_, hf, hmo, hx, hadj⟩ := isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top
+  obtain ⟨_, hf, -, hx, hadj⟩ := isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top
     (K := K) hπ hα rfl (Algebra.self_mem_adjoin_singleton A α)
   -- `A[α]` is a discrete valuation ring, hence integrally closed.
   have := hf.isDiscreteValuationRing_of_adjoin_eq_top hx hadj
@@ -226,9 +219,9 @@ the fraction field `K` of a discrete valuation ring `A` by an `n`-th root `α` o
 theorem irreducible_mk_of_pow_eq_of_irreducible (hπ : Irreducible π)
     (hα : α ^ n = algebraMap A L π) (hgen : K⟮α⟯ = ⊤) (h : α ∈ integralClosure A L) :
     Irreducible (⟨α, h⟩ : integralClosure A L) :=
-  have ⟨_, hf, hmo, hx, hadj⟩ :=
+  have ⟨_, hf, _, hx, hadj⟩ :=
     isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top_integralClosure hπ hα hgen h
-  hf.irreducible_of_adjoin_eq_top hmo hx hadj
+  hf.irreducible_of_adjoin_eq_top hx hadj
 
 include K in
 /-- **The ramification index of a Kummer extension of a discrete valuation ring.** If `L` is
@@ -242,9 +235,9 @@ theorem ramificationIdx_eq_of_pow_eq_of_irreducible (hπ : Irreducible π)
   have hn := ne_zero_of_pow_eq_of_irreducible (K := K) hπ hα
   have h := (mem_integralClosure_iff _ _).mpr
     (IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap))
-  obtain ⟨_, hf, hmo, hx, hadj⟩ :=
+  obtain ⟨_, hf, -, hx, hadj⟩ :=
     isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top_integralClosure hπ hα hgen h
-  rw [hf.ramificationIdx_eq_natDegree hmo hx hadj P, natDegree_X_pow_sub_C]
+  rw [hf.ramificationIdx_eq_natDegree hx hadj P, natDegree_X_pow_sub_C]
 
 include K in
 /-- **A Kummer extension of a discrete valuation ring is totally ramified.** If `L` is generated
@@ -256,11 +249,11 @@ theorem isTotallyRamifiedWRT_of_pow_eq_of_irreducible (hπ : Irreducible π)
   have hn := ne_zero_of_pow_eq_of_irreducible (K := K) hπ hα
   have h := (mem_integralClosure_iff _ _).mpr
     (IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap))
-  obtain ⟨_, hf, hmo, hx, hadj⟩ :=
+  obtain ⟨_, hf, -, hx, hadj⟩ :=
     isEisensteinAt_and_aeval_eq_zero_and_adjoin_eq_top_integralClosure hπ hα hgen h
-  exact Algebra.isTotallyRamifiedWRT_def.mpr ⟨⟨_, hf.isMaximal_span_singleton hmo hx hadj,
-      fun P _ ↦ hf.eq_span_singleton_of_isMaximal hmo hx hadj P⟩,
-    fun P _ ↦ hf.inertiaDeg_eq_one hmo hx hadj P⟩
+  exact Algebra.isTotallyRamifiedWRT_def.mpr ⟨⟨_, hf.isMaximal_span_singleton hx hadj,
+      fun P _ ↦ hf.eq_span_singleton_of_isMaximal hx hadj P⟩,
+    fun P _ ↦ hf.inertiaDeg_eq_one hx hadj P⟩
 
 include K in
 /-- In a Kummer extension `L = K(α)` of a discrete valuation ring `A`, the residue field extension

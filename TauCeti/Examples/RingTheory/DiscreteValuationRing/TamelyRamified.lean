@@ -200,7 +200,7 @@ theorem test_gaussian_two (hv : (2 : ℤ) ∈ v.asIdeal) {i : L} (hi : i ^ 2 = -
     rw [eq_top_iff, ← hgen, adjoin_simple_le_iff]
     simpa using sub_mem (mem_adjoin_simple_self ℚ (1 + i)) (one_mem ℚ⟮1 + i⟯)
   have he (P : Ideal B) [P.IsMaximal] : P.ramificationIdx A = 2 :=
-    hdeg ▸ hf.ramificationIdx_eq_natDegree hmo hx hadj P
+    hdeg ▸ hf.ramificationIdx_eq_natDegree hx hadj P
   refine ⟨inferInstance, inferInstance, he, fun h ↦ ?_⟩
   -- The ramification index `2` is the uniformizer of `A`, so it vanishes in the residue field.
   have : (maximalIdeal B).LiesOver (maximalIdeal A) :=
