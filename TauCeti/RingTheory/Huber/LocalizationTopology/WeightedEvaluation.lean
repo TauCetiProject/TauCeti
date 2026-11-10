@@ -493,9 +493,11 @@ theorem isOpenMap_weightedRationalEvalHom :
   rintro _ ⟨w, hw, rfl⟩
   exact ⟨_, hw, congrFun (weightedRationalEvalHom_comp_completionMap P T s S hden hW) w⟩
 
+omit [(nhds (0 : A)).IsCountablyGenerated] in
 /-- **The evaluation map `A⟨X⟩_{T ∪ {s}} → A⟨T/s⟩` is an open quotient map**: it presents the
 rational localisation of a Huber ring as a topological quotient of a weighted restricted
-power-series ring in one variable. -/
+power-series ring in one variable. The neighbourhood filter of zero in `A` is countably generated
+because `P` provides a countable neighbourhood basis. -/
 theorem isOpenQuotientMap_weightedRationalEvalHom :
     letI := locUniformSpace P T s S hden
     letI := isUniformAddGroup_locUniformSpace P T s S hden
@@ -504,6 +506,7 @@ theorem isOpenQuotientMap_weightedRationalEvalHom :
   letI := locUniformSpace P T s S hden
   letI := isUniformAddGroup_locUniformSpace P T s S hden
   letI := isTopologicalRing_locUniformSpace P T s S hden
+  haveI : (nhds (0 : A)).IsCountablyGenerated := P.hasBasis_nhds_zero.isCountablyGenerated
   ⟨weightedRationalEvalHom_surjective P T s S hden hW,
     continuous_weightedRationalEvalHom P T s S hden hW,
     isOpenMap_weightedRationalEvalHom P T s S hden hW⟩
