@@ -6,12 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Chebyshev
-import Mathlib.Algebra.Order.Field.GeomSum
 import Mathlib.Analysis.Complex.ExponentialBounds
-import Mathlib.Analysis.PSeries
 import Mathlib.Analysis.SpecialFunctions.Log.Sum
+import TauCeti.NumberTheory.ArithmeticFunction.VonMangoldt
 import TauCeti.NumberTheory.Chebyshev.Factorial
-import TauCeti.NumberTheory.SumPrimePow
 
 /-!
 # Mertens's first theorem over `ℚ`
@@ -31,10 +29,10 @@ The proof is Chebyshev's. By `Chebyshev.log_factorial_floor_eq_sum_vonMangoldt_m
 `x ∑_{n ≤ x} Λ(n) / n`. Mathlib's `Real.sum_log_le` and `Real.le_sum_log` give
 `log ⌊x⌋! = x log x - x + O(log x)`, and its `Chebyshev.psi_le_const_mul_self` gives
 `ψ(x) ≤ (log 4 + 4) x`; dividing by `x` gives the von Mangoldt form. The prime powers `p ^ k`
-with `k ≥ 2` contribute at most `∑_p log p / (p (p - 1))`, which is bounded by the convergent
-series `∑_{n ≥ 2} log n / (n (n - 1))`. For the prime divisors of `N`, the primes `p ≤ log N`
-contribute `log log N + O(1)` by the prime form, and the primes `p > log N` dividing `N`
-contribute at most `(∑_{p ∣ N} log p) / log N ≤ 1`.
+with `k ≥ 2` contribute at most the convergent series `∑_{n not prime} Λ(n) / n`, by
+`TauCeti.sum_vonMangoldt_div_le_sum_primesLE_log_div_add_tsum`. For the prime divisors of `N`,
+the primes `p ≤ log N` contribute `log log N + O(1)` by the prime form, and the primes
+`p > log N` dividing `N` contribute at most `(∑_{p ∣ N} log p) / log N ≤ 1`.
 
 `TauCeti.LFunctions.isBigO_primeSummatory_log_absNorm_div_sub_log` proves Mertens's first theorem
 for every number field as an asymptotic statement over prime ideals; the statements here are the
@@ -93,89 +91,16 @@ theorem abs_sum_vonMangoldt_div_sub_log_le {x : ℝ} (hx : 1 ≤ x) :
   rw [abs_le, ← mul_le_mul_iff_of_pos_left hx0, ← mul_le_mul_iff_of_pos_left hx0 (b := S - log x)]
   constructor <;> nlinarith
 
-/-- The prime powers `p ^ k` with `k ≥ 2` contribute a bounded amount to `∑_{n ≤ N} Λ(n) / n`:
-at most `∑_{n ≥ 2} log n / (n (n - 1))`, which bounds `∑_p log p / (p (p - 1))`. -/
-private theorem exists_sum_vonMangoldt_div_le_sum_primesLE_add :
-    ∃ B, 0 ≤ B ∧ ∀ N : ℕ, ∑ n ∈ Ioc 0 N, Λ n / n ≤ ∑ p ∈ Nat.primesLE N, log p / p + B := by
-  -- The series `∑ log n / (n (n - 1))` is dominated by `4 n ^ (-3 / 2)`.
-  have hterm (n : ℕ) : 0 ≤ log n / (n * (n - 1) : ℝ) := by
-    rcases Nat.lt_or_ge n 2 with hn | hn
-    · interval_cases n <;> simp
-    · have : (2 : ℝ) ≤ n := by exact_mod_cast hn
-      exact div_nonneg (log_nonneg (by linarith)) (by nlinarith)
-  have hsum : Summable fun n : ℕ ↦ log n / (n * (n - 1) : ℝ) := by
-    refine .of_nonneg_of_le hterm (fun n ↦ ?_)
-      ((Real.summable_nat_rpow.mpr (by norm_num : (-3 / 2 : ℝ) < -1)).mul_left 4)
-    rcases Nat.lt_or_ge n 2 with hn | hn
-    · interval_cases n <;> simp
-    · have h2 : (2 : ℝ) ≤ n := by exact_mod_cast hn
-      have hn0 : (0 : ℝ) < n := by linarith
-      have hlog : log n ≤ 2 * (n : ℝ) ^ (1 / 2 : ℝ) :=
-        calc log n ≤ (n : ℝ) ^ (1 / 2 : ℝ) / (1 / 2) := log_le_rpow_div hn0.le (by norm_num)
-          _ = 2 * (n : ℝ) ^ (1 / 2 : ℝ) := by ring
-      have hpow : (n : ℝ) ^ (1 / 2 : ℝ) = (n : ℝ) ^ (-3 / 2 : ℝ) * n ^ 2 := by
-        rw [← rpow_natCast, ← rpow_add hn0]
-        norm_num
-      rw [div_le_iff₀ (by nlinarith)]
-      have hpos : 0 ≤ (n : ℝ) ^ (-3 / 2 : ℝ) * (n * (n - 2)) :=
-        mul_nonneg (by positivity) (by nlinarith)
-      nlinarith
-  refine ⟨∑' n : ℕ, log n / (n * (n - 1)), tsum_nonneg hterm, fun N ↦ ?_⟩
-  -- Regroup by the prime base and bound the geometric sum of each prime.
-  have hreg : ∑ n ∈ Ioc 0 N, Λ n / n =
-      ∑ p ∈ Nat.primesLE N, ∑ k ∈ Icc 1 (p.log N), Λ (p ^ k) / (p ^ k : ℕ) := by
-    rw [← Icc_add_one_left_eq_Ioc, zero_add]
-    exact Nat.sum_Icc_eq_sum_primesLE_sum_Icc_log (f := fun n : ℕ ↦ Λ n / (n : ℝ))
-      (fun n hn ↦ by simp [vonMangoldt_eq_zero_iff.mpr hn]) N
-  have hprime (p : ℕ) (hp : p ∈ Nat.primesLE N) :
-      ∑ k ∈ Icc 1 (p.log N), Λ (p ^ k) / (p ^ k : ℕ) ≤ log p / p + log p / (p * (p - 1)) := by
-    have hp := Nat.prime_of_mem_primesLE hp
-    have hp2 : (2 : ℝ) ≤ p := by exact_mod_cast hp.two_le
-    have hlogp : 0 ≤ log p := log_nonneg (by linarith)
-    have hgeom : ∑ k ∈ Icc 1 (p.log N), ((p : ℝ)⁻¹) ^ k ≤ (p : ℝ)⁻¹ / (1 - (p : ℝ)⁻¹) := by
-      rw [← Ico_add_one_right_eq_Icc]
-      simpa using geom_sum_Ico_le_of_lt_one (x := (p : ℝ)⁻¹) (m := 1) (n := p.log N + 1)
-        (by positivity) (inv_lt_one_of_one_lt₀ (by linarith))
-    calc ∑ k ∈ Icc 1 (p.log N), Λ (p ^ k) / (p ^ k : ℕ)
-        = log p * ∑ k ∈ Icc 1 (p.log N), ((p : ℝ)⁻¹) ^ k := by
-          rw [mul_sum]
-          refine sum_congr rfl fun k hk ↦ ?_
-          rw [vonMangoldt_apply_pow (by grind), vonMangoldt_apply_prime hp]
-          simp [div_eq_mul_inv]
-      _ ≤ log p * ((p : ℝ)⁻¹ / (1 - (p : ℝ)⁻¹)) := mul_le_mul_of_nonneg_left hgeom hlogp
-      _ = log p / p + log p / (p * (p - 1)) := by
-          have : (p : ℝ) - 1 ≠ 0 := by linarith
-          field_simp
-          ring
-  have htail : ∑ p ∈ Nat.primesLE N, log p / (p * (p - 1) : ℝ) ≤
-      ∑' n : ℕ, log n / (n * (n - 1)) :=
-    hsum.sum_le_tsum _ fun n _ ↦ hterm n
-  rw [hreg]
-  calc _ ≤ ∑ p ∈ Nat.primesLE N, (log p / p + log p / (p * (p - 1))) := sum_le_sum hprime
-    _ ≤ _ := by
-      rw [sum_add_distrib]
-      linarith
-
-/-- The primes contribute at most `∑_{n ≤ N} Λ(n) / n`. -/
-private theorem sum_primesLE_log_div_le_sum_vonMangoldt_div (N : ℕ) :
-    ∑ p ∈ Nat.primesLE N, log p / p ≤ ∑ n ∈ Ioc 0 N, Λ n / n := by
-  calc ∑ p ∈ Nat.primesLE N, log p / p = ∑ p ∈ Nat.primesLE N, Λ p / p :=
-        sum_congr rfl fun p hp ↦ by rw [vonMangoldt_apply_prime (Nat.prime_of_mem_primesLE hp)]
-    _ ≤ ∑ n ∈ Ioc 0 N, Λ n / n := by
-      refine sum_le_sum_of_subset_of_nonneg (fun p hp ↦ ?_) fun n _ _ ↦ by
-        positivity [vonMangoldt_nonneg (n := n)]
-      rw [Nat.mem_primesLE] at hp
-      exact mem_Ioc.mpr ⟨hp.2.pos, hp.1⟩
-
 /-- **Mertens's first theorem.** There is an absolute constant `C` with
 `|∑_{p ≤ x} log p / p - log x| ≤ C` for every real `x ≥ 1`. -/
 theorem exists_abs_sum_primesLE_log_div_sub_log_le :
     ∃ C, ∀ x : ℝ, 1 ≤ x → |∑ p ∈ Nat.primesLE ⌊x⌋₊, log p / p - log x| ≤ C := by
-  obtain ⟨B, hB, h₁⟩ := exists_sum_vonMangoldt_div_le_sum_primesLE_add
+  set B := ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n
+  have hB : 0 ≤ B := tsum_nonneg fun n ↦ by positivity [vonMangoldt_nonneg (n := n)]
   refine ⟨log 4 + 4 + B, fun x hx ↦ ?_⟩
   have hM := abs_le.mp (abs_sum_vonMangoldt_div_sub_log_le hx)
   have h₂ := sum_primesLE_log_div_le_sum_vonMangoldt_div ⌊x⌋₊
-  have := h₁ ⌊x⌋₊
+  have h₁ := sum_vonMangoldt_div_le_sum_primesLE_log_div_add_tsum ⌊x⌋₊
   rw [abs_le]
   constructor <;> linarith [hM.1, hM.2]
 

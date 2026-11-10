@@ -1,0 +1,79 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.NumberTheory.Chebyshev
+import Mathlib.NumberTheory.LSeries.PrimesInAP
+
+/-!
+# Comparing `∑ Λ(n) / n` with `∑ log p / p`
+
+The partial sums `∑_{n ≤ N} Λ(n) / n` and `∑_{p ≤ N} log p / p` differ only by the prime powers
+`p ^ k` with `k ≥ 2`, whose total contribution `∑_{n not prime} Λ(n) / n` converges. This file
+records the resulting two-sided comparison, uniform in `N`.
+
+## Main results
+
+* `TauCeti.sum_primesLE_log_div_le_sum_vonMangoldt_div`:
+  `∑_{p ≤ N} log p / p ≤ ∑_{n ≤ N} Λ(n) / n`.
+* `TauCeti.sum_vonMangoldt_div_le_sum_primesLE_log_div_add_tsum`:
+  `∑_{n ≤ N} Λ(n) / n ≤ ∑_{p ≤ N} log p / p + ∑_{n not prime} Λ(n) / n`.
+
+The convergence of the nonprime series is Mathlib's
+`ArithmeticFunction.vonMangoldt.summable_residueClass_non_primes_div`, specialized to the
+modulus `1`.
+-/
+
+public section
+
+open Finset Real
+open ArithmeticFunction hiding log
+
+namespace TauCeti
+
+/-- The series `∑_{n not prime} Λ(n) / n`, that is, the contribution of the prime powers `p ^ k`
+with `k ≥ 2`, converges. -/
+theorem summable_vonMangoldt_non_primes_div :
+    Summable fun n : ℕ ↦ (if n.Prime then 0 else Λ n) / n :=
+  (vonMangoldt.summable_residueClass_non_primes_div (0 : ZMod 1)).congr fun n ↦ by
+    simp [Subsingleton.elim (n : ZMod 1) 0]
+
+/-- The primes contribute at most `∑_{n ≤ N} Λ(n) / n`. -/
+theorem sum_primesLE_log_div_le_sum_vonMangoldt_div (N : ℕ) :
+    ∑ p ∈ Nat.primesLE N, log p / p ≤ ∑ n ∈ Ioc 0 N, Λ n / n := by
+  calc ∑ p ∈ Nat.primesLE N, log p / p = ∑ p ∈ Nat.primesLE N, Λ p / p :=
+        sum_congr rfl fun p hp ↦ by rw [vonMangoldt_apply_prime (Nat.prime_of_mem_primesLE hp)]
+    _ ≤ ∑ n ∈ Ioc 0 N, Λ n / n := by
+      refine sum_le_sum_of_subset_of_nonneg (fun p hp ↦ ?_) fun n _ _ ↦ by
+        positivity [vonMangoldt_nonneg (n := n)]
+      rw [Nat.mem_primesLE] at hp
+      exact mem_Ioc.mpr ⟨hp.2.pos, hp.1⟩
+
+/-- The prime powers `p ^ k` with `k ≥ 2` contribute a bounded amount to `∑_{n ≤ N} Λ(n) / n`:
+at most the convergent series `∑_{n not prime} Λ(n) / n`. -/
+theorem sum_vonMangoldt_div_le_sum_primesLE_log_div_add_tsum (N : ℕ) :
+    ∑ n ∈ Ioc 0 N, Λ n / n ≤
+      ∑ p ∈ Nat.primesLE N, log p / p + ∑' n : ℕ, (if n.Prime then 0 else Λ n) / n := by
+  have hprime : ∑ n ∈ Ioc 0 N, (if n.Prime then Λ n / n else 0) =
+      ∑ p ∈ Nat.primesLE N, log p / p := by
+    rw [← sum_filter]
+    refine sum_congr ?_ fun p hp ↦ ?_
+    · ext p
+      simp only [mem_filter, mem_Ioc, Nat.mem_primesLE]
+      exact ⟨fun h ↦ ⟨h.1.2, h.2⟩, fun h ↦ ⟨⟨h.2.pos, h.1⟩, h.2⟩⟩
+    · rw [vonMangoldt_apply_prime (Nat.prime_of_mem_primesLE hp)]
+  calc ∑ n ∈ Ioc 0 N, Λ n / n
+      = ∑ n ∈ Ioc 0 N, ((if n.Prime then Λ n / n else 0) + (if n.Prime then 0 else Λ n) / n) :=
+        sum_congr rfl fun n _ ↦ by split_ifs <;> simp
+    _ = ∑ p ∈ Nat.primesLE N, log p / p +
+          ∑ n ∈ Ioc 0 N, (if n.Prime then 0 else Λ n) / n := by
+        rw [sum_add_distrib, hprime]
+    _ ≤ _ := by
+        gcongr
+        exact summable_vonMangoldt_non_primes_div.sum_le_tsum _ fun n _ ↦ by
+          positivity [vonMangoldt_nonneg (n := n)]
+
+end TauCeti
