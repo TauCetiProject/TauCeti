@@ -322,11 +322,10 @@ theorem raisingMatrix_mem_typeD {K : Type*} [CommRing K] (i : Fin n) :
     raisingMatrix (K := K) n hn i ∈ LieAlgebra.Orthogonal.typeD (Fin n) K := by
   by_cases hi : (i : ℕ) + 1 < n
   · rw [raisingMatrix_of_chain n hn hi]
-    exact Matrix.fromBlocks_mem_typeD (ι := Fin n) _ 0 0 (by simp) (by simp)
+    exact Matrix.fromBlocks_mem_typeD_iff.mpr ⟨by simp, by simp, rfl⟩
   · rw [raisingMatrix_of_fork n hn hi]
-    simpa only [forkBlock, Matrix.transpose_zero, neg_zero] using
-      Matrix.fromBlocks_mem_typeD (K := K) (ι := Fin n) 0 (forkBlock n hn) 0
-      (forkBlock_transpose n hn) (by simp only [Matrix.transpose_zero, neg_zero])
+    exact Matrix.fromBlocks_mem_typeD_iff.mpr
+      ⟨Matrix.transpose_single_sub_single _ _ _, by simp, by simp⟩
 
 /-- The transpose of an explicit raising matrix is again in the split type-`D` Lie algebra. -/
 theorem loweringMatrix_mem_typeD {K : Type*} [CommRing K] (i : Fin n) :
@@ -334,12 +333,10 @@ theorem loweringMatrix_mem_typeD {K : Type*} [CommRing K] (i : Fin n) :
   by_cases hi : (i : ℕ) + 1 < n
   · rw [loweringMatrix, raisingMatrix_of_chain n hn hi,
       Matrix.fromBlocks_transpose]
-    exact Matrix.fromBlocks_mem_typeD (ι := Fin n) _ 0 0 (by simp) (by simp)
+    exact Matrix.fromBlocks_mem_typeD_iff.mpr ⟨by simp, by simp, rfl⟩
   · rw [loweringMatrix_of_fork n hn hi]
-    simpa only [forkBlock, Matrix.transpose_zero, neg_zero] using
-      Matrix.fromBlocks_mem_typeD (K := K) (ι := Fin n) 0 0 (-forkBlock n hn)
-      (by simp only [Matrix.transpose_zero, neg_zero]) (by
-      rw [Matrix.transpose_neg, forkBlock_transpose])
+    exact Matrix.fromBlocks_mem_typeD_iff.mpr
+      ⟨by simp, by rw [Matrix.transpose_neg, Matrix.transpose_single_sub_single], by simp⟩
 
 /-- The raising and lowering generators, indexed by two copies of the zero-based Bourbaki nodes;
 `Fin` index `i` represents node `i + 1`. -/

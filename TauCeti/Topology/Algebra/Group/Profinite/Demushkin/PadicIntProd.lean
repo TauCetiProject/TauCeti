@@ -167,11 +167,11 @@ theorem finrank_cohomFp_two_multiplicative_pi_padicInt_fin_two :
     Set.singleton_subset_iff.mpr (demushkinWordNeTwo_mem_proPFrattini Fact.out (dvd_zero p) 2 _)
   have hfin : Finite (H2 G (ZMod p)) :=
     (presentedProP.finite_H2_iff_exists_finite_relation_system {r} hrels
-      (presentedProPEquivPiPadicInt p) htriv).mpr ⟨{r}, by rw [Finset.coe_singleton]⟩
-  have hfg := (presentedProP.finite_H2_iff {r} hrels (presentedProPEquivPiPadicInt p) htriv).mp hfin
+      (presentedProPEquivPiPadicInt p)).mpr ⟨{r}, by rw [Finset.coe_singleton]⟩
+  have hfg := (presentedProP.finite_H2_iff {r} hrels (presentedProPEquivPiPadicInt p)).mp hfin
   -- One relator bounds the relation rank by one.
   have hle : Module.finrank (ZMod p) (H2 G (ZMod p)) ≤ 1 :=
-    (presentedProP.finrank_H2_le_iff {r} hrels (presentedProPEquivPiPadicInt p) htriv hfg 1).mpr
+    (presentedProP.finrank_H2_le_iff {r} hrels (presentedProPEquivPiPadicInt p) hfg 1).mpr
       ⟨{⟨r, le_topologicalClosure _ (subset_normalClosure rfl)⟩}, by simp,
         by rw [Finset.coe_singleton, Set.image_singleton]⟩
   have : Finite (H2 G (ZMod p)) := hfin

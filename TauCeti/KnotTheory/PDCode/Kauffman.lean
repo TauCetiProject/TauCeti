@@ -183,6 +183,16 @@ over-pair indicator. -/
     (hs : s i = false) : D.smoothingChoice s i = !D.overPair i := by
   simp [smoothingChoice, hs]
 
+/-- Reading the over-pair indicators selected by a state as a state again selects the original
+one: `smoothingChoice` is an involution on states. -/
+@[simp] theorem smoothingChoice_smoothingChoice (D : PDCode n) (s : Fin n → Bool) :
+    D.smoothingChoice (D.smoothingChoice s) = s := by
+  funext i
+  cases hs : s i <;> cases ho : D.overPair i <;> simp [smoothingChoice, hs, ho]
+
+theorem smoothingChoice_involutive (D : PDCode n) : Function.Involutive D.smoothingChoice :=
+  D.smoothingChoice_smoothingChoice
+
 /-- Mirroring a code exchanges the `A`- and `B`-smoothings, so it acts on states by negation. -/
 @[simp] theorem smoothingChoice_mirror (D : PDCode n) (s : Fin n → Bool) :
     D.mirror.smoothingChoice s = D.smoothingChoice fun j ↦ !(s j) := by

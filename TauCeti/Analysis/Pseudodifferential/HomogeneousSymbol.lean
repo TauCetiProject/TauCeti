@@ -10,7 +10,8 @@ public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
-public import TauCeti.Analysis.Pseudodifferential.FrequencyCutoff
+public import TauCeti.Analysis.Calculus.CoordinateDeriv
+public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
 import TauCeti.Analysis.Normed.Module.Multilinear.Basic
@@ -33,7 +34,8 @@ The file develops:
 
 * the module structure on homogeneous symbols of a fixed degree, over every scalar ring acting
   on `V →L[ℂ] W` compatibly with `ℝ` (in particular `ℝ` and `ℂ`), and the pointwise
-  composition `HomogeneousSymbol.comp`, which adds degrees;
+  composition `HomogeneousSymbol.comp`, which adds degrees and has the identity symbol
+  `HomogeneousSymbol.id` of degree `0` as its unit;
 * the pullback `HomogeneousSymbol.compPosition` of the position along a smooth map, which keeps
   the degree and in particular restricts a symbol to a set of positions;
 * the derivatives `HomogeneousSymbol.spatialDeriv` in a position direction, which keeps the
@@ -43,8 +45,9 @@ The file develops:
   rule for `HomogeneousSymbol.comp`;
 * the growth bound `HomogeneousSymbol.exists_norm_coefficient_le`: on a compact set of positions,
   `‖a (x, ξ)‖ ≤ C ‖ξ‖ ^ m`, for a proper (for instance finite-dimensional) frequency space;
-  applied to the iterated derivatives above it bounds `‖∂ₓ^α ∂_ξ^β a (x, ξ)‖` by
-  `C ‖ξ‖ ^ (m - |β|)`;
+  applied to the iterated derivatives above it bounds the mixed derivatives on `ℝⁿ × ℝⁿ`:
+  `‖∂ₓ^α ∂_ξ^β a (x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency
+  (`HomogeneousSymbol.exists_norm_mixedDeriv_le`);
 * the homogeneity of all higher derivatives: the derivative of `a` in `j` position directions
   and `l` frequency directions is homogeneous of degree `m - l`
   (`HomogeneousSymbol.iteratedFDeriv_coefficient_smul_frequency_append`), and on a proper
@@ -106,6 +109,12 @@ theorem ext_of_ne_zero {a b : HomogeneousSymbol X E V W m}
   rcases eq_or_ne ξ 0 with rfl | hξ
   · simp
   · exact h x ξ hξ
+
+/-- Rescaling the frequency by `t > 0` rescales the norm of a homogeneous symbol of degree `m` by
+`t ^ m`. -/
+theorem norm_homogeneous (a : HomogeneousSymbol X E V W m) (x : X) (ξ : E) {t : ℝ} (ht : 0 < t) :
+    ‖a.coefficient (x, t • ξ)‖ = t ^ m * ‖a.coefficient (x, ξ)‖ := by
+  rw [a.homogeneous x ξ t ht, norm_smul, Real.norm_of_nonneg (Real.rpow_nonneg ht.le m)]
 
 section Regularity
 
@@ -218,6 +227,11 @@ instance {R : Type*} [Semiring R] [Module R (V →L[ℂ] W)] [SMulCommClass ℝ 
     { toFun := coefficient, map_zero' := coefficient_zero, map_add' := coefficient_add }
     coefficient_smul
 
+@[simp]
+theorem coefficient_sum {ι : Type*} (s : Finset ι) (f : ι → HomogeneousSymbol X E V W m) :
+    (∑ i ∈ s, f i).coefficient = ∑ i ∈ s, (f i).coefficient :=
+  map_sum (AddMonoidHom.mk' coefficient coefficient_add) f s
+
 /-! ### Changing the degree -/
 
 /-- Transport a homogeneous symbol along an equality of degrees, for instance to identify the
@@ -242,6 +256,14 @@ theorem castDegree_castDegree {m'' : ℝ} (h : m = m') (h' : m' = m'')
     (a : HomogeneousSymbol X E V W m) :
     (a.castDegree h).castDegree h' = a.castDegree (h.trans h') :=
   (rfl)
+
+/-- In a family `a i` of homogeneous symbols whose degrees depend on the index, the coefficient of
+`a i` depends only on the value of `i`, although the types of `a i` and `a i'` differ. -/
+theorem coefficient_congr_index {ι : Type*} {d : ι → ℝ}
+    (a : (i : ι) → HomogeneousSymbol X E V W (d i)) {i i' : ι} (h : i = i') :
+    (a i).coefficient = (a i').coefficient := by
+  subst h
+  rfl
 
 /-! Transport along an equality of degrees commutes with the vector space operations. -/
 
@@ -362,6 +384,32 @@ theorem comp_assoc {U' : Type*} [NormedAddCommGroup U'] [NormedSpace ℂ U'] {m'
     (a : HomogeneousSymbol X E V W m) :
     (c.comp b).comp a = (c.comp (b.comp a)).castDegree (add_assoc m'' m' m).symm :=
   (rfl)
+
+variable (X E V) in
+/-- The identity homogeneous symbol of degree `0`: the identity of `V` at every nonzero
+frequency, and zero at the zero frequency by the convention of `HomogeneousSymbol`. It is the
+unit for `HomogeneousSymbol.comp`. -/
+noncomputable def id : HomogeneousSymbol X E V V 0 :=
+  mk' (fun _ ↦ ContinuousLinearMap.id ℂ V) contDiffOn_const fun _ _ _ _ _ ↦ by simp
+
+@[simp]
+theorem coefficient_id {x : X} {ξ : E} (hξ : ξ ≠ 0) :
+    (id X E V).coefficient (x, ξ) = ContinuousLinearMap.id ℂ V :=
+  coefficient_mk'_of_ne_zero _ _ _ hξ
+
+/-- Composing with the identity symbol on the right does nothing, up to transport of the
+degree. -/
+@[simp]
+theorem comp_id (b : HomogeneousSymbol X E V W m) :
+    b.comp (id X E V) = b.castDegree (add_zero m).symm :=
+  ext_of_ne_zero fun _ _ hξ ↦ by simp [hξ]
+
+/-- Composing with the identity symbol on the left does nothing, up to transport of the
+degree. -/
+@[simp]
+theorem id_comp (a : HomogeneousSymbol X E V W m) :
+    (id X E W).comp a = a.castDegree (zero_add m).symm :=
+  ext_of_ne_zero fun _ _ hξ ↦ by simp [hξ]
 
 /-! ### Pullback in the position -/
 
@@ -705,6 +753,68 @@ theorem contDiff_smul_coefficient (χ : FrequencyCutoff E) :
 
 end Growth
 
+/-! ### Growth of the mixed derivatives -/
+
+section MixedDeriv
+
+variable {n : ℕ}
+
+/-- The iterated frequency derivative `∂_ξ^β a`, a homogeneous symbol of degree `m - |β|`. -/
+private noncomputable def iterFrequencyDeriv (a : HomogeneousSymbol X (CoordinateSpace n) V W m) :
+    (β : List (Fin n)) → HomogeneousSymbol X (CoordinateSpace n) V W (m - β.length)
+  | [] => a.castDegree (by simp)
+  | j :: js => ((iterFrequencyDeriv a js).frequencyDeriv (EuclideanSpace.single j 1)).castDegree
+      (by simp only [List.length_cons]; push_cast; ring)
+
+/-- The iterated spatial derivative `∂_x^α a`, a homogeneous symbol of the same degree. -/
+private noncomputable def iterSpatialDeriv (a : HomogeneousSymbol (CoordinateSpace n) E V W m) :
+    List (Fin n) → HomogeneousSymbol (CoordinateSpace n) E V W m
+  | [] => a
+  | j :: js => (iterSpatialDeriv a js).spatialDeriv (EuclideanSpace.single j 1)
+
+private theorem coefficient_iterFrequencyDeriv (a : HomogeneousSymbol X (CoordinateSpace n) V W m)
+    (β : List (Fin n)) (x : X) {ξ : CoordinateSpace n} (hξ : ξ ≠ 0) :
+    (iterFrequencyDeriv a β).coefficient (x, ξ) =
+      coordinateDeriv β (fun η => a.coefficient (x, η)) ξ := by
+  induction β generalizing ξ with
+  | nil => simp [iterFrequencyDeriv]
+  | cons j js ih =>
+    -- The two sides are derivatives of functions that agree on the open set of nonzero
+    -- frequencies.
+    have h : (fun η => (iterFrequencyDeriv a js).coefficient (x, η)) =ᶠ[𝓝 ξ]
+        coordinateDeriv js (fun η => a.coefficient (x, η)) :=
+      eventually_of_mem (isOpen_ne.mem_nhds hξ) fun η hη => ih hη
+    rw [iterFrequencyDeriv, coefficient_castDegree, coefficient_frequencyDeriv _ _ hξ,
+      coordinateDeriv_cons, h.fderiv_eq]
+
+private theorem coefficient_iterSpatialDeriv (a : HomogeneousSymbol (CoordinateSpace n) E V W m)
+    (α : List (Fin n)) (x : CoordinateSpace n) {ξ : E} (hξ : ξ ≠ 0) :
+    (iterSpatialDeriv a α).coefficient (x, ξ) =
+      coordinateDeriv α (fun y => a.coefficient (y, ξ)) x := by
+  induction α generalizing x with
+  | nil => simp [iterSpatialDeriv]
+  | cons j js ih =>
+    rw [iterSpatialDeriv, coefficient_spatialDeriv _ _ hξ, coordinateDeriv_cons, funext ih]
+
+/-- **Growth of the mixed derivatives of a homogeneous symbol.** On a compact set of positions,
+the mixed derivatives of a homogeneous symbol of degree `m` satisfy
+`‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C ‖ξ‖ ^ (m - |β|)` at every nonzero frequency. -/
+theorem exists_norm_mixedDeriv_le
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α β : List (Fin n)) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ξ ≠ 0 →
+      ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * ‖ξ‖ ^ (m - β.length) := by
+  obtain ⟨C, hC, hCK⟩ := (iterSpatialDeriv (iterFrequencyDeriv a β) α).exists_norm_coefficient_le hK
+  refine ⟨C, hC, fun x hx ξ hξ => ?_⟩
+  have h : (iterSpatialDeriv (iterFrequencyDeriv a β) α).coefficient (x, ξ) =
+      mixedDeriv α β a.coefficient x ξ := by
+    rw [coefficient_iterSpatialDeriv _ _ _ hξ, mixedDeriv_def]
+    exact congrArg (coordinateDeriv α · x)
+      (funext fun y => coefficient_iterFrequencyDeriv a β y hξ)
+  exact h ▸ hCK x hx ξ
+
+end MixedDeriv
+
 /-! ### Estimates for the higher derivatives -/
 
 section IteratedDeriv
@@ -718,8 +828,7 @@ theorem iteratedFDeriv_coefficient_smul_frequency {x : X} {ξ : E} (hξ : ξ ≠
     (ht : 0 < t) (k : ℕ) (v : Fin k → X × E) :
     iteratedFDeriv ℝ k a.coefficient (x, t • ξ) (fun i ↦ ((v i).1, t • (v i).2)) =
       t ^ m • iteratedFDeriv ℝ k a.coefficient (x, ξ) v :=
-  iteratedFDeriv_smul_snd_of_smul_snd_eq a.contDiffOn_coefficient
-    (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) (mod_cast le_top) hξ ht v
+  iteratedFDeriv_smul_snd_of_smul_snd_eq (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) hξ ht v
 
 /-- The derivative of a homogeneous symbol of degree `m` in `j` position directions and `l`
 frequency directions is homogeneous of degree `m - l` in the frequency. -/
@@ -730,8 +839,7 @@ theorem iteratedFDeriv_coefficient_smul_frequency_append {x : X} {ξ : E} (hξ :
       t ^ (m - l) •
         iteratedFDeriv ℝ (j + l) a.coefficient (x, ξ)
           (Fin.append (fun i ↦ (u i, 0)) (fun i ↦ (0, w i))) :=
-  iteratedFDeriv_append_smul_snd_of_smul_snd_eq a.contDiffOn_coefficient
-    (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) (mod_cast le_top) hξ ht u w
+  iteratedFDeriv_append_smul_snd_of_smul_snd_eq (fun x ξ _ t ht ↦ a.homogeneous x ξ t ht) hξ ht u w
 
 /-- On a proper frequency space, the derivatives of a homogeneous symbol of degree `m` in `j`
 position directions and `l` frequency directions are bounded by `C ‖ξ‖ ^ (m - l)` for positions

@@ -14,14 +14,16 @@ public import Mathlib.FieldTheory.IntermediateField.ExtendRight
 For a tower `K ⊆ L ⊆ M`, `IntermediateField.extendRight F M` is the copy of an intermediate
 field `F` of `L / K` inside `M`. Mathlib defines it and transfers algebra structure along it,
 but records nothing about how it sits in the order on intermediate fields of `M / K`. This file
-adds that, together with the universal property of the copy of a simple extension `K⟮g⟯`: it is
-the smallest intermediate field of `M / K` containing the image of `g`.
+adds that, together with the universal property of the copy of an adjoin `K⟮s⟯`: it is the
+smallest intermediate field of `M / K` containing the image of `s`.
 
 ## Main results
 
 * `IntermediateField.extendRight_eq_map`: the copy, as an `IntermediateField.map`.
 * `IntermediateField.extendRight_le_iff`: the copy of `F` lies below an intermediate
   field exactly when that field contains every image from `F`.
+* `IntermediateField.extendRight_adjoin_le_iff`: the copy of `K⟮s⟯` lies inside an
+  intermediate field exactly when that field contains the image of every element of `s`.
 * `IntermediateField.extendRight_adjoin_simple_le_iff`: the copy of `K⟮g⟯` lies inside an
   intermediate field exactly when that field contains the image of `g`.
 -/
@@ -55,13 +57,7 @@ theorem extendRight_le_iff {F : IntermediateField K L} {E : IntermediateField K 
 intermediate field exactly when that field contains the image of every element of `s`. -/
 theorem extendRight_adjoin_le_iff {s : Set L} {E : IntermediateField K M} :
     (adjoin K s).extendRight M ≤ E ↔ ∀ x ∈ s, algebraMap L M x ∈ E := by
-  rw [extendRight_le_iff]
-  refine ⟨fun h x hx => h x (subset_adjoin K s hx), fun h x hx => ?_⟩
-  -- `K⟮s⟯` is the smallest intermediate field containing `s`, so it lies in the preimage of `E`
-  -- as soon as every element of `s` does; `x` is then carried along.
-  have hsub : adjoin K s ≤ E.comap (IsScalarTower.toAlgHom K L M) :=
-    adjoin_le_iff.mpr h
-  exact hsub hx
+  simp [extendRight_eq_map, adjoin_map, adjoin_le_iff, Set.subset_def]
 
 /-- **The universal property of the copy of a simple extension**: the copy of `K⟮g⟯` inside `M`
 lies in an intermediate field exactly when that field contains the image of `g`. -/

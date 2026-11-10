@@ -122,16 +122,11 @@ theorem isOpenEmbedding_fiber (i : Z ⟶ X) [IsOpenImmersion i] (f : X ⟶ Y) (y
     IsOpenEmbedding ((f.fiberHomeo y).symm ∘ (f ⁻¹' {y}).restrictPreimage i) :=
   (f.fiberHomeo y).symm.isOpenEmbedding.comp (i.isOpenEmbedding.restrictPreimage _)
 
-private theorem preimage_comp (i : Z ⟶ X) (f : X ⟶ Y) (s : Set Y) :
-    (i ≫ f) ⁻¹' s = i ⁻¹' (f ⁻¹' s) := by
-  ext
-  simp
-
 /-- Precomposing with an embedding restricts a fibre to a subspace of that fibre. -/
 private theorem topologicalKrullDim_preimage_comp_le (i : Z ⟶ X) (hi : IsEmbedding i)
     (f : X ⟶ Y) (y : Y) :
     topologicalKrullDim ((i ≫ f) ⁻¹' {y}) ≤ topologicalKrullDim (f ⁻¹' {y}) := by
-  rw [preimage_comp]
+  rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.preimage_comp]
   exact (hi.restrictPreimage (f ⁻¹' {y})).isInducing.topologicalKrullDim_le
 
 /-- Precomposing with an embedding whose range contains the fibre over `y` does not change that
@@ -139,7 +134,7 @@ fibre. -/
 private theorem topologicalKrullDim_preimage_comp_eq (i : Z ⟶ X) (hi : IsEmbedding i)
     (f : X ⟶ Y) (y : Y) (hy : f ⁻¹' {y} ⊆ Set.range i) :
     topologicalKrullDim ((i ≫ f) ⁻¹' {y}) = topologicalKrullDim (f ⁻¹' {y}) := by
-  rw [preimage_comp]
+  rw [Scheme.Hom.comp_base, TopCat.coe_comp, Set.preimage_comp]
   refine IsHomeomorph.topologicalKrullDim_eq _ <| isHomeomorph_iff_isEmbedding_surjective.mpr
     ⟨hi.restrictPreimage (f ⁻¹' {y}), fun x ↦ ?_⟩
   obtain ⟨z, hz⟩ := hy x.2
@@ -207,7 +202,7 @@ instance RelativeDimensionLE.isZariskiLocalAtSource (d : ℕ) :
     (fun i ↦ (U i).ι.isOpenEmbedding.restrictPreimage _) hcover]
   refine iSup_le fun i ↦ ?_
   have := hf i
-  rw [← preimage_comp]
+  rw [← Set.preimage_comp, ← TopCat.coe_comp, ← Scheme.Hom.comp_base]
   exact topologicalKrullDim_preimage_le _ y
 
 /-- Having relative dimension at most `d` is local on the target. -/

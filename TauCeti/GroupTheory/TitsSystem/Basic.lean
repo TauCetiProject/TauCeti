@@ -24,7 +24,7 @@ double cosets satisfy the Tits multiplication and nondegeneracy axioms.
 * `TauCeti.TitsSystem.intersection`: the subgroup `B ∩ N`, regarded as a subgroup of `N`.
 * `TauCeti.TitsSystem.WeylGroup`: the quotient `N / (B ∩ N)`.
 * `TauCeti.TitsSystem.simple`: the simple reflections in the Weyl group.
-* `TauCeti.TitsSystem.simple_sq_eq_one`, `TauCeti.TitsSystem.inv_simple` and
+* `TauCeti.TitsSystem.simple_mul_simple_self`, `TauCeti.TitsSystem.inv_simple` and
   `TauCeti.TitsSystem.simple_ne_one`: the simple reflections are nontrivial involutions.
 
 ## References
@@ -39,15 +39,13 @@ open scoped Pointwise
 
 namespace TauCeti
 
-universe u
-
 /-- A **Tits system** (or **BN-pair**) in `G`.
 
 The field `mul_doubleCoset_subset` is the usual axiom
 `B s B w B ⊆ B (s w) B ∪ B w B`.  Its representative is supplied existentially so the
 structure records only the representation-independent simple set in `N / (B ∩ N)`. -/
 @[ext]
-structure TitsSystem (G : Type u) [Group G] where
+structure TitsSystem (G : Type*) [Group G] where
   /-- The subgroup conventionally denoted `B`. -/
   subgroupB : Subgroup G
   /-- The subgroup conventionally denoted `N`. -/
@@ -64,7 +62,7 @@ structure TitsSystem (G : Type u) [Group G] where
     let _ := intersection_normal
     Subgroup.closure simple = ⊤
   /-- Every simple reflection has a representative whose square lies in `B ∩ N`. -/
-  exists_simpleRep_sq_mem
+  exists_simpleRep_mul_self_mem
       (s : subgroupN ⧸ subgroupB.subgroupOf subgroupN) (hs : s ∈ simple) :
     ∃ r : subgroupN,
       (QuotientGroup.mk r : subgroupN ⧸ subgroupB.subgroupOf subgroupN) = s ∧
@@ -89,7 +87,7 @@ structure TitsSystem (G : Type u) [Group G] where
 
 namespace TitsSystem
 
-variable {G : Type u} [Group G] (T : TitsSystem G)
+variable {G : Type*} [Group G] (T : TitsSystem G)
 
 /-- The intersection `B ∩ N`, regarded as a subgroup of `N`. -/
 abbrev intersection : Subgroup T.subgroupN :=
@@ -107,37 +105,35 @@ abbrev WeylGroup :=
   T.subgroupN ⧸ T.intersection
 
 /-- Every simple reflection has square one. -/
-theorem simple_sq_eq_one {s : T.WeylGroup} (hs : s ∈ T.simple) : s * s = 1 := by
-  obtain ⟨r, rfl, hr⟩ := T.exists_simpleRep_sq_mem s hs
-  rw [← QuotientGroup.mk_mul]
-  exact (QuotientGroup.eq_one_iff (N := T.intersection) (r * r)).mpr hr
+@[simp]
+theorem simple_mul_simple_self {s : T.WeylGroup} (hs : s ∈ T.simple) : s * s = 1 := by
+  obtain ⟨r, rfl, hr⟩ := T.exists_simpleRep_mul_self_mem s hs
+  rwa [← QuotientGroup.mk_mul, QuotientGroup.eq_one_iff]
 
 /-- A simple reflection is its own inverse. -/
 @[simp]
 theorem inv_simple {s : T.WeylGroup} (hs : s ∈ T.simple) : s⁻¹ = s :=
-  inv_eq_of_mul_eq_one_right (T.simple_sq_eq_one hs)
+  inv_eq_of_mul_eq_one_right (T.simple_mul_simple_self hs)
 
 /-- Multiplying twice by a simple reflection on the left is the identity. -/
 @[simp]
 theorem simple_mul_simple_cancel_left {s : T.WeylGroup} (hs : s ∈ T.simple) (w : T.WeylGroup) :
     s * (s * w) = w := by
-  rw [← mul_assoc, T.simple_sq_eq_one hs, one_mul]
+  rw [← mul_assoc, T.simple_mul_simple_self hs, one_mul]
 
 /-- Multiplying twice by a simple reflection on the right is the identity. -/
 @[simp]
 theorem simple_mul_simple_cancel_right (w : T.WeylGroup) {s : T.WeylGroup} (hs : s ∈ T.simple) :
     w * s * s = w := by
-  rw [mul_assoc, T.simple_sq_eq_one hs, mul_one]
+  rw [mul_assoc, T.simple_mul_simple_self hs, mul_one]
 
 /-- A simple reflection is not the identity. -/
 theorem simple_ne_one {s : T.WeylGroup} (hs : s ∈ T.simple) : s ≠ 1 := by
-  obtain ⟨r, hrs, b, hb⟩ := T.exists_conj_not_mem s hs
-  intro heq
-  have hr_one : QuotientGroup.mk' T.intersection r = 1 := hrs.trans heq
-  have hsB : (r : G) ∈ T.subgroupB :=
-    (T.mem_intersection r).mp ((QuotientGroup.eq_one_iff r).mp hr_one)
-  exact hb (T.subgroupB.mul_mem
-    (T.subgroupB.mul_mem hsB b.property) (T.subgroupB.inv_mem hsB))
+  rintro rfl
+  obtain ⟨r, hr, b, hb⟩ := T.exists_conj_not_mem 1 hs
+  have hrB : (r : G) ∈ T.subgroupB :=
+    (T.mem_intersection r).mp ((QuotientGroup.eq_one_iff r).mp hr)
+  exact hb (mul_mem (mul_mem hrB b.2) (inv_mem hrB))
 
 end TitsSystem
 

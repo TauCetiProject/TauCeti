@@ -8,15 +8,42 @@ module
 public import Mathlib.Analysis.Complex.Basic
 
 /-!
-# Conjugation-invariant discs
+# Complex conjugation: invariant discs, symmetric norms and unit-norm quotients
 
 Complex conjugation is an isometry fixing the real axis (Mathlib's `Complex.dist_conj_conj`), so
 it maps every open or closed disc centred on the real axis to itself. Such discs are the natural
 domains for reflection across the real axis, for instance the even reflection
-`TauCeti.evenReflection`.
+`TauCeti.evenReflection`. Conjugation maps the real axis into itself
+(`TauCeti.mapsTo_conj_setOf_im_eq_zero`), whereas the rotation `z ↦ I z` does not
+(`TauCeti.not_mapsTo_I_mul_setOf_im_eq_zero`).
+
+Conjugation also preserves norms (Mathlib's `Complex.norm_conj`), so the norm of
+`1 - conj w * z` is symmetric in `z` and `w` (`Complex.norm_one_sub_conj_mul_comm`). This
+expression is the denominator of the Möbius automorphisms of the unit disc and of the
+pseudo-hyperbolic expression.
+
+The scalar Cayley expression `1 + (z - conj z) / (r - z)` has unit norm for real `r`.
+When `z ≠ r`, it is the quotient `(r - conj z) / (r - z)` of a complex number's conjugate
+by itself; at `z = r`, Lean's totalized inverse gives value one.
 -/
 
 public section
+
+open scoped ComplexConjugate
+
+/-- The scalar Cayley expression has unit norm at real `r`, including when `z = r`
+under the totalized inverse convention. -/
+theorem Complex.norm_one_add_sub_conj_mul_inv_ofReal_sub (z : ℂ) (r : ℝ) :
+    ‖1 + (z - conj z) * ((r : ℂ) - z)⁻¹‖ = 1 := by
+  by_cases hne : (r : ℂ) - z = 0
+  · simp [hne]
+  have heq : 1 + (z - conj z) * ((r : ℂ) - z)⁻¹ =
+      ((r : ℂ) - conj z) / ((r : ℂ) - z) := by
+    field_simp
+    ring
+  have hnorm : ‖(r : ℂ) - conj z‖ = ‖(r : ℂ) - z‖ := by
+    simpa using Complex.norm_conj ((r : ℂ) - z)
+  rw [heq, norm_div, hnorm, div_self (norm_ne_zero_iff.mpr hne)]
 
 namespace TauCeti
 
@@ -34,4 +61,42 @@ theorem conj_mem_closedBall_of_im_eq_zero (hx₀ : x₀.im = 0) (hz : z ∈ clos
     conj z ∈ closedBall x₀ r := by
   rwa [mem_closedBall, ← Complex.conj_eq_iff_im.2 hx₀, Complex.dist_conj_conj]
 
+/-- Complex conjugation maps the real axis into itself. -/
+theorem mapsTo_conj_setOf_im_eq_zero :
+    Set.MapsTo (conj ·) {z : ℂ | z.im = 0} {z : ℂ | z.im = 0} := fun z hz => by
+  simpa using hz
+
+/-- The rotation `z ↦ I z` does not preserve the real axis, so it is not admissible on
+half-discs. -/
+theorem not_mapsTo_I_mul_setOf_im_eq_zero :
+    ¬ Set.MapsTo (fun z : ℂ => Complex.I * z) {z | z.im = 0} {z | z.im = 0} := fun h => by
+  simpa using h (show (1 : ℂ) ∈ {z : ℂ | z.im = 0} by simp)
+
+variable {E : Type*} [TopologicalSpace E] {τ : E → E} {U : Set E} {ρ : ℝ}
+
+/-- The parameter map `τ` composed with conjugation of the disc coordinate is continuous on the
+product of `U` with a disc centred at zero, and maps this product and its punctured version to
+themselves. -/
+theorem continuousOn_mapsTo_prodMap_conj (hτ : ContinuousOn τ U) (hτU : Set.MapsTo τ U U) :
+    ContinuousOn (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 ρ) ∧
+      Set.MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 ρ) (U ×ˢ ball 0 ρ) ∧
+      Set.MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ (ball 0 ρ \ {0}))
+        (U ×ˢ (ball 0 ρ \ {0})) := by
+  have hconjBall : Set.MapsTo conj (ball (0 : ℂ) ρ) (ball 0 ρ) := fun _ hz ↦
+    conj_mem_ball_of_im_eq_zero (by simp) hz
+  exact ⟨hτ.prodMap Complex.continuous_conj.continuousOn, hτU.prodMap hconjBall,
+    hτU.prodMap fun z hz ↦ ⟨hconjBall hz.1, by simpa using hz.2⟩⟩
+
 end TauCeti
+
+namespace Complex
+
+open ComplexConjugate
+
+/-- The norm of `1 - conj w * z` is symmetric in `z` and `w`: conjugation swaps the two
+expressions and preserves norms. -/
+theorem norm_one_sub_conj_mul_comm (z w : ℂ) : ‖1 - conj w * z‖ = ‖1 - conj z * w‖ := by
+  rw [← norm_conj]
+  simp [mul_comm]
+
+end Complex

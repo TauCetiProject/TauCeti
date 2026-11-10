@@ -537,19 +537,21 @@ private lemma fiber_relation_of_univ_eq_triple {i j k : T.Component} (hij : i �
   have h := T.fiber_relation l
   rwa [hu, sum_insert (by simp [hij, hik]), sum_pair hjk, ← add_assoc] at h
 
-/-- If a numerical type has exactly three components `i`, `j` and `k`, each of self-intersection
-`-2w`, and `i` and `k` do not meet, then the components form a chain `x - j - z`, where `x` and
-`z` are `i` and `k` in a suitable order, of one of the five shapes of
-`TauCeti.NumericalType.IsGenusOneChainShape`. -/
-theorem exists_weight_multiplicity_intersection_eq_of_card_eq_three
-    (hcard : Fintype.card T.Component = 3) {i j k : T.Component} (hij : i ≠ j) (hik : i ≠ k)
-    (hjk : j ≠ k) (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
+/-- Integral coefficients for a three-component numerical type with components `i`, `j` and `k`,
+each of self-intersection `-2w`, where `i` and `k` do not meet. Writing `aᵢⱼ = wᵢα = wⱼβ` and
+`aⱼₖ = wⱼγ = wₖδ`, the fibre relations become `mⱼα = 2mᵢ`, `mᵢβ + mₖγ = 2mⱼ` and `mⱼδ = 2mₖ`,
+whence `αβ + γδ = 4`. -/
+private lemma exists_coefficients_of_univ_eq_triple {i j k : T.Component} (hij : i ≠ j)
+    (hik : i ≠ k) (hjk : j ≠ k) (hu : (univ : Finset T.Component) = {i, j, k})
+    (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
     (hj : T.intersection j j = -(2 * (T.weight j : ℤ)))
     (hk : T.intersection k k = -(2 * (T.weight k : ℤ))) (hik₀ : T.intersection i k = 0) :
-    ∃ x z, (x = i ∧ z = k ∨ x = k ∧ z = i) ∧ T.IsGenusOneChainShape x j z := by
-  have hu : (univ : Finset T.Component) = {i, j, k} :=
-    (eq_univ_of_card _ (by
-      rw [card_insert_of_notMem (by simp [hij, hik]), card_pair hjk, hcard])).symm
+    ∃ α β γ δ : ℤ, 0 < α ∧ 0 < β ∧ 0 < γ ∧ 0 < δ ∧
+      T.intersection i j = T.weight i * α ∧ T.intersection i j = T.weight j * β ∧
+      T.intersection j k = T.weight j * γ ∧ T.intersection j k = T.weight k * δ ∧
+      (T.multiplicity j : ℤ) * α = 2 * T.multiplicity i ∧
+      (T.multiplicity i : ℤ) * β + T.multiplicity k * γ = 2 * T.multiplicity j ∧
+      (T.multiplicity j : ℤ) * δ = 2 * T.multiplicity k ∧ α * β + γ * δ = 4 := by
   have ri := fiber_relation_of_univ_eq_triple hij hik hjk hu i
   have rj := fiber_relation_of_univ_eq_triple hij hik hjk hu j
   have rk := fiber_relation_of_univ_eq_triple hij hik hjk hu k
@@ -578,10 +580,26 @@ theorem exists_weight_multiplicity_intersection_eq_of_card_eq_three
     have h : (α * β + γ * δ - 4) * T.multiplicity j = 0 := by
       linear_combination β * e₁ + γ * e₃ + 2 * e₂
     exact sub_eq_zero.mp ((mul_eq_zero.mp h).resolve_right hmj.ne')
-  clear ri rj rk hu
+  exact ⟨α, β, γ, δ, hα₀, hβ₀, hγ₀, hδ₀, hα, hβ, hγ, hδ, e₁, e₂, e₃, hsum⟩
+
+/-- If a numerical type has exactly three components `i`, `j` and `k`, each of self-intersection
+`-2w`, and `i` and `k` do not meet, then the components form a chain `x - j - z`, where `x` and
+`z` are `i` and `k` in a suitable order, of one of the five shapes of
+`TauCeti.NumericalType.IsGenusOneChainShape`. -/
+theorem exists_weight_multiplicity_intersection_eq_of_card_eq_three
+    (hcard : Fintype.card T.Component = 3) {i j k : T.Component} (hij : i ≠ j) (hik : i ≠ k)
+    (hjk : j ≠ k) (hi : T.intersection i i = -(2 * (T.weight i : ℤ)))
+    (hj : T.intersection j j = -(2 * (T.weight j : ℤ)))
+    (hk : T.intersection k k = -(2 * (T.weight k : ℤ))) (hik₀ : T.intersection i k = 0) :
+    ∃ x z, (x = i ∧ z = k ∨ x = k ∧ z = i) ∧ T.IsGenusOneChainShape x j z := by
+  have hu : (univ : Finset T.Component) = {i, j, k} :=
+    (eq_univ_of_card _ (by
+      rw [card_insert_of_notMem (by simp [hij, hik]), card_pair hjk, hcard])).symm
+  obtain ⟨α, β, γ, δ, hα₀, hβ₀, hγ₀, hδ₀, hα, hβ, hγ, hδ, e₁, e₂, e₃, hsum⟩ :=
+    exists_coefficients_of_univ_eq_triple hij hik hjk hu hi hj hk hik₀
   simp only [isGenusOneChainShape_iff]
   -- In each case, read off the shape; for the last four the chain runs from `k` to `i`.
-  rcases Int.cases_of_mul_add_mul_eq_four hα₀ hβ₀ hγ₀ hδ₀ hsum with
+  rcases (Int.mul_add_mul_eq_four_iff hα₀ hβ₀ hγ₀ hδ₀).1 hsum with
     ⟨rfl, rfl, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩ | ⟨⟨rfl, rfl⟩ | ⟨rfl, rfl⟩, rfl, rfl⟩ |
       ⟨⟨rfl, rfl⟩ | ⟨rfl, rfl⟩, ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩⟩
   · exact ⟨i, k, .inl ⟨rfl, rfl⟩, .inr <| .inl <| by

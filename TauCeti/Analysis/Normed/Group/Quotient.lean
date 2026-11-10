@@ -18,6 +18,12 @@ every class in `M ⧸ S` has a representative of the same norm
 (`QuotientGroup.exists_mk_eq_and_norm_eq_iff`). The additive, submodule and ideal counterparts
 give the corresponding characterisations of strict closedness for submodules and ideals.
 
+If every nontrivial element of `S` has seminorm at least twice that of `m`, then `m` attains the
+quotient seminorm of its class (`QuotientGroup.norm_mk_eq_norm`). So the projection `M → M ⧸ S`
+preserves the distance between two points whose distance is at most half the least seminorm of a
+nontrivial element of `S` (`QuotientGroup.dist_mk_eq_dist`); for a lattice in a normed space this
+says that the projection to the torus is an isometry on small sets.
+
 When `M` is ultrametric, the quotient seminorm on `M ⧸ S` is again ultrametric: each class has
 representatives whose norms approximate its quotient norm, and the ultrametric inequality for a
 product of such representatives descends to the quotient. The additive form covers quotients of
@@ -79,6 +85,35 @@ theorem exists_mk_eq_and_norm_eq_iff :
     exact ⟨m / s, hmk, (norm_div_eq_norm_mk_iff hs).mpr hle⟩
 
 end LeastNorm
+
+section Small
+
+variable {M : Type*} [SeminormedCommGroup M] {S : Subgroup M}
+
+/-- If every nontrivial element of `S` has at least twice the seminorm of `m`, then the quotient
+seminorm of `m` modulo `S` is the seminorm of `m`. -/
+@[to_additive /-- If every nonzero element of `S` has at least twice the seminorm of `m`, then the
+quotient seminorm of `m` modulo `S` is the seminorm of `m`. -/]
+theorem norm_mk_eq_norm {m : M} (h : ∀ s ∈ S, s ≠ 1 → 2 * ‖m‖ ≤ ‖s‖) :
+    ‖(m : M ⧸ S)‖ = ‖m‖ := by
+  refine le_antisymm norm_mk_le_norm (le_norm_iff.2 fun m' hm' ↦ ?_)
+  have hs : m⁻¹ * m' ∈ S := QuotientGroup.eq.1 hm'.symm
+  by_cases hs1 : m⁻¹ * m' = 1
+  · rw [inv_mul_eq_one.1 hs1]
+  · have := (h _ hs hs1).trans (norm_mul_le' m⁻¹ m')
+    rw [norm_inv'] at this
+    linarith
+
+/-- The projection to `M ⧸ S` preserves the distance between `x` and `y` when every nontrivial
+element of `S` has at least twice that distance as seminorm. -/
+@[to_additive /-- The projection to `M ⧸ S` preserves the distance between `x` and `y` when every
+nonzero element of `S` has at least twice that distance as seminorm. -/]
+theorem dist_mk_eq_dist {x y : M} (h : ∀ s ∈ S, s ≠ 1 → 2 * dist x y ≤ ‖s‖) :
+    dist (x : M ⧸ S) y = dist x y := by
+  rw [dist_eq_norm_div, dist_eq_norm_div, ← QuotientGroup.mk_div]
+  exact norm_mk_eq_norm fun s hs hs1 ↦ (dist_eq_norm_div x y) ▸ h s hs hs1
+
+end Small
 
 section Ultrametric
 

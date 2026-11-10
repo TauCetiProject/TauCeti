@@ -25,8 +25,19 @@ The construction uses the orbit-map unit `DiscreteCoind.unit`, the pointwise coe
 additive, natural in both coefficients, and identifies the previously defined counit with the
 counit of the adjunction. Over a commutative coefficient ring it is linear.
 
+## Main definitions
+
+* `TauCeti.smoothDiscreteResCoindHomEquiv`: the additive equivalence
+  `(Res M ⟶ A) ≃+ (M ⟶ Coind A)` of hom sets.
+* `TauCeti.smoothDiscreteResCoindAdjunction`: the resulting adjunction
+  `smoothDiscreteResFunctor ⊣ coindFunctor`.
+* `TauCeti.smoothDiscreteResCoindHomLinearEquiv`: the `R`-linear form of the equivalence over a
+  commutative coefficient ring.
+
+## References
+
 The algebraic model is Mathlib's `Rep.resCoindHomEquiv` and `Rep.resCoindAdjunction`.
-For the continuous version see Ribes–Zalesskii, *Profinite Groups*, second edition, §6.10.
+For the continuous version see Ribes–Zalesskii, *Profinite Groups*, second edition, Lemma 6.10.2.
 -/
 
 public section
@@ -84,9 +95,7 @@ theorem smoothDiscreteResCoindToHom_apply
     (f : smoothDiscreteResTopRep U M ⟶ A) (m : M.obj.V) (g : G) :
     (dsimp% only (show DiscreteCoind G U A.obj.V from
       (smoothDiscreteResCoindToHom R G U M A f).hom.hom m) g) = f.hom.hom (g • m) := by
-  -- Remove the full-subcategory and continuous-linear-map wrappers around the construction.
-  change ((ofSmoothDiscrete R U).map f).toLinearMap (g • m) = _
-  exact ofSmoothDiscrete_map_toLinearMap_apply R U f (g • m)
+  rfl
 
 /-- Continuous Frobenius reciprocity, as an additive equivalence of hom sets.
 The inverse is restriction followed by the evaluation counit. -/
@@ -104,30 +113,13 @@ noncomputable def smoothDiscreteResCoindHomEquiv :
     ext m
     apply DiscreteCoind.ext
     intro x
-    -- The orbit formula is instantiated explicitly because the dictionary changes instances.
-    refine (smoothDiscreteResCoindToHom_apply R G U M A _ m x).trans ?_
-    -- Evaluation of equivariance at `1` identifies the reconstructed coinduced function.
-    change (show DiscreteCoind G U A.obj.V from f.hom.hom (x • m)) 1 =
-      (show DiscreteCoind G U A.obj.V from f.hom.hom m) x
-    have h := congrArg (fun a : DiscreteCoind G U A.obj.V ↦ a 1)
-      (f.hom.hom.isIntertwining x m)
-    -- The coinduced operator is right translation, transported through the dictionary.
-    exact h.trans (by
-      -- Identify the dictionary's operator with right translation before simplifying `1 * x`.
-      change (show DiscreteCoind G U A.obj.V from f.hom.hom m) (1 * x) = _
-      rw [one_mul])
+    exact (congrArg (fun a : DiscreteCoind G U A.obj.V ↦ a 1)
+      (f.hom.hom.isIntertwining x m)).trans
+        (congrArg (show DiscreteCoind G U A.obj.V from f.hom.hom m) (one_mul x))
   map_add' f g := by
     ext m
     apply DiscreteCoind.ext
     intro x
-    -- Reduce the morphism addition wrappers before applying the public orbit formula.
-    change (show DiscreteCoind G U A.obj.V from
-      (smoothDiscreteResCoindToHom R G U M A (f + g)).hom.hom m) x =
-      (show DiscreteCoind G U A.obj.V from
-        (smoothDiscreteResCoindToHom R G U M A f).hom.hom m) x +
-      (show DiscreteCoind G U A.obj.V from
-        (smoothDiscreteResCoindToHom R G U M A g).hom.hom m) x
-    simp only [smoothDiscreteResCoindToHom_apply]
     rfl
 
 /-- The forward Frobenius equivalence evaluates on orbit maps. -/
@@ -167,26 +159,20 @@ noncomputable def smoothDiscreteResCoindAdjunction :
         ext m
         apply DiscreteCoind.ext
         intro x
-        -- Both composites are pointwise coefficient maps of the same orbit function.
-        change g.hom.hom (f.hom.hom (x • m)) = g.hom.hom (f.hom.hom (x • m))
         rfl }
 
 /-- The adjunction uses the explicit Frobenius equivalence, after the canonical object
-identifications of restriction and coinduction. -/
+identification of coinduction. -/
 theorem smoothDiscreteResCoindAdjunction_homEquiv :
     (smoothDiscreteResCoindAdjunction R G U).homEquiv M A =
-      (Iso.homCongr (eqToIso (smoothDiscreteResFunctor_obj R G U M)) (Iso.refl A)).trans
-        ((smoothDiscreteResCoindHomEquiv R G U M A).toEquiv.trans
-          (Iso.homCongr (Iso.refl M) (eqToIso (coindFunctor_obj R G U A).symm))) := by
-  rw [smoothDiscreteResCoindAdjunction]
-  simp only [Adjunction.mkOfHomEquiv_homEquiv]
+      (smoothDiscreteResCoindHomEquiv R G U M A).toEquiv.trans
+        (Iso.homCongr (Iso.refl M) (eqToIso (coindFunctor_obj R G U A).symm)) := by
   rfl
 
 /-- The unit of continuous Frobenius reciprocity is the orbit-map adjunct of the identity.
-The object identifications display its codomain as locally constant coinduction. -/
+The object identification displays its codomain as locally constant coinduction. -/
 theorem smoothDiscreteResCoindAdjunction_unit_app :
     (smoothDiscreteResCoindAdjunction R G U).unit.app M ≫
-        (coindFunctor R G U).map (eqToHom (smoothDiscreteResFunctor_obj R G U M)) ≫
         eqToHom (coindFunctor_obj R G U (smoothDiscreteResTopRep U M)) =
       smoothDiscreteResCoindToHom R G U M (smoothDiscreteResTopRep U M)
         (𝟙 (smoothDiscreteResTopRep U M)) := by
@@ -224,12 +210,6 @@ noncomputable def smoothDiscreteResCoindHomLinearEquiv :
     ext m
     apply DiscreteCoind.ext
     intro g
-    -- Strip the scalar-action wrappers on morphisms; the orbit formula is pointwise linear.
-    change (show DiscreteCoind G U A.obj.V from
-      (smoothDiscreteResCoindHomEquiv R G U M A (r • f)).hom.hom m) g =
-      r • (show DiscreteCoind G U A.obj.V from
-        (smoothDiscreteResCoindHomEquiv R G U M A f).hom.hom m) g
-    simp only [smoothDiscreteResCoindHomEquiv_apply]
     rfl
 
 /-- The linear Frobenius equivalence refines the same additive equivalence. -/

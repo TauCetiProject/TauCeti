@@ -53,19 +53,12 @@ can reduce it in the kernel. -/
 nonzero. -/
 theorem mem_quaternionElements {n : ℕ} [NeZero n] (g : QuaternionGroup n) :
     g ∈ quaternionElements n := by
-  have hmem : ∀ i : ZMod (2 * n), i.val ∈ List.range (2 * n) :=
-    fun i => List.mem_range.mpr (ZMod.val_lt i)
   cases g with
-  | a i =>
-      refine List.mem_flatMap.mpr ⟨i.val, hmem i, ?_⟩
-      rw [ZMod.natCast_rightInverse i]
-      simp
-  | xa i =>
-      refine List.mem_flatMap.mpr ⟨i.val, hmem i, ?_⟩
-      rw [ZMod.natCast_rightInverse i]
-      simp
+  | a i | xa i => exact List.mem_flatMap.mpr ⟨i.val, List.mem_range.mpr i.val_lt, by simp⟩
 
 /-! ## The rotation subgroup -/
+
+variable {n : ℕ}
 
 /-- The parity of a quaternion-group element: `0` on `a i` and `1` on `xa i`. Written
 multiplicatively so its kernel is the rotation subgroup. -/
@@ -94,20 +87,21 @@ theorem quaternionCosetParity_xa (i : ZMod (2 * n)) :
 theorem quaternionCosetParity_surjective (n : ℕ) :
     Function.Surjective (quaternionCosetParity n) := by
   intro y
-  have hy : Multiplicative.toAdd y = 0 ∨ Multiplicative.toAdd y = 1 := by revert y; decide
-  rcases hy with hy | hy
-  · exact ⟨QuaternionGroup.a 0, by simpa using congrArg Multiplicative.ofAdd hy.symm⟩
-  · exact ⟨QuaternionGroup.xa 0, by simpa using congrArg Multiplicative.ofAdd hy.symm⟩
+  fin_cases y
+  exacts [⟨QuaternionGroup.a 0, rfl⟩, ⟨QuaternionGroup.xa 0, rfl⟩]
 
-/-- The cyclic subgroup of `QuaternionGroup n` consisting of the elements `a i`. -/
+/-- The cyclic subgroup of `QuaternionGroup n` consisting of the elements `a i`, the kernel of
+the coset parity. It is normal of index `2`, and `TauCeti.quaternionRotationsMulEquiv` identifies
+it with `Multiplicative (ZMod (2 * n))`. -/
 def quaternionRotations (n : ℕ) : Subgroup (QuaternionGroup n) :=
   (quaternionCosetParity n).ker
 
 instance quaternionRotations_normal (n : ℕ) : (quaternionRotations n).Normal :=
   (quaternionCosetParity n).normal_ker
 
-/-- Membership in the quaternion rotation subgroup is being an element `a i`. -/
-@[simp]
+/-- Membership in the quaternion rotation subgroup is being an element `a i`. Use this
+characterization explicitly; the constructor membership lemmas simplify without expanding the
+carrier of the subgroup. -/
 theorem mem_quaternionRotations_iff {g : QuaternionGroup n} :
     g ∈ quaternionRotations n ↔ ∃ i : ZMod (2 * n), g = QuaternionGroup.a i := by
   cases g with
@@ -118,11 +112,13 @@ theorem mem_quaternionRotations_iff {g : QuaternionGroup n} :
     simp at hj
 
 /-- Every element `a i` belongs to the quaternion rotation subgroup. -/
+@[simp]
 theorem a_mem_quaternionRotations (i : ZMod (2 * n)) :
     QuaternionGroup.a i ∈ quaternionRotations n :=
   mem_quaternionRotations_iff.mpr ⟨i, rfl⟩
 
 /-- No element `xa i` belongs to the quaternion rotation subgroup. -/
+@[simp]
 theorem xa_notMem_quaternionRotations (i : ZMod (2 * n)) :
     QuaternionGroup.xa i ∉ quaternionRotations n := fun h => by
   obtain ⟨j, hj⟩ := mem_quaternionRotations_iff.mp h
@@ -135,6 +131,8 @@ theorem index_quaternionRotations (n : ℕ) : (quaternionRotations n).index = 2 
     MonoidHom.range_eq_top.mpr (quaternionCosetParity_surjective n)]
   simp
 
+/-- The rotation subgroup has finite index, for every `n` -- including `n = 0`, where
+`QuaternionGroup n` is infinite. -/
 instance finiteIndex_quaternionRotations (n : ℕ) : (quaternionRotations n).FiniteIndex :=
   ⟨by simp⟩
 
@@ -146,20 +144,8 @@ theorem conj_eq_inv_of_notMem_quaternionRotations {s g : QuaternionGroup n}
   cases s with
   | a j => exact absurd (a_mem_quaternionRotations j) hs
   | xa j =>
-    have hinv : (QuaternionGroup.a i)⁻¹ = QuaternionGroup.a (-i) := by
-      rw [inv_eq_iff_mul_eq_one, QuaternionGroup.a_mul_a]
-      simp
-    have hcomm : QuaternionGroup.xa j * QuaternionGroup.a i =
-        (QuaternionGroup.a i)⁻¹ * QuaternionGroup.xa j := by
-      rw [hinv, QuaternionGroup.xa_mul_a, QuaternionGroup.a_mul_xa]
-      congr 1
-      simp [sub_eq_add_neg]
-    calc
-      QuaternionGroup.xa j * QuaternionGroup.a i * (QuaternionGroup.xa j)⁻¹ =
-          (QuaternionGroup.a i)⁻¹ *
-            (QuaternionGroup.xa j * (QuaternionGroup.xa j)⁻¹) := by
-        rw [hcomm, mul_assoc]
-      _ = (QuaternionGroup.a i)⁻¹ := by simp
+    rw [mul_inv_eq_iff_eq_mul, eq_inv_mul_iff_mul_eq, ← mul_assoc, QuaternionGroup.a_mul_xa,
+      QuaternionGroup.xa_mul_a, sub_add_cancel]
 
 /-- Conjugation by an element outside the quaternion rotations, read inside the normal
 subgroup. -/
@@ -171,6 +157,9 @@ theorem conjNormal_eq_inv_of_notMem_quaternionRotations {s : QuaternionGroup n}
     rw [MulAut.conjNormal_apply]
     simpa using conj_eq_inv_of_notMem_quaternionRotations hs x.2)
 
+/-- The rotation index of a quaternion-group element: the index `i` of `a i`, and the junk value
+`0` on `xa i`. The interface is `TauCeti.quaternionRotationsMulEquiv`, which reads the index off
+an element of the rotation subgroup and so never meets the junk value. -/
 private def quaternionRotationIndex : QuaternionGroup n → ZMod (2 * n)
   | QuaternionGroup.a i => i
   | QuaternionGroup.xa _ => 0
@@ -210,6 +199,7 @@ theorem coe_quaternionRotationsMulEquiv_symm (i : Multiplicative (ZMod (2 * n)))
       QuaternionGroup.a (Multiplicative.toAdd i) :=
   (rfl)
 
+/-- The rotation subgroup is cyclic, `Multiplicative (ZMod (2 * n))` being so. -/
 instance isCyclic_quaternionRotations (n : ℕ) : IsCyclic (quaternionRotations n) :=
   isCyclic_of_surjective _ (quaternionRotationsMulEquiv n).symm.surjective
 

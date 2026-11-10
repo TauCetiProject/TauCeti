@@ -14,7 +14,7 @@ public import TauCeti.Algebra.Bialgebra.MonoidAlgebra.BaseChange
 # Base change of diagonalizable-group points
 
 For a commutative group `G`, the diagonalizable group `D(G)` over `k` is represented by the
-Hopf algebra `k[G]`. The imported `TauCeti.MonoidAlgebra.scalarTensorBialgEquiv` identifies its
+Hopf algebra `k[G]`. The imported `MonoidAlgebra.scalarTensorBialgEquiv` identifies its
 base change `K ⊗[k] k[G]` with `K[G]` as a bialgebra. This file records the corresponding
 calculation on functors of points: if `A` is a commutative `K`-algebra, then the `A`-valued
 points of the base-changed Hopf algebra are still the character group `G →* Aˣ`.
@@ -88,7 +88,7 @@ noncomputable abbrev baseChangeCoordinateRingIso
     FiniteTypeCommHopfAlgCat.baseChange (K := K) (coordinateRing k G) ≅
       coordinateRing K G :=
   ObjectProperty.isoMk _ <|
-    _root_.CommHopfAlgCat.isoMk (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K (G := G))
+    _root_.CommHopfAlgCat.isoMk (MonoidAlgebra.scalarTensorBialgEquiv k K (G := G))
 
 /-- The `CommHopfAlgCat`-level form of `baseChangeCoordinateRingIso`, obtained by forgetting the
 finite-type property. It is the isomorphism `K ⊗[k] k[G] ≅ K[G]` of commutative Hopf algebras. -/
@@ -112,7 +112,7 @@ theorem baseChangeCoordinateHopfAlgebraIso_hom_apply
     (k : Type u) (K : Type v) [CommRing k] [CommRing K] [Algebra k K]
     (G : FGCommGrpCat.{u}) (x : K ⊗[k] MonoidAlgebra k G) :
     (baseChangeCoordinateHopfAlgebraIso k K G).hom.hom x =
-      TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K x :=
+      MonoidAlgebra.scalarTensorBialgEquiv k K x :=
   rfl
 
 /-- The `A`-points of the base change `K ⊗[k] k[G]` of the diagonalizable group `D(G)` are
@@ -174,7 +174,7 @@ theorem baseChangePointsMulEquiv_mapDomain_scalarTensorBialgEquiv
     (f : WithConv (MonoidAlgebra K G →ₐ[K] A)) :
     baseChangePointsMulEquiv (k := k) (K := K) (A := A) (G := G)
         (BialgHom.mapDomain (A := A)
-          (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv k K (G := G) :
+          (MonoidAlgebra.scalarTensorBialgEquiv k K (G := G) :
             K ⊗[k] MonoidAlgebra k G →ₐc[K] MonoidAlgebra K G) f) =
       pointsMulEquiv (R := K) (A := A) (G := G) f := by
   ext g

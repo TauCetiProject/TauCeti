@@ -106,17 +106,11 @@ theorem isBased_const (n : ℕ) (x : X) (m : ℕ) :
 
 end SingularCube
 
-/-- The number of coordinates of `y` in the open interval `(0, 1)`, as a sum. -/
-private lemma card_free_eq {m : ℕ} (y : Fin m → I) :
-    (Finset.univ.filter fun i ↦ y i ≠ 0 ∧ y i ≠ 1).card =
-      ∑ i, if y i ≠ 0 ∧ y i ≠ 1 then 1 else 0 :=
-  Finset.card_filter _ _
-
 private lemma card_free_removeNth_of_mem {m : ℕ} (i : Fin (m + 1)) {y : Fin (m + 1) → I}
     (hy : y i = 0 ∨ y i = 1) :
     (Finset.univ.filter fun j ↦ i.removeNth y j ≠ 0 ∧ i.removeNth y j ≠ 1).card =
       (Finset.univ.filter fun j ↦ y j ≠ 0 ∧ y j ≠ 1).card := by
-  simp only [card_free_eq]
+  simp only [Finset.card_filter]
   rw [Fin.sum_univ_succAbove _ i]
   simp only [Fin.removeNth_apply]
   rcases hy with h | h <;> simp only [h, ne_eq, not_true_eq_false, false_and, and_false,
@@ -127,7 +121,7 @@ private lemma card_free_removeNth_of_mem {m : ℕ} (i : Fin (m + 1)) {y : Fin (m
 private lemma card_free_removeNth_le {m : ℕ} (i : Fin (m + 1)) (y : Fin (m + 1) → I) :
     (Finset.univ.filter fun j ↦ i.removeNth y j ≠ 0 ∧ i.removeNth y j ≠ 1).card ≤
       (Finset.univ.filter fun j ↦ y j ≠ 0 ∧ y j ≠ 1).card := by
-  simp only [card_free_eq]
+  simp only [Finset.card_filter]
   rw [Fin.sum_univ_succAbove _ i]
   simp only [Fin.removeNth_apply]
   exact Nat.le_add_left _ _

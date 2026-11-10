@@ -389,7 +389,7 @@ variable {B G : Type*}
   {EG : Type*} [NormedAddCommGroup EG] [NormedSpace ℝ EG] [CompleteSpace EG]
   {HG : Type*} [TopologicalSpace HG] {IG : ModelWithCorners ℝ EG HG}
   [Group G] [TopologicalSpace G] [ChartedSpace HG G]
-  [LieGroup IG (minSmoothness ℝ 3) G] [IsManifold IG 1 G] [T2Space G]
+  [LieGroup IG (minSmoothness ℝ 3) G] [T2Space G]
   [BoundarylessManifold IG G]
   {P : B → Type*} [TopologicalSpace (TotalSpace G P)] [∀ b, TopologicalSpace (P b)]
   [FiberBundle G P] [∀ b, MulAction Gᵐᵒᵖ (P b)] [PrincipalBundle G P]

@@ -115,7 +115,7 @@ theorem cochainsCor1_apply_of_mem (f : N → M) {γ : G} (hγ : γ ∈ N) :
   rw [cochainsCor1_apply]
   refine Finset.sum_congr rfl fun u _ => ?_
   congr 2
-  exact Subtype.ext (lWord_of_mem_of_normal N t hγ u)
+  exact Subtype.ext (lWord_of_mem_of_normal N t le_rfl hγ u)
 
 end Cochain
 

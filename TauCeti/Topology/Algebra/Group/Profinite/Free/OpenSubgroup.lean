@@ -74,8 +74,8 @@ theorem topologicalGeneratorRankNat_add_index (U : OpenSubgroup (freeProP p X)) 
   -- `H²(F, ℤ/p)` vanishes, so the two-term Euler formula applies to `F`; then use `d(F) = #X`.
   have h := (isProP_freeProP p X).topologicalGeneratorRankNat_add_index
     (isTopologicallyFinitelyGenerated_freeProP p X)
-    (fun A _ _ _ _ _ _ hA _ ↦ subsingleton_H2_of_isPPrimaryTorsion
-      (isPPrimaryTorsion_of_natCard_eq_pow (hA.trans (pow_one p).symm))) U
+    (fun A _ _ _ _ _ _ hA _ ↦ subsingleton_H2_of_isAddPGroup
+      (IsAddPGroup.of_card (hA.trans (pow_one p).symm))) U
   rwa [topologicalGeneratorRankNat_freeProP] at h
 
 /-- **The Schreier index formula for open subgroups.** For an open subgroup `U` of index

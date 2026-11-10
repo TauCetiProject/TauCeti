@@ -45,11 +45,16 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
 * `HasStrictFDerivAt.contDiffAt_toOpenPartialHomeomorph_symm` and
   `HasStrictFDerivAt.contDiffOn_toOpenPartialHomeomorph_symm`: the local inverse is `C^n` at every
   point of the target, and hence on the target.
+* `OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv`: a `C^n` open partial
+  homeomorphism from a complete normed space whose derivative is invertible on its source has a
+  `C^n` inverse on its target.
 * `TauCeti.ContDiffOn.exists_openPartialHomeomorph`: a `C^n` map (`1 ≤ n`) on an open set with
   invertible derivative at a point restricts to an `OpenPartialHomeomorph` around that point whose
   inverse is `C^n` on the whole target.
 * `ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq`: the same local inverse
   carries a differential identity `dg_z u = v (g z)` over to `d(g⁻¹)_y (v y) = u`.
+* `Set.MapsTo.interior_of_contDiffOn`: a `C¹` map with invertible derivative on the interior of
+  `s` and mapping `s` into `t` maps `interior s` into `interior t`.
 
 ## References
 
@@ -141,6 +146,30 @@ end HasStrictFDerivAt
 
 end Approximation
 
+section ContDiffInverse
+
+variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- A `C^n` open partial homeomorphism of a complete normed space whose derivative is invertible at
+every point of its source has a `C^n` inverse on its target. -/
+theorem OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv [CompleteSpace E] {n : ℕ∞ω}
+    (ψ : OpenPartialHomeomorph E F) (hψ : ContDiffOn 𝕜 n ψ ψ.source)
+    (hinv : ∀ x ∈ ψ.source, (fderiv 𝕜 ψ x).IsInvertible) :
+    ContDiffOn 𝕜 n ψ.symm ψ.target := by
+  rcases eq_or_ne n 0 with rfl | hn
+  · exact contDiffOn_zero.2 ψ.continuousOn_symm
+  intro y hy
+  have hx := ψ.map_target hy
+  have hat : ContDiffAt 𝕜 n ψ (ψ.symm y) :=
+    (hψ _ hx).contDiffAt (ψ.open_source.mem_nhds hx)
+  obtain ⟨e, he⟩ := hinv _ hx
+  refine (ψ.contDiffAt_symm hy (f₀' := e) ?_ hat).contDiffWithinAt
+  rw [he]
+  exact (hat.differentiableAt hn).hasFDerivAt
+
+end ContDiffInverse
+
 namespace TauCeti
 
 variable {𝕂 : Type*} [RCLike 𝕂]
@@ -196,6 +225,22 @@ theorem _root_.ContDiffOn.exists_openPartialHomeomorph_fderiv_symm_apply_eq
     ((hd.congr_of_eventuallyEq hid.symm).unique (hasFDerivAt_id _))
   simpa only [ContinuousLinearMap.comp_apply, hgu _ (hΘs hz), hgy,
     ContinuousLinearMap.id_apply] using h
+
+/-- **Invariance of the interior.** A map which is `C^n` on `s`, with `1 ≤ n`, has invertible
+derivative at every interior point of `s` and maps `s` into `t` also maps `interior s` into
+`interior t`: by the inverse function theorem it carries neighbourhoods to neighbourhoods. -/
+theorem _root_.Set.MapsTo.interior_of_contDiffOn {t : Set F} (h : MapsTo g s t)
+    (hg : ContDiffOn 𝕂 n g s) (hn : 1 ≤ n)
+    (hinv : ∀ x ∈ interior s, (fderiv 𝕂 g x).IsInvertible) :
+    MapsTo g (interior s) (interior t) := by
+  have hn0 : n ≠ 0 := by rintro rfl; exact absurd hn (by simp)
+  intro x hx
+  have hs : s ∈ 𝓝 x := mem_interior_iff_mem_nhds.1 hx
+  have hat : ContDiffAt 𝕂 n g x := hg.contDiffAt hs
+  obtain ⟨e, he⟩ := hinv x hx
+  have hd : HasFDerivAt g (e : E →L[𝕂] F) x := he ▸ (hat.differentiableAt hn0).hasFDerivAt
+  rw [mem_interior_iff_mem_nhds, ← (hat.hasStrictFDerivAt hd hn0).map_nhds_eq_of_equiv]
+  exact mem_map.2 (mem_of_superset hs fun y hy => h hy)
 
 end TauCeti
 
