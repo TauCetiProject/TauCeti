@@ -28,9 +28,9 @@ and no finite-dimensionality assumption is needed for the bilinear-form result.
 * `IsLocalMin.eq_neg_of_max_hasFDerivAt_bilin`: equal-length bilinear gradients are opposite.
 * `IsLocalMin.eq_neg_of_max_hasGradientAt`: the inner-product gradient formulation.
 
-This is the variational return-direction argument for two inverse exponential radius branches.
-It supplies the opposite-terminal-velocity step in Klingenberg's lemma, used for
-noncollapse-to-injectivity estimates.
+Applied to two inverse exponential radius branches at a first minimal collision, the bilinear
+result would give the opposite terminal velocities used in Klingenberg's lemma. Constructing
+those branches is a separate geometric step.
 
 ## References
 
