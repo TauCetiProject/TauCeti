@@ -7,7 +7,6 @@ module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
 public import Mathlib.Data.Nat.Squarefree
-import TauCeti.Data.ZMod.ExactDivisor
 import TauCeti.Data.ZMod.PrincipalUnits
 import TauCeti.NumberTheory.DirichletCharacter.Basic
 
@@ -18,7 +17,7 @@ If an odd prime `p` divides `N` at least twice, then every unit modulo `N` that 
 `N / p` is a square. Write `p ^ k` for the exact power of `p` in `N`, so `k ≥ 2`. Such a unit
 is `1` modulo the prime-to-`p` part of `N`, and modulo `p ^ k` it is `1` modulo `p ^ (k - 1)`,
 hence modulo `p`, so it is a square modulo `p ^ k` (`ZMod.isSquare_of_unitsMap_eq_one`). The
-Chinese remainder theorem glues the two square roots.
+Chinese remainder theorem glues the two square roots (`ZMod.isSquare_of_unitsMap_div_eq_one`).
 
 A character whose square is trivial is therefore trivial on the kernel of reduction to `N / p`,
 so it factors through `N / p`. For a primitive such character, no odd prime divides the level
@@ -31,8 +30,6 @@ monoid with zero, and specialised to quadratic characters with values in a commu
 
 ## Main results
 
-* `ZMod.isSquare_of_unitsMap_div_eq_one`: for an odd prime `p` with `p ^ 2 ∣ N`, every unit
-  modulo `N` that is `1` modulo `N / p` is a square.
 * `DirichletCharacter.factorsThrough_div_of_sq_eq_one`: a character of order dividing two at a
   level divisible by `p ^ 2`, for an odd prime `p`, factors through `N / p`.
 * `DirichletCharacter.IsPrimitive.factorization_le_one_of_sq_eq_one`: an odd prime divides the
@@ -50,37 +47,6 @@ this shape of a primitive quadratic conductor.
 -/
 
 public section
-
-open scoped TauCeti.ExactDivisor
-
-namespace ZMod
-
-/-- **Units that are `1` modulo `N / p` are squares, for an odd prime `p` with `p ^ 2 ∣ N`.**
-Modulo the exact power `p ^ k` of `p` in `N` such a unit is `1` modulo `p`, so it is a square
-there (`ZMod.isSquare_of_unitsMap_eq_one`); modulo the prime-to-`p` part it is `1`. -/
-theorem isSquare_of_unitsMap_div_eq_one {N p : ℕ} [NeZero N] (hp : p.Prime) (hp2 : p ≠ 2)
-    (hN : p ^ 2 ∣ N) {h : N / p ∣ N} {u : (ZMod N)ˣ} (hu : unitsMap h u = 1) : IsSquare u := by
-  have hN0 : N ≠ 0 := NeZero.ne N
-  have hk : 2 ≤ N.factorization p := (hp.pow_dvd_iff_le_factorization hN0).mp hN
-  obtain ⟨k, hk'⟩ : ∃ k, N.factorization p = k + 1 := ⟨N.factorization p - 1, by omega⟩
-  have hQ : p ^ (k + 1) ∥ N := hk' ▸ TauCeti.Nat.isExactDivisor_primePow
-  -- Both `p` and the prime-to-`p` part `N / p ^ (k + 1)` divide `N / p`.
-  have hpN : p ∣ N := (dvd_pow_self p two_ne_zero).trans hN
-  have hpNp : p ∣ N / p := (Nat.dvd_div_iff_mul_dvd hpN).mpr (by rwa [← sq])
-  have hcomp : N / p ^ (k + 1) ∣ N / p := by
-    rw [pow_succ', ← Nat.div_div_eq_div_mul]
-    exact Nat.div_dvd_of_dvd ((Nat.dvd_div_iff_mul_dvd hpN).mpr (pow_succ' p k ▸ hQ.dvd))
-  have hp1 : p ∣ p ^ (k + 1) := dvd_pow_self p k.succ_ne_zero
-  have h1 : unitsMap hp1 (hQ.unitsEquivProd u).1 = 1 := by
-    rw [hQ.unitsEquivProd_apply_fst, ← MonoidHom.comp_apply, unitsMap_comp,
-      ← unitsMap_comp hpNp h, MonoidHom.comp_apply, hu, map_one]
-  have h2 : (hQ.unitsEquivProd u).2 = 1 := by
-    rw [hQ.unitsEquivProd_apply_snd, ← unitsMap_comp hcomp h, MonoidHom.comp_apply, hu, map_one]
-  obtain ⟨v, hv⟩ := isSquare_of_unitsMap_eq_one hp hp2 h1
-  refine ⟨hQ.unitsEquivProd.symm (v, 1), hQ.unitsEquivProd.injective ?_⟩
-  rw [map_mul, MulEquiv.apply_symm_apply, Prod.mk_mul_mk, mul_one, ← hv, ← h2]
-
-end ZMod
 
 namespace DirichletCharacter
 
