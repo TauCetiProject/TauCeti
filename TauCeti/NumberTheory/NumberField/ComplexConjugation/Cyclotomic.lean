@@ -45,7 +45,7 @@ theorem autToPow_complexConjugationAt (hζ : IsPrimitiveRoot ζ m)
       rw [← map_pow, hζ.pow_eq_one, map_one]
     exact (Complex.inv_eq_conj (Complex.norm_eq_one_of_pow_eq_one hz (NeZero.ne m))).symm
   apply Units.ext
-  rw [hζ.coe_autToPow_eq_natCast hc, Nat.cast_sub (NeZero.pos m), ZMod.natCast_self]
+  rw [hζ.coe_autToPow_eq_natCast_iff.2 hc, Nat.cast_sub (NeZero.pos m), ZMod.natCast_self]
   simp
 
 end IsPrimitiveRoot

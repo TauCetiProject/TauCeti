@@ -20,6 +20,9 @@ change of variables for arbitrary rough-form coefficients.
 For absolute moments, membership of the identity in `Lᵖ` gives integrability of its norm
 power even on a seminormed group. On the real line, positive-order `Lᵖ` membership is
 equivalent to integrability of the corresponding absolute power.
+
+The pointwise supremum of finitely many integrable lattice-valued functions is integrable
+(`MeasureTheory.integrable_finset_sup'`).
 -/
 
 public section
@@ -73,6 +76,15 @@ theorem isFiniteMeasure_of_integrable_of_one_le {X F : Type*} [MeasurableSpace X
   have hconst : Integrable (fun _ : X ↦ (1 : ℝ)) μ :=
     hf.norm.mono' aestronglyMeasurable_const (by simpa only [norm_one] using h_one)
   exact (integrable_const_iff_isFiniteMeasure one_ne_zero).mp hconst
+
+/-- The pointwise supremum over a nonempty finset of integrable functions with values in a normed
+lattice is integrable. -/
+theorem integrable_finset_sup' {X β κ : Type*} [MeasurableSpace X] [NormedAddCommGroup β]
+    [Lattice β] [HasSolidNorm β] [IsOrderedAddMonoid β] {μ : Measure X} {s : Finset κ}
+    (hs : s.Nonempty) {f : κ → X → β} (hf : ∀ i ∈ s, Integrable (f i) μ) :
+    Integrable (fun x ↦ s.sup' hs fun i ↦ f i x) μ := by
+  simpa only [← Finset.sup'_apply] using
+    Finset.sup'_induction (p := fun h ↦ Integrable h μ) hs f (fun _ h₁ _ h₂ ↦ h₁.sup h₂) hf
 
 end MeasureTheory
 

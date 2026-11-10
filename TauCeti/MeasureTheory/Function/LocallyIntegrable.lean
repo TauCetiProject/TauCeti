@@ -25,8 +25,8 @@ localized to relatively compact subdomains.
 For a right-translation-invariant measure on an additive group with continuous addition,
 local integrability is preserved by translating a function onto any set whose translate stays
 inside the original domain. Likewise, for an additive Haar measure on a finite-dimensional real
-vector space, it is preserved by a nonzero dilation onto any set whose dilate stays inside the
-original domain.
+vector space, it is preserved by a nonzero dilation, and more generally by a linear change of
+variables, onto any set whose image stays inside the original domain.
 
 On a space with continuous addition and zero, a locally integrable function on an open set agrees
 with a globally integrable one on any compact subset and on all sufficiently small translates of it.
@@ -73,8 +73,10 @@ globally strongly measurable representative to `[0, 1]`. The set `s` needs no me
 
 * `MeasureTheory.LocallyIntegrableOn.comp_add_right_of_mapsTo`: translation onto a smaller set
   preserves local integrability.
-* `MeasureTheory.LocallyIntegrableOn.comp_smul_of_mapsTo`: a nonzero dilation onto a smaller set
-  preserves local integrability for an additive Haar measure.
+* `MeasureTheory.LocallyIntegrableOn.comp_continuousLinearEquiv_of_mapsTo`: a linear change of
+  variables onto a smaller set preserves local integrability for an additive Haar measure.
+* `MeasureTheory.LocallyIntegrableOn.comp_smul_of_mapsTo`: in particular, so does a nonzero
+  dilation.
 * `MeasureTheory.LocallyIntegrableOn.exists_integrable_eqOn_add_of_isCompact`: localization to
   a compact set and its small translates by a globally integrable function.
 * `MeasureTheory.locallyIntegrableOn_iff_forall_isCompact_closure`: characterization by
@@ -194,19 +196,28 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [MeasurableSpace E] [BorelSpace E] [TopologicalSpace F] [ESeminormedAddMonoid F]
   {μ : Measure E} [μ.IsAddHaarMeasure] {Ω V : Set E} {u : E → F} {R : ℝ}
 
+/-- Local integrability for an additive Haar measure is preserved by a linear change of variables
+whose image stays in the original domain. -/
+theorem LocallyIntegrableOn.comp_continuousLinearEquiv_of_mapsTo
+    (hu : LocallyIntegrableOn u Ω μ) (e : E ≃L[ℝ] E) (hVΩ : MapsTo e V Ω) :
+    LocallyIntegrableOn (fun x => u (e x)) V μ := by
+  intro x hx
+  obtain ⟨s, hs, hus⟩ := hu (e x) (hVΩ hx)
+  refine ⟨e ⁻¹' s, e.continuous.continuousWithinAt.tendsto_nhdsWithin hVΩ hs, ?_⟩
+  have he : μ.map e = ENNReal.ofReal |(LinearMap.det (e : E →ₗ[ℝ] E))⁻¹| • μ :=
+    Measure.map_linearMap_addHaar_eq_smul_addHaar μ (LinearEquiv.isUnit_det' _).ne_zero
+  have hmap : IntegrableOn u s (μ.map e) := by
+    rw [he, IntegrableOn, Measure.restrict_smul]
+    exact hus.integrable.smul_measure ENNReal.ofReal_ne_top
+  exact e.toHomeomorph.measurableEmbedding.integrableOn_map_iff.1 hmap
+
 /-- Local integrability for an additive Haar measure is preserved by a nonzero dilation whose
 image stays in the original domain. -/
 theorem LocallyIntegrableOn.comp_smul_of_mapsTo (hu : LocallyIntegrableOn u Ω μ) (hR : R ≠ 0)
     (hVΩ : MapsTo (R • ·) V Ω) :
-    LocallyIntegrableOn (fun x => u (R • x)) V μ := by
-  intro x hx
-  obtain ⟨s, hs, hus⟩ := hu (R • x) (hVΩ hx)
-  refine ⟨(R • ·) ⁻¹' s, (continuous_const_smul R).continuousWithinAt.tendsto_nhdsWithin hVΩ hs,
-    ?_⟩
-  have hmap : IntegrableOn u s (μ.map (R • ·)) := by
-    rw [Measure.map_addHaar_smul μ hR, IntegrableOn, Measure.restrict_smul]
-    exact hus.integrable.smul_measure ENNReal.ofReal_ne_top
-  exact (Homeomorph.smulOfNeZero R hR).measurableEmbedding.integrableOn_map_iff.1 hmap
+    LocallyIntegrableOn (fun x => u (R • x)) V μ :=
+  hu.comp_continuousLinearEquiv_of_mapsTo
+    (LinearEquiv.smulOfNeZero ℝ E R hR).toContinuousLinearEquiv hVΩ
 
 end MeasureTheory
 

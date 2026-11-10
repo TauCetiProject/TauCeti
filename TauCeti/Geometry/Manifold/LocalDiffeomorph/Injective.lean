@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Topology.IsLocalHomeomorph
 
 /-!
 # Injective local diffeomorphisms on open sets
@@ -15,7 +16,6 @@ its image. The inverse is smooth because it agrees near each image point with a 
 smooth inverse.
 
 Main results:
-* `IsLocalDiffeomorphOn.isOpen_image`: the image of an open set is open.
 * `IsLocalDiffeomorphOn.contMDiffOn_invFunOn`: the inverse on an injective open set is smooth.
 * `IsLocalDiffeomorphOn.partialDiffeomorphOfInjOn`: the partial diffeomorphism onto the image,
   with simp lemmas for its source, target, forward function and inverse.
@@ -45,12 +45,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 namespace IsLocalDiffeomorphOn
 
-/-- The image of an open set under a local diffeomorphism on that set is open. -/
-theorem isOpen_image (hf : IsLocalDiffeomorphOn I J n f s) (hs : IsOpen s) :
-    IsOpen (f '' s) :=
-  isOpen_iff_mem_nhds.2 <| forall_mem_image.2 fun _ hx ↦
-    hf.isLocalHomeomorphOn.map_nhds_eq hx ▸ image_mem_map (hs.mem_nhds hx)
-
 variable [Nonempty M]
 
 /-- The inverse of a local diffeomorphism injective on an open set is `C^n` on its image.
@@ -74,7 +68,7 @@ def partialDiffeomorphOfInjOn (hf : IsLocalDiffeomorphOn I J n f s)
     (hs : IsOpen s) (hinj : InjOn f s) : PartialDiffeomorph I J M N n where
   toPartialEquiv := hinj.toPartialEquiv f s
   open_source := hs
-  open_target := hf.isOpen_image hs
+  open_target := hf.isLocalHomeomorphOn.isOpen_image hs
   contMDiffOn_toFun := hf.contMDiffOn
   contMDiffOn_invFun := hf.contMDiffOn_invFunOn hs hinj
 

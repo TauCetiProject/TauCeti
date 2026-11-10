@@ -44,7 +44,7 @@ theorem _root_.AlgebraicGeometry.Scheme.isFinite_singularLocus_subschemeι_comp
     IsFinite ((X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R))) := by
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of R)) := hnodal.syntomic
   have hAffine : AffineAtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)) :=
-    (atWorstNodalOfRelativeDimensionOne_iff_of_isAffine _ (Iso.refl _)).mp hnodal
+    (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _)).mp hnodal
   have : Unramified
       ((X.singularLocus R).subschemeι ≫ (X ↘ Spec (.of R))) :=
     hAffine.unramified_singularLocus
@@ -61,7 +61,7 @@ theorem _root_.AlgebraicGeometry.Scheme.etale_singularLocus_subschemeι_comp
     Etale ((X.singularLocus K).subschemeι ≫ (X ↘ Spec (.of K))) := by
   have : SyntomicOfRelativeDimension 1 (X ↘ Spec (.of K)) := hnodal.syntomic
   have hAffine : AffineAtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of K)) :=
-    (atWorstNodalOfRelativeDimensionOne_iff_of_isAffine _ (Iso.refl _)).mp hnodal
+    (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _)).mp hnodal
   have : Unramified
       ((X.singularLocus K).subschemeι ≫ (X ↘ Spec (.of K))) :=
     hAffine.unramified_singularLocus

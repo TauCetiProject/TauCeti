@@ -119,11 +119,8 @@ theorem exists_remainder (N : ℕ) :
   choose s hs using fun j =>
     Symbol.isSmoothing_iff.1 (isSmoothing_cutoffSymbol_sub_cutoffSymbol χ₀ χ (a.term j)) (m - N)
   refine ⟨r₀ + ∑ j ∈ Finset.range N, s j, fun p => ?_⟩
-  have hsum : (∑ j ∈ Finset.range N, s j).coefficient p =
-      ∑ j ∈ Finset.range N, (s j).coefficient p :=
-    map_sum (AddMonoidHom.mk' (fun b : Symbol n V W (m - N) => b.coefficient p) fun _ _ => rfl) _ _
-  simp only [Symbol.coefficient_add, Pi.add_apply, hsum, hr₀, hs, Symbol.coefficient_sub,
-    Pi.sub_apply, coefficient_cutoffSymbol, Finset.sum_sub_distrib]
+  simp only [Symbol.coefficient_add, Pi.add_apply, Symbol.coefficient_sum, Finset.sum_apply, hr₀,
+    hs, Symbol.coefficient_sub, Pi.sub_apply, coefficient_cutoffSymbol, Finset.sum_sub_distrib]
   abel
 
 /-- The remainder `a - ∑_{j<N} χ(ξ) a_{m-j}` of a classical symbol after `N` terms, a symbol of
@@ -703,6 +700,34 @@ theorem principal_comp : (b.comp a).principal = b.principal.comp a.principal := 
   ext1
   funext z
   simp
+
+@[simp]
+theorem comp_neg (b : ClassicalSymbol n W U m') (a : ClassicalSymbol n V W m) :
+    b.comp (-a) = -b.comp a :=
+  ext (Symbol.comp_neg _ _)
+
+@[simp]
+theorem neg_comp (b : ClassicalSymbol n W U m') (a : ClassicalSymbol n V W m) :
+    (-b).comp a = -b.comp a :=
+  ext (Symbol.neg_comp _ _)
+
+theorem comp_sub (b : ClassicalSymbol n W U m') (a₁ a₂ : ClassicalSymbol n V W m) :
+    b.comp (a₁ - a₂) = b.comp a₁ - b.comp a₂ :=
+  ext (Symbol.comp_sub _ _ _)
+
+theorem sub_comp (b₁ b₂ : ClassicalSymbol n W U m') (a : ClassicalSymbol n V W m) :
+    (b₁ - b₂).comp a = b₁.comp a - b₂.comp a :=
+  ext (Symbol.sub_comp _ _ _)
+
+/-- The product of two cut-off homogeneous terms is the cut-off composition of the terms, for the
+product cutoff. -/
+theorem ofHomogeneous_comp_ofHomogeneous (χ χ' : FrequencyCutoff (CoordinateSpace n))
+    (b : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) W U m')
+    (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
+    (ofHomogeneous χ b).comp (ofHomogeneous χ' a) = ofHomogeneous (χ * χ') (b.comp a) := by
+  ext : 2
+  funext p
+  simp [smul_smul, mul_comm]
 
 end Comp
 
