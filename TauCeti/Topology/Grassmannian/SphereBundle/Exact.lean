@@ -278,8 +278,10 @@ theorem exists_pow_mem_range_homotopyGroupMap_specialOrthogonalSphereMap_of_isOf
 theorem surjective_homotopyGroupMap_specialOrthogonalSphereMap [NeZero n]
     [Subsingleton (HomotopyGroup N (specialOrthogonalGroup (Fin n) ℝ) 1)] :
     Function.Surjective (HomotopyGroup.map (N := Option N) (x := 1)
-      ⟨specialOrthogonalSphereMap n, continuous_specialOrthogonalSphereMap n⟩ rfl) := fun _ ↦
-  mem_range_homotopyGroupMap_specialOrthogonalSphereMap_iff.2 (Subsingleton.elim _ _)
+      ⟨specialOrthogonalSphereMap n, continuous_specialOrthogonalSphereMap n⟩ rfl) :=
+  have := (fiberEquiv n N).subsingleton_congr.2 ‹_›
+  TopCat.surjective_homotopyGroupMap_of_subsingleton specialOrthogonalSphereMap_mem_serreFibrations
+    (e := fiberOne n)
 
 /-- **`π₃(SO(4)) → π₃(S³)` is surjective.** Since `π₂(SO(3)) = 0`, every class of `π₃(S³)` comes
 from `SO(4)` under `A ↦ A e₀`. Here `π₃` is modelled on `I^(Option N)` for a type `N` with two

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Algebra.Star.Unitary
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import Mathlib.Topology.ContinuousMap.Star
+public import TauCeti.Analysis.Normed.Module.Normalize
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.Calculus.FDeriv.Comp
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
@@ -36,6 +37,9 @@ and records that the coordinate function `z ↦ z` is a unitary element of `C(S�
 * `Circle.re_sq_add_im_sq` and `Circle.coe_add_inv_coe`: `Re z ^ 2 + Im z ^ 2 = 1` and
   `z + z⁻¹ = 2 Re z` on the circle, and `Complex.re_sq_add_im_sq_of_mem_sphere`, the first
   identity for a point of `sphere (0 : ℂ) 1`.
+* `Complex.conj_mul_self_of_mem_sphere` and `TauCeti.sphereDirection_mul_sphereDirection_conj`:
+  `conj z * z = 1` on the unit sphere of `ℂ`, and the directions of a nonzero `z` and of its
+  conjugate multiply to one.
 * `Circle.exp_pow_eq_neg_one` and `Circle.mixed_power_rotation_factor`: power identities for
   complex exponentials on the circle.
 * `Circle.exists_pow_nat_eq`: every point of the circle has an `n`-th root on the circle.
@@ -75,6 +79,23 @@ theorem re_sq_add_im_sq (z : Circle) : (z : ℂ).re ^ 2 + (z : ℂ).im ^ 2 = 1 :
 theorem _root_.Complex.re_sq_add_im_sq_of_mem_sphere {z : ℂ} (hz : z ∈ sphere (0 : ℂ) 1) :
     z.re ^ 2 + z.im ^ 2 = 1 := by
   simpa using re_sq_add_im_sq (homeomorphSphere.symm ⟨z, hz⟩)
+
+/-- A point of the unit sphere of `ℂ` times its conjugate is one. -/
+theorem _root_.Complex.conj_mul_self_of_mem_sphere {z : ℂ} (hz : z ∈ sphere (0 : ℂ) 1) :
+    conj z * z = 1 := by
+  rw [Complex.conj_mul', norm_eq_of_mem_sphere ⟨z, hz⟩, Complex.ofReal_one, one_pow]
+
+/-- The direction of a nonzero complex number times the direction of its conjugate is one. -/
+theorem _root_.TauCeti.sphereDirection_mul_sphereDirection_conj {z : ℂ} (hz : z ≠ 0) :
+    TauCeti.sphereDirection 1 z * TauCeti.sphereDirection 1 (conj z) = 1 := by
+  ext1
+  rw [Metric.unitSphere.coe_mul, TauCeti.coe_sphereDirection_of_ne_zero _ hz,
+    TauCeti.coe_sphereDirection_of_ne_zero _ ((map_ne_zero _).2 hz)]
+  have := Complex.ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)
+  simp only [NormedSpace.normalize, Complex.norm_conj, Complex.real_smul,
+    Metric.unitSphere.coe_one, mul_mul_mul_comm _ z, Complex.mul_conj']
+  push_cast
+  field_simp
 
 /-- For a point of the circle, `z + z⁻¹ = 2 Re z`. -/
 theorem coe_add_inv_coe (z : Circle) : (z : ℂ) + (z : ℂ)⁻¹ = 2 * (z : ℂ).re := by

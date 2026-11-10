@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Analysis.Normed.Module.Ball.Action
 public import TauCeti.Analysis.Normed.Module.Normalize
 public import TauCeti.Topology.ComplexProjectiveSpace.Charts
@@ -57,24 +58,6 @@ namespace TauCeti.ComplexProjectiveSpace
 
 variable {n : ℕ}
 
-/-- A unit complex number times its conjugate is one. -/
-private theorem conj_mul_self_of_mem_sphere (c : sphere (0 : ℂ) 1) :
-    (starRingEnd ℂ) (c : ℂ) * c = 1 := by
-  rw [Complex.conj_mul', norm_eq_of_mem_sphere c, Complex.ofReal_one, one_pow]
-
-/-- The direction of a nonzero complex number times the direction of its conjugate is one. -/
-private theorem sphereDirection_mul_sphereDirection_conj {z : ℂ} (hz : z ≠ 0) :
-    sphereDirection 1 z * sphereDirection 1 ((starRingEnd ℂ) z) = 1 := by
-  have hz' : (starRingEnd ℂ) z ≠ 0 := (map_ne_zero _).2 hz
-  ext1
-  rw [Metric.unitSphere.coe_mul, coe_sphereDirection_of_ne_zero _ hz,
-    coe_sphereDirection_of_ne_zero _ hz', NormedSpace.normalize, NormedSpace.normalize,
-    Complex.norm_conj, Complex.real_smul, Complex.real_smul, mul_mul_mul_comm, Complex.mul_conj',
-    Metric.unitSphere.coe_one]
-  have := Complex.ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)
-  push_cast
-  field_simp
-
 /-- The unit vector `e_k` of `ℂⁿ⁺¹`, an assigned value of `hopfSection k` off its chart. -/
 private def unitSingle (k : Fin (n + 1)) : sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1 :=
   ⟨EuclideanSpace.single k 1, by simp⟩
@@ -90,7 +73,8 @@ private theorem conjCoordSMul_smul (k : Fin (n + 1)) (c : sphere (0 : ℂ) 1)
       EuclideanSpace ℂ (Fin (n + 1))) = conjCoordSMul k v := by
   simp only [conjCoordSMul, Sphere.coe_sphere_smul, PiLp.smul_apply, smul_eq_mul, map_mul,
     smul_smul]
-  rw [mul_comm ((starRingEnd ℂ) (c : ℂ)), mul_assoc, conj_mul_self_of_mem_sphere, mul_one]
+  rw [mul_comm ((starRingEnd ℂ) (c : ℂ)), mul_assoc, Complex.conj_mul_self_of_mem_sphere c.2,
+    mul_one]
 
 private theorem continuous_conjCoordSMul (k : Fin (n + 1)) :
     Continuous (conjCoordSMul (n := n) k) :=

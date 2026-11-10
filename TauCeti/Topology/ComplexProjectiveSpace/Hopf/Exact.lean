@@ -24,8 +24,8 @@ unit circle, through `u ↦ u • v` (`TauCeti.ComplexProjectiveSpace.mk_mem_ser
 has no homotopy groups above degree one, its exact homotopy sequence gives:
 
 * for `k ≥ 3`, the projection induces isomorphisms `π_k(S²ⁿ⁺¹) ≅ π_k(CPⁿ)`
-  (`TauCeti.ComplexProjectiveSpace.homotopyGroupMulEquiv`);
-* `CPⁿ` is simply connected (`TauCeti.ComplexProjectiveSpace.simplyConnectedSpace`);
+  (`TauCeti.ComplexProjectiveSpace.hopfHomotopyGroupMulEquiv`);
+* `CPⁿ` is simply connected (`TauCeti.ComplexProjectiveSpace.instSimplyConnectedSpace`);
 * for `n ≥ 1`, the boundary map `π₂(CPⁿ) → π₁(S¹)` is an isomorphism
   (`TauCeti.ComplexProjectiveSpace.hopfBoundaryMulEquiv`). More generally, for `1 ≤ k < 2n` the
   boundary `π_{k+1}(CPⁿ) → π_k(S¹)` is bijective, so `π_k(CPⁿ)` vanishes for `3 ≤ k ≤ 2n`.
@@ -40,7 +40,7 @@ are based at a unit vector `v` and at its class `[v]`; in the circle the base po
 ## Main definitions
 
 * `TauCeti.ComplexProjectiveSpace.hopfBoundary`: the boundary map `π_{k+1}(CPⁿ, [v]) → π_k(S¹, 1)`.
-* `TauCeti.ComplexProjectiveSpace.homotopyGroupMulEquiv`: for `k ≥ 3`, the isomorphism
+* `TauCeti.ComplexProjectiveSpace.hopfHomotopyGroupMulEquiv`: for `k ≥ 3`, the isomorphism
   `π_k(S²ⁿ⁺¹, v) ≃* π_k(CPⁿ, [v])` induced by the projection.
 * `TauCeti.ComplexProjectiveSpace.hopfBoundaryMulEquiv`: for `1 ≤ k < 2n`, the boundary map as an
   isomorphism `π_{k+1}(CPⁿ, [v]) ≃* π_k(S¹, 1)`.
@@ -49,7 +49,7 @@ are based at a unit vector `v` and at its class `[v]`; in the circle the base po
 
 * `TauCeti.ComplexProjectiveSpace.bijective_homotopyGroupMap_mk`: for `k ≥ 3`, the projection
   induces a bijection `π_k(S²ⁿ⁺¹, v) → π_k(CPⁿ, [v])`.
-* `TauCeti.ComplexProjectiveSpace.simplyConnectedSpace`: `CPⁿ` is simply connected.
+* `TauCeti.ComplexProjectiveSpace.instSimplyConnectedSpace`: `CPⁿ` is simply connected.
 * `TauCeti.ComplexProjectiveSpace.bijective_hopfBoundary`: for `1 ≤ k < 2n`, the boundary map is
   bijective.
 
@@ -85,12 +85,18 @@ private def fiberHomeomorph : (hopfHom n).fiber (mk n v) ≃ₜ sphere (0 : ℂ)
 private theorem fiberHomeomorph_fiberPoint : fiberHomeomorph v (fiberPoint v) = 1 :=
   (hopfFiberHomeomorph v).symm_apply_eq.2 (hopfFiberHomeomorph_one v).symm
 
+/-- The higher homotopy groups of the unit circle vanish. -/
+private instance subsingleton_homotopyGroup_circle [Nontrivial N] (x : sphere (0 : ℂ) 1) :
+    Subsingleton (HomotopyGroup N (sphere (0 : ℂ) 1) x) :=
+  (HomotopyGroup.homeomorphEquiv (N := N) Circle.homeomorphSphere.symm x).subsingleton_congr.2
+    inferInstance
+
 /-- The higher homotopy groups of the fibre of the Hopf fibration vanish. -/
 private instance subsingleton_homotopyGroup_fiber [Nontrivial N]
     (x : (hopfHom n).fiber (mk n v)) :
     Subsingleton (HomotopyGroup N ((hopfHom n).fiber (mk n v)) x) :=
-  (HomotopyGroup.homeomorphEquiv (N := N)
-    ((fiberHomeomorph v).trans Circle.homeomorphSphere.symm) x).subsingleton_congr.2 inferInstance
+  (HomotopyGroup.homeomorphEquiv (N := N) (fiberHomeomorph v) x).subsingleton_congr.2
+    inferInstance
 
 /-- The fibre of the Hopf fibration is path connected. -/
 private instance pathConnectedSpace_fiber : PathConnectedSpace ((hopfHom n).fiber (mk n v)) :=
@@ -117,16 +123,16 @@ theorem bijective_homotopyGroupMap_mk [Finite N] [Nontrivial N] :
 
 /-- For `k ≥ 3`, the isomorphism `π_k(S²ⁿ⁺¹, v) ≃* π_k(CPⁿ, [v])` induced by the Hopf fibration,
 with `π_k` modelled on `I^(Option N)` for a type `N` with at least two elements. -/
-def homotopyGroupMulEquiv [Finite N] [Nontrivial N] [DecidableEq N] :
+def hopfHomotopyGroupMulEquiv [Finite N] [Nontrivial N] [DecidableEq N] :
     HomotopyGroup (Option N) (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) v ≃*
       HomotopyGroup (Option N) (ComplexProjectiveSpace n) (mk n v) :=
   MulEquiv.ofBijective (HomotopyGroup.mapHom ⟨mk n, continuous_mk n⟩ rfl)
     (bijective_homotopyGroupMap_mk v)
 
 @[simp]
-theorem homotopyGroupMulEquiv_apply [Finite N] [Nontrivial N] [DecidableEq N]
+theorem hopfHomotopyGroupMulEquiv_apply [Finite N] [Nontrivial N] [DecidableEq N]
     (a : HomotopyGroup (Option N) (sphere (0 : EuclideanSpace ℂ (Fin (n + 1))) 1) v) :
-    homotopyGroupMulEquiv v a = HomotopyGroup.map ⟨mk n, continuous_mk n⟩ rfl a :=
+    hopfHomotopyGroupMulEquiv v a = HomotopyGroup.map ⟨mk n, continuous_mk n⟩ rfl a :=
   (rfl)
 
 end Higher
@@ -136,7 +142,7 @@ end Higher
 /-- **`CPⁿ` is simply connected.** For `n ≥ 1`, every loop lifts, up to homotopy, to the simply
 connected sphere `S²ⁿ⁺¹`, because the fibre of the Hopf fibration is path connected; `CP⁰` is a
 point. -/
-instance simplyConnectedSpace : SimplyConnectedSpace (ComplexProjectiveSpace n) := by
+instance instSimplyConnectedSpace : SimplyConnectedSpace (ComplexProjectiveSpace n) := by
   rcases Nat.eq_zero_or_pos n with rfl | hn
   · infer_instance
   refine simplyConnectedSpace_iff_forall_subsingleton_fundamentalGroup.2
@@ -234,9 +240,6 @@ theorem hopfBoundaryMulEquiv_apply [DecidableEq N] [Nonempty N] (hN : Nat.card N
 is trivial. -/
 theorem subsingleton_homotopyGroup [Nontrivial N] (hN : Nat.card N < 2 * n) :
     Subsingleton (HomotopyGroup (Option N) (ComplexProjectiveSpace n) (mk n v)) :=
-  have : Subsingleton (HomotopyGroup N (sphere (0 : ℂ) 1) 1) :=
-    (HomotopyGroup.homeomorphEquiv (N := N) Circle.homeomorphSphere.symm 1).subsingleton_congr.2
-      inferInstance
   (bijective_hopfBoundary v hN).1.subsingleton
 
 end TauCeti.ComplexProjectiveSpace
