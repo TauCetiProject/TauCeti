@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.HomologicalComplexAbelian
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
 
 /-!
@@ -23,7 +22,7 @@ open CategoryTheory CategoryTheory.Limits
 
 universe v u
 
-variable {C : Type u} [Category.{v} C] [Abelian C]
+variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C]
 
 /-- Exactness of the specified differentials gives exactness in positive degrees of the
 chain complex assembled by `ChainComplex.of`. -/
