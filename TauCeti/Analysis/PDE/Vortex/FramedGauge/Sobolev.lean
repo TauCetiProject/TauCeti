@@ -65,7 +65,8 @@ theorem nor the quotient is treated.
 * `TauCeti.Vortex.gaugeForm_apply_mem_realSobolevFunctions`: for a `C¹` gauge in `G_(s+1)`,
   `Im (u⁻¹ du)` has coefficients in `H^s`.
 * `TauCeti.Vortex.gaugeTransform_mem_framedFieldSpace`: for `k ≥ 2`, the charge-one action of
-  `G_(k+1)` preserves `A_m^k`; this gives a `MulAction` of `G_(k+1)` on `A_m^k`.
+  `G_(k+1)` preserves `A_m^k`; this gives a `MulAction` of `G_(k+1)` on `A_m^k`, which is
+  free (an `IsCancelSMul` instance).
 
 ## References
 
@@ -344,5 +345,18 @@ theorem coe_sobolevGaugeGroup_smul {k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) 
     (x : framedFieldSpace f m k) :
     ((u • x : framedFieldSpace f m k) : ℂ → EuclideanSpace ℝ (Fin 4)) = gaugeTransform u x :=
   (rfl)
+
+/-- **The action of `G_(k+1)` on `A_m^k` is free**: an element of `G_(k+1)` fixing one field is the
+identity. -/
+instance {k : ℕ} [Fact (1 < k)] {hs : 1 < (k : ℝ) + 1} {f : ContDiffBump (0 : ℝ)} {m : ℕ} :
+    IsCancelSMul (sobolevGaugeGroup hs) (framedFieldSpace f m k) := by
+  have h : (3 : ℝ) ≤ k + 1 := by
+    have : (2 : ℝ) ≤ k := by exact_mod_cast (Fact.out : 1 < k)
+    linarith
+  refine isCancelSMul_iff_eq_one_of_smul_eq.mpr fun u x hux ↦ Subtype.ext ?_
+  exact eq_one_of_gaugeTransform_eq_self (x := x.1)
+    (differentiable_of_mem_sobolevGaugeGroup u.2 h)
+    (tendsto_cocompact_of_mem_sobolevGaugeGroup u.2)
+    (by simpa only [coe_sobolevGaugeGroup_smul] using congrArg Subtype.val hux)
 
 end TauCeti.Vortex
