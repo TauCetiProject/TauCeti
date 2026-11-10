@@ -168,11 +168,10 @@ theorem holderOnWith_iteratedFDeriv_comp_const_smul {f : E → F} {i : ℕ} {C r
       (iteratedFDeriv 𝕜 i fun z ↦ f (a • z)) s := by
   have h := hf.comp_const_smul a hst
   refine HolderOnWith.of_dist_le fun x hx y hy ↦ ?_
-  rw [iteratedFDeriv_comp_const_smul_apply, iteratedFDeriv_comp_const_smul_apply, dist_eq_norm,
-    ← smul_sub, norm_smul, norm_pow, ← dist_eq_norm, NNReal.coe_mul, NNReal.coe_pow, coe_nnnorm,
-    mul_assoc]
+  simp only [iteratedFDeriv_comp_const_smul_apply, dist_eq_norm, ← smul_sub, norm_smul, norm_pow]
+  push_cast [mul_assoc]
   gcongr
-  exact h.dist_le hx hy
+  simpa [dist_eq_norm, mul_assoc] using h.dist_le hx hy
 
 end TauCeti
 
