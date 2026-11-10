@@ -135,7 +135,7 @@ theorem rowSubset_injective : Function.Injective (rowSubset (n := n)) := by
 /-- In a pattern with entries in `{0, 1}`, row `j` is `(1, …, 1, 0, …, 0)`: an informative entry
 is `1` exactly when it lies before the number of ones of its row. -/
 private theorem eq_one_iff_lt_card {Q : GTPattern n} (hQ : ∀ i j, Q i j = 0 ∨ Q i j = 1)
-    {c j : ℕ} (hc : c < j) (hj : j ≤ n) : Q c j = 1 ↔ c < #{c ∈ range j | Q c j = 1} := by
+    {c j : ℕ} (hc : c < j) : Q c j = 1 ↔ c < #{c ∈ range j | Q c j = 1} := by
   have hcard : #{c ∈ range j | Q c j = 1} = #{i : Fin j | Q i j = 1} := by
     rw [← card_map Fin.valEmbedding, map_filter' _ Fin.valEmbedding, Fin.map_valEmbedding_univ,
       ← Nat.Iio_eq_range]
@@ -145,7 +145,7 @@ private theorem eq_one_iff_lt_card {Q : GTPattern n} (hQ : ∀ i j, Q i j = 0 �
   -- The entries equal to `1` form an initial segment of the row, since the row decreases.
   refine (Fin.lt_card_filter_univ_iff_apply_of_imp (j := ⟨c, hc⟩) (fun i : Fin j => Q i j = 1)
     fun c' c hcc' h1 => ?_).symm
-  have := Q.entry_anti hj hcc' c'.2
+  have := Q.entry_anti hcc' c'.2
   rcases hQ c j with h | h <;> omega
 
 /-- A pattern with entries in `{0, 1}` is a row-subset pattern.  The rows of `I` are those at
@@ -154,9 +154,9 @@ private theorem exists_eq_rowSubset {Q : GTPattern n} (hQ : ∀ i j, Q i j = 0 �
     ∃ I : Finset (Fin n), Q = rowSubset I := by
   -- `k j` is the number of ones in row `j`, and row `j` is `(1, …, 1, 0, …, 0)`.
   obtain ⟨k, hk⟩ : ∃ k : ℕ → ℕ, ∀ j, k j = #{c ∈ range j | Q c j = 1} := ⟨_, fun _ => rfl⟩
-  have hrow : ∀ {c j}, c < j → j ≤ n → (Q c j = 1 ↔ c < k j) := fun hc hj => by
+  have hrow : ∀ {c j}, c < j → j ≤ n → (Q c j = 1 ↔ c < k j) := fun hc _ => by
     rw [hk]
-    exact eq_one_iff_lt_card hQ hc hj
+    exact eq_one_iff_lt_card hQ hc
   have hk_le : ∀ j, k j ≤ j := fun j => by
     rw [hk]
     exact (card_filter_le _ _).trans (card_range j).le
