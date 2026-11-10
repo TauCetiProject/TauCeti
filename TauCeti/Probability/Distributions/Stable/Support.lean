@@ -76,7 +76,7 @@ support is the affine image of the standardized support. -/
 private theorem support_stableMeasure_eq_image (hs : 0 < s) (m : ℝ) :
     (stableMeasure α β s m).support =
       (fun x ↦ m + (s : ℝ) * x) '' (stableMeasure α β 1 0).support := by
-  rw [← stableMeasure_one_zero_map_affine hs, support_map_affine (NNReal.coe_pos.2 hs).ne']
+  rw [← stableMeasure_one_zero_map_affine, support_map_affine (NNReal.coe_pos.2 hs).ne']
 
 /-- Full support of the standardized non-Gaussian law gives full support at every positive
 scale and location, and the Gaussian shape always has full support. -/
@@ -100,7 +100,7 @@ private theorem support_standardStableMeasure_of_abs_lt_one (hα : α ∈ Ioo 0 
     (hβ : |β| < 1) : (stableMeasure α β 1 0).support = univ := by
   obtain ⟨μ, hμ, -⟩ := existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ.le
     (by norm_num : (0 : ℝ) < 1)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ.le zero_lt_one
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β 1
   obtain ⟨a, ha⟩ := Measure.nonempty_support (IsProbabilityMeasure.ne_zero (μ : Measure ℝ))
   apply eq_univ_of_forall
   intro x
@@ -145,7 +145,7 @@ private theorem mem_support_standardStableMeasure_of_eventually (hα : α ∈ Io
   obtain ⟨a, ha, haS⟩ := Measure.nonempty_inter_support_of_pos hn
   have hya : y - a ∈ (stableCompensatedPoissonMeasure α β (r n)).support :=
     hsub (by simpa [Metric.mem_ball, Real.dist_eq, abs_sub_comm] using ha)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ (hr n)
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β (r n)
   have hmem := Measure.add_mem_support_conv haS hya
   rwa [hρ n, add_sub_cancel] at hmem
 
@@ -317,8 +317,8 @@ private theorem exists_stableDensity_convolution_self (hα : α ∈ Ioc 0 2) (h�
 
 /-- If a stable density is the self-convolution of the density of a stable law with convex
 support, then it is positive exactly on the interior of the sum of that support with itself. -/
-private theorem stablePDFReal_pos_iff_mem_interior_add_support (hα : α ∈ Ioc 0 2)
-    (hβ : |β| ≤ 1) {m : ℝ} {r : ℝ≥0} {c : ℝ} (hr : 0 < r)
+private theorem stablePDFReal_pos_iff_mem_interior_add_support {m : ℝ} {r : ℝ≥0} {c : ℝ}
+    (hr : 0 < r)
     (hconv : stablePDFReal α β r c ⋆[mul ℝ ℝ] stablePDFReal α β r c = stablePDFReal α β s m)
     (hconvex : Convex ℝ (stableMeasure α β r c).support) (x : ℝ) :
     0 < stablePDFReal α β s m x ↔
@@ -328,16 +328,10 @@ private theorem stablePDFReal_pos_iff_mem_interior_add_support (hα : α ∈ Ioc
   have hsupp : tsupport (stablePDFReal α β r c) = (stableMeasure α β r c).support := by
     rw [← Measure.support_withDensity_ofReal (μ := volume) hf hf0,
       ← funext (stablePDF_eq_ofReal α β r c), ← stableMeasure_eq_withDensity α β hr c]
-  have hfinite : ConvolutionExists (stablePDFReal α β r c) (stablePDFReal α β r c)
-      (mul ℝ ℝ) volume :=
-    convolutionExists_of_integrable_of_ae_norm_le (mul ℝ ℝ)
-      (integrable_stablePDFReal α β r c) hf.aestronglyMeasurable
-      (.of_forall fun y ↦ by
-        rw [Real.norm_eq_abs, abs_of_nonneg (hf0 y)]
-        exact stablePDFReal_le hα hβ hr c y)
   rw [← congrFun hconv x, ← hsupp]
   exact convolution_pos_iff_mem_interior_add_tsupport hf hf hf0 hf0
-    (hsupp ▸ hconvex) (hsupp ▸ hconvex) (hfinite x)
+    (hsupp ▸ hconvex) (hsupp ▸ hconvex)
+    (convolutionExists_stablePDFReal (integrable_stablePDFReal α β r c) α β r c x)
 
 /-- A positive-scale stable density with full support is strictly positive everywhere. -/
 private theorem stablePDFReal_pos_of_support_eq_univ (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1)
@@ -345,7 +339,7 @@ private theorem stablePDFReal_pos_of_support_eq_univ (hα : α ∈ Ioc 0 2) (hβ
     (hsupp : ∀ (r : ℝ≥0) (c : ℝ), 0 < r → (stableMeasure α β r c).support = univ) :
     0 < stablePDFReal α β s m x := by
   obtain ⟨r, c, hr, -, hconv⟩ := exists_stableDensity_convolution_self hα hβ hs m
-  rw [stablePDFReal_pos_iff_mem_interior_add_support hα hβ hr hconv
+  rw [stablePDFReal_pos_iff_mem_interior_add_support hr hconv
     (by rw [hsupp r c hr]; exact convex_univ), hsupp r c hr, univ_add_univ, interior_univ]
   exact mem_univ x
 
@@ -372,7 +366,7 @@ theorem stablePDFReal_one_pos_iff_of_lt_one (hα : α ∈ Ioo 0 1) (hs : 0 < s) 
   have hβ : |(1 : ℝ)| ≤ 1 := by simp
   obtain ⟨r, c, hr, hloc, hconv⟩ := exists_stableDensity_convolution_self hα' hβ hs m
   have hsupp := support_stableMeasure_one_of_lt_one hα hr c
-  rw [stablePDFReal_pos_iff_mem_interior_add_support hα' hβ hr hconv
+  rw [stablePDFReal_pos_iff_mem_interior_add_support hr hconv
     (by rw [hsupp]; exact convex_Ici _), hsupp, hloc]
   set d := stableS1Location α 1 s m
   constructor
@@ -394,7 +388,7 @@ theorem stablePDFReal_neg_one_pos_iff_of_lt_one (hα : α ∈ Ioo 0 1) (hs : 0 <
   have hβ : |(-1 : ℝ)| ≤ 1 := by simp
   obtain ⟨r, c, hr, hloc, hconv⟩ := exists_stableDensity_convolution_self hα' hβ hs m
   have hsupp := support_stableMeasure_neg_one_of_lt_one hα hr c
-  rw [stablePDFReal_pos_iff_mem_interior_add_support hα' hβ hr hconv
+  rw [stablePDFReal_pos_iff_mem_interior_add_support hr hconv
     (by rw [hsupp]; exact convex_Iic _), hsupp, hloc]
   set d := stableS1Location α (-1) s m
   constructor

@@ -215,8 +215,8 @@ theorem weilDifferentialOfSeparating_eq_derivativeOfSeparating_smul (hF : IsFunc
   obtain ⟨q, hq, hqx⟩ := hxq hx0.ge
   obtain ⟨r, hr, hry⟩ := hyq hy0.ge
   -- The values of `x` and `y` at `P` are separable over `k`, so `q` and `r` are separable.
-  have hqs := P.separable_of_ord_aeval_pos hx0.ge hq (by rw [hqx]; exact one_pos)
-  have hrs := P.separable_of_ord_aeval_pos hy0.ge hr (by rw [hry]; exact one_pos)
+  have hqs := P.separable_of_ord_aeval_pos hq (by rw [hqx]; exact one_pos)
+  have hrs := P.separable_of_ord_aeval_pos hr (by rw [hry]; exact one_pos)
   -- Enlarge the constants until the places over `P` are rational, and pick one of them.
   have := P.finiteDimensional_residueField hF
   obtain ⟨F', k', _, _, h, hdeg⟩ :=
@@ -244,8 +244,7 @@ theorem Place.ord_derivativeOfSeparating_eq_sub (P : Place k F)
   rw [coe_weilDifferentialSpaceModule_smul] at hchain
   rw [weilDifferentialOrder_eq_ord_add_of_eq_repartitionDualMul hF hex _ _
     (weilDifferentialOfSeparating hF hx).2
-    (by simpa using weilDifferentialOfSeparating_ne_zero hF hx)
-    (derivativeOfSeparating_ne_zero hx hy) hchain P, add_sub_cancel_right]
+    (by simpa using weilDifferentialOfSeparating_ne_zero hF hx) hchain P, add_sub_cancel_right]
 
 /-- **The Kähler–Weil comparison does not depend on the separating element** (Stichtenoth,
 Theorem 4.3.2): over any exact constant field, the comparisons built from any two separating
