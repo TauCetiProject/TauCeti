@@ -10,6 +10,7 @@ public import Mathlib.Data.Finset.Sort
 public import Mathlib.Data.List.Rotate
 public import Mathlib.Logic.Equiv.Fin.Rotate
 public import Mathlib.Order.Fin.Tuple
+import Mathlib.Data.Fintype.Fin
 import Mathlib.Data.List.Chain
 import Mathlib.Order.Interval.Finset.Fin
 
@@ -296,18 +297,9 @@ theorem card_filter_lt_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (m :
 theorem lt_card_filter_iff_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (m : Fin k)
     (p : α → Prop) [DecidablePred p] (hp : ∀ x y, y ≤ x → p x → p y) :
     (m : ℕ) < #{x ∈ s | p x} ↔ p (s.orderEmbOfFin h m) := by
-  rw [← s.card_filter_lt_orderEmbOfFin h m]
-  constructor
-  · intro hlt
-    by_contra hm
-    refine hlt.not_ge (card_le_card fun x hx ↦ ?_)
-    obtain ⟨hxs, hx⟩ := mem_filter.1 hx
-    exact mem_filter.2 ⟨hxs, lt_of_not_ge fun hle ↦ hm (hp _ _ hle hx)⟩
-  · intro hm
-    refine card_lt_card ⟨fun x hx ↦ ?_, fun hsub ↦ ?_⟩
-    · obtain ⟨hxs, hx⟩ := mem_filter.1 hx
-      exact mem_filter.2 ⟨hxs, hp _ _ hx.le hm⟩
-    · exact lt_irrefl _ (mem_filter.1 (hsub (mem_filter.2 ⟨s.orderEmbOfFin_mem h m, hm⟩))).2
+  conv_lhs => rw [← map_orderEmbOfFin_univ s h, filter_map, card_map]
+  exact Fin.lt_card_filter_univ_iff_apply_of_imp (p ∘ s.orderEmbOfFin h)
+    fun _ _ hji ↦ hp _ _ ((s.orderEmbOfFin h).monotone hji)
 
 /-- The `m`-th element of a finset of `Fin n` in increasing order is at least `m`. -/
 theorem val_le_val_orderEmbOfFin {n : ℕ} (s : Finset (Fin n)) {k : ℕ} (h : #s = k) (m : Fin k) :

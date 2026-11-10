@@ -296,6 +296,13 @@ noncomputable def flagMinor (I : Finset (Fin n)) : MvPolynomial (Fin n × Fin n)
   Matrix.mvPolynomialMinor R (I.orderEmbOfFin rfl)
     (Fin.castLE (I.card_le_univ.trans_eq (Fintype.card_fin n)))
 
+/-- The flag minor on `I` is the minor of the generic matrix on the rows of `I`, in increasing
+order, and on the first `#I` columns. -/
+theorem flagMinor_def (I : Finset (Fin n)) :
+    flagMinor R I = Matrix.mvPolynomialMinor R (I.orderEmbOfFin rfl)
+      (Fin.castLE (I.card_le_univ.trans_eq (Fintype.card_fin n))) := by
+  rw [flagMinor]
+
 variable {R}
 
 /-- For the row-major lexicographic order on the variables, the leading exponent of the flag
@@ -303,7 +310,7 @@ minor on `I` is the exponent of its main diagonal. -/
 @[simp]
 theorem degree_rename_toLex_flagMinor [Nontrivial R] (I : Finset (Fin n)) :
     lex.degree (rename toLex (flagMinor R I)) = TauCeti.flagExponent I := by
-  rw [flagMinor, Matrix.mvPolynomialMinor_eq_det_submatrix]
+  rw [flagMinor_def, Matrix.mvPolynomialMinor_eq_det_submatrix]
   exact Matrix.degree_rename_toLex_det_submatrix_mvPolynomialX (I.orderEmbOfFin rfl).strictMono
     (Fin.strictMono_castLE _)
 
@@ -311,7 +318,7 @@ theorem degree_rename_toLex_flagMinor [Nontrivial R] (I : Finset (Fin n)) :
 @[simp]
 theorem monic_rename_toLex_flagMinor (I : Finset (Fin n)) :
     lex.Monic (rename toLex (flagMinor R I)) := by
-  rw [flagMinor, Matrix.mvPolynomialMinor_eq_det_submatrix]
+  rw [flagMinor_def, Matrix.mvPolynomialMinor_eq_det_submatrix]
   exact Matrix.monic_rename_toLex_det_submatrix_mvPolynomialX (I.orderEmbOfFin rfl).strictMono
     (Fin.strictMono_castLE _)
 
