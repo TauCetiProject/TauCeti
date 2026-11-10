@@ -74,13 +74,17 @@ theorem homotopicRel_comp_map_id {Z : Type*} [TopologicalSpace Z] {z : Z} {s : C
     ((map r hr : C(MooreLoopSpace Z z, MooreLoopSpace X x)).comp (map s hs)).HomotopicRel
       (ContinuousMap.id _) {1} := by
   have hrs : r.comp s x = x := by rw [ContinuousMap.comp_apply, hs, hr]
-  -- `Ω r ∘ Ω s = Ω (r ∘ s)` and `Ω id = id`, as continuous maps.
+  -- `Ω r ∘ Ω s = Ω (r ∘ s)` and `Ω id = id`, as continuous maps: after `map_comp` and `map_id`,
+  -- `rfl` closes the goals since coercing to continuous maps commutes with `comp` and `id`
+  -- by definition.
   have hcomp : (map r hr : C(MooreLoopSpace Z z, MooreLoopSpace X x)).comp (map s hs) =
-      (map (r.comp s) hrs : C(MooreLoopSpace X x, MooreLoopSpace X x)) :=
-    ContinuousMap.ext fun γ ↦ ext (by simp)
+      (map (r.comp s) hrs : C(MooreLoopSpace X x, MooreLoopSpace X x)) := by
+    rw [map_comp r s hr hs]
+    rfl
   have hid : (map (ContinuousMap.id X) (ContinuousMap.id_apply x) :
-      C(MooreLoopSpace X x, MooreLoopSpace X x)) = ContinuousMap.id _ :=
-    ContinuousMap.ext fun γ ↦ ext (by simp)
+      C(MooreLoopSpace X x, MooreLoopSpace X x)) = ContinuousMap.id _ := by
+    rw [map_id]
+    rfl
   simpa only [hcomp, hid] using homotopicRel_map h hrs (ContinuousMap.id_apply x)
 
 end TauCeti.MooreLoopSpace

@@ -61,16 +61,11 @@ theorem injective_singularHomologyMap_map_map_of_homotopicRel {X Q : Type u} [To
     (h : (r.comp s).HomotopicRel (ContinuousMap.id X) {x}) (k : Type u) [Ring k] (m : ℕ) :
     Function.Injective (ContinuousMap.singularHomologyMap k m
       (map (map s hs : C(MooreLoopSpace X x, MooreLoopSpace Q q)) (map_one (map s hs)) :
-        C(MooreLoopSpace (MooreLoopSpace X x) 1, MooreLoopSpace (MooreLoopSpace Q q) 1))) := by
-  -- `Ω²r ∘ Ω²s` is homotopic to the identity, so `(Ω²r)_*` is a left inverse of `(Ω²s)_*`.
-  have h₂ := homotopicRel_comp_map_id (homotopicRel_comp_map_id h hs hr) (map_one (map s hs))
-    (map_one (map r hr))
-  refine Function.LeftInverse.injective (g := ContinuousMap.singularHomologyMap k m
-    (map (map r hr : C(MooreLoopSpace Q q, MooreLoopSpace X x)) (map_one (map r hr)) :
-      C(MooreLoopSpace (MooreLoopSpace Q q) 1, MooreLoopSpace (MooreLoopSpace X x) 1))) fun y ↦ ?_
-  rw [← ContinuousMap.singularHomologyMap_comp,
-    ContinuousMap.singularHomologyMap_eq_of_homotopic k m h₂.homotopic,
-    ContinuousMap.singularHomologyMap_id]
+        C(MooreLoopSpace (MooreLoopSpace X x) 1, MooreLoopSpace (MooreLoopSpace Q q) 1))) :=
+  -- `Ω²r ∘ Ω²s` is homotopic to the identity, so `(Ω²s)_*` has a left inverse.
+  ContinuousMap.injective_singularHomologyMap_of_homotopic_comp_id k m
+    (homotopicRel_comp_map_id (homotopicRel_comp_map_id h hs hr) (map_one (map s hs))
+      (map_one (map r hr))).homotopic
 
 /-- **Double loops of a sphere mapping with degree `±1` back onto it.** Let `s : Sⁿ⁺² → Q` and
 `c : Q → Sⁿ⁺²` be pointed maps such that `c ∘ s` induces a bijection on `Hₙ₊₂(Sⁿ⁺²; ℤ)`. Then
