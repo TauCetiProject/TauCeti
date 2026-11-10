@@ -123,26 +123,12 @@ section Scaling
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 omit [BorelSpace E] in
-/-- The gradient norm of a constant function is square integrable for every measure. -/
-private theorem memLp_norm_fderiv_const (μ : Measure E) (c : ℝ) :
-    MemLp (fun x : E ↦ ‖fderiv ℝ (fun _ : E ↦ c) x‖) 2 μ := by
-  simp only [fderiv_fun_const, Pi.zero_apply, norm_zero]
-  exact MemLp.zero
-
-omit [BorelSpace E] in
-/-- Dilating a measure by `0` collapses it to a point mass at `0` carrying the total mass. -/
-private theorem map_zero_smul_eq (μ : Measure E) :
-    μ.map (fun x : E ↦ (0 : ℝ) • x) = μ Set.univ • Measure.dirac (0 : E) := by
-  have hconst : (fun x : E ↦ (0 : ℝ) • x) = fun _ ↦ 0 := funext fun x ↦ zero_smul ℝ x
-  rw [hconst, Measure.map_const]
-
-omit [BorelSpace E] in
 /-- A finite measure satisfying a Poincaré inequality is zero or has total mass one: the constant
 function `1` has variance zero, which forces the measure to be a probability measure unless it
 vanishes. -/
 theorem PoincareInequality.eq_zero_or_measure_univ_eq_one {μ : Measure E} {C : ℝ}
     [IsFiniteMeasure μ] (h : PoincareInequality μ C) : μ = 0 ∨ μ Set.univ = 1 := by
-  have h1 := h (fun _ ↦ 1) contDiff_const (memLp_const 1) (memLp_norm_fderiv_const μ 1)
+  have h1 := h (fun _ ↦ 1) contDiff_const (memLp_const 1) (by simp)
   have hv0 : variance (fun _ : E ↦ (1 : ℝ)) μ = 0 :=
     le_antisymm (by simpa using h1) (variance_nonneg _ _)
   have hae1 := ae_eq_integral_of_variance_eq_zero (memLp_const 1) hv0
@@ -159,7 +145,7 @@ theorem PoincareInequality.map_smul {μ : Measure E} {C : ℝ} (h : PoincareIneq
     PoincareInequality (μ.map (fun x ↦ a • x)) (a ^ 2 * C) := by
   by_cases ha : a = 0
   · subst ha
-    rw [map_zero_smul_eq]
+    simp only [zero_smul, Measure.map_const]
     intro f _ hfL _
     rw [zero_pow two_ne_zero, zero_mul, zero_mul]
     refine le_of_eq ?_
@@ -199,7 +185,7 @@ theorem LogSobolevInequality.toReal_measure_univ_eq_zero_or_one_le {μ : Measure
   by_cases hfin : μ Set.univ = ⊤
   · exact Or.inl (by simp [hfin])
   · have : IsFiniteMeasure μ := ⟨lt_top_iff_ne_top.2 hfin⟩
-    have h1 := h (fun _ : E ↦ (1 : ℝ)) contDiff_const (memLp_norm_fderiv_const μ 1) (by simp)
+    have h1 := h (fun _ : E ↦ (1 : ℝ)) contDiff_const (by simp) (by simp)
       (by simp)
     have he : entropy μ (fun _ : E ↦ (1 : ℝ) ^ 2) =
         -((μ Set.univ).toReal * Real.log (μ Set.univ).toReal) := by
@@ -218,7 +204,7 @@ theorem LogSobolevInequality.map_smul {μ : Measure E} {C : ℝ} (h : LogSobolev
     {a : ℝ} : LogSobolevInequality (μ.map (fun x ↦ a • x)) (a ^ 2 * C) := by
   by_cases ha : a = 0
   · subst ha
-    rw [map_zero_smul_eq]
+    simp only [zero_smul, Measure.map_const]
     intro f _ _ _ _
     rw [zero_pow two_ne_zero, zero_mul, mul_zero, zero_mul]
     have hm := h.toReal_measure_univ_eq_zero_or_one_le
