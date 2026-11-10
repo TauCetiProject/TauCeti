@@ -39,8 +39,6 @@ to its edge, and that `σ` acts in the coordinates `(t, A)` by `(R_σ t, R_σ A 
 
 ## Main results
 
-* `TauCeti.tetrahedronDisplacementRep_affineFieldEquiv`: the action in the coordinates `(t, A)`.
-* `TauCeti.tetrahedronSymmetryMatrix_swap`: transpositions act by reflections.
 * `TauCeti.mem_span_range_tetrahedronVertexSeedMatrix_iff`: the `Aᵢ` span the symmetric
   matrices with zero diagonal.
 * `TauCeti.ncard_range_tetrahedronDisplacementRep_vibrationSeed`: the `S₄`-orbit of a vibration
@@ -63,49 +61,6 @@ public section
 namespace TauCeti
 
 open Matrix
-
-/-! ### The action in translation and linear coordinates -/
-
-/-- In the coordinates `uᵢ = t + A qᵢ`, the symmetry `σ` acts by
-`(t, A) ↦ (R_σ t, R_σ A R_σ⁻¹)`. -/
-@[simp]
-theorem tetrahedronDisplacementRep_affineFieldEquiv (σ : Equiv.Perm (Fin 4)) (t : Fin 3 → ℝ)
-    (A : Matrix (Fin 3) (Fin 3) ℝ) :
-    tetrahedronDisplacementRep σ (tetrahedronAffineFieldEquiv (t, A)) =
-      tetrahedronAffineFieldEquiv (tetrahedronSymmetryMatrix σ *ᵥ t,
-        tetrahedronSymmetryMatrix σ * A * tetrahedronSymmetryMatrix σ⁻¹) := by
-  ext ⟨m, k⟩
-  have h := congrFun
-    (curry_tetrahedronDisplacementRep σ (tetrahedronAffineFieldEquiv (t, A)) m) k
-  simp only [Function.curry_apply] at h
-  have hc : Function.curry (tetrahedronAffineFieldEquiv (t, A)) (σ⁻¹ m) =
-      t + A *ᵥ tetrahedronCenteredVertex (σ⁻¹ m) := by
-    ext l; simp
-  rw [h, hc]
-  simp [mulVec_add, ← mulVec_mulVec]
-
-/-- A transposition acts on `ℝ³` by the reflection in the plane orthogonal to its edge,
-`R_{(j k)} = 1 - (qⱼ - qₖ)(qⱼ - qₖ)ᵀ`, the edge `qⱼ - qₖ` having squared length `2` for `j ≠ k`.
-For `j = k` both sides are the identity. -/
-theorem tetrahedronSymmetryMatrix_swap (j k : Fin 4) :
-    tetrahedronSymmetryMatrix (Equiv.swap j k) =
-      1 - vecMulVec (tetrahedronCenteredVertex j - tetrahedronCenteredVertex k)
-        (tetrahedronCenteredVertex j - tetrahedronCenteredVertex k) := by
-  rcases eq_or_ne j k with rfl | h
-  · simp [← Equiv.Perm.one_def]
-  refine ext_of_mulVec_tetrahedronCenteredVertex fun l ↦ ?_
-  rw [tetrahedronSymmetryMatrix_mulVec, sub_mulVec, one_mulVec, vecMulVec_mulVec,
-    op_smul_eq_smul, sub_dotProduct, dotProduct_tetrahedronCenteredVertex,
-    dotProduct_tetrahedronCenteredVertex]
-  by_cases hj : l = j
-  · subst hj
-    simp [Ne.symm h]
-    module
-  by_cases hk : l = k
-  · subst hk
-    simp [h]
-    module
-  · simp [Equiv.swap_apply_of_ne_of_ne hj hk, Ne.symm hj, Ne.symm hk]
 
 /-! ### The vertex seed matrices -/
 
