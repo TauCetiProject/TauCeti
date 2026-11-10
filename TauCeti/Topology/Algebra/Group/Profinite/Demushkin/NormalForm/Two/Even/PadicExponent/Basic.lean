@@ -42,7 +42,7 @@ pro-`2` groups which are trivial on `x₁` and whose value on `x₃` has trivial
 * `TauCeti.map_demushkinWordTwoEvenPadic`: a continuous homomorphism of pro-`2` groups reads the
   word on the image tuple.
 * `TauCeti.map_demushkinWordTwoEvenPadic_eq_one`: a continuous character into a commutative
-  pro-`2` group which is trivial on `x₁` and whose value on `x₃` has trivial `q`-th power kills the
+  group which is trivial on `x₁` and whose value on `x₃` has trivial `q`-th power kills the
   word.
 * `TauCeti.demushkinWordTwoEvenPadic_mem_proPFrattini`: for `α` and `q` even the word lies in the
   pro-`2` Frattini subgroup.
@@ -115,11 +115,11 @@ theorem demushkinWordTwoEvenPadic_two (hx : x 2 = 1) :
       hH.padicPow (x 0) (2 + α) * labuteComm (x 0) (x 1) := by
   simp [demushkinWordTwoEvenPadic_def, hx]
 
-/-- For `n ≥ 2` the word splits as `x₁^{2+α} (x₁, x₂)` times the tail relator
+/-- The word splits as `x₁^{2+α} (x₁, x₂)` times the tail relator
 `x₃^q (x₃, x₄) ⋯ (x_{n-1}, x_n)`, the `q ≠ 2` normal-form word on `n - 2` letters read on the tuple
 shifted by two. This is the shape of the relator produced by the successive-approximation argument
 for the dyadic relators of even rank. -/
-theorem demushkinWordTwoEvenPadic_eq_padicPow_mul_labuteComm_mul (hn : 2 ≤ n) :
+theorem demushkinWordTwoEvenPadic_eq_padicPow_mul_labuteComm_mul :
     demushkinWordTwoEvenPadic hH α q n x =
       hH.padicPow (x 0) (2 + α) * labuteComm (x 0) (x 1) *
         demushkinWordNeTwo q (n - 2) fun i ↦ x (i + 2) := by
@@ -134,7 +134,7 @@ theorem demushkinWordTwoEvenPadic_eq_padicPow_mul_labuteComm_mul (hn : 2 ≤ n) 
 normal-form word at `q = 2`: the even dyadic normal form at level `f = ∞` with `α = 0`. -/
 theorem demushkinWordTwoEvenPadic_zero_zero (hn : 2 ≤ n) :
     demushkinWordTwoEvenPadic hH 0 0 n x = demushkinWordNeTwo 2 n x := by
-  rw [demushkinWordTwoEvenPadic_eq_padicPow_mul_labuteComm_mul hH 0 0 n x hn, add_zero,
+  rw [demushkinWordTwoEvenPadic_eq_padicPow_mul_labuteComm_mul hH 0 0 n x, add_zero,
     hH.padicPow_ofNat, demushkinWordNeTwo_eq_pow_mul_labuteComm_mul 2 hn]
 
 variable {K : Type*} [Group K] [TopologicalSpace K] [IsTopologicalGroup K] [CompactSpace K]
@@ -157,12 +157,13 @@ theorem demushkinWordTwoEvenPadic_eq_of_commGroup (hA : IsProP 2 A) (y : ℕ →
     demushkinWordTwoEvenPadic hA α q n y = hA.padicPow (y 0) (2 + α) * y 2 ^ q := by
   simp [demushkinWordTwoEvenPadic_def]
 
-/-- A continuous character into a commutative pro-`2` group which is trivial on `x₁` and whose
+omit [IsTopologicalGroup A] [CompactSpace A] in
+/-- A continuous character into a commutative group which is trivial on `x₁` and whose
 value on `x₃` has trivial `q`-th power kills the word. -/
-theorem map_demushkinWordTwoEvenPadic_eq_one (hA : IsProP 2 A) (φ : H →ₜ* A) (h₀ : φ (x 0) = 1)
+theorem map_demushkinWordTwoEvenPadic_eq_one (φ : H →ₜ* A) (h₀ : φ (x 0) = 1)
     (h₂ : φ (x 2) ^ q = 1) : φ (demushkinWordTwoEvenPadic hH α q n x) = 1 := by
-  rw [map_demushkinWordTwoEvenPadic hH α q n x hA φ, demushkinWordTwoEvenPadic_eq_of_commGroup,
-    Function.comp_apply, Function.comp_apply, h₀, hA.one_padicPow, h₂, one_mul]
+  simp [demushkinWordTwoEvenPadic_def, hH.map_padicPow_eq_one_of_eq_one φ h₀, h₀, h₂,
+    map_list_prod, Function.comp_def]
 
 /-- For `α` and `q` even, the word lies in the pro-`2` Frattini subgroup: `x₁^{2+α}` is a `2`-adic
 power with even exponent, `x₃^q` is a square and the remaining factors are commutators. -/
