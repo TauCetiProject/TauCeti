@@ -60,7 +60,7 @@ exponential tilting `N(0, 1) ↦ N(σ √τ, 1)`
   `TauCeti.BlackScholes.putPrice_le` — the no-arbitrage bounds `0 ≤ C ≤ s` and
   `0 ≤ P ≤ K e^{-rτ} Φ(-d₋) ≤ K e^{-rτ}`.
 * `ContDiffAt.callPrice`, `ContDiffAt.putPrice` — smooth composition of the closed forms
-  with spot and remaining maturity wherever `s ≠ 0` and `τ > 0`, for `K, σ ≠ 0`.
+  with spot and remaining maturity wherever `s ≠ 0` and `τ > 0`.
 
 ## References
 
@@ -102,6 +102,11 @@ theorem terminalSpot_zero (s r σ z : ℝ) : terminalSpot s r σ 0 z = s := by
 theorem terminalSpot_pos (hs : 0 < s) (r σ τ z : ℝ) : 0 < terminalSpot s r σ τ z := by
   rw [terminalSpot_def]
   positivity
+
+/-- The terminal spot of a nonpositive spot is nonpositive. -/
+theorem terminalSpot_nonpos (hs : s ≤ 0) (r σ τ z : ℝ) : terminalSpot s r σ τ z ≤ 0 := by
+  rw [terminalSpot_def]
+  exact mul_nonpos_of_nonpos_of_nonneg hs (exp_pos _).le
 
 /-- The terminal spot is a measurable function of the Gaussian coordinate. -/
 theorem measurable_terminalSpot (s r σ τ : ℝ) : Measurable (terminalSpot s r σ τ) := by
@@ -424,8 +429,9 @@ namespace ContDiffAt
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {f g : E → ℝ} {x : E} {r σ K : ℝ}
 
-/-- The Black–Scholes normal argument is smooth under composition wherever its logarithm
-and denominator are nonsingular. -/
+/-- The Black–Scholes normal argument is smooth under composition wherever the spot is nonzero
+and the remaining maturity is positive (the degenerate cases `σ = 0` and `K = 0` hold through the
+conventions `x / 0 = 0` and `log 0 = 0`). -/
 @[fun_prop]
 theorem dPlus {n : WithTop ℕ∞} (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x)
     (hs : f x ≠ 0) (hτ : 0 < g x) :
@@ -441,7 +447,8 @@ theorem dPlus {n : WithTop ℕ∞} (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt 
       (contDiffAt_const.mul (hg.sqrt hτ.ne'))
       (mul_ne_zero hσ (sqrt_pos.2 hτ).ne')
 
-/-- The lower Black–Scholes normal argument is smooth under composition on the same domain. -/
+/-- The lower Black–Scholes normal argument is smooth under composition wherever the spot is
+nonzero and the remaining maturity is positive. -/
 @[fun_prop]
 theorem dMinus {n : WithTop ℕ∞} (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x)
     (hs : f x ≠ 0) (hτ : 0 < g x) :
@@ -452,7 +459,7 @@ theorem dMinus {n : WithTop ℕ∞} (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt
 variable {n : ℕ∞}
 
 /-- The closed-form call price is smooth under composition in spot and remaining maturity
-wherever the normal arguments are nonsingular. -/
+wherever the spot is nonzero and the remaining maturity is positive. -/
 @[fun_prop]
 theorem callPrice (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x)
     (hs : f x ≠ 0) (hτ : 0 < g x) :
@@ -464,7 +471,7 @@ theorem callPrice (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x)
       (hΦ.contDiffAt.comp _ (hf.dMinus hg hs hτ)))
 
 /-- The closed-form put price is smooth under composition in spot and remaining maturity
-wherever the normal arguments are nonsingular. -/
+wherever the spot is nonzero and the remaining maturity is positive. -/
 @[fun_prop]
 theorem putPrice (hf : ContDiffAt ℝ n f x) (hg : ContDiffAt ℝ n g x)
     (hs : f x ≠ 0) (hτ : 0 < g x) :
@@ -480,8 +487,8 @@ namespace ContinuousAt
 variable {E : Type*} [TopologicalSpace E]
   {f g : E → ℝ} {x : E} {r σ K : ℝ}
 
-/-- The Black–Scholes normal argument is continuous under composition wherever its logarithm
-and denominator are nonsingular. -/
+/-- The Black–Scholes normal argument is continuous under composition wherever the spot is nonzero
+and the remaining maturity is positive. -/
 @[fun_prop]
 theorem dPlus (hf : ContinuousAt f x) (hg : ContinuousAt g x)
     (hs : f x ≠ 0) (hτ : 0 < g x) :
@@ -489,7 +496,8 @@ theorem dPlus (hf : ContinuousAt f x) (hg : ContinuousAt g x)
   ((contDiffAt_fst (n := (0 : ℕ∞)) (p := (f x, g x))).dPlus contDiffAt_snd
     hs hτ).continuousAt.comp (f := fun y => (f y, g y)) (hf.prodMk hg)
 
-/-- The lower Black–Scholes normal argument is continuous under composition on the same domain. -/
+/-- The lower Black–Scholes normal argument is continuous under composition wherever the spot is
+nonzero and the remaining maturity is positive. -/
 @[fun_prop]
 theorem dMinus (hf : ContinuousAt f x) (hg : ContinuousAt g x)
     (hs : f x ≠ 0) (hτ : 0 < g x) :
@@ -498,7 +506,7 @@ theorem dMinus (hf : ContinuousAt f x) (hg : ContinuousAt g x)
     hs hτ).continuousAt.comp (f := fun y => (f y, g y)) (hf.prodMk hg)
 
 /-- The closed-form call price is continuous under composition in spot and remaining maturity
-wherever the normal arguments are nonsingular. -/
+wherever the spot is nonzero and the remaining maturity is positive. -/
 @[fun_prop]
 theorem callPrice (hf : ContinuousAt f x) (hg : ContinuousAt g x)
     (hs : f x ≠ 0) (hτ : 0 < g x) :
@@ -507,7 +515,7 @@ theorem callPrice (hf : ContinuousAt f x) (hg : ContinuousAt g x)
     hs hτ).continuousAt.comp (f := fun y => (f y, g y)) (hf.prodMk hg)
 
 /-- The closed-form put price is continuous under composition in spot and remaining maturity
-wherever the normal arguments are nonsingular. -/
+wherever the spot is nonzero and the remaining maturity is positive. -/
 @[fun_prop]
 theorem putPrice (hf : ContinuousAt f x) (hg : ContinuousAt g x)
     (hs : f x ≠ 0) (hτ : 0 < g x) :

@@ -89,7 +89,7 @@ theorem eq_callValue_of_pde (hσ : 0 < σ) (hK : 0 < K)
     hdiff
     (fun s hs t ht ↦ (contDiffAt_const.callValue (contDiffAt_const.sub contDiffAt_id) hs
       (sub_pos.2 ht.2) (n := 1) (r := r) (σ := σ) (K := K)).differentiableAt one_ne_zero)
-    (fun s hs t ht ↦ (hpde hs ht).trans (callValue_pde hs hK hσ.ne' ht.2).symm)
+    (fun s hs t ht ↦ (hpde hs ht).trans (callValue_pde hs hK ht.2).symm)
     (fun s hs ↦ by rw [hterminal hs, sub_self, callValue_maturity_zero])
 
 /-- **Uniqueness of the Black–Scholes put price.** Let `σ > 0` and `K > 0`. Let `C(s, t)` be

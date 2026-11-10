@@ -138,9 +138,7 @@ theorem riskNeutralPrice_call_eq_callValue (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 
   rcases lt_or_ge 0 s with hs | hs
   · rw [riskNeutralPrice_call hs hσ hK hτ, callValue_of_pos hs hτ]
   · -- For a nonpositive spot the terminal spot is nonpositive, so the call payoff vanishes.
-    have hS : ∀ z, terminalSpot s r σ τ z ≤ 0 := fun z ↦ by
-      rw [terminalSpot_def]
-      exact mul_nonpos_of_nonpos_of_nonneg hs (exp_pos _).le
+    have hS := terminalSpot_nonpos hs r σ τ
     have h0 : ∀ z, (terminalSpot s r σ τ z - K)⁺ = 0 := fun z ↦
       posPart_eq_zero.2 (by linarith [hS z])
     rw [riskNeutralPrice_def, callValue_of_nonpos (Or.inl hs)]
@@ -156,9 +154,7 @@ theorem riskNeutralPrice_put_eq_putValue (hσ : 0 < σ) (hK : 0 < K) (hτ : 0 �
   rcases lt_or_ge 0 s with hs | hs
   · rw [riskNeutralPrice_put hs hσ hK hτ, putValue_of_pos hs hτ]
   · -- For a nonpositive spot the put is exercised at every terminal spot.
-    have hS : ∀ z, terminalSpot s r σ τ z ≤ 0 := fun z ↦ by
-      rw [terminalSpot_def]
-      exact mul_nonpos_of_nonpos_of_nonneg hs (exp_pos _).le
+    have hS := terminalSpot_nonpos hs r σ τ
     have hpay : ∀ z, (K - terminalSpot s r σ τ z)⁺ = K - terminalSpot s r σ τ z := fun z ↦
       posPart_eq_self.2 (by linarith [hS z])
     have hid := riskNeutralPrice_id s r σ hτ.le
@@ -302,7 +298,7 @@ theorem continuous_putValue (hσ : 0 < σ) (hK : 0 < K) :
 /-- **The Black–Scholes equation for the extended call.** In calendar time `t < T` and at spot
 `s > 0`, the extended call `C(s, t) = callValue s r σ K (T - t)` satisfies
 `∂C/∂t + σ² s² / 2 ∂²C/∂s² + r (s ∂C/∂s - C) = 0`. -/
-theorem callValue_pde (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) {T t : ℝ} (ht : t < T) :
+theorem callValue_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
     deriv (fun u => callValue s r σ K (T - u)) t +
       σ ^ 2 * s ^ 2 / 2 * deriv (deriv fun x => callValue x r σ K (T - t)) s +
       r * (s * deriv (fun x => callValue x r σ K (T - t)) s - callValue s r σ K (T - t)) = 0 := by
@@ -316,7 +312,7 @@ theorem callValue_pde (hs : 0 < s) (hK : 0 < K) (hσ : σ ≠ 0) {T t : ℝ} (ht
     filter_upwards [Iio_mem_nhds ht] with u hu
     exact callValue_of_pos hs (sub_pos.2 hu)
   rw [htime.deriv_eq, hspot.deriv.deriv_eq, hspot.deriv_eq, callValue_of_pos hs hτ]
-  exact callPrice_pde hs hK hσ ht
+  exact callPrice_pde hs hK ht
 
 /-- **The Black–Scholes equation for the extended put.** In calendar time `t < T` and at spot
 `s > 0`, the extended put `P(s, t) = putValue s r σ K (T - t)` satisfies
@@ -335,23 +331,6 @@ theorem putValue_pde (hs : 0 < s) (hK : 0 < K) {T t : ℝ} (ht : t < T) :
     filter_upwards [Iio_mem_nhds ht] with u hu
     exact putValue_of_pos hs (sub_pos.2 hu)
   rw [htime.deriv_eq, hspot.deriv.deriv_eq, hspot.deriv_eq, putValue_of_pos hs hτ]
-  by_cases hσ : σ = 0
-  · -- Without volatility `d₋ = 0`, so the put is `(K e^{-rτ} - s) / 2`.
-    have hform : ∀ x u, putPrice x r σ K u = (K * exp (-r * u) - x) / 2 := fun x u ↦ by
-      simp [putPrice_def, dMinus_def, dPlus_def, hσ,
-        TauCeti.Probability.cdf_gaussianReal_self 0 one_ne_zero]
-      ring
-    have hu : deriv (fun u => (K * exp (-r * (T - u)) - s) / 2) t =
-        K * (exp (-r * (T - t)) * (-r * -1)) / 2 :=
-      ((((((hasDerivAt_id t).const_sub T).const_mul (-r)).exp.const_mul K).sub_const s).div_const
-        2).deriv
-    have hx : deriv (fun x => (K * exp (-r * (T - t)) - x) / 2) = fun _ => -1 / 2 := by
-      ext x
-      exact (((hasDerivAt_id x).const_sub _).div_const 2).deriv
-    simp only [hform]
-    rw [hu, hx]
-    simp
-    ring
-  · exact putPrice_pde hs hK hσ ht
+  exact putPrice_pde hs hK ht
 
 end TauCeti.BlackScholes

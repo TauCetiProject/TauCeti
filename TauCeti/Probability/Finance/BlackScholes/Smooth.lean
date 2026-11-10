@@ -10,8 +10,8 @@ public import TauCeti.Probability.Finance.BlackScholes.Extension
 /-!
 # Classical regularity of Black–Scholes prices
 
-For nonzero volatility and nonzero strike, the closed-form call and put prices are jointly
-smooth wherever spot is nonzero and remaining maturity is positive (see `ContDiffAt.callPrice`
+The closed-form call and put prices are jointly smooth wherever spot is nonzero and remaining
+maturity is positive (see `ContDiffAt.callPrice`
 and `ContDiffAt.putPrice`). The continuously extended values have the same regularity where
 spot and remaining maturity are positive, including in calendar time on `s > 0, t < T`.
 Consequently their spatial and time derivatives have the continuity required of classical
