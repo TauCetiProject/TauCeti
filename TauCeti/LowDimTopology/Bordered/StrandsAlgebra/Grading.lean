@@ -12,6 +12,7 @@ public import Mathlib.GroupTheory.Subgroup.Center
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Basic
+import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Tactic.LinearCombination
 
 /-!
@@ -53,9 +54,13 @@ the grading group is the central extension `TauCeti.FactorSet.Extension` of `α 
 from the bimultiplicative factor set `L` (`TauCeti.StrandGradingGroup.linkingFactorSet`), with the
 action trivial, so that `λ` is the image of `1` under its central inclusion `TauCeti.FactorSet.inl`.
 Lipshitz, Ozsváth and Thurston's `G'(n)` is the subgroup `TauCeti.StrandGradingGroup.gPrime`
-of `TauCeti.StrandGradingGroup (Fin n)` of the elements with half-integral Maslov component and
-boundary of total sum zero, and every grading of a diagram lies in it
-(`TauCeti.StrandDiagram.grading_mem_gPrime`).
+of `TauCeti.StrandGradingGroup (Fin n)` of the elements `(j, β)` with boundary of total sum zero
+and `j ≡ ε(β) (mod 1)`, where `ε(β)` is a quarter of the number of points at which `∂β` is odd,
+and every grading of a diagram lies in it (`TauCeti.StrandDiagram.grading_mem_gPrime`). Modulo
+`1`, `ε(β)` is a quarter of the sum of the squares of the coefficients of `∂β`
+(`TauCeti.StrandGradingGroup.mem_gPrime_iff_sum_sq`), and `L(β₁, β₂)` is half the sum of the
+products of the coefficients of `∂β₁` and `∂β₂`, which is why the congruence is preserved by the
+product.
 
 ## Main definitions
 
@@ -141,6 +146,53 @@ theorem exists_linking_eq (δ₁ δ₂ : α → ℤ) :
   refine ⟨∑ p, δ₁ p * k p, ?_⟩
   simp [linking_apply, hk, div_eq_mul_inv, Finset.sum_mul, mul_assoc]
 
+/-- Modulo `1`, the form `L(β₁, β₂)` is half the sum of the products of the coefficients of
+`∂β₁` and `∂β₂`. -/
+theorem exists_linking_eq_add (δ₁ δ₂ : α → ℤ) :
+    ∃ k : ℤ, linking δ₁ δ₂ = k + (∑ p, (δ₁ p : ℚ) * δ₂ p) / 2 := by
+  have h (p : α) : (δ₁ p : ℚ) * pointMultiplicity p δ₂ =
+      -(δ₁ p * (∑ y ∈ ({y | y < p} : Finset α), δ₂ y + δ₂ p) : ℤ) + (δ₁ p : ℚ) * δ₂ p / 2 := by
+    rw [pointMultiplicity_apply]
+    push_cast
+    ring
+  refine ⟨-∑ p, δ₁ p * (∑ y ∈ ({y | y < p} : Finset α), δ₂ y + δ₂ p), ?_⟩
+  rw [linking_apply, Finset.sum_congr rfl fun p _ ↦ h p, Finset.sum_add_distrib, ← Finset.sum_div]
+  push_cast
+  simp only [Finset.sum_neg_distrib]
+
+omit [LinearOrder α] in
+/-- The number of points at which a boundary `δ` is odd, the number of parity changes of the
+class, is congruent modulo `4` to the sum of the squares of the coefficients of `δ`. -/
+theorem exists_sum_sq_eq (δ : α → ℤ) :
+    ∃ m : ℤ, ∑ x, δ x ^ 2 = #{x | Odd (δ x)} + 4 * m := by
+  have h (x : α) : ∃ m : ℤ, δ x ^ 2 = (if Odd (δ x) then 1 else 0) + 4 * m := by
+    rcases Int.even_or_odd' (δ x) with ⟨a, ha | ha⟩
+    · refine ⟨a ^ 2, ?_⟩
+      rw [ha, ite_eq_right_iff.2 fun h ↦ absurd h (Int.not_odd_iff_even.2 ⟨a, by ring⟩)]
+      ring
+    · refine ⟨a ^ 2 + a, ?_⟩
+      rw [ite_eq_left_iff.2 fun h ↦ absurd ⟨a, ha⟩ h, ha]
+      ring
+  choose m hm using h
+  refine ⟨∑ x, m x, ?_⟩
+  rw [Finset.sum_congr rfl fun x _ ↦ hm x, Finset.sum_add_distrib, ← Finset.mul_sum,
+    Finset.natCast_card_filter]
+
+omit [LinearOrder α] in
+/-- The congruence `j ≡ #(parity changes of β) / 4 (mod 1)` defining Lipshitz, Ozsváth and
+Thurston's group `G'(n)`, written with the sum of the squares of the coefficients of `δ = ∂β` in
+place of the number of points where `δ` is odd. -/
+theorem exists_eq_add_card_odd_iff (j : ℚ) (δ : α → ℤ) :
+    (∃ k : ℤ, j = k + (#{x | Odd (δ x)} : ℚ) / 4) ↔ ∃ k : ℤ, j = k + (∑ x, (δ x : ℚ) ^ 2) / 4 := by
+  obtain ⟨m, hm⟩ := exists_sum_sq_eq δ
+  have hm' : ∑ x, (δ x : ℚ) ^ 2 = #{x | Odd (δ x)} + 4 * m := by exact_mod_cast hm
+  rw [hm']
+  constructor
+  · rintro ⟨k, rfl⟩
+    exact ⟨k - m, by push_cast; ring⟩
+  · rintro ⟨k, rfl⟩
+    exact ⟨k + m, by push_cast; ring⟩
+
 end StrandGradingGroup
 
 section GradingGroup
@@ -170,7 +222,8 @@ component in `ℚ`, built from the factor set `L`. An element is a pair of a Mas
 `maslov` and a boundary `boundary`, multiplied by
 `(j₁, β₁) (j₂, β₂) = (j₁ + j₂ + L(β₁, β₂), β₁ + β₂)`. For `α = Fin n`, Lipshitz, Ozsváth and
 Thurston's group `G'(n)` is its subgroup `StrandGradingGroup.gPrime` of elements with
-half-integral Maslov component and boundary of total sum zero. -/
+boundary of total sum zero whose Maslov component is congruent modulo `1` to a quarter of the number
+of points at which the boundary is odd. -/
 abbrev StrandGradingGroup (α : Type*) [LinearOrder α] [Fintype α] : Type _ :=
   (StrandGradingGroup.linkingFactorSet (α := α)).Extension
 
@@ -265,33 +318,64 @@ theorem lambda_mem_center : (lambda : StrandGradingGroup α) ∈ Subgroup.center
   FactorSet.inl_range_le_center _ trivialMulDistribMulAction_smul ⟨_, rfl⟩
 
 /-- The grading group `G'(n)` of Lipshitz, Ozsváth and Thurston, for `α = Fin n`: the subgroup of
-the elements with half-integral Maslov component and boundary of total sum zero. -/
+the elements `(j, β)` with boundary of total sum zero and `j ≡ ε(β) (mod 1)`, where `ε(β)` is a
+quarter of the number of parity changes of `β`, the points at which `∂β` is odd. Such a `j` is a
+half-integer (`TauCeti.StrandGradingGroup.exists_maslov_eq_of_mem_gPrime`). -/
 def gPrime : Subgroup (StrandGradingGroup α) where
-  carrier := {g | (∃ k : ℤ, g.maslov = k / 2) ∧ ∑ x, g.boundary x = 0}
+  carrier := {g | (∃ k : ℤ, g.maslov = k + (#{x | Odd (g.boundary x)} : ℚ) / 4) ∧
+    ∑ x, g.boundary x = 0}
   mul_mem' := by
-    rintro g h ⟨⟨k₁, hk₁⟩, hg⟩ ⟨⟨k₂, hk₂⟩, hh⟩
-    obtain ⟨k₃, hk₃⟩ := exists_linking_eq g.boundary h.boundary
-    refine ⟨⟨k₁ + k₂ + k₃, ?_⟩, ?_⟩
-    · rw [mul_maslov, hk₁, hk₂, hk₃]
-      push_cast
+    rintro g h ⟨hk₁, hg⟩ ⟨hk₂, hh⟩
+    obtain ⟨k₁, hk₁⟩ := (exists_eq_add_card_odd_iff _ _).1 hk₁
+    obtain ⟨k₂, hk₂⟩ := (exists_eq_add_card_odd_iff _ _).1 hk₂
+    obtain ⟨k₃, hk₃⟩ := exists_linking_eq_add g.boundary h.boundary
+    refine ⟨(exists_eq_add_card_odd_iff _ _).2 ⟨k₁ + k₂ + k₃, ?_⟩, ?_⟩
+    · rw [mul_maslov, hk₁, hk₂, hk₃, mul_boundary]
+      simp only [Pi.add_apply, Int.cast_add, add_sq, Finset.sum_add_distrib, mul_assoc,
+        ← Finset.mul_sum]
       ring
     · simp [Finset.sum_add_distrib, hg, hh]
-  one_mem' := ⟨⟨0, by simp⟩, by simp⟩
+  one_mem' := ⟨(exists_eq_add_card_odd_iff _ _).2 ⟨0, by simp⟩, by simp⟩
   inv_mem' := by
-    rintro g ⟨⟨k₁, hk₁⟩, hg⟩
-    obtain ⟨k₂, hk₂⟩ := exists_linking_eq g.boundary g.boundary
-    refine ⟨⟨-k₁ + k₂, ?_⟩, ?_⟩
-    · rw [inv_maslov, hk₁, hk₂]
+    rintro g ⟨hk₁, hg⟩
+    obtain ⟨k₁, hk₁⟩ := (exists_eq_add_card_odd_iff _ _).1 hk₁
+    obtain ⟨k₂, hk₂⟩ := exists_linking_eq_add g.boundary g.boundary
+    refine ⟨(exists_eq_add_card_odd_iff _ _).2 ⟨-k₁ + k₂, ?_⟩, ?_⟩
+    · rw [inv_maslov, hk₁, hk₂, inv_boundary]
+      simp only [Pi.neg_apply, Int.cast_neg, neg_sq, ← sq]
       push_cast
       ring
     · simp [hg]
 
 theorem mem_gPrime {g : StrandGradingGroup α} :
-    g ∈ gPrime ↔ (∃ k : ℤ, g.maslov = k / 2) ∧ ∑ x, g.boundary x = 0 :=
+    g ∈ gPrime ↔
+      (∃ k : ℤ, g.maslov = k + (#{x | Odd (g.boundary x)} : ℚ) / 4) ∧ ∑ x, g.boundary x = 0 :=
   Iff.rfl
 
+/-- Membership in `G'(n)`, with the sum of the squares of the coefficients of the boundary in place
+of the number of parity changes. -/
+theorem mem_gPrime_iff_sum_sq {g : StrandGradingGroup α} :
+    g ∈ gPrime ↔
+      (∃ k : ℤ, g.maslov = k + (∑ x, (g.boundary x : ℚ) ^ 2) / 4) ∧ ∑ x, g.boundary x = 0 := by
+  rw [mem_gPrime, exists_eq_add_card_odd_iff]
+
+/-- The Maslov component of an element of `G'(n)` is a half-integer. -/
+theorem exists_maslov_eq_of_mem_gPrime {g : StrandGradingGroup α} (hg : g ∈ gPrime) :
+    ∃ k : ℤ, g.maslov = k / 2 := by
+  obtain ⟨⟨k, hk⟩, hs⟩ := mem_gPrime_iff_sum_sq.1 hg
+  choose m hm using fun x ↦ Int.even_mul_pred_self (g.boundary x)
+  have hsq : ∑ x, g.boundary x ^ 2 = 2 * ∑ x, m x := by
+    rw [← zero_add (2 * _), ← hs, Finset.mul_sum, ← Finset.sum_add_distrib]
+    refine Finset.sum_congr rfl fun x _ ↦ ?_
+    linear_combination hm x
+  have hsq' : ∑ x, (g.boundary x : ℚ) ^ 2 = 2 * ∑ x, m x := by exact_mod_cast hsq
+  refine ⟨2 * k + ∑ x, m x, ?_⟩
+  rw [hk, hsq']
+  push_cast
+  ring
+
 theorem lambda_mem_gPrime : (lambda : StrandGradingGroup α) ∈ gPrime :=
-  ⟨⟨2, by simp⟩, by simp⟩
+  mem_gPrime_iff_sum_sq.2 ⟨⟨1, by simp⟩, by simp⟩
 
 end StrandGradingGroup
 
@@ -500,10 +584,35 @@ theorem grading_eq_lambda_zpow_mul {φ ψ : StrandDiagram α} (hs : ψ.source = 
     ring
   · simp [hb]
 
+/-- The sum of the squares of the coefficients of the boundary of `φ : S → T` is twice the number
+of starting points that are not end points. -/
+private theorem sum_boundary_sq (φ : StrandDiagram α) :
+    ∑ x, φ.boundary x ^ 2 = -2 * ∑ s ∈ φ.source, φ.boundary s := by
+  have hT : ∑ t ∈ φ.target, φ.boundary t + ∑ s ∈ φ.source, φ.boundary s = 0 := by
+    simp only [boundary_apply, Finset.sum_sub_distrib, Finset.sum_boole,
+      Finset.filter_mem_eq_inter, Finset.inter_self, Finset.inter_comm φ.source, card_target]
+    ring
+  calc ∑ x, φ.boundary x ^ 2
+      = ∑ x, φ.boundary x * ((if x ∈ φ.target then 1 else 0) - if x ∈ φ.source then 1 else 0) := by
+        simp only [sq]
+        rfl
+    _ = ∑ t ∈ φ.target, φ.boundary t - ∑ s ∈ φ.source, φ.boundary s := by
+        simp only [mul_sub, mul_ite, mul_one, mul_zero, Finset.sum_sub_distrib,
+          Finset.sum_ite_mem, Finset.univ_inter]
+    _ = -2 * ∑ s ∈ φ.source, φ.boundary s := by linear_combination hT
+
 /-- The grading of a diagram lies in the grading group `G'(n)` of Lipshitz, Ozsváth and
 Thurston. -/
-theorem grading_mem_gPrime (φ : StrandDiagram α) : φ.grading ∈ gPrime :=
-  ⟨φ.exists_grading_maslov_eq, φ.sum_boundary⟩
+theorem grading_mem_gPrime (φ : StrandDiagram α) : φ.grading ∈ gPrime := by
+  refine mem_gPrime_iff_sum_sq.2 ⟨⟨φ.inversionCount +
+    ∑ s ∈ φ.source, (∑ y ∈ ({y | y < s} : Finset α), φ.boundary y + φ.boundary s), ?_⟩,
+    φ.sum_boundary⟩
+  have hsq : ∑ x, (φ.boundary x : ℚ) ^ 2 = -2 * ∑ s ∈ φ.source, (φ.boundary s : ℚ) := by
+    exact_mod_cast φ.sum_boundary_sq
+  rw [grading_maslov, grading_boundary, hsq]
+  simp only [pointMultiplicity_apply, Int.cast_add, Int.cast_natCast, Int.cast_sum,
+    Finset.sum_add_distrib, Finset.sum_sub_distrib, Finset.sum_neg_distrib, ← Finset.sum_div]
+  ring
 
 end StrandDiagram
 

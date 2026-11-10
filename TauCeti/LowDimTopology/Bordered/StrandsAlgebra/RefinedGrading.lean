@@ -28,7 +28,7 @@ element `λ`; Lipshitz, Ozsváth and Thurston's `G(Z)` is its intersection with 
 The grading of a diagram itself does not lie in this subgroup: `M_*(∂[φ])` is the difference
 `M(T) - M(S)` of the matched pairs occupied at the two ends. The refinement corrects this by a
 choice of **grading refinement data** (`TauCeti.MatchedGradingRefinement M s₀`): a base set `s₀`
-of pairs and, for every set `s` of pairs of the same size, an element `ψ(s)` with
+of pairs and, for every set `s` of pairs of the same size, an element `ψ(s)` of `G'` with
 `M_*(∂ψ(s)) = s - s₀` (`TauCeti.MatchedGradingRefinement.shift`). The refined grading of a diagram
 `φ : S → T` is
 
@@ -36,7 +36,8 @@ of pairs and, for every set `s` of pairs of the same size, an element `ψ(s)` wi
 
 (`TauCeti.MatchedGradingRefinement.grading`). When `M` is injective on `S` and on `T` and
 `#S = #s₀`, as for the diagrams of the summand `A(Z, i)` of `A(Z)` containing `I(s₀)`, it lies in
-`matchedSubgroup M` (`TauCeti.MatchedGradingRefinement.grading_mem_matchedSubgroup`). The refined
+`matchedSubgroup M` (`TauCeti.MatchedGradingRefinement.grading_mem_matchedSubgroup`), and so in
+`G(Z)` (`TauCeti.MatchedGradingRefinement.grading_mem_gPrime_inf_matchedSubgroup`). The refined
 grading is multiplicative on composable diagrams, sends identity diagrams to `1`, and changes by
 the central `λ` exactly as the unrefined one, so the differential still has degree `λ⁻¹`.
 
@@ -69,8 +70,9 @@ idempotents at the two ends (`TauCeti.MatchedGradingRefinement.grading_eq_mul_gr
 
 * `TauCeti.StrandDiagram.grading_addHorizontal`, `TauCeti.StrandDiagram.grading_swapHorizontal`:
   adding or moving horizontal strands does not change the grading.
-* `TauCeti.MatchedGradingRefinement.grading_mem_matchedSubgroup`: refined gradings of the diagrams
-  of `A(Z, i)` lie in `matchedSubgroup M`.
+* `TauCeti.MatchedGradingRefinement.grading_mem_matchedSubgroup`,
+  `TauCeti.MatchedGradingRefinement.grading_mem_gPrime_inf_matchedSubgroup`: refined gradings of
+  the diagrams of `A(Z, i)` lie in `matchedSubgroup M`, and in `G(Z)`.
 * `TauCeti.MatchedGradingRefinement.grading_trans`,
   `TauCeti.MatchedGradingRefinement.grading_idOn`,
   `TauCeti.MatchedGradingRefinement.grading_eq_lambda_zpow_mul`: the refined grading is a grading.
@@ -379,6 +381,15 @@ theorem grading_mem_matchedSubgroup {φ : StrandDiagram α} (hs : Set.InjOn M φ
     ψ.pushBoundary_boundary_shift hT, pushBoundary_boundary hs ht]
   abel
 
+/-- **The refined grading takes values in `G(Z)`**: on the diagrams `φ : S → T` with no two
+matched starting points, no two matched end points and `#S = #s₀`, it lies in the intersection of
+`G'` with `matchedSubgroup M`, which for the matching of a pointed matched circle `Z` is the group
+`G(Z)` of Lipshitz, Ozsváth and Thurston. -/
+theorem grading_mem_gPrime_inf_matchedSubgroup {φ : StrandDiagram α} (hs : Set.InjOn M φ.source)
+    (ht : Set.InjOn M φ.target) (hcard : #φ.source = #s₀) :
+    ψ.grading φ ∈ gPrime ⊓ matchedSubgroup M :=
+  ⟨ψ.grading_mem_gPrime φ, ψ.grading_mem_matchedSubgroup hs ht hcard⟩
+
 /-- The identity diagrams have refined grading `1`. -/
 @[simp]
 theorem grading_idOn (S : Finset α) : ψ.grading (idOn S) = 1 := by
@@ -463,8 +474,9 @@ theorem grading_eq_mul_grading_mul_inv (ψ ψ' : MatchedGradingRefinement M s₀
 
 /-- **Grading refinement data exist** when every element of `β` is the image of a point under `M`,
 as for the matching of a pointed matched circle onto its pairs. Choosing one point `σ(b)` over each
-`b`, the element with Maslov component `0` and boundary the indicator of `σ(s)` minus that of
-`σ(s₀)` serves as `ψ(s)`. -/
+`b`, the element of `G'` with boundary `δ` the indicator of `σ(s)` minus that of `σ(s₀)`, and
+Maslov component a quarter of the sum of the squares of the coefficients of `δ`, serves as
+`ψ(s)`. -/
 theorem nonempty (hM : Function.Surjective M) (s₀ : Finset β) :
     Nonempty (MatchedGradingRefinement M s₀) := by
   classical
@@ -480,11 +492,11 @@ theorem nonempty (hM : Function.Surjective M) (s₀ : Finset β) :
   have himage (s : Finset β) : (s.image σ).image M = s := by
     rw [image_image]
     simp [Function.comp_def, hMσ]
-  refine ⟨⟨fun s ↦ StrandGradingGroup.mk 0
-    ((fun x ↦ if x ∈ (s : Finset β).image σ then 1 else 0) -
-      fun x ↦ if x ∈ s₀.image σ then 1 else 0),
-    fun s ↦ mem_gPrime.2 ⟨⟨0, by simp⟩, ?_⟩, fun s ↦ ?_⟩⟩
-  · simp only [mk_boundary, Pi.sub_apply, sum_sub_distrib, sum_boole, filter_mem_eq_inter,
+  let δ (s : {s : Finset β // #s = #s₀}) : α → ℤ :=
+    (fun x ↦ if x ∈ (s : Finset β).image σ then 1 else 0) - fun x ↦ if x ∈ s₀.image σ then 1 else 0
+  refine ⟨⟨fun s ↦ StrandGradingGroup.mk ((∑ x, (δ s x : ℚ) ^ 2) / 4) (δ s),
+    fun s ↦ mem_gPrime_iff_sum_sq.2 ⟨⟨0, by simp⟩, ?_⟩, fun s ↦ ?_⟩⟩
+  · simp only [δ, mk_boundary, Pi.sub_apply, sum_sub_distrib, sum_boole, filter_mem_eq_inter,
       univ_inter, card_image_of_injective _ hσ, s.2, sub_self]
   · rw [mk_boundary, map_sub, pushBoundary_indicator (hinj _), pushBoundary_indicator (hinj _),
       himage, himage]
