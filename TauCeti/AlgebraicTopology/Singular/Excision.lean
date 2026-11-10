@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Excision
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Relative
 public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Topology.Category.TopPair
+import TauCeti.Topology.Closure
 
 /-!
 # Excision for relative singular homology
@@ -220,27 +221,6 @@ lemma interior_subset_range_or_subset_range_fst_excisionMap (b : Bool) :
   · exact Or.inl (interior_subset.trans (range_ofSubset_map (B := B)).ge)
   · exact Or.inr (interior_subset.trans (range_fst_excisionMap A B).ge)
 
-/-- If the interiors of `A` and `B` cover `X`, so does the `Bool`-indexed family of these
-interiors: this is the open cover to which the general excision theorems for maps of pairs are
-applied. -/
-lemma iUnion_cond_interior_eq_univ (h : interior A ∪ interior B = Set.univ) :
-    ⋃ b : Bool, (bif b then interior A else interior B) = Set.univ := by
-  rw [← Set.union_eq_iUnion]
-  exact h
-
-/-- If the closure of `Z` lies in the interior of `B`, the interiors of `Zᶜ` and `B` cover `X`. -/
-lemma interior_compl_union_interior_eq_univ {Z : Set X} (h : closure Z ⊆ interior B) :
-    interior Zᶜ ∪ interior B = Set.univ := by
-  rw [interior_compl, ← Set.compl_subset_iff_union, compl_compl]
-  exact h
-
-/-- If the open set `U` contains the closed set `K`, the interiors of `U` and `Kᶜ` cover `X`. -/
-lemma interior_union_interior_compl_eq_univ {U K : Set X} (hU : IsOpen U) (hK : IsClosed K)
-    (hKU : K ⊆ U) : interior U ∪ interior Kᶜ = Set.univ := by
-  rw [hU.interior_eq, hK.isOpen_compl.interior_eq, Set.union_comm, ← Set.compl_subset_iff_union,
-    compl_compl]
-  exact hKU
-
 /-- **Excision.** If the interiors of `A` and `B` cover `X`, the inclusion of pairs
 `(A, A ∩ B) ⟶ (X, B)` induces isomorphisms on relative singular homology. -/
 theorem isIso_singularHomologyMap_excisionMap (h : interior A ∪ interior B = Set.univ)
@@ -248,7 +228,7 @@ theorem isIso_singularHomologyMap_excisionMap (h : interior A ∪ interior B = S
   exact isIso_singularHomologyMap_of_open_cover R (excisionMap A B)
     (isEmbedding_fst_excisionMap A B) (mem_range_map_of_fst_excisionMap_mem A B)
     (fun b : Bool ↦ bif b then interior A else interior B)
-    (fun b ↦ by cases b <;> exact isOpen_interior) (iUnion_cond_interior_eq_univ A B h)
+    (fun b ↦ by cases b <;> exact isOpen_interior) (Set.union_eq_iUnion.symm.trans h)
     (interior_subset_range_or_subset_range_fst_excisionMap A B) n
 
 /-- **Excision of a set with closure in the interior of the subspace.** If `closure Z ⊆ interior B`,
@@ -257,7 +237,7 @@ homology. -/
 theorem isIso_singularHomologyMap_excisionMap_compl (Z : Set X) (h : closure Z ⊆ interior B)
     (n : ℕ) : IsIso (TopPair.singularHomologyMap (excisionMap Zᶜ B) R n) := by
   exact isIso_singularHomologyMap_excisionMap R Zᶜ B
-    (interior_compl_union_interior_eq_univ B h) n
+    (TauCeti.interior_compl_union_interior_eq_univ_iff.2 h) n
 
 /-- **Excision onto a neighbourhood.** If `U` is open and contains the closed set `K`, the
 inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms on relative singular
@@ -266,7 +246,7 @@ theorem isIso_singularHomologyMap_excisionMap_of_isClosed_subset {U K : Set X} (
     (hK : IsClosed K) (hKU : K ⊆ U) (n : ℕ) :
     IsIso (TopPair.singularHomologyMap (excisionMap U Kᶜ) R n) := by
   exact isIso_singularHomologyMap_excisionMap R U Kᶜ
-    (interior_union_interior_compl_eq_univ hU hK hKU) n
+    (TauCeti.interior_union_interior_compl_eq_univ hU hK hKU) n
 
 variable {A B} {Y : TopCat.{w}} (g : X ⟶ Y) {A' B' : Set Y}
   (hA : Set.MapsTo g A A') (hB : Set.MapsTo g B B')

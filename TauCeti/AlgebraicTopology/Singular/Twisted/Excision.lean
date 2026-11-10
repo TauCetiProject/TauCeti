@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Singular.Excision
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Functoriality
 public import TauCeti.AlgebraicTopology.Singular.Twisted.Small.Chains
 public import TauCeti.Algebra.Homology.ModuleCat.QuasiIso
+import TauCeti.Topology.Closure
 
 /-!
 # Excision for relative singular homology with local coefficients
@@ -277,7 +278,7 @@ theorem quasiIso_twistedChainComplexMap_excisionMap (h : interior A ∪ interior
   exact quasiIso_twistedChainComplexMap_of_open_cover (excisionMap A B) L
     (isEmbedding_fst_excisionMap A B) (mem_range_map_of_fst_excisionMap_mem A B)
     (fun b : Bool ↦ bif b then interior A else interior B)
-    (fun b ↦ by cases b <;> exact isOpen_interior) (iUnion_cond_interior_eq_univ A B h)
+    (fun b ↦ by cases b <;> exact isOpen_interior) (Set.union_eq_iUnion.symm.trans h)
     (interior_subset_range_or_subset_range_fst_excisionMap A B)
 
 /-- **Excision with local coefficients.** If the interiors of `A` and `B` cover `X`, the
@@ -293,7 +294,7 @@ quasi-isomorphism of relative twisted chain complexes. -/
 theorem quasiIso_twistedChainComplexMap_excisionMap_compl (Z : Set X)
     (h : closure Z ⊆ interior B) : QuasiIso (twistedChainComplexMap (excisionMap Zᶜ B) L) := by
   exact quasiIso_twistedChainComplexMap_excisionMap Zᶜ B L
-    (interior_compl_union_interior_eq_univ B h)
+    (TauCeti.interior_compl_union_interior_eq_univ_iff.2 h)
 
 /-- **Excision with local coefficients of a set with closure in the interior of the subspace.**
 If `closure Z ⊆ interior B`, the inclusion of pairs `(X ∖ Z, B ∖ Z) ⟶ (X, B)` induces isomorphisms
@@ -310,7 +311,7 @@ theorem quasiIso_twistedChainComplexMap_excisionMap_of_isClosed_subset {U K : Se
     (hU : IsOpen U) (hK : IsClosed K) (hKU : K ⊆ U) :
     QuasiIso (twistedChainComplexMap (excisionMap U Kᶜ) L) := by
   exact quasiIso_twistedChainComplexMap_excisionMap U Kᶜ L
-    (interior_union_interior_compl_eq_univ hU hK hKU)
+    (TauCeti.interior_union_interior_compl_eq_univ hU hK hKU)
 
 /-- **Excision with local coefficients onto a neighbourhood.** If `U` is open and contains the
 closed set `K`, the inclusion of pairs `(U, U ∖ K) ⟶ (X, X ∖ K)` induces isomorphisms on relative
