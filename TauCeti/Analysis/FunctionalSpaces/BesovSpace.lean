@@ -47,6 +47,12 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace.inclusionOfLT`: `B^s_{p,q} ⊆ B^{s'}_{p,q'}` for `s' < s` and arbitrary
   `q, q'`, with norm at most `(1 - 2^{s' - s})⁻¹`. At the level of the predicate these inclusions
   are `TemperedDistribution.MemBesov.mono` and `TemperedDistribution.MemBesov.of_lt`.
+* `TauCeti.BesovSpace.inclusionOfExponentLE`: the Bernstein embedding
+  `B^s_{p,q} ⊆ B^{s - n (1/p - 1/r)}_{r,q}` for `p ≤ r` in dimension `n`, bounded uniformly in `s`
+  and `q` (`TauCeti.BesovSpace.exists_norm_inclusionOfExponentLE_le`); at the level of the
+  predicate it is `TemperedDistribution.MemBesov.mono_exponent`. Each block `Δⱼ u` is carried by
+  the ball of radius `2^j φ.rOut`, so Bernstein's inequality bounds its `Lʳ` norm by
+  `2^{j n (1/p - 1/r)}` times its `Lᵖ` norm.
 * `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_eq`: a Schwartz function whose Fourier transform
   is carried by the region where `ψⱼ = 1` lies in every Besov space, with norm `2^{js} ‖u‖_p`;
   `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_eq_of_norm_le` is the low-frequency case `j = 0`,
@@ -159,6 +165,26 @@ theorem MemBesov.neg {u : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) : (-u).MemBeso
 theorem MemBesov.sub {u v : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (hv : v.MemBesov φ s p q) :
     (u - v).MemBesov φ s p q := by
   simpa [sub_eq_add_neg] using hu.add hv.neg
+
+/-- Trading `a` orders of smoothness at the `j`-th block: `2^{j (s - a)} 2^{j a} = 2^{j s}`. -/
+private theorem two_rpow_sub_mul_natCast_mul (s a : ℝ) (j : ℕ) :
+    (2 : ℝ) ^ ((s - a) * j) * 2 ^ (a * j) = 2 ^ (s * j) := by
+  rw [← Real.rpow_add two_pos]
+  ring_nf
+
+/-- **The Bernstein embedding.** For `p ≤ r`, `B^s_{p,q} ⊆ B^{s - n (1/p - 1/r)}_{r,q}`, where `n`
+is the dimension of `E` and `1/∞ = 0`: raising the integrability exponent of the blocks from `p`
+to `r` costs `n (1/p - 1/r)` orders of smoothness. -/
+theorem MemBesov.mono_exponent {u : 𝓢'(E, F)} {r : ℝ≥0∞} [Fact (1 ≤ r)]
+    (hu : u.MemBesov φ s p q) (hpr : p ≤ r) :
+    u.MemBesov φ (s - Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) r q := by
+  obtain ⟨C, hC, hB⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_le (F := F) φ hpr
+  set a : ℝ := Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)
+  obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
+  choose g hg hgf using fun j ↦ hB j u (f j) (hf j)
+  refine memBesov_iff.2 ⟨g, hg, (hmem.const_mul C).mono fun j ↦ ?_⟩
+  rw [Real.norm_of_nonneg (by positivity), ← two_rpow_sub_mul_natCast_mul s a j]
+  exact (mul_le_mul_of_nonneg_left (hgf j) (by positivity)).trans_eq (by ring)
 
 end MemBesov
 
@@ -481,6 +507,67 @@ theorem norm_inclusionOfLT_le (hs : s' < s) (u : BesovSpace F φ s p q) :
   norm_le_of_toDistr_eq_of_lt hs (toDistr_inclusionOfLT hs u).symm
 
 end Inclusion
+
+section Bernstein
+
+variable {r : ℝ≥0∞} [Fact (1 ≤ r)]
+
+/-- For `p ≤ r` there is `C`, independent of `s` and `q`, such that the
+`B^{s - n (1/p - 1/r)}_{r,q}` norm of a distribution is at most `C` times its `B^s_{p,q}` norm. -/
+private theorem exists_norm_le_of_toDistr_eq_of_exponent_le (hpr : p ≤ r) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {s : ℝ} {q : ℝ≥0∞} [Fact (1 ≤ q)] {u : BesovSpace F φ s p q}
+      {v : BesovSpace F φ (s - Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) r q},
+      u.toDistr = v.toDistr → ‖v‖ ≤ C * ‖u‖ := by
+  obtain ⟨C, hC, hB⟩ := exists_littlewoodPaleyBlock_eq_and_norm_le_of_le (F := F) φ hpr
+  refine ⟨C, hC, ?_⟩
+  intro s q _ u v h
+  rw [← norm_weightedBlocks, ← norm_weightedBlocks]
+  calc ‖v.weightedBlocks‖ ≤ ‖(C : ℂ) • u.weightedBlocks‖ :=
+        lp.norm_mono (zero_lt_one.trans_le Fact.out).ne' fun j ↦ ?_
+    _ = C * ‖u.weightedBlocks‖ := by
+        rw [lp.norm_const_smul (zero_lt_one.trans_le Fact.out).ne', Complex.norm_of_nonneg hC]
+  -- The block `Δⱼ v = Δⱼ u` is the `Lʳ` function given by Bernstein's inequality.
+  obtain ⟨g, hg, hgf⟩ := hB j u.toDistr (u.block j) (coe_block u j).symm
+  have hvg : v.block j = g := LinearMap.ker_eq_bot.1 Lp.ker_toTemperedDistributionCLM_eq_bot <| by
+    simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, coe_block, ← h, hg]
+  rw [norm_weightedBlocks_apply, hvg, lp.coeFn_smul, Pi.smul_apply, norm_smul,
+    Complex.norm_of_nonneg hC, norm_weightedBlocks_apply,
+    ← two_rpow_sub_mul_natCast_mul s (Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) j]
+  exact (mul_le_mul_of_nonneg_left hgf (by positivity)).trans_eq (by ring)
+
+variable [Fact (1 ≤ q)]
+
+variable (F φ q) in
+/-- **The Bernstein embedding.** For `p ≤ r`, `B^s_{p,q} ⊆ B^{s - n (1/p - 1/r)}_{r,q}`
+continuously, where `n` is the dimension of `E` and `1/∞ = 0`. The norm of the inclusion is
+bounded independently of `s` and `q` (`TauCeti.BesovSpace.exists_norm_inclusionOfExponentLE_le`).
+At the level of the predicate this is `TemperedDistribution.MemBesov.mono_exponent`. -/
+def inclusionOfExponentLE (hpr : p ≤ r) :
+    BesovSpace F φ s p q →L[ℂ]
+      BesovSpace F φ (s - Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) r q :=
+  LinearMap.mkContinuousOfExistsBound
+    { toFun u := (u.memBesov_toDistr.mono_exponent hpr).toBesovSpace
+      map_add' _ _ := ext rfl
+      map_smul' _ _ := ext rfl } <| by
+    obtain ⟨C, -, hC⟩ := exists_norm_le_of_toDistr_eq_of_exponent_le (F := F) (φ := φ) hpr
+    exact ⟨C, fun _ ↦ hC rfl⟩
+
+@[simp]
+theorem toDistr_inclusionOfExponentLE (hpr : p ≤ r) (u : BesovSpace F φ s p q) :
+    (inclusionOfExponentLE F φ q hpr u).toDistr = u.toDistr := by rfl
+
+variable (F φ) in
+/-- **The Bernstein embedding is bounded uniformly in `s` and `q`.** For `p ≤ r` there is `C`,
+depending only on `E`, `F`, `p`, `r` and `φ`, with
+`‖u‖_{B^{s - n (1/p - 1/r)}_{r,q}} ≤ C ‖u‖_{B^s_{p,q}}` for every `s`, every `q ≥ 1` and every
+`u ∈ B^s_{p,q}`. -/
+theorem exists_norm_inclusionOfExponentLE_le (hpr : p ≤ r) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {s : ℝ} {q : ℝ≥0∞} [Fact (1 ≤ q)] (u : BesovSpace F φ s p q),
+      ‖inclusionOfExponentLE F φ q hpr u‖ ≤ C * ‖u‖ := by
+  obtain ⟨C, hC, h⟩ := exists_norm_le_of_toDistr_eq_of_exponent_le (F := F) (φ := φ) hpr
+  exact ⟨C, hC, fun u ↦ h (toDistr_inclusionOfExponentLE hpr u).symm⟩
+
+end Bernstein
 
 section SingleBlock
 
