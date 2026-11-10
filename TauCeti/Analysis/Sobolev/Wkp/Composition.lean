@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
-import Mathlib.Analysis.Calculus.BumpFunction.Basic
 import TauCeti.Analysis.Sobolev.W1p.ChainRule
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
@@ -43,8 +42,6 @@ the one hidden in the chain rule for the square.
 
 ## Main results
 
-* `TauCeti.W1p.hasWeakFDerivOn_comp_of_ae_abs_le`: the chain rule `∇(Φ ∘ u) = Φ'(u) ∇u` for an
-  essentially bounded `u ∈ W^{1,p}(Ω)` and a `C¹` function `Φ`.
 * `TauCeti.Wkp.exists_value_ae_eq_comp_of_contDiffOn`: `Φ ∘ w ∈ W^{k+1,p}(Ω)` for `Φ ∈ Cᵏ⁺¹` and
   `w ∈ Cᵏ(U) ∩ W^{k+1,p}(Ω)`.
 
@@ -57,7 +54,7 @@ the one hidden in the chain rule for the square.
 
 public section
 
-open MeasureTheory Metric Set TopologicalSpace
+open MeasureTheory Set TopologicalSpace
 open scoped ContDiff NNReal
 
 namespace TauCeti
@@ -65,37 +62,6 @@ namespace TauCeti
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
-
-/-- **The chain rule for essentially bounded Sobolev functions.** Let `1 ≤ p < ∞` and let
-`u ∈ W^{1,p}(Ω)` be essentially bounded on `Ω`. For every `C¹` function `Φ`, the composition
-`Φ ∘ u` has the weak gradient `Φ'(u) ∇u` on `Ω`.
-
-Unlike `TauCeti.W1p.hasWeakFDerivOn_comp`, no bound on `Φ'` is assumed: only the values of `Φ`
-near the essential range of `u` matter. -/
-theorem W1p.hasWeakFDerivOn_comp_of_ae_abs_le (hp : p ≠ ⊤) {Φ : ℝ → ℝ}
-    (hΦ : ContDiff ℝ 1 Φ) {u : W1p mu Omega p} {M : ℝ}
-    (hM : ∀ᵐ x ∂mu.restrict Omega, |W1p.value u x| ≤ M) :
-    HasWeakFDerivOn mu Omega (fun x => Φ (W1p.value u x))
-      fun x => innerSL ℝ (deriv Φ (W1p.value u x) • W1p.gradient u x) := by
-  -- Replace `Φ` by `F = ψ Φ`, with `ψ` a bump equal to one near `[-M, M]`; `F'` is bounded.
-  set R := |M| + 1
-  let ψ : ContDiffBump (0 : ℝ) := ⟨R, R + 1, by positivity, by linarith⟩
-  have hF : ContDiff ℝ 1 fun t => ψ t * Φ t := ψ.contDiff.mul hΦ
-  obtain ⟨K, hK⟩ := (hF.continuous_deriv le_rfl).bounded_above_of_compact_support
-    (ψ.hasCompactSupport.mul_right (f' := Φ)).deriv
-  have hFΦ : ∀ t, |t| ≤ M → (fun s => ψ s * Φ s) =ᶠ[nhds t] Φ := fun t ht => by
-    have ht' : t ∈ ball (0 : ℝ) R := by
-      rw [mem_ball, Real.dist_eq, sub_zero]
-      linarith [le_abs_self M]
-    filter_upwards [isOpen_ball.mem_nhds ht'] with s hs
-    rw [ψ.one_of_mem_closedBall (ball_subset_closedBall hs), one_mul]
-  refine ((W1p.hasWeakFDerivOn_comp hp hF (M := K.toNNReal) (fun t => ?_) u).congr_ae
-    ?_).congr_ae_deriv ?_
-  · rw [← NNReal.coe_le_coe, coe_nnnorm]
-    exact (hK t).trans (Real.le_coe_toNNReal K)
-  · filter_upwards [hM] with x hx using (hFΦ _ hx).eq_of_nhds
-  · filter_upwards [hM] with x hx
-    rw [(hFΦ _ hx).deriv_eq]
 
 namespace Wkp
 
