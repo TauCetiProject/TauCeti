@@ -353,7 +353,7 @@ theorem fderiv_apply_mem_sobolevFields {s : ℝ} (hs : 0 ≤ s) {y : ℂ → Euc
     (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).contDiff.comp hy
   have h := fderiv_apply_mem_realSobolevFunctions (by norm_num) (by norm_num) hs hc
     (mem_sobolevFields.1 hmem i) v
-  simpa only [PiLp.fderiv_apply_apply (hy.differentiable one_ne_zero _)] using h
+  simpa only [(hy.differentiable one_ne_zero _).fderiv_piLp_apply] using h
 
 /-- **Sobolev regularity of fields from classical derivatives.** A `C¹` field in `sobolevFields s`
 whose directional derivatives all lie in `sobolevFields s` lies in `sobolevFields (s + 1)`. -/
@@ -366,7 +366,7 @@ theorem mem_sobolevFields_add_one_of_fderiv_apply {s : ℝ} {y : ℂ → Euclide
     (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).contDiff.comp hy
   refine mem_realSobolevFunctions_add_one_of_fderiv_apply (by norm_num) (by norm_num) hc
     (mem_sobolevFields.1 hmem i) fun v ↦ ?_
-  simpa only [PiLp.fderiv_apply_apply (hy.differentiable one_ne_zero _)] using
+  simpa only [(hy.differentiable one_ne_zero _).fderiv_piLp_apply] using
     mem_sobolevFields.1 (hd v) i
 
 /-- The derivatives of a `C¹` field along `1` and `I` determine its Sobolev regularity: if both

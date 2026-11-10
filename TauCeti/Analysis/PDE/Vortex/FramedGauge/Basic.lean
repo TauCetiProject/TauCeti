@@ -351,42 +351,48 @@ theorem fderiv_gaugeLinearAction_apply_three {u : ℂ → Circle} {z : ℂ}
     fderiv_re_coe_eq_neg_im_mul_gaugeForm hu, fderiv_im_coe_eq_re_mul_gaugeForm hu]
   ring
 
+/-- **A gauge fixing a field is trivial.** A differentiable gauge `u` tending to one at infinity
+with `gaugeTransform u x = x` is the constant gauge `1`. The connection coordinates suffice: they
+force `Im (u⁻¹ du) = 0`, so `u` is constant, and the end condition makes it one. No nonvanishing,
+regularity or equation hypothesis on the field is required. -/
+theorem eq_one_of_gaugeTransform_eq_self {u : ℂ → Circle} {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hud : Differentiable ℝ (fun z ↦ (u z : ℂ))) (hend : Tendsto u (cocompact ℂ) (𝓝 1))
+    (hu : gaugeTransform u x = x) : u = 1 := by
+  have hzero (z : ℂ) : fderiv ℝ (fun w ↦ (u w : ℂ)) z = 0 := by
+    have hg (i : Fin 4) := congrArg (fun v ↦ v z i) hu
+    have hg₁ : gaugeForm u z 1 = 0 := by
+      simpa only [gaugeTransform_apply, PiLp.toLp_apply, Matrix.cons_val_zero,
+        sub_eq_self] using hg 0
+    have hgI : gaugeForm u z I = 0 := by
+      simpa only [gaugeTransform_apply, PiLp.toLp_apply, Matrix.cons_val_one,
+        Matrix.cons_val_zero, sub_eq_self] using hg 1
+    have hlin : (gaugeForm u z).toLinearMap = 0 := by
+      apply Complex.basisOneI.ext
+      intro i
+      fin_cases i
+      · simpa using hg₁
+      · simpa using hgI
+    have hform : gaugeForm u z = 0 := by
+      ext v
+      exact LinearMap.congr_fun hlin v
+    ext v
+    simp [fderiv_coe_eq_mul_gaugeForm v, hform]
+  have hconst (z : ℂ) : u z = u 0 := by
+    apply Subtype.ext
+    exact is_const_of_fderiv_eq_zero hud hzero z 0
+  have hend' : Tendsto (fun _ : ℂ ↦ u 0) (cocompact ℂ) (𝓝 1) :=
+    hend.congr fun z ↦ hconst z
+  have hone : u 0 = 1 := tendsto_nhds_unique tendsto_const_nhds hend'
+  funext z
+  exact (hconst z).trans hone
+
 /-- The smooth framed gauge action is free. The connection coordinates suffice; no
 nonvanishing, regularity or equation hypothesis on the field is required. -/
 instance : IsCancelSMul framedGaugeGroup (ℂ → EuclideanSpace ℝ (Fin 4)) := by
   apply isCancelSMul_iff_eq_one_of_smul_eq.mpr
   intro u x hu
   have hup := (mem_framedGaugeGroup _).mp u.property
-  have hud : Differentiable ℝ (fun z ↦ (u.val z : ℂ)) :=
-    hup.1.differentiable (by simp)
-  have hzero (z : ℂ) : fderiv ℝ (fun w ↦ (u.val w : ℂ)) z = 0 := by
-    have hg (i : Fin 4) := congrArg (fun v ↦ v z i) hu
-    have hg₁ : gaugeForm u.val z 1 = 0 := by
-      simpa only [framedGaugeGroup_smul, gaugeTransform_apply, PiLp.toLp_apply,
-        Matrix.cons_val_zero, sub_eq_self] using hg 0
-    have hgI : gaugeForm u.val z I = 0 := by
-      simpa only [framedGaugeGroup_smul, gaugeTransform_apply, PiLp.toLp_apply,
-        Matrix.cons_val_one, Matrix.cons_val_zero, sub_eq_self] using hg 1
-    have hlin : (gaugeForm u.val z).toLinearMap = 0 := by
-      apply Complex.basisOneI.ext
-      intro i
-      fin_cases i
-      · simpa using hg₁
-      · simpa using hgI
-    have hform : gaugeForm u.val z = 0 := by
-      ext v
-      exact LinearMap.congr_fun hlin v
-    ext v
-    simp [fderiv_coe_eq_mul_gaugeForm v, hform]
-  have hconst (z : ℂ) : u.val z = u.val 0 := by
-    apply Subtype.ext
-    exact is_const_of_fderiv_eq_zero hud hzero z 0
-  have hend : Tendsto (fun _ : ℂ ↦ u.val 0) (cocompact ℂ) (𝓝 1) :=
-    hup.2.congr fun z ↦ hconst z
-  have hone : u.val 0 = 1 := tendsto_nhds_unique tendsto_const_nhds hend
-  apply Subtype.ext
-  funext z
-  exact (hconst z).trans hone
+  exact Subtype.ext (eq_one_of_gaugeTransform_eq_self (hup.1.differentiable (by simp)) hup.2 hu)
 
 /-- The logarithmic derivative of a smooth gauge is smooth as a one-form. -/
 theorem contDiff_gaugeForm {u : ℂ → Circle}

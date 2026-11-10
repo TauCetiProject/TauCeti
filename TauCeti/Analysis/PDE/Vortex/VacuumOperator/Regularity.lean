@@ -79,7 +79,7 @@ theorem gaugeFixedOperator_vacuumField_fderiv_apply {y : ℂ → EuclideanSpace 
     (EuclideanSpace.proj i : EuclideanSpace ℝ (Fin 4) →L[ℝ] ℝ).contDiff.comp hy
   have hcoord (i : Fin 4) :
       (fun w ↦ fderiv ℝ y w v i) = fun w ↦ fderiv ℝ (fun t ↦ y t i) w v :=
-    funext fun w ↦ (PiLp.fderiv_apply_apply ((hy.differentiable two_ne_zero) w) i v).symm
+    funext fun w ↦ (((hy.differentiable two_ne_zero) w).fderiv_piLp_apply i v).symm
   have hpt (i : Fin 4) : fderiv ℝ y z v i = fderiv ℝ (fun t ↦ y t i) z v :=
     congrFun (hcoord i) z
   have hd0 (i : Fin 4) : DifferentiableAt ℝ (fun w ↦ y w i) z :=
@@ -93,7 +93,7 @@ theorem gaugeFixedOperator_vacuumField_fderiv_apply {y : ℂ → EuclideanSpace 
   have hcomm (i : Fin 4) (u : ℂ) :=
     fderiv_fderiv_apply_comm ((hyi i).contDiffAt (x := z)) (by simp) u v
   ext i
-  rw [← PiLp.fderiv_apply_apply hL]
+  rw [← hL.fderiv_piLp_apply]
   fin_cases i <;>
     simp [gaugeFixedOperator_apply_zero, gaugeFixedOperator_apply_one,
       gaugeFixedOperator_apply_two, gaugeFixedOperator_apply_three, vacuumField_apply, hcoord,
