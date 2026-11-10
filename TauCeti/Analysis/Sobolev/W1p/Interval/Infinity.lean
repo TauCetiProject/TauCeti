@@ -20,7 +20,7 @@ boundary values of the function. If the weak derivative of `u` has a continuous 
 forces both endpoint derivatives to vanish.
 
 The polynomial `x(1-x)` on `(0,1)` has zero endpoint trace but is at distance at least one
-from `W^{1,∞}_0(0,1)`. Thus the kernel of the endpoint trace is strictly larger than the
+from `W^{1,∞}_0(0,1)`. Thus the kernel of the endpoint trace is not contained in the
 full-norm closure of the test functions at the infinite exponent.
 
 ## References
@@ -93,7 +93,7 @@ theorem gradient_endpoints_eq_zero_of_mem_w1p0Submodule {a b : ℝ} (hab : a < b
 /-- The polynomial `x(1-x)` has zero endpoint trace on `(0,1)`, but its `W^{1,∞}` distance
 from every zero-boundary element is at least one. In particular, zero trace does not imply
 membership in the full-norm closure of test functions. -/
-theorem exists_intervalTraceL_eq_zero_not_mem_w1p0Submodule_top :
+theorem exists_intervalTraceL_eq_zero_notMem_w1p0Submodule_top :
     ∃ u : W1p volume ⟨Ioo (0 : ℝ) 1, isOpen_Ioo⟩ ⊤,
       (value u =ᵐ[volume.restrict (Ioo (0 : ℝ) 1)] fun x ↦ x * (1 - x)) ∧
       intervalTraceL (by norm_num : (0 : ℝ) < 1) u = 0 ∧
