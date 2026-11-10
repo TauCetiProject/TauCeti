@@ -328,7 +328,7 @@ private theorem intervalIntegrable_realWindingIntegrand_of_crossing_windows {γ 
     (fun t ht ↦ by linarith [(h_endpts t ((Finset.mem_sort _).mp ht)).2])
     (fun t ht t' ht' hne ↦ (h_pair t ((Finset.mem_sort _).mp ht) t'
       ((Finset.mem_sort _).mp ht') hne).le)
-    (fun t ht ↦ hρ_lip_int t ((Finset.mem_sort _).mp ht) ρ hρ_pos
+    (fun t ht _ ↦ hρ_lip_int t ((Finset.mem_sort _).mp ht) ρ hρ_pos
       (hρ_le_ρlip t ((Finset.mem_sort _).mp ht)))
     (fun u hu h_avoid ↦ hm u hu fun t ht ↦ h_avoid t ((Finset.mem_sort _).mpr ht))
 

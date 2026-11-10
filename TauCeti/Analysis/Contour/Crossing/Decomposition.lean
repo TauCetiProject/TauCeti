@@ -391,7 +391,7 @@ theorem exists_int_windingNumber_eq_add_windingNumber_sub_angle_div_two_pi
   -- The crossing point `γ l` lies on the curve, so the circle cannot be degenerate.
   have hr : r ≠ 0 := by
     rintro rfl
-    exact havoid l ⟨hal.le, by linarith⟩ (fun h => lt_irrefl _ h.1) (by simp [hθ, circleMap])
+    exact havoid l ⟨hal.le, by linarith⟩ (fun h => lt_irrefl _ h.1) (by simp [hθ])
   have hab : a ≤ b := by linarith
   have hE := hγ.exciseCrossing hlu hθ hθ'
   obtain ⟨k, hk⟩ := hE.exists_int_windingNumber (exciseCrossing_closed hal hub hclosed θ θ')
