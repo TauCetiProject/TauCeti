@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AffineScheme
 public import TauCeti.RingTheory.Norm.Projective
-public import TauCeti.AlgebraicGeometry.Morphisms.Finite.Basic
+public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 
 /-!
 # Basic opens defined by norms
@@ -39,12 +39,12 @@ theorem mem_basicOpen_projectiveNorm_iff {X Y : Scheme.{u}} (f : Y ⟶ X) [IsFin
     (hproj : letI := (f.app U).hom.toAlgebra; Module.Projective Γ(X, U) Γ(Y, f ⁻¹ᵁ U))
     (s : Γ(Y, f ⁻¹ᵁ U)) {x : X} (hx : x ∈ U) :
     letI := (f.app U).hom.toAlgebra
-    letI := f.moduleFinite_app_of_isAffineOpen hU
+    letI : Module.Finite Γ(X, U) Γ(Y, f ⁻¹ᵁ U) := f.finite_app U hU
     letI := hproj
     x ∈ X.basicOpen (Algebra.projectiveNorm Γ(X, U) s) ↔
       ∀ y, f y = x → y ∈ Y.basicOpen s := by
   let := (f.app U).hom.toAlgebra
-  let := f.moduleFinite_app_of_isAffineOpen hU
+  let : Module.Finite Γ(X, U) Γ(Y, f ⁻¹ᵁ U) := f.finite_app U hU
   let := hproj
   have hV : IsAffineOpen (f ⁻¹ᵁ U) := hU.preimage f
   let p := hU.primeIdealOf ⟨x, hx⟩
@@ -86,12 +86,12 @@ theorem basicOpen_projectiveNorm_eq {X Y : Scheme.{u}} (f : Y ⟶ X) [IsFinite f
     (hproj : letI := (f.app U).hom.toAlgebra; Module.Projective Γ(X, U) Γ(Y, f ⁻¹ᵁ U))
     (s : Γ(Y, f ⁻¹ᵁ U)) :
     letI := (f.app U).hom.toAlgebra
-    letI := f.moduleFinite_app_of_isAffineOpen hU
+    letI : Module.Finite Γ(X, U) Γ(Y, f ⁻¹ᵁ U) := f.finite_app U hU
     letI := hproj
     (X.basicOpen (Algebra.projectiveNorm Γ(X, U) s) : Set X) =
       (U : Set X) \ f '' ((f ⁻¹ᵁ U : Set Y) \ (Y.basicOpen s : Set Y)) := by
   let := (f.app U).hom.toAlgebra
-  let := f.moduleFinite_app_of_isAffineOpen hU
+  let : Module.Finite Γ(X, U) Γ(Y, f ⁻¹ᵁ U) := f.finite_app U hU
   let := hproj
   ext x
   constructor

@@ -39,16 +39,6 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- Sections over an affine open are finite for the algebra structure induced by a finite
-morphism. -/
-theorem Scheme.Hom.moduleFinite_app_of_isAffineOpen {X Y : Scheme.{u}} (f : Y ⟶ X)
-    [IsFinite f] {U : X.Opens} (hU : IsAffineOpen U) :
-    let := (f.app U).hom.toAlgebra
-    Module.Finite Γ(X, U) Γ(Y, f ⁻¹ᵁ U) := by
-  let := (f.app U).hom.toAlgebra
-  exact RingHom.finite_algebraMap.mp (by
-    simpa only [RingHom.algebraMap_toAlgebra] using f.finite_app U hU)
-
 /-- A finite morphism to the spectrum of a commutative ring has module-finite global sections,
 for any `R`-algebra structure on `Γ(X, ⊤)` given by the map of global sections. -/
 theorem Scheme.Hom.moduleFinite_appTop {R : Type u} [CommRing R] {X : Scheme.{u}}
