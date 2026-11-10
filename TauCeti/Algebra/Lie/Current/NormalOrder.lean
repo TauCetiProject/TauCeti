@@ -8,7 +8,7 @@ module
 public import TauCeti.Algebra.Lie.Current.Completion
 public import TauCeti.Algebra.Category.ModuleCat.Tower.Summation
 
-import Mathlib.Order.SuccPred.Int
+import TauCeti.Algebra.BigOperators.Intervals
 
 /-!
 # Normally ordered modes in the completed enveloping algebra
@@ -305,37 +305,12 @@ private theorem envelopingι_mul_normalOrderedSummand_sub_mul (z x y : L) (k n m
   have hy : n + k - (m + k) = n - m := by ring
   have hx : k + m = m + k := add_comm k m
   have hz : k + (n - m) = n + k - m := by ring
-  simp only [normalOrderedSummand_apply, hy]
-  by_cases hm : m < 0
-  · rw [ite_eq_left hm, ite_eq_left (by omega : m + k < k), ite_eq_left hm, hL,
-      envelopingι_single_tmul_mul_sub_mul, envelopingι_single_tmul_mul_sub_mul, hx, hz]
+  have hm : m + k < k ↔ m < 0 := by omega
+  simp only [normalOrderedSummand_apply, hy, hm]
+  by_cases h : m < 0 <;> simp only [h, ↓reduceIte] <;>
+  · rw [hL, envelopingι_single_tmul_mul_sub_mul, envelopingι_single_tmul_mul_sub_mul, hx, hz]
     simp only [mul_add, add_mul, Algebra.commutes]
     abel
-  · rw [ite_eq_right hm, ite_eq_right (by omega : ¬ m + k < k), ite_eq_right hm, hL,
-      envelopingι_single_tmul_mul_sub_mul, envelopingι_single_tmul_mul_sub_mul, hx, hz]
-    simp only [mul_add, add_mul, Algebra.commutes]
-    abel
-
-/-- Counted with sign, the integers between `0` and `k` sum to `k (k - 1) / 2`: twice
-`∑_{0 ≤ j < k} j - ∑_{k ≤ j < 0} j` is `k (k - 1)`. -/
-private theorem two_mul_sum_Ico_zero_sub_sum_Ico_zero (k : ℤ) :
-    2 * (∑ j ∈ Finset.Ico 0 k, j - ∑ j ∈ Finset.Ico k 0, j) = k * (k - 1) := by
-  induction k using Int.induction_on with
-  | zero => simp
-  | succ i ih =>
-    have hi : (0 : ℤ) ≤ i := by positivity
-    rw [← Finset.insert_Ico_right_eq_Ico_add_one hi, Finset.sum_insert (by simp),
-      Finset.Ico_eq_empty_of_le (by omega : (0 : ℤ) ≤ i + 1)]
-    rw [Finset.Ico_eq_empty_of_le hi] at ih
-    simp only [Finset.sum_empty, sub_zero] at ih ⊢
-    linear_combination ih
-  | pred i ih =>
-    have hi : -(i : ℤ) ≤ 0 := by omega
-    rw [← Finset.insert_Ico_left_eq_Ico_sub_one hi, Finset.sum_insert (by simp),
-      Finset.Ico_eq_empty_of_le (by omega : -(i : ℤ) - 1 ≤ 0)]
-    rw [Finset.Ico_eq_empty_of_le hi] at ih
-    simp only [Finset.sum_empty, zero_sub] at ih ⊢
-    linear_combination ih
 
 /-- The commutators `[x_j, y_{n-j}]` for `0 ≤ j < k`, minus those for `k ≤ j < 0`, sum to
 `k ⁅x, y⁆_n` minus the central term `(k (k - 1) / 2) a Φ(x, y)` at `n = 0`. -/
@@ -358,7 +333,7 @@ private theorem sum_Ico_sub_sum_Ico_envelopingι_mul_sub_mul (x y : L) (k n : �
     omega
   have hs : ∑ j ∈ Finset.Ico 0 k, -j - ∑ j ∈ Finset.Ico k 0, -j = -(k * (k - 1) / 2) := by
     rw [Finset.sum_neg_distrib, Finset.sum_neg_distrib,
-      ← Int.eq_ediv_of_mul_eq_right two_ne_zero (two_mul_sum_Ico_zero_sub_sum_Ico_zero k)]
+      ← Int.eq_ediv_of_mul_eq_right two_ne_zero (Finset.two_mul_sum_Ico_zero_sub_sum_Ico_zero k)]
     ring
   have hw : algebraMap R UK (if n = 0 then ((k * (k - 1) / 2 : ℤ) : R) * a * Φ x y else 0) =
       (k * (k - 1) / 2) • algebraMap R UK (if n = 0 then a * Φ x y else 0) := by

@@ -175,8 +175,8 @@ theorem sugawaraMode_mem_center (h : (2 * a) • Φ = killingForm K L) (n : ℤ)
   have hw (y : L) : killingForm K L w y = Φ z y := LinearMap.BilinForm.apply_toDual_symm_apply ..
   have hz : (2 * a) • w = z := by
     refine sub_eq_zero.1 (hnd.1 _ fun y ↦ ?_)
-    rw [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, hw, ← h,
-      LinearMap.smul_apply, LinearMap.smul_apply, sub_self]
+    simp only [map_sub, map_smul, LinearMap.sub_apply, LinearMap.smul_apply, hw]
+    simp [← h]
   rw [Commute, SemiconjBy, ← sub_eq_zero, toCompletedEnveloping_mul_sugawaraMode_sub_mul hw, hz,
     sub_self, TensorProduct.tmul_zero, map_zero, map_zero, smul_zero]
 

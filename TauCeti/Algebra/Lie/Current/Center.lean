@@ -156,16 +156,10 @@ theorem mem_center_iff_forall_commute_single {z : Û} :
         LaurentPolynomial.toLaurentSeries_single]
       exact h m x
   -- A formal current is the limit of its truncations, and commuting with `z` is a closed condition.
-  refine (isClosed_eq (f := (· * z)) (g := (z * ·)) (continuous_id.mul continuous_const)
-    (continuous_const.mul continuous_id)).mem_of_tendsto (b := Filter.atTop)
-    (f := fun N : ℕ ↦ toCompletedEnveloping Φ hΦ hΦs a (envelopingι c a (ofLoop R L
-      (trunc R L N u)))) ?_ (Filter.Eventually.of_forall fun N ↦ (hpoly _).eq)
-  rw [← tendsto_sub_nhds_zero_iff,
-    (hasBasis_nhds_zero_completedOrderLeftIdeal Φ hΦ hΦs a).tendsto_right_iff]
-  refine fun N _ ↦ Filter.eventually_atTop.2 ⟨N, fun M hM ↦ ?_⟩
-  rw [← map_sub, ← map_sub, SetLike.mem_coe, toCompletedEnveloping_mem_completedOrderLeftIdeal_iff]
-  exact orderLeftIdeal_natCast_antitone Φ hΦ hΦs a hM
-    (envelopingι_mem_orderLeftIdeal (ofLoop_trunc_sub_mem_orderSubmodule R L M u))
+  exact (isClosed_eq (f := (· * z)) (g := (z * ·)) (continuous_id.mul continuous_const)
+    (continuous_const.mul continuous_id)).mem_of_tendsto
+    (tendsto_toCompletedEnveloping_envelopingι_ofLoop_trunc Φ hΦ hΦs a u)
+    (Filter.Eventually.of_forall fun N ↦ (hpoly _).eq)
 
 /-! ### The action on smooth modules -/
 
