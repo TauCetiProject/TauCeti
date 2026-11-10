@@ -33,6 +33,7 @@ coefficient, including when diagonal entries repeat.
 
 ## Main results
 
+* `Matrix.expColumnCoefficient_def`: the matrix-valued integral formula.
 * `Matrix.expColumnCoefficient_apply`: the entrywise integral formula.
 * `Matrix.expColumnCoefficient_eq_toBlocks₁₂_exp`: the coefficient as an exponential block.
 * `Matrix.toBlocks₁₂_exp_fromBlocks_real_smul_one`: the upper-right block is the coefficient
@@ -72,6 +73,13 @@ see `Matrix.toBlocks₁₂_exp_fromBlocks_real_smul_one`. -/
 def expColumnCoefficient (A : Matrix n n R) (d : ℝ) : Matrix n n R :=
   ∫ t in (0 : ℝ)..1, Real.exp (t * d) • exp ((1 - t) • A)
 
+omit [CompleteSpace R] in
+/-- The last-column coefficient equals its defining matrix-valued integral.
+This equation is an explicit rewrite, preserving the coefficient's structural normal form. -/
+theorem expColumnCoefficient_def (A : Matrix n n R) (d : ℝ) :
+    expColumnCoefficient A d =
+      ∫ t in (0 : ℝ)..1, Real.exp (t * d) • exp ((1 - t) • A) := by rfl
+
 /-- The coefficient integrand is interval integrable for the operator norm. -/
 private theorem intervalIntegrable_expColumnCoefficient_integrand
     (A : Matrix n n R) (d : ℝ) :
@@ -108,14 +116,15 @@ theorem toBlocks₁₂_exp_fromBlocks_real_smul_one {m : Type*} [Fintype m] [Dec
   have h : (∫ t in (0 : ℝ)..1, (Real.exp (t * d) • exp ((1 - t) • A)) * B) =
       (∫ t in (0 : ℝ)..1, Real.exp (t * d) • exp ((1 - t) • A)) * B := by
     exact L.intervalIntegral_comp_comm hi
+  -- This typed specialization pins the operator-norm matrix ring instance so that
+  -- the general scalar identity matches the matrix exponential in simp only.
   have hexp (x : ℝ) : exp (x • (1 : Matrix m m R)) = Real.exp x • 1 :=
     NormedSpace.exp_real_smul_one x
-  rw [toBlocks₁₂_exp_fromBlocks_zero₂₁, expColumnCoefficient]
+  rw [toBlocks₁₂_exp_fromBlocks_zero₂₁, expColumnCoefficient_def]
   simp only [smul_smul, hexp, Matrix.mul_smul, Matrix.mul_one]
   simpa only [Matrix.smul_mul] using h
 
-/-- The column coefficient is a block of a matrix exponential. This explicit rewrite gives
-access to the regularity of the exponential without differentiating its integral formula. -/
+/-- The column coefficient equals the upper-right block of the corresponding matrix exponential. -/
 theorem expColumnCoefficient_eq_toBlocks₁₂_exp (A : Matrix n n R) (d : ℝ) :
     expColumnCoefficient A d =
       (exp (fromBlocks A (1 : Matrix n n R) (0 : Matrix n n R)
@@ -202,7 +211,7 @@ theorem IsUpperTriangular.expColumnCoefficient_apply_diag {A : Matrix n n 𝕜}
   have heq (t : ℝ) : Real.exp (t * d) • exp ((1 - t) • A) i i =
       (Real.exp ((1 - t) * a + t * d) : 𝕜) := by
     rw [he, RCLike.real_smul_eq_coe_mul, Real.exp_add, RCLike.ofReal_mul]
-    exact mul_comm _ _
+    ring
   rw [expColumnCoefficient_apply]
   simp_rw [heq]
   rw [RCLike.intervalIntegral_ofReal, ← Real.dslope_exp_eq_integral]
