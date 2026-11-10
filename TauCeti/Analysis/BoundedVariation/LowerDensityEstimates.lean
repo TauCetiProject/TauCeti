@@ -147,7 +147,7 @@ private theorem eventually_ofReal_le_mul_measure_inter_ball_rpow_of_nullMeasurab
     ((monotone_measureReal_inter_ball μ s x).monotoneOn _) measureReal_nonneg
     (fun ρ hρ => ENNReal.toReal_pos (measure_inter_ball_pos hx hρ.1).ne'
       (measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne))
-    (inv_pos.2 hn) NNReal.zero_le_coe
+    NNReal.zero_le_coe
     (h.mono fun ρ hρ hρr => hρ ⟨hρr.1, hρr.2.trans hr.2⟩)
   rw [← ofReal_measureReal hfin, ENNReal.ofReal_rpow_of_nonneg measureReal_nonneg (by positivity),
     ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul NNReal.zero_le_coe]
