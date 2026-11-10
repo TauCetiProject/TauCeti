@@ -54,8 +54,7 @@ private theorem integrable_id_stableMeasure_one_zero_iff (hα : α ∈ Ioo 0 2)
     (hβ : |β| ≤ 1) : Integrable id (stableMeasure α β 1 0) ↔ 1 < α := by
   obtain ⟨ρ, hρ, -⟩ := existsUnique_conv_stableCompensatedPoissonMeasure_eq hα hβ
     (by norm_num : (0 : ℝ) < 1)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ
-    (by norm_num : (0 : ℝ) < 1)
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β 1
   have hsmall : Integrable id (ρ : Measure ℝ) :=
     (memLp_two_id_of_conv_stableCompensatedPoissonMeasure_eq hα hβ (by norm_num) hρ).integrable
       (by norm_num)

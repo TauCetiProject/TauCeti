@@ -22,18 +22,20 @@ the group operations is required.
   group homomorphism.
 * `OpenNormalSubgroup.prod`: the product of two open normal subgroups, as an open normal subgroup
   of the product group.
-* `TauCeti.openNormalSubgroupBot`: the trivial subgroup of a group with the discrete
-  topology, as an open normal subgroup.
-* `TauCeti.openNormalSubgroupTop`: the whole group, as an open normal subgroup.
+
+## Main instances
+
+* `OrderTop (OpenNormalSubgroup G)`: the whole group is the greatest open normal subgroup; in
+  particular `OpenNormalSubgroup G` is inhabited.
+* `BoundedOrder (OpenNormalSubgroup G)` for `G` with the discrete topology: the trivial subgroup
+  is the least open normal subgroup.
 
 ## Main results
 
 * `OpenNormalSubgroup.toSubgroup_inf`, `OpenNormalSubgroup.toSubgroup_sup`: the lattice operations
   on open normal subgroups are those of the underlying subgroups.
-* `TauCeti.mem_openNormalSubgroupBot`: the trivial open normal subgroup contains only the
-  identity.
-* `TauCeti.openNormalSubgroupBot_le`: the trivial open normal subgroup lies below every open
-  normal subgroup.
+* `OpenNormalSubgroup.mem_top`, `OpenNormalSubgroup.mem_bot`: the top open normal subgroup
+  contains every element, and the bottom one only the identity.
 -/
 
 public section
@@ -59,6 +61,63 @@ subgroups. -/
 theorem toSubgroup_sup [SeparatelyContinuousMul G] (U V : OpenNormalSubgroup G) :
     (U ⊔ V).toSubgroup = U.toSubgroup ⊔ V.toSubgroup :=
   (rfl)
+
+/-- The whole group, as an open normal subgroup. -/
+instance instTopOpenNormalSubgroup : Top (OpenNormalSubgroup G) :=
+  ⟨⟨⊤, Subgroup.normal_top⟩⟩
+
+/-- The top open normal subgroup as a set is the whole group. -/
+@[simp, norm_cast]
+theorem coe_top : ((⊤ : OpenNormalSubgroup G) : Set G) = Set.univ :=
+  (rfl)
+
+/-- The underlying subgroup of the top open normal subgroup is `⊤`. -/
+@[simp]
+theorem toSubgroup_top : (⊤ : OpenNormalSubgroup G).toSubgroup = ⊤ :=
+  (rfl)
+
+/-- Every element lies in the top open normal subgroup. -/
+@[simp]
+theorem mem_top (x : G) : x ∈ (⊤ : OpenNormalSubgroup G) :=
+  Set.mem_univ x
+
+instance instOrderTopOpenNormalSubgroup : OrderTop (OpenNormalSubgroup G) where
+  le_top _ := Set.subset_univ _
+
+instance instInhabitedOpenNormalSubgroup : Inhabited (OpenNormalSubgroup G) :=
+  ⟨⊤⟩
+
+section DiscreteTopology
+
+variable [DiscreteTopology G]
+
+/-- The trivial subgroup of a group with the discrete topology, as an open normal subgroup. -/
+instance instBotOpenNormalSubgroup : Bot (OpenNormalSubgroup G) :=
+  ⟨⟨⟨⊥, isOpen_discrete _⟩, Subgroup.normal_bot⟩⟩
+
+/-- The bottom open normal subgroup of a discrete group as a set is `{1}`. -/
+@[simp, norm_cast]
+theorem coe_bot : ((⊥ : OpenNormalSubgroup G) : Set G) = {1} :=
+  (rfl)
+
+/-- The underlying subgroup of the bottom open normal subgroup is `⊥`. -/
+@[simp]
+theorem toSubgroup_bot : (⊥ : OpenNormalSubgroup G).toSubgroup = ⊥ :=
+  (rfl)
+
+/-- The bottom open normal subgroup of a discrete group contains only the identity. -/
+@[simp]
+theorem mem_bot {x : G} : x ∈ (⊥ : OpenNormalSubgroup G) ↔ x = 1 :=
+  Subgroup.mem_bot
+
+instance instOrderBotOpenNormalSubgroup : OrderBot (OpenNormalSubgroup G) where
+  bot_le U _ hx := Subgroup.mem_bot.1 hx ▸ one_mem U
+
+/-- `OpenNormalSubgroup G` is a bounded order for discrete `G`. This is not synthesized from the
+`OrderTop` and `OrderBot` instances. -/
+instance instBoundedOrderOpenNormalSubgroup : BoundedOrder (OpenNormalSubgroup G) where
+
+end DiscreteTopology
 
 /-- The preimage of an open normal subgroup under a continuous group homomorphism.
 Its underlying subgroup is definitionally `U.toSubgroup.comap f`. -/
@@ -115,43 +174,3 @@ theorem mem_prod {U : OpenNormalSubgroup G} {V : OpenNormalSubgroup H} {x : G ×
   Iff.rfl
 
 end OpenNormalSubgroup
-
-namespace TauCeti
-
-/-- The trivial subgroup of a group with the discrete topology, as an open normal subgroup. -/
-def openNormalSubgroupBot (G : Type*) [Group G] [TopologicalSpace G] [DiscreteTopology G] :
-    OpenNormalSubgroup G where
-  toOpenSubgroup := ⟨⊥, isOpen_discrete _⟩
-  isNormal' := inferInstance
-
-/-- The underlying subgroup of `openNormalSubgroupBot` is `⊥`. -/
-@[simp]
-theorem openNormalSubgroupBot_toSubgroup (G : Type*) [Group G] [TopologicalSpace G]
-    [DiscreteTopology G] : (openNormalSubgroupBot G).toSubgroup = ⊥ :=
-  (rfl)
-
-/-- The trivial open normal subgroup contains only the identity. -/
-@[simp]
-theorem mem_openNormalSubgroupBot {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
-    {x : G} : x ∈ openNormalSubgroupBot G ↔ x = 1 :=
-  Subgroup.mem_bot
-
-/-- The trivial open normal subgroup of a discrete group lies below every open normal subgroup. -/
-theorem openNormalSubgroupBot_le {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
-    {U : OpenNormalSubgroup G} : openNormalSubgroupBot G ≤ U := by
-  rw [← OpenNormalSubgroup.toSubgroup_le, openNormalSubgroupBot_toSubgroup]
-  exact bot_le
-
-/-- The whole group, as an open normal subgroup. It is the greatest element of
-`OpenNormalSubgroup G`, and in particular witnesses that this type is nonempty. -/
-def openNormalSubgroupTop (G : Type*) [Group G] [TopologicalSpace G] : OpenNormalSubgroup G where
-  toOpenSubgroup := ⊤
-  isNormal' := Subgroup.normal_top
-
-/-- The underlying subgroup of `openNormalSubgroupTop` is `⊤`. -/
-@[simp]
-theorem openNormalSubgroupTop_toSubgroup (G : Type*) [Group G] [TopologicalSpace G] :
-    (openNormalSubgroupTop G).toSubgroup = ⊤ :=
-  (rfl)
-
-end TauCeti
