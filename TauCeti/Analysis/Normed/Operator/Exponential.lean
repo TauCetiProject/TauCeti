@@ -36,6 +36,7 @@ space. The norm bounds for exponentials in a general normed algebra live in
   `exp (-B)`.
 * `ContinuousLinearMap.exp_apply_of_apply_eq_smul`: the exponential of an operator acts on an
   eigenvector by the scalar exponential of the eigenvalue.
+* `ContinuousLinearMap.exp_apply_of_apply_eq_zero`: the exponential of an operator fixes its kernel.
 * `ContinuousLinearMap.exp_apply_eq_self_iff`: if `‖B‖ < log 2`, the fixed vectors of `exp B` are
   the kernel of `B`.
 * `ContinuousLinearMap.spectrum_exp`: in finite dimension, the spectrum of `exp N` is the image of
@@ -116,13 +117,18 @@ theorem _root_.ContinuousLinearMap.exp_apply_of_apply_eq_smul (B : X →L[𝕜] 
   simp only [smul_eq_mul] at hscalar
   exact hop.unique hscalar
 
+/-- The exponential of an operator fixes every vector in its kernel: if `B x = 0`, then
+`exp B x = x`. -/
+theorem _root_.ContinuousLinearMap.exp_apply_of_apply_eq_zero {B : X →L[𝕜] X} {x : X}
+    (hx : B x = 0) : exp B x = x := by
+  simpa using B.exp_apply_of_apply_eq_smul (μ := 0) (by rw [hx, zero_smul])
+
 /-- **The fixed vectors of a small exponential are the kernel.** If `‖B‖ < log 2`, then `exp B`
 fixes `x` exactly when `B x = 0`. The bound is needed: for `B = 2π J`, the generator of the
 rotations of the plane, `exp B = 1` fixes every vector while `B` has trivial kernel. -/
 theorem _root_.ContinuousLinearMap.exp_apply_eq_self_iff {B : X →L[𝕜] X} (hB : ‖B‖ < Real.log 2)
     {x : X} : exp B x = x ↔ B x = 0 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ by
-    simpa using B.exp_apply_of_apply_eq_smul (μ := 0) (by rw [h, zero_smul])⟩
+  refine ⟨fun h ↦ ?_, ContinuousLinearMap.exp_apply_of_apply_eq_zero⟩
   -- Factor `exp B - 1` as `φ(-B) * B`, where `φ(a) = (1 - exp (-a)) / a` is the series
   -- `oneSubExpNegDivSelf`, which is invertible in this range.
   obtain ⟨u, hu⟩ := isUnit_oneSubExpNegDivSelf (𝕂 := 𝕜) (a := -B) (by rwa [norm_neg])

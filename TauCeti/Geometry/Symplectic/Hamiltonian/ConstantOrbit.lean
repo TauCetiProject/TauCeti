@@ -63,8 +63,8 @@ symplectic manifold at a critical point; the manifold statement is not proved he
 * `SymplecticForm.isNondegenerateCriticalPoint_of_isNondegenerateFixedPt`: a nondegenerate constant
   orbit sits at a nondegenerate critical point, for every `ε`.
 * `SymplecticForm.isNondegenerateFixedPt_timeDependentHamiltonianFlow_const_mul_iff`: for
-  `0 < |ε (t - s)| ‖dX_F(p)‖ < log 2`, the constant orbit is nondegenerate exactly at a
-  nondegenerate critical point.
+  `ε (t - s) ≠ 0` and `|ε (t - s)| ‖dX_F(p)‖ < log 2`, the constant orbit is nondegenerate exactly
+  at a nondegenerate critical point.
 * `SymplecticForm.exists_pos_forall_isNondegenerateFixedPt_timeDependentHamiltonianFlow_iff`: the
   uniform statement for the time-one maps of `εF` over a compact set of critical points.
 
@@ -154,8 +154,7 @@ theorem isNondegenerateCriticalPoint_of_isNondegenerateFixedPt (hF : ContDiff �
       ((hF.fderiv_right (m := 1) (by norm_num)).differentiable one_ne_zero p) u).2 hu
   refine (ω.isNondegenerateFixedPt_timeDependentHamiltonianFlow_const_mul_iff_exp hF hp ε hX s t).1
     h u ?_
-  simpa using ContinuousLinearMap.exp_apply_of_apply_eq_smul (μ := (0 : ℝ)) _
-    (by rw [_root_.smul_apply, hA, smul_zero, zero_smul])
+  exact ContinuousLinearMap.exp_apply_of_apply_eq_zero (by rw [_root_.smul_apply, hA, smul_zero])
 
 /-- **Constant orbits of small Hamiltonians.** Let `p` be a critical point of a `C²` function `F`,
 and let `ε (t - s) ≠ 0` with `|ε (t - s)| ‖dX_F(p)‖ < log 2`. Then the constant orbit at `p` is a
