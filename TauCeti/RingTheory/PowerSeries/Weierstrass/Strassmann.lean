@@ -11,6 +11,8 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.RingTheory.PowerSeries.EvalAt
 public import TauCeti.RingTheory.PowerSeries.Restricted.GoodZero
 public import TauCeti.RingTheory.PowerSeries.Weierstrass.Preparation
+import Mathlib.Analysis.Normed.Field.Instances
+import Mathlib.Analysis.Normed.Module.Completion
 import TauCeti.Analysis.Normed.Group.Basic
 import TauCeti.RingTheory.PowerSeries.RootBound
 
@@ -108,46 +110,72 @@ theorem IsDistinguished.norm_le_of_mem_roots_of_isUnit_mul (hf : IsDistinguished
 
 end RootBound
 
-variable {K L : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+/-- **Strassmann's theorem over a complete field**: the case of zeros in the coefficient field
+itself, from which the general case is deduced by extension of scalars. -/
+private theorem IsDistinguished.encard_setOf_evalAt_eq_zero_le_of_completeSpace
+    {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] {c : ℝ} {s : ℕ}
+    {f : PowerSeries K} (hf : IsDistinguished c s f) (hc : 0 < c) (hfr : f.IsRestricted c) :
+    {x : K | ‖x‖ ≤ c ∧ f.evalAt x = 0}.encard ≤ s := by
+  classical
+  obtain ⟨e, ω, he, hω, rfl⟩ :=
+    hf.exists_isUnit_isMonicOfDegree_mul_eq (isUnit_iff_ne_zero.mpr hf.coeff_ne_zero) hc hfr
+  -- A zero of `f = e * ω` in the closed disc is a root of `ω`, since `e(x)` is a unit.
+  have hsub : {x : K | ‖x‖ ≤ c ∧ ((e : PowerSeries K) * ω).evalAt x = 0} ⊆ ω.roots.toFinset := by
+    rintro x ⟨hx, h0⟩
+    have hu : IsUnit ((e : PowerSeries K).evalAt x) := by
+      simpa using he.map (_root_.PowerSeries.IsRestricted.evalAtHom K hx)
+    rw [_root_.PowerSeries.IsRestricted.evalAt_mul e.2 (isRestricted_polynomial ω) hx,
+      _root_.PowerSeries.evalAt_coe, hu.mul_right_eq_zero] at h0
+    simpa [Polynomial.mem_roots hω.ne_zero] using h0
+  refine (Set.encard_le_encard hsub).trans ?_
+  rw [Set.encard_coe_eq_coe_finsetCard, Nat.cast_le]
+  calc _ ≤ Multiset.card ω.roots := Multiset.toFinset_card_le _
+    _ ≤ ω.natDegree := Polynomial.card_roots' _
+    _ = s := hω.natDegree_eq
+
+variable {K L : Type*} [NormedField K] [IsUltrametricDist K]
   [NormedField L] [NormedAlgebra K L] [CompleteSpace L] {c : ℝ} {s : ℕ} {f : PowerSeries K}
 
-/-- **Strassmann's theorem.** Let `f` be a power series over a complete ultrametric normed field
+/-- **Strassmann's theorem.** Let `f` be a power series over an ultrametric normed field
 `K`, restricted at a radius `c > 0` and distinguished of degree `s` there, that is, `s` is the
 largest index at which the weighted coefficient norm `‖aₙ‖ cⁿ` attains the Gauss norm. Then `f` has
 at most `s` zeros of norm at most `c` in any complete normed field extension `L` of `K`. -/
 theorem IsDistinguished.encard_setOf_evalAt_eq_zero_le (hf : IsDistinguished c s f) (hc : 0 < c)
     (hfr : f.IsRestricted c) :
     {x : L | ‖x‖ ≤ c ∧ f.evalAt x = 0}.encard ≤ s := by
-  classical
   have : IsUltrametricDist L := .of_normedAlgebra K
-  obtain ⟨e, ω, he, hω, rfl⟩ :=
-    hf.exists_isUnit_isMonicOfDegree_mul_eq (isUnit_iff_ne_zero.mpr hf.coeff_ne_zero) hc hfr
-  have hω0 : ω.map (algebraMap K L) ≠ 0 :=
-    (Polynomial.map_ne_zero_iff (algebraMap K L).injective).mpr hω.ne_zero
-  -- A zero of `f = e * ω` in the closed disc is a root of `ω`, since `e(x)` is a unit.
-  have hsub : {x : L | ‖x‖ ≤ c ∧ ((e : PowerSeries K) * ω).evalAt x = 0} ⊆
-      (ω.map (algebraMap K L)).roots.toFinset := by
-    rintro x ⟨hx, h0⟩
-    have hu : IsUnit ((e : PowerSeries K).evalAt x) := by
-      simpa using he.map (_root_.PowerSeries.IsRestricted.evalAtHom K hx)
-    rw [_root_.PowerSeries.IsRestricted.evalAt_mul e.2 (isRestricted_polynomial ω) hx,
-      _root_.PowerSeries.evalAt_coe, hu.mul_right_eq_zero] at h0
-    simpa [Polynomial.mem_roots hω0] using h0
-  refine (Set.encard_le_encard hsub).trans ?_
-  rw [Set.encard_coe_eq_coe_finsetCard, Nat.cast_le]
-  calc _ ≤ Multiset.card (ω.map (algebraMap K L)).roots := Multiset.toFinset_card_le _
-    _ ≤ (ω.map (algebraMap K L)).natDegree := Polynomial.card_roots' _
-    _ ≤ ω.natDegree := Polynomial.natDegree_map_le
-    _ = s := hω.natDegree_eq
+  have hfr' : (_root_.PowerSeries.map (algebraMap K L) f).IsRestricted c := by
+    rw [_root_.PowerSeries.isRestricted_iff'] at hfr ⊢
+    simpa only [_root_.PowerSeries.coeff_map, norm_algebraMap'] using hfr
+  simpa using (hf.map (algebraMap K L) (norm_algebraMap' L)
+    ).encard_setOf_evalAt_eq_zero_le_of_completeSpace hc hfr'
 
-/-- **Strassmann's theorem with multiplicities.** Let `f` be restricted at `c > 0` and
+variable [CompleteSpace K]
+
+/-- **Strassmann's theorem with multiplicities.** Let `f` be restricted at `c` and
 distinguished of degree `s` there. If `f` has a good zero of order `h a` at each point `a` of a
 finite set `S` in the closed disc of radius `c`, then `∑_{a ∈ S} h a ≤ s`. -/
-theorem IsDistinguished.sum_le_of_isGoodZero (hfd : IsDistinguished c s f) (hc : 0 < c)
+theorem IsDistinguished.sum_le_of_isGoodZero (hfd : IsDistinguished c s f)
     (hfr : f.IsRestricted c) {S : Finset K} {h : K → ℕ}
     (hS : ∀ a ∈ S, ‖a‖ ≤ c ∧ f.IsGoodZero a (h a)) :
     ∑ a ∈ S, h a ≤ s := by
   classical
+  rcases le_or_gt c 0 with hc | hc
+  · -- the closed disc of radius `c ≤ 0` is empty or `{0}`, and `0` is not a zero of `f`
+    refine (Finset.sum_eq_zero fun a ha ↦ ?_).trans_le (Nat.zero_le _)
+    by_contra hne
+    obtain ⟨hac, hz⟩ := hS a ha
+    have ha0 : a = 0 := norm_le_zero_iff.mp (hac.trans hc)
+    have hc0 : c = 0 := le_antisymm hc ((norm_nonneg a).trans hac)
+    have hs : s = 0 := by
+      by_contra hs
+      have := hfd.gaussNorm_pos
+      rw [← hfd.norm_coeff_mul_pow_eq, hc0, zero_pow hs, mul_zero] at this
+      exact lt_irrefl _ this
+    have := hz.evalAt_eq_zero (Nat.pos_of_ne_zero hne)
+    rw [ha0, _root_.PowerSeries.evalAt_at_zero, map_eq_zero_iff _ (algebraMap K K).injective,
+      ← _root_.PowerSeries.coeff_zero_eq_constantCoeff_apply, ← hs] at this
+    exact hfd.coeff_ne_zero this
   obtain ⟨u, P, hu, hP, hmul⟩ :=
     hfd.exists_isUnit_isMonicOfDegree_mul_eq hfd.coeff_ne_zero.isUnit hc hfr
   have hroot : ∀ a ∈ S, h a = P.roots.count a := fun a ha ↦ (hS a ha).2.unique
@@ -181,10 +209,10 @@ namespace PowerSeries
 
 open TauCeti.PowerSeries
 
-variable {K L : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K]
+variable {K L : Type*} [NormedField K] [IsUltrametricDist K]
   [NormedField L] [NormedAlgebra K L] [CompleteSpace L] {c : ℝ} {f : PowerSeries K}
 
-/-- A nonzero power series over a complete ultrametric normed field, restricted at a radius
+/-- A nonzero power series over an ultrametric normed field, restricted at a radius
 `c > 0`, has only finitely many zeros of norm at most `c` in any complete normed field
 extension. -/
 theorem IsRestricted.finite_setOf_norm_le_and_evalAt_eq_zero (hfr : f.IsRestricted c)
@@ -192,7 +220,7 @@ theorem IsRestricted.finite_setOf_norm_le_and_evalAt_eq_zero (hfr : f.IsRestrict
   obtain ⟨s, hs⟩ := exists_isDistinguished hc hfr hf0
   exact Set.finite_of_encard_le_coe (hs.encard_setOf_evalAt_eq_zero_le hc hfr)
 
-/-- **Identity principle for restricted series.** A power series over a complete ultrametric
+/-- **Identity principle for restricted series.** A power series over an ultrametric
 normed field, restricted at a radius `c > 0`, that vanishes on an infinite set of points of norm at
 most `c` in a complete normed field extension is zero. -/
 theorem IsRestricted.eq_zero_of_infinite_of_evalAt_eq_zero (hfr : f.IsRestricted c) (hc : 0 < c)
@@ -211,14 +239,12 @@ open scoped Topology
 
 variable {K E : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [NormedAddCommGroup E]
   [NormedSpace K E] {ι : Type*} {L : ι → Type*} [∀ j, NormedField (L j)]
-  [∀ j, NormedAlgebra K (L j)] [∀ j, CompleteSpace (L j)]
+  [∀ j, NormedAlgebra K (L j)]
 
-/-- **Identity principle for module-valued series.** Let `E` be a normed space over an ultrametric
-nontrivially normed field `K`, with a jointly injective family of continuous linear maps
-`φⱼ : E → Lⱼ` into complete normed field extensions of `K`. A sequence `β` in `E` with
-`‖β k‖ rᵏ → 0`, whose series `∑ₖ xᵏ • β k` sums to zero at every point of an infinite subset of
-the disc of radius `r`, is zero. -/
-theorem eq_zero_of_hasSum_pow_smul (φ : ∀ j, E →L[K] L j)
+/-- **Identity principle for module-valued series** over complete extensions: the case in which
+the fields `Lⱼ` are complete, from which the general case is deduced by completing them. -/
+private theorem eq_zero_of_hasSum_pow_smul_of_completeSpace [∀ j, CompleteSpace (L j)]
+    (φ : ∀ j, E →L[K] L j)
     (hφ : ∀ e, (∀ j, φ j e = 0) → e = 0) {r : ℝ} {β : ℕ → E}
     (hβ : Tendsto (fun k ↦ ‖β k‖ * r ^ k) atTop (𝓝 0)) {S : Set K} (hS : S.Infinite)
     (hSr : ∀ x ∈ S, ‖x‖ ≤ r) (h : ∀ x ∈ S, HasSum (fun k ↦ x ^ k • β k) 0) : β = 0 := by
@@ -250,5 +276,19 @@ theorem eq_zero_of_hasSum_pow_smul (φ : ∀ j, E →L[K] L j)
       simpa only [Function.comp_def, map_zero] using
         ((h x hx).map (φ j) (φ j).continuous).tsum_eq
   simpa [hf_def] using congrArg (_root_.PowerSeries.coeff k) hzero
+
+/-- **Identity principle for module-valued series.** Let `E` be a normed space over an ultrametric
+nontrivially normed field `K`, with a jointly injective family of continuous linear maps
+`φⱼ : E → Lⱼ` into complete normed field extensions of `K`. A sequence `β` in `E` with
+`‖β k‖ rᵏ → 0`, whose series `∑ₖ xᵏ • β k` sums to zero at every point of an infinite subset of
+the disc of radius `r`, is zero. -/
+theorem eq_zero_of_hasSum_pow_smul (φ : ∀ j, E →L[K] L j)
+    (hφ : ∀ e, (∀ j, φ j e = 0) → e = 0) {r : ℝ} {β : ℕ → E}
+    (hβ : Tendsto (fun k ↦ ‖β k‖ * r ^ k) atTop (𝓝 0)) {S : Set K} (hS : S.Infinite)
+    (hSr : ∀ x ∈ S, ‖x‖ ≤ r) (h : ∀ x ∈ S, HasSum (fun k ↦ x ^ k • β k) 0) : β = 0 :=
+  eq_zero_of_hasSum_pow_smul_of_completeSpace (L := fun j ↦ UniformSpace.Completion (L j))
+    (fun j ↦ (UniformSpace.Completion.toComplL : L j →L[K] _).comp (φ j))
+    (fun e he ↦ hφ e fun j ↦ UniformSpace.Completion.coe_injective _ (by simpa using he j))
+    hβ hS hSr h
 
 end TauCeti.PowerSeries

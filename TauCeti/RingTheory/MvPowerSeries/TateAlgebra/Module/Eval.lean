@@ -191,7 +191,7 @@ section Injective
 
 variable [NontriviallyNormedField K] [IsUltrametricDist K] [NormedAddCommGroup E] [NormedSpace K E]
   [IsUltrametricDist E] [CompleteSpace E] {ι : Type*} {L : ι → Type*}
-  [∀ j, NormedField (L j)] [∀ j, NormedAlgebra K (L j)] [∀ j, CompleteSpace (L j)]
+  [∀ j, NormedField (L j)] [∀ j, NormedAlgebra K (L j)]
 
 /-- The statement proved by induction on the variables, for a fixed coefficient space. -/
 private def VanishingPrinciple (E : Type*) [NormedAddCommGroup E] [NormedSpace K E]
@@ -304,7 +304,7 @@ point of `ℤ_pⁿ`, is zero. -/
 theorem IsRestrictedFamily.eq_zero_of_familyEval_padicInt_eq_zero {p : ℕ} [Fact p.Prime]
     [Finite σ] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℚ_[p] E] [IsUltrametricDist E]
     [CompleteSpace E] {ι : Type*} {L : ι → Type*} [∀ j, NormedField (L j)]
-    [∀ j, NormedAlgebra ℚ_[p] (L j)] [∀ j, CompleteSpace (L j)] (φ : ∀ j, E →L[ℚ_[p]] L j)
+    [∀ j, NormedAlgebra ℚ_[p] (L j)] (φ : ∀ j, E →L[ℚ_[p]] L j)
     (hφ : ∀ e, (∀ j, φ j e = 0) → e = 0) {a : (σ →₀ ℕ) → E}
     (ha : IsRestrictedFamily (fun _ ↦ 1) a)
     (h : ∀ x : σ → ℤ_[p], familyEval (fun i ↦ (x i : ℚ_[p])) a = 0) : a = 0 := by
