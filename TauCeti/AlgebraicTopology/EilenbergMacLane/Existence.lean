@@ -14,34 +14,52 @@ public import TauCeti.AlgebraicTopology.Homotopy.KillHomotopyGroups
 import TauCeti.AlgebraicTopology.Singular.Contractible
 
 /-!
-# Eilenberg--Mac Lane spaces `K(A, n)` from a presentation
+# Eilenberg--Mac Lane spaces `K(A, n + 2)` from a presentation
 
-For every abelian group `A` and every `n ≥ 2` there is a Hausdorff Eilenberg--Mac Lane space of type
-`K(A, n)` (`TauCeti.exists_isEilenbergMacLaneSpace`). It is built from a presentation of `A` by
-cells, following Hatcher:
+For every abelian group `A` and every `n`, there is a Hausdorff Eilenberg--Mac Lane space of type
+`K(A, n + 2)` (`TauCeti.exists_isEilenbergMacLaneSpace`), so every degree at least two is covered.
+It is built from a presentation of `A` by cells, following Hatcher:
 
-1. Attach one `n`-cell to a point for each element of `A`, along the constant map. The result `W`
-   is a wedge of `n`-spheres. It is `(n - 1)`-connected, so by the Hurewicz theorem
-   `πₙ(W) ≅ Hₙ(W; ℤ)`, and `Hₙ(W; ℤ)` is free on the cells
-   (`TauCeti.nonempty_singularHomology_cellAttachment_iso_sigma`). Sending the cell of `a` to `a`
-   gives a surjection `ψ : Hₙ(W; ℤ) → A`.
-2. Attach an `(n + 1)`-cell along every map `g : Sⁿ → W` whose class `g_*[Sⁿ]` lies in the kernel of
-   `ψ`. The result `Y` is still `(n - 1)`-connected. By
-   `TauCeti.ker_singularHomologyMap_cellAttachmentIncl`, the kernel of `Hₙ(W) → Hₙ(Y)` is spanned by
-   the classes of the attaching spheres. Every class of `Hₙ(W)` is a Hurewicz class, hence up to
-   sign the class of the attaching sphere of a generalized loop
-   (`GenLoop.exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz`), so this kernel is
-   exactly the kernel of `ψ`. Hence `πₙ(Y) ≅ Hₙ(Y; ℤ) ≅ Hₙ(W; ℤ) ⧸ ker ψ ≅ A`.
-3. Kill the homotopy groups of `Y` above dimension `n` by attaching cells of dimension at least
-   `n + 2` (`TauCeti.isEilenbergMacLaneSpace_killHomotopyGroups`).
+1. Attach one `(n + 2)`-cell to a point for each element of `A`, along the constant map. The result
+   `W = TauCeti.EilenbergMacLane.wedge A n` is a wedge of `(n + 2)`-spheres. It is
+   `(n + 1)`-connected, so by the Hurewicz theorem `πₙ₊₂(W) ≅ Hₙ₊₂(W; ℤ)`, and `Hₙ₊₂(W; ℤ)` is free
+   on the cells (`TauCeti.nonempty_singularHomology_cellAttachment_iso_sigma`). Sending the cell of
+   `a` to `a` gives a surjection `ψ : Hₙ₊₂(W; ℤ) → A`
+   (`TauCeti.EilenbergMacLane.exists_surjective_wedge`).
+2. Attach an `(n + 3)`-cell along every map `g : Sⁿ⁺² → W` whose class `g_*[Sⁿ⁺²]` lies in the
+   kernel of `ψ`. The result `Y = TauCeti.EilenbergMacLane.presentation A n ψ` is still
+   `(n + 1)`-connected. By `TauCeti.ker_singularHomologyMap_cellAttachmentIncl`, the kernel of
+   `Hₙ₊₂(W) → Hₙ₊₂(Y)` is spanned by the classes of the attaching spheres. Every class of
+   `Hₙ₊₂(W)` is a Hurewicz class, hence up to sign the class of the attaching sphere of a
+   generalized loop (`TauCeti.exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz`),
+   so this kernel is exactly the kernel of `ψ`
+   (`TauCeti.EilenbergMacLane.ker_singularHomologyMap_presentation`). Hence
+   `πₙ₊₂(Y) ≅ Hₙ₊₂(Y; ℤ) ≅ Hₙ₊₂(W; ℤ) ⧸ ker ψ ≅ A`.
+3. Kill the homotopy groups of `Y` above dimension `n + 2` by attaching cells of dimension at least
+   `n + 4` (`TauCeti.isEilenbergMacLaneSpace_killHomotopyGroups`).
 
-The construction uses the Hurewicz theorem with integer coefficients, which is stated for spaces in
-the lowest universe, so `A` is a type in `Type`.
+The stages are stated for an arbitrary surjection `ψ`, so later constructions can work with this
+specific model. The construction uses the Hurewicz theorem with integer coefficients, which is
+stated for spaces in the lowest universe, so `A` is a type in `Type`.
+
+## Main definitions
+
+* `TauCeti.EilenbergMacLane.wedge A n`: the wedge of `(n + 2)`-spheres indexed by `A`.
+* `TauCeti.EilenbergMacLane.presentation A n ψ`: the wedge with an `(n + 3)`-cell attached along
+  every map in the kernel of `ψ`.
 
 ## Main results
 
-* `TauCeti.exists_isEilenbergMacLaneSpace`: every abelian group `A` has a Hausdorff `K(A, n)` for
-  every `n ≥ 2`.
+* `TauCeti.EilenbergMacLane.subsingleton_homotopyGroup_presentation`: the presentation complex is
+  `(n + 1)`-connected.
+* `TauCeti.EilenbergMacLane.ker_singularHomologyMap_presentation`: attaching the relation cells
+  kills exactly the kernel of `ψ` in `Hₙ₊₂`.
+* `TauCeti.EilenbergMacLane.nonempty_homotopyGroup_presentation_mulEquiv`: for surjective `ψ`, the
+  presentation complex has `πₙ₊₂ ≅ A`.
+* `TauCeti.EilenbergMacLane.isEilenbergMacLaneSpace_killHomotopyGroups_presentation`: killing its
+  higher homotopy groups gives a `K(A, n + 2)`.
+* `TauCeti.exists_isEilenbergMacLaneSpace`: every abelian group `A` has a Hausdorff `K(A, n + 2)`
+  for every `n`.
 
 ## References
 
@@ -64,19 +82,19 @@ namespace EilenbergMacLane
 
 variable (A : Type) (n : ℕ)
 
-/-- The constant attaching maps of the cells of the wedge of spheres. -/
-private abbrev wedgeAttach : A → (TopCat.diskBoundary.{0} (n + 2) ⟶ TopCat.of PUnit.{1}) :=
+/-- The constant attaching maps of the cells of the wedge of `(n + 2)`-spheres indexed by `A`. -/
+abbrev wedgeAttach : A → (TopCat.diskBoundary.{0} (n + 2) ⟶ TopCat.of PUnit.{1}) :=
   fun _ ↦ TopCat.ofHom (ContinuousMap.const _ PUnit.unit)
 
 /-- The wedge of `(n + 2)`-spheres indexed by the elements of `A`: one `(n + 2)`-cell attached to
 a point for each element, along the constant map. -/
-private abbrev wedge : TopCat.{0} := cellAttachment (wedgeAttach A n)
+abbrev wedge : TopCat.{0} := cellAttachment (wedgeAttach A n)
 
-/-- The base point of the wedge. -/
-private abbrev wedgeBase : wedge A n := cellAttachmentIncl (wedgeAttach A n) PUnit.unit
+/-- The base point of the wedge of spheres, the image of the point. -/
+abbrev wedgeBase : wedge A n := cellAttachmentIncl (wedgeAttach A n) PUnit.unit
 
 /-- The wedge of `(n + 2)`-spheres is `(n + 1)`-connected. -/
-private lemma subsingleton_homotopyGroup_wedge (k : ℕ) (hk : k < n + 2) :
+theorem subsingleton_homotopyGroup_wedge (k : ℕ) (hk : k < n + 2) :
     Subsingleton (π_ k (wedge A n) (wedgeBase A n)) :=
   (surjective_homotopyGroupMap_cellAttachmentIncl (N := Fin k) (wedgeAttach A n)
     (by simpa using Nat.le_of_lt_succ hk) PUnit.unit).subsingleton
@@ -92,10 +110,12 @@ private abbrev sphereClass : (H (n + 2)).obj (TopCat.diskBoundary.{0} (n + 3)) :
 
 variable [AddCommGroup A]
 
-/-- A surjection `Hₙ₊₂(W; ℤ) → A` from the homology of the wedge, sending the cell of `a` to `a`
-for some identification of `Hₙ₊₂(W; ℤ)` with the free abelian group on the cells. -/
-private lemma exists_surjective_wedge :
-    ∃ ψ : (H (n + 2)).obj (wedge A n) →ₗ[ℤ] A, Function.Surjective ψ := by
+/-- **The homology of the wedge surjects onto `A`.** There is a surjection `Hₙ₊₂(W; ℤ) → A` from
+the homology of the wedge of `(n + 2)`-spheres, sending the cell of `a` to `a` for some
+identification of `Hₙ₊₂(W; ℤ)` with the free abelian group on the cells. -/
+theorem exists_surjective_wedge :
+    ∃ ψ : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).obj
+      (wedge A n) →ₗ[ℤ] A, Function.Surjective ψ := by
   obtain ⟨e⟩ := nonempty_singularHomology_cellAttachment_iso_sigma (wedgeAttach A n) ℤ
     (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of ℤ ℤ) (TopCat.of PUnit.{1})
       (by omega))
@@ -109,34 +129,44 @@ private lemma exists_surjective_wedge :
     (Sigma.ι_comp_desc (fun a ↦ ModuleCat.ofHom (LinearMap.toSpanSingleton ℤ A a)) a) 1).trans
       (one_smul ℤ a)
 
-/-- The maps `Sⁿ⁺² → W` into the wedge whose class lies in the kernel of `ψ`. -/
-private abbrev Relation (ψ : (H (n + 2)).obj (wedge A n) →ₗ[ℤ] A) : Type :=
-  {g : TopCat.diskBoundary.{0} (n + 3) ⟶ wedge A n // ψ ((H (n + 2)).map g (sphereClass n)) = 0}
+variable (ψ : ((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).obj
+  (wedge A n) →ₗ[ℤ] A)
 
-/-- The relations, as attaching maps. -/
-private abbrev relationAttach (ψ : (H (n + 2)).obj (wedge A n) →ₗ[ℤ] A) (r : Relation A n ψ) :
+/-- The relations of the presentation: the maps `g : Sⁿ⁺² → W` into the wedge of spheres whose class
+`g_*[Sⁿ⁺²]` lies in the kernel of `ψ`. -/
+abbrev Relation : Type :=
+  {g : TopCat.diskBoundary.{0} (n + 3) ⟶ wedge A n //
+    ψ ((((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj (ModuleCat.of ℤ ℤ)).map g).hom
+      ((reducedSingularHomologyι (ModuleCat.of ℤ ℤ) (n + 2)).app (TopCat.diskBoundary.{0} (n + 3))
+        ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of ℤ ℤ) (n + 2)).inv 1))) = 0}
+
+/-- The relations of the presentation, as attaching maps of `(n + 3)`-cells. -/
+abbrev relationAttach (r : Relation A n ψ) :
     TopCat.diskBoundary.{0} (n + 3) ⟶ wedge A n :=
   r.1
 
-/-- The wedge with an `(n + 3)`-cell attached along every map in the kernel of `ψ`. -/
-private abbrev presentation (ψ : (H (n + 2)).obj (wedge A n) →ₗ[ℤ] A) : TopCat.{0} :=
+/-- **The presentation complex.** The wedge of `(n + 2)`-spheres indexed by `A`, with an
+`(n + 3)`-cell attached along every map `Sⁿ⁺² → W` whose class lies in the kernel of `ψ`. -/
+abbrev presentation : TopCat.{0} :=
   cellAttachment (relationAttach A n ψ)
 
-/-- The base point of the presentation complex. -/
-private abbrev presentationBase (ψ : (H (n + 2)).obj (wedge A n) →ₗ[ℤ] A) : presentation A n ψ :=
+/-- The base point of the presentation complex, the image of the base point of the wedge. -/
+abbrev presentationBase : presentation A n ψ :=
   cellAttachmentIncl (relationAttach A n ψ) (wedgeBase A n)
 
-/-- The presentation complex is `(n + 1)`-connected. -/
-private lemma subsingleton_homotopyGroup_presentation
-    (ψ : (H (n + 2)).obj (wedge A n) →ₗ[ℤ] A) (k : ℕ) (hk : k < n + 2) :
+/-- **The presentation complex is `(n + 1)`-connected.** -/
+theorem subsingleton_homotopyGroup_presentation (k : ℕ) (hk : k < n + 2) :
     Subsingleton (π_ k (presentation A n ψ) (presentationBase A n ψ)) :=
   have := subsingleton_homotopyGroup_wedge A n k hk
   (bijective_homotopyGroupMap_cellAttachmentIncl (N := Fin k) (relationAttach A n ψ)
     (by simpa using hk) (wedgeBase A n)).2.subsingleton
 
-/-- Attaching the relation cells kills exactly the kernel of `ψ` in `Hₙ₊₂`. -/
-private lemma ker_presentation (ψ : (H (n + 2)).obj (wedge A n) →ₗ[ℤ] A) :
-    LinearMap.ker ((H (n + 2)).map (cellAttachmentIncl (relationAttach A n ψ))).hom =
+/-- **Attaching the relation cells kills exactly the kernel of `ψ` in `Hₙ₊₂`.** The kernel of the
+map `Hₙ₊₂(W; ℤ) → Hₙ₊₂(Y; ℤ)` induced by the inclusion of the wedge into the presentation complex
+is the kernel of `ψ`. -/
+theorem ker_singularHomologyMap_presentation :
+    LinearMap.ker (((singularHomologyFunctor (ModuleCat.{0} ℤ) (n + 2)).obj
+      (ModuleCat.of ℤ ℤ)).map (cellAttachmentIncl (relationAttach A n ψ))).hom =
       LinearMap.ker ψ := by
   rw [ker_singularHomologyMap_cellAttachmentIncl]
   refine le_antisymm (Submodule.span_le.2 ?_) fun h hh ↦ ?_
@@ -145,7 +175,7 @@ private lemma ker_presentation (ψ : (H (n + 2)).obj (wedge A n) →ₗ[ℤ] A) 
   -- Every class of `Hₙ₊₂(W)` is the Hurewicz class of a generalized loop, so up to sign the class
   -- of its attaching sphere, which lies in the kernel of `ψ` with the class.
   obtain ⟨ε, hε⟩ :=
-    GenLoop.exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz (n + 1)
+    exists_singularHomologyMap_diskBoundaryMap_eq_units_smul_hurewicz (n + 1)
   obtain ⟨a, rfl⟩ :=
     (HomotopyGroup.hurewiczAddEquiv (subsingleton_homotopyGroup_wedge A n)).surjective h
   induction a using Additive.rec with | ofMul a => ?_
@@ -168,41 +198,51 @@ private lemma ker_presentation (ψ : (H (n + 2)).obj (wedge A n) →ₗ[ℤ] A) 
   simpa only [smul_smul, ← Units.val_mul, inv_mul_cancel, Units.val_one, one_smul,
     Submodule.mem_toAddSubgroup] using hmem
 
-/-- **The presentation complex has `πₙ₊₂ ≅ A`.** -/
-private lemma nonempty_homotopyGroup_presentation_mulEquiv
-    (ψ : (H (n + 2)).obj (wedge A n) →ₗ[ℤ] A)
-    (hψ : Function.Surjective ψ) :
+/-- **The presentation complex has `πₙ₊₂ ≅ A`.** For a surjection `ψ : Hₙ₊₂(W; ℤ) → A`, the
+`(n + 2)`-nd homotopy group of the presentation complex is isomorphic to `A`. -/
+theorem nonempty_homotopyGroup_presentation_mulEquiv (hψ : Function.Surjective ψ) :
     Nonempty (π_ (n + 2) (presentation A n ψ) (presentationBase A n ψ) ≃* Multiplicative A) := by
   let f := (H (n + 2)).map (cellAttachmentIncl (relationAttach A n ψ))
   -- `Hₙ₊₂(Y) ≅ Hₙ₊₂(W) ⧸ ker f = Hₙ₊₂(W) ⧸ ker ψ ≅ A`.
   let e : (H (n + 2)).obj (presentation A n ψ) ≃ₗ[ℤ] A :=
     (f.hom.quotKerEquivOfSurjective
       (surjective_singularHomologyMap_cellAttachmentIncl (relationAttach A n ψ) ℤ)).symm.trans
-      ((Submodule.quotEquivOfEq _ _ (ker_presentation A n ψ)).trans
+      ((Submodule.quotEquivOfEq _ _ (ker_singularHomologyMap_presentation A n ψ)).trans
         (ψ.quotKerEquivOfSurjective hψ))
   exact ⟨AddEquiv.toMultiplicative
     ((HomotopyGroup.hurewiczAddEquiv (subsingleton_homotopyGroup_presentation A n ψ)).trans
       e.toAddEquiv)⟩
 
-end EilenbergMacLane
-
-open EilenbergMacLane in
-/-- **Every abelian group has a `K(A, n)` for `n ≥ 2`.** For an abelian group `A` and `n ≥ 2`, there
-is a Hausdorff based space whose homotopy groups vanish outside dimension `n` and whose `n`-th
-homotopy group is isomorphic to `A`. It is obtained from a presentation of `A` by cells: a wedge of
-`n`-spheres, `(n + 1)`-cells killing the relations, and cells of dimension at least `n + 2`
-killing the higher homotopy groups. -/
-theorem exists_isEilenbergMacLaneSpace (A : Type) [AddCommGroup A] (n : ℕ) :
-    ∃ (X : Type) (_ : TopologicalSpace X) (x : X), T2Space X ∧
-      IsEilenbergMacLaneSpace (Multiplicative A) (n + 2) X x := by
-  obtain ⟨ψ, hψ⟩ := exists_surjective_wedge A n
+/-- **Killing the higher homotopy groups of the presentation complex gives a `K(A, n + 2)`.** For a
+surjection `ψ : Hₙ₊₂(W; ℤ) → A`, attaching cells of dimension at least `n + 4` to the presentation
+complex to kill its homotopy groups above dimension `n + 2` gives an Eilenberg--Mac Lane space of
+type `K(A, n + 2)`. -/
+theorem isEilenbergMacLaneSpace_killHomotopyGroups_presentation (hψ : Function.Surjective ψ) :
+    IsEilenbergMacLaneSpace (Multiplicative A) (n + 2)
+      (killHomotopyGroups (n + 3) (presentation A n ψ) (presentationBase A n ψ))
+      (killHomotopyGroupsIncl (n + 3) (presentation A n ψ) (presentationBase A n ψ)
+        (presentationBase A n ψ)) := by
   have : PathConnectedSpace (presentation A n ψ) :=
     (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (presentationBase A n ψ)).2
       (subsingleton_homotopyGroup_presentation A n ψ 0 (by omega))
   obtain ⟨e⟩ := nonempty_homotopyGroup_presentation_mulEquiv A n ψ hψ
+  exact (isEilenbergMacLaneSpace_killHomotopyGroups (n + 2) (presentation A n ψ)
+    (presentationBase A n ψ) fun k _ hk ↦
+      subsingleton_homotopyGroup_presentation A n ψ k hk).of_mulEquiv e
+
+end EilenbergMacLane
+
+open EilenbergMacLane in
+/-- **Every abelian group has a `K(A, n + 2)`.** For an abelian group `A` and every `n`, there is a
+Hausdorff based space whose homotopy groups vanish outside dimension `n + 2` and whose
+`(n + 2)`-nd homotopy group is isomorphic to `A`. It is obtained from a presentation of `A` by
+cells: a wedge of `(n + 2)`-spheres, `(n + 3)`-cells killing the relations, and cells of dimension
+at least `n + 4` killing the higher homotopy groups. -/
+theorem exists_isEilenbergMacLaneSpace (A : Type) [AddCommGroup A] (n : ℕ) :
+    ∃ (X : Type) (_ : TopologicalSpace X) (x : X), T2Space X ∧
+      IsEilenbergMacLaneSpace (Multiplicative A) (n + 2) X x := by
+  obtain ⟨ψ, hψ⟩ := exists_surjective_wedge A n
   exact ⟨_, inferInstance, _, inferInstance,
-    (isEilenbergMacLaneSpace_killHomotopyGroups (n + 2) (presentation A n ψ)
-      (presentationBase A n ψ) fun k _ hk ↦
-        subsingleton_homotopyGroup_presentation A n ψ k hk).of_mulEquiv e⟩
+    isEilenbergMacLaneSpace_killHomotopyGroups_presentation A n ψ hψ⟩
 
 end TauCeti

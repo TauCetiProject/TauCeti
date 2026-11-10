@@ -11,7 +11,7 @@ public import TauCeti.Topology.CWComplex.Abstract.AttachCells
 public import TauCeti.Topology.CWComplex.Abstract.CellAttachment
 
 /-!
-# The homology of a cell attachment in the dimension below the cells
+# The homology of a cell attachment in the dimension of the cells and the one below
 
 Let `Y` be obtained from a Hausdorff space `X` by attaching `(n + 1)`-cells along maps
 `φ i : Sⁿ → X`, and let `f : X → Y` be the inclusion. With coefficients in a ring `R`, the map
@@ -23,17 +23,23 @@ the reduced homology of the sphere, included in its ordinary homology. So
 `Hₙ(Y; R) ≅ Hₙ(X; R) ⧸ ⟨(φ i)_*[Sⁿ]⟩`: attaching cells kills exactly the homology classes of their
 attaching spheres.
 
+In the dimension `n + 1` of the cells, if `Hₙ₊₁(X; R)` and `Hₙ(X; R)` vanish, then `Hₙ₊₁(Y; R)` is
+free on the attached cells (`TauCeti.nonempty_singularHomology_cellAttachment_iso_sigma`).
+
 The proof reads the attachment as a relative CW complex whose cells all have dimension `n + 1`.
 Its `n`-skeleton is `X` and its `(n + 1)`-skeleton is `Y`, so the long exact sequence of the pair
 `(Y, X)` is the one of the skeletal pair. The relative homology `Hₙ(Y, X)` vanishes, and the image
 of the connecting morphism `Hₙ₊₁(Y, X) → Hₙ(X)` is spanned by the attaching spheres
-(`TauCeti.range_skeletonPairδ`).
+(`TauCeti.range_skeletonPairδ`). In degree `n + 1`, the same sequence identifies `Hₙ₊₁(Y)` with
+the relative homology `Hₙ₊₁(Y, X)`, the cellular chain group of the cells.
 
 ## Main results
 
 * `TauCeti.surjective_singularHomologyMap_cellAttachmentIncl`: `Hₙ(X) → Hₙ(Y)` is onto.
 * `TauCeti.ker_singularHomologyMap_cellAttachmentIncl`: its kernel is spanned by the classes of
   the attaching spheres.
+* `TauCeti.nonempty_singularHomology_cellAttachment_iso_sigma`: if `Hₙ₊₁(X)` and `Hₙ(X)` vanish,
+  `Hₙ₊₁(Y)` is free on the cells.
 
 ## References
 
