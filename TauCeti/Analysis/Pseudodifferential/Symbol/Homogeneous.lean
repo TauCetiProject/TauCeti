@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
-import TauCeti.Analysis.Pseudodifferential.CutoffSymbol
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
@@ -115,11 +114,15 @@ theorem spatialDeriv_cutoffSymbol (j : Fin n)
     (a : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
     Symbol.spatialDeriv j (cutoffSymbol χ a) =
       cutoffSymbol χ (a.spatialDeriv (EuclideanSpace.single j 1)) := by
-  -- `cutoffSymbol` has the same coefficient as `toSymbol`, whose spatial derivative is known.
-  have h (b : HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W m) :
-      cutoffSymbol χ b = toSymbol χ b :=
-    Symbol.ext <| funext fun p => by simp
-  rw [h, h, spatialDeriv_toSymbol]
+  ext1
+  funext ⟨x, ξ⟩
+  simp only [Symbol.coefficient_spatialDeriv, coefficient_cutoffSymbol, coordinateDeriv_cons,
+    coordinateDeriv_nil]
+  rcases eq_or_ne ξ 0 with rfl | hξ
+  · simp [χ.apply_zero]
+  · have hd : DifferentiableAt ℝ (fun y => a.coefficient (y, ξ)) x :=
+      (a.differentiableAt_coefficient (p := (x, ξ)) hξ).comp x (by fun_prop)
+    rw [fderiv_fun_const_smul hd, smul_apply, coefficient_spatialDeriv _ _ hξ]
 
 /-- A frequency derivative of the cut-off term is the cut-off term of the frequency derivative, up
 to a smoothing symbol: the two agree at all frequencies of norm greater than `2`, where the cutoff
