@@ -1,7 +1,7 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, GPT-6
 -/
 module
 
@@ -66,6 +66,15 @@ need the bounds on `C` along `T`, since `(A C)† = C A†` and `A†` takes val
   (Fan dominance) and Proposition IV.2.4 (ideal inequalities).
 * L. Mirsky, *Symmetric gauge functions and unitarily invariant norms*, Quart. J. Math. Oxford
   Ser. (2) **11** (1960), 50–59.
+
+## Provenance
+
+The checkerboard contraction
+`TauCeti.UnitarilyInvariantSeminorm.map_comp_starProjection_sub_starProjection_comp_le`
+is moved here from `TauCeti/Analysis/InnerProductSpace/UnitarilyInvariantSeminorm/Projection.lean`,
+where it was factored from the symmetric two-orientation proof adapted from
+`ForTauCeti/Analysis/InnerProductSpace/SinTheta/Perturbation.lean` in the AIQ-Kitware DKPS
+formalization (Apache-2.0; copyright 2026 Kitware, Inc.; Jon Crall, GPT-6).
 -/
 
 public section
