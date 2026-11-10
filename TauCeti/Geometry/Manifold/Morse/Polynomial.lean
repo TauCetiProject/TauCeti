@@ -24,8 +24,6 @@ Betti number in applying the identity.
 `TauCeti.IsMorse.exists_criticalCount_mul_eq_finrank_add_coeff` allows coefficients in any
 finite-dimensional module over a division ring. `TauCeti.morse_inequalities` uses the division
 ring itself as coefficients, so that the left side is the critical count without a factor.
-Both use the existing truncated polynomial identity, not merely the weak inequalities and
-Euler's equality.
 
 ## References
 
@@ -77,10 +75,8 @@ theorem IsMorse.exists_criticalCount_mul_eq_finrank_add_coeff (hf : IsMorse I f)
         (TopCat.of M)) := by
     by_cases hj : j < finrank ℝ E + 1
     · simp [coeff_monomial, Finset.mem_range, hj]
-    · have hzero := hf.finrank_singularHomology_le V j
-      rw [criticalCount_eq_zero_of_finrank_lt (by omega)] at hzero
-      have hz := Nat.eq_zero_of_le_zero (by simpa using hzero)
-      simp [coeff_monomial, Finset.mem_range, hj, hz]
+    · simp [coeff_monomial, Finset.mem_range, hj,
+        hf.finrank_singularHomology_eq_zero_of_finrank_lt V (by omega : finrank ℝ E < j)]
   refine ⟨Q, fun j ↦ ?_⟩
   have hj := hcount j
   rw [hQ, coeff_add, hbetti] at hj
@@ -96,8 +92,8 @@ is finite. -/
 theorem morse_inequalities (hf : IsMorse I f) (k : Type u) [DivisionRing k] :
     ∃ Q : ℕ[X], ∀ j : ℕ,
       criticalCount I f j =
-        ((finrank k (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{u} k) j).obj
-          (ModuleCat.of k k)).obj (TopCat.of M)) + ((1 + X) * Q).coeff j : ℕ) : ℕ∞) := by
-  simpa using hf.exists_criticalCount_mul_eq_finrank_add_coeff (ModuleCat.of k k)
+        ((bettiNumber k M j + ((1 + X) * Q).coeff j : ℕ) : ℕ∞) := by
+  simpa [bettiNumber_def] using
+    hf.exists_criticalCount_mul_eq_finrank_add_coeff (ModuleCat.of k k)
 
 end TauCeti
