@@ -54,29 +54,6 @@ namespace DirichletCharacter
 
 variable {N k : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
-/-- For `k ≥ 2`, `B_{k,χ}` equals `N^(k-1) ∑ₐ χ(a) B_k(a.val / N)`, computed with representatives in
-`{0, …, N-1}`. This is allowed because `B_k(0) = B_k(1)`. -/
-private theorem generalizedBernoulli_eq_pow_mul_sum_bernoulli_eval (hk : 2 ≤ k) :
-    χ.generalizedBernoulli k =
-      (N : ℂ) ^ (k - 1) *
-        ∑ a : ZMod N, χ a * (((Polynomial.bernoulli k).eval ((a.val : ℚ) / N) : ℚ) : ℂ) := by
-  classical
-  rw [generalizedBernoulli_def]
-  have hexp : (k : ℤ) - 1 = ((k - 1 : ℕ) : ℤ) := by omega
-  rw [hexp, zpow_natCast, map_pow, map_natCast]
-  congr 1
-  apply Finset.sum_congr rfl
-  intro a _
-  congr 1
-  by_cases ha : a = 0
-  · subst a
-    simp only [ite_true, div_self (Nat.cast_ne_zero.mpr (NeZero.ne N) : (N : ℚ) ≠ 0),
-      ZMod.val_zero, Nat.cast_zero, zero_div]
-    have h1 := Polynomial.bernoulli_eval_one_add k 0
-    rw [add_zero, zero_pow (by omega : k - 1 ≠ 0), mul_zero, add_zero] at h1
-    simp [h1]
-  · simp [ha]
-
 /-- The integer-indexed critical-value sum of a primitive character, multiplied by its Gauss
 sum, is an explicit multiple of its generalized Bernoulli number. No parity hypothesis is
 needed: both sides vanish for opposite parities. -/
@@ -107,6 +84,7 @@ theorem gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli (hχ : χ.IsPrimitive)
   have hNk : (N : ℂ) ^ (k - 1) ≠ 0 := pow_ne_zero _ hN
   field_simp
   simp_rw [Finset.mul_sum, mul_assoc]
+  simp only [eq_ratCast]
 
 /-- **The cotangent sum of a primitive character.** For a nontrivial primitive `φ` modulo
 `v ∣ N`, `∑_{j mod N} φ⁻¹(j) π cot (π j / N) = N · 2π i g(φ⁻¹) B₁,φ / v`. -/
