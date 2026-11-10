@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.MeasureTheory.Integral.Average
 public import TauCeti.Analysis.Sobolev.W1p.Basic
+import Mathlib.MeasureTheory.Function.UniformIntegrable
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.W1p
 import TauCeti.MeasureTheory.Integral.JohnNirenberg
 
@@ -37,6 +38,9 @@ every `u ∈ W^{1,n}(Ω)`: there are constants `A > 0` and `C`, depending only o
 
 `∫_{B'} exp (σ |u - u_{B'}|) ≤ C |B'|`.
 
+Since the gradient of `u` has small `Lⁿ` norm on small balls, this applies near every point of `Ω`
+for every `σ`, so `exp (σ u)` is locally integrable on `Ω` for every real `σ`.
+
 The mean oscillation bound is the Poincaré–Wirtinger inequality in `L¹` on the ball
 (`TauCeti.W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset`), followed by Hölder's
 inequality on the ball to pass from `‖∇u‖_{L¹(B)}` to `‖∇u‖_{Lᵖ(B)}`.
@@ -49,6 +53,8 @@ inequality on the ball to pass from `‖∇u‖_{L¹(B)}` to `‖∇u‖_{Lᵖ(B
   `p = n`, which places `W^{1,n}(Ω)` in `BMO(Ω)`.
 * `TauCeti.W1p.exists_setLIntegral_exp_mul_abs_value_sub_setAverage_ball_le`: local exponential
   integrability of `W^{1,n}` functions in `ℝⁿ`.
+* `TauCeti.W1p.locallyIntegrableOn_exp_mul_value`: `exp (σ u)` is locally integrable on `Ω` for
+  every `u ∈ W^{1,n}(Ω)` and every real `σ`.
 
 ## References
 
@@ -63,8 +69,8 @@ public section
 
 noncomputable section
 
-open Metric Set MeasureTheory Module TopologicalSpace
-open scoped ENNReal NNReal
+open Filter Metric Set MeasureTheory Module TopologicalSpace
+open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
@@ -234,6 +240,79 @@ theorem W1p.exists_setLIntegral_exp_mul_abs_value_sub_setAverage_ball_le :
         ≤ 2 ^ (n + 1) * (A / 2 ^ (n + 1)) := by gcongr
       _ = A := mul_div_cancel₀ A (by positivity)
   simpa only [Real.norm_eq_abs] using hJN hint hosc hσK
+
+/-- **Exponential integrability of `W^{1,n}` functions.** In `ℝⁿ = EuclideanSpace ℝ ι`, every
+`u ∈ W^{1,n}(Ω)` has `exp (σ u)` locally integrable on `Ω`, for every real `σ` and every additive
+Haar measure. Near a point of `Ω` the gradient has small `Lⁿ` norm on small balls, so the local
+John–Nirenberg bound `TauCeti.W1p.exists_setLIntegral_exp_mul_abs_value_sub_setAverage_ball_le`
+applies with the exponent `|σ|`. In the plane this makes `exp (σ u)` locally integrable for every
+`u ∈ H¹`, as needed for semilinear equations with exponential nonlinearities. -/
+theorem W1p.locallyIntegrableOn_exp_mul_value {mu : Measure (EuclideanSpace ℝ ι)}
+    [mu.IsAddHaarMeasure] {Omega : Opens (EuclideanSpace ℝ ι)} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+    (hp : p = Fintype.card ι) (u : W1p mu Omega p) (σ : ℝ) :
+    LocallyIntegrableOn (fun x => Real.exp (σ * W1p.value u x)) Omega mu := by
+  obtain ⟨A, hA, C, hJN⟩ :=
+    W1p.exists_setLIntegral_exp_mul_abs_value_sub_setAverage_ball_le (ι := ι)
+  set n := Fintype.card ι
+  have hp1 : 1 ≤ p := Fact.out
+  have hn : n ≠ 0 := by
+    rintro h0
+    rw [hp, h0, Nat.cast_zero] at hp1
+    exact absurd hp1 (by norm_num)
+  have hp_top : p ≠ ∞ := hp ▸ ENNReal.natCast_ne_top n
+  set K := mu.real (ball (0 : EuclideanSpace ℝ ι) 1) ^ (-(n : ℝ)⁻¹)
+  have hK : 0 ≤ K := by positivity
+  intro x hx
+  -- The gradient has `Lⁿ` norm at most `ε` on every set of measure at most `δ`.
+  set ε := A / (|σ| * K + 1)
+  obtain ⟨δ, hδ, hsmall⟩ := MemLp.eLpNorm_indicator_le hp1 hp_top (Lp.memLp (W1p.gradient u))
+    (ENNReal.ofReal_pos.2 (by positivity : 0 < ε))
+  -- Choose a ball about `x` inside `Ω` of measure at most `δ`.
+  have hball : Tendsto (fun r => mu (ball x r)) (𝓝[>] 0) (𝓝 0) := by
+    have h0 : Tendsto (fun r : ℝ => ENNReal.ofReal (r ^ n) * mu (ball (0 : EuclideanSpace ℝ ι) 1))
+        (𝓝 0) (𝓝 0) := by
+      have := ENNReal.Tendsto.mul_const (ENNReal.tendsto_ofReal ((continuous_pow n).tendsto 0))
+        (Or.inr (measure_ball_lt_top (μ := mu) (x := 0) (r := 1)).ne)
+      simpa [zero_pow hn] using this
+    refine (h0.mono_left nhdsWithin_le_nhds).congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with r hr
+    rw [Measure.addHaar_ball_of_pos mu x hr, finrank_euclideanSpace]
+  obtain ⟨R, ⟨hRδ, hRΩ⟩, hR⟩ := (((hball.eventually (eventually_le_nhds hδ)).and
+    (eventually_nhdsWithin_of_eventually_nhds (eventually_ball_subset
+      (Omega.isOpen.mem_nhds hx)))).and self_mem_nhdsWithin).exists
+  have hR : (0 : ℝ) < R := hR
+  -- On `B(x, R)` the gradient is small enough for the John–Nirenberg bound with exponent `|σ|`.
+  have hN : eLpNorm (W1p.gradient u) p (mu.restrict (ball x R)) ≤ ENNReal.ofReal ε := by
+    have hB : NullMeasurableSet (ball x R) (mu.restrict Omega) :=
+      measurableSet_ball.nullMeasurableSet
+    rw [← Measure.restrict_restrict_of_subset hRΩ, ← eLpNorm_indicator_eq_eLpNorm_restrict hB]
+    exact hsmall (ball x R) hB ((Measure.restrict_apply_le _ _).trans hRδ)
+  have hσ : |σ| * (K * (eLpNorm (W1p.gradient u) p (mu.restrict (ball x R))).toReal) ≤ A := by
+    have hε : (eLpNorm (W1p.gradient u) p (mu.restrict (ball x R))).toReal ≤ ε :=
+      ENNReal.toReal_le_of_le_ofReal (by positivity) hN
+    calc |σ| * (K * _) ≤ |σ| * K * ε := by rw [← mul_assoc]; gcongr
+      _ ≤ A := by
+        rw [mul_div_assoc', div_le_iff₀ (by positivity)]
+        nlinarith
+  set B' := ball x (R / (2 * √n))
+  set c := ⨍ y in B', W1p.value u y ∂mu
+  have hB' : B' ⊆ Omega := (ball_subset_ball (div_le_self hR.le
+    (by nlinarith [Real.one_le_sqrt.2 (Nat.one_le_cast.2 (Nat.one_le_iff_ne_zero.2 hn))]))).trans
+    hRΩ
+  have hmeas : AEStronglyMeasurable (W1p.value u) (mu.restrict B') :=
+    (Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hB' le_rfl)
+  -- The John–Nirenberg bound makes `exp (|σ| |u - c|)` integrable on `B'`.
+  have hexp : IntegrableOn (fun y => Real.exp (|σ| * |W1p.value u y - c|)) B' mu := by
+    refine ⟨(Real.continuous_exp.comp_aestronglyMeasurable
+      (((hmeas.sub aestronglyMeasurable_const).norm).const_mul _)), ?_⟩
+    rw [hasFiniteIntegral_iff_ofReal (ae_of_all _ fun _ => (Real.exp_pos _).le)]
+    exact ((hJN hp u hRΩ hσ).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top
+      measure_ball_lt_top))
+  refine ⟨B', mem_nhdsWithin_of_mem_nhds (ball_mem_nhds x (by positivity)), ?_⟩
+  refine (hexp.const_mul (Real.exp (σ * c))).mono'
+    (Real.continuous_exp.comp_aestronglyMeasurable (hmeas.const_mul σ)) (ae_of_all _ fun y => ?_)
+  rw [Real.norm_of_nonneg (Real.exp_pos _).le, ← Real.exp_add, Real.exp_le_exp, ← abs_mul]
+  linarith [le_abs_self (σ * (W1p.value u y - c))]
 
 end Euclidean
 
