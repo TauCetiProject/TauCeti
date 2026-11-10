@@ -13,6 +13,7 @@ public import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import Mathlib.MeasureTheory.Integral.Prod
+import Mathlib.MeasureTheory.Measure.Haar.Unique
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.IntervalIntegral.CauchySchwarz
@@ -67,6 +68,12 @@ isolated from each other in the uniform distance, it is therefore a single solut
 loops converge uniformly to `x` as `s → ∞`
 (`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atTop`). This is how nondegeneracy of the
 periodic orbits turns the accumulation along a sequence into convergence along the whole end.
+
+The defect does not see the direction of `s`, so reflecting `(s, t) ↦ (-s, t)` gives the same
+statements on a half-cylinder `s < a` at the negative end `s → -∞`
+(`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_Iio_ne_top` and
+`TauCeti.exists_periodic_hasDerivAt_tendstoUniformly_atBot`). For the Floer equation this is the
+output end of a Floer trajectory or of a pair of pants.
 
 ## References
 
@@ -578,5 +585,113 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_atTop (hu : ContDiffOn ℝ 1
   exact ⟨UniformFun.toFun x, hxO.1, hxO.2.1, UniformFun.tendsto_iff_tendstoUniformly.1 hx⟩
 
 end Convergence
+
+section NegativeEnd
+
+/-! ### Negative ends
+
+The defect only involves the `t`-derivative of `u`, so it is unchanged by the reflection
+`(s, t) ↦ (-s, t)` of the cylinder. The loops of `u` on the half-cylinder `s < a` are the loops of
+the reflected map `(s, t) ↦ u(-s, t)` on the half-cylinder `s > -a`, with the same defects, and the
+results above transfer to the negative end `s → -∞`. -/
+
+/-- The reflection `(s, t) ↦ (-s, t)` as a continuous linear equivalence. -/
+private noncomputable def negFst : (ℝ × ℝ) ≃L[ℝ] (ℝ × ℝ) :=
+  (ContinuousLinearEquiv.neg ℝ).prodCongr (ContinuousLinearEquiv.refl ℝ ℝ)
+
+private theorem negFst_apply (z : ℝ × ℝ) : negFst z = (-z.1, z.2) :=
+  (rfl)
+
+/-- The defect is invariant under the reflection `(s, t) ↦ (-s, t)`: the defect of
+`(s, t) ↦ u(-s, t)` at `(s, t)` is the defect of `u` at `(-s, t)`. -/
+theorem sliceDefect_comp_neg_fst (X : ℝ → V → V) (u : ℝ × ℝ → V) (z : ℝ × ℝ) :
+    sliceDefect X (fun z ↦ u (-z.1, z.2)) z = sliceDefect X u (-z.1, z.2) := by
+  have h : (fun z : ℝ × ℝ ↦ u (-z.1, z.2)) = u ∘ negFst := (rfl)
+  simp only [h, sliceDefect_def, negFst.comp_right_fderiv, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, negFst_apply, neg_zero, Function.comp_apply]
+
+private theorem contDiffOn_comp_negFst {n : WithTop ℕ∞} (hu : ContDiffOn ℝ n u (Iio a ×ˢ univ)) :
+    ContDiffOn ℝ n (fun z ↦ u (-z.1, z.2)) (Ioi (-a) ×ˢ univ) :=
+  hu.comp negFst.contDiff.contDiffOn fun _ hz ↦ ⟨neg_lt.1 hz.1, trivial⟩
+
+private theorem lintegral_sliceDefect_comp_negFst :
+    ∫⁻ z in Ioi (-a) ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X (fun z ↦ u (-z.1, z.2)) z‖ ^ 2) =
+      ∫⁻ z in Iio a ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2) := by
+  -- The reflection preserves Lebesgue measure and carries `(-a, ∞) × [0, 1]` onto
+  -- `(-∞, a) × [0, 1]`.
+  have hmp : MeasurePreserving negFst :=
+    (Measure.measurePreserving_neg (volume : Measure ℝ)).prod
+      (MeasurePreserving.id (volume : Measure ℝ))
+  have hpre : negFst ⁻¹' (Iio a ×ˢ Icc 0 1) = Ioi (-a) ×ˢ Icc 0 1 := by
+    ext z
+    simp [negFst_apply, neg_lt]
+  simp_rw [sliceDefect_comp_neg_fst, ← negFst_apply]
+  rw [← hpre]
+  exact hmp.setLIntegral_comp_preimage_emb negFst.toHomeomorph.measurableEmbedding
+    (fun z ↦ ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2)) _
+
+/-- **Loops with square-integrable defect accumulate at periodic orbits at the negative end.** Let
+`X` be a continuous, `1`-periodic time-dependent vector field and let `u` be `C¹` on the
+half-cylinder `s < a`, with `1`-periodic loops `t ↦ u(s, t)` in a compact set. If the squared norm
+of the defect `∂_t u - X(t, u)` has finite integral over `(-∞, a) × [0, 1]`, then there are a
+`1`-periodic solution `x` of `x' = X(t, x)` and `s_n → -∞`, with `s_n < a`, such that the loops
+`t ↦ u(s_n, t)` converge uniformly to `x` and the `L²` norms of the defect over them tend to
+`0`. -/
+theorem exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_Iio_ne_top [CompleteSpace V]
+    (hu : ContDiffOn ℝ 1 u (Iio a ×ˢ univ)) (hper : ∀ s, s < a → Periodic (fun t ↦ u (s, t)) 1)
+    {K : Set V} (hK : IsCompact K) (huK : ∀ s, s < a → ∀ t, u (s, t) ∈ K)
+    (hX : Continuous (uncurry X)) (hXper : ∀ v, Periodic (fun t ↦ X t v) 1)
+    (hfin : ∫⁻ z in Iio a ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2) ≠ ⊤) :
+    ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (X t (x t)) t) ∧
+      ∃ φ : ℕ → ℝ, (∀ n, φ n < a) ∧ Tendsto φ atTop atBot ∧
+        TendstoUniformly (fun n t ↦ u (φ n, t)) x atTop ∧
+        Tendsto (fun n ↦ ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ n, t)‖ ^ 2) atTop (𝓝 0) := by
+  obtain ⟨x, hxper, hx, φ, hφa, hφ, hux, hdef⟩ :=
+    exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_ne_top (contDiffOn_comp_negFst hu)
+      (fun s hs ↦ hper (-s) (neg_lt.1 hs)) hK (fun s hs ↦ huK (-s) (neg_lt.1 hs)) hX hXper
+      (by rwa [lintegral_sliceDefect_comp_negFst])
+  refine ⟨x, hxper, hx, fun n ↦ -φ n, fun n ↦ neg_lt.2 (hφa n),
+    tendsto_neg_atTop_atBot.comp hφ, ?_, ?_⟩
+  · simpa [negFst_apply] using hux
+  · simpa [sliceDefect_comp_neg_fst] using hdef
+
+/-- **Convergence of the loops to an isolated periodic solution at the negative end.** Let `X` be
+a continuous, `1`-periodic time-dependent vector field and let `u` be `C¹` on the half-cylinder
+`s < a`, with derivative bounded by `C` and with `1`-periodic loops `t ↦ u(s, t)` in a compact set
+`K`. Suppose that the squared norm of the defect `∂_t u - X(t, u)` has finite integral over
+`(-∞, a) × [0, 1]`, and that the `1`-periodic solutions of `x' = X(t, x)` in `K` are isolated: each
+has a uniform neighbourhood containing no other. Then the loops converge uniformly, as `s → -∞`,
+to a single `1`-periodic solution `x`. -/
+theorem exists_periodic_hasDerivAt_tendstoUniformly_atBot [CompleteSpace V] {K : Set V} {C : ℝ}
+    (hu : ContDiffOn ℝ 1 u (Iio a ×ˢ univ)) (hper : ∀ s, s < a → Periodic (fun t ↦ u (s, t)) 1)
+    (hK : IsCompact K) (huK : ∀ s, s < a → ∀ t, u (s, t) ∈ K) (hX : Continuous (uncurry X))
+    (hXper : ∀ v, Periodic (fun t ↦ X t v) 1)
+    (hfin : ∫⁻ z in Iio a ×ˢ Icc 0 1, ENNReal.ofReal (‖sliceDefect X u z‖ ^ 2) ≠ ⊤)
+    (hC : ∀ z ∈ Iio a ×ˢ univ, ‖fderiv ℝ u z‖ ≤ C)
+    (hiso : ∀ x : ℝ → V, Periodic x 1 → (∀ t, HasDerivAt x (X t (x t)) t) → (∀ t, x t ∈ K) →
+      ∃ ε > 0, ∀ y : ℝ → V, Periodic y 1 → (∀ t, HasDerivAt y (X t (y t)) t) →
+        (∀ t, y t ∈ K) → (∀ t, dist (y t) (x t) < ε) → y = x) :
+    ∃ x : ℝ → V, Periodic x 1 ∧ (∀ t, HasDerivAt x (X t (x t)) t) ∧
+      TendstoUniformly (fun s t ↦ u (s, t)) x atBot := by
+  -- The reflection is an isometry of `ℝ × ℝ`, so it preserves the bound on the derivative.
+  have hC' : ∀ z ∈ Ioi (-a) ×ˢ univ, ‖fderiv ℝ (fun z ↦ u (-z.1, z.2)) z‖ ≤ C := by
+    intro z hz
+    have hz' : negFst z ∈ Iio a ×ˢ univ := ⟨neg_lt.1 hz.1, trivial⟩
+    have h : (fun z : ℝ × ℝ ↦ u (-z.1, z.2)) = u ∘ negFst := (rfl)
+    rw [h, negFst.comp_right_fderiv]
+    refine ContinuousLinearMap.opNorm_le_bound _ ((norm_nonneg _).trans (hC _ hz')) fun v ↦ ?_
+    have hv : ‖negFst v‖ = ‖v‖ := by simp [negFst_apply, Prod.norm_def]
+    rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, ← hv]
+    exact (ContinuousLinearMap.le_opNorm _ _).trans
+      (mul_le_mul_of_nonneg_right (hC _ hz') (norm_nonneg _))
+  obtain ⟨x, hxper, hx, hux⟩ :=
+    exists_periodic_hasDerivAt_tendstoUniformly_atTop (contDiffOn_comp_negFst hu)
+      (fun s hs ↦ hper (-s) (neg_lt.1 hs)) hK (fun s hs ↦ huK (-s) (neg_lt.1 hs)) hX hXper
+      (by rwa [lintegral_sliceDefect_comp_negFst]) hC' hiso
+  refine ⟨x, hxper, hx, Metric.tendstoUniformly_iff.2 fun ε hε ↦ ?_⟩
+  simpa [negFst_apply] using
+    tendsto_neg_atBot_atTop.eventually (Metric.tendstoUniformly_iff.1 hux ε hε)
+
+end NegativeEnd
 
 end TauCeti
