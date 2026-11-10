@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Operator.Banach
-public import TauCeti.Analysis.CStarAlgebra.Multiplier
+public import Mathlib.Analysis.CStarAlgebra.Multiplier
 public import TauCeti.Topology.ApproximateUnit
 
 /-!
@@ -30,8 +30,11 @@ approximate unit supplies both (`TauCeti.faithfulSMul_of_tendsto_mul_left` and
 `TauCeti.faithfulSMul_mulOpposite_of_tendsto_mul_right`), as does a proper involution. A
 bounded approximate unit moreover controls norms: if a left approximate unit of `A` is bounded
 by `C`, then `‖S‖ ≤ C * ‖T‖` and `‖a‖ ≤ C * ‖(a : 𝓜(𝕜, A))‖`, while a right one
-gives `‖T‖ ≤ C * ‖S‖`. For an approximate unit of norm at most `1` this gives `‖S‖ = ‖T‖` and
-makes `A → 𝓜(𝕜, A)` isometric; for a general bound `C` it is only bounded below. Consequently
+gives `‖T‖ ≤ C * ‖S‖`. For a two-sided approximate unit of norm at most `1` this gives
+`‖S‖ = ‖T‖`. A left approximate unit of norm at most `1` makes `A → 𝓜(𝕜, A)` isometric and
+gives `‖R_a‖ = ‖a‖` for the right multiplication `R_a`, while a right one gives `‖L_a‖ = ‖a‖`
+for the left multiplication `L_a`; for a general bound `C` the map is only bounded below.
+Consequently
 the canonical image of a Banach algebra with a bounded left approximate unit is closed in its
 multiplier algebra; it is a two-sided ideal by `DoubleCentralizer.mul_coe_eq_coe_fst` and
 `DoubleCentralizer.coe_mul_eq_coe_snd`. The image is essential: a multiplier annihilating `A` on
@@ -44,6 +47,11 @@ either side vanishes.
 
 ## Main results
 
+* `DoubleCentralizer.fst_mul`, `DoubleCentralizer.snd_mul`: with zero annihilators, the
+  centralizers are module maps for right and left multiplication.
+* `DoubleCentralizer.coe_injective`, `DoubleCentralizer.ext_fst`: with zero annihilators, the
+  canonical map `A → 𝓜(𝕜, A)` is injective and a multiplier is determined by its left
+  centralizer.
 * `DoubleCentralizer.range_coeFn_fst_snd`: the pairs of underlying functions of double
   centralizers are exactly the pairs of functions satisfying the centrality condition.
 * `DoubleCentralizer.norm_fst_le_mul_norm_snd`, `DoubleCentralizer.norm_snd_le_mul_norm_fst`:
@@ -52,7 +60,9 @@ either side vanishes.
   `A → 𝓜(𝕜, A)` is bounded above and below.
 * `DoubleCentralizer.isClosed_range_coe`: its range is closed.
 * `DoubleCentralizer.norm_fst_eq_snd_of_isApproximateUnit`,
-  `DoubleCentralizer.isometry_coe_of_isApproximateUnit`: the contractive case.
+  `DoubleCentralizer.isometry_coe_of_tendsto_mul_right`,
+  `DoubleCentralizer.norm_coe_fst_of_tendsto_mul_left`,
+  `DoubleCentralizer.norm_coe_snd_of_tendsto_mul_right`: the contractive case.
 * `DoubleCentralizer.eq_zero_of_forall_mul_coe_eq_zero`,
   `DoubleCentralizer.eq_zero_of_forall_coe_mul_eq_zero`: the image of `A` is an essential ideal.
 
@@ -73,6 +83,117 @@ open Filter Topology
 open scoped MultiplierAlgebra
 
 namespace DoubleCentralizer
+
+/-! ### Basic API of the canonical inclusion and of nondegenerate double centralizers -/
+
+section NontriviallyNormed
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+  [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A]
+
+/-- Two multipliers are equal if their left and right centralizers agree pointwise. -/
+theorem ext_fst_snd {m n : 𝓜(𝕜, A)} (h₁ : ∀ a, m.fst a = n.fst a)
+    (h₂ : ∀ a, m.snd a = n.snd a) : m = n :=
+  DoubleCentralizer.ext _ _ _ _ <|
+    Prod.ext (ContinuousLinearMap.ext h₁) (ContinuousLinearMap.ext h₂)
+
+/-- The inclusion of `A` into its multiplier algebra sends `0` to `0`. -/
+@[simp, norm_cast]
+theorem coe_zero : ((0 : A) : 𝓜(𝕜, A)) = 0 :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+/-- The inclusion of `A` into its multiplier algebra commutes with addition. -/
+@[simp, norm_cast]
+theorem coe_add (a b : A) : ((a + b : A) : 𝓜(𝕜, A)) = (a : 𝓜(𝕜, A)) + b :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+/-- The inclusion of `A` into its multiplier algebra commutes with multiplication. -/
+@[simp, norm_cast]
+theorem coe_mul (a b : A) : ((a * b : A) : 𝓜(𝕜, A)) = (a : 𝓜(𝕜, A)) * b :=
+  ext_fst_snd (fun _ => by simp [mul_assoc]) (fun _ => by simp [mul_assoc])
+
+/-- The inclusion of `A` into its multiplier algebra commutes with negation. -/
+@[simp, norm_cast]
+theorem coe_neg (a : A) : ((-a : A) : 𝓜(𝕜, A)) = -(a : 𝓜(𝕜, A)) :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+/-- The inclusion of `A` into its multiplier algebra commutes with subtraction. -/
+@[simp, norm_cast]
+theorem coe_sub (a b : A) : ((a - b : A) : 𝓜(𝕜, A)) = (a : 𝓜(𝕜, A)) - b :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+/-- The inclusion of `A` into its multiplier algebra commutes with scalar multiplication. -/
+@[simp, norm_cast]
+theorem coe_smul (c : 𝕜) (a : A) : ((c • a : A) : 𝓜(𝕜, A)) = c • (a : 𝓜(𝕜, A)) :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+/-- The inclusion of `A` into its multiplier algebra commutes with the star operation. -/
+@[simp, norm_cast]
+theorem coe_star [StarRing 𝕜] [StarRing A] [StarModule 𝕜 A] [NormedStarGroup A] (a : A) :
+    ((star a : A) : 𝓜(𝕜, A)) = star (a : 𝓜(𝕜, A)) :=
+  map_star (coeHom (𝕜 := 𝕜)) a
+
+end NontriviallyNormed
+
+section Unital
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
+
+/-- The inclusion of a unital algebra into its multiplier algebra sends `1` to `1`. -/
+@[simp, norm_cast]
+theorem coe_one : ((1 : A) : 𝓜(𝕜, A)) = 1 :=
+  ext_fst_snd (fun _ => by simp) (fun _ => by simp)
+
+end Unital
+
+section FaithfulMulOpposite
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+  [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A] [FaithfulSMul Aᵐᵒᵖ A]
+
+/-- The left centralizer of a multiplier commutes with right multiplication. -/
+theorem fst_mul (m : 𝓜(𝕜, A)) (a b : A) : m.fst (a * b) = m.fst a * b :=
+  MulOpposite.op_injective <| FaithfulSMul.eq_of_smul_eq_smul fun y => by
+    rw [op_smul_eq_mul, op_smul_eq_mul, ← mul_assoc, ← m.central, ← m.central, mul_assoc]
+
+/-- A multiplier times an element of `A` is the element obtained from the left centralizer. -/
+@[simp]
+theorem mul_coe_eq_coe_fst (m : 𝓜(𝕜, A)) (a : A) : m * (a : 𝓜(𝕜, A)) = (m.fst a : 𝓜(𝕜, A)) :=
+  ext_fst_snd (fun _ => by simp [fst_mul]) (fun _ => by simp [m.central])
+
+/-- The canonical map of `A` into its multiplier algebra is injective. -/
+theorem coe_injective : Function.Injective (DoubleCentralizer.coe 𝕜 : A → 𝓜(𝕜, A)) :=
+  fun a b h => MulOpposite.op_injective <| FaithfulSMul.eq_of_smul_eq_smul fun y => by
+    rw [op_smul_eq_mul, op_smul_eq_mul]
+    simpa using congrArg (fun m : 𝓜(𝕜, A) => m.snd y) h
+
+@[simp, norm_cast]
+theorem coe_inj {a b : A} : (a : 𝓜(𝕜, A)) = b ↔ a = b :=
+  coe_injective.eq_iff
+
+end FaithfulMulOpposite
+
+section Faithful
+
+variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
+  [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A] [FaithfulSMul A A]
+
+/-- The right centralizer of a multiplier commutes with left multiplication. -/
+theorem snd_mul (m : 𝓜(𝕜, A)) (a b : A) : m.snd (a * b) = a * m.snd b :=
+  FaithfulSMul.eq_of_smul_eq_smul fun y => by
+    rw [smul_eq_mul, smul_eq_mul, m.central, mul_assoc, mul_assoc, m.central]
+
+/-- An element of `A` times a multiplier is the element obtained from the right centralizer. -/
+@[simp]
+theorem coe_mul_eq_coe_snd (a : A) (m : 𝓜(𝕜, A)) : (a : 𝓜(𝕜, A)) * m = (m.snd a : 𝓜(𝕜, A)) :=
+  ext_fst_snd (fun _ => by simp [m.central]) (fun _ => by simp [snd_mul])
+
+/-- A multiplier is determined by its left centralizer. -/
+theorem ext_fst {m n : 𝓜(𝕜, A)} (h : ∀ a, m.fst a = n.fst a) : m = n :=
+  ext_fst_snd h fun a => FaithfulSMul.eq_of_smul_eq_smul fun y => by
+    rw [smul_eq_mul, smul_eq_mul, m.central, n.central, h]
+
+end Faithful
 
 variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NonUnitalNormedRing A] [NormedSpace 𝕜 A]
   [SMulCommClass 𝕜 A A] [IsScalarTower 𝕜 A A]
@@ -244,19 +365,38 @@ theorem norm_fst_eq_snd_of_isApproximateUnit (hl : l.IsApproximateUnit)
   exact le_antisymm (by simpa using norm_fst_le_mul_norm_snd h1 hl.tendsto_mul_right m)
     (by simpa using norm_snd_le_mul_norm_fst h1 hl.tendsto_mul_left m)
 
-/-- If `A` has an approximate unit of norm at most `1`, the canonical map of `A` into its
+/-- If `A` has a left approximate unit of norm at most `1`, the canonical map of `A` into its
 multiplier algebra preserves the norm. -/
-theorem norm_coe_of_isApproximateUnit (hl : l.IsApproximateUnit) (h1 : ∀ᶠ e in l, ‖e‖ ≤ 1)
-    (a : A) : ‖(a : 𝓜(𝕜, A))‖ = ‖a‖ := by
-  have := hl.neBot
-  exact le_antisymm (norm_coe_le a) (by simpa using norm_le_mul_norm_coe h1 hl.tendsto_mul_right a)
+theorem norm_coe_of_tendsto_mul_right [l.NeBot] (h1 : ∀ᶠ e in l, ‖e‖ ≤ 1)
+    (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) (a : A) : ‖(a : 𝓜(𝕜, A))‖ = ‖a‖ :=
+  le_antisymm (norm_coe_le a) (by simpa using norm_le_mul_norm_coe h1 hl a)
 
-/-- If `A` has an approximate unit of norm at most `1`, the canonical map of `A` into its
+/-- If `A` has a left approximate unit of norm at most `1`, the canonical map of `A` into its
 multiplier algebra is an isometry. -/
-theorem isometry_coe_of_isApproximateUnit (hl : l.IsApproximateUnit) (h1 : ∀ᶠ e in l, ‖e‖ ≤ 1) :
-    Isometry (DoubleCentralizer.coe 𝕜 : A → 𝓜(𝕜, A)) := by
+theorem isometry_coe_of_tendsto_mul_right [l.NeBot] (h1 : ∀ᶠ e in l, ‖e‖ ≤ 1)
+    (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) : Isometry (DoubleCentralizer.coe 𝕜 : A → 𝓜(𝕜, A)) := by
   intro a b
-  simp only [edist_dist, dist_eq_norm, ← coe_sub, norm_coe_of_isApproximateUnit hl h1]
+  simp only [edist_dist, dist_eq_norm, ← coe_sub, norm_coe_of_tendsto_mul_right h1 hl]
+
+/-- If `A` has a right approximate unit of norm at most `1`, left multiplication by `a`, the left
+centralizer of `(a : 𝓜(𝕜, A))`, has norm `‖a‖`. -/
+theorem norm_coe_fst_of_tendsto_mul_left [l.NeBot] (h1 : ∀ᶠ e in l, ‖e‖ ≤ 1)
+    (hl : ∀ a, Tendsto (a * ·) l (𝓝 a)) (a : A) : ‖(a : 𝓜(𝕜, A)).fst‖ = ‖a‖ :=
+  le_antisymm ((norm_fst_le _).trans (norm_coe_le a)) <|
+    le_of_tendsto (hl a).norm <| h1.mono fun e he =>
+      calc ‖a * e‖ = ‖(a : 𝓜(𝕜, A)).fst e‖ := by simp
+        _ ≤ ‖(a : 𝓜(𝕜, A)).fst‖ * ‖e‖ := (a : 𝓜(𝕜, A)).fst.le_opNorm e
+        _ ≤ ‖(a : 𝓜(𝕜, A)).fst‖ := mul_le_of_le_one_right (norm_nonneg _) he
+
+/-- If `A` has a left approximate unit of norm at most `1`, right multiplication by `a`, the right
+centralizer of `(a : 𝓜(𝕜, A))`, has norm `‖a‖`. -/
+theorem norm_coe_snd_of_tendsto_mul_right [l.NeBot] (h1 : ∀ᶠ e in l, ‖e‖ ≤ 1)
+    (hl : ∀ a, Tendsto (· * a) l (𝓝 a)) (a : A) : ‖(a : 𝓜(𝕜, A)).snd‖ = ‖a‖ :=
+  le_antisymm ((norm_snd_le _).trans (norm_coe_le a)) <|
+    le_of_tendsto (hl a).norm <| h1.mono fun e he =>
+      calc ‖e * a‖ = ‖(a : 𝓜(𝕜, A)).snd e‖ := by simp
+        _ ≤ ‖(a : 𝓜(𝕜, A)).snd‖ * ‖e‖ := (a : 𝓜(𝕜, A)).snd.le_opNorm e
+        _ ≤ ‖(a : 𝓜(𝕜, A)).snd‖ := mul_le_of_le_one_right (norm_nonneg _) he
 
 end Norm
 
