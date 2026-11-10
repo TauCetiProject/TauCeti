@@ -10,7 +10,10 @@ public import Mathlib.Algebra.Group.Equiv.TypeTags
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.LinearAlgebra.Dual.Basis
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
+public import Mathlib.Algebra.Category.Grp.Injective
+public import Mathlib.Analysis.Complex.Polynomial.Basic
 public import TauCeti.Algebra.Group.FreeAbelianCharacter
+public import TauCeti.FieldTheory.IsAlgClosed.Units
 
 /-!
 # Integral characters on the complex torus
@@ -33,8 +36,8 @@ torus points.  Given an identification of the character lattice with a free abel
 * `TauCeti.Toric.ComplexTorus`: its coordinate-free complex torus.
 * `TauCeti.Toric.characterEvaluation`: evaluation of a character as a homomorphism on the torus.
 * `TauCeti.Toric.complexTorusMap`: the torus map induced by an additive map of lattices.
-* `TauCeti.Toric.complexTorusMap_surjective`: a surjection onto a projective lattice induces a
-  surjection of tori.
+* `TauCeti.Toric.complexTorusMap_surjective`: a surjection of lattices induces a surjection of
+  tori.
 * `TauCeti.Toric.mem_ker_complexTorusMap_mk'_iff`: the kernel of the torus map of a quotient
   lattice `N ⧸ H` is the subtorus trivial on the characters vanishing on `H`.
 * `TauCeti.Toric.exists_characterEvaluation_ne`: integral characters separate torus points.
@@ -157,11 +160,26 @@ theorem exists_complexTorusMap_comp_complexTorusMap_eq_id [Module.Projective ℤ
   rw [← complexTorusMap_comp, ← complexTorusMap_id]
   exact congrArg complexTorusMap (AddMonoidHom.ext fun n ↦ LinearMap.congr_fun hs n)
 
-/-- A surjective map onto a projective lattice induces a surjective map of complex tori. -/
-theorem complexTorusMap_surjective [Module.Projective ℤ N'] {f : N →+ N'}
-    (hf : Function.Surjective f) : Function.Surjective (complexTorusMap f) := by
-  obtain ⟨g, hg⟩ := exists_complexTorusMap_comp_complexTorusMap_eq_id hf
-  exact fun x ↦ ⟨complexTorusMap g x, DFunLike.congr_fun hg x⟩
+/-- A surjective lattice map induces a surjective map of complex tori: the dual map on integral
+characters is injective, and characters with values in the divisible group `ℂˣ` extend along
+injective homomorphisms. -/
+theorem complexTorusMap_surjective {f : N →+ N'} (hf : Function.Surjective f) :
+    Function.Surjective (complexTorusMap f) := by
+  intro y
+  have : DivisibleBy (Additive ℂˣ) ℕ :=
+    ⟨RootableBy.root (A := ℂˣ), RootableBy.root_zero (A := ℂˣ),
+      fun a hn ↦ RootableBy.root_cancel (A := ℂˣ) a hn⟩
+  have : DivisibleBy (Additive ℂˣ) ℤ := AddGroup.divisibleByIntOfDivisibleByNat _
+  obtain ⟨h, hh⟩ := Module.Baer.extension_property_addMonoidHom
+    (Module.Baer.of_divisible (Additive ℂˣ))
+    (AddMonoidHom.compHom' f : IntegralCharacter N' →+ IntegralCharacter N)
+    (fun m₁ m₂ hm ↦ AddMonoidHom.ext fun n ↦ by
+      obtain ⟨a, rfl⟩ := hf n
+      exact DFunLike.congr_fun hm a)
+    (AddChar.toAddMonoidHomEquiv y)
+  refine ⟨AddChar.toAddMonoidHomEquiv.symm h, DFunLike.ext _ _ fun m ↦ ?_⟩
+  have := DFunLike.congr_fun hh m
+  simpa [complexTorusMap] using congrArg Additive.toMul this
 
 /-- A torus point lies in the kernel of the torus map induced by the quotient by a sublattice `H`
 exactly when it is trivial on every integral character vanishing on `H`. -/
