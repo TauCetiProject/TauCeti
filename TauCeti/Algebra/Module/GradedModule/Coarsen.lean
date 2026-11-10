@@ -40,8 +40,6 @@ super (parity-graded) object, for example when Koszul signs only depend on parit
 * `TauCeti.LinearMap.IsHomogeneous.coarsenGrading`: a homogeneous linear map of degree `q` is
   homogeneous of degree `f q` for gradings coarsened along an additive homomorphism `f`.
 * `TauCeti.parityGrading_zero` and `TauCeti.parityGrading_one`: the even and odd pieces.
-* `TauCeti.uzpow_intCast_eq_negOnePow`: the sign `(-1) ^ (n mod 2)` of a parity is the sign
-  `Int.negOnePow n` of any integer lift.
 -/
 
 public section
@@ -211,10 +209,6 @@ theorem parityGrading_one (ℳ : ℤ → Submodule R M) :
     rw [eq_add_of_sub_eq hk]
     exact le_iSup (fun k ↦ ℳ (2 * k + 1)) k
   · simpa [CharP.ofNat_eq_zero] using mem_parityGrading_of_mem hx
-
-/-- The sign `(-1) ^ i` of the parity `i` of an integer `n` is the sign `Int.negOnePow n`. -/
-theorem uzpow_intCast_eq_negOnePow (n : ℤ) : (-1 : ℤˣ) ^ (n : ZMod 2) = n.negOnePow := by
-  rw [uzpow_intCast, Int.negOnePow_def]
 
 end Parity
 

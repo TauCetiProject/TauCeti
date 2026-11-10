@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Data.ZMod.IntUnitsPower
 public import TauCeti.Algebra.Module.GradedModule.Coarsen
+import TauCeti.Data.ZMod.IntUnitsPower
 
 /-!
 # The parity reduction of a signed derivation

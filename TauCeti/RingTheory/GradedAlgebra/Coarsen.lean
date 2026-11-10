@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Algebra.Operations
 public import Mathlib.Data.ZMod.IntUnitsPower
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import TauCeti.Algebra.Module.GradedModule.Coarsen
+import TauCeti.Data.ZMod.IntUnitsPower
 
 /-!
 # Coarsening the grading of a graded algebra
@@ -63,6 +64,17 @@ instance [SetLike.GradedMul 𝒜] (f : ι →+ κ) : SetLike.GradedMul (coarsenG
 
 end GradedMul
 
+section GradedMonoid
+
+variable {R : Type uR} {A : Type uA} {ι : Type uι} {κ : Type uκ}
+  [Semiring R] [Semiring A] [Module R A] [AddMonoid ι] [AddMonoid κ] (𝒜 : ι → Submodule R A)
+
+instance [SetLike.GradedMonoid 𝒜] (f : ι →+ κ) : SetLike.GradedMonoid (coarsenGrading 𝒜 f) :=
+  { (inferInstance : SetLike.GradedMul (coarsenGrading 𝒜 f)) with
+    one_mem := by simpa using mem_coarsenGrading_of_mem f (SetLike.one_mem_graded 𝒜) }
+
+end GradedMonoid
+
 section Coarsen
 
 variable {R : Type uR} {A : Type uA} {ι : Type uι} {κ : Type uκ}
@@ -73,10 +85,6 @@ in the coarsened piece of degree `k + l`. -/
 theorem coarsenGrading_mul_le [SetLike.GradedMul 𝒜] (f : ι →+ κ) (k l : κ) :
     coarsenGrading 𝒜 f k * coarsenGrading 𝒜 f l ≤ coarsenGrading 𝒜 f (k + l) :=
   Submodule.mul_le.2 fun _ ha _ hb ↦ SetLike.mul_mem_graded ha hb
-
-instance [SetLike.GradedMonoid 𝒜] (f : ι →+ κ) : SetLike.GradedMonoid (coarsenGrading 𝒜 f) :=
-  { (inferInstance : SetLike.GradedMul (coarsenGrading 𝒜 f)) with
-    one_mem := by simpa using mem_coarsenGrading_of_mem f (SetLike.one_mem_graded 𝒜) }
 
 /-- Coarsening the grading of a graded algebra along an additive homomorphism of index monoids
 gives a graded algebra. -/
