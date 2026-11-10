@@ -8,7 +8,10 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.Boundary.BicollarSide
+import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.Analysis.InnerProductSpace.Hemisphere
 import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 import TauCeti.Analysis.Normed.Module.Ball.Radial.Equiv
 
 /-!
@@ -57,6 +60,9 @@ This is the ball-exterior counterpart of the knot exterior of
   ball.
 * `Topology.IsOpenEmbedding.frontier_ballExterior`: the frontier of the exterior in `X` is the
   sphere of radius `r`.
+* `Topology.IsOpenEmbedding.nonempty_homeomorph_sphere_of_ballExterior`: if the exterior is a
+  closed disc bounded by the sphere of radius `r`, then `X`, the union of two closed discs glued
+  along their boundaries, is a sphere.
 
 ## References
 
@@ -171,6 +177,57 @@ private theorem isOpen_ballExterior_sdiff_range [ProperSpace E] [T2Space X]
     IsOpen (ballExterior φ r \ range fun u : sphere (0 : E) 1 => φ (r • (u : E))) := by
   rw [range_comp' φ, range_smul_coe_sphere hr, ballExterior_sdiff_image_sphere]
   exact ((isCompact_closedBall 0 r).image hφ.continuous).isClosed.isOpen_compl
+
+/-- **A closed coordinate ball and a closed disc glued along their boundaries form a sphere.**
+Let `φ : E → X` be an open embedding of a finite-dimensional real normed space into a Hausdorff
+space, and let `r > 0`. Suppose the exterior `TauCeti.ballExterior φ r` of the open coordinate ball
+of radius `r` is homeomorphic to the closed unit ball of `E` by a homeomorphism carrying the
+coordinate sphere `φ '' sphere 0 r` onto the unit sphere. Then `X` is homeomorphic to the unit
+sphere of any real normed space of dimension `dim E + 1`. The two discs are the closed coordinate
+ball and its exterior; the gluing homeomorphism of their boundary spheres is arbitrary. -/
+theorem nonempty_homeomorph_sphere_of_ballExterior [T2Space X] [FiniteDimensional ℝ E]
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] (hφ : IsOpenEmbedding φ) (hr : 0 < r)
+    (hF : Module.finrank ℝ F = Module.finrank ℝ E + 1)
+    (e : ballExterior φ r ≃ₜ closedBall (0 : E) 1)
+    (he : ∀ x : ballExterior φ r, (x : X) ∈ φ '' sphere 0 r ↔ ‖(e x : E)‖ = 1) :
+    Nonempty (X ≃ₜ sphere (0 : F) 1) := by
+  have : FiniteDimensional ℝ F := Module.finite_of_finrank_pos (by omega)
+  set n := Module.finrank ℝ E
+  have hn : Module.finrank ℝ E = Module.finrank ℝ (EuclideanSpace ℝ (Fin n)) := by simp [n]
+  let D := closedBallHomeomorphOfFinrankEq hn
+  have hD (v : closedBall (0 : E) 1) : ‖(D v : EuclideanSpace ℝ (Fin n))‖ = 1 ↔ ‖(v : E)‖ = 1 :=
+    by simp [D, ContinuousLinearEquiv.norm_unitBallHomeomorph_eq_one_iff]
+  -- The closed coordinate ball, rescaled to the closed unit ball.
+  obtain ⟨S, hS⟩ := exists_homeomorph_closedBall_one_norm_eq (V := E) hr
+  let eA : φ '' closedBall 0 r ≃ₜ closedBall (0 : EuclideanSpace ℝ (Fin n)) 1 :=
+    ((hφ.isEmbedding.homeomorphImage _).symm.trans S).trans D
+  have hAB : φ '' closedBall 0 r ∪ ballExterior φ r = univ :=
+    eq_univ_of_forall fun x ↦ (em (x ∈ φ '' ball 0 r)).elim
+      (fun hx ↦ Or.inl (image_mono ball_subset_closedBall hx))
+      fun hx ↦ Or.inr (mem_ballExterior.2 hx)
+  -- A point of the coordinate ball lies in the exterior exactly when it is on the sphere.
+  have hAe (x : φ '' closedBall 0 r) :
+      (x : X) ∈ ballExterior φ r ↔ ‖(eA x : EuclideanSpace ℝ (Fin n))‖ = 1 := by
+    obtain ⟨v, rfl⟩ := (hφ.isEmbedding.homeomorphImage (closedBall 0 r)).surjective x
+    simp only [eA, Homeomorph.trans_apply, Homeomorph.symm_apply_apply, hD, hS]
+    -- `IsEmbedding.homeomorphImage` has no lemma for its underlying point, which is `φ v` by
+    -- definition.
+    change φ v ∈ _ ↔ _
+    simp only [mem_ballExterior, hφ.injective.mem_set_image, mem_ball_zero_iff, not_lt]
+    exact ⟨fun h ↦ (mem_closedBall_zero_iff.1 v.2).antisymm h, fun h ↦ h.ge⟩
+  -- A point of the exterior lies in the coordinate ball exactly when it is on the sphere.
+  have hBe (x : ballExterior φ r) :
+      (x : X) ∈ φ '' closedBall 0 r ↔ ‖((e.trans D) x : EuclideanSpace ℝ (Fin n))‖ = 1 := by
+    rw [Homeomorph.trans_apply, hD, ← he]
+    refine ⟨fun ⟨v, hv, hvx⟩ ↦ ⟨v, ?_, hvx⟩, fun h ↦ image_mono sphere_subset_closedBall h⟩
+    have hvb : v ∉ ball (0 : E) r := fun h ↦ mem_ballExterior.1 x.2 ⟨v, h, hvx⟩
+    rw [mem_ball_zero_iff, not_lt] at hvb
+    exact mem_sphere_zero_iff_norm.2 ((mem_closedBall_zero_iff.1 hv).antisymm hvb)
+  obtain ⟨g⟩ := nonempty_homeomorph_sphere_of_union_closedBall
+    (E := EuclideanSpace ℝ (Fin (n + 1))) (by simp)
+    ((isCompact_closedBall (0 : E) r).image hφ.continuous).isClosed hφ.isClosed_ballExterior hAB
+    eA (e.trans D) hAe hBe
+  exact ⟨g.trans (sphereHomeomorphOfFinrankEq (by simp [hF, n]))⟩
 
 end NormedSpace
 
