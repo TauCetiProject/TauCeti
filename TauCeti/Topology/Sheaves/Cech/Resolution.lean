@@ -188,9 +188,9 @@ variable [CompactSpace X] [NormalSpace X]
 include ι in
 /-- The iterated connecting map `Hᵏ(X, Zⁿ⁺¹) ⟶ Hᵐ(X, F)`, `m = k + n + 1`, of a resolution
 `ι : F[0] ⟶ K` with cycles `Zʲ`: the composite of the connecting maps of the long exact Čech
-sequences of `0 ⟶ Zⁿ⁺¹ ⟶ Kⁿ⁺¹ ⟶ Zⁿ⁺² ⟶ 0`, …, `0 ⟶ Z¹ ⟶ K¹ ⟶ Z² ⟶ 0` and
-`0 ⟶ F ⟶ K⁰ ⟶ Z¹ ⟶ 0` (`TauCeti.Topology.resolutionCechδ_zero` and
-`TauCeti.Topology.resolutionCechδ_succ`). -/
+sequences of `0 ⟶ Zⁿ ⟶ Kⁿ ⟶ Zⁿ⁺¹ ⟶ 0`, …, `0 ⟶ Z¹ ⟶ K¹ ⟶ Z² ⟶ 0` and
+`0 ⟶ F ⟶ K⁰ ⟶ Z¹ ⟶ 0` for `n ≥ 1`, and the connecting map of `0 ⟶ F ⟶ K⁰ ⟶ Z¹ ⟶ 0` alone for
+`n = 0` (`TauCeti.Topology.resolutionCechδ_zero` and `TauCeti.Topology.resolutionCechδ_succ`). -/
 def resolutionCechδ : (n : ℕ) → {k m : ℕ} → k + n + 1 = m →
     ((cechCohomology X (ModuleCat.{u} R) k).obj (K.cycles (n + 1)).obj ⟶
       (cechCohomology X (ModuleCat.{u} R) m).obj F.obj)
@@ -387,15 +387,6 @@ variable {G : Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R)}
 
 omit hK
 
-omit [QuasiIso ι] [CompactSpace X] [NormalSpace X] [QuasiIso ι'] in
-include hφ in
-private lemma fromSingle₀Equiv_comp_f_zero :
-    (CochainComplex.fromSingle₀Equiv K F ι).1 ≫ φ.f 0 =
-      f ≫ (CochainComplex.fromSingle₀Equiv L G ι').1 := by
-  have := congrArg (fun g ↦ HomologicalComplex.Hom.f g 0) hφ
-  simp only [HomologicalComplex.comp_f, CochainComplex.single₀_map_f_zero] at this
-  exact this
-
 include hφ in
 /-- **Naturality of the iterated connecting map** in morphisms of resolutions: for a morphism
 `φ : K ⟶ L` of resolutions over `f : F ⟶ G`, the iterated connecting maps commute with the maps
@@ -412,7 +403,7 @@ theorem resolutionCechδ_naturality (n : ℕ) {k m : ℕ} (h : k + n + 1 = m) :
       resolutionCechδ_zero ι' k (shortExact_zero ι')]
     exact (shortExact_zero ι).cechCohomologyδ_naturality (shortExact_zero ι')
       { τ₁ := f, τ₂ := φ.f 0, τ₃ := HomologicalComplex.cyclesMap φ 1
-        comm₁₂ := (fromSingle₀Equiv_comp_f_zero ι ι' hφ).symm
+        comm₁₂ := (CochainComplex.fromSingle₀Equiv_comp_f_zero hφ).symm
         comm₂₃ := (HomologicalComplex.toCycles_cyclesMap φ 0 1).symm } k
   | succ n ih =>
     rw [resolutionCechδ_succ ι n h (shortExact_succ ι n),
@@ -448,7 +439,7 @@ theorem cechCohomologyObjIsoOfIsFlasque_hom_naturality
       HomologicalComplex.comp_liftCycles_assoc]
     congr 2
     simp only [Functor.mapHomologicalComplex_map_f, ← Functor.map_comp,
-      fromSingle₀Equiv_comp_f_zero ι ι' hφ]
+      CochainComplex.fromSingle₀Equiv_comp_f_zero hφ]
   | succ n =>
     have := epi_resolutionCechδ ι hK n (m := n + 1) (by omega)
     rw [← cancel_epi ((Sheaf.ΓNatIsoSheafSections _ _ isTerminalTop).hom.app
