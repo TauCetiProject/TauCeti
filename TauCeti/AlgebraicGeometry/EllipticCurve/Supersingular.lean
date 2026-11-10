@@ -139,14 +139,6 @@ section Elliptic
 
 variable [W.IsElliptic]
 
-/-- Over a separably closed field `Ω`, the `0`-torsion subgroup of the points of an elliptic curve
-is not trivial, since the curve has infinitely many points. -/
-private theorem torsionBy_zero_baseChange_ne_bot (Ω : Type*) [Field Ω] [IsSepClosed Ω]
-    [Algebra K Ω] [DecidableEq Ω] :
-    AddSubgroup.torsionBy (W.baseChange Ω).toAffine.Point 0 ≠ ⊥ := by
-  have : (W.baseChange Ω).IsElliptic := inferInstanceAs (W.map _).IsElliptic
-  exact AddSubgroup.torsionBy_zero_ne_bot _
-
 /-- **Supersingularity may be read over any algebraically closed extension** `Ω` of `K`: the
 `p`-torsion of `W` over `Ω` is trivial exactly when it is over `AlgebraicClosure K`, since
 `AlgebraicClosure K` embeds into `Ω` and an extension of an algebraically closed field adds no
@@ -155,10 +147,6 @@ theorem isSupersingular_iff_of_isAlgClosed (Ω : Type*) [Field Ω] [IsAlgClosed 
     [Algebra K Ω] [DecidableEq Ω] :
     W.IsSupersingular p ↔ AddSubgroup.torsionBy (W.baseChange Ω).toAffine.Point p = ⊥ := by
   classical
-  obtain rfl | hp := eq_or_ne p 0
-  · rw [IsSupersingular, Nat.cast_zero]
-    exact iff_of_false (W.torsionBy_zero_baseChange_ne_bot (AlgebraicClosure K))
-      (W.torsionBy_zero_baseChange_ne_bot Ω)
   -- Mathlib's ellipticity instance is stated for `W.map f`, which `W.baseChange A` unfolds to.
   have : (W.baseChange (AlgebraicClosure K)).IsElliptic := inferInstanceAs (W.map _).IsElliptic
   let ι : AlgebraicClosure K →ₐ[K] Ω := IsAlgClosed.lift
@@ -168,7 +156,7 @@ theorem isSupersingular_iff_of_isAlgClosed (Ω : Type*) [Field Ω] [IsAlgClosed 
   have hbc : (W.baseChange (AlgebraicClosure K)).baseChange Ω = W.baseChange Ω :=
     map_baseChange W (IsScalarTower.toAlgHom K (AlgebraicClosure K) Ω)
   rw [IsSupersingular, ← torsionBy_baseChange_eq_bot_iff_of_isAlgClosed
-    (W.baseChange (AlgebraicClosure K)) (Ω := Ω) (Nat.cast_ne_zero.mpr hp), hbc]
+    (W.baseChange (AlgebraicClosure K)) (Ω := Ω), hbc]
 
 /-- **Supersingularity is invariant under field extension**: for an arbitrary extension `L / K`,
 not necessarily algebraic, `W` is supersingular exactly when its base change to `L` is. -/

@@ -186,6 +186,7 @@ private lemma sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃ {x y : K}
   · exact key (4 * x'₀) (by rw [map_mul, map_ofNat, hx'₀])
   · exact key n₀ hn₀
 
+omit [IsDomain R] in
 /-- **The discriminant companion of Nagell–Lutz.** For a torsion point with integral coordinates,
 either `ψ₂` vanishes there — equivalently the point is two-torsion — or its square divides `4Δ`.
 
@@ -202,6 +203,8 @@ theorem evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ {x y : K}
           Squarefree ((p : ℤ) : R))
     {x₀ y₀ : R} (hx : algebraMap R K x₀ = x) (hy : algebraMap R K y₀ = y) :
     W.ψ₂.evalEval x₀ y₀ = 0 ∨ W.ψ₂.evalEval x₀ y₀ ^ 2 ∣ 4 * W.Δ := by
+  -- `R` embeds into the field `K`, so it is a domain.
+  have : IsDomain R := (IsFractionRing.injective R K).isDomain (algebraMap R K)
   by_cases hκ : W.ψ₂.evalEval x₀ y₀ = 0
   · exact Or.inl hκ
   -- The point satisfies the equation over `R` itself, by injectivity of `algebraMap R K`.
@@ -217,6 +220,7 @@ theorem evalEval_ψ₂_eq_zero_or_sq_dvd_four_mul_Δ {x y : K}
   refine Or.inr (dvd_four_mul_Δ_of_dvd_Ψ₂Sq_of_dvd_four_mul_Ψ₃ W (evalEval_ψ₂_sq W hEq).dvd ?_)
   exact sq_evalEval_ψ₂_dvd_four_mul_eval_Ψ₃ W hns htor hsf hx hEq hκK
 
+omit [IsDomain R] in
 /-- **The discriminant companion from a uniform hypothesis.** The same conclusion, asking
 squarefreeness at *every* prime dividing `addOrderOf (2 • P)` rather than at the one branch the
 proof lands in.
