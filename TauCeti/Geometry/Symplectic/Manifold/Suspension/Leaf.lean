@@ -98,8 +98,9 @@ All declarations are in the namespace `TauCeti.SmoothMappingTorus`.
   pseudoholomorphic curve of zero vertical area, that leaf lies over a closed orbit.
 * `minimalPeriod_pos_of_integralTopForm_eq_zero_of_mfderiv_ne_zero`: the same for every
   nonconstant curve of zero vertical area, without the immersion hypothesis.
-* `range_eq_range_orbitTorus_of_integralTopForm_eq_zero`: the image of such a curve is exactly
-  the orbit torus `(ℝ / ℤ) × γ` over that primitive closed orbit.
+* `range_eq_range_orbitTorus_of_integralTopForm_eq_zero`: the image of a compact connected
+  immersed curve of zero vertical area is exactly the orbit torus `(ℝ / ℤ) × γ` over that
+  primitive closed orbit.
 * `exists_surjective_orbitTorus_comp_eq_of_isPseudoholomorphicAt`: a nonconstant compact connected
   pseudoholomorphic horizontal curve factors through its orbit torus by a surjective
   pseudoholomorphic map.
