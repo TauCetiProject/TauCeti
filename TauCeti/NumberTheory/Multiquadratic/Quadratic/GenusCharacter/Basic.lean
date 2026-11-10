@@ -146,7 +146,7 @@ theorem primeDiscriminantCharFun_eq_one_of_four_mul_eq_sq_sub_mul_sq {P Q n x y 
     have hpd : (p : ℤ) ∣ oddPrimeDiscriminant p * Q :=
       (dvd_oddPrimeDiscriminant_iff.mpr dvd_rfl).mul_right Q
     rw [primeDiscriminantCharFun_oddPrimeDiscriminant hodd]
-    exact jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq hp hp2 hpd
+    exact jacobiSym_eq_one_of_dvd_of_four_mul_eq_sq_sub_mul_sq hp hpd
       (oddPrimeDiscriminant_dvd_iff.mpr.mt
         ((prime_oddPrimeDiscriminant_iff.mpr hp).coprime_iff_not_dvd.mp hcop.symm)) h
 
