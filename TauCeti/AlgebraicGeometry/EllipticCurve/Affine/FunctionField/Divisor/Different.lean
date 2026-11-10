@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.Divis
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.InfinityPlace.Ramification
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.FunctionField.PointPlace
 -- Proof-only: Dedekind's different theorem, `e = d + 1` at tame places.
+import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.TwoTorsion
 import TauCeti.FieldTheory.FunctionField.Different.Tame
 
 /-!
@@ -327,52 +328,6 @@ private theorem sum_ofPoint_le_zeros {A : Finset W.Point} (hA0 : (0 : W.Point) �
     | some x y h => exact (ord_invariantDifferentialDenom_pos h (hA _ hT)).trans_le le_sup_left
   · exact le_sup_right
 
-/-- Four points of order dividing two force `2 ≠ 0`: in characteristic two the affine points of
-order dividing two lie on `a₁x + a₃ = 0`, and there is at most one of them. -/
-private theorem two_ne_zero_of_card_eq_four {S : Finset W.Point} (hS : ∀ T ∈ S, -T = T)
-    (hcard : S.card = 4) : (2 : F) ≠ 0 := by
-  classical
-  intro h2
-  -- An affine point of order dividing two satisfies `a₁x + a₃ = 0`, as `2y + a₁x + a₃ = 0`.
-  have hlin {x y : F} (h : W.Nonsingular x y) (hT : -Point.some x y h = Point.some x y h) :
-      W.a₁ * x + W.a₃ = 0 := by
-    rw [Point.neg_some, Point.some.injEq] at hT
-    have h := hT.2
-    simp only [negY] at h
-    linear_combination -h - y * h2
-  have hle : (S.erase 0).card ≤ 1 := by
-    refine Finset.card_le_one.mpr fun a ha b hb ↦ ?_
-    obtain ⟨ha0, haS⟩ := Finset.mem_erase.mp ha
-    obtain ⟨hb0, hbS⟩ := Finset.mem_erase.mp hb
-    cases a with
-    | zero => exact absurd rfl ha0
-    | some x y h =>
-    cases b with
-    | zero => exact absurd rfl hb0
-    | some x' y' h' =>
-    have hx := hlin h (hS _ haS)
-    have hx' := hlin h' (hS _ hbS)
-    -- `a₁ = 0` would force `a₃ = 0`, and then the discriminant vanishes.
-    have ha1 : W.a₁ ≠ 0 := fun h1 ↦ by
-      have h3 : W.a₃ = 0 := by simpa [h1] using hx
-      have hb2 : W.b₂ = 0 := by rw [WeierstrassCurve.b₂, h1]; linear_combination (2 * W.a₂) * h2
-      have hb4 : W.b₄ = 0 := by
-        rw [WeierstrassCurve.b₄, h1, h3]; linear_combination W.a₄ * h2
-      have hb6 : W.b₆ = 0 := by rw [WeierstrassCurve.b₆, h3]; linear_combination (2 * W.a₆) * h2
-      refine W.isUnit_Δ.ne_zero ?_
-      rw [WeierstrassCurve.Δ, hb2, hb4, hb6]
-      ring
-    have hxx : x = x' := mul_left_cancel₀ ha1 (by linear_combination hx - hx')
-    subst hxx
-    have e := (equation_iff x y).mp h.left
-    have e' := (equation_iff x y').mp h'.left
-    have hyy : (y - y') ^ 2 = 0 := by
-      linear_combination e - e' - (y - y') * hx - y' * (y - y') * h2
-    obtain rfl : y = y' := sub_eq_zero.mp (pow_eq_zero_iff two_ne_zero |>.mp hyy)
-    rfl
-  have := Finset.pred_card_le_card_erase (s := S) (a := 0)
-  omega
-
 /-- **The different when the points of order two are rational**: if `S` is a set of four
 rational points of order dividing two, which forces characteristic other than two, then
 `Diff(F(W) / F(x))` is the sum of their places. This applies when `W` has full rational
@@ -382,7 +337,7 @@ theorem different_eq_sum_of_card_eq_four {S : Finset W.Point}
     Divisor.different F W.FunctionField (IsFunctionField.ratFunc F) =
       ∑ T ∈ S, WeilDivisor.ofPoint (pointEquivDegreeOnePlace W T).1 := by
   classical
-  have h2 := two_ne_zero_of_card_eq_four hS hcard
+  have h2 := Point.two_ne_zero_of_card_eq_four hS hcard
   -- The affine points of `S` give at most `3` zeros of `2y + a₁x + a₃`, counted with degree.
   have hle := sum_ofPoint_le_zeros (A := S.erase 0) (Finset.notMem_erase 0 S)
     fun T hT ↦ hS T (Finset.mem_of_mem_erase hT)
@@ -460,7 +415,7 @@ theorem ramificationIdx_pointEquivDegreeOnePlace_of_card_eq_four
     rw [← map_natCast (algebraMap F _), _root_.map_ne_zero]
     interval_cases Place.ramificationIdx (RatFunc F) (pointEquivDegreeOnePlace W T).1
     · simp
-    · exact_mod_cast two_ne_zero_of_card_eq_four hS hcard
+    · exact_mod_cast Point.two_ne_zero_of_card_eq_four hS hcard
   rw [(Place.ramificationIdx_eq_differentExponent_add_one_iff _ _ _).mpr htame,
     differentExponent_pointEquivDegreeOnePlace_of_card_eq_four hS hcard hT]
 
