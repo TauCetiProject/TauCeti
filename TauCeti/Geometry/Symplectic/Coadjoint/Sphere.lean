@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Orthogonal.CrossProduct
-public import TauCeti.Geometry.Manifold.Orientation.Sphere
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Comoment
-import TauCeti.Analysis.InnerProductSpace.Euclidean.CrossProduct
-import TauCeti.Geometry.Symplectic.Manifold.Sphere
+public import TauCeti.Geometry.Symplectic.Manifold.Sphere
 
 /-!
 # The two-sphere as a coadjoint orbit of `SO(3)`
@@ -23,10 +21,9 @@ origin (a fact about the group action, not treated here), and the orbit through 
 symplectic manifold on the unit sphere `S² ⊂ ℝ³`, parametrizing the orbit of radius `r` by
 `x ↦ r x`.
 
-The **area form** of `S²` is `σ_x(v, w) = x ⬝ (v × w)` (`TauCeti.sphereAreaForm`), the volume form
-of the sphere with its outward-normal orientation (`Orientation.sphereVolumeForm`). On any
-two-sphere this form vanishes nowhere, so it is symplectic
-(`Orientation.isSymplectic_sphereVolumeForm`).
+The **area form** of `S²` is `σ_x(v, w) = x ⬝ (v × w)` (`TauCeti.sphereAreaForm`), the symplectic
+volume form of the sphere with its outward-normal orientation, defined in
+`TauCeti.Geometry.Symplectic.Manifold.Sphere`.
 
 The infinitesimal rotation `A ∈ so(3)` moves `x ∈ S²` with velocity `A x = ξ × x`, where `A = ξ̂`.
 These rotation fields are the Hamiltonian vector fields of the height functions
@@ -49,7 +46,6 @@ along `x ↦ r x`. The total area `4π r` is not computed here.
 
 ## Main definitions
 
-* `TauCeti.sphereAreaForm`: the area form `σ_x(v, w) = x ⬝ (v × w)` of `S²`.
 * `TauCeti.sphereRotationAction`: the infinitesimal action of `so(3)` on `S²` by rotations.
 
 ## Main results
@@ -87,29 +83,6 @@ local notation "S²" => sphere (0 : ℝ³) 1
 
 /-- The inclusion of the unit sphere into `ℝ³`. -/
 local notation "ι" => ((↑) : S² → ℝ³)
-
-/-! ### The area form of the unit sphere of `ℝ³` -/
-
-/-- The **area form of the unit two-sphere** `S² ⊂ ℝ³`, `σ_x(v, w) = x ⬝ (v × w)`
-(`TauCeti.eval₂_sphereAreaForm`): the volume form of the sphere for the outward normal and the
-standard orientation of `ℝ³`. It is symplectic (`TauCeti.isSymplectic_sphereAreaForm`). -/
-def sphereAreaForm : SmoothTwoForm (𝓡 2) S² :=
-  (EuclideanSpace.basisFun (Fin 3) ℝ).toBasis.orientation.sphereVolumeForm
-
-/-- The area form of `S²` evaluates tangent vectors `v, w` at `x`, read in `ℝ³`, as the triple
-product `x ⬝ (v × w)`. -/
-theorem eval₂_sphereAreaForm (x : S²) (v w : TangentSpace (𝓡 2) x) :
-    SmoothBundleForm.eval₂ sphereAreaForm x v w =
-      ofLp (x : ℝ³) ⬝ᵥ ofLp (mvfderiv (𝓡 2) ι x v) ⨯₃ ofLp (mvfderiv (𝓡 2) ι x w) := by
-  rw [SmoothBundleForm.eval₂_apply, sphereAreaForm, Orientation.sphereVolumeForm_apply,
-    ← EuclideanSpace.volumeForm_basisFun_orientation_three]
-  congr 1
-  ext i : 1
-  fin_cases i <;> rfl
-
-/-- The area form of `S²` is symplectic. -/
-theorem isSymplectic_sphereAreaForm : sphereAreaForm.IsSymplectic :=
-  Orientation.isSymplectic_sphereVolumeForm _
 
 /-! ### Rotations and heights -/
 
