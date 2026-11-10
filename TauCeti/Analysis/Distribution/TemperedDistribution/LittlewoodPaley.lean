@@ -297,18 +297,13 @@ theorem exists_littlewoodPaleyBlock_eq_and_norm_le_of_le [CompleteSpace F] {p r 
         littlewoodPaleyBlock F φ j u = g ∧
           ‖g‖ ≤ C * 2 ^ (Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹) * j) * ‖f‖ := by
   obtain ⟨C, hC, hB⟩ :=
-    TauCeti.exists_iteratedLineDerivOp_eq_and_norm_le_of_isVanishingOn_fourier (E := E) (F := F)
-      hpr
+    TauCeti.exists_eq_and_norm_le_of_isVanishingOn_fourier (E := E) (F := F) hpr
   set a : ℝ := Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)
   refine ⟨C * φ.rOut ^ a, mul_nonneg hC (Real.rpow_nonneg φ.rOut_pos.le a), fun j u f hf ↦ ?_⟩
   -- Bernstein's inequality without derivatives, at the radius `2^j φ.rOut` carrying `Δⱼ u`.
-  obtain ⟨g, hg, hgf⟩ := hB 0 Fin.elim0 (R := 2 ^ j * φ.rOut)
-    (mul_pos (pow_pos two_pos j) φ.rOut_pos) f <| by
-    rw [← hf]
-    exact isVanishingOn_fourier_littlewoodPaleyBlock φ j u
-  rw [LineDeriv.iteratedLineDerivOp_fin_zero] at hg
+  obtain ⟨g, hg, hgf⟩ := hB (mul_pos (pow_pos two_pos j) φ.rOut_pos) f
+    (hf ▸ isVanishingOn_fourier_littlewoodPaleyBlock φ j u)
   refine ⟨g, hf.trans hg, hgf.trans_eq ?_⟩
-  simp only [Finset.univ_eq_empty, Finset.prod_empty, Nat.cast_zero, zero_add, pow_one, mul_one]
   rw [Real.mul_rpow (by positivity) φ.rOut_pos.le, ← Real.rpow_natCast,
     ← Real.rpow_mul zero_le_two, mul_comm (j : ℝ) a]
   ring
