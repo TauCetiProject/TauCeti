@@ -85,16 +85,10 @@ analytic. -/
 theorem upperHalfPlaneChart_symm_trans_mem_contDiffGroupoid
     {e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane}
     (he : e ∈ borderedHolomorphicGroupoid) :
-    upperHalfPlaneChart.symm ≫ₕ e ≫ₕ upperHalfPlaneChart ∈ contDiffGroupoid ω 𝓘(ℂ) := by
-  have hsymm : (upperHalfPlaneChart.symm ≫ₕ e ≫ₕ upperHalfPlaneChart).symm =
-      upperHalfPlaneChart.symm ≫ₕ e.symm ≫ₕ upperHalfPlaneChart := by
-    simp only [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
-      OpenPartialHomeomorph.symm_symm, OpenPartialHomeomorph.trans_assoc]
-  rw [contDiffGroupoid, mem_groupoid_of_pregroupoid, hsymm]
-  constructor
-  · simpa [contDiffPregroupoid, inter_assoc] using contDiffOn_upperHalfPlaneChart_conj he
-  · simpa [contDiffPregroupoid, inter_assoc] using
-      contDiffOn_upperHalfPlaneChart_conj (borderedHolomorphicGroupoid.symm he)
+    upperHalfPlaneChart.symm ≫ₕ e ≫ₕ upperHalfPlaneChart ∈ contDiffGroupoid ω 𝓘(ℂ) :=
+  upperHalfPlaneChart_symm_trans_mem_contDiffGroupoid_of_contDiffOn
+    (contDiffOn_upperHalfPlaneChart_conj he)
+    (contDiffOn_upperHalfPlaneChart_conj (borderedHolomorphicGroupoid.symm he))
 
 end ClosedUpperHalfPlane
 
@@ -218,7 +212,7 @@ theorem extChartAt_borderedInterior_apply (x y : borderedInterior M) :
     extChartAt closedUpperHalfPlaneModel y x = chartAt ℂ y x := by
   rw [extChartAt_coe, Function.comp_apply, closedUpperHalfPlaneModel_apply,
     chartAt_borderedInterior_apply]
-  rfl
+  simp [Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_coe]
 
 /-- The inverse of the extended chart of the open-subset structure of the interior at `y` is the
 inverse of the chart of the interior at `y`. -/

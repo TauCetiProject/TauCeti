@@ -178,6 +178,26 @@ theorem upperHalfPlaneChart_source :
 theorem upperHalfPlaneChart_target : upperHalfPlaneChart.target = {z : ℂ | 0 < z.im} :=
   (rfl)
 
+/-- A chart change of the closed upper half-plane, read in `ℂ` through the open upper half-plane,
+is in `contDiffGroupoid n 𝓘(𝕜, ℂ)` when it and its inverse, so read, are `C^n` over `𝕜` on their
+sources. -/
+theorem upperHalfPlaneChart_symm_trans_mem_contDiffGroupoid_of_contDiffOn
+    {𝕜 : Type*} [NontriviallyNormedField 𝕜] [NormedSpace 𝕜 ℂ] {n : ℕ∞ω}
+    {e : OpenPartialHomeomorph ClosedUpperHalfPlane ClosedUpperHalfPlane}
+    (h : ContDiffOn 𝕜 n (upperHalfPlaneChart.symm ≫ₕ e ≫ₕ upperHalfPlaneChart)
+      (upperHalfPlaneChart.symm ≫ₕ e ≫ₕ upperHalfPlaneChart).source)
+    (h_symm : ContDiffOn 𝕜 n (upperHalfPlaneChart.symm ≫ₕ e.symm ≫ₕ upperHalfPlaneChart)
+      (upperHalfPlaneChart.symm ≫ₕ e.symm ≫ₕ upperHalfPlaneChart).source) :
+    upperHalfPlaneChart.symm ≫ₕ e ≫ₕ upperHalfPlaneChart ∈ contDiffGroupoid n 𝓘(𝕜, ℂ) := by
+  have hsymm : (upperHalfPlaneChart.symm ≫ₕ e ≫ₕ upperHalfPlaneChart).symm =
+      upperHalfPlaneChart.symm ≫ₕ e.symm ≫ₕ upperHalfPlaneChart := by
+    simp only [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
+      OpenPartialHomeomorph.symm_symm, OpenPartialHomeomorph.trans_assoc]
+  rw [contDiffGroupoid, mem_groupoid_of_pregroupoid, hsymm]
+  constructor
+  · simpa [contDiffPregroupoid, inter_assoc] using h
+  · simpa [contDiffPregroupoid, inter_assoc] using h_symm
+
 /-- A chart change of the closed upper half-plane that is `C^n` up to the boundary, read in `ℂ`
 through the open upper half-plane, is `C^n`. -/
 theorem upperHalfPlaneChart_symm_trans_mem_contDiffGroupoid_of_mem_contDiffGroupoid {n : ℕ∞ω}
@@ -194,14 +214,8 @@ theorem upperHalfPlaneChart_symm_trans_mem_contDiffGroupoid_of_mem_contDiffGroup
     · simp only [mfld_simps] at hz
       exact ⟨hz.2.1, by simpa using le_of_lt hz.1⟩
     · simp
-  have hsymm : (upperHalfPlaneChart.symm ≫ₕ e ≫ₕ upperHalfPlaneChart).symm =
-      upperHalfPlaneChart.symm ≫ₕ e.symm ≫ₕ upperHalfPlaneChart := by
-    simp only [OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
-      OpenPartialHomeomorph.symm_symm, OpenPartialHomeomorph.trans_assoc]
-  rw [contDiffGroupoid, mem_groupoid_of_pregroupoid, hsymm]
-  constructor
-  · simpa [contDiffPregroupoid, inter_assoc] using hconj he
-  · simpa [contDiffPregroupoid, inter_assoc] using hconj ((contDiffGroupoid _ _).symm he)
+  exact upperHalfPlaneChart_symm_trans_mem_contDiffGroupoid_of_contDiffOn (hconj he)
+    (hconj ((contDiffGroupoid _ _).symm he))
 
 end ClosedUpperHalfPlane
 
