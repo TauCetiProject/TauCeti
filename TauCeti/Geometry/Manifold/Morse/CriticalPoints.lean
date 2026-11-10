@@ -22,6 +22,7 @@ import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.Opens
+import TauCeti.Topology.Instances.Real.SeparatingGrid
 
 /-!
 # The critical set of a real function on a manifold
@@ -43,6 +44,9 @@ function bounded below, this applies to every sublevel set. A compact band betwe
 values therefore holds finitely many critical levels, along which properties of the band can be
 proved one level at a time. Above a regular value, the critical points in a compact band stay a
 positive distance away in value, so the band begins with a collar free of critical points.
+On a compact manifold the values of a Morse function can be cut by a strictly increasing ℤ-indexed
+sequence of regular values, starting below and ending above all values of `f`, into critical
+bands, each containing at most one critical value.
 
 Restricting `f` to an open subset `U` keeps exactly the critical points lying in `U`, so the total
 critical count is additive over a finite partition of `M` into open sets, such as its connected
@@ -82,6 +86,13 @@ polynomial in the Morse inequalities.
   `c`, a Morse function has no critical values close to `c` other than `c` itself.
 * `TauCeti.IsMorse.exists_separating_levels`: on a compact manifold, levels just below `f p` and
   just above `f r` separate the critical values strictly between them.
+* `TauCeti.IsCriticalBand` and `TauCeti.IsCriticalBandCut`: compact bands with at most one
+  critical value, strictly inside, and sequences of values cutting `f` into such bands, which are
+  strictly increasing (`TauCeti.IsCriticalBandCut.strictMono`), with
+  `TauCeti.exists_isCriticalBandCut_of_finite_image_criticalPoints` and
+  `TauCeti.IsMorse.exists_isCriticalBandCut`: on a compact manifold a critical-band cut exists for
+  a function with finitely many critical values, such as a Morse function, starting below and
+  ending above all values of `f`.
 * `TauCeti.IsMorse.band_induction`: a property of compact bands between regular values follows
   from its validity across bands without critical points, across single critical levels, and
   along triples of levels.
@@ -693,6 +704,76 @@ theorem IsMorse.band_induction (hf : IsMorse I f) {P : ∀ s t : ℝ, s ≤ t �
     (htrans _ _ _ _ _ (hcompact' le_rfl (by linarith)) hlow hmid) hup
 
 end IsManifold
+
+/-! ### Critical-band cuts -/
+
+variable (I) in
+/-- The band `f⁻¹[s, t]` is a **critical band** of `f` when it is compact and contains at most one
+critical value of `f`, which lies strictly between `s` and `t` (so in particular `s < t`). -/
+structure IsCriticalBand (f : M → ℝ) (s t : ℝ) : Prop where
+  /-- The band is compact. -/
+  isCompact : IsCompact (f ⁻¹' Icc s t)
+  /-- The band contains at most one critical value, lying strictly between `s` and `t`. -/
+  exists_mem_Ioo_forall_eq : ∃ c ∈ Ioo s t, ∀ x ∈ criticalPoints I f, f x ∈ Icc s t → f x = c
+
+variable (I) in
+/-- A **critical-band cut** of `f` is a sequence of values `a : ℤ → ℝ` such that each band
+`f⁻¹[a q, a (q + 1)]` is a critical band of `f`: it is compact and contains at most one critical
+value, lying strictly between `a q` and `a (q + 1)`. Such a sequence is strictly increasing
+(`TauCeti.IsCriticalBandCut.strictMono`), and the sublevels `q ↦ {f ≤ a q}` form the
+critical-band filtration of `M`. -/
+structure IsCriticalBandCut (f : M → ℝ) (a : ℤ → ℝ) : Prop where
+  /-- Each band between consecutive cut values is a critical band. -/
+  isCriticalBand (q : ℤ) : IsCriticalBand I f (a q) (a (q + 1))
+
+/-- The ends of a critical band are in increasing order, since the band has a value strictly
+between them. -/
+theorem IsCriticalBand.lt {s t : ℝ} (h : IsCriticalBand I f s t) : s < t := by
+  obtain ⟨_, hc, _⟩ := h.exists_mem_Ioo_forall_eq
+  exact hc.1.trans hc.2
+
+/-- The values of a critical-band cut are strictly increasing. -/
+theorem IsCriticalBandCut.strictMono {a : ℤ → ℝ} (h : IsCriticalBandCut I f a) : StrictMono a :=
+  strictMono_int_of_lt_succ fun q ↦ (h.isCriticalBand q).lt
+
+/-- The values of a critical-band cut are monotone. -/
+theorem IsCriticalBandCut.monotone {a : ℤ → ℝ} (h : IsCriticalBandCut I f a) : Monotone a :=
+  h.strictMono.monotone
+
+/-- **Critical-band cuts exist on compact manifolds with finitely many critical values.** A
+continuous function `f` on a compact manifold with finitely many critical values has a
+critical-band cut `a : ℤ → ℝ` which starts below and ends above all values of `f`, so that the
+filtration `q ↦ {f ≤ a q}` is finite. -/
+theorem exists_isCriticalBandCut_of_finite_image_criticalPoints [CompactSpace M]
+    (hf : Continuous f) (hfin : (f '' criticalPoints I f).Finite) :
+    ∃ a : ℤ → ℝ, IsCriticalBandCut I f a ∧ (∃ q₀, ∀ x, a q₀ < f x) ∧ ∃ q₁, ∀ x, f x ≤ a q₁ := by
+  -- Cut at the points of a grid separating the critical values.
+  obtain ⟨a, ha, hbot, htop, hreg, hsub⟩ := hfin.exists_strictMono_notMem_subsingleton_inter_Icc
+  obtain ⟨m, hm⟩ := (isCompact_range hf).bddBelow
+  obtain ⟨m', hm'⟩ := (isCompact_range hf).bddAbove
+  obtain ⟨q₀, hq₀⟩ := (hbot.eventually (eventually_lt_atBot m)).exists
+  obtain ⟨q₁, hq₁⟩ := (htop.eventually (eventually_ge_atTop m')).exists
+  refine ⟨a, ⟨fun q ↦ ⟨(isClosed_Icc.preimage hf).isCompact, ?_⟩⟩,
+    ⟨q₀, fun x ↦ hq₀.trans_le (hm (mem_range_self x))⟩,
+    ⟨q₁, fun x ↦ (hm' (mem_range_self x)).trans hq₁⟩⟩
+  by_cases hx : ∃ x ∈ criticalPoints I f, f x ∈ Icc (a q) (a (q + 1))
+  · obtain ⟨x, hx, hfx⟩ := hx
+    have hxC : f x ∈ f '' criticalPoints I f := mem_image_of_mem f hx
+    exact ⟨f x, ⟨hfx.1.lt_of_ne fun h ↦ hreg q (by rwa [h]),
+      hfx.2.lt_of_ne fun h ↦ hreg (q + 1) (by rwa [← h])⟩,
+      fun y hy hfy ↦ hsub q ⟨mem_image_of_mem f hy, hfy⟩ ⟨hxC, hfx⟩⟩
+  · push Not at hx
+    have := ha (lt_add_one q)
+    exact ⟨(a q + a (q + 1)) / 2, ⟨by linarith, by linarith⟩,
+      fun y hy hfy ↦ absurd hfy (hx y hy)⟩
+
+/-- **Critical-band cuts exist for Morse functions on compact manifolds.** A Morse function `f` on
+a compact manifold has a critical-band cut `a : ℤ → ℝ` which starts below and ends above all values
+of `f`, so that the filtration `q ↦ {f ≤ a q}` is finite. -/
+theorem IsMorse.exists_isCriticalBandCut [IsManifold I 1 M] [CompactSpace M] (hf : IsMorse I f) :
+    ∃ a : ℤ → ℝ, IsCriticalBandCut I f a ∧ (∃ q₀, ∀ x, a q₀ < f x) ∧ ∃ q₁, ∀ x, f x ≤ a q₁ :=
+  exists_isCriticalBandCut_of_finite_image_criticalPoints hf.contMDiff.continuous
+    (hf.finite_criticalPoints.image f)
 
 /-! ### Counting critical points -/
 
