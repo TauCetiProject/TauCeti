@@ -132,6 +132,37 @@ theorem ContinuousLinearMap.isInvertible_of_mul_norm_sub_lt [CompleteSpace E]
 
 end Perturbation
 
+section InverseFamily
+
+/-- The derivative of a family of inverses: if `φ y ∘ ψ y = id` for `y` near `z` and
+`ψ z ∘ φ z = id`, then the derivative of `φ` at `z` in the direction `v` is
+`-(φ z ∘ ψ' v ∘ φ z)`. The maps may be linear over a larger field `𝕜'` than the field `𝕜` of
+differentiation, and the variable lives in any normed space. `HasDerivAt.clm_inverse` is the
+one-variable case. -/
+theorem TauCeti.fderiv_eq_neg_comp_of_comp_eq_id {𝕜' : Type*} [NontriviallyNormedField 𝕜']
+    [NormedAlgebra 𝕜 𝕜'] {E₁ E₂ X : Type*} [NormedAddCommGroup E₁] [NormedSpace 𝕜' E₁]
+    [NormedAddCommGroup E₂] [NormedSpace 𝕜' E₂] [NormedSpace 𝕜 E₁] [IsScalarTower 𝕜 𝕜' E₁]
+    [NormedSpace 𝕜 E₂] [IsScalarTower 𝕜 𝕜' E₂] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    {φ : X → E₂ →L[𝕜'] E₁} {ψ : X → E₁ →L[𝕜'] E₂} {z : X} (hφ : DifferentiableAt 𝕜 φ z)
+    (hψ : DifferentiableAt 𝕜 ψ z) (hl : ∀ᶠ y in 𝓝 z, φ y ∘L ψ y = .id 𝕜' E₁)
+    (hr : ψ z ∘L φ z = .id 𝕜' E₂) (v : X) :
+    fderiv 𝕜 φ z v = -(φ z ∘L (fderiv 𝕜 ψ z v ∘L φ z)) := by
+  -- The product rule for `φ ∘ ψ`, which is constant near `z`; composition of `𝕜'`-linear maps
+  -- is a continuous `𝕜`-bilinear map.
+  have h := congrArg (fun L => L v)
+    (((compL 𝕜' E₁ E₂ E₁).bilinearRestrictScalars 𝕜).fderiv_of_bilinear hφ hψ)
+  have hl' : (fun y => φ y ∘L ψ y) =ᶠ[𝓝 z] fun _ => ContinuousLinearMap.id 𝕜' E₁ := hl
+  simp only [hl'.fderiv_eq, fderiv_const_apply, zero_apply, add_apply, precompR_apply,
+    precompL_apply, comp_apply, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
+    compL_apply] at h
+  -- Compose `0 = φ ∘ ψ' v + φ' v ∘ ψ` on the right with `φ z`.
+  have h' := congrArg (· ∘L φ z) h
+  simp only [ContinuousLinearMap.zero_comp, ContinuousLinearMap.add_comp,
+    ContinuousLinearMap.comp_assoc, hr, ContinuousLinearMap.comp_id] at h'
+  exact eq_neg_of_add_eq_zero_right h'.symm
+
+end InverseFamily
+
 variable {t₀ : 𝕜} {A : 𝕜 → E →L[𝕜] F} {A' : E →L[𝕜] F} {w : 𝕜 → F} {w' : F}
 
 /-- The derivative of an inverse family of continuous linear maps, assuming the family is
@@ -141,29 +172,13 @@ theorem HasDerivAt.clm_inverse (hA : HasDerivAt A A' t₀)
     (hInvDiff : DifferentiableAt 𝕜 (fun t => (A t).inverse) t₀) :
     HasDerivAt (fun t => (A t).inverse)
       (-((A t₀).inverse.comp (A'.comp (A t₀).inverse))) t₀ := by
-  have hAInv : ∀ᶠ t in 𝓝 t₀, (A t).IsInvertible :=
-    hA0Inv.eventually_of_tendsto_inverse hInvDiff.continuousAt
-  let B' : F →L[𝕜] E := _root_.deriv (fun t => (A t).inverse) t₀
-  have hInvRaw : HasDerivAt (fun t => (A t).inverse) B' t₀ := hInvDiff.hasDerivAt
-  have hB'eq : B' = -((A t₀).inverse.comp (A'.comp (A t₀).inverse)) := by
-    apply ContinuousLinearMap.ext
-    intro v
-    have hconst : HasDerivAt (fun _ : 𝕜 => v) 0 t₀ := hasDerivAt_const t₀ v
-    have hBv := hInvRaw.clm_apply hconst
-    have hABv := hA.clm_apply hBv
-    have heq : (fun t => A t ((A t).inverse v)) =ᶠ[𝓝 t₀] fun _ => v := by
-      filter_upwards [hAInv] with t ht
-      exact ht.self_apply_inverse v
-    have hzero : HasDerivAt (fun t => A t ((A t).inverse v)) 0 t₀ := by
-      exact hconst.congr_of_eventuallyEq heq
-    have hderivZero := hABv.unique hzero
-    simp only [map_zero, add_zero] at hderivZero
-    apply hA0Inv.injective
-    simp only [neg_apply, ContinuousLinearMap.comp_apply]
-    rw [map_neg, hA0Inv.self_apply_inverse]
-    exact eq_neg_of_add_eq_zero_right hderivZero
-  rw [hB'eq] at hInvRaw
-  exact hInvRaw
+  have hl : ∀ᶠ t in 𝓝 t₀, (A t).inverse ∘L A t = .id 𝕜 E := by
+    filter_upwards [hA0Inv.eventually_of_tendsto_inverse hInvDiff.continuousAt] with t ht
+    exact ht.inverse_comp_self
+  have h := TauCeti.fderiv_eq_neg_comp_of_comp_eq_id hInvDiff hA.differentiableAt hl
+    hA0Inv.self_comp_inverse 1
+  rw [fderiv_apply_one_eq_deriv, fderiv_apply_one_eq_deriv, hA.deriv] at h
+  exact h ▸ hInvDiff.hasDerivAt
 
 /-- The derivative of an inverse family of continuous linear maps acting on a differentiable
 vector curve, assuming the family is invertible at the base point and the inverse family is
@@ -200,36 +215,6 @@ theorem HasDerivAt.clm_inverse_apply_of_completeSpace [CompleteSpace E]
       ((A t₀).inverse w' - (A t₀).inverse (A' ((A t₀).inverse (w t₀)))) t₀ := by
   exact hA.clm_inverse_apply hA0Inv
     (DifferentiableAt.clm_inverse_of_completeSpace hA.differentiableAt hA0Inv) hw
-
-section InverseFamily
-
-/-- The derivative of a family of inverses: if `φ y ∘ ψ y = id` for `y` near `z` and
-`ψ z ∘ φ z = id`, then the derivative of `φ` at `z` in the direction `v` is
-`-(φ z ∘ ψ' v ∘ φ z)`. The maps may be linear over a larger field `𝕜'` than the field `𝕜` of
-differentiation; unlike `HasDerivAt.clm_inverse`, the variable lives in any normed space. -/
-theorem TauCeti.fderiv_eq_neg_comp_of_comp_eq_id {𝕜' : Type*} [NontriviallyNormedField 𝕜']
-    [NormedAlgebra 𝕜 𝕜'] {E₁ E₂ X : Type*} [NormedAddCommGroup E₁] [NormedSpace 𝕜' E₁]
-    [NormedAddCommGroup E₂] [NormedSpace 𝕜' E₂] [NormedSpace 𝕜 E₁] [IsScalarTower 𝕜 𝕜' E₁]
-    [NormedSpace 𝕜 E₂] [IsScalarTower 𝕜 𝕜' E₂] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
-    {φ : X → E₂ →L[𝕜'] E₁} {ψ : X → E₁ →L[𝕜'] E₂} {z : X} (hφ : DifferentiableAt 𝕜 φ z)
-    (hψ : DifferentiableAt 𝕜 ψ z) (hl : ∀ᶠ y in 𝓝 z, φ y ∘L ψ y = .id 𝕜' E₁)
-    (hr : ψ z ∘L φ z = .id 𝕜' E₂) (v : X) :
-    fderiv 𝕜 φ z v = -(φ z ∘L (fderiv 𝕜 ψ z v ∘L φ z)) := by
-  -- The product rule for `φ ∘ ψ`, which is constant near `z`; composition of `𝕜'`-linear maps
-  -- is a continuous `𝕜`-bilinear map.
-  have h := congrArg (fun L => L v)
-    (((compL 𝕜' E₁ E₂ E₁).bilinearRestrictScalars 𝕜).fderiv_of_bilinear hφ hψ)
-  have hl' : (fun y => φ y ∘L ψ y) =ᶠ[𝓝 z] fun _ => ContinuousLinearMap.id 𝕜' E₁ := hl
-  simp only [hl'.fderiv_eq, fderiv_const_apply, zero_apply, add_apply, precompR_apply,
-    precompL_apply, comp_apply, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
-    compL_apply] at h
-  -- Compose `0 = φ ∘ ψ' v + φ' v ∘ ψ` on the right with `φ z`.
-  have h' := congrArg (· ∘L φ z) h
-  simp only [ContinuousLinearMap.zero_comp, ContinuousLinearMap.add_comp,
-    ContinuousLinearMap.comp_assoc, hr, ContinuousLinearMap.comp_id] at h'
-  exact eq_neg_of_add_eq_zero_right h'.symm
-
-end InverseFamily
 
 section RingInverse
 
