@@ -54,6 +54,14 @@ theorem Antitone.eq_of_card_filter_eq (hf : Antitone f) (hg : Antitone g)
     (h : ∀ a, #{i | f i = a} = #{i | g i = a}) : f = g :=
   Monotone.eq_of_card_filter_eq (α := αᵒᵈ) hf hg h
 
+/-- A map from a finite type with the same range as an injective map is injective. -/
+theorem Function.Injective.of_range_eq {ι β : Type*} [Finite ι] {f g : ι → β}
+    (hf : Function.Injective f) (h : Set.range f = Set.range g) : Function.Injective g := by
+  have e : ι ≃ Set.range g :=
+    (Equiv.ofInjective f hf).trans (Equiv.subtypeEquivRight fun x => by rw [h])
+  exact Subtype.val_injective.comp
+    ((Finite.injective_iff_surjective_of_equiv e).2 Set.rangeFactorization_surjective)
+
 namespace Tuple
 
 variable {β : Type*} [LinearOrder β] {m : ℕ}
@@ -70,11 +78,7 @@ theorem range_comp_sort (b : Fin m → β) : Set.range (b ∘ sort b) = Set.rang
 /-- The increasing rearrangement of an injective tuple only depends on its set of entries. -/
 theorem comp_sort_eq_comp_sort_of_range_eq {b b' : Fin m → β} (hb : Function.Injective b)
     (h : Set.range b = Set.range b') : b ∘ sort b = b' ∘ sort b' := by
-  have hb' : Function.Injective b' := by
-    have e : Fin m ≃ Set.range b' :=
-      (Equiv.ofInjective b hb).trans (Equiv.subtypeEquivRight fun x => by rw [h])
-    exact Subtype.val_injective.comp
-      ((Finite.injective_iff_surjective_of_equiv e).2 (Set.rangeFactorization_surjective))
+  have hb' : Function.Injective b' := hb.of_range_eq h
   exact ((strictMono_comp_sort hb).range_inj_of_wellFoundedLT (strictMono_comp_sort hb')).1 <| by
     rw [range_comp_sort, range_comp_sort, h]
 
@@ -108,6 +112,10 @@ theorem comp_succAbove_comp_sort {n : ℕ} {b : Fin (n + 1) → β} (k : Fin (n 
     (fun i : Fin n ↦ if b (k.succAbove i) = a then 1 else 0 : Fin n → ℕ)
   simp only [Equiv.apply_symm_apply, Function.comp_apply] at h1 h4 ⊢
   simp only [card_filter]
+  -- Both sides count the occurrences of `a` among the entries of `b` other than the one at `k`:
+  -- `h2` and `h3` reindex the total count along `sort b`, `h1` splits off the position
+  -- `(sort b).symm k` from it, and `h4` reindexes the left-hand side along
+  -- `sort (b ∘ k.succAbove)`.
   omega
 
 end Tuple
