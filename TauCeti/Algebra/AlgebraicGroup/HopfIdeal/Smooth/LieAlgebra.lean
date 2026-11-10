@@ -95,7 +95,7 @@ theorem eq_bot_of_lieSubalgebra_eq_top [Algebra.Smooth k H] [ConnectedSpace (Pri
     ((smoothCommHopfAlgProperty_iff _).mpr
       (FiniteTypeCommHopfAlgCat.smooth_identityComponent Q))
     (FiniteTypeCommHopfAlgCat.connectedSpace_identityComponent Q)
-    (conormalSubspace_ker_eq_bot_of_surjective_of_derivationCompLieHom_surjective f hf hdf)
+    (conormalSubspace_ker_eq_bot_of_derivationCompLieHom_surjective f hdf)
   refine le_antisymm (fun x hx ↦ ?_) bot_le
   rw [← hker, mem_ker]
   have hx0 : Bialgebra.Quotient.mkBialgHom (R := k) I.toIdeal x = 0 := by

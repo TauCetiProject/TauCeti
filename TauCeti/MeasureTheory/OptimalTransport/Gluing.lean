@@ -150,7 +150,15 @@ theorem map_prodMap_id_fst_glue [SFinite π] [IsMarkovKernel κ] :
 /-- The `(Y, Z)`-marginal of a gluing is the composition-product of the middle marginal with the
 kernel. -/
 @[simp]
-theorem snd_glue [SFinite π] [IsSFiniteKernel κ] : (glue π κ).snd = π.snd ⊗ₘ κ := by
+theorem snd_glue [SFinite π] : (glue π κ).snd = π.snd ⊗ₘ κ := by
+  by_cases hκ : IsSFiniteKernel κ
+  swap
+  · rcases isEmpty_or_nonempty X with hX | hX
+    · have : π = 0 := MeasureTheory.Measure.eq_zero_of_isEmpty π
+      simp [glue, this]
+    · have : ¬IsSFiniteKernel (Kernel.prodMkLeft X κ) := by
+        rwa [Kernel.isSFiniteKernel_prodMkLeft_iff]
+      simp [glue, MeasureTheory.Measure.compProd_of_not_isSFiniteKernel _ _ hκ, this]
   have h : (Prod.snd : X × Y × Z → Y × Z) ∘
       ⇑(MeasurableEquiv.prodAssoc (α := X) (β := Y) (γ := Z))
       = Prod.map (Prod.snd : X × Y → Y) (id : Z → Z) := rfl
@@ -196,8 +204,11 @@ variable (σ : Measure (Y × Z))
 
 /-- Gluing `π` against a conditional kernel of `σ` recovers `σ` as the `(Y, Z)`-marginal, as soon
 as the two plans share their middle marginal. -/
-theorem snd_glue_condKernel [StandardBorelSpace Z] [Nonempty Z] [SFinite π] [IsFiniteMeasure σ]
+theorem snd_glue_condKernel [StandardBorelSpace Z] [Nonempty Z] [IsFiniteMeasure σ]
     (hπσ : π.snd = σ.fst) : (glue π σ.condKernel).snd = σ := by
+  have : IsFiniteMeasure π := ⟨by
+    rw [← MeasureTheory.Measure.snd_univ, hπσ]
+    exact measure_lt_top _ _⟩
   rw [snd_glue, hπσ, MeasureTheory.Measure.disintegrate]
 
 /-- **The gluing lemma**, obtained by disintegrating the second plan over the middle space.
@@ -371,10 +382,10 @@ to be a ground distance recovers `d (x, z) ≤ d (x, y) + d (y, z)`, and the glu
 lets the three integrals be compared on a common space. -/
 theorem lintegral_map_prodMap_id_snd_le (hγπ : γ.map (Prod.map id Prod.fst) = π)
     (hγσ : γ.snd = σ) {c : X × Z → ℝ≥0∞} {c₁ : X × Y → ℝ≥0∞} {c₂ : Y × Z → ℝ≥0∞}
-    (hc : Measurable c) (hc₁ : Measurable c₁) (hc₂ : Measurable c₂)
+    (hc₁ : Measurable c₁) (hc₂ : Measurable c₂)
     (hle : ∀ x y z, c (x, z) ≤ c₁ (x, y) + c₂ (y, z)) :
     ∫⁻ q, c q ∂(γ.map (Prod.map id Prod.snd)) ≤ (∫⁻ w, c₁ w ∂π) + ∫⁻ v, c₂ v ∂σ := by
-  rw [lintegral_map hc (measurable_id.prodMap measurable_snd)]
+  refine (lintegral_map_le c (measurable_id.prodMap measurable_snd).aemeasurable).trans ?_
   calc ∫⁻ p, c (Prod.map id Prod.snd p) ∂γ
       ≤ ∫⁻ p, (c₁ (Prod.map id Prod.fst p) + c₂ p.2) ∂γ :=
         lintegral_mono fun p ↦ hle p.1 p.2.1 p.2.2
@@ -397,13 +408,13 @@ estimate of `TauCeti.Measure.lintegral_map_prodMap_id_snd_le`. -/
 theorem exists_comp_lintegral_le_of_exists_glue
     (h : ∃ γ : Measure (X × Y × Z), γ.map (Prod.map id Prod.fst) = π ∧ γ.snd = σ)
     {c : X × Z → ℝ≥0∞} {c₁ : X × Y → ℝ≥0∞} {c₂ : Y × Z → ℝ≥0∞}
-    (hc : Measurable c) (hc₁ : Measurable c₁) (hc₂ : Measurable c₂)
+    (hc₁ : Measurable c₁) (hc₂ : Measurable c₂)
     (hle : ∀ x y z, c (x, z) ≤ c₁ (x, y) + c₂ (y, z)) :
     ∃ ζ : Measure (X × Z), ζ.fst = π.fst ∧ ζ.snd = σ.snd ∧
       ∫⁻ q, c q ∂ζ ≤ (∫⁻ w, c₁ w ∂π) + ∫⁻ v, c₂ v ∂σ :=
   let ⟨γ, hγπ, hγσ⟩ := h
   ⟨γ.map (Prod.map id Prod.snd), fst_map_prodMap_id_snd hγπ, snd_map_prodMap_id_snd hγσ,
-    lintegral_map_prodMap_id_snd_le hγπ hγσ hc hc₁ hc₂ hle⟩
+    lintegral_map_prodMap_id_snd_le hγπ hγσ hc₁ hc₂ hle⟩
 
 /-- Two plans sharing a middle marginal compose to a plan with the two outer marginals, when the
 last space is standard Borel. -/
