@@ -469,7 +469,8 @@ private theorem isBigO_iteratedFDeriv_of_laplacian_eq_exp_sub_one_of_contDiff {�
     refine ⟨hℓall, fun i hi ↦ ?_⟩
     rcases Nat.lt_or_eq_of_le hi with h | rfl
     · exact ih.2 i (by omega)
-    · exact (hℓ.isBigO_iteratedFDeriv_succ_exp hℓall ih.2).trans hρ1
+    · exact ((hℓ.of_le (by simp)).isBigO_iteratedFDeriv_succ_exp (fun i _ hi ↦ hℓall i hi)
+        ih.2).trans hρ1
 
 /-- **Exponential decay of all derivatives of solutions of `Δ ℓ = κ (exp ℓ - 1)`.** Let `ℓ` be
 smooth outside a compact set and solve `Δ ℓ = κ (exp ℓ - 1)` there. If `ℓ` is `O(exp (-c ‖x‖))`
@@ -518,7 +519,8 @@ theorem isBigO_iteratedFDeriv_exp_sub_one_of_laplacian_eq_exp_sub_one {ℓ : E �
           ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc))) hℓd')
     · have he : ContDiff ℝ ∞ (fun x ↦ Real.exp (ℓ' x)) := Real.contDiff_exp.comp hℓ'c
       refine (isBigO_of_le _ fun y ↦ le_of_eq ?_).trans
-        (hℓ'c.isBigO_iteratedFDeriv_succ_exp (hP (n + 1)).1 (hP n).2)
+        ((hℓ'c.of_le (by simp)).isBigO_iteratedFDeriv_succ_exp
+          (fun i _ hi ↦ (hP (n + 1)).1 i hi) (hP n).2)
       rw [fun_iteratedFDeriv_sub_apply (he.contDiffAt.of_le (by simp)) contDiffAt_const,
         iteratedFDeriv_const_of_ne (by omega), Pi.zero_apply, sub_zero]
   refine h.congr' (hagree.mono fun x hx ↦ ?_) EventuallyEq.rfl
