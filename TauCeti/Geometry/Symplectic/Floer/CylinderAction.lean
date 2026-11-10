@@ -173,6 +173,14 @@ theorem contMDiff_uncurry_linearHomotopy {n : ℕ∞} {H₀ H₁ : ℝ → M →
   exact ((contMDiff_uncurry_comp_snd hH₀).add (hs.smul ((contMDiff_uncurry_comp_snd hH₁).sub
     (contMDiff_uncurry_comp_snd hH₀)))).congr fun p ↦ linearHomotopy_def β p.1 p.2
 
+/-- The continuation homotopy of two `Cⁿ` time-dependent Hamiltonians on a manifold is `Cⁿ`. -/
+theorem contMDiff_uncurry_continuationHomotopy {n : ℕ∞} {H₀ H₁ : ℝ → M → ℝ}
+    (hH₀ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry H₀))
+    (hH₁ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry H₁)) :
+    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n (uncurry (continuationHomotopy H₀ H₁)) := by
+  rw [continuationHomotopy_eq_linearHomotopy]
+  exact contMDiff_uncurry_linearHomotopy smoothTransition.contDiff hH₀ hH₁
+
 end TauCeti.Floer
 
 namespace TauCeti.SmoothTwoForm

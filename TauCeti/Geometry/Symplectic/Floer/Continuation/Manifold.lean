@@ -54,8 +54,6 @@ The existence, compactness and counting of continuation cylinders are not treate
 
 ## Main results
 
-* `TauCeti.Floer.contMDiff_uncurry_continuationHomotopy`: the continuation homotopy of `C^n`
-  Hamiltonians on a manifold is `C^n`.
 * `TauCeti.SmoothTwoForm.hamiltonianCurvature_linearHomotopy`: the curvature of a linear homotopy
   is `β'(s) (H₁ - H₀)(t)`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_linearHomotopy_le`: the
@@ -80,21 +78,6 @@ open Function MeasureTheory Set Real
 open scoped Manifold
 
 namespace TauCeti
-
-namespace Floer
-
-variable {E HM M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace HM]
-  {I : ModelWithCorners ℝ E HM} [TopologicalSpace M] [ChartedSpace HM M] {H₀ H₁ : ℝ → M → ℝ}
-
-/-- The continuation homotopy of two `Cⁿ` time-dependent Hamiltonians on a manifold is `Cⁿ`. -/
-theorem contMDiff_uncurry_continuationHomotopy {n : ℕ∞}
-    (hH₀ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry H₀))
-    (hH₁ : ContMDiff (𝓘(ℝ).prod I) 𝓘(ℝ) n (uncurry H₁)) :
-    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) n (uncurry (continuationHomotopy H₀ H₁)) := by
-  rw [continuationHomotopy_eq_linearHomotopy]
-  exact contMDiff_uncurry_linearHomotopy smoothTransition.contDiff hH₀ hH₁
-
-end Floer
 
 namespace SmoothTwoForm
 
