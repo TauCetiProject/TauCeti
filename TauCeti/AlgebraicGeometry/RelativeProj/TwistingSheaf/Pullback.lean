@@ -28,13 +28,9 @@ isomorphism (`AlgebraicGeometry.Scheme.Modules.isIso_of_forall_exists_bijective_
 
 ## Main results
 
-* `CategoryTheory.CommMon.isOpenImmersion_colimit_ι_relativeProjGluingData`: the charts of the
-  relative `Proj`, written as coprojections of the gluing diagram, are open immersions.
 * `CategoryTheory.CommMon.π_app_relativeProjTwistingSheafMap_app_pullbackSections`: on the
   pullback of a section, the glued morphism of twisting sheaves is computed by the chart
   components.
-* `CategoryTheory.CommMon.image_basicOpen_le_preimage_relativeProjMap`: the morphism of relative
-  `Proj`s maps the image of `D₊(φ b)` into the image of `D₊(b)`.
 * `CategoryTheory.CommMon.π_app_relativeProjTwistingSheafMap_app_chartGenerator`: the glued
   morphism sends the pullback of the standard generator `bⁿ` to the standard generator `(φ b)ⁿ`.
 * `CategoryTheory.CommMon.isIso_relativeProjTwistingSheafMap`: the glued morphism
@@ -89,22 +85,26 @@ theorem _root_.CategoryTheory.CommMon.π_app_relativeProjTwistingSheafMap_app_pu
     ((CommMon.relativeProjTwistingSheafMap φ hφ n).app _ x))
       (Scheme.Hom.pullbackSections_apply _ _ W t)).trans h
 
-/-- The charts of the relative `Proj`, written as the coprojections of the gluing diagram, are open
-immersions. -/
-instance _root_.CategoryTheory.CommMon.isOpenImmersion_colimit_ι_relativeProjGluingData
-    (U : X.AffineZariskiSite) : IsOpenImmersion (colimit.ι A.relativeProjGluingData.functor U) :=
-  A.isOpenImmersion_relativeProjCover_f U
-
-/-- The morphism of relative `Proj`s maps the image of `D₊(φ b)` in the chart of `Proj_X(A)` over
-`U` into the image of `D₊(b)` in the chart of `Proj_X(B)` over `U`. -/
-theorem _root_.CategoryTheory.CommMon.image_basicOpen_le_preimage_relativeProjMap
-    (U : X.AffineZariskiSite) (b : ⨁ n, Γ(B.X n, U.toOpens)) :
-    colimit.ι A.relativeProjGluingData.functor U ''ᵁ
-        Proj.basicOpen _ (CommMon.gradedSectionsGradedHom φ U.toOpens b) ≤
-      CommMon.relativeProjMap φ hφ ⁻¹ᵁ
-        (colimit.ι B.relativeProjGluingData.functor U ''ᵁ Proj.basicOpen _ b) := by
-  rintro _ ⟨z, hz, rfl⟩
-  exact ⟨Proj.map _ (hφ U.toOpens U.2) z, hz, congr($(CommMon.ι_relativeProjMap φ hφ U) z).symm⟩
+/-- Restricting the image of the pullback of `t` to a smaller open `W` is restricting the image of
+the pullback of `t` over the full preimage. -/
+private theorem presheaf_map_relativeProjTwistingSheafMap_app_pullbackSectionsLE
+    {V : (colimit B.relativeProjGluingData.functor).Opens} {V' W : A.relativeProj.Opens}
+    (hV : V' ≤ CommMon.relativeProjMap φ hφ ⁻¹ᵁ V) (i : W ⟶ V')
+    (t : Γ((B.relativeProjTwistingSheafGlueData n).glued, V)) :
+    (A.relativeProjTwistingSheaf n).presheaf.map i.op
+        ((CommMon.relativeProjTwistingSheafMap φ hφ n).app _
+          (Scheme.Hom.pullbackSectionsLE _ _ _ _ hV t)) =
+      (A.relativeProjTwistingSheaf n).presheaf.map (homOfLE (i.le.trans hV)).op
+        ((CommMon.relativeProjTwistingSheafMap φ hφ n).app _
+          (Scheme.Hom.pullbackSections (CommMon.relativeProjMap φ hφ)
+            (B.relativeProjTwistingSheaf n) _ t)) := by
+  refine (congrArg (fun z ↦ (A.relativeProjTwistingSheaf n).presheaf.map i.op
+    ((CommMon.relativeProjTwistingSheafMap φ hφ n).app _ z))
+      (Scheme.Hom.pullbackSectionsLE_apply _ _ _ _ hV t)).trans ?_
+  refine (congrArg ((A.relativeProjTwistingSheaf n).presheaf.map i.op)
+    (PresheafOfModules.naturality_apply (CommMon.relativeProjTwistingSheafMap φ hφ n).val
+      (homOfLE hV).op _)).trans ?_
+  exact (Functor.map_comp_apply _ _ _ _).symm
 
 /-- **The glued morphism of twisting sheaves sends the standard generator `bⁿ` to `(φ b)ⁿ`**: if a
 section `t` of `𝒪(n)` on `Proj_X(B)` restricts on the chart over `U` to the standard generator `bⁿ`
@@ -129,43 +129,27 @@ theorem _root_.CategoryTheory.CommMon.π_app_relativeProjTwistingSheafMap_app_ch
         ((Scheme.Hom.preimage_mono _ i.le).trans
           ((colimit.ι A.relativeProjGluingData.functor U).preimage_image_eq _).le) := by
   have hVA := CommMon.image_basicOpen_le_preimage_relativeProjMap φ hφ U b
-  have hnat {Y : Scheme.{u}} {P Q : Y.Modules} (α : P ⟶ Q) {V V' : Y.Opens} (j : V ⟶ V')
-      (z : Γ(P, V')) : α.app V (P.presheaf.map j.op z) = Q.presheaf.map j.op (α.app V' z) := by
-    simpa only [Scheme.Modules.mapPresheaf_app, Opposite.unop_op] using
-      α.mapPresheaf.naturality_apply j.op z
-  have hres {Y : Scheme.{u}} {P : Y.Modules} {V₁ V₂ V₃ : Y.Opens} (j₁ : V₁ ⟶ V₂) (j₂ : V₂ ⟶ V₃)
-      (z : Γ(P, V₃)) :
-      P.presheaf.map j₁.op (P.presheaf.map j₂.op z) = P.presheaf.map (j₁ ≫ j₂).op z := by
-    rw [op_comp, Functor.map_comp, ConcreteCategory.comp_apply]
-  have e1 : (A.relativeProjTwistingSheaf n).presheaf.map i.op
-      ((CommMon.relativeProjTwistingSheafMap φ hφ n).app _
-        (Scheme.Hom.pullbackSectionsLE _ _ _ _ hVA t)) =
-      (A.relativeProjTwistingSheaf n).presheaf.map (homOfLE (i.le.trans hVA)).op
-        ((CommMon.relativeProjTwistingSheafMap φ hφ n).app _
-          (Scheme.Hom.pullbackSections (CommMon.relativeProjMap φ hφ)
-            (B.relativeProjTwistingSheaf n) _ t)) := by
-    refine (congrArg (fun z ↦ (A.relativeProjTwistingSheaf n).presheaf.map i.op
-      ((CommMon.relativeProjTwistingSheafMap φ hφ n).app _ z))
-        (Scheme.Hom.pullbackSectionsLE_apply _ _ _ _ hVA t)).trans ?_
-    refine (congrArg ((A.relativeProjTwistingSheaf n).presheaf.map i.op)
-      (hnat _ (homOfLE hVA) _)).trans ?_
-    exact hres _ _ _
-  rw [e1]
-  refine (hnat ((A.relativeProjTwistingSheafGlueData n).π U) _ _).trans ?_
-  refine (congrArg (((Scheme.Modules.pushforward (colimit.ι A.relativeProjGluingData.functor U)).obj
-    ((A.relativeProjTwistingSheafGlueData n).obj U)).presheaf.map (homOfLE (i.le.trans hVA)).op)
-      (CommMon.π_app_relativeProjTwistingSheafMap_app_pullbackSections φ hφ n U _ t)).trans ?_
+  -- restriction to `W` of the sections of the chart `𝒪(n)` over the preimage of the image of
+  -- `D₊(b)`
+  let res := ((Scheme.Modules.pushforward (colimit.ι A.relativeProjGluingData.functor U)).obj
+    ((A.relativeProjTwistingSheafGlueData n).obj U)).presheaf.map (homOfLE (i.le.trans hVA)).op
+  refine (congrArg (((A.relativeProjTwistingSheafGlueData n).π U).app W)
+    (presheaf_map_relativeProjTwistingSheafMap_app_pullbackSectionsLE φ hφ n hVA i t)).trans ?_
+  -- move the restriction to `W` past the projection `π` to the chart over `U`
+  refine (PresheafOfModules.naturality_apply ((A.relativeProjTwistingSheafGlueData n).π U).val
+    (homOfLE (i.le.trans hVA)).op _).trans ?_
+  -- on the chart, the glued morphism is the chart component applied to the generator `bⁿ`
+  refine (congrArg res
+    (CommMon.π_app_relativeProjTwistingSheafMap_app_pullbackSections φ hφ n U _ t)).trans ?_
   rw [ht]
-  refine (congrArg (((Scheme.Modules.pushforward (colimit.ι A.relativeProjGluingData.functor U)).obj
-    ((A.relativeProjTwistingSheafGlueData n).obj U)).presheaf.map (homOfLE (i.le.trans hVA)).op)
-      (CommMon.relativeProjTwistingSheafMapChart_app_apply φ hφ n U _ _)).trans ?_
-  refine (congrArg (fun z ↦ ((Scheme.Modules.pushforward
-    (colimit.ι A.relativeProjGluingData.functor U)).obj
-      ((A.relativeProjTwistingSheafGlueData n).obj U)).presheaf.map (homOfLE (i.le.trans hVA)).op
-        ((Proj.twistingSheaf (A.gradedSectionsGrading U.toOpens) n).presheaf.map _ z))
+  refine (congrArg res (CommMon.relativeProjTwistingSheafMapChart_app_apply φ hφ n U _ _)).trans ?_
+  -- the chart component sends `bⁿ` to `(φ b)ⁿ`
+  refine (congrArg (fun z ↦ res
+    ((Proj.twistingSheaf (A.gradedSectionsGrading U.toOpens) n).presheaf.map _ z))
     (Proj.twistingSheafMap_app_chartGenerator _ (hφ U.toOpens U.2) n hb _)).trans ?_
-  exact (hres (P := Proj.twistingSheaf (A.gradedSectionsGrading U.toOpens) n)
-    (homOfLE (Scheme.Hom.preimage_mono _ (i.le.trans hVA))) _ _).trans
+  -- and `(φ b)ⁿ` restricts to `(φ b)ⁿ`
+  exact (Functor.map_comp_apply (Proj.twistingSheaf (A.gradedSectionsGrading U.toOpens) n).presheaf
+    _ (homOfLE (Scheme.Hom.preimage_mono _ (i.le.trans hVA))).op _).symm.trans
       (Proj.twistingSheaf.res_chartGenerator _ _ _ _ _ _)
 
 /-- **The pullback of `𝒪(n)` along `Proj_X(A) ⟶ Proj_X(B)` is `𝒪(n)`**: if `𝒪(n)` is invertible on
@@ -182,11 +166,10 @@ theorem _root_.CategoryTheory.CommMon.isIso_relativeProjTwistingSheafMap
   obtain ⟨y, hy⟩ := A.relativeProjCover.covers x
   obtain ⟨b, hb, hyb⟩ := h (A.relativeProjCover.idx x) y
   generalize A.relativeProjCover.idx x = U at y hy b hb hyb
-  -- the index type of the cover is `X.AffineZariskiSite` only after unfolding
-  have : IsOpenImmersion (colimit.ι A.relativeProjGluingData.functor U) :=
-    A.isOpenImmersion_relativeProjCover_f U
-  have : IsOpenImmersion (colimit.ι B.relativeProjGluingData.functor U) :=
-    B.isOpenImmersion_relativeProjCover_f U
+  -- `U` has the index type of the cover, which is `X.AffineZariskiSite` only after unfolding, so
+  -- instance search does not find the open immersion instance for its charts
+  have := A.isOpenImmersion_colimit_ι_relativeProjGluingData U
+  have := B.isOpenImmersion_colimit_ι_relativeProjGluingData U
   obtain ⟨t, ht⟩ := ((B.relativeProjTwistingSheafGlueData n).bijective_π_app
     (B.bijective_relativeProjTwistingSheafGlueData_map_app n)
     ((colimit.ι B.relativeProjGluingData.functor U).image_le_opensRange
