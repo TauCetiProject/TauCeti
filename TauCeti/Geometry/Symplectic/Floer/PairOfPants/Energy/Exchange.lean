@@ -516,8 +516,7 @@ private theorem integral_floerEnergyDensity_exchangeTruncation_eq (ω : Symplect
       exchangeMap c w ∈ thricePuncturedSphereReal :=
     (exchangeMap_mem_iff hc₀ hc₁ w).2 ⟨(mem_truncation.1 hw).1, (mem_truncation.1 hw).2.1⟩
   rw [← image_exchangeMap_truncation hc₀ hc₁ hR, integral_floerEnergyDensity_image ω
-    ((isCompact_truncation R).isClosed.preimage
-      Complex.equivRealProdCLM.symm.continuous).measurableSet
+    (measurableSet_preimage_truncation R)
     (injective_exchangeMap hc).injOn
     (fun w _ ↦ (contDiff_exchangeMap c).differentiable two_ne_zero w)
     (fun w _ ↦ det_fderiv_exchangeMap_nonneg hc w)
