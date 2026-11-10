@@ -96,8 +96,8 @@ theorem totallyRamifiedOfDegree_two_eq (h2 : ¬ ringChar 𝓀[K] ∣ 2) {ϖ : �
     totallyRamifiedOfDegree K 2 = {K⟮x⟯, K⟮y⟯} := by
   have huϖ : Irreducible ((u : 𝒪[K]) * ϖ) := (Associated.irreducible ⟨u, mul_comm _ _⟩ hϖ)
   refine Set.Subset.antisymm (fun L hL ↦ ?_) (Set.insert_subset
-    (adjoin_mem_totallyRamifiedOfDegree_of_pow_eq hϖ two_pos hx)
-    (Set.singleton_subset_iff.2 (adjoin_mem_totallyRamifiedOfDegree_of_pow_eq huϖ two_pos hy)))
+    (adjoin_mem_totallyRamifiedOfDegree_of_pow_eq hϖ hx)
+    (Set.singleton_subset_iff.2 (adjoin_mem_totallyRamifiedOfDegree_of_pow_eq huϖ hy)))
   have h2' : IsUnit (2 : 𝒪[K]) := by simpa using IsLocalRing.isUnit_natCast_iff_not_dvd.2 h2
   have : NeZero (2 : K) := ⟨two_ne_zero_of_isUnit_two h2'⟩
   have : NeZero ((2 : ℕ) : SeparableClosure K) :=

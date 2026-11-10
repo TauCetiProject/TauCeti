@@ -12,7 +12,7 @@ import TauCeti.Algebra.Polynomial.Degree.Operations
 # Eisenstein binomials and trinomials
 
 For an ideal `𝓟` of a commutative ring, `X ^ n - C ϖ` is Eisenstein at `𝓟` when
-`n` is positive and `ϖ` lies in `𝓟` but not in `𝓟 ^ 2`. Likewise `X ^ n + C a * X + C ϖ` is
+`ϖ` lies in `𝓟` but not in `𝓟 ^ 2`. Likewise `X ^ n + C a * X + C ϖ` is
 Eisenstein at `𝓟` when moreover `a ∈ 𝓟` and `2 ≤ n`.
 
 ## Main results
@@ -28,17 +28,23 @@ namespace TauCeti
 
 open Polynomial
 
-/-- `X ^ n - C ϖ` is Eisenstein at an ideal `𝓟` when `ϖ ∈ 𝓟` but `ϖ ∉ 𝓟 ^ 2`,
-for positive `n`. -/
+/-- `X ^ n - C ϖ` is Eisenstein at an ideal `𝓟` when `ϖ ∈ 𝓟` but `ϖ ∉ 𝓟 ^ 2`. -/
 theorem isEisensteinAt_X_pow_sub_C {R : Type*} [CommRing R] {𝓟 : Ideal R}
     {ϖ : R} (hmem : ϖ ∈ 𝓟) (hnotmem : ϖ ∉ 𝓟 ^ 2)
-    {n : ℕ} (hn : 0 < n) : (X ^ n - C ϖ).IsEisensteinAt 𝓟 := by
+    {n : ℕ} : (X ^ n - C ϖ).IsEisensteinAt 𝓟 := by
   have : Nontrivial R := nontrivial_of_ne ϖ 0 (by
     rintro rfl
     exact hnotmem (Ideal.zero_mem _))
   have h𝓟 : 𝓟 ≠ ⊤ := by
     rintro rfl
     exact hnotmem (by simp [Ideal.top_pow])
+  rcases n.eq_zero_or_pos with rfl | hn
+  · -- `X ^ 0 - C ϖ = C (1 - ϖ)` has the unit-like constant `1 - ϖ ∉ 𝓟`.
+    have h1 : (1 - ϖ) ∉ 𝓟 := fun h =>
+      h𝓟 ((Ideal.eq_top_iff_one _).2 (by simpa using 𝓟.add_mem h hmem))
+    rw [show (X ^ 0 - C ϖ : R[X]) = C (1 - ϖ) by simp]
+    exact ⟨by rwa [leadingCoeff_C], fun h => absurd h (by simp),
+      fun h => h1 (by simpa using Ideal.pow_le_self two_ne_zero h)⟩
   refine (monic_X_pow_sub_C ϖ hn.ne').isEisensteinAt_of_mem_of_notMem h𝓟 ?_ ?_
   · intro i hi
     rw [natDegree_X_pow_sub_C] at hi

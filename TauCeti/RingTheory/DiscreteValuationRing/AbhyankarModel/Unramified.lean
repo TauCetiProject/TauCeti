@@ -63,10 +63,9 @@ theorem map_maximalIdeal_abhyankarModelKummerHom :
         maximalIdeal (Localization.AtPrime M) := by
   have hn := mul_ne_zero he.neZero_natCast.out hd
   have := standardTameCover_isLocalRing ((mem_maximalIdeal π).mpr hπ.not_isUnit) hn
-  have hmax := (isEisensteinAt_X_pow_sub_C_of_irreducible hπ (Nat.pos_of_ne_zero hn)
-    ).eq_span_singleton_of_isMaximal
-      (by rw [AdjoinRoot.aeval_eq, AdjoinRoot.mk_self]) AdjoinRoot.adjoinRoot_eq_top
-      (maximalIdeal (standardTameCover A π (e * d)))
+  have hmax := (isEisensteinAt_X_pow_sub_C_of_irreducible hπ).eq_span_singleton_of_isMaximal
+    (by rw [AdjoinRoot.aeval_eq, AdjoinRoot.mk_self]) AdjoinRoot.adjoinRoot_eq_top
+    (maximalIdeal (standardTameCover A π (e * d)))
   rw [hmax]
   simpa only [Ideal.map_span, Set.image_singleton, RingHom.comp_apply,
     AlgHom.toRingHom_eq_coe, RingHom.coe_coe, abhyankarModelKummerHom_root] using

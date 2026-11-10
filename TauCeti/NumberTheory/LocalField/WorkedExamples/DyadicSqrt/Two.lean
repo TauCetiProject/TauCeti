@@ -163,7 +163,7 @@ theorem isRoot_integerSqrtTwo :
 /-- The polynomial `X² - 2` is Eisenstein over the integer ring of `ℚ₂`. -/
 theorem isEisensteinAt_X_sq_sub_two :
     (X ^ 2 - C 2 : 𝒪[ℚ_[2]][X]).IsEisensteinAt 𝓂[ℚ_[2]] :=
-  isEisensteinAt_X_pow_sub_C_of_irreducible (Padic.irreducible_natCast_self 2) (by decide)
+  isEisensteinAt_X_pow_sub_C_of_irreducible (Padic.irreducible_natCast_self 2)
 
 /-- `√2` is a uniformizer of the integer ring of `ℚ₂(√2)`. -/
 theorem irreducible_integerSqrtTwo : Irreducible integerSqrtTwo :=

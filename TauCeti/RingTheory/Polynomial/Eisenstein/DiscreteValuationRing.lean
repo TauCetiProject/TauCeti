@@ -127,12 +127,12 @@ namespace TauCeti
 
 open Polynomial
 
-/-- Over a discrete valuation ring, `X ^ n` minus a uniformizer is Eisenstein for positive `n`. -/
+/-- Over a discrete valuation ring, `X ^ n` minus a uniformizer is Eisenstein. -/
 theorem isEisensteinAt_X_pow_sub_C_of_irreducible
     {R : Type*} [CommRing R] [IsDomain R] [IsDiscreteValuationRing R]
-    {ϖ : R} (hϖ : Irreducible ϖ) {n : ℕ} (hn : 0 < n) :
+    {ϖ : R} (hϖ : Irreducible ϖ) {n : ℕ} :
     (X ^ n - C ϖ).IsEisensteinAt (maximalIdeal R) := by
-  apply isEisensteinAt_X_pow_sub_C (by simp [hϖ.maximalIdeal_eq]) _ hn
+  apply isEisensteinAt_X_pow_sub_C (by simp [hϖ.maximalIdeal_eq]) _
   rw [IsDiscreteValuationRing.mem_maximalIdeal_pow_iff_le_addVal,
     IsDiscreteValuationRing.addVal_uniformizer hϖ]
   simp

@@ -164,7 +164,7 @@ theorem isRoot_integerSqrtThree :
 /-- The polynomial `X² - 3` is Eisenstein over the integer ring of `ℚ₃`. -/
 theorem isEisensteinAt_X_sq_sub_three :
     (X ^ 2 - C 3 : 𝒪[ℚ_[3]][X]).IsEisensteinAt 𝓂[ℚ_[3]] :=
-  isEisensteinAt_X_pow_sub_C_of_irreducible (Padic.irreducible_natCast_self 3) (by decide)
+  isEisensteinAt_X_pow_sub_C_of_irreducible (Padic.irreducible_natCast_self 3)
 
 /-- `√3` is a uniformizer of the integer ring of `ℚ₃(√3)`. -/
 theorem irreducible_integerSqrtThree : Irreducible integerSqrtThree :=

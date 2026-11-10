@@ -91,7 +91,7 @@ private theorem wildExponent_adjoin_of_sq_eq_of_irreducible_padicTwo {c : 𝒪[�
   have hd : (ℚ_[2]⟮x⟯).discriminantExponent = 3 := by exact_mod_cast h
   simp [IntermediateField.wildExponent_def, hd,
     (mem_totallyRamifiedOfDegree_iff.1
-      (adjoin_mem_totallyRamifiedOfDegree_of_pow_eq hc two_pos hx)).1]
+      (adjoin_mem_totallyRamifiedOfDegree_of_pow_eq hc hx)).1]
 
 /-- `ℚ_2(√(1 - c))` lies in `σ_{ℚ_2}(2)` and has wild exponent `1` for a uniformizer `c` of
 `ℚ_2`: its discriminant exponent is `2 v(2) = 2`. -/
@@ -187,7 +187,7 @@ private theorem adjoin_mem_and_wildExponent_eq_padicTwo {i : Fin 8} (hi : i ∈ 
       (h : y ^ 2 = algebraMap ℚ_[2] (SeparableClosure ℚ_[2]) (m * 2)) :
       ℚ_[2]⟮y⟯ ∈ totallyRamifiedOfDegree ℚ_[2] 2 ∧ (ℚ_[2]⟮y⟯).wildExponent = 2 := by
     rw [← coe_intCast_mul_two_padicTwo] at h
-    exact ⟨adjoin_mem_totallyRamifiedOfDegree_of_pow_eq (hirr hm) two_pos h,
+    exact ⟨adjoin_mem_totallyRamifiedOfDegree_of_pow_eq (hirr hm) h,
       wildExponent_adjoin_of_sq_eq_of_irreducible_padicTwo (hirr hm) h⟩
   simp only [ramifiedIndices, Finset.mem_insert, Finset.mem_singleton] at hi
   rcases hi with rfl | rfl | rfl | rfl | rfl | rfl
