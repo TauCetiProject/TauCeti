@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Integration.Pullback
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.AddCircle
-public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Positivity
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.AddCircle
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
@@ -114,28 +113,15 @@ theorem integralTopForm_mpullback_wedge_timeForm_pos [CompactSpace C]
     by_contra h
     push Not at h
     exact hne (ContinuousLinearMap.ext h)
-  have he0 : e ≠ 0 := by
-    rintro rfl
-    exact he (map_zero _)
-  -- The positive frame `(e, j e)` at `c₀`, on which `η` is positive.
-  set b₀ := basisOfLinearIndependentOfCardEqFinrank
-    ((j.almostComplexStructureAt c₀).linearIndependent_pair he0)
-    (by simpa using (o.finrank_tangentSpace_eq c₀).symm)
-  have hb₀ : ⇑b₀ = ![e, j c₀ e] := by
-    rw [coe_basisOfLinearIndependentOfCardEqFinrank,
-      SmoothAlmostComplexStructure.almostComplexStructureAt_apply]
-  have hpos : 0 < η.1 c₀ b₀ := by
-    rw [hb₀, hη]
-    have h : (mfderiv I (𝓘(ℝ).prod 𝓘(ℝ)) v c₀ e).1 ≠ 0 ∨
-        (mfderiv I (𝓘(ℝ).prod 𝓘(ℝ)) v c₀ e).2 ≠ 0 := by
-      by_contra! h
-      exact he (Prod.ext h.1 h.2)
-    rcases h with h | h <;> positivity
-  exact integralTopForm_pos o (η.isSmoothForm.of_le (by simp))
+  refine j.integralTopForm_pos_of_forall_nonneg ho (η.isSmoothForm.of_le (by simp))
     (isCompact_univ.of_isClosed_subset (isClosed_tsupport _) (Set.subset_univ _))
-    (fun c b hb ↦ j.apply_basis_nonneg_of_forall_nonneg (ho c)
-      (fun e' ↦ (hη c e').symm ▸ by positivity) b hb)
-    ⟨c₀, b₀, ho c₀ b₀ (by rw [hb₀]; simp), hpos⟩
+    (fun c e' ↦ (hη c e').symm ▸ by positivity) (e₀ := e) ?_
+  rw [hη]
+  have h : (mfderiv I (𝓘(ℝ).prod 𝓘(ℝ)) v c₀ e).1 ≠ 0 ∨
+      (mfderiv I (𝓘(ℝ).prod 𝓘(ℝ)) v c₀ e).2 ≠ 0 := by
+    by_contra! h
+    exact he (Prod.ext h.1 h.2)
+  rcases h with h | h <;> positivity
 
 /-- **Pseudoholomorphic maps to the torus with nonzero differential are onto.** Let `C` be a compact
 boundaryless surface with an almost complex structure `j`, oriented so that the frames `(e, j e)`
