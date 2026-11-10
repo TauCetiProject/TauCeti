@@ -299,12 +299,15 @@ variable {O : Type*} [CommRing O] {K : Type*} [Field K] [Algebra O K]
 /-- **The `w`-equation is the Weierstrass equation read in the coordinates `z = -x / y`,
 `w = -1 / y`.** Clearing the denominators of `y ^ 2 + a₁ x y + a₃ y = x ^ 3 + a₂ x ^ 2 + a₄ x + a₆`
 at `x = z / w`, `y = -1 / w` is what produces that equation in the first place; this is the
-converse reading, from a point of the curve to a solution of the equation.
+converse reading, from a point of the curve to a solution of the equation. For `y = 0` both sides
+are `0`, by the convention `y⁻¹ = 0`.
 
 The hypothesis is `Equation`, not `Nonsingular`: nothing here needs the point to be smooth. -/
 theorem wEquation_of_equation (W : WeierstrassCurve O) {x y : K}
-    (hxy : (W.baseChange K).toAffine.Equation x y) (hy : y ≠ 0) :
+    (hxy : (W.baseChange K).toAffine.Equation x y) :
     -y⁻¹ = wEquationRHS W (-(x / y)) (-y⁻¹) := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp [wEquationRHS_def]
   rw [WeierstrassCurve.Affine.equation_iff] at hxy
   simp only [baseChange, map_a₁, map_a₂, map_a₃, map_a₄, map_a₆] at hxy
   rw [wEquationRHS_def]
@@ -536,8 +539,9 @@ variable {R : Type*} [CommRing R] (W : WeierstrassCurve R)
 `[q : -1 : v]` is equivalent to the `w`-equation
 `v = q ^ 3 + a₁ q v + a₂ q ^ 2 v + a₃ v ^ 2 + a₄ q v ^ 2 + a₆ v ^ 3` (`wEquationRHS`).
 `wEquation_of_equation` is the implication from left to right for a solution `(x, y)` of the
-affine Weierstrass equation over a field with `y ≠ 0`, where
-`[x : y : 1] = [-x / y : -1 : -1 / y]`. -/
+affine Weierstrass equation over a field, where for `y ≠ 0` we have
+`[x : y : 1] = [-x / y : -1 : -1 / y]`; for `y = 0` the implication holds only because
+`q = v = 0` under `y⁻¹ = 0`. -/
 theorem Projective.equation_neg_one_iff_wEquation (W' : Projective R) {S : Type*} [CommRing S]
     [Algebra R S] (q v : S) :
     (W'.map (algebraMap R S)).Equation ![q, -1, v] ↔ v = wEquationRHS W' q v := by
