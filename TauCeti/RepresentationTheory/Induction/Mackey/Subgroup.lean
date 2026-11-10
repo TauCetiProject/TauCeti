@@ -396,8 +396,8 @@ theorem card_doubleCoset_eq_card_mul_relIndex (s : G) (H K : Subgroup G) :
       have hconj : Nat.card (MulAut.conj s • H : Subgroup G) = 0 :=
         (card_conj_smul_eq s H).trans Nat.card_eq_zero_of_infinite
       have hfin : Finite (K ⊓ MulAut.conj s • H : Subgroup G) :=
-        Finite.of_injective (fun x => (⟨x.1, x.2.1⟩ : K)) fun a b h =>
-          Subtype.ext (Subtype.mk.inj h)
+        Finite.of_injective (Subgroup.inclusion (inf_le_left : K ⊓ MulAut.conj s • H ≤ K))
+          (Subgroup.inclusion_injective _)
       rw [hconj] at hrel
       rw [(mul_eq_zero.1 hrel).resolve_right Nat.card_pos.ne', mul_zero]
     · have : Infinite K := not_finite_iff_infinite.1 hK
