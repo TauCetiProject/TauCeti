@@ -266,7 +266,7 @@ private theorem squareGenLoop_comp_squeeze {u : ℝ × ℝ → M} (hu : Continuo
 /-- The integral of a closed `C¹` two-form over the unit square does not change along a `C²`
 homotopy which keeps the boundary of the square at `x`: this is
 `TauCeti.rectangleIntegral_eq_of_homotopy` on the unit square, with all its edges fixed. -/
-private theorem rectangleIntegral_eq_of_homotopy_unitSquare [CompleteSpace F] [IsManifold I 2 M]
+private theorem rectangleIntegral_eq_of_homotopy_unitSquare [IsManifold I 2 M]
     {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0)
     {Φ : (ℝ × ℝ) × ℝ → M} (hΦ : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × ℝ) I 2 Φ)
     (hx : ∀ c ∈ Icc (0 : ℝ) 1, MapsSquareBoundaryTo (fun z ↦ Φ (z, c)) x) :
@@ -282,7 +282,7 @@ private theorem rectangleIntegral_eq_of_homotopy_unitSquare [CompleteSpace F] [I
 
 /-- Squeezing a `C²` sphere does not change the integral of a closed `C¹` form over it: the segment
 from the identity to `squeeze` is a smooth homotopy through spheres. -/
-private theorem rectangleIntegral_comp_squeeze [CompleteSpace F] [IsManifold I 2 M]
+private theorem rectangleIntegral_comp_squeeze [IsManifold I 2 M]
     {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 1 φ) (hdφ : mextDeriv φ = 0) {u : ℝ × ℝ → M}
     (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 u) (hx : MapsSquareBoundaryTo u x) :
     rectangleIntegral φ (u ∘ Prod.map squeeze squeeze) (0, 0) (1, 1) =
