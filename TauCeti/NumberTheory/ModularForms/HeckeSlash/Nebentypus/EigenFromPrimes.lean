@@ -25,16 +25,17 @@ scalar are closed under products, which carries the eigen-property along both; a
 powers the recurrence contributes the term `(p • S_p) · T_{p^r}`, whose scalar action is the
 nebentypus (`heckeRingHomCuspCharSpace_heckeTGeneratorRecGamma0_succ_succ`).
 
-If the form is an eigenvector at the bad primes as well, the same argument covers every positive
-index. At a bad prime the recurrence family is a power of `T_p`; the same coprime multiplication
-law then assembles arbitrary mixtures of good and bad prime-power blocks.
+If the form is an eigenvector at the bad primes as well, the same argument covers every index
+(the index `0` is the identity). At a bad prime the recurrence family is a power of `T_p`; the
+same coprime multiplication law then assembles arbitrary mixtures of good and bad prime-power
+blocks.
 
 ## Main results
 
 * `HeckeRing.GL2.exists_smul_heckeTCompositeGamma0_of_forall_prime_of_coprime`: the
   eigen-property spreads from the good primes to every good index.
 * `HeckeRing.GL2.exists_smul_heckeTCompositeGamma0_of_forall_prime`: eigen-relations at every
-  prime, including those dividing the level, spread to every positive index.
+  prime, including those dividing the level, spread to every index.
 
 ## References
 
@@ -122,9 +123,9 @@ theorem exists_smul_heckeTCompositeGamma0_of_forall_prime_of_coprime
     rw [Nat.coprime_mul_iff_left] at hnN
     exact exists_smul_mul (iha hnN.1) (ihb hnN.2)
 
-/-- **Eigen at every prime is eigen at every positive index.** If the Hecke-ring generator at every
+/-- **Eigen at every prime is eigen at every index.** If the Hecke-ring generator at every
 prime acts on `F ∈ S_k(N, χ)` by a scalar, then so does `heckeTCompositeGamma0 N n` for every
-positive index `n`.
+index `n` (at `n = 0` the operator is the identity).
 
 At a good prime the prime-power blocks follow the Diamond–Shurman recurrence. At a prime dividing
 the level the scalar term vanishes, so the block is a power of `T_p`. Coprime products, including
@@ -133,7 +134,7 @@ products of good and bad prime powers, are assembled by
 theorem exists_smul_heckeTCompositeGamma0_of_forall_prime {F : cuspFormCharSpace k χ}
     (h : ∀ p : ℕ, p.Prime →
       ∃ c : ℂ, heckeRingHomCuspCharSpace k χ (heckeTGeneratorGamma0 N p) F = c • F)
-    (n : ℕ) (hn : n ≠ 0) :
+    (n : ℕ) :
     ∃ c : ℂ, heckeRingHomCuspCharSpace k χ (heckeTCompositeGamma0 N n) F = c • F := by
   induction n using Nat.recOnPosPrimePosCoprime with
   | prime_pow p v hp _ =>
@@ -142,11 +143,11 @@ theorem exists_smul_heckeTCompositeGamma0_of_forall_prime {F : cuspFormCharSpace
       · exact exists_smul_heckeTGeneratorRecGamma0 hp hpN (h p hp) v
       · rw [heckeTGeneratorRecGamma0_eq_generator_pow_of_not_coprime N hpN]
         exact exists_smul_pow (h p hp) v
-  | zero => exact (hn rfl).elim
+  | zero => exact ⟨1, by rw [heckeTCompositeGamma0_zero, map_one, one_apply_eq_self, one_smul]⟩
   | one => exact ⟨1, by rw [heckeTCompositeGamma0_one, map_one, one_apply_eq_self, one_smul]⟩
-  | coprime a b ha hb hab iha ihb =>
+  | coprime a b _ _ hab iha ihb =>
       rw [heckeTCompositeGamma0_mul_of_coprime N hab]
-      exact exists_smul_mul (iha (by omega)) (ihb (by omega))
+      exact exists_smul_mul iha ihb
 
 end HeckeRing.GL2
 
