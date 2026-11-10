@@ -94,7 +94,7 @@ theorem exists_isDarbouxBasis_hamiltonianEnd_apply_eq_of_posDef (hQ : Q.PosDef) 
   obtain ⟨J, hJ, hAJ⟩ := ω.exists_compatible_isComplexLinearMap_hamiltonianEnd_of_posDef hQ
   obtain ⟨n, b, c, hb, -, hc⟩ := exists_isDarbouxBasis_forall_apply_eq_of_skewAdjoint hJ
     (fun _ : Unit ↦ ω.hamiltonianEnd Q) (fun _ _ h ↦ absurd rfl h)
-    (fun _ x y ↦ by rw [apply_hamiltonianEnd, apply_hamiltonianEnd_right, neg_neg])
+    (fun _ ↦ ω.hamiltonianEnd_mem_skewAdjointLieSubalgebra Q)
     fun _ ↦ hAJ
   set A := ω.hamiltonianEnd Q
   -- The action of `A_Q` on the plane `span(qₖ, pₖ)` is by the complex number `a + b i` with

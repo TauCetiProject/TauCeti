@@ -32,11 +32,12 @@ systems, in every dimension; with the hyperbolic planes and the focus-focus bloc
 (`TauCeti.SymplecticForm.IsDarbouxBasis.isNondegenerateQuadraticFamily_focusFocus`) it makes up
 the normal forms of that classification.
 
-The certificate is a regular element. For frequencies `c₁, …, cₙ` that are nonzero with
-distinct squares, the combination `P = ∑ₖ cₖ Iₖ` has semisimple Hamiltonian endomorphism, killed
-by the squarefree polynomial `∏ₖ (X² + cₖ²)`
-(`IsDarbouxBasis.isSemisimple_hamiltonianEnd_sum_smul_elliptic`), and every quadratic form
-Poisson-commuting with `P` is a combination of the `Iₖ`
+The certificate is a regular element. For any frequencies `c₁, …, cₙ`, the combination
+`P = ∑ₖ cₖ Iₖ` has semisimple Hamiltonian endomorphism, killed by the squarefree polynomial
+`(∏ₜ (X² + t)) X` over the nonzero squares `t = cₖ²`
+(`IsDarbouxBasis.isSemisimple_hamiltonianEnd_sum_smul_elliptic`). If the frequencies are nonzero
+with distinct squares, every quadratic form Poisson-commuting with `P` is a combination of the
+`Iₖ`
 (`IsDarbouxBasis.mem_span_elliptic_of_quadraticPoissonBracket_eq_zero`). Indeed, if `R`
 Poisson-commutes with `P` then `polar R (A_P u) v = -polar R u (A_P v)`; as `A_P²` is `-cₖ²` on
 the plane `span(qₖ, pₖ)`, the polar form of `R` pairs distinct planes trivially, and on each plane
@@ -149,26 +150,43 @@ private theorem IsDarbouxBasis.hamiltonianEnd_sum_smul_elliptic_apply_apply
     congr 1
     ring
 
-/-- If the frequencies `cₖ` are nonzero with distinct squares, the Hamiltonian endomorphism of
-`∑ₖ cₖ Iₖ` is semisimple: it is killed by the squarefree polynomial `∏ₖ (X² + cₖ²)`. -/
-theorem IsDarbouxBasis.isSemisimple_hamiltonianEnd_sum_smul_elliptic (hb : ω.IsDarbouxBasis b)
-    (hc : Pairwise fun k l ↦ c k ^ 2 ≠ c l ^ 2) (hc0 : ∀ k, c k ≠ 0) :
+/-- The Hamiltonian endomorphism of `∑ₖ cₖ Iₖ` is semisimple: it is killed by the squarefree
+polynomial `(∏ₜ (X² + t)) X`, the product running over the nonzero squares `t = cₖ²`. -/
+theorem IsDarbouxBasis.isSemisimple_hamiltonianEnd_sum_smul_elliptic (hb : ω.IsDarbouxBasis b) :
     (ω.hamiltonianEnd (∑ k, c k • elliptic b k)).IsSemisimple := by
+  set S := (Finset.univ.image fun k ↦ c k ^ 2).filter (· ≠ 0)
   refine Module.End.isSemisimple_of_squarefree_aeval_eq_zero
-    (p := ∏ k, (X ^ 2 - C (-(c k ^ 2)))) ?_ ?_
-  · refine (Polynomial.separable_prod (fun k l hkl ↦ ?_) fun k ↦ ?_).squarefree
-    · exact Polynomial.isCoprime_sub_C_of_isUnit_sub _
-        (sub_ne_zero.2 fun h ↦ hc hkl (neg_inj.1 h)).isUnit
-    · exact Polynomial.separable_X_pow_sub_C _ (by norm_num) (neg_ne_zero.2 (pow_ne_zero _ (hc0 k)))
-  · -- The factor of index `j` kills the plane `span(qⱼ, pⱼ)`, and the factors commute.
+    (p := (∏ t ∈ S, (X ^ 2 - C (-t))) * X) ?_ ?_
+  · refine (Polynomial.Separable.mul (Polynomial.separable_prod' (fun s _ t _ hst ↦ ?_)
+      fun t ht ↦ ?_) separable_X (IsCoprime.prod_left fun t ht ↦ ?_)).squarefree
+    · exact Polynomial.isCoprime_sub_C_of_isUnit_sub _ (sub_ne_zero.2 (neg_inj.not.2 hst)).isUnit
+    · exact Polynomial.separable_X_pow_sub_C _ (by norm_num)
+        (neg_ne_zero.2 (Finset.mem_filter.1 ht).2)
+    · refine ⟨C t⁻¹, -(C t⁻¹ * X), ?_⟩
+      have h : C t⁻¹ * C t = (1 : ℝ[X]) := by
+        rw [← C_mul, inv_mul_cancel₀ (Finset.mem_filter.1 ht).2, C_1]
+      rw [C_neg]
+      linear_combination h
+  · -- A vector of the plane `span(qⱼ, pⱼ)` is killed by `X` if `cⱼ = 0` and by the factor
+    -- `X² + cⱼ²` otherwise, and the factors commute.
     refine b.ext fun i ↦ ?_
-    rw [← Finset.prod_erase_mul _ _ (Finset.mem_univ i.1), map_mul, mul_apply_eq_comp]
+    rw [LinearMap.zero_apply]
+    by_cases hi : c i.1 = 0
+    · have h0 : ω.hamiltonianEnd (∑ k, c k • elliptic b k) (b i) = 0 := by
+        obtain ⟨j, a⟩ := i
+        obtain rfl | rfl : a = 0 ∨ a = 1 := by omega
+        · rw [hb.hamiltonianEnd_sum_smul_elliptic_apply_fst, hi, neg_zero, zero_smul]
+        · rw [hb.hamiltonianEnd_sum_smul_elliptic_apply_snd, hi, zero_smul]
+      rw [map_mul, mul_apply_eq_comp, aeval_X, h0, map_zero]
+    have hS : c i.1 ^ 2 ∈ S :=
+      Finset.mem_filter.2 ⟨Finset.mem_image_of_mem _ (Finset.mem_univ _), pow_ne_zero _ hi⟩
+    rw [← Finset.prod_erase_mul _ _ hS, mul_right_comm, map_mul, mul_apply_eq_comp]
     have hi : aeval (ω.hamiltonianEnd (∑ k, c k • elliptic b k)) (X ^ 2 - C (-(c i.1 ^ 2)))
         (b i) = 0 := by
       rw [map_sub, map_pow, aeval_X, aeval_C, sq, LinearMap.sub_apply, mul_apply_eq_comp,
         hb.hamiltonianEnd_sum_smul_elliptic_apply_apply, Algebra.algebraMap_eq_smul_one,
         LinearMap.smul_apply, one_apply_eq_self, sub_self]
-    rw [hi, map_zero, LinearMap.zero_apply]
+    rw [hi, map_zero]
 
 /-- A quadratic form `R` Poisson-commuting with `∑ₖ cₖ Iₖ`, for nonzero frequencies with distinct
 squares, has a polar form diagonal in the Darboux basis, with equal values on `qₖ` and `pₖ`. -/
@@ -258,7 +276,7 @@ theorem IsDarbouxBasis.isNondegenerateQuadraticFamily_elliptic (hb : ω.IsDarbou
       exact_mod_cast add_right_cancel this))
   have hc0 (k : Fin n) : (k : ℝ) + 1 ≠ 0 := by positivity
   exact isNondegenerateQuadraticFamily_of_isSemisimple hb.quadraticPoissonBracket_elliptic
-    (hb.isSemisimple_hamiltonianEnd_sum_smul_elliptic hc hc0)
+    hb.isSemisimple_hamiltonianEnd_sum_smul_elliptic
     fun R hR ↦ hb.mem_span_elliptic_of_quadraticPoissonBracket_eq_zero hc hc0 hR
 
 end TauCeti.SymplecticForm

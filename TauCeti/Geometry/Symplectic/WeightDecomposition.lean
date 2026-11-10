@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Lie.SkewAdjoint
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Topology.Algebra.ContinuousMonoidHom
 public import TauCeti.Geometry.Symplectic.Darboux.Basis
@@ -337,7 +338,8 @@ theorem exists_isDarbouxBasis_forall_apply_eq_of_pairwise_commute [FiniteDimensi
 /-- An element `A` of `sp(V, ω)` preserves the symplectic complement of any line on which it acts
 by a complex number. -/
 private theorem mapsTo_orthogonal_span_pair_of_skewAdjoint {A : V →ₗ[ℝ] V}
-    (hA : ∀ x y, ω (A x) y = -ω x (A y)) (hAJ : IsComplexLinearMap J J A) {q : V} {a b : ℝ}
+    (hA : A ∈ skewAdjointLieSubalgebra ω.toBilinForm) (hAJ : IsComplexLinearMap J J A) {q : V}
+    {a b : ℝ}
     (h : A q = a • q + b • J q) :
     ∀ x ∈ ω.orthogonal (Submodule.span ℝ {q, J q}),
       A x ∈ ω.orthogonal (Submodule.span ℝ {q, J q}) := by
@@ -345,13 +347,12 @@ private theorem mapsTo_orthogonal_span_pair_of_skewAdjoint {A : V →ₗ[ℝ] V}
   simp only [mem_orthogonal_span_iff, Set.mem_insert_iff, Set.mem_singleton_iff,
     forall_eq_or_imp, forall_eq] at hx ⊢
   have hJq := hAJ.apply_apply_eq_of_apply_eq h
-  have e₁ := hA q x
-  have e₂ := hA (J q) x
-  beta_reduce at e₁ e₂
+  have e₁ := (LinearMap.mem_skewAdjointSubmodule A).1 hA q x
+  have e₂ := (LinearMap.mem_skewAdjointSubmodule A).1 hA (J q) x
   rw [h] at e₁
   rw [hJq] at e₂
-  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul, hx.1,
-    hx.2, mul_zero, add_zero] at e₁ e₂
+  simp only [map_add, map_smul, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul,
+    Pi.neg_apply, map_neg, hx.1, hx.2, mul_zero, add_zero] at e₁ e₂
   exact ⟨by linarith, by linarith⟩
 
 /-- **Simultaneous diagonalization in `sp(V, ω) ∩ gl(V, J)`.** Let `J` be a complex structure
@@ -362,7 +363,8 @@ every line `span(qₖ, pₖ)` by a complex number `c i k = a + b i`:
 `f i qₖ = a qₖ + b pₖ` and `f i pₖ = -b qₖ + a pₖ`. -/
 theorem exists_isDarbouxBasis_forall_apply_eq_of_skewAdjoint [FiniteDimensional ℝ V]
     (hJ : ω.Compatible J) {ι : Type*} (f : ι → V →ₗ[ℝ] V)
-    (hcomm : Pairwise fun i j ↦ Commute (f i) (f j)) (hf : ∀ i x y, ω (f i x) y = -ω x (f i y))
+    (hcomm : Pairwise fun i j ↦ Commute (f i) (f j))
+    (hf : ∀ i, f i ∈ skewAdjointLieSubalgebra ω.toBilinForm)
     (hfJ : ∀ i, IsComplexLinearMap J J (f i)) :
     ∃ (n : ℕ) (b : Basis (Fin n × Fin 2) ℝ V) (c : ι → Fin n → ℂ), ω.IsDarbouxBasis b ∧
       (∀ k, b (k, 1) = J (b (k, 0))) ∧ ∀ i k,
