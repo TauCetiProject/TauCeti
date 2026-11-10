@@ -390,11 +390,12 @@ crossing added along the edge. This restates
 `resolutionCube_map_homOfLE_insert_comp_resolutionCubeι` for a target which is only
 propositionally `insert a S`. -/
 theorem resolutionCube_map_homOfLE_comp_resolutionCubeι {S T : Finset (Fin n)} {a : Fin n}
-    (ha : a ∉ S) (hT : insert a S = T) (hST : S ⊆ T)
+    (hT : insert a S = T) (hST : S ⊆ T)
     (hst : ∀ i, i ≠ a → cubeState S i = cubeState T i) (hc : cubeState S a ≠ cubeState T a)
     (h : #(D.circlesAt (cubeState S) a) = 2 ∨ #(D.circlesAt (cubeState T) a) = 2) :
     (D.resolutionCube hD R j).map (homOfLE hST) ≫ D.resolutionCubeι hD R j T =
       D.resolutionCubeι hD R j S ≫ ModuleCat.ofHom (D.resolutionEdgeMap hst hc h R) := by
+  have ha : a ∉ S := fun hm => hc (by subst hT; simp [Finset.insert_eq_of_mem hm])
   subst hT
   exact D.resolutionCube_map_homOfLE_insert_comp_resolutionCubeι hD R j ha
 

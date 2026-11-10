@@ -11,6 +11,7 @@ public import Mathlib.RingTheory.SimpleModule.Basic
 public import Mathlib.SetTheory.Cardinal.Finite
 import Mathlib.RingTheory.Artinian.Module
 import TauCeti.Algebra.Module.ProjectiveCover.Basic
+import TauCeti.LinearAlgebra.Submodule.Quotient
 import TauCeti.RingTheory.Jacobson.Semiprimary
 import TauCeti.RingTheory.Semisimple.Multiplicity
 
@@ -140,7 +141,8 @@ theorem nonempty_linearEquiv_of_projective_of_natCard_linearMap_eq
   have := IsSimpleModule.nontrivial R S
   refine Nat.pow_right_injective (Module.End.one_lt_natCard (R := R) (M := S)) ?_
   simp only [← natCard_linearMap_eq_pow_jordanHolderMultiplicity,
-    Nat.card_congr (linearMapQuotientJacobsonEquiv _ S).toEquiv]
+    Nat.card_congr
+      (linearMapQuotientSMulTopEquiv _ (IsSemisimpleModule.jacobson_le_annihilator R S)).toEquiv]
   exact h S
 
 end TauCeti

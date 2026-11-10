@@ -228,19 +228,23 @@ end Nontrivial
 
 section CentralSimple
 
-variable [Algebra.IsCentral K A] [IsSimpleRing A] [FiniteDimensional K A]
+variable [Algebra.IsCentral K A] [IsSimpleRing A]
 
-/-- The dimension of a central simple algebra is the square of its degree. -/
+/-- The dimension of a central simple algebra is the square of its degree. For an
+infinite-dimensional algebra both sides are `0`, so no finiteness hypothesis is needed. -/
 @[simp]
 theorem deg_sq : deg K A ^ 2 = Module.finrank K A := by
-  obtain ⟨n, hn⟩ := IsSimpleRing.isSquare_finrank K A
-  rw [deg_eq_of_finrank_eq_sq (n := n) (by rw [hn, sq]), hn, sq]
+  by_cases h : FiniteDimensional K A
+  · obtain ⟨n, hn⟩ := IsSimpleRing.isSquare_finrank K A
+    rw [deg_eq_of_finrank_eq_sq (n := n) (by rw [hn, sq]), hn, sq]
+  · have h0 := Module.finrank_of_not_finite h
+    simp [deg, h0]
 
 /-- The degree is multiplicative under tensor product: this is the degree-level shadow of the fact
 that central simple `K`-algebras are closed under `⊗[K]`. -/
 @[simp]
 theorem deg_tensorProduct (B : Type*) [Ring B] [Algebra K B] [Algebra.IsCentral K B]
-    [IsSimpleRing B] [FiniteDimensional K B] :
+    [IsSimpleRing B] :
     deg K (A ⊗[K] B) = deg K A * deg K B :=
   deg_eq_of_finrank_eq_sq <| by
     rw [Module.finrank_tensorProduct, ← deg_sq K A, ← deg_sq K B]; ring
@@ -261,7 +265,7 @@ variable {K A}
 Wedderburn presentation; note that `A` itself carries no hypotheses here, since they are inherited
 through the isomorphism. -/
 theorem deg_eq_mul_deg_of_algEquiv_matrix {n : ℕ} {D : Type*} [Ring D] [Algebra K D]
-    [Algebra.IsCentral K D] [IsSimpleRing D] [FiniteDimensional K D]
+    [Algebra.IsCentral K D] [IsSimpleRing D]
     (e : A ≃ₐ[K] Matrix (Fin n) (Fin n) D) : deg K A = n * deg K D := by
   rw [deg_eq_of_algEquiv e, deg_matrix]
 

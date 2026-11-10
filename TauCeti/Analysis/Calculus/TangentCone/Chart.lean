@@ -29,6 +29,8 @@ charts used to verify it.
   derivative there.
 * `TauCeti.image_tangentConeAt_eq_tangentConeAt_preimage_symm`: the invertible derivative `A` of a
   chart at a point carries the tangent cone of a set there onto the tangent cone of its image.
+* `TauCeti.image_tangentConeAt_eq_of_preimage_eq`: the same for a homeomorphism carrying one set
+  onto another.
 * `TauCeti.IsSliceChart.tangentConeAt_eq_preimage`: the tangent cone of a set flattened onto a
   closed subspace is the preimage of that subspace under the derivative of the chart.
 * `TauCeti.IsSliceChart.span_tangentConeAt_eq_comap`: hence the span of the tangent cone is that
@@ -95,6 +97,19 @@ theorem image_tangentConeAt_eq_tangentConeAt_preimage_symm {e : OpenPartialHomeo
     refine tangentConeAt_mono ?_ hmaps
     rintro _ ⟨w, ⟨hwS, -⟩, rfl⟩
     exact hwS
+
+/-- **A homeomorphism transports tangent cones.** If a homeomorphism `Φ` carries `S` onto `T`, in
+the sense that `Φ ⁻¹' T = S`, and has invertible derivative `A` at `y`, then `A` maps the tangent
+cone of `S` at `y` onto the tangent cone of `T` at `Φ y`. -/
+theorem image_tangentConeAt_eq_of_preimage_eq {Φ : E ≃ₜ F} {S : Set E} {T : Set F} {y : E}
+    {A : E ≃L[𝕜] F} (hST : Φ ⁻¹' T = S) (hA : HasFDerivAt Φ (A : E →L[𝕜] F) y) :
+    A '' tangentConeAt 𝕜 S y = tangentConeAt 𝕜 T (Φ y) := by
+  have hA' : HasFDerivAt Φ.toOpenPartialHomeomorph (A : E →L[𝕜] F) y := by
+    rwa [Homeomorph.toOpenPartialHomeomorph_apply]
+  have h := image_tangentConeAt_eq_tangentConeAt_preimage_symm (S := S) (mem_univ y) hA'
+  subst hST
+  rwa [Homeomorph.toOpenPartialHomeomorph_symm_apply, Homeomorph.toOpenPartialHomeomorph_apply,
+    Homeomorph.preimage_symm, Φ.image_preimage] at h
 
 namespace IsSliceChart
 

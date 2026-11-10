@@ -43,6 +43,10 @@ known; it is a finite computation, run by `decide`.
 
 ## Main results
 
+* `TauCeti.CosetTable.prod_smul_point_of_edges`: sound edges along a word determine its action
+  on a named point, for any monoid action.
+* `TauCeti.CosetTable.smul_mem_range_point_of_edges`: a nonempty table with sound generator
+  edges covers the orbit under the generated subgroup, without an empty-word row or a certificate.
 * `TauCeti.CosetTable.smul_point`: a certified table describes the action of the generators on
   the points it names.
 * `TauCeti.CosetTable.smul_mem_range_point`: if the generators generate `G`, the named points
@@ -158,15 +162,16 @@ private def Sound (known : List (Fin m × Fin k)) : Prop :=
 
 variable {T g a}
 
-private theorem prod_smul_point_of_sound {known : List (Fin m × Fin k)}
-    (hk : Sound T g a known) (i : Fin k) :
-    ∀ u : List (Fin m), (∀ e ∈ T.edges u i, e ∈ known) →
+/-- If every edge traversed by a word describes the action on the named points, the word acts
+as its table trace. Only the traversed edges need to be sound; a monoid action suffices. -/
+theorem prod_smul_point_of_edges (i : Fin k) :
+    ∀ u : List (Fin m),
+      (∀ e ∈ T.edges u i, g e.1 • T.point g a e.2 = T.point g a (T.act e.1 e.2)) →
       (u.map g).prod • T.point g a i = T.point g a (T.trace u i)
-  | [], _ => by simp [trace_nil]
+  | [], _ => by simp
   | t :: u, hu => by
-    have hu' : ∀ e ∈ T.edges u i, e ∈ known := fun e he ↦ hu e (List.mem_cons_of_mem _ he)
-    rw [List.map_cons, List.prod_cons, mul_smul, prod_smul_point_of_sound hk i u hu', trace_cons]
-    exact hk _ (hu _ List.mem_cons_self)
+    obtain ⟨ht, hu⟩ := List.forall_mem_cons.1 hu
+    simpa [List.prod_cons, mul_smul, prod_smul_point_of_edges i u hu] using ht
 
 private theorem sound_deduce {known : List (Fin m × Fin k)} (hk : Sound T g a known)
     {i : Fin k} {r : List (Fin m)} (hr : (r.map g).prod • T.point g a i = T.point g a i) :
@@ -177,13 +182,9 @@ private theorem sound_deduce {known : List (Fin m × Fin k)} (hk : Sound T g a k
     rw [deduce]
     split_ifs with h
     · simp only [Bool.and_eq_true, List.all_eq_true, decide_eq_true_eq] at h
-      intro e he
-      rcases List.mem_cons.1 he with rfl | he
-      · rw [List.map_cons, List.prod_cons, mul_smul,
-          prod_smul_point_of_sound hk i u h.1] at hr
-        rw [h.2]
-        exact hr
-      · exact hk e he
+      refine List.forall_mem_cons.2 ⟨?_, hk⟩
+      simpa [List.prod_cons, mul_smul,
+        prod_smul_point_of_edges i u (fun e he ↦ hk e (h.1 e he)), h.2] using hr
     · exact hk
 
 private theorem sound_treeEdges : Sound T g a T.treeEdges := by
@@ -222,6 +223,30 @@ section Group
 
 variable {T} {G α : Type*} [Group G] [MulAction G α] {g : Fin m → G} {a : α}
 
+/-- A nonempty table with sound generator edges contains the orbit of its base point under
+the generated subgroup. No empty-word row or deduction certificate is required, and the
+generators need not generate the whole ambient group. -/
+theorem smul_mem_range_point_of_edges [NeZero k]
+    (hedges : ∀ t i, g t • T.point g a i = T.point g a (T.act t i))
+    {x : G} (hx : x ∈ Subgroup.closure (Set.range g)) :
+    x • a ∈ Set.range (T.point g a) := by
+  have hfin : (Set.range (T.point g a)).Finite := Set.finite_range _
+  have hstabilizer : Subgroup.closure (Set.range g) ≤
+      MulAction.stabilizer G (Set.range (T.point g a)) := by
+    rw [Subgroup.closure_le]
+    rintro _ ⟨t, rfl⟩
+    rw [SetLike.mem_coe, MulAction.mem_stabilizer_set' hfin]
+    rintro _ ⟨i, rfl⟩
+    exact ⟨T.act t i, (hedges t i).symm⟩
+  have hw : ((T.word 0).map g).prod ∈ Subgroup.closure (Set.range g) := by
+    apply list_prod_mem
+    intro y hy
+    obtain ⟨t, -, rfl⟩ := List.mem_map.1 hy
+    exact Subgroup.subset_closure (Set.mem_range_self t)
+  have hxa := (MulAction.mem_stabilizer_set' hfin).1
+    (hstabilizer (Subgroup.mul_mem _ hx (Subgroup.inv_mem _ hw))) (Set.mem_range_self 0)
+  simpa [point_def, mul_smul] using hxa
+
 /-- If the generators `g` generate `G`, the points named by a certified coset table contain the
 whole orbit of the base point `a`. -/
 theorem smul_mem_range_point {rels stab : List (List (Fin m))}
@@ -230,21 +255,9 @@ theorem smul_mem_range_point {rels stab : List (List (Fin m))}
     (hstab : ∀ r ∈ stab, (r.map g).prod • a = a) (x : G) :
     x • a ∈ Set.range (T.point g a) := by
   rw [check, Bool.and_eq_true] at hT
-  have hT' : T.checkAction rels stab cert = true := hT.2
-  have hfin : (Set.range (T.point g a)).Finite := Set.finite_range _
-  have hstabilizer : Subgroup.closure (Set.range g) ≤
-      MulAction.stabilizer G (Set.range (T.point g a)) := by
-    rw [Subgroup.closure_le]
-    rintro _ ⟨t, rfl⟩
-    rw [SetLike.mem_coe, MulAction.mem_stabilizer_set' hfin]
-    rintro _ ⟨i, rfl⟩
-    exact ⟨T.act t i, (smul_point hT' hrels hstab t i).symm⟩
-  have hx : x ∈ MulAction.stabilizer G (Set.range (T.point g a)) :=
-    hstabilizer (hg ▸ Subgroup.mem_top x)
-  refine (MulAction.mem_stabilizer_set' hfin).1 hx ?_
-  simp only [List.any_eq_true, decide_eq_true_eq] at hT
-  obtain ⟨i, -, hi⟩ := hT.1
-  exact ⟨i, by rw [point_def, hi, List.map_nil, List.prod_nil, one_smul]⟩
+  obtain ⟨i, -, -⟩ := List.any_eq_true.1 hT.1
+  have : NeZero k := ⟨Nat.ne_zero_of_lt i.isLt⟩
+  exact smul_mem_range_point_of_edges (smul_point hT.2 hrels hstab) (hg ▸ Subgroup.mem_top x)
 
 /-- The cosets named by a certified coset table for a subgroup `H` are all the cosets of `H`. -/
 theorem surjective_point {H : Subgroup G} {rels stab : List (List (Fin m))}

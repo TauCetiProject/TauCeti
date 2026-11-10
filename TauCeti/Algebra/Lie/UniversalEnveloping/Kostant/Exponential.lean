@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Form
-public import TauCeti.RingTheory.Nilpotent.Exp
+public import TauCeti.RingTheory.Nilpotent.Exp.Basic
 
 /-!
 # Root subgroup elements of a Kostant integral form
@@ -36,9 +36,9 @@ of scalars for which the rational coefficients `tⁿ/n!` of the ordinary exponen
 recombine into integers.
 
 The divided-power expansion, the one-parameter group law `x_i(t) x_i(u) = x_i(t + u)` and the
-general stability statements are `TauCeti/RingTheory/Nilpotent/Exp.lean`; nothing here re-proves
-them. Nothing here assumes the Chevalley relations either: the results hold for any families of
-distinguished vectors, and a pinned root datum will supply the specific ones.
+general stability statements are in `TauCeti/RingTheory/Nilpotent/Exp/Basic.lean`;
+nothing here re-proves them. Nothing here assumes the Chevalley relations either: the results hold
+for any families of distinguished vectors, and a pinned root datum will supply the specific ones.
 
 ## Main results
 

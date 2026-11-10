@@ -20,6 +20,8 @@ reduction, and a subgroup `E₀(L)` of points with nonsingular reduction.
 
 ## Main results
 
+* `WeierstrassCurve.isIntegral_valuationSubring`: integrality over `𝒪[K]` also supplies integrality
+  over the valuation subring, as used by the valuation reduction API.
 * `WeierstrassCurve.isIntegral_valuationSubring_baseChange`: along a compatible extension `L/K` of
   valued fields, an equation integral over the valuation ring of `K` stays integral over that of
   `L`.
@@ -34,6 +36,14 @@ public section
 namespace WeierstrassCurve
 
 open ValuativeRel
+
+/-- An equation integral over `𝒪[K]` is integral over the valuation subring of `K`. -/
+instance isIntegral_valuationSubring {K : Type*} [Field K] [ValuativeRel K]
+    (W : WeierstrassCurve K) [IsIntegral 𝒪[K] W] :
+    IsIntegral (valuation K).valuationSubring W :=
+  -- The integer subring and the valuation subring have definitionally equal carriers;
+  -- only their bundled subring structures differ.
+  inferInstanceAs (IsIntegral 𝒪[K] W)
 
 /-- **Integrality along an extension of valued fields.** If `L/K` is a compatible extension of
 valued fields, the base change to `L` of an equation with coefficients in the valuation ring of `K`

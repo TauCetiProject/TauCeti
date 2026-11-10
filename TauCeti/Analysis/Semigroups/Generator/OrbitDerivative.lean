@@ -202,7 +202,7 @@ theorem realOperator_hasDerivWithinAt_Ici (S : StronglyContinuousSemigroup X)
         (S.realOperator_continuousOn_Ici z).mono (by
           intro u hu
           exact hu.1)
-    have hcont := S.realOperator_continuousAt_of_pos z ht
+    have hcont := (S.continuous_realOperator_apply z).continuousAt (x := t)
     have hmeas := ContinuousOn.stronglyMeasurableAtFilter (μ := MeasureTheory.volume)
       isOpen_Ioi ((S.realOperator_continuousOn_Ici z).mono Set.Ioi_subset_Ici_self) t ht
     have hint := intervalIntegral.integral_hasDerivAt_right hzint hmeas hcont

@@ -11,9 +11,11 @@ public import TauCeti.LinearAlgebra.Orientation.Basic
 # The sign of a basis relative to an orientation
 
 The relative sign takes values in the integer units and compensates the sign of a change of
-basis. Empty index types are included, so both zero-dimensional orientations retain their sign.
-Two orientations are equal exactly when they agree on whether they are the orientation of a
-fixed basis (`Module.Basis.eq_iff_eq_orientation_iff`).
+basis. It is unchanged when the orientation and the basis are transported along the same linear
+equivalence (`Orientation.signBasis_map`). Empty index types are included, so both
+zero-dimensional orientations retain their sign. Two orientations are equal exactly when they
+agree on whether they are the orientation of a fixed basis
+(`Module.Basis.eq_iff_eq_orientation_iff`).
 -/
 
 public section
@@ -61,6 +63,19 @@ def signBasis (o : Orientation R E ι) (b : Module.Basis ι R E) : ℤˣ := by
 @[simp]
 theorem signBasis_orientation (b : Module.Basis ι R E) : signBasis b.orientation b = 1 := by
   simp [signBasis]
+
+/-- Transporting both the orientation and the basis along a linear equivalence preserves their
+relative sign. -/
+@[simp]
+theorem signBasis_map {F : Type*} [AddCommGroup F] [Module R F] (o : Orientation R E ι)
+    (b : Module.Basis ι R E) (e : E ≃ₗ[R] F) :
+    signBasis (Orientation.map ι e o) (b.map e) = signBasis o b := by
+  unfold signBasis
+  congr 1
+  rw [eq_iff_iff, ← (Orientation.map ι e).injective.eq_iff]
+  -- The two orientations of `b.map e` may carry different `DecidableEq` instances.
+  convert Iff.rfl using 2
+  simp [Module.Basis.orientation_map]
 
 /-- Reversing the orientation reverses the relative basis sign. -/
 @[simp]
@@ -116,6 +131,16 @@ theorem _root_.AlternatingMap.signBasis_mul_apply_eq_abs_det_mul (f : E [⋀^ι]
   rw [habs, hf]
   ring
 
+/-- A top-degree alternating form positive on a basis `b₀` is positive on every basis with the
+orientation of `b₀`: the two values differ by the positive change-of-basis determinant. -/
+theorem _root_.AlternatingMap.apply_pos_of_orientation_eq (f : E [⋀^ι]→ₗ[R] R)
+    {b₀ b : Module.Basis ι R E} (hb : b.orientation = b₀.orientation) (h : 0 < f b₀) :
+    0 < f b := by
+  have key := f.signBasis_mul_apply_eq_abs_det_mul b₀ b
+  rw [← hb, signBasis_orientation, Units.val_one, Int.cast_one, one_mul] at key
+  rw [key]
+  exact mul_pos (abs_pos.2 (b₀.isUnit_det b).ne_zero) h
+
 end CommRing
 
 section Field
@@ -145,12 +170,13 @@ end Orientation
 Jacobian multiplied by the two relative signs is positive. -/
 theorem Orientation.signBasis_mul_units_mul_det_pos
     {R E ι : Type*} [Field R] [LinearOrder R] [IsStrictOrderedRing R]
-    [AddCommGroup E] [Module R E] [FiniteDimensional R E] [Fintype ι] [DecidableEq ι]
+    [AddCommGroup E] [Module R E] [Fintype ι] [DecidableEq ι]
     (o : Orientation R E ι) (b : Module.Basis ι R E) (A : E ≃ₗ[R] E) (u : ℤˣ)
     (h : Orientation.map ι A ((Units.map (Int.castRingHom R).toMonoidHom u) • o) =
       b.orientation) :
     0 < (Orientation.signBasis o b : R) * (u : R) * A.toLinearMap.det := by
   classical
+  have := Module.Finite.of_basis b
   have hb : (Units.map (Int.castRingHom R).toMonoidHom (signBasis o b)) • o =
       b.orientation := by
     simpa only [signBasis, eq_comm] using

@@ -111,16 +111,11 @@ theorem locallyFiniteBoundary_zero_surjective
       ((twistedChainComplex L).d 1 0).hom (y ik) = e ik - e (ik.1, ik.2 + 1) := by
     simp only [y, e, map_neg, d_ιTwistedChainComplex_simplex₁_apply, neg_sub, hm]
   have hy (ik : S × ℕ) σ (hσ : (twistedChainComplexCoeff L σ).hom (y ik) ≠ 0) :
-      Set.range (simplexMap σ) ⊆ Set.range (q ik.1 ik.2) := by
-    obtain rfl := eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero L hσ
-    rintro _ ⟨p, rfl⟩
-    -- `simplexMap` evaluates the singular simplex at the unlifted point.
-    exact ⟨_, (congr($(toSSetObjEquiv_simplex₁ _) p.down)).symm⟩
+      Set.range (simplexMap σ) ⊆ Set.range (q ik.1 ik.2) :=
+    range_simplexMap_subset_range_of_ne_zero_simplex₁ L _ hσ
   have he (ik : S × ℕ) σ (hσ : (twistedChainComplexCoeff L σ).hom (e ik) ≠ 0) :
-      Set.range (simplexMap σ) ⊆ Set.range (q ik.1 ik.2) := by
-    obtain rfl := eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero L hσ
-    rintro _ ⟨_, rfl⟩
-    exact ⟨0, (q ik.1 ik.2).source⟩
+      Set.range (simplexMap σ) ⊆ Set.range (q ik.1 ik.2) :=
+    range_simplexMap_subset_range_of_ne_zero_vertex L (q ik.1 ik.2) hσ
   have he0 (i : S) : e (i, 0) = (ιTwistedChainComplex L 0 i.1).hom (c i.1) := by
     simp only [e, m, rayTransport, Category.comp_id]
     rw [ιTwistedChainComplex_zero_apply_eq_toSSetObj₀Equiv_symm L i.1 (hz0 i).symm]

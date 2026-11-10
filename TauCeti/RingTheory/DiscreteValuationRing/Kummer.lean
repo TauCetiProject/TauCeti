@@ -8,7 +8,7 @@ module
 public import Mathlib.FieldTheory.IntermediateField.Adjoin.Basic
 public import TauCeti.RingTheory.DiscreteValuationRing.TamelyRamified
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
+import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop
 import TauCeti.FieldTheory.Kummer.Extension
 import TauCeti.RingTheory.DiscreteValuationRing.Eisenstein

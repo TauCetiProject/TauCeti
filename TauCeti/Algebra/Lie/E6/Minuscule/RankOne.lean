@@ -64,7 +64,7 @@ theorem sl2BlockSL_lower_transvection {R : Type*} [CommRing R] (i : Fin 6) (t : 
     coe_rootSubgroupPoints_inr, toAdd_ofAdd]
 
 /-- The diagonal in the block action is the numbered simple-coroot point. -/
-@[simp]
+@[simp high] -- Prefer the carrier equation to the generic weight-table diagonal equation.
 theorem sl2BlockSL_diag2nUnit {R : Type*} [CommRing R] (i : Fin 6) (u : Rˣ) :
     weightTable.sl2BlockSL i (Matrix.SpecialLinearGroup.diag2nUnit
       (by decide : (0 : Fin 2) ≠ 1) u) =

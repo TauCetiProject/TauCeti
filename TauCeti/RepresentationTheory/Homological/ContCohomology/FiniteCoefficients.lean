@@ -305,9 +305,9 @@ fixed degree. Let `G` be a compact group, `p ≠ 0`, and `M` a discrete `p`-prim
 `G`-module with continuous action. If `Hⁿ(G, N)` vanishes for every finite discrete `p`-primary
 `G`-module `N`, then `Hⁿ(G, M)` vanishes. -/
 theorem subsingleton_continuousCohomology_of_forall_finite {p : ℕ} (hp : p ≠ 0)
-    (hM : IsPPrimaryTorsion p M) (n : ℕ)
+    (hM : IsAddPGroup p M) (n : ℕ)
     (h : ∀ (N : Type (max v w)) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
-      [DistribMulAction G N] [ContinuousSMul G N] [Finite N], IsPPrimaryTorsion p N →
+      [DistribMulAction G N] [ContinuousSMul G N] [Finite N], IsAddPGroup p N →
       Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G N))) :
     Subsingleton (continuousCohomology n (ofDiscreteModule ℤ G M)) := by
   refine subsingleton_continuousCohomology_of_forall_finite_addSubgroup (hM.isAddTorsion hp) n
@@ -334,7 +334,7 @@ every **finite** discrete `p`-primary `G`-module `M`. -/
 theorem cohomologicalDimensionLE_iff_forall_finite (hp : p ≠ 0) {n : ℕ} :
     CohomologicalDimensionLE.{v} p G n ↔
       ∀ (M : Type (max u v)) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-        [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsPPrimaryTorsion p M →
+        [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsAddPGroup p M →
         ∀ i : ℕ, n < i → Subsingleton (continuousCohomology i (ofDiscreteModule ℤ G M)) := by
   rw [cohomologicalDimensionLE_iff]
   exact ⟨fun h M _ _ _ _ _ _ hM i hi ↦ h M hM i hi, fun h M _ _ _ _ _ hM i hi ↦
@@ -347,7 +347,7 @@ for every `i > n` and every **finite** discrete `p`-primary `G`-module `M`. -/
 theorem cohomologicalDimensionAt_le_iff_forall_finite (hp : p ≠ 0) (n : ℕ) :
     cohomologicalDimensionAt.{v} p G ≤ n ↔
       ∀ (M : Type (max u v)) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
-        [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsPPrimaryTorsion p M →
+        [DistribMulAction G M] [ContinuousSMul G M] [Finite M], IsAddPGroup p M →
         ∀ i : ℕ, n < i → Subsingleton (continuousCohomology i (ofDiscreteModule ℤ G M)) := by
   rw [cohomologicalDimensionAt_le_iff, cohomologicalDimensionLE_iff_forall_finite hp]
 

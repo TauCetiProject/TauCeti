@@ -163,7 +163,7 @@ theorem ContMDiffAt.analyticAt_extend_comp_extend_symm {f : M → M'}
 and `f x`, at the coordinate of `x`. -/
 theorem ContMDiffAt.analyticAt_writtenInExtChartAt {f : M → M'} (hf : ContMDiffAt I I' ω f x) :
     AnalyticAt 𝕜 (writtenInExtChartAt I I' x f) (extChartAt I x x) :=
-  ((contMDiffAt_iff.1 hf).2.contDiffAt <| by simp [I.range_eq_univ]).analyticAt
+  hf.contDiffAt_writtenInExtChartAt.analyticAt
 
 namespace TauCeti
 

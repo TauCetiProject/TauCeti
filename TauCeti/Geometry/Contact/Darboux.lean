@@ -15,7 +15,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Calculus.DifferentialForm.Flow
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.Moser
-import TauCeti.Analysis.ODE.Gronwall
+import TauCeti.Analysis.ODE.ScalarLinear
 import TauCeti.Dynamics.Flow.RestPoint
 import TauCeti.Geometry.Contact.Symplectization.Linear
 
@@ -285,10 +285,10 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_
     refine (hσ.comp (continuousOn_id.prodMk fun t ht ↦ ?_) fun t ht ↦
       ⟨hTI ht, (hx t ht).1⟩).neg
     exact (hx t ht).2.1.continuousAt.continuousWithinAt
-  have h := eq_exp_integral_smul_of_hasDerivWithinAt (E := V [⋀^Fin 1]→L[ℝ] ℝ)
-    (f := fun s ↦ ((1 - s) • α₀ (ψ s x) + s • α₁ (ψ s x)).compContinuousLinearMap
-      (fderiv ℝ (ψ s) x)) ordConnected_Icc (left_mem_Icc.2 zero_le_one)
-    (right_mem_Icc.2 zero_le_one) hcont fun t ht ↦ (hP t ht).hasDerivWithinAt
+  have h := eq_exp_integral_smul_of_hasDerivWithinAt_smul (V := V [⋀^Fin 1]→L[ℝ] ℝ)
+    (P := fun s ↦ ((1 - s) • α₀ (ψ s x) + s • α₁ (ψ s x)).compContinuousLinearMap
+      (fderiv ℝ (ψ s) x)) ordConnected_Icc hcont (fun t ht ↦ (hP t ht).hasDerivWithinAt)
+    (left_mem_Icc.2 zero_le_one) (right_mem_Icc.2 zero_le_one)
   simp only [hψ0, fderiv_id, sub_zero, one_smul, zero_smul, add_zero, zero_add, sub_self,
     id_eq] at h
   refine h.trans (congrArg _ ?_)

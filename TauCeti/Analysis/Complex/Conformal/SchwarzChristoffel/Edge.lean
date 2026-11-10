@@ -62,6 +62,8 @@ prevertex `a i` rotates the edge direction by `-π · e i`, which for the classi
   integrand is the continued integrand times the unimodular edge-direction constant.
 * `TauCeti.schwarzChristoffelContinuedIntegrand_ofReal` -- on a prevertex-free real interval the
   continued integrand is the positive real `∏ i, |x - a i| ^ e i`.
+* `TauCeti.schwarzChristoffelContinuedIntegrand_ne_zero` -- the continued integrand does not vanish
+  at a complex point avoiding the prevertices with nonzero exponent.
 * `TauCeti.tendsto_schwarzChristoffelIntegrand_nhdsWithin` -- the boundary value of the integrand
   at a point of such an interval, whose argument is the edge angle.
 * `TauCeti.exists_tendsto_schwarzChristoffelPrimitive_sub_eq` -- the Schwarz--Christoffel map
@@ -317,6 +319,22 @@ theorem schwarzChristoffelContinuedIntegrand_ofReal (a e : ι → ℝ) {c x : �
     · have hx : 0 < a i - x := sub_pos.mpr (hhi i he (lt_of_not_ge h))
       have hcast : (a i : ℂ) - (x : ℂ) = ((a i - x : ℝ) : ℂ) := by push_cast; ring
       rw [ite_eq_right h, hcast, ← Complex.ofReal_cpow hx.le, abs_sub_comm, abs_of_pos hx]
+
+/-- The continued Schwarz--Christoffel integrand does not vanish at any complex point avoiding
+the prevertices with nonzero exponent, whatever the reference point: each factor is a nonzero
+base raised to a complex power, or the constant `1` if its exponent is zero. -/
+theorem schwarzChristoffelContinuedIntegrand_ne_zero (a e : ι → ℝ) (c : ℝ) {z : ℂ}
+    (hz : ∀ i, e i ≠ 0 → z ≠ (a i : ℂ)) :
+    schwarzChristoffelContinuedIntegrand a e c z ≠ 0 := by
+  rw [schwarzChristoffelContinuedIntegrand_def, Finset.prod_ne_zero_iff]
+  intro i _
+  rcases eq_or_ne (e i) 0 with he | he
+  · simp [he]
+  · have hbase : (if a i ≤ c then z - (a i : ℂ) else (a i : ℂ) - z) ≠ 0 := by
+      split_ifs
+      · exact sub_ne_zero.mpr (hz i he)
+      · exact sub_ne_zero.mpr (hz i he).symm
+    exact fun h => hbase ((Complex.cpow_eq_zero_iff _ _).mp h).1
 
 /-- The **boundary value of the Schwarz--Christoffel integrand** at a point of a real interval
 free of prevertices with nonzero exponent: approaching from the upper half-plane, the integrand

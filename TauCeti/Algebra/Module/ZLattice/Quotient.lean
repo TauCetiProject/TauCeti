@@ -45,7 +45,8 @@ for `c ≠ 0` a `ℤ`-basis of `L` identifies it with `(ℤ / c)^n` by reducing 
 ## Main results
 
 * `Submodule.instCompactSpaceOrbitRelQuotient`: the translation orbit space is compact.
-* `QuotientAddGroup.instCompactSpaceOfIsZLattice`: the additive quotient is compact.
+* `QuotientAddGroup.instCompactSpaceOfIsZLattice`,
+  `Submodule.instCompactSpaceQuotientToAddSubgroup`: the additive quotient is compact.
 * `Module.Basis.latticeCircleCoordinates`: the continuous homomorphism of circle coordinates.
 * `Module.Basis.quotientLatticeEquiv`: the quotient is a product of additive circles.
 * `Module.Basis.orbitRelQuotientLatticeEquiv`: the same circle coordinates on the orbit space.
@@ -85,6 +86,15 @@ instance QuotientAddGroup.instCompactSpaceOfIsZLattice {E : Type*} [NormedAddCom
   -- by L: toIntSubmodule retains L as its underlying additive subgroup.
   L.toIntSubmodule.orbitRelQuotientContinuousAddEquiv.surjective.compactSpace
     (map_continuous L.toIntSubmodule.orbitRelQuotientContinuousAddEquiv)
+
+/-- The additive quotient of a finite-dimensional real normed space by the additive subgroup of a
+full lattice `L : Submodule ℤ E` is compact. -/
+instance Submodule.instCompactSpaceQuotientToAddSubgroup {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [FiniteDimensional ℝ E] (L : Submodule ℤ E) [DiscreteTopology L]
+    [IsZLattice ℝ L] : CompactSpace (E ⧸ L.toAddSubgroup) :=
+  -- The quotient by L.toAddSubgroup is the quotient module by L, with the same topology.
+  L.orbitRelQuotientContinuousAddEquiv.surjective.compactSpace
+    (map_continuous L.orbitRelQuotientContinuousAddEquiv)
 
 noncomputable section
 

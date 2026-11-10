@@ -104,7 +104,7 @@ ideal of `𝒪[L]` divides the different ideal exactly when `n ≤ d(L/K)`. -/
 @[simp]
 theorem pow_dvd_differentIdeal_iff_le_differentExponent {n : ℕ} :
     𝓂[L] ^ n ∣ differentIdeal 𝒪[K] 𝒪[L] ↔ n ≤ differentExponent K L :=
-  pow_dvd_differentIdeal_iff_le_multiplicity 𝒪[K] (IsDiscreteValuationRing.not_a_field 𝒪[L])
+  pow_dvd_differentIdeal_iff_le_multiplicity 𝒪[K] Ideal.IsPrime.ne_top'
 
 /-- The different ideal of a separable extension of nonarchimedean local fields is the
 `d(L/K)`-th power of the maximal ideal of `𝒪[L]`. -/
@@ -121,8 +121,7 @@ theorem differentIdeal_eq_maximalIdeal_pow :
 theorem ramificationIndex_sub_one_le_differentExponent :
     ramificationIndex K L - 1 ≤ differentExponent K L := by
   rw [ramificationIndex_eq_ramificationIdx]
-  exact ramificationIdx_sub_one_le_multiplicity_differentIdeal 𝒪[K]
-    (IsDiscreteValuationRing.not_a_field 𝒪[K]) 𝓂[L]
+  exact ramificationIdx_sub_one_le_multiplicity_differentIdeal 𝒪[K] 𝓂[L]
 
 attribute [local instance] Ideal.Quotient.field in
 /-- **The different exponent reaches the ramification index exactly in the wild case**:

@@ -137,7 +137,7 @@ private lemma pontryaginChainMap_simplex (σ τ : (toSSet.obj G) _⦋1⦌) :
           (simplexMul G ((toSSet.obj G).σ 0 σ) ((toSSet.obj G).σ 1 τ))) := by
     simp only [HomologicalComplex.comp_f,
       ιChainComplex_tensorHom_ιChainComplex_shuffle_f_one_one_assoc, Preadditive.sub_comp,
-      TauCeti.SSet.ιChainComplex_chainComplexFunctor_map_app_f_assoc, SSet.ι_chainComplexMap_f,
+      SSet.ιChainComplex_chainComplexFunctor_map_app_f_assoc, SSet.ι_chainComplexMap_f,
       Preadditive.comp_sub]
   -- evaluate both sides at `1 ⊗ 1`, which the multiplication of `k` sends to `1`
   rw [← ModuleCat.MonoidalCategory.tensorHom_tmul, ← CategoryTheory.comp_apply, h]

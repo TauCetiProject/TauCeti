@@ -156,7 +156,7 @@ vectors are the curvature directions and the third is the vector acted on. -/
   have hb : mlieBracket J (constantField u) (constantField v) p = 0 := by
     -- The constant fields are the model-space constant fields in the inherited atlas.
     rw [funext (constantField_apply u), funext (constantField_apply v)]
-    exact TauCeti.mlieBracket_const_model_space (𝕜 := ℝ) u v (toProd p)
+    exact mlieBracket_const_model_space (𝕜 := ℝ) u v (toProd p)
   rw [hb, map_zero, sub_zero, map_sub, second_connection_const, second_connection_const]
   have hsq : exp (-(p.y * 2)) = exp (-p.y) * exp (-p.y) := by
     rw [← exp_add]

@@ -35,6 +35,9 @@ which that Gauss norm equals `‖c‖`.
 
 A normed field whose norm takes every positive real value is densely normed
 (`DenselyNormedField.ofForallExistsNormEq`).
+
+Finally, `TauCeti.norm_sub_div_le_of_dist_div_le` turns a bound on the ratio `F / w` near `c⁻¹`
+into a relative error bound for `F - w / c`.
 -/
 
 public section
@@ -178,3 +181,19 @@ def DenselyNormedField.ofForallExistsNormEq {𝕜 : Type*} [h' : NormedField �
   lt_norm_lt r₁ r₂ h₀ hr := by
     obtain ⟨x, hx⟩ := h ((r₁ + r₂) / 2) (by linarith)
     exact ⟨x, by linarith, by linarith⟩
+
+namespace TauCeti
+
+/-- A bound on the ratio `F / w` near `c⁻¹` is a relative error bound for `w / c`: if
+`dist (F / w) c⁻¹ ≤ η / ‖c‖` and `w ≠ 0`, then `‖F - w / c‖ ≤ η * ‖w / c‖`. -/
+theorem norm_sub_div_le_of_dist_div_le {𝕜 : Type*} [NormedField 𝕜] {F w c : 𝕜} {η : ℝ}
+    (hw : w ≠ 0) (h : dist (F / w) c⁻¹ ≤ η / ‖c‖) : ‖F - w / c‖ ≤ η * ‖w / c‖ := by
+  have hmul := mul_le_mul_of_nonneg_right h (norm_nonneg w)
+  rw [dist_eq_norm, ← norm_mul] at hmul
+  have heq : (F / w - c⁻¹) * w = F - w / c := by
+    field_simp
+  rw [heq] at hmul
+  calc ‖F - w / c‖ ≤ η / ‖c‖ * ‖w‖ := hmul
+    _ = η * ‖w / c‖ := by rw [norm_div]; ring
+
+end TauCeti

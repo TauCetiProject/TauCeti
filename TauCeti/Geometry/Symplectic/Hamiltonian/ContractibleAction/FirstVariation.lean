@@ -88,17 +88,6 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologic
 
 /-! ### The variation of the cap area -/
 
-/-- The cylinder swept by a variation through loops between the parameters `s` and `s₀`. -/
-private theorem isLoopCylinder_comp_prodMap {w : ℝ × ℝ → M} (hwc : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 2 w)
-    (hper : ∀ z : ℝ × ℝ, w (z.1, z.2 + 1) = w z) (s s₀ : ℝ) :
-    IsLoopCylinder I (w ∘ Prod.map (fun σ ↦ s + σ * (s₀ - s)) id) (fun t ↦ w (s, t))
-      (fun t ↦ w (s₀, t)) where
-  contMDiff := hwc.comp
-    ((contDiff_const.add (contDiff_id.mul contDiff_const)).prodMap contDiff_id).contMDiff
-  apply_add_one z := hper (s + z.1 * (s₀ - s), z.2)
-  apply_zero t := by simp
-  apply_one t := by simp
-
 section CapArea
 
 variable [IsManifold I 1 M] [CompleteSpace F] {φ : RoughForm I M F 2} {w : ℝ × ℝ → M}
@@ -122,10 +111,8 @@ theorem IsWeaklyExact.hasDerivAt_capArea (hφ : IsSmoothForm I 0 φ) (hw : IsWea
       fun s ↦ capArea φ (fun t ↦ w (s₀, t)) - ∫ x in s₀..s, f x := by
     funext s
     rw [hw.capArea_eq_rectangleIntegral_add hφ (isLoopCylinder_comp_prodMap hwc hper s s₀) hu,
-      rectangleIntegral_comp_prodMap hφ (hwc.of_le one_le_two) (σ' := fun _ ↦ s₀ - s)
-        (fun x _ ↦ by simpa using ((hasDerivAt_id x).mul_const (s₀ - s)).const_add s)
-        continuousOn_const, rectangleIntegral_def]
-    simp only [zero_mul, add_zero, one_mul, add_sub_cancel]
+      rectangleIntegral_comp_prodMap_affine hφ (hwc.of_le one_le_two) s s₀ 0 1,
+      rectangleIntegral_def]
     rw [intervalIntegral.integral_symm s₀ s]
     abel
   rw [heq]

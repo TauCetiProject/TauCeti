@@ -32,6 +32,8 @@ of complex projective space are built.
 
 * `Projectivization.affineOpen i`: the points whose `i`-th homogeneous coordinate is nonzero;
   `Projectivization.iUnion_affineOpen` says that these sets cover projective space.
+* `Projectivization.instNontrivial`: projective space over at least two coordinates has at least
+  two points.
 * `Projectivization.affineChart i`: the affine chart `U_i ≃ Fin n → K` by homogeneous ratios.
 * `Projectivization.affineChart_mk` and `Projectivization.affineChart_symm_apply`: the chart and
   its inverse in homogeneous coordinates.
@@ -111,6 +113,13 @@ theorem mk_single_injective :
   exact (mk_single_mem_affineOpen_iff k' k).mp (h' ▸ (mk_single_mem_affineOpen_iff k k).mpr rfl)
 
 end AffineOpen
+
+/-- Projective space over a coordinate space with at least two coordinates has at least two points:
+the coordinate points of two distinct indices differ. -/
+instance instNontrivial {K : Type*} [DivisionRing K] {ι : Type*} [Nontrivial ι] :
+    Nontrivial (ℙ K (ι → K)) := by
+  classical
+  exact mk_single_injective.nontrivial
 
 variable {K : Type*} [Field K] {n : ℕ}
 

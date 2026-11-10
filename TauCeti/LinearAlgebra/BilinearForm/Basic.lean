@@ -41,6 +41,8 @@ maps valued in an arbitrary module.
   preserves nondegeneracy.
 * `TauCeti.BilinForm.nondegenerate_neg_iff`: negating a bilinear form preserves nondegeneracy.
 * `Module.Basis.dualBasis_smul_apply`: the dual basis of a scalar multiple of a form.
+* `LinearMap.BilinForm.IsSymm.of_smul`: cancel a non-zero-divisor from a symmetric scalar
+  multiple of a bilinear form.
 * `LinearMap.BilinForm.IsSymm.apply_add_self`: polarization of a symmetric bilinear form.
 * `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_left`,
   `LinearMap.apply_eq_apply_of_isOfFinAddOrder_sub_right`: a bilinear map with additively
@@ -108,6 +110,12 @@ end LinearMap.BilinForm
 
 namespace LinearMap.BilinForm.IsSymm
 
+/-- A form `C` is symmetric when `a • C` is, for a non-zero-divisor `a`. -/
+theorem of_smul {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
+    {a : R} (ha : a ∈ nonZeroDivisors R) {C : LinearMap.BilinForm R M}
+    (hC : (a • C).IsSymm) : C.IsSymm :=
+  ⟨fun x y ↦ (mul_cancel_left_mem_nonZeroDivisors ha).mp (by simpa using hC.eq x y)⟩
+
 /-- Polarization of a symmetric bilinear form over a commutative semiring. -/
 theorem apply_add_self {R M : Type*} [CommSemiring R] [AddCommMonoid M]
     [Module R M] {B : LinearMap.BilinForm R M} (hB : B.IsSymm) (x y : M) :
@@ -119,20 +127,23 @@ end LinearMap.BilinForm.IsSymm
 
 namespace LinearMap
 
-variable {R M N P : Type*} [CommSemiring R] [AddCommGroup M] [AddCommGroup N] [AddCommGroup P]
-  [IsAddTorsionFree P] [Module R M] [Module R N] [Module R P] (B : M →ₗ[R] N →ₗ[R] P)
+variable {R M N P : Type*} [CommSemiring R] [AddCommGroup P] [IsAddTorsionFree P] [Module R P]
 
 /-- A bilinear map with additively torsion-free values sees its left argument only modulo
 elements of finite additive order. -/
-theorem apply_eq_apply_of_isOfFinAddOrder_sub_left {x x' : M} (h : IsOfFinAddOrder (x - x'))
-    (y : N) : B x y = B x' y := by
+theorem apply_eq_apply_of_isOfFinAddOrder_sub_left [AddCommGroup M] [Module R M]
+    [AddCommMonoid N] [Module R N]
+    (B : M →ₗ[R] N →ₗ[R] P) {x x' : M} (h : IsOfFinAddOrder (x - x')) (y : N) :
+    B x y = B x' y := by
   have := ((B.flip y).toAddMonoidHom.isOfFinAddOrder h).eq_zero'
   simpa [sub_eq_zero] using this
 
 /-- A bilinear map with additively torsion-free values sees its right argument only modulo
 elements of finite additive order. -/
-theorem apply_eq_apply_of_isOfFinAddOrder_sub_right {y y' : N} (h : IsOfFinAddOrder (y - y'))
-    (x : M) : B x y = B x y' := by
+theorem apply_eq_apply_of_isOfFinAddOrder_sub_right [AddCommMonoid M] [Module R M]
+    [AddCommGroup N] [Module R N]
+    (B : M →ₗ[R] N →ₗ[R] P) {y y' : N} (h : IsOfFinAddOrder (y - y')) (x : M) :
+    B x y = B x y' := by
   have := ((B x).toAddMonoidHom.isOfFinAddOrder h).eq_zero'
   simpa [sub_eq_zero] using this
 
@@ -206,7 +217,7 @@ theorem nondegenerate_smul_iff {R M : Type*} [CommSemiring R] [AddCommMonoid M]
 
 /-- Negating a bilinear form preserves nondegeneracy. -/
 @[simp]
-theorem nondegenerate_neg_iff {R M : Type*} [CommRing R] [AddCommGroup M]
+theorem nondegenerate_neg_iff {R M : Type*} [CommRing R] [AddCommMonoid M]
     [Module R M] {B : BilinForm R M} :
     (-B).Nondegenerate ↔ B.Nondegenerate := by
   rw [← neg_one_smul R B]

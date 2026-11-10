@@ -36,7 +36,8 @@ section ring.
 
 ## Main declarations
 
-* `TauCeti.DescentDatum.IsStable D U`: the open `U` is stable under `D`.
+* `TauCeti.DescentDatum.IsStable D U`: the open `U` is stable under `D`; for instance the preimage
+  in `X` of an open of `S` is stable (`TauCeti.DescentDatum.isStable_comp_preimage`).
 * `TauCeti.DescentDatum.restrict D U hU`: the descent datum induced on a stable open `U`, with the
   inclusion `TauCeti.DescentDatum.restrictHom D U hU` and the factorization
   `TauCeti.DescentDatum.Hom.codRestrict`.
@@ -97,6 +98,13 @@ theorem IsStable.preimage {Y : Over S'} {E : DescentDatum p Y} (f : Hom D E) {U 
   unfold IsStable at hU ⊢
   rw [← Scheme.Hom.comp_preimage, ← f.map_act, Scheme.Hom.comp_preimage, hU]
   simp only [← Scheme.Hom.comp_preimage, pullback.lift_snd]
+
+/-- The preimage in `X` of an open of `S` is stable: the action `(s, x) ↦ s · x` does not change
+the image of a point in `S`. -/
+theorem isStable_comp_preimage (U : S.Opens) : D.IsStable ((X.hom ≫ p) ⁻¹ᵁ U) := by
+  refine isStable_iff.mpr fun z ↦ ?_
+  rw [Scheme.Hom.mem_preimage, Scheme.Hom.mem_preimage, ← Scheme.Hom.comp_apply,
+    ← Scheme.Hom.comp_apply, act_comp_hom_comp]
 
 section Restrict
 
@@ -258,15 +266,6 @@ end BaseChange
 
 section Effective
 
-/-- The base change `U₀ ×_S S' ⟶ X₀ ×_S S'` of the inclusion of an open `U₀` of `X₀` exhibits
-`U₀ ×_S S'` as the preimage of `U₀`. -/
-private theorem isPullback_baseChangeHom_homMk_ι {X₀ : Over S} (U₀ : X₀.left.Opens) :
-    IsPullback (pullback.fst (U₀.ι ≫ X₀.hom) p)
-      (baseChangeHom p (Over.homMk U₀.ι : Over.mk (U₀.ι ≫ X₀.hom) ⟶ X₀)).hom.left U₀.ι
-      (pullback.fst X₀.hom p) :=
-  IsPullback.of_bot (by simpa using IsPullback.of_hasPullback (U₀.ι ≫ X₀.hom) p) (by simp)
-    (IsPullback.of_hasPullback X₀.hom p)
-
 variable [Surjective p] [Flat p] [QuasiCompact p]
 
 variable {D} in
@@ -281,7 +280,9 @@ theorem exists_baseChange_hom_isIso_restrict {X₀ : Over S} (f : Hom (baseChang
         (D.restrictHom U hU).comp g = f.comp (baseChangeHom p (Over.homMk U₀.ι)) := by
   obtain ⟨U₀, hU₀⟩ := (isStable_baseChange_iff p).mp (hU.preimage f)
   let m := baseChangeHom p (Over.homMk U₀.ι : Over.mk (U₀.ι ≫ X₀.hom) ⟶ X₀)
-  have hm := isPullback_baseChangeHom_homMk_ι (p := p) U₀
+  -- `U₀ ×_S S'` is the preimage of `U₀` in `X₀ ×_S S'`.
+  have hm : IsPullback (pullback.fst (U₀.ι ≫ X₀.hom) p) m.hom.left U₀.ι (pullback.fst X₀.hom p) :=
+    (isPullback_baseChangeHom p (Over.homMk U₀.ι : Over.mk (U₀.ι ≫ X₀.hom) ⟶ X₀)).flip
   -- The image of `U₀ ×_S S'` in `X₀ ×_S S'` is the preimage of `U₀`, which `f` maps onto `U`.
   have hrange : Set.range m.hom.left = SetLike.coe (pullback.fst X₀.hom p ⁻¹ᵁ U₀) := by
     have := Scheme.image_preimage_eq_of_isPullback hm Set.univ
