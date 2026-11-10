@@ -281,6 +281,14 @@ theorem wEquationRHS_def {A : Type*} [CommSemiring A] [Algebra R A] (W : Weierst
         algebraMap R A W.a₆ * v ^ 3 :=
   (rfl)
 
+/-- An algebra homomorphism carries the right-hand side of the `w`-equation to the same
+expression at the images of its parameter and unknown. -/
+@[simp]
+theorem _root_.AlgHom.map_wEquationRHS {A B : Type*} [CommSemiring A] [CommSemiring B]
+    [Algebra R A] [Algebra R B] (f : A →ₐ[R] B) (W : WeierstrassCurve R) (q v : A) :
+    f (wEquationRHS W q v) = wEquationRHS W (f q) (f v) := by
+  simp only [wEquationRHS_def, map_add, map_mul, map_pow, AlgHom.commutes]
+
 /-- The right-hand side of the `w`-equation commutes with an algebra map, both the parameter and
 the unknown being carried along. This is the element-level companion of `map_wEquationRHS`, which
 transports series along a ring homomorphism; here the coefficients stay put and only the two
@@ -289,8 +297,8 @@ arguments move up the tower. -/
 theorem algebraMap_wEquationRHS {A B : Type*} [CommSemiring A] [CommSemiring B] [Algebra R A]
     [Algebra R B] [Algebra A B] [IsScalarTower R A B] (q v : A) :
     algebraMap A B (wEquationRHS W q v) =
-      wEquationRHS W (algebraMap A B q) (algebraMap A B v) := by
-  simp only [wEquationRHS_def, map_add, map_mul, map_pow, ← IsScalarTower.algebraMap_apply]
+      wEquationRHS W (algebraMap A B q) (algebraMap A B v) :=
+  AlgHom.map_wEquationRHS (IsScalarTower.toAlgHom R A B) W q v
 
 section Equation
 
