@@ -90,7 +90,6 @@ theorem exists_nonempty_algEquiv_even_of_finrank_pos (hQ : Q.Nondegenerate)
     (hV : 0 < finrank K V) :
     ∃ (n : ℕ) (P : QuadraticForm K (Fin n → K)), P.Nondegenerate ∧ n + 1 = finrank K V ∧
       Nonempty (even Q ≃ₐ[K] CliffordAlgebra P) := by
-  have := Module.finite_of_finrank_pos hV
   obtain ⟨n, P, hP, hn, e, _⟩ := exists_reversalEquiv_even_of_finrank_pos hQ hV
   exact ⟨n, P, hP, hn, ⟨e⟩⟩
 
@@ -101,7 +100,6 @@ theorem exists_nonempty_algEquiv_even_of_odd_finrank (hQ : Q.Nondegenerate)
     (hV : Odd (finrank K V)) :
     ∃ (n : ℕ) (P : QuadraticForm K (Fin n → K)), P.Nondegenerate ∧ Even n ∧
       Nonempty (even Q ≃ₐ[K] CliffordAlgebra P) := by
-  have := Module.finite_of_finrank_pos hV.pos
   obtain ⟨n, P, hP, hn, e⟩ := exists_nonempty_algEquiv_even_of_finrank_pos hQ hV.pos
   refine ⟨n, P, hP, ?_, e⟩
   rw [← hn, Nat.odd_add_one, Nat.not_odd_iff_even] at hV
@@ -111,7 +109,6 @@ theorem exists_nonempty_algEquiv_even_of_odd_finrank (hQ : Q.Nondegenerate)
 Together with centrality and inherited finite dimensionality, this defines its Brauer class. -/
 theorem isSimpleRing_even_of_odd_finrank (hQ : Q.Nondegenerate) (hV : Odd (finrank K V)) :
     IsSimpleRing (even Q) := by
-  have := Module.finite_of_finrank_pos hV.pos
   obtain ⟨n, P, hP, hn, ⟨e⟩⟩ := exists_nonempty_algEquiv_even_of_odd_finrank hQ hV
   exact IsSimpleRing.of_ringEquiv e.symm.toRingEquiv
     (isSimpleRing_of_even_finrank hP (by simpa using hn))
@@ -121,7 +118,6 @@ V.2.5): its centre is the base field, although the centre of the full Clifford a
 two-dimensional in odd dimension. -/
 theorem isCentral_even_of_odd_finrank (hQ : Q.Nondegenerate) (hV : Odd (finrank K V)) :
     Algebra.IsCentral K (even Q) := by
-  have := Module.finite_of_finrank_pos hV.pos
   obtain ⟨n, P, hP, hn, ⟨e⟩⟩ := exists_nonempty_algEquiv_even_of_odd_finrank hQ hV
   have hC := isCentral_of_even_finrank hP (by simpa using hn)
   -- `Algebra.IsCentral.of_algEquiv` needs both algebras in one universe, while `even Q` lives in
