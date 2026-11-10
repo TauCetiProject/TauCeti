@@ -183,14 +183,10 @@ basis measure one. -/
 theorem liouvilleMeasure_constSmooth (σ : SymplecticForm V) {b : Basis (Fin m × Fin 2) ℝ V}
     (hb : σ.IsDarbouxBasis b) : σ.constSmooth.liouvilleMeasure m = b.addHaar := by
   set e := finProdFinEquiv.trans (finCongr (Nat.mul_comm m 2))
-  have hval (x : V) : (σ.constSmooth.volumeForm m).1 x (b.reindex e) = 1 := by
-    refine σ.isNondegenerate_constSmooth.volumeForm_apply_reindex (x := x) (b := b)
-      ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩ <;>
-    rw [SmoothTwoForm.IsNondegenerate.symplecticFormAt_apply]
-    -- The tangent spaces of the model space are `V` itself, and `b` is a basis of each of them.
-    exacts [(constSmooth_apply σ x _ _).trans (hb.apply_fst_fst i j),
-      (constSmooth_apply σ x _ _).trans (hb.apply_snd_snd i j),
-      (constSmooth_apply σ x _ _).trans (hb.apply_fst_snd i j)]
+  -- The tangent spaces of the model space are `V` itself, and `b` is a basis of each of them.
+  have hval (x : V) : (σ.constSmooth.volumeForm m).1 x (b.reindex e) = 1 :=
+    σ.isNondegenerate_constSmooth.volumeForm_apply_reindex (x := x) (b := b)
+      (by rwa [isNondegenerate_constSmooth_symplecticFormAt])
   rw [SmoothTwoForm.liouvilleMeasure_def, RoughForm.measure_eq_smul_addHaar (c := 1) _ hval,
     abs_one, ENNReal.ofReal_one, one_smul, Basis.addHaar_reindex]
 
@@ -198,8 +194,7 @@ theorem liouvilleMeasure_constSmooth (σ : SymplecticForm V) {b : Basis (Fin m �
 `ℂ^ι = EuclideanSpace ℝ ι × EuclideanSpace ℝ ι`, written in the real coordinates
 `z_i = q_i + i p_i`, the Liouville measure of the standard form `Σ dq_i ∧ dp_i` is the Lebesgue
 measure `volume`. -/
-theorem liouvilleMeasure_constSmooth_stdSymplecticForm {ι : Type*} [Fintype ι]
-    [Fact (finrank ℝ (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) = 2 * Fintype.card ι)] :
+theorem liouvilleMeasure_constSmooth_stdSymplecticForm {ι : Type*} [Fintype ι] :
     (stdSymplecticForm (V := EuclideanSpace ℝ ι)).constSmooth.liouvilleMeasure (Fintype.card ι) =
       volume := by
   classical
@@ -208,17 +203,13 @@ theorem liouvilleMeasure_constSmooth_stdSymplecticForm {ι : Type*} [Fintype ι]
   have hd : LinearMap.BilinForm.toMatrix d
       (stdSymplecticForm (V := EuclideanSpace ℝ ι)).toBilinForm =
         Matrix.J (Fin (Fintype.card ι)) ℝ := by
-    ext (a | a) (c | c) <;>
-      simp [d, LinearMap.BilinForm.toMatrix_apply, Matrix.J, stdSymplecticForm_apply,
-        EuclideanSpace.inner_single_left, PiLp.single_apply, Matrix.one_apply, eq_comm]
-  have hstd : stdSymplecticBasis ι =
-      ((EuclideanSpace.basisFun ι ℝ).toBasis.prod (EuclideanSpace.basisFun ι ℝ).toBasis).reindex
-        (Equiv.sumComm ι ι) :=
-    Basis.eq_of_apply_eq fun a ↦ by
-      rcases a with a | a <;> simp [Basis.prod_apply, EuclideanSpace.basisFun_apply]
+    ext a c
+    rw [LinearMap.BilinForm.toMatrix_apply, Basis.reindex_apply, Basis.reindex_apply,
+      ← LinearMap.BilinForm.toMatrix_apply, toMatrix_stdSymplecticBasis]
+    rcases a with a | a <;> rcases c with c | c <;> simp [Matrix.J, Matrix.one_apply]
   refine (liouvilleMeasure_constSmooth _ (isDarbouxBasis_reindex_symm_iff.2 hd)).trans ?_
-  rw [Basis.addHaar_reindex, Basis.addHaar_reindex, hstd, Basis.addHaar_reindex, Basis.prod_addHaar,
-    OrthonormalBasis.addHaar_eq_volume, Measure.volume_eq_prod]
+  rw [Basis.addHaar_reindex, Basis.addHaar_reindex, stdSymplecticBasis_def, Basis.addHaar_reindex,
+    Basis.prod_addHaar, OrthonormalBasis.addHaar_eq_volume, Measure.volume_eq_prod]
 
 end TauCeti.SymplecticForm
 

@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Symplectic.Manifold.LiouvilleMeasure
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Support
 
+import TauCeti.MeasureTheory.Measure.Support
+
 /-!
 # The Duistermaat–Heckman measure
 
@@ -138,17 +140,7 @@ theorem support_duistermaatHeckmanMeasure [TopologicalSpace F] [BorelSpace F]
     (hσ : σ.IsNondegenerate) (hμ : Continuous μ) :
     (σ.duistermaatHeckmanMeasure n μ).support = closure (range μ) := by
   have := hσ.isOpenPosMeasure_liouvilleMeasure (n := n)
-  ext x
-  rw [Measure.support_eq_forall_isOpen, mem_ofPred_eq, mem_closure_iff]
-  refine forall_congr' fun U ↦ ⟨fun h hU hxU ↦ ?_, fun h hxU hU ↦ ?_⟩
-  · have hpos := h hxU hU
-    rw [duistermaatHeckmanMeasure_apply hμ.measurable hU.measurableSet,
-      (hU.preimage hμ).measure_pos_iff (μ := σ.liouvilleMeasure n)] at hpos
-    obtain ⟨y, hy⟩ := hpos
-    exact ⟨μ y, hy, mem_range_self y⟩
-  · obtain ⟨_, hyU, y, rfl⟩ := h hU hxU
-    rw [duistermaatHeckmanMeasure_apply hμ.measurable hU.measurableSet]
-    exact (hU.preimage hμ).measure_pos _ ⟨y, hyU⟩
+  exact Measure.support_map_eq_closure_range _ Measure.support_eq_univ hμ
 
 end SmoothTwoForm
 

@@ -93,8 +93,7 @@ theorem map_volume_weightMomentMap (α : ι → StrongDual ℝ 𝔱) :
 Lebesgue measure. Then the Duistermaat–Heckman measure of `μ = -½ Σ_i (q_i² + p_i²) α_i` is
 `(2π)^|ι|` times the image of Lebesgue measure on the closed positive orthant under
 `a ↦ Σ_i a_i (-α_i)`. -/
-theorem duistermaatHeckmanMeasure_weightMomentMap (α : ι → StrongDual ℝ 𝔱)
-    [Fact (Module.finrank ℝ (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) = 2 * Fintype.card ι)] :
+theorem duistermaatHeckmanMeasure_weightMomentMap (α : ι → StrongDual ℝ 𝔱) :
     (stdSymplecticForm (V := EuclideanSpace ℝ ι)).constSmooth.duistermaatHeckmanMeasure
         (Fintype.card ι) (weightMomentMap α) =
       ENNReal.ofReal (2 * π) ^ Fintype.card ι •
@@ -149,8 +148,7 @@ Duistermaat–Heckman measure `(2π)^|ι|` times the Haar measure normalized by 
 cone `{ν | ∀ i, 0 ≤ b.repr ν i}`. For the standard torus `ℝ^ι / (2πℤ)^ι` acting by
 `z_j ↦ exp(-i θ_j) z_j`, with `b` the standard basis of the weight lattice, this is `(2π)^|ι|` times
 Lebesgue measure on the positive orthant. -/
-theorem duistermaatHeckmanMeasure_weightMomentMap_neg (b : Basis ι ℝ (StrongDual ℝ 𝔱))
-    [Fact (Module.finrank ℝ (EuclideanSpace ℝ ι × EuclideanSpace ℝ ι) = 2 * Fintype.card ι)] :
+theorem duistermaatHeckmanMeasure_weightMomentMap_neg (b : Basis ι ℝ (StrongDual ℝ 𝔱)) :
     (stdSymplecticForm (V := EuclideanSpace ℝ ι)).constSmooth.duistermaatHeckmanMeasure
         (Fintype.card ι) (weightMomentMap (-⇑b)) =
       ENNReal.ofReal (2 * π) ^ Fintype.card ι • b.addHaar.restrict {ν | ∀ i, 0 ≤ b.repr ν i} := by

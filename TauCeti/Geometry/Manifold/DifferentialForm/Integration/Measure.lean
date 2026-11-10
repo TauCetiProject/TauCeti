@@ -10,6 +10,8 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVar
 public import TauCeti.MeasureTheory.Measure.Glue
 public import Mathlib.MeasureTheory.Measure.OpenPos
 
+import TauCeti.MeasureTheory.Measure.Haar.OfBasis
+
 /-!
 # The measure of a top form
 
@@ -309,19 +311,18 @@ theorem measure_eq_withDensity_addHaar [mE : MeasurableSpace E]
   refine (eq_measure_iff.2 fun α s hs _ ↦ ?_).symm
   -- In the identity chart, the coefficient in `b₀` is `det_b b₀` times the coefficient in `b`.
   have hchart (y : E) : φ.inChartAt α y b₀ = b.det b₀ * φ y b := by
-    rw [inChartAt_apply, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
-      PartialEquiv.refl_coe, modelWithCornersSelf_coe, range_id, mfderivWithin_univ, mfderiv_id]
+    -- `simp` cannot rewrite the chart under the dependently typed `mfderiv`, so `rw` does it.
+    rw [inChartAt_apply, extChartAt_model_space_eq_id]
+    simp only [PartialEquiv.refl_symm, PartialEquiv.refl_coe, modelWithCornersSelf_coe, range_id,
+      mfderivWithin_univ, mfderiv_id]
     have h := congr($((φ y).toAlternatingMap.eq_smul_basis_det b) b₀)
     rw [smul_apply, smul_eq_mul] at h
     exact h.trans (mul_comm _ _)
-  have hhaar : b₀.addHaar = ENNReal.ofReal |b₀.det b| • b.addHaar := by
-    rw [Measure.addHaarMeasure_unique b₀.addHaar b.parallelepiped, ← b.addHaar_def,
-      ← Measure.addHaar_parallelepiped, b.coe_parallelepiped]
-  have hdet : ENNReal.ofReal |b₀.det b| * ENNReal.ofReal |b.det b₀| = 1 := by
-    rw [← ENNReal.ofReal_mul (abs_nonneg _), ← abs_mul, Basis.det_mul_det, Basis.det_self,
+  have hdet : ENNReal.ofReal |(b.det b₀)⁻¹| * ENNReal.ofReal |b.det b₀| = 1 := by
+    rw [← ENNReal.ofReal_mul (abs_nonneg _), ← abs_mul, inv_mul_cancel₀ (b.isUnit_det b₀).ne_zero,
       abs_one, ENNReal.ofReal_one]
-  rw [withDensity_apply _ hs, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, image_id, hhaar,
-    Measure.restrict_smul, lintegral_smul_measure]
+  rw [withDensity_apply _ hs, extChartAt_model_space_eq_id, PartialEquiv.refl_coe, image_id,
+    b.addHaar_eq_smul_of_basis b₀, Measure.restrict_smul, lintegral_smul_measure]
   have hint : ∫⁻ y in s, ENNReal.ofReal |φ.inChartAt α y b₀| ∂b.addHaar =
       ENNReal.ofReal |b.det b₀| * ∫⁻ y in s, ENNReal.ofReal |φ y b| ∂b.addHaar := by
     rw [← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
