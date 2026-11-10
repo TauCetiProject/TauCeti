@@ -730,6 +730,7 @@ theorem two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measure (L 
   exact two_pow_div_factorial_mul_covolume_le_prod_mul_measure L μ K.convex (interior_subset hK)
     hKs b hbL (successiveMin_nonneg L K) hbK
 
+omit [FiniteDimensional ℝ E] in
 /-- **Minkowski's second theorem**, lower bound, in terms of the successive minima and with real
 measures: `2ⁿ / n! · covolume L μ ≤ λ₀ ⋯ λₙ₋₁ · μ.real K`. -/
 theorem two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measureReal
@@ -738,6 +739,7 @@ theorem two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measureReal
     (hKs : ∀ x ∈ K, -x ∈ K) :
     2 ^ finrank ℝ E / (finrank ℝ E).factorial * ZLattice.covolume L μ ≤
       (∏ i, successiveMin L K i) * μ.real K := by
+  have := ConvexBody.finiteDimensional_of_zero_mem_interior hK
   have h := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
     K.isCompact.measure_lt_top.ne)
     (two_pow_div_factorial_mul_covolume_le_prod_successiveMin_mul_measure L μ hK hKs)

@@ -464,12 +464,14 @@ theorem successiveMin_isLeast (L : Submodule ℤ E) [DiscreteTopology L] [IsZLat
   ⟨⟨successiveMin_nonneg L K i, (successiveMin_le_iff L hK (successiveMin_nonneg L K i)).1 le_rfl⟩,
     fun _ ⟨ht, _, hv, hvLK⟩ ↦ successiveMin_le ht hv (fun j ↦ (hvLK j).1) fun j ↦ (hvLK j).2⟩
 
+omit [FiniteDimensional ℝ E] in
 /-- **The successive minima as rank thresholds.** For `t ≥ 0`, the `i`-th successive minimum is
 at most `t` exactly when the vectors of `L` in the dilate `t • K` span a subspace of dimension at
 least `i + 1`. -/
 theorem successiveMin_le_iff_finrank (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L]
     (hK : 0 ∈ interior (K : Set E)) {i : Fin (finrank ℝ E)} {t : ℝ} (ht : 0 ≤ t) :
     successiveMin L K i ≤ t ↔ i + 1 ≤ finrank ℝ (span ℝ ((L : Set E) ∩ t • (K : Set E))) := by
+  have := ConvexBody.finiteDimensional_of_zero_mem_interior hK
   rw [successiveMin_le_iff L hK ht, Submodule.le_finrank_span_iff_exists_linearIndependent]
   simp only [Set.mem_inter_iff, SetLike.mem_coe]
 
