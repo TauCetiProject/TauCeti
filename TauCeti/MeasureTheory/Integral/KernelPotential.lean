@@ -104,7 +104,7 @@ theorem integrable_prod_comp_sub_mul [NormedRing K] {k : G → K}
     {c : α → G} {v : α → K} (hc : AEMeasurable c μ)
     (hv : Integrable v μ) :
     Integrable (fun p : α × G ↦ k (p.2 - c p.1) * v p.1) (μ.prod ν) := by
-  have := measurableAdd_of_measurableSub₂ (G := G)
+  have := TauCeti.measurableAdd_of_measurableSub (G := G)
   have hm : AEStronglyMeasurable (fun p : α × G ↦ k (p.2 - c p.1) * v p.1)
       (μ.prod ν) :=
     (hk.aestronglyMeasurable.comp_prod_sub hc).mul hv.aestronglyMeasurable.comp_fst
@@ -136,7 +136,7 @@ theorem integrable_integral_norm_comp_sub_sub_mul_norm [NormedAddCommGroup K] {V
     {a b : α → G} {v : α → V} (ha : AEMeasurable a μ) (hb : AEMeasurable b μ)
     (hv : Integrable v μ) :
     Integrable (fun t ↦ (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖) μ := by
-  have := measurableAdd_of_measurableSub₂ (G := G)
+  have := TauCeti.measurableAdd_of_measurableSub (G := G)
   have hm : AEStronglyMeasurable
       (fun t ↦ (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖) μ := by
     have hprod : AEStronglyMeasurable
@@ -157,7 +157,7 @@ theorem integral_norm_kernel_potential_sub_le [NormedRing K] [NormedSpace ℝ K]
     (∫ z : G, ‖(∫ t, k (z - a t) * u t ∂μ) - (∫ t, k (z - b t) * v t ∂μ)‖ ∂ν) ≤
       (∫ z : G, ‖k z‖ ∂ν) * (∫ t, ‖u t - v t‖ ∂μ) +
       ∫ t, (∫ z : G, ‖k (z - a t) - k (z - b t)‖ ∂ν) * ‖v t‖ ∂μ := by
-  have := measurableAdd_of_measurableSub₂ (G := G)
+  have := TauCeti.measurableAdd_of_measurableSub (G := G)
   have hA := integrable_prod_comp_sub_mul hk ha hu
   have hB := integrable_prod_comp_sub_mul hk hb hv
   have hD := hA.sub hB
