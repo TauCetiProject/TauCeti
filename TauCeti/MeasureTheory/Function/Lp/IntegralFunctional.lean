@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
-public import Mathlib.Analysis.LocallyConvex.WeakSpace
-public import Mathlib.Topology.Semicontinuity.Basic
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import TauCeti.Analysis.LocallyConvex.WeakSpace
 import Mathlib.Analysis.Normed.Module.Convex
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.Bochner.Set
@@ -26,7 +25,7 @@ continuous with respect to the measure defining `Lp`; this includes weighted pot
 
 Using an extended nonnegative integral is essential: a nonlinear potential need not be
 integrable at every `Lp` function. The proofs use almost-everywhere subsequence convergence,
-Fatou's lemma, and the equality of norm and weak closures for convex sets.
+Fatou's lemma, and weak lower semicontinuity of lower semicontinuous quasiconvex functions.
 
 In particular the extended integral of the squared norm is weakly lower semicontinuous on `Lp`
 (`TauCeti.lowerSemicontinuous_lintegral_norm_sq_comp_toWeakSpace_symm`).
@@ -120,18 +119,9 @@ theorem lowerSemicontinuous_lintegral_ofReal_comp_toWeakSpace_symm [Fact (1 ≤ 
     (hν : ν ≪ μ) (hΦ : Continuous Φ) (hconv : ConvexOn ℝ univ Φ) :
     LowerSemicontinuous (fun u : WeakSpace ℝ (Lp F p μ) ↦
       ∫⁻ x, ENNReal.ofReal (Φ ((toWeakSpace ℝ (Lp F p μ)).symm u x)) ∂ν) := by
-  rw [lowerSemicontinuous_iff_isClosed_preimage]
-  intro c
-  have hc : IsClosed {u : Lp F p μ | ∫⁻ x, ENNReal.ofReal (Φ (u x)) ∂ν ≤ c} :=
-    (lowerSemicontinuous_lintegral_ofReal_comp_Lp (p := p) hν hΦ).isClosed_preimage c
-  have hcv := convex_setOf_lintegral_ofReal_comp_Lp_le (p := p) hν hΦ hconv c
-  have heq := hcv.toWeakSpace_closure ℝ
-  rw [hc.closure_eq] at heq
-  have hclosed : IsClosed ((toWeakSpace ℝ (Lp F p μ)) ''
-      {u : Lp F p μ | ∫⁻ x, ENNReal.ofReal (Φ (u x)) ∂ν ≤ c}) := by
-    rw [heq]
-    exact isClosed_closure
-  rwa [(toWeakSpace ℝ (Lp F p μ)).image_eq_preimage_symm] at hclosed
+  refine QuasiconvexOn.lowerSemicontinuous_comp_toWeakSpace_symm (fun c ↦ ?_)
+    (lowerSemicontinuous_lintegral_ofReal_comp_Lp hν hΦ)
+  simpa only [mem_univ, true_and] using convex_setOf_lintegral_ofReal_comp_Lp_le hν hΦ hconv c
 
 /-- The extended integral of the squared norm is weakly lower semicontinuous on `Lp`. -/
 theorem lowerSemicontinuous_lintegral_norm_sq_comp_toWeakSpace_symm [Fact (1 ≤ p)] :
