@@ -71,7 +71,6 @@ def lTensorLim : M ⊗[R] F.lim →ₗ[R] (F.lTensor M).lim :=
     rw [lTensor_transition, ← LinearMap.lTensor_comp, F.transition_comp_limπ]
 
 /-- Projection characterizes the tensor-limit comparison on every tensor, not only pure ones. -/
-@[simp]
 theorem limπ_lTensorLim (n : ℕ) (x : M ⊗[R] F.lim) :
     (F.lTensor M).limπ n (F.lTensorLim M x) = (F.limπ n).lTensor M x := by
   rw [lTensorLim, ← LinearMap.comp_apply, limπ_comp_limLift]
@@ -195,7 +194,8 @@ theorem lTensorLimEquiv_apply (x : M ⊗[R] F.lim) :
 /-- The inverse comparison is characterized by its coordinates in each tower term. -/
 @[simp]
 theorem lTensor_limπ_lTensorLimEquiv_symm (n : ℕ) (y : (F.lTensor M).lim) :
-    (F.limπ n).lTensor M ((F.lTensorLimEquiv M).symm y) = (F.lTensor M).limπ n y := by
-  rw [← limπ_lTensorLim, ← lTensorLimEquiv_apply, LinearEquiv.apply_symm_apply]
+    (F.limπ n).lTensor M ((F.lTensorLimEquiv M).symm y) =
+      (y : (F.lTensor M).Product) n := by
+  rw [← limπ_lTensorLim, ← lTensorLimEquiv_apply, LinearEquiv.apply_symm_apply, limπ_apply]
 
 end TauCeti.ModuleTower
