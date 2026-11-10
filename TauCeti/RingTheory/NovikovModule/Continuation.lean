@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.NovikovModule.Tensor
+public import TauCeti.RingTheory.NovikovModule.Leibniz
 public import TauCeti.Algebra.Homology.SquareZero.Graded
 
 /-!
@@ -47,6 +48,20 @@ multiplicative on cohomology. The kernel identity and the potential bounds, whic
 energy estimate, remain hypotheses: they are the geometric input from the compactified moduli
 spaces.
 
+On finite unions of torsors with invariant kernels, products and maps are given by matrices of
+Novikov series relative to reference generators (`NovikovModule.novikovProductOfMatrix`,
+`NovikovModule.novikovMapOfMatrix`). For product matrices `Q`, `Q'`, continuation matrices `Φ₁`,
+`Φ₂`, `Φ₀`, a homotopy matrix `K` and differential matrices `D₁`, `D₂`, `D₀'` the kernel identity
+becomes the identity
+
+`∑ₖ Qᵢⱼₖ Φ₀ₖₗ - ∑ₜ ∑ᵤ Φ₁ᵢₜ Φ₂ⱼᵤ Q'ₜᵤₗ =
+  ∑ₘ Kᵢⱼₘ D₀'ₘₗ + ∑ₘ D₁ᵢₘ Kₘⱼₗ + (-1)^(d₁ (r₁ i)) ∑ₘ D₂ⱼₘ Kᵢₘₗ`
+
+between finite sums of Novikov series, and it gives the same homotopy, with `K` acting as a
+product (`NovikovModule.novikovMapOfMatrix_novikovProductOfMatrix_sub_eq_add`), provided degrees
+change by even amounts within each orbit, so that the sign only depends on the orbit. This is the
+form in which counts indexed by classes of a period group enter.
+
 ## Main results
 
 * `NovikovModule.kernelMap_kernelProduct_sub_kernelProduct_kernelMap`: a kernel homotopy between
@@ -57,6 +72,8 @@ spaces.
   cocycles the two composites differ by a coboundary.
 * `NovikovModule.cohomologyMap_cohomologyProduct_kernelProduct`: the maps induced on cohomology
   intertwine the two products.
+* `NovikovModule.novikovMapOfMatrix_novikovProductOfMatrix_sub_eq_add`: the homotopy for matrices
+  of Novikov series, from the matrix identity.
 
 ## References
 
@@ -282,6 +299,123 @@ theorem cohomologyMap_cohomologyProduct_kernelProduct
       hφ₁fin hφ₂ hφ₂fin hφ₀ hφ₀fin hk hkfin hη₀ hη₀fin hδ₁ hδ₁fin hδ₂ hδ₂fin hkd hcont ha hb) x y
 
 end Cohomology
+
+end NovikovModule
+
+namespace NovikovModule
+
+section Matrix
+
+variable {R H ι₁ ι₂ ι₀ κ₁ κ₂ κ₀ : Type*} [CommRing R] [AddCommGroup H] {N : H →+ ℝ}
+  {P₁ : ι₁ → Type*} {P₂ : ι₂ → Type*} {P₀ : ι₀ → Type*}
+  {T₁ : κ₁ → Type*} {T₂ : κ₂ → Type*} {T₀ : κ₀ → Type*}
+  [∀ i, AddTorsor H (P₁ i)] [∀ j, AddTorsor H (P₂ j)] [∀ k, AddTorsor H (P₀ k)]
+  [∀ t, AddTorsor H (T₁ t)] [∀ u, AddTorsor H (T₂ u)] [∀ l, AddTorsor H (T₀ l)]
+  {F₁ : (Σ i, P₁ i) → ℝ} {F₂ : (Σ j, P₂ j) → ℝ} {F₀ : (Σ k, P₀ k) → ℝ}
+  {G₁ : (Σ t, T₁ t) → ℝ} {G₂ : (Σ u, T₂ u) → ℝ} {G₀ : (Σ l, T₀ l) → ℝ}
+  (hF₁ : ∀ i h (p : P₁ i), F₁ ⟨i, h +ᵥ p⟩ = F₁ ⟨i, p⟩ - N h)
+  (hF₂ : ∀ j h (p : P₂ j), F₂ ⟨j, h +ᵥ p⟩ = F₂ ⟨j, p⟩ - N h)
+  (hF₀ : ∀ k h (p : P₀ k), F₀ ⟨k, h +ᵥ p⟩ = F₀ ⟨k, p⟩ - N h)
+  (hG₁ : ∀ t h (p : T₁ t), G₁ ⟨t, h +ᵥ p⟩ = G₁ ⟨t, p⟩ - N h)
+  (hG₂ : ∀ u h (p : T₂ u), G₂ ⟨u, h +ᵥ p⟩ = G₂ ⟨u, p⟩ - N h)
+  (hG₀ : ∀ l h (p : T₀ l), G₀ ⟨l, h +ᵥ p⟩ = G₀ ⟨l, p⟩ - N h)
+  (r₁ : ∀ i, P₁ i) (r₂ : ∀ j, P₂ j) (r₀ : ∀ k, P₀ k)
+  (s₁ : ∀ t, T₁ t) (s₂ : ∀ u, T₂ u) (s₀ : ∀ l, T₀ l)
+  [Fintype ι₁] [Fintype ι₂] [Fintype ι₀] [Fintype κ₁] [Fintype κ₂] [Fintype κ₀]
+
+/-- **Compatibility with continuation maps for matrices of Novikov series.** Let `Q` and `Q'` be
+the matrices of two products, relative to reference generators `r` and `s`, let `Φ₁`, `Φ₂`, `Φ₀`
+be the matrices of maps from the generators of each input and of the output of the first product
+to those of the second, and let `D₁`, `D₂` and `D₀'` be the matrices of maps on the two inputs of
+the first product and on the output of the second. Grade the first input of the first product by
+`d₁`, with even changes of degree within each orbit. If a matrix `K` from the inputs of the first
+product to the output of the second obeys the identity
+
+`∑ₖ Qᵢⱼₖ Φ₀ₖₗ - ∑ₜ ∑ᵤ Φ₁ᵢₜ Φ₂ⱼᵤ Q'ₜᵤₗ =
+  ∑ₘ Kᵢⱼₘ D₀'ₘₗ + ∑ₘ D₁ᵢₘ Kₘⱼₗ + (-1)^(d₁ (r₁ i)) ∑ₘ D₂ⱼₘ Kᵢₘₗ`,
+
+which in Floer theory is the count of the ends of one-dimensional moduli spaces of the
+continuation family of pairs of pants between reference generators, class by class, then its
+product `K` is a homotopy between the two composites: for a completed combination `a` of degree
+`e` and any completed combination `b`,
+`Φ₀ (a ⋆ b) - Φ₁ a ⋆' Φ₂ b = D₀' K(a, b) + K(D₁ a, b) + (-1)^e K(a, D₂ b)`. -/
+theorem novikovMapOfMatrix_novikovProductOfMatrix_sub_eq_add
+    (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N) (Q' : κ₁ → κ₂ → κ₀ → NovikovSeries R H N)
+    (Φ₁ : Matrix ι₁ κ₁ (NovikovSeries R H N)) (Φ₂ : Matrix ι₂ κ₂ (NovikovSeries R H N))
+    (Φ₀ : Matrix ι₀ κ₀ (NovikovSeries R H N)) (K : ι₁ → ι₂ → κ₀ → NovikovSeries R H N)
+    (D₁ : Matrix ι₁ ι₁ (NovikovSeries R H N)) (D₂ : Matrix ι₂ ι₂ (NovikovSeries R H N))
+    (D₀' : Matrix κ₀ κ₀ (NovikovSeries R H N))
+    {d₁ : (Σ i, P₁ i) → ℤ} (hd₁ : ∀ i (h : H) (p : P₁ i), Even (d₁ ⟨i, h +ᵥ p⟩ - d₁ ⟨i, p⟩))
+    (hK : ∀ i j l, ∑ k, Q i j k * Φ₀ k l - ∑ t, ∑ u, Φ₁ i t * Φ₂ j u * Q' t u l =
+      ∑ m, K i j m * D₀' m l + ∑ m, D₁ i m * K m j l +
+        negOnePowCast R (d₁ ⟨i, r₁ i⟩) • ∑ m, D₂ j m * K i m l)
+    {e : ℤ} {a : NovikovModule R F₁} (ha : a ∈ gradeBy R F₁ d₁ e) (b : NovikovModule R F₂) :
+    novikovMapOfMatrix hF₀ hG₀ r₀ s₀ Φ₀ (novikovProductOfMatrix hF₁ hF₂ hF₀ r₁ r₂ r₀ Q a b) -
+        novikovProductOfMatrix hG₁ hG₂ hG₀ s₁ s₂ s₀ Q'
+          (novikovMapOfMatrix hF₁ hG₁ r₁ s₁ Φ₁ a) (novikovMapOfMatrix hF₂ hG₂ r₂ s₂ Φ₂ b) =
+      novikovMapOfMatrix hG₀ hG₀ s₀ s₀ D₀' (novikovProductOfMatrix hF₁ hF₂ hG₀ r₁ r₂ s₀ K a b) +
+        novikovProductOfMatrix hF₁ hF₂ hG₀ r₁ r₂ s₀ K (novikovMapOfMatrix hF₁ hF₁ r₁ r₁ D₁ a) b +
+        negOnePowCast R e • novikovProductOfMatrix hF₁ hF₂ hG₀ r₁ r₂ s₀ K a
+          (novikovMapOfMatrix hF₂ hF₂ r₂ r₂ D₂ b) := by
+  refine (coordinates hG₀ s₀).injective (funext fun l => ?_)
+  rw [map_sub, map_add, map_add, map_smul, Pi.sub_apply, Pi.add_apply, Pi.add_apply,
+    Pi.smul_apply]
+  simp only [coordinates_novikovMapOfMatrix, coordinates_novikovProductOfMatrix]
+  have hs := negOnePowCast_smul_coordinates_of_mem_gradeBy hF₁ r₁ hd₁ ha
+  set x := coordinates hF₁ r₁ a
+  set y := coordinates hF₂ r₂ b
+  -- Each of the five sums is regrouped as `∑ᵢ ∑ⱼ xᵢ yⱼ c(i, j)`, with `c(i, j)` one of the five
+  -- sums of the matrix identity.
+  have hQ : ∑ k, (∑ i, ∑ j, x i * y j * Q i j k) * Φ₀ k l =
+      ∑ i, ∑ j, x i * y j * ∑ k, Q i j k * Φ₀ k l := by
+    simp only [Finset.sum_mul, Finset.mul_sum, mul_assoc]
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun i _ => Finset.sum_comm
+  have hQ' : ∑ t, ∑ u, (∑ i, x i * Φ₁ i t) * (∑ j, y j * Φ₂ j u) * Q' t u l =
+      ∑ i, ∑ j, x i * y j * ∑ t, ∑ u, Φ₁ i t * Φ₂ j u * Q' t u l := by
+    have h (t : κ₁) (u : κ₂) : (∑ i, x i * Φ₁ i t) * (∑ j, y j * Φ₂ j u) * Q' t u l =
+        ∑ i, ∑ j, x i * y j * (Φ₁ i t * Φ₂ j u * Q' t u l) := by
+      rw [Finset.sum_mul_sum, Finset.sum_mul]
+      exact Finset.sum_congr rfl fun i _ => by
+        rw [Finset.sum_mul]
+        exact Finset.sum_congr rfl fun j _ => by ring
+    rw [Finset.sum_congr rfl fun t _ => Finset.sum_congr rfl fun u _ => h t u]
+    simp only [Finset.mul_sum]
+    -- Move the sums over `i` and `j` outside the sums over `t` and `u`.
+    exact (Finset.sum_congr rfl fun t _ => Finset.sum_comm).trans (Finset.sum_comm.trans
+      (Finset.sum_congr rfl fun i _ =>
+        (Finset.sum_congr rfl fun t _ => Finset.sum_comm).trans Finset.sum_comm))
+  have hK₀ : ∑ m, (∑ i, ∑ j, x i * y j * K i j m) * D₀' m l =
+      ∑ i, ∑ j, x i * y j * ∑ m, K i j m * D₀' m l := by
+    simp only [Finset.sum_mul, Finset.mul_sum, mul_assoc]
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun i _ => Finset.sum_comm
+  have hK₁ : ∑ m, ∑ j, (∑ i, x i * D₁ i m) * y j * K m j l =
+      ∑ i, ∑ j, x i * y j * ∑ m, D₁ i m * K m j l := by
+    simp only [Finset.sum_mul, Finset.mul_sum]
+    rw [Finset.sum_comm]
+    refine (Finset.sum_congr rfl fun j _ => Finset.sum_comm).trans ?_
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
+      Finset.sum_congr rfl fun m _ => by ring
+  have hK₂ : ∑ i, ∑ j, (x i * ∑ m, y m * D₂ m j) * K i j l =
+      ∑ i, ∑ j, x i * y j * ∑ m, D₂ j m * K i m l := by
+    simp only [Finset.sum_mul, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun i _ => ?_
+    rw [Finset.sum_comm]
+    exact Finset.sum_congr rfl fun j _ => Finset.sum_congr rfl fun m _ => by ring
+  -- Termwise, this is the matrix identity, with the sign of the orbit of `i` replaced by the
+  -- sign of the degree of `a` on its nonzero coordinates.
+  rw [hQ, hQ', hK₀, hK₁, hK₂, Finset.smul_sum, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  rw [Finset.smul_sum, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib,
+    ← Finset.sum_add_distrib]
+  refine Finset.sum_congr rfl fun j _ => ?_
+  rw [← mul_sub, hK, mul_add, mul_add, mul_smul_comm, ← smul_mul_assoc, ← smul_mul_assoc, hs,
+    smul_mul_assoc, smul_mul_assoc]
+
+end Matrix
 
 end NovikovModule
 
