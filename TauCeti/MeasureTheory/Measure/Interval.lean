@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Measure.Interval
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Real
 public import Mathlib.MeasureTheory.Measure.Real
 public import Mathlib.MeasureTheory.Measure.Typeclasses.NullSingletonClass
+import Mathlib.Topology.Bases
 import Mathlib.Topology.Order.LeftRight
 import Mathlib.Topology.Order.AtTopBotIxx
 
@@ -156,6 +157,35 @@ theorem continuous_cumulative_restrict_lt_top (μ : Measure α) [NullSingletonCl
         exact ⟨le_of_not_gt (fun hty ↦ hfinite ⟨y, hty, hy⟩), hy⟩
       · exact fun ⟨hyt, hy⟩ ↦ ⟨hyt.trans hx.le, hy⟩
     exact continuousWithinAt_const.congr (fun x hx ↦ heq x hx) rfl
+
+omit [FirstCountableTopology α] [OpensMeasurableSpace α] in
+/-- A set has mass at most `C` if every closed initial segment ending in that set has
+mass at most `C`. No measurability or finiteness assumption on the set is needed. -/
+theorem measure_le_of_forall_measure_Iic_le [SecondCountableTopology α]
+    (μ : Measure α) {s : Set α} {C : ℝ≥0∞}
+    (h : ∀ x ∈ s, μ (Iic x) ≤ C) : μ s ≤ C := by
+  classical
+  by_cases hmax : ∃ x ∈ s, ∀ y ∈ s, y ≤ x
+  · obtain ⟨x, hx, hxs⟩ := hmax
+    exact (measure_mono (fun y hy ↦ hxs y hy)).trans (h x hx)
+  push Not at hmax
+  have hcover : s ⊆ ⋃ x : s, Iio (x : α) := by
+    intro x hx
+    obtain ⟨y, hy, hxy⟩ := hmax x hx
+    exact mem_iUnion.2 ⟨⟨y, hy⟩, hxy⟩
+  obtain ⟨T, hT, heq⟩ := TopologicalSpace.isOpen_iUnion_countable
+    (fun x : s ↦ Iio (x : α)) (fun _ ↦ isOpen_Iio)
+  have hdir : DirectedOn (fun x y : s ↦ Iio (x : α) ⊆ Iio (y : α)) T := by
+    intro x hx y hy
+    rcases le_total x y with hxy | hyx
+    · exact ⟨y, hy, Iio_subset_Iio hxy, Subset.rfl⟩
+    · exact ⟨x, hx, Subset.rfl, Iio_subset_Iio hyx⟩
+  calc
+    μ s ≤ μ (⋃ x : s, Iio (x : α)) := measure_mono hcover
+    _ = ⨆ x ∈ T, μ (Iio (x : α)) := by
+      rw [← heq, measure_biUnion_eq_iSup hT hdir]
+    _ ≤ C := iSup₂_le fun x _ ↦
+      (measure_mono Iio_subset_Iic_self).trans (h x x.prop)
 
 end Measure
 
