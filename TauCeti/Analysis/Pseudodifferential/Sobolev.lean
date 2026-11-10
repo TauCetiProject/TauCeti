@@ -71,6 +71,9 @@ Since the `H^s` norm is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`, this is the est
 * `TauCeti.Symbol.quantizeSobolev`: the bounded operator `H^s → H^{s - m}`, with
   `TauCeti.Symbol.toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply` identifying its values
   on Schwartz functions.
+* `TauCeti.toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply`: conjugating an
+  operator on Bessel-potential spaces by isomorphisms of the coefficient spaces conjugates the
+  coefficient it quantizes on Schwartz functions.
 * `TauCeti.Symbol.exists_quantizeSobolev`: the mapping property for finite-dimensional normed
   `V` and `W`.
 
@@ -89,6 +92,39 @@ open scoped ENNReal NNReal SchwartzMap BesselPotentialSpace RealInnerProductSpac
   LineDeriv
 
 namespace TauCeti
+
+section Transport
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E]
+  {V W V' W' : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [CompleteSpace V]
+  [NormedAddCommGroup W] [NormedSpace ℂ W] [CompleteSpace W] [NormedAddCommGroup V']
+  [NormedSpace ℂ V'] [CompleteSpace V'] [NormedAddCommGroup W'] [NormedSpace ℂ W']
+  [CompleteSpace W']
+
+/-- **Change of coefficient spaces on Bessel-potential spaces.** Let `e₁ : V ≃L[ℂ] V'` and
+`e₂ : W ≃L[ℂ] W'`. If an operator `T : H^s(E; V') → H^t(E; W')` acts on Schwartz functions as the
+quantization of the conjugated coefficient `e₂ ∘ a(x, ξ) ∘ e₁⁻¹`, then the conjugated operator
+`e₂⁻¹ ∘ T ∘ e₁ : H^s(E; V) → H^t(E; W)` acts on Schwartz functions as the quantization of `a`. -/
+theorem toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply
+    (e₁ : V ≃L[ℂ] V') (e₂ : W ≃L[ℂ] W') {a : E × E → V →L[ℂ] W} {s t : ℝ}
+    {T : H^{s}(E, V') →L[ℂ] H^{t}(E, W')}
+    (hT : ∀ (u : 𝓢(E, V')) (φ : 𝓢(E, ℂ)),
+      (T (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
+        ∫ x, φ x • quantizeSchwartzValue (fun p ↦ e₁.arrowCongr e₂ (a p)) u x)
+    (u : 𝓢(E, V)) (φ : 𝓢(E, ℂ)) :
+    ((BesselPotentialSpace.postcomp E t 2 (e₂.symm : W' →L[ℂ] W) ∘L T ∘L
+        BesselPotentialSpace.postcomp E s 2 (e₁ : V →L[ℂ] V'))
+          (SchwartzMap.toBesselPotentialSpaceCLM s 2 u)).toDistr φ =
+      ∫ x, φ x • quantizeSchwartzValue a u x := by
+  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    ← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
+    BesselPotentialSpace.toDistr_postcomp_apply, hT]
+  simp only [quantizeSchwartzValue_arrowCongr, ← map_smul,
+    ContinuousLinearEquiv.integral_comp_comm, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.symm_apply_apply]
+
+end Transport
 
 namespace Symbol
 
@@ -669,19 +705,10 @@ theorem exists_quantizeSobolev (a : Symbol n V W m) (ha : a.HasCompactSpatialSup
   let Φ := (e₁.arrowCongr e₂).toContinuousLinearMap.restrictScalars ℝ
   refine ⟨BesselPotentialSpace.postcomp _ _ 2 (e₂.symm : _ →L[ℂ] W) ∘L
     (a.map Φ).quantizeSobolev (ha.map Φ) s ∘L BesselPotentialSpace.postcomp _ s 2 (e₁ : V →L[ℂ] _),
-    fun u φ ↦ ?_⟩
+    toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply e₁ e₂ fun u φ ↦ ?_⟩
   have hc : (a.map Φ).coefficient = fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) :=
     funext fun p ↦ by simp [Φ]
-  have hq (x : CoordinateSpace n) :
-      quantizeSchwartzValue (a.map Φ).coefficient (u.postcompCLM (e₁ : V →L[ℂ] _)) x =
-        e₂ (quantizeSchwartzValue a.coefficient u x) := by
-    rw [hc, quantizeSchwartzValue_arrowCongr]
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    ← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
-    BesselPotentialSpace.toDistr_postcomp_apply,
-    toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply]
-  simp only [hq, ← map_smul, ContinuousLinearEquiv.integral_comp_comm,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
+  rw [toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply, hc]
 
 end FiniteDimensional
 
