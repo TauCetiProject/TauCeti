@@ -38,7 +38,7 @@ Only the zero pattern of the projection is used, not its signs.
 * `TauCeti.nonempty_delineation_of_signInvariant_collinsProjection`: **Collins delineability**
   over a preconnected subset of `ℝⁿ` on which the projection is sign-invariant.
 * `TauCeti.nonempty_delineation_image_finSuccEquiv_map_of_signInvariant_collinsProjection`:
-  delineability after mapping the coefficients of a multivariate family injectively into `ℝ`.
+  delineability after mapping the coefficients of a multivariate family into `ℝ`.
 
 ## References
 
@@ -117,23 +117,78 @@ theorem nonempty_delineation_of_signInvariant_collinsProjection (hS : IsPreconne
       (congrArg (· = 0) (signInvariant_def.1 (h q hq) x x.2 y y.2)).to_iff
 
 /-- **Delineability of families mapped to `ℝ`.** Let `P` be a finite family of polynomials in
-the variables `X 0, …, X n` over `A`, and let `φ : A →+* ℝ` be injective. If every element of the
+the variables `X 0, …, X n` over `A`, and let `φ : A →+* ℝ`. If every element of the
 Collins projection computed over `A`, with `X 0` singled out, is sign-invariant after evaluation
 along `φ` on a preconnected set `S ⊆ ℝⁿ`, then the family obtained by mapping `P` to `ℝ` and
 singling out `X 0` has a delineation over `S`. -/
 theorem nonempty_delineation_image_finSuccEquiv_map_of_signInvariant_collinsProjection
     [DecidableEq (MvPolynomial (Fin n) A)[X]] [DecidableEq (MvPolynomial (Fin n) ℝ)[X]]
-    (hφ : Function.Injective φ) {P : Finset (MvPolynomial (Fin (n + 1)) A)}
+    {P : Finset (MvPolynomial (Fin (n + 1)) A)}
     (hS : IsPreconnected S)
     (h : ∀ q ∈ (P.image (MvPolynomial.finSuccEquiv A n)).collinsProjection,
       SignInvariant (fun x ↦ MvPolynomial.eval₂ φ x q) S) :
     Nonempty (Delineation fun (p : P.image fun f ↦ MvPolynomial.finSuccEquiv ℝ n (f.map φ))
       (x : S) ↦ p.1.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) x.1)) := by
   classical
-  refine nonempty_delineation_of_signInvariant_collinsProjection hS fun q hq ↦ ?_
-  rw [Finset.collinsProjection_image_finSuccEquiv_map hφ] at hq
-  obtain ⟨r, hr, rfl⟩ := Finset.mem_image.1 hq
-  simpa only [MvPolynomial.eval₂_id, MvPolynomial.eval_map] using h r hr
+  obtain ⟨D⟩ := nonempty_delineation_of_signInvariant_collinsProjection hS h
+  -- Every member of the mapped family is the specialization of a member of the original family.
+  have hrel (q : P.image fun f ↦ MvPolynomial.finSuccEquiv ℝ n (f.map φ)) :
+      ∃ p : P.image (MvPolynomial.finSuccEquiv A n), ∀ x : S,
+        q.1.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) x.1) =
+          p.1.map (MvPolynomial.eval₂Hom φ x.1) := by
+    obtain ⟨q, hq⟩ := q
+    obtain ⟨f, hf, rfl⟩ := Finset.mem_image.1 hq
+    refine ⟨⟨MvPolynomial.finSuccEquiv A n f, Finset.mem_image_of_mem _ hf⟩, fun x ↦ ?_⟩
+    simp only [MvPolynomial.finSuccEquiv_map, Polynomial.map_map]
+    congr 1
+    ext <;> simp
+  have hsurj (p : P.image (MvPolynomial.finSuccEquiv A n)) :
+      ∃ q : P.image fun f ↦ MvPolynomial.finSuccEquiv ℝ n (f.map φ), ∀ x : S,
+        q.1.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) x.1) =
+          p.1.map (MvPolynomial.eval₂Hom φ x.1) := by
+    obtain ⟨p, hp⟩ := p
+    obtain ⟨f, hf, rfl⟩ := Finset.mem_image.1 hp
+    exact ⟨⟨_, Finset.mem_image_of_mem _ hf⟩, fun x ↦ by
+      simp only [MvPolynomial.finSuccEquiv_map, Polynomial.map_map]
+      congr 1
+      ext <;> simp⟩
+  choose g hg using hrel
+  refine ⟨{
+    count := D.count
+    root := D.root
+    continuous_root := D.continuous_root
+    strictMono_root := D.strictMono_root
+    multiplicity := fun q i ↦
+      if hex : ∃ p, (∀ x : S, q.1.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) x.1) =
+          p.1.map (MvPolynomial.eval₂Hom φ x.1)) ∧ 0 < D.multiplicity p i
+      then D.multiplicity hex.choose i else D.multiplicity (g q) i
+    rootMultiplicity_root := ?_
+    exists_root_eq := fun q x hx t ht ↦ ?_
+    exists_multiplicity_pos := ?_
+    eq_zero_or_ne_zero := fun q ↦ ?_
+    natDegree_eq := fun q x y ↦ ?_
+    signInvariant_sectionSet := fun q i ↦ ?_
+    signInvariant_sectorSet := fun q j ↦ ?_ }⟩
+  · intro q i x
+    split_ifs with hex
+    · rw [hex.choose_spec.1 x]
+      exact D.rootMultiplicity_root _ i x
+    · rw [hg q x]
+      exact D.rootMultiplicity_root (g q) i x
+  · rw [hg q x] at hx ht
+    exact D.exists_root_eq (g q) x hx t ht
+  · intro i
+    obtain ⟨p, hp⟩ := D.exists_multiplicity_pos i
+    obtain ⟨q, hq⟩ := hsurj p
+    have hex : ∃ p', (∀ x : S, q.1.map (MvPolynomial.eval₂Hom (RingHom.id ℝ) x.1) =
+        p'.1.map (MvPolynomial.eval₂Hom φ x.1)) ∧ 0 < D.multiplicity p' i := ⟨p, hq, hp⟩
+    refine ⟨q, ?_⟩
+    simp only [hex, ↓reduceDIte]
+    exact hex.choose_spec.2
+  · simpa only [hg q] using D.eq_zero_or_ne_zero (g q)
+  · simpa only [hg q] using D.natDegree_eq (g q) x y
+  · simpa only [hg q] using D.signInvariant_sectionSet (g q) i
+  · simpa only [hg q] using D.signInvariant_sectorSet (g q) j
 
 end MvPolynomial
 
