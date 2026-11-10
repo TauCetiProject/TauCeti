@@ -932,10 +932,6 @@ theorem quantizeSchwartzValue_sum_left {ι : Type*} (s : Finset ι) (a : ι → 
       quantizeSchwartzValue_add_left ((a i).continuous_coefficient_slice x).aestronglyMeasurable
         hC ((∑ i ∈ s, a i).continuous_coefficient_slice x).aestronglyMeasurable hC', ih]
 
-private lemma hasTemperateGrowth_coord_sub (x : CoordinateSpace n) (j : Fin n) :
-    (fun y : CoordinateSpace n ↦ (x - y) j).HasTemperateGrowth :=
-  (EuclideanSpace.proj j).hasTemperateGrowth.comp (by fun_prop : (x - ·).HasTemperateGrowth)
-
 /-- **Multiplication by a coordinate of the displacement.** Multiplying the input by
 `(x - y)_j` and evaluating the quantization at `x` replaces the symbol by `i ∂_{ξ_j} a`. -/
 theorem quantizeSchwartzValue_smulLeftCLM_coord_sub (a : Symbol n V W m) (j : Fin n)
@@ -964,7 +960,8 @@ theorem quantizeSchwartzValue_smulLeftCLM_norm_sub_sq (a : Symbol n V W m)
     funext y
     rw [EuclideanSpace.real_norm_sq_eq]
     simp [sq]
-  have htg := hasTemperateGrowth_coord_sub x
+  have htg (j : Fin n) : (fun y : CoordinateSpace n ↦ (x - y) j).HasTemperateGrowth :=
+    (EuclideanSpace.proj j).hasTemperateGrowth.comp (by fun_prop : (x - ·).HasTemperateGrowth)
   rw [hsq, SchwartzMap.smulLeftCLM_sum fun j _ ↦ (htg j).mul (htg j), sum_apply,
     quantizeSchwartzValue_sum_right, frequencyLaplacian_eq_sum, quantizeSchwartzValue_sum_left,
     ← Finset.sum_neg_distrib]
