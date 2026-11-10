@@ -499,7 +499,7 @@ end Ring
 section AbsoluteValue
 
 variable {F K S : Type*} [Fintype σ] [CommSemiring R] [CommSemiring F] [CommSemiring K]
-  [Semiring S] [PartialOrder S] [IsOrderedRing S] [IsDomain S]
+  [Semiring S] [PartialOrder S] [IsOrderedRing S]
 
 /-- **Choice of a nonvanishing Hasse derivative** (the proof of Pottmeyer, Lemma 3.5.7). Let `P`
 be a polynomial with partial degrees `degreeOf i P ≤ r i` and coefficients of absolute value at

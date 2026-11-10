@@ -68,6 +68,12 @@ section AddSub
 
 variable {σ R : Type*} {n : ℕ∞}
 
+/-- A power series has order at least `n` exactly when all its coefficients in total degree
+less than `n` vanish. -/
+theorem le_order_iff [Semiring R] {f : MvPowerSeries σ R} :
+    n ≤ f.order ↔ ∀ d : σ →₀ ℕ, (d.degree : ℕ∞) < n → coeff d f = 0 :=
+  ⟨fun h _ hd ↦ coeff_of_lt_order (lt_of_lt_of_le hd h), le_order⟩
+
 /-- A lower bound on the orders of two series bounds the order of their sum. -/
 theorem le_order_add [Semiring R] {f g : MvPowerSeries σ R} (hf : n ≤ f.order)
     (hg : n ≤ g.order) : n ≤ (f + g).order :=
@@ -392,13 +398,14 @@ constant coefficient and `a i - b i` has order at least `n`, then in degrees at 
 coefficients of `H(a) - H(b)` are those of `∑ᵢ hᵢ (a i - b i)`, where `hᵢ` is the coefficient of
 `Xᵢ` in `H`. -/
 theorem coeff_subst_sub_subst_of_degree_le [Fintype σ] (H : MvPowerSeries σ R)
-    {a b : σ → MvPowerSeries τ R} (ha : HasSubst a) (hb : HasSubst b)
+    {a b : σ → MvPowerSeries τ R}
     (ha₀ : ∀ i, constantCoeff (a i) = 0) (hb₀ : ∀ i, constantCoeff (b i) = 0)
     (hab : ∀ i, (n : ℕ∞) ≤ (a i - b i).order) {e : τ →₀ ℕ} (he : e.degree ≤ n) :
     coeff e (H.subst a - H.subst b) =
       ∑ i, coeff (Finsupp.single i 1) H * coeff e (a i - b i) := by
   classical
-  rw [coeff_subst_sub_subst ha hb, finsum_eq_sum_of_support_subset (s := Finset.univ.image
+  rw [coeff_subst_sub_subst (hasSubst_of_constantCoeff_zero ha₀)
+    (hasSubst_of_constantCoeff_zero hb₀), finsum_eq_sum_of_support_subset (s := Finset.univ.image
     fun i ↦ Finsupp.single i 1), Finset.sum_image fun i _ j _ h ↦ by
       simpa using Finsupp.single_left_inj (one_ne_zero (α := ℕ)) |>.mp h]
   · refine Finset.sum_congr rfl fun i _ ↦ ?_

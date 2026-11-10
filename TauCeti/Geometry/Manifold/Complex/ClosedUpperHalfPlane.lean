@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Analysis.Complex.ReImTopology
 public import TauCeti.Geometry.Manifold.Boundary.Basic
+public import TauCeti.Geometry.Manifold.ModelTransport.Diffeomorph
 
 /-!
 # The closed upper half-plane as a model with corners
@@ -21,7 +22,9 @@ The real coordinate comparison uses `(Im z, Re z)`: Mathlib's `EuclideanHalfSpac
 its *first* coordinate to be nonnegative. Thus the normal coordinate precedes the tangential one,
 whereas complex coordinates conventionally write `z = s + it`. The comparison is a smooth
 real diffeomorphism up to the boundary. Smooth chart changes preserve the real boundary, by
-Mathlib's invariance of the manifold interior under local diffeomorphisms.
+Mathlib's invariance of the manifold interior under local diffeomorphisms. Reading the charts of a
+`C^n` manifold modelled on the closed upper half-plane through the comparison makes it a `C^n`
+manifold modelled on `𝓡∂ 2` (`ClosedUpperHalfPlane.isManifold_euclideanHalfSpace`).
 -/
 
 public section
@@ -89,6 +92,23 @@ theorem closedUpperHalfPlaneModel_symm_apply (z : ℂ) :
     (closedUpperHalfPlaneModel.symm z : ℂ) = (z.re : ℂ) + ((max z.im 0 : ℝ) : ℂ) * I := by
   rw [closedUpperHalfPlaneModel]
   rfl
+
+/-- At a point of nonnegative imaginary part, the model inverse is the inverse of the inclusion. -/
+theorem coe_closedUpperHalfPlaneModel_symm_of_im_nonneg {z : ℂ} (hz : 0 ≤ z.im) :
+    (closedUpperHalfPlaneModel.symm z : ℂ) = z := by
+  rw [closedUpperHalfPlaneModel_symm_apply, max_eq_left hz, re_add_im]
+
+/-- The model inverse is a left inverse of the inclusion. -/
+@[simp]
+theorem closedUpperHalfPlaneModel_symm_coe (z : ClosedUpperHalfPlane) :
+    closedUpperHalfPlaneModel.symm (z : ℂ) = z :=
+  Subtype.ext (coe_closedUpperHalfPlaneModel_symm_of_im_nonneg z.property)
+
+/-- Near a point of positive imaginary part, the model inverse is the inverse of the inclusion. -/
+theorem eventually_coe_closedUpperHalfPlaneModel_symm {z : ℂ} (hz : 0 < z.im) :
+    ∀ᶠ w in 𝓝 z, (closedUpperHalfPlaneModel.symm w : ℂ) = w :=
+  Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_im).mem_nhds hz) fun _ hw ↦
+    coe_closedUpperHalfPlaneModel_symm_of_im_nonneg (le_of_lt hw)
 
 @[simp]
 theorem range_closedUpperHalfPlaneModel :
@@ -220,5 +240,22 @@ theorem ClosedUpperHalfPlane.im_eq_zero_iff_of_mem_contDiffGroupoid {n : ℕ∞�
     (z : ℂ).im = 0 ↔ (e z : ℂ).im = 0 := by
   simpa only [closedUpperHalfPlaneModel_isBoundaryPoint_iff] using
     ModelWithCorners.isBoundaryPoint_iff_of_mem_contDiffGroupoid he hn hz
+
+/-- The native coordinate comparison, as a homeomorphism, is the underlying homeomorphism of the
+diffeomorphism `ClosedUpperHalfPlane.euclideanHalfSpaceDiffeomorph n`. -/
+theorem ClosedUpperHalfPlane.toHomeomorph_euclideanHalfSpaceDiffeomorph (n : ℕ∞ω) :
+    (euclideanHalfSpaceDiffeomorph n).toHomeomorph = euclideanHalfSpaceHomeomorph :=
+  Homeomorph.ext fun z ↦ Subtype.ext (by simp)
+
+/-- A `C^n` manifold modelled on the closed upper half-plane is a `C^n` manifold modelled on
+`𝓡∂ 2`, for its charts read in the native half-space coordinates `s + it ↦ (t, s)`. -/
+theorem ClosedUpperHalfPlane.isManifold_euclideanHalfSpace {n : ℕ∞ω} (M : Type*)
+    [TopologicalSpace M] [ChartedSpace ClosedUpperHalfPlane M]
+    [IsManifold closedUpperHalfPlaneModel n M] :
+    letI := euclideanHalfSpaceHomeomorph.toOpenPartialHomeomorph.singletonChartedSpace (by simp)
+    letI := ChartedSpace.comp (EuclideanHalfSpace 2) ClosedUpperHalfPlane M
+    IsManifold (𝓡∂ 2) n M := by
+  have h := (euclideanHalfSpaceDiffeomorph n).isManifold_chartedSpaceComp M
+  rwa [toHomeomorph_euclideanHalfSpaceDiffeomorph] at h
 
 end TauCeti

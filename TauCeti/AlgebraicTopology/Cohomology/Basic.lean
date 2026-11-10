@@ -230,7 +230,7 @@ lemma singularCohomologyMap_homologyπ_constSingularCocycle {X Y : TopCat.{w}} (
     ConcreteCategory.comp_apply]
   congr 1
   apply HomologicalComplex.moduleCat_iCycles_injective
-  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
+  rw [HomologicalComplex.moduleCat_iCycles_cyclesMap_apply,
     iCycles_constSingularCocycle, iCycles_constSingularCocycle]
   refine (singularCochainComplexMap_f_apply f 0 _).trans (SSet.chainComplex_hom_ext fun x ↦ ?_)
   simp [SSet.ι_chainComplexMap_f_assoc]

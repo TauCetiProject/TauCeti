@@ -197,8 +197,8 @@ theorem manifoldLeviForm_mul_apply {g : M → ℝ} (hf : ContMDiffAt 𝓘(ℝ, E
               (StrongDual.extendRCLike (F := E) (mvfderiv 𝓘(ℝ, E) f x) : StrongDual ℂ E) w) := by
   have h := leviForm_mul_apply hf.contDiffAt_comp_chartAt_symm
     hg.contDiffAt_comp_chartAt_symm v w
-  rwa [(hf.mdifferentiableAt (by norm_num)).fderiv_comp_chartAt_symm,
-    (hg.mdifferentiableAt (by norm_num)).fderiv_comp_chartAt_symm, comp_apply, comp_apply,
+  rwa [TauCeti.fderiv_comp_chartAt_symm (g := f),
+    TauCeti.fderiv_comp_chartAt_symm (g := g), comp_apply, comp_apply,
     (chartAt E x).left_inv (mem_chart_source E x)] at h
 
 /-- **The composition rule** for the Levi form on a complex manifold, for post-composition with a
@@ -215,7 +215,7 @@ theorem manifoldLeviForm_scalar_comp_apply {φ : ℝ → ℝ} (hφ : ContDiffAt 
   have hφ' : ContDiffAt ℝ 2 φ ((f ∘ (chartAt E x).symm) (chartAt E x x)) := by
     rwa [comp_apply, (chartAt E x).left_inv (mem_chart_source E x)]
   have h := leviForm_scalar_comp_apply hφ' hf.contDiffAt_comp_chartAt_symm v w
-  rwa [(hf.mdifferentiableAt (by norm_num)).fderiv_comp_chartAt_symm, comp_apply,
+  rwa [TauCeti.fderiv_comp_chartAt_symm (g := f), comp_apply,
     (chartAt E x).left_inv (mem_chart_source E x)] at h
 
 /-- **Post-composition with a convex function** on a complex manifold. If `φ'' ≥ 0` at `f x`, then
@@ -248,11 +248,7 @@ theorem manifoldLeviForm_comp_apply (hu : ContMDiffAt 𝓘(ℝ, F) 𝓘(ℝ) 2 u
   let G : E → F := chartAt F (g x) ∘ g ∘ (chartAt E x).symm
   have hx' : (chartAt E x).symm (chartAt E x x) = x :=
     (chartAt E x).left_inv (mem_chart_source E x)
-  have hG : ContDiffAt ℂ 2 G (chartAt E x x) := by
-    rw [← contDiffWithinAt_univ]
-    simpa only [G, extChartAt_coe, extChartAt_coe_symm, modelWithCornersSelf_coe,
-      modelWithCornersSelf_coe_symm, id_comp, comp_id, Set.range_id] using
-      (contMDiffAt_iff.mp hg).2
+  have hG : ContDiffAt ℂ 2 G (chartAt E x x) := hg.contDiffAt_writtenInExtChartAt
   have hGx : G (chartAt E x x) = chartAt F (g x) (g x) := by
     simp only [G, Function.comp_apply, hx']
   have hD : fderiv ℂ G (chartAt E x x) = mfderiv 𝓘(ℂ, E) 𝓘(ℂ, F) g x := by

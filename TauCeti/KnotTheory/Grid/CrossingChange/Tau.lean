@@ -101,7 +101,7 @@ turn in the row of `O_a`. Suppose that the crossing change maps, the commutation
 and the commutation map `Ψ` of `G' = G.swapColumns a b` turning in the row of `X_b`, have
 composites `ΨΦ` and `ΦΨ` chain homotopic to multiplication by `V_b` and `V_a`. Then
 `τ(G) - 1 ≤ τ(G') ≤ τ(G)`. -/
-theorem tau_swapColumns_mem_Icc_of_homotopy [IsNoetherianRing K]
+theorem tau_swapColumns_mem_Icc_of_homotopy
     (h : G.ColumnsInterleaving a b) (hO : G.O a ∈ G.columnArc b) (hs : C.turnRow = G.O a)
     (hH : ∃ H : GridChainMinus K n →ₗ[MvPolynomial (Fin n) K] GridChainMinus K n,
       ∀ c, G.unblockedDifferential K (H c) + H (G.unblockedDifferential K c) =

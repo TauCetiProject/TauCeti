@@ -120,6 +120,10 @@ def lyapunovPerronIntegral (A P : X →L[ℝ] X) (g : ℝ → X) (t : ℝ) : X :
   (∫ s in (0 : ℝ)..t, exp ((t - s) • A) (P (g s))) -
     ∫ s in Ioi t, exp ((t - s) • A) (g s - P (g s))
 
+theorem lyapunovPerronIntegral_def (A P : X →L[ℝ] X) (g : ℝ → X) (t : ℝ) :
+    lyapunovPerronIntegral A P g t = (∫ s in (0 : ℝ)..t, exp ((t - s) • A) (P (g s))) -
+      ∫ s in Ioi t, exp ((t - s) • A) (g s - P (g s)) := (rfl)
+
 variable [CompleteSpace X]
 
 variable {A P : X →L[ℝ] X} {K α : ℝ≥0} {M : ℝ} {g g₁ g₂ : ℝ → X} {t : ℝ}

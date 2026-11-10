@@ -44,6 +44,9 @@ No boundedness or boundary regularity of `Ω` is assumed.
 * `TauCeti.W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn`: the second-order case in the
   form a difference-quotient argument supplies, with `Lᵖ` weak derivatives of the components
   `⟪∇u, eⱼ⟫` of the weak gradient.
+* `TauCeti.W1p.exists_lowerOrder_eq_of_gradient_eq_of_hasWeakLineDerivOn`: the same on an open
+  subdomain `V ≤ Ω`, for any `u ∈ W^{1,p}(V)` whose weak gradient agrees on `V` with that of a
+  function on `Ω` whose gradient components are weakly differentiable.
 * `TauCeti.Wkp.inner_iteratedGradient_one_apply_ae_eq`: the weak Hessian is symmetric.
 * `TauCeti.Wkp.adjoint_iteratedGradient_one_ae_eq`: the weak Hessian is self-adjoint almost
   everywhere.
@@ -364,6 +367,26 @@ theorem W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn {ι : Type*} [Fint
     exact ((W1p.hasWeakFDerivOn u).hasWeakLineDerivOn (b j)).congr_ae_deriv (hgrad j)
   obtain ⟨U, hU⟩ := Wkp.exists_value_eq_of_forall_hasWeakLineDerivOn b (W1p.value u) 1 hcomp
   exact ⟨U, W1p.ext_value (((Wkp.value_one _).symm.trans (Wkp.value_succ 1 U).symm).trans hU)⟩
+
+/-- **Second-order weak differentiability on a subdomain.** Let `w ∈ W^{1,p}(Ω)` and let
+`V ≤ Ω` be open. Suppose that the components `⟪∇w, eⱼ⟫` of the weak gradient of `w` along an
+orthonormal basis `e` have weak derivatives in `Lᵖ(Ω)` along every `eᵢ`. Then every `u ∈ W^{1,p}(V)`
+whose weak gradient agrees almost everywhere on `V` with that of `w` is the first-order part of an
+element of `W^{2,p}(V)`. -/
+theorem W1p.exists_lowerOrder_eq_of_gradient_eq_of_hasWeakLineDerivOn {ι : Type*} [Fintype ι]
+    {V : Opens E} {w : W1p mu Omega p} {u : W1p mu V p} (b : OrthonormalBasis ι ℝ E)
+    (hV : V ≤ Omega)
+    (hgrad : ∀ᵐ x ∂mu.restrict V, W1p.gradient w x = W1p.gradient u x)
+    (h : ∀ i j : ι, ∃ g : Lp ℝ p (mu.restrict Omega),
+      HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient w x, b j⟫_ℝ) g (b i)) :
+    ∃ U : Wkp mu V p 2, Wkp.lowerOrder 1 U = u := by
+  refine W1p.exists_lowerOrder_eq_of_forall_hasWeakLineDerivOn u b fun i j => ?_
+  obtain ⟨G, hG⟩ := h i j
+  have hGm : MemLp G p (mu.restrict V) :=
+    (Lp.memLp G).mono_measure (Measure.restrict_mono (SetLike.coe_subset_coe.mpr hV) le_rfl)
+  refine ⟨hGm.toLp G, ((hG.mono hV).congr_ae ?_).congr_ae_deriv hGm.coeFn_toLp.symm⟩
+  filter_upwards [hgrad] with x hx
+  rw [hx]
 
 /-! ### Symmetry of the weak Hessian -/
 

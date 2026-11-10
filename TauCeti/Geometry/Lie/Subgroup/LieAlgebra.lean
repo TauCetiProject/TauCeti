@@ -74,6 +74,7 @@ target — the closed-subgroup theorem, promoting `K` to an embedded Lie subgrou
 * `TauCeti.Lie.hasDerivAt_Ad_lieExp_smul_apply_zero`: the adjoint orbit `s ↦ Ad (lieExp (s • X)) Y`
   has derivative `⁅X, Y⁆` at the origin. This is the derivation-level infinitesimal adjoint, the
   analytic input to bracket closure.
+* `TauCeti.Lie.finiteDimensional_lieSubalgebraOfSubgroup`: finite-dimensional subgroup models.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_le_iff`: the universal property of the generated subalgebra,
   for an arbitrary subgroup.
 * `TauCeti.Lie.lieSubalgebraOfSubgroup_induction`: induction on the generated subalgebra, for an
@@ -279,6 +280,13 @@ module docstring. -/
 def lieSubalgebraOfSubgroup (K : Subgroup G) : LieSubalgebra ℝ (LeftInvariantDerivation I G) :=
   LieSubalgebra.lieSpan ℝ (LeftInvariantDerivation I G)
     {X : LeftInvariantDerivation I G | ∀ t : ℝ, lieExp (I := I) (t • X) ∈ K}
+
+/-- The model given by the Lie algebra of a subgroup is finite-dimensional. -/
+instance finiteDimensional_lieSubalgebraOfSubgroup (K : Subgroup G) :
+    FiniteDimensional ℝ (lieSubalgebraOfSubgroup (I := I) K).toSubmodule := by
+  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation BoundarylessManifold.isInteriorPoint
+  exact FiniteDimensional.finiteDimensional_submodule _
 
 /-- A derivation whose one-parameter subgroup lies in `K` lies in the Lie algebra of `K`. This
 direction needs no hypothesis on `K`. -/

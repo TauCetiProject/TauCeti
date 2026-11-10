@@ -603,9 +603,9 @@ private theorem volume_lt_norm_sub_setAverage_closedBall_le [CompleteSpace E]
       (by simpa only [hQ (0, 0)] using hf)
       (fun q _ => by simpa only [hQ q] using hM c r subset_rfl) s
   rcases le_or_gt r 0 with hr | hr
-  · rw [volume_closedBall_eq_zero_of_nonpos c hr, mul_zero]
+  · rw [(subsingleton_closedBall c hr).measure_zero volume, mul_zero]
     exact (measure_mono_null (sep_subset _ _)
-      (volume_closedBall_eq_zero_of_nonpos c hr)).le
+      ((subsingleton_closedBall c hr).measure_zero _)).le
   set e := cubeEquiv c hr
   set B := closedBall c r
   have hmap := map_cubeEquiv (c := c) hr
@@ -654,7 +654,7 @@ private theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_volume_le [C
       (q₀ := (0, 0)) (f := f) (by simpa only [hQ (0, 0)] using hf)
       (fun q _ => by simpa only [hQ q] using hM c r subset_rfl) hρ
   rcases le_or_gt r 0 with hr | hr
-  · rw [setLIntegral_measure_zero _ _ (volume_closedBall_eq_zero_of_nonpos c hr)]
+  · rw [setLIntegral_measure_zero _ _ ((subsingleton_closedBall c hr).measure_zero _)]
     exact zero_le
   set e := cubeEquiv c hr
   set B := closedBall c r
@@ -851,7 +851,7 @@ private theorem setLIntegral_exp_preimage_closedBall_le [Nonempty ι] [CompleteS
     intro y ρ hy
     rcases le_or_gt ρ 0 with hρ0 | hρ0
     · rw [setLAverage_eq, setLIntegral_measure_zero _ _
-        (volume_closedBall_eq_zero_of_nonpos y hρ0), ENNReal.zero_div]
+        ((subsingleton_closedBall y hρ0).measure_zero _), ENNReal.zero_div]
       exact zero_le
     rw [← setLAverage_enorm_sub_setAverage_comp_preimage_of_map_eq_smul he ha ha', hpre]
     simp_rw [hge]

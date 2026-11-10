@@ -70,9 +70,7 @@ theorem re_leviForm_mfderiv_nonpos_of_isLocalMax
       (tangentSpaceCastModel J (g x) (mfderiv I J g x v))).re ≤ 0 := by
   let G := writtenInExtChartAt I J x g
   let z := extChartAt I x x
-  have hG : ContDiffAt ℂ 2 G z := by
-    simpa only [G, z, writtenInExtChartAt, ModelWithCorners.Boundaryless.range_eq_univ,
-      contDiffWithinAt_univ] using (contMDiffAt_iff.mp hg).2
+  have hG : ContDiffAt ℂ 2 G z := hg.contDiffAt_writtenInExtChartAt
   have hGz : G z = extChartAt J (g x) (g x) := by
     simp [G, z, writtenInExtChartAt]
   -- The pullback agrees locally with the composition of the two coordinate expressions.

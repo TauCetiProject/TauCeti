@@ -187,8 +187,7 @@ variable {z : E}
 theorem IsNegativeGradient.reverse (hφ : IsNegativeGradient φ f) :
     IsNegativeGradient φ.reverse (-f) := by
   refine isNegativeGradient_iff.2 fun z t ↦ ?_
-  have hgrad : ∇ (-f) (φ (-t) z) = -∇ f (φ (-t) z) := by
-    simpa using TauCeti.gradient_const_smul (-1 : ℝ) (f := f) (x := φ (-t) z)
+  have hgrad : ∇ (-f) (φ (-t) z) = -∇ f (φ (-t) z) := TauCeti.gradient_neg
   have hd := (hφ.isIntegralCurve z (-t)).scomp t (hasDerivAt_neg t)
   simpa [Function.comp_def, hgrad] using hd
 
@@ -289,8 +288,7 @@ theorem IsNegativeGradient.dist_le_of_mem_unstableSet (hφ : IsNegativeGradient 
     {s r c : ℝ} (hc : 0 ≤ c) (hgrad : ∀ w, s < dist w x → dist w x < r → c ≤ ‖∇ f w‖)
     (hzs : dist z x ≤ s) (hfz : f x - c * (r - s) < f z) {t : ℝ} (ht : t ≤ 0) :
     dist (φ t z) x ≤ r := by
-  have hneg (w : E) : ∇ (-f) w = -∇ f w := by
-    simpa using TauCeti.gradient_const_smul (-1 : ℝ) (f := f) (x := w)
+  have hneg (w : E) : ∇ (-f) w = -∇ f w := TauCeti.gradient_neg
   simpa only [_root_.Flow.reverse_apply, neg_neg] using
     hφ.reverse.dist_le_of_mem_stableSet (by rwa [stableSet_reverse])
       (fun t ↦ by simpa only [_root_.Flow.reverse_apply] using (hf (-t)).neg) hfx.neg hc

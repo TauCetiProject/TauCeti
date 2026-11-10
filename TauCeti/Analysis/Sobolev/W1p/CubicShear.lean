@@ -138,6 +138,49 @@ theorem fderiv_comp_cubicShear_apply_single_zero {f : EuclideanSpace ℝ (Fin 2)
 
 /-! ### Unboundedness on `W^{1,p}` -/
 
+/-- The pointwise form of the growth estimate: for `f` supported in the ball of radius `R` and
+`R ≤ k`, translating by `k` in the first coordinate and pulling back by the cubic shear gives
+`3 (k - R)² |∂_y f| ≤ ‖∇g‖ + ‖∇f‖` at the shifted point, where `g = f ∘ (cubicShear - k e₀)`.
+Only differentiability of `f` at the shifted point is needed. -/
+private theorem norm_smul_fderiv_single_le {f : EuclideanSpace ℝ (Fin 2) → ℝ}
+    {R k : ℝ} (hR : tsupport f ⊆ Metric.closedBall 0 R) (hk : R ≤ k)
+    (w : EuclideanSpace ℝ (Fin 2))
+    (hf : DifferentiableAt ℝ f (cubicShear w - k • EuclideanSpace.single 0 1)) :
+    ‖(3 * (k - R) ^ 2) • fderiv ℝ f (cubicShear w - k • EuclideanSpace.single 0 1)
+        (EuclideanSpace.single 1 1)‖ ≤
+      ‖∇ (fun w => f (cubicShear w - k • EuclideanSpace.single 0 1)) w‖ +
+        ‖∇ f (cubicShear w - k • EuclideanSpace.single 0 1)‖ := by
+  set c : EuclideanSpace ℝ (Fin 2) := k • EuclideanSpace.single 0 1
+  set T : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (Fin 2) := fun w => cubicShear w - c
+  set D := fderiv ℝ f (T w) (EuclideanSpace.single 1 1)
+  have hchain : fderiv ℝ (fun w => f (T w)) w (EuclideanSpace.single 0 1) =
+      fderiv ℝ f (T w) (EuclideanSpace.single 0 1) + 3 * w 0 ^ 2 * D := by
+    have h := fderiv_comp_cubicShear_apply_single_zero (f := fun z => f (z - c)) (v := w)
+      ((differentiableAt_comp_sub c).2 hf)
+    simp only [fderiv_comp_sub] at h
+    exact h
+  have hle : ∀ L : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ, ∀ i : Fin 2,
+      |L (EuclideanSpace.single i 1)| ≤ ‖L‖ := fun L i => by
+    simpa [PiLp.norm_single] using L.le_opNorm (EuclideanSpace.single i 1)
+  have hgrowth : (3 * (k - R) ^ 2) * |D| ≤ 3 * w 0 ^ 2 * |D| := by
+    rcases eq_or_ne D 0 with hD0 | hD0
+    · simp [hD0]
+    have hmem : T w ∈ tsupport f :=
+      support_fderiv_subset ℝ fun h => hD0 (by simp [D, h])
+    have hTw : |w 0 - k| ≤ R := by
+      have := (PiLp.norm_apply_le (T w) 0).trans (mem_closedBall_zero_iff.1 (hR hmem))
+      simpa [T, c] using this
+    have hw : k - R ≤ w 0 := by linarith [neg_abs_le (w 0 - k)]
+    gcongr
+  rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (by positivity), norm_gradient_eq_norm_fderiv,
+    norm_gradient_eq_norm_fderiv]
+  refine hgrowth.trans ?_
+  calc 3 * w 0 ^ 2 * |D| = |fderiv ℝ (fun w => f (T w)) w (EuclideanSpace.single 0 1) -
+        fderiv ℝ f (T w) (EuclideanSpace.single 0 1)| := by
+        rw [hchain, add_sub_cancel_left, abs_mul,
+          abs_of_nonneg (by positivity : (0 : ℝ) ≤ 3 * w 0 ^ 2)]
+    _ ≤ _ := (abs_sub _ _).trans (add_le_add (hle _ 0) (hle _ 0))
+
 section Sobolev
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -158,38 +201,8 @@ private theorem ofReal_mul_eLpNorm_fderiv_le {f : EuclideanSpace ℝ (Fin 2) →
   have hfd : Differentiable ℝ f := hf.differentiable one_ne_zero
   have hD : Continuous fun z => fderiv ℝ f z (EuclideanSpace.single 1 1) :=
     (hf.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  -- The pointwise inequality `3 (k - R)² |∂_y f (T w)| ≤ ‖∇g w‖ + ‖∇f (T w)‖`, `g = f ∘ T`.
   have hpt : ∀ w, ‖(3 * (k - R) ^ 2) • fderiv ℝ f (T w) (EuclideanSpace.single 1 1)‖ ≤
-      ‖∇ (fun w => f (T w)) w‖ + ‖∇ f (T w)‖ := by
-    intro w
-    set D := fderiv ℝ f (T w) (EuclideanSpace.single 1 1)
-    have hchain : fderiv ℝ (fun w => f (T w)) w (EuclideanSpace.single 0 1) =
-        fderiv ℝ f (T w) (EuclideanSpace.single 0 1) + 3 * w 0 ^ 2 * D := by
-      have h := fderiv_comp_cubicShear_apply_single_zero (f := fun z => f (z - c)) (v := w)
-        ((differentiableAt_comp_sub c).2 (hfd _))
-      simp only [fderiv_comp_sub] at h
-      exact h
-    have hle : ∀ L : EuclideanSpace ℝ (Fin 2) →L[ℝ] ℝ, ∀ i : Fin 2,
-        |L (EuclideanSpace.single i 1)| ≤ ‖L‖ := fun L i => by
-      simpa [PiLp.norm_single] using L.le_opNorm (EuclideanSpace.single i 1)
-    have hgrowth : (3 * (k - R) ^ 2) * |D| ≤ 3 * w 0 ^ 2 * |D| := by
-      rcases eq_or_ne D 0 with hD0 | hD0
-      · simp [hD0]
-      have hmem : T w ∈ tsupport f :=
-        support_fderiv_subset ℝ fun h => hD0 (by simp [D, h])
-      have hTw : |w 0 - k| ≤ R := by
-        have := (PiLp.norm_apply_le (T w) 0).trans (mem_closedBall_zero_iff.1 (hR hmem))
-        simpa [T, c] using this
-      have hw : k - R ≤ w 0 := by linarith [neg_abs_le (w 0 - k)]
-      gcongr
-    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (by positivity), norm_gradient_eq_norm_fderiv,
-      norm_gradient_eq_norm_fderiv]
-    refine hgrowth.trans ?_
-    calc 3 * w 0 ^ 2 * |D| = |fderiv ℝ (fun w => f (T w)) w (EuclideanSpace.single 0 1) -
-          fderiv ℝ f (T w) (EuclideanSpace.single 0 1)| := by
-          rw [hchain, add_sub_cancel_left, abs_mul,
-            abs_of_nonneg (by positivity : (0 : ℝ) ≤ 3 * w 0 ^ 2)]
-      _ ≤ _ := (abs_sub _ _).trans (add_le_add (hle _ 0) (hle _ 0))
+      ‖∇ (fun w => f (T w)) w‖ + ‖∇ f (T w)‖ := fun w => norm_smul_fderiv_single_le hR hk w (hfd _)
   set G : EuclideanSpace ℝ (Fin 2) → ℝ := fun z => fderiv ℝ f z (EuclideanSpace.single 1 1)
   calc ENNReal.ofReal (3 * (k - R) ^ 2) * eLpNorm G p volume
       = ‖3 * (k - R) ^ 2‖ₑ * eLpNorm (G ∘ T) p volume := by

@@ -154,6 +154,14 @@ theorem datumSteinberg_eq_datumFrobenius_iff_of_not_usesHalfFrobenius
   rw [datumSteinberg_of_not_usesHalfFrobenius d h]
   exact GraphTwistedIndex.datumSteinberg_eq_datumFrobenius_iff ⟨d, h⟩
 
+/-- With no half-Frobenius or diagram twist, the Steinberg character map is multiplication
+by the field order. -/
+theorem datumSteinberg_weightMap_of_diagramPerm_eq_one
+    (h : ¬ d.1.UsesHalfFrobenius) (hσ : GraphTwistedIndex.diagramPerm ⟨d, h⟩ = 1) :
+    d.datumSteinberg.weightMap = d.fieldOrder • LinearMap.id := by
+  rw [(d.datumSteinberg_eq_datumFrobenius_iff_of_not_usesHalfFrobenius h).mpr hσ,
+    datumFrobenius_weightMap]
+
 /-- **The twist-order power of an ordinary Steinberg map is a Frobenius**: `(γ ∘ Frob_q) ^ e` is
 `Frob_(q ^ e)`, the Frobenius of the degree-`e` extension of the field the index names. -/
 theorem datumSteinberg_pow_twistOrder_eq_smulId_of_not_usesHalfFrobenius

@@ -391,7 +391,7 @@ private theorem mem_initialOverlapPartners_of_recut
   have hrecut : E.toRectangleDecomposition.IsRecut D.toRectangleDecomposition := by
     rw [hD]
     exact E.toRectangleDecomposition.isRecut_recut hone hfirst hsecond
-  have hback := hrecut.symm hone hfirst hsecond
+  have hback := hrecut.symm hfirst hsecond
   have hcounted : D ∈ G.rectanglePentagonDecompositions C x z :=
     G.mem_rectanglePentagonDecompositions_of_val_add_val_eq_pentagonRectangle C hE
       (D.isEmpty_rectangle_of_isRecut hrecut) (D.isEmpty_pentagon_of_isRecut hrecut)
@@ -399,8 +399,7 @@ private theorem mem_initialOverlapPartners_of_recut
         (by simpa only [D, GridRectanglePentagonDecomposition.pentagon,
           GridPentagonBetween.ofRightEq_bottom] using hcol))
   refine (G.mem_initialOverlapPartners C E).2 ⟨D, (G.mem_initialOverlapSources C D).2
-    ⟨hcounted, ?_, GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback
-      (E.toRectangleDecomposition.target_ne_source_of_hasOneCommonSide hone)⟩, hback⟩
+    ⟨hcounted, ?_, GridRectangleDecomposition.hasOneCommonSide_of_isRecut hback⟩, hback⟩
   simpa only [D, GridRectanglePentagonDecomposition.rectangle,
     GridRectanglePentagonDecomposition.pentagon, GridPentagonBetween.ofRightEq_left] using
     x.toPerm.injective hleft

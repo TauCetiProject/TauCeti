@@ -84,9 +84,8 @@ when the cost and potential are Borel. -/
 theorem nullMeasurable_cTransformExtended (μ : Measure Y) [SFinite μ]
     (hc : Measurable c) (hφ : Measurable φ) :
     NullMeasurable (cTransformExtended c φ) μ :=
-  measurable_of_Iio fun a ↦ MeasureTheory.AnalyticSet.nullMeasurableSet
-    (analyticSet_setOf_cTransformExtended_lt a
-      (((hφ.comp measurable_fst).ereal_rightAddResiduation hc) measurableSet_Iio)) μ
+  measurable_of_Iio fun a ↦ (analyticSet_setOf_cTransformExtended_lt a
+    (((hφ.comp measurable_fst).ereal_rightAddResiduation hc) measurableSet_Iio)).nullMeasurableSet μ
 
 end ExtendedForward
 
@@ -109,9 +108,8 @@ measure on the source when the cost and potential are Borel. -/
 theorem nullMeasurable_cTransformSymmExtended (μ : Measure X) [SFinite μ]
     (hc : Measurable c) (hψ : Measurable ψ) :
     NullMeasurable (cTransformSymmExtended c ψ) μ :=
-  measurable_of_Iio fun a ↦ MeasureTheory.AnalyticSet.nullMeasurableSet
-    (analyticSet_setOf_cTransformSymmExtended_lt a
-      (((hψ.comp measurable_snd).ereal_rightAddResiduation hc) measurableSet_Iio)) μ
+  measurable_of_Iio fun a ↦ (analyticSet_setOf_cTransformSymmExtended_lt a
+    (((hψ.comp measurable_snd).ereal_rightAddResiduation hc) measurableSet_Iio)).nullMeasurableSet μ
 
 end ExtendedSymmetric
 
@@ -144,14 +142,14 @@ on the target when the corresponding integrand sublevel is Borel measurable. -/
 theorem nullMeasurableSet_setOf_cTransform_lt (μ : Measure Y) [SFinite μ] (a : EReal)
     (h : MeasurableSet {z : X × Y | (c z : EReal) - φ z.1 < a}) :
     NullMeasurableSet {y | cTransform c φ y < a} μ :=
-  MeasureTheory.AnalyticSet.nullMeasurableSet (analyticSet_setOf_cTransform_lt a h) μ
+  (analyticSet_setOf_cTransform_lt a h).nullMeasurableSet μ
 
 /-- A strict sublevel of a symmetric `c`-transform is measurable after completing any s-finite Borel
 measure on the source when the corresponding integrand sublevel is Borel measurable. -/
 theorem nullMeasurableSet_setOf_cTransformSymm_lt (μ : Measure X) [SFinite μ]
     (a : EReal) (h : MeasurableSet {z : X × Y | (c z : EReal) - ψ z.2 < a}) :
     NullMeasurableSet {x | cTransformSymm c ψ x < a} μ :=
-  MeasureTheory.AnalyticSet.nullMeasurableSet (analyticSet_setOf_cTransformSymm_lt a h) μ
+  (analyticSet_setOf_cTransformSymm_lt a h).nullMeasurableSet μ
 
 /-- A `c`-transform with Borel defining integrand is measurable for the completion of every
 s-finite Borel measure on the target. This is deliberately `NullMeasurable`, not Borel
@@ -220,7 +218,6 @@ theorem nullMeasurable_rockafellarPotential (μ : Measure X) [SFinite μ] {S : S
     (hc : Measurable c) (hS : MeasurableSet S) (p : X × Y) :
     NullMeasurable (rockafellarPotential c S p) μ :=
   measurable_of_Iio fun a =>
-    MeasureTheory.AnalyticSet.nullMeasurableSet
-      (analyticSet_setOf_rockafellarPotential_lt hc hS p a) μ
+    (analyticSet_setOf_rockafellarPotential_lt hc hS p a).nullMeasurableSet μ
 
 end TauCeti

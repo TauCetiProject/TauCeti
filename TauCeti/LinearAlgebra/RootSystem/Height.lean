@@ -16,8 +16,9 @@ among the roots: a vanishing integral combination of roots has a vanishing combi
 so two integral combinations with the same value have the same combination of heights. When the
 roots span the weight space, it also extends height to the linear functional which sums the
 coordinates in the simple-root basis, and then an automorphism permuting the simple roots preserves
-heights. Ahead of all this, it records the extensionality of bases:
-a base is determined by the indices of its simple roots.
+heights. Ahead of all this, it records the extensionality of bases (a base is determined by the
+indices of its simple roots) and how reflection in a root changes height: reflection in a simple
+root subtracts the corresponding Cartan integer.
 
 ## Main definitions
 
@@ -28,6 +29,9 @@ a base is determined by the indices of its simple roots.
 
 * `RootPairing.Base.ext`: a base is determined by its support, the indices of its simple roots.
 * `RootPairing.Base.height_eq_one_iff`: the roots of height one are exactly the simple roots.
+* `RootPairing.Base.height_reflectionPerm` computes the height after an arbitrary root reflection;
+  `RootPairing.Base.height_reflectionPerm_lt_iff` characterizes strict height decrease under a
+  simple reflection by positivity of the corresponding Cartan integer.
 * `RootPairing.pairingIn_eq_sum_of_root_eq_sum` reads the Cartan integers of an integral
   combination of roots off those of its summands.
 * `TauCeti.apply_root_eq_height_zsmul` says that an additive map taking the constant value `c`
@@ -84,6 +88,32 @@ theorem height_eq_one_iff [CharZero R] (b : P.Base) {i : ι} :
   · rw [height_eq_sum (f := fun j ↦ -(f j : ℤ)) (by simp [hf, natCast_zsmul])] at h
     have : ∑ j ∈ b.support, -(f j : ℤ) ≤ 0 := Finset.sum_nonpos fun _ _ ↦ by omega
     omega
+
+section Reflection
+
+variable [CharZero R] [P.IsCrystallographic] (b : P.Base)
+
+/-- Reflection in the root indexed by `i` changes the height of `j` by the Cartan integer
+`P.pairingIn ℤ j i` times the height of `i`. -/
+lemma height_reflectionPerm (i j : ι) :
+    b.height (P.reflectionPerm i j) = b.height j - P.pairingIn ℤ j i * b.height i := by
+  rw [b.height_add_zsmul (i := j) (j := i) (z := -P.pairingIn ℤ j i)
+    (by rw [root_reflectionPerm, reflection_apply_root' ℤ]; module)]
+  simp [sub_eq_add_neg]
+
+/-- Reflection in a simple root subtracts the corresponding Cartan integer from the height. -/
+@[simp]
+lemma height_reflectionPerm_of_mem_support {i j : ι} (hi : i ∈ b.support) :
+    b.height (P.reflectionPerm i j) = b.height j - P.pairingIn ℤ j i := by
+  rw [height_reflectionPerm, height_one_of_mem_support hi, mul_one]
+
+/-- Reflection in a simple root strictly decreases height exactly when the corresponding Cartan
+integer is positive. -/
+lemma height_reflectionPerm_lt_iff {i j : ι} (hi : i ∈ b.support) :
+    b.height (P.reflectionPerm i j) < b.height j ↔ 0 < P.pairingIn ℤ j i := by
+  simp [hi]
+
+end Reflection
 
 end RootPairing.Base
 
