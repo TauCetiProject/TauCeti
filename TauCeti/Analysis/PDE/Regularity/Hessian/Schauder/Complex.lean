@@ -57,7 +57,7 @@ theorem exists_holderWith_iteratedFDeriv_two_and_norm_le_of_laplacian_complex
     simp [Matrix.one_apply, iteratedFDeriv_two_apply, EuclideanSpace.basisFun_apply]
   obtain ⟨hH, -, hD⟩ := hC (uniformlyEllipticOn_const_one_one univ)
     (fun _ _ ↦ HolderWith.const) (hv.of_le (by simp)) (fun x ↦ hN (e x))
-    ⟨B, by rintro _ ⟨x, rfl⟩; exact hBN x⟩ ⟨B, hB⟩ hLv
+    ⟨B, hB⟩ hLv
   have heN : ‖(e.toContinuousLinearEquiv.symm : ℂ →L[ℝ] EuclideanSpace ℝ (Fin 2))‖₊ = 1 := by
     apply NNReal.coe_injective
     exact e.symm.norm_toContinuousLinearMap
