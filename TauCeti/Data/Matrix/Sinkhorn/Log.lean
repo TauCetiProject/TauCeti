@@ -173,13 +173,19 @@ theorem sum_exp_logSinkhornPlan_apply (L : Matrix ι κ ℝ) {a : ι → ℝ}
 /-- The plans from the stabilized iteration converge to any positive diagonal scaling with
 the prescribed marginals, by exact agreement with the ordinary Sinkhorn iteration. -/
 theorem tendsto_exp_logSinkhornPlan_iterate (L : Matrix ι κ ℝ) {a : ι → ℝ}
-    (ha : ∀ i, 0 < a i) {b : κ → ℝ} (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ}
+    (ha : ∀ i, 0 < a i) {b : κ → ℝ} {P : Matrix ι κ ℝ}
     {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P (L.map exp) u v)
     (hPm : HasMarginals P a b) (hv : ∀ j, 0 < v j) (u₀ : ι → ℝ) :
     Tendsto (fun n ↦ (L.logSinkhornPlan a b ((L.logSinkhornStep a b)^[n] u₀)).map exp)
       atTop (𝓝 P) := by
+  -- on an empty index type every matrix is the empty matrix
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · exact tendsto_const_nhds.congr fun _ ↦ Matrix.ext fun i _ ↦ (hι.false i).elim
+  rcases isEmpty_or_nonempty κ with hκ | hκ
+  · exact tendsto_const_nhds.congr fun _ ↦ Matrix.ext fun _ j ↦ (hκ.false j).elim
+  have hb : ∀ j, 0 < b j := hP.pos_col_marginal hPm (fun i j ↦ exp_pos _) ha hv
   simp only [exp_logSinkhornPlan L ha hb, exp_logSinkhornStep_iterate L ha hb]
-  exact tendsto_sinkhornPlan_iterate (fun i j ↦ exp_pos _) ha hb hP hPm hv
+  exact tendsto_sinkhornPlan_iterate (fun i j ↦ exp_pos _) ha hP hPm hv
     (fun i ↦ exp_pos (u₀ i))
 
 end Matrix

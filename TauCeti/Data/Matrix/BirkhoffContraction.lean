@@ -183,7 +183,7 @@ theorem hilbertProjectiveDist_mul_left_le [Finite ι] (w x y : ι → ℝ) :
   · have h₂ : w i * x i * (w j * y j) / (w i * y i * (w j * x j)) =
         x i * y j / (y i * x j) := by
       rw [← mul_div_mul_left (x i * y j) (y i * x j) hw]
-      ring_nf
+      ring
     rw [h₂]
     exact log_le_hilbertProjectiveDist x y i j
 

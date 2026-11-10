@@ -266,19 +266,6 @@ theorem IsDiagonalScaling.sinkhornStep_eq [Nonempty κ] {P K : Matrix ι κ ℝ}
   rw [mulVec_apply_eq_sum]
   exact (Finset.sum_pos (fun j _ ↦ mul_pos (hK i j) (hv j)) Finset.univ_nonempty).ne'
 
-omit [Fintype ι] in
-/-- The row factors of a diagonal scaling of a strictly positive kernel by strictly positive column
-factors are strictly positive when its row sums are. -/
-theorem IsDiagonalScaling.pos_left [Nonempty κ] {P K : Matrix ι κ ℝ} {u : ι → ℝ} {v : κ → ℝ}
-    (hP : IsDiagonalScaling P K u v) {a : ι → ℝ} (hPa : ∀ i, ∑ j, P i j = a i)
-    (hK : ∀ i j, 0 < K i j) (ha : ∀ i, 0 < a i) (hv : ∀ j, 0 < v j) (i : ι) : 0 < u i := by
-  have hS : 0 < ∑ j, K i j * v j :=
-    Finset.sum_pos (fun j _ ↦ mul_pos (hK i j) (hv j)) Finset.univ_nonempty
-  have h : a i = u i * ∑ j, K i j * v j := by
-    rw [← hPa i, Finset.mul_sum]
-    exact Finset.sum_congr rfl fun j _ ↦ by rw [(isDiagonalScaling_def _ _ _ _).1 hP i j, mul_assoc]
-  exact (mul_pos_iff_of_pos_right hS).1 (h ▸ ha i)
-
 /-- **Linear convergence of the row factors** of the Sinkhorn iteration: if `u` and `v` are
 strictly positive factors of a diagonal scaling of `K` with row sums `a` and column sums `b`, then
 the `n`-th iterate of the Sinkhorn step from a strictly positive `u₀` is within
@@ -294,9 +281,7 @@ theorem IsDiagonalScaling.hilbertProjectiveDist_sinkhornStep_iterate_le {P K : M
   · simp [hilbertProjectiveDist_def]
   have : Nonempty κ := hPm.nonempty_of_row_sum_ne_zero (ha i).ne'
   have : Nonempty ι := ⟨i⟩
-  have hb : ∀ j, 0 < b j := fun j ↦ by
-    rw [← ((hasMarginals_def P a b).1 hPm).2 j]
-    exact Finset.sum_pos (fun i' _ ↦ hP.pos hK hu hv i' j) Finset.univ_nonempty
+  have hb : ∀ j, 0 < b j := fun j ↦ ((hasMarginals_def P a b).1 hPm).2 j ▸ hP.sum_col_pos hK hu hv j
   have h := Matrix.hilbertProjectiveDist_sinkhornStep_iterate_le hK ha hb hu₀ hu n
   rwa [Function.iterate_fixed (hP.sinkhornStep_eq hPm hK hu hv)] at h
 
@@ -317,9 +302,7 @@ theorem IsDiagonalScaling.hilbertProjectiveDist_sinkhornUpdate_iterate_le {P K :
         (hilbertProjectiveDist_nonneg u₀ u))
   obtain ⟨j⟩ := id hκ
   have : Nonempty ι := hPm.nonempty_of_col_sum_ne_zero (hb j).ne'
-  have ha : ∀ i, 0 < a i := fun i ↦ by
-    rw [← ((hasMarginals_def P a b).1 hPm).1 i]
-    exact Finset.sum_pos (fun j' _ ↦ hP.pos hK hu hv i j') Finset.univ_nonempty
+  have ha : ∀ i, 0 < a i := fun i ↦ ((hasMarginals_def P a b).1 hPm).1 i ▸ hP.sum_row_pos hK hu hv i
   rw [hasMarginals_def] at hPm
   have hKt : ∀ j i, 0 < Kᵀ j i := fun j i ↦ by simpa using hK i j
   have hcol := hilbertProjectiveDist_sinkhornUpdate_le hKt (a := b)
@@ -407,15 +390,17 @@ entry of the Sinkhorn plan after `n` steps from a strictly positive `u₀` is at
 `exp (tanh (K.projectiveDiameter / 4) ^ (2 * n + 1) * hilbertProjectiveDist u₀ u)` times the
 corresponding entry of `P`. -/
 theorem sinkhornPlan_iterate_apply_le_exp_mul {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j)
-    {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ}
+    {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} {P : Matrix ι κ ℝ}
     {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) (hPm : HasMarginals P a b)
     (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ) (i : ι)
     (j : κ) :
     K.sinkhornPlan a b ((K.sinkhornStep a b)^[n] u₀) i j ≤
       exp (tanh (K.projectiveDiameter / 4) ^ (2 * n + 1) * hilbertProjectiveDist u₀ u) *
         P i j := by
+  have : Nonempty ι := ⟨i⟩
   have : Nonempty κ := ⟨j⟩
   have hu : ∀ i, 0 < u i := hP.pos_left ((hasMarginals_def P a b).1 hPm).1 hK ha hv
+  have hb : ∀ j, 0 < b j := hP.pos_col_marginal hPm hK ha hv
   refine (hP.sinkhornPlan_apply_le_exp_mul hK (fun i ↦ (ha i).le) hb
     ((hasMarginals_def P a b).1 hPm).1 hv (sinkhornStep_iterate_pos hK ha hb hu₀ n) i j).trans ?_
   exact mul_le_mul_of_nonneg_right
@@ -427,7 +412,7 @@ theorem sinkhornPlan_iterate_apply_le_exp_mul {K : Matrix ι κ ℝ} (hK : ∀ i
 `exp (tanh (K.projectiveDiameter / 4) ^ (2 * n + 1) * hilbertProjectiveDist u₀ u)` times the
 corresponding entry of the Sinkhorn plan after `n` steps. -/
 theorem le_exp_mul_sinkhornPlan_iterate_apply {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j)
-    {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ}
+    {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} {P : Matrix ι κ ℝ}
     {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) (hPm : HasMarginals P a b)
     (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ) (i : ι)
     (j : κ) :
@@ -437,6 +422,7 @@ theorem le_exp_mul_sinkhornPlan_iterate_apply {K : Matrix ι κ ℝ} (hK : ∀ i
   have : Nonempty ι := ⟨i⟩
   have : Nonempty κ := ⟨j⟩
   have hu : ∀ i, 0 < u i := hP.pos_left ((hasMarginals_def P a b).1 hPm).1 hK ha hv
+  have hb : ∀ j, 0 < b j := hP.pos_col_marginal hPm hK ha hv
   have hun := sinkhornStep_iterate_pos hK ha hb hu₀ n
   refine (hP.le_exp_mul_sinkhornPlan_apply hK hb ((hasMarginals_def P a b).1 hPm).1
     (fun i ↦ (hu i).le) hv hun i j).trans ?_
@@ -449,7 +435,7 @@ theorem le_exp_mul_sinkhornPlan_iterate_apply {K : Matrix ι κ ℝ} (hK : ∀ i
 `exp (tanh (K.projectiveDiameter / 4) ^ (2 * n + 1) * hilbertProjectiveDist u₀ u)` times the
 prescribed column sums `b`. -/
 theorem sum_sinkhornPlan_iterate_apply_le_exp_mul {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j)
-    {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ}
+    {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} {P : Matrix ι κ ℝ}
     {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) (hPm : HasMarginals P a b)
     (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ)
     (j : κ) :
@@ -457,13 +443,13 @@ theorem sum_sinkhornPlan_iterate_apply_le_exp_mul {K : Matrix ι κ ℝ} (hK : �
       exp (tanh (K.projectiveDiameter / 4) ^ (2 * n + 1) * hilbertProjectiveDist u₀ u) * b j := by
   rw [← ((hasMarginals_def P a b).1 hPm).2 j, Finset.mul_sum]
   exact Finset.sum_le_sum fun i _ ↦
-    sinkhornPlan_iterate_apply_le_exp_mul hK ha hb hP hPm hv hu₀ n i j
+    sinkhornPlan_iterate_apply_le_exp_mul hK ha hP hPm hv hu₀ n i j
 
 /-- The prescribed column sums `b` are at most
 `exp (tanh (K.projectiveDiameter / 4) ^ (2 * n + 1) * hilbertProjectiveDist u₀ u)` times the
 column sums of the Sinkhorn plan after `n` steps. -/
 theorem le_exp_mul_sum_sinkhornPlan_iterate_apply {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j)
-    {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ}
+    {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} {P : Matrix ι κ ℝ}
     {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) (hPm : HasMarginals P a b)
     (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) (n : ℕ)
     (j : κ) :
@@ -471,7 +457,7 @@ theorem le_exp_mul_sum_sinkhornPlan_iterate_apply {K : Matrix ι κ ℝ} (hK : �
       ∑ i, K.sinkhornPlan a b ((K.sinkhornStep a b)^[n] u₀) i j := by
   rw [← ((hasMarginals_def P a b).1 hPm).2 j, Finset.mul_sum]
   exact Finset.sum_le_sum fun i _ ↦
-    le_exp_mul_sinkhornPlan_iterate_apply hK ha hb hP hPm hv hu₀ n i j
+    le_exp_mul_sinkhornPlan_iterate_apply hK ha hP hPm hv hu₀ n i j
 
 /-- **Convergence of the Sinkhorn iteration**: for a strictly positive kernel `K`, if `P` is the
 diagonal scaling of `K` by strictly positive factors with row sums `a > 0` and column sums `b > 0`
@@ -479,7 +465,7 @@ diagonal scaling of `K` by strictly positive factors with row sums `a > 0` and c
 the same total mass), then the Sinkhorn plans along the iteration from any strictly positive
 initial row factors converge to `P`. -/
 theorem tendsto_sinkhornPlan_iterate {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K i j)
-    {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ}
+    {a : ι → ℝ} (ha : ∀ i, 0 < a i) {b : κ → ℝ} {P : Matrix ι κ ℝ}
     {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P K u v) (hPm : HasMarginals P a b)
     (hv : ∀ j, 0 < v j) {u₀ : ι → ℝ} (hu₀ : ∀ i, 0 < u₀ i) :
     Tendsto (fun n ↦ K.sinkhornPlan a b ((K.sinkhornStep a b)^[n] u₀)) atTop (𝓝 P) := by
@@ -497,8 +483,8 @@ theorem tendsto_sinkhornPlan_iterate {K : Matrix ι κ ℝ} (hK : ∀ i j, 0 < K
   have hlow := ((continuous_exp.tendsto' (-0) 1 (by simp)).comp hδ.neg).mul_const (P i j)
   rw [one_mul] at hup hlow
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le hlow hup (fun n ↦ ?_)
-    fun n ↦ sinkhornPlan_iterate_apply_le_exp_mul hK ha hb hP hPm hv hu₀ n i j
-  have h := le_exp_mul_sinkhornPlan_iterate_apply hK ha hb hP hPm hv hu₀ n i j
+    fun n ↦ sinkhornPlan_iterate_apply_le_exp_mul hK ha hP hPm hv hu₀ n i j
+  have h := le_exp_mul_sinkhornPlan_iterate_apply hK ha hP hPm hv hu₀ n i j
   simp only [Function.comp_apply, exp_neg, inv_mul_eq_div]
   rw [div_le_iff₀ (exp_pos _), mul_comm]
   exact h
