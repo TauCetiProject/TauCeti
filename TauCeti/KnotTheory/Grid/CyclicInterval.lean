@@ -1225,16 +1225,14 @@ theorem notMem_cIco_of_cIco_union {p r₀ r₁ s : Fin n}
 /-- A point of a half-open cyclic interval that misses its initial piece up to `b` lies in the
 final piece from `b`. -/
 theorem mem_cIco_of_mem_cIco_of_notMem_cIco_left {a b c s : Fin n} (hs : s ∈ cIco a c)
-    (h : s ∉ cIco a b) : s ∈ cIco b c := by
-  simp only [mem_cIco, ne_eq, ← Fin.val_inj] at *
-  split_ifs at * <;> omega
+    (h : s ∉ cIco a b) : s ∈ cIco b c :=
+  (Finset.mem_union.mp (cIco_subset_cIco_union_cIco hs)).resolve_right h
 
 /-- A point of a half-open cyclic interval that misses its final piece from `b` lies in the
 initial piece up to `b`. -/
 theorem mem_cIco_of_mem_cIco_of_notMem_cIco_right {a b c s : Fin n} (hs : s ∈ cIco a c)
-    (h : s ∉ cIco b c) : s ∈ cIco a b := by
-  simp only [mem_cIco, ne_eq, ← Fin.val_inj] at *
-  split_ifs at * <;> omega
+    (h : s ∉ cIco b c) : s ∈ cIco a b :=
+  (Finset.mem_union.mp (cIco_subset_cIco_union_cIco hs)).resolve_left h
 
 /-- The half-open cyclic interval from `a` to a point `s` of the interval from `a` to `b` is
 contained in it. -/
