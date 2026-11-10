@@ -47,8 +47,8 @@ polynomials `Φₙ` and `ΨSqₙ` in place of `N` and `D`.
   nonzero.
 * `TauCeti.Isogeny.wronskian_xRatFunc_sq_mul_Ψ₂Sq`: the polynomial identity
   `w² Ψ₂Sq₁ = c² D (4N³ + b₂'N²D + 2b₄'ND² + b₆'D³)`.
-* `TauCeti.Isogeny.eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq`: its value at a point `x₀` with
-  `D(x₀) ≠ 0`, `w(x₀)² Ψ₂Sq₁(x₀) = c² D(x₀)⁴ Ψ₂Sq₂(r(x₀))`.
+* `TauCeti.Isogeny.eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq`: its value at a point `x₀`,
+  `w(x₀)² Ψ₂Sq₁(x₀) = c² D(x₀)⁴ Ψ₂Sq₂(r(x₀))`.
 
 ## References
 
@@ -137,20 +137,21 @@ theorem wronskian_xRatFunc_sq_mul_Ψ₂Sq :
   linear_combination h
 
 /-- **`Ψ₂Sq₂(r(x₀)) = s(x₀)² Ψ₂Sq₁(x₀)`, cleared of denominators**: if `φ^*ω₂ = c ω₁`, then at
-every `x₀` where the denominator `D` of `r = φ.xRatFunc` does not vanish,
+every `x₀`, for the denominator `D` of `r = φ.xRatFunc`,
 
   `w(x₀)² Ψ₂Sq₁(x₀) = c² D(x₀)⁴ Ψ₂Sq₂(N(x₀) / D(x₀))`.
 
 When `c ≠ 0` (`φ` separable), with `s = w / (c D²)` this is
 `Ψ₂Sq₂(r(x₀)) = s(x₀)² Ψ₂Sq₁(x₀)`. -/
-theorem eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq {x₀ : F}
-    (hx₀ : φ.xRatFunc.denom.eval x₀ ≠ 0) :
+theorem eval_wronskian_xRatFunc_sq_mul_eval_Ψ₂Sq (x₀ : F) :
     (wronskian φ.xRatFunc.denom φ.xRatFunc.num).eval x₀ ^ 2 * W₁.Ψ₂Sq.eval x₀ =
       c ^ 2 * φ.xRatFunc.denom.eval x₀ ^ 4 *
         W₂.Ψ₂Sq.eval (φ.xRatFunc.num.eval x₀ / φ.xRatFunc.denom.eval x₀) := by
   have h := congrArg (eval x₀) (wronskian_xRatFunc_sq_mul_Ψ₂Sq hc)
   simp only [eval_mul, eval_pow, eval_C, eval_add] at h
   rw [h, WeierstrassCurve.Ψ₂Sq]
+  by_cases hx₀ : φ.xRatFunc.denom.eval x₀ = 0
+  · simp [hx₀]
   simp only [eval_add, eval_mul, eval_pow, eval_C, eval_X]
   field_simp
 
