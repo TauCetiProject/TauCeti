@@ -156,6 +156,26 @@ theorem coe_symm_blockQuotient_σinf (i : Fin m) :
       t.σinf '' (e.symm i : Set (Fin n)) := by
   simp [orbit.coe_smul, ← Set.image_smul, Subgroup.smul_def, Perm.smul_def]
 
+/-- A quotient by two translates in which neither `t.σ0` nor `t.σ1` maps `B` to itself is, for
+any numbering of the translates, the triple with components `(0 1)`, `(0 1)`, `1`: the double
+cover of the sphere branched over `0` and `1` only. -/
+theorem blockQuotient_eq_ofTwo_swap (e : orbit t.monodromyGroup B ≃ Fin 2)
+    (h0 : t.σ0 '' B ≠ B) (h1 : t.σ1 '' B ≠ B) :
+    t.blockQuotient B e = ofTwo (swap 0 1) (swap 0 1) := by
+  have hperm : ∀ σ : Perm (Fin 2), σ ≠ 1 → σ = swap 0 1 := by decide
+  have hB : B ∈ orbit t.monodromyGroup B := mem_orbit_self _
+  refine ext_of_two ?_ ?_
+  · rw [ofTwo_σ0]
+    refine hperm _ fun h ↦ h0 ?_
+    have h' := t.coe_symm_blockQuotient_σ0 B e (e ⟨B, hB⟩)
+    rw [h, Perm.one_apply, symm_apply_apply] at h'
+    exact h'.symm
+  · rw [ofTwo_σ1]
+    refine hperm _ fun h ↦ h1 ?_
+    have h' := t.coe_symm_blockQuotient_σ1 B e (e ⟨B, hB⟩)
+    rw [h, Perm.one_apply, symm_apply_apply] at h'
+    exact h'.symm
+
 /-- The monodromy group of the quotient is the image of the monodromy group of `t` acting on
 the translates of `B`. -/
 theorem monodromyGroup_blockQuotient :
@@ -251,6 +271,17 @@ degree of the quotient by it. -/
 theorem ncard_mul_eq_of_isBlock (e : orbit t.monodromyGroup B ≃ Fin m) : B.ncard * m = n := by
   have h := @IsBlock.ncard_block_mul_ncard_orbit_eq _ _ _ _ ht _ hB hBne
   rwa [← Nat.card_coe_set_eq (orbit _ B), Nat.card_congr e, Nat.card_fin, Nat.card_fin] at h
+
+include ht hB hBne in
+/-- A nonempty block of half the sheets which neither `t.σ0` nor `t.σ1` maps to itself has two
+translates, and the quotient by them is the double cover `(0 1)`, `(0 1)`, `1`. -/
+theorem exists_blockQuotient_eq_ofTwo_swap (hcard : B.ncard * 2 = n) (h0 : t.σ0 '' B ≠ B)
+    (h1 : t.σ1 '' B ≠ B) :
+    ∃ e : orbit t.monodromyGroup B ≃ Fin 2, t.blockQuotient B e = ofTwo (swap 0 1) (swap 0 1) := by
+  have h := ncard_mul_eq_of_isBlock ht hB hBne (Finite.equivFin (orbit t.monodromyGroup B))
+  exact ⟨Finite.equivFinOfCardEq (Nat.eq_of_mul_eq_mul_left
+    ((Set.ncard_pos B.toFinite).mpr hBne) (h.trans hcard.symm)),
+    blockQuotient_eq_ofTwo_swap _ _ _ h0 h1⟩
 
 /-! ### Composing quotients -/
 

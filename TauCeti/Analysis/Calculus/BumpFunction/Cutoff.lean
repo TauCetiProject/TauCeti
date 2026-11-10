@@ -42,12 +42,21 @@ It also provides radial cutoffs between two concentric closed balls of radii `r 
 gradient is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a
 universal constant `c`, the quantitative form needed by iteration arguments over families of balls
 with shrinking gaps. On the line, a smooth cutoff of the identity equals `s` on `[-r, r]` and
-vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`), and smooth plateaus supported
+vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`). On an inner product space, a
+smooth, even, compactly supported cutoff equals one on the annulus `r ≤ ‖ξ‖ ≤ R` and vanishes on
+the ball of radius `r / 2` (`TauCeti.exists_contDiff_cutoff_annulus`). Smooth plateaus supported
 in `[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy bounded
 independently of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`). The squared gradient of a
 function supported in a closed ball with bounded gradient there has integral at most the squared
 bound times the volume of the ball
 (`TauCeti.setIntegral_norm_gradient_sq_le_of_tsupport_subset_closedBall`).
+
+Finally, the space-time cut-offs `(t, x) ↦ χ (s • x) * φ (t, x)` of a function `φ` vanishing outside
+a time interval, for a bump `χ` and a small scale `s`, have compact support
+(`ContDiffBump.hasCompactSupport_cutoff_mul`), an explicit derivative
+(`ContDiffBump.fderiv_cutoff_mul_apply`) with a bound
+(`ContDiffBump.norm_cutoff_fderiv_le`) that tends to the derivative of `φ` as `s → 0`
+(`ContDiffBump.tendsto_cutoff_fderiv_add`).
 
 ## References
 
@@ -554,6 +563,49 @@ theorem exists_contDiff_cutoff_id {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
     filter_upwards [(isOpen_lt continuous_abs continuous_const).mem_nhds hs] with x hx
     exact hsmall x hx.le
 
+open Metric in
+/-- **A smooth cutoff of an annulus.** For `0 < r` and any `R`, some smooth, even, compactly
+supported `χ : E → ℝ` equals `1` on the annulus `r ≤ ‖ξ‖ ≤ R` and vanishes on the ball of radius
+`r / 2`. It is a bump function of `‖ξ‖²`. -/
+theorem exists_contDiff_cutoff_annulus [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {r : ℝ}
+    (hr : 0 < r) (R : ℝ) :
+    ∃ χ : E → ℝ, ContDiff ℝ ∞ χ ∧ HasCompactSupport χ ∧ (∀ ξ, ‖ξ‖ < r / 2 → χ ξ = 0) ∧
+      (∀ ξ, χ (-ξ) = χ ξ) ∧ ∀ ξ, r ≤ ‖ξ‖ → ‖ξ‖ ≤ R → χ ξ = 1 := by
+  set a : ℝ := r ^ 2
+  set b : ℝ := (|R| + 2 * r) ^ 2
+  have ha : 0 < a := by positivity
+  have hab : a < b := pow_lt_pow_left₀ (by linarith [abs_nonneg R]) hr.le two_ne_zero
+  let ρ : ContDiffBump ((a + b) / 2) := ⟨(b - a) / 2, b / 2, by linarith, by linarith⟩
+  refine ⟨fun ξ ↦ ρ (‖ξ‖ ^ 2), ρ.contDiff.comp (contDiff_norm_sq ℝ), ?_, fun ξ hξ ↦ ?_,
+    fun ξ ↦ by simp, fun ξ h₁ h₂ ↦ ?_⟩
+  · refine HasCompactSupport.intro (isCompact_closedBall (0 : E) (2 * (|R| + 2 * r)))
+      fun ξ hξ ↦ ρ.zero_of_le_dist ?_
+    have hξ' : 2 * (|R| + 2 * r) < ‖ξ‖ := by simpa using hξ
+    have : 4 * b < ‖ξ‖ ^ 2 := by
+      have := pow_lt_pow_left₀ hξ' (by positivity) two_ne_zero
+      simp only [b]
+      nlinarith
+    rw [Real.dist_eq, le_abs]
+    left
+    simp only [ρ]
+    linarith
+  · refine ρ.zero_of_le_dist ?_
+    have : ‖ξ‖ ^ 2 < a / 4 := by
+      have := pow_lt_pow_left₀ hξ (norm_nonneg _) two_ne_zero
+      simp only [a]
+      nlinarith
+    rw [Real.dist_eq, le_abs]
+    right
+    simp only [ρ]
+    nlinarith [sq_nonneg ‖ξ‖]
+  · refine ρ.one_of_mem_closedBall ?_
+    have hlo : a ≤ ‖ξ‖ ^ 2 := pow_le_pow_left₀ hr.le h₁ 2
+    have hhi : ‖ξ‖ ^ 2 ≤ b :=
+      pow_le_pow_left₀ (norm_nonneg _) (h₂.trans ((le_abs_self R).trans (by linarith))) 2
+    rw [mem_closedBall, Real.dist_eq, abs_le]
+    simp only [ρ]
+    constructor <;> linarith
+
 
 open MeasureTheory Metric in
 /-- **Smooth plateaus on the line with uniformly bounded derivative.** There is a constant `C`
@@ -689,4 +741,134 @@ theorem exists_cutoff_fderiv_bound :
 
 end ScaledCutoff
 
+section CutoffDecay
+
+open Metric
+
+variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup G]
+
+/-- **Cutoff derivative against decaying data.** Let `χ` equal `1` on the closed ball of radius
+`R` about the origin and `0` outside radius `2 R`, with `‖Dχ‖ ≤ A`. If `‖x‖ ‖u x‖ ≤ M` for
+`‖x‖ ≥ R`, then `‖Dχ‖ ‖u‖` is at most `A (M / R)` on the closed ball of radius `2 R` and vanishes
+outside it. -/
+theorem norm_fderiv_mul_norm_le_indicator {χ : E → ℝ} {u : E → G} {R A M : ℝ} (hR : 0 < R)
+    (hM : 0 ≤ M) (hχ1 : ∀ x ∈ closedBall (0 : E) R, χ x = 1)
+    (hχ0 : ∀ x, 2 * R < dist x 0 → χ x = 0) (hA : ∀ x, ‖fderiv ℝ χ x‖ ≤ A)
+    (hu : ∀ x : E, R ≤ ‖x‖ → ‖x‖ * ‖u x‖ ≤ M) (x : E) :
+    ‖fderiv ℝ χ x‖ * ‖u x‖ ≤ (closedBall (0 : E) (2 * R)).indicator (fun _ ↦ A * (M / R)) x := by
+  have hA0 : 0 ≤ A := (norm_nonneg _).trans (hA 0)
+  -- Off the annulus `R ≤ ‖x‖ ≤ 2 R` the cutoff is locally constant, so `Dχ x = 0`.
+  have hzero : fderiv ℝ χ x = 0 → ‖fderiv ℝ χ x‖ * ‖u x‖ ≤
+      (closedBall (0 : E) (2 * R)).indicator (fun _ ↦ A * (M / R)) x := fun h ↦ by
+    rw [h, norm_zero, zero_mul]
+    exact Set.indicator_nonneg (fun _ _ ↦ by positivity) x
+  rcases lt_or_ge ‖x‖ R with hx | hx
+  · refine hzero ?_
+    have hev : χ =ᶠ[𝓝 x] fun _ ↦ (1 : ℝ) := by
+      filter_upwards [isOpen_ball.mem_nhds (mem_ball_zero_iff.2 hx)] with y hy
+      exact hχ1 y (ball_subset_closedBall hy)
+    rw [hev.fderiv_eq, fderiv_const_apply]
+  rcases lt_or_ge (2 * R) ‖x‖ with hx' | hx'
+  · refine hzero ?_
+    have hev : χ =ᶠ[𝓝 x] fun _ ↦ (0 : ℝ) := by
+      have hopen : IsOpen {y : E | 2 * R < dist y 0} :=
+        isOpen_lt continuous_const (continuous_id.dist continuous_const)
+      filter_upwards [hopen.mem_nhds (by simpa using hx')] with y hy
+      exact hχ0 y hy
+    rw [hev.fderiv_eq, fderiv_const_apply]
+  rw [Set.indicator_of_mem (mem_closedBall_zero_iff.2 hx')]
+  have hux : ‖u x‖ ≤ M / R := by
+    rw [le_div_iff₀ hR]
+    calc ‖u x‖ * R ≤ ‖u x‖ * ‖x‖ := by gcongr
+      _ = ‖x‖ * ‖u x‖ := mul_comm _ _
+      _ ≤ M := hu x hx
+  exact mul_le_mul (hA x) hux (norm_nonneg _) hA0
+
+end CutoffDecay
+
 end TauCeti
+
+namespace ContDiffBump
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- The space-time cut-off `(t, x) ↦ χ (s • x) * φ (t, x)` of a function vanishing outside the time
+interval `(a, b)` has compact support, as soon as `χ` vanishes outside `ball 0 (s * R)`. -/
+theorem hasCompactSupport_cutoff_mul [FiniteDimensional ℝ E] {a b : ℝ} {φ : ℝ × E → ℝ}
+    (χ : ContDiffBump (0 : E)) {s R : ℝ} (hs : 0 < s) (hR : χ.rOut ≤ s * R)
+    (hzero : ∀ q : ℝ × E, q.1 ∉ Ioo a b → φ q = 0) :
+    HasCompactSupport fun q : ℝ × E ↦ χ (s • q.2) * φ q := by
+  refine HasCompactSupport.intro ((isCompact_Icc (a := a) (b := b)).prod
+    (isCompact_closedBall (0 : E) R)) fun q hq ↦ ?_
+  by_cases ht : q.1 ∈ Icc a b
+  · have hx : R < ‖q.2‖ := by
+      by_contra hle
+      exact hq ⟨ht, by simpa using not_lt.1 hle⟩
+    have : χ (s • q.2) = 0 := χ.zero_of_le_dist <| by
+      rw [dist_zero_right, norm_smul, Real.norm_of_nonneg hs.le]
+      exact hR.trans (mul_le_mul_of_nonneg_left hx.le hs.le)
+    simp [this]
+  · simp [hzero q fun h ↦ ht (Ioo_subset_Icc_self h)]
+
+variable [HasContDiffBump E]
+
+/-- The derivative of a space-time cut-off `(t, x) ↦ χ (s • x) * φ (t, x)` at `q`, applied to
+`(1, w)`. -/
+theorem fderiv_cutoff_mul_apply {φ : ℝ × E → ℝ} {q : ℝ × E} (hφd : DifferentiableAt ℝ φ q)
+    (χ : ContDiffBump (0 : E)) (s : ℝ) (w : E) :
+    fderiv ℝ (fun p : ℝ × E ↦ χ (s • p.2) * φ p) q (1, w) =
+      χ (s • q.2) * fderiv ℝ φ q (1, w) + φ q * fderiv ℝ χ (s • q.2) (s • w) := by
+  have hc : HasFDerivAt (fun p : ℝ × E ↦ χ (s • p.2))
+      ((fderiv ℝ χ (s • q.2)).comp (s • ContinuousLinearMap.snd ℝ ℝ E)) q :=
+    ((χ.contDiff (n := 1)).differentiable_one _).hasFDerivAt.comp q
+      (hasFDerivAt_snd.const_smul s)
+  rw [fderiv_fun_mul hc.differentiableAt hφd, hc.fderiv]
+  simp
+
+/-- The bound on the derivative at `q`, applied to `(1, w)`, of a cut-off
+`(t, x) ↦ χ (s • x) * φ (t, x)`: the cut-off does not increase the derivative of `φ`, and the
+derivative of `χ`, applied to `s • w`, contributes at most `B * D * (1 + ‖w‖)`, where `B` bounds `φ`
+and `D` bounds the derivative of `χ`; so the bound is `(C + B * D) * (1 + ‖w‖)`. -/
+theorem norm_cutoff_fderiv_le (χ : ContDiffBump (0 : E)) {φ : ℝ × E → ℝ} {C D B : ℝ}
+    {q : ℝ × E} (hC : ‖fderiv ℝ φ q‖ ≤ C) {s : ℝ} (hD : ‖fderiv ℝ χ (s • q.2)‖ ≤ D)
+    (hB : ‖φ q‖ ≤ B) (hs : ‖s‖ ≤ 1) (w : E) :
+    ‖χ (s • q.2) * fderiv ℝ φ q (1, w) + φ q * fderiv ℝ χ (s • q.2) (s • w)‖ ≤
+      (C + B * D) * (1 + ‖w‖) := by
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans hC
+  have hD0 : 0 ≤ D := (norm_nonneg _).trans hD
+  have hB0 : 0 ≤ B := (norm_nonneg _).trans hB
+  have h₁ : ‖χ (s • q.2) * fderiv ℝ φ q (1, w)‖ ≤ C * (1 + ‖w‖) := by
+    rw [norm_mul, Real.norm_of_nonneg χ.nonneg]
+    exact (mul_le_of_le_one_left (norm_nonneg _) χ.le_one).trans <|
+      ((fderiv ℝ φ q).le_opNorm _).trans (mul_le_mul hC
+        (norm_prod_le_iff.2 ⟨by simp, by simp⟩) (norm_nonneg _) hC0)
+  have hsw : ‖s • w‖ ≤ 1 + ‖w‖ := by
+    rw [norm_smul]
+    nlinarith [norm_nonneg w, norm_nonneg s]
+  have h₂ : ‖φ q * fderiv ℝ χ (s • q.2) (s • w)‖ ≤ B * D * (1 + ‖w‖) := by
+    rw [norm_mul, mul_assoc]
+    exact mul_le_mul hB (((fderiv ℝ χ _).le_opNorm _).trans
+      (mul_le_mul hD hsw (norm_nonneg _) hD0)) (norm_nonneg _) hB0
+  linarith [norm_add_le (χ (s • q.2) * fderiv ℝ φ q (1, w))
+    (φ q * fderiv ℝ χ (s • q.2) (s • w))]
+
+/-- As the scale `s i` tends to `0` along a filter `l`, the cut-off factor `χ (s i • x)` tends to
+`1` and the derivative term `fderiv ℝ χ (s i • x) (s i • w)` to `0`. -/
+theorem tendsto_cutoff_fderiv_add (χ : ContDiffBump (0 : E)) {ι : Type*} {l : Filter ι}
+    {s : ι → ℝ} (hs : Filter.Tendsto s l (𝓝 0)) (x w : E) (c d : ℝ) :
+    Filter.Tendsto (fun i ↦ χ (s i • x) * c + d * fderiv ℝ χ (s i • x) (s i • w)) l
+      (𝓝 c) := by
+  have hDχ : Continuous (fderiv ℝ χ) := (χ.contDiff (n := 1)).continuous_fderiv one_ne_zero
+  have hχ1 : Filter.Tendsto (fun i ↦ χ (s i • x)) l (𝓝 1) := by
+    have hx : Filter.Tendsto (fun i ↦ s i • x) l (𝓝 0) := by simpa using hs.smul_const x
+    have := (χ.continuous.tendsto 0).comp hx
+    rwa [χ.one_of_mem_closedBall (Metric.mem_closedBall_self χ.rIn_pos.le)] at this
+  have hDχ0 : Filter.Tendsto (fun i ↦ fderiv ℝ χ (s i • x) (s i • w)) l (𝓝 0) := by
+    have hcont : Continuous fun p : E × E ↦ fderiv ℝ χ p.1 p.2 :=
+      (hDχ.comp continuous_fst).clm_apply continuous_snd
+    have h0 : Filter.Tendsto (fun i ↦ (s i • x, s i • w)) l (𝓝 ((0 : E), (0 : E))) := by
+      simpa using (hs.smul_const x).prodMk_nhds (hs.smul_const w)
+    simpa only [Function.comp_def, map_zero] using (hcont.tendsto (0, 0)).comp h0
+  simpa using (hχ1.mul tendsto_const_nhds).add (tendsto_const_nhds.mul hDχ0)
+
+end ContDiffBump

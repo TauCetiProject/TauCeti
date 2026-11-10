@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.FunctorOfPoints
+public import TauCeti.Algebra.Bialgebra.SymmetricAlgebra.Basic
 public import TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Basic
 
 /-!
 # The additive group
@@ -34,8 +36,9 @@ one-dimensional additive group `𝔾ₐ = Spec R[X]`, whose `A`-valued points ar
 ## See also
 
 The symmetric-algebra Hopf structure is supplied by
-`TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic`, on top of Mathlib's symmetric-algebra
-bialgebra and convolution monoid APIs.
+`TauCeti.Algebra.HopfAlgebra.SymmetricAlgebra.Basic`, and the evaluation of convolution on
+generators by `TauCeti.Algebra.Bialgebra.SymmetricAlgebra.Basic`, on top of Mathlib's
+symmetric-algebra bialgebra and convolution monoid APIs.
 
 ## References
 
@@ -86,8 +89,8 @@ theorem toAdd_pointsMulEquiv (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) :
 
 /-- The linear map underlying a point evaluates as `x ↦ F (ι x)`. -/
 theorem toAdd_pointsMulEquiv_apply (F : WithConv (SymmetricAlgebra R M →ₐ[R] A)) (x : M) :
-    Multiplicative.toAdd (pointsMulEquiv F) x = F.ofConv (ι R M x) :=
-  TauCeti.SymmetricAlgebra.lift_symm_apply F.ofConv x
+    Multiplicative.toAdd (pointsMulEquiv F) x = F.ofConv (ι R M x) := by
+  simp
 
 /-- The inverse equivalence sends a linear map to the corresponding algebra map. -/
 @[simp]

@@ -14,7 +14,9 @@ Let `f : E × Λ → F` be a parametrized equation. A parameter `l` is regular a
 `c` when the fixed-parameter linearization of `x ↦ f (x, l)` is surjective at every solution.
 This file proves that the regular parameters form a residual, and hence dense, subset of `Λ`
 provided the universal linearization is surjective and the fixed-parameter linearization is
-Fredholm at every solution.
+Fredholm at every solution, and `f` is smooth enough there: of class `C^k` for the quadratic
+Sard--Smale threshold `k ≥ (dim ker)² + 1`, or, where the fixed-parameter linearization has index
+`i ≤ 2`, for Smale's sharp threshold `k > max (i, 0)`.
 
 The file also introduces regularity on a subset `U ⊆ E × Λ`, which asks for surjectivity only at
 the solutions lying in `U`. It reduces to regularity for `U = univ` and is monotone in `U`. The
@@ -123,9 +125,12 @@ universal Fredholm equation form a meagre set.
 
 The hypotheses are imposed only along the level set `f⁻¹(c)`. There the fixed-parameter
 linearization must be Fredholm, the total linearization must be surjective, and the smoothness
-order must meet the current Sard--Smale threshold `(dim ker)² + 1`. Second countability of the
-universal source makes the level set second countable and hence allows the local nowhere dense
-exceptional sets to be reduced to a countable family. -/
+order must meet a threshold of Sard--Smale: either the quadratic one `(dim ker)² + 1`, or, where the
+fixed-parameter linearization has index `i ≤ 2`, Smale's sharp threshold `k > max (i, 0)`. The
+sharp threshold does not depend on the kernel, whose dimension can jump along the level set; in
+index at most two it is the uniform bound `C³`. Second countability of the universal source makes
+the level set second countable and hence allows the local nowhere dense exceptional sets to be
+reduced to a countable family. -/
 theorem isMeagre_setOf_not_isRegularParameter [SecondCountableTopology (E × Λ)]
     {f : E × Λ → F} {c : F} {n : ℕ∞ω}
     (hcont : ∀ z, f z = c → ContDiffAt ℝ n f z)
@@ -136,58 +141,16 @@ theorem isMeagre_setOf_not_isRegularParameter [SecondCountableTopology (E × Λ)
     (hn : ∀ z, f z = c →
       ((finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker *
           finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker + 1 : ℕ) :
-        ℕ∞ω) ≤ n) :
+        ℕ∞ω) ≤ n ∨
+      ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index ≤ 2 ∧
+        ((((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index.toNat + 1 : ℕ) : ℕ∞ω) ≤
+          n) :
     IsMeagre {l | ¬ IsRegularParameter f c l} := by
   let S := {z : E × Λ | f z = c}
-  let fixedDeriv (z : S) : E →L[ℝ] F :=
-    (fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)
-  let parameterDeriv (z : S) : Λ →L[ℝ] F :=
-    (fderiv ℝ f z).comp (ContinuousLinearMap.inr ℝ E Λ)
   -- Package the coordinate-level local theorem as a neighbourhood of each solution together
   -- with one nowhere dense exceptional set in the common parameter space.
-  have hlocal : ∀ z : S, ∃ Q ∈ 𝓝 z, ∃ B : Set Λ, IsNowhereDense B ∧
-      ∀ w : S, w ∈ Q → ¬ Surjective (fixedDeriv w) → (w : E × Λ).2 ∈ B := by
-    intro z
-    have hn0 : n ≠ 0 := by
-      intro hnzero
-      have hpos : (0 : ℕ∞ω) <
-          ((finrank ℝ (fixedDeriv z).ker * finrank ℝ (fixedDeriv z).ker + 1 : ℕ) :
-            ℕ∞ω) := by
-        simp
-      exact (not_lt_of_ge ((hn z z.2).trans_eq hnzero) hpos)
-    have hstrict : HasStrictFDerivAt f ((fixedDeriv z).coprod (parameterDeriv z)) z := by
-      simpa only [fixedDeriv, parameterDeriv,
-        ContinuousLinearMap.coprod_comp_inl_inr] using
-        (hcont z z.2).hasStrictFDerivAt_fderiv hn0
-    have hfixed : ContinuousLinearMap.IsFredholm (fixedDeriv z) := hFred z z.2
-    have hsurj : Surjective ((fixedDeriv z).coprod (parameterDeriv z)) := by
-      simpa only [fixedDeriv, parameterDeriv,
-        ContinuousLinearMap.coprod_comp_inl_inr] using htotal z z.2
-    obtain ⟨N, hNnhds, -, -, hNnowhere⟩ :=
-      exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetParameterMap
-        hstrict (hcont z z.2) hfixed hsurj z.2 (hn z z.2) (U := univ) univ_mem
-    let Φ := levelSetChart hstrict (LinearMap.range_eq_top.mpr hsurj)
-      (hfixed.closedComplemented_ker_coprod hsurj) z.2
-    let g := levelSetParameterMap hstrict hsurj
-      (hfixed.closedComplemented_ker_coprod hsurj) z.2
-    obtain ⟨Q₀, hQ₀nhds, hQ₀⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem
-      hstrict hsurj (hfixed.closedComplemented_ker_coprod hsurj) z.2 hNnhds
-    let Q : Set S := Subtype.val ⁻¹' Q₀
-    let B : Set Λ := g ''
-      (N ∩ {k | ¬ Surjective ((fderiv ℝ f ((Φ.symm k : S) : E × Λ)).comp
-        (ContinuousLinearMap.inl ℝ E Λ))})
-    have hQnhds : Q ∈ 𝓝 z := continuous_subtype_val.continuousAt.preimage_mem_nhds hQ₀nhds
-    refine ⟨Q, hQnhds, B, hNnowhere, ?_⟩
-    intro w hwQ hwbad
-    obtain ⟨hwsource, hwN⟩ := hQ₀ w hwQ
-    have hwback : Φ.symm (Φ w) = w := Φ.left_inv hwsource
-    have hwbad' : ¬ Surjective ((fderiv ℝ f ((Φ.symm (Φ w) : S) : E × Λ)).comp
-        (ContinuousLinearMap.inl ℝ E Λ)) := by
-      rw [hwback]
-      exact hwbad
-    refine ⟨Φ w, ⟨hwN, hwbad'⟩, ?_⟩
-    exact levelSetParameterMap_levelSetChart hstrict hsurj
-      (hfixed.closedComplemented_ker_coprod hsurj) z.2 hwsource
+  have hlocal := fun z : S => exists_mem_nhds_isNowhereDense_not_surjective_fderiv_comp_inl z
+    (hcont z z.2) (hFred z z.2) (htotal z z.2) (hn z z.2)
   -- Second countability reduces this neighbourhood cover of the universal level set to a
   -- countable subcover.
   choose! Q hQnhds B hBnowhere hQB using hlocal
@@ -220,7 +183,10 @@ theorem mem_residual_setOf_isRegularParameter [SecondCountableTopology (E × Λ)
     (hn : ∀ z, f z = c →
       ((finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker *
           finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker + 1 : ℕ) :
-        ℕ∞ω) ≤ n) :
+        ℕ∞ω) ≤ n ∨
+      ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index ≤ 2 ∧
+        ((((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index.toNat + 1 : ℕ) : ℕ∞ω) ≤
+          n) :
     {l | IsRegularParameter f c l} ∈ residual Λ := by
   simpa only [IsMeagre, Set.compl_ofPred, Classical.not_not] using
     isMeagre_setOf_not_isRegularParameter hcont hFred htotal hn
@@ -239,7 +205,10 @@ theorem dense_setOf_isRegularParameter [SecondCountableTopology (E × Λ)]
     (hn : ∀ z, f z = c →
       ((finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker *
           finrank ℝ ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).ker + 1 : ℕ) :
-        ℕ∞ω) ≤ n) :
+        ℕ∞ω) ≤ n ∨
+      ((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index ≤ 2 ∧
+        ((((fderiv ℝ f z).comp (ContinuousLinearMap.inl ℝ E Λ)).index.toNat + 1 : ℕ) : ℕ∞ω) ≤
+          n) :
     Dense {l | IsRegularParameter f c l} := by
   exact dense_of_mem_residual
     (mem_residual_setOf_isRegularParameter hcont hFred htotal hn)

@@ -16,7 +16,7 @@ Given open embeddings with pairwise disjoint ranges, ordered tuples mapped point
 embeddings embed openly as unordered tuples. In particular, given pairwise disjoint open
 neighbourhoods `U i` of `n` distinct points, their product is an open subspace of `Sym α n`;
 obtaining such neighbourhoods in a Hausdorff space is a separate step. The proof comes from
-`TauCeti.Sym.ofFn` being continuous and open together with `IsOpenEmbedding.piMap`.
+`Sym.ofFn` being continuous and open together with `IsOpenEmbedding.piMap`.
 
 Splitting over the distinct points of a tuple, with the multiplicities as the degrees, is how the
 symmetric power of a surface is charted: a neighbourhood of a tuple with
@@ -32,15 +32,13 @@ sets, and the Hausdorff separation producing the family that a given tuple needs
 
 ## Main declaration
 
-* `TauCeti.Sym.isOpenEmbedding_ofFn_map`: open embeddings with pairwise disjoint ranges induce an
+* `Sym.isOpenEmbedding_ofFn_map`: open embeddings with pairwise disjoint ranges induce an
   open embedding from their product into the symmetric power.
 -/
 
 public section
 
 open Topology
-
-namespace TauCeti
 
 namespace Sym
 
@@ -63,5 +61,3 @@ theorem isOpenEmbedding_ofFn_map {X : Fin n → Type*} [∀ i, TopologicalSpace 
   · exact isOpenMap_ofFn.comp (IsOpenEmbedding.piMap hf).isOpenMap
 
 end Sym
-
-end TauCeti

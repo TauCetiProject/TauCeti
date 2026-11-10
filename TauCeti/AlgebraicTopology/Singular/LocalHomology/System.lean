@@ -161,6 +161,14 @@ lemma localHomologyMap_def {S : Set M} {T : Set N} (h : j ⁻¹' T ⊆ S) (k : �
           (TopCat.ofHom j) ((mapsTo_preimage _ _).mono_left (compl_subset_compl.2 h))) R k :=
   (rfl)
 
+/-- Equal continuous maps induce equal maps of local homology, with the preimage hypothesis
+transported along the equality. -/
+lemma localHomologyMap_congr {j₁ j₂ : C(M, N)} (hj : j₁ = j₂) {S : Set M} {T : Set N}
+    (h : j₁ ⁻¹' T ⊆ S) (k : ℕ) :
+    localHomologyMap R j₁ h k = localHomologyMap R j₂ (hj ▸ h) k := by
+  subst hj
+  rfl
+
 /-- The map of local homology induced by the identity is the restriction map. -/
 @[simp]
 lemma localHomologyMap_id {S T : Set M} (h : ContinuousMap.id M ⁻¹' T ⊆ S) (k : ℕ) :
