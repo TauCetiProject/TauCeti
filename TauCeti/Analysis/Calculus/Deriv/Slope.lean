@@ -25,10 +25,10 @@ zero and continuous nonnegative-rational scalar multiplication, so that `t / n` 
 both real and complex scalars qualify. This limit feeds the exponential power limit behind the
 Trotter product formula.
 
-For a real function, the sign of a positive one-sided derivative at `a` is read off from the
-slopes: if the right derivative at `a` is positive, then `f a < f x` for every `x > a` close to
-`a`, and if the left derivative at `a` is positive, then `f x < f a` for every `x < a` close to
-`a`.
+For a real function, a positive one-sided derivative at `a` fixes the sign of `f x - f a` for
+`x` near `a` on that side: if the right derivative at `a` is positive, then `f a < f x` for every
+`x > a` close to `a`, and if the left derivative at `a` is positive, then `f x < f a` for every
+`x < a` close to `a`.
 
 ## Main results
 

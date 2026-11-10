@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.Deriv.Slope
-public import Mathlib.LinearAlgebra.AffineSpace.Ordered
+public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Analysis.Calculus.Deriv.Slope
 
