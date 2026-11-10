@@ -8,9 +8,9 @@ module
 public import Mathlib.Topology.MetricSpace.HolderNorm
 public import Mathlib.Topology.MetricSpace.Thickening
 
-import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.UniformSpace.UniformEmbedding
+import TauCeti.Analysis.SpecialFunctions.Pow.Holder
 
 /-!
 # Hölder functions: a `dist` criterion, extension from a dense set, sums, and the seminorm
@@ -379,25 +379,11 @@ namespace TauCeti
 /-- For `α ≤ 1`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1`. -/
 theorem holderWith_norm_rpow {E : Type*} [SeminormedAddCommGroup E] {α : ℝ≥0} (hα : α ≤ 1) :
     HolderWith 1 α (fun x : E ↦ ‖x‖ ^ (α : ℝ)) := by
-  have hα' : (α : ℝ) ≤ 1 := hα
-  -- Subadditivity of `t ↦ t ^ α` gives `b ^ α - a ^ α ≤ (b - a) ^ α` for `0 ≤ a ≤ b`.
-  have key : ∀ a b : ℝ, 0 ≤ a → a ≤ b → b ^ (α : ℝ) - a ^ (α : ℝ) ≤ (b - a) ^ (α : ℝ) := by
-    intro a b ha hab
-    have h := Real.rpow_add_le_add_rpow ha (sub_nonneg.2 hab) α.coe_nonneg hα'
-    rw [add_sub_cancel] at h
-    linarith
   rw [← holderOnWith_univ]
   refine HolderOnWith.of_dist_le fun x _ y _ ↦ ?_
   rw [Real.dist_eq, NNReal.coe_one, one_mul]
-  have hxy : |‖x‖ - ‖y‖| ≤ dist x y := by
-    rw [dist_eq_norm]; exact abs_norm_sub_norm_le x y
-  rcases le_total ‖y‖ ‖x‖ with h | h
-  · rw [abs_of_nonneg (sub_nonneg.2 (Real.rpow_le_rpow (norm_nonneg y) h α.coe_nonneg))]
-    refine (key _ _ (norm_nonneg y) h).trans (Real.rpow_le_rpow (sub_nonneg.2 h) ?_ α.coe_nonneg)
-    exact (le_abs_self _).trans hxy
-  · rw [abs_of_nonpos (sub_nonpos.2 (Real.rpow_le_rpow (norm_nonneg x) h α.coe_nonneg)), neg_sub]
-    refine (key _ _ (norm_nonneg x) h).trans (Real.rpow_le_rpow (sub_nonneg.2 h) ?_ α.coe_nonneg)
-    rw [abs_sub_comm] at hxy
-    exact (le_abs_self _).trans hxy
+  exact (Real.abs_rpow_sub_rpow_le (norm_nonneg x) (norm_nonneg y) α.coe_nonneg hα).trans
+    (Real.rpow_le_rpow (abs_nonneg _) (by rw [dist_eq_norm]; exact abs_norm_sub_norm_le x y)
+      α.coe_nonneg)
 
 end TauCeti
