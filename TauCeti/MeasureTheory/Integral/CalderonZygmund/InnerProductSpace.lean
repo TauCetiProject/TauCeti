@@ -20,7 +20,7 @@ The Calderón–Zygmund theorems
 `ℝⁿ = ι → ℝ` with the sup distance, because the Calderón–Zygmund decomposition runs on dyadic
 cubes. The singular integral kernels of analysis, such as the second derivatives `D²Gₙ (x - y)` of
 the Newtonian kernel, are instead estimated in the Euclidean distance. This file states the
-theorems on a finite-dimensional real inner product space `V`, with its
+theorems on a finite-dimensional real inner product space `V` of dimension `n`, with its
 Lebesgue measure `volume`.
 
 Let `T` be a bounded linear operator on `L²(V)` given off the support of its argument by a kernel
@@ -385,7 +385,7 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace
   [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
 /-- **The Calderón–Zygmund theorem on an inner product space**, weak type `(1, 1)`. Let `V` be a
-finite-dimensional real inner product space, and let `T` be a bounded linear
+finite-dimensional real inner product space of dimension `n`, and let `T` be a bounded linear
 operator on `L²(V)` such that `T f x = ∫ K x y (f y) dy` for almost every `x` off any compact set
 outside which `f` vanishes, where for some `δ > 0` the kernel `K` satisfies the size and smoothness
 estimates
@@ -415,7 +415,7 @@ theorem exists_mul_volume_lt_enorm_le_of_norm_sub_le_mul_rpow
 
 /-- **The Calderón–Zygmund theorem on an inner product space under Hörmander's condition**, weak
 type `(1, 1)`, with a constant depending only on the data. Let `V` be a finite-dimensional real
-inner product space, and let `M` and `B` be finite. There is a constant `A`
+inner product space of dimension `n`, and let `M` and `B` be finite. There is a constant `A`
 with the following property. Let `T` be a bounded linear operator on `L²(V)` with `‖T‖ ≤ M`, such
 that `T f x = ∫ k x y (f y) dy` for almost every `x` off any compact set outside which `f` vanishes,
 where the kernel `k` satisfies **Hörmander's condition**
@@ -449,10 +449,10 @@ variable {H K : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H] [Complet
   [NormedAddCommGroup K] [InnerProductSpace ℝ K] [CompleteSpace K] {p : ℝ≥0∞}
 
 /-- **The Calderón–Zygmund theorem on an inner product space**, strong type `(p, p)` for
-`1 < p < ∞`. Let `V` be a finite-dimensional real inner product space, and let
-`T` be a bounded linear operator on `L²(V)` of Hilbert space valued functions. Suppose that `T` and
-its adjoint `T†` are given off the support of their argument by kernels `k` and `k'`: for every
-compact set `s` and every `f` vanishing off `s`, `T f x = ∫ k x y (f y) dy` (respectively
+`1 < p < ∞`. Let `V` be a finite-dimensional real inner product space of dimension `n`,
+and let `T` be a bounded linear operator on `L²(V)` of Hilbert space valued functions. Suppose
+that `T` and its adjoint `T†` are given off the support of their argument by kernels `k` and `k'`:
+for every compact set `s` and every `f` vanishing off `s`, `T f x = ∫ k x y (f y) dy` (respectively
 `T† f x = ∫ k' x y (f y) dy`) for almost every `x ∉ s`. Suppose that, for some `δ > 0`, the
 kernel `k` satisfies the size and smoothness estimates
 
@@ -495,7 +495,7 @@ theorem exists_eLpNorm_le_of_norm_sub_le_mul_rpow
 
 /-- **The Calderón–Zygmund theorem on an inner product space under Hörmander's condition**, strong
 type `(p, p)` for `1 < p < ∞`, with a constant depending only on the data. Let `V` be a
-finite-dimensional real inner product space, let `M`, `B` and `B'` be finite,
+finite-dimensional real inner product space of dimension `n`, let `M`, `B` and `B'` be finite,
 and let `1 < p < ∞`. There is a constant `C` with the following property. Let `T` be a bounded
 linear operator on `L²(V)` of Hilbert space valued functions with `‖T‖ ≤ M`. Suppose that `T` and
 its adjoint `T†` are given off the support of their argument by kernels `k` and `k'`: for every
