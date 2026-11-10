@@ -92,8 +92,8 @@ theorem IsStellarMove.dimension_eq (h : IsStellarMove K L) : dimension L = dimen
 /-- A stellar move preserves and reflects finiteness of the face collection. -/
 theorem IsStellarMove.finite_faces_iff (h : IsStellarMove K L) :
     K.faces.Finite ↔ L.faces.Finite := by
-  obtain ⟨σ, v, hσ, hv, rfl⟩ := h
-  exact (finite_faces_stellarSubdivision_iff hσ hv).symm
+  obtain ⟨σ, v, hσ, -, rfl⟩ := h
+  exact (finite_faces_stellarSubdivision_iff hσ).symm
 
 /-- **Stellar equivalence**: `K` and `L` are joined by a finite sequence of stellar moves and
 inverse stellar moves. -/
