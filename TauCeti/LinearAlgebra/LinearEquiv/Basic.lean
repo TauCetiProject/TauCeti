@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Module.Submodule.Map
 public import Mathlib.Algebra.Module.Equiv.Basic
-public import Mathlib.LinearAlgebra.Dimension.Finrank
 public import Mathlib.LinearAlgebra.Prod
 public import Mathlib.RingTheory.Ideal.Maps
 import TauCeti.LinearAlgebra.Span.Basic
@@ -16,7 +15,6 @@ import TauCeti.LinearAlgebra.Span.Basic
 # Elementary linear-equivalence transport
 
 Transport of submodule stability through an intertwining semilinear equivalence.
-A semilinear equivalence preserves `finrank`.
 Symmetry of a linear automorphism agrees with inversion in its group structure.
 Through a linear equivalence `L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, vᵢ)` for a spanning
 family `v` of `M₂` span the kernel of `u ↦ (L u).1`.
@@ -44,18 +42,6 @@ theorem mem_of_preserves_map
     {x : V} (hx : x ∈ p) : f x ∈ p := by
   subst hmap
   simpa [← hcomm] using hstable (Submodule.mem_map_of_mem hx)
-
-/-- A semilinear equivalence over a ring isomorphism preserves `finrank`, as a conjugate-linear
-equivalence of complex vector spaces preserves the complex dimension. Mathlib's
-`LinearEquiv.finrank_eq` is the linear case. -/
-theorem finrank_eq_of_semilinear {R S M N : Type*} [Semiring R] [Semiring S]
-    [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module S N]
-    {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
-    (f : M ≃ₛₗ[σ] N) : Module.finrank R M = Module.finrank S N := by
-  unfold Module.finrank
-  rw [← Cardinal.toNat_lift, lift_rank_eq_of_equiv_equiv σ f.toAddEquiv
-    (RingEquiv.ofRingHom σ σ' RingHomInvPair.comp_eq RingHomInvPair.comp_eq).bijective
-    f.map_smulₛₗ, Cardinal.toNat_lift]
 
 /-- Through a linear equivalence `L : M ≃ₗ[R] M₁ × M₂`, the vectors `L⁻¹ (0, vᵢ)` for a spanning
 family `v` of `M₂` span the kernel of the first component `u ↦ (L u).1`. -/

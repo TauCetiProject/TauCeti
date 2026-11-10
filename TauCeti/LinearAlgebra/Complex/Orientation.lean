@@ -10,7 +10,7 @@ public import Mathlib.RingTheory.AlgebraTower
 public import TauCeti.LinearAlgebra.Complex.Determinant
 public import TauCeti.LinearAlgebra.Complex.Finrank
 public import TauCeti.LinearAlgebra.Complex.Module
-public import TauCeti.LinearAlgebra.LinearEquiv.Basic
+public import TauCeti.LinearAlgebra.Dimension.Semilinear
 public import TauCeti.LinearAlgebra.Orientation.Prod
 
 /-!
@@ -188,6 +188,19 @@ theorem complexOrientation_eq (b : Basis (Fin (finrank ℂ E)) ℂ E) :
       Orientation.reindex ℝ E (TauCeti.complexRealIndexEquiv _) b.complexToReal.orientation := by
   rw [TauCeti.complexOrientation, orientation_complexToReal_eq (finBasis ℂ E) b]
 
+/-- A complex basis indexed by `Fin m`, where `m` is the complex dimension, computes the canonical
+real orientation after identifying the index types `Fin (2 * m)` and
+`Fin (2 * finrank ℂ E)`. -/
+theorem complexOrientation_eq_reindex {m : ℕ} (c : Basis (Fin m) ℂ E) (h : m = finrank ℂ E) :
+    Orientation.reindex ℝ E (TauCeti.complexRealIndexEquiv m) c.complexToReal.orientation =
+      Orientation.reindex ℝ E (finCongr (by rw [h])) (TauCeti.complexOrientation E) := by
+  rw [(c.reindex (finCongr h)).complexOrientation_eq]
+  simp only [← orientation_reindex, complexToReal_reindex]
+  congr 1
+  refine eq_of_apply_eq fun j ↦ ?_
+  obtain ⟨⟨i, k⟩, rfl⟩ := (TauCeti.complexRealIndexEquiv _).surjective j
+  simp
+
 end Module.Basis
 
 namespace LinearEquiv
@@ -204,13 +217,8 @@ theorem map_complexOrientation (f : E ≃ₗ[ℂ] F) :
     Orientation.map _ (f.restrictScalars ℝ) (complexOrientation E) =
       Orientation.reindex ℝ F (finCongr (by rw [f.finrank_eq])) (complexOrientation F) := by
   set b := finBasis ℂ E
-  rw [b.complexOrientation_eq, ((b.map f).reindex (finCongr f.finrank_eq)).complexOrientation_eq]
-  simp only [← Basis.orientation_reindex, ← Basis.orientation_map, Basis.complexToReal_reindex,
-    Basis.complexToReal_map]
-  congr 1
-  refine Basis.eq_of_apply_eq fun j ↦ ?_
-  obtain ⟨⟨i, k⟩, rfl⟩ := (complexRealIndexEquiv _).surjective j
-  simp
+  rw [b.complexOrientation_eq, Orientation.map_reindex, ← Basis.orientation_map,
+    ← Basis.complexToReal_map, (b.map f).complexOrientation_eq_reindex f.finrank_eq]
 
 /-- Complex-linear automorphisms preserve the canonical real orientation. -/
 @[simp]
@@ -267,18 +275,9 @@ theorem map_toRealLinearEquiv_complexOrientation (f : E ≃ₗ⋆[ℂ] F) :
   have hw : (∏ k : Fin (finrank ℂ E) × Fin 2, (-1 : ℝˣ) ^ (k.2 : ℕ)) = (-1) ^ finrank ℂ E := by
     rw [Fintype.prod_prod_type]
     simp [Fin.prod_univ_two]
-  -- Up to the sign, the image basis `(cᵢ, I • cᵢ)` induces the canonical orientation of `F`.
-  have key : Orientation.reindex ℝ F (complexRealIndexEquiv _) c.complexToReal.orientation =
-      Orientation.reindex ℝ F (finCongr (by rw [f.finrank_eq_of_semilinear]))
-        (complexOrientation F) := by
-    rw [(c.reindex (finCongr f.finrank_eq_of_semilinear)).complexOrientation_eq]
-    simp only [← Basis.orientation_reindex, Basis.complexToReal_reindex]
-    congr 1
-    refine Basis.eq_of_apply_eq fun j ↦ ?_
-    obtain ⟨⟨i, k⟩, rfl⟩ := (complexRealIndexEquiv _).surjective j
-    simp
   rw [b.complexOrientation_eq, Orientation.map_reindex, ← Basis.orientation_map,
-    b.complexToReal_map_toRealLinearEquiv c f hc, Basis.orientation_unitsSMul, hw, ← key]
+    b.complexToReal_map_toRealLinearEquiv c f hc, Basis.orientation_unitsSMul, hw,
+    ← c.complexOrientation_eq_reindex f.finrank_eq_of_semilinear]
   rcases Nat.even_or_odd (finrank ℂ E) with h | h <;>
     simp [h.neg_one_pow, Module.Ray.neg_units_smul, Orientation.reindex_neg]
 
