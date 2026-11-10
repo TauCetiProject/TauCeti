@@ -15,6 +15,7 @@ import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.ODE.DysonSeries
+import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Solutions of a linear equation that are square integrable on a half-line
@@ -36,10 +37,11 @@ two spaces spanning; that identification is not made here.
 
 For a continuous family, a solution is square integrable on the whole line exactly when it is so
 on both half-lines (`TauCeti.squareIntegrableSolutions_eq_inf`). Reversing time exchanges the two
-half-lines (`TauCeti.squareIntegrableSolutionsAtBot_eq_atTop`), and the half-line spaces depend
-only on the family near the corresponding end (`TauCeti.squareIntegrableSolutionsAtTop_congr`).
-At an end where the family is eventually the scalar `c • 1`, every solution decays there when
-`c < 0`, and only the zero solution does when `c > 0`.
+half-lines (`TauCeti.squareIntegrableSolutionsAtBot_eq_atTop`), and the space at `+∞` depends
+only on the family on a neighbourhood of the closed half-line `[0, ∞)`
+(`TauCeti.squareIntegrableSolutionsAtTop_congr`). Where the family is the scalar `c • 1` on a
+half-line `(-∞, a]`, every solution decays at `-∞` when `c < 0`, and only the zero solution does
+when `c > 0`; at `+∞` the signs are reversed.
 
 If `B(s)` is adjoint to `A(s)` for every `s`, the pairing `⟪v s, w s⟫` of a solution of
 `v' + A v = 0` with a solution of `w' = B w` is constant in `s`. When both solutions are square
@@ -166,22 +168,6 @@ private theorem hasDerivAt_comp_neg {v : ℝ → F} (hv : ∀ s, HasDerivAt v (-
     HasDerivAt (fun s ↦ v (-s)) (-(fun s ↦ -A (-s)) s ((fun s ↦ v (-s)) s)) s := by
   simpa [Function.comp_def] using (hv (-s)).scomp s (hasDerivAt_neg s)
 
-/-- The reflection `s ↦ -s` carries Lebesgue measure on `(0, ∞)` to Lebesgue measure on
-`(-∞, 0)`. -/
-private theorem measurePreserving_neg_Ioi :
-    MeasurePreserving (Neg.neg : ℝ → ℝ) (volume.restrict (Ioi 0)) (volume.restrict (Iio 0)) := by
-  have h := (Measure.measurePreserving_neg (volume : Measure ℝ)).restrict_preimage
-    (measurableSet_Iio (a := (0 : ℝ)))
-  rwa [show (Neg.neg : ℝ → ℝ) ⁻¹' Iio 0 = Ioi 0 by ext; simp] at h
-
-/-- The reflection `s ↦ -s` carries Lebesgue measure on `(-∞, 0)` to Lebesgue measure on
-`(0, ∞)`. -/
-private theorem measurePreserving_neg_Iio :
-    MeasurePreserving (Neg.neg : ℝ → ℝ) (volume.restrict (Iio 0)) (volume.restrict (Ioi 0)) := by
-  have h := (Measure.measurePreserving_neg (volume : Measure ℝ)).restrict_preimage
-    (measurableSet_Ioi (a := (0 : ℝ)))
-  rwa [show (Neg.neg : ℝ → ℝ) ⁻¹' Ioi 0 = Iio 0 by ext; simp] at h
-
 /-- **Time reversal exchanges the two half-lines.** Reversing time turns the solutions of
 `v' + A(s) v = 0` into those of `u' - A(-s) u = 0` with the same initial value, and turns square
 integrability on `(-∞, 0)` into square integrability on `(0, ∞)`. -/
@@ -191,10 +177,16 @@ theorem squareIntegrableSolutionsAtBot_eq_atTop (A : ℝ → F →L[ℝ] F) :
   constructor
   · rintro ⟨v, rfl, hv, hv2⟩
     exact ⟨fun s ↦ v (-s), by simp, hasDerivAt_comp_neg hv,
-      hv2.comp_measurePreserving measurePreserving_neg_Ioi⟩
+      hv2.comp_measurePreserving <| by
+        simpa only [neg_preimage, neg_Iio, neg_zero] using
+          (Measure.measurePreserving_neg volume).restrict_preimage
+            (measurableSet_Iio (a := (0 : ℝ)))⟩
   · rintro ⟨u, rfl, hu, hu2⟩
     refine ⟨fun s ↦ u (-s), by simp, fun s ↦ by simpa using hasDerivAt_comp_neg hu s,
-      hu2.comp_measurePreserving measurePreserving_neg_Iio⟩
+      hu2.comp_measurePreserving <| by
+        simpa only [neg_preimage, neg_Ioi, neg_zero] using
+          (Measure.measurePreserving_neg volume).restrict_preimage
+            (measurableSet_Ioi (a := (0 : ℝ)))⟩
 
 /-- Two continuous families that agree on `(a, ∞)`, with `a < 0`, have solutions that agree on
 `(a, ∞)` when their values at `0` agree. -/
@@ -337,20 +329,6 @@ private theorem inner_eq_inner_zero (hAB : ∀ s x y, ⟪A s x, y⟫_ℝ = ⟪x,
     simp [inner_neg_left, hAB]
   exact is_const_of_deriv_eq_zero (fun t ↦ (hd t).differentiableAt) (fun t ↦ (hd t).deriv) s 0
 
-/-- If the pairing of two paths is constant and both are square integrable on a set of infinite
-measure, the constant vanishes. -/
-private theorem inner_eq_zero_of_memLp {S : Set ℝ} (hS : volume S = ∞) {v w : ℝ → E}
-    (hconst : ∀ s, ⟪v s, w s⟫_ℝ = ⟪v 0, w 0⟫_ℝ) (hv2 : MemLp v 2 (volume.restrict S))
-    (hw2 : MemLp w 2 (volume.restrict S)) : ⟪v 0, w 0⟫_ℝ = 0 := by
-  have hprod : IntegrableOn (fun s ↦ ‖v s‖ * ‖w s‖) S := hv2.norm.integrable_mul hw2.norm
-  have hint : IntegrableOn (fun s ↦ ⟪v s, w s⟫_ℝ) S :=
-    hprod.mono' (hv2.aestronglyMeasurable.inner hw2.aestronglyMeasurable) (.of_forall fun s ↦ by
-      simpa using abs_real_inner_le_norm (v s) (w s))
-  simp_rw [hconst] at hint
-  rcases (integrableOn_const_iff (by simp)).1 hint with h | h
-  · simpa using h
-  · simp [hS] at h
-
 /-- **Decaying solutions at `+∞` are orthogonal to decaying solutions of the adjoint equation.**
 If `B(s)` is adjoint to `A(s)` for every `s`, the initial value of a solution of `v' + A v = 0`
 and that of a solution of `w' = B w`, both square integrable on `(0, ∞)`, are orthogonal. -/
@@ -360,7 +338,12 @@ theorem inner_eq_zero_of_mem_squareIntegrableSolutionsAtTop
     (hy : y ∈ squareIntegrableSolutionsAtTop fun s ↦ -B s) : ⟪x, y⟫_ℝ = 0 := by
   obtain ⟨v, rfl, hv, hv2⟩ := hx
   obtain ⟨w, rfl, hw, hw2⟩ := hy
-  exact inner_eq_zero_of_memLp (by simp) (inner_eq_inner_zero hAB hv hw) hv2 hw2
+  -- The pairing is constant and integrable on `(0, ∞)`, so it vanishes.
+  have hint : IntegrableOn (fun s ↦ ⟪v s, w s⟫_ℝ) (Ioi 0) := hv2.integrable_inner hw2
+  simp_rw [inner_eq_inner_zero hAB hv hw] at hint
+  rcases (integrableOn_const_iff (by simp)).1 hint with h | h
+  · simpa using h
+  · simp at h
 
 /-- **Decaying solutions at `-∞` are orthogonal to decaying solutions of the adjoint equation.**
 If `B(s)` is adjoint to `A(s)` for every `s`, the initial value of a solution of `v' + A v = 0`
@@ -369,9 +352,9 @@ theorem inner_eq_zero_of_mem_squareIntegrableSolutionsAtBot
     (hAB : ∀ s x y, ⟪A s x, y⟫_ℝ = ⟪x, B s y⟫_ℝ) {x y : E}
     (hx : x ∈ squareIntegrableSolutionsAtBot A)
     (hy : y ∈ squareIntegrableSolutionsAtBot fun s ↦ -B s) : ⟪x, y⟫_ℝ = 0 := by
-  obtain ⟨v, rfl, hv, hv2⟩ := hx
-  obtain ⟨w, rfl, hw, hw2⟩ := hy
-  exact inner_eq_zero_of_memLp (by simp) (inner_eq_inner_zero hAB hv hw) hv2 hw2
+  rw [squareIntegrableSolutionsAtBot_eq_atTop] at hx hy
+  exact inner_eq_zero_of_mem_squareIntegrableSolutionsAtTop (B := fun s ↦ -B (-s))
+    (fun s x y ↦ by simp [hAB]) hx hy
 
 /-- The decaying solutions at `+∞` of the formal adjoint equation `w' = B w` lie in the
 orthogonal complement of those of `v' + A v = 0`. -/

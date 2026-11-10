@@ -97,11 +97,6 @@ private theorem splice_of_lt (C : E →L[ℝ] E) {s : ℝ} (hs : -1 < s) : splic
 private theorem splice_of_le (C : E →L[ℝ] E) {s : ℝ} (hs : s ≤ -2) : splice A C s = C := by
   simp [splice, max_eq_right (by linarith : s ≤ -1), min_eq_left (by linarith : (1 : ℝ) ≤ -1 - s)]
 
-/-- The coefficient `-B†` of the formal adjoint equation of a continuous family is continuous. -/
-private theorem continuous_neg_adjoint [CompleteSpace E] {B : ℝ → E →L[ℝ] E}
-    (hB : Continuous B) : Continuous fun s ↦ -ContinuousLinearMap.adjoint (B s) :=
-  (ContinuousLinearMap.adjoint.continuous.comp hB).neg
-
 variable [FiniteDimensional ℝ E] {Aplus S : E →L[ℝ] E} {c : ℝ}
 
 /-- The index of the trajectory operator of `splice A (σ • 1)` with `σ = ±1`, computed in two ways:
@@ -150,7 +145,8 @@ theorem finrank_squareIntegrableSolutionsAtTop_add_finrank_pointSpectralSubspace
   have h := finrank_sub_finrank_splice hA hS hc hplus htop (σ := -1) (.inr rfl)
   set B := splice A ((-1 : ℝ) • 1) with hBdef
   have hB : Continuous B := continuous_splice hA _
-  have hBadj : Continuous fun s ↦ -ContinuousLinearMap.adjoint (B s) := continuous_neg_adjoint hB
+  have hBadj : Continuous fun s ↦ -ContinuousLinearMap.adjoint (B s) :=
+    (ContinuousLinearMap.adjoint.continuous.comp hB).neg
   -- At `-∞`, where `B = -1`, every solution of `v' + B v = 0` decays and no solution of the
   -- adjoint equation does.
   have hsol : squareIntegrableSolutions B = squareIntegrableSolutionsAtTop A := by
@@ -184,7 +180,10 @@ theorem finrank_squareIntegrableSolutionsAtTop_neg_adjoint
   have h := finrank_sub_finrank_splice hA hS hc hplus htop (σ := 1) (.inl rfl)
   set B := splice A ((1 : ℝ) • 1) with hBdef
   have hB : Continuous B := continuous_splice hA _
-  have hBadj : Continuous fun s ↦ -ContinuousLinearMap.adjoint (B s) := continuous_neg_adjoint hB
+  have hBadj : Continuous fun s ↦ -ContinuousLinearMap.adjoint (B s) :=
+    (ContinuousLinearMap.adjoint.continuous.comp hB).neg
+  have hAadj : Continuous fun s ↦ -ContinuousLinearMap.adjoint (A s) :=
+    (ContinuousLinearMap.adjoint.continuous.comp hA).neg
   -- At `-∞`, where `B = 1`, no solution of `v' + B v = 0` decays and every solution of the
   -- adjoint equation does.
   have hsol : squareIntegrableSolutions B = ⊥ := by
@@ -196,8 +195,8 @@ theorem finrank_squareIntegrableSolutionsAtTop_neg_adjoint
     rw [squareIntegrableSolutions_eq_inf hBadj,
       squareIntegrableSolutionsAtBot_eq_top_of_forall_le hBadj (c := -1) (a := -2) (by norm_num)
         fun s hs ↦ by simp [hBdef, splice_of_le _ hs, ContinuousLinearMap.adjoint_one],
-      squareIntegrableSolutionsAtTop_congr hBadj (continuous_neg_adjoint hA) (a := -1)
-        (by norm_num) fun s hs ↦ by simp [hBdef, splice_of_lt _ hs], top_inf_eq]
+      squareIntegrableSolutionsAtTop_congr hBadj hAadj (a := -1) (by norm_num)
+        fun s hs ↦ by simp [hBdef, splice_of_lt _ hs], top_inf_eq]
   have hpos := Module.End.pointSpectralSubspace_smul_one_of_notMem (𝕜 := ℝ) (E := E) (μ := 1)
     (Ω := Iio 0) (by norm_num)
   simp only [RCLike.ofReal_real_eq_id, id_eq] at hpos
@@ -252,7 +251,9 @@ theorem squareIntegrableSolutions_neg_adjoint_eq_orthogonal_sup {Aminus : E →L
     (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus)) :
     (squareIntegrableSolutions fun s ↦ -ContinuousLinearMap.adjoint (A s)) =
       (squareIntegrableSolutionsAtBot A ⊔ squareIntegrableSolutionsAtTop A)ᗮ := by
-  rw [squareIntegrableSolutions_eq_inf (continuous_neg_adjoint hA),
+  have hAadj : Continuous fun s ↦ -ContinuousLinearMap.adjoint (A s) :=
+    (ContinuousLinearMap.adjoint.continuous.comp hA).neg
+  rw [squareIntegrableSolutions_eq_inf hAadj,
     squareIntegrableSolutionsAtBot_neg_adjoint_eq_orthogonal hA hminus hbot,
     squareIntegrableSolutionsAtTop_neg_adjoint_eq_orthogonal hA hplus htop,
     Submodule.inf_orthogonal]
@@ -267,8 +268,9 @@ theorem finrank_squareIntegrableSolutionsAtTop_of_isSymmetric (hA : Continuous A
     Module.finrank ℝ (squareIntegrableSolutionsAtTop A) =
       Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Ioi 0)) := by
   have hform : ∀ v, α ^ 2 * ‖v‖ ^ 2 ≤ ⟪Aplus (Aplus v), v⟫_ℝ := fun v ↦ by
-    rw [show ⟪Aplus (Aplus v), v⟫_ℝ = ‖Aplus v‖ ^ 2 by
-      rw [← real_inner_self_eq_norm_sq, hsym.apply_clm], ← mul_pow]
+    have hsq : ⟪Aplus (Aplus v), v⟫_ℝ = ‖Aplus v‖ ^ 2 := by
+      rw [← real_inner_self_eq_norm_sq, hsym.apply_clm]
+    rw [hsq, ← mul_pow]
     exact pow_le_pow_left₀ (by positivity) (hgap v) 2
   have h₁ := finrank_squareIntegrableSolutionsAtTop_add_finrank_pointSpectralSubspace hA hsym
     (by positivity) hform htop
@@ -316,9 +318,11 @@ theorem surjective_trajectoryOperator_iff_sup_eq_top {Aminus : E →L[ℝ] E} (h
       fun s ↦ -ContinuousLinearMap.adjoint (A s) := by
     filter_upwards [Lp.coeFn_neg BL, hBL] with s hs hBs
     simp only [hs, Pi.neg_apply, hBs]
+  have hAadj : Continuous fun s ↦ -ContinuousLinearMap.adjoint (A s) :=
+    (ContinuousLinearMap.adjoint.continuous.comp hA).neg
   rw [surjective_trajectoryOperator_iff_ker_neg_eq_bot (ae_eq_adjoint_of_ae_eq hAL hBL)
       (isClosed_range_trajectoryOperator_of_hasLyapunovForm hA hminus hplus hbot htop AL hAL),
-    ker_trajectoryOperator_eq_bot_iff (continuous_neg_adjoint hA) (-BL) hneg,
+    ker_trajectoryOperator_eq_bot_iff hAadj (-BL) hneg,
     squareIntegrableSolutions_neg_adjoint_eq_orthogonal_sup hA hminus hplus hbot htop,
     Submodule.orthogonal_eq_bot_iff]
 
