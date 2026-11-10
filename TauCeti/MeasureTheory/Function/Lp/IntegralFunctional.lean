@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.Analysis.LocallyConvex.WeakSpace
 import Mathlib.Analysis.Normed.Module.Convex
+import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
 import Mathlib.MeasureTheory.Function.L2Space
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Analysis.SpecialFunctions.Sqrt
@@ -29,6 +30,13 @@ Fatou's lemma, and weak lower semicontinuity of lower semicontinuous quasiconvex
 
 In particular the extended integral of the squared norm is weakly lower semicontinuous on `Lp`
 (`TauCeti.lowerSemicontinuous_lintegral_norm_sq_comp_toWeakSpace_symm`).
+
+In the same way, for `ν ≪ μ`, every Lebesgue seminorm `eLpNorm u q ν`, including `q = ∞`, is norm
+lower semicontinuous on `Lp`, with the value `∞` allowed (`TauCeti.lowerSemicontinuous_eLpNorm_Lp`).
+Consequently, for an almost everywhere strongly measurable family `G` of `Lp` functions and
+`ν ≪ μ`, `b ↦ eLpNorm (G b) q ν` is almost everywhere measurable
+(`MeasureTheory.AEStronglyMeasurable.aemeasurable_eLpNorm_Lp`), which is what makes mixed norms
+such as `L^p_t L^q_x` of an `L²`-valued function of time meaningful.
 
 On `L²`, the integral of the modular `√(1 + v²) - 1` over any set is moreover norm continuous
 (`TauCeti.continuous_setIntegral_sqrt_one_add_sq_sub_one`). The modular is at most `v² / 2`, and
@@ -73,6 +81,19 @@ theorem lowerSemicontinuous_lintegral_ofReal_comp_Lp [Fact (1 ≤ p)]
       exact ((ENNReal.continuous_ofReal.comp hΦ).continuousAt.tendsto.comp hx).liminf_eq.symm
     _ ≤ liminf (fun n ↦ ∫⁻ x, ENNReal.ofReal (Φ (u (s n) x)) ∂ν) atTop :=
       lintegral_liminf_le' hmeas
+    _ ≤ c := liminf_le_of_frequently_le (Frequently.of_forall fun n ↦ hu (s n))
+
+/-- Every Lebesgue seminorm, for any exponent `q` and any absolutely continuous measure, is norm
+lower semicontinuous on `Lp`. The value `∞` is allowed, so `u ∈ Lp` need not lie in `L^q`. -/
+theorem lowerSemicontinuous_eLpNorm_Lp [Fact (1 ≤ p)] (hν : ν ≪ μ) (q : ℝ≥0∞) :
+    LowerSemicontinuous (fun u : Lp F p μ ↦ eLpNorm u q ν) := by
+  rw [lowerSemicontinuous_iff_isClosed_preimage]
+  intro c
+  refine isSeqClosed_iff_isClosed.mp fun u v hu huv => ?_
+  obtain ⟨s, -, hs⟩ := (tendstoInMeasure_of_tendsto_Lp huv).exists_seq_tendsto_ae
+  calc eLpNorm v q ν ≤ liminf (fun n ↦ eLpNorm (u (s n)) q ν) atTop :=
+        Lp.eLpNorm_lim_le_liminf_eLpNorm (fun n ↦ (Lp.aestronglyMeasurable _).mono_ac hν) _
+          ((Lp.aestronglyMeasurable _).mono_ac hν) (hν.ae_le hs)
     _ ≤ c := liminf_le_of_frequently_le (Frequently.of_forall fun n ↦ hu (s n))
 
 variable [NormedSpace ℝ F]
@@ -179,3 +200,19 @@ theorem continuous_setIntegral_sqrt_one_add_sq_sub_one (t : Set α) :
   simpa using this
 
 end TauCeti
+
+namespace MeasureTheory.AEStronglyMeasurable
+
+variable {α β F : Type*} [MeasurableSpace α] [MeasurableSpace β] [NormedAddCommGroup F]
+  {μ ν : Measure α} {ρ : Measure β} {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- The Lebesgue seminorms, for any exponent `q` and any measure `ν ≪ μ`, of an almost everywhere
+strongly measurable family of `Lp` functions form an almost everywhere measurable function of the
+parameter. -/
+theorem aemeasurable_eLpNorm_Lp {G : β → Lp F p μ} (hG : AEStronglyMeasurable G ρ)
+    (hν : ν ≪ μ) (q : ℝ≥0∞) : AEMeasurable (fun b ↦ eLpNorm (G b) q ν) ρ := by
+  borelize ↥(Lp F p μ)
+  exact (TauCeti.lowerSemicontinuous_eLpNorm_Lp hν q).measurable.comp_aemeasurable
+    hG.aemeasurable
+
+end MeasureTheory.AEStronglyMeasurable
