@@ -154,9 +154,9 @@ theorem mem_diagramIdeal_iff {j : ℕ} {x : BrauerAlgebra R δ k} :
 theorem mem_diagramIdeal_iff_mem_span {j : ℕ} {x : BrauerAlgebra R δ k} :
     x ∈ diagramIdeal R δ k j ↔
       x ∈ Submodule.span R (of '' {D : BrauerDiagram k | D.propagatingNumber + 2 * j ≤ k}) := by
-  rw [mem_diagramIdeal_iff, show (of : BrauerDiagram k → BrauerAlgebra R δ k) = basis R δ k from
-    funext fun D => (basis_apply D).symm, (basis R δ k).mem_span_image, basis_repr]
-  rfl
+  have hof : ⇑(basis R δ k) = of := funext basis_apply
+  rw [mem_diagramIdeal_iff, ← hof, (basis R δ k).mem_span_image, basis_repr, Set.subset_def]
+  simp only [Finset.mem_coe, Set.mem_ofPred_eq]
 
 /-- A diagram with at least `j` caps lies in `I_j`. -/
 theorem of_mem_diagramIdeal {j : ℕ} {D : BrauerDiagram k}
@@ -276,16 +276,15 @@ theorem permProj_of_capCup {a b : Fin k} (hab : a ≠ b) : permProj R δ k (of (
 @[simp]
 theorem coeff_permProj_apply (x : BrauerAlgebra R δ k) (σ : Equiv.Perm (Fin k)) :
     (permProj R δ k x).coeff σ = x.coeff (permToBrauer σ) := by
-  obtain ⟨f, rfl⟩ : ∃ f, x = ofCoeff f := ⟨x.coeff, rfl⟩
+  obtain ⟨f, rfl⟩ := (coeffLinearEquiv R δ k).symm.surjective x
   induction f using Finsupp.induction_linear with
-  | zero => simp [show (ofCoeff 0 : BrauerAlgebra R δ k) = 0 from ext (by simp)]
+  | zero =>
+    simp only [map_zero, MonoidAlgebra.coeff_zero, coeff_zero, Finsupp.coe_zero, Pi.zero_apply]
   | add f g hf hg =>
-    rw [show (ofCoeff (f + g) : BrauerAlgebra R δ k) = ofCoeff f + ofCoeff g from
-      ext (by simp), map_add, MonoidAlgebra.coeff_add, Finsupp.add_apply, hf, hg]
-    simp
+    simp only [map_add, MonoidAlgebra.coeff_add, coeff_add, Finsupp.add_apply, hf, hg]
   | single D r =>
-    rw [ofCoeff_single, map_smul, MonoidAlgebra.coeff_smul, Finsupp.smul_apply, permProj, lift_of,
-      coeff_permProjAux]
+    rw [coeffLinearEquiv_symm_apply, ofCoeff_single, map_smul, MonoidAlgebra.coeff_smul,
+      Finsupp.smul_apply, permProj, lift_of, coeff_permProjAux]
     simp [Finsupp.single_apply]
 
 /-- **`permProj` is a retraction of `ofPerm`**: the permutation diagrams of an element of the
