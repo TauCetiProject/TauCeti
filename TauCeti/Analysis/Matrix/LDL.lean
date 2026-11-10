@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Matrix.LDL
 import TauCeti.Analysis.InnerProductSpace.GramSchmidtOrtho
 import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.Order.Interval.Finite
 
 /-!
 # The diagonals of the LDL decomposition
@@ -37,14 +38,6 @@ public section
 open scoped ComplexOrder Matrix
 
 namespace TauCeti
-
-/-- Every finite linear order is a `LocallyFiniteOrderBot`, with `Finset.Iic a` the elements below
-`a`. Mathlib's `LDL` decomposition is stated for such an index type; the results below do not depend
-on the choice of instance, so they build this one inside their proofs. It is not an instance, so it
-never competes with a `LocallyFiniteOrderBot` that the index type already carries. -/
-private abbrev locallyFiniteOrderBotOfFintype (n : Type*) [LinearOrder n] [Fintype n] :
-    LocallyFiniteOrderBot n :=
-  LocallyFiniteOrderBot.ofIic n (fun a => Finset.univ.filter (· ≤ a)) (by simp)
 
 variable {𝕜 n : Type*} [RCLike 𝕜] [LinearOrder n]
   [LocallyFiniteOrderBot n] [Fintype n] {S : Matrix n n 𝕜} (hS : S.PosDef)
@@ -86,7 +79,7 @@ triangular `B` with positive diagonal. Writing the LDL decomposition as `S = L D
 lower unitriangular and `D` diagonal with positive real entries, take `B = √D Lᴴ`. -/
 theorem _root_.Matrix.PosDef.exists_isUpperTriangular_conjTranspose_mul_self_eq :
     ∃ B : Matrix n n 𝕜, B.IsUpperTriangular ∧ (∀ i, 0 < B i i) ∧ Bᴴ * B = S := by
-  let := locallyFiniteOrderBotOfFintype n
+  let := TauCeti.locallyFiniteOrderBotOfFintype n
   have hd := LDL.diagEntries_pos hS
   -- the diagonal entries of `D` are the positive reals `re (d i)`
   have hre (i : n) : ((RCLike.re (LDL.diagEntries hS i) : ℝ) : 𝕜) = LDL.diagEntries hS i := by
