@@ -174,15 +174,13 @@ theorem IsProPSylow.not_dvd_index_of_le [SeparatelyContinuousMul G] (hP : IsProP
     (V : OpenSubgroup G) (hPV : P ≤ V) : ¬ p ∣ V.toSubgroup.index := by
   -- the normal core of `V` is an open normal subgroup `N ≤ V`, and `[G : V]` is the index of the
   -- image of `V` in `G ⧸ N`, which divides the index of the image of `P`
-  let N : OpenNormalSubgroup G :=
-    { toSubgroup := V.toSubgroup.normalCore
-      isOpen' := Subgroup.isOpen_of_isClosed_of_finiteIndex _
-        (Subgroup.normalCore_isClosed _ V.isClosed) }
+  obtain ⟨N, hNV, -⟩ :=
+    V.exists_openNormalSubgroup_le_of_index_ne_zero Subgroup.index_ne_zero_of_finite
   intro hdvd
   refine hP.not_dvd_index N (hdvd.trans ?_)
   calc V.toSubgroup.index
       = (V.toSubgroup.map (QuotientGroup.mk' N.toSubgroup)).index := by
-        rw [Subgroup.index_map_mk'_eq_index_sup, sup_of_le_left (Subgroup.normalCore_le _)]
+        rw [Subgroup.index_map_mk'_eq_index_sup, sup_of_le_left hNV]
     _ ∣ (P.map (QuotientGroup.mk' N.toSubgroup)).index :=
         Subgroup.index_dvd_of_le (Subgroup.map_mono hPV)
 
