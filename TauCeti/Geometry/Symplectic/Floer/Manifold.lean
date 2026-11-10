@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.LineDeriv.IntegrationByParts
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
+import TauCeti.Geometry.Manifold.MFDeriv.Basic
 
 /-!
 # The Floer energy identity for manifold targets
@@ -106,6 +107,11 @@ form they recover the vector-space definitions.
 * `SmoothTwoForm.hamiltonianCurvature_comp_add_right`,
   `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_comp_add_right`: translations of the domain
   translate the curvature and preserve the curvature allowance along a map.
+* `SmoothTwoForm.perturbedMFDeriv_comp_add_right`,
+  `SmoothTwoForm.floerEnergyDensity_comp_add_right`,
+  `SmoothTwoForm.lintegral_floerEnergyDensity_comp_add_right`: translating a map together with its
+  perturbation data translates its perturbed derivative and energy density, with no
+  differentiability, and preserves its energy.
 
 ## References
 
@@ -509,6 +515,34 @@ theorem hamiltonianCurvature_perturbationPullback (ω : SmoothTwoForm I M)
   linear_combination fderiv_perturbationPullback_sub_fderiv_perturbationPullback hφ hKs hKt -
     hbracket
 
+/-- **The perturbed derivative of a translated map.** Translating a map and its perturbation data
+by `v` translates the perturbed derivative. No differentiability is needed. -/
+theorem perturbedMFDeriv_comp_add_right (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (u : ℝ × ℝ → M) (v z : ℝ × ℝ) :
+    ω.perturbedMFDeriv (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
+      ω.perturbedMFDeriv Ks Kt u (z + v) := by
+  -- `w ↦ u (w + v)` is the affine reparametrization `w ↦ u (v + 1 • w)`.
+  have hfun : (fun w ↦ u (w + v)) = fun w ↦ u (v + (1 : ℝ) • w) :=
+    funext fun w ↦ by rw [one_smul, add_comm]
+  have hz : v + (1 : ℝ) • z = z + v := by rw [one_smul, add_comm]
+  refine ContinuousLinearMap.ext fun a ↦ ?_
+  -- The two sides live in the tangent spaces at `u (z + v)` and `u (v + 1 • z)`, which are the
+  -- same point only up to `hz`; the equation is therefore stated in the model space `E` of both,
+  -- and `hz` is rewritten afterwards.
+  have hd : (mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun w ↦ u (w + v)) z a : E) =
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I u (v + (1 : ℝ) • z) a := by
+    rw [hfun]
+    exact (mfderiv_comp_const_add_smul_apply u v z 1 a).trans (one_smul ℝ _)
+  rw [perturbedMFDeriv_apply, perturbedMFDeriv_apply, hd, hz]
+
+/-- **The energy density of a translated map.** Translating a map and its perturbation data by
+`v` translates the Floer energy density. -/
+theorem floerEnergyDensity_comp_add_right (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → M → ℝ)
+    (u : ℝ × ℝ → M) (v z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
+      ω.floerEnergyDensity Ks Kt u (z + v) := by
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedMFDeriv_comp_add_right]
+
 end Pullback
 
 section Integral
@@ -580,6 +614,19 @@ theorem lintegral_enorm_hamiltonianCurvature_comp_add_right (ω : SmoothTwoForm 
   simp only [hamiltonianCurvature_comp_add_right]
   exact hv.lintegral_comp_emb (measurableEmbedding_addRight v)
     (fun z ↦ ‖ω.hamiltonianCurvature Ks Kt z (u z)‖ₑ)
+
+/-- **Translations preserve the energy.** The energy of the translate of a map and its
+perturbation data by `v` over the preimage of `S` is the energy over `S`. -/
+theorem lintegral_floerEnergyDensity_comp_add_right (ω : SmoothTwoForm I M)
+    (Ks Kt : ℝ × ℝ → M → ℝ) (u : ℝ × ℝ → M) (v : ℝ × ℝ) (S : Set (ℝ × ℝ)) :
+    ∫⁻ z in (· + v) ⁻¹' S, ENNReal.ofReal
+        (ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z) =
+      ∫⁻ z in S, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z) := by
+  have hv : MeasurePreserving (· + v) volume volume :=
+    (measurePreserving_add_right volume v.1).prod (measurePreserving_add_right volume v.2)
+  simp only [floerEnergyDensity_comp_add_right]
+  exact hv.setLIntegral_comp_preimage_emb (measurableEmbedding_addRight v)
+    (fun z ↦ ENNReal.ofReal (ω.floerEnergyDensity Ks Kt u z)) S
 
 /-- **The energy identity on a rectangle, for a manifold target.** Let `u` and the perturbation
 data `K = K_s ds + K_t dt` be `C¹` over an open neighbourhood `U` of a rectangle
