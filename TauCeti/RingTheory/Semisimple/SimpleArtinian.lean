@@ -12,6 +12,7 @@ public import Mathlib.RingTheory.SimpleModule.WedderburnArtin
 -- over the ring, so downstream importers do not pay for either module.
 import Mathlib.LinearAlgebra.Dimension.Constructions
 import Mathlib.RingTheory.Finiteness.Basic
+import TauCeti.RingTheory.SimpleRing.FiniteDimensional
 
 /-!
 # Modules over a simple Artinian ring are classified by their dimension
@@ -41,8 +42,6 @@ is exactly the input the Skolem-Noether theorem needs, in
   which is what lets two different modules be compared with each other.
 * `IsSimpleRing.nonempty_linearEquiv_of_finrank_eq`: two finite-dimensional modules over a
   simple `K`-algebra with the same `K`-dimension are isomorphic.
-* `IsSimpleRing.finiteDimensional_of_nontrivial`: a simple `K`-algebra with a nonzero module
-  finite-dimensional over `K` is finite-dimensional.
 * `IsSimpleRing.nonempty_linearEquiv_iff_finrank_eq`: the two-way form, the classification
   itself.
 
@@ -56,7 +55,8 @@ and can be cancelled.
 
 The two classification statements ask `R` to be neither finite-dimensional over `K` nor Artinian:
 a nonzero module that is finite-dimensional over `K` makes `R` finite-dimensional
-(`IsSimpleRing.finiteDimensional_of_nontrivial`), since `R` acts faithfully, and
+(`IsSimpleRing.finiteDimensional_of_nontrivial`, in
+`TauCeti/RingTheory/SimpleRing/FiniteDimensional.lean`), since `R` acts faithfully, and
 `IsArtinianRing.of_finite` derives Artinianity from that, so callers never have to supply either.
 Only `IsIsotypicOfType.of_isSimpleRing`, which has no field in
 sight, takes `IsArtinianRing R` as a hypothesis.
@@ -103,13 +103,6 @@ variable (K : Type*) [Field K] [Algebra K R]
   [FiniteDimensional K M]
   {N : Type*} [AddCommGroup N] [Module K N] [Module R N] [IsScalarTower K R N]
   [FiniteDimensional K N]
-
-/-- A simple `K`-algebra with a nonzero module which is finite-dimensional over `K` is itself
-finite-dimensional over `K`: it acts faithfully on the module, so it embeds in the endomorphism
-algebra of the module. -/
-theorem finiteDimensional_of_nontrivial [Nontrivial M] : FiniteDimensional K R :=
-  Module.Finite.of_injective (Algebra.lsmul K K M : R →ₐ[K] Module.End K M).toLinearMap
-    (RingHom.injective (Algebra.lsmul K K M : R →ₐ[K] Module.End K M).toRingHom)
 
 /-- **Modules over a simple Artinian algebra are classified by their dimension.** If `R` is a
 simple `K`-algebra and `M`, `N` are `R`-modules which are finite-dimensional over `K`, then equal
