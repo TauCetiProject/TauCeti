@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.Vortex.SpectralGap
 public import TauCeti.Analysis.InnerProductSpace.WeakSolution
 public import TauCeti.MeasureTheory.Function.L2Space
 public import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.Analysis.Distribution.TestFunction.Lp
 
 /-!
 # The weak right inverse of the gauge-fixed operator at a plane vortex
@@ -74,10 +75,6 @@ variable {μ : Measure ℂ} [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace �
 /-- The compactly supported `C²` test fields `ℂ → ℝ⁴`. -/
 abbrev TestField := TestFunction (⊤ : TopologicalSpace.Opens ℂ) (EuclideanSpace ℝ (Fin 4)) 2
 
-/-- A test field is square-integrable. -/
-theorem memLp_testField (η : TestField) : MemLp η 2 μ :=
-  η.continuous.memLp_of_hasCompactSupport η.hasCompactSupport
-
 /-- The formal adjoint `L_x*` of a test field is square-integrable. -/
 theorem memLp_gaugeFixedAdjoint (hx : Continuous x) (η : TestField) :
     MemLp (gaugeFixedAdjoint x η) 2 μ :=
@@ -87,7 +84,7 @@ theorem memLp_gaugeFixedAdjoint (hx : Continuous x) (η : TestField) :
 variable (μ) in
 /-- The inclusion of the test fields into `L²`. -/
 noncomputable def testFieldToLp : TestField →ₗ[ℝ] Lp (EuclideanSpace ℝ (Fin 4)) 2 μ where
-  toFun η := (memLp_testField η).toLp η
+  toFun η := (η.memLp (μ := μ)).toLp η
   map_add' η ν := by
     rw [← MemLp.toLp_add]
     exact MemLp.toLp_congr _ _ (.of_eq (FunLike.coe_add η ν))
@@ -114,7 +111,7 @@ noncomputable def gaugeFixedAdjointToLp (hx : Continuous x) :
 
 /-- The inclusion of a test field into `L²` is its class. -/
 theorem coeFn_testFieldToLp (η : TestField) : testFieldToLp μ η =ᵐ[μ] η :=
-  (memLp_testField η).coeFn_toLp
+  (η.memLp (μ := μ)).coeFn_toLp
 
 /-- The class of `L_x* η` in `L²` agrees almost everywhere with `L_x* η`. -/
 theorem coeFn_gaugeFixedAdjointToLp (hx : Continuous x) (η : TestField) :
@@ -124,7 +121,7 @@ theorem coeFn_gaugeFixedAdjointToLp (hx : Continuous x) (η : TestField) :
 /-- The `L²` pairing with a test field is the integral of the pointwise pairing. -/
 theorem inner_testFieldToLp (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ) (η : TestField) :
     ⟪u, testFieldToLp μ η⟫ = ∫ z, ⟪u z, η z⟫ ∂μ :=
-  L2.inner_toLp u (memLp_testField η)
+  L2.inner_toLp u (η.memLp (μ := μ))
 
 /-- The `L²` pairing with `L_x* η` is the integral of the pointwise pairing. -/
 theorem inner_gaugeFixedAdjointToLp (hx : Continuous x) (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ)

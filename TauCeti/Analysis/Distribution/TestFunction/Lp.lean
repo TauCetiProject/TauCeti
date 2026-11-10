@@ -28,6 +28,7 @@ evaluation on integrable forms (`Distribution.extendL1`).
 
 ## Main declarations
 
+* `TestFunction.memLp`: a test function on `Ω` lies in `Lᵖ(μ)` for a measure `μ` on `E`.
 * `TestFunction.toLp`: the class in `Lᵖ(μ)` of the restriction of a test function to `Ω`.
 * `TestFunction.indicatorToLp`: the class in `Lᵖ(μ)` of `1_A φ`, for a measurable set `A ⊆ Ω`.
   It is zero for `A = ∅`, is `toLp` for `A = Ω` and is additive on disjoint sets
@@ -87,6 +88,12 @@ theorem HasCompactSupport.exists_testFunction_eLpNorm_sub_le [IsFiniteMeasureOnC
     exact hηε.le
 
 namespace TestFunction
+
+/-- A test function on `Ω` lies in `Lᵖ(μ)` for every measure `μ` on `E` that is finite on compact
+sets. -/
+protected theorem memLp {μ : Measure E} [IsFiniteMeasureOnCompacts μ] (φ : 𝓓^{n}(Ω, F)) :
+    MemLp φ p μ :=
+  φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport
 
 /-- The restriction of a test function on `Ω` to `Ω` lies in `Lᵖ(μ)` for every measure `μ` on `Ω`
 that is finite on compact sets. -/
