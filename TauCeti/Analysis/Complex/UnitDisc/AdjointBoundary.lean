@@ -25,8 +25,9 @@ The pointwise computation `TauCeti.adjoint_boundary_iff` shows that this holds e
 `k` exactly when `I • g` is a solution of the original problem for the index `-k - 2`
 (`TauCeti.mem_unitDiscAdjointKernel_iff_smul_mem`), and the adjoint kernel has real dimension
 `max (-1 - k) 0` (`TauCeti.finrank_unitDiscAdjointKernel`). Combined with the kernel dimension
-`max (k + 1) 0` this gives index `k + 1` for every `k`
-(`TauCeti.finrank_unitDiscCauchyRiemannKernel_sub_finrank_unitDiscAdjointKernel`), which is
+`max (k + 1) 0`, the dimension of the kernel minus the dimension of the adjoint kernel is `k + 1`
+for every `k` (`TauCeti.finrank_unitDiscCauchyRiemannKernel_sub_finrank_unitDiscAdjointKernel`).
+Under the duality identifying the adjoint kernel with the cokernel, this is the Fredholm index
 `χ(D) + μ` for the disc with a boundary loop of Maslov index `k`. For `k ≥ -1` the adjoint kernel
 vanishes (`TauCeti.unitDiscAdjointKernel_eq_bot`).
 
@@ -48,8 +49,9 @@ Cauchy–Riemann operator needs the bordered Fredholm theory and is not treated 
   if and only if `I • g ∈ unitDiscCauchyRiemannKernel (-k - 2)`.
 * `TauCeti.finrank_unitDiscAdjointKernel`: the adjoint kernel has real dimension
   `(-k - 1).toNat`.
-* `TauCeti.finrank_unitDiscCauchyRiemannKernel_sub_finrank_unitDiscAdjointKernel`: the index
-  identity `dim ker - dim coker = k + 1`.
+* `TauCeti.finrank_unitDiscCauchyRiemannKernel_sub_finrank_unitDiscAdjointKernel`: the
+  dimension identity `dim ker - dim (adjoint ker) = k + 1`, which is the index formula once the
+  adjoint kernel is identified with the cokernel.
 
 ## References
 
@@ -113,6 +115,7 @@ theorem mem_unitDiscAdjointKernel_iff_smul_mem :
 
 /-- Membership in the adjoint kernel: `g` is the restriction of a function holomorphic on the open
 disc and continuous on its closure that satisfies the adjoint boundary condition. -/
+@[simp]
 theorem mem_unitDiscAdjointKernel_iff :
     g ∈ unitDiscAdjointKernel k ↔ ∃ u : ℂ → ℂ, DiffContOnCl ℂ u (ball 0 1) ∧
       (∀ w ∈ sphere (0 : ℂ) 1,
@@ -152,9 +155,10 @@ theorem finrank_unitDiscAdjointKernel (k : ℤ) :
   congr 1
   ring
 
-/-- **The index of the Cauchy–Riemann operator on the disc.** For the boundary condition of
-Maslov index `k`, the dimension of the kernel minus the dimension of the adjoint kernel is
-`k + 1 = χ(D) + k`, for every integer `k`. -/
+/-- **Kernel minus adjoint kernel on the disc.** For the boundary condition of Maslov index `k`,
+the dimension of the kernel minus the dimension of the adjoint kernel is `k + 1 = χ(D) + k`, for
+every integer `k`. Under the duality identifying the adjoint kernel with the cokernel (not
+formalized here), this is the Fredholm index of the Cauchy–Riemann operator. -/
 theorem finrank_unitDiscCauchyRiemannKernel_sub_finrank_unitDiscAdjointKernel (k : ℤ) :
     (finrank ℝ (unitDiscCauchyRiemannKernel k) : ℤ) - finrank ℝ (unitDiscAdjointKernel k) =
       k + 1 := by
