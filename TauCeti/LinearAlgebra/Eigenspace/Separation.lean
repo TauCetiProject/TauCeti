@@ -17,7 +17,9 @@ acts by scalars, one scalar `g j` per summand, and suppose the scalar `g k` of o
 summand is attained by no other. Then that summand is *exactly* the `g k`-eigenspace of `A` inside
 `p`: no eigenvector of eigenvalue `g k` hides in the other summands, because eigenspaces for
 distinct eigenvalues are independent. This is how a weight space is recovered from an eigenspace of
-a single operator once a decomposition separating the weights is available.
+a single operator once a decomposition separating the weights is available. The same holds, with
+the same proof, for the generalized eigenspaces `A.genEigenspace (g j) n` of any fixed order `n`
+(the eigenspaces are the case `n = 1`, the maximal generalized eigenspaces the case `n = ⊤`).
 
 When the other summands are *generalized* eigenspaces rather than eigenspaces, separating an
 eigenvector of eigenvalue `ν` from a generalized eigenvector of eigenvalue `μ ≠ ν` inside an
@@ -30,10 +32,10 @@ every `f`-invariant submodule while scaling the `ν`-eigenvector by `(ν - μ) ^
   `f - μ • 1`.
 * `Module.End.pow_sub_smul_one_apply_of_apply_eq_smul`: an eigenvector of `f` of eigenvalue `ν` is
   scaled by `(ν - μ) ^ k` under `(f - μ • 1) ^ k`.
-* `TauCeti.biSup_inf_eigenspace_eq_self`: a summand whose scalar is attained only by itself is cut
-  out by the corresponding eigenspace.
-* `Module.End.eigenspace_eq_of_iSup_eq_top`: if the summands span the whole space and the scalars
-  are pairwise distinct, every summand is an eigenspace.
+* `Module.End.biSup_inf_genEigenspace_eq_self`: a summand whose scalar is attained only by itself
+  is cut out by the corresponding generalized eigenspace.
+* `Module.End.genEigenspace_eq_of_iSup_eq_top`: if the summands span the whole space and the
+  scalars are pairwise distinct, every summand is a generalized eigenspace.
 * `TauCeti.isCompl_eigenspace_one_neg_one`: the `1`- and `-1`-eigenspaces of an involution are
   complementary over a commutative ring in which `2` is a unit.
 -/
@@ -90,39 +92,45 @@ theorem isCompl_eigenspace_one_neg_one (h2 : IsUnit (2 : K)) {T : Module.End K V
         (Module.End.eigenProjOfInvolutive hT ((neg_mul_neg (1 : K) 1).trans (one_mul 1)) x).2,
         Module.End.eigenProjOfInvolutive_add_eigenProjOfInvolutive_neg hT _ _ x⟩
 
+end TauCeti
+
+namespace Module.End
+
 variable [IsDomain K] [Module.IsTorsionFree K V]
 
-/-- **Separated summands are cut out by their eigenspaces.** If every `W j`, for `j` in a set `s`,
-consists of eigenvectors of `A` of eigenvalue `g j`, and if the scalar `g k` of a distinguished
-index `k ∈ s` is attained by no other index of `s`, then meeting the sum `⨆ j ∈ s, W j` with the
-`g k`-eigenspace of `A` returns `W k` exactly.
+/-- **Separated summands are cut out by their generalized eigenspaces.** Fix an order `n : ℕ∞`. If
+every `W j`, for `j` in a set `s`, lies in the generalized eigenspace `A.genEigenspace (g j) n`, and
+if the scalar `g k` of a distinguished index `k ∈ s` is attained by no other index of `s`, then
+meeting the sum `⨆ j ∈ s, W j` with `A.genEigenspace (g k) n` returns `W k` exactly. For `n = 1`
+the hypotheses say that `W j` consists of eigenvectors of eigenvalue `g j`, and the conclusion is
+about the `g k`-eigenspace.
 
-In particular no eigenvector of eigenvalue `g k` in the sum lies outside `W k`. -/
-theorem biSup_inf_eigenspace_eq_self {ι : Type w} (A : Module.End K V) (W : ι → Submodule K V)
-    (g : ι → K) {s : Set ι} (hW : ∀ j, j ∈ s → W j ≤ A.eigenspace (g j))
-    {k : ι} (hk : k ∈ s)
+In particular no generalized eigenvector of eigenvalue `g k` and order `n` in the sum lies outside
+`W k`. -/
+theorem biSup_inf_genEigenspace_eq_self {ι : Type w} (A : Module.End K V)
+    (W : ι → Submodule K V) (g : ι → K) {n : ℕ∞} {s : Set ι}
+    (hW : ∀ j, j ∈ s → W j ≤ A.genEigenspace (g j) n) {k : ι} (hk : k ∈ s)
     (hg : ∀ j ∈ s, j ≠ k → g j ≠ g k) :
-    (⨆ j ∈ s, W j) ⊓ A.eigenspace (g k) = W k := by
+    (⨆ j ∈ s, W j) ⊓ A.genEigenspace (g k) n = W k := by
   have hsplit : (⨆ j ∈ s, W j) = W k ⊔ ⨆ j ∈ s \ {k}, W j := by
     conv_lhs => rw [← Set.insert_sdiff_self_of_mem hk]
     rw [iSup_insert]
-  have hle : (⨆ j ∈ s \ {k}, W j) ≤ ⨆ c ≠ g k, A.eigenspace c := by
+  have hle : (⨆ j ∈ s \ {k}, W j) ≤ ⨆ c ≠ g k, A.genEigenspace c n := by
     refine iSup₂_le fun j hj ↦ (hW j hj.1).trans ?_
-    exact le_iSup₂ (f := fun (c : K) (_ : c ≠ g k) ↦ A.eigenspace c) (g j) (hg j hj.1 hj.2)
-  have hdisj : Disjoint (⨆ j ∈ s \ {k}, W j) (A.eigenspace (g k)) :=
-    ((A.eigenspaces_iSupIndep (g k)).mono_right hle).symm
+    exact le_iSup₂ (f := fun (c : K) (_ : c ≠ g k) ↦ A.genEigenspace c n) (g j) (hg j hj.1 hj.2)
+  have hdisj : Disjoint (⨆ j ∈ s \ {k}, W j) (A.genEigenspace (g k) n) :=
+    ((A.independent_genEigenspace n (g k)).mono_right hle).symm
   rw [hsplit, sup_inf_assoc_of_le _ (hW k hk), disjoint_iff.mp hdisj, sup_bot_eq]
 
-end TauCeti
+/-- **Summands of a spanning family with distinct scalars are generalized eigenspaces.** Fix an
+order `n : ℕ∞`. If the `W j` span `V`, every `W j` lies in the generalized eigenspace
+`A.genEigenspace (g j) n`, and `g` is injective, then `A.genEigenspace (g k) n` is exactly `W k`.
+For `n = 1` this says that the `g k`-eigenspace of `A` is `W k`. -/
+theorem genEigenspace_eq_of_iSup_eq_top {ι : Type w} (A : Module.End K V)
+    {W : ι → Submodule K V} {g : ι → K} {n : ℕ∞} (hW : ∀ j, W j ≤ A.genEigenspace (g j) n)
+    (htop : ⨆ j, W j = ⊤) (hg : Function.Injective g) (k : ι) :
+    A.genEigenspace (g k) n = W k :=
+  (congrFun (((A.independent_genEigenspace n).comp hg).le_iff_eq_of_iSup_eq_top htop |>.mp hW)
+    k).symm
 
-/-- **Summands of a spanning family with distinct scalars are eigenspaces.** If the `W j` span `V`,
-every `W j` consists of eigenvectors of `A` of eigenvalue `g j`, and `g` is injective, then the
-`g k`-eigenspace of `A` is exactly `W k`. -/
-theorem Module.End.eigenspace_eq_of_iSup_eq_top [IsDomain K] [Module.IsTorsionFree K V]
-    {ι : Type w} (A : Module.End K V) {W : ι → Submodule K V} {g : ι → K}
-    (hW : ∀ j, W j ≤ A.eigenspace (g j)) (htop : ⨆ j, W j = ⊤) (hg : Function.Injective g)
-    (k : ι) :
-    A.eigenspace (g k) = W k := by
-  have h := TauCeti.biSup_inf_eigenspace_eq_self A W g (s := Set.univ) (fun j _ ↦ hW j)
-    (Set.mem_univ k) fun j _ hjk ↦ hg.ne hjk
-  rwa [iSup_univ, htop, top_inf_eq] at h
+end Module.End
