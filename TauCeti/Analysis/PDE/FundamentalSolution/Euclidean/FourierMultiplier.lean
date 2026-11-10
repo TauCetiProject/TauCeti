@@ -120,6 +120,26 @@ private theorem rpow_one_sub_le_two_mul_rpow_two_sub {m y R : ℝ} (hm : 1 ≤ m
     _ ≤ 2 * (R / 2) ^ (2 - m) := mul_le_mul_of_nonneg_right
         (by rw [inv_div, div_le_iff₀ hR0]; linarith) (by positivity)
 
+/-- The annulus bound constant of the truncation error of the Newtonian potential is nonnegative,
+as soon as the cutoff derivative bound `‖Dχ‖ ≤ C / R` forces `0 ≤ C`. -/
+private theorem annulus_bound_nonneg (hn : 3 ≤ n) {C R A : ℝ} (hR : 1 ≤ R) (hA : 0 ≤ A)
+    {χ : EuclideanSpace ℝ (Fin n) → ℝ} (hχ' : ∀ x, ‖fderiv ℝ χ x‖ ≤ C / R) :
+    0 ≤ (4 * ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ +
+          ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹) *
+          C * A * R⁻¹ * (R / 2) ^ (2 - (n : ℝ)) := by
+  have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn
+  have hR0 : 0 < R := zero_lt_one.trans_le hR
+  have hC : 0 ≤ C := by
+    have := (norm_nonneg _).trans (hχ' 0)
+    rwa [le_div_iff₀ hR0, zero_mul] at this
+  have hV := volume_real_unitBall_pos n
+  have hCd : 0 ≤ ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ :=
+    inv_nonneg.2 (mul_nonneg (by linarith) hV.le)
+  have hCn :
+      0 ≤ ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ :=
+    inv_nonneg.2 (mul_nonneg (mul_nonneg (by linarith) (by linarith)) hV.le)
+  positivity
+
 open scoped Laplacian Gradient in
 /-- The annulus case of `norm_laplacian_smul_newtonianKernel_convolution_add_le`: for
 `R ≤ ‖x‖`, the decay of `u = Gₙ ⋆ φ` and `Du` bounds `2 Du(∇χ) + (Δχ) u` by a multiple of
@@ -198,18 +218,6 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le [Complete
         (4 * ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ +
           ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹) *
           C * (∫ y, ‖φ y‖) * R⁻¹ * (R / 2) ^ (2 - (n : ℝ))) x := by
-  have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn
-  have hR0 : 0 < R := zero_lt_one.trans_le hR
-  have hC : 0 ≤ C := by
-    have := (norm_nonneg _).trans (hχ' 0)
-    rwa [le_div_iff₀ hR0, zero_mul] at this
-  have hCd : 0 ≤ ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ :=
-    inv_nonneg.2 (mul_nonneg (by linarith) (volume_real_unitBall_pos n).le)
-  have hCn :
-      0 ≤ ((n : ℝ) * ((n : ℝ) - 2) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ :=
-    inv_nonneg.2 (mul_nonneg (mul_nonneg (by linarith) (by linarith))
-      (volume_real_unitBall_pos n).le)
-  have hA₀ := integral_nonneg (μ := volume) (f := fun y => ‖φ y‖) fun y => norm_nonneg _
   have hΔu : Δ (newtonianKernel n ⋆ φ) = -φ :=
     laplacian_newtonianKernel_convolution hn (hφ.of_le (by simp)) hc
   have hφx : ∀ y : EuclideanSpace ℝ (Fin n), R₀ < ‖y‖ → φ y = 0 := fun y hy =>
@@ -218,7 +226,8 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le [Complete
   · rw [laplacian_smul_add_eq_zero_of_norm_lt_or_lt_norm hΔu
       (fun y hy => hφx y (by linarith)) hχ1 hχ0 hann,
       norm_zero]
-    exact indicator_nonneg (fun _ _ => by positivity) x
+    exact indicator_nonneg (fun _ _ => annulus_bound_nonneg hn hR
+      (integral_nonneg fun y => norm_nonneg _) hχ') x
   push Not at hann
   obtain ⟨hxR, hx2R⟩ := hann
   have hannB := norm_laplacian_smul_newtonianKernel_convolution_add_le_of_norm_mem_annulus hn hφ hc
