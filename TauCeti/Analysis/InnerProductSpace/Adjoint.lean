@@ -23,6 +23,8 @@ by `M⁻¹` and has injective adjoint is invertible with `‖T⁻¹‖ ≤ M`
 (`ContinuousLinearMap.isUnit_and_norm_ringInverse_le_of_forall_norm_le`). If an invertible
 operator satisfies `‖x‖ ≤ M ‖T x‖`, every vector is `T† z` with `‖z‖ ≤ M ‖y‖`
 (`ContinuousLinearMap.exists_adjoint_apply_eq_and_norm_le`).
+On real Hilbert spaces the Riesz isomorphisms carry the adjoint to the transpose
+`ContinuousLinearMap.precomp` on continuous duals (`ContinuousLinearMap.precomp_comp_toDual`).
 For a continuous linear equivalence between complete inner product spaces, the adjoint is
 bijective (`ContinuousLinearEquiv.adjoint_bijective`).
 Its adjoint gives an equivalence in the reverse direction (`ContinuousLinearEquiv.adjointEquiv`),
@@ -131,6 +133,24 @@ theorem exists_adjoint_apply_eq_and_norm_le {T : E →L[𝕜] E} (hT : IsUnit T)
     exact norm_ringInverse_le_of_forall_norm_le hT hM h
 
 end Inverse
+
+section RealDual
+
+open InnerProductSpace
+
+variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+  [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F]
+
+/-- The Riesz isomorphisms carry the Hilbert adjoint of `T` to its transpose:
+`T' ∘ toDual F = toDual E ∘ T†`. -/
+theorem precomp_comp_toDual (T : E →L[ℝ] F) :
+    ((precomp ℝ T : StrongDual ℝ F →L[ℝ] StrongDual ℝ E) : StrongDual ℝ F →ₗ[ℝ] StrongDual ℝ E) ∘ₗ
+        (toDual ℝ F).toLinearEquiv.toLinearMap =
+      (toDual ℝ E).toLinearEquiv.toLinearMap ∘ₗ (T† : F →ₗ[ℝ] E) := by
+  ext y x
+  simp [adjoint_inner_left]
+
+end RealDual
 
 end ContinuousLinearMap
 

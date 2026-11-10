@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.Topology.Algebra.Module.FiniteDimension
 public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 public import TauCeti.Analysis.Fredholm.ClosedRange
+public import TauCeti.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Normed.Module.Dual.Adjoint
 public import TauCeti.LinearAlgebra.Determinant.Dual
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
@@ -38,15 +39,17 @@ Fredholm operator. Its determinant line is identified with that of `T`
 (`ContinuousLinearMap.detLinePrecompEquiv`) through the corresponding isomorphism
 `LinearMap.detLineDualMapEquiv` for the algebraic dual map. On real Hilbert spaces the Riesz
 isomorphisms carry the transpose to the Hilbert adjoint, which identifies the determinant line of
-the adjoint `T†` with that of `T` as well (`ContinuousLinearMap.detLineAdjointEquiv`).
+the adjoint `T†` with that of `T` as well (`ContinuousLinearMap.detLineAdjointEquiv`), using the
+commuting square `ContinuousLinearMap.precomp_comp_toDual`.
 
 ## Main declarations
 
 * `ContinuousLinearMap.IsFredholm.range_precomp_eq_orthogonalBilin_ker`: for Fredholm `T`, the
   range of the transpose is the annihilator of `ker T`.
-* `ContinuousLinearMap.kerPrecompEquivKerDualMap`,
-  `ContinuousLinearMap.cokerPrecompEquivCokerDualMap`: the kernel and cokernel of the transpose
-  agree with those of the algebraic dual map.
+* `ContinuousLinearMap.cokerPrecompEquivCokerDualMap`: the cokernel of the transpose agrees with
+  that of the algebraic dual map. The kernel comparison
+  `ContinuousLinearMap.kerPrecompEquivKerDualMap` needs only closed range of finite codimension and
+  lives in `TauCeti.Analysis.Normed.Module.Dual.Adjoint`.
 * `ContinuousLinearMap.index_precomp`: the transpose negates the index.
 * `ContinuousLinearMap.IsFredholm.precomp`: the transpose of a Fredholm operator between normed
   spaces is Fredholm.
@@ -74,55 +77,6 @@ namespace ContinuousLinearMap
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E]
   [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F]
-
-section Kernel
-
-variable [CompleteSpace 𝕜] [IsTopologicalAddGroup F] [ContinuousSMul 𝕜 F]
-  (T : E →L[𝕜] F) (hT : IsClosed (T.range : Set F)) [FiniteDimensional 𝕜 (F ⧸ T.range)]
-
-/-- **The kernel of the transpose.** If `T` has closed range of finite codimension, every
-functional vanishing on the range of `T` is continuous, so the inclusion of continuous functionals
-into all functionals identifies the kernel of the transpose `T'` with the kernel of the algebraic
-dual map `T^*`. Both are the dual of the cokernel of `T` (`LinearMap.kerDualMapEquiv`). -/
-def kerPrecompEquivKerDualMap :
-    (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).ker ≃ₗ[𝕜]
-      LinearMap.ker (T : E →ₗ[𝕜] F).dualMap :=
-  LinearEquiv.ofBijective
-    ((coeLM 𝕜 : StrongDual 𝕜 F →ₗ[𝕜] Dual 𝕜 F).restrict fun φ hφ ↦
-      LinearMap.mem_ker.2 <| LinearMap.ext fun x ↦ by
-        simpa using DFunLike.congr_fun (LinearMap.mem_ker.1 hφ) x)
-    ⟨fun φ ψ h ↦ Subtype.ext <| coe_injective <| congrArg Subtype.val h, fun ψ ↦ by
-      have hψ : T.range ≤ LinearMap.ker (ψ : Dual 𝕜 F) := by
-        rintro _ ⟨x, rfl⟩
-        exact LinearMap.congr_fun (LinearMap.mem_ker.1 ψ.2) x
-      -- `ψ` factors through the Hausdorff finite-dimensional quotient by the closed range.
-      have : IsClosed (T.range : Set F) := hT
-      have hcont : Continuous (ψ : Dual 𝕜 F) := by
-        rw [← T.range.liftQ_mkQ (ψ : Dual 𝕜 F) hψ, LinearMap.coe_comp]
-        exact (T.range.liftQ _ hψ).continuous_of_finiteDimensional.comp continuous_quot_mk
-      exact ⟨⟨⟨ψ, hcont⟩, LinearMap.mem_ker.2 <| ContinuousLinearMap.ext fun x ↦ hψ ⟨x, rfl⟩⟩,
-        rfl⟩⟩
-
-@[simp]
-theorem coe_kerPrecompEquivKerDualMap_apply
-    (φ : (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).ker) :
-    (kerPrecompEquivKerDualMap T hT φ : Dual 𝕜 F) = (φ : StrongDual 𝕜 F) :=
-  (rfl)
-
-@[simp]
-theorem coe_kerPrecompEquivKerDualMap_symm_apply (ψ : LinearMap.ker (T : E →ₗ[𝕜] F).dualMap) :
-    (((kerPrecompEquivKerDualMap T hT).symm ψ : StrongDual 𝕜 F) : Dual 𝕜 F) = ψ := by
-  rw [← coe_kerPrecompEquivKerDualMap_apply T hT, LinearEquiv.apply_symm_apply]
-
-include hT in
-/-- The kernel of the transpose has the dimension of the cokernel of `T`. -/
-theorem finrank_ker_precomp_eq_finrank_quotient_range :
-    finrank 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E).ker =
-      finrank 𝕜 (F ⧸ T.range) :=
-  (kerPrecompEquivKerDualMap T hT).finrank_eq.trans
-    (T : E →ₗ[𝕜] F).finrank_ker_dualMap_eq_finrank_quotient_range
-
-end Kernel
 
 section Cokernel
 
@@ -316,15 +270,6 @@ open scoped InnerProduct
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [CompleteSpace F] {T : E →L[ℝ] F}
-
-/-- The Riesz isomorphisms carry the Hilbert adjoint of `T` to its transpose:
-`T' ∘ toDual F = toDual E ∘ T†`. -/
-theorem precomp_comp_toDual (T : E →L[ℝ] F) :
-    ((precomp ℝ T : StrongDual ℝ F →L[ℝ] StrongDual ℝ E) : StrongDual ℝ F →ₗ[ℝ] StrongDual ℝ E) ∘ₗ
-        (toDual ℝ F).toLinearEquiv.toLinearMap =
-      (toDual ℝ E).toLinearEquiv.toLinearMap ∘ₗ (T† : F →ₗ[ℝ] E) := by
-  ext y x
-  simp [adjoint_inner_left]
 
 /-- **The determinant line of the Hilbert adjoint.** For a Fredholm operator `T` between real
 Hilbert spaces, the Riesz isomorphisms carry the adjoint `T†` to the transpose `T'`
