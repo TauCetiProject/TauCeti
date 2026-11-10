@@ -32,7 +32,7 @@ needed. These are the class-selection steps in the analysis of minimally uncount
 
 public section
 
-universe u v
+universe u v w o r
 
 open FirstOrder FirstOrder.Language Ordinal Set
 
@@ -41,22 +41,22 @@ namespace TauCeti
 open RelationalConfiguration
 
 variable {L : Language.{u, v}} [L.IsRelational] [Countable (Σ n, L.Relations n)]
-variable {K : Set (RelationalConfiguration L ℕ)}
+variable {V : Type w} [Countable V] {K : Set (RelationalConfiguration L V)}
 
 /-- A non-small class with countably many classes at level `α` has a non-small level class with
 small complement, provided smallness is closed under countable unions and every sentence cut
 has a small side. The centre belongs to the original class. -/
 theorem exists_bfClass_not_small_and_small_sdiff
-    (small : Set (RelationalConfiguration L ℕ) → Prop)
-    (hUnion : ∀ S : Set (Set (RelationalConfiguration L ℕ)),
+    (small : Set (RelationalConfiguration L V) → Prop)
+    (hUnion : ∀ S : Set (Set (RelationalConfiguration L V)),
       S.Countable → (∀ s ∈ S, small s) → small (⋃₀ S))
     (hK : ¬ small K)
     (hsplit : ∀ θ : L.Sentenceω, small (K ∩ modelsOf θ) ∨ small (K \ modelsOf θ))
-    {α : Ordinal.{0}} (hα : α < ω₁)
-    [Countable (Quotient ((bfEquivSetoid L ℕ α).comap (Subtype.val : K → _)))] :
-    ∃ c ∈ K, ¬ small (K ∩ {d | bfEquivSetoid L ℕ α c d}) ∧
-      small (K \ {d | bfEquivSetoid L ℕ α c d}) := by
-  refine (bfEquivSetoid L ℕ α).exists_class_not_small_and_small_sdiff K small hUnion hK
+    {α : Ordinal.{o}} (hα : α < ω₁)
+    [Countable (Quotient ((bfEquivSetoid L V α).comap (Subtype.val : K → _)))] :
+    ∃ c ∈ K, ¬ small (K ∩ {d | bfEquivSetoid L V α c d}) ∧
+      small (K \ {d | bfEquivSetoid L V α c d}) := by
+  refine (bfEquivSetoid L V α).exists_class_not_small_and_small_sdiff K small hUnion hK
     (fun c _ => ?_)
   simpa only [modelsOf_scottSentenceAtLevel c hα] using hsplit (c.scottSentenceAtLevel α)
 
@@ -64,17 +64,17 @@ theorem exists_bfClass_not_small_and_small_sdiff
 `α`, and every sentence cut has a side meeting only countably many isomorphism classes, then
 one level-`α` class meets uncountably many, and its complement meets only countably many. -/
 theorem exists_bfClass_uncountable_isoClasses_and_countable_sdiff
-    (hK : ¬ (Quotient.mk (isoSetoid L ℕ) '' K).Countable)
+    (hK : ¬ (Quotient.mk (isoSetoid L V) '' K).Countable)
     (hsplit : ∀ θ : L.Sentenceω,
-      (Quotient.mk (isoSetoid L ℕ) '' (K ∩ modelsOf θ)).Countable ∨
-        (Quotient.mk (isoSetoid L ℕ) '' (K \ modelsOf θ)).Countable)
-    {α : Ordinal.{0}} (hα : α < ω₁)
-    [Countable (Quotient ((bfEquivSetoid L ℕ α).comap (Subtype.val : K → _)))] :
+      (Quotient.mk (isoSetoid L V) '' (K ∩ modelsOf θ)).Countable ∨
+        (Quotient.mk (isoSetoid L V) '' (K \ modelsOf θ)).Countable)
+    {α : Ordinal.{o}} (hα : α < ω₁)
+    [Countable (Quotient ((bfEquivSetoid L V α).comap (Subtype.val : K → _)))] :
     ∃ c ∈ K,
-      ¬ (Quotient.mk (isoSetoid L ℕ) '' (K ∩ {d | bfEquivSetoid L ℕ α c d})).Countable ∧
-        (Quotient.mk (isoSetoid L ℕ) '' (K \ {d | bfEquivSetoid L ℕ α c d})).Countable := by
+      ¬ (Quotient.mk (isoSetoid L V) '' (K ∩ {d | bfEquivSetoid L V α c d})).Countable ∧
+        (Quotient.mk (isoSetoid L V) '' (K \ {d | bfEquivSetoid L V α c d})).Countable := by
   refine exists_bfClass_not_small_and_small_sdiff
-    (fun A => (Quotient.mk (isoSetoid L ℕ) '' A).Countable) ?_ hK hsplit hα
+    (fun A => (Quotient.mk (isoSetoid L V) '' A).Countable) ?_ hK hsplit hα
   intro S hS hs
   rw [image_sUnion, sUnion_image]
   exact hS.biUnion hs
@@ -83,13 +83,13 @@ theorem exists_bfClass_uncountable_isoClasses_and_countable_sdiff
 has a rank-bounded side, one level class is rank-unbounded and its complement is rank-bounded.
 The rank need not be invariant under isomorphism or isolating. -/
 theorem exists_bfClass_unboundedRankOn_and_boundedRankOn_sdiff
-    {ρ : RelationalConfiguration L ℕ → Ordinal.{0}} (hK : UnboundedRankOn ρ K)
+    {ρ : RelationalConfiguration L V → Ordinal.{r}} (hK : UnboundedRankOn ρ K)
     (hsplit : ∀ θ : L.Sentenceω,
       BoundedRankOn ρ (K ∩ modelsOf θ) ∨ BoundedRankOn ρ (K \ modelsOf θ))
-    {α : Ordinal.{0}} (hα : α < ω₁)
-    [Countable (Quotient ((bfEquivSetoid L ℕ α).comap (Subtype.val : K → _)))] :
-    ∃ c ∈ K, UnboundedRankOn ρ (K ∩ {d | bfEquivSetoid L ℕ α c d}) ∧
-      BoundedRankOn ρ (K \ {d | bfEquivSetoid L ℕ α c d}) := by
+    {α : Ordinal.{o}} (hα : α < ω₁)
+    [Countable (Quotient ((bfEquivSetoid L V α).comap (Subtype.val : K → _)))] :
+    ∃ c ∈ K, UnboundedRankOn ρ (K ∩ {d | bfEquivSetoid L V α c d}) ∧
+      BoundedRankOn ρ (K \ {d | bfEquivSetoid L V α c d}) := by
   simpa only [unboundedRankOn_iff_not_boundedRankOn] using
     exists_bfClass_not_small_and_small_sdiff (BoundedRankOn ρ)
       (fun _ hS hs => (boundedRankOn_sUnion_iff hS).2 hs)
@@ -98,7 +98,8 @@ theorem exists_bfClass_unboundedRankOn_and_boundedRankOn_sdiff
 /-- A back-and-forth scattered class with a countable side at every sentence cut is concentrated.
 The class need not be analytic, Borel, or invariant under isomorphism, and it may itself meet
 only countably many isomorphism classes. -/
-theorem concentratedAtBFLevels_of_bfScattered_of_sentence_splits (hK : BFScattered K)
+theorem concentratedAtBFLevels_of_bfScattered_of_sentence_splits
+    {K : Set (RelationalConfiguration L ℕ)} (hK : BFScattered K)
     (hsplit : ∀ θ : L.Sentenceω,
       (Quotient.mk (isoSetoid L ℕ) '' (K ∩ modelsOf θ)).Countable ∨
         (Quotient.mk (isoSetoid L ℕ) '' (K \ modelsOf θ)).Countable) :
