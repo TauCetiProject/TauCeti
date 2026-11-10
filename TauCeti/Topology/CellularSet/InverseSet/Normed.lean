@@ -9,6 +9,7 @@ public import TauCeti.Topology.CellularSet.Basic
 import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 import TauCeti.Analysis.Normed.Module.Ball.Radial.OrderIso
 import TauCeti.Analysis.Normed.Module.Connected
+import TauCeti.Topology.Separation.InvFunOn
 
 /-!
 # The only inverse set of a map of a cell between spaces of the same dimension is cellular
@@ -23,20 +24,22 @@ with `M ⊆ U ⊆ ball 0 1` onto an open subset of `F`
 (`TauCeti.isOpen_image_of_injOn_closedBall_diff`). Away from `p` this is Brouwer's invariance of
 domain, applied to `U \ M`. At `p`, a small ball `ball p r` around `p` misses the image of
 `B \ U`, so within it the image of `U \ M` is relatively closed in the punctured ball and open.
-In dimension at least two the punctured ball is connected, and the image of `U \ M` accumulates
-at `p`, so it fills the punctured ball. In dimension one the punctured ball has two sides; if
-the image of `U \ M` filled only one, then the segments leaving `M` in the two directions of `E`
-would cross the same values near `p`, contradicting injectivity.
+If `M` is empty there is nothing more to prove. Otherwise, in dimension at least two the punctured
+ball is connected, and the image of `U \ M` accumulates at `p`, so it fills the punctured ball.
+In dimension one the punctured ball has two sides; if the image of `U \ M` filled only one, then
+the segments leaving `M` in the two directions of `E` would cross the same values near `p`,
+contradicting injectivity.
 
-The second result is Brown's Theorem 3: `M` is cellular
-(`TauCeti.isCellularSet_of_injOn_closedBall_diff`). Given an open `U ⊇ M`, choose a
+The second result is Brown's Theorem 3: if `M` is nonempty, that is `p ∈ f '' B`, then `M` is
+cellular (`TauCeti.isCellularSet_of_injOn_closedBall_diff`). Given an open `U ⊇ M`, choose a
 homeomorphism `h` of `F` which fixes a neighbourhood of `p` and pulls the compact set `f '' B`
 into the open set `f '' (U ∩ ball 0 1)`. Then `g = f⁻¹ ∘ h ∘ f` on `B \ M`, extended by the
 identity on `M`, is a continuous injection of `B` into `U` which is the identity near `M`, so its
 image is a closed cell in `U` with `M` in its interior
 (`TauCeti.exists_cell_subset_of_injOn_closedBall_diff`).
 
-For maps of an `n`-cell with `n ≥ 2` into a space of dimension `n + 1`, see
+For maps of an `n`-cell with `n ≥ 2` into the unit sphere `Sⁿ` of a space of dimension `n + 1`,
+see
 `TauCeti.isCellularSet_closedBall_inter_preimage` in `TauCeti.Topology.CellularSet.InverseSet`.
 
 These are steps in Brown's proof of the generalized Schoenflies theorem. There, the map of the
@@ -47,10 +50,10 @@ Theorem 4 applies Theorem 3 to recognize both of them as cellular.
 
 * `TauCeti.isOpen_image_of_injOn_closedBall_diff`: the image of an open neighbourhood of the only
   inverse set is open (Brown's Theorem 0 for one inverse set).
-* `TauCeti.exists_cell_subset_of_injOn_closedBall_diff`: every neighbourhood of the only inverse
-  set contains a closed cell with the inverse set in its interior.
-* `TauCeti.isCellularSet_of_injOn_closedBall_diff`: the only inverse set is cellular (Brown's
-  Theorem 3).
+* `TauCeti.exists_cell_subset_of_injOn_closedBall_diff`: every neighbourhood of a nonempty only
+  inverse set contains a closed cell with the inverse set in its interior.
+* `TauCeti.isCellularSet_of_injOn_closedBall_diff`: a nonempty only inverse set is cellular
+  (Brown's Theorem 3).
 
 ## References
 
@@ -302,11 +305,12 @@ theorem exists_cell_subset_of_injOn_closedBall_diff (hEF : finrank ℝ E = finra
   homeomorphism of `F` fixing a neighbourhood of `p` and pulling `f '' closedBall 0 1` into
   `f '' (U ∩ ball 0 1)`, which is open by Brown's Theorem 0. Then `g` is injective, maps the closed
   ball into `U`, and is the identity near `M`; it is continuous at the points of `M` because it is
-  the identity near them, and elsewhere because `g x` is the unique point of the compact closed
-  ball with `f (g x) = h (f x)`. -/
+  the identity near them, and elsewhere because the inverse of `f` on `B \ M` is continuous, the
+  closed ball being compact. -/
   classical
   set B := closedBall (0 : E) 1
   set M := B ∩ f ⁻¹' {p}
+  set P := B \ f ⁻¹' {p}
   -- A ball `ball p ε` lies in the image of `U ∩ ball 0 1`, which is open by Theorem 0.
   obtain ⟨ε, hε, hεU⟩ := Metric.isOpen_iff.1
     (isOpen_image_of_injOn_closedBall_diff hEF hf hinj (hU.inter isOpen_ball)
@@ -339,17 +343,17 @@ theorem exists_cell_subset_of_injOn_closedBall_diff (hEF : finrank ℝ E = finra
     hεU (hh_maps (hR ⟨x, hx, rfl⟩))
   have hfp (x : E) (hx : x ∈ B) (hxM : x ∉ M) : f x ≠ p := fun hfx ↦ hxM ⟨hx, hfx⟩
   -- The map `g`: the identity on `M`, and the `f`-preimage of `h ∘ f` elsewhere.
-  set g : E → E := fun x ↦ if x ∈ M then x else invFunOn f B (h (f x))
+  set g : E → E := fun x ↦ if x ∈ M then x else invFunOn f P (h (f x))
   have hgM (x : E) (hx : x ∈ M) : g x = x := by simp [g, hx]
   have hg_spec (x : E) (hx : x ∈ B) (hxM : x ∉ M) :
       g x ∈ U ∩ ball 0 1 ∧ f (g x) = h (f x) := by
     obtain ⟨u, hu, hfu⟩ := hh_mapsU x hx
-    have hex : ∃ a ∈ B, f a = h (f x) := ⟨u, ball_subset_closedBall hu.2, hfu⟩
-    have hgx : g x = invFunOn f B (h (f x)) := by simp [g, hxM]
     have hne : h (f x) ≠ p := hh_ne _ (hfp x hx hxM)
+    have huP : u ∈ P := ⟨ball_subset_closedBall hu.2, fun hc ↦ hne (hfu.symm.trans hc)⟩
+    have hex : ∃ a ∈ P, f a = h (f x) := ⟨u, huP, hfu⟩
+    have hgx : g x = invFunOn f P (h (f x)) := by simp [g, hxM]
     have hfgx : f (g x) = h (f x) := hgx ▸ invFunOn_eq hex
-    have hgu : g x = u := hinj ⟨hgx ▸ invFunOn_mem hex, fun hc ↦ hne (hfgx.symm.trans hc)⟩
-      ⟨ball_subset_closedBall hu.2, fun hc ↦ hne (hfu.symm.trans hc)⟩ (hfgx.trans hfu.symm)
+    have hgu : g x = u := hinj (hgx ▸ invFunOn_mem hex) huP (hfgx.trans hfu.symm)
     exact ⟨hgu ▸ hu, hgu ▸ hfu⟩
   have hgB : MapsTo g B B := fun x hx ↦ by
     by_cases hxM : x ∈ M
@@ -372,22 +376,24 @@ theorem exists_cell_subset_of_injOn_closedBall_diff (hEF : finrank ℝ E = finra
       filter_upwards [self_mem_nhdsWithin, (hf x hx).preimage_mem_nhdsWithin
         (isOpen_ball.mem_nhds hxV)] with y hyB hyV
       exact hg_id y hyB hyV
-    /- Away from `M`, `g y` is the unique point of the compact ball `B` with `f (g y) = h (f y)`,
-    and this characterization passes to cluster points. -/
-    have hxM : x ∉ M := fun hxM ↦ hxV (by rw [mem_singleton_iff.1 hxM.2]; exact mem_ball_self (by
-      positivity))
-    have hgBev : ∀ᶠ y in 𝓝[B] x, g y ∈ B := eventually_mem_nhdsWithin.mono fun y hy ↦ hgB hy
-    refine (isCompact_closedBall 0 1).tendsto_nhds_of_unique_mapClusterPt hgBev
-      fun z hz hcl ↦ ?_
-    have ht : Tendsto (f ∘ g) (𝓝[B] x) (𝓝 (h (f x))) :=
-      (h.continuous.continuousAt.tendsto.comp (hf x hx)).congr'
-        (eventually_mem_nhdsWithin.mono fun y hy ↦ (hfg y hy).symm)
-    have hcl' : MapClusterPt (f z) (𝓝[B] x) (f ∘ g) :=
-      hcl.tendsto_comp' ((hf z hz).mono_left (inf_le_inf_left _ (tendsto_principal.2 hgBev)))
-    have hfz : f z = h (f x) := eq_of_nhds_neBot (ClusterPt.mono hcl' ht)
-    have hne : h (f x) ≠ p := hh_ne _ (hfp x hx hxM)
-    exact hinj ⟨hz, fun hzp ↦ hne (hfz.symm.trans hzp)⟩
-      ⟨hgB hx, fun hgp ↦ hne ((hfg x hx).symm.trans hgp)⟩ (hfz.trans (hfg x hx).symm)
+    /- Away from `M`, `g = f⁻¹ ∘ h ∘ f`, where the inverse of `f` on `P = B \ M` is continuous
+    on `f '' P` because `B` is compact. -/
+    have hxP : x ∈ P := ⟨hx, fun hxp ↦ hxV (by rw [mem_preimage.1 hxp]; exact mem_ball_self (by
+      positivity))⟩
+    have hinv : ContinuousOn (invFunOn f P) (f '' P) :=
+      hf.continuousOn_invFunOn_image_of_isCompact (isCompact_closedBall 0 1) sdiff_subset hinj
+        (disjoint_left.2 fun _ ⟨a, ha, haz⟩ ⟨b, hb, hbz⟩ ↦
+          hb.2 (hbz.trans (haz.symm.trans (not_not.1 fun h ↦ ha.2 ⟨ha.1, h⟩))))
+    have hhP (y : E) (hy : y ∈ P) : h (f y) ∈ f '' P :=
+      ⟨g y, ⟨hgB hy.1, fun hc ↦ hh_ne _ hy.2 ((hfg y hy.1).symm.trans hc)⟩, hfg y hy.1⟩
+    have hgP (y : E) (hy : y ∈ P) : g y = invFunOn f P (h (f y)) := by
+      simp [g, show y ∉ M from fun hyM ↦ hy.2 hyM.2]
+    have hhf : ContinuousWithinAt (fun y ↦ h (f y)) P x :=
+      h.continuous.continuousAt.comp_continuousWithinAt ((hf x hx).mono sdiff_subset)
+    have hcomp : ContinuousWithinAt (fun y ↦ invFunOn f P (h (f y))) P x :=
+      (hinv _ (hhP x hxP)).comp (f := fun y ↦ h (f y)) hhf hhP
+    exact (hcomp.congr hgP (hgP x hxP)).mono_of_mem_nhdsWithin (inter_mem self_mem_nhdsWithin
+      ((hf x hx).preimage_mem_nhdsWithin (isOpen_compl_singleton.mem_nhds hxP.2)))
   · have hfxy : f x = f y := h.injective (by rw [← hfg x hx, ← hfg y hy, hxy])
     by_cases hxM : x ∈ M
     · have hyM : y ∈ M := ⟨hy, mem_singleton_iff.2 (hfxy.symm.trans (mem_singleton_iff.1 hxM.2))⟩
