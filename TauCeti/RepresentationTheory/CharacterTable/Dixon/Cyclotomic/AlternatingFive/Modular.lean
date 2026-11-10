@@ -113,8 +113,8 @@ theorem alternatingGroupFive_centralCharacterSearch (α : ZMod 61)
       alternatingGroupFiveClassData.rowsOfMap (Cyclotomic.reduce 61 α)
         alternatingGroupFiveCandidateCentralCharacterTable := by
   let f := Cyclotomic.reduceRingHom 61 α hα
-  apply alternatingGroupFiveClassData.centralCharacterSearch_eq_rowsOfMap_of_isGoodDixonPrime
-    isGoodDixonPrime_alternatingGroup_five_sixtyOne (Cyclotomic.reduce 61 α)
+  apply alternatingGroupFiveClassData.centralCharacterSearch_eq_rowsOfMap
+    (Cyclotomic.reduce 61 α)
     alternatingGroupFiveCandidateCentralCharacterTable
   · intro i
     rw [alternatingGroupFiveCandidateCentralCharacterTable_index_one]

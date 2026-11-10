@@ -63,8 +63,6 @@ ambient covariant derivative.
 
 ## References
 
-* [Geodesics, the exponential map, and the Hopf--Rinow theorem roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/HopfRinow/README.md),
-  Layer 1, "Covariant derivative along a curve".
 * M. P. do Carmo, *Riemannian Geometry*, Birkhauser, 1992, Ch. 2, Proposition 2.2.
 * The moving-chart construction was informed by
   `formalized-sources/DoCarmo/DoCarmoLib/Riemannian/Connection/CovariantDerivativeAlong.lean` and
@@ -157,6 +155,14 @@ theorem continuousLinearMapAt_alongCurveWithin
   rw [alongCurveWithin_apply, Trivialization.continuousLinearMapAt_symmL
       _ (mem_baseSet_trivializationAt E (TangentSpace I) (γ t)),
     alongCurveInChartWithin_apply, sectionCoord_apply]
+
+/-- The junk value of the along-curve candidate: it vanishes where the parameter set does not have
+unique derivatives, because `derivWithin` is then `0`. -/
+theorem alongCurveWithin_of_not_uniqueDiffWithinAt {s : Set 𝕜} {t : 𝕜}
+    (hu : ¬UniqueDiffWithinAt 𝕜 s t) : alongCurveWithin cov γ V s t = 0 := by
+  simp [alongCurveWithin_apply, alongCurveInChartWithin_apply,
+    derivWithin_zero_of_not_uniqueDiffWithinAt hu]
+  rfl
 
 /-- At a zero of a field, its covariant derivative is its ordinary coordinate derivative
 in the canonical tangent trivialization at that point. -/

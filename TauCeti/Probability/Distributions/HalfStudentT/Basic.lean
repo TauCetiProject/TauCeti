@@ -57,7 +57,7 @@ theorem halfStudentTMeasure_of_pos (hν : 0 < ν) (hs : 0 < s) :
 theorem halfStudentTMeasure_eq_map_betaPrimeMeasure (hν : 0 < ν) (hs : 0 < s) :
     halfStudentTMeasure ν s =
       (betaPrimeMeasure (1 / 2) (ν / 2)).map (fun x ↦ s * √(ν * x)) := by
-  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure one_half_pos (half_pos hν)]
+  rw [betaPrimeMeasure_eq_map_fisherSnedecorMeasure]
   norm_num only [mul_one_div, mul_div_cancel_left₀ _ (two_ne_zero : (2 : ℝ) ≠ 0)]
   have hdegrees : 2 * (ν / 2) = ν := by ring
   rw [hdegrees, ← studentTMeasure_map_sq hν,
