@@ -111,18 +111,14 @@ theorem chartVolumeDensity_eq_abs_det_mul_of_inner_mfderiv {Φ : M → N} {α x 
 
 omit [FiniteDimensional ℝ E] [IsManifold I 1 M] [IsManifold I' 1 N] in
 /-- A map whose tangent map at `x` preserves the Riemannian inner products is differentiable at
-`x`: where a map is not differentiable its tangent map is zero, which preserves the inner products
-only if the model vector space `E` is trivial, and then every map is differentiable. -/
+`x`: the tangent map is injective, since it preserves norms. -/
 theorem mdifferentiableAt_of_inner_mfderiv {Φ : M → N} {x : M}
     (hinner : ∀ v : TangentSpace I x, ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x v⟫_ℝ = ⟪v, v⟫_ℝ) :
     MDifferentiableAt I I' Φ x := by
-  by_contra hx
-  have h0 := mfderiv_zero_of_not_mdifferentiableAt hx
-  have : Subsingleton E := subsingleton_of_forall_eq 0 fun v : TangentSpace I x ↦ by
-    have h := hinner v
-    rw [h0, zero_apply, inner_zero_left] at h
-    exact inner_self_eq_zero (𝕜 := ℝ) (E := TangentSpace I x) |>.1 h.symm
-  exact hx (mdifferentiable_of_subsingleton x)
+  refine mdifferentiableAt_of_mfderiv_injective ((injective_iff_map_eq_zero _).2 fun v hv ↦ ?_)
+  have h := hinner v
+  rw [hv, inner_zero_left] at h
+  exact inner_self_eq_zero (𝕜 := ℝ) (E := TangentSpace I x) |>.1 h.symm
 
 section Measure
 
@@ -132,19 +128,21 @@ variable [MeasurableSpace M] [BorelSpace M] [MeasurableSpace N] [BorelSpace N]
 
 attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
 
-/-- A map which is injective and differentiable on a measurable subset `s` of the chart source at
+/-- A map which is injective on a measurable subset `s` of the chart source at
 `α`, maps `s` into the chart source at `β`, and whose tangent maps at points of `s` preserve the
 Riemannian inner products, carries the chart volume of `s` at `α` to the chart volume of its image
-at `β`. -/
+at `β`. Differentiability on `s` follows from the inner-product condition
+(`TauCeti.mdifferentiableAt_of_inner_mfderiv`). -/
 theorem chartRiemannianVolume_image_of_inner_mfderiv {Φ : M → N} {α : M} {β : N} {s : Set M}
     (hs : MeasurableSet s) (hinj : InjOn Φ s)
     (hsα : s ⊆ (chartAt H α).source) (hsβ : MapsTo Φ s (chartAt H' β).source)
-    (hΦ : ∀ x ∈ s, MDifferentiableAt I I' Φ x)
     (hinner : ∀ x ∈ s, ∀ v w : TangentSpace I x,
       ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x w⟫_ℝ = ⟪v, w⟫_ℝ) :
     chartRiemannianVolume (I := I') β (Φ '' s) = chartRiemannianVolume (I := I) α s := by
   -- This change-of-variables argument is adapted from the proof of
   -- `TauCeti.chartRiemannianVolume_restrict_overlap`.
+  have hΦ (x : M) (hx : x ∈ s) : MDifferentiableAt I I' Φ x :=
+    mdifferentiableAt_of_inner_mfderiv fun v ↦ hinner x hx v v
   have hsα' : s ⊆ (extChartAt I α).source := by rwa [extChartAt_source]
   have hsβ' : Φ '' s ⊆ (extChartAt I' β).source := by
     rw [extChartAt_source]; exact hsβ.image_subset
@@ -280,8 +278,7 @@ theorem _root_.Homeomorph.measurePreserving_riemannianVolume [LindelofSpace M] [
     riemannianVolume_apply_of_subset (inter_subset_left.trans inter_subset_right),
     chartRiemannianVolume_image_of_inner_mfderiv hA
       Φ.injective.injOn (inter_subset_left.trans inter_subset_right)
-      (fun x hx ↦ hx.2) (fun x _ ↦ mdifferentiableAt_of_inner_mfderiv fun v ↦ hinner x v v)
-      (fun x _ ↦ hinner x)]
+      (fun x hx ↦ hx.2) (fun x _ ↦ hinner x)]
 
 end Measure
 
