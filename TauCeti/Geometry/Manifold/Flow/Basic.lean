@@ -180,7 +180,7 @@ theorem mfderiv_flowOf_trajectory_zero_apply [IsManifold I 1 M] {v : (x : M) →
   rw [mfderiv_flowOf_trajectory_apply hv (mem_flowDomain_zero hv x)]
   -- The tangent spaces at `flowOf v 0 x` and at `x` are both the model space `E`, so `v` may be
   -- treated as a non-dependent function here.
-  exact congrArg (a • v ·) (flowOf_zero hv x)
+  exact congrArg (a • v ·) (flowOf_zero v x)
 
 /-- On a complete normed model space, the domain of the maximal flow is jointly open in time
 and initial point. -/
@@ -280,7 +280,7 @@ theorem mfderiv_flowOf_zero_apply [IsManifold I 1 M]
   have hG : MDifferentiableAt (𝓘(ℝ).prod I) I (fun y : ℝ × M ↦ flowOf v y.1 y.2) (0, x) :=
     ((contMDiffOn_flowOf le_rfl hv).contMDiffAt
       ((isOpen_flowDomain hv).mem_nhds h0)).mdifferentiableAt one_ne_zero
-  have hspace : (fun z : M ↦ flowOf v 0 z) = id := funext (flowOf_zero hv)
+  have hspace : (fun z : M ↦ flowOf v 0 z) = id := funext (flowOf_zero v)
   have h1 : @Eq E (mfderiv 𝓘(ℝ) I (fun t : ℝ ↦ flowOf v t x) 0 a) (a • v x) :=
     mfderiv_flowOf_trajectory_zero_apply hv x a
   have h2 : @Eq E (mfderiv I I (fun z : M ↦ flowOf v 0 z) x w) w := by
@@ -394,7 +394,7 @@ theorem mfderiv_flowOf_apply_self [IsManifold I 1 M] {v : (x : M) → TangentSpa
         (hopen.mem_nhds (mem_flowDomain_zero hv x))
     have h₂ : ∀ᶠ s in 𝓝 (0 : ℝ), (t, flowOf v s x) ∈ flowDomain v :=
       (continuousAt_const.prodMk hcurve).preimage_mem_nhds
-        (hopen.mem_nhds (by simpa only [flowOf_zero hv x] using ht))
+        (hopen.mem_nhds (by simpa only [flowOf_zero v x] using ht))
     have h₃ : ∀ᶠ s in 𝓝 (0 : ℝ), (s, flowOf v t x) ∈ flowDomain v :=
       (continuous_id.prodMk continuous_const).continuousAt.preimage_mem_nhds
         (hopen.mem_nhds (mem_flowDomain_zero hv _))
@@ -404,7 +404,7 @@ theorem mfderiv_flowOf_apply_self [IsManifold I 1 M] {v : (x : M) → TangentSpa
     (contMDiffAt_flowOf_comp le_rfl hv contMDiffAt_const contMDiffAt_id ht).mdifferentiableAt
       one_ne_zero
   have key := mfderiv_comp_apply_of_eq (0 : ℝ) hΦ
-    (mdifferentiableAt_flowOf hv (mem_flowDomain_zero hv x)) (flowOf_zero hv x) (1 : ℝ)
+    (mdifferentiableAt_flowOf hv (mem_flowDomain_zero hv x)) (flowOf_zero v x) (1 : ℝ)
   have hvel' : mfderiv 𝓘(ℝ) I (flowOf v t ∘ fun s ↦ flowOf v s x) 0 (1 : ℝ) =
       v (flowOf v t x) := by
     rw [hcomm.mfderiv_eq]

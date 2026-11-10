@@ -240,7 +240,7 @@ theorem exists_continuous_pos_injOn_flowOf_comp [FiniteDimensional ℝ E'] [J.Bo
         rintro _ ⟨y, rfl⟩
         exact mem_flowDomain_zero hZ1 (ι y))
       (continuous_const.prodMk continuous_id) Prod.snd continuous_snd (fun _ ↦ rfl)
-      (by simpa only [Function.comp_def, flowOf_zero hZ1] using hιe)
+      (by simpa only [Function.comp_def, flowOf_zero Z] using hιe)
   -- A pseudometrizable space is normal and paracompact, so `U` contains a tube of positive
   -- continuous width.
   let := TopologicalSpace.pseudoMetrizableSpacePseudoMetric S
