@@ -77,6 +77,8 @@ inclusion is a `C^n` family of split injections `A x : F' →L[𝕜] F`; adjoini
 * `TauCeti.exists_isSubbundleFrameOn_map_synthesisMap`: a `C^n` family of orthogonal projections
   of a coefficient space, synthesized against `C^n` linearly independent sections, gives `C^n`
   local frames of the image subspaces.
+* `TauCeti.exists_isSubbundleFrameOn_map_symmₗ`: the ranges of a `C^n` family of operators of
+  constant rank on the model fibre, read through a trivialization, have `C^n` local frames.
 * `TauCeti.IsSubbundleFrameOn.contMDiffAt_totalSpace_subbundle`: the canonical inclusion of a
   frame-trivialized `C^n` subbundle into `TotalSpace F E` is `C^n`.
 * `TauCeti.isImmersion_totalSpace_subbundle`, `TauCeti.isSmoothEmbedding_totalSpace_subbundle`:
@@ -502,6 +504,68 @@ theorem exists_isSubbundleFrameOn_map_synthesisMap {d r : ℕ} {ε : Fin d → �
     rw [← hspan, Submodule.map_span, ← range_comp, comp_def]
 
 end OrthogonalProjections
+
+section Operators
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B] {n : ℕ∞ω}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [FiniteDimensional 𝕜 F] {E : B → Type*}
+  [∀ x, AddCommGroup (E x)] [∀ x, Module 𝕜 (E x)] [TopologicalSpace (TotalSpace F E)]
+  [∀ x, TopologicalSpace (E x)] [FiberBundle F E] [VectorBundle 𝕜 F E]
+  [ContMDiffVectorBundle n F E IB]
+
+/-- **Local frames from a smooth family of operators of constant rank.** Let `e` be a
+trivialization of `E` in its atlas and let `A y` be operators on the model fibre `F`, depending
+`C^n` on `y` in an open subset `U₀` of the base set of `e`, all of rank `r`. Read through `e`, their
+ranges are subspaces of the fibres `E y`; near every point of `U₀` these have a `C^n` local frame
+of size `r`. Apply `A y` to fixed preimages of a basis of the range of `A x₀`, and read the result
+back through `e`. -/
+theorem exists_isSubbundleFrameOn_map_symmₗ {r : ℕ} (e : Trivialization F (π F E))
+    [MemTrivializationAtlas e] {U₀ : Set B} (hU₀ : IsOpen U₀) (hU₀e : U₀ ⊆ e.baseSet)
+    {A : B → F →L[𝕜] F} (hA : ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F) n A U₀)
+    (hr : ∀ y ∈ U₀, finrank 𝕜 (A y).range = r) {x₀ : B} (hx₀ : x₀ ∈ U₀) :
+    ∃ U ⊆ U₀, IsOpen U ∧ x₀ ∈ U ∧ ∃ X : Fin r → Π x, E x,
+      IsSubbundleFrameOn F (fun y ↦ (A y).range.map (e.symmₗ 𝕜 y)) X U ∧
+      ∀ i, CMDiff[U] n (T% (X i)) := by
+  let β := Module.finBasisOfFinrankEq 𝕜 (A x₀).range (hr x₀ hx₀)
+  choose u hu using fun k ↦ LinearMap.mem_range.mp (β k).2
+  set Y : B → Fin r → F := fun y k ↦ A y (u k)
+  have hYc : ContinuousOn Y U₀ :=
+    continuousOn_pi.mpr fun k ↦ hA.continuousOn.clm_apply continuousOn_const
+  have hY₀ : LinearIndependent 𝕜 (Y x₀) := by
+    have hY : Y x₀ = fun k ↦ ((β k : (A x₀).range) : F) := funext hu
+    rw [hY]
+    exact β.linearIndependent.map' (A x₀).range.subtype (Submodule.ker_subtype _)
+  -- Read through `e`, a `C^n` family of vectors of `F` is a `C^n` family of sections.
+  have hX (k : Fin r) : CMDiff[U₀] n (T% (fun y ↦ e.symm y (Y y k))) := by
+    intro y hy
+    refine (e.contMDiffWithinAt_iff (by simpa [e.mem_source] using hU₀e hy)).mpr
+      ⟨contMDiffWithinAt_id, ((hA.clm_apply (contMDiffOn_const (c := u k))) y hy).congr
+        (fun z hz ↦ ?_) ?_⟩
+    · simp [Y, e.apply_mk_symm (hU₀e hz)]
+    · simp [Y, e.apply_mk_symm (hU₀e hy)]
+  refine ⟨U₀ ∩ Y ⁻¹' {f | LinearIndependent 𝕜 f}, inter_subset_left,
+    hYc.isOpen_inter_preimage hU₀ isOpen_setOfPred_linearIndependent, ⟨hx₀, hY₀⟩,
+    fun k y ↦ e.symm y (Y y k),
+    ⟨fun k ↦ (hX k).continuousOn.mono inter_subset_left, fun {y} hy ↦ ?_, fun {y} hy ↦ ?_⟩,
+    fun k ↦ (hX k).mono inter_subset_left⟩
+  · -- Over the base set, `e.symm y` is injective.
+    have hinj : Function.Injective (e.symmₗ 𝕜 y) := fun v w hvw ↦ by
+      have h := congr(e ⟨y, $hvw⟩)
+      simp only [e.symmₗ_apply (hU₀e hy.1), e.apply_mk_symm (hU₀e hy.1)] at h
+      exact (Prod.mk.inj h).2
+    simpa [Function.comp_def, e.symmₗ_apply (hU₀e hy.1)] using
+      hy.2.map' (e.symmₗ 𝕜 y) (LinearMap.ker_eq_bot.mpr hinj)
+  · -- `r` independent vectors of the `r`-dimensional range of `A y` span it.
+    have hspan : Submodule.span 𝕜 (range (Y y)) = (A y).range := by
+      refine Submodule.eq_of_le_of_finrank_eq (Submodule.span_le.mpr
+        (range_subset_iff.mpr fun k ↦ LinearMap.mem_range_self _ _)) ?_
+      rw [finrank_span_eq_card hy.2, Fintype.card_fin, hr y hy.1]
+    rw [← hspan, Submodule.map_span, ← range_comp, e.coe_symmₗ (hU₀e hy.1), comp_def]
+
+end Operators
 
 section SubbundleInclusion
 
