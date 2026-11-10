@@ -61,9 +61,20 @@ theorem bruhatCell_subset_of_mem {P : Subgroup G} (hB : T.subgroupB ≤ P)
   obtain ⟨a, ha, b, hb, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hx
   exact P.mul_mem (P.mul_mem (hB ha) hP) (hB hb)
 
-/-- If a simple reflection shortens a cell contained in a subgroup containing `B`, both the
-simple cell and the shortened cell lie in that subgroup. -/
-theorem bruhatCell_subset_of_wordLength_lt {P : Subgroup G} (hB : T.subgroupB ≤ P)
+/-- A subgroup containing a Bruhat cell contains `B`: for `n` in the cell, `n` and `n * b` lie in
+it for every `b ∈ B`, hence so does `b`. -/
+theorem subgroupB_le_of_bruhatCell_subset {P : Subgroup G} {w : T.WeylGroup}
+    (hw : T.bruhatCell w ⊆ P) : T.subgroupB ≤ P := by
+  obtain ⟨n, _, hn⟩ := T.exists_mem_bruhatCell w
+  intro b hb
+  have hnb : (n : G) * b ∈ T.bruhatCell w := by
+    rw [← T.bruhatCell_mul_subgroupB w]
+    exact Set.mul_mem_mul hn hb
+  simpa using P.mul_mem (P.inv_mem (hw hn)) (hw hnb)
+
+/-- If a simple reflection shortens a cell contained in a subgroup, both the simple cell and the
+shortened cell lie in that subgroup. -/
+theorem bruhatCell_subset_of_wordLength_lt {P : Subgroup G}
     {s w : T.WeylGroup} (hs : s ∈ T.simple) (hw : T.bruhatCell w ⊆ P)
     (hlt : ℓ (s * w) < ℓ w) :
     T.bruhatCell s ⊆ P ∧ T.bruhatCell (s * w) ⊆ P := by
@@ -76,7 +87,7 @@ theorem bruhatCell_subset_of_wordLength_lt {P : Subgroup G} (hB : T.subgroupB �
     have he : a = (n : G) * b⁻¹ := by rw [← hab, mul_inv_cancel_right]
     rw [he]
     exact P.mul_mem (hw hn) (P.inv_mem (hw hb))
-  have hsP := T.bruhatCell_subset_of_mem hB ha haP
+  have hsP := T.bruhatCell_subset_of_mem (T.subgroupB_le_of_bruhatCell_subset hw) ha haP
   refine ⟨hsP, ?_⟩
   intro x hx
   obtain ⟨a, ha, b, hb, rfl⟩ := T.subset_bruhatCell_mul_of_mem_simple hs w hx
@@ -88,13 +99,6 @@ theorem bruhatCell_subset_of_mem_reduced_word {P : Subgroup G}
     {l : List T.WeylGroup} (hl : ∀ s ∈ l, s ∈ T.simple)
     (hlen : l.length = ℓ l.prod) (hP : T.bruhatCell l.prod ⊆ P) :
     ∀ s ∈ l, T.bruhatCell s ⊆ P := by
-  have hB : T.subgroupB ≤ P := by
-    obtain ⟨n, _, hn⟩ := T.exists_mem_bruhatCell l.prod
-    intro b hb
-    have hnb : (n : G) * b ∈ T.bruhatCell l.prod := by
-      rw [← T.bruhatCell_mul_subgroupB l.prod]
-      exact Set.mul_mem_mul hn hb
-    simpa using P.mul_mem (P.inv_mem (hP hn)) (hP hnb)
   induction l with
   | nil => simp
   | cons s l ih =>
@@ -104,7 +108,7 @@ theorem bruhatCell_subset_of_mem_reduced_word {P : Subgroup G}
       simp only [List.prod_cons, T.simple_mul_simple_cancel_left hs]
       simp only [List.length_cons, List.prod_cons] at hlen
       omega
-    obtain ⟨hsP, htailP⟩ := T.bruhatCell_subset_of_wordLength_lt hB hs hP hshort
+    obtain ⟨hsP, htailP⟩ := T.bruhatCell_subset_of_wordLength_lt hs hP hshort
     have htailLen : l.length = ℓ l.prod := by
       have hbound := T.wordLength_simple_mul_le hs l.prod
       simp only [List.length_cons, List.prod_cons] at hlen
