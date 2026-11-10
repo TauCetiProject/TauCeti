@@ -19,7 +19,8 @@ equation into a bound on the full differential: if `L I = A (L 1)` with `‖A‖
 `‖L 1‖ ≤ B` this bounds the operator norm by `(1 + M) * B`
 (`ContinuousLinearMap.norm_le_of_apply_I_eq`).
 
-For `K = ℝ` the imaginary unit is `0` and the bounds reduce to `‖L z‖ ≤ ‖L 1‖ * ‖z‖`.
+For `K = ℝ` the imaginary unit is `0` and the first bound reduces to `‖L z‖ ≤ ‖L 1‖ * ‖z‖`; the
+other two keep their factor `1 + M`.
 -/
 
 public section
