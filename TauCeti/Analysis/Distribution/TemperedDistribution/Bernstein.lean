@@ -362,8 +362,9 @@ private theorem contDiff_annularSymbol (B : ℝ) {R : ℝ} (hR : 0 < R) (m : E) 
   refine Complex.ofRealCLM.contDiff.comp (contDiff_iff_contDiffAt.2 fun ξ ↦ ?_)
   rcases eq_or_ne ξ 0 with rfl | hξ
   · -- The symbol vanishes on the ball of radius `R / 4`.
+    have hR4 : 0 < R / 4 := by positivity
     refine contDiffAt_const (c := (0 : ℝ)).congr_of_eventuallyEq ?_
-    filter_upwards [ball_mem_nhds (0 : E) (show 0 < R / 4 by positivity)] with η hη
+    filter_upwards [ball_mem_nhds (0 : E) hR4] with η hη
     rw [mem_ball_zero_iff] at hη
     rw [annularCutoff_eq_zero B
       (by rw [norm_smul_of_nonneg (inv_nonneg.2 hR.le), inv_mul_lt_iff₀ hR]; linarith)]
@@ -529,8 +530,8 @@ theorem _root_.OrthonormalBasis.exists_norm_le_div_mul_sum_norm_of_lineDerivOp_e
     LinearMap.ker_eq_bot.mp (Lp.ker_toTemperedDistributionCLM_eq_bot (F := F)
       (μ := (volume : Measure E)) (p := p)) hdist
   calc ‖f‖ = (2 * Real.pi)⁻¹ * ‖∑ i, h i‖ := by
-        rw [hfh, norm_smul, norm_inv, norm_mul, Complex.norm_I, mul_one, norm_mul,
-          Complex.norm_ofNat, Complex.norm_real, Real.norm_of_nonneg Real.pi_pos.le]
+        rw [hfh, norm_smul]
+        simp [abs_of_pos Real.pi_pos]
     _ ≤ (2 * Real.pi)⁻¹ * ∑ i, R⁻¹ * K i * ‖g i‖ := by
         gcongr
         refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun i _ ↦ (hhn i).trans_eq ?_)
