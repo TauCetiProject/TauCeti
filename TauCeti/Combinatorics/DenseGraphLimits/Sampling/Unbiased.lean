@@ -117,6 +117,26 @@ theorem integral_injHomDensity_eq_sum_div {V W : Type*} [Fintype V] [Fintype W]
   ext G
   simp
 
+/-- A function that is nonzero at an atom of infinite mass is not integrable. -/
+theorem not_integrable_of_measure_singleton_eq_top {α E : Type*} [MeasurableSpace α]
+    [MeasurableSingletonClass α] [NormedAddCommGroup E] {ν : Measure α} {f : α → E} {x : α}
+    (hx : ν {x} = ⊤) (hf : f x ≠ 0) : ¬ Integrable f ν := fun hint ↦ by
+  have hge : ‖f x‖ₑ * ν {x} ≤ ∫⁻ y, ‖f y‖ₑ ∂ν :=
+    (lintegral_singleton (fun y ↦ ‖f y‖ₑ) x).symm.le.trans (setLIntegral_le_lintegral _ _)
+  rw [hx, ENNReal.mul_top (by simpa using hf)] at hge
+  exact hint.2.ne (top_unique hge)
+
+/-- On a finite type, the restriction of a measure to the points of finite mass is finite. -/
+theorem isFiniteMeasure_restrict_setOf_measure_singleton_ne_top {α : Type*} [Finite α]
+    [MeasurableSpace α] [MeasurableSingletonClass α] (ν : Measure α) :
+    IsFiniteMeasure (ν.restrict {x | ν {x} ≠ ⊤}) := by
+  refine ⟨?_⟩
+  rw [Measure.restrict_apply_univ]
+  have hsum := sum_measure_singleton (μ := ν) (s := (Set.toFinite {x | ν {x} ≠ ⊤}).toFinset)
+  rw [Set.Finite.coe_toFinset] at hsum
+  rw [← hsum]
+  exact ENNReal.sum_lt_top.2 fun G hG ↦ lt_top_iff_ne_top.2 (by simpa using hG)
+
 /-- If every embedded copy of a pattern is contained in hosts of the same mass `c`, the average
 injective homomorphism density of the pattern is `c`, provided the host has at least as many
 vertices as the pattern. -/
@@ -127,28 +147,19 @@ theorem integral_injHomDensity_eq_of_forall {V W : Type*} [Fintype V] [Fintype W
   classical
   have hd : ((Fintype.card W).descFactorial (Fintype.card V) : ℝ) ≠ 0 := by
     exact_mod_cast (Nat.descFactorial_pos.mpr hVW).ne'
-  -- A host graph has nonzero density exactly when some embedded copy of the pattern lies in it.
-  have hpos (G : SimpleGraph W) : injHomDensity F G ≠ 0 ↔ ∃ f : V ↪ W, F.map f ≤ G := by
-    rw [injHomDensity_def, SimpleGraph.card_injective_hom_eq_sum_map_le]
-    simp [hd]
+  have hpos (G : SimpleGraph W) := injHomDensity_ne_zero_iff F G hVW
   by_cases hinf : ∃ G, ν {G} = ⊤ ∧ ∃ f : V ↪ W, F.map f ≤ G
   · -- An atom of infinite mass carrying the pattern makes `c` and the integral both vanish.
     obtain ⟨G, hG, f, hf⟩ := hinf
     have hc : c = 0 := by
+      have hmono := measure_mono (μ := ν) (Set.singleton_subset_iff.2 hf :
+        {G} ⊆ {G | F.map f ≤ G})
+      rw [hG] at hmono
       rw [← h f, Measure.real, ENNReal.toReal_eq_zero_iff]
-      exact Or.inr (top_unique (hG ▸ measure_mono fun x hx ↦ by
-        rw [Set.mem_singleton_iff] at hx
-        exact hx ▸ hf))
+      exact Or.inr (top_unique hmono)
     rw [hc]
-    refine integral_undef fun hint ↦ ?_
-    have hfin := hint.2
-    have hge : ‖injHomDensity F G‖ₑ * ν {G} ≤ ∫⁻ x, ‖injHomDensity F x‖ₑ ∂ν := by
-      calc ‖injHomDensity F G‖ₑ * ν {G}
-          = ∫⁻ x in {G}, ‖injHomDensity F x‖ₑ ∂ν :=
-            (lintegral_singleton (fun x ↦ ‖injHomDensity F x‖ₑ) G).symm
-        _ ≤ _ := setLIntegral_le_lintegral _ _
-    rw [hG, ENNReal.mul_top (by simpa using (hpos G).2 ⟨f, hf⟩)] at hge
-    exact hfin.ne (top_unique hge)
+    exact integral_undef (not_integrable_of_measure_singleton_eq_top hG
+      ((hpos G).2 ⟨f, hf⟩))
   · push Not at hinf
     let s : Set (SimpleGraph W) := {G | ν {G} ≠ ⊤}
     have hs : MeasurableSet s := (Set.toFinite s).measurableSet
@@ -156,12 +167,7 @@ theorem integral_injHomDensity_eq_of_forall {V W : Type*} [Fintype V] [Fintype W
       by_contra hne
       obtain ⟨f, hf⟩ := (hpos G).1 hne
       exact hinf G (not_not.1 hG) f hf
-    have : IsFiniteMeasure (ν.restrict s) := ⟨by
-      rw [Measure.restrict_apply_univ]
-      have hsum := sum_measure_singleton (μ := ν) (s := (Set.toFinite s).toFinset)
-      rw [Set.Finite.coe_toFinset] at hsum
-      rw [← hsum]
-      exact ENNReal.sum_lt_top.2 fun G hG ↦ lt_top_iff_ne_top.2 (by simpa [s] using hG)⟩
+    have := isFiniteMeasure_restrict_setOf_measure_singleton_ne_top ν
     rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hg0,
       integral_injHomDensity_eq_sum_div F (ν.restrict s)]
     have hS (f : V ↪ W) : (ν.restrict s).real {G | F.map f ≤ G} = c := by
