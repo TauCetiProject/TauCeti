@@ -10,9 +10,11 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 /-!
 # Norm bounds for nonnegative translations in complex sectors
 
-For a complex number separated in argument from the negative real axis, adding a nonnegative
-real number increases the norm at least linearly, with an explicit constant depending only on
-the angular separation. These inequalities control reciprocal kernels in sectorial integrals.
+For a complex number `s` separated in argument from the negative real axis and a nonnegative
+real `t`, the norm of the translate `s + t` is bounded below by a fixed multiple of `‖s‖ + t`:
+`c * (‖s‖ + t) ≤ ‖s + t‖`, where `0 ≤ c ≤ 1` depends only on the angular separation. On the
+sector `|arg s| ≤ π - δ` one may take `c = (1 - cos δ) / 2`. These inequalities control
+reciprocal kernels in sectorial integrals.
 -/
 
 public section
@@ -21,8 +23,9 @@ open Complex Real
 
 namespace Complex
 
-/-- A lower bound on the real part gives a uniform lower bound after nonnegative translation. -/
-theorem norm_add_ofReal_lower_bound {s : ℂ} {c t : ℝ}
+/-- If `(2c - 1) ‖s‖ ≤ re s` with `0 ≤ c ≤ 1`, then `c * (‖s‖ + t) ≤ ‖s + t‖` for every
+nonnegative real `t`. -/
+theorem mul_norm_add_le_norm_add_ofReal {s : ℂ} {c t : ℝ}
     (hc : 0 ≤ c) (hc1 : c ≤ 1) (ht : 0 ≤ t)
     (hs : (2 * c - 1) * ‖s‖ ≤ s.re) :
     c * (‖s‖ + t) ≤ ‖s + t‖ := by
@@ -37,11 +40,12 @@ theorem norm_add_ofReal_lower_bound {s : ℂ} {c t : ℝ}
     nlinarith [mul_le_mul_of_nonneg_right hc2 (sq_nonneg (‖s‖ + t))]
   nlinarith [norm_nonneg (s + t)]
 
-/-- Translation by a nonnegative real has a uniform norm lower bound on a closed sector. -/
-theorem norm_add_ofReal_lower_bound_of_abs_arg_le {s : ℂ} {δ t : ℝ}
+/-- On the closed sector `|arg s| ≤ π - δ`, translation by a nonnegative real `t` satisfies
+`((1 - cos δ) / 2) * (‖s‖ + t) ≤ ‖s + t‖`. -/
+theorem mul_norm_add_le_norm_add_ofReal_of_abs_arg_le {s : ℂ} {δ t : ℝ}
     (hδ : 0 < δ) (hs : |s.arg| ≤ Real.pi - δ) (ht : 0 ≤ t) :
     ((1 - Real.cos δ) / 2) * (‖s‖ + t) ≤ ‖s + t‖ := by
-  apply norm_add_ofReal_lower_bound
+  apply mul_norm_add_le_norm_add_ofReal
   · linarith [Real.cos_le_one δ]
   · linarith [Real.neg_one_le_cos δ]
   · exact ht

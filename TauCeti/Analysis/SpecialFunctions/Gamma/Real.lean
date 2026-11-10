@@ -11,23 +11,33 @@ public import Mathlib.Analysis.Convex.Deriv
 public import Mathlib.Analysis.Complex.RealDeriv
 
 /-!
-# Explicit digamma bounds on the positive real axis
+# Real digamma and its bounds on the positive real axis
 
-For `x > 0`, the digamma function is real and satisfies
-`log x - 1 / x ≤ ψ(x) ≤ log x`. Consequently its difference from the
-principal complex logarithm has norm at most `1 / x` on the whole positive
-real axis. The real restriction is also monotone.
+This file defines the real digamma function `Real.digamma := logDeriv Real.Gamma`, the logarithmic
+derivative of real Gamma, and relates it to Mathlib's `Complex.digamma`.
 
-These estimates control the positive-real digamma asymptotic with an explicit error.
-The compatibility formulas relate every real digamma value to the logarithmic derivative
-of real Gamma and identify the derivative of its real logarithm at each regular point.
-They provide real-parameter bounds for archimedean factors of L-functions.
+## Main declarations
+
+* `Real.digamma`: the logarithmic derivative of `Real.Gamma`, with the total value `0` at the
+  poles `0, -1, -2, ...`.
+* `Complex.digamma_ofReal`: at every real point, complex digamma is the coercion of real digamma.
+* `Real.hasDerivAt_log_Gamma`, `Real.digamma_eq_deriv_log_Gamma`: at every regular real point,
+  real digamma is the derivative of `log ∘ Gamma`.
+* `Real.digamma_one`, `Real.digamma_apply_add_one`, `Real.digamma_apply_add_nat`: the value
+  `ψ(1) = -γ` and the recurrence `ψ(x + 1) = ψ(x) + 1 / x` with its iterates.
+* `Real.digamma_le_log_le`: for `x > 0`, `ψ(x) ≤ log x ≤ ψ(x + 1)`.
+* `Real.abs_digamma_sub_log_le`, `Complex.norm_digamma_ofReal_sub_log_le`,
+  `Complex.isBigO_digamma_ofReal_sub_log`: for `x > 0`, `|ψ(x) - log x| ≤ 1 / x`, so complex
+  digamma differs from the logarithm by `O(1 / x)` on the positive real axis.
+
+The positive-axis bounds come from the log-convexity of Gamma (Bohr–Mollerup): `ψ(x)` and
+`ψ(x + 1)` are the derivatives of the convex function `log ∘ Gamma` at the endpoints of
+`[x, x + 1]`, and its secant slope over that interval is `log x`.
 
 ## References
 
 * T. Tao, [Mathlib PR #43556](https://github.com/leanprover-community/mathlib4/pull/43556),
   for the real digamma definition, recurrence, coercion and bound statements.
-* The positive-axis bounds are consequences of the log-convexity of Gamma (Bohr–Mollerup).
 -/
 
 public section
@@ -82,10 +92,6 @@ theorem digamma_ofReal {x : ℝ} :
     obtain ⟨m, rfl⟩ := hx
     simp [digamma_def, logDeriv_apply, Gamma_neg_nat_eq_zero, Real.Gamma_neg_nat_eq_zero]
 
-/-- Real digamma is the real part of its complex counterpart on the real axis. -/
-theorem digamma_eq_re {x : ℝ} : Real.digamma x = (digamma (x : ℂ)).re := by
-  rw [digamma_ofReal, ofReal_re]
-
 end Complex
 
 namespace Real
@@ -104,29 +110,11 @@ theorem differentiableAt_log_Gamma {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)
 theorem digamma_eq_deriv_log_Gamma {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
     digamma x = deriv (log ∘ Gamma) x := (hasDerivAt_log_Gamma hx).deriv.symm
 
-/-- The derivative of the real log-Gamma function is monotone on the positive axis. -/
-theorem monotoneOn_deriv_log_Gamma : MonotoneOn (deriv (log ∘ Gamma)) (Ioi 0) :=
-  convexOn_log_Gamma.monotoneOn_deriv fun _ hx ↦
-    differentiableAt_log_Gamma (Complex.real_ne_neg_nat_of_pos hx)
-
-/-- Real digamma vanishes at zero under the total-value convention at the pole. -/
-@[simp]
-theorem digamma_zero : digamma 0 = 0 := by
-  apply Complex.ofReal_injective
-  push_cast
-  simp [← Complex.digamma_ofReal]
-
 /-- The value of real digamma at one is minus Euler's constant. -/
 theorem digamma_one : digamma 1 = -eulerMascheroniConstant := by
   apply Complex.ofReal_injective
   push_cast
   simpa [← Complex.digamma_ofReal] using Complex.digamma_one
-
-/-- The value of real digamma at one half is explicit in Euler's constant and `log 2`. -/
-theorem digamma_one_half : digamma (1 / 2) = -2 * log 2 - eulerMascheroniConstant := by
-  apply Complex.ofReal_injective
-  push_cast
-  simpa [← Complex.digamma_ofReal] using Complex.digamma_one_half
 
 /-- Real digamma satisfies the Gamma recurrence at every regular real point. -/
 theorem digamma_apply_add_one {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
@@ -143,40 +131,6 @@ theorem digamma_apply_add_nat {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) (n 
   push_cast
   simpa [← Complex.digamma_ofReal] using
     Complex.digamma_apply_add_nat (Complex.ofReal_ne_neg_nat hx) n
-
-/-- The real digamma values at positive integers are harmonic numbers minus Euler's constant. -/
-theorem digamma_nat_add_one (n : ℕ) :
-    digamma (n + 1) = harmonic n - eulerMascheroniConstant := by
-  apply Complex.ofReal_injective
-  push_cast
-  simpa [← Complex.digamma_ofReal] using Complex.digamma_nat_add_one n
-
-/-- Euler's reflection formula holds for real digamma away from the integers. -/
-theorem digamma_one_sub {x : ℝ} (hx : ∀ n : ℤ, x ≠ n) :
-    digamma (1 - x) = digamma x + π * cot (π * x) := by
-  apply Complex.ofReal_injective
-  push_cast
-  have hc : ∀ n : ℤ, (x : ℂ) ≠ n := fun n h ↦ hx n (by exact_mod_cast h)
-  simpa [← Complex.digamma_ofReal] using Complex.digamma_one_sub hc
-
-/-- The real digamma duplication formula holds whenever twice the argument is regular. -/
-theorem digamma_two_mul {x : ℝ} (hx : ∀ m : ℕ, 2 * x ≠ -(m : ℝ)) :
-    digamma (2 * x) = (1 / 2) * (digamma x + digamma (x + 1 / 2)) + log 2 := by
-  apply Complex.ofReal_injective
-  push_cast
-  have hc : ∀ m : ℕ, 2 * (x : ℂ) ≠ -(m : ℂ) := fun n h ↦ hx n (by exact_mod_cast h)
-  simpa [← Complex.digamma_ofReal] using Complex.digamma_two_mul hc
-
-/-- Real digamma is monotone on the positive real axis. -/
-theorem monotoneOn_digamma : MonotoneOn digamma (Ioi 0) := by
-  intro x hx y hy hxy
-  simpa only [← digamma_eq_deriv_log_Gamma (Complex.real_ne_neg_nat_of_pos hx),
-    ← digamma_eq_deriv_log_Gamma (Complex.real_ne_neg_nat_of_pos hy)] using
-      monotoneOn_deriv_log_Gamma hx hy hxy
-
-end Real
-
-namespace Real
 
 private theorem log_Gamma_slope {x : ℝ} (hx : 0 < x) :
     slope (log ∘ Gamma) x (x + 1) = log x := by

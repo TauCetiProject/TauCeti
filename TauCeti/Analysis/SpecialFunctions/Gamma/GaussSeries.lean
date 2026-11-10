@@ -17,8 +17,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 
 At every complex point outside the nonpositive integers, the paired reciprocal series
 `∑' n, (1 / (n + 1) - 1 / (s + n))` converges absolutely and equals `digamma s + γ`.
-The same statements hold for real arguments. Pairing is essential: the two reciprocal
-series do not converge separately.
+Pairing is essential: the two reciprocal series do not converge separately.
 
 The proof first identifies the sum on the positive real axis using the digamma recurrence
 and its explicit logarithmic asymptotic. Local uniform convergence extends the identity
@@ -29,7 +28,7 @@ then extend it to every regular complex point.
 
 * [NIST DLMF, equation 5.7.6](https://dlmf.nist.gov/5.7.E6).
 * T. Tao, [Mathlib PR #43556](https://github.com/leanprover-community/mathlib4/pull/43556),
-  for the real and complex Gauss series theorem statements.
+  for the Gauss series theorem statements.
 -/
 
 public section
@@ -47,6 +46,16 @@ private theorem gaussTerm_eq {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) (n :
   rw [gaussTerm, div_sub_div _ _ n.cast_add_one_ne_zero hsn]
   ring
 
+private theorem nonpole_of_re_pos {s : ℂ} (hs : 0 < s.re) :
+    ∀ m : ℕ, s ≠ -(m : ℂ) := by
+  intro m hm
+  have h := congrArg Complex.re hm
+  simp only [Complex.neg_re, Complex.natCast_re] at h
+  linarith [Nat.cast_nonneg (α := ℝ) m]
+
+private theorem norm_natCast_add_one (n : ℕ) : ‖(n : ℂ) + 1‖ = (n : ℝ) + 1 := by
+  simpa only [Nat.cast_add, Nat.cast_one] using Complex.norm_natCast (n + 1)
+
 private theorem summable_gaussTerm {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) :
     Summable (gaussTerm s) := by
   have hu : Summable (fun n : ℕ ↦ (2 * ‖s - 1‖) / (n : ℝ) ^ 2) := by
@@ -59,9 +68,7 @@ private theorem summable_gaussTerm {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)
   have hnorm : (n : ℝ) - ‖s‖ ≤ ‖s + n‖ := by
     simpa only [Complex.norm_natCast, add_comm] using norm_sub_le_norm_add (n : ℂ) s
   have hlow : (n : ℝ) / 2 ≤ ‖s + n‖ := by linarith [Nat.le_ceil ‖s‖]
-  have hn1 : ‖(n : ℂ) + 1‖ = (n : ℝ) + 1 := by
-    simpa only [Nat.cast_add, Nat.cast_one] using Complex.norm_natCast (n + 1)
-  rw [gaussTerm_eq hs, norm_div, norm_mul, hn1]
+  rw [gaussTerm_eq hs, norm_div, norm_mul, norm_natCast_add_one]
   have hden : 0 < ((n : ℝ) + 1) * ‖s + n‖ :=
     mul_pos (by linarith) (by linarith)
   apply (div_le_div_iff₀ hden (by positivity : 0 < (n : ℝ) ^ 2)).mpr
@@ -72,21 +79,10 @@ private theorem summable_gaussTerm {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)
 private theorem gaussTerm_sum (s : ℂ) (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) (N : ℕ) :
     ∑ n ∈ Finset.range N, gaussTerm s n =
       digamma s + Real.eulerMascheroniConstant + digamma (N + 1) - digamma (s + N) := by
-  have h1 : ∀ m : ℕ, (1 : ℂ) ≠ -(m : ℂ) := by
-    intro m hm
-    have h := congrArg Complex.re hm
-    simp only [one_re, neg_re, natCast_re] at h
-    linarith [Nat.cast_nonneg (α := ℝ) m]
-  rw [add_comm (N : ℂ) 1, digamma_apply_add_nat h1 N, digamma_apply_add_nat hs N, digamma_one]
+  rw [add_comm (N : ℂ) 1, digamma_apply_add_nat (nonpole_of_re_pos (by norm_num)) N,
+    digamma_apply_add_nat hs N, digamma_one]
   simp only [gaussTerm, Finset.sum_sub_distrib, add_comm (1 : ℂ), one_div]
   ring
-
-private theorem nonpole_of_re_pos {s : ℂ} (hs : 0 < s.re) :
-    ∀ m : ℕ, s ≠ -(m : ℂ) := by
-  intro m hm
-  have h := congrArg Complex.re hm
-  simp only [Complex.neg_re, Complex.natCast_re] at h
-  linarith [Nat.cast_nonneg (α := ℝ) m]
 
 private noncomputable def gaussSeries (s : ℂ) : ℂ :=
   -Real.eulerMascheroniConstant + ∑' n, gaussTerm s n
@@ -115,9 +111,7 @@ private theorem hasSumLocallyUniformlyOn_gaussTerm :
     have h := Complex.re_le_norm (s + n)
     simp only [Complex.add_re, Complex.natCast_re] at h
     linarith
-  have hn1 : ‖(n : ℂ) + 1‖ = (n : ℝ) + 1 := by
-    simpa only [Nat.cast_add, Nat.cast_one] using Complex.norm_natCast (n + 1)
-  rw [gaussTerm_eq (nonpole_of_re_pos hs0), norm_div, norm_mul, hn1]
+  rw [gaussTerm_eq (nonpole_of_re_pos hs0), norm_div, norm_mul, norm_natCast_add_one]
   apply (div_le_div_iff₀ (by nlinarith : 0 < ((n : ℝ) + 1) * ‖s + n‖)
     (by positivity : 0 < (n : ℝ) ^ 2)).mpr
   have hprod : (n : ℝ) ^ 2 ≤ ((n : ℝ) + 1) * ‖s + n‖ := by
@@ -143,27 +137,6 @@ private theorem tendsto_psi_error :
     Tendsto (fun x : ℝ ↦ digamma (x : ℂ) - Complex.log (x : ℂ)) atTop (𝓝 0) :=
   isBigO_digamma_ofReal_sub_log.trans_tendsto tendsto_inv_atTop_zero
 
-private theorem tendsto_log_nat_shift_diff {x : ℝ} (hx : 0 < x) :
-    Tendsto (fun N : ℕ ↦ Real.log ((N : ℝ) + 1) - Real.log ((N : ℝ) + x)) atTop (𝓝 0) := by
-  have ht : Tendsto (fun N : ℕ ↦ (N : ℝ) + x) atTop atTop :=
-    tendsto_atTop_add_const_right atTop x tendsto_natCast_atTop_atTop
-  have hi := tendsto_inv_atTop_zero.comp ht
-  have hr : Tendsto (fun N : ℕ ↦ ((N : ℝ) + 1) / ((N : ℝ) + x)) atTop (𝓝 1) := by
-    have h := (hi.const_mul (1 - x)).const_add 1
-    convert h using 1
-    · ext N
-      have hNx : (N : ℝ) + x ≠ 0 := by positivity
-      dsimp only [Function.comp_apply]
-      field_simp [hNx]
-      ring
-    · simp
-  have hl := (Real.continuousAt_log (by norm_num : (1 : ℝ) ≠ 0)).tendsto.comp hr
-  convert hl using 1
-  · ext N
-    dsimp only [Function.comp_apply]
-    exact (Real.log_div (by positivity) (by positivity)).symm
-  · simp
-
 private theorem tendsto_digamma_nat_shift_diff {x : ℝ} (hx : 0 < x) :
     Tendsto (fun N : ℕ ↦ digamma ((N : ℝ) + 1) - digamma ((N : ℝ) + x)) atTop (𝓝 0) := by
   have ht1 : Tendsto (fun N : ℕ ↦ (N : ℝ) + 1) atTop atTop :=
@@ -172,7 +145,12 @@ private theorem tendsto_digamma_nat_shift_diff {x : ℝ} (hx : 0 < x) :
     tendsto_atTop_add_const_right atTop x tendsto_natCast_atTop_atTop
   have hlogs : Tendsto (fun N : ℕ ↦ Complex.log (((N : ℝ) + 1) : ℂ) -
       Complex.log (((N : ℝ) + x) : ℂ)) atTop (𝓝 0) := by
-    have h := continuous_ofReal.continuousAt.tendsto.comp (tendsto_log_nat_shift_diff hx)
+    have hr : Tendsto (fun N : ℕ ↦ Real.log ((N : ℝ) + 1) - Real.log ((N : ℝ) + x)) atTop
+        (𝓝 0) := by
+      simpa only [Function.comp_def, sub_sub_sub_cancel_right, sub_zero] using
+        ((Real.tendsto_log_comp_add_sub_log 1).sub
+          (Real.tendsto_log_comp_add_sub_log x)).comp tendsto_natCast_atTop_atTop
+    have h := continuous_ofReal.continuousAt.tendsto.comp hr
     convert h using 1
     ext N
     dsimp only [Function.comp_apply]
@@ -312,24 +290,3 @@ theorem digamma_eq_gaussSeries {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) :
   simpa only [gaussSeries, gaussTerm] using digamma_eq_gaussSeries_regular hs
 
 end Complex
-
-namespace Real
-
-/-- The paired summands in the real Gauss series are summable at each regular real point. -/
-theorem summable_gaussSeries {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
-    Summable (fun n : ℕ ↦ 1 / ((n : ℝ) + 1) - 1 / (x + n)) := by
-  apply Complex.summable_ofReal.mp
-  have hc : ∀ m : ℕ, (x : ℂ) ≠ -(m : ℂ) := fun m h ↦ hx m (by exact_mod_cast h)
-  simpa only [Complex.ofReal_sub, Complex.ofReal_div, Complex.ofReal_add,
-    Complex.ofReal_one, Complex.ofReal_natCast] using Complex.summable_gaussSeries hc
-
-/-- Gauss' paired reciprocal series equals real digamma away from its poles. -/
-theorem digamma_eq_gaussSeries {x : ℝ} (hx : ∀ m : ℕ, x ≠ -(m : ℝ)) :
-    digamma x = -eulerMascheroniConstant +
-      ∑' n : ℕ, (1 / ((n : ℝ) + 1) - 1 / (x + n)) := by
-  have hc : ∀ m : ℕ, (x : ℂ) ≠ -(m : ℂ) := fun m h ↦ hx m (by exact_mod_cast h)
-  apply Complex.ofReal_injective
-  push_cast
-  simpa [← Complex.digamma_ofReal] using Complex.digamma_eq_gaussSeries hc
-
-end Real
