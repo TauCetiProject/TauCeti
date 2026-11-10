@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.Charpoly.Cyclic
-public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.TypeA
-public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.TypeC
-public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.TypeD
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.A
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.C
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.D
 
 /-!
 # Characteristic polynomials of the classical Coxeter elements
@@ -19,9 +19,9 @@ In the simple-root basis, the Coxeter element `s₀ s₁ ⋯ s_{n-1}` has charac
 * `(X^{n-1} + 1)(X + 1)` for `Dₙ`,
 * `1 + X + ⋯ + Xⁿ` for `Aₙ`.
 
-The ε-models of `TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.TypeB`,
-`TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.TypeC`,
-`TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.TypeD` intertwine the Coxeter element with the
+The ε-models of `TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.B`,
+`TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.C`,
+`TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.D` intertwine the Coxeter element with the
 negacyclic shift (and, for `Dₙ`, a sign on the last coordinate), so
 `Matrix.charpoly_eq_of_mul_eq_mul` transfers the polynomial. The negacyclic shift has the cyclic
 vector `e₀` (`Matrix.charpoly_eq_of_cyclic`). For `Dₙ` the eigenvalue `-1` is double when `n` is

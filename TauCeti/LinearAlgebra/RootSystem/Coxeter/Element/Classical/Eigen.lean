@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Classical
+public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Classical.Basic
 public import TauCeti.RingTheory.Polynomial.ComplexRoots
 
 /-!
