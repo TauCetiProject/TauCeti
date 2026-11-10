@@ -14,9 +14,12 @@ import TauCeti.Analysis.Normed.Module.DoubleDual
 
 A real or complex seminormed space is reflexive if and only if its closed unit ball is
 weakly compact. More generally, every norm-closed bounded real-convex set in a reflexive space is
-weakly compact. This rests on `TauCeti.isCompact_closure_toWeakSpace` from
-`TauCeti.Analysis.Normed.Module.DoubleDual`: over any proper nontrivially normed field, every
-bounded set in a reflexive space has weakly compact closure.
+weakly compact, and so a real function whose sublevel sets on a nonempty set are norm-closed,
+convex and bounded attains its infimum there (the direct method of the calculus of variations,
+`TauCeti.exists_isMinOn_of_isClosed_of_convex_of_isBounded`). This rests on
+`TauCeti.isCompact_closure_toWeakSpace` from `TauCeti.Analysis.Normed.Module.DoubleDual`: over
+any proper nontrivially normed field, every bounded set in a reflexive space has weakly compact
+closure.
 
 Reflexivity means surjectivity of `NormedSpace.inclusionInDoubleDual`. No completeness,
 separability or separation hypothesis is needed for the equivalence. For normed spaces,
@@ -72,6 +75,38 @@ theorem isCompact_toWeakSpace_of_isClosed_of_convex_of_isBounded
   have : LocallyConvexSpace ℝ E := NormedSpace.toLocallyConvexSpace' 𝕜
   rw [← hclosed.closure_eq, hconv.toWeakSpace_closure 𝕜]
   exact isCompact_closure_toWeakSpace hE hbound
+
+/-- **Direct method of the calculus of variations.** In a reflexive seminormed space, a real
+function `f` attains its infimum on a nonempty set `D` when every sublevel set
+`{u ∈ D | f u ≤ t}` is norm-closed, real-convex and bounded. These sublevel sets are weakly
+compact, and a common point of those at the levels `f v` for `v ∈ D` is a minimizer. -/
+theorem exists_isMinOn_of_isClosed_of_convex_of_isBounded
+    (hE : Surjective (inclusionInDoubleDual 𝕜 E))
+    [Module ℝ E] [IsScalarTower ℝ 𝕜 E] {f : E → ℝ} {D : Set E} (hD : D.Nonempty)
+    (hclosed : ∀ t, IsClosed {u ∈ D | f u ≤ t}) (hconv : ∀ t, Convex ℝ {u ∈ D | f u ≤ t})
+    (hbound : ∀ t, IsBounded {u ∈ D | f u ≤ t}) :
+    ∃ u ∈ D, IsMinOn f D u := by
+  have : LocallyConvexSpace ℝ E := NormedSpace.toLocallyConvexSpace' 𝕜
+  have : Nonempty D := hD.to_subtype
+  let K : D → Set (WeakSpace 𝕜 E) := fun v ↦ toWeakSpace 𝕜 E '' {u ∈ D | f u ≤ f v}
+  have hdir : Directed (· ⊇ ·) K := fun v w ↦ by
+    rcases le_total (f v) (f w) with h | h
+    · exact ⟨v, subset_rfl, image_mono fun u hu ↦ ⟨hu.1, hu.2.trans h⟩⟩
+    · exact ⟨w, image_mono fun u hu ↦ ⟨hu.1, hu.2.trans h⟩, subset_rfl⟩
+  have hKcl (v : D) : IsClosed (K v) := by
+    have h := (hconv (f v)).toWeakSpace_closure 𝕜
+    rw [(hclosed _).closure_eq] at h
+    simp only [K]
+    rw [h]
+    exact isClosed_closure
+  obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_directed_nonempty_isCompact_isClosed K hdir
+    (fun v ↦ ⟨_, v, ⟨v.2, le_rfl⟩, rfl⟩)
+    (fun v ↦ isCompact_toWeakSpace_of_isClosed_of_convex_of_isBounded hE (hclosed _) (hconv _)
+      (hbound _)) hKcl
+  have hmem (v : D) : (toWeakSpace 𝕜 E).symm x ∈ {u ∈ D | f u ≤ f v} := by
+    obtain ⟨u, hu, hux⟩ := mem_iInter.1 hx v
+    rwa [← hux, LinearEquiv.symm_apply_apply]
+  exact ⟨_, (hmem ⟨_, hD.some_mem⟩).1, isMinOn_iff.2 fun v hv ↦ (hmem ⟨v, hv⟩).2⟩
 
 /-- Every closed ball in a reflexive seminormed space is weakly compact, including balls
 of zero or negative radius. -/

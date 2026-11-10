@@ -660,82 +660,19 @@ theorem exists_isMinOn_sobolevReducedFunctional (hm : 0 < P.natDegree) :
       IsMinOn (sobolevReducedFunctional P) {v | Integrable (fun z ↦
         ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
           (Real.exp (2 * W1p.value v z) - 1 - 2 * W1p.value v z))} u := by
-  -- Name the admissible set `D` and the sublevel sets `S t`, keeping them opaque.
-  obtain ⟨D, hD⟩ : ∃ D : Set (W1p (volume : Measure ℂ) ⊤ 2), D = {v | Integrable (fun z ↦
-      ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-        (Real.exp (2 * W1p.value v z) - 1 - 2 * W1p.value v z))} := ⟨_, rfl⟩
-  obtain ⟨S, hS⟩ : ∃ S : ℝ → Set (W1p (volume : Measure ℂ) ⊤ 2), ∀ t, S t = {u | Integrable
-      (fun z ↦ ‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) *
-        (Real.exp (2 * W1p.value u z) - 1 - 2 * W1p.value u z)) ∧
-      sobolevReducedFunctional P u ≤ t} := ⟨_, fun _ ↦ rfl⟩
-  rw [← hD]
-  have hSD (t : ℝ) (u) (hu : u ∈ S t) : u ∈ D ∧ sobolevReducedFunctional P u ≤ t := by
-    rw [hS] at hu
-    rw [hD]
-    exact hu
-  have hDS (t : ℝ) (u) (hu : u ∈ D) (ht : sobolevReducedFunctional P u ≤ t) : u ∈ S t := by
-    rw [hD] at hu
-    rw [hS]
-    exact ⟨hu, ht⟩
-  have hconv (t : ℝ) : Convex ℝ (S t) := hS t ▸ convex_sublevel hm t
-  have hclosed (t : ℝ) : IsClosed (S t) := hS t ▸ isClosed_sublevel hm t
-  -- The zero function is admissible.
-  have h0 : (0 : W1p (volume : Measure ℂ) ⊤ 2) ∈ D := by
+  refine exists_isMinOn_of_isClosed_of_convex_of_isBounded
+    (surjective_inclusionInDoubleDual_of_uniformConvexSpace (𝕜 := ℝ)) ⟨0, ?_⟩
+    (isClosed_sublevel hm) (convex_sublevel hm) fun t ↦ ?_
+  · -- The zero function is admissible.
     have hz : (W1p.value (0 : W1p (volume : Measure ℂ) ⊤ 2) : ℂ → ℝ) =ᵐ[volume] 0 := by
       have := (Lp.coeFn_zero ℝ 2 ((volume : Measure ℂ).restrict
         ((⊤ : Opens ℂ) : Set ℂ))).filter_mono (ae_mono Measure.restrict_univ.ge)
       simpa only [← W1p.valueL_apply, map_zero] using this
-    rw [hD]
     refine (integrable_zero ℂ ℝ volume).congr ?_
     filter_upwards [hz] with z hz
     simp [hz]
-  obtain ⟨C₀, hC₀⟩ := exists_le_sobolevReducedFunctional hm
-  have hne : (sobolevReducedFunctional P '' D).Nonempty := ⟨_, 0, h0, rfl⟩
-  have hbdd : BddBelow (sobolevReducedFunctional P '' D) :=
-    ⟨C₀, by rintro _ ⟨v, hv, rfl⟩; rw [hD] at hv; exact hC₀ v hv⟩
-  obtain ⟨m, hm_def⟩ : ∃ m, m = sInf (sobolevReducedFunctional P '' D) := ⟨_, rfl⟩
-  -- The images in the weak topology of the sublevel sets at the levels `m + 1 / (n + 1)`.
-  let K : ℕ → Set (WeakSpace ℝ (W1p (volume : Measure ℂ) ⊤ 2)) :=
-    fun n ↦ toWeakSpace ℝ _ '' S (m + 1 / (n + 1))
-  have hmono (n : ℕ) : K (n + 1) ⊆ K n := by
-    refine image_mono fun u hu ↦ ?_
-    obtain ⟨huD, hut⟩ := hSD _ u hu
-    refine hDS _ u huD (hut.trans ?_)
-    have : 1 / ((↑(n + 1) : ℝ) + 1) ≤ 1 / ((n : ℝ) + 1) :=
-      one_div_le_one_div_of_le (by positivity) (by push_cast; linarith)
-    linarith
-  have hKne (n : ℕ) : (K n).Nonempty := by
-    obtain ⟨_, ⟨v, hv, rfl⟩, hlt⟩ := exists_lt_of_csInf_lt hne
-      (lt_add_of_pos_right (sInf (sobolevReducedFunctional P '' D))
-        (by positivity : (0 : ℝ) < 1 / (n + 1)))
-    exact ⟨_, v, hDS _ v hv (hm_def ▸ hlt.le), rfl⟩
-  have hK0 : IsCompact (K 0) := by
-    obtain ⟨R, hR⟩ := exists_norm_le_of_sobolevReducedFunctional_le hm (m + 1 / ((0 : ℕ) + 1))
-    have hsub : S (m + 1 / ((0 : ℕ) + 1)) ⊆ closedBall 0 R := fun u hu ↦ by
-      obtain ⟨huD, hut⟩ := hSD _ u hu
-      rw [hD] at huD
-      exact mem_closedBall_zero_iff.2 (hR u huD hut)
-    exact isCompact_toWeakSpace_of_isClosed_of_convex_of_isBounded
-      (surjective_inclusionInDoubleDual_of_uniformConvexSpace (𝕜 := ℝ)) (hclosed _) (hconv _)
-      (isBounded_closedBall.subset hsub)
-  have hKcl (n : ℕ) : IsClosed (K n) := by
-    have h := Convex.toWeakSpace_closure ℝ (hconv (m + 1 / (n + 1)))
-    rw [(hclosed _).closure_eq] at h
-    simp only [K]
-    rw [h]
-    exact isClosed_closure
-  obtain ⟨x, hx⟩ :=
-    IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed K hmono hKne hK0 hKcl
-  have hmem (n : ℕ) : (toWeakSpace ℝ _).symm x ∈ S (m + 1 / (n + 1)) := by
-    obtain ⟨v, hv, hvx⟩ := mem_iInter.1 hx n
-    rw [← hvx, LinearEquiv.symm_apply_apply]
-    exact hv
-  refine ⟨(toWeakSpace ℝ _).symm x, (hSD _ _ (hmem 0)).1, isMinOn_iff.2 fun v hv ↦ ?_⟩
-  have hle : sobolevReducedFunctional P ((toWeakSpace ℝ _).symm x) ≤ m := by
-    refine le_of_forall_pos_lt_add fun ε hε ↦ ?_
-    obtain ⟨n, hn⟩ := exists_nat_one_div_lt hε
-    linarith [(hSD _ _ (hmem n)).2]
-  exact hle.trans (hm_def ▸ csInf_le hbdd ⟨v, hv, rfl⟩)
+  · obtain ⟨R, hR⟩ := exists_norm_le_of_sobolevReducedFunctional_le hm t
+    exact isBounded_closedBall.subset fun u hu ↦ mem_closedBall_zero_iff.2 (hR u hu.1 hu.2)
 
 end Sobolev
 
