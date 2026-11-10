@@ -133,7 +133,8 @@ theorem mem_cyclicSubgroup_iff_mem_torus_and_pow_eq_one {g : SU2} :
     obtain ⟨j, hj⟩ := (bijective_rootsOfUnityAddChar n).surjective w
     apply (mem_cyclicSubgroup_iff n).2
     refine ⟨j, congrArg torusHom ?_⟩
-    exact congrArg (fun u : rootsOfUnity n Circle => (u.val : Circle)) hj
+    simpa only [ZMod.rootsOfUnityAddChar_val, w, val_toUnits_apply] using
+      congrArg (fun u : rootsOfUnity n Circle => (u.val : Circle)) hj
 
 /-- The parameter-one cyclic model is the trivial subgroup. -/
 @[simp]
