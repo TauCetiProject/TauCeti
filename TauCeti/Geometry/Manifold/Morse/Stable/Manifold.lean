@@ -100,12 +100,11 @@ theorem sum_weight_mul_coord_sq_pos {u : E} (hu : u ∈ φ.stableSubspace) (hu0 
   simp only [hterm]
   exact Finset.sum_pos' (fun i _ ↦ sq_nonneg _) ⟨j, Finset.mem_univ j, by positivity⟩
 
-variable [FiniteDimensional ℝ E]
-
 /-- The stable subspace has dimension `n - k`, where `k` is the Morse index. -/
 theorem finrank_stableSubspace_add_manifoldMorseIndex :
     Module.finrank ℝ φ.stableSubspace + manifoldMorseIndex 𝓘(ℝ, E) f x =
       Module.finrank ℝ E := by
+  have : FiniteDimensional ℝ E := φ.coord.symm.finiteDimensional
   have hsurj : Surjective φ.negativeCoord :=
     (LinearMap.funLeft_surjective_of_injective ℝ ℝ _ Subtype.val_injective).comp
       φ.coord.surjective
@@ -118,7 +117,6 @@ theorem finrank_stableSubspace_add_manifoldMorseIndex :
   rw [stableSubspace]
   omega
 
-omit [FiniteDimensional ℝ E] in
 /-- **The stable subspaces of a Morse chart and of its negation span the model space.** The stable
 subspace of the negated chart is the subspace where the coordinates of positive weight vanish, so
 every vector is the sum of a vector of each of the two subspaces. -/
