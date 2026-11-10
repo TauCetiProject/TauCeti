@@ -363,6 +363,18 @@ theorem factor_apply (h : I ≤ J) (x : L) :
     I.factor J h (LieSubmodule.Quotient.mk x) = LieSubmodule.Quotient.mk x := by
   simp [factor]
 
+/-- A quotient transition commutes with the quotient projections. -/
+@[simp]
+theorem factor_mkQ (h : I ≤ J) : (I.factor J h).comp I.mkQ = J.mkQ :=
+  I.liftQ_mkQ J.mkQ _
+
+/-- The identity induces the transition between nested quotient ideals. -/
+theorem mapQ_id_eq_factor (h : I ≤ J) :
+    I.mapQ J LieHom.id (fun _ hx => h hx) = I.factor J h := by
+  apply I.lieHom_qext
+  intro x
+  exact (I.mapQ_apply J LieHom.id h x).trans (I.factor_apply J h x).symm
+
 /-- A quotient transition at the same ideal is the identity. -/
 @[simp]
 theorem factor_refl : I.factor I le_rfl = LieHom.id := by
@@ -390,21 +402,12 @@ theorem ker_factor (h : I ≤ J) : (I.factor J h).ker = J.map I.mkQ := by
 brackets with the ambient algebra belong to `I`. -/
 theorem map_mkQ_le_center_iff :
     J.map I.mkQ ≤ LieAlgebra.center R (L ⧸ I) ↔ ⁅(⊤ : LieIdeal R L), J⁆ ≤ I := by
-  rw [LieSubmodule.lie_le_iff]
-  constructor
-  · intro h x _ y hy
-    have hy' := h (LieIdeal.mem_map (f := I.mkQ) hy)
-    rw [LieModule.mem_maxTrivSubmodule] at hy'
-    have hxy := hy' (I.mkQ x)
-    rw [← LieHom.map_lie, mkQ_apply, LieSubmodule.Quotient.mk_eq_zero'] at hxy
-    exact hxy
-  · intro h y hy
-    obtain ⟨y, rfl⟩ := LieIdeal.mem_map_of_surjective I.surjective_mkQ hy
-    rw [LieModule.mem_maxTrivSubmodule]
-    intro x
-    obtain ⟨x, rfl⟩ := I.surjective_mkQ x
-    rw [← LieHom.map_lie, mkQ_apply, LieSubmodule.Quotient.mk_eq_zero']
-    exact h x (LieSubmodule.mem_top x) y y.property
+  rw [LieModule.le_max_triv_iff_bracket_eq_bot]
+  have htop : (⊤ : LieIdeal R L).map I.mkQ = ⊤ := by
+    rw [← LieHom.idealRange_eq_map,
+      I.mkQ.idealRange_eq_top_of_surjective I.surjective_mkQ]
+  rw [← htop, ← LieIdeal.map_bracket_eq _ I.surjective_mkQ,
+    LieIdeal.map_eq_bot_iff, mkQ_ker]
 
 /-- A quotient transition is a central extension exactly when bracketing with
 the larger ideal lands in the smaller ideal. -/
