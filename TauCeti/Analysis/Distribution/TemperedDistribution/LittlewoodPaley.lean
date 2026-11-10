@@ -288,8 +288,8 @@ a tempered distribution is an `Lᵖ` function `f`, then it is also an `Lʳ` func
 
 `‖g‖_r ≤ C 2^{j n (1/p - 1/r)} ‖f‖_p`,
 
-where `n` is the dimension of `E` and `1/∞ = 0`. The block is carried by the ball of radius
-`2^j φ.rOut`, so this is Bernstein's inequality at that radius. -/
+where `n` is the dimension of `E` and `1/∞ = 0`. The Fourier transform of the block is carried by
+the ball of radius `2^j φ.rOut`, so this is Bernstein's inequality at that radius. -/
 theorem exists_littlewoodPaleyBlock_eq_and_norm_le_of_le [CompleteSpace F] {p r : ℝ≥0∞}
     [Fact (1 ≤ p)] [Fact (1 ≤ r)] (hpr : p ≤ r) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ (j : ℕ) (u : 𝓢'(E, F)) (f : Lp F p (volume : Measure E)),

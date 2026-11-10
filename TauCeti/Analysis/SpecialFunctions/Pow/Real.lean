@@ -101,6 +101,7 @@ with the corresponding integral of `q`-th powers.
   `a`, `C`, `I` and `0 < q`.
 * `Real.exists_le_mul_rpow_lt_of_neg`: for `0 < ε` and `p < 0`, arbitrarily large `R'` satisfy
   `M * R' ^ p < ε`.
+* `Real.rpow_sub_mul_mul_rpow_mul`: `x ^ ((s - a) t) x ^ (a t) = x ^ (s t)` for `0 < x`.
 * `Real.rpow_mul_le_rpow_add_one`: `T ^ S * x ≤ R' ^ (S + 1)` for `0 < R' ≤ T`, `x ≤ T` and
   `S + 1 ≤ 0`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
@@ -297,6 +298,12 @@ theorem rpow_le_rpow_sub_mul_rpow {ρ R₁ β γ : ℝ} (hρ : 0 < ρ) (hρR : �
     ρ ^ γ ≤ R₁ ^ (γ - β) * ρ ^ β :=
   calc ρ ^ γ = ρ ^ (γ - β) * ρ ^ β := by rw [← Real.rpow_add hρ, sub_add_cancel]
     _ ≤ R₁ ^ (γ - β) * ρ ^ β := by gcongr
+
+/-- Trading `a` orders in a scaled exponent: `x ^ ((s - a) t) x ^ (a t) = x ^ (s t)` for
+`0 < x`. -/
+theorem rpow_sub_mul_mul_rpow_mul {x : ℝ} (hx : 0 < x) (s a t : ℝ) :
+    x ^ ((s - a) * t) * x ^ (a * t) = x ^ (s * t) := by
+  rw [← rpow_add hx, ← add_mul, sub_add_cancel]
 
 /-- Dividing the base of a real power by a positive number divides the power by the same power
 of that number, whatever the sign of the base. Mathlib's `Real.div_rpow` needs a nonnegative

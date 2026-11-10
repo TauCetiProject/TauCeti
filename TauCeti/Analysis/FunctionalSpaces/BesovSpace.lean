@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Inhomogeneous Besov spaces
@@ -50,9 +51,9 @@ both its tempered distribution and this `Lᵖ` data.
 * `TauCeti.BesovSpace.inclusionOfExponentLE`: the Bernstein embedding
   `B^s_{p,q} ⊆ B^{s - n (1/p - 1/r)}_{r,q}` for `p ≤ r` in dimension `n`, bounded uniformly in `s`
   and `q` (`TauCeti.BesovSpace.exists_norm_inclusionOfExponentLE_le`); at the level of the
-  predicate it is `TemperedDistribution.MemBesov.mono_exponent`. Each block `Δⱼ u` is carried by
-  the ball of radius `2^j φ.rOut`, so Bernstein's inequality bounds its `Lʳ` norm by
-  `2^{j n (1/p - 1/r)}` times its `Lᵖ` norm.
+  predicate it is `TemperedDistribution.MemBesov.mono_exponent`. The Fourier transform of each
+  block `Δⱼ u` is carried by the ball of radius `2^j φ.rOut`, so Bernstein's inequality bounds its
+  `Lʳ` norm by `C 2^{j n (1/p - 1/r)}` times its `Lᵖ` norm, with `C` independent of `j` and `u`.
 * `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_eq`: a Schwartz function whose Fourier transform
   is carried by the region where `ψⱼ = 1` lies in every Besov space, with norm `2^{js} ‖u‖_p`;
   `TauCeti.BesovSpace.exists_toDistr_eq_and_norm_eq_of_norm_le` is the low-frequency case `j = 0`,
@@ -166,12 +167,6 @@ theorem MemBesov.sub {u v : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (hv : v.MemB
     (u - v).MemBesov φ s p q := by
   simpa [sub_eq_add_neg] using hu.add hv.neg
 
-/-- Trading `a` orders of smoothness at the `j`-th block: `2^{j (s - a)} 2^{j a} = 2^{j s}`. -/
-private theorem two_rpow_sub_mul_natCast_mul (s a : ℝ) (j : ℕ) :
-    (2 : ℝ) ^ ((s - a) * j) * 2 ^ (a * j) = 2 ^ (s * j) := by
-  rw [← Real.rpow_add two_pos]
-  ring_nf
-
 /-- **The Bernstein embedding.** For `p ≤ r`, `B^s_{p,q} ⊆ B^{s - n (1/p - 1/r)}_{r,q}`, where `n`
 is the dimension of `E` and `1/∞ = 0`: raising the integrability exponent of the blocks from `p`
 to `r` costs `n (1/p - 1/r)` orders of smoothness. -/
@@ -183,7 +178,7 @@ theorem MemBesov.mono_exponent {u : 𝓢'(E, F)} {r : ℝ≥0∞} [Fact (1 ≤ r
   obtain ⟨f, hf, hmem⟩ := memBesov_iff.1 hu
   choose g hg hgf using fun j ↦ hB j u (f j) (hf j)
   refine memBesov_iff.2 ⟨g, hg, (hmem.const_mul C).mono fun j ↦ ?_⟩
-  rw [Real.norm_of_nonneg (by positivity), ← two_rpow_sub_mul_natCast_mul s a j]
+  rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_sub_mul_mul_rpow_mul two_pos s a j]
   exact (mul_le_mul_of_nonneg_left (hgf j) (by positivity)).trans_eq (by ring)
 
 end MemBesov
@@ -532,7 +527,7 @@ private theorem exists_norm_le_of_toDistr_eq_of_exponent_le (hpr : p ≤ r) :
     simp only [ContinuousLinearMap.coe_coe, Lp.toTemperedDistributionCLM_apply, coe_block, ← h, hg]
   rw [norm_weightedBlocks_apply, hvg, lp.coeFn_smul, Pi.smul_apply, norm_smul,
     Complex.norm_of_nonneg hC, norm_weightedBlocks_apply,
-    ← two_rpow_sub_mul_natCast_mul s (Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) j]
+    ← Real.rpow_sub_mul_mul_rpow_mul two_pos s (Module.finrank ℝ E * (p.toReal⁻¹ - r.toReal⁻¹)) j]
   exact (mul_le_mul_of_nonneg_left hgf (by positivity)).trans_eq (by ring)
 
 variable [Fact (1 ≤ q)]
