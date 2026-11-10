@@ -148,28 +148,39 @@ theorem frobeniusCoalgebra_isFrobenius :
   rw [hl, hr, ← frobeniusCoalgebra_comul_mul_left ε a b,
     ← frobeniusCoalgebra_comul_mul_right ε a b]
 
+/-- The coproduct of any Frobenius coalgebra with counit `ε` is adjoint to
+multiplication for the trace pairing. -/
+theorem traceTensorEquiv_comul_of_isFrobenius (c : Coalgebra R A) (hc : c.counit = ε)
+    (hf : letI := c; Coalgebra.IsFrobenius R A) (a x y : A) :
+    traceTensorEquiv ε (c.comul a) (x ⊗ₜ[R] y) = ε (a * (x * y)) := by
+  let := c
+  let := hf
+  -- Contract the first leg after multiplying it by x, then pair the second with y.
+  have heval (t : A ⊗[R] A) :
+      traceTensorEquiv ε t (x ⊗ₜ[R] y) =
+        ε (TensorProduct.lid R A (c.counit.rTensor A
+          ((mul' R A).rTensor A ((TensorProduct.assoc R A A A).symm (x ⊗ₜ[R] t)))) * y) := by
+    induction t using TensorProduct.inductionOn with
+    | tmul b z => simp [hc, mul_comm b x]
+    | add t u ht hu => simp_all [tmul_add, add_mul]
+  have h := congrArg (fun f : A ⊗[R] A →ₗ[R] A ⊗[R] A => f (x ⊗ₜ[R] a))
+    (Coalgebra.IsFrobenius.right_eq_comul_comp_mul' (R := R) (A := A))
+  simp only [Coalgebra.IsFrobenius.right_def, comp_apply, lTensor_tmul,
+    LinearEquiv.coe_coe, mul'_apply] at h
+  rw [heval, h, Coalgebra.rTensor_counit_comul, TensorProduct.lid_tmul, one_smul,
+    mul_comm x a, mul_assoc]
+
 /-- A Frobenius coalgebra with the given counit is the trace reconstruction.
 In particular, the reconstruction is independent of any choice of basis. -/
 theorem frobeniusCoalgebra_eq (c : Coalgebra R A) (hc : c.counit = ε)
     (hf : letI := c; Coalgebra.IsFrobenius R A) : frobeniusCoalgebra ε = c := by
-  let := c
-  let := hf
   have hcomul : (frobeniusCoalgebra ε).comul = c.comul := by
     ext a
     apply (traceTensorEquiv ε).injective
     apply TensorProduct.ext'
     intro x y
-    rw [traceTensorEquiv_frobeniusCoalgebra_comul]
-    let t := Coalgebra.Repr.arbitrary R a
-    have h := congrArg
-      (fun z : A ⊗[R] A => ε (TensorProduct.lid R A (c.counit.rTensor A z) * y))
-      (congrArg (fun f : A ⊗[R] A →ₗ[R] A ⊗[R] A => f (x ⊗ₜ[R] a))
-        (Coalgebra.IsFrobenius.right_eq_comul_comp_mul' (R := R) (A := A)))
-    simp only [comp_apply, mul'_apply, Coalgebra.rTensor_counit_comul,
-      TensorProduct.lid_tmul, one_smul] at h
-    simpa [Coalgebra.IsFrobenius.right_def, ← t.eq, tmul_sum, traceTensorEquiv_tmul,
-      hc, Finset.sum_mul, Finset.mul_sum, mul_smul_comm, mul_assoc, mul_left_comm,
-      mul_comm] using h.symm
+    rw [traceTensorEquiv_frobeniusCoalgebra_comul,
+      traceTensorEquiv_comul_of_isFrobenius ε c hc hf]
   have hcounit : (frobeniusCoalgebra ε).counit = c.counit := by simp [hc]
   cases c with
   | @mk cs _ _ _ =>
@@ -215,9 +226,18 @@ theorem frobeniusCoalgebra_comul_eq_sum {ι : Type*} [Fintype ι]
   simp only [traceTensorEquiv_frobeniusCoalgebra_comul, map_sum]
   rw [LinearMap.sum_apply]
   simp only [traceTensorEquiv_tmul, mul_assoc, traceDualBasis_mul]
-  simpa only [Finset.sum_mul, Finset.mul_sum, map_sum, smul_mul_assoc, mul_smul_comm,
-    map_smul, smul_eq_mul, mul_comm, mul_assoc, mul_left_comm] using
-    congrArg (fun z : A => ε (z * x)) (b.sum_repr (a * y)).symm
+  symm
+  calc
+    ∑ i, ε (b i * x) * b.repr (a * y) i =
+        ∑ i, b.repr (a * y) i • ε (b i * x) := by
+      apply Finset.sum_congr rfl
+      intro i _
+      rw [smul_eq_mul, mul_comm]
+    _ = ε ((∑ i, b.repr (a * y) i • b i) * x) := by
+      rw [Finset.sum_mul, map_sum]
+      simp only [smul_mul_assoc, map_smul]
+    _ = ε ((a * y) * x) := by rw [b.sum_repr]
+    _ = ε (a * (x * y)) := by rw [mul_right_comm, mul_assoc]
 
 end LinearMap
 
