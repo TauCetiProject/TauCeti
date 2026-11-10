@@ -9,7 +9,6 @@ public import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Gradient
 public import TauCeti.Analysis.PDE.GreenFunction.HalfSpace
 import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
-import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Potential
 
 /-!
 # The Green kernel of a half-plane
@@ -34,7 +33,7 @@ normalization of `TauCeti.halfSpaceGreenKernel` does not cover. The kernel
 * tends to `0` at infinity;
 * has distributional Laplacian `-Δ G(a, ·) = δₐ - δ_{a*}` on the whole plane, hence
   `-Δ G(a, ·) = δₐ` against `C²` functions with compact support in the closed half-plane;
-* has inward normal derivative on the boundary line equal to minus the half-space Poisson
+* has outward normal derivative on the boundary line equal to minus the half-space Poisson
   kernel of dimension two, `⟪v, a⟫ / (π ‖z - a‖²)`, in the coordinates
   `Complex.orthonormalBasisOneI` of `EuclideanSpace ℝ (Fin 2)`, which is the kernel of the
   half-space Poisson integral `TauCeti.halfSpacePoissonIntegral` in dimension two.
@@ -50,8 +49,8 @@ higher-dimensional half-space.
 * `TauCeti.harmonicOnNhd_planarGreenKernelHalfPlane`: harmonicity away from the pole.
 * `TauCeti.tendsto_planarGreenKernelHalfPlane_cocompact`: decay at infinity.
 * `TauCeti.integral_laplacian_mul_planarGreenKernelHalfPlane_of_inner_neg`: `-Δ G(a, ·) = δₐ`.
-* `TauCeti.fderiv_planarGreenKernelHalfPlane_normal`: the normal derivative on the boundary is
-  the Poisson kernel.
+* `TauCeti.fderiv_planarGreenKernelHalfPlane_normal`: the outward normal derivative on the
+  boundary is minus the Poisson kernel.
 
 ## References
 
@@ -245,9 +244,9 @@ theorem fderiv_planarGreenKernelHalfPlane_normal_eq_neg_div {v : U} {a z : ℂ}
   field_simp
   ring
 
-/-- **The normal derivative of the half-plane Green kernel is the Poisson kernel.** On the
-boundary line, the derivative of `G(a, ·)` in the outward normal direction `-v` is minus the
-half-space Poisson kernel of dimension two, read in the coordinates
+/-- **The outward normal derivative of the half-plane Green kernel is minus the Poisson kernel.**
+On the boundary line, the derivative of `G(a, ·)` in the outward normal direction `-v` is minus
+the half-space Poisson kernel of dimension two, read in the coordinates
 `Complex.orthonormalBasisOneI` of `EuclideanSpace ℝ (Fin 2)`. -/
 theorem fderiv_planarGreenKernelHalfPlane_normal {v : U} {a z : ℂ}
     (hz : ⟪(v : ℂ), z⟫_ℝ = 0) (hza : z ≠ a) :
