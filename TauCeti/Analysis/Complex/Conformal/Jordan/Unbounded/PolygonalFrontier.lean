@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded
 
 import Mathlib.Analysis.Convex.PathConnected
+import TauCeti.Analysis.Normed.Field.Inversion
 import TauCeti.Topology.LocallyConnected
 
 /-!

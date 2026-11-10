@@ -38,6 +38,10 @@ into an open set.
   its closure outside the set is unbounded.
 * `TauCeti.closure_image_inv_sub`: the closure of the inversion of an unbounded set is the
   inverted closure together with `0`.
+* `TauCeti.isOpen_image_inv_sub`, `TauCeti.interior_image_inv_sub` and
+  `TauCeti.frontier_image_inv_sub`: the inversion of an open set about a point outside it is open,
+  the interior of the inversion of a set is the inversion of its interior, and inverting an
+  unbounded set about a point outside its closure adds `0` to the inverted frontier.
 * `TauCeti.isOpen_insert_zero_image_inv_sub`, `TauCeti.closure_insert_zero_image_inv_sub` and
   `TauCeti.frontier_insert_zero_image_inv_sub`: an open set with bounded complement, inverted about
   any point and completed by `0`, is open; the completed inversion of any set has the completed
@@ -228,6 +232,49 @@ theorem frontier_insert_zero_image_inv_sub (hUo : IsOpen U) (hq : q ∉ closure 
     sdiff_insert_of_notMem h0,
     ← image_sdiff (f := fun z : 𝕜 => (z - q)⁻¹) (inv_injective.comp (sub_left_injective (b := q))),
     ← hUo.frontier_eq]
+
+/-- Inverting an open set `U` about a point `q` outside it, the image is open. -/
+theorem isOpen_image_inv_sub (hUo : IsOpen U) (hqU : q ∉ U) :
+    IsOpen ((fun z : 𝕜 => (z - q)⁻¹) '' U) := by
+  -- the image is the preimage of `U` under `w ↦ q + w⁻¹`, which is continuous away from `0`
+  have : (fun z : 𝕜 => (z - q)⁻¹) '' U = {0}ᶜ ∩ (fun w : 𝕜 => q + w⁻¹) ⁻¹' U := by
+    rw [image_eq_preimage_of_inverse (f := fun z : 𝕜 => (z - q)⁻¹)
+      (g := fun w : 𝕜 => q + w⁻¹)
+      (by intro z; simp) (by intro w; simp)]
+    exact (inter_eq_right (s := {0}ᶜ).mpr fun w hw (hw0 : w = 0) =>
+      hqU (by simpa [hw0] using hw)).symm
+  rw [this]
+  exact (continuousOn_const.add continuousOn_inv₀).isOpen_inter_preimage isOpen_compl_singleton hUo
+
+/-- Inverting a set `U` about a point `q` outside it, the interior of the image is the image of the
+interior. -/
+theorem interior_image_inv_sub (hq : q ∉ U) :
+    interior ((fun z : 𝕜 => (z - q)⁻¹) '' U) = (fun z : 𝕜 => (z - q)⁻¹) '' interior U := by
+  refine Subset.antisymm (fun w hw => ?_) (interior_maximal (image_mono interior_subset)
+    (isOpen_image_inv_sub isOpen_interior fun h => hq (interior_subset h)))
+  obtain ⟨u, hu, rfl⟩ := interior_subset hw
+  -- the points off `q` inverted into the interior of the image form an open subset of `U`
+  have hN : IsOpen ({q}ᶜ ∩ (fun z : 𝕜 => (z - q)⁻¹) ⁻¹' interior ((fun z : 𝕜 => (z - q)⁻¹) '' U)) :=
+    (continuousOn_inv₀.comp (continuousOn_id.sub continuousOn_const) fun z hz => by
+      simpa [sub_ne_zero] using hz).isOpen_inter_preimage isOpen_compl_singleton isOpen_interior
+  have hNU : {q}ᶜ ∩ (fun z : 𝕜 => (z - q)⁻¹) ⁻¹' interior ((fun z : 𝕜 => (z - q)⁻¹) '' U) ⊆ U :=
+    fun z hz => by
+      obtain ⟨v, hv, hvz⟩ := interior_subset hz.2
+      exact (inv_injective.comp (sub_left_injective (b := q)) hvz) ▸ hv
+  exact ⟨u, hN.subset_interior_iff.mpr hNU ⟨fun h => hq (h ▸ hu), hw⟩, rfl⟩
+
+/-- Inverting an unbounded set `U` about a point `q` outside its closure, the frontier of the
+image is the image of the frontier together with `0`, the image of infinity. -/
+theorem frontier_image_inv_sub (hq : q ∉ closure U) (hUb : ¬IsBounded U) :
+    frontier ((fun z : 𝕜 => (z - q)⁻¹) '' U) =
+      insert 0 ((fun z : 𝕜 => (z - q)⁻¹) '' frontier U) := by
+  have hU0 : (0 : 𝕜) ∉ (fun z : 𝕜 => (z - q)⁻¹) '' interior U := by
+    rintro ⟨z, hz, hz0⟩
+    rw [inv_eq_zero, sub_eq_zero] at hz0
+    exact hq (subset_closure (interior_subset (hz0 ▸ hz)))
+  rw [frontier, closure_image_inv_sub hUb, interior_image_inv_sub fun h => hq (subset_closure h),
+    insert_sdiff_of_notMem _ hU0, frontier, image_sdiff (f := fun z : 𝕜 => (z - q)⁻¹)
+      (inv_injective.comp (sub_left_injective (b := q)))]
 
 end Completion
 

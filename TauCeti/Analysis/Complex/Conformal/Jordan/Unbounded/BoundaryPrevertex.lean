@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.Jordan.Unbounded.LocallyConnect
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
 import TauCeti.Analysis.Complex.Conformal.UpperHalfPlane.LocallyConnectedBoundary
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
+import TauCeti.Analysis.Normed.Field.Inversion
 
 /-!
 # Boundary prevertices from an inverted coordinate

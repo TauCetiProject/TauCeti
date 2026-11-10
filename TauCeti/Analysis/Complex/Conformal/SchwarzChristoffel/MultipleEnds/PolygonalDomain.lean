@@ -19,6 +19,7 @@ import TauCeti.Analysis.Complex.Conformal.LocalDegree
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Converse
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Formula
+import TauCeti.Analysis.Normed.Field.Inversion
 
 /-!
 # The Schwarz--Christoffel theorem for polygonal domains with several ends
