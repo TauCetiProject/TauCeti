@@ -93,13 +93,21 @@ def hahnModuleOrderClass (N : ℕ) :
   (orderQuotientHahnModuleEquiv R V N).symm.toLinearMap.comp
     (HahnModule.lattice R V N).mkQ
 
+/-- The quotient comparison sends a series' order class to its Laurent lattice class. -/
+@[simp]
+theorem orderQuotientHahnModuleEquiv_hahnModuleOrderClass (N : ℕ)
+    (x : _root_.HahnModule ℤ R V) :
+    orderQuotientHahnModuleEquiv R V N (hahnModuleOrderClass R V N x) =
+      Submodule.Quotient.mk x := by
+  simp [hahnModuleOrderClass]
+
 /-- The order class of a tensor's coefficient series is its tensor-current class. -/
 @[simp]
 theorem hahnModuleOrderClass_tensor (N : ℕ) (u : currentAlgebra R V) :
     hahnModuleOrderClass R V N (_root_.HahnModule.tensorProductToHahnModule ℤ R V u) =
       ModuleTower.quotientsπ _ (orderSubmodule_natCast_antitone R V) N u := by
   apply (orderQuotientHahnModuleEquiv R V N).injective
-  simp [hahnModuleOrderClass]
+  simp
 
 /-- Taking a lower order class commutes with the quotient transition. -/
 @[simp]
@@ -113,10 +121,10 @@ theorem transitionOfLE_hahnModuleOrderClass {M N : ℕ} (h : M ≤ N)
   have hx : _root_.HahnModule.tensorProductToHahnModule ℤ R V u - x ∈
       HahnModule.lattice R V N := by
     apply (Submodule.Quotient.eq _).mp
-    simpa [hahnModuleOrderClass] using
+    simpa using
       congrArg (orderQuotientHahnModuleEquiv R V N) hu
   rw [← hu, ModuleTower.transitionOfLE_quotientsπ, orderQuotientHahnModuleEquiv_mk]
-  simpa [hahnModuleOrderClass] using
+  simpa using
     (Submodule.Quotient.eq (HahnModule.lattice R V M)).mpr
       (HahnModule.lattice_antitone R V (by exact_mod_cast h) hx)
 
@@ -125,7 +133,7 @@ theorem transitionOfLE_hahnModuleOrderClass {M N : ℕ} (h : M ≤ N)
 theorem hahnModuleOrderClass_eq_zero_iff (N : ℕ) (x : _root_.HahnModule ℤ R V) :
     hahnModuleOrderClass R V N x = 0 ↔ x ∈ HahnModule.lattice R V N := by
   rw [← (orderQuotientHahnModuleEquiv R V N).map_eq_zero_iff]
-  simp [hahnModuleOrderClass]
+  simp
 
 /-- A vector-valued Laurent series gives compatible classes in all tensor-current order
 quotients. -/
