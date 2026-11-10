@@ -22,7 +22,7 @@ Consequently `∂ ∘ ∂ = 0` holds exactly when every set of broken index-two 
 cardinality. This is the algebraic half of `∂² = 0`. The geometric half, that broken trajectories
 are the boundary points of a compact one-dimensional manifold of trajectories and therefore come in
 pairs, needs the compactification and gluing of index-two trajectory spaces; it is proved in
-`TauCeti.Geometry.Manifold.Morse.Boundary.SquareZero`, which concludes `∂ ∘ ∂ = 0`.
+`TauCeti.Geometry.Manifold.Morse.Boundary.Square.Zero`, which concludes `∂ ∘ ∂ = 0`.
 
 This is the manifold form of `TauCeti.Analysis.Calculus.Morse.Boundary.Square`.
 

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Boundary.Square
+public import TauCeti.Geometry.Manifold.Morse.Boundary.Square.Basic
 import Mathlib.Geometry.Manifold.Metrizable
 import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
 import TauCeti.Geometry.Manifold.Morse.Stable.SequentialCompactness

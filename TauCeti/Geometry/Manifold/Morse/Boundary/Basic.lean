@@ -29,8 +29,8 @@ the finiteness of the index-one level slices strictly between the critical value
 observation that the slice is empty unless `f q < f p`. The boundary is the linear extension of
 the resulting counts. Showing that it squares to zero needs the compactification and gluing of
 index-two trajectory spaces, and is not asserted here; see
-`TauCeti.Geometry.Manifold.Morse.Boundary.Square` for its reduction to counting broken
-trajectories and `TauCeti.Geometry.Manifold.Morse.Boundary.SquareZero` for the proof.
+`TauCeti.Geometry.Manifold.Morse.Boundary.Square.Basic` for its reduction to counting broken
+trajectories and `TauCeti.Geometry.Manifold.Morse.Boundary.Square.Zero` for the proof.
 
 This is the manifold form of `TauCeti.Analysis.Calculus.Morse.Boundary.Basic`, which treats the
 negative-gradient flow of a function with compact sublevels on a vector space. On a compact
