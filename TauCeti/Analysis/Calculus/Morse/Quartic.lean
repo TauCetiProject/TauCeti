@@ -167,20 +167,17 @@ theorem isNondegenerateCriticalPoint_quarticWell_iff {x : ℝ} :
 /-- The local maximum `0` of the quartic has Morse index `1`. -/
 @[simp]
 theorem morseIndex_quarticWell_zero : morseIndex quarticWell 0 = 1 :=
-  (isNondegenerateCriticalPoint_quarticWell_iff.2 (by simp)).morseIndex_real_of_neg
-    (by rw [iteratedDeriv_two_quarticWell]; norm_num)
+  morseIndex_real_of_neg (by rw [iteratedDeriv_two_quarticWell]; norm_num)
 
 /-- The minimum `1` of the quartic has Morse index `0`. -/
 @[simp]
 theorem morseIndex_quarticWell_one : morseIndex quarticWell 1 = 0 :=
-  (isNondegenerateCriticalPoint_quarticWell_iff.2 (by simp)).morseIndex_real_of_pos
-    (by rw [iteratedDeriv_two_quarticWell]; norm_num)
+  morseIndex_real_of_pos (by rw [iteratedDeriv_two_quarticWell]; norm_num)
 
 /-- The minimum `-1` of the quartic has Morse index `0`. -/
 @[simp]
 theorem morseIndex_quarticWell_neg_one : morseIndex quarticWell (-1) = 0 :=
-  (isNondegenerateCriticalPoint_quarticWell_iff.2 (by simp)).morseIndex_real_of_pos
-    (by rw [iteratedDeriv_two_quarticWell]; norm_num)
+  morseIndex_real_of_pos (by rw [iteratedDeriv_two_quarticWell]; norm_num)
 
 /-! ### The flow on `[-1, 1]` -/
 
