@@ -30,6 +30,9 @@ For a real function, a positive one-sided derivative at `a` fixes the sign of `f
 `x > a` close to `a`, and if the left derivative at `a` is positive, then `f x < f a` for every
 `x < a` close to `a`.
 
+Comparing the slopes of two curves leaving a common point with the same right derivative shows
+that they do not separate linearly: their distance is `o(s - t)` at parameter `s`.
+
 ## Main results
 
 * `HasDerivAtFilter.tendsto_slope`: slopes converge to the derivative away from the base point.
@@ -37,6 +40,8 @@ For a real function, a positive one-sided derivative at `a` fixes the sign of `f
 * `HasDerivWithinAt.eventually_nhdsGT_lt_of_pos`,
   `HasDerivWithinAt.eventually_nhdsLT_lt_of_pos`: a positive right (left) derivative at `a`
   makes `f` larger (smaller) than `f a` just to the right (left) of `a`.
+* `HasDerivWithinAt.nonpos_of_mul_le_norm_sub`: two curves with the same right derivative at a
+  common point do not separate linearly.
 -/
 
 public section
@@ -91,3 +96,16 @@ theorem HasDerivWithinAt.eventually_nhdsLT_lt_of_pos {f : ℝ → ℝ} {f' a : �
   filter_upwards [((hasDerivWithinAt_iff_tendsto_slope' self_notMem_Iio).mp hf).eventually
     (lt_mem_nhds hf'), self_mem_nhdsWithin] with x hx hxa
   exact (slope_pos_iff_gt hxa).mp hx
+
+/-- Two curves leaving a common point with the same right derivative do not separate linearly:
+if `(s - t) * a ≤ ‖γ₁ s - γ₂ s‖` for all `s > t` close to `t`, then `a ≤ 0`. -/
+theorem HasDerivWithinAt.nonpos_of_mul_le_norm_sub {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {γ₁ γ₂ : ℝ → E} {u : E} {t a : ℝ}
+    (h₁ : HasDerivWithinAt γ₁ u (Ioi t) t) (h₂ : HasDerivWithinAt γ₂ u (Ioi t) t)
+    (h0 : γ₁ t = γ₂ t) (hle : ∀ᶠ s in 𝓝[>] t, (s - t) * a ≤ ‖γ₁ s - γ₂ s‖) : a ≤ 0 := by
+  have hslope := (hasDerivWithinAt_iff_tendsto_slope' (lt_irrefl t)).mp (h₁.sub h₂)
+  rw [sub_self] at hslope
+  refine ge_of_tendsto (by simpa using hslope.norm) ?_
+  filter_upwards [hle, self_mem_nhdsWithin] with s hs (hst : t < s)
+  simpa [slope_def_module, h0, norm_smul, abs_of_pos (sub_pos.2 hst),
+    le_inv_mul_iff₀ (sub_pos.2 hst)] using hs
