@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Data.Sym.Card
 public import Mathlib.Geometry.Manifold.Instances.Sphere
+import TauCeti.Analysis.Fredholm.LevelSet.Inclusion
 
 /-!
 # Stiefel manifolds of orthonormal frames
@@ -260,6 +261,31 @@ theorem range_mfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k) :
   rw [h.mfderiv]
   exact (LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)).trans
     (Submodule.range_subtype _)
+
+variable {E k} in
+/-- **The inclusion of the Stiefel manifold is an immersion.** Its differential at every frame,
+read in the space of `k`-families, is injective. -/
+theorem injective_mvfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k) :
+    Injective (mvfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ)
+      ((↑) : stiefel E k → Fin k → E) v) := by
+  rw [mvfderiv, ContinuousLinearMap.coe_comp]
+  exact (NormedSpace.fromTangentSpace _).injective.comp (injective_mfderiv_coe_levelSet _ _ _ _ v)
+
+variable {E k} in
+/-- The differential at `v` of the inclusion of the Stiefel manifold takes values in the kernel of
+the derivative of the Gram map: a tangent vector `a` at `v` satisfies
+`⟪v i, a j⟫ + ⟪a i, v j⟫ = 0` for all `i` and `j`. -/
+theorem gramSym2Deriv_mvfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k)
+    (w : TangentSpace 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) v) :
+    gramSym2Deriv E k v (mvfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ)
+      ((↑) : stiefel E k → Fin k → E) v w) = 0 := by
+  have h : (mfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) 𝓘(ℝ, Fin k → E)
+      ((↑) : stiefel E k → Fin k → E) v w) ∈ (gramSym2Deriv E k v).ker := by
+    rw [← range_mfderiv_coe_stiefel v]
+    exact LinearMap.mem_range_self _ w
+  -- `mvfderiv` is `mfderiv` followed by the identification of the tangent space of the vector
+  -- space `Fin k → E` with itself, which is the identity.
+  exact h
 
 /-- The `i`th vector of an orthonormal frame, as a point of the unit sphere. For `k = 2` and
 `i = 0` this is the projection of the unit tangent bundle of the sphere to its base. -/
