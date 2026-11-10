@@ -174,8 +174,8 @@ private theorem exists_map_IccExtend_eq_lintegral_curveAction_eq_of_normedSpace 
     exists_dense_eqOn_map_eval_lintegral_curveAction_le hp1 hp hab hμ hA
   -- Both curves of time marginals are continuous, so they agree on `[a, b]`.
   have hcont_η : Continuous fun t : Icc a b ↦ ηlim.map fun γ : C(Icc a b, E) ↦ γ t :=
-    ηlim.continuous_map_of_forall_continuous (fun s ↦ (continuous_eval_const s).aemeasurable)
-      fun γ ↦ γ.continuous
+    ηlim.continuous_map_of_ae_continuous (fun s ↦ (continuous_eval_const s).aemeasurable)
+      (ae_of_all _ fun γ ↦ γ.continuous)
   have hcont_μ : Continuous fun t : Icc a b ↦ (μ t : ProbabilityMeasure E) :=
     WassersteinSpace.continuous_toProbabilityMeasure.comp
       (hμ.continuousOn'.comp_continuous continuous_subtype_val fun t ↦ by
