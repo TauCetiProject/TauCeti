@@ -192,10 +192,8 @@ lemma isFiniteRelIndex_adjugate_natDiagGL (hn : n.Coprime N) :
       rcases not_and_or.mp hnN with h | h
       · exact natDiagGL_of_not_pos 2 fun H ↦ by simpa [not_not.mp h] using H 1
       · obtain rfl : n = 1 := by simpa [not_not.mp h] using hn
-        refine Units.ext ?_
-        rw [natDiagGL_coe 2 _ (by intro i; fin_cases i <;> simp)]
-        ext i j
-        fin_cases i <;> fin_cases j <;> simp
+        exact (congrArg (natDiagGL 2) (funext fun i ↦ by fin_cases i <;> rfl)).trans
+          (natDiagGL_one 2)
     rw [h1]
     simp only [map_one, Matrix.GeneralLinearGroup.adjugate_one, inv_one, map_one, one_smul]
     infer_instance
