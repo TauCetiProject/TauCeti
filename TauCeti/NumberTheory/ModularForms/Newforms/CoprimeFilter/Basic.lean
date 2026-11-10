@@ -235,16 +235,6 @@ private theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_pro
     · rw [hg'q n, hg₁q n, hprod]
       exact ite_coprime_ite_dvd_eq_ite_coprime_mul hq n _ _
 
-/-- Restricting a cusp form of nebentypus `χ.comp (ZMod.unitsMap h₁)` along a further divisibility
-`h₂` gives a cusp form of nebentypus `χ.comp (ZMod.unitsMap (h₁.trans h₂))`. -/
-private theorem restrict_mem_cuspFormCharSpace_comp {M₀ M₁ M₂ : ℕ} (χ : (ZMod M₀)ˣ →* ℂˣ)
-    (h₁ : M₀ ∣ M₁) (h₂ : M₁ ∣ M₂) {g : CuspForm ((Gamma1 M₁).map (mapGL ℝ)) k}
-    (hg : g ∈ cuspFormCharSpace k (χ.comp (ZMod.unitsMap h₁))) :
-    CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd h₂) g ∈
-      cuspFormCharSpace k (χ.comp (ZMod.unitsMap (h₁.trans h₂))) := by
-  have := CuspForm.restrict_mem_cuspFormCharSpace _ h₂ hg
-  rwa [MonoidHom.comp_assoc, ZMod.unitsMap_comp] at this
-
 omit [NeZero N] in
 /-- **The coprime-index filter.** For `f ∈ S_k(Γ₁(N), χ)` and a nonzero `L` whose primes all
 divide `N`, there is a cusp form `g` of level `∏ L.primeFactors * N`, with the nebentypus `χ`
@@ -301,7 +291,7 @@ theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_mul
   have hdvd : L.primeFactors.prod id * N ∣ L * N := mul_dvd_mul_right hpd N
   obtain ⟨g, hgχ, hgq⟩ := exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime χ hf hLN
   refine ⟨CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hdvd) g,
-    restrict_mem_cuspFormCharSpace_comp χ _ hdvd hgχ, fun n ↦ ?_⟩
+    CuspForm.restrict_mem_cuspFormCharSpace_comp χ _ hdvd hgχ, fun n ↦ ?_⟩
   rw [CuspForm.coe_restrict]
   exact hgq n
 
@@ -389,7 +379,7 @@ theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_mul_sq
     exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_prod_primeFactors_sq
       χ hf (L := L)
   refine ⟨CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hdvd) h,
-    restrict_mem_cuspFormCharSpace_comp χ _ hdvd hh, fun n ↦ ?_⟩
+    CuspForm.restrict_mem_cuspFormCharSpace_comp χ _ hdvd hh, fun n ↦ ?_⟩
   rw [CuspForm.coe_restrict]
   exact hhq n
 
@@ -460,7 +450,7 @@ theorem exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd_mul
   obtain ⟨g, hgχ, hgsupp, hgq⟩ :=
     exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd χ hf hp hLN hvan
   refine ⟨CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hdvd) g,
-    restrict_mem_cuspFormCharSpace_comp χ _ hdvd hgχ, ?_, fun n ↦ ?_⟩
+    CuspForm.restrict_mem_cuspFormCharSpace_comp χ _ hdvd hgχ, ?_, fun n ↦ ?_⟩
   · rwa [qExpansionSupportedOnDvd_iff, CuspForm.coe_restrict, ← qExpansionSupportedOnDvd_iff]
   · rw [CuspForm.coe_restrict]
     exact hgq n
