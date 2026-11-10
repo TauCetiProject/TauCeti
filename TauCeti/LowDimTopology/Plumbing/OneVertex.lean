@@ -418,7 +418,7 @@ noncomputable def coefficientEquivOneVertexPlumbingLatticeHomology {w : ℤ} (hw
     (k : (oneVertexPlumbing w).characteristicVectors) :
     PlumbingCoefficient ≃ₗ[PlumbingCoefficient] (oneVertexPlumbing w).latticeHomology k :=
   let h := isNegativeDefinite_oneVertexPlumbing hw
-  let e := (oneVertexPlumbing w).exists_cycle_latticeAugmentation_eq_one h k
+  let e := (oneVertexPlumbing w).exists_cycle_latticeAugmentation_eq_one k
   PlumbingGraph.coefficientEquivLatticeHomologyOfUnique _ k h e.choose e.choose_spec.1
     e.choose_spec.2
 

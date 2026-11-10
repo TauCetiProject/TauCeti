@@ -220,9 +220,15 @@ theorem latticeAugmentation_eq_zero_of_mem_range (P : PlumbingGraph V)
 
 /-- A lattice point of minimal characteristic weight gives a cycle whose augmentation is `1`. -/
 theorem exists_cycle_latticeAugmentation_eq_one (P : PlumbingGraph V)
-    (h : P.IsNegativeDefinite) (k : P.characteristicVectors) :
+    (k : P.characteristicVectors) :
     ∃ c : PlumbingChain V, P.latticeDifferential k c = 0 ∧ P.latticeAugmentation k c = 1 := by
-  obtain ⟨x, hx⟩ := P.exists_characteristicWeight_eq_sInfCharacteristicWeight h k
+  obtain ⟨x, hx⟩ : ∃ x : V → ℤ,
+      P.characteristicWeight k x = P.sInfCharacteristicWeight k := by
+    by_cases hb : BddBelow (Set.range (P.characteristicWeight k))
+    · rw [sInfCharacteristicWeight_def]
+      exact Int.csInf_mem (Set.range_nonempty _) hb
+    · exact ⟨0, by rw [P.characteristicWeight_zero, sInfCharacteristicWeight_def,
+        Int.csInf_of_not_bddBelow hb]⟩
   refine ⟨Finsupp.single ({ base := x, directions := ∅ } : PlumbingCube V) 1, ?_, ?_⟩
   · rw [latticeDifferential_single,
       P.latticeDifferentialOnGenerator_eq_zero_of_directions_eq_empty k rfl, smul_zero]
@@ -237,7 +243,7 @@ theorem exists_cycle_eq_zero_of_smul_mem_range_latticeDifferential (P : Plumbing
     ∃ c : PlumbingChain V, P.latticeDifferential k c = 0 ∧
       ∀ a : PlumbingCoefficient,
         a • c ∈ LinearMap.range (P.latticeDifferential k) → a = 0 := by
-  obtain ⟨c, hcycle, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one h k
+  obtain ⟨c, hcycle, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one k
   refine ⟨c, hcycle, fun a ha => ?_⟩
   have := P.latticeAugmentation_eq_zero_of_mem_range h k ha
   rwa [map_smul, hone, smul_eq_mul, mul_one] at this
@@ -261,7 +267,7 @@ theorem exists_injective_latticeHomologyCycleMap (P : PlumbingGraph V)
     ∃ (c : PlumbingChain V) (hc : P.latticeDifferential k c = 0),
       P.latticeAugmentation k c = 1 ∧
         Function.Injective (P.latticeHomologyCycleMap k c hc) := by
-  obtain ⟨c, hc, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one h k
+  obtain ⟨c, hc, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one k
   exact ⟨c, hc, hone, P.latticeHomologyCycleMap_injective h k c hc hone⟩
 
 /-! ### Nonvanishing of lattice homology -/
@@ -270,7 +276,7 @@ theorem exists_injective_latticeHomologyCycleMap (P : PlumbingGraph V)
 minimal-weight lattice point is a cycle that is not a boundary. -/
 theorem not_exact_latticeShortComplex (P : PlumbingGraph V) (h : P.IsNegativeDefinite)
     (k : P.characteristicVectors) : ¬ (P.latticeShortComplex k).Exact := by
-  obtain ⟨c, hcycle, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one h k
+  obtain ⟨c, hcycle, hone⟩ := P.exists_cycle_latticeAugmentation_eq_one k
   rw [P.latticeShortComplex_exact_iff_range_eq_ker k]
   intro hexact
   have hzero := P.latticeAugmentation_eq_zero_of_mem_range h k
