@@ -199,14 +199,28 @@ theorem squareClass_of_sq_mem_fintype {ι : Type*} [Finite ι] (d : ι → K) (r
   exact ⟨T, s, hs⟩
 
 /-- **Square-class descent for real rational square roots.** If `r` is a nonnegative
-rational with `√r ∈ ℚ(√c₀, …, √cₙ₋₁)` and every `c j` with `j < n` is nonnegative, then
-`r` is a rational square times a subset product of the `c j`. -/
-theorem squareClass_of_sqrt_mem (c : ℕ → ℚ) {n : ℕ} (hc : ∀ j < n, 0 ≤ c j) {r : ℚ} (hr : 0 ≤ r)
+rational with `√r ∈ ℚ(√c₀, …, √cₙ₋₁)`, then `r` is a rational square times a subset product of the
+`c j` with `j < n`. (A negative `c j` has `√(c j) = 0`; then either the product avoids it, or `r`
+vanishes.) -/
+theorem squareClass_of_sqrt_mem (c : ℕ → ℚ) {n : ℕ} {r : ℚ} (hr : 0 ≤ r)
     (hmem : (Real.sqrt r : ℝ) ∈ sqrtTower (K := ℚ) (fun j => Real.sqrt (c j)) n) :
-    ∃ (T : Finset ℕ) (s : ℚ), ↑T ⊆ Set.Iio n ∧ r = s ^ 2 * ∏ j ∈ T, c j :=
-  squareClass_of_sq_mem c _
-    (fun j hj => by simpa using Real.sq_sqrt (Rat.cast_nonneg.mpr (hc j hj)))
+    ∃ (T : Finset ℕ) (s : ℚ), ↑T ⊆ Set.Iio n ∧ r = s ^ 2 * ∏ j ∈ T, c j := by
+  have hsqrt : ∀ j, Real.sqrt (c j) = Real.sqrt ((max (c j) 0 : ℚ) : ℝ) := fun j => by
+    rcases le_total 0 (c j) with h | h
+    · rw [max_eq_left h]
+    · rw [max_eq_right h, Rat.cast_zero, Real.sqrt_eq_zero_of_nonpos (by exact_mod_cast h),
+        Real.sqrt_zero]
+  simp_rw [hsqrt] at hmem
+  obtain ⟨T, s, hT, hs⟩ := squareClass_of_sq_mem (fun j => max (c j) 0) _
+    (fun j _ => by simp)
     (by simpa using Real.sq_sqrt (Rat.cast_nonneg.mpr hr)) hmem
+  by_cases hT0 : ∀ j ∈ T, 0 ≤ c j
+  · exact ⟨T, s, hT, by rw [hs]; exact congrArg _ (Finset.prod_congr rfl fun j hj =>
+      max_eq_left (hT0 j hj))⟩
+  · obtain ⟨j, hjT, hj⟩ := not_forall₂.mp hT0
+    have hprod : ∏ i ∈ T, max (c i) 0 = 0 :=
+      Finset.prod_eq_zero hjT (max_eq_right (not_le.mp hj).le)
+    exact ⟨T, 0, hT, by rw [hs, hprod, mul_zero, zero_pow two_ne_zero, zero_mul]⟩
 
 /-- The real square root of a nonnegative integer squares back to its rational value, in the form
 `(√n)² = algebraMap ℚ ℝ n`. This supplies the `hroot` hypothesis of the degree theorem for the real
