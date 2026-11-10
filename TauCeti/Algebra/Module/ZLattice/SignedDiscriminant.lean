@@ -138,15 +138,12 @@ theorem signedDiscr_of_subsingleton [Subsingleton E] (L : Submodule ℤ E) : sig
   have hu : IsUnimodular L := isUnimodular_iff_eq_dual.mpr (Subsingleton.elim _ _)
   rw [hu.signedDiscr_eq_neg_one_pow, Module.finrank_zero_of_subsingleton, Nat.zero_div, pow_zero]
 
-/-- In a nontrivial space, the zero scaling `0 • L = ⊥` of any lattice has signed discriminant `0`:
-its dual is the whole space, so its discriminant group is infinite. -/
-theorem signedDiscr_zero_smul [Nontrivial E] (L : Submodule ℤ E) :
-    signedDiscr ((0 : ℝ) • L) = 0 := by
-  have hbot : (0 : ℝ) • L = ⊥ := by
-    ext x
-    simp
+/-- In a nontrivial space, the zero lattice `⊥` has signed discriminant `0`: its dual is the whole
+space, so its discriminant group is infinite. -/
+@[simp]
+theorem signedDiscr_bot [Nontrivial E] : signedDiscr (⊥ : Submodule ℤ E) = 0 := by
   obtain ⟨x, hx⟩ := exists_ne (0 : E)
-  rw [signedDiscr_eq_zero_iff, hbot]
+  rw [signedDiscr_eq_zero_iff]
   refine Infinite.of_injective
     (fun n : ℤ ↦ (Submodule.Quotient.mk ⟨n • x, mem_dual.2 fun y hy ↦ ?_⟩ : DiscriminantGroup ⊥))
     fun m n hmn ↦ ?_
@@ -253,10 +250,15 @@ theorem IsEven.signedDiscr_eq_one_of_isUnimodular (h : IsEven L) (hU : IsUnimodu
   rw [hU.signedDiscr_eq_neg_one_pow, show finrank ℝ E / 2 = 2 * m by omega, pow_mul, neg_one_sq,
     one_pow]
 
-/-- Scaling an integral full lattice `L` of rank `n` by `√m` (`m ≠ 0`) multiplies its signed
-discriminant by `mⁿ`. -/
-theorem IsIntegral.signedDiscr_sqrt_smul (h : IsIntegral L) {m : ℕ} (hm : m ≠ 0) :
+/-- Scaling an integral full lattice `L` of rank `n` by `√m` multiplies its signed discriminant by
+`mⁿ`. For `m = 0` both sides vanish when the space is nontrivial, and equal `1` otherwise. -/
+theorem IsIntegral.signedDiscr_sqrt_smul (h : IsIntegral L) {m : ℕ} :
     signedDiscr (√(m : ℝ) • L) = (m : ℤ) ^ finrank ℝ E * signedDiscr L := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · rcases subsingleton_or_nontrivial E with _ | _
+    · simp [signedDiscr_of_subsingleton, Module.finrank_zero_of_subsingleton]
+    · rw [Nat.cast_zero, Real.sqrt_zero, zero_smul, Submodule.zero_eq_bot, signedDiscr_bot,
+        Nat.cast_zero, zero_pow Module.finrank_pos.ne', zero_mul]
   rw [signedDiscr_def, signedDiscr_def, h.card_discriminantGroup_sqrt_smul hm]
   push_cast
   ring
@@ -276,17 +278,10 @@ theorem signedDiscr_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ E) {m : ℕ} :
     signedDiscr (√(m : ℝ) • span ℤ (Set.range b)) =
       (-1) ^ (Fintype.card ι / 2) * (m : ℤ) ^ Fintype.card ι := by
-  rcases eq_or_ne m 0 with rfl | hm
-  · rcases isEmpty_or_nonempty ι with hι | ⟨⟨i⟩⟩
-    · have : Subsingleton E := b.toBasis.repr.injective.subsingleton
-      simp [signedDiscr_of_subsingleton]
-    · have : Nontrivial E := nontrivial_of_ne (b i) 0 (b.orthonormal.ne_zero i)
-      rw [Nat.cast_zero, Real.sqrt_zero, signedDiscr_zero_smul,
-        Nat.cast_zero, zero_pow (Fintype.card_pos_iff.2 ⟨i⟩).ne', mul_zero]
   have := b.toBasis.finiteDimensional_of_finite
   have hu := isUnimodular_span_orthonormalBasis b
   rw [← b.coe_toBasis] at hu ⊢
-  rw [hu.isIntegral.signedDiscr_sqrt_smul hm, hu.signedDiscr_eq_neg_one_pow,
+  rw [hu.isIntegral.signedDiscr_sqrt_smul, hu.signedDiscr_eq_neg_one_pow,
     Module.finrank_eq_card_basis b.toBasis, mul_comm]
 
 /-- **Fricke partner product identity.** For an integral full lattice `L` of rank `n` and level `N`,
@@ -402,7 +397,7 @@ theorem IsEven.conductor_kroneckerChar_signedDiscr_sqrt_smul (R : Type*) [CommRi
         hL.isIntegral.signedDiscr_ne_zero).conductor := by
   obtain ⟨k, hk⟩ := hE
   refine TauCeti.conductor_kroneckerChar_eq_of_isSquare_mul _ _ _ _ ?_
-  rw [hL.isIntegral.signedDiscr_sqrt_smul hm, hk, pow_add]
+  rw [hL.isIntegral.signedDiscr_sqrt_smul, hk, pow_add]
   exact ⟨(m : ℤ) ^ k * signedDiscr L, by ring⟩
 
 /-- In even ambient dimension, scaling an even full lattice `L` by `√m` (`m ≠ 0`) preserves the
@@ -420,7 +415,7 @@ theorem IsEven.primitiveCharacter_kroneckerChar_signedDiscr_sqrt_smul_apply
   · exact Subsingleton.elim _ _
   obtain ⟨k, hk⟩ := hE
   refine TauCeti.primitiveCharacter_kroneckerChar_apply_of_isSquare_mul _ _ _ _ ?_ a
-  rw [hL.isIntegral.signedDiscr_sqrt_smul hm, hk, pow_add]
+  rw [hL.isIntegral.signedDiscr_sqrt_smul, hk, pow_add]
   exact ⟨(m : ℤ) ^ k * signedDiscr L, by ring⟩
 
 /-- The signed discriminant of the Fricke partner `√(level L) • L^∨` of an integral full lattice is
@@ -438,7 +433,7 @@ theorem signedDiscr_sqrt_level_smul_dual_modEq_zero_or_one (hE : Even (finrank �
   rcases (level L).eq_zero_or_pos with h0 | hpos
   · rcases subsingleton_or_nontrivial E with _ | _
     · simp [signedDiscr_of_subsingleton]
-    · rw [h0, Nat.cast_zero, Real.sqrt_zero, signedDiscr_zero_smul]
+    · rw [h0, Nat.cast_zero, Real.sqrt_zero, zero_smul, Submodule.zero_eq_bot, signedDiscr_bot]
       exact .inl rfl
   have : NeZero √(level L : ℝ) := ⟨Real.sqrt_ne_zero'.mpr (Nat.cast_pos.mpr hpos)⟩
   exact (isEven_sqrt_level_smul_dual L).signedDiscr_modEq_zero_or_one hE
