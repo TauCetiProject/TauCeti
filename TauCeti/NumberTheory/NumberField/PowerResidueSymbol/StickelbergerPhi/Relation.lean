@@ -17,6 +17,7 @@ import TauCeti.NumberTheory.GaussSum.Stickelberger
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
 import TauCeti.NumberTheory.NumberField.Cyclotomic.Splitting
 import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
+import TauCeti.RingTheory.Ideal.Pointwise
 
 /-!
 # Stickelberger's relation
@@ -301,9 +302,6 @@ theorem span_stickelbergerPhi_of_isMaximal (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [
   have hpm : ¬ p ∣ m := (Nat.Prime.coprime_iff_not_dvd hp).1 <|
     hP.coprime_dvd_left (hNP ▸ dvd_pow_self p (inertiaDeg_pos P ℤ).ne')
   set c : Gal(K/ℚ) → ℕ := fun σ ↦ (galEquivZMod m K σ : ZMod m).val
-  have hσP (σ : Gal(K/ℚ)) : (σ • P).IsMaximal := by
-    rw [pointwise_smul_eq_comap]
-    exact comap_isMaximal_of_surjective _ (RingEquiv.surjective _)
   -- The right side is the product of the multiset `M` of primes, its normalized factors.
   set M : Multiset (Ideal (𝓞 K)) := ∑ σ, c σ • {σ⁻¹ • P} with hM
   have hMprod : M.prod = ∏ σ : Gal(K/ℚ), (σ⁻¹ • P) ^ c σ := by
@@ -313,8 +311,8 @@ theorem span_stickelbergerPhi_of_isMaximal (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [
     obtain ⟨σ, -, hσ⟩ := Multiset.mem_sum.1 hQ
     rw [Multiset.mem_nsmul, Multiset.mem_singleton] at hσ
     rw [hσ.2]
-    exact prime_of_isPrime (Ring.ne_bot_of_isMaximal_of_not_isField (hσP σ⁻¹)
-      (RingOfIntegers.not_isField K)) (hσP σ⁻¹).isPrime
+    exact prime_of_isPrime (Ring.ne_bot_of_isMaximal_of_not_isField inferInstance
+      (RingOfIntegers.not_isField K)) inferInstance
   have hΦ := stickelbergerPhi_ne_zero hP hm
   suffices h : normalizedFactors (span {stickelbergerPhi P m}) = M by
     rw [← hMprod, ← h, prod_normalizedFactors_eq_self (by simpa using hΦ)]
