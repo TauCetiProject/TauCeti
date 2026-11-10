@@ -66,30 +66,31 @@ theorem variationOnFromTo.ediam_image_le {α E : Type*} [LinearOrder α] [Topolo
     ENNReal.toReal_mono hf (eVariationOn.mono f ht)
   have key {x y : α} (hx : x ∈ s) (hy : y ∈ s) (hxy : x ≤ y) :
       |variationOnFromTo f s a x - variationOnFromTo f s a y| ≤ (eVariationOn f s).toReal := by
+    have hV : 0 ≤ (eVariationOn f s).toReal := ENNReal.toReal_nonneg
     rcases le_total a x with h₁ | h₁
-    · rw [variationOnFromTo.eq_of_le f s h₁, variationOnFromTo.eq_of_le f s (h₁.trans hxy),
-        ← eVariationOn.Icc_add_Icc f h₁ hxy hx,
-        ENNReal.toReal_add (hfin inter_subset_left) (hfin inter_subset_left), abs_sub_comm,
-        add_sub_cancel_left, abs_of_nonneg ENNReal.toReal_nonneg]
-      exact hle inter_subset_left
+    · have hsum := congrArg ENNReal.toReal (eVariationOn.Icc_add_Icc f h₁ hxy hx)
+      rw [ENNReal.toReal_add (hfin inter_subset_left) (hfin inter_subset_left)] at hsum
+      have h₃ := hle (inter_subset_left : s ∩ Icc x y ⊆ s)
+      have h₄ : 0 ≤ (eVariationOn f (s ∩ Icc x y)).toReal := ENNReal.toReal_nonneg
+      rw [variationOnFromTo.eq_of_le f s h₁, variationOnFromTo.eq_of_le f s (h₁.trans hxy),
+        abs_le]
+      constructor <;> linarith
     rcases le_total a y with h₂ | h₂
     · have h := (eVariationOn.add_le_union f (s := s ∩ Icc x a) (t := s ∩ Icc a y)
         fun _ hu _ hv ↦ hu.2.2.trans hv.2.1).trans (eVariationOn.mono f
           (union_subset inter_subset_left inter_subset_left : s ∩ Icc x a ∪ s ∩ Icc a y ⊆ s))
       have h' := ENNReal.toReal_mono hf h
       rw [ENNReal.toReal_add (hfin inter_subset_left) (hfin inter_subset_left)] at h'
-      rw [variationOnFromTo.eq_of_ge f s h₁, variationOnFromTo.eq_of_le f s h₂,
-        show -(eVariationOn f (s ∩ Icc x a)).toReal - (eVariationOn f (s ∩ Icc a y)).toReal =
-          -((eVariationOn f (s ∩ Icc x a)).toReal + (eVariationOn f (s ∩ Icc a y)).toReal) by ring,
-        abs_neg, abs_of_nonneg (by positivity)]
-      exact h'
-    · rw [variationOnFromTo.eq_of_ge f s h₁, variationOnFromTo.eq_of_ge f s h₂,
-        ← eVariationOn.Icc_add_Icc f hxy h₂ hy,
-        ENNReal.toReal_add (hfin inter_subset_left) (hfin inter_subset_left),
-        show -((eVariationOn f (s ∩ Icc x y)).toReal + (eVariationOn f (s ∩ Icc y a)).toReal) -
-          -(eVariationOn f (s ∩ Icc y a)).toReal = -(eVariationOn f (s ∩ Icc x y)).toReal by ring,
-        abs_neg, abs_of_nonneg ENNReal.toReal_nonneg]
-      exact hle inter_subset_left
+      have h₃ : 0 ≤ (eVariationOn f (s ∩ Icc x a)).toReal := ENNReal.toReal_nonneg
+      have h₄ : 0 ≤ (eVariationOn f (s ∩ Icc a y)).toReal := ENNReal.toReal_nonneg
+      rw [variationOnFromTo.eq_of_ge f s h₁, variationOnFromTo.eq_of_le f s h₂, abs_le]
+      constructor <;> linarith
+    · have hsum := congrArg ENNReal.toReal (eVariationOn.Icc_add_Icc f hxy h₂ hy)
+      rw [ENNReal.toReal_add (hfin inter_subset_left) (hfin inter_subset_left)] at hsum
+      have h₃ := hle (inter_subset_left : s ∩ Icc x y ⊆ s)
+      have h₄ : 0 ≤ (eVariationOn f (s ∩ Icc x y)).toReal := ENNReal.toReal_nonneg
+      rw [variationOnFromTo.eq_of_ge f s h₁, variationOnFromTo.eq_of_ge f s h₂, abs_le]
+      constructor <;> linarith
   refine Metric.ediam_image_le_iff.2 fun x hx y hy ↦ ?_
   rw [edist_dist, Real.dist_eq, ← ENNReal.ofReal_toReal hf]
   refine ENNReal.ofReal_le_ofReal ?_
