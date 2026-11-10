@@ -244,7 +244,7 @@ private lemma quasiIso_transfiniteIterate_arrow (hA₀ : QuasiIso A₀.arrow) (j
     have hF : ((Set.principalSegIio m).monotone.functor ⋙ functor hS A₀ J ⋙ H)
         |>.IsEventuallyConstantFrom i₀ := fun k φ ↦ by
       have : QuasiIso ((functor hS A₀ J).map ((Set.principalSegIio m).monotone.functor.map φ)) :=
-        Subobject.quasiIso_ofLE _ (ih _ i₀.2) (ih _ k.2)
+        (Subobject.quasiIso_ofLE_iff _ (ih _ k.2)).2 (ih _ i₀.2)
       rw [Functor.comp_map, Functor.comp_map, HomologicalComplex.homologyFunctor_map]
       exact (quasiIsoAt_iff_isIso_homologyMap _ n).1 ((quasiIso_iff _).1 this n)
     have hι := hF.isIso_ι_of_isColimit (isColimitOfPreserves H hc)
