@@ -56,11 +56,9 @@ theorem rightCont (hW : IsFilteredPreBrownianReal ℱ W P)
     rw [hzero, MeasurableSpace.comap_const]
     exact indep_bot_right (ℱ.rightCont s)
   obtain ⟨u, -, hu, hlim⟩ := exists_seq_strictAnti_tendsto' hst
-  have hind (n : ℕ) : Indep (ℱ.rightCont s) (.comap (W t - W (u n)) inferInstance) P := by
-    have hle : ℱ.rightCont s ≤ ℱ (u n) := by
-      rw [Filtration.rightCont_eq]
-      exact iInf₂_le (u n) (hu n).1
-    exact indep_of_indep_of_le_left (hW.indep_sub (hu n).2.le).symm hle
+  have hind (n : ℕ) : Indep (ℱ.rightCont s) (.comap (W t - W (u n)) inferInstance) P :=
+    indep_of_indep_of_le_left (hW.indep_sub (hu n).2.le).symm
+      (ℱ.rightCont_le_of_lt (hu n).1)
   refine indep_comap_of_ae_tendsto (ℱ.rightCont.le s)
     (fun n => (hW.adapted.measurable.sub hW.adapted.measurable).aemeasurable)
     (hW.adapted.measurable.sub hW.adapted.measurable).aemeasurable hind ?_
