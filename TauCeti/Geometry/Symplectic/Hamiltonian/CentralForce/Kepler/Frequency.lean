@@ -138,7 +138,7 @@ theorem deriv_keplerActionHamiltonian_fst_eq_div_radialPeriod {m κ ℓ E r₁ r
   have hb : 0 < √(m / κ) := sqrt_pos.2 (div_pos hm hκ)
   have hc : 0 < √((r₁ + r₂) / 2) := sqrt_pos.2 ha
   have htotal : 0 < radialAction m (fun r ↦ -κ / r) ℓ E r₁ r₂ + |ℓ| := by
-    rw [kepler_radialAction hm hℓ h₁ hlt hr₁ hr₂, sub_add_cancel]
+    rw [kepler_radialAction hm h₁ hlt hr₁ hr₂, sub_add_cancel]
     exact mul_pos hκ (sqrt_pos.2 (div_pos hm (by linarith)))
   have hs : √(m / (-2 * E)) = √(m / κ) * √((r₁ + r₂) / 2) := by
     rw [← sqrt_mul (div_nonneg hm.le hκ.le)]
@@ -146,8 +146,8 @@ theorem deriv_keplerActionHamiltonian_fst_eq_div_radialPeriod {m κ ℓ E r₁ r
     rw [kepler_kappa_eq hm.ne' h₁.ne' (h₁.trans hlt).ne' hlt.ne hr₁ hr₂]
     field_simp [hE.ne, ne_of_gt (by linarith : 0 < r₁ + r₂)]
   rw [(hasDerivAt_keplerActionHamiltonian_fst m κ ℓ htotal.ne').deriv,
-    kepler_radialAction hm hℓ h₁ hlt hr₁ hr₂, sub_add_cancel,
-    kepler_radialPeriod hm hℓ h₁ hlt hr₁ hr₂, rpow_div_two_eq_sqrt 3 ha.le,
+    kepler_radialAction hm h₁ hlt hr₁ hr₂, sub_add_cancel,
+    kepler_radialPeriod hm h₁ hlt hr₁ hr₂, rpow_div_two_eq_sqrt 3 ha.le,
     hs]
   have hb2 := sq_sqrt (div_pos hm hκ).le
   field_simp at hb2 ⊢
@@ -167,11 +167,11 @@ theorem deriv_keplerActionHamiltonian_snd_eq_div_radialPeriod {m κ ℓ E r₁ r
   have hE := kepler_energy_neg hm hℓ h₁ hlt hr₁ hr₂
   have hκ := kepler_kappa_pos hm hℓ h₁ hlt hr₁ hr₂
   have htotal : radialAction m (fun r ↦ -κ / r) ℓ E r₁ r₂ + |ℓ| ≠ 0 := by
-    rw [kepler_radialAction hm hℓ h₁ hlt hr₁ hr₂, sub_add_cancel]
+    rw [kepler_radialAction hm h₁ hlt hr₁ hr₂, sub_add_cancel]
     exact ne_of_gt (mul_pos hκ (sqrt_pos.2 (div_pos hm (by linarith))))
   rw [deriv_keplerActionHamiltonian_snd_eq_sign_mul m κ _ hℓ htotal,
     deriv_keplerActionHamiltonian_fst_eq_div_radialPeriod hm hℓ h₁ hlt hr₁ hr₂,
-    kepler_apsidalAngle hm hℓ h₁ hlt hr₁ hr₂]
+    kepler_apsidalAngle hm h₁ hlt hr₁ hr₂]
   ring
 
 end TauCeti
