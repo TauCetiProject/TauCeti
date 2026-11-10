@@ -11,6 +11,7 @@ public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.ApproxProd
 public import TauCeti.NumberTheory.DiophantineApproximation.Subspace.Volume
 public import TauCeti.RingTheory.DedekindDomain.SInteger.Primitive
 
+import TauCeti.Algebra.Order.Floor.Ring
 import TauCeti.NumberTheory.Height.Primitive
 import TauCeti.NumberTheory.NumberField.Global.Places.Height
 import TauCeti.NumberTheory.NumberField.SUnits.AffineHeight
@@ -63,31 +64,6 @@ open Finset Height IsDedekindDomain Module Real
 namespace TauCeti.NumberField
 
 variable {ι : Type*}
-
-/-! ### Rounding exponents up to a grid -/
-
-/-- The exponent families on the grid `ℤ / N` with entries in `[-2, 2]` on `P` and `0` off `P`,
-indexed by the integer numerators. -/
-private noncomputable def gridExponent {α : Type*} (P : Set α) (N : ℕ)
-    (g : P → ι → Finset.Icc (-(2 * N : ℤ)) (2 * N)) : α → ι → ℝ :=
-  open Classical in fun v i ↦ if h : v ∈ P then ((g ⟨v, h⟩ i : ℤ) : ℝ) / N else 0
-
-/-- Rounding up to the grid `ℤ / N`: an exponent family with entries in `[-2, 2]` on `P` lies
-below a grid family which exceeds it by at most `1 / N` on `P`. -/
-private theorem exists_le_gridExponent {α : Type*} {P : Set α} {N : ℕ} (hN : 0 < N)
-    {a : α → ι → ℝ} (ha : ∀ v ∈ P, ∀ i, |a v i| ≤ 2) :
-    ∃ g, ∀ v ∈ P, ∀ i, a v i ≤ gridExponent P N g v i ∧
-      gridExponent P N g v i ≤ a v i + 1 / N := by
-  have hNpos : (0 : ℝ) < N := Nat.cast_pos.mpr hN
-  have hNa (v : P) (i : ι) : |(N : ℝ) * a v i| ≤ 2 * N := by
-    rw [abs_mul, Nat.abs_cast, mul_comm (2 : ℝ)]
-    exact mul_le_mul_of_nonneg_left (ha v v.2 i) hNpos.le
-  refine ⟨fun v i ↦ ⟨⌈N * a v i⌉, Finset.mem_Icc.mpr ⟨?_, ?_⟩⟩, fun v hv i ↦ ?_⟩
-  · exact Int.le_ceil_iff.mpr (by push_cast; linarith [(abs_le.mp (hNa v i)).1])
-  · exact Int.ceil_le.mpr (by push_cast; linarith [(abs_le.mp (hNa v i)).2])
-  · simp only [gridExponent, hv, dite_true]
-    rw [le_div_iff₀ hNpos, div_le_iff₀ hNpos, add_mul, one_div_mul_cancel hNpos.ne', mul_comm]
-    exact ⟨Int.le_ceil _, (Int.ceil_lt_add_one _).le⟩
 
 /-! ### The classes of solutions -/
 
@@ -185,8 +161,13 @@ theorem exists_finset_forall_exists_smul_mem_approxDomain (S₀ : Finset (Finite
   obtain ⟨N, hN⟩ := exists_nat_gt (2 * W / ε)
   have hNpos : (0 : ℝ) < N := (div_nonneg (by positivity) hε.le).trans_lt hN
   classical
-  refine ⟨(Set.finite_range (gridExponent P N)).toFinset.filter
-    fun c ↦ approxWeight S₀ c ≤ -(ε / 2), exp (max C 1), fun c hc ↦ (mem_filter.mp hc).2, ?_⟩
+  -- the exponent families on the grid `ℤ / N`, with entries in `[-2, 2]` on `P` and `0` off `P`
+  obtain ⟨T₀, hT₀⟩ := exists_finset_forall_exists_le_lt_add (κ := P × ι) (one_div_pos.mpr hNpos)
+    (2 : ℝ)
+  set ext : (P × ι → ℝ) → AbsoluteValue K ℝ → ι → ℝ :=
+    fun c v i ↦ if h : v ∈ P then c (⟨v, h⟩, i) else 0
+  refine ⟨(T₀.image ext).filter fun c ↦ approxWeight S₀ c ≤ -(ε / 2), exp (max C 1),
+    fun c hc ↦ (mem_filter.mp hc).2, ?_⟩
   intro x hx hQ hLinf hLfin happrox
   obtain ⟨u, -, hu⟩ := hC x hx
   set y := ((u : Kˣ) : K) • x with hy
@@ -219,9 +200,12 @@ theorem exists_finset_forall_exists_smul_mem_approxDomain (S₀ : Finset (Finite
       exact mulHeight_eq_prod_of_isPrimitive_image_maximalIdeal S₀ (by rwa [hS])
     · rwa [approxProd_smul (fun _ _ ↦ ⟨by ext; simp⟩) (fun _ _ ↦ ⟨by ext; simp⟩) hu0 x]
   -- rounding up to the grid raises the weight by at most `ε / 2`
-  obtain ⟨g, hg⟩ := exists_le_gridExponent (Nat.cast_pos.mp hNpos) ha2
-  have hwc : approxWeight S₀ (gridExponent P N g) ≤ -(ε / 2) := by
-    have h := approxWeight_mono (S₀ := S₀) (c₁ := gridExponent P N g)
+  obtain ⟨c₀, hc₀T, hc₀⟩ := hT₀ (fun k ↦ a k.1.1 k.2) fun k ↦ ha2 k.1.1 k.1.2 k.2
+  have hg : ∀ v ∈ P, ∀ i, a v i ≤ ext c₀ v i ∧ ext c₀ v i ≤ a v i + 1 / N := fun v hv i ↦ by
+    simp only [ext, hv, dite_true]
+    exact ⟨(hc₀ (⟨v, hv⟩, i)).1, (hc₀ (⟨v, hv⟩, i)).2.le⟩
+  have hwc : approxWeight S₀ (ext c₀) ≤ -(ε / 2) := by
+    have h := approxWeight_mono (S₀ := S₀) (c₁ := ext c₀)
       (c₂ := a + (1 / (N : ℝ)) • fun _ _ ↦ 1)
       (fun v i ↦ by simpa using (hg v.1 (hinf v) i).2)
       fun v hv i ↦ by simpa using (hg v.1 (hfin hv) i).2
@@ -231,12 +215,12 @@ theorem exists_finset_forall_exists_smul_mem_approxDomain (S₀ : Finset (Finite
       rw [div_mul_eq_mul_div, one_mul, div_le_iff₀ hNpos]
       linarith
     linarith
-  refine ⟨u, gridExponent P N g, by simp [hwc], ?_⟩
+  refine ⟨u, ext c₀, mem_filter.mpr ⟨mem_image_of_mem _ hc₀T, hwc⟩, ?_⟩
   -- membership in the approximation domain: `|L v i y|_v = H ^ a v i ≤ H ^ c v i`
   have hval {v : AbsoluteValue K ℝ} (hv : v ∈ P) {i : ι} (h : L v i x ≠ 0) :
-      v (L v i y) ≤ H ^ gridExponent P N g v i := by
+      v (L v i y) ≤ H ^ ext c₀ v i := by
     calc v (L v i y) = H ^ a v i := (rpow_logb (zero_lt_one.trans hH1) hH1.ne' (v.pos (hLy h))).symm
-      _ ≤ H ^ gridExponent P N g v i := rpow_le_rpow_of_exponent_le hH1.le (hg v hv i).1
+      _ ≤ H ^ ext c₀ v i := rpow_le_rpow_of_exponent_le hH1.le (hg v hv i).1
   refine mem_approxDomain.mpr ⟨fun v i ↦ hval (hinf v) (hLinf v i),
     fun v hv i ↦ hval (hfin hv) (hLfin v hv i), fun v hv j ↦ ?_⟩
   -- at a finite place outside `S₀` the primitive point `y` has local sup norm `1`
