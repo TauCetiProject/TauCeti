@@ -314,7 +314,9 @@ when `q = 0`, that is when `r` lies in the closed commutator subgroup, and `p^{v
 The divisibility `p ∣ q` follows from the Demushkin hypothesis, since the relator of a minimal
 presentation lies in the Frattini subgroup; without it the presentation need not be minimal, and a
 relator with a unit coordinate, such as `x₃ (x₁, x₂)` presenting the free pro-`p` group on
-`x₁, x₂` (abelianization `ℤ_p × ℤ_p`), has `q(G) = 0` while `ℤ_p ⧸ (q)` is trivial. -/
+`x₁, x₂`, gives a quotient `ℤ_p ⧸ (q)` that is trivial. That group has torsion-free abelianization
+`ℤ_p × ℤ_p` and is not a Demushkin group, so this example lies outside the Demushkin hypothesis
+and no `q`-invariant is attached to it. -/
 
 section OneRelator
 
