@@ -121,14 +121,16 @@ theorem exists_int_abs_sum_mul_sub_le [Nonempty κ] (A : Matrix ι κ ℝ) {P δ
   exact hz0 (funext fun k ↦ by cases k <;> simp [hy', hx])
 
 /-- **Dirichlet's theorem for systems of linear forms.** Let `A` be a real matrix with
-`m = |ι| ≥ 1` rows and `n = |κ| ≥ 1` columns, and let `Q > 1`. There are a nonzero integer
+`m = |ι|` rows and `n = |κ| ≥ 1` columns, and let `Q > 1`. There are a nonzero integer
 vector `y` with `|yⱼ| ≤ Q` and an integer vector `x` with `|∑ⱼ Aᵢⱼ yⱼ - xᵢ| ≤ Q ^ (-n / m)` for
-every `i`. -/
-theorem dirichlet_linearForms [Nonempty ι] [Nonempty κ] (A : Matrix ι κ ℝ) {Q : ℝ}
+every `i`. Without rows the second condition is empty. -/
+theorem dirichlet_linearForms [Nonempty κ] (A : Matrix ι κ ℝ) {Q : ℝ}
     (hQ : 1 < Q) :
     ∃ (y : κ → ℤ) (x : ι → ℤ), y ≠ 0 ∧ (∀ j, |(y j : ℝ)| ≤ Q) ∧
       ∀ i, |∑ j, A i j * y j - x i| ≤ Q ^ (-(Fintype.card κ : ℝ) / Fintype.card ι) := by
   have hQ₀ : 0 < Q := zero_lt_one.trans hQ
+  rcases isEmpty_or_nonempty ι with hι | _
+  · exact ⟨1, isEmptyElim, one_ne_zero, fun j ↦ by simpa using hQ.le, isEmptyElim⟩
   have hm : (0 : ℝ) < Fintype.card ι := Nat.cast_pos.2 Fintype.card_pos
   have hn : (0 : ℝ) < Fintype.card κ := Nat.cast_pos.2 Fintype.card_pos
   refine A.exists_int_abs_sum_mul_sub_le hQ₀.le (by positivity)
@@ -201,13 +203,32 @@ theorem simultaneous_dirichlet (α : ι → ℝ) {Q : ℝ} (hQ : 1 < Q) :
     · simpa [abs_sub_comm] using hx i
 
 /-- **Dirichlet's theorem for one linear form, infinitely many solutions.** Let `αⱼ`, `j ∈ κ`,
-be real numbers, `n = |κ| ≥ 1`, such that `∑ⱼ αⱼ yⱼ` is an integer for an integer vector `y`
-only when `y = 0`. Then infinitely many pairs `(x, y)` with `y ≠ 0` satisfy
-`|∑ⱼ αⱼ yⱼ - x| ≤ ‖y‖ ^ (-n)`, where `‖y‖` is the sup norm. -/
-theorem dirichlet_linearForm_infinite [Nonempty κ] (α : κ → ℝ)
-    (hα : ∀ y : κ → ℤ, (∃ k : ℤ, ∑ j, α j * y j = k) → y = 0) :
+be real numbers and `n = |κ| ≥ 1`. Then infinitely many pairs `(x, y)` with `y ≠ 0` satisfy
+`|∑ⱼ αⱼ yⱼ - x| ≤ ‖y‖ ^ (-n)`, where `‖y‖` is the sup norm. If `∑ⱼ αⱼ yⱼ` is an integer `k`
+for some nonzero integer vector `y`, the multiples `(m k, m y)` are exact solutions. -/
+theorem dirichlet_linearForm_infinite [Nonempty κ] (α : κ → ℝ) :
     {p : ℤ × (κ → ℤ) | p.2 ≠ 0 ∧
       |∑ j, α j * p.2 j - p.1| ≤ ‖p.2‖ ^ (-(Fintype.card κ : ℝ))}.Infinite := by
+  by_cases hα : ∀ y : κ → ℤ, (∃ k : ℤ, ∑ j, α j * y j = k) → y = 0
+  swap
+  · push Not at hα
+    obtain ⟨y, ⟨k, hk⟩, hy⟩ := hα
+    obtain ⟨j₀, hj₀⟩ := Function.ne_iff.1 hy
+    replace hj₀ : y j₀ ≠ 0 := hj₀
+    refine Set.infinite_of_injective_forall_mem
+      (f := fun m : ℕ ↦ (((m + 1 : ℕ) : ℤ) * k, ((m + 1 : ℕ) : ℤ) • y)) (fun m n h ↦ ?_)
+      fun m ↦ ⟨fun h ↦ hj₀ ?_, ?_⟩
+    · have := congrFun (congrArg Prod.snd h) j₀
+      simpa [hj₀] using this
+    · have := congrFun h j₀
+      simp only [Pi.smul_apply, smul_eq_mul, Pi.zero_apply, mul_eq_zero, Nat.cast_eq_zero,
+        Nat.add_one_ne_zero, false_or] at this
+      exact this
+    · have : ∑ j, α j * (((m + 1 : ℕ) : ℤ) • y) j = ((m + 1 : ℕ) : ℝ) * k := by
+        rw [← hk, Finset.mul_sum]
+        exact Finset.sum_congr rfl fun j _ ↦ by simp; ring
+      simp only [this, Int.cast_mul, Int.cast_natCast, sub_self, abs_zero]
+      positivity
   refine Set.infinite_of_injOn_mapsTo (f := fun p : (κ → ℤ) × (Unit → ℤ) ↦ (p.2 (), p.1))
     (fun p _ q _ h ↦ ?_) (fun p hp ↦ ?_)
     ((Matrix.of fun (_ : Unit) j ↦ α j).dirichlet_linearForms_infinite fun y hy ↦ hα y (hy ()))
