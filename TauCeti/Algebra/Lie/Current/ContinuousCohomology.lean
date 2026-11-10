@@ -442,20 +442,32 @@ theorem exists_eq_smul_twoCochainOfBilinear_add_d₁₂ {Ψ : LinearMap.BilinFor
 variable {Z : Type*} [AddCommGroup Z] [Module K Z]
 
 /-- **Every continuous 2-cocycle with discrete coefficients is a residue cocycle up to a continuous
-coboundary.** Under the hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, assume
-moreover that `Ψ` is nonzero, and let `Z` be any vector space with trivial action, of arbitrary
-dimension. Every continuous 2-cocycle on formal currents with values in `Z` is `c_Ψ ⊗ z + d₁₂ f`
-for a vector `z` and a continuous one-cochain `f`. -/
+coboundary.** Under the hypotheses of `exists_eq_smul_twoCochainOfBilinear_add_d₁₂`, let `Z` be
+any vector space with trivial action, of arbitrary dimension. Every continuous 2-cocycle on formal
+currents with values in `Z` is `c_Ψ ⊗ z + d₁₂ f` for a vector `z` and a continuous one-cochain
+`f`. -/
 theorem exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ {Ψ : LinearMap.BilinForm K L}
     (hΨs : Ψ.IsSymm)
     (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
-    (hΨ0 : Ψ ≠ 0) {c : twoCochain K (currentAlgebra K L)
+    {c : twoCochain K (currentAlgebra K L)
       (TrivialLieModule K (currentAlgebra K L) Z)}
     (hc : c ∈ continuousTwoCocycle K (currentAlgebra K L)
       (TrivialLieModule K (currentAlgebra K L) Z)) :
     ∃ z : Z, ∃ f ∈ continuousOneCochain K (currentAlgebra K L)
         (TrivialLieModule K (currentAlgebra K L) Z),
       c = twoCochainOfBilinearSMulRight K L Ψ hΨs z + d₁₂ K _ _ f := by
+  -- For trivial `L` every cochain vanishes; otherwise the Killing form is a nonzero invariant
+  -- form, so `hspan` makes `Ψ` nonzero.
+  rcases subsingleton_or_nontrivial L with hL | hL
+  · have : Subsingleton (currentAlgebra K L) := inferInstance
+    refine ⟨0, 0, zero_mem _, Subtype.ext (LinearMap.ext₂ fun a b ↦ ?_)⟩
+    rw [Subsingleton.elim a 0, Subsingleton.elim b 0]
+    simp
+  have hΨ0 : Ψ ≠ 0 := by
+    rintro rfl
+    obtain ⟨t, ht⟩ := hspan (killingForm K L) (LieModule.traceForm_lieInvariant K L L)
+    obtain ⟨x, hx⟩ := exists_ne (0 : L)
+    exact hx ((IsKilling.killingForm_nondegenerate K L).1 x fun y ↦ by simp [ht])
   set eK := TrivialLieModule.equiv K (currentAlgebra K L) K
   -- Each functional `φ` on the coefficients turns `c` into a scalar continuous cocycle, which by
   -- the scalar classification is `t φ • c_Ψ + d₁₂ (f φ)` with `f φ` continuous.
@@ -513,12 +525,11 @@ Under the hypotheses of `exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂`, t
 with coefficients in any vector space `Z` with trivial action is surjective. -/
 theorem residueClassMap_surjective {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
     (hΨs : Ψ.IsSymm)
-    (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ)
-    (hΨ0 : Ψ ≠ 0) :
+    (hspan : ∀ Φ : LinearMap.BilinForm K L, Φ.lieInvariant L → ∃ t : K, Φ = t • Ψ) :
     Function.Surjective (residueClassMap K L Ψ hΨ hΨs (Z := Z)) := by
   intro a
   obtain ⟨c, rfl⟩ := continuousSecondCohomologyMk_surjective a
-  obtain ⟨z, f, hf, hc⟩ := exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ hΨs hspan hΨ0 c.2
+  obtain ⟨z, f, hf, hc⟩ := exists_eq_twoCochainOfBilinearSMulRight_add_d₁₂ hΨs hspan c.2
   refine ⟨z, ?_⟩
   rw [residueClassMap_apply, continuousSecondCohomologyMk_eq_iff]
   exact ⟨-f, neg_mem hf, by
@@ -538,7 +549,7 @@ noncomputable def residueClassEquiv {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lie
     Z ≃ₗ[K] continuousSecondCohomology K (currentAlgebra K L)
       (TrivialLieModule K (currentAlgebra K L) Z) :=
   LinearEquiv.ofBijective (residueClassMap K L Ψ hΨ hΨs)
-    ⟨residueClassMap_injective hΨ hΨs hΨ0, residueClassMap_surjective hΨ hΨs hspan hΨ0⟩
+    ⟨residueClassMap_injective hΨ hΨs hΨ0, residueClassMap_surjective hΨ hΨs hspan⟩
 
 @[simp]
 theorem residueClassEquiv_apply {Ψ : LinearMap.BilinForm K L} (hΨ : Ψ.lieInvariant L)
