@@ -500,7 +500,7 @@ theorem exists_antilipschitzWith (h : IsStarImmersion n f) (hn : 1 ≤ n) (hf : 
   obtain ⟨C, hC, hanti⟩ := isCompact_univ.exists_antilipschitzWith_of_locally
     (h.continuous.comp e.symm.continuous).continuousOn ((hf.comp e.symm.injective).injOn) hc hδ
     fun p _ q _ hpq => by
-      rw [dist_eq_norm_realizationHomeomorphRange_symm] at hpq ⊢
+      rw [dist_eq_norm_realizationHomeomorphRange_symm _ (Set.toFinite _)] at hpq ⊢
       rw [comp_apply, comp_apply, dist_eq_norm]
       exact hlocal _ _ hpq
   exact ⟨C, hC, fun p q => hanti ⟨p, mem_univ p⟩ ⟨q, mem_univ q⟩⟩

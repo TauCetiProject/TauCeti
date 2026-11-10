@@ -49,15 +49,6 @@ namespace TauCeti
 variable {ι E : Type*} [LinearOrder ι] [Fintype ι] [NormedAddCommGroup E] [NormedSpace ℝ E]
   {K : AbstractSimplicialComplex ι} {f : Realization K → E}
 
-omit [LinearOrder ι] in
-/-- Distances in the coordinate image of `|K|` are distances of barycentric coordinates. -/
-theorem dist_eq_norm_realizationHomeomorphRange_symm
-    (p q : range fun x : Realization K => (x.1 : ι → ℝ)) :
-    dist p q = ‖(((K.realizationHomeomorphRange (Set.toFinite K.faces)).symm p).1 : ι → ℝ) -
-      ((K.realizationHomeomorphRange (Set.toFinite K.faces)).symm q).1‖ := by
-  rw [Subtype.dist_eq, dist_eq_norm, coe_realizationHomeomorphRange_symm_apply,
-    coe_realizationHomeomorphRange_symm_apply]
-
 /-- **Secant maps of anti-Lipschitz maps are uniformly anti-Lipschitz.** Let `f` be a map of the
 realization of a complex on a finite vertex type which is `C¹` on every closed simplex and
 anti-Lipschitz in barycentric coordinates. There is a constant `C'` such that for all
@@ -97,7 +88,7 @@ theorem exists_pos_eventually_norm_sub_le_mul_norm_secantMap_sub_of_antilipschit
   have hdist (x y : Realization (K.edgewiseSubdivision k)) : dist (Ψ x) (Ψ y) =
       ‖((edgewiseSubdivisionRealizationMap K k x).1 : ι → ℝ) -
         (edgewiseSubdivisionRealizationMap K k y).1‖ := by
-    rw [dist_eq_norm_realizationHomeomorphRange_symm, hΨ, hΨ]
+    rw [dist_eq_norm_realizationHomeomorphRange_symm _ (Set.toFinite _), hΨ, hΨ]
   have hlip : LipschitzWith (2 * C₁)⁻¹ (s ∘ Ψ.symm - f ∘ e.symm) :=
     LipschitzWith.of_dist_le_mul fun p q => by
       obtain ⟨x, rfl⟩ := Ψ.surjective p
