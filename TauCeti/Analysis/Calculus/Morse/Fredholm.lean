@@ -230,15 +230,11 @@ private theorem exists_pos_mul_norm_le_hessianOperator (hp : IsNondegenerateCrit
     (hq : IsNondegenerateCriticalPoint f q) :
     ∃ α > 0, (∀ v, α * ‖v‖ ≤ ‖hessianOperator f p v‖) ∧
       ∀ v, α * ‖v‖ ≤ ‖hessianOperator f q v‖ := by
-  obtain ⟨e₁, he₁⟩ := hp.isInvertible_hessianOperator
-  obtain ⟨e₂, he₂⟩ := hq.isInvertible_hessianOperator
-  obtain ⟨c₁, hc₁, h₁⟩ := antilipschitzWith_iff_exists_mul_le_norm.1 ⟨_, e₁.antilipschitzWith⟩
-  obtain ⟨c₂, hc₂, h₂⟩ := antilipschitzWith_iff_exists_mul_le_norm.1 ⟨_, e₂.antilipschitzWith⟩
+  obtain ⟨c₁, hc₁, h₁⟩ := hp.exists_pos_mul_norm_le_hessianOperator
+  obtain ⟨c₂, hc₂, h₂⟩ := hq.exists_pos_mul_norm_le_hessianOperator
   refine ⟨min c₁ c₂, lt_min hc₁ hc₂, fun v ↦ ?_, fun v ↦ ?_⟩
-  · rw [← he₁]
-    exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (h₁ v)
-  · rw [← he₂]
-    exact (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (h₂ v)
+  · exact (mul_le_mul_of_nonneg_right (min_le_left _ _) (norm_nonneg v)).trans (h₁ v)
+  · exact (mul_le_mul_of_nonneg_right (min_le_right _ _) (norm_nonneg v)).trans (h₂ v)
 
 /-- The coefficient family `s ↦ Hess f(γ s)` of the linearized operator is a continuous family of
 symmetric operators with invertible limits `Hess f(p)` and `Hess f(q)`. -/
