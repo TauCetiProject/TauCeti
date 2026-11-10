@@ -1,11 +1,12 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Calculus.Deriv.Slope
 public import Mathlib.LinearAlgebra.AffineSpace.Slope
 import Mathlib.Analysis.SpecificLimits.Basic
 
@@ -22,6 +23,8 @@ Sampling these slopes along `x + t / n` gives the sequential form: if `f` has de
 zero and continuous nonnegative-rational scalar multiplication, so that `t / n` tends to zero;
 both real and complex scalars qualify. This limit feeds the exponential power limit behind the
 Trotter product formula.
+
+A negative right derivative gives strict decrease on a punctured right neighborhood.
 
 ## Main results
 
@@ -65,3 +68,12 @@ theorem HasDerivAt.tendsto_nsmul_sub_add_div {𝕜 E : Type*} [NontriviallyNorme
   refine (((HasDerivAtFilter.tendsto_slope hf).comp hlim).const_smul t).congr' ?_
   filter_upwards [eventually_ne_atTop 0] with n hn
   simp [slope_def_module, smul_smul, mul_div_cancel₀ _ ht, Nat.cast_smul_eq_nsmul]
+
+/-- A negative right derivative gives strict decrease on a right neighborhood of the point. -/
+theorem HasDerivWithinAt.eventually_lt_of_neg {f : ℝ → ℝ} {a x : ℝ}
+    (hf : HasDerivWithinAt f a (Ioi x) x) (ha : a < 0) :
+    ∀ᶠ t in 𝓝[>] x, f t < f x := by
+  filter_upwards [hf.limsup_slope_le' (lt_irrefl x) ha, self_mem_nhdsWithin]
+    with t ht hxt
+  rw [slope_def_field, div_lt_iff₀ (sub_pos.mpr hxt), zero_mul] at ht
+  exact sub_neg.mp ht
