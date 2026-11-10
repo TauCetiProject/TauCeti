@@ -168,20 +168,6 @@ theorem frameCovariantDerivative_apply (v : TangentSpace I x) :
 
 variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F]
 
-omit [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F] [∀ x, IsTopologicalAddGroup (V x)]
-  [∀ x, ContinuousSMul 𝕜 (V x)] [Fintype ι] in
-/-- If the coefficient of a section in the frame of `e` agrees near `x` with a scalar map `g` that
-has derivative `A` at `x`, then the derivative of the coefficient at `x` is `A`. -/
-theorem mvfderiv_localFrameCoeff_apply {g : M → 𝕜} {A : TangentSpace I x →L[𝕜] 𝕜}
-    (hg : HasMFDerivAt I 𝓘(𝕜, 𝕜) g x A) (i : ι)
-    (hcoeff : (fun z ↦ e.localFrameCoeff I b i z (σ z)) =ᶠ[𝓝 x] g) (v : TangentSpace I x) :
-    mvfderiv I (LinearMap.piApply (e.localFrameCoeff I b i) σ) x v = A v := by
-  have h := (hg.congr_of_eventuallyEq hcoeff).mfderiv
-  rw [mvfderiv_apply_eq_mfderiv_apply, LinearMap.piApply_apply, h]
-  -- `tangentSpaceCast` and `fromTangentSpace` are the identity of the model space `𝕜`, so the
-  -- two sides are definitionally equal.
-  rfl
-
 omit [FiniteDimensional 𝕜 F] in
 /-- If the coefficients of a section in the frame of `e` agree near `x` with the coordinates of a
 model-valued map `g` that has derivative `A` at `x`, then its flat frame derivative at `x` is
