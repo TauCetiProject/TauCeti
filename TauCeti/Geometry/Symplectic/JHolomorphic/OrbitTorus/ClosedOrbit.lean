@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.MappingTorus
 public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.Zeta
 public import TauCeti.Geometry.Symplectic.Manifold.FixedPoint
+import TauCeti.LinearAlgebra.Matrix.ToLin
 
 /-!
 # The orbit-torus series of the closed orbits of a mapping torus
@@ -137,21 +138,6 @@ through `x i` is the fixed-point derivative `D i = d(φ^[d i])_(x i)`, an endomo
 two-dimensional tangent space `T_(x i) M` of determinant one, and that of the `n`-fold cover is
 `D i ^ n = d(φ^[d i * n])_(x i)`. -/
 
-/-- In a basis of a two-dimensional real vector space, the matrix `P` of an endomorphism `D`
-computes `det D`, `det (1 + D)`, `det (1 - D)` and every `det (1 - D ^ n)`. -/
-private theorem exists_matrix_det_eq {V : Type*} [AddCommGroup V] [Module ℝ V]
-    (hV : Module.finrank ℝ V = 2) (D : Module.End ℝ V) :
-    ∃ P : Matrix (Fin 2) (Fin 2) ℝ, P.det = LinearMap.det D ∧
-      (1 + P).det = LinearMap.det (LinearMap.id + D) ∧
-      (1 - P).det = LinearMap.det (LinearMap.id - D) ∧
-      ∀ n : ℕ, (1 - P ^ n).det = LinearMap.det (LinearMap.id - D ^ n) := by
-  have : Module.Finite ℝ V := Module.finite_of_finrank_eq_succ hV
-  let b := Module.finBasisOfFinrankEq ℝ V hV
-  refine ⟨LinearMap.toMatrix b b D, LinearMap.det_toMatrix b D, ?_, ?_, fun n ↦ ?_⟩
-  · rw [← LinearMap.det_toMatrix b, map_add, LinearMap.toMatrix_id]
-  · rw [← LinearMap.det_toMatrix b, map_sub, LinearMap.toMatrix_id]
-  · rw [← LinearMap.det_toMatrix b, map_sub, LinearMap.toMatrix_id, LinearMap.toMatrix_pow]
-
 variable {σ : SmoothTwoForm I M}
 
 include hφ hx hd in
@@ -183,9 +169,14 @@ theorem hasProd_ofPowerSeries_torusWeightSeries_fixedPointDerivative
           if LinearMap.det
               (LinearMap.id + fixedPointDerivative I (⇑φ)^[d i] ⟨x i, (hxd i).eq⟩) < 0
             then -1 else 1))) := by
-  choose P hPdet hPadd hPsub _ using fun i ↦
-    exists_matrix_det_eq (V := TangentSpace I (x i)) hE
-      (fixedPointDerivative I (⇑φ)^[d i] ⟨x i, (hxd i).eq⟩)
+  -- Read each return map `D i` as a matrix `P i` in a basis of `T_(x i) M = E`.
+  let D (i : ι) : Module.End ℝ E := fixedPointDerivative I (⇑φ)^[d i] ⟨x i, (hxd i).eq⟩
+  let P (i : ι) := Algebra.endAlgEquivMatrix ℝ E hE (D i)
+  have hPdet (i : ι) : (P i).det = LinearMap.det (D i) := Algebra.det_endAlgEquivMatrix ..
+  have hPadd (i : ι) : (1 + P i).det = LinearMap.det (LinearMap.id + D i) := by
+    rw [← Module.End.one_eq_id, ← Algebra.det_endAlgEquivMatrix ℝ E hE, map_add, _root_.map_one]
+  have hPsub (i : ι) : (1 - P i).det = LinearMap.det (LinearMap.id - D i) := by
+    rw [← Module.End.one_eq_id, ← Algebra.det_endAlgEquivMatrix ℝ E hE, map_sub, _root_.map_one]
   have hdet (i : ι) : (P i).det = 1 := (hPdet i).trans
     (SmoothTwoForm.det_fixedPointDerivative_iterate_eq_one hσ φ.contMDiff hφσ (hxd i))
   have hP (i : ι) : (1 - P i).det ≠ 0 := by
@@ -195,8 +186,8 @@ theorem hasProd_ofPowerSeries_torusWeightSeries_fixedPointDerivative
       ((hφ (d i)).isNondegenerateFixedPt (hd i) le_rfl (hxd i))
   have key := hasProd_ofPowerSeries_torusWeightSeries_closedOrbitHomologyClass hφ hx hxd hd hdet hP
   simp only [hPadd, hPsub] at key
-  -- `key` is stated on `T_(x i) M`, the goal on the tangent space at the subtype point
-  -- `⟨x i, _⟩`; the two are the same space.
+  -- `key` is stated on `E`, the goal on the tangent space at the subtype point `⟨x i, _⟩`; the
+  -- two are the same space.
   exact key
 
 include hφ hx hd in
@@ -224,9 +215,17 @@ theorem orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivat
             (if LinearMap.det
                 (LinearMap.id + fixedPointDerivative I (⇑φ)^[d i] ⟨x i, (hxd i).eq⟩) < 0
               then 1 else 0))) := by
-  choose P hPdet hPadd hPsub hPpow using fun i ↦
-    exists_matrix_det_eq (V := TangentSpace I (x i)) hE
-      (fixedPointDerivative I (⇑φ)^[d i] ⟨x i, (hxd i).eq⟩)
+  -- Read each return map `D i` as a matrix `P i` in a basis of `T_(x i) M = E`.
+  let D (i : ι) : Module.End ℝ E := fixedPointDerivative I (⇑φ)^[d i] ⟨x i, (hxd i).eq⟩
+  let P (i : ι) := Algebra.endAlgEquivMatrix ℝ E hE (D i)
+  have hPdet (i : ι) : (P i).det = LinearMap.det (D i) := Algebra.det_endAlgEquivMatrix ..
+  have hPadd (i : ι) : (1 + P i).det = LinearMap.det (LinearMap.id + D i) := by
+    rw [← Module.End.one_eq_id, ← Algebra.det_endAlgEquivMatrix ℝ E hE, map_add, _root_.map_one]
+  have hPsub (i : ι) : (1 - P i).det = LinearMap.det (LinearMap.id - D i) := by
+    rw [← Module.End.one_eq_id, ← Algebra.det_endAlgEquivMatrix ℝ E hE, map_sub, _root_.map_one]
+  have hPpow (i : ι) (n : ℕ) : (1 - P i ^ n).det = LinearMap.det (LinearMap.id - D i ^ n) := by
+    rw [← Module.End.one_eq_id, ← Algebra.det_endAlgEquivMatrix ℝ E hE, map_sub, _root_.map_one,
+      map_pow]
   have hdiff (i : ι) (n : ℕ) : MDifferentiableAt I I (⇑φ)^[d i * n] (x i) :=
     (φ.contMDiff.iterate _).mdifferentiableAt (by simp)
   -- The return map of the `n`-fold cover is the `n`-th power of the return map.
@@ -247,8 +246,7 @@ theorem orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivat
   have key := orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod hφ hx hxd hd hdet hP K
   simp only [hPadd, hPsub, hPpow] at key
   simp only [hit]
-  -- As above, `key` and the goal differ only in how the base point of the tangent space is
-  -- written.
+  -- As above, `key` and the goal differ only in how the tangent space is written.
   exact key
 
 end TauCeti.SmoothMappingTorus
