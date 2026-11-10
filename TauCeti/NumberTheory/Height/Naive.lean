@@ -90,14 +90,23 @@ theorem one_le_naiveHeight (x : F) : 1 ≤ naiveHeight x := by
     exact_mod_cast (by omega : (1 : ℤ) ≤ (primitiveMinpoly x).leadingCoeff)
   exact h.trans (leadingCoeff_primitiveMinpoly_le_naiveHeight x)
 
-/-- For algebraic elements, the natural denominator is at most the naive height. -/
-theorem natDenominator_le_naiveHeight {x : F} (hx : IsAlgebraic ℚ x) :
+/-- The natural denominator is at most the naive height. For a transcendental element the
+natural denominator is the junk value `0`. -/
+theorem natDenominator_le_naiveHeight (x : F) :
     (Algebra.natDenominator x : ℝ) ≤ naiveHeight x := by
-  have h := Int.le_of_dvd (leadingCoeff_primitiveMinpoly_pos x)
-    (natDenominator_dvd_leadingCoeff_primitiveMinpoly hx)
-  have h' : (Algebra.natDenominator x : ℝ) ≤ (primitiveMinpoly x).leadingCoeff := by
-    exact_mod_cast h
-  exact h'.trans (leadingCoeff_primitiveMinpoly_le_naiveHeight x)
+  by_cases hx : IsAlgebraic ℚ x
+  · have h := Int.le_of_dvd (leadingCoeff_primitiveMinpoly_pos x)
+      (natDenominator_dvd_leadingCoeff_primitiveMinpoly hx)
+    have h' : (Algebra.natDenominator x : ℝ) ≤ (primitiveMinpoly x).leadingCoeff := by
+      exact_mod_cast h
+    exact h'.trans (leadingCoeff_primitiveMinpoly_le_naiveHeight x)
+  · have h0 : Algebra.natDenominator x = 0 := by
+      by_contra h
+      have hint : IsIntegral ℤ ((Algebra.natDenominator x : ℤ) • x) := by
+        simpa only [natCast_zsmul] using Algebra.isIntegral_natDenominator_smul x
+      exact hx <| (IsFractionRing.isAlgebraic_iff ℤ ℚ F).mp <|
+        hint.isAlgebraic.of_smul (mem_nonZeroDivisors_of_ne_zero (by exact_mod_cast h))
+    simpa [h0] using zero_le_one.trans (one_le_naiveHeight x)
 
 /-- The naive height of a rational number is the maximum of its numerator's
 absolute value and its positive denominator, independently of the ambient field. -/
@@ -179,9 +188,9 @@ theorem inv_naiveHeight_add_one_le_norm {K : Type*} [RCLike K] {x : K}
     (primitiveMinpoly_ne_zero x) (aeval_primitiveMinpoly hx) hx0).le
 
 /-- Near a complex algebraic number `α` of degree `d`, its primitive minimal polynomial `F_α` is
-small: `|F_α(z)| ≤ (d + 1) (2 + |z|) ^ d H(α) |z - α|` whenever `|z - α| ≤ 1`, where `H(α)` is the
-naive height of `α`. -/
-theorem norm_aeval_primitiveMinpoly_le {α z : ℂ} (hα : IsAlgebraic ℚ α) (hz : ‖z - α‖ ≤ 1) :
+small: `|F_α(z)| ≤ (d + 1) (2 + |z|) ^ d H(α) |z - α|`, where `H(α)` is the naive height of `α`.
+The bound is only informative when `|z - α| ≤ 1`, but holds for every `z`. -/
+theorem norm_aeval_primitiveMinpoly_le {α z : ℂ} (hα : IsAlgebraic ℚ α) :
     ‖aeval z (primitiveMinpoly α)‖ ≤ ((minpoly ℚ α).natDegree + 1) *
       (2 + ‖z‖) ^ (minpoly ℚ α).natDegree * naiveHeight α * ‖z - α‖ := by
   set d := (minpoly ℚ α).natDegree
@@ -198,26 +207,42 @@ theorem norm_aeval_primitiveMinpoly_le {α z : ℂ} (hα : IsAlgebraic ℚ α) (
       simp
     rwa [aeval_def, algebraMap_int_eq, ← eval_map]
   have hdeg : P.natDegree ≤ d := natDegree_map_le.trans (natDegree_primitiveMinpoly α).le
-  have hα₁ : 1 + ‖α‖ ≤ 2 + ‖z‖ := by
-    have := norm_le_norm_add_norm_sub' α z
-    rw [norm_sub_rev] at this
-    linarith
-  have hpow : (1 + ‖α‖) ^ P.natDegree ≤ (2 + ‖z‖) ^ d :=
-    (pow_le_pow_left₀ (by positivity) hα₁ _).trans
-      (pow_le_pow_right₀ (by linarith [norm_nonneg z]) hdeg)
   have hl1 : P.l1Norm ≤ (d + 1) * naiveHeight α := by
     rw [l1Norm_map _ _ fun x ↦ by simp [Int.norm_eq_abs]]
     refine ((primitiveMinpoly α).l1Norm_le_natDegree_add_one_mul_supNorm).trans ?_
     rw [naiveHeight_def, natDegree_primitiveMinpoly]
   have hH : 0 ≤ (d + 1 : ℝ) * naiveHeight α :=
     mul_nonneg (by positivity) (zero_le_one.trans (one_le_naiveHeight α))
-  calc ‖aeval z (primitiveMinpoly α)‖ = ‖(P /ₘ (X - C α)).eval z‖ * ‖z - α‖ := by
-        rw [heval, norm_mul]
-    _ ≤ P.l1Norm * (1 + ‖α‖) ^ P.natDegree * ‖z - α‖ := by
-        gcongr
-        exact norm_eval_le_l1Norm_mul_of_mul_X_sub_C_pow_eq hV hz
-    _ ≤ (d + 1) * naiveHeight α * (2 + ‖z‖) ^ d * ‖z - α‖ := by
-        gcongr
-    _ = (d + 1) * (2 + ‖z‖) ^ d * naiveHeight α * ‖z - α‖ := by ring
+  rcases le_or_gt ‖z - α‖ 1 with hz | hz
+  · have hα₁ : 1 + ‖α‖ ≤ 2 + ‖z‖ := by
+      have := norm_le_norm_add_norm_sub' α z
+      rw [norm_sub_rev] at this
+      linarith
+    have hpow : (1 + ‖α‖) ^ P.natDegree ≤ (2 + ‖z‖) ^ d :=
+      (pow_le_pow_left₀ (by positivity) hα₁ _).trans
+        (pow_le_pow_right₀ (by linarith [norm_nonneg z]) hdeg)
+    calc ‖aeval z (primitiveMinpoly α)‖ = ‖(P /ₘ (X - C α)).eval z‖ * ‖z - α‖ := by
+          rw [heval, norm_mul]
+      _ ≤ P.l1Norm * (1 + ‖α‖) ^ P.natDegree * ‖z - α‖ := by
+          gcongr
+          exact norm_eval_le_l1Norm_mul_of_mul_X_sub_C_pow_eq hV hz
+      _ ≤ (d + 1) * naiveHeight α * (2 + ‖z‖) ^ d * ‖z - α‖ := by
+          gcongr
+      _ = (d + 1) * (2 + ‖z‖) ^ d * naiveHeight α * ‖z - α‖ := by ring
+  · -- Far from `α`, bound `F_α(z)` directly and absorb the factor `‖z - α‖ > 1`.
+    have hPz : aeval z (primitiveMinpoly α) = P.eval z := by
+      rw [aeval_def, algebraMap_int_eq, ← eval_map]
+    calc ‖aeval z (primitiveMinpoly α)‖ = ‖P.eval z‖ := by rw [hPz]
+      _ ≤ P.l1Norm * max 1 ‖z‖ ^ P.natDegree := norm_eval_le_l1Norm_mul P z
+      _ ≤ (d + 1) * naiveHeight α * (2 + ‖z‖) ^ d := by
+          have hm : max 1 ‖z‖ ≤ 2 + ‖z‖ :=
+            max_le (by linarith [norm_nonneg z]) (by linarith [norm_nonneg z])
+          exact mul_le_mul hl1
+            ((pow_le_pow_left₀ (by positivity) hm _).trans
+              (pow_le_pow_right₀ (by linarith [norm_nonneg z]) hdeg))
+            (by positivity) hH
+      _ ≤ (d + 1) * naiveHeight α * (2 + ‖z‖) ^ d * ‖z - α‖ :=
+          le_mul_of_one_le_right (by positivity) hz.le
+      _ = (d + 1) * (2 + ‖z‖) ^ d * naiveHeight α * ‖z - α‖ := by ring
 
 end TauCeti
