@@ -16,7 +16,13 @@ import Mathlib.Tactic.Ring
 Let `u` and `y` be elements of a commutative semiring `A` with a compatible `R`-module structure,
 for instance a commutative `R`-algebra. The products `u ^ i y ^ j` with `i + j < n` span the values
 at `(u, y)` of the polynomials of total degree less than `n`. A linear change of coordinates
-`u ↦ u + c • y` preserves total degrees, so it does not change this span.
+`u ↦ u + c • y` preserves total degrees, so each product `(u + c • y) ^ i y ^ j` lies in the span
+of the products `u ^ a y ^ b` with `a + b = i + j`. When `R` is a ring, the inverse shear
+`u ↦ u + (-c) • y` gives the reverse inclusion, so the shear does not change the span of the
+products of total degree less than `n`. Over a semiring the span can shrink: for `R = ℕ`,
+`A = ℕ[X, Y]`, `u = X`, `y = Y`, `c = 1` and `n = 2`, the element `X` is not in the `ℕ`-span of
+`1`, `X + Y` and `Y`.
+
 This is how statements about the polynomials of bounded degree in the affine coordinates of a
 plane curve are transported between coordinate systems.
 
@@ -24,8 +30,8 @@ plane curve are transported between coordinate systems.
 
 * `TauCeti.add_smul_pow_mul_pow_mem_span`: `(u + c • y) ^ i y ^ j` lies in the span of the
   products `u ^ a y ^ b` with `a + b = i + j`.
-* `TauCeti.span_add_smul_pow_mul_pow`: the products `(u + c • y) ^ i y ^ j` and `u ^ i y ^ j`
-  with `i + j < n` span the same submodule.
+* `TauCeti.span_add_smul_pow_mul_pow`: for a ring `R`, the products `(u + c • y) ^ i y ^ j` and
+  `u ^ i y ^ j` with `i + j < n` span the same submodule.
 -/
 
 public section
