@@ -294,9 +294,11 @@ theorem det_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι] (b : Ortho
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L]
   [IsZLattice ℝ L] in
 /-- For an orthonormal basis `b` and a natural number `m`, the discriminant group of the scaled
-cubic lattice `√m • ℤ b` has order `mⁿ`, where `n` is the dimension of the space, which for
-`m ≠ 0` is `det (√m • ℤ b)`. For `m = 0` the lattice is `0` and its discriminant group is the whole
-space, of order `0 ^ n`. For instance the discriminant group `(ℤ/2)²` of `√2 ℤ²` has order `4`. -/
+cubic lattice `√m • ℤ b` has `Nat.card` equal to `mⁿ`, where `n` is the dimension of the space,
+which for `m ≠ 0` is `det (√m • ℤ b)`. For `m = 0` the lattice is `0` and its discriminant group is
+the whole space: for `n > 0` it is infinite, so `Nat.card` returns the junk value `0 = 0 ^ n`, and
+for `n = 0` it is trivial and `Nat.card` returns `1 = 0 ^ 0`. For instance the discriminant group
+`(ℤ/2)²` of `√2 ℤ²` has order `4`. -/
 theorem natCard_discriminantGroup_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ E) {m : ℕ} :
     Nat.card (DiscriminantGroup (√(m : ℝ) • span ℤ (Set.range b))) = m ^ finrank ℝ E := by
