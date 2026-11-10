@@ -191,10 +191,18 @@ theorem arakelovMulHeight_eq {ι : Type*} [Finite ι] {y : ι → K} (hy : y ≠
 /-- For a nonzero integral tuple, multiplying its relative Euclidean height by the norm of
 its coordinate ideal leaves precisely the archimedean Euclidean factors. -/
 theorem arakelovMulHeight_mul_absNorm_span_range {ι : Type*} [Finite ι]
-    {y : ι → 𝓞 K} (hy : y ≠ 0) :
+    (y : ι → 𝓞 K) :
     arakelovMulHeight (fun i ↦ (y i : K)) * (Ideal.span (Set.range y)).absNorm =
       letI := Fintype.ofFinite ι
       ∏ w : InfinitePlace K, (∑ i, ‖w.embedding (y i)‖ ^ 2) ^ ((w.mult : ℝ) / 2) := by
+  rcases eq_or_ne y 0 with rfl | hy
+  · -- Both sides vanish: the coordinate ideal is `⊥` and every archimedean factor is `0`.
+    let _ := Fintype.ofFinite ι
+    have h0 : ∀ w : InfinitePlace K,
+        (∑ i, ‖w.embedding (((0 : ι → 𝓞 K) i : 𝓞 K) : K)‖ ^ 2) ^ ((w.mult : ℝ) / 2) = 0 :=
+      fun w ↦ by simp [Real.zero_rpow (div_pos (Nat.cast_pos.2 w.mult_pos) two_pos).ne']
+    rw [Finset.prod_eq_zero (Finset.mem_univ (Classical.arbitrary (InfinitePlace K))) (h0 _)]
+    simp [← Pi.zero_def]
   have hy' : (fun i ↦ (y i : K)) ≠ 0 := by
     contrapose hy
     ext i
