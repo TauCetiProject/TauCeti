@@ -213,9 +213,9 @@ theorem mk_preimage_range_closedOrbit (hx : x ∈ periodicPts φ) (t : ℝ) :
     Diffeomorph.exists_zpow_apply_eq_iff hx]
   simp
 
-/-- The closed orbit meets each fibre of the mapping torus in exactly as many points as the least
-period of `x`, which is zero when `x` is not periodic (and `Set.ncard` of an infinite set is
-zero). -/
+/-- The `Set.ncard` of the intersection of the closed orbit with each fibre of the mapping torus
+is the least period of `x`. For a periodic `x` this is the number of intersection points; for a
+nonperiodic `x` the intersection is infinite and its `Set.ncard` is zero by convention. -/
 theorem ncard_mk_preimage_range_closedOrbit (t : ℝ) :
     (mk φ t ⁻¹' range (closedOrbit φ h)).ncard = minimalPeriod φ x := by
   by_cases hx : x ∈ periodicPts φ
