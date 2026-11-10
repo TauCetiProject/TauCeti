@@ -51,6 +51,9 @@ Its integer translates sum to one (`TauCeti.hasSum_latticeBump₁_sub`). -/
 noncomputable def latticeBump₁ (t : ℝ) : ℝ :=
   smoothTransition (t + 1) - smoothTransition t
 
+theorem latticeBump₁_def (t : ℝ) : latticeBump₁ t = smoothTransition (t + 1) - smoothTransition t :=
+  (rfl)
+
 theorem contDiff_latticeBump₁ {k : ℕ∞} : ContDiff ℝ k latticeBump₁ :=
   (smoothTransition.contDiff.comp (contDiff_id.add contDiff_const)).sub smoothTransition.contDiff
 
@@ -60,14 +63,14 @@ theorem latticeBump₁_nonneg (t : ℝ) : 0 ≤ latticeBump₁ t :=
 theorem latticeBump₁_le_one (t : ℝ) : latticeBump₁ t ≤ 1 := by
   have h₁ := smoothTransition.le_one (t + 1)
   have h₀ := smoothTransition.nonneg t
-  rw [latticeBump₁]
+  rw [latticeBump₁_def]
   linarith
 
 theorem latticeBump₁_eq_zero_of_one_le_abs {t : ℝ} (ht : 1 ≤ |t|) : latticeBump₁ t = 0 := by
   rcases le_abs'.1 ht with ht | ht
-  · rw [latticeBump₁, smoothTransition.zero_of_nonpos (by linarith),
+  · rw [latticeBump₁_def, smoothTransition.zero_of_nonpos (by linarith),
       smoothTransition.zero_of_nonpos (by linarith), sub_zero]
-  · rw [latticeBump₁, smoothTransition.one_of_one_le (by linarith),
+  · rw [latticeBump₁_def, smoothTransition.one_of_one_le (by linarith),
       smoothTransition.one_of_one_le ht, sub_self]
 
 theorem abs_lt_one_of_latticeBump₁_ne_zero {t : ℝ} (ht : latticeBump₁ t ≠ 0) : |t| < 1 :=
@@ -99,7 +102,7 @@ private theorem sum_latticeBump₁_sub (t : ℝ) :
   have h₁ := Int.floor_le t
   have h₂ := Int.lt_floor_add_one t
   have e : t - ((⌊t⌋ + 1 : ℤ) : ℝ) + 1 = t - ⌊t⌋ := by push_cast; ring
-  rw [latticeBump₁, latticeBump₁, e, smoothTransition.one_of_one_le (by linarith),
+  rw [latticeBump₁_def, latticeBump₁_def, e, smoothTransition.one_of_one_le (by linarith),
     smoothTransition.zero_of_nonpos (x := t - ((⌊t⌋ + 1 : ℤ) : ℝ)) (by push_cast; linarith)]
   ring
 
