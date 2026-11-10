@@ -185,9 +185,10 @@ theorem localAbelianExistence_primeToResidueCharacteristic (p : ℕ) [Fact p.Pri
     (natCast_ne_zero_of_isUnit hunit) N.powerSubgroup_index_le
 
 /-- **Local existence prime to the residue characteristic, forgetful form.** -/
-theorem localExistence_primeToResidueCharacteristic (p : ℕ) [Fact p.Prime] [CharP 𝓀[K] p]
+theorem localExistence_primeToResidueCharacteristic (p : ℕ) [CharP 𝓀[K] p]
     (N : Subgroup Kˣ) (hindex : N.index.Coprime p) :
     ∃ V : OpenNormalSubgroup (AbsoluteGaloisGroup K), localNormSubgroup K V = N :=
+  have : Fact p.Prime := ⟨CharP.char_is_prime 𝓀[K] p⟩
   (localAbelianExistence_primeToResidueCharacteristic p N hindex).imp fun _ h ↦ h.2
 
 end TauCeti.ClassFieldTheory
