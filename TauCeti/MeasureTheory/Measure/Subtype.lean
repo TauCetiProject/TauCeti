@@ -91,10 +91,9 @@ theorem comap_inclusion_comap_subtype_coe {s t : Set α} (ht : MeasurableSet t) 
         NullMeasurableSet (Set.inclusion hst '' A) (μ.comap ((↑) : t → α)) := by
       intro A hA
       have : Set.inclusion hst '' A = ((↑) : t → α) ⁻¹' (((↑) : s → α) '' A) := by
-        ext x
-        simp only [mem_image, mem_preimage]
-        exact ⟨fun ⟨y, hy, h⟩ => ⟨y, hy, h ▸ rfl⟩,
-          fun ⟨y, hy, h⟩ => ⟨y, hy, Subtype.ext h⟩⟩
+        have himg' : ((↑) : s → α) '' A = ((↑) : t → α) '' (Set.inclusion hst '' A) := by
+          rw [image_image]
+        rw [himg', preimage_image_eq _ Subtype.coe_injective]
       rw [this]
       exact (hR A hA).preimage hqmp
     ext A hA
