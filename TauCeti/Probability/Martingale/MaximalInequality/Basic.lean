@@ -30,7 +30,8 @@ Under the same right-continuity hypothesis the running maximum `sup_{t ≤ T} f_
 everywhere measurable (`MeasureTheory.aemeasurable_iSup_le_ofReal`).
 
 A weak-type bound of this kind controls the running maximum in every `Lᵖ` with `p < 1`. The file
-records the case `p = 1 / 2`, `E[sup_{t ≤ T} √f_t] ≤ P(Ω) + 4 E[f_T]`. Applied to `f = g²`, it
+records the case `p = 1 / 2`, `E[sup_{t ≤ T} √f_t] ≤ μ(Ω) + 4 E[f_T]`, as a bound on the extended
+integral that is informative for a finite measure. Applied to `f = g²` over a probability space, it
 bounds the expected running maximum of a nonnegative process `g` whose square is a submartingale;
 this is how the running maximum of an exponential martingale is shown to be integrable.
 
@@ -229,9 +230,11 @@ theorem mul_measure_exists_le_lt_le [IsFiniteMeasure μ] (hf : Submartingale f �
     (ENNReal.ofReal_le_ofReal
       (setIntegral_le_integral (hf.integrable T) (Eventually.of_forall (hnonneg T))))
 
-/-- **The running maximum of the square root of a submartingale is integrable.** For a
-nonnegative submartingale `f` whose paths are almost surely right-continuous before `T`,
-`E[sup_{t ≤ T} √f_t] ≤ P(Ω) + 4 E[f_T]`. The integrand is almost everywhere measurable by
+/-- **The running maximum of the square root of a submartingale, in `L¹`.** For a nonnegative
+submartingale `f` whose paths are almost surely right-continuous before `T`, the extended integral
+satisfies `∫⁻ sup_{t ≤ T} √f_t ≤ μ(Ω) + 4 E[f_T]`. For a finite measure the right-hand side is
+finite, so the running maximum is integrable; for an infinite measure it is `∞` and the bound is
+vacuous. The integrand is almost everywhere measurable by
 `MeasureTheory.aemeasurable_iSup_le_ofReal`. -/
 theorem lintegral_iSup_sqrt_le (hf : Submartingale f ℱ μ)
     (hnonneg : 0 ≤ f) {T : ι}
