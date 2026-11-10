@@ -27,6 +27,10 @@ concatenation (`Circle.degree_trans`) and the pointwise product (`Circle.degree_
 because angle functions concatenate and add, and reversing a loop negates it
 (`Circle.degree_symm`). Raising a loop pointwise to the `n`-th power multiplies its degree by `n`
 (`Circle.degree_map_pow`), and inverting it pointwise negates its degree (`Circle.degree_inv`).
+A loop that avoids a point has degree zero, so two loops that are never antipodal have the same
+degree (`Circle.degree_eq_of_forall_ne_neg`). In particular, the loop of directions `z t / ‖z t‖`
+of a family of complex numbers keeps its degree under perturbations of `z` smaller than `‖z‖`
+(`Circle.degree_eq_of_norm_sub_lt`), the dog-on-a-leash principle.
 
 The degree is the integer that Tau Ceti's identification
 `Circle.fundamentalGroupMulEquiv : π₁(Circle, x) ≃* Multiplicative ℤ` assigns to the class of the
@@ -59,6 +63,10 @@ continuous part of the Maslov index of a path of Lagrangian frames.
   `z = a cos 2πt + i b sin 2πt`, has degree `n`.
 * `Circle.degree_inv`: the pointwise inverse of a loop has the opposite degree.
 * `Circle.degree_congr`: loops agreeing pointwise have the same degree.
+* `Circle.degree_eq_zero_of_forall_ne`: a loop avoiding a point of the circle has degree `0`.
+* `Circle.degree_eq_of_forall_ne_neg`: two loops that are never antipodal have the same degree.
+* `Circle.degree_eq_of_norm_sub_lt`: the loops of directions of two families `z` and `w` of complex
+  numbers with `‖z t - w t‖ < ‖w t‖` have the same degree.
 * `Circle.exists_lift`: every path in the circle has a continuous lift through `Circle.exp`.
 * `Circle.angleChange`: the angle swept by a path in the circle.
 * `Circle.angleChange_eq_sub`: it is `θ 1 - θ 0` for every continuous lift `θ`.
@@ -419,5 +427,51 @@ theorem degree_eq_of_forall_eq_pow {x : Circle} (γ : Path x x) {a b : ℝ} (ha 
 theorem degree_inv {x : Circle} (γ : Path x x) : degree γ.inv = -degree γ :=
   degree_eq_of_angleChange_eq _ (by
     rw [angleChange_inv, angleChange_eq_degree_mul]; push_cast; ring)
+
+/-! ### Loops that avoid a point -/
+
+/-- A loop in the circle that avoids some point `c` has degree zero. -/
+theorem degree_eq_zero_of_forall_ne {x c : Circle} (γ : Path x x) (h : ∀ t, γ t ≠ c) :
+    degree γ = 0 := by
+  set δ := γ.mul (Path.refl (-c⁻¹))
+  have hslit (t : I) : (δ t : ℂ) ∈ Complex.slitPlane := by
+    refine Complex.mem_slitPlane_iff_arg.2 ⟨fun hπ ↦ h t ?_, coe_ne_zero _⟩
+    have hδ : δ t = -1 := by
+      rw [← exp_arg (δ t), hπ]
+      exact Circle.ext (by simp [coe_exp, Complex.exp_pi_mul_I])
+    simpa [δ, neg_eq_iff_eq_neg, mul_neg, mul_inv_eq_one] using hδ
+  have hδ := degree_eq_of_sub_eq δ (θ := fun t ↦ Complex.arg (δ t))
+    (continuous_iff_continuousAt.2 fun t ↦ (Complex.continuousAt_arg (hslit t)).comp
+      (f := fun s ↦ (δ s : ℂ)) (by fun_prop))
+    (fun t ↦ exp_arg _) (n := 0) (by simp)
+  simpa [δ] using hδ
+
+/-- Two loops in the circle that are never antipodal, `γ₀ t ≠ -γ₁ t` for every `t`, have the same
+degree. -/
+theorem degree_eq_of_forall_ne_neg {x y : Circle} (γ₀ : Path x x) (γ₁ : Path y y)
+    (h : ∀ t, γ₀ t ≠ -γ₁ t) : degree γ₀ = degree γ₁ := by
+  have h₀ := degree_eq_zero_of_forall_ne (γ₀.mul γ₁.inv) (c := -1) fun t ht ↦ h t (by
+    simpa [mul_inv_eq_iff_eq_mul] using ht)
+  rw [degree_mul, degree_inv] at h₀
+  omega
+
+/-- **Dog-on-a-leash.** Let `γ₀` and `γ₁` be the loops of directions `z t / ‖z t‖` and
+`w t / ‖w t‖` of two families `z` and `w` of complex numbers. If `z` stays closer to `w` than `w`
+is to the origin, `‖z t - w t‖ < ‖w t‖` for every `t`, then the two loops have the same degree. -/
+theorem degree_eq_of_norm_sub_lt {x y : Circle} (γ₀ : Path x x) (γ₁ : Path y y) {z w : I → ℂ}
+    (h₀ : ∀ t, (γ₀ t : ℂ) = z t / ‖z t‖) (h₁ : ∀ t, (γ₁ t : ℂ) = w t / ‖w t‖)
+    (h : ∀ t, ‖z t - w t‖ < ‖w t‖) : degree γ₀ = degree γ₁ := by
+  refine degree_eq_of_forall_ne_neg γ₀ γ₁ fun t ht ↦ (h t).not_ge ?_
+  have hmul {u : ℂ} {v : Circle} (hv : (v : ℂ) = u / ‖u‖) : u = ‖u‖ * (v : ℂ) := by
+    rcases eq_or_ne u 0 with hu | hu
+    · simp [hu]
+    · rw [hv, mul_div_cancel₀ _ (by exact_mod_cast norm_ne_zero_iff.2 hu)]
+  have hsub : z t - w t = -((‖z t‖ + ‖w t‖ : ℝ) * (γ₁ t : ℂ)) := by
+    have hneg : (γ₀ t : ℂ) = -(γ₁ t : ℂ) := by rw [ht, coe_neg]
+    push_cast
+    linear_combination hmul (h₀ t) - hmul (h₁ t) + (‖z t‖ : ℂ) * hneg
+  rw [hsub, norm_neg, norm_mul, Complex.norm_real, norm_coe, mul_one,
+    Real.norm_of_nonneg (by positivity)]
+  linarith [norm_nonneg (z t)]
 
 end Circle
