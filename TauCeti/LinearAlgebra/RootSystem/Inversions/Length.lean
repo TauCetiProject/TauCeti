@@ -167,20 +167,19 @@ theorem _root_.RootPairing.finite_weylGroup_of_base : Finite P.weylGroup := by
   obtain ⟨l, hl, hlen⟩ := exists_wordProd_eq_and_length_eq_ncard_inversions P b w
   exact ⟨l, hlen.trans_le (ncard_inversions_le P b w), hl⟩
 
-/-- **The inversion count is invariant under inversion**: reversing a word spelling `w` spells
-`w⁻¹`, since a simple reflection is its own inverse. -/
+omit [Finite ι] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] in
+/-- **The inversion count is invariant under inversion**: `w` followed by root negation is a
+bijection from the inversions of `w` onto those of `w⁻¹`. -/
 @[simp]
 theorem ncard_inversions_inv (w : P.weylGroup) :
     (inversions P b w⁻¹).ncard = (inversions P b w).ncard := by
-  have key : ∀ v : P.weylGroup, (inversions P b v⁻¹).ncard ≤ (inversions P b v).ncard := by
-    intro v
-    obtain ⟨l, hl, hlen⟩ := exists_wordProd_eq_and_length_eq_ncard_inversions P b v
-    have hrev : wordProd P b l.reverse = v⁻¹ := by rw [wordProd_reverse, hl]
-    calc
-      (inversions P b v⁻¹).ncard ≤ l.reverse.length := by
-        rw [← hrev]; exact ncard_inversions_wordProd_le_length P b l.reverse
-      _ = (inversions P b v).ncard := by rw [List.length_reverse, hlen]
-  exact le_antisymm (key w) (by simpa using key w⁻¹)
+  let := P.indexNeg
+  let e := (P.weylGroupToPerm w).trans (Equiv.neg ι)
+  have hmem : ∀ i, e i ∈ inversions P b w⁻¹ ↔ i ∈ inversions P b w :=
+    neg_weylGroupToPerm_mem_inversions_inv_iff P b w
+  exact (Set.ncard_congr (fun i _ ↦ e i) (fun i hi ↦ (hmem i).mpr hi)
+    (fun _ _ _ _ h ↦ e.injective h)
+    (fun j hj ↦ ⟨e.symm j, (hmem _).mp (by simpa using hj), by simp⟩)).symm
 
 /-- **The inversion count is subadditive**: concatenating shortest words for `v` and `w` spells
 `v * w`. -/
@@ -235,6 +234,7 @@ theorem lt_ncard_inversions_mul_ofIdx_iff (w : P.weylGroup) {i : ι} (hi : b.IsP
       ((mem_inversions_mul_ofIdx_iff_not_mem P w b hi).mpr h)
     rwa [mul_assoc, RootPairing.weylGroup.ofIdx_mul_self, mul_one] at hback
 
+omit [Finite ι] [IsDomain R] [P.IsCrystallographic] [P.IsReduced] in
 /-- Left multiplication by a reflection has the same inversion count as right multiplication by it
 on the inverse element; this is what turns the left criteria into the right ones. -/
 private theorem ncard_inversions_ofIdx_mul (w : P.weylGroup) (i : ι) :
