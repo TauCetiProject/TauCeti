@@ -38,9 +38,10 @@ Differentiating the equivariance, the derivative of the time-`t` map sends `dP_v
 Hence it maps the tangent spaces of `W^u(x)` onto one another
 (`TauCeti.IsAdaptedPseudoGradient.unstableTangentFlowEquiv`), and since the scaling by `e^t > 0`
 preserves orientations, it preserves the induced orientations. Every orientation of the tangent
-space of `W^u(x)` at `x` therefore extends to a flow-invariant orientation of all the tangent spaces
-of `W^u(x)` (`TauCeti.IsAdaptedPseudoGradient.exists_orientation_unstableSet`). No orientation of
-`M` is involved.
+space of `W^u(x)` at `x` is therefore the value at `x` of such an induced orientation, which is a
+flow-invariant orientation of all the tangent spaces of `W^u(x)`
+(`TauCeti.IsAdaptedPseudoGradient.exists_orientation_unstableSet`). No orientation of `M` is
+involved.
 
 ## Main declarations
 
@@ -56,7 +57,7 @@ of `W^u(x)` (`TauCeti.IsAdaptedPseudoGradient.exists_orientation_unstableSet`). 
 * `TauCeti.IsAdaptedPseudoGradient.UnstableParametrization.orientation_neg`: reversing the
   orientation of the parameter space reverses it.
 * `TauCeti.IsAdaptedPseudoGradient.exists_orientation_unstableSet`: every orientation of `W^u(x)`
-  at `x` extends to a flow-invariant orientation of `W^u(x)`.
+  at `x` is the value at `x` of an orientation induced by a parametrization, hence flow-invariant.
 
 ## References
 
@@ -120,6 +121,7 @@ theorem mem_unstableSet (v : L) : P v ∈ hX.flow.unstableSet x :=
 
 /-- The parametrization sends `0` to the critical point: `P 0` is a rest point of the flow lying on
 `W^u(x)`, so its constant backward orbit converges to `x`. -/
+@[simp]
 theorem map_zero : P 0 = x := by
   have hfix : ∀ t, hX.flow t (P 0) = P 0 := fun t ↦ by
     rw [P.flow_apply, smul_zero]
@@ -309,23 +311,23 @@ theorem map_orientation_unstableTangentFlowEquiv [Finite ι] (o : Orientation �
 end UnstableParametrization
 
 /-- **Orientations of unstable manifolds.** Every orientation `o₀` of the tangent space of `W^u(x)`
-at a critical point `x` of a Morse function extends to an orientation of the tangent spaces of
-`W^u(x)` at all of its points which is invariant under the flow: the derivative of each time-`t`
-map carries the orientation at `y` to the orientation at the image of `y`. -/
+at a critical point `x` of a Morse function is the value at `x` of the orientation induced by a
+flow-equivariant parametrization `P` and an orientation `o` of its parameter space. This induced
+orientation of the tangent spaces of `W^u(x)` at all of its points is invariant under the flow: the
+derivative of each time-`t` map carries the orientation at `y` to the orientation at the image of
+`y`. -/
 theorem exists_orientation_unstableSet (hf : IsMorse 𝓘(ℝ, E) f)
     (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) {ι : Type*} [Finite ι]
     (o₀ : Orientation ℝ (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet x) x)) ι) :
-    ∃ o : ∀ y ∈ hX.flow.unstableSet x,
-        Orientation ℝ (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.unstableSet x) y)) ι,
-      o x (hX.self_mem_unstableSet hx) = o₀ ∧
+    ∃ (L : Submodule ℝ E) (P : hX.UnstableParametrization x L) (o : Orientation ℝ L ι),
+      P.orientation hf hx o (hX.self_mem_unstableSet hx) = o₀ ∧
       ∀ (t : ℝ) (y : M) (hy : y ∈ hX.flow.unstableSet x),
-        Orientation.map ι (hX.unstableTangentFlowEquiv hf hx t hy) (o y hy) =
-          o (hX.flow t y) (Flow.isInvariant_unstableSet hX.flow x t hy) := by
+        Orientation.map ι (hX.unstableTangentFlowEquiv hf hx t hy) (P.orientation hf hx o hy) =
+          P.orientation hf hx o (Flow.isInvariant_unstableSet hX.flow x t hy) := by
   obtain ⟨L, ⟨P⟩⟩ := hX.exists_unstableParametrization hf hx
   set e := P.tangentEquiv hf hx (hX.self_mem_unstableSet hx)
-  refine ⟨fun y hy ↦ P.orientation hf hx (Orientation.map ι e.symm o₀) hy, ?_,
+  refine ⟨L, P, Orientation.map ι e.symm o₀, ?_,
     fun t y hy ↦ P.map_orientation_unstableTangentFlowEquiv hf hx _ t hy⟩
-  dsimp only
   rw [UnstableParametrization.orientation_def, ← Orientation.map_trans,
     LinearEquiv.symm_trans_self, Orientation.map_refl, Equiv.refl_apply]
 

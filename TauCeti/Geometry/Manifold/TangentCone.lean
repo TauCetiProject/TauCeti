@@ -173,31 +173,22 @@ theorem mfderiv_apply_mem_mtangentConeAt {F : Type*} [NormedAddCommGroup F] [Nor
     (hs : ∀ᶠ w in 𝓝 a, g w ∈ s) (u : F) :
     mfderiv 𝓘(𝕜, F) 𝓘(𝕜, E) g a u ∈ mtangentConeAt 𝓘(𝕜, E) s (g a) := by
   rw [mtangentConeAt_eq_tangentConeAt_chartAt]
-  -- Read in the preferred chart at `g a`, the derivative of `g` is an ordinary derivative.
-  have hd : HasFDerivAt (chartAt E (g a) ∘ g)
-      (mfderiv 𝓘(𝕜, F) 𝓘(𝕜, E) g a : F →L[𝕜] E) a := by
-    have h := hg.hasMFDerivAt.2
-    simp only [writtenInExtChartAt, PartialEquiv.refl_coe, modelWithCornersSelf_coe, range_id,
-      hasFDerivWithinAt_univ, extChartAt, OpenPartialHomeomorph.extend, PartialEquiv.coe_trans,
-      modelWithCornersSelf_partialEquiv, OpenPartialHomeomorph.toFun_eq_coe,
-      Function.id_comp] at h
-    exact h
-  -- Along the line `t ↦ a + t • u`, the curve read in the chart has velocity `dg_a u` at `0`.
-  have hγ : HasDerivAt (fun t : 𝕜 ↦ chartAt E (g a) (g (a + t • u)))
-      (mfderiv 𝓘(𝕜, F) 𝓘(𝕜, E) g a u) 0 := by
-    have hl : HasDerivAt (fun t : 𝕜 ↦ a + t • u) u 0 := by
-      simpa using ((hasDerivAt_id (0 : 𝕜)).smul_const u).const_add a
-    exact hd.comp_hasDerivAt_of_eq (0 : 𝕜) hl (by simp)
-  have hcurve : Tendsto (fun t : 𝕜 ↦ a + t • u) (𝓝 0) (𝓝 a) :=
-    (continuous_const.add (continuous_id.smul continuous_const)).tendsto' (0 : 𝕜) a (by simp)
   have hsrc : ∀ᶠ w in 𝓝 a, g w ∈ (chartAt E (g a)).source :=
     hg.continuousAt.preimage_mem_nhds ((chartAt E (g a)).open_source.mem_nhds
       (mem_chart_source E (g a)))
-  have h := hγ.mem_tangentConeAt (S := (chartAt E (g a)).symm ⁻¹' s)
-    ((hcurve.eventually (hs.and hsrc)).mono fun t ht ↦ by
-      rw [mem_preimage, (chartAt E (g a)).left_inv ht.2]
-      exact ht.1)
-  rwa [zero_smul, add_zero] at h
+  -- Read in the preferred chart at `g a`, the derivative of `g` is an ordinary derivative. It maps
+  -- the tangent cone of a neighbourhood of `a`, all of `F`, into the tangent cone of its image.
+  have hd := (hg.differentiableAt_chartAt_comp.hasFDerivAt.hasFDerivWithinAt
+    (s := {w | g w ∈ s ∧ g w ∈ (chartAt E (g a)).source})).mapsTo_tangent_cone
+    (by rw [tangentConeAt_of_mem_nhds (hs.and hsrc)]; exact mem_univ u)
+  rw [hg.fderiv_chartAt_comp] at hd
+  have hsub : (chartAt E (g a) ∘ g) '' {w | g w ∈ s ∧ g w ∈ (chartAt E (g a)).source} ⊆
+      (chartAt E (g a)).symm ⁻¹' s := by
+    rintro _ ⟨w, hw, rfl⟩
+    rw [mem_preimage, Function.comp_apply, (chartAt E (g a)).left_inv hw.2]
+    exact hw.1
+  -- The canonical identification of the tangent space of `F` at `a` with `F` is the identity.
+  exact tangentConeAt_mono hsub hd
 
 /-- The preferred chart at `y` sends a point `y` of `s` into the chart image of `s`. -/
 private theorem chartAt_self_mem_preimage (hys : y ∈ s) :
