@@ -28,6 +28,7 @@ namespace Complex
 
 /-- A point of `ℂ` lies on the open segment joining two real points exactly when it is real and
 its real part lies on the open segment joining them in `ℝ`. -/
+@[simp]
 theorem mem_openSegment_ofReal {w : ℂ} {a b : ℝ} :
     w ∈ openSegment ℝ (a : ℂ) b ↔ w.im = 0 ∧ w.re ∈ openSegment ℝ a b := by
   simp only [openSegment, Set.mem_ofPred_eq, Complex.ext_iff]
