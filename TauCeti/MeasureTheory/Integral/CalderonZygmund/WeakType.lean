@@ -236,6 +236,26 @@ theorem mul_volume_lt_enorm_le_of_isEmpty [IsEmpty ι]
     _ = ‖T‖ₑ * ∫⁻ x, ‖f x‖ₑ := by rw [hint, hnormE]
 
 omit [CompleteSpace E] in
+/-- On the one-point space `(ι → ℝ)` for empty `ι`, the sharp bound `t |{‖T f‖ > t}| ≤ ‖T‖ ‖f‖₁`
+(`ContinuousLinearMap.mul_volume_lt_enorm_le_of_isEmpty`) is below the weak-type constant of the
+Calderón–Zygmund theorem, whatever the coefficient `c` of the kernel term. -/
+theorem mul_volume_lt_enorm_le_of_isEmpty_add [IsEmpty ι]
+    (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
+    (f : Lp E 2 (volume : Measure (ι → ℝ))) (t c : ℝ≥0∞) :
+    t * volume {x | t < ‖T f x‖ₑ} ≤
+      (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) + c) * ∫⁻ x, ‖f x‖ₑ := by
+  have h : ‖T‖ₑ ≤ 2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) + c := by
+    rw [Fintype.card_eq_zero, pow_zero, one_mul]
+    refine le_trans ?_ le_self_add
+    rcases le_total ‖T‖ₑ 1 with h | h
+    · exact h.trans le_add_self
+    · calc ‖T‖ₑ ≤ ‖T‖ₑ * ‖T‖ₑ := le_mul_of_one_le_right zero_le h
+        _ = ‖T‖ₑ ^ 2 := (sq _).symm
+        _ ≤ 4 * ‖T‖ₑ ^ 2 := le_mul_of_one_le_left zero_le (by norm_num)
+        _ ≤ _ := le_self_add
+  exact (mul_volume_lt_enorm_le_of_isEmpty T f t).trans (by gcongr)
+
+omit [CompleteSpace E] in
 /-- Chebyshev's inequality for the image of the good part under an operator bounded on `L²`. -/
 private theorem mul_volume_lt_enorm_calderonZygmundGood_le [Nonempty ι]
     (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
@@ -364,7 +384,8 @@ vanishing off a closed ball `closedBall y r` with integral zero,
 
 `t · |{‖T f‖ > t}| ≤ (4 · 2ⁿ ‖T‖² + cⁿ + 4 B) ‖f‖₁`,
 
-where `cⁿ` is read as `0` when `c < 0` (it is `ENNReal.ofReal c ^ n`). The classical factor is
+where `cⁿ` is `ENNReal.ofReal c ^ n`, which is `0` for `c < 0` when `n > 0` and is always `1` when
+`n = 0`. The classical factor is
 `c = 2`, for which the constant is `2ⁿ (4 ‖T‖² + 1) + 4 B`. A larger factor makes the cancellation
 condition weaker; it is needed when the condition comes from a kernel estimate in a distance other
 than the sup distance. The bound is vacuous unless `f` is also integrable. -/
@@ -379,15 +400,8 @@ theorem mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le
       (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2) + ENNReal.ofReal c ^ Fintype.card ι + 4 * B) *
         ∫⁻ x, ‖f x‖ₑ := by
   rcases isEmpty_or_nonempty ι with hι | hι
-  · refine (mul_volume_lt_enorm_le_of_isEmpty T f t).trans ?_
-    gcongr
-    rw [Fintype.card_eq_zero, pow_zero, pow_zero, one_mul]
-    refine le_add_right ?_
-    rcases le_total ‖T‖ₑ 1 with h | h
-    · exact h.trans le_add_self
-    · calc ‖T‖ₑ ≤ ‖T‖ₑ ^ 2 := le_self_pow₀ h two_ne_zero
-        _ ≤ 4 * ‖T‖ₑ ^ 2 := le_mul_of_one_le_left' (by norm_num)
-        _ ≤ _ := le_self_add
+  · have h := mul_volume_lt_enorm_le_of_isEmpty_add T f t (4 * B)
+    simpa [Fintype.card_eq_zero, add_assoc] using h
   rcases eq_or_ne T 0 with rfl | hT0
   · simp
   rcases eq_or_ne (∫⁻ x, ‖f x‖ₑ) ∞ with hI | hI

@@ -232,26 +232,6 @@ open scoped ENNReal NNReal
 variable {ι : Type*} [Fintype ι] {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [CompleteSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 
-omit [CompleteSpace E] [CompleteSpace F] in
-/-- On the one-point space `(ι → ℝ)` for empty `ι`, the sharp bound `t |{‖T f‖ > t}| ≤ ‖T‖ ‖f‖₁`
-(`ContinuousLinearMap.mul_volume_lt_enorm_le_of_isEmpty`) is below the weak-type constant of the
-Calderón–Zygmund theorem, whatever the coefficient `c` of the kernel term. -/
-private theorem mul_volume_lt_enorm_le_of_isEmpty_add [IsEmpty ι]
-    (T : Lp E 2 (volume : Measure (ι → ℝ)) →L[ℝ] Lp F 2 (volume : Measure (ι → ℝ)))
-    (f : Lp E 2 (volume : Measure (ι → ℝ))) (t c : ℝ≥0∞) :
-    t * volume {x | t < ‖T f x‖ₑ} ≤
-      (2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) + c) * ∫⁻ x, ‖f x‖ₑ := by
-  have h : ‖T‖ₑ ≤ 2 ^ Fintype.card ι * (4 * ‖T‖ₑ ^ 2 + 1) + c := by
-    rw [Fintype.card_eq_zero, pow_zero, one_mul]
-    refine le_trans ?_ le_self_add
-    rcases le_total ‖T‖ₑ 1 with h | h
-    · exact h.trans le_add_self
-    · calc ‖T‖ₑ ≤ ‖T‖ₑ * ‖T‖ₑ := le_mul_of_one_le_right zero_le h
-        _ = ‖T‖ₑ ^ 2 := (sq _).symm
-        _ ≤ 4 * ‖T‖ₑ ^ 2 := le_mul_of_one_le_left zero_le (by norm_num)
-        _ ≤ _ := le_self_add
-  exact (mul_volume_lt_enorm_le_of_isEmpty T f t).trans (by gcongr)
-
 /-- **The Calderón–Zygmund theorem** for an operator with a standard kernel. Let `T` be a bounded
 linear operator on `L²(ℝⁿ)` such that `T b x = ∫ K x y (b y) dy` for almost every `x` off any
 closed ball outside which `b` vanishes, where for some `δ > 0` the kernel `K` satisfies the
