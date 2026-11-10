@@ -224,7 +224,7 @@ private theorem perimeter_le_liminf_totalVariationOn_smoothTransition_comp
   have hlim := tendsto_lintegral_of_dominated_convergence' (μ := μ.restrict K) (f := 0)
     (F := fun n x => ‖Real.smoothTransition (((n : ℝ) + 1) * (u x - t)) -
       {x | t < u x}.indicator 1 x‖ₑ) (fun _ => 1)
-    (fun n => ((((hv n).continuousOn.mono hKΩ).aemeasurable hKm).sub hind_meas).enorm)
+    (fun n => ((((hv n).continuousOn.mono hKΩ).aemeasurable hKm).sub hind_meas).eNorm)
     (fun n => .of_forall fun x => ?_) (by simpa using hK.measure_lt_top.ne)
     (.of_forall fun x => ?_)
   · simpa using hlim
@@ -272,7 +272,7 @@ theorem _root_.LocallyLipschitzOn.lintegral_perimeter_eq_setLIntegral_enorm_fder
       (Real.smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl
     exact (ENNReal.measurable_ofReal.comp_aemeasurable ((hψ'.measurable.comp_aemeasurable
       ((hu2.sub measurable_fst.aemeasurable).const_mul _)).const_mul _)).mul
-      ((measurable_fderiv ℝ u).enorm.comp measurable_snd).aemeasurable
+      ((measurable_fderiv ℝ u).eNorm.comp measurable_snd).aemeasurable
   have hint (n : ℕ) : ∫⁻ t, ∫⁻ x in Ω, F n t x ∂μ = ∫⁻ x in Ω, ‖fderiv ℝ u x‖ₑ ∂μ := by
     rw [lintegral_lintegral_swap (hF n)]
     refine lintegral_congr fun x => ?_

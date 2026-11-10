@@ -52,7 +52,7 @@ theorem norm_sub_sq_le_integral_norm_deriv_sq {v : ℝ → V} {a b t : ℝ}
     filter_upwards [self_mem_ae_restrict measurableSet_Ioo] with r hr
     exact derivWithin_of_mem_nhds (Icc_mem_nhds hr.1 hr.2)
   have hm : AEMeasurable (fun r ↦ ‖deriv v r‖ₑ) (volume.restrict (Icc a b)) :=
-    (hd.enorm.aemeasurable measurableSet_Icc).congr (heq.fun_comp enorm)
+    (hd.eNorm.aemeasurable measurableSet_Icc).congr (heq.fun_comp eNorm)
   have hFTC : ‖v t - v a‖ₑ ≤ ∫⁻ r in Icc a b, ‖deriv v r‖ₑ :=
     (eNorm_sub_le_lintegral_deriv_of_contDiffOn_Icc
       (hv.mono (Icc_subset_Icc_right ht.2)) ht.1).trans

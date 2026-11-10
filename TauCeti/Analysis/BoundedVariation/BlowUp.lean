@@ -274,7 +274,7 @@ theorem integral_divergenceCLM_mul_indicator_nonneg_of_tendsto_measure_symmDiff_
     rw [mul_zero] at hK
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hK
       (.of_forall fun _ => zero_le) (hint.mono fun i hi => ?_)
-    rw [edist_eq_enorm_sub, ← integral_sub hi hJ]
+    rw [eDist_eq_eNorm_sub, ← integral_sub hi hJ]
     refine (eNorm_integral_le_lintegral_eNorm _).trans <|
       ((lintegral_mono fun y => ?_).trans_eq (lintegral_const_mul' _ _ eNorm_ne_top)).trans
         (mul_le_mul_right (lintegral_indicator_one_le _) _)

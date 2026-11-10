@@ -202,7 +202,7 @@ theorem _root_.HasDerivAt.tendsto_edist_div {E : Type*} [SeminormedAddCommGroup 
   refine ((continuous_eNorm.tendsto v).comp (HasDerivAtFilter.tendsto_slope h)).congr' <|
     eventually_nhdsWithin_of_forall fun s hs ↦ ?_
   simp only [Function.comp_apply, slope_def_module, eNorm_smul, eNorm_inv (sub_ne_zero.2 hs),
-    edist_eq_enorm_sub, ENNReal.div_eq_inv_mul]
+    eDist_eq_eNorm_sub, ENNReal.div_eq_inv_mul]
 
 /-- On a seminormed space the metric derivative of a curve is the norm of its derivative. -/
 theorem _root_.HasDerivAt.metricDerivative_eq {E : Type*} [SeminormedAddCommGroup E]
@@ -225,7 +225,7 @@ theorem _root_.BoundedVariationOn.ae_metricDerivative_le_enorm_deriv_variationOn
   have hV {s u : ℝ} (hs : s ∈ uIcc a b) (hu : u ∈ uIcc a b) (hsu : s ≤ u) :
       edist (γ s) (γ u) ≤ edist (V s) (V u) := by
     simp only [V]
-    rw [edist_comm (variationOnFromTo _ _ _ s), edist_eq_enorm_sub,
+    rw [edist_comm (variationOnFromTo _ _ _ s), eDist_eq_eNorm_sub,
       ← variationOnFromTo.add hγ.locallyBoundedVariationOn left_mem_uIcc hs hu, add_sub_cancel_left,
       variationOnFromTo.eq_of_le _ _ hsu, Real.eNorm_eq_ofReal ENNReal.toReal_nonneg,
       ENNReal.ofReal_toReal ((eVariationOn.mono _ inter_subset_left).trans_lt hγ.lt_top).ne]
@@ -259,7 +259,7 @@ private noncomputable def profileSpeed (γ : ℝ → X) (c : Set X) (r : ℝ) : 
 
 private lemma measurable_profileSpeed (c : Set X) [Countable c] :
     Measurable (profileSpeed γ c) :=
-  Measurable.iSup fun _ ↦ (measurable_deriv _).enorm
+  Measurable.iSup fun _ ↦ (measurable_deriv _).eNorm
 
 /-- If `c` is dense in the image of `[a, b]`, the distances along `γ` are bounded by the integrals
 of `profileSpeed γ c`. Each distance profile is the integral of its derivative, and the profile of

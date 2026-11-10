@@ -194,7 +194,7 @@ theorem setLIntegral_enorm_sub_le_of_starConvex (hΩ : IsOpen Ω) (hu : ContDiff
   have hcont := hu.continuousOn_fderiv_of_isOpen hΩ le_rfl
   have hg : Measurable g := by
     rw [hg_def, ← piecewise_eq_indicator]
-    exact hcont.enorm.measurable_piecewise continuousOn_const hΩ.measurableSet
+    exact hcont.eNorm.measurable_piecewise continuousOn_const hΩ.measurableSet
   -- The segment estimate for `u` between `x` and a point `y` of `Ω`.
   have hseg : ∀ y ∈ Ω,
       ‖u x - u y‖ₑ ≤ (∫⁻ t in Ioc (0 : ℝ) 1, g (x + t • (y - x))) * ‖x - y‖ₑ := by

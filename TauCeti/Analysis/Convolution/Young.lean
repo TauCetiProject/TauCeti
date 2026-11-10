@@ -179,8 +179,8 @@ theorem eLpNorm_convolution_le (hf : AEStronglyMeasurable f μ) (hg : AEStrongly
         ≤ ∫⁻ t, ‖L‖ₑ * ‖f t‖ₑ * eLpNormEssSup g μ ∂μ :=
           lintegral_mono_ae <| hgx.mono fun t ht ↦ by gcongr
       _ = ‖L‖ₑ * (∫⁻ t, ‖f t‖ₑ ∂μ) * eLpNormEssSup g μ := by
-          rw [lintegral_mul_const'' _ (hf.enorm.const_mul _),
-            lintegral_const_mul'' _ hf.enorm]
+          rw [lintegral_mul_const'' _ (hf.eNorm.const_mul _),
+            lintegral_const_mul'' _ hf.eNorm]
   -- For `p < ∞`, Minkowski's integral inequality moves the `Lᵖ` norm inside the integral.
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le hp).ne'
   have hr : 1 ≤ p.toReal := by
@@ -189,9 +189,9 @@ theorem eLpNorm_convolution_le (hf : AEStronglyMeasurable f μ) (hg : AEStrongly
   set r := p.toReal
   have hmeas : AEMeasurable (Function.uncurry fun x t ↦ ‖L‖ₑ * ‖f t‖ₑ * ‖g (x - t)‖ₑ)
       (μ.prod μ) :=
-    (aemeasurable_const.mul hf.enorm.comp_snd).mul
+    (aemeasurable_const.mul hf.eNorm.comp_snd).mul
       (hg.comp_quasiMeasurePreserving
-        (quasiMeasurePreserving_sub_of_right_invariant μ μ)).enorm
+        (quasiMeasurePreserving_sub_of_right_invariant μ μ)).eNorm
   have hg_tr (t : G) : ∫⁻ x, ‖g (x - t)‖ₑ ^ r ∂μ = ∫⁻ x, ‖g x‖ₑ ^ r ∂μ :=
     lintegral_sub_right_eq_self (fun x ↦ ‖g x‖ₑ ^ r) t
   rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp_top (hf.convolution L hg),
@@ -213,8 +213,8 @@ theorem eLpNorm_convolution_le (hf : AEStronglyMeasurable f μ) (hg : AEStrongly
         rw [h, ENNReal.mul_rpow_of_nonneg _ _ (by positivity), ← ENNReal.rpow_mul,
           mul_one_div_cancel hr0.ne', ENNReal.rpow_one]
     _ = ‖L‖ₑ * (∫⁻ t, ‖f t‖ₑ ∂μ) * (∫⁻ x, ‖g x‖ₑ ^ r ∂μ) ^ (1 / r) := by
-        rw [lintegral_mul_const'' _ (hf.enorm.const_mul _),
-          lintegral_const_mul'' _ hf.enorm]
+        rw [lintegral_mul_const'' _ (hf.eNorm.const_mul _),
+          lintegral_const_mul'' _ hf.eNorm]
 
 end Convolution
 
@@ -356,7 +356,7 @@ theorem eLpNorm_convolution_le_of_inv_add_inv_eq {𝕜 E E' F : Type*} [Nontrivi
           (Filter.Eventually.of_forall hpt)
     _ ≤ ‖L‖ₑ * (eLpNorm (fun t ↦ ‖f t‖ₑ) p μ * eLpNorm (fun t ↦ ‖g t‖ₑ) r μ) := by
         gcongr
-        exact eLpNorm_lconvolution_le hp hr hpqr hf.enorm hg.enorm
+        exact eLpNorm_lconvolution_le hp hr hpqr hf.eNorm hg.eNorm
     _ = ‖L‖ₑ * eLpNorm f p μ * eLpNorm g r μ := by
         rw [eLpNorm_eNorm f hf, eLpNorm_eNorm g hg, mul_assoc]
 

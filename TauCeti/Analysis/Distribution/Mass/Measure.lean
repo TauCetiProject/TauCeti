@@ -167,7 +167,7 @@ private theorem sum_measure_levelSet_mul_le (μ : Measure Ω) (φ : 𝓓^{n}(Ω,
         simp only [setLIntegral_const, mul_comm]
     _ ≤ ∑ j : Fin N, ∫⁻ x in levelSet φ ε j, (‖φ x‖ₑ + ENNReal.ofReal (2 * ε)) ∂μ := by
         refine Finset.sum_le_sum fun j _ => setLIntegral_mono
-          (hφc.enorm.measurable.add measurable_const) fun x hx => ?_
+          (hφc.eNorm.measurable.add measurable_const) fun x hx => ?_
         rw [← ofReal_norm, ← ENNReal.ofReal_add (norm_nonneg _) (by positivity)]
         exact ENNReal.ofReal_le_ofReal (by linarith [(mem_levelSet hε hx).1])
     _ = ∫⁻ x in ⋃ j : Fin N, levelSet φ ε j, (‖φ x‖ₑ + ENNReal.ofReal (2 * ε)) ∂μ := by

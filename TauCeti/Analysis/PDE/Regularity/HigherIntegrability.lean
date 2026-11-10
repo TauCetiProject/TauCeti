@@ -257,8 +257,8 @@ theorem exists_setLAverage_enorm_gradient_rpow_le_divergence [Nonempty ι] (K : 
   refine ⟨C, fun {Omega a lam Lam F u x₀ R} h hK ha hF hu hball => ?_⟩
   have hball' : mu.restrict (ball x₀ R) ≤ mu.restrict Omega := Measure.restrict_mono hball le_rfl
   exact hC (f := fun x => ‖W1p.gradient u x‖ₑ) (φ := fun x => ‖F x‖ₑ / ENNReal.ofReal lam)
-    ((Lp.aestronglyMeasurable (W1p.gradient u)).enorm.mono_measure hball')
-    ((hF.aestronglyMeasurable.enorm.div_const _).mono_measure hball')
+    ((Lp.aestronglyMeasurable (W1p.gradient u)).eNorm.mono_measure hball')
+    ((hF.aestronglyMeasurable.eNorm.div_const _).mono_measure hball')
     fun y ρ hρ hsub => hb h hK ha hF hu hρ (hsub.trans hball)
 
 /-- **Meyers' theorem: higher integrability of the gradient.** Let `n ≥ 1` be the dimension and

@@ -494,7 +494,7 @@ theorem meas_ofReal_lt_le_add_setLIntegral (hv : AEMeasurable v μ) (ht : 0 < t)
   set g : α → G := hv.mk v with _
   have hgmeas : Measurable g := hv.measurable_mk
   set S : Set α := {x | ENNReal.ofReal (c * t) < ‖g x‖ₑ} with hSdef
-  have hSmeas : MeasurableSet S := measurableSet_lt measurable_const hgmeas.enorm
+  have hSmeas : MeasurableSet S := measurableSet_lt measurable_const hgmeas.eNorm
   set g₁ : α → G := S.indicator v with hg₁def
   set g₂ : α → G := Sᶜ.indicator v with hg₂def
   have hg₁meas : AEMeasurable g₁ μ := hv.indicator hSmeas
@@ -548,7 +548,7 @@ theorem lintegral_rpow_le_of_rpow_mul_meas_lt_le (hv : AEMeasurable v μ)
       (ENNReal.ofReal (p * c ^ (p₀ - p) / (p - p₀)) * (A₀ * ENNReal.ofReal (d ^ (-p₀))) +
         ENNReal.ofReal (p * c ^ (p₁ - p) / (p₁ - p)) * (A₁ * ENNReal.ofReal (e ^ (-p₁)))) *
         ∫⁻ x, ‖v x‖ₑ ^ p ∂μ :=
-  lintegral_rpow_le_of_meas_ofReal_lt_le hv.enorm hTv hp₀ hlt₀ hlt₁ hc fun _t ht =>
+  lintegral_rpow_le_of_meas_ofReal_lt_le hv.eNorm hTv hp₀ hlt₀ hlt₁ hc fun _t ht =>
     meas_ofReal_lt_le_add_setLIntegral hv ht hp₀ (hp₀.trans (hlt₀.trans hlt₁)) hd he hde hadd
       hweak₀ hweak₁
 
@@ -585,7 +585,7 @@ private theorem meas_lt_enorm_le_add_setLIntegral (T : Lp E p₁ μ →L[𝕜] L
   have hp₁0 : p₁ ≠ 0 := (zero_lt_one.trans_le (Fact.out : 1 ≤ p₁)).ne'
   have hq₁ : 0 < p₁.toReal := ENNReal.toReal_pos hp₁0 hp₁
   set S := {x | s < ‖f x‖ₑ}
-  have hS : MeasurableSet S := measurableSet_lt measurable_const (Lp.stronglyMeasurable f).enorm
+  have hS : MeasurableSet S := measurableSet_lt measurable_const (Lp.stronglyMeasurable f).eNorm
   have hm₁ := (Lp.memLp f).indicator hS.nullMeasurableSet
   have hm₂ := (Lp.memLp f).indicator hS.compl.nullMeasurableSet
   set f₁ := hm₁.toLp (S.indicator f)
@@ -658,8 +658,8 @@ theorem eLpNorm_le_of_rpow_mul_meas_lt_le (T : Lp E p₁ μ →L[𝕜] Lp F p₁
   have hlt₀' : p₀.toReal < p.toReal := ENNReal.toReal_strict_mono hp_top hlt₀
   have hlt₁' : p.toReal < p₁.toReal := ENNReal.toReal_strict_mono hp₁ hlt₁
   have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hp_top
-  have key := lintegral_rpow_le_of_meas_ofReal_lt_le (Lp.aestronglyMeasurable f).enorm
-    (Lp.aestronglyMeasurable (T f)).enorm (ENNReal.toReal_pos hp₀.ne' hp₀') hlt₀' hlt₁' one_pos
+  have key := lintegral_rpow_le_of_meas_ofReal_lt_le (Lp.aestronglyMeasurable f).eNorm
+    (Lp.aestronglyMeasurable (T f)).eNorm (ENNReal.toReal_pos hp₀.ne' hp₀') hlt₀' hlt₁' one_pos
     (A₀ := 2 ^ p₀.toReal * A) (A₁ := 2 ^ p₁.toReal * ‖T‖ₑ ^ p₁.toReal) fun t ht => by
       have hinv (q : ℝ) : ENNReal.ofReal (t ^ (-q)) = (ENNReal.ofReal t ^ q)⁻¹ := by
         rw [← ENNReal.ofReal_rpow_of_pos ht, ENNReal.rpow_neg]

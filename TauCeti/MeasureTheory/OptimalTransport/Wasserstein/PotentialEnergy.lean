@@ -314,7 +314,7 @@ theorem potentialEnergy_ne_bot_of_hasFiniteMoment {V : E → ℝ} {μ : Measure 
     continuous_norm.measurable.aestronglyMeasurable
   have hmem : MemLp (fun x : E ↦ ‖x‖) 2 μ :=
     (memLp_congr_eNorm hnorm measurable_edist_right.aestronglyMeasurable
-      (.of_forall fun x ↦ by simp [edist_eq_enorm_sub])).2
+      (.of_forall fun x ↦ by simp [eDist_eq_eNorm_sub])).2
       (hμ.memLp (x := 0) measurable_edist_right.aestronglyMeasurable)
   have hsq := (memLp_two_iff_integrable_sq_norm hnorm).1 hmem
   simp only [norm_norm] at hsq

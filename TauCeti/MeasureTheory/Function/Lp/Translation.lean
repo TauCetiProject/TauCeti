@@ -290,7 +290,7 @@ theorem ContDiff.enorm_sub_rpow_le_lintegral_fderiv_apply (hu : ContDiff ℝ 1 u
       (volume.restrict (Icc (0 : ℝ) 1)) :=
     (((hu.continuous_fderiv one_ne_zero).comp
       (by fun_prop : Continuous fun t : ℝ => x + t • h)).clm_apply
-      continuous_const).enorm.aemeasurable
+      continuous_const).eNorm.aemeasurable
   have huniv : (volume.restrict (Icc (0 : ℝ) 1)) univ = 1 := by
     rw [Measure.restrict_apply_univ, Real.volume_Icc]
     simp
@@ -327,7 +327,7 @@ theorem ContDiff.setLIntegral_enorm_comp_add_sub_rpow_le (hu : ContDiff ℝ 1 u)
   set g : E → ℝ≥0∞ := T.indicator fun y => ‖fderiv ℝ u y h‖ₑ ^ r
   have hg : Measurable g :=
     (ENNReal.continuous_rpow_const.comp (((hu.continuous_fderiv one_ne_zero).clm_apply
-      continuous_const).enorm)).measurable.indicator hT
+      continuous_const).eNorm)).measurable.indicator hT
   have hjoint : Measurable fun z : E × ℝ => g (z.1 + z.2 • h) :=
     hg.comp (by fun_prop : Continuous fun z : E × ℝ => z.1 + z.2 • h).measurable
   calc ∫⁻ x in K, ‖u (x + h) - u x‖ₑ ^ r ∂mu
@@ -385,7 +385,7 @@ theorem ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply [SecondCountableTo
       eLpNorm_exponent_top hfd.aestronglyMeasurable]
     let C := eLpNormEssSup (fun x => fderiv ℝ u x h) (mu.restrict T)
     let g : E → ℝ≥0∞ := T.indicator fun x => ‖fderiv ℝ u x h‖ₑ
-    have hg : Measurable g := hfd.enorm.measurable.indicator hT
+    have hg : Measurable g := hfd.eNorm.measurable.indicator hT
     have hgC : ∀ᵐ x ∂mu, g x ≤ C := by
       filter_upwards [(ae_restrict_iff' hT).1
         (ae_le_eLpNormEssSup (f := fun x => fderiv ℝ u x h))] with x hx
@@ -403,7 +403,7 @@ theorem ContDiff.eLpNorm_comp_add_sub_le_eLpNorm_fderiv_apply [SecondCountableTo
         (Filter.Eventually.of_forall fun t =>
           (measurePreserving_add_right mu (t • h)).quasiMeasurePreserving.tendsto_ae.eventually hgC)
     apply eLpNormEssSup_le_of_ae_eNorm_bound
-    refine (ae_restrict_iff (measurableSet_le hsub.enorm.measurable measurable_const)).2 ?_
+    refine (ae_restrict_iff (measurableSet_le hsub.eNorm.measurable measurable_const)).2 ?_
     filter_upwards [hsegments] with x hx hxK
     calc ‖u (x + h) - u x‖ₑ
         ≤ ∫⁻ t in Icc (0 : ℝ) 1, ‖fderiv ℝ u (x + t • h) h‖ₑ := by

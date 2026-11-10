@@ -119,7 +119,7 @@ theorem eLpNorm_sub_setAverage_le_mul_measure_rpow_of_convex (hΩ : IsOpen Ω)
   -- The `Lᵖ`-`L^q` bound for the potential, with `κ = 1/n`.
   have hpot := eLpNorm_setLIntegral_enorm_sub_rpow_mul_le (μ := μ) (p := p) (q := q)
     (κ := (n : ℝ)⁻¹) hp hpq hδ hδn (inv_le_one_of_one_le₀ hn) hΩ.measurableSet
-    hDm.enorm
+    hDm.eNorm
   rw [eLpNorm_eNorm _ hDm] at hpot
   have hum : AEStronglyMeasurable (fun x => u x - ⨍ y in S, u y ∂μ) (μ.restrict Ω) :=
     (hu.continuousOn.aestronglyMeasurable hΩ.measurableSet).sub aestronglyMeasurable_const

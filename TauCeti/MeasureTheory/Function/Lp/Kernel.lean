@@ -40,7 +40,7 @@ a kernel is measurable, for every exponent `p`. -/
 theorem measurable_eLpNorm_kernel (κ : Kernel X Y) {f : Y → ε} (hf : StronglyMeasurable f) :
     Measurable fun x ↦ eLpNorm f p (κ x) := by
   simp only [← eLpNorm_eNorm f hf.aestronglyMeasurable]
-  have hg : Measurable fun y ↦ ‖f y‖ₑ := hf.enorm
+  have hg : Measurable fun y ↦ ‖f y‖ₑ := hf.eNorm
   rcases eq_or_ne p 0 with rfl | hp0
   · simp only [eLpNorm_exponent_zero hg.aestronglyMeasurable, measurable_const]
   rcases eq_or_ne p ∞ with rfl | hp
@@ -54,7 +54,7 @@ theorem measurable_eLpNorm_kernel (κ : Kernel X Y) {f : Y → ε} (hf : Strongl
     exact ⟨fun h ↦ (ENNReal.ae_le_essSup _).mono fun y hy ↦ hy.trans h,
       essSup_le_of_ae_le (μ := κ x) c⟩
   simp only [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hg.aestronglyMeasurable]
-  exact ((hg.enorm.pow_const _).lintegral_kernel).pow_const _
+  exact ((hg.eNorm.pow_const _).lintegral_kernel).pow_const _
 
 /-- Averaging the pointwise `L^p` seminorms `x ↦ ‖f‖_{L^p (κ x)}` over `μ` in `L^p` gives the
 `L^p` seminorm of `f` against the mixture `κ ∘ₘ μ`, for every exponent `p`. -/
@@ -63,7 +63,7 @@ theorem measurable_eLpNorm_kernel (κ : Kernel X Y) {f : Y → ε} (hf : Strongl
     eLpNorm (fun x ↦ eLpNorm f p (κ x)) p μ = eLpNorm f p (κ ∘ₘ μ) := by
   -- replace `f` by the norm `g` of a strongly measurable version of it, on both sides
   set g : Y → ℝ≥0∞ := fun y ↦ ‖hf.mk f y‖ₑ
-  have hg : Measurable g := hf.stronglyMeasurable_mk.enorm
+  have hg : Measurable g := hf.stronglyMeasurable_mk.eNorm
   have hfg {ν : Measure Y} (h : f =ᵐ[ν] hf.mk f) : eLpNorm f p ν = eLpNorm g p ν :=
     (eLpNorm_congr_ae h).trans
       (eLpNorm_eNorm _ hf.stronglyMeasurable_mk.aestronglyMeasurable).symm
@@ -87,7 +87,7 @@ theorem measurable_eLpNorm_kernel (κ : Kernel X Y) {f : Y → ε} (hf : Strongl
   have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hgk.aestronglyMeasurable,
     eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hg.aestronglyMeasurable,
-    Measure.lintegral_bind κ.aemeasurable (hg.enorm.pow_const _).aemeasurable]
+    Measure.lintegral_bind κ.aemeasurable (hg.eNorm.pow_const _).aemeasurable]
   congr 1
   refine lintegral_congr fun x ↦ ?_
   simp only [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hg.aestronglyMeasurable,

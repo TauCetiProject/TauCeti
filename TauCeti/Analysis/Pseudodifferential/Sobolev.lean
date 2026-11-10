@@ -481,7 +481,7 @@ theorem HasCompactSpatialSupport.exists_eLpNorm_smul_fourier_quantizeSchwartzVal
   have hgmeas : AEStronglyMeasurable
       (fun ζ : CoordinateSpace n ↦ (((1 + ‖ζ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ζ) :=
     ((hw s).smul (𝓕 u).continuous).aestronglyMeasurable
-  have hschur := TauCeti.eLpNorm_lintegral_mul_le hkmeas hgmeas.enorm
+  have hschur := TauCeti.eLpNorm_lintegral_mul_le hkmeas hgmeas.eNorm
     (p := 2) one_le_two (A := A) (B := A)
     (.of_forall fun x ↦ (lintegral_sub_left_eq_self (fun η ↦ ENNReal.ofReal (B * k η)) x).trans
       hint |>.le)

@@ -41,7 +41,7 @@ variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
 
 private def projectionSequence (x : E) : ℕ →ᵇ E :=
   BoundedContinuousFunction.ofNormedAddCommGroup (fun n ↦ b.proj n x)
-    continuous_of_discreteTopology (b.nnnormProjBound * ‖x‖)
+    continuous_of_discreteTopology (b.nnNormProjBound * ‖x‖)
     (fun n ↦ ((b.proj n).le_opNorm x).trans
       (mul_le_mul_of_nonneg_right (b.norm_proj_le_nnNormProjBound n) (norm_nonneg x)))
 
@@ -52,7 +52,7 @@ private def projectionSequenceLinearMap : E →ₗ[𝕜] (ℕ →ᵇ E) where
 
 /-- Send a vector to the bounded sequence of its initial basis projections. -/
 def partialSums : E →L[𝕜] (ℕ →ᵇ E) :=
-  b.projectionSequenceLinearMap.mkContinuous b.nnnormProjBound fun x ↦
+  b.projectionSequenceLinearMap.mkContinuous b.nnNormProjBound fun x ↦
     (BoundedContinuousFunction.norm_le (by positivity)).2 fun n ↦
       ((b.proj n).le_opNorm x).trans
         (mul_le_mul_of_nonneg_right (b.norm_proj_le_nnNormProjBound n) (norm_nonneg x))
@@ -74,7 +74,7 @@ theorem norm_le_norm_partialSums (x : E) : ‖x‖ ≤ ‖b.partialSums x‖ := 
 
 /-- The partial-sum embedding is bounded by the basis constant. -/
 theorem norm_partialSums_le (x : E) :
-    ‖b.partialSums x‖ ≤ b.nnnormProjBound * ‖x‖ := by
+    ‖b.partialSums x‖ ≤ b.nnNormProjBound * ‖x‖ := by
   exact (BoundedContinuousFunction.norm_le (by positivity)).2 fun n ↦
     ((b.proj n).le_opNorm x).trans
       (mul_le_mul_of_nonneg_right (b.norm_proj_le_nnNormProjBound n) (norm_nonneg x))
@@ -102,7 +102,7 @@ private theorem norm_renormLinearEquiv (x : E) :
 renorming, sending each vector to its sequence of partial sums. Its norm is at most
 the basis constant and its inverse is contractive. -/
 def monotoneRenormEquiv : E ≃L[𝕜] b.MonotoneRenorm :=
-  b.renormLinearEquiv.toContinuousLinearEquivOfBounds b.nnnormProjBound 1
+  b.renormLinearEquiv.toContinuousLinearEquivOfBounds b.nnNormProjBound 1
     (fun x ↦ (b.norm_renormLinearEquiv x).trans_le (b.norm_partialSums_le x))
     (fun x ↦ by
       simpa only [one_mul, ← b.norm_renormLinearEquiv,
@@ -142,7 +142,7 @@ theorem norm_le_norm_monotoneRenormEquiv (x : E) :
 
 /-- The monotone renorming is bounded by the basis constant times the original norm. -/
 theorem norm_monotoneRenormEquiv_le (x : E) :
-    ‖b.monotoneRenormEquiv x‖ ≤ b.nnnormProjBound * ‖x‖ := by
+    ‖b.monotoneRenormEquiv x‖ ≤ b.nnNormProjBound * ‖x‖ := by
   simpa only [← Submodule.norm_coe, b.monotoneRenormEquiv_apply] using
     b.norm_partialSums_le x
 

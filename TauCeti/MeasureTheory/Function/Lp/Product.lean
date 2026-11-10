@@ -59,7 +59,7 @@ theorem eLpNorm_mul_prod_le {f : α → 𝕜} {g : β → 𝕜}
       simpa only [mul_pow] using pow_le_pow_left' hmul 2
     _ ≤ ∫⁻ x, ∫⁻ y, ‖f x‖ₑ ^ 2 * ‖g y‖ₑ ^ 2 ∂ν ∂μ := lintegral_prod_le _
     _ = (∫⁻ x, ‖f x‖ₑ ^ 2 ∂μ) * ∫⁻ y, ‖g y‖ₑ ^ 2 ∂ν :=
-      lintegral_lintegral_mul (hf.enorm.pow_const 2) (hg.enorm.pow_const 2)
+      lintegral_lintegral_mul (hf.eNorm.pow_const 2) (hg.eNorm.pow_const 2)
 
 /-- The pointwise product `(x, y) ↦ f x * g y` of an `L²(μ)` and an `L²(ν)` function is `L²` for the
 product measure `μ ⊗ ν`. -/

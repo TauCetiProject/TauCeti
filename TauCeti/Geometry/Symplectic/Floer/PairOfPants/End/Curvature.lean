@@ -268,7 +268,7 @@ theorem setLIntegral_image_endChart_enorm_hamiltonianCurvature_le (ω : SmoothTw
           (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)‖ₑ ≤
       (∫⁻ s, ‖deriv P (q.endSign * s)‖ₑ) * ENNReal.ofReal B := by
   have hm : Measurable fun s ↦ ‖deriv P (q.endSign * s)‖ₑ * ENNReal.ofReal B :=
-    ((measurable_deriv P).comp (measurable_const.mul measurable_id)).enorm.mul_const _
+    ((measurable_deriv P).comp (measurable_const.mul measurable_id)).eNorm.mul_const _
   refine (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral hKd hKx hm
     (fun z hz x ↦ ?_) u).trans_eq (lintegral_mul_const' _ _ ENNReal.ofReal_ne_top)
   rw [ω.hamiltonianCurvature_perturbationPullback_endChart_of_eq hK

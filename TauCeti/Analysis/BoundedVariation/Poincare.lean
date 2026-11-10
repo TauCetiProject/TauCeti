@@ -115,7 +115,7 @@ private theorem setLIntegral_setLIntegral_enorm_sub_le_of_measurable
     have hset : MeasurableSet {p : E × E | p.1 + p.2 ∈ U} :=
       (measurable_fst.add measurable_snd) hU
     have hg : Measurable fun p : E × E => ‖u (p.1 + p.2) - u p.1‖ₑ :=
-      ((hum.comp (measurable_fst.add measurable_snd)).sub (hum.comp measurable_fst)).enorm
+      ((hum.comp (measurable_fst.add measurable_snd)).sub (hum.comp measurable_fst)).eNorm
     have hF_eq : Function.uncurry F =
         {p : E × E | p.1 + p.2 ∈ U}.indicator fun p => ‖u (p.1 + p.2) - u p.1‖ₑ := by
       ext ⟨x, h⟩
@@ -312,7 +312,7 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_closure_subset {U T : Se
       exact lintegral_mono_set hTK
     -- The triangle inequality through `v n` and its mean.
     have hdist : AEMeasurable (fun x => ‖v n x - u x‖ₑ) (μ.restrict A) :=
-      (((hv n).continuous.aestronglyMeasurable.restrict.sub huK.aestronglyMeasurable).enorm
+      (((hv n).continuous.aestronglyMeasurable.restrict.sub huK.aestronglyMeasurable).eNorm
         ).mono_measure (Measure.restrict_mono (hA.trans subset_closure) le_rfl)
     calc ∫⁻ x in A, ‖u x - ⨍ y in T, u y ∂μ‖ₑ ∂μ
         ≤ ∫⁻ x in A, (‖v n x - u x‖ₑ + ‖v n x - ⨍ y in T, v n y ∂μ‖ₑ +

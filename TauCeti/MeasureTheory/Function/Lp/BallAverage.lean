@@ -202,7 +202,7 @@ private theorem lintegral_enorm_setAverage_rpow_le {q : ℝ} (hq : 1 ≤ q) {G :
       (mu (ball (0 : E) r))⁻¹ * ∫⁻ e in ball (0 : E) r, ∫⁻ x, ‖G x e‖ₑ ^ q ∂mu ∂mu := by
   have hV0 : mu (ball (0 : E) r) ≠ 0 := (measure_ball_pos mu 0 hr).ne'
   have hjoint : Measurable fun z : E × E => ‖G z.1 z.2‖ₑ ^ q :=
-    ENNReal.continuous_rpow_const.measurable.comp hG.enorm
+    ENNReal.continuous_rpow_const.measurable.comp hG.eNorm
   calc ∫⁻ x, ‖⨍ e in ball (0 : E) r, G x e ∂mu‖ₑ ^ q ∂mu
       ≤ ∫⁻ x, (mu (ball (0 : E) r))⁻¹ * ∫⁻ e in ball (0 : E) r, ‖G x e‖ₑ ^ q ∂mu ∂mu :=
         lintegral_mono fun x => enorm_setAverage_rpow_le hq
@@ -311,7 +311,7 @@ theorem continuous_ballAverage (hp : 1 ≤ p) (hp' : p ≠ ∞) (hf : MemLp f p 
       ENNReal.Tendsto.const_mul htrans (Or.inr hfactor)
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hupper_zero
     (fun _ => bot_le) fun y => ?_
-  rw [edist_eq_enorm_sub]
+  rw [eDist_eq_eNorm_sub]
   have hbound := enorm_ballAverage_add_sub_ballAverage_le (r := r) hp hp' hf (y - x) x
   rwa [add_sub_cancel] at hbound
 

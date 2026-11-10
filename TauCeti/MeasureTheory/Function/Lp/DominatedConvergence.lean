@@ -15,7 +15,7 @@ import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 For a finite exponent `q`, if the functions `f n` converge to `g` almost everywhere
 and the errors `‖f n - g‖ₑ` are eventually dominated by a fixed nonnegative multiple of the
-enorm of a `MemLp` function, then `f n → g` in the `Lᵖ` seminorm. In particular, this applies
+eNorm of a `MemLp` function, then `f n → g` in the `Lᵖ` seminorm. In particular, this applies
 when truncating a function by cutoffs that are eventually `1` on every bounded set.
 The dominating function's codomain only needs a topology and an extended norm.
 
@@ -38,7 +38,7 @@ open Filter MeasureTheory
 open scoped NNReal ENNReal Topology
 
 /-- **Dominated convergence in `Lᵖ`.** For a finite exponent, if `f n` converges to `g` at almost
-every point and `‖f n - g‖ₑ` is eventually dominated by a fixed nonnegative multiple of the enorm
+every point and `‖f n - g‖ₑ` is eventually dominated by a fixed nonnegative multiple of the eNorm
 of a `MemLp` function, then `f n → g` in the `Lᵖ` seminorm.
 The dominating function may take values in any topological space with an extended norm.
 Both the measurability of `f n` and the domination are only needed eventually along `l`, and `g`
@@ -70,7 +70,7 @@ theorem tendsto_eLpNorm_sub_of_ae_tendsto {α ι F G : Type*} [MeasurableSpace �
     simpa only [lintegral_zero] using tendsto_lintegral_filter_of_dominated_convergence'
       (F := fun n x => ‖(f n - g) x‖ₑ ^ q.toReal) (f := fun _ => 0)
       (fun x => ((C : ℝ≥0∞) * ‖bound x‖ₑ) ^ q.toReal)
-      (hfg.mono fun _ hn => hn.enorm.pow_const _)
+      (hfg.mono fun _ hn => hn.eNorm.pow_const _)
       (hbound.mono fun _ hn => hn.mono fun _ hx => ENNReal.rpow_le_rpow hx hr.le)
       (by
         simp_rw [ENNReal.mul_rpow_of_nonneg _ _ hr.le]
@@ -78,7 +78,7 @@ theorem tendsto_eLpNorm_sub_of_ae_tendsto {α ι F G : Type*} [MeasurableSpace �
         exact ENNReal.mul_ne_top (by simp [hr.le])
           (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hq0 hq hb).ne)
       (hlim.mono fun x hx => by
-        simpa [hr] using (hx.sub (tendsto_const_nhds (x := g x))).enorm.ennrpow_const q.toReal)
+        simpa [hr] using (hx.sub (tendsto_const_nhds (x := g x))).eNorm.ennrpow_const q.toReal)
   simpa only [ENNReal.zero_rpow_of_pos (one_div_pos.2 hr)] using
     hlint.ennrpow_const (1 / q.toReal)
 
@@ -108,7 +108,7 @@ theorem limsup_eLpNorm_restrict_le {α E : Type*} [MeasurableSpace α] {μ : Mea
   rw [Function.comp_def] at hmap
   rw [← hmap]
   refine ENNReal.rpow_le_rpow (limsup_setLIntegral_le
-    (hmeas.enorm.pow_const _) hs hst ?_) hpos
+    (hmeas.eNorm.pow_const _) hs hst ?_) hpos
   exact (lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp0 hptop
     ((hgh le_rfl).symm.trans_lt hg.eLpNorm_lt_top)).ne
 

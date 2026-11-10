@@ -95,7 +95,7 @@ theorem norm_subsequence_proj_le (n : ℕ) :
 
 /-- The basis constant of a subsequence does not exceed the original basis constant. -/
 theorem subsequence_nnnormProjBound_le [CompleteSpace E] :
-    (b.subsequence u hu).nnnormProjBound ≤ b.nnnormProjBound := by
+    (b.subsequence u hu).nnNormProjBound ≤ b.nnNormProjBound := by
   apply ciSup_le
   intro n
   exact_mod_cast (b.norm_subsequence_proj_le u hu n).trans

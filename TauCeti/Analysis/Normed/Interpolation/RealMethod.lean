@@ -155,7 +155,7 @@ theorem kMethodConst_top {θ : ℝ} (hθ : θ ∈ Icc 0 1) : kMethodConst θ ∞
     map_volume_exp ▸ (continuousOn_rpow_neg_mul_min θ).aestronglyMeasurable_multHaar
   have hcont : Continuous fun s : ℝ => ‖Real.exp s ^ (-θ) * min 1 (Real.exp s)‖ₑ :=
     ((Real.continuous_exp.rpow_const fun s => Or.inl (Real.exp_pos s).ne').mul
-      (continuous_const.min Real.continuous_exp)).enorm
+      (continuous_const.min Real.continuous_exp)).eNorm
   rw [kMethodConst, ← map_volume_exp, eLpNorm_map_measure hg Real.measurable_exp.aemeasurable,
     eLpNorm_exponent_top (hg.comp_aemeasurable Real.measurable_exp.aemeasurable), eLpNormEssSup,
     Function.comp_def, ← iSup_eq_essSup fun s _ hs =>

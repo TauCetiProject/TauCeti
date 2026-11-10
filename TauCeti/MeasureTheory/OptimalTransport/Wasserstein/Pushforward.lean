@@ -161,7 +161,7 @@ theorem exists_coe_eq_map_of_memLp {ν : ProbabilityMeasure X} {T : X → F}
     rw [hasFiniteMoment_map_iff_memLp_edist hTm 0]
     exact (memLp_congr_eNorm hT.aestronglyMeasurable
       (measurable_edist_left.comp_aemeasurable hTm).aestronglyMeasurable
-      (.of_forall fun x ↦ by simp [edist_eq_enorm_sub])).1 hT
+      (.of_forall fun x ↦ by simp [eDist_eq_eNorm_sub])).1 hT
   refine ⟨.mk (ν.map T) (by rwa [ProbabilityMeasure.toMeasure_map]), ?_⟩
   rw [WassersteinSpace.coe_mk, ProbabilityMeasure.toMeasure_map]
 

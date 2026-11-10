@@ -199,7 +199,7 @@ theorem wassersteinEDist_rpow_le (h : IsContinuityEquation (fun t ↦ (ν t : Me
   rintro r ⟨φ, ψ, hfeas, rfl⟩
   refine ofReal_kantorovichDualValue_le h hν hab hp₁ φ ψ fun x y ↦ ?_
   have hxy := hfeas.ofReal_add_le x y
-  rwa [edist_eq_enorm_sub, ← ofReal_norm,
+  rwa [eDist_eq_eNorm_sub, ← ofReal_norm,
     ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) (zero_le_one.trans hp₁),
     ENNReal.ofReal_le_ofReal_iff (by positivity)] at hxy
 

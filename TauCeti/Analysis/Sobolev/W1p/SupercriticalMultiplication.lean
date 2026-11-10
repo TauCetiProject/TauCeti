@@ -184,7 +184,7 @@ private theorem W1p.lintegral_mulGradient_sub_le (hp : (finrank ℝ E : ℝ≥0)
   have hmeas : AEMeasurable (fun x =>
       ‖W1p.morreyEmbedding hp a - W1p.morreyEmbedding hp u‖ₑ * ‖W1p.gradient v x‖ₑ)
       (mu.restrict (V : Set E)) :=
-    ((Lp.aestronglyMeasurable (W1p.gradient v)).mono_measure hres).enorm.const_mul _
+    ((Lp.aestronglyMeasurable (W1p.gradient v)).mono_measure hres).eNorm.const_mul _
   rw [← lintegral_const_mul' _ _ (by finiteness),
     ← lintegral_const_mul' _ _ (by finiteness), ← lintegral_add_left' hmeas]
   refine lintegral_mono_ae ?_

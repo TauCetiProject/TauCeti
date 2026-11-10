@@ -165,7 +165,7 @@ theorem exists_isContinuityEquation_map_smul_fst_add_smul_snd_of_injOn (π : Mea
       = ∫⁻ t in Ioo (0 : ℝ) 1, ∫⁻ z, ‖z.2 - z.1‖ₑ ^ p ∂π := by
         refine setLIntegral_congr_fun_ae measurableSet_Ioo ?_
         filter_upwards [hae'] with t ht hmem
-        rw [lintegral_map ((hvm t).enorm.pow_const p) (by fun_prop)]
+        rw [lintegral_map ((hvm t).eNorm.pow_const p) (by fun_prop)]
         exact lintegral_congr_ae ((ht hmem).mono fun z hz ↦ by simp [hz])
     _ = ∫⁻ z, ‖z.2 - z.1‖ₑ ^ p ∂π := by simp
 

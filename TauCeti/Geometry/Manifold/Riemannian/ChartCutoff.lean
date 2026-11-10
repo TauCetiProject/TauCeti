@@ -139,7 +139,7 @@ theorem lintegral_enorm_fderiv_mul_comp_extChartAt_symm_rpow_le [LindelofSpace M
   have hmeas : AEMeasurable
       (fun y ↦ ENNReal.ofReal G ^ p * ‖u ((extChartAt I c).symm y)‖ₑ ^ p) (μ.restrict B) :=
     ((((hu.comp_contMDiffOn (contMDiffOn_extChartAt_symm c)).contDiffOn.continuousOn.mono
-      hrt).aemeasurable measurableSet_ball).enorm.pow_const p).const_mul _
+      hrt).aemeasurable measurableSet_ball).eNorm.pow_const p).const_mul _
   calc ∫⁻ y, ‖fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y‖ₑ ^ p ∂μ
       = ∫⁻ y in B, ‖fderiv ℝ (fun y ↦ b y * u ((extChartAt I c).symm y)) y‖ₑ ^ p ∂μ := by
         -- The integrand vanishes off the support of the bump, which lies in `B`.

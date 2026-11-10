@@ -100,7 +100,7 @@ theorem totalVariationOn_convolution_le [SFinite μ] [μ.IsAddRightInvariant]
         · exact mul_le_mul_right (htrans t ht) _
         · simp [image_eq_zero_of_notMem_tsupport ht]
     _ = (∫⁻ t, ‖ρ t‖ₑ ∂μ) * totalVariationOn μ Ω u :=
-        lintegral_mul_const'' _ hρ.aemeasurable.enorm
+        lintegral_mul_const'' _ hρ.aemeasurable.eNorm
 
 variable [μ.IsAddHaarMeasure]
 

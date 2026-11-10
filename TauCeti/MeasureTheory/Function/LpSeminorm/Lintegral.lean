@@ -89,7 +89,7 @@ theorem ae_enorm_lt_top {f : α → ε} {p : ℝ≥0∞} (hf : MemLp f p μ) (hp
   · filter_upwards [ae_le_eLpNormEssSup (f := f) (μ := μ)] with x hx
     exact hx.trans_lt (eLpNormEssSup_le_eLpNorm_top.trans_lt hf.eLpNorm_lt_top)
   have hlt := lintegral_rpow_eNorm_lt_top_of_eLpNorm_lt_top hp hp_top hf.eLpNorm_lt_top
-  filter_upwards [ae_lt_top' (hf.aestronglyMeasurable.enorm.pow_const _) hlt.ne] with x hx
+  filter_upwards [ae_lt_top' (hf.aestronglyMeasurable.eNorm.pow_const _) hlt.ne] with x hx
   exact (ENNReal.rpow_lt_top_iff_of_pos (ENNReal.toReal_pos hp hp_top)).1 hx
 
 end MeasureTheory.MemLp

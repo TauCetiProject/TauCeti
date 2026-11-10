@@ -162,7 +162,7 @@ theorem lintegral_enorm_rpow_le_of_support_subset_Icc
         have hmu : (volume.restrict (Ioc a b)) Set.univ = ENNReal.ofReal (b - a) := by
           rw [Measure.restrict_apply_univ, Real.volume_Ioc]
         simpa only [hmu] using rpow_lintegral_le_measure_univ_rpow_mul
-          (μ := volume.restrict (Ioc a b)) hg'.enorm.measurable.aemeasurable hr
+          (μ := volume.restrict (Ioc a b)) hg'.eNorm.measurable.aemeasurable hr
     _ = ENNReal.ofReal ((b - a) ^ r) * ∫⁻ s in Ioc a b, ‖g' s‖ₑ ^ r := by
         rw [mul_right_comm, hpow]
     _ ≤ ENNReal.ofReal ((b - a) ^ r) * ∫⁻ t, ‖g' t‖ₑ ^ r :=
@@ -292,7 +292,7 @@ private theorem eLpNorm_top_le_eLpNorm_top_fderiv_of_support_subset_slab
   have hfc : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
   have hbound : ∀ x, ‖fderiv ℝ u x‖ₑ ≤ eLpNorm (fderiv ℝ u) ∞ volume := by
     have hsub := (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))).support_subset_of_isClosed
-      (isClosed_le hfc.enorm continuous_const)
+      (isClosed_le hfc.eNorm continuous_const)
       ((eNorm_ae_le_eLpNormEssSup (fderiv ℝ u) volume).mono fun _ hx =>
         hx.trans eLpNormEssSup_le_eLpNorm_top)
     simpa only [Measure.support_eq_univ, subset_def, mem_univ, true_implies, mem_ofPred_eq]
@@ -340,9 +340,9 @@ theorem eLpNorm_le_eLpNorm_fderiv_of_support_subset_slab (hu : ContDiff ℝ 1 u)
     (zero_lt_one.trans_le hp).ne' hp' hu.continuous.aestronglyMeasurable ?_
   set r := p.toReal
   have hmu : Measurable fun x : EuclideanSpace ℝ (Fin (n + 1)) => ‖u x‖ₑ ^ r :=
-    (ENNReal.continuous_rpow_const.comp hu.continuous.enorm).measurable
+    (ENNReal.continuous_rpow_const.comp hu.continuous.eNorm).measurable
   have hmf : Measurable fun x : EuclideanSpace ℝ (Fin (n + 1)) => ‖fderiv ℝ u x‖ₑ ^ r :=
-    (ENNReal.continuous_rpow_const.comp hfc.enorm).measurable
+    (ENNReal.continuous_rpow_const.comp hfc.eNorm).measurable
   have hline : ∀ y : Fin n → ℝ, ∫⁻ t, ‖u (slabChart i (t, y))‖ₑ ^ r
       ≤ ENNReal.ofReal ((b - a) ^ r) * ∫⁻ t, ‖fderiv ℝ u (slabChart i (t, y))‖ₑ ^ r := fun y =>
     lintegral_enorm_rpow_comp_slabChart_le

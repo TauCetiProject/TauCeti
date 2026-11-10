@@ -128,7 +128,7 @@ theorem setLIntegral_compl_closedBall_enorm_le_of_hormander {K : X → X → E �
       (lintegral_mono fun y => ContinuousLinearMap.le_opENorm _ _)
   have hmeas : AEMeasurable (Function.uncurry fun x y => ‖K x y - K x y₀‖ₑ * ‖b y‖ₑ)
       ((μ.restrict (closedBall y₀ (2 * r))ᶜ).prod μ) :=
-    hKd.enorm.aemeasurable.mul hb.1.enorm.comp_snd
+    hKd.eNorm.aemeasurable.mul hb.1.eNorm.comp_snd
   calc ∫⁻ x in (closedBall y₀ (2 * r))ᶜ, ‖h x‖ₑ ∂μ
       ≤ ∫⁻ x in (closedBall y₀ (2 * r))ᶜ, ∫⁻ y, ‖K x y - K x y₀‖ₑ * ‖b y‖ₑ ∂μ ∂μ :=
         setLIntegral_mono_ae' isClosed_closedBall.measurableSet.compl hpt
@@ -136,7 +136,7 @@ theorem setLIntegral_compl_closedBall_enorm_le_of_hormander {K : X → X → E �
         rw [lintegral_lintegral_swap hmeas]
         refine lintegral_congr fun y => ?_
         have hKy : Measurable fun x => ‖K x y - K x y₀‖ₑ :=
-          (hKd.comp_measurable measurable_prodMk_right).enorm
+          (hKd.comp_measurable measurable_prodMk_right).eNorm
         rw [lintegral_mul_const'' _ hKy.aemeasurable, mul_comm]
     _ ≤ ∫⁻ y, ‖b y‖ₑ * B ∂μ := by
         -- For `y` in the ball, the complement of the doubled ball lies in the region of
@@ -148,7 +148,7 @@ theorem setLIntegral_compl_closedBall_enorm_le_of_hormander {K : X → X → E �
           simp only [mem_compl_iff, mem_closedBall, not_le] at hx hyr
           exact (mul_le_mul_of_nonneg_left hyr zero_le_two).trans_lt hx
         · simp [hy hyr]
-    _ = B * ∫⁻ y, ‖b y‖ₑ ∂μ := by rw [lintegral_mul_const'' _ hb.1.enorm, mul_comm]
+    _ = B * ∫⁻ y, ‖b y‖ₑ ∂μ := by rw [lintegral_mul_const'' _ hb.1.eNorm, mul_comm]
 
 end Kernel
 
@@ -230,7 +230,7 @@ theorem mul_volume_lt_enorm_le_of_isEmpty [IsEmpty ι]
   calc t * volume {x | t < ‖T f x‖ₑ} ≤ t * volume {x | t ≤ ‖T f x‖ₑ} :=
         mul_le_mul' le_rfl (measure_mono (Set.ofPred_subset_ofPred.2 fun x hx => hx.le))
     _ ≤ ∫⁻ x, ‖T f x‖ₑ :=
-        mul_meas_ge_le_lintegral₀ (Lp.aestronglyMeasurable (T f)).enorm t
+        mul_meas_ge_le_lintegral₀ (Lp.aestronglyMeasurable (T f)).eNorm t
     _ = ‖T f‖ₑ := by rw [hint, hnormF]
     _ ≤ ‖T‖ₑ * ‖f‖ₑ := T.le_opENorm f
     _ = ‖T‖ₑ * ∫⁻ x, ‖f x‖ₑ := by rw [hint, hnormE]
@@ -304,12 +304,12 @@ private theorem setLIntegral_compl_enorm_calderonZygmundBad_le [Nonempty ι]
       rw [hx]
       exact calderonZygmundBad_of_notMem fun hxc => hxb (dyadicCube_subset_closedBall _ _ hxc)
     · rw [integral_congr_ae hcoe, integral_calderonZygmundBad]
-    · rw [lintegral_congr_ae (hcoe.mono fun x hx => congrArg enorm hx)]
+    · rw [lintegral_congr_ae (hcoe.mono fun x hx => congrArg eNorm hx)]
       exact lintegral_enorm_calderonZygmundBad_le _ _
   calc ∫⁻ x in Ωᶜ, ‖T (((Lp.memLp f).sub (memLp_two_calderonZygmundGood hf ht ht')).toLp _) x‖ₑ
       ≤ ∫⁻ x in Ωᶜ, ∑' q : 𝒬, ‖T (b q) x‖ₑ := lintegral_mono_ae (ae_restrict_of_ae hsum)
     _ = ∑' q : 𝒬, ∫⁻ x in Ωᶜ, ‖T (b q) x‖ₑ :=
-        lintegral_tsum fun q => (Lp.aestronglyMeasurable _).enorm.restrict
+        lintegral_tsum fun q => (Lp.aestronglyMeasurable _).eNorm.restrict
     _ ≤ ∑' q : 𝒬, B * (2 * ∫⁻ x in dyadicCube q.1.1 q.1.2, ‖f x‖ₑ) :=
         tsum_le_tsum fun q => (lintegral_mono_set
           (compl_subset_compl.2 (subset_biUnion_of_mem (u := fun q : ℤ × (ι → ℤ) =>
@@ -349,7 +349,7 @@ private theorem mul_volume_lt_enorm_inter_compl_calderonZygmundBad_le [Nonempty 
   calc 2 * (t / 2 * volume.restrict Ωᶜ {x | t / 2 < ‖T b x‖ₑ})
       ≤ 2 * ∫⁻ x in Ωᶜ, ‖T b x‖ₑ := mul_le_mul_right ((mul_le_mul_right
         (measure_mono (ofPred_subset_ofPred.2 fun _ hx => hx.le)) _).trans
-          (mul_meas_ge_le_lintegral₀ (Lp.aestronglyMeasurable _).enorm.restrict _)) _
+          (mul_meas_ge_le_lintegral₀ (Lp.aestronglyMeasurable _).eNorm.restrict _)) _
     _ ≤ 2 * (2 * B * ∫⁻ x, ‖f x‖ₑ) := mul_le_mul_right
         (setLIntegral_compl_enorm_calderonZygmundBad_le T hT f hf ht ht') _
     _ = 4 * B * ∫⁻ x, ‖f x‖ₑ := by ring

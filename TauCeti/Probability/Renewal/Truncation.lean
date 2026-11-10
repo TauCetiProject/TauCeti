@@ -79,7 +79,7 @@ theorem tendstoUniformly_renewalConv_indicator_Ici (μ : Measure ℝ≥0) [IsPro
     edist (0 : ℝ) (renewalConv ((Ici (N : ℝ≥0)).indicator h) μ.renewalMeasure t) =
         ‖∫ s in Iic t ∩ {s | (N : ℝ≥0) ≤ t - s}, h (t - s) ∂μ.renewalMeasure‖ₑ := by
       rw [renewalConv_def, hid, setIntegral_indicator hset]
-      simp [edist_eq_enorm_sub]
+      simp [eDist_eq_eNorm_sub]
     _ ≤ ∫⁻ s in Iic t ∩ {s | (N : ℝ≥0) ≤ t - s}, ENNReal.ofReal (h (t - s))
         ∂μ.renewalMeasure := by
       simpa only [Real.eNorm_of_nonneg (h₀ _)] using

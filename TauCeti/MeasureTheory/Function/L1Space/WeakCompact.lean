@@ -90,7 +90,7 @@ theorem isCompact_closure_toWeakSpace_of_uniformIntegrable {A : Set (Lp 𝕜 1 �
   · -- The truncation of `f` at level `C` is bounded by `C`, hence lies in this ball.
     set s := {x | C ≤ ‖(f : α → 𝕜) x‖₊}
     have hs : MeasurableSet s :=
-      measurableSet_le measurable_const (Lp.stronglyMeasurable f).measurable.nnnorm
+      measurableSet_le measurable_const (Lp.stronglyMeasurable f).measurable.nnNorm
     set g := sᶜ.indicator (f : α → 𝕜)
     have hgC (x : α) : ‖g x‖ ≤ C := by
       by_cases hx : x ∈ s
@@ -165,7 +165,7 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
     by_contra! hle
     have hsplit : ∫⁻ x in s (τ k), ‖(i (τ k) : α → 𝕜) x‖ₑ ∂μ ≤
         ∫⁻ x in s (τ k), ‖h k x‖ₑ ∂μ + ∫⁻ x in s (τ k), ‖(f : α → 𝕜) x‖ₑ ∂μ := by
-      rw [← lintegral_add_right' _ (L1.integrable_coeFn f).1.enorm.restrict]
+      rw [← lintegral_add_right' _ (L1.integrable_coeFn f).1.eNorm.restrict]
       refine lintegral_mono fun x ↦ ?_
       calc ‖(i (τ k) : α → 𝕜) x‖ₑ = ‖h k x + (f : α → 𝕜) x‖ₑ := by simp [h]
         _ ≤ ‖h k x‖ₑ + ‖(f : α → 𝕜) x‖ₑ := eNorm_add_le _ _

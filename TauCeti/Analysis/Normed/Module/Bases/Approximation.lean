@@ -57,7 +57,7 @@ theorem hasBoundedApproximationPropertyWith_of_bound (b : SchauderBasis 𝕜 E) 
 /-- A Schauder basis of a Banach space gives the bounded approximation property with its
 basis constant. -/
 theorem hasBoundedApproximationPropertyWith (b : SchauderBasis 𝕜 E) [CompleteSpace E] :
-    TauCeti.HasBoundedApproximationPropertyWith 𝕜 E b.nnnormProjBound :=
+    TauCeti.HasBoundedApproximationPropertyWith 𝕜 E b.nnNormProjBound :=
   b.hasBoundedApproximationPropertyWith_of_bound b.norm_proj_le_nnNormProjBound
 
 /-- A Banach space with a Schauder basis has the bounded approximation property. -/
@@ -87,7 +87,7 @@ theorem hasBoundedApproximationPropertyWith_of_bound (b : UnconditionalSchauderB
 /-- An unconditional basis of a Banach space gives the bounded approximation property with
 its unconditional basis constant. -/
 theorem hasBoundedApproximationPropertyWith (b : UnconditionalSchauderBasis β 𝕜 E)
-    [CompleteSpace E] : TauCeti.HasBoundedApproximationPropertyWith 𝕜 E b.nnnormProjBound :=
+    [CompleteSpace E] : TauCeti.HasBoundedApproximationPropertyWith 𝕜 E b.nnNormProjBound :=
   b.hasBoundedApproximationPropertyWith_of_bound b.norm_proj_le_nnNormProjBound
 
 /-- A Banach space with an unconditional Schauder basis has the bounded approximation

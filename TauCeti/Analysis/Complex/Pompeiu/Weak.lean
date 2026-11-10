@@ -87,7 +87,7 @@ theorem integrable_prod_sub_inv_smul {f : ℂ → F} (hf : Integrable f) {s : Se
     (measurable_fst.sub measurable_snd).inv.aestronglyMeasurable.smul
       hf.aestronglyMeasurable.comp_snd
   refine ⟨hm, ?_⟩
-  rw [HasFiniteIntegral, lintegral_prod_symm _ hm.enorm]
+  rw [HasFiniteIntegral, lintegral_prod_symm _ hm.eNorm]
   have hC : ENNReal.ofReal (2 * π) + volume s ≠ ∞ := by finiteness
   calc ∫⁻ z, ∫⁻ w in s, ‖(w - z)⁻¹ • f z‖ₑ
       ≤ ∫⁻ z, (ENNReal.ofReal (2 * π) + volume s) * ‖f z‖ₑ := by

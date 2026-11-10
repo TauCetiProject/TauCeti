@@ -134,7 +134,7 @@ private theorem lintegral_edist_le (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) {
     (hu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const
   simp_rw [perturbedFDeriv_cylindrical_apply_stdComplexLineReal]
   rw [Measure.volume_eq_prod, setLIntegral_prod_symm (fun z ↦ ‖fderiv ℝ u z (1, 0)‖ₑ)
-    ((hcont.mono hR).enorm.aemeasurable (measurableSet_Icc.prod measurableSet_Icc))]
+    ((hcont.mono hR).eNorm.aemeasurable (measurableSet_Icc.prod measurableSet_Icc))]
   refine setLIntegral_mono' measurableSet_Icc fun t ht ↦ ?_
   have hmem {r : ℝ} (hr : r ∈ uIcc α β) : (r, t) ∈ U := hR ⟨by rwa [uIcc_of_le hαβ] at hr, ht⟩
   -- The fundamental theorem of calculus along the segment `[α, β] × {t}`.
@@ -143,7 +143,7 @@ private theorem lintegral_edist_le (hU : IsOpen U) (hu : ContDiffOn ℝ 1 u U) {
       ((hu.differentiableOn one_ne_zero _ (hmem hr)).differentiableAt (hU.mem_nhds (hmem hr)))
   have hint : IntervalIntegrable (fun r ↦ fderiv ℝ u (r, t) (1, 0)) volume α β :=
     (hcont.comp (by fun_prop) fun r hr ↦ hmem hr).intervalIntegrable
-  rw [edist_eq_enorm_sub, ← intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hint,
+  rw [eDist_eq_eNorm_sub, ← intervalIntegral.integral_eq_sub_of_hasDerivAt hderiv hint,
     intervalIntegral.integral_of_le hαβ]
   exact (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono_set Ioc_subset_Icc_self)
 
@@ -166,7 +166,7 @@ private theorem lintegral_enorm_sub_sub_integral_le (hH : ContDiff ℝ 1 (uncurr
   simp_rw [perturbedFDeriv_cylindrical_apply_stdComplexLineImag]
   rw [Measure.volume_eq_prod, setLIntegral_prod
     (fun z ↦ ‖fderiv ℝ u z (0, 1) - ω.hamiltonianVectorField (H z.2) (u z)‖ₑ)
-    (((hcont.sub hcontX).mono hR).enorm.aemeasurable (measurableSet_Icc.prod measurableSet_Icc))]
+    (((hcont.sub hcontX).mono hR).eNorm.aemeasurable (measurableSet_Icc.prod measurableSet_Icc))]
   refine setLIntegral_mono' measurableSet_Icc fun r hr ↦ ?_
   dsimp only
   have hsub : uIcc t₁ t₂ ⊆ Icc 0 1 := uIcc_subset_Icc ⟨ht₁, ht.trans ht₂⟩ ⟨ht₁.trans ht, ht₂⟩

@@ -732,7 +732,7 @@ theorem lintegral_rpow_maximalFunction_mul_le (μ : Measure E) [μ.IsAddHaarMeas
       (by simpa only [eNorm_eq_self] using hg.mono_ac hac) y)
     (fun g hg s => by
       rw [withDensity_apply' w, lintegral_withDensity_eq_lintegral_mul₀ hMw.aemeasurable
-        (hg.mono_ac hac).enorm]
+        (hg.mono_ac hac).eNorm]
       simpa only [Pi.mul_apply, mul_comm (maximalFunction μ w _)] using
         mul_setLIntegral_lt_maximalFunction_le μ g w s)
     (fun g _hg => .of_forall fun y => by

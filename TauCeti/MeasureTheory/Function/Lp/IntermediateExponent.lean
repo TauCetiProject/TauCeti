@@ -82,7 +82,7 @@ theorem MemLp.of_le_of_le {f : α → ε} {p₀ p p₁ : ℝ≥0∞} (hf₀ : Me
           · exact (ENNReal.rpow_le_rpow_of_exponent_ge h hle).trans le_self_add
           · exact (ENNReal.rpow_le_rpow_of_exponent_le h hle₁).trans le_add_self
       _ < ∞ := by
-        rw [lintegral_add_left' (hmeas.enorm.pow_const _)]
+        rw [lintegral_add_left' (hmeas.eNorm.pow_const _)]
         exact ENNReal.add_lt_top.2 ⟨hI₀, hI₁⟩
 
 /-- **Logarithmic convexity of the `Lᵖ` norms.** If `0 ≤ θ ≤ 1` and
@@ -130,8 +130,8 @@ theorem eLpNorm_le_eLpNorm_rpow_mul_eLpNorm_rpow {f : α → ε} {p₀ p₁ p : 
           ENNReal.rpow_one]
     _ ≤ eLpNorm (‖f ·‖ₑ ^ (1 - θ)) (p₀ / ENNReal.ofReal (1 - θ)) μ *
           eLpNorm (‖f ·‖ₑ ^ θ) (p₁ / ENNReal.ofReal θ) μ :=
-        eLpNorm_le_eLpNorm_mul_eLpNorm_ennreal (hf.enorm.pow_const _).aestronglyMeasurable
-          (hf.enorm.pow_const _).aestronglyMeasurable
+        eLpNorm_le_eLpNorm_mul_eLpNorm_ennreal (hf.eNorm.pow_const _).aestronglyMeasurable
+          (hf.eNorm.pow_const _).aestronglyMeasurable
     _ = eLpNorm f p₀ μ ^ (1 - θ) * eLpNorm f p₁ μ ^ θ := by
         rw [eLpNorm_eNorm_rpow f hf ha, eLpNorm_eNorm_rpow f hf hθ₀, hr₀, hr₁]
 

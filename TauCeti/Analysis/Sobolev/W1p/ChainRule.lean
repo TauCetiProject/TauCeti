@@ -243,7 +243,7 @@ private theorem hasWeakFDerivOn_comp_aux (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F
       (fun _ => zero_le) fun i => ?_
     rw [← lintegral_const_mul' _ _ ENNReal.coe_ne_top]
     refine lintegral_mono fun x => ?_
-    rw [← edist_eq_enorm_sub, ← edist_eq_enorm_sub]
+    rw [← eDist_eq_eNorm_sub, ← eDist_eq_eNorm_sub]
     exact hlip _ _
   -- the gradients converge in `L¹(V)`: the coefficient is bounded and continuous
   refine ((hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub

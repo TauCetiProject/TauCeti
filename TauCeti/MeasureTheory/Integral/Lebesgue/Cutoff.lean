@@ -61,7 +61,7 @@ theorem tendsto_lintegral_enorm_mul_sub_of_eventually_eq_one {ι : Type*} {l : F
   simpa only [Pi.mul_apply, Pi.sub_apply, lintegral_zero] using
     tendsto_lintegral_filter_of_dominated_convergence' (f := fun _ => 0) (fun x => ‖u x‖ₑ)
       (.of_forall fun n => (((hχm n).mul hu.aestronglyMeasurable).sub
-        hu.aestronglyMeasurable).enorm)
+        hu.aestronglyMeasurable).eNorm)
       (.of_forall hdom) hu.hasFiniteIntegral.ne
       (hlim.mono fun x hx => tendsto_const_nhds.congr' (hx.mono fun n hn => by
         simp only [Pi.sub_apply, Pi.mul_apply, hn, one_mul, sub_self, eNorm_zero]))

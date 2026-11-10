@@ -129,7 +129,7 @@ theorem volume_preimage_inter_setOf_fderiv_ne_zero {h : E → ℝ} {I : Set ℝ}
     TauCeti.measurableSet_preimage_inter_setOf_fderiv_ne_zero hI
   -- The weight `1_I(h) ‖Dh‖⁻¹` on the regular set.
   let w : E → ℝ≥0∞ := (h ⁻¹' I ∩ R).indicator fun x ↦ ‖fderiv ℝ h x‖ₑ⁻¹
-  have hw : Measurable w := (measurable_fderiv ℝ h).enorm.inv.indicator hm
+  have hw : Measurable w := (measurable_fderiv ℝ h).eNorm.inv.indicator hm
   have hcoarea := lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
     hR.nullMeasurableSet (fun _ hx ↦ TauCeti.differentiableAt_of_fderiv_ne_zero hx) hsurj hw
   rw [finrank_self] at hcoarea

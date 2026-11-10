@@ -142,7 +142,7 @@ theorem eLpNorm_edist_quantileCoupling (p : ℝ≥0∞) (μ ν : Measure ℝ) :
   rw [Measure.quantileCoupling_def,
     eLpNorm_map_measure measurable_edist.aestronglyMeasurable hq.aemeasurable]
   exact eLpNorm_congr_eNorm_ae (measurable_edist.comp hq).aestronglyMeasurable (by fun_prop)
-    (.of_forall fun t ↦ by simp [Function.comp_apply, edist_eq_enorm_sub])
+    (.of_forall fun t ↦ by simp [Function.comp_apply, eDist_eq_eNorm_sub])
 
 /-- The `p`-Wasserstein distance of two real laws is at most the `L^p (0,1)` distance of their
 quantile functions, the transport objective of the monotone coupling. -/

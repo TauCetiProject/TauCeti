@@ -191,7 +191,7 @@ theorem AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le [Sig
   -- The set `{t < ‖h‖}` has positive measure, so by σ-finiteness it contains a set `F` of
   -- finite positive measure.
   have hE : MeasurableSet {x | t < ‖h' x‖ₑ} :=
-    measurableSet_lt measurable_const hmeas.stronglyMeasurable_mk.measurable.enorm
+    measurableSet_lt measurable_const hmeas.stronglyMeasurable_mk.measurable.eNorm
   have hEpos : 0 < μ {x | t < ‖h' x‖ₑ} := by
     refine pos_iff_ne_zero.2 fun h0 => htN.not_ge ?_
     rw [eLpNorm_exponent_top hmeas]
@@ -233,7 +233,7 @@ theorem AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le [Sig
   have hlow : t * μ F ≤ eLpNorm (F.indicator h) 1 μ := by
     rw [eLpNorm_indicator_eq_eLpNorm_restrict hFm.nullMeasurableSet,
       eLpNorm_one_eq_lintegral_eNorm hmeas.restrict, ← setLIntegral_const]
-    refine setLIntegral_mono_ae hmeas.enorm.restrict ?_
+    refine setLIntegral_mono_ae hmeas.eNorm.restrict ?_
     filter_upwards [hhh'] with x hx hxF
     rw [hx]
     exact (hFE hxF).le

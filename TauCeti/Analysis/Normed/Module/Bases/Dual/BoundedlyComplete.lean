@@ -43,7 +43,7 @@ theorem isShrinking_of_isBoundedlyComplete_dualBasis
   intro f
   have hbound : BddAbove (range fun n ↦
       ‖∑ i ∈ Finset.range n, f (b i) • b.dualBasis i‖) := by
-    refine ⟨‖f‖ * b.nnnormProjBound, ?_⟩
+    refine ⟨‖f‖ * b.nnNormProjBound, ?_⟩
     rintro _ ⟨n, rfl⟩
     dsimp only
     rw [← Submodule.norm_coe]

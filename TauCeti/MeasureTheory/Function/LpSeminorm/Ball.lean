@@ -100,7 +100,7 @@ theorem lintegral_eLpNorm_restrict_ball_rpow (hp0 : p ≠ 0) (hp : p ≠ ∞) {g
     rw [eLpNorm_eq_lintegral_rpow_eNorm_toReal hp0 hp hν, ← ENNReal.rpow_mul,
       one_div_mul_cancel hq.ne', ENNReal.rpow_one]
   simp_rw [hpow _ hg.restrict, hpow μ hg]
-  exact lintegral_setLIntegral_ball (hg.enorm.pow_const _) r
+  exact lintegral_setLIntegral_ball (hg.eNorm.pow_const _) r
 
 /-- **Global estimates from local ones on balls of one radius.** If `0 < r` and, for almost every
 centre `y`, the `Lᵖ` seminorm of `g` on `B(y, r)` is at most that of `h` on `B(y, R)`, then

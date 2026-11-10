@@ -114,7 +114,7 @@ theorem enorm_integral_sub_integral_le_of_hormander {K : X → X → E →L[ℝ]
           · rw [hy' (mem_closedBall.2 (not_lt.1 h))]
             simp
       _ = (∫⁻ y in {y | 2 * dist x x' < dist y x'}, ‖K x y - K x' y‖ₑ ∂μ) * M :=
-          lintegral_mul_const'' _ hKd.enorm.restrict
+          lintegral_mul_const'' _ hKd.eNorm.restrict
       _ ≤ B * M := by gcongr
   rcases eq_or_ne (B * M) ∞ with hBM | hBM
   · simp [hBM]

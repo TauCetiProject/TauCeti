@@ -36,7 +36,7 @@ theorem eLpNorm_sub_eq_eLpNorm_edist {E : Type*} [SeminormedAddCommGroup E] [Mea
     [OpensMeasurableSpace E] [SecondCountableTopology E] (p : ℝ≥0∞) (π : Measure (E × E)) :
     eLpNorm (fun z : E × E ↦ z.1 - z.2) p π = eLpNorm (fun z : E × E ↦ edist z.1 z.2) p π :=
   eLpNorm_congr_eNorm_ae (by fun_prop) measurable_edist.aestronglyMeasurable
-    (.of_forall fun z ↦ by simp [edist_eq_enorm_sub])
+    (.of_forall fun z ↦ by simp [eDist_eq_eNorm_sub])
 
 /-- On a pseudometric space, the real-distance and extended-distance formulations of
 finite `p`-moment at a basepoint agree. -/

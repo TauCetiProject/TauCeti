@@ -57,7 +57,7 @@ theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' : p �
           ∫⁻ _ in ball (0 : E) r, (C * ENNReal.ofReal r ^ (α : ℝ)) ∂mu := by
         refine mul_le_mul le_rfl (lintegral_mono_ae ?_) bot_le bot_le
         filter_upwards [ae_restrict_mem measurableSet_ball] with e he
-        rw [← edist_eq_enorm_sub]
+        rw [← eDist_eq_eNorm_sub]
         refine (hg (x + e) x).trans ?_
         have he' : edist (x + e) x ≤ ENNReal.ofReal r := by
           rw [edist_dist, dist_eq_norm, add_sub_cancel_left]
@@ -81,7 +81,7 @@ theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' : p �
     _ ≤ edist (g x) (ballAverage mu r g x) + ‖ballAverage mu r g x‖ₑ := by
       simpa only [edist_zero_right] using edist_triangle (g x) (ballAverage mu r g x) 0
     _ ≤ C * ENNReal.ofReal r ^ (α : ℝ) + mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu :=
-      add_le_add (by rw [edist_comm]; simpa only [edist_eq_enorm_sub] using hdev)
+      add_le_add (by rw [edist_comm]; simpa only [eDist_eq_eNorm_sub] using hdev)
         (enorm_ballAverage_le hp hp' x)
 
 /-- Real-valued form of `HolderWith.enorm_le_add_eLpNorm`: a globally Hölder function with finite

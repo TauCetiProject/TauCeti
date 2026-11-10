@@ -73,7 +73,7 @@ theorem HasFPowerSeriesOnBall.torusIntegral_cauchyCoeff
     intro i
     exact (mem_sphere_iff_norm.1 (z i).2).le.trans (by rw [abs_of_pos (hR i)]; exact hRs i)
   have hmem (z : K) : v z ∈ eball c r := by
-    rw [mem_eball, edist_eq_enorm_sub]
+    rw [mem_eball, eDist_eq_eNorm_sub]
     exact lt_of_le_of_lt (by exact_mod_cast hbound z) hs
   let G : C(K, F) := ⟨fun z ↦ f (v z), hf.continuousOn.comp_continuous hv hmem⟩
   let P : ℕ → C(K, F) := fun k ↦ ⟨fun z ↦ p k (fun _ ↦ v z - c), by fun_prop⟩

@@ -150,7 +150,7 @@ theorem exists_tendsto_eLpNorm_of_tendsto_eLpNorm_bound [NormedAddCommGroup E] [
       Tendsto (fun n ↦ eLpNorm (f n - g) p μ) atTop (𝓝 0) := by
   have hnorm : ∀ {u v : α → E}, AEStronglyMeasurable u μ → AEStronglyMeasurable v μ →
       eLpNorm (fun x ↦ edist (u x) (v x)) p μ = eLpNorm (u - v) p μ := fun {u v} hu hv ↦ by
-    simpa only [edist_eq_enorm_sub, Pi.sub_apply] using eLpNorm_eNorm (u - v) (hu.sub hv)
+    simpa only [eDist_eq_eNorm_sub, Pi.sub_apply] using eLpNorm_eNorm (u - v) (hu.sub hv)
   obtain ⟨g, hg, hlim⟩ := exists_tendsto_eLpNorm_edist_of_tendsto_bound hp hf hB
     fun N n m hn hm ↦ (hnorm (hf n) (hf m)).trans_le (h_cau N n m hn hm)
   exact ⟨g, hg, (tendsto_congr fun n ↦ hnorm (hf n) hg.aestronglyMeasurable).1 hlim⟩

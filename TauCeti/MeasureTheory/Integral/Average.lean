@@ -203,7 +203,7 @@ theorem enorm_setAverage_rpow_le {q : ℝ} (hq : 1 ≤ q) :
       enorm_setAverage_le_setLAverage mu f s
   have hholder : (∫⁻ y in s, ‖f y‖ₑ ∂mu) ^ q ≤ mu s ^ (q - 1) * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu := by
     have := rpow_lintegral_le_measure_univ_rpow_mul (μ := mu.restrict s)
-      (u := fun y => ‖f y‖ₑ) hf.aestronglyMeasurable.enorm hq
+      (u := fun y => ‖f y‖ₑ) hf.aestronglyMeasurable.eNorm hq
     rwa [Measure.restrict_apply_univ] at this
   have hexp : -q + (q - 1) = (-1 : ℝ) := by ring
   calc ‖⨍ y in s, f y ∂mu‖ₑ ^ q
@@ -365,7 +365,7 @@ theorem setLAverage_enorm_add_sub_le {g : X → F} (hf : AEStronglyMeasurable f 
         lintegral_mono fun y => by
           rw [add_sub_add_comm]
           exact eNorm_add_le _ _
-    _ = _ := lintegral_add_left' (hf.sub aestronglyMeasurable_const).enorm _
+    _ = _ := lintegral_add_left' (hf.sub aestronglyMeasurable_const).eNorm _
 
 omit [CompleteSpace F] in
 /-- The mean oscillation of `f` on a set depends only on the a.e. class of `f`. -/
@@ -394,7 +394,7 @@ theorem ae_restrict_eq_setAverage_of_setLAverage_enorm_sub_setAverage_eq_zero
     ∀ᵐ y ∂μ.restrict s, f y = ⨍ z in s, f z ∂μ := by
   rw [setLAverage_eq, ENNReal.div_eq_zero_iff] at h
   refine h.elim (fun h => ?_) fun h => absurd h hs
-  filter_upwards [(lintegral_eq_zero_iff' (hf.sub aestronglyMeasurable_const).enorm).1 h] with y hy
+  filter_upwards [(lintegral_eq_zero_iff' (hf.sub aestronglyMeasurable_const).eNorm).1 h] with y hy
   exact sub_eq_zero.1 (eNorm_eq_zero.1 hy)
 
 end Oscillation
@@ -567,7 +567,7 @@ theorem norm_setAverage_sub_le_of_subset (hst : s ⊆ t) (hs : μ s ≠ 0) (ht :
     ‖(⨍ x in s, f x ∂μ) - c‖ ≤ μ.real t / μ.real s * ⨍ x in t, ‖f x - c‖ ∂μ := by
   have hfc : IntegrableOn (fun x => f x - c) t μ := hf.sub (integrableOn_const ht)
   have hav : (⨍⁻ x in t, ‖f x - c‖ₑ ∂μ).toReal = ⨍ x in t, ‖f x - c‖ ∂μ := by
-    simpa using toReal_setLAverage hfc.1.enorm (ae_of_all _ fun _ => eNorm_ne_top)
+    simpa using toReal_setLAverage hfc.1.eNorm (ae_of_all _ fun _ => eNorm_ne_top)
   rw [← toReal_eNorm, measureReal_def, measureReal_def, ← ENNReal.toReal_div, ← hav,
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono

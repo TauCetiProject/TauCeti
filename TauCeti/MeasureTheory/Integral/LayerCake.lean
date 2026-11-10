@@ -321,7 +321,7 @@ theorem measure_symmDiff_setOf_lt_indicator_le (m : Measure α) {u : α → ℝ}
     m ({x | t < u x} ∆ s) ≤ (∫⁻ x, ‖u x - s.indicator 1 x‖ₑ ∂m) / ENNReal.ofReal δ := by
   refine (measure_mono ?_).trans
     (meas_ge_le_lintegral_div
-      (hu.sub ((aestronglyMeasurable_const (b := (1 : ℝ))).indicator₀ hs)).enorm
+      (hu.sub ((aestronglyMeasurable_const (b := (1 : ℝ))).indicator₀ hs)).eNorm
       (ne_of_gt (ENNReal.ofReal_pos.mpr hδ)) ENNReal.ofReal_ne_top)
   intro x hx
   rw [mem_symmDiff] at hx

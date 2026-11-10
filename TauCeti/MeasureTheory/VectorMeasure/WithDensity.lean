@@ -122,7 +122,7 @@ private theorem integral_eq_integral_variation_withDensityᵥ (B : E →L[ℝ] F
     (hg : Integrable g ν) (f : X → E) :
     ∫ x, B (f x) (g x) ∂ν = ∫ x, B (f x) (‖g x‖⁻¹ • g x) ∂(ν.withDensityᵥ g).variation := by
   rw [Measure.variation_withDensityᵥ hg, integral_withDensity_eq_integral_toReal_smul₀
-    hg.aestronglyMeasurable.enorm (ae_of_all _ fun _ => eNorm_lt_top)]
+    hg.aestronglyMeasurable.eNorm (ae_of_all _ fun _ => eNorm_lt_top)]
   congr with x
   rcases eq_or_ne (g x) 0 with hx | hx
   · simp [hx]
@@ -293,7 +293,7 @@ theorem integrable_withDensity_mul_iff (hg : μ.Integrable g) :
       μ.Integrable fun x => f x * g x := by
   have hgm : AEStronglyMeasurable g μ.variation := hg.1
   rw [VectorMeasure.Integrable, variation_withDensity_mul hg,
-    integrable_withDensity_iff_integrable_smul₀' hgm.enorm (ae_of_all _ fun _ => eNorm_lt_top)]
+    integrable_withDensity_iff_integrable_smul₀' hgm.eNorm (ae_of_all _ fun _ => eNorm_lt_top)]
   -- The direction `‖g x‖⁻¹ • g x` of `g` has norm at most one and is a.e. strongly measurable.
   -- Multiplying by it, or by its conjugate, converts `‖g‖ • f` into `f * g` and back.
   have hu : AEStronglyMeasurable (fun x => ‖g x‖⁻¹ • g x) μ.variation :=
@@ -339,7 +339,7 @@ theorem integral_withDensity_mul (hg : μ.Integrable g) (f : X → 𝕜) :
   · rw [integral_undef hf, integral_undef (mt (integrable_withDensity_mul_iff hg).2 hf)]
   have hlint (u : X → 𝕜) :
       ∫⁻ x, ‖u x‖ₑ ∂η.variation = ∫⁻ x, ‖u x‖ₑ * ‖g x‖ₑ ∂μ.variation := by
-    rw [hρ, lintegral_withDensity_eq_lintegral_mul_non_measurable₀ _ hg.1.enorm
+    rw [hρ, lintegral_withDensity_eq_lintegral_mul_non_measurable₀ _ hg.1.eNorm
       (ae_of_all _ fun _ => eNorm_lt_top)]
     simp_rw [Pi.mul_apply, mul_comm]
   refine Integrable.induction (μ := η.variation)
@@ -356,16 +356,16 @@ theorem integral_withDensity_mul (hg : μ.Integrable g) (f : X → 𝕜) :
     rw [integral_fun_add hf₁ hf₂, h₁, h₂, integral_fun_add (hmul hf₁) (hmul hf₂)]
   · -- Both sides are continuous on `L¹(|g · μ|)`; the right-hand side is `1`-Lipschitz.
     refine isClosed_eq continuous_integral (LipschitzWith.of_edist_le fun f₁ f₂ => ?_).continuous
-    rw [edist_eq_enorm_sub, ← integral_fun_sub (hmul (L1.integrable_coeFn f₁))
+    rw [eDist_eq_eNorm_sub, ← integral_fun_sub (hmul (L1.integrable_coeFn f₁))
       (hmul (L1.integrable_coeFn f₂)), L1.edist_def]
-    simp_rw [← sub_mul, edist_eq_enorm_sub, hlint, ← eNorm_mul]
+    simp_rw [← sub_mul, eDist_eq_eNorm_sub, hlint, ← eNorm_mul]
     refine eNorm_integral_le_lintegral_eNorm.trans ?_
     rw [eNorm_eq_nnNorm, ContinuousLinearMap.opNNNorm_mul, ENNReal.coe_one, one_mul]
   · -- A `|g · μ|`-null set meets `{g ≠ 0}` in a `|μ|`-null set, where `f * g` does not see `f`.
     intro f₁ f₂ hae _ h₁
     rw [← integral_congr_ae hae, h₁]
     refine integral_congr_ae ?_
-    rw [hρ, EventuallyEq, ae_withDensity_iff' hg.1.enorm] at hae
+    rw [hρ, EventuallyEq, ae_withDensity_iff' hg.1.eNorm] at hae
     filter_upwards [hae] with x hx
     rcases eq_or_ne (g x) 0 with hgx | hgx
     · simp [hgx]

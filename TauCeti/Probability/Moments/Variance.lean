@@ -281,13 +281,13 @@ theorem evariance_integral_prod_le (hF : Measurable F) (hint : Integrable F (ν.
       _ ≤ _ := by
           simpa [ENNReal.rpow_two] using rpow_lintegral_le_measure_univ_rpow_mul
             (μ := π) (u := fun w => ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ)
-            (((hF.comp measurable_prodMk_left).sub hmm.measurable).enorm.aemeasurable)
+            (((hF.comp measurable_prodMk_left).sub hmm.measurable).eNorm.aemeasurable)
             one_le_two
   calc evariance (fun a => ∫ w, F (a, w) ∂π) ν
       ≤ ∫⁻ a, ∫⁻ w, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂π ∂ν := lintegral_mono_ae hae
     _ = ∫⁻ w, ∫⁻ a, ‖F (a, w) - ∫ a', F (a', w) ∂ν‖ₑ ^ 2 ∂ν ∂π :=
         lintegral_lintegral_swap
-          ((hF.sub (hmm.measurable.comp measurable_snd)).enorm.pow_const 2).aemeasurable
+          ((hF.sub (hmm.measurable.comp measurable_snd)).eNorm.pow_const 2).aemeasurable
     _ = ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := rfl
 
 /-- The two-factor Efron--Stein inequality. -/
@@ -312,6 +312,6 @@ theorem measurable_evariance_update {ι : Type*} [DecidableEq ι] {α : ι → T
   exact Measurable.lintegral_prod_right'
     (f := fun p : (∀ i, α i) × α i =>
       ‖f (Function.update p.1 i p.2) - ∫ y, f (Function.update p.1 i y) ∂μ i‖ₑ ^ 2)
-    ((hu.sub (hm.measurable.comp measurable_fst)).enorm.pow_const 2)
+    ((hu.sub (hm.measurable.comp measurable_fst)).eNorm.pow_const 2)
 
 end TauCeti.Probability

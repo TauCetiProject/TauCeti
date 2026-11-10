@@ -106,7 +106,7 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (hu : ContDiff ℝ 
       simp [eNorm_eq_nnNorm] at hy
   -- The `Lᵖ`-`L^q` bound for the potential, with `κ = 1/n`.
   have hpot := eLpNorm_setLIntegral_enorm_sub_rpow_mul_le (μ := μ) (p := p) (q := q)
-    (κ := (n : ℝ)⁻¹) hp hpq hδ hδn (inv_le_one_of_one_le₀ hn) hΩ hcont.enorm.aemeasurable
+    (κ := (n : ℝ)⁻¹) hp hpq hδ hδn (inv_le_one_of_one_le₀ hn) hΩ hcont.eNorm.aemeasurable
   rw [← eLpNorm_restrict_eq_of_support_subset hu.continuous.aestronglyMeasurable
     ((subset_tsupport _).trans hsupp)]
   calc

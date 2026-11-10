@@ -212,7 +212,7 @@ theorem W1p.eLpNorm_value_comp_add_sub_le_of_top (hp : p ≠ ∞) (w : W1p mu �
       eLpNorm (fun x ↦ W1p.value v (x + h) - W1p.value v x) p (mu.restrict K)
         ≤ eLpNorm (fun x ↦ ⟪h, W1p.gradient v x⟫_ℝ) p (mu.restrict T)} := by
     simp only [← hA, ← hB]
-    exact isClosed_le A.continuous.enorm B.continuous.enorm
+    exact isClosed_le A.continuous.eNorm B.continuous.eNorm
   -- Pass the smooth estimate to all of `W^{1,p}(ℝⁿ)` by density of test functions.
   refine w1p0Submodule_subset_of_isClosed hclosed (fun phi ↦ ?_) (W1p.mem_w1p0Submodule_top hp w)
   exact eLpNorm_value_ofTestFunctionₗ_comp_add_sub_le phi h hT hKT

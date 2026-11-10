@@ -76,7 +76,7 @@ theorem exists_eq_zero_of_two_mul_norm_le [CompleteSpace E] {f : E → F} {f' : 
   -- A right inverse of `f'` with the bound `C` in place of `‖f'⁻¹‖`, which may vanish.
   let R : (f' : E →L[𝕜] F).NonlinearRightInverse :=
     { toFun := f'.symm
-      nnnorm := ⟨C, hC.le⟩
+      nnNorm := ⟨C, hC.le⟩
       bound' := hbound
       right_inv' := f'.apply_symm_apply }
   have hsub := Metric.closedBall_subset_closedBall (x := b) hr

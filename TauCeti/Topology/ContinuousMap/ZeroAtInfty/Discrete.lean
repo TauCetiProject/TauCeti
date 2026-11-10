@@ -407,7 +407,7 @@ theorem nnnorm_sum_single [DecidableEq I] (s : Finset I) (b : I → β) :
   · rw [← NNReal.coe_le_coe, coe_nnNorm, coe_nnNorm]
     simpa [sum_single_apply, hi] using norm_coe_le_norm (∑ i ∈ s, single i (b i)) i
 
-/-- A family vanishing outside a finite set `s` has `nnnorm` equal to the maximum over `s`. -/
+/-- A family vanishing outside a finite set `s` has `nnNorm` equal to the maximum over `s`. -/
 theorem nnnorm_eq_sup_of_forall_eq_zero {s : Finset I} {f : C₀(I, β)}
     (hf : ∀ i ∉ s, f i = 0) :
     ‖f‖₊ = s.sup fun i ↦ ‖f i‖₊ := by

@@ -398,7 +398,7 @@ theorem totalVariationOn_le_liminf [OpensMeasurableSpace E] {ι : Type*} {l : Fi
   rw [mul_zero] at hlim
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
     (.of_forall fun _ => zero_le) (hu.mono fun i hi => ?_)
-  rw [edist_eq_enorm_sub,
+  rw [eDist_eq_eNorm_sub,
     ← integral_sub (by simpa using ψ.integrable_smul hi)
       (by simpa using ψ.integrable_smul hu₀)]
   simpa only [mul_sub] using hbound fun x => u i x - u₀ x
@@ -437,7 +437,7 @@ theorem totalVariationOn_le_of_tendsto_L1 [OpensMeasurableSpace E] {ι : Type*}
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hd
     (fun _ => zero_le) fun i => ?_
   rw [L1.edist_def]
-  simpa only [edist_eq_enorm_sub] using
+  simpa only [eDist_eq_eNorm_sub] using
     (lintegral_mono_set hK :
       (∫⁻ x in K, ‖u i x - v x‖ₑ ∂μ) ≤ ∫⁻ x in Ω, ‖u i x - v x‖ₑ ∂μ)
 

@@ -264,7 +264,7 @@ private theorem mul_volume_lt_enorm_le_of_coordConj
   have h := hA (lpCoord b E f) t
   -- Transfer the level set of `T' (f ∘ e) = (T f) ∘ e` and the `L¹` norm of `f ∘ e` back to `V`.
   have hS : MeasurableSet {v | t < ‖T f v‖ₑ} :=
-    measurableSet_lt measurable_const (Lp.stronglyMeasurable (T f)).enorm
+    measurableSet_lt measurable_const (Lp.stronglyMeasurable (T f)).eNorm
   have hlevel : volume {x | t < ‖coordConj b T (lpCoord b E f) x‖ₑ} =
       volume {v | t < ‖T f v‖ₑ} := by
     rw [← he.measure_preimage hS.nullMeasurableSet]
@@ -363,7 +363,7 @@ private theorem setLIntegral_compl_closedBall_enorm_coordConj_le_of_hormander
     _ ≤ B * ∫⁻ v, ‖g v‖ₑ := hcanc
     _ = B * ∫⁻ x, ‖f x‖ₑ := by
         rw [← he.lintegral_comp_emb e.measurableEmbedding]
-        exact congrArg _ (lintegral_congr_ae (hge.mono fun x hx => congrArg enorm hx))
+        exact congrArg _ (lintegral_congr_ae (hge.mono fun x hx => congrArg eNorm hx))
 
 end Coordinates
 

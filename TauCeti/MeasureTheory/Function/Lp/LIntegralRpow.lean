@@ -51,7 +51,7 @@ open scoped ENNReal Topology
 /-- For a finite nonzero exponent, the `p`-th power of the `Lᵖ` seminorm of an a.e. measurable
 `ℝ≥0∞`-valued function is the integral of the `p`-th power of that function. This is
 `MeasureTheory.lintegral_rpow_eNorm_eq_rpow_eLpNorm'` read at an `ℝ≥0∞`-valued exponent and at a
-function whose enorm is the identity, which is the shape the extended-valued estimates use. -/
+function whose eNorm is the identity, which is the shape the extended-valued estimates use. -/
 theorem eLpNorm_rpow_eq_lintegral {α : Type*} [MeasurableSpace α]
     {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) {f : α → ℝ≥0∞} {μ : Measure α}
     (hf : AEMeasurable f μ) :

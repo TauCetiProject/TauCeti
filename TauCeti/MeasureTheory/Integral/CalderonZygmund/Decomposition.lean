@@ -368,7 +368,7 @@ theorem lintegral_enorm_calderonZygmundBad_le (f : (ι → ℝ) → E) (q : ℤ 
 by `2ⁿ t` almost everywhere. -/
 theorem ae_enorm_calderonZygmundGood_le [Nonempty ι] (hf : Integrable f) (ht : t ≠ 0) :
     ∀ᵐ x, ‖calderonZygmundGood f t x‖ₑ ≤ 2 ^ Fintype.card ι * t := by
-  filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes hf.1.enorm
+  filter_upwards [ae_le_of_forall_notMem_calderonZygmundCubes hf.1.eNorm
     hf.2.ne ht] with x hx
   by_cases hmem : ∃ q ∈ calderonZygmundCubes (‖f ·‖ₑ) t, x ∈ dyadicCube q.1 q.2
   · obtain ⟨q, hq, hxq⟩ := hmem
@@ -447,7 +447,7 @@ theorem sq_eLpNorm_calderonZygmundGood_le [Nonempty ι] (hf : Integrable f) (ht 
         rw [sq]
         gcongr
     _ = 2 ^ Fintype.card ι * t * ∫⁻ x, ‖calderonZygmundGood f t x‖ₑ :=
-        lintegral_const_mul'' _ hg.enorm
+        lintegral_const_mul'' _ hg.eNorm
     _ ≤ 2 ^ Fintype.card ι * t * ∫⁻ x, ‖f x‖ₑ :=
         mul_le_mul_right (lintegral_enorm_calderonZygmundGood_le f t) _
 

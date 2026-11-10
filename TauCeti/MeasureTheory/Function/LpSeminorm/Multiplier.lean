@@ -54,7 +54,7 @@ theorem eLpNorm_top_le_of_forall_eLpNorm_indicator_le {ε : Type*} [TopologicalS
   have hp_pos : 0 < p.toReal := ENNReal.toReal_pos hp hp_top
   -- Integrating `‖a‖ₑ ^ p` over each set of finite measure compares it with the constant `C ^ p`.
   have hle : (fun x ↦ ‖a x‖ₑ ^ p.toReal) ≤ᵐ[μ] fun _ ↦ C ^ p.toReal := by
-    refine ae_le_of_forall_setLIntegral_le_of_sigmaFinite₀ (ha.enorm.pow_const _)
+    refine ae_le_of_forall_setLIntegral_le_of_sigmaFinite₀ (ha.eNorm.pow_const _)
       fun s hs hμs ↦ ?_
     have hs' := h s hs hμs
     rw [eLpNorm_indicator_eq_eLpNorm_restrict hs.nullMeasurableSet,

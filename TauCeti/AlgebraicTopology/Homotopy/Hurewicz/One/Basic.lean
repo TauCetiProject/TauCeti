@@ -638,7 +638,7 @@ omit [PathConnectedSpace X] in
 lemma hurewiczAb_ofMul_of_mk (γ : Path x x) :
     hurewiczAb x (Additive.ofMul ((Group.Abelianization.of : FundamentalGroup X x →* _)
       (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)))) = loopClass γ := by
-  simp [hurewiczAb]
+  rw [hurewiczAb_ofMul_of, hurewicz₁_mk, toAdd_ofAdd]
 
 private lemma hurewiczAb_chainsDesc_loopThroughAb (c : ((singularChains ℤ).obj X).X 1) :
     hurewiczAb x (chainsDesc (fun s ↦ loopThroughAb x (.mk (path₁ s))) c) =
@@ -768,10 +768,10 @@ lemma hurewiczHomologyAddEquiv_apply [PathConnectedSpace X] {x : X}
 
 @[simp]
 lemma hurewiczHomologyAddEquiv_ofMul_of_mk [PathConnectedSpace X] {x : X} (γ : Path x x) :
-    hurewiczHomologyAddEquiv x (Additive.ofMul ((Group.Abelianization.of : FundamentalGroup X x →*
-        _)
+    hurewiczHomologyAddEquiv x (Additive.ofMul
+      ((Group.Abelianization.of : FundamentalGroup X x →* _)
       (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)))) =
         H₁AddEquivHomology X (loopClass γ) := by
-  simp [hurewiczHomologyAddEquiv]
+  rw [hurewiczHomologyAddEquiv, AddEquiv.trans_apply, hurewiczAddEquiv_ofMul_of_mk]
 
 end TauCeti.HurewiczOne

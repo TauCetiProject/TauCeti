@@ -105,8 +105,8 @@ theorem enorm_one_add_norm_sq_rpow_mul_convolution_le {s : ℝ} (hs : 0 ≤ s)
     _ ≤ ∫⁻ t, c * (A t * b (x - t) + a t * B (x - t)) := lintegral_mono hweight
     _ = c * ((b ⋆ₗ A) x + (a ⋆ₗ B) x) := by
       rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
-        lintegral_add_left' (f := fun t => A t * b (x - t)) (hwf.enorm.mul
-          (hg.enorm.comp_quasiMeasurePreserving
+        lintegral_add_left' (f := fun t => A t * b (x - t)) (hwf.eNorm.mul
+          (hg.eNorm.comp_quasiMeasurePreserving
             (quasiMeasurePreserving_sub_left_of_right_invariant volume x))),
         hcomm, lconvolution_def]
       simp only [neg_add_eq_sub, c]
@@ -127,8 +127,8 @@ theorem eLpNorm_one_add_norm_sq_rpow_mul_convolution_le {s : ℝ} (hs : 0 ≤ s)
     hwc.aestronglyMeasurable.mul hg
   set X := (fun y => ‖g y‖ₑ) ⋆ₗ fun y => ‖(((1 + ‖y‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * f y‖ₑ
   set Y := (fun y => ‖f y‖ₑ) ⋆ₗ fun y => ‖(((1 + ‖y‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * g y‖ₑ
-  have hX : AEMeasurable X := aemeasurable_lconvolution hg.enorm hwf.enorm
-  have hY : AEMeasurable Y := aemeasurable_lconvolution hf.enorm hwg.enorm
+  have hX : AEMeasurable X := aemeasurable_lconvolution hg.eNorm hwf.eNorm
+  have hY : AEMeasurable Y := aemeasurable_lconvolution hf.eNorm hwg.eNorm
   -- Integrate the pointwise bound, then apply Young's inequality to `X` and `Y`.
   calc eLpNorm (fun x => (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * (f ⋆[mul ℂ ℂ] g) x) 2
       ≤ eLpNorm (fun x => ENNReal.ofReal (2 ^ s) * (X x + Y x)) 2 :=
@@ -150,8 +150,8 @@ theorem eLpNorm_one_add_norm_sq_rpow_mul_convolution_le {s : ℝ} (hs : 0 ≤ s)
           ← eLpNorm_eNorm _ hwg]
         have h12 : (1 : ℝ≥0∞)⁻¹ + 2⁻¹ = 1 + 2⁻¹ := by rw [inv_one]
         gcongr
-        · exact eLpNorm_lconvolution_le le_rfl one_le_two h12 hg.enorm hwf.enorm
-        · exact eLpNorm_lconvolution_le le_rfl one_le_two h12 hf.enorm hwg.enorm
+        · exact eLpNorm_lconvolution_le le_rfl one_le_two h12 hg.eNorm hwf.eNorm
+        · exact eLpNorm_lconvolution_le le_rfl one_le_two h12 hf.eNorm hwg.eNorm
 
 /-- For `0 ≤ s`, if `f` and `g` are integrable and `(1 + ‖ξ‖ ^ 2) ^ (s / 2) f` and
 `(1 + ‖ξ‖ ^ 2) ^ (s / 2) g` are square integrable, then so is

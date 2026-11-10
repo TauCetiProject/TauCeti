@@ -105,7 +105,7 @@ exponent including `p = ∞`. -/
 theorem AEStronglyMeasurable.eLpNorm_prod_right [SFinite ν] {f : α × β → ε}
     (hf : AEStronglyMeasurable f (μ.prod ν)) :
     AEStronglyMeasurable (fun x ↦ eLpNorm (fun y ↦ f (x, y)) p ν) μ := by
-  have hg := hf.enorm
+  have hg := hf.eNorm
   refine (hg.measurable_mk.eLpNorm_prod_right (p := p) (ν := ν)).aestronglyMeasurable.congr ?_
   filter_upwards [hf.prodMk_left, Measure.ae_ae_of_ae_prod hg.ae_eq_mk] with x hx hxg
   rw [← eLpNorm_eNorm _ hx]
@@ -128,7 +128,7 @@ private theorem eLpNorm_top_prod_eq_of_measurable [SFinite ν] {g : α × β →
   refine le_antisymm (eLpNormEssSup_le_of_ae_eNorm_bound ?_)
     (eLpNormEssSup_le_of_ae_eNorm_bound ?_)
   · -- A bound valid for almost every section is valid almost everywhere on the product.
-    refine (Measure.ae_prod_iff_ae_ae (measurableSet_le hg.enorm measurable_const)).2 ?_
+    refine (Measure.ae_prod_iff_ae_ae (measurableSet_le hg.eNorm measurable_const)).2 ?_
     filter_upwards [ae_le_eLpNormEssSup (f := fun x ↦ eLpNorm (fun y ↦ g (x, y)) ∞ ν) (μ := μ)]
       with x hx
     filter_upwards [ae_le_eLpNormEssSup (f := fun y ↦ g (x, y)) (μ := ν)] with y hy
@@ -148,9 +148,9 @@ theorem eLpNorm_prod_eq_eLpNorm_eLpNorm [SFinite ν] {f : α × β → ε}
     (hf : AEStronglyMeasurable f (μ.prod ν)) :
     eLpNorm f p (μ.prod ν) = eLpNorm (fun x ↦ eLpNorm (fun y ↦ f (x, y)) p ν) p μ := by
   -- Reduce to a measurable representative `g` of `‖f‖ₑ`.
-  set g := hf.enorm.mk
-  have hg : Measurable g := hf.enorm.measurable_mk
-  have hfg : (fun z ↦ ‖f z‖ₑ) =ᵐ[μ.prod ν] g := hf.enorm.ae_eq_mk
+  set g := hf.eNorm.mk
+  have hg : Measurable g := hf.eNorm.measurable_mk
+  have hfg : (fun z ↦ ‖f z‖ₑ) =ᵐ[μ.prod ν] g := hf.eNorm.ae_eq_mk
   have hsec (x : α) : AEStronglyMeasurable (fun y ↦ g (x, y)) ν :=
     (hg.comp measurable_prodMk_left).aestronglyMeasurable
   have hout : AEStronglyMeasurable (fun x ↦ eLpNorm (fun y ↦ g (x, y)) p ν) μ :=
@@ -192,9 +192,9 @@ theorem eLpNorm_prod_smul [SFinite ν] {𝕜 : Type*} [TopologicalSpace 𝕜] [C
   have hsec (x : α) : eLpNorm (fun y ↦ f x • g y) p ν = ‖f x‖ₑ * eLpNorm g p ν := by
     rw [← eLpNorm_eNorm _ (hg.fun_const_smul (f x))]
     simp_rw [eNorm_smul]
-    rw [eLpNorm_const_mul_ennreal hg.enorm.aestronglyMeasurable, eLpNorm_eNorm _ hg]
+    rw [eLpNorm_const_mul_ennreal hg.eNorm.aestronglyMeasurable, eLpNorm_eNorm _ hg]
   simp_rw [hsec, mul_comm _ (eLpNorm g p ν)]
-  rw [eLpNorm_const_mul_ennreal hf.enorm.aestronglyMeasurable, eLpNorm_eNorm _ hf, mul_comm]
+  rw [eLpNorm_const_mul_ennreal hf.eNorm.aestronglyMeasurable, eLpNorm_eNorm _ hf, mul_comm]
 
 end TauCeti
 

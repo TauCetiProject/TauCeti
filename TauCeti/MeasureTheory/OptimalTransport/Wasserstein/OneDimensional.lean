@@ -132,7 +132,7 @@ theorem wassersteinEDist_one_eq_lintegral_enorm_cdf_sub (μ ν : Measure ℝ)
       _ = ∫⁻ z, ‖z.1 - z.2‖ₑ ∂π :=
           (lintegral_enorm_sub_eq_lintegral_measure_symmDiff π measurable_fst.aemeasurable
             measurable_snd.aemeasurable).symm
-      _ = ∫⁻ z, edist z.1 z.2 ∂π := by simp_rw [edist_eq_enorm_sub]
+      _ = ∫⁻ z, edist z.1 z.2 ∂π := by simp_rw [eDist_eq_eNorm_sub]
 
 end RealLaws
 

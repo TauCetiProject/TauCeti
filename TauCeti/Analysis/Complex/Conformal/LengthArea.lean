@@ -179,7 +179,7 @@ theorem circleImageLength_eq_lintegral_Ioc (f : ℂ → ℂ) (s : Set ℂ) (ζ :
 `TauCeti/MeasureTheory/Integral/Circle/LIntegral.lean` apply to it. -/
 private theorem measurable_indicator_enorm_deriv (f : ℂ → ℂ) (hs : MeasurableSet s) :
     Measurable (s.indicator fun z => ‖deriv f z‖ₑ) :=
-  (measurable_deriv f).enorm.indicator hs
+  (measurable_deriv f).eNorm.indicator hs
 
 /-- The plane integral of the square of the length density of `f` cut off outside `s` is the
 Dirichlet integral of `f` over `s`: the indicator commutes with squaring. -/
@@ -301,7 +301,7 @@ theorem edist_comp_le_lintegral_Ioc (hUo : IsOpen U) (hf : DifferentiableOn ℂ 
       ((hf _ hmem).differentiableAt (hUo.mem_nhds hmem)).hasDerivAt.scomp t hγt
     rw [h.deriv, smul_eq_mul, eNorm_mul]
   calc edist (f (γ a)) (f (γ b))
-      = ‖f (γ b) - f (γ a)‖ₑ := by rw [edist_comm, edist_eq_enorm_sub]
+      = ‖f (γ b) - f (γ a)‖ₑ := by rw [edist_comm, eDist_eq_eNorm_sub]
     _ ≤ ∫⁻ t in Icc a b, ‖deriv (fun t => f (γ t)) t‖ₑ :=
         eNorm_sub_le_lintegral_deriv_of_contDiffOn_Icc hcd hab
     _ = ∫⁻ t in Ioo a b, ‖deriv (fun t => f (γ t)) t‖ₑ := by rw [restrict_Ioo_eq_restrict_Icc]

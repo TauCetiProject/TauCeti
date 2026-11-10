@@ -297,7 +297,7 @@ theorem eLpNorm_greenIntegral_le (hα : 0 < α) (hg : Continuous g) (hgM : ∀ s
           fun t ↦ by simpa only [eNorm_eq_self] using enorm_greenIntegral_le hs hu g t
     _ ≤ ENNReal.ofReal (2 * K / α) ^ (1 - p.toReal⁻¹) *
           ENNReal.ofReal (2 * K / α) ^ p.toReal⁻¹ * eLpNorm (fun s ↦ ‖g s‖ₑ) p volume :=
-        TauCeti.eLpNorm_lintegral_mul_le hk hg.aestronglyMeasurable.enorm hp (ae_of_all _ hrow)
+        TauCeti.eLpNorm_lintegral_mul_le hk hg.aestronglyMeasurable.eNorm hp (ae_of_all _ hrow)
           (ae_of_all _ hcol)
     _ = ENNReal.ofReal (2 * K / α) * eLpNorm g p volume := by
       rw [← ENNReal.rpow_add_of_nonneg _ _ (TauCeti.one_sub_toReal_inv_nonneg hp)

@@ -154,9 +154,9 @@ theorem W1p.eLpNorm_value_comp_add_sub_value_le_mul_enorm_gradient (h : E)
     exact isClosed_le
       (((((mu.restrict ((⊤ : Opens E) : Set E)).translateLp p h).toLinearIsometry
         |>.toContinuousLinearMap.comp W1p.valueL) -
-        W1p.valueL).continuous.enorm)
+        W1p.valueL).continuous.eNorm)
       ((ENNReal.continuous_const_mul (by finiteness)).comp
-        W1p.gradientL.continuous.enorm)
+        W1p.gradientL.continuous.eNorm)
   refine w1p0Submodule_subset_of_isClosed hclosed (fun phi => ?_) hu
   simpa only [Set.mem_ofPred_eq, W1p.value_ofTestFunctionₗ, W1p.gradient_ofTestFunctionₗ] using
     eLpNorm_testFunctionLp_comp_add_sub_testFunctionLp_le h phi

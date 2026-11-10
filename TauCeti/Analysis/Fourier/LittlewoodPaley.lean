@@ -480,7 +480,7 @@ theorem exists_eLpNorm_tsum_enorm_fourierMultiplierCLM_sq_rpow_le [Nontrivial V]
       ENNReal.tsum_eq_iSup_nat' (tendsto_add_atTop_nat 1)]
   have hmeas : ∀ n, AEMeasurable (G n) := fun n ↦
     (Finset.aemeasurable_fun_sum _ fun j _ ↦
-      (Lp.aestronglyMeasurable _).enorm.pow_const 2).pow_const _
+      (Lp.aestronglyMeasurable _).eNorm.pow_const 2).pow_const _
   have hmono : ∀ x, Monotone fun n ↦ G n x := fun x a b hab ↦ ENNReal.rpow_le_rpow
     (Finset.sum_le_sum_of_subset (Finset.range_mono (by omega))) (by norm_num)
   simp_rw [hG]

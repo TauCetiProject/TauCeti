@@ -765,7 +765,7 @@ private theorem eLpNorm_rieszPotential_le_mul [FiniteDimensional ℝ E] [μ.IsAd
     (measurable_maximalFunction μ f).aestronglyMeasurable
   calc eLpNorm (rieszPotential μ α f) q μ
       ≤ eLpNorm (fun x => C₀ * N ^ θ * ‖maximalFunction μ f x‖ₑ ^ (1 - θ)) q μ := by
-        refine eLpNorm_mono_eNorm (aemeasurable_rieszPotential hf.enorm).aestronglyMeasurable
+        refine eLpNorm_mono_eNorm (aemeasurable_rieszPotential hf.eNorm).aestronglyMeasurable
           fun x => ?_
         simp only [eNorm_eq_self]
         refine (rieszPotential_le_hedbergConst hα hp hαp f x).trans_eq ?_
@@ -801,7 +801,7 @@ theorem exists_eLpNorm_rieszPotential_le [FiniteDimensional ℝ E] (μ : Measure
     rcases eq_or_ne (eLpNorm f p μ) ∞ with hN | hN
     · simp [hN]
     rw [ENNReal.coe_zero, eLpNorm_exponent_zero (aemeasurable_rieszPotential
-      (aestronglyMeasurable_of_eLpNorm_ne_top hN).enorm).aestronglyMeasurable]
+      (aestronglyMeasurable_of_eLpNorm_ne_top hN).eNorm).aestronglyMeasurable]
     exact zero_le
   -- In dimension zero the potential vanishes.
   rcases subsingleton_or_nontrivial E with hE | hE
@@ -850,7 +850,7 @@ theorem exists_eLpNorm_rieszPotential_le [FiniteDimensional ℝ E] (μ : Measure
       (ENNReal.rpow_pos (pos_iff_ne_zero.2 hK₁₀) hK₁_top).ne')]
     exact le_top
   have hf := aestronglyMeasurable_of_eLpNorm_ne_top hN
-  exact eLpNorm_rieszPotential_le_mul hα hp.le hαp hqp hq hf (hK₁ f hf.enorm)
+  exact eLpNorm_rieszPotential_le_mul hα hp.le hαp hqp hq hf (hK₁ f hf.eNorm)
 
 section VectorValued
 

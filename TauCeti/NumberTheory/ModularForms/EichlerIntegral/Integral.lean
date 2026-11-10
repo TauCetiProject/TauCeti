@@ -162,9 +162,9 @@ theorem integrableOn_eichlerIntegrand (hh : 0 < h) (hfper : Periodic (f ∘ ofCo
   calc ∫⁻ t in Ioi (0 : ℝ), ‖f (ofComplex (τ + t * I)) * (t * I) ^ n * I‖ₑ
       ≤ ∫⁻ t in Ioi 0, ∑' m, ‖F m t‖ₑ :=
         setLIntegral_mono' measurableSet_Ioi fun t ht ↦
-          (congrArg enorm (heq ht)).trans_le eNorm_tsum_le_tsum_eNorm
+          (congrArg eNorm (heq ht)).trans_le eNorm_tsum_le_tsum_eNorm
     _ = ∑' m, ∫⁻ t in Ioi 0, ‖F m t‖ₑ :=
-        lintegral_tsum fun m ↦ (hint m).aestronglyMeasurable.enorm
+        lintegral_tsum fun m ↦ (hint m).aestronglyMeasurable.eNorm
     _ = ENNReal.ofReal (∑' m, ∫ t in Ioi (0 : ℝ), ‖F m t‖) := by
         rw [ENNReal.ofReal_tsum_of_nonneg (fun m ↦ integral_nonneg fun t ↦ norm_nonneg _) hsum]
         simp only [ofReal_integral_norm_eq_lintegral_eNorm (hint _)]

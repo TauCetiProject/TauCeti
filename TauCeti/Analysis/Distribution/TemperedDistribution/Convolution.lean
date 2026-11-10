@@ -86,7 +86,7 @@ private theorem integrable_fourier_sub_mul_smul (σ φ : 𝓢(E, ℂ)) (f : Lp F
     refine lintegral_congr fun x ↦ ?_
     rw [eNorm_smul, eNorm_mul, neg_add_eq_sub]
     ring
-  rw [HasFiniteIntegral, lintegral_prod _ hmeas.enorm]
+  rw [HasFiniteIntegral, lintegral_prod _ hmeas.eNorm]
   simp only [Function.uncurry_apply_pair, hinner]
   -- Hölder's inequality with the conjugate exponent `p'` of `p`, then Young's inequality
   -- `‖H‖_{p'} ≤ ‖φ‖_{p'} ‖𝓕 σ‖_1`.
@@ -94,24 +94,24 @@ private theorem integrable_fourier_sub_mul_smul (σ φ : 𝓢(E, ℂ)) (f : Lp F
   have hpp' : p.HolderConjugate p' := ENNReal.HolderConjugate.inv_one_sub_inv' hp.out
   have hp' : 1 ≤ p' := ENNReal.one_le_inv.2 tsub_le_self
   have hHm : AEMeasurable H volume :=
-    aemeasurable_lconvolution φ.continuous.enorm.aemeasurable
-      (𝓕 σ).continuous.enorm.aemeasurable
+    aemeasurable_lconvolution φ.continuous.eNorm.aemeasurable
+      (𝓕 σ).continuous.eNorm.aemeasurable
   have hfH : AEStronglyMeasurable (fun y ↦ ‖f y‖ₑ * H y) volume :=
-    ((Lp.aestronglyMeasurable f).enorm.mul hHm).aestronglyMeasurable
+    ((Lp.aestronglyMeasurable f).eNorm.mul hHm).aestronglyMeasurable
   calc ∫⁻ y, ‖f y‖ₑ * H y
       = eLpNorm (fun y ↦ ‖f y‖ₑ * H y) 1 volume := by
         rw [eLpNorm_one_eq_lintegral_eNorm hfH]
         simp
     _ ≤ 1 * eLpNorm f p volume * eLpNorm H p' volume :=
         eLpNorm_le_eLpNorm_mul_eLpNorm_of_eNorm (fun v h ↦ ‖v‖ₑ * h) 1
-          (fun hf hH ↦ (hf.enorm.mul hH.aemeasurable).aestronglyMeasurable)
+          (fun hf hH ↦ (hf.eNorm.mul hH.aemeasurable).aestronglyMeasurable)
           (Lp.aestronglyMeasurable f) hHm.aestronglyMeasurable
           (Filter.Eventually.of_forall fun _ ↦ by simp)
     _ ≤ 1 * eLpNorm f p volume *
           (eLpNorm (fun x ↦ ‖φ x‖ₑ) p' volume * eLpNorm (fun x ↦ ‖𝓕 σ x‖ₑ) 1 volume) := by
         gcongr
         exact eLpNorm_lconvolution_le hp' le_rfl (by rw [inv_one, add_comm])
-          φ.continuous.enorm.aemeasurable (𝓕 σ).continuous.enorm.aemeasurable
+          φ.continuous.eNorm.aemeasurable (𝓕 σ).continuous.eNorm.aemeasurable
     _ < ∞ := by
         rw [eLpNorm_eNorm _ φ.continuous.aestronglyMeasurable,
           eLpNorm_eNorm _ (𝓕 σ).continuous.aestronglyMeasurable, one_mul]

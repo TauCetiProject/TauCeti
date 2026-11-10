@@ -75,7 +75,7 @@ private theorem eLpNorm_lintegral_enorm_mul_le
     (hB : ∀ᵐ y ∂ν, ∫⁻ x, ‖K x y‖ₑ ∂μ ≤ B) :
     eLpNorm (fun x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) p μ ≤
       A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹ * eLpNorm u p ν :=
-  (eLpNorm_lintegral_mul_le (k := fun x y ↦ ‖K x y‖ₑ) hK.enorm hu.enorm hp hA hB).trans_eq
+  (eLpNorm_lintegral_mul_le (k := fun x y ↦ ‖K x y‖ₑ) hK.eNorm hu.eNorm hp hA hB).trans_eq
     (by rw [eLpNorm_eNorm _ hu])
 
 /-- For `u ∈ Lᵖ(ν)` the dominating function `x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν` is finite almost
@@ -86,7 +86,7 @@ private theorem ae_lintegral_enorm_mul_lt_top
     (hB : ∀ᵐ y ∂ν, ∫⁻ x, ‖K x y‖ₑ ∂μ ≤ B) :
     ∀ᵐ x ∂μ, ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν < ∞ := by
   have hfin : MemLp (fun x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) p μ :=
-    memLp_lintegral_mul (k := fun x y ↦ ‖K x y‖ₑ) hK.enorm hu.enorm hp hA hB
+    memLp_lintegral_mul (k := fun x y ↦ ‖K x y‖ₑ) hK.eNorm hu.eNorm hp hA hB
   simpa only [eNorm_eq_self] using hfin.ae_enorm_lt_top (zero_lt_one.trans_le hp).ne'
 
 /-- For `u ∈ Lᵖ(ν)`, `1 ≤ p ≤ ∞`, and a kernel whose operator-norm row and column integrals are

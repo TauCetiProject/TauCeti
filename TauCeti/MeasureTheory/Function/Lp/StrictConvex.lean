@@ -93,7 +93,7 @@ theorem strictConvexSpace [Fact (1 ≤ p)] (hp : 1 < p) (hp_top : p ≠ ∞) :
       simp only [F, hs, Pi.smul_apply, ha, Pi.add_apply]
     rw [← lintegral_congr_ae hcoe, hint, hone hmid, ENNReal.one_rpow]
   have hmeas (h : Lp E p μ) : AEMeasurable (fun x ↦ ‖h x‖ₑ ^ p.toReal) μ :=
-    (Lp.aestronglyMeasurable h).enorm.pow_const _
+    (Lp.aestronglyMeasurable h).eNorm.pow_const _
   have hG : ∫⁻ x, G x ∂μ = 1 := by
     rw [lintegral_add_left' ((hmeas f).const_mul _), lintegral_const_mul'' _ (hmeas f),
       lintegral_const_mul'' _ (hmeas g), hint, hint, hone hf, hone hg, ENNReal.one_rpow,

@@ -85,7 +85,7 @@ private theorem measure_inter_ball_rpow_le_perimeter (hn : 2 ≤ finrank ℝ E) 
   have hlow : 2⁻¹ * μ (t ∩ B) ≤ ∫⁻ x in t ∩ B, ‖u x - a‖ₑ ∂μ := by
     rw [← setLIntegral_const]
     refine setLIntegral_mono_ae
-      ((hu.aestronglyMeasurable.sub aestronglyMeasurable_const).enorm.mono_measure
+      ((hu.aestronglyMeasurable.sub aestronglyMeasurable_const).eNorm.mono_measure
         (Measure.restrict_mono inter_subset_right le_rfl)) ?_
     exact Filter.Eventually.of_forall fun x hx => by rw [htb x hx]; exact hb'
   have hup := setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_totalVariationOn_of_convex

@@ -282,7 +282,7 @@ theorem mul_meas_ofReal_lt_le_setLIntegral
   have hvg : v =ᵐ[μ] g := hv.ae_eq_mk
   have hgmeas : Measurable g := hv.measurable_mk
   set S : Set α := {x | ENNReal.ofReal (c * t) < ‖g x‖ₑ} with hSdef
-  have hSmeas : MeasurableSet S := measurableSet_lt measurable_const hgmeas.enorm
+  have hSmeas : MeasurableSet S := measurableSet_lt measurable_const hgmeas.eNorm
   set g₁ : α → G := S.indicator v with hg₁def
   set g₂ : α → G := Sᶜ.indicator v with hg₂def
   have hg₁meas : AEMeasurable g₁ μ := hv.indicator hSmeas
@@ -324,7 +324,7 @@ theorem mul_meas_ofReal_lt_le_setLIntegral
   have hint : ∫⁻ x, ‖g₁ x‖ₑ ∂μ =
       ∫⁻ x in {x | ENNReal.ofReal (c * t) < ‖v x‖ₑ}, ‖v x‖ₑ ∂μ := by
     have henorm : (fun x => ‖v x‖ₑ) =ᵐ[μ] fun x => ‖g x‖ₑ :=
-      hvg.mono fun _ hx => congrArg enorm hx
+      hvg.mono fun _ hx => congrArg eNorm hx
     have hsets : {x | ENNReal.ofReal (c * t) < ‖v x‖ₑ} =ᵐ[μ] S := by
       filter_upwards [henorm] with x hx
       exact congrArg (fun z : ℝ≥0∞ => ENNReal.ofReal (c * t) < z) hx
@@ -371,7 +371,7 @@ theorem lintegral_rpow_le_of_mul_meas_lt_le_of_le_eLpNormEssSup
     ∫⁻ y, T v y ^ p ∂ν ≤
       ENNReal.ofReal (p * c ^ (1 - p) / (p - 1)) * (ENNReal.ofReal d⁻¹ * A) *
         ∫⁻ x, ‖v x‖ₑ ^ p ∂μ := by
-  apply lintegral_rpow_le_of_mul_meas_ofReal_lt_le hv.enorm hTv hp hc
+  apply lintegral_rpow_le_of_mul_meas_ofReal_lt_le hv.eNorm hTv hp hc
   intro t ht
   exact mul_meas_ofReal_lt_le_setLIntegral hv ht hb hc hd hbcd hadd hweak hinfty
 

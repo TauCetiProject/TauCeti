@@ -159,7 +159,7 @@ theorem exists_contDiff_hasCompactSupport_strict_approximation (hu : Integrable 
       (fun _ => zero_le) fun n => ?_
     have htri := lintegral_edist_triangle (μ := μ) (f := w n - v n) (g := u - v n) (h := 0)
       (hwi n).aestronglyMeasurable aestronglyMeasurable_zero
-    simp only [edist_eq_enorm_sub, Pi.sub_apply, sub_sub_sub_cancel_right, sub_zero,
+    simp only [eDist_eq_eNorm_sub, Pi.sub_apply, sub_sub_sub_cancel_right, sub_zero,
       Pi.zero_apply] at htri
     refine htri.trans (add_le_add (hk n).le ?_)
     simp only [enorm_sub_rev (u _)]
@@ -549,7 +549,7 @@ private theorem exists_contDiffOn_lintegral_le_totalVariationOn_le
         setLIntegral_le_lintegral _ _
     _ = ∑' k, ∫⁻ x, ‖mollifiedPiece μ u ζ n k x - ζ k x * u x‖ₑ ∂μ :=
         lintegral_tsum fun k => ((hf k).continuous.aestronglyMeasurable.sub
-          (hv k).aestronglyMeasurable).enorm
+          (hv k).aestronglyMeasurable).eNorm
     _ ≤ ∑' k, ENNReal.ofReal (δ / 2 / 2 ^ k) :=
         tsum_le_tsum fun k => by simpa only [mollifiedPiece] using hnv k
     _ = ENNReal.ofReal δ := by

@@ -127,7 +127,7 @@ private theorem exists_volume_lt_enorm_sub_setAverage_le_tsum [Nonempty ι] [Com
   set C := calderonZygmundCubes g t
   have ht0 : t ≠ 0 := mul_ne_zero two_ne_zero (ENNReal.coe_ne_zero.2 hM0)
   have hgm : AEMeasurable g :=
-    (aemeasurable_indicator_iff hQ).2 (hf.1.sub aestronglyMeasurable_const).enorm
+    (aemeasurable_indicator_iff hQ).2 (hf.1.sub aestronglyMeasurable_const).eNorm
   have hg : ∫⁻ x, g x ≤ M * volume Q := by
     rw [lintegral_indicator hQ, ← measure_mul_setLAverage _ (volume_dyadicCube_ne_top _ _),
       mul_comm]
@@ -179,7 +179,7 @@ private theorem exists_volume_lt_enorm_sub_setAverage_le_tsum [Nonempty ι] [Com
           calc ‖f x - c‖ₑ
               ≤ ‖f x - ⨍ y in dyadicCube q.1 q.2, f y ∂volume‖ₑ +
                   ‖⨍ y in dyadicCube q.1 q.2, f y ∂volume - c‖ₑ := by
-                simpa only [edist_eq_enorm_sub] using edist_triangle (f x) _ c
+                simpa only [eDist_eq_eNorm_sub] using edist_triangle (f x) _ c
             _ ≤ 2 ^ (n + 1) * N * M + 2 ^ (n + 1) * M := add_le_add hle (havg q hq)
             _ = 2 ^ (n + 1) * ↑(N + 1) * M := by push_cast; ring
         · push Not at hmem
@@ -220,7 +220,7 @@ private theorem volume_lt_enorm_sub_setAverage_le_inv_two_pow [CompleteSpace E]
   · -- For `M = 0`, `f` equals its average almost everywhere on `Q₀`.
     have hm : AEMeasurable (fun x => ‖f x - ⨍ y in dyadicCube q₀.1 q₀.2, f y ∂volume‖ₑ)
         (volume.restrict (dyadicCube q₀.1 q₀.2)) :=
-      (hf.1.sub aestronglyMeasurable_const).enorm
+      (hf.1.sub aestronglyMeasurable_const).eNorm
     have h := hM q₀ le_rfl
     rw [ENNReal.coe_zero, nonpos_iff_eq_zero, setLAverage_eq, ENNReal.div_eq_zero_iff,
       or_iff_left (volume_dyadicCube_ne_top _ _), lintegral_eq_zero_iff' hm, Filter.EventuallyEq,
@@ -367,7 +367,7 @@ private theorem setLIntegral_exp_mul_norm_sub_setAverage_volume_le [CompleteSpac
   -- The superlevel sets of `‖f - c‖` at the levels `N 2ⁿ⁺¹ M`.
   set T : ℕ → Set (ι → ℝ) := fun N => {x | 2 ^ (n + 1) * (N : ℝ≥0∞) * M < ‖f x - c‖ₑ}
   have hT (N : ℕ) : NullMeasurableSet (T N) (volume.restrict Q) :=
-    nullMeasurableSet_lt aemeasurable_const (hf.1.sub aestronglyMeasurable_const).enorm
+    nullMeasurableSet_lt aemeasurable_const (hf.1.sub aestronglyMeasurable_const).eNorm
   -- Pointwise, `exp (σ ‖f - c‖) ≤ 1 + ∑_N 1_{T N} ρ^(N + 1)`.
   have hpt (x : ι → ℝ) : ENNReal.ofReal (Real.exp (σ * ‖f x - c‖)) ≤
       1 + ∑' N : ℕ, (T N).indicator (fun _ => r ^ (N + 1)) x := by

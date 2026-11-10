@@ -131,7 +131,7 @@ theorem ContDiff.lintegral_totalVariationOn_line_eq {w : E → ℝ} (hw : ContDi
       ∫⁻ x, ‖fderiv ℝ w x e‖ₑ := by
   simp_rw [TauCeti.totalVariationOn_line_eq_lintegral hw]
   exact (TauCeti.lintegral_eq_lintegral_lintegral_line e he
-    ((hw.continuous_fderiv one_ne_zero).clm_apply continuous_const).enorm.aemeasurable).symm
+    ((hw.continuous_fderiv one_ne_zero).clm_apply continuous_const).eNorm.aemeasurable).symm
 
 namespace TauCeti
 
@@ -203,7 +203,7 @@ private theorem exists_aemeasurable_totalVariationOn_line_le {u : E → ℝ} (hu
     hu.exists_contDiff_hasCompactSupport_strict_approximation (μ := volume)
   have hw1 (n : ℕ) : ContDiff ℝ 1 (w n) := (hw n).1.of_le (by simp)
   obtain ⟨σ, hσ, hFlim⟩ := exists_strictMono_ae_tendsto_lintegral_line e he
-    (fun n => ((hw n).1.continuous.aestronglyMeasurable.sub hu.aestronglyMeasurable).enorm) hL1
+    (fun n => ((hw n).1.continuous.aestronglyMeasurable.sub hu.aestronglyMeasurable).eNorm) hL1
   -- Almost every line restriction of `u` is integrable, by Fubini's theorem.
   have hline : ∀ᵐ y : (ℝ ∙ e)ᗮ, Integrable (fun t : ℝ => u ((y : E) + t • e)) := by
     simpa only [Function.comp_def, orthogonalLineEquiv_apply] using
@@ -214,7 +214,7 @@ private theorem exists_aemeasurable_totalVariationOn_line_le {u : E → ℝ} (hu
   have hVm (j : ℕ) : AEMeasurable (V j) := by
     simp_rw [V, totalVariationOn_line_eq_lintegral (hw1 _)]
     exact aemeasurable_lintegral_line e he
-      (((hw1 _).continuous_fderiv one_ne_zero).clm_apply continuous_const).enorm.aemeasurable
+      (((hw1 _).continuous_fderiv one_ne_zero).clm_apply continuous_const).eNorm.aemeasurable
   -- The transverse weight `√(1 - ‖φ‖²)`.
   set c : (ℝ ∙ e)ᗮ → ℝ≥0∞ := fun y => ENNReal.ofReal √(1 - ‖φ y‖ ^ 2)
   have hcm : AEMeasurable c := (ENNReal.continuous_ofReal.comp (Real.continuous_sqrt.comp

@@ -804,7 +804,7 @@ theorem integrable_fourier_of_posSemidef (F : V → ℂ)
   have htn_lim : Tendsto tn atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
   have hf_meas : ∀ n : ℕ, Measurable fun ξ : V =>
       ‖𝓕 F ξ * Complex.exp (-(tn n * ‖ξ‖ ^ 2 : ℝ))‖ₑ := fun n =>
-    ((hft_cont.mul (continuous_cexp_neg_mul_sq_norm (tn n))).measurable).enorm
+    ((hft_cont.mul (continuous_cexp_neg_mul_sq_norm (tn n))).measurable).eNorm
   have hf_tendsto : ∀ ξ : V, Tendsto
       (fun n : ℕ => ‖𝓕 F ξ * Complex.exp (-(tn n * ‖ξ‖ ^ 2 : ℝ))‖ₑ)
       atTop (𝓝 ‖𝓕 F ξ‖ₑ) := by
@@ -814,7 +814,7 @@ theorem integrable_fourier_of_posSemidef (F : V → ℂ)
     have h3 : Tendsto (fun n : ℕ => 𝓕 F ξ * Complex.exp (-(tn n * ‖ξ‖ ^ 2 : ℝ)))
         atTop (𝓝 (𝓕 F ξ)) := by
       simpa using tendsto_const_nhds.mul h2
-    exact h3.enorm
+    exact h3.eNorm
   have hbound : ∫⁻ ξ, ‖𝓕 F ξ‖ₑ ≤ ENNReal.ofReal (F 0).re := by
     calc ∫⁻ ξ, ‖𝓕 F ξ‖ₑ
         = ∫⁻ ξ, liminf

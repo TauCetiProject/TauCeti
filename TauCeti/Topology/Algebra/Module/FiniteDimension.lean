@@ -24,7 +24,7 @@ intermediate space; the target may be any topological vector space.
 continuous version.
 
 A multilinear map `f : MultilinearMap (RingHom.id
-    𝕜) M N` on finitely many finite-dimensional Hausdorff
+𝕜) M N` on finitely many finite-dimensional Hausdorff
 topological vector spaces over a complete nontrivially normed field is continuous when addition
 and scalar multiplication are continuous in the codomain:
 `MultilinearMap.continuous_of_finiteDimensional`. The codomain need only be an additive

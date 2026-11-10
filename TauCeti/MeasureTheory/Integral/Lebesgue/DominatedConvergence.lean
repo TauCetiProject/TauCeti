@@ -98,19 +98,19 @@ theorem tendsto_lintegral_enorm_smul_sub {E : Type*} [NormedAddCommGroup E] [Nor
   have hC : Tendsto (fun i => ∫⁻ x, ‖c i x - c₀ x‖ₑ * ‖g₀ x‖ₑ ∂ν) atTop (𝓝 0) := by
     simpa using tendsto_lintegral_of_dominated_convergence' (fun x => (M + M) * ‖g₀ x‖ₑ)
       (F := fun i x => ‖c i x - c₀ x‖ₑ * ‖g₀ x‖ₑ) (f := 0)
-      (fun i => ((hc i).sub hc₀).enorm.mul hg₀.enorm)
+      (fun i => ((hc i).sub hc₀).eNorm.mul hg₀.eNorm)
       (fun i => (hcM i).and hc₀M |>.mono fun x ⟨hx, hx'⟩ => by
         dsimp only
         gcongr
         exact enorm_sub_le.trans (add_le_add (eNorm_le_coe.2 hx) (eNorm_le_coe.2 hx')))
       (by rw [lintegral_const_mul' _ _ (by simp)]; exact ENNReal.mul_ne_top (by simp) hg₀int)
       (hlim.mono fun x hx => by
-        simpa using ENNReal.Tendsto.mul_const (hx.sub_const (c₀ x)).enorm (Or.inr eNorm_ne_top))
+        simpa using ENNReal.Tendsto.mul_const (hx.sub_const (c₀ x)).eNorm (Or.inr eNorm_ne_top))
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
     (by simpa using (ENNReal.Tendsto.const_mul (a := M) hgg (Or.inr ENNReal.coe_ne_top)).add hC)
     (fun _ => zero_le) fun i => ?_
   rw [← lintegral_const_mul' _ _ ENNReal.coe_ne_top,
-    ← lintegral_add_left' (f := fun x => M * ‖g i x - g₀ x‖ₑ) (((hg i).sub hg₀).enorm.const_mul _)]
+    ← lintegral_add_left' (f := fun x => M * ‖g i x - g₀ x‖ₑ) (((hg i).sub hg₀).eNorm.const_mul _)]
   refine lintegral_mono_ae ((hcM i).mono fun x hx => ?_)
   calc
     ‖c i x • g i x - c₀ x • g₀ x‖ₑ

@@ -115,7 +115,7 @@ theorem lintegral_enorm_sub_setAverage_rpow_le_of_convex (hΩ : IsOpen Ω) (hΩc
   have hschur : ∫⁻ x in Ω, V x ^ p ∂μ ≤
       ENNReal.ofReal K ^ (p - 1) * ENNReal.ofReal K * ∫⁻ y in Ω, ‖fderiv ℝ u y‖ₑ ^ p ∂μ :=
     lintegral_rpow_lintegral_mul_le (by fun_prop)
-      (hcont.enorm.aemeasurable hΩ.measurableSet) hp
+      (hcont.eNorm.aemeasurable hΩ.measurableSet) hp
       ((ae_restrict_iff' hΩ.measurableSet).2 (ae_of_all _ hmarg))
       ((ae_restrict_iff' hΩ.measurableSet).2 (ae_of_all _ fun y hy => by
         simpa only [k, enorm_sub_rev y] using hmarg y hy))
@@ -182,7 +182,7 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex (hΩ
     simpa only [k, enorm_sub_rev y] using setLIntegral_enorm_sub_rpow_le_finrank hA'm y
   have hmeas : AEMeasurable (Function.uncurry fun x y => ‖fderiv ℝ u y‖ₑ * k x y)
       ((μ.restrict A').prod (μ.restrict Ω)) :=
-    ((hu.continuousOn_fderiv_of_isOpen hΩ le_rfl).enorm.aemeasurable
+    ((hu.continuousOn_fderiv_of_isOpen hΩ le_rfl).eNorm.aemeasurable
       hΩ.measurableSet).comp_snd.mul (by fun_prop)
   have hc : c * ENNReal.ofReal K =
       ENNReal.ofReal (μ.real (ball 0 1) ^ (1 - (n : ℝ)⁻¹) * d ^ n / μ.real S) :=

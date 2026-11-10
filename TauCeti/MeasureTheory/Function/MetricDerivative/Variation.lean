@@ -73,7 +73,7 @@ theorem absolutelyContinuousOnInterval_variationOnFromTo
   have hcontrol {s u : ℝ} (hs : s ∈ uIcc a b) (hu : u ∈ uIcc a b) (hsu : s ≤ u) :
       edist (variationOnFromTo γ (uIcc a b) a s) (variationOnFromTo γ (uIcc a b) a u) ≤
         ∫⁻ t in uIoc s u, TauCeti.metricDerivative γ t := by
-    rw [edist_comm, edist_eq_enorm_sub,
+    rw [edist_comm, eDist_eq_eNorm_sub,
       variationOnFromTo.sub_right hBV.locallyBoundedVariationOn left_mem_uIcc hu hs,
       variationOnFromTo.eq_of_le _ _ hsu, Real.eNorm_eq_ofReal ENNReal.toReal_nonneg,
       ENNReal.ofReal_toReal ((eVariationOn.mono _ inter_subset_left).trans_lt hBV.lt_top).ne]
