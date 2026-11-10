@@ -25,8 +25,8 @@ is combined with a deformation of the surrounding annulus, as in cell reattachme
 * `TauCeti.TopCat.discGlue`: the gluing of a map on the ball of radius `d` and a map on the
   annulus, with a parameter space `P`.
 * `TauCeti.TopCat.diskCylinderPath`: the straight-line homotopy in the cylinder `I × D^k` from
-  `w ↦ (1 - s, w / max d ‖w‖)`, with `s` the radial parameter of `w`, to `w ↦ (0, w)`. It fixes
-  the boundary sphere.
+  `w ↦ (1 - s, w / max d ‖w‖)`, with `s` the radial parameter of `w`, to `w ↦ (0, w)`. For
+  `0 < d < 1` it fixes the boundary sphere, at the bottom `0` of the cylinder.
 -/
 
 public section
