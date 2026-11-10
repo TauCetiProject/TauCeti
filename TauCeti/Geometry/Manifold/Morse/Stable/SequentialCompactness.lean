@@ -89,8 +89,7 @@ component from `x i` to `x (i + 1)` passes through the point `z i`, which is the
 points of the orbits of the subsequence at the times `s i`. The time shifts are ordered:
 `s i' - s i` tends to `+∞` whenever `i < i'`. When `b = r` the chain is the single point `r`. -/
 theorem exists_subseq_tendsto_broken_of_tendsto_mem_stableSet (h : hX.IsMorseSmale)
-    (hf : IsMorse 𝓘(ℝ, E) f) {b r y : M} (hb : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f b = 0)
-    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0) (hy : y ∈ hX.flow.stableSet b) {v : ℕ → M}
+    (hf : IsMorse 𝓘(ℝ, E) f) {b r y : M} (hy : y ∈ hX.flow.stableSet b) {v : ℕ → M}
     (hv : Tendsto v atTop (𝓝 y)) (hvr : ∀ j, v j ∈ hX.flow.stableSet r) :
     ∃ (k : ℕ) (x : Fin (k + 1) → M) (z : Fin k → M) (s : Fin k → ℕ → ℝ) (n : ℕ → ℕ),
       StrictMono n ∧ x 0 = b ∧ x (Fin.last k) = r ∧
@@ -108,28 +107,30 @@ theorem exists_subseq_tendsto_broken_of_tendsto_mem_stableSet (h : hX.IsMorseSma
   | _ m ih =>
     by_cases hbr : b = r
     · subst hbr
-      exact ⟨0, fun _ ↦ b, Fin.elim0, Fin.elim0, id, strictMono_id, rfl, rfl, fun _ ↦ hb,
+      exact ⟨0, fun _ ↦ b, Fin.elim0, Fin.elim0, id, strictMono_id, rfl, rfl,
+        fun _ ↦ hX.mfderiv_eq_zero_of_mem_stableSet hy,
         fun i j hij ↦ (hij.ne (Subsingleton.elim (α := Fin 1) i j)).elim, fun i ↦ i.elim0,
         fun i ↦ i.elim0, fun i ↦ i.elim0, fun i ↦ i.elim0⟩
     obtain ⟨w, hwU, hwb, n₁, t, hn₁, ht, hlim⟩ :=
       hX.exists_tendsto_mem_unstableSet_of_tendsto_mem_stableSet hf hy hv
         (Frequently.of_forall fun j ↦ (Flow.disjoint_stableSet hbr).notMem_of_mem_right (hvr j))
     obtain ⟨ψ, hψ, hn₁ψ⟩ := strictMono_subseq_of_tendsto_atTop hn₁
-    obtain ⟨b', hb', hwb'⟩ := hX.exists_tendsto_atTop hf w
+    obtain ⟨b', -, hwb'⟩ := hX.exists_tendsto_atTop hf w
     have hwb' : w ∈ hX.flow.stableSet b' := Flow.mem_stableSet.2 hwb'
     have hbb' : b ≠ b' := by
       rintro rfl
       exact hwb (hX.eq_of_mem_unstableSet_inter_stableSet hdf ⟨hwU, hwb'⟩)
     have hlt := h.manifoldMorseIndex_lt hf hbb' ⟨w, hwU, hwb'⟩
     obtain ⟨k, x, z, s, n, hn, hx0, hxk, hxc, hxi, hz, hs, hss, hzlim⟩ :=
-      ih _ (hm ▸ hlt) hb' hwb' (hlim.comp hψ.tendsto_atTop)
+      ih _ (hm ▸ hlt) hwb' (hlim.comp hψ.tendsto_atTop)
         (fun j ↦ Flow.isInvariant_stableSet _ r _ (hvr _)) rfl
     have hT : Tendsto (fun j ↦ t (ψ (n j))) atTop atTop :=
       ht.comp (hψ.tendsto_atTop.comp hn.tendsto_atTop)
     refine ⟨k + 1, Fin.cons b x, Fin.cons w z,
       Fin.cons (fun j ↦ t (ψ (n j))) (fun i j ↦ s i j + t (ψ (n j))), n₁ ∘ ψ ∘ n,
       hn₁ψ.comp hn, rfl, by rw [← Fin.succ_last, Fin.cons_succ, hxk],
-      Fin.forall_fin_succ.2 ⟨hb, hxc⟩, ?_, Fin.forall_fin_succ.2 ⟨?_, fun i ↦ ?_⟩,
+      Fin.forall_fin_succ.2 ⟨hX.mfderiv_eq_zero_of_mem_stableSet hy, hxc⟩,
+      ?_, Fin.forall_fin_succ.2 ⟨?_, fun i ↦ ?_⟩,
       Fin.forall_fin_succ.2 ⟨hT, fun i ↦ (hs i).atTop_add_atTop hT⟩, ?_,
       Fin.forall_fin_succ.2 ⟨(hlim.comp hψ.tendsto_atTop).comp hn.tendsto_atTop, fun i ↦ ?_⟩⟩
     · rw [Fin.strictAnti_iff_succ_lt] at hxi ⊢
@@ -158,7 +159,7 @@ then converge to the components on compact time windows, for any compatible unif
 Since the chain runs from `p` to `r`, it has at least one component when `p ≠ r`, and the strict
 decrease of the index bounds the number `k` of components by `ind p - ind r`. -/
 theorem exists_subseq_tendsto_broken (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p r : M}
-    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0) (u : ℕ → M)
+    (u : ℕ → M)
     (hu : ∀ j, u j ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r) :
     ∃ (k : ℕ) (x : Fin (k + 1) → M) (z : Fin k → M) (s : Fin k → ℕ → ℝ) (n : ℕ → ℕ),
       StrictMono n ∧ x 0 = p ∧ x (Fin.last k) = r ∧
@@ -173,10 +174,11 @@ theorem exists_subseq_tendsto_broken (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(�
   obtain ⟨B, hB⟩ := (𝓝 p).exists_antitone_basis
   choose τ hτ using fun j ↦ ((Flow.mem_unstableSet.1 (hu j).1).eventually_mem (hB.mem j)).exists
   have hpp : p ∈ hX.flow.stableSet p := by
-    simp only [Flow.mem_stableSet, hX.flow_apply_of_mfderiv_eq_zero hp]
+    simp only [Flow.mem_stableSet,
+      hX.flow_apply_of_mfderiv_eq_zero (hX.mfderiv_eq_zero_of_mem_unstableSet (hu 0).1)]
     exact tendsto_const_nhds
   obtain ⟨k, x, z, s, n, hn, hx0, hxk, hxc, hxi, hz, -, hss, hzlim⟩ :=
-    exists_subseq_tendsto_broken_of_tendsto_mem_stableSet h hf hp hr hpp (hB.tendsto hτ)
+    exists_subseq_tendsto_broken_of_tendsto_mem_stableSet h hf hpp (hB.tendsto hτ)
       fun j ↦ Flow.isInvariant_stableSet _ r _ (hu j).2
   refine ⟨k, x, z, fun i j ↦ s i j + τ (n j), n, hn, hx0, hxk, hxc, hxi, hz,
     fun i i' hii' ↦ ?_, fun i ↦ ?_⟩
@@ -192,8 +194,7 @@ Moreover, for the component crossing the level `c`, the point `z i` lies on the 
 time shift `s i` tends to `0`, and the representatives of the subsequence themselves converge to
 `z i`. -/
 theorem exists_subseq_tendsto_broken_of_mem_level (h : hX.IsMorseSmale)
-    (hf : IsMorse 𝓘(ℝ, E) f) {p r : M} (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0)
-    (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0) {c : ℝ}
+    (hf : IsMorse 𝓘(ℝ, E) f) {p r : M} {c : ℝ}
     (hreg : ∀ y, f y = c → mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0) (u : ℕ → M)
     (hu : ∀ j, u j ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r ∩ {z | f z = c}) :
     ∃ (k : ℕ) (x : Fin (k + 1) → M) (z : Fin k → M) (s : Fin k → ℕ → ℝ) (n : ℕ → ℕ),
@@ -207,7 +208,7 @@ theorem exists_subseq_tendsto_broken_of_mem_level (h : hX.IsMorseSmale)
         Tendsto (fun j ↦ u (n j)) atTop (𝓝 (z i)) := by
   have hdf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := hf.contMDiff.mdifferentiable (by simp)
   obtain ⟨k, x, z, s, n, hn, hx0, hxk, hxc, hxi, hz, hss, hzlim⟩ :=
-    exists_subseq_tendsto_broken h hf hp hr u fun j ↦ (hu j).1
+    exists_subseq_tendsto_broken h hf u fun j ↦ (hu j).1
   -- The critical values decrease strictly along the chain, from above `c` to below `c`, so some
   -- component crosses the level `c`.
   have hne : ∀ i : Fin k, x i.castSucc ≠ x i.succ := fun i he ↦
@@ -264,7 +265,6 @@ component: the times tend to `+∞` if `y` runs from `p` to `q`, and to `-∞` i
 to `r`. -/
 theorem exists_subseq_unbroken_or_broken_of_manifoldMorseIndex_eq_add_two
     (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f) {p r : M}
-    (hp : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f p = 0) (hr : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f r = 0)
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f r + 2) {c : ℝ}
     (hreg : ∀ y, f y = c → mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f y ≠ 0) (u : ℕ → M)
     (hu : ∀ n, u n ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet r ∩ {z | f z = c}) :
@@ -279,7 +279,7 @@ theorem exists_subseq_unbroken_or_broken_of_manifoldMorseIndex_eq_add_two
             (y ∈ hX.flow.unstableSet q ∩ hX.flow.stableSet r ∧
               z ∈ hX.flow.unstableSet p ∩ hX.flow.stableSet q ∧ Tendsto t atTop atBot))) := by
   obtain ⟨k, x, z, s, n, hn, hx0, hxk, hxc, hxi, hz, hss, hzlim, i, hzi, hsi, hlim⟩ :=
-    exists_subseq_tendsto_broken_of_mem_level h hf hp hr hreg u hu
+    exists_subseq_tendsto_broken_of_mem_level h hf hreg u hu
   -- The index drops strictly along the chain, by `2` in total, so it has one or two components.
   have hk : k = 1 ∨ k = 2 := by
     rcases k with _ | _ | _ | k
