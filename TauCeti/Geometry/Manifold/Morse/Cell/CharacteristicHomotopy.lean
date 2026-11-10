@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicTopology.Disk.Collar
 public import TauCeti.Analysis.InnerProductSpace.Polar.Det
 public import TauCeti.Geometry.Manifold.Morse.Cell.Annulus
 public import TauCeti.Geometry.Manifold.Morse.Cell.NegativeDisc
+public import TauCeti.Geometry.Manifold.Morse.Cell.Width
 
 /-!
 # Comparing the characteristic maps of two Morse charts
@@ -51,6 +52,17 @@ When `det A_uu > 0` the polar factor lies in the special orthogonal group and ca
 the attaching maps `∂D^k → M_{c-ε}` of the two charts are homotopic
 (`TauCeti.homotopic_morseAttachingMap_of_det_pos`).
 
+The two charts may also be used at different widths: `ψ₀` at width `ε₀` and `ψ₁` at width `ε₁`,
+each chart containing only its own closed ball. One compares the charts at the smaller width, where
+both balls fit, and then widens the chart with the larger ball through its negative-coordinate
+annulus (`OpenPartialHomeomorph.homotopic_morseAttachingMap_comp_retraction`). For any retraction
+`r` of the larger lower sublevel onto the smaller one, for instance the retraction of a compact
+critical-free band (`TauCeti.exists_sublevelDeformation`), this gives `α₁ ≃ r ∘ α₀ ∘ h` when
+`ε₀ ≤ ε₁` (`TauCeti.exists_homotopic_morseAttachingMap_retraction_comp_polarFactor`) and
+`r ∘ α₁ ≃ α₀ ∘ h` when `ε₁ ≤ ε₀`
+(`TauCeti.exists_homotopic_retraction_comp_morseAttachingMap_polarFactor`), with the same polar
+factor `h`, which does not depend on the widths.
+
 ## Main results
 
 * `TauCeti.exists_homotopy_morseCharacteristicMap_polarFactor`: the characteristic map of `ψ₁` is
@@ -58,6 +70,13 @@ the attaching maps `∂D^k → M_{c-ε}` of the two charts are homotopic
   of the transition.
 * `TauCeti.homotopic_morseAttachingMap_of_det_pos`: when that negative block preserves
   orientation, the two attaching maps are homotopic.
+* `TauCeti.exists_homotopic_morseAttachingMap_retraction_comp_polarFactor`,
+  `TauCeti.exists_homotopic_retraction_comp_morseAttachingMap_polarFactor`: the comparison of the
+  attaching maps of the two charts at unequal widths, through a retraction of the band between
+  the two lower sublevels.
+* `TauCeti.homotopic_morseAttachingMap_retraction_comp_of_det_pos`,
+  `TauCeti.homotopic_retraction_comp_morseAttachingMap_of_det_pos`: at unequal widths, when the
+  negative block preserves orientation, the polar factor can be dropped.
 
 ## References
 
@@ -350,5 +369,150 @@ theorem homotopic_morseAttachingMap_of_det_pos (hf : ContMDiff Iₘ 𝓘(ℝ) �
   rw [hg']
   exact ContinuousLinearMap.det_polarFactor_eq_one_iff.2 hdet
 
+section UnequalLevels
+
+variable {ε₀ ε₁ : ℝ}
+
+/-- **Attaching maps of two Morse charts at unequal levels, lower level for the first chart.**
+Let `ψ₀` and `ψ₁` be charts with a common centre in which
+`f = c - Σ_{j < k} yⱼ² + Σ_{j ≥ k} yⱼ²`, with `0 < ε₀ ≤ ε₁`, such that the target of `ψ₀`
+contains the closed ball of radius `√ε₀` and that of `ψ₁` the closed ball of radius `√ε₁`, and
+whose transition `ψ₀ ∘ ψ₁⁻¹` is differentiable at the origin. Suppose that `f⁻¹[c - ε₀, c]` is
+compact and that `f` has no critical point with value in `[c - ε₀, c)`. Let `g` be the polar
+factor of the negative block of the derivative of the transition, as in
+`TauCeti.exists_homotopy_morseCharacteristicMap_polarFactor`, and let `r` be any retraction of
+`M_{c-ε₀}` onto `M_{c-ε₁}`. Then the attaching map `α₁ : ∂D^k → M_{c-ε₁}` of `ψ₁` at width `ε₁`
+is homotopic to `r ∘ α₀ ∘ g`, where `α₀` is the attaching map of `ψ₀` at width `ε₀`. The chart
+`ψ₀` need not contain the closed ball of radius `√ε₁`. -/
+theorem exists_homotopic_morseAttachingMap_retraction_comp_polarFactor
+    (hf : ContMDiff Iₘ 𝓘(ℝ) ∞ f)
+    (ψ₀ ψ₁ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (hk : k ≤ n) (h₀ : 0 < ε₀)
+    (hε : ε₀ ≤ ε₁) (hball₀ : closedBall 0 √ε₀ ⊆ ψ₀.target)
+    (hball₁ : closedBall 0 √ε₁ ⊆ ψ₁.target)
+    (hf₀ : ∀ y ∈ ψ₀.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ₀ y j ^ 2)
+    (hf₁ : ∀ y ∈ ψ₁.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ₁ y j ^ 2)
+    (hp : ψ₀.symm 0 = ψ₁.symm 0) (hT : DifferentiableAt ℝ (fun z ↦ ψ₀ (ψ₁.symm z)) 0)
+    (hcompact : IsCompact (f ⁻¹' Icc (c - ε₀) c))
+    (hreg : ∀ x, c - ε₀ ≤ f x → f x < c → mfderiv Iₘ 𝓘(ℝ) f x ≠ 0)
+    (r : C({x : M | f x ≤ c - ε₀}, {x : M | f x ≤ c - ε₁}))
+    (hr : ∀ x, r (sublevelInclusion f (c - ε₁) (c - ε₀) (sub_le_sub_left hε c) x) = x) :
+    ∃ g : EuclideanSpace ℝ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin k),
+      ⇑g = (ContinuousLinearMap.adjoint
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk)).toContinuousLinearMap ∘L
+        fderiv ℝ (fun z ↦ ψ₀ (ψ₁.symm z)) 0 ∘L
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk)).toContinuousLinearMap).polarFactor ∧
+      (ψ₁.morseAttachingMap hk (h₀.le.trans hε) hball₁ hf₁).hom.Homotopic
+        (r.comp (g.diskBoundaryMap ≫ ψ₀.morseAttachingMap hk h₀.le hball₀ hf₀).hom) := by
+  have hball₁' : closedBall 0 √ε₀ ⊆ ψ₁.target :=
+    (closedBall_subset_closedBall (Real.sqrt_le_sqrt hε)).trans hball₁
+  -- Compare the two charts at the common width `ε₀`, then widen `ψ₁` to `ε₁`.
+  obtain ⟨g, hg, K, hK⟩ := exists_homotopy_morseCharacteristicMap_polarFactor hf ψ₀ ψ₁ hk h₀
+    hball₀ hball₁' hf₀ hf₁ hp hT hcompact hreg
+  refine ⟨g, hg, ?_⟩
+  exact (ψ₁.homotopic_morseAttachingMap_comp_retraction hk h₀.le hε hball₁ hf₁ r hr).symm.trans
+    ((ContinuousMap.Homotopic.refl r).comp
+      (homotopic_morseAttachingMap_diskBoundaryMap_comp hk h₀.le hball₀ hball₁' hf₀ hf₁ K hK))
+
+/-- **Attaching maps of two Morse charts at unequal levels, lower level for the second chart.**
+This is the counterpart of `TauCeti.exists_homotopic_morseAttachingMap_retraction_comp_polarFactor`
+for `0 < ε₁ ≤ ε₀`, where now the target of `ψ₀` contains the closed ball of radius `√ε₀` and that
+of `ψ₁` the closed ball of radius `√ε₁`. Suppose that `f⁻¹[c - ε₁, c]` is compact and that `f` has
+no critical point with value in `[c - ε₁, c)`, and let `r` be any retraction of `M_{c-ε₁}` onto
+`M_{c-ε₀}`. Then `r ∘ α₁` is homotopic to `α₀ ∘ g`, where `α₁` is the attaching map of `ψ₁` at
+width `ε₁`, `α₀` that of `ψ₀` at width `ε₀`, and `g` the polar factor of the negative block of the
+derivative of the transition `ψ₀ ∘ ψ₁⁻¹` at the origin. The chart `ψ₁` need not contain the closed
+ball of radius `√ε₀`. -/
+theorem exists_homotopic_retraction_comp_morseAttachingMap_polarFactor
+    (hf : ContMDiff Iₘ 𝓘(ℝ) ∞ f)
+    (ψ₀ ψ₁ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (hk : k ≤ n) (h₁ : 0 < ε₁)
+    (hε : ε₁ ≤ ε₀) (hball₀ : closedBall 0 √ε₀ ⊆ ψ₀.target)
+    (hball₁ : closedBall 0 √ε₁ ⊆ ψ₁.target)
+    (hf₀ : ∀ y ∈ ψ₀.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ₀ y j ^ 2)
+    (hf₁ : ∀ y ∈ ψ₁.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ₁ y j ^ 2)
+    (hp : ψ₀.symm 0 = ψ₁.symm 0) (hT : DifferentiableAt ℝ (fun z ↦ ψ₀ (ψ₁.symm z)) 0)
+    (hcompact : IsCompact (f ⁻¹' Icc (c - ε₁) c))
+    (hreg : ∀ x, c - ε₁ ≤ f x → f x < c → mfderiv Iₘ 𝓘(ℝ) f x ≠ 0)
+    (r : C({x : M | f x ≤ c - ε₁}, {x : M | f x ≤ c - ε₀}))
+    (hr : ∀ x, r (sublevelInclusion f (c - ε₀) (c - ε₁) (sub_le_sub_left hε c) x) = x) :
+    ∃ g : EuclideanSpace ℝ (Fin k) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin k),
+      ⇑g = (ContinuousLinearMap.adjoint
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk)).toContinuousLinearMap ∘L
+        fderiv ℝ (fun z ↦ ψ₀ (ψ₁.symm z)) 0 ∘L
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk)).toContinuousLinearMap).polarFactor ∧
+      (r.comp (ψ₁.morseAttachingMap hk h₁.le hball₁ hf₁).hom).Homotopic
+        (g.diskBoundaryMap ≫ ψ₀.morseAttachingMap hk (h₁.le.trans hε) hball₀ hf₀).hom := by
+  have hball₀' : closedBall 0 √ε₁ ⊆ ψ₀.target :=
+    (closedBall_subset_closedBall (Real.sqrt_le_sqrt hε)).trans hball₀
+  -- Compare the two charts at the common width `ε₁`, then widen `ψ₀` to `ε₀`.
+  obtain ⟨g, hg, K, hK⟩ := exists_homotopy_morseCharacteristicMap_polarFactor hf ψ₀ ψ₁ hk h₁
+    hball₀' hball₁ hf₀ hf₁ hp hT hcompact hreg
+  refine ⟨g, hg, ?_⟩
+  have hwiden := (ψ₀.homotopic_morseAttachingMap_comp_retraction hk h₁.le hε hball₀ hf₀ r hr).comp
+    (ContinuousMap.Homotopic.refl g.diskBoundaryMap.hom)
+  rw [ContinuousMap.comp_assoc, ← TopCat.hom_comp, ← TopCat.hom_comp] at hwiden
+  exact ((ContinuousMap.Homotopic.refl r).comp
+    (homotopic_morseAttachingMap_diskBoundaryMap_comp hk h₁.le hball₀' hball₁ hf₀ hf₁ K hK)).trans
+    hwiden
+
+/-- **Orientation-compatible Morse charts have homotopic attaching maps at unequal levels, lower
+level for the first chart.** Under the hypotheses of
+`TauCeti.exists_homotopic_morseAttachingMap_retraction_comp_polarFactor`, if the negative block
+of the derivative of the transition `ψ₀ ∘ ψ₁⁻¹` at the origin has positive determinant, then the
+attaching map `α₁ : ∂D^k → M_{c-ε₁}` of `ψ₁` at width `ε₁` is homotopic to `r ∘ α₀`, where `α₀` is
+the attaching map of `ψ₀` at width `ε₀ ≤ ε₁` and `r` is any retraction of `M_{c-ε₀}` onto
+`M_{c-ε₁}`. -/
+theorem homotopic_morseAttachingMap_retraction_comp_of_det_pos (hf : ContMDiff Iₘ 𝓘(ℝ) ∞ f)
+    (ψ₀ ψ₁ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (hk : k ≤ n) (h₀ : 0 < ε₀)
+    (hε : ε₀ ≤ ε₁) (hball₀ : closedBall 0 √ε₀ ⊆ ψ₀.target)
+    (hball₁ : closedBall 0 √ε₁ ⊆ ψ₁.target)
+    (hf₀ : ∀ y ∈ ψ₀.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ₀ y j ^ 2)
+    (hf₁ : ∀ y ∈ ψ₁.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ₁ y j ^ 2)
+    (hp : ψ₀.symm 0 = ψ₁.symm 0) (hT : DifferentiableAt ℝ (fun z ↦ ψ₀ (ψ₁.symm z)) 0)
+    (hcompact : IsCompact (f ⁻¹' Icc (c - ε₀) c))
+    (hreg : ∀ x, c - ε₀ ≤ f x → f x < c → mfderiv Iₘ 𝓘(ℝ) f x ≠ 0)
+    (r : C({x : M | f x ≤ c - ε₀}, {x : M | f x ≤ c - ε₁}))
+    (hr : ∀ x, r (sublevelInclusion f (c - ε₁) (c - ε₀) (sub_le_sub_left hε c) x) = x)
+    (hdet : 0 < (ContinuousLinearMap.adjoint
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk)).toContinuousLinearMap ∘L
+        fderiv ℝ (fun z ↦ ψ₀ (ψ₁.symm z)) 0 ∘L
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk)).toContinuousLinearMap).det) :
+    (ψ₁.morseAttachingMap hk (h₀.le.trans hε) hball₁ hf₁).hom.Homotopic
+      (r.comp (ψ₀.morseAttachingMap hk h₀.le hball₀ hf₀).hom) := by
+  have hball₁' : closedBall 0 √ε₀ ⊆ ψ₁.target :=
+    (closedBall_subset_closedBall (Real.sqrt_le_sqrt hε)).trans hball₁
+  exact (ψ₁.homotopic_morseAttachingMap_comp_retraction hk h₀.le hε hball₁ hf₁ r hr).symm.trans
+    ((ContinuousMap.Homotopic.refl r).comp (homotopic_morseAttachingMap_of_det_pos hf ψ₀ ψ₁ hk h₀
+      hball₀ hball₁' hf₀ hf₁ hp hT hcompact hreg hdet))
+
+/-- **Orientation-compatible Morse charts have homotopic attaching maps at unequal levels, lower
+level for the second chart.** Under the hypotheses of
+`TauCeti.exists_homotopic_retraction_comp_morseAttachingMap_polarFactor`, if the negative block
+of the derivative of the transition `ψ₀ ∘ ψ₁⁻¹` at the origin has positive determinant, then
+`r ∘ α₁` is homotopic to `α₀`, where `α₁` is the attaching map of `ψ₁` at width `ε₁`, `α₀` that
+of `ψ₀` at width `ε₀ ≥ ε₁`, and `r` is any retraction of `M_{c-ε₁}` onto `M_{c-ε₀}`. -/
+theorem homotopic_retraction_comp_morseAttachingMap_of_det_pos (hf : ContMDiff Iₘ 𝓘(ℝ) ∞ f)
+    (ψ₀ ψ₁ : OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (hk : k ≤ n) (h₁ : 0 < ε₁)
+    (hε : ε₁ ≤ ε₀) (hball₀ : closedBall 0 √ε₀ ⊆ ψ₀.target)
+    (hball₁ : closedBall 0 √ε₁ ⊆ ψ₁.target)
+    (hf₀ : ∀ y ∈ ψ₀.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ₀ y j ^ 2)
+    (hf₁ : ∀ y ∈ ψ₁.source, f y = c + ∑ j, (if j.val < k then -1 else 1) * ψ₁ y j ^ 2)
+    (hp : ψ₀.symm 0 = ψ₁.symm 0) (hT : DifferentiableAt ℝ (fun z ↦ ψ₀ (ψ₁.symm z)) 0)
+    (hcompact : IsCompact (f ⁻¹' Icc (c - ε₁) c))
+    (hreg : ∀ x, c - ε₁ ≤ f x → f x < c → mfderiv Iₘ 𝓘(ℝ) f x ≠ 0)
+    (r : C({x : M | f x ≤ c - ε₁}, {x : M | f x ≤ c - ε₀}))
+    (hr : ∀ x, r (sublevelInclusion f (c - ε₀) (c - ε₁) (sub_le_sub_left hε c) x) = x)
+    (hdet : 0 < (ContinuousLinearMap.adjoint
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk)).toContinuousLinearMap ∘L
+        fderiv ℝ (fun z ↦ ψ₀ (ψ₁.symm z)) 0 ∘L
+          (piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk)).toContinuousLinearMap).det) :
+    (r.comp (ψ₁.morseAttachingMap hk h₁.le hball₁ hf₁).hom).Homotopic
+      (ψ₀.morseAttachingMap hk (h₁.le.trans hε) hball₀ hf₀).hom := by
+  have hball₀' : closedBall 0 √ε₁ ⊆ ψ₀.target :=
+    (closedBall_subset_closedBall (Real.sqrt_le_sqrt hε)).trans hball₀
+  exact ((ContinuousMap.Homotopic.refl r).comp (homotopic_morseAttachingMap_of_det_pos hf ψ₀ ψ₁ hk
+    h₁ hball₀' hball₁ hf₀ hf₁ hp hT hcompact hreg hdet)).trans
+    (ψ₀.homotopic_morseAttachingMap_comp_retraction hk h₁.le hε hball₀ hf₀ r hr)
+
+end UnequalLevels
 
 end TauCeti
