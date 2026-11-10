@@ -63,6 +63,13 @@ def frameCkTopology (k : ℕ) : TopologicalSpace (ContMDiffRiemannianMetric IB �
   .induced (fun g : ContMDiffRiemannianMetric IB ∞ F V ↦ g.ofLE (n := ∞) (m := k) (by simp))
     (frameTopology IB k e U hU)
 
+/-- The finite-order topology is induced by forgetting regularity to Cᵏ metrics equipped
+with the section-space topology. -/
+theorem frameCkTopology_def (k : ℕ) :
+    frameCkTopology IB e U hU k =
+      .induced (fun g : ContMDiffRiemannianMetric IB ∞ F V ↦
+        g.ofLE (n := ∞) (m := k) (by simp)) (frameTopology IB k e U hU) := (rfl)
+
 /-- Forgetting regularity embeds smooth metrics with their `C^k` topology into `C^k` metrics
 with the section-space topology. -/
 theorem isEmbedding_ofLE_frameCkTopology (k : ℕ) :
