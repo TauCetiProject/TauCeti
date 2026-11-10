@@ -105,6 +105,7 @@ variable {E' H H' M M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [Fi
   (J : ModelWithCorners ℝ E' H') [TopologicalSpace M] [ChartedSpace H M] [TopologicalSpace M']
   [ChartedSpace H' M']
 
+omit [FiniteDimensional ℝ E] in
 variable {I J} in
 /-- A partial homeomorphism between models of the same finite dimension sends a point read in the
 interior of the first model to a point read in the interior of the second. -/
