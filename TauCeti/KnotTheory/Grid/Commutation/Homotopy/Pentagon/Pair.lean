@@ -97,9 +97,7 @@ theorem exists_left_eq_iff {a' : Fin n} (ha' : a' = a) :
       by simpa only [hb, ht, GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
         hP, P.right_eq] using Q.turn_mem_cIco_bottom_top⟩
   · rintro ⟨hs, ht⟩
-    have ha : a' ≠ finRotate n a' := fun h => by
-      rw [← h, Grid.cIco_self] at hs
-      exact absurd hs (Finset.notMem_empty _)
+    have ha : a' ≠ finRotate n a' := fun h => Grid.ne_of_mem_cIco hs (congrArg _ h)
     let m := x.swapColumns a' (finRotate n a')
     let r := GridRectangleBetween.ofSwapColumns m x a' (finRotate n a') ha
       (GridState.swapColumns_swapColumns _ _ _).symm
@@ -184,9 +182,8 @@ theorem exists_right_eq_iff {a' : Fin n} (ha' : a' = a) :
       by simpa only [hb, ht, GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
         hP, P.left_eq] using Q.turn_mem_cIco_bottom_top⟩
   · rintro ⟨hs, ht⟩
-    have hbc : finRotate n a' ≠ finRotate n (finRotate n a') := fun h => by
-      rw [← h, Grid.cIco_self] at hs
-      exact absurd hs (Finset.notMem_empty _)
+    have hbc : finRotate n a' ≠ finRotate n (finRotate n a') :=
+      fun h => Grid.ne_of_mem_cIco hs (congrArg _ h)
     let m := x.swapColumns (finRotate n a') (finRotate n (finRotate n a'))
     let r := GridRectangleBetween.ofSwapColumns m x (finRotate n a') (finRotate n (finRotate n a'))
       hbc (GridState.swapColumns_swapColumns _ _ _).symm

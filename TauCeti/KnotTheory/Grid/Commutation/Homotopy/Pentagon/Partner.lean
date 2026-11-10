@@ -880,24 +880,10 @@ theorem exists_pentagonPair_of_hasMixedSideOverlap_of_mem_iff {x z : GridState n
           D.toRectangleDecomposition = F.toRectangleDecomposition by
     rcases h with ⟨D, hD, hside, hD'⟩ | ⟨D, hD, hside, hD'⟩
     exacts [⟨D, hD, Or.inl ⟨hside, hD'⟩⟩, ⟨D, hD, Or.inr ⟨hside, hD'⟩⟩]
-  -- The rectangle under a commutation hexagon covers the `X`-marking of the column it cuts away.
-  have hcut : ∀ {u v : GridState n}
-      (P : GridCommutationHexagonBetween C.column C.turnRow s' u v),
-      (P.cutColumn, G.X P.cutColumn) ∈ P.toGridRectangleBetween.toGridRectangle.coveredSquares := by
-    intro u v P
-    cases P with
-    | inl P =>
-      rw [GridCommutationHexagonBetween.cutColumn_inl,
-        GridCommutationHexagonBetween.toGridRectangleBetween_inl]
-      exact P.mk_mem_toGridRectangle_coveredSquares_of_mem hXcol
-    | inr P =>
-      rw [GridCommutationHexagonBetween.cutColumn_inr,
-        GridCommutationHexagonBetween.toGridRectangleBetween_inr]
-      exact P.mk_mem_toGridRectangle_coveredSquares_of_mem hXnext
   rcases F with F | F
-  · exact G.exists_pentagonPair_of_hasMixedSideOverlap_of_inl C C' hcol hturn hXcol hXnext hH hcut
-      hF hnot hmixed
-  · exact G.exists_pentagonPair_of_hasMixedSideOverlap_of_inr C C' hcol hturn hXcol hXnext hH hcut
-      hF hnot hmixed
+  · exact G.exists_pentagonPair_of_hasMixedSideOverlap_of_inl C C' hcol hturn hXcol hXnext hH
+      (fun P => P.cutColumn_X_mem_toGridRectangle_coveredSquares_of_mem hXcol hXnext) hF hnot hmixed
+  · exact G.exists_pentagonPair_of_hasMixedSideOverlap_of_inr C C' hcol hturn hXcol hXnext hH
+      (fun P => P.cutColumn_X_mem_toGridRectangle_coveredSquares_of_mem hXcol hXnext) hF hnot hmixed
 
 end TauCeti.GridDiagram
