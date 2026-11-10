@@ -197,8 +197,10 @@ theorem one_sub_intervalBaseOrbit_sq (C s : ℝ) :
     1 - intervalBaseOrbit C s ^ 2 = sigmoid (-(2 * C * s)) := by
   rw [intervalBaseOrbit_sq_eq_sigmoid, sigmoid_neg]
 
-/-- **The trajectories from `0` to `1` form one orbit**: the flow line through `t ∈ (0, 1)` is the
-trajectory `q` at unit rate, started at the time coordinate of `t`. -/
+/-- **The flow lines through `(0, 1)` lie on one orbit**: the flow line through `t ∈ (0, 1)` is the
+unit-rate reference trajectory `intervalBaseOrbit 1` evaluated at time
+`intervalBaseTimeCoordinate t + C * s`. So for `C > 0` it runs forward from `0` to `1`, for
+`C < 0` it runs backward from `1` to `0`, and for `C = 0` it is stationary. -/
 theorem intervalBaseFlow_eq_intervalBaseOrbit (C s : ℝ) {t : ℝ} (ht : t ∈ Ioo 0 1) :
     intervalBaseFlow C s t = intervalBaseOrbit 1 (intervalBaseTimeCoordinate t + C * s) := by
   rw [← intervalBaseTimeCoordinate_intervalBaseFlow C s ht,
