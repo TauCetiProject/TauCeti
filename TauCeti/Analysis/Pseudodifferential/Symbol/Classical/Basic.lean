@@ -311,6 +311,14 @@ theorem exists_sub_cutoffSymbol_principal (χ : FrequencyCutoff (CoordinateSpace
       r.coefficient = (a.toSymbol - cutoffSymbol χ a.principal).coefficient :=
   ⟨Symbol.inclusion (by simp) (a.remainder χ 1), funext fun p => by simp⟩
 
+/-- At frequencies of norm at least `2`, where the cutoff is `1`, a classical symbol is its
+principal symbol plus the remainder of order `m - 1`. -/
+theorem coefficient_toSymbol_eq_principal_add_remainder (χ : FrequencyCutoff (CoordinateSpace n))
+    {x ξ : CoordinateSpace n} (hξ : 2 ≤ ‖ξ‖) :
+    a.toSymbol.coefficient (x, ξ) =
+      a.principal.coefficient (x, ξ) + (a.remainder χ 1).coefficient (x, ξ) := by
+  simp [χ.apply_eq_one_of_two_le_norm hξ]
+
 @[simp]
 theorem principal_zero : (0 : ClassicalSymbol n V W m).principal = 0 :=
   castDegree_zero _

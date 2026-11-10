@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.Elliptic
-public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Classical.Basic
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
@@ -21,9 +21,10 @@ principal symbol of their parametrices.
 
 For symbols that are not classical, ellipticity is instead phrased through the full symbol: `a` is
 invertible at large frequencies, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` there, locally uniformly in `x`
-(here `⟨ξ⟩ = (1 + ‖ξ‖²)^(1/2)`). This is the hypothesis under which the cut-off inverse
-`TauCeti.Symbol.cutoffInverse` is a symbol of order `-m`. The main result of this file is that the
-two notions agree for classical symbols
+(here `⟨ξ⟩ = (1 + ‖ξ‖²)^(1/2)`). This supports a local cut-off inverse construction on each
+compact set of positions; using the existing `TauCeti.Symbol.cutoffInverse` globally requires in
+addition one radius common to all positions. The main result of this file is that the two notions
+agree for classical symbols
 (`TauCeti.ClassicalSymbol.isElliptic_iff_exists_isInvertible_and_norm_inverse_le`): the full
 symbol differs from its principal symbol by a symbol of order `m - 1`, which is small against
 `a_m⁻¹ = O(⟨ξ⟩^(-m))` at large frequencies, and conversely homogeneity transports invertibility at
@@ -133,39 +134,6 @@ theorem existsUnique_inversePrincipalSymbol [CompleteSpace V] {a : ClassicalSymb
 
 /-! ### Ellipticity through the full symbol -/
 
-/-- Away from the unit ball, `c ⟨ξ⟩^(-m) ⟨ξ⟩^(m - 1) = c ⟨ξ⟩⁻¹` is at most `1 / 2` once
-`2 c ≤ ‖ξ‖`. -/
-private theorem mul_rpow_mul_rpow_le_half {c : ℝ} (hc : 0 ≤ c) {ξ : CoordinateSpace n}
-    (h1 : 1 ≤ ‖ξ‖) (hc' : 2 * c ≤ ‖ξ‖) :
-    c * (1 + ‖ξ‖ ^ 2) ^ (-m / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) ≤ 1 / 2 := by
-  have h0 : 0 < ‖ξ‖ := one_pos.trans_le h1
-  have hexp : -m / 2 + (m - 1) / 2 = -((1 : ℕ) : ℝ) / 2 := by
-    push_cast
-    ring
-  rw [mul_assoc, ← Real.rpow_add (by positivity), hexp]
-  calc c * (1 + ‖ξ‖ ^ 2) ^ (-((1 : ℕ) : ℝ) / 2) ≤ c * (1 / ‖ξ‖ ^ 1) := by
-        gcongr
-        exact Real.one_add_sq_rpow_neg_le h0 1
-    _ ≤ 1 / 2 := by
-        rw [pow_one, mul_one_div, div_le_iff₀ h0]
-        linarith
-
-/-- At frequencies of norm at least `2`, a classical symbol is its principal symbol plus the
-remainder of order `m - 1`. -/
-private theorem coefficient_toSymbol_eq_principal_add (a : ClassicalSymbol n V W m)
-    (χ : FrequencyCutoff (CoordinateSpace n)) {x ξ : CoordinateSpace n} (hξ : 2 ≤ ‖ξ‖) :
-    a.toSymbol.coefficient (x, ξ) =
-      a.principal.coefficient (x, ξ) + (a.remainder χ 1).coefficient (x, ξ) := by
-  simp [χ.apply_eq_one_of_two_le_norm hξ]
-
-/-- The remainder of order `m - 1` after the principal term satisfies its estimate. -/
-private theorem exists_norm_remainder_le (a : ClassicalSymbol n V W m)
-    (χ : FrequencyCutoff (CoordinateSpace n)) {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
-    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
-      ‖(a.remainder χ 1).coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) := by
-  obtain ⟨C, hC, h⟩ := (a.remainder χ 1).exists_bound K hK [] []
-  exact ⟨C, hC, fun x hx ξ => by simpa using h x hx ξ⟩
-
 /-- **Elliptic classical symbols are invertible at large frequencies.** On each compact set `K` of
 positions, an elliptic classical symbol `a` of order `m` is invertible at all frequencies of norm
 at least some `R`, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩^(-m)` there. -/
@@ -178,7 +146,7 @@ theorem IsElliptic.exists_isInvertible_and_norm_inverse_le [CompleteSpace V]
   -- so `‖a_m⁻¹‖ ‖r‖ ≤ C₁ C₂ ⟨ξ⟩⁻¹ ≤ 1 / 2` and `‖a⁻¹‖ ≤ 2 ‖a_m⁻¹‖`.
   have hp := isElliptic_principal_iff.2 ha
   obtain ⟨C₀, hC₀, hq⟩ := (a.principal.inverse hp).exists_norm_coefficient_le hK
-  obtain ⟨C₂, hC₂, hr⟩ := a.exists_norm_remainder_le default hK
+  obtain ⟨C₂, hr⟩ := (a.remainder default 1).exists_norm_coefficient_le K hK
   set C₁ := C₀ * 2 ^ (|m| / 2)
   refine ⟨max 2 (2 * (C₁ * C₂)), 2 * C₁, fun x hx ξ hξ => ?_⟩
   have h2 : 2 ≤ ‖ξ‖ := (le_max_left _ _).trans hξ
@@ -195,11 +163,11 @@ theorem IsElliptic.exists_isInvertible_and_norm_inverse_le [CompleteSpace V]
       ‖(a.remainder default 1).coefficient (x, ξ)‖ ≤ 1 / 2 :=
     calc _ ≤ C₁ * (1 + ‖ξ‖ ^ 2) ^ (-m / 2) * (C₂ * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2)) := by
           gcongr
-          exact hr x hx ξ
+          simpa using hr x hx ξ
       _ = C₁ * C₂ * (1 + ‖ξ‖ ^ 2) ^ (-m / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2) := by ring
       _ ≤ 1 / 2 :=
-          mul_rpow_mul_rpow_le_half (by positivity) (by linarith) ((le_max_right _ _).trans hξ)
-  rw [a.coefficient_toSymbol_eq_principal_add default h2]
+          Real.mul_one_add_sq_rpow_mul_one_add_sq_rpow_le_half ((le_max_right _ _).trans hξ) m
+  rw [a.coefficient_toSymbol_eq_principal_add_remainder default h2]
   refine ⟨hL.add (hsmall.trans_lt (by norm_num)), ?_⟩
   calc _ ≤ ‖(a.principal.coefficient (x, ξ)).inverse‖ /
         (1 - ‖(a.principal.coefficient (x, ξ)).inverse‖ *
@@ -222,7 +190,7 @@ theorem isElliptic_of_forall_exists_isInvertible_and_norm_inverse_le [CompleteSp
     a.IsElliptic := by
   refine isElliptic_iff.2 fun x ξ hξ => ?_
   obtain ⟨R, C, hRC⟩ := h x
-  obtain ⟨C₂, hC₂, hr⟩ := a.exists_norm_remainder_le default isCompact_singleton (K := {x})
+  obtain ⟨C₂, hr⟩ := (a.remainder default 1).exists_norm_coefficient_le {x} isCompact_singleton
   -- Rescale `ξ` to a frequency `η = t ξ` of norm `S`, so large that `a(x, η)` is invertible and
   -- `‖a(x, η)⁻¹‖ ‖r(x, η)‖ < 1`; then `a_m(x, η) = a(x, η) - r(x, η)` is invertible.
   set S := max (max R 2) (2 * (max C 0 * C₂))
@@ -240,14 +208,13 @@ theorem isElliptic_of_forall_exists_isInvertible_and_norm_inverse_le [CompleteSp
           (C₂ * (1 + ‖t • ξ‖ ^ 2) ^ ((m - 1) / 2)) := by
           gcongr
           · exact hAb.trans (by gcongr; exact le_max_left _ _)
-          · exact hr x rfl _
+          · simpa using hr x rfl (t • ξ)
       _ = max C 0 * C₂ * (1 + ‖t • ξ‖ ^ 2) ^ (-m / 2) * (1 + ‖t • ξ‖ ^ 2) ^ ((m - 1) / 2) := by
           ring
-      _ ≤ 1 / 2 := mul_rpow_mul_rpow_le_half (by positivity) (by linarith)
-          (hη ▸ le_max_right _ _)
+      _ ≤ 1 / 2 := Real.mul_one_add_sq_rpow_mul_one_add_sq_rpow_le_half (hη ▸ le_max_right _ _) m
       _ < 1 := by norm_num
   have hp := hA.add hsmall
-  rw [a.coefficient_toSymbol_eq_principal_add default (hη ▸ hS2), add_neg_cancel_right,
+  rw [a.coefficient_toSymbol_eq_principal_add_remainder default (hη ▸ hS2), add_neg_cancel_right,
     a.principal.homogeneous x ξ t ht, ← Complex.coe_smul,
     ContinuousLinearMap.isInvertible_smul_iff (by exact_mod_cast (Real.rpow_pos_of_pos ht m).ne')]
     at hp
