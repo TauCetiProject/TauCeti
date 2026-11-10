@@ -84,8 +84,8 @@ In the remaining results, `B` is free of finite rank over `A`.
   sections if and only if the norm form factors into linear forms,
   `Norm (∑ j, Xⱼ ⊗ bⱼ) = ∏ i, ∑ j, sᵢ(bⱼ) • Xⱼ` in `MvPolynomial κ A`.
 * `TauCeti.IsFullSetOfSections.trace_eq_sum`: the trace is the sum of the values at the sections.
-* `TauCeti.IsFullSetOfSections.finite_of_nonempty`: over a nontrivial ring, a free algebra with a
-  nonempty full set of sections is finite.
+* `TauCeti.IsFullSetOfSections.finite_of_nonempty`: a free algebra with a nonempty full set of
+  sections is finite.
 * `TauCeti.IsFullSetOfSections.card_eq_finrank`: over a nontrivial ring, a full set of sections
   has exactly `rank B` members.
 * `TauCeti.isFullSetOfSections_evalAlgHom`: the coordinate projections of `ι → A`, the sections
@@ -476,11 +476,15 @@ section NonFinite
 
 variable [Module.Free A B] [Nontrivial A]
 
-/-- Over a nontrivial ring, a free algebra with a nonempty full set of sections is finite: for an
-algebra that is not finite, the norm is `1`, which contradicts the vanishing of the norm of `0`
-at a section. -/
+omit [Nontrivial A] in
+/-- A free algebra with a nonempty full set of sections is finite: over the zero ring every
+module is trivial, and over a nontrivial ring, for an algebra that is not finite the norm is `1`,
+which contradicts the vanishing of the norm of `0` at a section. -/
 theorem IsFullSetOfSections.finite_of_nonempty [Nonempty ι] (h : IsFullSetOfSections s) :
     Module.Finite A B := by
+  rcases subsingleton_or_nontrivial A with hA | hA
+  · have := Module.subsingleton A B
+    exact Module.Finite.of_finite
   by_contra hfin
   have : Module.Free A (A ⊗[A] B) := Module.Free.of_equiv (TensorProduct.lid A B).symm
   have hn : ¬ Module.Finite A (A ⊗[A] B) :=
