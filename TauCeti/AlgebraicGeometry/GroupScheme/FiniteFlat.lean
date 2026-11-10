@@ -25,9 +25,9 @@ affine base, see `TauCeti.FiniteLocallyFreeCommAffineGroupSchemeCat`.
   `Over S`, with its commutative group-object instances `grpObj` and `isCommMonObj`.
 * `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.Section`: sections of the structure
   morphism.
-* `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.Hom` and
-  `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.Iso`: homomorphisms and isomorphisms, as
-  morphisms and isomorphisms of the underlying group objects in `Grp (Over S)`.
+* `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.Hom`: group-scheme homomorphisms, giving
+  the category structure. The functor `toGrp` to `Grp (Over S)` is fully faithful.
+* The comparison with the affine category is in `GroupScheme/FiniteFlat/Affine.lean`.
 * `TauCeti.AlgebraicGeometry.FiniteFlatCommGroupScheme.baseChange`: base change along a morphism
   of schemes, with `grpMk_baseChange` identifying its group object with the image of that of `G`
   under `(Over.pullback f).mapGrp`, and `Hom.baseChange`: base change of homomorphisms, with
@@ -101,10 +101,40 @@ laws. -/
 abbrev Hom {S : Scheme.{u}} (G H : FiniteFlatCommGroupScheme S) : Type u :=
   Grp.mk G.toOver ⟶ Grp.mk H.toOver
 
-/-- An isomorphism of finite flat commutative group schemes over `S`: an isomorphism of the
-underlying group objects in `Grp (Over S)`. -/
-abbrev Iso {S : Scheme.{u}} (G H : FiniteFlatCommGroupScheme S) : Type u :=
-  Grp.mk G.toOver ≅ Grp.mk H.toOver
+/-- Finite locally free commutative group schemes form a category with their group-scheme
+homomorphisms as morphisms. -/
+noncomputable instance {S : Scheme.{u}} : Category (FiniteFlatCommGroupScheme S) where
+  Hom G H := G.Hom H
+  id G := 𝟙 (Grp.mk G.toOver)
+  comp f g := f ≫ g
+
+/-- The fully faithful functor forgetting finiteness and commutativity of a finite locally free
+commutative group scheme. The object map is exposed so that its morphisms are the existing
+`Hom` type without transports. -/
+@[expose]
+noncomputable def toGrp (S : Scheme.{u}) : FiniteFlatCommGroupScheme S ⥤ Grp (Over S) where
+  obj G := Grp.mk G.toOver
+  map f := f
+
+/-- The forgetful functor retains the underlying group object. -/
+@[simp]
+theorem toGrp_obj {S : Scheme.{u}} (G : FiniteFlatCommGroupScheme S) :
+    (toGrp S).obj G = Grp.mk G.toOver :=
+  (rfl)
+
+/-- The forgetful functor retains the underlying homomorphism. -/
+@[simp]
+theorem toGrp_map {S : Scheme.{u}} {G H : FiniteFlatCommGroupScheme S} (f : G ⟶ H) :
+    (toGrp S).map f = f :=
+  (rfl)
+
+/-- Forgetting finiteness and commutativity does not change group-scheme homomorphisms. -/
+noncomputable def fullyFaithfulToGrp (S : Scheme.{u}) : (toGrp S).FullyFaithful where
+  preimage f := f
+
+instance {S : Scheme.{u}} : (toGrp S).Full := (fullyFaithfulToGrp S).full
+
+instance {S : Scheme.{u}} : (toGrp S).Faithful := (fullyFaithfulToGrp S).faithful
 
 /-- The base change of a finite flat commutative group scheme `G` over `S` along `f : T ⟶ S`: the
 fibre product of `G.structureMap` and `f`, with the second projection as structure morphism and
