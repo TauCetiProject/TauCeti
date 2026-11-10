@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.FiberProduct.Composition
-public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Composition
-import TauCeti.Geometry.Manifold.Immersion.Differential
+public import TauCeti.Geometry.Symplectic.Lagrangian.Composition
+import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
 # Transverse composition of Lagrangian correspondences
@@ -34,7 +34,8 @@ immersion: its differential is injective exactly when the composition has no **e
 composites over transverse fibre products live in
 `TauCeti.Geometry.Manifold.FiberProduct.Composition`.
 A transverse composite without excess that is a topological embedding is therefore a Lagrangian
-correspondence `M₁ ⇝ M₃`.
+correspondence `M₁ ⇝ M₃`; this embedded case is in
+`TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Composition`.
 
 ## Main results
 
@@ -42,8 +43,6 @@ In the namespace `TauCeti.SmoothTwoForm.IsNondegenerate`:
 
 * `IsLagrangianMap.relComp_transverseFiberProduct`: the transverse composite of Lagrangian maps
   is Lagrangian.
-* `IsLagrangianMap.isLagrangianEmbedding_relComp_transverseFiberProduct`: a transverse composite
-  without excess which is a topological embedding is a Lagrangian correspondence.
 
 ## References
 
@@ -118,32 +117,6 @@ theorem IsLagrangianMap.relComp_transverseFiberProduct
       exists_mfderiv_eq_of_transverseFiberProduct (by simp) hf.snd hg.fst htrans p u w (by
         rwa [(hf.mdifferentiable (by simp) p.1.1).mfderiv_snd_apply,
           (hg.mdifferentiable (by simp) p.1.2).mfderiv_fst_apply])
-
-/-- **Embedded transverse composition of Lagrangian correspondences.** Let `f : L₁ → M₁ × M₂` and
-`g : L₂ → M₂ × M₃` be smooth Lagrangian maps for the twisted products, such that `x ↦ (f x).2`
-and `y ↦ (g y).1` are transverse, and suppose the composition has no excess: every tangent pair
-`(u, w)` with `(df u).2 = (dg w).1`, `(df u).1 = 0` and `(dg w).2 = 0` is zero. If the composite
-`(x, y) ↦ ((f x).1, (g y).2)` on the fibre product `L₁ ×_{M₂} L₂` is a topological embedding, it
-is a Lagrangian correspondence `M₁ ⇝ M₃`. -/
-theorem IsLagrangianMap.isLagrangianEmbedding_relComp_transverseFiberProduct
-    [I₁.Boundaryless] [I₃.Boundaryless] (hfL : (hσ₁.twistedProd hσ₂).IsLagrangianMap K₁ f)
-    (hgL : (hσ₂.twistedProd hσ₃).IsLagrangianMap K₂ g)
-    (hexc : ∀ (p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1}) u w,
-      (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).2 = (mfderiv K₂ (I₂.prod I₃) g p.1.2 w).1 →
-        (mfderiv K₁ (I₁.prod I₂) f p.1.1 u).1 = 0 → (mfderiv K₂ (I₂.prod I₃) g p.1.2 w).2 = 0 →
-          u = 0 ∧ w = 0)
-    (hemb : Topology.IsEmbedding
-      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2))) :
-    letI := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
-    (hσ₁.twistedProd hσ₃).IsLagrangianEmbedding KF
-      (fun p : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ ((f p.1.1).1, (g p.1.2).2)) := by
-  let := transverseFiberProductChartedSpace (by simp) hf.snd hg.fst htrans
-  have := isManifold_transverseFiberProduct (by simp) hf.snd hg.fst htrans
-  exact ⟨(contMDiff_relComp_transverseFiberProduct hf hg htrans).isImmersion_of_injective_mfderiv
-      (by simp) fun p ↦
-        (injective_mfderiv_relComp_transverseFiberProduct_iff hf hg htrans p).2 (hexc p),
-    hemb, hfL.relComp_transverseFiberProduct (hσ₁ := hσ₁) (hσ₂ := hσ₂) (hσ₃ := hσ₃) hf hg htrans
-      hgL⟩
 
 end SmoothTwoForm.IsNondegenerate
 
