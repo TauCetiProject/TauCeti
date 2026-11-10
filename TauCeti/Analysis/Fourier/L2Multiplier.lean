@@ -40,7 +40,11 @@ defined, it agrees with Mathlib's multipliers.
 * `MeasureTheory.Lp.norm_fourierMultiplierCLM_le`: the bound `‖T_m‖ ≤ ‖m‖_∞`.
 * `MeasureTheory.Lp.fourierMultiplierCLM_compL_fourierMultiplierCLM`: `T_{m₁} ∘ T_{m₂} =
   T_{m₁ m₂}`, with linearity in the symbol and `T_c = c • id` for a constant symbol.
-* `MeasureTheory.Lp.adjoint_fourierMultiplierCLM`: the adjoint of `T_m` is `T_{star m}`.
+* `MeasureTheory.Lp.adjoint_fourierMultiplierCLM`: the adjoint of `T_m` is `T_{star m}`, so a
+  real symbol gives a self-adjoint multiplier
+  (`MeasureTheory.Lp.isSelfAdjoint_fourierMultiplierCLM`), and multipliers whose symbols have
+  disjoint supports have orthogonal ranges
+  (`MeasureTheory.Lp.inner_fourierMultiplierCLM_fourierMultiplierCLM_eq_zero`).
 * `SchwartzMap.toLp_fourierMultiplierCLM_eq` and
   `MeasureTheory.Lp.fourierMultiplierCLM_toTemperedDistribution_eq`: for a bounded symbol of
   temperate growth, `T_m` agrees with Mathlib's multipliers on Schwartz functions and, as a
@@ -189,6 +193,22 @@ theorem adjoint_fourierMultiplierCLM :
   filter_upwards [coeFn_lpSMul (r := 2) (star m) (𝓕 f), coeFn_lpSMul (r := 2) m (𝓕 g),
     Lp.coeFn_star m] with x h₁ h₂ h₃
   simp [h₁, h₂, h₃, inner_smul_left, inner_smul_right]
+
+variable {m} in
+/-- A real symbol, `star m = m`, gives a self-adjoint multiplier. -/
+theorem isSelfAdjoint_fourierMultiplierCLM (hm : star m = m) :
+    IsSelfAdjoint (fourierMultiplierCLM (E := E) F m) := by
+  rw [ContinuousLinearMap.isSelfAdjoint_iff', adjoint_fourierMultiplierCLM, hm]
+
+variable {m₁ m₂} in
+/-- Multipliers whose symbols have disjoint supports have orthogonal ranges: if
+`star m₁ • m₂ = 0`, then `⟪T_{m₁} f, T_{m₂} g⟫ = 0`. -/
+theorem inner_fourierMultiplierCLM_fourierMultiplierCLM_eq_zero
+    (h : (star m₁ • m₂ : Lp ℂ ∞ (volume : Measure E)) = 0) (f g : Lp F 2 (volume : Measure E)) :
+    ⟪fourierMultiplierCLM F m₁ f, fourierMultiplierCLM F m₂ g⟫ = 0 := by
+  rw [← adjoint_inner_right, adjoint_fourierMultiplierCLM,
+    fourierMultiplierCLM_fourierMultiplierCLM_apply, h, fourierMultiplierCLM_zero, zero_apply,
+    inner_zero_right]
 
 /-! ### Comparison with multipliers on Schwartz functions and tempered distributions -/
 

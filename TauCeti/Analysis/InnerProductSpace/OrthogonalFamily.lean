@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Orthogonal
 public import Mathlib.Analysis.InnerProductSpace.PiL2
+import Mathlib.Algebra.Order.Chebyshev
 
 /-!
 # Orthogonal families from orthogonal vectors
@@ -18,6 +19,12 @@ identity `OrthogonalFamily.norm_sum` gives `‖∑ i ∈ s, v i‖² = ∑ i ∈
 orthogonal vectors, and passing to the limit gives the same identity for a convergent series of
 pairwise orthogonal vectors. Normalizing the nonzero vectors of a pairwise orthogonal family gives
 an orthonormal family.
+
+The residue classes modulo `L` give the almost-orthogonal version: if `⟪v i, v j⟫ = 0` whenever
+`i + L ≤ j`, then `‖∑ i ∈ s, v i‖² ≤ L ∑ i ∈ s, ‖v i‖²`
+(`TauCeti.norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero`). This is the form in which a
+decomposition into pieces with almost disjoint frequency supports, such as Littlewood–Paley
+blocks, is controlled in `L²`.
 
 Orthogonality also gives linear independence: a nonzero vector followed by a linearly independent
 family of vectors orthogonal to it is linearly independent
@@ -58,6 +65,49 @@ theorem hasSum_norm_sq_of_pairwise_inner_eq_zero {v : ι → E}
     HasSum (fun i ↦ ‖v i‖ ^ 2) (‖y‖ ^ 2) :=
   ((Filter.Tendsto.norm hy).pow 2).congr fun s ↦
     norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero hv s
+
+/-- **Almost orthogonal vectors.** If `⟪v i, v j⟫ = 0` whenever `i + L ≤ j`, then
+`‖∑ i ∈ s, v i‖² ≤ L ∑ i ∈ s, ‖v i‖²`: the vectors whose indices have a fixed residue modulo `L`
+are pairwise orthogonal, and there are `L` residues. -/
+theorem norm_sum_sq_le_mul_sum_norm_sq_of_inner_eq_zero {v : ℕ → E} {L : ℕ}
+    (hv : ∀ i j, i + L ≤ j → ⟪v i, v j⟫_𝕜 = 0) (s : Finset ℕ) :
+    ‖∑ i ∈ s, v i‖ ^ 2 ≤ L * ∑ i ∈ s, ‖v i‖ ^ 2 := by
+  rcases Nat.eq_zero_or_pos L with rfl | hL
+  · have h0 : ∀ i, v i = 0 := fun i ↦ inner_self_eq_zero.1 (hv i i (by simp))
+    simp [h0]
+  -- Distinct indices with the same residue modulo `L` are at least `L` apart.
+  have hgap : ∀ i j, i % L = j % L → i < j → i + L ≤ j := fun i j hij h ↦ by
+    have := Nat.le_of_dvd (Nat.sub_pos_of_lt h) ((Nat.modEq_iff_dvd' h.le).1 hij)
+    omega
+  -- Split the family by residues modulo `L`: each class is pairwise orthogonal.
+  set w : ℕ → ℕ → E := fun r i ↦ if i % L = r then v i else 0
+  have hw : ∀ r, Pairwise fun i j ↦ ⟪w r i, w r j⟫_𝕜 = 0 := by
+    intro r i j hij
+    simp only [w]
+    split_ifs with hi hj
+    · rcases lt_or_gt_of_ne hij with h | h
+      · exact hv i j (hgap i j (hi.trans hj.symm) h)
+      · rw [← inner_conj_symm, hv j i (hgap j i (hj.trans hi.symm) h), map_zero]
+    all_goals simp
+  have hsum : ∀ r, ∑ i ∈ s, w r i = ∑ i ∈ s with i % L = r, v i := fun r ↦
+    (Finset.sum_filter _ _).symm
+  have hsq : ∀ r, ∑ i ∈ s, ‖w r i‖ ^ 2 = ∑ i ∈ s with i % L = r, ‖v i‖ ^ 2 := fun r ↦ by
+    rw [Finset.sum_filter]
+    exact Finset.sum_congr rfl fun i _ ↦ by simp only [w]; split_ifs <;> simp
+  have hmaps : ∀ i ∈ s, i % L ∈ Finset.range L := fun i _ ↦
+    Finset.mem_range.2 (Nat.mod_lt i hL)
+  calc ‖∑ i ∈ s, v i‖ ^ 2
+      = ‖∑ r ∈ Finset.range L, ∑ i ∈ s, w r i‖ ^ 2 := by
+        simp_rw [hsum, Finset.sum_fiberwise_of_maps_to hmaps]
+    _ ≤ (∑ r ∈ Finset.range L, ‖∑ i ∈ s, w r i‖) ^ 2 := by
+        gcongr
+        exact norm_sum_le _ _
+    _ ≤ L * ∑ r ∈ Finset.range L, ‖∑ i ∈ s, w r i‖ ^ 2 := by
+        simpa using sq_sum_le_card_mul_sum_sq (s := Finset.range L)
+          (f := fun r ↦ ‖∑ i ∈ s, w r i‖)
+    _ = L * ∑ i ∈ s, ‖v i‖ ^ 2 := by
+        simp_rw [norm_sum_sq_eq_sum_norm_sq_of_pairwise_inner_eq_zero (hw _), hsq,
+          Finset.sum_fiberwise_of_maps_to hmaps]
 
 /-- **Normalizing an orthogonal family.** If the vectors `vᵢ` are pairwise orthogonal, then the
 normalized nonzero vectors `‖vᵢ‖⁻¹ vᵢ` are orthonormal. -/
