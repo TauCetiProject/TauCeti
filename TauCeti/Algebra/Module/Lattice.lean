@@ -285,7 +285,6 @@ theorem rationalizationEquiv_symm_coe (S : Submodule R V') [Module.Free R S] [S.
     (x : S) : (rationalizationEquiv S).symm (x : V') = 1 ⊗ₜ[R] x :=
   (isBaseChange_subtype S).equiv_symm_apply x
 
-omit [IsDomain R] in
 /-- A `K`-linear endomorphism of the ambient space which restricts to an endomorphism `g` of a
 free full lattice `S` has the determinant of `g`, read in `K`. -/
 theorem _root_.LinearMap.det_eq_algebraMap_det_of_isLattice {S : Submodule R V'}
