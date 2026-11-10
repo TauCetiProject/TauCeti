@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Complex.Module
 import Mathlib.Algebra.Ring.Action.ConjAct
+import Mathlib.Tactic.FastInstance
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 
@@ -32,7 +33,9 @@ Multiplication by `I` squares to `-1` as a real-linear endomorphism of a complex
 
 A real-linear map between complex modules that commutes with multiplication by `I` is complex
 linear (`LinearMap.complexOfMapISmul`), and one that anticommutes with it is conjugate-linear
-(`LinearMap.map_smul_eq_conj_smul_of_map_I_smul`).
+(`LinearMap.map_smul_eq_conj_smul_of_map_I_smul`). The non-instance `RestrictScalars.realModule`
+normalizes the restricted real module at the additive-group parent for use in constructions on real
+modules.
 
 Likewise an `ℝ`-algebra map out of the complex plane is determined by its value at `I`, so a
 conjugacy `g z = w * f z * w⁻¹` by a unit `w` between two such maps holds everywhere once it holds
@@ -43,6 +46,15 @@ half its skew difference `a* - a` (`TauCeti.realPart_eq_add_half_star_sub`).
 -/
 
 public section
+
+/-- The restricted real module indexed by the inherited additive-group parent.
+This normalizes the inherited additive-monoid instance of the scalar-restriction type alias. -/
+@[expose, instance_reducible]
+noncomputable def RestrictScalars.realModule (M : Type*) [AddCommGroup M] [Module ℂ M] :
+    @Module ℝ (RestrictScalars ℝ ℂ M) Real.semiring
+      (instAddCommGroupRestrictScalars ℝ ℂ M).toAddCommMonoid :=
+  fast_instance% RestrictScalars.module ℝ ℂ M
+
 
 namespace LinearMap
 
