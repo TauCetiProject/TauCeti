@@ -27,7 +27,7 @@ More generally, any linear trivialization sends a vector over its base set to a 
 exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`). Over the base
 set, its fibrewise linear inverse `e.symmₗ R b` is the inverse of the fibrewise linear equivalence
 (`Bundle.Trivialization.coe_linearEquivAt_symm`), hence injective
-(`Bundle.Trivialization.injective_symmₗ`). For two linear
+(`Bundle.Trivialization.symmₗ_injective`). For two linear
 trivializations whose base sets contain `b`, the fibre equivalence `E_b ≃ F` of the second is that
 of the first followed by the coordinate change from the first to the second
 (`Bundle.Trivialization.continuousLinearEquivAt_trans_coordChangeL`). Convergence in the total
@@ -93,7 +93,7 @@ theorem coe_linearEquivAt_symm {b : B} (hb : b ∈ e.baseSet) :
   LinearMap.ext fun u ↦ by rw [LinearEquiv.coe_coe, linearEquivAt_symm_apply, symmₗ_apply e hb]
 
 /-- Over the base set, the fibrewise linear inverse of a linear trivialization is injective. -/
-theorem injective_symmₗ {b : B} (hb : b ∈ e.baseSet) : Function.Injective (e.symmₗ R b) := by
+theorem symmₗ_injective {b : B} (hb : b ∈ e.baseSet) : Function.Injective (e.symmₗ R b) := by
   rw [← e.coe_linearEquivAt_symm R hb, LinearEquiv.coe_coe]
   exact (e.linearEquivAt R b hb).symm.injective
 

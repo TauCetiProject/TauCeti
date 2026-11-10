@@ -38,7 +38,7 @@ bilinear forms which is `C^n` at a point reads in the trivialization at that poi
 bilinear forms on the model fibre which is `C^n` there
 (`TauCeti.Manifold.exists_contMDiffAt_apply_eq_apply_symm`). Over the whole base set of an atlas
 trivialization of a `C^n` vector bundle, a `C^n` field of bilinear forms reads as a `C^n` family of
-bilinear forms on the model fibre (`TauCeti.Manifold.contMDiffOn_compl₁₂_symmₗ`). Fibrewise
+bilinear forms on the model fibre (`Bundle.Trivialization.contMDiffOn_compl₁₂_symmₗ`). Fibrewise
 inversion preserves smoothness of a hom-bundle section at every point where the section is
 invertible (`ContMDiffWithinAt.clm_bundle_inverse` and its variants). The latter is the bundle
 form of the smoothness of inversion of continuous linear maps between Banach spaces. A constant
@@ -230,7 +230,8 @@ there reads as the `C^n` family `y ↦ β y (e.symm y ·) (e.symm y ·)` of bili
 fibre. Unlike `TauCeti.Manifold.exists_contMDiffAt_apply_eq_apply_symm`, which reads `β` only at
 the centre of the preferred trivialization and needs no smoothness of `V`, this holds on the whole
 base set, which requires `V` to be a `C^n` vector bundle. -/
-theorem contMDiffOn_compl₁₂_symmₗ {β : ∀ x, V x →L[𝕜] V x →L[𝕜] G}
+theorem _root_.Bundle.Trivialization.contMDiffOn_compl₁₂_symmₗ
+    {β : ∀ x, V x →L[𝕜] V x →L[𝕜] G}
     (e : Trivialization F (π F V)) [MemTrivializationAtlas e]
     (hβ : ContMDiffOn IB (IB.prod 𝓘(𝕜, F →L[𝕜] F →L[𝕜] G)) n (fun x ↦
       TotalSpace.mk' (F →L[𝕜] F →L[𝕜] G) (E := fun y ↦ V y →L[𝕜] V y →L[𝕜] G) x (β x))

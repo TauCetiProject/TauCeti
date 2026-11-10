@@ -40,13 +40,13 @@ critical level of the submanifold is crossed.
 The subbundles depend on the metric `g`, but their ranks do not. No eigenbasis of the normal
 Hessian is chosen. In the preferred normal-bundle trivialization at `s₀`, with fibre model `P`, the
 metric becomes a `C^k` family `G` of bilinear forms on `P`
-(`TauCeti.Manifold.contMDiffOn_compl₁₂_symmₗ`). The projections onto the negative relative spectral
-subspaces of the normal Hessian with respect to `G`, along the positive ones, are then a `C^k`
-family of operators on `P` whose ranges and kernels read the negative and positive normal spaces in
-the trivialization
+(`Bundle.Trivialization.contMDiffOn_compl₁₂_symmₗ`). The projections onto the negative relative
+spectral subspaces of the normal Hessian with respect to `G`, along the positive ones, are then a
+`C^k` family of operators on `P` whose ranges and kernels read the negative and positive normal
+spaces in the trivialization
 (`IsNondegenerateCriticalSubmanifold.exists_contMDiffOn_negativeNormalProjection`), and a `C^k`
 family of operators of constant rank has `C^k` local frames of its ranges
-(`TauCeti.exists_isSubbundleFrameOn_map_symmₗ`).
+(`Bundle.Trivialization.exists_isSubbundleFrameOn_map_symmₗ`).
 
 ## References
 
@@ -108,10 +108,10 @@ private theorem exists_contMDiffOn_negativeNormalSpace_eq_map
   set G : S → P →L[ℝ] P →L[ℝ] ℝ := fun s ↦
     ((g.inner s).toLinearMap₁₂.compl₁₂ (e.symmₗ ℝ s) (e.symmₗ ℝ s)).toContinuousBilinearMap
   have hG : ContMDiffOn J 𝓘(ℝ, P →L[ℝ] P →L[ℝ] ℝ) k G e.baseSet :=
-    TauCeti.Manifold.contMDiffOn_compl₁₂_symmₗ e g.contMDiff.contMDiffOn
+    e.contMDiffOn_compl₁₂_symmₗ g.contMDiff.contMDiffOn
   obtain ⟨p, hp, hps⟩ := h.exists_contMDiffOn_negativeNormalProjection hn (le_self_add.trans hk)
     hf hdim s₀ hG (fun s _ u v ↦ by simpa [G] using g.symm s _ _) fun s hs u hu ↦ by
-      simpa [G] using g.pos s _ ((map_ne_zero_iff _ (e.injective_symmₗ ℝ hs)).mpr hu)
+      simpa [G] using g.pos s _ ((map_ne_zero_iff _ (e.symmₗ_injective ℝ hs)).mpr hu)
   -- The normal-bundle trivialization at `s₀` is the bundle chart `e` at `s₀`.
   simp only [← normalSpaceFiberBundle_trivializationAt] at hp hps
   refine ⟨p, hp.mono fun s hs ↦ ⟨hs, hs⟩, fun s hs ↦ ?_⟩
@@ -167,10 +167,11 @@ theorem hasLocalContMDiffSubbundleFrames_negativeNormalSpace
   let := i.normalSpaceContMDiffVectorBundle hn hk hdim
   refine hasLocalContMDiffSubbundleFrames_iff.mpr fun s₀ ↦ ?_
   obtain ⟨p, hp, hps⟩ := exists_contMDiffOn_negativeNormalSpace_eq_map hn h hk hf hdim g s₀
-  obtain ⟨U, hUe, hU, hs₀U, X, hX, hXk⟩ := exists_isSubbundleFrameOn_map_symmₗ _
-    (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).open_baseSet subset_rfl hp
-    (fun s hs ↦ (hps s hs).2.2.2.1.trans (hr s))
-    (mem_baseSet_trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀)
+  obtain ⟨U, hUe, hU, hs₀U, X, hX, hXk⟩ :=
+    (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).exists_isSubbundleFrameOn_map_symmₗ
+      (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).open_baseSet subset_rfl hp
+      (fun s hs ↦ (hps s hs).2.2.2.1.trans (hr s))
+      (mem_baseSet_trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀)
   exact ⟨U, hU, hs₀U, X, ⟨hX.continuousOn, hX.linearIndependent,
     fun hy ↦ (hX.span_eq hy).trans (hps _ (hUe hy)).2.1.symm⟩, hXk⟩
 
@@ -213,12 +214,13 @@ theorem hasLocalContMDiffSubbundleFrames_positiveNormalSpace
     have hP : IsIdempotentElem (p s : P →ₗ[ℝ] P) := congr(($((hps s hs).1) : P →ₗ[ℝ] P))
     rw [LinearMap.IsIdempotentElem.ker_eq_range_one_sub hP,
       ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_one]
-  obtain ⟨U, hUe, hU, hs₀U, X, hX, hXk⟩ := exists_isSubbundleFrameOn_map_symmₗ _
-    (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).open_baseSet subset_rfl
-    (A := fun s ↦ 1 - p s) ((contDiff_const.sub contDiff_id :
-      ContDiff ℝ k fun A : P →L[ℝ] P ↦ 1 - A).contMDiff.comp_contMDiffOn hp)
-    (fun s hs ↦ (hker s hs ▸ (hps s hs).2.2.2.2).trans (hr s))
-    (mem_baseSet_trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀)
+  obtain ⟨U, hUe, hU, hs₀U, X, hX, hXk⟩ :=
+    (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).exists_isSubbundleFrameOn_map_symmₗ
+      (trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀).open_baseSet subset_rfl
+      (A := fun s ↦ 1 - p s) ((contDiff_const.sub contDiff_id :
+        ContDiff ℝ k fun A : P →L[ℝ] P ↦ 1 - A).contMDiff.comp_contMDiffOn hp)
+      (fun s hs ↦ (hker s hs ▸ (hps s hs).2.2.2.2).trans (hr s))
+      (mem_baseSet_trivializationAt P (fun s ↦ i.NormalSpace s hn) s₀)
   exact ⟨U, hU, hs₀U, X, ⟨hX.continuousOn, hX.linearIndependent, fun hy ↦
     (hX.span_eq hy).trans (by rw [hker _ (hUe hy), (hps _ (hUe hy)).2.2.1])⟩, hXk⟩
 

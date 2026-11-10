@@ -77,8 +77,9 @@ inclusion is a `C^n` family of split injections `A x : F' →L[𝕜] F`; adjoini
 * `TauCeti.exists_isSubbundleFrameOn_map_synthesisMap`: a `C^n` family of orthogonal projections
   of a coefficient space, synthesized against `C^n` linearly independent sections, gives `C^n`
   local frames of the image subspaces.
-* `TauCeti.exists_isSubbundleFrameOn_map_symmₗ`: the ranges of a `C^n` family of operators of
-  constant rank on the model fibre, read through a trivialization, have `C^n` local frames.
+* `Bundle.Trivialization.exists_isSubbundleFrameOn_map_symmₗ`: the ranges of a `C^n` family of
+  operators of constant rank on the model fibre, read through a trivialization, have `C^n` local
+  frames.
 * `TauCeti.IsSubbundleFrameOn.contMDiffAt_totalSpace_subbundle`: the canonical inclusion of a
   frame-trivialized `C^n` subbundle into `TotalSpace F E` is `C^n`.
 * `TauCeti.isImmersion_totalSpace_subbundle`, `TauCeti.isSmoothEmbedding_totalSpace_subbundle`:
@@ -515,8 +516,9 @@ trivialization of `E` in its atlas and let `A y` be operators on the model fibre
 `C^n` on `y` in an open subset `U₀` of the base set of `e`, all of rank `r`. Read through `e`, their
 ranges are subspaces of the fibres `E y`; near every point of `U₀` these have a `C^n` local frame
 of size `r`. -/
-theorem exists_isSubbundleFrameOn_map_symmₗ {r : ℕ} (e : Trivialization F (π F E))
-    [MemTrivializationAtlas e] {U₀ : Set B} (hU₀ : IsOpen U₀) (hU₀e : U₀ ⊆ e.baseSet)
+theorem _root_.Bundle.Trivialization.exists_isSubbundleFrameOn_map_symmₗ {r : ℕ}
+    (e : Trivialization F (π F E)) [MemTrivializationAtlas e] {U₀ : Set B} (hU₀ : IsOpen U₀)
+    (hU₀e : U₀ ⊆ e.baseSet)
     {A : B → F →L[𝕜] F} (hA : ContMDiffOn IB 𝓘(𝕜, F →L[𝕜] F) n A U₀)
     (hr : ∀ y ∈ U₀, finrank 𝕜 (A y).range = r) {x₀ : B} (hx₀ : x₀ ∈ U₀) :
     ∃ U ⊆ U₀, IsOpen U ∧ x₀ ∈ U ∧ ∃ X : Fin r → Π x, E x,
@@ -540,7 +542,7 @@ theorem exists_isSubbundleFrameOn_map_symmₗ {r : ℕ} (e : Trivialization F (�
     ⟨fun k ↦ (hX k).continuousOn.mono hUU₀, fun {y} hy ↦ ?_, fun {y} hy ↦ ?_⟩,
     fun k ↦ (hX k).mono hUU₀⟩
   · simpa [Function.comp_def, e.symmₗ_apply (hU₀e (hUU₀ hy))] using
-      (hYU y hy).1.map' (e.symmₗ 𝕜 y) (LinearMap.ker_eq_bot.mpr (e.injective_symmₗ 𝕜
+      (hYU y hy).1.map' (e.symmₗ 𝕜 y) (LinearMap.ker_eq_bot.mpr (e.symmₗ_injective 𝕜
         (hU₀e (hUU₀ hy))))
   · rw [← (hYU y hy).2, Submodule.map_span, ← range_comp, e.coe_symmₗ (hU₀e (hUU₀ hy)),
       comp_def]
