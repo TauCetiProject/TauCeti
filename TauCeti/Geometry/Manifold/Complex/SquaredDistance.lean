@@ -149,13 +149,10 @@ theorem manifoldMorseIndex_norm_sq_sub_comp_le
   by_cases hE : FiniteDimensional ℂ E
   · have hpos := (isManifoldStrictlyPlurisubharmonicAt_norm_sq_sub_comp_iff (a := a) hi).2 hinj
     exact hpos.manifoldMorseIndex_le (contMDiffAt_norm_sq_sub_comp hi) hcrit
-  · -- In infinite dimensions the index is `0` by Mathlib's convention for `sigNeg`.
-    have hER : ¬ FiniteDimensional ℝ E := fun h ↦ hE (Module.Finite.of_restrictScalars_finite ℝ ℂ E)
-    rw [manifoldMorseIndex_def, morseIndex_def]
-    have h := sigPos_le_finrank (-hessianQuadraticForm
-      ((fun y ↦ ‖i y - a‖ ^ 2) ∘ (extChartAt 𝓘(ℝ, E) x).symm) (extChartAt 𝓘(ℝ, E) x x))
-    rw [sigPos_neg, Module.finrank_of_not_finite hER] at h
-    exact h.trans (Nat.zero_le _)
+  · -- In infinite dimensions the index is `0`, by the convention `finrank = 0`.
+    rw [manifoldMorseIndex_def, morseIndex_eq_zero_of_not_finiteDimensional fun _ ↦
+      hE (Module.Finite.of_restrictScalars_finite ℝ ℂ E)]
+    exact Nat.zero_le _
 
 /-- Along the inclusion of an open subset of a complex inner product space, the squared distance
 from any point is strictly plurisubharmonic at every point. -/

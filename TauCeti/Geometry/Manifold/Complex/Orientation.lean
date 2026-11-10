@@ -19,8 +19,6 @@ public import TauCeti.Geometry.Manifold.Orientation.Prod
 public import TauCeti.Geometry.Manifold.Orientation.Pullback
 public import TauCeti.LinearAlgebra.Complex.Orientation
 import Mathlib.LinearAlgebra.Complex.Determinant
--- Access the body of `IsLocalDiffeomorphAt` to lower the regularity of its witness.
-import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Analysis.Calculus.TangentCone.Chart
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Constructions
@@ -414,10 +412,8 @@ theorem _root_.IsLocalDiffeomorphAt.isOrientationPreservingAt_complexManifoldOri
     Manifold.Orientation.IsOrientationPreservingAt (complexManifoldOrientation E M)
       (complexManifoldOrientation E N) f x := by
   -- Only the `C^1` structure is needed, so we lower the regularity of `f` to `1`.
-  obtain ⟨Φ, hxΦ, hfΦ⟩ := hf
   have hf : IsLocalDiffeomorphAt 𝓘(ℂ, E) 𝓘(ℂ, E) 1 f x :=
-    ⟨Φ.ofLE (ENat.one_le_iff_ne_zero_withTop.mpr (NeZero.ne n)), by simpa using hxΦ,
-      by simpa using hfΦ⟩
+    hf.of_le (ENat.one_le_iff_ne_zero_withTop.mpr (NeZero.ne n))
   -- Read both orientations through the holomorphic chart `e` of `N` at `f x` and a holomorphic
   -- chart `e'` of `M` at `x` agreeing with `e ∘ f` near `x`, whose derivative at `x` is that of
   -- `e` after that of `f`.
