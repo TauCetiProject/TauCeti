@@ -77,6 +77,7 @@ theorem comp_fst_add_comp_snd_comp_extChartAt_prod_symm :
 /-- **Nondegenerate critical points of a separated sum.** The point `(x, y)` is a nondegenerate
 critical point of `f ∘ Prod.fst + g ∘ Prod.snd` exactly when `x` is a nondegenerate critical point
 of `f` and `y` is one of `g`. -/
+@[simp]
 theorem isManifoldNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff :
     IsManifoldNondegenerateCriticalPoint (I.prod I') (f ∘ Prod.fst + g ∘ Prod.snd) (x, y) ↔
       IsManifoldNondegenerateCriticalPoint I f x ∧

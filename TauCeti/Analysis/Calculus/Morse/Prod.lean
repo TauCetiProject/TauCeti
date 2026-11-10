@@ -75,6 +75,22 @@ theorem hessianQuadraticForm_comp_fst_add_comp_snd (hφ : ContDiffAt ℝ 2 φ a)
     QuadraticMap.prod_apply, hessianQuadraticForm_apply, hessianQuadraticForm_apply]
   simp [coprodEquivL_apply_apply]
 
+/-- If a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` is `Cⁿ` at `(a, b)`, then `φ` is `Cⁿ` at `a`:
+restrict to the slice `y = b` and subtract the constant `ψ b`. -/
+theorem _root_.ContDiffAt.of_comp_fst_add_comp_snd_left {n : WithTop ℕ∞}
+    (h : ContDiffAt ℝ n (φ ∘ Prod.fst + ψ ∘ Prod.snd) (a, b)) : ContDiffAt ℝ n φ a := by
+  have hφ : ContDiffAt ℝ n (fun x ↦ φ x + ψ b) a := by
+    simpa [Function.comp_def] using h.comp (f := fun x : E ↦ (x, b)) a (by fun_prop)
+  simpa using hφ.sub (contDiffAt_const (c := ψ b))
+
+/-- If a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` is `Cⁿ` at `(a, b)`, then `ψ` is `Cⁿ` at `b`:
+restrict to the slice `x = a` and subtract the constant `φ a`. -/
+theorem _root_.ContDiffAt.of_comp_fst_add_comp_snd_right {n : WithTop ℕ∞}
+    (h : ContDiffAt ℝ n (φ ∘ Prod.fst + ψ ∘ Prod.snd) (a, b)) : ContDiffAt ℝ n ψ b := by
+  have hψ : ContDiffAt ℝ n (fun y ↦ φ a + ψ y) b := by
+    simpa [Function.comp_def] using h.comp (f := fun y : F ↦ (a, y)) b (by fun_prop)
+  simpa using hψ.sub (contDiffAt_const (c := φ a))
+
 /-- **Nondegenerate critical points of a separated sum.** The separated sum
 `φ ∘ Prod.fst + ψ ∘ Prod.snd` has a nondegenerate critical point at `(a, b)` exactly when `φ` has
 one at `a` and `ψ` has one at `b`. -/
@@ -98,13 +114,8 @@ theorem isNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff :
         hcrit.2 ⟨h₁.fderiv_eq_zero, h₂.fderiv_eq_zero⟩, ?_⟩
       rw [hsnd, isInvertible_equiv_comp, isInvertible_prodMap_iff]
       exact ⟨h₁.isInvertible, h₂.isInvertible⟩
-  · refine iff_of_false (fun h ↦ hc ?_) fun h ↦ hc ⟨h.1.contDiffAt, h.2.contDiffAt⟩
-    have hφ : ContDiffAt ℝ 2 (fun x ↦ φ x + ψ b) a :=
-      h.contDiffAt.comp (f := fun x : E ↦ (x, b)) a (by fun_prop)
-    have hψ : ContDiffAt ℝ 2 (fun y ↦ φ a + ψ y) b :=
-      h.contDiffAt.comp (f := fun y : F ↦ (a, y)) b (by fun_prop)
-    exact ⟨by simpa using hφ.sub (contDiffAt_const (c := ψ b)),
-      by simpa using hψ.sub (contDiffAt_const (c := φ a))⟩
+  · exact iff_of_false (fun h ↦ hc ⟨h.contDiffAt.of_comp_fst_add_comp_snd_left,
+      h.contDiffAt.of_comp_fst_add_comp_snd_right⟩) fun h ↦ hc ⟨h.1.contDiffAt, h.2.contDiffAt⟩
 
 /-- A pair of nondegenerate critical points of `φ` and `ψ` is a nondegenerate critical point of
 the separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd`. -/
@@ -262,14 +273,8 @@ theorem HasNondegenerateCriticalPointsOn.separatedSum
     (hg : HasNondegenerateCriticalPointsOn g univ) :
     HasNondegenerateCriticalPointsOn (separatedSum f g) univ := by
   refine hasNondegenerateCriticalPointsOn_iff.2 fun z _ hz ↦ ?_
-  have hdf : DifferentiableAt ℝ f z.fst := by
-    by_contra h
-    exact h ((hasNondegenerateCriticalPointsOn_iff.1 hf (mem_univ _)
-      (fderiv_zero_of_not_differentiableAt h)).contDiffAt.differentiableAt two_ne_zero)
-  have hdg : DifferentiableAt ℝ g z.snd := by
-    by_contra h
-    exact h ((hasNondegenerateCriticalPointsOn_iff.1 hg (mem_univ _)
-      (fderiv_zero_of_not_differentiableAt h)).contDiffAt.differentiableAt two_ne_zero)
+  have hdf := hf.differentiableAt (mem_univ z.fst)
+  have hdg := hg.differentiableAt (mem_univ z.snd)
   obtain ⟨h₁, h₂⟩ := (fderiv_separatedSum_eq_zero_iff hdf hdg).1 hz
   have hf' := hasNondegenerateCriticalPointsOn_iff.1 hf (mem_univ _) h₁
   have hg' := hasNondegenerateCriticalPointsOn_iff.1 hg (mem_univ _) h₂
