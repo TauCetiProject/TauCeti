@@ -62,7 +62,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {G' : Type*} [TopologicalSpace G'] [ChartedSpace H' G'] [Group G']
   [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [LieGroup I ∞ G] [LieGroup I' ∞ G']
   [T2Space G] [BoundarylessManifold I G] [T2Space G'] [BoundarylessManifold I' G']
-  [IsMulCommutative G] [IsMulCommutative G'] [IsTopologicalGroup G] [PreconnectedSpace G]
+  [IsMulCommutative G] [IsMulCommutative G'] [PreconnectedSpace G]
 
 /-- **The index of the period lattice under an isogeny.** Let `f : G → G'` be a continuous
 homomorphism of commutative Lie groups, with `G` connected, whose Lie map `df` is bijective. Then
@@ -72,6 +72,7 @@ theorem relIndex_map_lieMap_periodLattice (f : G →ₜ* G')
     (hf : Function.Bijective (lieMap (I := I) (I' := I') f)) :
     ((periodLattice I G).map (lieMap (I := I) (I' := I') f).toLinearMap.toAddMonoidHom).relIndex
         (periodLattice I' G') = Nat.card f.ker := by
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
   set e := LinearEquiv.ofBijective (lieMap (I := I) (I' := I') f).toLinearMap hf
   have he (X : LeftInvariantDerivation I G) : e X = lieMap (I := I) (I' := I') f X :=
     LinearEquiv.ofBijective_apply _ _
