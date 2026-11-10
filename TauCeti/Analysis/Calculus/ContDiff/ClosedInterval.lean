@@ -11,14 +11,16 @@ public import TauCeti.Analysis.Calculus.IteratedDeriv.Within
 /-!
 # Continuous derivative jets on a closed interval
 
-On a closed time interval, derivatives at the endpoints are one-sided.
+On a nondegenerate closed time interval `a < b`, derivatives at the endpoints are one-sided.
 An interior derivative with a continuous extension to the closed interval is the derivative
-within that interval, including at its endpoints. Applying this observation successively
-identifies every field of a continuous derivative jet with `iteratedDerivWithin`.
+within that interval, including at its endpoints (this also holds for `b ≤ a`, where the interval
+has at most one point). For `a < b`, applying this observation successively identifies every field
+of a continuous derivative jet with `iteratedDerivWithin`; on a singleton the interior conditions
+are vacuous and the higher fields are arbitrary, so this identification needs `a < b`.
 
 The jet criterion `contDiffOn_Icc_iff_exists_continuous_jet` characterizes finite-order
-smoothness on a closed interval using only continuous fields and ordinary interior
-derivatives. It allows time derivatives of functions on closed slabs to be specified by
+smoothness on a closed interval, degenerate or not, using only continuous fields and ordinary
+interior derivatives. It allows time derivatives of functions on closed slabs to be specified by
 continuous extensions without choosing an extension of the function outside the slab.
 The codomain may itself be a space of continuous multilinear maps.
 

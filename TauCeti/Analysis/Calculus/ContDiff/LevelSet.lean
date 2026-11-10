@@ -46,18 +46,12 @@ theorem ContDiff.exists_contDiff_setOf_pos_eq_setOf_lt {u : E → ℝ} (hu : Con
   · refine ⟨fun _ => -1, contDiff_const, ?_, fun x hx => absurd hx (by norm_num), ?_⟩
     · norm_num
     · exact Set.ext fun x => iff_of_false (by norm_num) fun h => hne ⟨x, h⟩
-  -- Otherwise a closed ball inside `{u > t} ⊆ tsupport u` is compact, so `E` is complete.
+  -- Otherwise `u ≠ 0`, so the compact support forces `E` to be finite-dimensional, hence complete.
   have : CompleteSpace E := by
-    obtain ⟨x₀, hx₀⟩ := hne
-    have hopen : IsOpen {x | t < u x} := isOpen_lt continuous_const hu.continuous
-    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 hopen x₀ hx₀
-    have hsub : Metric.closedBall x₀ (ε / 2) ⊆ tsupport u := fun x hx =>
-      subset_closure (by
-        have : t < u x := hball (Metric.closedBall_subset_ball (half_lt_self hε) hx)
-        exact (ht.trans this).ne')
-    have := FiniteDimensional.of_isCompact_closedBall ℝ (half_pos hε)
-      (huc.isCompact.of_isClosed_subset Metric.isClosed_closedBall hsub)
-    exact FiniteDimensional.complete ℝ E
+    rcases huc.eq_zero_or_finiteDimensional ℝ hu.continuous with rfl | hfin
+    · obtain ⟨x₀, hx₀⟩ := hne
+      exact absurd (ht.trans hx₀) (lt_irrefl _)
+    · exact FiniteDimensional.complete ℝ E
   -- `G` is the gradient of `u` and `g = √(‖∇u‖² + (u - t)²)` is a smooth positive normalizer.
   let G : E → E := ∇ u
   have hG : ContDiff ℝ ∞ G := hu.gradient_right le_rfl
