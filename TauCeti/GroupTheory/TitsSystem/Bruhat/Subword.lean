@@ -29,10 +29,10 @@ hypothesis is needed for this upper bound.
 * `TauCeti.TitsSystem.inv_bruhatCell`: inversion of a Weyl-indexed cell.
 * `TauCeti.TitsSystem.bruhatCell_mul_eq_or_eq_union_of_mem_simple_right`: right multiplication
   by a simple cell.
-* `TauCeti.TitsSystem.subset_bruhatCell_mul_of_mem_simple_right` and
+* `TauCeti.TitsSystem.subset_bruhatCell_mul_right` and
   `TauCeti.TitsSystem.bruhatCell_mul_subset_union_of_mem_simple_right`: the adjacent cell always
-  occurs in the product with a simple cell on the right, and nothing beyond the adjacent and the
-  original cell does.
+  occurs in the product of cells on the right, and, for a simple cell, nothing beyond the adjacent
+  and the original cell does.
 * `TauCeti.TitsSystem.exists_sublist_of_mem_prod_bruhatCell`: the subword expansion for a product
   of simple cells.
 
@@ -81,13 +81,20 @@ theorem bruhatCell_mul_eq_or_eq_union_of_mem_simple_right (w : T.WeylGroup)
     have h' := congrArg Inv.inv h
     simpa only [mul_inv_rev, inv_bruhatCell, inv_inv, T.inv_simple hs, Set.union_inv] using h'
 
-/-- The adjacent cell always occurs in the product with a simple cell on the right. -/
-theorem subset_bruhatCell_mul_of_mem_simple_right (w : T.WeylGroup) {s : T.WeylGroup}
-    (hs : s ∈ T.simple) : T.bruhatCell (w * s) ⊆ T.bruhatCell w * T.bruhatCell s := by
-  rcases T.bruhatCell_mul_eq_or_eq_union_of_mem_simple_right w hs with h | h
-  · rw [h]
-  · rw [h]
-    exact Set.subset_union_left
+/-- The adjacent cell always occurs in the product of cells on the right. -/
+theorem subset_bruhatCell_mul_right (w s : T.WeylGroup) :
+    T.bruhatCell (w * s) ⊆ T.bruhatCell w * T.bruhatCell s := by
+  obtain ⟨n, rfl⟩ := QuotientGroup.mk_surjective w
+  obtain ⟨m, rfl⟩ := QuotientGroup.mk_surjective s
+  rintro x hx
+  rw [← QuotientGroup.mk_mul, T.bruhatCell_mk] at hx
+  obtain ⟨b₁, hb₁, b₂, hb₂, rfl⟩ := DoubleCoset.mem_doubleCoset.mp hx
+  refine ⟨b₁ * n, ?_, m * b₂, ?_, ?_⟩
+  · rw [T.bruhatCell_mk]
+    exact DoubleCoset.mem_doubleCoset.mpr ⟨b₁, hb₁, 1, T.subgroupB.one_mem, by simp⟩
+  · rw [T.bruhatCell_mk]
+    exact DoubleCoset.mem_doubleCoset.mpr ⟨1, T.subgroupB.one_mem, b₂, hb₂, by simp⟩
+  · simp only [Subgroup.coe_mul, mul_assoc]
 
 /-- The product with a simple cell on the right lies in the union of the adjacent and the original
 cell. -/
