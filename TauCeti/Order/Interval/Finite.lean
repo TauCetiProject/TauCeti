@@ -10,9 +10,8 @@ public import Mathlib.Data.Set.Finite.Lattice
 /-!
 # Intervals avoiding a finite set of points
 
-A finite family of points of a nonempty order without a maximal element misses a nonempty open
-interval: along a strictly increasing sequence, each point lies in at most two of the intervals
-from the sequence element of index `n` to that of index `n + 2`.
+A finite family of points of a nonempty preorder without a maximal element misses a nonempty open
+interval.
 
 A finite set of points cuts every closed interval of a linear order into finitely many closed
 pieces whose interiors avoid it. `TauCeti.Icc_induction_of_disjoint_Ioo` proves a two-endpoint
