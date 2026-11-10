@@ -24,12 +24,14 @@ both notions the radius `R` is the same for all positions.
 
 An elliptic symbol satisfies the hypotheses of the cut-off inverse `TauCeti.Symbol.cutoffInverse`
 at every radius `R' ≥ R` (`TauCeti.Symbol.IsEllipticAbove.isInvertible`,
-`TauCeti.Symbol.IsEllipticAbove.exists_norm_inverse_le`), which is a symbol of order `-m` inverting
-`a` at all large frequencies. Conversely, a symbol that a symbol of order `-m` inverts at all large
-frequencies is elliptic (`TauCeti.Symbol.isEllipticAbove_of_comp_eq_id`), so a symbol is elliptic
-above some radius exactly when it has such an inverse (`TauCeti.Symbol.exists_isEllipticAbove_iff`),
-and similarly for uniform ellipticity (`TauCeti.Symbol.exists_isUniformlyEllipticAbove_iff`). For
-example the Bessel weight `⟨ξ / 2π⟩^s` is uniformly elliptic of order `s`
+`TauCeti.Symbol.IsEllipticAbove.exists_norm_inverse_le`). For a nonzero such radius `R'`, the
+cut-off inverse is a symbol of order `-m` inverting `a` at every frequency of norm at least `2|R'|`
+(`TauCeti.Symbol.coefficient_cutoffInverse_of_two_mul_abs_le`). Conversely, a symbol that a symbol
+of order `-m` inverts at all large frequencies is elliptic
+(`TauCeti.Symbol.isEllipticAbove_of_comp_eq_id`), so a symbol is elliptic above some radius exactly
+when it has such an inverse (`TauCeti.Symbol.exists_isEllipticAbove_iff`), and similarly for
+uniform ellipticity (`TauCeti.Symbol.exists_isUniformlyEllipticAbove_iff`). For example the Bessel
+weight `⟨ξ / 2π⟩^s` is uniformly elliptic of order `s`
 (`TauCeti.Symbol.isUniformlyEllipticAbove_besselPotential`).
 
 ## Main declarations
