@@ -171,14 +171,15 @@ section Conj
 
 /-- The action of the based automorphisms on the normal subgroup `W` by conjugation, the action
 defining the semidirect product `RootPairing.Base.semidirectProductMulEquiv`. -/
-@[expose] noncomputable def conjWeylGroup (b : P.Base) : b.basedAut →* MulAut P.weylGroup :=
+noncomputable def conjWeylGroup (b : P.Base) : b.basedAut →* MulAut P.weylGroup :=
   P.weylGroup.normalizerMonoidHom.comp
     (Subgroup.inclusion (P.weylGroup.normalizer_eq_top ▸ le_top))
 
 /-- A based automorphism `δ` acts on the Weyl group by `w ↦ δ w δ⁻¹`. -/
 @[simp]
 theorem coe_conjWeylGroup_apply (δ : b.basedAut) (w : P.weylGroup) :
-    (b.conjWeylGroup δ w : P.Aut) = δ * w * (δ : P.Aut)⁻¹ :=
+    (b.conjWeylGroup δ w : P.Aut) = δ * w * (δ : P.Aut)⁻¹ := by
+  rw [conjWeylGroup]
   rfl
 
 /-- **The product formula of the semidirect product**: `(w, δ) (v, η)` has Weyl factor
