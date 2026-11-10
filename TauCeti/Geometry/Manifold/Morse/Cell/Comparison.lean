@@ -528,7 +528,7 @@ private theorem ι_comp_morseCellComparison (hε : 0 ≤ ε) (i : ι) :
 the pairwise disjoint chart sources. -/
 theorem morseCellComparison_injective (hφ : Pairwise (Disjoint on fun i ↦ (φ i).source))
     (hε : 0 < ε) : Injective (morseCellComparison φ k hk hε.le hball hf) :=
-  TopCat.injective_of_isPushout_sigma
+  TopCat.injective_of_isPushout_sigma_of_comp
     (fun x y h ↦ Subtype.ext (by simpa using congr(($h : M))))
     (χ := fun i ↦ (φ i).morseCharacteristicMap (hk i) hε.le (hball i) (hf i))
     (fun i ↦ (φ i).morseCharacteristicMap_injective (hball i) (hf i) (hk i) hε)
@@ -546,7 +546,7 @@ with disjoint sources is a closed embedding. -/
 theorem isClosedEmbedding_morseCellComparison [T2Space M] [Finite ι] (hfc : Continuous f)
     (hφ : Pairwise (Disjoint on fun i ↦ (φ i).source)) (hε : 0 < ε) :
     IsClosedEmbedding (morseCellComparison φ k hk hε.le hball hf) :=
-  TopCat.isClosedEmbedding_of_isPushout_sigma
+  TopCat.isClosedEmbedding_of_isPushout_sigma_of_comp
     (isClosedEmbedding_sublevelInclusion hfc (by linarith))
     (fun i ↦ (φ i).isClosedEmbedding_morseCharacteristicMap (hball i) (hf i) (hk i) hε)
     (fun _ _ h ↦ (Set.disjoint_iff.1
