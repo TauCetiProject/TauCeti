@@ -123,6 +123,12 @@ theorem ker_eq_top_iff {α : RoughForm I M ℝ 1} {x : M} : α.ker x = ⊤ ↔ �
     simpa [hv] using mem_ker.1 (h ▸ Submodule.mem_top : v 0 ∈ α.ker x)
   · simp [h]
 
+/-- A one-form which does not vanish at `x` takes a nonzero value on some tangent vector at `x`. -/
+theorem exists_apply_ne_zero {α : RoughForm I M ℝ 1} {x : M} (hα : α x ≠ 0) :
+    ∃ v : TangentSpace I x, α x ![v] ≠ 0 := by
+  by_contra! h
+  exact hα (ker_eq_top_iff.1 (eq_top_iff.2 fun v _ ↦ mem_ker.2 (h v)))
+
 /-- Rescaling a one-form by a function that does not vanish at `x` does not change its kernel
 at `x`. -/
 theorem ker_fun_smul {α : RoughForm I M ℝ 1} {f : M → ℝ} {x : M} (hfx : f x ≠ 0) :

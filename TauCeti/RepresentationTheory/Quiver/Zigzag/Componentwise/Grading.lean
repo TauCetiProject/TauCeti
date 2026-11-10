@@ -272,7 +272,7 @@ in nonnegative degrees are those of `TauCeti.zigzagAlgebraGrade`, and those in n
 vanish. -/
 theorem isInternal_zigzagAlgebraIntegerGrade :
     DirectSum.IsInternal (zigzagAlgebraIntegerGrade k G) :=
-  Graded.isInternal_extendByZero (isInternal_zigzagAlgebraGrade k G)
+  Graded.isInternal_extendByZero_iff.2 (isInternal_zigzagAlgebraGrade k G)
 
 /-- Multiplication adds signed degrees in the integer extension of the componentwise grading. -/
 theorem mul_mem_zigzagAlgebraIntegerGrade {m n : ℤ} {x y : zigzagAlgebra k G}

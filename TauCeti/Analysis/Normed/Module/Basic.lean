@@ -10,7 +10,8 @@ public import Mathlib.Analysis.Normed.Module.Basic
 /-!
 # Basic lemmas on normed scalar actions and modules
 
-This file collects elementary norm facts for scalar actions on seminormed additive groups:
+This file collects elementary facts about scalar actions on seminormed additive groups and real
+normed spaces:
 
 * `RingHomIsometric.intCastRingHom`: in a seminormed ring in which `ℤ` acts isometrically and
   `‖1‖ = 1`, such as `ℝ` or `ℂ`, `Int.castRingHom R` preserves norms, making lemmas stated for a
@@ -22,6 +23,8 @@ This file collects elementary norm facts for scalar actions on seminormed additi
   norm-bounded preimages along linear maps.
 * `TauCeti.mul_norm_le_two_mul_norm_of_norm_sub_smul_le`: a vector within `K * a ^ 2` of the real
   multiple `a • v`, with `|a| * (2 * K) ≤ ‖v‖`, still has norm at least half of `|a| * ‖v‖`.
+* `IsOpen.diam_pos`: a nonempty bounded open set in a nontrivial real normed space has positive
+  diameter.
 -/
 
 public section
@@ -66,5 +69,14 @@ theorem mul_norm_le_two_mul_norm_of_norm_sub_smul_le {E : Type*} [SeminormedAddC
     mul_nonneg (abs_nonneg a) (norm_nonneg v)]
 
 end TauCeti
+
+/-- A nonempty bounded open set in a nontrivial real normed space has positive diameter. -/
+theorem IsOpen.diam_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Nontrivial E]
+    {s : Set E} (hs : IsOpen s) (hb : Bornology.IsBounded s) {x : E} (hx : x ∈ s) :
+    0 < Metric.diam s := by
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 hs x hx
+  calc 0 < 2 * r := by positivity
+    _ = Metric.diam (Metric.ball x r) := (Metric.diam_ball_eq x hr.le).symm
+    _ ≤ Metric.diam s := Metric.diam_mono hball hb
 
 end

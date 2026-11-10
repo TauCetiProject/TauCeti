@@ -166,9 +166,9 @@ theorem _root_.CategoryTheory.CommMon.restrictRelativeProjTwistingSheafIso_hom (
 charts are the twisting sheaves of the charts, which are quasi-coherent. -/
 instance _root_.CategoryTheory.CommMon.isQuasicoherent_relativeProjTwistingSheaf (n : ℤ) :
     (A.relativeProjTwistingSheaf n).IsQuasicoherent := by
-  refine AlgebraicGeometry.isQuasicoherent_of_isQuasicoherent_restrict _
+  refine (AlgebraicGeometry.Scheme.Modules.isQuasicoherent_iff_of_iSup_eq_top _
     (fun U : X.AffineZariskiSite ↦ (A.relativeProjCover.f U).opensRange)
-    A.relativeProjCover.iSup_opensRange fun U ↦ ?_
+    A.relativeProjCover.iSup_opensRange).2 fun U ↦ ?_
   let f := A.relativeProjCover.f U
   have : ((A.relativeProjTwistingSheaf n).restrict f).IsQuasicoherent :=
     (SheafOfModules.isQuasicoherent (A.relativeProjCover.X U).ringCatSheaf).prop_of_iso

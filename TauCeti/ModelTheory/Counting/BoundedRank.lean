@@ -5,24 +5,33 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.ModelTheory.Counting.Levels
 public import TauCeti.ModelTheory.Counting.Stratification
 
 /-!
-# Borel isomorphism on classes of bounded rank
+# The bounded-rank dichotomy
 
 On a set of relational configurations on `ℕ`, a countable bound on an isolating rank makes
 isomorphism equal to one back-and-forth level. In a countable vocabulary that level is Borel,
-so isomorphism has Borel graph on the set. This supplies the relation to which a descriptive
-set-theoretic dichotomy can be applied when counting models of bounded rank.
+so isomorphism has Borel graph on the set, and Silver's theorem applies to it directly.
 
-The set need not be measurable or isomorphism invariant: the graph is measurable for the
-induced measurable structure on its square. To apply a dichotomy requiring a standard Borel
-domain, the caller must separately establish that the set is Borel.
+The set need not be measurable or isomorphism invariant for the graph to be Borel: the graph is
+measurable for the induced measurable structure on its square. To apply a dichotomy requiring a
+standard Borel domain, the set itself must be Borel, as model classes are.
 
 The Scott height supplies the canonical isolating rank. A bound `β` on the internal Scott rank
 also suffices, but gives a bound `β + ω` on the Scott height, not necessarily `β` itself.
 Countably many isomorphism classes give Borel isomorphism as well, since they bound every
 isolating rank.
+
+The **bounded-rank dichotomy** follows. If an isolating rank is bounded below `ω₁` on the models
+on `ℕ` of an infinitary sentence `φ` with countable branching, in a vocabulary with countably many
+relation symbols of each arity, then `φ` has at most `ℵ₀` countable models up to isomorphism, or a
+nonempty perfect set of pairwise non-isomorphic countable models. On `ℕ` this is Silver's theorem
+for the Borel relation of isomorphism on the model class; on each finite carrier `Fin n` it is the
+finite-carrier dichotomy, which needs no bound. So the perfect set may lie on `ℕ` or on some
+finite carrier `Fin n`; in the latter case the bound plays no role. Conversely, countably many
+countable models bound every isomorphism-invariant countable rank on the models on `ℕ`.
 
 ## Main results
 
@@ -33,6 +42,22 @@ isolating rank.
   the external and internal Scott rank forms.
 * `TauCeti.RelationalConfiguration.measurableSet_setOf_comap_isoSetoid_of_countable_isoClasses`:
   countably many isomorphism classes give a Borel isomorphism relation.
+* `TauCeti.IsIsolatingRank.countable_isoClasses_or_hasPerfectAntichainOn` and
+  `TauCeti.IsIsolatingRank.mk_isoClasses_le_aleph0_or_eq_continuum`: a Borel set of configurations
+  on `ℕ` of bounded rank meets countably many isomorphism classes or contains a nonempty perfect
+  set of pairwise non-isomorphic configurations (hence `≤ ℵ₀` or `= 𝔠` classes).
+* `TauCeti.countableModelCount_le_aleph0_or_hasPerfectlyMany_of_bounded`: **the bounded-rank
+  dichotomy**, witnessed form.
+* `TauCeti.countableModelCount_le_aleph0_or_eq_continuum_of_bounded`: its cardinal form.
+* `TauCeti.countableModelCount_le_aleph0_or_hasPerfectlyMany_of_scottHeight_le` and
+  `TauCeti.countableModelCount_le_aleph0_or_hasPerfectlyMany_of_internalScottRank_le`: the forms
+  with a bound on the Scott height or on the internal Scott rank of the countably infinite models,
+  with cardinal forms `TauCeti.countableModelCount_le_aleph0_or_eq_continuum_of_scottHeight_le`
+  and `TauCeti.countableModelCount_le_aleph0_or_eq_continuum_of_internalScottRank_le`.
+* `TauCeti.exists_rank_bound_of_countableModelCount_le_aleph0` and
+  `TauCeti.countableModelCount_le_aleph0_iff_exists_rank_bound`: the converse, and the resulting
+  characterization of countably many countable models for a sentence without a perfect set of
+  pairwise non-isomorphic countable models.
 
 ## References
 
@@ -40,16 +65,27 @@ isolating rank.
   the chapter on the space of countable models.
 * Antonio Montalbán, *Computable Structure Theory: Beyond the Arithmetic*, Part 2,
   Chapter XII, §XII.1.
+* J. H. Silver, *Counting the number of equivalence classes of Borel and coanalytic equivalence
+  relations*, Annals of Mathematical Logic 18 (1980), 1–28.
+* The cardinal bounded-rank dichotomy follows `counting_coded_models_dichotomy` in
+  `InfinitaryLogic/Descriptive/CountingDichotomy.lean` and
+  `counting_countable_models_bounded_scottHeight` in
+  `InfinitaryLogic/ModelTheory/CountingCountable.lean` of Cameron Freer's
+  `cameronfreer/infinitary-logic` (checkpoint `518a366cba97b1ae8c4dc64a297a396939bc3e0b`,
+  Apache-2.0), which bound the Scott height of the models. There Silver's theorem is assumed
+  through `SilverBurgessDichotomy`; here it is discharged unconditionally, an arbitrary isolating
+  rank may be bounded, the finite tiers are included, and the witnessed form with a perfect set of
+  pairwise non-isomorphic countable models is new.
 
 The isolating-rank and Scott-height arguments use the APIs in
-`TauCeti.ModelTheory.Counting.Stratification` and `TauCeti.ModelTheory.Scott.Height`.
+`TauCeti.ModelTheory.Counting.Stratification` and `TauCeti.ModelTheory.Scott.Height`; the
+one-level forms of Silver's theorem are those of `TauCeti.ModelTheory.Counting.Levels`.
 -/
-
 public section
 
-universe u v
+universe u v uι
 
-open FirstOrder Ordinal Set
+open FirstOrder Cardinal Ordinal Set
 
 namespace TauCeti
 
@@ -68,6 +104,137 @@ theorem IsIsolatingRank.measurableSet_setOf_comap_isoSetoid
   exact (measurableSet_setOf_bfEquivSetoid hβ).preimage
     ((measurable_subtype_coe.comp measurable_fst).prodMk
       (measurable_subtype_coe.comp measurable_snd))
+
+/-! ### Borel sets of bounded rank -/
+
+/-- **The bounded-rank dichotomy for Borel sets on `ℕ`.** In a vocabulary with countably many
+relation symbols of each arity, a Borel set `K` of configurations on `ℕ` on which an isolating
+rank is bounded below `ω₁` meets countably many isomorphism classes, or contains a nonempty
+perfect set of pairwise non-isomorphic configurations. -/
+theorem IsIsolatingRank.countable_isoClasses_or_hasPerfectAntichainOn
+    {ρ : RelationalConfiguration L ℕ → Ordinal.{0}} (hρ : IsIsolatingRank ρ)
+    (hK : MeasurableSet K) (hβ : β < ω₁) (hKρ : ∀ c ∈ K, ρ c ≤ β) :
+    Countable (Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) ∨
+      (isoSetoid L ℕ).HasPerfectAntichainOn K := by
+  rw [hρ.comap_isoSetoid_eq_bfEquivSetoid hKρ]
+  exact countable_quotient_comap_bfEquivSetoid_or_hasPerfectAntichainOn hK hβ
+
+/-- **The cardinal bounded-rank dichotomy for Borel sets on `ℕ`.** In a vocabulary with countably
+many relation symbols of each arity, a Borel set `K` of configurations on `ℕ` on which an
+isolating rank is bounded below `ω₁` meets either at most `ℵ₀` or `𝔠` isomorphism classes. This
+is the cardinality form of Silver's theorem for the Borel relation of isomorphism on `K`. -/
+theorem IsIsolatingRank.mk_isoClasses_le_aleph0_or_eq_continuum
+    {ρ : RelationalConfiguration L ℕ → Ordinal.{0}} (hρ : IsIsolatingRank ρ)
+    (hK : MeasurableSet K) (hβ : β < ω₁) (hKρ : ∀ c ∈ K, ρ c ≤ β) :
+    #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) ≤ ℵ₀ ∨
+      #(Quotient ((isoSetoid L ℕ).comap (Subtype.val : K → _))) = 𝔠 := by
+  rw [hρ.comap_isoSetoid_eq_bfEquivSetoid hKρ]
+  exact mk_quotient_comap_bfEquivSetoid_le_aleph0_or_eq_continuum hK hβ
+
+/-! ### The bounded-rank dichotomy for sentences -/
+
+section Sentences
+
+variable {ι : Type uι} [Countable ι] {φ : L.SentenceInf ι}
+  {ρ : RelationalConfiguration L ℕ → Ordinal.{0}}
+
+/-- **The bounded-rank dichotomy.** In a vocabulary with countably many relation symbols of each
+arity, if an isolating rank is bounded below `ω₁` on the models on `ℕ` of an infinitary sentence
+`φ` with countable branching, then `φ` has at most `ℵ₀` countable models up to isomorphism, finite
+models included, or a nonempty perfect set of pairwise non-isomorphic countable models at the
+tier `ℕ` or at some finite tier `Fin n`. -/
+theorem countableModelCount_le_aleph0_or_hasPerfectlyMany_of_bounded (hρ : IsIsolatingRank ρ)
+    (hβ : β < ω₁) (hφ : ∀ c ∈ modelsOf (V := ℕ) φ, ρ c ≤ β) :
+    countableModelCount φ ≤ ℵ₀ ∨ HasPerfectlyManyCountableModels φ := by
+  rcases hρ.countable_isoClasses_or_hasPerfectAntichainOn (measurableSet_modelsOf φ) hβ hφ with
+    hℕ | hℕ
+  · rcases forall_countable_quotient_isoSetoidOn_fin_or_exists_hasPerfectAntichainOn φ with
+      hfin | ⟨_, hn⟩
+    · exact .inl (countableModelCount_le_aleph0_iff.2 ⟨hℕ, hfin⟩)
+    · exact .inr (.of_fin hn)
+  · exact .inr (.of_nat hℕ)
+
+/-- **The cardinal bounded-rank dichotomy.** In a vocabulary with countably many relation symbols
+of each arity, if an isolating rank is bounded below `ω₁` on the models on `ℕ` of an infinitary
+sentence `φ` with countable branching, then `φ` has either at most `ℵ₀` or exactly `𝔠` countable
+models up to isomorphism. -/
+theorem countableModelCount_le_aleph0_or_eq_continuum_of_bounded (hρ : IsIsolatingRank ρ)
+    (hβ : β < ω₁) (hφ : ∀ c ∈ modelsOf (V := ℕ) φ, ρ c ≤ β) :
+    countableModelCount φ ≤ ℵ₀ ∨ countableModelCount φ = 𝔠 :=
+  (countableModelCount_le_aleph0_or_hasPerfectlyMany_of_bounded hρ hβ hφ).imp_right
+    HasPerfectlyManyCountableModels.countableModelCount_eq
+
+/-- **The bounded-rank dichotomy for Scott height.** In a vocabulary with countably many relation
+symbols of each arity, if every countably infinite model `M : Type` of an infinitary sentence `φ`
+with countable branching has Scott height at most `β < ω₁`, then `φ` has at most `ℵ₀` countable
+models up to isomorphism or a nonempty perfect set of pairwise non-isomorphic countable models. -/
+theorem countableModelCount_le_aleph0_or_hasPerfectlyMany_of_scottHeight_le (hβ : β < ω₁)
+    (hφ : ∀ (M : Type) [L.Structure M] [Countable M] [Infinite M], φ.Realize M →
+      scottHeight (L := L) M ≤ β) :
+    countableModelCount φ ≤ ℵ₀ ∨ HasPerfectlyManyCountableModels φ :=
+  countableModelCount_le_aleph0_or_hasPerfectlyMany_of_bounded (isIsolatingRank_scottHeight L) hβ
+    fun c hc => @hφ ℕ c.toStructure _ _ (mem_modelsOf.1 hc)
+
+/-- **The bounded-rank dichotomy for internal Scott rank.** In a vocabulary with countably many
+relation symbols of each arity, if every countably infinite model `M : Type` of an infinitary
+sentence `φ` with countable branching has internal Scott rank at most `β < ω₁`, then `φ` has at
+most `ℵ₀` countable models up to isomorphism or a nonempty perfect set of pairwise
+non-isomorphic countable models. The Scott heights of these models are then at most `β + ω`. -/
+theorem countableModelCount_le_aleph0_or_hasPerfectlyMany_of_internalScottRank_le (hβ : β < ω₁)
+    (hφ : ∀ (M : Type) [L.Structure M] [Countable M] [Infinite M], φ.Realize M →
+      internalScottRank (L := L) M ≤ β) :
+    countableModelCount φ ≤ ℵ₀ ∨ HasPerfectlyManyCountableModels φ :=
+  countableModelCount_le_aleph0_or_hasPerfectlyMany_of_scottHeight_le
+    (Ordinal.isPrincipal_add_omega 1 hβ Ordinal.omega0_lt_omega_one)
+    fun M _ _ _ hM => (scottHeight_le_internalScottRank_add_omega0 M).trans
+      (add_le_add (hφ M hM) le_rfl)
+
+/-- **The cardinal bounded-rank dichotomy for Scott height.** In a vocabulary with countably many
+relation symbols of each arity, if every countably infinite model `M : Type` of an infinitary
+sentence `φ` with countable branching has Scott height at most `β < ω₁`, then `φ` has either at
+most `ℵ₀` or exactly `𝔠` countable models up to isomorphism. -/
+theorem countableModelCount_le_aleph0_or_eq_continuum_of_scottHeight_le (hβ : β < ω₁)
+    (hφ : ∀ (M : Type) [L.Structure M] [Countable M] [Infinite M], φ.Realize M →
+      scottHeight (L := L) M ≤ β) :
+    countableModelCount φ ≤ ℵ₀ ∨ countableModelCount φ = 𝔠 :=
+  (countableModelCount_le_aleph0_or_hasPerfectlyMany_of_scottHeight_le hβ hφ).imp_right
+    HasPerfectlyManyCountableModels.countableModelCount_eq
+
+/-- **The cardinal bounded-rank dichotomy for internal Scott rank.** In a vocabulary with
+countably many relation symbols of each arity, if every countably infinite model `M : Type` of an
+infinitary sentence `φ` with countable branching has internal Scott rank at most `β < ω₁`, then
+`φ` has either at most `ℵ₀` or exactly `𝔠` countable models up to isomorphism. -/
+theorem countableModelCount_le_aleph0_or_eq_continuum_of_internalScottRank_le (hβ : β < ω₁)
+    (hφ : ∀ (M : Type) [L.Structure M] [Countable M] [Infinite M], φ.Realize M →
+      internalScottRank (L := L) M ≤ β) :
+    countableModelCount φ ≤ ℵ₀ ∨ countableModelCount φ = 𝔠 :=
+  (countableModelCount_le_aleph0_or_hasPerfectlyMany_of_internalScottRank_le hβ hφ).imp_right
+    HasPerfectlyManyCountableModels.countableModelCount_eq
+
+omit [Countable ι] [∀ n, Countable (L.Relations n)] in
+/-- **Countably many countable models bound every rank.** If `φ` has at most `ℵ₀` countable
+models up to isomorphism, every isomorphism-invariant rank with countable values is bounded
+strictly below one countable ordinal on the models of `φ` on `ℕ`. -/
+theorem exists_rank_bound_of_countableModelCount_le_aleph0
+    (hinv : ∀ ⦃c d⦄, isoSetoid L ℕ c d → ρ c = ρ d) (hρ : ∀ c, ρ c < ω₁)
+    (h : countableModelCount φ ≤ ℵ₀) :
+    ∃ β < ω₁, ∀ c ∈ modelsOf (V := ℕ) φ, ρ c < β :=
+  have := (countableModelCount_le_aleph0_iff.1 h).1
+  exists_rank_bound_of_countable_isoClasses hinv hρ _
+
+/-- For a sentence without a perfect set of pairwise non-isomorphic countable models, in a
+vocabulary with countably many relation symbols of each arity, there are at most `ℵ₀` countable
+models up to isomorphism exactly when a given isolating rank is bounded below `ω₁` on the models
+on `ℕ`. -/
+theorem countableModelCount_le_aleph0_iff_exists_rank_bound (hρ : IsIsolatingRank ρ)
+    (h : ¬ HasPerfectlyManyCountableModels φ) :
+    countableModelCount φ ≤ ℵ₀ ↔ ∃ β < ω₁, ∀ c ∈ modelsOf (V := ℕ) φ, ρ c < β := by
+  refine ⟨exists_rank_bound_of_countableModelCount_le_aleph0 hρ.iso_invariant hρ.lt_omega_one,
+    fun ⟨β, hβ, hφ⟩ => ?_⟩
+  exact (countableModelCount_le_aleph0_or_hasPerfectlyMany_of_bounded hρ hβ
+    fun c hc => (hφ c hc).le).resolve_right h
+
+end Sentences
 
 namespace RelationalConfiguration
 

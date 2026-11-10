@@ -8,7 +8,10 @@ module
 public import TauCeti.Geometry.Symplectic.Area.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
+import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
 /-!
 # The Hamiltonian action and the energy of cylindrical Floer solutions
@@ -61,12 +64,19 @@ For a solution with tame `J`, the action therefore drops by at most the integral
 `u` (`SymplecticForm.hamiltonianAction_le_hamiltonianAction_sub_integral`), and it does not drop
 for a monotone homotopy (`SymplecticForm.hamiltonianAction_le_hamiltonianAction_of_monotone`).
 
+A `1`-periodic orbit `x` of `X_{H_t}` is a critical point of the action, so for a loop `γ` the
+difference `A_H(γ) - A_H(x)` has no term linear in `ξ = γ - x`: it is
+`∫₀¹ (½ ω(ξ, ξ') + H_t(γ) - H_t(x) - dH_t(x) ξ) dt`
+(`SymplecticForm.hamiltonianAction_sub_hamiltonianAction_eq_integral`).
+
 ## Main definitions
 
 * `TauCeti.SymplecticForm.hamiltonianAction`: the Hamiltonian action of a loop.
 
 ## Main results
 
+* `SymplecticForm.hamiltonianAction_add_const`: adding a function `c` of time to the Hamiltonian
+  adds `∫₀¹ c` to the action of every loop.
 * `integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral_hamiltonianCurvature`:
   the energy of a map over `[a, b] × [0, 1]`, for a perturbation which is `H_a dt` and `H_b dt` on
   the two boundary circles, is the change of action minus the integrated curvature.
@@ -76,6 +86,8 @@ for a monotone homotopy (`SymplecticForm.hamiltonianAction_le_hamiltonianAction_
   solutions.
 * `SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction`: the energy of a
   Floer solution on the whole cylinder is the difference of its limiting actions.
+* `SymplecticForm.tendsto_hamiltonianAction`: the action is continuous for uniform `C¹`
+  convergence of loops.
 * `SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral`: the energy
   identity of a continuation cylinder over a rectangle.
 * `SymplecticForm.hamiltonianAction_le_hamiltonianAction_sub_integral`: the action estimate along
@@ -84,6 +96,8 @@ for a monotone homotopy (`SymplecticForm.hamiltonianAction_le_hamiltonianAction_
   along a continuation cylinder of a monotone homotopy.
 * `SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction_sub_integral`: the
   energy identity of a continuation cylinder over the whole cylinder.
+* `SymplecticForm.hamiltonianAction_sub_hamiltonianAction_eq_integral`: the expansion of the
+  action at an orbit, without linear term.
 
 ## References
 
@@ -119,6 +133,15 @@ theorem hamiltonianAction_def (ω : SymplecticForm V) (H : ℝ → V → ℝ) (x
 theorem hamiltonianAction_const (ω : SymplecticForm V) (H : ℝ → V → ℝ) (v : V) :
     ω.hamiltonianAction H (fun _ ↦ v) = ∫ t in (0 : ℝ)..1, H t v := by
   simp [hamiltonianAction_def]
+
+/-- **Normalizing a Hamiltonian shifts the action.** Adding a function `c` of time to the
+Hamiltonian adds its time average `∫₀¹ c` to the action of every loop. -/
+theorem hamiltonianAction_add_const (ω : SymplecticForm V) {H : ℝ → V → ℝ} {c : ℝ → ℝ}
+    {x : ℝ → V} (hH : IntervalIntegrable (fun t ↦ H t (x t)) volume 0 1)
+    (hc : IntervalIntegrable c volume 0 1) :
+    ω.hamiltonianAction (fun t y ↦ H t y + c t) x =
+      ω.hamiltonianAction H x + ∫ t in (0 : ℝ)..1, c t := by
+  rw [hamiltonianAction_def, hamiltonianAction_def, intervalIntegral.integral_add hH hc, add_assoc]
 
 end Action
 
@@ -348,5 +371,107 @@ theorem lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction (ω : Sympl
       htop
 
 end Energy
+
+section Expansion
+
+variable [FiniteDimensional ℝ V] {H : ℝ → V → ℝ} {x : ℝ → V}
+
+open intervalIntegral in
+/-- **The action near a critical loop.** Let `x` be an orbit of the Hamiltonian vector field of a
+`C¹` Hamiltonian `H` with `x 1 = x 0`, and let `γ` be a loop with continuous derivative `γ'` and
+`γ 1 = γ 0`. Since `x` is a critical point of the action, the action difference has no term linear
+in `ξ = γ - x`:
+`A_H(γ) - A_H(x) = ∫₀¹ (½ ω(ξ, ξ') + H_t(γ) - H_t(x) - dH_t(x) ξ) dt`. -/
+theorem hamiltonianAction_sub_hamiltonianAction_eq_integral (ω : SymplecticForm V)
+    (hH : ContDiff ℝ 1 (uncurry H))
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hx1 : x 1 = x 0)
+    {γ γ' : ℝ → V} (hγ' : Continuous γ') (hγ : ∀ t, HasDerivAt γ (γ' t) t) (hγ1 : γ 1 = γ 0) :
+    ω.hamiltonianAction H γ - ω.hamiltonianAction H x =
+      ∫ t in (0 : ℝ)..1, ((1 / 2 : ℝ) *
+        ω (γ t - x t) (γ' t - ω.hamiltonianVectorField (H t) (x t)) +
+        (H t (γ t) - H t (x t) - fderiv ℝ (H t) (x t) (γ t - x t))) := by
+  set X : ℝ → V → V := fun t ↦ ω.hamiltonianVectorField (H t)
+  set ξ : ℝ → V := fun t ↦ γ t - x t with hξdef
+  set ξ' : ℝ → V := fun t ↦ γ' t - X t (x t) with hξ'def
+  simp only [← ω.apply_hamiltonianVectorField]
+  have hXc : Continuous (uncurry X) :=
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
+  have hγc : Continuous γ := continuous_iff_continuousAt.2 fun t ↦ (hγ t).continuousAt
+  have hxc : Continuous x := continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt
+  have hXcomp {p : ℝ → V} (hp : Continuous p) : Continuous fun t ↦ X t (p t) :=
+    hXc.comp (continuous_id.prodMk hp)
+  have hHcomp {p : ℝ → V} (hp : Continuous p) : Continuous fun t ↦ H t (p t) :=
+    hH.continuous.comp (continuous_id.prodMk hp)
+  have hξc : Continuous ξ := hγc.sub hxc
+  have hξ'c : Continuous ξ' := hγ'.sub (hXcomp hxc)
+  -- The derivative of `ω(x, ξ)` integrates to zero over a period.
+  have i₆ : IntervalIntegrable (fun t ↦ ω (X t (x t)) (ξ t) + ω (x t) (ξ' t)) volume 0 1 :=
+    ((ω.continuous_apply_comp (hXcomp hxc) hξc).add
+      (ω.continuous_apply_comp hxc hξ'c)).intervalIntegrable _ _
+  have hφ : ∫ t in (0 : ℝ)..1, (ω (X t (x t)) (ξ t) + ω (x t) (ξ' t)) = 0 := by
+    rw [integral_eq_sub_of_hasDerivAt (f := fun t ↦ ω (x t) (ξ t))
+      (fun t _ ↦ ω.hasDerivAt_apply_comp (hx t) ((hγ t).sub (hx t))) i₆]
+    simp [hξdef, hγ1, hx1]
+  -- Pointwise, the action density differs from the claimed integrand by half that derivative.
+  have hpt (t : ℝ) : (1 / 2 : ℝ) * ω (γ t) (γ' t) + H t (γ t) -
+      ((1 / 2 : ℝ) * ω (x t) (X t (x t)) + H t (x t)) =
+      ((1 / 2 : ℝ) * ω (ξ t) (ξ' t) + (H t (γ t) - H t (x t) - ω (X t (x t)) (ξ t))) +
+        (1 / 2 : ℝ) * (ω (X t (x t)) (ξ t) + ω (x t) (ξ' t)) := by
+    have hγt : γ t = x t + ξ t := by simp [hξdef]
+    have hγ't : γ' t = X t (x t) + ξ' t := by simp [hξ'def]
+    have hskew : ω (ξ t) (X t (x t)) = -ω (X t (x t)) (ξ t) := (ω.neg_eq _ _).symm
+    simp only [hγt, hγ't, map_add, LinearMap.add_apply] at hskew ⊢
+    linear_combination (1 / 2 : ℝ) * hskew
+  have hdγ : deriv γ = γ' := funext fun t ↦ (hγ t).deriv
+  have hdx : deriv x = fun t ↦ X t (x t) := funext fun t ↦ (hx t).deriv
+  have i₁ := (ω.continuous_apply_comp hγc hγ').intervalIntegrable (μ := volume) 0 1
+  have i₂ := (hHcomp hγc).intervalIntegrable (μ := volume) 0 1
+  have i₃ := (ω.continuous_apply_comp hxc (hXcomp hxc)).intervalIntegrable (μ := volume) 0 1
+  have i₄ := (hHcomp hxc).intervalIntegrable (μ := volume) 0 1
+  have i₅ : IntervalIntegrable (fun t ↦ (1 / 2 : ℝ) * ω (ξ t) (ξ' t) +
+      (H t (γ t) - H t (x t) - ω (X t (x t)) (ξ t))) volume 0 1 :=
+    ((continuous_const.mul (ω.continuous_apply_comp hξc hξ'c)).add
+      (((hHcomp hγc).sub (hHcomp hxc)).sub
+        (ω.continuous_apply_comp (hXcomp hxc) hξc))).intervalIntegrable _ _
+  have h := integral_congr (μ := volume) (a := 0) (b := 1) fun t _ ↦ hpt t
+  rw [integral_sub ((i₁.const_mul _).add i₂) ((i₃.const_mul _).add i₄), integral_add i₅
+    (i₆.const_mul _), integral_add (i₁.const_mul _) i₂, integral_add (i₃.const_mul _) i₄,
+    intervalIntegral.integral_const_mul, intervalIntegral.integral_const_mul,
+    intervalIntegral.integral_const_mul, hφ] at h
+  rw [hamiltonianAction_def, hamiltonianAction_def, loopArea_def, loopArea_def, hdγ, hdx]
+  linear_combination h
+
+end Expansion
+
+section Continuity
+
+variable [FiniteDimensional ℝ V] {ι : Type*} {l : Filter ι} [l.IsCountablyGenerated]
+  {H : ℝ → V → ℝ} {x : ι → ℝ → V} {x₀ : ℝ → V}
+
+/-- **The action is continuous for uniform `C¹` convergence of loops.** Let `H` be a continuous
+time-dependent Hamiltonian. If the loops `x i` and their derivatives are eventually continuous on
+`[0, 1]` and converge uniformly there to `x₀` and to the derivative of `x₀`, then the actions of the
+`x i` converge to the action of `x₀`. -/
+theorem tendsto_hamiltonianAction (ω : SymplecticForm V) (hH : Continuous (uncurry H))
+    (hx : ∀ᶠ i in l, ContinuousOn (x i) (Icc 0 1))
+    (hdx : ∀ᶠ i in l, ContinuousOn (deriv (x i)) (Icc 0 1))
+    (hlim : TendstoUniformlyOn x x₀ l (Icc 0 1))
+    (hdlim : TendstoUniformlyOn (fun i ↦ deriv (x i)) (deriv x₀) l (Icc 0 1)) :
+    Tendsto (fun i ↦ ω.hamiltonianAction H (x i)) l (𝓝 (ω.hamiltonianAction H x₀)) := by
+  -- The pairs `(x(t), x'(t))` converge uniformly on `[0, 1]`, so the integrands of the symplectic
+  -- area and of the Hamiltonian term, continuous functions of `t` and of the pair, converge.
+  rw [← uIcc_of_le (zero_le_one : (0 : ℝ) ≤ 1)] at hx hdx hlim hdlim
+  have hP := hlim.prodMk_same hdlim
+  have hPc : ∀ᶠ i in l, ContinuousOn (fun t ↦ (x i t, deriv (x i) t)) (uIcc 0 1) :=
+    (hx.and hdx).mono fun i hi ↦ hi.1.prodMk hi.2
+  have hg1 : Continuous (uncurry fun (_ : ℝ) (p : V × V) ↦ ω p.1 p.2) :=
+    ω.continuous_apply_comp continuous_snd.fst continuous_snd.snd
+  have hg2 : Continuous (uncurry fun t (p : V × V) ↦ H t p.1) :=
+    hH.comp (continuous_fst.prodMk continuous_snd.fst)
+  simpa only [hamiltonianAction_def, loopArea_def] using
+    (tendsto_const_nhds.mul (hP.tendsto_intervalIntegral_comp hg1 hPc)).add
+      (hP.tendsto_intervalIntegral_comp hg2 hPc)
+
+end Continuity
 
 end TauCeti.SymplecticForm

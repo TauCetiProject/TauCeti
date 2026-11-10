@@ -12,6 +12,7 @@ public import TauCeti.AlgebraicGeometry.EllipticCurve.NodePolynomial
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.AddPolynomial
 import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Formula.VariableChange
 import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
+import TauCeti.RingTheory.LocalRing.MaximalIdeal.Generator
 
 /-!
 # Points reducing to the singular point
@@ -93,6 +94,7 @@ are the affine points `(x, y)` with `x, y ∈ 𝔪`, since the singular point of
 public section
 
 open IsLocalRing Polynomial
+open TauCeti.IsLocalRing (isUnit_iff_not_dvd)
 
 namespace WeierstrassCurve
 
@@ -206,7 +208,7 @@ theorem exists_associated_sq_Δ_of_isSingular (W : WeierstrassCurve R) {x y : R}
   set W' := VariableChange.mk 1 x 0 y • W
   have hX := hs.evalEval_polynomialX_mem_maximalIdeal
   have hY := hs.evalEval_polynomialY_mem_maximalIdeal
-  have h₆ : W'.a₆ = 0 := variableChange_translate_a₆_of_equation W h
+  have h₆ : W'.a₆ = 0 := (variableChange_translate_a₆ W x y).trans (neg_eq_zero.mpr h)
   have h₃ : W'.a₃ ∈ maximalIdeal R := variableChange_translate_a₃ W x y ▸ hY
   have h₄ : W'.a₄ ∈ maximalIdeal R :=
     variableChange_translate_a₄ W x y ▸ (maximalIdeal R).neg_mem hX
@@ -520,6 +522,39 @@ theorem two_nsmul_notMem_of_slope_mem
     hslopeF, ← coe_addX_integralModel, ← coe_addY_integralModel]
   exact ⟨(Valuation.mem_maximalIdeal_iff (v := v)).1 hx₃,
     (Valuation.mem_maximalIdeal_iff (v := v)).1 hy₃⟩
+
+omit [IsIntegral v.valuationSubring W] in
+/-- The chord from `(ϖ X₁, ϖ² Y₁)`, with `X₁` a non-multiple of `ϖ`, to `(ϖ² X₂, ϖ² Y₂)` is not
+vertical and its slope is a multiple of `ϖ` in the valuation ring: it is
+`ϖ (Y₁ − Y₂) / (X₁ − ϖ X₂)`, and `X₁ − ϖ X₂` is a unit. -/
+theorem exists_slope_eq_dvd_of_not_dvd {ϖ : v.valuationSubring}
+    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ}) (hϖ₀ : ϖ ≠ 0)
+    {X₁ Y₁ X₂ Y₂ : v.valuationSubring} (hX₁ : ¬ ϖ ∣ X₁) :
+    ∃ L : v.valuationSubring, ϖ ∣ L ∧
+      ¬(((ϖ * X₁ : v.valuationSubring) : F) = ((ϖ ^ 2 * X₂ : v.valuationSubring) : F) ∧
+        ((ϖ ^ 2 * Y₁ : v.valuationSubring) : F) =
+          W.negY ((ϖ ^ 2 * X₂ : v.valuationSubring) : F) ((ϖ ^ 2 * Y₂ : v.valuationSubring) : F)) ∧
+      W.slope ((ϖ * X₁ : v.valuationSubring) : F) ((ϖ ^ 2 * X₂ : v.valuationSubring) : F)
+        ((ϖ ^ 2 * Y₁ : v.valuationSubring) : F) ((ϖ ^ 2 * Y₂ : v.valuationSubring) : F) = L := by
+  -- `x₁ − x₂ = ϖ u` with `u = X₁ − ϖ X₂` a unit
+  have hu : IsUnit (X₁ - ϖ * X₂) := (isUnit_iff_not_dvd hϖ).2 fun hd ↦
+    hX₁ (by simpa using dvd_add hd (dvd_mul_right ϖ X₂))
+  obtain ⟨i, hi⟩ := hu.exists_right_inv
+  have hi' : ((X₁ - ϖ * X₂ : v.valuationSubring) : F) * (i : F) = 1 := by
+    exact_mod_cast congrArg ((↑) : v.valuationSubring → F) hi
+  have hx : ((ϖ * X₁ : v.valuationSubring) : F) ≠ ((ϖ ^ 2 * X₂ : v.valuationSubring) : F) :=
+    fun he ↦ mul_ne_zero hϖ₀ hu.ne_zero (Subtype.val_injective (by
+      push_cast at he ⊢
+      linear_combination he))
+  have hxy : ¬(((ϖ * X₁ : v.valuationSubring) : F) = ((ϖ ^ 2 * X₂ : v.valuationSubring) : F) ∧
+      ((ϖ ^ 2 * Y₁ : v.valuationSubring) : F) =
+        W.negY ((ϖ ^ 2 * X₂ : v.valuationSubring) : F) ((ϖ ^ 2 * Y₂ : v.valuationSubring) : F)) :=
+    fun hn ↦ hx hn.1
+  -- the slope is `L = ϖ (Y₁ − Y₂) / u`
+  refine ⟨ϖ * ((Y₁ - Y₂) * i), dvd_mul_right _ _, hxy, ?_⟩
+  rw [slope_of_X_ne hx, div_eq_iff (sub_ne_zero.2 hx)]
+  push_cast at hi' ⊢
+  linear_combination (-(ϖ : F) ^ 2 * ((Y₁ : F) - Y₂)) * hi'
 
 end Affine
 

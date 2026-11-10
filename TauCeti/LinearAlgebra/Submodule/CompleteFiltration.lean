@@ -67,6 +67,22 @@ theorem pow_apply_mem_of_map_le (hT : ∀ n, (F n).map T ≤ F (n + 1)) {m : ℕ
     rw [pow_succ', mul_apply_eq_comp, ← add_assoc]
     exact hT _ ⟨_, ih, rfl⟩
 
+/-- If a family of submodules starts at the whole semimodule and vanishes at order `r`,
+any endomorphism raising its order by one has zero `r`-th power. The family need not
+be decreasing, and the coefficient semiring need not admit subtraction.
+
+Adapted from `Mei/LinearAlgebra/ModuleFiltration/FiniteLength.lean` by Kimi K3 and Codex
+(copyright 2026 Mei contributors, Apache 2.0), at commit
+`7f1e4c7714fb020473694755ad8748c8f15d0e7f`.
+Source: https://github.com/yuma-mizuno-lean/Mei/blob/7f1e4c7714fb020473694755ad8748c8f15d0e7f/Mei/LinearAlgebra/ModuleFiltration/FiniteLength.lean
+-/
+theorem pow_eq_zero_of_map_le (hT : ∀ n, (F n).map T ≤ F (n + 1))
+    (hzero : F 0 = ⊤) {r : ℕ} (hr : F r = ⊥) : T ^ r = 0 := by
+  ext x
+  have hx0 : x ∈ F 0 := by simp [hzero]
+  have hx := pow_apply_mem_of_map_le hT hx0 r
+  simpa only [Nat.zero_add, hr, Submodule.mem_bot, LinearMap.zero_apply] using hx
+
 end Module.End
 
 variable [Ring R] [AddCommGroup M] [Module R M]

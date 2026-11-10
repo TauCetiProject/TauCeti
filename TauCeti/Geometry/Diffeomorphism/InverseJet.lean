@@ -143,6 +143,43 @@ section Continuity
 variable [CompactSpace M] [T2Space N] [LocallyCompactSpace E]
   [IsManifold I n M] [IsManifold J n N]
 
+/-- Along the inverse image of a moving point of the target chart, the source chart is eventually
+defined and sends the inverse image to a point of the source chart target, tending to the
+chart image of the limit inverse image. -/
+theorem tendsto_extChartAt_diffeomorph_symm_eval
+    {f₀ : M ≃ₘ^n⟮I, J⟯ N} {x : M} {y : N} {w₀ : F}
+    (hw₀ : w₀ ∈ (extChartAt J y).target)
+    (hf₀ : f₀.symm ((extChartAt J y).symm w₀) ∈ (extChartAt I x).source) :
+    (∀ᶠ p in 𝓝 f₀ ×ˢ 𝓝[(extChartAt J y).target] w₀,
+      p.1.symm ((extChartAt J y).symm p.2) ∈ (extChartAt I x).source) ∧
+    Tendsto (fun p : (M ≃ₘ^n⟮I, J⟯ N) × F ↦
+      extChartAt I x (p.1.symm ((extChartAt J y).symm p.2)))
+      (𝓝 f₀ ×ˢ 𝓝[(extChartAt J y).target] w₀)
+      (𝓝[(extChartAt I x).target]
+        (extChartAt I x (f₀.symm ((extChartAt J y).symm w₀)))) := by
+  set l := 𝓝 f₀ ×ˢ 𝓝[(extChartAt J y).target] w₀
+  have hpt : Tendsto (fun p : (M ≃ₘ^n⟮I, J⟯ N) × F ↦
+      (p.1, (extChartAt J y).symm p.2)) l (𝓝 (f₀, (extChartAt J y).symm w₀)) := by
+    rw [nhds_prod_eq]
+    exact (tendsto_fst : Tendsto Prod.fst l (𝓝 f₀)).prodMk
+      ((continuousOn_extChartAt_symm y w₀ hw₀).tendsto.comp tendsto_snd)
+  have hv := (continuous_diffeomorph_symm_eval.tendsto (f₀, (extChartAt J y).symm w₀)).comp hpt
+  have hsrc := hv.eventually ((isOpen_extChartAt_source x).mem_nhds hf₀)
+  exact ⟨hsrc, tendsto_nhdsWithin_iff.mpr ⟨(continuousOn_extChartAt x _ hf₀).tendsto.comp
+    (tendsto_nhdsWithin_iff.mpr ⟨hv, hsrc⟩), hsrc.mono fun _ hp ↦ (extChartAt I x).map_source hp⟩⟩
+
+omit [CompactSpace M] [T2Space N] [LocallyCompactSpace E] [IsManifold I n M] [IsManifold J n N] in
+/-- The forward map sends the chart-source inverse image of a point of the target chart back into
+the target chart's source. -/
+theorem diffeomorph_toContMDiffMap_symm_extChartAt_mem_source
+    {f₀ : M ≃ₘ^n⟮I, J⟯ N} {x : M} {y : N} {w₀ : F}
+    (hw₀ : w₀ ∈ (extChartAt J y).target)
+    (hf₀ : f₀.symm ((extChartAt J y).symm w₀) ∈ (extChartAt I x).source) :
+    f₀.toContMDiffMap ((extChartAt I x).symm
+      (extChartAt I x (f₀.symm ((extChartAt J y).symm w₀)))) ∈ (extChartAt J y).source := by
+  simpa only [Diffeomorph.toContMDiffMap, ContMDiffMap.coeFn_mk, Diffeomorph.apply_symm_apply,
+    (extChartAt I x).left_inv hf₀] using (extChartAt J y).map_target hw₀
+
 /-- The first coordinate differential of the inverse varies continuously with the
 diffeomorphism and the point of the target chart. -/
 theorem tendsto_fderivWithin_diffeomorph_symm_extChartAt
@@ -167,27 +204,12 @@ theorem tendsto_fderivWithin_diffeomorph_symm_extChartAt
   have hz₀ : f₀ z₀ ∈ ψ.source := by
     simpa only [z₀, Diffeomorph.apply_symm_apply] using ψ.map_target hw₀
   -- Track the inverse image point and keep it inside the chosen source chart.
-  have hpt : Tendsto (fun p : (M ≃ₘ^n⟮I, J⟯ N) × F ↦ (p.1, ψ.symm p.2)) l
-      (𝓝 (f₀, ψ.symm w₀)) := by
-    rw [nhds_prod_eq]
-    exact (tendsto_fst : Tendsto Prod.fst l (𝓝 f₀)).prodMk
-      ((continuousOn_extChartAt_symm y w₀ hw₀).tendsto.comp tendsto_snd)
-  have hv : Tendsto v l (𝓝 z₀) :=
-    ((continuous_diffeomorph_symm_eval (I := I) (J := J) (n := n)).tendsto
-      (f₀, ψ.symm w₀)).comp hpt
-  have hsrc : ∀ᶠ p in l, v p ∈ φ.source :=
-    hv.eventually ((isOpen_extChartAt_source x).mem_nhds hf₀)
-  have hφ : Tendsto (fun p ↦ φ (v p)) l (𝓝[φ.target] (φ z₀)) :=
-    tendsto_nhdsWithin_iff.mpr ⟨(continuousOn_extChartAt x z₀ hf₀).tendsto.comp
-      (tendsto_nhdsWithin_iff.mpr ⟨hv, hsrc⟩), hsrc.mono fun _ hp ↦ φ.map_source hp⟩
-  -- Evaluate the forward differential at the moving inverse image, then invert it.
+  obtain ⟨hsrc, hφ⟩ := tendsto_extChartAt_diffeomorph_symm_eval hw₀ hf₀
   have hq : Tendsto (fun p : (M ≃ₘ^n⟮I, J⟯ N) × F ↦ (p.1.toContMDiffMap, φ (v p))) l
       (𝓝 f₀.toContMDiffMap ×ˢ 𝓝[φ.target] (φ z₀)) :=
     (Diffeomorph.continuous_toContMDiffMap.continuousAt.tendsto.comp
       (tendsto_fst : Tendsto Prod.fst l (𝓝 f₀))).prodMk hφ
-  have hz₀' : z₀ ∈ φ.source := hf₀
-  have hvis : f₀.toContMDiffMap (φ.symm (φ z₀)) ∈ ψ.source := by
-    simpa only [Diffeomorph.toContMDiffMap, ContMDiffMap.coeFn_mk, φ.left_inv hz₀'] using hz₀
+  have hvis := diffeomorph_toContMDiffMap_symm_extChartAt_mem_source hw₀ hf₀
   have hD : Tendsto (fun p : (M ≃ₘ^n⟮I, J⟯ N) × F ↦
       fderivWithin 𝕜 (ψ ∘ p.1 ∘ φ.symm) φ.target (φ (v p))) l
       (𝓝 (fderivWithin 𝕜 (ψ ∘ f₀ ∘ φ.symm) φ.target (φ z₀))) := by

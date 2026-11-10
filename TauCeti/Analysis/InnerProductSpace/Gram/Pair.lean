@@ -20,7 +20,9 @@ The results here specialize Mathlib's general Gram-matrix API to a pair, exposin
 formula without introducing a second notion of Gram determinant.  The real Gram determinant
 `‖u‖² ‖v‖² - ⟪u, v⟫²` of a pair is also differentiated as a function of the pair
 (`TauCeti.hasStrictFDerivAt_sq_sub_inner_sq`); in mechanics it is the squared angular momentum
-`ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of a phase-space point `(q, p)`.
+`ℓ² = ‖q‖² ‖p‖² - ⟪q, p⟫²` of a phase-space point `(q, p)`.  Replacing the pair by
+`(a q + b p, c q + d p)` multiplies it by `(a d - b c)²`
+(`TauCeti.sq_sub_inner_sq_smul_add_smul`), so changes with `a d - b c = ±1` preserve it.
 -/
 
 public section
@@ -59,6 +61,15 @@ theorem hasStrictFDerivAt_sq_sub_inner_sq (x : V × V) :
   have h12 := (hasStrictFDerivAt_fst (p := x)).inner ℝ (hasStrictFDerivAt_snd (p := x))
   refine ((h1.mul h2).sub (h12.pow 2)).congr_fderiv (ContinuousLinearMap.ext fun v ↦ ?_)
   simp [real_inner_comm]
+  ring
+
+/-- Replacing a pair `(q, p)` by `(a q + b p, c q + d p)` multiplies its real Gram determinant
+`‖q‖² ‖p‖² - ⟪q, p⟫²` by the square of the determinant `a d - b c` of the change of basis. -/
+theorem sq_sub_inner_sq_smul_add_smul (a b c d : ℝ) (q p : V) :
+    ‖a • q + b • p‖ ^ 2 * ‖c • q + d • p‖ ^ 2 - ⟪a • q + b • p, c • q + d • p⟫_ℝ ^ 2 =
+      (a * d - b * c) ^ 2 * (‖q‖ ^ 2 * ‖p‖ ^ 2 - ⟪q, p⟫_ℝ ^ 2) := by
+  simp only [← real_inner_self_eq_norm_sq, inner_add_left, inner_add_right, real_inner_smul_left,
+    real_inner_smul_right, real_inner_comm q p]
   ring
 
 end TauCeti

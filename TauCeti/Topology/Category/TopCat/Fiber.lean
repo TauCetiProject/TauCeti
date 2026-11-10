@@ -8,8 +8,6 @@ module
 public import Mathlib.CategoryTheory.CommSq
 public import Mathlib.Topology.Category.TopCat.Basic
 
-import Mathlib.Data.Fintype.Sigma
-
 /-!
 # Fibres of morphisms in `TopCat`
 
@@ -55,23 +53,10 @@ lemma fiberι_comp (p : E ⟶ B) (b : B) : p.fiberι b ≫ p = TopCat.const b :=
 /-- The composite of two maps with finite fibres has finite fibres. -/
 theorem finite_fibers_comp {E B X : TopCat.{u}} (p : E ⟶ B) (q : B ⟶ X)
     (hfinp : ∀ b, Finite ↥(p ⁻¹' {b})) (hfinq : ∀ x, Finite ↥(q ⁻¹' {x})) :
-    ∀ x, Finite ↥((p ≫ q) ⁻¹' {x}) := by
-  intro x
-  let fq : Fintype ↥(q ⁻¹' {x}) :=
-    Classical.choice ((finite_iff_nonempty_fintype _).mp (hfinq x))
-  let fp : ∀ b : ↥(q ⁻¹' {x}), Fintype ↥(p ⁻¹' {b.1}) := fun b =>
-    Classical.choice ((finite_iff_nonempty_fintype _).mp (hfinp b.1))
-  let fs : Fintype (Σ b : ↥(q ⁻¹' {x}), ↥(p ⁻¹' {b.1})) :=
-    @Sigma.instFintype _ _ fp fq
-  apply @Finite.of_injective _ _ (Fintype.finite fs)
-    (fun e : ↥((p ≫ q) ⁻¹' {x}) =>
-      (⟨⟨p e, by
-          simpa only [Set.mem_preimage, Set.mem_singleton_iff,
-            ConcreteCategory.comp_apply] using e.property⟩,
-        ⟨e, by simp⟩⟩ : Σ b : ↥(q ⁻¹' {x}), ↥(p ⁻¹' {b.1})))
-  intro e e' h
-  apply Subtype.ext
-  exact congrArg (fun z : Σ b : ↥(q ⁻¹' {x}), ↥(p ⁻¹' {b.1}) => (z.2 : E)) h
+    ∀ x, Finite ↥((p ≫ q) ⁻¹' {x}) := fun x => by
+  rw [TopCat.coe_comp, Set.preimage_comp]
+  exact ((Set.finite_coe_iff.mp (hfinq x)).preimage' fun b _ =>
+    Set.finite_coe_iff.mp (hfinp b)).to_subtype
 
 end TopCat.Hom
 
@@ -84,9 +69,7 @@ variable {E B E' B' E'' B'' : TopCat.{u}} {p : E ⟶ B} {p' : E' ⟶ B'} {p'' : 
 over `b` to the fibre of `p'` over `g b`. -/
 def fiberMap (sq : CommSq f p p' g) (b : B) : p.fiber b ⟶ p'.fiber (g b) :=
   TopCat.ofHom
-    { toFun x := ⟨f x.1, by
-        rw [Set.mem_preimage, Set.mem_singleton_iff, ← ConcreteCategory.comp_apply, sq.w,
-          ConcreteCategory.comp_apply, x.2]⟩
+    { toFun x := ⟨f x.1, by simpa using ConcreteCategory.congr_hom sq.w x.1⟩
       continuous_toFun := by fun_prop }
 
 @[simp]

@@ -25,7 +25,8 @@ to smoothness of inversion of continuous linear maps.
 off its coordinate expression, `ContinuousLinearMap.inCoordinates_comp` reads a composite
 of fibre maps as the composite of their coordinate expressions, and
 `ContinuousLinearMap.inCoordinates_id` and `ContinuousLinearMap.inCoordinates_smul` read the
-identity map and scalar multiples in a compatible target vector-bundle structure.
+identity map and scalar multiples in a compatible target vector-bundle structure, and
+`ContinuousLinearMap.inCoordinates_finset_sum` reads finite sums of fibre maps.
 `ContinuousLinearMap.mem_ker_inCoordinates_iff`, `ContinuousLinearMap.mem_range_inCoordinates_iff`
 and `ContinuousLinearMap.finrank_range_inCoordinates` read the kernel, the range and the rank of
 a fibre map off its coordinate expression.
@@ -373,5 +374,29 @@ theorem inCoordinates_comp {x₀ x : B} {y₀ y : B'} {z₀ z : B''}
   simp only [inCoordinates, comp_apply, Trivialization.symmL_continuousLinearMapAt _ hy]
 
 end Comp
+
+section Sum
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {B : Type*} [TopologicalSpace B] {B' : Type*} [TopologicalSpace B']
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {V : B → Type*} [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+  {W : B' → Type*} [∀ x, AddCommMonoid (W x)] [∀ x, Module 𝕜 (W x)]
+  [∀ x, TopologicalSpace (W x)] [∀ x, ContinuousAdd (W x)] [TopologicalSpace (TotalSpace F' W)]
+  [FiberBundle F' W] [VectorBundle 𝕜 F' W]
+
+/-- The coordinate expression of a finite sum of fibre maps is the sum of their coordinate
+expressions. -/
+theorem inCoordinates_finset_sum {ι : Type*} (s : Finset ι) {x₀ x : B} {y₀ y : B'}
+    (ϕ : ι → V x →L[𝕜] W y) :
+    inCoordinates F V F' W x₀ x y₀ y (∑ i ∈ s, ϕ i) =
+      ∑ i ∈ s, inCoordinates F V F' W x₀ x y₀ y (ϕ i) := by
+  ext v
+  simp [inCoordinates]
+
+end Sum
 
 end ContinuousLinearMap

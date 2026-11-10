@@ -9,6 +9,7 @@ public import Mathlib.Order.Setoid.Partition
 public import Mathlib.Order.Partition.Finpartition
 public import Mathlib.Algebra.Field.Defs
 public import Mathlib.Algebra.Order.GroupWithZero.Basic
+public import Mathlib.Data.Fintype.Prod
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Algebra.BigOperators.Group.Finset.Sigma
 import Mathlib.Algebra.BigOperators.Ring.Finset
@@ -51,12 +52,14 @@ partitions other than the finest and the coarsest, the partition
 `Finpartition.pairPartition` with one pair part and singletons elsewhere, the partition
 `Finpartition.splitPartition` into a subset and its complement, the position of the parts of
 `Finpartition.atomise`, and of its common refinements with other partitions, relative to the sets
-it cuts along, and the pullback `Finpartition.comap`
+it cuts along, together with the bound `Finpartition.card_parts_inf_atomise_le` on the number of
+parts of such a common refinement, and the pullback `Finpartition.comap`
 of a finite partition of the image `f '' s` to a finite partition of `s`, which is an order
 embedding whose image consists of the partitions coarser than the partition of `s` into the fibres
 of `f`, each of which is the pullback of its pushforward `Finpartition.pushforward`, a left inverse
 of the pullback; pulling a partition of `univ` back along an equivalence moves its parts along the
-inverse equivalence.
+inverse equivalence; and the partition of `α × β` into the fibres of the first coordinate
+(`Finpartition.ofSetoid_ker_fst_parts`).
 -/
 
 public section
@@ -404,14 +407,22 @@ theorem part_top {a : α} (ha : a ∈ s) : (⊤ : Finpartition s).part a = s :=
 theorem mem_part_comm {a b : α} : b ∈ P.part a ↔ a ∈ P.part b := by
   simp only [mem_part_iff_exists, and_comm]
 
-/-- If the parts through two points of `s` are different and cover `s`, they are complementary. -/
-theorem part_eq_sdiff_part {a b : α} (ha : a ∈ s) (hb : b ∈ s) (hab : P.part a ∪ P.part b = s)
+/-- If the parts through two points are different and cover `s`, they are complementary. -/
+theorem part_eq_sdiff_part {a b : α} (hab : P.part a ∪ P.part b = s)
     (hne : P.part a ≠ P.part b) : P.part a = s \ P.part b := by
-  ext w
-  refine ⟨fun hw => mem_sdiff.2 ⟨P.part_subset a hw, fun hw₂ => hne ?_⟩, fun hw => ?_⟩
-  · rw [← (P.mem_part_iff_part_eq_part (P.part_subset a hw) ha).1 hw,
-      (P.mem_part_iff_part_eq_part (P.part_subset a hw) hb).1 hw₂]
-  · exact (mem_union.1 (hab.symm ▸ (mem_sdiff.1 hw).1)).resolve_right (mem_sdiff.1 hw).2
+  by_cases hb : b ∈ s
+  · by_cases ha : a ∈ s
+    · ext w
+      refine ⟨fun hw => mem_sdiff.2 ⟨P.part_subset a hw, fun hw₂ => hne ?_⟩, fun hw => ?_⟩
+      · rw [← (P.mem_part_iff_part_eq_part (P.part_subset a hw) ha).1 hw,
+          (P.mem_part_iff_part_eq_part (P.part_subset a hw) hb).1 hw₂]
+      · exact (mem_union.1 (hab.symm ▸ (mem_sdiff.1 hw).1)).resolve_right (mem_sdiff.1 hw).2
+    · rw [P.part_eq_empty.2 ha, empty_union] at hab
+      rw [P.part_eq_empty.2 ha, hab]
+      simp
+  · rw [P.part_eq_empty.2 hb, union_empty] at hab
+    rw [P.part_eq_empty.2 hb, hab]
+    simp
 
 /-- A finite partition of a finset is determined by the part containing each point. -/
 theorem part_injective : Function.Injective (part : Finpartition s → α → Finset α) := by
@@ -800,6 +811,12 @@ theorem subset_or_disjoint_of_mem_inf_atomise {P : Finpartition s} {F : Finset (
   obtain ⟨T, hT, htT⟩ := (inf_le_right : P ⊓ atomise s F ≤ atomise s F) ht
   exact (subset_or_disjoint_of_mem_atomise hT hu).imp htT.trans (Disjoint.mono_left htT)
 
+/-- Cutting a partition along `F` and refining by the atoms gives at most `#P.parts * 2 ^ #F`
+parts. -/
+theorem card_parts_inf_atomise_le (P : Finpartition s) (F : Finset (Finset α)) :
+    #(P ⊓ atomise s F).parts ≤ #P.parts * 2 ^ #F :=
+  (card_parts_inf_le_mul P _).trans (Nat.mul_le_mul_left _ card_atomise_le)
+
 end Atomise
 
 section Comap
@@ -990,5 +1007,47 @@ theorem exists_comap_eq_iff {Q : Finpartition s} :
   ⟨fun ⟨_, hP⟩ => hP ▸ comap_mono bot_le, fun h => ⟨_, comap_pushforward h⟩⟩
 
 end Comap
+
+end Finpartition
+
+namespace Finpartition
+
+open Finset
+
+variable {α β : Type*} [Fintype α] [DecidableEq α] [Fintype β] [DecidableEq β] [Nonempty β]
+  [DecidableRel (Setoid.ker (Prod.fst : α × β → α))]
+
+/-- The partition of `α × β` into the fibers of the first coordinate has the cells
+`{A} ×ˢ univ`, one for each `A : α`. -/
+theorem ofSetoid_ker_fst_parts :
+    (ofSetoid (Setoid.ker (Prod.fst : α × β → α))).parts =
+      univ.image (fun A : α ↦ {A} ×ˢ (univ : Finset β)) := by
+  have hfilter (x : α × β) :
+      {y ∈ (univ : Finset (α × β)) | x.1 = y.1} = {x.1} ×ˢ univ := by
+    ext y
+    simp only [mem_filter, mem_univ, true_and, mem_product, mem_singleton, and_true, eq_comm]
+  simp only [ofSetoid, ofSetSetoid_parts, Setoid.ker_def, hfilter]
+  ext B
+  simp only [mem_image, mem_univ, true_and]
+  exact ⟨fun ⟨x, hx⟩ ↦ ⟨x.1, hx⟩, fun ⟨A, hA⟩ ↦ ⟨(A, Classical.arbitrary β), hA⟩⟩
+
+/-- Every cell of the partition of `α × β` into the fibers of the first coordinate has
+`Fintype.card β` elements. -/
+theorem card_of_mem_ofSetoid_ker_fst_parts {B : Finset (α × β)}
+    (hB : B ∈ (ofSetoid (Setoid.ker (Prod.fst : α × β → α))).parts) :
+    #B = Fintype.card β := by
+  obtain ⟨A, -, rfl⟩ := mem_image.1 (ofSetoid_ker_fst_parts (α := α) (β := β) ▸ hB)
+  simp
+
+/-- The partition of `α × β` into the fibers of the first coordinate has `Fintype.card α` cells. -/
+@[simp]
+theorem card_ofSetoid_ker_fst_parts :
+    #(ofSetoid (Setoid.ker (Prod.fst : α × β → α))).parts = Fintype.card α := by
+  rw [ofSetoid_ker_fst_parts, card_image_of_injective, card_univ]
+  intro A B h
+  have hmem : (A, Classical.arbitrary β) ∈ {A} ×ˢ (univ : Finset β) := by simp
+  simp only at h
+  rw [h] at hmem
+  simpa only [mem_product, mem_singleton, mem_univ, and_true] using hmem
 
 end Finpartition

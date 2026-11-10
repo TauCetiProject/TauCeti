@@ -70,17 +70,71 @@ between the pulled-back structures, for the pulled-back form.
 public section
 
 open Bundle Real
-open scoped Manifold
+open scoped Manifold ContDiff
 
 noncomputable section
+
+open TauCeti in
+/-- The Cayley path formula applied to two tangent endomorphism sections along a smooth base
+map is smooth at a point whenever both inverse denominators are units there. Only pointwise
+smoothness and invertibility are needed; no compatibility assumptions away from the point are
+required. -/
+theorem ContMDiffAt.cayleyPathFormula_hom_bundle
+    {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+    [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
+    {EP HP P : Type*} [NormedAddCommGroup EP] [NormedSpace ℝ EP] [TopologicalSpace HP]
+    {IP : ModelWithCorners ℝ EP HP} [TopologicalSpace P] [ChartedSpace HP P]
+    {f : P → M} {b : P → ℝ}
+    {A B : (q : P) → TangentSpace I (f q) →L[ℝ] TangentSpace I (f q)} {q₀ : P}
+    (hf : ContMDiffAt IP I ∞ f q₀) (hb : ContMDiffAt IP 𝓘(ℝ) ∞ b q₀)
+    (hA : ContMDiffAt IP (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (f q) (A q)) q₀)
+    (hB : ContMDiffAt IP (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (f q) (B q)) q₀)
+    (hu₁ : IsUnit (1 - A q₀ * B q₀))
+    (hu₂ : IsUnit (1 - b q₀ • cayleyFormula (A q₀) (B q₀))) :
+    ContMDiffAt IP (I.prod 𝓘(ℝ, E →L[ℝ] E)) ∞
+      (fun q ↦ TotalSpace.mk' (E →L[ℝ] E)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x) (f q)
+        (cayleyPathFormula (b q) (A q) (B q))) q₀ := by
+  rw [contMDiffAt_hom_bundle]
+  refine ⟨hf, ?_⟩
+  let e := trivializationAt E (TangentSpace I) (f q₀)
+  let coord : (x : M) → (TangentSpace I x →L[ℝ] TangentSpace I x) → E →L[ℝ] E :=
+    fun x C ↦ ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I)
+      (f q₀) x (f q₀) x C
+  have hconj {x : M} (hx : x ∈ e.baseSet) (C : TangentSpace I x →L[ℝ] TangentSpace I x) :
+      coord x C = (e.continuousLinearEquivAt ℝ x hx).conjContinuousAlgEquiv C := by
+    simp only [coord, e, ContinuousLinearMap.inCoordinates_eq hx hx,
+      ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+  have hx₀ : f q₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) (f q₀)
+  have hinner : ContMDiffAt IP 𝓘(ℝ, ℝ × (E →L[ℝ] E) × (E →L[ℝ] E)) ∞
+      (fun q ↦ (b q, coord (f q) (A q), coord (f q) (B q))) q₀ :=
+    hb.prodMk_space (((contMDiffAt_hom_bundle _).1 hA).2.prodMk_space
+      ((contMDiffAt_hom_bundle _).1 hB).2)
+  let φ := (e.continuousLinearEquivAt ℝ (f q₀) hx₀).conjContinuousAlgEquiv
+  have hu₁' : IsUnit (1 - coord (f q₀) (A q₀) * coord (f q₀) (B q₀)) := by
+    rw [hconj hx₀, hconj hx₀, ← map_mul, ← map_one φ, ← map_sub]
+    exact hu₁.map φ
+  have hu₂' : IsUnit (1 - b q₀ •
+      cayleyFormula (coord (f q₀) (A q₀)) (coord (f q₀) (B q₀))) := by
+    rw [hconj hx₀, hconj hx₀, ← map_cayleyFormula, ← map_smul, ← map_one φ, ← map_sub]
+    exact hu₂.map φ
+  refine ((contDiffAt_cayleyPathFormula hu₁' hu₂').comp_contMDiffAt
+    (f := fun q ↦ (b q, coord (f q) (A q), coord (f q) (B q)))
+    hinner).congr_of_eventuallyEq ?_
+  filter_upwards [hf.continuousAt.preimage_mem_nhds (e.open_baseSet.mem_nhds hx₀)] with q hq
+  rw [Function.comp_apply, hconj hq, hconj hq]
+  exact (hconj hq _).trans (map_cayleyPathFormula _ _ _ _)
 
 namespace TauCeti
 
 /-! ### The Cayley path of smooth compatible structures -/
 
 namespace SmoothTwoForm.Compatible
-
-open scoped ContDiff
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
@@ -128,51 +182,19 @@ private theorem contMDiff_cayleyPathEnd_family {K₀ K₁ : P → SmoothAlmostCo
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
         q.2 (cayleyPathEnd (hc₀ q.1) (hc₁ q.1) (τ q.1) q.2)) := by
   intro q₀
-  rw [contMDiffAt_hom_bundle]
-  refine ⟨contMDiffAt_snd, ?_⟩
-  -- Read every fibre endomorphism in the tangent trivialization at `q₀.2`.
-  set x₀ := q₀.2
-  let e := trivializationAt E (TangentSpace I) x₀
-  let coord : (x : M) → (TangentSpace I x →L[ℝ] TangentSpace I x) → E →L[ℝ] E :=
-    fun x A ↦ ContinuousLinearMap.inCoordinates E (TangentSpace I) E (TangentSpace I) x₀ x x₀ x A
-  -- On the base set, reading in coordinates is conjugation by an algebra isomorphism.
-  have hconj {x : M} (hx : x ∈ e.baseSet) (A : TangentSpace I x →L[ℝ] TangentSpace I x) :
-      coord x A = (e.continuousLinearEquivAt ℝ x hx).conjContinuousAlgEquiv A := by
-    simp only [coord, e, ContinuousLinearMap.inCoordinates_eq hx hx,
-      ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
-  have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt E (TangentSpace I) x₀
-  have hinner : ContMDiffAt (IP.prod I) 𝓘(ℝ, ℝ × (E →L[ℝ] E) × (E →L[ℝ] E)) ∞
-      (fun q : P × M ↦ (smoothTransition (τ q.1), coord q.2 ((K₀ q.1).toEndomorphism q.2),
-        coord q.2 ((K₁ q.1).toEndomorphism q.2))) q₀ :=
-    (smoothTransition.contDiff.contMDiff.comp (hτ.comp contMDiff_fst)).contMDiffAt.prodMk_space
-      (((contMDiffAt_hom_bundle _).1 (hs₀ q₀)).2.prodMk_space
-        ((contMDiffAt_hom_bundle _).1 (hs₁ q₀)).2)
-  -- The two denominators are invertible at `q₀`, since conjugation preserves units.
-  let φ₀ := (e.continuousLinearEquivAt ℝ x₀ hx₀).conjContinuousAlgEquiv
-  have hu₁ : IsUnit (1 - coord x₀ ((K₀ q₀.1).toEndomorphism x₀) *
-      coord x₀ ((K₁ q₀.1).toEndomorphism x₀)) := by
-    rw [hconj hx₀, hconj hx₀, ← map_mul, ← map_one φ₀, ← map_sub]
-    exact (SymplecticForm.Tames.isUnit_one_sub_mul_of_toLinearMap (V := E)
-      ((hc₀ q₀.1).compatibleAt x₀).tames ((hc₁ q₀.1).compatibleAt x₀).tames
-      ((K₀ q₀.1).almostComplexStructureAt_toLinearMap x₀).symm
-      ((K₁ q₀.1).almostComplexStructureAt_toLinearMap x₀).symm).map φ₀
-  have hu₂ : IsUnit (1 - smoothTransition (τ q₀.1) •
-      cayleyFormula (coord x₀ ((K₀ q₀.1).toEndomorphism x₀))
-        (coord x₀ ((K₁ q₀.1).toEndomorphism x₀))) := by
-    rw [hconj hx₀, hconj hx₀, ← map_cayleyFormula, ← map_smul, ← map_one φ₀, ← map_sub]
-    exact (SymplecticForm.Compatible.isUnit_one_sub_smul_cayleyFormula (V := E)
-      ((hc₀ q₀.1).compatibleAt x₀) ((hc₁ q₀.1).compatibleAt x₀).tames
+  simp only [cayleyPathEnd_eq]
+  exact ContMDiffAt.cayleyPathFormula_hom_bundle contMDiffAt_snd
+    (smoothTransition.contDiff.contMDiff.comp (hτ.comp contMDiff_fst)).contMDiffAt
+    (hs₀ q₀) (hs₁ q₀)
+    (SymplecticForm.Tames.isUnit_one_sub_mul_of_toLinearMap (V := E)
+      ((hc₀ q₀.1).compatibleAt q₀.2).tames ((hc₁ q₀.1).compatibleAt q₀.2).tames
+      ((K₀ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm
+      ((K₁ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm)
+    (SymplecticForm.Compatible.isUnit_one_sub_smul_cayleyFormula (V := E)
+      ((hc₀ q₀.1).compatibleAt q₀.2) ((hc₁ q₀.1).compatibleAt q₀.2).tames
       (smoothTransition.abs_le_one _)
-      ((K₀ q₀.1).almostComplexStructureAt_toLinearMap x₀).symm
-      ((K₁ q₀.1).almostComplexStructureAt_toLinearMap x₀).symm).map φ₀
-  -- Near `q₀`, the path in coordinates is the Cayley path expression of the endpoints in
-  -- coordinates, which is smooth.
-  refine ((contDiffAt_cayleyPathFormula hu₁ hu₂).comp_contMDiffAt (f := fun q : P × M ↦
-    (smoothTransition (τ q.1), coord q.2 ((K₀ q.1).toEndomorphism q.2),
-      coord q.2 ((K₁ q.1).toEndomorphism q.2))) hinner).congr_of_eventuallyEq ?_
-  filter_upwards [(e.open_baseSet.preimage continuous_snd).mem_nhds hx₀] with q hq
-  rw [Function.comp_apply, cayleyPathEnd_eq, hconj hq, hconj hq]
-  exact (hconj hq _).trans (map_cayleyPathFormula _ _ _ _)
+      ((K₀ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm
+      ((K₁ q₀.1).almostComplexStructureAt_toLinearMap q₀.2).symm)
 
 end Family
 
