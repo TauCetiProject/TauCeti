@@ -79,11 +79,9 @@ theorem exists_subdivision_centroid_mem (K : SimplicialComplex ℝ E)
       ⋃ (t : K.faces) (_ : t ≠ s ∧ convexHull ℝ (t : Set E) ⊆ convexHull ℝ (s : Set E)),
         convexHull ℝ (t : Set E) := by
     intro s x hx
-    have hcl : IsClosed (convexHull ℝ (s : Set E)) := s.1.finite_toSet.isClosed_convexHull ℝ
-    rw [← hcl.sdiff_intrinsicInterior] at hx
-    obtain ⟨t, ht, hts, hxt⟩ := exists_mem_faces_subset_mem_intrinsicInterior s.2 hx.1
-    exact mem_iUnion₂.2 ⟨⟨t, ht⟩, ⟨fun h => hx.2 (congrArg Subtype.val h ▸ hxt),
-      convexHull_mono (Finset.coe_subset.2 hts)⟩, intrinsicInterior_subset hxt⟩
+    obtain ⟨t, ht, h⟩ := mem_iUnion₂.1 (intrinsicFrontier_convexHull_subset_iUnion s.2 hx)
+    obtain ⟨⟨hne, hsub⟩, hxt⟩ := mem_iUnion.1 h
+    exact mem_iUnion₂.2 ⟨⟨t, ht⟩, ⟨fun h => hne (congrArg Subtype.val h), hsub⟩, hxt⟩
   have hri : Pairwise fun s t : K.faces =>
       Disjoint (intrinsicInterior ℝ (convexHull ℝ (s : Set E)))
         (intrinsicInterior ℝ (convexHull ℝ (t : Set E))) := fun s t hst =>

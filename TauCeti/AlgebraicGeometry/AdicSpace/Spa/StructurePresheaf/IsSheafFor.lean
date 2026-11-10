@@ -87,7 +87,7 @@ theorem isInducing_restrictionMap_iff_isInducing_presentationLimitMap {ι : Type
     TopCat.homeoOfIso (G.mapIso (eqToIso (presentationLimitPresheaf_obj P Aplus (op V))))
   have e_apply (V : Opens ↥(spa Aplus)) (x : (presentationLimitPresheaf P Aplus).obj (op V)) :
       e V x = (eqToHom (presentationLimitPresheaf_obj P Aplus (op V))).hom.1 x := rfl
-  exact (e W).isInducing_pi_iff_of_homeomorph (fun i ↦ e (V i)) fun x i ↦ by
+  exact (e W).isInducing_pi_iff_of_homeomorph (fun i ↦ (e (V i)).isInducing) fun x i ↦ by
     rw [e_apply, e_apply]
     exact eqToHom_apply_presentationLimitPresheaf_map_apply P (h i) x
 
