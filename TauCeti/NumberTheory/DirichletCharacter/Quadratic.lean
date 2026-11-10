@@ -6,19 +6,21 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.DirichletCharacter.Basic
+public import TauCeti.NumberTheory.MulChar.Basic
 
 /-!
-# Quadratic characters under products and level changes
+# Quadratic Dirichlet characters under level changes and products
 
-Being quadratic is preserved by lifting a Dirichlet character to a multiple of its level, and by
-the product `χ.mul ψ` of characters of different levels at their common level. That a finite
-product of quadratic characters is quadratic holds for arbitrary multiplicative characters
-(`MulChar.isQuadratic_prod`, in `TauCeti.NumberTheory.MulChar.Basic`).
+Being quadratic is preserved by lifting a Dirichlet character to a multiple of its level, and
+reflected by it when the target level is nonzero. Together with the fact that a product of
+quadratic multiplicative characters is quadratic (`MulChar.IsQuadratic.mul`, in
+`TauCeti.NumberTheory.MulChar.Basic`), this shows that the product `χ.mul ψ` of characters of
+different levels, taken at their common level, is quadratic.
 
 ## Main results
 
-* `DirichletCharacter.isQuadratic_changeLevel`: lifting a quadratic character to a multiple of
-  its level leaves it quadratic.
+* `MulChar.IsQuadratic.changeLevel`: lifting a quadratic Dirichlet character to a multiple of its
+  level leaves it quadratic.
 * `DirichletCharacter.isQuadratic_changeLevel_iff`: at a nonzero target level, a lifted
   character is quadratic exactly when the original character is quadratic.
 * `DirichletCharacter.isQuadratic_mul`: the common-level product of two quadratic characters is
@@ -27,24 +29,24 @@ product of quadratic characters is quadratic holds for arbitrary multiplicative 
 
 public section
 
-namespace DirichletCharacter
-
-/-- Lifting a quadratic character to a multiple of its level leaves it quadratic. -/
-theorem isQuadratic_changeLevel {R : Type*} [CommRing R]
+/-- Lifting a quadratic Dirichlet character to a multiple of its level leaves it quadratic. -/
+theorem MulChar.IsQuadratic.changeLevel {R : Type*} [CommRing R]
     {n m : ℕ} {χ : DirichletCharacter R n} (hχ : χ.IsQuadratic) (h : n ∣ m) :
-    (changeLevel h χ).IsQuadratic := by
+    (DirichletCharacter.changeLevel h χ).IsQuadratic := by
   intro a
   by_cases ha : IsUnit a
-  · rw [← ha.unit_spec, changeLevel_eq_cast_of_dvd]
+  · rw [← ha.unit_spec, DirichletCharacter.changeLevel_eq_cast_of_dvd]
     exact hχ _
   · exact Or.inl (MulChar.map_nonunit _ ha)
+
+namespace DirichletCharacter
 
 /-- Lifting to a nonzero multiple of the level preserves and reflects being quadratic. -/
 @[simp]
 theorem isQuadratic_changeLevel_iff {R : Type*} [CommRing R]
     {n m : ℕ} [NeZero m] {χ : DirichletCharacter R n} (h : n ∣ m) :
     (changeLevel h χ).IsQuadratic ↔ χ.IsQuadratic := by
-  refine ⟨?_, fun hχ ↦ isQuadratic_changeLevel hχ h⟩
+  refine ⟨?_, fun hχ ↦ hχ.changeLevel h⟩
   intro hχ a
   by_cases ha : IsUnit a
   · obtain ⟨u, hu⟩ := ZMod.unitsMap_surjective h ha.unit
@@ -59,10 +61,7 @@ is quadratic. -/
 theorem isQuadratic_mul {R : Type*} [CommRing R] {n m : ℕ} {χ : DirichletCharacter R n}
     {ψ : DirichletCharacter R m} (hχ : χ.IsQuadratic) (hψ : ψ.IsQuadratic) :
     (χ.mul ψ).IsQuadratic := by
-  intro a
-  rw [DirichletCharacter.mul, MulChar.mul_apply]
-  rcases isQuadratic_changeLevel hχ (Nat.dvd_lcm_left n m) a with h | h | h <;>
-    rcases isQuadratic_changeLevel hψ (Nat.dvd_lcm_right n m) a with h' | h' | h' <;>
-    simp [h, h']
+  rw [DirichletCharacter.mul]
+  exact (hχ.changeLevel _).mul (hψ.changeLevel _)
 
 end DirichletCharacter

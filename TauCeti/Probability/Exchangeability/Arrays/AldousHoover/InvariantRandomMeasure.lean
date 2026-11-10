@@ -64,7 +64,7 @@ the law of `ν`, the measurable injective codes of its one-coordinate marginals 
 i.i.d. The conditional directing law is the global parameter at the first level of the
 Aldous--Hoover factorization. -/
 theorem SeparatelyExchangeable.exists_directing_arrayRow_codedCoordinateMarginals
-    [StandardBorelSpace α] [Nonempty α]
+    [StandardBorelSpace α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ × ℕ → Ω → α}
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     ∃ ν : Ω → ProbabilityMeasure (ℕ → α),
@@ -80,7 +80,7 @@ under the law of `ν`, the codes of its marginals on consecutive disjoint blocks
 positive width are conditionally i.i.d. The same `ν` works for every width; the conditional
 directing law of the coded blocks may depend on the width. -/
 theorem SeparatelyExchangeable.exists_directing_arrayRow_codedBlockMarginals
-    [StandardBorelSpace α] [Nonempty α]
+    [StandardBorelSpace α]
     {μ : Measure Ω} [IsFiniteMeasure μ] {X : ℕ × ℕ → Ω → α}
     (h : SeparatelyExchangeable μ X) (hX : ∀ p, AEMeasurable (X p) μ) :
     ∃ ν : Ω → ProbabilityMeasure (ℕ → α),
