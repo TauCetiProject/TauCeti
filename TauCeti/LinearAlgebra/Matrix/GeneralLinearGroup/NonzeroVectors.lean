@@ -86,21 +86,38 @@ instance faithfulSMulNonzeroVectors [Nontrivial R] :
       Matrix.mulVec_single_one] at hcol
     exact congrFun hcol i
 
-/-- **The number of nonzero vectors** is `|R| ^ |n| - 1`. -/
-theorem natCard_nonzeroVectors [Finite R] :
+/-- **The number of nonzero vectors** is `|R| ^ |n| - 1`. For an infinite ring both sides are
+`0`, as `Nat.card` of an infinite type. -/
+theorem natCard_nonzeroVectors :
     Nat.card (nonzeroVectors n R) = Nat.card R ^ Nat.card n - 1 := by
   classical
   have e : ↥(nonzeroVectors n R) ≃ {v : n → R // v ≠ 0} :=
     Equiv.subtypeEquivRight fun _ ↦ mem_nonzeroVectors
-  have key := Nat.card_congr (Equiv.optionSubtypeNe (0 : n → R))
-  rw [Finite.card_option, Nat.card_fun] at key
-  rw [Nat.card_congr e]
-  omega
+  by_cases hR : Finite R
+  · have key := Nat.card_congr (Equiv.optionSubtypeNe (0 : n → R))
+    rw [Finite.card_option, Nat.card_fun] at key
+    rw [Nat.card_congr e]
+    omega
+  · have hRinf : Infinite R := not_finite_iff_infinite.mp hR
+    rcases isEmpty_or_nonempty n with hn | ⟨⟨i⟩⟩
+    · have : IsEmpty (nonzeroVectors n R) := ⟨fun v ↦ v.2 (Subsingleton.elim _ _)⟩
+      simp
+    · have : Infinite (nonzeroVectors n R) := by
+        have : Infinite ↥((Set.univ : Set R) \ {0}) :=
+          (Set.infinite_univ.sdiff (Set.finite_singleton 0)).to_subtype
+        have hne (r : ↥((Set.univ : Set R) \ {0})) : r.1 ≠ 0 := r.2.2
+        refine Infinite.of_injective
+          (fun r : ↥((Set.univ : Set R) \ {0}) ↦
+            (⟨Pi.single i r.1, mem_nonzeroVectors.2 fun h ↦ hne r (by simpa using congrFun h i)⟩ :
+              nonzeroVectors n R)) fun r r' h ↦ ?_
+        exact Subtype.ext (by simpa using congrFun (congrArg Subtype.val h) i)
+      have : Nonempty n := ⟨i⟩
+      rw [Nat.card_eq_zero_of_infinite, Nat.card_eq_zero_of_infinite (α := R),
+        zero_pow Nat.card_pos.ne', Nat.zero_sub]
 
 /-- **A plane over a semiring with two elements has three nonzero vectors.** -/
 theorem natCard_nonzeroVectors_fin_two_of_card_eq_two (hR : Nat.card R = 2) :
     Nat.card (nonzeroVectors (Fin 2) R) = 3 := by
-  have : Finite R := Nat.finite_of_card_ne_zero (by omega)
   rw [natCard_nonzeroVectors, hR, Nat.card_fin]
   decide
 
