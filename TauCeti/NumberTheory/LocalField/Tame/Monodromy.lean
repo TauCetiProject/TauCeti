@@ -63,6 +63,10 @@ private theorem tameMonodromyCharacter_eq_one_iff :
     ext σ
     simp [tameMonodromyCharacter]
 
+private theorem tameMonodromyCharacter_ne_one (hc : c ≠ 0) :
+    tameMonodromyCharacter K hℓ e c ≠ 1 :=
+  fun h ↦ hc ((tameMonodromyCharacter_eq_one_iff K hℓ e c).mp h)
+
 /-- The two-dimensional transvection representation of inertia with parameter `c`, after the
 choice `e` of a coordinate on the Tate twist. -/
 def tameMonodromyRepresentation :
@@ -97,21 +101,19 @@ zero. -/
 theorem mem_invariants_tameMonodromyRepresentation_iff (hc : c ≠ 0) (v : ℚ_[ℓ] × ℚ_[ℓ]) :
     v ∈ (tameMonodromyRepresentation K hℓ e c).invariants ↔ v.2 = 0 := by
   exact mem_invariants_transvectionRepresentation_iff _
-    (fun h ↦ hc ((tameMonodromyCharacter_eq_one_iff K hℓ e c).mp h)) v
+    (tameMonodromyCharacter_ne_one K hℓ e c hc) v
 
 /-- The invariant space is the first coordinate line, expressed without choosing its basis. -/
 @[simp]
 theorem invariants_tameMonodromyRepresentation (hc : c ≠ 0) :
     (tameMonodromyRepresentation K hℓ e c).invariants =
       LinearMap.ker (LinearMap.snd ℚ_[ℓ] ℚ_[ℓ] ℚ_[ℓ]) := by
-  ext v
-  simp [mem_invariants_tameMonodromyRepresentation_iff K hℓ e c hc]
+  exact invariants_transvectionRepresentation _ (tameMonodromyCharacter_ne_one K hℓ e c hc)
 
 /-- A nonzero tame-monodromy representation has a one-dimensional invariant space. -/
 theorem finrank_invariants_tameMonodromyRepresentation (hc : c ≠ 0) :
     Module.finrank ℚ_[ℓ] (tameMonodromyRepresentation K hℓ e c).invariants = 1 := by
-  exact finrank_invariants_transvectionRepresentation _
-    (fun h ↦ hc ((tameMonodromyCharacter_eq_one_iff K hℓ e c).mp h))
+  exact finrank_invariants_transvectionRepresentation _ (tameMonodromyCharacter_ne_one K hℓ e c hc)
 
 /-- The tame contribution, the codimension of inertia invariants, is one for nonzero parameter.
 This does not define or assume an Artin conductor. -/
@@ -120,17 +122,16 @@ theorem finrank_sub_finrank_invariants_tameMonodromyRepresentation (hc : c ≠ 0
       Module.finrank ℚ_[ℓ] (tameMonodromyRepresentation K hℓ e c).invariants = 1 := by
   simp [finrank_invariants_tameMonodromyRepresentation K hℓ e c hc, Module.finrank_prod]
 
-/-- Vanishing monodromy gives the trivial representation. -/
-@[simp]
-theorem tameMonodromyRepresentation_zero : tameMonodromyRepresentation K hℓ e 0 = 1 := by
-  rw [tameMonodromyRepresentation, transvectionRepresentation_eq_one_iff,
-    tameMonodromyCharacter_eq_one_iff]
-
 /-- The tame monodromy representation is trivial exactly when its parameter vanishes. -/
 @[simp]
 theorem tameMonodromyRepresentation_eq_one_iff :
     tameMonodromyRepresentation K hℓ e c = 1 ↔ c = 0 := by
   rw [tameMonodromyRepresentation, transvectionRepresentation_eq_one_iff,
     tameMonodromyCharacter_eq_one_iff]
+
+/-- Vanishing monodromy gives the trivial representation. -/
+@[simp]
+theorem tameMonodromyRepresentation_zero : tameMonodromyRepresentation K hℓ e 0 = 1 :=
+  (tameMonodromyRepresentation_eq_one_iff K hℓ e 0).mpr rfl
 
 end TauCeti

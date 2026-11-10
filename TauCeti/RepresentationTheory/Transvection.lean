@@ -23,7 +23,11 @@ noncomputable section
 
 namespace MonoidHom
 
-variable {k G : Type*} [Field k] [Group G] (χ : G →* Multiplicative k)
+variable {k G : Type*}
+
+section CommSemiring
+
+variable [CommSemiring k] [Monoid G] (χ : G →* Multiplicative k)
 
 /-- The two-dimensional transvection representation attached to an additive character. -/
 def transvectionRepresentation : Representation k G (k × k) where
@@ -43,6 +47,27 @@ theorem transvectionRepresentation_apply (σ : G) (v : k × k) :
     transvectionRepresentation χ σ v = (v.1 + v.2 * (χ σ).toAdd, v.2) := by
   rcases v with ⟨x, y⟩
   simp [transvectionRepresentation, LinearMap.transvection.apply, smul_eq_mul]
+
+/-- The transvection representation is trivial exactly when its character is trivial. -/
+@[simp]
+theorem transvectionRepresentation_eq_one_iff : transvectionRepresentation χ = 1 ↔ χ = 1 := by
+  constructor
+  · intro h
+    ext σ
+    have hv := congrArg (fun ρ : Representation k G (k × k) ↦ (ρ σ (0, 1)).1) h
+    simpa using hv
+  · rintro rfl
+    apply MonoidHom.ext
+    intro σ
+    apply LinearMap.ext
+    rintro ⟨x, y⟩
+    simp
+
+end CommSemiring
+
+section CommRing
+
+variable [CommRing k] [NoZeroDivisors k] [Group G] (χ : G →* Multiplicative k)
 
 /-- For a nontrivial character, fixed vectors have vanishing second coordinate. -/
 theorem mem_invariants_transvectionRepresentation_iff (hχ : χ ≠ 1) (v : k × k) :
@@ -64,25 +89,18 @@ theorem invariants_transvectionRepresentation (hχ : χ ≠ 1) :
   ext v
   simp [mem_invariants_transvectionRepresentation_iff χ hχ]
 
+end CommRing
+
+section Field
+
+variable [Field k] [Group G] (χ : G →* Multiplicative k)
+
 /-- A nontrivial character gives a one-dimensional invariant space. -/
 theorem finrank_invariants_transvectionRepresentation (hχ : χ ≠ 1) :
     Module.finrank k (transvectionRepresentation χ).invariants = 1 := by
   rw [invariants_transvectionRepresentation χ hχ, LinearMap.ker_snd,
     LinearMap.finrank_range_of_inj LinearMap.inl_injective, Module.finrank_self]
 
-/-- The transvection representation is trivial exactly when its character is trivial. -/
-@[simp]
-theorem transvectionRepresentation_eq_one_iff : transvectionRepresentation χ = 1 ↔ χ = 1 := by
-  constructor
-  · intro h
-    ext σ
-    have hv := congrArg (fun ρ : Representation k G (k × k) ↦ (ρ σ (0, 1)).1) h
-    simpa using hv
-  · rintro rfl
-    apply MonoidHom.ext
-    intro σ
-    apply LinearMap.ext
-    rintro ⟨x, y⟩
-    simp
+end Field
 
 end MonoidHom
