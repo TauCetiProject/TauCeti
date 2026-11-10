@@ -52,13 +52,13 @@ private theorem indepFun_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
 
 /-- A past-measurable height times the centered square of a future Brownian
 increment has mean zero. No integrability assumption on the height is required. -/
-theorem integral_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
+theorem integral_mul_sq_sub_sub_eq_zero (hB : IsFilteredPreBrownianReal ℱ B P)
     {s t : ℝ≥0} (hst : s ≤ t) {Y : Ω → ℝ} (hY : Measurable[ℱ s] Y) :
     (∫ ω, Y ω * ((B t ω - B s ω) ^ 2 - ((t : ℝ) - s)) ∂P) = 0 := by
   rw [(indepFun_sq_sub_sub hB hst hY).integral_fun_mul_eq_mul_integral
     (hY.mono (ℱ.le s) le_rfl).aestronglyMeasurable
       hB.toIsPreBrownianReal.memLp_sq_sub_sub.aestronglyMeasurable,
-    hB.toIsPreBrownianReal.integral_sq_sub_sub hst,
+    hB.toIsPreBrownianReal.integral_sq_sub_sub_eq_zero hst,
     mul_zero]
 
 /-- A square-integrable past height times a centered squared Brownian increment is
@@ -106,7 +106,7 @@ theorem integral_sq_sum_mul_sq_sub_sub (hB : IsFilteredPreBrownianReal ℱ B P)
       have h₁ := (hB.adapted (t (i + 1))).mono (ℱ.mono (ht hi hj.le hij)) le_rfl
       exact (((hH i hi).mono (ℱ.mono (ht hi.le hj.le hij.le)) le_rfl).mul
         (((h₁.sub h₀).pow_const 2).sub measurable_const)).mul (hH j hj)
-    have h := hB.integral_mul_sq_sub_sub (ht hj.le hj (Nat.le_succ j)) hmeas
+    have h := hB.integral_mul_sq_sub_sub_eq_zero (ht hj.le hj (Nat.le_succ j)) hmeas
     convert h using 1
     congr 1
     ext ω

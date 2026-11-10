@@ -37,6 +37,8 @@ produce a new Brownian motion.
   `ProbabilityTheory.IsPreBrownianReal.integral_pow_four_sub_of_le`: second and fourth moments
   of increments; the centered square is square integrable with mean zero and second moment
   twice the squared interval length.
+* `ProbabilityTheory.IsPreBrownianReal.integral_sq_sub_sub_eq_zero`: the centered square
+  of an increment has mean zero.
 * `MeasureTheory.Adapted.isFilteredPreBrownianReal`: the characterization by Gaussian increments
   independent of the past.
 
@@ -159,7 +161,7 @@ theorem memLp_sq_sub_sub (hB : IsPreBrownianReal B P) {s t : ℝ≥0} :
   exact (hB.memLp_sq_sub t s).sub (memLp_const _)
 
 /-- The centered square of a Brownian increment has mean zero. -/
-theorem integral_sq_sub_sub (hB : IsPreBrownianReal B P)
+theorem integral_sq_sub_sub_eq_zero (hB : IsPreBrownianReal B P)
     {s t : ℝ≥0} (hst : s ≤ t) :
     (∫ ω, (B t ω - B s ω) ^ 2 - ((t : ℝ) - s) ∂P) = 0 := by
   have := (hB.hasLaw_eval 0).isProbabilityMeasure
