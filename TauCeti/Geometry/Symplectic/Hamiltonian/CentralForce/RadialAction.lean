@@ -380,12 +380,10 @@ theorem isotropicOscillator_energy_eq (hm : m ≠ 0)
   by_cases h₁ : r₁ = 0
   · have h₂ : r₂ ≠ 0 := fun h => hne (by rw [h₁, h])
     obtain ⟨hE, -, hν⟩ := isotropicOscillator_of_turningPoint_zero hm h₁ h₂ hr₁ hr₂
-    rw [hE, h₁, show m * ν ^ 2 = m * ν * ν by ring, hν]
-    simp
+    simp [hE, (mul_eq_zero.1 hν).resolve_left hm]
   by_cases h₂ : r₂ = 0
   · obtain ⟨hE, -, hν⟩ := isotropicOscillator_of_turningPoint_zero hm h₂ h₁ hr₂ hr₁
-    rw [hE, h₂, show m * ν ^ 2 = m * ν * ν by ring, hν]
-    simp
+    simp [hE, (mul_eq_zero.1 hν).resolve_left hm]
   have hprod : (m * (r₂ ^ 2 - r₁ ^ 2)) * (2 * E - m * ν ^ 2 * (r₁ ^ 2 + r₂ ^ 2)) = 0 := by
     linear_combination isotropicOscillator_turningPoint_eq h₂ hr₂ -
       isotropicOscillator_turningPoint_eq h₁ hr₁
