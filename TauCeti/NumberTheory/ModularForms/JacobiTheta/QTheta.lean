@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.QPochhammer
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Topology.Algebra.Module.Cardinality
 import TauCeti.Algebra.Ring.Periodic
+import TauCeti.Analysis.Analytic.ExtractZeros
 import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
 import TauCeti.Analysis.SpecialFunctions.Elliptic.PeriodPair
 import TauCeti.NumberTheory.ModularForms.DedekindEta
@@ -188,29 +189,6 @@ private theorem hasDerivAt_thetaExp_zero (hτ : 0 < τ.im) :
 
 /-! ### Liouville's theorem -/
 
-open Classical in
-/-- The quotient `A / B` of two functions analytic at `0` and vanishing there, extended by `c` on
-the lattice, is differentiable at `0` when `A` and `B` have derivatives `c * b` and `b ≠ 0`
-there. -/
-private lemma differentiableAt_zero_ite_div (L : PeriodPair) {A B : ℂ → ℂ} {c b : ℂ}
-    (hA : AnalyticAt ℂ A 0) (hB : AnalyticAt ℂ B 0) (hA₀ : A 0 = 0)
-    (hB₀ : B 0 = 0)
-    (hdA : HasDerivAt A (c * b) 0) (hdB : HasDerivAt B b 0) (hb : b ≠ 0) :
-    DifferentiableAt ℂ (fun z ↦ if z ∈ L.lattice then c else A z / B z) 0 := by
-  have hBd : dslope B 0 0 ≠ 0 := by
-    rwa [dslope_same, hdB.deriv]
-  refine ((hA.dslope 0).differentiableAt.div (hB.dslope 0).differentiableAt
-    hBd).congr_of_eventuallyEq ?_
-  filter_upwards [L.compl_lattice_sdiff_singleton_mem_nhds 0] with x hx
-  by_cases hx₀ : x = 0
-  · subst hx₀
-    simp only [L.lattice.zero_mem, ite_true, Pi.div_apply, dslope_same, hdA.deriv, hdB.deriv]
-    exact (mul_div_cancel_right₀ c hb).symm
-  · have hxL : x ∉ L.lattice := fun h ↦ hx ⟨h, hx₀⟩
-    simp only [hxL, ite_false]
-    rw [Pi.div_apply, dslope_of_ne _ hx₀, dslope_of_ne _ hx₀, slope_def_field, slope_def_field,
-      hA₀, hB₀, sub_zero, sub_zero, sub_zero, div_div_div_cancel_right₀ hx₀]
-
 /-- **The inversion law of the theta product**, as an equality of entire functions. -/
 private theorem thetaInv_eq (hτ : 0 < τ.im) (z : ℂ) :
     thetaInv τ z = -I * cexp (π * I * (1 / 6 / τ + τ / 6)) * thetaExp τ z := by
@@ -243,8 +221,10 @@ private theorem thetaInv_eq (hτ : 0 < τ.im) (z : ℂ) :
     rw [hω₁, hω₂]
     exact hperτ.int_mul_add_int_mul hper₁ m n
   have hH₀ : DifferentiableAt ℂ H 0 :=
-    differentiableAt_zero_ite_div L (hA.analyticAt 0) (hB.analyticAt 0) hA₀ hB₀
+    differentiableAt_of_eventuallyEq_div (hA.analyticAt 0) (hB.analyticAt 0) hA₀ hB₀
       (hasDerivAt_thetaInv_zero hτ) (hasDerivAt_thetaExp_zero hτ) hb
+      (by simp only [H, L.lattice.zero_mem, ite_true]; rfl)
+      ((L.eventually_notMem_lattice 0).mono fun x hx ↦ by simp only [H, hx, ite_false])
   have hH : Differentiable ℂ H := L.differentiable_of_periodic hperL hH₀ fun x hx ↦
     ((hA x).div (hB x) (hne hx)).congr_of_eventuallyEq <| by
       filter_upwards [L.isClosed_lattice.isOpen_compl.mem_nhds hx] with y hy
