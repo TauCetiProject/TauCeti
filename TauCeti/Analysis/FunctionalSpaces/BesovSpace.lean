@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Distribution.TemperedDistribution.LittlewoodPaley
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Normed.Lp.Basic
 import TauCeti.Analysis.Normed.Lp.Reindex
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Inhomogeneous Besov spaces
@@ -170,20 +171,6 @@ theorem MemBesov.sub {u v : 𝓢'(E, F)} (hu : u.MemBesov φ s p q) (hv : v.MemB
     (u - v).MemBesov φ s p q := by
   simpa [sub_eq_add_neg] using hu.add hv.neg
 
-/-- If `k` is within `L` of `j`, the weights satisfy `2^{js} ≤ 2^{|s| L} 2^{ks}`. -/
-private theorem two_rpow_mul_natCast_le (s : ℝ) {L j k : ℕ} (hk : k ∈ Finset.Ico (j - L) (j + L)) :
-    (2 : ℝ) ^ (s * j) ≤ 2 ^ (|s| * L) * 2 ^ (s * k) := by
-  rw [Finset.mem_Ico] at hk
-  have hjk : |(j : ℝ) - k| ≤ L := abs_sub_le_iff.2
-    ⟨by rw [sub_le_iff_le_add']; exact_mod_cast (by omega : j ≤ k + L),
-      by rw [sub_le_iff_le_add']; exact_mod_cast (by omega : k ≤ j + L)⟩
-  rw [← Real.rpow_add two_pos]
-  refine Real.rpow_le_rpow_of_exponent_le one_le_two ?_
-  have : s * (j - k) ≤ |s| * L := (le_abs_self _).trans <| by
-    rw [abs_mul]
-    exact mul_le_mul_of_nonneg_left hjk (abs_nonneg s)
-  linarith
-
 /-- **The blocks of another bump function.** If the blocks `Δₖ u` built from `φ` are `Lᵖ`
 functions `fₖ`, then the blocks `Δ'ⱼ u` built from `φ'` are `Lᵖ` functions `f'ⱼ`, with
 `2^{js} ‖f'ⱼ‖_p ≤ K ∑_{j - L ≤ k < j + L} 2^{ks} ‖fₖ‖_p`. The constants `K` and `L` depend only on
@@ -207,7 +194,10 @@ private theorem exists_littlewoodPaleyBlock_eq_and_le (φ φ' : ContDiffBump (0 
     refine Finset.sum_le_sum fun k hk ↦ ?_
     calc 2 ^ (s * j) * ‖g j k‖ ≤ 2 ^ (|s| * L) * 2 ^ (s * k) * (max C 0 * ‖f k‖) := by
           gcongr
-          · exact two_rpow_mul_natCast_le s hk
+          · rw [Finset.mem_Ico] at hk
+            refine Real.rpow_mul_le_rpow_abs_mul_mul_rpow_mul one_le_two s
+              (abs_sub_le_iff.2 ⟨?_, ?_⟩)
+            all_goals rw [sub_le_iff_le_add']; exact_mod_cast (by omega)
           · exact (hgC j k).trans (by gcongr; exact le_max_left C 0)
       _ = _ := by ring
 
