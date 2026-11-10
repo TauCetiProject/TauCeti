@@ -45,8 +45,6 @@ Only the topology of the tube is used: `M` is an arbitrary Hausdorff space.
 
 ## Main results
 
-* `TauCeti.IsFramedTube.pontryaginThomSphereMap_eq_iff`: the collapse sends exactly the core to the
-  image of the origin.
 * `TauCeti.IsFramedTube.degree_pontryaginThomSphereMap_comp_eq_sum_localIndex`: the degree of
   `c ∘ g` is the sum of the local indices over the points where `g` meets the core.
 * `TauCeti.IsFramedTube.isUnit_degree_pontryaginThomSphereMap_comp`: if `g` meets the core in a
@@ -75,17 +73,6 @@ namespace TauCeti
 namespace IsFramedTube
 
 variable {S M : Type} [TopologicalSpace S] [CompactSpace S] [TopologicalSpace M] [T2Space M]
-
-/-- **The core is the preimage of the image of the origin.** The Pontryagin–Thom collapse of a
-framed tube onto the sphere sends a point to the image of the origin exactly when it lies on the
-core. -/
-theorem pontryaginThomSphereMap_eq_iff {k : ℕ} {f : S → M} {τ : S × (Fin k → ℝ) → M}
-    (h : IsFramedTube f τ) (s₀ : sphere (0 : EuclideanSpace ℝ (Fin (k + 1))) 1) {m : M} :
-    pontryaginThomSphereMap h.isOpenEmbedding s₀ m =
-        onePointHomeomorphSphere k s₀ ((0 : Fin k → ℝ) : OnePoint (Fin k → ℝ)) ↔
-      m ∈ range f := by
-  rw [coe_pontryaginThomSphereMap, comp_apply, (onePointHomeomorphSphere k s₀).injective.eq_iff,
-    h.pontryaginThomCollapse_eq_zero_iff]
 
 variable {P E : Type} [TopologicalSpace P] [T2Space P] [CompactSpace P]
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E P] {k : ℕ}
