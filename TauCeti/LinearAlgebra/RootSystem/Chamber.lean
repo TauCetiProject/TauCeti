@@ -215,19 +215,20 @@ theorem ofIdx_smul_notMem_dominantChamber {i : ι} (hi : i ∈ b.support) {x : M
   exact hx.not_ge h
 
 omit [IsOrderedAddMonoid R] in
-/-- No simple reflection fixes a point of the open dominant chamber: it would otherwise move `x`
-by a multiple of the simple root `αᵢ`, whose coefficient `⟨x, αᵢ^∨⟩` is positive, and the simple
-roots are linearly independent. -/
+/-- No simple reflection fixes a point of the open dominant chamber. This needs only a preorder on
+the coefficient ring, with no compatibility with addition. -/
 theorem ofIdx_smul_ne_of_mem_openDominantChamber {i : ι} (hi : i ∈ b.support) {x : M}
     (hx : x ∈ openDominantChamber P b) :
     RootPairing.weylGroup.ofIdx P i • x ≠ x := by
   intro hfix
+  -- A fixed point is moved by the multiple `⟨x, αᵢ^∨⟩ • αᵢ` of the simple root `αᵢ` to itself,
+  -- and the simple roots are linearly independent, so the positive coefficient is zero.
   have hsmul : P.coroot' i x • P.root i = 0 := by
     rw [RootPairing.weylGroup.ofIdx_smul, RootPairing.Equiv.reflection_smul,
       RootPairing.reflection_apply, sub_eq_self] at hfix
     exact hfix
-  have hzero := linearIndependent_iff'.mp b.linearIndepOn_root {⟨i, hi⟩} (fun _ ↦ P.coroot' i x)
-    (by simpa using hsmul) ⟨i, hi⟩ (Finset.mem_singleton_self _)
+  have hzero : P.coroot' i x = 0 :=
+    b.linearIndepOn_root.smul_left_injective ⟨i, hi⟩ (by simpa using hsmul)
   exact (hx i hi).ne' hzero
 
 end Reflections
@@ -283,8 +284,7 @@ theorem exists_mem_dominantChamber_of_finite_weylGroup (x : M) :
     ∃ w : P.weylGroup, w • x ∈ dominantChamber P b := by
   -- A nontrivial linearly ordered additive group is torsion free, so the ring has characteristic
   -- zero.
-  have : CharZero R := ⟨fun {m n} h ↦ IsAddTorsionFree.nsmul_left_injective
-    (one_ne_zero : (1 : R) ≠ 0) (by simpa only [nsmul_one] using h)⟩
+  have : CharZero R := CharZero.of_hasUniqueDiv R R
   obtain ⟨w, hw⟩ := Finite.exists_max fun w : P.weylGroup ↦ posCorootSum P b (w • x)
   refine ⟨w, fun i hi ↦ ?_⟩
   have hsmul : (RootPairing.weylGroup.ofIdx P i * w) • x = P.reflection i (w • x) := by
