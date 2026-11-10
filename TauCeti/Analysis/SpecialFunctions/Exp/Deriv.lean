@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 import Mathlib.Analysis.Calculus.ContDiff.Basic
 
@@ -17,8 +18,13 @@ as it has over `ℂ`, restricted to real scalars. Since every complex derivative
 every real iterated derivative of `Complex.exp` at `z` has norm `‖exp z‖`. This is the input a
 Faà di Bruno bound needs for compositions `Complex.exp ∘ f` with a real-differentiable `f`.
 
+For a real function `f`, `f ∘ exp` is differentiable at `y` exactly when `f` is differentiable at
+`exp y`.
+
 ## Main results
 
+* `TauCeti.differentiableAt_comp_exp_iff`: `f ∘ exp` is differentiable at `y` exactly when `f` is
+  differentiable at `exp y`.
 * `TauCeti.norm_iteratedFDeriv_real_cexp`: every real iterated derivative of `Complex.exp` at `z`
   has norm `‖exp z‖`.
 * `ContinuousLinearMap.norm_iteratedFDeriv_cexp_comp_le`: for a real-linear map `ℓ` to `ℂ`, the
@@ -51,6 +57,24 @@ theorem norm_iteratedFDeriv_real_cexp (n : ℕ) (z : ℂ) :
       (𝕜 := ℝ),
     Function.comp_apply, ContinuousMultilinearMap.norm_restrictScalars,
     norm_iteratedFDeriv_eq_norm_iteratedDeriv, iteratedDeriv_eq_iterate, Complex.iter_deriv_exp]
+
+section ExpComp
+
+open Real Filter Topology
+
+variable {f : ℝ → ℝ} {y : ℝ}
+
+/-- `f ∘ exp` is differentiable at `y` exactly when `f` is differentiable at `exp y`. -/
+@[simp]
+theorem differentiableAt_comp_exp_iff :
+    DifferentiableAt ℝ (fun y ↦ f (exp y)) y ↔ DifferentiableAt ℝ f (exp y) := by
+  refine ⟨fun h ↦ ?_, fun hf ↦ hf.comp y differentiableAt_exp⟩
+  have h' : DifferentiableAt ℝ (fun y ↦ f (exp y)) (log (exp y)) := by simpa using h
+  refine (h'.comp (exp y) (differentiableAt_log (exp_pos y).ne')).congr_of_eventuallyEq ?_
+  filter_upwards [eventually_gt_nhds (exp_pos y)] with z hz
+  simp [exp_log hz]
+
+end ExpComp
 
 end TauCeti
 

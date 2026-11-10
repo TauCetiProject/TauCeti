@@ -13,6 +13,8 @@ import Mathlib.Analysis.Calculus.Deriv.Add
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
 # Second derivatives of functions of one variable
@@ -157,31 +159,6 @@ section LogExp
 
 variable {f v : ℝ → ℝ} {x y : ℝ}
 
-/-- For `x ≠ 0`, `v ∘ log` is differentiable at `x` exactly when `v` is differentiable at `log x`.
-For `x < 0` this uses that `v ∘ log` is even. -/
-theorem differentiableAt_comp_log_iff (hx : x ≠ 0) :
-    DifferentiableAt ℝ (fun x ↦ v (log x)) x ↔ DifferentiableAt ℝ v (log x) := by
-  refine ⟨fun h ↦ ?_, fun hv ↦ hv.comp x (differentiableAt_log hx)⟩
-  have hg : DifferentiableAt ℝ (fun x ↦ v (log x)) (exp (log x)) := by
-    rw [exp_log_eq_abs hx]
-    rcases hx.lt_or_gt with hneg | hpos
-    · rw [abs_of_neg hneg]
-      have h' : DifferentiableAt ℝ (fun x ↦ v (log x)) (-(-x)) := by simpa using h
-      exact (h'.comp (-x) differentiableAt_id.neg).congr_of_eventuallyEq
-        (Eventually.of_forall fun t ↦ by simp [log_neg_eq_log])
-    · rwa [abs_of_pos hpos]
-  exact (hg.comp (log x) differentiableAt_exp).congr_of_eventuallyEq
-    (Eventually.of_forall fun y ↦ by simp [log_exp])
-
-/-- `f ∘ exp` is differentiable at `y` exactly when `f` is differentiable at `exp y`. -/
-theorem differentiableAt_comp_exp_iff :
-    DifferentiableAt ℝ (fun y ↦ f (exp y)) y ↔ DifferentiableAt ℝ f (exp y) := by
-  refine ⟨fun h ↦ ?_, fun hf ↦ hf.comp y differentiableAt_exp⟩
-  have h' : DifferentiableAt ℝ (fun y ↦ f (exp y)) (log (exp y)) := by simpa using h
-  refine (h'.comp (exp y) (differentiableAt_log (exp_pos y).ne')).congr_of_eventuallyEq ?_
-  filter_upwards [eventually_gt_nhds (exp_pos y)] with z hz
-  simp [exp_log hz]
-
 /-- Under the change of variables `x = e^y` the operator `x d/dx` is `d/dy`:
 `x (v ∘ log)'(x) = v'(log x)` for `x ≠ 0`. If `v` is not differentiable at `log x`, then `v ∘ log`
 is not differentiable at `x` either, and both sides are `0`. -/
@@ -219,7 +196,8 @@ theorem deriv_deriv_comp_exp (hf' : DifferentiableAt ℝ (deriv f) (exp y)) :
     · have h : HasDerivAt (fun y ↦ f (exp y)) (deriv f (exp z) * exp z) z :=
         hz.hasDerivAt.comp z (hasDerivAt_exp z)
       rw [h.deriv, mul_comm]
-    · change deriv _ z = exp z * deriv f (exp z)
+    · -- `Eventually.of_forall` leaves the right-hand side as an unreduced beta-redex.
+      beta_reduce
       rw [deriv_zero_of_not_differentiableAt hz,
         deriv_zero_of_not_differentiableAt (mt differentiableAt_comp_exp_iff.1 hz), mul_zero]
   have h : HasDerivAt (fun y ↦ exp y * deriv f (exp y))

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Deriv.Second
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
+import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 
 /-!
 # The pricing equation in log-spot coordinates
@@ -93,16 +94,20 @@ equals the pricing operator `C_t + σ² s² / 2 C_ss + r (s C_s - C)` at the spo
 volatility `σ` and the rate `r` are arbitrary reals, so they may be the values of a local
 volatility and a time-dependent rate at `(e^y, t)`. -/
 theorem pde_comp_exp {C : ℝ → ℝ → ℝ} {t : ℝ} (σ r : ℝ)
-    (hC : ∀ᶠ x in 𝓝 (exp y), DifferentiableAt ℝ (fun x => C x t) x)
     (hC' : DifferentiableAt ℝ (deriv fun x => C x t) (exp y)) :
     deriv (fun t' => C (exp y) t') t + σ ^ 2 / 2 * deriv (deriv fun y => C (exp y) t) y +
         (r - σ ^ 2 / 2) * deriv (fun y => C (exp y) t) y - r * C (exp y) t =
       deriv (fun t' => C (exp y) t') t +
         σ ^ 2 * exp y ^ 2 / 2 * deriv (deriv fun x => C x t) (exp y) +
         r * (exp y * deriv (fun x => C x t) (exp y) - C (exp y) t) := by
-  have h₁ : HasDerivAt (fun y => C (exp y) t) (deriv (fun x => C x t) (exp y) * exp y) y :=
-    hC.self_of_nhds.hasDerivAt.comp y (hasDerivAt_exp y)
-  rw [deriv_deriv_comp_exp (f := fun x => C x t) hC', h₁.deriv]
+  -- Where `C (·, t)` is not differentiable at `exp y`, so is `C (exp ·, t)` at `y`, and both
+  -- derivatives are `0`.
+  have h₁ : deriv (fun y => C (exp y) t) y = deriv (fun x => C x t) (exp y) * exp y := by
+    by_cases hC : DifferentiableAt ℝ (fun x => C x t) (exp y)
+    · exact (hC.hasDerivAt.comp y (hasDerivAt_exp y)).deriv
+    · rw [deriv_zero_of_not_differentiableAt hC, zero_mul,
+        deriv_zero_of_not_differentiableAt (mt differentiableAt_comp_exp_iff.1 hC)]
+  rw [deriv_deriv_comp_exp (f := fun x => C x t) hC', h₁]
   ring
 
 /-- **The pricing equation in weighted log-spot coordinates.** For a function `C(s, t)` of the
@@ -163,7 +168,7 @@ theorem pde_comp_exp_div_one_add_exp {C : ℝ → ℝ → ℝ} {t : ℝ} (σ r :
     rw [hg'.deriv_eq]
     exact (((hasDerivAt_exp y).mul hwd.self_of_nhds.hasDerivAt).add
       ((hψd y).mul hwd'.hasDerivAt)).deriv
-  rw [← pde_comp_exp σ r hC hC', hg'', hg'.self_of_nhds, deriv_div_const]
+  rw [← pde_comp_exp σ r hC', hg'', hg'.self_of_nhds, deriv_div_const]
   have hwy : C (exp y) t = (1 + exp y) * w y := congrFun hgw y
   rw [hwy]
   have h1 : exp y + 1 ≠ 0 := by rw [add_comm]; exact hψ y
