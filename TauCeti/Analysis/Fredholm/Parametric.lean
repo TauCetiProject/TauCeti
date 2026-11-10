@@ -8,7 +8,6 @@ module
 public import Mathlib.Algebra.Exact.Basic
 public import TauCeti.Analysis.Fredholm.Basic
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
-import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.LinearAlgebra.Isomorphisms
 
 /-!
@@ -34,7 +33,8 @@ generality, `ContinuousLinearMap.parameterProj D₁ D₂` is the restriction of 
 * the projection is **surjective exactly when `D₁` is**, provided the total linearization is
   surjective -- so a parameter is a regular value of the projection exactly when the equation it
   indexes is regular;
-* when `E` and `Λ` are Banach spaces the projection is **Fredholm whenever `D₁` is Fredholm**;
+* when `E` has continuous addition and `Λ` continuous negation (for instance normed spaces, with
+  no completeness) the projection is **Fredholm whenever `D₁` is Fredholm**;
   if the total linearization is surjective it has the **same index as `D₁`** -- so the
   parametrized problem carries the same expected dimension count as the unparametrized one.
 
@@ -89,10 +89,12 @@ total linearization by the same quotient: `(x, l) ↦ (x, ι l)`
 form a short exact sequence `0 → ker (D₁.coprod D₂) → ker (D₁.coprod D₂') → Λ' ⧸ range ι → 0`
 when `ι` is injective and `D₁.coprod D₂` is onto.
 
-The Fredholm statement additionally assumes that `D₁` is Fredholm and that `E` and `Λ` are Banach
-spaces; `F` need only have continuous addition and closed points. Its closed range is the preimage
-of the closed range of `D₁`, its kernel inherits a continuous projection from that of `D₁`, and the
-Banach open mapping theorem gives strictness. No completeness of the scalar field is required.
+The Fredholm statement additionally assumes that `D₁` is Fredholm, that `E` and `Λ` are topological
+`𝕜`-modules with `E` having continuous addition and `Λ` continuous negation (for instance normed
+spaces), and that `F` has continuous addition. Its closed range is the preimage of the closed range
+of `D₁`, its kernel inherits a continuous projection from that of `D₁`, and strictness comes from
+the openness of the pullback of the quotient map `E → range D₁` along `l ↦ D₂ (-l)`. No
+completeness of the spaces or of the scalar field is required.
 
 ## Main declarations
 
@@ -115,8 +117,8 @@ Banach open mapping theorem gives strictness. No completeness of the scalar fiel
   projection is surjective exactly when `D₁` is.
 * `ContinuousLinearMap.index_parameterProj`: for a surjective total linearization, the
   projection has the same index as `D₁`.
-* `ContinuousLinearMap.isFredholm_parameterProj`: when `E` and `Λ` are normed spaces, if `D₁` is
-  Fredholm then the projection is Fredholm.
+* `ContinuousLinearMap.isFredholm_parameterProj`: when `E` has continuous addition and `Λ`
+  continuous negation, if `D₁` is Fredholm then the projection is Fredholm.
 * `ContinuousLinearMap.kerCoprodMap`, `ContinuousLinearMap.exact_kerCoprodMap` and
   `ContinuousLinearMap.surjective_mkQ_comp_parameterProj`: for `ι : Λ → Λ'` with `D₂' ∘ ι = D₂`,
   the short exact sequence `0 → ker (D₁.coprod D₂) → ker (D₁.coprod D₂') → Λ' ⧸ range ι → 0`
@@ -590,17 +592,17 @@ theorem index_coprod [FiniteDimensional 𝕜 D₁.ker]
 
 end Dimension
 
-section Normed
+section Fredholm
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 variable {E Λ F : Type*}
-variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-variable [NormedAddCommGroup Λ] [NormedSpace 𝕜 Λ]
+variable [AddCommGroup E] [Module 𝕜 E] [TopologicalSpace E] [ContinuousAdd E]
+variable [AddCommGroup Λ] [Module 𝕜 Λ] [TopologicalSpace Λ] [ContinuousNeg Λ]
 variable [AddCommGroup F] [Module 𝕜 F] [TopologicalSpace F] [ContinuousAdd F]
 variable (D₁ : E →L[𝕜] F) (D₂ : Λ →L[𝕜] F)
 
-/-- **The parameter projection is Fredholm** as soon as `D₁` is, when `E` and `Λ` are normed
-spaces and `F` has continuous addition. When the total linearization is
+/-- **The parameter projection is Fredholm** as soon as `D₁` is, when `E` has continuous addition,
+`Λ` continuous negation and `F` continuous addition. When the total linearization is
 surjective, `ContinuousLinearMap.index_parameterProj` also identifies their indices.
 
 Applying Sard--Smale in the nonlinear setting is a further step requiring a suitable smooth chart,
@@ -658,6 +660,6 @@ theorem isFredholm_parameterProj (hD₁ : IsFredholm D₁) :
     apply (kerEquivKerParameterProj D₁ D₂).symm.injective
     simpa using hP ((kerEquivKerParameterProj D₁ D₂).symm v)
 
-end Normed
+end Fredholm
 
 end ContinuousLinearMap
