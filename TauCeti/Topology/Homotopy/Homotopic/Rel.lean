@@ -13,7 +13,7 @@ public import Mathlib.Topology.Homotopy.Basic
 A homotopy relative to a set `S` fixes every point of `S` at all times, so it is also a homotopy
 relative to every subset of `S`. This lets relative homotopies obtained relative to different sets
 be composed relative to a common subset. Precomposed with a map `e`, it is a homotopy relative to
-the preimage `e ⁻¹' S`.
+the preimage `e ⁻¹' S`, and composites of relative homotopies are again relative homotopies.
 
 Homotopy relative to a single point is pointed homotopy: it is an equivalence relation on the
 pointed maps `(Y, y₀) → (X, x)`, whose classes are the pointed homotopy classes of maps.
@@ -25,6 +25,9 @@ pointed maps `(Y, y₀) → (X, x)`, whose classes are the pointed homotopy clas
   every `T ⊆ S`.
 * `ContinuousMap.HomotopyRel.precomp`, `ContinuousMap.HomotopicRel.precomp`: precomposing a
   homotopy relative to `S` with `e` gives a homotopy relative to `e ⁻¹' S`.
+* `ContinuousMap.HomotopicRel.comp`: relative homotopies compose.
+* `ContinuousMap.HomotopicRel.mapsTo_self`: a self-map homotopic to the identity relative to `S`
+  maps `S` into itself.
 * `TauCeti.pointedHomotopySetoid`: pointed homotopy, as an equivalence relation on pointed maps.
 -/
 
@@ -74,6 +77,19 @@ relative to `e ⁻¹' S`. -/
 theorem HomotopicRel.precomp (h : HomotopicRel f₀ f₁ S) (e : C(W, X)) :
     HomotopicRel (f₀.comp e) (f₁.comp e) (e ⁻¹' S) :=
   h.map (·.precomp e)
+
+/-- A self-map homotopic to the identity relative to `S` fixes `S` pointwise, so it maps `S` into
+itself. -/
+theorem HomotopicRel.mapsTo_self {f : C(X, X)} (h : HomotopicRel f (ContinuousMap.id X) S) :
+    Set.MapsTo f S S :=
+  (Set.mapsTo_id S).congr fun _ hx ↦ (h.fst_eq_snd hx).symm
+
+/-- Homotopies relative to `S` and to `T` compose to a homotopy relative to `S` when the first map
+carries `S` into `T`, the relative form of `ContinuousMap.Homotopic.comp`. -/
+theorem HomotopicRel.comp {Z : Type*} [TopologicalSpace Z] {g₀ g₁ : C(Y, Z)} {T : Set Y}
+    (hf : HomotopicRel f₀ f₁ S) (hg : HomotopicRel g₀ g₁ T) (hST : Set.MapsTo f₀ S T) :
+    HomotopicRel (g₀.comp f₀) (g₁.comp f₁) S :=
+  ((hg.precomp f₀).mono hST.subset_preimage).trans (hf.comp_continuousMap g₁)
 
 end ContinuousMap
 
