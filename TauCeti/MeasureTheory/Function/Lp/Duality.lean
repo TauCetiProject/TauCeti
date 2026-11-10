@@ -54,9 +54,8 @@ is `∞` outside the almost everywhere strongly measurable functions.
 * `TauCeti.enorm_integral_mul_le`: Hölder's inequality `‖∫ u v‖ ≤ ‖u‖_p ‖v‖_q` for an integral.
 * `MeasureTheory.MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top`: the duality bound
   for `q < ∞`.
-* `MeasureTheory.AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le` and
-  `MeasureTheory.MemLp.eLpNorm_top_le_of_forall_enorm_integral_mul_le`: the duality bound for
-  `q = ∞` on a σ-finite measure space, the first without assuming `h ∈ L^∞` in advance.
+* `MeasureTheory.AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le`: the duality
+  bound for `q = ∞` on a σ-finite measure space, without assuming `h ∈ L^∞` in advance.
 * `MeasureTheory.MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le`: the duality bound for every
   `1 ≤ q ≤ ∞` on a σ-finite measure space.
 * `MeasureTheory.Lp.enorm_integral_mul_le_of_apply_eq`: a continuous linear functional on
@@ -253,14 +252,6 @@ theorem AEStronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le [Sig
     exact (hFE hxF).1.le
   exact ((ENNReal.mul_le_mul_iff_left hFpos.ne' hFtop.ne).1 (hlow.trans hkC)).not_gt hCt
 
-/-- **Norming by simple functions, `q = ∞`.** On a σ-finite measure space, if `h ∈ L^∞`
-satisfies `‖∫ h g‖ ≤ C ‖g‖₁` for every simple function `g ∈ L¹`, then `‖h‖_∞ ≤ C`. -/
-theorem MemLp.eLpNorm_top_le_of_forall_enorm_integral_mul_le [SigmaFinite μ] {h : α → 𝕜}
-    (hh : MemLp h ∞ μ) {C : ℝ≥0∞}
-    (hC : ∀ g : SimpleFunc α 𝕜, MemLp g 1 μ → ‖∫ x, h x * g x ∂μ‖ₑ ≤ C * eLpNorm g 1 μ) :
-    eLpNorm h ∞ μ ≤ C :=
-  hh.aestronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le hC
-
 /-- **Norming by simple functions.** On a σ-finite measure space, let `q` and `q'` be Hölder
 conjugate. If `h ∈ L^q` satisfies `‖∫ h g‖ ≤ C ‖g‖_{q'}` for every simple function
 `g ∈ L^{q'}`, then `‖h‖_q ≤ C`. -/
@@ -270,7 +261,7 @@ theorem MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le [SigmaFinite μ] {q q' 
     eLpNorm h q μ ≤ C := by
   rcases eq_or_ne q ∞ with rfl | hq
   · obtain rfl : q' = 1 := (ENNReal.HolderConjugate.eq_top_iff_eq_one ∞ q').1 rfl
-    exact hh.eLpNorm_top_le_of_forall_enorm_integral_mul_le hC
+    exact hh.aestronglyMeasurable.eLpNorm_top_le_of_forall_enorm_integral_mul_le hC
   · exact hh.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top hq hC
 
 /-- If a continuous linear functional `Λ` on `L^q'(μ)` is integration against `h` at the class of
