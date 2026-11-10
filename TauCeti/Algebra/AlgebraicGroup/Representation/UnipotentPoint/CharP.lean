@@ -54,14 +54,13 @@ universe u v
 variable {k H : Type u} {K : Type v} [Field k] [CommRing H] [_root_.HopfAlgebra k H]
   [Algebra.FiniteType k H] [CommRing K] [Algebra k K]
 
-/-- **A unipotent point in characteristic `p` has `p`-power order.** Over a commutative value
-ring of characteristic `p`, some power `p ^ n` kills a unipotent point of an affine group of finite
-type. -/
+/-- **A unipotent point in characteristic `p` is killed by a power of `p`.** Over a commutative
+value ring of characteristic `p`, some power `p ^ n` kills a unipotent point of an affine group of
+finite type. For `p > 0` this says the point has `p`-power order; for `p = 0` the conclusion is the
+tautology `g ^ 0 = 1`, and no order statement follows. -/
 theorem exists_pow_char_pow_eq_one (p : ℕ) [CharP K p]
     {g : WithConv (H →ₐ[k] K)} (hg : IsUnipotentPoint g) :
     ∃ n : ℕ, g ^ p ^ n = 1 := by
-  rcases eq_or_ne p 0 with rfl | hp0
-  · exact ⟨1, by simp⟩
   obtain ⟨M, d, b, hb⟩ := Comodule.exists_isClosedImmersion_coordinateGroupSchemeHom (k := k)
     (H := H)
   let _ : AddCommGroup M := Module.addCommMonoidToAddCommGroup k
@@ -70,11 +69,12 @@ theorem exists_pow_char_pow_eq_one (p : ℕ) [CharP K p]
     (Comodule.isFaithful_iff_isClosedImmersion_coordinateGroupSchemeHom b).mpr hb
   obtain ⟨n, hn⟩ := (isUnipotentPoint_iff_forall_isNilpotent_endOfPoint_sub_one g).mp hg
     (FGComoduleCat.of (R := k) (C := H) M)
-  -- Write the action as `1 + N` with `N` nilpotent; this has `p`-power order since `p = 0`.
+  -- Write the action as `1 + N` with `N` nilpotent; as `p = 0` in the endomorphisms, a power of
+  -- `p` kills it.
   set N := Comodule.endOfPoint M g.ofConv - 1
   have hp : (p : Module.End K (K ⊗[k] M)) = 0 := by
     rw [← map_natCast (algebraMap K (Module.End K (K ⊗[k] M))), CharP.cast_eq_zero, map_zero]
-  obtain ⟨n', hn'⟩ := exists_one_add_pow_eq_one_of_natCast_eq_zero hp0 hp ⟨n, hn⟩
+  obtain ⟨n', hn'⟩ := exists_one_add_pow_eq_one_of_natCast_eq_zero hp ⟨n, hn⟩
   refine ⟨n', Comodule.pointsAction_injective_of_isFaithful hfaithful ?_⟩
   apply LinearEquiv.toLinearMap_injective
   rw [map_pow, map_one, ← LinearEquiv.automorphismGroup.toLinearMapMonoidHom_apply, map_pow,
