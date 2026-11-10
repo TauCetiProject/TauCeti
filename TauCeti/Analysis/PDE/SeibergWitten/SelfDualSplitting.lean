@@ -214,16 +214,6 @@ theorem norm_sq_eq_two_of_cliffordProjection_apply_eq_self (hQ : ∀ v, Q v = -�
   have h5 : (2 * 2 : ℝ) = 2 * ‖ω‖ ^ 2 := by exact_mod_cast sub_eq_zero.1 h4
   linarith
 
-variable {ω} in
-/-- **A nonzero spinor killed by `P_α` forces the normalization `‖ω‖² = 2`**: it is fixed by the
-complementary projection `P_β = P(-ω)`. -/
-theorem norm_sq_eq_two_of_cliffordProjection_apply_eq_zero (hQ : ∀ v, Q v = -‖v‖ ^ 2)
-    (hkl : 2 + 2 = finrank ℝ V) (hω : o.hodgeStar hkl ω = ω) {β : positiveHalfSpinors o ρ}
-    (hβ₀ : β ≠ 0) (hβ : cliffordProjection o ρ ω β = 0) : ‖ω‖ ^ 2 = 2 := by
-  have h := norm_sq_eq_two_of_cliffordProjection_apply_eq_self o ρ (ω := -ω) hQ hkl
-    (by rw [map_neg, hω]) hβ₀ (by rw [cliffordProjection_neg_apply, hβ, sub_zero])
-  rwa [norm_neg] at h
-
 section Normalized
 
 variable {ω} (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V)
