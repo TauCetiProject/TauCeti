@@ -5,7 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.LocalRing.MaximalIdeal.Defs
 public import Mathlib.RingTheory.Valuation.ValuationRing
+import Mathlib.RingTheory.LocalRing.MaximalIdeal.Basic
 
 /-!
 # Valuation rings: squares `1 + 4c`, integrality under domination, and divisibility
@@ -25,6 +27,9 @@ containing `S`, an element of `K` whose image lies in `S` already lies in `R`. O
 valuation ring this is what lets an integrality statement proved after a ramified extension of
 the base descend to the base itself.
 
+In a valuation ring an irreducible element generates the maximal ideal, with no discreteness
+hypothesis.
+
 Finally, on a monoid with total divisibility, a multiplicative map preserving zero and one is
 determined by divisibility when it is at most `1` everywhere, below `1` on the nonunits and zero
 only at `0`: then `v x ≤ v y` exactly when `y ∣ x`. This describes the `𝔪`-adic valuation of a
@@ -36,6 +41,8 @@ discrete valuation ring on its own elements, and the points with zero support of
   `c = t ^ 2 + t` for some `t`.
 * `TauCeti.ValuationRing.isInteger_of_isInteger_algebraMap`: an element of `K` whose image in `L`
   lies in a ring `S` dominating `R` already lies in `R`.
+* `TauCeti.ValuationRing.maximalIdeal_eq_span_singleton_of_irreducible`: an irreducible element
+  of a valuation ring generates its maximal ideal.
 * `MonoidWithZeroHom.le_iff_dvd`: a multiplicative map at most `1`, below `1` on the nonunits
   and zero only at `0` compares elements by divisibility.
 
@@ -108,6 +115,22 @@ theorem isInteger_of_isInteger_algebraMap (hS : Function.Injective (algebraMap S
   rw [← inv_inv x, ← hr, map_units_inv, IsUnit.unit_spec]
 
 end Domination
+
+/-- In a valuation ring, an irreducible element generates the maximal ideal: every nonunit is
+comparable with it under divisibility, and it cannot divide properly into a nonunit. No discrete
+valuation ring hypothesis is needed (compare `Irreducible.maximalIdeal_eq`). -/
+theorem maximalIdeal_eq_span_singleton_of_irreducible {R : Type*} [CommRing R] [IsDomain R]
+    [_root_.ValuationRing R] {ϖ : R} (hϖ : Irreducible ϖ) :
+    IsLocalRing.maximalIdeal R = Ideal.span {ϖ} := by
+  ext y
+  rw [Ideal.mem_span_singleton, IsLocalRing.mem_maximalIdeal, mem_nonunits_iff]
+  refine ⟨fun hy ↦ ?_, fun h hu ↦ hϖ.not_isUnit (isUnit_of_dvd_unit h hu)⟩
+  obtain ⟨c, hc | hc⟩ := _root_.ValuationRing.cond y ϖ
+  · rcases hϖ.isUnit_or_isUnit hc.symm with h | h
+    · exact absurd h hy
+    · obtain ⟨u, rfl⟩ := h
+      exact ⟨↑u⁻¹, by rw [← hc, mul_assoc, Units.mul_inv, mul_one]⟩
+  · exact ⟨c, hc.symm⟩
 
 end ValuationRing
 
