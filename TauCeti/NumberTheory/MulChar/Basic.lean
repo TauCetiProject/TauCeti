@@ -28,7 +28,9 @@ Since `(-1) * (-1) = 1`, every multiplicative character satisfies `χ (-1) * χ 
 Pushing a character along an injective ring homomorphism of the coefficients preserves its order
 (`MulChar.orderOf_ringHomComp`).
 
-Quadratic characters are closed under multiplication (`MulChar.IsQuadratic.mul`), and hence a
+A quadratic character takes the value `1` or `-1` at every unit
+(`MulChar.IsQuadratic.apply_eq_one_or_eq_neg_one`). Quadratic characters are closed under
+multiplication (`MulChar.IsQuadratic.mul`), and hence a
 finite product of quadratic characters is quadratic (`MulChar.isQuadratic_prod`).
 -/
 
@@ -71,6 +73,14 @@ theorem orderOf_ringHomComp {R R' R'' : Type*} [CommMonoid R] [CommRing R'] [Com
     {f : R' →+* R''} (hf : Function.Injective f) (χ : MulChar R R') :
     orderOf (χ.ringHomComp f) = orderOf χ := by
   rw [← ringHomCompHom_apply, orderOf_injective _ (injective_ringHomComp hf)]
+
+/-- A quadratic character takes the value `1` or `-1` at a unit. -/
+theorem IsQuadratic.apply_eq_one_or_eq_neg_one {M R : Type*} [CommMonoid M] [CommRing R]
+    {χ : MulChar M R} (hχ : χ.IsQuadratic) {a : M} (ha : IsUnit a) : χ a = 1 ∨ χ a = -1 := by
+  rcases hχ a with h | h | h
+  · exact Or.inl (h.trans (isUnit_zero_iff.mp (h ▸ ha.map χ)))
+  · exact Or.inl h
+  · exact Or.inr h
 
 /-- The product of two quadratic characters is quadratic. -/
 theorem IsQuadratic.mul {M R : Type*} [CommMonoid M] [CommRing R] {χ ψ : MulChar M R}

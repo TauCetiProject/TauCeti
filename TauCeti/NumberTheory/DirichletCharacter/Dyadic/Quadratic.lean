@@ -17,6 +17,10 @@ that level: every unit in the reduction kernel is a square. Thus a primitive qua
 character has dyadic conductor exponent at most three. Together with the exclusion of
 exponent one, its dyadic exponent is zero, two or three.
 
+Likewise such a character at level `2 ^ k` with `k ≥ 3` factors through `8`
+(`DirichletCharacter.factorsThrough_eight_of_sq_eq_one`), since every unit congruent to `1`
+modulo `8` is a square.
+
 The descent and upper bound are proved for characters of order dividing two with values
 in any commutative monoid with zero. In particular they apply to quadratic characters
 with values in a commutative ring, without assumptions on its characteristic.
@@ -48,6 +52,32 @@ theorem factorsThrough_half_of_sq_eq_one [NeZero N] (χ : DirichletCharacter R N
   rw [MulChar.coe_toUnitHom, Units.val_one, hy, map_pow]
   simpa only [MulChar.pow_apply' χ two_ne_zero, MulChar.one_apply hyunit] using
     congrArg (fun ψ : DirichletCharacter R N ↦ ψ y) hχ
+
+/-- A character of order dividing two at level `2 ^ k`, `k ≥ 3`, factors through `8`: every
+unit congruent to `1` modulo `8` is a square. -/
+theorem factorsThrough_eight_of_sq_eq_one {k : ℕ} (hk : 3 ≤ k) (χ : DirichletCharacter R (2 ^ k))
+    (hχ : χ ^ 2 = 1) : χ.FactorsThrough 8 := by
+  obtain ⟨k, rfl⟩ : ∃ j, k = j + 1 := ⟨k - 1, by omega⟩
+  have h8 : 8 ∣ 2 ^ (k + 1) := pow_dvd_pow 2 hk
+  refine (factorsThrough_iff_ker_unitsMap h8).mpr fun u hu ↦ ?_
+  have hcast : ((u : ZMod (2 ^ (k + 1))).cast : ZMod 8) = 1 := by
+    simpa only [MonoidHom.mem_ker, Units.ext_iff, ZMod.unitsMap_val, Units.val_one] using hu
+  -- The representative of `u` is `1 + 8 a`, the square of a unit.
+  set x := (u : ZMod (2 ^ (k + 1))).val with hx
+  have hmod : x % 8 = 1 := by
+    have h : (x : ZMod 8) = ((1 : ℕ) : ZMod 8) := by
+      rw [hx, ← ZMod.cast_eq_val, hcast, Nat.cast_one]
+    exact (ZMod.natCast_eq_natCast_iff' x 1 8).mp h
+  obtain ⟨q, hq⟩ : ∃ q, x = 8 * q + 1 := ⟨x / 8, by omega⟩
+  obtain ⟨y, hy⟩ := ZMod.exists_unit_sq_eq_one_add_eight_mul (q : ZMod (2 ^ (k + 1)))
+  have hu' : (u : ZMod (2 ^ (k + 1))) = (y : ZMod (2 ^ (k + 1))) ^ 2 := by
+    rw [hy, ← ZMod.natCast_zmod_val (u : ZMod (2 ^ (k + 1))), ← hx, hq]
+    push_cast
+    ring
+  apply Units.ext
+  rw [MulChar.coe_toUnitHom, Units.val_one, hu', map_pow]
+  simpa only [MulChar.pow_apply' χ two_ne_zero, MulChar.one_apply y.isUnit] using
+    congrArg (fun ψ : DirichletCharacter R (2 ^ (k + 1)) ↦ ψ y) hχ
 
 /-- The dyadic exponent of a primitive character of order dividing two is at most three.
 At level zero this uses the zero convention for `Nat.factorization`. -/
