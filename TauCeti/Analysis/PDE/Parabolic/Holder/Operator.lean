@@ -264,13 +264,8 @@ theorem norm_euclideanSecondOrderCoeff_le
         (EuclideanSpace.single i (1 : ℝ)))‖ ≤ 1 :=
     ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun H ↦ by
       simpa using H.le_opNorm₂ (EuclideanSpace.single i (1 : ℝ)) (EuclideanSpace.single j 1)
-  refine ((ContinuousLinearMap.lsmul ℝ ℝ).norm_compHolder₂_apply_le _ _).trans ?_
-  calc
-    _ ≤ 1 * ‖a i j‖ * 1 := by
-      gcongr
-      · exact ContinuousLinearMap.opNorm_lsmul_le
-      · exact (HolderSpace.norm_const_le _).trans he
-    _ = ‖a i j‖ := by ring
+  exact (ContinuousLinearMap.norm_lsmul_compHolder₂_const_le _ _).trans
+    (mul_le_of_le_one_right (norm_nonneg _) he)
 
 /-- The first-order coefficient field is bounded by the sum of the norms of its scalar
 coefficients: `‖v ↦ bⁱ v(eᵢ)‖ ≤ ∑ᵢ ‖bⁱ‖`. -/
@@ -282,26 +277,16 @@ theorem norm_euclideanFirstOrderCoeff_le
   have he : ‖ContinuousLinearMap.apply ℝ ℝ (EuclideanSpace.single i (1 : ℝ))‖ ≤ 1 :=
     ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun v ↦ by
       simpa using v.le_opNorm (EuclideanSpace.single i (1 : ℝ))
-  refine ((ContinuousLinearMap.lsmul ℝ ℝ).norm_compHolder₂_apply_le _ _).trans ?_
-  calc
-    _ ≤ 1 * ‖b i‖ * 1 := by
-      gcongr
-      · exact ContinuousLinearMap.opNorm_lsmul_le
-      · exact (HolderSpace.norm_const_le _).trans he
-    _ = ‖b i‖ := by ring
+  exact (ContinuousLinearMap.norm_lsmul_compHolder₂_const_le _ _).trans
+    (mul_le_of_le_one_right (norm_nonneg _) he)
 
 omit [DecidableEq ι] in
 /-- The zeroth-order coefficient field `y ↦ c y` is bounded by the norm of `c`. -/
 theorem norm_euclideanZerothOrderCoeff_le
     (c : HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ) :
-    ‖euclideanZerothOrderCoeff c‖ ≤ ‖c‖ := by
-  refine ((ContinuousLinearMap.lsmul ℝ ℝ).norm_compHolder₂_apply_le _ _).trans ?_
-  calc
-    _ ≤ 1 * ‖c‖ * 1 := by
-      gcongr
-      · exact ContinuousLinearMap.opNorm_lsmul_le
-      · exact (HolderSpace.norm_const_le _).trans ContinuousLinearMap.norm_id_le
-    _ = ‖c‖ := by ring
+    ‖euclideanZerothOrderCoeff c‖ ≤ ‖c‖ :=
+  (ContinuousLinearMap.norm_lsmul_compHolder₂_const_le _ _).trans
+    (mul_le_of_le_one_right (norm_nonneg _) ContinuousLinearMap.norm_id_le)
 
 /-- The parabolic operator `P u = ∂ₜu - aⁱʲ ∂ᵢ∂ⱼu - bⁱ ∂ᵢu - c u` on `ℝⁿ = EuclideanSpace ℝ ι`
 with scalar coefficients `aⁱʲ`, `bⁱ`, `c` in `C_b^{α,α/2}`, as a continuous linear map from

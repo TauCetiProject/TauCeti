@@ -141,39 +141,11 @@ section Cutoff
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {a b : ℝ} {hab : a < b}
 
-/-- Multiplying by a cutoff with values in `[0, 1]` does not increase the supremum norm. -/
-private theorem norm_valueL_mul_le {χ u : ParabolicC2HolderSpace α E ℝ hab} (hα : α ≤ 1)
-    (hχ : ∀ q, χ q ∈ Icc 0 1) :
-    ‖valueL ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u)‖ ≤ ‖valueL u‖ :=
-  (BoundedContinuousFunction.norm_le (norm_nonneg _)).2 fun q ↦ by
-    have h1 : ‖u q‖ ≤ ‖valueL u‖ := by simpa using (valueL u).norm_coe_le_norm q
-    calc
-      _ = χ q * ‖u q‖ := by
-        rw [valueL_apply, ContinuousLinearMap.compParabolicC2Holder₂_apply,
-          ContinuousLinearMap.mul_apply', norm_mul, Real.norm_of_nonneg (hχ q).1]
-      _ ≤ 1 * ‖valueL u‖ := mul_le_mul (hχ q).2 h1 (norm_nonneg _) zero_le_one
-      _ = ‖valueL u‖ := one_mul _
-
 /-- A localization `χ u` vanishes where the cutoff `χ` does. -/
 private theorem mul_apply_eq_zero {χ u : ParabolicC2HolderSpace α E ℝ hab} (hα : α ≤ 1)
     {q : slab (E := E) a b} (h : χ q = 0) :
     (ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u q = 0 := by
   simp [h]
-
-/-- A localization `χ u` agrees with `u` where the cutoff `χ` is one. -/
-private theorem mul_apply_eq_of_eq_one {χ u : ParabolicC2HolderSpace α E ℝ hab} (hα : α ≤ 1)
-    {q : slab (E := E) a b} (h : χ q = 1) :
-    (ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u q = u q := by
-  simp [h]
-
-/-- A localization `χ u` of a map with vanishing trace at time `t` vanishes at time `t`. -/
-private theorem spatialTrace_mul_eq_zero {χ u : ParabolicC2HolderSpace α E ℝ hab} (hα : α ≤ 1)
-    {t : Icc a b} (hu : u.spatialTrace t = 0) :
-    ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u).spatialTrace t = 0 :=
-  CkHolderSpace.ext fun x ↦ by
-    have h := congrArg (· x) hu
-    simp only [spatialTrace_apply, CkHolderSpace.coe_zero, Pi.zero_apply] at h
-    simp [h]
 
 /-- The local bound behind the patching argument. If the localization `w = χ u` satisfies
 `‖w‖ ≤ C₁ (‖P w‖ + ‖w‖_∞)` and the commutator `P w - χ P u` is at most `η ‖u‖ + K ‖u‖_∞`, then
@@ -192,15 +164,19 @@ private theorem norm_mul_le_of_norm_le (hα : α ≤ 1)
       C₁ * (24 * Cχ * ‖P u‖ + η * ‖u‖ + (K + 1) * ‖valueL u‖) := by
   -- Multiplication by the cutoff costs at most its `C_b^{α,α/2}` norm, which is `≤ 24 ‖χ‖`.
   have hQ : ‖valueHolderL hα χ‖ ≤ 24 * Cχ :=
-    ((le_add_of_nonneg_right (norm_nonneg _)).trans
-      (norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul hα χ)).trans
-      (mul_le_mul_of_nonneg_left hχn (by norm_num))
+    (norm_valueHolderL_le_mul hα χ).trans (mul_le_mul_of_nonneg_left hχn (by norm_num))
   have hχP := ((ContinuousLinearMap.mul ℝ ℝ).norm_compHolder₂_apply_le
     (valueHolderL hα χ) (P u)).trans (mul_le_mul_of_nonneg_right (mul_le_mul
       (ContinuousLinearMap.opNorm_mul_le ℝ ℝ) hQ (norm_nonneg _) zero_le_one) (norm_nonneg (P u)))
   have hPw := norm_sub_norm_le (P ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα χ u))
     ((ContinuousLinearMap.mul ℝ ℝ).compHolder₂ (valueHolderL hα χ) (P u))
-  have hv := norm_valueL_mul_le (u := u) hα hχ
+  -- Multiplication by a cutoff with values in `[0, 1]` does not increase the supremum norm.
+  have hχ₁ : ‖valueL χ‖ ≤ 1 := (BoundedContinuousFunction.norm_le zero_le_one).2 fun q ↦ by
+    rw [valueL_apply, Real.norm_of_nonneg (hχ q).1]
+    exact (hχ q).2
+  have hv := ((ContinuousLinearMap.mul ℝ ℝ).norm_valueL_compParabolicC2Holder₂_le hα χ u).trans
+    (mul_le_of_le_one_left (norm_nonneg _) ((mul_le_mul (ContinuousLinearMap.opNorm_mul_le ℝ ℝ)
+      hχ₁ (norm_nonneg _) zero_le_one).trans_eq (one_mul 1)))
   refine hw.trans (mul_le_mul_of_nonneg_left ?_ hC₁)
   linarith
 
@@ -212,21 +188,20 @@ section Schauder
 
 variable {lam Lam : ℝ}
 
-/-- The second-order coefficient field of coefficients bounded by `K` has norm at most `n² K`. -/
-private theorem norm_euclideanSecondOrderCoeff_le_mul {t₀ t₁ : ℝ} {K : ℝ}
-    {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
-    (h : ∀ i j, ‖a i j‖ ≤ K) :
-    ‖euclideanSecondOrderCoeff a‖ ≤ Fintype.card ι * (Fintype.card ι * K) :=
-  (norm_euclideanSecondOrderCoeff_le a).trans <| by
-    simpa using Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦
-      Finset.sum_le_sum fun j (_ : j ∈ Finset.univ) ↦ h i j
-
-/-- The first-order coefficient field of coefficients bounded by `K` has norm at most `n K`. -/
-private theorem norm_euclideanFirstOrderCoeff_le_mul {t₀ t₁ : ℝ} {K : ℝ}
-    {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ} (h : ∀ i, ‖b i‖ ≤ K) :
-    ‖euclideanFirstOrderCoeff b‖ ≤ Fintype.card ι * K :=
-  (norm_euclideanFirstOrderCoeff_le b).trans <| by
-    simpa using Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦ h i
+/-- Coefficients with Hölder norms at most `K` give second- and first-order coefficient fields of
+norms at most constants `KA` and `KB` depending only on `n` and `K` (namely `n² K` and `n K`). -/
+private theorem exists_norm_euclideanCoeff_le (K : ℝ≥0) :
+    ∃ KA KB : ℝ, 0 ≤ KA ∧ 0 ≤ KB ∧ ∀ {t₀ t₁ : ℝ}
+      {a : ι → ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ}
+      {b : ι → HolderSpace α (slab (E := EuclideanSpace ℝ ι) t₀ t₁) ℝ},
+      (∀ i j, ‖a i j‖ ≤ K) → (∀ i, ‖b i‖ ≤ K) →
+        ‖euclideanSecondOrderCoeff a‖ ≤ KA ∧ ‖euclideanFirstOrderCoeff b‖ ≤ KB :=
+  ⟨Fintype.card ι * (Fintype.card ι * K), Fintype.card ι * K, by positivity, by positivity,
+    fun ha hb ↦ ⟨(norm_euclideanSecondOrderCoeff_le _).trans <| by
+      simpa using Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦
+        Finset.sum_le_sum fun j (_ : j ∈ Finset.univ) ↦ ha i j,
+    (norm_euclideanFirstOrderCoeff_le _).trans <| by
+      simpa using Finset.sum_le_sum fun i (_ : i ∈ Finset.univ) ↦ hb i⟩⟩
 
 /-- The arithmetic of the absorption step: if `X ≤ Ct (P + F + L + R)`, where the errors `F` and
 `L` contain `X` with coefficients whose products with `Ct` are at most `1 / 4`, then `X` is bounded
@@ -267,9 +242,7 @@ theorem exists_norm_le_euclideanParabolicOperatorL_add_of_forall_lt_dist (hα₀
     exists_norm_le_euclideanParabolicOperatorL_const (ι := ι) hα₀ hα₁ (Lam := Lam) hlam
   -- The constant-coefficient estimate holds with the constant `Ct` on every horizon `T ≤ T₀`.
   obtain ⟨Ct, hCt₀, hCt⟩ : ∃ Ct : ℝ, 0 ≤ Ct ∧ Ct = C₀ * (1 + T₀) := ⟨_, by positivity, rfl⟩
-  obtain ⟨KA, hKA₀, hKA⟩ : ∃ KA : ℝ, 0 ≤ KA ∧ KA = Fintype.card ι * (Fintype.card ι * K) :=
-    ⟨_, by positivity, rfl⟩
-  obtain ⟨KB, hKB₀, hKB⟩ : ∃ KB : ℝ, 0 ≤ KB ∧ KB = Fintype.card ι * K := ⟨_, by positivity, rfl⟩
+  obtain ⟨KA, KB, hKA₀, hKB₀, hcoeff⟩ := exists_norm_euclideanCoeff_le (ι := ι) (α := α) K
   -- Smallness parameters: each absorbed error costs at most a quarter of `‖w‖`.
   have hη₁ : 0 < 1 / (4 * (Ct + 1)) := by positivity
   have hη₂ : 0 < 1 / (4 * (Ct + 1) * (KB + K + 1)) := by positivity
@@ -281,11 +254,8 @@ theorem exists_norm_le_euclideanParabolicOperatorL_add_of_forall_lt_dist (hα₀
   have hKl₀ : 0 ≤ max Kl 0 := le_max_right _ _
   refine ⟨r₀, hr₀, 2 * Ct * (1 + max Cf 0 + (KB + K) * max Kl 0), by positivity,
     fun T hT hTT₀ a b c ha ha' hak hbk hck w p r hr hrr hw ↦ ?_⟩
-  have hA := norm_euclideanSecondOrderCoeff_le_mul hak
-  have hB := norm_euclideanFirstOrderCoeff_le_mul hbk
+  obtain ⟨hA, hB⟩ := hcoeff hak hbk
   have hC := (norm_euclideanZerothOrderCoeff_le c).trans hck
-  rw [← hKA] at hA
-  rw [← hKB] at hB
   -- The constant-coefficient estimate for the operator frozen at `p`.
   have h₀ := hconst (Matrix.of fun i j ↦ a i j p) (ha p) (ha' p) T hT w
   simp only [Matrix.of_apply] at h₀
@@ -369,9 +339,7 @@ private theorem exists_norm_le_euclideanParabolicOperatorL_add_of_spatialTrace_e
     (ρ := r₀ / 2) (by positivity)
   obtain ⟨Cp, hCp₀, hCp⟩ : ∃ Cp : ℝ, 0 < Cp ∧ Cp = 6 + 4 * (r₀ / 2 / 2) ^ (-(α : ℝ)) :=
     ⟨_, by positivity, rfl⟩
-  obtain ⟨KA, hKA₀, hKA⟩ : ∃ KA : ℝ, 0 ≤ KA ∧ KA = Fintype.card ι * (Fintype.card ι * K) :=
-    ⟨_, by positivity, rfl⟩
-  obtain ⟨KB, hKB₀, hKB⟩ : ∃ KB : ℝ, 0 ≤ KB ∧ KB = Fintype.card ι * K := ⟨_, by positivity, rfl⟩
+  obtain ⟨KA, KB, hKA₀, hKB₀, hcoeff⟩ := exists_norm_euclideanCoeff_le (ι := ι) (α := α) K
   -- The commutator with a cutoff costs a small multiple of `‖u‖` and a multiple of `‖u‖_∞`.
   obtain ⟨K₃, hK₃, hcomm⟩ := exists_norm_parabolicOperatorL_mul_sub_mul_parabolicOperatorL_le
     (E := EuclideanSpace ℝ ι) hα₁ (M := Cχ + KA * Cχ + (KB + 2 * KA) * (24 * Cχ))
@@ -379,19 +347,15 @@ private theorem exists_norm_le_euclideanParabolicOperatorL_add_of_spatialTrace_e
   refine ⟨2 * Cp * C₁ * (24 * Cχ + (K₃ + 1) + 1), by positivity,
     fun T hT hTT₀ a b c ha ha' hak hbk hck u hu ↦ ?_⟩
   obtain ⟨χ, hχn, hχmem, hχone, hχzero⟩ := hfam 0 T hT
-  have hA := norm_euclideanSecondOrderCoeff_le_mul hak
-  have hB := norm_euclideanFirstOrderCoeff_le_mul hbk
-  rw [← hKA] at hA
-  rw [← hKB] at hB
+  obtain ⟨hA, hB⟩ := hcoeff hak hbk
   -- The local bound for the localization `χ_p u` at every point `p`.
   have hlocal : ∀ p, ‖(ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα₁.le (χ p) u‖ ≤
       C₁ * (24 * Cχ * ‖euclideanParabolicOperatorL hα₁.le a b c u‖ +
         1 / (2 * Cp * (C₁ + 1)) * ‖u‖ + (K₃ + 1) * ‖valueL u‖) := by
     intro p
-    have h24 := norm_valueHolderL_add_norm_spatialFDerivHolderL_le_mul hα₁.le (χ p)
-    have h24' := mul_le_mul_of_nonneg_left (hχn p) (by norm_num : (0 : ℝ) ≤ 24)
     have hχd : ‖spatialFDerivHolderL hα₁.le (χ p)‖ ≤ 24 * Cχ :=
-      ((le_add_of_nonneg_left (norm_nonneg _)).trans h24).trans h24'
+      (norm_spatialFDerivHolderL_le_mul hα₁.le (χ p)).trans
+        (mul_le_mul_of_nonneg_left (hχn p) (by norm_num))
     have hχM : ‖timeDerivL (χ p)‖ + ‖euclideanSecondOrderCoeff a‖ *
         ‖spatialSecondFDerivL (χ p)‖ + (‖euclideanFirstOrderCoeff b‖ +
           2 * ‖euclideanSecondOrderCoeff a‖) * ‖spatialFDerivHolderL hα₁.le (χ p)‖ ≤
@@ -407,14 +371,15 @@ private theorem exists_norm_le_euclideanParabolicOperatorL_add_of_spatialTrace_e
     have hw := hloc T hT hTT₀ a b c ha ha' hak hbk hck
       ((ContinuousLinearMap.mul ℝ ℝ).compParabolicC2Holder₂ hα₁.le (χ p) u) p hr₀.le le_rfl
       fun q hq ↦ mul_apply_eq_zero hα₁.le (hχzero p q (by linarith))
-    rw [spatialTrace_mul_eq_zero hα₁.le hu, norm_zero, add_zero] at hw
+    rw [(ContinuousLinearMap.mul ℝ ℝ).spatialTrace_compParabolicC2Holder₂_eq_zero hα₁.le (χ p) hu,
+      norm_zero, add_zero] at hw
     exact norm_mul_le_of_norm_le hα₁.le _ hC₁ (hχmem p) (hχn p) hw hc
   -- Patch the local bounds and absorb.
   have hpatch : ‖u‖ ≤ (6 + 4 * (r₀ / 2 / 2) ^ (-(α : ℝ))) *
       (C₁ * (24 * Cχ * ‖euclideanParabolicOperatorL hα₁.le a b c u‖ +
         1 / (2 * Cp * (C₁ + 1)) * ‖u‖ + (K₃ + 1) * ‖valueL u‖)) :=
     norm_le_of_forall_eqOn_ball (r := r₀ / 2 / 2) (by positivity) fun p ↦
-      ⟨_, hlocal p, fun q hq ↦ (mul_apply_eq_of_eq_one hα₁.le (hχone p q hq)).symm⟩
+      ⟨_, hlocal p, fun q hq ↦ by simp [hχone p q hq]⟩
   rw [← hCp] at hpatch
   have hη : Cp * C₁ * (1 / (2 * Cp * (C₁ + 1))) ≤ 1 / 2 := by
     rw [mul_one_div, div_le_div_iff₀ (by positivity) (by positivity)]
@@ -463,10 +428,9 @@ theorem exists_norm_le_euclideanParabolicOperatorL_add (hα₀ : 0 < α) (hα₁
   obtain ⟨Cs, hCs, hsol⟩ :=
     exists_solutionOperator_euclideanParabolicOperatorL_const_prod (ι := ι) hα₀ hα₁ (Lam := Lam)
       hlam
+  obtain ⟨KA, KB, hKA₀, hKB₀, hcoeff⟩ := exists_norm_euclideanCoeff_le (ι := ι) (α := α) K
   -- `N` bounds the operator norm of `P`, and `Cz` the solution operator of the frozen problem.
-  obtain ⟨N, hN₀, hN⟩ : ∃ N : ℝ, 0 ≤ N ∧
-      N = 1 + Fintype.card ι * (Fintype.card ι * K) + 24 * (Fintype.card ι * K + K) :=
-    ⟨_, by positivity, rfl⟩
+  obtain ⟨N, hN₀, hN⟩ : ∃ N : ℝ, 0 ≤ N ∧ N = 1 + KA + 24 * (KB + K) := ⟨_, by positivity, rfl⟩
   refine ⟨C₂ + (C₂ * (N + 1) + 1) * (Cs * (1 + T₀)), by positivity,
     fun T hT hTT₀ a b c ha ha' hak hbk hck u ↦ ?_⟩
   -- Subtract the solution `z` of the problem frozen at a point with the initial datum of `u`.
@@ -487,8 +451,7 @@ theorem exists_norm_le_euclideanParabolicOperatorL_add (hα₀ : 0 < α) (hα₁
   have hP : ‖euclideanParabolicOperatorL (ht := hT) hα₁.le a b c‖ ≤ N := by
     rw [euclideanParabolicOperatorL_def, hN]
     refine (norm_parabolicOperatorL_le hα₁.le).trans ?_
-    have hA := norm_euclideanSecondOrderCoeff_le_mul hak
-    have hB := norm_euclideanFirstOrderCoeff_le_mul hbk
+    obtain ⟨hA, hB⟩ := hcoeff hak hbk
     have hC := (norm_euclideanZerothOrderCoeff_le c).trans hck
     linarith
   have hPv : ‖euclideanParabolicOperatorL hα₁.le a b c (u - z)‖ ≤
