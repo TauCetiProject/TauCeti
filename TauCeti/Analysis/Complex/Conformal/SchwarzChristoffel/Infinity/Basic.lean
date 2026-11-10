@@ -183,7 +183,7 @@ private theorem norm_schwarzChristoffelPrimitive_sub_le_vertical (a e : ι → �
   have hmain := norm_schwarzChristoffelPrimitive_sub_le_integral a e z₀ hβ0 hmem hB hBi
   rw [hend, hstart] at hmain
   have hint := mul_le_mul_of_nonneg_left
-    (TauCeti.integral_add_rpow_le_of_lt_neg_one hz0 hβ0 (by linarith : S < -1)) hK.le
+    (TauCeti.integral_add_rpow_le_of_lt_neg_one (β := β) hz0 (by linarith : S < -1)) hK.le
   rw [← intervalIntegral.integral_const_mul] at hint
   refine hmain.trans (hint.trans (le_of_eq ?_))
   rw [hKdef]

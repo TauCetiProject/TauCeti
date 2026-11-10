@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Idempotent
+public import Mathlib.Data.Matrix.Block
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Ungraded
 public import Mathlib.LinearAlgebra.PiTensorProduct.Basic
@@ -86,6 +87,8 @@ one and so does not apply to an ungraded differential algebra.
 * `TauCeti.TypeDStructure.boxDifferential_smul`: `A ⊠ N` is a differential left module.
 * `TauCeti.TypeDStructure.morphismDifferential_morphismDifferential`,
   `TauCeti.TypeDStructure.morphismDifferential_mul`: the morphisms form a differential category.
+* `TauCeti.TypeDStructure.map_fromBlocks_add_fromBlocks_mul_fromBlocks`: the curvature of the
+  block matrix `fromBlocks δ F 0 δ'` is `fromBlocks 0 (∂F) 0 0`.
 * `TauCeti.TypeDStructure.boxDifferential_continuationMap`: morphisms act on box tensor products
   compatibly with the differentials.
 * `TauCeti.TypeDStructure.lift_iteratedCoeff_succ`: the recursion `δᵏ⁺¹ = (1 ⊗ δᵏ) ∘ δ¹`.
@@ -227,6 +230,24 @@ def morphismDifferential : Matrix X X' A →ₗ[R] Matrix X X' A where
 theorem morphismDifferential_apply (F : Matrix X X' A) :
     morphismDifferential N N' F = F.map d + F * N'.coeff + N.coeff * F :=
   (rfl)
+
+variable (N N') in
+/-- The curvature `d C + C * C` of the block upper-triangular matrix `C = fromBlocks δ F 0 δ'` on
+`X ⊕ X'` is the differential `∂F` of `F`, in the off-diagonal block. So `C` satisfies the type `D`
+structure equation exactly when `F` is a cycle; it is then the coefficient matrix of the mapping
+cone of `F`. -/
+theorem map_fromBlocks_add_fromBlocks_mul_fromBlocks (F : Matrix X X' A) :
+    (Matrix.fromBlocks N.coeff F 0 N'.coeff).map d +
+        Matrix.fromBlocks N.coeff F 0 N'.coeff * Matrix.fromBlocks N.coeff F 0 N'.coeff =
+      Matrix.fromBlocks 0 (morphismDifferential N N' F) 0 0 := by
+  rw [Matrix.fromBlocks_map, Matrix.fromBlocks_multiply, Matrix.fromBlocks_add,
+    morphismDifferential_apply]
+  have h0 : (0 : Matrix X' X A).map d = 0 := Matrix.map_zero d (map_zero d)
+  congr 1
+  · simpa using N.map_coeff_add_coeff_mul_coeff
+  · abel
+  · simp [h0]
+  · simpa using N'.map_coeff_add_coeff_mul_coeff
 
 variable (N) in
 /-- In characteristic two the structure equation reads `d δ = δ * δ`. -/
