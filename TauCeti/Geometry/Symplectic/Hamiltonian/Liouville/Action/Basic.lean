@@ -49,7 +49,10 @@ The angle map and its pullback of the symplectic form are treated in
 
 ## Main results
 
-All in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
+* `TauCeti.fderiv_apply_eq_of_hasFDerivAt_action`: the differential of an action function,
+  `dA = (2π)⁻¹ ∑ⱼ λⱼ dcⱼ`, evaluated on a vector.
+
+The remaining results are in the namespace `TauCeti.SmoothTwoForm.IsSymplectic`:
 
 * `fderiv_dotProduct_comm_of_mem_hamiltonianFlowStabilizer`: the period one-forms are closed.
 * `exists_forall_hasFDerivAt_of_mem_hamiltonianFlowStabilizer`: on a convex open set, a period
@@ -74,6 +77,15 @@ open ContinuousLinearMap (proj)
 open scoped Manifold ContDiff Matrix
 
 namespace TauCeti
+
+/-- **The differential of an action function.** If `f` has differential
+`(2π)⁻¹ ∑ⱼ vⱼ dcⱼ` at `c`, then `df_c(w) = (2π)⁻¹ (v ⬝ᵥ w)`. -/
+theorem fderiv_apply_eq_of_hasFDerivAt_action {ι : Type*} [Fintype ι] {f : (ι → ℝ) → ℝ}
+    {v c : ι → ℝ} (hf : HasFDerivAt f ((2 * π)⁻¹ • ∑ j, v j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c)
+    (w : ι → ℝ) :
+    fderiv ℝ f c w = (2 * π)⁻¹ * (v ⬝ᵥ w) := by
+  rw [hf.fderiv]
+  simp [dotProduct, Finset.mul_sum, mul_comm]
 
 namespace SmoothTwoForm
 
@@ -204,9 +216,8 @@ theorem exists_isLocalDiffeomorphAt_action_of_isCompact (hdim : 2 * Fintype.card
   swap
   · -- The periods are the integral combinations of the `p i c`, and `dAᵢ = (2π)⁻¹ ⟨p i c, ·⟩`.
     have hd (i : ι) (w : ι → ℝ) :
-        fderiv ℝ (fun c ↦ A i c) c w = (2 * π)⁻¹ * (p i c ⬝ᵥ w) := by
-      rw [(hA i c hc).fderiv]
-      simp [dotProduct, Finset.mul_sum]
+        fderiv ℝ (fun c ↦ A i c) c w = (2 * π)⁻¹ * (p i c ⬝ᵥ w) :=
+      fderiv_apply_eq_of_hasFDerivAt_action (hA i c hc) w
     simp_rw [hd, (hball hc).1.2.2, AddSubgroup.mem_closure_range_iff_of_fintype]
     constructor
     · rintro ⟨n, rfl⟩
