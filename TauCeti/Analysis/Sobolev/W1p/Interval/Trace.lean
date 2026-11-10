@@ -101,27 +101,30 @@ theorem intervalTraceL_eq_iff_sub_mem_w1p0Submodule (hp : p ≠ ⊤) (hab : a < 
       u - v ∈ w1p0Submodule volume ⟨Ioo a b, isOpen_Ioo⟩ p := by
   rw [mem_w1p0Submodule_iff_intervalTraceL_eq_zero hp hab, map_sub, sub_eq_zero]
 
+private theorem exists_intervalCoord :
+    ∃ v : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p,
+      value v =ᵐ[volume.restrict (Ioo a b)] (ContinuousLinearMap.id ℝ ℝ) ∧
+      gradient v =ᵐ[volume.restrict (Ioo a b)]
+        fun _ ↦ (InnerProductSpace.toDual ℝ ℝ).symm (ContinuousLinearMap.id ℝ ℝ) :=
+  exists_value_gradient_ae_eq_continuousLinearMap
+    (mu := volume) (Omega := ⟨Ioo a b, isOpen_Ioo⟩) (p := p)
+    (by simpa using Metric.isBounded_Ioo a b) (ContinuousLinearMap.id ℝ ℝ)
+
 /-- The Sobolev class of the coordinate function `t ↦ t` on a bounded interval. -/
 def intervalCoord : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p :=
-  (exists_value_gradient_ae_eq_continuousLinearMap
-    (mu := volume) (Omega := ⟨Ioo a b, isOpen_Ioo⟩) (p := p)
-    (by simpa using Metric.isBounded_Ioo a b) (ContinuousLinearMap.id ℝ ℝ)).choose
+  (exists_intervalCoord (a := a) (b := b) (p := p)).choose
 
 /-- The value component of the coordinate class equals the coordinate almost everywhere. -/
 theorem value_intervalCoord :
     value (intervalCoord (a := a) (b := b) (p := p)) =ᵐ[volume.restrict (Ioo a b)]
       fun t ↦ t :=
-  (exists_value_gradient_ae_eq_continuousLinearMap
-    (mu := volume) (Omega := ⟨Ioo a b, isOpen_Ioo⟩) (p := p)
-    (by simpa using Metric.isBounded_Ioo a b) (ContinuousLinearMap.id ℝ ℝ)).choose_spec.1
+  (exists_intervalCoord (a := a) (b := b) (p := p)).choose_spec.1
 
 /-- The weak gradient of the coordinate class is one almost everywhere. -/
 theorem gradient_intervalCoord :
     gradient (intervalCoord (a := a) (b := b) (p := p)) =ᵐ[volume.restrict (Ioo a b)]
       fun _ ↦ 1 := by
-  have hg := (exists_value_gradient_ae_eq_continuousLinearMap
-    (mu := volume) (Omega := ⟨Ioo a b, isOpen_Ioo⟩) (p := p)
-    (by simpa using Metric.isBounded_Ioo a b) (ContinuousLinearMap.id ℝ ℝ)).choose_spec.2
+  have hg := (exists_intervalCoord (a := a) (b := b) (p := p)).choose_spec.2
   have hdual : (InnerProductSpace.toDual ℝ ℝ).symm (ContinuousLinearMap.id ℝ ℝ) = 1 := by
     simpa using (InnerProductSpace.toDual_symm_apply (𝕜 := ℝ) (x := (1 : ℝ))
       (y := ContinuousLinearMap.id ℝ ℝ))
