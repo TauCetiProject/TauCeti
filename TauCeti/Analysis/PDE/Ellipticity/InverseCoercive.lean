@@ -48,11 +48,13 @@ theorem isUnit_of_quadratic_lower_bound (hlam : 0 < lam)
   exact sub_eq_zero.mp hz'
 
 /-- Inverse coercivity controls the squared norm of the image by its diagonal energy. -/
-theorem norm_mulVec_sq_le_of_inverse_lower_bound (hLam : 0 < Lam) (hA : IsUnit A)
+theorem norm_mulVec_sq_le_of_inverse_lower_bound (hLam : 0 < Lam)
     (hinv : ∀ ξ : EuclideanSpace ℝ ι,
       Lam⁻¹ * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (A⁻¹ *ᵥ ξ)) (ξ : EuclideanSpace ℝ ι) :
     ‖(WithLp.toLp 2 (A *ᵥ ξ) : EuclideanSpace ℝ ι)‖ ^ 2 ≤
       Lam * (ξ ⬝ᵥ (A *ᵥ ξ)) := by
+  have hA := Matrix.isUnit_nonsing_inv_iff.mp
+    (isUnit_of_quadratic_lower_bound (inv_pos.mpr hLam) hinv)
   have h := hinv (WithLp.toLp 2 (A *ᵥ ξ))
   rw [WithLp.ofLp_toLp, mulVec_mulVec,
     A.nonsing_inv_mul ((Matrix.isUnit_iff_isUnit_det A).mp hA), one_mulVec,
@@ -60,7 +62,7 @@ theorem norm_mulVec_sq_le_of_inverse_lower_bound (hLam : 0 < Lam) (hA : IsUnit A
   exact (inv_mul_le_iff₀ hLam).mp h
 
 /-- Inverse coercivity implies the mixed bound with the same upper constant. -/
-theorem abs_dotProduct_mulVec_le_of_inverse_lower_bound (hLam : 0 < Lam) (hA : IsUnit A)
+theorem abs_dotProduct_mulVec_le_of_inverse_lower_bound (hLam : 0 < Lam)
     (hinv : ∀ ξ : EuclideanSpace ℝ ι,
       Lam⁻¹ * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (A⁻¹ *ᵥ ξ)) (η ξ : EuclideanSpace ℝ ι) :
     |η ⬝ᵥ (A *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖ := by
@@ -69,22 +71,28 @@ theorem abs_dotProduct_mulVec_le_of_inverse_lower_bound (hLam : 0 < Lam) (hA : I
     simpa [EuclideanSpace.inner_eq_star_dotProduct, v, dotProduct_comm] using
       abs_real_inner_le_norm ζ v
   have he : ‖v‖ ^ 2 ≤ Lam * (ξ ⬝ᵥ (A *ᵥ ξ)) :=
-    norm_mulVec_sq_le_of_inverse_lower_bound hLam hA hinv ξ
+    norm_mulVec_sq_le_of_inverse_lower_bound hLam hinv ξ
   have hn : ‖v‖ ≤ Lam * ‖ξ‖ := by
-    by_cases hv : v = 0
-    · simp [hv, mul_nonneg hLam.le (norm_nonneg ξ)]
-    apply (mul_le_mul_iff_right₀ (norm_pos_iff.mpr hv)).mp
     have hc := mul_le_mul_of_nonneg_left
       ((le_abs_self _).trans (hcs ξ)) hLam.le
-    nlinarith
+    have hs : ‖v‖ ^ 2 ≤ ‖v‖ * (Lam * ‖ξ‖) := by nlinarith
+    linarith [two_mul_le_add_of_sq_le_mul (norm_nonneg v)
+      (mul_nonneg hLam.le (norm_nonneg ξ)) hs]
   exact (hcs η).trans (by nlinarith [norm_nonneg η])
 
 /-- An operator bound and coercivity give inverse coercivity with constant `M² / λ`. -/
-theorem inverse_quadratic_lower_bound_of_bounds (hlam : 0 < lam) (hM : 0 < M)
+theorem inverse_quadratic_lower_bound_of_bounds (hlam : 0 < lam)
     (hlower : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (A *ᵥ ξ))
     (hupper : ∀ η ξ : EuclideanSpace ℝ ι,
       |η ⬝ᵥ (A *ᵥ ξ)| ≤ M * ‖η‖ * ‖ξ‖) (ξ : EuclideanSpace ℝ ι) :
     (M ^ 2 / lam)⁻¹ * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (A⁻¹ *ᵥ ξ) := by
+  by_cases hξ : ξ = 0
+  · simp [hξ]
+  have hM : 0 < M := by
+    have hn : 0 < ‖ξ‖ ^ 2 := sq_pos_of_pos (norm_pos_iff.mpr hξ)
+    have hle := (hlower ξ).trans ((le_abs_self _).trans (hupper ξ ξ))
+    have : lam ≤ M := (mul_le_mul_iff_left₀ hn).mp (by nlinarith [hle])
+    exact hlam.trans_le this
   have hA := isUnit_of_quadratic_lower_bound hlam hlower
   let v : EuclideanSpace ℝ ι := WithLp.toLp 2 (A⁻¹ *ᵥ ξ)
   have hav : A *ᵥ v = ξ := by
@@ -94,13 +102,12 @@ theorem inverse_quadratic_lower_bound_of_bounds (hlam : 0 < lam) (hM : 0 < M)
   have hu := hupper ξ v
   rw [hav] at hu
   have hself : ξ ⬝ᵥ ξ = ‖ξ‖ ^ 2 := by
-    simpa [dotProduct, sq] using (EuclideanSpace.real_norm_sq_eq ξ).symm
+    simpa only [Matrix.toQuadraticForm'_apply, one_mulVec] using toQuadraticForm'_one ξ
   rw [hself, abs_of_nonneg (sq_nonneg _)] at hu
   have hn : ‖ξ‖ ≤ M * ‖v‖ := by
-    by_cases hξ : ξ = 0
-    · simp [hξ, mul_nonneg hM.le (norm_nonneg v)]
-    apply (mul_le_mul_iff_left₀ (norm_pos_iff.mpr hξ)).mp
-    nlinarith [hu]
+    have hs : ‖ξ‖ ^ 2 ≤ ‖ξ‖ * (M * ‖v‖) := by nlinarith [hu]
+    linarith [two_mul_le_add_of_sq_le_mul (norm_nonneg ξ)
+      (mul_nonneg hM.le (norm_nonneg v)) hs]
   have hs : ‖ξ‖ ^ 2 ≤ M ^ 2 * ‖v‖ ^ 2 := by
     nlinarith [mul_self_le_mul_self (norm_nonneg ξ) hn]
   rw [inv_div, div_mul_eq_mul_div, div_le_iff₀ (sq_pos_of_pos hM)]
@@ -150,8 +157,19 @@ theorem ae_isUnit (h : IsUniformlyEllipticAE mu Ω a lam Lam) :
 theorem ae_upper_bound (h : IsUniformlyEllipticAE mu Ω a lam Lam) :
     ∀ᵐ x ∂mu.restrict Ω, ∀ η ξ : EuclideanSpace ℝ ι,
       |η ⬝ᵥ (a x *ᵥ ξ)| ≤ Lam * ‖η‖ * ‖ξ‖ := by
-  filter_upwards [h.ae_bounds, h.ae_isUnit] with x hx hunit
-  exact abs_dotProduct_mulVec_le_of_inverse_lower_bound (h.pos.trans_le h.le) hunit hx.2
+  filter_upwards [h.ae_bounds] with x hx
+  exact abs_dotProduct_mulVec_le_of_inverse_lower_bound (h.pos.trans_le h.le) hx.2
+
+/-- Lowering the positive lower constant and raising the upper constant preserves
+inverse-coercive ellipticity. -/
+theorem mono_constants (h : IsUniformlyEllipticAE mu Ω a lam Lam) {lam' Lam' : ℝ}
+    (hlam' : 0 < lam') (hle : lam' ≤ lam) (hLam : Lam ≤ Lam') :
+    IsUniformlyEllipticAE mu Ω a lam' Lam' := by
+  refine ⟨hlam', hle.trans (h.le.trans hLam), ?_⟩
+  filter_upwards [h.ae_bounds] with x hx
+  exact ⟨fun ξ => (mul_le_mul_of_nonneg_right hle (sq_nonneg _)).trans (hx.1 ξ),
+    fun ξ => (mul_le_mul_of_nonneg_right
+      (inv_anti₀ (h.pos.trans_le h.le) hLam) (sq_nonneg _)).trans (hx.2 ξ)⟩
 
 /-- Restricting the domain preserves inverse-coercive ellipticity. -/
 theorem mono_set (h : IsUniformlyEllipticAE mu Ω a lam Lam) (hΩ : Ω' ⊆ Ω) :
@@ -204,13 +222,12 @@ inverse-coercive ellipticity with constants `(λ, M² / λ)`, not generally `(λ
 theorem UniformlyEllipticOn.isUniformlyEllipticAE (h : UniformlyEllipticOn Ω a lam M)
     (hΩ : MeasurableSet Ω) :
     IsUniformlyEllipticAE mu Ω a lam (M ^ 2 / lam) := by
-  have hM : 0 < M := h.pos.trans_le h.le
   have hconst : lam ≤ M ^ 2 / lam :=
     (le_div_iff₀ h.pos).mpr (by nlinarith [mul_self_le_mul_self h.pos.le h.le])
   refine ⟨h.pos, hconst, ?_⟩
   filter_upwards [ae_restrict_mem hΩ] with x hx
   have hl : ∀ ξ : EuclideanSpace ℝ ι, lam * ‖ξ‖ ^ 2 ≤ ξ ⬝ᵥ (a x *ᵥ ξ) := by
     simpa only [Matrix.toQuadraticForm'_apply] using h.lower_bound hx
-  exact ⟨hl, inverse_quadratic_lower_bound_of_bounds h.pos hM hl (h.upper_bound hx)⟩
+  exact ⟨hl, inverse_quadratic_lower_bound_of_bounds h.pos hl (h.upper_bound hx)⟩
 
 end TauCeti.PDE
