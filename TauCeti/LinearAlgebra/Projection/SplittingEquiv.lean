@@ -32,6 +32,8 @@ to two fibre metrics are compared.
 
 * `Submodule.splittingEquiv_apply`: the formula `x ↦ π₂ (π₁ x) + π₂' (π₁' x)` in terms of the
   projections `π` onto the first summands and `π'` onto the second summands.
+* `Submodule.splittingEquiv_symm_apply`: the inverse is `y ↦ π₁₂ (π₂ y) + π₁₂' (π₂' y)`, where
+  `π₁₂` projects onto `p₁` along `q₂` and `π₁₂'` onto `q₁` along `p₂`.
 * `Submodule.map_splittingEquiv_left` and `Submodule.map_splittingEquiv_right`: the automorphism
   carries `p₁` onto `p₂` and `q₁` onto `q₂`.
 * `Submodule.splittingEquiv_self`: comparing a splitting with itself gives the identity.
@@ -79,6 +81,40 @@ theorem splittingEquiv_apply_of_mem_right {x : E} (hx : x ∈ q₁) :
   rw [splittingEquiv_apply, projection_apply_of_mem_left h₁.symm hx,
     (projection_apply_eq_zero_iff h₁).2 hx, map_zero, zero_add]
 
+/-- Exchanging the roles of the two summands in both splittings gives the same comparison. -/
+theorem splittingEquiv_swap :
+    splittingEquiv h₁.symm h₂.symm hq hp = splittingEquiv h₁ h₂ hp hq := by
+  ext x
+  rw [splittingEquiv_apply, splittingEquiv_apply, add_comm]
+
+/-- On `p₂`, the inverse of the comparison of two splittings is the projection onto `p₁` along
+`q₂`. -/
+theorem splittingEquiv_symm_apply_of_mem_left {y : E} (hy : y ∈ p₂) :
+    (splittingEquiv h₁ h₂ hp hq).symm y = p₁.projection q₂ hp y := by
+  rw [LinearEquiv.symm_apply_eq,
+    splittingEquiv_apply_of_mem_left h₁ h₂ hp hq (projection_apply_mem hp y),
+    -- The projection of `y` onto `p₁` along `q₂` differs from `y` by an element of `q₂`.
+    projection_eq_self_sub_projection hp.symm, map_sub, projection_apply_of_mem_left h₂ hy,
+    (projection_apply_eq_zero_iff h₂).2 (projection_apply_mem hp.symm y), sub_zero]
+
+/-- On `q₂`, the inverse of the comparison of two splittings is the projection onto `q₁` along
+`p₂`. -/
+theorem splittingEquiv_symm_apply_of_mem_right {y : E} (hy : y ∈ q₂) :
+    (splittingEquiv h₁ h₂ hp hq).symm y = q₁.projection p₂ hq y := by
+  rw [← splittingEquiv_swap]
+  exact splittingEquiv_symm_apply_of_mem_left h₁.symm h₂.symm hq hp hy
+
+/-- The inverse of the comparison of two splittings projects the `p₂`-component of `y` onto `p₁`
+along `q₂` and its `q₂`-component onto `q₁` along `p₂`. -/
+@[simp]
+theorem splittingEquiv_symm_apply (y : E) :
+    (splittingEquiv h₁ h₂ hp hq).symm y =
+      p₁.projection q₂ hp (p₂.projection q₂ h₂ y) +
+        q₁.projection p₂ hq (q₂.projection p₂ h₂.symm y) := by
+  conv_lhs => rw [← projection_add_projection_eq_self h₂ y]
+  rw [map_add, splittingEquiv_symm_apply_of_mem_left h₁ h₂ hp hq (projection_apply_mem h₂ y),
+    splittingEquiv_symm_apply_of_mem_right h₁ h₂ hp hq (projection_apply_mem h₂.symm y)]
+
 /-- **The comparison of two splittings carries `p₁` onto `p₂`.** -/
 theorem map_splittingEquiv_left : p₁.map (splittingEquiv h₁ h₂ hp hq : E →ₗ[R] E) = p₂ := by
   apply le_antisymm
@@ -86,26 +122,14 @@ theorem map_splittingEquiv_left : p₁.map (splittingEquiv h₁ h₂ hp hq : E �
     rw [LinearEquiv.coe_coe, splittingEquiv_apply_of_mem_left h₁ h₂ hp hq hx]
     exact projection_apply_mem h₂ x
   · intro y hy
-    -- The preimage of `y` is its projection onto `p₁` along `q₂`, which differs from `y` by an
-    -- element of `q₂`.
     refine ⟨p₁.projection q₂ hp y, projection_apply_mem hp y, ?_⟩
-    rw [LinearEquiv.coe_coe, splittingEquiv_apply_of_mem_left h₁ h₂ hp hq
-      (projection_apply_mem hp y), projection_eq_self_sub_projection hp.symm, map_sub,
-      projection_apply_of_mem_left h₂ hy, (projection_apply_eq_zero_iff h₂).2
-      (projection_apply_mem hp.symm y), sub_zero]
+    rw [LinearEquiv.coe_coe, ← splittingEquiv_symm_apply_of_mem_left h₁ h₂ hp hq hy,
+      LinearEquiv.apply_symm_apply]
 
 /-- **The comparison of two splittings carries `q₁` onto `q₂`.** -/
 theorem map_splittingEquiv_right : q₁.map (splittingEquiv h₁ h₂ hp hq : E →ₗ[R] E) = q₂ := by
-  apply le_antisymm
-  · rintro _ ⟨x, hx, rfl⟩
-    rw [LinearEquiv.coe_coe, splittingEquiv_apply_of_mem_right h₁ h₂ hp hq hx]
-    exact projection_apply_mem h₂.symm x
-  · intro y hy
-    refine ⟨q₁.projection p₂ hq y, projection_apply_mem hq y, ?_⟩
-    rw [LinearEquiv.coe_coe, splittingEquiv_apply_of_mem_right h₁ h₂ hp hq
-      (projection_apply_mem hq y), projection_eq_self_sub_projection hq.symm, map_sub,
-      projection_apply_of_mem_left h₂.symm hy, (projection_apply_eq_zero_iff h₂.symm).2
-      (projection_apply_mem hq.symm y), sub_zero]
+  rw [← splittingEquiv_swap]
+  exact map_splittingEquiv_left h₁.symm h₂.symm hq hp
 
 /-- **Comparing a splitting with itself gives the identity.** -/
 @[simp]
