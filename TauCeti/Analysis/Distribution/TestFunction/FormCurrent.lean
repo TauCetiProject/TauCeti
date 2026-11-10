@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.TestFunction.ExtDeriv
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import TauCeti.MeasureTheory.Integral.Bochner.Alternating
 import Mathlib.MeasureTheory.Measure.Haar.Unique
+import TauCeti.Analysis.Calculus.DifferentialForm.Const
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
@@ -236,8 +237,7 @@ theorem formCurrent_comp_extDerivCLM {k : ℕ} (o : Orientation ℝ E (Fin (j + 
     have hloc : LocallyIntegrableOn ω Ω b.addHaar :=
       hω.continuousOn.locallyIntegrableOn Ω.isOpen.measurableSet
     have hdloc : LocallyIntegrableOn (extDeriv ω) Ω b.addHaar :=
-      ContinuousOn.locallyIntegrableOn (fun x hx ↦ (TauCeti.contDiffAt_extDeriv (r := 0)
-        (hω.contDiffAt (Ω.isOpen.mem_nhds hx)) (by simp)).continuousAt.continuousWithinAt)
+      (TauCeti.contDiffOn_extDeriv hω Ω.isOpen (r := 0) (by simp)).continuousOn.locallyIntegrableOn
         Ω.isOpen.measurableSet
     have hη : ContDiff ℝ 1 η := η.contDiff.of_le (by exact_mod_cast le_top)
     -- Off `Ω` the test form `η`, and with it `ω ∧ η`, vanishes near every point.
@@ -265,8 +265,8 @@ theorem formCurrent_comp_extDerivCLM {k : ℕ} (o : Orientation ℝ E (Fin (j + 
           ext i
           simp [e]
         simpa [wedge_def, hb] using this
-      · have hd₀ (m : ℕ) : extDeriv (0 : E → E [⋀^Fin m]→L[ℝ] ℝ) x = 0 := by
-          simp [extDeriv, ← alternatizeUncurryFinCLM_apply]
+      · have hd₀ (m : ℕ) : extDeriv (0 : E → E [⋀^Fin m]→L[ℝ] ℝ) x = 0 :=
+          congrFun (extDeriv_const 0) x
         rw [(hψ₀ x hx).extDeriv_eq, (hη₀ x hx).extDeriv_eq, hd₀, hd₀,
           show η x = 0 from (hη₀ x hx).eq_of_nhds]
         simp [wedge_def]

@@ -64,90 +64,6 @@ public section
 open MeasureTheory TopologicalSpace TestFunction Distribution Filter Set Real
 open scoped Distributions ENNReal NNReal
 
-namespace TauCeti.SeibergWitten
-
-section Integral
-
-variable {X : Type*} [MeasurableSpace X] {μ : Measure X} {S : Set X} {s t : X → ℝ}
-  {C r L : ℝ}
-
-/-- **`L¹` bound on the vacuum defect.** Let `s = |α|²` and `t = |β|²` on a measurable set `S` of
-finite measure, with `t ≤ (C / r) w₊ + C / r²` on `S` for `w₊ = max (1 - s) 0`, `0 ≤ C` and
-`2 C ≤ r`. If the spinor defect `1 - s - t` is integrable on `S` with
-`r ∫_S |1 - s - t| ≤ L`, then `r ∫_S w₊ ≤ 2 L + 2 (C / r) μ(S)`. -/
-theorem mul_setIntegral_max_one_sub_le (hS : MeasurableSet S) (hμS : μ S ≠ ∞) (hC : 0 ≤ C)
-    (hr : 2 * C ≤ r) (hd : IntegrableOn (fun x ↦ 1 - s x - t x) S μ)
-    (ht : ∀ x ∈ S, t x ≤ C / r * max (1 - s x) 0 + C / r ^ 2)
-    (hL : r * ∫ x in S, |1 - s x - t x| ∂μ ≤ L) :
-    r * ∫ x in S, max (1 - s x) 0 ∂μ ≤ 2 * L + 2 * (C / r) * μ.real S := by
-  have hr₀ : 0 ≤ r := by linarith
-  have hd' : IntegrableOn (fun x ↦ 2 * |1 - s x - t x|) S μ := hd.abs.const_mul 2
-  have hc : IntegrableOn (fun _ ↦ 2 * (C / r ^ 2)) S μ := integrableOn_const hμS
-  have hle : ∫ x in S, max (1 - s x) 0 ∂μ ≤
-      ∫ x in S, (2 * |1 - s x - t x| + 2 * (C / r ^ 2)) ∂μ :=
-    integral_mono_of_nonneg (Eventually.of_forall fun _ ↦ le_max_right _ _) (hd'.add hc)
-      ((ae_restrict_iff' hS).2 (Eventually.of_forall fun x hx ↦
-        max_one_sub_le_two_mul_abs_sub_add hC hr (ht x hx)))
-  rw [integral_add hd' hc, integral_const_mul, setIntegral_const, smul_eq_mul] at hle
-  have hrC : r * (C / r ^ 2) = C / r := by
-    rcases eq_or_ne r 0 with h | h
-    · simp [h]
-    · field_simp
-  calc r * ∫ x in S, max (1 - s x) 0 ∂μ
-      ≤ r * (2 * ∫ x in S, |1 - s x - t x| ∂μ + μ.real S * (2 * (C / r ^ 2))) :=
-        mul_le_mul_of_nonneg_left hle hr₀
-    _ = 2 * (r * ∫ x in S, |1 - s x - t x| ∂μ) + 2 * (r * (C / r ^ 2)) * μ.real S := by ring
-    _ ≤ 2 * L + 2 * (C / r) * μ.real S := by
-        rw [hrC]
-        linarith
-
-/-- **`L¹` bound on the curvature.** Under the hypotheses of
-`TauCeti.SeibergWitten.mul_setIntegral_max_one_sub_le`, a field `F` with the pointwise bound
-`‖F‖ ≤ A r w₊ + B` on `S`, `0 ≤ A`, satisfies
-`∫_S ‖F‖ ≤ 2 A L + (2 A (C / r) + B) μ(S)`. No measurability of `F` is needed: the bound is on the
-lower Lebesgue integral of `‖F‖`. -/
-theorem setLIntegral_enorm_le_of_norm_le {V : Type*} [NormedAddCommGroup V] {F : X → V}
-    {A B : ℝ} (hS : MeasurableSet S) (hμS : μ S ≠ ∞) (hC : 0 ≤ C) (hr : 2 * C ≤ r)
-    (hd : IntegrableOn (fun x ↦ 1 - s x - t x) S μ)
-    (ht : ∀ x ∈ S, t x ≤ C / r * max (1 - s x) 0 + C / r ^ 2)
-    (hL : r * ∫ x in S, |1 - s x - t x| ∂μ ≤ L) (hA : 0 ≤ A)
-    (hF : ∀ x ∈ S, ‖F x‖ ≤ A * r * max (1 - s x) 0 + B) :
-    ∫⁻ x in S, ‖F x‖ₑ ∂μ ≤ ENNReal.ofReal (2 * A * L + (2 * A * (C / r) + B) * μ.real S) := by
-  have hr₀ : 0 ≤ r := by linarith
-  have hrC : r * (C / r ^ 2) = C / r := by
-    rcases eq_or_ne r 0 with h | h
-    · simp [h]
-    · field_simp
-  -- The pointwise majorant `g = 2 A r |1 - s - t| + (2 A (C / r) + B)` of `‖F‖` on `S`.
-  set g : X → ℝ := fun x ↦ 2 * A * r * |1 - s x - t x| + (2 * A * (C / r) + B)
-  have hg : IntegrableOn g S μ :=
-    (hd.abs.const_mul (2 * A * r)).add (integrableOn_const hμS)
-  have hFg (x : X) (hx : x ∈ S) : ‖F x‖ ≤ g x := by
-    have hw := max_one_sub_le_two_mul_abs_sub_add hC hr (ht x hx)
-    calc ‖F x‖ ≤ A * r * max (1 - s x) 0 + B := hF x hx
-      _ ≤ A * r * (2 * |1 - s x - t x| + 2 * (C / r ^ 2)) + B := by gcongr
-      _ = g x := by
-          simp only [g]
-          rw [← hrC]
-          ring
-  have hg₀ : 0 ≤ᵐ[μ.restrict S] g :=
-    (ae_restrict_iff' hS).2 (Eventually.of_forall fun x hx ↦ (norm_nonneg _).trans (hFg x hx))
-  calc ∫⁻ x in S, ‖F x‖ₑ ∂μ ≤ ∫⁻ x in S, ENNReal.ofReal (g x) ∂μ :=
-        setLIntegral_mono_ae' hS (Eventually.of_forall fun x hx ↦ by
-          rw [← ofReal_norm]
-          exact ENNReal.ofReal_le_ofReal (hFg x hx))
-    _ = ENNReal.ofReal (∫ x in S, g x ∂μ) := (ofReal_integral_eq_lintegral_ofReal hg hg₀).symm
-    _ ≤ ENNReal.ofReal (2 * A * L + (2 * A * (C / r) + B) * μ.real S) := by
-        refine ENNReal.ofReal_le_ofReal ?_
-        rw [integral_add (hd.abs.const_mul (2 * A * r)) (integrableOn_const hμS),
-          integral_const_mul, setIntegral_const, smul_eq_mul]
-        have h2A : 0 ≤ 2 * A := by positivity
-        nlinarith [mul_le_mul_of_nonneg_left hL h2A]
-
-end Integral
-
-end TauCeti.SeibergWitten
-
 namespace Orientation
 
 universe u
@@ -177,8 +93,7 @@ theorem curvatureCurrent_apply (o : Orientation ℝ E (Fin (1 + 1 + l))) (Ω : O
     curvatureCurrent o Ω b ζ =
       (2 * π)⁻¹ * ∫ x, ContinuousAlternatingMap.wedge (-extDeriv b x) (ζ x) e ∂e.addHaar := by
   have hloc : LocallyIntegrableOn (extDeriv b) Ω e.addHaar :=
-    ContinuousOn.locallyIntegrableOn (fun x hx ↦ (TauCeti.contDiffAt_extDeriv (r := 0)
-      (hb.contDiffAt (Ω.isOpen.mem_nhds hx)) (by simp)).continuousAt.continuousWithinAt)
+    (TauCeti.contDiffOn_extDeriv hb Ω.isOpen (r := 0) (by simp)).continuousOn.locallyIntegrableOn
       Ω.isOpen.measurableSet
   rw [curvatureCurrent_def, smul_apply, o.formCurrent_apply Ω e he hloc, smul_eq_mul,
     ← integral_const_mul, ← integral_const_mul]
