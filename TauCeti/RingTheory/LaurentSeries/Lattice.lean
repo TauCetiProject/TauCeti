@@ -323,6 +323,18 @@ theorem mem_lattice_iff {a : ℤ} {f : HahnModule ℤ R V} :
     f ∈ lattice R V a ↔ ∀ n < a, ((of R).symm f).coeff n = 0 := by
   simp [lattice, TauCeti.LaurentSeries.mem_lattice_iff]
 
+/-- Membership in the Hahn-module lattice is the order bound `a ≤ ord f`. -/
+theorem mem_lattice_iff_le_orderTop {a : ℤ} {f : HahnModule ℤ R V} :
+    f ∈ lattice R V a ↔ (a : WithTop ℤ) ≤ ((of R).symm f).orderTop := by
+  rw [mem_lattice_iff, ← LaurentSeries.mem_lattice_iff (R := R),
+    LaurentSeries.mem_lattice_iff_le_orderTop]
+
+/-- Every module-valued Laurent series lies in the lattice at its finite order. -/
+theorem mem_lattice_order (f : HahnModule ℤ R V) :
+    f ∈ lattice R V ((of R).symm f).order := by
+  rw [mem_lattice_iff]
+  exact fun _ hn ↦ HahnSeries.coeff_eq_zero_of_lt_order hn
+
 /-- The comparison from Hahn series to Hahn modules preserves lattice membership. -/
 @[simp]
 theorem of_mem_lattice_iff {a : ℤ} {f : HahnSeries ℤ V} :

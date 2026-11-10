@@ -41,8 +41,7 @@ variable (R L : Type*) [Ring R] [LieRing L] [Module R L]
 theorem lie_mem_lattice {r s : ℤ} {x y : HahnModule ℤ R L}
     (hx : x ∈ lattice R L r) (hy : y ∈ lattice R L s) :
     ⁅x, y⁆ ∈ lattice R L (r + s) := by
-  rw [mem_lattice_iff, ← LaurentSeries.mem_lattice_iff (R := R),
-    LaurentSeries.mem_lattice_iff_le_orderTop] at hx hy ⊢
+  rw [mem_lattice_iff_le_orderTop] at hx hy ⊢
   have h : ((r + s : ℤ) : WithTop ℤ) ≤
       ((of R).symm x).orderTop + ((of R).symm y).orderTop := by
     simpa using add_le_add hx hy
@@ -74,10 +73,6 @@ theorem continuous_lie :
       ext y
       simp [add_lie]
   have h0 := hasBasis_nhds_zero_lattice R L
-  have horder (x : HahnModule ℤ R L) :
-      x ∈ lattice R L ((of R).symm x).order := by
-    rw [mem_lattice_iff]
-    exact fun n hn ↦ HahnSeries.coeff_eq_zero_of_lt_order hn
   refine continuous_of_continuousAt_zero₂ B ?_ (fun x ↦ ?_) (fun y ↦ ?_)
   · rw [ContinuousAt, nhds_prod_eq, map_zero, (h0.prod h0).tendsto_iff h0]
     refine fun N _ ↦ ⟨(max N 0, max N 0), ⟨trivial, trivial⟩, fun p hp ↦ ?_⟩
@@ -85,9 +80,9 @@ theorem continuous_lie :
       (lie_mem_lattice R L hp.1 hp.2)
   · rw [ContinuousAt, map_zero, h0.tendsto_iff h0]
     refine fun N _ ↦ ⟨N - ((of R).symm x).order, trivial, fun y hy ↦ ?_⟩
-    simpa [B] using lie_mem_lattice R L (horder x) hy
+    simpa [B] using lie_mem_lattice R L (mem_lattice_order R L x) hy
   · rw [ContinuousAt, map_zero, AddMonoidHom.zero_apply, h0.tendsto_iff h0]
     refine fun N _ ↦ ⟨N - ((of R).symm y).order, trivial, fun x hx ↦ ?_⟩
-    simpa [B] using lie_mem_lattice R L hx (horder y)
+    simpa [B] using lie_mem_lattice R L hx (mem_lattice_order R L y)
 
 end TauCeti.HahnModule
