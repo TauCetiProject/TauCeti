@@ -20,7 +20,7 @@ A root `ω` of `X² + X + 1` labels the four elements as `0, 1, ω, ω²`.
 The explicit enumeration supports finite calculations over this alphabet without choosing
 another model of the field. In a field of order four the roots are exactly the elements other
 than `0` and `1`. Such a root is a cube root of unity, a field of order four has characteristic
-two, and squaring exchanges the two roots in characteristic two.
+two, and squaring exchanges the two roots.
 
 Additively, a field of four elements is the Klein four-group: `zmodTwoProdAddEquiv` sends
 `(a, b) : ZMod 2 × ZMod 2` to `a + bω`, so that the three nonzero elements `1, ω, ω²` correspond
@@ -58,10 +58,10 @@ theorem sq_add_self_add_one_eq_zero_iff_of_natCard_eq_four (hF : Nat.card F = 4)
     linear_combination hpow
   exact (mul_eq_zero.mp hmul).resolve_left (sub_ne_zero.mpr h1)
 
-/-- The square of a root of `X² + X + 1` is again a root, since
-`X ^ 4 + X ^ 2 + 1 = (X ^ 2 + 1) * (X ^ 2 + X + 1) - X * (X ^ 2 + X + 1)`. -/
+/-- In any commutative semiring, the square of a root of `X² + X + 1` is again a root. -/
 theorem sq_sq_add_sq_add_one_eq_zero {R : Type*} [CommSemiring R]
     {ω : R} (hω : ω ^ 2 + ω + 1 = 0) : (ω ^ 2) ^ 2 + ω ^ 2 + 1 = 0 := by
+  -- `(ω ^ 2 + 1) * (ω ^ 2 + ω + 1) = ((ω ^ 2) ^ 2 + ω ^ 2 + 1) + ω * (ω ^ 2 + ω + 1)`
   have h : (ω ^ 2 + 1) * (ω ^ 2 + ω + 1) =
       ((ω ^ 2) ^ 2 + ω ^ 2 + 1) + ω * (ω ^ 2 + ω + 1) := by ring
   rw [hω] at h
