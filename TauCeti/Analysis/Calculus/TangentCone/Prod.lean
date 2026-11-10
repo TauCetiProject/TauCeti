@@ -64,15 +64,23 @@ theorem prod_span_tangentConeAt_le {𝕜 E F : Type*} [NontriviallyNormedField �
 
 end TauCeti
 
-/-- For convex sets containing the base points, the positive tangent cone of the product is the
-product of the positive tangent cones. -/
+/-- For convex sets, the positive tangent cone of the product is the product of the positive
+tangent cones. -/
 @[simp]
 theorem Convex.posTangentConeAt_prod {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     [NormedAddCommGroup F] [NormedSpace ℝ F] {s : Set E} {t : Set F} (hs : Convex ℝ s)
-    (ht : Convex ℝ t) {x : E} {y : F} (hx : x ∈ s) (hy : y ∈ t) :
+    (ht : Convex ℝ t) {x : E} {y : F} :
     posTangentConeAt (s ×ˢ t) (x, y) = posTangentConeAt s x ×ˢ posTangentConeAt t y := by
   refine TauCeti.tangentConeAt_prod_subset.antisymm ?_
   rintro ⟨v, w⟩ ⟨hv, hw⟩
+  -- Only the closures matter, and the base points lie in them as the cones are nonempty.
+  have hx : x ∈ closure s := mem_closure_of_nonempty_tangentConeAt ⟨v, hv⟩
+  have hy : y ∈ closure t := mem_closure_of_nonempty_tangentConeAt ⟨w, hw⟩
+  change (v, w) ∈ tangentConeAt NNReal (s ×ˢ t) (x, y)
+  rw [← tangentConeAt_closure (s := s ×ˢ t), closure_prod_eq]
+  rw [← tangentConeAt_closure] at hv hw
+  replace hs := hs.closure
+  replace ht := ht.closure
   obtain ⟨α, l₁, hl₁, c₁, d₁, hd₁, hds₁, hcd₁⟩ := exists_fun_of_mem_tangentConeAt hv
   obtain ⟨β, l₂, hl₂, c₂, d₂, hd₂, hds₂, hcd₂⟩ := exists_fun_of_mem_tangentConeAt hw
   -- Both families are rescaled to the larger of the two scalars. The rescaling ratios lie in
