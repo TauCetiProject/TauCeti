@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.PDE.Regularity.KrylovSafonov.MeasureEstimate
 import TauCeti.Analysis.Calculus.SecondDerivative
+import TauCeti.Analysis.Normed.Lp.PiLp
+import TauCeti.Analysis.SpecificLimits.GeometricLevels
 import TauCeti.MeasureTheory.Integral.CalderonZygmund.KrylovSafonov
+import TauCeti.MeasureTheory.Measure.InterComplement
 
 /-!
 # The power decay of Krylov and Safonov
@@ -36,13 +39,12 @@ estimate on `B_Q`, applied to `u / t`, says that if `u ≤ t` somewhere in the p
 ball `B_Q` for a dyadic subcube `Q` of a cube `Q₀` lies in `B_{Q₀}`, so the hypotheses on
 `B_{Q₀}` serve all scales at once; the smallness of `f` only improves on smaller balls. The
 covering lemma, applied to the sets `Aⱼ = {u ≥ M^(j+1)} ∩ Q₀`, then gives the geometric decay
-`|{u ≥ M^j} ∩ Q₀| ≤ δ^j |Q₀|`, which is the power decay with `ε = log (1/δ) / log M`. The ball
-`B(x₀, r)` is placed inside a translate of a dyadic cube of side comparable to `r`.
+`|{u ≥ M^j} ∩ Q₀| ≤ δ^j |Q₀|`, which is the power decay with `ε = log (1/δ) / log M`
+(`TauCeti.le_ofReal_inv_mul_rpow_mul_of_forall_le_pow_mul`). The ball `B(x₀, r)` is placed inside
+a translate of a dyadic cube of side comparable to `r`.
 
 ## Main declarations
 
-* `TauCeti.le_ofReal_inv_mul_rpow_mul_of_forall_le_pow_mul`: geometric decay along the levels
-  `Mʲ` of an antitone function gives power decay at every level.
 * `TauCeti.PDE.exists_volume_setOf_le_inter_ball_le_rpow_mul_volume_ball`: **the power decay**
   of the superlevel sets of a nonnegative supersolution.
 
@@ -63,75 +65,44 @@ open scoped ENNReal
 
 namespace TauCeti
 
-/-- **Geometric decay along the levels `Mʲ` gives power decay.** If an antitone `g` is bounded
-by `V` and satisfies `g (Mʲ) ≤ δʲ V` for every `j`, with `M > 1` and `0 < δ ≤ 1`, then
-`g t ≤ δ⁻¹ t^(log δ / log M) V` for every `t > 0`. For `δ < 1` the exponent `log δ / log M` is
-negative. -/
-theorem le_ofReal_inv_mul_rpow_mul_of_forall_le_pow_mul {M δ t : ℝ} {g : ℝ → ℝ≥0∞} {V : ℝ≥0∞}
-    (hM : 1 < M) (hδ0 : 0 < δ) (hδ1 : δ ≤ 1) (hg : Antitone g) (hgV : ∀ s, g s ≤ V)
-    (hgj : ∀ j : ℕ, g (M ^ j) ≤ ENNReal.ofReal δ ^ j * V) (ht : 0 < t) :
-    g t ≤ ENNReal.ofReal (δ⁻¹ * t ^ (Real.log δ / Real.log M)) * V := by
-  have he : Real.log δ / Real.log M ≤ 0 :=
-    div_nonpos_of_nonpos_of_nonneg (Real.log_nonpos hδ0.le hδ1) (Real.log_pos hM).le
-  rcases lt_or_ge t 1 with ht1 | ht1
-  · -- Below level `1` the bound is at least `V`.
-    refine (hgV t).trans (le_mul_of_one_le_left bot_le (ENNReal.one_le_ofReal.2 ?_))
-    exact one_le_mul_of_one_le_of_one_le (one_le_inv₀ hδ0 |>.2 hδ1)
-      (Real.one_le_rpow_of_pos_of_le_one_of_nonpos ht ht1.le he)
-  -- Above level `1`, `t` lies between two consecutive levels `Mʲ ≤ t < M^(j+1)`.
-  obtain ⟨j, hjt, htj⟩ := exists_nat_pow_near ht1 hM
-  have hMe : M ^ (Real.log δ / Real.log M) = δ := by
-    rw [Real.rpow_def_of_pos (by linarith), mul_div_cancel₀ _ (Real.log_pos hM).ne',
-      Real.exp_log hδ0]
-  have hδj : δ ^ (j + 1) ≤ t ^ (Real.log δ / Real.log M) := by
-    calc δ ^ (j + 1) = (M ^ (Real.log δ / Real.log M)) ^ (j + 1) := by rw [hMe]
-      _ = (M ^ (j + 1)) ^ (Real.log δ / Real.log M) := Real.rpow_pow_comm (by linarith) _ _
-      _ ≤ t ^ (Real.log δ / Real.log M) := Real.rpow_le_rpow_of_nonpos ht htj.le he
-  refine (hg hjt).trans ((hgj j).trans ?_)
-  rw [← ENNReal.ofReal_pow hδ0.le]
-  gcongr
-  rw [pow_succ] at hδj
-  calc δ ^ j = δ⁻¹ * (δ ^ j * δ) := by field_simp
-    _ ≤ δ⁻¹ * t ^ (Real.log δ / Real.log M) := by gcongr
-
 namespace PDE
 
 variable {ι : Type*}
 
 variable [Fintype ι]
 
-/-- Passing from the sup distance on `ι → ℝ` to the Euclidean distance costs at most a factor of
-the dimension. -/
-private theorem dist_toLp_add_le [Nonempty ι] (a b : ι → ℝ) (w : EuclideanSpace ℝ ι) :
-    dist (WithLp.toLp 2 a + w) (WithLp.toLp 2 b + w) ≤ Fintype.card ι * dist a b := by
-  rw [dist_add_right]
-  refine ((PiLp.lipschitzWith_toLp 2 fun _ : ι ↦ ℝ).dist_le_mul a b).trans ?_
-  gcongr
-  rw [NNReal.coe_rpow, NNReal.coe_natCast]
-  exact Real.rpow_le_self_of_one_le (by exact_mod_cast Fintype.card_pos) (by norm_num)
-
 /-- A point whose image in `EuclideanSpace ℝ ι`, translated by `w`, is within `2ᵏ / 2` of the
 translated centre of a dyadic cube of level `k` lies in that cube. -/
 private theorem preimage_ball_subset_dyadicCube (k : ℤ) (m : ι → ℤ) (w : EuclideanSpace ℝ ι) :
     (fun y : ι → ℝ ↦ WithLp.toLp 2 y + w) ⁻¹'
       ball (WithLp.toLp 2 (fun i ↦ ((m i : ℝ) + 2⁻¹) * 2 ^ k) + w) (2 ^ k / 2) ⊆
-      dyadicCube k m := by
-  intro y hy
-  rw [mem_preimage, mem_ball, dist_add_right, dist_eq_norm, ← WithLp.toLp_sub] at hy
-  rw [dyadicCube_eq_pi]
-  intro i _
-  have hi := abs_le.1 ((Real.norm_eq_abs _).symm.trans_le
-    (PiLp.norm_apply_le (WithLp.toLp 2 (y - fun i ↦ ((m i : ℝ) + 2⁻¹) * 2 ^ k)) i))
-  simp only [Pi.sub_apply] at hi
-  constructor <;> nlinarith
+      dyadicCube k m := fun y hy ↦ by
+  rw [mem_preimage, mem_ball, dist_add_right] at hy
+  exact ball_subset_dyadicCube k m (PiLp.ball_subset_preimage_ofLp_ball _ _ hy)
 
 /-- Points of a dyadic cube of level `j`, mapped to `EuclideanSpace ℝ ι` and translated by `w`, are
 at distance less than `n 2ʲ`. -/
 private theorem dist_toLp_add_lt_of_mem_dyadicCube [Nonempty ι] {j : ℤ} {m : ι → ℤ}
     {a b : ι → ℝ} (ha : a ∈ dyadicCube j m) (hb : b ∈ dyadicCube j m) (w : EuclideanSpace ℝ ι) :
-    dist (WithLp.toLp 2 a + w) (WithLp.toLp 2 b + w) < Fintype.card ι * 2 ^ j :=
-  (dist_toLp_add_le a b w).trans_lt
-    (mul_lt_mul_of_pos_left (dist_lt_of_mem_dyadicCube ha hb) (by exact_mod_cast Fintype.card_pos))
+    dist (WithLp.toLp 2 a + w) (WithLp.toLp 2 b + w) < Fintype.card ι * 2 ^ j := by
+  have hN : (1 : ℝ) ≤ Fintype.card ι := Nat.one_le_cast.2 Fintype.card_pos
+  rw [dist_add_right]
+  refine (PiLp.dist_le_sqrt_card_mul_dist_ofLp _ _).trans_lt ?_
+  calc Real.sqrt (Fintype.card ι) * dist a b < Real.sqrt (Fintype.card ι) * 2 ^ j :=
+        mul_lt_mul_of_pos_left (dist_lt_of_mem_dyadicCube ha hb) (by positivity)
+    _ ≤ Fintype.card ι * 2 ^ j := by gcongr; exact Real.sqrt_le_self_iff.2 (Or.inr hN)
+
+/-- A translated dyadic cube of level `k` lies in the closed ball of radius `8 n 2ᵏ` about its
+translated centre. -/
+private theorem toLp_add_mem_closedBall_of_mem_dyadicCube [Nonempty ι] {k : ℤ} {m : ι → ℤ}
+    {c w : EuclideanSpace ℝ ι} {R : ℝ} {y : ι → ℝ}
+    (hc : c = WithLp.toLp 2 (fun i ↦ ((m i : ℝ) + 2⁻¹) * 2 ^ k) + w)
+    (hR : R = 8 * Fintype.card ι * 2 ^ k) (hy : y ∈ dyadicCube k m) :
+    WithLp.toLp 2 y + w ∈ closedBall c R := by
+  refine mem_closedBall.2 ((hc ▸ dist_toLp_add_lt_of_mem_dyadicCube hy
+    (center_mem_dyadicCube k m) w).le.trans ?_)
+  rw [hR]
+  nlinarith [(by positivity : (0 : ℝ) < Fintype.card ι * 2 ^ k)]
 
 /-- The balls attached to the dyadic subcubes of a cube `Q₀` lie in the ball attached to `Q₀`: if
 `Q` has level `k < k₀` and lies in `Q₀`, the closed ball of radius `8 n 2ᵏ` about the centre of `Q`
@@ -176,6 +147,11 @@ private theorem measurableSet_setOf_le_inter_dyadicCube {u : EuclideanSpace ℝ 
   simp only [mem_inter_iff, mem_ofPred_eq, mem_preimage, mem_Ici]
   exact ⟨fun h ↦ ⟨⟨hQ y h.2, h.1⟩, h.2⟩, fun h ↦ ⟨h.1.2, h.2⟩⟩
 
+/-- The volume `ω` of the unit ball is positive. -/
+private theorem toReal_volume_ball_zero_one_pos :
+    0 < (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal :=
+  ENNReal.toReal_pos (measure_ball_pos volume _ one_pos).ne' measure_ball_lt_top.ne
+
 /-- The ball of radius `2ᵏ / 2` has volume `ω 2⁻ⁿ |Q|` for a dyadic cube `Q` of level `k`, where `ω`
 is the volume of the unit ball. -/
 private theorem volume_ball_eq_ofReal_mul_volume_dyadicCube (c : EuclideanSpace ℝ ι)
@@ -199,8 +175,7 @@ private theorem volume_dyadicCube_le_ofReal_mul_volume_ball {k : ℤ} {r : ℝ}
       (4 ^ Fintype.card ι / (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal) *
         volume (ball x r) := by
   set ω := (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal
-  have hω : 0 < ω :=
-    ENNReal.toReal_pos (measure_ball_pos volume _ one_pos).ne' measure_ball_lt_top.ne
+  have hω : 0 < ω := toReal_volume_ball_zero_one_pos
   have hB1 : volume (ball (0 : EuclideanSpace ℝ ι) 1) = ENNReal.ofReal ω :=
     (ENNReal.ofReal_toReal measure_ball_lt_top.ne).symm
   rw [volume_dyadicCube, Measure.addHaar_ball_of_pos _ _ hr, finrank_euclideanSpace, hB1,
@@ -208,19 +183,6 @@ private theorem volume_dyadicCube_le_ofReal_mul_volume_ball {k : ℤ} {r : ℝ}
   refine ENNReal.ofReal_le_ofReal ?_
   calc ((2 : ℝ) ^ k) ^ Fintype.card ι ≤ (4 * r) ^ Fintype.card ι := by gcongr
     _ = _ := by field_simp; ring
-
-/-- If the complement of `A` fills a fraction `η` of a dyadic cube `Q`, and `A ∩ Q` is measurable,
-then `A` fills at most a fraction `1 - η` of `Q`. -/
-private theorem volume_inter_dyadicCube_le_ofReal_one_sub_mul {A : Set (ι → ℝ)} {k : ℤ}
-    {m : ι → ℤ} {η : ℝ} (hη : 0 ≤ η) (hA : MeasurableSet (A ∩ dyadicCube k m))
-    (h : ENNReal.ofReal η * volume (dyadicCube k m) ≤ volume (dyadicCube k m \ A)) :
-    volume (A ∩ dyadicCube k m) ≤ ENNReal.ofReal (1 - η) * volume (dyadicCube k m) := by
-  have hsplit := measure_inter_add_sdiff (μ := volume) (dyadicCube k m) hA
-  rw [inter_eq_right.2 inter_subset_right, sdiff_inter_self_eq_sdiff] at hsplit
-  rw [ENNReal.ofReal_sub _ hη, ENNReal.ofReal_one,
-    ENNReal.sub_mul fun _ _ ↦ volume_dyadicCube_ne_top k m, one_mul]
-  exact ENNReal.le_sub_of_add_le_right (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-    (volume_dyadicCube_ne_top k m)) ((add_le_add_right h _).trans_eq hsplit)
 
 /-- The scale-invariant size `R ‖g‖_{Lᵖ(B(x, R))}` of `g` on a ball of radius `R ≤ K r` is at most
 `K` times its size `r ‖g‖_{Lᵖ(B(x, K r))}` on the larger ball. -/
@@ -283,8 +245,7 @@ private theorem exists_volume_setOf_le_inter_dyadicCube_le {κ : ℝ} (hκ : 0 <
   obtain ⟨M₀, μ, ε₀, -, hμ, hε₀, hME⟩ := exists_mul_volume_ball_le_volume_setOf_lt_inter_ball
     (ι := ι) hκ (θ := (16 * N)⁻¹) (τ := 2⁻¹) (by positivity) (by norm_num) (by norm_num)
   set ω := (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal
-  have hω : 0 < ω :=
-    ENNReal.toReal_pos (measure_ball_pos volume _ one_pos).ne' measure_ball_lt_top.ne
+  have hω : 0 < ω := toReal_volume_ball_zero_one_pos
   set η := μ * ω / 2 ^ Fintype.card ι
   have hη : 0 < η := by positivity
   refine ⟨max M₀ 2, max (1 - η) 2⁻¹, ε₀, by simp, by positivity,
@@ -320,13 +281,11 @@ private theorem exists_volume_setOf_le_inter_dyadicCube_le {κ : ℝ} (hκ : 0 <
     have hA' : max M₀ 2 * t ≤ u (WithLp.toLp 2 y + w) := hA
     nlinarith [(inv_mul_lt_iff₀ ht0).1 hyu, mul_le_mul_of_nonneg_right (le_max_left M₀ 2) ht0.le]
   -- The superlevel set is measurable on the cube, so its measure there is the rest of `|Q|`.
-  have hmeas : MeasurableSet (A ∩ dyadicCube k m) :=
-    measurableSet_setOf_le_inter_dyadicCube hcont fun y hy ↦ by
-      refine mem_closedBall.2 ((hc ▸ dist_toLp_add_lt_of_mem_dyadicCube hy
-        (center_mem_dyadicCube k m) w).le.trans ?_)
-      rw [hR]
-      nlinarith [(by positivity : (0 : ℝ) < N * 2 ^ k)]
-  refine (volume_inter_dyadicCube_le_ofReal_one_sub_mul hη.le hmeas hcompl).trans ?_
+  have hmeas : MeasurableSet (A ∩ dyadicCube k m) := measurableSet_setOf_le_inter_dyadicCube hcont
+    fun y hy ↦ toLp_add_mem_closedBall_of_mem_dyadicCube hc hR hy
+  refine (measure_inter_le_one_sub_mul hmeas.nullMeasurableSet (volume_dyadicCube_ne_top k m)
+    hcompl).trans ?_
+  rw [← ENNReal.ofReal_one, ← ENNReal.ofReal_sub _ hη.le]
   gcongr
   exact le_max_left _ _
 
@@ -360,11 +319,8 @@ private theorem exists_volume_setOf_pow_le_inter_dyadicCube_le {κ : ℝ} (hκ :
   rcases j with - | j
   · simpa using measure_mono inter_subset_right
   have hN : (0 : ℝ) < Fintype.card ι := by exact_mod_cast Fintype.card_pos
-  have hQ₀ : ∀ y ∈ dyadicCube k₀ m₀, WithLp.toLp 2 y + w ∈ closedBall c R := fun y hy ↦ by
-    refine mem_closedBall.2 ((hc ▸ dist_toLp_add_lt_of_mem_dyadicCube hy
-      (center_mem_dyadicCube k₀ m₀) w).le.trans ?_)
-    rw [hR]
-    nlinarith [(by positivity : (0 : ℝ) < Fintype.card ι * 2 ^ k₀)]
+  have hQ₀ : ∀ y ∈ dyadicCube k₀ m₀, WithLp.toLp 2 y + w ∈ closedBall c R := fun _ hy ↦
+    toLp_add_mem_closedBall_of_mem_dyadicCube hc hR hy
   -- The covering lemma, applied to the superlevel sets `Aⱼ = {u ≥ M^(j+1)} ∩ Q₀`.
   set A : ℕ → Set (ι → ℝ) := fun j ↦ {y | M ^ (j + 1) ≤ u (WithLp.toLp 2 y + w)} ∩ dyadicCube k₀ m₀
   refine volume_le_pow_mul_volume_dyadicCube (A := A)
@@ -435,8 +391,7 @@ theorem exists_volume_setOf_le_inter_ball_le_rpow_mul_volume_ball {κ : ℝ} (h�
   set N : ℝ := (Fintype.card ι : ℝ)
   have hN : 1 ≤ N := Nat.one_le_cast.2 Fintype.card_pos
   set ω := (volume (ball (0 : EuclideanSpace ℝ ι) 1)).toReal
-  have hω : 0 < ω :=
-    ENNReal.toReal_pos (measure_ball_pos volume _ one_pos).ne' measure_ball_lt_top.ne
+  have hω : 0 < ω := toReal_volume_ball_zero_one_pos
   have hε : 0 < -(Real.log δ / Real.log M) :=
     neg_pos.2 (div_neg_of_neg_of_pos (Real.log_neg hδ0 hδ1) (Real.log_pos hM))
   refine ⟨32 * N, δ⁻¹ * 4 ^ Fintype.card ι / ω, -(Real.log δ / Real.log M), ε₀ / (32 * N),
