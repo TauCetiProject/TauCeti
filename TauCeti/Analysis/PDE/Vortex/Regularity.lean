@@ -9,7 +9,7 @@ public import TauCeti.Analysis.PDE.Vortex.Variational
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Normed.Operator.Holder
-import TauCeti.Analysis.PDE.DirichletProblem
+import TauCeti.Analysis.PDE.EnergyForm.Restriction
 import TauCeti.Analysis.PDE.Regularity.Hessian.Classical
 import TauCeti.Analysis.PDE.Regularity.Inhomogeneous
 import TauCeti.Analysis.Sobolev.Trudinger
@@ -88,61 +88,14 @@ section Euclidean
 
 variable {h k : EuclideanSpace ℝ (Fin 2) → ℝ}
 
-/-- A weak solution of `Δv = -F` on the plane, tested against compactly supported smooth functions,
-is a weak solution of `-Δv = F` on every open set `Ω` with `F ∈ L²(Ω)`, tested against `H¹₀(Ω)`.
-The right-hand side `G` of the global identity need only agree with `-F` on `Ω`. -/
-private theorem forall_energyFormH1_restrictL_eq
-    {v : W1p (volume : Measure (EuclideanSpace ℝ (Fin 2))) ⊤ 2} {G F : EuclideanSpace ℝ (Fin 2) → ℝ}
-    {Ω : Opens (EuclideanSpace ℝ (Fin 2))} (hF : MemLp F 2 (volume.restrict Ω))
-    (hGF : G =ᵐ[volume.restrict Ω] fun x => -F x)
-    (hv : ∀ φ : EuclideanSpace ℝ (Fin 2) → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
-      (∫ x, ⟪W1p.gradient v x, ∇ φ x⟫) + ∫ x, G x * φ x = 0) :
-    ∀ w : W1p0 volume Ω 2, energyFormH1 (fun _ => 1) 0 0 (W1p.restrictL le_top v)
-      (w : W1p volume Ω 2) = ∫ x in Ω, F x * W1p.value (w : W1p volume Ω 2) x := by
-  have hcoeff : MemLp (fun x => energyIntegrand ((fun _ => (1 : Matrix (Fin 2) (Fin 2) ℝ)) x)
-      ((0 : EuclideanSpace ℝ (Fin 2) → EuclideanSpace ℝ (Fin 2)) x)
-      ((0 : EuclideanSpace ℝ (Fin 2) → ℝ) x)) ⊤ (volume.restrict Ω) := by
-    simpa using memLp_top_const (μ := volume.restrict (Ω : Set (EuclideanSpace ℝ (Fin 2))))
-      (energyIntegrand (1 : Matrix (Fin 2) (Fin 2) ℝ) 0 0)
-  intro w
-  refine ((forall_energyFormH1_eq_setIntegral_iff_forall_testFunction hcoeff (hF.toLp F)
-    (W1p.restrictL le_top v)).2 (fun φ => ?_) w).trans (integral_congr_ae ?_)
-  · -- Both sides vanish off the support of `φ`, which lies in `Ω`.
-    have hsupp : ∀ x, x ∉ (Ω : Set (EuclideanSpace ℝ (Fin 2))) → φ x = 0 :=
-      fun x hx => φ.zero_on_compl hx
-    have hgrad0 : ∀ x, x ∉ (Ω : Set (EuclideanSpace ℝ (Fin 2))) →
-        ∇ (φ : EuclideanSpace ℝ (Fin 2) → ℝ) x = 0 := fun x hx => by
-      have hφ : fderiv ℝ (φ : EuclideanSpace ℝ (Fin 2) → ℝ) x = 0 :=
-        fderiv_of_notMem_tsupport ℝ fun hx' => hx (φ.tsupport_subset hx')
-      simp [gradient, hφ]
-    have hglob := hv φ φ.contDiff φ.hasCompactSupport
-    have e1 : ∫ x in Ω, ⟪W1p.gradient v x, ∇ (φ : EuclideanSpace ℝ (Fin 2) → ℝ) x⟫ =
-        ∫ x, ⟪W1p.gradient v x, ∇ (φ : EuclideanSpace ℝ (Fin 2) → ℝ) x⟫ :=
-      setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by simp [hgrad0 x hx]
-    have e2 : ∫ x in Ω, G x * φ x = ∫ x, G x * φ x :=
-      setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by simp [hsupp x hx]
-    rw [← e1, ← e2] at hglob
-    rw [energyFormH1_zero_zero_eq_setIntegral]
-    have h1 : ∫ x in Ω, (matrixBilinearForm ((fun _ => (1 : Matrix (Fin 2) (Fin 2) ℝ)) x))
-        (W1p.gradient (W1p.ofTestFunctionₗ volume Ω 2 φ) x)
-        (W1p.gradient (W1p.restrictL (show Ω ≤ ⊤ from le_top) v) x) =
-        ∫ x in Ω, ⟪W1p.gradient v x, ∇ (φ : EuclideanSpace ℝ (Fin 2) → ℝ) x⟫ := by
-      refine integral_congr_ae ?_
-      filter_upwards [gradientTestFunctionLp_apply_ae (mu := volume) 2 φ,
-        W1p.gradient_restrictL_ae (show Ω ≤ ⊤ from le_top) v] with x hx hx'
-      rw [W1p.gradient_ofTestFunctionₗ, hx, hx', matrixBilinearForm_one_apply,
-        real_inner_comm]
-      exact ((EuclideanSpace.inner_eq_star_dotProduct _ _).trans (dotProduct_comm _ _)).symm
-    have h2 : ∫ x in Ω, G x * φ x = -∫ x in Ω, (hF.toLp F) x * φ x := by
-      rw [← integral_neg]
-      refine integral_congr_ae ?_
-      filter_upwards [hGF, hF.coeFn_toLp] with x hx hx'
-      rw [hx, hx']
-      ring
-    rw [h1]
-    linarith
-  · filter_upwards [hF.coeFn_toLp] with x hx
-    rw [hx]
+/-- A `C¹` function is Lipschitz and bounded on a compact convex set. -/
+private theorem _root_.ContDiff.exists_lipschitzOnWith_and_norm_le {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : E → F} {s : Set E} (hf : ContDiff ℝ 1 f) (hs : Convex ℝ s) (hsc : IsCompact s) :
+    ∃ L M : ℝ≥0, LipschitzOnWith L f s ∧ ∀ x ∈ s, ‖f x‖ ≤ M := by
+  obtain ⟨L, hL⟩ := hf.contDiffOn.exists_lipschitzOnWith one_ne_zero hs hsc
+  obtain ⟨M, hM⟩ := hsc.exists_bound_of_continuousOn hf.continuous.continuousOn
+  exact ⟨L, M.toNNReal, hL, fun x hx => (hM x hx).trans (Real.le_coe_toNNReal M)⟩
 
 /-- On a ball, the nonlinearity `-(h (exp (2u) - 1) / 8 + k)` of a bounded `β`-Hölder function `u`
 with `C¹` coefficients is `β`-Hölder. -/
@@ -151,23 +104,17 @@ private theorem exists_holderOnWith_nonlinearity (hh : ContDiff ℝ 1 h) (hk : C
     (hβ : β ≤ 1) (hu : HolderOnWith C β u (ball c ρ)) {M : ℝ}
     (huM : ∀ x ∈ ball c ρ, |u x| ≤ M) :
     ∃ K, HolderOnWith K β (fun x => -(h x * (Real.exp (2 * u x) - 1) / 8 + k x)) (ball c ρ) := by
-  -- A `C¹` function, in particular `t ↦ -(exp (2t) - 1) / 8`, is Lipschitz and bounded on a
-  -- compact convex set.
-  have hC1 : ∀ {F : Type} [NormedAddCommGroup F] [NormedSpace ℝ F] [ProperSpace F] (f : F → ℝ)
-      (s : Set F), ContDiff ℝ 1 f → Convex ℝ s → IsCompact s →
-      ∃ L M : ℝ≥0, LipschitzOnWith L f s ∧ ∀ x ∈ s, ‖f x‖ ≤ M := fun f s hf hs hsc => by
-    obtain ⟨L, hL⟩ := hf.contDiffOn.exists_lipschitzOnWith one_ne_zero hs hsc
-    obtain ⟨M, hM⟩ := hsc.exists_bound_of_continuousOn hf.continuous.continuousOn
-    exact ⟨L, M.toNNReal, hL, fun x hx => (hM x hx).trans (Real.le_coe_toNNReal M)⟩
   have hball : ∀ f : EuclideanSpace ℝ (Fin 2) → ℝ, ContDiff ℝ 1 f →
       ∃ K M : ℝ≥0, HolderOnWith K β f (ball c ρ) ∧ ∀ x ∈ ball c ρ, ‖f x‖ ≤ M := fun f hf => by
-    obtain ⟨L, M, hL, hM⟩ := hC1 f _ hf (convex_closedBall c ρ) (isCompact_closedBall c ρ)
+    obtain ⟨L, M, hL, hM⟩ :=
+      hf.exists_lipschitzOnWith_and_norm_le (convex_closedBall c ρ) (isCompact_closedBall c ρ)
     have hMb : ∀ x ∈ ball c ρ, ‖f x‖ ≤ M := fun x hx => hM x (ball_subset_closedBall hx)
     exact ⟨_, M, (hL.mono ball_subset_closedBall).holderOnWith_of_norm_le hMb hβ, hMb⟩
   obtain ⟨Kh, Mh, hHh, hMh⟩ := hball h hh
   obtain ⟨Kk, -, hHk, -⟩ := hball k hk
-  obtain ⟨LΦ, MΦ, hLΦ, hMΦ⟩ := hC1 (fun t : ℝ => -(Real.exp (2 * t) - 1) / 8) (Icc (-M) M)
-    (by fun_prop) (convex_Icc (-M) M) isCompact_Icc
+  obtain ⟨LΦ, MΦ, hLΦ, hMΦ⟩ :=
+    (show ContDiff ℝ 1 fun t : ℝ => -(Real.exp (2 * t) - 1) / 8 by fun_prop)
+      |>.exists_lipschitzOnWith_and_norm_le (convex_Icc (-M) M) isCompact_Icc
   have hmaps : MapsTo u (ball c ρ) (Icc (-M) M) := fun x hx => abs_le.1 (huM x hx)
   have hE := hLΦ.holderOnWith.comp hu hmaps
   rw [one_mul] at hE
@@ -268,17 +215,12 @@ private theorem memLp_and_forall_energyFormH1_eq (hh : Continuous h) (hk : Conti
       (volume.restrict Ω) := by
     rw [hΩ]
     exact memLp_nonlinearity hh hk hum hexp
-  exact ⟨hvu, hF, forall_energyFormH1_restrictL_eq hF
+  exact ⟨hvu, hF, forall_energyFormH1_restrictL_eq_setIntegral hF
     (by filter_upwards [hvu] with x hx; simp [hx]) hv⟩
 
 /-- **Local regularity on a ball.** A weak `H¹` solution of `Δv = h (exp (2v) - 1) / 8 + k` on the
 plane with `C¹` coefficients agrees almost everywhere on each unit ball with a `C²` function that
-solves the equation classically there.
-
-On the ball `Ω` of radius `2` the solution solves Poisson's equation with `L²` data
-(`memLp_and_forall_energyFormH1_eq`), so De Giorgi's theorem makes its precise representative `u`
-Hölder on the unit ball `B`. Then the data is Hölder on `B`, and the precise representative is a
-classical solution there. -/
+solves the equation classically there. -/
 private theorem exists_contDiffOn_ball (hh : ContDiff ℝ 1 h) (hk : ContDiff ℝ 1 k)
     {v : W1p (volume : Measure (EuclideanSpace ℝ (Fin 2))) ⊤ 2}
     (hv : ∀ φ : EuclideanSpace ℝ (Fin 2) → ℝ, ContDiff ℝ ∞ φ → HasCompactSupport φ →
@@ -300,6 +242,7 @@ private theorem exists_contDiffOn_ball (hh : ContDiff ℝ 1 h) (hk : ContDiff �
   obtain ⟨u, hu⟩ : ∃ u, preciseRepresentative volume
       (W1p.value (W1p.restrictL (show Ω ≤ ⊤ from le_top) v) : EuclideanSpace ℝ (Fin 2) → ℝ) = u :=
     ⟨_, rfl⟩
+  -- On the ball `Ω` of radius `2` the solution solves Poisson's equation with `L²` data.
   obtain ⟨hvu, hF, hweak⟩ := memLp_and_forall_energyFormH1_eq hh.continuous hk.continuous hv hΩ hu
   -- De Giorgi's theorem makes `u` Hölder continuous on `B`, with an exponent `α / 2 < 1`.
   obtain ⟨α, C, hα, hα1, -, hdg⟩ := exists_holderOnWith_preciseRepresentative_of_memLp
@@ -391,8 +334,8 @@ private theorem weak_compAffineIsometryEquivL {F : Type*} [NormedAddCommGroup F]
     have hd : HasFDerivAt (φ ∘ g) ((fderiv ℝ φ (g z)).comp (g : E →L[ℝ] F)) z :=
       ((hφ.differentiable (by simp)) (g z)).hasFDerivAt.comp z
         g.toContinuousLinearEquiv.hasFDerivAt
-    rw [gradient, gradient, hd.fderiv, toDual_symm_apply, toDual_symm_apply]
-    rfl
+    rw [gradient, gradient, hd.fderiv, toDual_symm_apply, toDual_symm_apply,
+      ContinuousLinearMap.comp_apply, LinearIsometryEquiv.coe_coe'']
   -- Test the equation for `u` against `φ ∘ g`, and change variables by `g⁻¹`.
   have hψ := hu (φ ∘ g) (hφ.comp g.contDiff) (hφc.comp_homeomorph g.toHomeomorph)
   rw [← hmp.integral_comp hemb, ← hmp.integral_comp hemb] at hψ

@@ -468,14 +468,13 @@ theorem W1p.setLIntegral_exp_abs_value_div_rpow_le (hp : p = finrank ℝ E)
 /-- **Local exponential integrability in the borderline case `p = n`.** Let `n ≥ 2` be the
 dimension. For every `u ∈ W^{1,n}(Ω)`, with no boundary condition, every set `V` whose closure is
 compact and contained in `Ω`, and every real `c`, the function `exp (c |u|)` is integrable on `V`.
-
-A cutoff of `u` lies in `W^{1,n}_0` of a set of finite measure containing `V`
-(`TauCeti.W1p.exists_zeroBoundaryLocalization`), and Young's inequality bounds `c |u|` by
-`(|u| / A) ^ (n / (n - 1))` plus a constant, which Trudinger's inequality
-`TauCeti.W1p.setLIntegral_exp_abs_value_div_rpow_le` controls. -/
+-/
 theorem W1p.integrableOn_exp_mul_abs_value (hp : p = finrank ℝ E) (hn : 2 ≤ finrank ℝ E)
     (u : W1p mu Omega p) {V : Set E} (hV : IsCompact (closure V)) (hVΩ : closure V ⊆ Omega)
     (c : ℝ) : IntegrableOn (fun x => Real.exp (c * |W1p.value u x|)) V mu := by
+  -- A cutoff of `u` lies in `W^{1,n}_0` of a set of finite measure containing `V`, and Young's
+  -- inequality bounds `c |u|` by `(|u| / A) ^ (n / (n - 1))` plus a constant, which Trudinger's
+  -- inequality `TauCeti.W1p.setLIntegral_exp_abs_value_div_rpow_le` controls.
   obtain ⟨U, hU, hVU, T, hT⟩ :=
     W1p.exists_zeroBoundaryLocalization (μ := mu) (hp ▸ ENNReal.natCast_ne_top _) hV hVΩ
   set v : W1p mu U p := (T u : W1p mu U p)
