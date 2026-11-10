@@ -24,14 +24,13 @@ zero and continuous nonnegative-rational scalar multiplication, so that `t / n` 
 both real and complex scalars qualify. This limit feeds the exponential power limit behind the
 Trotter product formula.
 
-A negative right derivative gives strict decrease on a punctured right neighborhood.
+A negative right derivative at `x` forces nearby values to the right to lie strictly below `f x`.
 
 ## Main results
 
 * `HasDerivAtFilter.tendsto_slope`: slopes converge to the derivative away from the base point.
 * `HasDerivAt.tendsto_nsmul_sub_add_div`: `n • (f (x + t / n) - f x)` tends to `t • f'`.
-* `HasDerivWithinAt.eventually_lt_of_neg`: a negative right derivative gives strict decrease
-  on a punctured right neighborhood.
+* `HasDerivWithinAt.eventually_lt_of_neg`: `f t < f x` eventually for `t` to the right of `x`.
 -/
 
 public section
@@ -71,7 +70,8 @@ theorem HasDerivAt.tendsto_nsmul_sub_add_div {𝕜 E : Type*} [NontriviallyNorme
   filter_upwards [eventually_ne_atTop 0] with n hn
   simp [slope_def_module, smul_smul, mul_div_cancel₀ _ ht, Nat.cast_smul_eq_nsmul]
 
-/-- A negative right derivative gives strict decrease on a right neighborhood of the point. -/
+/-- A negative right derivative at `x` forces `f t < f x` for all `t > x` sufficiently close
+to `x`. -/
 theorem HasDerivWithinAt.eventually_lt_of_neg {f : ℝ → ℝ} {a x : ℝ}
     (hf : HasDerivWithinAt f a (Ioi x) x) (ha : a < 0) :
     ∀ᶠ t in 𝓝[>] x, f t < f x := by

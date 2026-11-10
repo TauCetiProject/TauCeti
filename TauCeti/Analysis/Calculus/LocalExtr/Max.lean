@@ -5,7 +5,8 @@ Authors: Axel Delaval, Zhiyuan Zhang, Leheng Chen
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.LinearMap
+public import Mathlib.Analysis.Calculus.Gradient.Basic
+public import Mathlib.Analysis.Calculus.LineDeriv.Basic
 public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Analysis.Calculus.LocalExtr.Basic
@@ -18,7 +19,14 @@ import Mathlib.Tactic.Linarith
 At a right local minimum of the maximum of two right-differentiable real-valued functions,
 the right derivatives cannot both be negative. Consequently, equal-length gradients for a positive
 definite symmetric bilinear form must be opposite. The maximum need not be differentiable,
-and no completeness or finite-dimensionality assumption is needed.
+and no finite-dimensionality assumption is needed for the bilinear-form result.
+
+## Main results
+
+* `IsLocalMin.max_hasLineDerivAt_nonneg`: directional derivatives cannot both be negative.
+* `IsLocalMin.max_hasFDerivAt_nonneg`: the corresponding Fréchet derivative consequence.
+* `IsLocalMin.eq_neg_of_max_hasFDerivAt_bilin`: equal-length bilinear gradients are opposite.
+* `IsLocalMin.eq_neg_of_max_hasGradientAt`: the inner-product gradient formulation.
 
 This is the variational return-direction argument for two inverse exponential radius branches.
 It supplies the opposite-terminal-velocity step in Klingenberg's lemma, used for
@@ -53,6 +61,23 @@ theorem IsMinFilter.not_both_deriv_neg_max {f g : ℝ → ℝ} {a b x : ℝ}
       (hft.trans_le (le_max_left _ _)) (hgt.trans_le (le_max_right _ _)))
   exact hfalse.exists.choose_spec
 
+/-- At a local minimum of a maximum, two line derivatives in the same direction cannot both
+be negative. -/
+theorem IsLocalMin.max_hasLineDerivAt_nonneg
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {f g : E → ℝ} {a b : ℝ} {x y : E}
+    (hmin : IsLocalMin (fun z ↦ Max.max (f z) (g z)) x)
+    (hf : HasLineDerivAt ℝ f a x y) (hg : HasLineDerivAt ℝ g b x y) :
+    0 ≤ Max.max a b := by
+  by_contra hneg
+  have hm : IsLocalMin (fun t : ℝ ↦ Max.max (f (x + t • y)) (g (x + t • y))) 0 := by
+    have hmin0 : IsLocalMin (fun z ↦ Max.max (f z) (g z)) (x + (0 : ℝ) • y) := by
+      simpa using hmin
+    exact hmin0.comp_continuous (g := fun t : ℝ ↦ x + t • y) (by fun_prop :
+      ContinuousAt (fun t : ℝ ↦ x + t • y) 0)
+  exact (hm.filter_mono nhdsWithin_le_nhds).not_both_deriv_neg_max
+    hf.hasDerivWithinAt hg.hasDerivWithinAt (max_lt_iff.mp (lt_of_not_ge hneg))
+
 /-- At a local minimum of a maximum, the maximum of the directional derivatives is
 nonnegative in every direction. -/
 theorem IsLocalMin.max_hasFDerivAt_nonneg
@@ -60,19 +85,8 @@ theorem IsLocalMin.max_hasFDerivAt_nonneg
     {f g : E → ℝ} {f' g' : E →L[ℝ] ℝ} {x : E}
     (hmin : IsLocalMin (fun z ↦ Max.max (f z) (g z)) x)
     (hf : HasFDerivAt f f' x) (hg : HasFDerivAt g g' x) (y : E) :
-    0 ≤ Max.max (f' y) (g' y) := by
-  by_contra hneg
-  let c : ℝ → E := fun t ↦ x + t • y
-  have hc : HasDerivAt c y 0 := by
-    simpa [c] using ((hasDerivAt_id (0 : ℝ)).smul_const y).const_add x
-  have hc0 : c 0 = x := by simp [c]
-  have hf' := hf.comp_hasDerivAt_of_eq 0 hc hc0.symm
-  have hg' := hg.comp_hasDerivAt_of_eq 0 hc hc0.symm
-  rw [← hc0] at hmin
-  have hm : IsLocalMin (fun t ↦ Max.max (f (c t)) (g (c t))) 0 :=
-    hmin.comp_continuous hc.continuousAt
-  exact (hm.filter_mono nhdsWithin_le_nhds).not_both_deriv_neg_max
-    hf'.hasDerivWithinAt hg'.hasDerivWithinAt (max_lt_iff.mp (lt_of_not_ge hneg))
+    0 ≤ Max.max (f' y) (g' y) :=
+  hmin.max_hasLineDerivAt_nonneg (hf.hasLineDerivAt y) (hg.hasLineDerivAt y)
 
 /-- Equal-length gradients for a positive definite symmetric bilinear form are opposite at a
 local minimum of the maximum. Only the second slot of the form needs to be continuous. -/
@@ -100,15 +114,14 @@ theorem IsLocalMin.eq_neg_of_max_hasFDerivAt_bilin
     (max_lt hu hv)
 
 /-- Equal-norm inner-product gradients are opposite at a local minimum of the maximum. -/
-theorem IsLocalMin.eq_neg_of_max_hasFDerivAt_inner
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+theorem IsLocalMin.eq_neg_of_max_hasGradientAt
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
     {f g : E → ℝ} {x u v : E}
     (hmin : IsLocalMin (fun y ↦ Max.max (f y) (g y)) x)
-    (hf : HasFDerivAt f (innerSL ℝ u) x)
-    (hg : HasFDerivAt g (innerSL ℝ v) x)
+    (hf : HasGradientAt f u x) (hg : HasGradientAt g v x)
     (hnorm : ‖u‖ = ‖v‖) : u = -v := by
   exact hmin.eq_neg_of_max_hasFDerivAt_bilin (innerSL ℝ).toLinearMap
     (fun a b ↦ real_inner_comm b a) (fun a ha ↦ real_inner_self_pos.mpr ha)
-    hf hg (by
+    hf.hasFDerivAt hg.hasFDerivAt (by
       simp only [ContinuousLinearMap.coe_coe, innerSL_apply_apply,
         real_inner_self_eq_norm_sq, hnorm])
