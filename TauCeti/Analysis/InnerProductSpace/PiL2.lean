@@ -32,8 +32,6 @@ Borel measurable structure on the scalar field.
 
 ## Additional results
 
-* `TauCeti.rank_euclideanSpace`: the cardinal dimension of a finite Euclidean coordinate space
-  is its number of coordinates.
 * `EuclideanSpace.dotProduct_ofLp_self`: the coordinate dot product of a real Euclidean vector
   with itself is its squared norm.
 * `EuclideanSpace.measurableSet_setOf_forall_pos`: the real positive orthant is measurable.
@@ -68,18 +66,6 @@ public section
 noncomputable section
 
 open scoped BigOperators
-
-namespace TauCeti
-
-/-- The cardinal dimension of a finite Euclidean coordinate space is its number of coordinates. -/
-@[simp]
-theorem rank_euclideanSpace {𝕜 : Type*} [Ring 𝕜] [StrongRankCondition 𝕜]
-    {ι : Type*} [Fintype ι] :
-    Module.rank 𝕜 (EuclideanSpace 𝕜 ι) = Fintype.card ι := by
-  rw [(WithLp.linearEquiv 2 𝕜 (ι → 𝕜)).rank_eq]
-  simp
-
-end TauCeti
 
 namespace EuclideanSpace
 

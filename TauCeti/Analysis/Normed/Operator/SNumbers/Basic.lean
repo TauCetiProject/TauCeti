@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.PiL2
+public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Analysis.Normed.Operator.NNNorm
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
 
@@ -110,7 +110,7 @@ theorem IsStrictSNumberSequence.of_normalize_of_lt_rank {s : SNumberFamily 𝕜}
   comp_le := comp_le
   eq_zero_of_rank_le := eq_zero_of_rank_le
   normalize n := normalize_of_lt_rank n <| by
-    rw [rank_euclideanSpace, Fintype.card_fin]
+    rw [(WithLp.linearEquiv 2 𝕜 (Fin (n + 1) → 𝕜)).rank_eq, rank_fin_fun]
     exact_mod_cast n.lt_succ_self
   normalize_of_lt_rank := normalize_of_lt_rank
 
