@@ -272,11 +272,9 @@ theorem setIntegral_sq_mul_max_sub_sq_le_of_caccioppoli {q : ℝ≥0∞} (hq : 2
     exists_mem_w1p0Submodule_norm_gradient_sq_le_of_caccioppoli hkl hwLp hψ hcpt hts hG hA hcacc
   -- `z` vanishes off `A' = supp ψ ∩ {u > l}`, whose measure Chebyshev's inequality controls.
   set A' := T ∩ {x | l < W1p.value u x}
-  have hA' : MeasurableSet A' :=
-    hT.inter (measurableSet_lt measurable_const (Lp.stronglyMeasurable _).measurable)
   have hAfin : mu ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A') ≠ (∞ : ℝ≥0∞) :=
     ne_top_of_le_ne_top hTfin (measure_mono (inter_subset_right.trans inter_subset_left))
-  have hsob := W1p.integral_value_sq_le_of_eLpNorm_le hq (hS z hz) hA' hAfin hvA
+  have hsob := W1p.integral_value_sq_le_of_eLpNorm_le hq (hS z hz) hAfin hvA
   -- Chebyshev: on `{u > l}`, the lower truncation `(u - k)⁺` is at least `l - k`.
   have hcheb : mu.real ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A') ≤ I / (l - k) ^ 2 := by
     rw [← inter_assoc]
