@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.GroupTheory.GroupAction.ConjAct
 public import Mathlib.GroupTheory.Subgroup.Centralizer
+public import TauCeti.GroupTheory.GroupAction.ConjAct
 
 /-!
 # Normalizer orbits and conjugacy classes
@@ -22,18 +22,11 @@ cover `G`. For a maximal torus of a compact connected Lie group both conditions 
 * `Subgroup.normalizerOrbitMap`: the map from `N(H)`-orbits on `H` to conjugation orbits on `G`.
 * `Subgroup.normalizerOrbitMap_injective_iff`, `Subgroup.normalizerOrbitMap_surjective_iff`: the
   group-theoretic meaning of injectivity and surjectivity.
-* `ConjAct.mk_eq_mk_iff_isConj`: conjugation orbits are the classes of `IsConj`.
 -/
 
 public section
 
 open MulAction
-
-/-- Two elements of a group lie in one orbit of the conjugation action exactly when they are
-conjugate. -/
-theorem ConjAct.mk_eq_mk_iff_isConj {G : Type*} [Group G] {x y : G} :
-    (Quotient.mk'' x : orbitRel.Quotient (ConjAct G) G) = Quotient.mk'' y ↔ IsConj x y :=
-  Quotient.eq''.trans (by rw [orbitRel_conjAct])
 
 namespace Subgroup
 
