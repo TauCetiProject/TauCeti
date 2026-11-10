@@ -24,8 +24,9 @@ the kernel of `D` near a point consists of the holomorphic multiples of a holomo
 is a holomorphic structure on `V`, whose holomorphic sections are the kernel of `D`.
 
 The frame near `x₀` is built from the frame `s` of the trivialization of `V` at `x₀` and the chart
-at `x₀`. There `D s = (B dz̄) ⊗ s` for the coefficient `B = TauCeti.cauchyRiemannChartCoeff D x₀`,
-assumed smooth near the chart point of `x₀`. A smooth solution `g` of `∂bar g = -B`
+`φ` at `x₀`. There `D s = (B • conj dz) ⊗ s` for the coefficient
+`B = TauCeti.cauchyRiemannChartCoeff D x₀`, assumed smooth near the chart point of `x₀`. A smooth
+solution `g` of `∂bar g = -B`
 (`TauCeti.exists_contDiff_conjWirtingerDeriv_apply_one_eventually_eq`) gives the holomorphic frame
 `exp (g ∘ φ) • s`, by the complex Leibniz rule.
 
@@ -458,7 +459,7 @@ variable {V : M → Type*} [TopologicalSpace (TotalSpace ℂ V)] [∀ x, Topolog
 chart `φ` and the trivialization `e` at `x₀`: at the chart point `z`, the coordinate in `e` of
 `D s`, for the frame `s = e⁻¹ 1` of `e` (`Bundle.Trivialization.localFrame`), evaluated on the
 coordinate vector `∂/∂x = dφ⁻¹ 1` of the chart. For a real Cauchy–Riemann operator, whose values
-are `(0,1)`-forms, `D s = (B dz̄) ⊗ s` on the chart domain, where `B` is this coefficient. -/
+are `(0,1)`-forms, `D s = (B • conj dz) ⊗ s` on the chart domain, where `B` is this coefficient. -/
 def cauchyRiemannChartCoeff (D : (Π x : M, V x) → Π x : M, TangentSpace 𝓘(ℝ, ℂ) x →L[ℝ] V x)
     (x₀ : M) (z : ℂ) : ℂ :=
   (trivializationAt ℂ V x₀).continuousLinearMapAt ℂ ((extChartAt 𝓘(ℝ, ℂ) x₀).symm z)
