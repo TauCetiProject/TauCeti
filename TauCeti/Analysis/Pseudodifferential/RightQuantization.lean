@@ -113,12 +113,6 @@ private theorem HasCompactSpatialSupport.exists_norm_fourier_le (hc : c.HasCompa
         mul_le_mul_of_nonneg_left (hC θ ξ) (by positivity)
     _ = C * (1 + ‖θ‖) ^ (-((n : ℝ) + 1 + |m|)) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by ring
 
-/-- Rescaling the frequency by `2π` changes the weight `⟨ξ⟩ ^ s` by at most `(2π) ^ |s|`. -/
-private theorem weight_two_pi_smul_le (s : ℝ) (ξ : CoordinateSpace n) :
-    (1 + ‖(2 * π) • ξ‖ ^ 2) ^ (s / 2) ≤ (2 * π) ^ |s| * (1 + ‖ξ‖ ^ 2) ^ (s / 2) :=
-  one_add_norm_sq_rpow_le_of_norm_eq_mul (by linarith [Real.two_le_pi]) s
-    (by rw [norm_smul, Real.norm_of_nonneg Real.two_pi_pos.le])
-
 /-- The weight `⟨θ⟩ ^ |m|` lost to Peetre's inequality is absorbed by the decay of `ĉ`. -/
 private theorem weight_mul_decay_le (θ : CoordinateSpace n) :
     (1 + ‖θ‖ ^ 2) ^ (|m| / 2) * (1 + ‖θ‖) ^ (-((n : ℝ) + 1 + |m|)) ≤
@@ -127,19 +121,15 @@ private theorem weight_mul_decay_le (θ : CoordinateSpace n) :
       (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) := by
     rw [← Real.rpow_add (by positivity)]
     ring_nf
-  have hhalf : |m| / 2 = (1 / 2 : ℝ) * |m| := by ring
-  have hθ : (1 + ‖θ‖ ^ 2) ^ (|m| / 2) ≤ (1 + ‖θ‖) ^ |m| := by
-    rw [hhalf, Real.rpow_mul (by positivity),
-      ← Real.sqrt_eq_rpow]
-    exact Real.rpow_le_rpow (by positivity) (sqrt_one_add_norm_sq_le θ) (abs_nonneg m)
   rw [← hsplit]
   gcongr
+  exact one_add_norm_sq_rpow_le_one_add_norm_rpow θ (abs_nonneg m)
 
 /-- The weight `⟨2πθ⟩ ^ |m|` lost to Peetre's inequality is absorbed by the decay of `ĉ`. -/
 private theorem weight_two_pi_mul_le (θ : CoordinateSpace n) :
     (1 + ‖(2 * π) • θ‖ ^ 2) ^ (|m| / 2) * (1 + ‖θ‖) ^ (-((n : ℝ) + 1 + |m|)) ≤
       (2 * π) ^ |m| * (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) := by
-  have hscale := weight_two_pi_smul_le |m| θ
+  have hscale := one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) |m| θ
   rw [abs_abs] at hscale
   calc (1 + ‖(2 * π) • θ‖ ^ 2) ^ (|m| / 2) * (1 + ‖θ‖) ^ (-((n : ℝ) + 1 + |m|))
       ≤ (2 * π) ^ |m| * (1 + ‖θ‖ ^ 2) ^ (|m| / 2) * (1 + ‖θ‖) ^ (-((n : ℝ) + 1 + |m|)) := by
@@ -178,24 +168,6 @@ private theorem integrable_decay :
     Integrable fun θ : CoordinateSpace n ↦ (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) :=
   integrable_one_add_norm (by rw [finrank_euclideanSpace_fin]; linarith)
 
-/-- The Fourier transform `ĉ(θ, ξ)` of the position slices is jointly continuous. -/
-private theorem HasCompactSpatialSupport.continuous_fourier (hc : c.HasCompactSpatialSupport) :
-    Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
-      𝓕 (fun z ↦ c.coefficient (z, q.2)) q.1 := by
-  obtain ⟨K, hK, hKc⟩ := hasCompactSpatialSupport_iff.mp hc
-  have h : (fun q : CoordinateSpace n × CoordinateSpace n ↦
-      𝓕 (fun z ↦ c.coefficient (z, q.2)) q.1) =
-        fun q ↦ ∫ z in K, (𝐞 (-⟪z, q.1⟫) : ℂ) • c.coefficient (z, q.2) := by
-    funext q
-    rw [Real.fourier_eq, setIntegral_eq_integral_of_forall_compl_eq_zero fun z hz ↦ by
-      simp [hKc z hz]]
-    simp only [Circle.smul_def]
-  rw [h]
-  refine continuous_parametric_integral_of_continuous ?_ hK
-  exact (by fun_prop : Continuous fun q : (CoordinateSpace n × CoordinateSpace n) ×
-      CoordinateSpace n ↦ (𝐞 (-⟪q.2, q.1.1⟫) : ℂ)).smul
-    (c.contDiff_coefficient.continuous.comp (by fun_prop))
-
 /-- The integrand is jointly continuous in the point and the frequency `θ`. -/
 private theorem HasCompactSpatialSupport.continuous_rightIntegrand
     (hc : c.HasCompactSpatialSupport) :
@@ -205,7 +177,7 @@ private theorem HasCompactSpatialSupport.continuous_rightIntegrand
       (𝐞 ⟪q.2, q.1.1⟫ : ℂ) := by fun_prop
   have hg : Continuous fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
       ((q.2, q.1.2 + (2 * π) • q.2) : CoordinateSpace n × CoordinateSpace n) := by fun_prop
-  have h₂ := hc.continuous_fourier.comp hg
+  have h₂ := hc.continuous_fourier_slice.comp hg
   simp only [Function.comp_def] at h₂
   exact h₁.smul h₂
 
@@ -770,7 +742,7 @@ private theorem HasCompactSpatialSupport.integrable_fourier_apply_sub
     (ContinuousLinearMap.mul ℝ ℝ) hg (μ := volume) (ν := volume)
   have hcont : Continuous fun q : CoordinateSpace n × CoordinateSpace n ↦
       𝓕 (fun z ↦ c.coefficient (z, (2 * π) • q.1)) q.2 (𝓕 v (q.1 - q.2)) := by
-    have h₁ := hc.continuous_fourier.comp (by fun_prop : Continuous
+    have h₁ := hc.continuous_fourier_slice.comp (by fun_prop : Continuous
       fun q : CoordinateSpace n × CoordinateSpace n ↦
         ((q.2, (2 * π) • q.1) : CoordinateSpace n × CoordinateSpace n))
     simp only [Function.comp_def] at h₁
@@ -790,7 +762,10 @@ private theorem HasCompactSpatialSupport.integrable_fourier_apply_sub
           (2 ^ (|m| / 2) * (1 + ‖θ‖ ^ 2) ^ (|m| / 2) * (1 + ‖ζ - θ‖ ^ 2) ^ (m / 2))) *
           ‖𝓕 v (ζ - θ)‖ := by
         gcongr
-        exact (hC θ _).trans (by gcongr; exact (weight_two_pi_smul_le m ζ).trans (by gcongr))
+        exact (hC θ _).trans (by
+          gcongr
+          exact (one_add_norm_smul_sq_rpow_le (c := 2 * π) (by linarith [Real.two_le_pi]) m
+            ζ).trans (by gcongr))
     _ = C * (2 * π) ^ |m| * 2 ^ (|m| / 2) * (((1 + ‖θ‖ ^ 2) ^ (|m| / 2) *
           (1 + ‖θ‖) ^ (-((n : ℝ) + 1 + |m|))) *
           ((1 + ‖ζ - θ‖ ^ 2) ^ (m / 2) * ‖𝓕 v (ζ - θ)‖)) := by ring
@@ -826,7 +801,9 @@ private theorem HasCompactSpatialSupport.integrable_fourierChar_smul_rightIntegr
     _ ≤ C * ((2 * π) ^ |m| * (1 + ‖q.1‖ ^ 2) ^ (m / 2)) * (1 + ‖q.2‖) ^ (-((n : ℝ) + 1)) *
           ‖𝓕 v q.1‖ := by
         gcongr
-        exact (hC _ q.2).trans (by gcongr; exact weight_two_pi_smul_le m q.1)
+        exact (hC _ q.2).trans (by
+          gcongr
+          exact one_add_norm_smul_sq_rpow_le (by linarith [Real.two_le_pi]) m q.1)
     _ = C * (2 * π) ^ |m| * ((1 + ‖q.1‖ ^ 2) ^ (m / 2) * ‖𝓕 v q.1‖) *
           (1 + ‖q.2‖) ^ (-((n : ℝ) + 1)) := by ring
 
