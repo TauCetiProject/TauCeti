@@ -158,20 +158,6 @@ theorem integral_shrinking_normed_mul {R : ℝ} (hR : 0 < R) (n : ℕ) (f : G �
         simp only [g, smul_eq_mul, integral_mul_const]
         field_simp
 
-/-- Normalized bumps of shrinking radius approximate a uniformly continuous function
-uniformly on the whole space. -/
-theorem tendstoUniformly_normed_convolution {ι : Type*} {l : Filter ι}
-    {ρ : ι → ContDiffBump (0 : G)} (hρ : Tendsto (fun i => (ρ i).rOut) l (𝓝 0))
-    (hg : UniformContinuous g) :
-    TendstoUniformly (fun i => (ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] g) g l := by
-  refine Metric.tendstoUniformly_iff.2 fun ε hε => ?_
-  obtain ⟨δ, hδ, hgδ⟩ := Metric.uniformContinuous_iff.1 hg (ε / 2) (by positivity)
-  filter_upwards [hρ.eventually (gt_mem_nhds hδ)] with i hi x
-  rw [dist_comm]
-  refine ((ρ i).dist_normed_convolution_le (μ := μ) hg.continuous.aestronglyMeasurable
-    (fun y hy => (hgδ ((mem_ball.1 hy).trans hi)).le)).trans_lt ?_
-  exact half_lt_self hε
-
 /-- Normalized bumps of shrinking radius approximate a function uniformly on a set `s` when the
 function is uniformly continuous on a `δ`-neighbourhood of `s`. Only the values on that
 neighbourhood matter, so the function need not be continuous elsewhere. -/
@@ -189,6 +175,15 @@ theorem tendstoUniformlyOn_normed_convolution {ι : Type*} {l : Filter ι}
   have hyx : dist y x < min η δ := (mem_ball.1 hy).trans hi
   exact (hgη y (mem_thickening_iff.2 ⟨x, hx, hyx.trans_le (min_le_right _ _)⟩) x
     (self_subset_thickening hδ s hx) (hyx.trans_le (min_le_left _ _))).le
+
+/-- Normalized bumps of shrinking radius approximate a uniformly continuous function
+uniformly on the whole space. -/
+theorem tendstoUniformly_normed_convolution {ι : Type*} {l : Filter ι}
+    {ρ : ι → ContDiffBump (0 : G)} (hρ : Tendsto (fun i => (ρ i).rOut) l (𝓝 0))
+    (hg : UniformContinuous g) :
+    TendstoUniformly (fun i => (ρ i).normed μ ⋆[lsmul ℝ ℝ, μ] g) g l :=
+  tendstoUniformlyOn_univ.1 <| tendstoUniformlyOn_normed_convolution hρ one_pos
+    hg.uniformContinuousOn hg.continuous.aestronglyMeasurable
 
 /-- Normalized bumps of radius tending to zero along a filter approximate a function that is
 continuous at `x` uniformly on a neighbourhood filter of `x`. This upgrades Mathlib's joint

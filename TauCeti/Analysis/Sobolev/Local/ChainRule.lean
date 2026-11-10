@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+import Mathlib.MeasureTheory.Function.Holder
 import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Sobolev.Mollification.Interior
 import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
-import TauCeti.MeasureTheory.Function.LpSeminorm.CLMComp
 import TauCeti.MeasureTheory.Integral.Lebesgue.UniformConvergence
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
 
@@ -23,7 +23,8 @@ and values in a Banach space, and let `g` be `C¹` on an open set containing the
 Then `g ∘ u` has weak derivative `z ↦ Dg(u z) ∘ Du z` on `Ω`. In particular, a continuous member
 of `W^{1,p}_loc` on a planar set composes with a `C¹` map to give a member of `W^{1,p}_loc`, and
 on compact sets `K` its derivative obeys `‖D(g ∘ u)‖_{Lᵖ(K)} ≤ (sup_{u(K)} ‖Dg‖) ‖Du‖_{Lᵖ(K)}`
-(`TauCeti.eLpNorm_clm_comp_le_of_ae_nnnorm_le`). The domain-dependent form `z ↦ g(z, u z)`
+(Hölder's inequality `MeasureTheory.eLpNorm_le_enorm_mul_eLpNorm_mul_eLpNorm` for the composition
+map `ContinuousLinearMap.compL`). The domain-dependent form `z ↦ g(z, u z)`
 follows by composing with the graph map `z ↦ (z, u z)`.
 
 Continuity of `u` is a hypothesis here. On a planar set, where `TauCeti.MemWkpLoc` lives, it is
@@ -66,6 +67,20 @@ namespace TauCeti
 
 open Filter MeasureTheory Metric Set TopologicalSpace
 open scoped Convolution ENNReal NNReal Topology
+
+/-- On a compact set where the family `A` is continuous, its pointwise composition with an `Lᵖ`
+family `B` is in `Lᵖ`: Hölder's inequality for `ContinuousLinearMap.compL` with exponents
+`(∞, p, p)`. -/
+private theorem memLp_clm_comp_of_continuousOn {α 𝕜 E F G : Type*} [MeasurableSpace α]
+    [TopologicalSpace α] [OpensMeasurableSpace α] {μ : Measure α} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    [NormedAddCommGroup G] [NormedSpace 𝕜 G] {A : α → F →L[𝕜] G} {B : α → E →L[𝕜] F}
+    {p : ℝ≥0∞} {K : Set α} (hK : IsCompact K) (hKm : MeasurableSet K) (hA : ContinuousOn A K)
+    (hB : MemLp B p (μ.restrict K)) : MemLp (fun x => (A x).comp (B x)) p (μ.restrict K) := by
+  obtain ⟨C, hC⟩ := hK.exists_bound_of_continuousOn hA
+  refine (ContinuousLinearMap.compL 𝕜 E F G).memLp_of_bilin p
+    (memLp_top_of_bound (hA.aestronglyMeasurable_of_isCompact hK hKm) C ?_) hB
+  filter_upwards [ae_restrict_mem hKm] with x hx using hC x hx
 
 section Core
 
@@ -194,7 +209,7 @@ private theorem hasWeakFDerivOn_comp_of_isCompact_closure
   -- `Dg ∘ u` is bounded on `S`, and `Dg(u) ∘ Du` is integrable there.
   obtain ⟨C, hC⟩ := hVc.exists_bound_of_continuousOn hDguS
   have hWint : IntegrableOn (fun x => (fderiv ℝ g (u x)).comp (Du x)) V μ :=
-    IntegrableOn.mono_set (memLp_one_iff_integrable.1 (MemLp.clm_comp_of_continuousOn hVc
+    IntegrableOn.mono_set (memLp_one_iff_integrable.1 (memLp_clm_comp_of_continuousOn hVc
       isClosed_closure.measurableSet hDguS (memLp_one_iff_integrable.2 hDuS))) hVS
   have hgAt : ∀ y ∈ u '' S, ContinuousAt g y := fun y hy =>
     hgc.continuousAt (hW.mem_nhds (huSW hy))
@@ -279,8 +294,8 @@ variable [CompleteSpace G]
 /-- **Composition of continuous `W^{1,p}_loc` maps with `C¹` maps.** If `u` is continuous on `U`
 and belongs to `W^{1,p}_loc(U)`, and `g` is `C¹` on an open set containing `u '' U`, then
 `g ∘ u` belongs to `W^{1,p}_loc(U)`. Its weak derivative on `interior U` is given by
-`TauCeti.HasWeakFDerivOn.comp_contDiffOn`, and its `Lᵖ` bound on compact sets by
-`TauCeti.eLpNorm_clm_comp_le_of_ae_nnnorm_le`. -/
+`TauCeti.HasWeakFDerivOn.comp_contDiffOn`, and its `Lᵖ` membership on compact sets is Hölder's
+inequality for `ContinuousLinearMap.compL` with the bounded factor `Dg ∘ u`. -/
 theorem MemWkpLoc.comp_contDiffOn {u : ℂ → F} {g : F → G} {W : Set F}
     (hu : MemWkpLoc p U 1 u) (huc : ContinuousOn u U) (hW : IsOpen W) (hg : ContDiffOn ℝ 1 g W)
     (huW : MapsTo u U W) : MemWkpLoc p U 1 (fun z => g (u z)) := by
@@ -292,7 +307,7 @@ theorem MemWkpLoc.comp_contDiffOn {u : ℂ → F} {g : F → G} {W : Set F}
   intro K hKU hK
   have hgu : ContinuousOn (fun x => fderiv ℝ g (u x)) K :=
     hDgc.comp (huc.mono hKU) (huW.mono_left hKU)
-  exact MemLp.clm_comp_of_continuousOn hK hK.measurableSet hgu (hDup K hKU hK)
+  exact memLp_clm_comp_of_continuousOn hK hK.measurableSet hgu (hDup K hKU hK)
 
 /-- **Composition of continuous `W^{1,p}_loc` maps with globally `C¹` maps.** -/
 theorem MemWkpLoc.comp_contDiff {u : ℂ → F} {g : F → G} (hu : MemWkpLoc p U 1 u)
