@@ -42,12 +42,12 @@ a heat kernel assumes `0 < t`.
 * `TauCeti.heatKernel_le`: the pointwise bound by `(4πt)^(-n/2)`.
 * `TauCeti.heatKernel_eq_mul_heatKernel_one_smul`: the parabolic scaling
   `K_t(x) = (√t)⁻¹ ^ n K_1((√t)⁻¹ • x)`.
-* `TauCeti.heatKernel_mul_eq_mul_heatKernel_smul`: the same scaling between two positive times,
+* `TauCeti.heatKernel_mul_eq_mul_heatKernel_smul`: the same scaling between two times,
   `K_{ts}(x) = (√t)⁻¹ ^ n K_s((√t)⁻¹ • x)`.
 * `TauCeti.contDiff_heatKernel`: `K_t` is smooth.
 * `TauCeti.integral_heatKernel`: `∫ K_t = 1` for `t > 0`.
 * `TauCeti.eLpNorm_heatKernel_le`: an explicit `Lᵠ` bound for `1 ≤ q ≤ ∞`.
-* `TauCeti.memLp_heatKernel`: `K_t` belongs to every `Lᵠ` with `1 ≤ q ≤ ∞`.
+* `TauCeti.memLp_heatKernel`: `K_t` belongs to every `Lᵠ`.
 * `TauCeti.laplacian_heatKernel`: `Δ K_t(x) = (‖x‖² / (4t²) - n / (2t)) K_t(x)`.
 * `TauCeti.hasDerivAt_heatKernel`: the heat equation `∂ₜ K_t(x) = Δ K_t(x)` for `t > 0`.
 * `TauCeti.heatKernel_convolution_heatKernel`: the semigroup identity `K_t ⋆ K_s = K_{t+s}`.
@@ -118,13 +118,18 @@ theorem heatKernel_eq_mul_heatKernel_one_smul {t : ℝ} (ht : 0 < t) (x : E) :
     mul_rpow (by positivity) ht.le]
   field_simp
 
-/-- **Parabolic scaling of the heat kernel between two times.** For `t, s > 0`,
+/-- **Parabolic scaling of the heat kernel between two times.** For `t > 0`,
 `K_{ts}(x) = (√t)⁻¹ ^ n K_s((√t)⁻¹ • x)` with `n = dim E`. -/
-theorem heatKernel_mul_eq_mul_heatKernel_smul {t s : ℝ} (ht : 0 < t) (hs : 0 < s) (x : E) :
+theorem heatKernel_mul_eq_mul_heatKernel_smul {t s : ℝ} (ht : 0 < t) (x : E) :
     heatKernel (t * s) x = (√t)⁻¹ ^ Module.finrank ℝ E * heatKernel s ((√t)⁻¹ • x) := by
-  rw [heatKernel_eq_mul_heatKernel_one_smul (mul_pos ht hs),
-    heatKernel_eq_mul_heatKernel_one_smul hs, smul_smul, sqrt_mul ht.le, mul_inv, mul_pow]
-  ring_nf
+  have hst : 0 < √t := sqrt_pos.2 ht
+  have hnorm : ‖(√t)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / t := by
+    rw [norm_smul, norm_inv, norm_of_nonneg hst.le, mul_pow, inv_pow, sq_sqrt ht.le]
+    ring
+  rw [heatKernel_apply, heatKernel_apply, hnorm, inv_sqrt_pow_eq_rpow ht.le,
+    show 4 * π * (t * s) = t * (4 * π * s) by ring, mul_rpow_of_pos_left ht,
+    show -‖x‖ ^ 2 / (4 * (t * s)) = -(‖x‖ ^ 2 / t) / (4 * s) by ring]
+  ring
 
 /-- The heat kernel `K_t` is smooth in the space variable (for every `t`). -/
 theorem contDiff_heatKernel (t : ℝ) {k : WithTop ℕ∞} : ContDiff ℝ k (heatKernel t : E → ℝ) :=
@@ -251,10 +256,33 @@ theorem eLpNorm_heatKernel_le {t : ℝ} (ht : 0 < t) {q : ℝ≥0∞} (hq : 1 �
   rw [he]
   simp only [c, ← rpow_mul (by positivity : 0 ≤ 4 * π * t)]
 
-/-- The heat kernel belongs to every `Lᵠ` with `1 ≤ q ≤ ∞`. -/
-theorem memLp_heatKernel {t : ℝ} (ht : 0 < t) {q : ℝ≥0∞} (hq : 1 ≤ q) :
-    MemLp (heatKernel t : E → ℝ) q volume :=
-  (eLpNorm_heatKernel_le ht hq).trans_lt ENNReal.ofReal_lt_top
+/-- The heat kernel belongs to every `Lᵠ`, `0 ≤ q ≤ ∞`. For `q < 1` its `q`-th power is again a
+Gaussian, a multiple of the heat kernel at time `t / q`. -/
+theorem memLp_heatKernel {t : ℝ} (ht : 0 < t) {q : ℝ≥0∞} :
+    MemLp (heatKernel t : E → ℝ) q volume := by
+  by_cases hq : 1 ≤ q
+  · exact (eLpNorm_heatKernel_le ht hq).trans_lt ENNReal.ofReal_lt_top
+  have hm : AEStronglyMeasurable (heatKernel t : E → ℝ) volume :=
+    (contDiff_heatKernel t (k := 0)).continuous.aestronglyMeasurable
+  rcases eq_or_ne q 0 with rfl | hq0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hm
+  have hqt : q ≠ (∞ : ℝ≥0∞) := fun h ↦ hq (h ▸ le_top)
+  rw [← integrable_norm_rpow_iff hm hq0 hqt]
+  set r := q.toReal
+  have hr : 0 < r := ENNReal.toReal_pos hq0 hqt
+  set p : ℝ := -(Module.finrank ℝ E : ℝ) / 2
+  have h4t : 0 < 4 * π * t := by positivity
+  have htr : 0 < t / r := by positivity
+  have hscale : (fun x : E ↦ ‖heatKernel t x‖ ^ r) =
+      fun x ↦ ((4 * π * t) ^ (p * r) / (4 * π * (t / r)) ^ p) * heatKernel (t / r) x := by
+    funext x
+    rw [norm_of_nonneg (heatKernel_pos ht x).le, heatKernel_apply, heatKernel_apply,
+      mul_rpow (by positivity) (exp_pos _).le, ← rpow_mul h4t.le, ← exp_mul, ← mul_assoc,
+      div_mul_cancel₀ _ (by positivity)]
+    congr 2
+    field_simp
+  rw [hscale]
+  exact (integrable_heatKernel htr).const_mul _
 
 /-- **The semigroup property of the heat kernel** (Chapman–Kolmogorov):
 `K_t ⋆ K_s = K_{t+s}` for `t, s > 0`. -/
@@ -359,9 +387,15 @@ theorem fourier_heatKernel_convolution {F : Type*} [NormedAddCommGroup F] [Norme
 /-- On `ℝ`, the heat kernel smoothing of a function supported in `[a, b]` is the Gaussian
 transform `x ↦ ∫ y in a..b, (4πt)^(-1/2) g y exp (-(x - y)² / (4t))`. -/
 theorem heatKernel_convolution_eq_intervalIntegral {t a b : ℝ} {g : ℝ → ℝ}
-    (hgs : Function.support g ⊆ Set.Icc a b) (hab : a ≤ b) (x : ℝ) :
+    (hgs : Function.support g ⊆ Set.Icc a b) (x : ℝ) :
     (heatKernel t ⋆ g) x =
       ∫ y in a..b, (4 * π * t) ^ (-(1 : ℝ) / 2) * g y * Real.exp (-(4 * t)⁻¹ * (x - y) ^ 2) := by
+  rcases le_or_gt a b with hab | hab
+  swap
+  · -- An empty interval forces `g = 0`, and both sides vanish.
+    have hg : g = 0 := Function.support_eq_empty_iff.1
+      (Set.subset_empty_iff.1 ((hgs.trans (Set.Icc_eq_empty hab.not_ge).subset)))
+    simp [hg]
   rw [convolution_lsmul_swap, intervalIntegral.integral_of_le hab,
     ← integral_Icc_eq_integral_Ioc, setIntegral_eq_integral_of_forall_compl_eq_zero]
   · congr 1
