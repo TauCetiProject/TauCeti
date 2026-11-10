@@ -59,6 +59,7 @@ noncomputable def stripMeasure : Measure ℝ :=
   ((volume.restrict ((univ : Set ℝ) ×ˢ Icc (0 : ℝ) 1)).withDensity f).map Prod.fst
 
 /-- The strip measure of a measurable set `A` is the integral of the density over `A × [0, 1]`. -/
+@[simp]
 theorem stripMeasure_apply {A : Set ℝ} (hA : MeasurableSet A) :
     stripMeasure f A = ∫⁻ z in A ×ˢ Icc 0 1, f z := by
   rw [stripMeasure, Measure.map_apply measurable_fst hA,
@@ -77,6 +78,7 @@ theorem isFiniteMeasure_stripMeasure (hfin : ∫⁻ z in (univ : Set ℝ) ×ˢ I
   ⟨by rw [stripMeasure_univ]; exact hfin.lt_top⟩
 
 /-- The strip measure vanishes exactly when the integral of the density over the strip does. -/
+@[simp]
 theorem stripMeasure_eq_zero_iff :
     stripMeasure f = 0 ↔ ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1, f z = 0 := by
   rw [← Measure.measure_univ_eq_zero, stripMeasure_univ]
