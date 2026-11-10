@@ -52,8 +52,8 @@ integrable over `S`
 (`SmoothTwoForm.integrableOn_hamiltonianCurvature_pairOfPantsContinuationPerturbation`). Since the
 two data agree outside `S_R`, the energy identity of the pair of pants on the whole of `S`
 (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation`) carries over
-too: if the loops `ℓ_q` converge pointwise to loops `x_q` as `R → ∞` and the energy and area
-densities are integrable over `S`, then
+too: if the outer Hamiltonians are bounded, `|H_q(t, x)| ≤ B_q`, the loops `ℓ_q` converge pointwise
+to loops `x_q` as `R → ∞` and the energy and area densities are integrable over `S`, then
 
 `∫_S E = ∫_S u^*ω + ∑ q, ±∫₀¹ H_q(t, x_q(t)) dt - ∫_S R_K(u)`
 
