@@ -185,13 +185,14 @@ theorem star_right_of_isStarNormal {T S : E →ₗ[ℂ] E} [IsStarNormal S]
 /-- The real and imaginary parts of two commuting normal operators commute in all four
 combinations. -/
 theorem realPart_imaginaryPart_of_isStarNormal {T S : E →ₗ[ℂ] E}
-    [IsStarNormal T] [IsStarNormal S] (h : Commute T S) :
+    [IsStarNormal T] (h : Commute T S) :
     Commute (ℜ T : E →ₗ[ℂ] E) (ℜ S : E →ₗ[ℂ] E) ∧
       Commute (ℜ T : E →ₗ[ℂ] E) (ℑ S : E →ₗ[ℂ] E) ∧
       Commute (ℑ T : E →ₗ[ℂ] E) (ℜ S : E →ₗ[ℂ] E) ∧
       Commute (ℑ T : E →ₗ[ℂ] E) (ℑ S : E →ₗ[ℂ] E) := by
-  have h₂ := h.star_right_of_isStarNormal
   have h₃ := h.symm.star_right_of_isStarNormal.symm
+  have h₂ : Commute T (star S) := by
+    simpa using h.symm.star_right_of_isStarNormal.star_star.symm
   have h₄ := h.star_star
   -- Expand multiplication, use the four commutation relations, then normalize scalars.
   refine ⟨?_, ?_, ?_, ?_⟩
@@ -226,7 +227,6 @@ theorem exists_orthonormalBasis_apply_eq_smul_of_pairwise_commute
   have hSC : Pairwise (Commute on S) := by
     rintro ⟨i, a⟩ ⟨j, b⟩ -
     have := hT i
-    have := hT j
     have h := (hcomm i j).realPart_imaginaryPart_of_isStarNormal
     cases a <;> cases b
     exacts [h.1, h.2.1, h.2.2.1, h.2.2.2]
