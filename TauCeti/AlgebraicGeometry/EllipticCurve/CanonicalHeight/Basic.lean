@@ -296,13 +296,10 @@ theorem Point.canonicalHeight_eq_zero_of_isOfFinAddOrder {P : W.Point}
     (h : IsOfFinAddOrder P) : P.canonicalHeight = 0 := by
   -- The multiples `2 ^ n • P` run through the finitely many multiples `k • P` with `k` below the
   -- order of `P`, so their naïve heights are bounded and the defining sequence tends to `0`.
-  have hfin : (Set.range fun n : ℕ ↦ ((2 ^ n) • P).naiveHeight).Finite := by
-    refine (((Finset.range (addOrderOf P)).image fun k ↦ (k • P).naiveHeight).finite_toSet).subset
-      ?_
-    rintro _ ⟨n, rfl⟩
-    refine Finset.mem_coe.mpr (Finset.mem_image.mpr ⟨2 ^ n % addOrderOf P, ?_, ?_⟩)
-    · exact Finset.mem_range.mpr (Nat.mod_lt _ h.addOrderOf_pos)
-    · rw [mod_addOrderOf_nsmul]
+  have hfin : (Set.range fun n : ℕ ↦ ((2 ^ n) • P).naiveHeight).Finite :=
+    (h.finite_multiples.image Point.naiveHeight).subset <| by
+      rintro _ ⟨n, rfl⟩
+      exact ⟨(2 ^ n) • P, ⟨2 ^ n, rfl⟩, rfl⟩
   obtain ⟨M, hM⟩ := hfin.bddAbove
   have hlim : Tendsto (fun n : ℕ ↦ ((2 ^ n) • P).naiveHeight / 4 ^ n) atTop (𝓝 0) :=
     tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
