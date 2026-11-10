@@ -249,6 +249,20 @@ theorem flatComp_apply (σ : SmoothTwoForm I M)
     σ.flatComp C x = (σ.flat x).comp (C x) :=
   ContMDiffSection.clmComp_apply _ C x
 
+/-- `C ↦ σ(C ·, ·)` is additive. -/
+theorem flatComp_add (σ : SmoothTwoForm I M)
+    (C D : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) :
+    σ.flatComp (C + D) = σ.flatComp C + σ.flatComp D := by
+  ext1 x
+  simp [ContinuousLinearMap.comp_add]
+
+/-- `C ↦ σ(C ·, ·)` commutes with scalar multiplication. -/
+theorem flatComp_smul (σ : SmoothTwoForm I M) (a : ℝ)
+    (C : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) :
+    σ.flatComp (a • C) = a • σ.flatComp C := by
+  ext1 x
+  simp
+
 variable [FiniteDimensional ℝ E]
 
 /-- The `σ`-skew part `(C - C^†) / 2` of a section `C` of `End(TM)`, where `C^†` is the adjoint
@@ -296,6 +310,42 @@ theorem IsNondegenerate.skewPart_apply_of_skew (hσ : σ.IsNondegenerate)
   simp only [IsNondegenerate.symplecticFormAt_apply, ← flat_apply] at h₁ h₂
   rw [hσ.flat_skewPart_apply]
   linarith
+
+/-- The skew part is idempotent: it is a projection onto the skew-adjoint sections. -/
+@[simp]
+theorem IsNondegenerate.skewPart_skewPart (hσ : σ.IsNondegenerate)
+    (C : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) :
+    hσ.skewPart (hσ.skewPart C) = hσ.skewPart C := by
+  ext1 x
+  exact hσ.skewPart_apply_of_skew _ (hσ.skewPart_skew C x)
+
+/-- The skew part is additive. -/
+theorem IsNondegenerate.skewPart_add (hσ : σ.IsNondegenerate)
+    (C D : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) :
+    hσ.skewPart (C + D) = hσ.skewPart C + hσ.skewPart D := by
+  ext x v
+  refine (hσ.isInvertible_flat x).injective (ContinuousLinearMap.ext fun w ↦ ?_)
+  simp only [ContMDiffSection.coe_add, Pi.add_apply, add_apply, map_add,
+    hσ.flat_skewPart_apply]
+  ring
+
+/-- The skew part commutes with scalar multiplication. -/
+theorem IsNondegenerate.skewPart_smul (hσ : σ.IsNondegenerate) (a : ℝ)
+    (C : Cₛ^∞⟮I; E →L[ℝ] E, fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x⟯) :
+    hσ.skewPart (a • C) = a • hσ.skewPart C := by
+  ext x v
+  refine (hσ.isInvertible_flat x).injective (ContinuousLinearMap.ext fun w ↦ ?_)
+  simp only [ContMDiffSection.coe_smul, Pi.smul_apply, smul_apply, map_smul,
+    hσ.flat_skewPart_apply, smul_eq_mul]
+  ring
+
+/-- The skew part of the zero section is zero. -/
+@[simp]
+theorem IsNondegenerate.skewPart_zero (hσ : σ.IsNondegenerate) : hσ.skewPart 0 = 0 := by
+  ext1 x
+  refine hσ.skewPart_apply_of_skew _ fun v w ↦ ?_
+  simp only [ContMDiffSection.coe_zero, Pi.zero_apply, zero_apply, map_zero,
+    LinearMap.zero_apply, add_zero]
 
 end SkewPart
 

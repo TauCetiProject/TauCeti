@@ -18,10 +18,10 @@ manifold. Every vector in `V` is the value of a global `C^n` section. This lets 
 operations on globally `C^n` sections define maps on individual fibres. The construction cuts off
 Mathlib's locally `C^n` `FiberBundle.extend` with a smooth bump function.
 
-Every fibre vector is moreover the value of a compactly supported smooth section supported in any
+Every fibre vector is moreover the value of a compactly supported `C^n` section supported in any
 prescribed neighbourhood of its base point
-(`ContMDiffSection.exists_apply_eq_isCompact_tsupport_subset`): the section is constant in the
-preferred trivialization and cut off by a smooth bump function.
+(`ContMDiffSection.exists_apply_eq_isCompact_tsupport_subset`): a global `C^n` section with that
+value, cut off by a smooth bump function.
 -/
 
 public section
@@ -67,30 +67,20 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
   [ContMDiffVectorBundle n F V I]
 
-/-- Every vector `v` of the fibre over `x₀` is the value at `x₀` of a smooth section whose closed
-support is compact and contained in any prescribed neighbourhood `U` of `x₀`. -/
+/-- Every vector `v` of the fibre over `x₀` is the value at `x₀` of a `C^n` section (smooth when
+`n = ∞`) whose closed support is compact and contained in any prescribed neighbourhood `U` of
+`x₀`. -/
 theorem exists_apply_eq_isCompact_tsupport_subset (x₀ : M) (v : V x₀) {U : Set M}
     (hU : U ∈ 𝓝 x₀) :
     ∃ s : Cₛ^n⟮I; F, V⟯, s x₀ = v ∧ IsCompact s.tsupport ∧ s.tsupport ⊆ U := by
-  let e := trivializationAt F V x₀
-  have hx₀ : x₀ ∈ e.baseSet := mem_baseSet_trivializationAt F V x₀
-  obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x₀).mem_iff.1
-    (Filter.inter_mem hU (e.open_baseSet.mem_nhds hx₀))
-  -- The section `x ↦ e.symm x c` is constant, equal to the coordinate `c` of `v`, in `e`.
-  obtain ⟨c, hc⟩ : ∃ c, e.symm x₀ c = v := ⟨_, e.symm_apply_apply_mk hx₀ v⟩
-  have ht : ContMDiffOn I (I.prod 𝓘(ℝ, F)) n
-      (fun x ↦ TotalSpace.mk' F x (e.symm x c)) e.baseSet := by
-    rw [e.contMDiffOn_section_baseSet_iff]
-    exact contMDiffOn_const.congr fun x hx ↦ by rw [e.apply_mk_symm hx]
-  let s : Cₛ^n⟮I; F, V⟯ := ⟨fun x ↦ ρ x • e.symm x c,
-    (ρ.contMDiff.of_le (mod_cast le_top)).contMDiffOn.smul_section_of_tsupport e.open_baseSet
-      (hρ.trans inter_subset_right) ht⟩
-  have hs (x : M) : s x = ρ x • e.symm x c := (rfl)
+  obtain ⟨t, ht, htv⟩ := FiberBundle.exists_contMDiff_section_eq I F (n : ℕ∞ω) v
+  obtain ⟨ρ, -, hρ⟩ := (SmoothBumpFunction.nhds_basis_tsupport (I := I) x₀).mem_iff.1 hU
+  let s : Cₛ^n⟮I; F, V⟯ := ⟨(ρ : M → ℝ) • t, (ρ.contMDiff.of_le (mod_cast le_top)).smul_section ht⟩
   have hsρ : s.tsupport ⊆ _root_.tsupport ρ :=
     (tsupport_subset_iff (_root_.isClosed_tsupport _)).2 fun x hx ↦ by
-      rw [hs, image_eq_zero_of_notMem_tsupport (f := (ρ : M → ℝ)) hx, zero_smul]
-  exact ⟨s, by rw [hs, ρ.eq_one, one_smul, hc],
-    ρ.hasCompactSupport.isCompact.of_isClosed_subset s.isClosed_tsupport hsρ,
-    hsρ.trans (hρ.trans inter_subset_left)⟩
+      change ρ x • t x = 0
+      rw [image_eq_zero_of_notMem_tsupport (f := (ρ : M → ℝ)) hx, zero_smul]
+  exact ⟨s, by change ρ x₀ • t x₀ = v; rw [ρ.eq_one, one_smul, htv],
+    ρ.hasCompactSupport.isCompact.of_isClosed_subset s.isClosed_tsupport hsρ, hsρ.trans hρ⟩
 
 end ContMDiffSection
