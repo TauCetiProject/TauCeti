@@ -41,8 +41,6 @@ is nonzero, and Schur's lemma makes it bijective.
 * `TauCeti.YoungTableau.spechtIdealSignTransposeEquiv`: `F_t` as an equivalence of representations.
 * `TauCeti.YoungTableau.spechtSubrepresentationTensorSignEquiv`: the resulting equivalence
   `S^μ ⊗ sgn ≃ S^(μᵗ)` between the polytabloid Specht modules of the diagrams `μ` and `μᵗ`.
-* `TauCeti.spechtSubrepresentationCongr`: the transport of a Specht module along an equation of
-  diagrams.
 * `TauCeti.spechtModuleTensorSignIso`: the partition-level isomorphism `S^μ ⊗ sgn ≅ S^(μᵗ)`, chosen
   by the row-superstandard tableau.
 
@@ -283,25 +281,6 @@ end YoungTableau
 section Partition
 
 variable {n : ℕ}
-
-/-- **Specht modules of equal diagrams are equivalent**, the symmetric groups on their labels both
-being identified with `Sₙ`.  This transports a Specht module along an equation of diagrams such as
-`YoungDiagram.ofPartition_conjugate`. -/
-noncomputable def spechtSubrepresentationCongr {R : Type*} [CommRing R] {D E : YoungDiagram}
-    (h : D = E) (hD : n = D.card) (hE : n = E.card) :
-    Representation.Equiv ((spechtSubrepresentation (R := R) D).toRepresentation.comp
-        (finCongr hD).permCongrHom.toMonoidHom)
-      ((spechtSubrepresentation (R := R) E).toRepresentation.comp
-        (finCongr hE).permCongrHom.toMonoidHom) := by
-  subst h
-  exact .refl _
-
-/-- Transport along the trivial equation of diagrams is the identity. -/
-@[simp]
-theorem spechtSubrepresentationCongr_rfl {R : Type*} [CommRing R] (D : YoungDiagram)
-    (hD hD' : n = D.card) :
-    spechtSubrepresentationCongr (R := R) rfl hD hD' = .refl _ :=
-  (rfl)
 
 /-- **The isomorphism `S^μ ⊗ sgn_n ≅ S^(μᵗ)`** in `FDRep ℚ (Equiv.Perm (Fin n))`, chosen by the
 row-superstandard tableau of `μ`: it is `YoungTableau.spechtSubrepresentationTensorSignEquiv` of
