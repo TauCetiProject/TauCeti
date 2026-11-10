@@ -119,7 +119,7 @@ attribute [local instance] extChartAtMeasurableSpaceE extChartAtBorelSpaceE
 Riemannian inner products, carries the chart volume of `s` at `α` to the chart volume of its image
 at `β`. -/
 theorem chartRiemannianVolume_image_of_inner_mfderiv {Φ : M → N} {α : M} {β : N} {s : Set M}
-    (hs : MeasurableSet s) (hΦs : MeasurableSet (Φ '' s)) (hinj : InjOn Φ s)
+    (hs : MeasurableSet s) (hinj : InjOn Φ s)
     (hsα : s ⊆ (chartAt H α).source) (hsβ : MapsTo Φ s (chartAt H' β).source)
     (hΦ : ∀ x ∈ s, MDifferentiableAt I I' Φ x)
     (hinner : ∀ x ∈ s, ∀ v w : TangentSpace I x,
@@ -130,8 +130,7 @@ theorem chartRiemannianVolume_image_of_inner_mfderiv {Φ : M → N} {α : M} {β
   have hsα' : s ⊆ (extChartAt I α).source := by rwa [extChartAt_source]
   have hsβ' : Φ '' s ⊆ (extChartAt I' β).source := by
     rw [extChartAt_source]; exact hsβ.image_subset
-  rw [chartRiemannianVolume_apply β hΦs, chartRiemannianVolume_apply α hs,
-    inter_eq_left.2 hsα', inter_eq_left.2 hsβ']
+  rw [chartRiemannianVolume_apply α hs, inter_eq_left.2 hsα']
   -- Change variables along `Φ` read in the charts at `α` and `β`.
   let A := extChartAt I α '' s
   let g := extChartAt I' β ∘ Φ ∘ (extChartAt I α).symm
@@ -155,7 +154,26 @@ theorem chartRiemannianVolume_image_of_inner_mfderiv {Φ : M → N} {α : M} {β
         mfderivWithin 𝓘(ℝ, E) I (extChartAt I α).symm (range I) (extChartAt I α x) :
           E →L[ℝ] E) (range I) (extChartAt I α x) :=
     (hΦ x hx).hasMFDerivAt.hasFDerivWithinAt_of_mem_source (hsα hx) (hsβ hx)
-  rw [← himage, lintegral_image_eq_lintegral_abs_det_fderiv_mul (Module.finBasis ℝ E).addHaar hA
+  -- The image `Φ '' s` is measurable by the Lusin–Souslin theorem, as `g` is continuous and
+  -- injective on the measurable set `A`.
+  have hΦs : MeasurableSet (Φ '' s) := by
+    have : CompleteSpace E := FiniteDimensional.complete ℝ E
+    have hgA : MeasurableSet (g '' A) :=
+      hA.image_of_continuousOn_injOn
+        (fun y hy ↦ by
+          obtain ⟨x, hx, rfl⟩ := hy
+          exact (hderiv x hx).continuousWithinAt.mono hA_range) hinjA
+    rw [himage] at hgA
+    have hR := measurableEmbedding_extChartAt_restrict (I := I') β
+    have himg : (extChartAt I' β).source.domRestrict (extChartAt I' β) ''
+        (Subtype.val ⁻¹' (Φ '' s)) = extChartAt I' β '' (Φ '' s) := by
+      rw [Set.image_domRestrict, inter_eq_left.2 hsβ']
+    have hpre : MeasurableSet (Subtype.val ⁻¹' (Φ '' s) : Set (extChartAt I' β).source) :=
+      hR.measurableSet_image.1 (himg ▸ hgA)
+    simpa only [Subtype.image_preimage_coe, inter_eq_right.2 hsβ'] using
+      MeasurableSet.subtype_image (isOpen_extChartAt_source β).measurableSet hpre
+  rw [chartRiemannianVolume_apply β hΦs, inter_eq_left.2 hsβ', ← himage,
+    lintegral_image_eq_lintegral_abs_det_fderiv_mul (Module.finBasis ℝ E).addHaar hA
     (f' := fun y ↦ fderivWithin ℝ g (range I) y) ?_ hinjA]
   · apply setLIntegral_congr_fun hA
     rintro _ ⟨x, hx, rfl⟩
@@ -224,10 +242,22 @@ theorem riemannianVolume_image_of_inner_mfderiv [HereditarilyLindelofSpace M] [L
 maps preserve the Riemannian inner products carries the Riemannian volume of `M` to the Riemannian
 volume of `N`. -/
 theorem _root_.Homeomorph.measurePreserving_riemannianVolume [LindelofSpace M] [LindelofSpace N]
-    (Φ : M ≃ₜ N) (hΦ : MDifferentiable I I' Φ)
+    (Φ : M ≃ₜ N)
     (hinner : ∀ x (v w : TangentSpace I x),
       ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x w⟫_ℝ = ⟪v, w⟫_ℝ) :
     MeasurePreserving Φ (riemannianVolume I M) (riemannianVolume I' N) := by
+  -- Differentiability is automatic: where `Φ` is not differentiable its tangent map is zero, which
+  -- preserves the inner products only if the vector space `E` is trivial, and then every map out
+  -- of `E` is differentiable.
+  have hΦ (x : M) : MDifferentiableAt I I' Φ x := by
+    by_contra hx
+    have h0 := mfderiv_zero_of_not_mdifferentiableAt hx
+    have : Subsingleton E := subsingleton_of_forall_eq 0 fun v : TangentSpace I x ↦ by
+      have h := hinner x v v
+      rw [h0, zero_apply, inner_zero_left] at h
+      exact inner_self_eq_zero (𝕜 := ℝ) (E := TangentSpace I x) |>.1 h.symm
+    exact hx ((mdifferentiableAt_iff _ _).2
+      ⟨Φ.continuous.continuousAt, differentiableWithinAt_of_subsingleton⟩)
   refine ⟨Φ.measurable, eq_riemannianVolume_iff.2 fun β ↦ ?_⟩
   set S := (chartAt H' β).source
   have hS : MeasurableSet S := (chartAt H' β).open_source.measurableSet
@@ -250,7 +280,6 @@ theorem _root_.Homeomorph.measurePreserving_riemannianVolume [LindelofSpace M] [
     Measure.restrict_apply' hS, Homeomorph.preimage_symm, ← image_inter_preimage,
     riemannianVolume_apply_of_subset (inter_subset_left.trans inter_subset_right),
     chartRiemannianVolume_image_of_inner_mfderiv hA
-      (by rw [Φ.image_eq_preimage_symm]; exact hA.preimage Φ.symm.measurable)
       Φ.injective.injOn (inter_subset_left.trans inter_subset_right)
       (fun x hx ↦ hx.2) (fun x _ ↦ hΦ x) (fun x _ ↦ hinner x)]
 
@@ -269,7 +298,6 @@ theorem measurePreserving_riemannianVolume [LindelofSpace M] [LindelofSpace N]
     (Φ : RiemannianIsometry I I' M N) :
     MeasurePreserving Φ (riemannianVolume I M) (riemannianVolume I' N) := by
   apply Homeomorph.measurePreserving_riemannianVolume Φ.toDiffeomorph.toHomeomorph
-    Φ.mdifferentiable
   intro x v w
   -- The coercions from a Riemannian isometry to its diffeomorphism and homeomorphism
   -- are definitionally the same map, but `mfderiv` does not unfold those wrappers itself.

@@ -85,12 +85,11 @@ variable {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners ℝ E H'}
 
 /-- A differentiable isometry between compact Riemannian manifolds preserves total volume. -/
 theorem _root_.Homeomorph.riemannianTotalVolume_eq (Φ : M ≃ₜ N)
-    (hΦ : MDifferentiable I I' Φ)
     (hinner : ∀ x (v w : TangentSpace I x),
       ⟪mfderiv I I' Φ x v, mfderiv I I' Φ x w⟫_ℝ = ⟪v, w⟫_ℝ) :
     riemannianTotalVolume I M = riemannianTotalVolume I' N := by
   rw [riemannianTotalVolume_def, riemannianTotalVolume_def]
-  have h := Φ.measurePreserving_riemannianVolume hΦ hinner
+  have h := Φ.measurePreserving_riemannianVolume hinner
   apply congrArg ENNReal.toReal
   calc
     (riemannianVolume I M) univ = ((riemannianVolume I M).map Φ) univ := by
@@ -109,7 +108,7 @@ variable {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'}
 theorem riemannianTotalVolume_eq
     (Φ : RiemannianIsometry I J M N) :
     riemannianTotalVolume I M = riemannianTotalVolume J N := by
-  apply Homeomorph.riemannianTotalVolume_eq Φ.toDiffeomorph.toHomeomorph Φ.mdifferentiable
+  apply Homeomorph.riemannianTotalVolume_eq Φ.toDiffeomorph.toHomeomorph
   intro x v w
   -- See `measurePreserving_riemannianVolume` for the coercion normalization.
   change ⟪mfderiv I J Φ x v, mfderiv I J Φ x w⟫_ℝ = ⟪v, w⟫_ℝ
