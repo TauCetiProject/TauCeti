@@ -46,8 +46,9 @@ The hypothesis on `δ` is the instance argument `Fact (IsSelfAdjoint δ)`; for a
 * `TauCeti.TemperleyLieb.map_star_iff`: the universal property as a star algebra.
 * `TauCeti.TemperleyLieb.strandIncl_star`, `TauCeti.TemperleyLieb.aug_star`: the strand inclusion
   and the augmentation preserve the star structure.
-* `TauCeti.TemperleyLieb.isSelfAdjoint_of_star_e`: a star structure fixing the generators exists
-  only for self-adjoint `δ`.
+* `TauCeti.TemperleyLieb.isSelfAdjoint_loop_of_reverse`: even without involutivity, a
+  conjugate-linear product reversal fixing the two-strand generator forces self-adjoint `δ`.
+* `TauCeti.TemperleyLieb.isSelfAdjoint_of_star_e`: the specialization to a star structure.
 
 ## Implementation notes
 
@@ -98,14 +99,11 @@ private theorem conjugateReverse_algebraMap (r : R) :
 
 private theorem conjugateReverse_involutive (x : TemperleyLieb R δ n) :
     unop (conjugateReverse (unop (conjugateReverse x))) = x := by
-  have hx : x ∈ Algebra.adjoin R (Set.range (e δ (n := n))) := by simp [adjoin_range_e]
-  induction hx using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    simp [conjugateReverse_e]
+  induction x using TemperleyLieb.induction with
+  | e i => simp [conjugateReverse_e]
   | algebraMap r => simp [conjugateReverse_algebraMap]
-  | add x y _ _ hx hy => simp [map_add, hx, hy]
-  | mul x y _ _ hx hy => simp [map_mul, hx, hy]
+  | add x y hx hy => simp [map_add, hx, hy]
+  | mul x y hx hy => simp [map_mul, hx, hy]
 
 /-- For a self-adjoint loop value, the analytic adjoint on the Temperley–Lieb algebra: the
 conjugate-linear, product-reversing involution fixing every generator. -/
@@ -140,15 +138,12 @@ theorem star_unique {f : TemperleyLieb R δ n → TemperleyLieb R δ n}
     (map_smul : ∀ (r : R) x, f (r • x) = star r • f x) (map_one : f 1 = 1)
     (map_e : ∀ i, f (e δ i) = e δ i) : f = star := by
   funext x
-  have hx : x ∈ Algebra.adjoin R (Set.range (e δ (n := n))) := by simp [adjoin_range_e]
-  induction hx using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    rw [map_e, star_e]
+  induction x using TemperleyLieb.induction with
+  | e i => rw [map_e, star_e]
   | algebraMap r =>
     rw [Algebra.algebraMap_eq_smul_one, map_smul, map_one, star_smul, star_one]
-  | add x y _ _ hx hy => rw [map_add, star_add, hx, hy]
-  | mul x y _ _ hx hy => rw [map_mul, star_mul, hx, hy]
+  | add x y hx hy => rw [map_add, star_add, hx, hy]
+  | mul x y hx hy => rw [map_mul, star_mul, hx, hy]
 
 section UniversalProperty
 
@@ -163,14 +158,11 @@ theorem map_star_iff {F : TemperleyLieb R δ n →ₐ[R] A} :
   · intro h i
     simpa only [IsSelfAdjoint, star_e] using (h (e δ i)).symm
   · intro h x
-    have hx : x ∈ Algebra.adjoin R (Set.range (e δ (n := n))) := by simp [adjoin_range_e]
-    induction hx using Algebra.adjoin_induction with
-    | mem x hx =>
-      obtain ⟨i, rfl⟩ := hx
-      rw [star_e, (h i).star_eq]
+    induction x using TemperleyLieb.induction with
+    | e i => rw [star_e, (h i).star_eq]
     | algebraMap r => simp [← algebraMap_star_comm]
-    | add x y _ _ hx hy => simp only [star_add, map_add, hx, hy]
-    | mul x y _ _ hx hy => simp only [star_mul, map_mul, hx, hy]
+    | add x y hx hy => simp only [star_add, map_add, hx, hy]
+    | mul x y hx hy => simp only [star_mul, map_mul, hx, hy]
 
 end UniversalProperty
 
@@ -188,15 +180,25 @@ theorem aug_star (x : TemperleyLieb R δ n) : aug (star x) = star (aug x) :=
 
 end Construction
 
+/-- Already on two strands, a conjugate-linear product reversal fixing the generator forces
+self-adjoint loop value. Neither additivity nor involutivity is needed. In particular, non-real
+complex loop values admit no such reversal. -/
+theorem isSelfAdjoint_loop_of_reverse
+    (f : TemperleyLieb R δ 2 → TemperleyLieb R δ 2)
+    (hsmul : ∀ (r : R) x, f (r • x) = star r • f x)
+    (hmul : ∀ x y, f (x * y) = f y * f x)
+    (i : Fin (2 - 1)) (he : f (e δ i) = e δ i) : IsSelfAdjoint δ := by
+  apply smul_left_injective_e_two (δ := δ) i
+  have h := hmul (e δ i) (e δ i)
+  rw [e_mul_self, hsmul, he, e_mul_self] at h
+  exact h
+
 /-- A conjugate-linear star structure on the two-strand Temperley–Lieb algebra fixing the
 generator exists only for a self-adjoint loop value: applied to `e * e = δ • e` it gives
 `δ • e = star δ • e`. In particular over `ℂ` the loop value must be real. -/
 theorem isSelfAdjoint_of_star_e [StarMul (TemperleyLieb R δ 2)]
     [StarModule R (TemperleyLieb R δ 2)] (i : Fin (2 - 1)) (he : star (e δ i) = e δ i) :
-    IsSelfAdjoint δ := by
-  apply smul_left_injective_e_two (δ := δ) i
-  have h := congrArg star (e_mul_self (δ := δ) i)
-  rw [star_mul, star_smul, he, e_mul_self] at h
-  exact h.symm
+    IsSelfAdjoint δ :=
+  isSelfAdjoint_loop_of_reverse star star_smul star_mul i he
 
 end TauCeti.TemperleyLieb

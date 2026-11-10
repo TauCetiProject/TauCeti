@@ -99,14 +99,15 @@ theorem isTamelyRamified_of_adjoin_eq_top_of_pow_eq {n : ℕ} (hn : ¬ ringChar 
   have := finiteIntermediateField_valuativeExtension K L E
   have hEK : IsUnramified K E :=
     isUnramified_of_adjoin_eq_top_of_pow_eq (fun h ↦ hn (hne ▸ h.mul_left e'))
-      (AdjoinSimple.adjoin_gen_eq_top (β ^ e')) (a := a)
+      (adjoin_adjoinSimple_gen_eq_top (β ^ e')) (a := a)
       (Subtype.ext (by simp [← pow_mul, ← hne, ha])) ⟨m', hm.trans (mul_comm _ _)⟩
   -- So `e(L/K) = e(L/E)`, which is at most `[L : E] ≤ n'`, as `β` is a root of `X^{n'} − β^{n'}`.
   have hLE : ramificationIndex K L = ramificationIndex E L :=
     (IsUnramified.ramificationIndex_tower_eq K E L).symm
   have hfin : Module.finrank E L ≤ e' :=
-    TauCeti.IntermediateField.finrank_le_of_adjoin_simple_eq_top_of_pow_mem hβ
-      (Nat.pos_of_ne_zero fun h ↦ hn0 (by simp [hne, h])) (mem_adjoin_simple_self K _)
+    TauCeti.IntermediateField.finrank_le_of_adjoin_simple_eq_top_of_pow_mem
+      (adjoin_eq_top_of_adjoin_eq_top K hβ) (fun h ↦ hn0 (by simp [hne, h]))
+      ⟨⟨_, mem_adjoin_simple_self K _⟩, rfl⟩
   have hle : ramificationIndex E L ≤ e' :=
     (Nat.le_of_dvd Module.finrank_pos
       (Dvd.intro _ (ramificationIndex_mul_inertiaDegree E L))).trans hfin
@@ -174,7 +175,7 @@ theorem IsTamelyRamified.of_adjoin_range_eq_top (hL : IsTamelyRamified K L) (ι 
   have hcharF : ringChar 𝓀[F] = ringChar 𝓀[K] := (Algebra.ringChar_eq 𝓀[K] 𝓀[F]).symm
   have hF₁ : IsTamelyRamified F F₁ := by
     refine isTamelyRamified_of_adjoin_eq_top_of_pow_eq
-      (n := Nat.card 𝓀[K] ^ inertiaDegree K L - 1) ?_ (AdjoinSimple.adjoin_gen_eq_top (ι ζ))
+      (n := Nat.card 𝓀[K] ^ inertiaDegree K L - 1) ?_ (adjoin_adjoinSimple_gen_eq_top (ι ζ))
       (a := 1) (Subtype.ext (by simp [← map_pow, hζ.pow_eq_one]))
     rw [hcharF, ← IsLocalRing.isUnit_natCast_iff_not_dvd (R := 𝒪[K])]
     exact isUnit_natCast_natCard_pow_sub_one K inertiaDegree_pos.ne'
@@ -241,7 +242,7 @@ theorem IsTamelyRamified.of_fieldRange_sup_fieldRange_eq_top (h₁ : IsTamelyRam
   -- `M` is generated over `L₂` by the image of `L₁`, so `M/L₂` is tamely ramified by base change,
   -- and `M/K` by transitivity.
   have hM := h₁.of_adjoin_range_eq_top (F := L₂) ι₁
-    (TauCeti.IntermediateField.adjoin_range_eq_top_of_fieldRange_sup_fieldRange_eq_top ι₁
+    (ι₁.adjoin_range_eq_top_iff_fieldRange_sup_fieldRange_eq_top.2
       ((sup_comm _ _).trans h))
   exact (isTamelyRamified_tower_iff (K := K) (L := L₂) M).2 ⟨h₂, hM⟩
 

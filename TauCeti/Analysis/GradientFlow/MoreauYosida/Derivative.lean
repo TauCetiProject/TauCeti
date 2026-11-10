@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Basic
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.Analysis.Real.Inequalities
 import TauCeti.Data.EReal.Operations
 
 /-!
@@ -357,17 +358,7 @@ theorem tendsto_moreauYosida_nhdsGT_zero (hφ : LowerSemicontinuousAt φ x) {σ 
   have hdδ : (δ₀ : ℝ) ≤ d := by
     rw [← ENNReal.coe_toReal δ₀]
     exact ENNReal.toReal_mono hz hzδ
-  have hw : 0 ≤ 1 / (2 * (τ : ℝ)) - 1 / (2 * σ) := by
-    rw [sub_nonneg]
-    gcongr
-  have hsq : (δ₀ : ℝ) ^ 2 ≤ d ^ 2 := pow_le_pow_left₀ δ₀.coe_nonneg hdδ 2
-  have key : (δ₀ : ℝ) ^ 2 * (1 / (2 * τ) - 1 / (2 * σ)) ≤ d ^ 2 * (1 / (2 * τ) - 1 / (2 * σ)) :=
-    mul_le_mul_of_nonneg_right hsq hw
-  have e₁ : (δ₀ : ℝ) ^ 2 / 2 * (τ : ℝ)⁻¹ = δ₀ ^ 2 / (2 * τ) := by field_simp
-  have e₂ : d ^ 2 * (1 / (2 * τ) - 1 / (2 * σ)) = d ^ 2 / (2 * τ) - d ^ 2 / (2 * σ) := by ring
-  have e₃ : (δ₀ : ℝ) ^ 2 * (1 / (2 * τ) - 1 / (2 * σ)) = δ₀ ^ 2 / (2 * τ) - δ₀ ^ 2 / (2 * σ) := by
-    ring
-  linarith
+  exact Real.le_add_sq_div_two_mul_of_sq_div_le hδ₀'.le hdδ hτ₀ (by exact_mod_cast hτσ.le) hτK h
 
 variable {y : ℝ → X} {σ : ℝ}
 

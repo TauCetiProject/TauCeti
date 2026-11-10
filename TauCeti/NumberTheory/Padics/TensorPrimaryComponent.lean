@@ -80,8 +80,7 @@ private theorem exists_idempotent_data (hA : AddMonoid.ExponentExists A) :
 `ℤ_p`, because that number is a unit of `ℤ_p`. -/
 theorem tmul_eq_zero_of_nsmul_eq_zero {m : ℕ} (hm : ¬p ∣ m) {y : A} (hy : m • y = 0)
     (a : ℤ_[p]) : a ⊗ₜ[ℤ] y = 0 := by
-  obtain ⟨u, hu⟩ :=
-    PadicInt.isUnit_natCast_of_coprime ((Nat.Prime.coprime_iff_not_dvd hp.out).mpr hm)
+  obtain ⟨u, hu⟩ := PadicInt.isUnit_natCast_iff.mpr hm
   have ha : a = (m : ℤ) • (a * ↑u⁻¹) := by
     rw [zsmul_eq_mul, Int.cast_natCast, ← hu, mul_left_comm, Units.mul_inv, mul_one]
   rw [ha, smul_tmul, natCast_zsmul, hy, tmul_zero]

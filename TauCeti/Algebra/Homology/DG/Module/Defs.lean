@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Module.GradedModule
 public import TauCeti.Algebra.DirectSum.Internal
 public import TauCeti.Algebra.Homology.DG.Algebra.Defs
 public import TauCeti.LinearAlgebra.Graded.LinearMap
+import TauCeti.Algebra.Module.GradedModule.Internal
 
 /-!
 # Differential graded left modules
@@ -58,6 +59,9 @@ a differential graded algebra be a module over itself with no twist.
 * `TauCeti.IsDGLeftModule.map_decompose`: the differential commutes with the homogeneous
   projections of the grading, `dM (x_p) = (dM x)_{p + 1}`; in particular the homogeneous components
   of a cycle are cycles and those of a boundary are boundaries.
+* `TauCeti.IsDGLeftModule.exists_mem_of_forall_exists`: if every relative cycle of a degree-zero
+  map of differential graded left modules is a relative boundary, then a homogeneous relative cycle
+  is the relative boundary of homogeneous elements of the matching degrees.
 * `TauCeti.IsDGLeftModule.leibniz_of_map_eq_zero`: the Leibniz rule for an arbitrary scalar against
   a cycle, with no sign and no homogeneity hypothesis.
 * `TauCeti.IsDGLeftModule.smul_mem_range_of_map_eq_zero`: a cycle of `A` carries a boundary of `M`
@@ -121,6 +125,25 @@ theorem map_decompose (hM : IsDGLeftModule h ℳ dM) (p : ℤ) (x : M) :
     dM (decompose ℳ x p : M) = (decompose ℳ (dM x) (p + 1) : M) :=
   DirectSum.map_decompose_shift ℳ ℳ dM.toAddMonoidHom (· + 1) (add_left_injective 1)
     (fun _ _ hy ↦ hM.isHomogeneous.map_mem hy) p x
+
+/-- If every relative cycle `(c, w)` of a degree-zero map `f`, with `dM c = 0` and `f c = dN w`, is
+a relative boundary `(dM u, f u + dN v)`, then a homogeneous relative cycle is the relative
+boundary of homogeneous elements of the matching degrees: take homogeneous components. -/
+theorem exists_mem_of_forall_exists {N : Type*} [AddCommGroup N] [Module R N] [Module A N]
+    [IsScalarTower R A N] {𝒩 : ℤ → Submodule R N} [SetLike.GradedSMul 𝒜 𝒩]
+    [DirectSum.Decomposition 𝒩] {dN : N →ₗ[R] N} (hM : IsDGLeftModule h ℳ dM)
+    (hN : IsDGLeftModule h 𝒩 dN) {f : M →ₗ[A] N} (hf : LinearMap.IsHomogeneous f ℳ 𝒩 0)
+    (hrel : ∀ c w, dM c = 0 → f c = dN w → ∃ u v, dM u = c ∧ f u + dN v = w)
+    {n : ℤ} {c : M} {w : N} (hc : c ∈ ℳ n) (hw : w ∈ 𝒩 (n - 1)) (hdc : dM c = 0)
+    (hcw : f c = dN w) :
+    ∃ u v, u ∈ ℳ (n - 1) ∧ v ∈ 𝒩 (n - 1 - 1) ∧ dM u = c ∧ f u + dN v = w := by
+  obtain ⟨u, v, hu, huv⟩ := hrel c w hdc hcw
+  refine ⟨decompose ℳ u (n - 1), decompose 𝒩 v (n - 1 - 1), SetLike.coe_mem _,
+    SetLike.coe_mem _, ?_, ?_⟩
+  · rw [hM.map_decompose, sub_add_cancel, hu, decompose_of_mem_same _ hc]
+  · rw [hf.map_decompose, hN.map_decompose, add_zero, sub_add_cancel,
+      ← Submodule.coe_add, ← DirectSum.add_apply, ← decompose_add, huv,
+      decompose_of_mem_same _ hw]
 
 /-- Every homogeneous projection of a boundary is again a boundary. -/
 theorem decompose_mem_range (hM : IsDGLeftModule h ℳ dM) {x : M} (hx : x ∈ LinearMap.range dM)

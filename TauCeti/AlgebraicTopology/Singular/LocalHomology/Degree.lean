@@ -29,6 +29,8 @@ of every fundamental class along a compact set:
 
 `f_*[M]_{f⁻¹(K)} = deg f • [N]_K` for every compact `K ⊆ N`.
 
+For compact `M` and `N` the case `K = N` reads `f_*[M] = deg f • [N]` in `Hₙ(N; ℤ)`.
+
 This is the classical homological definition of the degree of a proper map, which does not need
 compactness of `M` or `N` nor any smoothness of `f`. The degree is `1` for the identity, changes
 sign when either orientation is reversed, is multiplicative under composition, vanishes for maps
@@ -58,6 +60,10 @@ that are not surjective and is invariant under proper homotopies, that is homoto
   onto a preconnected manifold is surjective.
 * `TauCeti.HomologicalOrientation.degree_eq_of_homotopy`: the degree is invariant under proper
   homotopies.
+* `TauCeti.HomologicalOrientation.mapFundamentalClass_eq_degree_smul`: for compact `M` and `N`,
+  `f_*[M] = deg f • [N]` in `Hₙ(N; ℤ)`, and more generally
+  `TauCeti.HomologicalOrientation.mapFundamentalClass_comp_eq_degree_smul`:
+  `(g ∘ f)_*[M] = deg f • g_*[N]` for every continuous `g : N → X`.
 
 ## References
 
@@ -357,6 +363,47 @@ theorem degree_eq_of_homotopy {f₀ f₁ : C(M, N)} (H : f₀.Homotopy f₁) (hH
   · rw [degree_of_isEmpty, degree_of_isEmpty]
   · rw [degree_eq_localDegree_some o o' hE f₀ h, degree_eq_localDegree_some o o' hE f₁ h,
       o.localDegree_eq_of_homotopy o' hE hF H hH]
+
+section CompactSpace
+
+variable [CompactSpace M] [CompactSpace N]
+
+variable [PreconnectedSpace N]
+
+include hF in
+/-- **The degree computes the image of the fundamental class**: for a map `f : M → N` between
+compact oriented `n`-manifolds with `N` preconnected, `f_*[M] = deg f • [N]` in `Hₙ(N; ℤ)`. -/
+theorem mapFundamentalClass_eq_degree_smul (f : C(M, N)) :
+    o.mapFundamentalClass hE f = o.degree o' hE f • o'.fundamentalClass hF := by
+  have : IsEmpty (TopPair.ofSubset ((univ : Set (TopCat.of N))ᶜ)).snd := by
+    simp only [compl_univ]
+    exact inferInstanceAs (IsEmpty (∅ : Set N))
+  have hπ : IsIso ((TopPair.ofSubset ((univ : Set (TopCat.of N))ᶜ)).singularHomologyπ
+      (C := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) n) := inferInstance
+  refine ((ConcreteCategory.isIso_iff_bijective _).1 hπ).1 ?_
+  have h := o.localHomologyMap_fundamentalClassOn_preimage o' hE hF f.continuous.isProperMap
+    isCompact_univ
+  rw [← o.localHomologyRestriction_fundamentalClassOn_of_subset hE isCompact_univ _
+    (subset_univ _), ← ModuleCat.comp_apply, localHomologyRestriction_comp_localHomologyMap] at h
+  -- Both sides are read in `Hₙ(N, N ∖ N; ℤ)`, where `[N]` maps to `[N]` along `N`.
+  exact (o.singularHomologyπ_mapFundamentalClass hE f).trans (h.trans
+    ((congrArg (o.degree o' hE f • ·)
+      (o'.singularHomologyπ_fundamentalClass hF isCompact_univ)).symm.trans
+      (map_zsmul _ _ _).symm))
+
+include hF in
+/-- **The degree of a composite with a further map**: for `f : M → N` between compact oriented
+`n`-manifolds with `N` preconnected and any continuous `g : N → X`,
+`(g ∘ f)_*[M] = deg f • g_*[N]` in `Hₙ(X; ℤ)`. -/
+theorem mapFundamentalClass_comp_eq_degree_smul {X : Type} [TopologicalSpace X] (g : C(N, X))
+    (f : C(M, N)) :
+    o.mapFundamentalClass hE (g.comp f) = o.degree o' hE f • o'.mapFundamentalClass hF g := by
+  rw [mapFundamentalClass_comp, o.mapFundamentalClass_eq_degree_smul o' hE hF f,
+    mapFundamentalClass_def o' hF g]
+  exact map_zsmul (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) n).obj
+    (ModuleCat.of ℤ (ULift.{0} ℤ))).map (TopCat.ofHom g)).hom _ _
+
+end CompactSpace
 
 end HomologicalOrientation
 

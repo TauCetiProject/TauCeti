@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Modular.Exponential
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Pinning.First
 public import TauCeti.Algebra.Lie.F4.ShortRoot.Quotient.Pinning.DividedSquare
-public import TauCeti.LinearAlgebra.LinearMap.QuadraticPolynomial
 
 /-!
 # Integral root exponentials on the modular F₄ quotient
@@ -110,13 +109,7 @@ theorem f4ShortRootBaseChangeQuotient_rootExponential_tmul
           f4ShortRootSubspace.mkQ (1 ⊗ₜ[ℤ] ⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), x⁆)) +
         t ^ 2 • ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootSubspace.mkQ
             (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k x)) := by
-  let q := f4ShortRootBaseChangeQuotient (A := A)
-  exact (congrArg q (f4RootExponential_tmul k t x)).trans
-    ((LinearMap.map_quadraticPolynomial q t _ _ _).trans (quadraticPolynomial_congr t
-        (f4ShortRootBaseChangeQuotient_tmul (1 : A) x)
-        (f4ShortRootBaseChangeQuotient_tmul (1 : A)
-          (⁅f4IntegralRootVector (f4SignedSimpleRootIndex k), x⁆))
-        (f4ShortRootBaseChangeQuotient_tmul (1 : A) (f4IntegralDividedAdjointSquare k x))))
+  simp only [f4RootExponential_tmul, map_add, map_smul, f4ShortRootBaseChangeQuotient_tmul]
 
 /-- The canonical integral lift of a quotient basis coordinate: a long root vector, or the long
 simple coroot `h₁`, `h₀` at coordinates `12`, `13`. -/
@@ -213,13 +206,8 @@ theorem f4ShortRootBaseChangeQuotient_rootExponential_integralShortRootQuotientL
               f4IntegralShortRootQuotientLift a⁆)) +
         t ^ 2 • ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootSubspace.mkQ
             (1 ⊗ₜ[ℤ] f4IntegralDividedAdjointSquare k (f4IntegralShortRootQuotientLift a))) := by
-  have hpoly := f4ShortRootBaseChangeQuotient_rootExponential_tmul
-    (A := A) k t (f4IntegralShortRootQuotientLift a)
-  have hzero : (1 : A) ⊗ₜ[ZMod 2]
-          f4ShortRootSubspace.mkQ (1 ⊗ₜ[ℤ] f4IntegralShortRootQuotientLift a) =
-        (1 : A) ⊗ₜ[ZMod 2] f4ShortRootQuotientBasis a :=
-    congrArg (fun z => (1 : A) ⊗ₜ[ZMod 2] z) (f4IntegralShortRootQuotientLift_mkQ a)
-  exact hpoly.trans (quadraticPolynomial_congr t hzero rfl rfl)
+  simp only [f4ShortRootBaseChangeQuotient_rootExponential_tmul,
+    f4IntegralShortRootQuotientLift_mkQ]
 
 /-- The quotient of the genuine integral root exponential on a canonical lift is its canonical
 quadratic column polynomial, over every commutative algebra of characteristic two. -/
@@ -231,12 +219,8 @@ theorem f4ShortRootBaseChangeQuotient_rootExponential_quotientColumns
       (1 : A) ⊗ₜ[ZMod 2] f4ShortRootQuotientBasis a +
         t • ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootQuotientFirstColumn k a) +
         t ^ 2 • ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootQuotientDividedSquareColumn k a) := by
-  have h := f4ShortRootBaseChangeQuotient_rootExponential_integralShortRootQuotientLift
-    (A := A) k t a
-  have h₁ := congrArg (fun z => (1 : A) ⊗ₜ[ZMod 2] z) (f4IntegralRootBracket_quotientLift_mkQ k a)
-  have h₂ := congrArg (fun z => (1 : A) ⊗ₜ[ZMod 2] z)
-    (f4IntegralDividedAdjointSquare_quotientLift_mkQ k a)
-  exact h.trans (quadraticPolynomial_congr t rfl h₁ h₂)
+  simp only [f4ShortRootBaseChangeQuotient_rootExponential_integralShortRootQuotientLift,
+    f4IntegralRootBracket_quotientLift_mkQ, f4IntegralDividedAdjointSquare_quotientLift_mkQ]
 
 /-- Scalar extension of the pinned coordinate equivalence from the modular quotient to the
 short-root ideal. -/
@@ -270,11 +254,8 @@ theorem f4ShortRootExponential_basis_apply {A : Type*} [CommRing A] [Algebra (ZM
       (1 : A) ⊗ₜ[ZMod 2] f4ShortRootLieIdealBasis a +
         t • ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootIdealFirstColumn k a) +
         t ^ 2 • ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootIdealDividedSquareColumn k a) := by
-  have h := f4ShortRootExponential_apply (A := A) k t (f4ShortRootLieIdealBasis a)
-  have h₁ := congrArg (fun z => (1 : A) ⊗ₜ[ZMod 2] z) (f4ShortRootIdealFirstColumn_apply k a).symm
-  have h₂ := congrArg (fun z => (1 : A) ⊗ₜ[ZMod 2] z)
-    (f4ShortRootIdealDividedSquareColumn_apply k a).symm
-  exact h.trans (quadraticPolynomial_congr t rfl h₁ h₂)
+  simp only [f4ShortRootExponential_apply, f4ShortRootIdealFirstColumn_apply,
+    f4ShortRootIdealDividedSquareColumn_apply]
 
 private theorem f4ShortRootTransportedQuotientPolynomial_eq_exponential_of_short
     {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
@@ -283,26 +264,13 @@ private theorem f4ShortRootTransportedQuotientPolynomial_eq_exponential_of_short
     f4ShortRootTransportedQuotientPolynomial k t a =
       f4ShortRootExponential (isogenyReverse k) (t ^ isogenyExponent k)
         ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootLieIdealBasis a) := by
-  let u₀ := (1 : A) ⊗ₜ[ZMod 2] f4ShortRootLieIdealBasis a
-  let i₁ := (1 : A) ⊗ₜ[ZMod 2] f4ShortRootIdealFirstColumn (isogenyReverse k) a
-  have hleft : f4ShortRootTransportedQuotientPolynomial k t a = u₀ + t ^ 2 • i₁ := by
-    unfold f4ShortRootTransportedQuotientPolynomial
-    have h := quadraticPolynomial_congr t (rfl : u₀ = u₀) (congrArg (fun z => (1 : A) ⊗ₜ[ZMod 2] z)
-        (f4ShortRootQuotientToIdealEquiv_firstColumn_eq_zero_of_short k hk a))
-      (congrArg (fun z => (1 : A) ⊗ₜ[ZMod 2] z)
-        (f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_short k hk a))
-    simpa only [TensorProduct.tmul_zero, smul_zero, add_zero] using h
-  have hright : f4ShortRootExponential (isogenyReverse k) (t ^ 2) u₀ =
-      u₀ + t ^ 2 • i₁ := by
-    have h := (f4ShortRootExponential_basis_apply (A := A) (isogenyReverse k) (t ^ 2) a).trans
-      (quadraticPolynomial_congr (t ^ 2) (rfl : u₀ = u₀) (rfl : i₁ = i₁)
-        (congrArg (fun z => (1 : A) ⊗ₜ[ZMod 2] z)
-          (f4ShortRootIdealDividedSquareColumn_eq_zero_of_long (isogenyReverse k)
-            (f4Length_isogenyReverse_eq_two_of_short k hk) a)))
-    simpa only [TensorProduct.tmul_zero, smul_zero, add_zero] using h
-  exact hleft.trans (hright.symm.trans (congrArg
-    (fun u => f4ShortRootExponential (isogenyReverse k) u u₀)
-    (congrArg (t ^ ·) (isogenyExponent_eq_two_of_short k hk)).symm))
+  simp only [isogenyExponent_eq_two_of_short k hk, f4ShortRootExponential_basis_apply,
+    f4ShortRootIdealDividedSquareColumn_eq_zero_of_long (isogenyReverse k)
+      (f4Length_isogenyReverse_eq_two_of_short k hk) a,
+    f4ShortRootTransportedQuotientPolynomial,
+    f4ShortRootQuotientToIdealEquiv_firstColumn_eq_zero_of_short k hk a,
+    f4ShortRootQuotientToIdealEquiv_dividedSquare_eq_firstColumn_of_short k hk a,
+    TensorProduct.tmul_zero, smul_zero, add_zero]
 
 private theorem f4ShortRootTransportedQuotientPolynomial_eq_exponential_of_long
     {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
@@ -311,22 +279,10 @@ private theorem f4ShortRootTransportedQuotientPolynomial_eq_exponential_of_long
     f4ShortRootTransportedQuotientPolynomial k t a =
       f4ShortRootExponential (isogenyReverse k) (t ^ isogenyExponent k)
         ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootLieIdealBasis a) := by
-  have hexp : t ^ isogenyExponent k = t := by
-    rw [isogenyExponent_eq_one_of_long k hk, pow_one]
-  have htarget := f4ShortRootExponential_basis_apply (A := A) (isogenyReverse k) t a
-  have hcoeff : f4ShortRootTransportedQuotientPolynomial k t a =
-      (1 : A) ⊗ₜ[ZMod 2] f4ShortRootLieIdealBasis a +
-        t • ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootIdealFirstColumn (isogenyReverse k) a) +
-        t ^ 2 • ((1 : A) ⊗ₜ[ZMod 2]
-          f4ShortRootIdealDividedSquareColumn (isogenyReverse k) a) :=
-    quadraticPolynomial_congr t rfl
-      (congrArg (fun z => (1 : A) ⊗ₜ[ZMod 2] z)
-        (f4ShortRootQuotientToIdealEquiv_firstColumn_of_long k hk a))
-      (congrArg (fun z => (1 : A) ⊗ₜ[ZMod 2] z)
-        (f4ShortRootQuotientToIdealEquiv_dividedSquare_of_long k hk a))
-  exact hcoeff.trans (htarget.symm.trans (congrArg
-    (fun u => f4ShortRootExponential (isogenyReverse k) u
-      ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootLieIdealBasis a)) hexp.symm))
+  simp only [isogenyExponent_eq_one_of_long k hk, pow_one, f4ShortRootExponential_basis_apply,
+    f4ShortRootTransportedQuotientPolynomial,
+    f4ShortRootQuotientToIdealEquiv_firstColumn_of_long k hk a,
+    f4ShortRootQuotientToIdealEquiv_dividedSquare_of_long k hk a]
 
 /-- The transported canonical quotient-column polynomial is the target short-root exponential
 with the special-isogeny parameter exponent. -/
@@ -351,37 +307,10 @@ theorem f4ShortRootQuotient_rootExponential_pinning
             ((1 : A) ⊗ₜ[ℤ] f4IntegralShortRootQuotientLift a))) =
       f4ShortRootExponential (isogenyReverse k) (t ^ isogenyExponent k)
         ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootLieIdealBasis a) := by
-  let E := f4ShortRootQuotientToIdealBaseChange (A := A)
-  have hpoly := congrArg E
-    (f4ShortRootBaseChangeQuotient_rootExponential_quotientColumns
-      (A := A) k t a)
-  have h₀ : E ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootQuotientBasis a) =
-      (1 : A) ⊗ₜ[ZMod 2] f4ShortRootLieIdealBasis a := by
-    calc
-      _ = (1 : A) ⊗ₜ[ZMod 2]
-          f4ShortRootQuotientToIdealEquiv (f4ShortRootQuotientBasis a) :=
-        LinearMap.baseChange_tmul f4ShortRootQuotientToIdealEquiv.toLinearMap 1 _
-      _ = _ := congrArg (fun z => (1 : A) ⊗ₜ[ZMod 2] z)
-        (f4ShortRootQuotientToIdealEquiv_basis a)
-  have h₁ : E ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootQuotientFirstColumn k a) =
-      (1 : A) ⊗ₜ[ZMod 2]
-        f4ShortRootQuotientToIdealEquiv (f4ShortRootQuotientFirstColumn k a) :=
-    LinearMap.baseChange_tmul f4ShortRootQuotientToIdealEquiv.toLinearMap 1 _
-  have h₂ : E ((1 : A) ⊗ₜ[ZMod 2]
-      f4ShortRootQuotientDividedSquareColumn k a) =
-      (1 : A) ⊗ₜ[ZMod 2]
-        f4ShortRootQuotientToIdealEquiv
-          (f4ShortRootQuotientDividedSquareColumn k a) :=
-    LinearMap.baseChange_tmul f4ShortRootQuotientToIdealEquiv.toLinearMap 1 _
-  have hmap :
-      E ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootQuotientBasis a +
-          t • ((1 : A) ⊗ₜ[ZMod 2] f4ShortRootQuotientFirstColumn k a) +
-          t ^ 2 • ((1 : A) ⊗ₜ[ZMod 2]
-            f4ShortRootQuotientDividedSquareColumn k a)) =
-        f4ShortRootTransportedQuotientPolynomial k t a := by
-    exact (LinearMap.map_quadraticPolynomial E t _ _ _).trans
-      (quadraticPolynomial_congr t h₀ h₁ h₂)
-  exact hpoly.trans (hmap.trans (f4ShortRootQuotientColumns_eq_exponential k t a))
+  refine Eq.trans ?_ (f4ShortRootQuotientColumns_eq_exponential k t a)
+  simp only [f4ShortRootBaseChangeQuotient_rootExponential_quotientColumns,
+    f4ShortRootTransportedQuotientPolynomial, map_add, map_smul,
+    f4ShortRootQuotientToIdealBaseChange_tmul, f4ShortRootQuotientToIdealEquiv_basis]
 
 end
 

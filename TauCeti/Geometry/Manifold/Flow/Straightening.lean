@@ -80,7 +80,7 @@ theorem exists_chart_mfderiv_eq_const {m : ℕ∞} {n : ℕ∞ω} (hm : 1 ≤ m)
     rw [mem_preimage, he₀, extChartAt_to_inv]
     exact mem_interior_iff_mem_nhds.2 hU
   have hwS : ContDiffOn ℝ m w S :=
-    (hv.mono interior_subset).contDiffOn_mpullback_extChartAt_symm isOpen_interior hmn
+    (hv.mono interior_subset).contDiffOn_mpullback_extChartAt_symm hmn
   -- At `e₀ y`, the coordinate field is the image of `v y` under the differential of `e₀`.
   have hwe (y : M) (hy : y ∈ e₀.source) : w (e₀ y) = mfderiv I 𝓘(ℝ, E) e₀ y (v y) :=
     mpullback_extChartAt_symm_apply_eq_mfderiv v hy

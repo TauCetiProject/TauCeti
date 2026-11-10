@@ -6,14 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLogExp
+public import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 
 /-!
 # Negative exponential on the extended nonnegative reals
 
 `ENNReal.expNeg` takes values in `ℝ≥0`, agrees with the negative exponential at finite
 arguments, and vanishes at infinity. It is continuous, antitone, and converts addition
-into multiplication. The value at infinity permits Laplace functionals of measures
-without assuming that every test integral is finite.
+into multiplication, also for infinite sums and products. The value at infinity permits
+Laplace functionals of measures without assuming that every test integral is finite.
 
 The construction uses Mathlib's `EReal.exp`, including its continuity at minus infinity.
 -/
@@ -70,6 +71,24 @@ theorem expNeg_le_one (x : ℝ≥0∞) : expNeg x ≤ 1 := by
   intro x
   exact (ENNReal.tendsto_toNNReal (by simp : EReal.exp (-x.toEReal) ≠ ∞)).comp
     (ENNReal.continuous_exp.continuousAt.comp (continuous_coe_ennreal_ereal.continuousAt.neg))
+
+/-- A finite sum becomes a product, including infinite summands. -/
+theorem expNeg_sum {ι : Type*} (s : Finset ι) (a : ι → ℝ≥0∞) :
+    expNeg (∑ i ∈ s, a i) = ∏ i ∈ s, expNeg (a i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih => simp [hi, ih]
+
+/-- The negative exponential of an extended nonnegative series is the infinite product
+of the negative exponentials. Divergent series give a zero product. -/
+theorem coe_expNeg_tsum {ι : Type*} (a : ι → ℝ≥0∞) :
+    (expNeg (∑' i, a i) : ℝ≥0∞) = ∏' i, (expNeg (a i) : ℝ≥0∞) := by
+  have h := (continuous_coe.comp continuous_expNeg).continuousAt.tendsto.comp
+    (CompleteLattice.summable.hasSum (f := a))
+  simp only [Function.comp_def, expNeg_sum, ofNNReal_finsetProd] at h
+  exact tendsto_nhds_unique h (ENNReal.multipliable_of_le_one
+    (fun i ↦ coe_le_one_iff.mpr (expNeg_le_one (a i)))).hasProd
 
 /-- Measurability of the extended negative exponential. -/
 @[fun_prop] theorem measurable_expNeg : Measurable expNeg := continuous_expNeg.measurable

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RepresentationTheory.Homological.GroupCohomology.Functoriality
+public import Mathlib.RepresentationTheory.Homological.GroupCohomology.LongExactSequence
 public import TauCeti.RepresentationTheory.Homological.Augmentation.Basic
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.LowDegree
 public import TauCeti.RepresentationTheory.Rep.TensorShortExact
@@ -41,6 +42,9 @@ It is adapted to Mathlib's `Rep` and low-degree cohomology API from
   splitting-module sequence is short exact, also after restriction.
 * `Rep.map_splittingModuleIncl_res_eq_zero`: after restriction along any group homomorphism, the
   defining class maps to zero in the splitting module's second cohomology.
+* `Rep.surjective_connecting_res_splittingModule`: the connecting map `H¹(H, I_G) → H²(H, A)` of
+  the splitting-module sequence restricted along `f : H → G` is onto when `H²(H, A)` is generated
+  by the restriction of the defining class.
 -/
 
 public noncomputable section
@@ -331,5 +335,25 @@ theorem map_splittingModuleIncl_res_eq_zero {H : Type u} [Group H] (f : H →* G
 theorem map_splittingModuleIncl_eq_zero :
     groupCohomology.map (MonoidHom.id G) (splittingModuleIncl A u) 2 u = 0 := by
   exact map_splittingModuleIncl_res_eq_zero A u (MonoidHom.id G)
+
+/-- The connecting map `H¹(H, I_G) → H²(H, A)` of the splitting module sequence restricted along a
+group homomorphism `f : H → G` is onto: `u` restricts to a generator of `H²(H, A)` and dies in the
+splitting module. -/
+theorem surjective_connecting_res_splittingModule {H : Type u} [Group H] (f : H →* G)
+    (hgen : ∀ x : groupCohomology (res f A) 2,
+      ∃ r : k, r • groupCohomology.map f (𝟙 (res f A)) 2 u = x)
+    (hX : ((ShortComplex.mk (splittingModuleIncl A u) (splittingModuleProj A u)
+      (splittingModuleIncl_comp_splittingModuleProj A u)).map (resFunctor f)).ShortExact) :
+    Function.Surjective (groupCohomology.δ hX 1 2 rfl) := by
+  have hex₁ := (ShortComplex.moduleCat_exact_iff _).1
+    (groupCohomology.mapShortComplex₁_exact hX (i := 1) (j := 2) rfl)
+  intro x
+  obtain ⟨r, rfl⟩ := hgen x
+  have hcomp := groupCohomology.map_comp f (MonoidHom.id H) (𝟙 (res f A))
+    ((resFunctor f).map (splittingModuleIncl A u)) 2
+  obtain ⟨y, hy⟩ := hex₁ (groupCohomology.map f (𝟙 (res f A)) 2 u)
+    ((ConcreteCategory.congr_hom hcomp u).symm.trans
+      (map_splittingModuleIncl_res_eq_zero A u f))
+  exact ⟨r • y, (map_smul (groupCohomology.δ hX 1 2 rfl).hom r y).trans (congrArg _ hy)⟩
 
 end Rep

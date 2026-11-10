@@ -19,10 +19,18 @@ Interval integrals of elementary functions in closed form or as series, continui
 
 ## Main declarations
 
+* `TauCeti.intervalIntegrable_sub_const_rpow`: the weight `(x - c)^r` is interval integrable on
+  every interval, for `r > -1`;
+* `TauCeti.integral_sub_const_rpow`: `∫ x in a..b, (x - a)^r = (b - a)^(r + 1) / (r + 1)` for
+  `r > -1`;
 * `TauCeti.intervalIntegrable_sub_rpow`, `TauCeti.integral_sub_rpow`:
   `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
 * `TauCeti.integral_sub_rpow_le_of_lt_neg_one`: `∫ x in a..b - c, (b - x)^r ≤ c^(r + 1) / -(r + 1)`
   for `r < -1`.
+* `TauCeti.integral_const_mul_rpow_le`: `∫ t in δ..1, c * t ^ T ≤ c / (T + 1)` for `T > -1`,
+  `c ≥ 0` and `δ ≥ 0`.
+* `TauCeti.integral_add_rpow_le_of_lt_neg_one`: `∫ s in 0..β, (r + s) ^ S ≤ r ^ (S + 1) / -(S + 1)`
+  for `0 < r`, `0 ≤ β` and `S < -1`.
 * `TauCeti.norm_integral_le_of_ae_norm_le_mul_sub_rpow`: an integral over `[0, t' - h]` of a
   function bounded by `A h (t' - s)^((α - 4)/2)` is at most `2 / (2 - α) A h^(α/2)` for `α < 2`.
 * `TauCeti.integral_one_div_sqrt_one_sub_sq`: `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`
@@ -55,6 +63,19 @@ open scoped Nat
 
 namespace TauCeti
 
+/-- The weight `(x - c)^r`, singular at `x = c`, is interval integrable between `a` and `b` for
+`r > -1`, wherever `c` lies. -/
+theorem intervalIntegrable_sub_const_rpow {r : ℝ} (hr : -1 < r) (c a b : ℝ) :
+    IntervalIntegrable (fun x => (x - c) ^ r) MeasureTheory.volume a b := by
+  simpa using
+    (intervalIntegral.intervalIntegrable_rpow' hr (a := a - c) (b := b - c)).comp_sub_right c
+
+/-- `∫ x in a..b, (x - a)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`. -/
+theorem integral_sub_const_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
+    ∫ x in a..b, (x - a) ^ r = (b - a) ^ (r + 1) / (r + 1) := by
+  rw [intervalIntegral.integral_comp_sub_right (fun x => x ^ r), sub_self,
+    integral_rpow (Or.inl hr), Real.zero_rpow (by linarith : r + 1 ≠ 0), sub_zero]
+
 /-- The weight `(b - x)^r`, singular at `x = b`, is interval integrable between `a` and `b` for
 `r > -1`. -/
 theorem intervalIntegrable_sub_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
@@ -67,19 +88,46 @@ theorem integral_sub_rpow {r : ℝ} (hr : -1 < r) (a b : ℝ) :
   rw [intervalIntegral.integral_comp_sub_left (fun x => x ^ r), sub_self,
     integral_rpow (Or.inl hr), Real.zero_rpow (by linarith : r + 1 ≠ 0), sub_zero]
 
+open MeasureTheory Set in
 /-- Away from the singularity, the weight `(b - x)^r` with `r < -1` has integral at most
-`c^(r + 1) / -(r + 1)` over `[a, b - c]`, uniformly in `a`. -/
-theorem integral_sub_rpow_le_of_lt_neg_one {r a b c : ℝ} (hr : r < -1) (hc : 0 < c)
-    (hcb : c ≤ b - a) :
+`c^(r + 1) / -(r + 1)` over `[a, b - c]`, uniformly in `a`. (If `a ≥ b`, the pole `x = b` lies in
+the interval of integration, the integrand is not integrable and the integral is `0`.) -/
+theorem integral_sub_rpow_le_of_lt_neg_one {r a b c : ℝ} (hr : r < -1) (hc : 0 < c) :
     ∫ x in a..b - c, (b - x) ^ r ≤ c ^ (r + 1) / -(r + 1) := by
-  have hval : ∫ x in a..b - c, (b - x) ^ r = (c ^ (r + 1) - (b - a) ^ (r + 1)) / -(r + 1) := by
-    rw [intervalIntegral.integral_comp_sub_left (fun x => x ^ r), sub_sub_cancel,
-      integral_rpow (Or.inr ⟨by linarith, Set.notMem_uIcc_of_lt hc (hc.trans_le hcb)⟩),
-      div_neg, ← neg_div, neg_sub]
   have hr₁ : 0 < -(r + 1) := by linarith
-  rw [hval]
-  gcongr
-  exact sub_le_self _ (Real.rpow_nonneg (hc.le.trans hcb) _)
+  rcases lt_or_ge 0 (b - a) with hba | hba
+  · have hval : ∫ x in a..b - c, (b - x) ^ r = (c ^ (r + 1) - (b - a) ^ (r + 1)) / -(r + 1) := by
+      rw [intervalIntegral.integral_comp_sub_left (fun x => x ^ r), sub_sub_cancel,
+        integral_rpow (Or.inr ⟨by linarith, Set.notMem_uIcc_of_lt hc hba⟩),
+        div_neg, ← neg_div, neg_sub]
+    rw [hval]
+    gcongr
+    exact sub_le_self _ (Real.rpow_nonneg hba.le _)
+  · -- the pole `x = b` lies in the interval of integration, so the integral is the junk value `0`
+    have hnot : ¬ IntervalIntegrable (fun x => (b - x) ^ r) volume a (b - c) := by
+      intro h
+      have h1 := (h.comp_sub_left b)
+      simp only [sub_sub_cancel] at h1
+      have h2 : IntervalIntegrable (fun x : ℝ => x ^ r) volume 0 c :=
+        h1.mono_set (by
+          rw [uIcc_of_le hc.le, uIcc_of_le (hba.trans hc.le)]
+          exact Icc_subset_Icc hba le_rfl)
+      rw [intervalIntegrable_iff_integrableOn_Ioo_of_le hc.le,
+        intervalIntegral.integrableOn_Ioo_rpow_iff hc] at h2
+      linarith
+    rw [intervalIntegral.integral_undef hnot]
+    positivity
+
+/-- For `-1 < T`, a nonnegative constant `c` and `0 ≤ δ`, the integral of `c * t ^ T` over
+`[δ, 1]` is at most `c / (T + 1)`. -/
+theorem integral_const_mul_rpow_le {T c δ : ℝ} (hT : -1 < T) (hc : 0 ≤ c) (hδ : 0 ≤ δ) :
+    (∫ t in δ..1, c * t ^ T) ≤ c / (T + 1) := by
+  rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inl hT), Real.one_rpow]
+  have hδpow : 0 ≤ δ ^ (T + 1) := Real.rpow_nonneg hδ _
+  have hT1 : 0 < T + 1 := by linarith
+  calc
+    c * ((1 - δ ^ (T + 1)) / (T + 1)) ≤ c * (1 / (T + 1)) := by gcongr; linarith
+    _ = c / (T + 1) := by rw [mul_one_div]
 
 open MeasureTheory Real Set in
 open scoped Interval in
@@ -107,7 +155,7 @@ theorem norm_integral_le_of_ae_norm_le_mul_sub_rpow {G : Type*} [NormedAddCommGr
   calc A * h * ∫ s in 0..t' - h, (t' - s) ^ ((α - 4) / 2)
       ≤ A * h * (h ^ ((α - 4) / 2 + 1) / -((α - 4) / 2 + 1)) := by
         gcongr
-        exact integral_sub_rpow_le_of_lt_neg_one (by linarith) hh (by linarith)
+        exact integral_sub_rpow_le_of_lt_neg_one (by linarith) hh
     _ = 2 / (2 - α) * A * h ^ (α / 2) := by
         rw [← hpow, show -((α - 4) / 2 + 1) = (2 - α) / 2 by ring]
         field_simp
@@ -357,6 +405,15 @@ theorem integral_comp_sin_sq_add_int_mul_pi (G : ℝ → ℝ)
           2 * n * ∫ θ in (0 : ℝ)..Real.pi / 2, G (Real.sin θ ^ 2) := by
         rw [integral_comp_sin_sq_neg_pi_div_two G hG]
         ring
+
+/-- For `S < -1`, the integral of `(r + s) ^ S` over `[0, β]` is at most `r ^ (S + 1) / -(S + 1)`,
+uniformly in `β`. -/
+theorem integral_add_rpow_le_of_lt_neg_one {r β S : ℝ} (hr : 0 < r) (hS : S < -1) :
+    ∫ s in (0 : ℝ)..β, (r + s) ^ S ≤ r ^ (S + 1) / -(S + 1) := by
+  have h := integral_sub_rpow_le_of_lt_neg_one (a := 0) (b := r + β) (c := r) hS hr
+  rw [intervalIntegral.integral_comp_sub_left (fun x : ℝ => x ^ S) (r + β)] at h
+  rw [intervalIntegral.integral_comp_add_left (fun x : ℝ => x ^ S) r]
+  convert h using 2 <;> ring
 
 end TauCeti
 

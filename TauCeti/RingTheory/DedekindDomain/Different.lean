@@ -156,7 +156,7 @@ inseparable or `e(P ∣ p)` vanishes in the residue field `A ⧸ p`. -/
 theorem ramificationIdx_le_multiplicity_differentIdeal_iff :
     P.ramificationIdx A ≤ multiplicity P (differentIdeal A B) ↔
       ¬ Algebra.IsSeparable (A ⧸ p) (B ⧸ P) ∨ ((P.ramificationIdx A : ℕ) : A ⧸ p) = 0 := by
-  rw [← pow_dvd_differentIdeal_iff_le_multiplicity A (Ideal.ne_bot_of_liesOver_of_ne_bot hp P),
+  rw [← pow_dvd_differentIdeal_iff_le_multiplicity A Ideal.IsPrime.ne_top',
     pow_ramificationIdx_dvd_differentIdeal_iff A hp P]
 
 /-- **Dedekind's different theorem, the tame case, as an exponent**: the multiplicity of `P` in
@@ -165,7 +165,7 @@ the different ideal is exactly `e(P ∣ p) - 1` when the residue extension is se
 theorem multiplicity_differentIdeal_eq_ramificationIdx_sub_one_iff :
     multiplicity P (differentIdeal A B) = P.ramificationIdx A - 1 ↔
       Algebra.IsSeparable (A ⧸ p) (B ⧸ P) ∧ ((P.ramificationIdx A : ℕ) : A ⧸ p) ≠ 0 := by
-  have hle := ramificationIdx_sub_one_le_multiplicity_differentIdeal A hp P
+  have hle := ramificationIdx_sub_one_le_multiplicity_differentIdeal A P
   have hpos := Ideal.ramificationIdx_pos A P
   rw [← not_not (a := Algebra.IsSeparable (A ⧸ p) (B ⧸ P)), ne_eq, ← not_or,
     ← ramificationIdx_le_multiplicity_differentIdeal_iff A hp P]

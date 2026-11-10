@@ -73,7 +73,7 @@ theorem coe_algebraicAnalyticDiffeomorph (n : ℕ∞ω) :
     letI := algebraicComplexPointChartedSpace hΦ
     letI := Φ.analyticChartedSpace hΦ
     ⇑(algebraicAnalyticDiffeomorph hΦ n) = algebraicAnalyticEquiv hΦ := by
-  simp only [algebraicAnalyticDiffeomorph, coe_diffeomorphOfBijective,
+  simp only [algebraicAnalyticDiffeomorph, IsLocalDiffeomorph.coe_diffeomorphOfBijective,
     coe_algebraicAnalyticHomeomorph]
 
 /-- The inverse biholomorphism is the inverse chartwise comparison. -/

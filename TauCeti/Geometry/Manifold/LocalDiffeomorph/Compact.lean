@@ -18,7 +18,7 @@ import TauCeti.Topology.Covering.Compact
 A local diffeomorphism `f : M → N` from a compact connected Hausdorff manifold, real or complex, to
 a simply connected Hausdorff manifold is bijective, so by Mathlib's
 `IsLocalDiffeomorph.diffeomorphOfBijective` it is a diffeomorphism, whose forward map is `f` by
-`TauCeti.coe_diffeomorphOfBijective`. This is the topological statement
+`IsLocalDiffeomorph.coe_diffeomorphOfBijective`. This is the topological statement
 `IsLocalHomeomorph.bijective_of_compactSpace`, which applies because a manifold modelled on a real
 normed space is locally path-connected, so a connected one is path-connected.
 

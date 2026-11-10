@@ -587,7 +587,7 @@ theorem connectedAtInfinity_of_subsingleton_endComponents [Subsingleton (EndComp
       ← connectedComponentIn_eq (hV (V.antitone j.zero_le hw))]
     exact mem_connectedComponentIn hy
   -- That component is open and connected, hence path-connected.
-  exact (hL.isClosed.isOpen_compl.joinedIn_of_mem_connectedComponentIn hx hxy).mono
+  exact (hL.isClosed.isOpen_compl.joinedIn_of_mem_connectedComponentIn hxy).mono
     ((connectedComponentIn_subset _ _).trans (compl_subset_compl.2 (hKL.trans interior_subset)))
 
 /-- **Connectedness at infinity is having at most one end**, for preconnected, locally

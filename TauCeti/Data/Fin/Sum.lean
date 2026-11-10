@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Basic.Finite.Defs
 public import Mathlib.Logic.Embedding.Basic
 public import Mathlib.Logic.Equiv.Defs
+import Mathlib.Data.Fintype.BigOperators
 import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Logic.Equiv.Fin.Basic
 
@@ -21,7 +23,8 @@ an API indexed by `Fin n`.
 
 More generally, an embedding of a type `α` into a finite type `β` identifies `β` with the sum of
 `α` and a finite complementary type `Fin l`. This packages the standard splitting of a finite
-type along the range of an embedding.
+type along the range of an embedding. Likewise, a dependent sum of blocks `Fin (m i)` over a
+finite index type is equivalent to `Fin n` as soon as the block sizes add up to `n`.
 
 The two `Unit`-sum equivalences are Mathlib's own compositions — `finOneEquiv` on each summand,
 then `finSumFinEquiv` — given a name and their evaluation lemmas, so that call sites reindexing a
@@ -35,12 +38,15 @@ two- or three-variable object can rewrite rather than unfold them.
   sending the outer left summand to `0` and the two inner ones to `1` and `2`.
 * `Function.Embedding.exists_equiv_sum_fin`: an embedding into a finite type extends to an
   equivalence from the sum with a finite complement.
+* `TauCeti.nonempty_sigmaFinEquiv`: blocks `Fin (m i)` whose sizes add up to `n` together form a
+  type equivalent to `Fin n`.
 
 ## Implementation notes
 
-The constructions are implementation details: `Mathlib.Data.Fintype.EquivFin` and
-`Mathlib.Logic.Equiv.Fin.Basic` are imported privately rather than re-exported. Only the
-finiteness, equivalence and embedding interfaces needed by the declaration types are public.
+The constructions are implementation details: `Mathlib.Data.Fintype.BigOperators`,
+`Mathlib.Data.Fintype.EquivFin` and `Mathlib.Logic.Equiv.Fin.Basic` are imported privately rather
+than re-exported. Only the finite sum, finiteness, equivalence and embedding interfaces needed by
+the declaration types are public.
 -/
 
 public section
@@ -113,5 +119,10 @@ theorem unitSumUnitSumUnitEquivFinThree_symm_one :
 @[simp]
 theorem unitSumUnitSumUnitEquivFinThree_symm_two :
     unitSumUnitSumUnitEquivFinThree.symm 2 = Sum.inr (Sum.inr ()) := by decide
+
+/-- A sigma type of finite sets whose cardinalities add up to `n` is equivalent to `Fin n`. -/
+theorem nonempty_sigmaFinEquiv {ι : Type*} [Fintype ι] {m : ι → ℕ} {n : ℕ}
+    (hn : ∑ i, m i = n) : Nonempty ((Σ i, Fin (m i)) ≃ Fin n) :=
+  ⟨Fintype.equivFinOfCardEq (by simpa using hn)⟩
 
 end TauCeti

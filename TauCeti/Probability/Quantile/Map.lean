@@ -89,7 +89,7 @@ theorem quantile_map_of_monotoneOn [IsProbabilityMeasure μ] (hs : s.OrdConnecte
   have hq := hs.quantile_mem hμs h0 h1
   refine le_antisymm ((quantile_le_iff _ h0 h1).2 ?_) (le_of_not_gt fun hlt ↦ ?_)
   · -- Every point of `s` below the quantile is sent below its image.
-    rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hgm measurableSet_Iic]
+    rw [Measure.cdf_map _ _ hgm]
     refine (le_cdf_quantile μ h1).trans ?_
     rw [cdf_eq_real]
     exact ENNReal.toReal_mono (measure_ne_top _ _)
@@ -100,7 +100,7 @@ theorem quantile_map_of_monotoneOn [IsProbabilityMeasure μ] (hs : s.OrdConnecte
       (eventually_nhdsWithin_iff.1 ((hgc _ hq).eventually (lt_mem_nhds hlt)))
       ⟨μ.quantile t - 1, by linarith⟩
     refine ((lt_quantile_iff μ h0 h1).1 hlq).not_ge ((le_cdf_quantile (μ.map g) h1).trans ?_)
-    rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hgm measurableSet_Iic, cdf_eq_real]
+    rw [Measure.cdf_map _ _ hgm, cdf_eq_real]
     refine ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono_ae (hμs.mono fun x hx hxy ↦ ?_))
     simp only [mem_preimage, mem_Iic] at hxy ⊢
     by_contra! hxl
@@ -125,13 +125,13 @@ theorem upperQuantile_map_of_monotoneOn [IsProbabilityMeasure μ] (hs : s.OrdCon
       (eventually_nhdsWithin_iff.1 ((hgc _ hp).eventually (gt_mem_nhds hy)))
       ⟨μ.upperQuantile t + 1, by linarith⟩
     refine upperQuantile_le_of_lt_cdf _ h0 (((upperQuantile_lt_iff μ h0 h1).1 hpr).trans_le ?_)
-    rw [cdf_eq_real, map_measureReal_apply_of_aemeasurable hgm measurableSet_Iic]
+    rw [Measure.cdf_map _ _ hgm]
     refine ENNReal.toReal_mono (measure_ne_top _ _) (measure_mono_ae (hμs.mono fun x hx hxr ↦ ?_))
     rcases le_or_gt (μ.upperQuantile t) x with hpx | hxp
     · exact (hr ⟨hpx, hxr⟩ hx).le
     · exact (hg hx hp hxp.le).trans hy.le
   · -- A point of `s` sent strictly below the image of the upper quantile lies strictly below it.
-    refine le_trans ?_ (measureReal_Iio_upperQuantile_le μ h0 h1)
+    refine le_trans ?_ (measureReal_Iio_upperQuantile_le μ h0)
     rw [map_measureReal_apply_of_aemeasurable hgm measurableSet_Iio]
     exact ENNReal.toReal_mono (measure_ne_top _ _)
       (measure_mono_ae (hμs.mono fun x hx hxp ↦ lt_of_not_ge fun hpx ↦
@@ -164,8 +164,7 @@ theorem upperQuantile_map_of_monotone [IsProbabilityMeasure μ] (hg : Monotone g
   have hpre : (Neg.neg ⁻¹' Iic y : Set ℝ) = (Iio (-y))ᶜ := by
     ext x
     simp
-  rw [quantile_le_iff _ h0 h1, cdf_eq_real, neg_def,
-    map_measureReal_apply measurable_neg measurableSet_Iic, hpre,
+  rw [quantile_le_iff _ h0 h1, neg_def, Measure.cdf_map _ _ measurable_neg.aemeasurable, hpre,
     measureReal_compl measurableSet_Iio, probReal_univ, neg_le,
     le_upperQuantile_iff μ (by linarith) (by linarith)]
   constructor <;> intro h <;> linarith
@@ -232,14 +231,12 @@ private theorem map_eq_map_neg_comp (hs : s.OrdConnected)
       (∀ᵐ x ∂μ.neg, x ∈ Neg.neg ⁻¹' s) ∧
       MonotoneOn (g ∘ Neg.neg) (Neg.neg ⁻¹' s) ∧ ContinuousOn (g ∘ Neg.neg) (Neg.neg ⁻¹' s) := by
   have hae : ∀ᵐ x ∂μ.neg, x ∈ Neg.neg ⁻¹' s := by
-    exact μ.ae_neg_mem_preimage hs.measurableSet hμs
+    exact μ.ae_neg_mem_preimage hμs
   have hmono : MonotoneOn (g ∘ Neg.neg) (Neg.neg ⁻¹' s) :=
     fun x hx y hy hxy ↦ hg hy hx (neg_le_neg hxy)
   refine ⟨?_, hs.preimage_anti fun _ _ ↦ neg_le_neg, hae, hmono,
     hgc.comp continuousOn_neg fun _ hx ↦ hx⟩
-  have hgm : AEMeasurable (g ∘ Neg.neg) μ.neg := restrict_eq_self_of_ae_mem hae ▸
-    aemeasurable_restrict_of_monotoneOn (measurable_neg hs.measurableSet) hmono
-  exact (μ.map_neg_comp hgm).symm
+  exact μ.map_neg_comp.symm
 
 /-- **Quantiles of a nonincreasing image.** If `g` is nonincreasing and continuous on an interval
 carrying all the mass of `μ`, then at every level strictly between `0` and `1` the quantile of the
