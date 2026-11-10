@@ -9,9 +9,11 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
+import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Bilinear
 import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
+import TauCeti.Analysis.Calculus.IteratedFDeriv.ContinuousLinearMapInverse
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -55,10 +57,12 @@ sector of spectral parameters, as used for contour integrals, lies in a slightly
 
 The estimates are proved at one point `p = ((x, ξ), z)` at a time. Pulling a function back along
 `v ↦ p + parameterDilation n t v`, with `t` the weight at `p`, turns the dilated derivatives at
-`p` into ordinary iterated derivatives at `0`, where Mathlib's Leibniz bound
-`ContinuousLinearMap.norm_iteratedFDerivWithin_le_of_bilinear` applies. The inverse estimates
-follow by induction on the order from `∂ᵤ(a⁻¹) = -a⁻¹ (∂ᵤ a) a⁻¹`, as for the cut-off inverse
-`TauCeti.Symbol.cutoffInverse` of a symbol.
+`p` into ordinary iterated derivatives at `0`
+(`TauCeti.parameterIteratedFDeriv_eq_iteratedFDeriv_comp`), where the uniform Leibniz bound
+`TauCeti.exists_norm_iteratedFDeriv_bilinear_le` applies. The inverse estimates come from
+`TauCeti.exists_norm_iteratedFDeriv_clm_inverse_le`, an induction on the order from
+`∂ᵤ(a⁻¹) = -a⁻¹ (∂ᵤ a) a⁻¹`, as for the cut-off inverse `TauCeti.Symbol.cutoffInverse` of a
+symbol.
 
 ## References
 
@@ -134,6 +138,25 @@ def parameterIteratedFDeriv {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ 
   (iteratedFDeriv ℝ k f p).compContinuousLinearMap fun _ =>
     parameterDilation n (parameterWeight p.1.2 p.2)
 
+/-- The dilated derivative evaluated on directions `v`: the ordinary derivative evaluated on the
+dilated directions. -/
+theorem parameterIteratedFDeriv_apply {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
+    (k : ℕ) (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A)
+    (p : (CoordinateSpace n × CoordinateSpace n) × ℂ)
+    (v : Fin k → (CoordinateSpace n × CoordinateSpace n) × ℂ) :
+    parameterIteratedFDeriv k f p v =
+      iteratedFDeriv ℝ k f p fun i => parameterDilation n (parameterWeight p.1.2 p.2) (v i) := by
+  simp only [parameterIteratedFDeriv, ContinuousMultilinearMap.compContinuousLinearMap_apply]
+
+/-- The dilated derivative of order `0` is the value of the function. -/
+@[simp]
+theorem parameterIteratedFDeriv_zero_apply {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
+    (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A)
+    (p : (CoordinateSpace n × CoordinateSpace n) × ℂ)
+    (v : Fin 0 → (CoordinateSpace n × CoordinateSpace n) × ℂ) :
+    parameterIteratedFDeriv 0 f p v = f p := by
+  simp [parameterIteratedFDeriv_apply]
+
 /-! ### Estimates
 
 The estimates below are proved at one point `p` at a time, by pulling the function back along the
@@ -163,17 +186,25 @@ private theorem iteratedFDeriv_comp_dilation (f : (CoordinateSpace n × Coordina
 
 /-- The dilated derivative at `p` is the ordinary derivative at `0` of the pullback along
 `v ↦ p + parameterDilation n t v`, `t` the weight at `p`. -/
-private theorem parameterIteratedFDeriv_eq (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A)
+theorem parameterIteratedFDeriv_eq_iteratedFDeriv_comp
+    (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A)
     (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) (k : ℕ) :
     parameterIteratedFDeriv k f p = iteratedFDeriv ℝ k
       (fun v => f (p + parameterDilation n (parameterWeight p.1.2 p.2) v)) 0 :=
   (iteratedFDeriv_comp_dilation f p (parameterWeight_pos _ _).ne' k).symm
 
+/-- The dilated derivative of order `0` has the norm of the value of the function. -/
+@[simp]
+theorem norm_parameterIteratedFDeriv_zero (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A)
+    (p : (CoordinateSpace n × CoordinateSpace n) × ℂ) :
+    ‖parameterIteratedFDeriv 0 f p‖ = ‖f p‖ := by
+  simp [parameterIteratedFDeriv_eq_iteratedFDeriv_comp, Prod.mk_zero_zero]
+
 private theorem parameterIteratedFDeriv_mk_eq
     (f : (CoordinateSpace n × CoordinateSpace n) × ℂ → A) (x ξ : CoordinateSpace n) (z : ℂ)
     (k : ℕ) : parameterIteratedFDeriv k f ((x, ξ), z) = iteratedFDeriv ℝ k
       (fun v => f (((x, ξ), z) + parameterDilation n (parameterWeight ξ z) v)) 0 :=
-  parameterIteratedFDeriv_eq f _ k
+  parameterIteratedFDeriv_eq_iteratedFDeriv_comp f _ k
 
 /-- The pullback of a function smooth on `univ ×ˢ Λ` is smooth on an open neighbourhood of `0`. -/
 private theorem contDiffOn_comp_dilation {Λ : Set ℂ} (hΛ : IsOpen Λ)
@@ -188,147 +219,11 @@ private theorem contDiffOn_comp_dilation {Λ : Set ℂ} (hΛ : IsOpen Λ)
   exact hf.comp (contDiff_const.add (parameterDilation n t).contDiff).contDiffOn
     (mapsTo_preimage _ _)
 
-/-- The Leibniz rule at a point, with all derivatives of order at most `k` bounded by constants. -/
-private theorem norm_iteratedFDeriv_bilinear_le {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (B : X →L[ℝ] Y →L[ℝ] Z) {f : E → X} {g : E → Y} {U : Set E}
-    (hU : IsOpen U) {x : E} (hx : x ∈ U) (hf : ContDiffOn ℝ ∞ f U) (hg : ContDiffOn ℝ ∞ g U)
-    {k : ℕ} {M₁ M₂ : ℝ} (h₁ : ∀ i ≤ k, ‖iteratedFDeriv ℝ i f x‖ ≤ M₁)
-    (h₂ : ∀ i ≤ k, ‖iteratedFDeriv ℝ i g x‖ ≤ M₂) :
-    ‖iteratedFDeriv ℝ k (fun y => B (f y) (g y)) x‖ ≤ ‖B‖ * 2 ^ k * M₁ * M₂ := by
-  have h := B.norm_iteratedFDerivWithin_le_of_bilinear hf hg hU.uniqueDiffOn hx (n := k)
-    (by exact_mod_cast le_top)
-  rw [iteratedFDerivWithin_of_isOpen k hU hx] at h
-  refine h.trans ?_
-  calc ‖B‖ * ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * ‖iteratedFDerivWithin ℝ i f U x‖ *
-        ‖iteratedFDerivWithin ℝ (k - i) g U x‖
-      ≤ ‖B‖ * ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * M₁ * M₂ := by
-        refine mul_le_mul_of_nonneg_left (Finset.sum_le_sum fun i hi => ?_) (norm_nonneg B)
-        rw [iteratedFDerivWithin_of_isOpen i hU hx, iteratedFDerivWithin_of_isOpen (k - i) hU hx]
-        have hM₁ : 0 ≤ M₁ := (norm_nonneg _).trans (h₁ 0 (Nat.zero_le _))
-        exact mul_le_mul (mul_le_mul_of_nonneg_left
-          (h₁ i (Nat.lt_succ_iff.1 (Finset.mem_range.1 hi))) (Nat.cast_nonneg _))
-          (h₂ (k - i) (Nat.sub_le k i)) (norm_nonneg _) (mul_nonneg (Nat.cast_nonneg _) hM₁)
-    _ = ‖B‖ * 2 ^ k * M₁ * M₂ := by
-        rw [← Finset.sum_mul, ← Finset.sum_mul, ← Nat.cast_sum, Nat.sum_range_choose]
-        push_cast
-        ring
-
-/-- The Leibniz rule at a point, as a bound with a constant depending only on `B` and `k`, valid
-for all derivatives of order at most `k`. -/
-private theorem exists_norm_iteratedFDeriv_bilinear_le (E : Type*) [NormedAddCommGroup E]
-    [NormedSpace ℝ E] (B : X →L[ℝ] Y →L[ℝ] Z) (k : ℕ) :
-    ∃ C, 0 ≤ C ∧ ∀ (f : E → X) (g : E → Y) (U : Set E) (x : E), IsOpen U → x ∈ U →
-      ContDiffOn ℝ ∞ f U → ContDiffOn ℝ ∞ g U → ∀ M₁ M₂ : ℝ,
-      (∀ i ≤ k, ‖iteratedFDeriv ℝ i f x‖ ≤ M₁) → (∀ i ≤ k, ‖iteratedFDeriv ℝ i g x‖ ≤ M₂) →
-      ∀ j ≤ k, ‖iteratedFDeriv ℝ j (fun y => B (f y) (g y)) x‖ ≤ C * (M₁ * M₂) := by
-  refine ⟨‖B‖ * 2 ^ k, by positivity, fun f g U x hU hx hf hg M₁ M₂ h₁ h₂ j hj => ?_⟩
-  have hM₁ : 0 ≤ M₁ := (norm_nonneg _).trans (h₁ 0 (Nat.zero_le _))
-  have hM₂ : 0 ≤ M₂ := (norm_nonneg _).trans (h₂ 0 (Nat.zero_le _))
-  refine (norm_iteratedFDeriv_bilinear_le B hU hx hf hg (fun i hi => h₁ i (hi.trans hj))
-    (fun i hi => h₂ i (hi.trans hj))).trans ?_
-  have : (2 : ℝ) ^ j ≤ 2 ^ k := pow_le_pow_right₀ one_le_two hj
-  calc ‖B‖ * 2 ^ j * M₁ * M₂ = ‖B‖ * 2 ^ j * (M₁ * M₂) := by ring
-    _ ≤ ‖B‖ * 2 ^ k * (M₁ * M₂) := by gcongr
-
 /-- Composition of complex-linear maps, as a real bilinear map. -/
 private abbrev compR (V₁ V₂ V₃ : Type*) [NormedAddCommGroup V₁] [NormedSpace ℂ V₁]
     [NormedAddCommGroup V₂] [NormedSpace ℂ V₂] [NormedAddCommGroup V₃] [NormedSpace ℂ V₃] :
     (V₂ →L[ℂ] V₃) →L[ℝ] (V₁ →L[ℂ] V₂) →L[ℝ] (V₁ →L[ℂ] V₃) :=
   (ContinuousLinearMap.compL ℂ V₁ V₂ V₃).bilinearRestrictScalars ℝ
-
-/-- Bounds on the derivatives of an inverse family at one point, from bounds on the derivatives
-of the family at that point and on its inverse there. The bounds are homogeneous in the scale `s`:
-the derivatives of the family are of size `s` and its inverse of size `1 / s`. -/
-private theorem exists_norm_iteratedFDeriv_inverse_le {E V W : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [NormedAddCommGroup V] [NormedSpace ℂ V]
-    [CompleteSpace V] [NormedAddCommGroup W] [NormedSpace ℂ W] (k : ℕ) (A B : ℝ) :
-    ∃ c, ∀ (H : E → V →L[ℂ] W) (U : Set E) (x : E) (s : ℝ), 0 < s → IsOpen U → x ∈ U →
-      ContDiffOn ℝ ∞ H U → (∀ y ∈ U, (H y).IsInvertible) →
-      (∀ j ≤ k, ‖iteratedFDeriv ℝ j H x‖ ≤ A * s) → ‖(H x).inverse‖ ≤ B / s →
-      ∀ j ≤ k, ‖iteratedFDeriv ℝ j (fun y => (H y).inverse) x‖ ≤ c / s := by
-  induction k with
-  | zero =>
-    refine ⟨B, fun H U x s _ _ _ _ _ _ hB j hj => ?_⟩
-    obtain rfl := Nat.le_zero.1 hj
-    simpa using hB
-  | succ k ih =>
-    obtain ⟨c, hc⟩ := ih
-    obtain ⟨C₁, hC₁, h₁⟩ := exists_norm_iteratedFDeriv_bilinear_le E (compR W V W) k
-    obtain ⟨C₂, hC₂, h₂⟩ := exists_norm_iteratedFDeriv_bilinear_le E (compR W W V) k
-    refine ⟨max c (C₂ * (c * (C₁ * (A * c)))), ?_⟩
-    intro H U x s hs hU hx hH hinv hA hB j hj
-    have hc' := hc H U x s hs hU hx hH hinv (fun j hj => hA j (hj.trans k.le_succ)) hB
-    rcases Nat.lt_or_eq_of_le hj with hj | rfl
-    · exact (hc' j (Nat.lt_succ_iff.1 hj)).trans
-        (div_le_div_of_nonneg_right (le_max_left _ _) hs.le)
-    have hc0 : 0 ≤ c / s := (norm_nonneg _).trans (hc' 0 (Nat.zero_le _))
-    have hA0 : 0 ≤ A * s := (norm_nonneg _).trans (hA 0 (Nat.zero_le _))
-    -- Replace `H` and `H⁻¹` by globally smooth functions agreeing with them near `x`.
-    have hF : ContDiffOn ℝ ∞ (fun y => (H y).inverse) U := hH.clm_inverse hinv
-    obtain ⟨H', hH', -, hHH'⟩ :=
-      hH.exists_contDiff_eventuallyEq_of_finiteDimensional (hU.mem_nhds hx)
-    obtain ⟨F', hF', -, hFF'⟩ :=
-      hF.exists_contDiff_eventuallyEq_of_finiteDimensional (hU.mem_nhds hx)
-    have hDH' : ContDiff ℝ ∞ (fderiv ℝ H') := hH'.fderiv_right (by simp)
-    have hDF' : ContDiff ℝ ∞ (fderiv ℝ F') := hF'.fderiv_right (by simp)
-    have hH'x : ∀ i, iteratedFDeriv ℝ i H' x = iteratedFDeriv ℝ i H x :=
-      fun i => (hHH'.iteratedFDeriv (𝕜 := ℝ) i).eq_of_nhds
-    have hF'x : ∀ i, iteratedFDeriv ℝ i F' x = iteratedFDeriv ℝ i (fun y => (H y).inverse) x :=
-      fun i => (hFF'.iteratedFDeriv (𝕜 := ℝ) i).eq_of_nhds
-    -- `∂ᵤ(H⁻¹) = -H⁻¹ (∂ᵤ H) H⁻¹` near `x`.
-    have heq (u : E) : (fun y => fderiv ℝ F' y u) =ᶠ[𝓝 x]
-        fun y => -compR W W V (F' y) (compR W V W (fderiv ℝ H' y u) (F' y)) := by
-      filter_upwards [hU.mem_nhds hx, hHH'.eventuallyEq_nhds, hFF'.eventuallyEq_nhds]
-        with y hy hHy hFy
-      have hdiff : DifferentiableAt ℝ H y :=
-        (hH.differentiableOn (by simp) y hy).differentiableAt (hU.mem_nhds hy)
-      rw [hFy.fderiv_eq, hHy.fderiv_eq, hdiff.fderiv_clm_inverse (hinv y hy), hFy.eq_of_nhds]
-      simp
-    -- Bounds on the derivatives of `∂ᵤ(H⁻¹)` at `x`, for every direction `u`.
-    have hdir (u : E) : ‖iteratedFDeriv ℝ k (fun y => fderiv ℝ F' y u) x‖ ≤
-        C₂ * (c * (C₁ * (A * c))) / s * ‖u‖ := by
-      have hDHu : ∀ i ≤ k, ‖iteratedFDeriv ℝ i (fun y => fderiv ℝ H' y u) x‖ ≤ ‖u‖ * (A * s) :=
-        fun i hi => (norm_iteratedFDeriv_clm_apply_const hDH'.contDiffAt
-          (by exact_mod_cast le_top)).trans (by
-            rw [norm_iteratedFDeriv_fderiv, hH'x]
-            exact mul_le_mul_of_nonneg_left (hA (i + 1) (Nat.succ_le_succ hi)) (norm_nonneg u))
-      have hF'k : ∀ i ≤ k, ‖iteratedFDeriv ℝ i F' x‖ ≤ c / s := fun i hi => by
-        rw [hF'x]
-        exact hc' i hi
-      have hG := h₁ (fun y => fderiv ℝ H' y u) F' univ x isOpen_univ (mem_univ x)
-        (hDH'.clm_apply contDiff_const).contDiffOn hF'.contDiffOn _ _ hDHu hF'k
-      have hG' := h₂ F' (fun y => compR W V W (fderiv ℝ H' y u) (F' y)) univ x isOpen_univ
-        (mem_univ x) hF'.contDiffOn
-        (((compR W V W).isBoundedBilinearMap.contDiff (n := ∞)).comp
-          ((hDH'.clm_apply contDiff_const).prodMk hF')).contDiffOn _ _ hF'k hG k le_rfl
-      have hneg : iteratedFDeriv ℝ k (fun y => -compR W W V (F' y)
-          (compR W V W (fderiv ℝ H' y u) (F' y))) x = -iteratedFDeriv ℝ k
-            (fun y => compR W W V (F' y) (compR W V W (fderiv ℝ H' y u) (F' y))) x :=
-        iteratedFDeriv_neg_apply
-      rw [((heq u).iteratedFDeriv (𝕜 := ℝ) k).eq_of_nhds, hneg, norm_neg]
-      refine hG'.trans (le_of_eq ?_)
-      field_simp
-    -- Assemble the bound on the derivative of order `k + 1` from the directional ones.
-    have hK : 0 ≤ C₂ * (c * (C₁ * (A * c))) / s := by
-      have hc'0 : 0 ≤ c := by
-        have := mul_nonneg hc0 hs.le
-        rwa [div_mul_cancel₀ c hs.ne'] at this
-      have hA'0 : 0 ≤ A := nonneg_of_mul_nonneg_left hA0 hs
-      positivity
-    rw [← hF'x]
-    refine (ContinuousMultilinearMap.opNorm_le_bound hK fun m => ?_).trans
-      (div_le_div_of_nonneg_right (le_max_right _ _) hs.le)
-    rw [iteratedFDeriv_succ_apply_right, ← iteratedFDeriv_clm_apply_const_apply hDF'
-      (by exact_mod_cast le_top), Fin.prod_univ_castSucc]
-    calc ‖iteratedFDeriv ℝ k (fun y => fderiv ℝ F' y (m (Fin.last k))) x (Fin.init m)‖
-        ≤ ‖iteratedFDeriv ℝ k (fun y => fderiv ℝ F' y (m (Fin.last k))) x‖ *
-            ∏ i, ‖Fin.init m i‖ := ContinuousMultilinearMap.le_opNorm _ _
-      _ ≤ C₂ * (c * (C₁ * (A * c))) / s * ‖m (Fin.last k)‖ * ∏ i, ‖Fin.init m i‖ := by
-          gcongr
-          exact hdir _
-      _ = _ := by
-          simp only [Fin.init]
-          ring
 
 /-- The estimates of order `m` for a function of positions, frequencies and spectral parameters in
 `Λ`: on every compact set of positions, `‖parameterIteratedFDeriv k f ((x, ξ), z)‖` is at most a
@@ -408,7 +303,7 @@ private theorem Bounds.comp_left (hΛ : IsOpen Λ) {A' : Type*} [NormedAddCommGr
   obtain ⟨hU, h0, hfT⟩ := contDiffOn_comp_dilation hΛ hf (p := ((x, ξ), z)) hz
     (parameterWeight ξ z)
   have := hf' x hx ξ z hz
-  rw [parameterIteratedFDeriv_eq] at *
+  rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp] at *
   refine (L.norm_iteratedFDeriv_comp_left ((hfT 0 h0).contDiffAt (hU.mem_nhds h0))
     (by exact_mod_cast le_top)).trans ?_
   rw [mul_assoc]
@@ -430,12 +325,13 @@ private theorem Bounds.bilinear (hΛ : IsOpen Λ) (B : X →L[ℝ] Y →L[ℝ] Z
     (parameterWeight ξ z)
   obtain ⟨-, -, hgT⟩ := contDiffOn_comp_dilation hΛ hg (p := ((x, ξ), z)) hz
     (parameterWeight ξ z)
-  rw [parameterIteratedFDeriv_eq]
-  refine (hB _ _ _ 0 hU h0 hfT hgT (C * parameterWeight ξ z ^ m) (D * parameterWeight ξ z ^ m')
-    (fun i hi => ?_) (fun i hi => ?_) k le_rfl).trans_eq ?_
-  · rw [← parameterIteratedFDeriv_eq]
+  have hk : ((k : ℕ∞ω)) ≤ ∞ := by exact_mod_cast le_top
+  rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
+  refine (hB _ _ _ 0 hU h0 (hfT.of_le hk) (hgT.of_le hk) (C * parameterWeight ξ z ^ m)
+    (D * parameterWeight ξ z ^ m') (fun i hi => ?_) (fun i hi => ?_) k le_rfl).trans_eq ?_
+  · rw [← parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
     exact hf' i hi x hx ξ z hz
-  · rw [← parameterIteratedFDeriv_eq]
+  · rw [← parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
     exact hg' i hi x hx ξ z hz
   · rw [Real.rpow_add (parameterWeight_pos ξ z)]
     ring
@@ -452,18 +348,18 @@ private theorem Bounds.inverse (hΛ : IsOpen Λ) {V W : Type*} [NormedAddCommGro
     Bounds Λ (-m) (fun p => (a p).inverse) := fun K hK k => by
   obtain ⟨A, -, hA⟩ := hb.exists_forall_le hK k
   obtain ⟨B, hB⟩ := hC K hK
-  obtain ⟨c, hc⟩ := exists_norm_iteratedFDeriv_inverse_le
+  obtain ⟨c, hc⟩ := exists_norm_iteratedFDeriv_clm_inverse_le
     (E := (CoordinateSpace n × CoordinateSpace n) × ℂ) (V := V) (W := W) k A B
   refine ⟨max c 0, le_max_right _ _, fun x hx ξ z hz => ?_⟩
   have hs := rpow_parameterWeight_pos ξ z m
   obtain ⟨hU, h0, haT⟩ := contDiffOn_comp_dilation hΛ ha (p := ((x, ξ), z)) hz
     (parameterWeight ξ z)
-  rw [parameterIteratedFDeriv_eq]
+  rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
   have h := hc _ _ 0 _ hs hU h0 haT (fun y hy => hinv _ hy.2) (fun j hj => ?_) ?_ k le_rfl
   · refine h.trans ?_
     rw [Real.rpow_neg (parameterWeight_pos ξ z).le, div_eq_mul_inv]
     exact mul_le_mul_of_nonneg_right (le_max_left _ _) (inv_nonneg.2 hs.le)
-  · rw [← parameterIteratedFDeriv_eq]
+  · rw [← parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
     exact hA j hj x hx ξ z hz
   · simpa [Real.rpow_neg (parameterWeight_pos ξ z).le, div_eq_mul_inv] using hB x hx ξ z hz
 
@@ -471,7 +367,7 @@ private theorem Bounds.inverse (hΛ : IsOpen Λ) {V W : Type*} [NormedAddCommGro
 private theorem bounds_const (c : A) :
     Bounds Λ 0 (fun _ : (CoordinateSpace n × CoordinateSpace n) × ℂ => c) := fun K _ k => by
   refine ⟨‖c‖, norm_nonneg c, fun x _ ξ z _ => ?_⟩
-  rw [parameterIteratedFDeriv_eq, Real.rpow_zero, mul_one]
+  rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp, Real.rpow_zero, mul_one]
   rcases k with _ | k
   · simp
   · simp [iteratedFDeriv_const_of_ne]
@@ -488,7 +384,7 @@ private theorem bounds_continuousLinearMap
   have hw := (rpow_parameterWeight_pos ξ z m).le
   have hC : C * parameterWeight ξ z ^ m ≤ max C 0 * parameterWeight ξ z ^ m :=
     mul_le_mul_of_nonneg_right (le_max_left _ _) hw
-  rw [parameterIteratedFDeriv_eq]
+  rw [parameterIteratedFDeriv_eq_iteratedFDeriv_comp]
   have hL : (fun v => L (((x, ξ), z) + parameterDilation n (parameterWeight ξ z) v)) =
       fun v => L ((x, ξ), z) + (L.comp (parameterDilation n (parameterWeight ξ z))) v := by
     ext1 v
@@ -859,7 +755,7 @@ theorem isElliptic_shiftedLaplacian {s c δ : ℝ} (hs : 0 ≤ s) (hc : c < 1) (
       ((s + ‖ξ‖ ^ 2 : ℝ) : ℂ) - z ≠ 0 := by
     intro h
     have := (mul_pos hκ (pow_pos (parameterWeight_pos ξ z) 2)).trans_le (hlow x ξ hz)
-    rw [show laplacianSymbol s ((x, ξ), z) = 0 from h, norm_zero] at this
+    simp only [laplacianSymbol, h, norm_zero] at this
     exact lt_irrefl 0 this
   refine ⟨fun x ξ z hz => ?_, fun K _ => ⟨((1 - max c (-1)) / 2 / (3 * (1 + δ⁻¹)))⁻¹,
     fun x _ ξ z hz => ?_⟩⟩
