@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.ExtensionBasis
 public import TauCeti.Algebra.Coalgebra.Comodule.Flag.Basic
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Induced
+import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Submodule
 
 /-!
 # Upper-triangular comodule structures and extensions
@@ -53,7 +54,7 @@ public section
 
 namespace TauCeti.Comodule
 
-open Module
+open _root_.Module
 
 universe u v w
 
@@ -93,16 +94,15 @@ theorem coefficientMatrix_natAdd_castAdd_of_castAdd_eq
     coefficientMatrix (C := C) b (Fin.natAdd m i) (Fin.castAdd n j) = 0 := by
   have hcoord : (b.coord (Fin.natAdd m i)).comp N.carrier.subtype = 0 := by
     refine bN.ext fun l ↦ ?_
-    rw [LinearMap.comp_apply, show N.carrier.subtype (bN l) = b (Fin.castAdd n l) from (hb l).symm]
+    rw [LinearMap.comp_apply, Submodule.subtype_apply, ← hb]
     simp only [Basis.coord_apply, Basis.repr_self, Finsupp.single_apply, LinearMap.zero_apply]
     refine ite_eq_right fun h ↦ ?_
     have hval := congrArg Fin.val h
     simp only [Fin.val_castAdd, Fin.val_natAdd] at hval
     omega
-  obtain ⟨x, hx⟩ := N.coact_mem' (bN j).2
-  rw [coefficientMatrix_apply, hb, matrixCoefficient_def, ← hx, ← LinearMap.comp_apply,
-    ← TensorProduct.map_comp, hcoord]
-  simp
+  rw [coefficientMatrix_apply, hb]
+  exact N.carrier.matrixCoefficient_eq_zero_of_mem_dualAnnihilator (N.coact_mem (bN j).2)
+    ((Submodule.mem_dualAnnihilator _).2 fun w hw ↦ LinearMap.congr_fun hcoord ⟨w, hw⟩)
 
 end Semiring
 
