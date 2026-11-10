@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.LocalField.Tame.PadicCharacter
-public import Mathlib.RepresentationTheory.Invariants
-import Mathlib.LinearAlgebra.Transvection.Basic
+public import TauCeti.RepresentationTheory.Transvection
 
 /-!
 # Tame monodromy in dimension two
@@ -39,48 +38,51 @@ noncomputable section
 
 namespace TauCeti
 
-open _root_.ValuativeRel
+open _root_.ValuativeRel MonoidHom
 
 variable (K : Type*) [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] {ℓ : ℕ} [Fact ℓ.Prime]
   (hℓ : ℓ.Coprime (ringChar 𝓀[K]))
   (e : PadicTateTwist ℓ (AlgebraicClosure K) ≃ₜ+ ℤ_[ℓ]) (c : ℚ_[ℓ])
 
+private def tameMonodromyCharacter : inertiaSubgroup K →* Multiplicative ℚ_[ℓ] where
+  toFun σ := Multiplicative.ofAdd (c * (e (inertiaPadicTameCharacter K hℓ σ).toAdd : ℚ_[ℓ]))
+  map_one' := by simp
+  map_mul' σ τ := by simp [mul_add]
+
+private theorem tameMonodromyCharacter_eq_one_iff :
+    tameMonodromyCharacter K hℓ e c = 1 ↔ c = 0 := by
+  constructor
+  · intro h
+    obtain ⟨σ, hσ⟩ := inertiaPadicTameCharacter_surjective K hℓ
+      (Multiplicative.ofAdd (e.symm 1))
+    have hval := congrArg (fun χ : inertiaSubgroup K →* Multiplicative ℚ_[ℓ] ↦
+      (χ σ).toAdd) h
+    simpa [tameMonodromyCharacter, hσ] using hval
+  · rintro rfl
+    ext σ
+    simp [tameMonodromyCharacter]
+
 /-- The two-dimensional transvection representation of inertia with parameter `c`, after the
 choice `e` of a coordinate on the Tate twist. -/
 def tameMonodromyRepresentation :
-    Representation ℚ_[ℓ] (inertiaSubgroup K) (ℚ_[ℓ] × ℚ_[ℓ]) where
-  toFun σ := LinearMap.transvection (LinearMap.snd _ _ _)
-    (c * (e (inertiaPadicTameCharacter K hℓ σ).toAdd : ℚ_[ℓ]), 0)
-  map_one' := by
-    apply LinearMap.ext
-    rintro ⟨x, y⟩
-    simp [LinearMap.transvection.apply]
-  map_mul' σ τ := by
-    rw [Module.End.mul_eq_comp, LinearMap.transvection.comp_of_left_eq (by simp)]
-    congr 1
-    simp [mul_add]
+    Representation ℚ_[ℓ] (inertiaSubgroup K) (ℚ_[ℓ] × ℚ_[ℓ]) :=
+  transvectionRepresentation (tameMonodromyCharacter K hℓ e c)
 
 /-- The coordinate formula for tame monodromy. -/
 @[simp]
 theorem tameMonodromyRepresentation_apply (σ : inertiaSubgroup K) (v : ℚ_[ℓ] × ℚ_[ℓ]) :
     tameMonodromyRepresentation K hℓ e c σ v =
       (v.1 + v.2 * (c * (e (inertiaPadicTameCharacter K hℓ σ).toAdd : ℚ_[ℓ])), v.2) := by
-  rcases v with ⟨x, y⟩
-  simp [tameMonodromyRepresentation, LinearMap.transvection.apply, smul_eq_mul]
+  simp [tameMonodromyRepresentation, tameMonodromyCharacter]
 
 /-- The inertia action is jointly continuous in the group element and the vector. -/
 theorem continuous_tameMonodromyRepresentation :
     Continuous (fun p : inertiaSubgroup K × (ℚ_[ℓ] × ℚ_[ℓ]) ↦
       tameMonodromyRepresentation K hℓ e c p.1 p.2) := by
   simp only [tameMonodromyRepresentation_apply]
-  have ht := continuous_toAdd.comp (inertiaPadicTameCharacter K hℓ).continuous
-  have he : Continuous (fun σ ↦ (e (inertiaPadicTameCharacter K hℓ σ).toAdd : ℚ_[ℓ])) :=
-    continuous_subtype_val.comp (e.continuous_toFun.comp ht)
-  exact ((continuous_fst.comp continuous_snd).add <|
-    (continuous_snd.comp continuous_snd).mul <|
-      continuous_const.mul (he.comp continuous_fst)).prodMk
-    (continuous_snd.comp continuous_snd)
+  have ht := continuous_toAdd (X := PadicTateTwist ℓ (AlgebraicClosure K))
+  fun_prop
 
 /-- Wild inertia acts trivially in the tame monodromy representation. -/
 theorem tameMonodromyRepresentation_eq_one_of_mem_wildInertiaSubgroup
@@ -94,16 +96,8 @@ theorem tameMonodromyRepresentation_eq_one_of_mem_wildInertiaSubgroup
 zero. -/
 theorem mem_invariants_tameMonodromyRepresentation_iff (hc : c ≠ 0) (v : ℚ_[ℓ] × ℚ_[ℓ]) :
     v ∈ (tameMonodromyRepresentation K hℓ e c).invariants ↔ v.2 = 0 := by
-  constructor
-  · intro hv
-    obtain ⟨σ, hσ⟩ := inertiaPadicTameCharacter_surjective K hℓ
-      (Multiplicative.ofAdd (e.symm 1))
-    have h := congrArg Prod.fst (hv σ)
-    simp only [tameMonodromyRepresentation_apply, hσ, toAdd_ofAdd,
-      ContinuousAddEquiv.apply_symm_apply, PadicInt.coe_one, mul_one] at h
-    exact (mul_eq_zero.mp (add_eq_left.mp h)).resolve_right hc
-  · intro hv σ
-    apply Prod.ext <;> simp [hv]
+  exact mem_invariants_transvectionRepresentation_iff _
+    (fun h ↦ hc ((tameMonodromyCharacter_eq_one_iff K hℓ e c).mp h)) v
 
 /-- The invariant space is the first coordinate line, expressed without choosing its basis. -/
 @[simp]
@@ -116,11 +110,8 @@ theorem invariants_tameMonodromyRepresentation (hc : c ≠ 0) :
 /-- A nonzero tame-monodromy representation has a one-dimensional invariant space. -/
 theorem finrank_invariants_tameMonodromyRepresentation (hc : c ≠ 0) :
     Module.finrank ℚ_[ℓ] (tameMonodromyRepresentation K hℓ e c).invariants = 1 := by
-  rw [invariants_tameMonodromyRepresentation K hℓ e c hc]
-  have h := LinearMap.finrank_range_add_finrank_ker (LinearMap.snd ℚ_[ℓ] ℚ_[ℓ] ℚ_[ℓ])
-  rw [LinearMap.range_eq_top.mpr LinearMap.snd_surjective,
-    finrank_top, Module.finrank_self, Module.finrank_prod, Module.finrank_self] at h
-  omega
+  exact finrank_invariants_transvectionRepresentation _
+    (fun h ↦ hc ((tameMonodromyCharacter_eq_one_iff K hℓ e c).mp h))
 
 /-- The tame contribution, the codimension of inertia invariants, is one for nonzero parameter.
 This does not define or assume an Artin conductor. -/
@@ -132,22 +123,14 @@ theorem finrank_sub_finrank_invariants_tameMonodromyRepresentation (hc : c ≠ 0
 /-- Vanishing monodromy gives the trivial representation. -/
 @[simp]
 theorem tameMonodromyRepresentation_zero : tameMonodromyRepresentation K hℓ e 0 = 1 := by
-  apply MonoidHom.ext
-  intro σ
-  apply LinearMap.ext
-  rintro ⟨x, y⟩
-  simp
+  rw [tameMonodromyRepresentation, transvectionRepresentation_eq_one_iff,
+    tameMonodromyCharacter_eq_one_iff]
 
 /-- The tame monodromy representation is trivial exactly when its parameter vanishes. -/
 @[simp]
 theorem tameMonodromyRepresentation_eq_one_iff :
     tameMonodromyRepresentation K hℓ e c = 1 ↔ c = 0 := by
-  refine ⟨fun h ↦ ?_, fun h ↦ by simp [h]⟩
-  by_contra hc
-  have hv : ((0, 1) : ℚ_[ℓ] × ℚ_[ℓ]) ∈ (tameMonodromyRepresentation K hℓ e c).invariants := by
-    intro σ
-    rw [h]
-    rfl
-  simp [mem_invariants_tameMonodromyRepresentation_iff K hℓ e c hc] at hv
+  rw [tameMonodromyRepresentation, transvectionRepresentation_eq_one_iff,
+    tameMonodromyCharacter_eq_one_iff]
 
 end TauCeti
