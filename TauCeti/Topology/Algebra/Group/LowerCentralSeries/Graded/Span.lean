@@ -21,8 +21,9 @@ subgroup it generates matters. The degree-zero statement holds for every `p` and
 `λ_1` is open. Both statements bound `gr_0(G)` and `gr_1(G)` in terms of the generators, which is
 the first step in computing the graded pieces of a group given by generators.
 
-Without openness of `λ_2`, continuous maps out of `gr_1(G)` into a Hausdorff group are still
-determined by their values on the `p`-power classes and brackets of all elements of `G`
+Without openness of `λ_2`, `ZMod p`-linear maps out of `gr_1(G)` into a Hausdorff group that are
+continuous after composition with `gradedMk` are still determined by their values on the `p`-power
+classes and brackets of all elements of `G`
 (`TauCeti.linearMap_ext_gradedPiece_one_of_continuous`); this applies to free pro-`p` groups of
 infinite rank.
 
@@ -52,9 +53,10 @@ The openness hypothesis holds in a topologically finitely generated profinite gr
   brackets of a topological generating set span `gr_1(G)`, when `λ_2` is open.
 * `TauCeti.linearMap_ext_gradedPiece_one`: linear maps out of `gr_1(G)` are determined by their
   values on those `p`-power classes and brackets.
-* `TauCeti.linearMap_ext_gradedPiece_one_of_continuous`: without openness of `λ_2`, two maps out
-  of `gr_1(G)` into a Hausdorff group that are continuous on `λ_1` and agree on the `p`-power
-  classes and brackets of all elements of `G` are equal.
+* `TauCeti.linearMap_ext_gradedPiece_one_of_continuous`: without openness of `λ_2`, two
+  `ZMod p`-linear maps out of `gr_1(G)` into a Hausdorff group that are continuous on `λ_1`
+  through `gradedMk` and agree on the `p`-power classes and brackets of all elements of `G` are
+  equal.
 * `TauCeti.span_range_degreeOneFamily_eq_top`: the ordered form of the previous statement.
 * `TauCeti.span_range_gradedPow_union_range_gradedBracket_eq_top`,
   `TauCeti.eq_top_of_forall_gradedPow_mem_of_forall_gradedBracket_mem`: in every degree, the
