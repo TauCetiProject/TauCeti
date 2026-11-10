@@ -87,27 +87,28 @@ theorem dualCarrierBasis_det_carrierInDualBasis (L : IntegralLattice V)
 
 open Classical in
 /-- The discriminant group has cardinality equal to the absolute value of the Gram determinant in
-any carrier basis. -/
+any carrier basis. For a degenerate lattice both sides are `0`: the discriminant group is
+infinite, so its cardinality is `0`. -/
 theorem natCard_discriminantGroup_eq_natAbs_gramDet (L : IntegralLattice V)
-    [L.IsNondegenerate] {ι : Type v} [Fintype ι]
-    (b : Basis ι ℤ L) :
+    {ι : Type v} [Fintype ι] (b : Basis ι ℤ L) :
     Nat.card L.DiscriminantGroup = (L.gramDet b).natAbs := by
-  rw [← L.dualCarrierBasis_det_carrierInDualBasis b]
-  exact (Submodule.natAbs_det_basis_change (L.dualCarrierBasis b) L.carrierInDual
-    (L.carrierInDualBasis b)).symm
+  by_cases h : L.form.Nondegenerate
+  · let _ : L.IsNondegenerate := ⟨h⟩
+    rw [← L.dualCarrierBasis_det_carrierInDualBasis b]
+    exact (Submodule.natAbs_det_basis_change (L.dualCarrierBasis b) L.carrierInDual
+      (L.carrierInDualBasis b)).symm
+  · have hinf : Infinite L.DiscriminantGroup :=
+      not_finite_iff_infinite.mp fun hfin ↦ h (L.finite_discriminantGroup_iff_nondegenerate.mp hfin)
+    rw [Nat.card_eq_zero_of_infinite, ← L.discriminant_eq_natAbs_gramDet b,
+      (L.discriminant_eq_zero_iff).mpr h]
 
 /-- **The order of the discriminant group is the lattice discriminant.** For a degenerate lattice
 both sides are `0`: the discriminant group is infinite, so its cardinality is `0`. -/
 theorem natCard_discriminantGroup (L : IntegralLattice V) :
     Nat.card L.DiscriminantGroup = L.discriminant := by
   classical
-  by_cases h : L.form.Nondegenerate
-  · let _ : L.IsNondegenerate := ⟨h⟩
-    rw [L.natCard_discriminantGroup_eq_natAbs_gramDet (Module.Free.chooseBasis ℤ L),
-      L.discriminant_eq_natAbs_gramDet (Module.Free.chooseBasis ℤ L)]
-  · have hinf : Infinite L.DiscriminantGroup :=
-      not_finite_iff_infinite.mp fun hfin ↦ h (L.finite_discriminantGroup_iff_nondegenerate.mp hfin)
-    rw [Nat.card_eq_zero_of_infinite, (L.discriminant_eq_zero_iff).mpr h]
+  rw [L.natCard_discriminantGroup_eq_natAbs_gramDet (Module.Free.chooseBasis ℤ L),
+    L.discriminant_eq_natAbs_gramDet (Module.Free.chooseBasis ℤ L)]
 
 /-- **Vectors pairing into `pℤ` are divisible by `p`** when `p` is prime to the discriminant: if
 `p` divides the pairing of `v` with every lattice vector, then `v / p` lies in `L`. -/
