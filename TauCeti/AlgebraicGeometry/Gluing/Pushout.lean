@@ -5,7 +5,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Separated
+public import Mathlib.AlgebraicGeometry.Morphisms.QuasiSeparated
 public import TauCeti.AlgebraicGeometry.Morphisms.OpenImmersion
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
