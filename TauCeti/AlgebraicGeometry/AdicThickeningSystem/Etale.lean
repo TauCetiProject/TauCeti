@@ -37,13 +37,13 @@ universe u
 
 namespace TauCeti.AlgebraicGeometry.AdicThickeningSystem
 
-variable {𝔛 𝔜 𝔝 : AdicThickeningSystem.{u}}
+variable {𝔛 𝔜 Z : AdicThickeningSystem.{u}}
 
 /-- Morphisms over an adic thickening system into a levelwise unramified target are determined
 by their initial component. The source need not be étale or adic over the base. -/
-theorem hom_ext_of_formallyUnramified (p : 𝔜 ⟶ 𝔛) (q : 𝔝 ⟶ 𝔛)
+theorem hom_ext_of_formallyUnramified (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
     [∀ n, FormallyUnramified (q.app n)] [∀ n, LocallyOfFiniteType (q.app n)]
-    {a b : 𝔜 ⟶ 𝔝}
+    {a b : 𝔜 ⟶ Z}
     (ha : a ≫ q = p) (hb : b ≫ q = p) (h₀ : a.app 0 = b.app 0) : a = b := by
   ext n
   apply _root_.AlgebraicGeometry.ext_of_surjective_of_formallyUnramified (q.app n)
@@ -54,35 +54,35 @@ theorem hom_ext_of_formallyUnramified (p : 𝔜 ⟶ 𝔛) (q : 𝔝 ⟶ 𝔛)
 /-- A morphism on the initial level into a levelwise étale target extends uniquely over an
 adic thickening system. The resulting morphism commutes with the structure maps to the base
 and restricts to the prescribed morphism on level zero. -/
-theorem existsUnique_hom_of_etale (p : 𝔜 ⟶ 𝔛) (q : 𝔝 ⟶ 𝔛)
-    (hq : ∀ n, Etale (q.app n)) (a₀ : 𝔜.X 0 ⟶ 𝔝.X 0)
+theorem existsUnique_hom_of_etale (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
+    (hq : ∀ n, Etale (q.app n)) (a₀ : 𝔜.X 0 ⟶ Z.X 0)
     (ha₀ : a₀ ≫ q.app 0 = p.app 0) :
-    ∃! a : 𝔜 ⟶ 𝔝, a ≫ q = p ∧ a.app 0 = a₀ := by
+    ∃! a : 𝔜 ⟶ Z, a ≫ q = p ∧ a.app 0 = a₀ := by
   have : ∀ n, Etale (q.app n) := hq
-  have lifts (n : ℕ) : ∃ a : 𝔜.X n ⟶ 𝔝.X n,
-      𝔜.levelMap n ≫ a = a₀ ≫ 𝔝.levelMap n ∧ a ≫ q.app n = p.app n := by
-    have sq : CommSq (a₀ ≫ 𝔝.levelMap n) (𝔜.levelMap n) (q.app n) (p.app n) :=
+  have lifts (n : ℕ) : ∃ a : 𝔜.X n ⟶ Z.X n,
+      𝔜.levelMap n ≫ a = a₀ ≫ Z.levelMap n ∧ a ≫ q.app n = p.app n := by
+    have sq : CommSq (a₀ ≫ Z.levelMap n) (𝔜.levelMap n) (q.app n) (p.app n) :=
       ⟨by simp only [Category.assoc, Hom.levelMap_app]; rw [← Category.assoc, ha₀]⟩
     exact ⟨sq.lift, sq.fac_left, sq.fac_right⟩
   choose a hleft hright using lifts
   have hzero : a 0 = a₀ := by simpa using hleft 0
-  have hnat (n : ℕ) : 𝔜.ι n ≫ a (n + 1) = a n ≫ 𝔝.ι n := by
+  have hnat (n : ℕ) : 𝔜.ι n ≫ a (n + 1) = a n ≫ Z.ι n := by
     apply _root_.AlgebraicGeometry.ext_of_surjective_of_formallyUnramified (q.app (n + 1))
       (by
         simp only [Category.assoc, hright, Hom.naturality]
         rw [← Category.assoc, hright]) (𝔜.levelMap n)
     simpa only [levelMap_succ, Category.assoc, reassoc_of% hleft n] using hleft (n + 1)
-  let a' : 𝔜 ⟶ 𝔝 := { app := a, naturality := hnat }
+  let a' : 𝔜 ⟶ Z := { app := a, naturality := hnat }
   have ha' : a' ≫ q = p := hom_ext hright
   refine ⟨a', ⟨ha', hzero⟩, fun b hb ↦ ?_⟩
   exact hom_ext_of_formallyUnramified p q hb.1 ha' (hb.2.trans hzero.symm)
 
 /-- An isomorphism on the initial level between two levelwise étale systems over the same base
 extends uniquely to an isomorphism of systems over that base. -/
-theorem existsUnique_iso_of_etale (p : 𝔜 ⟶ 𝔛) (q : 𝔝 ⟶ 𝔛)
+theorem existsUnique_iso_of_etale (p : 𝔜 ⟶ 𝔛) (q : Z ⟶ 𝔛)
     (hp : ∀ n, Etale (p.app n)) (hq : ∀ n, Etale (q.app n))
-    (e₀ : 𝔜.X 0 ≅ 𝔝.X 0) (he₀ : e₀.hom ≫ q.app 0 = p.app 0) :
-    ∃! e : 𝔜 ≅ 𝔝, e.hom ≫ q = p ∧ e.hom.app 0 = e₀.hom := by
+    (e₀ : 𝔜.X 0 ≅ Z.X 0) (he₀ : e₀.hom ≫ q.app 0 = p.app 0) :
+    ∃! e : 𝔜 ≅ Z, e.hom ≫ q = p ∧ e.hom.app 0 = e₀.hom := by
   have : ∀ n, Etale (p.app n) := hp
   have : ∀ n, Etale (q.app n) := hq
   obtain ⟨a, ha, -⟩ := existsUnique_hom_of_etale p q hq e₀.hom he₀
@@ -91,7 +91,7 @@ theorem existsUnique_iso_of_etale (p : 𝔜 ⟶ 𝔛) (q : 𝔝 ⟶ 𝔛)
   have hab : a ≫ b = 𝟙 𝔜 := by
     apply hom_ext_of_formallyUnramified p p (by simp [ha.1, hb.1]) (by simp)
     simp [ha.2, hb.2]
-  have hba : b ≫ a = 𝟙 𝔝 := by
+  have hba : b ≫ a = 𝟙 Z := by
     apply hom_ext_of_formallyUnramified q q (by simp [ha.1, hb.1]) (by simp)
     simp [ha.2, hb.2]
   refine ⟨⟨a, b, hab, hba⟩, ha, fun e he ↦ ?_⟩
