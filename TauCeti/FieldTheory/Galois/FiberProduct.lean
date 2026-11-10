@@ -47,9 +47,9 @@ rather than in either of them, and the restriction maps to it are
 
 public section
 
-namespace TauCeti
-
 open IntermediateField
+
+namespace AlgEquiv
 
 section FiberProduct
 
@@ -61,7 +61,7 @@ variable {F E K₁ K₂ : Type*} [Field F] [Field E] [Field K₁] [Field K₂]
 normal subextensions `K₁` and `K₂`, a pair `(σ₁, σ₂)` of automorphisms is the restriction of a
 single automorphism of `E` if and only if `σ₁` and `σ₂` agree on the elements common to `K₁` and
 `K₂` inside `E`. -/
-theorem _root_.AlgEquiv.mem_range_restrictNormalHom_prod_restrictNormalHom_iff
+theorem mem_range_restrictNormalHom_prod_restrictNormalHom_iff
     [FiniteDimensional F E] [IsGalois F E] (σ₁ : Gal(K₁/F)) (σ₂ : Gal(K₂/F)) :
     (σ₁, σ₂) ∈ ((AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₁).prod
         (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₂)).range ↔
@@ -99,7 +99,7 @@ theorem _root_.AlgEquiv.mem_range_restrictNormalHom_prod_restrictNormalHom_iff
 
 /-- The joint restriction map to two normal subextensions of a finite Galois extension is surjective
 if and only if the two subextensions meet only in the base field. -/
-theorem _root_.AlgEquiv.restrictNormalHom_prod_restrictNormalHom_surjective_iff
+theorem restrictNormalHom_prod_restrictNormalHom_surjective_iff
     [FiniteDimensional F E] [IsGalois F E] :
     Function.Surjective ((AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₁).prod
         (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₂)) ↔
@@ -139,7 +139,7 @@ the restriction of a single automorphism of `E` if and only if `σ₁` and `σ�
 restriction to the intersection of `K₁` and `K₂` inside `E`. So the image of `Gal(E/F)` in
 `Gal(K₁/F) × Gal(K₂/F)` is the fibre product over `Gal((K₁ ∩ K₂)/F)` of the two restriction maps
 `AlgHom.restrictNormalHomOfLE`. -/
-theorem _root_.AlgEquiv.mem_range_restrictNormalHom_prod_iff_restrictNormalHomOfLE_eq
+theorem mem_range_restrictNormalHom_prod_iff_restrictNormalHomOfLE_eq
     [FiniteDimensional F E] [IsGalois F E] (σ₁ : Gal(K₁/F)) (σ₂ : Gal(K₂/F)) :
     (σ₁, σ₂) ∈ ((AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₁).prod
         (AlgEquiv.restrictNormalHom (F := F) (K₁ := E) K₂)).range ↔
@@ -166,6 +166,10 @@ theorem _root_.AlgEquiv.mem_range_restrictNormalHom_prod_iff_restrictNormalHomOf
 
 end FiberProduct
 
+end AlgEquiv
+
+namespace IntermediateField
+
 section Compositum
 
 variable {F E : Type*} [Field F] [Field E] [Algebra F E] (K L : IntermediateField F E)
@@ -176,7 +180,7 @@ variable {F E : Type*} [Field F] [Field E] [Algebra F E] (K L : IntermediateFiel
 `IntermediateField.restrictNormalHomSupProd` consists of the pairs whose restrictions to `K ⊓ L`
 agree. Since `restrictNormalHomSupProd` is injective, `Gal(K ⊔ L / F)` is the fibre product
 `Gal(K/F) ×_{Gal(K ⊓ L / F)} Gal(L/F)`. -/
-theorem _root_.IntermediateField.mem_range_restrictNormalHomSupProd_iff (σ : Gal(K/F))
+theorem mem_range_restrictNormalHomSupProd_iff (σ : Gal(K/F))
     (τ : Gal(L/F)) :
     (σ, τ) ∈ (restrictNormalHomSupProd K L).range ↔
       (inclusion (inf_le_left : K ⊓ L ≤ K)).restrictNormalHom σ =
@@ -210,4 +214,4 @@ theorem _root_.IntermediateField.mem_range_restrictNormalHomSupProd_iff (σ : Ga
 
 end Compositum
 
-end TauCeti
+end IntermediateField
