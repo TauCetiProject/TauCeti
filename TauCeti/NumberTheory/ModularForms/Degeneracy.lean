@@ -226,6 +226,15 @@ lemma inv_scaleGL_smul_vadd [NeZero d] (a : ℝ) (τ : ℍ) :
   push_cast
   ring
 
+/-- Scaling up commutes with translation, at the cost of multiplying the shift by `d`. -/
+@[simp]
+lemma scaleGL_smul_vadd [NeZero d] (a : ℝ) (τ : ℍ) :
+    (scaleGL d • ((a : ℝ) +ᵥ τ) : ℍ) = ((d : ℝ) * a) +ᵥ (scaleGL d • τ) := by
+  apply UpperHalfPlane.ext
+  rw [coe_scaleGL_smul, UpperHalfPlane.coe_vadd, UpperHalfPlane.coe_vadd, coe_scaleGL_smul]
+  push_cast
+  ring
+
 @[simp]
 lemma scaleGL_one : scaleGL 1 = 1 := by
   rw [scaleGL, ← map_one diagGL]
@@ -1143,10 +1152,34 @@ lemma qParam_one_scaleGL_smul [NeZero d] (τ : ℍ) :
   rw [← Complex.exp_nat_mul]
   ring_nf
 
+/-- **A level-raise is `1`-periodic through `ofComplex`.** If `1` is a strict period of `𝒢`, then
+`V_d f ∘ ofComplex` is `1`-periodic, for any target group `𝒢'` admitted by `hle`. -/
+theorem _root_.ModularForm.periodic_comp_ofComplex_levelRaise [𝒢'.HasDetOne] [NeZero d]
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
+    (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) :
+    Periodic (⇑(ModularForm.levelRaise d hle f) ∘ ofComplex) 1 := by
+  refine UpperHalfPlane.periodic_comp_ofComplex fun τ ↦ ?_
+  simp only [ModularForm.levelRaise_apply, scaleGL_smul_vadd, mul_one]
+  rw [SlashInvariantForm.vAdd_apply_of_mem_strictPeriods f _ (by simpa using nsmul_mem h𝒢 d)]
+
+/-- **The `q`-parameter function of a level-raise is analytic at the cusp `∞`.** If `1` is a
+strict period of `𝒢`, the cusp function `cuspFunction 1 (V_d f)` of a level-raise is analytic at
+`0`, for any target group `𝒢'` admitted by `hle`. -/
+theorem _root_.ModularForm.analyticAt_cuspFunction_levelRaise [𝒢'.HasDetOne] [NeZero d]
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
+    (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) :
+    AnalyticAt ℂ (cuspFunction 1 (ModularForm.levelRaise d hle f)) 0 := by
+  have : Fact (IsCusp OnePoint.infty 𝒢) := ⟨Subgroup.isCusp_of_mem_strictPeriods one_pos h𝒢⟩
+  refine analyticAt_cuspFunction_zero one_pos
+    (ModularForm.periodic_comp_ofComplex_levelRaise h𝒢 hle f) (ModularFormClass.holo _) ?_
+  rw [ModularForm.coe_levelRaise]
+  exact (UpperHalfPlane.IsBoundedAtImInfty.slash k (by simp [scaleGL])
+    (ModularFormClass.bdd_at_infty f)).const_smul_left _
+
 /-- **The `q`-expansion of a level-raise.** Level-raising substitutes `q ↦ q ^ d` in the
 `q`-expansion, which on power series is `PowerSeries.expand d`. -/
 theorem ModularForm.qExpansion_levelRaise [𝒢'.HasDetOne] [NeZero d]
-    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods) (h𝒢' : (1 : ℝ) ∈ 𝒢'.strictPeriods)
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) :
     qExpansion 1 (ModularForm.levelRaise d hle f) =
       (qExpansion 1 f).expand d (NeZero.ne d) := by
@@ -1165,16 +1198,17 @@ theorem ModularForm.qExpansion_levelRaise [𝒢'.HasDetOne] [NeZero d]
     · refine h1.congr_fun fun m ↦ ?_
       simp only [Function.comp_apply, PowerSeries.coeff_expand_mul, smul_eq_mul, pow_mul,
         ← qParam_one_scaleGL_smul]
-  exact PowerSeries.ext fun n ↦ (ModularFormClass.qExpansion_coeff_unique one_pos h𝒢' key n).symm
+  have hana := ModularForm.analyticAt_cuspFunction_levelRaise h𝒢 hle f
+  exact PowerSeries.ext fun n ↦ (UpperHalfPlane.qExpansion_coeff_unique _ one_pos hana key n).symm
 
 /-- **The `q`-expansion of a level-raise, on coefficients.** `aₙ(V_d f) = a_{n/d}(f)` when
 `d ∣ n`, and `0` otherwise. -/
 theorem ModularForm.qExpansion_levelRaise_coeff [𝒢'.HasDetOne] [NeZero d]
-    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods) (h𝒢' : (1 : ℝ) ∈ 𝒢'.strictPeriods)
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) (n : ℕ) :
     (qExpansion 1 (ModularForm.levelRaise d hle f)).coeff n =
       if d ∣ n then (qExpansion 1 f).coeff (n / d) else 0 := by
-  rw [ModularForm.qExpansion_levelRaise h𝒢 h𝒢' hle f, PowerSeries.coeff_expand]
+  rw [ModularForm.qExpansion_levelRaise h𝒢 hle f, PowerSeries.coeff_expand]
 
 /-- **The `q`-expansion of a level-raise, at `Γ₁`.** For `f` of level `Γ₁(M)`, its image `V_d f`
 has level `Γ₁(dM)` and `q`-expansion coefficients `aₙ(V_d f) = a_{n/d}(f)` when `d ∣ n`, and `0`
@@ -1183,14 +1217,13 @@ theorem ModularForm.qExpansion_levelRaise_coeff_Gamma1 (M : ℕ) [NeZero d]
     (f : ModularForm ((Gamma1 M).map (mapGL ℝ)) k) (n : ℕ) :
     (qExpansion 1 (ModularForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL M d) f)).coeff n =
       if d ∣ n then (qExpansion 1 f).coeff (n / d) else 0 := by
-  refine ModularForm.qExpansion_levelRaise_coeff ?_ ?_ _ f n <;>
-    exact one_mem_strictPeriods_Gamma1_map _
+  exact ModularForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map _) _ f n
 
 /-- **The `q`-expansion of a level-raised cusp form.** A cusp form and its image under the
 inclusion into modular forms have the same underlying function, so the substitution `q ↦ q ^ d`
 of `ModularForm.qExpansion_levelRaise` reads the same way on cusp forms. -/
 theorem CuspForm.qExpansion_levelRaise [𝒢'.HasDetOne] [NeZero d]
-    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods) (h𝒢' : (1 : ℝ) ∈ 𝒢'.strictPeriods)
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
     qExpansion 1 (CuspForm.levelRaise d hle f) = (qExpansion 1 f).expand d (NeZero.ne d) := by
   have hcoe : ⇑(CuspForm.levelRaise d hle f) =
@@ -1198,16 +1231,16 @@ theorem CuspForm.qExpansion_levelRaise [𝒢'.HasDetOne] [NeZero d]
     rw [CuspForm.coe_levelRaise, ModularForm.coe_levelRaise]
     rfl
   rw [hcoe]
-  exact ModularForm.qExpansion_levelRaise h𝒢 h𝒢' hle _
+  exact ModularForm.qExpansion_levelRaise h𝒢 hle _
 
 /-- **The `q`-expansion of a level-raised cusp form, on coefficients.**
 `aₙ(V_d f) = a_{n/d}(f)` when `d ∣ n`, and `0` otherwise. -/
 theorem CuspForm.qExpansion_levelRaise_coeff [𝒢'.HasDetOne] [NeZero d]
-    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods) (h𝒢' : (1 : ℝ) ∈ 𝒢'.strictPeriods)
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) (n : ℕ) :
     (qExpansion 1 (CuspForm.levelRaise d hle f)).coeff n =
       if d ∣ n then (qExpansion 1 f).coeff (n / d) else 0 := by
-  rw [CuspForm.qExpansion_levelRaise h𝒢 h𝒢' hle f, PowerSeries.coeff_expand]
+  rw [CuspForm.qExpansion_levelRaise h𝒢 hle f, PowerSeries.coeff_expand]
 
 /-- **The `q`-expansion of a level-raised cusp form, at `Γ₁`.** For `f` of level `Γ₁(M)`, its
 image `V_d f` has level `Γ₁(dM)` and `q`-expansion coefficients `aₙ(V_d f) = a_{n/d}(f)` when
@@ -1217,8 +1250,7 @@ theorem CuspForm.qExpansion_levelRaise_coeff_Gamma1 (M : ℕ) [NeZero d]
     (f : CuspForm ((Gamma1 M).map (mapGL ℝ)) k) (n : ℕ) :
     (qExpansion 1 (CuspForm.levelRaise d (Gamma1_map_le_conjAct_scaleGL M d) f)).coeff n =
       if d ∣ n then (qExpansion 1 f).coeff (n / d) else 0 := by
-  refine CuspForm.qExpansion_levelRaise_coeff ?_ ?_ _ f n <;>
-    exact one_mem_strictPeriods_Gamma1_map _
+  exact CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map _) _ f n
 
 /-- **The coefficients of a level-raise, read backwards.** If a cusp form `G` of level `Γ₁(M)`
 is `V_d g` as a function on `ℍ`, that is `⇑G = d ^ (1 - k) • (⇑g ∣[k] diag(d, 1))` for a cusp
@@ -1233,8 +1265,7 @@ theorem CuspForm.qExpansion_coeff_eq_qExpansion_coeff_mul_of_coe_eq_smul_slash_s
   have hG : G = CuspForm.levelRaise d
       (Gamma1_map_le_conjAct_scaleGL_of_dvd (dvd_of_eq (Nat.mul_div_cancel' hdM))) g :=
     DFunLike.coe_injective (by rw [CuspForm.coe_levelRaise, h])
-  rw [hG, CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map _)
-    (one_mem_strictPeriods_Gamma1_map _)]
+  rw [hG, CuspForm.qExpansion_levelRaise_coeff (one_mem_strictPeriods_Gamma1_map _)]
   simp only [dvd_mul_right, ↓reduceIte, Nat.mul_div_cancel_left m (NeZero.pos d)]
 
 /-- **Level-raising lands in the series supported on multiples of `d`.** The `q`-expansion of
@@ -1244,20 +1275,20 @@ of `d` vanish.
 This is the forward half of the Atkin–Lehner description of the old subspace: everything in the
 image of `V_d` satisfies the support condition. -/
 theorem _root_.ModularForm.isSupportedOnDvd_qExpansion_levelRaise [𝒢'.HasDetOne] [NeZero d]
-    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods) (h𝒢' : (1 : ℝ) ∈ 𝒢'.strictPeriods)
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : ModularForm 𝒢 k) :
     PowerSeries.IsSupportedOnDvd d (qExpansion 1 (ModularForm.levelRaise d hle f)) := by
-  rw [ModularForm.qExpansion_levelRaise h𝒢 h𝒢' hle f]
+  rw [ModularForm.qExpansion_levelRaise h𝒢 hle f]
   exact PowerSeries.isSupportedOnDvd_expand (NeZero.ne d) _
 
 /-- **Level-raising lands in the series supported on multiples of `d`, for cusp forms.** The
 cusp-form reading of `ModularForm.isSupportedOnDvd_qExpansion_levelRaise`, which is the form the
 old subspace is described with. -/
 theorem _root_.CuspForm.isSupportedOnDvd_qExpansion_levelRaise [𝒢'.HasDetOne] [NeZero d]
-    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods) (h𝒢' : (1 : ℝ) ∈ 𝒢'.strictPeriods)
+    (h𝒢 : (1 : ℝ) ∈ 𝒢.strictPeriods)
     (hle : 𝒢' ≤ ConjAct.toConjAct (scaleGL d)⁻¹ • 𝒢) (f : CuspForm 𝒢 k) :
     PowerSeries.IsSupportedOnDvd d (qExpansion 1 (CuspForm.levelRaise d hle f)) := by
-  rw [CuspForm.qExpansion_levelRaise h𝒢 h𝒢' hle f]
+  rw [CuspForm.qExpansion_levelRaise h𝒢 hle f]
   exact PowerSeries.isSupportedOnDvd_expand (NeZero.ne d) _
 
 end QExpansion
