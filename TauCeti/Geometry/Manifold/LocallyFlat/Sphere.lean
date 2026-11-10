@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.LocallyFlat.Separation
 public import TauCeti.Geometry.Sphere.Connected
-import Mathlib.Analysis.Normed.Module.Connected
 import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
 import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 
