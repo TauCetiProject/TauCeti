@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Connected.Basic
+public import Mathlib.Topology.Instances.Real.Lemmas
 
 /-!
 # Elementary frontier lemmas
@@ -14,6 +15,11 @@ Facts about `frontier` that carry no structure of their own: straddling, splitti
 two, clinging to it from inside, and the frontier of an image.
 Each is the topological core of a step that a boundary argument would otherwise carry out inside
 a concrete space. The list is open-ended; nothing below depends on how many entries it has.
+
+Also recorded here is the sublevel-set lemma `TauCeti.exists_isOpen_subset_pos_forall_frontier_le`:
+if `u` and `w` are continuous on the closure of an open set `Ω`, `w` lies below `u` on the frontier
+of `Ω` and above it at a point of `Ω`, then `Ω ∩ {u < w}` is an open subset of `Ω` whose closure
+lies in `Ω` and on whose frontier `w ≤ u`.
 
 ## A connected set that straddles a set meets its frontier
 
@@ -67,6 +73,15 @@ meeting of two frontiers. The first is the one an argument about limits of point
 the second is the one a diameter estimate consumes, `frontier` being where the estimates of a
 domain-splitting argument live.
 
+## A local defining function takes its boundary value on the frontier
+
+If, on an open set `U`, a set `D` is the superlevel set `{a ≤ f}` of a function `f` with values in
+a linear order with closed order topology, then `f x = a` at every frontier point `x ∈ U` of `D`
+at which `f` is continuous (`TauCeti.eq_of_mem_frontier_of_mem_iff_le`). Where `a < f x`,
+continuity puts a whole neighbourhood of `x` in `D`, so `x` is interior to `D`; where `f x < a`, it
+puts a whole neighbourhood of `x` outside `D`, so `x` is not adherent to `D`. Neither `D` nor `f`
+needs any further hypothesis: `D` need not be closed, and `f` need only be continuous at `x`.
+
 ## Consumers
 
 The straddling, splitting and clinging lemmas serve Carathéodory's boundary correspondence for
@@ -92,6 +107,9 @@ let alone a holomorphic map.
   closure of a subset exactly where it meets that subset's frontier.
 * `TauCeti.frontier_image_subset_of_closure_subset` — for an open map whose image closure adds at
   most a set `t`, the frontier of an image lies on the image of the frontier, together with `t`.
+* `TauCeti.eq_of_mem_frontier_of_mem_iff_le` — a function whose superlevel set `{a ≤ f}` agrees
+  with a set on an open set takes the value `a` at the frontier points of the set in that open
+  set where it is continuous.
 -/
 
 public section
@@ -244,5 +262,61 @@ theorem frontier_image_subset_of_closure_subset (hf : IsOpenMap f)
   exact Set.union_subset_union (Set.subset_image_sdiff f _ _) Set.sdiff_subset
 
 end OpenImage
+
+section SublevelBetween
+
+variable {X : Type*} [TopologicalSpace X] {Ω : Set X} {u : X → ℝ}
+
+/-- Let `u` and `w` be continuous on the closure of an open set `Ω` with `w < u` on its frontier,
+and `u x₀ < w x₀` at some `x₀ ∈ Ω`. Then `G = Ω ∩ {u < w}` is an open subset of `Ω` containing `x₀`,
+and the closure of `G` lies in `Ω` and `w ≤ u` on the frontier of `G`. -/
+theorem exists_isOpen_subset_pos_forall_frontier_le (hΩo : IsOpen Ω) {w : X → ℝ}
+    (huc : ContinuousOn u (closure Ω)) (hwc : ContinuousOn w (closure Ω))
+    (hfrw : ∀ y ∈ frontier Ω, w y < u y) {x₀ : X} (hx₀ : x₀ ∈ Ω) (hlt : u x₀ < w x₀) :
+    ∃ G, IsOpen G ∧ G ⊆ Ω ∧ closure G ⊆ Ω ∧ x₀ ∈ G ∧ (∀ y ∈ G, 0 < w y - u y) ∧
+      ∀ y ∈ frontier G, w y ≤ u y := by
+  set G := Ω ∩ (fun y => w y - u y) ⁻¹' Ioi 0
+  have hGo : IsOpen G := ((hwc.sub huc).mono subset_closure).isOpen_inter_preimage hΩo isOpen_Ioi
+  have hGc : closure G ⊆ Ω := by
+    have hT : closure G ⊆ closure Ω ∩ (fun y => w y - u y) ⁻¹' Ici 0 :=
+      closure_minimal (fun y hy => ⟨subset_closure hy.1, le_of_lt hy.2⟩)
+        ((hwc.sub huc).preimage_isClosed_of_isClosed isClosed_closure isClosed_Ici)
+    intro y hy
+    obtain ⟨hy₁, hy₂⟩ := hT hy
+    by_contra hyΩ
+    have := hfrw y (by rw [hΩo.frontier_eq]; exact ⟨hy₁, hyΩ⟩)
+    simp only [mem_preimage, mem_Ici] at hy₂
+    linarith
+  refine ⟨G, hGo, inter_subset_left, hGc, ⟨hx₀, sub_pos.2 hlt⟩, fun y hy => hy.2,
+    fun y hy => ?_⟩
+  rw [hGo.frontier_eq] at hy
+  have : ¬0 < w y - u y := fun h => hy.2 ⟨hGc hy.1, h⟩
+  linarith [not_lt.1 this]
+
+end SublevelBetween
+
+section DefiningFunction
+
+open Filter Topology
+
+variable {X α : Type*} [TopologicalSpace X] [LinearOrder α] [TopologicalSpace α]
+  [OrderClosedTopology α] {D U : Set X} {f : X → α} {a : α} {x : X}
+
+/-- **A local defining function takes its boundary value on the frontier.** If, on an open set
+`U`, the set `D` is the superlevel set `{a ≤ f}` of a function `f` with values in a linear order
+with closed order topology, then `f x = a` at every point `x ∈ U` of `frontier D` at which `f` is
+continuous. -/
+theorem eq_of_mem_frontier_of_mem_iff_le (hU : IsOpen U) (hD : ∀ y ∈ U, y ∈ D ↔ a ≤ f y)
+    (hxU : x ∈ U) (hf : ContinuousAt f x) (hx : x ∈ frontier D) : f x = a := by
+  refine le_antisymm (not_lt.1 fun h ↦ hx.2 (mem_interior_iff_mem_nhds.2 ?_)) (not_lt.1 fun h ↦ ?_)
+  · filter_upwards [hU.mem_nhds hxU, hf (isOpen_Ioi.mem_nhds h)] with y hyU hy
+    exact (hD y hyU).2 (le_of_lt hy)
+  · have hDc : Dᶜ ∈ 𝓝 x := by
+      filter_upwards [hU.mem_nhds hxU, hf (isOpen_Iio.mem_nhds h)] with y hyU hy hyD
+      exact not_le.2 hy ((hD y hyU).1 hyD)
+    obtain ⟨y, hyD, hy⟩ := mem_closure_iff_nhds.1 hx.1 _ hDc
+    exact hyD hy
+
+end DefiningFunction
 
 end TauCeti
