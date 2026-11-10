@@ -113,7 +113,6 @@ variable [CompactSpace X]
 
 /-- **`h⁰(0) = 1`.** On a compact connected Riemann surface the global sections of `𝒪(0)` are the
 constants, by the maximum principle. -/
-@[simp]
 theorem finrank_divisorSheaf_zero [ConnectedSpace X] :
     Module.finrank ℂ ((divisorSheaf (0 : WeilDivisor X)).obj.obj (op ⊤)) = 1 := by
   exact (((sheafToPresheaf _ _).mapIso (divisorSheafZeroIso X)).app
