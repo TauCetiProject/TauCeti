@@ -74,15 +74,33 @@ theorem summable_taylorSeries_neg_log {ι : Type*} {r : ι → ℂ} (hr : Summab
   exact_mod_cast Nat.succ_le_succ (Nat.zero_le e)
 
 
-/-- **The double sum is the sum of the local logarithms.**  For a summable `r : ι → ℂ` with every
-`‖r i‖ < 1`, summing the Taylor series of `-log (1 - r i)` over `ι × ℕ` gives `∑' i, -log (1 - r i)`
-— the fibrewise regrouping that `summable_taylorSeries_neg_log` licenses. -/
-theorem tsum_taylorSeries_neg_log {ι : Type*} {r : ι → ℂ} (hr : Summable r)
-    (h1 : ∀ i, ‖r i‖ < 1) :
+/-- **The double sum is the sum of the local logarithms.**  For `r : ι → ℂ` with every
+`‖r i‖ < 1`, summing the Taylor series of `-log (1 - r i)` over `ι × ℕ` gives
+`∑' i, -log (1 - r i)`, the fibrewise regrouping that `summable_taylorSeries_neg_log` licenses.
+If `r` is not summable, neither sum is summable and both are the junk value `0`. -/
+theorem tsum_taylorSeries_neg_log {ι : Type*} {r : ι → ℂ} (h1 : ∀ i, ‖r i‖ < 1) :
     ∑' ie : ι × ℕ, r ie.1 ^ (ie.2 + 1) / ((ie.2 : ℂ) + 1) = ∑' i, -Complex.log (1 - r i) := by
   have hfib : ∀ i, HasSum (fun e : ℕ ↦ r i ^ (e + 1) / ((e : ℂ) + 1))
       (-Complex.log (1 - r i)) := fun i ↦ hasSum_taylorSeries_neg_log' (h1 i)
-  exact ((summable_taylorSeries_neg_log hr h1).hasSum.prod_fiberwise hfib).tsum_eq.symm
+  by_cases hg : Summable fun i ↦ -Complex.log (1 - r i)
+  · -- Summability of the logarithms forces summability of `r`, since `‖r i‖ ≤ 2 ‖log (1 - r i)‖`
+    -- once the logarithm is small.
+    have hr : Summable r := by
+      refine Summable.of_norm_bounded_eventually (hg.norm.mul_left 2) ?_
+      have hlim := tendsto_zero_iff_norm_tendsto_zero.1 hg.tendsto_cofinite_zero
+      filter_upwards [hlim.eventually_le_const one_pos] with i hi
+      have hne : 1 - r i ≠ 0 := fun h ↦ by
+        have := h1 i
+        rw [show r i = 1 by linear_combination -h, norm_one] at this
+        exact lt_irrefl _ this
+      have h2 := Complex.norm_exp_sub_one_le (x := Complex.log (1 - r i))
+        (by simpa using hi)
+      rw [Complex.exp_log hne, show 1 - r i - 1 = -r i by ring, norm_neg] at h2
+      simpa using h2
+    exact ((summable_taylorSeries_neg_log hr h1).hasSum.prod_fiberwise hfib).tsum_eq.symm
+  · rw [tsum_eq_zero_of_not_summable hg]
+    refine tsum_eq_zero_of_not_summable fun hS ↦ hg ?_
+    exact (hS.hasSum.prod_fiberwise hfib).summable
 
 /-- **The truncation error of the Taylor series of `log (1 - z)⁻¹`.** For `‖z‖ < 1`, the partial
 sum `∑ j ∈ Icc 1 n, z ^ j / j` approximates `log (1 - z)⁻¹ = -log (1 - z)` to within
