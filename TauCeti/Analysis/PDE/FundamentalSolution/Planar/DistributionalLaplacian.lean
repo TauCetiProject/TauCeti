@@ -220,14 +220,12 @@ theorem integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul {g : ℂ →
   -- Both sides converge as `t → 0⁺`.
   have hL := tendsto_integral_mul_of_dominated_away (measure_singleton (0 : ℂ))
     (μ := volume) (l := 𝓝[>] (0 : ℝ)) (K := regKernel) (K₀ := regKernel 0)
-    hg'.aestronglyMeasurable
     (eventually_mem_nhdsWithin.mono fun t ht ↦ (continuous_regKernel ht).aestronglyMeasurable)
     (by simpa [regKernel_zero] using integrable_planarNewtonianKernel_mul hg' hcg')
     (eventually_mem_nhdsWithin.mono fun t ht z hz ↦ abs_regKernel_le (le_of_lt ht) hz)
     (fun z hz ↦ tendsto_regKernel hz)
   have hR := tendsto_integral_mul_of_dominated_away (measure_singleton (0 : ℂ))
     (μ := volume) (l := 𝓝[>] (0 : ℝ)) (K := regKernelDeriv v) (K₀ := regKernelDeriv v 0)
-    hg.continuous.aestronglyMeasurable
     (eventually_mem_nhdsWithin.mono fun t ht ↦
       (continuous_regKernelDeriv v ht).aestronglyMeasurable)
     ((integrable_fderiv_planarNewtonianKernel_mul v hg.continuous hc).congr hderiv)

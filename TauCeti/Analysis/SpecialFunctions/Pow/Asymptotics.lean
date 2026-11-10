@@ -27,6 +27,11 @@ On a seminormed group, as `‖s‖ → ∞`:
 
 These are the comparisons behind the order of growth of an entire function.
 
+## Positive powers near zero
+
+As `h → 0⁺`, every multiple `A * h ^ θ` of a positive power falls below any positive constant.
+This is how polynomial rates in a small scale `h` become inequalities for all small `h`.
+
 ## Comparing exponents
 
 If `(n + 1) ^ a ≤ C (n + 1) ^ b` for every natural number `n`, then `a ≤ b`: a power with a
@@ -82,6 +87,13 @@ theorem Filter.Tendsto.rpow_mul_comp_add {f : ℝ → ℝ} {α C : ℝ}
 open Asymptotics Bornology
 
 namespace TauCeti
+
+/-- Near `0⁺`, a positive power of `h` with any coefficient is below any positive constant. -/
+theorem eventually_mul_rpow_lt_nhdsGT_zero {θ : ℝ} (hθ : 0 < θ) (A : ℝ) {c : ℝ} (hc : 0 < c) :
+    ∀ᶠ h in 𝓝[>] (0 : ℝ), A * h ^ θ < c := by
+  have ht := (Real.continuousAt_rpow_const 0 θ (Or.inr hθ.le)).tendsto.const_mul A
+  rw [Real.zero_rpow hθ.ne', mul_zero] at ht
+  exact (ht.mono_left nhdsWithin_le_nhds).eventually (gt_mem_nhds hc)
 
 variable {E : Type*} [SeminormedAddCommGroup E]
 

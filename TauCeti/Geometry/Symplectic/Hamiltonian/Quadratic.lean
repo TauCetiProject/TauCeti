@@ -58,6 +58,8 @@ quadratic form whose Hamiltonian endomorphism preserves both summands is a direc
 
 * `TauCeti.SymplecticForm.apply_hamiltonianEnd`, `TauCeti.SymplecticForm.eq_hamiltonianEnd_iff`:
   the characterizing identity `ω (A_Q v) w = polar Q v w`.
+* `TauCeti.SymplecticForm.hamiltonianEnd_apply_eq_of_basis`: it suffices to test the
+  characterizing identity on a basis.
 * `TauCeti.SymplecticForm.hamiltonianEnd_mem_skewAdjointLieSubalgebra`: `A_Q ∈ sp(V, ω)`.
 * `TauCeti.SymplecticForm.ker_hamiltonianEnd`: the kernel of `A_Q` is the radical of `Q`.
 * `TauCeti.SymplecticForm.hamiltonianEndEquiv_symm_apply_apply`: the inverse equivalence sends `A`
@@ -138,6 +140,16 @@ theorem eq_hamiltonianEnd_iff {Q : QuadraticForm ℝ V} {A : Module.End ℝ V} :
     A = ω.hamiltonianEnd Q ↔ ∀ v w, ω (A v) w = QuadraticMap.polar Q v w := by
   refine ⟨fun h v w ↦ h ▸ ω.apply_hamiltonianEnd Q v w, fun h ↦ ω.ext_of_apply_left fun v w ↦ ?_⟩
   rw [h, apply_hamiltonianEnd]
+
+/-- The Hamiltonian endomorphism of `Q` sends `u` to `z` as soon as `ω z` and `polar Q u` agree
+on a basis. -/
+theorem hamiltonianEnd_apply_eq_of_basis {ι : Type*} (b : Module.Basis ι ℝ V)
+    {Q : QuadraticForm ℝ V} {u z : V} (h : ∀ c, ω z (b c) = QuadraticMap.polar Q u (b c)) :
+    ω.hamiltonianEnd Q u = z := by
+  have hzero : ω.toBilinForm (ω.hamiltonianEnd Q u - z) = 0 := b.ext fun c ↦ by
+    rw [map_sub, LinearMap.sub_apply, LinearMap.zero_apply, sub_eq_zero]
+    exact (ω.apply_hamiltonianEnd Q u (b c)).trans (h c).symm
+  exact sub_eq_zero.1 (ω.nondegenerate.1 _ fun w ↦ by rw [hzero, LinearMap.zero_apply])
 
 /-- Pairing on the right: `ω v (A_Q w) = -polar Q v w`. -/
 @[simp]

@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Normed.Operator.LinearIsometry
 public import Mathlib.Analysis.Normed.Group.BallSphere
 public import Mathlib.Analysis.Normed.Module.Basic
 public import Mathlib.Topology.MetricSpace.IsometricSMul
+public import TauCeti.Analysis.Normed.Module.Ball.Action
 
 /-!
 # Linear isometries of the unit sphere
@@ -31,6 +32,8 @@ This file develops that restriction independently of the manifold structure on s
   on the unit sphere of `E`, which is by isometries.
 * `LinearIsometryEquiv.isPretransitive_unitSphere`: for a real inner product space this action is
   transitive.
+* `LinearIsometryEquiv.instSMulCommClassUnitSphere`: over a normed field `𝕜`, this action commutes
+  with the action of the unit scalars of `𝕜` on the unit sphere.
 
 ## Main results
 
@@ -197,6 +200,19 @@ instance : IsIsometricSMul (E ≃ₗᵢ[R] E) (sphere (0 : E) 1) :=
   ⟨fun e => Isometry.of_dist_eq fun x y => by simp [Subtype.dist_eq]⟩
 
 end Seminormed
+
+section NormedField
+
+variable {𝕜 E : Type*} [NormedField 𝕜] [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- A `𝕜`-linear isometry equivalence of `E` commutes with the action of the unit scalars of `𝕜`
+on the unit sphere of `E`. -/
+instance instSMulCommClassUnitSphere :
+    SMulCommClass (E ≃ₗᵢ[𝕜] E) (sphere (0 : 𝕜) 1) (sphere (0 : E) 1) where
+  smul_comm e c x := Subtype.ext <| by
+    simp only [coe_smul_unitSphere, TauCeti.Sphere.coe_sphere_smul, map_smul]
+
+end NormedField
 
 section InnerProduct
 

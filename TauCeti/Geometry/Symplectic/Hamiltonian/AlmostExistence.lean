@@ -208,17 +208,17 @@ theorem HasContractibleClosedCharacteristic.of_hamiltonianVectorField_eq_smul
   rw [Pi.smul_apply, hX _ (hlev t), inv_smul_smul₀ ha]
   exact hγ t
 
-/-- **Closed characteristics under reparametrization of the energy.** If `φ` is differentiable at
-`c` with `φ'(c) ≠ 0` and `F` is differentiable along `F⁻¹(c)`, then a closed characteristic of
+/-- **Closed characteristics under reparametrization of the energy.** If `φ'(c) ≠ 0` (so `φ` is
+differentiable at `c`) and `F` is differentiable along `F⁻¹(c)`, then a closed characteristic of
 `F⁻¹(c)` contractible in `W` is one of the level `φ(c)` of `φ ∘ F`, since
 `X_{φ ∘ F} = φ'(c) X_F` along `F⁻¹(c)`. -/
 theorem HasContractibleClosedCharacteristic.comp
     (h : σ.HasContractibleClosedCharacteristic W F c) {φ : ℝ → ℝ}
-    (hφ : DifferentiableAt ℝ φ c) (hφ' : deriv φ c ≠ 0)
-    (hF : ∀ x, F x = c → MDifferentiableAt I 𝓘(ℝ) F x) :
+    (hφ' : deriv φ c ≠ 0) (hF : ∀ x, F x = c → MDifferentiableAt I 𝓘(ℝ) F x) :
     σ.HasContractibleClosedCharacteristic W (φ ∘ F) (φ c) :=
   h.of_hamiltonianVectorField_eq_smul hφ' (fun x hx ↦ by simp [hx]) fun x hx ↦ by
-    rw [hamiltonianVectorField_comp (hx ▸ hφ) (hF x hx), hx]
+    rw [hamiltonianVectorField_comp (hx ▸ differentiableAt_of_deriv_ne_zero hφ')
+      (hF x hx), hx]
 
 /-- **Conformal invariance of closed characteristics.** For a nondegenerate form on a
 finite-dimensional manifold and `a ≠ 0`, the closed characteristics contractible in `W` of `aσ`
