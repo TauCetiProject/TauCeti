@@ -126,13 +126,13 @@ theorem lowerIncompleteGamma_eq_zero_of_nonpos_left (hs : s ≤ 0) (x : ℝ) :
     lowerIncompleteGamma s x = 0 :=
   ite_eq_right (not_lt.2 hs)
 
-/-- For `s ≤ 0` and `0 < x`, Euler's integrand `t ^ (s - 1) * exp (-t)` is not integrable at the
-origin. -/
-theorem not_intervalIntegrable_rpow_mul_exp_neg (hs : s ≤ 0) (hx : 0 < x) :
-    ¬ IntervalIntegrable (fun t : ℝ => t ^ (s - 1) * Real.exp (-t)) volume 0 x := by
+/-- Euler's integrand `t ^ p * exp (-t)` is not interval integrable at the origin, for `p ≤ -1`
+and `0 < x`; this is the converse of `TauCeti.intervalIntegrable_rpow_mul_exp_neg`. -/
+theorem not_intervalIntegrable_rpow_mul_exp_neg {p : ℝ} (hp : p ≤ -1) (hx : 0 < x) :
+    ¬ IntervalIntegrable (fun t : ℝ => t ^ p * Real.exp (-t)) volume 0 x := by
   intro h
   have h' := h.mul_continuousOn (g := Real.exp) Real.continuous_exp.continuousOn
-  have hint : IntegrableOn (fun t : ℝ => t ^ (s - 1)) (Ioo 0 x) := by
+  have hint : IntegrableOn (fun t : ℝ => t ^ p) (Ioo 0 x) := by
     refine ((intervalIntegrable_iff_integrableOn_Ioc_of_le hx.le).1
       (h'.congr ?_)).mono_set Ioo_subset_Ioc_self
     intro t _
@@ -150,7 +150,7 @@ theorem lowerIncompleteGamma_eq_integral (hx : 0 ≤ x) :
     rcases hx.eq_or_lt with rfl | hx
     · simp
     · exact (intervalIntegral.integral_undef
-        (not_intervalIntegrable_rpow_mul_exp_neg (not_lt.1 hs) hx)).symm
+        (not_intervalIntegrable_rpow_mul_exp_neg (by linarith [not_lt.1 hs]) hx)).symm
 
 /-- Below the support, `γ(s, x)` is `0`. -/
 @[simp]
@@ -304,8 +304,8 @@ theorem deriv_regularizedGamma (hs : 0 < s) (hx : 0 < x) :
 
 /-! ### The recurrence in the shape parameter -/
 
-/-- For a positive real shape parameter `s` and `0 ≤ x`, `γ(s, x)` is Mathlib's
-`Complex.partialGamma` at `(s : ℂ)`.
+/-- For real `s` and `0 ≤ x`, `γ(s, x)` is Mathlib's `Complex.partialGamma` at `(s : ℂ)`. For
+`s ≤ 0` both sides are the junk value `0`, as in `TauCeti.lowerIncompleteGamma_eq_integral`.
 
 The complex partial gamma function carries the integration by parts behind
 `TauCeti.lowerIncompleteGamma_add_one`, so this identification is what lets that recurrence be
@@ -326,7 +326,6 @@ theorem ofReal_lowerIncompleteGamma_eq_partialGamma (hx : 0 ≤ x) :
 /-- The recurrence `γ(s + 1, x) = s * γ(s, x) - x ^ s * exp (-x)`, for `0 < s` and `0 ≤ x`. -/
 theorem lowerIncompleteGamma_add_one (hs : 0 < s) (hx : 0 ≤ x) :
     lowerIncompleteGamma (s + 1) x = s * lowerIncompleteGamma s x - x ^ s * Real.exp (-x) := by
-  have hs1 : (0 : ℝ) < s + 1 := by linarith
   have key := Complex.partialGamma_add_one (s := (s : ℂ)) (by simpa using hs) hx
   -- `Complex.partialGamma_add_one` shifts the shape inside `ℂ`, as `(s : ℂ) + 1`, whereas
   -- `TauCeti.ofReal_lowerIncompleteGamma_eq_partialGamma` only matches a shape of the form
