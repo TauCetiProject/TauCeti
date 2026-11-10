@@ -104,11 +104,12 @@ section Approximation
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {u : E → ℝ} {Ω : Set E} {x y : E} {m : ℝ}
 
-/-- **The pointwise limit of the contact integrands.** Let `C²` functions `v k` converge to `u`
-uniformly on open sets `U k ⊆ Ω` which eventually contain a ball around each point of `Ω`, with
-`|u| ≤ M` on `Ω`, and let `y ∈ Ω` be a point at which the Hessians of the `v k` converge to `H`. Then the upper limit of `|det D²(v k)(y)|` restricted to the
-contact sets of `v k` is at most `|det H|`, restricted to the contact set of `u` and to the
-points where `H` is symmetric and nonpositive. -/
+/-- **The pointwise limit of the contact integrands.** Let `C²` functions `v k` converge to
+`u` uniformly on open sets `U k ⊆ Ω` which eventually contain a ball around each point of `Ω`,
+with `|u| ≤ M` on `Ω`, and let `y ∈ Ω` be a point at which the Hessians of the `v k` converge to
+`H`. Then the upper limit of `|det D²(v k)(y)|` restricted to the contact sets of `v k` is at
+most `|det H|`, restricted to the contact set of `u` and to the points where `H` is symmetric and
+nonpositive. -/
 private theorem limsup_indicator_upperContactSet_le {U : ℕ → Set E} {v : ℕ → E → ℝ}
     {H : E → E →L[ℝ] E} {M : ℝ} (hu : ∀ z ∈ Ω, |u z| ≤ M) (hUo : ∀ k, IsOpen (U k))
     (hUΩ : ∀ k, U k ⊆ Ω) (hUball : ∀ z ∈ Ω, ∃ r > 0, ∀ᶠ k in atTop, closedBall z r ⊆ U k)

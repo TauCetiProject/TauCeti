@@ -66,8 +66,7 @@ function (`TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Sobole
   principal part `∑ᵢⱼ aⁱʲ (T eⱼ)ᵢ` of a measurable operator field and the quotient
   `F⁻ / (det a)^{1/n}` are measurable.
 * `TauCeti.PDE.negPart_div_det_rpow_le`: under `∑ᵢⱼ |aⁱʲ| ≤ K (det a)^{1/n}`, perturbing the
-  Hessian by `T - S` changes `(∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu)⁻ / (det a)^{1/n}` by at most `K ‖T - S‖`; this is
-  how the right-hand side passes to a limit of approximate Hessians.
+  Hessian by `T - S` changes `(∑ᵢⱼ aⁱʲ ∂ᵢ∂ⱼu)⁻ / (det a)^{1/n}` by at most `K ‖T - S‖`.
 * `TauCeti.PDE.le_add_mul_eLpNorm_negPart_div_det_rpow_of_volume_ball_le`: the `Lⁿ` form follows
   from the measure form; it is shared with the estimate for strong solutions in
   `TauCeti.Analysis.PDE.MaximumPrinciple.AleksandrovBakelmanPucci.Sobolev`.
@@ -187,7 +186,6 @@ theorem setLIntegral_ofReal_negPart_div_card_pow_div_det_eq [Nonempty ι]
   filter_upwards [ha] with y hy
   have hdet := hy.det_pos
   have hgy : 0 ≤ g y := div_nonneg (negPart_nonneg _) (Real.rpow_nonneg hdet.le _)
-  dsimp only
   rw [Real.enorm_eq_ofReal hgy, ← ENNReal.ofReal_pow hgy,
     ← ENNReal.ofReal_mul (by positivity)]
   congr 1
