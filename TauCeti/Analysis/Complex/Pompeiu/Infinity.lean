@@ -83,8 +83,7 @@ theorem norm_cauchyTransform_sub_inv_smul_le (hf : Integrable f)
     (hsupp : support f ⊆ closedBall c r) (hw : (r : ℝ) < ‖w - c‖) :
     ‖cauchyTransform f w - (w - c)⁻¹ • ((Real.pi : ℂ)⁻¹ • ∫ z, f z)‖ ≤
       π⁻¹ * (r / ((‖w - c‖ - r) * ‖w - c‖) * ∫ z, ‖f z‖) := by
-  rw [cauchyTransform_sub_inv_smul_eq hf hsupp hw, norm_smul, norm_inv, norm_real,
-    Real.norm_of_nonneg Real.pi_pos.le]
+  rw [cauchyTransform_sub_inv_smul_eq hf hsupp hw, norm_pi_inv_smul]
   gcongr
   exact norm_integral_smul_le_of_support_subset hf hsupp fun z hz ↦
     norm_inv_sub_sub_inv_sub_le_of_mem_closedBall hz hw
@@ -137,8 +136,7 @@ theorem norm_deriv_cauchyTransform_le (hf : Integrable f) (hsupp : support f ⊆
     (hw : (r : ℝ) < ‖w - c‖) :
     ‖deriv (cauchyTransform f) w‖ ≤ π⁻¹ * (((‖w - c‖ - r) ^ 2)⁻¹ * ∫ z, ‖f z‖) := by
   have hw' := notMem_tsupport_of_support_subset_closedBall hsupp hw
-  rw [(hasDerivAt_cauchyTransform_of_notMem_tsupport hf hw').deriv, norm_neg, norm_smul, norm_inv,
-    norm_real, Real.norm_of_nonneg Real.pi_pos.le]
+  rw [(hasDerivAt_cauchyTransform_of_notMem_tsupport hf hw').deriv, norm_neg, norm_pi_inv_smul]
   gcongr
   refine norm_integral_smul_le_of_support_subset hf hsupp fun z hz ↦ ?_
   rw [← inv_pow, norm_pow, ← inv_pow]
@@ -162,7 +160,7 @@ theorem norm_deriv_cauchyTransform_add_inv_sq_smul_le (hf : Integrable f)
       integral_sub hint (hf.smul ((w - c) ^ 2)⁻¹ : Integrable fun z ↦ ((w - c) ^ 2)⁻¹ • f z),
       integral_smul, smul_sub, smul_comm ((w - c) ^ 2)⁻¹]
     abel
-  rw [heq, norm_neg, norm_smul, norm_inv, norm_real, Real.norm_of_nonneg Real.pi_pos.le]
+  rw [heq, norm_neg, norm_pi_inv_smul]
   gcongr
   refine norm_integral_smul_le_of_support_subset hf hsupp fun z hz ↦ ?_
   rw [← inv_pow, ← inv_pow, sq_sub_sq, norm_mul, mul_comm]

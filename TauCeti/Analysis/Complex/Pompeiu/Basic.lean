@@ -104,6 +104,10 @@ noncomputable def cauchyTransform (f : ℂ → F) (w : ℂ) : F :=
 theorem cauchyTransform_apply (f : ℂ → F) (w : ℂ) :
     cauchyTransform f w = (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z := (rfl)
 
+/-- The norm of the Cauchy-transform normalization `π⁻¹ • x`. -/
+theorem norm_pi_inv_smul (x : F) : ‖(Real.pi : ℂ)⁻¹ • x‖ = π⁻¹ * ‖x‖ := by
+  rw [norm_smul, norm_inv, norm_real, Real.norm_of_nonneg Real.pi_pos.le]
+
 /-- In convolution coordinates the Cauchy transform uses the reciprocal kernel with the same
 positive sign. The variable substitution gives `ξ⁻¹ • f (w - ξ)`. -/
 theorem cauchyTransform_eq_convolution (f : ℂ → F) :
