@@ -42,7 +42,7 @@ theorem pgf_negativeHypergeometricMeasure {N K r : ℕ} (hr : r ≤ K) (z : ℝ)
         (((k + r - 1).choose k : ℝ) * ((N - r - k).choose (K - r) : ℝ) /
           (N.choose K : ℝ)) * z ^ k := by
   by_cases hK : K ≤ N
-  · rw [pgf_def, integral_negativeHypergeometricMeasure _ hr hK]
+  · rw [pgf_def, integral_negativeHypergeometricMeasure _ hr]
     refine Finset.sum_congr rfl fun k hk ↦ ?_
     have hk : k ≤ N - K := Nat.lt_succ_iff.mp (Finset.mem_range.mp hk)
     simp only [negativeHypergeometricWeight_toReal, ite_eq_left hk, id_eq, smul_eq_mul]
