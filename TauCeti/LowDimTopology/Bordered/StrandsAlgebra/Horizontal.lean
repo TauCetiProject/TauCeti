@@ -246,20 +246,6 @@ theorem target_swapHorizontal (h : φ.CanMoveHorizontal a b) :
     refine ⟨x, fun hxa ↦ hya ?_, fun hxb ↦ h.notMem_source (mem_source.2 ⟨y, hxb ▸ hy⟩), hy⟩
     exact Option.mem_unique hy (hxa ▸ h.mem)
 
-/-- Moving a horizontal strand of an identity diagram gives an identity diagram. -/
-theorem swapHorizontal_idOn {s : Finset α} (ha : a ∈ s) (hb : b ∉ s) :
-    (idOn s).swapHorizontal a b = idOn (insert b (s.erase a)) := by
-  have h : (idOn s).CanMoveHorizontal a b := by
-    refine ⟨?_, by simpa using hb, by simpa using hb⟩
-    simp [ha]
-  ext x y
-  rw [← Option.mem_def, ← Option.mem_def, mem_swapHorizontal h, mem_idOn, mem_idOn, mem_insert,
-    mem_erase]
-  rcases eq_or_ne x b with rfl | hxb
-  · simp [eq_comm]
-  simp only [hxb, false_and, ne_eq, not_false_eq_true, true_and, false_or]
-  tauto
-
 /-- Moving one of the horizontal strands added along `U` from `a ∈ U` to `b ∉ U` adds them along
 `U` with `a` replaced by `b`, when no strand of `φ` starts or ends at `a` or `b`. -/
 theorem swapHorizontal_addHorizontal {U : Finset α} (ha : a ∈ U) (hb : b ∉ U)
@@ -275,6 +261,13 @@ theorem swapHorizontal_addHorizontal {U : Finset α} (ha : a ∈ U) (hb : b ∉ 
   ext x y
   simp only [← Option.mem_def, mem_swapHorizontal h, mem_addHorizontal, mem_insert, mem_erase]
   grind
+
+/-- Moving a horizontal strand of an identity diagram gives an identity diagram. -/
+theorem swapHorizontal_idOn {s : Finset α} (ha : a ∈ s) (hb : b ∉ s) :
+    (idOn s).swapHorizontal a b = idOn (insert b (s.erase a)) := by
+  have h := swapHorizontal_addHorizontal (φ := idOn ∅) ha hb (by simp) (by simp) (by simp)
+    (by simp)
+  rwa [idOn_addHorizontal, idOn_addHorizontal, empty_union, empty_union] at h
 
 /-! ### Strands crossing a horizontal strand -/
 

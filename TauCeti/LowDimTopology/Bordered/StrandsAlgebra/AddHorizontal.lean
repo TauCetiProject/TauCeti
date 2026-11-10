@@ -43,7 +43,7 @@ whether two diagrams have a nonzero product in the strands algebra
   factors pass through the composite.
 * `TauCeti.StrandDiagram.composable_addHorizontal_iff`: adding common horizontal strands does not
   change composability.
-* `TauCeti.StrandDiagram.eraseHorizontal_addHorizontal_horizontalPoints`,
+* `TauCeti.StrandDiagram.addHorizontal_eraseHorizontal_horizontalPoints`,
   `TauCeti.StrandDiagram.eraseHorizontal_addHorizontal`: every diagram is obtained, in exactly one
   way, by adding horizontal strands to a diagram without horizontal strands.
 
@@ -265,7 +265,7 @@ theorem target_eraseHorizontal (φ : StrandDiagram α) :
 
 /-- **A diagram is its horizontal strands added to the rest.** -/
 @[simp]
-theorem eraseHorizontal_addHorizontal_horizontalPoints (φ : StrandDiagram α) :
+theorem addHorizontal_eraseHorizontal_horizontalPoints (φ : StrandDiagram α) :
     φ.eraseHorizontal.addHorizontal φ.horizontalPoints = φ := by
   ext i j
   simp only [← Option.mem_def, mem_addHorizontal, mem_horizontalPoints, mem_eraseHorizontal]
