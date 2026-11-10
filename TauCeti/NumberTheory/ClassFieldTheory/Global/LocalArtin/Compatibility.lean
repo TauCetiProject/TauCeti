@@ -133,7 +133,7 @@ theorem apply_globalArtinMap_eq_finsum (ι : L →ₐ[K] SeparableClosure K)
           (g : AbsoluteGaloisGroup K ⧸ (fixingOpenNormalSubgroup K L).toSubgroup)))) := by
     simp only [ψ, χ', AddMonoidHom.comp_apply, MonoidHom.coe_toAdditive,
       Function.comp_apply, toMul_ofMul, AddEquiv.coe_toAddMonoidHom,
-      MulEquiv.toAdditive_apply_apply, abelianizationCongr_of]
+      MulEquiv.toAdditive_apply_apply, Group.abelianizationCongr_of]
     rw [← layerGalEquiv_symm_restrictNormalHom ι g, MulEquiv.apply_symm_apply]
   -- Embeddings of separable closures reading the components of `a`, and representatives of the
   -- local Artin symbols of the components.

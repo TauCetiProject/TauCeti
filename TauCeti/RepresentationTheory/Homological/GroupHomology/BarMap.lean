@@ -39,7 +39,7 @@ universe u
 namespace MonoidHom
 
 variable {k G H : Type u} [CommRing k] [Group G] [Group H]
-  [DecidableEq G] [DecidableEq H] {A : Rep k G} {B : Rep k H}
+  {A : Rep k G} {B : Rep k H}
 
 /-- Change of groups on bar coinvariants. On tensor classes this applies the compatible
 coefficient map in the first factor and relabels the bar chain in the second factor. -/

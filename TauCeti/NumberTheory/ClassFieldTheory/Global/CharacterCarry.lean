@@ -572,7 +572,7 @@ theorem ClassFormation.apply_artinMap_eq_finsum_of_inv_eq_ideleSumLocalInv
   have hχ'' : χ'.comp (((ofOpenNormal V).repMapLayerHom (ideleClassHom K)).galEquiv
       |>.abelianizationCongr : Group.Abelianization (ofOpenNormal V).Gal →*
         Group.Abelianization (ofOpenNormal V).Gal).toAdditive = χ' := by
-    rw [NormalLayer.repMapLayerHom_galEquiv, abelianizationCongr_refl]
+    rw [NormalLayer.repMapLayerHom_galEquiv, Group.abelianizationCongr_refl]
     rfl
   have h := (congrArg (fun χ'' ↦
     ((ofOpenNormal V).repMapLayerHom (ideleClassHom K)).cohomologyMap 2

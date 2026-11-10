@@ -89,7 +89,7 @@ theorem classifyingSpaceFirstHomologyAddEquiv_hurewiczHomologyAddEquiv
           (classifyingSpaceBasepoint G) (Additive.ofMul (Group.Abelianization.of γ))) =
       Additive.ofMul (Group.Abelianization.of (classifyingSpaceFundamentalGroupMulEquiv G γ)) := by
   rw [classifyingSpaceFirstHomologyAddEquiv, AddEquiv.trans_apply, AddEquiv.symm_apply_apply]
-  exact congrArg Additive.ofMul (abelianizationCongr_of _ γ)
+  exact congrArg Additive.ofMul (Group.abelianizationCongr_of _ γ)
 
 /-- The singular homology class of a loop `p` at the base point corresponds to the class of the
 group element `p` represents under `classifyingSpaceFundamentalGroupMulEquiv`. -/

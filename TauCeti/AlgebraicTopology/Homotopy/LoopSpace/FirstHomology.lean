@@ -65,7 +65,7 @@ theorem pathLoopSpaceFirstHomologyAddEquiv_symm_loopClass (x : X)
   simp only [pathLoopSpaceFirstHomologyAddEquiv, AddEquiv.trans_apply,
     MulEquiv.toAdditive_apply_apply, toMul_ofMul, MulEquiv.trans_apply,
     ← fundamentalGroupLoopSpaceMulEquiv_apply, Group.Abelianization.equivOfComm_apply,
-    abelianizationCongr_of, MulEquiv.symm_apply_apply]
+    Group.abelianizationCongr_of, MulEquiv.symm_apply_apply]
   exact (HurewiczOne.hurewiczHomologyAddEquiv_ofMul_of_mk
     (X := TopCat.of (Ω X x)) γ).symm
 

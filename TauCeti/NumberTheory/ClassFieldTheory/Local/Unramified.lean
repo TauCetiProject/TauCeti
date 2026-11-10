@@ -173,7 +173,7 @@ private theorem layerFrobeniusCharacter_frobenius (ι : L →ₐ[K] SeparableClo
         (Additive.ofMul (Group.Abelianization.of (layerFrobenius K L ι))) =
       ((1 / orderOf (layerFrobenius K L ι) : ℚ) : AddCircle (1 : ℚ)) := by
   rw [layerFrobeniusCharacter_apply, MulEquiv.toAdditive_apply_apply, toMul_ofMul,
-    abelianizationCongr_of, orderOf_layerFrobenius, layerFrobenius, MulEquiv.apply_symm_apply,
+    Group.abelianizationCongr_of, orderOf_layerFrobenius, layerFrobenius, MulEquiv.apply_symm_apply,
     frobeniusCharacter_frobenius]
 
 /-- A ground-field unit as an invariant coefficient of the normal layer. -/
