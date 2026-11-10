@@ -414,8 +414,7 @@ private theorem exists_bound_extend (a : LocalSymbol U V W m) (hψ : ContDiff �
         (by filter_upwards [hab x hxL] with y hy η using by rw [hy]), mixedDeriv_def]
       congr 1
       funext y
-      exact congrFun (coordinateDeriv_const_smul β
-        (contDiff_infty.1 (hb.comp (contDiff_prodMk_right y)) _) (ψ y)) ξ
+      exact congrFun (coordinateDeriv_const_smul β (fun η => b (y, η)) (ψ y)) ξ
     rw [hψb]
     refine (norm_coordinateDeriv_smul_le α (contDiff_infty.1 hψ _)
       (contDiff_infty.1 (contDiff_coordinateDeriv_slice hb β ξ) _) x).trans ?_

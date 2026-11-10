@@ -18,6 +18,7 @@ public import TauCeti.Topology.Algebra.GroupAction.GermKernel
 public import TauCeti.Topology.OpenPartialHomeomorph.MulAction
 import Mathlib.Analysis.Convex.PathConnected
 import TauCeti.Algebra.BigOperators.Finset.Average
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.RepresentationTheory.Invariants
 
 /-!
@@ -408,6 +409,17 @@ variable {𝕜 G X E : Type*} [NontriviallyNormedField 𝕜] [Group G] [Fintype 
   [Invertible (Fintype.card G : 𝕜)] [TopologicalSpace X] [MulAction G X] [ContinuousConstSMul G X]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
 
+omit [CompleteSpace E] [ContinuousConstSMul G X] in
+/-- The Bochner average of `y ↦ χ y - χ x`, read in the coordinates of `χ`, has the identity as
+strict derivative at `χ x`, when the conjugated maps have strict derivatives `σ g` there. -/
+private theorem hasStrictFDerivAt_bochnerAverage_comp_symm (χ : OpenPartialHomeomorph X E) {x : X}
+    (σ : ContRepresentation 𝕜 G E)
+    (hσ : ∀ g : G, HasStrictFDerivAt (χ ∘ (g • ·) ∘ χ.symm) (σ g) (χ x)) :
+    HasStrictFDerivAt (σ.bochnerAverage (fun y => χ y - χ x) ∘ χ.symm)
+      ((ContinuousLinearEquiv.refl 𝕜 E : E ≃L[𝕜] E) : E →L[𝕜] E) (χ x) := by
+  refine ContRepresentation.hasStrictFDerivAt_bochnerAverage_comp_of_intertwining fun g => ?_
+  simpa using (hσ g).sub_const (χ x)
+
 /-- **Bochner linearization** for a finite group. Let `G` act on `X` fixing `x`, let `χ` be an
 `E`-valued chart around `x`, and suppose that each conjugated map `χ ∘ (g • ·) ∘ χ.symm` has strict
 derivative `σ g` at `χ x`, where `σ` is a continuous representation of `G` on `E`. Then there is a
@@ -422,10 +434,7 @@ theorem exists_equivariant_chart (χ : OpenPartialHomeomorph X E) {x : X} (hxχ 
     ∃ e : OpenPartialHomeomorph X E, x ∈ e.source ∧ e x = 0 ∧ e.source ⊆ χ.source ∧
       (∀ g : G, ∀ y ∈ e.source, g • y ∈ e.source ∧ e (g • y) = σ g (e y)) ∧
       HasStrictFDerivAt (e ∘ χ.symm) (ContinuousLinearMap.id 𝕜 E) (χ x) := by
-  have hA : HasStrictFDerivAt (σ.bochnerAverage (fun y => χ y - χ x) ∘ χ.symm)
-      ((ContinuousLinearEquiv.refl 𝕜 E : E ≃L[𝕜] E) : E →L[𝕜] E) (χ x) := by
-    refine ContRepresentation.hasStrictFDerivAt_bochnerAverage_comp_of_intertwining fun g => ?_
-    simpa using (hσ g).sub_const (χ x)
+  have hA := hasStrictFDerivAt_bochnerAverage_comp_symm χ σ hσ
   have hΘ : EqOn (hA.toOpenPartialHomeomorph _)
       (σ.bochnerAverage (fun y => χ y - χ x) ∘ χ.symm)
       (hA.toOpenPartialHomeomorph _).source := fun _ _ => rfl
@@ -454,17 +463,9 @@ theorem map_eq_one_iff_mem_germKernel (χ : OpenPartialHomeomorph X E) {x : X}
   · -- the Bochner average `a` is equivariant, and injective near `χ x` in the coordinates `χ`
     set a := σ.bochnerAverage (fun y => χ y - χ x)
     have hA : HasStrictFDerivAt (a ∘ χ.symm)
-        ((ContinuousLinearEquiv.refl 𝕜 E : E ≃L[𝕜] E) : E →L[𝕜] E) (χ x) := by
-      refine ContRepresentation.hasStrictFDerivAt_bochnerAverage_comp_of_intertwining fun g => ?_
-      simpa using (hσ g).sub_const (χ x)
-    obtain ⟨s, hs, hinj⟩ : ∃ s ∈ 𝓝 (χ x), InjOn (a ∘ χ.symm) s := by
-      rcases (ContinuousLinearEquiv.refl 𝕜 E).subsingleton_or_nnnorm_symm_pos with hE | hpos
-      · obtain ⟨s, hs, happ⟩ := hA.approximates_deriv_on_nhds (c := 0) (Or.inl hE)
-        exact ⟨s, hs, happ.injOn (Or.inl hE)⟩
-      · obtain ⟨s, hs, happ⟩ := hA.approximates_deriv_on_nhds
-          (c := (‖((ContinuousLinearEquiv.refl 𝕜 E).symm : E →L[𝕜] E)‖₊)⁻¹ / 2)
-          (Or.inr (half_pos (inv_pos.2 hpos)))
-        exact ⟨s, hs, happ.injOn (Or.inr (half_lt_self (inv_pos.2 hpos)))⟩
+        ((ContinuousLinearEquiv.refl 𝕜 E : E ≃L[𝕜] E) : E →L[𝕜] E) (χ x) :=
+      hasStrictFDerivAt_bochnerAverage_comp_symm χ σ hσ
+    obtain ⟨s, hs, hinj⟩ := hA.exists_mem_nhds_injOn
     have hgx : g • x ∈ χ.source := by rwa [hx g]
     have hcont : ContinuousAt (fun y => χ (g • y)) x :=
       (χ.continuousAt hgx).comp_of_eq (continuous_const_smul g).continuousAt rfl

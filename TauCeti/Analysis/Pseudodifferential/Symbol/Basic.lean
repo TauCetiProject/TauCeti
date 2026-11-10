@@ -471,8 +471,7 @@ def frequencyDeriv (j : Fin n) : Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 1)
   map_smul' c a := by
     ext1
     funext p
-    exact congrFun (coordinateDeriv_const_smul [j]
-      (contDiff_infty.1 (a.contDiff_coefficient.comp (contDiff_prodMk_right p.1)) _) c) p.2
+    exact congrFun (coordinateDeriv_const_smul [j] (fun η => a.coefficient (p.1, η)) c) p.2
 
 @[simp]
 theorem coefficient_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
@@ -509,8 +508,7 @@ def spatialDeriv (j : Fin n) : Symbol n V W m →ₗ[ℂ] Symbol n V W m where
   map_smul' c a := by
     ext1
     funext p
-    exact congrFun (coordinateDeriv_const_smul [j]
-      (contDiff_infty.1 (a.contDiff_coefficient.comp (contDiff_prodMk_left p.2)) _) c) p.1
+    exact congrFun (coordinateDeriv_const_smul [j] (fun y => a.coefficient (y, p.2)) c) p.1
 
 @[simp]
 theorem coefficient_spatialDeriv (j : Fin n) (a : Symbol n V W m) (x ξ : CoordinateSpace n) :

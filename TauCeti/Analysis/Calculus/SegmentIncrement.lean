@@ -14,15 +14,14 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.DistLEIntegral
 # The increment of a function along a segment
 
 This file bounds the increment of a function between `x` and `x + h` by the integral of its
-directional derivative along the segment joining them. It is the multi-dimensional form of
-Mathlib's one-dimensional `enorm_sub_le_lintegral_deriv_of_contDiffOn_Icc`, obtained by
-composing with the affine parametrization `t ↦ x + t • h` of the segment.
+directional derivative along the segment joining them. It is the multi-dimensional form of the
+one-dimensional estimate for the composite with the affine parametrization `t ↦ x + t • h` of the
+segment.
 
-The hypothesis of the first estimate is local to the segment: differentiability at each of its
-points. The normalized real-valued estimate
-instead assumes continuity of the function along the unit-speed parameterized segment,
-differentiability at interior parameters, and interval integrability of the norm of the full
-Fréchet derivative rather than continuity merely of its fixed directional evaluation; for a
+The first estimate needs only differentiability of the function at each point of the closed
+segment, with no continuity of its derivative. The normalized real-valued estimate instead assumes
+continuity of the function along the unit-speed parameterized segment, differentiability at
+interior parameters, and interval integrability of the norm of the full Fréchet derivative; for a
 zero-length segment these hypotheses hold trivially.
 
 ## Main declarations

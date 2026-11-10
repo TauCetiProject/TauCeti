@@ -381,7 +381,7 @@ def mixedDerivCLM (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
   let L : Symbol n V W m →ₗ[ℂ] V →L[ℂ] W :=
     { toFun a := mixedDeriv α β a.coefficient x ξ
       map_add' a b := mixedDeriv_add a.contDiff_coefficient b.contDiff_coefficient α β x ξ
-      map_smul' c a := mixedDeriv_const_smul a.contDiff_coefficient c α β x ξ }
+      map_smul' c a := mixedDeriv_const_smul c α β x ξ }
   { toLinearMap := L
     cont := WithSeminorms.continuous_of_isBounded withSeminorms (norm_withSeminorms ℂ _) L
       (Seminorm.IsBounded.of_real fun _ => ⟨{({x}, α, β)},
