@@ -55,9 +55,19 @@ private theorem ae_mem_Icc_semicircleReal_zero_one :
     ∀ᵐ y ∂semicircleReal 0 1, y ∈ Icc (-2 : ℝ) 2 := by
   simpa using ae_mem_Icc_semicircleReal 0 1
 
+private theorem restrict_Icc_semicircleReal_eq (a : ℝ) (v : ℝ≥0) :
+    (semicircleReal a v).restrict (Icc (a - 2 * Real.sqrt v) (a + 2 * Real.sqrt v)) =
+      semicircleReal a v :=
+  restrict_Icc_semicircleReal a v
+
 private theorem restrict_Icc_semicircleReal_zero_one :
     (semicircleReal 0 1).restrict (Icc (-2) 2) = semicircleReal 0 1 := by
-  simpa using restrict_Icc_semicircleReal 0 1
+  simpa using restrict_Icc_semicircleReal_eq 0 1
+
+private theorem ae_ne_semicircleReal_zero_one (x : ℝ) :
+    ∀ᵐ y ∂semicircleReal 0 1, y ≠ x := by
+  let := nullSingletonClass_semicircleReal 0 one_pos
+  exact (semicircleReal 0 1).ae_ne x
 
 /-- The logarithmic kernel `y ↦ log |x - y|` is integrable against the semicircle law. -/
 theorem integrable_log_abs_sub_semicircleReal (x a : ℝ) (v : ℝ≥0) :
@@ -78,7 +88,7 @@ theorem integrable_log_abs_sub_semicircleReal (x a : ℝ) (v : ℝ≥0) :
         (ENNReal.ofReal (Real.pi * Real.sqrt v)⁻¹ • volume.restrict (Icc l u)) :=
       hint.smul_measure ENNReal.ofReal_ne_top
     have hrestr : (semicircleReal a v).restrict (Icc l u) = semicircleReal a v :=
-      restrict_Icc_semicircleReal a v
+      restrict_Icc_semicircleReal_eq a v
     rw [← hrestr]
     refine h1.mono_measure ?_
     rw [← Measure.restrict_smul]
@@ -106,14 +116,12 @@ private theorem tendsto_log_norm_sub_integral (x : ℝ) :
       with ε hε hε1
     have hεpos : 0 < ε := hε
     have hεle : ε ≤ 1 := hε1.le
-    let := nullSingletonClass_semicircleReal 0 one_pos
     filter_upwards [ae_mem_Icc_semicircleReal_zero_one,
-      (semicircleReal 0 1).ae_ne x] with y hy hxy
+      ae_ne_semicircleReal_zero_one x] with y hy hxy
     have hy' : |y| ≤ 2 := abs_le.mpr ⟨hy.1, hy.2⟩
     simpa only [bound, show (|x| + 2 + 1 : ℝ) = |x| + 3 by ring] using
       TauCeti.log_norm_sub_bound x y ε 2 hεpos hεle hy' hxy
-  · let := nullSingletonClass_semicircleReal 0 one_pos
-    filter_upwards [(semicircleReal 0 1).ae_ne x] with y hxy
+  · filter_upwards [ae_ne_semicircleReal_zero_one x] with y hxy
     have harg : ContinuousAt
         (fun ε : ℝ ↦ (x : ℂ) + (ε : ℂ) * Complex.I - y) 0 := by
       fun_prop
@@ -148,6 +156,11 @@ private theorem integrable_log_sub {w : ℂ} (hw : 0 < w.im) :
     (continuous_log_sub hw).continuousOn.integrableOn_compact isCompact_Icc
   rwa [IntegrableOn, restrict_Icc_semicircleReal_zero_one] at h
 
+private theorem not_mem_range_ofReal_of_im_pos {z : ℂ} (hz : 0 < z.im) :
+    z ∉ Set.range (algebraMap ℝ ℂ) := by
+  rintro ⟨x, hx⟩
+  exact ofReal_ne_of_im_pos hz x hx
+
 /-- The complex logarithmic potential is holomorphic in the upper half-plane, with derivative the
 Cauchy transform `∫ (z - y)⁻¹`. -/
 private theorem hasDerivAt_logPotential (hz : 0 < z.im) :
@@ -174,12 +187,12 @@ private theorem hasDerivAt_logPotential (hz : 0 < z.im) :
 private theorem hasDerivAt_m (hz : 0 < z.im) : ∃ d, HasDerivAt m d z := by
   refine ⟨_, hasDerivAt_resolventTransform (μ := semicircleReal 0 1) z ?_⟩
   rintro ⟨x, -, hx⟩
-  exact ofReal_ne_of_im_pos hz x hx
+  exact not_mem_range_ofReal_of_im_pos hz ⟨x, hx⟩
 
 private theorem m_quad (hz : 0 < z.im) : m z * m z + z * m z + 1 = 0 := by
   have h := resolventTransform_semicircleReal_quadratic_eq_zero (a := 0) (v := 1) (z := z) (by
     rintro ⟨x, -, hx⟩
-    exact ofReal_ne_of_im_pos hz x hx)
+    exact not_mem_range_ofReal_of_im_pos hz ⟨x, hx⟩)
   simpa [m] using h
 
 private theorem m_im_pos (hz : 0 < z.im) : 0 < (m z).im :=
@@ -208,7 +221,9 @@ private theorem hasDerivAt_logPotential_eq_neg_m (hz : 0 < z.im) :
   filter_upwards with y
   simp only [resolvent, Ring.inverse_eq_inv]
   have hyz : (algebraMap ℝ ℂ) y - z ≠ 0 :=
-    sub_ne_zero.mpr (ofReal_ne_of_im_pos hz y)
+    sub_ne_zero.mpr (by
+      intro hy
+      exact not_mem_range_ofReal_of_im_pos hz ⟨y, hy⟩)
   have hzy : z - (y : ℂ) ≠ 0 := by
     intro h
     apply hyz
@@ -522,16 +537,17 @@ private theorem m_boundary_identities (x ε : ℝ) (hε : 0 < ε) :
 private theorem m_boundary_q_estimate {x ε : ℝ} (hx : x ∈ Icc (-2) 2)
     (hε : 0 < ε) :
     0 < 1 - mBoundaryNormSq x ε ∧ (1 - mBoundaryNormSq x ε) ^ 2 ≤ 2 * ε := by
-  let z : ℂ := (x : ℂ) + (ε : ℂ) * Complex.I
-  let a : ℝ := (m z).re
-  let b : ℝ := (m z).im
-  let q : ℝ := a ^ 2 + b ^ 2
-  have hz : 0 < z.im := by simp [z, hε]
+  let a : ℝ := (mBoundary x ε).re
+  let b : ℝ := (mBoundary x ε).im
+  let q : ℝ := mBoundaryNormSq x ε
+  have hz : 0 < ((x : ℂ) + (ε : ℂ) * Complex.I).im := by simp [hε]
   have hids := m_boundary_identities x ε hε
-  have hreal : a * (q + 1) = -x * q := hids.1
-  have himag : b * (1 - q) = ε * q := hids.2
-  have hb : 0 < b := by simpa [b, z] using m_im_pos hz
-  have hq : 0 < q := by dsimp [q]; positivity
+  have hreal : a * (q + 1) = -x * q := by simpa [a, q] using hids.1
+  have himag : b * (1 - q) = ε * q := by simpa [b, q] using hids.2
+  have hb : 0 < b := by simpa [b, mBoundary] using m_im_pos (by simpa [mBoundary] using hε)
+  have hqdef : q = a ^ 2 + b ^ 2 := by
+    dsimp [q, a, b, mBoundaryNormSq]
+  have hq : 0 < q := by rw [hqdef]; positivity
   have hq_lt : q < 1 := by
     by_contra hn
     have hle : 1 - q ≤ 0 := by linarith
@@ -551,8 +567,7 @@ private theorem m_boundary_q_estimate {x ε : ℝ} (hx : x ∈ Icc (-2) 2)
     nlinarith [h]
   have hfactor :
       b ^ 2 * (q + 1) ^ 2 = q * ((q + 1) ^ 2 - x ^ 2 * q) := by
-    dsimp [q] at *
-    nlinarith [hreal_sq]
+    nlinarith [hreal_sq, hqdef]
   have hfactor_le : (1 - q) ^ 2 ≤ (q + 1) ^ 2 - x ^ 2 * q := by
     have hq0 : 0 ≤ q := le_of_lt hq
     have h4x : 0 ≤ 4 - x ^ 2 := by linarith
@@ -604,26 +619,20 @@ private theorem m_boundary_q_estimate {x ε : ℝ} (hx : x ∈ Icc (-2) 2)
     ring
   have hsmall : (1 - q) ^ 2 ≤ 2 * ε :=
     (sq_le_sq₀ (sq_nonneg (1 - q)) (by positivity)).1 hfour''
-  exact ⟨sub_pos.mpr hq_lt, hsmall⟩
+  exact ⟨by simpa [q] using sub_pos.mpr hq_lt, by simpa [q] using hsmall⟩
 
 private theorem tendsto_m_boundary_normSq {x : ℝ} (hx : x ∈ Icc (-2) 2) :
-    Tendsto
-      (fun ε : ℝ ↦ (m ((x : ℂ) + (ε : ℂ) * Complex.I)).re ^ 2 +
-        (m ((x : ℂ) + (ε : ℂ) * Complex.I)).im ^ 2)
-      (𝓝[>] 0) (𝓝 1) := by
+    Tendsto (fun ε : ℝ ↦ mBoundaryNormSq x ε) (𝓝[>] 0) (𝓝 1) := by
   refine tendsto_order.2 ⟨fun c hc ↦ ?_, fun c hc ↦ ?_⟩
   · have hδ : 0 < 1 - c := sub_pos.mpr hc
     filter_upwards [self_mem_nhdsWithin,
       mem_nhdsWithin_of_mem_nhds
         (Iio_mem_nhds (by positivity : 0 < (1 - c) ^ 2 / 2))]
       with ε hε hεsmall
-    let z : ℂ := (x : ℂ) + (ε : ℂ) * Complex.I
-    let a : ℝ := (m z).re
-    let b : ℝ := (m z).im
-    let q : ℝ := a ^ 2 + b ^ 2
+    let q : ℝ := mBoundaryNormSq x ε
     have hest := m_boundary_q_estimate hx hε
-    have hqpos : 0 < 1 - q := hest.1
-    have hqbound : (1 - q) ^ 2 ≤ 2 * ε := hest.2
+    have hqpos : 0 < 1 - q := by simpa [q] using hest.1
+    have hqbound : (1 - q) ^ 2 ≤ 2 * ε := by simpa [q] using hest.2
     simp only [Set.mem_Iio] at hεsmall
     have hεsq : 2 * ε < (1 - c) ^ 2 := by linarith
     have hsq : (1 - q) ^ 2 < (1 - c) ^ 2 := lt_of_le_of_lt hqbound hεsq
@@ -635,110 +644,95 @@ private theorem tendsto_m_boundary_normSq {x : ℝ} (hx : x ∈ Icc (-2) 2) :
         nlinarith [mul_nonneg (sub_nonneg.mpr hle) hsum]
       linarith
     have hqgt : c < q := by linarith
-    simpa [z, a, b, q] using hqgt
+    simpa [q] using hqgt
   · filter_upwards [self_mem_nhdsWithin] with ε hε
-    let z : ℂ := (x : ℂ) + (ε : ℂ) * Complex.I
-    let a : ℝ := (m z).re
-    let b : ℝ := (m z).im
-    let q : ℝ := a ^ 2 + b ^ 2
+    let q : ℝ := mBoundaryNormSq x ε
     have hest := m_boundary_q_estimate hx hε
     have hqbound : q < 1 := by
       have hqpos : 0 < 1 - q := hest.1
       linarith
     have hc1 : 1 < c := by linarith
     have : q < c := hqbound.trans hc1
-    simpa [z, a, b, q] using this
+    simpa [q] using this
 
 private theorem tendsto_m_boundary_re {x : ℝ} (hx : x ∈ Icc (-2) 2) :
-    Tendsto (fun ε : ℝ ↦ (m ((x : ℂ) + (ε : ℂ) * Complex.I)).re)
-      (𝓝[>] 0) (𝓝 (-x / 2)) := by
-  let Q : ℝ → ℝ := fun ε ↦
-    (m ((x : ℂ) + (ε : ℂ) * Complex.I)).re ^ 2 +
-      (m ((x : ℂ) + (ε : ℂ) * Complex.I)).im ^ 2
-  let A : ℝ → ℝ := fun ε ↦ (m ((x : ℂ) + (ε : ℂ) * Complex.I)).re
+    Tendsto (fun ε : ℝ ↦ (mBoundary x ε).re) (𝓝[>] 0) (𝓝 (-x / 2)) := by
+  let Q : ℝ → ℝ := fun ε ↦ mBoundaryNormSq x ε
+  let A : ℝ → ℝ := fun ε ↦ (mBoundary x ε).re
   let F : ℝ → ℝ := fun t ↦ -x * t / (t + 1)
-  have hQ : Tendsto Q (𝓝[>] 0) (𝓝 1) := by
-    simpa [Q] using tendsto_m_boundary_normSq hx
+  have hQ : Tendsto Q (𝓝[>] 0) (𝓝 1) := tendsto_m_boundary_normSq hx
   have hcont : ContinuousAt F 1 := by
     fun_prop (disch := norm_num)
   have hF := hcont.tendsto.comp hQ
   have hEq : ∀ᶠ ε : ℝ in 𝓝[>] 0, A ε = F (Q ε) := by
     filter_upwards [self_mem_nhdsWithin] with ε hε
-    let z : ℂ := (x : ℂ) + (ε : ℂ) * Complex.I
-    let a : ℝ := (m z).re
-    let b : ℝ := (m z).im
-    let q : ℝ := a ^ 2 + b ^ 2
+    let a : ℝ := (mBoundary x ε).re
+    let q : ℝ := mBoundaryNormSq x ε
     have hids := m_boundary_identities x ε hε
-    have hreal : a * (q + 1) = -x * q := hids.1
-    have hqnonneg : 0 ≤ q := by dsimp [q]; positivity
+    have hreal : a * (q + 1) = -x * q := by simpa [a, q] using hids.1
+    have hqnonneg : 0 ≤ q := by
+      dsimp [q, mBoundaryNormSq]
+      positivity
     have hformula : a = -x * q / (q + 1) := by
       have hqp : q + 1 ≠ 0 := by linarith
       field_simp [hqp]
       nlinarith
-    simpa [A, F, Q, z, a, b, q] using hformula
+    simpa [A, F, Q, a, q] using hformula
   have hA := Filter.Tendsto.congr' (EventuallyEq.symm hEq) hF
   have hF1 : F 1 = -x / 2 := by dsimp [F]; ring
   rw [← hF1]
   simpa [A] using hA
 
 private theorem tendsto_eps_mul_m_boundary_im {x : ℝ} (hx : x ∈ Icc (-2) 2) :
-    Tendsto (fun ε : ℝ ↦ ε * (m ((x : ℂ) + (ε : ℂ) * Complex.I)).im)
-      (𝓝[>] 0) (𝓝 0) := by
+    Tendsto (fun ε : ℝ ↦ ε * (mBoundary x ε).im) (𝓝[>] 0) (𝓝 0) := by
   have hε : Tendsto (fun ε : ℝ ↦ ε) (𝓝[>] 0) (𝓝 0) :=
     tendsto_id.mono_left (nhdsWithin_le_nhds : 𝓝[>] (0 : ℝ) ≤ 𝓝 0)
   refine Filter.Tendsto.squeeze' tendsto_const_nhds hε ?_ ?_
   · filter_upwards [self_mem_nhdsWithin] with ε hε
-    have hb : 0 < (m ((x : ℂ) + (ε : ℂ) * Complex.I)).im :=
-      m_im_pos (by simpa using hε)
+    have hb : 0 < (mBoundary x ε).im :=
+      m_im_pos (by simpa [mBoundary] using hε)
     exact mul_nonneg (le_of_lt hε) hb.le
   · filter_upwards [self_mem_nhdsWithin] with ε hε
-    let z : ℂ := (x : ℂ) + (ε : ℂ) * Complex.I
-    let a : ℝ := (m z).re
-    let b : ℝ := (m z).im
-    let q : ℝ := a ^ 2 + b ^ 2
+    let a : ℝ := (mBoundary x ε).re
+    let b : ℝ := (mBoundary x ε).im
+    let q : ℝ := mBoundaryNormSq x ε
     have hest := m_boundary_q_estimate hx hε
     have hq_lt : q < 1 := by
-      have hqpos : 0 < 1 - q := hest.1
+      have hqpos : 0 < 1 - q := by simpa [q] using hest.1
       linarith
-    have hb : 0 < b := by simpa [b, z] using m_im_pos (by simpa [z] using hε)
+    have hb : 0 < b := by
+      simpa [b, mBoundary] using m_im_pos (by simpa [mBoundary] using hε)
+    have hqdef : q = a ^ 2 + b ^ 2 := by
+      dsimp [q, a, b, mBoundaryNormSq]
     have hb_sq : b ^ 2 ≤ 1 := by
-      dsimp [q] at hq_lt
-      nlinarith [sq_nonneg a]
+      nlinarith [sq_nonneg a, hqdef]
     have hb_le : b ≤ 1 :=
       (sq_le_sq₀ hb.le (by norm_num : (0 : ℝ) ≤ 1)).1 (by simpa using hb_sq)
-    -- Express the goal using the local abbreviation for the imaginary part.
-    change ε * b ≤ ε
-    simpa using mul_le_mul_of_nonneg_left hb_le (le_of_lt hε)
+    simpa [b] using mul_le_mul_of_nonneg_left hb_le (le_of_lt hε)
 
 private theorem tendsto_log_norm_m_boundary {x : ℝ} (hx : x ∈ Icc (-2) 2) :
-    Tendsto (fun ε : ℝ ↦
-      Real.log ‖m ((x : ℂ) + (ε : ℂ) * Complex.I)‖) (𝓝[>] 0) (𝓝 0) := by
-  let Q : ℝ → ℝ := fun ε ↦
-    (m ((x : ℂ) + (ε : ℂ) * Complex.I)).re ^ 2 +
-      (m ((x : ℂ) + (ε : ℂ) * Complex.I)).im ^ 2
-  have hQ : Tendsto Q (𝓝[>] 0) (𝓝 1) := by
-    simpa [Q] using tendsto_m_boundary_normSq hx
+    Tendsto (fun ε : ℝ ↦ Real.log ‖mBoundary x ε‖) (𝓝[>] 0) (𝓝 0) := by
+  let Q : ℝ → ℝ := fun ε ↦ mBoundaryNormSq x ε
+  have hQ : Tendsto Q (𝓝[>] 0) (𝓝 1) := tendsto_m_boundary_normSq hx
   have hlogQ : Tendsto (Real.log ∘ Q) (𝓝[>] 0) (𝓝 0) := by
     have hcont : ContinuousAt Real.log (1 : ℝ) := Real.continuousAt_log (by norm_num)
     simpa only [Real.log_one] using hcont.tendsto.comp hQ
   have hEq : ∀ᶠ ε : ℝ in 𝓝[>] 0,
-      Real.log ‖m ((x : ℂ) + (ε : ℂ) * Complex.I)‖ =
+      Real.log ‖mBoundary x ε‖ =
         Real.log (Q ε) / 2 := by
     filter_upwards [self_mem_nhdsWithin] with ε hε
-    let z : ℂ := (x : ℂ) + (ε : ℂ) * Complex.I
-    let a : ℝ := (m z).re
-    let b : ℝ := (m z).im
-    let q : ℝ := a ^ 2 + b ^ 2
-    have hqnorm : q = ‖m z‖ ^ 2 := by
-      dsimp [q, a, b]
+    let q : ℝ := mBoundaryNormSq x ε
+    have hqnorm : q = ‖mBoundary x ε‖ ^ 2 := by
+      dsimp [q, mBoundaryNormSq]
       rw [← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
       ring
-    have hnorm : ‖m z‖ ≠ 0 := norm_ne_zero_iff.mpr (m_ne_zero (by simpa [z] using hε))
-    have hlog : Real.log q = 2 * Real.log ‖m z‖ := by
+    have hnorm : ‖mBoundary x ε‖ ≠ 0 :=
+      norm_ne_zero_iff.mpr (m_ne_zero (by simpa [mBoundary] using hε))
+    have hlog : Real.log q = 2 * Real.log ‖mBoundary x ε‖ := by
       rw [hqnorm, pow_two, Real.log_mul hnorm hnorm]
       ring
-    have hlognorm : Real.log ‖m z‖ = Real.log q / 2 := by linarith
-    simpa [Q, z, a, b, q] using hlognorm
+    have hlognorm : Real.log ‖mBoundary x ε‖ = Real.log q / 2 := by linarith
+    simpa [Q, q, mBoundary] using hlognorm
   have hhalf : Tendsto (fun ε ↦ Real.log (Q ε) / 2) (𝓝[>] 0) (𝓝 0) := by
     simpa using hlogQ.div_const 2
   exact Filter.Tendsto.congr' (EventuallyEq.symm hEq) hhalf
@@ -748,15 +742,13 @@ private theorem tendsto_primitive_re_boundary {x : ℝ} (hx : x ∈ Icc (-2) 2) 
       (fun ε : ℝ ↦
         (primitive ((x : ℂ) + (ε : ℂ) * Complex.I)).re)
       (𝓝[>] 0) (𝓝 (x ^ 2 / 4 - 1 / 2)) := by
-  let A : ℝ → ℝ := fun ε ↦ (m ((x : ℂ) + (ε : ℂ) * Complex.I)).re
-  let B : ℝ → ℝ := fun ε ↦ ε * (m ((x : ℂ) + (ε : ℂ) * Complex.I)).im
-  have hA : Tendsto A (𝓝[>] 0) (𝓝 (-x / 2)) := by
-    simpa [A] using tendsto_m_boundary_re hx
-  have hB : Tendsto B (𝓝[>] 0) (𝓝 0) := by
-    simpa [B] using tendsto_eps_mul_m_boundary_im hx
+  let A : ℝ → ℝ := fun ε ↦ (mBoundary x ε).re
+  let B : ℝ → ℝ := fun ε ↦ ε * (mBoundary x ε).im
+  have hA : Tendsto A (𝓝[>] 0) (𝓝 (-x / 2)) := tendsto_m_boundary_re hx
+  have hB : Tendsto B (𝓝[>] 0) (𝓝 0) := tendsto_eps_mul_m_boundary_im hx
   have hlog : Tendsto
-      (fun ε : ℝ ↦ Real.log ‖m ((x : ℂ) + (ε : ℂ) * Complex.I)‖)
-      (𝓝[>] 0) (𝓝 0) := tendsto_log_norm_m_boundary hx
+      (fun ε : ℝ ↦ Real.log ‖mBoundary x ε‖) (𝓝[>] 0) (𝓝 0) :=
+    tendsto_log_norm_m_boundary hx
   have hxa : Tendsto (fun ε ↦ x * A ε) (𝓝[>] 0) (𝓝 (x * (-x / 2))) := by
     simpa [A] using tendsto_const_nhds.mul hA
   have hterm₁ : Tendsto (fun ε ↦ -(x * A ε) / 2) (𝓝[>] 0) (𝓝 (x ^ 2 / 4)) := by
@@ -773,8 +765,7 @@ private theorem tendsto_primitive_re_boundary {x : ℝ} (hx : x ∈ Icc (-2) 2) 
     have h := hB.div_const 2
     simpa using h
   have hsum : Tendsto
-      (fun ε ↦ (-(x * A ε) / 2 + B ε / 2) - Real.log ‖m
-        ((x : ℂ) + (ε : ℂ) * Complex.I)‖)
+      (fun ε ↦ (-(x * A ε) / 2 + B ε / 2) - Real.log ‖mBoundary x ε‖)
       (𝓝[>] 0) (𝓝 (x ^ 2 / 4)) := by
     have h := (hterm₁.add hterm₂).sub hlog
     simpa using h
@@ -783,16 +774,21 @@ private theorem tendsto_primitive_re_boundary {x : ℝ} (hx : x ∈ Icc (-2) 2) 
   have hEq : (fun ε : ℝ ↦ (primitive ((x : ℂ) + (ε : ℂ) * Complex.I)).re) =ᶠ[𝓝[>] 0]
       fun ε ↦
         (-(x * A ε) / 2 + B ε / 2) -
-          Real.log ‖m ((x : ℂ) + (ε : ℂ) * Complex.I)‖ + (-1 / 2) := by
+          Real.log ‖mBoundary x ε‖ + (-1 / 2) := by
     filter_upwards [self_mem_nhdsWithin] with ε hε
     let z : ℂ := (x : ℂ) + (ε : ℂ) * Complex.I
-    let a : ℝ := (m z).re
-    let b : ℝ := (m z).im
+    let a : ℝ := (mBoundary x ε).re
+    let b : ℝ := (mBoundary x ε).im
     have hfirst :
-        (-(z * m z) / 2).re = -(x * a) / 2 + ε * b / 2 := by
-      simp [z, a, b, Complex.mul_re]
+        (-(z * mBoundary x ε) / 2).re = -(x * a) / 2 + ε * b / 2 := by
+      simp [z, a, b, mBoundary, Complex.mul_re]
       ring
-    rw [primitive_re, hfirst]
+    have hprimitive :
+        (primitive z).re =
+          (-(z * mBoundary x ε) / 2).re - Real.log ‖mBoundary x ε‖ - 1 / 2 := by
+      rw [primitive_re]
+      simp [z, mBoundary]
+    rw [hprimitive, hfirst]
     ring
   have h' := Filter.Tendsto.congr' (EventuallyEq.symm hEq) hfinal
   have hlimit : x ^ 2 / 4 + (-1 / 2) = x ^ 2 / 4 - 1 / 2 := by ring
