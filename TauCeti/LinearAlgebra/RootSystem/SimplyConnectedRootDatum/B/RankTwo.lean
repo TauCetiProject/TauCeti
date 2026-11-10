@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.RootLength
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.B.Datum
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 
 /-!
 # The rank-two type `B` root datum in explicit coordinates
@@ -224,6 +224,11 @@ private lemma b2_root_coroot_b2Index (k : Fin 8) :
     (typeBSimplyConnectedRootDatum 2).root (b2Index k) = b2Root k := by
   exact (b2_root_coroot_b2Index k).1
 
+/-- The assembled B₂ datum carries the same root table as the explicit rank-two datum. -/
+theorem root_simplyConnectedRootDatum_b2Index {ht : (B 2).Valid} (k : Fin 8) :
+    ((B 2).simplyConnectedRootDatum ht).root (b2Index k) = b2Root k := by
+  simpa +instances only [simplyConnectedRootDatum_B, rank, numRoots] using root_b2Index k
+
 /-- **The eight named indices carry the tabulated coroots.** -/
 @[simp] theorem coroot_b2Index (k : Fin 8) :
     (typeBSimplyConnectedRootDatum 2).coroot (b2Index k) = b2Coroot k := by
@@ -251,6 +256,12 @@ theorem range_root_typeBSimplyConnectedRootDatum_two :
     range (typeBSimplyConnectedRootDatum 2).root = range b2Root := by
   rw [← b2Index_bijective.surjective.range_comp ⇑(typeBSimplyConnectedRootDatum 2).root]
   exact congrArg range (funext root_b2Index)
+
+/-- The root table exhausts the roots of the assembled B₂ datum. -/
+theorem range_root_simplyConnectedRootDatum_B_two {ht : (B 2).Valid} :
+    range ((B 2).simplyConnectedRootDatum ht).root = range b2Root := by
+  simpa +instances only [simplyConnectedRootDatum_B, rank, numRoots] using
+    range_root_typeBSimplyConnectedRootDatum_two
 
 /-- **The tabulated coroots are all the coroots.** -/
 theorem range_coroot_typeBSimplyConnectedRootDatum_two :
