@@ -132,7 +132,7 @@ variable {X G : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurabl
   {μ : Measure X} [SeminormedAddGroup G]
 
 /-- **The standard smoothness estimate implies Hörmander's condition.** Let the closed balls
-about `y'` satisfy the growth bound `μ (closedBall y' r) ≤ A rⁿ` with `0 ≤ n`, and let `K` satisfy
+about `y'` satisfy the growth bound `μ (closedBall y' r) ≤ A rⁿ`, and let `K` satisfy
 the standard smoothness estimate with exponent `δ > 0`,
 
 `‖K x y - K x y'‖ ≤ C dist y y' ^ δ dist x y' ^ (-(n + δ))` whenever `dist x y' > 2 dist y y'`.
@@ -140,7 +140,7 @@ the standard smoothness estimate with exponent `δ > 0`,
 Then `∫_{dist x y' > 2 dist y y'} ‖K x y - K x y'‖ dx ≤ C A 2ⁿ / (2^δ - 1)`. -/
 theorem setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow {K : X → X → G} {y y' : X}
     {A : ℝ≥0∞} {n : ℝ} (hμ : ∀ r, 0 < r → μ (closedBall y' r) ≤ A * ENNReal.ofReal (r ^ n))
-    (hn : 0 ≤ n) {C : ℝ≥0} {δ : ℝ} (hδ : 0 < δ)
+    {C : ℝ≥0} {δ : ℝ} (hδ : 0 < δ)
     (hK : ∀ x, 2 * dist y y' < dist x y' →
       ‖K x y - K x y'‖ ≤ C * (dist y y' ^ δ * dist x y' ^ (-(n + δ)))) :
     ∫⁻ x in {x | 2 * dist y y' < dist x y'}, ‖K x y - K x y'‖ₑ ∂μ ≤
@@ -182,7 +182,7 @@ theorem setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow {K : X → X → G} {y
               have h2t : 0 < 2 * t := by positivity
               exact setLIntegral_ofReal_dist_rpow_neg_le
                 (fun r hr ↦ (measure_mono ball_subset_closedBall).trans (hμ r (h2t.trans hr)))
-                (by positivity) (by linarith) h2t
+                (by linarith) h2t
           _ = A * ENNReal.ofReal (C * (2 ^ n / (2 ^ δ - 1))) := by
               rw [mul_left_comm, ← ENNReal.ofReal_mul (by positivity), hr]
           _ = C * A * ENNReal.ofReal (2 ^ n / (2 ^ δ - 1)) := by
@@ -216,7 +216,7 @@ theorem setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow_pi {K : (ι → ℝ) �
       4 ^ Fintype.card ι / (2 ^ δ - 1) := by
     rw [Real.rpow_natCast, ← mul_div_assoc, ← mul_pow]
     norm_num
-  refine (setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow hμ (Nat.cast_nonneg _) hδ hK).trans
+  refine (setLIntegral_enorm_sub_le_of_norm_sub_le_mul_rpow hμ hδ hK).trans
     (le_of_eq ?_)
   rw [mul_assoc, ← ENNReal.ofReal_mul (by positivity), h4]
 
