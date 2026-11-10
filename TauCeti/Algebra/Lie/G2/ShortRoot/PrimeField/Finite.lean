@@ -34,7 +34,7 @@ private theorem specialIsogenyCoordinateMap_apply_apply (x : carrierAlgebra) :
 
 /-- The exceptional G2 coordinate endomorphism is finite. -/
 theorem finite_specialIsogenyCoordinateMap : specialIsogenyCoordinateMap.hom.toAlgHom.Finite :=
-  specialIsogenyCoordinateMap.hom.toAlgHom.finite_of_comp_self_eq_pow (by decide)
+  specialIsogenyCoordinateMap.hom.toAlgHom.finite_of_comp_eq_pow (by decide)
     specialIsogenyCoordinateMap_apply_apply
 
 /-- The scheme-theoretic kernel of the exceptional G2 endomorphism is finite over `𝔽₃`. -/
@@ -47,7 +47,7 @@ instance moduleFinite_quotient_kernel_specialIsogenyCoordinateMap :
 It is therefore bijective there, even though the coordinate endomorphism need not be invertible. -/
 theorem comap_specialIsogenyCoordinateMap_involutive :
     Function.Involutive (PrimeSpectrum.comap specialIsogenyCoordinateMap.hom.toAlgHom.toRingHom) :=
-  specialIsogenyCoordinateMap.hom.toAlgHom.toRingHom.comap_involutive_of_comp_self_eq_pow
+  specialIsogenyCoordinateMap.hom.toAlgHom.toRingHom.leftInverse_comap_of_comp_eq_pow
     (by decide) specialIsogenyCoordinateMap_apply_apply
 
 end TauCeti.G2ShortRoot.PrimeField

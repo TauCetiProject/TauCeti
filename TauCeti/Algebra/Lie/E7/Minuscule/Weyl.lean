@@ -51,7 +51,7 @@ noncomputable section
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
 
-local notation "CM" => CartanMatrix.E 7
+local notation "CM" => weightTable.cartanMatrix
 local notation "rootGen" => serreRootGenerator CM
 local notation "cartanGen" => serreH ℚ CM
 local notation "rootWeight" => E7.rootGeneratorWeight valid_E7
@@ -120,15 +120,15 @@ theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin 7) (A : Type v) [CommRin
   -- reflection homomorphisms use the same instances; rewriting rank_E7 alone leaves them.
   dsimp (config := { instances := true }) only [rank]
   simp only [cartanMatrix_E7]
-  have hpos (q : Fin 7) : rootWeight (.inl i) q = CM i q := by
+  have hpos (q : Fin 7) : rootWeight (.inl i) q = CartanMatrix.E 7 i q := by
     simpa only [rank_E7, cartanMatrix_E7] using
       E7.rootGeneratorWeight_inl (ht := valid_E7) i q
-  have hneg (q : Fin 7) : rootWeight (.inr i) q = -CM i q := by
+  have hneg (q : Fin 7) : rootWeight (.inr i) q = -CartanMatrix.E 7 i q := by
     simpa only [rank_E7, cartanMatrix_E7] using
       E7.rootGeneratorWeight_inr (ht := valid_E7) i q
   have h := kostantToralWeylPoint_conj_weightTorusPoints_of_rootWeight
     (i := Sum.inl i) (j := Sum.inr i) (c := i)
-    (α := fun j : Fin 7 ↦ CM i j)
+    (α := fun j : Fin 7 ↦ CartanMatrix.E 7 i j)
     rootGen cartanGen rep lattice.toAddSubgroup rep_kostantForm_mem_lattice
     isNilpotent_rep_serreRootGenerator latticeBasis e7MinusculeWeight
     (isSl2Triple_rep_serreRootGenerator i) rootWeight

@@ -162,11 +162,10 @@ private theorem exists_sum_lt_of_summingENorm_le (hp : p ≠ ∞) {T : E →L[�
     calc
       _ = ∑ x : s, C ^ p.toReal * (w x * ‖g x‖ ^ p.toReal) := by
         refine Finset.sum_congr rfl fun x _ ↦ ?_
-        have hy : ‖g (y x)‖ ^ p.toReal = w x * ‖g x‖ ^ p.toReal :=
-          by rw [map_smul, norm_ofReal_rpow_inv_smul_rpow (hw x) hq.ne']
         simp only [Pi.smul_apply, map_smul, norm_smul, RCLike.norm_ofReal,
           abs_of_nonneg hC]
-        rw [Real.mul_rpow hC (norm_nonneg _), hy]
+        rw [Real.mul_rpow hC (norm_nonneg _), map_smul,
+          norm_ofReal_rpow_inv_smul_rpow (hw x) hq.ne']
       _ = C ^ p.toReal * ∑ x ∈ s, w x * ‖g x‖ ^ p.toReal := by
         rw [← Finset.mul_sum, Finset.sum_coe_sort s fun x ↦ w x * ‖g x‖ ^ p.toReal]
       _ ≤ A - δ := h

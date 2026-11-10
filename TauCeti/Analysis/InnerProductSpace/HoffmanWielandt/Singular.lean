@@ -64,16 +64,11 @@ theorem sum_sq_singularValues_sub_le_sq_frobenius_apply_sub_of_finrank_le
   have hcross := B.sum_antitone_mul_re_inner_le_sum_mul_singularValues
     u v hu hv (fun i _ ↦ A.singularValues_antitone (Nat.le_succ i))
     (A.singularValues_nonneg _)
-  have hB2 :
-      TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E F B ^ 2 =
-          ∑ i : Fin (finrank 𝕜 E), B.singularValues i ^ 2 := by
-    rw [TauCeti.UnitarilyInvariantSeminorm.frobenius_apply_eq_sqrt_sum_sq_singularValues,
-      ← B.sum_fin_singularValues (· ^ 2) (by simp)]
-    exact Real.sq_sqrt (Finset.sum_nonneg fun i _ ↦ sq_nonneg (B.singularValues i))
   have hBbasis :
       ∑ i : Fin (finrank 𝕜 E), ‖B (v i)‖ ^ 2 =
         ∑ i : Fin (finrank 𝕜 E), B.singularValues i ^ 2 := by
-    rw [← TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_apply v B, hB2]
+    rw [← TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_apply v B,
+      B.sq_frobenius_apply_eq_sum_sq_singularValues]
   have hexp (i : Fin (finrank 𝕜 E)) :
       ‖(A - B) (v i)‖ ^ 2 =
         A.singularValues i ^ 2 -

@@ -180,7 +180,7 @@ and holomorphic separately in each open coordinate disc, with a common bound on 
 boundary. No topology on the parameter set is needed. -/
 theorem tendstoUniformlyOn_torusIntegral_cauchyCoeff {P : Type*} {S : Set P}
     {f : P → (Fin n → ℂ) → E} {c : Fin n → ℂ} {R r : Fin n → ℝ} {M : ℝ}
-    (hr : ∀ i, 0 ≤ r i) (hrR : ∀ i, r i < R i)
+    (hrR : ∀ i, r i < R i)
     (hf : ∀ x ∈ S, ContinuousOn (f x) (univ.pi fun i ↦ closedBall (c i) (R i)))
     (hd : ∀ x ∈ S, ∀ z ∈ univ.pi (fun i ↦ closedBall (c i) (R i)), ∀ i,
       z i ∈ ball (c i) (R i) →
@@ -192,6 +192,15 @@ theorem tendstoUniformlyOn_torusIntegral_cauchyCoeff {P : Type*} {S : Set P}
           ∯ z in T(c, R), (∏ i, (z i - c i) ^ (α i + 1))⁻¹ • f b.1 z))
       (fun b ↦ f b.1 (c + b.2)) atTop
       (S ×ˢ univ.pi fun i ↦ closedBall 0 (r i)) := by
+  by_cases hr : ∀ i, 0 ≤ r i
+  swap
+  · push Not at hr
+    obtain ⟨i, hi⟩ := hr
+    have hempty : (S ×ˢ univ.pi fun i ↦ closedBall (0 : ℂ) (r i)) = ∅ := by
+      refine Set.prod_eq_empty_iff.mpr (Or.inr ?_)
+      exact Set.univ_pi_eq_empty (i := i) (Metric.closedBall_eq_empty.mpr hi)
+    rw [hempty]
+    exact tendstoUniformlyOn_empty
   have hR (i) : 0 < R i := (hr i).trans_lt (hrR i)
   have hs : Summable (fun α : Fin n → ℕ ↦ ∏ i, (r i / R i) ^ α i) :=
     (hasSum_prod_geometric_of_norm_lt_one (r := fun i ↦ r i / R i) (fun i ↦ by

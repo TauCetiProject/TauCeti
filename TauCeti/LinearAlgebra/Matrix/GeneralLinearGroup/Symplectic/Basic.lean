@@ -335,46 +335,6 @@ theorem dotProduct_JFin_mulVec_eq_neg (u w : Fin (m + m) → R) :
   rw [Matrix.dotProduct_mulVec, dotProduct_comm, ← Matrix.vecMul_transpose, JFin_transpose,
     Matrix.vecMul_neg, dotProduct_neg, neg_neg]
 
-section CommRing
-
-variable {m R}
-
-/-- A nonzero vector has nonzero pairing with some vector in the standard symplectic space. -/
-theorem exists_dotProduct_JFin_mulVec_ne_zero {x : Fin (m + m) → R} (hx : x ≠ 0) :
-    ∃ z, z ⬝ᵥ (JFin m R *ᵥ x) ≠ 0 := by
-  have hJx : JFin m R *ᵥ x ≠ 0 := by
-    intro h
-    have hh := congrArg (fun v => JFin m R *ᵥ v) h
-    rw [mulVec_mulVec, JFin_mul_self] at hh
-    simp only [neg_mulVec, one_mulVec, mulVec_zero, neg_eq_zero] at hh
-    exact hx hh
-  obtain ⟨i, hi⟩ := Function.ne_iff.mp hJx
-  exact ⟨Pi.single i 1, by simpa using hi⟩
-
-/-- **The standard alternating form is nondegenerate**: a vector pairing trivially with every
-vector is zero. -/
-theorem eq_zero_of_forall_dotProduct_JFin_mulVec_eq_zero {x : Fin (m + m) → R}
-    (h : ∀ z, z ⬝ᵥ (JFin m R *ᵥ x) = 0) : x = 0 := by
-  by_contra hx
-  obtain ⟨z, hz⟩ := exists_dotProduct_JFin_mulVec_ne_zero hx
-  exact hz (h z)
-
-/-- Two nonzero vectors have a common vector pairing nontrivially with both, over any
-commutative ring. In particular, this includes the field with two elements. -/
-theorem exists_dotProduct_JFin_mulVec_ne_zero_pair {x y : Fin (m + m) → R}
-    (hx : x ≠ 0) (hy : y ≠ 0) :
-    ∃ z, z ⬝ᵥ (JFin m R *ᵥ x) ≠ 0 ∧ z ⬝ᵥ (JFin m R *ᵥ y) ≠ 0 := by
-  obtain ⟨v, hv⟩ := exists_dotProduct_JFin_mulVec_ne_zero hx
-  obtain ⟨w, hw⟩ := exists_dotProduct_JFin_mulVec_ne_zero hy
-  by_cases hvy : v ⬝ᵥ (JFin m R *ᵥ y) = 0
-  · by_cases hwx : w ⬝ᵥ (JFin m R *ᵥ x) = 0
-    · exact ⟨v + w, by simpa [add_dotProduct, hwx] using hv,
-        by simpa [add_dotProduct, hvy] using hw⟩
-    · exact ⟨w, hwx, hw⟩
-  · exact ⟨v, hv, hvy⟩
-
-end CommRing
-
 /-- The transported alternating form is a unit, with inverse its negative. -/
 theorem isUnit_JFin : IsUnit (JFin m R) :=
   Matrix.isUnit_of_mul_self_eq_neg_one (JFin_mul_self m R)

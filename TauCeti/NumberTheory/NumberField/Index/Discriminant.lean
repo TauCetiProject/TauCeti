@@ -58,61 +58,32 @@ of `K`. -/
 theorem discr_minpoly_eq_index_sq_mul_discr (θ : IntegralPrimitiveElement K) :
     (minpoly ℤ θ.1).discr = (θ.index : ℤ) ^ 2 * NumberField.discr K := by
   classical
-  -- The power basis of `ℤ[θ]` over `ℤ`, and an integral basis of `𝓞 K` reindexed to match it.
+  -- The power basis of `ℤ[θ]` over `ℤ`, as a basis of the sublattice `ℤ[θ]` of `𝓞 K`.
   set pb := Algebra.adjoin.powerBasis' θ.1.isIntegral with hpb
   have hfin : finrank ℤ (Algebra.adjoin ℤ ({θ.1} : Set (𝓞 K))) = finrank ℤ (𝓞 K) := by
     have h := θ.finrank_adjoin
     rwa [adjoin_def] at h
-  have hcard : Fintype.card (Free.ChooseBasisIndex ℤ (𝓞 K)) = Fintype.card (Fin pb.dim) := by
-    rw [Fintype.card_fin, ← pb.finrank, hfin, finrank_eq_card_chooseBasisIndex]
-  set b : Basis (Fin pb.dim) ℤ (𝓞 K) :=
-    (_root_.NumberField.RingOfIntegers.basis K).reindex (Fintype.equivOfCardEq hcard)
-  set u : Fin pb.dim → 𝓞 K := fun i => (pb.basis i : 𝓞 K) with hu
-  set P : Matrix (Fin pb.dim) (Fin pb.dim) ℤ := b.toMatrix u with hP
-  -- The determinant of the change of basis is the index, up to sign.
-  have hdet : P.det.natAbs = θ.index := by
-    rw [hP, ← b.det_apply, index_def, adjoin_def]
-    have h := Submodule.natAbs_det_basis_change b
-      (Subalgebra.toSubmodule (Algebra.adjoin ℤ ({θ.1} : Set (𝓞 K))))
-      (pb.basis.map (Subalgebra.toSubmoduleEquiv _).symm)
-    -- `Subalgebra.toSubmoduleEquiv` is the identity on underlying elements
-    -- (`LinearEquiv.coe_ofEq_apply`), so the transported basis has the same coordinates in `𝓞 K`.
-    have hcoe : (Subtype.val ∘ ⇑(pb.basis.map (Subalgebra.toSubmoduleEquiv _).symm)) = u := by
-      funext i
-      simp only [Function.comp_apply, Basis.map_apply, hu, Subalgebra.toSubmoduleEquiv]
-      rw [LinearEquiv.ofEq_symm]
-      exact LinearEquiv.coe_ofEq_apply _ _
-    rw [hcoe] at h
-    exact h
-  -- Over `ℚ`, the powers of `θ` are obtained from the integral basis by that matrix.
-  set w : Fin pb.dim → K := fun i => algebraMap (𝓞 K) K (b i) with hw
-  have hw_discr : Algebra.discr ℚ w = (_root_.NumberField.discr K : ℚ) :=
-    _root_.NumberField.discr_eq_of_integralBasis b
-  have hv : (fun i : Fin pb.dim => algebraMap (𝓞 K) K (u i)) =
-      w ᵥ* (P.map (algebraMap ℤ ℚ)).map (algebraMap ℚ K) := by
-    have h := b.toMatrix_map_vecMul u
-    rw [← hP] at h
-    funext j
-    rw [← congrFun h j]
-    simp [Matrix.vecMul, dotProduct, hw, map_sum, algebraMap_int_eq, map_intCast]
-  have hdiscr_u : Algebra.discr ℚ (fun i : Fin pb.dim => algebraMap (𝓞 K) K (u i)) =
-      ((P.det : ℤ) : ℚ) ^ 2 * (_root_.NumberField.discr K : ℚ) := by
-    rw [hv, Algebra.discr_of_matrix_vecMul, hw_discr, ← RingHom.mapMatrix_apply,
-      ← RingHom.map_det, algebraMap_int_eq, eq_intCast]
+  have hcard : Fintype.card (Fin pb.dim) = finrank ℤ (𝓞 K) := by
+    rw [Fintype.card_fin, ← pb.finrank, hfin]
+  have h := (Subalgebra.toSubmodule (Algebra.adjoin ℤ ({θ.1} : Set (𝓞 K))))
+    |>.discr_eq_cardQuot_sq_mul_discr (pb.basis.map (Subalgebra.toSubmoduleEquiv _).symm) hcard
   -- The powers of `θ` are the power basis of `θ`, up to the identification of the index sets.
   have hdim : θ.powerBasis.dim = pb.dim := by
     rw [← θ.powerBasis.finrank, ← _root_.NumberField.RingOfIntegers.rank K, ← hfin, pb.finrank]
   have hpow : Algebra.discr ℚ θ.powerBasis.basis =
-      Algebra.discr ℚ (fun i : Fin pb.dim => algebraMap (𝓞 K) K (u i)) := by
+      Algebra.discr ℚ (fun i : Fin pb.dim =>
+        algebraMap (𝓞 K) K ((pb.basis.map (Subalgebra.toSubmoduleEquiv _).symm i : _) : 𝓞 K)) := by
     rw [← Algebra.discr_reindex ℚ θ.powerBasis.basis (finCongr hdim)]
     congr 1
     funext i
-    simp [PowerBasis.basis_eq_pow, hu, hpb]
+    simp [PowerBasis.basis_eq_pow, hpb, Subalgebra.toSubmoduleEquiv]
+    rfl
   -- Assemble, after casting to `ℚ`.
   apply Int.cast_injective (α := ℚ)
-  rw [← eq_intCast (algebraMap ℤ ℚ), ← θ.discr_powerBasis_eq_minpoly_discr, hpow, hdiscr_u, ← hdet]
+  rw [← eq_intCast (algebraMap ℤ ℚ), ← θ.discr_powerBasis_eq_minpoly_discr, hpow, h, index_def,
+    ← Submodule.cardQuot_apply, adjoin_def]
   push_cast
-  rw [sq_abs]
+  rfl
 
 
 /-- A natural number not dividing the discriminant of `minpoly ℤ θ` does not divide the index

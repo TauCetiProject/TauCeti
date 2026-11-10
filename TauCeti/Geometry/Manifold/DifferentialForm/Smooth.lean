@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.ContinuousAlternatingMap
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 import TauCeti.Geometry.Manifold.ContMDiff.ContinuousAlternatingMap
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
+import TauCeti.Topology.FiberBundle.Separation
 
 /-!
 # Smooth bundle-valued differential forms
@@ -41,7 +42,8 @@ declarations in `TauCeti.Geometry.Manifold.TwoForm.Basic`.
 For degree two, use the ordered-pair evaluation to obtain the value in the fibre over a point.
 The accompanying API provides alternation, extensionality, and `C^n` smoothness after applying
 the form to `C^n` tangent fields; the fixed-coefficient section exposes the same operations in a
-trivial bundle.
+trivial bundle. On a Hausdorff manifold, two smooth forms agreeing on a dense set are equal
+(`TauCeti.SmoothBundleForm.eq_of_forall_mem_dense`).
 -/
 
 public section
@@ -152,6 +154,17 @@ theorem ext {φ ψ : SmoothBundleForm I F V k}
   apply ContinuousAlternatingMap.ext
   intro v
   exact h x v
+
+/-- Two smooth bundle-valued forms on a Hausdorff manifold that agree on a dense set are equal:
+their sections are continuous maps into the total space of the alternating bundle, which is
+Hausdorff. -/
+theorem eq_of_forall_mem_dense [T2Space M] {s : Set M} (hs : Dense s)
+    {φ ψ : SmoothBundleForm I F V k} (h : ∀ x ∈ s, φ.1 x = ψ.1 x) : φ = ψ := by
+  have hcont (φ : SmoothBundleForm I F V k) :
+      Continuous fun x ↦ TotalSpace.mk' (E [⋀^Fin k]→L[ℝ] F) x (φ.1 x) :=
+    ((isSmoothBundleForm_def ∞ φ.1).mp (mem_smoothBundleForms.mp φ.2)).continuous
+  have heq := (hcont φ).ext_on hs (hcont ψ) fun x hx ↦ by simp only [h x hx]
+  exact Subtype.ext (funext fun x ↦ by simpa using congrFun heq x)
 
 /-- The smooth section underlying a smooth bundle-valued differential form. -/
 def toContMDiffSection (φ : SmoothBundleForm I F V k) :
@@ -323,14 +336,19 @@ theorem eval₂_neg_right (φ : SmoothBundleForm I F V 2) (x : M) (v w : Tangent
     ContinuousAlternatingMap.coe_toAlternatingMap] using
     (φ.1 x).toAlternatingMap.map_update_neg ![v, w] (0 : Fin 1).succ w
 
-/-- Two smooth bundle-valued two-forms are equal when their ordered-pair evaluations agree. -/
-theorem ext_eval₂ {φ ψ : SmoothBundleForm I F V 2}
-    (h : ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w) : φ = ψ := by
-  apply ext
-  intro x v
+/-- Two smooth bundle-valued two-forms have the same value at a point when their ordered-pair
+evaluations there agree. -/
+theorem apply_eq_of_eval₂_eq {φ ψ : SmoothBundleForm I F V 2} {x : M}
+    (h : ∀ v w, φ.eval₂ x v w = ψ.eval₂ x v w) : φ.1 x = ψ.1 x := by
+  refine ContinuousAlternatingMap.ext fun v ↦ ?_
   have hv : v = ![v 0, v 1] := (FinVec.etaExpand_eq v).symm
   rw [hv]
-  simpa [eval₂] using h x (v 0) (v 1)
+  simpa [eval₂] using h (v 0) (v 1)
+
+/-- Two smooth bundle-valued two-forms are equal when their ordered-pair evaluations agree. -/
+theorem ext_eval₂ {φ ψ : SmoothBundleForm I F V 2}
+    (h : ∀ x v w, φ.eval₂ x v w = ψ.eval₂ x v w) : φ = ψ :=
+  Subtype.ext (funext fun x ↦ apply_eq_of_eval₂_eq (h x))
 
 /-- Two smooth bundle-valued two-forms are equal exactly when all ordered-pair evaluations agree. -/
 theorem ext_eval₂_iff {φ ψ : SmoothBundleForm I F V 2} :
@@ -634,6 +652,19 @@ theorem add_toRoughForm {k : ℕ} (φ ψ : SmoothForm I M F k) :
 theorem neg_toRoughForm {k : ℕ} (φ : SmoothForm I M F k) :
     (-φ).1 = -φ.1 :=
   rfl
+
+/-- Multiplication of smooth forms by a smooth real function, as a real-linear map. -/
+def funSMulₗ {k : ℕ} (g : C^∞⟮I, M; ℝ⟯) : SmoothForm I M F k →ₗ[ℝ] SmoothForm I M F k where
+  toFun φ := ⟨fun x ↦ g x • φ.1 x, (φ.isSmoothForm.fun_smul g.contMDiff).mem_smoothBundleForms⟩
+  map_add' φ ψ := Subtype.ext <| funext fun x ↦ smul_add (g x) (φ.1 x) (ψ.1 x)
+  map_smul' c φ := Subtype.ext <| funext fun x ↦ smul_comm (g x) c (φ.1 x)
+
+/-- The rough form underlying the product of a smooth form with a smooth function is the
+pointwise product. -/
+@[simp]
+theorem coe_funSMulₗ {k : ℕ} (g : C^∞⟮I, M; ℝ⟯) (φ : SmoothForm I M F k) :
+    (funSMulₗ g φ : RoughForm I M F k) = fun x ↦ g x • φ.1 x :=
+  (rfl)
 
 /-- A smooth form whose degree exceeds the dimension of the model space vanishes. -/
 theorem eq_zero_of_finrank_lt [FiniteDimensional ℝ E] (h : Module.finrank ℝ E < k)

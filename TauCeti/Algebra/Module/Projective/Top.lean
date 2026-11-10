@@ -82,15 +82,11 @@ projective module `P` is indecomposable exactly when `P / IP` is. -/
 theorem isIndecomposableModule_quotient_smul_top_iff (hI : IsNilpotent I) :
     IsIndecomposableModule R (P ⧸ I • (⊤ : Submodule R P)) ↔ IsIndecomposableModule R P := by
   refine ⟨IsIndecomposableModule.of_quotient_smul_top hI, fun hP ↦ ?_⟩
-  let q := Ideal.endMapQ I P
-  have hker : ∀ f ∈ RingHom.ker q, IsNilpotent f :=
-    fun _ hf ↦ Ideal.isNilpotent_of_mem_ker_endMapQ I P hI hf
   rw [isIndecomposableModule_iff_nontrivial_and_forall_isIdempotentElem] at hP ⊢
   obtain ⟨_, h⟩ := hP
   refine ⟨Submodule.Quotient.nontrivial_iff.mpr
     (isSuperfluous_smul_top_of_isNilpotent hI).ne_top, fun g hg ↦ ?_⟩
-  obtain ⟨f, hf, rfl⟩ := exists_isIdempotentElem_eq_of_ker_isNilpotent q hker g
-    (RingHom.mem_range.mpr (Ideal.endMapQ_surjective I P g)) hg
+  obtain ⟨f, hf, rfl⟩ := Ideal.exists_isIdempotentElem_endMapQ_eq hI hg
   exact (h f hf).imp (fun hf0 ↦ by simp [hf0]) (fun hf1 ↦ by simp [hf1])
 
 /-- **A projective module is indecomposable exactly when its top is simple.**  Here `R` is

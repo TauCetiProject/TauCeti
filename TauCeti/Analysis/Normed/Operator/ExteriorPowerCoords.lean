@@ -8,6 +8,7 @@ module
 public import TauCeti.LinearAlgebra.ExteriorPower.Coordinates
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Topology.Instances.Matrix
+public import TauCeti.Analysis.Calculus.ContDiff.Matrix
 
 /-!
 # Exterior powers of coordinate operators
@@ -17,9 +18,11 @@ For a continuous linear operator `g` between coordinate spaces over a normed fie
 `exteriorPower.piEquiv`, that is, the `j`th compound matrix of `g`, as a continuous linear
 operator between the coordinate spaces of dimensions `m.choose j` and `n.choose j`. The
 construction preserves identities and composition, and it depends continuously on the
-operator (`ContinuousLinearMap.continuous_exteriorPowerCoords`), since its
-matrix entries are minors of the matrix of `g`. It can therefore be applied to continuous families
-of transition matrices.
+operator (`ContinuousLinearMap.continuous_exteriorPowerCoords`), even by a `C^k` or analytic map
+(`ContinuousLinearMap.contDiff_exteriorPowerCoords`), since its matrix entries are minors of the
+matrix of `g`. It can therefore be applied to continuous, smooth or holomorphic families of
+transition matrices. For an endomorphism of `Fin m → 𝕜` the compound matrix in the top degree `m`
+is multiplication by the determinant (`ContinuousLinearMap.exteriorPowerCoords_self`).
 
 In degrees zero and one the compound matrices are identified explicitly, through the continuous
 coordinate equivalences `exteriorPower.piZeroContinuousEquiv` with the coordinate line and
@@ -58,26 +61,50 @@ noncomputable def exteriorPowerCoords (j : ℕ) (g : (Fin m → 𝕜) →L[𝕜]
   coe_injective (LinearMap.exteriorPowerCoords_comp j (g : (Fin m → 𝕜) →ₗ[𝕜] (Fin n → 𝕜))
     (f : (Fin l → 𝕜) →ₗ[𝕜] (Fin m → 𝕜)))
 
+/-- In the top degree, the compound matrix of an endomorphism of `Fin m → 𝕜` is multiplication
+by its determinant on the coordinate line `Fin (m.choose m) → 𝕜`. -/
+@[simp] theorem exteriorPowerCoords_self (g : (Fin m → 𝕜) →L[𝕜] (Fin m → 𝕜)) :
+    g.exteriorPowerCoords m = g.det • ContinuousLinearMap.id 𝕜 (Fin (m.choose m) → 𝕜) :=
+  coe_injective (LinearMap.exteriorPowerCoords_self (g : (Fin m → 𝕜) →ₗ[𝕜] (Fin m → 𝕜)))
+
+/-- The compound matrix as a sum of rank-one operators: its column at `t` is the vector of the
+`j × j` minors of `g` with columns selected by the subset enumerated by `t`. -/
+private theorem exteriorPowerCoords_eq_sum (j : ℕ) (g : (Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) :
+    g.exteriorPowerCoords j = ∑ t, smulRightL 𝕜 _ _ (proj t : (Fin (m.choose j) → 𝕜) →L[𝕜] 𝕜)
+      (fun s ↦ (Matrix.of fun i k : Fin j ↦ g
+        (Pi.single (Set.powersetCard.ofFinEmbEquiv.symm
+          ((Set.powersetCard.finChooseEquiv m j).symm t) i) 1)
+        (Set.powersetCard.ofFinEmbEquiv.symm
+          ((Set.powersetCard.finChooseEquiv n j).symm s) k)).det) := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  conv_lhs => rw [pi_eq_sum_univ' v]
+  simp_rw [map_sum, map_smul, sum_apply, smulRightL_apply_apply, smulRight_apply, proj_apply]
+  refine Finset.sum_congr rfl fun t _ ↦ congrArg _ (funext fun s ↦ ?_)
+  rw [exteriorPowerCoords_apply, LinearMap.exteriorPowerCoords_single_apply]
+  simp only [coe_coe]
+
 /-- The compound matrix depends continuously on the operator. -/
 theorem continuous_exteriorPowerCoords (j m n : ℕ) :
     Continuous (exteriorPowerCoords j : ((Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) → _) := by
-  -- Expand in the standard basis: the compound matrix is a sum of rank-one operators whose
-  -- columns are vectors of minors.
-  have h : (exteriorPowerCoords j : ((Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) → _) = fun g ↦
-      ∑ t, smulRightL 𝕜 _ _ (proj t : (Fin (m.choose j) → 𝕜) →L[𝕜] 𝕜)
-        (g.exteriorPowerCoords j (Pi.single t 1)) := by
-    funext g
-    refine ContinuousLinearMap.ext fun v ↦ ?_
-    conv_lhs => rw [pi_eq_sum_univ' v]
-    simp only [map_sum, map_smul, sum_apply, smulRightL_apply_apply, smulRight_apply, proj_apply]
-  rw [h]
+  simp_rw [funext (exteriorPowerCoords_eq_sum j)]
   refine continuous_finsetSum _ fun t _ ↦ (smulRightL 𝕜 _ _
     (proj t : (Fin (m.choose j) → 𝕜) →L[𝕜] 𝕜)).continuous.comp' (continuous_pi fun s ↦ ?_)
-  simp_rw [exteriorPowerCoords_apply, LinearMap.exteriorPowerCoords_single_apply, coe_coe]
   refine Continuous.matrix_det (continuous_matrix fun i k ↦ ?_)
   simp only [Matrix.of_apply]
   exact (continuous_apply _).comp
     (continuous_eval_const (F := (Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) (Pi.single _ 1))
+
+/-- The compound matrix depends on the operator by a `C^k` map for every `k`, including analytic
+regularity, since its entries are minors of the matrix of the operator. -/
+theorem contDiff_exteriorPowerCoords (j m n : ℕ) {k : WithTop ℕ∞} :
+    ContDiff 𝕜 k (exteriorPowerCoords j : ((Fin m → 𝕜) →L[𝕜] (Fin n → 𝕜)) → _) := by
+  simp_rw [funext (exteriorPowerCoords_eq_sum j)]
+  refine ContDiff.sum fun t _ ↦ ?_
+  apply ContDiff.continuousLinearMap_comp
+  refine contDiff_pi.2 fun s ↦ ContDiff.matrix_det fun i l ↦ ?_
+  simp only [Matrix.of_apply]
+  exact (contDiff_apply 𝕜 (F' := fun _ : Fin n ↦ 𝕜) _).comp
+    (contDiff_id.clm_apply contDiff_const)
 
 end ContinuousLinearMap
 

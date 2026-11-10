@@ -113,7 +113,7 @@ theorem mem_fracPowLE_iff {a b : ℕ} (hb : b ≠ 0) (hq : q = a / b) {v : Spv A
   rw [mem_fracPowLE, ← valuation_le_iff, ← valuation_le_iff, map_pow, map_pow,
     map_pow, map_pow]
   exact pow_le_pow_iff_of_mul_eq zero_le zero_le hb q.den_ne_zero (mul_comm _ _)
-    (NNRat.num_mul_eq_of_eq_div hb hq)
+    ((NNRat.eq_div_iff_num_mul_eq_mul_den hb).mp hq)
 
 /-- **Membership in `{|f| ≥ |g| ^ q}` from any fraction**: if `q = a / b` with `b ≠ 0`, then
 `v ∈ fracPowGE f g q` exactly when `v(g ^ a) ≤ v(f ^ b)`. -/
@@ -122,7 +122,7 @@ theorem mem_fracPowGE_iff {a b : ℕ} (hb : b ≠ 0) (hq : q = a / b) {v : Spv A
   rw [mem_fracPowGE, ← valuation_le_iff, ← valuation_le_iff, map_pow, map_pow,
     map_pow, map_pow]
   exact pow_le_pow_iff_of_mul_eq zero_le zero_le hb q.den_ne_zero
-    (NNRat.num_mul_eq_of_eq_div hb hq) (mul_comm _ _)
+    ((NNRat.eq_div_iff_num_mul_eq_mul_den hb).mp hq) (mul_comm _ _)
 
 /-! ### Integral and degenerate exponents -/
 

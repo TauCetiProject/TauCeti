@@ -96,11 +96,8 @@ private theorem exists_nonneg_sum_smul_eq_zero_and_coeff_add_dual_pos_at_of_fins
     obtain ⟨x, y, hxy, hsum, hpos⟩ := ih a
     by_cases hy : 0 ≤ y (a n)
     · -- `y` is already nonnegative on the new vector: extend `x` by zero.
-      refine ⟨Function.update x n 0, y, ?_, ?_, ?_⟩
-      · rintro j hj
-        rcases Finset.mem_insert.1 hj with rfl | hj
-        · simp [hy]
-        · simpa [Function.update_of_ne (hne j hj)] using hxy j hj
+      refine ⟨Function.update x n 0, y, Finset.forall_mem_insert _ _ _ |>.2 ⟨by simp [hy],
+        fun j hj => by simpa [Function.update_of_ne (hne j hj)] using hxy j hj⟩, ?_, ?_⟩
       · rw [Finset.sum_insert hn', Function.update_self, zero_smul, zero_add, ← hsum]
         exact Finset.sum_congr rfl fun j hj => by rw [Function.update_of_ne (hne j hj)]
       · rwa [Function.update_of_ne (Ne.symm hnk)]
@@ -119,23 +116,16 @@ private theorem exists_nonneg_sum_smul_eq_zero_and_coeff_add_dual_pos_at_of_fins
           smul_eq_mul]
         field_simp
       refine ⟨Function.update u n (∑ j ∈ insert k s, c j * u j), w, ?_, ?_, ?_⟩
-      · rintro j hj
-        rcases Finset.mem_insert.1 hj with rfl | hj
-        · refine ⟨?_, ?_⟩
-          · rw [Function.update_self]
-            exact Finset.sum_nonneg fun i hi => mul_nonneg (hc i hi) (huz i hi).1
-          · simp only [w, LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul]
-            rw [div_mul_cancel₀ _ hd, add_neg_cancel]
-        · rw [Function.update_of_ne (hne j hj), hw]
-          exact huz j hj
+      · refine Finset.forall_mem_insert _ _ _ |>.2 ⟨⟨?_, by simp [w, d, hd]⟩, fun j hj => ?_⟩
+        · simpa using Finset.sum_nonneg fun i hi => mul_nonneg (hc i hi) (huz i hi).1
+        · simpa only [Function.update_of_ne (hne j hj), hw] using huz j hj
       · rw [Finset.sum_insert hn', Function.update_self, ← hsum', Finset.sum_smul]
         simp only [smul_add, smul_smul, Finset.sum_add_distrib]
         rw [add_comm]
         congr 1
         · exact Finset.sum_congr rfl fun j hj => by rw [Function.update_of_ne (hne j hj)]
         · exact Finset.sum_congr rfl fun j _ => by rw [mul_comm]
-      · rw [Function.update_of_ne (Ne.symm hnk), hw]
-        exact hpos'
+      · simpa only [Function.update_of_ne (Ne.symm hnk), hw] using hpos'
 
 /-- **Tucker's key lemma.** For a finite family of vectors `a j` and an index `k`, there are a
 nonnegative linear relation `x` among the `a j` and a linear functional `y` that is nonnegative on
@@ -230,9 +220,7 @@ theorem exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos [Fintype ι]
   let b := Module.Free.chooseBasis ℤ N
   -- Rational coordinates of lattice vectors with respect to an integral basis.
   let e : N →+ (Module.Free.ChooseBasisIndex ℤ N → ℚ) :=
-    { toFun n k := (b.repr n k : ℚ)
-      map_zero' := by ext; simp
-      map_add' n n' := by ext; simp }
+    (AddMonoidHom.compLeft (Int.castAddHom ℚ) _).comp b.equivFun.toAddMonoidHom
   obtain ⟨X, Y, hX, hsum, hY, hpos⟩ :=
     exists_nonneg_sum_smul_eq_zero_and_forall_coeff_add_dual_pos (K := ℚ) fun j ↦ e (a j)
   -- Clear the denominators of the relation and of the values of the functional on the
@@ -250,19 +238,16 @@ theorem exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos [Fintype ι]
     have : (0 : ℚ) ≤ z j := by rw [hz]; exact mul_nonneg hD'.le (hX j)
     rw [← hz]
     exact_mod_cast Int.toNat_of_nonneg (by exact_mod_cast this)
-  let m : N →+ ℤ :=
-    { toFun n := ∑ k, w k * b.repr n k
-      map_zero' := by simp
-      map_add' n n' := by simp [mul_add, Finset.sum_add_distrib] }
+  let m : N →+ ℤ := (∑ k, w k • b.coord k).toAddMonoidHom
   have hm : ∀ n, (m n : ℚ) = E * Y (e n) := fun n ↦ by
-    rw [LinearMap.pi_apply_eq_sum_univ, Finset.mul_sum]
-    simp only [m, AddMonoidHom.coe_mk, ZeroHom.coe_mk, Int.cast_sum, Int.cast_mul, hw]
+    conv_rhs => rw [pi_eq_sum_univ' (e n)]
+    simp only [m, LinearMap.toAddMonoidHom_coe, LinearMap.sum_apply, LinearMap.smul_apply,
+      Int.cast_sum, Int.cast_mul, map_sum, map_smul, smul_eq_mul, Finset.mul_sum]
     refine Finset.sum_congr rfl fun k _ ↦ ?_
-    simp only [e, AddMonoidHom.coe_mk, ZeroHom.coe_mk, smul_eq_mul]
-    have hk : (fun j ↦ if k = j then (1 : ℚ) else 0) = Pi.single k 1 := by
-      ext j
-      simp [Pi.single_apply, eq_comm]
-    rw [hk]
+    rw [hw k]
+    simp only [e, AddMonoidHom.comp_apply, AddMonoidHom.compLeft_apply,
+      Function.comp_apply, LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_coe,
+      Module.Basis.equivFun_apply, Int.coe_castAddHom, Module.Basis.coord_apply]
     ring
   refine ⟨x, m, ?_, fun j ↦ ?_, fun j ↦ ?_⟩
   · apply b.repr.injective
@@ -279,14 +264,9 @@ theorem exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos [Fintype ι]
     exact_mod_cast this
   · have : (0 : ℚ) < x j + m (a j) := by
       rw [hm, hx]
-      have hXj : 0 ≤ X j := hX j
-      rcases hXj.lt_or_eq with h | h
-      · exact add_pos_of_pos_of_nonneg (mul_pos hD' h)
-          (mul_nonneg hE'.le (hY j))
-      · rw [← h, mul_zero, zero_add]
-        have hYj := hpos j
-        rw [← h, zero_add] at hYj
-        exact mul_pos hE' hYj
+      rcases (hX j).lt_or_eq with h | h
+      · exact add_pos_of_pos_of_nonneg (mul_pos hD' h) (mul_nonneg hE'.le (hY j))
+      · simpa [← h] using mul_pos hE' (by simpa [← h] using hpos j)
     exact_mod_cast this
 
 end Int

@@ -22,7 +22,9 @@ Nested subsets `s ⊆ t` of a topological space form the topological pair
 special case `t = X`; the general form is the one a filtration of a space, such as the skeletal
 filtration of a CW complex, produces.  A continuous map `t → t'` carrying `s` into `s'` induces a
 map of such pairs `TopPair.ofInclusionMap`, and a homotopy that keeps `s` inside `s'` at every
-time induces a homotopy of maps of pairs `TopPair.ofInclusionHomotopy`.
+time induces a homotopy of maps of pairs `TopPair.ofInclusionHomotopy`.  The pair `(t, s)` is
+isomorphic to the pair `TopPair.ofSubset` of `t` and the preimage of `s` in `t`
+(`TopPair.ofSubsetPreimageValIso`).
 
 A map of pairs which is an isomorphism of the ambient spaces and is surjective on the subspaces is
 an isomorphism of pairs (`TopPair.isIso_of_isIso_fst_of_surjective_snd`): the inverse on the
@@ -49,6 +51,16 @@ open CategoryTheory
 universe u
 
 namespace TopPair
+
+/-- The ambient component of the identity map of a topological pair is the identity. -/
+@[simp]
+lemma Hom.fst_id (P : TopPair.{u}) : Hom.fst (𝟙 P) = 𝟙 P.fst := (rfl)
+
+/-- The ambient component of a composite map of topological pairs is the composite of the
+ambient components. -/
+@[simp]
+lemma Hom.fst_comp {P Q S : TopPair.{u}} (f : P ⟶ Q) (g : Q ⟶ S) :
+    Hom.fst (f ≫ g) = Hom.fst f ≫ Hom.fst g := (rfl)
 
 /-- The topological pair `(t, s)` determined by nested subsets `s ⊆ t` of a topological space,
 with the inclusion of `s` into `t` as its embedding. -/
@@ -175,6 +187,23 @@ lemma ofInclusionMap_comp (g : C(t, t')) (g' : C(t', t''))
       ofInclusionMap hst hst' g hg ≫ ofInclusionMap hst' hst'' g' hg' := by
   ext : 2 <;> rfl
 
+variable {hst''} in
+/-- Two composites `(t, s) ⟶ (t', s') ⟶ (t'', s'')` and `(t, s) ⟶ (t₀, s₀) ⟶ (t'', s'')` of maps
+of pairs induced by continuous maps of subspaces agree whenever the composites of the continuous
+maps agree. -/
+lemma ofInclusionMap_comp_ofInclusionMap_eq {W : TopCat.{u}} {s₀ t₀ : Set W} {hst₀ : s₀ ⊆ t₀}
+    (g : C(t, t')) (hg : ∀ x : t, (x : X) ∈ s → (g x : Y) ∈ s')
+    (g' : C(t', t'')) (hg' : ∀ x : t', (x : Y) ∈ s' → (g' x : Z) ∈ s'')
+    (k : C(t, t₀)) (hk : ∀ x : t, (x : X) ∈ s → (k x : W) ∈ s₀)
+    (k' : C(t₀, t'')) (hk' : ∀ x : t₀, (x : W) ∈ s₀ → (k' x : Z) ∈ s'')
+    (h : ∀ x, (g' (g x) : Z) = k' (k x)) :
+    ofInclusionMap hst hst' g hg ≫ ofInclusionMap hst' hst'' g' hg' =
+      ofInclusionMap hst hst₀ k hk ≫ ofInclusionMap hst₀ hst'' k' hk' := by
+  rw [← ofInclusionMap_comp, ← ofInclusionMap_comp]
+  congr 1
+  ext x
+  exact h x
+
 /-- A homotopy between maps `t → t'` which keeps `s` inside `s'` at every time induces a homotopy
 between the induced maps of pairs `(t, s) ⟶ (t', s')`. -/
 def ofInclusionHomotopy {g₀ g₁ : C(t, t')} (F : g₀.Homotopy g₁)
@@ -187,6 +216,32 @@ def ofInclusionHomotopy {g₀ g₁ : C(t, t')} (F : g₀.Homotopy g₁)
       continuous_toFun := by fun_prop
       map_zero_left x := Subtype.ext (congrArg Subtype.val (F.apply_zero ⟨x.1, hst x.2⟩) :)
       map_one_left x := Subtype.ext (congrArg Subtype.val (F.apply_one ⟨x.1, hst x.2⟩) :) }
+
+variable (hst) in
+/-- The pair of `t` and the preimage of `s` in `t` is isomorphic to the pair `(t, s)`: the two
+pairs have the same ambient space, and their subspaces are identified by the coercion to `X`. -/
+def ofSubsetPreimageValIso :
+    ofSubset (X := TopCat.of t) (Subtype.val ⁻¹' s) ≅ ofInclusion hst where
+  hom := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨x.1.1, x.2⟩, by fun_prop⟩)
+  inv := TopPair.ofHom (𝟙 _) (TopCat.ofHom ⟨fun x ↦ ⟨⟨x.1, hst x.2⟩, x.2⟩, by fun_prop⟩)
+  hom_inv_id := by ext : 2 <;> rfl
+  inv_hom_id := by ext : 2 <;> rfl
+
+@[simp]
+lemma ofSubsetPreimageValIso_hom_fst_apply (x : t) :
+    Hom.fst (ofSubsetPreimageValIso hst).hom x = x := (rfl)
+
+@[simp]
+lemma ofSubsetPreimageValIso_hom_snd_apply (x : (Subtype.val ⁻¹' s : Set t)) :
+    (Hom.snd (ofSubsetPreimageValIso hst).hom x).1 = x.1.1 := (rfl)
+
+@[simp]
+lemma ofSubsetPreimageValIso_inv_fst_apply (x : t) :
+    Hom.fst (ofSubsetPreimageValIso hst).inv x = x := (rfl)
+
+@[simp]
+lemma ofSubsetPreimageValIso_inv_snd_apply (x : s) :
+    (Hom.snd (ofSubsetPreimageValIso hst).inv x).1 = ⟨x.1, hst x.2⟩ := (rfl)
 
 end ofInclusion
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.AB
 public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.Module
+public import TauCeti.Topology.Sheaves.Cohomology.Instances
 public import TauCeti.Topology.Sheaves.SupportedCohomology
 import TauCeti.Algebra.Homology.Ext.Basic
 import TauCeti.CategoryTheory.Abelian.DiagramLemmas.CokernelComp

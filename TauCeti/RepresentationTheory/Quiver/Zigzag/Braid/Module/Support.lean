@@ -64,7 +64,6 @@ private def positiveSupport (i : V) : TwoTermSupport (Bimod k G) where
   high := zigzagBraidComplexXIso₁ k G i
   ne := by decide
   outgoing j := zigzagBraidComplex_d_eq_zero₀ i j (by decide)
-  incoming j := zigzagBraidComplex_d_eq_zero₁ i j (by decide)
   support j := isZero_zigzagBraidComplex_X i
 
 private def inverseSupport (i : V) : TwoTermSupport (Bimod k G) where
@@ -77,7 +76,6 @@ private def inverseSupport (i : V) : TwoTermSupport (Bimod k G) where
   high := zigzagBraidInverseComplexXIso₁ k G i
   ne := by decide
   outgoing j := zigzagBraidInverseComplex_d_eq_zero₀ i j (by decide)
-  incoming j := zigzagBraidInverseComplex_d_eq_zero₁ i j (by decide)
   support j := isZero_zigzagBraidInverseComplex_X i
 
 /-- The natural two-support sequence of the positive braid tensor action has outer functors

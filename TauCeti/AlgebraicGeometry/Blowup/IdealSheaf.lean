@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicGeometry.IdealSheaf.ReesAlgebra
 public import TauCeti.AlgebraicGeometry.ProjectiveSpectrum.Basic
 public import TauCeti.AlgebraicGeometry.RelativeProj.Proper
+public import Mathlib.AlgebraicGeometry.Noetherian
 
 /-!
 # The blowup of a scheme along an ideal sheaf
@@ -40,7 +41,8 @@ algebras `Γ(X, U)[I(U)t]` are finitely generated, and the blowup is proper over
   lies over `U` (`blowupChart_blowupToBase`) and its image is the preimage of `U`
   (`opensRange_blowupChart`).
 * `AlgebraicGeometry.Scheme.IdealSheafData.isProper_blowupToBase`: the blowup along an ideal sheaf
-  of finite type is proper.
+  of finite type is proper; in particular every blowup of a locally noetherian scheme is proper
+  (`isProper_blowupToBase_of_isLocallyNoetherian`).
 
 ## References
 
@@ -200,6 +202,14 @@ theorem isProper_blowupToBase (hI : ∀ U : X.affineOpens, (I.ideal U).FG) :
       rw [Scheme.Modules.sectionsFunctor_ε]
       exact IsIso.id _
     exact (ConcreteCategory.bijective_of_isIso _).2
+
+/-- **The blowup of a locally noetherian scheme is proper.** On a locally noetherian scheme every
+ideal sheaf is of finite type, so `Bl_I X ⟶ X` is proper for every ideal sheaf `I`. -/
+instance isProper_blowupToBase_of_isLocallyNoetherian [IsLocallyNoetherian X] :
+    IsProper I.blowupToBase :=
+  I.isProper_blowupToBase fun U ↦
+    have := IsLocallyNoetherian.component_noetherian U
+    IsNoetherian.noetherian _
 
 end Blowup
 

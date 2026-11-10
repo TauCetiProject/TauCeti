@@ -28,6 +28,8 @@ of the form `Ωᵏ N`.
 
 * `CategoryTheory.ObjectProperty.isSyzygy_succ_iff`: the recursive description.
 * `CategoryTheory.ObjectProperty.IsSyzygy.of_succ`: a `(k + 1)`-st syzygy is a `k`-th syzygy.
+* `CategoryTheory.ObjectProperty.IsSyzygy.map`: functors preserving short exact sequences preserve
+  syzygies.
 * The `k`-th syzygies are closed under isomorphisms.
 
 ## References
@@ -89,5 +91,18 @@ theorem IsSyzygy.of_le {k l : ℕ} (hlk : l ≤ k) {X : C} (h : P.IsSyzygy k X) 
   induction hlk with
   | refl => exact h
   | step _ ih => exact ih h.of_succ
+
+/-- **Syzygies are preserved by functors** that preserve short exact sequences and send objects of
+`P` to objects of `P'`. -/
+theorem IsSyzygy.map {D : Type*} [Category* D] [HasZeroMorphisms D] {P' : ObjectProperty D}
+    (F : C ⥤ D) [F.PreservesZeroMorphisms]
+    (hF : ∀ S : ShortComplex C, S.ShortExact → (S.map F).ShortExact)
+    (hP : ∀ Q, P Q → P' (F.obj Q)) {k : ℕ} {X : C} (h : P.IsSyzygy k X) :
+    P'.IsSyzygy k (F.obj X) := by
+  induction k generalizing X with
+  | zero => exact isSyzygy_zero P' _
+  | succ k ih =>
+    obtain ⟨S, hS, ⟨e⟩, hQ, hX'⟩ := (P.isSyzygy_succ_iff k X).1 h
+    exact (P'.isSyzygy_succ_iff k _).2 ⟨S.map F, hF S hS, ⟨F.mapIso e⟩, hP _ hQ, ih hX'⟩
 
 end CategoryTheory.ObjectProperty

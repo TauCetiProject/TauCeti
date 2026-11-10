@@ -82,11 +82,11 @@ private lemma regKernel_zero (n : ℕ) : regKernel n 0 = newtonianKernel n := by
   rw [regKernel, newtonianKernel_def, add_zero, Real.sq_rpow_div_two (norm_nonneg x)]
 
 private lemma regKernelDeriv_zero (hn : 3 ≤ n) (v : EuclideanSpace ℝ (Fin n))
-    {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) :
+    (x : EuclideanSpace ℝ (Fin n)) :
     regKernelDeriv n v 0 x = fderiv ℝ (newtonianKernel n) x v := by
   have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn
   have hvol := (volume_real_unitBall_pos n).ne'
-  rw [regKernelDeriv, fderiv_newtonianKernel_apply n (by omega) hx, add_zero,
+  rw [regKernelDeriv, fderiv_newtonianKernel_apply n (by omega), add_zero,
     show (2 - (n : ℝ)) / 2 - 1 = -(n : ℝ) / 2 by ring, Real.sq_rpow_div_two (norm_nonneg x)]
   have h2 : (n : ℝ) - 2 ≠ 0 := by linarith
   have h0 : (n : ℝ) ≠ 0 := by linarith
@@ -179,15 +179,14 @@ theorem integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul (hn : 3 ≤ n)
       (((continuous_regKernel ht).mul hg.continuous).integrable_of_hasCompactSupport hc.mul_left)
       (fun x _ ↦ hasLineDerivAt_regKernel v ht x)
       (fun x _ ↦ ((hg.differentiable one_ne_zero) x).hasFDerivAt.hasLineDerivAt v)
-  -- At `t = 0` the regularizations are the kernel and, away from the pole, its derivative.
+  -- At `t = 0` the regularizations are the kernel and its derivative.
   have hderiv : (fun x ↦ fderiv ℝ (newtonianKernel n) x v * g x) =ᵐ[volume]
-      fun x ↦ regKernelDeriv n v 0 x * g x := by
-    filter_upwards [volume.ae_ne 0] with x hx
-    rw [regKernelDeriv_zero hn v hx]
+      fun x ↦ regKernelDeriv n v 0 x * g x :=
+    ae_of_all _ fun x ↦ by simp only [regKernelDeriv_zero hn v x]
   -- Both sides converge as `t → 0⁺`.
   have hL := tendsto_integral_mul_of_dominated_away
     (measure_singleton (0 : EuclideanSpace ℝ (Fin n))) (μ := volume)
-    (l := 𝓝[>] (0 : ℝ)) (K := regKernel n) (K₀ := regKernel n 0) hg'.aestronglyMeasurable
+    (l := 𝓝[>] (0 : ℝ)) (K := regKernel n) (K₀ := regKernel n 0)
     (eventually_mem_nhdsWithin.mono fun t ht ↦ (continuous_regKernel ht).aestronglyMeasurable)
     (by simpa [regKernel_zero] using integrable_newtonianKernel_mul hg' hcg')
     (eventually_mem_nhdsWithin.mono fun t ht x hx ↦ abs_regKernel_le hn (le_of_lt ht) hx)
@@ -195,7 +194,6 @@ theorem integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul (hn : 3 ≤ n)
   have hR := tendsto_integral_mul_of_dominated_away
     (measure_singleton (0 : EuclideanSpace ℝ (Fin n))) (μ := volume)
     (l := 𝓝[>] (0 : ℝ)) (K := regKernelDeriv n v) (K₀ := regKernelDeriv n v 0)
-    hg.continuous.aestronglyMeasurable
     (eventually_mem_nhdsWithin.mono fun t ht ↦
       (continuous_regKernelDeriv v ht).aestronglyMeasurable)
     ((integrable_fderiv_newtonianKernel_mul v hg.continuous hc).congr hderiv)
@@ -218,13 +216,13 @@ theorem hasWeakFDerivOn_newtonianKernel (hn : 3 ≤ n) (Ω : Opens (EuclideanSpa
 /-- Away from the pole, the gradient pairing `∇Gₙ · ∇f` is `-(n ωₙ)⁻¹ ‖x‖⁻ⁿ f' x x`. -/
 private lemma sum_fderiv_newtonianKernel_mul_fderiv (hn : 3 ≤ n)
     (b : OrthonormalBasis (Fin n) ℝ (EuclideanSpace ℝ (Fin n)))
-    (f : EuclideanSpace ℝ (Fin n) → ℝ) {x : EuclideanSpace ℝ (Fin n)} (hx : x ≠ 0) :
+    (f : EuclideanSpace ℝ (Fin n) → ℝ) (x : EuclideanSpace ℝ (Fin n)) :
     ∑ i, fderiv ℝ (newtonianKernel n) x (b i) * fderiv ℝ f x (b i) =
       -((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
         (‖x‖ ^ (-(n : ℝ)) * fderiv ℝ f x x) := by
   have hx' : fderiv ℝ f x x = ∑ i, ⟪b i, x⟫ * fderiv ℝ f x (b i) := by
     simpa using congrArg (fderiv ℝ f x) (b.sum_repr' x).symm
-  simp_rw [fderiv_newtonianKernel_apply n (by omega) hx, hx', Finset.mul_sum, real_inner_comm x]
+  simp_rw [fderiv_newtonianKernel_apply n (by omega), hx', Finset.mul_sum, real_inner_comm x]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   ring
 
@@ -244,9 +242,8 @@ theorem integral_laplacian_mul_newtonianKernel (hn : 3 ≤ n)
   set b := EuclideanSpace.basisFun (Fin n) ℝ
   have hsum : (fun x ↦ ∑ i, fderiv ℝ (newtonianKernel n) x (b i) * fderiv ℝ f x (b i)) =ᵐ[volume]
       fun x ↦ -((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
-        (‖x‖ ^ (-(n : ℝ)) * fderiv ℝ f x x) := by
-    filter_upwards [volume.ae_ne 0] with x hx
-    exact sum_fderiv_newtonianKernel_mul_fderiv hn b f hx
+        (‖x‖ ^ (-(n : ℝ)) * fderiv ℝ f x x) :=
+    ae_of_all _ (sum_fderiv_newtonianKernel_mul_fderiv hn b f)
   rw [(locallyIntegrable_newtonianKernel n).integral_laplacian_mul_eq_neg_integral_sum
       (locallyIntegrable_fderiv_newtonianKernel n)
       (fun _ ↦ integral_newtonianKernel_mul_fderiv_eq_neg_fderiv_mul hn) hf hc b,

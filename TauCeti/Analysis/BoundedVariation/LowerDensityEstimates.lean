@@ -12,7 +12,7 @@ import Mathlib.Analysis.Calculus.Monotone
 import TauCeti.Analysis.BoundedVariation.CutByBall
 import TauCeti.Analysis.BoundedVariation.DensityEstimates
 import TauCeti.Analysis.BoundedVariation.RelativeIsoperimetric
-import TauCeti.Analysis.BoundedVariation.Sobolev
+import TauCeti.Analysis.BoundedVariation.Sobolev.Basic
 import TauCeti.Analysis.Calculus.PowerGrowth
 import TauCeti.Basic.Real.ConjExponents
 import TauCeti.MeasureTheory.Measure.InterBall

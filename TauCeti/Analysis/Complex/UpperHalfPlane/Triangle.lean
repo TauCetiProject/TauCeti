@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.Measure
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.InteriorAngle
 public import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Semicircle
 import TauCeti.Analysis.Complex.NormSq
+import TauCeti.Analysis.Complex.UpperHalfPlane.Geodesic.Orientation
 import TauCeti.Analysis.Complex.UpperHalfPlane.IdealRegion
 import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
@@ -229,6 +230,39 @@ theorem smul_triangle (h : PSL(2, ℝ)) {A B C : ℍ} (hAB : A ≠ B) (hBC : B �
 
 /-! ### The Gauss–Bonnet formula -/
 
+/-- The closed side `B C` containing `A` is the closed disc bounded by the semicircle through
+`B` and `C`, when `C` lies to the right of `B` and `A` lies inside it. -/
+private theorem closedSide_eq_normSq_le_of_re_lt {B C A : ℍ} (hBC : B.re < C.re)
+    (hA : A ∈ rightHalfPlane (geodesicBetween B C)) :
+    closedSide B C A = {z : ℍ |
+      Complex.normSq ((z : ℂ) - circleCenter B C) ≤
+        Complex.normSq ((C : ℂ) - circleCenter B C)} := by
+  unfold closedSide
+  simp only [hA, ↓reduceIte]
+  ext z
+  rw [mem_closure_rightHalfPlane_iff, Set.mem_ofPred_eq]
+  obtain ⟨κ, hκ, h⟩ := exists_re_inv_geodesicBetween_smul_eq hBC.ne z
+  rw [h, ← normSq_sub_circleCenter hBC.ne, mul_nonneg_iff_of_pos_left hκ]
+  set X := Complex.normSq ((z : ℂ) - circleCenter B C)
+  set Y := Complex.normSq ((C : ℂ) - circleCenter B C)
+  have e : (B.re - C.re) * (X - Y) = (C.re - B.re) * (Y - X) := by ring
+  rw [e, mul_nonneg_iff_of_pos_left (sub_pos.2 hBC), sub_nonneg]
+
+/-- The closed side `C A` containing `B` is the complement of the open disc bounded by the
+semicircle through `A` and `C`, when `C` lies to the right of `A` and `B` lies outside it. -/
+private theorem closedSide_eq_normSq_ge_of_re_lt {C A B : ℍ} (hAC : A.re < C.re)
+    (hB : B ∈ rightHalfPlane (geodesicBetween C A)) :
+    closedSide C A B = {z : ℍ |
+      Complex.normSq ((C : ℂ) - circleCenter A C) ≤
+        Complex.normSq ((z : ℂ) - circleCenter A C)} := by
+  unfold closedSide
+  simp only [hB, ↓reduceIte]
+  ext z
+  rw [mem_closure_rightHalfPlane_iff, Set.mem_ofPred_eq]
+  obtain ⟨κ, hκ, h⟩ := exists_re_inv_geodesicBetween_smul_eq hAC.ne' z
+  rw [h, circleCenter_comm, mul_nonneg_iff_of_pos_left hκ,
+    mul_nonneg_iff_of_pos_left (sub_pos.2 hAC), sub_nonneg]
+
 /-- The triangle in normal form, with `A = I`, `B = i exp d` above it and `C` to the right, as
 a system of inequalities: to the right of the imaginary axis, inside the disc bounded by the
 semicircle through `B` and `C`, and outside the disc bounded by the semicircle through `I` and
@@ -257,43 +291,20 @@ theorem mem_triangle_normal_form_iff {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < 
     ext z
     rw [mem_closure_rightHalfPlane_iff, inv_one, one_smul, Set.mem_ofPred_eq]
   -- the side `B C` is a semicircle, with `I` inside its disc
-  have h2 : closedSide B C UpperHalfPlane.I = {z : ℍ |
-      Complex.normSq ((z : ℂ) - circleCenter B C) ≤
-        Complex.normSq ((C : ℂ) - circleCenter B C)} := by
-    unfold closedSide
-    have hImem : UpperHalfPlane.I ∈ rightHalfPlane (geodesicBetween B C) := by
-      rw [mem_rightHalfPlane_geodesicBetween_iff_of_re_lt hBC]
-      simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
-        Complex.ofReal_im, sub_zero, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, hBre, hBim,
-        UpperHalfPlane.I_re, UpperHalfPlane.I_im]
-      nlinarith
-    simp only [hImem, ↓reduceIte]
-    ext z
-    rw [mem_closure_rightHalfPlane_iff, Set.mem_ofPred_eq]
-    obtain ⟨κ, hκ, h⟩ := exists_re_inv_geodesicBetween_smul_eq hBC.ne z
-    rw [h, hBre, ← normSq_sub_circleCenter hBC.ne, mul_nonneg_iff_of_pos_left hκ]
-    set X := Complex.normSq ((z : ℂ) - circleCenter B C)
-    set Y := Complex.normSq ((C : ℂ) - circleCenter B C)
-    have e : (0 - C.re) * (X - Y) = C.re * (Y - X) := by ring
-    rw [e, mul_nonneg_iff_of_pos_left hC, sub_nonneg]
+  have h2 := closedSide_eq_normSq_le_of_re_lt (A := UpperHalfPlane.I) hBC (by
+    rw [mem_rightHalfPlane_geodesicBetween_iff_of_re_lt hBC]
+    simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
+      Complex.ofReal_im, sub_zero, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, hBre, hBim,
+      UpperHalfPlane.I_re, UpperHalfPlane.I_im]
+    nlinarith)
   -- the side `C I` is a semicircle, with `B` outside its disc
-  have h3 : closedSide C UpperHalfPlane.I B = {z : ℍ |
-      Complex.normSq ((C : ℂ) - circleCenter UpperHalfPlane.I C) ≤
-        Complex.normSq ((z : ℂ) - circleCenter UpperHalfPlane.I C)} := by
-    unfold closedSide
-    have hBmem : B ∈ rightHalfPlane (geodesicBetween C UpperHalfPlane.I) := by
-      rw [mem_rightHalfPlane_geodesicBetween_iff_of_lt_re hIC, circleCenter_comm,
-        normSq_sub_circleCenter hIC.ne]
-      simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
-        Complex.ofReal_im, sub_zero, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, hBre, hBim,
-        UpperHalfPlane.I_re, UpperHalfPlane.I_im]
-      nlinarith
-    simp only [hBmem, ↓reduceIte]
-    ext z
-    rw [mem_closure_rightHalfPlane_iff, Set.mem_ofPred_eq]
-    obtain ⟨κ, hκ, h⟩ := exists_re_inv_geodesicBetween_smul_eq hIC.ne' z
-    rw [h, UpperHalfPlane.I_re, sub_zero, circleCenter_comm, mul_nonneg_iff_of_pos_left hκ,
-      mul_nonneg_iff_of_pos_left hC, sub_nonneg]
+  have h3 := closedSide_eq_normSq_ge_of_re_lt (B := B) hIC (by
+    rw [mem_rightHalfPlane_geodesicBetween_iff_of_lt_re hIC, circleCenter_comm,
+      normSq_sub_circleCenter hIC.ne]
+    simp only [Complex.normSq_apply, Complex.sub_re, Complex.sub_im, Complex.ofReal_re,
+      Complex.ofReal_im, sub_zero, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, hBre, hBim,
+      UpperHalfPlane.I_re, UpperHalfPlane.I_im]
+    nlinarith)
   rw [triangle, h1, h2, h3]
   simp only [Set.mem_inter_iff, Set.mem_ofPred_eq]
   tauto
@@ -533,6 +544,26 @@ theorem interiorAngle_add_add_le_pi_of_normal_form {d : ℝ} (hd : 0 < d) {C : �
     ← normSq_sub_circleCenter hBC]
   linarith
 
+/-- In normal form, the triangle has the same area as the difference of the two ideal-vertex
+regions above the semicircles through `I`, `C` and through `i exp d`, `C`. -/
+private theorem volume_triangle_I_geodesicLine_one_eq_volume_diff {d : ℝ} (hd : 0 < d) {C : ℍ}
+    (hC : 0 < C.re) :
+    volume (triangle UpperHalfPlane.I (geodesicLine 1 d) C) =
+      volume (idealRegionAbove (circleCenter UpperHalfPlane.I C)
+          (Real.sqrt (Complex.normSq ((C : ℂ) - circleCenter UpperHalfPlane.I C))) 0 C.re \
+        idealRegionAbove (circleCenter (geodesicLine 1 d) C)
+          (Real.sqrt (Complex.normSq ((C : ℂ) - circleCenter (geodesicLine 1 d) C))) 0 C.re) := by
+  refine le_antisymm ?_ (measure_mono (diff_subset_triangle_of_normal_form hd hC))
+  calc volume (triangle UpperHalfPlane.I (geodesicLine 1 d) C)
+      ≤ volume ((idealRegionAbove (circleCenter UpperHalfPlane.I C)
+            (Real.sqrt (Complex.normSq ((C : ℂ) - circleCenter UpperHalfPlane.I C))) 0 C.re \
+          idealRegionAbove (circleCenter (geodesicLine 1 d) C)
+            (Real.sqrt (Complex.normSq ((C : ℂ) - circleCenter (geodesicLine 1 d) C))) 0 C.re) ∪
+          Set.range (geodesicLine (geodesicBetween (geodesicLine 1 d) C))) :=
+        measure_mono (triangle_subset_diff_union_of_normal_form hd hC)
+    _ ≤ _ := measure_union_le _ _
+    _ = _ := by rw [volume_range_geodesicLine, add_zero]
+
 /-- The Gauss–Bonnet formula for the triangle in normal form. -/
 theorem volume_triangle_I_geodesicLine_one {d : ℝ} (hd : 0 < d) {C : ℍ} (hC : 0 < C.re) :
     volume (triangle UpperHalfPlane.I (geodesicLine 1 d) C) =
@@ -557,24 +588,16 @@ theorem volume_triangle_I_geodesicLine_one {d : ℝ} (hd : 0 < d) {C : ℍ} (hC 
     rw [normSq_sub_circleCenter hBC, Complex.normSq_apply]
     simp [hBre, hBim]
     ring
-  have hnC : ∀ c : ℝ, Complex.normSq ((C : ℂ) - c) = (C.re - c) ^ 2 + C.im ^ 2 := fun c ↦ by
-    rw [Complex.normSq_apply]
-    simp
-    ring
   have hr₁0 : 0 < r₁ := Real.sqrt_pos.2 (by rw [hn₁]; positivity)
   have hr₂0 : 0 < r₂ := Real.sqrt_pos.2 (by rw [hn₂]; positivity)
   have h1a : c₁ - r₁ < 0 := by
     rw [sub_neg]
     exact Real.lt_sqrt_of_sq_lt (by rw [hn₁]; linarith)
-  have h1b : C.re < c₁ + r₁ := by
-    rw [← sub_lt_iff_lt_add']
-    exact Real.lt_sqrt_of_sq_lt (by rw [hnC]; nlinarith [C.im_pos])
+  have h1b : C.re < c₁ + r₁ := sub_lt_iff_lt_add'.mp (abs_lt.mp (abs_re_sub_lt_sqrt_normSq C c₁)).2
   have h2a : c₂ - r₂ < 0 := by
     rw [sub_neg]
     exact Real.lt_sqrt_of_sq_lt (by rw [hn₂]; nlinarith [Real.exp_pos d])
-  have h2b : C.re < c₂ + r₂ := by
-    rw [← sub_lt_iff_lt_add']
-    exact Real.lt_sqrt_of_sq_lt (by rw [hnC]; nlinarith [C.im_pos])
+  have h2b : C.re < c₂ + r₂ := sub_lt_iff_lt_add'.mp (abs_lt.mp (abs_re_sub_lt_sqrt_normSq C c₂)).2
   -- the areas of the two ideal-vertex regions
   have hV₁ := volume_idealRegionAbove hr₁0 h1a.le hC.le h1b.le
   have hV₂ := volume_idealRegionAbove hr₂0 h2a.le hC.le h2b.le
@@ -582,16 +605,8 @@ theorem volume_triangle_I_geodesicLine_one {d : ℝ} (hd : 0 < d) {C : ℍ} (hC 
   rw [← hB, ← hc₂, ← hr₂, ← hc₁, ← hr₁] at hsub
   -- the triangle and the difference of the two regions have the same area
   have hT : volume (triangle UpperHalfPlane.I B C) =
-      volume (idealRegionAbove c₁ r₁ 0 C.re \ idealRegionAbove c₂ r₂ 0 C.re) := by
-    refine le_antisymm ?_ (measure_mono (diff_subset_triangle_of_normal_form hd hC))
-    calc volume (triangle UpperHalfPlane.I B C)
-        ≤ volume ((idealRegionAbove c₁ r₁ 0 C.re \ idealRegionAbove c₂ r₂ 0 C.re) ∪
-            Set.range (geodesicLine (geodesicBetween B C))) :=
-          measure_mono (triangle_subset_diff_union_of_normal_form hd hC)
-      _ ≤ volume (idealRegionAbove c₁ r₁ 0 C.re \ idealRegionAbove c₂ r₂ 0 C.re) +
-            volume (Set.range (geodesicLine (geodesicBetween B C))) := measure_union_le _ _
-      _ = volume (idealRegionAbove c₁ r₁ 0 C.re \ idealRegionAbove c₂ r₂ 0 C.re) := by
-          rw [volume_range_geodesicLine, add_zero]
+      volume (idealRegionAbove c₁ r₁ 0 C.re \ idealRegionAbove c₂ r₂ 0 C.re) :=
+    volume_triangle_I_geodesicLine_one_eq_volume_diff hd hC
   rw [hT, measure_sdiff hsub (measurableSet_idealRegionAbove _ _ _ _).nullMeasurableSet
     (by rw [hV₂]; exact ENNReal.ofReal_ne_top), hV₁, hV₂,
     ← ENNReal.ofReal_sub _ (sub_nonneg.2 (Real.arccos_le_arccos
@@ -683,5 +698,31 @@ theorem interiorAngle_add_add_le_pi {A B C : ℍ} (hAB : A ≠ B)
       interiorAngle_comm UpperHalfPlane.I (geodesicLine 1 d) (h • C),
       interiorAngle_comm (h • C) UpperHalfPlane.I (geodesicLine 1 d)]
     linarith [interiorAngle_add_add_le_pi_of_normal_form hd hCre]
+
+/-- The vertices `I`, `C`, `i t` of the triangle in normal form run counterclockwise: each lies
+to the left of the oriented side through the other two. -/
+theorem leftHalfPlane_normal_form {C : ℍ} {t : ℝ} (ht : 1 < t) (hC : 0 < C.re) :
+    geodesicLine 1 (Real.log t) ∈ leftHalfPlane (geodesicBetween UpperHalfPlane.I C) ∧
+      UpperHalfPlane.I ∈ leftHalfPlane (geodesicBetween C (geodesicLine 1 (Real.log t))) ∧
+      C ∈ leftHalfPlane (geodesicBetween (geodesicLine 1 (Real.log t)) UpperHalfPlane.I) := by
+  have hBc := coe_geodesicLine_one_log (by linarith : 0 < t)
+  have hIB : UpperHalfPlane.I ≠ geodesicLine 1 (Real.log t) := fun h ↦ by
+    have him := congrArg (fun z : ℍ ↦ (z : ℂ).im) h
+    simp only [UpperHalfPlane.coe_I, Complex.I_im, hBc] at him
+    linarith
+  have hIC : UpperHalfPlane.I ≠ C := fun h ↦ by
+    have hre := congrArg UpperHalfPlane.re h
+    rw [UpperHalfPlane.I_re] at hre
+    exact hC.ne hre
+  -- The third orientation is the only one that is computed; the others follow by cyclic
+  -- invariance.
+  have h₃ : C ∈ leftHalfPlane (geodesicBetween (geodesicLine 1 (Real.log t))
+      UpperHalfPlane.I) := by
+    rw [geodesicBetween_swap hIB, geodesicBetween_I_geodesicLine_one (Real.log_pos ht),
+      leftHalfPlane_mul_pslS, rightHalfPlane_mul_dilation, mem_rightHalfPlane_iff, inv_one,
+      one_smul]
+    exact hC
+  have h₁ := mem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane hIB.symm h₃
+  exact ⟨h₁, mem_leftHalfPlane_geodesicBetween_of_mem_leftHalfPlane hIC h₁, h₃⟩
 
 end TauCeti.UpperHalfPlane

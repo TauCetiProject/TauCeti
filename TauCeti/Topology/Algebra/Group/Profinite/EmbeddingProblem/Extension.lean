@@ -40,7 +40,9 @@ in `TauCeti.Topology.Algebra.Group.Profinite.Free.Extension` is the instance of 
 
 public section
 
-namespace TauCeti
+namespace GroupExtension
+
+open TauCeti
 
 universe u v
 
@@ -58,7 +60,7 @@ variable [T2Space G] {M : Type*} [Group M] [TopologicalSpace M]
 `1 → M → E → G → 1` of topological groups with profinite total group and pro-`p` kernel, over a
 projective pro-`p` Hausdorff group `G`, has a continuous homomorphic section: the total group is
 pro-`p`, and projectivity lifts the identity of `G` through the projection. -/
-theorem _root_.GroupExtension.exists_splitting_continuous_of_isProjective
+theorem exists_splitting_continuous_of_isProjective
     (S : GroupExtension M E G) (hinl : Continuous S.inl) (hrh : Continuous S.rightHom)
     (hM : IsProP p M) (hG : IsProP p G) (hproj : IsProjective.{u, v, u} p G) :
     ∃ s : S.Splitting, Continuous ⇑s := by
@@ -67,9 +69,10 @@ theorem _root_.GroupExtension.exists_splitting_continuous_of_isProjective
       (Topology.IsQuotientMap.of_surjective_continuous S.rightHom_surjective hrh)).isOpenMap hM hG
   obtain ⟨σ, hσ⟩ := hproj.exists_continuous_lift hE ⟨S.rightHom, hrh⟩ S.rightHom_surjective
     (ContinuousMonoidHom.id G)
-  obtain ⟨s, hs, -⟩ := S.exists_splitting_continuous_of_comp_eq_id hrh σ hσ
+  obtain ⟨s, hs, -⟩ := S.exists_splitting_continuous_of_comp_eq_id σ
+    (congrArg ContinuousMonoidHom.toMonoidHom hσ)
   exact ⟨s, hs⟩
 
 end Splitting
 
-end TauCeti
+end GroupExtension

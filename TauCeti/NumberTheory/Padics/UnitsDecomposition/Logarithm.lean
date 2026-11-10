@@ -48,7 +48,8 @@ At `p = 2` the modulus `q = 4` cannot be lowered to `2`: `-1` has order two, so
 * `TauCeti.unitsPrincipalLogEquiv p`: the logarithm `1 + qℤ_p ≃ₜ* ℤ_p`, `u ↦ log u / q`.
 * `TauCeti.padicUnitsGenerator p`: the unit `γ = exp q`, with
   `TauCeti.topologicalClosure_zpowers_padicUnitsGenerator` and
-  `TauCeti.coe_padicUnitsGenerator_zpow`, `γ ^ k = exp (q k)`, and
+  `TauCeti.coe_padicUnitsGenerator_zpow`, `γ ^ k = exp (q k)`,
+  `TauCeti.coe_padicUnitsGenerator_pow_prime_pow`, `γ ^ (p ^ j) = exp (p ^ (k + j))`, and
   `TauCeti.not_isOfFinOrder_padicUnitsGenerator`.
 * `TauCeti.padicUnitsSection p`: the section `ω`, with `TauCeti.eq_padicUnitsSection` and
   `TauCeti.padicUnitsSection_pow_totient`.
@@ -108,7 +109,9 @@ private theorem one_lt_sub_one_mul_padicUnitsDepth_add (j : ℕ) :
     exact lt_of_lt_of_le (by norm_num)
       (Nat.mul_le_mul (by omega : 2 ≤ p - 1) (by omega : 1 ≤ 1 + j))
 
-private theorem one_lt_sub_one_mul_padicUnitsDepth : 1 < (p - 1) * padicUnitsDepth p :=
+/-- The depth `k` with `q = p ^ k` satisfies `1 < (p - 1) k`: the modulus `q` lies in the disc of
+convergence `‖x‖ < p ^ (-1 / (p - 1))` of the `p`-adic exponential. -/
+theorem one_lt_sub_one_mul_padicUnitsDepth : 1 < (p - 1) * padicUnitsDepth p :=
   one_lt_sub_one_mul_padicUnitsDepth_add 0
 
 private theorem norm_coe_sub_one (u : ℤ_[p]ˣ) :
@@ -266,6 +269,13 @@ theorem coe_padicUnitsGenerator_zpow (k : ℤ) :
       exp ((p : ℚ_[p]) ^ padicUnitsDepth p * k) := by
   rw [padicUnitsGenerator, ← Subgroup.coe_zpow, ← map_zpow, ← ofAdd_zsmul,
     coe_unitsPrincipalLogEquiv_symm_apply, toAdd_ofAdd, zsmul_one, PadicInt.coe_intCast]
+
+/-- The powers `γ ^ (p ^ j) = exp (p ^ (k + j))`, where `q = p ^ k`. -/
+theorem coe_padicUnitsGenerator_pow_prime_pow (j : ℕ) :
+    (((padicUnitsGenerator p ^ p ^ j : ℤ_[p]ˣ) : ℤ_[p]) : ℚ_[p]) =
+      exp ((p : ℚ_[p]) ^ (padicUnitsDepth p + j)) := by
+  rw [← zpow_natCast, coe_padicUnitsGenerator_zpow, pow_add]
+  norm_cast
 
 /-- A unit logarithmic coordinate gives a principal unit of exact level `padicUnitsDepth p`. -/
 theorem unitsPrincipalLogEquiv_symm_notMem_unitsPrincipal_succ (u : ℤ_[p]ˣ) :

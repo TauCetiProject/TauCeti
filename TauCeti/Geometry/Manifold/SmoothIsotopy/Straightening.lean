@@ -134,12 +134,61 @@ private theorem norm_deriv_splice_sub_le {k l : ℝ → E} {k' l' v : E} {δ s t
         ContinuousLinearMap.le_opNorm _ _
     _ ≤ (3 + 4 * B) * ε := by rw [norm_one, mul_one]; exact hh'v
 
+/-- A `C¹` curve on `(-r, r)` has velocity within `ε` of its velocity `v` at `0` near `0`. -/
+private theorem exists_norm_deriv_sub_lt {f : ℝ → E} {r ε : ℝ} {v : E}
+    (hf : ContDiffOn ℝ 1 f (Ioo (-r) r)) (hr : 0 < r) (hf0 : deriv f 0 = v) (hε : 0 < ε) :
+    ∃ ρ > 0, ∀ t, |t| < ρ → ‖deriv f t - v‖ < ε := by
+  have hI : IsOpen (Ioo (-r) r) := isOpen_Ioo
+  have := (hf.continuousOn_deriv_of_isOpen hI le_rfl).continuousAt
+    (hI.mem_nhds ⟨neg_lt_zero.2 hr, hr⟩)
+  obtain ⟨ρ, hρ, h⟩ := Metric.continuousAt_iff.1 this ε hε
+  exact ⟨ρ, hρ, fun t ht => by
+    simpa [dist_eq_norm, hf0] using h (by simpa [Real.dist_eq] using ht)⟩
+
+/-- **A small interval where two curves with the same velocity at `0` are close.** If `k` and `l`
+are `C¹` on `(-r, r)`, agree at `0` and have the same velocity there, then on some `[-ρ, ρ]` with
+`ρ < r` both velocities are within `ε` of that velocity, and `‖l t - k t‖ ≤ 2 * ε * |t|`. -/
+private theorem exists_Icc_norm_deriv_sub_lt_and_norm_sub_le {k l : ℝ → E} {r ε : ℝ} (hr : 0 < r)
+    (hk : ContDiffOn ℝ 1 k (Ioo (-r) r)) (hl : ContDiffOn ℝ 1 l (Ioo (-r) r))
+    (h0 : k 0 = l 0) (hd : deriv k 0 = deriv l 0) (hε0 : 0 < ε) :
+    ∃ ρ, 0 < ρ ∧ ρ < r ∧ ∀ t ∈ Icc (-ρ) ρ, t ∈ Ioo (-r) r ∧
+      ‖deriv k t - deriv k 0‖ < ε ∧ ‖deriv l t - deriv k 0‖ < ε ∧ ‖l t - k t‖ ≤ 2 * ε * |t| := by
+  have hI : IsOpen (Ioo (-r) r) := isOpen_Ioo
+  obtain ⟨ρ₁, hρ₁, hk₁⟩ := exists_norm_deriv_sub_lt hk hr rfl hε0
+  obtain ⟨ρ₂, hρ₂, hl₁⟩ := exists_norm_deriv_sub_lt hl hr hd.symm hε0
+  set ρ := min (min ρ₁ ρ₂) r / 2 with hρ
+  have hρ0 : 0 < ρ := by positivity
+  have hρr : ρ < r := by
+    rw [hρ]; linarith [min_le_right (min ρ₁ ρ₂) r]
+  have hlt (t : ℝ) (ht : t ∈ Icc (-ρ) ρ) : |t| < ρ₁ ∧ |t| < ρ₂ ∧ t ∈ Ioo (-r) r := by
+    have ht' : |t| < min (min ρ₁ ρ₂) r := (abs_le.2 ht).trans_lt (by rw [hρ]; linarith)
+    refine ⟨ht'.trans_le ((min_le_left _ _).trans (min_le_left _ _)),
+      ht'.trans_le ((min_le_left _ _).trans (min_le_right _ _)), ?_⟩
+    exact ⟨neg_lt_of_abs_lt (ht'.trans_le (min_le_right _ _)),
+      lt_of_abs_lt (ht'.trans_le (min_le_right _ _))⟩
+  have hdk (t : ℝ) (ht : t ∈ Ioo (-r) r) : DifferentiableAt ℝ k t :=
+    (hk.contDiffAt (hI.mem_nhds ht)).differentiableAt one_ne_zero
+  have hdl (t : ℝ) (ht : t ∈ Ioo (-r) r) : DifferentiableAt ℝ l t :=
+    (hl.contDiffAt (hI.mem_nhds ht)).differentiableAt one_ne_zero
+  refine ⟨ρ, hρ0, hρr, fun t ht => ⟨(hlt t ht).2.2, hk₁ t (hlt t ht).1, hl₁ t (hlt t ht).2.1, ?_⟩⟩
+  -- Mean value estimate: `‖l t - k t‖ ≤ 2 * ε * |t|`.
+  have h := (convex_Icc (-ρ) ρ).norm_sub_le_of_norm_hasFDerivWithin_sub_le
+    (A := ContinuousLinearMap.toSpanSingleton ℝ (deriv k 0))
+    (fun x hx => (hdk x (hlt x hx).2.2).hasDerivAt.hasFDerivAt.hasFDerivWithinAt)
+    (fun x hx => (hdl x (hlt x hx).2.2).hasDerivAt.hasFDerivAt.hasFDerivWithinAt)
+    (fun x hx => by
+      simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using (hk₁ x (hlt x hx).1).le)
+    (fun x hx => by
+      simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using (hl₁ x (hlt x hx).2.1).le)
+    ht ⟨neg_nonpos.2 hρ0.le, hρ0.le⟩ h0
+  simpa [Real.norm_eq_abs] using h
+
 /-- **The spliced curves are uniformly regular.** If `k` and `l` are `C¹` near `0`, agree at `0`
 and have the same nonzero velocity `v` there, then on a fixed interval `[-ρ, ρ]` the velocity of
 every spliced curve, at every scale `δ` and weight `s ∈ [0, 1]`, has positive pairing with a fixed
-functional `ℓ` normalizing `v`. The key estimate is that `l - k` vanishes to first order at `0`, so
-the derivative `δ⁻¹ χ' (δ⁻¹ t)` of the cutoff, which is supported where `|t| ≤ 2δ`, only meets
-`l t - k t = o(t)`. -/
+functional `ℓ` normalizing `v`. The key estimate is the bound `‖l t - k t‖ ≤ 2 ε |t|`, so the
+derivative `δ⁻¹ χ' (δ⁻¹ t)` of the cutoff, which is supported where `|t| ≤ 2δ`, only meets a
+difference of size `O(ε |t|)`. -/
 private theorem exists_pos_deriv_splice {k l : ℝ → E} {r : ℝ} (hr : 0 < r)
     (hk : ContDiffOn ℝ 1 k (Ioo (-r) r)) (hl : ContDiffOn ℝ 1 l (Ioo (-r) r))
     (h0 : k 0 = l 0) (hd : deriv k 0 = deriv l 0) (hv : deriv k 0 ≠ 0) :
@@ -157,49 +206,15 @@ private theorem exists_pos_deriv_splice {k l : ℝ → E} {r : ℝ} (hr : 0 < r)
   have hεv : (3 + 4 * B) * ε < ‖v‖ := by
     rw [hε, mul_div_assoc', div_lt_iff₀ (by positivity)]
     nlinarith
-  have hI : IsOpen (Ioo (-r) r) := isOpen_Ioo
-  have h0I : (0 : ℝ) ∈ Ioo (-r) r := ⟨neg_lt_zero.2 hr, hr⟩
-  -- The velocities of `k` and `l` stay within `ε` of `v` on a small interval about `0`.
-  have hcont (f : ℝ → E) (hf : ContDiffOn ℝ 1 f (Ioo (-r) r)) (hf0 : deriv f 0 = v) :
-      ∃ ρ > 0, ∀ t, |t| < ρ → ‖deriv f t - v‖ < ε := by
-    have := ((hf.continuousOn_deriv_of_isOpen hI le_rfl).continuousAt (hI.mem_nhds h0I))
-    obtain ⟨ρ, hρ, h⟩ := Metric.continuousAt_iff.1 this ε hε0
-    exact ⟨ρ, hρ, fun t ht => by
-      simpa [dist_eq_norm, hf0] using h (by simpa [Real.dist_eq] using ht)⟩
-  obtain ⟨ρ₁, hρ₁, hk₁⟩ := hcont k hk rfl
-  obtain ⟨ρ₂, hρ₂, hl₁⟩ := hcont l hl hd.symm
-  set ρ := min (min ρ₁ ρ₂) r / 2 with hρ
-  have hρ0 : 0 < ρ := by positivity
-  have hρr : ρ < r := by
-    rw [hρ]; linarith [min_le_right (min ρ₁ ρ₂) r]
-  have hlt (t : ℝ) (ht : t ∈ Icc (-ρ) ρ) : |t| < ρ₁ ∧ |t| < ρ₂ ∧ t ∈ Ioo (-r) r := by
-    have ht' : |t| < min (min ρ₁ ρ₂) r := (abs_le.2 ht).trans_lt (by rw [hρ]; linarith)
-    refine ⟨ht'.trans_le ((min_le_left _ _).trans (min_le_left _ _)),
-      ht'.trans_le ((min_le_left _ _).trans (min_le_right _ _)), ?_⟩
-    exact ⟨neg_lt_of_abs_lt (ht'.trans_le (min_le_right _ _)),
-      lt_of_abs_lt (ht'.trans_le (min_le_right _ _))⟩
+  obtain ⟨ρ, hρ0, hρr, hρ⟩ := exists_Icc_norm_deriv_sub_lt_and_norm_sub_le hr hk hl h0 hd hε0
   have hdk (t : ℝ) (ht : t ∈ Ioo (-r) r) : DifferentiableAt ℝ k t :=
-    (hk.contDiffAt (hI.mem_nhds ht)).differentiableAt one_ne_zero
+    (hk.contDiffAt (isOpen_Ioo.mem_nhds ht)).differentiableAt one_ne_zero
   have hdl (t : ℝ) (ht : t ∈ Ioo (-r) r) : DifferentiableAt ℝ l t :=
-    (hl.contDiffAt (hI.mem_nhds ht)).differentiableAt one_ne_zero
-  -- Mean value estimate: `l - k` vanishes to first order at `0`.
-  have hlk (t : ℝ) (ht : t ∈ Icc (-ρ) ρ) : ‖l t - k t‖ ≤ 2 * ε * |t| := by
-    have h := (convex_Icc (-ρ) ρ).norm_sub_le_of_norm_hasFDerivWithin_sub_le
-      (A := ContinuousLinearMap.toSpanSingleton ℝ v)
-      (fun x hx => (hdk x (hlt x hx).2.2).hasDerivAt.hasFDerivAt.hasFDerivWithinAt)
-      (fun x hx => (hdl x (hlt x hx).2.2).hasDerivAt.hasFDerivAt.hasFDerivWithinAt)
-      (fun x hx => by
-        simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using (hk₁ x (hlt x hx).1).le)
-      (fun x hx => by
-        simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using (hl₁ x (hlt x hx).2.1).le)
-      ht ⟨neg_nonpos.2 hρ0.le, hρ0.le⟩ h0
-    simpa [Real.norm_eq_abs] using h
+    (hl.contDiffAt (isOpen_Ioo.mem_nhds ht)).differentiableAt one_ne_zero
   refine ⟨ℓ, ρ, hρ0, hρr, fun δ hδ s hs t ht => ?_⟩
-  obtain ⟨htk, htl, htI⟩ := hlt t ht
-  have hk' := (hdk t htI).hasDerivAt
-  have hl' := (hdl t htI).hasDerivAt
-  obtain ⟨hD, hDv⟩ :=
-    norm_deriv_splice_sub_le hδ hs hB hk' hl' (hk₁ t htk).le (hl₁ t htl).le (hlk t ht)
+  obtain ⟨htI, hk₁, hl₁, hlk⟩ := hρ t ht
+  obtain ⟨hD, hDv⟩ := norm_deriv_splice_sub_le hδ hs hB (hdk t htI).hasDerivAt
+    (hdl t htI).hasDerivAt hk₁.le hl₁.le hlk
   refine ⟨hD, ?_⟩
   set D := deriv (splice k l δ s) t
   -- `ℓ D ≥ ‖v‖ - ‖D - v‖ > 0`.
@@ -289,18 +304,16 @@ private theorem contMDiff_spliceMap {G : ℝ → ℝ → E}
         (not_le.1 (mt mem_circleExp_image_Icc_neg_iff.2 hq')).le
     exact (K.contMDiff.comp contMDiff_snd).contMDiffAt.congr_of_eventuallyEq hev
 
-/-- **The spliced map is a smooth embedding**, provided the curve `g` is regular and injective on
-`(-ρ, ρ)`, and its stretch over `(-a, a)` avoids the image of the rest of the circle under `K`. -/
-private theorem isSmoothEmbedding_spliceMap [T2Space M]
-    (hsmooth : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ (spliceMap K φ ρ g))
-    (hgC : ContDiffOn ℝ ∞ g (Ioo (-r) r)) (hgφ : ∀ t, |t| < ρ → g t ∈ φ.target)
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- The spliced map is injective, provided the curve `g` is injective on `(-ρ, ρ)` and its stretch
+over `(-a, a)` avoids the image of the rest of the circle under `K`. -/
+private theorem injective_spliceMap
+    (hgφ : ∀ t, |t| < ρ → g t ∈ φ.target)
     (hgK : ∀ t, a ≤ |t| → |t| < r → g t = φ (K (Circle.exp t)))
     (hKφ : ∀ t, |t| < r → K (Circle.exp t) ∈ φ.source) (hinj : InjOn g (Ioo (-ρ) ρ))
-    (hderiv : ∀ t, |t| < ρ → deriv g t ≠ 0)
     (hfar : ∀ t, |t| < a → φ.symm (g t) ∉ K '' (Circle.centeredArc ρ)ᶜ)
-    (haρ : a < ρ) (hρr : ρ ≤ r) (hrπ : r ≤ Real.pi)
-    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) :
-    IsSmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ (spliceMap K φ ρ g) := by
+    (haρ : a < ρ) (hρr : ρ ≤ r) (hrπ : r ≤ Real.pi) :
+    Injective (spliceMap K φ ρ g) := by
   have hρπ := hρr.trans hrπ
   -- Two points of the arc `|arg z| < ρ` with the same image are equal.
   have hinner {z w : Circle} (hz : |arg z| < ρ) (hw : |arg w| < ρ)
@@ -319,15 +332,29 @@ private theorem isSmoothEmbedding_spliceMap [T2Space M]
       exact not_lt.2 hw ((Circle.mem_centeredArc hρπ).1 h)
     · rw [spliceMap_of_le_abs hgK hKφ hρr (not_lt.1 hza)] at hzw
       exact K.isEmbedding.injective hzw
-  have hinj' : Injective (spliceMap K φ ρ g) := by
-    intro z w hzw
-    by_cases hz : |arg z| < ρ <;> by_cases hw : |arg w| < ρ
-    · exact hinner hz hw hzw
-    · exact hmixed hz (not_lt.1 hw) hzw
-    · exact (hmixed hw (not_lt.1 hz) hzw.symm).symm
-    · rw [spliceMap_of_le_abs hgK hKφ hρr (haρ.le.trans (not_lt.1 hz)),
-        spliceMap_of_le_abs hgK hKφ hρr (haρ.le.trans (not_lt.1 hw))] at hzw
-      exact K.isEmbedding.injective hzw
+  intro z w hzw
+  by_cases hz : |arg z| < ρ <;> by_cases hw : |arg w| < ρ
+  · exact hinner hz hw hzw
+  · exact hmixed hz (not_lt.1 hw) hzw
+  · exact (hmixed hw (not_lt.1 hz) hzw.symm).symm
+  · rw [spliceMap_of_le_abs hgK hKφ hρr (haρ.le.trans (not_lt.1 hz)),
+      spliceMap_of_le_abs hgK hKφ hρr (haρ.le.trans (not_lt.1 hw))] at hzw
+    exact K.isEmbedding.injective hzw
+
+/-- **The spliced map is a smooth embedding**, provided the curve `g` is regular and injective on
+`(-ρ, ρ)`, and its stretch over `(-a, a)` avoids the image of the rest of the circle under `K`. -/
+private theorem isSmoothEmbedding_spliceMap [T2Space M]
+    (hsmooth : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ (spliceMap K φ ρ g))
+    (hgC : ContDiffOn ℝ ∞ g (Ioo (-r) r)) (hgφ : ∀ t, |t| < ρ → g t ∈ φ.target)
+    (hgK : ∀ t, a ≤ |t| → |t| < r → g t = φ (K (Circle.exp t)))
+    (hKφ : ∀ t, |t| < r → K (Circle.exp t) ∈ φ.source) (hinj : InjOn g (Ioo (-ρ) ρ))
+    (hderiv : ∀ t, |t| < ρ → deriv g t ≠ 0)
+    (hfar : ∀ t, |t| < a → φ.symm (g t) ∉ K '' (Circle.centeredArc ρ)ᶜ)
+    (haρ : a < ρ) (hρr : ρ ≤ r) (hrπ : r ≤ Real.pi)
+    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) :
+    IsSmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ (spliceMap K φ ρ g) := by
+  have hinj' := injective_spliceMap hgφ hgK hKφ hinj hfar haρ hρr hrπ
+  have hρπ := hρr.trans hrπ
   refine ⟨isImmersion_iff_forall_isImmersionAt.2 fun z => ?_,
     (hsmooth.continuous.isClosedEmbedding hinj').isEmbedding⟩
   by_cases hz : |arg z| < ρ
@@ -366,6 +393,32 @@ private theorem isSmoothEmbedding_spliceMap [T2Space M]
       exact spliceMap_of_le_abs hgK hKφ hρr (not_le.1 (mt mem_circleExp_image_Icc_neg_iff.2 hw)).le
     exact (K.isImmersion.isImmersionAt z).congr_of_eventuallyEq hev.symm
 
+/-- **The spliced map is a smooth embedding**, provided the curve `g` is regular and its velocity
+has positive pairing with a functional `ℓ` on `[-ρ, ρ]` (so `g` is injective there), and its
+stretch over `(-a, a)` avoids the image of the rest of the circle under `K`. -/
+private theorem isSmoothEmbedding_spliceMap_of_pos_deriv [T2Space M] (ℓ : StrongDual ℝ E)
+    (hsmooth : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ (spliceMap K φ ρ g))
+    (hgC : ContDiffOn ℝ ∞ g (Ioo (-r) r)) (hgφ : ∀ t, |t| < ρ → g t ∈ φ.target)
+    (hgK : ∀ t, a ≤ |t| → |t| < r → g t = φ (K (Circle.exp t)))
+    (hKφ : ∀ t, |t| < r → K (Circle.exp t) ∈ φ.source)
+    (hpos : ∀ t ∈ Icc (-ρ) ρ, DifferentiableAt ℝ g t ∧ 0 < ℓ (deriv g t))
+    (hfar : ∀ t, |t| < a → φ.symm (g t) ∉ K '' (Circle.centeredArc ρ)ᶜ)
+    (haρ : a < ρ) (hρr : ρ ≤ r) (hrπ : r ≤ Real.pi)
+    (hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M) :
+    IsSmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ (spliceMap K φ ρ g) := by
+  have hmono : StrictMonoOn (ℓ ∘ g) (Icc (-ρ) ρ) := by
+    refine strictMonoOn_of_deriv_pos (convex_Icc _ _) (fun t ht => ?_) fun t ht => ?_
+    · exact (ℓ.continuous.continuousAt.comp (hpos t ht).1.continuousAt).continuousWithinAt
+    · have ht' := interior_subset ht
+      rw [(ℓ.hasFDerivAt.comp_hasDerivAt t (hpos t ht').1.hasDerivAt).deriv]
+      exact (hpos t ht').2
+  refine isSmoothEmbedding_spliceMap hsmooth hgC hgφ hgK hKφ (fun t ht t' ht' htt' => ?_)
+    (fun t ht h0 => ?_) hfar haρ hρr hrπ hφ
+  · exact hmono.injOn (Ioo_subset_Icc_self ht) (Ioo_subset_Icc_self ht') (congrArg ℓ htt')
+  · have := (hpos t (abs_le.1 ht.le)).2
+    rw [h0, map_zero] at this
+    exact lt_irrefl _ this
+
 end Motion
 
 /-! ### Straightening -/
@@ -381,6 +434,44 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 variable [T2Space M]
 
+omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
+/-- For scales `δ < ρ / 2` small enough, for every weight `s ∈ [0, 1]` and every `|t| < 2 δ` the
+spliced curve at `t` lies in `φ.target`, and its preimage under `φ` avoids the image under `K` of
+the circle outside the arc `|arg z| < ρ`. Here `k` and `l` take the value `φ (K 1)` at `0`. -/
+private theorem exists_scale_splice_mem_target (K : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ Circle M)
+    {φ : OpenPartialHomeomorph M E} (hpφ : K 1 ∈ φ.source) {k l : ℝ → E} {r ρ : ℝ} (hr : 0 < r)
+    (hρ0 : 0 < ρ) (hρr : ρ < r) (hrπ : r ≤ Real.pi) (hkC : ContinuousOn k (Ioo (-r) r))
+    (hlC : ContinuousOn l (Ioo (-r) r)) (hk0 : k 0 = φ (K 1)) (hl0 : l 0 = φ (K 1)) :
+    ∃ δ, 0 < δ ∧ 2 * δ < ρ ∧ ∀ s ∈ Icc (0 : ℝ) 1, ∀ t, |t| < 2 * δ →
+      splice k l δ s t ∈ φ.target ∧ φ.symm (splice k l δ s t) ∉ K '' (Circle.centeredArc ρ)ᶜ := by
+  have hpC : K 1 ∉ K '' (Circle.centeredArc ρ)ᶜ := by
+    rintro ⟨z, hz, hKz⟩
+    obtain rfl : z = 1 := K.isEmbedding.injective hKz
+    exact hz ((Circle.mem_centeredArc (hρr.le.trans hrπ)).2 (by simpa using hρ0))
+  have hV : IsOpen (K '' (Circle.centeredArc ρ)ᶜ)ᶜ :=
+    (((Circle.isOpen_centeredArc ρ).isClosed_compl.isCompact).image
+      K.contMDiff.continuous).isClosed.isOpen_compl
+  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 (φ.isOpen_inter_preimage_symm hV) (φ (K 1))
+    ⟨φ.map_source hpφ, by simpa [φ.left_inv hpφ] using hpC⟩
+  have hI0 : Ioo (-r) r ∈ 𝓝 (0 : ℝ) := isOpen_Ioo.mem_nhds ⟨neg_lt_zero.2 hr, hr⟩
+  obtain ⟨δk, hδk, hk⟩ := Metric.continuousAt_iff.1 (hkC.continuousAt hI0) ε hε
+  obtain ⟨δl, hδl, hl⟩ := Metric.continuousAt_iff.1 (hlC.continuousAt hI0) ε hε
+  set δ := min (ρ / 4) (min δk δl / 2)
+  have hδ : 0 < δ := by positivity
+  have hδρ : 2 * δ < ρ := by linarith [min_le_left (ρ / 4) (min δk δl / 2)]
+  have hinball (s : ℝ) (hs : s ∈ Icc (0 : ℝ) 1) (t : ℝ) (ht : |t| < 2 * δ) :
+      splice k l δ s t ∈ Metric.ball (φ (K 1)) ε := by
+    have ht' : |t| < min δk δl := by
+      linarith [min_le_right (ρ / 4) (min δk δl / 2)]
+    have htk : dist t 0 < δk := by
+      rw [Real.dist_eq, sub_zero]; exact ht'.trans_le (min_le_left _ _)
+    have htl : dist t 0 < δl := by
+      rw [Real.dist_eq, sub_zero]; exact ht'.trans_le (min_le_right _ _)
+    exact splice_mem (convex_ball _ _) δ hs (Metric.mem_ball.2 (by rw [← hk0]; exact hk htk))
+      (Metric.mem_ball.2 (by rw [← hl0]; exact hl htl))
+  refine ⟨δ, hδ, hδρ, fun s hs t ht => ?_⟩
+  exact hball (hinball s hs t ht)
+
 /-- Straightening at the base point `1` of the circle; the general statement is
 `TauCeti.SmoothEmbedding.exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq`. -/
 private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
@@ -393,121 +484,60 @@ private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
       ⇑K' =ᶠ[𝓝 1] L ∧ ∀ t z, z ∉ U → F (t, z) = K z := by
   set p := K 1 with hp
   set φ := chartAt E p
-  have hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M := IsManifold.chart_mem_maximalAtlas p
+  have hφ := IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, E)) (n := ∞) p
   have hpφ : p ∈ φ.source := mem_chart_source E p
   -- Step 1: an arc `|arg z| < r` inside `U`, along which `K` and `L` stay in the chart `φ`.
-  obtain ⟨r, hr, hrπ, hrU, hKφ, hLφ⟩ : ∃ r, 0 < r ∧ r ≤ Real.pi ∧ Circle.centeredArc r ⊆ U ∧
-      (∀ t, |t| < r → K (Circle.exp t) ∈ φ.source) ∧
-      (∀ t, |t| < r → L (Circle.exp t) ∈ φ.source) := by
-    have hpre {f : Circle → M} (hf : Continuous f) (hf1 : f 1 ∈ φ.source) :
-        (fun t => f (Circle.exp t)) ⁻¹' φ.source ∈ 𝓝 0 :=
-      (hf.comp Circle.exp.continuous).continuousAt.preimage_mem_nhds
-        (φ.open_source.mem_nhds (by rwa [comp_apply, Circle.exp_zero]))
-    have hU' : Circle.exp ⁻¹' U ∈ 𝓝 0 :=
-      Circle.exp.continuous.continuousAt.preimage_mem_nhds (by rwa [Circle.exp_zero])
-    obtain ⟨r', hr', hball⟩ := Metric.mem_nhds_iff.1
-      (inter_mem hU' (inter_mem (hpre K.contMDiff.continuous hpφ) (hpre hL.continuous (h₀ ▸ hpφ))))
-    have hmem {t : ℝ} (ht : |t| < min r' Real.pi) : t ∈ Metric.ball 0 r' := by
-      simpa [Real.dist_eq] using ht.trans_le (min_le_left _ _)
-    refine ⟨min r' Real.pi, lt_min hr' Real.pi_pos, min_le_right _ _, ?_,
-      fun t ht => (hball (hmem ht)).2.1, fun t ht => (hball (hmem ht)).2.2⟩
-    rintro _ ⟨t, ht, rfl⟩
-    exact (hball (hmem ht)).1
+  have hKS : K ⁻¹' φ.source ∈ 𝓝 (1 : Circle) :=
+    K.contMDiff.continuous.continuousAt.preimage_mem_nhds (φ.open_source.mem_nhds hpφ)
+  have hLS : L ⁻¹' φ.source ∈ 𝓝 (1 : Circle) :=
+    hL.continuous.continuousAt.preimage_mem_nhds (φ.open_source.mem_nhds (h₀ ▸ hpφ))
+  obtain ⟨r, hr, hrπ, hrV⟩ :=
+    exists_centeredArc_subset_of_mem_nhds (inter_mem hU (inter_mem hKS hLS))
+  have hrU : Circle.centeredArc r ⊆ U := fun z hz => (hrV hz).1
+  have harc (t : ℝ) (ht : |t| < r) : Circle.exp t ∈ Circle.centeredArc r :=
+    ⟨t, ht, rfl⟩
+  have hKφ (t : ℝ) (ht : |t| < r) : K (Circle.exp t) ∈ φ.source := (hrV (harc t ht)).2.1
+  have hLφ (t : ℝ) (ht : |t| < r) : L (Circle.exp t) ∈ φ.source := (hrV (harc t ht)).2.2
   -- Step 2: `K` and `L` read in the chart along the circle have the same nonzero velocity at `0`.
   set k : ℝ → E := fun t => φ (K (Circle.exp t))
   set l : ℝ → E := fun t => φ (L (Circle.exp t))
-  have hC {f : Circle → M} (hf : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ f)
-      (hfφ : ∀ t, |t| < r → f (Circle.exp t) ∈ φ.source) :
-      ContDiffOn ℝ ∞ (fun t => φ (f (Circle.exp t))) (Ioo (-r) r) :=
-    contMDiffOn_iff_contDiffOn.1 ((contMDiffOn_chart (x := p)).comp
-      (hf.comp contMDiff_circleExp).contMDiffOn fun t ht => hfφ t (abs_lt.2 ht))
-  have hkC := hC K.contMDiff hKφ
-  have hlC := hC hL hLφ
+  have hkC := contDiffOn_chart_comp_circleExp hφ K.contMDiff hKφ
+  have hlC := contDiffOn_chart_comp_circleExp hφ hL hLφ
   have hk0 : k 0 = φ p := by simp only [k, Circle.exp_zero, hp]
   have hl0 : l 0 = φ p := by simp only [l, Circle.exp_zero, ← h₀]
-  have hvK := toSpanSingleton_deriv_chart_comp_circleExp (by simp)
-    (K.contMDiff.mdifferentiableAt (by simp)) hφ (by rwa [Circle.exp_zero])
-  have hvL := toSpanSingleton_deriv_chart_comp_circleExp (by simp)
-    (hL.mdifferentiableAt (by simp)) hφ (by rwa [Circle.exp_zero, ← h₀])
-  rw [Circle.exp_zero] at hvK hvL
-  rw [← h₁, ← h₀] at hvL
-  have hd : deriv k 0 = deriv l 0 := by
-    simpa using congrArg (fun T => T 1) (hvK.trans hvL.symm)
-  have hv : deriv k 0 ≠ 0 := by
-    intro h0
-    have h1 : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ p
-        (mfderiv (𝓡 1) 𝓘(ℝ, E) K 1 (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp 0 1)) = 0 := by
-      have h := (congrArg (fun T => T 1) hvK).symm
-      simp only [ContinuousLinearMap.toSpanSingleton_apply, one_smul] at h
-      exact h.trans h0
-    have hφi := ((φ.isLocalDiffeomorphAt_of_mem_maximalAtlas hφ hpφ).isDiffImmersionAt
-      (by simp)).mfderiv_injective
-    have hKi := (K.isImmersion.isImmersionAt 1).mfderiv_injective (by simp)
-    exact one_ne_zero (α := ℝ) (injective_mfderiv_circleExp 0
-      ((hKi ((hφi (h1.trans (map_zero _).symm)).trans (map_zero _).symm)).trans
-        (map_zero _).symm))
+  have hn0 : (∞ : WithTop ℕ∞) ≠ 0 := by simp
+  have hd := deriv_chart_comp_circleExp_eq (K := ⇑K) (L := L) (t := 0) hn0 hφ
+    (by rwa [Circle.exp_zero])
+    (by rw [Circle.exp_zero]; exact K.contMDiff.mdifferentiableAt hn0)
+    (by rw [Circle.exp_zero]; exact hL.mdifferentiableAt hn0)
+    (by simpa only [Circle.exp_zero] using h₀)
+    (by rw [Circle.exp_zero]; exact h₁)
+  have hv := deriv_chart_comp_circleExp_ne_zero (f := ⇑K) (t := 0) hn0 hφ (by rwa [Circle.exp_zero])
+    (by rw [Circle.exp_zero]; exact K.isImmersion.isImmersionAt 1)
   -- Step 3: the spliced curves are regular on a fixed interval `[-ρ, ρ]`.
   obtain ⟨ℓ, ρ, hρ0, hρr, hpos⟩ := exists_pos_deriv_splice hr (hkC.of_le (by simp))
     (hlC.of_le (by simp)) (hk0.trans hl0.symm) hd hv
   -- Step 4: a ball in the chart about `φ p` whose points avoid `K` off the arc `|arg z| < ρ`, and
   -- a scale `δ` below which both curves stay in that ball.
-  have hpC : p ∉ K '' (Circle.centeredArc ρ)ᶜ := by
-    rintro ⟨z, hz, hKz⟩
-    obtain rfl : z = 1 := K.isEmbedding.injective hKz
-    exact hz ((Circle.mem_centeredArc (hρr.le.trans hrπ)).2 (by simpa using hρ0))
-  have hV : IsOpen (K '' (Circle.centeredArc ρ)ᶜ)ᶜ :=
-    (((Circle.isOpen_centeredArc ρ).isClosed_compl.isCompact).image
-      K.contMDiff.continuous).isClosed.isOpen_compl
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 (φ.isOpen_inter_preimage_symm hV) (φ p)
-    ⟨φ.map_source hpφ, by simpa [φ.left_inv hpφ] using hpC⟩
-  have hI0 : Ioo (-r) r ∈ 𝓝 (0 : ℝ) := isOpen_Ioo.mem_nhds ⟨neg_lt_zero.2 hr, hr⟩
-  obtain ⟨δk, hδk, hk⟩ := Metric.continuousAt_iff.1 (hkC.continuousOn.continuousAt hI0) ε hε
-  obtain ⟨δl, hδl, hl⟩ := Metric.continuousAt_iff.1 (hlC.continuousOn.continuousAt hI0) ε hε
-  set δ := min (ρ / 4) (min δk δl / 2)
-  have hδ : 0 < δ := by positivity
-  have hδρ : 2 * δ < ρ := by linarith [min_le_left (ρ / 4) (min δk δl / 2)]
-  have hinball (s : ℝ) (hs : s ∈ Icc (0 : ℝ) 1) (t : ℝ) (ht : |t| < 2 * δ) :
-      splice k l δ s t ∈ Metric.ball (φ p) ε := by
-    have ht' : |t| < min δk δl := by
-      linarith [min_le_right (ρ / 4) (min δk δl / 2)]
-    have htk : dist t 0 < δk := by
-      rw [Real.dist_eq, sub_zero]; exact ht'.trans_le (min_le_left _ _)
-    have htl : dist t 0 < δl := by
-      rw [Real.dist_eq, sub_zero]; exact ht'.trans_le (min_le_right _ _)
-    exact splice_mem (convex_ball _ _) δ hs (Metric.mem_ball.2 (by rw [← hk0]; exact hk htk))
-      (Metric.mem_ball.2 (by rw [← hl0]; exact hl htl))
+  obtain ⟨δ, hδ, hδρ, hδb⟩ := exists_scale_splice_mem_target K hpφ hr hρ0 hρr hrπ
+    hkC.continuousOn hlC.continuousOn hk0 hl0
   -- Step 5: the spliced curves satisfy the hypotheses of the splicing lemmas.
   have hGK (s : ℝ) (t : ℝ) (ht : 2 * δ ≤ |t|) : splice k l δ s t = φ (K (Circle.exp t)) :=
     splice_of_le_abs hδ s ht
   have hGφ (s : ℝ) (hs : s ∈ Icc (0 : ℝ) 1) (t : ℝ) (ht : |t| < ρ) :
       splice k l δ s t ∈ φ.target := by
     by_cases h2 : |t| < 2 * δ
-    · exact (hball (hinball s hs t h2)).1
-    · rw [hGK s t (not_lt.1 h2)]
-      exact φ.map_source (hKφ t (ht.trans hρr))
+    · exact (hδb s hs t h2).1
+    · exact (hGK s t (not_lt.1 h2)).symm ▸ φ.map_source (hKφ t (ht.trans hρr))
   have hjoint := contMDiff_spliceMap (K := K) (G := splice k l δ) (contDiffOn_splice hkC hlC δ)
     hGφ (fun s _ t ht _ => hGK s t ht) hKφ hδρ hρr.le hrπ hφ
   have hemb (s : unitInterval) : IsSmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞
-      (spliceMap K φ ρ (splice k l δ s)) := by
-    have hgC : ContDiffOn ℝ ∞ (splice k l δ s) (Ioo (-r) r) :=
-      (contDiffOn_splice hkC hlC δ).comp (contDiffOn_const.prodMk contDiffOn_id)
-        fun t ht => ⟨mem_univ _, ht⟩
-    have hmono : StrictMonoOn (ℓ ∘ splice k l δ s) (Icc (-ρ) ρ) := by
-      refine strictMonoOn_of_deriv_pos (convex_Icc _ _) (fun t ht => ?_) fun t ht => ?_
-      · exact (ℓ.continuous.continuousAt.comp
-          (hpos δ hδ s s.2 t ht).1.continuousAt).continuousWithinAt
-      · have ht' := interior_subset ht
-        rw [(ℓ.hasFDerivAt.comp_hasDerivAt t (hpos δ hδ s s.2 t ht').1.hasDerivAt).deriv]
-        exact (hpos δ hδ s s.2 t ht').2
-    refine isSmoothEmbedding_spliceMap (r := r) (a := 2 * δ)
-      (hjoint.comp (contMDiff_const.prodMk contMDiff_id)) hgC (hGφ s s.2) (fun t ht _ => hGK s t ht)
-      hKφ (fun t ht t' ht' htt' => ?_) (fun t ht h0 => ?_)
-      (fun t ht => (hball (hinball s s.2 t ht)).2) hδρ hρr.le hrπ hφ
-    · exact hmono.injOn (Ioo_subset_Icc_self ht) (Ioo_subset_Icc_self ht')
-        (congrArg ℓ htt')
-    · have := (hpos δ hδ s s.2 t (abs_le.1 ht.le)).2
-      rw [h0, map_zero] at this
-      exact lt_irrefl _ this
+      (spliceMap K φ ρ (splice k l δ s)) :=
+    isSmoothEmbedding_spliceMap_of_pos_deriv (r := r) (a := 2 * δ) ℓ
+      (hjoint.comp (contMDiff_const.prodMk contMDiff_id))
+      ((contDiffOn_splice hkC hlC δ).comp (contDiffOn_const.prodMk contDiffOn_id)
+        fun t ht => ⟨mem_univ _, ht⟩) (hGφ s s.2) (fun t ht _ => hGK s t ht) hKφ
+      (hpos δ hδ s s.2) (fun t ht => (hδb s s.2 t ht).2) hδρ hρr.le hrπ hφ
   let K' := SmoothEmbedding.ofIsSmoothEmbedding _ (hemb 1)
   refine ⟨K', ⟨⟨_, hjoint⟩, fun z => ?_, fun z => ?_, hemb⟩, ?_, fun t z hz => ?_⟩
   · -- At time `0` the motion is `K`.
@@ -519,10 +549,9 @@ private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
     filter_upwards [(Circle.isOpen_centeredArc δ).mem_nhds
       ((Circle.mem_centeredArc (by linarith)).2 (by simpa using hδ))] with z hz
     have hz' := (Circle.mem_centeredArc (by linarith)).1 hz
-    have hzr : |arg z| < r := by linarith
     simp only [K', SmoothEmbedding.ofIsSmoothEmbedding_apply, Icc.coe_one]
     rw [spliceMap_of_abs_lt (by linarith), splice_one_of_abs_le hδ hz'.le,
-      φ.left_inv (hLφ _ hzr), Circle.exp_arg]
+      φ.left_inv (hLφ _ (by linarith)), Circle.exp_arg]
   · -- Off `U` the motion is stationary.
     have hzr : r ≤ |arg z| := not_lt.1 fun h => hz (hrU ((Circle.mem_centeredArc hrπ).2 h))
     exact spliceMap_of_le_abs (fun t' ht' _ => hGK t t' ht') hKφ hρr.le (by linarith)

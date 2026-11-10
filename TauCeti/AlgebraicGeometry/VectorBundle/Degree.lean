@@ -10,6 +10,9 @@ public import TauCeti.AlgebraicGeometry.Cohomology.FlatBaseChange
 public import TauCeti.AlgebraicGeometry.Curves.Cohomology
 public import TauCeti.AlgebraicGeometry.VectorBundle.FixedRank
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.EulerCharacteristic
+public import TauCeti.AlgebraicGeometry.CartierDivisor.Effective.Degree
+public import TauCeti.AlgebraicGeometry.Cohomology.Skyscraper
+import TauCeti.AlgebraicGeometry.Noetherian
 
 /-!
 # The degree of a vector bundle on a curve
@@ -33,6 +36,17 @@ Lemma 0B59). In rank one it is the Euler-characteristic degree of a line bundle,
 proper integral curve whose codimension-one local rings are discrete valuation rings,
 `deg 𝒪_X(D) = Σ_y D(y) [κ(y) : k]` for a Weil divisor `D` (Stacks, Lemma 0AYY).
 
+A modification `0 ⟶ E₁ ⟶ E₂ ⟶ T ⟶ 0` of a vector bundle by a subsheaf of the same rank changes
+the degree by `χ(X, T)`. For an elementary modification, the kernel of a surjection of `E₂` onto
+the skyscraper sheaf `κ(x)ₓ` at a point, this is the residue degree `[κ(x) : k]`.
+
+Twisting by a line bundle `L` changes the degree by `r · deg L`: on a proper integral curve,
+possibly singular, `deg (E ⊗ L) = deg E + r · deg L`, the case of rank-one `V` of Stacks,
+Lemma 0AYX. Writing `L` as a difference of effective Cartier divisors reduces this to twisting by
+`𝒪_X(-D)` for an effective Cartier divisor `D`. There the exact sequence
+`0 ⟶ E(-D) ⟶ E ⟶ E|_D ⟶ 0` and the triviality of `E|_D` on the finite scheme `D` give
+`χ(E(-D)) = χ(E) - r · dim_k Γ(D, 𝒪_D)` (`Scheme.IdealSheafData.eulerCharBelow_tensor_sheaf`).
+
 ## Main declarations
 
 * `FiniteLocallyFreeSheaf.FixedRank.vectorBundleDegree k E`: the degree
@@ -49,15 +63,30 @@ proper integral curve whose codimension-one local rings are discrete valuation r
   `FixedRank.vectorBundleDegree_add_of_shortExact_of_isCurveOver`, where these hypotheses are
   discharged on a proper integral curve whose codimension-one local rings are discrete valuation
   rings;
+* `FixedRank.vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact`: for a short exact sequence
+  `0 ⟶ E₁ ⟶ E₂ ⟶ T ⟶ 0` with `E₁` and `E₂` of the same rank, `deg E₂ = deg E₁ + χ(X, T)`, and
+  `FixedRank.vectorBundleDegree_elementaryModification`, its case `T = κ(x)ₓ`, where the degree
+  drops by `[κ(x) : k]`, with curve versions
+  `FixedRank.vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact_of_isCurveOver` and
+  `FixedRank.vectorBundleDegree_elementaryModification_of_isCurveOver`;
 * `FixedRank.vectorBundleDegree_baseChange`: the degree of the pullback of `E` to `X_K` for a
-  field extension `K / k` is the degree of `E`.
+  field extension `K / k` is the degree of `E`;
+* `FixedRank.vectorBundleDegree_twist_toInvertibleSheaf`: `deg E(-D) = deg E - r · deg D` for an
+  effective Cartier divisor `D` finite over `k`, on any scheme over `k`;
+* `FixedRank.vectorBundleDegree_twist`, `FixedRank.vectorBundleDegree_twist_of_isEffective` and
+  `FixedRank.finiteDimensional_cohomology_twist`: on a proper integral curve,
+  `deg (E ⊗ L) = deg E + r · deg L` for every line bundle `L`, `deg E(D) = deg E + r · deg D` for
+  an effective Cartier divisor `D`, and twisting preserves finiteness of cohomology.
 
 ## References
 
 * [The Stacks Project, Section 33.44, Degrees on curves](https://stacks.math.columbia.edu/tag/0AYR):
-  Definition 0AYR and Lemmas 0AYS, 0AYY.
+  Definition 0AYR and Lemmas 0AYS, 0AYX, 0AYY.
 * [The Stacks Project, Lemma 0B59](https://stacks.math.columbia.edu/tag/0B59): invariance of the
   degree under extension of the ground field.
+* M. Maruyama, *Elementary transformations in the theory of algebraic vector bundles*, in
+  *Algebraic Geometry (La Rábida, 1981)*, Lecture Notes in Math. 961, Springer, 1982,
+  pp. 241–266.
 -/
 
 public section
@@ -183,6 +212,72 @@ theorem vectorBundleDegree_add_of_shortExact_of_isCurveOver [X.IsCurveOver k]
 
 end ShortExact
 
+section Modification
+
+variable {E₁ E₂ : FixedRank X r} {T : X.Modules} {f : E₁.obj.obj ⟶ E₂.obj.obj}
+
+/-- **The degree under a modification.** For a short exact sequence `0 ⟶ E₁ ⟶ E₂ ⟶ T ⟶ 0` of
+sheaves of modules in which `E₁` and `E₂` are vector bundles of the same constant rank, with
+`H¹(X, E₁)`, `H⁰(X, E₂)` and `H¹(X, E₂)` finite-dimensional and `H²(X, E₁) = 0`, the degrees differ
+by the Euler characteristic of the quotient: `deg E₂ = deg E₁ + χ(X, T)`. -/
+theorem vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact {g : E₂.obj.obj ⟶ T}
+    {w : f ≫ g = 0} (hS : (ShortComplex.mk f g w).ShortExact)
+    [FiniteDimensional k (Scheme.Modules.Cohomology E₁.obj.obj 1)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology E₂.obj.obj 0)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology E₂.obj.obj 1)]
+    (hvan : Subsingleton (Scheme.Modules.Cohomology E₁.obj.obj 2)) :
+    vectorBundleDegree k E₂ = vectorBundleDegree k E₁ + eulerCharBelow k X T 2 := by
+  have h := eulerCharBelow_eq_add k hS 2
+    (fun i hi hi₀ ↦ by obtain rfl : i = 1 := (by omega); infer_instance)
+    (fun i hi ↦ by interval_cases i <;> infer_instance) hvan
+  rw [vectorBundleDegree_def, vectorBundleDegree_def]
+  linear_combination h
+
+/-- **The degree of an elementary modification.** If `E₁` is the kernel of a surjection
+`E₂ ⟶ κ(x)ₓ` from a vector bundle onto the skyscraper sheaf of the residue field at a point `x`,
+and `E₁` is again a vector bundle of the same constant rank, then
+`deg E₂ = deg E₁ + [κ(x) : k]`, under the finiteness and vanishing hypotheses of
+`vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact`. -/
+theorem vectorBundleDegree_elementaryModification {x : X}
+    {g : E₂.obj.obj ⟶ Scheme.skyscraperResidueField x} {w : f ≫ g = 0}
+    (hS : (ShortComplex.mk f g w).ShortExact)
+    [FiniteDimensional k (Scheme.Modules.Cohomology E₁.obj.obj 1)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology E₂.obj.obj 0)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology E₂.obj.obj 1)]
+    (hvan : Subsingleton (Scheme.Modules.Cohomology E₁.obj.obj 2)) :
+    vectorBundleDegree k E₂ = vectorBundleDegree k E₁ + (X ↘ Spec (.of k)).residueDegree x := by
+  rw [vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact k hS hvan,
+    Scheme.eulerCharBelow_skyscraperResidueField]
+
+/-- **The degree under a modification on a curve.** On a proper integral curve over `k` whose
+codimension-one local rings are discrete valuation rings, for every short exact sequence
+`0 ⟶ E₁ ⟶ E₂ ⟶ T ⟶ 0` of sheaves of modules in which `E₁` and `E₂` are vector bundles of the
+same constant rank, `deg E₂ = deg E₁ + χ(X, T)`. -/
+theorem vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact_of_isCurveOver [X.IsCurveOver k]
+    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
+    {g : E₂.obj.obj ⟶ T} {w : f ≫ g = 0} (hS : (ShortComplex.mk f g w).ShortExact) :
+    vectorBundleDegree k E₂ = vectorBundleDegree k E₁ + eulerCharBelow k X T 2 := by
+  have := finiteDimensional_cohomology_of_isCurveOver k E₁.obj.obj 1
+  have := finiteDimensional_cohomology_of_isCurveOver k E₂.obj.obj 0
+  have := finiteDimensional_cohomology_of_isCurveOver k E₂.obj.obj 1
+  exact vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact k hS
+    (subsingleton_cohomology_of_two_le_of_isCurveOver k E₁.obj.obj 2 le_rfl)
+
+/-- **The degree of an elementary modification on a curve.** On a proper integral curve over `k`
+whose codimension-one local rings are discrete valuation rings, if `E₁` is the kernel of a
+surjection `E₂ ⟶ κ(x)ₓ` from a vector bundle onto the skyscraper sheaf of the residue field at a
+point `x`, and `E₁` is again a vector bundle of the same constant rank, then
+`deg E₂ = deg E₁ + [κ(x) : k]`. -/
+theorem vectorBundleDegree_elementaryModification_of_isCurveOver [X.IsCurveOver k]
+    [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))] {x : X}
+    {g : E₂.obj.obj ⟶ Scheme.skyscraperResidueField x} {w : f ≫ g = 0}
+    (hS : (ShortComplex.mk f g w).ShortExact) :
+    vectorBundleDegree k E₂ = vectorBundleDegree k E₁ + (X ↘ Spec (.of k)).residueDegree x := by
+  rw [vectorBundleDegree_eq_add_eulerCharBelow_of_shortExact_of_isCurveOver k hS,
+    Scheme.eulerCharBelow_skyscraperResidueField]
+
+end Modification
+
 section BaseChange
 
 variable {k} {K : Type u} [Field K] [Algebra k K] {Y : Scheme.{u}} [Y.Over (Spec (.of K))]
@@ -208,6 +303,130 @@ theorem vectorBundleDegree_baseChange
     eulerCharBelow_pullback_eq_of_isPullback H, eulerCharBelow_pullback_eq_of_isPullback H]
 
 end BaseChange
+
+section Twist
+
+/-- **Twisting by `𝒪_X(-D)` lowers the degree by `r · deg D`.** Let `I ⊆ 𝒪_X` be the ideal sheaf
+of an effective Cartier divisor `D` finite over `k`, so that `I = 𝒪_X(-D)` is a line bundle, and let
+`E` be a vector bundle of constant rank `r` with `H⁰(X, E)` and `H¹(X, E)` finite-dimensional. Then
+`deg (E ⊗ 𝒪_X(-D)) = deg E - r · dim_k Γ(D, 𝒪_D)`, the dimension being written as the rank of
+`D ⟶ Spec k` at the point `s`. No integrality, properness or regularity of `X` is needed. -/
+theorem vectorBundleDegree_twist_toInvertibleSheaf {I : X.IdealSheafData}
+    (hI : I.IsEffectiveCartier) [IsFinite (I.subschemeι ≫ X ↘ Spec (.of k))] (E : FixedRank X r)
+    [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 0)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 1)] (s : Spec (.of k)) :
+    vectorBundleDegree k (E.twist hI.toInvertibleSheaf) =
+      vectorBundleDegree k E - r * (I.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
+  rw [vectorBundleDegree_def, vectorBundleDegree_def, twist_obj_obj,
+    Scheme.IdealSheafData.IsEffectiveCartier.toInvertibleSheaf_obj,
+    Scheme.IdealSheafData.eulerCharBelow_tensor_sheaf k I E s]
+  ring
+
+section Curve
+
+variable [IsIntegral X] [IsProper (X ↘ Spec (.of k))] [RelativeDimensionLE 1 (X ↘ Spec (.of k))]
+
+/-- Twisting by a line bundle `L` on an integral proper curve preserves finiteness of `H⁰` and
+`H¹`, and changes the degree by `r · deg L`. Write `[L] = [𝒪_X(D₁)] [𝒪_X(D₂)]⁻¹` with `D₁` and
+`D₂` effective; then `(E ⊗ L) ⊗ 𝒪_X(-D₁) ≅ E ⊗ 𝒪_X(-D₂)`, and both sides are computed by
+`vectorBundleDegree_twist_toInvertibleSheaf`. Only the degree formula needs `H⁰(X, 𝒪_X)` and
+`H¹(X, 𝒪_X)` finite-dimensional. -/
+private theorem finiteDimensional_cohomology_twist_and_vectorBundleDegree_twist
+    (E : FixedRank X r) [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 0)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 1)] (L : InvertibleSheaf X) :
+    (∀ i < 2, FiniteDimensional k (Scheme.Modules.Cohomology (E.twist L).obj.obj i)) ∧
+      ∀ [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0)]
+        [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)],
+        vectorBundleDegree k (E.twist L) = vectorBundleDegree k E + r * L.eulerDegree k := by
+  have : IsNoetherian X := isNoetherian_of_finiteType (X ↘ Spec (.of k))
+  obtain ⟨D₁, D₂, hD₁, hD₂, hD⟩ :=
+    Scheme.CartierDivisor.exists_isEffective_toLineBundleClass_mul_inv_eq
+    (coheight_le_of_relativeDimensionLE_of_field (d := 1) (X ↘ Spec (.of k)))
+    (LineBundleClass.mk L)
+  have hI₁ := hD₁.isEffectiveCartier_sectionsIdealSheaf
+  have hI₂ := hD₂.isEffectiveCartier_sectionsIdealSheaf
+  have : IsFinite (hD₁.sectionsIdealSheaf.subschemeι ≫ X ↘ Spec (.of k)) :=
+    hI₁.isFinite_subschemeι_comp
+  have : IsFinite (hD₂.sectionsIdealSheaf.subschemeι ≫ X ↘ Spec (.of k)) :=
+    hI₂.isFinite_subschemeι_comp
+  -- `L ⊗ 𝒪_X(-D₁) ≅ 𝒪_X(-D₂)`, since `[L] [𝒪_X(D₁)]⁻¹ = [𝒪_X(D₂)]⁻¹`.
+  obtain ⟨e⟩ := LineBundleClass.mk_eq_mk_iff.mp
+    (show LineBundleClass.mk (InvertibleSheaf.tensorProduct L hI₁.toInvertibleSheaf) =
+        LineBundleClass.mk hI₂.toInvertibleSheaf by
+      rw [LineBundleClass.mk_tensorProduct, hD₁.mk_toInvertibleSheaf_sectionsIdealSheaf,
+        hD₂.mk_toInvertibleSheaf_sectionsIdealSheaf, ← hD, mul_right_comm, mul_inv_cancel, one_mul])
+  -- Hence `(E ⊗ L) ⊗ 𝒪_X(-D₁) ≅ E ⊗ 𝒪_X(-D₂)`.
+  let e' : ((E.twist L).twist hI₁.toInvertibleSheaf).obj.obj ≅
+      (E.twist hI₂.toInvertibleSheaf).obj.obj :=
+    (Scheme.Modules.isFiniteLocallyFree X).ι.mapIso ((toFiniteLocallyFree X r).mapIso
+      (twistTensorProductIso E L _ ≪≫ twistCongr (Iso.refl E) (ObjectProperty.isoMk _ e)))
+  -- `E ⊗ 𝒪_X(-D₂)`, hence `(E ⊗ L) ⊗ 𝒪_X(-D₁)`, hence `E ⊗ L` has finite `H⁰` and `H¹`.
+  have hiff (I : X.IdealSheafData) (hI : I.IsEffectiveCartier)
+      [IsFinite (I.subschemeι ≫ X ↘ Spec (.of k))] (F : FixedRank X r) :
+      (∀ i < 2, FiniteDimensional k
+          (Scheme.Modules.Cohomology (F.twist hI.toInvertibleSheaf).obj.obj i)) ↔
+        ∀ i < 2, FiniteDimensional k (Scheme.Modules.Cohomology F.obj.obj i) := by
+    rw [twist_obj_obj, Scheme.IdealSheafData.IsEffectiveCartier.toInvertibleSheaf_obj]
+    exact Scheme.IdealSheafData.finiteDimensional_cohomology_tensor_sheaf_iff I
+  have hfin : ∀ i < 2, FiniteDimensional k (Scheme.Modules.Cohomology (E.twist L).obj.obj i) :=
+    (hiff _ hI₁ _).mp fun i hi ↦ (finiteDimensional_cohomology_congr k e' i).mpr
+      ((hiff _ hI₂ E).mpr (fun j hj ↦ by interval_cases j <;> infer_instance) i hi)
+  refine ⟨hfin, fun {_ _} ↦ ?_⟩
+  have := hfin 0 (by norm_num)
+  have := hfin 1 (by norm_num)
+  have h₁ := vectorBundleDegree_twist_toInvertibleSheaf k hI₁ (E.twist L) default
+  have h₂ := vectorBundleDegree_twist_toInvertibleSheaf k hI₂ E default
+  have h₃ := vectorBundleDegree_congr k e'
+  -- `deg L = deg 𝒪_X(D₁) - deg 𝒪_X(D₂)`, the degrees of the effective divisors.
+  have hL : L.eulerDegree k =
+      (hD₁.sectionsIdealSheaf.subschemeι ≫ X ↘ Spec (.of k)).finrank default -
+        (hD₂.sectionsIdealSheaf.subschemeι ≫ X ↘ Spec (.of k)).finrank default := by
+    rw [← LineBundleClass.eulerDegree_mk, ← hD, LineBundleClass.eulerDegree_mul_of_isIntegral,
+      LineBundleClass.eulerDegree_inv_of_isIntegral, hD₁.eulerDegree_toLineBundleClass k,
+      hD₂.eulerDegree_toLineBundleClass k, sub_eq_add_neg]
+  rw [hL]
+  linear_combination h₂ - h₁ + h₃
+
+/-- **Twisting preserves finiteness of cohomology.** On an integral scheme `X`, proper over `k`
+with fibres of dimension at most one, if a vector bundle `E` of constant rank has
+finite-dimensional `H⁰` and `H¹`, then so does its twist `E ⊗ L` by any line bundle `L`. -/
+theorem finiteDimensional_cohomology_twist (E : FixedRank X r)
+    [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 0)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 1)] (L : InvertibleSheaf X) {i : ℕ}
+    (hi : i < 2) : FiniteDimensional k (Scheme.Modules.Cohomology (E.twist L).obj.obj i) :=
+  (finiteDimensional_cohomology_twist_and_vectorBundleDegree_twist k E L).1 i hi
+
+variable [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0)]
+  [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
+
+/-- **Twisting by a line bundle.** On an integral scheme `X`, proper over `k` with fibres of
+dimension at most one and with finite-dimensional `H⁰(X, 𝒪_X)` and `H¹(X, 𝒪_X)`, let `E` be a
+vector bundle of constant rank `r` with finite-dimensional `H⁰` and `H¹`. Then for every line bundle
+`L`, `deg (E ⊗ L) = deg E + r · deg L`. This is the case of rank-one `V` of
+`deg (E ⊗ V) = r · deg V + rank V · deg E` (Stacks, Lemma 0AYX). The curve `X` may be singular. -/
+theorem vectorBundleDegree_twist (E : FixedRank X r)
+    [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 0)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 1)] (L : InvertibleSheaf X) :
+    vectorBundleDegree k (E.twist L) = vectorBundleDegree k E + r * L.eulerDegree k :=
+  (finiteDimensional_cohomology_twist_and_vectorBundleDegree_twist k E L).2
+
+/-- **Twisting by an effective divisor.** On an integral scheme `X`, proper over `k` with fibres of
+dimension at most one and with finite-dimensional `H⁰(X, 𝒪_X)` and `H¹(X, 𝒪_X)`, let `D` be an
+effective Cartier divisor and `E` a vector bundle of constant rank `r` with finite-dimensional `H⁰`
+and `H¹`. Then `deg E(D) = deg E + r · deg D`, where `E(D) = E ⊗ 𝒪_X(D)` and `deg D` is
+`dim_k Γ(D, 𝒪_D)`, the rank of `D ⟶ Spec k` at the point `s`. -/
+theorem vectorBundleDegree_twist_of_isEffective {D : Scheme.CartierDivisor X} (hD : D.IsEffective)
+    (E : FixedRank X r) [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 0)]
+    [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 1)] {L : InvertibleSheaf X}
+    (hL : LineBundleClass.mk L = D.toLineBundleClass) (s : Spec (.of k)) :
+    vectorBundleDegree k (E.twist L) = vectorBundleDegree k E +
+      r * (hD.sectionsIdealSheaf.subschemeι ≫ X ↘ Spec (.of k)).finrank s := by
+  rw [vectorBundleDegree_twist, ← LineBundleClass.eulerDegree_mk, hL,
+    hD.eulerDegree_toLineBundleClass k s]
+
+end Curve
+
+end Twist
 
 end FiniteLocallyFreeSheaf.FixedRank
 

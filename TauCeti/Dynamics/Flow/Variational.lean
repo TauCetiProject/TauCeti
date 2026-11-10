@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.ODE.DysonSeries
 public import TauCeti.Dynamics.Flow.OfLipschitz
 public import TauCeti.Dynamics.Flow.TimeDependent
 -- Private: parametric integrals and the chain rule are used only inside proofs.
@@ -41,6 +42,10 @@ compute the first-order dependence of the flow on parameters of the vector field
 * `TauCeti.contDiff_timeDependentFlow` and `TauCeti.hasDerivAt_fderiv_timeDependentFlow`: the
   time-dependent flow `φ(s, t)` of a jointly `C^(n+1)` field (`TauCeti.timeDependentFlow`) is
   `C^(n+1)` in `(s, t, x)`, and `∂ₜ Dφ(s, t)(x) = Dvₜ(φ(s, t) x) ∘ Dφ(s, t)(x)`.
+* `TauCeti.differentiable_timeDependentFlow` and
+  `TauCeti.fderiv_timeDependentFlow_eq_dysonSeriesLeft`: consequently `Dφ(s, t)(x)` exists and is
+  the propagator `TauCeti.dysonSeriesLeft` of the linearized equation `ξ' = Dv_r(φ(s, r) x) ξ`
+  along the orbit of `x`, from time `s` to time `t`.
 -/
 
 public section
@@ -354,6 +359,28 @@ theorem hasDerivAt_fderiv_timeDependentFlow (s t : ℝ) (x : E) :
   conv_lhs => rw [← Prod.mk.eta (p := fderiv ℝ (flowOfLipschitz _ hv (t - s)) (s, x) (0, w)),
     fst_fderiv_flowOfLipschitz_inr hv hvs]
   exact snd_fderiv_timeDependentSuspension_inr hvs t _ _
+
+/-- Each time map of the time-dependent flow of a jointly `C¹` field is differentiable. -/
+theorem differentiable_timeDependentFlow (s t : ℝ) :
+    Differentiable ℝ (timeDependentFlow v hv s t) :=
+  fun x ↦ (hasFDerivAt_timeDependentFlow hv hvs s t x).differentiableAt
+
+/-- **The derivative of a time-dependent flow is the propagator of the linearized equation.**
+For a jointly `C¹` time-dependent field whose suspension is globally Lipschitz, the derivative
+`Dφ(s, t)(x)` of the evolution from time `s` to time `t` is the propagator from `0` to `t - s`
+of the linear equation `ξ' = M r ξ` with `M r = Dv_{s + r}(φ(s, s + r) x)`, the linearization of
+the field along the orbit of `x`. -/
+theorem fderiv_timeDependentFlow_eq_dysonSeriesLeft (s t : ℝ) (x : E) :
+    fderiv ℝ (timeDependentFlow v hv s t) x =
+      dysonSeriesLeft (fun r ↦ fderiv ℝ (v (s + r)) (timeDependentFlow v hv s (s + r) x))
+        (t - s) := by
+  have hM : Continuous fun r ↦ fderiv ℝ (v r) (timeDependentFlow v hv s r x) :=
+    (hvs.fderiv (contDiff_zero.2 ((continuous_timeDependentFlow v hv).comp
+      (by fun_prop : Continuous fun r : ℝ ↦ ((s, r), x)))) le_rfl).continuous
+  have hf (r : ℝ) := (hasDerivAt_fderiv_timeDependentFlow hv hvs s (s + r) x).comp_const_add s r
+  have h := eq_dysonSeriesLeft_mul (hM.comp (continuous_const.add continuous_id)) hf (t - s)
+  have hself : timeDependentFlow v hv s s = id := funext (timeDependentFlow_self v hv s)
+  simpa [hself, Function.comp_def, ContinuousLinearMap.mul_def] using h
 
 end TimeDependent
 

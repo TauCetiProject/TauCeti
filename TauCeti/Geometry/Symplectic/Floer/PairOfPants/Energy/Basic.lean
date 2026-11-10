@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.Energy
+public import TauCeti.Geometry.Symplectic.Floer.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.MeasureTheory.Group.Integral
@@ -22,7 +22,8 @@ An energy bound for the pair-of-pants product therefore needs a bound on `∫ su
 does not depend on how far out the ends are cut off.
 
 This file computes the curvature of the perturbation `TauCeti.Floer.pairOfPantsPerturbation` in
-the end coordinates `z = (s, t)` of each end `q`, for Hamiltonians on a symplectic vector space.
+the end coordinates `z = (s, t)` of each end `q`. The curvature formula holds for Hamiltonians on
+any manifold with a two-form, and the integrated bounds are stated for a symplectic vector space.
 There the perturbation is the continuation datum `β(±s - 1) H_q(t) dt`, where `β` is the smooth
 transition function, so its curvature is `±β'(±s - 1) H_q(t)`. It is supported in the collar
 `1 ≤ ±s ≤ 2`, and since `β' ≥ 0` has total integral `1`, the integrated curvature over any part of
@@ -36,8 +37,9 @@ The components `K_s` and `K_t` of the perturbation in end coordinates are
 
 ## Main results
 
-* `TauCeti.SymplecticForm.hamiltonianCurvature_pairOfPantsEndComponent`: the curvature on the end
-  is `±β'(±s - 1) H_q(t)`.
+* `TauCeti.SmoothTwoForm.hamiltonianCurvature_pairOfPantsEndComponent`: the curvature on the end
+  is `±β'(±s - 1) H_q(t)`, for a manifold target; the vector-space case is
+  `TauCeti.SymplecticForm.hamiltonianCurvature_pairOfPantsEndComponent`.
 * `TauCeti.SymplecticForm.hamiltonianCurvature_pairOfPantsEndComponent_eq_zero`: it vanishes
   outside the collar `1 ≤ ±s ≤ 2`.
 * `TauCeti.SymplecticForm.integral_abs_hamiltonianCurvature_pairOfPantsEndComponent_le`: the
@@ -62,6 +64,33 @@ open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
 
 namespace TauCeti
 
+namespace SmoothTwoForm
+
+open Floer
+
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I ⊤ M]
+  {H : Puncture → ℝ → M → ℝ} {q : Puncture}
+
+/-- **The curvature on an end, for a manifold target.** On the part `±s > 0` of the end `q`, the
+curvature of the pair-of-pants perturbation in end coordinates is `±β'(±s - 1) H_q(t)`. -/
+theorem hamiltonianCurvature_pairOfPantsEndComponent (ω : SmoothTwoForm I M)
+    (hH : Periodic (H q) 1) {z : ℝ × ℝ} (hz : 0 < q.endSign * z.1) {x : M}
+    (hHx : DifferentiableAt ℝ (fun t ↦ H q t x) z.2) :
+    ω.hamiltonianCurvature (pairOfPantsEndComponent H q 1)
+        (pairOfPantsEndComponent H q Complex.I) z x =
+      q.endSign * deriv smoothTransition (q.endSign * z.1 - 1) * H q z.2 x := by
+  obtain ⟨hs, ht⟩ := eventuallyEq_pairOfPantsEndComponent hH hz
+  have hβ : HasDerivAt (fun s ↦ smoothTransition (q.endSign * s - 1))
+      (deriv smoothTransition (q.endSign * z.1 - 1) * q.endSign) z.1 :=
+    (((hasDerivAt_id z.1).const_mul q.endSign).sub_const 1).smoothTransition.congr_deriv
+      (by simp)
+  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hs ht,
+    ω.hamiltonianCurvature_continuation hβ.differentiableAt hHx, hβ.deriv]
+  ring
+
+end SmoothTwoForm
+
 namespace SymplecticForm
 
 open Floer
@@ -76,14 +105,8 @@ theorem hamiltonianCurvature_pairOfPantsEndComponent (ω : SymplecticForm V)
     (hHx : DifferentiableAt ℝ (fun t ↦ H q t x) z.2) :
     ω.hamiltonianCurvature (pairOfPantsEndComponent H q 1) (pairOfPantsEndComponent H q I) z x =
       q.endSign * deriv smoothTransition (q.endSign * z.1 - 1) * H q z.2 x := by
-  obtain ⟨hs, ht⟩ := eventuallyEq_pairOfPantsEndComponent hH hz
-  have hβ : HasDerivAt (fun s ↦ smoothTransition (q.endSign * s - 1))
-      (deriv smoothTransition (q.endSign * z.1 - 1) * q.endSign) z.1 :=
-    (((hasDerivAt_id z.1).const_mul q.endSign).sub_const 1).smoothTransition.congr_deriv
-      (by simp)
-  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hs ht,
-    ω.hamiltonianCurvature_continuation hβ.differentiableAt hHx, hβ.deriv]
-  ring
+  rw [← hamiltonianCurvature_constSmooth]
+  exact ω.constSmooth.hamiltonianCurvature_pairOfPantsEndComponent hH hz hHx
 
 /-- **The curvature is supported in the collar.** On the parts `0 < ±s < 1` and `±s > 2` of the
 end `q`, the curvature of the pair-of-pants perturbation in end coordinates vanishes. -/

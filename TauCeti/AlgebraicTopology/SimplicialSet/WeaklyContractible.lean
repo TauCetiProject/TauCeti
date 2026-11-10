@@ -38,16 +38,19 @@ nerve of the group `ℤ`, viewed as a category with one object, which sends the 
 from a constant map to a map `φ` into the nerve of a group assigns to each vertex `k` an element
 `w k` with `w b = φ (a → b) * w a` for every edge, forcing `φ (0 → 2) = φ (1 → 2) * φ (0 → 1)`.
 
-The comparison with the weak equivalences of
-`TauCeti/AlgebraicTopology/SimplicialSet/WeakEquivalence.lean`, namely that `K` is weakly
-contractible exactly when `K ⟶ Δ[0]` is a weak homotopy equivalence, needs the homotopy theory
-of the Kan–Quillen model structure and is not proved here.
+Weak contractibility is equivalent to `K ⟶ Δ[0]` being a weak homotopy equivalence in the
+mapping-space sense of Kerodon (`SSet.isWeaklyContractible_iff_isWeakHomotopyEquivalence` in
+`TauCeti/AlgebraicTopology/SimplicialSet/WeakHomotopyEquivalence.lean`). The comparison with the
+realization-based weak equivalences of
+`TauCeti/AlgebraicTopology/SimplicialSet/WeakEquivalence.lean` needs the homotopy theory of the
+Kan–Quillen model structure and is not proved here.
 
 ## Main declarations
 
 * `SSet.constMaps K Z`: the constant maps `Z ⟶ Fun(K, Z)`, and `SSet.evalAt x Z`, evaluation at a
   vertex `x`, which is a retraction of it (`SSet.constMaps_evalAt`); `SSet.curry_evalAt`
-  evaluates curried maps.
+  evaluates curried maps, and `SSet.ihomObj₀Equiv_constMaps_app` identifies the vertices of the
+  constant maps.
 * `SSet.IsWeaklyContractible`: weakly contractible simplicial sets.
 * `SSet.IsWeaklyContractible.of_homotopy`: contractible simplicial sets are weakly contractible;
   in particular every standard simplex `Δ[n]` is.
@@ -89,6 +92,12 @@ noncomputable def evalAt (x : K _⦋0⦌) (Z : SSet.{u}) : (ihom K).obj Z ⟶ Z 
   lift (const x) (𝟙 _) ≫ (ihom.ev K).app Z
 
 variable {K} in
+/-- Evaluation at `x` evaluates `Fun(K, Z)` on the constant map at `x`. -/
+lemma evalAt_eq (x : K _⦋0⦌) (Z : SSet.{u}) :
+    evalAt x Z = lift (const x) (𝟙 _) ≫ (ihom.ev K).app Z :=
+  (rfl)
+
+variable {K} in
 /-- Evaluating a curried map at a vertex `x` of `K` restricts it to `x` on the first factor. -/
 @[reassoc (attr := simp)]
 lemma curry_evalAt {Y Z : SSet.{u}} (x : K _⦋0⦌) (f : K ⊗ Y ⟶ Z) :
@@ -99,6 +108,13 @@ lemma curry_evalAt {Y Z : SSet.{u}} (x : K _⦋0⦌) (f : K ⊗ Y ⟶ Z) :
 @[reassoc (attr := simp)]
 lemma constMaps_evalAt (x : K _⦋0⦌) (Z : SSet.{u}) : constMaps K Z ≫ evalAt x Z = 𝟙 Z := by
   simp [constMaps]
+
+/-- The vertex of `Fun(K, Z)` given by the constant maps at a vertex `z` of `Z` corresponds to
+the constant map `K ⟶ Z` at `z`. -/
+@[simp]
+lemma ihomObj₀Equiv_constMaps_app {Z : SSet.{u}} (z : Z _⦋0⦌) :
+    ihomObj₀Equiv K Z ((constMaps K Z).app _ z) = const z := by
+  rw [ihomObj₀Equiv_apply, ← const_comp, constMaps, lift_curry_ihom_ev_app, lift_snd]
 
 /-- Precomposition with a map `f : K ⟶ L` sends constant maps out of `L` to constant maps out
 of `K`. -/
@@ -176,19 +192,11 @@ instance (n : ℕ) : IsWeaklyContractible Δ[n] :=
 lemma of_iso {L : SSet.{u}} (e : K ≅ L) [IsWeaklyContractible K] : IsWeaklyContractible L where
   exists_homotopyInverse Z _ := by
     obtain ⟨g, ⟨H₁⟩, ⟨H₂⟩⟩ := exists_homotopyInverse (K := K) Z
-    obtain ⟨h, h₀, h₁⟩ : ∃ h : (ihom K).obj Z ⊗ Δ[1] ⟶ (ihom K).obj Z,
-        ι₀ ≫ h = g ≫ constMaps K Z ∧ ι₁ ≫ h = 𝟙 _ := ⟨H₂.h, H₂.h₀, H₂.h₁⟩
     have hPQ : (pre e.hom).app Z ≫ (pre e.inv).app Z = 𝟙 _ := by
       rw [← NatTrans.comp_app, ← pre_map, e.inv_hom_id, pre_id, NatTrans.id_app]
-    let P := (pre e.hom).app Z
-    refine ⟨P ≫ g, ⟨?_⟩, ⟨{ h := P ▷ _ ≫ h ≫ (pre e.inv).app Z, h₀ := ?_, h₁ := ?_, rel := ?_ }⟩⟩
-    · rwa [constMaps_pre_assoc]
-    · -- `change` unfolds `RelativeMorphism.botEquiv.symm` in the types of the fields.
-      change ι₀ ≫ _ = ((pre e.hom).app Z ≫ g) ≫ constMaps L Z
-      rw [ι₀_comp_assoc, reassoc_of% h₀, constMaps_pre, Category.assoc]
-    · change ι₁ ≫ _ = 𝟙 _
-      rw [ι₁_comp_assoc, reassoc_of% h₁, hPQ]
-    · ext _ ⟨⟨_, ⟨⟩⟩, _⟩
+    have H := (H₂.precomp ((pre e.hom).app Z)).postcomp ((pre e.inv).app Z)
+    rw [Category.assoc, Category.assoc, constMaps_pre, Category.comp_id, hPQ] at H
+    exact ⟨(pre e.hom).app Z ≫ g, ⟨by rwa [constMaps_pre_assoc]⟩, ⟨H⟩⟩
 
 variable [IsWeaklyContractible K]
 
@@ -210,31 +218,12 @@ constant map. -/
 lemma exists_homotopy_const {Z : SSet.{u}} [KanComplex Z] (f : K ⟶ Z) :
     ∃ z : Z _⦋0⦌, Nonempty (Homotopy (const z) f) := by
   obtain ⟨g, -, ⟨H⟩⟩ := exists_homotopyInverse (K := K) Z
-  obtain ⟨h, h₀, h₁⟩ : ∃ h : (ihom K).obj Z ⊗ Δ[1] ⟶ (ihom K).obj Z,
-      ι₀ ≫ h = g ≫ constMaps K Z ∧ ι₁ ≫ h = 𝟙 _ := ⟨H.h, H.h₀, H.h₁⟩
-  let v : (Δ[0] : SSet.{u}) _⦋0⦌ := stdSimplex.obj₀Equiv.symm 0
-  let φ : Δ[0] ⟶ (ihom K).obj Z := curry (fst K _ ≫ f)
-  -- The edge of `Fun(K, Z)` traced by the homotopy `h` at the vertex `f`.
-  let e : Δ[1] ⟶ (ihom K).obj Z := lift (const v) (𝟙 _) ≫ φ ▷ Δ[1] ≫ h
-  have he₀ : const (X := K) (stdSimplex.obj₀Equiv.symm 0) ≫ e =
-      const ((φ ≫ g).app _ v) ≫ constMaps K Z := by
-    rw [← const_comp, Category.assoc, Category.assoc, ← h₀, ← ι₀_comp_assoc]
-    simp only [e, ← Category.assoc]
-    congr 2
-  have he₁ : const (X := K) (stdSimplex.obj₀Equiv.symm 1) ≫ e = const v ≫ φ := by
-    rw [← Category.comp_id φ, ← h₁, ← ι₁_comp_assoc]
-    simp only [e, ← Category.assoc]
-    congr 2
-  -- Through `uncurry`, the edge `e` is a homotopy `K ⊗ Δ[1] ⟶ Z`, whose ends are the values of
-  -- `e` at the vertices of `Δ[1]`, both curried.
-  refine ⟨(φ ≫ g).app _ v, ⟨{ h := uncurry e, h₀ := ?_, h₁ := ?_, rel := ?_ }⟩⟩
-  · -- `change` unfolds `RelativeMorphism.botEquiv.symm` in the types of the fields.
-    change ι₀ ≫ uncurry e = const _
-    rw [ι₀, uncurry_eq, lift_whiskerLeft_assoc, he₀, constMaps, lift_curry_ihom_ev_app, lift_snd]
-  · change ι₁ ≫ uncurry e = f
-    rw [ι₁, uncurry_eq, lift_whiskerLeft_assoc, he₁, lift_curry_ihom_ev_app, lift_fst_assoc,
-      Category.id_comp]
-  · ext _ ⟨⟨_, ⟨⟩⟩, _⟩
+  -- The homotopy `H` traces an edge of `Fun(K, Z)` from the constant maps at the value of `g` at
+  -- the vertex `f` to that vertex, which is a homotopy from a constant map to `f`.
+  let v := (ihomObj₀Equiv K Z).symm f
+  refine ⟨g.app _ v, ⟨ihomEdgeEquiv _ _
+    ((Edge.ofSimplicialObjectHomotopy H.toSimplicialObjectHomotopy v).ofEq ?_ rfl)⟩⟩
+  rw [Equiv.eq_symm_apply, NatTrans.comp_app, types_comp_apply, ihomObj₀Equiv_constMaps_app]
 
 /-- A weakly contractible simplicial set is connected. -/
 instance isConnected : K.IsConnected where

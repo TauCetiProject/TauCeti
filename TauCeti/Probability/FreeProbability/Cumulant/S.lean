@@ -19,7 +19,8 @@ For a normalized function `φ : A → R` on a monoid and an element `a` with uni
 
 where the inverse is for substitution and division by `z` removes its zero constant
 coefficient. The moment–cumulant equation identifies this series with `C₀⁻¹(z) / z`, where
-`C₀(z) = C(z) - 1 = z R(z)`. In particular its constant coefficient is the inverse mean and
+`C₀(z) = C(z) - 1 = z R(z)`, so `z S(z)` is a two-sided compositional inverse of `C₀`, which
+characterizes `S`. In particular its constant coefficient is the inverse mean and
 it is a unit power series. These are formal identities over a commutative ring; they assert
 neither analytic convergence nor multiplicativity on free products.
 
@@ -104,14 +105,14 @@ theorem X_mul_sSeries_eq_substInvOfIsUnit (hφ : φ 1 = 1) (ha : IsUnit (φ a)) 
   have hMI : (momentSeries φ a).subst I = 1 + X := by
     have h := (momentSeries φ a - 1).subst_substInvOfIsUnit_right
       (by simp [hφ]) (isUnit_coeff_one_momentSeries_sub_one φ a ha)
-    rw [subst_sub hI, subst_one hI] at h
+    rw [subst_sub hI, subst_one] at h
     exact (sub_eq_iff_eq_add.mp h).trans (add_comm _ _)
   have hcomp : (X * momentSeries φ a).subst I = (1 + X) * I := by
     rw [subst_mul hI, subst_X hI, hMI, mul_comm]
   rw [X_mul_sSeries]
   apply (freeCumulantSeries φ a - 1).eq_substInvOfIsUnit_of_subst_eq_X (by simp) _
     (.of_constantCoeff_zero' (by simp))
-  rw [← hcomp, ← subst_comp_subst_apply hM hI, subst_sub hM, subst_one hM,
+  rw [← hcomp, ← subst_comp_subst_apply hM hI, subst_sub hM, subst_one,
     freeCumulantSeries_subst_X_mul_momentSeries a hφ,
     subst_substInvOfIsUnit_right _ (by simp [hφ])]
 
@@ -136,6 +137,26 @@ theorem eq_sSeries_of_subst_X_mul_eq (hφ : φ 1 = 1) (ha : IsUnit (φ a)) {S : 
     (by simp) (isUnit_coeff_one_freeCumulantSeries_sub_one φ a ha)
     (.of_constantCoeff_zero' (by simp)) hS).trans
       (X_mul_sSeries_eq_substInvOfIsUnit a hφ ha).symm
+
+/-- The right inverse equation `(C - 1)(X * S) = X`. -/
+@[simp]
+theorem freeCumulantSeries_sub_one_subst_X_mul_sSeries (hφ : φ 1 = 1) (ha : IsUnit (φ a)) :
+    (freeCumulantSeries φ a - 1).subst (X * sSeries φ a ha) = X := by
+  rw [X_mul_sSeries_eq_substInvOfIsUnit a hφ ha]
+  exact (freeCumulantSeries φ a - 1).subst_substInvOfIsUnit_right (by simp) _
+
+/-- The left inverse equation `(X * S)(C - 1) = X`. -/
+@[simp]
+theorem X_mul_sSeries_subst_freeCumulantSeries_sub_one (hφ : φ 1 = 1) (ha : IsUnit (φ a)) :
+    (X * sSeries φ a ha).subst (freeCumulantSeries φ a - 1) = X := by
+  rw [X_mul_sSeries_eq_substInvOfIsUnit a hφ ha]
+  exact (freeCumulantSeries φ a - 1).subst_substInvOfIsUnit_left (by simp) _
+
+/-- The S-series is characterized by the right inverse equation for `C - 1`. -/
+theorem eq_sSeries_iff (hφ : φ 1 = 1) (ha : IsUnit (φ a)) {S : R⟦X⟧} :
+    S = sSeries φ a ha ↔ (freeCumulantSeries φ a - 1).subst (X * S) = X :=
+  ⟨by rintro rfl; exact freeCumulantSeries_sub_one_subst_X_mul_sSeries a hφ ha,
+    eq_sSeries_of_subst_X_mul_eq a hφ ha⟩
 
 /-- Equal moment series give equal S-series, even when the underlying monoids differ. -/
 theorem sSeries_congr {B : Type*} [Monoid B] {ψ : B → R} {b : B}

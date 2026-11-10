@@ -45,6 +45,35 @@ variable
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   {X : Π x : M, TangentSpace I x}
 
+omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- If the flow of `X` preserves the norm of `u` for small times, then the squared norm of the
+transverse velocity at `0` of the flowed curve `q ↦ flowOf X t (γ q)` is locally constant in
+`t`, for any curve `γ` through `p` with velocity `u`. -/
+theorem eventually_norm_sq_curveVelocity_flowOf_eq
+    (hX₁ : CMDiff 1 (T% X)) {p : M} {u : TangentSpace I p} {γ : ℝ → M}
+    (hγ : MDifferentiableAt 𝓘(ℝ) I γ 0) (hγ₀ : γ 0 = p) (hvel : curveVelocity I γ 0 = u)
+    (hflow : ∀ᶠ t : ℝ in 𝓝 0, ‖mfderiv I I (flowOf X t) p u‖ = ‖u‖) :
+    (fun t : ℝ ↦ ‖curveVelocity I (fun q ↦ flowOf X t (γ q)) 0‖ ^ 2) =ᶠ[𝓝 0]
+      fun _ ↦ ‖u‖ ^ 2 := by
+  have hdom : ∀ᶠ t : ℝ in 𝓝 0, (t, p) ∈ flowDomain X :=
+    ((isOpen_flowDomain hX₁).preimage
+      (by fun_prop : Continuous fun t : ℝ ↦ (t, p))).mem_nhds
+        (mem_flowDomain_zero hX₁ p)
+  filter_upwards [hflow, hdom] with t hn htd
+  have hslice := contMDiffAt_flowOf_comp (n := 1) (by norm_num) hX₁
+    contMDiffAt_const contMDiffAt_id htd
+  have hmap := curveVelocityWithin_map (s := univ)
+    (by simpa only [hγ₀] using hslice.mdifferentiableAt one_ne_zero)
+    uniqueDiffWithinAt_univ hγ.mdifferentiableWithinAt
+  simp only [curveVelocityWithin_univ, Function.comp_def, id_eq, hvel] at hmap
+  have hnorm : ‖curveVelocity I (fun q ↦ flowOf X t (γ q)) 0‖ =
+        ‖mfderiv I I (flowOf X t) p u‖ := by
+    have hFt : flowOf X t (γ 0) = flowOf X t p := by rw [hγ₀]
+    rw [hFt]
+    exact congrArg (fun w : TangentSpace I (flowOf X t p) ↦ ‖w‖)
+      (hmap.trans (by rw [hγ₀]))
+  rw [hnorm, hn]
+
 /-- Norm preservation near time zero in one tangent direction forces the diagonal
 Killing equation in that direction. -/
 theorem inner_leviCivitaConnection_self_eq_zero_of_eventually_norm_mfderiv_flowOf
@@ -83,24 +112,9 @@ theorem inner_leviCivitaConnection_self_eq_zero_of_eventually_norm_mfderiv_flowO
     (hγ.mdifferentiableAt (by norm_num))) (hX.mdifferentiable (by simp) (γ 0))
   rw [hpull, hvel, hγ₀] at hd
   -- Norm preservation makes that scalar function locally constant, on the actual flow domain.
-  have hconst : (fun t ↦ ‖U t‖ ^ 2) =ᶠ[𝓝 0] fun _ ↦ ‖u‖ ^ 2 := by
-    have hdom : ∀ᶠ t : ℝ in 𝓝 0, (t, p) ∈ flowDomain X :=
-      ((isOpen_flowDomain hX₁).preimage
-        (by fun_prop : Continuous fun t : ℝ ↦ (t, p))).mem_nhds
-          (mem_flowDomain_zero hX₁ p)
-    filter_upwards [hflow, hdom] with t hn htd
-    have hslice := contMDiffAt_flowOf_comp (n := 1) (by norm_num) hX₁
-      contMDiffAt_const contMDiffAt_id htd
-    have hmap := curveVelocityWithin_map (s := univ)
-      (by simpa only [hγ₀] using hslice.mdifferentiableAt one_ne_zero)
-      uniqueDiffWithinAt_univ (hγ.mdifferentiableAt (by norm_num)).mdifferentiableWithinAt
-    simp only [curveVelocityWithin_univ, Function.comp_def, id_eq, hvel] at hmap
-    have hnorm : ‖U t‖ = ‖mfderiv I I (flowOf X t) p u‖ := by
-      have hFt : F 0 t = flowOf X t p := by simp only [F, hγ₀]
-      rw [hFt]
-      exact congrArg (fun w : TangentSpace I (flowOf X t p) ↦ ‖w‖)
-        (hmap.trans (by rw [hγ₀]))
-    rw [hnorm, hn]
+  have hconst : (fun t ↦ ‖U t‖ ^ 2) =ᶠ[𝓝 0] fun _ ↦ ‖u‖ ^ 2 :=
+    eventually_norm_sq_curveVelocity_flowOf_eq hX₁ (hγ.mdifferentiableAt (by norm_num)) hγ₀ hvel
+      hflow
   have heq := hd.deriv.symm.trans hconst.deriv_eq
   have hF₀₀ : F 0 0 = p := (congrFun hF₀ 0).trans hγ₀
   rw [deriv_const, hF₀₀] at heq

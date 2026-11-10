@@ -325,8 +325,7 @@ gradient trajectory for `-f` on `Ici (-a)`. -/
 private theorem comp_neg_isIntegralCurveOn_neg
     (hγ : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Iic a)) :
     IsIntegralCurveOn (fun t ↦ γ (-t)) (fun _ x ↦ -∇ (-f) x) (Ici (-a)) := by
-  have hgrad_neg : ∀ y : E, ∇ (-f) y = -∇ f y := fun y ↦ by
-    simpa using (gradient_const_smul (𝕜 := ℝ) (F := E) (f := f) (x := y) (-1))
+  have hgrad_neg : ∀ y : E, ∇ (-f) y = -∇ f y := fun y ↦ gradient_neg
   have hdomain : {t : ℝ | t * (-1) ∈ Iic a} = Ici (-a) := by
     ext t
     simp only [mem_ofPred_eq, mem_Iic, mem_Ici, mul_neg, mul_one, neg_le]

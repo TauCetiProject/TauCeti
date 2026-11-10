@@ -7,8 +7,8 @@ module
 
 public import Mathlib.Analysis.CStarAlgebra.ApproximateUnit
 public import Mathlib.RingTheory.TwoSidedIdeal.Instances
+public import TauCeti.Analysis.CStarAlgebra.ApproximateUnit
 public import TauCeti.Topology.Algebra.Ring.TwoSidedIdeal
-import Mathlib.Algebra.Order.Interval.Set.Group
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Range
 
 /-!
@@ -95,38 +95,9 @@ theorem star_mem_of_isClosed {a : A} (ha : a ∈ I) : star a ∈ I := by
     have hsq : ∀ᶠ e : S in l,
         ‖(e : A) * star a - star a‖ ^ 2 ≤ ‖(e * k - k : S)‖ := by
       filter_upwards [hl.eventually_nonneg, hl.eventually_norm] with e he₀ he₁
-      have heA₀ : 0 ≤ (e : A) := he₀
-      have heA₁ : ‖(e : A)‖ ≤ 1 := he₁
-      have he_icc : ((e : A) : A⁺¹) ∈ Set.Icc (0 : A⁺¹) 1 :=
-        CStarAlgebra.inr_mem_Icc_iff_norm_le.mpr ⟨heA₀, heA₁⟩
-      have h1_icc : 1 - ((e : A) : A⁺¹) ∈ Set.Icc (0 : A⁺¹) 1 :=
-        Set.sub_mem_Icc_zero_iff_right.mpr he_icc
-      obtain ⟨h1_nonneg, h1_norm⟩ := CStarAlgebra.mem_Icc_iff_norm_le_one.mp h1_icc
-      have h1_star : star (1 - ((e : A) : A⁺¹)) = 1 - ((e : A) : A⁺¹) :=
-        (IsSelfAdjoint.of_nonneg h1_nonneg).star_eq
-      let b : A⁺¹ := (1 - ((e : A) : A⁺¹)) * star (a : A⁺¹)
-      have hb_norm : ‖(e : A) * star a - star a‖ = ‖b‖ := by
-        rw [norm_sub_rev, ← Unitization.norm_inr (𝕜 := ℂ), Unitization.inr_sub,
-          Unitization.inr_mul, Unitization.inr_star]
-        congr 1
-        dsimp only [b]
-        rw [sub_mul, one_mul]
-      have hb_mul : b * star b =
-          (((k : A) - (e : A) * (k : A) : A) : A⁺¹) * (1 - ((e : A) : A⁺¹)) := by
-        simp only [b, k, star_mul, star_star, h1_star, Unitization.inr_sub, Unitization.inr_mul,
-          Unitization.inr_star]
-        noncomm_ring
-      calc
-        ‖(e : A) * star a - star a‖ ^ 2 = ‖b‖ ^ 2 := by rw [hb_norm]
-        _ = ‖b * star b‖ := by rw [sq, ← CStarRing.norm_self_mul_star]
-        _ = ‖(((k : A) - (e : A) * (k : A) : A) : A⁺¹) * (1 - ((e : A) : A⁺¹))‖ := by rw [hb_mul]
-        _ ≤ ‖(((k : A) - (e : A) * (k : A) : A) : A⁺¹)‖ * ‖1 - ((e : A) : A⁺¹)‖ := norm_mul_le _ _
-        _ ≤ ‖(k : A) - (e : A) * (k : A)‖ * 1 := by
-            rw [Unitization.norm_inr]
-            exact mul_le_mul_of_nonneg_left h1_norm (norm_nonneg _)
-        _ = ‖(e * k - k : S)‖ := by
-            rw [mul_one, norm_sub_rev]
-            rfl
+      have h := TauCeti.CStarAlgebra.norm_mul_star_sub_star_sq_le (A := A) (e := (e : A)) he₀ he₁ a
+      rw [norm_sub_rev (star a * a)] at h
+      exact h
     have hk_lim : Tendsto (fun e : S => ‖(e * k - k : S)‖) l (𝓝 0) :=
       tendsto_iff_norm_sub_tendsto_zero.mp (hl.tendsto_mul_right k)
     have hsqrt : Tendsto (fun e : S => Real.sqrt ‖(e * k - k : S)‖) l (𝓝 0) := by

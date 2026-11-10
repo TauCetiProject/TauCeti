@@ -41,7 +41,7 @@ theorem hasSum_cdf_compoundPoissonMeasure (r : ℝ≥0) (μ : Measure ℝ)
     HasSum (fun n : ℕ => (exp (-(r : ℝ)) * (r : ℝ) ^ n / n !) *
       cdf (μ.convolutionPower n) x) (cdf (compoundPoissonMeasure r μ) x) := by
   simpa only [cdf_eq_real] using
-    hasSum_compoundPoissonMeasure_real_apply r μ (s := Iic x) measurableSet_Iic
+    hasSum_compoundPoissonMeasure_real_apply r μ (Iic x)
 
 /-- The compound Poisson cdf, with the empty-sum atom separated from the nonempty sums. -/
 theorem cdf_compoundPoissonMeasure (r : ℝ≥0) (μ : Measure ℝ)
@@ -64,7 +64,7 @@ theorem cdf_map_natCast_compoundPoissonMeasure (r : ℝ≥0) (μ : Measure ℕ)
       else 0 := by
   split_ifs with hx
   · rw [Measure.cdf_map_natCast _ hx]
-    exact (hasSum_compoundPoissonMeasure_real_apply r μ measurableSet_Iic).tsum_eq.symm
+    exact (hasSum_compoundPoissonMeasure_real_apply r μ (Iic _)).tsum_eq.symm
   · exact Measure.cdf_map_natCast_of_neg _ (lt_of_not_ge hx)
 
 /-- The cdf of the real cast of an integer-valued compound Poisson law, using integer floor
@@ -75,6 +75,6 @@ theorem cdf_map_intCast_compoundPoissonMeasure (r : ℝ≥0) (μ : Measure ℤ)
       ∑' n : ℕ, (exp (-(r : ℝ)) * (r : ℝ) ^ n / n !) *
         (μ.convolutionPower n).real (Iic ⌊x⌋) := by
   rw [Measure.cdf_map_intCast]
-  exact (hasSum_compoundPoissonMeasure_real_apply r μ measurableSet_Iic).tsum_eq.symm
+  exact (hasSum_compoundPoissonMeasure_real_apply r μ (Iic _)).tsum_eq.symm
 
 end TauCeti.Probability

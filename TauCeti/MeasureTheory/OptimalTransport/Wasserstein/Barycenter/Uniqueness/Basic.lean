@@ -78,9 +78,9 @@ theorem subsingleton_frechetBarycenters (hp : p ≠ ∞) {P : Measure (Wasserste
     simp_rw [frechetPower_def, edist_comm z]
   intro ν₀ h₀ ν₁ h₁
   obtain ⟨hR₀, hmin₀⟩ := (isFrechetBarycenter_iff_forall_frechetPower_le hp0 hp
-    (hm ν₀).aemeasurable fun z ↦ (hm z).aemeasurable).1 (mem_frechetBarycenters.1 h₀)
+    fun z ↦ (hm z).aemeasurable).1 (mem_frechetBarycenters.1 h₀)
   obtain ⟨-, hmin₁⟩ := (isFrechetBarycenter_iff_forall_frechetPower_le hp0 hp
-    (hm ν₁).aemeasurable fun z ↦ (hm z).aemeasurable).1 (mem_frechetBarycenters.1 h₁)
+    fun z ↦ (hm z).aemeasurable).1 (mem_frechetBarycenters.1 h₁)
   have hF₀ : frechetPower p P ν₀ ≠ ∞ := by
     rw [← frechetRadius_rpow_eq_frechetPower hp0 hp (hm ν₀).aemeasurable]
     exact ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg hR₀

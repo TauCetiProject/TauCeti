@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Analytic.Order
+public import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
 # The analytic order of products, power maps and derivatives
@@ -23,7 +24,7 @@ nearby are confined to a finite set. The finiteness of the zero set itself on a 
 
 ## Main declarations
 
-* `AnalyticAt.exists_analyticOrderAt_monomial_sub_eq_min`: outside at most two scalar
+* `TauCeti.exists_analyticOrderAt_monomial_sub_eq_min`: outside at most two scalar
   coefficients, subtraction of a scalar monomial has the minimum of the two orders.
 * `TauCeti.analyticOrderNatAt_congr`: eventual equality preserves the natural analytic order.
 * `TauCeti.analyticOrderAt_prod`: the order of `∏ i ∈ s, F i` is `∑ i ∈ s`, of the orders.
@@ -102,11 +103,21 @@ theorem analyticOrderAt_pow_sub_zero_pow {m : ℕ} (hm : m ≠ 0) :
 derivative at `x` does not vanish: the `iff` form of Mathlib's
 `AnalyticAt.analyticOrderAt_sub_eq_one_of_deriv_ne_zero`. -/
 theorem _root_.AnalyticAt.analyticOrderAt_sub_eq_one_iff_deriv_ne_zero {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E] [CharZero 𝕜] {f : 𝕜 → E} {x : 𝕜}
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] {f : 𝕜 → E} {x : 𝕜}
     (hf : AnalyticAt 𝕜 f x) :
     analyticOrderAt (f · - f x) x = 1 ↔ deriv f x ≠ 0 := by
-  rw [← hf.analyticOrderAt_deriv_add_one, ← hf.deriv.analyticOrderAt_eq_zero]
-  simp
+  refine ⟨fun h => ?_, hf.analyticOrderAt_sub_eq_one_of_deriv_ne_zero⟩
+  obtain ⟨g, hg, hgx, hfg⟩ := (AnalyticAt.analyticOrderAt_eq_natCast (hf.sub analyticAt_const)).1
+    (h.trans Nat.cast_one.symm)
+  have hd : HasDerivAt f (g x) x := by
+    have h1 := (HasDerivAt.fun_smul ((hasDerivAt_id x).sub_const x)
+      hg.differentiableAt.hasDerivAt).add_const (f x)
+    simp only [id_eq, sub_self, zero_smul, zero_add, one_smul] at h1
+    refine h1.congr_of_eventuallyEq ?_
+    filter_upwards [hfg] with z hz
+    simp only [pow_one, Pi.sub_apply] at hz
+    simp [← hz]
+  rwa [hd.deriv]
 
 /-- A function analytic at `z₀` and dominated there by `f` vanishes to at least the order of `f`
 at `z₀`. No analyticity of `f` is needed: a non-analytic `f` has order `0`. -/
@@ -189,13 +200,22 @@ theorem analyticOrderAt_ne_top_of_zeros_subset {E : Type*} [NormedAddCommGroup E
 
 end TauCeti
 
-/-- Outside zero and at most one additional scalar, subtracting an analytic germ from
+/-- Outside zero and at most one additional scalar, subtracting a function from
 a scalar multiple of a monomial has order equal to the minimum of their orders. The
-exceptional scalar accounts for cancellation when the two orders coincide. -/
-theorem AnalyticAt.exists_analyticOrderAt_monomial_sub_eq_min {𝕜 : Type*}
-    [NontriviallyNormedField 𝕜] {f : 𝕜 → 𝕜} (hf : AnalyticAt 𝕜 f 0) (N : ℕ) :
+exceptional scalar accounts for cancellation when the two orders coincide. If `f` is not analytic
+at `0` the difference is not either, and both orders are `0` by convention. -/
+theorem TauCeti.exists_analyticOrderAt_monomial_sub_eq_min {𝕜 : Type*}
+    [NontriviallyNormedField 𝕜] (f : 𝕜 → 𝕜) (N : ℕ) :
     ∃ b : 𝕜, ∀ c : 𝕜, c ≠ 0 → c ≠ b →
       analyticOrderAt (fun t ↦ c * t ^ N - f t) 0 = min (N : ℕ∞) (analyticOrderAt f 0) := by
+  by_cases hf : AnalyticAt 𝕜 f 0
+  swap
+  · refine ⟨0, fun c _ _ ↦ ?_⟩
+    have hd : ¬ AnalyticAt 𝕜 (fun t ↦ c * t ^ N - f t) 0 := fun h ↦ hf <|
+      (((analyticAt_const (v := c)).mul (analyticAt_id.pow N)).sub h).congr
+        (.of_forall fun t ↦ by simp)
+    rw [analyticOrderAt_of_not_analyticAt hd, analyticOrderAt_of_not_analyticAt hf]
+    simp
   have hmono (c : 𝕜) (hc : c ≠ 0) :
       analyticOrderAt (fun t : 𝕜 ↦ c * t ^ N) 0 = N := by
     apply (analyticAt_const.mul (analyticAt_id.pow N)).analyticOrderAt_eq_natCast.2

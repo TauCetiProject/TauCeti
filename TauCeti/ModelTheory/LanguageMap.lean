@@ -26,6 +26,9 @@ the `L`-structure along `g`; the `L'`-structure can be taken to be the reduct.
   it expands along is the original structure.
 * `FirstOrder.Language.LHom.sumMap_isExpansionOn_of_reduct`: a structure on a sum language is
   expanded along `ϕ.sumMap ψ` by a sum structure expanding its two parts along `ϕ` and `ψ`.
+* `FirstOrder.Language.LHom.mem_range_sumInl_onFunction_of_mem_range_sumMap` and
+  `FirstOrder.Language.LHom.mem_range_sumInl_onRelation_of_mem_range_sumMap`: the symbols of
+  `L.sum (L₁.sum L₂)` shared by the images of `L.sum L₁` and `L.sum L₂` come from `L`.
 
 The relation map of `lhomWithConstants` inverts the elimination of the empty summand of
 `L[[γ]].Relations n` by `Equiv.sumEmpty`
@@ -88,6 +91,44 @@ theorem sumMap_isExpansionOn_of_reduct {L₀ : Language.{u', v'}} {L₁ : Langua
   map_onRelation
     | .inl R, x => @map_onRelation L L₀ ϕ M ((LHom.sumInl : L →ᴸ L.sum L₁).reduct M) _ _ _ R x
     | .inr R, x => @map_onRelation L₁ L₁' ψ M ((LHom.sumInr : L₁ →ᴸ L.sum L₁).reduct M) _ _ _ R x
+
+section SumMap
+
+variable {L₁ : Language.{u', v'}} {L₂ : Language.{u'', v''}}
+
+/-- A function symbol of `L.sum (L₁.sum L₂)` that is the image of a function symbol of `L.sum L₁`
+along `(LHom.id L).sumMap LHom.sumInl` and of a function symbol of `L.sum L₂` along
+`(LHom.id L).sumMap LHom.sumInr` is the image of a function symbol of `L` along `LHom.sumInl`. -/
+theorem mem_range_sumInl_onFunction_of_mem_range_sumMap {s : Σ k, (L.sum (L₁.sum L₂)).Functions k}
+    (h₁ : s ∈ Set.range fun t : Σ k, (L.sum L₁).Functions k =>
+      (⟨t.1, ((LHom.id L).sumMap LHom.sumInl).onFunction t.2⟩ :
+        Σ k, (L.sum (L₁.sum L₂)).Functions k))
+    (h₂ : s ∈ Set.range fun t : Σ k, (L.sum L₂).Functions k =>
+      (⟨t.1, ((LHom.id L).sumMap LHom.sumInr).onFunction t.2⟩ :
+        Σ k, (L.sum (L₁.sum L₂)).Functions k)) :
+    s ∈ Set.range fun t : Σ k, L.Functions k =>
+      (⟨t.1, LHom.sumInl.onFunction t.2⟩ : Σ k, (L.sum (L₁.sum L₂)).Functions k) := by
+  obtain ⟨⟨k, f | f⟩, rfl⟩ := h₁
+  · exact ⟨⟨k, f⟩, rfl⟩
+  · obtain ⟨⟨k', f' | f'⟩, h⟩ := h₂ <;> obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 h <;> cases h
+
+/-- A relation symbol of `L.sum (L₁.sum L₂)` that is the image of a relation symbol of `L.sum L₁`
+along `(LHom.id L).sumMap LHom.sumInl` and of a relation symbol of `L.sum L₂` along
+`(LHom.id L).sumMap LHom.sumInr` is the image of a relation symbol of `L` along `LHom.sumInl`. -/
+theorem mem_range_sumInl_onRelation_of_mem_range_sumMap {s : Σ k, (L.sum (L₁.sum L₂)).Relations k}
+    (h₁ : s ∈ Set.range fun t : Σ k, (L.sum L₁).Relations k =>
+      (⟨t.1, ((LHom.id L).sumMap LHom.sumInl).onRelation t.2⟩ :
+        Σ k, (L.sum (L₁.sum L₂)).Relations k))
+    (h₂ : s ∈ Set.range fun t : Σ k, (L.sum L₂).Relations k =>
+      (⟨t.1, ((LHom.id L).sumMap LHom.sumInr).onRelation t.2⟩ :
+        Σ k, (L.sum (L₁.sum L₂)).Relations k)) :
+    s ∈ Set.range fun t : Σ k, L.Relations k =>
+      (⟨t.1, LHom.sumInl.onRelation t.2⟩ : Σ k, (L.sum (L₁.sum L₂)).Relations k) := by
+  obtain ⟨⟨k, R | R⟩, rfl⟩ := h₁
+  · exact ⟨⟨k, R⟩, rfl⟩
+  · obtain ⟨⟨k', R' | R'⟩, h⟩ := h₂ <;> obtain ⟨rfl, h⟩ := Sigma.mk.inj_iff.1 h <;> cases h
+
+end SumMap
 
 end LHom
 

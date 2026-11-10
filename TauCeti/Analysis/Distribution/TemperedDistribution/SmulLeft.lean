@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Distribution.TemperedDistribution
+import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
+import TauCeti.Analysis.Distribution.TemperateGrowth
 
 /-!
 # Multiplication of tempered distributions by functions of temperate growth
@@ -18,10 +20,17 @@ Mathlib's `SchwartzMap.smulLeftCLM`. Mathlib proves the corresponding statement 
 temperate growth lying in `Lᵖ`, acting on `L^q` functions with Hölder exponents
 (`MeasureTheory.Lp.toTemperedDistribution_smul_eq`).
 
+Directional derivatives of such products obey the Leibniz rule
+`∂_v (g f) = (∂_v g) f + g ∂_v f`, where `∂_v g` is the classical derivative `x ↦ Dg(x) v`, again
+a function of temperate growth. By duality this is the Leibniz rule for Schwartz functions
+(`SchwartzMap.lineDerivOp_smulLeftCLM`).
+
 ## Main results
 
 * `TemperedDistribution.smulLeftCLM_toTemperedDistributionCLM_eq`: multiplication by `g` on
   tempered distributions extends multiplication by `g` on Schwartz functions.
+* `TemperedDistribution.lineDerivOp_smulLeftCLM`: the Leibniz rule for the product of a tempered
+  distribution with a function of temperate growth.
 -/
 
 public section
@@ -29,7 +38,22 @@ public section
 namespace TemperedDistribution
 
 open MeasureTheory
-open scoped SchwartzMap
+open scoped SchwartzMap LineDeriv
+
+section Deriv
+
+variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F]
+  [NormedSpace ℂ F]
+
+/-- **The Leibniz rule for tempered distributions**: for `g` of temperate growth,
+`∂_v (g f) = (∂_v g) f + g ∂_v f`, where `∂_v g` is the classical derivative `x ↦ Dg(x) v`. -/
+theorem lineDerivOp_smulLeftCLM {g : E → ℂ} (hg : g.HasTemperateGrowth) (f : 𝓢'(E, F)) (v : E) :
+    ∂_{v} (smulLeftCLM F g f) =
+      smulLeftCLM F (fun x ↦ fderiv ℝ g x v) f + smulLeftCLM F g (∂_{v} f) := by
+  ext u
+  simp [SchwartzMap.lineDerivOp_smulLeftCLM hg, ← map_add]
+
+end Deriv
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [BorelSpace E] [SecondCountableTopology E] [NormedAddCommGroup F] [NormedSpace ℂ F]

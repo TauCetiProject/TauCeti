@@ -173,7 +173,7 @@ theorem addOrderOf_globalArtinMap_primeIdeleClass [IsMulCommutative Gal(L/K)] :
   obtain ⟨σ, hσ⟩ := NumberField.exists_isArithFrobAt K Q hQ
   rw [globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt L ι v Q hσ, addOrderOf_ofMul_eq_orderOf,
     orderOf_injective _ Abelianization.of_injective,
-    Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q hQ hσ]
+    Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q hσ]
 
 /-- **Splitting criterion through the Artin symbol.** For a finite abelian extension `L/K` of
 number fields and a finite place `v` of `K` unramified at a prime `Q` of `L` above it, the global
@@ -199,7 +199,7 @@ theorem globalArtinMap_quadratic_prime (hL : Module.finrank K L = 2) {τ : Gal(L
   obtain ⟨σ, hσ⟩ := NumberField.exists_isArithFrobAt K Q hQ
   rw [globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt L ι v Q hσ,
     Additive.ofMul.injective.eq_iff, Abelianization.of_injective.eq_iff,
-    ← Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q hQ hσ]
+    ← Ideal.orderOf_eq_inertiaDeg_of_isArithFrobAt Q hσ]
   -- In a group of order two, the nontrivial element is the unique element of order two.
   obtain ⟨u, -, hu⟩ := (Nat.card_eq_two_iff' (1 : Gal(L/K))).mp hcard
   refine ⟨fun h ↦ h ▸ orderOf_eq_prime (hcard ▸ pow_card_eq_one') hτ, fun h ↦ ?_⟩
@@ -228,16 +228,13 @@ theorem globalArtinMap_ideal (v : HeightOneSpectrum (𝓞 K))
       .ofMul (Abelianization.of
         (NumberFieldArithmetic.artinHomAway algEquiv_commute_of_isAbelianGalois S hur I)) := by
   -- `I` is prime to `S` and has multiplicity one at `v`, so `v ∉ S`.
-  have hv : v ∉ S := fun h ↦ by
-    have := NumberFieldArithmetic.mem_idealsAway_iff.1 I.2 v h
-    rw [hI, FractionalIdeal.count_self] at this
-    exact one_ne_zero this
+  have hv : v ∉ S := NumberFieldArithmetic.notMem_of_coe_eq_asIdeal I.2 hI
   obtain ⟨Q, _, _⟩ := (inferInstance : Nonempty (v.asIdeal.primesOver (𝓞 L)))
   have := hur v hv Q
   obtain ⟨σ, hσ⟩ := NumberField.exists_isArithFrobAt K Q
     (Ideal.ne_bot_of_liesOver_of_ne_bot v.ne_bot Q)
   rw [globalArtinMap_primeIdeleClass_eq_of_isArithFrobAt L ι v Q hσ,
-    NumberFieldArithmetic.artinHomAway_apply_prime _ S hur I v hv hI Q σ hσ]
+    NumberFieldArithmetic.artinHomAway_apply_prime _ S hur I v hI Q σ hσ]
 
 /-- **The global Artin symbols of the prime idele classes determine the ideal-theoretic Artin
 map.** For a finite abelian extension `L/K` of number fields, unramified outside a finite set `S`

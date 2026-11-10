@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.RankOne.Basi
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Transvection
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Elementary
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.InverseTranspose
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.RankOne
 
 /-!
 # Rank-one maps into the doubled E₆ minuscule carrier
@@ -87,6 +88,25 @@ theorem rankOneMatrix_injective : Function.Injective (rankOneMatrix R i) := by
     Equiv.symm_apply_apply, Matrix.fromBlocks_apply₁₁,
     E6Minuscule.weightTable.coe_sl2BlockSL] using hab
 
+private theorem reindex_root_blocks (A B : Matrix (Fin 27) (Fin 27) ℤ) (t : R) :
+    Matrix.reindex matrixIndexEquiv matrixIndexEquiv
+      (Matrix.fromBlocks (1 + t • A.map (Int.cast : ℤ → R)) 0 0
+        (1 + (-t) • B.map (Int.cast : ℤ → R))) =
+      1 + t • (Matrix.reindex matrixIndexEquiv matrixIndexEquiv
+        (Matrix.fromBlocks A 0 0 (-B))).map (Int.cast : ℤ → R) := by
+  -- The dual root block has the negative coefficient; scalar extension and reindexing
+  -- preserve the resulting block-diagonal sum.
+  have hblocks : Matrix.fromBlocks (1 + t • A.map (Int.cast : ℤ → R)) 0 0
+      (1 + (-t) • B.map (Int.cast : ℤ → R)) =
+      1 + t • (Matrix.fromBlocks A 0 0 (-B)).map (Int.cast : ℤ → R) := by
+    rw [Matrix.fromBlocks_map, ← Matrix.fromBlocks_one,
+      Matrix.fromBlocks_smul, Matrix.fromBlocks_add]
+    simp [Matrix.map_zero (Int.cast : ℤ → R) Int.cast_zero,
+      Matrix.map_neg (Int.cast : ℤ → R) Int.cast_neg]
+  rw [hblocks]
+  simp [Matrix.reindex_apply, Matrix.submatrix_add, Matrix.submatrix_smul,
+    Matrix.submatrix_one_equiv, Matrix.submatrix_map]
+
 /-- An upper transvection is the numbered positive simple-root point. -/
 @[simp]
 theorem rankOneMatrix_upper_transvection (t : R) :
@@ -99,13 +119,9 @@ theorem rankOneMatrix_upper_transvection (t : R) :
   rw [Matrix.SpecialLinearGroup.transpose_coe_transvection,
     E6Minuscule.weightTable.sl2BlockMatrix_upper_transvection,
     E6Minuscule.weightTable.sl2BlockMatrix_lower_transvection,
-    E6Minuscule.weightTable_raisingMatrix, E6Minuscule.weightTable_loweringMatrix]
-  ext a b
-  obtain ⟨a, rfl⟩ := matrixIndexEquiv.surjective a
-  obtain ⟨b, rfl⟩ := matrixIndexEquiv.surjective b
-  cases a <;> cases b <;>
-    simp [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.fromBlocks,
-      Matrix.one_apply, Matrix.smul_apply, smul_eq_mul, neg_ite]
+    E6Minuscule.weightTable_raisingMatrix, E6Minuscule.weightTable_loweringMatrix,
+    raisingMatrix_eq_fromBlocks]
+  exact reindex_root_blocks R _ _ t
 
 /-- A lower transvection is the numbered negative simple-root point. -/
 @[simp]
@@ -119,13 +135,9 @@ theorem rankOneMatrix_lower_transvection (t : R) :
   rw [Matrix.SpecialLinearGroup.transpose_coe_transvection,
     E6Minuscule.weightTable.sl2BlockMatrix_lower_transvection,
     E6Minuscule.weightTable.sl2BlockMatrix_upper_transvection,
-    E6Minuscule.weightTable_raisingMatrix, E6Minuscule.weightTable_loweringMatrix]
-  ext a b
-  obtain ⟨a, rfl⟩ := matrixIndexEquiv.surjective a
-  obtain ⟨b, rfl⟩ := matrixIndexEquiv.surjective b
-  cases a <;> cases b <;>
-    simp [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.fromBlocks,
-      Matrix.one_apply, Matrix.smul_apply, smul_eq_mul, neg_ite, neg_eq_iff_eq_neg]
+    E6Minuscule.weightTable_raisingMatrix, E6Minuscule.weightTable_loweringMatrix,
+    loweringMatrix_eq_fromBlocks]
+  exact reindex_root_blocks R _ _ t
 
 /-- The diagonal of the rank-one map is the numbered simple-coroot value. -/
 @[simp]
@@ -138,24 +150,18 @@ theorem rankOneMatrix_diag2nUnit (u : Rˣ) :
     UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe,
     Matrix.SpecialLinearGroup.diag2nUnit_inv]
   simp only [Matrix.SpecialLinearGroup.diag2nUnit_coe, Matrix.diagonal_transpose, inv_inv]
-  rw [E6Minuscule.weightTable.sl2BlockMatrix_diagonal,
-    E6Minuscule.weightTable.sl2BlockMatrix_diagonal]
-  have hweights (a : Fin 27) :
-      (if e6MinusculeWeight a i = 1 then (u : R)
-        else if e6MinusculeWeight a i = -1 then (↑u⁻¹ : R) else 1) =
-          ↑(u ^ e6MinusculeWeight a i) ∧
-      (if e6MinusculeWeight a i = 1 then (↑u⁻¹ : R)
-        else if e6MinusculeWeight a i = -1 then (u : R) else 1) =
-          ↑(u ^ (-e6MinusculeWeight a i)) := by
-    rcases e6MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h
-    all_goals simp [h]
-  ext a b
+  rw [E6Minuscule.weightTable.sl2BlockMatrix_diagonal_unit]
+  have hdual := E6Minuscule.weightTable.sl2BlockMatrix_diagonal_unit i u⁻¹
+  simp only [inv_inv] at hdual
+  rw [hdual, Matrix.fromBlocks_diagonal, Matrix.reindex_apply,
+    Matrix.submatrix_diagonal_equiv]
+  congr 1
+  funext a
   obtain ⟨a, rfl⟩ := matrixIndexEquiv.surjective a
-  obtain ⟨b, rfl⟩ := matrixIndexEquiv.surjective b
-  cases a <;> cases b <;>
-    simp [Matrix.reindex_apply, Matrix.submatrix_apply, Matrix.fromBlocks,
-      Matrix.diagonal_apply, torusCharacter_mulSingle, matrixWeight_apply,
-      (hweights _).1, (hweights _).2]
+  -- The doubled weight is the minuscule weight on the first block and its negative
+  -- on the dual block; inversion of the unit realizes the latter character.
+  cases a <;>
+    simp [matrixWeight_apply, torusCharacter_mulSingle, E6Minuscule.weightTable_weight]
 
 end
 
@@ -168,16 +174,13 @@ private theorem rankOneMatrix_mem_of_root_mem {H : Subgroup (GL (Fin 54) K)}
       GL (Fin 54) K) ∈ H)
     (hneg : ∀ t : K, (rootSubgroupPoints (.inr i) K (Multiplicative.ofAdd t) :
       GL (Fin 54) K) ∈ H) (g : SL(2, K)) : rankOneMatrix K i g ∈ H := by
-  induction g using Matrix.SL2.transvection_induction with
-  | htransvec a b hab t =>
-    fin_cases a <;> fin_cases b
-    · exact (hab rfl).elim
-    · rw [rankOneMatrix_upper_transvection]
-      exact hpos t
-    · rw [rankOneMatrix_lower_transvection]
-      exact hneg t
-    · exact (hab rfl).elim
-  | hmul g h hg hh => simpa only [map_mul] using H.mul_mem hg hh
+  refine (rankOneMatrix K i).sl2_range_le_of_transvection_mem ?_ ?_ ⟨g, rfl⟩
+  · intro t
+    rw [rankOneMatrix_upper_transvection]
+    exact hpos t
+  · intro t
+    rw [rankOneMatrix_lower_transvection]
+    exact hneg t
 
 /-- The numbered rank-one homomorphism into the doubled minuscule carrier over a field. -/
 def rankOnePoints : SL(2, K) →* points K :=
@@ -227,23 +230,12 @@ theorem rankOnePoints_diag2nUnit (u : Kˣ) :
 theorem range_rankOnePoints : (rankOnePoints K i).range =
     Subgroup.closure (Set.range (rootSubgroupPoints (.inl i) K) ∪
       Set.range (rootSubgroupPoints (.inr i) K)) := by
-  apply le_antisymm
-  · rintro _ ⟨g, rfl⟩
-    rw [← Subgroup.mem_map_iff_mem (points K).subtype_injective, Subgroup.subtype_apply,
-      coe_rankOnePoints]
-    apply rankOneMatrix_mem_of_root_mem K i
-    · intro t
-      exact Subgroup.mem_map.mpr ⟨_, Subgroup.subset_closure
-        (Set.mem_union_left _ (Set.mem_range_self (Multiplicative.ofAdd t))), rfl⟩
-    · intro t
-      exact Subgroup.mem_map.mpr ⟨_, Subgroup.subset_closure
-        (Set.mem_union_right _ (Set.mem_range_self (Multiplicative.ofAdd t))), rfl⟩
-  · rw [Subgroup.closure_le]
-    rintro _ (⟨t, rfl⟩ | ⟨t, rfl⟩)
-    · exact ⟨Matrix.SpecialLinearGroup.transvection
-        (by decide : (0 : Fin 2) ≠ 1) (Multiplicative.toAdd t), by simp⟩
-    · exact ⟨Matrix.SpecialLinearGroup.transvection
-        (by decide : (1 : Fin 2) ≠ 0) (Multiplicative.toAdd t), by simp⟩
+  rw [(rankOnePoints K i).sl2_range_eq_closure]
+  congr 2 <;>
+    simpa only [Function.comp_def, rankOnePoints_upper_transvection,
+      rankOnePoints_lower_transvection] using
+      (Multiplicative.ofAdd : K ≃ Multiplicative K).surjective.range_comp
+        (rootSubgroupPoints _ K)
 
 end
 

@@ -116,20 +116,21 @@ theorem orientation_suspensionForm (hN : σ.IsNondegenerate) (hm : finrank ℝ E
     ((isNondegenerate_suspensionForm_iff (hσ := hσ)).2 hN).orientation (k := 1 + (1 + m))
         (by rw [finrank_prod, finrank_prod, finrank_self, hm]) =
       (AddCircle.orientation 1).prod (orientation φ (hN.orientation hm)
-        (hN.isOrientationPreservingAt_orientation hm hN hm φ hσ)) := by
+        (hN.isOrientationPreservingAt_orientation hm hN hm φ.contMDiff hσ)) := by
   refine Manifold.Orientation.ext fun z ↦ ?_
   obtain ⟨θ, y⟩ := z
   obtain ⟨⟨t, x⟩, rfl⟩ : ∃ p : ℝ × M, mk φ p.1 p.2 = y := uncurry_mk_surjective φ y
   obtain ⟨D, hD, hDo⟩ := (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).mp
     (isOrientationPreservingAt_uncurry_mk φ (hN.orientation hm)
-      (hN.isOrientationPreservingAt_orientation hm hN hm φ hσ) (t, x))
+      (hN.isOrientationPreservingAt_orientation hm hN hm φ.contMDiff hσ) (t, x))
   have hL := isSymplectomorphism_prodCongr_mfderiv_mk (hσ := hσ) hN θ t x D hD
   -- The tangent spaces of `M` are its model space `E`, and `uncurry (mk φ) (t, x)` is `[t, x]`.
   have hm' : finrank ℝ (TangentSpace I x) = m := hm
   have hDo' : Orientation.map (Fin (1 + m)) D.toLinearEquiv
       ((Manifold.Orientation.real.prod (hN.orientation hm)).orientationAt (t, x)) =
         (orientation φ (hN.orientation hm)
-          (hN.isOrientationPreservingAt_orientation hm hN hm φ hσ)).orientationAt (mk φ t x) :=
+          (hN.isOrientationPreservingAt_orientation hm hN hm φ.contMDiff hσ)).orientationAt
+            (mk φ t x) :=
     hDo
   rw [SmoothTwoForm.IsNondegenerate.orientationAt_orientation,
     ← hL.map_orientation (by rw [finrank_prod, finrank_prod, finrank_self, hm']),

@@ -66,9 +66,9 @@ at least `1/2` from its mean over `B`, the localized Poincaré–Wirtinger inequ
 `μ(t ∩ B) ^ (1 - 1/n) ≤ 2 ^ (n + 1) ω ^ (-1/n) P(s; Ω)`. -/
 private theorem measure_inter_ball_rpow_le_perimeter (hn : 2 ≤ finrank ℝ E) {s t : Set E} {c : E}
     {r : ℝ} (hr : 0 < r) (hs : NullMeasurableSet s (μ.restrict (ball c r))) (hΩ : ball c r ⊆ Ω)
-    (ht : NullMeasurableSet t (μ.restrict (ball c r))) {b : ℝ}
+    {b : ℝ}
     (hb : 1 / 2 ≤ |b - ⨍ y in ball c r, s.indicator 1 y ∂μ|)
-    (htb : ∀ x ∈ t, s.indicator 1 x = b) :
+    (htb : ∀ x ∈ t ∩ ball c r, s.indicator 1 x = b) :
     μ (t ∩ ball c r) ^ (1 - (finrank ℝ E : ℝ)⁻¹) ≤
       ENNReal.ofReal (2 ^ (finrank ℝ E + 1) / μ.real (ball 0 1) ^ (finrank ℝ E : ℝ)⁻¹) *
         perimeter μ Ω s := by
@@ -83,8 +83,11 @@ private theorem measure_inter_ball_rpow_le_perimeter (hn : 2 ≤ finrank ℝ E) 
       ← one_div]
     exact ENNReal.ofReal_le_ofReal hb
   have hlow : 2⁻¹ * μ (t ∩ B) ≤ ∫⁻ x in t ∩ B, ‖u x - a‖ₑ ∂μ := by
-    rw [← Measure.restrict_restrict₀ ht, ← Measure.restrict_apply₀ ht, ← setLIntegral_const]
-    exact lintegral_mono_ae ((ae_restrict_mem₀ ht).mono fun x hx => by rw [htb x hx]; exact hb')
+    rw [← setLIntegral_const]
+    refine setLIntegral_mono_ae
+      ((hu.aestronglyMeasurable.sub aestronglyMeasurable_const).enorm.mono_measure
+        (Measure.restrict_mono inter_subset_right le_rfl)) ?_
+    exact Filter.Eventually.of_forall fun x hx => by rw [htb x hx]; exact hb'
   have hup := setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_totalVariationOn_of_convex
     (Ω := ⟨B, isOpen_ball⟩) (convex_ball c r) isBounded_ball hu.locallyIntegrableOn subset_rfl
     (measure_ball_pos μ c hr).ne' (inter_subset_right : t ∩ B ⊆ B)
@@ -118,13 +121,13 @@ theorem min_measure_inter_measure_sdiff_rpow_le_perimeter (hn : 2 ≤ finrank �
   set a := ⨍ y in ball c r, s.indicator (1 : E → ℝ) y ∂μ
   rcases le_or_gt (1 / 2) |1 - a| with h1 | h1
   · exact (ENNReal.rpow_le_rpow (min_le_left _ _) hexp.le).trans
-      (measure_inter_ball_rpow_le_perimeter hn hr hs hΩ hs h1 fun x hx => by simp [hx])
+      (measure_inter_ball_rpow_le_perimeter hn hr hs hΩ h1 fun x hx => by simp [hx.1])
   · have h0 : 1 / 2 ≤ |0 - a| := by
       rw [zero_sub, abs_neg]
       exact le_abs.2 (Or.inl (by linarith [(abs_lt.1 h1).2]))
     refine (ENNReal.rpow_le_rpow (min_le_right _ _) hexp.le).trans ?_
     rw [sdiff_eq_compl_inter]
-    exact measure_inter_ball_rpow_le_perimeter hn hr hs hΩ hs.compl h0 fun x hx =>
-      indicator_of_notMem hx _
+    exact measure_inter_ball_rpow_le_perimeter hn hr hs hΩ h0 fun x hx =>
+      indicator_of_notMem hx.1 _
 
 end TauCeti

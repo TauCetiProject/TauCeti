@@ -52,7 +52,7 @@ identities of weak derivatives. For a general measure these are adjoint identiti
 * `TestFunction.integral_divergenceCLM_eq_zero`: the divergence of a test vector field has
   integral zero against an additive Haar measure.
 * `TauCeti.dist_integral_trace_fderiv_mul_le`: the pairing `∫ div φ * u` of `C¹` vector fields
-  supported in a fixed compact set `K` with a function integrable on `K` depends continuously on
+  supported in a fixed set `K` with a function integrable on `K` depends continuously on
   `Dφ` in the uniform norm.
 
 ## References
@@ -100,7 +100,7 @@ theorem HasWeakFDerivOn.integral_inner_gradient_eq_neg_integral_smul_trace
         Finset.sum_congr rfl fun i _ => (hdir i).integral_lineDeriv_smul_eq_neg_integral_smul φ
     _ = -∫ x, (φ : E → ℝ) x • LinearMap.trace ℝ E (G x) ∂μ := by
         rw [Finset.sum_neg_distrib, ← integral_finsetSum _ fun i _ =>
-          integrable_smul_of_locallyIntegrableOn (hdir i).locallyIntegrableOn_deriv φ]
+          φ.integrable_smul (hdir i).locallyIntegrableOn_deriv]
         congr 1
         refine integral_congr_ae (ae_of_all _ fun x => ?_)
         simp [LinearMap.trace_eq_sum_inner _ b, Finset.mul_sum]
@@ -144,8 +144,7 @@ theorem HasWeakFDerivOn.integral_divergenceCLM_smul_eq_neg_integral [OpensMeasur
         (h.hasWeakLineDerivOn (b i)).integral_lineDeriv_smul_eq_neg_integral_smul (ψ i)
     _ = -∫ x, U x (φ x) ∂μ := by
         rw [Finset.sum_neg_distrib, ← integral_finsetSum _ fun i _ =>
-          integrable_smul_of_locallyIntegrableOn
-            (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv (ψ i)]
+          TestFunction.integrable_smul (ψ i) (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv]
         congr 1
         refine integral_congr_ae (ae_of_all _ fun x => ?_)
         simp only [hψ]
@@ -159,11 +158,11 @@ theorem _root_.TestFunction.integral_divergenceCLM_eq_zero [BorelSpace E] [μ.Is
     simpa using hasWeakLineDerivOn_const (μ := μ) (Ω := Ω) (v := v) (1 : ℝ)
   simpa using h.integral_divergenceCLM_smul_eq_neg_integral φ
 
-/-- Vector fields supported in a fixed compact set `K` whose derivatives are uniformly close have
+/-- Vector fields supported in a fixed set `K` whose derivatives are uniformly close have
 close divergence pairings `∫ div φ * u dμ` with a function `u` integrable on `K`. The constant is
-the norm of the trace times `∫_K |u| dμ`. -/
+the norm of the trace times `∫_K |u| dμ`. (If the two pairings are not integrable, both are `0`.) -/
 theorem dist_integral_trace_fderiv_mul_le [OpensMeasurableSpace E] {u : E → ℝ} {K : Set E}
-    (hK : IsCompact K) (hu : IntegrableOn u K μ) {f g : E → E} (hf : ContDiff ℝ 1 f)
+    (hu : IntegrableOn u K μ) {f g : E → E} (hf : ContDiff ℝ 1 f)
     (hg : ContDiff ℝ 1 g) (hfK : tsupport f ⊆ K) (hgK : tsupport g ⊆ K) {ε : ℝ}
     (hε : ∀ x, dist (fderiv ℝ f x) (fderiv ℝ g x) ≤ ε) :
     dist (∫ x, LinearMap.trace ℝ E (fderiv ℝ f x : E →ₗ[ℝ] E) * u x ∂μ)
@@ -178,18 +177,41 @@ theorem dist_integral_trace_fderiv_mul_le [OpensMeasurableSpace E] {u : E → �
       LinearMap.trace ℝ E (fderiv ℝ h x : E →ₗ[ℝ] E) * u x = 0 := by
     simp [image_eq_zero_of_notMem_tsupport fun h' => hx (hhK (tsupport_fderiv_subset ℝ h'))]
   rw [← setIntegral_eq_integral_of_forall_compl_eq_zero (hvan hfK),
-    ← setIntegral_eq_integral_of_forall_compl_eq_zero (hvan hgK), dist_eq_norm,
-    ← integral_sub (hu.continuousOn_mul (hdiv hf).continuousOn hK)
-      (hu.continuousOn_mul (hdiv hg).continuousOn hK), ← integral_const_mul]
-  refine norm_integral_le_of_norm_le (hu.norm.const_mul _)
-    (Filter.Eventually.of_forall fun x => ?_)
-  have htr : LinearMap.trace ℝ E (fderiv ℝ f x : E →ₗ[ℝ] E) -
-      LinearMap.trace ℝ E (fderiv ℝ g x : E →ₗ[ℝ] E) =
-        traceCLM ℝ E (fderiv ℝ f x - fderiv ℝ g x) := by
-    simp [map_sub]
-  rw [← sub_mul, htr, norm_mul]
-  gcongr
-  exact ((traceCLM ℝ E).le_opNorm _).trans
-    (mul_le_mul_of_nonneg_left (by simpa [dist_eq_norm] using hε x) (norm_nonneg _))
+    ← setIntegral_eq_integral_of_forall_compl_eq_zero (hvan hgK), dist_eq_norm]
+  -- The difference of the two integrands is dominated by a multiple of `‖u‖`.
+  have hbound : ∀ x, ‖(LinearMap.trace ℝ E (fderiv ℝ f x : E →ₗ[ℝ] E) -
+      LinearMap.trace ℝ E (fderiv ℝ g x : E →ₗ[ℝ] E)) * u x‖ ≤ ‖traceCLM ℝ E‖ * ε * ‖u x‖ := by
+    intro x
+    have htr : LinearMap.trace ℝ E (fderiv ℝ f x : E →ₗ[ℝ] E) -
+        LinearMap.trace ℝ E (fderiv ℝ g x : E →ₗ[ℝ] E) =
+          traceCLM ℝ E (fderiv ℝ f x - fderiv ℝ g x) := by
+      simp [map_sub]
+    rw [htr, norm_mul]
+    gcongr
+    exact ((traceCLM ℝ E).le_opNorm _).trans
+      (mul_le_mul_of_nonneg_left (by simpa [dist_eq_norm] using hε x) (norm_nonneg _))
+  have hH : IntegrableOn (fun x => (LinearMap.trace ℝ E (fderiv ℝ f x : E →ₗ[ℝ] E) -
+      LinearMap.trace ℝ E (fderiv ℝ g x : E →ₗ[ℝ] E)) * u x) K μ :=
+    Integrable.mono' (hu.norm.const_mul _)
+      (((hdiv hf).sub (hdiv hg)).aestronglyMeasurable.mul hu.aestronglyMeasurable)
+      (Filter.Eventually.of_forall hbound)
+  by_cases hF : IntegrableOn (fun x => LinearMap.trace ℝ E (fderiv ℝ f x : E →ₗ[ℝ] E) * u x) K μ
+  · have hG : IntegrableOn (fun x => LinearMap.trace ℝ E (fderiv ℝ g x : E →ₗ[ℝ] E) * u x) K μ := by
+      convert hF.sub hH using 2 with x
+      simp only [Pi.sub_apply]
+      ring
+    rw [← integral_sub hF hG, ← integral_const_mul]
+    refine norm_integral_le_of_norm_le (hu.norm.const_mul _)
+      (Filter.Eventually.of_forall fun x => ?_)
+    rw [← sub_mul]
+    exact hbound x
+  · have hG : ¬ IntegrableOn
+        (fun x => LinearMap.trace ℝ E (fderiv ℝ g x : E →ₗ[ℝ] E) * u x) K μ := fun hG => hF (by
+      convert hG.add hH using 2 with x
+      simp only [Pi.add_apply]
+      ring)
+    rw [integral_undef hF, integral_undef hG, sub_zero, norm_zero]
+    have hε0 : 0 ≤ ε := (dist_nonneg).trans (hε 0)
+    positivity
 
 end TauCeti

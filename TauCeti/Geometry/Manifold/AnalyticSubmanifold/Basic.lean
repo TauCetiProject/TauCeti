@@ -76,6 +76,21 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
   {n n' d : ℕ} {s t u : Set M}
 
+/-! ### Analytic charts as `C^k` maps -/
+
+/-- An analytic chart is `C^k` on its source as a map between model vector spaces. -/
+theorem IsAnalyticChart.contMDiffOn {S : Set (Fin n → 𝕜)} {k : WithTop ℕ∞}
+    {φ : OpenPartialHomeomorph (Fin n → 𝕜) (Fin n → 𝕜)} (h : IsAnalyticChart d S φ) :
+    ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜) k φ φ.source :=
+  (h.analyticOnNhd.contDiffOn φ.open_source.uniqueDiffOn).contMDiffOn
+
+/-- The inverse of an analytic chart is `C^k` on its target as a map between model vector
+spaces. -/
+theorem IsAnalyticChart.contMDiffOn_symm {S : Set (Fin n → 𝕜)} {k : WithTop ℕ∞}
+    {φ : OpenPartialHomeomorph (Fin n → 𝕜) (Fin n → 𝕜)} (h : IsAnalyticChart d S φ) :
+    ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜) k φ.symm φ.target :=
+  (h.analyticOnNhd_symm.contDiffOn φ.open_target.uniqueDiffOn).contMDiffOn
+
 /-! ### Definition and coordinate-equivalence independence -/
 
 /-- A subset `s` of a charted space `M` is a `d`-dimensional *analytic submanifold* with respect to

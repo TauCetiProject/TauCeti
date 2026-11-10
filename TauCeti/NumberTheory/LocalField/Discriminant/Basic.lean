@@ -257,11 +257,12 @@ section AlgEquiv
 
 variable (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
   [IsNonarchimedeanLocalField M] [Algebra K M] [ValuativeExtension K M]
-  [Module.Finite K L] [Module.Finite K M]
+  [Module.Finite K L]
 
 /-- The discriminant ideal is unchanged by an equivalence of extensions over the base field. -/
 theorem discriminantIdeal_eq_of_algEquiv (e : L ≃ₐ[K] M) :
     discriminantIdeal K L = discriminantIdeal K M := by
+  have : Module.Finite K M := Module.Finite.equiv e.toLinearEquiv
   rw [discriminantIdeal_def, discriminantIdeal_def,
     ← differentIdeal_map_integerRingEquiv K L M e, Ideal.relNorm_map_algEquiv]
 
@@ -271,6 +272,7 @@ theorem discriminantExponent_eq_of_algEquiv (e : L ≃ₐ[K] M) :
       (let _ : Algebra.IsSeparable K M := AlgEquiv.Algebra.isSeparable e
        discriminantExponent K M) := by
   have : Algebra.IsSeparable K M := AlgEquiv.Algebra.isSeparable e
+  have : Module.Finite K M := Module.Finite.equiv e.toLinearEquiv
   rw [discriminantExponent_def, discriminantExponent_def,
     discriminantIdeal_eq_of_algEquiv K L M e]
 

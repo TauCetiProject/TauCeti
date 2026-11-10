@@ -13,6 +13,8 @@ public import Mathlib.AlgebraicTopology.SingularHomology.Basic
 
 This module relates the singular-chain functor to the chain map induced by a map of singular
 simplicial sets, and the singular homology functor to the simplicial homology map it induces.
+It records restriction along subspace inclusions (`TopCat.chainComplexMap_f_comp_subtypeVal`)
+without requiring the small-chain subdivision theory.
 It also records the degree-zero component of Mathlib's identification of the singular chains of
 a totally disconnected space with an alternating constant complex
 (`TauCeti.ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_hom_f_zero`).
@@ -79,3 +81,21 @@ lemma ιChainComplex_singularChainComplexFunctorIsoOfTotallyDisconnectedSpace_ho
   exact congrArg _ (congrArg (TopCat.toSSetObjEquiv X _ σ) (Subsingleton.elim _ _))
 
 end TauCeti
+
+namespace TopCat
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [HasCoproducts.{w} C]
+  {R M : C} {X : TopCat.{w}}
+
+/-- Pulling back singular cochains along a map of subspaces of `X` commuting with the inclusions,
+and then along the inclusion of the target, is pulling back along the inclusion of the source. -/
+lemma chainComplexMap_f_comp_subtypeVal {S' T' : Set X} (g : of ↥S' ⟶ of ↥T')
+    (hg : ∀ x, (g x : X) = x) (n : ℕ) (z : ((toSSet.obj X).chainComplex R).X n ⟶ M) :
+    (SSet.chainComplexMap (toSSet.map g) R).f n ≫
+        (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal T'))) R).f n ≫ z =
+      (SSet.chainComplexMap (toSSet.map (ofHom (ContinuousMap.subtypeVal S'))) R).f n ≫ z := by
+  rw [← Category.assoc, ← HomologicalComplex.comp_f, ← Functor.map_comp, ← Functor.map_comp]
+  congr 4
+  exact TopCat.ext hg
+
+end TopCat

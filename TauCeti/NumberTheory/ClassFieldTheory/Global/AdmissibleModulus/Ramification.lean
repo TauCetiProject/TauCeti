@@ -282,7 +282,7 @@ modulus admissible for `L/K`, in particular the conductor `abelianConductor K L`
 theorem ramifiedSupport_subset_support (h : IsAdmissibleModulus K L 𝔪) :
     TauCeti.NumberField.ramifiedSupport K L ⊆ 𝔪.support := fun v hv ↦ by
   rw [TauCeti.NumberField.mem_ramifiedSupport,
-    dvd_relDiscr_iff_exists_not_isUnramifiedAt v.ne_bot] at hv
+    dvd_relDiscr_iff_exists_not_isUnramifiedAt] at hv
   obtain ⟨⟨Q, _, _⟩, hQ⟩ := hv
   exact h.mem_support_of_ramified v Q hQ
 

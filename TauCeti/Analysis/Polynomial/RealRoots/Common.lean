@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Polynomial.CommonRoots
 public import TauCeti.Analysis.Polynomial.RealRoots.Ordered
 
 import TauCeti.RingTheory.Polynomial.Roots
-import TauCeti.Topology.Algebra.Polynomial.RootMultiplicity
+import TauCeti.Topology.Algebra.Polynomial.Root.Multiplicity
 
 /-!
 # Common ordered real roots of a finite family of real polynomials

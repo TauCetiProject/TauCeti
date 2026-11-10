@@ -34,12 +34,15 @@ namespace TauCeti
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  [TopologicalSpace M] [ChartedSpace H M]
 
 namespace SmoothForm
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
-variable {form : SmoothForm I M F k}
+
+section OnceDifferentiable
+
+variable [IsManifold I 1 M] {form : SmoothForm I M F k}
 
 /-- A smooth form is closed when the generic manifold exterior derivative vanishes. -/
 def IsClosed (form : SmoothForm I M F k) : Prop := mextDeriv form.1 = 0
@@ -48,34 +51,6 @@ def IsClosed (form : SmoothForm I M F k) : Prop := mextDeriv form.1 = 0
 theorem isClosed_def (form : SmoothForm I M F k) :
     form.IsClosed ↔ mextDeriv form.1 = 0 :=
   Iff.rfl
-
-/-- Closedness is equivalent to vanishing of the exterior derivative of every chart expression
-within the model range, at every point of the chart target. -/
-theorem isClosed_iff_forall_extDerivWithin_inChartAt_eq_zero [IsManifold I 2 M]
-    (form : SmoothForm I M F k) :
-    form.IsClosed ↔ ∀ x₀ z, z ∈ (extChartAt I x₀).target →
-      extDerivWithin (RoughForm.inChartAt form.1 x₀) (Set.range I) z = 0 := by
-  have hform : IsSmoothForm I 1 form.1 := form.isSmoothForm.of_le (by norm_num)
-  constructor
-  · intro h x₀ z hz
-    rw [isClosed_def] at h
-    rw [← hform.inChartAt_mextDeriv_eq x₀ hz, h, RoughForm.inChartAt_zero]
-    simp
-  · intro h
-    rw [isClosed_def]
-    funext x
-    rw [mextDeriv_def]
-    exact h x (extChartAt I x x) (mem_extChartAt_target x)
-
-/-- For a closed smooth form on a `C²` manifold, the ordinary flat exterior derivative `extDeriv`
-of its coordinate expression in any preferred chart vanishes on the interior of the chart
-target. -/
-theorem IsClosed.extDeriv_inChartAt_eq_zero [IsManifold I 2 M]
-    (h : form.IsClosed) (x₀ : M) {z : E} (hz : z ∈ interior (extChartAt I x₀).target) :
-    extDeriv (RoughForm.inChartAt form.1 x₀) z = 0 := by
-  have hform : IsSmoothForm I 1 form.1 := form.isSmoothForm.of_le (by norm_num)
-  rw [isClosed_def] at h
-  rw [← hform.inChartAt_mextDeriv_eq_extDeriv x₀ hz, h, RoughForm.inChartAt_zero, Pi.zero_apply]
 
 /-- On a manifold of finite dimension at most `k`, every smooth `k`-form is closed, since there are
 no nonzero `(k + 1)`-forms. In particular, top-degree forms are closed. -/
@@ -88,16 +63,6 @@ theorem isClosed_iff_forall_mextDeriv_apply_eq_zero (form : SmoothForm I M F k) 
     form.IsClosed ↔ ∀ x, mextDeriv form.1 x = 0 := by
   rw [isClosed_def, funext_iff]
   simp only [Pi.zero_apply]
-
-/-- Closedness is the vanishing of the bundled exterior derivative. -/
-theorem isClosed_iff_mextDerivₗ_eq_zero [IsManifold I 2 M] (form : SmoothForm I M F k) :
-    form.IsClosed ↔ mextDerivₗ I k form = 0 := by
-  rw [isClosed_def, ← mextDerivₗ_apply I k form, ZeroMemClass.coe_eq_zero]
-
-/-- The exterior derivative of a smooth form is closed. -/
-theorem isClosed_mextDerivₗ [IsManifold I 2 M] (form : SmoothForm I M F k) :
-    (mextDerivₗ I k form).IsClosed := by
-  rw [isClosed_def, mextDerivₗ_apply, SmoothForm.mextDeriv_mextDeriv]
 
 /-- The zero smooth form is closed. -/
 theorem isClosed_zero : (0 : SmoothForm I M F k).IsClosed := by
@@ -164,11 +129,57 @@ theorem isClosed_realLineCoordForm : realLineCoordForm.IsClosed := by
   rw [h]
   exact isClosed_const _
 
+end OnceDifferentiable
+
+section TwiceDifferentiable
+
+/-! The statements below assume a `C²` manifold; the `C¹` structure that `SmoothForm` and
+`IsClosed` ask for is derived from it. -/
+
+variable [IsManifold I 2 M] {form : SmoothForm I M F k}
+
+/-- Closedness is equivalent to vanishing of the exterior derivative of every chart expression
+within the model range, at every point of the chart target. -/
+theorem isClosed_iff_forall_extDerivWithin_inChartAt_eq_zero
+    (form : SmoothForm I M F k) :
+    form.IsClosed ↔ ∀ x₀ z, z ∈ (extChartAt I x₀).target →
+      extDerivWithin (RoughForm.inChartAt form.1 x₀) (Set.range I) z = 0 := by
+  have hform : IsSmoothForm I 1 form.1 := form.isSmoothForm.of_le (by norm_num)
+  constructor
+  · intro h x₀ z hz
+    rw [isClosed_def] at h
+    rw [← hform.inChartAt_mextDeriv_eq x₀ hz, h, RoughForm.inChartAt_zero]
+    simp
+  · intro h
+    rw [isClosed_def]
+    funext x
+    rw [mextDeriv_def]
+    exact h x (extChartAt I x x) (mem_extChartAt_target x)
+
+/-- For a closed smooth form on a `C²` manifold, the ordinary flat exterior derivative `extDeriv`
+of its coordinate expression in any preferred chart vanishes on the interior of the chart
+target. -/
+theorem IsClosed.extDeriv_inChartAt_eq_zero
+    (h : form.IsClosed) (x₀ : M) {z : E} (hz : z ∈ interior (extChartAt I x₀).target) :
+    extDeriv (RoughForm.inChartAt form.1 x₀) z = 0 := by
+  have hform : IsSmoothForm I 1 form.1 := form.isSmoothForm.of_le (by norm_num)
+  rw [isClosed_def] at h
+  rw [← hform.inChartAt_mextDeriv_eq_extDeriv x₀ hz, h, RoughForm.inChartAt_zero, Pi.zero_apply]
+
+/-- Closedness is the vanishing of the bundled exterior derivative. -/
+theorem isClosed_iff_mextDerivₗ_eq_zero (form : SmoothForm I M F k) :
+    form.IsClosed ↔ mextDerivₗ I k form = 0 := by
+  rw [isClosed_def, ← mextDerivₗ_apply I k form, ZeroMemClass.coe_eq_zero]
+
+/-- The exterior derivative of a smooth form is closed. -/
+theorem isClosed_mextDerivₗ (form : SmoothForm I M F k) :
+    (mextDerivₗ I k form).IsClosed := by
+  rw [isClosed_def, mextDerivₗ_apply, SmoothForm.mextDeriv_mextDeriv]
+
 section Pullback
 
 variable {E' H' M' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
-  {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I 2 M]
-  [IsManifold I' 2 M']
+  {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M'] [ChartedSpace H' M'] [IsManifold I' 2 M']
 
 /-- The smooth pullback of a closed form is closed. -/
 theorem IsClosed.mpullback {φ : SmoothForm I' M' F k} (hφ : φ.IsClosed) (f : M → M')
@@ -187,6 +198,8 @@ theorem isClosed_mpullback_iff_of_surjective {φ : SmoothForm I' M' F k} {f : M 
   exact (TauCeti.mpullback_injective_of_surjective hsurj hdf).eq_iff' (TauCeti.mpullback_zero f)
 
 end Pullback
+
+end TwiceDifferentiable
 
 end SmoothForm
 

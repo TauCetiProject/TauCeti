@@ -35,6 +35,8 @@ symbol of `P` evaluated at `df`. This file develops the algebraic theory:
 * `Derivation.mem_differentialOperators_one` and `differentialOperatorsOneEquiv`: an operator
   `D : A →ₗ[R] M` has order at most one exactly when `D = δ + (· • m)` for a derivation `δ` and
   `m : M`, and this splitting is unique, with `m = D 1`.
+* `AlgEquiv.conjDifferentialOperators`: conjugation `D ↦ e ∘ D ∘ e⁻¹` by an algebra isomorphism
+  `e : A ≃ B` preserves the order of operators on the algebra itself.
 * `apply_mem_smul_top_of_mem_pow_smul_top`: an operator of order at most `m` sends
   `I ^ (m + 1) • M` into `I • N` for every ideal `I`, so the value of `D x` modulo `I` depends
   only on `x` modulo `I ^ (m + 1)`. For the vanishing ideal of a point this is the statement
@@ -138,6 +140,34 @@ theorem smulCommutator_mul (a b : A) (D : M →ₗ[R] N) :
     smul_smul, mul_comm b a]
   abel
 
+theorem smulCommutator_smul (r : R) (a : A) :
+    smulCommutator R (r • a) = (r • smulCommutator R a : Module.End R (M →ₗ[R] N)) := by
+  ext D x
+  simp [smul_assoc, smul_sub]
+
+/-- The commutator with `a` commutes with multiplying the values of an operator by `g : A`. -/
+theorem smulCommutator_apply_smul (a g : A) (D : M →ₗ[R] N) :
+    smulCommutator R a (g • D) = g • smulCommutator R a D := by
+  ext x
+  simp [smul_sub, smul_comm g a]
+
+/-- An iterated commutator commutes with each further commutator. -/
+theorem commute_smulCommutator_list_prod {m : ℕ} (b : A) (a : Fin m → A) :
+    Commute (smulCommutator R b : Module.End R (M →ₗ[R] N))
+      (List.ofFn fun i ↦ smulCommutator R (a i)).prod :=
+  Commute.list_prod_right _ _ fun _ hc ↦ by
+    obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hc
+    exact commute_smulCommutator _ _
+
+/-- Iterated commutators commute with multiplying the values of an operator by `g : A`. -/
+theorem list_prod_smulCommutator_apply_smul {m : ℕ} (a : Fin m → A) (g : A) (D : M →ₗ[R] N) :
+    (List.ofFn fun i ↦ smulCommutator R (a i)).prod (g • D) =
+      g • (List.ofFn fun i ↦ smulCommutator R (a i)).prod D := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    simp only [List.ofFn_succ, List.prod_cons, mul_apply_eq_comp, ih, smulCommutator_apply_smul]
+
 /-- The Leibniz rule for commutators of a composition:
 `[P ∘ Q, a] = P ∘ [Q, a] + [P, a] ∘ Q`. -/
 theorem smulCommutator_comp (a : A) (P : N →ₗ[R] O) (Q : M →ₗ[R] N) :
@@ -219,6 +249,20 @@ theorem differentialOperators_le_succ (m : ℕ) :
 theorem differentialOperators_mono : Monotone (differentialOperators R A M N) :=
   monotone_nat_of_le_succ differentialOperators_le_succ
 
+/-- Multiplying the values of a differential operator by `g : A` preserves its order. -/
+theorem smul_mem_differentialOperators (g : A) {D : M →ₗ[R] N} {m : ℕ}
+    (hD : D ∈ differentialOperators R A M N m) : g • D ∈ differentialOperators R A M N m := by
+  induction m generalizing D with
+  | zero =>
+    rw [mem_differentialOperators_zero_iff_smulCommutator] at hD ⊢
+    intro a
+    rw [smulCommutator_apply_smul, hD, smul_zero]
+  | succ m ih =>
+    rw [mem_differentialOperators_succ_iff] at hD ⊢
+    intro a
+    rw [smulCommutator_apply_smul]
+    exact ih (hD a)
+
 /-- A differential operator has order at most `m` exactly when all its `(m + 1)`-fold iterated
 commutators with multiplication by elements of `A` vanish. -/
 theorem mem_differentialOperators_iff_forall_list_prod {D : M →ₗ[R] N} {m : ℕ} :
@@ -234,13 +278,9 @@ theorem mem_differentialOperators_iff_forall_list_prod {D : M →ₗ[R] N} {m : 
     refine forall_congr' fun c ↦ ?_
     rw [ih]
     refine forall_congr' fun v ↦ ?_
-    have hc : Commute (smulCommutator R c : Module.End R (M →ₗ[R] N))
-        (List.ofFn fun i ↦ smulCommutator R (v i)).prod :=
-      Commute.list_prod_right _ _ fun _ hb ↦ by
-        obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hb
-        exact commute_smulCommutator _ _
     conv_rhs => rw [List.ofFn_succ, List.prod_cons]
-    simp only [Fin.cons_zero, Fin.cons_succ, hc.eq, mul_apply_eq_comp]
+    simp only [Fin.cons_zero, Fin.cons_succ, (commute_smulCommutator_list_prod c v).eq,
+      mul_apply_eq_comp]
 
 theorem smulCommutator_pow_mem_differentialOperators {D : M →ₗ[R] N} {m j : ℕ}
     (hD : D ∈ differentialOperators R A M N (m + j)) (a : A) :
@@ -250,6 +290,17 @@ theorem smulCommutator_pow_mem_differentialOperators {D : M →ₗ[R] N} {m j : 
   | succ j ih =>
     rw [pow_succ, mul_apply_eq_comp]
     exact ih (smulCommutator_mem_differentialOperators hD a)
+
+/-- An `m`-fold iterated commutator lowers the order by `m`. -/
+theorem list_prod_smulCommutator_mem_differentialOperators {D : M →ₗ[R] N} {m k : ℕ}
+    (hD : D ∈ differentialOperators R A M N (k + m)) (a : Fin m → A) :
+    (List.ofFn fun i ↦ smulCommutator R (a i)).prod D ∈ differentialOperators R A M N k := by
+  induction m generalizing k D with
+  | zero => simpa using hD
+  | succ m ih =>
+    rw [List.ofFn_succ, List.prod_cons, (commute_smulCommutator_list_prod _ _).eq,
+      mul_apply_eq_comp]
+    exact ih (smulCommutator_mem_differentialOperators (by rwa [← add_assoc] at hD) _) _
 
 /-- The `j`-fold commutator of an operator of order at most `m` vanishes when `m < j`. -/
 theorem smulCommutator_pow_eq_zero {D : M →ₗ[R] N} {m j : ℕ}
@@ -415,6 +466,76 @@ theorem mem_differentialOperators_one_iff {D : A →ₗ[R] M} :
   exact this ▸ Subtype.prop _
 
 end FirstOrder
+
+/-! ### Transport along algebra isomorphisms -/
+
+section Conj
+
+variable {R A B : Type*} [CommSemiring R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
+  (e : A ≃ₐ[R] B)
+
+/-- Conjugating an operator `D` on `A` by an algebra isomorphism `e : A ≃ B` carries its commutator
+with `a` to the commutator of the conjugate with `e a`. -/
+theorem _root_.AlgEquiv.smulCommutator_conj (a : A) (D : A →ₗ[R] A) :
+    smulCommutator R (e a) (e.toLinearMap ∘ₗ D ∘ₗ e.symm.toLinearMap) =
+      e.toLinearMap ∘ₗ smulCommutator R a D ∘ₗ e.symm.toLinearMap := by
+  ext y
+  simp
+
+/-- Conjugation by an algebra isomorphism preserves the order of a differential operator. -/
+theorem _root_.AlgEquiv.conj_mem_differentialOperators {D : A →ₗ[R] A} {m : ℕ}
+    (hD : D ∈ differentialOperators R A A A m) :
+    e.toLinearMap ∘ₗ D ∘ₗ e.symm.toLinearMap ∈ differentialOperators R B B B m := by
+  induction m generalizing D with
+  | zero =>
+    rw [mem_differentialOperators_zero_iff_smulCommutator] at hD ⊢
+    intro b
+    rw [← e.apply_symm_apply b, e.smulCommutator_conj, hD]
+    simp
+  | succ m ih =>
+    rw [mem_differentialOperators_succ_iff] at hD ⊢
+    intro b
+    rw [← e.apply_symm_apply b, e.smulCommutator_conj]
+    exact ih (hD _)
+
+/-- Iterated commutators commute with conjugation by an algebra isomorphism `e`, the entries
+being transported by `e`. -/
+theorem _root_.AlgEquiv.list_prod_smulCommutator_conj {m : ℕ} (a : Fin m → A) (D : A →ₗ[R] A) :
+    (List.ofFn fun i ↦ smulCommutator R (e (a i))).prod
+        (e.toLinearMap ∘ₗ D ∘ₗ e.symm.toLinearMap) =
+      e.toLinearMap ∘ₗ (List.ofFn fun i ↦ smulCommutator R (a i)).prod D ∘ₗ e.symm.toLinearMap := by
+  induction m generalizing D with
+  | zero => rfl
+  | succ m ih =>
+    simp only [List.ofFn_succ, List.prod_cons, mul_apply_eq_comp]
+    rw [ih (fun i ↦ a i.succ), e.smulCommutator_conj]
+
+/-- Conjugation `D ↦ e ∘ D ∘ e⁻¹` by an algebra isomorphism `e : A ≃ B`, as a linear equivalence
+between the differential operators of order at most `m` on `A` and on `B`. -/
+def _root_.AlgEquiv.conjDifferentialOperators (m : ℕ) :
+    differentialOperators R A A A m ≃ₗ[R] differentialOperators R B B B m where
+  toFun D := ⟨e.toLinearMap ∘ₗ (D : A →ₗ[R] A) ∘ₗ e.symm.toLinearMap,
+    e.conj_mem_differentialOperators D.2⟩
+  invFun D := ⟨e.symm.toLinearMap ∘ₗ (D : B →ₗ[R] B) ∘ₗ e.toLinearMap,
+    by simpa using e.symm.conj_mem_differentialOperators D.2⟩
+  map_add' D₁ D₂ := by ext; simp
+  map_smul' c D := by ext; simp
+  left_inv D := by ext; simp
+  right_inv D := by ext; simp
+
+@[simp]
+theorem _root_.AlgEquiv.coe_conjDifferentialOperators {m : ℕ}
+    (D : differentialOperators R A A A m) :
+    (e.conjDifferentialOperators m D : B →ₗ[R] B) =
+      e.toLinearMap ∘ₗ (D : A →ₗ[R] A) ∘ₗ e.symm.toLinearMap :=
+  (rfl)
+
+@[simp]
+theorem _root_.AlgEquiv.conjDifferentialOperators_symm {m : ℕ} :
+    (e.conjDifferentialOperators m).symm = e.symm.conjDifferentialOperators m :=
+  (rfl)
+
+end Conj
 
 /-! ### The second derivative on polynomials -/
 

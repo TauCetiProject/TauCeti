@@ -107,7 +107,7 @@ theorem W1p.setLAverage_enorm_value_sub_setAverage_ball_le_mul_measure_rpow {x :
       ← ofReal_integral_norm_eq_lintegral_enorm hgint, ← ENNReal.ofReal_mul (by positivity)]
     refine ENNReal.ofReal_le_ofReal ?_
     simpa only [Real.norm_eq_abs] using
-      W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset hr hball u
+      W1p.setIntegral_abs_value_sub_setAverage_le_of_ball_subset hball u
   -- Hölder's inequality on the ball.
   have hH : eLpNorm (W1p.gradient u) 1 (mu.restrict B) ≤
       eLpNorm (W1p.gradient u) p (mu.restrict B) * mu B ^ (1 - p.toReal⁻¹) := by

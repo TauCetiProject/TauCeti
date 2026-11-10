@@ -9,6 +9,7 @@ public import TauCeti.NumberTheory.ModularForms.DedekindEta
 public import TauCeti.NumberTheory.ModularForms.SiegelFunction.Basic
 import Mathlib.LinearAlgebra.Matrix.FixedDetMatrices
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
+import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.ModularGroup
 
 /-!
 # The Siegel functions of level three
@@ -31,9 +32,11 @@ two functions under `S`, again with exact roots of unity:
 `g_{(0, 1/3)}` is multiplied by `e^{π i / 6}`, while `g_{(1/3, 0)}`, `g_{(1/3, 1/3)}` and
 `g_{(1/3, 2/3)}` are permuted cyclically up to roots of unity. All these roots of unity are twelfth
 roots of unity, so `SL₂(ℤ)` permutes the twelfth powers of the four functions: the monic quartic
-with these roots is invariant under `SL₂(ℤ)`. This is the input for computing the conjugates of the
-value of `g_{(0, 1/3)}¹²` at a CM point, products of which are estimated in
-`TauCeti.NumberTheory.ModularForms.SiegelFunction.ClassNumberOne`.
+with these roots is invariant under `SL₂(ℤ)`. The quartic is the input for computing the
+conjugates of the value of `g_{(0, 1/3)}¹²` at a CM point, products of which are estimated in
+`TauCeti.NumberTheory.ModularForms.SiegelFunction.ClassNumberOne`. In the product of the four
+functions the roots of unity cancel exactly, so the product itself is invariant under `SL₂(ℤ)`;
+this pins down the multiplier of the Siegel functions on `Γ(3)`.
 
 ## Main results
 
@@ -47,6 +50,8 @@ value of `g_{(0, 1/3)}¹²` at a CM point, products of which are estimated in
   transformation under `τ ↦ -1/τ`.
 * `TauCeti.ModularForm.prod_X_sub_C_siegelFunction_third_pow_twelve_smul`: the quartic whose roots
   are the twelfth powers of the four functions is invariant under `SL₂(ℤ)`.
+* `siegelFunction_zero_third_mul_third_zero_mul_third_third_mul_third_two_thirds_smul`:
+  the product of the four functions is invariant under `SL₂(ℤ)`.
 
 ## References
 
@@ -361,5 +366,50 @@ theorem prod_X_sub_C_siegelFunction_third_pow_twelve_smul (γ : SL(2, ℤ)) (τ 
     · exact prod_X_sub_C_siegelFunction_third_pow_twelve_T_smul τ
   | mul g h _ _ hg hh => rw [mul_smul, hg, hh]
   | inv g _ hg => rw [← hg, smul_inv_smul]
+
+/-! ### The product of the four functions -/
+
+/-- **`SL₂(ℤ)` fixes the product of the level-three Siegel functions**: for every `γ ∈ SL₂(ℤ)`,
+the product `g_{(0, 1/3)} g_{(1/3, 0)} g_{(1/3, 1/3)} g_{(1/3, 2/3)}` takes the same value at
+`γ τ` as at `τ`. The roots of unity in the transformations under `S` and `T` cancel exactly in
+the product, so no power needs to be taken. -/
+theorem siegelFunction_zero_third_mul_third_zero_mul_third_third_mul_third_two_thirds_smul
+    (γ : SL(2, ℤ)) (τ : ℍ) :
+    siegelFunction ![0, 1 / 3] ↑(γ • τ) * siegelFunction ![1 / 3, 0] ↑(γ • τ) *
+        siegelFunction ![1 / 3, 1 / 3] ↑(γ • τ) * siegelFunction ![1 / 3, 2 / 3] ↑(γ • τ) =
+      siegelFunction ![0, 1 / 3] τ * siegelFunction ![1 / 3, 0] τ *
+        siegelFunction ![1 / 3, 1 / 3] τ * siegelFunction ![1 / 3, 2 / 3] τ :=
+  TauCeti.Matrix.SpecialLinearGroup.apply_smul_eq_of_S_smul_of_T_smul
+    (f := fun τ : ℍ ↦ siegelFunction ![0, 1 / 3] τ * siegelFunction ![1 / 3, 0] τ *
+      siegelFunction ![1 / 3, 1 / 3] τ * siegelFunction ![1 / 3, 2 / 3] τ)
+    (fun τ ↦ by
+      -- Under `S` the factors pick up `-i`, `i`, `e^{π i / 6}` and `e^{-π i / 6}`.
+      have hS : ((ModularGroup.S • τ : ℍ) : ℂ) = -1 / τ := by
+        rw [modular_S_smul, coe_mk, neg_div, one_div, inv_neg]
+      have he : cexp (π * I / 6) * cexp (-(π * I / 6)) = 1 := by
+        rw [← Complex.exp_add, add_neg_cancel, Complex.exp_zero]
+      rw [hS, siegelFunction_zero_third_apply_neg_one_div τ.im_pos,
+        siegelFunction_third_zero_apply_neg_one_div τ.im_pos,
+        siegelFunction_third_third_apply_neg_one_div τ.im_pos,
+        siegelFunction_third_two_thirds_apply_neg_one_div τ.im_pos]
+      linear_combination (-I ^ 2 * (siegelFunction ![0, 1 / 3] τ * siegelFunction ![1 / 3, 0] τ *
+          siegelFunction ![1 / 3, 1 / 3] τ * siegelFunction ![1 / 3, 2 / 3] τ)) * he -
+        (siegelFunction ![0, 1 / 3] τ * siegelFunction ![1 / 3, 0] τ *
+          siegelFunction ![1 / 3, 1 / 3] τ * siegelFunction ![1 / 3, 2 / 3] τ) * I_sq)
+    (fun τ ↦ by
+      -- Under `T` the factors pick up `e^{π i / 6}` three times and `-i` once.
+      have hT : ((ModularGroup.T • τ : ℍ) : ℂ) = τ + 1 := by
+        rw [modular_T_smul, coe_vadd, add_comm, ofReal_one]
+      have he : cexp (π * I / 6) ^ 3 = I := by
+        rw [← Complex.exp_nat_mul,
+          show ((3 : ℕ) : ℂ) * (π * I / 6) = π / 2 * I by push_cast; ring, exp_pi_div_two_mul_I]
+      rw [hT, siegelFunction_zero_third_apply_add_one, siegelFunction_third_zero_apply_add_one,
+        siegelFunction_third_third_apply_add_one,
+        siegelFunction_third_two_thirds_apply_add_one τ.im_pos]
+      linear_combination (-I * (siegelFunction ![0, 1 / 3] τ * siegelFunction ![1 / 3, 0] τ *
+          siegelFunction ![1 / 3, 1 / 3] τ * siegelFunction ![1 / 3, 2 / 3] τ)) * he -
+        (siegelFunction ![0, 1 / 3] τ * siegelFunction ![1 / 3, 0] τ *
+          siegelFunction ![1 / 3, 1 / 3] τ * siegelFunction ![1 / 3, 2 / 3] τ) * I_sq)
+    γ τ
 
 end TauCeti.ModularForm

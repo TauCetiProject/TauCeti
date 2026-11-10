@@ -9,8 +9,8 @@ public import TauCeti.Algebra.Category.GradedModuleCat.Abelian
 public import TauCeti.Algebra.Category.GradedModuleCat.Shift
 public import TauCeti.Algebra.Homology.EulerCharacteristic.ExtEuler.Graded.Basic
 public import TauCeti.Algebra.Homology.Ext.Equivalence
+public import TauCeti.CategoryTheory.Adjunction.Additive
 public import TauCeti.CategoryTheory.Equivalence.Pow
-public import TauCeti.CategoryTheory.Preadditive.Equivalence
 
 /-!
 # The shift identities of the graded Ext-Euler characteristic
