@@ -77,17 +77,18 @@ theorem mvfderiv_det_apply {A : M → Matrix n n 𝕜} {x : M}
     rw [← h₁]
     exact h₂
   have hdet' : HasFDerivAt (fun B : n → n → 𝕜 ↦ (L B).det)
-      (((A x).det • (⟨Matrix.traceLinearMap n 𝕜 𝕜, continuous_id.matrix_trace⟩ :
-          Matrix n n 𝕜 →L[𝕜] 𝕜).comp (ContinuousLinearMap.mul 𝕜 (Matrix n n 𝕜) (A x)⁻¹)).comp L)
-        (A' x) :=
-    (Matrix.hasFDerivAt_det hdet).comp (A' x) L.hasFDerivAt
-  have hLA : (fun y ↦ (L (A' y)).det) = fun y ↦ (A y).det := funext fun y ↦ rfl
+      ((fderiv 𝕜 (Matrix.det : Matrix n n 𝕜 → 𝕜) (A x)).comp L) (A' x) :=
+    (Matrix.differentiable_det (A x)).hasFDerivAt.comp (A' x) L.hasFDerivAt
+  -- `L` is the entrywise identification `Matrix.of`, as a continuous linear map.
+  have hL (B : n → n → 𝕜) : L B = Matrix.of B := by
+    exact (congrFun (ContinuousLinearMap.coe_mk' _ _) B).trans (by simp)
+  have hLA : (fun y ↦ (L (A' y)).det) = fun y ↦ (A y).det := funext fun y ↦ by simp [hL, A']
   have hcomp := mvfderiv_comp_apply_of_differentiableAt hdet'.differentiableAt hA' v
   rw [Function.comp_def, hLA] at hcomp
   rw [hcomp, hdet'.fderiv]
   simp only [hentry]
   generalize mvfderiv I A' x v = B
-  rfl
+  rw [ContinuousLinearMap.comp_apply, hL, Matrix.fderiv_det_apply hdet]
 
 end TauCeti
 
