@@ -185,8 +185,7 @@ private theorem tangentToPointDerivation_surjective_model
   -- Read `D` on a finite coordinate system and use those values as the coordinates of the
   -- candidate tangent vector.
   let b := Module.finBasis ℝ E
-  let c (i : Fin (Module.finrank ℝ E)) : C^∞⟮modelWithCornersSelf ℝ E, E; ℝ⟯ :=
-    ⟨b.coord i, (b.coord i).toContinuousLinearMap.contDiff.contMDiff⟩
+  let c := b.smoothCoord
   -- `PointedContMDiffMap` is a type synonym for `C^∞⟮…⟯`, so `D` applies to an ordinary smooth
   -- map directly and no pointed-map wrapper is needed.
   let v : TangentSpace (modelWithCornersSelf ℝ E) x := ∑ i, D (c i) • b i
@@ -200,7 +199,7 @@ private theorem tangentToPointDerivation_surjective_model
   -- Hadamard's lemma factors `f - f(x)` through the coordinate functions, with smooth factors,
   -- so this identity lives in the algebra on which the derivation acts.
   obtain ⟨a, hax, ha⟩ := ContMDiffMap.exists_hadamard_coords f' x b
-  have hfactor := TauCeti.sub_algebraMap_eq_sum_mul_sub_algebraMap x f' a c ha
+  have hfactor := TauCeti.sub_algebraMap_eq_sum_mul_sub_algebraMap x f' a c (by simpa [c] using ha)
   -- `D`'s domain is a type synonym for `C^∞⟮…⟯`, so the sum below lives *syntactically* in the
   -- unpointed type and `rw` cannot use `map_sum` as stated; this restatement supplies the
   -- matching form, and holds by definitional unfolding alone.

@@ -111,7 +111,7 @@ theorem isUnit_and_norm_ringInverse_le_of_forall_norm_le {T : E →L[𝕜] E} {M
     exact hT'
   have hunit : IsUnit T := isUnit_iff_bijective.mpr
     ((bijective_iff_dense_range_and_antilipschitz T).mpr ⟨hdense, _, hanti⟩)
-  exact ⟨hunit, norm_ringInverse_le_of_forall_norm_le hunit hM hT⟩
+  exact ⟨hunit, norm_ringInverse_le_of_forall_norm_le hM hT⟩
 
 /-- The adjoint of an operator on a Hilbert space is invertible exactly when the operator is. -/
 @[simp]
@@ -131,7 +131,7 @@ theorem exists_adjoint_apply_eq_and_norm_le {T : E →L[𝕜] E} (hT : IsUnit T)
   refine ⟨adjoint (Ring.inverse T) y, ?_, le_of_opNorm_le _ ?_ y⟩
   · rw [← ringInverse_adjoint, apply_ringInverse_apply (isUnit_adjoint_iff.2 hT)]
   · rw [LinearIsometryEquiv.norm_map]
-    exact norm_ringInverse_le_of_forall_norm_le hT hM h
+    exact norm_ringInverse_le_of_forall_norm_le hM h
 
 end Inverse
 
@@ -214,7 +214,7 @@ theorem adjointEquiv_symm_apply [CompleteSpace E] [CompleteSpace F]
 /-- If `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` for all `x`, then conjugating by `e` loses at most a factor `λ` in
 operator norm: `‖M‖ ≤ λ⁻¹ ‖e† ∘ M ∘ e‖`. -/
 theorem norm_le_inv_mul_norm_adjoint_comp_comp [CompleteSpace E] [CompleteSpace F]
-    (e : E ≃L[𝕜] F) {lam : ℝ} (hlam : 0 < lam) (he : ∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖)
+    (e : E ≃L[𝕜] F) {lam : ℝ} (he : ∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖)
     (M : F →L[𝕜] F) :
     ‖M‖ ≤ lam⁻¹ * ‖(e : E →L[𝕜] F)† ∘L M ∘L (e : E →L[𝕜] F)‖ := by
   have hK : ‖(e.symm : F →L[𝕜] E)‖ ≤ (√lam)⁻¹ :=
@@ -226,15 +226,20 @@ theorem norm_le_inv_mul_norm_adjoint_comp_comp [CompleteSpace E] [CompleteSpace 
     refine ext_inner_right 𝕜 fun z => ?_
     simp
   set N := (e : E →L[𝕜] F)† ∘L M ∘L (e : E →L[𝕜] F)
-  calc ‖M‖ = ‖(e.symm : F →L[𝕜] E)† ∘L N ∘L (e.symm : F →L[𝕜] E)‖ := by rw [← hM]
-    _ ≤ ‖(e.symm : F →L[𝕜] E)†‖ * (‖N‖ * ‖(e.symm : F →L[𝕜] E)‖) :=
-        (ContinuousLinearMap.opNorm_comp_le _ _).trans
-          (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
-    _ ≤ (√lam)⁻¹ * (‖N‖ * (√lam)⁻¹) := by
-        rw [LinearIsometryEquiv.norm_map]
-        gcongr
-    _ = lam⁻¹ * ‖N‖ := by
-        rw [mul_comm ‖N‖, ← mul_assoc, ← mul_inv, Real.mul_self_sqrt hlam.le]
+  have hMN : ‖M‖ ≤ (√lam)⁻¹ * (‖N‖ * (√lam)⁻¹) :=
+    calc ‖M‖ = ‖(e.symm : F →L[𝕜] E)† ∘L N ∘L (e.symm : F →L[𝕜] E)‖ := by rw [← hM]
+      _ ≤ ‖(e.symm : F →L[𝕜] E)†‖ * (‖N‖ * ‖(e.symm : F →L[𝕜] E)‖) :=
+          (ContinuousLinearMap.opNorm_comp_le _ _).trans
+            (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
+      _ ≤ (√lam)⁻¹ * (‖N‖ * (√lam)⁻¹) := by
+          rw [LinearIsometryEquiv.norm_map]
+          gcongr
+  rcases lt_or_ge 0 lam with hlam | hlam
+  · rwa [mul_comm ‖N‖, ← mul_assoc, ← mul_inv, Real.mul_self_sqrt hlam.le] at hMN
+  · -- If `lam ≤ 0` then `√lam = 0`, so `M = 0` and hence `N = 0`.
+    rw [Real.sqrt_eq_zero_of_nonpos hlam, inv_zero, zero_mul] at hMN
+    have hM0 : M = 0 := norm_le_zero_iff.mp hMN
+    simp [N, hM0]
 
 end ContinuousLinearEquiv
 

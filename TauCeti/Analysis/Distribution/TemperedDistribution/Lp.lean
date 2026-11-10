@@ -45,6 +45,8 @@ function by a function of temperate growth multiplies the function pointwise
 
 ## Main declarations
 
+* `MeasureTheory.Lp.toTemperedDistribution_add`, `MeasureTheory.Lp.toTemperedDistribution_smul`
+  and their companions: the embedding `Lᵖ → 𝓢'` is linear, stated on the coercion.
 * `MeasureTheory.Lp.ae_eq_of_toTemperedDistribution_apply_eq`: an `Lᵖ` function whose pairings
   with Schwartz functions agree with those of a locally integrable `g` is almost everywhere
   equal to `g`.
@@ -82,6 +84,36 @@ open scoped ContDiff FourierTransform
 
 variable {E F : Type*} [NormedAddCommGroup E] [MeasurableSpace E] [BorelSpace E]
   [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+
+section Linear
+
+variable [NormedSpace ℝ E] {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal} [Fact (1 ≤ p)]
+
+@[simp]
+theorem toTemperedDistribution_zero : ((0 : Lp F p μ) : 𝓢'(E, F)) = 0 :=
+  map_zero (toTemperedDistributionCLM F μ p)
+
+@[simp]
+theorem toTemperedDistribution_add (f g : Lp F p μ) :
+    ((f + g : Lp F p μ) : 𝓢'(E, F)) = (f : 𝓢'(E, F)) + (g : 𝓢'(E, F)) :=
+  map_add (toTemperedDistributionCLM F μ p) f g
+
+@[simp]
+theorem toTemperedDistribution_neg (f : Lp F p μ) :
+    ((-f : Lp F p μ) : 𝓢'(E, F)) = -(f : 𝓢'(E, F)) :=
+  map_neg (toTemperedDistributionCLM F μ p) f
+
+@[simp]
+theorem toTemperedDistribution_sub (f g : Lp F p μ) :
+    ((f - g : Lp F p μ) : 𝓢'(E, F)) = (f : 𝓢'(E, F)) - (g : 𝓢'(E, F)) :=
+  map_sub (toTemperedDistributionCLM F μ p) f g
+
+@[simp]
+theorem toTemperedDistribution_smul (c : ℂ) (f : Lp F p μ) :
+    ((c • f : Lp F p μ) : 𝓢'(E, F)) = c • (f : 𝓢'(E, F)) :=
+  map_smul (toTemperedDistributionCLM F μ p) c f
+
+end Linear
 
 section NormedSpace
 
