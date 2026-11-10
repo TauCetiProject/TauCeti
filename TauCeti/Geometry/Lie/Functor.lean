@@ -40,6 +40,7 @@ Lie-group exponential.
   criterion at every point.
 * `ContMDiffMonoidMorphism.lieMap_injective_of_mfderiv_injective`: injectivity of the identity
   differential implies injectivity of the Lie map.
+* `ContMDiffMonoidMorphism.leftInverse_lieMap`: inverse composition laws pass to Lie maps.
 * `TauCeti.Lie.lieEquivOfIsLocalDiffeomorphAt`: the Lie-algebra equivalence induced by a smooth
   homomorphism that is a local diffeomorphism at the identity.
 * `ContMDiffMonoidMorphism.lieMap_bijective_of_isLocalDiffeomorphAt`: the Lie map of a
@@ -239,6 +240,17 @@ private theorem monoidHom_mulInvariantExp
   rw [mulInvariantExp_eq_mulInvariantIntegralCurve]
   rw [mulInvariantExp_eq_mulInvariantIntegralCurve]
   exact congrFun heq 1
+
+/-- A left inverse pair of smooth homomorphisms induces a left inverse pair of Lie maps. -/
+theorem ContMDiffMonoidMorphism.leftInverse_lieMap
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G')
+    (ψ : ContMDiffMonoidMorphism I' I ∞ G' G)
+    (h : ψ.comp φ = ContMDiffMonoidMorphism.id) :
+    Function.LeftInverse (lieMap ψ) (lieMap φ) := by
+  intro X
+  have h' := congrArg (fun f ↦ lieMap f X) h
+  simpa only [lieMap_comp, LieHom.comp_apply, lieMap_id, one_apply_eq_self] using h'
 
 /-- A smooth group homomorphism intertwines the Lie-group exponentials through its Lie map. -/
 @[simp]
