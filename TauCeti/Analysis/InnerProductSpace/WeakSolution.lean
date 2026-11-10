@@ -23,10 +23,9 @@ weak right inverse: there is a continuous linear map `Q : G → H` with `‖Q‖
 `Q f` is a weak solution of `L y = f` for every `f`, and `Q f` is orthogonal to the weak kernel
 (`LinearMap.exists_continuousLinearMap_inner_apply_eq_of_mul_norm_le`). A weak solution
 orthogonal to the weak kernel is unique (`LinearMap.eq_of_inner_apply_eq_of_mem_orthogonal`),
-and it is the weak solution of least norm
-(`LinearMap.norm_le_of_inner_apply_eq_of_mem_orthogonal`). In this sense `L` has vanishing weak
-cokernel, and `Q` is the operator `L* (L L*)⁻¹` of the classical theory, defined without first
-realizing `L L*` as an operator.
+so `Q f` is the weak solution of least norm. In this sense `L` has vanishing weak cokernel, and
+`Q` is the operator `L* (L L*)⁻¹` of the classical theory, defined without first realizing
+`L L*` as an operator.
 
 The lower bound makes `S η ↦ ι η` a bounded operator on the range of `S`. Its canonical factor
 `H → G` through the inclusion of that range (`ContinuousLinearMap.factorThru`) extends it to the
@@ -41,8 +40,6 @@ here is the canonical one and depends linearly and continuously on `f`.
   inverse.
 * `LinearMap.eq_of_inner_apply_eq_of_mem_orthogonal`: uniqueness of weak solutions orthogonal to
   the weak kernel.
-* `LinearMap.norm_le_of_inner_apply_eq_of_mem_orthogonal`: a weak solution orthogonal to the weak
-  kernel has least norm.
 
 ## References
 
@@ -104,22 +101,5 @@ theorem eq_of_inner_apply_eq_of_mem_orthogonal (S : D →ₗ[𝕜] H) {y y' : H}
     rw [inner_sub_right, ← inner_conj_symm (S η) y, ← inner_conj_symm (S η) y', h η, sub_self]
   rw [← sub_eq_zero]
   exact (mem_bot 𝕜).1 ((orthogonal_disjoint _).le_bot ⟨hsub, sub_mem hy hy'⟩)
-
-omit [CompleteSpace H] in
-/-- **Least norm of weak solutions orthogonal to the weak kernel.** If `y` lies in
-`(range S)ᗮᗮ`, the orthogonal complement of the weak kernel `(range S)ᗮ`, and `u` pairs in the
-same way as `y` with every `S η`, then `‖y‖ ≤ ‖u‖`. In particular a weak solution orthogonal to
-the weak kernel has the least norm among all weak solutions of the same equation. -/
-theorem norm_le_of_inner_apply_eq_of_mem_orthogonal (S : D →ₗ[𝕜] H) {y u : H}
-    (hy : y ∈ (range S)ᗮᗮ) (h : ∀ η, ⟪u, S η⟫_𝕜 = ⟪y, S η⟫_𝕜) : ‖y‖ ≤ ‖u‖ := by
-  have hsub : u - y ∈ (range S)ᗮ := by
-    rw [mem_orthogonal]
-    rintro _ ⟨η, rfl⟩
-    rw [inner_sub_right, ← inner_conj_symm (S η) u, ← inner_conj_symm (S η) y, h η, sub_self]
-  have hu : ‖u‖ * ‖u‖ = ‖y‖ * ‖y‖ + ‖u - y‖ * ‖u - y‖ := by
-    rw [← norm_add_sq_eq_norm_sq_add_norm_sq_of_inner_eq_zero _ _
-      ((mem_orthogonal' _ _).1 hy _ hsub), add_sub_cancel]
-  exact (mul_self_le_mul_self_iff (norm_nonneg y) (norm_nonneg u)).2
-    (hu ▸ le_add_of_nonneg_right (mul_self_nonneg _))
 
 end LinearMap
