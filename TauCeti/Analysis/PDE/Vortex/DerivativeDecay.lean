@@ -7,11 +7,12 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Decay
 import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
+import TauCeti.Analysis.InnerProductSpace.Laplacian.SemilinearDecay
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
 import TauCeti.Analysis.SpecialFunctions.Log.MulLog
 
 /-!
-# Exponential decay of the first derivatives of a plane vortex
+# Exponential decay of the derivatives of a plane vortex
 
 In the coordinates of `TauCeti.Vortex.equation`, a field `x = (b₁, b₂, p, q)` has connection
 `a = i (b₁ ds + b₂ dt)` and section `α = 2 (p + i q)`, so `|α|² = 4 (p² + q²)`. For a vortex on the
@@ -42,9 +43,14 @@ covariant derivative is complex linear, `d_a α (v) = v · d_a α (1)`
 `|d_a α|` by the gradient of `|α|²`
 (`TauCeti.Vortex.norm_covariantDerivative_one_le_norm_fderiv_normSq`).
 
+For a smooth section the same holds for derivatives of every order: outside the disc where
+`|α|² > 0`, `ℓ` solves the semilinear equation `Δ ℓ = (exp ℓ - 1) / 4`, whose linearization at the
+vacuum `ℓ = 0` is `Δ - 1 / 4`, and every derivative of `ℓ` decays at every rate `c < 1 / 2`
+(`TauCeti.exists_norm_iteratedFDeriv_succ_le_mul_exp_of_laplacian_eq`).
+
 These are gauge-invariant estimates for classical solutions. The decay of the connection
 coefficients themselves depends on a choice of gauge, such as the winding-`m` end trivialization,
-and is not treated here; neither are higher derivatives.
+and is not treated here.
 
 ## Main results
 
@@ -55,6 +61,9 @@ and is not treated here; neither are higher derivatives.
   `|d_a α (v)| ≤ K |v| exp (-c |z|)`.
 * `TauCeti.Vortex.exists_energyDensity_le_mul_exp`: the energy density is bounded by
   `K exp (-c |z|)` for every `c < 1`.
+* `TauCeti.Vortex.exists_norm_iteratedFDeriv_log_normSq_le_mul_exp`: for a smooth section, every
+  derivative of `log |α|²` of positive order is bounded by `K exp (-c |z|)` outside a disc, for
+  every `c < 1 / 2`.
 
 ## References
 
@@ -71,6 +80,7 @@ noncomputable section
 namespace TauCeti.Vortex
 
 open Complex Filter Metric Topology InnerProductSpace Laplacian
+open scoped ContDiff
 
 variable {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
@@ -348,5 +358,52 @@ theorem exists_energyDensity_le_mul_exp
   rw [energyDensity_apply, curvature_apply, curvature_eq_of_equation_eq_zero (hsol z),
     sq_norm_sectionValue, ← hEsq]
   nlinarith
+
+/-- **Exponential decay of all derivatives of `log |α|²`.** Let `x` be a vortex on the whole plane
+with smooth section and `|α| → 1` at infinity. Then for every `n` and every rate `c < 1 / 2`, the
+derivative of order `n + 1` of `ℓ = log |α|²` satisfies `‖Dⁿ⁺¹ℓ z‖ ≤ K exp (-c |z|)` outside a
+disc. Outside the disc where `|α|² > 0`, `ℓ` solves `Δ ℓ = (exp ℓ - 1) / 4`, whose linearization
+at `ℓ = 0` is `Δ - 1 / 4`. -/
+theorem exists_norm_iteratedFDeriv_log_normSq_le_mul_exp
+    (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
+    (hp : ContDiff ℝ ∞ (fun w ↦ x w 2)) (hq : ContDiff ℝ ∞ (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
+    (hc : c < 1 / 2) (n : ℕ) :
+    ∃ K R, ∀ z, R ≤ ‖z‖ →
+      ‖iteratedFDeriv ℝ (n + 1) (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z‖ ≤
+        K * Real.exp (-(c * ‖z‖)) := by
+  set s : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)
+  have hscd : ContDiff ℝ ∞ s := contDiff_normSq hp hq
+  -- Outside a disc of radius `R₀`, `|α|² > 0`.
+  obtain ⟨R₀, -, hR₀⟩ := hasBasis_cobounded_norm.eventually_iff.mp
+    (cobounded_eq_cocompact (α := ℂ) ▸ hlim.eventually (lt_mem_nhds one_pos))
+  have hpos : ∀ z : ℂ, R₀ < ‖z‖ → 0 < s z := fun z hz ↦ hR₀ (show R₀ ≤ ‖z‖ from hz.le)
+  set G : ℝ → ℝ := fun t ↦ (Real.exp t - 1) / 4
+  have hG : ContDiff ℝ ∞ G := by fun_prop
+  have hG₀ : deriv G 0 = 1 / 4 := by
+    have h : HasDerivAt G (Real.exp 0 / 4) 0 :=
+      ((Real.hasDerivAt_exp 0).sub_const 1).div_const 4
+    rw [h.deriv, Real.exp_zero]
+  set c₀ := max c 0
+  have hc₀ : c₀ ^ 2 < deriv G 0 := by
+    rw [hG₀]
+    have h₁ : c₀ < 1 / 2 := max_lt hc (by norm_num)
+    nlinarith [le_max_right c 0]
+  have hℓlim : Tendsto (fun w ↦ Real.log (s w)) (cocompact ℂ) (𝓝 0) := by
+    have h := (Real.continuousAt_log one_ne_zero).tendsto.comp hlim
+    rwa [Real.log_one] at h
+  obtain ⟨K, R, hK⟩ := exists_norm_iteratedFDeriv_succ_le_mul_exp_of_laplacian_eq (R := R₀) hG hc₀
+    (fun z hz ↦ (hscd.contDiffAt.log (hpos z hz).ne').contDiffWithinAt)
+    (fun z hz ↦ by
+      have h := laplacian_log_normSq_of_equation_eq_zero (hb₁ z) (hb₂ z)
+        (hp.contDiffAt.of_le (by simp)) (hq.contDiffAt.of_le (by simp))
+        (right_ne_zero_of_mul (hpos z hz).ne') (Eventually.of_forall hsol)
+      simp only [s, G] at h hpos ⊢
+      rw [h, Real.exp_log (hpos z hz)]) hℓlim n
+  refine ⟨max K 0, R, fun z hz ↦ (hK z hz).trans ?_⟩
+  gcongr
+  · exact le_max_left _ _
+  · exact le_max_left _ _
 
 end TauCeti.Vortex

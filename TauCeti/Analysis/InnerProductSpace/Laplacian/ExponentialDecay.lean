@@ -34,11 +34,18 @@ apply: both `u` and `-u` are subsolutions of `-Δ + V`, so `|u|` decays at the r
 This is the decay mechanism of massive fields: for instance, outside a large disc the logarithmic
 modulus defect `-log |α|²` of a plane vortex is such a subsolution for every rate `c < 1 / 2`.
 
+A source term decaying at a slower rate `c < c'` is absorbed by subtracting a multiple of the
+barrier `exp (-c ‖x‖)`: if `V u ≤ Δ u + G exp (-c ‖x‖)` with `V ≥ c'²`, then `u` decays at the
+rate `c`. This is the form needed for the derivatives of solutions of semilinear equations, whose
+equations carry lower-order source terms.
+
 ## Main declarations
 
 * `TauCeti.le_mul_exp_of_mul_le_laplacian`: a subsolution of `-Δ + V`, `V ≥ c²`, on the exterior of
   a ball which tends to zero at infinity is bounded by `M exp (-c (‖x‖ - R))`.
 * `TauCeti.le_mul_exp_of_sq_mul_le_laplacian`: the case of the constant potential `c²`.
+* `TauCeti.le_mul_exp_add_of_mul_le_laplacian_add`: the bound for a subsolution with a source
+  decaying at a slower rate.
 
 ## References
 
@@ -157,5 +164,54 @@ theorem le_mul_exp_of_sq_mul_le_laplacian {u : E → ℝ} {R c M : ℝ} (hR : 0 
     u x ≤ M * Real.exp (-(c * (‖x‖ - R))) :=
   le_mul_exp_of_mul_le_laplacian (V := fun _ ↦ c ^ 2) hR hc hM hcont hcd (fun _ _ ↦ le_rfl) hsub
     hbdry hlim hx
+
+/-- The barrier `exp (-c ‖x‖)` tends to zero at infinity when `c > 0`. -/
+theorem tendsto_exp_neg_mul_norm_cocompact {c : ℝ} (hc : 0 < c) :
+    Tendsto (fun x : E ↦ Real.exp (-(c * ‖x‖))) (cocompact E) (𝓝 0) :=
+  Real.tendsto_exp_atBot.comp (tendsto_neg_atTop_atBot.comp
+    ((tendsto_norm_cocompact_atTop (E := E)).const_mul_atTop hc))
+
+/-- **Exponential decay of subsolutions of `-Δ + V` with a decaying source.** Let `u` be continuous
+on the exterior `‖x‖ ≥ R` of a ball of radius `R > 0`, `C²` on `‖x‖ > R`, with
+`V u ≤ Δ u + G exp (-c ‖x‖)` there for a potential `V ≥ c'²` and rates `0 < c < c'`, and `u → 0`
+at infinity. If `u ≤ M` on the sphere `‖x‖ = R`, with `M ≥ 0`, then for every `x` with `‖x‖ ≥ R`,
+`u x ≤ M exp (-c' (‖x‖ - R)) + G / (c'² - c²) exp (-c ‖x‖)`. The source decays at the slower
+rate `c`, and so does its contribution to the bound. -/
+theorem le_mul_exp_add_of_mul_le_laplacian_add {u V : E → ℝ} {R c c' M G : ℝ} (hR : 0 < R)
+    (hc : 0 < c) (hcc' : c < c') (hM : 0 ≤ M) (hG : 0 ≤ G) (hcont : ContinuousOn u {x | R ≤ ‖x‖})
+    (hcd : ∀ x, R < ‖x‖ → ContDiffAt ℝ 2 u x) (hV : ∀ x, R < ‖x‖ → c' ^ 2 ≤ V x)
+    (hsub : ∀ x, R < ‖x‖ → V x * u x ≤ Δ u x + G * Real.exp (-(c * ‖x‖)))
+    (hbdry : ∀ x, ‖x‖ = R → u x ≤ M) (hlim : Tendsto u (cocompact E) (𝓝 0)) {x : E}
+    (hx : R ≤ ‖x‖) :
+    u x ≤ M * Real.exp (-(c' * (‖x‖ - R))) + G / (c' ^ 2 - c ^ 2) * Real.exp (-(c * ‖x‖)) := by
+  have hgap : 0 < c' ^ 2 - c ^ 2 := by nlinarith
+  set A := G / (c' ^ 2 - c ^ 2) with hA
+  have hA₀ : 0 ≤ A := div_nonneg hG hgap.le
+  have hGA : G = A * (c' ^ 2 - c ^ 2) := by rw [hA, div_mul_cancel₀ _ hgap.ne']
+  -- Subtract the barrier `A exp (-c ‖y‖)`, which absorbs the source, and compare the difference.
+  set b : E → ℝ := fun y ↦ A * Real.exp (-(c * ‖y‖))
+  have hbcd : ∀ y : E, y ≠ 0 → ContDiffAt ℝ 2 b y := fun y hy ↦
+    ((contDiffAt_norm ℝ hy).const_smul c).neg.exp.const_smul A
+  have hbΔ : ∀ y : E, y ≠ 0 → Δ b y ≤ c ^ 2 * b y := fun y hy ↦ by
+    simpa [b] using laplacian_exp_barrier_le hA₀ hc.le le_rfl hy
+  have hne : ∀ y : E, R < ‖y‖ → y ≠ 0 := fun y hy ↦ norm_pos_iff.mp (hR.trans hy)
+  have hb_lim : Tendsto b (cocompact E) (𝓝 0) := by
+    simpa [b] using (tendsto_exp_neg_mul_norm_cocompact hc).const_mul A
+  have hmain := le_mul_exp_of_mul_le_laplacian (u := u - b) (V := V) hR (hc.trans hcc').le hM
+    (hcont.sub (by fun_prop)) (fun y hy ↦ (hcd y hy).sub (hbcd y (hne y hy))) hV
+    (fun y hy ↦ ?_) (fun y hy ↦ ?_) (by have h := hlim.sub hb_lim; rw [sub_zero] at h; exact h) hx
+  · have : u x - b x ≤ M * Real.exp (-(c' * (‖x‖ - R))) := hmain
+    linarith
+  · rw [(hcd y hy).laplacian_sub (hbcd y (hne y hy))]
+    have h₁ := hsub y hy
+    have h₂ := hbΔ y (hne y hy)
+    have h₃ := hV y hy
+    have hb₀ : 0 ≤ b y := by positivity
+    simp only [Pi.sub_apply]
+    rw [hGA] at h₁
+    nlinarith
+  · have : 0 ≤ b y := by positivity
+    simp only [Pi.sub_apply]
+    linarith [hbdry y hy]
 
 end TauCeti
