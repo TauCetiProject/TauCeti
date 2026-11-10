@@ -58,6 +58,15 @@ public section
 
 open scoped InnerProductSpace
 
+/-- A right inverse of a self-adjoint element is self-adjoint. -/
+theorem isSelfAdjoint_of_mul_eq_one {A : Type*} [Monoid A] [StarMul A] {R Rinv : A}
+    (hR : IsSelfAdjoint R) (hRRinv : R * Rinv = 1) : IsSelfAdjoint Rinv := by
+  have hstar : star Rinv * R = 1 := by
+    simpa only [star_mul, hR.star_eq, star_one] using congrArg star hRRinv
+  calc star Rinv = star Rinv * (R * Rinv) := by rw [hRRinv, mul_one]
+    _ = (star Rinv * R) * Rinv := (mul_assoc _ _ _).symm
+    _ = Rinv := by rw [hstar, one_mul]
+
 namespace ContinuousLinearMap
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
@@ -88,10 +97,7 @@ theorem conj_add_star_of_lyapunov [CompleteSpace E]
       Rinv * B * Rinv + Rinv * B * Rinv := by
   have hstar : star Rinv * R = 1 := by
     simpa only [star_mul, hR.star_eq, star_one] using congrArg star hRRinv
-  have hRinv : IsSelfAdjoint Rinv := by
-    calc star Rinv = star Rinv * (R * Rinv) := by rw [hRRinv, mul_one]
-      _ = (star Rinv * R) * Rinv := (mul_assoc _ _ _).symm
-      _ = Rinv := by rw [hstar, one_mul]
+  have hRinv := isSelfAdjoint_of_mul_eq_one hR hRRinv
   have hRinvR : Rinv * R = 1 := by rw [← hRinv.star_eq]; exact hstar
   have hleft : Rinv * C = R := by rw [← hRR, ← mul_assoc, hRinvR, one_mul]
   have hright : C * Rinv = R := by rw [← hRR, mul_assoc, hRRinv, mul_one]
@@ -109,13 +115,14 @@ theorem conj_add_star_of_lyapunov [CompleteSpace E]
 is required, and `δ = 0` is allowed. -/
 theorem coercive_conj_of_lyapunov [CompleteSpace E]
     (B C W R Rinv : E →L[𝕜] E)
-    (hR : IsSelfAdjoint R) (hRinv : IsSelfAdjoint Rinv)
+    (hR : IsSelfAdjoint R)
     (hRR : R * R = C) (hRRinv : R * Rinv = 1)
     (hlyap : C * W + star W * C = B + B)
     {δ : ℝ} (hδ : 0 ≤ δ) (hBcoer : B.LowerFormBoundOn ⊤ δ) :
     ∀ x, δ / (1 + ‖R‖ ^ 2) * ‖x‖ ^ 2 ≤
       RCLike.re ⟪(R * W * Rinv) x, x⟫_𝕜 := by
   intro x
+  have hRinv := isSelfAdjoint_of_mul_eq_one hR hRRinv
   let y := Rinv x
   have hxy : R y = x := by
     simpa only [y, mul_apply_eq_comp, one_apply_eq_self] using DFunLike.congr_fun hRRinv x
@@ -235,7 +242,6 @@ theorem le_re_of_mem_spectrum_of_positive_lyapunov
   exact le_re_of_mem_spectrum_of_coercive _
     (coercive_conj_of_lyapunov B C W R Rinv
       (CFC.rpow_nonneg (a := C) (y := (1 / 2 : ℝ))).isSelfAdjoint
-      (CFC.rpow_nonneg (a := C) (y := (-(1 / 2 : ℝ)))).isSelfAdjoint
       hRR hRRinv hlyap hδ hB) hz'
 
 section Real
