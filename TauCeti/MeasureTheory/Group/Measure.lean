@@ -52,25 +52,27 @@ open scoped ENNReal Pointwise
 
 namespace TauCeti
 
-/-- A group with measurable subtraction on pairs has measurable negation. -/
-theorem _root_.MeasurableSub₂.measurableNeg {G : Type*} [AddGroup G] [MeasurableSpace G]
-    [MeasurableSub₂ G] : MeasurableNeg G :=
+/-- A group with measurable division on pairs has measurable inversion. -/
+@[to_additive /-- A group with measurable subtraction on pairs has measurable negation. -/]
+theorem _root_.MeasurableDiv₂.measurableInv {G : Type*} [DivInvMonoid G] [MeasurableSpace G]
+    [MeasurableDiv₂ G] : MeasurableInv G :=
   ⟨by
-    convert (measurable_const (a := (0 : G))).sub measurable_id using 1
+    convert (measurable_const (a := (1 : G))).div measurable_id using 1
     funext x
     simp⟩
 
-/-- A group with measurable subtraction on pairs has measurable translations. -/
-theorem _root_.MeasurableSub₂.measurableAdd {G : Type*} [AddGroup G] [MeasurableSpace G]
-    [MeasurableSub₂ G] : MeasurableAdd G := by
-  have := MeasurableSub₂.measurableNeg (G := G)
+/-- A group with measurable division on pairs has measurable translations. -/
+@[to_additive /-- A group with measurable subtraction on pairs has measurable translations. -/]
+theorem _root_.MeasurableDiv₂.measurableMul {G : Type*} [DivisionMonoid G] [MeasurableSpace G]
+    [MeasurableDiv₂ G] : MeasurableMul G := by
+  have := MeasurableDiv₂.measurableInv (G := G)
   refine ⟨fun c ↦ ?_, fun c ↦ ?_⟩
-  · convert (measurable_const (a := c)).sub (measurable_neg (G := G)) using 1
+  · convert (measurable_const (a := c)).div (measurable_inv (G := G)) using 1
     funext x
-    simp [sub_neg_eq_add]
-  · convert (measurable_id (α := G)).sub (measurable_const (a := -c)) using 1
+    simp [div_inv_eq_mul]
+  · convert (measurable_id (α := G)).div (measurable_const (a := c⁻¹)) using 1
     funext x
-    simp [sub_neg_eq_add]
+    simp [div_inv_eq_mul]
 
 variable {E : Type*} [AddGroup E] [MeasurableSpace E] [MeasurableAdd E]
 
