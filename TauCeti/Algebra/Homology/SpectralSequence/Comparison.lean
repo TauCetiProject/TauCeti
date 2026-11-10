@@ -36,7 +36,7 @@ lemma isIso_hom_f_of_le (r : ℤ) (hr : r₀ ≤ r) (h : ∀ pq, IsIso ((f.hom r
   | base => exact h pq
   | succ r' hrr' ih =>
     have := HomologicalComplex.Hom.isIso_of_components (f.hom r' (hr.trans hrr'))
-    rw [(Iso.eq_inv_comp _).mpr (f.comm r' (r' + 1) pq rfl (hr.trans hrr')).symm]
+    rw [← isIso_comp_left_iff (E.iso r' _ pq).hom, ← f.comm r' (r' + 1)]
     infer_instance
 
 end CategoryTheory.SpectralSequence.Hom

@@ -58,13 +58,13 @@ theorem _root_.HasFDerivAt.injective_of_eventuallyEq_id {f : E → F} {g : F →
   exact Function.LeftInverse.injective fun a => by
     simpa using congrArg (fun L : E →L[𝕜] E => L a) hcomp
 
-/-- **Criticality does not depend on the coordinates.** If `f` is differentiable at `φ b`, `φ` is
-differentiable at `b`, and the differential of `φ` at `b` is invertible, then `b` is a critical
+/-- **Criticality does not depend on the coordinates.** If `f` is differentiable at `φ b` and
+the differential of `φ` at `b` is invertible, then `b` is a critical
 point of `f ∘ φ` exactly when `φ b` is a critical point of `f`. -/
 theorem fderiv_comp_eq_zero_iff_of_isInvertible {f : E → G} {φ : F → E} {b : F}
-    (hf : DifferentiableAt 𝕜 f (φ b)) (hφ : DifferentiableAt 𝕜 φ b)
-    (hinv : (fderiv 𝕜 φ b).IsInvertible) :
+    (hf : DifferentiableAt 𝕜 f (φ b)) (hinv : (fderiv 𝕜 φ b).IsInvertible) :
     fderiv 𝕜 (f ∘ φ) b = 0 ↔ fderiv 𝕜 f (φ b) = 0 := by
+  have hφ := differentiableAt_of_isInvertible_fderiv hinv
   obtain ⟨e, he⟩ := hinv
   -- The differential of `f ∘ φ` at `b` is that of `f` at `φ b` precomposed with the equivalence
   -- `e`, so one vanishes exactly when the other does.

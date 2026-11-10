@@ -299,6 +299,22 @@ theorem Place.one_lt_ramificationIdx_iff_of_sq_eq (h2 : (2 : k) ≠ 0) {f : k[X]
       have hqf := ((Place.adicOfIrreducible_eq_adicOfIrreducible_iff hq hr).mp hqr).dvd.trans hrf
       simp [hqf]
 
+/-- Away from the branch locus, a place over a finite place `q` of `k(x)` not dividing `f` is
+unramified over `k(x)`: it lies neither over infinity nor over a zero of `f`. -/
+theorem Place.ramificationIdx_eq_one_of_restrict_eq (h2 : (2 : k) ≠ 0) {f : k[X]}
+    (hf : Squarefree f) {y : F} (hgen : (RatFunc k)⟮y⟯ = ⊤)
+    (hy : y ^ 2 = algebraMap (RatFunc k) F (algebraMap k[X] (RatFunc k) f)) {q : k[X]}
+    (hq : Irreducible q) (hqf : ¬q ∣ f) {P : Place k F}
+    (hP : P.restrict k (RatFunc k) = Place.adicOfIrreducible hq) :
+    Place.ramificationIdx (RatFunc k) P = 1 := by
+  have hle : ¬1 < Place.ramificationIdx (RatFunc k) P := by
+    rw [Place.one_lt_ramificationIdx_iff_of_sq_eq h2 hf hgen hy P, hP]
+    rintro (⟨h, -⟩ | ⟨r, hr, hrf, hrq⟩)
+    · exact Place.adicOfIrreducible_ne_infty _ h
+    · exact hqf (((Place.adicOfIrreducible_eq_adicOfIrreducible_iff _ hr).mp hrq).dvd.trans hrf)
+  have := Place.ramificationIdx_pos (RatFunc k) P
+  omega
+
 /-- **The degree of the different of `y ^ 2 = f`**: for a squarefree polynomial `f` of degree
 `m ≥ 1`, the different of `F / k(x)` has degree `m + (m mod 2)`, the number of branch points
 counted with their degrees. -/

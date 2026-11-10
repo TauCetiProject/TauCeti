@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.DirichletCharacter.Subgroup
 public import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Dirichlet.Character
 public import Mathlib.Data.Fintype.Sets
 public import Mathlib.NumberTheory.MulChar.Duality
+import TauCeti.NumberTheory.MulChar.Basic
 import TauCeti.NumberTheory.Multiquadratic.Legendre.PrimeDiscriminant.Dirichlet.Basic
 
 /-!

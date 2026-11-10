@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Operator.Nonarchimedean.Resolvent
+public import Mathlib.LinearAlgebra.Eigenspace.Basic
 import Mathlib.RingTheory.Polynomial.Basic
 import TauCeti.Algebra.Polynomial.Coprime
 import TauCeti.Algebra.Ring.Commute
@@ -69,6 +70,8 @@ nilpotents and need not be Noetherian; over a ring the range need not be free.
 
 * `ContinuousLinearMap.IsRieszProjection.range_eq_ker`: the range of a Riesz projection is the
   generalised eigenspace `ker (1 - a • u) ^ h`.
+* `ContinuousLinearMap.IsRieszProjection.maxGenEigenspace_eq_range`: for `a * μ = 1` it is the
+  maximal generalised eigenspace of `u` at `μ`.
 * `ContinuousLinearMap.IsRieszProjection.unique`: Riesz projections are unique.
 * `ContinuousLinearMap.IsRieszProjection.comp_comp_of_retract`: Riesz projections compress along
   continuous linear retracts.
@@ -274,6 +277,27 @@ theorem disjoint_range {F : M →L[R] M} {b : R} {k : ℕ}
   simpa only [map_pow, map_sub, map_one, map_mul, Polynomial.aeval_C,
     Polynomial.aeval_X, Algebra.algebraMap_eq_smul_one, smul_mul_assoc, one_mul,
     toLinearMap_pow, toLinearMap_sub, toLinearMap_smul, toLinearMap_one] using hd
+
+/-- **The range of a Riesz projection is the maximal generalised eigenspace.** If `a * μ = 1`,
+the range of a Riesz projection of `u` at `a` is the space of all vectors killed by some power of
+`u - μ`, the maximal generalised eigenspace of `u` at the eigenvalue `μ = a⁻¹`. -/
+theorem maxGenEigenspace_eq_range (hE : IsRieszProjection u a h E) {μ : R} (hμ : a * μ = 1) :
+    Module.End.maxGenEigenspace (u : Module.End R M) μ = LinearMap.range (E : M →ₗ[R] M) := by
+  have hunit : IsUnit (-μ) := (IsUnit.of_mul_eq_one_right a hμ).neg
+  -- `u - μ = -μ (1 - a u)` differs from `1 - a • u` by a unit.
+  have hsub : (u : Module.End R M) - μ • 1 =
+      (-μ) • ((1 - a • u : M →L[R] M) : M →ₗ[R] M) := by
+    ext x
+    simp [smul_smul, mul_comm μ a, hμ, sub_eq_neg_add, add_comm]
+  ext x
+  simp only [Module.End.mem_maxGenEigenspace, hsub, smul_pow, LinearMap.smul_apply,
+    (hunit.pow _).smul_eq_zero, ← toLinearMap_pow, coe_coe]
+  refine ⟨fun ⟨k, hk⟩ ↦ ?_, fun hx ↦ ⟨h, ?_⟩⟩
+  · -- The kernels of the powers of `1 - a • u` stabilise in the range of `E`.
+    rw [(hE.of_le (le_max_right k h)).range_eq_ker, LinearMap.mem_ker, coe_coe,
+      ← Nat.sub_add_cancel (le_max_left k h), pow_add, mul_apply_eq_comp, hk, map_zero]
+  · rw [hE.range_eq_ker, LinearMap.mem_ker, coe_coe] at hx
+    exact hx
 
 /-- **Uniqueness of the Riesz projection.** Two Riesz projections of `u` at `a` of the same order
 are equal. -/
