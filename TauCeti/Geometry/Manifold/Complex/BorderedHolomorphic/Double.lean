@@ -32,9 +32,10 @@ commutes with conjugation, restricts to `e` on the closed upper half-plane, and 
 chart changes needed to give the Schottky double a holomorphic atlas; the double itself is not
 constructed here.
 
-The translation `z ↦ z + 1` and the dilation `z ↦ 2z` reflect to the same maps of the plane. If
-the lower half were glued by `z ↦ -conj z` instead, the identity chart would become `z` on the
-upper and `-z` on the lower half-plane, which is not complex differentiable at any real point.
+The translation `z ↦ z + 1` and the dilation `z ↦ 2z` reflect to the same maps of the plane. The
+outer conjugation in `z ↦ conj (e (conj z))` matters: with `z ↦ -conj z` in its place, the
+identity would become the piecewise map that is `z` on the closed upper half-plane and `-z` on the
+lower half-plane, which is not complex differentiable at any real point.
 
 ## Main definitions
 
@@ -54,8 +55,9 @@ upper and `-z` on the lower half-plane, which is not complex differentiable at a
   half-plane.
 * `TauCeti.ClosedUpperHalfPlane.schwarzDouble_symm`, `schwarzDouble_trans`, `schwarzDouble_refl`:
   compatibility with the groupoid operations.
-* `TauCeti.ClosedUpperHalfPlane.not_differentiableAt_negConj_glue`: the gluing by `z ↦ -conj z`
-  does not match across the real axis.
+* `TauCeti.ClosedUpperHalfPlane.not_differentiableAt_negConj_glue`: the piecewise map that is `z`
+  on the closed upper half-plane and `-conj (conj z) = -z` on the lower half-plane is not complex
+  differentiable at any real point.
 
 ## References
 
@@ -411,10 +413,10 @@ theorem schwarzDouble_twoMul (h : PreservesRealAxis twoMul.toOpenPartialHomeomor
     · simp [schwarzDouble_apply_of_im_nonneg _ hnn, coe_fold_of_im_nonneg hnn]
     · simp [schwarzDouble_apply_of_im_neg _ hneg, coe_fold_of_im_nonpos hneg.le, map_ofNat]
 
-/-- Gluing the conjugate copy by `z ↦ -conj z` instead of `z ↦ conj z` does not match across the
-real axis: the identity chart becomes `z` on the closed upper half-plane and
-`-conj (conj z) = -z` on the lower half-plane, which is not complex differentiable at any real
-point. Its imaginary part along the vertical line through a real point `x` is `t ↦ |t|`. -/
+/-- The piecewise map that is `z` on the closed upper half-plane and `-conj (conj z) = -z` on the
+lower half-plane is not complex differentiable at any real point `x`: its imaginary part along the
+vertical line through `x` is `t ↦ |t|`. This is what the lower-half formula `conj (e (conj z))` of
+`schwarzDouble` gives for the identity `e` if the outer `conj` is replaced by `z ↦ -conj z`. -/
 theorem not_differentiableAt_negConj_glue (x : ℝ) :
     ¬ DifferentiableAt ℂ (fun z : ℂ ↦ if 0 ≤ z.im then z else -conj (conj z)) x := by
   intro hd
