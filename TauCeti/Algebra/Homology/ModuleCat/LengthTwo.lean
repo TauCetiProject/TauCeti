@@ -102,10 +102,7 @@ noncomputable def augmentation : complex f g hcomp ⟶
 @[simp]
 theorem augmentation_f_zero :
     (complexXIso f g hcomp 0).inv ≫ (augmentation f g hcomp).f 0 =
-    ModuleCat.ofHom (LinearMap.range g).mkQ := by
-  apply ModuleCat.hom_ext
-  ext x
-  rfl
+    ModuleCat.ofHom (LinearMap.range g).mkQ := (rfl)
 
 variable (hexact : LinearMap.range f = LinearMap.ker g) (hinj : Function.Injective f)
 
@@ -114,9 +111,7 @@ private theorem range_differential_succ_eq_ker : ∀ n : ℕ,
     LinearMap.range (differential f g (n + 1)).hom =
       LinearMap.ker (differential f g n).hom
   | 0 => hexact
-  | 1 => by
-    simp only [differential, ModuleCat.hom_zero, LinearMap.range_zero]
-    exact ((LinearMap.ker_eq_bot).2 hinj).symm
+  | 1 => by simpa [differential] using (LinearMap.ker_eq_bot.2 hinj).symm
   | _ + 2 => Subsingleton.elim _ _
 
 variable [Module.Projective A P₀] [Module.Projective A P₁] [Module.Projective A P₂]
@@ -132,8 +127,7 @@ noncomputable def projectiveResolution :
       projective := ?_
       «π» := augmentation f g hcomp
       quasiIso := ?_ }
-  · intro n
-    rcases n with _ | (_ | (_ | n))
+  · rintro (_ | _ | _ | n)
     · exact inferInstanceAs (Projective (ModuleCat.of A P₀))
     · exact inferInstanceAs (Projective (ModuleCat.of A P₁))
     · exact inferInstanceAs (Projective (ModuleCat.of A P₂))
@@ -143,12 +137,9 @@ noncomputable def projectiveResolution :
     cases n with
     | zero =>
       rw [ChainComplex.quasiIsoAt₀_iff, ShortComplex.quasiIso_iff_of_zeros' _ rfl rfl rfl]
-      refine ⟨?_, ?_⟩
-      · rw [ShortComplex.moduleCat_exact_iff_range_eq_ker]
-        simp only [HomologicalComplex.shortComplexFunctor'_obj_f]
-        exact (Submodule.ker_mkQ (LinearMap.range g)).symm
-      · rw [ModuleCat.epi_iff_surjective]
-        exact Submodule.mkQ_surjective _
+      exact ⟨(ShortComplex.moduleCat_exact_iff_range_eq_ker _).2
+          (Submodule.ker_mkQ (LinearMap.range g)).symm,
+        (ModuleCat.epi_iff_surjective _).2 (Submodule.mkQ_surjective _)⟩
     | succ n =>
       rw [quasiIsoAt_iff_exactAt' (hL := ChainComplex.exactAt_succ_single_obj ..),
         HomologicalComplex.exactAt_iff' _ (n + 2) (n + 1) n (by simp) (by simp),
@@ -157,7 +148,6 @@ noncomputable def projectiveResolution :
         HomologicalComplex.shortComplexFunctor'_obj_g]
       rw [complex_d f g hcomp (n + 1), complex_d f g hcomp n]
       exact range_differential_succ_eq_ker f g hexact hinj n
-
 
 /-- The resolution uses the specified three-term complex. -/
 @[simp]
