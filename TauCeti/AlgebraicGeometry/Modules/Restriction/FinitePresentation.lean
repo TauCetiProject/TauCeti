@@ -36,6 +36,16 @@ instance isFinitePresentation_restrict
     ((Scheme.Modules.restrictFunctorIsoPullback j).app M).symm
     (Scheme.Modules.isFinitePresentation_pullback j M)
 
+/-- Restriction along an isomorphism preserves and reflects finite presentation. -/
+theorem isFinitePresentation_restrict_iff_of_isIso {X Y : Scheme.{u}} (M : X.Modules)
+    (f : Y ⟶ X) [IsIso f] : (M.restrict f).IsFinitePresentation ↔ M.IsFinitePresentation := by
+  refine ⟨fun _ ↦ ?_, fun _ ↦ inferInstance⟩
+  exact (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
+    (((restrictFunctorComp (inv f) f).app M).symm ≪≫
+      (restrictFunctorCongr (IsIso.inv_hom_id f)).app M ≪≫
+      restrictFunctorId.app M)
+    (inferInstanceAs ((M.restrict f).restrict (inv f)).IsFinitePresentation)
+
 /-- Finite presentation can be checked on restrictions to an open cover. -/
 theorem isFinitePresentation_of_isFinitePresentation_restrict {X : Scheme.{u}} {ι : Type*}
     (M : X.Modules) (U : ι → X.Opens) (hU : ⨆ i, U i = ⊤)

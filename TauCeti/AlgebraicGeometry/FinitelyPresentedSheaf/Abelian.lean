@@ -1,0 +1,154 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.FinitePresentation
+public import TauCeti.AlgebraicGeometry.Modules.Biprod
+public import TauCeti.AlgebraicGeometry.Modules.Restriction.FiniteType
+public import Mathlib.CategoryTheory.Preadditive.LeftExact
+public import Mathlib.AlgebraicGeometry.Noetherian
+public import Mathlib.CategoryTheory.Abelian.Subcategory
+
+/-!
+# Coherent sheaves on locally Noetherian schemes
+
+Finitely presented sheaves on a locally Noetherian scheme form an abelian category, and their
+inclusion into all sheaves of modules preserves finite limits and finite colimits. Thus coherent
+kernels and cokernels can be used directly in the ambient long exact cohomology sequence. In
+particular, the kernel of a finite sum of twisting sheaves surjecting onto a coherent sheaf is
+again coherent, as needed in the dimension-shifting proof of finiteness of projective cohomology.
+
+The kernel statement only requires a quasi-coherent target and a quasi-coherent source of finite
+type. The cokernel statement holds on any scheme, without a Noetherian hypothesis, when the
+source is quasi-coherent of finite type and the target is finitely presented. Both follow from
+the corresponding affine calculations by restriction to affine opens and descent of finite
+presentation. No quasi-compactness or separation assumption is needed. The affine inputs are
+`Scheme.Modules.isFinitePresentation_kernel_spec` and
+`Scheme.Modules.isFinitePresentation_cokernel_spec`; the abelian structure uses Mathlib's
+`CategoryTheory.ObjectProperty` construction for subcategories closed under kernels, cokernels
+and finite products.
+
+## References
+
+* R. Hartshorne, *Algebraic Geometry*, Proposition II.5.7.
+* The Stacks Project, Section 30.9 (Tag 01XY), coherent sheaves on locally Noetherian schemes.
+-/
+
+public section
+
+open CategoryTheory Limits AlgebraicGeometry
+
+universe u
+
+namespace AlgebraicGeometry.Scheme.Modules
+
+variable {X : Scheme.{u}} {M N : X.Modules}
+
+/-- The ambient cokernel of a morphism from a quasi-coherent sheaf of finite type to a finitely
+presented sheaf is finitely presented on any scheme. -/
+instance isFinitePresentation_cokernel (f : M ⟶ N) [M.IsQuasicoherent] [M.IsFiniteType]
+    [N.IsFinitePresentation] : (cokernel f).IsFinitePresentation := by
+  refine isFinitePresentation_of_isFinitePresentation_restrict (cokernel f)
+    (fun U : X.affineOpens ↦ U.1) (iSup_affineOpens_eq_top X) fun U ↦ ?_
+  let F := restrictFunctor U.1.ι
+  let G := restrictFunctor U.2.isoSpec.inv
+  apply (isFinitePresentation_restrict_iff_of_isIso _ U.2.isoSpec.inv).mp
+  exact (SheafOfModules.isFinitePresentation (Spec Γ(X, U.1)).ringCatSheaf).prop_of_iso
+    (G.mapIso (PreservesCokernel.iso F f) ≪≫ PreservesCokernel.iso G (F.map f)).symm
+    (isFinitePresentation_cokernel_spec (G.map (F.map f)))
+
+/-- On a locally Noetherian scheme the ambient kernel of a morphism from a quasi-coherent
+sheaf of finite type to a quasi-coherent sheaf is finitely presented. -/
+instance isFinitePresentation_kernel [IsLocallyNoetherian X] (f : M ⟶ N)
+    [M.IsQuasicoherent] [M.IsFiniteType] [N.IsQuasicoherent] :
+    (kernel f).IsFinitePresentation := by
+  refine isFinitePresentation_of_isFinitePresentation_restrict (kernel f)
+    (fun U : X.affineOpens ↦ U.1) (iSup_affineOpens_eq_top X) fun U ↦ ?_
+  let F := restrictFunctor U.1.ι
+  let G := restrictFunctor U.2.isoSpec.inv
+  have : IsNoetherianRing Γ(X, U.1) := IsLocallyNoetherian.component_noetherian U
+  apply (isFinitePresentation_restrict_iff_of_isIso _ U.2.isoSpec.inv).mp
+  exact (SheafOfModules.isFinitePresentation (Spec Γ(X, U.1)).ringCatSheaf).prop_of_iso
+    (G.mapIso (PreservesKernel.iso F f) ≪≫ PreservesKernel.iso G (F.map f)).symm
+    (isFinitePresentation_kernel_spec (G.map (F.map f)))
+
+/-- Finitely presented sheaves are closed under ambient cokernels on every scheme. -/
+instance isFinitePresentation_isClosedUnderCokernels (X : Scheme.{u}) :
+    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderCokernels where
+  cokernels_le := by
+    rintro _ ⟨f, c, hc, hM, hN⟩
+    have := hM
+    have := hN
+    exact (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
+      (colimit.isoColimitCocone ⟨c, hc⟩) (isFinitePresentation_cokernel f)
+
+/-- Coherent sheaves on a locally Noetherian scheme are closed under ambient kernels. -/
+instance isFinitePresentation_isClosedUnderKernels (X : Scheme.{u}) [IsLocallyNoetherian X] :
+    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderKernels where
+  kernels_le := by
+    rintro _ ⟨f, k, hk, hM, hN⟩
+    have := hM
+    have := hN
+    exact (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
+      (limit.isoLimitCone ⟨k, hk⟩) (isFinitePresentation_kernel f)
+
+/-- The zero module sheaf is finitely presented. -/
+instance isFinitePresentation_containsZero (X : Scheme.{u}) :
+    (SheafOfModules.isFinitePresentation X.ringCatSheaf).ContainsZero where
+  exists_zero := ⟨_, TauCeti.SheafOfModules.isZero_free PEmpty, inferInstance⟩
+
+/-- Finitely presented sheaves are closed under binary products, computed as direct sums. -/
+instance isFinitePresentation_isClosedUnderBinaryProducts (X : Scheme.{u}) :
+    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderBinaryProducts where
+  limitsOfShape_le := by
+    rintro M ⟨p⟩
+    have := p.prop_diag_obj ⟨WalkingPair.left⟩
+    have := p.prop_diag_obj ⟨WalkingPair.right⟩
+    -- Name the factors as scheme modules so instance search sees their abelian category.
+    let A : X.Modules := p.diag.obj ⟨WalkingPair.left⟩
+    let B : X.Modules := p.diag.obj ⟨WalkingPair.right⟩
+    exact (SheafOfModules.isFinitePresentation X.ringCatSheaf).prop_of_iso
+      (IsLimit.conePointUniqueUpToIso (BinaryBiproduct.isLimit A B)
+        ((IsLimit.postcomposeHomEquiv (diagramIsoPair p.diag) _).2 p.isLimit))
+      (Scheme.Modules.isFinitePresentation_biprod A B)
+
+/-- Finitely presented sheaves are closed under finite products. -/
+instance isFinitePresentation_isClosedUnderFiniteProducts (X : Scheme.{u}) :
+    (SheafOfModules.isFinitePresentation X.ringCatSheaf).IsClosedUnderFiniteProducts := .mk'
+
+end AlgebraicGeometry.Scheme.Modules
+
+namespace TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf
+
+/-- Coherent sheaves on a locally Noetherian scheme form an abelian category. -/
+noncomputable instance (X : Scheme.{u}) [IsLocallyNoetherian X] :
+    Abelian (FinitelyPresentedSheaf X) := inferInstanceAs
+      (Abelian (ObjectProperty.FullSubcategory
+        (SheafOfModules.isFinitePresentation X.ringCatSheaf)))
+
+/-- The inclusion of coherent sheaves into all module sheaves preserves finite limits. -/
+noncomputable instance preservesFiniteLimits_inclusion (X : Scheme.{u})
+    [IsLocallyNoetherian X] :
+    PreservesFiniteLimits
+      (ObjectProperty.ι (SheafOfModules.isFinitePresentation X.ringCatSheaf)) := by
+  have := ObjectProperty.preservesKernels_ι (SheafOfModules.isFinitePresentation X.ringCatSheaf)
+  exact Functor.preservesFiniteLimits_of_preservesKernels _
+
+/-- The inclusion of finitely presented sheaves preserves finite colimits on any scheme. -/
+noncomputable instance preservesFiniteColimits_inclusion (X : Scheme.{u}) :
+    PreservesFiniteColimits
+      (ObjectProperty.ι (SheafOfModules.isFinitePresentation X.ringCatSheaf)) := by
+  have : HasFiniteBiproducts (FinitelyPresentedSheaf X) :=
+    HasFiniteBiproducts.of_hasFiniteProducts
+  have : HasBinaryBiproducts (FinitelyPresentedSheaf X) :=
+    hasBinaryBiproducts_of_finite_biproducts _
+  have : HasCoequalizers (FinitelyPresentedSheaf X) :=
+    Preadditive.hasCoequalizers_of_hasCokernels
+  have := ObjectProperty.preservesCokernels_ι (SheafOfModules.isFinitePresentation X.ringCatSheaf)
+  exact Functor.preservesFiniteColimits_of_preservesCokernels _
+
+end TauCeti.AlgebraicGeometry.FinitelyPresentedSheaf
