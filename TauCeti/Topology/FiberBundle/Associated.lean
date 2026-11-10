@@ -173,6 +173,10 @@ noncomputable def mk {b : B} (p : P b) (v : F) : AssociatedBundle G P F b :=
   -- The fibre is a type synonym of `F`, so the action of `G` on `F` is supplied explicitly.
   @HSMul.hSMul G F F _ (trivializationAt G P b ⟨b, p⟩).2 v
 
+/-- The class map in the model coordinates of the preferred chart at its base point. -/
+theorem mk_def {b : B} (p : P b) (v : F) :
+    mk G p v = @HSMul.hSMul G F F _ (trivializationAt G P b ⟨b, p⟩).2 v := (rfl)
+
 /-- **The charts of the associated bundle.** In the preferred trivialization at `b'`, the class
 `[p, v]` over a point `b` of its base set has coordinate `(e p).2 • v`, where
 `e = trivializationAt G P b'`. -/
