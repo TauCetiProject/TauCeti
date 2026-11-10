@@ -59,11 +59,9 @@ theorem posDef_gcd_divisors (N : ℕ) :
     ext i j
     have hfilter : {d ∈ N.divisors | d ∣ i.val ∧ d ∣ j.val} =
         (Nat.gcd i.val j.val).divisors := by
-      ext d
-      have hi := Nat.dvd_of_mem_divisors i.property
-      have hg := Nat.gcd_ne_zero_left (n := j.val) (Nat.pos_of_mem_divisors i.property).ne'
-      simp only [mem_filter, Nat.mem_divisors, Nat.dvd_gcd_iff]
-      grind [Nat.dvd_trans]
+      simpa only [Nat.dvd_gcd_iff] using Nat.divisors_filter_dvd_of_dvd
+        (Nat.ne_zero_of_mem_divisors i.property)
+        ((Nat.gcd_dvd_left i.val j.val).trans (Nat.dvd_of_mem_divisors i.property))
     rw [Matrix.mul_apply]
     simp only [mul_diagonal, conjTranspose_apply, B, of_apply, apply_ite star,
       star_one, star_zero, ite_mul, one_mul, zero_mul, mul_ite, mul_one, mul_zero, ← ite_and]
