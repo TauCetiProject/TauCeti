@@ -80,7 +80,7 @@ theorem integral_rpow_logLogisticMeasure (ha : 0 < a) (hq : |q| < b) :
     simp only [mgf, id_eq, ← Real.exp_mul, mul_comm q]
   rw [logLogisticMeasure_of_pos ha,
     integral_map Real.measurable_exp.aemeasurable (by fun_prop), hmgf,
-    mgf_id_logisticMeasure (inv_pos.mpr hb) hmem, Real.rpow_def_of_pos ha, inv_mul_eq_div]
+    mgf_id_logisticMeasure hmem, Real.rpow_def_of_pos ha, inv_mul_eq_div]
   ring_nf
 
 /-- A natural power `X ^ n` of a log-logistic variable is integrable exactly when `n < b`. -/

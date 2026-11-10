@@ -117,10 +117,22 @@ theorem integrableExpSet_id_logisticMeasure (hs : 0 < s) :
   simpa only [id_eq] using
     (integrable_exp_mul_id_logisticMeasure_iff (m := m) (t := t) hs)
 
-/-- The moment-generating function of a logistic law on its exact finiteness domain. -/
-theorem mgf_id_logisticMeasure (hs : 0 < s) (ht : t ∈ Ioo (-1 / s) (1 / s)) :
+/-- The interval `(-1 / s, 1 / s)` is nonempty only for a positive scale `s`: it is empty for
+`s = 0` by the convention `1 / 0 = 0`, and for `s < 0` its endpoints are reversed. -/
+theorem pos_of_mem_Ioo_neg_one_div (ht : t ∈ Ioo (-1 / s) (1 / s)) : 0 < s := by
+  by_contra h
+  rcases (not_lt.1 h).lt_or_eq with hs | rfl
+  · have h1 : 1 / s < 0 := one_div_neg.2 hs
+    have h2 : -1 / s = -(1 / s) := neg_div s 1
+    linarith [ht.1, ht.2]
+  · simp at ht
+
+/-- The moment-generating function of a logistic law on its exact finiteness domain. The
+hypothesis `ht` forces the scale `s` to be positive. -/
+theorem mgf_id_logisticMeasure (ht : t ∈ Ioo (-1 / s) (1 / s)) :
     mgf id (logisticMeasure m s) t =
       Real.exp (m * t) * Real.Gamma (1 - s * t) * Real.Gamma (1 + s * t) := by
+  have hs := pos_of_mem_Ioo_neg_one_div ht
   have hlo : 0 < 1 + s * t := by
     have := (div_lt_iff₀ hs).1 ht.1
     nlinarith
@@ -143,11 +155,13 @@ theorem mgf_id_logisticMeasure (hs : 0 < s) (ht : t ∈ Ioo (-1 / s) (1 / s)) :
   rw [hsum, Real.Gamma_two]
   ring_nf
 
-/-- The cumulant-generating function of a logistic law on its exact finiteness domain. -/
-theorem cgf_id_logisticMeasure (hs : 0 < s) (ht : t ∈ Ioo (-1 / s) (1 / s)) :
+/-- The cumulant-generating function of a logistic law on its exact finiteness domain. The
+hypothesis `ht` forces the scale `s` to be positive. -/
+theorem cgf_id_logisticMeasure (ht : t ∈ Ioo (-1 / s) (1 / s)) :
     cgf id (logisticMeasure m s) t =
       m * t + Real.log (Real.Gamma (1 - s * t)) +
         Real.log (Real.Gamma (1 + s * t)) := by
+  have hs := pos_of_mem_Ioo_neg_one_div ht
   have hlo : 0 < 1 + s * t := by
     have := (div_lt_iff₀ hs).1 ht.1
     nlinarith
@@ -155,7 +169,7 @@ theorem cgf_id_logisticMeasure (hs : 0 < s) (ht : t ∈ Ioo (-1 / s) (1 / s)) :
     have h : t < 1 / s := by simpa [one_div] using ht.2
     have := (lt_div_iff₀ hs).1 h
     nlinarith
-  rw [cgf, mgf_id_logisticMeasure hs ht,
+  rw [cgf, mgf_id_logisticMeasure ht,
     Real.log_mul (mul_ne_zero (Real.exp_ne_zero _) (Real.Gamma_pos_of_pos hhi).ne')
       (Real.Gamma_pos_of_pos hlo).ne',
     Real.log_mul (Real.exp_ne_zero _) (Real.Gamma_pos_of_pos hhi).ne', Real.log_exp]
@@ -200,10 +214,9 @@ private theorem analyticOnNhd_logisticComplexMGF (hs : 0 < s) :
       (hGamma_lo.comp z (by fun_prop))).differentiableWithinAt
 
 /-- The proposed complex MGF agrees with the real MGF on the real interval. -/
-private theorem logisticComplexMGF_ofReal (hs : 0 < s) {t : ℝ}
-    (ht : t ∈ Ioo (-1 / s) (1 / s)) :
+private theorem logisticComplexMGF_ofReal {t : ℝ} (ht : t ∈ Ioo (-1 / s) (1 / s)) :
     logisticComplexMGF m s t = mgf id (logisticMeasure m s) t := by
-  rw [mgf_id_logisticMeasure hs ht, logisticComplexMGF]
+  rw [mgf_id_logisticMeasure ht, logisticComplexMGF]
   have hexp : Complex.exp ((m : ℂ) * t) = (Real.exp (m * t) : ℂ) := by
     rw [← Complex.ofReal_mul, Complex.ofReal_exp]
   have hGamma_hi : Complex.Gamma (1 - (s : ℂ) * t) = (Real.Gamma (1 - s * t) : ℂ) := by
@@ -227,7 +240,7 @@ private theorem charFun_logisticMeasure_eq_gamma (hs : 0 < s) (t : ℝ) :
   have hEq : Set.EqOn (complexMGF id (logisticMeasure m s)) (logisticComplexMGF m s)
       {z : ℂ | z.re ∈ Ioo (-1 / s) (1 / s)} :=
     TauCeti.eqOn_complexMGF_of_eqOn_mgf isOpen_Ioo (convex_Ioo _ _) hsub
-      (analyticOnNhd_logisticComplexMGF hs) fun _ ht ↦ logisticComplexMGF_ofReal hs ht
+      (analyticOnNhd_logisticComplexMGF hs) fun _ ht ↦ logisticComplexMGF_ofReal ht
   have hzero : (0 : ℝ) ∈ Ioo (-1 / s) (1 / s) := by
     have hinv : 0 < 1 / s := one_div_pos.mpr hs
     constructor
