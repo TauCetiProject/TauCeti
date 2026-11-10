@@ -252,7 +252,7 @@ theorem exists_contMDiffRiemannianMetric_compatible_totallyReal_on {n : ℕ∞}
           ((LinearMap.lsmul ℂ (V y) Complex.I).restrictScalars ℝ) (L y)}
         have hW : IsOpen W := hU.inter isOpen_interior
         have hx₀W : x₀ ∈ W := ⟨hx₀U, mem_interior_iff_mem_nhds.2
-          (eventually_isMaximalTotallyReal hU hX hXs hx₀U (hL x₀ hx₀))⟩
+          (eventually_isMaximalTotallyReal hU hX hx₀U (hL x₀ hx₀))⟩
         have hLW (y : B) (hy : y ∈ W) :
             IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V y) Complex.I).restrictScalars ℝ) (L y) :=
           interior_subset hy.2

@@ -46,7 +46,7 @@ and the projection is `C^n` wherever it is defined on a neighbourhood.
   given by submodules.
 * `TauCeti.totallyRealProjection`: the projection of a fibre onto a maximal totally real
   subspace `L x` along `i L x`.
-* `TauCeti.eventually_isMaximalTotallyReal`: along a `C^n` frame, maximal total reality is an
+* `TauCeti.eventually_isMaximalTotallyReal`: along a continuous frame, maximal total reality is an
   open condition.
 * `TauCeti.contMDiffAt_totallyRealProjection`, `TauCeti.contMDiff_totallyRealProjection`: the
   projection is a smooth bundle endomorphism.
@@ -507,14 +507,14 @@ private theorem isMaximalTotallyReal_of_bijective_trivOperator [Fintype ι]
   rw [hcoprod]
   exact (ContinuousLinearEquiv.bijective _).comp (hA.comp φ.bijective)
 
-omit [FiniteDimensional ℂ F] [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+omit [NormedSpace ℝ F] [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F]
+  [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
   [∀ x, ContinuousConstSMul ℂ (V x)] in
-/-- **Maximal total reality is an open condition along a frame.** If `L` has a `C^n` local frame
-on an open set `U` and its fibre at `x₀ ∈ U` is maximal totally real, then so are its fibres at
-all points near `x₀`. -/
-theorem eventually_isMaximalTotallyReal [ContMDiffVectorBundle n F V IB] (hU : IsOpen U)
-    (hX : IsSubbundleFrameOn F L X U) (hXs : ∀ i, CMDiff[U] n (T% (X i))) {x₀ : B}
-    (hx₀ : x₀ ∈ U)
+/-- **Maximal total reality is an open condition along a frame.** If `L` has a continuous local
+frame on an open set `U` and its fibre at `x₀ ∈ U` is maximal totally real, then so are its fibres
+at all points near `x₀`. -/
+theorem eventually_isMaximalTotallyReal (hU : IsOpen U) (hX : IsSubbundleFrameOn F L X U)
+    {x₀ : B} (hx₀ : x₀ ∈ U)
     (hL : IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V x₀) Complex.I).restrictScalars ℝ) (L x₀)) :
     ∀ᶠ y in 𝓝 x₀,
       IsMaximalTotallyReal ((LinearMap.lsmul ℂ (V y) Complex.I).restrictScalars ℝ) (L y) := by
@@ -522,8 +522,8 @@ theorem eventually_isMaximalTotallyReal [ContMDiffVectorBundle n F V IB] (hU : I
   set e := trivializationAt F V x₀
   have he₀ : x₀ ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt F V x₀
   let A : B → (ι → ℂ) →L[ℂ] F := IsSubbundleFrameOn.trivOperator ℂ F X x₀
-  have hA : ContinuousAt A x₀ := (IsSubbundleFrameOn.contMDiffAt_trivOperator
-      (fun i ↦ (hXs i).contMDiffAt (hU.mem_nhds hx₀)) he₀).continuousAt
+  have hA : ContinuousAt A x₀ := IsSubbundleFrameOn.continuousAt_trivOperator fun i ↦
+    (hX.continuousOn i).continuousAt (hU.mem_nhds hx₀)
   have hinv : (A x₀).IsInvertible :=
     ⟨(LinearEquiv.ofBijective (A x₀ : (ι → ℂ) →ₗ[ℂ] F)
       (bijective_trivOperator hX hx₀ he₀ hL)).toContinuousLinearEquiv, rfl⟩
