@@ -44,6 +44,9 @@ whose exponent is two whatever `p` is.  That is what makes the squared-norm iden
 * `TauCeti.WeakDerivStep`: the resulting graph space, with projections
   `TauCeti.WeakDerivStep.prev` and `TauCeti.WeakDerivStep.weakFDeriv`, constructor
   `TauCeti.WeakDerivStep.mk`, and extensionality `TauCeti.WeakDerivStep.ext`.
+* `TauCeti.WeakDerivStep.norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq`,
+  `TauCeti.WeakDerivStep.norm_prev_add_norm_weakFDeriv_le`: the graph norm in terms of its
+  components, and the bound `‖x‖ + ‖Du‖_p ≤ √2 ‖(x, Du)‖`.
 * `TauCeti.WeakDerivStep.restrictBaseL`: restriction of the selected field to an open subdomain,
   with its exact and almost-everywhere characteristic equations.
 * `TauCeti.WeakDerivStep.norm_prev_sq_eq_integral`,
@@ -398,6 +401,14 @@ theorem norm_le_norm_prev_add_norm_weakFDeriv
     ‖u‖ ≤ ‖prev base u‖ + ‖weakFDeriv base u‖ := by
   have h := norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq base u
   nlinarith [norm_nonneg u, norm_nonneg (prev base u), norm_nonneg (weakFDeriv base u)]
+
+/-- The sum of the component norms is at most `√2` times the graph norm. -/
+theorem norm_prev_add_norm_weakFDeriv_le
+    (base : X →L[ℝ] Lp F p (mu.restrict Omega)) (u : WeakDerivStep mu Omega p base) :
+    ‖prev base u‖ + ‖weakFDeriv base u‖ ≤ √2 * ‖u‖ := by
+  refine le_of_pow_le_pow_left₀ two_ne_zero (by positivity) ?_
+  rw [mul_pow, Real.sq_sqrt zero_le_two, norm_sq_eq_norm_prev_sq_add_norm_weakFDeriv_sq]
+  nlinarith [sq_nonneg (‖prev base u‖ - ‖weakFDeriv base u‖)]
 
 end SeminormedModule
 
