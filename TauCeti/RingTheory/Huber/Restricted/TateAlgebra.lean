@@ -59,8 +59,7 @@ public section
 
 namespace TauCeti.Huber
 
-variable {K : Type*} [NormedField K] [IsUltrametricDist K] [NonarchimedeanRing K]
-  [CompleteSpace K] {n : ℕ}
+variable {K : Type*} [NormedField K] [IsUltrametricDist K] [CompleteSpace K] {n : ℕ}
 
 /-- **The completed Tate algebra is a unique factorisation domain** over a complete nonarchimedean
 field. By `UniqueFactorizationMonoid.instIsIntegrallyClosed` it is therefore integrally
