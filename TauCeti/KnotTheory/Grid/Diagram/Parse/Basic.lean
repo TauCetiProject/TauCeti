@@ -32,12 +32,15 @@ private abbrev Point (height width : Nat) := Fin height × Fin width
 
 private abbrev Pair (height width : Nat) := Point height width × Point height width
 
+/-- The four edge directions present around a box-drawing cell. -/
 private structure BoxEdgePresence where
   up : Bool
   down : Bool
   left : Bool
   right : Bool
   deriving Inhabited
+
+attribute [inherit_doc BoxEdgePresence] instInhabitedBoxEdgePresence.default
 
 private def BoxEdgePresence.toChar : BoxEdgePresence → Char
   | ⟨false, false, false, false⟩ => ' '
