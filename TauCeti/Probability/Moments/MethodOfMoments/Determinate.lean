@@ -154,7 +154,7 @@ private theorem tendsto_integral_clampPow (ν : Measure ℝ) (k : ℕ)
     (TauCeti.abs_max_min_le_abs (NNReal.coe_nonneg _) x) k
 
 private theorem abs_integral_clampPow_sub_le_of_mapClusterPt
-    {ι : Type*} {l : Filter ι} [l.NeBot] {μn : ι → ProbabilityMeasure ℝ}
+    {ι : Type*} {l : Filter ι} {μn : ι → ProbabilityMeasure ℝ}
     {ν : ProbabilityMeasure ℝ} {m : ℕ → ℝ} {B : ℕ → ℝ}
     (hint : ∀ k, ∀ᶠ n in l, Integrable (fun x : ℝ => x ^ k) (μn n : Measure ℝ))
     (hlim : ∀ k, Tendsto (fun n => ∫ x, x ^ k ∂(μn n : Measure ℝ)) l (𝓝 (m k)))
