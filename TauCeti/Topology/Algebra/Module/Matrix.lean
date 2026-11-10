@@ -14,13 +14,16 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
 public import Mathlib.Data.Matrix.Block
 
 /-!
-# Matrices acting on vectors with entries in a topological module
+# Continuous matrix actions and block maps over a topological module
 
 A matrix `A : Matrix κ ι R` acts on vectors `x : ι → M` with entries in an `R`-module `M` by
 `k ↦ ∑ i, A k i • x i`. When `M` is a topological additive monoid on which each scalar acts
 continuously, this is the continuous additive map `Matrix.smulVecHom A M : (ι → M) →ₜ+ (κ → M)`,
 and it is functorial in the matrix (`Matrix.smulVecHom_one`, `Matrix.smulVecHom_mul`). For `M = R`
 it is `Matrix.mulVec` (`Matrix.smulVecHom_self_apply`).
+
+The motivating case is `R = ℤ` and `M = AddCircle p`, where an integer matrix induces a map of
+tori `(ι → AddCircle p) → (κ → AddCircle p)`.
 
 The upper-right block projection and the matching insertion are continuous linear maps over
 any semiring and topological module, with arbitrary row and column index types. Their application
@@ -31,9 +34,6 @@ lemmas are `Matrix.toBlocks₁₂CLM_apply` and `Matrix.fromBlocks₁₂CLM_appl
 * `Matrix.smulVecHom`: the continuous additive action of a matrix on module-valued vectors.
 * `Matrix.toBlocks₁₂CLM`: projection onto the upper-right block as a continuous linear map.
 * `Matrix.fromBlocks₁₂CLM`: insertion into the upper-right block as a continuous linear map.
-
-The motivating case is `R = ℤ` and `M = AddCircle p`, where an integer matrix induces a map of
-tori `(ι → AddCircle p) → (κ → AddCircle p)`.
 -/
 
 public section
