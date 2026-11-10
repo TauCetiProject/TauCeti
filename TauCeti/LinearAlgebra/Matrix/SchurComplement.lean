@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Matrix.ColumnRowPartitioned
 public import Mathlib.LinearAlgebra.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.SchurComplement
+public import TauCeti.LinearAlgebra.Matrix.PosSemidef
 
 /-!
 # Schur complements and rank-one inverse updates
@@ -63,43 +64,36 @@ theorem PosSemidef.schur_complement₂₂ [Fintype n]
     (hP : P.IsHermitian) (hPDP : P * D * P = P) :
     (A - B * P * Bᴴ).PosSemidef := by
   classical
-  have hfinite : ∀ s : Finset m,
-      ((A - B * P * Bᴴ).submatrix ((↑) : s → m) (↑)).PosSemidef := fun s ↦ by
-    let e : s → m := (↑)
-    have hmat : (fromBlocks A B Bᴴ D).submatrix (Sum.map e id) (Sum.map e id) =
-        fromBlocks (A.submatrix e e) (B.submatrix e id) (B.submatrix e id)ᴴ D := by
-      ext (i | i) (j | j) <;> simp [conjTranspose_apply]
-    have hcompress :
-        fromCols 1 (-(B.submatrix e id * P)) * fromBlocks (A.submatrix e e) (B.submatrix e id)
-            (B.submatrix e id)ᴴ D * (fromCols 1 (-(B.submatrix e id * P)))ᴴ =
-          (A - B * P * Bᴴ).submatrix e e := by
-      have hcancel' : B.submatrix e id * P * D * P = B.submatrix e id * P := by
-        simpa only [Matrix.mul_assoc] using congrArg (B.submatrix e id * ·) hPDP
-      have hsub : (B * P * Bᴴ).submatrix e e =
-          B.submatrix e id * P * (B.submatrix e id)ᴴ := by
-        ext i j
-        simp [Matrix.mul_apply, conjTranspose_apply, Matrix.submatrix_apply]
-      have hsub' : (A - B * P * Bᴴ).submatrix e e =
-          A.submatrix e e - (B * P * Bᴴ).submatrix e e := rfl
-      rw [hsub', hsub]
-      simp only [conjTranspose_fromCols_eq_fromRows_conjTranspose, conjTranspose_one,
-        conjTranspose_neg, conjTranspose_mul, hP.eq,
-        fromCols_mul_fromBlocks, fromCols_mul_fromRows, Matrix.one_mul, Matrix.mul_one,
-        Matrix.add_mul, Matrix.neg_mul, Matrix.mul_neg,
-        ← Matrix.mul_assoc, hcancel']
-      abel
-    rw [← hcompress, ← hmat]
-    exact (h.submatrix _).mul_mul_conjTranspose_same _
-  refine ⟨?_, fun x ↦ ?_⟩
-  · exact (isHermitian_fromBlocks_iff.1 h.1).1.sub
-      (by simp [IsHermitian, conjTranspose_mul, hP.eq, Matrix.mul_assoc])
-  · let e : x.support → m := (↑)
-    have hinj : Function.Injective e := Subtype.val_injective
-    have hx : x = (x.comapDomain e hinj.injOn).mapDomain e :=
-      (Finsupp.mapDomain_comapDomain e hinj x fun a ha ↦ ⟨⟨a, ha⟩, rfl⟩).symm
-    have hx' := (hfinite x.support).2 (x.comapDomain e hinj.injOn)
-    rw [hx]
-    simpa [Finsupp.sum_mapDomain_index, add_mul, mul_add] using hx'
+  refine TauCeti.posSemidef_of_support_posSemidef (fun a b ↦ (A - B * P * Bᴴ) a b)
+    ((isHermitian_fromBlocks_iff.1 h.1).1.sub
+      (by simp [IsHermitian, conjTranspose_mul, hP.eq, Matrix.mul_assoc]))
+    fun x ↦ ?_
+  let e : x.support → m := (↑)
+  have hmat : (fromBlocks A B Bᴴ D).submatrix (Sum.map e id) (Sum.map e id) =
+      fromBlocks (A.submatrix e e) (B.submatrix e id) (B.submatrix e id)ᴴ D := by
+    ext (i | i) (j | j) <;> simp [conjTranspose_apply]
+  have hsub : (A - B * P * Bᴴ).submatrix e e =
+      A.submatrix e e - B.submatrix e id * P * (B.submatrix e id)ᴴ := by
+    rw [Matrix.submatrix_sub, Pi.sub_apply, Pi.sub_apply,
+      Matrix.submatrix_mul _ _ _ id _ Function.bijective_id,
+      Matrix.submatrix_mul _ _ _ id _ Function.bijective_id, Matrix.conjTranspose_submatrix]
+    simp
+  have hcancel : B.submatrix e id * P * D * P = B.submatrix e id * P := by
+    simpa only [Matrix.mul_assoc] using congrArg (B.submatrix e id * ·) hPDP
+  have hcompress :
+      fromCols 1 (-(B.submatrix e id * P)) * fromBlocks (A.submatrix e e) (B.submatrix e id)
+          (B.submatrix e id)ᴴ D * (fromCols 1 (-(B.submatrix e id * P)))ᴴ =
+        (A - B * P * Bᴴ).submatrix e e := by
+    rw [hsub]
+    simp only [conjTranspose_fromCols_eq_fromRows_conjTranspose, conjTranspose_one,
+      conjTranspose_neg, conjTranspose_mul, hP.eq,
+      fromCols_mul_fromBlocks, fromCols_mul_fromRows, Matrix.one_mul, Matrix.mul_one,
+      Matrix.add_mul, Matrix.neg_mul, Matrix.mul_neg,
+      ← Matrix.mul_assoc, hcancel]
+    abel
+  change ((A - B * P * Bᴴ).submatrix e e).PosSemidef
+  rw [← hcompress, ← hmat]
+  exact (h.submatrix _).mul_mul_conjTranspose_same _
 
 /-- A generalized Schur complement of the top-left block of a positive-semidefinite matrix
 is positive semidefinite, including when that block is singular. -/
