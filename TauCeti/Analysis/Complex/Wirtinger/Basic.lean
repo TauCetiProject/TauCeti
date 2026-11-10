@@ -37,6 +37,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 * `TauCeti.wirtingerDeriv g x`: the complex-linear Wirtinger derivative `∂g(x) : V →L[ℂ] W`.
 * `TauCeti.conjWirtingerDeriv g x`: the complex-antilinear Wirtinger derivative
   `\bar∂g(x) : V →L⋆[ℂ] W`.
+* `TauCeti.wirtingerPartsCLM a b`: the real-linear map `v ↦ v • a + conj v • b` of the plane with
+  Wirtinger parts `a` and `b`.
 
 ## Main results
 
@@ -65,6 +67,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 * `TauCeti.conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line`: `\bar∂g(x) v` is the
   one-variable conjugate Wirtinger derivative of the restriction of `g` to the complex line
   `t ↦ x + t • v`.
+* `TauCeti.fderiv_eq_wirtingerPartsCLM`, `TauCeti.wirtingerPartsCLM_inj`: in one variable the
+  real derivative is `wirtingerPartsCLM` of its two Wirtinger parts, which it determines.
 * `ContDiffAt.hasFDerivAt_conjWirtingerDeriv_apply`: the derivative of `y ↦ \bar∂g(y) u` for a
   `C²` map `g`, in terms of the second derivative of `g`.
 * `TauCeti.conjWirtingerDeriv_conjWirtingerDeriv_comm`: second conjugate Wirtinger derivatives
@@ -419,6 +423,82 @@ theorem conjWirtingerDeriv_eq_zero_iff_apply_one_eq_zero {f : ℂ → W} {x : �
   · intro h
     ext v
     rw [conjWirtingerDeriv_apply_eq_conj_smul_apply_one, h, smul_zero, zero_apply]
+
+/-! ### Real-linear maps through their Wirtinger parts -/
+
+/-- The real-linear map `v ↦ v • a + conj v • b` of the plane into `W`. Its Wirtinger parts are
+`a` and `b` (`TauCeti.fderiv_eq_wirtingerPartsCLM`), and it determines them
+(`TauCeti.wirtingerPartsCLM_inj`). -/
+noncomputable def wirtingerPartsCLM (a b : W) : ℂ →L[ℝ] W :=
+  (ContinuousLinearMap.lsmul ℝ ℂ).flip a +
+    ((ContinuousLinearMap.lsmul ℝ ℂ).flip b).comp conjCLE.toContinuousLinearMap
+
+@[simp]
+theorem wirtingerPartsCLM_apply (a b : W) (v : ℂ) :
+    wirtingerPartsCLM a b v = v • a + conj v • b := by
+  simp [wirtingerPartsCLM]
+
+@[simp]
+theorem wirtingerPartsCLM_zero : wirtingerPartsCLM (0 : W) 0 = 0 := by
+  ext v
+  simp
+
+theorem wirtingerPartsCLM_add (a b a' b' : W) :
+    wirtingerPartsCLM (a + a') (b + b') = wirtingerPartsCLM a b + wirtingerPartsCLM a' b' := by
+  ext v
+  simp only [wirtingerPartsCLM_apply, add_apply, smul_add]
+  abel
+
+theorem wirtingerPartsCLM_neg (a b : W) :
+    wirtingerPartsCLM (-a) (-b) = -wirtingerPartsCLM a b := by
+  ext v
+  simp only [wirtingerPartsCLM_apply, neg_apply, smul_neg, neg_add]
+
+theorem wirtingerPartsCLM_sub (a b a' b' : W) :
+    wirtingerPartsCLM (a - a') (b - b') = wirtingerPartsCLM a b - wirtingerPartsCLM a' b' := by
+  simp only [sub_eq_add_neg, wirtingerPartsCLM_add, wirtingerPartsCLM_neg]
+
+theorem wirtingerPartsCLM_smul {S : Type*} [Monoid S] [DistribMulAction S W]
+    [SMulCommClass ℂ S W] [SMulCommClass ℝ S W] [ContinuousConstSMul S W] (s : S) (a b : W) :
+    wirtingerPartsCLM (s • a) (s • b) = s • wirtingerPartsCLM a b := by
+  ext v
+  simp only [wirtingerPartsCLM_apply, smul_apply, smul_add, smul_comm v s, smul_comm (conj v) s]
+
+/-- The operator norm of `v ↦ v • a + conj v • b` is at most `‖a‖ + ‖b‖`. -/
+theorem norm_wirtingerPartsCLM_le (a b : W) : ‖wirtingerPartsCLM a b‖ ≤ ‖a‖ + ‖b‖ := by
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun v ↦ ?_
+  rw [wirtingerPartsCLM_apply]
+  refine (norm_add_le _ _).trans_eq ?_
+  rw [norm_smul, norm_smul, Complex.norm_conj]
+  ring
+
+/-- The two Wirtinger parts are determined by the real-linear map. -/
+@[simp]
+theorem wirtingerPartsCLM_inj {a b a' b' : W} :
+    wirtingerPartsCLM a b = wirtingerPartsCLM a' b' ↔ a = a' ∧ b = b' := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.1 ▸ h.2 ▸ rfl⟩
+  have h1 := congrArg (· 1) h
+  have hI := congrArg (· I) h
+  simp only [wirtingerPartsCLM_apply, map_one, one_smul, conj_I, neg_smul] at h1 hI
+  have hI' : a - b = a' - b' := by
+    have := congrArg ((-I) • ·) hI
+    simp only [smul_add, smul_neg, smul_smul, neg_mul, I_mul_I, neg_neg, one_smul] at this
+    simpa only [sub_eq_add_neg] using this
+  constructor
+  · have h2 : (2 : ℂ) • a = (2 : ℂ) • a' := by
+      rw [two_smul, two_smul]
+      linear_combination (norm := module) h1 + hI'
+    exact smul_right_injective W two_ne_zero h2
+  · have h2 : (2 : ℂ) • b = (2 : ℂ) • b' := by
+      rw [two_smul, two_smul]
+      linear_combination (norm := module) h1 - hI'
+    exact smul_right_injective W two_ne_zero h2
+
+/-- In one variable the real derivative is the real-linear map with its two Wirtinger parts. -/
+theorem fderiv_eq_wirtingerPartsCLM (f : ℂ → W) (x : ℂ) :
+    fderiv ℝ f x = wirtingerPartsCLM (wirtingerDeriv f x 1) (conjWirtingerDeriv f x 1) := by
+  ext v
+  rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv, wirtingerPartsCLM_apply]
 
 /-! ### Second conjugate Wirtinger derivatives -/
 
