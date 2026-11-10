@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.LaurentSeries
+public import TauCeti.RingTheory.LaurentSeries.HasseDeriv
 public import TauCeti.RingTheory.HahnSeries.Map
 public import TauCeti.RingTheory.HahnSeries.PowerSeries
 public import TauCeti.RingTheory.PowerSeries.Derivative
@@ -29,12 +29,11 @@ nonzero Laurent series `f ∈ K⸨X⸩` has valuation `exp (-ord f)`, since its 
 unit of `K⟦X⟧`. Consequently a field embedding `K → L`, applied to every coefficient, preserves
 valuations.
 
-The second part proves the product rule for the derivative of Laurent series,
-`(f * g)' = f' * g + f * g'`. Mathlib defines `LaurentSeries.derivative` only as a linear map,
+The imported higher Leibniz rule gives the product rule for the derivative of Laurent series,
+`(f * g)' = f' * g + f * g'`. Mathlib defines `LaurentSeries.derivative` as a linear map,
 the first Hasse derivative; the product rule is what makes it a derivation, so that composing it
 with a ring homomorphism into `R⸨X⸩` gives a derivation, as for Laurent expansions of functions.
-It is reduced to the product rule for power series by writing a Laurent series as a monomial
-times a power series.
+This file also records its compatibility with power-series differentiation.
 
 The third part computes the residue of the formal one-form `φ ^ n * φ' dX`
 for any power series `φ` over a field and every integer `n`:
@@ -295,34 +294,6 @@ theorem derivative_single_mul_coe (m : ℤ) (c : R) (φ : R⟦X⟧) :
     derivative R (single m c * (φ : R⸨X⸩)) =
       single (m - 1) (m * c) * φ + single m c * ((d⁄dX φ : R⟦X⟧) : R⸨X⸩) := by
   rw [derivative_single_mul, ← PowerSeries.coe_derivative]
-
-/-- **The product rule** for the derivative of Laurent series: `(f * g)' = f' * g + f * g'`. -/
-theorem derivative_mul (f g : R⸨X⸩) :
-    derivative R (f * g) = derivative R f * g + f * derivative R g := by
-  -- Write `f = X ^ a * φ` and `g = X ^ b * ψ` with power series `φ` and `ψ`, so that
-  -- `f * g = X ^ (a + b) * (φ * ψ)`, and use the product rule for power series.
-  rw [← single_order_mul_powerSeriesPart f, ← single_order_mul_powerSeriesPart g]
-  set a := f.order
-  set b := g.order
-  set φ := f.powerSeriesPart
-  set ψ := g.powerSeriesPart
-  have hab : (single (a + b) (1 : R) : R⸨X⸩) = single a 1 * single b 1 := by
-    rw [single_mul_single, one_mul]
-  have hfg : (single a (1 : R) * (φ : R⸨X⸩)) * (single b 1 * (ψ : R⸨X⸩)) =
-      single (a + b) 1 * ((φ * ψ : R⟦X⟧) : R⸨X⸩) := by
-    rw [PowerSeries.coe_mul, hab]
-    ring
-  -- The derivative of the monomial `X ^ (a + b)` splits as `(X ^ a)' X ^ b + X ^ a (X ^ b)'`.
-  have hd : (single (a + b - 1) (((a + b : ℤ) : R) * 1) : R⸨X⸩) =
-      single (a - 1) ((a : R) * 1) * single b 1 + single a 1 * single (b - 1) ((b : R) * 1) := by
-    rw [single_mul_single, single_mul_single, show a - 1 + b = a + b - 1 by ring,
-      show a + (b - 1) = a + b - 1 by ring, ← single_add]
-    push_cast
-    ring_nf
-  simp only [hfg, derivative_single_mul_coe]
-  simp only [Derivation.leibniz, smul_eq_mul, PowerSeries.coe_add, PowerSeries.coe_mul]
-  rw [hd, hab]
-  ring
 
 /-- **Differentiation lowers the order by at most one, with leading term `m X⁻¹ f`.** If `f` has
 valuation at most `exp (-m)`, that is, vanishes to order at least `m`, then `f' - m X⁻¹ f` again
