@@ -23,11 +23,13 @@ bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓ�
 (`Memℓp.of_norm_le_geometric`), and for `1 ≤ p` its `ℓᵖ` norm is at most `C (1 - r)⁻¹`
 (`lp.norm_le_of_norm_le_geometric`). The scalar coordinate vectors are linearly independent, and
 vectors in their span vanish outside the corresponding indices. These algebraic facts hold over
-normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum of single-coordinate
-vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and
-`lp.enorm_sum_single` for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
-to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely many scalars `aᵢ`, have norm at
-most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
+normed rings at every exponent. A family lies in `ℓ²` exactly when the squares of the norms of its
+terms are summable (`memℓp_two_iff_summable_sq`). In `ℓ²`, the squared norm of a finite sum of
+single-coordinate vectors is the sum of the squared norms of its coordinates
+(`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It follows that the
+operators `v ↦ (aᵢ v)ᵢ` from `F` to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely
+many scalars `aᵢ`, have norm at most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`,
+`lp.norm_sum_lsmul_comp_evalCLM_le`).
 
 For a finite exponent `p` and a countable index type, `lp E p` is separable as soon as every
 `E i` is (`lp.separableSpace`): the finite sums of coordinate vectors with entries in countable
@@ -245,6 +247,12 @@ theorem tendsto_apply_of_tendsto_apply_single [DecidableEq ι] {Z : Type*}
 end Density
 
 end lp
+
+/-- A family lies in `ℓ²` exactly when the squares of the norms of its terms are summable. -/
+theorem memℓp_two_iff_summable_sq {ι : Type*} {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)]
+    {f : ∀ i, E i} : Memℓp f 2 ↔ Summable fun i ↦ ‖f i‖ ^ 2 := by
+  rw [memℓp_gen_iff (by norm_num)]
+  simp only [ENNReal.toReal_ofNat, Real.rpow_two]
 
 section Geometric
 

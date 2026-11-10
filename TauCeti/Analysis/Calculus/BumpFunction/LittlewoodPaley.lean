@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Distribution.TemperateGrowth
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Algebra.Order.Chebyshev
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import TauCeti.Analysis.Normed.Module.Ball
@@ -30,8 +31,8 @@ Keeping `φ` itself as a low-frequency piece and discarding the cutoffs with `j 
 **inhomogeneous** partition `ψ₀ = φ, ψ₁, ψ₂, …`, which sums to `1` on all of `E`. Its partial sums
 are `∑_{j ≤ N} ψⱼ = φ (2^{-N} ·)`, each `ψ_{j+1}` is the rescaling `ψ₁ (2^{-j} ·)`, and pieces whose
 indices differ by at least a fixed `L` have disjoint supports, so that `∑ⱼ ψⱼ ξ ²` is bounded
-independently of `ξ`. This is the partition used to decompose a tempered distribution into
-frequency blocks for Besov and Bessel-potential spaces.
+above and below by positive constants independent of `ξ`. This is the partition used to decompose
+a tempered distribution into frequency blocks for Besov and Bessel-potential spaces.
 The sum `Ψⱼ` of the pieces with indices within `L` of `j` is then a smooth cutoff, equal to `1` on
 the support of `ψⱼ` and supported in a slightly larger ball or annulus, with the same rescaled
 derivative bounds; it localizes operators to the frequencies of a single block.
@@ -47,6 +48,8 @@ derivative bounds; it localizes operators to the frequencies of a single block.
 * `ContDiffBump.exists_inhomogeneousLittlewoodPaley_mul_eq_zero`: finite overlap of the pieces.
 * `ContDiffBump.exists_sum_sq_inhomogeneousLittlewoodPaley_le`: `∑ⱼ ψⱼ ξ ²` is bounded uniformly
   in `ξ` and in the set of indices.
+* `ContDiffBump.exists_one_le_mul_sum_sq_inhomogeneousLittlewoodPaley`: `∑ⱼ ψⱼ ξ ²` is bounded
+  below by a positive constant independent of `ξ`.
 * `ContDiffBump.exists_one_add_norm_sq_rpow_le_of_mem_tsupport_inhomogeneousLittlewoodPaley`: on
   the support of `ψⱼ`, `(1 + ‖ξ‖ ^ 2) ^ (t / 2) ≤ c (2^j) ^ t` with `c` independent of `j`.
 * `ContDiffBump.exists_norm_iteratedFDeriv_inhomogeneousLittlewoodPaley_le`: the uniform rescaled
@@ -545,6 +548,43 @@ theorem exists_sum_sq_inhomogeneousLittlewoodPaley_le :
       (hL _ _ hjL ξ)
   refine hle.trans ?_
   exact_mod_cast (Finset.card_le_card hsub).trans (by simp)
+
+/-- **Sum of squares bounded below.** There is `L`, depending only on `φ`, such that every `ξ` has
+`1 ≤ L ∑_{j < N} ψⱼ ξ ²` for some `N`: the pieces sum to `1`, and at each `ξ` at most `L`
+consecutive pieces are nonzero, so Cauchy–Schwarz bounds the square of their sum. Together with
+`exists_sum_sq_inhomogeneousLittlewoodPaley_le`, `∑ⱼ ψⱼ ξ ²` is bounded above and below
+independently of `ξ`. -/
+theorem exists_one_le_mul_sum_sq_inhomogeneousLittlewoodPaley :
+    ∃ L : ℕ, ∀ ξ : E, ∃ N : ℕ,
+      1 ≤ L * ∑ j ∈ Finset.range N, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 := by
+  obtain ⟨L, hL⟩ := φ.exists_inhomogeneousLittlewoodPaley_mul_eq_zero
+  refine ⟨L, fun ξ ↦ ?_⟩
+  obtain ⟨N, hN⟩ := pow_unbounded_of_one_lt (‖ξ‖ / φ.rIn) (one_lt_two (α := ℝ))
+  have h1 : ∑ j ∈ Finset.range (N + 1), φ.inhomogeneousLittlewoodPaley j ξ = 1 := by
+    rw [φ.sum_inhomogeneousLittlewoodPaley_range, φ.one_of_mem_closedBall]
+    rw [mem_closedBall_zero_iff, norm_inv_smul_of_nonneg (pow_nonneg zero_le_two _),
+      div_le_iff₀ (pow_pos two_pos _), mul_comm]
+    exact ((div_lt_iff₀ φ.rIn_pos).1 hN).le
+  refine ⟨N + 1, ?_⟩
+  set t := (Finset.range (N + 1)).filter fun j ↦ φ.inhomogeneousLittlewoodPaley j ξ ≠ 0
+  have ht1 : ∑ j ∈ t, φ.inhomogeneousLittlewoodPaley j ξ = 1 := by
+    rw [Finset.sum_filter_ne_zero, h1]
+  have hst : ∑ j ∈ t, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 =
+      ∑ j ∈ Finset.range (N + 1), φ.inhomogeneousLittlewoodPaley j ξ ^ 2 :=
+    Finset.sum_filter_of_ne fun j _ h ↦ by simpa using h
+  have ht : t.Nonempty := Finset.nonempty_iff_ne_empty.2 fun h ↦ by simp [h] at ht1
+  -- The nonzero pieces at `ξ` have indices in `[j₀, j₀ + L)`, where `j₀` is the least of them.
+  have hsub : t ⊆ Finset.Ico (t.min' ht) (t.min' ht + L) := fun j hj ↦ by
+    refine Finset.mem_Ico.2 ⟨t.min'_le j hj, lt_of_not_ge fun hjL ↦ ?_⟩
+    exact mul_ne_zero (Finset.mem_filter.1 (t.min'_mem ht)).2 (Finset.mem_filter.1 hj).2
+      (hL _ _ hjL ξ)
+  have hcard : (t.card : ℝ) ≤ L := by
+    exact_mod_cast (Finset.card_le_card hsub).trans (by simp)
+  rw [← hst]
+  calc (1 : ℝ) = (∑ j ∈ t, φ.inhomogeneousLittlewoodPaley j ξ) ^ 2 := by rw [ht1, one_pow]
+    _ ≤ t.card * ∑ j ∈ t, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 := sq_sum_le_card_mul_sum_sq
+    _ ≤ L * ∑ j ∈ t, φ.inhomogeneousLittlewoodPaley j ξ ^ 2 :=
+      mul_le_mul_of_nonneg_right hcard (Finset.sum_nonneg fun _ _ ↦ sq_nonneg _)
 
 end HasContDiffBump
 
