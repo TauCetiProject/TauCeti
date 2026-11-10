@@ -170,10 +170,6 @@ private theorem exists_contDiffOn_contactMoserField
       (∀ t ∈ T, ∀ y ∈ U, α₁ y = α₀ y → Y t y = 0) := by
   have hr' : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
   have hrle : (r : WithTop ℕ∞) ≤ r + 1 := le_self_add
-  -- The forms are `C^r` on `W`, and so are their exterior derivatives.
-  have hd {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} (hα : ContDiffOn ℝ (r + 1) α W) :
-      ContDiffOn ℝ r (extDeriv α) W := fun y hy ↦
-    (contDiffAt_extDeriv ((hα y hy).contDiffAt (hW.mem_nhds hy)) le_rfl).contDiffWithinAt
   -- The symplectization forms of `α₀` and `α₁`, on `ℝ × V`, and the right-hand side `α₁ - α₀`.
   let B₀ : ℝ × V → ℝ × V →L[ℝ] ℝ × V →L[ℝ] ℝ :=
     fun p ↦ (α₀ p.2).symplectizationFormCLM (extDeriv α₀ p.2)
@@ -190,7 +186,7 @@ private theorem exists_contDiffOn_contactMoserField
       ContDiffOn ℝ r (fun p : ℝ × V ↦ (α p.2).symplectizationFormCLM (extDeriv α p.2))
         (univ ×ˢ W) :=
     ContDiffOn.symplectizationFormCLM ((hα.of_le hrle).comp contDiffOn_snd hsnd)
-      ((hd hα).comp contDiffOn_snd hsnd)
+      ((contDiffOn_extDeriv hα hW le_rfl).comp contDiffOn_snd hsnd)
   have hβ : ContDiffOn ℝ r β (univ ×ˢ W) :=
     ((e.contDiff.comp_contDiffOn
       (((hα₁.of_le hrle).sub (hα₀.of_le hrle)).comp contDiffOn_snd hsnd)).clm_comp
