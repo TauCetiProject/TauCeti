@@ -251,9 +251,10 @@ theorem metricChangeTransport_bilinearComp (e : E ≃ₗᵢ[ℝ] F) {k : F →L[
     metricChangeTransport_mul_mul_self hK, map_one]
   exact ⟨map_nonneg _ (isStrictlyPositive_metricChangeTransport hK).nonneg, rfl⟩
 
-/-- **Naturality of the inverse transport.** Pulling a bilinear form `k` on `F` with positive Riesz
-operator back along a linear isometry equivalence `e : E ≃ₗᵢ[ℝ] F` conjugates the square root of
-its Riesz operator by `e`. -/
+/-- **Naturality of the inverse transport.** Pulling a bilinear form `k` on `F` back along a linear
+isometry equivalence `e : E ≃ₗᵢ[ℝ] F` conjugates the square root of its Riesz operator by `e`. This
+holds for every `k`; when the Riesz operator `k♯` is not nonnegative both sides are `0`, as
+`CFC.sqrt` is `0` there. -/
 theorem sqrt_continuousLinearMapOfBilin_bilinearComp (e : E ≃ₗᵢ[ℝ] F) {k : F →L[ℝ] F →L[ℝ] ℝ}
     (x : E) :
     CFC.sqrt (k.bilinearComp (e : E →L[ℝ] F) (e : E →L[ℝ] F))♯ x =
