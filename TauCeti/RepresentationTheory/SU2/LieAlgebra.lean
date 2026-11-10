@@ -22,9 +22,9 @@ standard normalization: the basis
 where `σₐ` are the Pauli matrices, that is, the isomorphism
 `TauCeti.suTwoEquiv : ℝ³ ≃ 𝔰𝔲(2)`, `x ↦ -(i/2) (x₀ σ₁ + x₁ σ₂ + x₂ σ₃)`. In this basis:
 
-* the bracket is the cross product, `⁅x̂, ŷ⁆ = (x ⨯₃ y)^` (`TauCeti.lie_suTwoEquiv`), so
-  `𝔰𝔲(2)` is isomorphic to `so(3)` with `-iσₐ/2` corresponding to the infinitesimal rotation
-  about the `a`-th axis (`TauCeti.suTwoLieEquivSoThree`);
+* the bracket is the cross product, `⁅suTwoEquiv x, suTwoEquiv y⁆ = suTwoEquiv (x ⨯₃ y)`
+  (`TauCeti.lie_suTwoEquiv`), so `𝔰𝔲(2)` is isomorphic to `so(3)` with `-iσₐ/2` corresponding
+  to the infinitesimal rotation about the `a`-th axis (`TauCeti.suTwoLieEquivSoThree`);
 * the basis is orthonormal for the invariant form `B(X, Y) = -2 tr(XY)`
   (`TauCeti.trace_toMatrix_suTwoEquiv_mul`); the dot product therefore identifies `ℝ³` with the
   dual `𝔰𝔲(2)*` (`TauCeti.suTwoDualEquiv`), compatibly with the identification of `so(3)*`
@@ -208,7 +208,7 @@ def suTwoLieEquivSoThree : SU2.lieAlgebra ≃ₗ⁅ℝ⁆ LieAlgebra.Orthogonal.
       obtain ⟨y, rfl⟩ := suTwoEquiv.surjective Y
       simp }
 
-/-- The isomorphism `𝔰𝔲(2) ≃ so(3)` sends `suTwoEquiv x` to the hat matrix `x̂`. -/
+/-- The isomorphism `𝔰𝔲(2) ≃ so(3)` sends `suTwoEquiv x` to the hat matrix of `x`. -/
 @[simp]
 theorem suTwoLieEquivSoThree_suTwoEquiv (x : Fin 3 → ℝ) :
     suTwoLieEquivSoThree (suTwoEquiv x) = soThreeEquiv ℝ x :=
