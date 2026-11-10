@@ -343,14 +343,25 @@ end Degree
 
 variable [TopologicalSpace Z] [ChartedSpace ℂ Z]
 
+omit [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y] in
+/-- A map from an empty Riemann surface has degree zero. -/
+private theorem degree_eq_zero_of_isEmpty [IsEmpty X] (f : X → Y) : degree f = 0 :=
+  Nat.eq_zero_of_le_zero (ciSup_le' fun y ↦ by
+    simp [fiberMultiplicitySum_def, eq_empty_of_isEmpty])
+
 /-- The fibre sum of a composite `g ∘ f` over `z` is the fibre sum of `g` over `z` times the degree
 of `f`: the fibre of `g ∘ f` over `z` is the disjoint union of the fibres of `f` over the points of
 the fibre of `g` over `z`, and the local multiplicities multiply. -/
 theorem fiberMultiplicitySum_comp [IsManifold 𝓘(ℂ) 1 Z] [CompactSpace X]
-    [T2Space X] [T2Space Y] [CompactSpace Y] [PreconnectedSpace Y]
+    [T2Space X] [T2Space Y] [PreconnectedSpace Y]
     (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) (hne : ∀ x, ¬ EventuallyConst f (𝓝 x))
     (hg : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) g) (hneg : ∀ y, ¬ EventuallyConst g (𝓝 y)) (z : Z) :
     fiberMultiplicitySum (g ∘ f) z = fiberMultiplicitySum g z * degree f := by
+  rcases isEmpty_or_nonempty X with hX | hX
+  · rw [degree_eq_zero_of_isEmpty f, mul_zero]
+    simp [fiberMultiplicitySum_def, eq_empty_of_isEmpty]
+  have := Function.Surjective.compactSpace hf.continuous
+    (surjective_of_forall_not_eventuallyConst hf hne)
   have hT : (g ⁻¹' {z}).Finite := finite_preimage_singleton hg hneg z
   -- The fibre of `g ∘ f` over `z` is the disjoint union of the fibres of `f` over `g ⁻¹' {z}`.
   have hfib : (g ∘ f) ⁻¹' {z} = ⋃ y ∈ g ⁻¹' {z}, f ⁻¹' {y} := by
@@ -386,11 +397,7 @@ theorem degree_comp_of_forall_not_eventuallyConst [IsManifold 𝓘(ℂ) 1 Z] [Co
   rcases isEmpty_or_nonempty Z with hZ | hZ
   · simp [degree_def]
   rcases isEmpty_or_nonempty X with hX | hX
-  · have h₁ : degree f = 0 := Nat.eq_zero_of_le_zero (ciSup_le' fun y ↦ by
-      simp [fiberMultiplicitySum_def, eq_empty_of_isEmpty])
-    have h₂ : degree (g ∘ f) = 0 := Nat.eq_zero_of_le_zero (ciSup_le' fun y ↦ by
-      simp [fiberMultiplicitySum_def, eq_empty_of_isEmpty])
-    rw [h₁, h₂, mul_zero]
+  · rw [degree_eq_zero_of_isEmpty f, degree_eq_zero_of_isEmpty (g ∘ f), mul_zero]
   have := Function.Surjective.compactSpace hf.continuous
     (surjective_of_forall_not_eventuallyConst hf hne)
   have hgf : ∀ x, ¬ EventuallyConst (g ∘ f) (𝓝 x) := fun x ↦
