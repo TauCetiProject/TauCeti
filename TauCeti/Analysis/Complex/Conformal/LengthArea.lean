@@ -216,15 +216,15 @@ theorem lintegral_circleImageLength_sq_div_le_lintegral_enorm_deriv_sq (f : ℂ 
         exact lintegral_circleLIntegral_sq_div_le_lintegral_sq
           (measurable_indicator_toMeasurable_enorm_deriv f s) ζ
 
-/-- **The length–area inequality, area form.** On a measurable set `s` at every point of which
+/-- **The length–area inequality, area form.** On a null-measurable set `s` at every point of which
 `f` is complex differentiable, and on which `f` is injective, the Dirichlet integral is the area
 of `f '' s`, so the total weighted length `∫⁻ ρ, ℓ ρ ^ 2 / ρ` is at most `2 π` times that area. -/
 theorem lintegral_circleImageLength_sq_div_le_volume_image
-    (hf : ∀ z ∈ s, DifferentiableAt ℂ f z) (hs : MeasurableSet s) (hinj : Set.InjOn f s)
-    (ζ : ℂ) :
+    (hf : ∀ z ∈ s, DifferentiableAt ℂ f z) (hs : NullMeasurableSet s volume)
+    (hinj : Set.InjOn f s) (ζ : ℂ) :
     ∫⁻ ρ in Ioi (0 : ℝ), circleImageLength f s ζ ρ ^ 2 / ENNReal.ofReal ρ ≤
       ENNReal.ofReal (2 * π) * volume (f '' s) := by
-  rw [volume_image_eq_lintegral_enorm_deriv_sq hf hs.nullMeasurableSet hinj]
+  rw [volume_image_eq_lintegral_enorm_deriv_sq hf hs hinj]
   exact lintegral_circleImageLength_sq_div_le_lintegral_enorm_deriv_sq f ζ
 
 /-- **Wolff's lemma.** If `2 π` times the Dirichlet integral of `f` over `s` is smaller than
@@ -249,16 +249,18 @@ theorem exists_circleImageLength_sq_lt (f : ℂ → ℂ) (ζ : ℂ) {r R : ℝ}
   gcongr
   exact circleImageLength_mono f ζ ρ (subset_toMeasurable volume s)
 
-/-- **Wolff's lemma, area form.** On a measurable set `s` at every point of which `f` is complex
-differentiable, and on which `f` is injective, the Dirichlet integral is the area of `f '' s`, so a
-radius with `ℓ ρ ^ 2 < c` exists as soon as `2 π * area (f '' s) < c * log (R / r)`. -/
+/-- **Wolff's lemma, area form.** On a null-measurable set `s` at every point of which `f` is
+complex differentiable, and on which `f` is injective, the Dirichlet integral is the area of
+`f '' s`, so a radius with `ℓ ρ ^ 2 < c` exists as soon as
+`2 π * area (f '' s) < c * log (R / r)`. -/
 theorem exists_circleImageLength_sq_lt_of_volume_image
-    (hf : ∀ z ∈ s, DifferentiableAt ℂ f z) (hs : MeasurableSet s) (hinj : Set.InjOn f s)
+    (hf : ∀ z ∈ s, DifferentiableAt ℂ f z) (hs : NullMeasurableSet s volume)
+    (hinj : Set.InjOn f s)
     (ζ : ℂ) {r R : ℝ} (hr : 0 < r) (hrR : r < R) {c : ℝ≥0∞}
     (hc : ENNReal.ofReal (2 * π) * volume (f '' s) < c * ENNReal.ofReal (Real.log (R / r))) :
     ∃ ρ ∈ Ioo r R, circleImageLength f s ζ ρ ^ 2 < c := by
   refine exists_circleImageLength_sq_lt f ζ hr hrR ?_
-  rwa [volume_image_eq_lintegral_enorm_deriv_sq hf hs.nullMeasurableSet hinj] at hc
+  rwa [volume_image_eq_lintegral_enorm_deriv_sq hf hs hinj] at hc
 
 /-! ### Short circles at arbitrarily small radii -/
 
