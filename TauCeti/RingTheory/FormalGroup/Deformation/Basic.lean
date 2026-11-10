@@ -32,7 +32,10 @@ reduction on ring homomorphisms from the Lazard ring, naturally in the coefficie
 This is the coordinate description of deformations used in J. Lubin and J. Tate,
 *Formal moduli for one-parameter formal Lie groups*, Bull. Soc. Math. France 94 (1966).
 Here the special fibre is fixed by equality, rather than by a separate marking
-isomorphism; no comparison with arbitrary marked special fibres is asserted.
+isomorphism. When coefficients and units lift along `π`,
+`FormalGroupDeformation.markedEquiv` in
+`TauCeti.RingTheory.FormalGroup.Deformation.Marked` identifies this convention with
+arbitrary marked special fibres.
 -/
 
 public section

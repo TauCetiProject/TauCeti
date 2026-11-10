@@ -49,7 +49,7 @@ structure MarkedFormalGroupLift (π : A →+* k) (F₀ : FormalGroup k) where
   /-- The coordinate of the special-fibre marking. -/
   marking : FormalCoordinate k
   /-- The marking transports the special fibre to the specified law. -/
-  marking_smul : marking • formalGroup.map π = F₀
+  smul_map_eq : marking • formalGroup.map π = F₀
 
 attribute [instance] MarkedFormalGroupLift.isComm
 
@@ -63,7 +63,7 @@ def markingIso (F : MarkedFormalGroupLift π F₀) :
   ( { toPowerSeries := F.marking.toPowerSeries
       zero_constantCoeff := F.marking.constantCoeff_toPowerSeries
       hom := by
-        simpa only [FormalGroup.smulIso_toHom_toPowerSeries, F.marking_smul] using
+        simpa only [FormalGroup.smulIso_toHom_toPowerSeries, F.smul_map_eq] using
           (FormalGroup.smulIso F.marking (F.formalGroup.map π)).toHom.hom } :
     FormalGroupHom (F.formalGroup.map π) F₀).toIso F.marking.isUnit_coeff_one
 
@@ -82,7 +82,7 @@ def ofIso {F : FormalGroup A} [F.IsComm] (e : FormalGroupIso (F.map π) F₀) :
     { toPowerSeries := e.toHom.toPowerSeries
       constantCoeff_toPowerSeries := e.toHom.zero_constantCoeff
       isUnit_coeff_one := e.isUnit_coeff_one }
-  marking_smul := e.toHom.smul_eq rfl
+  smul_map_eq := e.toHom.smul_eq rfl
 
 /-- Encoding a bundled marking does not change the lifted law. -/
 @[simp]
@@ -94,6 +94,16 @@ theorem formalGroup_ofIso {F : FormalGroup A} [F.IsComm]
 theorem marking_ofIso_toPowerSeries {F : FormalGroup A} [F.IsComm]
     (e : FormalGroupIso (F.map π) F₀) :
     (ofIso e).marking.toPowerSeries = e.toHom.toPowerSeries := (rfl)
+
+/-- Decoding an encoded bundled marking recovers the original isomorphism. -/
+@[simp]
+theorem markingIso_ofIso {F : FormalGroup A} [F.IsComm]
+    (e : FormalGroupIso (F.map π) F₀) :
+    (ofIso e).markingIso = (formalGroup_ofIso e).symm ▸ e := by
+  unfold ofIso
+  apply FormalGroupIso.ext
+  apply FormalGroupHom.ext
+  simp
 
 /-- A marked lift is recovered from its law and its bundled marking. -/
 @[simp]
@@ -109,8 +119,8 @@ instance : SMul (FormalCoordinate A) (MarkedFormalGroupLift π F₀) where
     { formalGroup := φ • F.formalGroup
       isComm := inferInstance
       marking := F.marking * (FormalCoordinate.map π φ)⁻¹
-      marking_smul := by
-        rw [FormalGroup.map_smul, mul_smul, inv_smul_smul, F.marking_smul] }
+      smul_map_eq := by
+        rw [FormalGroup.map_smul, mul_smul, inv_smul_smul, F.smul_map_eq] }
 
 /-- Change of coordinates acts on the underlying law. -/
 @[simp]
@@ -119,7 +129,7 @@ theorem formalGroup_smul (φ : FormalCoordinate A) (F : MarkedFormalGroupLift π
 
 /-- The marking transforms contravariantly in the reduced coordinate. -/
 @[simp]
-theorem marking_smul_apply (φ : FormalCoordinate A) (F : MarkedFormalGroupLift π F₀) :
+theorem marking_smul (φ : FormalCoordinate A) (F : MarkedFormalGroupLift π F₀) :
     (φ • F).marking = F.marking * (FormalCoordinate.map π φ)⁻¹ := (rfl)
 
 /-- Changes of coordinates act on marked lifts, retaining the specified special fibre. -/
@@ -134,7 +144,7 @@ def map (F : MarkedFormalGroupLift π F₀) (f : A →+* B) (hf : ρ.comp f = π
   formalGroup := F.formalGroup.map f
   isComm := inferInstance
   marking := F.marking
-  marking_smul := by rw [FormalGroup.map_comp, hf, F.marking_smul]
+  smul_map_eq := by rw [FormalGroup.map_comp, hf, F.smul_map_eq]
 
 /-- Coefficient extension acts on the lifted law. -/
 @[simp]
@@ -172,7 +182,7 @@ def ofLift (F : FormalGroupLift π F₀) : MarkedFormalGroupLift π F₀ where
   formalGroup := F.formalGroup
   isComm := inferInstance
   marking := 1
-  marking_smul := by rw [one_smul, F.map_eq]
+  smul_map_eq := by rw [one_smul, F.map_eq]
 
 /-- The identity-marked lift has the original underlying law. -/
 @[simp]
@@ -196,8 +206,8 @@ theorem ofLift_map (F : FormalGroupLift π F₀) (f : A →+* B) (hf : ρ.comp f
 
 end MarkedFormalGroupLift
 
-/-- Deformations with an arbitrary special-fibre marking, modulo coordinate changes
-which commute with that marking. -/
+/-- Marked lifts modulo all coordinate changes over `A`, each acting on the law and
+precomposing the marking with the inverse reduced coordinate. -/
 abbrev MarkedFormalGroupDeformation (π : A →+* k) (F₀ : FormalGroup k) :=
   MulAction.orbitRel.Quotient (FormalCoordinate A) (MarkedFormalGroupLift π F₀)
 
@@ -215,7 +225,7 @@ theorem mk_eq_mk_iff (F G : MarkedFormalGroupLift π F₀) :
   constructor
   · rintro ⟨φ, hφ⟩
     refine ⟨φ, congrArg MarkedFormalGroupLift.formalGroup hφ, ?_⟩
-    rw [← hφ, MarkedFormalGroupLift.marking_smul_apply, inv_mul_cancel_right]
+    rw [← hφ, MarkedFormalGroupLift.marking_smul, inv_mul_cancel_right]
   · rintro ⟨φ, hF, hmark⟩
     refine ⟨φ, MarkedFormalGroupLift.ext hF ?_⟩
     simpa using (eq_mul_inv_iff_mul_eq.mpr hmark).symm
@@ -283,7 +293,7 @@ theorem toMarked_surjective (hπ : Function.Surjective (FormalCoordinate.map π)
   let G : FormalGroupLift π F₀ :=
     { formalGroup := φ • F.formalGroup
       isComm := inferInstance
-      map_eq := by rw [FormalGroup.map_smul, hφ, F.marking_smul] }
+      map_eq := by rw [FormalGroup.map_smul, hφ, F.smul_map_eq] }
   refine ⟨⟦G⟧, (MarkedFormalGroupDeformation.mk_eq_mk_iff _ _).mpr ?_⟩
   refine ⟨φ⁻¹, ?_, ?_⟩
   · exact inv_smul_smul φ F.formalGroup
