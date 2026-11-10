@@ -284,7 +284,7 @@ theorem IsSymm.exists_binary_isPerfPair_isCompl_orthogonal (hB : B.IsSymm)
     (hdet : IsUnit (B.toMatrix b).det) :
     ∃ S : Submodule R M,
       finrank R S = 2 ∧ (B.restrict S).IsPerfPair ∧ IsCompl S (B.orthogonal S) := by
-  have : B.IsPerfPair := b.isPerfPair_of_isUnit_det B hdet
+  have : B.IsPerfPair := b.isPerfPair_of_isUnit_det b B hdet
   obtain ⟨S, ⟨c⟩, hS, hc⟩ :=
     hB.exists_binary_isPerfPair_isCompl_orthogonal_of_dual_apply_eq_one B
       (fun x hx ↦ h2 (isUnit_of_dvd_unit (heven x) hx)) (b 0) (b.coord 0) (by simp)

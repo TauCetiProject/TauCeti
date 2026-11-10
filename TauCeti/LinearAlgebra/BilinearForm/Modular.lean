@@ -372,7 +372,7 @@ theorem _root_.Module.Basis.isModular_of_isUnit_det {ι : Type*} [Fintype ι] [D
     (mul_cancel_left_mem_nonZeroDivisors ha).mp (by
       rw [LinearMap.toMatrix₂_apply, ← hG, ← hC]
       simp)
-  exact ⟨C, hC, b.isPerfPair_of_isUnit_det C (hCG ▸ hdet)⟩
+  exact ⟨C, hC, b.isPerfPair_of_isUnit_det b C (hCG ▸ hdet)⟩
 
 /-- **A Gram block of unit determinant spans a modular submodule.** If the Gram matrix of a finite
 family `v` is `a` times a matrix of unit determinant, with `a` a non-zero-divisor, then the
@@ -497,7 +497,7 @@ theorem exists_basis_toMatrix_mul_eq_of_isInternal [Module.Free R M] [Module.Fin
   let U (i : o) := (C i).toMatrix (d i)
   have hCapp (i : o) (x y : P i) : π ^ e i * C i x y = B x y := by
     simpa using LinearMap.congr_fun₂ (hC i) x y
-  have hUdet (i : o) : IsUnit (U i).det := (d i).isUnit_det_of_isPerfPair (C i) (hCp i)
+  have hUdet (i : o) : IsUnit (U i).det := (d i).isUnit_det_of_isPerfPair (d i) (C i) (hCp i)
   have hUs (i : o) : (U i).IsSymm := by
     ext a a'
     refine (mul_cancel_left_mem_nonZeroDivisors (pow_mem hπ' (e i))).mp ?_
