@@ -740,7 +740,7 @@ theorem spatialDeriv_iteratedSpatialDeriv (j : Fin n) {k : ℕ} (r : Fin k → F
   funext ⟨x, ξ⟩
   rw [coefficient_spatialDeriv, coefficient_iteratedSpatialDeriv, mixedDeriv_spatialDeriv]
   simp only [coefficient_iteratedSpatialDeriv, mixedDeriv_def, coordinateDeriv_nil]
-  rw [coordinateDeriv_perm (List.perm_append_singleton j (List.ofFn r))
+  rw [(List.perm_append_singleton j (List.ofFn r)).coordinateDeriv_eq
     ((a.contDiff_coefficient_slice ξ).of_le (mod_cast le_top)), coordinateDeriv_cons,
     coordinateDeriv_cons, coordinateDeriv_nil]
 
@@ -756,7 +756,7 @@ theorem frequencyDeriv_iteratedFrequencyDeriv (j : Fin n) {k : ℕ} (r : Fin k �
   rw [coefficient_frequencyDeriv, coefficient_inclusion, coefficient_iteratedFrequencyDeriv,
     mixedDeriv_frequencyDeriv]
   simp only [coefficient_iteratedFrequencyDeriv, mixedDeriv_def, coordinateDeriv_nil]
-  rw [coordinateDeriv_perm (List.perm_append_singleton j (List.ofFn r))
+  rw [(List.perm_append_singleton j (List.ofFn r)).coordinateDeriv_eq
     (f := fun η ↦ a.coefficient (x, η))
     ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (mod_cast le_top)),
     coordinateDeriv_cons, coordinateDeriv_cons, coordinateDeriv_nil]

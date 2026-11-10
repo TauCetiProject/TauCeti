@@ -55,8 +55,8 @@ symbol calculus. Its first-order case for a pointwise composition of continuous 
 * `TauCeti.coordinateDeriv_eq_iteratedFDeriv`: its comparison with `iteratedFDeriv`.
 * `TauCeti.coordinateDeriv_eq_iteratedFDerivAlong`: its comparison with
   `TauCeti.iteratedFDerivAlong` along standard basis vectors.
-* `TauCeti.coordinateDeriv_perm`: for a smooth enough function it does not depend on the order of
-  the letters of the word.
+* `List.Perm.coordinateDeriv_eq`: for a smooth enough function it does not depend on the order
+  of the letters of the word.
 * `TauCeti.norm_iteratedFDeriv_le_sum_coordinateDeriv`,
   `TauCeti.norm_iteratedFDeriv_succ_le_sum_coordinateDeriv`: the converse estimates, bounding a
   Fréchet derivative by coordinate derivatives, or by Fréchet derivatives of the first partial
@@ -146,8 +146,9 @@ theorem coordinateDeriv_eq_iteratedFDerivAlong (α : List (Fin n)) (f : Coordina
 
 /-- **Symmetry of iterated coordinate derivatives.** For a `C^k` function, the coordinate
 derivative along a word of length `k` does not depend on the order of the letters. -/
-theorem coordinateDeriv_perm {α β : List (Fin n)} (h : α.Perm β) {f : CoordinateSpace n → A}
-    (hf : ContDiff ℝ α.length f) : coordinateDeriv α f = coordinateDeriv β f := by
+theorem _root_.List.Perm.coordinateDeriv_eq {α β : List (Fin n)} (h : α.Perm β)
+    {f : CoordinateSpace n → A} (hf : ContDiff ℝ α.length f) :
+    coordinateDeriv α f = coordinateDeriv β f := by
   simpa only [coordinateDeriv_eq_iteratedFDerivAlong] using
     (h.map _).iteratedFDerivAlong_eq hf (by simp)
 
