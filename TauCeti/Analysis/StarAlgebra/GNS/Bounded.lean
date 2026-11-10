@@ -76,7 +76,7 @@ namespace StarPositiveFunctional
 section NonUnital
 
 variable {A : Type*} [NonUnitalRing A] [Module ℂ A] [StarRing A] [StarModule ℂ A]
-  [IsScalarTower ℂ A A] [SMulCommClass ℂ A A] (φ : StarPositiveFunctional A)
+  [IsScalarTower ℂ A A] (φ : StarPositiveFunctional A)
 
 /-- The Hilbert-space completion of the algebraic GNS inner product space `φ.GNS`. -/
 abbrev HilbertGNS : Type _ := Completion φ.GNS
@@ -126,6 +126,8 @@ theorem hilbertClassMap_eq_zero_iff (a : A) :
     φ.hilbertClassMap a = 0 ↔ φ (star a * a) = 0 := by
   rw [← norm_eq_zero (a := φ.hilbertClassMap a), φ.norm_hilbertClassMap, norm_eq_zero,
     φ.classMap_eq_zero_iff]
+
+variable [SMulCommClass ℂ A A]
 
 /-- The quadratic-form inequality `φ (star b * star a * a * b) ≤ (R : ℂ) ^ 2 * φ (star b * b)` is
 the squared GNS norm bound for `φ.leftMul a` at `φ.classMap b`. -/

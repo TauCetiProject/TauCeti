@@ -128,15 +128,19 @@ theorem toLinearMap_ofPositiveLinearMap {C : Type*} [NonUnitalRing C] [PartialOr
 
 variable (φ : StarPositiveFunctional A)
 
-variable [StarModule ℂ A] [IsScalarTower ℂ A A] [SMulCommClass ℂ A A]
+variable [StarModule ℂ A] [IsScalarTower ℂ A A]
 
 /-- Positivity implies conjugate symmetry of the associated sesquilinear form. -/
 theorem star_apply_star_mul (a b : A) : star (φ (star a * b)) = φ (star b * a) := by
+  -- Scalars commute with left multiplication: apply `star` to the scalar tower identity.
+  have hcomm (c : ℂ) (x y : A) : x * (c • y) = c • (x * y) := by
+    apply star_injective
+    rw [star_mul, star_smul, smul_mul_assoc, star_smul, star_mul]
   have him (x : A) : (φ (star x * x)).im = 0 := (φ.square_nonneg x).2.symm
   have hsum := him (a + b)
   have hI := him (a + Complex.I • b)
   simp [add_mul, mul_add, him] at hsum
-  simp [add_mul, mul_add, smul_mul_assoc, mul_smul_comm, him] at hI
+  simp [add_mul, mul_add, smul_mul_assoc, hcomm, him] at hI
   rw [Complex.ext_iff]
   simp only [Complex.star_def, Complex.conj_re, Complex.conj_im]
   constructor <;> linarith
@@ -304,6 +308,8 @@ theorem inner_classMap (a b : A) :
 /-- The GNS norm of a class is determined by the quadratic form. -/
 theorem norm_classMap_sq (a : A) : ‖φ.classMap a‖ ^ 2 = (φ (star a * a)).re := by
   rw [norm_sq_eq_re_inner (𝕜 := ℂ), φ.inner_classMap, RCLike.re_to_complex]
+
+variable [SMulCommClass ℂ A A]
 
 /-- Left multiplication on the algebraic GNS space, without a continuity assertion. -/
 def leftMul (a : A) : Module.End ℂ φ.GNS where
