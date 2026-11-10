@@ -42,6 +42,7 @@ namespace TauCeti
 
 /-- A Cauchy law and a translate of it are at distance equal to the change of location,
 even when neither has any finite first moment. -/
+@[simp]
 theorem wassersteinEDist_cauchyMeasure_same_scale {p : ℝ≥0∞} (hp : 1 ≤ p)
     (m n : ℝ) (γ : ℝ≥0) :
     wassersteinEDist p (cauchyMeasure m γ) (cauchyMeasure n γ) = edist m n := by
