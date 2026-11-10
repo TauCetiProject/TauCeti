@@ -24,7 +24,7 @@ public section
 
 universe u v w
 
-namespace TauCeti.MvPolynomial
+namespace TauCeti.PolynomialQuotient
 
 open _root_.MvPolynomial
 
@@ -452,4 +452,4 @@ theorem IsQuotientBasis.map [Finite ι] {source target : Type*} [CommRing source
   rw [← idealEquality, ← quotientBasisEquiv_comp]
   exact (quotientBasisEquiv w target (scalarMap.comp classifier)).2
 
-end TauCeti.MvPolynomial
+end TauCeti.PolynomialQuotient
