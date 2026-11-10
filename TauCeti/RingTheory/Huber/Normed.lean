@@ -54,8 +54,10 @@ the adic spectra of the Tate algebras `K⟨X₁, …, Xₙ⟩`.
   closed unit ball.
 * `TauCeti.Huber.powerBoundedSubring.dvd_iff_norm_le`: in an ultrametric normed field
   divisibility in `K°` is comparison of norms.
+* `TauCeti.Huber.exists_isOpen_isBounded_subring`: an ultrametric seminormed ring has an open
+  bounded subring, even when `‖1‖ ≠ 1`.
 * `TauCeti.Huber.IsTateRing.of_isUnit_norm_lt_one`: an ultrametric seminormed commutative ring
-  with `‖1‖ = 1` and a unit of norm less than one is a Tate ring.
+  with a unit of norm less than one is a Tate ring.
 * `TauCeti.Huber.IsTateRing.of_nontriviallyNormedField`: a nontrivially normed field with an
   ultrametric norm is a Tate ring; for instance `ℚ_[p]`.
 * `TauCeti.Huber.IsTateRing.of_normedAlgebra`: an ultrametric seminormed algebra over a
@@ -258,15 +260,38 @@ theorem coe_powerBoundedSubring_eq_closedBall :
 
 end Ultrametric
 
-/-- **An ultrametric seminormed commutative ring with `‖1‖ = 1` and a unit of norm less than one
-is a Tate ring.** The closed unit ball `Subring.unitClosedBall` is open because the norm is
-ultrametric and bounded because it is a ball, and the unit is a pseudouniformiser
-(`IsPseudoUniformizer.of_norm_lt_one`). -/
+/-- **An ultrametric seminormed ring has an open bounded subring**: the elements
+acting contractively by multiplication. This is the closed unit ball when `‖1‖ = 1`, and it is
+still a subring when the norm has `‖1‖ > 1`. -/
+theorem exists_isOpen_isBounded_subring (R : Type*) [SeminormedRing R] [IsUltrametricDist R] :
+    ∃ R₀ : Subring R, IsOpen (R₀ : Set R) ∧ IsBounded (R₀ : Set R) := by
+  let R₀ : Subring R :=
+    { carrier := {a | ∀ x : R, ‖a * x‖ ≤ ‖x‖}
+      zero_mem' := by simp
+      one_mem' := by simp
+      add_mem' := fun ha hb x ↦ by
+        rw [add_mul]
+        exact (IsUltrametricDist.norm_add_le_max _ _).trans (max_le (ha x) (hb x))
+      neg_mem' := fun ha x ↦ by simpa using ha x
+      mul_mem' := fun ha hb x ↦ by
+        rw [mul_assoc]
+        exact (ha _).trans (hb x) }
+  have hball : Metric.ball (0 : R) 1 ⊆ R₀ := by
+    intro a ha x
+    exact (norm_mul_le a x).trans
+      (mul_le_of_le_one_left (norm_nonneg x) (mem_ball_zero_iff.mp ha).le)
+  refine ⟨R₀, R₀.toAddSubgroup.isOpen_of_mem_nhds
+    (Filter.mem_of_superset (Metric.ball_mem_nhds 0 zero_lt_one) hball),
+    (isBounded_closedBall_zero ‖(1 : R)‖).subset fun a ha ↦ mem_closedBall_zero_iff.mpr ?_⟩
+  simpa using ha 1
+
+/-- **An ultrametric seminormed commutative ring with a unit of norm less than one is a Tate
+ring.** The subring of elements acting contractively (`exists_isOpen_isBounded_subring`) is open
+and bounded, and the unit is a pseudouniformiser (`IsPseudoUniformizer.of_norm_lt_one`). -/
 theorem IsTateRing.of_isUnit_norm_lt_one {R : Type*} [SeminormedCommRing R] [IsUltrametricDist R]
-    [NormOneClass R] {ϖ : R} (hϖ : IsUnit ϖ) (hϖ1 : ‖ϖ‖ < 1) : IsTateRing R :=
-  IsTateRing.of_isOpen_isBounded (Subring.unitClosedBall R) (Subring.isOpen_unitClosedBall R)
-    (Subring.coe_unitClosedBall R ▸ isBounded_closedBall_zero 1)
-    (IsPseudoUniformizer.of_norm_lt_one hϖ hϖ1)
+    {ϖ : R} (hϖ : IsUnit ϖ) (hϖ1 : ‖ϖ‖ < 1) : IsTateRing R :=
+  let ⟨R₀, hopen, hb⟩ := exists_isOpen_isBounded_subring R
+  IsTateRing.of_isOpen_isBounded R₀ hopen hb (IsPseudoUniformizer.of_norm_lt_one hϖ hϖ1)
 
 /-- **A nontrivially normed field with an ultrametric norm is a Tate ring**, by
 `IsTateRing.of_isUnit_norm_lt_one` applied to any `ϖ` with `0 < ‖ϖ‖ < 1`. Its ring of integers
@@ -281,27 +306,7 @@ No normalisation of the algebra norm at one is required. -/
 theorem IsTateRing.of_normedAlgebra (K : Type*) [NontriviallyNormedField K]
     (A : Type*) [SeminormedCommRing A] [NormedAlgebra K A]
     [IsUltrametricDist A] : IsTateRing A := by
-  -- The elements acting contractively by multiplication form an open bounded subring,
-  -- even when the given norm has `‖1‖ > 1`.
-  let A₀ : Subring A :=
-    { carrier := {a | ∀ x : A, ‖a * x‖ ≤ ‖x‖}
-      zero_mem' := by simp
-      one_mem' := by simp
-      add_mem' := fun ha hb x ↦ by
-        rw [add_mul]
-        exact (IsUltrametricDist.norm_add_le_max _ _).trans (max_le (ha x) (hb x))
-      neg_mem' := fun ha x ↦ by simpa using ha x
-      mul_mem' := fun ha hb x ↦ by
-        rw [mul_assoc]
-        exact (ha _).trans (hb x) }
-  have hball : Metric.ball (0 : A) 1 ⊆ A₀ := by
-    intro a ha x
-    exact (norm_mul_le a x).trans
-      (mul_le_of_le_one_left (norm_nonneg x) (mem_ball_zero_iff.mp ha).le)
-  have hopen : IsOpen (A₀ : Set A) := A₀.toAddSubgroup.isOpen_of_mem_nhds
-    (Filter.mem_of_superset (Metric.ball_mem_nhds 0 zero_lt_one) hball)
-  have hb : IsBounded (A₀ : Set A) := (isBounded_closedBall_zero ‖(1 : A)‖).subset
-    fun a ha ↦ mem_closedBall_zero_iff.mpr (by simpa using ha 1)
+  obtain ⟨A₀, hopen, hb⟩ := exists_isOpen_isBounded_subring A
   obtain ⟨ϖ, hϖ0, hϖ1⟩ := NormedField.exists_norm_lt_one K
   have hϖ := IsPseudoUniformizer.of_norm_lt_one
     (isUnit_iff_ne_zero.mpr (norm_pos_iff.mp hϖ0)) hϖ1
