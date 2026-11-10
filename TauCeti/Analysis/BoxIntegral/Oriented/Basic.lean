@@ -245,22 +245,16 @@ theorem hasHenstockIntervalIntegral_zero (a b : ℝ) :
 
 /-- A linear isometry `e : E →ₗᵢ[ℝ] F` does not change the existence or the value of an oriented
 Henstock integral: the integral sums of `e ∘ f` are the images of those of `f`. -/
-theorem hasHenstockIntervalIntegral_map_iff {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (e : E →ₗᵢ[ℝ] F) :
+protected theorem _root_.LinearIsometry.hasHenstockIntervalIntegral_comp_iff {F : Type*}
+    [NormedAddCommGroup F] [NormedSpace ℝ F] (e : E →ₗᵢ[ℝ] F) :
     HasHenstockIntervalIntegral (fun t ↦ e (f t)) a b (e y) ↔
       HasHenstockIntervalIntegral f a b y := by
-  have hbox {I : Box (Fin 1)} {g : (Fin 1 → ℝ) → E} {z : E} :
-      HasIntegral I IntegrationParams.Henstock (fun x ↦ e (g x)) BoxAdditiveMap.volume (e z) ↔
-        HasIntegral I IntegrationParams.Henstock g BoxAdditiveMap.volume z := by
-    have hsum (π : TaggedPrepartition I) :
-        integralSum (fun x ↦ e (g x)) BoxAdditiveMap.volume π =
-          e (integralSum g BoxAdditiveMap.volume π) := by
-      simp [integralSum, BoxAdditiveMap.volume, map_sum]
-    simp only [hasIntegral_iff, hsum, LinearIsometry.dist_map]
   rcases lt_trichotomy a b with hab | rfl | hba
-  · simp only [hasHenstockIntervalIntegral_iff_of_lt hab, hbox]
+  · simp only [hasHenstockIntervalIntegral_iff_of_lt hab,
+      hasIntegral_volume_comp_linearIsometry_iff]
   · simp only [hasHenstockIntervalIntegral_same, map_eq_zero_iff e e.injective]
-  · simp only [hasHenstockIntervalIntegral_iff_of_gt hba, ← map_neg, hbox]
+  · simp only [hasHenstockIntervalIntegral_iff_of_gt hba, ← map_neg,
+      hasIntegral_volume_comp_linearIsometry_iff]
 
 variable [CompleteSpace E]
 
@@ -427,13 +421,13 @@ private theorem trans_of_completeSpace (h₁ : HasHenstockIntervalIntegral f a c
 omit [CompleteSpace E] in
 /-- Local conditional Henstock integrals glue across any intermediate parameter, including
 backtracking beyond either endpoint. No integrability on the whole interval is assumed, and the
-space need not be complete: the statement is transferred to the completion. -/
+space need not be complete. -/
 theorem HasHenstockIntervalIntegral.trans (h₁ : HasHenstockIntervalIntegral f a c y)
     (h₂ : HasHenstockIntervalIntegral f c b z) : HasHenstockIntervalIntegral f a b (y + z) := by
   let e := UniformSpace.Completion.toComplₗᵢ (𝕜 := ℝ) (E := E)
-  have h := trans_of_completeSpace ((hasHenstockIntervalIntegral_map_iff e).2 h₁)
-    ((hasHenstockIntervalIntegral_map_iff e).2 h₂)
-  rwa [← map_add, hasHenstockIntervalIntegral_map_iff] at h
+  have h := trans_of_completeSpace (e.hasHenstockIntervalIntegral_comp_iff.2 h₁)
+    (e.hasHenstockIntervalIntegral_comp_iff.2 h₂)
+  rwa [← map_add, e.hasHenstockIntervalIntegral_comp_iff] at h
 
 
 /-- Any finite subdivision whose nodes lie in the endpoint interval admits actual gauge values

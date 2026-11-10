@@ -45,8 +45,7 @@ private theorem hasHenstockIntervalIntegral_of_hasDerivAt_off_countable_of_compl
 
 omit [CompleteSpace E] in
 /-- The oriented Henstock fundamental theorem for a continuous primitive differentiable
-outside a countable exceptional set in the interval interior. The space need not be complete: the
-statement is transferred to the completion. -/
+outside a countable exceptional set in the interval interior. The space need not be complete. -/
 theorem hasHenstockIntervalIntegral_of_hasDerivAt_off_countable {a b : ℝ} {f f' : ℝ → E} {s : Set ℝ}
     (hs : s.Countable) (hc : ContinuousOn f (uIcc a b))
     (hd : ∀ x ∈ uIoo a b \ s, HasDerivAt f (f' x) x) :
@@ -56,7 +55,7 @@ theorem hasHenstockIntervalIntegral_of_hasDerivAt_off_countable {a b : ℝ} {f f
     (f := fun t ↦ e (f t)) (f' := fun t ↦ e (f' t)) hs (e.continuous.comp_continuousOn hc)
     fun x hx ↦ e.toContinuousLinearMap.hasFDerivAt.comp_hasDerivAt x (hd x hx)
   rw [← map_sub] at h
-  exact (hasHenstockIntervalIntegral_map_iff e).1 h
+  exact e.hasHenstockIntervalIntegral_comp_iff.1 h
 
 /-- Oriented substitution for continuous integrands and continuous scalar parametrizations
 with countably many derivative exceptions. The parameter may reverse direction or backtrack. -/
