@@ -154,12 +154,16 @@ theorem not_isIsothermalChart_conj :
   have hd : mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) Complex.conjCLE.toHomeomorph.toOpenPartialHomeomorph 0 =
       (Complex.conjCLE : ℂ →L[ℝ] ℂ) := by
     rw [mfderiv_eq_fderiv]
+    simp only [mfld_simps, ContinuousLinearEquiv.coe_toHomeomorph]
     exact Complex.conjCLE.fderiv
   have h1 := h.mfderiv_apply_commute (mem_univ 0) (1 : ℂ)
   rw [hd] at h1
-  have h2 : (starRingEnd ℂ) (Complex.I * 1) = Complex.I * (starRingEnd ℂ) 1 :=
+  -- Read both sides of `h1` through `ofComplexManifold_apply`: the tangent spaces of `ℂ` are `ℂ`,
+  -- on which `ofComplexManifold ℂ ℂ` is multiplication by `i`.
+  have h2 : Complex.conjCLE (Complex.I • (1 : ℂ)) = Complex.I • Complex.conjCLE (1 : ℂ) :=
     (congrArg Complex.conjCLE (ofComplexManifold_apply (E := ℂ) 0 1).symm).trans
       (h1.trans (ofComplexManifold_apply (E := ℂ) _ _))
+  rw [Complex.conjCLE_apply, Complex.conjCLE_apply] at h2
   norm_num [Complex.ext_iff] at h2
 
 /-! ### The complex curve of an almost complex surface with isothermal charts -/
@@ -202,43 +206,6 @@ theorem homeomorph_apply (p : IsothermalSurface j) : homeomorph j p = p.toSurfac
 theorem homeomorph_symm_apply (x : M) : (homeomorph j).symm x = ofSurface x :=
   (rfl)
 
-section transOpenPartialHomeomorph
-
-variable {e : OpenPartialHomeomorph M ℂ}
-
-variable {j} in
-/-- A point of the isothermal surface lies in the source of `e` read through `homeomorph` exactly
-when the corresponding point of `M` lies in the source of `e`. -/
-theorem mem_transOpenPartialHomeomorph_source {p : IsothermalSurface j} :
-    p ∈ ((homeomorph j).transOpenPartialHomeomorph e).source ↔ p.toSurface ∈ e.source :=
-  (Iff.rfl)
-
-/-- A point of `ℂ` lies in the target of `e` read through `homeomorph` exactly when it lies in the
-target of `e`. -/
-theorem mem_transOpenPartialHomeomorph_target {z : ℂ} :
-    z ∈ ((homeomorph j).transOpenPartialHomeomorph e).target ↔ z ∈ e.target :=
-  (Iff.rfl)
-
-variable {j} in
-/-- Near a point whose image lies in the source of `e`, the identity to `M` is the inverse of `e`
-after the chart `(homeomorph j).transOpenPartialHomeomorph e`. -/
-theorem homeomorph_eventuallyEq_symm_comp {p : IsothermalSurface j}
-    (hp : p.toSurface ∈ e.source) :
-    homeomorph j =ᶠ[𝓝 p] e.symm ∘ (homeomorph j).transOpenPartialHomeomorph e := by
-  filter_upwards [((homeomorph j).transOpenPartialHomeomorph e).open_source.mem_nhds
-    (mem_transOpenPartialHomeomorph_source.2 hp)] with q hq
-  simp [e.left_inv (mem_transOpenPartialHomeomorph_source.1 hq)]
-
-variable {j} in
-/-- Near a point of the source of `e`, the identity from `M` is the inverse of the chart
-`(homeomorph j).transOpenPartialHomeomorph e` after `e`. -/
-theorem homeomorph_symm_eventuallyEq_symm_comp {x : M} (hx : x ∈ e.source) :
-    (homeomorph j).symm =ᶠ[𝓝 x] ((homeomorph j).transOpenPartialHomeomorph e).symm ∘ e := by
-  filter_upwards [e.open_source.mem_nhds hx] with y hy
-  simp [e.left_inv hy]
-
-end transOpenPartialHomeomorph
-
 variable [j.HasIsothermalCharts]
 
 /-- The isothermal surface of `j` is charted by the isothermal charts of `j`. -/
@@ -246,8 +213,8 @@ instance instChartedSpace : ChartedSpace ℂ (IsothermalSurface j) where
   atlas := (homeomorph j).transOpenPartialHomeomorph '' {e | IsIsothermalChart j e}
   chartAt p := (homeomorph j).transOpenPartialHomeomorph
     (HasIsothermalCharts.exists_isIsothermalChart (j := j) p.toSurface).choose
-  mem_chart_source p := mem_transOpenPartialHomeomorph_source.2
-    (HasIsothermalCharts.exists_isIsothermalChart (j := j) p.toSurface).choose_spec.2
+  mem_chart_source p := by
+    simpa using (HasIsothermalCharts.exists_isIsothermalChart (j := j) p.toSurface).choose_spec.2
   chart_mem_atlas p :=
     ⟨_, (HasIsothermalCharts.exists_isIsothermalChart (j := j) p.toSurface).choose_spec.1, rfl⟩
 
@@ -295,8 +262,8 @@ theorem contMDiff_homeomorph : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) 1 (homeom
     subset_maximalAtlas (transOpenPartialHomeomorph_mem_atlas he)
   -- Near `p`, the identity is the inverse of `e` after the chart `c`.
   exact ((contMDiffAt_symm_of_mem_maximalAtlas he.mem_maximalAtlas (e.map_source hx)).comp p
-    (contMDiffAt_of_mem_maximalAtlas hc (mem_transOpenPartialHomeomorph_source.2 hx)))
-    |>.congr_of_eventuallyEq (homeomorph_eventuallyEq_symm_comp hx)
+    (contMDiffAt_of_mem_maximalAtlas hc (by simpa [c] using hx)))
+    |>.congr_of_eventuallyEq ((homeomorph j).eventuallyEq_symm_comp_transOpenPartialHomeomorph hx)
 
 /-- The identity from `M` to the isothermal surface of `j` is a real `C¹` map. -/
 theorem contMDiff_homeomorph_symm : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) 1 (homeomorph j).symm := by
@@ -306,10 +273,10 @@ theorem contMDiff_homeomorph_symm : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) 1 (h
   have hc : c ∈ maximalAtlas 𝓘(ℝ, ℂ) 1 (IsothermalSurface j) :=
     subset_maximalAtlas (transOpenPartialHomeomorph_mem_atlas he)
   -- Near `x`, the identity is the inverse of the chart `c` after `e`.
-  exact ((contMDiffAt_symm_of_mem_maximalAtlas hc
-    ((mem_transOpenPartialHomeomorph_target j).2 (e.map_source hx))).comp x
+  exact ((contMDiffAt_symm_of_mem_maximalAtlas hc (by simpa [c] using e.map_source hx)).comp x
     (contMDiffAt_of_mem_maximalAtlas he.mem_maximalAtlas hx))
-    |>.congr_of_eventuallyEq (homeomorph_symm_eventuallyEq_symm_comp hx)
+    |>.congr_of_eventuallyEq
+      ((homeomorph j).symm_eventuallyEq_symm_transOpenPartialHomeomorph_comp hx)
 
 /-- The identity from the isothermal surface of `j` to `M`, as a real `C¹` diffeomorphism. -/
 def diffeomorph : IsothermalSurface j ≃ₘ^1⟮𝓘(ℝ, ℂ), 𝓘(ℝ, ℂ)⟯ M where
@@ -337,10 +304,10 @@ theorem isPseudoholomorphic_homeomorph :
   have hcp : IsPseudoholomorphicAt (ofComplexManifold ℂ (IsothermalSurface j))
       (ofComplexManifold ℂ ℂ) c p :=
     isPseudoholomorphicAt_ofComplexManifold_iff.2
-      (mdifferentiableAt_atlas hc (mem_transOpenPartialHomeomorph_source.2 hx))
+      (mdifferentiableAt_atlas hc (by simpa [c] using hx))
   exact (IsPseudoholomorphicAt.comp (u := c) (x := p)
     (he.isPseudoholomorphicAt_symm (e.map_source hx)) hcp).congr_of_eventuallyEq
-    (homeomorph_eventuallyEq_symm_comp hx)
+    ((homeomorph j).eventuallyEq_symm_comp_transOpenPartialHomeomorph hx)
 
 /-- **The induced almost complex structure is `j`.** The identity from `M` to the isothermal
 surface of `j` is pseudoholomorphic from `j` to `ofComplexManifold`. -/
@@ -354,9 +321,10 @@ theorem isPseudoholomorphic_homeomorph_symm :
   have hcz : IsPseudoholomorphicAt (ofComplexManifold ℂ ℂ)
       (ofComplexManifold ℂ (IsothermalSurface j)) c.symm (e x) :=
     isPseudoholomorphicAt_ofComplexManifold_iff.2 (mdifferentiableAt_atlas_symm hc
-      ((mem_transOpenPartialHomeomorph_target j).2 (e.map_source hx)))
+      (by simpa [c] using e.map_source hx))
   exact (IsPseudoholomorphicAt.comp (v := c.symm) hcz (he.isPseudoholomorphicAt x hx))
-    |>.congr_of_eventuallyEq (homeomorph_symm_eventuallyEq_symm_comp hx)
+    |>.congr_of_eventuallyEq
+      ((homeomorph j).symm_eventuallyEq_symm_transOpenPartialHomeomorph_comp hx)
 
 end IsothermalSurface
 
