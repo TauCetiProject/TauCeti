@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Topology.Homotopy.Affine
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Derivative
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.LocalIndex
 import TauCeti.Analysis.Calculus.FDeriv.Equiv
@@ -28,16 +27,14 @@ compact (`IsCompact.finite_of_hasFDerivAt`), which is automatic for a proper map
 
 The local index at a regular point compares `f` with its affine linearization, which acts on
 local homology by the sign of its determinant relative to a translation
-(`TauCeti.localHomologyMap_domRestrict_eq_sign_det_smul_of_hasFDerivAt`). Translations have local
-index one for every orientation (`TauCeti.HomologicalOrientation.localIndex_addRight`): they are
-properly homotopic to the identity, so they have degree one.
+(`TauCeti.localHomologyMap_domRestrict_eq_sign_det_smul_of_hasFDerivAt`), and translations have
+local index one for every orientation (`TauCeti.HomologicalOrientation.localIndex_addRight`).
 
 This identifies the homological degree of a smooth proper map with the classical differential
 topological degree.
 
 ## Main results
 
-* `TauCeti.HomologicalOrientation.localIndex_addRight`: translations have local index one.
 * `TauCeti.HomologicalOrientation.localIndex_eq_sign_det`: the local index at a regular point is
   the sign of the Jacobian determinant.
 * `TauCeti.HomologicalOrientation.degree_eq_sum_sign_det`: the degree of a proper map is the signed
@@ -62,33 +59,6 @@ namespace HomologicalOrientation
 
 variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {n : ℕ}
   (o : HomologicalOrientation E E n) (hE : finrank ℝ E = n)
-
-include hE in
-/-- Translations preserve every orientation of a finite-dimensional real normed space: the
-translation by `v` has local index `1` at every point. -/
-theorem localIndex_addRight (v x : E) : o.localIndex o (ContinuousMap.addRight v) x = 1 := by
-  -- The straight-line homotopy from the identity to the translation is proper: it is the
-  -- projection `[0, 1] × E → E` composed with the homeomorphism `(t, y) ↦ (t, y + t v)`.
-  have hH : IsProperMap (ContinuousMap.Homotopy.affine (ContinuousMap.id E)
-      (ContinuousMap.addRight v)) := by
-    let Φ : unitInterval × E ≃ₜ unitInterval × E :=
-      { toFun := fun p ↦ (p.1, p.2 + (p.1 : ℝ) • v)
-        invFun := fun p ↦ (p.1, p.2 - (p.1 : ℝ) • v)
-        left_inv := fun p ↦ by simp
-        right_inv := fun p ↦ by simp
-        continuous_toFun := by fun_prop
-        continuous_invFun := by fun_prop }
-    have h : ⇑(ContinuousMap.Homotopy.affine (ContinuousMap.id E) (ContinuousMap.addRight v)) =
-        Prod.snd ∘ Φ := by
-      ext p
-      simp [Φ, AffineMap.lineMap_apply_module', add_comm]
-    rw [h]
-    exact isProperMap_snd_of_compactSpace.comp Φ.isProperMap
-  have hdeg := o.degree_eq_of_homotopy o hE hE (ContinuousMap.Homotopy.affine _ _) hH
-  rw [degree_id] at hdeg
-  have hfib : ContinuousMap.addRight v ⁻¹' {x + v} = {x} := by ext; simp
-  rw [← o.localDegree_eq_localIndex o hE hE _ hfib,
-    o.localDegree_eq_degree o hE hE (Homeomorph.addRight v).isProperMap, ← hdeg]
 
 include hE in
 /-- **The local index at a regular point is the sign of the Jacobian.** If `f : E → E` is
