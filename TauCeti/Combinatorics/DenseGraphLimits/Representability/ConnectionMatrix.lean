@@ -38,8 +38,8 @@ of the Lovász–Szegedy representability theorem.
   conditions, by which each of them is both established and applied;
 * `TauCeti.DenseGraphLimits.isHermitian_connectionMatrix` — isomorphism invariance makes connection
   matrices Hermitian because the two gluing orders are isomorphic;
-* `TauCeti.DenseGraphLimits.IsReflectionPositive.posSemidef` reindexes the definition, which
-  quantifies over `Fin n`-indexed families, to an arbitrary finite index type;
+* `TauCeti.DenseGraphLimits.IsReflectionPositive.posSemidef` extends the definition, which
+  quantifies over `Fin n`-indexed families, to an arbitrary index type;
 * `TauCeti.DenseGraphLimits.IsReflectionPositive.nonneg_glue_self` is the diagonal consequence
   `0 ≤ f` on a self-gluing;
 * `TauCeti.DenseGraphLimits.IsMultiplicative.apply_sum_bot` says adjoining any finite edgeless
@@ -55,9 +55,9 @@ that reflection positivity is not automatic.
 
 `connectionMatrix` takes an arbitrary index type: the `Matrix ι ι ℝ` it produces needs no
 finiteness, and `IsReflectionPositive` supplies `Fin n` where positive semidefiniteness is
-asserted.  `IsReflectionPositive.posSemidef` then recovers the arbitrary finite index case, since
-a connection matrix on `ι` is a submatrix of one on `Fin (Fintype.card ι)` along
-`Fintype.equivFin`.
+asserted.  `IsReflectionPositive.posSemidef` then recovers the arbitrary index case, since every
+finitely supported test vector lives on a finite principal block, a connection matrix on a
+`Fin n`-indexed family.
 
 ## References
 
@@ -131,7 +131,7 @@ theorem isHermitian_connectionMatrix (f : GraphParam) (hf : IsIsoInvariant f) {k
 
 /-- A graph parameter is **reflection positive** when every finite connection matrix is positive
 semidefinite — every finite principal block of each `M(f, k)` is PSD.  The definition quantifies
-over `Fin n`-indexed families; `IsReflectionPositive.posSemidef` recovers an arbitrary finite index
+over `Fin n`-indexed families; `IsReflectionPositive.posSemidef` recovers an arbitrary index
 type. -/
 def IsReflectionPositive (f : GraphParam) : Prop :=
   ∀ (k n : ℕ) (A : Fin n → LabeledGraph k), (connectionMatrix f A).PosSemidef
@@ -165,20 +165,30 @@ one-vertex graph `K₁` is `1`.  This is both the way to prove `IsNormalized` an
 it. -/
 theorem isNormalized_iff {f : GraphParam} : IsNormalized f ↔ f 1 ⊥ = 1 := (Iff.rfl)
 
-/-- Reflection positivity for an arbitrary finite index type.  A connection matrix on `ι` is the
-`Fintype.equivFin ι` submatrix of one on `Fin (Fintype.card ι)`, and positive semidefiniteness is
-invariant under reindexing by an equivalence. -/
+/-- Reflection positivity for an arbitrary index type.  Every finitely supported test vector is
+carried by a finite principal block of the connection matrix, which is a connection matrix on a
+`Fin n`-indexed family, and Hermitianness is a statement about `2 × 2` blocks. -/
 theorem IsReflectionPositive.posSemidef {f : GraphParam} (hf : IsReflectionPositive f) {k : ℕ}
-    {ι : Type*} [Finite ι] (A : ι → LabeledGraph k) : (connectionMatrix f A).PosSemidef := by
+    {ι : Type*} (A : ι → LabeledGraph k) : (connectionMatrix f A).PosSemidef := by
   classical
-  have _inst : Fintype ι := Fintype.ofFinite ι
-  have hsub : connectionMatrix f (A ∘ (Fintype.equivFin ι).symm) =
-      (connectionMatrix f A).submatrix (Fintype.equivFin ι).symm (Fintype.equivFin ι).symm := by
-    ext i j
-    simp only [connectionMatrix_apply, Matrix.submatrix_apply, Function.comp_apply]
-  have h := hf k (Fintype.card ι) (A ∘ (Fintype.equivFin ι).symm)
-  rw [hsub] at h
-  exact (Matrix.posSemidef_submatrix_equiv (Fintype.equivFin ι).symm).1 h
+  have hsub : ∀ (n : ℕ) (g : Fin n → ι),
+      ((connectionMatrix f A).submatrix g g).PosSemidef := fun n g => by
+    have h := hf k n (A ∘ g)
+    have hg : connectionMatrix f (A ∘ g) = (connectionMatrix f A).submatrix g g := by
+      ext i j
+      simp only [connectionMatrix_apply, Matrix.submatrix_apply, Function.comp_apply]
+    rwa [hg] at h
+  refine ⟨Matrix.ext fun i j => ?_, fun x => ?_⟩
+  · have h := (hsub 2 ![i, j]).1.apply 0 1
+    simpa [Matrix.conjTranspose_apply] using h
+  · let e := x.support.equivFin
+    let g : Fin x.support.card → ι := fun s => (e.symm s : ι)
+    have hg : Function.Injective g := fun a b hab => e.symm.injective (Subtype.ext hab)
+    have hx : (x.support : Set ι) ⊆ Set.range g := fun i hi =>
+      ⟨e ⟨i, hi⟩, by simp [g]⟩
+    have h := (hsub _ g).2 (x.comapDomain g hg.injOn)
+    rw [← Finsupp.mapDomain_comapDomain g hg x hx]
+    simpa [Finsupp.sum_mapDomain_index, add_mul, mul_add] using h
 
 /-- The diagonal of a connection matrix is nonnegative: a reflection-positive parameter is
 nonnegative on every self-gluing. -/
