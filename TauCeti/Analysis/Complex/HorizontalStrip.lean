@@ -35,6 +35,12 @@ theorem bijOn_ofReal_mul_add_horizontalStrip {s : ℝ} (hs : 0 < s) (c : ℂ) (l
   ((Equiv.mulLeft₀ (s : ℂ) (ofReal_ne_zero.mpr hs.ne')).trans (Equiv.addRight c)).bijOn
     fun w => by simp [hs]
 
+end TauCeti
+
+namespace IsOpen
+
+open Complex Set
+
 /-- If the frontier of an open set `U ⊆ ℂ` is, to the right of `R`, exactly the two horizontal
 lines at heights `lo` and `hi`, and a point `z` of the band between them to the right of `R` is not
 in `U`, then every point of `U` to the right of `R` lies strictly below or strictly above the
@@ -104,4 +110,4 @@ theorem mem_iff_im_lt_or_lt_im_of_frontier_eq {U : Set ℂ} (hUo : IsOpen U) {R 
     · linarith [(abs_lt.mp hu).2]
   exact ⟨hout hwR, fun hw => hw.elim (fun h => hbelow ⟨hwR, h⟩) (fun h => habove ⟨hwR, h⟩)⟩
 
-end TauCeti
+end IsOpen
