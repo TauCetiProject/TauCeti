@@ -99,27 +99,6 @@ theorem MemLp.of_le_of_le {f : α → ε} {p₀ p p₁ : ℝ≥0∞} (hf₀ : Me
         rw [lintegral_add_left' (hmeas.enorm.pow_const _)]
         exact ENNReal.add_lt_top.2 ⟨hI₀, hI₁⟩
 
-/-- If `‖f‖_q ≤ M` for `M ≠ 0, ∞`, then `∫ M ^ (r - q) ‖f‖ ^ q ≤ M ^ r` for every real `r`. -/
-theorem lintegral_rpow_sub_mul_rpow_enorm_le {f : α → ε} {q M : ℝ≥0∞} (r : ℝ) (hq0 : q ≠ 0)
-    (hq : q ≠ ∞) (hM0 : M ≠ 0) (hM : M ≠ ∞) (hf : AEStronglyMeasurable f μ)
-    (hfM : eLpNorm f q μ ≤ M) :
-    ∫⁻ x, M ^ (r - q.toReal) * ‖f x‖ₑ ^ q.toReal ∂μ ≤ M ^ r := by
-  rw [lintegral_const_mul' _ _ (ENNReal.rpow_ne_top_of_ne_zero hM0 hM),
-    lintegral_rpow_enorm_eq_eLpNorm_rpow hq0 hq hf]
-  calc M ^ (r - q.toReal) * eLpNorm f q μ ^ q.toReal
-      ≤ M ^ (r - q.toReal) * M ^ q.toReal := by gcongr
-    _ = M ^ r := by rw [← ENNReal.rpow_add _ _ hM0 hM, sub_add_cancel]
-
-/-- If `‖k x‖ ^ q ≤ t ^ (q - p) ‖f x‖ ^ p` pointwise, where `t = ‖f‖_p`, then `‖k‖_q ≤ t`. -/
-theorem eLpNorm_le_of_rpow_le_rpow_mul {f k : α → ε} {p q : ℝ≥0∞} (hp0 : p ≠ 0)
-    (hp : p ≠ ∞) (hq0 : q ≠ 0) (hq : q ≠ ∞) (hf : AEStronglyMeasurable f μ)
-    (hk : AEStronglyMeasurable k μ) (ht0 : eLpNorm f p μ ≠ 0) (ht : eLpNorm f p μ ≠ ∞)
-    (hkf : ∀ x, ‖k x‖ₑ ^ q.toReal ≤
-      eLpNorm f p μ ^ (q.toReal - p.toReal) * ‖f x‖ₑ ^ p.toReal) :
-    eLpNorm k q μ ≤ eLpNorm f p μ :=
-  eLpNorm_le_of_lintegral_rpow_le hq0 hq hk <| (lintegral_mono hkf).trans <|
-    lintegral_rpow_sub_mul_rpow_enorm_le _ hp0 hp ht0 ht hf le_rfl
-
 section Split
 
 variable {E : Type*} [NormedAddCommGroup E]

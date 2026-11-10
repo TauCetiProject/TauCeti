@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
+import TauCeti.MeasureTheory.Function.AEEqFun
 public import TauCeti.MeasureTheory.Function.Lp.IntermediateExponent
 
 /-!
@@ -47,13 +48,6 @@ public noncomputable section
 
 open MeasureTheory Filter Topology WithLp
 open scoped ENNReal
-
-/-- Two sums in `α →ₘ[μ] β` are equal exactly when the sums of their representatives agree almost
-everywhere. -/
-theorem MeasureTheory.AEEqFun.add_eq_add_iff_ae_eq {α β : Type*} {mα : MeasurableSpace α}
-    {μ : Measure α} [TopologicalSpace β] [Add β] [ContinuousAdd β] {a b c d : α →ₘ[μ] β} :
-    a + b = c + d ↔ ⇑a + ⇑b =ᵐ[μ] ⇑c + ⇑d := by
-  rw [AEEqFun.ext_iff, (AEEqFun.coeFn_add a b).congr_left, (AEEqFun.coeFn_add c d).congr_right]
 
 namespace TauCeti
 
@@ -104,9 +98,8 @@ variable {r s : ℝ≥0∞} [Fact (1 ≤ r)] [Fact (1 ≤ s)]
 /-- The sum of the classes of `f` and `g` is the class of `h` exactly when `f + g = h` almost
 everywhere. -/
 theorem lpToAmbient_add_lpToAmbient_eq_iff {f : Lp E p μ} {g : Lp E q μ} {h : Lp E r μ} :
-    lpToAmbient 𝕜 f + lpToAmbient 𝕜 g = lpToAmbient 𝕜 h ↔ ⇑f + ⇑g =ᵐ[μ] ⇑h := by
-  change (f : α →ₘ[μ] E) + (g : α →ₘ[μ] E) = (h : α →ₘ[μ] E) ↔ _
-  rw [AEEqFun.ext_iff, (AEEqFun.coeFn_add _ _).congr_left]
+    lpToAmbient 𝕜 f + lpToAmbient 𝕜 g = lpToAmbient 𝕜 h ↔ ⇑f + ⇑g =ᵐ[μ] ⇑h :=
+  AEEqFun.ext_iff.trans (AEEqFun.coeFn_add (f : α →ₘ[μ] E) g).congr_left
 
 /-- Two sums of classes of `Lᵖ` functions agree exactly when the sums of the functions agree almost
 everywhere. -/
@@ -152,16 +145,15 @@ instance isClosed_sumKer_l1Linfty :
   have h₁ : TendstoInMeasure μ (fun n => ⇑(-(u n).snd)) atTop ⇑(-x.snd) :=
     tendstoInMeasure_of_tendsto_Lp
       ((((sndL 1 𝕜 _ _).continuous.tendsto x).comp hux).neg)
-  have hu' (n : ℕ) : ((u n).fst : α →ₘ[μ] E) = ((-(u n).snd : Lp E ∞ μ) : α →ₘ[μ] E) := by
+  have hu' (n : ℕ) : ⇑(-(u n).snd) =ᵐ[μ] ⇑(u n).fst := by
     have := hu n
     simp only [SetLike.mem_coe, mem_sumKer_iff, l1Linfty_embed₀, l1Linfty_embed₁] at this
-    change ((u n).fst : α →ₘ[μ] E) + ((u n).snd : α →ₘ[μ] E) = 0 at this
-    rw [AddSubgroup.coe_neg, eq_neg_iff_add_eq_zero, this]
+    rw [← L1AddLinfty.lpToAmbient_eq_lpToAmbient_iff 𝕜, map_neg,
+      ← eq_neg_of_add_eq_zero_left this]
   have hx' : ⇑x.fst =ᵐ[μ] ⇑(-x.snd) :=
-    tendstoInMeasure_ae_unique h₀ (h₁.congr_left fun n => by rw [hu' n])
+    tendstoInMeasure_ae_unique h₀ (h₁.congr_left hu')
   simp only [SetLike.mem_coe, mem_sumKer_iff, l1Linfty_embed₀, l1Linfty_embed₁]
-  change (x.fst : α →ₘ[μ] E) + (x.snd : α →ₘ[μ] E) = 0
-  rw [AEEqFun.ext hx', AddSubgroup.coe_neg, neg_add_cancel]
+  rw [(L1AddLinfty.lpToAmbient_eq_lpToAmbient_iff 𝕜).2 hx', map_neg, neg_add_cancel]
 
 end CompatibleCouple
 
