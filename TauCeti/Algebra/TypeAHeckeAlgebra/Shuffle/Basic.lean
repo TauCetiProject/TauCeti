@@ -968,6 +968,17 @@ theorem span_range_shuffleRep_single_initial_eq_top :
   simp only [map_smul, LinearMap.smul_apply, hw.shuffleRep_prod_val_inv_unitT_single_initial,
     smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
 
+/-- Two maps of Hecke modules out of the shuffle module agreeing on the initial mask are equal. -/
+theorem shuffleRep_hom_ext {N : Type*} [AddCommGroup N] [Module R N]
+    (σ : TypeAHeckeAlgebra R q (k + l) →ₐ[R] Module.End R N)
+    {F F' : (ShuffleMask k l → U) →ₗ[R] N}
+    (hF : ∀ x, F ∘ₗ shuffleRep k ρ x = σ x ∘ₗ F) (hF' : ∀ x, F' ∘ₗ shuffleRep k ρ x = σ x ∘ₗ F')
+    (h : ∀ u, F (Pi.single ShuffleMask.initial u) = F' (Pi.single ShuffleMask.initial u)) :
+    F = F' :=
+  LinearMap.ext_on_range (span_range_shuffleRep_single_initial_eq_top ρ) fun p ↦ by
+    rw [← LinearMap.comp_apply, hF, LinearMap.comp_apply, h, ← LinearMap.comp_apply, ← hF',
+      LinearMap.comp_apply]
+
 end Rep
 
 end TauCeti.TypeAHeckeAlgebra

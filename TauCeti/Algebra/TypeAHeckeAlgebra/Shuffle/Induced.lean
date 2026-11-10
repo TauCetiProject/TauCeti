@@ -363,16 +363,13 @@ generators of the parabolic subalgebra `H_J`, this is the unique map of Hecke mo
 (`TauCeti.TypeAHeckeAlgebra.shuffleLift_comp_shuffleRep`,
 `TauCeti.TypeAHeckeAlgebra.eq_shuffleLift`). -/
 noncomputable def shuffleLift (f : U →ₗ[R] N) : (ShuffleMask k l → U) →ₗ[R] N :=
-  ∑ S, (-1 : R) ^ S.length • (σ (shuffleInvWord q S) ∘ₗ f ∘ₗ LinearMap.proj S)
+  LinearMap.lsum R (fun _ : ShuffleMask k l ↦ U) R fun S ↦
+    (-1 : R) ^ S.length • (σ (shuffleInvWord q S) ∘ₗ f)
 
 /-- The extension sends the vector `u` at `S` to `(-1) ^ S.length • shuffleInvWord q S • f u`. -/
 theorem shuffleLift_single (f : U →ₗ[R] N) (S : ShuffleMask k l) (u : U) :
     shuffleLift σ f (Pi.single S u) = (-1 : R) ^ S.length • σ (shuffleInvWord q S) (f u) := by
-  rw [shuffleLift, LinearMap.sum_apply, Finset.sum_eq_single S]
-  · simp
-  · intro M _ hM
-    simp [Pi.single_eq_of_ne hM]
-  · simp
+  rw [shuffleLift, LinearMap.lsum_piSingle, LinearMap.smul_apply, LinearMap.comp_apply]
 
 /-- The extension agrees with `f` on the initial mask. -/
 @[simp]
@@ -452,15 +449,6 @@ theorem shuffleLift_comp_shuffleRep {f : U →ₗ[R] N}
   | mul x y _ _ hx hy =>
     rw [map_mul, map_mul, Module.End.mul_eq_comp, Module.End.mul_eq_comp, ← LinearMap.comp_assoc,
       hx, LinearMap.comp_assoc, hy, LinearMap.comp_assoc]
-
-/-- Two maps of Hecke modules out of the shuffle module agreeing on the initial mask are equal. -/
-theorem shuffleRep_hom_ext {F F' : (ShuffleMask k l → U) →ₗ[R] N}
-    (hF : ∀ x, F ∘ₗ shuffleRep k ρ x = σ x ∘ₗ F) (hF' : ∀ x, F' ∘ₗ shuffleRep k ρ x = σ x ∘ₗ F')
-    (h : ∀ u, F (Pi.single ShuffleMask.initial u) = F' (Pi.single ShuffleMask.initial u)) :
-    F = F' :=
-  LinearMap.ext_on_range (span_range_shuffleRep_single_initial_eq_top ρ) fun p ↦ by
-    rw [← LinearMap.comp_apply, hF, LinearMap.comp_apply, h, ← LinearMap.comp_apply, ← hF',
-      LinearMap.comp_apply]
 
 variable {ρ σ} in
 /-- **Uniqueness of the extension.** A map of Hecke modules out of the shuffle module agreeing with
