@@ -150,6 +150,18 @@ theorem exists_isCoupling_of_transportCost_ne_top (h : transportCost c μ ν ≠
   obtain ⟨π, hπ, -⟩ := transportCost_lt_iff.1 h.lt_top
   exact ⟨π, hπ⟩
 
+/-- A probability measure whose transport cost to `ν` is finite has a probability measure `ν`
+as target. -/
+theorem isProbabilityMeasure_right_of_transportCost_ne_top [IsProbabilityMeasure μ]
+    (h : transportCost c μ ν ≠ ⊤) : IsProbabilityMeasure ν :=
+  (exists_isCoupling_of_transportCost_ne_top h).choose_spec.isProbabilityMeasure_right
+
+/-- A probability measure that is the target of a finite transport cost has a probability measure
+`μ` as source. -/
+theorem isProbabilityMeasure_left_of_transportCost_ne_top [IsProbabilityMeasure ν]
+    (h : transportCost c μ ν ≠ ⊤) : IsProbabilityMeasure μ :=
+  ⟨by rw [(exists_isCoupling_of_transportCost_ne_top h).choose_spec.measure_univ_eq, measure_univ]⟩
+
 /-- The transport cost is monotone in the cost function. -/
 @[gcongr]
 theorem transportCost_mono (h : c ≤ c') : transportCost c μ ν ≤ transportCost c' μ ν :=

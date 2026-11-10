@@ -48,7 +48,7 @@ theorem generalizedParetoPDFReal_div_one_sub_cdf (hs : 0 < s) (hx : 0 < x)
   by_cases hξ : ξ = 0
   · subst ξ
     simp [generalizedParetoPDFReal_zero hs, hx, cdf_generalizedParetoMeasure_eq hs,
-      hx.not_ge]
+      hx.not_ge, -generalizedParetoMeasure_zero]
     field_simp
   rw [generalizedParetoPDFReal_of_shape_ne_zero hs hξ hx hw,
     cdf_generalizedParetoMeasure_of_shape_ne_zero hs hξ hx.le hw,
@@ -65,7 +65,7 @@ theorem neg_log_one_sub_cdf_generalizedParetoMeasure (hs : 0 < s) (hx : 0 ≤ x)
       if ξ = 0 then x / s else Real.log (1 + ξ * x / s) / ξ := by
   by_cases hξ : ξ = 0
   · subst ξ
-    rw [generalizedParetoMeasure_zero hs, cdf_expMeasure_eq (inv_pos.mpr hs),
+    rw [generalizedParetoMeasure_zero, cdf_expMeasure_eq (inv_pos.mpr hs),
       ite_eq_left hx]
     simp [Real.log_exp, div_eq_mul_inv, mul_comm]
   have hw : 0 < 1 + ξ * x / s := by

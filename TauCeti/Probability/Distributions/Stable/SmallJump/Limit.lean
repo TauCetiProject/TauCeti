@@ -58,11 +58,11 @@ theorem tendsto_stableSmallJumpRemainderMeasure_of_conv_eq
       isProbabilityMeasure_stableSmallJumpRemainderMeasure hα hβ (hε n) (hεr n)⟩ :
         ℕ → ProbabilityMeasure ℝ) atTop (𝓝 μ) := by
   have hr : 0 < r := (hε 0).trans_le (hεr 0)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure hα hβ hr
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   apply ProbabilityMeasure.tendsto_of_tendsto_charFun
   intro t
   have hne : charFun (stableCompensatedPoissonMeasure α β r) t ≠ 0 := by
-    rw [charFun_stableCompensatedPoissonMeasure hα hβ hr]
+    rw [charFun_stableCompensatedPoissonMeasure hr]
     exact Complex.exp_ne_zero _
   have hquot : charFun μ t = Complex.exp (stableCharacteristicExponent α β t) /
       charFun (stableCompensatedPoissonMeasure α β r) t := by

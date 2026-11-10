@@ -10,9 +10,12 @@ public import Mathlib.Algebra.Homology.BifunctorAssociator
 /-!
 # Naturality of the totalized bifunctor associator
 
-The associator on homological complexes is natural in all three inputs. This
-comparison is needed to identify composition of the totalized tensor functors
-in the graded bimodule action.
+The associator `HomologicalComplex.mapBifunctorAssociator` on totalized triple complexes is
+natural in all three inputs. This comparison is needed to identify composition of the totalized
+tensor functors in the graded bimodule action.
+
+On the way, `mapBifunctor₁₂.ι_mapBifunctorMap` and `mapBifunctor₂₃.ι_mapBifunctorMap` compute
+the maps of totalized triple complexes induced by three morphisms of complexes on each summand.
 
 This extends Joël Riou's construction in `Mathlib.Algebra.Homology.BifunctorAssociator`,
 using `HomologicalComplex.mapBifunctorAssociator` and its summand-inclusion equations.
@@ -55,45 +58,42 @@ variable {C₁ : Type u₁} {C₂ : Type u₂} {C₃ : Type u₃}
   [HasMapBifunctor K₁ (mapBifunctor K₂ K₃ G₂₃ c₂₃) F c₄]
   [HasMapBifunctor L₁ (mapBifunctor L₂ L₃ G₂₃ c₂₃) F c₄]
 
-private theorem ι_map₁₂ (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂) (f₃ : K₃ ⟶ L₃)
-    (p : ι₁) (q : ι₂) (r : ι₃) (j : ι₄) (h : ComplexShape.r c₁ c₂ c₃ c₁₂ c₄
-      (p, q, r) = j) :
+/-- The map on totalized triple complexes induced by `f₁`, `f₂` and `f₃`, restricted to the
+summand of `mapBifunctor (mapBifunctor K₁ K₂ F₁₂ c₁₂) K₃ G c₄` indexed by `(p, q, r)`. -/
+@[reassoc (attr := simp)]
+theorem mapBifunctor₁₂.ι_mapBifunctorMap (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂) (f₃ : K₃ ⟶ L₃)
+    (p : ι₁) (q : ι₂) (r : ι₃) (j : ι₄)
+    (h : ComplexShape.r c₁ c₂ c₃ c₁₂ c₄ (p, q, r) = j) :
     mapBifunctor₁₂.ι F₁₂ G K₁ K₂ K₃ c₁₂ c₄ p q r j h ≫
         (mapBifunctorMap (mapBifunctorMap f₁ f₂ F₁₂ c₁₂) f₃ G c₄).f j =
-      (G.map ((F₁₂.map (f₁.f p)).app (K₂.X q) ≫
-          (F₁₂.obj (L₁.X p)).map (f₂.f q))).app (K₃.X r) ≫
-        (G.obj ((F₁₂.obj (L₁.X p)).obj (L₂.X q))).map (f₃.f r) ≫
-          mapBifunctor₁₂.ι F₁₂ G L₁ L₂ L₃ c₁₂ c₄ p q r j h := by
-  rw [mapBifunctor₁₂.ι_eq F₁₂ G K₁ K₂ K₃ c₁₂ c₄ p q r
-      (ComplexShape.π c₁ c₂ c₁₂ (p, q)) j rfl
-      (by rw [← h]; rfl),
-    Category.assoc, ι_mapBifunctorMap]
-  rw [← NatTrans.comp_app_assoc, ← G.map_comp, ι_mapBifunctorMap]
-  simp only [Functor.map_comp, NatTrans.comp_app, Category.assoc]
-  rw [← NatTrans.naturality_assoc,
-    ← mapBifunctor₁₂.ι_eq F₁₂ G L₁ L₂ L₃ c₁₂ c₄ p q r
-      (ComplexShape.π c₁ c₂ c₁₂ (p, q)) j rfl
-      (by rw [← h]; rfl)]
+      (G.map ((F₁₂.map (f₁.f p)).app (K₂.X q))).app (K₃.X r) ≫
+        (G.map ((F₁₂.obj (L₁.X p)).map (f₂.f q))).app (K₃.X r) ≫
+          (G.obj ((F₁₂.obj (L₁.X p)).obj (L₂.X q))).map (f₃.f r) ≫
+            mapBifunctor₁₂.ι F₁₂ G L₁ L₂ L₃ c₁₂ c₄ p q r j h := by
+  rw [mapBifunctor₁₂.ι_eq F₁₂ G K₁ K₂ K₃ c₁₂ c₄ p q r _ j rfl (by rw [← h]; rfl),
+    mapBifunctor₁₂.ι_eq F₁₂ G L₁ L₂ L₃ c₁₂ c₄ p q r _ j rfl (by rw [← h]; rfl)]
+  simp only [Category.assoc, ← NatTrans.comp_app_assoc, ← G.map_comp,
+    _root_.HomologicalComplex.ι_mapBifunctorMap]
+  simp
 
 omit [DecidableEq ι₁₂] in
-private theorem ι_map₂₃ (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂) (f₃ : K₃ ⟶ L₃)
-    (p : ι₁) (q : ι₂) (r : ι₃) (j : ι₄) (h : ComplexShape.r c₁ c₂ c₃ c₁₂ c₄
-      (p, q, r) = j) :
+/-- The map on totalized triple complexes induced by `f₁`, `f₂` and `f₃`, restricted to the
+summand of `mapBifunctor K₁ (mapBifunctor K₂ K₃ G₂₃ c₂₃) F c₄` indexed by `(p, q, r)`. -/
+@[reassoc (attr := simp)]
+theorem mapBifunctor₂₃.ι_mapBifunctorMap (f₁ : K₁ ⟶ L₁) (f₂ : K₂ ⟶ L₂) (f₃ : K₃ ⟶ L₃)
+    (p : ι₁) (q : ι₂) (r : ι₃) (j : ι₄)
+    (h : ComplexShape.r c₁ c₂ c₃ c₁₂ c₄ (p, q, r) = j) :
     mapBifunctor₂₃.ι F G₂₃ K₁ K₂ K₃ c₁₂ c₂₃ c₄ p q r j h ≫
         (mapBifunctorMap f₁ (mapBifunctorMap f₂ f₃ G₂₃ c₂₃) F c₄).f j =
       (F.map (f₁.f p)).app ((G₂₃.obj (K₂.X q)).obj (K₃.X r)) ≫
-        (F.obj (L₁.X p)).map ((G₂₃.map (f₂.f q)).app (K₃.X r) ≫
-          (G₂₃.obj (L₂.X q)).map (f₃.f r)) ≫
+        (F.obj (L₁.X p)).map ((G₂₃.map (f₂.f q)).app (K₃.X r)) ≫
+          (F.obj (L₁.X p)).map ((G₂₃.obj (L₂.X q)).map (f₃.f r)) ≫
             mapBifunctor₂₃.ι F G₂₃ L₁ L₂ L₃ c₁₂ c₂₃ c₄ p q r j h := by
-  rw [mapBifunctor₂₃.ι_eq F G₂₃ K₁ K₂ K₃ c₁₂ c₂₃ c₄
-      p q r (ComplexShape.π c₂ c₃ c₂₃ (q, r)) j rfl
+  rw [mapBifunctor₂₃.ι_eq F G₂₃ K₁ K₂ K₃ c₁₂ c₂₃ c₄ p q r _ j rfl
       (by rw [← ComplexShape.assoc c₁ c₂ c₃ c₁₂ c₂₃ c₄]; exact h),
-    Category.assoc, ι_mapBifunctorMap]
-  rw [NatTrans.naturality_assoc, ← Functor.map_comp_assoc, ι_mapBifunctorMap]
-  simp only [Functor.map_comp, Category.assoc]
-  rw [← mapBifunctor₂₃.ι_eq F G₂₃ L₁ L₂ L₃ c₁₂ c₂₃ c₄
-      p q r (ComplexShape.π c₂ c₃ c₂₃ (q, r)) j rfl
+    mapBifunctor₂₃.ι_eq F G₂₃ L₁ L₂ L₃ c₁₂ c₂₃ c₄ p q r _ j rfl
       (by rw [← ComplexShape.assoc c₁ c₂ c₃ c₁₂ c₂₃ c₄]; exact h)]
+  simp [← Functor.map_comp_assoc, -Functor.map_comp]
 
 variable
   [HasGoodTrifunctor₁₂Obj F₁₂ G K₁ K₂ K₃ c₁₂ c₄]
@@ -110,18 +110,12 @@ theorem mapBifunctorAssociator_naturality
       (mapBifunctorAssociator associator K₁ K₂ K₃ c₁₂ c₂₃ c₄).hom ≫
         mapBifunctorMap f₁ (mapBifunctorMap f₂ f₃ G₂₃ c₂₃) F c₄ := by
   ext j : 1
-  simp only [comp_f, mapBifunctorAssociator, Hom.isoOfComponents_hom_f]
   apply mapBifunctor₁₂.hom_ext
   intro p q r h
-  rw [← Category.assoc, ι_map₁₂]
-  simp only [Category.assoc]
-  rw [ι_mapBifunctorAssociatorX_hom, ι_mapBifunctorAssociatorX_hom_assoc, ι_map₂₃]
   have h₁ := NatTrans.naturality_app_app associator.hom (f₁.f p) (K₂.X q) (K₃.X r)
   have h₂ := NatTrans.naturality_app (associator.hom.app (L₁.X p)) (K₃.X r) (f₂.f q)
-  have h₃ := ((associator.hom.app (L₁.X p)).app (L₂.X q)).naturality (f₃.f r)
-  dsimp at h₁ h₂ h₃
-  simp only [Functor.map_comp, NatTrans.comp_app, Category.assoc]
-  rw [reassoc_of% h₃, reassoc_of% h₂, reassoc_of% h₁]
+  dsimp at h₁ h₂
+  simp [mapBifunctorAssociator, reassoc_of% h₁, reassoc_of% h₂]
 
 /-- The inverse totalized associator is natural in all three complexes. -/
 @[reassoc]
@@ -131,9 +125,6 @@ theorem mapBifunctorAssociator_inv_naturality
         (mapBifunctorAssociator associator L₁ L₂ L₃ c₁₂ c₂₃ c₄).inv =
       (mapBifunctorAssociator associator K₁ K₂ K₃ c₁₂ c₂₃ c₄).inv ≫
         mapBifunctorMap (mapBifunctorMap f₁ f₂ F₁₂ c₁₂) f₃ G c₄ := by
-  rw [← cancel_mono
-    (mapBifunctorAssociator associator L₁ L₂ L₃ c₁₂ c₂₃ c₄).hom]
-  simp only [Category.assoc, Iso.inv_hom_id, Category.comp_id,
-    mapBifunctorAssociator_naturality, Iso.inv_hom_id_assoc]
+  simp [Iso.comp_inv_eq, mapBifunctorAssociator_naturality]
 
 end TauCeti.HomologicalComplex

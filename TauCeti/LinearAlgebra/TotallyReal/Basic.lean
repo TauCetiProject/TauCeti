@@ -258,6 +258,32 @@ theorem existsUnique_add (hL : IsMaximalTotallyReal J L) (x : E) :
     ∃! y : L × L.map J, (y.1 : E) + y.2 = x :=
   Submodule.existsUnique_add_of_isCompl_prod hL.isCompl x
 
+variable (hJ : J ∘ₗ J = -LinearMap.id)
+include hJ
+
+/-- Writing `v = P v + J b` with `b ∈ L`, where `P` is the projection onto `L` along `J L`, the
+projection of `J v` is `-b`, so every vector is recovered from the projections of itself and of
+its `J`-image. -/
+theorem sub_map_projection_map (hL : IsMaximalTotallyReal J L) (v : E) :
+    L.projection (L.map J) hL.isCompl v - J (L.projection (L.map J) hL.isCompl (J v)) = v := by
+  set P := L.projection (L.map J) hL.isCompl
+  have hJJ (v : E) : J (J v) = -v := LinearMap.congr_fun hJ v
+  obtain ⟨b, hb, hbv⟩ := Submodule.sub_projection_mem hL.isCompl v
+  have hbv : J b = v - P v := hbv
+  have hv : v = P v + J b := by rw [hbv, add_sub_cancel]
+  have hJv : J v = J (P v) - b := by
+    conv_lhs => rw [hv]
+    rw [map_add, hJJ, sub_eq_add_neg]
+  rw [hJv, map_sub, Submodule.projection_apply_of_mem_right hL.isCompl
+      ⟨_, L.projection_apply_mem hL.isCompl v, rfl⟩,
+    Submodule.projection_apply_of_mem_left hL.isCompl hb, zero_sub, map_neg, sub_neg_eq_add, hbv,
+    add_sub_cancel]
+
+/-- The projection onto `L` along `J L` takes `J (J v)` to minus the projection of `v`. -/
+theorem projection_map_map (hL : IsMaximalTotallyReal J L) (v : E) :
+    L.projection (L.map J) hL.isCompl (J (J v)) = -L.projection (L.map J) hL.isCompl v := by
+  rw [show J (J v) = -v from LinearMap.congr_fun hJ v, map_neg]
+
 end IsMaximalTotallyReal
 
 end Ring

@@ -350,6 +350,7 @@ theorem eventuallyEq_apply_christoffelSecondKind (hg : ∀ᶠ y in 𝓝 x, Diffe
 
 /-! ### The index formula -/
 
+omit [FiniteDimensional ℝ E] in
 /-- **The index formula for the Christoffel symbols.** For a basis `b` of `E`, the `k`-th
 coordinate of `Γ(b i, b j)` is `(1/2) Σ_l g^(kl) (∂_i g_jl + ∂_j g_il - ∂_l g_ij)`, where `g^(kl)`
 is the inverse of the Gram matrix `g_ij = g(b i, b j)` of the symmetric nondegenerate metric at
@@ -361,6 +362,7 @@ theorem repr_christoffelSecondKind {ι : Type*} [Fintype ι] [DecidableEq ι]
       2⁻¹ * ∑ l, (LinearMap.toMatrix₂ b b (g x).toBilinForm)⁻¹ k l *
         (fderiv ℝ g x (b i) (b j) (b l) + fderiv ℝ g x (b j) (b i) (b l) -
           fderiv ℝ g x (b l) (b i) (b j)) := by
+  have : FiniteDimensional ℝ E := Module.Finite.of_basis b
   rw [LinearMap.BilinForm.Nondegenerate.repr_eq_sum_inv_toMatrix₂_mul_apply hnd, Finset.mul_sum]
   refine Finset.sum_congr rfl fun l _ ↦ ?_
   rw [toBilinForm_apply, isSymm_toBilinForm_iff.1 hsymm, apply_christoffelSecondKind hnd,

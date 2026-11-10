@@ -282,7 +282,6 @@ theorem iteratedFDeriv_two_newtonianKernel_convolution_apply_of_notMem_tsupport
   have hsub : tsupport fw ⊆ tsupport f := tsupport_fderiv_apply_subset ℝ w
   -- Integrability: every integrand is a function continuous off `x` times a continuous function
   -- with compact support in `tsupport f`, which does not contain `x`.
-  have hU : IsOpen ({x}ᶜ : Set (EuclideanSpace ℝ (Fin n))) := isOpen_compl_singleton
   have hkc : ContinuousOn k {x}ᶜ := fun y hy => (hk y hy).continuousAt.continuousWithinAt
   have hkvc : ContinuousOn (fun y => fderiv ℝ k y v) {x}ᶜ := fun y hy =>
     (hkv y hy).continuousAt.continuousWithinAt
@@ -296,15 +295,15 @@ theorem iteratedFDeriv_two_newtonianKernel_convolution_apply_of_notMem_tsupport
   have hkx : ∀ y, newtonianKernel n (x - y) = k y := fun y => newtonianKernel_sub_comm n x y
   simp_rw [hkx]
   rw [integral_smul_fderiv_eq_neg_fderiv_smul_of_integrable
-      (hfw.continuous.integrable_smul_of_continuousOn hcw hU (hsub.trans hxs) hkvc)
-      (hfwv.integrable_smul_of_continuousOn (hcw.fderiv_apply (𝕜 := ℝ) v) hU (hsub'.trans hxs) hkc)
-      (hfw.continuous.integrable_smul_of_continuousOn hcw hU (hsub.trans hxs) hkc)
+      (hfw.continuous.integrable_smul_of_continuousOn hcw (hsub.trans hxs) hkvc)
+      (hfwv.integrable_smul_of_continuousOn (hcw.fderiv_apply (𝕜 := ℝ) v) (hsub'.trans hxs) hkc)
+      (hfw.continuous.integrable_smul_of_continuousOn hcw (hsub.trans hxs) hkc)
       (fun y hy => (hk y (hne y (hsub hy))).differentiableAt (by norm_num))
       (fun y _ => hfw.differentiable one_ne_zero y),
     integral_smul_fderiv_eq_neg_fderiv_smul_of_integrable (f := fun y => fderiv ℝ k y v) (g := f)
-      (hf.continuous.integrable_smul_of_continuousOn hc hU hxs hkwc)
-      (hfw.continuous.integrable_smul_of_continuousOn hcw hU (hsub.trans hxs) hkvc)
-      (hf.continuous.integrable_smul_of_continuousOn hc hU hxs hkvc)
+      (hf.continuous.integrable_smul_of_continuousOn hc hxs hkwc)
+      (hfw.continuous.integrable_smul_of_continuousOn hcw (hsub.trans hxs) hkvc)
+      (hf.continuous.integrable_smul_of_continuousOn hc hxs hkvc)
       (fun y hy => (hkv y (hne y hy)).differentiableAt one_ne_zero)
       (fun y _ => hf.differentiable (by norm_num) y), neg_neg]
   refine integral_congr_ae (ae_of_all _ fun y => ?_)
