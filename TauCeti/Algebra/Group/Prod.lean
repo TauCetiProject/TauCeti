@@ -36,6 +36,13 @@ identities as the product of the two factors.
 * `MulEquiv.ofProdCoprod`: the multiplicative equivalence `P ≃* A × B` determined by
   projections `P →* A`, `P →* B` and inclusions `A →* P`, `B →* P` satisfying the biproduct
   identities.
+
+## Main results
+
+* `MonoidHom.comp_inl_comp_fst_mul_comp_inr_comp_snd`: a homomorphism out of a product is the
+  product of its two restrictions pulled back along the projections.
+* `MonoidHom.surjective_fst_prod_iff`: the triangular map `(m, n) ↦ (m, f (m, n))` is surjective
+  if and only if `f.comp (MonoidHom.inr M N)` is.
 * `MulEquiv.prodCongr_apply`, `MulEquiv.prodCongr_symm`: the product of two isomorphisms acts
   componentwise, and its inverse is the product of the inverses.
 * `MulEquiv.iterate_prodCongr_eq_id`: the product of two automorphisms of order dividing `m` has
@@ -79,9 +86,9 @@ pulled back along the two projections. -/
 @[to_additive /-- A homomorphism out of a product is the sum of its restrictions to the two
 factors, pulled back along the two projections. -/]
 theorem comp_inl_comp_fst_mul_comp_inr_comp_snd (f : M × N →* P) :
-    (f.comp (inl M N)).comp (fst M N) * (f.comp (inr M N)).comp (snd M N) = f := by
-  ext x
-  simp [← map_mul]
+    (f.comp (inl M N)).comp (fst M N) * (f.comp (inr M N)).comp (snd M N) = f :=
+  -- The left-hand side is `MonoidHom.coprod` of the two restrictions, unfolded.
+  coprod_unique f
 
 end CoprodEquiv
 
@@ -95,17 +102,12 @@ if and only if the restriction of `f` to `{0} × N` is surjective. Neither facto
 needs additive inverses. -/]
 theorem surjective_fst_prod_iff (f : M × N →* P) :
     Function.Surjective ((fst M N).prod f) ↔ Function.Surjective (f.comp (inr M N)) := by
-  constructor
-  · intro h p
-    obtain ⟨⟨m, n⟩, hmn⟩ := h (1, p)
-    have hm : m = 1 := congrArg Prod.fst hmn
-    exact ⟨n, by simpa [hm] using congrArg Prod.snd hmn⟩
-  · intro h ⟨m, p⟩
-    obtain ⟨n, hn⟩ := h ((f (m, 1))⁻¹ * p)
-    refine ⟨(m, n), Prod.ext rfl ?_⟩
-    have hsplit : f (m, n) = f (m, 1) * f (1, n) := by
-      rw [← map_mul, Prod.mk_mul_mk, mul_one, one_mul]
-    simpa [hsplit] using congrArg (f (m, 1) * ·) hn
+  refine ⟨fun h p ↦ ?_, fun h ⟨m, p⟩ ↦ ?_⟩
+  · obtain ⟨⟨m, n⟩, hmn⟩ := h (1, p)
+    obtain ⟨rfl, rfl⟩ : m = 1 ∧ f (m, n) = p := by simpa using hmn
+    exact ⟨n, by simp⟩
+  · obtain ⟨n, hn⟩ := h ((f (m, 1))⁻¹ * p)
+    exact ⟨(m, n), by simpa [eq_inv_mul_iff_mul_eq, ← map_mul] using hn⟩
 
 end MonoidHom
 
