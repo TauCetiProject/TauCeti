@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Pullback
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.SymmetricAlgebra.Adjunction
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.SymmetricAlgebra.DirectSum
 public import TauCeti.AlgebraicGeometry.RelativeSpec.PullbackAlgebra
 
@@ -26,6 +28,15 @@ module maps `F ⟶ f_* B` by the pullback–pushforward adjunction. The two bije
 `B`, and the isomorphism is the one they induce. On generators it is the pullback of the
 inclusion `F ⟶ Sym F` (`symmetricAlgebraι_comp_pullbackSymmetricAlgebraIso_inv`).
 
+The isomorphism respects the grading: `f^* (Sym F) ≅ Sym (f^* F)` as graded quasicoherent
+algebras (`pullbackGradedSymmetricAlgebraIso`), where the pullback of a graded algebra is taken
+degree by degree. The graded morphism `Sym (f^* F) ⟶ f^* (Sym F)` is the one extending
+`f^* F ≅ f^* (Sym¹ F)` in degree one (`gradedSymmetricAlgebraLift`). Forgetting the grading and
+composing with the identification `⨁ₙ f^* (Symⁿ F) ≅ f^* (⨁ₙ Symⁿ F)`
+(`GradedQuasicoherentAlgebra.pullbackToQuasicoherentAlgebraIso`), it becomes the inverse of the
+ungraded isomorphism, since both are algebra morphisms out of `Sym (f^* F)` agreeing on `f^* F`.
+Forgetting the grading reflects isomorphisms, so the graded morphism is an isomorphism.
+
 ## Main declarations
 
 * `TauCeti.AlgebraicGeometry.pullbackSymmetricAlgebraIso`: the isomorphism
@@ -34,7 +45,10 @@ inclusion `F ⟶ Sym F` (`symmetricAlgebraι_comp_pullbackSymmetricAlgebraIso_in
   `TauCeti.AlgebraicGeometry.pullback_map_symmetricAlgebraι_comp_pullbackSymmetricAlgebraIso_hom`:
   on generators it identifies the pullback of the inclusion `F ⟶ Sym F` with the inclusion
   `f^* F ⟶ Sym (f^* F)`;
-* `TauCeti.AlgebraicGeometry.pullbackSymmetricAlgebraNatIso`: the isomorphism is natural in `F`.
+* `TauCeti.AlgebraicGeometry.pullbackSymmetricAlgebraNatIso`: the isomorphism is natural in `F`;
+* `TauCeti.AlgebraicGeometry.pullbackGradedSymmetricAlgebraIso`: the isomorphism
+  `f^* (Sym F) ≅ Sym (f^* F)` of graded quasicoherent algebras, which in degree one is the
+  pullback of `F ≅ Sym¹ F` (`degreeOne_map_pullbackGradedSymmetricAlgebraIso_inv`).
 
 ## References
 
@@ -248,6 +262,111 @@ theorem pullbackSymmetricAlgebraNatIso_hom_app :
 theorem pullbackSymmetricAlgebraNatIso_inv_app :
     (pullbackSymmetricAlgebraNatIso f).inv.app F = (pullbackSymmetricAlgebraIso f F).inv :=
   (rfl)
+
+
+/-! ### The pullback of the graded symmetric algebra -/
+
+open GradedQuasicoherentAlgebra
+
+/-- The identification `f^* F ≅ f^* (Sym¹ F)` of `f^* F` with the degree-one component of
+`f^* (Sym F)`. -/
+private def pullbackDegreeOneIso :
+    (QuasicoherentSheaf.pullback f).obj F ≅
+      degreeOne.obj
+        ((GradedQuasicoherentAlgebra.pullback f).obj ((gradedSymmetricAlgebra Y).obj F)) :=
+  (QuasicoherentSheaf.pullback f).mapIso ((gradedSymmetricAlgebraDegreeOneIso Y).app F).symm ≪≫
+    ((pullbackDegreeIso f 1).app _).symm
+
+/-- The graded algebra morphism `Sym (f^* F) ⟶ f^* (Sym F)` extending `f^* F ≅ f^* (Sym¹ F)`. -/
+private def gradedSymmetricAlgebraPullbackHom :
+    (gradedSymmetricAlgebra X).obj ((QuasicoherentSheaf.pullback f).obj F) ⟶
+      (GradedQuasicoherentAlgebra.pullback f).obj ((gradedSymmetricAlgebra Y).obj F) :=
+  gradedSymmetricAlgebraLift (pullbackDegreeOneIso f F).hom
+
+/-- The computation on generators behind
+`toQuasicoherentAlgebra_map_gradedSymmetricAlgebraPullbackHom`, with the identifications of the
+objects abstracted so that they can be eliminated by `subst`. -/
+private lemma gradedSymmetricAlgebraPullbackHom_aux {F₀ D S₁ L : Y.Modules}
+    {GF B₁ S₁' P₁ D' M Lp R L' : X.Modules} (a : F₀ ⟶ D) (d : D = S₁) (j : S₁ ⟶ L)
+    (b : GF ⟶ B₁) (e₁ : B₁ = S₁') (j' : S₁' ⟶ L') (Ψ : L' ⟶ Lp)
+    (ψ₁ : S₁' ⟶ P₁) (jP : P₁ ⟶ Lp) (κ : Lp ⟶ R) (θ : L' ⟶ R) (dψ : B₁ ⟶ D')
+    (m₁ : GF ⟶ M) (m₂ : M ⟶ D') (e₂ : P₁ = D')
+    (e₃ : P₁ = (Scheme.Modules.pullback f).obj S₁) (e₄ : (Scheme.Modules.pullback f).obj L = R)
+    (p : GF = (Scheme.Modules.pullback f).obj F₀) (q : (Scheme.Modules.pullback f).obj D = M)
+    (r : M = D') (e₆ : GF = (Scheme.Modules.pullback f).obj F₀)
+    (e₇ : (Scheme.Modules.pullback f).obj L = R)
+    (h₂ : j' ≫ Ψ = ψ₁ ≫ jP)
+    (h₃ : jP ≫ κ = eqToHom e₃ ≫ (Scheme.Modules.pullback f).map j ≫ eqToHom e₄)
+    (h₄ : b ≫ dψ = m₁ ≫ m₂) (hdψ : dψ = eqToHom e₁ ≫ ψ₁ ≫ eqToHom e₂)
+    (hm₁ : m₁ = eqToHom p ≫ (Scheme.Modules.pullback f).map a ≫ eqToHom q) (hm₂ : m₂ = eqToHom r)
+    (h₇ : (b ≫ eqToHom e₁ ≫ j') ≫ θ =
+      eqToHom e₆ ≫ (Scheme.Modules.pullback f).map (a ≫ eqToHom d ≫ j) ≫ eqToHom e₇) :
+    (b ≫ eqToHom e₁ ≫ j') ≫ Ψ ≫ κ = (b ≫ eqToHom e₁ ≫ j') ≫ θ := by
+  subst hm₁ hm₂ hdψ
+  subst_vars
+  simp only [eqToHom_refl, Category.id_comp, Category.comp_id] at *
+  rw [h₇, Category.assoc, reassoc_of% h₂, h₃, ← Category.assoc, h₄, Functor.map_comp]
+
+/-- Forgetting the grading, the graded algebra morphism `Sym (f^* F) ⟶ f^* (Sym F)`, followed by
+the identification `⨁ₙ f^* (Symⁿ F) ≅ f^* (⨁ₙ Symⁿ F)`, is the inverse of
+`pullbackSymmetricAlgebraIso`. -/
+private theorem toQuasicoherentAlgebra_map_gradedSymmetricAlgebraPullbackHom :
+    toQuasicoherentAlgebra.map (gradedSymmetricAlgebraPullbackHom f F) ≫
+        (pullbackToQuasicoherentAlgebraIso f).inv.app _ =
+      (pullbackSymmetricAlgebraIso f F).inv := by
+  refine ObjectProperty.hom_ext _ (symmetricAlgebra_hom_ext ?_)
+  rw [symmetricAlgebraι_def]
+  -- Both sides are compared on the generators `f^* F ≅ Sym¹ (f^* F) ⟶ Sym (f^* F)`.
+  refine gradedSymmetricAlgebraPullbackHom_aux f
+    (a := ((gradedSymmetricAlgebraDegreeOneIso Y).inv.app F).hom)
+    (j := ιTotal ((gradedSymmetricAlgebra Y).obj F) 1)
+    (b := ((gradedSymmetricAlgebraDegreeOneIso X).inv.app
+      ((QuasicoherentSheaf.pullback f).obj F)).hom)
+    (j' := ιTotal ((gradedSymmetricAlgebra X).obj ((QuasicoherentSheaf.pullback f).obj F)) 1)
+    (Ψ := (toQuasicoherentAlgebra.map (gradedSymmetricAlgebraPullbackHom f F)).hom.hom.hom)
+    (θ := (pullbackSymmetricAlgebraIso f F).inv.hom.hom.hom)
+    (h₂ := ιTotal_toQuasicoherentAlgebra_map _ 1)
+    (h₃ := ιTotal_pullbackToQuasicoherentAlgebraIso_inv_app f _ 1)
+    (h₄ := (ObjectProperty.FullSubcategory.comp_hom ..).symm.trans
+      ((congrArg (fun φ ↦ φ.hom) (gradedSymmetricAlgebraDegreeOneIso_inv_app_comp_degreeOne_map_lift
+        (pullbackDegreeOneIso f F).hom)).trans (ObjectProperty.FullSubcategory.comp_hom ..)))
+    (hdψ := degree_map_hom _ 1) (hm₁ := QuasicoherentSheaf.pullback_map_hom f _)
+    (hm₂ := pullbackDegreeIso_inv_app_hom f 1 _) (d := degree_obj_obj _ 1)
+    (e₆ := QuasicoherentSheaf.pullback_obj_obj f F)
+    (e₇ := (QuasicoherentAlgebra.pullback_obj_X f _).symm) (h₇ := ?_)
+  exact (congrArg (· ≫ _)
+    (symmetricAlgebraι_def ((QuasicoherentSheaf.pullback f).obj F))).symm.trans
+    ((symmetricAlgebraι_comp_pullbackSymmetricAlgebraIso_inv f F).trans
+      (congrArg (fun s ↦ _ ≫ (Scheme.Modules.pullback f).map s ≫ _) (symmetricAlgebraι_def F)))
+
+/-- **Pullback of the graded symmetric algebra.** For a morphism of schemes `f : X ⟶ Y` and a
+quasicoherent sheaf `F` on `Y`, the pullback `f^* (Sym F)` of the graded symmetric algebra of `F`
+is isomorphic, as a graded quasicoherent algebra, to the graded symmetric algebra `Sym (f^* F)` of
+the pullback of `F`. Its inverse extends the identification `f^* F ≅ f^* (Sym¹ F)`
+(`degreeOne_map_pullbackGradedSymmetricAlgebraIso_inv`). -/
+def pullbackGradedSymmetricAlgebraIso :
+    (GradedQuasicoherentAlgebra.pullback f).obj ((gradedSymmetricAlgebra Y).obj F) ≅
+      (gradedSymmetricAlgebra X).obj ((QuasicoherentSheaf.pullback f).obj F) :=
+  have : IsIso (toQuasicoherentAlgebra.map (gradedSymmetricAlgebraPullbackHom f F) ≫
+      (pullbackToQuasicoherentAlgebraIso f).inv.app _) := by
+    rw [toQuasicoherentAlgebra_map_gradedSymmetricAlgebraPullbackHom]
+    infer_instance
+  have := IsIso.of_isIso_comp_right
+    (toQuasicoherentAlgebra.map (gradedSymmetricAlgebraPullbackHom f F))
+    ((pullbackToQuasicoherentAlgebraIso f).inv.app _)
+  have := isIso_of_reflects_iso (gradedSymmetricAlgebraPullbackHom f F) toQuasicoherentAlgebra
+  (asIso (gradedSymmetricAlgebraPullbackHom f F)).symm
+
+/-- In degree one, the inverse of `pullbackGradedSymmetricAlgebraIso` is the pullback of the
+identification `F ≅ Sym¹ F`: through `f^* F ≅ Sym¹ (f^* F)` it is
+`f^* F ≅ f^* (Sym¹ F) = (f^* (Sym F))₁`. -/
+@[reassoc]
+theorem degreeOne_map_pullbackGradedSymmetricAlgebraIso_inv :
+    (gradedSymmetricAlgebraDegreeOneIso X).inv.app ((QuasicoherentSheaf.pullback f).obj F) ≫
+        degreeOne.map (pullbackGradedSymmetricAlgebraIso f F).inv =
+      (QuasicoherentSheaf.pullback f).map ((gradedSymmetricAlgebraDegreeOneIso Y).inv.app F) ≫
+        (pullbackDegreeIso f 1).inv.app ((gradedSymmetricAlgebra Y).obj F) :=
+  gradedSymmetricAlgebraDegreeOneIso_inv_app_comp_degreeOne_map_lift (pullbackDegreeOneIso f F).hom
 
 end
 

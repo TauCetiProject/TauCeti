@@ -50,7 +50,8 @@ is quasicoherent because coproducts of quasicoherent sheaves are.
   (`mul_ιTotal` and `one_ιTotal` for the identity);
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.ιTotal_toQuasicoherentAlgebra_map`:
   the algebra morphism induced by a graded algebra morphism is its degree-`n` component on the
-  summand `Aₙ`.
+  summand `Aₙ`; and `toQuasicoherentAlgebra` reflects isomorphisms, since each summand is a retract
+  of the direct sum.
 -/
 
 public section
@@ -302,6 +303,54 @@ theorem ιTotal_toQuasicoherentAlgebra_map {A B : GradedQuasicoherentAlgebra X} 
   exact (Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) h).trans
     ((Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _)
       (GradedObject.ιTotal_total_map f.hom.hom.hom n)).trans (Category.assoc _ _ _))))
+
+/-- The projection `⨁ₘ Aₘ ⟶ Aₙ` onto the summand of degree `n`. -/
+private def πTotal (A : GradedQuasicoherentAlgebra X) (n : ℕ) :
+    (toQuasicoherentAlgebra.obj A).obj.X ⟶ A.obj.X n :=
+  Cofan.IsColimit.desc (isColimitιTotal A) fun m ↦
+    if h : m = n then eqToHom (congrArg A.obj.X h) else 0
+
+private theorem ιTotal_πTotal (A : GradedQuasicoherentAlgebra X) (m n : ℕ) :
+    ιTotal A m ≫ πTotal A n = if h : m = n then eqToHom (congrArg A.obj.X h) else 0 :=
+  Cofan.IsColimit.fac (isColimitιTotal A) _ m
+
+private theorem ιTotal_πTotal_self (A : GradedQuasicoherentAlgebra X) (n : ℕ) :
+    ιTotal A n ≫ πTotal A n = 𝟙 _ := by
+  simp [ιTotal_πTotal]
+
+/-- Forgetting the grading reflects isomorphisms: a morphism of graded quasicoherent algebras
+whose direct sum `⨁ₙ Aₙ ⟶ ⨁ₙ Bₙ` is an isomorphism is an isomorphism, since each homogeneous
+component `Aₙ` is a retract of the direct sum. -/
+instance : (toQuasicoherentAlgebra (X := X)).ReflectsIsomorphisms where
+  reflects {A B} g _ := by
+    -- The underlying isomorphism `⨁ₙ Aₙ ≅ ⨁ₙ Bₙ` of modules.
+    let e := (ObjectProperty.ι _ ⋙ CommMon.forget₂Mon _ ⋙ Mon.forget _).mapIso
+      (asIso (toQuasicoherentAlgebra.map g))
+    have hι (m : ℕ) : ιTotal A m ≫ e.hom = g.hom.hom.hom m ≫ ιTotal B m :=
+      ιTotal_toQuasicoherentAlgebra_map g m
+    -- The projections intertwine the direct sum of `g` with its components.
+    have hπ (n : ℕ) : e.hom ≫ πTotal B n = πTotal A n ≫ g.hom.hom.hom n := by
+      refine toQuasicoherentAlgebra_hom_ext fun m ↦ ?_
+      -- `rw` cannot see through the carrier of the direct-sum algebra; chain the equations.
+      refine (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ πTotal B n) (hι m)).trans
+        ((Category.assoc _ _ _).trans ((congrArg (_ ≫ ·) (ιTotal_πTotal B m n)).trans ?_)))
+      refine Eq.trans ?_ ((Category.assoc _ _ _).trans
+        (congrArg (· ≫ g.hom.hom.hom n) (ιTotal_πTotal A m n))).symm
+      split_ifs with h
+      · subst h
+        exact (Category.comp_id _).trans (Category.id_comp _).symm
+      · exact comp_zero.trans zero_comp.symm
+    have hg (n : ℕ) : IsIso (g.hom.hom.hom n) :=
+      ⟨ιTotal B n ≫ e.inv ≫ πTotal A n,
+        (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _) (hι n).symm).trans
+          ((Category.assoc _ _ _).trans ((congrArg (ιTotal A n ≫ ·) (e.hom_inv_id_assoc _)).trans
+            (ιTotal_πTotal_self A n)))),
+        (Category.assoc _ _ _).trans ((congrArg (ιTotal B n ≫ ·)
+          (((Category.assoc _ _ _).trans (congrArg (e.inv ≫ ·) (hπ n).symm)).trans
+            (e.inv_hom_id_assoc _))).trans (ιTotal_πTotal_self B n))⟩
+    have : IsIso g.hom.hom.hom := GradedObject.isIso_of_isIso_apply _
+    have : IsIso ((ObjectProperty.ι _ ⋙ CommMon.forget₂Mon _ ⋙ Mon.forget _).map g) := this
+    exact isIso_of_reflects_iso g (ObjectProperty.ι _ ⋙ CommMon.forget₂Mon _ ⋙ Mon.forget _)
 
 end GradedQuasicoherentAlgebra
 
