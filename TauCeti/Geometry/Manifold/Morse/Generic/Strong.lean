@@ -22,8 +22,8 @@ On a boundaryless finite-dimensional Hausdorff sigma-compact manifold `M`, every
 `f : M → ℝ` is a limit of Morse functions in the strong Whitney topology
 (`TauCeti.dense_setOf_isMorse_manifoldStrongWhitney`). More precisely, for every strong `C^k`
 neighbourhood `c.ball f` of `f` and every continuous positive tolerance `ε`, there is a Morse
-function `g ∈ c.ball f` with `|g - f| < ε` everywhere; if `f` is already Morse on an open
-neighbourhood of a closed set `C`, then `g` can be chosen equal to `f` near `C`
+function `g ∈ c.ball f` with `|g - f| < ε` everywhere; if `f` is already Morse on a set
+containing a closed set `C`, then `g` can be chosen equal to `f` near `C`
 (`ContMDiffMap.exists_isMorse_mem_ball_sub_compl`). With `ε = 1` the approximation keeps a proper
 function proper, with no separate sigma-compactness hypothesis needed because a proper map into
 `ℝ` already makes `M` sigma-compact (`ContMDiffMap.exists_isMorse_isProperMap_mem_ball`), and so
@@ -245,14 +245,36 @@ private theorem exists_isMorse_of_seminorms (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯
 open ContMDiffMap in
 /-- **Relative Morse approximation in the strong Whitney topology.** Every strong `C^k`
 neighbourhood `c.ball f` of a smooth function `f` contains a Morse function `g` which is within a
-prescribed continuous positive tolerance `ε` of `f` everywhere. If `f` is Morse on an open
-neighbourhood `V` of a closed set `C`, then `g` can be chosen to agree with `f` on a
+prescribed continuous positive tolerance `ε` of `f` everywhere. If `f` is Morse on a set `V`
+containing a closed set `C`, then `g` can be chosen to agree with `f` on a
 neighbourhood of `C`. -/
 theorem _root_.ContMDiffMap.exists_isMorse_mem_ball_sub_compl (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯)
     (c : StrongCkControl I M ∞) {ε : M → ℝ} (hε : Continuous ε) (hε₀ : ∀ x, 0 < ε x)
-    {C V : Set M} (hC : IsClosed C) (hV : IsOpen V) (hCV : C ⊆ V) (hfV : IsMorseOn I f V) :
+    {C V : Set M} (hC : IsClosed C) (hCV : C ⊆ V) (hfV : IsMorseOn I f V) :
     ∃ g ∈ c.ball f, IsMorse I g ∧ (∀ x, |g x - f x| < ε x) ∧
       tsupport (fun x ↦ g x - f x) ⊆ Cᶜ := by
+  -- `f` is Morse on the open set `V'` of points near which every critical point is nondegenerate,
+  -- and `V ⊆ V'`: a regular point has a neighbourhood free of critical points, and a
+  -- nondegenerate critical point is isolated among the critical points.
+  let V' : Set M :=
+    {x | ∀ᶠ y in 𝓝 x, y ∈ criticalPoints I f → IsManifoldNondegenerateCriticalPoint I f y}
+  have hV : IsOpen V' := isOpen_setOfPred_eventually_nhds
+  have hVV' : V ⊆ V' := fun x hx ↦ by
+    by_cases hxc : x ∈ criticalPoints I f
+    · have hnd := hfV.isManifoldNondegenerateCriticalPoint hx
+        (mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero.1 hxc)
+      filter_upwards [eventually_nhdsWithin_iff.1 hnd.eventually_notMem_criticalPoints]
+        with y hy hyc
+      by_cases hyx : y = x
+      · exact hyx ▸ hnd
+      · exact absurd hyc (hy hyx)
+    · filter_upwards [(isClosed_criticalPoints
+        (f.contMDiff.of_le (by simp))).isOpen_compl.mem_nhds hxc] with y hy hyc
+      exact absurd hyc hy
+  have hfV' : IsMorseOn I f V' := isMorseOn_iff.mpr
+    ⟨fun x _ ↦ f.contMDiff.contMDiffAt.contMDiffWithinAt, fun x hx hc ↦
+      hx.self_of_nhds (mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero.2 hc)⟩
+  have hCV' : C ⊆ V' := hCV.trans hVV'
   -- The points of `M` represented by the members of the strong control, and its seminorms.
   let A : c.ι → Set M := fun i ↦ (extChartAt I (c.center i)).symm ''
     (Subtype.val '' (c.compact i : Set (extChartAt I (c.center i)).target))
@@ -261,7 +283,7 @@ theorem _root_.ContMDiffMap.exists_isMorse_mem_ball_sub_compl (f : C^∞⟮I, M;
       ((continuousOn_extChartAt_symm (c.center i)).mono (by rintro _ ⟨z, -, rfl⟩; exact z.2))
   let p : c.ι → Seminorm ℝ C^∞⟮I, M; 𝓘(ℝ), ℝ⟯ := fun i ↦
     chartCkSeminorm (c.center i) (c.compact i) c.order c.order_le
-  obtain ⟨g, hgp, hgm, hgε, hgs⟩ := exists_isMorse_of_seminorms f hC hV hCV hfV A p
+  obtain ⟨g, hgp, hgm, hgε, hgs⟩ := exists_isMorse_of_seminorms f hC hV hCV' hfV' A p
     c.tolerance_pos (fun K hK ↦ c.locallyFinite.finite_nonempty_inter_compact hK)
     (fun i φ δ hδ ↦ eventually_of_mem (ball_chartCkSeminorm_mem_nhds _ _ _ _ φ hδ) fun ψ hψ ↦
       (Seminorm.mem_ball _).mp hψ) hA
@@ -278,23 +300,23 @@ theorem dense_setOf_isMorse_manifoldStrongWhitney :
   refine (mem_closure_iff_nhds_basis
     (ContMDiffMap.hasBasis_nhds_manifoldStrongWhitney f)).mpr fun c _ ↦ ?_
   obtain ⟨g, hg, hgm, -⟩ := f.exists_isMorse_mem_ball_sub_compl c continuous_const
-    (fun _ ↦ one_pos) isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
+    (fun _ ↦ one_pos) isClosed_empty (subset_refl _) isMorseOn_empty
   exact ⟨g, hgm, hg⟩
 
 end SigmaCompact
 
-/-- **Proper Morse approximation.** A proper smooth function `f`, already Morse on an open
-neighbourhood `V` of a closed set `C`, is approximated in every strong `C^k` neighbourhood by
+/-- **Proper Morse approximation.** A proper smooth function `f`, already Morse on a set `V`
+containing a closed set `C`, is approximated in every strong `C^k` neighbourhood by
 proper Morse functions within distance `1` of `f` and agreeing with `f` near `C`. In particular a
 lower bound for `f` gives one for the approximation. -/
 theorem _root_.ContMDiffMap.exists_isMorse_isProperMap_mem_ball (f : C^∞⟮I, M; 𝓘(ℝ), ℝ⟯)
     (c : ContMDiffMap.StrongCkControl I M ∞) (hf : IsProperMap f)
-    {C V : Set M} (hC : IsClosed C) (hV : IsOpen V) (hCV : C ⊆ V) (hfV : IsMorseOn I f V) :
+    {C V : Set M} (hC : IsClosed C) (hCV : C ⊆ V) (hfV : IsMorseOn I f V) :
     ∃ g ∈ c.ball f, IsMorse I g ∧ IsProperMap g ∧ (∀ x, |g x - f x| < 1) ∧
       tsupport (fun x ↦ g x - f x) ⊆ Cᶜ := by
   have : SigmaCompactSpace M := hf.sigmaCompactSpace
   obtain ⟨g, hg, hgm, hgf, hgs⟩ := f.exists_isMorse_mem_ball_sub_compl c continuous_const
-    (fun _ ↦ one_pos) hC hV hCV hfV
+    (fun _ ↦ one_pos) hC hCV hfV
   refine ⟨g, hg, hgm, hf.of_dist_le g.contMDiff.continuous (C := 1) fun x ↦ ?_, hgf, hgs⟩
   rw [Real.dist_eq, abs_sub_comm]
   exact (hgf x).le
@@ -306,7 +328,7 @@ theorem exists_isMorse_isProperMap_bddBelow [SigmaCompactSpace M] :
   obtain ⟨f, hf, hf₀⟩ := exists_contMDiffMap_isProperMap_nonneg (M := M) I
   obtain ⟨g, -, hgm, hgp, hgf, -⟩ :=
     f.exists_isMorse_isProperMap_mem_ball ContMDiffMap.StrongCkControl.empty hf
-      isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
+      isClosed_empty (subset_refl _) isMorseOn_empty
   exact ⟨g, hgm, hgp,
     BddBelow.range_of_abs_sub_le ⟨0, forall_mem_range.2 hf₀⟩ fun x ↦ (hgf x).le⟩
 

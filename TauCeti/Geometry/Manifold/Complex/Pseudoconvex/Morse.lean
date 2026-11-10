@@ -23,7 +23,7 @@ dense in the strong Whitney topology (`ContMDiffMap.exists_isMorse_mem_ball_sub_
 the order-two positivity control with any prescribed strong `C^k` control via
 `ContMDiffMap.StrongCkControl.sup` produces smooth Morse approximations that simultaneously stay in
 the prescribed strong `C^k` ball, satisfy a prescribed continuous positive `C⁰` error bound, agree
-with the original function near any closed set on a neighbourhood of which it is already Morse, and
+with the original function near any closed set contained in a set on which it is already Morse, and
 remain globally strongly `q`-pseudoconvex so that every critical point has real Morse index at most
 `n + q`.
 
@@ -190,13 +190,13 @@ private theorem exists_strongCkControl_ball_subset_isManifoldStronglyPseudoconve
 neighbourhood `c.ball f` of a smooth globally strongly `q`-pseudoconvex function `f` on a
 sigma-compact Hausdorff complex manifold contains a smooth globally strongly `q`-pseudoconvex Morse
 function `g` within a prescribed continuous positive tolerance `ε` of `f`, whose critical points all
-have real Morse index at most `dim_ℂ E + q`. If `f` is already Morse on an open neighbourhood `V`
-of a closed set `C`, then `g` can be chosen equal to `f` near `C`. -/
+have real Morse index at most `dim_ℂ E + q`. If `f` is already Morse on a set `V`
+containing a closed set `C`, then `g` can be chosen equal to `f` near `C`. -/
 theorem exists_isMorse_isManifoldStronglyPseudoconvexAt_mem_ball_sub_compl {q : ℕ}
     (f : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) (c : StrongCkControl 𝓘(ℝ, E) M ∞)
     (hf : ∀ x, IsManifoldStronglyPseudoconvexAt E q f x)
     {ε : M → ℝ} (hε : Continuous ε) (hε₀ : ∀ x, 0 < ε x)
-    {C V : Set M} (hC : IsClosed C) (hV : IsOpen V) (hCV : C ⊆ V)
+    {C V : Set M} (hC : IsClosed C) (hCV : C ⊆ V)
     (hfV : IsMorseOn 𝓘(ℝ, E) f V) :
     ∃ g ∈ c.ball f, IsMorse 𝓘(ℝ, E) g ∧
       (∀ x, IsManifoldStronglyPseudoconvexAt E q g x) ∧
@@ -206,7 +206,7 @@ theorem exists_isMorse_isManifoldStronglyPseudoconvexAt_mem_ball_sub_compl {q : 
   have : FiniteDimensional ℝ E := .trans ℝ ℂ E
   obtain ⟨c', hsub, hc'⟩ :=
     f.exists_strongCkControl_ball_subset_isManifoldStronglyPseudoconvexAt c hf
-  obtain ⟨g, hg, hgm, hgf, hgs⟩ := f.exists_isMorse_mem_ball_sub_compl c' hε hε₀ hC hV hCV hfV
+  obtain ⟨g, hg, hgm, hgf, hgs⟩ := f.exists_isMorse_mem_ball_sub_compl c' hε hε₀ hC hCV hfV
   obtain ⟨hg_pos, hg_idx⟩ := hc' g hg
   exact ⟨g, hsub hg, hgm, hg_pos, hg_idx, hgf, hgs⟩
 
@@ -222,7 +222,7 @@ theorem exists_isMorse_isManifoldStronglyPseudoconvexAt_mem_ball {q : ℕ}
       ∀ x, |g x - f x| < ε x := by
   obtain ⟨g, hg, hgm, hg_pos, hg_idx, hgf, -⟩ :=
     f.exists_isMorse_isManifoldStronglyPseudoconvexAt_mem_ball_sub_compl c hf hε hε₀
-      isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
+      isClosed_empty (subset_refl _) isMorseOn_empty
   exact ⟨g, hg, hgm, hg_pos, hg_idx, hgf⟩
 
 /-- **Relative Morse approximation of strictly plurisubharmonic functions.** Every strong `C^k`
@@ -233,7 +233,7 @@ theorem exists_isMorse_isManifoldStrictlyPlurisubharmonicAt_mem_ball_sub_compl
     (f : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) (c : StrongCkControl 𝓘(ℝ, E) M ∞)
     (hf : ∀ x, IsManifoldStrictlyPlurisubharmonicAt E f x)
     {ε : M → ℝ} (hε : Continuous ε) (hε₀ : ∀ x, 0 < ε x)
-    {C V : Set M} (hC : IsClosed C) (hV : IsOpen V) (hCV : C ⊆ V)
+    {C V : Set M} (hC : IsClosed C) (hCV : C ⊆ V)
     (hfV : IsMorseOn 𝓘(ℝ, E) f V) :
     ∃ g ∈ c.ball f, IsMorse 𝓘(ℝ, E) g ∧
       (∀ x, IsManifoldStrictlyPlurisubharmonicAt E g x) ∧
@@ -242,7 +242,7 @@ theorem exists_isMorse_isManifoldStrictlyPlurisubharmonicAt_mem_ball_sub_compl
       tsupport (fun x ↦ g x - f x) ⊆ Cᶜ := by
   simpa only [isManifoldStronglyPseudoconvexAt_zero_iff, add_zero] using
     f.exists_isMorse_isManifoldStronglyPseudoconvexAt_mem_ball_sub_compl (q := 0) c
-      (fun x ↦ (hf x).isManifoldStronglyPseudoconvexAt 0) hε hε₀ hC hV hCV hfV
+      (fun x ↦ (hf x).isManifoldStronglyPseudoconvexAt 0) hε hε₀ hC hCV hfV
 
 /-- **Morse approximation of strictly plurisubharmonic functions** in a strong `C^k` ball and
 within a continuous positive `C⁰` tolerance. -/
@@ -256,7 +256,7 @@ theorem exists_isMorse_isManifoldStrictlyPlurisubharmonicAt_mem_ball
       ∀ x, |g x - f x| < ε x := by
   obtain ⟨g, hg, hgm, hg_pos, hg_idx, hgf, -⟩ :=
     f.exists_isMorse_isManifoldStrictlyPlurisubharmonicAt_mem_ball_sub_compl c hf hε hε₀
-      isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
+      isClosed_empty (subset_refl _) isMorseOn_empty
   exact ⟨g, hg, hgm, hg_pos, hg_idx, hgf⟩
 
 end SigmaCompact
@@ -265,12 +265,12 @@ end SigmaCompact
 globally strongly `q`-pseudoconvex function `f` is approximated, in every strong `C^k`
 neighbourhood `c.ball f`, by proper smooth globally strongly `q`-pseudoconvex Morse functions `g`
 within `C⁰` distance `1` of `f` whose critical points have real Morse index at most `dim_ℂ E + q`,
-agreeing with `f` near any closed set `C` on an open neighbourhood `V` of which `f` is already
+agreeing with `f` near any closed set `C` contained in a set `V` on which `f` is already
 Morse. No separate sigma-compactness hypothesis on `M` is needed. -/
 theorem exists_isMorse_isProperMap_isManifoldStronglyPseudoconvexAt_mem_ball_sub_compl {q : ℕ}
     (f : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) (c : StrongCkControl 𝓘(ℝ, E) M ∞)
     (hf_prop : IsProperMap f) (hf_pos : ∀ x, IsManifoldStronglyPseudoconvexAt E q f x)
-    {C V : Set M} (hC : IsClosed C) (hV : IsOpen V) (hCV : C ⊆ V)
+    {C V : Set M} (hC : IsClosed C) (hCV : C ⊆ V)
     (hfV : IsMorseOn 𝓘(ℝ, E) f V) :
     ∃ g ∈ c.ball f, IsMorse 𝓘(ℝ, E) g ∧ IsProperMap g ∧
       (∀ x, IsManifoldStronglyPseudoconvexAt E q g x) ∧
@@ -282,7 +282,7 @@ theorem exists_isMorse_isProperMap_isManifoldStronglyPseudoconvexAt_mem_ball_sub
   obtain ⟨c', hsub, hc'⟩ :=
     f.exists_strongCkControl_ball_subset_isManifoldStronglyPseudoconvexAt c hf_pos
   obtain ⟨g, hg, hgm, hgp, hgf, hgs⟩ :=
-    f.exists_isMorse_isProperMap_mem_ball c' hf_prop hC hV hCV hfV
+    f.exists_isMorse_isProperMap_mem_ball c' hf_prop hC hCV hfV
   obtain ⟨hg_pos, hg_idx⟩ := hc' g hg
   exact ⟨g, hsub hg, hgm, hgp, hg_pos, hg_idx, hgf, hgs⟩
 
@@ -297,14 +297,14 @@ theorem exists_isMorse_isProperMap_isManifoldStronglyPseudoconvexAt_mem_ball {q 
       ∀ x, |g x - f x| < 1 := by
   obtain ⟨g, hg, hgm, hgp, hg_pos, hg_idx, hgf, -⟩ :=
     f.exists_isMorse_isProperMap_isManifoldStronglyPseudoconvexAt_mem_ball_sub_compl c hf_prop
-      hf_pos isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
+      hf_pos isClosed_empty (subset_refl _) isMorseOn_empty
   exact ⟨g, hg, hgm, hgp, hg_pos, hg_idx, hgf⟩
 
 /-- **Relative proper Morse approximation of strictly plurisubharmonic functions.** -/
 theorem exists_isMorse_isProperMap_isManifoldStrictlyPlurisubharmonicAt_mem_ball_sub_compl
     (f : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯) (c : StrongCkControl 𝓘(ℝ, E) M ∞)
     (hf_prop : IsProperMap f) (hf_pos : ∀ x, IsManifoldStrictlyPlurisubharmonicAt E f x)
-    {C V : Set M} (hC : IsClosed C) (hV : IsOpen V) (hCV : C ⊆ V)
+    {C V : Set M} (hC : IsClosed C) (hCV : C ⊆ V)
     (hfV : IsMorseOn 𝓘(ℝ, E) f V) :
     ∃ g ∈ c.ball f, IsMorse 𝓘(ℝ, E) g ∧ IsProperMap g ∧
       (∀ x, IsManifoldStrictlyPlurisubharmonicAt E g x) ∧
@@ -313,7 +313,7 @@ theorem exists_isMorse_isProperMap_isManifoldStrictlyPlurisubharmonicAt_mem_ball
       tsupport (fun x ↦ g x - f x) ⊆ Cᶜ := by
   simpa only [isManifoldStronglyPseudoconvexAt_zero_iff, add_zero] using
     f.exists_isMorse_isProperMap_isManifoldStronglyPseudoconvexAt_mem_ball_sub_compl (q := 0) c
-      hf_prop (fun x ↦ (hf_pos x).isManifoldStronglyPseudoconvexAt 0) hC hV hCV hfV
+      hf_prop (fun x ↦ (hf_pos x).isManifoldStronglyPseudoconvexAt 0) hC hCV hfV
 
 /-- **Proper Morse approximation of strictly plurisubharmonic functions** in a strong `C^k` ball
 within `C⁰` distance `1`. -/
@@ -326,7 +326,7 @@ theorem exists_isMorse_isProperMap_isManifoldStrictlyPlurisubharmonicAt_mem_ball
       ∀ x, |g x - f x| < 1 := by
   obtain ⟨g, hg, hgm, hgp, hg_pos, hg_idx, hgf, -⟩ :=
     f.exists_isMorse_isProperMap_isManifoldStrictlyPlurisubharmonicAt_mem_ball_sub_compl c hf_prop
-      hf_pos isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
+      hf_pos isClosed_empty (subset_refl _) isMorseOn_empty
   exact ⟨g, hg, hgm, hgp, hg_pos, hg_idx, hgf⟩
 
 end ContMDiffMap
@@ -342,14 +342,14 @@ private local instance : IsManifold 𝓘(ℝ, E) ∞ M :=
 
 /-- **Relative Morse perturbation of a strongly `q`-pseudoconvex exhaustion.** Given a smooth
 proper bounded-below globally strongly `q`-pseudoconvex function `f : M → ℝ` on a Hausdorff complex
-manifold which is already Morse on an open neighbourhood `V` of a closed set `C`, there is a smooth
+manifold which is already Morse on a set `V` containing a closed set `C`, there is a smooth
 proper bounded-below globally strongly `q`-pseudoconvex Morse function `g` within `C⁰` distance `1`
 of `f` that agrees with `f` near `C` and has real Morse index at most `dim_ℂ E + q` at every
 critical point. -/
 theorem exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt_sub_compl {q : ℕ}
     {f : M → ℝ} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hf_prop : IsProperMap f)
     (hf_bdd : BddBelow (range f)) (hf_pos : ∀ x, IsManifoldStronglyPseudoconvexAt E q f x)
-    {C V : Set M} (hC : IsClosed C) (hV : IsOpen V) (hCV : C ⊆ V)
+    {C V : Set M} (hC : IsClosed C) (hCV : C ⊆ V)
     (hfV : IsMorseOn 𝓘(ℝ, E) f V) :
     ∃ g : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯,
       IsMorse 𝓘(ℝ, E) g ∧ IsProperMap g ∧ BddBelow (range g) ∧
@@ -359,7 +359,7 @@ theorem exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt_sub
       tsupport (fun x ↦ g x - f x) ⊆ Cᶜ := by
   obtain ⟨g, -, hgm, hgp, hg_pos, hg_idx, hgf, hgs⟩ :=
     ContMDiffMap.exists_isMorse_isProperMap_isManifoldStronglyPseudoconvexAt_mem_ball_sub_compl
-      ⟨f, hf⟩ .empty hf_prop hf_pos hC hV hCV hfV
+      ⟨f, hf⟩ .empty hf_prop hf_pos hC hCV hfV
   simp only [ContMDiffMap.coeFn_mk] at hgf hgs
   exact ⟨g, hgm, hgp, hf_bdd.range_of_abs_sub_le fun x ↦ (hgf x).le, hg_pos, hg_idx, hgf, hgs⟩
 
@@ -378,14 +378,14 @@ theorem exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt {q 
       ∀ x, |g x - f x| < 1 := by
   obtain ⟨g, hgm, hgp, hg_bdd, hg_pos, hg_idx, hgf, -⟩ :=
     exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt_sub_compl hf hf_prop
-      hf_bdd hf_pos isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
+      hf_bdd hf_pos isClosed_empty (subset_refl _) isMorseOn_empty
   exact ⟨g, hgm, hgp, hg_bdd, hg_pos, hg_idx, hgf⟩
 
 /-- **Relative Morse perturbation of a strictly plurisubharmonic exhaustion.** -/
 theorem exists_isMorse_isProperMap_bddBelow_isManifoldStrictlyPlurisubharmonicAt_sub_compl
     {f : M → ℝ} (hf : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) ∞ f) (hf_prop : IsProperMap f)
     (hf_bdd : BddBelow (range f)) (hf_pos : ∀ x, IsManifoldStrictlyPlurisubharmonicAt E f x)
-    {C V : Set M} (hC : IsClosed C) (hV : IsOpen V) (hCV : C ⊆ V)
+    {C V : Set M} (hC : IsClosed C) (hCV : C ⊆ V)
     (hfV : IsMorseOn 𝓘(ℝ, E) f V) :
     ∃ g : C^∞⟮𝓘(ℝ, E), M; 𝓘(ℝ), ℝ⟯,
       IsMorse 𝓘(ℝ, E) g ∧ IsProperMap g ∧ BddBelow (range g) ∧
@@ -395,7 +395,7 @@ theorem exists_isMorse_isProperMap_bddBelow_isManifoldStrictlyPlurisubharmonicAt
       tsupport (fun x ↦ g x - f x) ⊆ Cᶜ := by
   simpa only [isManifoldStronglyPseudoconvexAt_zero_iff, add_zero] using
     exists_isMorse_isProperMap_bddBelow_isManifoldStronglyPseudoconvexAt_sub_compl (q := 0) hf
-      hf_prop hf_bdd (fun x ↦ (hf_pos x).isManifoldStronglyPseudoconvexAt 0) hC hV hCV hfV
+      hf_prop hf_bdd (fun x ↦ (hf_pos x).isManifoldStronglyPseudoconvexAt 0) hC hCV hfV
 
 /-- **Morse perturbation of a strictly plurisubharmonic exhaustion.** A smooth proper bounded-below
 globally strictly plurisubharmonic function `f : M → ℝ` on a Hausdorff complex manifold is
@@ -412,7 +412,7 @@ theorem exists_isMorse_isProperMap_bddBelow_isManifoldStrictlyPlurisubharmonicAt
       ∀ x, |g x - f x| < 1 := by
   obtain ⟨g, hgm, hgp, hg_bdd, hg_pos, hg_idx, hgf, -⟩ :=
     exists_isMorse_isProperMap_bddBelow_isManifoldStrictlyPlurisubharmonicAt_sub_compl hf hf_prop
-      hf_bdd hf_pos isClosed_empty isOpen_empty (subset_refl _) isMorseOn_empty
+      hf_bdd hf_pos isClosed_empty (subset_refl _) isMorseOn_empty
   exact ⟨g, hgm, hgp, hg_bdd, hg_pos, hg_idx, hgf⟩
 
 /-- **Morse perturbation of squared distance along a proper holomorphic immersion.** For any smooth

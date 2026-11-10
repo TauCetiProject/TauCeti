@@ -202,7 +202,7 @@ theorem exists_isMorse_ne_quarticExhaustion :
       isProperMap_quarticExhaustion
       ⟨0, by rintro _ ⟨z, rfl⟩; unfold quarticExhaustion; positivity⟩
       isManifoldStrictlyPlurisubharmonicAt_quarticExhaustion
-      hC isOpen_compl_singleton hCV isMorseOn_quarticExhaustion_compl_zero
+      hC hCV isMorseOn_quarticExhaustion_compl_zero
   refine ⟨g, fun hge ↦ not_isMorse_quarticExhaustion (hge ▸ hgm), hgm, hgp, hg_bdd, hg_pos,
     fun j hj ↦ criticalCount_eq_zero_of_isManifoldStrictlyPlurisubharmonicAt
       (g.contMDiff.of_le (by simp : (2 : ℕ∞ω) ≤ ∞)) (fun z _ ↦ hg_pos z)
