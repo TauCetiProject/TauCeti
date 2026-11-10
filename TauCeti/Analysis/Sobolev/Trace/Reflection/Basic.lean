@@ -225,14 +225,30 @@ theorem contDiff_normalReflection (a : ℝ) {n : WithTop ℕ∞} :
   exact (normalLinearReflection E).toContinuousLinearEquiv.contDiff.add contDiff_const
 
 /-- **Gradients of odd functions.** Let `h` be odd under the reflection `ρ` in `{a} × E` on an
-open set `U`, that is `h (ρ x) = -h x` for `x ∈ U`. If `h` is differentiable at `ρ x`, then its
-gradient transforms by minus the linear part `R` of `ρ`: `∇h (ρ x) = -R (∇h x)`. The normal
+open set `U`, that is `h (ρ x) = -h x` for `x ∈ U`. Then its gradient transforms by minus the
+linear part `R` of `ρ`: `∇h (ρ x) = -R (∇h x)`. The normal
 component of `∇h` is therefore even under `ρ` and its tangential components are odd. -/
 theorem gradient_normalReflection_of_forall_eq_neg {a : ℝ} {U : Set (WithLp 2 (ℝ × E))}
     (hU : IsOpen U) {h : WithLp 2 (ℝ × E) → ℝ} (hodd : ∀ x ∈ U, h (normalReflection E a x) = -h x)
-    {x : WithLp 2 (ℝ × E)} (hx : x ∈ U) (hd : DifferentiableAt ℝ h (normalReflection E a x)) :
+    {x : WithLp 2 (ℝ × E)} (hx : x ∈ U) :
     ∇ h (normalReflection E a x) = -normalLinearReflection E (∇ h x) := by
   set R := normalLinearReflection E
+  by_cases hd : DifferentiableAt ℝ h (normalReflection E a x)
+  swap
+  · have hdx : ¬ DifferentiableAt ℝ h x := fun hdx => hd <| by
+      have heq : (fun y => h (normalReflection E a y)) =ᶠ[𝓝 x] -h :=
+        Filter.eventually_of_mem (hU.mem_nhds hx) hodd
+      have h1 : DifferentiableAt ℝ (fun y => h (normalReflection E a y)) x :=
+        (hdx.neg).congr_of_eventuallyEq heq
+      rw [← normalReflection_normalReflection a x] at h1
+      have h2 : DifferentiableAt ℝ
+          (fun y => h (normalReflection E a (normalReflection E a y))) (normalReflection E a x) :=
+        h1.comp (normalReflection E a x) (hasFDerivAt_normalReflection a _).differentiableAt
+      rwa [show (fun y => h (normalReflection E a (normalReflection E a y))) = h from
+        funext fun y => by rw [normalReflection_normalReflection]] at h2
+    rw [gradient, gradient, fderiv_zero_of_not_differentiableAt hd,
+      fderiv_zero_of_not_differentiableAt hdx]
+    simp
   have hcomp : HasFDerivAt (fun y => h (normalReflection E a y))
       ((fderiv ℝ h (normalReflection E a x)).comp
         (R.toContinuousLinearEquiv : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))) x :=
