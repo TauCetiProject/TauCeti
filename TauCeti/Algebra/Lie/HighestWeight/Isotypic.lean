@@ -78,6 +78,9 @@ dictionary, `LieModule.isotypicComponent_eq_top_iff_of_ι_smul`.
 * `TauCeti.lieSpan_equiv_irreducibleQuotient_of_isHighestWeightVector` and
   `TauCeti.finrank_irreducibleQuotient_le_of_isHighestWeightVector`: the same two statements at the
   fixed carrier `L(lam)`.
+* `TauCeti.IsHighestWeightVector.exists_isHighestWeightVector_apply_eq`: highest weight vectors
+  lift along a surjection out of a completely reducible module, so a quotient of such a module has
+  no highest weights beyond those of the module itself.
 * `TauCeti.isIsotypicOfType_of_forall_isHighestWeightVector` and
   `TauCeti.isotypicComponent_eq_top_of_isHighestWeightVector_of_forall_isHighestWeightVector`:
   **the single-weight isotypic criterion**, with
@@ -120,6 +123,30 @@ private theorem isHighestWeightVector_generator (hv : IsHighestWeightVector b la
       (⟨v, LieSubmodule.subset_lieSpan rfl⟩ :
         (LieSubmodule.lieSpan K L ({v} : Set M) : LieSubmodule K L M)) :=
   isHighestWeightVector_coe_iff.mp hv
+
+omit [LieModule K L N] in
+/-- **Highest weight vectors lift along a surjection out of a completely reducible module.** If
+the Lie submodules of `M` form a complemented lattice, every highest weight vector of `N` is the
+image, under a surjective morphism `f : M → N`, of a highest weight vector of `M` of the same
+weight. -/
+theorem IsHighestWeightVector.exists_isHighestWeightVector_apply_eq
+    [ComplementedLattice (LieSubmodule K L M)] {w : N} (hw : IsHighestWeightVector b lam w)
+    {f : M →ₗ⁅K,L⁆ N} (hf : Function.Surjective f) :
+    ∃ u : M, IsHighestWeightVector b lam u ∧ f u = w := by
+  obtain ⟨C, hC⟩ := exists_isCompl f.ker
+  obtain ⟨m, rfl⟩ := hf w
+  have hm : m ∈ f.ker ⊔ C := by rw [hC.sup_eq_top]; exact LieSubmodule.mem_top m
+  obtain ⟨k, hk, u, hu, rfl⟩ := (LieSubmodule.mem_sup f.ker C m).mp hm
+  rw [map_add, LieModuleHom.mem_ker.mp hk, zero_add] at hw ⊢
+  -- `f` is injective on the complement `C` of its kernel
+  have hinj : ∀ y ∈ C, f y = 0 → y = 0 := fun y hy hfy ↦ (LieSubmodule.mem_bot y).mp
+    (hC.disjoint.le_bot ((LieSubmodule.mem_inf _ _ y).mpr ⟨LieModuleHom.mem_ker.mpr hfy, hy⟩))
+  refine ⟨u, isHighestWeightVector_iff.mpr
+    ⟨fun h ↦ hw.ne_zero (by rw [h, map_zero]), fun x ↦ ?_, fun x hx ↦ ?_⟩, rfl⟩
+  · refine sub_eq_zero.mp (hinj _ (sub_mem (C.lie_mem hu) (C.smul_mem _ hu)) ?_)
+    rw [map_sub, LieModuleHom.map_lie, map_smul, hw.lie_eq_smul x, sub_self]
+  · exact hinj _ (C.lie_mem hu)
+      (by rw [LieModuleHom.map_lie, hw.lie_eq_zero_of_mem_positiveNilradical hx])
 
 /-! ### A finite-dimensional highest weight module is irreducible -/
 
