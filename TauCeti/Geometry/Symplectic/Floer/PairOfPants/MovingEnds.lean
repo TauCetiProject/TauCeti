@@ -266,9 +266,7 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_inf_of_le
         (deriv inf.cylindricalEndLift z * v) =
       v.im * (smoothTransition (-z.re - 1) * Hout z.im x) := by
   have hnorm : 2 * Real.exp (2 * π) ≤ ‖inf.cylindricalEndLift z‖ := by
-    rw [norm_cylindricalEndLift_inf]
-    gcongr
-    nlinarith [Real.pi_pos]
+    simpa using two_mul_exp_le_norm_cylindricalEndLift_inf (R := 1) hz
   rw [puncturedSpherePerturbation_eq_negativePlanePerturbation fun i => ?_,
     negativePlanePerturbation_cylindricalEndLift_apply hH]
   have h := norm_sub_norm_le (inf.cylindricalEndLift z) (c i)
