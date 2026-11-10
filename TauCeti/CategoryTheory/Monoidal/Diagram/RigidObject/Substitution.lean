@@ -83,13 +83,12 @@ theorem dualPow_add (m n : ℤ) (L : WindingWord α) :
   | zero => simp
   | succ k ih =>
     have h : 2 * ((k : ℤ) + 1) = (2 * k + 1) + 1 := by omega
-    rw [h, dualPow_add_one, dualPow_add_one, ih, rightDual_rightDual, shift_shift]
-    congr 1
+    simp only [h, dualPow_add_one, ih, rightDual_rightDual, shift_shift]
+    exact congrArg (fun n ↦ shift n L) (by omega)
   | pred k ih =>
     have h : 2 * (-(k : ℤ) - 1) = (2 * -k - 1) - 1 := by omega
-    rw [h, dualPow_sub_one, dualPow_sub_one, ih, leftDual_leftDual, shift_shift]
-    congr 1
-    omega
+    simp only [h, dualPow_sub_one, ih, leftDual_leftDual, shift_shift]
+    exact congrArg (fun n ↦ shift n L) (by omega)
 
 @[simp] theorem dualPow_nil (n : ℤ) : dualPow n ([] : WindingWord α) = [] := by
   induction n using Int.induction_on <;> simp_all
