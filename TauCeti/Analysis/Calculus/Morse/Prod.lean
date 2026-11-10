@@ -236,24 +236,26 @@ section Critical
 
 /-- **Nondegenerate critical points of a separated sum** are the pairs of nondegenerate critical
 points of the summands. -/
-theorem isNondegenerateCriticalPoint_separatedSum_iff {z : WithLp 2 (E × F)}
-    (hf : ContDiffAt ℝ 2 f z.fst) (hg : ContDiffAt ℝ 2 g z.snd) :
+@[simp]
+theorem isNondegenerateCriticalPoint_separatedSum_iff {z : WithLp 2 (E × F)} :
     IsNondegenerateCriticalPoint (separatedSum f g) z ↔
       IsNondegenerateCriticalPoint f z.fst ∧ IsNondegenerateCriticalPoint g z.snd := by
   let e := WithLp.prodContinuousLinearEquiv 2 ℝ E F
-  have hsum : ContDiffAt ℝ 2 (f ∘ Prod.fst + g ∘ Prod.snd) (e z) :=
-    (ContDiffAt.comp (e z) hf contDiffAt_fst).add (ContDiffAt.comp (e z) hg contDiffAt_snd)
-  rw [separatedSum_eq_comp, isNondegenerateCriticalPoint_comp_iff hsum e.contDiff.contDiffAt
-    (by rw [e.fderiv]; exact ⟨e, rfl⟩)]
-  exact isNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff
+  rw [← isNondegenerateCriticalPoint_comp_fst_add_comp_snd_iff, separatedSum_eq_comp]
+  by_cases hsum : ContDiffAt ℝ 2 (f ∘ Prod.fst + g ∘ Prod.snd) (e z)
+  · exact isNondegenerateCriticalPoint_comp_iff hsum e.contDiff.contDiffAt
+      (by rw [e.fderiv]; exact ⟨e, rfl⟩)
+  · -- Either side makes the separated sum `C²` at `e z`, since `e` is a linear equivalence.
+    refine iff_of_false (fun h ↦ hsum ?_) fun h ↦ hsum h.contDiffAt
+    rw [← e.contDiffAt_comp_iff, e.symm_apply_apply]
+    exact h.contDiffAt
 
 /-- A pair of nondegenerate critical points is a nondegenerate critical point of the separated
 sum. -/
 theorem IsNondegenerateCriticalPoint.separatedSum {x : E} {y : F}
     (hx : IsNondegenerateCriticalPoint f x) (hy : IsNondegenerateCriticalPoint g y) :
     IsNondegenerateCriticalPoint (separatedSum f g) (WithLp.toLp 2 (x, y)) :=
-  (isNondegenerateCriticalPoint_separatedSum_iff (z := WithLp.toLp 2 (x, y)) hx.contDiffAt
-    hy.contDiffAt).2 ⟨hx, hy⟩
+  isNondegenerateCriticalPoint_separatedSum_iff.2 ⟨hx, hy⟩
 
 /-- **Critical points of a separated sum** are the pairs of critical points of the summands. -/
 theorem fderiv_separatedSum_eq_zero_iff {z : WithLp 2 (E × F)} (hf : DifferentiableAt ℝ f z.fst)
@@ -278,8 +280,7 @@ theorem HasNondegenerateCriticalPointsOn.separatedSum
   obtain ⟨h₁, h₂⟩ := (fderiv_separatedSum_eq_zero_iff hdf hdg).1 hz
   have hf' := hasNondegenerateCriticalPointsOn_iff.1 hf (mem_univ _) h₁
   have hg' := hasNondegenerateCriticalPointsOn_iff.1 hg (mem_univ _) h₂
-  exact (isNondegenerateCriticalPoint_separatedSum_iff hf'.contDiffAt hg'.contDiffAt).2
-    ⟨hf', hg'⟩
+  exact isNondegenerateCriticalPoint_separatedSum_iff.2 ⟨hf', hg'⟩
 
 /-- **The Morse index of a separated sum is additive.** -/
 theorem morseIndex_separatedSum [FiniteDimensional ℝ E] [FiniteDimensional ℝ F]
