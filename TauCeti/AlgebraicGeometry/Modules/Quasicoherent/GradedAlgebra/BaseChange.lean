@@ -339,20 +339,6 @@ theorem pullbackGradedSectionsGradedHom_comp_restrictGradedSectionsGradedHom {U'
       pullbackGradedSectionsGradedHom_apply] using
       DFunLike.congr_fun (pullbackGradedSections_comp_restrictGradedSections f A hV j hV') x
 
-/-- Pulling back sections of a quasicoherent module `M` to `V` and transporting them along an
-equation `f^* M = N` is a base change. -/
-private lemma isBaseChange_eqToHom_app_pullbackSectionsLE (M : X.Modules) [M.IsQuasicoherent]
-    {N : Y.Modules} (h : (Scheme.Modules.pullback f).obj M = N) (hU : IsAffineOpen U)
-    (hV' : IsAffineOpen V) :
-    letI := (f.appLE U V hV).hom.toAlgebra
-    ∀ [Module Γ(X, U) Γ(N, V)] [IsScalarTower Γ(X, U) Γ(Y, V) Γ(N, V)]
-      (φ : Γ(M, U) →ₗ[Γ(X, U)] Γ(N, V)),
-      (∀ s, φ s = (eqToHom h).app V (f.pullbackSectionsLE M U V hV s)) →
-        IsBaseChange Γ(Y, V) φ := by
-  subst h
-  intro _ _ φ hφ
-  exact f.isBaseChange_pullbackSectionsLE M hU hV' hV φ hφ
-
 /-- **Graded rings of sections under base change.** For a morphism of schemes `f : Y ⟶ X`, a
 graded quasicoherent algebra `A` on `X`, an affine open `U` of `X` and an affine open `V ≤ f⁻¹ U`
 of `Y`, pullback of sections exhibits `⨁ n, Γ(f^* Aₙ, V)` as the base change of
@@ -376,8 +362,8 @@ theorem isPushout_pullbackGradedSections (hU : IsAffineOpen U) (hV' : IsAffineOp
       map_smul' r x := (congrArg _ ((f.pullbackSectionsLE (A.obj.X n) U V hV).map_smulₛₗ r x)).trans
         (Scheme.Modules.Hom.app_smul _ (f.appLE U V hV r) _) }
   have hρ (n : ℕ) : IsBaseChange Γ(Y, V) (ρ n) :=
-    isBaseChange_eqToHom_app_pullbackSectionsLE f hV (A.obj.X n) (pullback_obj_obj_X f A n).symm
-      hU hV' (ρ n) fun _ ↦ rfl
+    f.isBaseChange_eqToHom_app_pullbackSectionsLE (A.obj.X n) (pullback_obj_obj_X f A n).symm
+      hU hV' hV (ρ n) fun _ ↦ rfl
   -- The `Γ(X, U)`-algebra structure on `⨁ n, Γ(f^* Aₙ, V)` whose module structure is the
   -- direct sum of the restrictions of scalars.
   let : Algebra Γ(X, U) (⨁ n, Γ(((pullback f).obj A).obj.X n, V)) := Algebra.ofModule

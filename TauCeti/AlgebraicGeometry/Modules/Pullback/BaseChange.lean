@@ -13,6 +13,7 @@ public import Mathlib.Topology.QuasiSeparated
 public import Mathlib.AlgebraicGeometry.Morphisms.Flat
 import Mathlib.AlgebraicGeometry.Morphisms.QuasiCompact
 import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.Scheme.Opens
 import TauCeti.RingTheory.Flat.IsBaseChange
 import TauCeti.RingTheory.TensorProduct.IsBaseChange
 import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
@@ -63,7 +64,9 @@ statements.
 * `AlgebraicGeometry.Scheme.Hom.isBaseChange_pullbackSections`: base change of sections over an
   affine open, along any base-ring map.
 * `AlgebraicGeometry.Scheme.Hom.isBaseChange_pullbackSectionsLE`: for affine opens `U` and
-  `V ≤ g⁻¹ U`, sections over `V` of the pullback are the base change along `Γ(X, U) → Γ(Y, V)`.
+  `V ≤ g⁻¹ U`, sections over `V` of the pullback are the base change along `Γ(X, U) → Γ(Y, V)`;
+  `AlgebraicGeometry.Scheme.Hom.isBaseChange_eqToHom_app_pullbackSectionsLE` transports this
+  along an equation `g^* M = N`.
 * `AlgebraicGeometry.Scheme.Hom.flat_sectionsBase_pullback`: flatness of the sections over an
   affine open survives every base change.
 * `AlgebraicGeometry.Scheme.Hom.liftBaseChange_pullbackSectionsBaseLinear_injective`: for flat
@@ -899,19 +902,29 @@ theorem isBaseChange_pullbackSectionsLE {U : X.Opens} (hU : IsAffineOpen U) {V :
   -- Apply the base change theorem for cartesian squares to the square with identity verticals.
   -- Its statement lets the identities act on functions through `(𝟙 _).appLE`, so the two
   -- corresponding scalar towers are supplied explicitly.
-  have hid {Z : Scheme.{u}} {W : Z.Opens} (r : Γ(Z, W)) :
-      Scheme.Hom.appLE (𝟙 Z) W W le_rfl r = r := by
-    simp only [Scheme.Hom.appLE, Scheme.Hom.id_app]
-    exact congr($(Z.presheaf.map_id (op W)) r)
   have h := @isBaseChange_pullbackSectionsLEBaseLinear _ _ _ _ _ _ _ g M _
     (IsPullback.id_vert g) U hU V hV hVU U le_rfl hU V (by simpa using hVU) _ _ _
     (@IsScalarTower.of_algebraMap_smul _ _ _ _ _
       (Scheme.Hom.appLE (𝟙 X) U U le_rfl).hom.toAlgebra _ _
-      fun r s ↦ by rw [RingHom.algebraMap_toAlgebra, hid])
+      fun r s ↦ by rw [RingHom.algebraMap_toAlgebra, appLE_eq_id_of_eq_id rfl _ le_rfl]; rfl)
     (@IsScalarTower.of_algebraMap_smul _ _ _ _ _
       (Scheme.Hom.appLE (𝟙 Y) V V le_rfl).hom.toAlgebra _ _
-      fun r s ↦ by rw [RingHom.algebraMap_toAlgebra, hid]) _
+      fun r s ↦ by rw [RingHom.algebraMap_toAlgebra, appLE_eq_id_of_eq_id rfl _ le_rfl]; rfl) _
   convert h using 1
   exact LinearMap.ext hφ
+
+/-- Variant of `isBaseChange_pullbackSectionsLE` for a module `N` equal to `g^* M`, such as a
+component of a pulled-back graded algebra: pulling back sections to `V` and transporting them
+along `g^* M = N` is a base change along `g.appLE U V hVU`. -/
+theorem isBaseChange_eqToHom_app_pullbackSectionsLE {N : Y.Modules}
+    (h : (pullback g).obj M = N) {U : X.Opens} (hU : IsAffineOpen U) {V : Y.Opens}
+    (hV : IsAffineOpen V) (hVU : V ≤ g ⁻¹ᵁ U) :
+    letI := (g.appLE U V hVU).hom.toAlgebra
+    ∀ [Module Γ(X, U) Γ(N, V)] [IsScalarTower Γ(X, U) Γ(Y, V) Γ(N, V)]
+      (φ : Γ(M, U) →ₗ[Γ(X, U)] Γ(N, V)),
+      (∀ s, φ s = (eqToHom h).app V (g.pullbackSectionsLE M U V hVU s)) →
+        IsBaseChange Γ(Y, V) φ := by
+  subst h
+  exact g.isBaseChange_pullbackSectionsLE M hU hV hVU
 
 end AlgebraicGeometry.Scheme.Hom
