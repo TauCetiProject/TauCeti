@@ -371,12 +371,13 @@ theorem IsIntegral.not_isUnimodular_sqrt_smul [Nontrivial E] (h : IsIntegral L) 
     rw [abs_of_nonneg (Real.sqrt_nonneg _), Real.lt_sqrt zero_le_one, one_pow]
     exact_mod_cast hm
 
-omit [MeasurableSpace E] [BorelSpace E] [IsZLattice ℝ L] in
+omit [MeasurableSpace E] [BorelSpace E] [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- In positive dimension, scaling a unimodular lattice by `c` with `|c| ≠ 1` never gives a
 unimodular lattice. -/
 theorem IsUnimodular.not_isUnimodular_smul [Nontrivial E] (h : IsUnimodular L) {c : ℝ}
     (hc : |c| ≠ 1) : ¬ IsUnimodular (c • L) := by
   borelize E
+  have := h.isIntegral.discreteTopology
   have := h.isZLattice
   intro hu
   rcases eq_or_ne c 0 with rfl | hc0
