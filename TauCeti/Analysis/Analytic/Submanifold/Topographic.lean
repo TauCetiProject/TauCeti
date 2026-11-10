@@ -128,7 +128,7 @@ private theorem exists_isAnalyticChart_image_tail (hψ : IsAnalyticSubmanifold d
     hc.injective_fderiv_symm_firstCoords hvc hv hψ.le
   -- By the height inequality, so is its projection `p`.
   have hDp : Function.Injective (fderiv 𝕜 p u₀) :=
-    injective_fderiv_tail_comp hφ.differentiableAt hDφ h (hφψ.mono fun u hu ↦ hu.2)
+    hφ.differentiableAt.injective_fderiv_tail_comp hDφ h (hφψ.mono fun u hu ↦ hu.2)
   have hd : d ≤ n := by
     simpa using LinearMap.finrank_le_finrank_of_injective (f := (fderiv 𝕜 p u₀).toLinearMap) hDp
   -- Points of `Fin.tail '' ψ` near `Fin.tail v` lift to points of `ψ` near `v`, since the

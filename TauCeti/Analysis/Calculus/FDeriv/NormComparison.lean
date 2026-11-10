@@ -27,9 +27,9 @@ map, without assuming differentiability of the outer map.
 * `HasFDerivAt.norm_apply_le_mul_norm_apply`: a norm comparison of increments passes to the
   derivative.
 * `LipschitzWith.norm_fderiv_comp_le`: postcomposition by a Lipschitz map.
-* `TauCeti.injective_fderiv_tail_comp`: if a differentiable parametrization of a set whose heights
-  are bounded by `A` times the distances of base points has injective derivative, so does its
-  projection to the base.
+* `DifferentiableAt.injective_fderiv_tail_comp`: if a differentiable parametrization of a set
+  whose heights are bounded by `A` times the distances of base points has injective derivative, so
+  does its projection to the base.
 -/
 
 public section
@@ -82,12 +82,10 @@ theorem LipschitzWith.norm_fderiv_comp_le {f : E → F} {g : F → G} {C : ℝ�
           mul_le_mul_of_nonneg_left ((fderiv 𝕜 f x).le_opNorm v) C.coe_nonneg
   · simp [fderiv_zero_of_not_differentiableAt hgf, mul_nonneg C.coe_nonneg (norm_nonneg _)]
 
-namespace TauCeti
-
 /-- If `φ` parametrizes points of `ψ` near `u₀` with injective derivative at `u₀`, and `ψ`
 satisfies the height inequality, then the projection `Fin.tail ∘ φ` also has injective derivative
 at `u₀`: tangent vectors to `ψ` satisfy the height inequality as well. -/
-theorem injective_fderiv_tail_comp {n : ℕ}
+theorem DifferentiableAt.injective_fderiv_tail_comp {n : ℕ}
     {ψ : Set (Fin (n + 1) → 𝕜)} {A : ℝ≥0} {φ : E → Fin (n + 1) → 𝕜} {u₀ : E}
     (hφ : DifferentiableAt 𝕜 φ u₀) (hDφ : Function.Injective (fderiv 𝕜 φ u₀))
     (h : ∀ v ∈ ψ, ∀ w ∈ ψ, dist (v 0) (w 0) ≤ A * dist (Fin.tail v) (Fin.tail w))
@@ -111,5 +109,3 @@ theorem injective_fderiv_tail_comp {n : ℕ}
   rw [map_zero]
   funext i
   exact Fin.cases h0 (fun j ↦ congrFun hk j) i
-
-end TauCeti
