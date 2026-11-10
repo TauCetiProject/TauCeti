@@ -31,7 +31,7 @@ the tangent image of `h` at `c` is the composite of the linear canonical relatio
 `(df (da ξ)).2 = (dg (db ξ)).1`, is the derivative of the fibre-product condition
 (`MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct_comp`), and the differential of
 `h` reads off the outer coordinates of `df (da ξ)` and `dg (db ξ)`
-(`MDifferentiableAt.mfderiv_relComp_apply`). Hence
+(`MDifferentiableAt.mfderiv_prodMk_fst_snd_comp_apply`). Hence
 `TauCeti.SmoothTwoForm.IsNondegenerate.IsLagrangianMap.relComp`: the composite map is
 Lagrangian for `pr₁*σ₁ - pr₂*σ₃`, even when `h` has excess kernel and is not an immersion. The
 embedded case, where `h` is a Lagrangian correspondence `M₁ ⇝ M₃`, is in
@@ -53,52 +53,6 @@ noncomputable section
 
 open Module
 open scoped Manifold ContDiff
-
-section Differential
-
-variable {E₁ H₁ M₁ E₂ H₂ M₂ E₃ H₃ M₃ EL₁ HL₁ L₁ EL₂ HL₂ L₂ EC HC C : Type*}
-  [NormedAddCommGroup E₁] [NormedSpace ℝ E₁] [TopologicalSpace H₁] {I₁ : ModelWithCorners ℝ E₁ H₁}
-  [TopologicalSpace M₁] [ChartedSpace H₁ M₁]
-  [NormedAddCommGroup E₂] [NormedSpace ℝ E₂] [TopologicalSpace H₂] {I₂ : ModelWithCorners ℝ E₂ H₂}
-  [TopologicalSpace M₂] [ChartedSpace H₂ M₂]
-  [NormedAddCommGroup E₃] [NormedSpace ℝ E₃] [TopologicalSpace H₃] {I₃ : ModelWithCorners ℝ E₃ H₃}
-  [TopologicalSpace M₃] [ChartedSpace H₃ M₃]
-  [NormedAddCommGroup EL₁] [NormedSpace ℝ EL₁] [TopologicalSpace HL₁]
-  {K₁ : ModelWithCorners ℝ EL₁ HL₁} [TopologicalSpace L₁] [ChartedSpace HL₁ L₁]
-  [NormedAddCommGroup EL₂] [NormedSpace ℝ EL₂] [TopologicalSpace HL₂]
-  {K₂ : ModelWithCorners ℝ EL₂ HL₂} [TopologicalSpace L₂] [ChartedSpace HL₂ L₂]
-  [NormedAddCommGroup EC] [NormedSpace ℝ EC] [TopologicalSpace HC]
-  {KC : ModelWithCorners ℝ EC HC} [TopologicalSpace C] [ChartedSpace HC C]
-  {f : L₁ → M₁ × M₂} {g : L₂ → M₂ × M₃} {a : C → L₁} {b : C → L₂} {c : C}
-
-/-- The differential of the composite `c ↦ ((f (a c)).1, (g (b c)).2)` reads off the outer
-coordinates of `df (da ξ)` and `dg (db ξ)`. -/
-theorem MDifferentiableAt.mfderiv_relComp_apply (hf : MDifferentiableAt K₁ (I₁.prod I₂) f (a c))
-    (hg : MDifferentiableAt K₂ (I₂.prod I₃) g (b c)) (ha : MDifferentiableAt KC K₁ a c)
-    (hb : MDifferentiableAt KC K₂ b c) (ξ : TangentSpace KC c) :
-    mfderiv KC (I₁.prod I₃) (fun c ↦ ((f (a c)).1, (g (b c)).2)) c ξ =
-      ((mfderiv K₁ (I₁.prod I₂) f (a c) (mfderiv KC K₁ a c ξ)).1,
-        (mfderiv K₂ (I₂.prod I₃) g (b c) (mfderiv KC K₂ b c ξ)).2) := by
-  have hfa : MDifferentiableAt KC (I₁.prod I₂) (f ∘ a) c := hf.comp c ha
-  have hgb : MDifferentiableAt KC (I₂.prod I₃) (g ∘ b) c := hg.comp c hb
-  have hh := hfa.fst.prodMk hgb.snd
-  rw [← mfderiv_comp_apply c hf ha, ← mfderiv_comp_apply c hg hb, ← hfa.mfderiv_fst_apply,
-    ← hgb.mfderiv_snd_apply]
-  exact Prod.ext (hh.mfderiv_fst_apply ξ).symm (hh.mfderiv_snd_apply ξ).symm
-
-/-- Differentiating the fibre-product condition `(f (a c)).2 = (g (b c)).1`: the matching
-coordinates of `df (da ξ)` and `dg (db ξ)` agree. -/
-theorem MDifferentiableAt.mfderiv_snd_eq_mfderiv_fst_of_fiberProduct_comp
-    (hf : MDifferentiableAt K₁ (I₁.prod I₂) f (a c))
-    (hg : MDifferentiableAt K₂ (I₂.prod I₃) g (b c)) (ha : MDifferentiableAt KC K₁ a c)
-    (hb : MDifferentiableAt KC K₂ b c) (hab : ∀ c, (f (a c)).2 = (g (b c)).1)
-    (ξ : TangentSpace KC c) :
-    (mfderiv K₁ (I₁.prod I₂) f (a c) (mfderiv KC K₁ a c ξ)).2 =
-      (mfderiv K₂ (I₂.prod I₃) g (b c) (mfderiv KC K₂ b c ξ)).1 := by
-  rw [← mfderiv_comp_apply c hf ha, ← mfderiv_comp_apply c hg hb]
-  exact (hf.comp c ha).mfderiv_snd_eq_mfderiv_fst_of_fiberProduct (hg.comp c hb) hab ξ
-
-end Differential
 
 namespace TauCeti.SmoothTwoForm.IsNondegenerate
 
@@ -184,7 +138,7 @@ theorem IsLagrangianMap.relComp (hfL : (hσ₁.twistedProd hσ₂).IsLagrangianM
     all_goals
       simp only [LinearMap.comp_apply, LinearMap.prod_apply, Function.prod_apply,
         ContinuousLinearMap.coe_coe, LinearEquiv.coe_coe, he, hA, hB]
-      rw [(hf (a c)).mfderiv_relComp_apply (hg (b c)) (ha c) (hb c)]
+      rw [(hf (a c)).mfderiv_prodMk_fst_snd_comp_apply (hg (b c)) (ha c) (hb c)]
       -- `LinearMap.fst` and `LinearMap.snd` are the projections by definition, but
       -- `LinearMap.fst_apply` and `LinearMap.snd_apply` do not rewrite here: they act on the
       -- product of the coordinate tangent spaces, which is the tangent space of the product only

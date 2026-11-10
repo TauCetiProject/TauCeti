@@ -130,7 +130,7 @@ theorem injective_mfderiv_relComp_transverseFiberProduct_iff
   have hf' := hf.mdifferentiable (by simp) p.1.1
   have hg' := hg.mdifferentiable (by simp) p.1.2
   -- The differential of the composite reads off the outer components of `df` and `dg`.
-  have hd := hf'.mfderiv_relComp_apply
+  have hd := hf'.mfderiv_prodMk_fst_snd_comp_apply
     (a := fun q : {p : L₁ × L₂ // (f p.1).2 = (g p.2).1} ↦ q.1.1) (b := fun q ↦ q.1.2) hg'
     hval.fst hval.snd
   rw [injective_iff_map_eq_zero]
