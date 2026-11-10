@@ -117,17 +117,23 @@ theorem isNondegenerateCriticalPoint_sub_iff (hf : ContDiffAt ℝ 2 f x) (a : E 
 
 /-- **A perturbation that is Morse on `U` has only finitely many critical points on a compact
 subset of `U`.** Continuity of `fderiv ℝ f` on the compact set closes the critical locus, and
-nondegeneracy makes it discrete. The hypotheses are that `K` is compact and contained in `U`,
-that `f` is differentiable at each point of `K`, and that `fderiv ℝ f` is continuous on `K`;
-note that continuity of `fderiv ℝ f` does not by itself give differentiability, since `fderiv`
-is defined at points where `f` is not differentiable. The perturbation itself needs no
+nondegeneracy makes it discrete. The hypotheses are that `K` is compact and contained in `U` and
+that `fderiv ℝ f` is continuous on `K`. Differentiability of `f` on `K` is not assumed: where `f`
+is not differentiable, `fderiv ℝ f` is zero, but so is the differential of the perturbation, and
+nondegeneracy there would make the perturbation `C²`. The perturbation itself needs no
 regularity: it shifts the differential of `f` by the constant `a`, which disturbs neither the
 differentiability nor the continuity. -/
 theorem finite_setOfPred_fderiv_sub_eq_zero {K : Set E} (hK : IsCompact K)
-    (hd : ∀ x ∈ K, DifferentiableAt ℝ f x) (hcont : ContinuousOn (fderiv ℝ f) K)
+    (hcont : ContinuousOn (fderiv ℝ f) K)
     (ha : HasNondegenerateCriticalPointsOn (fun y ↦ f y - a y) U) (hKU : K ⊆ U) :
-    {x ∈ K | fderiv ℝ (fun y ↦ f y - a y) x = 0}.Finite :=
-  (ha.mono hKU).finite_setOfPred_fderiv_eq_zero hK
+    {x ∈ K | fderiv ℝ (fun y ↦ f y - a y) x = 0}.Finite := by
+  have hd : ∀ x ∈ K, DifferentiableAt ℝ f x := fun x hx ↦ by
+    by_contra h
+    have hg : ¬DifferentiableAt ℝ (fun y ↦ f y - a y) x := fun hg ↦
+      h (by simpa using hg.add a.differentiableAt)
+    exact hg ((hasNondegenerateCriticalPointsOn_iff.1 ha (hKU hx)
+      (fderiv_zero_of_not_differentiableAt hg)).contDiffAt.differentiableAt (by norm_num))
+  exact (ha.mono hKU).finite_setOfPred_fderiv_eq_zero hK
     ((hcont.sub continuousOn_const).congr fun y hy ↦
       (by simpa using fderiv_fun_sub (hd y hy) a.differentiableAt))
 

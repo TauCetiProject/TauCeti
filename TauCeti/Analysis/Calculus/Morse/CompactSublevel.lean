@@ -115,7 +115,7 @@ and `l.length` is at most `morseIndex f x - morseIndex f q`. -/
 theorem exists_isChain_of_mem_closure_stableSet_inter_stableSet_of_isCompact_sublevel
     (hx : IsNondegenerateCriticalPoint f x) (hfs : ContDiff ℝ 2 f)
     (hf : LipschitzWith K (∇ f)) (hM : HasNondegenerateCriticalPointsOn f univ)
-    (hcompact : ∀ c : ℝ, IsCompact {z | f z ≤ c}) (hqx : q ≠ x)
+    (hcompact : ∀ c : ℝ, IsCompact {z | f z ≤ c})
     (hy : (closure (Flow.stableSet (negativeGradientFlow f hf) q) ∩
       Flow.stableSet (negativeGradientFlow f hf) x).Nonempty)
     (htr : IsMorseSmale f hf) :
@@ -125,16 +125,21 @@ theorem exists_isChain_of_mem_closure_stableSet_inter_stableSet_of_isCompact_sub
           Flow.stableSet (negativeGradientFlow f hf) b).Nonempty) ∧
       (x :: l).getLast (List.cons_ne_nil _ _) = q ∧
       (∀ a ∈ x :: l, IsNondegenerateCriticalPoint f a) ∧
-      l.length + morseIndex f q ≤ morseIndex f x :=
-  hx.exists_isChain_of_mem_closure_stableSet_inter_stableSet hfs hf hqx hy
-    (fun {_} _ ↦ exists_stableSet_of_isCompact_sublevel hfs hf hM _ (hcompact _)) htr
+      l.length + morseIndex f q ≤ morseIndex f x := by
+  by_cases hqx : q = x
+  · subst hqx
+    exact ⟨[], by simp, by simp, by simpa using hx, by simp⟩
+  · exact hx.exists_isChain_of_mem_closure_stableSet_inter_stableSet hfs hf hqx hy
+      (fun {_} _ ↦ exists_stableSet_of_isCompact_sublevel hfs hf hM _ (hcompact _)) htr
+
+end IsNondegenerateCriticalPoint
 
 /-- For a globally Morse function with Morse--Smale transversality and compact sublevel at
 `f p`, an unstable-set closure incidence produces a finite chain `p :: l` from `p` to `x` of
 nonconstant connecting orbits between nondegenerate critical points. Compactness supplies backward
 convergence, and `l.length` is at most `morseIndex f p - morseIndex f x`. -/
 theorem exists_isChain_of_mem_closure_unstableSet_inter_unstableSet_of_isCompact_sublevel
-    (hx : IsNondegenerateCriticalPoint f x) (hfs : ContDiff ℝ 2 f)
+    {p x : E} (hfs : ContDiff ℝ 2 f)
     (hf : LipschitzWith K (∇ f)) (hM : HasNondegenerateCriticalPointsOn f univ)
     (hcompact : IsCompact {z | f z ≤ f p}) (hpx : p ≠ x)
     (hy : (closure (Flow.unstableSet (negativeGradientFlow f hf) p) ∩
@@ -146,12 +151,15 @@ theorem exists_isChain_of_mem_closure_unstableSet_inter_unstableSet_of_isCompact
           Flow.stableSet (negativeGradientFlow f hf) b).Nonempty) ∧
       (p :: l).getLast (List.cons_ne_nil _ _) = x ∧
       (∀ a ∈ p :: l, IsNondegenerateCriticalPoint f a) ∧
-      l.length + morseIndex f x ≤ morseIndex f p :=
-  hx.exists_isChain_of_mem_closure_unstableSet_inter_unstableSet hfs hf hpx hy
+      l.length + morseIndex f x ≤ morseIndex f p := by
+  have ⟨y, hy₁, hy₂⟩ := hy
+  obtain ⟨a, ha, hya⟩ :=
+    exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel hfs hf hM hcompact hy₁
+  have hx : IsNondegenerateCriticalPoint f x :=
+    tendsto_nhds_unique (Flow.mem_unstableSet.1 hya) (Flow.mem_unstableSet.1 hy₂) ▸ ha
+  exact hx.exists_isChain_of_mem_closure_unstableSet_inter_unstableSet hfs hf hpx hy
     (fun {_} hz ↦ exists_unstableSet_of_mem_closure_unstableSet_of_isCompact_sublevel
       hfs hf hM hcompact hz) htr
-
-end IsNondegenerateCriticalPoint
 
 /-- An index-one Morse--Smale trajectory space has finitely many trajectories when the Morse
 function has compact sublevels. A trajectory is represented by its unique point at the level

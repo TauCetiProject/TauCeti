@@ -203,6 +203,7 @@ private theorem continuous_hessianAverage_integrand (hf : ContDiff ℝ 2 f) (x v
     ((hf.fderiv_right (m := 1) (by norm_num)).fderiv_right (m := 0) (by norm_num)).continuous
   exact (by fun_prop : Continuous fun t : ℝ ↦ 2 * (1 - t)).smul (hd.comp (by fun_prop))
 
+omit [CompleteSpace F] in
 /-- Evaluating the averaged Hessian on a pair of vectors commutes with the integral. -/
 theorem hessianAverage_apply (hf : ContDiff ℝ 2 f) (x v w w' : E) :
     hessianAverage f x v w w'
@@ -210,14 +211,15 @@ theorem hessianAverage_apply (hf : ContDiff ℝ 2 f) (x v w w' : E) :
   have h1 := continuous_hessianAverage_integrand hf x v
   have h2 : Continuous fun t : ℝ ↦ ((2 * (1 - t)) • fderiv ℝ (fderiv ℝ f) (x + t • v)) w :=
     (ContinuousLinearMap.apply ℝ (E →L[ℝ] F) w).continuous.comp h1
-  have hApply := ContinuousLinearMap.segmentAverage_apply
-    (ContinuousLinearMap.apply ℝ (E →L[ℝ] F) w) (fun t ↦ 2 * (1 - t))
-      (fderiv ℝ (fderiv ℝ f)) x v (h1.intervalIntegrable 0 1)
-  simp only [ContinuousLinearMap.apply_apply] at hApply
-  rw [hessianAverage, hApply,
-    ContinuousLinearMap.intervalIntegral_apply (h2.intervalIntegrable 0 1) w']
-  simp
+  rw [hessianAverage_eq_integral_Icc]
+  beta_reduce
+  rw [ContinuousLinearMap.integral_apply ?_ w, ContinuousLinearMap.integral_apply ?_ w',
+    intervalIntegral.integral_of_le zero_le_one, ← integral_Icc_eq_integral_Ioc]
+  · simp
+  · exact h2.integrableOn_Icc
+  · exact h1.integrableOn_Icc
 
+omit [CompleteSpace F] in
 /-- The averaged Hessian is a symmetric bilinear form, since each second derivative along the
 segment is. -/
 theorem hessianAverage_symm (hf : ContDiff ℝ 2 f) (x v w w' : E) :
@@ -227,6 +229,7 @@ theorem hessianAverage_symm (hf : ContDiff ℝ 2 f) (x v w w' : E) :
   rw [(hf.contDiffAt.isSymmSndFDerivAt (by norm_num) :
     IsSymmSndFDerivAt ℝ f (x + t • v)) w w']
 
+omit [CompleteSpace F] in
 /-- **The averaged Hessian under a linear change of variables.** For a continuous linear
 equivalence `e`, the averaged Hessian of `f ∘ e` at `x` in the direction `v`, applied to `w` and
 `w'`, is that of `f` at `e x` in the direction `e v`, applied to `e w` and `e w'`. -/
@@ -383,6 +386,7 @@ theorem eventually_morseCongruence_bilinearComp {E' : Type*} [NormedAddCommGroup
   ext x
   simp [mul_apply_eq_comp]
 
+omit [CompleteSpace E] in
 /-- A `C^n` family `B` of symmetric continuous bilinear forms on a Banach space whose value at
 `a` is invertible is, near `a`, the congruence of that value by a `C^n` family of continuous
 linear operators equal to the identity at `a`: there is `R` with `R a = 1` and
@@ -397,6 +401,8 @@ theorem exists_congruence_of_symmetric_family
     ∃ (R : F → (E →L[ℝ] E)) (U : Set F), IsOpen U ∧ a ∈ U ∧ R a = 1 ∧
       ContDiffOn ℝ n R U ∧ ∀ v ∈ U, ∀ w w', B₀ (R v w) (R v w') = B v w w' := by
   have hBa : (B a).IsInvertible := ⟨B₀, hB₀⟩
+  have : CompleteSpace E := (completeSpace_congr (e := B₀.toEquiv) B₀.isUniformEmbedding).2
+    inferInstance
   have hpair : ContDiff ℝ n fun v ↦ (B a, B v) := contDiff_const.prodMk hB
   have hT : Tendsto (fun v ↦ (B a, B v)) (𝓝 a) (𝓝 (B a, B a)) :=
     hpair.continuous.tendsto a
@@ -458,6 +464,7 @@ section MorseLemma
 
 variable [CompleteSpace E] {f : E → ℝ} {n : ℕ∞}
 
+omit [CompleteSpace E] in
 /-- **The Morse lemma.** Near a nondegenerate critical point `x` of a `C^{n+2}` function `f`,
 with `1 ≤ n ≤ ∞`, there is a `C^n` map `φ`, fixing `0` and with derivative the identity there,
 in terms of which `f` is exactly its Hessian quadratic form:
