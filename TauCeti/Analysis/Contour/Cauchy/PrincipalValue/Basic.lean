@@ -712,7 +712,7 @@ theorem CauchyPVExistsAt.const_mul_curve {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ
     CauchyPVExistsAt (fun t => c * γ t) a b (fun z => c⁻¹ * f (c⁻¹ * z)) (c * z₀) := by
   rcases eq_or_ne c 0 with rfl | hc
   · -- for `c = 0` the scaled integrand vanishes identically
-    refine CauchyPVExistsAt.intro (L := 0) (HasCauchyPVAt.intro ?_ ?_) <;> simp
+    simpa using (CauchyPVExistsAt.zero (γ := fun _ => 0) (a := a) (b := b) (z₀ := 0))
   · let ⟨_, hL⟩ := cauchyPVExistsAt_iff.mp h
     exact CauchyPVExistsAt.intro (hL.const_mul_curve hc)
 
