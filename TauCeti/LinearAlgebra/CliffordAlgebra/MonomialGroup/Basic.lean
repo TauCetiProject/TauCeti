@@ -102,7 +102,8 @@ of `G` trivial on `ε`, each for exactly one `t`.
 * `CliffordAlgebra.mem_monomialGroup_iff`: **the normal form**: a unit lies in the group exactly
   when its value is `e_s` or `-e_s` for some finite index set `s`.
 * `CliffordAlgebra.mem_center_monomialGroup_iff`: a signed basis monomial is central exactly when
-  its support is empty or is the full odd-cardinality index set.
+  it can be written as `±e_s` with `s` empty or `s` the full odd-cardinality index set (over a
+  trivial ring the support is not unique, and every element is central).
 * `CliffordAlgebra.monomialGroup_commuteOrNeg`: signed monomials commute or anticommute.
 * `CliffordAlgebra.monomialGroup_val_eq_or_neg_of_isConj`: conjugation changes a signed monomial by
   at most its central sign.
@@ -751,9 +752,11 @@ theorem natCard_monomialGroup [Fintype I] [Nontrivial R]
   rw [← Nat.card_congr (monomialGroupEquiv hb hQ)]
   simp [Nat.card_eq_fintype_card, Fintype.card_finset, pow_succ]
 
-/-- A signed basis monomial is central in the finite monomial subgroup exactly when its support is
-empty, or when it is the full index set of odd cardinality, for an orthogonal basis whose vectors
-square to `±1` over a commutative ring in which `2` is invertible. -/
+/-- A signed basis monomial is central in the finite monomial subgroup exactly when it can be
+written as `±e_s` with `s` empty, or with `s` the full index set of odd cardinality, for an
+orthogonal basis whose vectors square to `±1` over a commutative ring in which `2` is invertible.
+Over a nontrivial ring the support `s` of a signed monomial is unique; over a trivial ring it is
+not, and every element is central. -/
 theorem mem_center_monomialGroup_iff [Fintype I]
     (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
     (hQ : ∀ i, Q (b i) = 1 ∨ Q (b i) = -1)
