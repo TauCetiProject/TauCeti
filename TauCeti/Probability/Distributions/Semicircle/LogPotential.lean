@@ -8,9 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
 import TauCeti.Analysis.Complex.UpperHalfPlane.Log.Kernel
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
-import TauCeti.MeasureTheory.Measure.ResolventTransform.Expansion
 
 /-!
 # The logarithmic potential of the semicircle law
@@ -492,16 +490,12 @@ private theorem m_boundary_identities (x ε : ℝ) (hε : 0 < ε) :
     apply Complex.ext
     · simp [a, b]
     · simp [a, b]
-  let c : ℂ := (a : ℂ) - (b : ℂ) * Complex.I
+  let c : ℂ := star (m z)
   have hmc : m z * c = (q : ℂ) := by
-    rw [hmval]
-    apply Complex.ext
-    · simp [c, q, Complex.mul_re, Complex.mul_im]
-      norm_cast
-      ring
-    · simp [c, Complex.mul_re, Complex.mul_im]
-      norm_cast
-      ring
+    dsimp only [c]
+    rw [Complex.star_def, Complex.mul_conj, Complex.normSq_apply]
+    simp [a, b, q]
+    ring
   have hmul := congrArg (fun w : ℂ ↦ w * c) (m_quad hz)
   have hrelmul : (q : ℂ) * m z + z * (q : ℂ) + c =
       (m z * m z + z * m z + 1) * c := by
@@ -513,12 +507,12 @@ private theorem m_boundary_identities (x ε : ℝ) (hε : 0 < ε) :
   rw [hmval] at hrel
   have hreal : q * a + x * q + a = 0 := by
     have h := congrArg Complex.re hrel
-    simp [z, c, q, Complex.add_re, Complex.mul_re, Complex.mul_im] at h
+    simp [z, c, q, hmval, Complex.add_re, Complex.mul_re, Complex.mul_im] at h
     norm_cast at h
     nlinarith
   have himag : q * b + ε * q - b = 0 := by
     have h := congrArg Complex.im hrel
-    simp [z, c, q, Complex.add_im, Complex.mul_re, Complex.mul_im] at h
+    simp [z, c, q, hmval, Complex.add_im, Complex.mul_re, Complex.mul_im] at h
     norm_cast at h
     nlinarith
   -- Restate the boundary abbreviations using the local real and imaginary parts.

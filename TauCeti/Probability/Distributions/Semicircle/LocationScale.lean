@@ -84,6 +84,7 @@ theorem ae_mem_Icc_semicircleReal (a : ℝ) (v : ℝ≥0) :
   constructor <;> nlinarith [Real.sqrt_nonneg (v : ℝ), hx.1, hx.2]
 
 /-- Restriction to the support interval leaves the semicircle law unchanged. -/
+@[simp]
 theorem restrict_Icc_semicircleReal (a : ℝ) (v : ℝ≥0) :
     (semicircleReal a v).restrict (Icc (a - 2 * Real.sqrt v) (a + 2 * Real.sqrt v)) =
       semicircleReal a v :=
