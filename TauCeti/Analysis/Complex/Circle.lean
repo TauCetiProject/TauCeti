@@ -130,6 +130,11 @@ theorem exists_pow_nat_eq (z : Circle) {n : ℕ} (hn : n ≠ 0) : ∃ y : Circle
   ⟨exp (Complex.arg z / n), by
     rw [← exp_nsmul, nsmul_eq_mul, mul_div_cancel₀ _ (Nat.cast_ne_zero.2 hn), exp_arg]⟩
 
+/-- Every point of the circle has an `n`-th root on the circle, for an integer `n ≠ 0`. -/
+theorem exists_zpow_eq (z : Circle) {n : ℤ} (hn : n ≠ 0) : ∃ y : Circle, y ^ n = z :=
+  ⟨exp (Complex.arg z / n), by
+    rw [← exp_intCast_mul, mul_div_cancel₀ _ (Int.cast_ne_zero.2 hn), exp_arg]⟩
+
 /-- The pointwise inverse of a circle-valued map that is differentiable at `z`, as a map into `ℂ`,
 is differentiable at `z`. -/
 theorem differentiableAt_coe_inv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]

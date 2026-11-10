@@ -140,10 +140,8 @@ theorem fiberSetoid_mul_left {g : ℤ} (hg : g ≠ 0) (p q : ℤ) :
   · rintro ⟨t, h₁, h₂⟩
     exact ⟨t ^ g, by rwa [← zpow_mul], by rwa [← zpow_mul]⟩
   · rintro ⟨s, h₁, h₂⟩
-    obtain ⟨θ, rfl⟩ := Circle.exp_surjective s
-    have hs : Circle.exp (θ / g) ^ g = Circle.exp θ := by
-      rw [← Circle.exp_intCast_mul, mul_div_cancel₀ _ (Int.cast_ne_zero.2 hg)]
-    exact ⟨Circle.exp (θ / g), by rwa [zpow_mul, hs], by rwa [zpow_mul, hs]⟩
+    obtain ⟨t, rfl⟩ := Circle.exists_zpow_eq s hg
+    exact ⟨t, by rwa [zpow_mul], by rwa [zpow_mul]⟩
 
 /-- For `q ≠ 0`, the fibres of `V(p, q)` are those of a model `V(p', q')` with `p'` coprime to `q'`
 and `q' > 0`, obtained by dividing out the greatest common divisor and, if `q < 0`, the sign. -/
@@ -178,10 +176,8 @@ private theorem nonempty_homeomorph_circle_of_isCoprime {p q : ℤ} (hq : q ≠ 
     constructor
     · rintro ⟨w, rfl⟩
       -- The core is a single fibre: `t ↦ t ^ q` is onto, as `q ≠ 0`.
-      obtain ⟨θ, hθ⟩ := Circle.exp_surjective (w * a.2⁻¹)
-      refine ⟨Circle.exp (θ / q), rfl, ?_⟩
-      rw [← Circle.exp_intCast_mul, mul_div_cancel₀ _ (Int.cast_ne_zero.2 hq), hθ,
-        inv_mul_cancel_right]
+      obtain ⟨t, ht⟩ := Circle.exists_zpow_eq (w * a.2⁻¹) hq
+      exact ⟨t, rfl, by rw [ht, inv_mul_cancel_right]⟩
     · rintro ⟨-, h₁, -⟩
       exact ⟨b.2, Prod.ext (Subtype.ext h₁) rfl⟩
   · obtain ⟨u, v, huv⟩ := hpq
