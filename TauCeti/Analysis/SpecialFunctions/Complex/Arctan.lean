@@ -33,9 +33,11 @@ theorem one_add_mul_I_div_one_sub_mul_I_eq_exp (x : ℝ) :
   have hne (s : ℝ) : 1 + s * x * I ≠ 0 := fun h => by simpa using congrArg re h
   have h₁ : 1 + (x : ℂ) * I ≠ 0 := by simpa using hne 1
   have h₂ : 1 - (x : ℂ) * I ≠ 0 := by simpa [sub_eq_add_neg] using hne (-1)
-  rw [ofReal_mul, ofReal_arctan, arctan,
-    show (↑(2 : ℝ) : ℂ) * (-I / 2 * log ((1 + x * I) / (1 - x * I))) * I =
-      -(I * I) * log ((1 + x * I) / (1 - x * I)) by push_cast; ring,
-    I_mul_I, neg_neg, one_mul, exp_log (div_ne_zero h₁ h₂)]
+  -- Unfolding `arctan`, the exponent is `2 * (-i / 2 * log w) * i = -i² log w = log w`.
+  have harg : (↑(2 * Real.arctan x) * I : ℂ) = log ((1 + x * I) / (1 - x * I)) := by
+    rw [ofReal_mul, ofReal_arctan, arctan]
+    push_cast
+    linear_combination -log ((1 + x * I) / (1 - x * I)) * I_sq
+  rw [harg, exp_log (div_ne_zero h₁ h₂)]
 
 end Complex
