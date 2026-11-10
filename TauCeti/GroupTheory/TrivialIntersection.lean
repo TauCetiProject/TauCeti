@@ -205,7 +205,7 @@ theorem index_eq_zero_or_one_of_infinite [Infinite G] (hH : IsTISubgroup H) :
     rw [hbot] at hKinf
     exact hKinf inferInstance
   obtain ⟨⟨x, hxK⟩, hx1⟩ := Subgroup.ne_bot_iff_exists_ne_one.1 hne
-  rw [Subgroup.mem_inf, Subgroup.mem_comap] at hxK
+  rw [Subgroup.mem_inf, Subgroup.mem_comap, MulEquiv.coe_toMonoidHom, MulAut.conj_apply] at hxK
   exact Subtype.coe_ne_coe.2 hx1 (hH hg hxK.1 hxK.2)
 
 end IsTISubgroup

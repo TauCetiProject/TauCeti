@@ -485,8 +485,9 @@ section Semidirect
 variable {N : Subgroup G}
 
 /-- **A normal subgroup meeting `H` trivially lies in the Frobenius kernel of `H`.**  Neither
-finiteness nor a complement hypothesis is needed; for a complement in a finite group, normality
-can be dropped instead (`TauCeti.IsTISubgroup.coe_subset_frobeniusKernel_of_isComplement'`). -/
+finiteness nor a complement hypothesis is needed; for a complement to a trivial-intersection
+subgroup `H` in a finite group, normality can be dropped instead
+(`TauCeti.IsTISubgroup.coe_subset_frobeniusKernel_of_isComplement'`). -/
 theorem coe_subset_frobeniusKernel [N.Normal] (hdisj : Disjoint N H) :
     (N : Set G) ⊆ frobeniusKernel H := by
   -- every conjugate of `N` is `N` itself, so a nonidentity element of `N` is conjugated into `H`
