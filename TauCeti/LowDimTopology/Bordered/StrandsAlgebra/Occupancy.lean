@@ -118,6 +118,7 @@ theorem of_mem_strandSummand {φ : StrandDiagram α} (h : #φ.source = k) :
   rwa [← (ite_ne_right_iff.1 hψ).1]
 
 /-- Over a nontrivial ring, a strand diagram lies in `A(n, k)` exactly when it has `k` strands. -/
+@[simp]
 theorem of_mem_strandSummand_iff [Nontrivial R] {φ : StrandDiagram α} :
     (of φ : StrandsAlgebra R α) ∈ strandSummand R α k ↔ #φ.source = k :=
   ⟨fun h ↦ h φ (by simp), of_mem_strandSummand⟩
@@ -128,7 +129,7 @@ theorem idem_mem_strandSummand (s : Finset α) :
   rw [idem_def]
   exact of_mem_strandSummand (by rw [source_idOn])
 
-/-- `A(n, k)` is a left ideal: multiplying an element with `k` strands on the right keeps it in
+/-- `A(n, k)` is a right ideal: multiplying an element with `k` strands on the right keeps it in
 `A(n, k)`. -/
 theorem mul_mem_strandSummand_left (hx : x ∈ strandSummand R α k) (y : StrandsAlgebra R α) :
     x * y ∈ strandSummand R α k := by
@@ -137,7 +138,7 @@ theorem mul_mem_strandSummand_left (hx : x ∈ strandSummand R α k) (y : Strand
   rw [source_trans_of_target_eq hc.target_eq]
   exact hx φ hφ
 
-/-- `A(n, k)` is a right ideal: multiplying an element with `k` strands on the left keeps it in
+/-- `A(n, k)` is a left ideal: multiplying an element with `k` strands on the left keeps it in
 `A(n, k)`, since a composable diagram ends at as many points as the second factor. -/
 theorem mul_mem_strandSummand_right (x : StrandsAlgebra R α) (hy : y ∈ strandSummand R α k) :
     x * y ∈ strandSummand R α k := by
@@ -180,12 +181,14 @@ theorem differential_strandSummandOne (k : ℕ) : differential R α (strandSumma
 
 /-- Left multiplication by the unit of `A(n, k)` keeps the diagrams with `k` strands and kills the
 others. -/
+@[simp]
 theorem strandSummandOne_mul_of (k : ℕ) (φ : StrandDiagram α) :
     strandSummandOne R α k * of φ = if #φ.source = k then of φ else 0 := by
   simp [strandSummandOne_def, sum_mul, idem_mul_of, sum_ite_eq']
 
 /-- Right multiplication by the unit of `A(n, k)` keeps the diagrams with `k` strands and kills
 the others. -/
+@[simp]
 theorem of_mul_strandSummandOne (k : ℕ) (φ : StrandDiagram α) :
     of φ * strandSummandOne R α k = if #φ.source = k then of φ else 0 := by
   simp [strandSummandOne_def, mul_sum, of_mul_idem, sum_ite_eq, card_target]
