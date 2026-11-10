@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.Monoidal.Cap
+public import TauCeti.Algebra.Homology.Monoidal.Cap.Basic
 public import TauCeti.AlgebraicTopology.Cohomology.Basic
 public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Pairing
 public import TauCeti.AlgebraicTopology.Singular.AlexanderWhitney.Basic

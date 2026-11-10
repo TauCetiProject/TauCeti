@@ -93,7 +93,7 @@ theorem localArtinMap_quadratic_eq_hilbertSymbol {L : Type} [Field L] [Algebra K
       localSymbol (kummerCupPairing ζ hζ) tr (kummerClass K hζ.neZero'.out.isUnit a)
         (kummerClass K hζ.neZero'.out.isUnit d) = 1 := by
   -- `[L : K]` divides `2`, and it is not `1` because `τ ≠ 1`
-  obtain ⟨-, -, hdvd, -⟩ := exists_forall_mem_zpowers_apply_eq hζ d.ne_zero hs hgen
+  obtain ⟨-, -, hdvd, -⟩ := exists_forall_mem_zpowers_apply_eq hζ hs hgen
   have hdegree : finrank K L = 2 := by
     refine ((Nat.dvd_prime Nat.prime_two).1 hdvd).resolve_left fun h ↦ hτ ?_
     have : Subsingleton Gal(L/K) := (Nat.card_eq_one_iff_unique.1 <| by
