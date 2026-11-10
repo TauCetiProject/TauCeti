@@ -117,14 +117,11 @@ of the complementary subfamily. -/
 theorem orthogonal_spanIndices (b : OrthonormalBasis ι 𝕜 E) (s : Set ι) :
     (b.spanIndices s)ᗮ = b.spanIndices sᶜ := by
   ext x
-  rw [b.mem_spanIndices_iff, b.spanIndices_eq_span, Submodule.mem_orthogonal]
-  simp only [Set.mem_compl_iff, not_not, b.repr_apply_apply]
-  refine ⟨fun h i hi ↦ h _ (Submodule.subset_span ⟨i, hi, rfl⟩), fun h u hu ↦ ?_⟩
-  induction hu using Submodule.span_induction with
-  | mem y hy => obtain ⟨i, hi, rfl⟩ := hy; exact h i hi
-  | zero => exact inner_zero_left _
-  | add y z _ _ hy hz => rw [inner_add_left, hy, hz, add_zero]
-  | smul a y _ hy => rw [inner_smul_left, hy, mul_zero]
+  rw [b.mem_spanIndices_iff, b.spanIndices_eq_span]
+  -- Membership in `Kᗮ` is, by definition, membership in `K.orthogonalBilin (innerₛₗ 𝕜)`, for which
+  -- the simp lemma `Submodule.mem_orthogonalBilin_span` reduces to the spanning vectors.
+  change x ∈ (Submodule.span 𝕜 (b '' s)).orthogonalBilin (innerₛₗ 𝕜) ↔ _
+  simp [b.repr_apply_apply]
 
 /-- A vector orthogonal to the first `n` basis vectors lies in the remaining span. -/
 theorem mem_spanIndices_le_of_mem_orthogonal {m : ℕ} (b : OrthonormalBasis (Fin m) 𝕜 E)
