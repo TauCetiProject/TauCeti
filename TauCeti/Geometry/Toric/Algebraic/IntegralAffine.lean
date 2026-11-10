@@ -202,14 +202,22 @@ theorem one_def : (1 : IntegralAffineEquiv h h) = refl h := (rfl)
 theorem inv_def (e : IntegralAffineEquiv h h) : e⁻¹ = e.symm := (rfl)
 
 /-- A product acts by composing the actions. -/
-@[simp]
 theorem mul_apply (e f : IntegralAffineEquiv h h) (x : V) : (e * f) x = e (f x) := by
   rw [mul_def, trans_apply]
 
 /-- The identity of the group acts as the identity map. -/
-@[simp]
 theorem one_apply (x : V) : (1 : IntegralAffineEquiv h h) x = x := by
   rw [one_def, refl_apply]
+
+/-- The affine equivalence underlying a product is the composite of the affine equivalences. -/
+@[simp]
+theorem mul_toAffineEquiv (e f : IntegralAffineEquiv h h) :
+    (e * f).toAffineEquiv = f.toAffineEquiv.trans e.toAffineEquiv := (rfl)
+
+/-- The identity of the group has the identity affine equivalence. -/
+@[simp]
+theorem one_toAffineEquiv :
+    (1 : IntegralAffineEquiv h h).toAffineEquiv = AffineEquiv.refl ℝ V := (rfl)
 
 /-- The affine equivalence underlying an inverse is the inverse affine equivalence. -/
 @[simp]
