@@ -16,7 +16,6 @@ import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
-import Mathlib.Topology.ContinuousMap.ZeroAtInfty
 
 /-!
 # The affine Sobolev space of framed plane vortex fields

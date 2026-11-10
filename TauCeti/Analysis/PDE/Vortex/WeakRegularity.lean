@@ -6,10 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
-public import TauCeti.Analysis.PDE.Vortex.GaugeFixed
 public import TauCeti.Analysis.PDE.Vortex.RightInverse
 public import TauCeti.Analysis.PDE.Vortex.VacuumOperator.Sobolev
-import TauCeti.MeasureTheory.Function.L2Space
 
 /-!
 # Weak solutions of the gauge-fixed vortex equation lie in `H¹`
