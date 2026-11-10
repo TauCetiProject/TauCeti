@@ -91,6 +91,13 @@ theorem continuous_point : Continuous (point : MoorePathPullback f b → D) :=
 theorem continuous_path : Continuous (path : MoorePathPullback f b → MoorePath X) :=
   MoorePathFrom.continuous_toMoorePath.comp toMoorePathFrom.continuous
 
+/-- The end point of the underlying path from `b` is the image of the parameter. -/
+@[simp]
+theorem endpoint_toMoorePathFrom (x : MoorePathPullback f b) :
+    MoorePathFrom.endpoint X b (toMoorePathFrom x) = f x.point := by
+  rw [MoorePathFrom.endpoint_apply]
+  exact x.2
+
 /-- Projection of the pulled-back path space to its parameter. -/
 def proj (f : C(D, X)) (b : X) : C(MoorePathPullback f b, D) :=
   ⟨point, continuous_point⟩
