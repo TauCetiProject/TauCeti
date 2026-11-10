@@ -163,9 +163,28 @@ theorem lift_eval_smul_of_mem_intLieAlgebra {g : LinearMap.GeneralLinearGroup K 
 
 section Grading
 
-variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
+variable {K : Type u} {L : Type v} [Field K] [LieRing L] [LieAlgebra K L]
   [FiniteDimensional K L] {h : L}
   (hh : DirectSum.IsInternal fun j : ℤ ↦ (ad K L h).eigenspace (j : K))
+
+omit [FiniteDimensional K L] in
+include hh in
+/-- **In positive characteristic the grading forces `L` to be trivial.** In characteristic `q > 0`,
+the eigenspaces of `ad h` at the integers `j` and `j + q` coincide for every `j`, so independence of
+the integer eigenspaces makes them all trivial, and `L` is trivial. -/
+theorem subsingleton_of_charP_pos {q : ℕ} [CharP K q] (hq : 0 < q) : Subsingleton L := by
+  -- The eigenspaces at the integers `j` and `j + q` coincide, so independence kills them all.
+  have hbot (j : ℤ) : (ad K L h).eigenspace (j : K) = ⊥ := by
+    have hne : j ≠ j + q := by omega
+    have hcoe : (((j + q : ℤ)) : K) = (j : K) := by
+      push_cast
+      rw [CharP.cast_eq_zero, add_zero]
+    have hd := hh.submodule_iSupIndep.pairwiseDisjoint hne
+    simp only [Function.onFun, hcoe] at hd
+    exact disjoint_self.mp hd
+  have htop := hh.submodule_iSup_eq_top
+  simp only [hbot, iSup_bot] at htop
+  exact (Submodule.subsingleton_iff K).mp (subsingleton_of_bot_eq_top htop)
 
 include hh in
 /-- **The transposes of the grading automorphisms fix the polynomial functions killed by `h`.**
@@ -175,6 +194,18 @@ killed by the coadjoint action of `h`, in particular every Lie invariant. -/
 theorem map_dualMap_gradingAut_apply {p : _root_.SymmetricAlgebra K (Dual K L)}
     (hp : lieModuleDerivation K L (Dual K L) h p = 0) (s : Kˣ) :
     map K (gradingAut hh s : L →ₗ[K] L).dualMap p = p := by
+  rcases subsingleton_or_nontrivial L with hL | hL
+  · -- A trivial `L` has trivial dual, so the transpose is the identity.
+    have hid : map K (gradingAut hh s : L →ₗ[K] L).dualMap = AlgHom.id K _ := by
+      refine algHom_ext (LinearMap.ext fun φ ↦ ?_)
+      simp [Subsingleton.elim _ φ]
+    simp [hid]
+  -- A nontrivial `L` forces characteristic zero: in positive characteristic it would be trivial.
+  have : CharZero K := by
+    obtain ⟨q, hq⟩ := CharP.exists K
+    rcases q.eq_zero_or_pos with rfl | hq0
+    · exact (CharP.charP_zero_iff_charZero K).mp hq
+    · exact absurd (subsingleton_of_charP_pos hh hq0) (not_subsingleton L)
   -- A functional of weight `j` for the coadjoint action of `h` vanishes outside `L(-j)`, so the
   -- transpose of the grading automorphism at `s` scales it by `s⁻¹ ^ j`.
   have hg (j : ℤ) (φ : Dual K L)
@@ -202,45 +233,21 @@ theorem map_dualMap_gradingAut_apply {p : _root_.SymmetricAlgebra K (Dual K L)}
   simpa using map_apply_of_derivationOfEnd_eq_smul
     (TauCeti.LieModule.iSup_eigenspace_toEnd_dual_eq_top hh) hg hw
 
-omit [CharZero K] in
 include hh in
 /-- **Polynomial functions killed by `h` are invariant under the grading automorphisms.** If `L`
 is the internal direct sum of the integer eigenspaces of `ad h` and `p ∈ S(L*)` is killed by the
 coadjoint action of `h`, then `p (gradingAut hh s x) = p x` for every unit `s` and every `x : L`.
 This applies to every Lie-invariant polynomial function, although the grading automorphisms need
-not be inner over a field that is not algebraically closed. In positive characteristic `p`, the
-integer eigenspaces at `0` and `p` coincide, so the hypothesis `hh` forces `L` to be trivial. -/
+not be inner over a field that is not algebraically closed. -/
 theorem lift_eval_gradingAut_apply {p : _root_.SymmetricAlgebra K (Dual K L)}
     (hp : lieModuleDerivation K L (Dual K L) h p = 0) (s : Kˣ) (x : L) :
     lift (Dual.eval K L (gradingAut hh s x)) p = lift (Dual.eval K L x) p := by
-  obtain ⟨q, hq⟩ := CharP.exists K
-  rcases q.eq_zero_or_pos with rfl | hq0
-  · have := (CharP.charP_zero_iff_charZero K).mp hq
-    -- Evaluation at `gradingAut hh s x` is evaluation at `x` after the transpose.
-    have h : lift (Dual.eval K L (gradingAut hh s x)) =
-        (lift (Dual.eval K L x)).comp (map K (gradingAut hh s : L →ₗ[K] L).dualMap) := by
-      refine algHom_ext (LinearMap.ext fun φ ↦ ?_)
-      simp
-    rw [h, AlgHom.comp_apply, map_dualMap_gradingAut_apply hh hp]
-  · -- The eigenspaces at the integers `j` and `j + q` coincide, so independence kills them all.
-    have hbot (j : ℤ) : (ad K L h).eigenspace (j : K) = ⊥ := by
-      have hne : j ≠ j + q := by omega
-      have hcoe : (((j + q : ℤ)) : K) = (j : K) := by
-        push_cast
-        rw [CharP.cast_eq_zero, add_zero]
-      have hd := hh.submodule_iSupIndep.pairwiseDisjoint hne
-      simp only [Function.onFun, hcoe] at hd
-      exact disjoint_self.mp hd
-    have : Subsingleton L := by
-      have htop := hh.submodule_iSup_eq_top
-      simp only [hbot, iSup_bot] at htop
-      refine ⟨fun a b ↦ ?_⟩
-      have h0 (a : L) : a = 0 := by
-        have ha : a ∈ (⊤ : Submodule K L) := trivial
-        rw [← htop] at ha
-        simpa using ha
-      rw [h0 a, h0 b]
-    rw [Subsingleton.elim (gradingAut hh s x) x]
+  -- Evaluation at `gradingAut hh s x` is evaluation at `x` after the transpose.
+  have h : lift (Dual.eval K L (gradingAut hh s x)) =
+      (lift (Dual.eval K L x)).comp (map K (gradingAut hh s : L →ₗ[K] L).dualMap) := by
+    refine algHom_ext (LinearMap.ext fun φ ↦ ?_)
+    simp
+  rw [h, AlgHom.comp_apply, map_dualMap_gradingAut_apply hh hp]
 
 end Grading
 
