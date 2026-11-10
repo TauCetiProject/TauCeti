@@ -142,7 +142,7 @@ omit [Fact (1 ≤ p)] in
 private theorem norm_toLp_inter_fst_le (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁)
     (x : (lebesgue 𝕜 E μ p₀ p₁).inter) : ‖(memLp_inter_fst h₀ h₁ x).toLp _‖ ≤ ‖x‖ := by
   rw [Lp.norm_toLp, norm_inter]
-  have h := eLpNorm_le_max_of_le_of_le (Lp.aestronglyMeasurable (x : Lp E p₀ μ × Lp E p₁ μ).1)
+  have h := eLpNorm_le_max_of_le_of_le (f := (x : Lp E p₀ μ × Lp E p₁ μ).1) (μ := μ)
     (zero_lt_one.trans_le (Fact.out : 1 ≤ p₀)).ne' h₀ h₁
   rw [eLpNorm_congr_ae (p := p₁) (mem_lebesgue_inter_iff.1 x.2)] at h
   calc (eLpNorm (x : Lp E p₀ μ × Lp E p₁ μ).1 p μ).toReal
