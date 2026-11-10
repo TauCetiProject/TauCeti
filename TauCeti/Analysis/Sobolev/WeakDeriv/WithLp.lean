@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Lp.ProdLp
+public import TauCeti.Analysis.Normed.Lp.ProdLp
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 
 /-!
@@ -30,21 +30,7 @@ open MeasureTheory TopologicalSpace
 
 namespace TauCeti
 
-variable {𝕜 : Type*} [NormedField 𝕜] {p : ENNReal}
-
-/-- The graph of `u` in the `Lᵖ` product is `x ↦ ι₁ x + ι₂ (u x)`, read through the identification
-`WithLp p (E × V) ≃L E × V`. -/
-theorem toLp_prodMk_eq_add {α E V : Type*} [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
-    [SeminormedAddCommGroup V] [NormedSpace 𝕜 V] (f : α → E) (u : α → V) :
-    (fun x ↦ WithLp.toLp p (f x, u x)) = fun x ↦
-      (WithLp.prodContinuousLinearEquiv p 𝕜 E V).symm.toContinuousLinearMap
-          (ContinuousLinearMap.inl 𝕜 E V (f x)) +
-        (WithLp.prodContinuousLinearEquiv p 𝕜 E V).symm.toContinuousLinearMap
-          (ContinuousLinearMap.inr 𝕜 E V (u x)) := by
-  funext x
-  simp [WithLp.ext_iff]
-
-variable [Fact (1 ≤ p)] {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {p : ENNReal} [Fact (1 ≤ p)] {E V : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup V]
   [NormedSpace ℝ V] [CompleteSpace V]
   {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E} {u : E → V} {D : E → E →L[ℝ] V}
