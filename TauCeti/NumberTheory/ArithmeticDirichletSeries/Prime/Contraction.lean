@@ -84,10 +84,10 @@ variable {K E : Type*} [Field K] [NumberField K] [Field E] [NumberField E]
   {π : HeightOneSpectrum (𝓞 E) → HeightOneSpectrum (𝓞 K)} {c : ℕ}
 
 /-- **Prime sums along a fibre count.** If `π` maps `T` into `S`, preserves absolute norms on `T`,
-and every prime of `S` has exactly `c ≠ 0` preimages in `T`, then the prime sum over `T` is `c`
+and every prime of `S` has exactly `c` preimages in `T`, then the prime sum over `T` is `c`
 times the prime sum over `S`, at every real `s`. -/
 theorem primeIdealZetaSum_eq_mul_of_card_fiber (hmaps : Set.MapsTo π T S)
-    (hnorm : ∀ 𝔓 ∈ T, Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (π 𝔓).asIdeal) (hc : c ≠ 0)
+    (hnorm : ∀ 𝔓 ∈ T, Ideal.absNorm 𝔓.asIdeal = Ideal.absNorm (π 𝔓).asIdeal)
     (hfiber : ∀ 𝔭 ∈ S, Nat.card {𝔓 // π 𝔓 = 𝔭 ∧ 𝔓 ∈ T} = c) (s : ℝ) :
     T.primeIdealZetaSum s = c * S.primeIdealZetaSum s := by
   classical
@@ -103,9 +103,15 @@ theorem primeIdealZetaSum_eq_mul_of_card_fiber (hmaps : Set.MapsTo π T S)
           ⟨⟨𝔓.1, 𝔓.2.2⟩, Subtype.ext ((hmaps.val_restrict_apply _).trans 𝔓.2.1)⟩
         left_inv := fun _ ↦ rfl
         right_inv := fun _ ↦ rfl }
-  -- `c ≠ 0` makes the fibres finite: an infinite fibre would have `Nat.card` equal to `0`.
-  have hfin (𝔭 : S) : Finite {t : T // f t = 𝔭} :=
-    Nat.finite_of_card_ne_zero ((hcard 𝔭).symm ▸ hc)
+  -- Each fibre is finite: `π` preserves the norm on `T`, and only finitely many primes have a
+  -- given norm.
+  have hfin (𝔭 : S) : Finite {t : T // f t = 𝔭} := by
+    refine (Ring.HasFiniteQuotients.finite_absNorm_heightOneSpectrum_le
+      (S := 𝓞 E) (Ideal.absNorm 𝔭.1.asIdeal)).to_subtype.of_injective
+      (fun t ↦ ⟨t.1.1, ?_⟩) fun t t' h ↦ ?_
+    · rw [Set.mem_ofPred_eq, hnorm t.1.1 t.1.2]
+      exact (congrArg (fun q : S ↦ Ideal.absNorm q.1.asIdeal) t.2).le
+    · simpa only [Subtype.mk.injEq, Subtype.ext_iff] using h
   have hinner (𝔭 : S) : ∑' _ : {t : T // f t = 𝔭}, g 𝔭 = c * g 𝔭 := by
     have := Fintype.ofFinite {t : T // f t = 𝔭}
     rw [tsum_fintype, Finset.sum_const, Finset.card_univ, Fintype.card_eq_nat_card, hcard,
@@ -118,6 +124,14 @@ theorem primeIdealZetaSum_eq_mul_of_card_fiber (hmaps : Set.MapsTo π T S)
     simp only [Equiv.sigmaFiberEquiv_apply, hnorm t.1 t.2, g, f, hmaps.val_restrict_apply]
   -- Both sides are summable together, so off summability both are the junk value `0`.
   rw [hT, primeIdealZetaSum_def]
+  rcases eq_or_ne c 0 with rfl | hc
+  · -- With no preimages, `T` is empty, so both sides vanish.
+    have : IsEmpty (Σ 𝔭 : S, {t : T // f t = 𝔭}) :=
+      ⟨fun ⟨𝔭, t⟩ ↦ by
+        have := hfin 𝔭
+        have := Nonempty.intro t
+        exact (Nat.card_pos (α := {t : T // f t = 𝔭})).ne' (hcard 𝔭)⟩
+    rw [tsum_empty, Nat.cast_zero, zero_mul]
   by_cases hsum : Summable fun x : Σ 𝔭 : S, {t : T // f t = 𝔭} ↦ g x.1
   · rw [hsum.tsum_sigma, tsum_congr hinner, tsum_mul_left]
   · -- The regrouped family is summable exactly when `g` is, since `c ≠ 0`.
@@ -137,7 +151,7 @@ theorem hasDirichletDensity_iff_of_card_fiber (hmaps : Set.MapsTo π T S)
   -- The all-prime sums over `E` and `K` differ, so compare both through the logarithmic
   -- normalization, where each is asymptotic to `log (1 / (s - 1))`.
   simp_rw [hasDirichletDensity_iff_tendsto_div_log_one_div_sub_one,
-    primeIdealZetaSum_eq_mul_of_card_fiber hmaps hnorm hc hfiber, mul_div_assoc]
+    primeIdealZetaSum_eq_mul_of_card_fiber hmaps hnorm hfiber, mul_div_assoc]
   refine ⟨fun h ↦ ?_, fun h ↦ ?_⟩
   · simpa [div_eq_inv_mul, hc'] using h.const_mul (c : ℝ)⁻¹
   · simpa [mul_div_cancel₀ δ hc'] using h.const_mul (c : ℝ)

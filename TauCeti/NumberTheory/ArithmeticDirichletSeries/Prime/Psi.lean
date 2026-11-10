@@ -301,12 +301,14 @@ theorem primePsi_isLittleO_of_finite (hS : S.Finite) :
     primePsi K S =o[atTop] fun x : ℝ ↦ x :=
   (primePsi_isBigO_log_of_finite hS).trans_isLittleO Real.isLittleO_log_id_atTop
 
-/-- **Transfer of a linear asymptotic from `ψ` to `ϑ`.**  If the higher prime powers of `S` are
-negligible and `ψ(x) = δ x + o(x)`, then `ϑ(x) = δ x + o(x)`. -/
-theorem primeTheta_asymptotic_of_primePsi (h : HasNegligibleHigherPrimePowers K S)
+/-- **Transfer of a linear asymptotic from `ψ` to `ϑ`.**  If `ψ(x) = δ x + o(x)`, then
+`ϑ(x) = δ x + o(x)`, since the higher prime powers of `S` are negligible
+(`TauCeti.standardPrimePowerRemoval`). -/
+theorem primeTheta_asymptotic_of_primePsi
     (hψ : (fun x ↦ primePsi K S x - δ * x) =o[atTop] fun x : ℝ ↦ x) :
     (fun x ↦ primeTheta K S x - δ * x) =o[atTop] fun x : ℝ ↦ x :=
-  (hψ.sub h).congr' (Eventually.of_forall fun x ↦ by ring) EventuallyEq.rfl
+  (hψ.sub (standardPrimePowerRemoval K S)).congr'
+    (Eventually.of_forall fun x ↦ by ring) EventuallyEq.rfl
 
 /-- **Transfer of a linear asymptotic from `ϑ` to `ψ`**, the converse direction. -/
 theorem primePsi_asymptotic_of_primeTheta (h : HasNegligibleHigherPrimePowers K S)
@@ -314,16 +316,21 @@ theorem primePsi_asymptotic_of_primeTheta (h : HasNegligibleHigherPrimePowers K 
     (fun x ↦ primePsi K S x - δ * x) =o[atTop] fun x : ℝ ↦ x :=
   (hϑ.add h).congr' (Eventually.of_forall fun x ↦ by ring) EventuallyEq.rfl
 
-/-- The asymptotic-equivalence form of `TauCeti.primeTheta_asymptotic_of_primePsi`, for a nonzero
-density `δ`.  At `δ = 0` an equivalence would force `ϑ` to vanish eventually, so the `o(x)` form
-above is the one that covers that case. -/
-theorem primeTheta_isEquivalent_of_primePsi (hδ : δ ≠ 0) (h : HasNegligibleHigherPrimePowers K S)
+/-- The asymptotic-equivalence form of `TauCeti.primeTheta_asymptotic_of_primePsi`.  At `δ = 0`
+an equivalence forces `ψ`, hence `ϑ ≤ ψ`, to vanish eventually. -/
+theorem primeTheta_isEquivalent_of_primePsi
     (hψ : primePsi K S ~[atTop] fun x ↦ δ * x) :
     primeTheta K S ~[atTop] fun x ↦ δ * x := by
+  rcases eq_or_ne δ 0 with rfl | hδ
+  · have h0 : (fun x : ℝ ↦ (0 : ℝ) * x) = 0 := funext (zero_mul ·)
+    rw [h0] at hψ ⊢
+    rw [Asymptotics.isEquivalent_zero_iff_eventually_zero] at hψ ⊢
+    filter_upwards [hψ] with x hx
+    exact le_antisymm (hx ▸ primeTheta_le_primePsi S x) (primeTheta_nonneg S x)
   have hψ' : (fun x ↦ primePsi K S x - δ * x) =o[atTop] fun x : ℝ ↦ x :=
     hψ.isLittleO.of_const_mul_right
   rw [Asymptotics.IsEquivalent]
-  exact ((primeTheta_asymptotic_of_primePsi h hψ').const_mul_right hδ).congr'
+  exact ((primeTheta_asymptotic_of_primePsi hψ').const_mul_right hδ).congr'
     (Eventually.of_forall fun x ↦ (Pi.sub_apply _ _ x).symm) EventuallyEq.rfl
 
 /-! ### The von Mangoldt coefficient system of a set of primes -/
@@ -386,12 +393,17 @@ theorem primeVonMangoldtWeight_of_pow_of_mem {𝔭 : HeightOneSpectrum (𝓞 K)}
 
 /-- The von Mangoldt weight of `S` vanishes at a positive power of a prime outside `S`. -/
 theorem primeVonMangoldtWeight_of_pow_of_notMem {𝔭 : HeightOneSpectrum (𝓞 K)} (h𝔭 : 𝔭 ∉ S) {k : ℕ}
-    (hk : 0 < k) {A : (Ideal (𝓞 K))⁰} (hA : 𝔭.asIdeal ^ k = (A : Ideal (𝓞 K))) :
+    {A : (Ideal (𝓞 K))⁰} (hA : 𝔭.asIdeal ^ k = (A : Ideal (𝓞 K))) :
     primeVonMangoldtWeight K S A = 0 := by
   have hprime : Prime 𝔭.asIdeal := Ideal.prime_of_isPrime 𝔭.ne_bot 𝔭.isPrime
   refine primeVonMangoldtWeight_of_not_exists_dvd ?_
   rintro ⟨𝔮, h𝔮, hdvd⟩
   refine h𝔭 ?_
+  rcases k.eq_zero_or_pos with rfl | hk
+  · -- `A = 1` has no prime divisor
+    rw [← hA, pow_zero, Ideal.one_eq_top] at hdvd
+    exact (𝔮.isPrime.ne_top
+      (Ideal.isUnit_iff.mp (isUnit_of_dvd_one (by rwa [Ideal.one_eq_top])))).elim
   have hbase : primePowerBase ⟨A, 𝔭.asIdeal, k, hprime, hk, hA⟩ = 𝔭 :=
     HeightOneSpectrum.ext (primePowerBase_asIdeal_eq hprime hA)
   rwa [← hbase, ← dvd_iff_eq_primePowerBase.mp hdvd]
@@ -539,7 +551,7 @@ theorem primeVonMangoldtCoeff_rat_natGenerator_pow (S : Set (HeightOneSpectrum (
     Finset.sum_singleton]
   split_ifs with h
   · exact primeVonMangoldtWeight_of_pow_of_mem h hk rfl
-  · exact primeVonMangoldtWeight_of_pow_of_notMem h hk rfl
+  · exact primeVonMangoldtWeight_of_pow_of_notMem h rfl
 
 open ArithmeticFunction in
 /-- Over `ℚ`, the von Mangoldt coefficients of any set of primes are bounded by `Λ`. -/
