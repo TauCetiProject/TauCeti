@@ -8,7 +8,6 @@ module
 public import TauCeti.AlgebraicGeometry.Sites.Big.Sheaf
 public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.Cokernels
 public import Mathlib.CategoryTheory.Sites.Descent.DescentData
-import Mathlib.Algebra.Category.Grp.Adjunctions
 
 /-!
 # Uniqueness of fpqc descent for module morphisms
@@ -19,8 +18,8 @@ Isomorphisms of quasi-coherent modules can also be detected on such a family. Co
 the comparison from quasi-coherent modules to descent data is faithful for every fpqc
 covering family.
 
-The argument uses `Scheme.Modules.isSheaf_bigPresheaf_fpqcTopology`: sections of the target
-module on the big site form an fpqc sheaf. Equality of sections can therefore be checked
+The argument uses `Scheme.Modules.isSheaf_bigPresheaf_comp_forget_fpqcTopology`: sections of the
+target module on the big site form an fpqc sheaf. Equality of sections can therefore be checked
 on a covering sieve, including after pulling that sieve back to any open subscheme.
 
 ## References
@@ -58,27 +57,20 @@ theorem Hom.ext_of_fpqc {S : Scheme.{u}} {M N : S.Modules} [N.IsQuasicoherent]
     ← Scheme.Hom.pullbackSectionsLE_naturality]
   let T : Over S := Over.mk U.ι
   let R : Sieve T := (Sieve.overEquiv T).symm ((Sieve.ofArrows X f).pullback U.ι)
-  -- The big site has objects in `u + 1`; use preservation of limits of this size from
-  -- the free-forgetful adjunction, rather than the small-limit instance for abelian groups.
-  have : Limits.PreservesLimitsOfSize.{u, u + 1} (CategoryTheory.forget AddCommGrpCat.{u}) :=
-    (Adjunction.ofIsRightAdjoint
-      (CategoryTheory.forget AddCommGrpCat.{u})).rightAdjoint_preservesLimits
-  have hs : Presieve.IsSheaf (fpqcTopology.over S)
-      (N.bigPresheaf.presheaf ⋙ CategoryTheory.forget AddCommGrpCat.{u}) :=
-    (isSheaf_iff_isSheaf_of_type _ _).1
-      (Presheaf.isSheaf_comp_of_isSheaf _ _ (CategoryTheory.forget AddCommGrpCat.{u})
-        (isSheaf_bigPresheaf_fpqcTopology N))
   have hR' : R ∈ (fpqcTopology.over S) T :=
     fpqcTopology.overEquiv_symm_mem_over T _ (fpqcTopology.pullback_stable U.ι hf)
-  apply (hs _ hR').isSeparatedFor.ext
+  apply (isSheaf_bigPresheaf_comp_forget_fpqcTopology N _ hR').isSeparatedFor.ext
   intro V g hg
-  have hg' : Sieve.ofArrows X f (g.left ≫ U.ι) := hg
-  have hg'' : Sieve.ofArrows X f V.hom := (Over.w g) ▸ hg'
+  rw [Sieve.overEquiv_symm_iff, Sieve.pullback_apply] at hg
+  have hg' : Sieve.ofArrows X f V.hom := (Over.w g) ▸ hg
+  -- Here `T.hom` is `U.ι` by `Over.mk_hom`, so `t` is a global section of `T.hom^* M`.
   let t := U.ι.pullbackSectionsLE M U ⊤ (by simp) s
-  exact (bigSectionsRestrict_naturality φ g t).trans
-    ((congrArg (fun k : (pullback V.hom).obj M ⟶ (pullback V.hom).obj N ↦
-      k.app ⊤ (bigSectionsRestrict M g t)) (hR V.hom hg'')).trans
-      (bigSectionsRestrict_naturality ψ g t).symm)
+  exact (bigPresheaf_presheaf_comp_forget_map_apply N g _).trans <|
+    (bigSectionsRestrict_naturality φ g t).trans <|
+    (congrArg (fun k : (pullback V.hom).obj M ⟶ (pullback V.hom).obj N ↦
+      k.app ⊤ (bigSectionsRestrict M g t)) (hR V.hom hg')).trans <|
+    (bigSectionsRestrict_naturality ψ g t).symm.trans
+      (bigPresheaf_presheaf_comp_forget_map_apply N g _).symm
 
 /-- A morphism of quasi-coherent modules is an isomorphism if it becomes an isomorphism
 on every member of an fpqc covering family. The schemes need not be affine. -/
@@ -115,7 +107,10 @@ theorem qcohPseudofunctor_faithful_toDescentData {S : Scheme.{u}} {ι : Type v}
     apply ObjectProperty.hom_ext
     apply Scheme.Modules.Hom.ext_of_fpqc φ.hom ψ.hom f hf
     intro i
-    exact congrArg (fun k ↦
+    have hi := congrArg (fun k ↦
       (Pseudofunctor.DescentData.Hom.hom (F := qcohPseudofunctor) (f := f) k i).hom) h
+    simp only [Pseudofunctor.toDescentData_map_hom] at hi
+    exact (qcohPseudofunctor_map_toFunctor_map_hom (f i).op.toLoc φ).symm.trans
+      (hi.trans (qcohPseudofunctor_map_toFunctor_map_hom (f i).op.toLoc ψ))
 
 end TauCeti.AlgebraicGeometry.Descent
