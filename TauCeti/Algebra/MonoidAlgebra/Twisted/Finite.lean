@@ -31,8 +31,9 @@ namespace TauCeti.IsFactorSet
 variable {k G : Type*} [Field k] [IsAlgClosed k] [Group G]
   (α : G → G → kˣ) [IsFactorSet α]
 
-/-- A normalized factor set of a finite group over an algebraically closed field can be
-rescaled by a normalized cochain so that every value has order dividing `Nat.card G`. -/
+/-- A normalized factor set of a group over an algebraically closed field can be rescaled by a
+normalized cochain so that every value has order dividing `Nat.card G`. For infinite `G` we have
+`Nat.card G = 0`, and the conclusion is trivial. -/
 theorem exists_rescale_pow_card_eq_one :
     ∃ c : G → kˣ, c 1 = 1 ∧ ∀ g h,
       (c g * c h * (c (g * h))⁻¹ * α g h) ^ Nat.card G = 1 := by
