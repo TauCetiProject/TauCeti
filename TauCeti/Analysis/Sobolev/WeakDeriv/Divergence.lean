@@ -197,7 +197,7 @@ theorem dist_integral_trace_fderiv_mul_le [OpensMeasurableSpace E] {u : E → �
       (((hdiv hf).sub (hdiv hg)).aestronglyMeasurable.mul hu.aestronglyMeasurable)
       (Filter.Eventually.of_forall hbound)
   rw [← integral_const_mul]
-  refine TauCeti.MeasureTheory.norm_integral_sub_le_integral_of_norm_sub_le ?_
+  refine TauCeti.MeasureTheory.norm_integral_sub_integral_le_integral_of_norm_sub_le ?_
     (hu.norm.const_mul _) (Filter.Eventually.of_forall fun x => ?_)
   · simp only [← sub_mul]
     exact hH

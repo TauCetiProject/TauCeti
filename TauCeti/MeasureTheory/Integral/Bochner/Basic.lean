@@ -49,9 +49,9 @@ for set and probability integrals.
   integral one) total extended mass one.
 * `ofReal_integral_add_ofReal_integral_le` adds the positive parts of two integrals whose
   integrands sum, almost everywhere, to at most a third integrable function.
-* `norm_integral_sub_le_integral_of_norm_sub_le` bounds `‖∫ F - ∫ G‖` by `∫ b` when `F - G` is
-  integrable and almost everywhere bounded by an integrable `b`, with no integrability assumption
-  on `F` and `G` themselves.
+* `norm_integral_sub_integral_le_integral_of_norm_sub_le` bounds `‖∫ F - ∫ G‖` by `∫ b` when
+  `F - G` is integrable and almost everywhere bounded by an integrable `b`, with no integrability
+  assumption on `F` and `G` themselves.
 * `integral_min_le_left` and `integral_le_integral_max` compare the integral of an integrable
   function with that of its pointwise minimum or maximum with another integrable function.
 * `ofReal_setIntegral_norm_sq_eq` reads the set integral of `‖f‖²` in `ℝ≥0∞` as the lower
@@ -747,7 +747,7 @@ theorem measure_eq_zero_of_integral_eq_zero_of_ae_pos {α : Type*} [MeasurableSp
 /-- If `F - G` is integrable and almost everywhere bounded in norm by an integrable `b`, then
 `‖∫ F - ∫ G‖ ≤ ∫ b`, whether or not `F` and `G` are integrable: if one of them is not, neither is
 the other, and both integrals are `0` by convention. -/
-theorem norm_integral_sub_le_integral_of_norm_sub_le {α V : Type*} [MeasurableSpace α]
+theorem norm_integral_sub_integral_le_integral_of_norm_sub_le {α V : Type*} [MeasurableSpace α]
     [NormedAddCommGroup V] [NormedSpace ℝ V] {ν : Measure α} {F G : α → V} {b : α → ℝ}
     (hFG : Integrable (fun x => F x - G x) ν) (hb : Integrable b ν)
     (h : ∀ᵐ x ∂ν, ‖F x - G x‖ ≤ b x) :
