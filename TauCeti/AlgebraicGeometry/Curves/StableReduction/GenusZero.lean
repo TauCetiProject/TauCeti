@@ -106,9 +106,6 @@ theorem exists_finrank_le_two_of_genus_eq_zero (C : Scheme.{u}) [C.Over (Spec (.
         (genericFiber K E.extensionField (C ↘ Spec (.of K))).left
         (genericFiber K E.extensionField (C ↘ Spec (.of K))).hom := by
   obtain ⟨x, _, hx, _⟩ := C.exists_finrank_residueField_le_two_and_isSeparable_of_genus_eq_zero hg
-  let : Algebra R (C.residueField x) :=
-    ((algebraMap K (C.residueField x)).comp (algebraMap R K)).toAlgebra
-  have : IsScalarTower R K (C.residueField x) := .of_algebraMap_eq' rfl
   obtain ⟨E, ⟨e⟩⟩ := FiniteDVRExtension.exists_algEquiv_extensionField R K (C.residueField x)
   let _ : (genericFiber K E.extensionField (C ↘ Spec (.of K))).left.Over
       (Spec (.of E.extensionField)) := ⟨(genericFiber K E.extensionField (C ↘ Spec (.of K))).hom⟩

@@ -336,8 +336,6 @@ private theorem hasPotentialGoodReduction_of_smul_baseChange_eq {W : Weierstrass
         (W'.map (f : L →+* E.extensionField)).HasGoodReduction E.localRing) :
     W.HasPotentialGoodReduction R := by
   -- a discrete valuation ring `S` dominating `R`, with fraction field `K`-isomorphic to `L`
-  let _ : Algebra R L := ((algebraMap K L).comp (algebraMap R K)).toAlgebra
-  have : IsScalarTower R K L := .of_algebraMap_eq' rfl
   obtain ⟨E, ⟨e⟩⟩ := TauCeti.FiniteDVRExtension.exists_algEquiv_extensionField R K L
   set L' := E.extensionField
   set S := E.localRing
