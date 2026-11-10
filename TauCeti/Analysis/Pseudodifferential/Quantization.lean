@@ -375,6 +375,7 @@ def fourierCharSMulFDeriv (L : X →L[ℝ] E) (ζ : E) (p : X) (v : F) (D : X �
     (toSpanSingleton ℝ (2 * π * Complex.I * 𝐞 ⟪ζ, L p⟫) ∘L innerSL ℝ ζ ∘L L).smulRight v
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+@[simp]
 theorem fourierCharSMulFDeriv_apply (L : X →L[ℝ] E) (ζ : E) (p : X) (v : F) (D : X →L[ℝ] F)
     (q : X) :
     fourierCharSMulFDeriv L ζ p v D q =
