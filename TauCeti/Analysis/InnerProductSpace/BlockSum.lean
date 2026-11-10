@@ -184,15 +184,9 @@ theorem singularValues_prodMap_withLpMap_self (A : E₁ →ₗ[𝕜] F₁) (i : 
   suffices ((A.prodMap A).withLpMap 2).singularValues = d by rw [this, hd]
   refine Finsupp.eq_of_antitone_of_ncard_eq (singularValues_antitone _)
     (fun i j hij ↦ by simpa only [hd] using A.singularValues_antitone (Nat.div_le_div_right hij))
-    fun s hs ↦ ?_
-  rcases (lt_or_gt_of_ne hs) with hs | hs
-  · have hempty (f : ℕ → ℝ) (hf : ∀ i, 0 ≤ f i) : {i | f i = s} = ∅ :=
-      Set.eq_empty_of_forall_notMem fun i hi ↦ (hf i).not_gt (hi ▸ hs)
-    rw [hempty _ (singularValues_nonneg _), hempty d fun i ↦ by
-      simpa only [hd] using A.singularValues_nonneg _]
-  · rw [ncard_ofPred_singularValues_prodMap_withLpMap A A, ← mul_two,
-      ← Set.ncard_preimage_div]
-    simp only [hd, Set.preimage_ofPred_eq]
+    fun s _ ↦ ?_
+  rw [ncard_ofPred_singularValues_prodMap_withLpMap A A, ← mul_two, ← Set.ncard_preimage_div]
+  simp only [hd, Set.preimage_ofPred_eq]
 
 /-- **Ky Fan sums of a doubled block.** `K₂ₖ(A ⊕ A) = 2 Kₖ(A)`. -/
 theorem kyFanSum_prodMap_withLpMap_self (A : E₁ →ₗ[𝕜] F₁) (k : ℕ) :

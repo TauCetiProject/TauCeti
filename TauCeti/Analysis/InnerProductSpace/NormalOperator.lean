@@ -182,8 +182,8 @@ theorem star_right_of_isStarNormal {T S : E →ₗ[ℂ] E} [IsStarNormal S]
   rw [← toContinuousLinearMap_star] at hs
   exact hs.of_map (Module.End.toContinuousLinearMap (𝕜 := ℂ) E).injective
 
-/-- The real and imaginary parts of two commuting normal operators commute in all four
-combinations. -/
+/-- If `T` is normal and commutes with `S`, then the real and imaginary parts of `T` and `S`
+commute in all four combinations. -/
 theorem realPart_imaginaryPart_of_isStarNormal {T S : E →ₗ[ℂ] E}
     [IsStarNormal T] (h : Commute T S) :
     Commute (ℜ T : E →ₗ[ℂ] E) (ℜ S : E →ₗ[ℂ] E) ∧
