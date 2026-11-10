@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGLocalSystem.LoopAlgebra
-public import TauCeti.Algebra.Homology.DG.Algebra.Hom.Cohomology
 import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Aspherical
 
 /-!
@@ -32,14 +31,11 @@ of the fundamental group, over which classical local systems are modules. Path-c
 
 ## Main results
 
-* `TauCeti.cohomologyMap_loopChainToGroupAlgebraDGAlgHom_groupAlgebraToLoopChainCohomology`: the
-  degree-zero truncation is a left inverse of the inclusion of zeroth homology, on cohomology.
-* `TauCeti.groupAlgebraToLoopChainCohomology_injective`: the inclusion of zeroth homology is
-  injective.
-* `TauCeti.groupAlgebraToLoopChainCohomology_surjective`: for an aspherical space it is
-  surjective.
+* `TauCeti.groupAlgebraToLoopChainCohomology_surjective`: for an aspherical space the inclusion
+  of zeroth homology is surjective.
 * `TauCeti.groupAlgebraLoopChainCohomologyAlgEquiv`: for an aspherical space,
-  `R[π₁(B, b)] ≃ₐ[R] H(C_*(Ω_b B; R))`.
+  `R[π₁(B, b)] ≃ₐ[R] H(C_*(Ω_b B; R))`, whose inverse is the degree-zero truncation on cohomology
+  (`TauCeti.groupAlgebraLoopChainCohomologyAlgEquiv_symm_apply`).
 * `TauCeti.bijective_cohomologyMap_loopChainToGroupAlgebraDGAlgHom`: for an aspherical space, the
   degree-zero truncation `C_*(Ω_b B; R) → R[π₁(B, b)]` is a quasi-isomorphism.
 
@@ -62,34 +58,7 @@ universe u
 
 namespace TauCeti
 
-variable (B : Type u) [TopologicalSpace B] (b : B) (R : Type u) [CommRing R]
-
-/-- **The degree-zero truncation inverts the inclusion of zeroth homology.** On cohomology,
-`C_*(Ω_b B; R) → R[π₁(B, b)]` sends the class of a group-ring element, included as a class of
-zero chains, back to that element. -/
-@[simp]
-theorem cohomologyMap_loopChainToGroupAlgebraDGAlgHom_groupAlgebraToLoopChainCohomology
-    (a : MonoidAlgebra R (FundamentalGroup B b)) :
-    (loopChainToGroupAlgebraDGAlgHom B b R).cohomologyMap
-        (groupAlgebraToLoopChainCohomology B b R a) =
-      algEquivCohomologyOfZero (trivialGrading R (MonoidAlgebra R (FundamentalGroup B b))) a := by
-  obtain ⟨c, rfl⟩ := loopZeroChainToGroupAlgebra_surjective (R := R) (x := b) a
-  rw [groupAlgebraToLoopChainCohomology_loopZeroChainToGroupAlgebra, DGAlgHom.cohomologyMap_mk,
-    algEquivCohomologyOfZero_apply]
-  congr 1
-  ext
-  simp [DGAlgHom.cyclesMap_apply_coe]
-
-/-- The inclusion `R[π₁(B, b)] → H(C_*(Ω_b B; R))` of zeroth homology is injective, for every
-space: the degree-zero truncation is a left inverse on cohomology. -/
-theorem groupAlgebraToLoopChainCohomology_injective :
-    Function.Injective (groupAlgebraToLoopChainCohomology B b R) := fun a a' h ↦ by
-  have := congrArg (loopChainToGroupAlgebraDGAlgHom B b R).cohomologyMap h
-  rw [cohomologyMap_loopChainToGroupAlgebraDGAlgHom_groupAlgebraToLoopChainCohomology,
-    cohomologyMap_loopChainToGroupAlgebraDGAlgHom_groupAlgebraToLoopChainCohomology] at this
-  exact (algEquivCohomologyOfZero _).injective this
-
-variable {B b}
+variable {B : Type u} [TopologicalSpace B] {b : B} (R : Type u) [CommRing R]
 
 /-- Over an aspherical space, the class of a homogeneous cycle of the loop chain algebra is the
 class of a zero chain: in dimension zero it is one, and in positive dimension the cycle is a
@@ -164,6 +133,19 @@ theorem groupAlgebraLoopChainCohomologyAlgEquiv_apply
     (hB : ∀ n : ℕ, Subsingleton (π_ (n + 2) B b)) (a : MonoidAlgebra R (FundamentalGroup B b)) :
     groupAlgebraLoopChainCohomologyAlgEquiv R hB a = groupAlgebraToLoopChainCohomology B b R a :=
   (rfl)
+
+/-- The inverse of `groupAlgebraLoopChainCohomologyAlgEquiv` is the degree-zero truncation
+`C_*(Ω_b B; R) → R[π₁(B, b)]` on cohomology. -/
+@[simp]
+theorem groupAlgebraLoopChainCohomologyAlgEquiv_symm_apply
+    (hB : ∀ n : ℕ, Subsingleton (π_ (n + 2) B b)) (x : (loopChain_isDGAlgebra B b R).Cohomology) :
+    (groupAlgebraLoopChainCohomologyAlgEquiv R hB).symm x =
+      (algEquivCohomologyOfZero (trivialGrading R (MonoidAlgebra R (FundamentalGroup B b)))).symm
+        ((loopChainToGroupAlgebraDGAlgHom B b R).cohomologyMap x) := by
+  obtain ⟨a, rfl⟩ := (groupAlgebraLoopChainCohomologyAlgEquiv R hB).surjective x
+  rw [AlgEquiv.symm_apply_apply, groupAlgebraLoopChainCohomologyAlgEquiv_apply,
+    cohomologyMap_loopChainToGroupAlgebraDGAlgHom_groupAlgebraToLoopChainCohomology,
+    AlgEquiv.symm_apply_apply]
 
 /-- **Over an aspherical space, the loop chain algebra is quasi-isomorphic to the group ring.** If
 `π_(n + 2)(B, b)` vanishes for every `n`, the degree-zero truncation

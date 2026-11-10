@@ -28,8 +28,6 @@ elements of the fundamental group.
 
 ## Main results
 
-* `TauCeti.NormalizedCubicalChain.exists_boundary_eq_of_isZero_homology`: if the normalized
-  cubical homology vanishes in dimension `n + 1`, every `(n + 1)`-cycle is a boundary.
 * `TauCeti.isZero_homology_normalizedCubicalChainComplex_of_forall_subsingleton_homotopyGroup`,
   `TauCeti.isZero_singularHomologyFunctor_of_forall_subsingleton_homotopyGroup`: the positive-degree
   homology of a space with weakly contractible path components vanishes.
@@ -49,25 +47,6 @@ open scoped Topology
 universe u
 
 namespace TauCeti
-
-namespace NormalizedCubicalChain
-
-variable {R : Type u} [Ring R]
-
-/-- If the normalized cubical homology of `X` vanishes in dimension `n + 1`, every normalized
-cubical `(n + 1)`-cycle of `X` is a boundary. -/
-theorem exists_boundary_eq_of_isZero_homology {X : TopCat.{u}} {n : ℕ}
-    (h : IsZero (((normalizedCubicalChainComplex R).obj X).homology (n + 1)))
-    {c : NormalizedCubicalChain X R (n + 1)} (hc : NormalizedCubicalChain.boundary X R n c = 0) :
-    ∃ c' : NormalizedCubicalChain X R (n + 2),
-      NormalizedCubicalChain.boundary X R (n + 1) c' = c := by
-  have hex := (((normalizedCubicalChainComplex R).obj X).exactAt_iff_isZero_homology (n + 1)).2 h
-  rw [HomologicalComplex.exactAt_iff' _ (n + 2) (n + 1) n (by simp) (by simp),
-    ShortComplex.moduleCat_exact_iff] at hex
-  obtain ⟨c', hc'⟩ := hex c ((normalizedCubicalChainComplex_obj_d_apply X n c).trans hc)
-  exact ⟨c', (normalizedCubicalChainComplex_obj_d_apply X (n + 1) c').symm.trans hc'⟩
-
-end NormalizedCubicalChain
 
 variable {X : Type u} [TopologicalSpace X] (R : Type u) [Ring R]
 
@@ -114,7 +93,7 @@ theorem NormalizedCubicalChain.exists_boundary_eq_of_forall_subsingleton_homotop
     (hc : NormalizedCubicalChain.boundary (TopCat.of X) R n c = 0) :
     ∃ c' : NormalizedCubicalChain (TopCat.of X) R (n + 2),
       NormalizedCubicalChain.boundary (TopCat.of X) R (n + 1) c' = c :=
-  exists_boundary_eq_of_isZero_homology
+  NormalizedCubicalChain.exists_boundary_eq_of_isZero_homology
     (isZero_homology_normalizedCubicalChainComplex_of_forall_subsingleton_homotopyGroup R hX
       n.succ_ne_zero) hc
 
