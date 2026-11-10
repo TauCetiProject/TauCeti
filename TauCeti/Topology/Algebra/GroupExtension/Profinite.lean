@@ -67,8 +67,8 @@ extensions is the subject of `TauCeti/Topology/Algebra/GroupExtension/Cohomology
 
 * `TauCeti.GroupExtension.isClosed_ker_rightHom`: a compact kernel is a closed subgroup of a
   Hausdorff extension.
-* `TauCeti.GroupExtension.exists_continuous_section`: the projection of a profinite extension with
-  compact kernel has a continuous normalized section.
+* `TauCeti.GroupExtension.exists_continuous_section`: the projection of a profinite extension to a
+  Hausdorff group has a continuous normalized section.
 * `TauCeti.GroupExtension.continuous_factorSet`: the factor set of a continuous normalized section
   is continuous whenever the inclusion of the kernel is an embedding, as a compact kernel of a
   Hausdorff extension is.
@@ -158,14 +158,14 @@ end ClosedKernel
 section Profinite
 
 variable [IsTopologicalGroup E] [CompactSpace E] [TotallyDisconnectedSpace E]
-  [Group M] [TopologicalSpace M] [CompactSpace M] {S : GroupExtension M E G}
+  [Group M] {S : GroupExtension M E G}
 
-/-- **The projection of a profinite extension with compact kernel has a continuous normalized
-set-theoretic section.** The kernel is compact, hence closed, so the continuous section of a
-profinite group over the quotient by a closed subgroup applies; the base is identified with that
-quotient because the projection is a continuous bijection out of a compact space. -/
-theorem exists_continuous_section [T2Space G] (hinl : Continuous S.inl)
-    (hrh : Continuous S.rightHom) : ∃ σ : S.Section, Continuous ⇑σ ∧ σ 1 = 1 := by
+/-- **The projection of a profinite extension has a continuous normalized section.**
+The kernel of the continuous projection to a Hausdorff group is closed, so the continuous section
+of a profinite group over the quotient by a closed subgroup applies; the base is identified with
+that quotient because the projection is a continuous bijection out of a compact space. -/
+theorem exists_continuous_section [T2Space G] (hrh : Continuous S.rightHom) :
+    ∃ σ : S.Section, Continuous ⇑σ ∧ σ 1 = 1 := by
   -- identify `G` with the quotient of `E` by the kernel of the projection
   let f : E →ₜ* G := ⟨S.rightHom, hrh⟩
   set N := f.toMonoidHom.ker
@@ -175,7 +175,7 @@ theorem exists_continuous_section [T2Space G] (hinl : Continuous S.inl)
   have hf : ∀ x, f x = S.rightHom x := fun _ => rfl
   let e := f.quotientKerEquivOfSurjective S.rightHom_surjective
   -- pull the continuous section of `E → E ⧸ N` back along that identification
-  obtain ⟨s, hs, hsec, hs₁⟩ := TauCeti.exists_continuous_section N (isClosed_ker_rightHom hinl)
+  obtain ⟨s, hs, hsec, hs₁⟩ := TauCeti.exists_continuous_section N (isClosed_singleton.preimage hrh)
   have hone : e.symm 1 = QuotientGroup.mk 1 := by
     rw [← S.rightHom.map_one, ← hf, f.quotientKerEquivOfSurjective_symm_apply]
   have hsec' : ∀ g : G, S.rightHom (s (e.symm g)) = g := fun g => by
@@ -296,7 +296,7 @@ theorem exists_continuous_factorSet [IsTopologicalGroup E] [CompactSpace E]
     [ContinuousMul G] (hinl : Continuous S.inl)
     (hrh : Continuous S.rightHom) (hact : InducesAction S) :
     ∃ α : FactorSet G M, Continuous ⇑α ∧ ∃ e : α.groupExtension.Equiv S, Continuous ⇑e := by
-  obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hinl hrh
+  obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hrh
   exact ⟨factorSet σ hσ hact,
     continuous_factorSet (hinl.isClosedEmbedding S.inl_injective).isEmbedding hσc hσ hact,
     factorSetToGroupExtensionEquiv σ hσ hact,

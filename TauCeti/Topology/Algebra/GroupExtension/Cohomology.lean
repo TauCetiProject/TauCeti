@@ -503,10 +503,10 @@ which `TauCeti.GroupExtension.exists_continuous_section` provides one. By
 noncomputable def _root_.GroupExtension.contCohomologyClass (S : GroupExtension M E G)
     (hinl : Continuous S.inl) (hrh : Continuous S.rightHom) (hact : InducesAction S) :
     H2 G (Additive M) :=
-  (factorSet (exists_continuous_section hinl hrh).choose
-    (exists_continuous_section hinl hrh).choose_spec.2 hact).contCohomologyClass
+  (factorSet (exists_continuous_section hrh).choose
+    (exists_continuous_section hrh).choose_spec.2 hact).contCohomologyClass
     (continuous_factorSet (hinl.isClosedEmbedding S.inl_injective).isEmbedding
-      (exists_continuous_section hinl hrh).choose_spec.1 _ hact)
+      (exists_continuous_section hrh).choose_spec.1 _ hact)
 
 variable (S : GroupExtension M E G) (hinl : Continuous S.inl) (hrh : Continuous S.rightHom)
   (hact : InducesAction S)
@@ -518,8 +518,8 @@ theorem _root_.GroupExtension.contCohomologyClass_eq {σ : S.Section} (hσc : Co
     S.contCohomologyClass hinl hrh hact = (factorSet σ hσ hact).contCohomologyClass
       (continuous_factorSet (hinl.isClosedEmbedding S.inl_injective).isEmbedding hσc hσ hact) :=
   contCohomologyClass_factorSet_eq (hinl.isClosedEmbedding S.inl_injective).isEmbedding
-    (exists_continuous_section hinl hrh).choose_spec.2 hσ hact
-    (exists_continuous_section hinl hrh).choose_spec.1 hσc
+    (exists_continuous_section hrh).choose_spec.2 hσ hact
+    (exists_continuous_section hrh).choose_spec.1 hσc
 
 /-- **Continuous `H²` classifies profinite extensions.** Two profinite extensions of `G` by the
 compact kernel `M`, both inducing the ambient action, are equivalent by a continuous equivalence
@@ -532,8 +532,8 @@ theorem _root_.GroupExtension.exists_equiv_continuous_iff_contCohomologyClass_eq
     (hact' : InducesAction S') :
     (∃ e : S.Equiv S', Continuous ⇑e) ↔
       S.contCohomologyClass hinl hrh hact = S'.contCohomologyClass hinl' hrh' hact' := by
-  obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hinl hrh
-  obtain ⟨σ', hσ'c, hσ'⟩ := exists_continuous_section hinl' hrh'
+  obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hrh
+  obtain ⟨σ', hσ'c, hσ'⟩ := exists_continuous_section hrh'
   rw [S.contCohomologyClass_eq hinl hrh hact hσc hσ,
     S'.contCohomologyClass_eq hinl' hrh' hact' hσ'c hσ',
     ← exists_equiv_continuous_iff_contCohomologyClass_factorSet_eq
@@ -544,7 +544,7 @@ theorem _root_.GroupExtension.exists_equiv_continuous_iff_contCohomologyClass_eq
 vanishes.** -/
 theorem _root_.GroupExtension.exists_splitting_continuous_iff_contCohomologyClass_eq_zero :
     (∃ s : S.Splitting, Continuous ⇑s) ↔ S.contCohomologyClass hinl hrh hact = 0 := by
-  obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hinl hrh
+  obtain ⟨σ, hσc, hσ⟩ := exists_continuous_section hrh
   rw [S.contCohomologyClass_eq hinl hrh hact hσc hσ]
   exact exists_splitting_continuous_iff_contCohomologyClass_factorSet_eq_zero
     (hinl.isClosedEmbedding S.inl_injective).isEmbedding hσ hact hσc
@@ -662,18 +662,20 @@ section Section
 
 variable [T2Space G] (X : ProfiniteGroupExtension G M)
 
-/-- **A continuous normalized section of a profinite extension with compact kernel**, chosen once
+/-- **A continuous normalized section of a profinite extension**, chosen once
 and for all from `TauCeti.GroupExtension.exists_continuous_section`. The pushforwards
 `TauCeti.ProfiniteGroupExtension.map` of `X` are the twisted products of the pushforwards of the
 factor set of this section. -/
 noncomputable def continuousSection : X.toGroupExtension.Section :=
-  (GroupExtension.exists_continuous_section X.continuous_inl X.continuous_rightHom).choose
+  (GroupExtension.exists_continuous_section X.continuous_rightHom).choose
 
+omit [CompactSpace M] in
 theorem continuous_continuousSection : Continuous ⇑X.continuousSection :=
-  (GroupExtension.exists_continuous_section X.continuous_inl X.continuous_rightHom).choose_spec.1
+  (GroupExtension.exists_continuous_section X.continuous_rightHom).choose_spec.1
 
+omit [CompactSpace M] in
 theorem continuousSection_one : X.continuousSection 1 = 1 :=
-  (GroupExtension.exists_continuous_section X.continuous_inl X.continuous_rightHom).choose_spec.2
+  (GroupExtension.exists_continuous_section X.continuous_rightHom).choose_spec.2
 
 end Section
 
