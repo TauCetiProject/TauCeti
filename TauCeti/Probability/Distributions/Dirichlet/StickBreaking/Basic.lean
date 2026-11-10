@@ -80,12 +80,10 @@ theorem measurable_dirichletStickSplit : Measurable (dirichletStickSplit (ι := 
 omit [Fintype ι] in
 /-- The stick-insertion map is measurable. -/
 @[fun_prop]
-theorem measurable_dirichletStickInsert [Finite ι] :
+theorem measurable_dirichletStickInsert :
     Measurable (dirichletStickInsert (ι := ι)) := by
-  let _ := Fintype.ofFinite ι
   unfold dirichletStickInsert
-  refine (EuclideanSpace.equiv (Option ι) ℝ).symm.continuous.measurable.comp
-    (measurable_pi_iff.mpr fun i ↦ ?_)
+  refine (WithLp.measurable_toLp 2 _).comp (measurable_pi_iff.mpr fun i ↦ ?_)
   cases i <;> simp only [Option.elim_none, Option.elim_some] <;> fun_prop
 
 /-- Inserting a split vector recovers it when its coordinates sum to one and its remaining
@@ -203,11 +201,30 @@ theorem HasLaw.dirichletStickSplit {X : Ω → EuclideanSpace ℝ (Option ι)}
   (⟨measurable_dirichletStickSplit.aemeasurable,
     map_dirichletStickSplit_dirichletMeasure ha⟩ : HasLaw _ _ _).comp hX
 
-/-- A Dirichlet coordinate is independent of the normalized remaining coordinates. -/
+omit [Nonempty ι] in
+/-- A Dirichlet coordinate is independent of the normalized remaining coordinates. For an invalid
+concentration vector the law is zero, so `P` is the zero measure; for an empty remaining index
+type the normalized remaining coordinates are constant. -/
 theorem HasLaw.indepFun_dirichletStickSplit {X : Ω → EuclideanSpace ℝ (Option ι)}
-    (hX : HasLaw X (dirichletMeasure a) P) (ha : ∀ i, 0 < a i) :
+    (hX : HasLaw X (dirichletMeasure a) P) :
     IndepFun (fun ω ↦ X ω none)
       (fun ω ↦ dirichletNormalize fun i ↦ X ω (some i)) P := by
+  by_cases ha : ∀ i, 0 < a i
+  swap
+  · have h := congrArg (fun μ : Measure (EuclideanSpace ℝ (Option ι)) ↦ μ Set.univ) hX.map_eq
+    simp only [Measure.map_apply_of_aemeasurable hX.aemeasurable MeasurableSet.univ,
+      Set.preimage_univ, dirichletMeasure_eq_zero_of_invalid fun h ↦ ha h.2, FunLike.coe_zero,
+      Pi.zero_apply] at h
+    rw [Measure.measure_univ_eq_zero.mp h]
+    exact indepFun_iff_measure_inter_preimage_eq_mul.2 fun _ _ _ _ ↦ by simp
+  rcases isEmpty_or_nonempty ι with hι | hι
+  · have : Nonempty (Option ι) := ⟨none⟩
+    have := isProbabilityMeasure_dirichletMeasure ha
+    have : IsProbabilityMeasure P := hX.isProbabilityMeasure
+    have hconst : (fun ω ↦ dirichletNormalize fun i ↦ X ω (some i)) =
+        fun _ ↦ (0 : EuclideanSpace ℝ ι) := funext fun _ ↦ Subsingleton.elim _ _
+    rw [hconst]
+    exact indepFun_const_right _ _
   have hA : 0 < ∑ i, a (some i) :=
     Finset.sum_pos (fun i _ ↦ ha (some i)) Finset.univ_nonempty
   let _ := isProbabilityMeasureBeta (ha none) hA
