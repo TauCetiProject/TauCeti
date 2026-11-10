@@ -40,7 +40,8 @@ middle and back faces.  The unit is the class of the constant `0`-cocycle
 * `TopCat.ιChainComplex_cupCochain_alexanderWhitneyDiagonal`: the cup product of singular
   cochains on a singular simplex.
 * `TopCat.singularCup`: the cup product on singular cohomology, with `TopCat.singularCup_homologyπ`
-  computing it on classes of cocycles and `TopCat.singularCup_naturality` its naturality.
+  computing it on classes of cocycles and `TopCat.singularCup_naturality` its naturality;
+  `TopCat.singularCup_comp` changes the coefficient morphism `u`.
 * `TopCat.cupCochain_alexanderWhitneyDiagonal_assoc` and `TopCat.singularCup_assoc`:
   associativity of the cup product of cochains and on cohomology.
 * `TopCat.cupCochain_constCochain_left`, `TopCat.cupCochain_constCochain_right`,
@@ -310,3 +311,22 @@ lemma singularCup_def {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{
   (rfl)
 
 end TauCeti
+
+namespace TopCat
+
+/-- **The cup product along a composite coefficient morphism**: the cup product along `c ≫ u`
+is the cup product along `u` followed by the change of the chain coefficients along `c`. -/
+lemma singularCup_comp {C : Type u} [Category.{v} C] [Abelian C] [HasCoproducts.{w} C]
+    [MonoidalCategory C] [MonoidalPreadditive C] (k : Type*) [CommRing k] [Linear k C]
+    [MonoidalLinear k C] (X : TopCat.{w}) {R S T T' M N P : C} (c : T' ⟶ T) (u : T ⟶ R ⊗ S)
+    (μ : M ⊗ N ⟶ P) (p q n : ℕ) (h : p + q = n) (a : X.singularCohomology R k M p)
+    (b : X.singularCohomology S k N q) :
+    X.singularCup k (c ≫ u) μ p q n h a b =
+      homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k P).map
+        (((SSet.chainComplexFunctor C).map c).app (toSSet.obj X)).op) n
+        (X.singularCup k u μ p q n h a b) := by
+  rw [TauCeti.singularCup_def, TauCeti.singularCup_def, TauCeti.alexanderWhitneyDiagonal_def,
+    TauCeti.alexanderWhitneyDiagonal_def, Functor.map_comp, NatTrans.comp_app, Category.assoc]
+  exact TauCeti.ChainComplex.cup_precomp _ μ _ p q n h a b
+
+end TopCat

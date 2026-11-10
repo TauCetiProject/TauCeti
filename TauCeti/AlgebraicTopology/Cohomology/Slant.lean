@@ -61,8 +61,9 @@ by a point and are killed by the slant by a loop.
 Slant products of cohomology cross products are computed by the Kronecker pairing: for
 `a ∈ Hᵖ(X; R, M)`, `b ∈ H^q(Y; S, N)` and a pairing `μ : M ⊗ N ⟶ P`, the slant of `a × b` by
 `x ∈ Hₚ(X; R)` is `b` with its coefficients changed along `n ↦ μ (⟨a, x⟩ ⊗ n)`
-(`TopCat.singularSlant_singularCross`; with coefficients in `k` and the multiplication as pairing,
-`(a × b) / x = ⟨a, x⟩ • b`, `TopCat.singularSlant_singularCross_leftUnitor`), and the slant by a
+(`TopCat.singularSlant_singularCross`; for `a` with coefficients in `k` and the scalar
+multiplication `k ⊗ N ⟶ N` as pairing, `(a × b) / x = ⟨a, x⟩ • b`,
+`TopCat.singularSlant_singularCross_leftUnitor`), and the slant by a
 class of another degree vanishes
 (`TopCat.singularSlant_singularCross_of_ne`). Conversely, when `R` and the homology modules
 `Hₚ(X; R)` are projective, a class of `Hⁿ(X × Y; R ⊗ S, M)` is determined by its slant products
@@ -79,6 +80,9 @@ for the cohomology of a product one of whose factors has finitely generated proj
 * `TopCat.singularSlant_homologyπ`: its value on classes of cycles and cocycles.
 * `TopCat.singularKronecker_singularSlant`: the evaluation law `⟨φ / x, y⟩ = ⟨φ, u_*(x × y)⟩`.
 * `TopCat.singularSlant_naturality`: naturality in both spaces.
+* `TopCat.singularSlant_coefficient_naturality`: naturality in the coefficient module `M`.
+* `TopCat.singularSlant_comp`: slanting along `u ≫ c` is slanting along `u` after changing the
+  chain coefficients of the product along `c`.
 * `TopCat.singularSlant_singularCohomologyMap_fst_eq_zero` and
   `TopCat.singularSlant_singularCohomologyMap_snd_eq_zero`: the vanishing of the slant product of a
   class pulled back from one factor in the degrees where the cohomology or homology of a point
@@ -91,7 +95,9 @@ for the cohomology of a product one of whose factors has finitely generated proj
 * `TopCat.singularSlant_singularCross`, `TopCat.singularSlant_singularCross_of_ne` and
   `TopCat.singularSlant_singularCross_leftUnitor`: slant products of cross products.
 * `TopCat.eq_zero_of_forall_singularSlant_eq_zero`: slant products by the homology of a factor
-  with projective homology detect the cohomology of the product.
+  with projective homology detect the cohomology of the product;
+  `TopCat.eq_zero_of_forall_singularSlant_eq_zero_of_isIso` is the same along an isomorphism
+  `u : R ⊗ S ≅ T`, for instance `k ⊗ k ≅ k`.
 
 ## References
 
@@ -184,6 +190,39 @@ lemma singularSlant_naturality {X Y X' Y' : TopCat.{w}} (f : X ⟶ X') (g : Y �
       rw [Category.assoc, ← ((SSet.chainComplexFunctor _).map u).naturality]
       exact shuffle_naturality_assoc f g R S _)
     p q n h x φ
+
+/-- **Naturality of the slant product in the coefficients**: for a map of coefficient modules
+`g : M ⟶ M'`, `g_* φ / x = g_* (φ / x)`. -/
+lemma singularSlant_coefficient_naturality (X Y : TopCat.{w}) (u : R ⊗ S ⟶ T)
+    {M' : ModuleCat.{w} k} (g : M ⟶ M') (p q n : ℕ) (h : p + q = n)
+    (x : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj R).obj X)
+    (φ : (X ⊗ Y).singularCohomology T k M n) :
+    singularSlant k M' X Y u p q n h x
+        (homologyMap (((toSSet.obj (X ⊗ Y)).chainComplex T).linearYonedaObjMap k g) n φ) =
+      homologyMap (((toSSet.obj Y).chainComplex S).linearYonedaObjMap k g) q
+        (singularSlant k M X Y u p q n h x φ) := by
+  rw [singularSlant_def, singularSlant_def]
+  exact TauCeti.ChainComplex.slant_linearYonedaObjMap _ g p q n h x φ
+
+/-- **Slant products along a composite coefficient map**: slanting along `u ≫ c` is slanting along
+`u` after changing the chain coefficients of the product along `c : T ⟶ T'`. -/
+lemma singularSlant_comp (X Y : TopCat.{w}) (u : R ⊗ S ⟶ T) {T' : ModuleCat.{w} k}
+    (c : T ⟶ T') (p q n : ℕ) (h : p + q = n)
+    (x : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj R).obj X)
+    (φ : (X ⊗ Y).singularCohomology T' k M n) :
+    singularSlant k M X Y (u ≫ c) p q n h x φ =
+      singularSlant k M X Y u p q n h x
+        (homologyMap ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
+          (((SSet.chainComplexFunctor _).map c).app (toSSet.obj (X ⊗ Y))).op) n φ) := by
+  rw [singularSlant_def, singularSlant_def]
+  refine Eq.trans ?_ (TauCeti.ChainComplex.slant_naturality
+    (shuffle X Y R S ≫ ((SSet.chainComplexFunctor _).map (u ≫ c)).app (toSSet.obj (X ⊗ Y)))
+    (shuffle X Y R S ≫ ((SSet.chainComplexFunctor _).map u).app (toSSet.obj (X ⊗ Y)))
+    (𝟙 _) (𝟙 _) (((SSet.chainComplexFunctor _).map c).app (toSSet.obj (X ⊗ Y)))
+    (by simp) p q n h x φ (P := M)).symm
+  -- the identity maps induce identities; `simp` leaves `x` against `id x`
+  simp
+  rfl
 
 /-- **A class pulled back from the first factor has no slant products in positive codegree**: for
 `a ∈ Hⁿ(X; T, M)` and `x ∈ Hₚ(X; R)` with `p + q = n` and `q ≠ 0`, `pr₁^* a / x = 0`. In particular
@@ -319,26 +358,27 @@ theorem singularSlant_singularCross_of_ne (X Y : TopCat.{w}) {M N : ModuleCat.{w
   exact TauCeti.ChainComplex.slant_cup_of_ne (K := (toSSet.obj X).chainComplex R) μ h h' hp x a b
 
 /-- **The slant product of a cross product with coefficients in `k`**: for `a ∈ Hᵖ(X; k)`,
-`b ∈ H^q(Y; k)` and `x ∈ Hₚ(X; k)`, with the multiplication `k ⊗ k ⟶ k` as pairing,
+`b ∈ H^q(Y; N)` and `x ∈ Hₚ(X; k)`, with the scalar multiplication `k ⊗ N ⟶ N` as pairing,
 `(a × b) / x = ⟨a, x⟩ • b`. -/
 @[simp]
-theorem singularSlant_singularCross_leftUnitor (X Y : TopCat.{w}) (p q n : ℕ) (h : p + q = n)
+theorem singularSlant_singularCross_leftUnitor (X Y : TopCat.{w}) {N : ModuleCat.{w} k}
+    (p q n : ℕ) (h : p + q = n)
     (x : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj (𝟙_ (ModuleCat.{w} k))).obj X)
     (a : X.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) p)
-    (b : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k (𝟙_ (ModuleCat.{w} k)) q) :
-    singularSlant k (𝟙_ (ModuleCat.{w} k)) X Y (𝟙 _) p q n h x
-        (TauCeti.singularCross k X Y (λ_ (𝟙_ (ModuleCat.{w} k))).hom p q n h a b) =
+    (b : Y.singularCohomology (𝟙_ (ModuleCat.{w} k)) k N q) :
+    singularSlant k N X Y (𝟙 _) p q n h x
+        (TauCeti.singularCross k X Y (λ_ N).hom p q n h a b) =
       (X.singularKronecker k p a x : k) • b := by
   rw [singularSlant_singularCross]
   -- the coefficient map `n ↦ ⟨a, x⟩ n` is multiplication by the scalar `⟨a, x⟩`
   have hmap (r : k) : ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{w} k))).linearYonedaObjMap k
-      (TauCeti.ModuleCat.tensorMk r ≫ (λ_ (𝟙_ (ModuleCat.{w} k))).hom) = r • 𝟙 _ := by
-    have hr : TauCeti.ModuleCat.tensorMk r ≫ (λ_ (𝟙_ (ModuleCat.{w} k))).hom = r • 𝟙 _ :=
+      (TauCeti.ModuleCat.tensorMk r ≫ (λ_ N).hom) = r • 𝟙 _ := by
+    have hr : TauCeti.ModuleCat.tensorMk r ≫ (λ_ N).hom = r • 𝟙 _ :=
       ModuleCat.hom_ext (LinearMap.ext fun v ↦ by
         rw [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_smul, LinearMap.smul_apply,
           ModuleCat.hom_id, LinearMap.id_apply]
-        exact (congrArg (ModuleCat.Hom.hom (λ_ (𝟙_ (ModuleCat.{w} k))).hom)
-          (TauCeti.ModuleCat.tensorMk_apply (N := 𝟙_ (ModuleCat.{w} k)) r v)).trans
+        exact (congrArg (ModuleCat.Hom.hom (λ_ N).hom)
+          (TauCeti.ModuleCat.tensorMk_apply (N := N) r v)).trans
             (ModuleCat.MonoidalCategory.leftUnitor_hom_apply r v))
     ext i (c : ((toSSet.obj Y).chainComplex (𝟙_ (ModuleCat.{w} k))).X i ⟶ _)
     -- both sides send a cochain `c` to `r • c`
@@ -363,5 +403,25 @@ theorem eq_zero_of_forall_singularSlant_eq_zero (X Y : TopCat.{w}) [Module.Proje
     ((TauCeti.ChainComplex.eq_zero_of_forall_slant_eq_zero _ fun p q h x ↦ ?_).trans
       (map_zero _).symm)
   exact (singularSlant_eq_slant M X Y p q n h x φ).symm.trans (hφ p q h x)
+
+/-- **Slant products along an isomorphism detect the cohomology of a product**: if `R` and the
+homology modules `Hₚ(X; R)` are projective and `u : R ⊗ S ⟶ T` is an isomorphism, a class
+`φ ∈ Hⁿ(X × Y; T, M)` whose slant products along `u` by all classes of `Hₚ(X; R)` vanish is zero.
+For `R = S = T = k` and `u` the multiplication `k ⊗ k ≅ k`, this applies to the cohomology of
+`X × Y` with coefficients in `M`, computed from the singular chains with coefficients in `k`. -/
+theorem eq_zero_of_forall_singularSlant_eq_zero_of_isIso (X Y : TopCat.{w})
+    [Module.Projective k R]
+    [∀ p, Projective (((singularHomologyFunctor (ModuleCat.{w} k) p).obj R).obj X)]
+    (u : R ⊗ S ⟶ T) [IsIso u] {n : ℕ} (φ : (X ⊗ Y).singularCohomology T k M n)
+    (hφ : ∀ p q (h : p + q = n) (x : ((singularHomologyFunctor (ModuleCat.{w} k) p).obj R).obj X),
+      singularSlant k M X Y u p q n h x φ = 0) : φ = 0 := by
+  -- changing the coefficients of the product along the isomorphism `u` is injective
+  have he := (ModuleCat.mono_iff_injective (homologyMap
+    ((TauCeti.ChainComplex.linearYonedaFunctor k M).map
+      (((SSet.chainComplexFunctor _).map u).app (toSSet.obj (X ⊗ Y))).op) n)).1 inferInstance
+  refine he ((eq_zero_of_forall_singularSlant_eq_zero M X Y _ fun p q h x ↦ ?_).trans
+    (map_zero _).symm)
+  rw [← singularSlant_comp, Category.id_comp]
+  exact hφ p q h x
 
 end TopCat

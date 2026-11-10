@@ -755,6 +755,13 @@ theorem isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne {n k : ℕ} (hk
   (isZero_reducedSingularHomologyFunctor_sphere_of_ne R (finrank_euclideanSpace_ulift_fin (n + 1))
     hk).of_iso ((diskBoundaryHomeomorph (n + 1)).toHomotopyEquiv.reducedSingularHomologyIso R k)
 
+/-- **The homology of `TopCat.sphere n` vanishes in positive degrees other than `n`.** -/
+theorem isZero_singularHomologyFunctor_topCatSphere_of_ne {n q : ℕ} (hq : q + 1 ≠ n) :
+    IsZero (((AlgebraicTopology.singularHomologyFunctor C (q + 1)).obj R).obj
+      (TopCat.sphere.{w} n)) :=
+  (isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne R hq).of_iso
+    ((reducedSingularHomologySuccIso R q).app _).symm
+
 /-- **The standard generator of the reduced homology of `TopCat.sphere n`.**  The reduced
 homology of `TopCat.sphere n` in degree `n` is one copy of the coefficient object, through the
 homeomorphism `TauCeti.diskBoundaryHomeomorph` with the unit sphere of

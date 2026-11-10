@@ -73,6 +73,7 @@ has finitely generated projective homology.
   `TauCeti.ChainComplex.slant_homologyπ` computing it on classes of cycles and cocycles.
 * `TauCeti.ChainComplex.kronecker_slant`: the evaluation law `⟨φ / x, y⟩ = ⟨φ, D_*(x × y)⟩`.
 * `TauCeti.ChainComplex.slant_naturality`: naturality.
+* `TauCeti.ChainComplex.slant_linearYonedaObjMap`: naturality in the coefficients.
 * `TauCeti.ChainComplex.slant_homologyπ_zero_homologyMap`: the slant product by a cycle of degree
   zero along which `D` restricts to a chain map.
 * `TauCeti.ChainComplex.slantCochain_cupCochain`, `TauCeti.ChainComplex.slant_cup` and
@@ -508,6 +509,30 @@ lemma slant_naturality {K' L' T' : ChainComplex (ModuleCat.{u} k) ℕ} [K'.HasTe
   rw [iCycles_slantCycles, iCycles_cyclesMap_linearYonedaFunctor_map_apply,
     iCycles_cyclesMap_linearYonedaFunctor_map_apply, iCycles_slantCycles, hfi]
   exact slantCochain_naturality D D' f g e hD p q n h _ _
+
+/-- The slant product of chains and cochains commutes with changing the coefficients of the
+cochain along `g : P ⟶ P'`. -/
+lemma slantCochain_comp {P' : ModuleCat.{u} k} (g : P ⟶ P') (p q n : ℕ) (h : p + q = n)
+    (z : K.X p) (φ : T.X n ⟶ P) :
+    slantCochain k D p q n h z (φ ≫ g) = slantCochain k D p q n h z φ ≫ g := by
+  ext v
+  simp [slantCochain_apply]
+
+/-- **Naturality of the slant product in the coefficients**: for `g : P ⟶ P'`,
+`g_* φ / x = g_* (φ / x)`. -/
+lemma slant_linearYonedaObjMap {P' : ModuleCat.{u} k} (g : P ⟶ P') (p q n : ℕ) (h : p + q = n)
+    (x : K.homology p) (φ : (T.linearYonedaObj k P).homology n) :
+    slant k D p q n h x (homologyMap (T.linearYonedaObjMap k g) n φ) =
+      homologyMap (L.linearYonedaObjMap k g) q (slant k D p q n h x φ) := by
+  obtain ⟨z, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ p x
+  obtain ⟨ψ, rfl⟩ := HomologicalComplex.moduleCat_homologyπ_surjective _ n φ
+  rw [_root_.ChainComplex.homologyMap_linearYonedaObjMap_homologyπ_apply, slant_homologyπ,
+    slant_homologyπ, _root_.ChainComplex.homologyMap_linearYonedaObjMap_homologyπ_apply]
+  congr 1
+  apply HomologicalComplex.moduleCat_iCycles_injective
+  rw [iCycles_slantCycles, _root_.ChainComplex.iCycles_cyclesMap_linearYonedaObjMap_apply,
+    _root_.ChainComplex.iCycles_cyclesMap_linearYonedaObjMap_apply, iCycles_slantCycles]
+  exact slantCochain_comp D g p q n h _ _
 
 section CupProduct
 
