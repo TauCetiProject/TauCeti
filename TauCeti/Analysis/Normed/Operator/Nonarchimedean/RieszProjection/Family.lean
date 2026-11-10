@@ -145,6 +145,7 @@ theorem IsRowCompact.isUnit_evalAt_charPowerSeries_complement_sum_of_isRieszProj
     comp_apply, map_sub]
   module
 
+omit [NormOneClass R] in
 /-- The Fredholm factor on a finite union of separated good-zero summands is the product
 of the corresponding normalised linear factors, with their good-zero orders. -/
 theorem IsRowCompact.charPowerSeries_matrixCoeff_mul_sum_eq_prod_of_isRieszProjection
@@ -163,6 +164,7 @@ theorem IsRowCompact.charPowerSeries_matrixCoeff_mul_sum_eq_prod_of_isRieszProje
     rw [mul_assoc, ← mul_assoc (E i), ← (hE i hi).commute.eq, mul_assoc u (E i),
       (hE i hi).mul_eq_zero (hE j hj) (ha hi hj hij), mul_zero, mul_zero]
 
+omit [NormOneClass R] in
 /-- Simultaneously split off finitely many separated Fredholm zeros. The remaining factor
 is the determinant of the operator on the common complementary summand. -/
 theorem IsRowCompact.charPowerSeries_matrixCoeff_eq_prod_mul_of_isRieszProjection
