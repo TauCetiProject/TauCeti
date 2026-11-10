@@ -291,7 +291,7 @@ theorem image_inter_ball_subset_filledHull_or_image_sdiff_closedBall_subset_fill
     inter_subset_inter (subset_closure.trans hγKcl) subset_rfl
   have key := Contour.mem_filledHull_or_mem_filledHull_of_isPreconnected_sdiff_singleton
     (K := K) (v := v) (z₀ := p) (a := -(η / 2)) (b := η / 2) (s := 0)
-    hK hKb hv ⟨by linarith, by linarith⟩
+    hK hKb ⟨by linarith, by linarith⟩
     (by simpa using hseg) (by simpa using hKp)
     (by simpa using closure_mono (hγK' _) hleft) (by simpa using closure_mono (hγK' _) hright)
   rcases key with hx | hy
