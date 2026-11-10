@@ -58,8 +58,8 @@ theorem subsingleton_H'_one_divisorSheaf_chart_eball (D : WeilDivisor X)
   let G := (sheafCompose (Opens.grothendieckTopology X)
     (forget₂ (ModuleCat.{0} ℂ) AddCommGrpCat.{0})).obj
       (holomorphicStructureSheafModules 𝓘(ℂ) X)
-  let eAb : ((Opens.isOpenEmbedding (X := TopCat.of X) U).sheafPullback AddCommGrpCat.{0}).obj F ≅
-      ((Opens.isOpenEmbedding (X := TopCat.of X) U).sheafPullback AddCommGrpCat.{0}).obj G :=
+  let eAb : (U.sheafRestrict (X := TopCat.of X)).obj F ≅
+      (U.sheafRestrict (X := TopCat.of X)).obj G :=
     (sheafCompose (Opens.grothendieckTopology U)
       (forget₂ (ModuleCat.{0} ℂ) AddCommGrpCat.{0})).mapIso eD
   have : Subsingleton (Sheaf.H' G 1 U) :=
