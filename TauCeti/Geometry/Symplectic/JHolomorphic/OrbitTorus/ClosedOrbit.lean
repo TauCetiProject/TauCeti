@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.MappingTorus
 public import TauCeti.Geometry.Symplectic.JHolomorphic.OrbitTorus.Zeta
+public import TauCeti.Geometry.Symplectic.Manifold.FixedPoint
 
 /-!
 # The orbit-torus series of the closed orbits of a mapping torus
@@ -33,10 +34,21 @@ the orbit zeta function
 (`TauCeti.SmoothMappingTorus.orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod`).
 
 The labels of the orbit tori are read off, as in
-`TauCeti.ofPowerSeries_torusWeightSeries_eq_zpow_unitsOneSubSingle`, from auxiliary `2 × 2`
-matrices `P i` of determinant one. These are arbitrary inputs of the statements: identifying them
-with the linearized return maps of `φ` along the orbits, and the labels with those of the actual
-twisted normal operators of the orbit tori, is not done here.
+`TauCeti.ofPowerSeries_torusWeightSeries_eq_zpow_unitsOneSubSingle`, from `2 × 2` matrices `P i`
+of determinant one. In the first two statements below these are arbitrary inputs. When `M` is a
+surface and `φ` preserves a nondegenerate two-form `σ`, as an area-preserving map does, they can
+be taken to be the linearized return maps of the orbits: the fixed-point derivative
+`D i = d(φ^[d i])_(x i)` (`TauCeti.fixedPointDerivative`) is an endomorphism of the
+two-dimensional tangent space `T_(x i) M` of determinant one
+(`TauCeti.SmoothTwoForm.det_fixedPointDerivative_iterate_eq_one`), and the return map of the
+`n`-fold cover is `D i ^ n = d(φ^[d i * n])_(x i)`
+(`TauCeti.fixedPointDerivative_iterate_mul`). With these labels the product of the orbit-torus
+series is the orbit zeta function
+`exp (∑ᵢ ∑_{n ≥ 1} sgn det (1 - d(φ^[d i * n])_(x i)) e^(n [γ_(x i)]) / n)`, whose signs are the
+local Lefschetz indices of the periodic points `x i` of `φ^[d i * n]`
+(`SmoothMappingTorus.orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivative`).
+Identifying these labels with the determinant signs of the twisted normal operators of the orbit
+tori is not done here.
 
 ## Main results
 
@@ -45,6 +57,10 @@ twisted normal operators of the orbit tori, is not done here.
   converges to the integral Euler product in `Nov(ℤ, H₁(Y_φ; ℤ), N)`.
 * `TauCeti.SmoothMappingTorus.orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod`: that
   product is the orbit zeta function.
+* `TauCeti.SmoothMappingTorus.hasProd_ofPowerSeries_torusWeightSeries_fixedPointDerivative`,
+  `SmoothMappingTorus.orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivative`:
+  the same statements for an area-preserving map of a surface, with the orbit tori labelled by the
+  linearized return maps of the orbits.
 
 ## References
 
@@ -112,5 +128,127 @@ theorem orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod
             (if (1 + P i).det < 0 then 1 else 0))) :=
   TauCeti.orbitZeta_eq_mapRingHom_tprod_ofPowerSeries_torusWeightSeries _
     (tendsto_timePeriodHom_closedOrbitHomologyClass hφ hx hxd hd) hdet hP K
+
+/-! ### Labels from the linearized return maps
+
+For a diffeomorphism `φ` of a surface preserving a nondegenerate two-form `σ`, the labels can be
+read off from the linearized return maps of the orbits themselves: the return map of the orbit
+through `x i` is the fixed-point derivative `D i = d(φ^[d i])_(x i)`, an endomorphism of the
+two-dimensional tangent space `T_(x i) M` of determinant one, and that of the `n`-fold cover is
+`D i ^ n = d(φ^[d i * n])_(x i)`. -/
+
+/-- In a basis of a two-dimensional real vector space, the matrix `P` of an endomorphism `D`
+computes `det D`, `det (1 + D)`, `det (1 - D)` and every `det (1 - D ^ n)`. -/
+private theorem exists_matrix_det_eq {V : Type*} [AddCommGroup V] [Module ℝ V]
+    (hV : Module.finrank ℝ V = 2) (D : Module.End ℝ V) :
+    ∃ P : Matrix (Fin 2) (Fin 2) ℝ, P.det = LinearMap.det D ∧
+      (1 + P).det = LinearMap.det (LinearMap.id + D) ∧
+      (1 - P).det = LinearMap.det (LinearMap.id - D) ∧
+      ∀ n : ℕ, (1 - P ^ n).det = LinearMap.det (LinearMap.id - D ^ n) := by
+  have : Module.Finite ℝ V := Module.finite_of_finrank_eq_succ hV
+  let b := Module.finBasisOfFinrankEq ℝ V hV
+  refine ⟨LinearMap.toMatrix b b D, LinearMap.det_toMatrix b D, ?_, ?_, fun n ↦ ?_⟩
+  · rw [← LinearMap.det_toMatrix b, map_add, LinearMap.toMatrix_id]
+  · rw [← LinearMap.det_toMatrix b, map_sub, LinearMap.toMatrix_id]
+  · rw [← LinearMap.det_toMatrix b, map_sub, LinearMap.toMatrix_id, LinearMap.toMatrix_pow]
+
+variable {σ : SmoothTwoForm I M}
+
+include hφ hx hd in
+/-- **The orbit-torus series labelled by the return maps converge to an integral Euler product.**
+Let `φ` be a diffeomorphism of a compact surface preserving a nondegenerate two-form `σ`,
+nondegenerate up to every period, and let `x i` be distinct points of positive periods `d i`, with
+linearized return maps `D i = d(φ^[d i])_(x i)`. The product over `i` of the local series of the
+orbit tori labelled by `D i`, substituted at `t = e^[γ_(x i)]`, converges in
+`Nov(ℤ, H₁(Y_φ; ℤ), N)` to the Euler product `∏ᵢ (1 - σ' i e^[γ_(x i)]) ^ (-(ε i σ' i))`, with
+`ε i = sgn det (1 - D i)` and `σ' i = -1` if `det (1 + D i) < 0`, `σ' i = 1` otherwise. -/
+theorem hasProd_ofPowerSeries_torusWeightSeries_fixedPointDerivative
+    (hE : Module.finrank ℝ E = 2) (hσ : σ.IsNondegenerate)
+    (hφσ : SmoothForm.mpullback φ φ.contMDiff σ = σ) :
+    HasProd (fun i ↦ ofPowerSeries (closedOrbitHomologyClass (hxd i))
+        (timePeriodHom_closedOrbitHomologyClass_pos (hxd i) (hd i))
+        (torusWeightSeries
+          (decide (0 < LinearMap.det
+            (LinearMap.id - fixedPointDerivative I (⇑φ)^[d i] ⟨x i, (hxd i).eq⟩)))
+          (if LinearMap.det
+              (LinearMap.id + fixedPointDerivative I (⇑φ)^[d i] ⟨x i, (hxd i).eq⟩) < 0
+            then 1 else 0)))
+      (eulerProduct (fun i ↦ closedOrbitHomologyClass (hxd i))
+        (fun i ↦ timePeriodHom_closedOrbitHomologyClass_pos (hxd i) (hd i))
+        (fun i ↦ if LinearMap.det
+            (LinearMap.id + fixedPointDerivative I (⇑φ)^[d i] ⟨x i, (hxd i).eq⟩) < 0
+          then -1 else 1)
+        (fun i ↦ -(SignType.sign (LinearMap.det
+            (LinearMap.id - fixedPointDerivative I (⇑φ)^[d i] ⟨x i, (hxd i).eq⟩)) *
+          if LinearMap.det
+              (LinearMap.id + fixedPointDerivative I (⇑φ)^[d i] ⟨x i, (hxd i).eq⟩) < 0
+            then -1 else 1))) := by
+  choose P hPdet hPadd hPsub _ using fun i ↦
+    exists_matrix_det_eq (V := TangentSpace I (x i)) hE
+      (fixedPointDerivative I (⇑φ)^[d i] ⟨x i, (hxd i).eq⟩)
+  have hdet (i : ι) : (P i).det = 1 := (hPdet i).trans
+    (SmoothTwoForm.det_fixedPointDerivative_iterate_eq_one hσ φ.contMDiff hφσ (hxd i))
+  have hP (i : ι) : (1 - P i).det ≠ 0 := by
+    rw [hPsub i]
+    exact (isNondegenerateFixedPt_iff_det_id_sub_ne_zero ⟨x i, (hxd i).eq⟩
+      ((φ.contMDiff.iterate (d i)).mdifferentiableAt (by simp))).1
+      ((hφ (d i)).isNondegenerateFixedPt (hd i) le_rfl (hxd i))
+  have key := hasProd_ofPowerSeries_torusWeightSeries_closedOrbitHomologyClass hφ hx hxd hd hdet hP
+  simp only [hPadd, hPsub] at key
+  -- `key` is stated on `T_(x i) M`, the goal on the tangent space at the subtype point
+  -- `⟨x i, _⟩`; the two are the same space.
+  exact key
+
+include hφ hx hd in
+/-- **The orbit-torus series labelled by the return maps give the orbit zeta function.** Under the
+hypotheses of
+`TauCeti.SmoothMappingTorus.hasProd_ofPowerSeries_torusWeightSeries_fixedPointDerivative`, the
+product of the orbit-torus series labelled by the linearized return maps `D i = d(φ^[d i])_(x i)`
+is, over any `ℚ`-algebra `K`, the orbit zeta function
+`exp (∑ᵢ ∑_{n ≥ 1} sgn det (1 - d(φ^[d i * n])_(x i)) e^(n [γ_(x i)]) / n)` in
+`Nov(K, H₁(Y_φ; ℤ), N)`. The sign `sgn det (1 - d(φ^[d i * n])_(x i))` is the local Lefschetz
+index of `x i` as a fixed point of `φ^[d i * n]`. -/
+theorem orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod_fixedPointDerivative
+    (hE : Module.finrank ℝ E = 2) (hσ : σ.IsNondegenerate)
+    (hφσ : SmoothForm.mpullback φ φ.contMDiff σ = σ) (K : Type*) [CommRing K] [Algebra ℚ K] :
+    orbitZeta K (timePeriodHom φ)
+        (fun i ↦ closedOrbitHomologyClass (hxd i))
+        (fun i n ↦ SignType.sign (LinearMap.det (LinearMap.id -
+          fixedPointDerivative I (⇑φ)^[d i * n] ⟨x i, ((hxd i).mul_const n).eq⟩))) =
+      mapRingHom (Int.castRingHom K) (AddMonoidHom.id _) ⟨1, one_pos, by simp⟩
+        (∏' i, ofPowerSeries (closedOrbitHomologyClass (hxd i))
+          (timePeriodHom_closedOrbitHomologyClass_pos (hxd i) (hd i))
+          (torusWeightSeries
+            (decide (0 < LinearMap.det
+              (LinearMap.id - fixedPointDerivative I (⇑φ)^[d i] ⟨x i, (hxd i).eq⟩)))
+            (if LinearMap.det
+                (LinearMap.id + fixedPointDerivative I (⇑φ)^[d i] ⟨x i, (hxd i).eq⟩) < 0
+              then 1 else 0))) := by
+  choose P hPdet hPadd hPsub hPpow using fun i ↦
+    exists_matrix_det_eq (V := TangentSpace I (x i)) hE
+      (fixedPointDerivative I (⇑φ)^[d i] ⟨x i, (hxd i).eq⟩)
+  have hdiff (i : ι) (n : ℕ) : MDifferentiableAt I I (⇑φ)^[d i * n] (x i) :=
+    (φ.contMDiff.iterate _).mdifferentiableAt (by simp)
+  -- The return map of the `n`-fold cover is the `n`-th power of the return map.
+  have hit (i : ι) (n : ℕ) :
+      fixedPointDerivative I (⇑φ)^[d i * n] ⟨x i, ((hxd i).mul_const n).eq⟩ =
+        fixedPointDerivative I (⇑φ)^[d i] ⟨x i, (hxd i).eq⟩ ^ n :=
+    fixedPointDerivative_iterate_mul (hxd i) (by simpa using hdiff i 1) n
+  have hdet (i : ι) : (P i).det = 1 := (hPdet i).trans
+    (SmoothTwoForm.det_fixedPointDerivative_iterate_eq_one hσ φ.contMDiff hφσ (hxd i))
+  have hP (i : ι) (k : ℕ) (hk : k ≠ 0) : (1 - P i ^ k).det ≠ 0 := by
+    have h := (isNondegenerateFixedPt_iff_det_id_sub_ne_zero
+      ⟨x i, ((hxd i).mul_const k).eq⟩ (hdiff i k)).1
+      ((hφ (d i * k)).isNondegenerateFixedPt (Nat.mul_pos (hd i) (Nat.pos_of_ne_zero hk)) le_rfl
+        ((hxd i).mul_const k))
+    rw [hit] at h
+    rw [hPpow]
+    exact h
+  have key := orbitZeta_closedOrbitHomologyClass_eq_mapRingHom_tprod hφ hx hxd hd hdet hP K
+  simp only [hPadd, hPsub, hPpow] at key
+  simp only [hit]
+  -- As above, `key` and the goal differ only in how the base point of the tangent space is
+  -- written.
+  exact key
 
 end TauCeti.SmoothMappingTorus
