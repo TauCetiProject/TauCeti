@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.BrownianMotion.Integral.Elementary
 public import TauCeti.Probability.Finance.SimpleStrategy.Energy
+import TauCeti.Analysis.Normed.Group.Real
 
 /-!
 # Elementary Brownian isometry in the predictable energy measure
@@ -54,9 +55,7 @@ theorem lintegral_enorm_sq_simpleGains (hW : IsFilteredPreBrownianReal ℱ W P)
   rw [lintegral_lintegral_swap (hm.mono ℱ.predictable_le_prod le_rfl).aemeasurable]
   simp_rw [lintegral_enorm_sq_simpleHolding_timeMeasure hτ]
   have hsum := hW.memLp_sum_mul_sub hτ ha ha₂
-  have he (x : ℝ) : ‖x‖ₑ ^ 2 = ENNReal.ofReal (x ^ 2) := by
-    rw [← enorm_pow, Real.enorm_of_nonneg (sq_nonneg x)]
-  simp_rw [he, simpleGains_apply_eq_sum hτ le_rfl]
+  simp_rw [Real.enorm_sq_eq_ofReal_sq, simpleGains_apply_eq_sum hτ le_rfl]
   have hmeas (i : ℕ) (hi : i < n) : Measurable (fun ω ↦ ENNReal.ofReal (a i ω ^ 2)) :=
     (((ha i hi).mono (ℱ.le _)).measurable.pow_const 2).ennreal_ofReal
   rw [lintegral_finsetSum _ (fun i hi ↦ (hmeas i (mem_range.mp hi)).mul_const _),
