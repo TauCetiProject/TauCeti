@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Calculus.ImplicitFunctionTheorem
 public import TauCeti.Analysis.Calculus.TangentCone.Chart
 public import TauCeti.Analysis.Calculus.TangentCone.LevelSet
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
+import TauCeti.Topology.Algebra.Module.Complement
 
 /-!
 # Transverse intersections of flattened sets
@@ -107,8 +108,16 @@ private theorem exists_isSliceChart_inter_and_tangentConeAt {n : ℕ∞ω} (hn :
   have hg : HasStrictFDerivAt g g' y :=
     (hgC y ⟨hy₁, hy₂⟩).hasStrictFDerivAt
       ((P₁.hasFDerivAt.comp y hA₁).prodMk (P₂.hasFDerivAt.comp y hA₂)) hn
-  obtain ⟨hker₁, hsurj₁⟩ := ker_range_projectionOntoL_comp hC₁.symm A₁
-  obtain ⟨hker₂, hsurj₂⟩ := ker_range_projectionOntoL_comp hC₂.symm A₂
+  have hker₁ : ((C₁.projectionOntoL L₁ hC₁.symm).comp (A₁ : E →L[𝕜] E)).ker =
+      L₁.comap (A₁ : E →ₗ[𝕜] E) :=
+    Submodule.ker_projectionOntoL_comp hC₁.symm (A₁ : E →L[𝕜] E)
+  have hker₂ : ((C₂.projectionOntoL L₂ hC₂.symm).comp (A₂ : E →L[𝕜] E)).ker =
+      L₂.comap (A₂ : E →ₗ[𝕜] E) :=
+    Submodule.ker_projectionOntoL_comp hC₂.symm (A₂ : E →L[𝕜] E)
+  have hsurj₁ :=
+    Submodule.range_projectionOntoL_comp hC₁.symm (A := (A₁ : E →L[𝕜] E)) A₁.surjective
+  have hsurj₂ :=
+    Submodule.range_projectionOntoL_comp hC₂.symm (A := (A₂ : E →L[𝕜] E)) A₂.surjective
   -- Transversality is the surjectivity of the derivative of `g`.
   have hrange : g'.range = ⊤ := by
     rw [ContinuousLinearMap.range_prod_eq (by rw [hker₁, hker₂]; exact htr), hsurj₁, hsurj₂,

@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.LevelSet.FiniteDimensional
 public import TauCeti.Analysis.Calculus.TangentCone.Chart
 import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Topology.Algebra.Module.Complement
 
 /-!
 # Parametric transversality to a flattened set
@@ -93,7 +94,8 @@ theorem IsSliceChart.ae_range_fderiv_comp_inl_sup_span_tangentConeAt_eq_top {G :
     intro w hw hwS
     obtain ⟨A, hA⟩ := e.exists_hasFDerivAt_of_chart hw.2 ((he _ hw.2).differentiableAt hn0)
       ((hes _ (e.map_source hw.2)).differentiableAt hn0)
-    obtain ⟨hker, hrange⟩ := ker_range_projectionOntoL_comp hCL A
+    have hker := Submodule.ker_projectionOntoL_comp hCL (A : E →L[ℝ] E)
+    have hrange := Submodule.range_projectionOntoL_comp hCL (A := (A : E →L[ℝ] E)) A.surjective
     refine ⟨A, (P.hasFDerivAt.comp (G w) hA).comp w
       ((hcont w hw.1 hwS).differentiableAt hn0).hasFDerivAt, hrange, ?_⟩
     rw [hS.span_tangentConeAt_eq_comap L.closed_of_finiteDimensional hw.2 hwS hA]
