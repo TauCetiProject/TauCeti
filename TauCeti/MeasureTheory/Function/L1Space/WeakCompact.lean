@@ -199,7 +199,7 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
   have hzero := tendsto_setIntegral_norm_of_pairwise_disjoint (fun j ↦ hh (σ j + K))
     (fun S hS ↦ (hset S hS).comp ((tendsto_add_atTop_nat K).comp hσ.tendsto_atTop)) hBm hB
   have hzero' := TauCeti.MeasureTheory.tendsto_lintegral_enorm_of_tendsto_integral_norm
-    (fun j ↦ (hh (σ j + K)).integrableOn) hzero
+    (.of_forall fun j ↦ (hh (σ j + K)).integrableOn) hzero
   obtain ⟨j, hj⟩ := (ENNReal.tendsto_nhds_zero.1 hzero' (ε / 2 / 2)
     (ENNReal.half_pos (ENNReal.half_pos hε.ne').ne')).exists
   exact (hlow j).not_ge hj
