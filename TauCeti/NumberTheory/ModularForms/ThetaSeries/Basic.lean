@@ -123,6 +123,19 @@ theorem thetaCoset_apply (γ : E) (τ : ℍ) :
     thetaCoset L γ τ = ∑' v : L, cexp (π * I * (‖γ + (v : E)‖ ^ 2 : ℝ) * τ) :=
   (rfl)
 
+/-- If the Gaussian `exp (-π y ‖γ + v‖²)` is summable over `v ∈ L` for no height `y > 0`, then the
+series defining `θ_{γ+L}(τ)` is not summable for any `τ`, so `θ_{γ+L}` is identically `0` (the value
+of a `tsum` that is not summable). -/
+theorem thetaCoset_eq_zero_of_forall_not_summable (γ : E)
+    (h : ∀ y : ℝ, 0 < y → ¬ Summable fun v : L => Real.exp (-(π * y) * ‖γ + (v : E)‖ ^ 2)) :
+    thetaCoset L γ = 0 :=
+  funext fun τ => by
+    rw [thetaCoset_apply, Pi.zero_apply]
+    refine tsum_eq_zero_of_not_summable fun hs => h τ.im τ.im_pos <| hs.norm.congr fun v => ?_
+    rw [norm_exp_pi_mul_I_mul_ofReal_mul, UpperHalfPlane.coe_im]
+    congr 1
+    ring
+
 /-- The theta series of the translate `0 + L` is the theta series of `L`. -/
 @[simp]
 theorem thetaCoset_zero : thetaCoset L 0 = thetaSeries L := by
@@ -257,30 +270,6 @@ theorem hasSumLocallyUniformly_thetaSeries :
       (thetaSeries L) := by
   simpa using hasSumLocallyUniformly_thetaCoset L 0
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L] in
-/-- If the Gaussian `exp (-c ‖γ + v‖²)`, `c > 0`, is summable over a subgroup `L` of a normed
-group, then `L` is discrete: only finitely many `v ∈ L` have `‖γ + v‖` bounded. -/
-theorem discreteTopology_of_summable_exp_neg_mul_norm_add_sq (γ : E) {c : ℝ} (hc : 0 < c)
-    (h : Summable fun v : L => Real.exp (-c * ‖γ + (v : E)‖ ^ 2)) : DiscreteTopology L := by
-  -- Only finitely many `v ∈ L` have `‖γ + v‖ ≤ R`, since the terms tend to `0`.
-  have hfin (R : ℝ) : {v : L | ‖γ + (v : E)‖ ≤ R}.Finite := by
-    refine (Filter.eventually_cofinite.mp (h.tendsto_cofinite_zero.eventually
-      (gt_mem_nhds (Real.exp_pos (-c * R ^ 2))))).subset fun v hv => ?_
-    simp only [Set.mem_ofPred_eq, not_lt] at hv ⊢
-    have := pow_le_pow_left₀ (norm_nonneg _) hv 2
-    exact Real.exp_le_exp.mpr (by nlinarith)
-  have hS : {v : L | ‖(v : E)‖ < 1 ∧ v ≠ 0}.Finite :=
-    (hfin (‖γ‖ + 1)).subset fun v hv => by
-      have := norm_add_le γ (v : E)
-      simp only [Set.mem_ofPred_eq] at hv ⊢
-      linarith [hv.1]
-  refine discreteTopology_of_isOpen_singleton_zero ?_
-  have hopen : IsOpen ({v : L | ‖(v : E)‖ < 1} \ {v : L | ‖(v : E)‖ < 1 ∧ v ≠ 0}) :=
-    (isOpen_lt (continuous_norm.comp continuous_subtype_val) continuous_const).sdiff hS.isClosed
-  convert hopen using 1
-  ext v
-  by_cases hv : v = 0 <;> simp [hv]
-
 omit [DiscreteTopology L] in
 /-- The theta series of a translate is holomorphic on the upper half-plane, as a function of
 `z : ℂ`. -/
@@ -306,14 +295,10 @@ theorem differentiableOn_thetaCoset (γ : E) :
     filter_upwards [hU.mem_nhds hzU] with w hw
     have hw' : 0 < w.im := lt_trans (half_pos hz) hw
     simp [thetaCoset_apply, ofComplex_apply_of_im_pos hw']
-  · have h0 : thetaCoset L γ = 0 := funext fun τ => by
-      rw [thetaCoset_apply, Pi.zero_apply]
-      refine tsum_eq_zero_of_not_summable fun hs => hL ?_
-      refine discreteTopology_of_summable_exp_neg_mul_norm_add_sq L γ (c := π * τ.im)
-        (by positivity) (hs.norm.congr fun v => ?_)
-      rw [norm_exp_pi_mul_I_mul_ofReal_mul, UpperHalfPlane.coe_im]
-      congr 1
-      ring
+  · have h0 : thetaCoset L γ = 0 :=
+      thetaCoset_eq_zero_of_forall_not_summable L γ fun y hy hs =>
+        hL (discreteTopology_of_summable_exp_neg_mul_norm_add_sq L γ (c := π * y)
+          (by positivity) hs)
     rw [h0]
     exact differentiableOn_const 0
 

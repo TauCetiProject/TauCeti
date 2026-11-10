@@ -22,9 +22,9 @@ an even unimodular lattice. The unit-homomorphism used for modular forms with ch
 `MulChar.equivToUnitHom (hL.thetaCharacter hE)`.
 
 The evaluated Gauss-sum transformation law is expressed in terms of this character at the
-lower-right matrix entry, for matrices in `Γ₀(level L)` with positive lower-left and positive odd
-upper-left entries. This identifies the arithmetic scalar needed for the general theta
-transformation law.
+lower-right matrix entry, for matrices in `Γ₀(level L)` whose lower-left entry is a natural number
+(a multiple of the level, possibly `0`) and whose upper-left entry is an odd natural number. This
+identifies the arithmetic scalar needed for the general theta transformation law.
 
 ## References
 

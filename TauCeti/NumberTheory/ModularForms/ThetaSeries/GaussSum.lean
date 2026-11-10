@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Reciprocity
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.CosetSplitting
 public import TauCeti.Algebra.Module.ZLattice.SignedDiscriminant
+import TauCeti.NumberTheory.Modular.ConjugateTranslation
 
 /-!
 # The closed formula for lattice Gauss sums
@@ -23,7 +24,8 @@ modulus `a` gives this formula without evaluating any Gauss sum at an even modul
 
 The normalized scalar `(-i)^k c^(-k) (covol L)^(-1) G_L(a, c)` is consequently just the Jacobi
 symbol. This evaluates the scalar in the theta transformation law for matrices whose first
-column is positive and whose upper-left entry is odd. No character at the level, or reduction
+column is nonnegative (the Gauss-sum normalization needs `c > 0`, and for `c = 0` the matrix is a
+power of `T`) and whose upper-left entry is odd. No character at the level, or reduction
 of arbitrary matrices to this case, is asserted here.
 
 The sum depends only on `a` modulo `c`. At `c = level L`, comparing an odd `a ≡ 1` with `1`
@@ -98,19 +100,18 @@ theorem thetaSeries_slash_eq_jacobiSym_smul (hk : finrank ℝ E = 2 * k) (A : SL
     thetaSeries L ∣[(k : ℤ)] A =
       (jacobiSym ((-1) ^ k * Nat.card (DiscriminantGroup L)) a : ℂ) • thetaSeries L := by
   rcases eq_or_ne c 0 with rfl | hc0
-  · -- If `c = 0` then `A = T ^ n`, which fixes `Θ_L`, and `a = 1`.
+  · -- If `c = 0` then `A = T ^ n` (which fixes `Θ_L`, and has `a = 1`) or `A = -T ^ n`, which is
+    -- excluded since its upper-left entry `-1` is not the natural number `a`.
     have hc' : A 1 0 = 0 := by simpa using hc
-    have hdet := A.det_coe
-    rw [Matrix.det_fin_two, hc', mul_zero, sub_zero] at hdet
-    have ha1 : A 0 0 = 1 := Int.eq_one_of_mul_eq_one_right (by rw [ha]; positivity) hdet
-    have hd1 : A 1 1 = 1 := by rwa [ha1, one_mul] at hdet
-    have hA : A = ModularGroup.T ^ (A 0 1) := by
-      ext i j
-      fin_cases i <;> fin_cases j <;>
-        simp [ha1, hc', hd1, ModularGroup.coe_T_zpow, show (1 : Fin (0 + 2)) = (1 : Fin 2) from rfl]
-    have ha' : a = 1 := by exact_mod_cast ha.symm.trans ha1
-    rw [hA, hL.thetaSeries_slash_T_zpow, ha']
-    simp
+    rcases TauCeti.ModularGroup.eq_T_zpow_or_eq_neg_T_zpow_of_c_eq_zero hc' with hA | hA
+    · have ha1 : A 0 0 = 1 := by
+        simpa [ModularGroup.coe_T_zpow] using congrArg (fun B : SL(2, ℤ) => B 0 0) hA
+      have ha' : a = 1 := by exact_mod_cast ha.symm.trans ha1
+      rw [hA, hL.thetaSeries_slash_T_zpow, ha']
+      simp
+    · have hneg : A 0 0 = -1 := by
+        simpa [ModularGroup.coe_T_zpow] using congrArg (fun B : SL(2, ℤ) => B 0 0) hA
+      omega
   have : NeZero c := ⟨hc0⟩
   have hac : IsCoprime (a : ℤ) c := by
     simpa only [ha, hc] using A.isCoprime_col 0

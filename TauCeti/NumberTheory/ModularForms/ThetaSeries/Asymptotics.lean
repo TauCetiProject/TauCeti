@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Complex.UpperHalfPlane.FunctionsBoundedAtInfty
 public import TauCeti.Algebra.Module.ZLattice.GaussSum
 public import TauCeti.Algebra.Module.ZLattice.Scaling
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.Inversion
+import TauCeti.Algebra.Module.ZLattice.Summable
 import TauCeti.Analysis.Complex.UpperHalfPlane.MoebiusAction
 import TauCeti.NumberTheory.ModularForms.ThetaSeries.Cusp
 
@@ -106,7 +107,8 @@ theorem tendsto_pow_mul_thetaCoset_comap_S (hk : finrank ℝ E = 2 * k) (v : E) 
   have hF : Tendsto F atImInfty (𝓝 1) := by
     classical
     have h := tendsto_tsum_mul_thetaTerm_atImInfty (dual L) 0
-      (fun m ↦ cexp (2 * π * I * (⟪v, (m : E)⟫ : ℝ))) fun m ↦ by simp [Complex.norm_exp]
+      (fun m ↦ cexp (2 * π * I * (⟪v, (m : E)⟫ : ℝ))) (fun m ↦ by simp [Complex.norm_exp])
+      (ZLattice.summable_exp_neg_mul_norm_add_sq (dual L) (c := π * 1) (by positivity) 0)
     simpa only [zero_add, ZeroMemClass.coe_eq_zero, tsum_ite_eq, ZeroMemClass.coe_zero,
       inner_zero_right, ofReal_zero, mul_zero, exp_zero] using h
   -- With `τ = -1/ε`, the inversion law gives `ε^k θ_{v+L}(ε) = i^k (covol L)⁻¹ F τ`.
