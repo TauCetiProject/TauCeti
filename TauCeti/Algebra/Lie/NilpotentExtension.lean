@@ -226,24 +226,6 @@ namespace TauCeti.LieAlgebra
 
 variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 
-/-- **Every element of the nilradical lies in a nilpotent ideal.** Nilpotent ideals are directed,
-so the supremum defining the nilradical is attained on each element, with no Noetherian hypothesis
-on `L`. -/
-theorem exists_isNilpotent_ideal_of_mem_nilradical {n : L} (hn : n ∈ nilradical R L) :
-    ∃ J : LieIdeal R L, LieRing.IsNilpotent J ∧ n ∈ J := by
-  let S : Set (Submodule R L) :=
-    {s | ∃ I : LieIdeal R L, LieRing.IsNilpotent I ∧ LieSubmodule.toSubmodule I = s}
-  have hn' : n ∈ sSup S := by
-    rw [nilradical_def] at hn
-    exact hn
-  have hdir : DirectedOn (· ≤ ·) S := by
-    rintro _ ⟨I, hI, rfl⟩ _ ⟨J, hJ, rfl⟩
-    exact ⟨LieSubmodule.toSubmodule (I ⊔ J), ⟨I ⊔ J, LieIdeal.isNilpotentSup I J, rfl⟩,
-      sup_le_iff.mp le_rfl⟩
-  have hne : S.Nonempty := ⟨_, ⊥, LieIdeal.isNilpotentBot, rfl⟩
-  obtain ⟨_, ⟨J, hJ, rfl⟩, hnJ⟩ := (Submodule.mem_sSup_of_directed hne hdir).mp hn'
-  exact ⟨J, hJ, hnJ⟩
-
 /-- The adjoint specialization of the nilpotent-extension lemma: if `y` is `ad`-nilpotent, then so
 is every element of `R ∙ y ⊔ nilradical R L`.  Each element of the nilradical lies in a nilpotent
 ideal (`TauCeti.LieAlgebra.exists_isNilpotent_ideal_of_mem_nilradical`), so no Noetherian
