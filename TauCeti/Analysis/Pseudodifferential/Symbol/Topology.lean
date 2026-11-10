@@ -412,15 +412,18 @@ over the splittings of `α` and `β` into complementary subwords, of the product
 theorem seminorm_comp_le (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
     (b : Symbol n W U m') (a : Symbol n V W m) :
     Symbol.seminorm K α β (b.comp a) ≤
-      compBound (fun s t => Symbol.seminorm K s t b) (fun s t => Symbol.seminorm K s t a) α β := by
-  refine seminorm_le_bound K α β _
-    (compBound_nonneg (fun _ _ => apply_nonneg _ _) (fun _ _ => apply_nonneg _ _) α β)
-    fun x hx ξ => ?_
-  have hc : (b.comp a).coefficient = fun p => (b.coefficient p).comp (a.coefficient p) :=
-    funext (coefficient_comp b a)
-  rw [hc]
-  exact norm_mixedDeriv_comp_le b.contDiff_coefficient a.contDiff_coefficient
-    (fun s t _ _ => le_seminorm K s t b hx ξ) (fun s t _ _ => le_seminorm K s t a hx ξ)
+      (β.sublists'.revzip.map fun t => (α.sublists'.revzip.map fun s =>
+        Symbol.seminorm K s.1 t.1 b * Symbol.seminorm K s.2 t.2 a).sum).sum := by
+  refine seminorm_le_bound K α β _ (List.sum_nonneg fun _ h => ?_) fun x hx ξ => ?_
+  · obtain ⟨t, -, rfl⟩ := List.mem_map.1 h
+    exact List.sum_nonneg fun _ h' => by
+      obtain ⟨s, -, rfl⟩ := List.mem_map.1 h'
+      exact mul_nonneg (apply_nonneg _ _) (apply_nonneg _ _)
+  · have hc : (b.comp a).coefficient = fun p => (b.coefficient p).comp (a.coefficient p) :=
+      funext (coefficient_comp b a)
+    rw [hc]
+    exact norm_mixedDeriv_comp_le b.contDiff_coefficient a.contDiff_coefficient
+      (fun s t => le_seminorm K s t b hx ξ) (fun s t => le_seminorm K s t a hx ξ) α β
 
 /-- If all products `p_{K,α₁,β₁}(b_i) p_{K,α₂,β₂}(a_i)` tend to zero, then so does
 `p_{K,α,β}(b_i ∘ a_i)`, by the Leibniz estimate `seminorm_comp_le`. -/
@@ -429,8 +432,11 @@ private theorem tendsto_seminorm_comp {ι : Type*} {l : Filter ι} (K : Compacts
     (h : ∀ s₁ t₁ s₂ t₂, Tendsto (fun i =>
       Symbol.seminorm K s₁ t₁ (b i) * Symbol.seminorm K s₂ t₂ (a i)) l (𝓝 0)) :
     Tendsto (fun i => Symbol.seminorm K α β ((b i).comp (a i))) l (𝓝 0) := by
-  exact squeeze_zero (fun _ => apply_nonneg _ _) (fun i => seminorm_comp_le K α β (b i) (a i))
-    (tendsto_compBound h α β)
+  refine squeeze_zero (fun _ => apply_nonneg _ _) (fun i => seminorm_comp_le K α β (b i) (a i)) ?_
+  have := tendsto_list_sum (a := fun _ => (0 : ℝ)) β.sublists'.revzip fun t _ => by
+    simpa using tendsto_list_sum (a := fun _ => (0 : ℝ)) α.sublists'.revzip
+      fun s _ => h s.1 t.1 s.2 t.2
+  simpa using this
 
 /-- Composition of symbols is jointly continuous for the symbol topologies. -/
 theorem continuous_comp :

@@ -74,6 +74,7 @@ same two pieces the geometric picture uses.
   `link_stellarSubdivision_singleton`: away from the new vertex the subdivision is `deletion K σ`,
   and the link of the new vertex is the boundary `closedStar K σ ⊓ deletion K σ` of the closed
   star.
+* `PreAbstractSimplicialComplex.stellarSubdivision_mono`: starring is monotone in the complex.
 * `PreAbstractSimplicialComplex.map_stellarSubdivision`: injective relabeling commutes with
   stellar subdivision.
 * `PreAbstractSimplicialComplex.dimension_stellarSubdivision`: starring preserves the dimension.
@@ -129,6 +130,15 @@ theorem mem_stellarSubdivision_iff :
     τ ∈ stellarSubdivision K σ v ↔
       (v ∉ τ ∧ τ ∈ K ∧ ¬ σ ⊆ τ) ∨ (v ∈ τ ∧ ¬ σ ⊆ τ.erase v ∧ τ.erase v ∪ σ ∈ K) :=
   Iff.rfl
+
+/-- Starring is monotone in the complex: starring a subcomplex at the same face and vertex gives
+a subcomplex of the starred complex. -/
+@[gcongr]
+theorem stellarSubdivision_mono {L : PreAbstractSimplicialComplex ι} (h : K ≤ L) :
+    stellarSubdivision K σ v ≤ stellarSubdivision L σ v := by
+  rintro τ (⟨hvτ, hτ, hστ⟩ | ⟨hvτ, hστ, hτ⟩)
+  · exact Or.inl ⟨hvτ, h hτ, hστ⟩
+  · exact Or.inr ⟨hvτ, hστ, h hτ⟩
 
 /-- Every stellar simplex omits a vertex of the starred face, including simplices containing
 its new barycentric vertex. -/

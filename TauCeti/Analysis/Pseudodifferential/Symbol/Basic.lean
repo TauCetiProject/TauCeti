@@ -692,23 +692,6 @@ section Frequency
 
 variable {b : CoordinateSpace n → V →L[ℂ] W}
 
-/-- The frequency-only estimates hold with constants uniform in the position. -/
-private theorem exists_bound_comp_snd (hb : ContDiff ℝ ∞ b)
-    (hbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k b ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2))
-    (α β : List (Fin n)) :
-    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ξ,
-      ‖mixedDeriv α β (fun p => b p.2) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  rcases eq_or_ne α [] with rfl | hα
-  · obtain ⟨C, hC⟩ := hbound β.length
-    refine ⟨max C 0, le_max_right _ _, fun x ξ => ?_⟩
-    rw [mixedDeriv_nil_comp_snd]
-    calc ‖coordinateDeriv β b ξ‖ ≤ ‖iteratedFDeriv ℝ β.length b ξ‖ :=
-          norm_coordinateDeriv_le β (hb.of_le (mod_cast le_top)) ξ
-      _ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := hC ξ
-      _ ≤ max C 0 * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) :=
-          mul_le_mul_of_nonneg_right (le_max_left _ _) (by positivity)
-  · exact ⟨0, le_rfl, fun x ξ => by simp [mixedDeriv_comp_snd b hα]⟩
-
 /-- A smooth frequency-only coefficient `a(x, ξ) = b(ξ)` whose derivatives satisfy
 `‖D^k b(ξ)‖ ≤ C_k ⟨ξ⟩ ^ (m - k)` is a symbol of order `m`. Its quantization is the Fourier
 multiplier `b(D)` (`TauCeti.Symbol.quantizeSchwartzValue_ofFrequency`). -/
@@ -718,7 +701,8 @@ def ofFrequency (b : CoordinateSpace n → V →L[ℂ] W) (hb : ContDiff ℝ ∞
   coefficient p := b p.2
   contDiff_coefficient := hb.comp contDiff_snd
   exists_bound _ _ α β :=
-    (exists_bound_comp_snd hb hbound α β).imp fun _ hC => ⟨hC.1, fun x _ ξ => hC.2 x ξ⟩
+    (exists_bound_mixedDeriv_comp_snd (hb.of_le (mod_cast le_top)) (hbound β.length) α).imp
+      fun _ hC => ⟨hC.1, fun x _ ξ => hC.2 x ξ⟩
 
 variable (hb : ContDiff ℝ ∞ b)
   (hbound : ∀ k : ℕ, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k b ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2))
@@ -729,7 +713,8 @@ theorem coefficient_ofFrequency (p : CoordinateSpace n × CoordinateSpace n) :
 
 /-- A frequency-only symbol satisfies its estimates uniformly in the position. -/
 theorem isUniform_ofFrequency : (ofFrequency b hb hbound).IsUniform :=
-  isUniform_iff.2 (exists_bound_comp_snd hb hbound)
+  isUniform_iff.2 fun α β =>
+    exists_bound_mixedDeriv_comp_snd (hb.of_le (mod_cast le_top)) (hbound β.length) α
 
 end Frequency
 
@@ -737,43 +722,34 @@ section Comp
 
 variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m'' : ℝ}
 
-/-- The constant of the Leibniz estimate `norm_mixedDeriv_comp_le`: the sum of
-`C s₁ t₁ * D s₂ t₂` over all splittings of `α` into complementary subwords `s₁, s₂` and of `β`
-into `t₁, t₂`. -/
-def compBound (C D : List (Fin n) → List (Fin n) → ℝ) (α β : List (Fin n)) : ℝ :=
-  (β.sublists'.revzip.map fun t => (α.sublists'.revzip.map fun s => C s.1 t.1 * D s.2 t.2).sum).sum
-
 /-- The product estimate behind `TauCeti.Symbol.comp`: bounds `C s t ⟨ξ⟩^(m' - |t|)` and
-`D s t ⟨ξ⟩^(m - |t|)` on the mixed derivatives of `b` and `a` at `(x, ξ)` bound the mixed
-derivative `∂_x^α ∂_ξ^β` of `b ∘ a` by `compBound C D α β` times `⟨ξ⟩^(m' + m - |β|)`, as in the
-Leibniz rule. Only the derivatives with `|s| ≤ |α|` and `|t| ≤ |β|` enter, so the bounds are
-only required for those. -/
+`D s t ⟨ξ⟩^(m - |t|)` on all mixed derivatives of `b` and `a` at `(x, ξ)` bound the mixed
+derivative `∂_x^α ∂_ξ^β` of `b ∘ a` by a constant times `⟨ξ⟩^(m' + m - |β|)`. The constant sums
+`C s₁ t₁ * D s₂ t₂` over all splittings of `α` into `s₁, s₂` and of `β` into `t₁, t₂`, as in the
+Leibniz rule. -/
 theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → W →L[ℂ] U}
     {a : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hb : ContDiff ℝ ∞ b)
     (ha : ContDiff ℝ ∞ a) {x ξ : CoordinateSpace n} {C D : List (Fin n) → List (Fin n) → ℝ}
-    {α β : List (Fin n)}
-    (hC : ∀ s t, s.length ≤ α.length → t.length ≤ β.length →
-      ‖mixedDeriv s t b x ξ‖ ≤ C s t * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.length) / 2))
-    (hD : ∀ s t, s.length ≤ α.length → t.length ≤ β.length →
-      ‖mixedDeriv s t a x ξ‖ ≤ D s t * (1 + ‖ξ‖ ^ 2) ^ ((m - t.length) / 2)) :
+    (hC : ∀ s t, ‖mixedDeriv s t b x ξ‖ ≤ C s t * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.length) / 2))
+    (hD : ∀ s t, ‖mixedDeriv s t a x ξ‖ ≤ D s t * (1 + ‖ξ‖ ^ 2) ^ ((m - t.length) / 2))
+    (α β : List (Fin n)) :
     ‖mixedDeriv α β (fun p => (b p).comp (a p)) x ξ‖ ≤
-      compBound C D α β * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
+      (β.sublists'.revzip.map fun t =>
+        (α.sublists'.revzip.map fun s => C s.1 t.1 * D s.2 t.2).sum).sum *
+        (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
   -- Composition of `ℂ`-linear maps, viewed as a continuous `ℝ`-bilinear map.
   have h := ((ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ).mixedDeriv_of_bilinear
     (α := α) (β := β) (hb.of_le (by exact_mod_cast le_top)) (ha.of_le (by exact_mod_cast le_top))
     x ξ
   simp only [ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
     ContinuousLinearMap.compL_apply] at h
-  rw [h, compBound, ← List.sum_map_mul_right]
+  rw [h, ← List.sum_map_mul_right]
   refine (List.le_sum_of_subadditive norm norm_zero.le norm_add_le _).trans ?_
   rw [List.map_map]
   refine List.sum_le_sum fun t ht => ?_
   refine (List.le_sum_of_subadditive norm norm_zero.le norm_add_le _).trans ?_
   rw [List.map_map, ← List.sum_map_mul_right]
-  refine List.sum_le_sum fun s hs => ?_
-  have ht' := (List.revzip_sublists' _ _ _ ht).length_eq
-  have hs' := (List.revzip_sublists' _ _ _ hs).length_eq
-  rw [List.length_append] at ht' hs'
+  refine List.sum_le_sum fun s _ => ?_
   have hw : (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) =
       (1 + ‖ξ‖ ^ 2) ^ ((m' - t.1.length) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((m - t.2.length) / 2) := by
     rw [← Real.rpow_add (by positivity), ← (List.revzip_sublists' _ _ _ ht).length_eq,
@@ -785,38 +761,21 @@ theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → 
         ContinuousLinearMap.opNorm_comp_le _ _
     _ ≤ (C s.1 t.1 * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.1.length) / 2)) *
         (D s.2 t.2 * (1 + ‖ξ‖ ^ 2) ^ ((m - t.2.length) / 2)) :=
-        mul_le_mul (hC _ _ (by omega) (by omega)) (hD _ _ (by omega) (by omega)) (norm_nonneg _)
-          ((norm_nonneg _).trans (hC _ _ (by omega) (by omega)))
+        mul_le_mul (hC _ _) (hD _ _) (norm_nonneg _) ((norm_nonneg _).trans (hC _ _))
     _ = C s.1 t.1 * D s.2 t.2 * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
         rw [hw]
         ring
 
 /-- The constant in `norm_mixedDeriv_comp_le` is nonnegative. -/
-theorem compBound_nonneg {C D : List (Fin n) → List (Fin n) → ℝ}
+private theorem comp_bound_nonneg {C D : List (Fin n) → List (Fin n) → ℝ}
     (hC : ∀ s t, 0 ≤ C s t) (hD : ∀ s t, 0 ≤ D s t) (α β : List (Fin n)) :
-    0 ≤ compBound C D α β :=
+    0 ≤ (β.sublists'.revzip.map fun t =>
+        (α.sublists'.revzip.map fun s => C s.1 t.1 * D s.2 t.2).sum).sum :=
   List.sum_nonneg fun _ h => by
     obtain ⟨t, -, rfl⟩ := List.mem_map.1 h
     exact List.sum_nonneg fun _ h' => by
       obtain ⟨s, -, rfl⟩ := List.mem_map.1 h'
       exact mul_nonneg (hC _ _) (hD _ _)
-
-/-- A constant factor of the first family of bounds pulls out of `compBound`. -/
-theorem compBound_const_mul_left (c : ℝ) (C D : List (Fin n) → List (Fin n) → ℝ)
-    (α β : List (Fin n)) :
-    compBound (fun s t => c * C s t) D α β = c * compBound C D α β := by
-  simp only [compBound, mul_assoc, List.sum_map_mul_left]
-
-/-- If every product `C s₁ t₁ * D s₂ t₂` of the bounds tends to zero, then so does
-`compBound C D α β`. -/
-theorem tendsto_compBound {ι : Type*} {l : Filter ι} {C D : ι → List (Fin n) → List (Fin n) → ℝ}
-    (h : ∀ s₁ t₁ s₂ t₂, Filter.Tendsto (fun i => C i s₁ t₁ * D i s₂ t₂) l (nhds 0))
-    (α β : List (Fin n)) :
-    Filter.Tendsto (fun i => compBound (C i) (D i) α β) l (nhds 0) := by
-  have := tendsto_list_sum (a := fun _ => (0 : ℝ)) β.sublists'.revzip fun t _ => by
-    simpa using tendsto_list_sum (a := fun _ => (0 : ℝ)) α.sublists'.revzip
-      fun s _ => h s.1 t.1 s.2 t.2
-  simpa [compBound] using this
 
 /-- The pointwise composition `(x, ξ) ↦ b(x, ξ) ∘ a(x, ξ)` of symbols of orders `m'` and `m` is a
 symbol of order `m' + m`. For matrix-valued symbols this is the matrix product. -/
@@ -829,9 +788,9 @@ def comp (b : Symbol n W U m') (a : Symbol n V W m) : Symbol n V U (m' + m) wher
   exists_bound K hK α β := by
     choose C hC0 hC using fun s t => b.exists_bound K hK s t
     choose D hD0 hD using fun s t => a.exists_bound K hK s t
-    exact ⟨_, compBound_nonneg hC0 hD0 α β, fun x hx ξ => norm_mixedDeriv_comp_le
-      b.contDiff_coefficient a.contDiff_coefficient (fun s t _ _ => hC s t x hx ξ)
-      (fun s t _ _ => hD s t x hx ξ)⟩
+    exact ⟨_, comp_bound_nonneg hC0 hD0 α β, fun x hx ξ => norm_mixedDeriv_comp_le
+      b.contDiff_coefficient a.contDiff_coefficient (fun s t => hC s t x hx ξ)
+      (fun s t => hD s t x hx ξ) α β⟩
 
 @[simp]
 theorem coefficient_comp (b : Symbol n W U m') (a : Symbol n V W m)
@@ -928,9 +887,9 @@ theorem IsUniform.comp {b : Symbol n W U m'} {a : Symbol n V W m} (hb : b.IsUnif
   intro α β
   choose C hC0 hC using hb
   choose D hD0 hD using ha
-  exact ⟨_, compBound_nonneg hC0 hD0 α β, fun x ξ => norm_mixedDeriv_comp_le
-    b.contDiff_coefficient a.contDiff_coefficient (fun s t _ _ => hC s t x ξ)
-    (fun s t _ _ => hD s t x ξ)⟩
+  exact ⟨_, comp_bound_nonneg hC0 hD0 α β, fun x ξ => norm_mixedDeriv_comp_le
+    b.contDiff_coefficient a.contDiff_coefficient (fun s t => hC s t x ξ)
+    (fun s t => hD s t x ξ) α β⟩
 
 /-- Composing a symbol with compact spatial support on the right with another symbol keeps compact
 spatial support. -/

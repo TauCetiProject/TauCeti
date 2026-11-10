@@ -77,6 +77,9 @@ form they recover the vector-space definitions.
 * `SmoothTwoForm.hamiltonianCurvature_congr_of_eventuallyEq`,
   `SmoothTwoForm.hamiltonianCurvature_continuation`: the curvature is local in the domain, and a
   continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`.
+* `SmoothTwoForm.hamiltonianCurvature_eq_zero_of_cylindrical`: the curvature vanishes along a line
+  near which the perturbation is cylindrical; the vector-space case is
+  `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_eq`: the pointwise energy identity.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_zero_left_nonneg`,
   `SmoothTwoForm.continuous_hamiltonianCurvature_zero_left_comp` and
@@ -415,6 +418,23 @@ theorem hamiltonianCurvature_continuation (ω : SmoothTwoForm I M) {β : ℝ →
   simp only [hamiltonianCurvature_def, poissonBracket_const_left, fderiv_const_apply,
     zero_apply, sub_zero]
   exact fderiv_mul_apply_stdComplexLineReal (h := fun t ↦ H t x) hβ hH
+
+/-- A datum `K = K_s ds + K_t dt` with `K_s = 0` and `K_t` independent of `s` near the line
+`s = c` has zero curvature along that line. -/
+theorem hamiltonianCurvature_eq_zero_of_cylindrical (ω : SmoothTwoForm I M)
+    {Ks Kt : ℝ × ℝ → M → ℝ} {c : ℝ} (hKs : ∀ᶠ s in 𝓝 c, ∀ t, Ks (s, t) = 0)
+    (hKt : ∀ᶠ s in 𝓝 c, ∀ t, Kt (s, t) = Kt (c, t)) (t : ℝ) (x : M) :
+    ω.hamiltonianCurvature Ks Kt (c, t) x = 0 := by
+  have hfst : Tendsto Prod.fst (𝓝 ((c, t) : ℝ × ℝ)) (𝓝 c) := continuous_fst.tendsto (c, t)
+  have hs : Ks =ᶠ[𝓝 (c, t)] fun _ _ ↦ 0 := by
+    filter_upwards [hfst.eventually hKs] with w hw
+    funext x
+    simpa using congrFun (hw w.2) x
+  have ht : Kt =ᶠ[𝓝 (c, t)] fun w ↦ Kt (c, w.2) := by
+    filter_upwards [hfst.eventually hKt] with w hw
+    simpa using hw w.2
+  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hs ht]
+  exact ω.hamiltonianCurvature_cylindrical (fun t ↦ Kt (c, t)) (c, t) x
 
 end Curvature
 
@@ -962,6 +982,17 @@ theorem eval₂_constSmooth_mfderiv_stdComplexLine (ω : SymplecticForm V) (u : 
       ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
   rw [← SmoothTwoForm.floerEnergyDensity_zero, floerEnergyDensity_constSmooth,
     floerEnergyDensity_zero]
+
+open Filter Topology in
+/-- A datum `K = K_s ds + K_t dt` on a symplectic vector space with `K_s = 0` and `K_t` independent
+of `s` near the line `s = c` has zero curvature along that line. This is the constant-form case of
+`TauCeti.SmoothTwoForm.hamiltonianCurvature_eq_zero_of_cylindrical`. -/
+theorem hamiltonianCurvature_eq_zero_of_cylindrical (ω : SymplecticForm V)
+    {Ks Kt : ℝ × ℝ → V → ℝ} {c : ℝ} (hKs : ∀ᶠ s in 𝓝 c, ∀ t, Ks (s, t) = 0)
+    (hKt : ∀ᶠ s in 𝓝 c, ∀ t, Kt (s, t) = Kt (c, t)) (t : ℝ) (x : V) :
+    ω.hamiltonianCurvature Ks Kt (c, t) x = 0 := by
+  simpa only [hamiltonianCurvature_constSmooth] using
+    ω.constSmooth.hamiltonianCurvature_eq_zero_of_cylindrical hKs hKt t x
 
 open MeasureTheory Set Filter Topology in
 /-- **The energy identity for compactly supported perturbation data.** Let the perturbation data

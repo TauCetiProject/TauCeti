@@ -5,11 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 public import TauCeti.Analysis.Normed.Operator.Banach
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 
 /-!
 # Elliptic homogeneous symbols and their inverses
@@ -212,7 +212,7 @@ theorem fderiv_coefficient_inverse {p : X × E} (hp : p.2 ≠ 0) (q : X × E) :
     fderiv ℝ (a.inverse ha).coefficient p q =
       -((a.inverse ha).coefficient p ∘L (fderiv ℝ a.coefficient p q ∘L
         (a.inverse ha).coefficient p)) :=
-  fderiv_clm_inverse (a.differentiableAt_coefficient hp) (ha p.1 p.2 hp) q
+  (a.differentiableAt_coefficient hp).fderiv_clm_inverse (ha p.1 p.2 hp) q
 
 /-- The spatial derivative of the inverse of an elliptic symbol is `-(a⁻¹ ∘ ∂ₓa ∘ a⁻¹)`. -/
 theorem spatialDeriv_inverse (v : X) :
