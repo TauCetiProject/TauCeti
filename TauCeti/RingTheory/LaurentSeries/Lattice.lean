@@ -329,12 +329,6 @@ theorem mem_lattice_iff_le_orderTop {a : ℤ} {f : HahnModule ℤ R V} :
   rw [mem_lattice_iff, ← LaurentSeries.mem_lattice_iff (R := R),
     LaurentSeries.mem_lattice_iff_le_orderTop]
 
-/-- Every module-valued Laurent series lies in the lattice at its finite order. -/
-theorem mem_lattice_order (f : HahnModule ℤ R V) :
-    f ∈ lattice R V ((of R).symm f).order := by
-  rw [mem_lattice_iff]
-  exact fun _ hn ↦ HahnSeries.coeff_eq_zero_of_lt_order hn
-
 /-- The comparison from Hahn series to Hahn modules preserves lattice membership. -/
 @[simp]
 theorem of_mem_lattice_iff {a : ℤ} {f : HahnSeries ℤ V} :
@@ -454,6 +448,12 @@ end TauCeti.HahnModule
 namespace HahnModule
 
 open TauCeti.HahnModule
+
+/-- Every module-valued Laurent series lies in the lattice at its finite order. -/
+theorem mem_lattice_order (R V : Type*) [Semiring R] [AddCommMonoid V] [Module R V]
+    (f : HahnModule ℤ R V) : f ∈ lattice R V ((of R).symm f).order := by
+  rw [mem_lattice_iff]
+  exact fun _ hn ↦ HahnSeries.coeff_eq_zero_of_lt_order hn
 
 /-- Multiplying by a Laurent monomial translates the lattice bound. -/
 theorem single_smul_mem_lattice_iff {R V : Type*} [Semiring R] [AddCommMonoid V]
