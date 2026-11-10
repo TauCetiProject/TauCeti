@@ -77,14 +77,19 @@ theorem naturalParameterization_toReal_eVariationOn (hγ : BoundedVariationOn γ
     hγ.locallyBoundedVariationOn.naturalParameterization_variationOnFromTo (left_mem_Icc.2 hab)
       (right_mem_Icc.2 hab)
 
-/-- If a curve of bounded variation on `[a, b]` (`a ≤ b`) has equal endpoint values `γ a = γ b`,
-then its natural parameterization takes equal values at `0` and at the length of the curve. -/
+/-- If a curve has equal endpoint values `γ a = γ b` on `[a, b]`, then its natural
+parameterization takes equal values at `0` and at the length of the curve. -/
 theorem naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn
-    (hγ : BoundedVariationOn γ (Icc a b)) (hab : a ≤ b) (hclosed : γ a = γ b) :
+    (hclosed : γ a = γ b) :
     naturalParameterization γ (Icc a b) a 0 =
-      naturalParameterization γ (Icc a b) a (eVariationOn γ (Icc a b)).toReal :=
-  (hγ.locallyBoundedVariationOn.naturalParameterization_zero (left_mem_Icc.mpr hab)).trans
-    (hclosed.trans (hγ.naturalParameterization_toReal_eVariationOn hab).symm)
+      naturalParameterization γ (Icc a b) a (eVariationOn γ (Icc a b)).toReal := by
+  by_cases hγ : BoundedVariationOn γ (Icc a b)
+  · by_cases hab : a ≤ b
+    · exact (hγ.locallyBoundedVariationOn.naturalParameterization_zero
+        (left_mem_Icc.mpr hab)).trans
+        (hclosed.trans (hγ.naturalParameterization_toReal_eVariationOn hab).symm)
+    · simp [Icc_eq_empty hab]
+  · simp [not_not.mp hγ]
 
 /-- Cumulative variation maps the parameter interval of a continuous rectifiable curve onto its
 length interval. -/
@@ -102,13 +107,21 @@ The factor has exactly the parameter difference as variation on every subinterva
 when the original curve has pauses or zero length. Values of the factor outside its length
 interval are unspecified. -/
 theorem exists_arclength_factorization (hγ : BoundedVariationOn γ (Icc a b))
-    (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) :
+    (hcont : ContinuousOn γ (Icc a b)) :
     ∃ g : ℝ → X,
       LipschitzOnWith 1 g (Icc 0 (eVariationOn γ (Icc a b)).toReal) ∧
       EqOn (g ∘ variationOnFromTo γ (Icc a b) a) γ (Icc a b) ∧
       ∀ u ∈ Icc 0 (eVariationOn γ (Icc a b)).toReal,
         ∀ v ∈ Icc 0 (eVariationOn γ (Icc a b)).toReal, u ≤ v →
           eVariationOn g (Icc u v) = ENNReal.ofReal (v - u) := by
+  rcases lt_or_ge b a with hba | hab
+  · have h0 : eVariationOn γ (Icc a b) = 0 := by simp [Icc_eq_empty hba.not_ge]
+    refine ⟨fun _ ↦ γ 0, ?_, fun t ht ↦ ?_, fun u hu v hv _ ↦ ?_⟩
+    · exact (LipschitzWith.const _).weaken zero_le_one |>.lipschitzOnWith
+    · simp [Icc_eq_empty hba.not_ge] at ht
+    · rw [h0, ENNReal.toReal_zero, Icc_self, mem_singleton_iff] at hu hv
+      subst hu hv
+      simp
   let s := variationOnFromTo γ (Icc a b) a
   let L := (eVariationOn γ (Icc a b)).toReal
   have ha : a ∈ Icc a b := left_mem_Icc.mpr hab
@@ -173,19 +186,26 @@ theorem image_naturalParameterization_Icc (hγ : BoundedVariationOn γ (Icc a b)
 /-- The natural parameterization of a continuous rectifiable curve has unit speed on its length
 interval. -/
 theorem hasUnitSpeedOn_naturalParameterization (hγ : BoundedVariationOn γ (Icc a b))
-    (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) :
+    (hcont : ContinuousOn γ (Icc a b)) :
     HasUnitSpeedOn (naturalParameterization γ (Icc a b) a)
       (Icc 0 (eVariationOn γ (Icc a b)).toReal) := by
+  rcases lt_or_ge b a with hba | hab
+  · have h0 : eVariationOn γ (Icc a b) = 0 := by simp [Icc_eq_empty hba.not_ge]
+    rw [h0, ENNReal.toReal_zero]
+    intro x hx y hy
+    rw [Icc_self, mem_singleton_iff] at hx hy
+    subst hx hy
+    simp
   rw [← hγ.image_variationOnFromTo_Icc hcont hab]
   exact has_unit_speed_naturalParameterization γ hγ.locallyBoundedVariationOn (left_mem_Icc.2 hab)
 
 /-- The natural parameterization of a continuous rectifiable curve has, on its length interval,
 the same length as the curve. -/
 theorem eVariationOn_naturalParameterization (hγ : BoundedVariationOn γ (Icc a b))
-    (hcont : ContinuousOn γ (Icc a b)) (hab : a ≤ b) :
+    (hcont : ContinuousOn γ (Icc a b)) :
     eVariationOn (naturalParameterization γ (Icc a b) a)
       (Icc 0 (eVariationOn γ (Icc a b)).toReal) = eVariationOn γ (Icc a b) := by
-  have h := hγ.hasUnitSpeedOn_naturalParameterization hcont hab
+  have h := hγ.hasUnitSpeedOn_naturalParameterization hcont
     (left_mem_Icc.2 ENNReal.toReal_nonneg) (right_mem_Icc.2 ENNReal.toReal_nonneg)
   rwa [inter_self, NNReal.coe_one, one_mul, sub_zero, ENNReal.ofReal_toReal hγ] at h
 

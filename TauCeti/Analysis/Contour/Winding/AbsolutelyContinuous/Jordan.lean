@@ -582,7 +582,8 @@ theorem jordanSign_naturalParameterization_eq_one_or_neg_one
   (hγ.absolutelyContinuousOnInterval_naturalParameterization hcont
       hab.le).jordanSign_eq_one_or_neg_one
     (hγ.toReal_eVariationOn_pos_of_injOn_Ioo hab (hinj.mono Ioo_subset_Ico_self))
-    (hγ.naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn hab.le hclosed)
+    (BoundedVariationOn.naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn
+      hclosed)
     (hγ.injOn_naturalParameterization_Ico hcont hinj hab.le)
 
 /-- **The Jordan index theorem for the arclength parametrization of a rectifiable simple closed
@@ -603,7 +604,8 @@ theorem windingNumber_naturalParameterization_eq_jordanSign
   exact (hγ.absolutelyContinuousOnInterval_naturalParameterization hcont
       hab.le).windingNumber_eq_jordanSign_of_mem_filledHull_sdiff
     (hγ.toReal_eVariationOn_pos_of_injOn_Ioo hab (hinj.mono Ioo_subset_Ico_self))
-    (hγ.naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn hab.le hclosed)
+    (BoundedVariationOn.naturalParameterization_zero_eq_naturalParameterization_toReal_eVariationOn
+      hclosed)
     (hγ.injOn_naturalParameterization_Ico hcont hinj hab.le) hz'
 
 /-- **Increasing continuous reparametrizations preserve the arclength orientation sign of a
