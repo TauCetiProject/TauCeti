@@ -82,7 +82,8 @@ Two statements are worth singling out.
 * `TauCeti.BilinForm.IsIsometry.det_sq_eq_one`: `(det f) ^ 2 = 1` for an isometry of a form whose
   Gram determinant is a non-zero-divisor.
 * `TauCeti.BilinForm.IsIsometry.det_eq_one_of_isAlt`: an isometry of a nondegenerate alternating
-  form on a finite-dimensional vector space has determinant `1`.
+  form on a vector space has determinant `1` (by convention when the space is
+  infinite-dimensional).
 * `LinearMap.BilinForm.Isometry.injective`: an isometric embedding of a left-separating form is
   injective.
 * `TauCeti.BilinForm.IsIsometry.bijective`: over an integral domain, an isometry of a
@@ -544,17 +545,19 @@ end CommRing
 
 section Field
 
-variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
   {B : BilinForm K V} {f : V →ₗ[K] V}
 
 /-- **Isometries of a nondegenerate alternating form have determinant one.** On a
 finite-dimensional space the form has a symplectic basis, in which the matrix of an isometry is
-symplectic. -/
+symplectic. On an infinite-dimensional space the determinant is `1` by convention. -/
 theorem IsIsometry.det_eq_one_of_isAlt (hB : B.IsAlt) (hnd : B.Nondegenerate)
     (hf : IsIsometry B f) :
     LinearMap.det f = 1 := by
-  obtain ⟨m, b, hb⟩ := hB.exists_basis_toMatrix_eq_J hnd
-  exact hf.det_eq_one_of_toMatrix_eq_J b hb
+  by_cases h : Module.Finite K V
+  · obtain ⟨m, b, hb⟩ := hB.exists_basis_toMatrix_eq_J hnd
+    exact hf.det_eq_one_of_toMatrix_eq_J b hb
+  · exact LinearMap.det_eq_one_of_not_module_finite h f
 
 end Field
 

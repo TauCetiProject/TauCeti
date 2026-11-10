@@ -42,6 +42,10 @@ The homogeneous terms enter the expansion through their cut-off terms
 * `TauCeti.ClassicalSymbol.isSmoothing_toSymbol_iff`: a classical symbol is smoothing exactly when
   all of its homogeneous terms vanish; `TauCeti.ClassicalSymbol.ofIsSmoothing` makes every
   smoothing symbol classical;
+* `TauCeti.ClassicalSymbol.termsLinearMap`: the homogeneous terms as a linear map, whose kernel
+  consists of the smoothing classical symbols (`TauCeti.ClassicalSymbol.mem_ker_termsLinearMap`);
+  `TauCeti.ClassicalSymbol.isSmoothing_toSymbol_sub_iff`: two classical symbols differ by a
+  smoothing symbol exactly when their homogeneous terms agree;
 * `TauCeti.ClassicalSymbol.ofHomogeneous`: the classical symbol `χ(ξ) a(x, ξ)` of a single
   homogeneous term, whose principal symbol is `a`;
 * `TauCeti.ClassicalSymbol.inclusion`: a classical symbol of order `m - k`, `k ∈ ℕ`, is classical
@@ -374,6 +378,10 @@ theorem principal_ofHomogeneous : (ofHomogeneous χ a).principal = a :=
 theorem term_ofHomogeneous_succ (j : ℕ) : (ofHomogeneous χ a).term (j + 1) = 0 :=
   (rfl)
 
+@[simp]
+theorem ofHomogeneous_zero : ofHomogeneous χ (0 : HomogeneousSymbol _ _ V W m) = 0 :=
+  ext (map_zero (cutoffSymbol χ))
+
 end Examples
 
 section PrincipalKernel
@@ -463,6 +471,13 @@ theorem term_inclusion_add (j : ℕ) :
   simp only [term_inclusion, Nat.le_add_right, ↓reduceDIte, coefficient_castDegree]
   rw [coefficient_congr_index b.term (Nat.add_sub_cancel_left k j)]
 
+/-- Including a classical symbol into a strictly larger order kills its principal symbol. -/
+@[simp]
+theorem principal_inclusion_succ (k : ℕ) (hk : m' = m - (k + 1 : ℕ)) :
+    (inclusion (k + 1) hk b).principal = 0 := by
+  ext1
+  simp
+
 theorem inclusion_injective :
     Function.Injective (inclusion (n := n) (V := V) (W := W) k hk) := fun _ _ h =>
   ext (Symbol.inclusion_injective _ (congrArg toSymbol h))
@@ -499,6 +514,12 @@ theorem term_tail (j : ℕ) :
     (a.tail χ).term j = (a.term (j + 1)).castDegree (by push_cast; ring) :=
   (rfl)
 
+/-- A classical symbol is its cut-off principal term plus its tail, included back into order
+`m`. -/
+theorem inclusion_tail_add_ofHomogeneous :
+    inclusion 1 (by simp) (a.tail χ) + ofHomogeneous χ a.principal = a :=
+  ext <| Symbol.ext <| funext fun p => by simp
+
 end Tail
 
 /-! ### The principal symbol sequence
@@ -526,16 +547,11 @@ theorem principalLinearMap_apply (a : ClassicalSymbol n V W m) :
 zero exactly when it is a classical symbol of order `m - 1`. -/
 theorem principal_eq_zero_iff_exists_inclusion (a : ClassicalSymbol n V W m) :
     a.principal = 0 ↔ ∃ b : ClassicalSymbol n V W (m - 1), inclusion 1 (by simp) b = a := by
-  refine ⟨fun h => ⟨a.tail default, ext ?_⟩, ?_⟩
-  · -- With a vanishing leading term, the remainder after it is `a` itself.
-    have h0 : (a.term 0).coefficient = 0 := by
-      simpa using congrArg HomogeneousSymbol.coefficient h
-    ext1
-    funext p
-    simp [h0]
+  refine ⟨fun h => ⟨a.tail default, ?_⟩, ?_⟩
+  · -- With a vanishing leading term, `a` is the inclusion of its tail.
+    simpa [h] using inclusion_tail_add_ofHomogeneous default a
   · rintro ⟨b, rfl⟩
-    ext1
-    simp
+    exact principal_inclusion_succ b 0 (by simp)
 
 variable (n V W m) in
 /-- **The kernel of the principal symbol** is the image of the classical symbols of order
@@ -730,6 +746,38 @@ theorem ofHomogeneous_comp_ofHomogeneous (χ χ' : FrequencyCutoff (CoordinateSp
   simp [smul_smul, mul_comm]
 
 end Comp
+
+/-! ### The homogeneous terms as a linear map -/
+
+section Terms
+
+variable (n V W m) in
+/-- The homogeneous terms `(a_{m-j})ⱼ` of a classical symbol of order `m`, as a linear map to the
+sequences of homogeneous symbols of degrees `m - j`. -/
+def termsLinearMap : ClassicalSymbol n V W m →ₗ[ℂ]
+    ∀ j : ℕ, HomogeneousSymbol (CoordinateSpace n) (CoordinateSpace n) V W (m - j) where
+  toFun a := a.term
+  map_add' a b := funext fun j => term_add a b j
+  map_smul' c a := funext fun j => term_smul a c j
+
+@[simp]
+theorem termsLinearMap_apply (a : ClassicalSymbol n V W m) : termsLinearMap n V W m a = a.term :=
+  (rfl)
+
+/-- The classical symbols with vanishing homogeneous terms are exactly the smoothing ones. -/
+theorem mem_ker_termsLinearMap {a : ClassicalSymbol n V W m} :
+    a ∈ LinearMap.ker (termsLinearMap n V W m) ↔ a.toSymbol.IsSmoothing := by
+  simp only [LinearMap.mem_ker, termsLinearMap_apply, isSmoothing_toSymbol_iff, funext_iff,
+    Pi.zero_apply]
+
+/-- **Uniqueness modulo smoothing.** Two classical symbols of order `m` differ by a smoothing
+symbol exactly when they have the same homogeneous terms. -/
+theorem isSmoothing_toSymbol_sub_iff {a b : ClassicalSymbol n V W m} :
+    (a.toSymbol - b.toSymbol).IsSmoothing ↔ a.term = b.term := by
+  rw [← toSymbol_sub, isSmoothing_toSymbol_iff, funext_iff]
+  simp [sub_eq_zero]
+
+end Terms
 
 end ClassicalSymbol
 

@@ -497,7 +497,7 @@ theorem map_log {S : Type*} [CommRing S] [Algebra ℚ S] (f : R →+* S) :
 @[simp]
 theorem map_exp {S : Type*} [CommRing S] [Algebra ℚ S] (f : R →+* S) :
     F.exp.map f = (F.map f).exp := by
-  rw [exp, PowerSeries.map_substInvOfIsUnit f F.constantCoeff_log, exp]
+  rw [exp, PowerSeries.map_substInvOfIsUnit f, exp]
   congr 1
   exact F.map_log f
 
