@@ -128,7 +128,7 @@ of a finite sum of weighted increments equals the sum of the expected squared he
 the interval lengths. The intervals are pairwise chronologically disjoint, but their index type
 need not be ordered. Heights are known at their own left endpoints and belong to `L²`;
 no independence between heights is assumed. Empty families and zero-length intervals are allowed. -/
-theorem integral_sq_sum_mul_sub_of_ordered (hW : IsFilteredPreBrownianReal ℱ W P)
+theorem integral_sq_sum_mul_sub_of_pairwise_disjoint (hW : IsFilteredPreBrownianReal ℱ W P)
     {ι : Type*} (I : Finset ι) {s t : ι → ℝ≥0} {X : ι → Ω → ℝ}
     (hst : ∀ i ∈ I, s i ≤ t i)
     (hdisj : (I : Set ι).Pairwise fun i j => t i ≤ s j ∨ t j ≤ s i)
@@ -180,7 +180,7 @@ theorem integral_sq_sum_mul_sub (hW : IsFilteredPreBrownianReal ℱ W P)
     (ha₂ : ∀ i < n, MemLp (a i) 2 P) :
     ∫ ω, (∑ i ∈ range n, a i ω * (W (τ (i + 1)) ω - W (τ i) ω)) ^ 2 ∂P =
       ∑ i ∈ range n, (∫ ω, a i ω ^ 2 ∂P) * ((τ (i + 1) : ℝ) - τ i) := by
-  apply hW.integral_sq_sum_mul_sub_of_ordered (range n)
+  apply hW.integral_sq_sum_mul_sub_of_pairwise_disjoint (range n)
     (fun i hi => hτ (by simpa using (mem_range.mp hi).le)
       (by simpa using Nat.succ_le_of_lt (mem_range.mp hi)) (Nat.le_succ i))
     (hX := fun i hi => ha i (mem_range.mp hi)) (hXi := fun i hi => ha₂ i (mem_range.mp hi))
@@ -222,9 +222,10 @@ theorem integral_sq_sum_mul_sub_min (hW : IsFilteredPreBrownianReal ℱ W P)
     ∫ ω, (∑ i ∈ I, X i ω * (W (min (t i) T) ω - W (min (s i) T) ω)) ^ 2 ∂P =
       ∑ i ∈ I, (∫ ω, X i ω ^ 2 ∂P) * (↑(min (t i) T) - ↑(min (s i) T)) := by
   classical
-  -- Discard intervals not yet started before applying the terminal-grid theorem. Their
-  -- heights need not be measurable at the observation time.
-  have h := hW.integral_sq_sum_mul_sub_of_ordered (I.filter fun i => s i < T)
+  -- Discard intervals not yet started before applying the disjoint-family isometry
+  -- integral_sq_sum_mul_sub_of_pairwise_disjoint. Their heights need not be measurable
+  -- at the observation time.
+  have h := hW.integral_sq_sum_mul_sub_of_pairwise_disjoint (I.filter fun i => s i < T)
     (s := s) (t := fun i => min (t i) T) (X := X)
     (fun i hi => le_min (hst i (mem_filter.mp hi).1) (mem_filter.mp hi).2.le)
     (fun i hi j hj hij => (hdisj (mem_filter.mp hi).1 (mem_filter.mp hj).1 hij).imp
