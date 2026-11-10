@@ -65,12 +65,15 @@ namespace TauCeti
 
 open _root_.HahnSeries
 
-variable {k : Type*} [Semiring k] [NoZeroDivisors k] [Nontrivial k] {n : ℕ}
+variable {k : Type*} [Semiring k] [NoZeroDivisors k] {n : ℕ}
 
 /-- The order of a power of a nonzero Laurent series is the corresponding multiple of its
 integer order. -/
 theorem laurentSeries_orderTop_pow_of_ne_zero (n : ℕ) {w : k⸨X⸩} (hw : w ≠ 0) :
     (w ^ n).orderTop = ((n : ℤ) * w.order : ℤ) := by
+  have : Nontrivial k := by
+    rw [← not_subsingleton_iff_nontrivial]
+    exact fun _ ↦ hw (Subsingleton.elim _ _)
   rw [hahnSeries_orderTop_pow, ← order_eq_orderTop_of_ne_zero hw,
     ← WithTop.coe_nsmul, nsmul_eq_mul]
 
