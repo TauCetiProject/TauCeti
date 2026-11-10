@@ -77,13 +77,9 @@ theorem manifoldMorseIndex_scalar_comp_add_manifoldMorseIndex_eq_finrank
     apply h.morseIndex_scalar_comp_add_morseIndex_eq_finrank
     · simpa using hφ
     · simpa using hφ'
-  · have hle (g : M → ℝ) : manifoldMorseIndex I g x ≤ Module.finrank ℝ E := by
-      rw [manifoldMorseIndex_def, morseIndex_def]
-      rw [← sigPos_neg]
-      exact sigPos_le_finrank _
-    have h0 : Module.finrank ℝ E = 0 := Module.finrank_of_not_finite (by simpa using hE)
-    have h1 := hle (φ ∘ f)
-    have h2 := hle f
+  · have h0 : Module.finrank ℝ E = 0 := Module.finrank_of_not_finite (by simpa using hE)
+    have h1 := manifoldMorseIndex_le_finrank (I := I) (f := φ ∘ f) (x := x)
+    have h2 := manifoldMorseIndex_le_finrank (I := I) (f := f) (x := x)
     omega
 
 end IsManifoldNondegenerateCriticalPoint

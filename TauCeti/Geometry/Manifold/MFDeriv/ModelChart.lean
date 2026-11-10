@@ -43,9 +43,6 @@ open set.
   `C^n` chart of the model space with `C^n` inverse is again in the maximal atlas.
 * `TauCeti.mfderiv_eq_zero_iff_of_eqOn`: on the source of `e`, the differential of `f` vanishes at
   `y` if and only if the Fréchet derivative of `h` vanishes at `e y`.
-* `TauCeti.mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm`: the differential of
-  `f` vanishes at `x` if and only if the Fréchet derivative of its coordinate expression in the
-  preferred chart vanishes at `extChartAt 𝓘(𝕜, E) x x`.
 * `TauCeti.isOpen_setOf_mfderiv_ne_zero`: the points where the differential of a `C^1` map is
   nonzero form an open set.
 -/
@@ -248,18 +245,6 @@ theorem contDiffOn_comp_chartAt_symm {n : WithTop ℕ∞} [IsManifold 𝓘(𝕜,
   (hf.comp_contMDiffOn contMDiffOn_chart_symm).contDiffOn
 
 variable [IsManifold 𝓘(𝕜, E) 1 M]
-
-/-- The differential of `f` vanishes at `x` if and only if the Fréchet derivative of the
-coordinate expression of `f` in the preferred extended chart at `x` vanishes at
-`extChartAt 𝓘(𝕜, E) x x`. -/
-theorem mfderiv_eq_zero_iff_fderiv_comp_extChartAt_symm {x : M} :
-    mfderiv 𝓘(𝕜, E) 𝓘(𝕜, F) f x = 0 ↔
-      fderiv 𝕜 (f ∘ (extChartAt 𝓘(𝕜, E) x).symm) (extChartAt 𝓘(𝕜, E) x x) = 0 := by
-  have hext : ((extChartAt 𝓘(𝕜, E) x).symm : E → M) = (chartAt E x).symm := by ext; simp
-  have hext' : extChartAt 𝓘(𝕜, E) x x = chartAt E x x := by simp
-  rw [hext, hext']
-  exact mfderiv_eq_zero_iff_of_eqOn (IsManifold.chart_mem_maximalAtlas x)
-    (eqOn_comp_chartAt_symm x) (mem_chart_source E x)
 
 /-- The points where the differential of a `C^1` function is nonzero form an open set. -/
 theorem isOpen_setOf_mfderiv_ne_zero (hf : ContMDiff 𝓘(𝕜, E) 𝓘(𝕜, F) 1 f) :
