@@ -125,7 +125,7 @@ theorem LocallyIntegrableOn.exists_hasWeakFDerivOn_integrableOn_of_uniformIntegr
       (∫⁻ x in Ω, ‖g x‖ₑ ∂μ) ≤ liminf (fun i => ∫⁻ x in Ω, ‖U i x‖ₑ ∂μ) l := by
   have hlsc := totalVariationOn_le_liminf
     (.of_forall fun i => (hv i).locallyIntegrableOn) hu hconv
-  obtain ⟨C, hC⟩ : ∃ C : ℝ≥0, ∀ i, eLpNorm (U i) 1 (μ.restrict Ω) ≤ C :=
+  obtain ⟨C, hC⟩ : ∃ C : NNReal, ∀ i, eLpNorm (U i) 1 (μ.restrict Ω) ≤ C :=
     ⟨_, fun i ↦ (le_iSup (fun i ↦ eLpNorm (U i) 1 (μ.restrict Ω)) i).trans_eq
       (ENNReal.coe_toNNReal hUI.iSup_eLpNorm_lt.ne).symm⟩
   have hnorm (i : ι) : (∫⁻ x in Ω, ‖U i x‖ₑ ∂μ) ≤ C := by

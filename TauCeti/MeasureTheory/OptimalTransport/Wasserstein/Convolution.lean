@@ -131,7 +131,7 @@ theorem wassersteinEDist_map_add_right_le_enorm [MeasurableAdd E]
     (hd : Measurable fun z : E × E ↦ edist z.1 z.2) (μ : Measure E) [IsProbabilityMeasure μ]
     (a : E) : wassersteinEDist p μ (μ.map (· + a)) ≤ ‖a‖ₑ := by
   refine (wassersteinEDist_map_le hd (measurable_add_const a).aemeasurable p).trans ?_
-  simp only [edist_eq_enorm_neg_add, neg_add_cancel_left]
+  simp only [eDist_eq_eNorm_neg_add, neg_add_cancel_left]
   simpa using eLpNorm_le_of_ae_eNorm_bound (p := p) (μ := μ) (f := fun _ : E ↦ ‖a‖ₑ)
     aestronglyMeasurable_const (.of_forall fun _ ↦ le_rfl)
 

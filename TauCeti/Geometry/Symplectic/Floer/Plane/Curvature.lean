@@ -551,7 +551,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_image_realChart
   -- The band and the closed rectangle differ by a null set.
   have hae : s =ᵐ[volume] Icc ((a, -1 / 2) : ℝ × ℝ) (b, 1 / 2) := by
     rw [Icc_prod_eq, Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq (ae_eq_refl _) (preimage_endSign_mul_ae_eq p)
+    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl (preimage_endSign_mul_ae_eq p)
   -- Integrability over the image transfers to the pulled-back densities on the rectangle.
   have hint {g g' : ℝ × ℝ → ℝ} (hg : IntegrableOn g (φ '' s))
       (hg' : ∀ w, g' w = (fderiv ℝ φ w).det * g (φ w)) :

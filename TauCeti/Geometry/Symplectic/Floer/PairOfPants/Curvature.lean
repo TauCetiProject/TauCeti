@@ -531,7 +531,7 @@ private theorem IsNondegenerate.integral_floerEnergyDensity_endChart_rect
   have hae : Icc a₁ b₁ ×ˢ Ico (-1 / 2 : ℝ) (1 / 2) =ᵐ[volume]
       Icc ((a₁, -1 / 2) : ℝ × ℝ) (b₁, 1 / 2) := by
     rw [Icc_prod_eq, Measure.volume_eq_prod]
-    exact Measure.set_prod_ae_eq (ae_eq_refl _) Ico_ae_eq_Icc
+    exact Measure.set_prod_ae_eq Filter.EventuallyEqSet.rfl Ico_ae_eq_Icc
   simp only [setIntegral_congr_set hae]
   have hIccU : Icc ((a₁, -1 / 2) : ℝ × ℝ) (b₁, 1 / 2) ⊆ U := fun z hz => hU₁ (by
     rw [Icc_prod_eq] at hz

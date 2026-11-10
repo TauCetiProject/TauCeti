@@ -120,7 +120,7 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
   swap
   · -- Weakly compact sets are bounded.
     obtain ⟨R, hR⟩ := isBounded_iff_forall_norm_le.1 hA.isBounded_toWeakSpace_preimage
-    refine ⟨R.toNNReal, fun f ↦ ?_⟩
+    refine lt_of_le_of_lt (iSup_le fun f ↦ ?_) ENNReal.ofReal_lt_top
     rw [← Lp.eNorm_def, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal
       (hR f (subset_closure (s := toWeakSpace 𝕜 (Lp 𝕜 1 μ) '' A) (mem_image_of_mem _ f.2)))
@@ -205,13 +205,13 @@ closure exactly when it is norm bounded and uniformly integrable. -/
 theorem isCompact_closure_toWeakSpace_iff_isBounded_and_unifIntegrable {A : Set (Lp 𝕜 1 μ)} :
     IsCompact (closure (toWeakSpace 𝕜 (Lp 𝕜 1 μ) '' A)) ↔
       IsBounded A ∧ UnifIntegrable (fun f : A ↦ (f : α → 𝕜)) 1 μ := by
-  rw [isCompact_closure_toWeakSpace_iff_uniformIntegrable, UniformIntegrable, and_comm]
-  refine and_congr_left' ⟨fun ⟨C, hC⟩ ↦ ?_, fun hA ↦ ?_⟩
-  · refine isBounded_iff_forall_norm_le.2 ⟨C, fun f hf ↦ ?_⟩
-    rw [Lp.norm_def]
-    exact ENNReal.toReal_le_of_le_ofReal C.coe_nonneg (by simpa using hC ⟨f, hf⟩)
+  rw [isCompact_closure_toWeakSpace_iff_uniformIntegrable]
+  refine ⟨fun h ↦ ⟨isBounded_iff_forall_norm_le.2
+    ⟨(⨆ f : A, eLpNorm (f : α → 𝕜) 1 μ).toReal, fun f hf ↦ ?_⟩, h.1⟩, fun ⟨hA, hui⟩ ↦ ?_⟩
+  · rw [Lp.norm_def]
+    exact ENNReal.toReal_mono h.2.ne (le_iSup (fun f : A ↦ eLpNorm (f : α → 𝕜) 1 μ) ⟨f, hf⟩)
   · obtain ⟨R, hR⟩ := isBounded_iff_forall_norm_le.1 hA
-    refine ⟨R.toNNReal, fun f ↦ ?_⟩
+    refine ⟨hui, lt_of_le_of_lt (iSup_le fun f ↦ ?_) ENNReal.ofReal_lt_top⟩
     rw [← Lp.eNorm_def, ← ofReal_norm]
     exact ENNReal.ofReal_le_ofReal (hR f f.2)
 

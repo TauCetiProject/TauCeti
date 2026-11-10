@@ -103,7 +103,7 @@ theorem isTOrthogonalFamily_one_iff [IsUltrametricDist M] {e : I → M} :
       ∀ (s : Finset I) (a : I → R), ‖∑ i ∈ s, a i • e i‖₊ = s.sup fun i ↦ ‖a i • e i‖₊ := by
   simp only [isTOrthogonalFamily_def, one_mul]
   exact forall₂_congr fun s a ↦
-    ⟨fun h ↦ le_antisymm (Finset.nnnorm_sum_le_sup_nnnorm s _) h, ge_of_eq⟩
+    ⟨fun h ↦ le_antisymm (Finset.nnNorm_sum_le_sup_nnNorm s _) h, ge_of_eq⟩
 
 end Defs
 
@@ -239,7 +239,7 @@ theorem mul_max_nnnorm_le_nnnorm_smul_add [NormedField K] [NormedAddCommGroup M]
   refine max_le h₁ ?_
   rcases le_or_gt ‖z‖₊ ‖c • w‖₊ with h | h
   · exact (mul_le_mul_of_nonneg_left h zero_le).trans h₁
-  · rw [IsUltrametricDist.nnnorm_add_eq_max_of_nnnorm_ne_nnnorm h.ne, max_eq_right h.le]
+  · rw [IsUltrametricDist.nnNorm_add_eq_max_of_nnNorm_ne_nnNorm h.ne, max_eq_right h.le]
     exact mul_le_of_le_one_left zero_le hr
 
 /-- Adjoining a vector orthogonal to the span of a finite orthogonal family preserves

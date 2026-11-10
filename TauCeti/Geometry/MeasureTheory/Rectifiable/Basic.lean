@@ -75,12 +75,12 @@ theorem mono_ae (hs : CountablyRectifiable k s) (ht : t ≤ᵐ[μHE[k]] s) :
 /-- Arbitrary subsets of rectifiable sets are rectifiable; in particular this allows
 restriction to measurable sets without an additional measurability assumption. -/
 theorem mono (hs : CountablyRectifiable k s) (ht : t ⊆ s) : CountablyRectifiable k t :=
-  hs.mono_ae ht.eventuallyLE
+  hs.mono_ae ht.eventuallySubset
 
 /-- Countable rectifiability is independent of the representative modulo `μHE[k]`. -/
 theorem congr (hs : CountablyRectifiable k s) (hst : s =ᵐ[μHE[k]] t) :
     CountablyRectifiable k t :=
-  hs.mono_ae hst.symm.le
+  hs.mono_ae hst.symm.subset
 
 /-- A single Lipschitz patch is countably rectifiable. -/
 theorem of_lipschitzWith {A : Set (EuclideanSpace ℝ (Fin k))} {f : A → X} {K : ℝ≥0}

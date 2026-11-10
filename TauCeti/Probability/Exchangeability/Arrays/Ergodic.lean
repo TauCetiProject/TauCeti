@@ -240,7 +240,7 @@ theorem jointlyDissociated_of_ergodicSMul {ρ : Measure (ℕ × ℕ → α)} [Is
     MeasureTheory.aeconst_of_forall_preimage_smul_ae_eq FinitaryPerm
       ((arrayTail_le_ambient (X := fun p (x : ℕ × ℕ → α) => x p) 0
         fun p _ _ => measurable_pi_apply p) s hs).nullMeasurableSet
-      fun g => EventuallyEq.of_eq (by
+      fun g => Filter.EventuallyEqSet.of_eq (by
         rw [preimage_finitaryPerm_smul_array_eq_self_of_measurableSet_arrayTail hs g])
   rcases eventuallyEmptyOrUniv_iff'.mp hconst with h | h
   · exact Or.inl (by simpa using measure_congr h)
@@ -395,7 +395,7 @@ theorem jointlyDissociated_iff_ergodicSMul_pair {ρ : Measure (ℕ × ℕ → α
     have hact : (fun x : ℕ × ℕ → α => (g, g) • x) = fun x => g • x := by
       funext x p
       simp [finitaryPermPair_smul_array_apply, finitaryPerm_smul_array_apply]
-    exact EventuallyEq.of_eq (by rw [← hact, hinv (g, g)])
+    exact Filter.EventuallyEqSet.of_eq (by rw [← hact, hinv (g, g)])
   · intro herg
     let := hexch.smulInvariantMeasure_pair
     let : ErgodicSMul (FinitaryPerm × FinitaryPerm) (ℕ × ℕ → α) ρ := herg
@@ -410,7 +410,7 @@ theorem jointlyDissociated_iff_ergodicSMul_pair {ρ : Measure (ℕ × ℕ → α
         (FinitaryPerm × FinitaryPerm)
         ((arrayTail_le_ambient (X := fun p (x : ℕ × ℕ → α) => x p) 0
           fun p _ _ => measurable_pi_apply p) s hs).nullMeasurableSet
-        fun g => EventuallyEq.of_eq (by
+        fun g => Filter.EventuallyEqSet.of_eq (by
           rw [preimage_finitaryPermPair_smul_array_eq_self_of_measurableSet_arrayTail hs g])
     rcases eventuallyEmptyOrUniv_iff'.mp hconst with h | h
     · exact Or.inl (by simpa using measure_congr h)

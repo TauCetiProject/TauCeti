@@ -123,7 +123,7 @@ theorem linearIndependent_mk_iff (hR : ∀ a : R, zpowCeil ‖(ϖ.unit : R)‖ �
   refine ⟨fun hli ↦ isOrthonormalFamily_def.2 fun s a ↦ le_antisymm ?_ ?_,
     linearIndependent_mk_of_isOrthonormalFamily⟩
   · -- The ultrametric upper bound.
-    refine (Finset.nnnorm_sum_le_sup_nnnorm _ _).trans (Finset.sup_mono_fun fun i _ ↦ ?_)
+    refine (Finset.nnNorm_sum_le_sup_nnNorm _ _).trans (Finset.sup_mono_fun fun i _ ↦ ?_)
     refine (nnNorm_smul_le _ _).trans (mul_le_of_le_one_right' ?_)
     rw [← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one]
     exact mem_unitClosedBallSubmodule.mp (e i).2

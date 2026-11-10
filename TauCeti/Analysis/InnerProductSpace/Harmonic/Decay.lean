@@ -161,7 +161,7 @@ private lemma norm_sq_le_of_mem_ball_half {x₀ x : E} {R : ℝ} (hR : 0 < R)
   have h := (hu.mono hsub).measureReal_ball_mul_norm_sq_le_setIntegral (μ := μ)
   have hmono : ∫ z in ball x (R / 2), ‖u z‖ ^ 2 ∂μ ≤ ∫ z in ball x₀ R, ‖u z‖ ^ 2 ∂μ :=
     setIntegral_mono_set hint (ae_of_all _ fun _ ↦ by positivity)
-      (ball_subset_closedBall.trans hsub).eventuallyLE
+      (ball_subset_closedBall.trans hsub).eventuallySubset
   rw [μ.addHaar_real_ball_of_pos x (half_pos hR), div_pow] at h
   rw [le_div_iff₀ (by positivity)]
   have h2 : (0 : ℝ) < 2 ^ finrank ℝ E := by positivity
@@ -208,7 +208,7 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.setIntegral_ball_norm_sq_le {x₀
       exact one_le_pow₀ (by rw [← mul_div_assoc, le_div_iff₀ hR]; linarith)
     calc ∫ x in ball x₀ ρ, ‖u x‖ ^ 2 ∂μ ≤ I :=
           setIntegral_mono_set hint (ae_of_all _ fun _ ↦ by positivity)
-            (ball_subset_ball hρR).eventuallyLE
+            (ball_subset_ball hρR).eventuallySubset
       _ ≤ 2 ^ finrank ℝ E * (ρ / R) ^ finrank ℝ E * I := le_mul_of_one_le_left hI hle
 
 /-- Comparing the mean values of `u` over two balls of the same radius `s`: if `‖u‖ ≤ M` on both,
@@ -447,7 +447,7 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.setIntegral_ball_norm_sub_setAver
     _ ≤ 4 * I := by
         gcongr
         exact setIntegral_mono_set hint (ae_of_all _ fun _ ↦ by positivity)
-          (ball_subset_ball hρR).eventuallyLE
+          (ball_subset_ball hρR).eventuallySubset
     _ ≤ _ := by gcongr
 
 /-! ### Linear changes of variables -/
@@ -480,7 +480,7 @@ theorem setIntegral_ball_norm_sq_le_of_harmonicOnNhd_comp (e : E' ≃L[ℝ] E)
   have hI : 0 ≤ I := setIntegral_nonneg measurableSet_ball fun _ _ ↦ by positivity
   have hmono : ∫ x in ball x₀ ρ, ‖u x‖ ^ 2 ∂μ ≤ I :=
     setIntegral_mono_set hint (ae_of_all _ fun _ ↦ by positivity)
-      (ball_subset_ball hρR).eventuallyLE
+      (ball_subset_ball hρR).eventuallySubset
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- In a zero-dimensional space all the powers are `1`.
     simpa [n, finrank_zero_of_subsingleton] using hmono
@@ -589,7 +589,7 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp (e : E'
       _ ≤ 4 * I := by
           refine mul_le_mul_of_nonneg_left ?_ (by norm_num)
           exact setIntegral_mono_set hint (ae_of_all _ fun _ ↦ by positivity)
-            (ball_subset_ball hρR).eventuallyLE
+            (ball_subset_ball hρR).eventuallySubset
       _ ≤ K * I := by gcongr
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- In a zero-dimensional space `u` is constant, so the left side vanishes.
@@ -645,7 +645,7 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp (e : E'
       _ ≤ 4 * ∫ y in ball (e.symm x₀) (a * ρ), ‖(u ∘ e) y - c'‖ ^ 2 ∂ν := by
           refine mul_le_mul_of_nonneg_left ?_ (by norm_num)
           exact setIntegral_mono_set (hint''.mono_set ((ball_subset_ball hle).trans hsub))
-            (ae_of_all _ fun _ ↦ by positivity) hsup.eventuallyLE
+            (ae_of_all _ fun _ ↦ by positivity) hsup.eventuallySubset
       _ ≤ 4 * (2 ^ (3 * n + 8) * (n + 1) ^ 2 * (a * ρ / (R / b)) ^ (n + 2) *
             ∫ y in ball (e.symm x₀) (R / b), ‖(u ∘ e) y - c‖ ^ 2 ∂ν) := by
           gcongr
@@ -653,7 +653,7 @@ theorem setIntegral_ball_norm_sub_setAverage_sq_le_of_harmonicOnNhd_comp (e : E'
             ∫ y in e ⁻¹' ball x₀ R, ‖(u ∘ e) y - c‖ ^ 2 ∂ν) := by
           refine mul_le_mul_of_nonneg_left
             (mul_le_mul_of_nonneg_left ?_ (by positivity)) (by norm_num)
-          exact setIntegral_mono_set hint' (ae_of_all _ fun _ ↦ by positivity) hsub.eventuallyLE
+          exact setIntegral_mono_set hint' (ae_of_all _ fun _ ↦ by positivity) hsub.eventuallySubset
       _ = _ := by
           -- `MeasurePreserving.setIntegral_preimage_emb` matches the goal only after unfolding
           -- `∘`, so state the pullback of `I` in the form in which it appears here.

@@ -84,7 +84,8 @@ theorem apply_eval_algebraMap_eq_of_linearDeriv_eq_zero
       congr 1
       · simp
       · exact Finset.prod_congr rfl fun l hl ↦ by simp [Finset.ne_of_mem_erase hl]
-    simp_rw [hupd, φ.map_sum_finset, φ.map_smul_univ, hprod, _root_.map_sum, _root_.map_smul]
+    simp_rw [hupd, φ.map_sum_finset, φ.map_smul_univ, RingHom.id_apply, hprod, _root_.map_sum,
+        _root_.map_smul]
     rw [Finset.sum_comm]
     simp only [P, derivative_sum, derivative_C_mul, derivative_prod_finset, derivative_X_pow,
       eval_finsetSum, eval_mul, eval_C, eval_prod, eval_pow, eval_X, Finset.mul_sum, smul_eq_mul]

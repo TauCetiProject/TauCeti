@@ -216,7 +216,8 @@ theorem tendsto_eLpNorm_dist_iff_tendstoInMeasure_and_uniformIntegrable (hp : 1 
   -- the distances to the reference map `T₀` are uniformly integrable with the bound `C`, and the
   -- reference map transports to the basepoint `y₀`
   have hui' : UniformIntegrable (fun n x ↦ dist (T n x) (T₀ x)) p μ :=
-    ⟨hui.dist_of_memLp_dist hp hp' hT hT₀ (by simpa only [dist_comm] using hT₀p), C, hC⟩
+    ⟨hui.dist_of_memLp_dist hp hp' hT hT₀ (by simpa only [dist_comm] using hT₀p),
+      lt_of_le_of_lt (iSup_le hC) ENNReal.coe_lt_top⟩
   exact ⟨hTm, hui'.dist_of_memLp_dist hp hp' hT aemeasurable_const hT₀p⟩
 
 end Vitali

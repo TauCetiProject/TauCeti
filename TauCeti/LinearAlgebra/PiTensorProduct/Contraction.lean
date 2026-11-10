@@ -76,21 +76,21 @@ private noncomputable def contractTensorPairMultilinear (B : LinearMap.BilinForm
             (fun b => v b.val) :=
         update_comp_eq_of_forall_ne v z (fun b => b.property.1)
       simp only [LinearMap.smul_apply, smul_eq_mul, update_self, update_of_ne hij.symm, hup,
-        map_smul,
-        smul_smul]
+        map_smul, smul_smul, RingHom.id_apply]
     by_cases haj : a = j
     · subst a
       have hup (z : M) :
           (fun b : {b : ι // b ≠ i ∧ b ≠ j} => update v j z b.val) =
             (fun b => v b.val) :=
         update_comp_eq_of_forall_ne v z (fun b => b.property.2)
-      simp only [update_self, update_of_ne hij, hup, map_smul, smul_smul, smul_eq_mul]
+      simp only [update_self, update_of_ne hij, hup, map_smul, smul_smul, smul_eq_mul,
+        RingHom.id_apply]
     let a' : {b : ι // b ≠ i ∧ b ≠ j} := ⟨a, hai, haj⟩
     have hup (z : M) : (fun b : {b : ι // b ≠ i ∧ b ≠ j} => update v a z b.val) =
         update (fun b => v b.val) a' z := by
       exact update_comp_eq_of_injective v Subtype.val_injective a' z
     simp only [update_of_ne (Ne.symm hai), update_of_ne (Ne.symm haj), hup,
-      (PiTensorProduct.tprod R).map_update_smul, smul_comm (B (v i) (v j)) c]
+      (PiTensorProduct.tprod R).map_update_smul, RingHom.id_apply, smul_comm (B (v i) (v j)) c]
 
 /-- Contract two distinct slots against a bilinear form. The remaining factors keep their
 original indices, restricted to the complement of the contracted pair. -/
