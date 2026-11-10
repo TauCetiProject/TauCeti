@@ -281,8 +281,9 @@ theorem IsMetricCompatible.cottonTensor_eq_zero_of_schoutenTensor_eq_smul_inner
     (cov := cov) hcov c h x]
 
 /-- A metric-compatible connection of constant curvature `R(w,u)v = κ (⟨u,v⟩ w - ⟨w,v⟩ u)`, with
-`κ` the same at every point, has vanishing Cotton tensor. In dimension at most `2` the Schouten
-tensor is `0` by the convention `0⁻¹ = 0`, so only dimension at least `3` has content. -/
+`κ` the same at every point, has vanishing Cotton tensor. In dimension `2` the Schouten tensor is
+`0` by the convention `0⁻¹ = 0`, and in dimension at most `1` the curvature vanishes, so only
+dimension at least `3` has content. -/
 theorem IsMetricCompatible.cottonTensor_eq_zero_of_curvatureTensor_eq_smul_inner_sub
     (hcov : CovariantDerivative.IsMetricCompatible
       (V := fun y : M ↦ TangentSpace I y) cov) (k : ℝ)
