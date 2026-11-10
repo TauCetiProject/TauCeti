@@ -8,6 +8,8 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Analysis.Convex.Contractible
 
+import TauCeti.AlgebraicTopology.FundamentalGroup.Basic
+
 /-!
 # Consequences of a space not being simply connected
 
@@ -29,6 +31,8 @@ is turned into a homotopy equivalence by `e.toHomotopyEquiv`.
 
 * `TauCeti.not_simplyConnectedSpace_of_nontrivial_fundamentalGroup`: a space with a nontrivial
   fundamental group at some basepoint is not simply connected.
+* `TauCeti.simplyConnectedSpace_iff_forall_subsingleton_fundamentalGroup`: conversely, a path
+  connected space with trivial fundamental groups is simply connected.
 * `TauCeti.not_contractibleSpace_of_not_simplyConnectedSpace`: a non-simply-connected space is
   not contractible.
 * `TauCeti.isEmpty_homotopyEquiv_of_not_simplyConnectedSpace`,
@@ -47,6 +51,16 @@ simply connected space has a subsingleton fundamental group. -/
 theorem not_simplyConnectedSpace_of_nontrivial_fundamentalGroup {X : Type*} [TopologicalSpace X]
     (x : X) [Nontrivial (FundamentalGroup X x)] : ¬ SimplyConnectedSpace X :=
   fun _ => false_of_nontrivial_of_subsingleton (FundamentalGroup X x)
+
+/-- **Simple connectedness from the fundamental groups.** A space is simply connected exactly when
+it is path connected and its fundamental group at every basepoint is trivial. -/
+theorem simplyConnectedSpace_iff_forall_subsingleton_fundamentalGroup {X : Type*}
+    [TopologicalSpace X] :
+    SimplyConnectedSpace X ↔
+      PathConnectedSpace X ∧ ∀ x : X, Subsingleton (FundamentalGroup X x) := by
+  refine ⟨fun _ => ⟨inferInstance, fun _ => inferInstance⟩, fun ⟨_, h⟩ => ?_⟩
+  exact simply_connected_iff_loops_nullhomotopic.2
+    ⟨inferInstance, fun x => subsingleton_fundamentalGroup_iff.1 (h x)⟩
 
 /-- A **not simply connected** space is **not contractible**: a contractible space is simply
 connected. -/

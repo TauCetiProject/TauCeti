@@ -175,9 +175,7 @@ theorem isOpen_orbit_default (g : AddGeneratingFamily S r) :
     ext x
     simp only [mem_orbit_default_iff, Set.mem_iInter, Set.mem_ofPred_eq]
     refine ⟨fun h j ↦ by rw [monomialEmbedding_apply]; exact h _, fun h s ↦ ?_⟩
-    obtain ⟨a, ha⟩ := AddSubmonoid.exists_of_mem_closure_range g.toFun s (by
-      rw [g.spans]
-      trivial)
+    obtain ⟨a, ha⟩ := g.exists_eq_sum s
     rw [apply_single_eq_prod_monomialEmbedding g ha]
     exact Finset.prod_ne_zero_iff.2 fun j _ ↦ pow_ne_zero _ (h j)
   rw [h]

@@ -96,6 +96,43 @@ private theorem _root_.IsCoveringMap.mapOfNatTrans_apply (hp : _root_.IsCovering
       ⟨IsCoveringMap.mapOfNatTrans hp hq α e, IsCoveringMap.proj_mapOfNatTrans hp hq α e⟩ :=
   rfl
 
+/-- Naturality along a path inside the base-side domains of two sheets identifies the forced map
+with the target sheet's local inverse composed with the source projection. -/
+private theorem _root_.IsCoveringMap.mapOfNatTrans_eq_of_path_in_sheets
+    (hp : _root_.IsCoveringMap p) (hq : _root_.IsCoveringMap q)
+    (α : hp.monodromyFunctor ⟶ hq.monodromyFunctor)
+    (φp : OpenPartialHomeomorph X E) (φq : OpenPartialHomeomorph X F)
+    (hφp : ⇑φp.symm = p) (hφq : ⇑φq.symm = q) {e z : E} (γ : Path (p e) (p z))
+    (hγφp : ∀ t, γ t ∈ φp.source) (hγφq : ∀ t, γ t ∈ φq.source)
+    (heφp : e ∈ φp.target) (hzφp : z ∈ φp.target)
+    (hfeφq : IsCoveringMap.mapOfNatTrans hp hq α e ∈ φq.target) :
+    IsCoveringMap.mapOfNatTrans hp hq α z = φq (p z) := by
+  let f : E → F := IsCoveringMap.mapOfNatTrans hp hq α
+  have hqfe : q (f e) = p e := IsCoveringMap.proj_mapOfNatTrans hp hq α e
+  have hpzφq : p z ∈ φq.source := by simpa using hγφq 1
+  have hgz : q (φq (p z)) = p z := by
+    rw [← hφq]
+    exact φq.left_inv hpzφq
+  let e' : p ⁻¹' {p e} := ⟨e, rfl⟩
+  let z' : p ⁻¹' {p z} := ⟨z, rfl⟩
+  have hpmono : hp.monodromy (Path.Homotopic.Quotient.mk γ) e' = z' :=
+    IsCoveringMap.monodromy_eq_of_path_in_sheet hp φp hφp γ hγφp e' z' heφp hzφp
+  let fe' : q ⁻¹' {p e} := ⟨f e, hqfe⟩
+  let gz' : q ⁻¹' {p z} := ⟨φq (p z), hgz⟩
+  have hqmono : hq.monodromy (Path.Homotopic.Quotient.mk γ) fe' = gz' :=
+    IsCoveringMap.monodromy_eq_of_path_in_sheet hq φq hφq γ hγφq fe' gz' hfeφq
+      (φq.map_source hpzφq)
+  have hα := α.naturality_apply (Path.Homotopic.Quotient.mk γ) e'
+  have hαe : α.app (FundamentalGroupoid.mk (p e)) e' = fe' := by
+    simpa only [e', fe', f] using IsCoveringMap.mapOfNatTrans_apply hp hq α e
+  -- By definition, `monodromyFunctor.map γ` is `monodromy γ` on each fibre. Mathlib's simp lemma
+  -- `monodromyFunctor_map` does not fire through the `TypeCat` coercion, so the two functor-map
+  -- equations are obtained from the monodromy equations by definitional unfolding.
+  have hpmap : hp.monodromyFunctor.map (Path.Homotopic.Quotient.mk γ) e' = z' := hpmono
+  have hqmap : hq.monodromyFunctor.map (Path.Homotopic.Quotient.mk γ) fe' = gz' := hqmono
+  rw [hpmap, hαe, hqmap] at hα
+  exact congrArg Subtype.val hα
+
 /-- The map forced by a natural transformation of monodromy functors is continuous when the
 base is locally path-connected. -/
 private theorem _root_.IsCoveringMap.continuous_mapOfNatTrans [LocallyPathConnectedSpace X]
@@ -136,39 +173,10 @@ private theorem _root_.IsCoveringMap.continuous_mapOfNatTrans [LocallyPathConnec
   have hfg : IsCoveringMap.mapOfNatTrans hp hq α =ᶠ[𝓝 e] g := by
     filter_upwards [hVopen.mem_nhds heV] with z hz
     -- Transport from `e` to `z` inside both sheets and compare it by naturality of `α`.
-    have hpzU : p z ∈ U := hz.2
-    let joined : JoinedIn U x (p z) := hUpath.joinedIn x hxU (p z) hpzU
-    let γ : Path x (p z) := joined.somePath
-    have hγφp (t : I) : γ t ∈ φp.source := (hUsub (joined.somePath_mem t)).1
-    have hγφq (t : I) : γ t ∈ φq.source := (hUsub (joined.somePath_mem t)).2
-    let e' : p ⁻¹' {x} := ⟨e, rfl⟩
-    let z' : p ⁻¹' {p z} := ⟨z, rfl⟩
-    have hpmono : hp.monodromy (Path.Homotopic.Quotient.mk γ) e' = z' :=
-      IsCoveringMap.monodromy_eq_of_path_in_sheet hp φp hφp γ hγφp e' z' heφp hz.1
-    have hgz : q (g z) = p z := by
-      dsimp only [g]
-      exact hq.isLocalHomeomorph.apply_localInverseAt_of_mem (hUsub hpzU).2
-    let fe' : q ⁻¹' {x} := ⟨f e, hqfe⟩
-    let gz' : q ⁻¹' {p z} := ⟨g z, hgz⟩
-    have hgzφq : g z ∈ φq.target := by
-      dsimp only [g]
-      exact φq.map_source (hUsub hpzU).2
-    have hqmono : hq.monodromy (Path.Homotopic.Quotient.mk γ) fe' = gz' :=
-      IsCoveringMap.monodromy_eq_of_path_in_sheet hq φq hφq γ hγφq fe' gz' hfeφq hgzφq
-    have hα := ConcreteCategory.congr_hom
-      (α.naturality (Path.Homotopic.Quotient.mk γ)) e'
-    rw [_root_.IsCoveringMap.monodromyFunctor_map,
-      _root_.IsCoveringMap.monodromyFunctor_map] at hα
-    -- The rewrites leave bundled `Type` composites under `ConcreteCategory.hom`, where the
-    -- pointwise composition lemmas do not match, so expose their definitionally equal values.
-    change α.app (FundamentalGroupoid.mk (p z))
-        (hp.monodromy (Path.Homotopic.Quotient.mk γ) e') =
-      hq.monodromy (Path.Homotopic.Quotient.mk γ)
-        (α.app (FundamentalGroupoid.mk x) e') at hα
-    have hαe : α.app (FundamentalGroupoid.mk x) e' = fe' := by
-      simpa only [e', fe', f, x] using IsCoveringMap.mapOfNatTrans_apply hp hq α e
-    rw [hpmono, hαe, hqmono] at hα
-    exact congrArg Subtype.val hα
+    let joined : JoinedIn U x (p z) := hUpath.joinedIn x hxU (p z) hz.2
+    exact IsCoveringMap.mapOfNatTrans_eq_of_path_in_sheets hp hq α φp φq hφp hφq
+      joined.somePath (fun t ↦ (hUsub (joined.somePath_mem t)).1)
+      (fun t ↦ (hUsub (joined.somePath_mem t)).2) heφp hz.1 hfeφq
   exact (continuousAt_congr hfg).mpr hg
 
 /-- Over a locally path-connected base, every natural transformation between the monodromy

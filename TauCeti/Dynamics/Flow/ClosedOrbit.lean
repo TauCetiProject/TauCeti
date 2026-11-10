@@ -64,6 +64,8 @@ iterates.
   multiples of the minimal period.
 * `Flow.minimalPeriod_pos_iff`: the minimal period is positive exactly at periodic points which are
   not rest points.
+* `Flow.exists_periods_eq_zmultiples_inv`: if `1` is a period of a point which is not a rest
+  point, its periods are the multiples of `1 / n` for some `n ≥ 1`.
 * `Flow.ClosedOrbit.ext`: a closed orbit is determined by its image and its period.
 * `Flow.ClosedOrbit.multiplicity_mul_minimalPeriod`: the period is the multiplicity times the
   minimal period.
@@ -206,6 +208,18 @@ theorem minimalPeriod_pos_iff [T1Space α] :
   obtain ⟨n, rfl⟩ := (ϕ.apply_eq_self_iff_exists_zsmul hx).1 ht
   refine (ϕ.minimalPeriod_nonneg x).lt_of_ne fun h ↦ ht₀ ?_
   rw [← h, smul_zero]
+
+/-- If `1` is a period of a point `x` which is not a rest point, then the periods of `x` are the
+integer multiples of `1 / n` for some `n ≥ 1`. -/
+theorem exists_periods_eq_zmultiples_inv [T1Space α] (h₁ : ϕ 1 x = x) (hx : ∃ t, ϕ t x ≠ x) :
+    ∃ n : ℕ, 0 < n ∧ ϕ.periods x = AddSubgroup.zmultiples ((n : ℝ)⁻¹) := by
+  -- The period `1` is an integer multiple `k • p` of the minimal period `p`, with `k ≥ 1`.
+  obtain ⟨k, hk⟩ := (ϕ.apply_eq_self_iff_exists_zsmul hx).1 h₁
+  rw [zsmul_eq_mul] at hk
+  have hk₀ : (0 : ℝ) < k := pos_of_mul_pos_left (hk ▸ one_pos) (ϕ.minimalPeriod_nonneg x)
+  lift k to ℕ using (by exact_mod_cast hk₀.le)
+  have hp : ϕ.minimalPeriod x = (k : ℝ)⁻¹ := eq_inv_of_mul_eq_one_right (by exact_mod_cast hk)
+  exact ⟨k, by exact_mod_cast hk₀, by rw [ϕ.periods_eq_zmultiples_minimalPeriod hx, hp]⟩
 
 /-! ### Periodic trajectories and closed orbits -/
 

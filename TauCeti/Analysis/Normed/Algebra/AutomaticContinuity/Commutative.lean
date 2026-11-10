@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Normed.Algebra.Character
+public import TauCeti.Analysis.Normed.Algebra.Character.Basic
 public import TauCeti.Analysis.Normed.Operator.SeparatingSpace
 
 /-!

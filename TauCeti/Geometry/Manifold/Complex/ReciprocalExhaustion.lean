@@ -47,7 +47,7 @@ theorem IsManifoldStrictlyPlurisubharmonicAt.le_manifoldMorseIndex_inv_one_add
     (hc : IsManifoldNondegenerateCriticalPoint 𝓘(ℝ, E) f x) (hf : 1 + f x ≠ 0) :
     Module.finrank ℂ E ≤ manifoldMorseIndex 𝓘(ℝ, E) (fun y ↦ (1 + f y)⁻¹) x := by
   have hbound := h.manifoldMorseIndex_le hc.contMDiffAt
-    (mvfderiv_eq_zero_iff.mp hc.mvfderiv_eq_zero)
+    (mvfderiv_eq_zero_iff.mp (mem_criticalPoints.1 hc.mem_criticalPoints))
   have hsum := hc.manifoldMorseIndex_inv_one_add_add_manifoldMorseIndex_eq_finrank hf
   have hdim : Module.finrank ℝ E = 2 * Module.finrank ℂ E :=
     finrank_real_eq_two_mul_finrank_complex

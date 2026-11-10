@@ -127,7 +127,6 @@ theorem mem_frechetBarycenters {p : ℝ≥0∞} {μ : Measure X} {x : X} :
 minimizes the power functional. -/
 theorem isFrechetBarycenter_iff_forall_frechetPower_le {p : ℝ≥0∞} (hp₀ : p ≠ 0)
     (hp_top : p ≠ ⊤) {μ : Measure X} {x : X}
-    (hxm : AEMeasurable (fun y ↦ edist x y) μ)
     (hm : ∀ z, AEMeasurable (fun y ↦ edist z y) μ) :
     IsFrechetBarycenter p μ x ↔
       frechetRadius p μ x ≠ ⊤ ∧ ∀ z, frechetPower p μ x ≤ frechetPower p μ z := by
@@ -135,7 +134,7 @@ theorem isFrechetBarycenter_iff_forall_frechetPower_le {p : ℝ≥0∞} (hp₀ :
   rw [isFrechetMinimizer_iff]
   refine and_congr_right fun _ ↦ forall_congr' fun z ↦ ?_
   rw [← ENNReal.rpow_le_rpow_iff (ENNReal.toReal_pos hp₀ hp_top),
-    frechetRadius_rpow_eq_frechetPower hp₀ hp_top hxm,
+    frechetRadius_rpow_eq_frechetPower hp₀ hp_top (hm x),
     frechetRadius_rpow_eq_frechetPower hp₀ hp_top (hm z)]
 
 /-! ### The essential-supremum endpoint -/

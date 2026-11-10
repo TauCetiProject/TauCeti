@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Data.ZMod.Defs
 public import Mathlib.GroupTheory.Exponent
 public import Mathlib.GroupTheory.Index
 public import Mathlib.GroupTheory.SpecificGroups.Cyclic.Basic
+import Mathlib.Algebra.Field.ZMod
 import Mathlib.Algebra.Group.Subgroup.Pointwise
+import Mathlib.FieldTheory.Finiteness
 import Mathlib.Order.Zorn
 import TauCeti.Algebra.Module.ZMod.Span.Basic
 
@@ -50,6 +53,9 @@ corollary below drops it.
   exponent `p`, every set contains a finite subset `B` generating the same subgroup, which has
   `p ^ #B` elements. Unlike the separation results, its proof goes through the `𝔽_p`-vector space
   `Additive G`, where it is the extraction of a basis from a spanning set.
+* `TauCeti.nonempty_mulEquiv_of_exponent_dvd_of_natCard_eq_pow`: a commutative group of exponent
+  dividing `p` with `p ^ r` elements is isomorphic to `(ZMod p) ^ r`, written multiplicatively.
+  This is how a count of points identifies a group of `ℓ`-torsion points with `(ℤ/ℓℤ) ^ r`.
 -/
 
 public section
@@ -201,5 +207,29 @@ theorem exists_finset_subset_closure_eq_natCard_eq_pow [IsMulCommutative G] [Fin
     exact Nat.card_congr (Equiv.subtypeEquiv Additive.ofMul fun g ↦ by
       rw [← Subgroup.toAddSubgroup_closure]
       exact (Additive.mem_toAddSubgroup _ _).symm)
+
+open scoped IsMulCommutative in
+/-- **A finite elementary abelian `p`-group is `(ZMod p) ^ r`.** A commutative group all of whose
+elements satisfy `g ^ p = 1`, for `p` prime, and which has `p ^ r` elements, is isomorphic to the
+group `Fin r → ZMod p`, written multiplicatively.
+
+The group is an `𝔽_p`-vector space `Additive G`, whose dimension is read off its cardinality. -/
+theorem nonempty_mulEquiv_of_exponent_dvd_of_natCard_eq_pow [IsMulCommutative G] (hp : p.Prime)
+    (hexp : Monoid.exponent G ∣ p) {r : ℕ} (hcard : Nat.card G = p ^ r) :
+    Nonempty (G ≃* Multiplicative (Fin r → ZMod p)) := by
+  have : Fact p.Prime := ⟨hp⟩
+  have : Finite G := Nat.finite_of_card_ne_zero (by simp [hcard, hp.ne_zero])
+  -- A `have` rather than a `let`: with the unfolded structure, instance search for
+  -- `Module.Finite (ZMod p) (Additive G)` in the cardinality formula below gets stuck.
+  have _ : Module (ZMod p) (Additive G) := AddCommGroup.zmodModule fun x ↦ by
+    rw [← ofMul_toMul x, ← ofMul_pow, Monoid.exponent_dvd_iff_forall_pow_eq_one.mp hexp,
+      ofMul_one]
+  have hpow : p ^ r = p ^ Module.finrank (ZMod p) (Additive G) := by
+    rw [← hcard, ← Nat.card_congr Additive.toMul, Module.natCard_eq_pow_finrank (K := ZMod p),
+      Nat.card_zmod]
+  obtain ⟨e⟩ := FiniteDimensional.nonempty_linearEquiv_of_finrank_eq (R := ZMod p)
+    (M := Additive G) (M' := Fin r → ZMod p)
+    (by simpa using (Nat.pow_right_injective hp.two_le hpow).symm)
+  exact ⟨AddEquiv.toMultiplicativeRight e.toAddEquiv⟩
 
 end TauCeti

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Dagger.IntegralWashnitzer
+public import TauCeti.RingTheory.Dagger.IntegralWashnitzer.Basic
 public import Mathlib.RingTheory.Noetherian.Defs
 import Mathlib.Algebra.Polynomial.Lifts
 import Mathlib.RingTheory.Polynomial.Basic
@@ -147,9 +147,11 @@ by integral Weierstrass division, the quotient by that series is a finite `K°�
 private theorem fg_of_isDistinguished_mem [IsNoetherianRing Wint] {I : Ideal Wint'} {g : Wint'}
     (hgI : g ∈ I) {s : ℕ}
     (hg : PowerSeries.IsDistinguished 1 s
-      (restrictedOptionEquiv (toTate _ K (toWashnitzerAlgebra _ K g)) : PowerSeries Tate))
+      (restrictedOptionEquiv (washnitzerAlgebra.toTate _ K (toWashnitzerAlgebra _ K g)) :
+        PowerSeries Tate))
     (hu : IsUnit (PowerSeries.coeff s
-      (restrictedOptionEquiv (toTate _ K (toWashnitzerAlgebra _ K g)) : PowerSeries Tate)))
+      (restrictedOptionEquiv (washnitzerAlgebra.toTate _ K (toWashnitzerAlgebra _ K g)) :
+        PowerSeries Tate)))
     (hg1 : ‖toWashnitzerAlgebra _ K g‖ = 1) : I.FG := by
   let : Algebra Wint Wint' := (intOptionC (σ := σ) (K := K)).toAlgebra
   let J : Ideal Wint' := Ideal.span {g}

@@ -7,10 +7,10 @@ module
 
 public import Mathlib.NumberTheory.LocalField.Basic
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
-public import TauCeti.Topology.Algebra.Polynomial.RootLocus
+public import TauCeti.Topology.Algebra.Polynomial.Root.Locus
 import TauCeti.NumberTheory.LocalField.IntegerRing.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.Basic
-import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 import TauCeti.Topology.Algebra.ValuativeRel.AdicTopology
 import TauCeti.Topology.Algebra.ValuativeRel.ContinuousRingHom
 

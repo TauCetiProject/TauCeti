@@ -43,7 +43,7 @@ namespace TauCeti
 eventually `M + c * padicValNat p n ≤ n`. -/
 theorem eventually_add_mul_padicValNat_le (p M c : ℕ) :
     ∀ᶠ n in atTop, M + c * padicValNat p n ≤ n := by
-  simp only [Nat.padicValNat_def] at *
+  simp only [Nat.padicValNat_def]
   rcases lt_or_ge p 2 with hp | hp
   · -- For `p ≤ 1` the valuation vanishes identically.
     filter_upwards [eventually_ge_atTop M] with n hn
@@ -67,22 +67,23 @@ theorem eventually_add_mul_padicValNat_le (p M c : ℕ) :
 /-- Scaled by any constant `c`, the `p`-adic valuation of natural numbers is bounded by `n` up to
 an additive constant: for some `C`, `c * padicValNat p n ≤ n + C` for all `n`. -/
 theorem exists_mul_padicValNat_le_add (p c : ℕ) : ∃ C, ∀ n, c * padicValNat p n ≤ n + C := by
-  simp only [Nat.padicValNat_def] at *
   obtain ⟨N, hN⟩ := eventually_atTop.1 (eventually_add_mul_padicValNat_le p 0 c)
   refine ⟨c * N, fun n => ?_⟩
-  rcases lt_or_ge n N with hn | hn
-  · have := Nat.mul_le_mul_left c ((Nat.multiplicity_le_self (p := p) n).trans hn.le)
+  rcases le_total N n with hn | hn
+  · have := hN n hn
     omega
-  · simpa only [Nat.padicValNat_def, zero_add] using (hN n hn).trans (Nat.le_add_right n (c * N))
+  · have := Nat.mul_le_mul_left c
+      ((Nat.padicValNat_def.trans_le (Nat.multiplicity_le_self (p := p) n)).trans hn)
+    omega
 
 /-- If `e < (p - 1) * i`, then `e * padicValNat p n < i * (n - 1)` for every `n ≥ 2`. -/
 theorem mul_padicValNat_lt_mul_sub_one {p e i n : ℕ} (hi : e < (p - 1) * i)
     (hn : 2 ≤ n) : e * padicValNat p n < i * (n - 1) := by
-  simp only [Nat.padicValNat_def] at *
+  rw [Nat.padicValNat_def]
   set k := multiplicity p n
   -- From `p * k ≤ n`: `(p - 1) * k ≤ n - 1`, since `k = 0` or `k ≥ 1`.
   have hk : (p - 1) * k ≤ n - 1 := by
-    have h : p * k ≤ n := _root_.mul_multiplicity_le
+    have h : p * k ≤ n := mul_multiplicity_le
     rcases Nat.eq_zero_or_pos k with h0 | h0
     · simp [h0]
     · rw [Nat.sub_one_mul]
@@ -96,27 +97,23 @@ theorem mul_padicValNat_lt_mul_sub_one {p e i n : ℕ} (hi : e < (p - 1) * i)
 /-- The `p`-adic valuation of `n` is at most logarithmic in `n`:
 `padicValNat p n * log p ≤ log n`. -/
 theorem padicValNat_mul_log_le_log (p n : ℕ) : padicValNat p n * Real.log p ≤ Real.log n := by
-  simp only [Nat.padicValNat_def] at *
+  rw [Nat.padicValNat_def]
   rcases n.eq_zero_or_pos with rfl | hn
   · simp
   rcases p.eq_zero_or_pos with rfl | hp
   · simpa using Real.log_natCast_nonneg n
   rw [← Real.log_pow]
-  exact Real.log_le_log (by positivity)
-    (by exact_mod_cast Nat.le_of_dvd hn (pow_multiplicity_dvd p n))
+  exact Real.log_le_log (by positivity) (mod_cast Nat.le_of_dvd hn (pow_multiplicity_dvd p n))
 
 /-- The `p`-adic valuation of `n` is at most `log n / log 2`. -/
 theorem padicValNat_le_log_div_log_two (p n : ℕ) :
     (padicValNat p n : ℝ) ≤ Real.log n / Real.log 2 := by
-  simp only [Nat.padicValNat_def] at *
-  have hlog2 : 0 < Real.log 2 := Real.log_pos one_lt_two
+  rw [le_div_iff₀ (Real.log_pos one_lt_two)]
   rcases lt_or_ge p 2 with hp | hp
   · -- For `p ≤ 1` the valuation vanishes identically.
     obtain rfl | rfl : p = 0 ∨ p = 1 := by omega
-    all_goals simpa using div_nonneg (Real.log_natCast_nonneg n) hlog2.le
-  rw [le_div_iff₀ hlog2]
-  refine le_trans ?_ (by
-    simpa only [Nat.padicValNat_def] using padicValNat_mul_log_le_log p n)
+    all_goals simpa [Nat.padicValNat_def] using Real.log_natCast_nonneg n
+  refine le_trans ?_ (padicValNat_mul_log_le_log p n)
   gcongr
   exact_mod_cast hp
 

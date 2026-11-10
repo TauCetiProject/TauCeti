@@ -79,9 +79,9 @@ theorem mem_affineZeroLocus {x : σ → R} : x ∈ affineZeroLocus p ↔ ∀ k, 
   funext_iff
 
 /-- The common zero set of a family of polynomials is closed. -/
-theorem isClosed_affineZeroLocus [TopologicalSpace R] [IsTopologicalSemiring R] [T2Space R]
+theorem isClosed_affineZeroLocus [TopologicalSpace R] [IsTopologicalSemiring R] [T1Space R]
     (p : ι → MvPolynomial σ R) : IsClosed (affineZeroLocus p) :=
-  isClosed_eq (continuous_pi fun k ↦ continuous_eval (p k)) continuous_const
+  isClosed_singleton.preimage (continuous_pi fun k ↦ continuous_eval (p k))
 
 end CommSemiring
 

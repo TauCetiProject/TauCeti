@@ -113,7 +113,7 @@ unramified. -/
 theorem isUnramified_of_isUnit_discrim
     (hω : IsUnit (Algebra.trace 𝒪[K] 𝒪[L] ω ^ 2 - 4 * Algebra.norm 𝒪[K] ω)) :
     IsUnramified K L := by
-  have hli := linearIndependent_one_of_notMem_range_algebraMap 𝓀[K] 𝓀[L]
+  have hli := (linearIndependent_one_iff_notMem_range_algebraMap 𝓀[K] 𝓀[L]).mpr
     (residue_notMem_range_of_isUnit_discrim hω)
   have hle : 2 ≤ inertiaDegree K L := by
     rw [inertiaDegree_def]

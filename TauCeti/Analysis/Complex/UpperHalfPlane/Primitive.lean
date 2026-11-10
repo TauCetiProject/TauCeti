@@ -40,26 +40,6 @@ open scoped Interval
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
 variable {f : ℂ → E}
 
-namespace TauCeti
-
-/-- A holomorphic integrand on a ball has a primitive agreeing with any given primitive on
-the intersection of that ball with the upper half-plane. -/
-theorem exists_hasDerivAt_eqOn_ball_inter_upperHalfPlane {g : ℂ → E} {c : ℂ} {r : ℝ}
-    (hg : DifferentiableOn ℂ g (Metric.ball c r))
-    (hf : ∀ z ∈ Metric.ball c r ∩ upperHalfPlaneSet, HasDerivAt f (g z) z) :
-    ∃ G : ℂ → E, (∀ z ∈ Metric.ball c r, HasDerivAt G (g z) z) ∧
-      EqOn G f (Metric.ball c r ∩ upperHalfPlaneSet) := by
-  obtain ⟨P, hP⟩ := hg.isExactOn_ball
-  have hVopen : IsOpen (Metric.ball c r ∩ upperHalfPlaneSet) :=
-    Metric.isOpen_ball.inter isOpen_upperHalfPlaneSet
-  have hVpre : IsPreconnected (Metric.ball c r ∩ upperHalfPlaneSet) :=
-    ((convex_ball _ _).inter (convex_halfSpace_im_gt 0)).isPreconnected
-  obtain ⟨k, hk⟩ := hVopen.exists_eq_add_of_deriv_eq hVpre
-    (fun z hz => (hf z hz).differentiableAt.differentiableWithinAt)
-    (fun z hz => (hP z hz.1).differentiableAt.differentiableWithinAt)
-    (fun z hz => (hf z hz).deriv.trans (hP z hz.1).deriv.symm)
-  exact ⟨fun z => P z + k, fun z hz => (hP z hz).add_const k, fun z hz => (hk hz).symm⟩
-
 omit [CompleteSpace E] in
 -- This proof adapts
 -- `Complex.IsConservativeOn.eventually_nhds_wedgeIntegral_sub_wedgeIntegral` from
@@ -67,7 +47,7 @@ omit [CompleteSpace E] in
 /-- Wedge integrals based at a point of the upper half-plane are additive along any intermediate
 point there.  Equivalently, the integral around the rectangle left between the three wedge paths
 vanishes. -/
-theorem _root_.Complex.IsConservativeOn.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_upperHalfPlane
+theorem Complex.IsConservativeOn.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_upperHalfPlane
     (hf : IsConservativeOn f upperHalfPlaneSet) (hcont : ContinuousOn f upperHalfPlaneSet)
     {b z w : ℂ} (hb : b ∈ upperHalfPlaneSet) (hz : z ∈ upperHalfPlaneSet)
     (hw : w ∈ upperHalfPlaneSet) :
@@ -84,30 +64,18 @@ theorem _root_.Complex.IsConservativeOn.wedgeIntegral_sub_wedgeIntegral_eq_of_me
       IntervalIntegrable (fun x : ℝ ↦ f (x + y * Complex.I)) volume x₁ x₂ :=
     (hcont.comp (by fun_prop) (fun _ _ ↦ by simpa using hy)).intervalIntegrable
   have integrableVert (x y₁ y₂ : ℝ) (hy₁ : 0 < y₁) (hy₂ : 0 < y₂) :
-      IntervalIntegrable (fun y : ℝ ↦ f (x + y * Complex.I)) volume y₁ y₂ := by
-    apply ContinuousOn.intervalIntegrable
-    apply hcont.comp (by fun_prop)
-    intro y hy
-    rcases mem_uIcc.mp hy with hy | hy
-    · have : 0 < y := hy₁.trans_le hy.1
-      simpa using this
-    · have : 0 < y := hy₂.trans_le hy.1
-      simpa using this
+      IntervalIntegrable (fun y : ℝ ↦ f (x + y * Complex.I)) volume y₁ y₂ :=
+    (hcont.comp (by fun_prop) fun _ hy ↦ by
+      simpa using ordConnected_Ioi.uIcc_subset hy₁ hy₂ hy).intervalIntegrable
   have hI₁ : I₁ = I₃ + I₇ := by
-    rw [intervalIntegral.integral_add_adjacent_intervals]
-    · exact integrableHoriz _ _ _ hb
-    · exact integrableHoriz _ _ _ hb
+    rw [intervalIntegral.integral_add_adjacent_intervals] <;> exact integrableHoriz _ _ _ hb
   have hI₂ : I₂ = I₈ + I₆ := by
     rw [← smul_add, intervalIntegral.integral_add_adjacent_intervals]
     · exact integrableVert _ _ _ hb hz
     · exact integrableVert _ _ _ hz hw
   have hrect : Rectangle (z.re + b.im * Complex.I) (w.re + z.im * Complex.I) ⊆
       upperHalfPlaneSet := by
-    apply (convex_halfSpace_im_gt 0).rectangle_subset
-    · simpa using hb
-    · simpa using hz
-    · simpa using hz
-    · simpa using hb
+    apply (convex_halfSpace_im_gt 0).rectangle_subset <;> simp [hb.out, hz.out]
   have hI₀ : I₇ - I₅ + I₈ - I₄ = 0 := by
     simpa [← add_eq_zero_iff_eq_neg, wedgeIntegral_add_wedgeIntegral_eq] using
       hf (z.re + b.im * Complex.I) (w.re + z.im * Complex.I) hrect
@@ -115,7 +83,7 @@ theorem _root_.Complex.IsConservativeOn.wedgeIntegral_sub_wedgeIntegral_eq_of_me
 
 /-- The wedge integral of a holomorphic function from an upper-half-plane base point has derivative
 equal to the function at every point of the upper half-plane. -/
-theorem _root_.DifferentiableOn.hasDerivAt_wedgeIntegral_upperHalfPlane
+theorem DifferentiableOn.hasDerivAt_wedgeIntegral_upperHalfPlane
     (hf : DifferentiableOn ℂ f upperHalfPlaneSet) (b : UpperHalfPlane) {z : ℂ}
     (hz : z ∈ upperHalfPlaneSet) :
     HasDerivAt (fun w ↦ wedgeIntegral (b : ℂ) w f) (f z) z := by
@@ -128,5 +96,3 @@ theorem _root_.DifferentiableOn.hasDerivAt_wedgeIntegral_upperHalfPlane
   have hadd := hf.isConservativeOn.wedgeIntegral_sub_wedgeIntegral_eq_of_mem_upperHalfPlane
     hf.continuousOn b.coe_im_pos hz hw
   grind
-
-end TauCeti

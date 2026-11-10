@@ -95,7 +95,7 @@ theorem weightBasis_apply (i : Fin (d + 1)) :
 the unordered tuple indexing it lists its factors. -/
 theorem exists_weightBasis_eq_tprod (i : Fin (d + 1)) :
     ∃ f : Fin d → Fin 2, weightBasis d i = ⨂ₛ[ℂ] j, Pi.basisFun ℂ (Fin 2) (f j) := by
-  obtain ⟨f, hf⟩ := TauCeti.Sym.ofFn_surjective ((symFinTwoEquiv d).symm i)
+  obtain ⟨f, hf⟩ := Sym.ofFn_surjective ((symFinTwoEquiv d).symm i)
   exact ⟨f, by rw [weightBasis_apply, ← hf, Module.Basis.symmetricPower_apply,
     SymmetricPower.tprodOfSym_ofFn]⟩
 

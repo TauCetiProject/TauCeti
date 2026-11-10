@@ -133,11 +133,16 @@ theorem tsum_rootCount_eq_of_separable {n : ℕ} {a : Fin n → K} {f : 𝒪[K][
 /-- Almost everywhere on the Eisenstein region, the root counts over all totally ramified
 degree-`n` subextensions sum to `n`. This also holds in equal characteristic, because the
 inseparable Eisenstein polynomials have measure zero. -/
-theorem ae_tsum_rootCount_eq {n : ℕ} (hn : 0 < n)
+theorem ae_tsum_rootCount_eq {n : ℕ}
     [MeasurableSpace (Fin n → K)] [BorelSpace (Fin n → K)]
     (μ : Measure (Fin n → K)) [μ.IsAddHaarMeasure] :
     ∀ᵐ a ∂μ.restrict (eisensteinSet K n),
       ∑' L : totallyRamifiedOfDegree K n, (L.1.rootCount a : ℝ≥0∞) = n := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · have : IsEmpty (totallyRamifiedOfDegree K 0) := by
+      rw [totallyRamifiedOfDegree_zero]
+      infer_instance
+    exact Filter.Eventually.of_forall fun a ↦ by simp
   filter_upwards [ae_restrict_mem measurableSet_eisensteinSet,
     ae_separable_monicOfCoeff_restrict_eisensteinSet hn μ] with a ha hsep
   obtain ⟨f, hf, he⟩ := mem_eisensteinSet_iff_exists_isEisensteinAt.mp ha

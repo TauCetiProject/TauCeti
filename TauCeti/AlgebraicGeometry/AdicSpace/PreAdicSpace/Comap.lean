@@ -235,14 +235,9 @@ theorem comap_map_rationalLocalizationPoint (φ : A →+* B) (hφ : Continuous �
   have hmem : comap (completionLocRingHom g) w.1 ∈
       spa (completedPlusSubring P Aplus p.num p.den _ p.hasDenominatorPower) := by
     refine comap_mem_spa_completedPlusSubring P Aplus p.num p.den _ p.hasDenominatorPower _
-      (continuous_completionLocRingHom g) ((mem_spa_iff _ _).mp w.2).1
-      (fun a ha ↦ ?_) ?_
-    · rw [← RingHom.comp_apply, hcomp, RingHom.comp_apply]
-      exact ((mem_spa_iff _ _).mp w.2).2 _
-        (toCompletionLoc_mem_completedPlusSubring P' Bplus q.num q.den _
-          q.hasDenominatorPower (hplus a ha))
-    · rw [hcomap]
-      exact mem_spaBasicOpen.mp hy
+      (continuous_completionLocRingHom g) ((mem_spa_iff _ _).mp w.2).1 ?_
+    rw [hcomap]
+    exact mem_spaBasicOpen.mp hy
   have hpt :
       (spaCompletedLocalizationHomeomorph P Aplus hP p.num p.den _
         p.hasDenominatorPower).symm ⟨y, mem_spaBasicOpen.mp hy⟩ =
@@ -599,6 +594,21 @@ theorem presentationLimitRationalGerm_comp_stalkMap_presentationLimitPreAdicSpac
         ((spaBasicOpen_le_map_spaBasicOpen_iff φ hφ hplus).mpr hsub) x hy hx)
 
 /-! ### Functoriality -/
+
+/-- `presentationLimitPreAdicSpaceComap` depends on `(φ, hφ, hplus)` only through `φ`. -/
+theorem presentationLimitPreAdicSpaceComap_congr
+    {φ₁ φ₂ : A →+* B} (h : φ₁ = φ₂)
+    (hφ₁ : Continuous φ₁) (hφ₂ : Continuous φ₂)
+    (hplus₁ : ∀ a ∈ Aplus, φ₁ a ∈ Bplus) (hplus₂ : ∀ a ∈ Aplus, φ₂ a ∈ Bplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
+    (hBplus : ∀ ⦃b⦄, b ∈ Bplus → IsPowerBounded b)
+    (hP : P.ringOfDefinition ≤ Aplus) (hP' : P'.ringOfDefinition ≤ Bplus)
+    (hsheaf : Presheaf.IsSheaf (Opens.grothendieckTopology ↥(spa Bplus))
+      (presentationLimitPresheaf P' Bplus)) :
+    presentationLimitPreAdicSpaceComap φ₁ hφ₁ hplus₁ hAplus hBplus hP hP' hsheaf =
+      presentationLimitPreAdicSpaceComap φ₂ hφ₂ hplus₂ hAplus hBplus hP hP' hsheaf := by
+  subst h
+  rfl
 
 /-- **The identity of `A` induces the identity morphism** of `Spa(A, A⁺)`. -/
 @[simp]

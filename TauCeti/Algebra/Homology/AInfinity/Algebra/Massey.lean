@@ -472,6 +472,40 @@ theorem IsHomogeneous.value_mem_piece (hS : S.IsHomogeneous p q r) :
     S.value ∈ 𝒜.cohomologyGrading.piece (p + q + r - 1) :=
   𝒜.cohomologyClass_mem_cohomologyGrading_piece _ hS.cycle_mem_piece
 
+open _root_.DirectSum in
+/-- Projecting the bounding cochains `u`, `v` of a defining system to the degrees `p + q - 1`,
+`q + r - 1` projects the Massey cycle to degree `p + q + r - 1`, when `a`, `b`, `c` are
+homogeneous of degrees `p`, `q`, `r`. -/
+theorem cycle_projection (T : 𝒜.TripleMasseyDefiningSystem x y z) {p q r : ℤ}
+    (ha : T.a ∈ 𝒜.grading.piece p) (hb : T.b ∈ 𝒜.grading.piece q)
+    (hc : T.c ∈ 𝒜.grading.piece r) :
+    𝒜.m 2 ![(decompose 𝒜.grading.piece T.u (p + q - 1) : A), T.c] -
+        𝒜.m 2 ![𝒜.grading.koszulTwist 1 T.a, (decompose 𝒜.grading.piece T.v (q + r - 1) : A)] +
+      𝒜.m 3 ![T.a, T.b, T.c] =
+    (decompose 𝒜.grading.piece T.cycle (p + q + r - 1) : A) := by
+  have h₁ := DirectSum.map_decompose_shift 𝒜.grading.piece 𝒜.grading.piece
+    (𝒜.mul.flip T.c) (· + r) (add_left_injective r)
+    (fun _ _ h ↦ 𝒜.mul_mem_piece h hc) (p + q - 1) T.u
+  have h₂ := DirectSum.map_decompose_shift 𝒜.grading.piece 𝒜.grading.piece
+    (𝒜.mul (𝒜.grading.koszulTwist 1 T.a)) (p + ·) (add_right_injective p)
+    (fun _ _ h ↦ 𝒜.mul_mem_piece (𝒜.grading.koszulTwist_mem_piece ha 1) h)
+    (q + r - 1) T.v
+  have h₃ := 𝒜.m_three_mem_piece ha hb hc
+  rw [show p + q - 1 + r = p + q + r - 1 by ring] at h₁
+  rw [show p + (q + r - 1) = p + q + r - 1 by ring] at h₂
+  -- The projection lemma acts through additive-hom coercions. Unwrap them to expose the
+  -- linear-map applications before rewriting the propositional binary-operation formula.
+  change 𝒜.mul (decompose 𝒜.grading.piece T.u (p + q - 1) : A) T.c =
+    (decompose 𝒜.grading.piece (𝒜.mul T.u T.c) (p + q + r - 1) : A) at h₁
+  change 𝒜.mul (𝒜.grading.koszulTwist 1 T.a)
+    (decompose 𝒜.grading.piece T.v (q + r - 1) : A) =
+    (decompose 𝒜.grading.piece (𝒜.mul (𝒜.grading.koszulTwist 1 T.a) T.v)
+      (p + q + r - 1) : A) at h₂
+  simp only [mul_apply] at h₁ h₂
+  rw [TripleMasseyDefiningSystem.cycle_def, decompose_add, decompose_sub, DirectSum.add_apply,
+    DirectSum.sub_apply, Submodule.coe_add, Submodule.coe_sub, ← h₁, ← h₂,
+    decompose_of_mem_same _ h₃]
+
 end TripleMasseyDefiningSystem
 
 open _root_.DirectSum in
@@ -516,29 +550,8 @@ theorem exists_isHomogeneous_value_eq_iff {p q r : ℤ} (hx : x ∈ 𝒜.cohomol
     ⟨ha₂ ▸ hap, hb₂ ▸ hbq, hcT ▸ hcr, SetLike.coe_mem _, SetLike.coe_mem _⟩
   refine ⟨T', hT', ?_⟩
   -- The new Massey cycle is the degree-`(p + q + r - 1)` component of the old one.
-  have hcycle : T'.cycle = decompose 𝒜.grading.piece T.cycle (p + q + r - 1) := by
-    have h₁ := DirectSum.map_decompose_shift 𝒜.grading.piece 𝒜.grading.piece
-      (𝒜.mul.flip T.c) (· + r) (add_left_injective r)
-      (fun _ _ h ↦ 𝒜.mul_mem_piece h (hcT ▸ hcr)) (p + q - 1) T.u
-    have h₂ := DirectSum.map_decompose_shift 𝒜.grading.piece 𝒜.grading.piece
-      (𝒜.mul (𝒜.grading.koszulTwist 1 T.a)) (p + ·) (add_right_injective p)
-      (fun _ _ h ↦ 𝒜.mul_mem_piece (𝒜.grading.koszulTwist_mem_piece (ha₂ ▸ hap) 1) h)
-      (q + r - 1) T.v
-    have h₃ := 𝒜.m_three_mem_piece (ha₂ ▸ hap) (hb₂ ▸ hbq) (hcT ▸ hcr)
-    rw [show p + q - 1 + r = p + q + r - 1 by ring] at h₁
-    rw [show p + (q + r - 1) = p + q + r - 1 by ring] at h₂
-    -- The projection lemma acts through additive-hom coercions. Unwrap them to expose the
-    -- linear-map applications before rewriting the propositional binary-operation formula.
-    change 𝒜.mul (decompose 𝒜.grading.piece T.u (p + q - 1) : A) T.c =
-      (decompose 𝒜.grading.piece (𝒜.mul T.u T.c) (p + q + r - 1) : A) at h₁
-    change 𝒜.mul (𝒜.grading.koszulTwist 1 T.a)
-      (decompose 𝒜.grading.piece T.v (q + r - 1) : A) =
-      (decompose 𝒜.grading.piece (𝒜.mul (𝒜.grading.koszulTwist 1 T.a) T.v)
-        (p + q + r - 1) : A) at h₂
-    simp only [mul_apply] at h₁ h₂
-    rw [TripleMasseyDefiningSystem.cycle_def, TripleMasseyDefiningSystem.cycle_def,
-      decompose_add, decompose_sub, DirectSum.add_apply, DirectSum.sub_apply, Submodule.coe_add,
-      Submodule.coe_sub, ← h₁, ← h₂, decompose_of_mem_same _ h₃]
+  have hcycle : T'.cycle = decompose 𝒜.grading.piece T.cycle (p + q + r - 1) :=
+    TripleMasseyDefiningSystem.cycle_projection T (ha₂ ▸ hap) (hb₂ ▸ hbq) (hcT ▸ hcr)
   calc T'.value = decompose 𝒜.cohomologyGrading.piece T.value (p + q + r - 1) := by
         rw [TripleMasseyDefiningSystem.value_def, TripleMasseyDefiningSystem.value_def,
           decompose_cohomologyClass, cohomologyClass_eq_iff, hcycle, sub_self]

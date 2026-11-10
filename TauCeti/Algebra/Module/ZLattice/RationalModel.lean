@@ -58,8 +58,9 @@ whose theta series are studied analytically.
   positive definite and nondegenerate.
 * `ZLattice.finrank_ratModel`, `ZLattice.isEven_ratModel_iff`,
   `ZLattice.isUnimodular_ratModel_iff`: rank, evenness and unimodularity agree.
-* `ZLattice.determinant_ratModel`, `ZLattice.discriminant_ratModel`: the determinant and the
-  discriminant of the rational model are `ZLattice.det L`.
+* `ZLattice.determinant_ratModel`, `ZLattice.discriminant_ratModel`,
+  `ZLattice.IsIntegral.determinant_ratModel_eq_card_discriminantGroup`: the determinant and the
+  discriminant of the rational model are `ZLattice.det L = |L^∨ ⧸ L|`.
 * `ZLattice.mem_ratModel_dualCarrier_iff`, `ZLattice.exists_ratModelMap_eq_of_mem_dual`: the dual
   carrier of the rational model is the preimage of `L^∨`, and `ratModelMap` maps it onto `L^∨`.
 * `ZLattice.discriminantPairing_ratModelDiscriminantGroupEquiv_mk_eq_coe_iff`,
@@ -244,6 +245,14 @@ theorem discriminant_ratModel (hL : IsIntegral L) :
     determinant_ratModel, abs_of_pos (det_pos L)]
 
 end Determinant
+
+/-- The determinant of the rational model of an integral full lattice is the order of its
+discriminant group. -/
+theorem IsIntegral.determinant_ratModel_eq_card_discriminantGroup (hL : IsIntegral L) :
+    (ratModel hL).determinant = Nat.card (DiscriminantGroup L) := by
+  borelize E
+  refine Int.cast_injective (α := ℝ) ?_
+  rw [determinant_ratModel, hL.det_eq_card_discriminantGroup, Int.cast_natCast]
 
 /-- The rational model is unimodular exactly when `L` is. -/
 theorem isUnimodular_ratModel_iff (hL : IsIntegral L) :

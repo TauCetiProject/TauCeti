@@ -90,7 +90,7 @@ theorem hasFullSymmetricGaloisGroup_iff_separable_and_surjective_galActionHom
 points as its degree. No numbering of its roots is fixed globally. -/
 theorem HasFullSymmetricGaloisGroup.nonempty_mulEquiv (hf : HasFullSymmetricGaloisGroup f) :
     Nonempty (f.Gal ≃* Equiv.Perm (Fin f.natDegree)) := by
-  obtain ⟨e⟩ := TauCeti.nonempty_rootSet_splittingField_equiv_fin f hf.separable
+  obtain ⟨e⟩ := nonempty_rootSet_equiv_fin hf.separable (SplittingField.splits f)
   exact ⟨(MulEquiv.ofBijective (Gal.galActionHom f f.SplittingField)
     ⟨Gal.galActionHom_injective f _, hf.surjective_galActionHom⟩).trans (Equiv.permCongrHom e)⟩
 
@@ -111,7 +111,7 @@ theorem HasFullSymmetricGaloisGroup.not_isSolvable (hf : f.HasFullSymmetricGaloi
 theorem HasFullSymmetricGaloisGroup.isSolvable_iff (hf : f.HasFullSymmetricGaloisGroup) :
     Group.IsSolvable f.Gal ↔ f.natDegree ≤ 4 :=
   ⟨fun hsolv ↦ not_lt.mp fun hlt ↦ hf.not_isSolvable hlt hsolv,
-    TauCeti.isSolvable_gal_of_natDegree_le_four⟩
+    isSolvable_gal_of_natDegree_le_four⟩
 
 /-- A power of a nonunit polynomial with exponent at least two cannot have full symmetric
 Galois group. -/

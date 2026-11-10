@@ -5,7 +5,6 @@ on:
     types: [in_progress]
 permissions:
   contents: read
-  pull-requests: read  # confirm the immutable PR head before recovery
   actions: write
   statuses: write  # terminal recovery failure must not leave bors pending indefinitely
 concurrency:
@@ -13,7 +12,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   recover:
-    if: ${{ vars.FLEET_CI_ENABLED == 'true' && (github.event.workflow_run.event == 'repository_dispatch' || github.event.workflow_run.event == 'pull_request_target') && (startsWith(github.event.workflow_run.display_title, 'bors branch=') || startsWith(github.event.workflow_run.display_title, 'pr-build pr=')) }}
+    # PRs wait in the shared pool; only exact staging placements need recovery.
+    if: ${{ vars.FLEET_CI_ENABLED == 'true' && github.event.workflow_run.event == 'repository_dispatch' && startsWith(github.event.workflow_run.display_title, 'bors branch=') }}
     runs-on:
       - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
       - namespace-features:github.run-id=${{ github.run_id }}
@@ -28,10 +28,10 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@472566310e766bbc7933579a1f7743f41960046e
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a110e92c93bfcdb6befc0c50865547268137eef1
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 472566310e766bbc7933579a1f7743f41960046e
+          tools-ref: a110e92c93bfcdb6befc0c50865547268137eef1
           project-directory: .
       - name: Retry an unacquired dedicated runner within the same run
         env:

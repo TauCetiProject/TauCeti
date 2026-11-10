@@ -34,6 +34,12 @@ This is the smooth-dependence input for smoothness of the exponential map on its
   smooth on its domain.
 * `TauCeti.Manifold.contMDiffOn_maximalGeodesic`: maximal geodesics depend smoothly on their
   initial data and on time.
+* `TauCeti.Manifold.contMDiffAt_maximalGeodesic_comp`: a curve of initial states gives a
+  jointly Cⁿ geodesic variation at each point of the central maximal interval.
+* `TangentBundle.exists_contMDiffOn_maximalGeodesic_of_isCompact`: nearby initial states
+  share a smooth flow domain around any compact subset of a maximal geodesic interval.
+* `TauCeti.Manifold.exists_contMDiffOn_maximalGeodesic_comp_of_isCompact`: a curve of initial
+  states gives a geodesic variation on a common domain around a compact time subset.
 
 ## References
 
@@ -120,6 +126,79 @@ theorem contMDiffOn_maximalGeodesic :
       {q | q.2 ∈ geodesicInterval I M q.1.proj q.1.2} :=
   ((Bundle.contMDiff_proj (fun x : M ↦ TangentSpace I x) (n := ∞)).comp_contMDiffOn
     contMDiffOn_maximalIntegralCurve_geodesicSpray).congr fun _ _ ↦ maximalGeodesic_def _ _ _
+
+/-- A Cⁿ curve of initial states gives a jointly Cⁿ geodesic variation at each point
+of the central maximal geodesic interval, for every finite order `n`. -/
+theorem contMDiffAt_maximalGeodesic_comp
+    {σ : ℝ → TangentBundle I M} {n : ℕ} (hσ : ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n σ 0) {t : ℝ}
+    (ht : t ∈ geodesicInterval I M (σ 0).proj (σ 0).2) :
+    ContMDiffAt 𝓘(ℝ, ℝ × ℝ) I n
+      (fun z : ℝ × ℝ ↦ maximalGeodesic I M (σ z.1).proj (σ z.1).2 z.2) (0, t) := by
+  have hfst : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ) n Prod.fst ((0 : ℝ), t) :=
+    (contMDiff_iff_contDiff.mpr contDiff_fst).contMDiffAt
+  have hsnd : ContMDiffAt 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ) n Prod.snd ((0 : ℝ), t) :=
+    (contMDiff_iff_contDiff.mpr contDiff_snd).contMDiffAt
+  exact ((contMDiffOn_maximalGeodesic (I := I) (M := M)).contMDiffAt
+    (isOpen_setOfPred_mem_geodesicInterval.mem_nhds ht)).of_le (by simp)
+      |>.comp (0, t) ((hσ.comp (0, t) hfst).prodMk hsnd)
+
+/-- Around a compact subset of a maximal geodesic interval there is one open time domain
+valid for every nearby initial state, on which the geodesic flow is jointly smooth.
+In particular a prescribed compact geodesic segment admits variations on a common time domain,
+even when the metric is incomplete. -/
+theorem _root_.TangentBundle.exists_contMDiffOn_maximalGeodesic_of_isCompact (z : TangentBundle I M)
+    {K : Set ℝ} (hK : IsCompact K) (hsub : K ⊆ geodesicInterval I M z.proj z.2) :
+    ∃ (U : Set (TangentBundle I M)) (V : Set ℝ),
+      IsOpen U ∧ IsOpen V ∧ z ∈ U ∧ K ⊆ V ∧
+        (∀ w ∈ U, V ⊆ geodesicInterval I M w.proj w.2) ∧
+        ContMDiffOn (I.tangent.prod 𝓘(ℝ, ℝ)) I ∞
+          (fun q : TangentBundle I M × ℝ ↦ maximalGeodesic I M q.1.proj q.1.2 q.2)
+          (U ×ˢ V) := by
+  obtain ⟨U, V, hU, hV, hz, hKV, hUV⟩ := generalized_tube_lemma
+    (isCompact_singleton (x := z)) hK
+    (isOpen_setOfPred_mem_geodesicInterval (I := I) (M := M))
+    (by rintro ⟨w, t⟩ ⟨hw, ht⟩; rcases mem_singleton_iff.mp hw with rfl; exact hsub ht)
+  exact ⟨U, V, hU, hV, hz (mem_singleton z), hKV,
+    fun w hw t ht ↦ hUV (a := (w, t)) ⟨hw, ht⟩,
+    contMDiffOn_maximalGeodesic.mono hUV⟩
+
+/-- A Cⁿ curve of initial states gives a Cⁿ geodesic variation on one product neighbourhood of
+any compact subset of the central maximal interval, including smooth regularity
+`n = ∞`. Both the variation
+parameter and the time domain are open, so derivatives at compact segment endpoints
+are unrestricted. The initial-state curve is `C^n` throughout a neighbourhood of zero;
+for `n = ∞`, regularity merely at zero would not suffice. -/
+theorem exists_contMDiffOn_maximalGeodesic_comp_of_isCompact
+    {σ : ℝ → TangentBundle I M} {n : ℕ∞}
+    (hσ : ∀ᶠ q in 𝓝 0, ContMDiffAt 𝓘(ℝ, ℝ) I.tangent n σ q)
+    {K : Set ℝ} (hK : IsCompact K)
+    (hsub : K ⊆ geodesicInterval I M (σ 0).proj (σ 0).2) :
+    ∃ (U V : Set ℝ), IsOpen U ∧ IsOpen V ∧ 0 ∈ U ∧ K ⊆ V ∧
+      ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I n
+        (fun z : ℝ × ℝ ↦ maximalGeodesic I M (σ z.1).proj (σ z.1).2 z.2) (U ×ˢ V) ∧
+      ∀ q ∈ U, IsGeodesicCurveOn I (maximalGeodesic I M (σ q).proj (σ q).2) V := by
+  obtain ⟨A, V, hA, hV, hσA, hKV, hdom, hflow⟩ :=
+    (σ 0).exists_contMDiffOn_maximalGeodesic_of_isCompact hK hsub
+  obtain ⟨W, hW, hσW⟩ := eventually_iff_exists_mem.mp hσ
+  let U := interior W ∩ interior (σ ⁻¹' A)
+  have h0 : 0 ∈ U := ⟨mem_interior_iff_mem_nhds.2 hW,
+    mem_interior_iff_mem_nhds.2 (hσ.self_of_nhds.continuousAt.preimage_mem_nhds (hA.mem_nhds hσA))⟩
+  have hσU : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent n σ U :=
+    fun q hq ↦ (hσW q (interior_subset hq.1)).contMDiffWithinAt
+  have hUA : MapsTo σ U A := fun _ hq ↦ (interior_subset (s := σ ⁻¹' A)) hq.2
+  refine ⟨U, V, isOpen_interior.inter isOpen_interior, hV, h0, hKV, ?_, ?_⟩
+  · have hfst : ContMDiff 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ) n Prod.fst :=
+      contMDiff_iff_contDiff.mpr contDiff_fst
+    have hsnd : ContMDiff 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ) n Prod.snd :=
+      contMDiff_iff_contDiff.mpr contDiff_snd
+    have hσfst : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I.tangent n
+        (fun z : ℝ × ℝ ↦ σ z.1) (U ×ˢ V) :=
+      hσU.comp hfst.contMDiffOn (fun _ h ↦ h.1)
+    exact (hflow.of_le (by simp)).comp (hσfst.prodMk hsnd.contMDiffOn)
+      (fun z hz ↦ ⟨hUA hz.1, hz.2⟩)
+  · intro q hq
+    exact (isGeodesicCurveOnFrom_maximalGeodesic (σ q).proj (σ q).2).isGeodesicCurveOn.mono
+      hV.uniqueDiffOn (hdom (σ q) (hUA hq))
 
 end TauCeti.Manifold
 

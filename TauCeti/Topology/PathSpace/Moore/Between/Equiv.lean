@@ -76,10 +76,7 @@ theorem retrace_zero (γ : MoorePathBetween X a b) : γ.retrace 0 = 1 :=
 theorem continuous_retrace :
     Continuous fun p : MoorePathBetween X a b × ℝ≥0 ↦ p.1.retrace p.2 := by
   apply MooreLoopSpace.isEmbedding_toMoorePath.continuous_iff.2
-  have h := (continuous_toMoorePath (a := a) (b := b)).comp
-    (continuous_fst : Continuous (Prod.fst : MoorePathBetween X a b × ℝ≥0 → _))
-  have h' := h.moorePath_truncate continuous_snd
-  exact h'.moorePath_trans h'.moorePath_symm _
+  exact (continuous_toMoorePath.comp continuous_fst).moorePath_retrace continuous_snd
 
 /-- Grow a retracing prefix from duration zero to the full path and its reversal. -/
 def prependSymmHomotopy (γ : MoorePathBetween X a b) (c : X) :

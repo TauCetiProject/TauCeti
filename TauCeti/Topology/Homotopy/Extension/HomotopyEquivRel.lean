@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Topology.Homotopy.Extension.Basic
 public import TauCeti.Topology.Homotopy.Homotopic.Rel
-public import Mathlib.Topology.Homotopy.Equiv
+public import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
 # Homotopy equivalences relative to subspaces with the homotopy extension property
@@ -27,6 +27,13 @@ both composites are homotopic to the identities relative to the base points
 (`TauCeti.HasHomotopyExtensionProperty.exists_basedInverse_homotopicRel`). It upgrades an unbased
 homotopy inverse of a based map, such as the one given by Whitehead's theorem, to a based one.
 
+For a map of pairs the inverse can be prescribed on the subspaces. If `h : X ≃ₕ Y` restricts to
+a homotopy equivalence `h₀ : A ≃ₕ B`, then any `g₀ : B → A` with a homotopy `H₀ : g₀ ∘ h₀ ≃ id`
+extends to a homotopy inverse `g` of `h` with a homotopy `g ∘ h ≃ id` which is `H₀` on `A`
+(`TauCeti.HasHomotopyExtensionProperty.exists_inverse_extending_homotopy`). Applied stage by stage,
+this produces strictly compatible inverses and compatible left-inverse homotopies `g ∘ h ≃ id`
+along a tower of closed cofibrations, as needed to compare mapping telescopes with colimits.
+
 ## Proof
 
 The proof follows Hatcher. A homotopy inverse `g` of `h` is first deformed, using the homotopy
@@ -42,6 +49,13 @@ Applied to `g ∘ h`, this gives a left inverse of `h` relative to `A`
 has in turn a left inverse `h'` relative to `B`; then `h ≃ h' ∘ g ∘ h ≃ h'` relative to `A`, so
 `g` is also a right inverse of `h` relative to `B`.
 
+For the extension of a prescribed inverse, a homotopy inverse of `h` is first deformed on `B` to
+`g₀`, giving `g₁`. The homotopy `H₀` extends to a homotopy `K` from `g₁ ∘ h` to a map `φ₁` fixing
+`A`, and `φ₁` has a left inverse `ψ` relative to `A`; then `g = ψ ∘ g₁`, and `ψ ∘ K` followed by
+the relative homotopy `ψ ∘ φ₁ ≃ id` is `H₀` followed by a constant homotopy on `A`. That constant
+tail is removed by
+`TauCeti.HasHomotopyExtensionProperty.exists_homotopy_apply_eq_of_trans_refl`.
+
 ## Main results
 
 * `TauCeti.HasHomotopyExtensionProperty.exists_leftInverse_homotopicRel_of_homotopic_id`: a
@@ -53,11 +67,16 @@ has in turn a left inverse `h'` relative to `B`; then `h ≃ h' ∘ g ∘ h ≃ 
 * `TauCeti.HasHomotopyExtensionProperty.exists_basedInverse_homotopicRel`: a homotopy
   equivalence preserving base points with the homotopy extension property has a based homotopy
   inverse, with both homotopies relative to the base points.
+* `TauCeti.HasHomotopyExtensionProperty.exists_inverse_extending_homotopy`: a homotopy inverse
+  of the restriction `A ≃ₕ B`, with a homotopy `g₀ ∘ h₀ ≃ id`, extends to a homotopy inverse of
+  `h` with a homotopy `g ∘ h ≃ id` extending the given one.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Chapter 0, Proposition 0.19 and its proof.
+* T. tom Dieck, *Algebraic Topology*, EMS Textbooks in Mathematics, 2008, Chapter 5, for
+  homotopy equivalences of pairs of cofibrations.
 -/
 
 public section
@@ -173,5 +192,79 @@ theorem HasHomotopyExtensionProperty.exists_basedInverse_homotopicRel {x₀ : X}
     (Homeomorph.homeomorphOfUnique _ _)
     fun a => by rw [Set.mem_singleton_iff.1 a.2, hh, Set.mem_singleton_iff.1 (Subtype.prop _)]
   exact ⟨g, (hg ⟨y₀, rfl⟩).trans (Set.mem_singleton_iff.1 (Subtype.prop _)), hgh, hhg⟩
+
+/-- **Extending a homotopy inverse from the subspaces.** Let `A ⊆ X` and `B ⊆ Y` have the
+homotopy extension property, and let `h : X ≃ₕ Y` restrict to a homotopy equivalence
+`h₀ : A ≃ₕ B`. Given a left homotopy inverse `g₀ : B → A` of `h₀` together with a homotopy
+`H₀ : g₀ ∘ h₀ ≃ id`, there is a homotopy inverse `g : Y → X` of `h` which is `g₀` on `B`, with a
+homotopy `H : g ∘ h ≃ id` which is `H₀` on `A`. -/
+theorem HasHomotopyExtensionProperty.exists_inverse_extending_homotopy
+    (hA : HasHomotopyExtensionProperty A) (hB : HasHomotopyExtensionProperty B) (h : X ≃ₕ Y)
+    (h₀ : A ≃ₕ B) (hh₀ : ∀ a : A, (h₀ a : Y) = h a) (g₀ : C(B, A))
+    (H₀ : (g₀.comp h₀.toFun).Homotopy (ContinuousMap.id A)) :
+    ∃ (g : C(Y, X)) (H : (g.comp h.toFun).Homotopy (ContinuousMap.id X)),
+      (∀ b : B, g b = g₀ b) ∧ (∀ (t : I) (a : A), H (t, a) = H₀ (t, a)) ∧
+        (h.toFun.comp g).Homotopic (ContinuousMap.id Y) := by
+  -- `g₀` is also a right homotopy inverse of `h₀`.
+  have hg₀ := h₀.toFun_comp_homotopic_id_of_comp_toFun_homotopic_id ⟨H₀⟩
+  -- On `B`, the homotopy inverse `h⁻¹` is homotopic to `g₀`: `h⁻¹ ≃ h⁻¹ h₀ g₀ = h⁻¹ h g₀ ≃ g₀`.
+  have hι : (subtypeVal B).comp h₀.toFun = h.toFun.comp (subtypeVal A) :=
+    ContinuousMap.ext hh₀
+  have hM : (h.invFun.comp (subtypeVal B)).Homotopic ((subtypeVal A).comp g₀) := by
+    have e₁ := (Homotopic.refl (h.invFun.comp (subtypeVal B))).comp hg₀.symm
+    have e₂ := h.left_inv.comp (Homotopic.refl ((subtypeVal A).comp g₀))
+    simp only [ContinuousMap.comp_id, ContinuousMap.id_comp, ContinuousMap.comp_assoc] at e₁ e₂
+    rw [← ContinuousMap.comp_assoc (subtypeVal B), hι, ContinuousMap.comp_assoc] at e₁
+    exact e₁.trans e₂
+  obtain ⟨M⟩ := hM
+  -- Deform `h⁻¹`, following `M` on `B`, to a map `g₁` which is `g₀` on `B`.
+  obtain ⟨G₁, hG₁₀, hG₁₁⟩ := hB.exists_extension h.invFun M.toContinuousMap M.apply_zero
+  let g₁ : C(Y, X) := ⟨fun y => G₁ (1, y), by fun_prop⟩
+  have hg₁ (b : B) : g₁ b = g₀ b := (hG₁₁ 1 b).trans (M.apply_one b)
+  have hg₁h : h.invFun.Homotopic g₁ :=
+    ⟨{ toContinuousMap := G₁
+       map_zero_left := hG₁₀
+       map_one_left := fun _ => rfl }⟩
+  -- `φ = g₁ h` is homotopic to the identity and is `g₀ h₀` on `A`. Extend `H₀` to a homotopy `K`
+  -- from `φ` to a map `φ₁` fixing `A`.
+  set φ := g₁.comp h.toFun with hφ_def
+  have hφ : φ.Homotopic (ContinuousMap.id X) := (hg₁h.symm.comp (.refl _)).trans h.left_inv
+  have hφA (a : A) : φ a = g₀ (h₀ a) := by
+    rw [hφ_def, ContinuousMap.comp_apply, ← hh₀]
+    exact hg₁ (h₀ a)
+  obtain ⟨K, hK₀, hK₁⟩ := hA.exists_extension φ ((subtypeVal A).comp H₀.toContinuousMap)
+    fun a => by simp [hφA]
+  let φ₁ : C(X, X) := ⟨fun x => K (1, x), by fun_prop⟩
+  have hφ₁A (x : X) (hx : x ∈ A) : φ₁ x = x :=
+    (hK₁ 1 ⟨x, hx⟩).trans (by simp)
+  let K' : φ.Homotopy φ₁ :=
+    { toContinuousMap := K
+      map_zero_left := hK₀
+      map_one_left := fun _ => rfl }
+  -- `φ₁` has a left inverse `ψ` relative to `A`; the inverse of `h` is `g = ψ g₁`.
+  obtain ⟨ψ, hψA, hψ, ⟨L⟩⟩ := hA.exists_leftInverse_homotopicRel_of_homotopic_id hφ₁A
+    ((Homotopic.symm ⟨K'⟩).trans hφ)
+  have hgB (b : B) : ψ (g₁ b) = g₀ b := by rw [hg₁, hψA _ (g₀ b).2]
+  -- The homotopy `ψ K` followed by `L` runs from `g h` to the identity, and on `A` it is `H₀`
+  -- followed by the constant homotopy.
+  let F : ((ψ.comp g₁).comp h.toFun).Homotopy (ContinuousMap.id X) :=
+    (((Homotopy.refl ψ).comp K').trans L.toHomotopy).cast (ContinuousMap.comp_assoc _ _ _).symm rfl
+  let G : (((ψ.comp g₁).comp h.toFun).comp (subtypeVal A)).Homotopy
+      ((ContinuousMap.id X).comp (subtypeVal A)) :=
+    ((Homotopy.refl (subtypeVal A)).comp H₀).cast
+      (ContinuousMap.ext fun a => by simp [← hh₀, hgB]) (ContinuousMap.ext fun a => rfl)
+  obtain ⟨H, hH⟩ := hA.exists_homotopy_apply_eq_of_trans_refl F G fun t a => by
+    simp only [F, G, Homotopy.cast_apply, Homotopy.trans_apply, Homotopy.comp_apply,
+      Homotopy.refl_apply]
+    split_ifs
+    · -- `K' = K` follows `H₀` on `A`, where `ψ` is the identity.
+      exact (congrArg ψ (hK₁ _ a)).trans (hψA _ (H₀ _).2)
+    · -- `L` is stationary on `A`, where `ψ φ₁` is the identity.
+      exact (L.eq_fst _ a.2).trans ((hψA _ (by rw [hφ₁A _ a.2]; exact a.2)).trans (hφ₁A _ a.2))
+  refine ⟨ψ.comp g₁, H, hgB, hH, ?_⟩
+  -- `h g = h ψ g₁ ≃ h g₁ ≃ h h⁻¹ ≃ id`.
+  have := (Homotopic.refl h.toFun).comp (hψ.comp hg₁h.symm)
+  simp only [ContinuousMap.id_comp] at this
+  exact this.trans h.right_inv
 
 end TauCeti

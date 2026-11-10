@@ -26,7 +26,7 @@ verdict on `Group.IsSolvable (f.map (Int.castRingHom ℚ)).Gal` and, in prime de
 Three families of evidence are combined under `TauCeti.SolvabilityCertificate`:
 
 1. **Degree at most four (`smallDegree`).** Every polynomial of degree at most four has a solvable
-   Galois group (`TauCeti.isSolvable_gal_of_natDegree_le_four`), without irreducibility or
+   Galois group (`Polynomial.isSolvable_gal_of_natDegree_le_four`), without irreducibility or
    separability assumptions.
 2. **Quintic transitive-group labels (`quintic`).** A verified `TauCeti.QuinticCertificate`
    determines the LMFDB label `5T1`–`5T5` of `f` over `ℚ`; `5T1`, `5T2`, and `5T3` are solvable

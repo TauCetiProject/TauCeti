@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Germ
-public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.NodeLocalRing
+public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Node.LocalRing
 import TauCeti.Analysis.Analytic.ConstantOrder.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Analytic
 

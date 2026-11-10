@@ -37,7 +37,7 @@ variable {m n : Type*}
 /-- Regression through a possibly singular covariance block preserves the cross covariance.
 This is the block cancellation identity used by Gaussian regression. -/
 theorem PosSemidef.toBlocks₁₂_mul_covariancePseudoInverse_mul
-    [Finite m] [Fintype n] [DecidableEq n] {S : Matrix (m ⊕ n) (m ⊕ n) ℝ}
+    [Fintype n] [DecidableEq n] {S : Matrix (m ⊕ n) (m ⊕ n) ℝ}
     (hS : S.PosSemidef) :
     S.toBlocks₁₂ * S.toBlocks₂₂.covariancePseudoInverse * S.toBlocks₂₂ = S.toBlocks₁₂ := by
   apply Matrix.toEuclideanLin.injective

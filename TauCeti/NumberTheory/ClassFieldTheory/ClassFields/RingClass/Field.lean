@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RayClassField
 public import TauCeti.NumberTheory.ClassFieldTheory.ClassFields.RingClass.Quotient
 public import TauCeti.NumberTheory.ClassFieldTheory.Global.AdmissibleModulus.Reciprocity
 public import TauCeti.NumberTheory.ClassFieldTheory.GlobalExistence.Correspondence
@@ -23,8 +24,10 @@ ray-class reciprocity.
 * Its norm group is the kernel of the ring-class quotient
   (`range_ideleClassNormMap_ringClassField`). That kernel contains the ray subgroup of `𝔣`, so the
   conductor modulus of `O` is admissible for the ring class field
-  (`isAdmissibleModulus_ringClassField`). Hence the ring class field is unramified at every prime
-  of `K` not dividing `𝔣` (`isUnramifiedAt_ringClassField`).
+  (`isAdmissibleModulus_ringClassField`), that is, the conductor of the ring class field divides
+  `𝔣` (`abelianConductor_ringClassField_dvd`). Hence the ring class field is unramified at every
+  prime of `K` not dividing `𝔣` (`isUnramifiedAt_ringClassField`) and, `𝔣` having no infinite
+  part, at every infinite place (`isUnramifiedAtInfinitePlaces_ringClassField`).
 * The ray-class Artin map of the ring class field at `𝔣` therefore exists; it is surjective, and
   its kernel is the image of the norm group in `Cl_𝔣`, which is the kernel of the congruence
   description `Cl_𝔣 → Pic O` (`ker_rayClassArtinMap_ringClassField`). Both maps out of `Cl_𝔣`
@@ -33,7 +36,8 @@ ray-class reciprocity.
   Artin map (`ringClassArtinEquiv_ringClassIdeleQuotient`), and it obeys the **splitting law**: the
   Picard class of the contraction to `O` of a prime `𝔭` of `𝓞 K` prime to `𝔣` maps to an
   arithmetic Frobenius at every prime above `𝔭` (`isArithFrobAt_ringClassArtinEquiv_picClass`).
-  Hence `[ringClassField O : K] = #Pic O` (`finrank_ringClassField`), and the decomposition of
+  Hence `Gal(ringClassField O / K) ≃* Pic O` (`gal_ringClassField_equiv_pic`) and
+  `[ringClassField O : K] = #Pic O` (`finrank_ringClassField`), and the decomposition of
   such a prime `𝔭` is read off `Pic O`: its residue degree in the ring class field is the order
   `f` of the Picard class of `𝔭 ∩ O` (`orderOf_picClass_eq_inertiaDeg`), and it has `#Pic O / f`
   primes above it (`ncard_primesOver_ringClassField_mul_orderOf_picClass`). In particular `𝔭`
@@ -42,6 +46,13 @@ ray-class reciprocity.
 * Composed with the Picard class map, it is the ideal form of reciprocity on invertible fractional
   ideals of `O`, `ringClassArtinMap O`, which is surjective and kills exactly the principal ideals
   (`ringClassArtinMap_eq_one_iff`).
+* Ring class fields shrink as the order grows: `ringClassField O' ≤ ringClassField O` when
+  `O ⊆ O'` (`ringClassField_le_ringClassField`), since the kernel of the ring-class quotient grows
+  with the order. The ring class field of the maximal order is the Hilbert class field
+  (`ringClassField_maximalNumberFieldOrder`, `ringClassField_maximal`), since its ring-class
+  kernel is the ray subgroup of the trivial modulus
+  (`ringClassNormSubgroup_maximalNumberFieldOrder`), so the Hilbert class field lies in every
+  ring class field (`hilbertClassField_le_ringClassField`).
 
 No hypothesis on the degree of `K` is needed: the congruence description
 `NumberFieldOrder.rayClassToPic` of `Pic O` as a quotient of `Cl_𝔣` holds for every order
@@ -65,9 +76,14 @@ one, cut out by ideals with a generator congruent to a rational integer modulo `
   admissible for its ring class field.
 * `TauCeti.ClassFieldTheory.ringClassArtinEquiv_ringClassIdeleQuotient`: on idele classes the
   isomorphism is the global Artin map.
-* `TauCeti.ClassFieldTheory.isUnramifiedAt_ringClassField`: the ring class field is unramified
-  outside the conductor.
+* `TauCeti.ClassFieldTheory.abelianConductor_ringClassField_dvd`: the conductor of the ring class
+  field divides the conductor of the order.
+* `TauCeti.ClassFieldTheory.isUnramifiedAt_ringClassField`,
+  `TauCeti.ClassFieldTheory.isUnramifiedAtInfinitePlaces_ringClassField`: the ring class field is
+  unramified outside the conductor, including at every infinite place.
 * `TauCeti.ClassFieldTheory.isArithFrobAt_ringClassArtinEquiv_picClass`: the splitting law.
+* `TauCeti.ClassFieldTheory.gal_ringClassField_equiv_pic`: the Galois group of the ring class
+  field is the Picard group of the order.
 * `TauCeti.ClassFieldTheory.finrank_ringClassField`: the degree is the order of `Pic O`.
 * `TauCeti.ClassFieldTheory.orderOf_picClass_eq_inertiaDeg`,
   `TauCeti.ClassFieldTheory.ncard_primesOver_ringClassField_mul_orderOf_picClass`: the
@@ -76,6 +92,11 @@ one, cut out by ideals with a generator congruent to a rational integer modulo `
   completely in the ring class field exactly when it has a generator in `O`.
 * `TauCeti.ClassFieldTheory.ringClassArtinMap_eq_one_iff`: the ideal form of reciprocity kills
   exactly the principal ideals.
+* `TauCeti.ClassFieldTheory.ringClassField_le_ringClassField`: ring class fields shrink as the
+  order grows.
+* `TauCeti.ClassFieldTheory.ringClassField_maximalNumberFieldOrder`,
+  `TauCeti.ClassFieldTheory.ringClassField_maximal`: the ring class field of the maximal order is
+  the Hilbert class field.
 
 ## References
 
@@ -103,6 +124,15 @@ def ringClassNormSubgroup : GlobalNormSubgroups K :=
 theorem ringClassNormSubgroup_toSubgroup :
     (ringClassNormSubgroup O).1.toSubgroup = (ringClassIdeleQuotient O).ker :=
   (rfl)
+
+variable {O} in
+/-- Inclusions of the bundled ring-class kernels are inclusions of the kernels of the ring-class
+quotients. -/
+@[simp]
+theorem ringClassNormSubgroup_le_ringClassNormSubgroup_iff {O' : NumberFieldOrder K} :
+    ringClassNormSubgroup O ≤ ringClassNormSubgroup O' ↔
+      (ringClassIdeleQuotient O).ker ≤ (ringClassIdeleQuotient O').ker :=
+  Subtype.coe_le_coe.symm.trans OpenSubgroup.toSubgroup_le.symm
 
 /-- **The ring class field of an order** `O` of a number field `K`: the class field in `Kˢ` of the
 kernel of the ring-class quotient `C_K → Pic O` under the global class-field correspondence, that
@@ -158,6 +188,19 @@ theorem isUnramifiedAt_ringClassField {v : IsDedekindDomain.HeightOneSpectrum (�
     Algebra.IsUnramifiedAt (𝓞 K) Q :=
   (isAdmissibleModulus_ringClassField O).isUnramifiedAway v
     (by rwa [Modulus.mem_support_iff, conductorModulus_finitePart]) Q
+
+/-- **The ring class field is unramified at the infinite places**: the conductor modulus of an
+order has no infinite part, so no real place of `K` becomes complex in the ring class field. -/
+instance isUnramifiedAtInfinitePlaces_ringClassField :
+    IsUnramifiedAtInfinitePlaces K (ringClassField O) :=
+  ⟨fun w ↦ (isAdmissibleModulus_ringClassField O).isUnramified_of_forall_ne
+    (v := w.comap (algebraMap K (ringClassField O))) (by simp [conductorModulus_infinitePart]) w⟩
+
+/-- **The conductor of the ring class field divides the conductor of the order**, viewed as a
+modulus with no infinite part. -/
+theorem abelianConductor_ringClassField_dvd :
+    abelianConductor K (ringClassField O) ∣ O.conductorModulus :=
+  (isAdmissibleModulus_iff_abelianConductor_dvd _).1 (isAdmissibleModulus_ringClassField O)
 
 /-! ### Reciprocity for the ring class field -/
 
@@ -217,6 +260,11 @@ theorem isArithFrobAt_ringClassArtinEquiv_picClass
     IsArithFrobAt (𝓞 K) (ringClassArtinEquiv O (O.picClass J)) Q := by
   rw [ringClassArtinEquiv_picClass]
   exact isArithFrobAt_rayClassArtinMap_idealClass _ J Q
+
+/-- The Galois group of the ring class field of `O` is the Picard group of `O`, through the inverse
+of `ringClassArtinEquiv O`. -/
+theorem gal_ringClassField_equiv_pic : Nonempty (Gal(ringClassField O/K) ≃* Pic O) :=
+  ⟨(ringClassArtinEquiv O).symm⟩
 
 /-- **The degree of the ring class field of `O` is the order of the Picard group of `O`.** -/
 theorem finrank_ringClassField :
@@ -279,5 +327,54 @@ theorem ringClassArtinMap_eq_one_iff (I : O.invertibleProperFractionalIdeals) :
 /-- The ideal form of ring-class reciprocity is surjective. -/
 theorem ringClassArtinMap_surjective : Function.Surjective (ringClassArtinMap O) :=
   (ringClassArtinEquiv O).surjective.comp O.mkPic_surjective
+
+/-! ### Comparison across orders -/
+
+variable {O}
+
+/-- **Inclusions of ring class fields are inclusions of the kernels of the ring-class quotients**,
+reversed. -/
+theorem ringClassField_le_ringClassField_iff {O' : NumberFieldOrder K} :
+    ringClassField O ≤ ringClassField O' ↔
+      (ringClassIdeleQuotient O').ker ≤ (ringClassIdeleQuotient O).ker :=
+  (globalClassField_orderReversing (ringClassNormSubgroup O') (ringClassNormSubgroup O)).symm.trans
+    ringClassNormSubgroup_le_ringClassNormSubgroup_iff
+
+/-- **Ring class fields shrink as the order grows**: if `O ⊆ O'`, the ring class field of `O'`
+lies in that of `O`. -/
+theorem ringClassField_le_ringClassField {O' : NumberFieldOrder K}
+    (h : O.toSubalgebra ≤ O'.toSubalgebra) : ringClassField O' ≤ ringClassField O :=
+  ringClassField_le_ringClassField_iff.mpr (ker_ringClassIdeleQuotient_mono h)
+
+variable (K) in
+/-- The bundled ring-class kernel of the maximal order is the bundled ray subgroup of the trivial
+modulus. -/
+theorem ringClassNormSubgroup_maximalNumberFieldOrder :
+    ringClassNormSubgroup (maximalNumberFieldOrder K) = rayNormSubgroup (Modulus.one K) :=
+  Subtype.ext <| OpenSubgroup.toSubgroup_injective <| by
+    rw [ringClassNormSubgroup_toSubgroup, rayNormSubgroup_toSubgroup,
+      ker_ringClassIdeleQuotient_maximalNumberFieldOrder]
+
+variable (K) in
+/-- **The ring class field of the maximal order is the Hilbert class field**: the ring-class
+quotient of the maximal order has kernel the ray subgroup of the trivial modulus. -/
+@[simp]
+theorem ringClassField_maximalNumberFieldOrder :
+    ringClassField (maximalNumberFieldOrder K) = hilbertClassField K := by
+  rw [ringClassField_def, ringClassNormSubgroup_maximalNumberFieldOrder, hilbertClassField,
+    rayClassField_def]
+
+/-- **The ring class field of an order with trivial conductor is the Hilbert class field**: such
+an order is the maximal order (`ringClassField_maximalNumberFieldOrder`). -/
+theorem ringClassField_maximal (hO : O.conductor = ⊤) : ringClassField O = hilbertClassField K := by
+  rw [conductor_eq_top_iff] at hO
+  subst hO
+  exact ringClassField_maximalNumberFieldOrder K
+
+variable (O) in
+/-- **The Hilbert class field lies in every ring class field.** -/
+theorem hilbertClassField_le_ringClassField : hilbertClassField K ≤ ringClassField O :=
+  (ringClassField_maximalNumberFieldOrder K).symm.trans_le <| ringClassField_le_ringClassField <|
+    O.le_ringOfIntegers.trans_eq (maximalNumberFieldOrder_toSubalgebra K).symm
 
 end TauCeti.ClassFieldTheory
