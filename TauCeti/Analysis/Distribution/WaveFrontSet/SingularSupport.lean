@@ -193,7 +193,7 @@ theorem notMem_singSupport_iff_forall_isMicrolocallySmoothAt {T : 𝓓'(Ω, ℂ)
     (hx : x ∈ Ω) :
     x ∉ T.singSupport ↔ ∀ ξ : E, ξ ≠ 0 → T.IsMicrolocallySmoothAt x ξ := by
   refine ⟨fun h ξ _ ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨U, hU, hxU, f, hf, hT⟩ := not_not.1 fun h' ↦ h (mem_singSupport_iff.2 ⟨hx, h'⟩)
+  · obtain ⟨U, hU, hxU, f, hf, hT⟩ := (notMem_singSupport_iff hx).1 h
     exact isMicrolocallySmoothAt_of_apply_eq_integral hU hf hT hxU hx ξ
   -- A cutoff `ψ` with rapid decay makes `ψ T` a smooth function, and `T` agrees with it where
   -- `ψ = 1`.

@@ -24,6 +24,8 @@ are in `TauCeti.Analysis.Distribution.WaveFrontSet.SingularSupport`.
 
 ## Main results
 
+* `Distribution.notMem_singSupport_iff`: a point of `Ω` lies outside the singular support exactly
+  when `T` is a smooth function near it.
 * `Distribution.notMem_singSupport_of_apply_eq_integral`: a point of an open set on which `T` is a
   smooth function lies outside the singular support.
 * `Distribution.isOpen_diff_singSupport`: the singular support is closed in `Ω`.
@@ -58,6 +60,13 @@ theorem mem_singSupport_iff {T : 𝓓'(Ω, ℂ)} {x : E} :
       ContDiffOn ℝ ∞ f U ∧ ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ y, φ y • f y :=
   Iff.rfl
 
+/-- A point `x ∈ Ω` lies outside the singular support of `T` exactly when `T` is a smooth function
+on some open neighbourhood of `x`. -/
+theorem notMem_singSupport_iff {T : 𝓓'(Ω, ℂ)} {x : E} (hx : x ∈ Ω) :
+    x ∉ T.singSupport ↔ ∃ U : Set E, IsOpen U ∧ x ∈ U ∧ ∃ f : E → ℂ, ContDiffOn ℝ ∞ f U ∧
+      ∀ φ : 𝓓(Ω, ℝ), tsupport φ ⊆ U → T φ = ∫ y, φ y • f y :=
+  ⟨fun h ↦ not_not.1 fun h' ↦ h ⟨hx, h'⟩, fun h h' ↦ h'.2 h⟩
+
 /-- The singular support lies in `Ω`. -/
 theorem singSupport_subset (T : 𝓓'(Ω, ℂ)) : T.singSupport ⊆ Ω := fun _ hx ↦ hx.1
 
@@ -71,7 +80,7 @@ theorem notMem_singSupport_of_apply_eq_integral {T : 𝓓'(Ω, ℂ)} {U : Set E}
 /-- The singular support is closed in `Ω`. -/
 theorem isOpen_diff_singSupport (T : 𝓓'(Ω, ℂ)) : IsOpen ((Ω : Set E) \ T.singSupport) := by
   refine isOpen_iff_mem_nhds.2 fun x ⟨hxΩ, hx⟩ ↦ ?_
-  obtain ⟨U, hU, hxU, f, hf, hT⟩ := not_not.1 fun h ↦ hx ⟨hxΩ, h⟩
+  obtain ⟨U, hU, hxU, f, hf, hT⟩ := (notMem_singSupport_iff hxΩ).1 hx
   filter_upwards [Ω.isOpen.mem_nhds hxΩ, hU.mem_nhds hxU] with y hyΩ hyU
   exact ⟨hyΩ, notMem_singSupport_of_apply_eq_integral hU hf hT hyU⟩
 
