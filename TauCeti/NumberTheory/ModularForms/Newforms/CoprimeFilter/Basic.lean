@@ -235,6 +235,7 @@ private theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_pro
     · rw [hg'q n, hg₁q n, hprod]
       exact ite_coprime_ite_dvd_eq_ite_coprime_mul hq n _ _
 
+omit [NeZero N] in
 /-- **The coprime-index filter.** For `f ∈ S_k(Γ₁(N), χ)` and a nonzero `L` whose primes all
 divide `N`, there is a cusp form `g` of level `∏ L.primeFactors * N`, with the nebentypus `χ`
 read at that level, whose `q`-expansion is that of `f` restricted to the indices coprime to `L`:
@@ -252,12 +253,23 @@ theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime (χ : (ZMod
       g ∈ cuspFormCharSpace k
         (χ.comp (ZMod.unitsMap (Nat.dvd_mul_left N (L.primeFactors.prod id)))) ∧
       ∀ n, (qExpansion 1 g).coeff n = if Nat.Coprime n L then (qExpansion 1 f).coeff n else 0 := by
+  rcases Nat.eq_zero_or_pos N with rfl | hN
+  · -- at level `0` the hypothesis `hLN` forces `L = 1`, and the filter is the identity
+    have hL : L = 1 := by
+      have h : L.primeFactors = ∅ := Finset.subset_empty.mp (by simpa using hLN)
+      exact (Nat.primeFactors_eq_empty.mp h).resolve_left (NeZero.ne L)
+    have hNM := Nat.dvd_mul_left 0 (L.primeFactors.prod id)
+    refine ⟨CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hNM) f,
+      CuspForm.restrict_mem_cuspFormCharSpace χ hNM hf, fun n ↦ ?_⟩
+    simp [hL, CuspForm.coe_restrict]
+  have : NeZero N := ⟨hN.ne'⟩
   obtain ⟨M', hM'dvd, hM'eq, g, hg, hgq⟩ :=
     exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_prod L.primeFactors.card χ hf
       L.primeFactors hLN rfl
   subst hM'eq
   exact ⟨g, hg, fun n ↦ by simp only [hgq n, coprime_prod_primeFactors_iff (NeZero.ne L)]⟩
 
+omit [NeZero N] in
 /-- **Miyake's Lemma 4.6.5, the coprime-index filter at squarefree `L`.** For
 `f ∈ S_k(Γ₁(N), χ)` and a squarefree `L` whose primes all divide `N`, there is a cusp form `g`
 of level `L * N`, with the nebentypus `χ` read at that level, whose `q`-expansion is that of
@@ -280,6 +292,7 @@ theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_of_squarefr
   have key := exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime χ hf hLN
   rwa [hprod] at key
 
+omit [NeZero N] in
 /-- **The complementary filter.** For `f ∈ S_k(Γ₁(N), χ)` and a nonzero `L` whose primes all
 divide `N`, there is a cusp form `h` of level `∏ L.primeFactors * N`, with the nebentypus `χ`
 read at that level, whose `q`-expansion is that of `f` restricted to the indices *not* coprime
@@ -368,6 +381,7 @@ theorem exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_zero_mul_sq
   · rw [CuspForm.coe_restrict]
     exact hhq n
 
+omit [NeZero N] in
 /-- **The filter of a form vanishing off `p · L` is supported on the multiples of `p`.** If
 `f ∈ S_k(Γ₁(N), χ)` has `aₙ(f) = 0` at every `n` coprime to `p · L`, then its coprime-to-`L`
 filter — the cusp form of level `∏ L.primeFactors * N` that
@@ -380,7 +394,7 @@ into the level-lowering dichotomy. The hypotheses on `L` are the filter's own, u
 not divide `N`, and no relation between `p` and `L` is assumed. -/
 theorem exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd
     (χ : (ZMod N)ˣ →* ℂˣ) {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
-    (hf : f ∈ cuspFormCharSpace k χ) {p L : ℕ} [NeZero L] (hp : p.Prime)
+    (hf : f ∈ cuspFormCharSpace k χ) {p L : ℕ} (hp : p.Prime)
     (hLN : L.primeFactors ⊆ N.primeFactors)
     (hvan : ∀ n, Nat.Coprime n (p * L) → (qExpansion 1 f).coeff n = 0) :
     ∃ g : CuspForm ((Gamma1 (L.primeFactors.prod id * N)).map (mapGL ℝ)) k,
@@ -389,6 +403,20 @@ theorem exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd
         QExpansionSupportedOnDvd p g ∧
         ∀ n, (qExpansion 1 g).coeff n =
           if Nat.Coprime n L then (qExpansion 1 f).coeff n else 0 := by
+  rcases Nat.eq_zero_or_pos L with rfl | hL
+  · -- at `L = 0` only `n = 1` is coprime to `L`, and `hvan` kills that coefficient
+    have h0 {M : ℕ} (n : ℕ) :
+        (qExpansion 1 ⇑(0 : CuspForm ((Gamma1 M).map (mapGL ℝ)) k)).coeff n = 0 := by
+      simp [FunLike.coe_zero, UpperHalfPlane.qExpansion_zero]
+    refine ⟨0, Submodule.zero_mem _, ?_, fun n ↦ ?_⟩
+    · rw [qExpansionSupportedOnDvd_iff, PowerSeries.isSupportedOnDvd_iff]
+      exact fun n _ ↦ h0 n
+    · rcases eq_or_ne n 1 with rfl | hn
+      · rw [h0]
+        simp [hvan 1 (by simp)]
+      · rw [h0]
+        simp [Nat.coprime_zero_right, hn]
+  have : NeZero L := ⟨hL.ne'⟩
   obtain ⟨g, hgχ, hgq⟩ := exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime χ hf hLN
   refine ⟨g, hgχ, ?_, hgq⟩
   rw [qExpansionSupportedOnDvd_iff, PowerSeries.isSupportedOnDvd_iff]
@@ -400,16 +428,14 @@ theorem exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd
   · exact hvan n (Nat.Coprime.mul_right (hp.coprime_iff_not_dvd.mpr hn).symm hcop)
   · rfl
 
-/-- **The `p`-supported filter at a squarefree `L`**, where `∏ L.primeFactors` is `L` itself and
-the level is `L * N`.
-
-This is `TauCeti.exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd` at a squarefree `L`, in
-the same relation as
-`TauCeti.exists_mem_cuspFormCharSpace_qExpansion_coeff_eq_ite_coprime_of_squarefree` stands to the
-filter it specializes. -/
-theorem exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd_of_squarefree
+omit [NeZero N] in
+/-- **The `p`-supported filter at level `L * N`.** This is
+`TauCeti.exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd` read at level `L * N` instead of
+`∏ L.primeFactors * N`: the former divides the latter, and the form is restricted along that
+divisibility. For a squarefree `L` the two levels agree. -/
+theorem exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd_mul
     (χ : (ZMod N)ˣ →* ℂˣ) {f : CuspForm ((Gamma1 N).map (mapGL ℝ)) k}
-    (hf : f ∈ cuspFormCharSpace k χ) {p L : ℕ} (hp : p.Prime) (hL : Squarefree L)
+    (hf : f ∈ cuspFormCharSpace k χ) {p L : ℕ} (hp : p.Prime)
     (hLN : L.primeFactors ⊆ N.primeFactors)
     (hvan : ∀ n, Nat.Coprime n (p * L) → (qExpansion 1 f).coeff n = 0) :
     ∃ g : CuspForm ((Gamma1 (L * N)).map (mapGL ℝ)) k,
@@ -417,10 +443,15 @@ theorem exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd_of_squarefree
         QExpansionSupportedOnDvd p g ∧
         ∀ n, (qExpansion 1 g).coeff n =
           if Nat.Coprime n L then (qExpansion 1 f).coeff n else 0 := by
-  have : NeZero L := ⟨hL.ne_zero⟩
-  have hprod : L.primeFactors.prod id = L := by
-    simpa using Nat.prod_primeFactors_of_squarefree hL
-  have key := exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd χ hf hp hLN hvan
-  rwa [hprod] at key
+  have hpd : L.primeFactors.prod id ∣ L := by simpa using Nat.prod_primeFactors_dvd L
+  have hdvd : L.primeFactors.prod id * N ∣ L * N := mul_dvd_mul_right hpd N
+  obtain ⟨g, hgχ, hgsupp, hgq⟩ :=
+    exists_mem_cuspFormCharSpace_qExpansionSupportedOnDvd χ hf hp hLN hvan
+  refine ⟨CuspForm.restrict (Gamma1_map_le_Gamma1_map_of_dvd hdvd) g, ?_, ?_, fun n ↦ ?_⟩
+  · have := CuspForm.restrict_mem_cuspFormCharSpace _ hdvd hgχ
+    rwa [MonoidHom.comp_assoc, ZMod.unitsMap_comp] at this
+  · rwa [qExpansionSupportedOnDvd_iff, CuspForm.coe_restrict, ← qExpansionSupportedOnDvd_iff]
+  · rw [CuspForm.coe_restrict]
+    exact hgq n
 
 end TauCeti
