@@ -76,11 +76,15 @@ theorem projModelFunctionFieldEquiv_algebraMap (c : K) :
 
 variable [W.IsElliptic]
 
-/-- The function field of the projective model of an elliptic curve is an algebraic function
+omit [W.IsElliptic] in
+/-- The function field of the projective model of a Weierstrass curve is an algebraic function
 field of one variable over the base field. -/
 theorem isFunctionField_functionField_projModel :
-    IsFunctionField K W.projModel.functionField :=
-  (isFunctionField_functionField_iff K).mpr (topologicalKrullDim_projModel W)
+    IsFunctionField K W.projModel.functionField := by
+  have := W.toAffine.isFunctionField.essFiniteType
+  have := (Algebra.EssFiniteType.iff_of_algEquiv W.projModelFunctionFieldBaseAlgEquiv).2 this
+  rw [isFunctionField_iff_trdeg_eq_one, W.projModelFunctionFieldBaseAlgEquiv.trdeg_eq]
+  exact W.toAffine.isFunctionField.trdeg_eq_one
 
 /-- **The codimension-one points of the projective model are the places of `K(W)`.** A
 codimension-one point of `E = projModel W` goes to the place of `K(E)` whose valuation ring is its
