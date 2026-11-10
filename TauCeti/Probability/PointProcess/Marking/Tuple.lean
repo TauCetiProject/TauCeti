@@ -105,7 +105,7 @@ theorem bind_tupleMarking {ι : Type*} [Countable ι] (x : ι → X) :
       (Measure.measurable_dirac.comp (measurable_pi_apply i))).aemeasurable
 
 /-- Bijective relabeling of occurrences does not change their marked law. -/
-theorem tupleMarking_reindex {ι ι' : Type*} [Countable ι] [Countable ι']
+theorem tupleMarking_comp_equiv {ι ι' : Type*} [Countable ι] [Countable ι']
     (e : ι' ≃ ι) (x : ι → X) :
     κ.tupleMarking ι' (x ∘ e) = κ.tupleMarking ι x := by
   have hmap := Measure.map_infinitePi_infinitePi_of_inj
@@ -174,7 +174,7 @@ theorem tupleMarking_deterministic {ι : Type*} [Countable ι] {g : X → E}
 
 /-- Marking an empty tuple gives the empty measure with probability one. -/
 @[simp]
-theorem tupleMarking_isEmpty {ι : Type*} [Countable ι] [IsEmpty ι] (x : ι → X) :
+theorem tupleMarking_of_isEmpty {ι : Type*} [Countable ι] [IsEmpty ι] (x : ι → X) :
     κ.tupleMarking ι x = Measure.dirac 0 := by
   simp [tupleMarking_apply, Measure.sum_of_isEmpty]
 

@@ -24,6 +24,8 @@ of measures.
   finite total mass.
 * `TauCeti.MeasureTheory.measurable_sum_smul_dirac` — a countable mixture of Dirac measures at
   fixed atoms is measurable when each weight is measurable.
+* `TauCeti.MeasureTheory.measurable_sum_dirac` — the counting measure of a countable tuple is
+  measurable in the tuple, with repeated entries counted separately.
 * `TauCeti.MeasureTheory.measurable_probabilityMeasure_map` — pushing forward along a fixed
   measurable map is measurable on `ProbabilityMeasure`.
 * `TauCeti.MeasureTheory.measurable_map_of_measurable_uncurry` — pushing a fixed s-finite measure
