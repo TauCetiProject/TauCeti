@@ -109,11 +109,10 @@ theorem moduleEnd [Nontrivial M] : IsSimpleRing (Module.End R M) :=
 end Simplicity
 
 variable (K : Type*) [Field K] {R : Type*} [Ring R] [IsSimpleRing R] [Algebra K R]
-  [FiniteDimensional K R]
 
 section Aux
 
-variable (S : Submodule R R) [IsSimpleModule R S]
+variable [FiniteDimensional K R] (S : Submodule R R) [IsSimpleModule R S]
 variable (M : Type*) [AddCommGroup M] [Module K M] [Module R M] [IsScalarTower K R M]
   [FiniteDimensional K M]
 
@@ -135,7 +134,7 @@ variable {M : Type*} [AddCommGroup M] [Module K M] [Module R M] [IsScalarTower K
   [FiniteDimensional K M]
 
 /-- **The dimension of the endomorphism algebra of a module over a simple Artinian algebra.** For a
-finite-dimensional simple `K`-algebra `R` and an `R`-module `M` finite-dimensional over `K`,
+simple `K`-algebra `R` and an `R`-module `M` finite-dimensional over `K`,
 
   `finrank K (End_R M) * finrank K R = (finrank K M)²`.
 
@@ -146,6 +145,11 @@ The identity determines `finrank K (End_R M)` outright, since `finrank K R ≠ 0
 product rather than a quotient to stay inside `ℕ`. -/
 theorem finrank_end_mul_finrank_eq_sq :
     finrank K (Module.End R M) * finrank K R = finrank K M ^ 2 := by
+  rcases subsingleton_or_nontrivial M with hM | hM
+  · rw [Module.finrank_zero_of_subsingleton (M := M),
+      Module.finrank_zero_of_subsingleton (M := Module.End R M)]
+    simp
+  have := finiteDimensional_of_nontrivial K (R := R) (M := M)
   have : IsArtinianRing R := IsArtinianRing.of_finite K R
   obtain ⟨S, hS⟩ := IsAtomic.exists_atom (Submodule R R)
   rw [← isSimpleModule_iff_isAtom] at hS
@@ -174,7 +178,7 @@ theorem finrank_end_mul_finrank_eq_sq :
   ring
 
 /-- **Matrices over a simple algebra are matrices over the opposite of an endomorphism algebra.**
-For a finite-dimensional simple `K`-algebra `R` and an `R`-module `M` finite-dimensional over `K`,
+For a simple `K`-algebra `R` and an `R`-module `M` finite-dimensional over `K`,
 
   `Mₐ(R) ≃ₐ[K] M_b((End_R M)ᵐᵒᵖ)`  with  `a = finrank K M`, `b = finrank K R`.
 
@@ -184,6 +188,24 @@ so if `R` and `(End_R M)ᵐᵒᵖ` are central over `K` they have the same Braue
 theorem nonempty_algEquiv_matrix_mulOpposite_end :
     Nonempty (Matrix (Fin (finrank K M)) (Fin (finrank K M)) R ≃ₐ[K]
       Matrix (Fin (finrank K R)) (Fin (finrank K R)) (Module.End R M)ᵐᵒᵖ) := by
+  rcases subsingleton_or_nontrivial M with hM | hM
+  · rw [Module.finrank_zero_of_subsingleton (M := M)]
+    have : Subsingleton (Matrix (Fin 0) (Fin 0) R) := inferInstance
+    have : Subsingleton (Module.End R M) := inferInstance
+    have : Subsingleton (Module.End R M)ᵐᵒᵖ := inferInstance
+    have : Subsingleton (Matrix (Fin (finrank K R)) (Fin (finrank K R)) (Module.End R M)ᵐᵒᵖ) :=
+      inferInstance
+    let f : Matrix (Fin 0) (Fin 0) R →ₐ[K]
+        Matrix (Fin (finrank K R)) (Fin (finrank K R)) (Module.End R M)ᵐᵒᵖ :=
+      { toFun := fun _ => 0
+        map_one' := Subsingleton.elim _ _
+        map_mul' := fun _ _ => Subsingleton.elim _ _
+        map_zero' := Subsingleton.elim _ _
+        map_add' := fun _ _ => Subsingleton.elim _ _
+        commutes' := fun _ => Subsingleton.elim _ _ }
+    exact ⟨AlgEquiv.ofBijective f ⟨fun _ _ _ => Subsingleton.elim _ _,
+      fun _ => ⟨0, Subsingleton.elim _ _⟩⟩⟩
+  have := finiteDimensional_of_nontrivial K (R := R) (M := M)
   have hdim : finrank K (Fin (finrank K R) → M) = finrank K (Fin (finrank K M) → R) := by
     simp [Module.finrank_pi_fintype, mul_comm]
   obtain ⟨e⟩ := nonempty_linearEquiv_of_finrank_eq (R := R) K hdim
