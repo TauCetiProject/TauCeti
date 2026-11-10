@@ -23,6 +23,7 @@ against any measure on `ℝ` whose polynomial moments are finite (up to the rele
   integrable when every monomial is;
 * `tendsto_integral_eval_of_tendsto_integral_pow` — convergence of polynomial integrals from
   eventual integrability and convergence of monomial integrals;
+* `integrable_pow_of_integrable_pow_of_le` — lower powers are integrable when a higher power is;
 * `integrable_pow_of_ae_abs_le` — every monomial is integrable against a finite measure
   concentrated on a bounded interval, so such measures satisfy the moment hypothesis;
 * `abs_integral_eval_sub_le` — a polynomial that approximates a bounded continuous function within
@@ -99,6 +100,17 @@ theorem integrable_eval_of_forall_integrable_pow
     (hmom : ∀ k : ℕ, Integrable (fun x : ℝ => x ^ k) μ) (q : ℝ[X]) :
     Integrable (fun x : ℝ => q.eval x) μ :=
   integrable_eval_of_forall_le_natDegree fun k _ => hmom k
+
+/-- Lower powers are integrable against a finite measure whenever a higher power is integrable. -/
+theorem integrable_pow_of_integrable_pow_of_le [IsFiniteMeasure μ] {k n : ℕ} (hkn : k ≤ n)
+    (h : Integrable (fun x : ℝ => x ^ n) μ) : Integrable (fun x : ℝ => x ^ k) μ := by
+  have hnorm : Integrable (fun x : ℝ => ‖x‖ ^ n) μ := by
+    simpa only [norm_pow] using h.norm
+  have hnormk : Integrable (fun x : ℝ => ‖x‖ ^ k) μ :=
+    integrable_norm_pow_of_le aestronglyMeasurable_id hkn hnorm
+  apply (integrable_norm_iff
+    (by fun_prop : AEStronglyMeasurable (fun x : ℝ => x ^ k) μ)).1
+  simpa only [norm_pow] using hnormk
 
 /-- Every monomial is integrable against a finite measure that is almost everywhere concentrated
 on `[-R, R]`, so such a measure satisfies the moment hypothesis of the results above. -/
