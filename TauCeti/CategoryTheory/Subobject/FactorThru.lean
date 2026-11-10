@@ -37,6 +37,7 @@ variable {C : Type u} [Category.{v} C] {X Y Z : C}
 
 /-- Factoring through a subobject is unchanged after precomposing with a split epimorphism, such
 as an isomorphism or the morphism `eqToHom h` induced by an equality of objects. -/
+@[simp]
 theorem factors_comp_iff_of_isSplitEpi (P : Subobject Z) (g : X ⟶ Y) [IsSplitEpi g]
     (f : Y ⟶ Z) : P.Factors (g ≫ f) ↔ P.Factors f :=
   ⟨fun h ↦ by simpa using factors_of_factors_right (section_ g) h, factors_of_factors_right g⟩
