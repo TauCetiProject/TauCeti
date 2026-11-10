@@ -65,7 +65,9 @@ its topological part plus that constant.
 * `TauCeti.Floer.pairOfPantsContinuationPerturbation_cylindricalEndLift_of_pos`: its pullback to
   the end `q` is `β(σ - 1) C_q(σ - L_q, t) dt`;
   `TauCeti.Floer.pairOfPantsContinuationPerturbation_eq_smul_endAngularForm`: beyond the neck and
-  the collar, where `σ ≥ max 2 (L_q + 1)`, it is `H_q(t) dt`;
+  the collar, where `σ ≥ max 2 (L_q + 1)`, it is `H_q(t) dt`, so there it is the pair-of-pants
+  perturbation of `H`
+  (`TauCeti.Floer.pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_le`);
   `TauCeti.Floer.pairOfPantsContinuationPerturbation_eq_smul_endAngularForm_of_le`: beyond the
   single height `2 + ∑ q, |L_q|`, past every neck, it is `H_q(t) dt` on each end.
 * `SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_pairOfPantsContinuationPerturbation_le`,
@@ -219,6 +221,16 @@ theorem pairOfPantsContinuationPerturbation_eq_smul_endAngularForm_of_le {r : Pu
   pairOfPantsContinuationPerturbation_eq_smul_endAngularForm
     (by linarith [Finset.sum_nonneg fun q (_ : q ∈ Finset.univ) ↦ abs_nonneg (L q)])
     (by linarith) x
+
+/-- **Beyond the neck and the collar the perturbation is the pair-of-pants datum of `H`.** At a
+point `w` of the end `r` whose signed longitudinal coordinate is at least `2` and at least
+`L_r + 1`, the perturbation is the pair-of-pants perturbation of the outer Hamiltonians `H`. -/
+theorem pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_le {r : Puncture}
+    {w : ℂ} (hw : 2 ≤ r.endSign * (r.endCoord w).re)
+    (hwL : L r + 1 ≤ r.endSign * (r.endCoord w).re) (x : M) :
+    pairOfPantsContinuationPerturbation G H L w x = pairOfPantsPerturbation H w x := by
+  rw [pairOfPantsContinuationPerturbation_eq_smul_endAngularForm hw hwL,
+    pairOfPantsPerturbation_eq_smul_endAngularForm hw]
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace F]
   {I : ModelWithCorners ℝ E F} [TopologicalSpace M] [ChartedSpace F M]

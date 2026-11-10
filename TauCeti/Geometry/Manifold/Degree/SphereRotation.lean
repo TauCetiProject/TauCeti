@@ -232,7 +232,7 @@ theorem sphereRotationFamily_eq_sphereRotationFamily_iff (p : sphere (0 : E) 1)
         smul_neg, neg_neg]
 
 /-- A point with `Im z = 0` is sent to `p` or to `-p`. -/
-private theorem sphereRotationFamily_eq_or_eq_neg_of_im_eq_zero (p : sphere (0 : E) 1)
+theorem sphereRotationFamily_eq_or_eq_neg_of_im_eq_zero (p : sphere (0 : E) 1)
     {x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : ℂ) 1} (hx : (x.2 : ℂ).im = 0) :
     sphereRotationFamily p x = p ∨ sphereRotationFamily p x = -p := by
   have hre : (x.2 : ℂ).re ^ 2 = 1 ^ 2 := by

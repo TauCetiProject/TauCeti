@@ -370,6 +370,7 @@ theorem mlieDerivForm_eq_mextDeriv_interior {φ : RoughForm I M F (k + 1)}
     mlieDerivForm V φ = mextDeriv (φ.interior V) :=
   funext fun x ↦ mlieDerivForm_eq_mextDeriv_interior_apply (hφ x) (hV x) (congrFun hdφ x)
 
+omit [IsManifold I 1 M] in
 /-- Cartan's formula in degree zero within a set, `L_V f = ι_V df`, holds for every rough
 `0`-form and every vector field. -/
 theorem mlieDerivFormWithin_eq_interior_mextDerivWithin (V : (x : M) → TangentSpace I x)
@@ -380,6 +381,7 @@ theorem mlieDerivFormWithin_eq_interior_mextDerivWithin (V : (x : M) → Tangent
   rw [VectorField.mpullbackWithin_extChartAt_symm_self, RoughForm.interior_apply_eq_curryLeft,
     mextDerivWithin_def]
 
+omit [IsManifold I 1 M] in
 /-- Cartan's formula in degree zero, `L_V f = ι_V df`, holds for every rough `0`-form and every
 vector field. -/
 theorem mlieDerivForm_eq_interior_mextDeriv (V : (x : M) → TangentSpace I x)
