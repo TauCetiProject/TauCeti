@@ -514,17 +514,10 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsContinuationPerturbation
         (fun z x ↦
           pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)) thricePuncturedSphereReal := by
-  have hJ {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : M) :=
-    (contMDiffAt_pairOfPantsContinuationPerturbation (n := 1) hG hH hGs hHs L ⟨w, hw⟩
-      x).mdifferentiableAt one_ne_zero
   refine ω.integrableOn_hamiltonianCurvature_of_forall_integrableOn_endStrip
     (fun _ hw y ↦ pairOfPantsContinuationPerturbation_eq_zero_of_forall_le hw y)
-    (fun w hw x v ↦ ((hJ hw x).comp (f := fun w' : ℂ ↦ (w', x)) w
-      (mdifferentiableAt_id.prodMk mdifferentiableAt_const)).differentiableAt.clm_apply
-        (differentiableAt_const v))
-    (fun w hw x v ↦ ((hJ hw x).comp (f := fun y : M ↦ (w, y)) x
-      (mdifferentiableAt_const.prodMk mdifferentiableAt_id)).clm_apply mdifferentiableAt_const)
-    fun q ↦ ?_
+    (fun w x ↦ (contMDiffAt_pairOfPantsContinuationPerturbation (n := 1) hG hH hGs hHs L w
+      x).mdifferentiableAt one_ne_zero) fun q ↦ ?_
   -- In the coordinates of the end the pulled-back curvature along `u` is the function `F`.
   set F : ℝ × ℝ → ℝ := fun w ↦ q.endSign *
     (deriv smoothTransition (q.endSign * w.1 - 1) *

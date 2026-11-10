@@ -436,18 +436,10 @@ theorem integrableOn_hamiltonianCurvature_pairOfPantsPerturbation (ω : SmoothTw
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)) thricePuncturedSphereReal := by
-  -- The datum is differentiable jointly, hence separately, in the domain and target points.
-  have hK {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : M) :=
-    (contMDiffAt_pairOfPantsPerturbation (n := 1) hH hHs ⟨w, hw⟩ x).mdifferentiableAt
-      one_ne_zero
   refine ω.integrableOn_hamiltonianCurvature_of_forall_integrableOn_endStrip
     (fun _ hw y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le hw y)
-    (fun w hw x v ↦ ((hK hw x).comp (f := fun w' : ℂ ↦ (w', x)) w
-      (mdifferentiableAt_id.prodMk mdifferentiableAt_const)).differentiableAt.clm_apply
-        (differentiableAt_const v))
-    (fun w hw x v ↦ ((hK hw x).comp (f := fun y : M ↦ (w, y)) x
-      (mdifferentiableAt_const.prodMk mdifferentiableAt_id)).clm_apply mdifferentiableAt_const)
-    fun q ↦ ?_
+    (fun w x ↦ (contMDiffAt_pairOfPantsPerturbation (n := 1) hH hHs w x).mdifferentiableAt
+      one_ne_zero) fun q ↦ ?_
   -- In the coordinates of the end the pulled-back curvature along `u` is `±β'(±s - 1) H_q(t, u)`,
   -- which is continuous on the compact closure of the collar `1 ≤ ±s ≤ 2` and vanishes off it.
   have hpos {w : ℝ × ℝ}
@@ -734,7 +726,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_trun
   replace harea := (harea.mono hTS).integrableOn_compact (μ := volume) hT
   have hcurv := (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs
     hu.continuousOn).mono_set hTS
-  have hKp := contMDiffOn_uncurry_of_forall_contMDiffAt
+  have hKp := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
     (contMDiffAt_pairOfPantsPerturbation (n := 1) hH hHs)
   have hE := hω.integrableOn_floerEnergyDensity isOpen_thricePuncturedSphereReal hu (hKp 1)
     (hKp Complex.I) hT hTS hcurv

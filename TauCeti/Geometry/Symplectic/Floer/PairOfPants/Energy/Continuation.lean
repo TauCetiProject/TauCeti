@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Continuation
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Asymptotic
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # The energy of pairs of pants with continuation necks
@@ -137,6 +138,37 @@ private theorem eqOn_pairOfPantsContinuationPerturbation {R : ℝ} (hR : 2 ≤ R
 
 end TauCeti.Floer
 
+namespace TauCeti.SmoothTwoForm
+
+open Floer
+
+variable {E F M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace F]
+  {I : ModelWithCorners ℝ E F} [TopologicalSpace M] [ChartedSpace F M] [IsManifold I ⊤ M]
+  {G H : Puncture → ℝ → M → ℝ} {L : Puncture → ℝ}
+
+/-- **The curvature vanishes beyond the necks, for a manifold target.** At a point of `S` where the
+signed longitudinal coordinate of some end `r` is greater than `2` and greater than `L_r + 1`, the
+perturbation with continuation necks is `H_r(t) dt` in the coordinates of that end, and its
+curvature vanishes. -/
+theorem hamiltonianCurvature_pairOfPantsContinuationPerturbation_eq_zero_of_lt
+    (ω : SmoothTwoForm I M) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) {r : Puncture}
+    (h₂ : 2 < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re)
+    (hL : L r + 1 < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re) (x : M) :
+    ω.hamiltonianCurvature
+      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦
+        pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z x = 0 := by
+  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq
+    (pairOfPantsContinuationPerturbation_eventuallyEq hz h₂ hL 1)
+    (pairOfPantsContinuationPerturbation_eventuallyEq hz h₂ hL Complex.I)]
+  exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs
+    (mem_thricePuncturedSphereReal_iff.1 hz) h₂ x
+
+end TauCeti.SmoothTwoForm
+
 namespace TauCeti.SymplecticForm
 
 open Floer
@@ -159,11 +191,8 @@ theorem hamiltonianCurvature_pairOfPantsContinuationPerturbation_eq_zero_of_lt
       (fun z x ↦
         pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
       z x = 0 := by
-  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq
-    (pairOfPantsContinuationPerturbation_eventuallyEq hz h₂ hL 1)
-    (pairOfPantsContinuationPerturbation_eventuallyEq hz h₂ hL Complex.I)]
-  exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs
-    (mem_thricePuncturedSphereReal_iff.1 hz) h₂ x
+  simpa using ω.constSmooth.hamiltonianCurvature_pairOfPantsContinuationPerturbation_eq_zero_of_lt
+    hH (fun q ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) hz h₂ hL x
 
 variable [FiniteDimensional ℝ V]
 
@@ -349,15 +378,12 @@ theorem le_add_add_sum_of_tendsto_hamiltonianAction_pairOfPantsContinuationPertu
         ω.hamiltonianAction (H one) (fun t ↦ u (Complex.equivRealProdCLM
           (one.cylindricalEndLift (↑(one.endSign * R) + ↑t * Complex.I)))) +
         ∑ q, (B q + D q) := by
-    filter_upwards [eventually_ge_atTop 2, eventually_ge_atTop (∑ q, |L q| + 1)] with R hR hRL
-    have hRL' (q : Puncture) : L q + 1 ≤ R := by
-      have := Finset.single_le_sum (f := fun q : Puncture ↦ |L q|) (fun q _ ↦ abs_nonneg _)
-        (Finset.mem_univ q)
-      linarith [le_abs_self (L q)]
+    filter_upwards [eventually_ge_atTop 2,
+      Filter.eventually_all.2 fun q ↦ eventually_ge_atTop (L q + 1)] with R hR hRL
     simpa only [endSign_zero, endSign_one, endSign_inf, one_mul, neg_one_mul,
       Complex.ofReal_neg] using
       hamiltonianAction_le_add_add_sum_of_pairOfPantsContinuationPerturbation ω hG hH hGs hHs hGB
-        hHB hD hu hR hRL'
+        hHB hD hu hR hRL
         (fun z hz ↦ hJ z (preimage_truncation_subset_thricePuncturedSphereReal R hz))
         fun z hz ↦ hfloer z (preimage_truncation_subset_thricePuncturedSphereReal R hz)
   exact le_of_tendsto_of_tendsto (ha inf) (((ha zero).add (ha one)).add_const _) hev
@@ -373,27 +399,6 @@ open Floer
 variable {E F M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace F]
   {I : ModelWithCorners ℝ E F} [TopologicalSpace M] [ChartedSpace F M] [IsManifold I ⊤ M]
   {G H : Puncture → ℝ → M → ℝ} {L : Puncture → ℝ}
-
-/-- **The curvature vanishes beyond the necks, for a manifold target.** At a point of `S` where the
-signed longitudinal coordinate of some end `r` is greater than `2` and greater than `L_r + 1`, the
-perturbation with continuation necks is `H_r(t) dt` in the coordinates of that end, and its
-curvature vanishes. -/
-theorem hamiltonianCurvature_pairOfPantsContinuationPerturbation_eq_zero_of_lt
-    (ω : SmoothTwoForm I M) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {z : ℝ × ℝ}
-    (hz : z ∈ thricePuncturedSphereReal) {r : Puncture}
-    (h₂ : 2 < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re)
-    (hL : L r + 1 < r.endSign * (r.endCoord (Complex.equivRealProdCLM.symm z)).re) (x : M) :
-    ω.hamiltonianCurvature
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦
-        pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z x = 0 := by
-  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq
-    (pairOfPantsContinuationPerturbation_eventuallyEq hz h₂ hL 1)
-    (pairOfPantsContinuationPerturbation_eventuallyEq hz h₂ hL Complex.I)]
-  exact ω.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH hHs
-    (mem_thricePuncturedSphereReal_iff.1 hz) h₂ x
 
 variable [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M}
 
@@ -440,9 +445,10 @@ theorem integral_floerEnergyDensity_pairOfPantsContinuationPerturbation_truncati
   have hT : IsCompact T :=
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
   have hTS : T ⊆ thricePuncturedSphereReal := preimage_truncation_subset_thricePuncturedSphereReal R
-  have hKc := contMDiffOn_uncurry_of_forall_contMDiffAt
+  have hKc := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
     (contMDiffAt_pairOfPantsContinuationPerturbation hG hH hGs hHs L)
-  have hKp := contMDiffOn_uncurry_of_forall_contMDiffAt (contMDiffAt_pairOfPantsPerturbation hH hHs)
+  have hKp := contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
+    (contMDiffAt_pairOfPantsPerturbation hH hHs)
   have hRc := (integrableOn_hamiltonianCurvature_pairOfPantsContinuationPerturbation ω hG hH hGs
     hHs L hu.continuousOn).mono_set hTS
   have hRp := (integrableOn_hamiltonianCurvature_pairOfPantsPerturbation ω hH hHs
@@ -599,13 +605,10 @@ theorem integral_floerEnergyDensity_pairOfPantsContinuationPerturbation
         pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
       z (u z))
   refine tendsto_nhds_unique (tendsto_setIntegral_truncation hE) (hrhs.congr' ?_)
-  filter_upwards [eventually_ge_atTop 2, eventually_ge_atTop (∑ q, |L q| + 1)] with R hR hRL
-  have hRL' (q : Puncture) : L q + 1 ≤ R := by
-    have := Finset.single_le_sum (f := fun q : Puncture ↦ |L q|) (fun q _ ↦ abs_nonneg _)
-      (Finset.mem_univ q)
-    linarith [le_abs_self (L q)]
+  filter_upwards [eventually_ge_atTop 2,
+    Filter.eventually_all.2 fun q ↦ eventually_ge_atTop (L q + 1)] with R hR hRL
   exact (hω.integral_floerEnergyDensity_pairOfPantsContinuationPerturbation_truncation hG hH hGs
-    hHs hu hR hRL').symm
+    hHs hu hR hRL).symm
 
 /-- **The topological energy of a pair of pants with continuation necks is bounded below, for a
 manifold target.** Let `u` solve the Floer equation `(du - X_K)^{0,1} = 0` on `S` for almost
