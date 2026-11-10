@@ -31,6 +31,10 @@ A finite nontrivial module has more than one endomorphism (`Module.End.one_lt_na
 
 Endomorphisms conjugate by a linear equivalence square to the same scalar
 (`Module.End.mul_self_eq_smul_one_iff_of_forall_apply_eq`).
+
+An endomorphism acting as a scalar `a` from a monoid acting on the module has `k`-th power acting
+as `a ^ k` (`Module.End.pow_apply_eq_pow_smul`), so it is `1` once `a ^ k = 1`
+(`Module.End.pow_eq_one_of_apply_eq_smul`).
 -/
 
 public section
@@ -102,5 +106,17 @@ theorem mul_self_eq_smul_one_iff_of_forall_apply_eq {R M N : Type*} [CommSemirin
   · have hBBv : B (B (e v)) = κ • e v := by simpa using LinearMap.congr_fun hBB (e v)
     refine e.injective ?_
     simp [hAB, hBBv]
+
+/-- The `k`-th power of an endomorphism acting as the scalar `a` acts as `a ^ k`. -/
+theorem pow_apply_eq_pow_smul {R M X : Type*} [Semiring R] [AddCommMonoid X] [Module R X]
+    [Monoid M] [MulAction M X] {a : M} (S : Module.End R X) (hS : ∀ x, S x = a • x) (k : ℕ)
+    (x : X) : (S ^ k) x = a ^ k • x := by
+  rw [pow_apply_eq_iterate, show ⇑S = fun x ↦ a • x from funext hS, smul_iterate_apply]
+
+/-- An endomorphism acting as the scalar `a` satisfies `S ^ k = 1` whenever `a ^ k = 1`. -/
+theorem pow_eq_one_of_apply_eq_smul {R M X : Type*} [Semiring R] [AddCommMonoid X] [Module R X]
+    [Monoid M] [MulAction M X] {a : M} (S : Module.End R X) (hS : ∀ x, S x = a • x) {k : ℕ}
+    (hk : a ^ k = 1) : S ^ k = 1 :=
+  LinearMap.ext fun x ↦ by rw [pow_apply_eq_pow_smul S hS, hk, one_smul, one_apply_eq_self]
 
 end Module.End

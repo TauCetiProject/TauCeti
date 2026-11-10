@@ -286,7 +286,7 @@ private theorem exists_aeval_eq_symmetricAlgebra
     ∃ q : K[X], aeval (SymmetricAlgebra.ι K _ (slTwoCartanGenerator K)) q = p := by
   have htop : Algebra.adjoin K {(SymmetricAlgebra.ι K (slTwoDiagonalCartan K)
       (slTwoCartanGenerator K))} = ⊤ := by
-    rw [eq_top_iff, ← TauCeti.SymmetricAlgebra.adjoin_range_ι, Algebra.adjoin_le_iff]
+    rw [eq_top_iff, ← SymmetricAlgebra.adjoin_range_ι, Algebra.adjoin_le_iff]
     rintro _ ⟨x, rfl⟩
     rw [eq_smul_slTwoCartanGenerator x, map_smul]
     exact Subalgebra.smul_mem _ (Algebra.subset_adjoin rfl) _
