@@ -56,6 +56,9 @@ and replacing the constant by the average costs a factor `2`
 
 ## Main declarations
 
+* `TauCeti.enorm_integral_sub_integral_le_lintegral_enorm_sub`: two Bochner integrals differ by at
+  most the integral of the norm of the difference of the integrands, with no integrability
+  assumption.
 * `TauCeti.enorm_integral_sub_integral_le_of_hormander`: a bounded function vanishing near `x'`
   has kernel integrals at `x` and `x'` that differ by at most `B ‖b‖_∞`.
 * `ContinuousLinearMap.setLAverage_enorm_sub_setAverage_le_of_hormander_of_measure_closedBall_le`:
@@ -81,6 +84,26 @@ open MeasureTheory Metric Set
 open scoped ENNReal
 
 section Kernel
+
+/-- The Bochner integrals of two a.e. strongly measurable functions differ by at most the integral
+of the norm of their difference. No integrability is assumed: if the right-hand side is finite,
+the two functions are either both integrable or both not, and in the second case both integrals
+vanish. -/
+theorem enorm_integral_sub_integral_le_lintegral_enorm_sub {α G : Type*} [MeasurableSpace α]
+    {μ : Measure α} [NormedAddCommGroup G] [NormedSpace ℝ G] {f g : α → G}
+    (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ) :
+    ‖∫ x, f x ∂μ - ∫ x, g x ∂μ‖ₑ ≤ ∫⁻ x, ‖f x - g x‖ₑ ∂μ := by
+  rcases eq_or_ne (∫⁻ x, ‖f x - g x‖ₑ ∂μ) ∞ with h | h
+  · simp [h]
+  have hint : Integrable (fun x => f x - g x) μ :=
+    ⟨hf.sub hg, hasFiniteIntegral_iff_enorm.2 h.lt_top⟩
+  by_cases hgi : Integrable g μ
+  · have hfi : Integrable f μ := (hint.add hgi).congr (.of_forall fun x => by simp)
+    rw [← integral_sub hfi hgi]
+    exact enorm_integral_le_lintegral_enorm _
+  · have hfi : ¬Integrable f μ := fun hfi =>
+      hgi ((hfi.sub hint).congr (.of_forall fun x => by simp))
+    simp [integral_undef hfi, integral_undef hgi]
 
 variable {X E F : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   {μ : Measure X} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -116,20 +139,12 @@ theorem enorm_integral_sub_integral_le_of_hormander {K : X → X → E →L[ℝ]
       _ = (∫⁻ y in {y | 2 * dist x x' < dist y x'}, ‖K x y - K x' y‖ₑ ∂μ) * M :=
           lintegral_mul_const'' _ hKd.enorm.restrict
       _ ≤ B * M := by gcongr
-  rcases eq_or_ne (B * M) ∞ with hBM | hBM
-  · simp [hBM]
-  have hint : Integrable (fun y => (K x y - K x' y) (b y)) μ :=
-    ⟨(ContinuousLinearMap.apply ℝ F).aestronglyMeasurable_comp₂ hb hKd,
-      hlint.trans_lt hBM.lt_top⟩
-  by_cases hx' : Integrable (fun y => K x' y (b y)) μ
-  · have hx : Integrable (fun y => K x y (b y)) μ :=
-      (hint.add hx').congr (.of_forall fun y => by simp)
-    rw [← integral_sub hx hx']
-    refine (enorm_integral_le_lintegral_enorm _).trans (le_of_eq_of_le ?_ hlint)
-    simp
-  · have hx : ¬Integrable (fun y => K x y (b y)) μ := fun hx =>
-      hx' ((hx.sub hint).congr (.of_forall fun y => by simp))
-    simp [integral_undef hx, integral_undef hx']
+  have hmeas (z : X) (hKz : AEStronglyMeasurable (K z) μ) :
+      AEStronglyMeasurable (fun y => K z y (b y)) μ := by
+    simpa using (ContinuousLinearMap.apply ℝ F).aestronglyMeasurable_comp₂ hb hKz
+  refine (enorm_integral_sub_integral_le_lintegral_enorm_sub (hmeas x hKx)
+    (hmeas x' hKx')).trans (le_of_eq_of_le ?_ hlint)
+  simp
 
 end Kernel
 

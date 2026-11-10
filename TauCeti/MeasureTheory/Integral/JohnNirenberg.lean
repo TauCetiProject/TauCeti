@@ -9,6 +9,7 @@ public import TauCeti.MeasureTheory.Function.BoundedMeanOscillation
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.Decomposition
 public import TauCeti.MeasureTheory.Measure.Haar.EuclideanSpace
 import TauCeti.Analysis.Normed.Module.Ball
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # The John–Nirenberg inequality
@@ -72,6 +73,9 @@ averages under positive finite scaling.
 * `TauCeti.measure_lt_norm_sub_setAverage_closedBall_le`,
   `TauCeti.setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le`: the same two statements on an
   arbitrary cube `closedBall c r`.
+* `TauCeti.setLAverage_enorm_sub_setAverage_rpow_le`: every moment `⨍_B ‖f - f_B‖^q` of a
+  function of bounded mean oscillation is at most `C(n, q) ‖f‖_{BMO}^q`, on every open sup-norm
+  ball.
 * `TauCeti.exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le`: exponential integrability
   on Euclidean balls.
 * `TauCeti.exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_le`: the same
@@ -729,6 +733,145 @@ theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le [CompleteSpace E]
       hfv (fun y ρ => hMv (y, ρ)) hρ) a
 
 end ClosedBall
+
+section Moments
+
+/-! ### Moments of functions of bounded mean oscillation
+
+Exponential integrability bounds every moment: on each open ball `B` of `ι → ℝ` with the sup
+norm, `⨍_B ‖f - f_B‖^q ≤ C(n, q) ‖f‖_{BMO}^q` for every `q > 0`. The closed ball of the same
+radius differs from `B` by a null set, so the cube estimate applies, and `x^q ≤ 1 + ⌈q⌉! eˣ`
+turns the exponential bound into a bound on the `q`-th moment. -/
+
+open Metric
+
+/-- **Moments of functions of bounded mean oscillation.** Let `f` be locally integrable on
+`ℝⁿ = ι → ℝ`, `n ≥ 1`, for an additive Haar measure `μ`. For every `q > 0` and every open ball `B`
+of the sup norm,
+
+`⨍_B ‖f - f_B‖^q ≤ (1 + 7 ⌈q⌉!) (2ⁿ⁺¹ / log (3 / 2))^q ‖f‖_{BMO}^q`.
+
+The inequality is in `ℝ≥0∞`, so it is informative only when `‖f‖_{BMO} < ∞`. -/
+theorem setLAverage_enorm_sub_setAverage_rpow_le [Nonempty ι] [CompleteSpace E]
+    {μ : Measure (ι → ℝ)} [μ.IsAddHaarMeasure] (hf : LocallyIntegrable f μ) {q : ℝ} (hq : 0 < q)
+    (c : ι → ℝ) (r : ℝ) :
+    ⨍⁻ x in ball c r, ‖f x - ⨍ y in ball c r, f y ∂μ‖ₑ ^ q ∂μ ≤
+      ENNReal.ofReal ((1 + 7 * (⌈q⌉₊).factorial) *
+        (2 ^ (Fintype.card ι + 1) / Real.log (3 / 2)) ^ q) * bmoSeminorm f μ ^ q := by
+  set n := Fintype.card ι
+  set C : ℝ := (1 + 7 * (⌈q⌉₊).factorial) * (2 ^ (n + 1) / Real.log (3 / 2)) ^ q
+  have hlog : 0 < Real.log (3 / 2) := Real.log_pos (by norm_num)
+  have hC : 0 < C := by positivity
+  rcases le_or_gt r 0 with hr | hr
+  · simp [ball_eq_empty.2 hr]
+  set B := ball c r
+  have hB0 : μ B ≠ 0 := (measure_ball_pos μ c hr).ne'
+  have hBtop : μ B ≠ ⊤ := measure_ball_lt_top.ne
+  set β := bmoSeminorm f μ
+  rcases eq_or_ne β ⊤ with hβ | hβ
+  · rw [hβ, ENNReal.top_rpow_of_pos hq, ENNReal.mul_top (ENNReal.ofReal_pos.2 hC).ne']
+    exact le_top
+  rcases eq_or_ne β 0 with hβ0 | hβ0
+  · -- Zero mean oscillation forces `f` to agree with its average on the ball.
+    have hosc : ⨍⁻ x in B, ‖f x - ⨍ y in B, f y ∂μ‖ₑ ∂μ = 0 :=
+      le_antisymm ((setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ c r).trans hβ0.le)
+        zero_le
+    have hae := ae_restrict_eq_setAverage_of_setLAverage_enorm_sub_setAverage_eq_zero
+      hf.aestronglyMeasurable.restrict hBtop hosc
+    have : ⨍⁻ x in B, ‖f x - ⨍ y in B, f y ∂μ‖ₑ ^ q ∂μ = 0 := by
+      rw [setLAverage_eq, ENNReal.div_eq_zero_iff]
+      left
+      refine (lintegral_congr_ae ?_).trans lintegral_zero
+      filter_upwards [hae] with x hx
+      simp [hx, ENNReal.zero_rpow_of_pos hq]
+    rw [this]
+    exact zero_le
+  set M : ℝ≥0 := β.toNNReal
+  have hM : (M : ℝ≥0∞) = β := ENNReal.coe_toNNReal hβ
+  have hM0 : (0 : ℝ) < M := by
+    rw [NNReal.coe_pos, pos_iff_ne_zero]
+    intro h
+    exact hβ0 (by rw [← hM, h, ENNReal.coe_zero])
+  -- The mean oscillation on every closed ball is at most `M`.
+  have hMcl : ∀ y ρ, closedBall y ρ ⊆ closedBall c r →
+      ⨍⁻ x in closedBall y ρ, ‖f x - ⨍ z in closedBall y ρ, f z ∂μ‖ₑ ∂μ ≤ M := by
+    intro y ρ _
+    rcases le_or_gt ρ 0 with hρ | hρ
+    · have h0 : μ (closedBall y ρ) = 0 := measure_mono_null (closedBall_subset_closedBall hρ)
+        (by rw [closedBall_zero]; exact measure_singleton y)
+      simp [Measure.restrict_eq_zero.2 h0]
+    rw [Measure.restrict_congr_set (μ.addHaar_closedBall_ae_eq_ball y ρ), hM]
+    exact setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ y ρ
+  -- Exponential integrability at the rate `σ = log (3 / 2) / (2ⁿ⁺¹ M)`.
+  set σ : ℝ := Real.log (3 / 2) / (2 ^ (n + 1) * M)
+  have hσ : 0 < σ := by positivity
+  have hσM : Real.exp (σ * (2 ^ (n + 1) * M)) = 3 / 2 := by
+    rw [div_mul_cancel₀ _ (by positivity), Real.exp_log (by norm_num)]
+  have hJN := setLIntegral_exp_mul_norm_sub_setAverage_closedBall_le
+    (hf.integrableOn_isCompact (isCompact_closedBall c r)) hMcl (σ := σ)
+    (by rw [hσM]; norm_num)
+  rw [hσM, Measure.restrict_congr_set (μ.addHaar_closedBall_ae_eq_ball c r),
+    measure_congr (μ.addHaar_closedBall_ae_eq_ball c r)] at hJN
+  norm_num at hJN
+  set k := (⌈q⌉₊).factorial
+  set v := fun x => ‖f x - ⨍ y in B, f y ∂μ‖
+  -- Pointwise, `v ^ q ≤ σ ^ (-q) (1 + k exp (σ v))`, since `x ^ q ≤ 1 + ⌈q⌉! eˣ` for `x ≥ 0`.
+  have hpt : ∀ x, ‖f x - ⨍ y in B, f y ∂μ‖ₑ ^ q ≤
+      ENNReal.ofReal (σ ^ (-q)) * (1 + (k : ℝ≥0∞) * ENNReal.ofReal (Real.exp (σ * v x))) := by
+    intro x
+    have hv : 0 ≤ v x := norm_nonneg _
+    have hxq : (σ * v x) ^ q ≤ 1 + k * Real.exp (σ * v x) := by
+      rcases le_total (σ * v x) 1 with h | h
+      · have h1 : (σ * v x) ^ q ≤ 1 := Real.rpow_le_one (by positivity) h hq.le
+        have : 0 ≤ (k : ℝ) * Real.exp (σ * v x) := by positivity
+        linarith
+      · have h1 : (σ * v x) ^ q ≤ (σ * v x) ^ (⌈q⌉₊ : ℝ) :=
+          Real.rpow_le_rpow_of_exponent_le h (Nat.le_ceil q)
+        have h2 : (σ * v x) ^ ⌈q⌉₊ ≤ k * Real.exp (σ * v x) := by
+          have := Real.pow_div_factorial_le_exp _ (by positivity : 0 ≤ σ * v x) ⌈q⌉₊
+          rw [div_le_iff₀ (by positivity)] at this
+          exact this.trans_eq (mul_comm _ _)
+        rw [Real.rpow_natCast] at h1
+        linarith
+    have key : v x ^ q ≤ σ ^ (-q) * (1 + k * Real.exp (σ * v x)) := by
+      rw [Real.mul_rpow hσ.le hv] at hxq
+      have h2 : σ ^ (-q) * σ ^ q = 1 := by
+        rw [← Real.rpow_add hσ, neg_add_cancel, Real.rpow_zero]
+      calc v x ^ q = σ ^ (-q) * (σ ^ q * v x ^ q) := by rw [← mul_assoc, h2, one_mul]
+        _ ≤ _ := by gcongr
+    rw [← ofReal_norm, ENNReal.ofReal_rpow_of_nonneg (norm_nonneg _) hq.le]
+    refine (ENNReal.ofReal_le_ofReal key).trans_eq ?_
+    rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_add zero_le_one (by positivity),
+      ENNReal.ofReal_one, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_natCast]
+  have hint : ∫⁻ x in B, ‖f x - ⨍ y in B, f y ∂μ‖ₑ ^ q ∂μ ≤
+      ENNReal.ofReal (σ ^ (-q) * (1 + 7 * k)) * μ B := by
+    calc ∫⁻ x in B, ‖f x - ⨍ y in B, f y ∂μ‖ₑ ^ q ∂μ
+        ≤ ∫⁻ x in B, ENNReal.ofReal (σ ^ (-q)) *
+            (1 + (k : ℝ≥0∞) * ENNReal.ofReal (Real.exp (σ * v x))) ∂μ := lintegral_mono hpt
+      _ = ENNReal.ofReal (σ ^ (-q)) * (μ B + k * ∫⁻ x in B,
+            ENNReal.ofReal (Real.exp (σ * v x)) ∂μ) := by
+        rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_add_left measurable_const,
+          setLIntegral_one, lintegral_const_mul' _ _ (ENNReal.natCast_ne_top k)]
+      _ ≤ ENNReal.ofReal (σ ^ (-q)) * (μ B + k * (7 * μ B)) := by gcongr
+      _ = _ := by
+        rw [ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_add zero_le_one (by positivity),
+          ENNReal.ofReal_one, ENNReal.ofReal_mul (by positivity), ENNReal.ofReal_natCast]
+        norm_num
+        ring
+  have hσq : σ ^ (-q) = (2 ^ (n + 1) / Real.log (3 / 2)) ^ q * (M : ℝ) ^ q := by
+    rw [Real.rpow_neg hσ.le, ← Real.inv_rpow hσ.le, ← Real.mul_rpow (by positivity) hM0.le]
+    congr 1
+    simp only [σ]
+    field_simp
+  rw [setLAverage_eq, ENNReal.div_le_iff hB0 hBtop, ← hM, ← ENNReal.ofReal_coe_nnreal,
+    ENNReal.ofReal_rpow_of_nonneg hM0.le hq.le, ← ENNReal.ofReal_mul hC.le]
+  refine hint.trans_eq ?_
+  congr 2
+  rw [hσq]
+  simp only [C, k]
+  ring
+
+end Moments
 
 section EuclideanBall
 
