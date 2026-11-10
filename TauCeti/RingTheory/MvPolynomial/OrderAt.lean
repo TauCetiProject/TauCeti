@@ -74,7 +74,8 @@ The Taylor shift itself preserves the degree in each variable (`MvPolynomial.deg
 * `MvPolynomial.taylor_aeval`: the Taylor shift of a substitution `p(g)` at `b` substitutes the
   Taylor shifts of the `g i` at `b`, without their constant terms, into the Taylor shift of `p`
   at the image point `(g i (b))ᵢ`.
-* `MvPolynomial.orderAt_rename`: renaming along an injective map preserves the order.
+* `MvPolynomial.order_coe_rename`, `MvPolynomial.orderAt_rename`: renaming along an injective map
+  preserves the order, as a power series and at a point.
 * `MvPolynomial.finSuccEquiv_taylor`, `MvPolynomial.coeff_taylor_cons`: singling out the
   variable `X₀` turns the Taylor shift at `a` into the univariate Taylor shift at `a₀` followed by
   the Taylor shift at the remaining coordinates.
@@ -395,6 +396,20 @@ theorem coe_homogeneousComponent (n : ℕ) (q : MvPolynomial σ R) :
   ext d
   simp [MvPowerSeries.coeff_homogeneousComponent, coeff_homogeneousComponent]
 
+/-- Renaming the variables of a polynomial along an injective map does not change its order as a
+power series. -/
+theorem order_coe_rename {f : σ → τ} (hf : Function.Injective f) (p : MvPolynomial σ R) :
+    ((rename f p : MvPolynomial τ R) : MvPowerSeries τ R).order =
+      (p : MvPowerSeries σ R).order := by
+  refine eq_of_forall_le_iff fun n ↦ ?_
+  rw [MvPowerSeries.le_order_iff, MvPowerSeries.le_order_iff]
+  refine ⟨fun h d hd ↦ ?_, fun h d hd ↦ ?_⟩
+  · simpa only [coeff_coe, coeff_rename_mapDomain f hf] using
+      h (d.mapDomain f) (by simpa only [degree_mapDomain] using hd)
+  · simp only [coeff_coe]
+    exact coeff_rename_eq_zero f _ d fun u hu ↦ by
+      simpa only [coeff_coe] using h u (by simpa only [← hu, degree_mapDomain] using hd)
+
 end Substitution
 
 section SubstitutionRing
@@ -409,11 +424,10 @@ theorem coe_aeval_eq_subst (h : σ → MvPolynomial τ R) (q : MvPolynomial σ R
   rw [MvPowerSeries.subst_coe]
   simpa using comp_aeval_apply (coeToMvPowerSeries.algHom R) q (f := h)
 
-/-- **The lowest-degree component of a substitution.** If `q` has order at least `n` and the
-polynomials `h i` have no constant terms, the degree-`n` component of `q(h)` is the degree-`n`
-component of `q` evaluated at the linear parts of the `h i`. -/
-theorem homogeneousComponent_aeval_of_le_order [Finite σ] {q : MvPolynomial σ R} {n : ℕ}
-    (hq : n ≤ (q : MvPowerSeries σ R).order) {h : σ → MvPolynomial τ R}
+/-- The case of finitely many variables of `homogeneousComponent_aeval_of_le_order`, by power-series
+substitution. -/
+private theorem homogeneousComponent_aeval_of_le_order_of_finite [Finite σ] {q : MvPolynomial σ R}
+    {n : ℕ} (hq : n ≤ (q : MvPowerSeries σ R).order) {h : σ → MvPolynomial τ R}
     (hh : ∀ i, constantCoeff (h i) = 0) :
     homogeneousComponent n (aeval h q) =
       aeval (fun i ↦ homogeneousComponent 1 (h i)) (homogeneousComponent n q) := by
@@ -422,6 +436,21 @@ theorem homogeneousComponent_aeval_of_le_order [Finite σ] {q : MvPolynomial σ 
     MvPowerSeries.homogeneousComponent_subst_of_le_order hq
       (MvPowerSeries.hasSubst_of_constantCoeff_zero fun i ↦ by simp [hh i]) fun i ↦ by simp [hh i]]
   simp only [coe_homogeneousComponent]
+
+/-- **The lowest-degree component of a substitution.** If `q` has order at least `n` and the
+polynomials `h i` have no constant terms, the degree-`n` component of `q(h)` is the degree-`n`
+component of `q` evaluated at the linear parts of the `h i`. -/
+theorem homogeneousComponent_aeval_of_le_order {q : MvPolynomial σ R} {n : ℕ}
+    (hq : n ≤ (q : MvPowerSeries σ R).order) {h : σ → MvPolynomial τ R}
+    (hh : ∀ i, constantCoeff (h i) = 0) :
+    homogeneousComponent n (aeval h q) =
+      aeval (fun i ↦ homogeneousComponent 1 (h i)) (homogeneousComponent n q) := by
+  -- `q` involves only finitely many variables: reduce to the finite case by renaming.
+  obtain ⟨s, q, rfl⟩ := exists_finset_rename q
+  have hq' : n ≤ (q : MvPowerSeries s R).order := by
+    rwa [order_coe_rename Subtype.val_injective] at hq
+  rw [aeval_rename, ← rename_homogeneousComponent, aeval_rename]
+  exact homogeneousComponent_aeval_of_le_order_of_finite hq' fun i ↦ hh i
 
 end SubstitutionRing
 
@@ -444,8 +473,7 @@ theorem orderAt_def (p : MvPolynomial σ R) (a : σ → R) :
 total degree less than `n` vanishes. -/
 theorem le_orderAt_iff {n : ℕ∞} :
     n ≤ p.orderAt a ↔ ∀ d : σ →₀ ℕ, (d.degree : ℕ∞) < n → (taylor a p).coeff d = 0 := by
-  refine ⟨fun h d hd ↦ ?_, fun h ↦ MvPowerSeries.le_order fun d hd ↦ by simpa using h d hd⟩
-  simpa using MvPowerSeries.coeff_of_lt_order (lt_of_lt_of_le hd h)
+  simp only [orderAt_def, MvPowerSeries.le_order_iff, coeff_coe]
 
 theorem orderAt_le {d : σ →₀ ℕ} (h : (taylor a p).coeff d ≠ 0) : p.orderAt a ≤ d.degree :=
   MvPowerSeries.order_le (by simpa using h)
@@ -560,13 +588,8 @@ theorem orderAt_prod [NoZeroDivisors R] [Nontrivial R] {ι : Type*}
 /-- Renaming the variables along an injective map does not change the order. -/
 theorem orderAt_rename {f : σ → τ} (hf : Function.Injective f) (p : MvPolynomial σ R)
     (b : τ → R) : (rename f p).orderAt b = p.orderAt (b ∘ f) := by
-  refine eq_of_forall_le_iff fun n ↦ ?_
-  rw [le_orderAt_iff, le_orderAt_iff, taylor_rename]
-  refine ⟨fun h d hd ↦ ?_, fun h d hd ↦ ?_⟩
-  · simpa only [coeff_rename_mapDomain f hf] using
-      h (d.mapDomain f) (by simpa only [degree_mapDomain] using hd)
-  · exact coeff_rename_eq_zero f _ d fun u hu ↦ h u (by
-      simpa only [← hu, degree_mapDomain] using hd)
+  rw [orderAt_def, orderAt_def, taylor_rename]
+  exact order_coe_rename hf _
 
 /-- Substituting `aᵢ + X (f i)` for the variable `Xᵢ`, along an injective map `f`, preserves the
 order: the order of the substituted polynomial at the origin is the order of `p` at `a`. -/

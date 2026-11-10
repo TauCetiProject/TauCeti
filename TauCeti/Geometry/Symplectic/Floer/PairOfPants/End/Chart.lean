@@ -34,6 +34,11 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 
 ## Main results
 
+* `TauCeti.Floer.preimage_truncation_subset_thricePuncturedSphereReal`,
+  `TauCeti.Floer.exists_lt_endSign_mul_re_endCoord_of_notMem_truncation`: in real coordinates the
+  truncation `S_R` lies in `S`, and every other point of `S` lies beyond `R` on some end.
+* `TauCeti.Floer.setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation`: the integral over
+  `S` of a function vanishing beyond `R` on every end is its integral over `S_R`.
 * `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`: in real coordinates, the
   components of the perturbation are `Cⁿ` on `S × V` for `Cⁿ` Hamiltonians.
 * `TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, `TauCeti.Floer.re_endCoord_endChart`:
@@ -52,6 +57,8 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
   under the end lift.
 * `TauCeti.Floer.perturbationPullback_endChart`: the pullback of the pair-of-pants perturbation
   along the end chart is its component in the end coordinates.
+* `TauCeti.Floer.perturbationPullback_endChart_stdComplexLineImag_of_le`: where a perturbation is
+  `H_q(t) dt` on the end `q`, its pullback along the end chart sends `∂_t` to `H_q(t)`.
 
 ## References
 
@@ -85,6 +92,52 @@ theorem mem_thricePuncturedSphereReal_iff {z : ℝ × ℝ} :
 theorem isOpen_thricePuncturedSphereReal : IsOpen thricePuncturedSphereReal :=
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
+
+/-- The truncation `S_R`, in real coordinates, is measurable. -/
+theorem measurableSet_preimage_truncation (R : ℝ) :
+    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
+  ((isCompact_truncation R).isClosed.preimage
+    Complex.equivRealProdCLM.symm.continuous).measurableSet
+
+/-- The truncation `S_R`, in real coordinates, lies in `S`. -/
+theorem preimage_truncation_subset_thricePuncturedSphereReal (R : ℝ) :
+    Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal :=
+  fun _ hz ↦ mem_thricePuncturedSphereReal_iff.2 ⟨(mem_truncation.1 hz).1,
+    (mem_truncation.1 hz).2.1⟩
+
+/-- A point of `S` outside the truncation `S_R` lies beyond `R` on some end. -/
+theorem exists_lt_endSign_mul_re_endCoord_of_notMem_truncation {R : ℝ} {z : ℝ × ℝ}
+    (hz : z ∈ thricePuncturedSphereReal) (hzR : Complex.equivRealProdCLM.symm z ∉ truncation R) :
+    ∃ q : Puncture, R < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re := by
+  by_contra! h
+  exact hzR (mem_truncation.2 ⟨(mem_thricePuncturedSphereReal_iff.1 hz).1,
+    (mem_thricePuncturedSphereReal_iff.1 hz).2, h⟩)
+
+/-- The integral over `S` of a function vanishing at every point of `S` beyond `R` on some end is
+its integral over the truncation `S_R`. -/
+theorem setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {f : ℝ × ℝ → E} {R : ℝ}
+    (hf : ∀ z ∈ thricePuncturedSphereReal, ∀ q : Puncture,
+      R < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re → f z = 0) :
+    ∫ z in thricePuncturedSphereReal, f z =
+      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, f z := by
+  refine setIntegral_eq_of_subset_of_forall_sdiff_eq_zero
+    isOpen_thricePuncturedSphereReal.measurableSet
+    (preimage_truncation_subset_thricePuncturedSphereReal R) fun z hz ↦ ?_
+  obtain ⟨q, hq⟩ := exists_lt_endSign_mul_re_endCoord_of_notMem_truncation hz.1 hz.2
+  exact hf z hz.1 q hq
+
+/-- Almost every point of the plane lies in the pair of pants: the two punctures form a null
+set. -/
+theorem ae_mem_thricePuncturedSphereReal : ∀ᵐ z : ℝ × ℝ, z ∈ thricePuncturedSphereReal := by
+  refine measure_mono_null (t := {Complex.equivRealProdCLM 0, Complex.equivRealProdCLM 1})
+    (fun z hz ↦ ?_) ?_
+  · rcases not_and_or.1 (mem_thricePuncturedSphereReal_iff.not.1 hz) with h | h
+    · exact Or.inl (by rw [← not_not.1 h, ContinuousLinearEquiv.apply_symm_apply])
+    · exact Or.inr (by
+        rw [Set.mem_singleton_iff, ← not_not.1 h, ContinuousLinearEquiv.apply_symm_apply])
+  · rw [Measure.volume_eq_prod]
+    exact (Set.toFinite _).measure_zero _
 
 /-- In the real coordinates of `S`, the components of the pair-of-pants perturbation are `Cⁿ`
 jointly in the domain and target points, for `Cⁿ` Hamiltonians. -/
@@ -215,6 +268,28 @@ theorem perturbationPullback_endChart (q : Puncture) (v : ℝ × ℝ) :
   rw [perturbationPullback_endChart_eq_cylindricalEndLift (pairOfPantsPerturbation H)]
   funext z x
   rw [pairOfPantsEndComponent_def, Complex.equivRealProdCLM_symm_apply, ← Complex.mk_eq_add_mul_I]
+
+/-- Where `K = H_q(t) dt` on the end `q`, its pullback along the end chart sends `∂_t` to
+`H_q(t)`. -/
+theorem perturbationPullback_endChart_stdComplexLineImag_of_le {X : Type*}
+    {K : ℂ → X → ℂ →L[ℝ] ℝ} {H : Puncture → ℝ → X → ℝ} {T₀ : ℝ}
+    (hKH : ∀ q w x, T₀ ≤ q.endSign * (q.endCoord w).re →
+      K w x = H q (q.endCoord w).im x • q.endAngularForm w)
+    (hH : ∀ q, Periodic (H q) 1) {q : Puncture} {ζ : ℝ × ℝ} (hζ : T₀ ≤ q.endSign * ζ.1) (x : X) :
+    perturbationPullback (endChart q)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) stdComplexLineImag ζ x =
+      H q ζ.2 x := by
+  have hI : Complex.equivRealProdCLM.symm stdComplexLineImag = Complex.I := by
+    apply Complex.ext <;> simp [stdComplexLineImag_eq]
+  rw [perturbationPullback_endChart_eq_cylindricalEndLift K, hI]
+  beta_reduce
+  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift (Complex.equivRealProdCLM.symm ζ)
+  have hre : (q.endCoord (q.cylindricalEndLift (Complex.equivRealProdCLM.symm ζ))).re = ζ.1 := by
+    simp [hk]
+  rw [hKH q _ x (by rwa [hre]), smul_apply, endAngularForm_cylindricalEndLift,
+    hk, smul_eq_mul, Complex.I_im, mul_one]
+  simpa using congrFun ((hH q).int_mul k ζ.2) x
 
 /-- The end chart is injective on every band `ℝ × [t₀, t₀ + 1)` of angular width one: two points
 with the same image differ by an integer multiple of `i`. -/

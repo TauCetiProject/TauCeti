@@ -154,12 +154,16 @@ theorem sum_range_choose_mul_choose_succ (m n K r : ℕ) (hr : r < K) :
 
 /-- A partial upper-index Vandermonde sum and its complementary lower tail add to the full
 binomial coefficient. It partitions `K`-element subsets by whether their `r`th element occurs
-among the first `k + r` positions. -/
+among the first `k + r` positions. For `r = 0` the second sum is empty and only the term `i = 0`
+of the first sum is nonzero. -/
 theorem sum_range_choose_mul_choose_add_sum_range_choose_mul_choose
-    {N K r k : ℕ} (hr : 0 < r) (hrK : r ≤ K) (hk : k + r ≤ N) :
+    {N K r k : ℕ} (hrK : r ≤ K) (hk : k + r ≤ N) :
     (∑ i ∈ range (k + 1), (i + r - 1).choose i * (N - r - i).choose (K - r)) +
         (∑ j ∈ range r, (k + r).choose j * (N - k - r).choose (K - j)) =
       N.choose K := by
+  rcases Nat.eq_zero_or_pos r with rfl | hr
+  · -- Only the term `i = 0` of the first sum is nonzero, and the second sum is empty.
+    simp [sum_range_succ', Nat.choose_succ_self]
   induction k with
   | zero =>
     have hsum := add_choose_eq r (N - r) K

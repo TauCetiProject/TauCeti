@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Algebra.Bilinear
 public import Mathlib.Algebra.Lie.OfAssociative
 import Mathlib.RingTheory.Nilpotent.Lemmas
+import Mathlib.Tactic.Module
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -36,6 +37,10 @@ combination of products of left and right multiplications (`LieAlgebra.ad_comp_a
 such products are often computable, which is how the Killing form of the commutator Lie algebra
 of an associative algebra, such as `gl n`, is evaluated.
 
+If `x * x = c • 1` is a scalar, then `ad x` satisfies the cubic `(ad x)³ = 4 c • ad x`
+(`LieAlgebra.ad_pow_three_eq_smul_ad`), also inside any Lie subalgebra containing `x`
+(`LieSubalgebra.ad_pow_three_eq_smul_ad`).
+
 ## Main definitions
 
 * `LieHom.leftRegularRep`: the left-regular representation `L →ₗ⁅R⁆ Module.End R A` along `q`.
@@ -52,6 +57,8 @@ of an associative algebra, such as `gl n`, is evaluated.
 * `LieHom.ad_apply_eq_leftRegularRep_sub_mulRight`: the inner derivation action is the difference
   of the left-regular action and right multiplication.
 * `LieAlgebra.ad_comp_ad`: `ad x ∘ ad y` expanded into left and right multiplications.
+* `LieAlgebra.ad_pow_three_eq_smul_ad`: `(ad x)³ = 4 c • ad x` when `x * x = c • 1`.
+* `LieSubalgebra.ad_pow_three_eq_smul_ad`: the same cubic for `ad x` on a Lie subalgebra.
 * `LieSubalgebra.commute_coe_iff`: two elements of a Lie subalgebra of `A` commute in `A` exactly
   when their bracket vanishes.
 
@@ -157,6 +164,19 @@ theorem ad_comp_ad (x y : A) :
     LinearMap.sub_apply, LinearMap.mulLeft_apply, LinearMap.mulRight_apply]
   noncomm_ring
 
+/-- **The adjoint action of a square root of a scalar.** If `x * x = c • 1`, then
+`(ad x)³ = 4 c • ad x`, that is `⁅x, ⁅x, ⁅x, y⁆⁆⁆ = 4 c • ⁅x, y⁆`. -/
+theorem ad_pow_three_eq_smul_ad {x : A} {c : R} (hx : x * x = c • 1) :
+    ad R A x ^ 3 = (4 * c) • ad R A x := by
+  ext1 y
+  have key : (ad R A x ^ 3) y =
+      (x * x) * (x * y) - 3 • ((x * x) * (y * x)) + 3 • (x * y * (x * x)) - y * x * (x * x) := by
+    simp only [pow_succ, pow_zero, one_mul, mul_apply_eq_comp, ad_apply, Ring.lie_def]
+    noncomm_ring
+  rw [key, hx, LinearMap.smul_apply, ad_apply, Ring.lie_def]
+  simp only [smul_mul_assoc, one_mul, mul_smul_comm, mul_one]
+  module
+
 end LieAlgebra
 
 namespace LieSubalgebra
@@ -169,5 +189,15 @@ variable {R : Type u} {A : Type w} [CommRing R] [Ring A] [Algebra R A]
 their bracket vanishes. -/
 theorem commute_coe_iff {K : LieSubalgebra R A} {x y : K} : Commute (x : A) y ↔ ⁅x, y⁆ = 0 := by
   rw [commute_iff_lie_eq, ← coe_bracket, ZeroMemClass.coe_eq_zero]
+
+/-- **The adjoint action of a square root of a scalar in a Lie subalgebra.** If `u` lies in a Lie
+subalgebra `K` of `A` with `u * u = c • 1`, then `(ad u)³ = 4 c • ad u` on `K`. -/
+theorem ad_pow_three_eq_smul_ad {K : LieSubalgebra R A} {u : K} {c : R}
+    (hu : (u : A) * u = c • 1) :
+    LieAlgebra.ad R K u ^ 3 = (4 * c) • LieAlgebra.ad R K u := by
+  ext1 v
+  apply Subtype.ext
+  rw [coe_ad_pow, LinearMap.smul_apply, SetLike.val_smul, coe_ad,
+    LieAlgebra.ad_pow_three_eq_smul_ad hu, LinearMap.smul_apply]
 
 end LieSubalgebra

@@ -59,7 +59,7 @@ theorem orderAt_mul_eq_sum_min_of_puiseux (p : MvPolynomial (Fin 2) 𝕜) (a : F
     simp only [hp, map_zero, zero_pow hN.ne'] at this
     exact mul_ne_zero hu0 hprod this.symm
   choose b hb using fun i ↦
-    ((hr i).sub analyticAt_const).exists_analyticOrderAt_monomial_sub_eq_min N
+    TauCeti.exists_analyticOrderAt_monomial_sub_eq_min (fun t ↦ r i t - a 1) N
   obtain ⟨c, hc, horder⟩ := p.exists_analyticOrderAt_eval_finTwo_eq hp a
     (insert 0 (Finset.univ.image b))
   have hc0 : c ≠ 0 := fun h ↦ hc (by simp [h])

@@ -6,9 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.Probability.Distributions.Dirichlet.Density
-import TauCeti.Probability.Distributions.Dirichlet.Aggregation
-import TauCeti.Probability.Distributions.Dirichlet.StickBreaking.Basic
-import TauCeti.MeasureTheory.Integral.Prod
 
 /-!
 # Mixed power moments of the Dirichlet distribution
@@ -18,16 +15,11 @@ each exponent to its concentration parameter leaves it positive. This includes n
 exponents, and in particular gives every natural mixed moment. These integrals also evaluate
 the masses obtained by mixing multinomial laws against a Dirichlet law.
 
-When there are at least two coordinates, the shifted-parameter condition is also necessary.
-This is proved by splitting off each coordinate in turn: the split coordinate is Beta-distributed
-and independent of the normalized remainder, so Fubini reduces each endpoint threshold to the
-sharp mixed-power criterion for a Beta law. The one-coordinate law is instead concentrated at
-the constant vector `1`, and hence has every real mixed moment.
-
-The moment computation uses `dirichletMeasure_eq_map_withDensity_dirichletChartPDF`:
-multiplication by a monomial shifts the exponents in the chart density, and the shifted density
-has mass one. On a one-element coordinate type every mixed power is identically one almost
-surely, without any restriction on its exponent.
+The computation uses `dirichletMeasure_eq_map_withDensity_dirichletChartPDF`: multiplication
+by a monomial shifts the exponents in the chart density, and the shifted density has mass one.
+No assertion of divergence outside the positive shifted-shape range is made here. On a
+one-element coordinate type every mixed power is identically one almost surely, without any
+restriction on its exponent.
 
 ## References
 
@@ -149,107 +141,6 @@ theorem integrable_prod_rpow_dirichletMeasure {a q : ι → ℝ}
     exact ENNReal.ofReal_lt_top
   · rw [dirichletMeasure_eq_zero_of_invalid h]
     simp
-
-omit [Nonempty ι] in
-private theorem map_reindexed_dirichletStickInsert_eq {K : Type*} [Fintype K] [Nonempty K]
-    (e : Option K ≃ ι) {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
-    ((betaMeasure (a (e none)) (∑ j : K, a (e (some j)))).prod
-      (dirichletMeasure fun j ↦ a (e (some j)))).map
-        (euclideanFiberSum e ∘ dirichletStickInsert) = dirichletMeasure a := by
-  classical
-  let a' : Option K → ℝ := fun j ↦ a (e j)
-  have ha' (j : Option K) : 0 < a' j := ha (e j)
-  rw [← Measure.map_map (measurable_euclideanFiberSum e)
-    measurable_dirichletStickInsert,
-    map_dirichletStickInsert_prod_betaMeasure_dirichletMeasure ha',
-    map_euclideanFiberSum_dirichletMeasure e.surjective ha']
-  congr 1
-  funext j
-  rw [e.sum_fiber_eq]
-  simp [a']
-
-omit [Nonempty ι] in
-private theorem prod_rpow_reindexed_dirichletStickInsert_ae {K : Type*}
-    [Fintype K] [Nonempty K] (e : Option K ≃ ι) {a q : ι → ℝ}
-    (ha : ∀ i, 0 < a i) :
-    ∀ᵐ z ∂((betaMeasure (a (e none)) (∑ j : K, a (e (some j)))).prod
-        (dirichletMeasure fun j ↦ a (e (some j)))),
-      (∏ j, (euclideanFiberSum e (dirichletStickInsert z)) j ^ q j) =
-        (z.1 ^ q (e none) * (1 - z.1) ^ (∑ j : K, q (e (some j)))) *
-          ∏ j, z.2 j ^ q (e (some j)) := by
-  have hsum_a : 0 < ∑ j : K, a (e (some j)) :=
-    Finset.sum_pos (fun j _ ↦ ha (e (some j))) Finset.univ_nonempty
-  let _ := isProbabilityMeasureBeta (ha (e none)) hsum_a
-  let _ := isProbabilityMeasure_dirichletMeasure (fun j : K ↦ ha (e (some j)))
-  apply Measure.ae_prod_iff_ae_ae (measurableSet_eq_fun (by fun_prop) (by fun_prop)) |>.2
-  filter_upwards [ae_mem_Ioo_betaMeasure (a (e none))
-    (∑ j : K, a (e (some j)))] with v hv
-  filter_upwards [ae_pos_dirichletMeasure (a := fun j : K ↦ a (e (some j)))] with y hy
-  rw [Fintype.prod_equiv e.symm
-    (fun j ↦ (euclideanFiberSum e (dirichletStickInsert (v, y))) j ^ q j)
-    (fun j ↦ dirichletStickInsert (v, y) j ^ q (e j))]
-  · simp only [Fintype.prod_option, dirichletStickInsert_none,
-      dirichletStickInsert_some]
-    simp_rw [Real.mul_rpow (sub_pos.mpr hv.2).le (hy _).le]
-    rw [Finset.prod_mul_distrib, ← Real.rpow_sum_of_pos (sub_pos.mpr hv.2)]
-    simp [mul_assoc]
-  · intro j
-    simp
-
-omit [Nonempty ι] in
-/-- For a Dirichlet law with at least two coordinates, a mixed real power is integrable exactly
-when every exponent stays above its coordinate's endpoint singularity threshold. -/
-@[simp]
-theorem integrable_prod_rpow_dirichletMeasure_iff {a q : ι → ℝ}
-    (ha : ∀ i, 0 < a i) (hcard : 2 ≤ Fintype.card ι) :
-    Integrable (fun x ↦ ∏ i, x i ^ q i) (dirichletMeasure a) ↔
-      ∀ i, 0 < a i + q i := by
-  classical
-  constructor
-  · intro h i
-    let κ := {j // j ≠ i}
-    let e : Option κ ≃ ι := Equiv.optionSubtypeNe i
-    have he_none : e none = i := by rfl
-    have hne : ∃ j, j ≠ i :=
-      Fintype.exists_ne_of_one_lt_card (lt_of_lt_of_le one_lt_two hcard) i
-    let _ : Nonempty κ := ⟨⟨hne.choose, hne.choose_spec⟩⟩
-    let mu := (betaMeasure (a (e none)) (∑ j : κ, a (e (some j)))).prod
-      (dirichletMeasure fun j ↦ a (e (some j)))
-    let insert := euclideanFiberSum e ∘ dirichletStickInsert
-    let f : ℝ → ℝ := fun v ↦
-      v ^ q (e none) * (1 - v) ^ (∑ j : κ, q (e (some j)))
-    let g : EuclideanSpace ℝ κ → ℝ := fun y ↦ ∏ j, y j ^ q (e (some j))
-    have hsum_a : 0 < ∑ j : κ, a (e (some j)) :=
-      Finset.sum_pos (fun j _ ↦ ha (e (some j))) Finset.univ_nonempty
-    have _ : IsProbabilityMeasure (betaMeasure (a (e none))
-        (∑ j : κ, a (e (some j)))) :=
-      isProbabilityMeasureBeta (ha (e none)) hsum_a
-    have _ : IsProbabilityMeasure (dirichletMeasure fun j : κ ↦ a (e (some j))) :=
-      isProbabilityMeasure_dirichletMeasure (fun j ↦ ha (e (some j)))
-    -- Reindex the one-step stick-breaking representation so that its first coordinate is `i`.
-    have hmap : Measure.map insert mu = dirichletMeasure a := by
-      simpa [mu, insert] using map_reindexed_dirichletStickInsert_eq e ha
-    have hinsert : Integrable ((fun x ↦ ∏ j, x j ^ q j) ∘ insert) mu := by
-      have hi : Integrable (fun x ↦ ∏ j, x j ^ q j) (Measure.map insert mu) :=
-        hmap.symm ▸ h
-      exact (integrable_map_measure hi.aestronglyMeasurable
-        (by fun_prop : AEMeasurable insert mu)).1 hi
-    have hfactor : ∀ᵐ z ∂mu, ((fun x ↦ ∏ j, x j ^ q j) ∘ insert) z =
-        f z.1 * g z.2 := by
-      simpa [mu, insert, f, g] using
-        prod_rpow_reindexed_dirichletStickInsert_ae e ha (q := q)
-    have hsep : Integrable (fun z ↦ f z.1 * g z.2) mu := hinsert.congr hfactor
-    have hpositive : ∀ᵐ y ∂(dirichletMeasure fun j : κ ↦ a (e (some j))), 0 < g y := by
-      filter_upwards [ae_pos_dirichletMeasure (a := fun j : κ ↦ a (e (some j)))] with y hy
-      exact Finset.prod_pos fun j _ ↦ Real.rpow_pos_of_pos (hy j) _
-    -- A positive Dirichlet slice lets product integrability descend to the Beta factor.
-    have hf : Integrable f (betaMeasure (a (e none)) (∑ j : κ, a (e (some j)))) :=
-      integrable_left_of_mul_prod_of_ae_ne_zero (by simpa [mu] using hsep)
-        (hpositive.mono fun _ h ↦ h.ne')
-    have hi := ((integrable_rpow_mul_one_sub_rpow_betaMeasure_iff
-      (ha (e none)) hsum_a).1 (by simpa [f] using hf)).1
-    simpa [he_none] using hi
-  · exact integrable_prod_rpow_dirichletMeasure
 
 /-- The mixed real-power moment of a Dirichlet law is the ratio of the original and shifted
 normalizing constants. -/

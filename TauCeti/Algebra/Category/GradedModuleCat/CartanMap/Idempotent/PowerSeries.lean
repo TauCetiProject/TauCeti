@@ -52,14 +52,14 @@ variable {k : Type uk} [Field k] {A : Type uA} [Ring A] [Algebra k A] [Module.Fi
 /-- The polynomial graded Cartan matrix in the primitive-idempotent bases.
 Mapping its entries by `Polynomial.toLaurent` recovers the original Cartan matrix. -/
 def gradedIdempotentCartanPolynomial : Matrix I I (Polynomial ℤ) :=
-  (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso)
+  (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasisOfPrimitive he hI hprim hnoniso)
     (gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim hnoniso)).map LaurentPolynomial.trunc
 
 /-- Polynomialization retains every coefficient: the discarded negative coefficients vanish. -/
 @[simp]
 theorem map_toLaurent_gradedIdempotentCartanPolynomial :
     (gradedIdempotentCartanPolynomial he he₀ hI hneg hprim hnoniso).map Polynomial.toLaurent =
-      gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso)
+      gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasisOfPrimitive he hI hprim hnoniso)
         (gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim hnoniso) := by
   ext i j : 2
   obtain ⟨p, hp⟩ := exists_toLaurent_eq_iff.mpr
@@ -72,7 +72,7 @@ theorem map_toLaurent_gradedIdempotentCartanPolynomial :
 @[simp]
 theorem coeff_gradedIdempotentCartanPolynomial (i j : I) (n : ℕ) :
     (gradedIdempotentCartanPolynomial he he₀ hI hneg hprim hnoniso i j).coeff n =
-      (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso)
+      (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasisOfPrimitive he hI hprim hnoniso)
         (gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim hnoniso) i j).coeff n := by
   simp [gradedIdempotentCartanPolynomial]
 
@@ -108,7 +108,7 @@ theorem isUnit_gradedIdempotentCartanPolynomial_powerSeries :
 /-- The graded Cartan determinant is nonzero in Laurent polynomials, even when it is not a unit.
 This is independent of the Cartan comparison theorem for finite resolutions. -/
 theorem det_gradedCartanMatrix_gradedIdempotentProjectiveBasisOfPrimitive_ne_zero :
-    (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasisOfPrimitive he he₀ hI hprim hnoniso)
+    (gradedCartanMatrix 𝒜 (gradedIdempotentProjectiveBasisOfPrimitive he hI hprim hnoniso)
       (gradedIdempotentHeadBasisOfPrimitive hneg he he₀ hprim hnoniso)).det ≠ 0 := by
   have hp : (gradedIdempotentCartanPolynomial he he₀ hI hneg hprim hnoniso).det ≠ 0 := by
     intro hz
