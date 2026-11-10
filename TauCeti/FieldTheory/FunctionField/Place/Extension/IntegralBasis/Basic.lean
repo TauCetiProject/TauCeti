@@ -26,11 +26,13 @@ The local model `𝒪_P ⊆ 𝒪'_P` and its fraction-field, localization, Dedek
 separability infrastructure are supplied by
 `TauCeti/FieldTheory/FunctionField/Place/Extension/Basic.lean`.
 
-The freeness and rank calculation are specializations of Mathlib's generic integral-closure
-theorems `IsIntegralClosure.module_free` and `IsIntegralClosure.rank`.  The point of this file is
-the function-field interface: the basis is indexed by `Fin [F' : F]`, its vectors are visibly
-integral, and their `𝒪_P`-span inside `F'` is exactly `𝒪'_P`.  These are the forms used by the
-subsequent constructions of the complementary module and different.
+The freeness is a specialization of Mathlib's generic integral-closure theorem
+`IsIntegralClosure.module_free`.  The rank comes from `F'` being the localization of `𝒪'_P` at
+`𝒪_P⁰` (`IsLocalizedModule.finrank_eq`, `IsFractionRing.finrank_right_eq`, through the local
+instance `isLocalization_integralClosure`) and holds without separability.  The point of this
+file is the function-field interface: the basis is indexed by `Fin [F' : F]`, its vectors are
+visibly integral, and their `𝒪_P`-span inside `F'` is exactly `𝒪'_P`.  These are the forms used by
+the subsequent constructions of the complementary module and different.
 
 The basis material is the place-local analogue of Mathlib's `NumberField.integralBasis` API in
 `Mathlib.NumberTheory.NumberField.Basic`, and is built the same way:
