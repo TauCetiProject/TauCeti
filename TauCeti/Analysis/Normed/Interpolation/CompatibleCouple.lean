@@ -440,20 +440,15 @@ private theorem sumSwapMap_sumSwapMap (u : C.SumSpace) :
   simp [sumSwapMap]
 
 /-- Exchanging the endpoints preserves the sum norm and the element in the ambient space. -/
-def sumSwap : C.SumSpace ≃ₗᵢ[𝕜] C.swap.SumSpace where
-  toFun := C.sumSwapMap
-  invFun := C.swap.sumSwapMap
-  left_inv := C.sumSwapMap_sumSwapMap
-  right_inv := C.swap.sumSwapMap_sumSwapMap
-  map_add' := map_add C.sumSwapMap
-  map_smul' := map_smul C.sumSwapMap
-  norm_map' u := by
-    dsimp
-    refine le_antisymm (C.sumSwapMap_norm_le u) ?_
-    calc
-      ‖u‖ = ‖C.swap.sumSwapMap (C.sumSwapMap u)‖ :=
-        congrArg norm (C.sumSwapMap_sumSwapMap u).symm
-      _ ≤ ‖C.sumSwapMap u‖ := C.swap.sumSwapMap_norm_le _
+def sumSwap : C.SumSpace ≃ₗᵢ[𝕜] C.swap.SumSpace :=
+  LinearIsometryEquiv.ofBounds
+    { toFun := C.sumSwapMap
+      invFun := C.swap.sumSwapMap
+      left_inv := C.sumSwapMap_sumSwapMap
+      right_inv := C.swap.sumSwapMap_sumSwapMap
+      map_add' := map_add C.sumSwapMap
+      map_smul' := map_smul C.sumSwapMap }
+    C.sumSwapMap_norm_le C.swap.sumSwapMap_norm_le
 
 @[simp]
 theorem sumSwap_fstToSum (x : X₀) : C.sumSwap (C.fstToSum x) = C.swap.sndToSum x :=

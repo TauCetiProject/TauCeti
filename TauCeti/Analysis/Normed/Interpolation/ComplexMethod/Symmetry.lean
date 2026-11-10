@@ -108,6 +108,15 @@ theorem stripEval_stripTracesSwap (z : ℂ) (g : C.stripTraces) :
       simpa only [sub_mem_verticalClosedStrip_iff, one_re, sub_self, sub_zero] using hz
     simp [C.swap.stripEval_eq_zero hz, C.stripEval_eq_zero hz']
 
+/-- Evaluation of reversed traces at the complementary real parameter agrees with evaluation
+of the original traces, under the canonical identification of sum spaces. -/
+theorem stripEval_stripTracesSwap_of_add_eq_one {θ η : ℝ} (h : θ + η = 1)
+    (g : C.stripTraces) :
+    C.swap.stripEval η (C.stripTracesSwap g) = C.sumSwap (C.stripEval θ g) := by
+  have hsub : (1 : ℂ) - η = θ := by
+    exact_mod_cast sub_eq_of_eq_add h.symm
+  rw [stripEval_stripTracesSwap, hsub]
+
 namespace ComplexMethodSpace
 
 variable {C} {θ η : ℝ}
@@ -120,8 +129,7 @@ private def reflectionMap (h : θ + η = 1) :
       simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
         LinearIsometryEquiv.coe_toContinuousLinearEquiv]
       rw [← map_zero (mk (C := C.swap) η), mk_eq_mk_iff]
-      rw [stripEval_stripTracesSwap, ← ofReal_one, ← ofReal_sub,
-        sub_eq_of_eq_add h.symm, hg]
+      rw [stripEval_stripTracesSwap_of_add_eq_one C h, hg]
       simp only [map_zero]
 
 private theorem reflectionMap_mk (h : θ + η = 1) (g : C.stripTraces) :
@@ -132,8 +140,7 @@ private theorem reflectionMap_mk (h : θ + η = 1) (g : C.stripTraces) :
 private theorem toSum_reflectionMap (h : θ + η = 1) (u : C.ComplexMethodSpace θ) :
     toSum (reflectionMap h u) = C.sumSwap (toSum u) := by
   obtain ⟨g, rfl⟩ := mk_surjective u
-  rw [reflectionMap_mk, toSum_mk, stripEval_stripTracesSwap, toSum_mk]
-  rw [← ofReal_one, ← ofReal_sub, sub_eq_of_eq_add h.symm]
+  rw [reflectionMap_mk, toSum_mk, stripEval_stripTracesSwap_of_add_eq_one C h, toSum_mk]
 
 private theorem reflectionMap_norm_le (h : θ + η = 1) (u : C.ComplexMethodSpace θ) :
     ‖reflectionMap h u‖ ≤ ‖u‖ := by
@@ -142,8 +149,9 @@ private theorem reflectionMap_norm_le (h : θ + η = 1) (u : C.ComplexMethodSpac
   rw [reflectionMap_mk]
   exact (norm_mk_le _).trans_lt ((C.stripTracesSwap.norm_map g).trans_lt hg)
 
-private theorem reflectionMap_reflectionMap (h : θ + η = 1) (h' : η + θ = 1)
-    (u : C.ComplexMethodSpace θ) : reflectionMap h' (reflectionMap h u) = u := by
+private theorem reflectionMap_reflectionMap (h : θ + η = 1)
+    (u : C.ComplexMethodSpace θ) :
+    reflectionMap (by linarith : η + θ = 1) (reflectionMap h u) = u := by
   apply toSum_injective
   simp [toSum_reflectionMap, ← sumSwap_symm]
 
@@ -151,21 +159,15 @@ private theorem reflectionMap_reflectionMap (h : θ + η = 1) (h' : η + θ = 1)
 `1 - θ` preserves the interpolation norm. The isometry identifies the same element of the
 ambient space; no regularity or completeness hypothesis on the endpoints is needed. -/
 def swap (C : TauCeti.CompatibleCouple ℂ X₀ X₁ V) (θ : ℝ) :
-    C.ComplexMethodSpace θ ≃ₗᵢ[ℂ] C.swap.ComplexMethodSpace (1 - θ) where
-  toFun := reflectionMap (by ring : θ + (1 - θ) = 1)
-  invFun := reflectionMap (by ring : (1 - θ) + θ = 1)
-  left_inv := reflectionMap_reflectionMap _ _
-  right_inv := reflectionMap_reflectionMap _ _
-  map_add' := map_add _
-  map_smul' := map_smul _
-  norm_map' u := by
-    dsimp
-    refine le_antisymm (reflectionMap_norm_le _ u) ?_
-    calc
-      ‖u‖ = ‖reflectionMap (by ring : (1 - θ) + θ = 1)
-          (reflectionMap (by ring : θ + (1 - θ) = 1) u)‖ :=
-        congrArg norm (reflectionMap_reflectionMap _ _ u).symm
-      _ ≤ _ := reflectionMap_norm_le _ _
+    C.ComplexMethodSpace θ ≃ₗᵢ[ℂ] C.swap.ComplexMethodSpace (1 - θ) :=
+  LinearIsometryEquiv.ofBounds
+    { toFun := reflectionMap (by ring : θ + (1 - θ) = 1)
+      invFun := reflectionMap (by ring : (1 - θ) + θ = 1)
+      left_inv := reflectionMap_reflectionMap _
+      right_inv := reflectionMap_reflectionMap _
+      map_add' := map_add _
+      map_smul' := map_smul _ }
+    (reflectionMap_norm_le _) (reflectionMap_norm_le _)
 
 /-- On representatives, symmetry reflects the admissible boundary traces. -/
 @[simp]
