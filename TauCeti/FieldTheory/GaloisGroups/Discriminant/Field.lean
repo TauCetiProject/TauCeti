@@ -28,8 +28,9 @@ the root set is empty and the discriminant field is just `F`.) In particular the
 does not depend on the numbering of the roots that `discrSqrt` is computed from, even though
 `discrSqrt` itself changes sign with it. From that description one reads off the two
 possibilities: `F⟮δ⟯` is `F` when `discr f` is a square in `F`, and a quadratic extension of `F`
-otherwise. Away from characteristic `2` it is moreover a Galois extension of `F` as soon as the
-discriminant is nonzero, since `X ^ 2 - C f.discr` is then separable.
+otherwise. Away from characteristic `2` it is moreover a Galois extension of `F`: when the
+discriminant is nonzero, `X ^ 2 - C f.discr` is separable, and when it is zero the discriminant
+field is `F`.
 
 The discriminant field is determined by the discriminant alone. The comparison theorem
 `TauCeti.fixedField_evenAutSubgroup` characterizes it additionally through the action on the roots
@@ -40,9 +41,9 @@ inclusions short: an even automorphism fixes `δ`, and an odd one negates it, wh
 because `δ ≠ 0` and `2 ≠ 0`.
 
 For separable `f` of positive degree and away from characteristic `2`, the comparison reads
-factorizations over the discriminant field on the Galois image: in a normal splitting extension,
-`f` stays irreducible over its discriminant field exactly when the even
-permutations in the Galois image act transitively on the roots
+factorizations over the discriminant field on the Galois image: in a splitting extension, `f`
+stays irreducible over its discriminant field exactly when the even permutations in the Galois
+image act transitively on the roots
 (`TauCeti.irreducible_map_discrField_iff`). Since all discriminant fields are splitting fields of
 `X ^ 2 - C f.discr`, whether `f` stays irreducible over one does not depend on the extension `E` in
 which it is taken (`TauCeti.irreducible_map_discrField_congr`). This is the datum that separates the
@@ -67,8 +68,7 @@ discriminant field is trivial exactly when the Galois image is contained in the 
   new base field with the original discriminant field.
 * `TauCeti.discrField_eq_bot_iff`, `TauCeti.finrank_discrField_eq_two`: the discriminant field is
   `F` exactly when the discriminant is a square, and has degree `2` otherwise.
-* `TauCeti.isGalois_discrField`: away from characteristic `2`, and for nonzero discriminant, it is
-  a Galois extension of `F`.
+* `TauCeti.isGalois_discrField`: away from characteristic `2`, it is a Galois extension of `F`.
 * `TauCeti.irreducible_map_discrField_congr`: irreducibility over the discriminant field does not
   depend on the extension in which the discriminant field is taken.
 * `TauCeti.fixedField_evenAutSubgroup`: **the comparison theorem**, that the discriminant field is
@@ -224,12 +224,16 @@ theorem finrank_discrField_baseChange_eq_two {K : Type w} [Field K] [Algebra F K
     exact hδ
   · rwa [Polynomial.discr_map_of_natDegree_eq _ hdeg]
 
-/-- Away from characteristic `2`, the discriminant field of a polynomial with nonzero discriminant
-is a Galois extension of the base field: it is the splitting field of `X ^ 2 - C f.discr`, which is
-separable because the discriminant is nonzero and `2` is invertible. For a monic polynomial,
-`Polynomial.Monic.discr_ne_zero_iff` reads the hypothesis as separability of `f`. -/
-theorem isGalois_discrField {δ : E} (hδ : δ ^ 2 = algebraMap F E f.discr) (hdisc : f.discr ≠ 0)
+/-- Away from characteristic `2`, the discriminant field of a polynomial is a Galois extension of
+the base field. For nonzero discriminant it is the splitting field of `X ^ 2 - C f.discr`, which is
+separable because the discriminant is nonzero and `2` is invertible; for zero discriminant it is
+the base field itself. For a monic polynomial, `Polynomial.Monic.discr_ne_zero_iff` reads the
+nonvanishing of the discriminant as separability of `f`. -/
+theorem isGalois_discrField {δ : E} (hδ : δ ^ 2 = algebraMap F E f.discr)
     (hchar : ringChar F ≠ 2) : IsGalois F (discrField f E) := by
+  by_cases hdisc : f.discr = 0
+  · rw [(discrField_eq_bot_iff hδ).mpr (by simp [hdisc])]
+    infer_instance
   have hsep2 : ((X : F[X]) ^ 2 - C f.discr).Separable :=
     separable_X_pow_sub_C _ (by simpa using Ring.two_ne_zero hchar) hdisc
   have := isSplittingField_discrField hδ
@@ -353,44 +357,77 @@ theorem isPretransitive_evenAutSubgroup_iff [Normal F E] :
     exact ⟨⟨σ, hπ⟩, rfl⟩
 
 open scoped Classical in
-/-- **Irreducibility over the discriminant field.** In a normal splitting extension, and away from
+/-- **Irreducibility over the discriminant field.** In a splitting extension, and away from
 characteristic `2`, a separable polynomial of positive degree stays irreducible over its
 discriminant field exactly when the even permutations in its Galois image act transitively on its
 roots.
 
 By `TauCeti.irreducible_map_discrField_congr`, the left-hand side is the same for the discriminant
 field taken in any extension containing a square root of the discriminant. -/
-theorem irreducible_map_discrField_iff [Normal F E] (hsep : f.Separable)
+theorem irreducible_map_discrField_iff (hsep : f.Separable)
     (hchar : ringChar F ≠ 2) (hdeg : 0 < f.natDegree) :
     Irreducible (f.map (algebraMap F (discrField f E))) ↔
       MulAction.IsPretransitive
         ((Gal.galActionHom f E).range ⊓ alternatingGroup (f.rootSet E) :
           Subgroup (Equiv.Perm (f.rootSet E))) (f.rootSet E) := by
-  rw [irreducible_map_iff_isPretransitive_fixingSubgroup E _ hsep hdeg,
+  -- Read both sides in the splitting field `f.SplittingField`, which is normal over `F`.
+  have : Fact ((f.map (algebraMap F f.SplittingField)).Splits) := ⟨IsSplittingField.splits _ f⟩
+  obtain ⟨e⟩ : Nonempty (Fin f.natDegree ≃ f.rootSet E) :=
+    ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
+  obtain ⟨e'⟩ : Nonempty (Fin f.natDegree ≃ f.rootSet f.SplittingField) :=
+    ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
+  rw [irreducible_map_discrField_congr (leadingCoeff_pow_mul_discrSqrt_sq e)
+      (leadingCoeff_pow_mul_discrSqrt_sq e') f,
+    irreducible_map_iff_isPretransitive_fixingSubgroup f.SplittingField _ hsep hdeg,
     fixingSubgroup_discrField hsep hchar, isPretransitive_evenAutSubgroup_iff]
+  -- The root action in `E` is the transport of the root action in the splitting field.
+  let ε := Gal.rootsEquivRoots f E f.SplittingField
+  let φ : ((Gal.galActionHom f E).range ⊓ alternatingGroup (f.rootSet E) :
+        Subgroup (Equiv.Perm (f.rootSet E))) →
+      ((Gal.galActionHom f f.SplittingField).range ⊓ alternatingGroup (f.rootSet f.SplittingField) :
+        Subgroup (Equiv.Perm (f.rootSet f.SplittingField))) :=
+    fun σ ↦ ⟨ε.permCongr σ, by
+      obtain ⟨⟨g, hg⟩, halt⟩ := Subgroup.mem_inf.mp σ.2
+      refine Subgroup.mem_inf.mpr ⟨⟨g, ?_⟩, ?_⟩
+      · rw [Gal.galActionHom_eq_permCongr f E f.SplittingField g, hg]
+      · rwa [Equiv.Perm.mem_alternatingGroup, Equiv.Perm.sign_permCongr,
+          ← Equiv.Perm.mem_alternatingGroup]⟩
+  refine (MulAction.isPretransitive_congr (φ := φ) (f := ⟨ε, fun σ x ↦ ?_⟩) ?_
+    ε.bijective).symm
+  · simp [φ, Subgroup.smul_def, Equiv.Perm.smul_def]
+  · rintro ⟨π, hπ⟩
+    obtain ⟨⟨g, hg⟩, halt⟩ := Subgroup.mem_inf.mp hπ
+    refine ⟨⟨Gal.galActionHom f E g, ⟨g, rfl⟩, ?_⟩, Subtype.ext ?_⟩
+    · have h1 := Equiv.Perm.mem_alternatingGroup.mp halt
+      rw [← hg, Gal.galActionHom_eq_permCongr f E f.SplittingField g,
+        Equiv.Perm.sign_permCongr] at h1
+      exact Equiv.Perm.mem_alternatingGroup.mpr h1
+    · simp only [φ]
+      rw [← Gal.galActionHom_eq_permCongr f E f.SplittingField g, hg]
 
 open scoped Classical in
 /-- **The discriminant test, read on the discriminant field.** The discriminant field is trivial
 exactly when the Galois image consists of even permutations of the roots. -/
-theorem discrField_eq_bot_iff_range_le_alternatingGroup [IsGalois F E]
+theorem discrField_eq_bot_iff_range_le_alternatingGroup
     (hsep : f.Separable) (hchar : ringChar F ≠ 2) :
     discrField f E = ⊥ ↔ (Gal.galActionHom f E).range ≤ alternatingGroup (f.rootSet E) := by
   obtain ⟨e⟩ : Nonempty (Fin f.natDegree ≃ f.rootSet E) :=
     ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
-  rw [discrField_eq_bot_iff (leadingCoeff_pow_mul_discrSqrt_sq e)]
-  exact hsep.isSquare_discr_iff_range_le_alternatingGroup hchar
+  rw [discrField_eq_bot_iff (leadingCoeff_pow_mul_discrSqrt_sq e),
+    hsep.isSquare_discr_iff_sign_eq_one hchar, Gal.sign_eq_one_iff_range_le_alternatingGroup f E]
 
 open scoped Classical in
 /-- The discriminant field is a quadratic extension exactly when the Galois image contains an odd
 permutation of the roots. This is the separation the quartic decision table reads. -/
-theorem finrank_discrField_eq_two_iff [IsGalois F E] (hsep : f.Separable)
+theorem finrank_discrField_eq_two_iff (hsep : f.Separable)
     (hchar : ringChar F ≠ 2) :
     Module.finrank F (discrField f E) = 2 ↔
       ¬ (Gal.galActionHom f E).range ≤ alternatingGroup (f.rootSet E) := by
   obtain ⟨e⟩ : Nonempty (Fin f.natDegree ≃ f.rootSet E) :=
     ⟨(Fintype.equivFinOfCardEq (card_rootSet_eq_natDegree hsep Fact.out)).symm⟩
   have hδ := leadingCoeff_pow_mul_discrSqrt_sq e
-  rw [← hsep.isSquare_discr_iff_range_le_alternatingGroup (E := E) hchar]
+  rw [← Gal.sign_eq_one_iff_range_le_alternatingGroup f E,
+    ← hsep.isSquare_discr_iff_sign_eq_one hchar]
   refine ⟨fun h hsq ↦ ?_, finrank_discrField_eq_two hδ⟩
   rw [← finrank_discrField_eq_one_iff hδ] at hsq
   omega
