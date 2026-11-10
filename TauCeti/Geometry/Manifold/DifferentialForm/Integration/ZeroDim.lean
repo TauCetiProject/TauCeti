@@ -56,8 +56,8 @@ theorem integralTopForm_ofFunction_zeroDim (o : Manifold.Orientation 𝓘(ℝ, E
     rw [RoughForm.signedInChartAt_apply, dite_eq_left (ht y), RoughForm.inChartAt_ofFunction]
     simp only [hx, ContinuousAlternatingMap.constOfIsEmpty_apply]
   simp_rw [hcoef]
-  rw [integral_const, measureReal_def, Module.Basis.addHaar_univ_of_isEmpty,
-    ENNReal.toReal_one, one_smul, Manifold.Orientation.orientationAt_mk,
+  rw [integral_const, Module.Basis.addHaar_eq_dirac, probReal_univ, one_smul,
+    Manifold.Orientation.orientationAt_mk,
     Manifold.OrientationLift.signBasis_orientationAt]
   simp only [Units.val_mul, Int.cast_mul]
   ring

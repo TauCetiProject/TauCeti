@@ -187,7 +187,7 @@ theorem integrationCurrent_positiveOrientation_apply [Subsingleton E] (Ω : Open
     ext x
     rw [Subsingleton.elim x 0, Subsingleton.elim (⇑b) ![]]
   rw [integrationCurrent_apply _ Ω b (Basis.orientation_isEmpty b)]
-  simp [hfun, measureReal_def, b.addHaar_univ_of_isEmpty]
+  simp [hfun]
 
 section Pullback
 
