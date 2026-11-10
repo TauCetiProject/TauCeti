@@ -30,8 +30,8 @@ Rescaling an involution by a scalar `μ` with `μ * μ = 1` gives an endomorphis
 
 A finite nontrivial module has more than one endomorphism (`Module.End.one_lt_natCard`).
 
-Endomorphisms conjugate by a linear equivalence square to the same scalar
-(`Module.End.mul_self_eq_smul_one_iff_of_forall_apply_eq`).
+Of two endomorphisms conjugate by a linear equivalence, one squares to `κ • 1` exactly when the
+other does (`Module.End.mul_self_eq_smul_one_iff_of_forall_apply_eq`).
 
 An endomorphism acting as a scalar `a` from a monoid acting on the module has `k`-th power acting
 as `a ^ k` (`Module.End.pow_apply_eq_pow_smul`), so it is `1` once `a ^ k = 1`
@@ -94,7 +94,7 @@ theorem one_lt_natCard {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
   have : Finite (Module.End R M) := Finite.of_injective _ DFunLike.coe_injective
   exact Finite.one_lt_card
 
-/-- Conjugate endomorphisms have the same squares. -/
+/-- If `e` conjugates `A` to `B`, then `A` squares to `κ • 1` exactly when `B` does. -/
 theorem mul_self_eq_smul_one_iff_of_forall_apply_eq {R M N : Type*} [CommSemiring R]
     [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] {A : Module.End R M}
     {B : Module.End R N} {e : M ≃ₗ[R] N} (hAB : ∀ v, e (A v) = B (e v)) (κ : R) :
