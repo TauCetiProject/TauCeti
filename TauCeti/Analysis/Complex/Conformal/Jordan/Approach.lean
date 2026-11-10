@@ -123,12 +123,14 @@ private theorem IsJordanDomain.exists_isPreconnected_inter_ball_subset_of_arc
   exact janiszewski isClosed_frontier (isClosed_sphere.union hclosed) hSb
     (isBounded_sphere.union (hSb.subset sdiff_subset)) (hST ▸ hpre) hSsep hTsep
 
-/-- **A Jordan domain is locally connected from within at each point.**  At a boundary point the
-arc lemma supplies the closed complementary arc and the Janiszewski step does the rest; elsewhere
-the point is interior to the domain or outside its closure. -/
+/-- **A Jordan domain is locally connected from within at each point.** For every outer radius
+`ε > 0` there is a smaller radius `δ > 0` and a preconnected subset of `U ∩ ball a ε` that contains
+the trace `U ∩ ball a δ` of the domain on the smaller ball. -/
 theorem IsJordanDomain.exists_isPreconnected_inter_ball_subset
     (hU : IsJordanDomain U) {ε : ℝ} (hε : 0 < ε) :
     ∃ δ > 0, ∃ C ⊆ U ∩ ball a ε, IsPreconnected C ∧ U ∩ ball a δ ⊆ C := by
+  -- At a boundary point the arc lemma supplies the closed complementary arc and the Janiszewski
+  -- step does the rest; elsewhere the point is interior to the domain or outside its closure.
   by_cases ha : a ∈ frontier U
   swap
   · -- off the frontier, `a` is an interior point of `U` or lies outside `closure U`
