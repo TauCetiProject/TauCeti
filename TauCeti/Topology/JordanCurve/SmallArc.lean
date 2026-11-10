@@ -143,7 +143,8 @@ open scoped Real
 /-- **Two distinct points cut the circle into a short arc and a long one.** The complement of
 `{z, w}` is the union of two preconnected sets, the first of which stays of diameter at most
 `π / 2 * dist z w` even after the two cut points are put back: it is `P ∪ {z, w}`, the *closed*
-short arc, that is bounded. For `z = w` the short arc is empty. -/
+short arc, that is bounded. For `z = w` the open piece `P` is empty and the closed short arc is
+the singleton `{z}`. -/
 theorem exists_isPreconnected_union_eq_compl_pair_circle_diam_le {z w : Circle} :
     ∃ P Q : Set Circle, IsPreconnected P ∧ IsPreconnected Q ∧
       P ∪ Q = ({z, w} : Set Circle)ᶜ ∧ Metric.diam (P ∪ {z, w}) ≤ π / 2 * dist z w := by
@@ -213,10 +214,10 @@ the transport to a Jordan curve consumes, since what arrives there is a hypothes
 `dist z w < δ`. -/
 private theorem exists_pos_forall_isPreconnected_union_eq_compl_pair_circle_diam_lt {η : ℝ}
     (hη : 0 < η) :
-    ∃ δ > 0, ∀ ⦃z w : Circle⦄, z ≠ w → dist z w < δ →
+    ∃ δ > 0, ∀ ⦃z w : Circle⦄, dist z w < δ →
       ∃ P Q : Set Circle, IsPreconnected P ∧ IsPreconnected Q ∧
         P ∪ Q = ({z, w} : Set Circle)ᶜ ∧ Metric.diam (P ∪ {z, w}) < η := by
-  refine ⟨2 / π * η, by positivity, fun z w _ hd => ?_⟩
+  refine ⟨2 / π * η, by positivity, fun z w hd => ?_⟩
   obtain ⟨P, Q, hPc, hQc, hunion, hPd⟩ :=
     exists_isPreconnected_union_eq_compl_pair_circle_diam_le (z := z) (w := w)
   exact ⟨P, Q, hPc, hQc, hunion, hPd.trans_lt (pi_div_two_mul_lt hη hd)⟩
@@ -310,8 +311,7 @@ private theorem IsJordanCurve.exists_pos_forall_exists_isPreconnected_diam_union
   set w := e ⟨q, hq⟩
   have hgz : g z = p := jordanParam_apply_apply e hp
   have hgw : g w = q := jordanParam_apply_apply e hq
-  have hzw : z ≠ w := fun hh => hpq (congrArg Subtype.val (e.injective hh))
-  obtain ⟨P, Q, hPc, hQc, hunion, hPd⟩ := hcut hzw (hδ p hp q hq hpqδ)
+  obtain ⟨P, Q, hPc, hQc, hunion, hPd⟩ := hcut (hδ p hp q hq hpqδ)
   -- The closed short arc downstairs is the image of the closed short arc of parameters.
   have hclosed : g '' (P ∪ {z, w}) = g '' P ∪ {p, q} := by
     rw [image_union, image_insert_eq, image_singleton, hgz, hgw]
