@@ -31,7 +31,8 @@ zero modules. Almost finite generation is invariant under almost isomorphisms. T
 is preserved along a map with almost zero cokernel for every setup, and under Gabber–Ramero's
 condition (A), `BasicSetup.IsFilteredPrincipal`, it is invariant under almost isomorphisms with
 the same bound. So almost finite generation, and under condition (A) the uniform bound, are
-properties of the almost module `N^a` rather than of the representative `N`.
+properties of the almost module `N^a` rather than of the representative `N`. Finally, almost
+finite generation is closed under extensions.
 
 ## Main definitions
 
@@ -60,11 +61,13 @@ properties of the almost module `N^a` rather than of the representative `N`.
   `TauCeti.Almost.BasicSetup.UniformlyAlmostFG.iff_of_isAlmostIso`: the uniform bound passes
   along maps with almost zero cokernel, and under condition (A) it is invariant under almost
   isomorphisms (Gabber–Ramero Remark 2.3.9).
+* `TauCeti.Almost.BasicSetup.AlmostFG.extension`: extensions of almost finitely generated modules
+  (Gabber–Ramero Lemma 2.3.17(i)).
 
 ## References
 
 * O. Gabber, L. Ramero, *Almost ring theory*, Lecture Notes in Mathematics 1800, §2.3:
-  Definition 2.3.8, Remark 2.3.9 and Proposition 2.3.10.
+  Definition 2.3.8, Remark 2.3.9, Proposition 2.3.10 and Lemma 2.3.17(i).
 * P. Scholze, *Perfectoid spaces*, Publ. Math. IHÉS 116 (2012), §4, Definition/Proposition 4.7.
 -/
 
@@ -225,9 +228,9 @@ section Invariance
 
 variable {f : M →ₗ[V] N} {K : Ideal V}
 
-/-- Forward transfer: if `K • M ≤ P` and `f` has almost zero cokernel, then
+/-- If `f : M → N` has almost zero cokernel, `K ≤ m` and `K • M ≤ P`, then
 `K ^ 2 • N ≤ f(P)`. -/
-private theorem pow_two_smul_top_le_map (hf : S.IsAlmostZero (N ⧸ range f)) (hK : K ≤ S.ideal)
+theorem pow_two_smul_top_le_map (hf : S.IsAlmostZero (N ⧸ range f)) (hK : K ≤ S.ideal)
     {P : Submodule V M} (hP : K • (⊤ : Submodule V M) ≤ P) :
     (K ^ 2) • (⊤ : Submodule V N) ≤ P.map f := by
   rw [sq, Submodule.mul_smul]
@@ -318,5 +321,38 @@ theorem UniformlyAlmostFG.iff_of_isAlmostIso (hS : S.IsFilteredPrincipal) (hf : 
   exact hzφ
 
 end Invariance
+
+/-! ### Extensions -/
+
+section Extension
+
+variable {P : Type*} [AddCommGroup P] [Module V P] {f : M →ₗ[V] N} {g : N →ₗ[V] P}
+
+/-- If `M → N → P → 0` is exact with `M` and `P` almost finitely generated, then `N` is almost
+finitely generated (Gabber–Ramero Lemma 2.3.17(i)). -/
+theorem AlmostFG.extension (h₁ : S.AlmostFG M) (h₃ : S.AlmostFG P) (hfg : Function.Exact f g)
+    (hg : Function.Surjective g) : S.AlmostFG N := by
+  rw [almostFG_iff_exists_fg] at h₁ h₃ ⊢
+  intro m₀ hm hfg₀
+  obtain ⟨K, hKfg, hK, hm₀⟩ :=
+    Ideal.exists_fg_le_pow_of_isIdempotentElem S.isIdempotentElem hfg₀ hm 2
+  obtain ⟨Q₁, hQ₁fg, hKQ₁⟩ := h₁ K hK hKfg
+  obtain ⟨Q₃, hQ₃fg, hKQ₃⟩ := h₃ K hK hKfg
+  -- Lift the generators of `Q₃` along `g`.
+  obtain ⟨t, ρ, rfl⟩ := (fg_iff_exists_fin_linearMap _ _).mp hQ₃fg
+  obtain ⟨ρ', hρ'⟩ := exists_comp_eq_of_range_le (b := g) (a := ρ)
+    (by rw [range_eq_top.mpr hg]; exact le_top)
+  refine ⟨range ρ' ⊔ Q₁.map f, (fg_range ρ').sup (hQ₁fg.map f), (smul_mono_left hm₀).trans ?_⟩
+  have h : K • (⊤ : Submodule V N) ≤ range ρ' ⊔ range f := by
+    rw [← hfg.linearMap_ker_eq, ← comap_map_eq, ← map_le_iff_le_comap, map_smul'',
+      Submodule.map_top, range_eq_top.mpr hg, ← range_comp, hρ']
+    exact hKQ₃
+  rw [sq, Submodule.mul_smul]
+  calc K • K • (⊤ : Submodule V N) ≤ K • (range ρ' ⊔ range f) := smul_mono_right K h
+    _ = K • range ρ' ⊔ (K • (⊤ : Submodule V M)).map f := by
+      rw [smul_sup, range_eq_map f, map_smul'']
+    _ ≤ range ρ' ⊔ Q₁.map f := sup_le_sup smul_le_right (map_mono hKQ₁)
+
+end Extension
 
 end TauCeti.Almost.BasicSetup

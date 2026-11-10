@@ -61,10 +61,10 @@ jobs:
       # The no-stack bot intentionally uses a different Tools release.
       # Test that exact implementation after the general suite, without another runner.
       - name: Prepare stack-policy tools at the production pin
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@422751ed4ca60d28f4ec80f149505236fd1db408
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@70275ec56d5b1cead0acd03c785bb145353e2fc6
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 422751ed4ca60d28f4ec80f149505236fd1db408
+          tools-ref: 70275ec56d5b1cead0acd03c785bb145353e2fc6
           project-directory: .
       - name: Stack-policy regression tests
         run: |

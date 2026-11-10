@@ -55,17 +55,18 @@ private theorem matrixMap_positive (u : Multiplicative A) :
     D.matrixMap A (kostantRootSubgroupParam (t.lieBasis ht).rootGenerator
       (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice (.inl i)
       (D.isNilpotent_representation_rootGenerator (.inl i)) (CommAlgCat.of ℤ A) u) =
-      (D.rootSubgroup (t.simpleIndex ht i) A u : Matrix.GeneralLinearGroup (Fin D.dim) A) := by
-  rw [matrixMap, coe_rootSubgroup, chevalleyRootSubgroup_simpleIndex]
+      (D.rootSubgroupPoints (t.simpleIndex ht i) A u :
+        Matrix.GeneralLinearGroup (Fin D.dim) A) := by
+  rw [matrixMap, coe_rootSubgroupPoints, chevalleyRootSubgroup_simpleIndex]
 
 private theorem matrixMap_negative (u : Multiplicative A) :
     D.matrixMap A (kostantRootSubgroupParam (t.lieBasis ht).rootGenerator
       (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice (.inr i)
       (D.isNilpotent_representation_rootGenerator (.inr i)) (CommAlgCat.of ℤ A) u) =
-      (D.rootSubgroup ((t.simplyConnectedRootDatum ht).reflectionPerm
+      (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
         (t.simpleIndex ht i) (t.simpleIndex ht i)) A u :
         Matrix.GeneralLinearGroup (Fin D.dim) A) := by
-  rw [matrixMap, coe_rootSubgroup, chevalleyRootSubgroup_reflectionPerm_simpleIndex]
+  rw [matrixMap, coe_rootSubgroupPoints, chevalleyRootSubgroup_reflectionPerm_simpleIndex]
 
 private theorem matrixMap_coroot (s : Aˣ) :
     D.matrixMap A (kostantCoordinateCocharacter D.lattice D.basis D.weight A i s) =
@@ -83,16 +84,16 @@ private theorem matrixMap_weyl :
 
 /-- A simple coroot rescales its positive simple-root parameter by its square. -/
 theorem simpleCorootPoints_conj_rootSubgroup (s : Aˣ) (u : A) :
-    D.simpleCorootPoints i A s * D.rootSubgroup (t.simpleIndex ht i) A (ofAdd u) *
+    D.simpleCorootPoints i A s * D.rootSubgroupPoints (t.simpleIndex ht i) A (ofAdd u) *
         (D.simpleCorootPoints i A s)⁻¹ =
-      D.rootSubgroup (t.simpleIndex ht i) A (ofAdd ((s : A) ^ 2 * u)) := by
-  rw [D.simpleCorootPoints_eq_torusPoints, D.torusPoints_conj_rootSubgroup]
+      D.rootSubgroupPoints (t.simpleIndex ht i) A (ofAdd ((s : A) ^ 2 * u)) := by
+  rw [D.simpleCorootPoints_eq_torusPoints, D.torusPoints_conj_rootSubgroupPoints]
   simp [coordinateRoot_def, D.torusCharacter_simpleCorootParameter]
 
 /-- Moving a simple coroot past its positive root subgroup rescales the parameter. -/
 theorem simpleCorootPoints_mul_rootSubgroup (s : Aˣ) (u : A) :
-    D.simpleCorootPoints i A s * D.rootSubgroup (t.simpleIndex ht i) A (ofAdd u) =
-      D.rootSubgroup (t.simpleIndex ht i) A (ofAdd ((s : A) ^ 2 * u)) *
+    D.simpleCorootPoints i A s * D.rootSubgroupPoints (t.simpleIndex ht i) A (ofAdd u) =
+      D.rootSubgroupPoints (t.simpleIndex ht i) A (ofAdd ((s : A) ^ 2 * u)) *
         D.simpleCorootPoints i A s :=
   mul_inv_eq_iff_eq_mul.mp (D.simpleCorootPoints_conj_rootSubgroup i A s u)
 
@@ -132,7 +133,7 @@ theorem weylElement_mul_self :
 
 /-- The rank-one exchange identity at a unit parameter, valid over any commutative ring. -/
 theorem weylElement_mul_rootSubgroup_mul_weylElement (u : Aˣ) :
-    let x := D.rootSubgroup (t.simpleIndex ht i) A
+    let x := D.rootSubgroupPoints (t.simpleIndex ht i) A
     let n := D.weylElement (t.simpleIndex ht i) A 1
     n * x (ofAdd (u : A)) * n =
       x (ofAdd (-((u⁻¹ : Aˣ) : A))) * D.simpleCorootPoints i A (-u⁻¹) * n *
@@ -154,10 +155,10 @@ theorem weylElement_mul_rootSubgroup_mul_weylElement (u : Aˣ) :
 /-- An opposite simple-root pair generates the same subgroup as its positive root group,
 coroot values and simple Weyl representative, over every commutative ring. -/
 theorem closure_simpleRootPair_eq :
-    Subgroup.closure (Set.range (D.rootSubgroup (t.simpleIndex ht i) A) ∪
-      Set.range (D.rootSubgroup ((t.simplyConnectedRootDatum ht).reflectionPerm
+    Subgroup.closure (Set.range (D.rootSubgroupPoints (t.simpleIndex ht i) A) ∪
+      Set.range (D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
         (t.simpleIndex ht i) (t.simpleIndex ht i)) A)) =
-    Subgroup.closure (Set.range (D.rootSubgroup (t.simpleIndex ht i) A) ∪
+    Subgroup.closure (Set.range (D.rootSubgroupPoints (t.simpleIndex ht i) A) ∪
       Set.range (D.simpleCorootPoints i A) ∪ {D.weylElement (t.simpleIndex ht i) A 1}) := by
   apply Subgroup.map_injective (D.points A).subtype_injective
   have h := congrArg (fun S => S.map (D.matrixMap A))
@@ -177,8 +178,8 @@ variable (K : Type v) [Field K]
 /-- Over every field, words in an opposite simple-root pair have two rank-one Bruhat forms.
 This is an existence and membership criterion, without uniqueness or cell separation. -/
 theorem mem_closure_simpleRootPair_iff (g : D.points K) :
-    let x := D.rootSubgroup (t.simpleIndex ht i) K
-    let y := D.rootSubgroup ((t.simplyConnectedRootDatum ht).reflectionPerm
+    let x := D.rootSubgroupPoints (t.simpleIndex ht i) K
+    let y := D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
       (t.simpleIndex ht i) (t.simpleIndex ht i)) K
     let h := D.simpleCorootPoints i K
     let n := D.weylElement (t.simpleIndex ht i) K 1
@@ -196,8 +197,8 @@ theorem mem_closure_simpleRootPair_iff (g : D.points K) :
 rank-one Bruhat forms. The torus factor is on the right, and no surjectivity of the full-weight
 parametrization is assumed. This does not assert uniqueness or disjointness of the forms. -/
 theorem mem_sup_simpleRootPair_torus_iff (g : D.points K) :
-    let x := D.rootSubgroup (t.simpleIndex ht i) K
-    let y := D.rootSubgroup ((t.simplyConnectedRootDatum ht).reflectionPerm
+    let x := D.rootSubgroupPoints (t.simpleIndex ht i) K
+    let y := D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
       (t.simpleIndex ht i) (t.simpleIndex ht i)) K
     let T := D.torusPoints K
     let n := D.weylElement (t.simpleIndex ht i) K 1
@@ -205,8 +206,8 @@ theorem mem_sup_simpleRootPair_torus_iff (g : D.points K) :
       (∃ a s, g = x (ofAdd a) * T s) ∨
         ∃ a b s, g = x (ofAdd a) * n * x (ofAdd b) * T s := by
   dsimp only
-  let x := D.rootSubgroup (t.simpleIndex ht i) K
-  let y := D.rootSubgroup ((t.simplyConnectedRootDatum ht).reflectionPerm
+  let x := D.rootSubgroupPoints (t.simpleIndex ht i) K
+  let y := D.rootSubgroupPoints ((t.simplyConnectedRootDatum ht).reflectionPerm
     (t.simpleIndex ht i) (t.simpleIndex ht i)) K
   let h := D.simpleCorootPoints i K
   let n := D.weylElement (t.simpleIndex ht i) K 1

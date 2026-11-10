@@ -27,6 +27,11 @@ fibre bundle continuous.
   space lies over a finite union of preferred trivializing base sets.
 * `Bundle.Trivialization.continuousOn_coordChange`: coordinate changes are jointly continuous over
   the overlap of the base sets.
+* `Bundle.Trivialization.isOpen_sheet`: for a trivialization with discrete fibre of a map,
+  the sheet of a given index over an open subset of the base set is open.
+* `Bundle.Trivialization.map_mem_sheet_iff`, `Bundle.Trivialization.map_symm_eq_of_mem_sheet`:
+  a continuous map `g` over the base, between two trivialized maps with discrete target fibre,
+  carries the sheets of `p` over a preconnected set onto sheets of `q`.
 -/
 
 public section
@@ -188,5 +193,98 @@ theorem iUnion_symm_apply {i : ι} {p : B × F} (hp : p.1 ∈ (e i).baseSet) :
   iUnionInv_eq e hd hp
 
 end DisjointUnion
+
+end Bundle.Trivialization
+
+namespace Bundle.Trivialization
+
+/-- For a trivialization `tq` of a map `q` with discrete fibre, the sheet of index `j`
+over an open set `V` inside the base set, the set of points lying over `V` with fibre coordinate
+`j`, is open. -/
+theorem isOpen_sheet {Z B J : Type*} [TopologicalSpace Z] [TopologicalSpace B]
+    [TopologicalSpace J] [DiscreteTopology J] {q : Z → B} (tq : Trivialization J q)
+    {V : Set B} (hVopen : IsOpen V) (hVsub : V ⊆ tq.baseSet) (j : J) :
+    IsOpen {f : Z | q f ∈ V ∧ (tq f).2 = j} := by
+  have hW : {f : Z | q f ∈ V ∧ (tq f).2 = j} = tq.source ∩ tq ⁻¹' (V ×ˢ {j}) := by
+    ext f
+    refine ⟨fun h => ⟨tq.mem_source.mpr (hVsub h.1), ?_⟩, fun h => ?_⟩
+    · simpa [tq.coe_fst (tq.mem_source.mpr (hVsub h.1))] using And.intro h.1 h.2
+    · have := h.2
+      simp only [Set.mem_preimage, Set.mem_prod, Set.mem_singleton_iff] at this
+      exact ⟨by simpa [tq.coe_fst h.1] using this.1, this.2⟩
+  rw [hW]
+  exact tq.continuousOn_toFun.isOpen_inter_preimage tq.open_source
+    (hVopen.prod (isOpen_discrete {j}))
+
+section SheetComparison
+
+variable {E F X : Type*} [TopologicalSpace E] [TopologicalSpace F] [TopologicalSpace X]
+  {p : E → X} {q : F → X} {g : E → F}
+
+/-- A point of a sheet of `p` over a set `V` inside both base sets is sent by `g` into the source
+of `tq`, so its sheet index for `q` is defined. -/
+theorem map_symm_mem_source (hqg : ∀ e, q (g e) = p e) {I J : Type*}
+    [TopologicalSpace I] [TopologicalSpace J] (tp : Trivialization I p) (tq : Trivialization J q)
+    {V : Set X} (hVsub : V ⊆ tp.baseSet ∩ tq.baseSet) (i : I) {v : X} (hv : v ∈ V) :
+    g (tp.toOpenPartialHomeomorph.symm (v, i)) ∈ tq.source := by
+  rw [tq.mem_source, hqg, tp.proj_symm_apply' (hVsub hv).1]
+  exact (hVsub hv).2
+
+/-- The `q`-sheet index of the image under `g` of a point of a `p`-sheet over a preconnected set
+`V` is constant along the sheet, because the index is continuous and `J` is discrete. -/
+theorem snd_map_symm_eq (hg : Continuous g) (hqg : ∀ e, q (g e) = p e) {I J : Type*}
+    [TopologicalSpace I] [TopologicalSpace J] [DiscreteTopology J] (tp : Trivialization I p)
+    (tq : Trivialization J q) {V : Set X} (hVconn : IsPreconnected V)
+    (hVsub : V ⊆ tp.baseSet ∩ tq.baseSet) (i : I) {v x₀ : X} (hv : v ∈ V) (hx₀ : x₀ ∈ V) :
+    (tq (g (tp.toOpenPartialHomeomorph.symm (v, i)))).2 =
+      (tq (g (tp.toOpenPartialHomeomorph.symm (x₀, i)))).2 := by
+  have hsnd : ContinuousOn (fun f : F => (tq f).2) tq.source :=
+    continuous_snd.comp_continuousOn tq.continuousOn_toFun
+  have h1 : ContinuousOn (fun v => g (tp.toOpenPartialHomeomorph.symm (v, i))) V :=
+    hg.comp_continuousOn (tp.continuousOn_symm_prodMk_left.mono fun v hv => (hVsub hv).1)
+  exact hVconn.constant (hsnd.comp h1 fun v hv => tp.map_symm_mem_source hqg tq hVsub i hv)
+    hv hx₀
+
+/-- Whether `g e` lies in the `q`-sheet of index `j` over `V` is read off the sheet index of `p`
+at `e`. -/
+theorem map_mem_sheet_iff (hg : Continuous g) (hqg : ∀ e, q (g e) = p e) {I J : Type*}
+    [TopologicalSpace I] [TopologicalSpace J] [DiscreteTopology J] (tp : Trivialization I p)
+    (tq : Trivialization J q) {V : Set X} (hVconn : IsPreconnected V)
+    (hVsub : V ⊆ tp.baseSet ∩ tq.baseSet) {x₀ : X} (hx₀ : x₀ ∈ V) (j : J) (e : E) :
+    (q (g e) ∈ V ∧ (tq (g e)).2 = j) ↔
+      p e ∈ V ∧ (tq (g (tp.toOpenPartialHomeomorph.symm (x₀, (tp e).2)))).2 = j := by
+  constructor
+  · rintro ⟨h1, h2⟩
+    rw [hqg] at h1
+    refine ⟨h1, ?_⟩
+    rw [← tp.snd_map_symm_eq hg hqg tq hVconn hVsub (tp e).2 h1 hx₀,
+      tp.symm_apply_mk_proj (tp.mem_source.mpr (hVsub h1).1), h2]
+  · rintro ⟨h1, h2⟩
+    have h3 := tp.snd_map_symm_eq hg hqg tq hVconn hVsub (tp e).2 h1 hx₀
+    rw [tp.symm_apply_mk_proj (tp.mem_source.mpr (hVsub h1).1)] at h3
+    exact ⟨by rw [hqg]; exact h1, by rw [h3, h2]⟩
+
+/-- The point `tp.symm (q w, i)` of the `p`-sheet of index `i` lying over `q w` is mapped by `g`
+to `w`, provided `q w` lies in a preconnected set `V` contained in both base sets and `w` is in the
+`q`-sheet of index `j`, and
+the image under `g` of the point of that `p`-sheet over the reference base point `x₀ ∈ V` lies in
+the same `q`-sheet of index `j`. -/
+theorem map_symm_eq_of_mem_sheet (hg : Continuous g) (hqg : ∀ e, q (g e) = p e)
+    {I J : Type*} [TopologicalSpace I] [TopologicalSpace J] [DiscreteTopology J]
+    (tp : Trivialization I p) (tq : Trivialization J q) {V : Set X} (hVconn : IsPreconnected V)
+    (hVsub : V ⊆ tp.baseSet ∩ tq.baseSet) {x₀ : X} (hx₀ : x₀ ∈ V) {j : J} {w : F} {i : I}
+    (hw : q w ∈ V ∧ (tq w).2 = j) (hi : (tq (g (tp.toOpenPartialHomeomorph.symm (x₀, i)))).2 = j) :
+    g (tp.toOpenPartialHomeomorph.symm (q w, i)) = w := by
+  have h1 : q (g (tp.toOpenPartialHomeomorph.symm (q w, i))) = q w := by
+    rw [hqg, tp.proj_symm_apply' (hVsub hw.1).1]
+  refine tq.injOn (tp.map_symm_mem_source hqg tq hVsub i hw.1)
+    (tq.mem_source.mpr (hVsub hw.1).2) (Prod.ext ?_ ?_)
+  · simp only [Trivialization.coe_coe]
+    rw [tq.coe_fst (tp.map_symm_mem_source hqg tq hVsub i hw.1),
+      tq.coe_fst (tq.mem_source.mpr (hVsub hw.1).2), h1]
+  · simp only [Trivialization.coe_coe]
+    rw [tp.snd_map_symm_eq hg hqg tq hVconn hVsub i hw.1 hx₀, hi, hw.2]
+
+end SheetComparison
 
 end Bundle.Trivialization
