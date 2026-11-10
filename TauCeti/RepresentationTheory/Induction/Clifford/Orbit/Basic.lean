@@ -39,8 +39,9 @@ finiteness either; finiteness of `G` is assumed only by
 `TauCeti.Representation.finite_isotypicComponents`, which counts the isotypic components through the
 translates.  Finite-dimensionality of `V` is needed only to know that a minimal `N`-stable subspace
 exists at all: each of the orbit and isotypic-component statements below takes such a subspace as a
-hypothesis, except `TauCeti.Representation.exists_isAtom_forall_nonempty_linearEquiv_conjSubrep`,
-the packaged form of the theorem, which assumes finite-dimensionality and produces one.
+hypothesis, except `TauCeti.Representation.finite_isotypicComponents`, which needs none, and
+`TauCeti.Representation.exists_isAtom_forall_nonempty_linearEquiv_conjSubrep`, the packaged form of
+the theorem, which assumes finite-dimensionality and produces one.
 
 That the constituents share one multiplicity is proved in
 `TauCeti/RepresentationTheory/Induction/Clifford/Multiplicity.lean` from the single-orbit
@@ -59,8 +60,8 @@ of one constituent, indexed by the cosets of its inertia group, is not proved he
 * `TauCeti.Representation.isotypicComponents_eq_range`: the isotypic components of the restriction
   are exactly the components of the translates of a given minimal `N`-stable subspace, so `G` acts
   transitively on them; `Representation.conjSubrepIsotypicComponent` packages each such
-  component, and `TauCeti.Representation.finite_isotypicComponents` reads off from the same
-  hypothesis that there are finitely many of them when `G` is finite.
+  component, and `TauCeti.Representation.finite_isotypicComponents` shows that
+  there are finitely many of them when `G` is finite.
 * `TauCeti.Representation.isIsotypicOfType_asSubmodule_iff`: the restriction is isotypic exactly
   when every translate of one constituent is isomorphic to it — the case in which the inertia group
   of the constituent is all of `G`.
@@ -159,14 +160,20 @@ theorem isotypicComponents_eq_range [ρ.IsIrreducible]
     exact ⟨_, Subrepresentation.isSimpleModule_asSubmodule_iff.mpr
       (isAtom_conjSubrep_iff.mpr hσ), rfl⟩
 
-/-- **Given one minimal `N`-stable subspace, a restriction along a normal subgroup of a finite group
-has finitely many isotypic components.**  There is one component for each translate of that
-subspace, so at most one for each element of `G`. -/
-theorem finite_isotypicComponents [ρ.IsIrreducible] [Finite G]
-    {σ : Subrepresentation (ρ.comp N.subtype)} (hσ : IsAtom σ) :
+/-- **A restriction along a normal subgroup of a finite group has finitely many isotypic
+components.**  There is one component for each translate of a minimal `N`-stable subspace, so at
+most one for each element of `G`; if there is no component at all there is nothing to count. -/
+theorem finite_isotypicComponents [ρ.IsIrreducible] [Finite G] :
     (isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype))).Finite := by
-  rw [isotypicComponents_eq_range ρ hσ]
-  exact Set.finite_range _
+  rcases Set.eq_empty_or_nonempty
+      (isotypicComponents k[N] (_root_.Representation.asModule (ρ.comp N.subtype))) with h | h
+  · rw [h]
+    exact Set.finite_empty
+  · obtain ⟨-, S, hS, rfl⟩ := h
+    have hσ : IsAtom (Subrepresentation.ofSubmodule' S) :=
+      Subrepresentation.isSimpleModule_asSubmodule_iff.mp hS
+    rw [isotypicComponents_eq_range ρ hσ]
+    exact Set.finite_range _
 
 /-- **The restriction is isotypic exactly when one constituent is fixed by all of `G`.**  The
 right-hand side says that the inertia group of `σ` is all of `G`; Clifford's theorem then leaves the
