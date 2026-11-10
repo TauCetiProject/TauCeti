@@ -180,9 +180,9 @@ satisfying Mihlin's condition of order `N`, `2N > dim E`, away from the origin m
 `H^{s,p}`. For `p = 2` every bounded symbol does (`MemSobolev.fourierMultiplierCLM_of_bounded`).
 
 Temperate growth of `g` is not assumed: if `g` lacks it, `fourierMultiplierCLM F g` is the junk
-value `0` (`TemperedDistribution.fourierMultiplierCLM_of_not_hasTemperateGrowth`), so the statement
-has content only for symbols of temperate growth, and symbols singular at the origin, such as the
-Riesz symbols `ξⱼ / ‖ξ‖`, are not covered. -/
+value `0` (`TemperedDistribution.fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth`), so the
+statement has content only for symbols of temperate growth, and symbols singular at the origin,
+such as the Riesz symbols `ξⱼ / ‖ξ‖`, are not covered. -/
 theorem MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le (hp : 1 < p)
     (hp_top : p ≠ ∞) {s : ℝ} {f : 𝓢'(E, F)} (hf : MemSobolev s p f) {g : E → ℂ}
     {N : ℕ} (hN : finrank ℝ E < 2 * N) {A : ℝ≥0}
@@ -191,7 +191,7 @@ theorem MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le (hp : 1 < p)
   -- without temperate growth the symbol acts as `0`
   by_cases hg : g.HasTemperateGrowth
   swap
-  · rw [fourierMultiplierCLM_of_not_hasTemperateGrowth hg]
+  · rw [fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth hg]
     exact (sobolevSubmodule E F s p).zero_mem
   rcases subsingleton_or_nontrivial E with hE | hE
   · -- On the zero space every symbol is constant.

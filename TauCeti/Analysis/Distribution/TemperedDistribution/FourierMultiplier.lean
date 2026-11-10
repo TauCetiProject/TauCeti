@@ -28,8 +28,8 @@ Bernstein's inequalities.
 ## Main results
 
 * `TemperedDistribution.fourierMultiplierCLM_add`: Fourier multipliers are additive in the symbol.
-* `TemperedDistribution.fourierMultiplierCLM_of_not_hasTemperateGrowth`: the multiplier of a symbol
-  without temperate growth is the junk value `0`.
+* `TemperedDistribution.fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth`: the multiplier of
+  a symbol without temperate growth is the junk value `0`.
 * `TemperedDistribution.fourierMultiplierCLM_eq_self_of_isVanishingOn`: a multiplier whose symbol
   is one outside the set where `𝓕 u` vanishes fixes `u`.
 * `TemperedDistribution.isVanishingOn_fourier_lineDerivOp`,
@@ -50,10 +50,10 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
 /-- The Fourier multiplier of a symbol without temperate growth is the junk value `0`, because
 `TemperedDistribution.smulLeftCLM` is `0` for such a symbol. -/
 @[simp]
-theorem fourierMultiplierCLM_of_not_hasTemperateGrowth {g : E → ℂ} (hg : ¬ g.HasTemperateGrowth) :
-    fourierMultiplierCLM F g = 0 := by
+theorem fourierMultiplierCLM_eq_zero_of_not_hasTemperateGrowth {g : E → ℂ}
+    (hg : ¬ g.HasTemperateGrowth) : fourierMultiplierCLM F g = 0 := by
   refine ContinuousLinearMap.ext fun f => ?_
-  rw [fourierMultiplierCLM_apply, smulLeftCLM_of_not_hasTemperateGrowth hg, zero_apply,
+  rw [fourierMultiplierCLM_apply, smulLeftCLM_eq_zero_of_not_hasTemperateGrowth hg, zero_apply,
     FourierTransform.fourierInv_zero, zero_apply]
 
 /-- Fourier multipliers on tempered distributions are additive in the symbol. -/
