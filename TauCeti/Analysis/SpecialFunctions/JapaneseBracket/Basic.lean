@@ -217,12 +217,35 @@ private theorem tendsto_pow_mul_sq_add_mul_rescaledBracket {m : ℕ} {t : ℝ} (
 `(n - 2) ∫₀^∞ r ^ (n - 1) r² ψ(r) = n t² ∫₀^∞ r ^ (n - 1) ψ(r)`, where
 `ψ(r) = (2 t / (t² + r²)) ^ n`. This follows by integrating the derivative of
 `r ↦ r ^ n (t² + r²) ψ(r)`, which vanishes at `0` and at infinity. -/
-theorem sub_two_mul_integral_radial {n : ℕ} (hn : 2 < n) {t : ℝ} (ht : 0 < t)
+theorem sub_two_mul_integral_radial {n : ℕ} (hn : 2 < n) {t : ℝ}
     (h₁ : IntegrableOn (fun r : ℝ ↦ r ^ (n - 1) * (2 * t / (t ^ 2 + r ^ 2)) ^ n) (Ioi 0))
     (h₂ : IntegrableOn (fun r : ℝ ↦ r ^ (n - 1) * (r ^ 2 * (2 * t / (t ^ 2 + r ^ 2)) ^ n))
       (Ioi 0)) :
     ((n : ℝ) - 2) * ∫ r in Ioi 0, r ^ (n - 1) * (r ^ 2 * (2 * t / (t ^ 2 + r ^ 2)) ^ n) =
       n * t ^ 2 * ∫ r in Ioi 0, r ^ (n - 1) * (2 * t / (t ^ 2 + r ^ 2)) ^ n := by
+  wlog ht : 0 < t generalizing t
+  · rcases (not_lt.1 ht).eq_or_lt with rfl | hneg
+    · simp [zero_pow (show n ≠ 0 by omega)]
+    · -- By symmetry: the integrands for `-t` are `(-1) ^ n` times those for `t`.
+      have hE (r : ℝ) : (2 * -t / ((-t) ^ 2 + r ^ 2)) ^ n =
+          (-1) ^ n * (2 * t / (t ^ 2 + r ^ 2)) ^ n := by
+        rw [← mul_pow]
+        congr 1
+        rw [neg_sq]
+        ring
+      have key := this (t := -t)
+        (IntegrableOn.congr_fun (h₁.const_mul ((-1) ^ n)) (fun r _ ↦ by simp only [hE]; ring)
+          measurableSet_Ioi)
+        (IntegrableOn.congr_fun (h₂.const_mul ((-1) ^ n)) (fun r _ ↦ by simp only [hE]; ring)
+          measurableSet_Ioi)
+        (neg_pos.2 hneg)
+      simp only [neg_sq] at key
+      have hE' (r : ℝ) : (2 * -t / (t ^ 2 + r ^ 2)) ^ n =
+          (-1) ^ n * (2 * t / (t ^ 2 + r ^ 2)) ^ n := by simpa only [neg_sq] using hE r
+      simp only [hE', mul_left_comm _ ((-1 : ℝ) ^ n), integral_const_mul] at key
+      have hne : ((-1 : ℝ) ^ n) ≠ 0 := pow_ne_zero _ (by norm_num)
+      refine mul_left_cancel₀ hne ?_
+      linear_combination key
   obtain ⟨m, rfl⟩ : ∃ m, n = m + 3 := ⟨n - 3, by omega⟩
   simp only [show m + 3 - 1 = m + 2 by omega] at h₁ h₂ ⊢
   set F : ℝ → ℝ := fun r ↦ r ^ (m + 3) * (t ^ 2 + r ^ 2) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 3)
@@ -251,10 +274,12 @@ partial logarithmic series is a geometric sum in `w`. -/
 `∫_0^R r ^ (2 m + 1) (2 t / (t² + r²)) ^ (m + 1) dr =
 2 ^ m t ^ (m + 1) (log (1 + (R / t)²) - ∑_{k < m} w ^ (k + 1) / (k + 1))`, with
 `w = R² / (t² + R²)`. -/
-theorem integral_pow_mul_div_add_sq_pow {t : ℝ} (ht : t ≠ 0) (m : ℕ) (R : ℝ) :
+theorem integral_pow_mul_div_add_sq_pow {t : ℝ} (m : ℕ) (R : ℝ) :
     ∫ r in (0)..R, r ^ (2 * m + 1) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 1) =
       2 ^ m * t ^ (m + 1) * (log (1 + (R / t) ^ 2) -
         ∑ k ∈ Finset.range m, (R ^ 2 / (t ^ 2 + R ^ 2)) ^ (k + 1) / (k + 1)) := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · simp
   set G : ℝ → ℝ := fun r ↦ r ^ (2 * m + 1) * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 1) with hG
   set Φ : ℝ → ℝ := fun r ↦ (2 * t) ^ (m + 1) / 2 * (log (t ^ 2 + r ^ 2) -
       ∑ k ∈ Finset.range m, (r ^ 2 / (t ^ 2 + r ^ 2)) ^ (k + 1) / (k + 1)) with hΦ
@@ -308,11 +333,13 @@ with `w = R² / (t² + R²)`. When `V` is nontrivial, the integral over the whol
 logarithmically. -/
 theorem setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow
     (μ : Measure V) [μ.IsAddHaarMeasure] {m : ℕ} (hm : m ≠ 0) {p : ℝ}
-    (hp : p + finrank ℝ V = 2 * m) {t : ℝ} (ht : t ≠ 0) {R : ℝ} (hR : 0 ≤ R) (b : V) :
+    (hp : p + finrank ℝ V = 2 * m) {t : ℝ} {R : ℝ} (hR : 0 ≤ R) (b : V) :
     ∫ x in ball b R, ‖x - b‖ ^ p * (2 * t / (t ^ 2 + ‖x - b‖ ^ 2)) ^ m ∂μ =
       (finrank ℝ V : ℝ) * μ.real (ball (0 : V) 1) * (2 ^ (m - 1) * t ^ m *
         (log (1 + (R / t) ^ 2) -
           ∑ k ∈ Finset.range (m - 1), (R ^ 2 / (t ^ 2 + R ^ 2)) ^ (k + 1) / (k + 1))) := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · simp [hm]
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hm
   simp only [Nat.add_sub_cancel]
   set F : ℝ → ℝ := fun r ↦ r ^ p * (2 * t / (t ^ 2 + r ^ 2)) ^ (m + 1) with hF
@@ -354,7 +381,7 @@ theorem setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow
     rw [setIntegral_congr_fun measurableSet_Ioi heq, setIntegral_indicator measurableSet_Ioo,
       inter_eq_right.mpr Ioo_subset_Ioi_self, intervalIntegral.integral_of_le hR,
       integral_Ioc_eq_integral_Ioo]
-  rw [hrad, hG, integral_pow_mul_div_add_sq_pow ht]
+  rw [hrad, hG, integral_pow_mul_div_add_sq_pow]
   simp only [nsmul_eq_mul, smul_eq_mul]
   ring
 
@@ -369,7 +396,7 @@ theorem abs_setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow_sub_mul_l
         (finrank ℝ V : ℝ) * μ.real (ball (0 : V) 1) * (2 ^ (m - 1) * t ^ m *
           log (1 + (R / t) ^ 2))| ≤
       (finrank ℝ V : ℝ) * μ.real (ball (0 : V) 1) * (2 ^ (m - 1) * t ^ m * harmonic (m - 1)) := by
-  rw [setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow μ hm hp ht.ne' hR b]
+  rw [setIntegral_ball_norm_sub_rpow_mul_div_add_norm_sub_sq_pow μ hm hp hR b]
   set w := R ^ 2 / (t ^ 2 + R ^ 2)
   have hw₀ : 0 ≤ w := by positivity
   have hw₁ : w ≤ 1 := div_le_one_of_le₀ (by nlinarith) (by positivity)
