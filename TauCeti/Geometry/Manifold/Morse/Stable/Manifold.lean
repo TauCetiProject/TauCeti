@@ -128,14 +128,14 @@ variable [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] [CompactSpace
 linear. Every point of `W^s(x)` lies in the source of a chart of the maximal atlas that flattens
 `W^s(x)` onto the stable subspace of `φ`. -/
 theorem exists_stableSet_chart (hX : IsAdaptedPseudoGradient f X)
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (φ : MorseChart E f x)
+    (φ : MorseChart E f x)
     (hφ : ∀ y ∈ φ.toChart.source, φ.coord (mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart y (X y)) =
       fun i ↦ -(φ.weight i * φ.coord (φ.toChart y) i))
     {p : M} (hp : p ∈ hX.flow.stableSet x) :
     ∃ q : OpenPartialHomeomorph M E, p ∈ q.source ∧
       q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
       ∀ z ∈ q.source, z ∈ hX.flow.stableSet x ↔ q z ∈ φ.stableSubspace := by
-  obtain ⟨ε, hε, hloc⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hf
+  obtain ⟨ε, hε, hloc⟩ := hX.exists_forall_mem_stableSet_iff φ hφ
   set D := φ.toChart.source ∩ φ.toChart ⁻¹' {v : E | ‖φ.coord v‖ < ε} with hDdef
   have hD : IsOpen D := φ.toChart.continuousOn.isOpen_inter_preimage φ.toChart.open_source
     (isOpen_lt (continuous_norm.comp φ.continuous_coord) continuous_const)
@@ -160,14 +160,14 @@ theorem exists_stableSet_chart (hX : IsAdaptedPseudoGradient f X)
 manifold of a critical point `x` lies in the source of a chart of the maximal atlas that flattens
 `W^s(x)` onto a subspace of dimension `n - ind x`. -/
 theorem exists_isSliceChart_stableSet (hX : IsAdaptedPseudoGradient f X)
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) {p : M}
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) {p : M}
     (hp : p ∈ hX.flow.stableSet x) :
     ∃ (L : Submodule ℝ E) (q : OpenPartialHomeomorph M E),
       Module.finrank ℝ L + manifoldMorseIndex 𝓘(ℝ, E) f x = Module.finrank ℝ E ∧
         p ∈ q.source ∧ q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
         IsSliceChart q (L : Set E) (hX.flow.stableSet x) := by
   obtain ⟨φ, hφ⟩ := hX.exists_morseChart x hx
-  obtain ⟨q, hpq, hq, hmem⟩ := hX.exists_stableSet_chart hf φ hφ hp
+  obtain ⟨q, hpq, hq, hmem⟩ := hX.exists_stableSet_chart φ hφ hp
   exact ⟨φ.stableSubspace, q, φ.finrank_stableSubspace_add_manifoldMorseIndex, hpq, hq,
     isSliceChart_iff.2 hmem⟩
 
@@ -183,8 +183,8 @@ theorem exists_isSliceChart_unstableSet (hX : IsAdaptedPseudoGradient f X)
         p ∈ q.source ∧ q ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M ∧
         IsSliceChart q (L : Set E) (hX.flow.unstableSet x) := by
   rw [hX.unstableSet_eq_stableSet_neg hf] at hp ⊢
-  obtain ⟨L, q, hL, hpq, hq, hs⟩ := (hX.neg hf).exists_isSliceChart_stableSet
-    (hf.neg.contMDiff.mdifferentiable (by simp)) (mfderiv_neg_eq_zero_iff.2 hx) hp
+  obtain ⟨L, q, hL, hpq, hq, hs⟩ :=
+    (hX.neg hf).exists_isSliceChart_stableSet (mfderiv_neg_eq_zero_iff.2 hx) hp
   have hidx := (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
     ).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   exact ⟨L, q, by omega, hpq, hq, hs⟩
@@ -194,7 +194,7 @@ theorem exists_isSliceChart_unstableSet (hX : IsAdaptedPseudoGradient f X)
 manifold structure modelled on a subspace of dimension `n - k`, with its subspace topology and a
 smooth inclusion into `M`. -/
 theorem exists_stableSet_isManifold (hX : IsAdaptedPseudoGradient f X)
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
+    (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
     ∃ L : Submodule ℝ E,
       Module.finrank ℝ L + manifoldMorseIndex 𝓘(ℝ, E) f x = Module.finrank ℝ E ∧
       ∃ C : ChartedSpace L (hX.flow.stableSet x), letI := C
@@ -207,7 +207,7 @@ theorem exists_stableSet_isManifold (hX : IsAdaptedPseudoGradient f X)
     (Submodule.IsCompl.isTopCompl_of_isClosed hN
       φ.stableSubspace.closed_of_finiteDimensional N.closed_of_finiteDimensional)
     fun y ↦ ?_
-  obtain ⟨q, hyq, hq, hmem⟩ := hX.exists_stableSet_chart hf φ hφ y.2
+  obtain ⟨q, hyq, hq, hmem⟩ := hX.exists_stableSet_chart φ hφ y.2
   exact ⟨q, hyq, fun z hz ↦ contMDiffAt_of_mem_maximalAtlas hq hz,
     fun z hz ↦ contMDiffAt_symm_of_mem_maximalAtlas hq hz, hmem⟩
 
@@ -221,8 +221,7 @@ theorem exists_unstableSet_isManifold (hX : IsAdaptedPseudoGradient f X)
       ∃ C : ChartedSpace L (hX.flow.unstableSet x), letI := C
         IsManifold 𝓘(ℝ, L) ∞ (hX.flow.unstableSet x) ∧
         ContMDiff 𝓘(ℝ, L) 𝓘(ℝ, E) ∞ (Subtype.val : hX.flow.unstableSet x → M) := by
-  obtain ⟨L, hL, hman⟩ := (hX.neg hf).exists_stableSet_isManifold
-    (hf.neg.contMDiff.mdifferentiable (by simp)) (mfderiv_neg_eq_zero_iff.2 hx)
+  obtain ⟨L, hL, hman⟩ := (hX.neg hf).exists_stableSet_isManifold (mfderiv_neg_eq_zero_iff.2 hx)
   have hidx := (hf.isManifoldNondegenerateCriticalPoint_of_mfderiv_eq_zero hx
     ).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   rw [hX.unstableSet_eq_stableSet_neg hf]

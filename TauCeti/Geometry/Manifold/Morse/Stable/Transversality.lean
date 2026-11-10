@@ -94,11 +94,11 @@ include hX
 /-- The tangent space of the stable manifold of a critical point `b`, at any of its points, has
 dimension `n - ind b`. -/
 theorem finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) (hy : y ∈ hX.flow.stableSet b) :
+    (hy : y ∈ hX.flow.stableSet b) :
     Module.finrank ℝ (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y)) +
       manifoldMorseIndex 𝓘(ℝ, E) f b = Module.finrank ℝ E := by
   have hb := hX.mfderiv_eq_zero_of_mem_stableSet hy
-  obtain ⟨L, q, hL, hyq, hq, hs⟩ := hX.exists_isSliceChart_stableSet hf hb hy
+  obtain ⟨L, q, hL, hyq, hq, hs⟩ := hX.exists_isSliceChart_stableSet hb hy
   rwa [hs.finrank_span_mtangentConeAt (by simp) hq L.closed_of_finiteDimensional hyq hy]
 
 /-- The tangent space of the unstable manifold of a critical point `a`, at any of its points, has
@@ -155,8 +155,8 @@ theorem exists_unstableSet_inter_stableSet_chart (hf : IsMorse 𝓘(ℝ, E) f)
           Submodule ℝ E) : Set E) (hX.flow.unstableSet a ∩ hX.flow.stableSet b) := by
   obtain ⟨L₁, q₁, -, hy₁, hq₁, h₁⟩ :=
     hX.exists_isSliceChart_unstableSet hf (hX.mfderiv_eq_zero_of_mem_unstableSet hy.1) hy.1
-  obtain ⟨L₂, q₂, -, hy₂, hq₂, h₂⟩ := hX.exists_isSliceChart_stableSet
-    (hf.contMDiff.mdifferentiable (by simp)) (hX.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
+  obtain ⟨L₂, q₂, -, hy₂, hq₂, h₂⟩ :=
+    hX.exists_isSliceChart_stableSet (hX.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
   exact exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ h₁ h₂ hy₁
     hy₂ htr
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
@@ -179,8 +179,8 @@ theorem span_mtangentConeAt_unstableSet_inter_stableSet (hf : IsMorse 𝓘(ℝ, 
         Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y) := by
   obtain ⟨L₁, q₁, -, hy₁, hq₁, h₁⟩ :=
     hX.exists_isSliceChart_unstableSet hf (hX.mfderiv_eq_zero_of_mem_unstableSet hy.1) hy.1
-  obtain ⟨L₂, q₂, -, hy₂, hq₂, h₂⟩ := hX.exists_isSliceChart_stableSet
-    (hf.contMDiff.mdifferentiable (by simp)) (hX.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
+  obtain ⟨L₂, q₂, -, hy₂, hq₂, h₂⟩ :=
+    hX.exists_isSliceChart_stableSet (hX.mfderiv_eq_zero_of_mem_stableSet hy.2) hy.2
   exact span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ h₁ h₂ hy₁
     hy₂ htr
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
@@ -207,7 +207,7 @@ theorem finrank_span_mtangentConeAt_unstableSet_inter_stableSet_add_manifoldMors
     (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) (hX.flow.stableSet b) y))
   rw [htr, finrank_top, hX.finrank_span_mtangentConeAt_unstableSet hf hy.1,
     ← hX.span_mtangentConeAt_unstableSet_inter_stableSet hf hy htr] at hdim
-  have hs := hX.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex hdf hy.2
+  have hs := hX.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex hy.2
   omega
 
 /-- **The Morse index drops strictly along a transverse trajectory.** If a trajectory of the flow
@@ -268,7 +268,7 @@ theorem IsMorseSmale.of_manifoldMorseIndex_eq_zero_or_eq_finrank
   intro a b y ha hb hy
   have hu := hX.finrank_span_mtangentConeAt_unstableSet hf hy.1
   have hs := hX.finrank_span_mtangentConeAt_stableSet_add_manifoldMorseIndex
-    (hf.contMDiff.mdifferentiable (by simp)) hy.2
+    hy.2
   rcases hind a ha with ha0 | han
   · rcases hind b hb with hb0 | hbn
     · rw [Submodule.eq_top_of_finrank_eq (by omega : Module.finrank ℝ (Submodule.span ℝ
