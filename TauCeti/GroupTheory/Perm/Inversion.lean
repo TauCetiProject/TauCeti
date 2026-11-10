@@ -9,6 +9,8 @@ public import Mathlib.Algebra.BigOperators.Fin
 public import Mathlib.GroupTheory.Perm.Fin
 public import TauCeti.Data.Finset.Inversions
 
+import TauCeti.Data.Fin.Basic
+
 /-!
 # Signs of permutations, inversions, and signed-sum reindexing
 
@@ -28,8 +30,6 @@ permutations when rotating index blocks.
 * `TauCeti.sign_shuffle`: the sign of a shuffle permutation is a power of `-1`.
 * `TauCeti.sign_finAddFlip_trans_finCongr`: the block swap of `Fin (m + n)`, which exchanges the
   first `m` indices with the last `n`, has sign `(-1) ^ (m * n)`.
-* `TauCeti.finSigmaFinEquiv_lt_finSigmaFinEquiv_iff`: listing blocks consecutively orders their
-  entries lexicographically.
 * `Equiv.Perm.blockPerm` and `Equiv.Perm.sign_blockPerm`: the permutation of consecutive blocks of
   sizes `d i` that lists them in the order of a permutation `σ`, and its sign
   `(-1) ^ ∑ d (σ i) * d (σ j)` over the pairs `i < j` inverted by `σ`; it is even when all the
@@ -265,48 +265,9 @@ theorem sum_sign_smul_rotate_blocks {γ M : Type*} [AddCommGroup M] {k l m : ℕ
       simp only [c, finCongr_apply]
     _ = _ := (sum_sign_smul_permCongr_mul c B f).trans (by rw [hB])
 
-/-! ### Permutations of consecutive blocks -/
-
-section BlockPerm
-
-open _root_.Finset
-
-variable {k : ℕ}
-
-/-- Listing blocks of sizes `d 0, …, d (k - 1)` consecutively, `finSigmaFinEquiv` orders the
-entries lexicographically: first by block, then by position within the block. -/
-theorem finSigmaFinEquiv_lt_finSigmaFinEquiv_iff {d : Fin k → ℕ}
-    {x y : (i : Fin k) × Fin (d i)} :
-    finSigmaFinEquiv x < finSigmaFinEquiv y ↔ x.1 < y.1 ∨ x.1 = y.1 ∧ (x.2 : ℕ) < y.2 := by
-  -- The offset of block `i` is the sum of the sizes of the blocks before it.
-  set s : Fin k → ℕ := fun i ↦ ∑ j : Fin i, d (Fin.castLE i.2.le j) with hs
-  have hoff (i j : Fin k) (h : i < j) : s i + d i ≤ s j := by
-    set F : ℕ → ℕ := fun l ↦ if h : l < k then d ⟨l, h⟩ else 0
-    have hF (i : Fin k) : s i = ∑ l ∈ range i, F l := by
-      rw [hs, ← Fin.sum_univ_eq_sum_range]
-      refine Fintype.sum_congr _ _ fun l ↦ ?_
-      simp [F, l.2.trans i.2, Fin.castLE]
-    have hFi : F i = d i := by simp [F]
-    rw [hF, hF, ← hFi, ← sum_range_succ]
-    exact sum_le_sum_of_subset (range_subset_range.2 h)
-  have hval (x : (i : Fin k) × Fin (d i)) : (finSigmaFinEquiv x : ℕ) = s x.1 + x.2 :=
-    finSigmaFinEquiv_apply x
-  rw [Fin.lt_def, hval, hval]
-  rcases x with ⟨i, a⟩
-  rcases y with ⟨j, c⟩
-  dsimp only
-  rcases lt_trichotomy i j with h | rfl | h
-  · have := hoff i j h
-    simp only [h, true_or, iff_true]
-    omega
-  · simp
-  · have := hoff j i h
-    simp only [h.not_gt, h.ne', false_and, or_self, iff_false, not_lt]
-    omega
-
-end BlockPerm
-
 end TauCeti
+
+/-! ### Permutations of consecutive blocks -/
 
 namespace Equiv.Perm
 
