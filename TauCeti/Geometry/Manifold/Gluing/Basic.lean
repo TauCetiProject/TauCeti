@@ -383,7 +383,7 @@ theorem maximalAtlas_eq_of_forall_isLocalDiffeomorph {c c' : ChartedSpace H M}
   ext e
   rw [key c hc hφc, key c' hc' hφc']
 
-include hdeck in
+omit hdeck in
 /-- **Uniqueness of the glued atlas.** A `C^n` manifold structure on `M` for which the embedding
 of every piece is a `C^n` local diffeomorphism has the same maximal atlas as
 `chartedSpaceOfIsOpenEmbedding`. -/
@@ -391,8 +391,23 @@ theorem maximalAtlas_chartedSpaceOfIsOpenEmbedding_eq [∀ j, IsManifold I n (U 
     {c : ChartedSpace H M} (hc : letI := c; IsManifold I n M)
     (hφc : ∀ j, letI := c; IsLocalDiffeomorph I I n (φ j)) :
     (letI := chartedSpaceOfIsOpenEmbedding (H := H) hφ hcover; maximalAtlas I n M) =
-      (letI := c; maximalAtlas I n M) :=
-  maximalAtlas_eq_of_forall_isLocalDiffeomorph hcover
+      (letI := c; maximalAtlas I n M) := by
+  -- The transition maps are `C^n` because each `φ k` is a local diffeomorphism for `c`.
+  have hdeck : ∀ (j k : J) (x : U j) (y : U k), φ j x = φ k y →
+      ∃ T : U j → U k, ContMDiffAt I I n T x ∧ φ k ∘ T =ᶠ[𝓝 x] φ j := by
+    intro j k x y hxy
+    let := c
+    have hk := hφc k y
+    have hcont : ContinuousAt (φ j) x := (hφ j).continuous.continuousAt
+    have hjk : φ j x = φ k y := hxy
+    refine ⟨hk.localInverse ∘ φ j, ?_, ?_⟩
+    · have h1 := hk.contMDiffAt_localInverse
+      rw [← hjk] at h1
+      exact h1.comp x (hφc j x).contMDiffAt
+    · have h2 := hk.localInverse_eventuallyEq_right
+      rw [← hjk] at h2
+      exact hcont.eventually h2
+  exact maximalAtlas_eq_of_forall_isLocalDiffeomorph hcover
     (isManifold_chartedSpaceOfIsOpenEmbedding hφ hcover hdeck) hc
     (isLocalDiffeomorph_chartedSpaceOfIsOpenEmbedding hφ hcover hdeck) hφc
 
