@@ -10,6 +10,8 @@ public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Structural
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Finite
 public import TauCeti.Combinatorics.SimpleGraph.Measurable
 import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Closeness
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
+import TauCeti.MeasureTheory.Measure.Restrict
 import Mathlib.Data.Fintype.CardEmbedding
 import Mathlib.MeasureTheory.Integral.Bochner.SumMeasure
 
@@ -117,26 +119,6 @@ theorem integral_injHomDensity_eq_sum_div {V W : Type*} [Fintype V] [Fintype W]
   ext G
   simp
 
-/-- A function that is nonzero at an atom of infinite mass is not integrable. -/
-theorem not_integrable_of_measure_singleton_eq_top {α E : Type*} [MeasurableSpace α]
-    [MeasurableSingletonClass α] [NormedAddCommGroup E] {ν : Measure α} {f : α → E} {x : α}
-    (hx : ν {x} = ⊤) (hf : f x ≠ 0) : ¬ Integrable f ν := fun hint ↦ by
-  have hge : ‖f x‖ₑ * ν {x} ≤ ∫⁻ y, ‖f y‖ₑ ∂ν :=
-    (lintegral_singleton (fun y ↦ ‖f y‖ₑ) x).symm.le.trans (setLIntegral_le_lintegral _ _)
-  rw [hx, ENNReal.mul_top (by simpa using hf)] at hge
-  exact hint.2.ne (top_unique hge)
-
-/-- On a finite type, the restriction of a measure to the points of finite mass is finite. -/
-theorem isFiniteMeasure_restrict_setOf_measure_singleton_ne_top {α : Type*} [Finite α]
-    [MeasurableSpace α] [MeasurableSingletonClass α] (ν : Measure α) :
-    IsFiniteMeasure (ν.restrict {x | ν {x} ≠ ⊤}) := by
-  refine ⟨?_⟩
-  rw [Measure.restrict_apply_univ]
-  have hsum := sum_measure_singleton (μ := ν) (s := (Set.toFinite {x | ν {x} ≠ ⊤}).toFinset)
-  rw [Set.Finite.coe_toFinset] at hsum
-  rw [← hsum]
-  exact ENNReal.sum_lt_top.2 fun G hG ↦ lt_top_iff_ne_top.2 (by simpa using hG)
-
 /-- If every embedded copy of a pattern is contained in hosts of the same mass `c`, the average
 injective homomorphism density of the pattern is `c`, provided the host has at least as many
 vertices as the pattern. -/
@@ -147,7 +129,7 @@ theorem integral_injHomDensity_eq_of_forall {V W : Type*} [Fintype V] [Fintype W
   classical
   have hd : ((Fintype.card W).descFactorial (Fintype.card V) : ℝ) ≠ 0 := by
     exact_mod_cast (Nat.descFactorial_pos.mpr hVW).ne'
-  have hpos (G : SimpleGraph W) := injHomDensity_ne_zero_iff F G hVW
+  have hpos (G : SimpleGraph W) := injHomDensity_ne_zero_iff F G
   by_cases hinf : ∃ G, ν {G} = ⊤ ∧ ∃ f : V ↪ W, F.map f ≤ G
   · -- An atom of infinite mass carrying the pattern makes `c` and the integral both vanish.
     obtain ⟨G, hG, f, hf⟩ := hinf
@@ -167,7 +149,7 @@ theorem integral_injHomDensity_eq_of_forall {V W : Type*} [Fintype V] [Fintype W
       by_contra hne
       obtain ⟨f, hf⟩ := (hpos G).1 hne
       exact hinf G (not_not.1 hG) f hf
-    have := isFiniteMeasure_restrict_setOf_measure_singleton_ne_top ν
+    have := Measure.isFiniteMeasure_restrict_setOf_measure_singleton_ne_top ν
     rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hg0,
       integral_injHomDensity_eq_sum_div F (ν.restrict s)]
     have hS (f : V ↪ W) : (ν.restrict s).real {G | F.map f ≤ G} = c := by
