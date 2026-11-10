@@ -27,28 +27,9 @@ generator, even when the exponents differ among the factors.
 
 public section
 
-open Polynomial
-
 namespace TauCeti
 
 variable {A C : Type*} [CommRing A] [CommRing C] [Algebra A C] {f : A}
-
-/-- A finite product of standard tame covers is finite over the base. -/
-theorem IsFiniteProductOfStandardTameCovers.finite
-    (h : IsFiniteProductOfStandardTameCovers A C f) : Module.Finite A C := by
-  obtain ⟨ι, _, e, he, -, ⟨σ⟩⟩ := (isFiniteProductOfStandardTameCovers_iff f).mp h
-  have (i : ι) : Module.Finite A (standardTameCover A f (e i)) :=
-    (monic_X_pow_sub_C f (Nat.ne_of_gt (he i))).finite_adjoinRoot
-  exact Module.Finite.equiv σ.symm.toLinearEquiv
-
-/-- A finite product of standard tame covers is free over the base, including the empty
-product and the zero base ring. -/
-theorem IsFiniteProductOfStandardTameCovers.free
-    (h : IsFiniteProductOfStandardTameCovers A C f) : Module.Free A C := by
-  obtain ⟨ι, _, e, he, -, ⟨σ⟩⟩ := (isFiniteProductOfStandardTameCovers_iff f).mp h
-  have (i : ι) : Module.Free A (standardTameCover A f (e i)) :=
-    (monic_X_pow_sub_C f (Nat.ne_of_gt (he i))).free_adjoinRoot
-  exact Module.Free.of_equiv σ.symm.toLinearEquiv
 
 /-- A finite product of standard tame covers along a nonzerodivisor with reduced quotient
 is the integral closure of the base in its localization away from that element.

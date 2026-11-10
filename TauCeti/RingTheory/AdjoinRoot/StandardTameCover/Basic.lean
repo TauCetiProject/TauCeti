@@ -154,6 +154,23 @@ theorem isFiniteProductOfStandardTameCovers_iff {C : Type v} [CommRing C] [Algeb
         (∀ i, IsUnit (e i : A)) ∧ Nonempty (C ≃ₐ[A] ∀ i, standardTameCover A f (e i)) :=
   Iff.rfl
 
+/-- A finite product of standard tame covers is finite over the base. -/
+theorem IsFiniteProductOfStandardTameCovers.finite {C : Type v} [CommRing C] [Algebra A C]
+    {f : A} (h : IsFiniteProductOfStandardTameCovers A C f) : Module.Finite A C := by
+  obtain ⟨ι, _, e, he, -, ⟨σ⟩⟩ := (isFiniteProductOfStandardTameCovers_iff f).mp h
+  have (i : ι) : Module.Finite A (standardTameCover A f (e i)) :=
+    (monic_X_pow_sub_C f (Nat.ne_of_gt (he i))).finite_adjoinRoot
+  exact Module.Finite.equiv σ.symm.toLinearEquiv
+
+/-- A finite product of standard tame covers is free over the base, including the empty
+product and the zero base ring. -/
+theorem IsFiniteProductOfStandardTameCovers.free {C : Type v} [CommRing C] [Algebra A C]
+    {f : A} (h : IsFiniteProductOfStandardTameCovers A C f) : Module.Free A C := by
+  obtain ⟨ι, _, e, he, -, ⟨σ⟩⟩ := (isFiniteProductOfStandardTameCovers_iff f).mp h
+  have (i : ι) : Module.Free A (standardTameCover A f (e i)) :=
+    (monic_X_pow_sub_C f (Nat.ne_of_gt (he i))).free_adjoinRoot
+  exact Module.Free.of_equiv σ.symm.toLinearEquiv
+
 /-- Being a finite product of standard covers is invariant under `A`-algebra isomorphisms. -/
 theorem IsFiniteProductOfStandardTameCovers.of_algEquiv {C : Type v} {C' : Type w} [CommRing C]
     [Algebra A C] [CommRing C'] [Algebra A C'] {f : A}
