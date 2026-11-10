@@ -14,8 +14,9 @@ import Mathlib.MeasureTheory.Function.Floor
 # Counts of temporal Poisson random measures
 
 The natural-valued cumulative counts of a Poisson random measure with locally finite intensity
-have independent increments. For homogeneous rate `r`, the increment over `(s,t]` has Poisson
-law with parameter `r * (t-s)`. Counts use `(0,t]`, so the initial count is zero. The rate may
+are measurable, almost surely monotone, and have independent increments. The increment over
+`(s,t]` has Poisson law with parameter `(Λ (Ioc s t)).toNNReal`, equal to `r * (t-s)` for
+homogeneous rate `r`. Counts use `(0,t]`, so the initial count is zero. The rate may
 be zero; an inhomogeneous intensity may have atoms and hence simultaneous occurrences.
 
 The natural-valued representative is obtained by flooring the finite mass. On exceptional
@@ -40,23 +41,36 @@ variable {Ω : Type*} [MeasurableSpace Ω] {P : Measure Ω}
 
 namespace IsPoissonRandomMeasure
 
-/-- The natural-valued count on any right-closed temporal interval has its Poisson law.
-This includes empty intervals and rate zero. -/
-theorem hasLaw_nat_count_Ioc (h : IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume))
-    (s t : ℝ≥0) :
-    HasLaw (fun ω ↦ ⌊(M ω (Ioc s t)).toNNReal⌋₊) (poissonMeasure (r * (t - s))) P := by
-  have heval : ((r : ℝ≥0∞) • nnvolume) (Ioc s t) = (r * (t - s) : ℝ≥0) := by
-    simp only [smul_apply, nnvolume_Ioc, smul_eq_mul, ENNReal.coe_mul]
-  have hc := h.hasLaw (A := Ioc s t) measurableSet_Ioc (by rw [heval]; exact ENNReal.coe_lt_top)
-  simp only [heval, ENNReal.toNNReal_coe] at hc
+/-- Each natural-valued cumulative count of a Poisson random measure is measurable. -/
+@[fun_prop]
+theorem measurable_nat_count (h : IsPoissonRandomMeasure P M Λ) (t : ℝ≥0) :
+    Measurable (fun ω ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊) :=
+  ((Measure.measurable_coe measurableSet_Ioc).comp h.measurable).ennreal_toNNReal.nat_floor
+
+/-- The natural-valued count on any right-closed temporal interval has Poisson law with
+parameter equal to the intensity of that interval. This includes empty intervals. -/
+theorem hasLaw_nat_count_Ioc [IsLocallyFiniteMeasure Λ]
+    (h : IsPoissonRandomMeasure P M Λ) (s t : ℝ≥0) :
+    HasLaw (fun ω ↦ ⌊(M ω (Ioc s t)).toNNReal⌋₊)
+      (poissonMeasure (Λ (Ioc s t)).toNNReal) P := by
+  have hc := h.hasLaw (A := Ioc s t) measurableSet_Ioc measure_Ioc_lt_top
   have hm : Measurable (fun x : ℝ≥0∞ ↦ ⌊x.toNNReal⌋₊) := by fun_prop
-  have hp := (hasLaw_map (P := (poissonMeasure (r * (t - s))).map
+  have hp := (hasLaw_map (P := (poissonMeasure (Λ (Ioc s t)).toNNReal).map
     (Nat.cast : ℕ → ℝ≥0∞)) hm.aemeasurable).comp hc
-  have hmap : ((poissonMeasure (r * (t - s))).map (Nat.cast : ℕ → ℝ≥0∞)).map
-      (fun x ↦ ⌊x.toNNReal⌋₊) = poissonMeasure (r * (t - s)) := by
+  have hmap : ((poissonMeasure (Λ (Ioc s t)).toNNReal).map (Nat.cast : ℕ → ℝ≥0∞)).map
+      (fun x ↦ ⌊x.toNNReal⌋₊) = poissonMeasure (Λ (Ioc s t)).toNNReal := by
     rw [Measure.map_map hm Measurable.of_discrete]
     simp [Function.comp_def]
   simpa only [hmap, Function.comp_def] using hp
+
+/-- For homogeneous intensity, the interval count has parameter rate times elapsed time.
+This includes empty intervals and rate zero. -/
+theorem hasLaw_nat_count_Ioc_smul_nnvolume
+    (h : IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume)) (s t : ℝ≥0) :
+    HasLaw (fun ω ↦ ⌊(M ω (Ioc s t)).toNNReal⌋₊) (poissonMeasure (r * (t - s))) P := by
+  let := nnvolume.isLocallyFiniteMeasure_smul (c := (r : ℝ≥0∞)) ENNReal.coe_ne_top
+  simpa only [smul_apply, nnvolume_Ioc, smul_eq_mul, ← ENNReal.coe_mul,
+    ENNReal.toNNReal_coe] using h.hasLaw_nat_count_Ioc s t
 
 private theorem ae_count_Ioc_natCast [IsLocallyFiniteMeasure Λ]
     (h : IsPoissonRandomMeasure P M Λ) (s t : ℝ≥0) :
@@ -68,6 +82,20 @@ private theorem ae_count_Ioc_natCast [IsLocallyFiniteMeasure Λ]
     exact ae_map_mem_range (countable_range _).measurableSet Measurable.of_discrete.aemeasurable
   filter_upwards [ae_of_ae_map hc.aemeasurable hmem] with ω ⟨n, hn⟩
   exact ⟨n, hn.symm⟩
+
+/-- Natural cumulative counts are monotone on one event of full probability. Local finiteness
+of the intensity rules out infinite counts simultaneously on all bounded time intervals. -/
+theorem ae_monotone_nat_count [IsLocallyFiniteMeasure Λ]
+    (h : IsPoissonRandomMeasure P M Λ) :
+    ∀ᵐ ω ∂P, Monotone (fun t : ℝ≥0 ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊) := by
+  filter_upwards [ae_all_iff.2 (fun n : ℕ ↦ h.ae_count_Ioc_natCast 0 n)] with ω hω
+  have hfin (t : ℝ≥0) : M ω (Ioc 0 t) ≠ ∞ := by
+    obtain ⟨n, hn⟩ := hω ⌈t⌉₊
+    exact ne_top_of_le_ne_top (by rw [hn]; exact ENNReal.natCast_ne_top n)
+      (measure_mono (Ioc_subset_Ioc_right (Nat.le_ceil t)))
+  intro s t hst
+  exact Nat.floor_mono (ENNReal.toNNReal_mono (hfin t)
+    (measure_mono (Ioc_subset_Ioc_right hst)))
 
 private theorem ae_nat_count_sub_eq [IsLocallyFiniteMeasure Λ]
     (h : IsPoissonRandomMeasure P M Λ) {s t : ℝ≥0} (hst : s ≤ t) :
@@ -83,14 +111,24 @@ private theorem ae_nat_count_sub_eq [IsLocallyFiniteMeasure Λ]
   rw [hadd, ha, hb]
   simp only [ENNReal.toNNReal_natCast, Nat.floor_natCast, Nat.add_sub_cancel_left]
 
-/-- A cumulative-count increment has Poisson law with parameter equal to rate times elapsed
-time. Counts exclude the origin and include the observation endpoint. -/
-theorem hasLaw_nat_count_sub (h : IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume))
+/-- A cumulative-count increment has Poisson law with parameter equal to the interval intensity.
+Counts exclude the origin and include the observation endpoint. -/
+theorem hasLaw_nat_count_sub [IsLocallyFiniteMeasure Λ]
+    (h : IsPoissonRandomMeasure P M Λ) {s t : ℝ≥0} (hst : s ≤ t) :
+    HasLaw (fun ω ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊ - ⌊(M ω (Ioc 0 s)).toNNReal⌋₊)
+      (poissonMeasure (Λ (Ioc s t)).toNNReal) P :=
+  (h.hasLaw_nat_count_Ioc s t).congr (h.ae_nat_count_sub_eq hst)
+
+/-- For homogeneous intensity, a cumulative-count increment has Poisson law with parameter
+rate times elapsed time. This includes rate zero and equal observation times. -/
+theorem hasLaw_nat_count_sub_smul_nnvolume
+    (h : IsPoissonRandomMeasure P M ((r : ℝ≥0∞) • nnvolume))
     {s t : ℝ≥0} (hst : s ≤ t) :
     HasLaw (fun ω ↦ ⌊(M ω (Ioc 0 t)).toNNReal⌋₊ - ⌊(M ω (Ioc 0 s)).toNNReal⌋₊)
       (poissonMeasure (r * (t - s))) P := by
   let := nnvolume.isLocallyFiniteMeasure_smul (c := (r : ℝ≥0∞)) ENNReal.coe_ne_top
-  exact (h.hasLaw_nat_count_Ioc s t).congr (h.ae_nat_count_sub_eq hst)
+  simpa only [smul_apply, nnvolume_Ioc, smul_eq_mul, ← ENNReal.coe_mul,
+    ENNReal.toNNReal_coe] using h.hasLaw_nat_count_sub hst
 
 /-- Natural cumulative counts of a Poisson random measure with locally finite intensity have
 independent increments. The intensity may have atoms; no regularity assumptions on the
