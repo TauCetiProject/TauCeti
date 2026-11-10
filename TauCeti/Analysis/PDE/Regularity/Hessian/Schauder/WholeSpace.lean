@@ -118,7 +118,7 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_holder
   obtain ⟨R, hR, -, hscale⟩ := Real.exists_pos_le_one_mul_rpow_le
     (2 * (C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)) * ((n : ℝ) + 1) ^ 2 *
       ((1 + 2 ^ (α : ℝ)) * L)) (NNReal.coe_pos.2 hα) hlam
-  obtain ⟨C₁, hC₁⟩ := hball (L := L) (M := Lam.toNNReal) hlam hR
+  obtain ⟨C₁, hC₁⟩ := hball (L := L) (M := Lam.toNNReal) hlam
     (by simpa only [mul_assoc] using hscale) (half_lt_self hR)
   set δ : ℝ≥0 := ⟨R / 2, by positivity⟩
   have hδ : 0 < δ := by rw [← NNReal.coe_pos]; exact half_pos hR
@@ -183,15 +183,8 @@ theorem exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fder
   -- The Hölder norm `H` of `D²u` and the interpolation inequalities at scale `ε`.
   set H := nnHolderNorm α (iteratedFDeriv ℝ 2 u)
   have hH : HolderWith H α (iteratedFDeriv ℝ 2 u) := hmem.holderWith
-  have hN0 (y : E) : ‖iteratedFDeriv ℝ 0 u y‖ ≤ N := by
-    simpa only [norm_iteratedFDeriv_zero, Real.norm_eq_abs] using hN y
-  have h1 (x : E) : ‖fderiv ℝ u x‖ ≤ c * N + 2 * H * ε ^ (α : ℝ) := by
-    have h := (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hu hN0
-      hbdd hε hε1 x).1
-    rwa [zero_add, norm_iteratedFDeriv_one] at h
-  have h2 (x : E) : ‖iteratedFDeriv ℝ 2 u x‖ ≤ c * N + 2 * H * ε ^ (α : ℝ) :=
-    (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hu hN0 hbdd hε
-      hε1 x).2
+  obtain ⟨h1, h2⟩ := hH.norm_fderiv_le_and_norm_iteratedFDeriv_two_le hu
+    (fun y => by simpa only [Real.norm_eq_abs] using hN y) hbdd hε hε1
   -- The first estimate with `N₁ = (1 + c) N + 4 H ε^α`, which bounds `|u|`, `‖Du‖` and `‖D²u‖`.
   have hNN : 0 ≤ (N : ℝ) := N.coe_nonneg
   have hHε : 0 ≤ (H : ℝ) * ε ^ (α : ℝ) := by positivity

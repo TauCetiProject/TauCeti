@@ -142,6 +142,22 @@ lemma quotientFunc_TSL_zpow_smul (f : F) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮�
     slash_T_zpow_apply]
   norm_num
 
+/-- Integer translation of a coset does not change its constant term. -/
+lemma valueAtInfty_quotientFunc_TSL_zpow_smul (f : F) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) (j : ℤ) :
+    valueAtInfty (quotientFunc f (TSL ^ j • q)) = valueAtInfty (quotientFunc f q) := by
+  have hshift (r : ℝ) : Tendsto (fun τ : ℍ ↦ r +ᵥ τ) atImInfty atImInfty := by
+    simpa only [TauCeti.Matrix.GeneralLinearGroup.upperRightHom_smul] using
+      (tendsto_smul_atImInfty (g := Matrix.GeneralLinearGroup.upperRightHom r)
+        (by simp [Matrix.GeneralLinearGroup.upperRightHom_apply]))
+  have hmap : map (fun τ : ℍ ↦ (-j : ℝ) +ᵥ τ) atImInfty = atImInfty := by
+    have hid : (fun τ : ℍ ↦ (-j : ℝ) +ᵥ τ) ∘ (fun τ : ℍ ↦ (j : ℝ) +ᵥ τ) = id := by
+      ext τ
+      simp [vadd_vadd]
+    exact Filter.map_eq_of_inverse (fun τ : ℍ ↦ (j : ℝ) +ᵥ τ) hid (hshift _) (hshift _)
+  have hfun : quotientFunc f (TSL ^ j • q) = quotientFunc f q ∘ fun τ ↦ (-j : ℝ) +ᵥ τ :=
+    funext (quotientFunc_TSL_zpow_smul f q j)
+  rw [valueAtInfty, valueAtInfty, hfun, limUnder, limUnder, ← map_map, hmap]
+
 end Translate
 
 
@@ -391,20 +407,6 @@ lemma tendsto_quotientFunc_valueAtInfty (f : F) (q : 𝒮ℒ ⧸ 𝒢.subgroupOf
   exact TauCeti.UpperHalfPlane.tendsto_valueAtInfty
     (h := (minimalPeriod (TSL • ·) q : ℝ))
     (f := quotientFunc (𝒢 := 𝒢) (ℋ := 𝒮ℒ) (k := k) f q) hw' hper hana
-
-/-- Integer translation of a coset does not change its constant term. -/
-lemma valueAtInfty_quotientFunc_TSL_zpow_smul (f : F)
-    (q : 𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ) (j : ℤ) :
-    valueAtInfty (quotientFunc f (TSL ^ j • q)) = valueAtInfty (quotientFunc f q) := by
-  have hshift : Tendsto (fun τ : ℍ ↦ (-j : ℝ) +ᵥ τ) atImInfty atImInfty := by
-    simpa only [TauCeti.Matrix.GeneralLinearGroup.upperRightHom_smul] using
-      (tendsto_smul_atImInfty (g := Matrix.GeneralLinearGroup.upperRightHom (-j : ℝ))
-        (by simp [Matrix.GeneralLinearGroup.upperRightHom_apply]))
-  have hlim := (tendsto_quotientFunc_valueAtInfty f q).comp hshift
-  have hlim' : Tendsto (quotientFunc f (TSL ^ j • q)) atImInfty
-      (𝓝 (valueAtInfty (quotientFunc f q))) :=
-    hlim.congr (fun τ ↦ (quotientFunc_TSL_zpow_smul f q j τ).symm)
-  exact tendsto_nhds_unique (tendsto_quotientFunc_valueAtInfty f _) hlim'
 
 private lemma analyticAt_cuspFunction_one_galoisProd (f : F) (c : CuspTranslationOrbit 𝒢) :
     AnalyticAt ℂ

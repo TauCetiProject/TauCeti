@@ -8,8 +8,8 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic
 public import TauCeti.MeasureTheory.Measure.Lebesgue.HalfSqRadius
 public import Mathlib.MeasureTheory.Measure.Haar.OfBasis
+public import TauCeti.Geometry.Symplectic.Manifold.DuistermaatHeckman
 import Mathlib.LinearAlgebra.Finsupp.VectorSpace
-import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 
 /-!
@@ -19,8 +19,12 @@ The Duistermaat–Heckman measure of a Hamiltonian torus action is the pushforwa
 measure by the moment map. This file computes it for the linear model `ℂ^ι` of
 `TauCeti.Geometry.Symplectic.Hamiltonian.WeightModel.Basic`, whose moment map is
 `μ(q, p) = -½ Σ_i (q_i² + p_i²) α_i` for weights `α_i ∈ 𝔱*`. The Liouville measure `|ωⁿ / n!|` of
-the standard form `ω = Σ dq_i ∧ dp_i` is Lebesgue measure in the coordinates `(q, p)`, so the
-results are stated for the pushforward of `volume` on `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι`.
+the standard form `ω = Σ dq_i ∧ dp_i` is Lebesgue measure in the coordinates `(q, p)`
+(`TauCeti.SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm`), so the computations are
+carried out for the pushforward of `volume` on `EuclideanSpace ℝ ι × EuclideanSpace ℝ ι`, and then
+restated for the Duistermaat–Heckman measure of the symplectic manifold `ℂ^ι`
+(`TauCeti.duistermaatHeckmanMeasure_weightMomentMap`,
+`Module.Basis.duistermaatHeckmanMeasure_weightMomentMap_neg`).
 
 Since `μ` is the linear map `a ↦ Σ_i a_i (-α_i)` applied to the moment map `(|z_i|² / 2)_i` of the
 reversed rotation action `z_i ↦ exp(-i θ_i) z_i` (`TauCeti.weightMomentMap_eq_linearCombination`),
@@ -84,6 +88,20 @@ theorem map_volume_weightMomentMap (α : ι → StrongDual ℝ 𝔱) :
     hP.map_eq, map_volume_pi_half_sq_add_sq, Measure.map_smul]
   exact hL.aemeasurable
 
+/-- **The Duistermaat–Heckman measure of the weight model, as a symplectic manifold.** Regard
+`ℂ^ι` as a manifold with the standard symplectic form `Σ dq_i ∧ dp_i`, whose Liouville measure is
+Lebesgue measure. Then the Duistermaat–Heckman measure of `μ = -½ Σ_i (q_i² + p_i²) α_i` is
+`(2π)^|ι|` times the image of Lebesgue measure on the closed positive orthant under
+`a ↦ Σ_i a_i (-α_i)`. -/
+theorem duistermaatHeckmanMeasure_weightMomentMap (α : ι → StrongDual ℝ 𝔱) :
+    (stdSymplecticForm (V := EuclideanSpace ℝ ι)).constSmooth.duistermaatHeckmanMeasure
+        (Fintype.card ι) (weightMomentMap α) =
+      ENNReal.ofReal (2 * π) ^ Fintype.card ι •
+        (volume.restrict (univ.pi fun _ ↦ Ici (0 : ℝ))).map
+          (Fintype.linearCombination ℝ (-α)) := by
+  rw [SmoothTwoForm.duistermaatHeckmanMeasure_def,
+    SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm, map_volume_weightMomentMap]
+
 end TauCeti
 
 namespace Module.Basis
@@ -122,5 +140,19 @@ theorem map_volume_weightMomentMap_neg (b : Basis ι ℝ (StrongDual ℝ 𝔱)) 
     rw [← L.symm.preimage_symm_preimage {ν | ∀ i, 0 ≤ b.repr ν i}, L.symm_symm, hS]
     exact L.symm.continuous.measurable (MeasurableSet.univ_pi fun _ ↦ measurableSet_Ici)
   rw [hL, ← hvol, Measure.restrict_map L.continuous.measurable hSm, hS]
+
+/-- **The Duistermaat–Heckman measure of the weight model with a basis of negated weights, as a
+symplectic manifold.** If `b` is a basis of `𝔱*`, the moment map `μ = ½ Σ_i (q_i² + p_i²) b_i` of
+the action `z_i ↦ exp(-i b_i(ξ)) z_i` on `ℂ^ι`, with the standard symplectic form, has
+Duistermaat–Heckman measure `(2π)^|ι|` times the Haar measure normalized by `b`, restricted to the
+cone `{ν | ∀ i, 0 ≤ b.repr ν i}`. For the standard torus `ℝ^ι / (2πℤ)^ι` acting by
+`z_j ↦ exp(-i θ_j) z_j`, with `b` the standard basis of the weight lattice, this is `(2π)^|ι|` times
+Lebesgue measure on the positive orthant. -/
+theorem duistermaatHeckmanMeasure_weightMomentMap_neg (b : Basis ι ℝ (StrongDual ℝ 𝔱)) :
+    (stdSymplecticForm (V := EuclideanSpace ℝ ι)).constSmooth.duistermaatHeckmanMeasure
+        (Fintype.card ι) (weightMomentMap (-⇑b)) =
+      ENNReal.ofReal (2 * π) ^ Fintype.card ι • b.addHaar.restrict {ν | ∀ i, 0 ≤ b.repr ν i} := by
+  rw [SmoothTwoForm.duistermaatHeckmanMeasure_def,
+    SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm, map_volume_weightMomentMap_neg]
 
 end Module.Basis

@@ -11,7 +11,6 @@ public import TauCeti.Data.Set.Function
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.AddHorizontal
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Differential
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Horizontal
-public import TauCeti.RingTheory.Idempotents.Corner.Basic
 import TauCeti.Data.Finset.Basic
 
 /-!
@@ -60,16 +59,18 @@ two points it differs from the unit of the strands algebra. With this unit the m
 is an `R`-algebra, and over a ring of characteristic two the restricted differential makes it an
 ungraded differential algebra, over which type `D` structures are defined.
 
-The idempotents `I(s)` form a complete family of orthogonal idempotents of the matched subalgebra.
-Grouping them by the number `i` of strands gives the occupancy idempotents, which are central
-because products preserve the number of strands. As an `R`-algebra, the matched subalgebra is
-therefore the product of the corners `e_i A e_i` of the occupancy idempotents, its occupancy
-summands (`TauCeti.StrandsAlgebra.OccupancySummand`); for a pointed matched circle these are the
-summands `A(Z, j)` of Lipshitz, Ozsváth and Thurston. Resolving a crossing does not move the
-endpoints of a diagram, so the differential commutes with the `I(s)` and preserves each summand
-(`TauCeti.StrandsAlgebra.occupancyDifferential`), and the isomorphism intertwines the differentials
-(`TauCeti.StrandsAlgebra.occupancyAlgEquiv_matchedDifferential`). Over a ring of characteristic
-two, this makes each summand an ungraded differential algebra.
+The span of the generators is the matched subalgebra
+(`TauCeti.StrandsAlgebra.matchedAlgebra_eq_matchedSubalgebra`), so the algebra of a matching is
+also closed under the differential
+(`TauCeti.StrandsAlgebra.differential_mem_matchedAlgebra`). The summands of `a(ρ, h)` are the
+diagrams which, with their horizontal strands removed (`TauCeti.StrandDiagram.eraseHorizontal`),
+are `ρ`, and whose horizontal strands sit at one point of each pair in `h`; moving a horizontal
+strand to the other point of its pair permutes them, and any two of them are joined by a sequence
+of such moves. So `a(ρ, h)` is the matched completion sum of any of its summands
+(`TauCeti.StrandsAlgebra.horizontalCompletion_eq_matchedSum`) and lies in the matched subalgebra.
+Conversely, a diagram with no two matched starting or end points splits into a generator
+(`TauCeti.StrandsAlgebra.isMatchedGenerator_eraseHorizontal`), so the matched completion sums
+spanning the matched subalgebra are generators.
 
 ## Main definitions
 
@@ -89,15 +90,6 @@ two, this makes each summand an ungraded differential algebra.
 * `TauCeti.StrandsAlgebra.matchedSum R M φ`: the matched completion sum of a diagram.
 * `TauCeti.StrandsAlgebra.matchedDifferential R M`: the differential restricted to the matched
   subalgebra.
-* `TauCeti.StrandsAlgebra.matchedSubalgebraIdem R M s`: the idempotent `I(s)` as an element of
-  the matched subalgebra.
-* `TauCeti.StrandsAlgebra.occupancyIdem R M i`: the idempotent of the summand with `i` strands.
-* `TauCeti.StrandsAlgebra.OccupancySummand R M i`: the summand with `i` strands, the corner of
-  `occupancyIdem R M i`.
-* `TauCeti.StrandsAlgebra.occupancyAlgEquiv R M`: as an `R`-algebra, the matched subalgebra is
-  the product of its occupancy summands.
-* `TauCeti.StrandsAlgebra.occupancyDifferential R M i`: the differential of the summand with `i`
-  strands.
 
 ## Main results
 
@@ -123,27 +115,19 @@ two, this makes each summand an ungraded differential algebra.
   for the matched subalgebra.
 * `TauCeti.StrandsAlgebra.isUngradedDGAlgebra_matchedDifferential`: over a ring of characteristic
   two, the matched subalgebra is an ungraded differential algebra.
-* `TauCeti.StrandsAlgebra.completeOrthogonalIdempotents_matchedSubalgebraIdem`: the `I(s)` are a
-  complete family of orthogonal idempotents of the matched subalgebra.
-* `TauCeti.StrandsAlgebra.isMulCentral_occupancyIdem`,
-  `TauCeti.StrandsAlgebra.completeOrthogonalIdempotents_occupancyIdem`: the occupancy idempotents
-  are central and form a complete family of orthogonal idempotents.
-* `TauCeti.StrandsAlgebra.occupancyIdem_mul_eq_self_iff`: an element lies in the summand with `i`
-  strands exactly when all of its diagrams have `i` strands.
-* `TauCeti.StrandsAlgebra.occupancyAlgEquiv_apply_coe`,
-  `TauCeti.StrandsAlgebra.occupancyAlgEquiv_symm_apply`: the components of the occupancy
-  decomposition are the corners `e_i x e_i`, and an element is the sum of its components.
-* `TauCeti.StrandsAlgebra.isUngradedDGAlgebra_occupancyDifferential`: over a ring of
-  characteristic two, each occupancy summand is an ungraded differential algebra.
-* `TauCeti.StrandsAlgebra.occupancyAlgEquiv_matchedDifferential`: the occupancy decomposition
-  intertwines the differentials.
+* `TauCeti.StrandsAlgebra.repr_horizontalCompletion_apply`: the coefficients of `a(ρ, h)`.
+* `TauCeti.StrandsAlgebra.horizontalCompletion_eq_matchedSum`: `a(ρ, h)` is the matched
+  completion sum of any of its summands.
+* `TauCeti.StrandsAlgebra.matchedAlgebra_eq_matchedSubalgebra`: the span of the generators
+  `a(ρ, h)` is the matched subalgebra.
+* `TauCeti.StrandsAlgebra.differential_mem_matchedAlgebra`: the algebra of a matching is closed
+  under the differential.
 
 ## References
 
 * R. Lipshitz, P. Ozsváth and D. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer. Math.
   Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687), §3.2 (pointed
-  matched circles, the idempotents `I(s)`, the elements `a(ρ)`, the algebra `A(Z)` and its summands
-  `A(Z, i)`).
+  matched circles, the idempotents `I(s)`, the elements `a(ρ)` and the algebra `A(Z)`).
 -/
 
 public section
@@ -220,6 +204,31 @@ theorem injOn_source_and_target_iff_of_matchedSetoid (h : matchedSetoid M φ ψ)
       (fun _ _ _ hab ↦ propext (by
         rw [injOn_source_swapHorizontal_iff hab, injOn_target_swapHorizontal_iff hab])) h).to_iff
 
+/-- Moving the horizontal strand of `ρ.addHorizontal U` at a point `a ∈ U` to a point `b ∉ U`
+gives `ρ` with horizontal strands added along `U` with `a` replaced by `b`, provided no strand of
+`ρ` starts or ends at `a` or at `b`. -/
+theorem swapHorizontal_addHorizontal {ρ : StrandDiagram α} {U : Finset α} (ha : a ∈ U) (hb : b ∉ U)
+    (has : a ∉ ρ.source) (hat : a ∉ ρ.target) (hbs : b ∉ ρ.source) (hbt : b ∉ ρ.target) :
+    (ρ.addHorizontal U).swapHorizontal a b = ρ.addHorizontal (insert b (U.erase a)) := by
+  have hρ {i j : α} (hij : j ∈ ρ i) : i ≠ a ∧ i ≠ b ∧ j ≠ a ∧ j ≠ b := by
+    have hi := mem_source.2 ⟨j, hij⟩
+    have hj := mem_target.2 ⟨i, hij⟩
+    refine ⟨?_, ?_, ?_, ?_⟩ <;> rintro rfl
+    exacts [has hi, hbs hi, hat hj, hbt hj]
+  have hcan : (ρ.addHorizontal U).CanMoveHorizontal a b := by
+    refine canMoveHorizontal_iff.2 ⟨addHorizontal_apply_of_mem ρ ha, fun h ↦ ?_, fun h ↦ ?_⟩
+    · obtain ⟨j, hj⟩ := mem_source.1 h
+      rcases mem_addHorizontal.1 hj with ⟨hbU, -⟩ | ⟨-, -, hbj⟩
+      exacts [hb hbU, (hρ hbj).2.1 rfl]
+    · obtain ⟨i, hi⟩ := mem_target.1 h
+      rcases mem_addHorizontal.1 hi with ⟨hiU, rfl⟩ | ⟨-, -, hib⟩
+      exacts [hb hiU, (hρ hib).2.2.2 rfl]
+  ext x y
+  simp only [← Option.mem_def, mem_swapHorizontal hcan, mem_addHorizontal, Finset.mem_insert,
+    Finset.mem_erase]
+  have := @hρ x y
+  grind
+
 end StrandDiagram
 
 namespace StrandsAlgebra
@@ -243,8 +252,8 @@ The second condition says that the coefficients are constant on each family of d
 from one another by moving horizontal strands between matched points, so that `x` is a combination
 of the sums of these families. For the matching of a pointed matched circle `Z` with `4k` points,
 `α = Fin (4 * k)` and `R = ZMod 2`, these sums span the algebra `A(Z)` of Lipshitz, Ozsváth and
-Thurston, which is therefore this subalgebra. The definition uses no property of `M` beyond being
-a function. -/
+Thurston, which is therefore this subalgebra (`matchedAlgebra_eq_matchedSubalgebra`). The
+definition uses no property of `M` beyond being a function. -/
 def matchedSubalgebra (M : α → β) : NonUnitalSubalgebra R (StrandsAlgebra R α) where
   carrier := {x | (∀ φ, (basis R α).repr x φ ≠ 0 →
       Set.InjOn M (φ.source : Set α) ∧ Set.InjOn M (φ.target : Set α)) ∧
@@ -885,9 +894,10 @@ open scoped Pointwise in
 variable (R M) in
 /-- The algebra of the matching `M`, spanned by the elements `a(ρ, h)`. For the matching of a
 pointed matched circle `Z` this is the span description of the algebra `A(Z)` of Lipshitz,
-Ozsváth and Thurston, without its differential; `matchedSubalgebra R M` is the intrinsic
-description. It is closed under multiplication because the product of two of its
-generators is again one or zero (`horizontalCompletion_mul_horizontalCompletion`). It is a
+Ozsváth and Thurston; `matchedSubalgebra R M` is the intrinsic description, and the two agree
+(`matchedAlgebra_eq_matchedSubalgebra`). It is closed under multiplication because the product of
+two of its generators is again one or zero (`horizontalCompletion_mul_horizontalCompletion`), and
+under the differential (`differential_mem_matchedAlgebra`). It is a
 non-unital subalgebra of the strands algebra; its own unit is `matchedOne R M`. -/
 def matchedAlgebra : NonUnitalSubalgebra R (StrandsAlgebra R α) :=
   (Submodule.span R {x | ∃ ρ h, IsMatchedGenerator M ρ h ∧ horizontalCompletion M ρ h = x}
@@ -1057,6 +1067,222 @@ theorem matchedOne_eq_sum [Fintype β] : matchedOne R M = ∑ s, matchedIdem R M
 
 end Unit
 
+/-! ### The algebra of a matching is the matched subalgebra -/
+
+section Span
+
+variable [DecidableEq β] {M : α → β} {ρ : StrandDiagram α} {h : Finset β}
+
+/-- Replacing a point of a choice of points over `h` by another point of the same pair gives
+another choice. -/
+private theorem insert_erase_mem_matchedChoices {U : Finset α} {a b : α}
+    (hU : U ∈ matchedChoices M h) (ha : a ∈ U) (hb : b ∉ U) (hab : M a = M b) :
+    insert b (U.erase a) ∈ matchedChoices M h := by
+  simp only [matchedChoices, mem_filter, mem_univ, true_and] at hU ⊢
+  refine ⟨?_, ?_⟩
+  · rw [image_insert, ← hab, ← image_insert, insert_erase ha, hU.1]
+  · rw [card_insert_of_notMem fun h' ↦ hb (mem_of_mem_erase h'), card_erase_of_mem ha, ← hU.2]
+    have := card_pos.2 ⟨a, ha⟩
+    omega
+
+namespace IsMatchedGenerator
+
+/-- A summand of `a(ρ, h)` is determined by its horizontal strands: it is a summand exactly when
+removing its horizontal strands gives `ρ` and these strands sit at one point of each pair in
+`h`. -/
+theorem mem_image_addHorizontal_iff (hρ : IsMatchedGenerator M ρ h) {φ : StrandDiagram α} :
+    φ ∈ (matchedChoices M h).image ρ.addHorizontal ↔
+      φ.eraseHorizontal = ρ ∧ φ.horizontals ∈ matchedChoices M h := by
+  constructor
+  · intro hφ
+    obtain ⟨U, hU, rfl⟩ := mem_image.1 hφ
+    have hUh := (mem_matchedChoices.1 hU).1.le
+    rw [StrandDiagram.eraseHorizontal_addHorizontal hρ.notMem_self
+      (hρ.disjoint_source_of_image_subset hUh) (hρ.disjoint_target_of_image_subset hUh),
+      StrandDiagram.horizontals_addHorizontal hρ.notMem_self]
+    exact ⟨rfl, hU⟩
+  · rintro ⟨hφ, hH⟩
+    exact mem_image.2 ⟨_, hH, hφ ▸ φ.addHorizontal_eraseHorizontal_horizontals⟩
+
+/-- Moving a horizontal strand of a summand `ρ.addHorizontal U` of `a(ρ, h)` to the other point of
+its pair gives the summand with that point in place of the first. -/
+private theorem swapHorizontal_addHorizontal (hρ : IsMatchedGenerator M ρ h) {U : Finset α}
+    {a b : α} (hU : U ∈ matchedChoices M h) (ha : a ∈ U) (hb : b ∉ U) (hab : M a = M b) :
+    (ρ.addHorizontal U).swapHorizontal a b = ρ.addHorizontal (insert b (U.erase a)) := by
+  have hah : M a ∈ h := (mem_matchedChoices.1 hU).1 ▸ mem_image_of_mem M ha
+  have hs {c : α} (hc : M c ∈ h) : c ∉ ρ.source := fun hc' ↦
+    disjoint_left.1 hρ.disjoint_source (mem_image_of_mem M hc') hc
+  have ht {c : α} (hc : M c ∈ h) : c ∉ ρ.target := fun hc' ↦
+    disjoint_left.1 hρ.disjoint_target (mem_image_of_mem M hc') hc
+  exact StrandDiagram.swapHorizontal_addHorizontal ha hb (hs hah) (ht hah) (hs (hab ▸ hah))
+    (ht (hab ▸ hah))
+
+/-- Moving a horizontal strand of a summand of `a(ρ, h)` to a matched point gives a summand. -/
+private theorem swapHorizontal_mem_image_addHorizontal (hρ : IsMatchedGenerator M ρ h)
+    {φ : StrandDiagram α} {a b : α} (hab : M a = M b) (hφ : φ.CanMoveHorizontal a b)
+    (hφρ : φ ∈ (matchedChoices M h).image ρ.addHorizontal) :
+    φ.swapHorizontal a b ∈ (matchedChoices M h).image ρ.addHorizontal := by
+  obtain ⟨U, hU, rfl⟩ := mem_image.1 hφρ
+  have ha : a ∈ U := (StrandDiagram.mem_addHorizontal_self hρ.notMem_self).1 hφ.mem
+  have hb : b ∉ U := fun hb ↦
+    hφ.notMem_source (StrandDiagram.mem_source.2 ⟨b, ρ.addHorizontal_apply_of_mem hb⟩)
+  rw [hρ.swapHorizontal_addHorizontal hU ha hb hab]
+  exact mem_image_of_mem _ (insert_erase_mem_matchedChoices hU ha hb hab)
+
+/-- Moving a horizontal strand to a matched point does not change whether a diagram is a summand
+of `a(ρ, h)`. -/
+private theorem swapHorizontal_mem_image_addHorizontal_iff (hρ : IsMatchedGenerator M ρ h)
+    {φ : StrandDiagram α} {a b : α} (hab : M a = M b) :
+    φ.swapHorizontal a b ∈ (matchedChoices M h).image ρ.addHorizontal ↔
+      φ ∈ (matchedChoices M h).image ρ.addHorizontal := by
+  wlog hφ : φ.CanMoveHorizontal a b generalizing a b
+  · by_cases hφ' : φ.CanMoveHorizontal b a
+    · rw [swapHorizontal_comm]
+      exact this hab.symm hφ'
+    · rw [swapHorizontal_of_not hφ hφ']
+  refine ⟨fun h' ↦ ?_, hρ.swapHorizontal_mem_image_addHorizontal hab hφ⟩
+  simpa [swapHorizontal_comm _ b a] using
+    hρ.swapHorizontal_mem_image_addHorizontal hab.symm hφ.swapHorizontal h'
+
+/-- Any two summands of `a(ρ, h)` are related by moving horizontal strands to matched points. -/
+private theorem matchedSetoid_addHorizontal (hρ : IsMatchedGenerator M ρ h) {U V : Finset α}
+    (hU : U ∈ matchedChoices M h) (hV : V ∈ matchedChoices M h) :
+    matchedSetoid M (ρ.addHorizontal U) (ρ.addHorizontal V) := by
+  -- Move the horizontal strands of `U` outside `V` to `V` one at a time.
+  induction hn : #(U \ V) using Nat.strong_induction_on generalizing U with
+  | _ n ih =>
+    have hcard {W : Finset α} (hW : W ∈ matchedChoices M h) : #W = #h := by
+      simp only [matchedChoices, mem_filter, mem_univ, true_and] at hW
+      exact hW.2
+    by_cases hUV : U ⊆ V
+    · rw [eq_of_subset_of_card_le hUV (by rw [hcard hU, hcard hV])]
+    obtain ⟨a, haU, haV⟩ := not_subset.1 hUV
+    have hah : M a ∈ V.image M := by
+      rw [(mem_matchedChoices.1 hV).1, ← (mem_matchedChoices.1 hU).1]
+      exact mem_image_of_mem M haU
+    obtain ⟨b, hbV, hba⟩ := mem_image.1 hah
+    have hbU : b ∉ U := fun hbU ↦ haV ((mem_matchedChoices.1 hU).2 hbU haU hba ▸ hbV)
+    have hlt : #(insert b (U.erase a) \ V) < n := by
+      have : insert b (U.erase a) \ V = (U \ V).erase a := by
+        ext c
+        simp only [mem_sdiff, mem_insert, mem_erase]
+        grind
+      rw [this, ← hn]
+      exact card_erase_lt_of_mem (mem_sdiff.2 ⟨haU, haV⟩)
+    refine (matchedSetoid M).iseqv.trans (matchedSetoid_swapHorizontal hba.symm) ?_
+    rw [hρ.swapHorizontal_addHorizontal hU haU hbU hba.symm]
+    exact ih _ hlt (insert_erase_mem_matchedChoices hU haU hbU hba.symm) rfl
+
+/-- The summands of `a(ρ, h)` form the class of any one of them under moving horizontal strands to
+matched points. -/
+private theorem matchedSetoid_addHorizontal_iff (hρ : IsMatchedGenerator M ρ h) {U : Finset α}
+    (hU : U ∈ matchedChoices M h) {φ : StrandDiagram α} :
+    matchedSetoid M (ρ.addHorizontal U) φ ↔ φ ∈ (matchedChoices M h).image ρ.addHorizontal := by
+  refine ⟨fun hφ ↦ ?_, fun hφ ↦ ?_⟩
+  · exact (apply_eq_of_matchedSetoid (f := (· ∈ (matchedChoices M h).image ρ.addHorizontal))
+      (fun _ _ _ hab ↦ propext (hρ.swapHorizontal_mem_image_addHorizontal_iff hab)) hφ).mp
+      (mem_image_of_mem _ hU)
+  · obtain ⟨V, hV, rfl⟩ := mem_image.1 hφ
+    exact hρ.matchedSetoid_addHorizontal hU hV
+end IsMatchedGenerator
+
+/-- The coefficient of a diagram in `a(ρ, h)` is `1` when it is one of its summands, `ρ` with a
+horizontal strand added at one point of each pair in `h`, and `0` otherwise. -/
+theorem repr_horizontalCompletion_apply (hρ : IsMatchedGenerator M ρ h) (φ : StrandDiagram α) :
+    (basis R α).repr (horizontalCompletion M ρ h) φ =
+      if φ ∈ (matchedChoices M h).image ρ.addHorizontal then 1 else 0 := by
+  rw [horizontalCompletion_def, ← sum_image (f := of) fun U _ V _ hUV ↦
+    StrandDiagram.addHorizontal_injective hρ.notMem_self hUV]
+  simp [← basis_apply, Finsupp.single_apply]
+
+/-- **A generator is a matched completion sum.** `a(ρ, h)` is the matched completion sum of any of
+its summands. -/
+theorem horizontalCompletion_eq_matchedSum (hρ : IsMatchedGenerator M ρ h) {U : Finset α}
+    (hU : U ∈ matchedChoices M h) :
+    (horizontalCompletion M ρ h : StrandsAlgebra R α) = matchedSum R M (ρ.addHorizontal U) := by
+  classical
+  refine (basis R α).repr.injective (Finsupp.ext fun φ ↦ ?_)
+  rw [repr_horizontalCompletion_apply hρ, repr_matchedSum_apply]
+  exact if_congr (hρ.matchedSetoid_addHorizontal_iff hU).symm rfl rfl
+
+/-- **The generators `a(ρ, h)` lie in the matched subalgebra.** -/
+theorem horizontalCompletion_mem_matchedSubalgebra (hρ : IsMatchedGenerator M ρ h) :
+    (horizontalCompletion M ρ h : StrandsAlgebra R α) ∈ matchedSubalgebra R M := by
+  rcases (matchedChoices M h).eq_empty_or_nonempty with hh | ⟨U, hU⟩
+  · rw [horizontalCompletion_def, hh, sum_empty]
+    exact zero_mem _
+  -- The points of a summand are those of `ρ` and one point of each pair in `h`, which `h` keeps
+  -- apart from those of `ρ`.
+  obtain ⟨hUh, hUinj⟩ := mem_matchedChoices.1 hU
+  have key {S : Finset α} (hS : Set.InjOn M S) (hSh : Disjoint (S.image M) h) :
+      Set.InjOn M ↑(S ∪ U) := by
+    rw [coe_union]
+    exact hS.union_of_disjoint_image hUinj
+      (by rw [← coe_image, ← coe_image, disjoint_coe, hUh]; exact hSh)
+  rw [horizontalCompletion_eq_matchedSum hρ hU]
+  refine matchedSum_mem_matchedSubalgebra ?_ ?_
+  · rw [StrandDiagram.source_addHorizontal (hρ.disjoint_target_of_image_subset hUh.le)]
+    exact key hρ.injOn_source hρ.disjoint_source
+  · rw [StrandDiagram.target_addHorizontal (hρ.disjoint_source_of_image_subset hUh.le)]
+    exact key hρ.injOn_target hρ.disjoint_target
+
+/-- The span of the generators `a(ρ, h)` lies in the matched subalgebra. -/
+theorem matchedAlgebra_le_matchedSubalgebra : matchedAlgebra R M ≤ matchedSubalgebra R M :=
+  fun _ hx ↦ by
+    induction hx using matchedAlgebra_induction with
+    | generator ρ h hρ => exact horizontalCompletion_mem_matchedSubalgebra hρ
+    | zero => exact zero_mem _
+    | add x y _ _ hx hy => exact add_mem hx hy
+    | smul r x _ hx => exact SMulMemClass.smul_mem r hx
+
+/-- A diagram with no two matched starting points and no two matched end points splits into a
+generator: its strands that are not horizontal, and the pairs of its horizontal strands. -/
+theorem isMatchedGenerator_eraseHorizontal {φ : StrandDiagram α}
+    (hs : Set.InjOn M φ.source) (ht : Set.InjOn M φ.target) :
+    IsMatchedGenerator M φ.eraseHorizontal (φ.horizontals.image M) := by
+  -- A point of `S` that is not horizontal is not matched with a horizontal strand.
+  have hdisj {S : Finset α} (hS : Set.InjOn M S) (hHS : φ.horizontals ⊆ S) :
+      Disjoint ((S \ φ.horizontals).image M) (φ.horizontals.image M) := by
+    refine disjoint_left.2 fun m hm hm' ↦ ?_
+    obtain ⟨i, hi, rfl⟩ := mem_image.1 hm
+    obtain ⟨j, hj, hji⟩ := mem_image.1 hm'
+    exact (mem_sdiff.1 hi).2 (hS (hHS hj) (mem_sdiff.1 hi).1 hji ▸ hj)
+  refine ⟨φ.notMem_eraseHorizontal_self, ?_, ?_, ?_, ?_⟩
+  · simpa using hs.mono (coe_subset.2 sdiff_subset)
+  · simpa using ht.mono (coe_subset.2 sdiff_subset)
+  · simpa using hdisj hs φ.horizontals_subset_source
+  · simpa using hdisj ht φ.horizontals_subset_target
+
+/-- **The matched subalgebra is spanned by the generators `a(ρ, h)`.** It is spanned by the matched
+completion sums of the diagrams with no two matched starting or end points, and each of these is
+the generator of the diagram's strands that are not horizontal and the pairs of its horizontal
+strands. -/
+theorem matchedSubalgebra_le_matchedAlgebra : matchedSubalgebra R M ≤ matchedAlgebra R M := by
+  intro x hx
+  rw [← NonUnitalSubalgebra.mem_toSubmodule, ← span_matchedSum] at hx
+  refine (Submodule.span_le (p := (matchedAlgebra R M).toSubmodule)).2 ?_ hx
+  rintro _ ⟨φ, ⟨hS, hT⟩, rfl⟩
+  have hρ := isMatchedGenerator_eraseHorizontal hS hT
+  have h := horizontalCompletion_eq_matchedSum (R := R) hρ
+    (mem_matchedChoices.2 ⟨rfl, hS.mono (coe_subset.2 φ.horizontals_subset_source)⟩)
+  rw [φ.addHorizontal_eraseHorizontal_horizontals] at h
+  rw [SetLike.mem_coe, NonUnitalSubalgebra.mem_toSubmodule, ← h]
+  exact horizontalCompletion_mem_matchedAlgebra hρ
+/-- **The algebra of a matching is the matched subalgebra.** The span of the generators `a(ρ, h)`
+of Lipshitz, Ozsváth and Thurston is the subalgebra of the elements whose diagrams have no two
+matched starting or end points and whose coefficients do not change when a horizontal strand
+moves to a matched point. -/
+theorem matchedAlgebra_eq_matchedSubalgebra : matchedAlgebra R M = matchedSubalgebra R M :=
+  le_antisymm matchedAlgebra_le_matchedSubalgebra matchedSubalgebra_le_matchedAlgebra
+
+/-- **The algebra of a matching is closed under the differential.** -/
+theorem differential_mem_matchedAlgebra {x : StrandsAlgebra R α} (hx : x ∈ matchedAlgebra R M) :
+    differential R α x ∈ matchedAlgebra R M := by
+  rw [matchedAlgebra_eq_matchedSubalgebra] at hx ⊢
+  exact differential_mem_matchedSubalgebra hx
+
+end Span
+
 /-! ### The unit of the matched subalgebra -/
 
 section SubalgebraUnit
@@ -1191,237 +1417,6 @@ theorem isUngradedDGAlgebra_matchedDifferential [DecidableEq β] {R : Type*} [Co
   map_map a := Subtype.ext (by simp [differential_differential])
 
 end Differential
-
-/-! ### The occupancy summands of the matched subalgebra -/
-
-section Occupancy
-
-variable {M : α → β} [DecidableEq β]
-
-variable (R M) in
-/-- The idempotent `I(s)`, `TauCeti.StrandsAlgebra.matchedIdem R M s`, as an element of the
-matched subalgebra. -/
-def matchedSubalgebraIdem (s : Finset β) : matchedSubalgebra R M :=
-  ⟨matchedIdem R M s, matchedIdem_mem_matchedSubalgebra M s⟩
-
-@[simp]
-theorem coe_matchedSubalgebraIdem (s : Finset β) :
-    (matchedSubalgebraIdem R M s : StrandsAlgebra R α) = matchedIdem R M s :=
-  (rfl)
-
-/-- The idempotents `I(s)` of the matched subalgebra are cycles. -/
-@[simp]
-theorem matchedDifferential_matchedSubalgebraIdem (s : Finset β) :
-    matchedDifferential R M (matchedSubalgebraIdem R M s) = 0 :=
-  Subtype.ext (by simp)
-
-/-- The idempotents `I(s)` of the matched subalgebra are orthogonal: `I(s) I(t)` is `I(s)` when
-`s = t` and zero otherwise. -/
-@[simp]
-theorem matchedSubalgebraIdem_mul_matchedSubalgebraIdem (s t : Finset β) :
-    matchedSubalgebraIdem R M s * matchedSubalgebraIdem R M t =
-      if s = t then matchedSubalgebraIdem R M s else 0 := by
-  apply Subtype.ext
-  split_ifs <;> simp [*]
-
-/-- `I(s) x I(t)` vanishes in the matched subalgebra when `s` and `t` have different sizes. -/
-theorem matchedSubalgebraIdem_mul_mul_matchedSubalgebraIdem_eq_zero_of_card_ne {s t : Finset β}
-    (h : #s ≠ #t) (x : matchedSubalgebra R M) :
-    matchedSubalgebraIdem R M s * x * matchedSubalgebraIdem R M t = 0 :=
-  Subtype.ext (by simp [matchedIdem_mul_mul_matchedIdem_eq_zero_of_card_ne M h])
-
-variable [Fintype β]
-
-/-- **The idempotents `I(s)` of the matched subalgebra are a complete family of orthogonal
-idempotents**: they are idempotent, pairwise orthogonal, and sum to the unit. -/
-theorem completeOrthogonalIdempotents_matchedSubalgebraIdem :
-    CompleteOrthogonalIdempotents (matchedSubalgebraIdem R M) where
-  idem s := by simp [IsIdempotentElem]
-  ortho s t hst := by simp [hst]
-  complete := Subtype.ext (by simp [matchedOne_eq_sum])
-
-variable (R M) in
-/-- The idempotent of the summand of the matched subalgebra with `i` strands: the sum of the
-idempotents `I(s)` over the sets `s` of size `i`. For the matching of a pointed matched circle with
-`4k` points, `i = k + j` strands give the summand `A(Z, j)` of Lipshitz, Ozsváth and Thurston. -/
-def occupancyIdem (i : Fin (Fintype.card β + 1)) : matchedSubalgebra R M :=
-  ∑ s with #s = (i : ℕ), matchedSubalgebraIdem R M s
-
-theorem occupancyIdem_def (i : Fin (Fintype.card β + 1)) :
-    occupancyIdem R M i = ∑ s with #s = (i : ℕ), matchedSubalgebraIdem R M s :=
-  (rfl)
-
-/-- In the strands algebra, the idempotent of the summand with `i` strands is the sum of the
-idempotents `I(s)` over the sets `s` of size `i`. -/
-@[simp]
-theorem coe_occupancyIdem (i : Fin (Fintype.card β + 1)) :
-    (occupancyIdem R M i : StrandsAlgebra R α) = ∑ s with #s = (i : ℕ), matchedIdem R M s := by
-  simp [occupancyIdem_def]
-
-/-- The coefficients of `e_i x` are those of `x` at the diagrams with `i` strands, and zero at the
-other diagrams. -/
-theorem repr_coe_occupancyIdem_mul_apply (i : Fin (Fintype.card β + 1))
-    (x : matchedSubalgebra R M) (φ : StrandDiagram α) :
-    (basis R α).repr ((occupancyIdem R M i * x : matchedSubalgebra R M) : StrandsAlgebra R α) φ =
-      if #φ.source = (i : ℕ) then (basis R α).repr (x : StrandsAlgebra R α) φ else 0 := by
-  have := Fintype.ofFinite (StrandDiagram α)
-  set y : StrandsAlgebra R α := ↑x with hy
-  have hx := (mem_matchedSubalgebra.1 x.2).1
-  have key : (∑ s with #s = (i : ℕ), matchedIdem R M s) * y =
-      ∑ ψ, (if #ψ.source = (i : ℕ) then (basis R α).repr y ψ else 0) • basis R α ψ := by
-    conv_lhs => rw [← (basis R α).sum_repr y]
-    simp only [mul_sum, mul_smul_comm, basis_apply]
-    refine sum_congr rfl fun ψ _ ↦ ?_
-    by_cases h : (basis R α).repr y ψ = 0
-    · simp [h]
-    · simp only [sum_mul, matchedIdem_mul_of, ite_and, sum_ite_eq, mem_filter, mem_univ,
-        true_and, card_image_of_injOn (hx ψ h).1, ite_true]
-      split_ifs <;> simp
-  rw [MulMemClass.coe_mul, coe_occupancyIdem, ← hy, key, (basis R α).repr_sum_self]
-
-/-- **An element lies in the summand with `i` strands**, that is `e_i x = x`, exactly when all of
-its diagrams have `i` strands. -/
-theorem occupancyIdem_mul_eq_self_iff {i : Fin (Fintype.card β + 1)} {x : matchedSubalgebra R M} :
-    occupancyIdem R M i * x = x ↔
-      ∀ φ, (basis R α).repr (x : StrandsAlgebra R α) φ ≠ 0 → #φ.source = (i : ℕ) := by
-  refine ⟨fun h φ hφ ↦ ?_, fun h ↦ Subtype.ext ((basis R α).ext_elem fun φ ↦ ?_)⟩
-  · by_contra hne
-    exact hφ (by rw [← h, repr_coe_occupancyIdem_mul_apply]; simp [hne])
-  · rw [repr_coe_occupancyIdem_mul_apply]
-    split_ifs with hφ
-    · rfl
-    · exact (not_not.1 (mt (h φ) hφ)).symm
-
-/-- The occupancy idempotents are cycles. -/
-@[simp]
-theorem matchedDifferential_occupancyIdem (i : Fin (Fintype.card β + 1)) :
-    matchedDifferential R M (occupancyIdem R M i) = 0 := by
-  simp [occupancyIdem_def]
-
-/-- The differential commutes with left multiplication by an occupancy idempotent. -/
-theorem matchedDifferential_occupancyIdem_mul (i : Fin (Fintype.card β + 1))
-    (x : matchedSubalgebra R M) :
-    matchedDifferential R M (occupancyIdem R M i * x) =
-      occupancyIdem R M i * matchedDifferential R M x :=
-  Subtype.ext (by simp [sum_mul, differential_matchedIdem_mul])
-
-/-- The differential commutes with right multiplication by an occupancy idempotent. -/
-theorem matchedDifferential_mul_occupancyIdem (x : matchedSubalgebra R M)
-    (i : Fin (Fintype.card β + 1)) :
-    matchedDifferential R M (x * occupancyIdem R M i) =
-      matchedDifferential R M x * occupancyIdem R M i :=
-  Subtype.ext (by simp [mul_sum, differential_mul_matchedIdem])
-
-/-- `e_i x e_j` vanishes for distinct occupancy idempotents `e_i` and `e_j`. -/
-theorem occupancyIdem_mul_mul_occupancyIdem_eq_zero_of_ne {i j : Fin (Fintype.card β + 1)}
-    (h : i ≠ j) (x : matchedSubalgebra R M) :
-    occupancyIdem R M i * x * occupancyIdem R M j = 0 := by
-  simp only [occupancyIdem_def, sum_mul, mul_sum]
-  refine sum_eq_zero fun s hs ↦ sum_eq_zero fun t ht ↦
-    matchedSubalgebraIdem_mul_mul_matchedSubalgebraIdem_eq_zero_of_card_ne ?_ x
-  rw [(mem_filter.1 hs).2, (mem_filter.1 ht).2]
-  exact Fin.val_injective.ne h
-
-/-- **The occupancy idempotents are a complete family of orthogonal idempotents.** -/
-theorem completeOrthogonalIdempotents_occupancyIdem :
-    CompleteOrthogonalIdempotents (occupancyIdem R M) := by
-  refine (CompleteOrthogonalIdempotents.iff_ortho_complete).2 ⟨fun i j hij ↦ ?_, ?_⟩
-  · simpa [occupancyIdem_def, ← mul_assoc] using
-      occupancyIdem_mul_mul_occupancyIdem_eq_zero_of_ne (R := R) (M := M) hij 1
-  · rw [← completeOrthogonalIdempotents_matchedSubalgebraIdem.complete]
-    have hlt (s : Finset β) : #s < Fintype.card β + 1 := Nat.lt_succ_of_le (card_le_univ s)
-    rw [← sum_fiberwise univ (fun s ↦ (⟨#s, hlt s⟩ : Fin (Fintype.card β + 1)))
-      (matchedSubalgebraIdem R M)]
-    refine sum_congr rfl fun i _ ↦ sum_congr ?_ fun _ _ ↦ rfl
-    ext s
-    simp [Fin.ext_iff]
-
-/-- **The occupancy idempotents are central**: the products in the matched subalgebra preserve the
-number of strands. -/
-theorem isMulCentral_occupancyIdem (i : Fin (Fintype.card β + 1)) :
-    IsMulCentral (occupancyIdem R M i) :=
-  completeOrthogonalIdempotents_occupancyIdem.isMulCentral_of_mul_mul_eq_zero
-    (fun _ _ h x ↦ occupancyIdem_mul_mul_occupancyIdem_eq_zero_of_ne h x) i
-
-variable (R M) in
-/-- The occupancy summand of the matched subalgebra with `i` strands: the corner `e_i A e_i` of
-the occupancy idempotent `e_i`, an `R`-algebra with unit `e_i`. For the matching of a pointed
-matched circle with `4k` points, `i = k + j` strands give the summand `A(Z, j)` of Lipshitz,
-Ozsváth and Thurston. -/
-abbrev OccupancySummand (i : Fin (Fintype.card β + 1)) : Type _ :=
-  ((completeOrthogonalIdempotents_occupancyIdem (R := R) (M := M)).idem i).Corner
-
-variable (R M) in
-/-- **The occupancy decomposition of the matched subalgebra.** As an `R`-algebra, the matched
-subalgebra is the product of its occupancy summands, the corners `e_i A e_i` of its central
-occupancy idempotents `e_i`. Its compatibility with the differential is
-`occupancyAlgEquiv_matchedDifferential`. -/
-def occupancyAlgEquiv : matchedSubalgebra R M ≃ₐ[R] Π i, OccupancySummand R M i :=
-  completeOrthogonalIdempotents_occupancyIdem.algEquivOfIsMulCentral R isMulCentral_occupancyIdem
-
-/-- The component of `x` in the summand with `i` strands is `e_i x e_i`. -/
-@[simp]
-theorem occupancyAlgEquiv_apply_coe (x : matchedSubalgebra R M) (i : Fin (Fintype.card β + 1)) :
-    (occupancyAlgEquiv R M x i).1 = occupancyIdem R M i * x * occupancyIdem R M i :=
-  completeOrthogonalIdempotents_occupancyIdem.val_algEquivOfIsMulCentral_apply _ x i
-
-/-- An element is recovered from its occupancy components as their sum. -/
-@[simp]
-theorem occupancyAlgEquiv_symm_apply (y : Π i, OccupancySummand R M i) :
-    (occupancyAlgEquiv R M).symm y = ∑ i, (y i).1 :=
-  completeOrthogonalIdempotents_occupancyIdem.algEquivOfIsMulCentral_symm_apply _ y
-
-variable (R M) in
-/-- The differential of the occupancy summand with `i` strands: the restriction of the
-differential of the matched subalgebra, which preserves the corner `e_i A e_i` because it commutes
-with multiplication by `e_i`. -/
-def occupancyDifferential (i : Fin (Fintype.card β + 1)) :
-    OccupancySummand R M i →ₗ[R] OccupancySummand R M i where
-  toFun y := ⟨matchedDifferential R M y.1, by
-    obtain ⟨r, hr⟩ := y.2
-    exact ⟨matchedDifferential R M r, by
-      rw [← hr, matchedDifferential_mul_occupancyIdem, matchedDifferential_occupancyIdem_mul]⟩⟩
-  map_add' y z := Subtype.ext (map_add (matchedDifferential R M) y.1 z.1)
-  map_smul' r y := Subtype.ext (map_smul (matchedDifferential R M) r y.1)
-
-@[simp]
-theorem occupancyDifferential_apply_coe (i : Fin (Fintype.card β + 1))
-    (y : OccupancySummand R M i) :
-    (occupancyDifferential R M i y).1 = matchedDifferential R M y.1 :=
-  (rfl)
-
-/-- The differential of an occupancy summand squares to zero. -/
-@[simp]
-theorem occupancyDifferential_occupancyDifferential [CharP R 2] (i : Fin (Fintype.card β + 1))
-    (y : OccupancySummand R M i) :
-    occupancyDifferential R M i (occupancyDifferential R M i y) = 0 :=
-  Subtype.ext (Subtype.ext (differential_differential _))
-
-/-- **The Leibniz rule** for the differential of an occupancy summand. -/
-theorem occupancyDifferential_mul [CharP R 2] (i : Fin (Fintype.card β + 1))
-    (y z : OccupancySummand R M i) :
-    occupancyDifferential R M i (y * z) =
-      occupancyDifferential R M i y * z + y * occupancyDifferential R M i z :=
-  Subtype.ext (matchedDifferential_mul y.1 z.1)
-
-/-- Over a ring of characteristic two, each occupancy summand with its differential is an ungraded
-differential algebra. -/
-theorem isUngradedDGAlgebra_occupancyDifferential {R : Type*} [CommRing R] [CharP R 2]
-    (i : Fin (Fintype.card β + 1)) :
-    IsUngradedDGAlgebra (occupancyDifferential R M i) where
-  map_mul := occupancyDifferential_mul i
-  map_map := occupancyDifferential_occupancyDifferential i
-
-/-- The occupancy decomposition intertwines the differential of the matched subalgebra with the
-differentials of its occupancy summands. -/
-theorem occupancyAlgEquiv_matchedDifferential (x : matchedSubalgebra R M)
-    (i : Fin (Fintype.card β + 1)) :
-    occupancyAlgEquiv R M (matchedDifferential R M x) i =
-      occupancyDifferential R M i (occupancyAlgEquiv R M x i) :=
-  Subtype.ext (by
-    simp [matchedDifferential_mul_occupancyIdem, matchedDifferential_occupancyIdem_mul])
-
-end Occupancy
 
 end StrandsAlgebra
 
