@@ -231,7 +231,7 @@ theorem enorm_setAverage_rpow_le {q : ℝ} (hq : 1 ≤ q) :
       enorm_setAverage_le_setLAverage mu f s
   have hholder : (∫⁻ y in s, ‖f y‖ₑ ∂mu) ^ q ≤ mu s ^ (q - 1) * ∫⁻ y in s, ‖f y‖ₑ ^ q ∂mu := by
     have := rpow_lintegral_le_measure_univ_rpow_mul (μ := mu.restrict s)
-      (u := fun y => ‖f y‖ₑ) hf.aestronglyMeasurable.enorm hq
+      (u := fun y => ‖f y‖ₑ) hq
     rwa [Measure.restrict_apply_univ] at this
   have hexp : -q + (q - 1) = (-1 : ℝ) := by ring
   calc ‖⨍ y in s, f y ∂mu‖ₑ ^ q
@@ -513,7 +513,7 @@ variable {X : Type*} [MeasurableSpace X] {μ : Measure X}
 /-- **Jensen's inequality for the average of a nonnegative function**: for `r ≥ 1`, the `r`-th
 power of the average of `u` is at most the average of `u ^ r`. No finiteness is assumed: if the
 measure is zero or infinite, both averages vanish. -/
-theorem rpow_laverage_le_laverage_rpow {u : X → ℝ≥0∞} (hu : AEMeasurable u μ) {r : ℝ}
+theorem rpow_laverage_le_laverage_rpow {u : X → ℝ≥0∞} {r : ℝ}
     (hr : 1 ≤ r) : (⨍⁻ x, u x ∂μ) ^ r ≤ ⨍⁻ x, u x ^ r ∂μ := by
   have hr0 : 0 < r := one_pos.trans_le hr
   rw [laverage_eq, laverage_eq]
@@ -522,7 +522,7 @@ theorem rpow_laverage_le_laverage_rpow {u : X → ℝ≥0∞} (hu : AEMeasurable
     simp [ENNReal.zero_rpow_of_pos hr0]
   rcases eq_or_ne (μ Set.univ) ∞ with htop | htop
   · simp [htop, ENNReal.zero_rpow_of_pos hr0]
-  have key := rpow_lintegral_le_measure_univ_rpow_mul hu hr
+  have key := rpow_lintegral_le_measure_univ_rpow_mul (μ := μ) (u := u) hr
   have hpow0 : μ Set.univ ^ r ≠ 0 := (ENNReal.rpow_pos (pos_iff_ne_zero.2 h0) htop).ne'
   have hpowtop : μ Set.univ ^ r ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg hr0.le htop
   rw [ENNReal.div_rpow_of_nonneg _ _ hr0.le, ENNReal.div_le_iff hpow0 hpowtop]
