@@ -75,13 +75,6 @@ theorem bernsteinNumber_def (T : E →L[𝕜] F) (n : ℕ) :
       ⨅ x : {x : E // x ∈ M.1 ∧ x ≠ 0}, ‖T x‖₊ / ‖(x : E)‖₊ := by
   rw [bernsteinNumber]
 
-/-- A subspace of rank `n + 1` contains a nonzero vector. -/
-private theorem exists_mem_ne_zero_of_rank_eq {M : Submodule 𝕜 E} {n : ℕ}
-    (hM : Module.rank 𝕜 M = n + 1) : ∃ x ∈ M, x ≠ 0 := by
-  refine Submodule.exists_mem_ne_zero_of_ne_bot fun h ↦ ?_
-  rw [h, rank_bot] at hM
-  exact (Cardinal.natCast_add_one_le_iff.mp hM.symm.le).not_ge zero_le
-
 /-- The gain of `T` on `M` is a coercivity constant of `T` on `M`. -/
 private theorem iInf_mul_nnnorm_le (T : E →L[𝕜] F) (M : Submodule 𝕜 E) {x : E} (hx : x ∈ M) :
     (⨅ y : {y : E // y ∈ M ∧ y ≠ 0}, ‖T y‖₊ / ‖(y : E)‖₊) * ‖x‖₊ ≤ ‖T x‖₊ := by
@@ -95,7 +88,7 @@ private theorem iInf_mul_nnnorm_le (T : E →L[𝕜] F) (M : Submodule 𝕜 E) {
 private theorem le_iInf_of_rank_eq (T : E →L[𝕜] F) {M : Submodule 𝕜 E} {n : ℕ}
     (hM : Module.rank 𝕜 M = n + 1) {c : ℝ≥0} (h : ∀ x ∈ M, c * ‖x‖₊ ≤ ‖T x‖₊) :
     c ≤ ⨅ y : {y : E // y ∈ M ∧ y ≠ 0}, ‖T y‖₊ / ‖(y : E)‖₊ := by
-  obtain ⟨x, hx, hx0⟩ := exists_mem_ne_zero_of_rank_eq hM
+  obtain ⟨x, hx, hx0⟩ := exists_mem_ne_zero_of_rank_pos (hM ▸ n.cast_add_one_pos)
   have : Nonempty {y : E // y ∈ M ∧ y ≠ 0} := ⟨⟨x, hx, hx0⟩⟩
   exact le_ciInf fun y ↦ (le_div_iff₀ (nnnorm_pos.mpr y.2.2)).mpr (h y y.2.1)
 
@@ -103,7 +96,7 @@ private theorem le_iInf_of_rank_eq (T : E →L[𝕜] F) {M : Submodule 𝕜 E} {
 private theorem iInf_le_nnnorm (T : E →L[𝕜] F) {M : Submodule 𝕜 E} {n : ℕ}
     (hM : Module.rank 𝕜 M = n + 1) :
     ⨅ y : {y : E // y ∈ M ∧ y ≠ 0}, ‖T y‖₊ / ‖(y : E)‖₊ ≤ ‖T‖₊ := by
-  obtain ⟨x, hx, hx0⟩ := exists_mem_ne_zero_of_rank_eq hM
+  obtain ⟨x, hx, hx0⟩ := exists_mem_ne_zero_of_rank_pos (hM ▸ n.cast_add_one_pos)
   refine le_of_mul_le_mul_right ?_ (nnnorm_pos.mpr hx0)
   exact (iInf_mul_nnnorm_le T M hx).trans (T.le_opNNNorm x)
 
@@ -160,7 +153,7 @@ private theorem le_mul_bernsteinNumber_of_rank_eq (T : E →L[𝕜] F) {n : ℕ}
     (hM : Module.rank 𝕜 M = n + 1) {d k : ℝ≥0} (h : ∀ x ∈ M, d * ‖x‖₊ ≤ k * ‖T x‖₊) :
     d ≤ k * T.bernsteinNumber n := by
   rcases eq_or_ne k 0 with rfl | hk
-  · obtain ⟨x, hx, hx0⟩ := exists_mem_ne_zero_of_rank_eq hM
+  · obtain ⟨x, hx, hx0⟩ := exists_mem_ne_zero_of_rank_pos (hM ▸ n.cast_add_one_pos)
     have hdx := h x hx
     rw [zero_mul, nonpos_iff_eq_zero, mul_eq_zero, nnnorm_eq_zero] at hdx
     simp [hdx.resolve_right hx0]
@@ -172,7 +165,7 @@ private theorem le_mul_bernsteinNumber_of_rank_eq (T : E →L[𝕜] F) {n : ℕ}
 /-- The Bernstein numbers are bounded by the operator norm. -/
 theorem bernsteinNumber_le_nnnorm (T : E →L[𝕜] F) (n : ℕ) : T.bernsteinNumber n ≤ ‖T‖₊ :=
   bernsteinNumber_le_of_forall_rank_eq fun _ hM ↦
-    let ⟨x, hx, hx0⟩ := exists_mem_ne_zero_of_rank_eq hM
+    let ⟨x, hx, hx0⟩ := exists_mem_ne_zero_of_rank_pos (hM ▸ n.cast_add_one_pos)
     ⟨x, hx, hx0, T.le_opNNNorm x⟩
 
 /-- **Zeroth Bernstein number.** `b₀(T) = ‖T‖`, testing the gain on the line through each
