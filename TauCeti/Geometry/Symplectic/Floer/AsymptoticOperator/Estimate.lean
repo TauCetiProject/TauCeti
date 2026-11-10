@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.AsymptoticOperator
 import TauCeti.Analysis.ODE.Periodic
+import TauCeti.Geometry.Symplectic.CompatibleMetric
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -74,40 +75,6 @@ namespace Floer
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
   {ω : SymplecticForm V} {J : ℝ → AlmostComplexStructure V} {S : ℝ → V →L[ℝ] V}
 
-/-- The forms `g_t = ω(·, J_t ·)` are uniformly equivalent to the square of the norm over
-`t ∈ [0, 1]`, for tame `J_t` depending continuously on `t`. -/
-private theorem exists_pos_forall_mul_norm_sq_le_associatedBilinForm (hJ : ∀ t, ω.Tames (J t))
-    (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) :
-    ∃ a > 0, ∃ b ≥ 0, ∀ t ∈ Icc (0 : ℝ) 1, ∀ v,
-      a * ‖v‖ ^ 2 ≤ ω.associatedBilinForm (J t) v v ∧
-        ω.associatedBilinForm (J t) v v ≤ b * ‖v‖ ^ 2 := by
-  set e : ℝ → V →L[ℝ] V := fun t ↦ LinearMap.toContinuousLinearMap (J t).toLinearMap
-  have he : Continuous e := continuous_clm_apply.2 fun v ↦ by
-    simpa [e, Function.comp_def] using hJc.comp (continuous_id.prodMk continuous_const)
-  set ωc := ω.toBilinForm.toContinuousBilinearMap
-  have hT : IsCompact (e '' Icc 0 1) := isCompact_Icc.image he
-  obtain ⟨a, ha, hlow⟩ := hT.exists_pos_forall_mul_norm_sq_le_compRight ωc (by
-    rintro _ ⟨t, -, rfl⟩ v hv
-    simpa [e, ωc] using hJ t v hv)
-  obtain ⟨M, hM⟩ := isCompact_Icc.exists_bound_of_continuousOn he.continuousOn (s := Icc (0 : ℝ) 1)
-  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0 ⟨le_rfl, zero_le_one⟩)
-  refine ⟨a, ha, ‖ωc‖ * M, by positivity, fun t ht v ↦
-    ⟨by simpa [e, ωc] using hlow _ ⟨t, ht, rfl⟩ v, ?_⟩⟩
-  have h₁ : ω.associatedBilinForm (J t) v v = ωc v (e t v) := by simp [e, ωc]
-  rw [h₁]
-  calc ωc v (e t v) ≤ ‖ωc v (e t v)‖ := Real.le_norm_self _
-    _ ≤ ‖ωc‖ * ‖v‖ * ‖e t v‖ := ωc.le_opNorm₂ _ _
-    _ ≤ ‖ωc‖ * ‖v‖ * (M * ‖v‖) := by
-        gcongr
-        exact (e t).le_opNorm v |>.trans (mul_le_mul_of_nonneg_right (hM t ht) (norm_nonneg _))
-    _ = ‖ωc‖ * M * ‖v‖ ^ 2 := by ring
-
-/-- The diagonal `t ↦ g_t(ζ t, ζ t)` along a continuous loop is continuous. -/
-private theorem continuous_associatedBilinForm_apply_self_comp
-    (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2) {ζ : ℝ → V} (hζ : Continuous ζ) :
-    Continuous fun t ↦ ω.associatedBilinForm (J t) (ζ t) (ζ t) :=
-  ω.continuous_apply_comp hζ (hJc.comp (continuous_id.prodMk hζ))
-
 /-- **The `L²` loop estimate at a nondegenerate orbit.** Let each `J_t` be `ω`-tame and depend
 continuously on `t`, let `S` be continuous, and suppose that `det (1 - Ψ(1)) ≠ 0` for the return
 map `Ψ(1) = dysonSeriesLeft S 1` of `ζ' = S_t ζ`. Then there is a constant `C ≥ 0` such that
@@ -119,22 +86,26 @@ theorem exists_forall_integral_associatedBilinForm_le_mul_integral (hJ : ∀ t, 
     ∃ C, 0 ≤ C ∧ ∀ ⦃ζ f : ℝ → V⦄, Continuous f → (∀ t, HasDerivAt ζ (S t (ζ t) + f t) t) →
       ζ 1 = ζ 0 → ∫ t in 0..1, ω.associatedBilinForm (J t) (ζ t) (ζ t) ≤
         C * ∫ t in 0..1, ω.associatedBilinForm (J t) (f t) (f t) := by
-  obtain ⟨a, ha, b, hb, hab⟩ := exists_pos_forall_mul_norm_sq_le_associatedBilinForm hJ hJc
-  have hdet' : LinearMap.det ((1 : ℝ) • 1 - (↑(dysonSeriesLeft S 1) : V →ₗ[ℝ] V)) ≠ 0 := by
+  have he : Continuous fun t ↦ LinearMap.toContinuousLinearMap (J t).toLinearMap :=
+    continuous_clm_apply.2 fun v ↦ by
+      simpa [Function.comp_def] using hJc.comp (continuous_id.prodMk continuous_const)
+  obtain ⟨a, ha, b, hb, hab⟩ := ω.exists_pos_forall_mul_norm_sq_le_associatedBilinForm
+    isCompact_Icc he.continuousOn fun t _ ↦ hJ t
+  have hP : IsUnit ((1 : ℝ) • 1 - dysonSeriesLeft S 1) := by
+    rw [ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap, LinearMap.isUnit_iff_isUnit_det]
     simpa using hdet
-  obtain ⟨C, hC, hle⟩ := exists_forall_integral_norm_sq_le_mul_integral_norm_sq hSc zero_le_one
-    hdet'
+  obtain ⟨C, hC, hle⟩ := exists_forall_integral_norm_sq_le_mul_integral_norm_sq hSc zero_le_one hP
   refine ⟨b * C / a, by positivity, fun ζ f hf hζ hζ1 ↦ ?_⟩
   have hζc : Continuous ζ := continuous_iff_continuousAt.2 fun t ↦ (hζ t).continuousAt
   have h₁ : ∫ t in 0..1, ω.associatedBilinForm (J t) (ζ t) (ζ t) ≤ ∫ t in 0..1, b * ‖ζ t‖ ^ 2 :=
     intervalIntegral.integral_mono_on zero_le_one
-      ((continuous_associatedBilinForm_apply_self_comp hJc hζc).intervalIntegrable _ _)
+      ((ω.continuous_apply_comp hζc (hJc.comp (continuous_id.prodMk hζc))).intervalIntegrable _ _)
       ((continuous_const.mul (hζc.norm.pow 2)).intervalIntegrable _ _)
       fun t ht ↦ (hab t ht _).2
   have h₂ : ∫ t in 0..1, a * ‖f t‖ ^ 2 ≤ ∫ t in 0..1, ω.associatedBilinForm (J t) (f t) (f t) :=
     intervalIntegral.integral_mono_on zero_le_one
       ((continuous_const.mul (hf.norm.pow 2)).intervalIntegrable _ _)
-      ((continuous_associatedBilinForm_apply_self_comp hJc hf).intervalIntegrable _ _)
+      ((ω.continuous_apply_comp hf (hJc.comp (continuous_id.prodMk hf))).intervalIntegrable _ _)
       fun t ht ↦ (hab t ht _).1
   rw [intervalIntegral.integral_const_mul] at h₁ h₂
   have h₃ := hle hf hζ (by rw [hζ1, one_smul])
@@ -163,14 +134,6 @@ theorem exists_forall_integral_associatedBilinForm_le_mul_integral_asymptoticOpe
     using h (f := fun t ↦ deriv ζ t - S t (ζ t))
       ((hζ.continuous_deriv le_rfl).sub (hSc.clm_apply hζ.continuous)) hd hζ1
 
-/-- The function `z ↦ g_{z.2}(f z, f z)` is integrable over every rectangle `[a, b] × [0, 1]`. -/
-private theorem integrableOn_rect_associatedBilinForm (hJc : Continuous fun p : ℝ × V ↦ J p.1 p.2)
-    {f : ℝ × ℝ → V} (hf : Continuous f) (a b : ℝ) :
-    IntegrableOn (fun z : ℝ × ℝ ↦ ω.associatedBilinForm (J z.2) (f z) (f z))
-      (Icc a b ×ˢ Icc 0 1) :=
-  (ω.continuous_apply_comp hf (hJc.comp (continuous_snd.prodMk hf))).continuousOn
-    |>.integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
-
 /-- **The cylinder estimate at a nondegenerate orbit.** Let each `J_t` be `ω`-compatible and
 depend continuously on `t`, let each `S_t` be infinitesimally symplectic and `S` continuous, and
 suppose that `det (1 - Ψ(1)) ≠ 0` for the return map `Ψ(1) = dysonSeriesLeft S 1`. Then there is
@@ -198,15 +161,9 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
   obtain ⟨C, hC, hloop⟩ :=
     exists_forall_integral_associatedBilinForm_le_mul_integral (fun t ↦ (hJ t).tames) hJc hSc hdet
   refine ⟨1 + C, by positivity, fun ξ hξ hper a b hab ha hb ↦ ?_⟩
-  have hdξ : Continuous (fderiv ℝ ξ) := hξ.continuous_fderiv (by norm_num)
   set w : ℝ × ℝ → V := fun z ↦ fderiv ℝ ξ z stdComplexLineImag - S z.2 (ξ z)
-  have hw : Continuous w :=
-    (hdξ.clm_apply continuous_const).sub ((hSc.comp continuous_snd).clm_apply hξ.continuous)
-  have hs : Continuous fun z ↦ fderiv ℝ ξ z stdComplexLineReal := hdξ.clm_apply continuous_const
-  have hg0 (t : ℝ) (v : V) : 0 ≤ ω.associatedBilinForm (J t) v v := by
-    rcases eq_or_ne v 0 with rfl | hv
-    · simp
-    · exact ((hJ t).associated_pos hv).le
+  have hw : Continuous w := ((hξ.continuous_fderiv (by norm_num)).clm_apply continuous_const).sub
+    ((hSc.comp continuous_snd).clm_apply hξ.continuous)
   -- The energy identity, whose boundary slices vanish.
   have hid := setIntegral_associatedBilinForm_stationaryCylinderOperator
     (fun t ↦ (hJ t).invariant) hJc hS hSc hξ hper hab
@@ -221,9 +178,13 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
     have h := hloop (hw.comp (Continuous.prodMk_right s)) hd (by simpa using hper s 0)
     simpa only [integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le zero_le_one,
       Function.comp_def] using h
-  have hQ := integrableOn_rect_associatedBilinForm (ω := ω) hJc hξ.continuous a b
-  have hW := integrableOn_rect_associatedBilinForm (ω := ω) hJc hw a b
-  have hP := integrableOn_rect_associatedBilinForm (ω := ω) hJc hs a b
+  have hrect := isCompact_Icc (a := a) (b := b) |>.prod (isCompact_Icc (a := (0 : ℝ)) (b := 1))
+  have hQ := (continuous_associatedBilinForm_apply_self (ω := ω) hJc hξ.continuous).continuousOn
+    |>.integrableOn_compact (μ := volume) hrect
+  have hW := (continuous_associatedBilinForm_apply_self (ω := ω) hJc hw).continuousOn
+    |>.integrableOn_compact (μ := volume) hrect
+  have hE := (continuous_associatedBilinForm_add_apply_self (ω := ω) hJc hSc
+    (hξ.of_le one_le_two)).continuousOn |>.integrableOn_compact (μ := volume) hrect
   have hfub : ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (ξ z) (ξ z) ≤
       C * ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (w z) (w z) :=
     setIntegral_rect_le_mul_of_forall_setIntegral_le hQ hW fun s _ ↦ hslice s
@@ -231,9 +192,9 @@ theorem exists_forall_setIntegral_le_mul_setIntegral_stationaryCylinderOperator
   have hW' : ∫ z in Icc a b ×ˢ Icc 0 1, ω.associatedBilinForm (J z.2) (w z) (w z) ≤
       ∫ z in Icc a b ×ˢ Icc 0 1, (ω.associatedBilinForm (J z.2) (fderiv ℝ ξ z stdComplexLineReal)
         (fderiv ℝ ξ z stdComplexLineReal) + ω.associatedBilinForm (J z.2) (w z) (w z)) :=
-    setIntegral_mono hW (hP.add hW) fun z ↦ le_add_of_nonneg_left (hg0 _ _)
-  have hsplit := integral_add (hP.add hW) hQ
-  simp only [Pi.add_apply, w] at hsplit hfub hW'
+    setIntegral_mono hW hE fun z ↦ le_add_of_nonneg_left ((hJ _).associatedBilinForm_self_nonneg _)
+  have hsplit := integral_add hE hQ
+  simp only [w] at hsplit hfub hW'
   rw [hsplit, hid]
   linarith [mul_le_mul_of_nonneg_left hW' hC]
 
