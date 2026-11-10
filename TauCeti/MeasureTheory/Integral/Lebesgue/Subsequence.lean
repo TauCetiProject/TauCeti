@@ -5,15 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 public import Mathlib.Order.Filter.AtTopBot.Basic
-public import Mathlib.Topology.Algebra.Module.Determinant
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Constructions.Polish.Basic
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Almost everywhere convergence along a subsequence
@@ -23,9 +20,9 @@ subsequence the functions themselves tend to `0` almost everywhere. Choose the s
 integrals below `2⁻ʲ`: the sum `∑ⱼ F (φ j)` then has finite integral, so it is finite almost
 everywhere, and its terms tend to `0` there.
 
-Applied to the `n`-th powers of the errors of operator fields converging in `Lⁿ`, `n` the
-dimension, the same sum, plus the `n`-th power of the limit, dominates the determinants along the
-subsequence, since `|det T| ≤ 2ⁿ (‖S‖ⁿ + ‖T - S‖ⁿ)`.
+Applied to the `p`-th powers of the errors of fields converging in `Lᵖ`, the same sum, plus the
+`p`-th power of the limit, dominates the `p`-th powers of the fields along the subsequence, since
+`‖x‖ᵖ ≤ 2ᵖ⁻¹ (‖a‖ᵖ + ‖x - a‖ᵖ)`.
 
 ## Main statements
 
@@ -33,16 +30,16 @@ subsequence, since `|det T| ≤ 2ⁿ (‖S‖ⁿ + ‖T - S‖ⁿ)`.
   functions whose integrals tend to `0` has a sum with finite integral.
 * `TauCeti.exists_strictMono_ae_tendsto_zero_of_tendsto_lintegral`: a subsequence of functions
   whose integrals tend to `0` tends to `0` almost everywhere.
-* `TauCeti.exists_strictMono_ofReal_abs_det_le_and_ae_tendsto_of_tendsto_lintegral`: operator
-  fields converging in `Lⁿ` converge almost everywhere along a subsequence, along which their
-  determinants have a common integrable majorant.
+* `TauCeti.exists_strictMono_enorm_pow_le_and_ae_tendsto_of_tendsto_lintegral`: fields
+  converging in `Lᵖ` converge almost everywhere along a subsequence, along which their `p`-th
+  powers have a common integrable majorant.
 -/
 
 public section
 
 namespace TauCeti
 
-open Filter MeasureTheory Module Set Topology
+open Filter MeasureTheory Set Topology
 open scoped ENNReal
 
 variable {α : Type*} [MeasurableSpace α] {μ : Measure α}
@@ -72,53 +69,53 @@ theorem exists_strictMono_ae_tendsto_zero_of_tendsto_lintegral {F : ℕ → α �
   filter_upwards [ae_lt_top' (AEMeasurable.tsum fun j ↦ hF (φ j)) hsum] with a ha
   exact ENNReal.tendsto_atTop_zero_of_tsum_ne_top ha.ne
 
-/-- **A common majorant for determinants along a subsequence.** Let `F k` be operator fields
-converging to `H` in `Lⁿ` on measurable sets `U k ⊆ Ω`, `n` the dimension, with `‖H‖ ∈ Lⁿ(Ω)`,
-and let every point of `Ω` lie in `U k` for all large `k`. Then along a subsequence the
-determinants `|det F (φ j)|` on `U (φ j)` have a common integrable majorant, and
-`F (φ j) → H` almost everywhere on `Ω`. -/
-theorem exists_strictMono_ofReal_abs_det_le_and_ae_tendsto_of_tendsto_lintegral
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] {Ω : Set α}
+/-- **A common majorant along a subsequence.** Let `F k` be fields converging to `H` in `Lᵖ`
+on measurable sets `U k ⊆ Ω`, `p ≠ 0` a natural number, with `‖H‖ ∈ Lᵖ(Ω)`, and let every point
+of `Ω` lie in `U k` for all large `k`. Then along a subsequence the powers `‖F (φ j)‖ᵖ` on
+`U (φ j)` have a common integrable majorant, and `F (φ j) → H` almost everywhere on `Ω`. -/
+theorem exists_strictMono_enorm_pow_le_and_ae_tendsto_of_tendsto_lintegral
+    {E : Type*} [SeminormedAddCommGroup E] {p : ℕ} (hp : p ≠ 0) {Ω : Set α}
     (hΩ : MeasurableSet Ω) {U : ℕ → Set α} (hU : ∀ k, MeasurableSet (U k)) (hUΩ : ∀ k, U k ⊆ Ω)
-    (hΩU : ∀ y ∈ Ω, ∀ᶠ k in atTop, y ∈ U k) {F : ℕ → α → E →L[ℝ] E}
-    (hF : ∀ k, AEStronglyMeasurable (F k) (μ.restrict (U k))) {H : α → E →L[ℝ] E}
-    (hHm : AEStronglyMeasurable H (μ.restrict Ω)) (hH : ∫⁻ y in Ω, ‖H y‖ₑ ^ finrank ℝ E ∂μ ≠ ∞)
-    (hFH : Tendsto (fun k ↦ ∫⁻ y in U k, ‖F k y - H y‖ₑ ^ finrank ℝ E ∂μ) atTop (𝓝 0)) :
+    (hΩU : ∀ y ∈ Ω, ∀ᶠ k in atTop, y ∈ U k) {F : ℕ → α → E}
+    (hF : ∀ k, AEStronglyMeasurable (F k) (μ.restrict (U k))) {H : α → E}
+    (hHm : AEStronglyMeasurable H (μ.restrict Ω)) (hH : ∫⁻ y in Ω, ‖H y‖ₑ ^ p ∂μ ≠ ∞)
+    (hFH : Tendsto (fun k ↦ ∫⁻ y in U k, ‖F k y - H y‖ₑ ^ p ∂μ) atTop (𝓝 0)) :
     ∃ φ : ℕ → ℕ, StrictMono φ ∧ (∃ G : α → ℝ≥0∞, ∫⁻ y, G y ∂μ ≠ ∞ ∧
-      ∀ j, ∀ y ∈ U (φ j), ENNReal.ofReal |(F (φ j) y).det| ≤ G y) ∧
+      ∀ j, ∀ y ∈ U (φ j), ‖F (φ j) y‖ₑ ^ p ≤ G y) ∧
       ∀ᵐ y ∂μ, y ∈ Ω → Tendsto (fun j ↦ F (φ j) y) atTop (𝓝 (H y)) := by
-  set n := finrank ℝ E
-  -- A subsequence along which the `Lⁿ` errors have a summable integral.
-  set D : ℕ → α → ℝ≥0∞ := fun k ↦ (U k).indicator fun y ↦ ‖F k y - H y‖ₑ ^ n
+  -- A subsequence along which the `Lᵖ` errors have a summable integral.
+  set D : ℕ → α → ℝ≥0∞ := fun k ↦ (U k).indicator fun y ↦ ‖F k y - H y‖ₑ ^ p
   have hD (k : ℕ) : AEMeasurable (D k) μ :=
     (aemeasurable_indicator_iff (hU k)).2
-      ((((hF k).sub (hHm.mono_measure (Measure.restrict_mono (hUΩ k) le_rfl))).enorm).pow_const n)
+      ((((hF k).sub (hHm.mono_measure (Measure.restrict_mono (hUΩ k) le_rfl))).enorm).pow_const p)
   obtain ⟨φ, hφ, hS⟩ := exists_strictMono_lintegral_tsum_ne_top_of_tendsto_lintegral hD
     (by simpa only [D, lintegral_indicator (hU _)] using hFH)
   refine ⟨φ, hφ, ?_, ?_⟩
-  -- The majorant `2ⁿ (‖H‖ⁿ + ∑ⱼ ‖F (φ j) - H‖ⁿ)`.
-  · have hC : (2 : ℝ≥0∞) ^ n ≠ ∞ := ENNReal.pow_ne_top ENNReal.ofNat_ne_top
-    refine ⟨fun y ↦ 2 ^ n * (Ω.indicator (fun y ↦ ‖H y‖ₑ ^ n) y + ∑' j, D (φ j) y), ?_,
-      fun j y hy ↦ ((F (φ j) y).ofReal_abs_det_le (H y)).trans
-        (mul_le_mul_right (add_le_add ?_ ?_) _)⟩
+  -- The majorant `2ᵖ⁻¹ (‖H‖ᵖ + ∑ⱼ ‖F (φ j) - H‖ᵖ)`, from `‖x‖ᵖ ≤ 2ᵖ⁻¹ (‖a‖ᵖ + ‖x - a‖ᵖ)`.
+  · have hC : (2 : ℝ≥0∞) ^ (p - 1) ≠ ∞ := ENNReal.pow_ne_top ENNReal.ofNat_ne_top
+    have hle (x a : E) : ‖x‖ₑ ^ p ≤ 2 ^ (p - 1) * (‖a‖ₑ ^ p + ‖x - a‖ₑ ^ p) := by
+      have h : ‖x‖₊ ^ p ≤ 2 ^ (p - 1) * (‖a‖₊ ^ p + ‖x - a‖₊ ^ p) :=
+        (pow_le_pow_left₀ zero_le (by simpa using nnnorm_add_le a (x - a)) p).trans
+          (add_pow_le zero_le zero_le p)
+      simpa only [enorm, ENNReal.coe_pow, ENNReal.coe_mul, ENNReal.coe_add, ENNReal.coe_ofNat]
+        using ENNReal.coe_le_coe.2 h
+    refine ⟨fun y ↦ 2 ^ (p - 1) * (Ω.indicator (fun y ↦ ‖H y‖ₑ ^ p) y + ∑' j, D (φ j) y), ?_,
+      fun j y hy ↦ (hle (F (φ j) y) (H y)).trans (mul_le_mul_right (add_le_add ?_ ?_) _)⟩
     · rw [lintegral_const_mul' _ _ hC, lintegral_add_left'
-        ((aemeasurable_indicator_iff hΩ).2 (hHm.enorm.pow_const n)), lintegral_indicator hΩ]
+        ((aemeasurable_indicator_iff hΩ).2 (hHm.enorm.pow_const p)), lintegral_indicator hΩ]
       exact ENNReal.mul_ne_top hC (ENNReal.add_ne_top.2 ⟨hH, hS⟩)
     · rw [indicator_of_mem (hUΩ _ hy)]
-    · exact le_trans (le_of_eq (by simp only [D, n, indicator_of_mem hy]))
+    · exact le_trans (le_of_eq (by simp only [D, indicator_of_mem hy]))
         (_root_.le_tsum (fun j ↦ D (φ j) y) j)
   -- The errors tend to `0` where the sum is finite, and `y` lies in `U (φ j)` eventually.
   · filter_upwards [ae_lt_top' (AEMeasurable.tsum fun j ↦ hD (φ j)) hS] with y hy hyΩ
-    rcases subsingleton_or_nontrivial E with hE | hE
-    · exact tendsto_const_nhds.congr fun j ↦ Subsingleton.elim _ _
-    have hn : n ≠ 0 := finrank_pos.ne'
-    have h1 : Tendsto (fun j ↦ ‖F (φ j) y - H y‖ₑ ^ n) atTop (𝓝 0) :=
+    have h1 : Tendsto (fun j ↦ ‖F (φ j) y - H y‖ₑ ^ p) atTop (𝓝 0) :=
       (ENNReal.tendsto_atTop_zero_of_tsum_ne_top hy.ne).congr'
         ((hφ.tendsto_atTop.eventually (hΩU y hyΩ)).mono fun j hj ↦ by
           simp only [D, indicator_of_mem hj])
-    have h2 := ((ENNReal.continuous_rpow_const (y := (n : ℝ)⁻¹)).tendsto 0).comp h1
-    simp only [Function.comp_def, ENNReal.pow_rpow_inv_natCast hn,
-      ENNReal.zero_rpow_of_pos (inv_pos.2 (Nat.cast_pos.2 (Nat.pos_of_ne_zero hn)))] at h2
+    have h2 := ((ENNReal.continuous_rpow_const (y := (p : ℝ)⁻¹)).tendsto 0).comp h1
+    simp only [Function.comp_def, ENNReal.pow_rpow_inv_natCast hp,
+      ENNReal.zero_rpow_of_pos (inv_pos.2 (Nat.cast_pos.2 (Nat.pos_of_ne_zero hp)))] at h2
     rw [tendsto_iff_edist_tendsto_0]
     simpa only [edist_eq_enorm_sub] using h2
 

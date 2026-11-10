@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Mollification
 import TauCeti.Analysis.InnerProductSpace.WeakOperatorTopology
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
+import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Topology.MetricSpace.Thickening
 
@@ -57,9 +58,9 @@ uniformly continuous on the compact set `closure Ω`, are at most `m + o(1)` on 
 (`TauCeti.Wkp.tendsto_eLpNorm_smoothField_sub`). The `C²` estimate applies to each `vₖ` on `Uₖ`.
 To pass to the limit:
 
-* along a subsequence the Hessians converge almost everywhere and `|det D²vₖ|` has a common
-  integrable majorant, built from a summable sequence of `Lⁿ` errors
-  (`TauCeti.exists_strictMono_ofReal_abs_det_le_and_ae_tendsto_of_tendsto_lintegral`), so the
+* along a subsequence the Hessians converge almost everywhere and `‖D²vₖ‖ⁿ`, hence
+  `|det D²vₖ| ≤ ‖D²vₖ‖ⁿ`, has a common integrable majorant, built from a summable sequence of
+  `Lⁿ` errors (`TauCeti.exists_strictMono_enorm_pow_le_and_ae_tendsto_of_tendsto_lintegral`), so the
   reverse Fatou lemma bounds the upper limit of the integrals over the contact sets of `vₖ`;
 * a point that lies in the contact sets of infinitely many `vₖ` lies in the contact set of `ū`
   (`TauCeti.PDE.mem_upperContactSet_of_frequently`);
@@ -207,8 +208,8 @@ private theorem addHaar_ball_le_of_tendsto [Nontrivial E] (hΩb : Bornology.IsBo
   have hmeas (k : ℕ) : Measurable (hessianOperator (v k)) := by
     simpa only [funext (fderiv_gradient (v k))] using measurable_fderiv ℝ (∇ (v k))
   obtain ⟨φ, hφ, ⟨G, hGfin, hG⟩, hconv⟩ :=
-    exists_strictMono_ofReal_abs_det_le_and_ae_tendsto_of_tendsto_lintegral hΩ.measurableSet
-      (fun k => (hUo k).measurableSet) hUΩ
+    exists_strictMono_enorm_pow_le_and_ae_tendsto_of_tendsto_lintegral finrank_pos.ne'
+      hΩ.measurableSet (fun k => (hUo k).measurableSet) hUΩ
       (fun z hz => (hUball z hz).elim fun s ⟨hs, hsb⟩ =>
         hsb.mono fun k hk => hk (mem_closedBall_self hs.le))
       (fun k => (hmeas k).aestronglyMeasurable) hHm hH hvH
@@ -224,7 +225,9 @@ private theorem addHaar_ball_le_of_tendsto [Nontrivial E] (hΩb : Bornology.IsBo
       (hmeas _)))).indicator (hΓ j)
   have hgG (j : ℕ) (y : E) : g j y ≤ G y := by
     by_cases hy : y ∈ Γ j
-    · exact (indicator_of_mem hy _).trans_le (hG j y (upperContactSet_subset hy))
+    · refine (indicator_of_mem hy _).trans_le (le_trans ?_ (hG j y (upperContactSet_subset hy)))
+      rw [← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
+      exact ENNReal.ofReal_le_ofReal (hessianOperator (v (φ j)) y).abs_det_le_opNorm_pow
     · simp only [g, indicator_of_notMem hy]
       exact zero_le
   -- Their upper limit is the contact integrand of `u`.
