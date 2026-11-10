@@ -39,6 +39,22 @@ variable {R A B : Type*} [CommRing R]
   [Semiring B] [Algebra R B] [StarRing B]
   {φ : A →ₗ[R] R} {ψ : B →ₗ[R] R} {a : A} {b : B}
 
+/-- The alternating Boolean word of length `n` starting with `c`, used to index
+R-diagonal cumulants. -/
+def rDiagonalWord (c : Bool) (n : ℕ) (i : Fin n) : Bool :=
+  if Even (i : ℕ) then c else !c
+
+/-- The letters of the alternating word are selected by parity. -/
+theorem rDiagonalWord_apply (c : Bool) (n : ℕ) (i : Fin n) :
+    rDiagonalWord c n i = if Even (i : ℕ) then c else !c := (rfl)
+
+/-- Complementing every letter exchanges the two alternating words. -/
+@[simp]
+theorem not_rDiagonalWord (c : Bool) (n : ℕ) (i : Fin n) :
+    (!rDiagonalWord c n i) = rDiagonalWord (!c) n i := by
+  unfold rDiagonalWord
+  split <;> simp
+
 /-- An R-diagonal element has a normalized functional and zero cumulants outside even
 alternating words in the element and its adjoint. `false` labels the element and `true`
 its adjoint. The even alternating words are parametrized by their half-length and their
@@ -49,7 +65,7 @@ structure IsRDiagonal (φ : A →ₗ[R] R) (a : A) : Prop where
   /-- Only nonempty even alternating cumulants may be nonzero. -/
   freeCumulant_eq_zero {n : ℕ} (hn : n ≠ 0) (w : Fin n → Bool)
     (hw : ¬ ∃ k c, n = 2 * (k + 1) ∧
-      ∀ i, w i = if Even (i : ℕ) then c else !c) :
+      ∀ i, w i = rDiagonalWord c n i) :
     freeCumulant φ (fun i => if w i then star a else a) univ = 0
 
 /-- The two determining sequences of an element: entry `n` is its alternating cumulant
@@ -57,13 +73,13 @@ of order `2 * (n + 1)`, starting with the element for `c = false` and its adjoin
 `c = true`. This definition is meaningful without assuming R-diagonality. -/
 def rDiagonalDeterminingSequence (φ : A →ₗ[R] R) (a : A) (c : Bool) (n : ℕ) : R :=
   freeCumulant φ (fun i : Fin (2 * (n + 1)) =>
-    if (if Even (i : ℕ) then c else !c) then star a else a) univ
+    if rDiagonalWord c (2 * (n + 1)) i then star a else a) univ
 
 /-- The determining sequences are alternating free cumulants. -/
 theorem rDiagonalDeterminingSequence_def (φ : A →ₗ[R] R) (a : A) (c : Bool) (n : ℕ) :
     rDiagonalDeterminingSequence φ a c n =
       freeCumulant φ (fun i : Fin (2 * (n + 1)) =>
-        if (if Even (i : ℕ) then c else !c) then star a else a) univ := (rfl)
+        if rDiagonalWord c (2 * (n + 1)) i then star a else a) univ := (rfl)
 
 /-- Taking the adjoint exchanges the two determining sequences. -/
 @[simp]
@@ -73,7 +89,35 @@ theorem rDiagonalDeterminingSequence_star (φ : A →ₗ[R] R) (a : A) (c : Bool
   unfold rDiagonalDeterminingSequence
   congr 1
   funext i
-  split <;> cases c <;> simp_all
+  conv_rhs => rw [← not_rDiagonalWord]
+  generalize rDiagonalWord c (2 * (n + 1)) i = d
+  cases d <;> simp
+
+/-- Scaling multiplies the order-`2 * (n + 1)` determining cumulant by
+`(z * star z) ^ (n + 1)`, independently of the starting letter. -/
+@[simp]
+theorem rDiagonalDeterminingSequence_smul [StarRing R] [StarModule R A]
+    (φ : A →ₗ[R] R) (a : A) (z : R) (c : Bool) (n : ℕ) :
+    rDiagonalDeterminingSequence φ (z • a) c n =
+      (z * star z) ^ (n + 1) * rDiagonalDeterminingSequence φ a c n := by
+  have hp (m : ℕ) :
+      (∏ i : Fin (2 * m), if rDiagonalWord c (2 * m) i then star z else z) =
+        (z * star z) ^ m := by
+    induction m with
+    | zero => simp
+    | succ m ih =>
+      rw [Nat.mul_succ, Fin.prod_univ_succ, Fin.prod_univ_succ]
+      simp only [rDiagonalWord, Fin.val_zero, Fin.val_succ, Nat.add_assoc,
+        Nat.even_add] at *
+      cases c <;> simp_all [pow_succ, mul_comm, mul_left_comm, mul_assoc]
+  have he : (fun i : Fin (2 * (n + 1)) =>
+      if rDiagonalWord c (2 * (n + 1)) i then star (z • a) else z • a) =
+      fun i => (if rDiagonalWord c (2 * (n + 1)) i then star z else z) •
+        (if rDiagonalWord c (2 * (n + 1)) i then star a else a) := by
+    funext i
+    cases rDiagonalWord c (2 * (n + 1)) i <;> simp [star_smul]
+  rw [rDiagonalDeterminingSequence_def, he, freeCumulant_smul, hp,
+    rDiagonalDeterminingSequence_def]
 
 namespace IsRDiagonal
 
@@ -91,12 +135,12 @@ theorem star (h : IsRDiagonal φ a) : IsRDiagonal φ (star a) where
   freeCumulant_eq_zero := by
     intro n hn w hw
     have hw' : ¬ ∃ k c, n = 2 * (k + 1) ∧
-        ∀ i, (!w i) = if Even (i : ℕ) then c else !c := by
+        ∀ i, (!w i) = rDiagonalWord c n i := by
       rintro ⟨k, c, hk, hc⟩
       apply hw
       refine ⟨k, !c, hk, fun i => ?_⟩
       have hi := congrArg Bool.not (hc i)
-      simpa only [apply_ite, Bool.not_not] using hi
+      simpa only [not_rDiagonalWord, Bool.not_not] using hi
     convert h.freeCumulant_eq_zero hn (fun i => !w i) hw' using 1
     congr 1
     funext i
@@ -124,7 +168,7 @@ theorem freeCumulant_eq (h : IsRDiagonal φ a) (h' : IsRDiagonal ψ b)
   · subst n
     simp [freeCumulant_empty]
   by_cases hw : ∃ k c, n = 2 * (k + 1) ∧
-      ∀ i, w i = if Even (i : ℕ) then c else !c
+      ∀ i, w i = rDiagonalWord c n i
   · obtain ⟨k, c, rfl, hw⟩ := hw
     simpa only [hw, rDiagonalDeterminingSequence_def] using hc c k
   · rw [h.freeCumulant_eq_zero hn w hw, h'.freeCumulant_eq_zero hn w hw]
@@ -164,7 +208,7 @@ theorem rDiagonalDeterminingSequence_eq_of_starDistribution_eq
   have hR := (jointRSeries_eq_iff_jointDistribution_eq
     (by simpa using LinearMap.congr_fun h 1)).2 hj
   have he := congrArg (WordSeries.coeff (FreeMonoid.ofList (List.ofFn
-    (fun i : Fin (2 * (n + 1)) => ((), if Even (i : ℕ) then c else !c))))) hR
+    (fun i : Fin (2 * (n + 1)) => ((), rDiagonalWord c (2 * (n + 1)) i))))) hR
   rw [coeff_jointRSeries_ofFn _ _ _ (by omega : 2 * (n + 1) ≠ 0),
     coeff_jointRSeries_ofFn _ _ _ (by omega : 2 * (n + 1) ≠ 0)] at he
   simpa only [Function.comp_def, StarPolynomial.withStar_def,
@@ -180,6 +224,12 @@ theorem IsRDiagonal.starDistribution_eq_iff [StarRing R] [StarModule R A] [StarM
   ⟨fun he => rDiagonalDeterminingSequence_eq_of_starDistribution_eq he,
     h.starDistribution_eq h'⟩
 
+private theorem freeCumulant_boolWord {n : ℕ} (w : Fin n → Bool) :
+    freeCumulant φ ((![a, star a] : Fin 2 → A) ∘
+      (fun i => if w i then 1 else 0)) univ =
+      freeCumulant φ (fun i => if w i then star a else a) univ := by
+  simp [Function.comp_def, apply_ite]
+
 /-- Circular elements are R-diagonal: their only nonzero cumulants are the two alternating
 second cumulants. -/
 theorem IsCircular.isRDiagonal {A : Type*} [Ring A] [Algebra ℂ A] [StarRing A]
@@ -193,30 +243,25 @@ theorem IsCircular.isRDiagonal {A : Type*} [Ring A] [Algebra ℂ A] [StarRing A]
         by_contra hne
         apply hw
         refine ⟨0, w 0, by omega, fun i => ?_⟩
-        fin_cases i <;> simp
-        cases h0 : w 0 <;> cases h1 : w 1 <;> simp_all
+        fin_cases i <;> cases h0 : w 0 <;> cases h1 : w 1 <;>
+          simp_all [rDiagonalWord]
       have hc := h.freeCumulant_two (fun i => if w i then (1 : Fin 2) else 0)
-      simpa [Function.comp_def, apply_ite, heq] using hc
+      rw [freeCumulant_boolWord] at hc
+      simpa [heq] using hc
     · have hc := h.freeCumulant_eq_zero hn hn₂
         (fun i => if w i then (1 : Fin 2) else 0)
-      simpa [Function.comp_def, apply_ite] using hc
+      simpa only [freeCumulant_boolWord] using hc
 
 /-- Both determining sequences of a standard circular element are `1, 0, 0, …`. -/
 @[simp]
 theorem IsCircular.rDiagonalDeterminingSequence {A : Type*} [Ring A] [Algebra ℂ A] [StarRing A]
     {φ : A →ₗ[ℂ] ℂ} {a : A} (h : IsCircular φ a) (c : Bool) (n : ℕ) :
     rDiagonalDeterminingSequence φ a c n = if n = 0 then 1 else 0 := by
-  let w : Fin (2 * (n + 1)) → Fin 2 :=
-    fun i => if (if Even (i : ℕ) then c else !c) then 1 else 0
-  have he : (![a, Star.star a] : Fin 2 → A) ∘ w =
-      fun i : Fin (2 * (n + 1)) =>
-        if (if Even (i : ℕ) then c else !c) then Star.star a else a := by
-    simp [w, Function.comp_def, apply_ite]
-  rw [rDiagonalDeterminingSequence_def, ← he]
+  rw [rDiagonalDeterminingSequence_def, ← freeCumulant_boolWord]
   by_cases hn : n = 0
   · subst n
     rw [IsCircular.freeCumulant_two h]
-    cases c <;> simp [w]
+    cases c <;> simp [rDiagonalWord]
   · rw [h.freeCumulant_eq_zero (by omega) (by omega), ite_eq_right hn]
 
 end TauCeti
