@@ -28,9 +28,8 @@ when its sign vector has even parity. Restriction of scalars then gives
 This is the relative Galois-group side of the genus-field construction; the sign subspace found
 here is matched with the genus characters of `ℚ(√d)`, hence with the maximal elementary-2 quotient
 `Cl⁺(ℚ(√d)) / Cl⁺(ℚ(√d))²`, in
-`TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.GenusCharacter`. When `d` is
-nonsquare, its order is the predicted `2 ^ (t - 1)`, where `t` is the number of chosen prime
-discriminants.
+`TauCeti.NumberTheory.Multiquadratic.CandidateGenusField.Relative.GenusCharacter`. Its order is
+the predicted `2 ^ (t - 1)`, where `t` is the number of chosen prime discriminants.
 
 The prime-discriminant description of the genus field is classical; see D. A. Cox,
 *Primes of the Form x² + ny²*, and F. Lemmermeyer, *Reciprocity Laws*.
@@ -54,7 +53,7 @@ formalization of L. Alpöge's disproof of the uniform-constant Erdős unit-dista
 * `TauCeti.Multiquadratic.galoisGroupEquivCandidateGenusFieldRelative_apply`: the equivalence is
   given by the sign pattern of the restricted automorphism.
 * `TauCeti.Multiquadratic.card_aut_candidateGenusField_over_base`: the relative Galois group has
-  order `2 ^ (t - 1)` when `d` is nonsquare.
+  order `2 ^ (t - 1)`.
 -/
 
 public section
@@ -461,19 +460,6 @@ theorem card_aut_candidateGenusField_over_base {d : ℤ} (hd : Squarefree d) :
     Nat.card
         (candidateGenusField hd ≃ₐ[candidateGenusFieldBase hd] candidateGenusField hd) =
       2 ^ ((genusPrimeDiscriminants hd).card - 1) := by
-  rw [IsGalois.card_aut_eq_finrank]
-  by_cases hnsq : IsSquare (((d : ℤ) : ℚ))
-  · -- A rational square has trivial candidate genus field, so the degree is `1 = 2 ^ (0 - 1)`.
-    have hempty := genusPrimeDiscriminants_eq_empty_of_isSquare hd hnsq
-    have hbot : candidateGenusField hd = ⊥ := by
-      rw [candidateGenusField_def, IntermediateField.adjoin_eq_bot_iff]
-      rintro _ ⟨P, rfl⟩
-      exact absurd P.property (by simp [hempty])
-    have h1 : Module.finrank ℚ (candidateGenusField hd) = 1 :=
-      IntermediateField.finrank_eq_one_iff.mpr hbot
-    have h := Module.finrank_mul_finrank ℚ (candidateGenusFieldBase hd) (candidateGenusField hd)
-    rw [h1] at h
-    simp [hempty, Nat.eq_one_of_mul_eq_one_left h]
-  · exact finrank_candidateGenusField_over_candidateGenusFieldBase hd hnsq
+  rw [IsGalois.card_aut_eq_finrank, finrank_candidateGenusField_over_candidateGenusFieldBase hd]
 
 end TauCeti.Multiquadratic
