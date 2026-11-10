@@ -36,8 +36,10 @@ the class of `φ`. This file reads the kernel `N[φ]` and the cokernel `N ⧸ φ
 * over an infinite domain, when the norm vanishes, `N ⧸ φ N` is infinite;
 * for a polynomial `φ = P`, the norm is the resultant `Res(f, P)`.
 
-The first three are the Weierstrass cases of the corresponding statements for any finite free
-algebra (`TauCeti.Algebra.torsionBy_eq_bot_iff_norm_ne_zero` and its companions).
+The first two are the Weierstrass cases of the corresponding statements for any finite free
+algebra (`TauCeti.Algebra.torsionBy_eq_bot_iff_norm_ne_zero` and its companion); the
+infinite-cokernel statement is given directly by
+`TauCeti.Algebra.infinite_quotSMulTop_of_norm_eq_zero`.
 
 Over an infinite principal ideal domain with finite quotients, such as a discrete valuation ring
 `O` with finite residue field, `N ⧸ φ N` is therefore finite exactly when the norm of `φ` is
@@ -185,9 +187,7 @@ example (p : ℕ) [Fact p.Prime] (n : ℕ) :
   refine TauCeti.Algebra.infinite_quotSMulTop_of_norm_eq_zero (A := ℤ_[p]) ?_
   have hres := resultant_X_pow_left (((X + 1) ^ p ^ n - 1 : ℤ_[p][X])) 1 _ le_rfl
   rw [pow_one] at hres
-  change Algebra.norm ℤ_[p] (Ideal.Quotient.mk (Ideal.span {((X : ℤ_[p][X]) : ℤ_[p]⟦X⟧)})
-    (((X + 1) ^ p ^ n - 1 : ℤ_[p][X]) : ℤ_[p]⟦X⟧)) = 0
-  rw [H.norm_mk_coe_eq_resultant, natDegree_X, hres]
+  rw [Ideal.Quotient.algebraMap_eq, H.norm_mk_coe_eq_resultant, natDegree_X, hres]
   simp [coeff_zero_eq_eval_zero]
 
 end Examples

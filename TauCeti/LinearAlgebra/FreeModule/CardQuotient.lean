@@ -94,7 +94,8 @@ if `det f = 0` then `M ⧸ range f` is infinite. Together with
 cokernel of `f` is finite exactly when `det f ≠ 0` and `R ⧸ (det f)` is finite. -/
 theorem infinite_quotient_range_of_det_eq_zero [Infinite R] {f : M →ₗ[R] M} (hf : f.det = 0) :
     Infinite (M ⧸ range f) := by
-  -- A nonzero determinant forces `M` to have a finite basis, so `M` is finite and free.
+  -- A vanishing determinant forces `M` to have a finite basis (otherwise `det f = 1`), so `M` is
+  -- finite and free.
   have hbasis : ∃ s : Finset M, Nonempty (Basis s R M) := by
     classical
     refine LinearMap.det_cases (P := fun d ↦ d = 0 → ∃ s : Finset M, Nonempty (Basis s R M)) f
