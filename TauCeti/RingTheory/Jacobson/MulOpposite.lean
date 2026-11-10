@@ -19,8 +19,8 @@ ideals, and consequently it leaves the transfer of `IsSemiprimaryRing` to the op
 `proof_wanted` in `Mathlib/RingTheory/SimpleModule/WedderburnArtin.lean`, annotated "Need
 left-right symmetry of Jacobson radical".
 
-This file supplies that symmetry and the two consequences it was wanted for. The route is the
-elementwise description of the radical proved in `TauCeti/RingTheory/Jacobson/Basic.lean`: `x`
+This file supplies that symmetry and the transfer of semiprimarity it was wanted for. The route is
+the elementwise description of the radical proved in `TauCeti/RingTheory/Jacobson/Basic.lean`: `x`
 lies in `Ring.jacobson R` exactly when `1 + y * x` is a unit for every `y`, and hence, by
 `TauCeti.isUnit_one_add_mul_comm`, exactly when `1 + x * y` is a unit for every `y`. The second
 description is the first one read in `Rᵐᵒᵖ`, so the radical of the opposite ring is the opposite
@@ -34,9 +34,11 @@ of the radical.
   `Rᵐᵒᵖ ⧸ Ring.jacobson Rᵐᵒᵖ ≃+* (R ⧸ Ring.jacobson R)ᵐᵒᵖ`.
 * `TauCeti.isSemiprimaryRing_mulOpposite_iff` and `TauCeti.IsSemiprimaryRing.mulOpposite`:
   semiprimarity passes to the opposite ring.
-* `TauCeti.IsArtinianRing.isNoetherianRing_iff_isArtinianRing_mulOpposite`: a left
-  Artinian ring is right Noetherian exactly when it is right Artinian, the statement that
-  `WedderburnArtin.lean` records as waiting on the same symmetry.
+
+Hopkins-Levitzki, `IsSemiprimaryRing.isNoetherian_iff_isArtinian`, applies to `Rᵐᵒᵖ` through the
+instance `TauCeti.IsSemiprimaryRing.mulOpposite`. For a semiprimary ring `R` (for instance a left
+Artinian ring) this settles that `Rᵐᵒᵖ` is Noetherian exactly when it is Artinian, the statement
+that `WedderburnArtin.lean` records as waiting on the same symmetry.
 -/
 
 public section
@@ -204,12 +206,5 @@ theorem isSemiprimaryRing_mulOpposite_iff : IsSemiprimaryRing Rᵐᵒᵖ ↔ IsS
 `IsSemiprimaryRing.mulOpposite`. -/
 instance IsSemiprimaryRing.mulOpposite [IsSemiprimaryRing R] : IsSemiprimaryRing Rᵐᵒᵖ :=
   (isSemiprimaryRing_mulOpposite_iff R).mpr ‹_›
-
-/-- For a left Artinian ring, being right Noetherian and being right Artinian coincide: the
-opposite ring is semiprimary, so Hopkins-Levitzki applies to it. This is the `example` that
-`Mathlib/RingTheory/SimpleModule/WedderburnArtin.lean` leaves open. -/
-theorem IsArtinianRing.isNoetherianRing_iff_isArtinianRing_mulOpposite
-    [IsArtinianRing R] : IsNoetherianRing Rᵐᵒᵖ ↔ IsArtinianRing Rᵐᵒᵖ :=
-  IsSemiprimaryRing.isNoetherian_iff_isArtinian
 
 end TauCeti

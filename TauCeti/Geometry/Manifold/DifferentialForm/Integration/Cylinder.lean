@@ -28,8 +28,9 @@ coordinate `s`, the coordinate along which a cylinder `u` joins its boundary loo
 * the integral is additive under subdivision of `[a.1, b.1]`
   (`TauCeti.rectangleIntegral_add_adjacent_fst`);
 * it is invariant under a `C¹` change `σ` of the first coordinate, between the image endpoints
-  (`TauCeti.rectangleIntegral_comp_prodMap`), and reversing the first coordinate changes its sign
-  (`TauCeti.rectangleIntegral_comp_prodMap_one_sub`).
+  (`TauCeti.rectangleIntegral_comp_prodMap`, with the affine case
+  `TauCeti.rectangleIntegral_comp_prodMap_affine`), and reversing the first coordinate changes
+  its sign (`TauCeti.rectangleIntegral_comp_prodMap_one_sub`).
 
 Two maps `u₁ u₂ : ℝ × ℝ → M` with `u₁(1, ·) = u₂(0, ·)` are glued into their concatenation
 `TauCeti.rectangleTrans u₁ u₂`, the curve concatenation `TauCeti.curveConcat` in the first
@@ -38,7 +39,9 @@ for `s ∈ [0, 1/3]`, rests at the common edge for `s ∈ [1/3, 2/3]` and runs t
 `s ∈ [2/3, 1]`, so it is as smooth as `u₁` and `u₂` (`TauCeti.contMDiff_rectangleTrans`). It
 is periodic in `t` when `u₁` and `u₂` are, and its integral is the sum of the integrals of `u₁` and
 `u₂` (`TauCeti.rectangleIntegral_rectangleTrans`). This is how a cap of a loop is glued to a
-cylinder ending at the loop, and how two caps of the same loop are glued into a sphere.
+cylinder ending at the loop, and how two caps of the same loop are glued into a sphere, whose
+integral is the difference of the integrals of the two caps
+(`TauCeti.rectangleIntegral_rectangleTrans_comp_prodMap_one_sub`).
 
 Finally, **Green's formula** (`TauCeti.rectangleIntegral_mextDeriv`): the integral of an exact
 two-form `dα` over a `C²` map `u` is the signed sum of the line integrals of `α` along the four
@@ -53,8 +56,15 @@ line integrals of `α` along its two boundary loops.
 ## Main results
 
 * `TauCeti.rectangleIntegral_add_adjacent_fst`: additivity in the first coordinate.
-* `TauCeti.rectangleIntegral_comp_prodMap`: reparametrization in the first coordinate.
+* `TauCeti.rectangleIntegral_comp_prodMap`: reparametrization in the first coordinate, and
+  `TauCeti.rectangleIntegral_comp_prodMap_affine` its affine case.
 * `TauCeti.rectangleIntegral_rectangleTrans`: the integral over a concatenation.
+* `TauCeti.rectangleIntegral_rectangleTrans_comp_prodMap_one_sub`: the integral over two maps
+  glued along their common start.
+* `TauCeti.IsSmoothCylinder.trans`: the concatenation of two smooth cylinders is a smooth
+  cylinder.
+* `TauCeti.isSmoothCylinder_comp_prodMap_affine`: rescaling a smooth map, `1`-periodic in `t`,
+  from `[a, b]` to `[0, 1]` in the first coordinate gives a smooth cylinder.
 * `TauCeti.rectangleIntegral_mextDeriv`: Green's formula for an exact form.
 
 ## References
@@ -112,6 +122,24 @@ theorem rectangleIntegral_comp_prodMap_one_sub {φ : RoughForm I M F 2} (hφ : I
   rw [rectangleIntegral_comp_prodMap hφ hu (σ' := fun _ ↦ -1)
     (fun s _ ↦ by simpa using (hasDerivAt_id s).const_sub 1) continuousOn_const]
   simpa using rectangleIntegral_symm_fst φ u 0 a₂ 1 b₂
+
+/-- The affine rescaling `(s, t) ↦ (a + (b - a) s, t)` of the plane, carrying `[0, 1]` onto
+`[a, b]` in the first coordinate, is smooth. -/
+theorem contMDiff_prodMap_affine {n : WithTop ℕ∞} (a b : ℝ) :
+    ContMDiff 𝓘(ℝ, ℝ × ℝ) 𝓘(ℝ, ℝ × ℝ) n
+      (Prod.map (fun s : ℝ ↦ a + (b - a) * s) (id : ℝ → ℝ)) :=
+  ((contDiff_const.add (contDiff_const.mul contDiff_id)).prodMap contDiff_id).contMDiff
+
+/-- Rescaling the first coordinate affinely from `[0, 1]` to `[a, b]` does not change the
+integral. -/
+theorem rectangleIntegral_comp_prodMap_affine {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
+    {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (a b a₂ b₂ : ℝ) :
+    rectangleIntegral φ (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) (0, a₂) (1, b₂) =
+      rectangleIntegral φ u (a, a₂) (b, b₂) := by
+  rw [rectangleIntegral_comp_prodMap hφ hu (σ' := fun _ ↦ b - a)
+    (fun s _ ↦ by simpa using ((hasDerivAt_id s).const_mul (b - a)).const_add a)
+    continuousOn_const]
+  simp
 
 end Continuous
 
@@ -223,6 +251,20 @@ theorem rectangleIntegral_rectangleTrans [IsManifold I 1 M] {φ : RoughForm I M 
       rectangleIntegral_comp_prodMap hφ hu₂ (fun s _ ↦ h₂.1 s) h₂.2.continuousOn]
     norm_num [Real.smoothTransition.zero_of_nonpos]
 
+/-- **The integral over two maps glued along their common start.** For a continuous form and two
+`C¹` maps `u` and `v` with `u (0, ·) = v (0, ·)`, the concatenation that runs backwards through
+`u` and then forwards through `v` has the integral of `v` minus the integral of `u`. When `u`
+and `v` are caps of the same loop, this concatenation is the sphere by which they differ. -/
+theorem rectangleIntegral_rectangleTrans_comp_prodMap_one_sub [IsManifold I 1 M]
+    {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ) {u v : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) (hv : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 v)
+    (h : ∀ t, u (0, t) = v (0, t)) (a₂ b₂ : ℝ) :
+    rectangleIntegral φ (rectangleTrans (u ∘ Prod.map (fun s ↦ 1 - s) id) v) (0, a₂) (1, b₂) =
+      rectangleIntegral φ v (0, a₂) (1, b₂) - rectangleIntegral φ u (0, a₂) (1, b₂) := by
+  have hu' : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 (u ∘ Prod.map (fun s ↦ 1 - s) id) :=
+    hu.comp ((contDiff_const.sub contDiff_id).prodMap contDiff_id).contMDiff
+  rw [rectangleIntegral_rectangleTrans hφ hu' hv (fun t ↦ by simpa using h t),
+    rectangleIntegral_comp_prodMap_one_sub hφ hu, neg_add_eq_sub]
 
 variable (I) in
 /-- A smooth cylinder from the loop `γ` to the loop `γ₀`: a smooth map `u : ℝ × ℝ → M` running
@@ -235,6 +277,32 @@ structure IsSmoothCylinder (γ γ₀ : ℝ → M) (u : ℝ × ℝ → M) : Prop 
   apply_zero (t : ℝ) : u (0, t) = γ t
   apply_one : ∀ t ∈ Icc (0 : ℝ) 1, u (1, t) = γ₀ t
   periodic : ∀ s ∈ Icc (0 : ℝ) 1, u (s, 1) = u (s, 0)
+
+/-- The concatenation of a smooth cylinder from `γ` to `γ'` and a smooth cylinder from `γ'` to
+`γ₀`, sharing their common edge for every `t`, is a smooth cylinder from `γ` to `γ₀`. -/
+theorem IsSmoothCylinder.trans {γ γ' γ₀ : ℝ → M} {u₁ u₂ : ℝ × ℝ → M}
+    (h₁ : IsSmoothCylinder I γ γ' u₁) (h₂ : IsSmoothCylinder I γ' γ₀ u₂)
+    (h : ∀ t, u₁ (1, t) = u₂ (0, t)) : IsSmoothCylinder I γ γ₀ (rectangleTrans u₁ u₂) where
+  contMDiff := contMDiff_rectangleTrans h₁.contMDiff h₂.contMDiff h
+  apply_zero t := by rw [rectangleTrans_apply_zero, h₁.apply_zero]
+  apply_one t ht := by rw [rectangleTrans_apply_one, h₂.apply_one t ht]
+  periodic s _ := by
+    -- Both maps are only evaluated at first coordinates `smoothTransition r ∈ [0, 1]`.
+    have hβ (r : ℝ) : Real.smoothTransition r ∈ Icc (0 : ℝ) 1 :=
+      ⟨Real.smoothTransition.nonneg r, Real.smoothTransition.le_one r⟩
+    simp only [rectangleTrans, h₁.periodic _ (hβ _), h₂.periodic _ (hβ _)]
+
+/-- Rescaling the first coordinate from `[0, 1]` to `[a, b]` turns a smooth map `u : ℝ × ℝ → M`,
+`1`-periodic in `t`, into a smooth cylinder from the loop `u(a, ·)` to the loop `u(b, ·)`. -/
+theorem isSmoothCylinder_comp_prodMap_affine {u : ℝ × ℝ → M}
+    (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I ∞ u) (hper : ∀ z : ℝ × ℝ, u (z.1, z.2 + 1) = u z)
+    (a b : ℝ) :
+    IsSmoothCylinder I (fun t ↦ u (a, t)) (fun t ↦ u (b, t))
+      (u ∘ Prod.map (fun s ↦ a + (b - a) * s) id) where
+  contMDiff := hu.comp (contMDiff_prodMap_affine a b)
+  apply_zero t := by simp
+  apply_one t _ := by simp
+  periodic s _ := by simpa using hper (a + (b - a) * s, 0)
 
 /-- A two-form `φ` **vanishes on spheres** when its integral over the unit square vanishes for
 every smooth map `u : ℝ × ℝ → M` that is constant on each of the two vertical edges of the square

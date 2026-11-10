@@ -228,6 +228,49 @@ theorem edgePair_closure_cons_cons_two :
       ((edgePair_closure_outgoingSlot w hmem).trans ?_)
   rw [hnext, hin, crossing_closure]
 
+/-- The arc matching of the closure of a word beginning with two same-index letters is `M` as
+soon as `M` agrees with it on the four outgoing slots of the two new crossings and on every
+outgoing slot of an old crossing. -/
+theorem edgePair_closure_cons_cons_eq_of_outgoingSlot
+    {M : PerfectMatching (Fin (4 * ((i, ε) :: (i, η) :: v).length))}
+    (h₀₁ : (closure ((i, ε) :: (i, η) :: v)).edgePair.val
+        (crossingSlotEquiv _ (0, 1)) = M.val (crossingSlotEquiv _ (0, 1)))
+    (h₀₂ : (closure ((i, ε) :: (i, η) :: v)).edgePair.val
+        (crossingSlotEquiv _ (0, 2)) = M.val (crossingSlotEquiv _ (0, 2)))
+    (h₁₁ : (closure ((i, ε) :: (i, η) :: v)).edgePair.val
+        (crossingSlotEquiv _ (1, 1)) = M.val (crossingSlotEquiv _ (1, 1)))
+    (h₁₂ : (closure ((i, ε) :: (i, η) :: v)).edgePair.val
+        (crossingSlotEquiv _ (1, 2)) = M.val (crossingSlotEquiv _ (1, 2)))
+    (hold : ∀ {j : Fin v.length} {p : Fin n}, j ∈ v.crossingsAt p →
+      (closure ((i, ε) :: (i, η) :: v)).edgePair.val
+          (crossingSlotEquiv _ (j.succ.succ, v.outgoingSlot j p)) =
+        M.val (crossingSlotEquiv _ (j.succ.succ, v.outgoingSlot j p))) :
+    (closure ((i, ε) :: (i, η) :: v)).edgePair = M := by
+  let w : BraidWord n := (i, ε) :: (i, η) :: v
+  apply edgePair_closure_eq_of_outgoingSlot
+  intro j p hj
+  rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
+  · have hpos : p = strand i ∨ p = strandSucc i := by
+      simpa [w] using (mem_crossingsAt (w := w)).mp hj
+    rcases hpos with rfl | rfl
+    · have hout : w.outgoingSlot 0 (strand i) = 2 := outgoingSlot_strand w 0
+      simpa only [w, hout] using h₀₂
+    · have hout : w.outgoingSlot 0 (strandSucc i) = 1 := outgoingSlot_strandSucc w 0
+      simpa only [w, hout] using h₀₁
+  · rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
+    · have hpos : p = strand i ∨ p = strandSucc i := by
+        simpa [w] using (mem_crossingsAt (w := w)).mp hj
+      rcases hpos with rfl | rfl
+      · have hout : w.outgoingSlot 1 (strand i) = 2 := outgoingSlot_strand w 1
+        simpa only [w, hout, Fin.succ_zero_eq_one] using h₁₂
+      · have hout : w.outgoingSlot 1 (strandSucc i) = 1 := outgoingSlot_strandSucc w 1
+        simpa only [w, hout, Fin.succ_zero_eq_one] using h₁₁
+    · have hjold : j ∈ v.crossingsAt p := by
+        simpa [w] using (mem_crossingsAt (w := w)).mp hj
+      have hletter : w[j.succ.succ.val] = v[j.val] := by simp [w]
+      rw [outgoingSlot_congr hletter p]
+      exact hold hjold
+
 /-- Opposite letters give opposite over-pair indicators at the two inserted crossings.
 Together with the internal-arc formulas, this means the same physical strand is over twice. -/
 theorem overPair_closure_freeCancel_one :

@@ -47,8 +47,7 @@ theorem sum_exp_quantile_hyperexponentialMeasure
     ∑ i, (p.weights i : ℝ) * exp (-(r i * (hyperexponentialMeasure p r).quantile u)) =
       1 - u := by
   let _ := isProbabilityMeasure_hyperexponentialMeasure hr
-  have hroot := Measure.cdf_quantile (hyperexponentialMeasure p r)
-    (Measure.continuous_cdf_of_noAtoms _) hu.1 hu.2
+  have hroot := Measure.cdf_quantile_of_noAtoms (hyperexponentialMeasure p r) hu.1 hu.2
   rw [cdf_hyperexponentialMeasure_eq hr,
     ite_eq_right (quantile_hyperexponentialMeasure_pos hr hu).not_ge] at hroot
   linarith
@@ -74,7 +73,7 @@ theorem strictMonoOn_quantile_hyperexponentialMeasure
     (hr : ∀ i, 0 < p.weights i → 0 < r i) :
     StrictMonoOn (hyperexponentialMeasure p r).quantile (Ioo 0 1) := by
   let _ := isProbabilityMeasure_hyperexponentialMeasure hr
-  exact Measure.strictMonoOn_quantile _ (Measure.continuous_cdf_of_noAtoms _)
+  exact Measure.strictMonoOn_quantile_of_noAtoms _
 
 /-- The hyperexponential quantile is continuous at every interior probability level. -/
 theorem continuousOn_quantile_hyperexponentialMeasure

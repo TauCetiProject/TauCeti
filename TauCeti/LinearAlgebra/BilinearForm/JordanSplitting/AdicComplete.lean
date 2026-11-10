@@ -191,31 +191,14 @@ private theorem IsJordanSplitting.exists_dual [Module.Free R M] [Module.Finite R
   have hEs (i : ℕ) : (E i).IsSymm := (Matrix.isSymm_toBilin_iff_isSymm (d i)).mpr <| by
     rw [Matrix.IsSymm, Matrix.transpose_smul, Matrix.transpose_nonsing_inv, (hUs i).eq]
   obtain ⟨D, hres, horth, hDs⟩ := exists_forall_restrict_eq_of_isInternal h.isInternal E
-  -- Reversing the indices up to `m` is an involution of `ℕ`.
-  let τ (k : ℕ) : ℕ := if k ≤ m then m - k else k
-  have hτ : Function.Involutive τ := fun k ↦ by
-    simp only [τ]
-    split_ifs <;> omega
-  have hτN : (fun k ↦ if k ≤ m then N (m - k) else ⊥) = N ∘ τ := by
-    funext k
-    simp only [Function.comp_apply, τ]
-    split_ifs with hk
-    · rfl
-    · exact (htop k (by omega)).symm
-  refine ⟨D, hDs hEs, hτN ▸ ⟨?_, ?_, fun k ↦ ?_⟩, horth, fun i hi ↦ ⟨d i, ?_⟩,
-    fun i hi heven w hw ↦ ?_⟩
-  · exact (DirectSum.isInternal_submodule_iff_iSupIndep_and_iSup_eq_top _).mpr
-      ⟨h.isInternal.submodule_iSupIndep.comp hτ.injective,
-        (hτ.surjective.iSup_comp N).trans h.isInternal.submodule_iSup_eq_top⟩
-  · exact fun k k' hkk' ↦ horth _ _ (hτ.injective.ne hkk')
-  · -- The constituent of index `k ≤ m` is `N (m - k)`, with the form `π ^ k • (U (m - k))⁻¹`.
-    by_cases hk : k ≤ m
-    · rw [Function.comp_apply, show τ k = m - k by simp [τ, hk], hres]
-      refine (d (m - k)).isModular_of_isUnit_det (pow_mem hπ k) (fun a a' ↦ ?_)
-        (Matrix.isUnit_nonsing_inv_det _ (hUdet (m - k)))
-      rw [hEapp, Nat.sub_sub_self hk]
-    · rw [Function.comp_apply, show τ k = k by simp [τ, hk], htop k (by omega)]
-      exact isModular_of_subsingleton
+  have hmod : ∀ k ≤ m, (D.restrict (N (m - k))).IsModular (π ^ k) := fun k hk ↦ by
+    -- The constituent of index `k ≤ m` is `N (m - k)`, with the form `π ^ k • (U (m - k))⁻¹`.
+    rw [hres]
+    refine (d (m - k)).isModular_of_isUnit_det (pow_mem hπ k) (fun a a' ↦ ?_)
+      (Matrix.isUnit_nonsing_inv_det _ (hUdet (m - k)))
+    rw [hEapp, Nat.sub_sub_self hk]
+  refine ⟨D, hDs hEs, isJordanSplitting_reverse h.isInternal htop horth hmod, horth,
+    fun i hi ↦ ⟨d i, ?_⟩, fun i hi heven w hw ↦ ?_⟩
   · have hBU : (B.restrict (N i)).toMatrix (d i) = π ^ i • U i := by
       ext a a'
       simp [U, toMatrix_apply, ← hCapp]

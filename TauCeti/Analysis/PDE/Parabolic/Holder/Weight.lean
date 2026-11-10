@@ -471,15 +471,15 @@ variable (A : HolderSpace α (slab (E := E) t₀ t₁) ((E →L[ℝ] E →L[ℝ]
 /-- The first-order coefficient `B_w H = B H + A (ℓ ⊗ H + H ⊗ ℓ)` of the operator conjugated by
 the weight `exp φ` with gradient `ℓ = Dφ`, as a field in `C_b^{α,α/2}`. -/
 def weightFirstOrderCoeff : HolderSpace α (slab (E := E) t₀ t₁) ((E →L[ℝ] F) →L[ℝ] F) :=
-  B + firstOrderCorrL.compHolder₂ A (HolderSpace.compLipschitzL _ lipschitzWith_slab_space ℓ)
+  B + firstOrderCorrL.compHolder₂ A (HolderSpace.compLipschitzL _ lipschitzWith_slabSpace ℓ)
 
 /-- The zeroth-order coefficient `C_w y = C y + A ((M + ℓ ⊗ ℓ) ⊗ y) + B (ℓ ⊗ y)` of the operator
 conjugated by the weight `exp φ` with gradient `ℓ = Dφ` and Hessian `M = D²φ`, as a field in
 `C_b^{α,α/2}`. -/
 def weightZerothOrderCoeff : HolderSpace α (slab (E := E) t₀ t₁) (F →L[ℝ] F) :=
-  C + zerothOrderCorrL.compHolder₂ A (HolderSpace.compLipschitzL _ lipschitzWith_slab_space
+  C + zerothOrderCorrL.compHolder₂ A (HolderSpace.compLipschitzL _ lipschitzWith_slabSpace
       (M + (smulRightL ℝ E (E →L[ℝ] ℝ)).compHolder₂ ℓ ℓ)) +
-    gradCorrL.compHolder₂ B (HolderSpace.compLipschitzL _ lipschitzWith_slab_space ℓ)
+    gradCorrL.compHolder₂ B (HolderSpace.compLipschitzL _ lipschitzWith_slabSpace ℓ)
 
 @[simp]
 theorem weightFirstOrderCoeff_apply (p : slab (E := E) t₀ t₁) (H : E →L[ℝ] F) :
@@ -523,7 +523,7 @@ theorem norm_weightZerothOrderCoeff_le :
     refine (norm_compHolder₂_apply_le _ _ _).trans ?_
     nlinarith [norm_smulRightL_le (𝕜 := ℝ) (E := E) (Fₗ := E →L[ℝ] ℝ), norm_nonneg ℓ]
   have h₁ : ‖zerothOrderCorrL.compHolder₂ A (HolderSpace.compLipschitzL _
-      (lipschitzWith_slab_space (a := t₀) (b := t₁))
+      (lipschitzWith_slabSpace (a := t₀) (b := t₁))
         (M + (smulRightL ℝ E (E →L[ℝ] ℝ)).compHolder₂ ℓ ℓ))‖ ≤ ‖A‖ * (‖M‖ + ‖ℓ‖ * ‖ℓ‖) := by
     refine (norm_compHolder₂_apply_le _ _ _).trans ?_
     calc _ ≤ 1 * ‖A‖ * (‖M‖ + ‖ℓ‖ * ‖ℓ‖) := by
@@ -533,7 +533,7 @@ theorem norm_weightZerothOrderCoeff_le :
               (HolderSpace.norm_compLipschitzL_le_one _) _).trans_eq (one_mul _)).trans hQ
       _ = _ := by ring
   have h₂ : ‖gradCorrL.compHolder₂ B (HolderSpace.compLipschitzL _
-      (lipschitzWith_slab_space (a := t₀) (b := t₁)) ℓ)‖ ≤ ‖B‖ * ‖ℓ‖ := by
+      (lipschitzWith_slabSpace (a := t₀) (b := t₁)) ℓ)‖ ≤ ‖B‖ * ‖ℓ‖ := by
     refine (norm_compHolder₂_apply_le _ _ _).trans ?_
     calc _ ≤ 1 * ‖B‖ * ‖ℓ‖ := by
           gcongr

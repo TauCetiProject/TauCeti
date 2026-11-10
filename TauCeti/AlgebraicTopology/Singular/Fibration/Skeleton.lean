@@ -43,6 +43,8 @@ fibres of `p`.
 
 * `TauCeti.TopCat.isZero_singularHomology_preimage_of_relHomotopyGroup`: the homology of a
   preimage pair vanishes below the connectivity of the pair in the base.
+* `TauCeti.TopCat.isZero_singularHomology_preimage_of_homotopyRel`: if `S ⊆ B` deforms into
+  `A ⊆ S` relative to `A`, then `(p⁻¹(S), p⁻¹(A))` has vanishing relative homology.
 * `TauCeti.TopCat.isZero_singularHomology_preimage_skeletonLT`: the homology of a pair of stages
   of the skeletal filtration of a Serre fibration vanishes in degrees at most the lower stage.
 
@@ -83,6 +85,31 @@ theorem isZero_singularHomology_preimage_of_relHomotopyGroup (hp : serreFibratio
     (exists_joined_preimage_of_mem_serreFibrations hp h₀)
     (fun k hk e ↦ subsingleton_relHomotopyGroup_preimage_of_mem_serreFibrations hp e
       (h k hk ⟨p e, e.2⟩)) R hm
+
+/-- **A Serre fibration over a deformation has acyclic preimage pair.** Let `p : E ⟶ B` be a Serre
+fibration and `A ⊆ S ⊆ B`. If the identity of `S` is homotopic, relative to `A`, to a map with
+values in `A`, then `Hₘ(p⁻¹(S), p⁻¹(A); R) = 0` in every degree `m`. -/
+theorem isZero_singularHomology_preimage_of_homotopyRel (hp : serreFibrations p) {A S : Set B}
+    (hAS : A ⊆ S) {g : C(S, S)} (H : (ContinuousMap.id S).HomotopyRel g (Subtype.val ⁻¹' A))
+    (hg : ∀ x, (g x : B) ∈ A) (R : Type u) [Ring R] (m : ℕ) :
+    IsZero ((TopPair.ofInclusion (X := E) (preimage_mono (f := p) hAS)).singularHomology
+      (ModuleCat.of R R) m) := by
+  let A' : Set (_root_.TopCat.of S) := Subtype.val ⁻¹' A
+  have h₀ (b : _root_.TopCat.of S) : ∃ a ∈ A', Joined b a :=
+    ⟨g b, hg b, ⟨{ toFun t := H (t, b), source' := by simp, target' := by simp }⟩⟩
+  have h (k : ℕ) (_ : k + 1 < m + 1) (a : A') :
+      Subsingleton (RelHomotopyGroup (Fin k) ⟨TopPair.ofSubset A', a⟩) := by
+    refine RelHomotopyGroup.subsingleton_of_homotopyRel (g := g) ?_ fun x ↦ ?_
+    · rw [TopPair.range_ofSubset_map]
+      exact H
+    · rw [TopPair.range_ofSubset_map]
+      exact hg x
+  have hz := isZero_singularHomology_preimage_of_relHomotopyGroup
+    (mem_serreFibrations_restrictPreimage hp S) h₀ h R (Nat.lt_succ_self m)
+  -- The preimage pair of the restriction of `p` over `S` is the pair `(p⁻¹(S), p⁻¹(A))`.
+  exact hz.of_iso (asIso (TopPair.singularHomologyMap
+    (TopPair.ofSubsetPreimageValIso (X := E) (preimage_mono (f := p) hAS)).hom
+    (ModuleCat.of R R) m)).symm
 
 variable [T2Space B] {C D : Set B} [RelCWComplex C D]
 

@@ -32,49 +32,20 @@ private noncomputable def quaternionValue : Q₈ → ℍ
   | .a i => Quaternion.ofComplex (Complex.I ^ i.val)
   | .xa i => ⟨0, 0, 1, 0⟩ * Quaternion.ofComplex (Complex.I ^ i.val)
 
-private theorem quaternionValue_aa (i j : ZMod (2 * 2)) :
-    quaternionValue (.a i * .a j) = quaternionValue (.a i) * quaternionValue (.a j) := by
-  simp only [QuaternionGroup.a_mul_a]
+private theorem quaternionValue_mul (g h : Q₈) :
+    quaternionValue (g * h) = quaternionValue g * quaternionValue h := by
   have hc : ∀ x : ZMod (2 * 2), x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 := by decide
-  rcases hc i with rfl | rfl | rfl | rfl <;>
+  cases g <;> cases h <;>
+    simp only [QuaternionGroup.a_mul_a, QuaternionGroup.a_mul_xa, QuaternionGroup.xa_mul_a,
+      QuaternionGroup.xa_mul_xa] <;>
+    rename_i i j <;>
+    rcases hc i with rfl | rfl | rfl | rfl <;>
     rcases hc j with rfl | rfl | rfl | rfl <;> ext <;>
     norm_num [quaternionValue, Quaternion.coe_ofComplex, Quaternion.coeComplex,
       ZMod.val_add, ZMod.val_sub, ZMod.neg_val', ZMod.val_natCast, ZMod.val_ofNat,
       ZMod.val_one_eq_one_mod, Quaternion.re_mul, Quaternion.imI_mul,
       Quaternion.imJ_mul, Quaternion.imK_mul]
 
-private theorem quaternionValue_ax (i j : ZMod (2 * 2)) :
-    quaternionValue (.a i * .xa j) = quaternionValue (.a i) * quaternionValue (.xa j) := by
-  simp only [QuaternionGroup.a_mul_xa]
-  have hc : ∀ x : ZMod (2 * 2), x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 := by decide
-  rcases hc i with rfl | rfl | rfl | rfl <;>
-    rcases hc j with rfl | rfl | rfl | rfl <;> ext <;>
-    norm_num [quaternionValue, Quaternion.coe_ofComplex, Quaternion.coeComplex,
-      ZMod.val_add, ZMod.val_sub, ZMod.neg_val', ZMod.val_natCast, ZMod.val_ofNat,
-      ZMod.val_one_eq_one_mod, Quaternion.re_mul, Quaternion.imI_mul,
-      Quaternion.imJ_mul, Quaternion.imK_mul]
-
-private theorem quaternionValue_xa (i j : ZMod (2 * 2)) :
-    quaternionValue (.xa i * .a j) = quaternionValue (.xa i) * quaternionValue (.a j) := by
-  simp only [QuaternionGroup.xa_mul_a]
-  have hc : ∀ x : ZMod (2 * 2), x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 := by decide
-  rcases hc i with rfl | rfl | rfl | rfl <;>
-    rcases hc j with rfl | rfl | rfl | rfl <;> ext <;>
-    norm_num [quaternionValue, Quaternion.coe_ofComplex, Quaternion.coeComplex,
-      ZMod.val_add, ZMod.val_sub, ZMod.neg_val', ZMod.val_natCast, ZMod.val_ofNat,
-      ZMod.val_one_eq_one_mod, Quaternion.re_mul, Quaternion.imI_mul,
-      Quaternion.imJ_mul, Quaternion.imK_mul]
-
-private theorem quaternionValue_xx (i j : ZMod (2 * 2)) :
-    quaternionValue (.xa i * .xa j) = quaternionValue (.xa i) * quaternionValue (.xa j) := by
-  simp only [QuaternionGroup.xa_mul_xa]
-  have hc : ∀ x : ZMod (2 * 2), x = 0 ∨ x = 1 ∨ x = 2 ∨ x = 3 := by decide
-  rcases hc i with rfl | rfl | rfl | rfl <;>
-    rcases hc j with rfl | rfl | rfl | rfl <;> ext <;>
-    norm_num [quaternionValue, Quaternion.coe_ofComplex, Quaternion.coeComplex,
-      ZMod.val_add, ZMod.val_sub, ZMod.neg_val', ZMod.val_natCast, ZMod.val_ofNat,
-      ZMod.val_one_eq_one_mod, Quaternion.re_mul, Quaternion.imI_mul,
-      Quaternion.imJ_mul, Quaternion.imK_mul]
 
 /-- The standard homomorphism from Q₈ to the multiplicative monoid of Hamilton's quaternions,
 sending `a 1` to i and `xa 0` to j. -/
@@ -83,12 +54,7 @@ noncomputable def quaternionGroupTwoToQuaternion : Q₈ →* ℍ where
   map_one' := by
     rw [QuaternionGroup.one_def]
     norm_num [quaternionValue, Quaternion.coe_ofComplex]
-  map_mul' g h := by
-    cases g <;> cases h
-    · exact quaternionValue_aa _ _
-    · exact quaternionValue_ax _ _
-    · exact quaternionValue_xa _ _
-    · exact quaternionValue_xx _ _
+  map_mul' := quaternionValue_mul
 
 /-- A rotation acts by the corresponding power of i. -/
 @[simp]

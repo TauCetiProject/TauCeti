@@ -39,6 +39,8 @@ every `v : E` has the complex coordinates `⟪b j, v⟫`:
 
 * `OrthonormalBasis.toBasis_coord`: the coordinate functional `b.toBasis.coord i` is
   `innerₛₗ 𝕜 (b i)`.
+* `OrthonormalBasis.repr_apply_of_eigenbasis`: in an orthonormal eigenbasis of a linear map `S`,
+  the coordinates of `S x` are those of `x` scaled by the eigenvalues.
 * `TauCeti.exists_linearIsometryEquiv_inner_eq_norm_mul_eval`: for a vector `v` and a prescribed
   coordinate `i`, there is a linear isometry equivalence `f` with
   `⟪v, x⟫ = ‖v‖ * f x i` for all `x`.
@@ -87,6 +89,15 @@ theorem toBasis_coord_real {F : Type*} [NormedAddCommGroup F] [InnerProductSpace
     b.toBasis.coord i = innerₗ F (b i) := by
   ext v
   simp only [toBasis_coord, innerₛₗ_apply_apply, innerₗ_apply_apply]
+
+/-- The coordinates of `S x` in an orthonormal eigenbasis of `S` are the coordinates of `x`
+scaled by the eigenvalues. -/
+theorem repr_apply_of_eigenbasis (b : OrthonormalBasis ι 𝕜 E) (S : E →ₗ[𝕜] E) {μ : ι → 𝕜}
+    (hb : ∀ i, S (b i) = μ i • b i) (x : E) (i : ι) :
+    b.repr (S x) i = μ i * b.repr x i := by
+  classical
+  conv_lhs => rw [← b.sum_repr x]
+  simp [map_sum, hb, smul_smul, mul_comm, Pi.single_apply]
 
 end OrthonormalBasis
 

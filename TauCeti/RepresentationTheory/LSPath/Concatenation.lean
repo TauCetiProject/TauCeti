@@ -230,15 +230,8 @@ theorem lower_ofSegments_eq_of_strictly_rising {l : List V} {k₀ k₁ : ℕ} {�
     rw [List.drop_eq_getElem_cons (by omega), Nat.sub_add_cancel (by omega : 1 ≤ k₁)]
   have hsplit : ofSegments 𝕜 l =
       ofSegments 𝕜 (l.take k₀ ++ (m ++ [θ • v]) ++ ((1 - θ) • v :: l.drop k₁)) := by
-    have hl : l = (l.take k₀ ++ m) ++ v :: l.drop k₁ := by
-      rw [← htake, ← hdrop, List.take_append_drop]
-    have hr : l.take k₀ ++ (m ++ [θ • v]) ++ ((1 - θ) • v :: l.drop k₁) =
-        (l.take k₀ ++ m) ++ (θ • v :: (1 - θ) • v :: l.drop k₁) := by
-      simp only [List.append_assoc, List.singleton_append]
-    conv_lhs => rw [hl]
-    rw [hr, ofSegments_append (l.take k₀ ++ m), ofSegments_append (l.take k₀ ++ m),
-      ofSegments_smul_cons_smul_cons hθ₀
-      (sub_nonneg.mpr ((mul_le_iff_le_one_left hvpos).mp hθv)), add_sub_cancel, one_smul]
+    rw [ofSegments_append_cut_eq hθ₀
+      ((mul_le_iff_le_one_left hvpos).mp hθv), ← htake, ← hdrop, List.take_append_drop]
   rw [hsplit, lower_ofSegments_append_append]
   · -- The minimum is attained at the end of `l.take k₀`.
     have hsplit₀ := listMinHeight_append (f := f) (l.take k₀) (l.drop k₀)

@@ -8,6 +8,8 @@ module
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import Mathlib.Topology.OpenPartialHomeomorph.Composition
+public import Mathlib.Topology.Sets.OpenCover
+public import TauCeti.Geometry.Manifold.Immersion.Basic
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import all Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
@@ -57,6 +59,8 @@ are the basic examples of the latter
 * `TauCeti.isImmersionAt_comp_subtypeVal_iff`, `TauCeti.isImmersionAt_codRestrict_opens_iff`:
   immersions at a point, restricted to an open subset of the source or corestricted to an open
   subset of the target.
+* `TauCeti.isImmersion_comp_subtypeVal_iff`, `TauCeti.isImmersion_iff_of_isOpenCover`:
+  restriction to open source subsets and locality on open covers for finite-dimensional targets.
 * `Manifold.IsImmersion.codRestrict`: an immersion with image in an open subset is an immersion
   into that open submanifold.
 * `TauCeti.isImmersion_subtypeVal_comp_iff`, `TauCeti.isSmoothEmbedding_subtypeVal_comp_iff`,
@@ -277,6 +281,27 @@ theorem isImmersionAt_comp_subtypeVal_iff [IsManifold I n M] {U : TopologicalSpa
   filter_upwards [hU.localInverse_eventuallyEq_right] with y hy
   simp only [Function.comp_apply] at hy ⊢
   rw [hy, id_eq]
+
+/-- For a finite-dimensional target model, restriction to an open source subset is an
+immersion exactly when the original map is an immersion at every point of that subset. -/
+theorem isImmersion_comp_subtypeVal_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E']
+    [IsManifold I n M] {U : TopologicalSpace.Opens M} :
+    IsImmersion I J n (f ∘ (Subtype.val : U → M)) ↔
+      ∀ x ∈ U, IsImmersionAt I J n f x := by
+  rw [isImmersion_iff_forall_isImmersionAt]
+  simp only [isImmersionAt_comp_subtypeVal_iff, Subtype.forall]
+
+/-- For a finite-dimensional target model, being an immersion can be checked on an arbitrary
+open cover of the source. -/
+theorem isImmersion_iff_of_isOpenCover [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E']
+    [IsManifold I n M] {ι : Type*} {U : ι → TopologicalSpace.Opens M}
+    (hU : TopologicalSpace.IsOpenCover U) :
+    IsImmersion I J n f ↔ ∀ i, IsImmersion I J n (f ∘ (Subtype.val : U i → M)) := by
+  simp_rw [isImmersion_comp_subtypeVal_iff]
+  rw [isImmersion_iff_forall_isImmersionAt]
+  exact ⟨fun h _ x _ ↦ h x, fun h x ↦ by
+    obtain ⟨i, hi⟩ := hU.exists_mem x
+    exact h i x hi⟩
 
 /-- A map into an open subset of a manifold is an immersion at a point exactly when its
 composition with the inclusion of the subset is. -/

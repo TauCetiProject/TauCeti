@@ -59,7 +59,12 @@ those in degree `n` for `I` and `Q` are.
   (`TauCeti.AlgebraicGeometry.cohomologyBaseChangeLinearEquiv_toLinearMap`);
 * `TauCeti.AlgebraicGeometry.finrank_cohomology_pullback_eq_of_isPullback` and
   `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_pullback_of_isPullback`: invariance of
-  the dimension and finite-dimensionality of `Hⁿ(X, M)` under extension of the base field, and
+  the dimension and finite-dimensionality of `Hⁿ(X, M)` under extension of the base field,
+  `TauCeti.AlgebraicGeometry.finrank_cohomology_trivial_eq_of_isPullback` and
+  `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_trivial_of_isPullback`: their
+  specialisation to the structure sheaf, whose pullback is identified with `𝒪_Y`, with
+  `TauCeti.AlgebraicGeometry.finiteDimensional_cohomology_trivial_of_isPullback_of_isProper` the
+  finite-dimensionality for a proper scheme, and
   `TauCeti.AlgebraicGeometry.eulerCharBelow_pullback_eq_of_isPullback`: the same invariance of the
   truncated Euler characteristic `Scheme.Modules.eulerCharBelow`.
 
@@ -87,6 +92,46 @@ variable {R : Type u} [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))]
   {g : Y ⟶ X}
   (H : IsPullback g (Y ↘ Spec (.of R')) (X ↘ Spec (.of R))
     (Spec.map (CommRingCat.ofHom (algebraMap R R'))))
+
+section Aux
+
+variable (M : X.Modules) (U V : X.Opens) [Algebra R Γ(X, ⊤)] [Algebra R' Γ(Y, ⊤)]
+  [∀ W : X.Opens, Module R Γ(M, W)] [∀ W : X.Opens, IsScalarTower R Γ(X, ⊤) Γ(M, W)]
+  [∀ W' : Y.Opens, Module R' Γ((Scheme.Modules.pullback g).obj M, W')]
+  [∀ W' : Y.Opens, IsScalarTower R' Γ(Y, ⊤) Γ((Scheme.Modules.pullback g).obj M, W')]
+  [∀ W' : Y.Opens, Module R Γ((Scheme.Modules.pullback g).obj M, W')]
+  [∀ W' : Y.Opens, IsScalarTower R R' Γ((Scheme.Modules.pullback g).obj M, W')]
+
+/-- Pulling back sections commutes with the restriction of `H⁰` to the two members of a cover. -/
+lemma mayerVietorisSectionsRestrictionLinear_comm_cohomologyPullback
+    [IsScalarTower R Γ(X, ⊤) (Cohomology M 0)]
+    [IsScalarTower R' Γ(Y, ⊤) (Cohomology ((Scheme.Modules.pullback g).obj M) 0)]
+    [Module R (Cohomology ((Scheme.Modules.pullback g).obj M) 0)]
+    [IsScalarTower R R' (Cohomology ((Scheme.Modules.pullback g).obj M) 0)]
+    (σU : Γ(M, U) →ₗ[R] Γ((Scheme.Modules.pullback g).obj M, g ⁻¹ᵁ U))
+    (σV : Γ(M, V) →ₗ[R] Γ((Scheme.Modules.pullback g).obj M, g ⁻¹ᵁ V))
+    (h₁ : Cohomology M 0 →ₗ[R] Cohomology ((Scheme.Modules.pullback g).obj M) 0)
+    (hσU : ∀ s, σU s = g.pullbackSections M U s) (hσV : ∀ s, σV s = g.pullbackSections M V s)
+    (h₁_apply : ∀ x, h₁ x = g.cohomologyPullback M 0 x) :
+    (σU.prodMap σV).comp (((mayerVietorisSectionsRestrictionLinear M U V).comp
+        (cohomologyZeroLinearEquiv M).toLinearMap).restrictScalars R) =
+      ((((mayerVietorisSectionsRestrictionLinear ((Scheme.Modules.pullback g).obj M) (g ⁻¹ᵁ U)
+        (g ⁻¹ᵁ V)).comp (cohomologyZeroLinearEquiv _).toLinearMap).restrictScalars
+          R').restrictScalars R).comp h₁ := by
+  refine LinearMap.ext fun x ↦ ?_
+  -- Pullback lands in sections over `g ⁻¹ᵁ ⊤`, which is `⊤` by definition.
+  have hx := mayerVietorisSectionsRestrictionLinear_apply ((Scheme.Modules.pullback g).obj M)
+    (g ⁻¹ᵁ U) (g ⁻¹ᵁ V) (g.pullbackSections M ⊤ (cohomologyZeroEquiv M x))
+  simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, LinearEquiv.coe_coe,
+    LinearMap.prodMap_apply, cohomologyZeroLinearEquiv_apply,
+    mayerVietorisSectionsRestrictionLinear_apply, h₁_apply,
+    g.cohomologyZeroEquiv_cohomologyPullback, hσU, hσV]
+  refine Eq.trans ?_ hx.symm
+  -- Pullback of sections commutes with the restrictions from `⊤` to `U` and to `V`.
+  exact Prod.ext (g.pullbackSections_restrict M ⊤ U.leTop _).symm
+    (g.pullbackSections_restrict M ⊤ V.leTop _).symm
+
+end Aux
 
 include H in
 /-- The pullback map on cohomology along the base change `g` is `R`-linear, for the action of `R`
@@ -291,6 +336,46 @@ theorem finiteDimensional_cohomology_pullback_of_isPullback [CompactSpace X]
     (n : ℕ) [FiniteDimensional k (Cohomology M n)] :
     FiniteDimensional K (Cohomology ((Scheme.Modules.pullback g).obj M) n) :=
   Module.Finite.equiv (cohomologyBaseChangeLinearEquiv H M n)
+
+include H in
+/-- The dimension of `Hⁿ(X, 𝒪_X)` does not change under extension of the base field, on a
+quasi-compact scheme over a field with affine diagonal, for instance a proper one. -/
+theorem finrank_cohomology_trivial_eq_of_isPullback [CompactSpace X]
+    [IsAffineHom (pullback.diagonal (terminal.from X))] (n : ℕ) :
+    Module.finrank K (Cohomology (InvertibleSheaf.trivial Y).obj n) =
+      Module.finrank k (Cohomology (InvertibleSheaf.trivial X).obj n) := by
+  let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
+      (InvertibleSheaf.trivial Y).obj :=
+    (Scheme.Modules.pullback g).mapIso (InvertibleSheaf.trivialObjIsoUnit X) ≪≫
+      Scheme.Modules.pullbackObjUnitIso g ≪≫ (InvertibleSheaf.trivialObjIsoUnit Y).symm
+  rw [← finrank_cohomology_congr K e n, finrank_cohomology_pullback_eq_of_isPullback H]
+
+include H in
+/-- `Hⁿ(X, 𝒪_X)` stays finite-dimensional under extension of the base field, on a quasi-compact
+scheme over a field with affine diagonal, for instance a proper one. -/
+theorem finiteDimensional_cohomology_trivial_of_isPullback [CompactSpace X]
+    [IsAffineHom (pullback.diagonal (terminal.from X))] (n : ℕ)
+    [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj n)] :
+    FiniteDimensional K (Cohomology (InvertibleSheaf.trivial Y).obj n) := by
+  let e : (Scheme.Modules.pullback g).obj (InvertibleSheaf.trivial X).obj ≅
+      (InvertibleSheaf.trivial Y).obj :=
+    (Scheme.Modules.pullback g).mapIso (InvertibleSheaf.trivialObjIsoUnit X) ≪≫
+      Scheme.Modules.pullbackObjUnitIso g ≪≫ (InvertibleSheaf.trivialObjIsoUnit Y).symm
+  exact (finiteDimensional_cohomology_congr K e n).mp
+    (finiteDimensional_cohomology_pullback_of_isPullback H _ n)
+
+include H in
+/-- For a proper scheme over a field, `Hⁿ(X, 𝒪_X)` stays finite-dimensional under extension of the
+base field. -/
+theorem finiteDimensional_cohomology_trivial_of_isPullback_of_isProper
+    [IsProper (X ↘ Spec (.of k))] (n : ℕ)
+    [FiniteDimensional k (Cohomology (InvertibleSheaf.trivial X).obj n)] :
+    FiniteDimensional K (Cohomology (InvertibleSheaf.trivial Y).obj n) := by
+  have : CompactSpace X := QuasiCompact.compactSpace_of_compactSpace (X ↘ Spec (.of k))
+  have : IsSeparated (terminal.from X) := by
+    rw [← terminal.comp_from (X ↘ Spec (.of k))]
+    infer_instance
+  exact finiteDimensional_cohomology_trivial_of_isPullback H n
 
 include H in
 /-- The truncated Euler characteristic `∑_{i < n} (-1)ⁱ dim Hⁱ(X, M)` of a quasi-coherent sheaf

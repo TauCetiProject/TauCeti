@@ -461,13 +461,16 @@ subgroup `L'`. Then the map of quotients `ker f / (L ∩ ker f) → E / L` induc
 holomorphic embedding of complex tori. -/
 theorem Submodule.isSmoothEmbedding_orbitRelQuotientMap_ker_subtype {𝕜 : Type*} [RCLike 𝕜]
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedSpace 𝕜 E] [IsScalarTower ℝ 𝕜 E]
-    [FiniteDimensional ℝ E] {E' : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-    [NormedSpace 𝕜 E'] [IsScalarTower ℝ 𝕜 E'] (L : Submodule ℤ E) [DiscreteTopology L]
-    [IsZLattice ℝ L] {L' : Submodule ℤ E'} [DiscreteTopology L'] (f : E →ₗ[𝕜] E')
-    (hf : L.map (f.restrictScalars ℤ) ≤ L') :
+    [FiniteDimensional ℝ E] {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L] {L' : Submodule ℤ E'}
+    [DiscreteTopology L'] (f : E →ₗ[𝕜] E') (hf : L.map (f.restrictScalars ℤ) ≤ L') :
     Manifold.IsSmoothEmbedding 𝓘(𝕜, LinearMap.ker f) 𝓘(𝕜, E) n
       ((ZLattice.comap 𝕜 L (LinearMap.ker f).subtype).orbitRelQuotientMap L
         ((LinearMap.ker f).subtype.restrictScalars ℤ) le_rfl) := by
+  -- `ZLattice.isZLattice_comap_ker_subtype` counts ranks over `ℝ`; give `E'` the real structure
+  -- obtained by restricting scalars.
+  let : NormedSpace ℝ E' := NormedSpace.restrictScalars ℝ 𝕜 E'
+  have : IsScalarTower ℝ 𝕜 E' := Real.isScalarTower
   have := ZLattice.isZLattice_comap_ker_subtype L f hf
   have : FiniteDimensional ℝ (LinearMap.ker f) :=
     .of_injective ((LinearMap.ker f).subtype.restrictScalars ℝ) (LinearMap.ker f).injective_subtype
@@ -482,9 +485,9 @@ open Topology
 
 variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedSpace 𝕜 E] [IsScalarTower ℝ 𝕜 E] [FiniteDimensional ℝ E] {E' : Type*}
-  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [NormedSpace 𝕜 E'] [IsScalarTower ℝ 𝕜 E']
-  (L : Submodule ℤ E) [DiscreteTopology L] [IsZLattice ℝ L] {L' : Submodule ℤ E'}
-  [DiscreteTopology L'] (f : E →ₗ[𝕜] E') (h : L ≤ L'.comap (f.restrictScalars ℤ))
+  [NormedAddCommGroup E'] [NormedSpace 𝕜 E'] (L : Submodule ℤ E) [DiscreteTopology L]
+  [IsZLattice ℝ L] {L' : Submodule ℤ E'} [DiscreteTopology L'] (f : E →ₗ[𝕜] E')
+  (h : L ≤ L'.comap (f.restrictScalars ℤ))
 
 /-- The torus `ker f / (L ∩ ker f)` is an open subgroup of the kernel `f⁻¹(L') / L` of the map
 `E / L → E' / L'` induced by `f`. -/
@@ -497,9 +500,9 @@ theorem Submodule.isOpenEmbedding_orbitRelQuotientToKerOrbitRelQuotientMap :
   have hcoe : Subtype.val ∘ L.orbitRelQuotientToKerOrbitRelQuotientMap f h = j :=
     funext (L.coe_orbitRelQuotientToKerOrbitRelQuotientMap f h)
   refine ⟨IsEmbedding.subtypeVal.of_comp_iff.1 (hcoe ▸ hemb), ?_⟩
+  have : FiniteDimensional 𝕜 E := .of_restrictScalars_finite ℝ 𝕜 E
   obtain ⟨U, hU, hUK⟩ := Submodule.exists_isOpen_inter_orbitRelQuotient_mk_image_preimage L f
-    (LinearMap.continuous_of_finiteDimensional (f.restrictScalars ℝ))
-    (Submodule.map_le_iff_le_comap.2 h)
+    (LinearMap.continuous_of_finiteDimensional f) (Submodule.map_le_iff_le_comap.2 h)
   have hK : ((L.orbitRelQuotientMap L' (f.restrictScalars ℤ) h).ker :
       Set (AddAction.orbitRel.Quotient L E)) =
         _root_.Quotient.mk (AddAction.orbitRel L E) '' (f ⁻¹' L') := by

@@ -24,7 +24,9 @@ there, and the clamped function is in general not differentiable at those levels
 Clamped functions of this form are the standard test functions for integration by parts against
 the indicator of a superlevel set. The clamped function differs from `η` times the indicator of
 `{w > 0}` by at most `η`, and only on the band `{0 < w < η}`
-(`TauCeti.abs_mul_indicator_sub_max_min_le`), for any real function `w` on any type.
+(`TauCeti.abs_mul_indicator_sub_max_min_le`), for any real function `w` on any type. Against a
+real weight `d`, the error is at most `η |d|` on the band
+(`TauCeti.norm_mul_sub_clamp_le_indicator`).
 -/
 
 public section
@@ -52,6 +54,18 @@ theorem abs_mul_indicator_sub_max_min_le {X : Type*} {w : X → ℝ} {η : ℝ} 
     · have hηx : η ≤ w x := le_of_not_gt fun h' => hxS ⟨h, h'⟩
       rw [indicator_of_mem (s := {x | 0 < w x}) h, Pi.one_apply, mul_one, min_eq_right hηx,
         max_eq_right hη, sub_self, abs_zero]
+
+/-- The clamped function `max 0 (min w η)` agrees with `η 1_{w > 0}` off the shell `{0 < w < η}`
+and differs from it by at most `η` on the shell; so against any `d` the error is at most
+`η |d|` on the shell and zero off it. -/
+theorem norm_mul_sub_clamp_le_indicator {X : Type*} {w : X → ℝ} {η : ℝ} (hη : 0 ≤ η)
+    (d : ℝ) (x : X) :
+    ‖d * (η * {x | 0 < w x}.indicator 1 x - max 0 (min (w x) η))‖ ≤
+      η * (w ⁻¹' Ioo 0 η).indicator (fun _ => |d|) x := by
+  rw [norm_mul, Real.norm_eq_abs, Real.norm_eq_abs]
+  refine (mul_le_mul_of_nonneg_left (abs_mul_indicator_sub_max_min_le (w := w) hη x)
+    (abs_nonneg d)).trans_eq ?_
+  rw [mul_comm, ← indicator_const_mul, ← indicator_mul_const]
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 

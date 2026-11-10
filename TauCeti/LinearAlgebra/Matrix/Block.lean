@@ -23,6 +23,15 @@ block lower triangular left factor, or a block upper triangular right factor, is
 the square blocks. If the leading blocks on the initial segments `{j | b j ≤ b i}` have unit
 determinants, so do the leading blocks on the strict initial segments `{j | b j < b i}`.
 
+An invertible block triangular matrix has invertible leading blocks over any commutative ring.
+Consequently, multiplying on the left by an invertible block lower triangular matrix and on the
+right by an invertible block upper triangular matrix preserves the condition that leading block
+minors are units. This reduces the leading-minor test on a Bruhat expression `L * W * U` to the
+test on its Weyl representative `W`. The middle matrix need not be invertible, the outer matrices
+need not be unitriangular, and blocks may have arbitrary multiplicities. The result holds on any
+down-closed set of block indices, including the empty set, before specializing to all initial
+segments. In particular, it applies to weight-space blocks of arbitrary dimensions.
+
 ## Main results
 
 * `Matrix.toBlocks₁₁_eq_submatrix`, `Matrix.toBlocks₁₂_eq_submatrix`,
@@ -33,6 +42,20 @@ determinants, so do the leading blocks on the strict initial segments `{j | b j 
   `Matrix.BlockTriangular.toSquareBlockProp_mul`: square blocks of products on down-closed sets.
 * `Matrix.isUnit_det_toSquareBlockProp_lt`: unit leading block minors give unit determinants of
   the leading blocks on the strict initial segments.
+* `Matrix.BlockTriangular.isUnit_det_toSquareBlockProp`: leading blocks of an invertible
+  block upper triangular matrix have unit determinants.
+* `Matrix.BlockTriangular.isUnit_det_toSquareBlockProp_of_toDual`: the lower triangular version.
+* `Matrix.isUnit_det_toSquareBlockProp_mul_mul_iff`: the unit-minor test on a down-closed set
+  is unchanged by invertible triangular outer factors.
+* `Matrix.forall_isUnit_det_toSquareBlockProp_le_mul_mul_iff`: preservation of the test on
+  every leading block.
+
+## References
+
+* R. Steinberg, *Lectures on Chevalley Groups*, AMS University Lecture Series 66 (2016),
+  Chapter 5, Theorem 7.
+* J. C. Jantzen, *Representations of Algebraic Groups*, second edition, AMS (2003),
+  Part II, Chapter 1.
 -/
 
 open OrderDual
@@ -78,6 +101,20 @@ public theorem det_blockDiagonal' {o R : Type*} {m : o → Type*} [Fintype o] [D
   -- `(Equiv.sigmaSubtype i).symm j`, so the definition is unfolded to see that it is `⟨i, j⟩`.
   simp [toSquareBlock_def, Equiv.sigmaSubtype]
 
+/-- Restricting to a square block commutes with any entrywise map. -/
+@[simp]
+public theorem map_toSquareBlockProp {m R S : Type*} (M : Matrix m m R) (p : m → Prop)
+    (f : R → S) : (M.map f).toSquareBlockProp p = (M.toSquareBlockProp p).map f :=
+  (rfl)
+
+/-- A square block with unit determinant retains that property under a ring homomorphism. -/
+public theorem _root_.IsUnit.det_map_toSquareBlockProp {m R S : Type*} [Fintype m]
+    [DecidableEq m] [CommRing R] [CommRing S] {M : Matrix m m R} {p : m → Prop}
+    [DecidablePred p] (h : IsUnit (M.toSquareBlockProp p).det) (f : R →+* S) :
+    IsUnit ((M.map f).toSquareBlockProp p).det := by
+  rw [map_toSquareBlockProp, ← RingHom.mapMatrix_apply, ← RingHom.map_det]
+  exact h.map f
+
 /-! ### Leading blocks -/
 
 section LeadingBlocks
@@ -122,6 +159,52 @@ public theorem isUnit_det_toSquareBlockProp_lt [DecidableEq m] [CommRing R] (M :
   rw [equiv_block_det M (q := fun j => b j ≤ b k) fun j =>
     ⟨fun hj => hj.trans_lt k.2, fun hj => hk ⟨j, hj⟩⟩]
   exact hM k
+
+variable [DecidableEq m] [CommRing R] {A L M U : Matrix m m R} {p : m → Prop} [DecidablePred p]
+
+/-- A leading block of a block upper triangular matrix with unit determinant also has unit
+determinant. The set of indices may be any down-closed union of blocks. -/
+public theorem BlockTriangular.isUnit_det_toSquareBlockProp (hA : A.BlockTriangular b)
+    (hdet : IsUnit A.det) (hp : ∀ ⦃i j⦄, b j ≤ b i → p i → p j) :
+    IsUnit (A.toSquareBlockProp p).det := by
+  rw [twoBlockTriangular_det A p fun i hi j hj =>
+    hA (lt_of_not_ge fun hij => hi (hp hij hj))] at hdet
+  exact isUnit_of_mul_isUnit_left hdet
+
+/-- A leading block of a block lower triangular matrix with unit determinant also has unit
+determinant. The set of indices may be any down-closed union of blocks. -/
+public theorem BlockTriangular.isUnit_det_toSquareBlockProp_of_toDual
+    (hA : A.BlockTriangular (toDual ∘ b)) (hdet : IsUnit A.det)
+    (hp : ∀ ⦃i j⦄, b j ≤ b i → p i → p j) :
+    IsUnit (A.toSquareBlockProp p).det := by
+  rw [twoBlockTriangular_det' A p fun i hi j hj =>
+    hA (toDual_lt_toDual.mpr (lt_of_not_ge fun hij => hj (hp hij hi)))] at hdet
+  exact isUnit_of_mul_isUnit_left hdet
+
+/-- Invertible block lower triangular left factors and invertible block upper triangular right
+factors preserve the unit-determinant test on every down-closed union of blocks. No hypothesis
+on the middle matrix is required. -/
+public theorem isUnit_det_toSquareBlockProp_mul_mul_iff
+    (hL : L.BlockTriangular (toDual ∘ b)) (hU : U.BlockTriangular b)
+    (hLdet : IsUnit L.det) (hUdet : IsUnit U.det)
+    (hp : ∀ ⦃i j⦄, b j ≤ b i → p i → p j) :
+    IsUnit ((L * M * U).toSquareBlockProp p).det ↔
+      IsUnit (M.toSquareBlockProp p).det := by
+  rw [hU.toSquareBlockProp_mul hp, hL.toSquareBlockProp_mul_of_toDual hp]
+  simp only [det_mul, IsUnit.mul_iff,
+    hL.isUnit_det_toSquareBlockProp_of_toDual hLdet hp,
+    hU.isUnit_det_toSquareBlockProp hUdet hp, true_and, and_true]
+
+/-- All leading block minors of `L * M * U` are units exactly when those of `M` are, if `L`
+is invertible block lower triangular and `U` is invertible block upper triangular. This is the
+leading-minor criterion for the block matrix big cell, invariant under its triangular factors. -/
+public theorem forall_isUnit_det_toSquareBlockProp_le_mul_mul_iff
+    (hL : L.BlockTriangular (toDual ∘ b)) (hU : U.BlockTriangular b)
+    (hLdet : IsUnit L.det) (hUdet : IsUnit U.det) :
+    (∀ i, IsUnit ((L * M * U).toSquareBlockProp fun j => b j ≤ b i).det) ↔
+      ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det := by
+  exact forall_congr' fun _ => isUnit_det_toSquareBlockProp_mul_mul_iff hL hU hLdet hUdet
+    fun _ _ hji hi => hji.trans hi
 
 end LeadingBlocks
 

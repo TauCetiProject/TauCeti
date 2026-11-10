@@ -24,12 +24,14 @@ adds that `H_d(M_b, M_a; V)` is free for every free module `V` over a principal 
 zero divisors; for instance `H_d(M_b, M_a; ℤ)` is free abelian
 (`TauCeti.IsMorse.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le`).
 
-On a compact manifold `M` itself is such a band, over the empty sublevel, so `H_d(M; V)` is free
-(`TauCeti.IsMorse.free_singularHomology_of_compactSpace_of_manifoldMorseIndex_le`). The same holds
+The same holds for a compact regular sublevel `M_b`, which is such a band over the empty sublevel
+(`TauCeti.IsMorse.free_singularHomology_sublevel_of_manifoldMorseIndex_le`), and on a compact
+manifold, which is itself one
+(`TauCeti.IsMorse.free_singularHomology_of_compactSpace_of_manifoldMorseIndex_le`). It also holds
 for a proper Morse function bounded below on a possibly noncompact `M`, all of whose critical
 points have index at most `d` (`TauCeti.IsMorse.free_singularHomology_of_manifoldMorseIndex_le`).
 Then `H_d(M; V)` is the colimit of the homology of a regular sublevel exhaustion
-`M_{a₁} ⊆ M_{a₂} ⊆ ⋯`; the vanishing of `H_{d+1}(M_{a_{j+1}}, M_{a_j})` makes the maps
+`M_{a₀} ⊆ M_{a₁} ⊆ ⋯`; the vanishing of `H_{d+1}(M_{a_{j+1}}, M_{a_j})` makes the maps
 `H_d(M_{a_j}) → H_d(M_{a_{j+1}})` injective, with cokernels embedded in the free modules
 `H_d(M_{a_{j+1}}, M_{a_j})`, and such a colimit is free (`ModuleCat.free_of_isColimit`).
 
@@ -58,9 +60,11 @@ freeness (`TauCeti.TopTriple.free_singularHomology_totalPair`).
 ## Main results
 
 * `TauCeti.IsMorse.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le`,
+  `TauCeti.IsMorse.free_singularHomology_sublevel_of_manifoldMorseIndex_le`,
   `TauCeti.IsMorse.free_singularHomology_of_compactSpace_of_manifoldMorseIndex_le` and
   `TauCeti.IsMorse.free_singularHomology_of_manifoldMorseIndex_le`: freeness of homology in the
-  degree of the largest index.
+  degree of the largest index, for compact bands, compact regular sublevels, compact manifolds and
+  manifolds with a proper Morse function bounded below.
 * `TauCeti.IsMorse.isZero_singularCohomology_sublevelPair_of_manifoldMorseIndex_le`,
   `TauCeti.IsMorse.isZero_singularCohomology_of_compactSpace_of_manifoldMorseIndex_le` and
   `TauCeti.IsMorse.isZero_singularCohomology_of_manifoldMorseIndex_le`: vanishing of cohomology
@@ -135,6 +139,24 @@ theorem IsMorse.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le (hf 
     exact ⟨T.isZero_singularHomology_totalPair V (d + 1) h₁.1 h₂.1,
       T.free_singularHomology_totalPair V d h₂.1⟩
 
+/-- **Homology of a compact regular sublevel is free in the degree of the largest index.** Let `f`
+be a Morse function, let `b` be a regular value of `f` with compact sublevel `{f ≤ b}`, and suppose
+every critical point in this sublevel has index at most `d`. Then `H_d({f ≤ b}; V)` is free for
+every free module `V` over a principal ideal ring without zero divisors. -/
+theorem IsMorse.free_singularHomology_sublevel_of_manifoldMorseIndex_le (hf : IsMorse I f)
+    {b : ℝ} (hcompact : IsCompact {x | f x ≤ b}) (hb : IsRegularValue I 𝓘(ℝ) f b) {d : ℕ}
+    (hd : ∀ p ∈ criticalPoints I f, f p ≤ b → manifoldMorseIndex I f p ≤ d)
+    {k : Type u} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] (V : ModuleCat.{u} k)
+    [Module.Free k V] :
+    Module.Free k (((singularHomologyFunctor (ModuleCat.{u} k) d).obj V).obj
+      (TopCat.of {x | f x ≤ b})) := by
+  obtain ⟨a, hab, _, hband, ha⟩ :=
+    exists_isEmpty_sublevelPair_of_isCompact_sublevel (I := I) hf.contMDiff.continuous hcompact
+  have := hf.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab hband ha hb
+    (fun p hp ↦ hd p hp.1 hp.2.2) V
+  -- Relative homology modulo the empty sublevel is the homology of `{f ≤ b}`.
+  exact .of_equiv (asIso ((sublevelPair f hab).singularHomologyπ V d)).toLinearEquiv.symm
+
 /-- **Homology of a compact manifold is free in the degree of the largest index.** If every
 critical point of a Morse function on a compact boundaryless manifold `M` has index at most `d`,
 then `H_d(M; V)` is free for every free module `V` over a principal ideal ring without zero
@@ -163,49 +185,30 @@ theorem IsMorse.free_singularHomology_of_manifoldMorseIndex_le (hf : IsMorse I f
     {k : Type u} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] (V : ModuleCat.{u} k)
     [Module.Free k V] :
     Module.Free k (((singularHomologyFunctor (ModuleCat.{u} k) d).obj V).obj (TopCat.of M)) := by
-  obtain ⟨a, K, hmono, -, hreg, hK, hK0, -⟩ := hf.exists_regular_sublevel_exhaustion hp hbdd
-  have hKa (j : ℕ) : K j = {x | f x ≤ a j} := hK j
-  have hband {i j : ℕ} (hij : i ≤ j) : IsCompact (f ⁻¹' Icc (a i) (a j)) :=
-    (K.isCompact j).of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
-      fun x hx ↦ by simpa [hKa j] using hx.2
-  have hpair {i j : ℕ} (hij : i ≤ j) :=
-    hf.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le (hmono.monotone hij)
-      (hband hij) (hreg i) (hreg j) (fun x hx ↦ hd x hx.1) V
-  -- The nonempty regular sublevels `{f ≤ a (j + 1)}` and their inclusions into `M` form a cocone
-  -- of embeddings, and every compact subset of `M` lies in one of them.
-  let F : ℕ ⥤ TopCat.{u} :=
-    { obj j := TopCat.of {x | f x ≤ a (j + 1)}
-      map h := TopCat.ofHom (ContinuousMap.inclusion
-        (sublevel_mono f (hmono.monotone (Nat.succ_le_succ h.le)))) }
-  let c : Cocone F :=
-    { pt := TopCat.of M
-      ι := { app j := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ } }
-  have hc : IsColimit (((singularHomologyFunctor (ModuleCat.{u} k) d).obj V).mapCocone c) :=
-    isColimitMapCoconeSingularHomology V d c (fun _ ↦ IsEmbedding.subtypeVal) fun L hL ↦ by
-      obtain ⟨j, hj⟩ := K.exists_superset_of_isCompact hL
-      refine ⟨j, fun x hx ↦ ⟨⟨x, ?_⟩, rfl⟩⟩
-      exact sublevel_mono f (hmono.monotone j.le_succ) (by simpa [hKa j] using hj hx)
-  refine ModuleCat.free_of_isColimit _ hc ?_ (fun j ↦ ?_) fun j ↦ ?_
-  · -- The first sublevel is a band over the empty sublevel `{f ≤ a 0}`.
-    have : IsEmpty (sublevelPair f (hmono.monotone (Nat.zero_le 1))).snd :=
-      ⟨fun x ↦ by simpa [← hKa 0, hK0] using x.2⟩
-    have hπ : IsIso ((sublevelPair f (hmono.monotone (Nat.zero_le 1))).singularHomologyπ V d) :=
-      inferInstance
-    have := hpair (Nat.zero_le 1)
-    exact .of_equiv (@asIso _ _ _ _ _ hπ).symm.toLinearEquiv
-  · -- `H_{d+1}` of the band between consecutive sublevels vanishes.
-    have h := hmono.monotone (Nat.le_succ (j + 1))
-    have := (sublevelPair f h).mono_homologyMap_map_of_isZero V
-      (hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le h (hband (j + 1).le_succ)
-        (hreg _) (hreg _) (fun x hx ↦ hd x hx.1) V d.lt_succ_self)
+  -- `H_d(M)` is the colimit of the homology of the regular sublevels `{f ≤ a j}`.
+  obtain ⟨a, ha, hreg, hcompact, hc⟩ :=
+    hf.exists_regular_sublevel_isColimit_singularHomology hp hbdd
+  have hstep (j : ℕ) := ha (Nat.le_succ j)
+  -- Each step `({f ≤ a (j + 1)}, {f ≤ a j})` is a compact band between regular values.
+  have hband (j : ℕ) : IsCompact (f ⁻¹' Icc (a j) (a (j + 1))) :=
+    (hcompact (j + 1)).of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
+      fun x hx ↦ hx.2
+  refine ModuleCat.free_of_isColimit _ (hc V d).some
+    (hf.free_singularHomology_sublevel_of_manifoldMorseIndex_le (hcompact 0) (hreg 0)
+      (fun x hx _ ↦ hd x hx) V) (fun j ↦ ?_) fun j ↦ ?_
+  · -- `H_{d+1}` of the band between consecutive sublevels vanishes, so the map
+    -- `H_d({f ≤ a j}) ⟶ H_d({f ≤ a (j + 1)})` induced by the embedding is injective.
+    have := (sublevelPair f (hstep j)).mono_homologyMap_map_of_isZero V
+      (hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le (hstep j) (hband j)
+        (hreg j) (hreg (j + 1)) (fun x hx ↦ hd x hx.1) V d.lt_succ_self)
     exact (ModuleCat.mono_iff_injective _).1 this
   · -- The cokernel embeds in the free module `H_d` of the band between consecutive sublevels.
-    have h := hmono.monotone (Nat.le_succ (j + 1))
-    have hex := ((sublevelPair f h).singularHomology_exact_space V d).moduleCat_range_eq_ker
-    have := hpair (j + 1).le_succ
+    have hex := ((sublevelPair f (hstep j)).singularHomology_exact_space V d).moduleCat_range_eq_ker
+    have := hf.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le (hstep j) (hband j)
+      (hreg j) (hreg (j + 1)) (fun x hx ↦ hd x hx.1) V
     let e := (Submodule.quotEquivOfEq _ _ hex).trans (LinearMap.quotKerEquivRange _)
     have : Module.Free k (LinearMap.range (ShortComplex.mk _ _
-        ((sublevelPair f h).homologyMap_comp_singularHomologyπ V d)).g.hom) :=
+        ((sublevelPair f (hstep j)).homologyMap_comp_singularHomologyπ V d)).g.hom) :=
       Submodule.free_of_isPrincipalIdealRing _
     exact .of_equiv e.symm
 

@@ -25,6 +25,8 @@ twice its absolute value is `|a| + |b| - |b - a|`.
 * `TauCeti.max_zero_min_add`: `max 0 (min t (a + b)) = max 0 (min t a) + max 0 (min (t - a) b)`.
 * `TauCeti.abs_max_min_le`: the max-min clipping formula is bounded by `|M|` for any height `M`.
 * `TauCeti.abs_max_min_le_abs`: clipping at a nonnegative height does not increase absolute value.
+* `TauCeti.add_max_neg_min_nonneg`: clamping two elements with nonnegative sum to `[-r, r]` leaves
+  a nonnegative sum.
 * `TauCeti.abs_max_zero_min_add_min_zero_max_add_abs_sub`: the median `u` of `0`, `a` and `b`
   satisfies `|u| + |a - u| = |a|`.
 * `TauCeti.two_nsmul_abs_max_zero_min_add_min_zero_max`: `2 • |u| = |a| + |b| - |b - a|`.
@@ -53,6 +55,11 @@ theorem abs_max_min_le_abs {M : α} (hM : 0 ≤ M) (x : α) :
     |max (-M) (min M x)| ≤ |x| := by
   rw [abs_le]
   constructor <;> grind [le_abs_self, neg_abs_le]
+
+/-- Clamping two elements with nonnegative sum to `[-r, r]` leaves a nonnegative sum. -/
+theorem add_max_neg_min_nonneg {r a b : α} (h : 0 ≤ a + b) :
+    0 ≤ max (-r) (min a r) + max (-r) (min b r) := by
+  grind
 
 /-- The median `u = max 0 (min a b) + min 0 (max a b)` of `0`, `a` and `b` lies between `0` and
 `a`: `|u| + |a - u| = |a|`. -/

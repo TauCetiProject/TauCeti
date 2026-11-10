@@ -16,7 +16,7 @@ Mathlib's `AdjoinRoot.map` sends a ring homomorphism `f : R →+* S`, together w
 `q ∣ p.map f`, to a ring homomorphism `AdjoinRoot p →+* AdjoinRoot q`. It records the action on
 `AdjoinRoot.of` and on `AdjoinRoot.root` (`map_of`, `map_root`) but not the action on the class of
 a general polynomial, and says nothing about surjectivity. Both are added here, together with the
-description of the `R`-linear endomorphisms of `AdjoinRoot g`, for `g` monic, that commute with
+description of the `R`-linear endomorphisms of `AdjoinRoot g`, for any `g`, that commute with
 multiplication by the root, and the annihilators of the powers of the root in the truncated
 polynomial ring `R[X]/(X ^ n)`.
 
@@ -28,6 +28,9 @@ polynomial ring `R[X]/(X ^ n)`.
 * `AdjoinRoot.map_surjective`: the map is surjective when `f` is.
 * `AdjoinRoot.algHom_mk`: an algebra map out of `AdjoinRoot g` sends the class of `p` to the
   evaluation of `p` at the image of the root.
+* `AdjoinRoot.algHomEquiv`: over any commutative ring, the algebra maps out of `AdjoinRoot f` are
+  the roots of `f`. Mathlib's `AdjoinRoot.equiv` is the version over a field with values in a
+  domain.
 * `AdjoinRoot.root_X_pow_sub_one_pow`: the class of `X` in `R[X]/(X ^ n - 1)` is an `n`th root of
   unity.
 * `AdjoinRoot.root_X_pow_sub_C_pow`: the class of `X` in `R[X]/(X ^ n - C a)` is an `n`th root
@@ -39,12 +42,12 @@ polynomial ring `R[X]/(X ^ n)`.
   relator, every class is represented by a polynomial of degree less than that of the relator, and
   that representative is unique. Mathlib has division with remainder by a monic polynomial but
   does not record what it says about `AdjoinRoot`.
-* `AdjoinRoot.eq_mulRight_of_root_mul`: an `R`-linear endomorphism of `AdjoinRoot g`, for `g`
-  monic, that commutes with multiplication by the root is multiplication by its value at `1`. Its
+* `AdjoinRoot.eq_mulRight_of_root_mul`: an `R`-linear endomorphism of `AdjoinRoot g`
+  that commutes with multiplication by the root is multiplication by its value at `1`. Its
   consumers are the truncated polynomial algebras of
   `TauCeti.RepresentationTheory.Quiver.OneLoop.FiniteRepType` and
   `TauCeti.RepresentationTheory.Quiver.Kronecker.FiniteRepType`, whose endomorphism algebras it
-  pins down, but nothing beyond monicity of the relator enters the proof.
+  pins down. The characterization holds for any relator `g`.
 * `AdjoinRoot.algebraTensorAlgEquiv`: the base change `T ⊗[R] R[X]/(g)` of `AdjoinRoot g` to an
   `R`-algebra `T` is `T[X]/(g)`, with `g` mapped into `T[X]`. Mathlib's `AdjoinRoot.tensorAlgEquiv`
   lands in `AdjoinRoot` over `T ⊗[R] R` instead; this is it followed by `T ⊗[R] R ≃ T`, the form
@@ -121,6 +124,30 @@ theorem algHom_mk {g : R[X]} {B F : Type*} [Semiring B] [Algebra R B] [FunLike F
     φ (mk g p) = aeval (φ (root g)) p := by
   rw [← aeval_eq, aeval_algHom_apply]
 
+variable (S) in
+/-- **Algebra maps out of `AdjoinRoot f` are the roots of `f`.** An `R`-algebra map
+`AdjoinRoot f →ₐ[R] S` is determined by the image of the root, which can be any root of `f` in
+`S`. Mathlib's `AdjoinRoot.equiv` is the version over a field with values in a domain, indexed by
+the multiset of roots. -/
+noncomputable def algHomEquiv [Algebra R S] (f : R[X]) :
+    (AdjoinRoot f →ₐ[R] S) ≃ {x : S // aeval x f = 0} where
+  toFun φ := ⟨φ (root f), aeval_algHom_eq_zero f φ⟩
+  invFun x := liftAlgHom f (Algebra.ofId R S) x x.2
+  left_inv φ := liftAlgHom_eq_algHom f φ
+  right_inv _ := Subtype.ext (liftAlgHom_root ..)
+
+/-- The root of `f` attached to an algebra map out of `AdjoinRoot f` is the image of the root. -/
+@[simp]
+theorem coe_algHomEquiv_apply [Algebra R S] {f : R[X]} (φ : AdjoinRoot f →ₐ[R] S) :
+    (algHomEquiv S f φ : S) = φ (root f) :=
+  (rfl)
+
+/-- The algebra map out of `AdjoinRoot f` attached to a root `x` of `f` sends the root to `x`. -/
+@[simp]
+theorem algHomEquiv_symm_apply_root [Algebra R S] {f : R[X]} (x : {x : S // aeval x f = 0}) :
+    (algHomEquiv S f).symm x (root f) = x :=
+  liftAlgHom_root ..
+
 /-- The class of `X` in `R[X]/(X ^ n - 1)` is an `n`th root of unity. -/
 @[simp]
 theorem root_X_pow_sub_one_pow (n : ℕ) : root (X ^ n - 1 : R[X]) ^ n = 1 := by
@@ -162,8 +189,8 @@ lemma mk_eq_mk_iff_of_degree_lt [Nontrivial R] {g : R[X]} (hg : g.Monic) {p q : 
 
 /-- **An `R`-linear endomorphism of `AdjoinRoot g` commuting with multiplication by the root is
 multiplication by its value at `1`.** It commutes with multiplication by every power of the root,
-and for a monic relator those powers are a basis (`AdjoinRoot.powerBasis'`). -/
-theorem eq_mulRight_of_root_mul {g : R[X]} (hg : g.Monic) {f : AdjoinRoot g →ₗ[R] AdjoinRoot g}
+and these powers span `AdjoinRoot g`. -/
+theorem eq_mulRight_of_root_mul {g : R[X]} {f : AdjoinRoot g →ₗ[R] AdjoinRoot g}
     (hf : ∀ x, f (root g * x) = root g * f x) :
     f = LinearMap.mulRight R (f 1) := by
   have hpow : ∀ i : ℕ, f (root g ^ i) = root g ^ i * f 1 := by
@@ -172,9 +199,13 @@ theorem eq_mulRight_of_root_mul {g : R[X]} (hg : g.Monic) {f : AdjoinRoot g →�
     | zero => simp
     | succ i ih =>
       rw [pow_succ' (root g) i, hf, ih, ← mul_assoc, ← pow_succ' (root g) i]
-  refine (powerBasis' hg).basis.ext fun i ↦ ?_
-  rw [PowerBasis.coe_basis]
-  simpa using hpow i
+  refine LinearMap.ext fun x ↦ ?_
+  obtain ⟨p, rfl⟩ := mk_surjective x
+  induction p using Polynomial.induction_on' with
+  | add p q hp hq => simp only [map_add, hp, hq, LinearMap.mulRight_apply]
+  | monomial n a =>
+    rw [← C_mul_X_pow_eq_monomial, map_mul, map_pow, mk_C, mk_X, ← algebraMap_eq,
+      ← Algebra.smul_def, map_smul, hpow n, LinearMap.mulRight_apply, smul_mul_assoc]
 
 /-- **The annihilator of `x ^ i` in `R[X]/(X ^ n)` is generated by `x ^ (n - i)`**, for `x` the
 class of `X`: `x ^ i * c = 0` exactly when `x ^ (n - i)` divides `c`. Thus `x ^ i` and

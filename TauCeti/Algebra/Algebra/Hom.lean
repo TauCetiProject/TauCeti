@@ -14,9 +14,11 @@ public import Mathlib.RingTheory.Ideal.Maps
 # Bridging lemmas between `AlgHom` and `RingHom`
 
 Two small families of identities relating the bundled homomorphism types, each of which several
-files would otherwise restate inline, together with the maximality of the kernel of an
-augmentation to the ground field, and the promotion of an algebra homomorphism between
-finite-dimensional algebras of equal finrank to an algebra equivalence.
+files would otherwise restate inline, together with a few further facts about algebra
+homomorphisms: their action on images of units of the base ring, the maximality of the kernel of
+an augmentation to the ground field, the promotion of an algebra homomorphism between
+finite-dimensional algebras of equal finrank to an algebra equivalence, and the ranges of
+composition maps on algebra homomorphisms.
 
 ## The structure map of the algebra induced by an algebra homomorphism
 
@@ -44,14 +46,14 @@ several do.
 * `RingHom.toIntAlgHom_id`, `RingHom.toIntAlgHom_comp`: `RingHom.toIntAlgHom` is functorial.
 * `RingHom.toIntAlgHom_toRingHom`, `AlgHom.toRingHom_toIntAlgHom`: it is inverse to
   `AlgHom.toRingHom` in both directions.
-* `AlgHom.units_map_units_map_algebraMap`: an algebra homomorphism fixes the image of a unit of
-  the base ring.
-* `AlgHom.kernelIsMaximal`: the kernel of an augmentation `H →ₐ[k] k` to a field is a maximal
+* `AlgHom.units_map_units_map_algebraMap`: an algebra homomorphism sends the image of a unit of
+  the base ring to the image of the same unit.
+* `AlgHom.ker_isMaximal`: the kernel of an augmentation `H →ₐ[k] k` to a field is a maximal
   ideal, for any (not necessarily commutative) `k`-algebra `H`.
 * `AlgHom.algEquivOfFinrankEq`: an algebra homomorphism from a finite-dimensional division algebra
-  to a finite-dimensional algebra of the same finrank is an algebra equivalence. It is the
-  algebra analogue of Mathlib's `LinearMap.linearEquivOfInjective`, with injectivity supplied by
-  the division-ring source.
+  to an algebra of the same finrank is an algebra equivalence. It is the algebra analogue of
+  Mathlib's `LinearMap.linearEquivOfInjective`, with injectivity supplied by the division-ring
+  source.
 * `AlgHom.range_comp_left_of_injective`, `AlgHom.range_comp_left_eq_of_adjoin_eq_top` and
   `AlgHom.range_comp_right_of_surjective`: ranges of composition maps on algebra homomorphisms,
   characterized by lifting values and by vanishing on a kernel.
@@ -135,16 +137,16 @@ left inverse of `AlgHom.toRingHom`.
 
 Stated through the coercion, for the reason given above. -/
 @[simp]
-theorem AlgHom.toRingHom_toIntAlgHom (φ : R →ₐ[ℤ] S) : ((φ : R →+* S)).toIntAlgHom = φ :=
+theorem AlgHom.toRingHom_toIntAlgHom (φ : R →ₐ[ℤ] S) : (φ : R →+* S).toIntAlgHom = φ :=
   AlgHom.ext fun _ ↦ rfl
 
 end ToIntAlgHom
 
 /-! ### Images of units of the base ring -/
 
-/-- An `R`-algebra homomorphism fixes the image of a unit of `R`. It is stated through the ring
-homomorphism coercion, the form in which `Units.map` of an algebra homomorphism arises from
-constructions over ring homomorphisms. -/
+/-- An `R`-algebra homomorphism sends the image in `A` of a unit of `R` to its image in `B`. It
+is stated through the ring homomorphism coercion, the form in which `Units.map` of an algebra
+homomorphism arises from constructions over ring homomorphisms. -/
 theorem AlgHom.units_map_units_map_algebraMap {R A B : Type*} [CommSemiring R] [Semiring A]
     [Semiring B] [Algebra R A] [Algebra R B] (f : A →ₐ[R] B) (q : Rˣ) :
     Units.map ((f : A →+* B) : A →* B) (Units.map (algebraMap R A : R →* A) q) =
@@ -155,7 +157,7 @@ theorem AlgHom.units_map_units_map_algebraMap {R A B : Type*} [CommSemiring R] [
 
 /-- The kernel of an augmentation to a field is a maximal ideal, even when the algebra is
 not commutative. -/
-instance AlgHom.kernelIsMaximal {k H : Type*} [Field k] [Ring H] [Algebra k H]
+instance AlgHom.ker_isMaximal {k H : Type*} [Field k] [Ring H] [Algebra k H]
     (f : H →ₐ[k] k) : (RingHom.ker (f : H →+* k)).IsMaximal :=
   RingHom.ker_isMaximal_of_surjective (f : H →+* k)
     (fun r ↦ ⟨algebraMap k H r, f.commutes r⟩)
@@ -165,19 +167,22 @@ instance AlgHom.kernelIsMaximal {k H : Type*} [Field k] [Ring H] [Algebra k H]
 section FinrankEq
 
 variable {K L M : Type*} [Field K] [DivisionRing L] [Semiring M] [Algebra K L] [Algebra K M]
-  [FiniteDimensional K L] [Module.Finite K M]
+  [FiniteDimensional K L]
 
-/-- An algebra homomorphism from a finite-dimensional division algebra to a finite-dimensional
-algebra of the same finrank promotes to an algebra equivalence. This is the algebra analogue of
+/-- An algebra homomorphism from a finite-dimensional division algebra to an algebra of the same
+finrank promotes to an algebra equivalence. The equality of finranks forces the target to be
+finite-dimensional, so that is not assumed. This is the algebra analogue of
 Mathlib's `LinearMap.linearEquivOfInjective`. -/
 noncomputable def AlgHom.algEquivOfFinrankEq (f : L →ₐ[K] M)
     (hfin : Module.finrank K L = Module.finrank K M) : L ≃ₐ[K] M :=
   letI := Algebra.semiringToRing (A := M) K
   haveI : Nontrivial M := Module.nontrivial_of_finrank_pos (R := K) (hfin ▸ Module.finrank_pos)
+  haveI : Module.Finite K M := Module.finite_of_finrank_pos (hfin ▸ Module.finrank_pos)
   AlgEquiv.ofBijective f
     ⟨f.injective, (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hfin
       (f := f.toLinearMap)).mp f.injective⟩
 
+/-- The algebra equivalence `AlgHom.algEquivOfFinrankEq` acts as the homomorphism it promotes. -/
 @[simp]
 theorem AlgHom.algEquivOfFinrankEq_apply (f : L →ₐ[K] M)
     (hfin : Module.finrank K L = Module.finrank K M) (x : L) :
@@ -199,15 +204,10 @@ theorem AlgHom.range_comp_left_of_injective (ψ : R →ₐ[k] S) (hψ : Function
     Set.range (fun x : A →ₐ[k] R ↦ ψ.comp x) =
       {x | ∀ a, x a ∈ Set.range ψ} := by
   ext x
-  constructor
-  · rintro ⟨y, rfl⟩ a
-    exact ⟨y a, rfl⟩
-  · intro hx
-    let y := (AlgEquiv.ofInjective ψ hψ).symm.toAlgHom.comp (x.codRestrict ψ.range hx)
-    refine ⟨y, ?_⟩
-    ext a
-    exact congrArg Subtype.val ((AlgEquiv.ofInjective ψ hψ).apply_symm_apply
-      (⟨x a, hx a⟩ : ψ.range))
+  refine ⟨fun ⟨y, hy⟩ a ↦ ⟨y a, by simp [← hy]⟩, fun hx ↦ ?_⟩
+  refine ⟨(AlgEquiv.ofInjective ψ hψ).symm.toAlgHom.comp (x.codRestrict ψ.range hx),
+    AlgHom.ext fun a ↦ ?_⟩
+  exact congrArg Subtype.val ((AlgEquiv.ofInjective ψ hψ).apply_symm_apply ⟨x a, hx a⟩)
 
 /-- Lifting through an injective coefficient map can be tested on any algebra generating family. -/
 theorem AlgHom.range_comp_left_eq_of_adjoin_eq_top (ψ : R →ₐ[k] S)
@@ -217,12 +217,10 @@ theorem AlgHom.range_comp_left_eq_of_adjoin_eq_top (ψ : R →ₐ[k] S)
       {x | ∀ i, x (a i) ∈ Set.range ψ} := by
   rw [AlgHom.range_comp_left_of_injective ψ hψ]
   ext x
-  constructor
-  · exact fun hx i ↦ hx (a i)
-  · intro hx b
-    have hle : Algebra.adjoin k (Set.range a) ≤ ψ.range.comap x :=
-      Algebra.adjoin_le (by rintro _ ⟨i, rfl⟩; exact hx i)
-    exact hle (ha ▸ Algebra.mem_top)
+  refine ⟨fun hx i ↦ hx (a i), fun hx b ↦ ?_⟩
+  have hle : Algebra.adjoin k (Set.range a) ≤ ψ.range.comap x :=
+    Algebra.adjoin_le (Set.range_subset_iff.2 hx)
+  exact hle (ha ▸ Algebra.mem_top)
 
 end Ranges
 
@@ -233,11 +231,9 @@ theorem AlgHom.range_comp_right_of_surjective {k A B R : Type*}
     Set.range (fun x : A →ₐ[k] R ↦ x.comp φ) =
       {x | ∀ b ∈ RingHom.ker φ, x b = 0} := by
   ext x
-  constructor
-  · rintro ⟨y, rfl⟩ b hb
-    simp only [AlgHom.comp_apply, RingHom.mem_ker.mp hb, map_zero]
-  · intro hx
-    let g : {g : B →+* R // RingHom.ker φ ≤ RingHom.ker g} := ⟨x.toRingHom, hx⟩
+  refine ⟨fun ⟨y, hy⟩ b hb ↦ ?_, fun hx ↦ ?_⟩
+  · rw [← hy, AlgHom.comp_apply, RingHom.mem_ker.mp hb, map_zero]
+  · let g : {g : B →+* R // RingHom.ker φ ≤ RingHom.ker g} := ⟨x.toRingHom, hx⟩
     let y := φ.toRingHom.liftOfSurjective hφ g
     have hy (b : B) : y (φ b) = x b :=
       RingHom.liftOfSurjective_comp_apply φ.toRingHom hφ g b

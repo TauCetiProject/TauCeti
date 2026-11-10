@@ -65,18 +65,13 @@ theorem exists_hasWeakFDerivOn_update_of_finite_energy
   have hbound : ∀ z ∈ ball z₀ R \ {z₀},
       ‖fderiv ℝ u z‖ ≤ (1 + max M 0) * (1 + ‖fderiv ℝ u z 1‖ ^ 2) := by
     intro z hz
-    have hI : ‖fderiv ℝ u z I‖ ≤ max M 0 * ‖fderiv ℝ u z 1‖ := by
-      rw [hCR z hz]
-      exact ((J (u z)).le_opNorm _).trans (by
-        gcongr
-        exact (hM _ (huK hz)).trans (le_max_left _ _))
-    have hop : ‖fderiv ℝ u z‖ ≤ ‖fderiv ℝ u z 1‖ + ‖fderiv ℝ u z I‖ :=
-      (fderiv ℝ u z).opNorm_le_bound (by positivity)
-        (fderiv ℝ u z).norm_apply_le_norm_one_add_norm_I
+    have hop : ‖fderiv ℝ u z‖ ≤ (1 + max M 0) * ‖fderiv ℝ u z 1‖ :=
+      (fderiv ℝ u z).norm_le_of_apply_I_eq (hCR z hz) ((hM _ (huK hz)).trans (le_max_left _ _))
+        le_rfl
     have hs : ‖fderiv ℝ u z 1‖ ≤ 1 + ‖fderiv ℝ u z 1‖ ^ 2 := by
       nlinarith [sq_nonneg (‖fderiv ℝ u z 1‖ - 1)]
     calc
-      ‖fderiv ℝ u z‖ ≤ (1 + max M 0) * ‖fderiv ℝ u z 1‖ := by nlinarith
+      ‖fderiv ℝ u z‖ ≤ (1 + max M 0) * ‖fderiv ℝ u z 1‖ := hop
       _ ≤ _ := mul_le_mul_of_nonneg_left hs (by positivity)
   have hi : IntegrableOn (fderiv ℝ u) (ball z₀ R) := by
     have hmajor : IntegrableOn

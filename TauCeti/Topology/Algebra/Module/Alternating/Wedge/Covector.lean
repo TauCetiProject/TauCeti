@@ -38,7 +38,7 @@ open Module
 
 namespace ContinuousAlternatingMap
 
-variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [FiniteDimensional ℝ E]
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
   {l : ℕ}
 
 /-- **A wedge with a covector vanishes exactly on its kernel.** On a real vector space of

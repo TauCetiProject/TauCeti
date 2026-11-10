@@ -10,6 +10,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 
 import TauCeti.Analysis.Convolution.Basic
+import Mathlib.MeasureTheory.Function.Holder
 
 /-!
 # Smooth approximate identities in `Lᵖ`
@@ -145,6 +146,23 @@ theorem norm_normedBumpLp_le_one (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
   exact norm_normedBumpAverageL_le_one (F := Lp F p mu) phi mu (mu.translateLp p)
     (Measure.continuous_translateLp hp)
 
+/-- Convolution with a normalized smooth bump does not increase the `Lᵖ` seminorm,
+for `1 ≤ p < ∞`. -/
+theorem eLpNorm_normed_convolution_le [CompleteSpace F] (hp : p ≠ ∞)
+    (phi : ContDiffBump (0 : E)) {f : E → F} (hf : MemLp f p mu) :
+    eLpNorm (phi.normed mu ⋆[lsmul ℝ ℝ, mu] f) p mu ≤ eLpNorm f p mu := by
+  have h := (normedBumpLp (F := F) hp phi mu).le_of_opNorm_le
+    (norm_normedBumpLp_le_one hp phi) (hf.toLp f)
+  have hn : ‖normedBumpLp hp phi mu (hf.toLp f)‖ ≤ ‖hf.toLp f‖ := by simpa using h
+  calc eLpNorm (phi.normed mu ⋆[lsmul ℝ ℝ, mu] f) p mu =
+      ‖normedBumpLp hp phi mu (hf.toLp f)‖ₑ := by
+        rw [Lp.enorm_def]
+        exact eLpNorm_congr_ae (normedBumpLp_ae_eq_convolution hp phi hf).symm
+    _ ≤ ‖hf.toLp f‖ₑ := by simpa only [← ofReal_norm] using ENNReal.ofReal_le_ofReal hn
+    _ = eLpNorm f p mu := by
+        rw [Lp.enorm_def]
+        exact eLpNorm_congr_ae hf.coeFn_toLp
+
 /-- **Smooth approximate identity in `Lᵖ`.** Let `phi i` be normalized smooth bumps centred at
 zero. If their outer radii tend to zero, then averaging any `f ∈ Lᵖ` against these bumps converges
 to `f` in the `Lᵖ` norm.
@@ -160,6 +178,29 @@ theorem tendsto_normedBumpLp [CompleteSpace F] {I : Type*} {l : Filter I}
   simpa only [normedBumpLp, Measure.translateLp_zero] using
     tendsto_normedBumpAverageL (F := Lp F p mu) hphi mu (mu.translateLp p)
       (Measure.continuous_translateLp hp) f
+
+/-- Pairing an `Lᵖ` mollification with any fixed conjugate-`Lᵠ` scalar coefficient converges
+in the Banach codomain. The bump family and convergence filter are arbitrary. -/
+theorem tendsto_integral_smul_normed_convolution [CompleteSpace F] {q : ℝ≥0∞}
+    [Fact (1 ≤ q)] [p.HolderConjugate q] {I : Type*} {l : Filter I}
+    (hp : p ≠ ∞) {phi : I → ContDiffBump (0 : E)}
+    (hphi : Tendsto (fun i ↦ (phi i).rOut) l (nhds 0)) {a : E → ℝ} (ha : MemLp a q mu)
+    {f : E → F} (hf : MemLp f p mu) :
+    Tendsto (fun i ↦ ∫ x, a x • ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x ∂mu)
+      l (nhds (∫ x, a x • f x ∂mu)) := by
+  let L : Lp F p mu →L[ℝ] F := (lsmul ℝ ℝ).lpPairing mu q p (ha.toLp a)
+  have hpair (g : Lp F p mu) (G : E → F) (hg : g =ᵐ[mu] G) :
+      L g = ∫ x, a x • G x ∂mu := by
+    dsimp only [L]
+    rw [lpPairing_eq_integral]
+    apply integral_congr_ae
+    filter_upwards [ha.coeFn_toLp, hg] with x hx hG
+    simp only [lsmul_apply, hx, hG]
+  have hlim := L.continuous.tendsto (hf.toLp f) |>.comp (tendsto_normedBumpLp hp hphi (hf.toLp f))
+  have hpairphi (i : I) : L (normedBumpLp hp (phi i) mu (hf.toLp f)) =
+      ∫ x, a x • ((phi i).normed mu ⋆[lsmul ℝ ℝ, mu] f) x ∂mu :=
+    hpair _ _ (normedBumpLp_ae_eq_convolution hp (phi i) hf)
+  simpa only [Function.comp_def, hpairphi, hpair _ _ hf.coeFn_toLp] using hlim
 
 /-- **Mollification converges in `Lᵖ`.** For `f ∈ Lᵖ` with `1 ≤ p < ∞` and normalized smooth bumps
 `phi i` centred at zero whose outer radii tend to zero, the classical convolutions

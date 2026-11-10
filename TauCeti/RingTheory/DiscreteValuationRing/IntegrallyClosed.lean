@@ -101,8 +101,9 @@ a principal ideal ring: a field at the zero ideal, and a discrete valuation ring
 height one. -/
 theorem IsLocalization.AtPrime.isPrincipalIdealRing_of_height_le_one {A : Type*} [CommRing A]
     [IsDomain A] [IsNoetherianRing A] [IsIntegrallyClosed A] {P : Ideal A} [P.IsPrime]
-    (hP : P.height ≤ 1) (Aₚ : Type*) [CommRing Aₚ] [IsDomain Aₚ] [Algebra A Aₚ]
+    (hP : P.height ≤ 1) (Aₚ : Type*) [CommRing Aₚ] [Algebra A Aₚ]
     [IsLocalization.AtPrime Aₚ P] : IsPrincipalIdealRing Aₚ := by
+  have := IsLocalization.isDomain_of_le_nonZeroDivisors Aₚ P.primeCompl_le_nonZeroDivisors
   have := IsLocalization.AtPrime.isLocalRing Aₚ P
   have := IsLocalization.isNoetherianRing P.primeCompl Aₚ inferInstance
   have := isIntegrallyClosed_of_isLocalization Aₚ P.primeCompl P.primeCompl_le_nonZeroDivisors

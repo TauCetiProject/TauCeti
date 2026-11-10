@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Basic
+public import TauCeti.Algebra.Polynomial.AlgebraMap
+import Mathlib.Algebra.Polynomial.Div
 
 /-!
 # Intertwining linear maps
@@ -14,12 +16,15 @@ A linear map `T : E →ₗ[R] F` between topological modules, possibly discontin
 intertwined by continuous linear maps `Q` on `F` and `P` on `E` up to a continuous error when
 `Q ∘ T - T ∘ P` is continuous. This file shows that such intertwining pairs are closed under
 taking products. Exact intertwiners also intertwine the spectral operators `1 - a • u`
-and their powers.
+and their powers. Polynomial evaluation with zero constant coefficient commutes with extending
+an endomorphism along a continuous linear retract; no complement is needed.
 
 ## Main results
 
 * `LinearMap.continuous_comp_sub_comp_of_continuous_sub`: products of maps intertwining `T`
   up to continuous errors again intertwine `T` up to a continuous error.
+* `ContinuousLinearMap.aeval_comp_comp_of_retract`: polynomial evaluation with zero constant
+  coefficient commutes with extension along a retract.
 -/
 
 public section
@@ -85,3 +90,42 @@ theorem continuous_comp_sub_comp_of_continuous_sub (T : E →ₗ[R] F) (P : ℕ 
     exact h₁.add h₂
 
 end LinearMap
+
+namespace ContinuousLinearMap
+
+variable {R M N : Type*} [CommSemiring R]
+  [TopologicalSpace M] [AddCommGroup M] [Module R M] [IsTopologicalAddGroup M]
+  [ContinuousConstSMul R M]
+  [TopologicalSpace N] [AddCommGroup N] [Module R N] [IsTopologicalAddGroup N]
+  [ContinuousConstSMul R N]
+
+/-- Forgetting continuity commutes with polynomial evaluation. -/
+@[simp]
+theorem toLinearMap_aeval (u : M →L[R] M) (p : Polynomial R) :
+    (Polynomial.aeval u p).toLinearMap = Polynomial.aeval u.toLinearMap p := by
+  simpa only [Polynomial.map_id, toLinearMapRingHom_apply] using
+    Polynomial.map_aeval_eq_aeval_map (ψ := toLinearMapRingHom)
+      (φ := RingHom.id R) (by ext x; rfl) p u
+
+/-- Extending an endomorphism along a retract commutes with evaluating a polynomial whose
+constant coefficient is zero. The condition ensures that the polynomial also vanishes on the
+kernel of the retraction. -/
+theorem aeval_comp_comp_of_retract {i : M →L[R] N} {r : N →L[R] M}
+    (hri : r.comp i = .id R M) (u : M →L[R] M) {B : Polynomial R} (hB0 : B.coeff 0 = 0) :
+    Polynomial.aeval (i.comp (u.comp r)) B = i.comp ((Polynomial.aeval u B).comp r) := by
+  obtain ⟨Q, rfl⟩ := Polynomial.X_dvd_iff.2 hB0
+  have hr : u.toLinearMap ∘ₗ r.toLinearMap =
+      r.toLinearMap ∘ₗ (i.comp (u.comp r)).toLinearMap := by
+    apply LinearMap.ext
+    intro y
+    have h := DFunLike.congr_fun hri (u (r y))
+    simpa using h.symm
+  have hQ : (Polynomial.aeval u Q).comp r =
+      r.comp (Polynomial.aeval (i.comp (u.comp r)) Q) := by
+    apply ContinuousLinearMap.coe_injective
+    simpa only [toLinearMap_comp, toLinearMap_aeval] using
+      Polynomial.aeval_comp_eq_comp_aeval hr Q
+  simp only [map_mul, Polynomial.aeval_X, mul_def, comp_assoc]
+  rw [← hQ]
+
+end ContinuousLinearMap

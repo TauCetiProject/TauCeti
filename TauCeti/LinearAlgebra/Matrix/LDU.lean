@@ -376,10 +376,7 @@ theorem exists_blockLDU_iff (M : Matrix m m R) :
   · rintro ⟨L, D, U, hL, hD, hD', hU, hDdet, rfl⟩ i
     have hp : ∀ ⦃j k⦄, b k ≤ b j → b j ≤ b i → b k ≤ b i := fun _ _ h₁ h₂ => h₁.trans h₂
     rw [det_toSquareBlockProp_blockLDU hL hU hp]
-    -- `D` is block triangular for the split into the leading segment and its complement.
-    rw [twoBlockTriangular_det D (fun j => b j ≤ b i)
-      fun j hj k hk => hD (lt_of_le_of_lt hk (not_le.mp hj))] at hDdet
-    exact isUnit_of_mul_isUnit_left hDdet
+    exact hD.isUnit_det_toSquareBlockProp hDdet hp
 
 end CommRing
 

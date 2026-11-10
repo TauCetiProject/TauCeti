@@ -118,6 +118,14 @@ theorem cgf_id_map_cast_geometricMeasure (hp : p ≠ 0)
 theorem geometricMeasure_zero : geometricMeasure (0 : unitInterval) = Measure.dirac 0 := by
   simp [geometricMeasure]
 
+/-- At success probability one, the geometric law is concentrated at zero. -/
+@[simp]
+theorem geometricMeasure_one : geometricMeasure (1 : unitInterval) = Measure.dirac 0 := by
+  apply Measure.ext_of_singleton
+  intro n
+  rw [geometricMeasure_singleton (by norm_num), Measure.dirac_apply]
+  cases n <;> simp
+
 /-- The real cast of a geometric random variable is integrable, including at the totalized
 zero parameter. -/
 theorem integrable_cast_geometricMeasure :

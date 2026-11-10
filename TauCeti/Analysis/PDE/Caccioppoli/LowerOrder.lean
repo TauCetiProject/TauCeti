@@ -155,7 +155,7 @@ private theorem setIntegral_sq_mul_sub_inner_mul_posPartAbove_le (hlam : 0 < lam
   have hX : Integrable (fun x => ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2) (mu.restrict Omega) :=
     (W1p.integrable_norm_gradient_sq w).bdd_mul hψ2 hψ2M
   have hZ : Integrable (fun x => ψ x ^ 2 * W1p.value w x ^ 2) (mu.restrict Omega) :=
-    (W1p.integrable_value_sq w).bdd_mul hψ2 hψ2M
+    (Lp.memLp (W1p.value w)).integrable_sq.bdd_mul hψ2 hψ2M
   have hFw : Integrable (fun x => ψ x ^ 2 * F x * W1p.value w x) (mu.restrict Omega) :=
     ((hF.integrable_mul (Lp.memLp (W1p.value w))).bdd_mul hψ2 hψ2M).congr
       (Eventually.of_forall fun x => by simp only [Pi.mul_apply]; ring)
@@ -179,10 +179,10 @@ private theorem setIntegral_sq_mul_sub_inner_mul_posPartAbove_le (hlam : 0 < lam
     · have hxmem : x ∈ {y : EuclideanSpace ℝ ι | k < W1p.value u y} := hxu
       rw [hwg, Set.indicator_of_mem hxmem]
     · rw [hwv, max_eq_right (sub_nonpos.mpr (le_of_not_gt hxu)), mul_zero, mul_zero]
-  have hyoung := two_mul_real_inner_le_add_mul_norm_sq (-(ψ x * W1p.value w x) • b x)
+  have hyoung := two_mul_re_inner_le_add_mul_norm_sq (𝕜 := ℝ) (-(ψ x * W1p.value w x) • b x)
     (ψ x • W1p.gradient w x) (by positivity : (0 : ℝ) < 2 / lam)
-  simp only [real_inner_smul_left, real_inner_smul_right, norm_smul, mul_pow, Real.norm_eq_abs,
-    sq_abs, inv_div] at hyoung
+  simp only [RCLike.re_to_real, real_inner_smul_left, real_inner_smul_right, norm_smul, mul_pow,
+    Real.norm_eq_abs, sq_abs, inv_div] at hyoung
   have hb2 : (ψ x * W1p.value w x) ^ 2 * ‖b x‖ ^ 2 ≤ (ψ x * W1p.value w x) ^ 2 * beta ^ 2 :=
     mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (norm_nonneg _) (hb_bound x hx) 2)
       (sq_nonneg _)

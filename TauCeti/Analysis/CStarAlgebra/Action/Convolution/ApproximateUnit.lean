@@ -110,7 +110,7 @@ private theorem norm_sub_le_of_forall_mem_tsupport [OpensMeasurableSpace G]
       (hae.mono fun r hr hrU => hr.trans (image_eq_zero_of_notMem_tsupport hrU))
       ((((map_continuous φ).smul (hX s)).integrable_of_hasCompactSupport
         φ.hasCompactSupport.smul_right).aestronglyMeasurable.congr
-          (hae.mono fun r hr => by simp only [hr, Pi.smul_apply'])) (hε s)
+          (hae.mono fun r hr => by simp only [hr, Pi.smul_apply'])) (ae_of_all _ (hε s))
     rwa [hint, hnorm, mul_one, ← hu] at h
   -- Outside `C` the difference vanishes, and on `C` it is at most `ε`.
   rw [norm_eq_integral_norm, ← setIntegral_eq_integral_of_forall_compl_eq_zero (s := C)

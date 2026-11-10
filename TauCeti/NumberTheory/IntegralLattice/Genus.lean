@@ -199,8 +199,10 @@ theorem determinant_eq (h : L.SameGenus M) : L.determinant = M.determinant := by
     discriminant_def, habs]
 
 /-- Lattices in one genus have discriminant groups of the same order. -/
-theorem natCard_discriminantGroup_eq [L.IsNondegenerate] [M.IsNondegenerate]
-    (h : L.SameGenus M) : Nat.card L.DiscriminantGroup = Nat.card M.DiscriminantGroup := by
+theorem natCard_discriminantGroup_eq [L.IsNondegenerate] (h : L.SameGenus M) :
+    Nat.card L.DiscriminantGroup = Nat.card M.DiscriminantGroup := by
+  have : M.IsNondegenerate := ⟨M.determinant_ne_zero_iff.mp
+    (h.determinant_eq ▸ L.determinant_ne_zero_iff.mpr L.form_nondegenerate)⟩
   rw [natCard_discriminantGroup, natCard_discriminantGroup, discriminant_def, discriminant_def,
     h.determinant_eq]
 

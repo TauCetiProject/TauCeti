@@ -112,7 +112,7 @@ variable {K : Type*} [Field K] [Algebra R K] [IsFractionRing R K] {x y : K}
 
 section UniqueFactorization
 
-variable [IsDomain R] [UniqueFactorizationMonoid R]
+variable [UniqueFactorizationMonoid R]
 
 /-- **The rational-root integrality step.** If the `x`-coordinate of a point of `W` is a root of
 `f ∈ R[X]` and `f.leadingCoeff` is squarefree, then `x` is integral.
@@ -122,8 +122,9 @@ The rational root theorem gives `den x ∣ f.leadingCoeff`; powerfulness of the 
 which squarefreeness forbids. -/
 theorem _root_.WeierstrassCurve.isInteger_x_of_equation_of_is_root_of_squarefree_leadingCoeff
     (h : (W.baseChange K).toAffine.Equation x y) {f : R[X]} (hroot : aeval x f = 0)
-    (hsf : Squarefree f.leadingCoeff) : IsLocalization.IsInteger R x :=
-  isInteger_of_isUnit_den <|
+    (hsf : Squarefree f.leadingCoeff) : IsLocalization.IsInteger R x := by
+  have := IsDomain.of_faithfulSMul R K
+  exact isInteger_of_isUnit_den <|
     WeierstrassCurve.isUnit_den_of_dvd_squarefree W h hsf (den_dvd_of_is_root hroot)
 
 end UniqueFactorization

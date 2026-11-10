@@ -178,7 +178,7 @@ theorem quaternionClass_comm (a b : Kˣ) : quaternionClass a b = quaternionClass
 theorem quaternionClass_mul_sq_right (a b c : Kˣ) :
     quaternionClass a (b * c ^ 2) = quaternionClass a b := by
   rw [mul_comm b (c ^ 2)]
-  exact quaternionClass_eq_of_algEquiv (QuaternionAlgebra.rescaleJEquiv (a : K) (b : K) c)
+  exact quaternionClass_eq_of_algEquiv (QuaternionAlgebra.rescaleJEquiv (a : K) 0 (b : K) c)
 
 /-- The quaternion symbol is invariant under multiplying its first argument by a square. -/
 theorem quaternionClass_mul_sq_left (a b c : Kˣ) :
@@ -388,7 +388,7 @@ makes the Hasse invariant well defined on isometry classes. -/
 theorem quaternionClass_congr {a b c d : Kˣ}
     (h : (weightedSumSquares K ![(a : K), b]).Equivalent (weightedSumSquares K ![(c : K), d])) :
     quaternionClass a b = quaternionClass c d :=
-  let ⟨e⟩ := QuaternionAlgebra.nonempty_algEquiv_of_equivalent_binary (a : K) b c d h
+  let ⟨e⟩ := QuaternionAlgebra.nonempty_algEquiv_of_equivalent_binary h
   quaternionClass_eq_of_algEquiv e
 
 end BrauerGroup

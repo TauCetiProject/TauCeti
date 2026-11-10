@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.IsManifold.Basic
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.LinearAlgebra.Dimension.Submodule
 

@@ -103,14 +103,14 @@ theorem isSemialgebraic_iff_exists_isQF {s : Set (σ → R)} :
       (fun s _ ⟨φ, hφ, hs⟩ => ⟨φ.not, hφ.not, by ext; simp [hs]⟩)
       (fun s t _ _ ⟨φ, hφ, hs⟩ ⟨ψ, hψ, ht⟩ => ⟨φ ⊔ ψ, hφ.sup hψ, by ext; simp [hs, ht]⟩) hs
     · -- The zero set of `p` is defined by the equation `p = 0`.
-      obtain ⟨t, ht⟩ := p.exists_term_realize_eq_eval
-      obtain ⟨z, hz⟩ := (0 : MvPolynomial σ R).exists_term_realize_eq_eval
+      obtain ⟨t, ht⟩ := p.exists_term_realize_eq_eval (L := Language.order)
+      obtain ⟨z, hz⟩ := (0 : MvPolynomial σ R).exists_term_realize_eq_eval (L := Language.order)
       refine ⟨t.equal z, (BoundedFormula.IsAtomic.equal _ _).isQF, ?_⟩
       ext v
       simp [ht, hz]
     · -- The positivity set of `p` is defined by `¬ p ≤ 0`.
-      obtain ⟨t, ht⟩ := p.exists_term_realize_eq_eval
-      obtain ⟨z, hz⟩ := (0 : MvPolynomial σ R).exists_term_realize_eq_eval
+      obtain ⟨t, ht⟩ := p.exists_term_realize_eq_eval (L := Language.order)
+      obtain ⟨z, hz⟩ := (0 : MvPolynomial σ R).exists_term_realize_eq_eval (L := Language.order)
       refine ⟨(leSymb.formula₂ t z).not, (BoundedFormula.IsAtomic.rel _ _).isQF.not, ?_⟩
       ext v
       simp [ht, hz]
