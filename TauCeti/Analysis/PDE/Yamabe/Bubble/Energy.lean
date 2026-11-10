@@ -154,7 +154,12 @@ theorem conformalCoefficient_mul_integral_norm_fderiv_bubble_sq {t : ℝ}
       simp [h, Subsingleton.elim (fderiv ℝ (bubble t b) _) 0]
     · simp [h, conformalCoefficient_def]
     · have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)
-      simp [h, conformalCoefficient_def, criticalExponent_def, measureReal_def]
+      -- The critical exponent is `0`, so the right side is the integral of `1`, over a space of
+      -- infinite Haar measure, and the coefficient `aₙ` on the left is `0`.
+      have hcrit : criticalExponent (finrank ℝ E) = 0 := by simp [h, criticalExponent_def]
+      have hcoef : conformalCoefficient (finrank ℝ E) = 0 := by simp [h, conformalCoefficient_def]
+      simp only [hcrit, hcoef, Real.rpow_zero, integral_const, measureReal_def,
+        measure_univ_of_isAddLeftInvariant μ, ENNReal.toReal_top, smul_eq_mul, mul_zero, zero_mul]
   -- Translate `b` to the origin, pass to polar coordinates, and compare the two radial integrals
   -- with `sub_two_mul_integral_radial`.
   have : Nontrivial E := Module.nontrivial_of_finrank_pos (R := ℝ) (by omega)

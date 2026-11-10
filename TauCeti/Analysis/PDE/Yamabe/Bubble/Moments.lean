@@ -145,6 +145,21 @@ theorem integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent
     beta (((finrank ℝ E : ℝ) + p) / 2) (((finrank ℝ E : ℝ) - p) / 2)) / 2) *
       (hscale + htwo_pow)
 
+/-- A positive power of the distance to a point is not integrable for an additive Haar measure on a
+nontrivial space, because the whole space has infinite Haar measure. -/
+theorem not_integrable_norm_sub_rpow [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure]
+    {p : ℝ} (hp : 0 < p) (b : E) : ¬ Integrable (fun x ↦ ‖x - b‖ ^ p) μ := fun hint ↦ by
+  have hfin := hint.measure_norm_ge_lt_top one_pos
+  have hsub : (ball b 1)ᶜ ⊆ {x | 1 ≤ ‖‖x - b‖ ^ p‖} := fun x hx ↦ by
+    simp only [mem_compl_iff, mem_ball, dist_eq_norm, not_lt] at hx
+    simpa [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) p)] using
+      Real.one_le_rpow hx hp.le
+  have hlt : μ univ < ⊤ := by
+    calc μ univ ≤ μ (ball b 1) + μ (ball b 1)ᶜ := by
+          simpa using measure_union_le (μ := μ) (ball b 1) (ball b 1)ᶜ
+      _ < ⊤ := ENNReal.add_lt_top.2 ⟨measure_ball_lt_top, (measure_mono hsub).trans_lt hfin⟩
+  exact hlt.ne (measure_univ_of_isAddLeftInvariant μ)
+
 /-- Every positive critical-mass moment of order less than the dimension tends to zero as the
 bubble scale tends to zero from above, for any additive Haar measure. In dimension `2` the
 critical exponent is `0` by the convention for division by zero, and the moment is the integral of
@@ -161,16 +176,7 @@ theorem tendsto_integral_norm_sub_rpow_mul_bubble_rpow_criticalExponent
         ∫ x, ‖x - b‖ ^ p * bubble t b x ^ criticalExponent (finrank ℝ E) ∂μ = 0 := by
       refine integral_undef fun hint ↦ ?_
       simp only [hcrit, Real.rpow_zero, mul_one] at hint
-      have hfin := hint.measure_norm_ge_lt_top one_pos
-      have hsub : (ball b 1)ᶜ ⊆ {x | 1 ≤ ‖‖x - b‖ ^ p‖} := fun x hx ↦ by
-        simp only [mem_compl_iff, mem_ball, dist_eq_norm, not_lt] at hx
-        simpa [Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg _) p)] using
-          Real.one_le_rpow hx hp.le
-      have hlt : μ univ < ⊤ := by
-        calc μ univ ≤ μ (ball b 1) + μ (ball b 1)ᶜ := by
-              simpa using measure_union_le (μ := μ) (ball b 1) (ball b 1)ᶜ
-          _ < ⊤ := ENNReal.add_lt_top.2 ⟨measure_ball_lt_top, (measure_mono hsub).trans_lt hfin⟩
-      exact hlt.ne (measure_univ_of_isAddLeftInvariant μ)
+      exact not_integrable_norm_sub_rpow μ hp b hint
     simpa only [hzero] using tendsto_const_nhds
   have ht : Tendsto (fun t : ℝ ↦ t ^ p) (𝓝[>] 0) (𝓝 0) := by
     simpa only [Real.zero_rpow hp.ne'] using
