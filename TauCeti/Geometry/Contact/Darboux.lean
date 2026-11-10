@@ -287,7 +287,8 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_
     exact (hx t ht).2.1.continuousAt.continuousWithinAt
   have h := eq_exp_integral_smul_of_hasDerivWithinAt (E := V [⋀^Fin 1]→L[ℝ] ℝ)
     (f := fun s ↦ ((1 - s) • α₀ (ψ s x) + s • α₁ (ψ s x)).compContinuousLinearMap
-      (fderiv ℝ (ψ s) x)) zero_le_one hcont fun t ht ↦ (hP t ht).hasDerivWithinAt
+      (fderiv ℝ (ψ s) x)) ordConnected_Icc (left_mem_Icc.2 zero_le_one)
+    (right_mem_Icc.2 zero_le_one) hcont fun t ht ↦ (hP t ht).hasDerivWithinAt
   simp only [hψ0, fderiv_id, sub_zero, one_smul, zero_smul, add_zero, zero_add, sub_self,
     id_eq] at h
   refine h.trans (congrArg _ ?_)

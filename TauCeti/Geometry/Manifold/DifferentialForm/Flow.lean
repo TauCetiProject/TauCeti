@@ -8,9 +8,9 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.LieDeriv
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Basic
 public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
-import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.DifferentialForm.Flow
 import TauCeti.Analysis.Calculus.ParametricFDeriv
+import TauCeti.Analysis.ODE.Gronwall
 import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
@@ -287,44 +287,27 @@ theorem mpullback_flowOf_apply_eq_exp_integral_smul {g : M → ℝ} (hg : Contin
     (hL : mlieDerivForm Z α = fun y ↦ g y • α y) {t : ℝ} {x : M} (hx : (t, x) ∈ flowDomain Z) :
     mpullback I I (flowOf Z t) α x = Real.exp (∫ s in 0..t, g (flowOf Z s x)) • α x := by
   have hZ1 := hZ.of_le one_le_two
-  -- The times at which the flow through `x` is defined form an open interval `J` containing `0`.
+  -- The times at which the flow through `x` is defined form an interval `J` containing `0`.
   set J : Set ℝ := {s | (s, x) ∈ flowDomain Z}
   have hJ : J = maximalIntegralCurveInterval Z x := by
     ext s
     exact mem_flowDomain
-  have hJo : IsOpen J := hJ ▸ isOpen_maximalIntegralCurveInterval
   have hJc : J.OrdConnected := hJ ▸ ordConnected_maximalIntegralCurveInterval
   have hJ0 : (0 : ℝ) ∈ J := mem_flowDomain_zero hZ1 x
-  -- The pullbacks at `x`, as alternating maps on the model space, and the integrated rate.
+  -- The pullbacks at `x`, as alternating maps on the model space, solve `P' = g(φₛ x) P` on `J`.
   set P : ℝ → E [⋀^Fin k]→L[ℝ] F := fun s ↦ mpullback I I (flowOf Z s) α x
-  set G : ℝ → ℝ := fun s ↦ ∫ τ in 0..s, g (flowOf Z τ x)
   have hcont : ContinuousOn (fun s ↦ g (flowOf Z s x)) J :=
     hg.comp_continuousOn (isMIntegralCurveOn_flowOf hZ1 x).continuousOn
-  have hG (s : ℝ) (hs : s ∈ J) : HasDerivAt G (g (flowOf Z s x)) s :=
-    intervalIntegral.integral_hasDerivAt_right
-      ((hcont.mono (hJc.uIcc_subset hJ0 hs)).intervalIntegrable)
-      (hcont.stronglyMeasurableAtFilter hJo s hs) (hcont.continuousAt (hJo.mem_nhds hs))
   have hP (s : ℝ) (hs : s ∈ J) : HasDerivAt P (g (flowOf Z s x) • P s) s := by
     have h := hasDerivAt_mpullback_flowOf hZ hs (hα _)
     rwa [hL, mpullback_fun_smul] at h
-  -- `s ↦ e^{-G s} P s` has zero derivative on the interval `J`, so it is constant there.
-  have hderiv (s : ℝ) (hs : s ∈ J) : HasDerivAt (fun s ↦ Real.exp (-G s) • P s) 0 s := by
-    refine ((hG s hs).neg.exp.smul (hP s hs)).congr_deriv ?_
-    module
-  have hconst := hJo.is_const_of_deriv_eq_zero hJc.isPreconnected
-    (fun s hs ↦ (hderiv s hs).differentiableAt.differentiableWithinAt)
-    (fun s hs ↦ (hderiv s hs).deriv) hx hJ0
-  have hG0 : G 0 = 0 := intervalIntegral.integral_same
   have hP0 : P 0 = α x := by
     have h : mpullback I I (flowOf Z 0) α = α := by
       rw [show flowOf Z 0 = id from funext (flowOf_zero hZ1), mpullback_id]
     exact congrFun h x
-  rw [hG0, neg_zero, Real.exp_zero, one_smul, hP0] at hconst
-  have hPt : P t = Real.exp (G t) • (Real.exp (-G t) • P t) := by
-    rw [smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
-  rw [hconst] at hPt
-  -- The value at `x` of the pulled-back form is `P t`.
-  exact hPt
+  rw [← hP0]
+  exact eq_exp_integral_smul_of_hasDerivWithinAt (E := E [⋀^Fin k]→L[ℝ] F) (f := P) hJc hJ0 hx
+    hcont fun s hs ↦ (hP s hs).hasDerivWithinAt
 
 end MaximalFlow
 
