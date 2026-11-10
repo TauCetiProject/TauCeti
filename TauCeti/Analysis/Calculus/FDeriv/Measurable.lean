@@ -22,11 +22,16 @@ second-countability assumption.
 An arbitrary function is continuous on its regular set `{x | fderiv 𝕜 f x ≠ 0}`, which is
 measurable, so the regular part of the preimage of a measurable set is measurable.
 
+On a finite-dimensional space the determinant is continuous on operators, so the Jacobian
+determinant `x ↦ det (fderiv 𝕜 f x)` of an arbitrary self-map is measurable.
+
 ## Main results
 
 * `TauCeti.measurable_fderiv_apply`: the map `(x, y) ↦ fderiv 𝕜 f x y` is measurable.
 * `TauCeti.measurableSet_preimage_inter_setOf_fderiv_ne_zero`: the regular part
   `f⁻¹(I) ∩ {Df ≠ 0}` of the preimage of a measurable set is measurable.
+* `TauCeti.measurable_det_fderiv`: the Jacobian determinant `x ↦ det (fderiv 𝕜 f x)` is
+  measurable.
 -/
 
 public section
@@ -67,5 +72,16 @@ theorem measurableSet_preimage_inter_setOf_fderiv_ne_zero {f : E → F} {I : Set
   simp only [Set.mem_inter_iff, Set.mem_preimage, and_congr_left_iff]
   intro hx
   rw [Set.piecewise_eq_of_mem _ _ _ hx]
+
+variable (𝕜) in
+omit [SecondCountableTopologyEither (E →L[𝕜] F) E] in
+/-- The Jacobian determinant `x ↦ det (fderiv 𝕜 f x)` of an arbitrary self-map of a
+finite-dimensional space is measurable. No differentiability is assumed. -/
+@[fun_prop]
+theorem measurable_det_fderiv [CompleteSpace 𝕜] [MeasurableSpace 𝕜] [BorelSpace 𝕜]
+    [FiniteDimensional 𝕜 E] (f : E → E) : Measurable fun x ↦ (fderiv 𝕜 f x).det := by
+  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  borelize (E →L[𝕜] E)
+  exact ContinuousLinearMap.continuous_det.measurable.comp (measurable_fderiv 𝕜 f)
 
 end TauCeti

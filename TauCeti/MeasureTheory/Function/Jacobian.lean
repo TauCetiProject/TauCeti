@@ -25,6 +25,8 @@ Fréchet derivative `fderiv ℝ f` as Jacobian and `μ` on `t` in place of `μ` 
 Such a pushforward bound `μ.map f ≤ C • ν` gives the `eLpNorm` estimate for precomposition with
 `f` (`MeasureTheory.eLpNorm_comp_le_of_map_le_smul`). For a change of variables no upper bound on
 the Jacobian is needed, but a Jacobian that may vanish gives no such bound.
+In particular precomposition with such an `f` carries `Lᵖ` on `t` to `Lᵖ` on `s`
+(`MeasureTheory.MemLp.comp_of_differentiableOn`).
 
 A continuous affine map `T` carrying a measurable set `s` of finite measure onto itself preserves
 integrals over `s`. When `s` is not null, the linear part of `T` has determinant `±1`, because the
@@ -39,6 +41,8 @@ a permutation of the vertices of a simplex, acts on integrals over it.
   `c⁻¹ μ` on `f '' s`.
 * `MeasureTheory.map_restrict_le_smul_restrict_of_differentiableOn`: the same for `f`
   differentiable on an open set `s` and mapping it into `t`, with `μ` on `t` as the target.
+* `MeasureTheory.MemLp.comp_of_differentiableOn`: precomposition with such a map carries
+  `Lᵖ(t)` to `Lᵖ(s)`.
 * `ContinuousAffineMap.setIntegral_comp_of_image_eq`: integrals over `s` are invariant under a
   continuous affine map carrying `s` onto itself, when `s` has finite measure.
 -/
@@ -84,6 +88,18 @@ theorem map_restrict_le_smul_restrict_of_differentiableOn (hs : IsOpen s)
   (map_restrict_le_smul_restrict_image μ hs.measurableSet.nullMeasurableSet (fun x hx =>
     ((hf x hx).differentiableAt (hs.mem_nhds hx)).hasFDerivAt.hasFDerivWithinAt) hinj hc
       hdet).trans (by gcongr; exact hmaps.image_subset)
+
+variable {μ} in
+/-- **Precomposition with a change of variables preserves `Lᵖ`.** If `f` is injective and
+differentiable on an open set `s`, maps `s` into `t`, and `c ≤ |det (fderiv ℝ f x)|` on `s` with
+`c > 0`, then `g ∈ Lᵖ(t)` gives `g ∘ f ∈ Lᵖ(s)`. -/
+theorem MemLp.comp_of_differentiableOn {F : Type*} [NormedAddCommGroup F] {p : ℝ≥0∞} {g : E → F}
+    (hg : MemLp g p (μ.restrict t)) (hs : IsOpen s) (hf : DifferentiableOn ℝ f s)
+    (hinj : InjOn f s) (hmaps : MapsTo f s t) (hc : 0 < c)
+    (hdet : ∀ x ∈ s, c ≤ |(fderiv ℝ f x).det|) : MemLp (g ∘ f) p (μ.restrict s) :=
+  (hg.of_measure_le_smul (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc).ne')
+    (map_restrict_le_smul_restrict_of_differentiableOn μ hs hf hinj hmaps hc hdet)).comp_of_map
+      (hf.continuousOn.aemeasurable hs.measurableSet)
 
 end MeasureTheory
 

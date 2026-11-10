@@ -11,8 +11,10 @@ public import Mathlib.Analysis.CStarAlgebra.Matrix
 
 import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Calculus.FDeriv.EuclideanMatrix
+import TauCeti.Analysis.Calculus.FDeriv.Measurable
 import TauCeti.Analysis.InnerProductSpace.Adjoint
 import TauCeti.Analysis.Matrix.EuclideanLin
+import TauCeti.Analysis.Matrix.MeasurableSpace
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -38,8 +40,8 @@ with the pulled-back coefficients
 The zeroth-order coefficient and the right-hand side transform as densities, because the
 volume element changes by the factor `J`. The transformed principal coefficient is again
 uniformly elliptic and bounded when `DΦ` and its inverse are bounded and `J` is bounded below
-(`TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipal`). If moreover `Φ` has an inverse change of
-variables, the transformed drift, zeroth-order coefficient and right-hand side stay in `Lᵖ`
+(`TauCeti.PDE.UniformlyEllipticOn.pullbackPrincipal`). Under the same bounds on `DΦ`, the
+transformed drift, zeroth-order coefficient and right-hand side stay in `Lᵖ`
 (`TauCeti.PDE.memLp_pullbackDrift`, `TauCeti.PDE.memLp_pullbackDensity`); with `p = ∞`, bounded
 lower-order coefficients stay bounded.
 
@@ -427,26 +429,6 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   [mu.IsAddHaarMeasure] {U V : Opens (EuclideanSpace ℝ ι)}
   {Φ Ψ : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {L L' c₀ : ℝ}
 
-/-- Composition with `f` carries `Lᵖ(t)` to `Lᵖ(s)` when `f` maps the open set `s` injectively
-into `t` with `c ≤ |det Df|` on `s` for some `c > 0`. -/
-private theorem memLp_comp_of_differentiableOn {E F : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
-    [NormedAddCommGroup F] {μ : Measure E} [μ.IsAddHaarMeasure] {s t : Set E} {f : E → E}
-    {c : ℝ} {p : ENNReal} {g : E → F} (hs : IsOpen s) (hf : DifferentiableOn ℝ f s)
-    (hinj : InjOn f s) (hmaps : MapsTo f s t) (hc : 0 < c)
-    (hdet : ∀ x ∈ s, c ≤ |(fderiv ℝ f x).det|) (hg : MemLp g p (μ.restrict t)) :
-    MemLp (g ∘ f) p (μ.restrict s) :=
-  (hg.of_measure_le_smul (ENNReal.inv_ne_top.2 (ENNReal.ofReal_pos.2 hc).ne')
-    (map_restrict_le_smul_restrict_of_differentiableOn μ hs hf hinj hmaps hc hdet)).comp_of_map
-      (hf.continuousOn.aemeasurable hs.measurableSet)
-
-/-- The Jacobian `|det Df|` is measurable. -/
-private theorem measurable_abs_det_fderiv {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] (f : E → E) :
-    Measurable fun x => |(fderiv ℝ f x).det| :=
-  continuous_abs.measurable.comp
-    (ContinuousLinearMap.continuous_det.measurable.comp (measurable_fderiv ℝ f))
-
 /-- If `Φ` maps `U` into `V` with an inverse `Ψ` differentiable on `V`, the transformed drift at
 `x ∈ U` is `|det DΦ(x)| DΨ(Φ x) b(Φ x)`. -/
 theorem pullbackDrift_eq_of_invOn (hΦ : DifferentiableOn ℝ Φ U) (hmaps : MapsTo Φ U V)
@@ -462,21 +444,23 @@ theorem pullbackDrift_eq_of_invOn (hΦ : DifferentiableOn ℝ Φ U) (hmaps : Map
   rw [hΨΦ hx] at h
   rw [pullbackDrift_apply, h]
 
-/-- **The transformed drift is bounded pointwise.** If `Φ` maps `U` into `V` with an inverse `Ψ`
-differentiable on `V`, `‖DΦ(x)‖ ≤ L` and `‖DΨ(Φ x)‖ ≤ L'`, then
-`‖b'(x)‖ ≤ Lⁿ L' ‖b(Φ x)‖`, where `n` is the dimension. -/
-theorem norm_pullbackDrift_le (hΦ : DifferentiableOn ℝ Φ U) (hmaps : MapsTo Φ U V)
-    (hΨ : DifferentiableOn ℝ Ψ V) (hΦΨ : RightInvOn Ψ Φ V) (hΨΦ : LeftInvOn Ψ Φ U)
-    (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) {x : EuclideanSpace ℝ ι}
-    (hx : x ∈ (U : Set (EuclideanSpace ℝ ι))) (hL : ‖fderiv ℝ Φ x‖ ≤ L)
-    (hL' : ‖fderiv ℝ Ψ (Φ x)‖ ≤ L') :
+/-- **The transformed drift is bounded pointwise.** If `‖DΦ(x)‖ ≤ L` and `‖v‖ ≤ L' ‖DΦ(x) v‖` for
+every `v`, then `‖b'(x)‖ ≤ Lⁿ L' ‖b(Φ x)‖`, where `n` is the dimension. -/
+theorem norm_pullbackDrift_le (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι)
+    {x : EuclideanSpace ℝ ι} (hL : ‖fderiv ℝ Φ x‖ ≤ L)
+    (hL' : ∀ v, ‖v‖ ≤ L' * ‖fderiv ℝ Φ x v‖) :
     ‖pullbackDrift Φ b x‖ ≤ L ^ Fintype.card ι * L' * ‖b (Φ x)‖ := by
+  -- The lower bound makes `DΦ(x)` injective, hence invertible.
+  have hinj : Function.Injective (fderiv ℝ Φ x) := (injective_iff_map_eq_zero _).2 fun v hv =>
+    norm_le_zero_iff.1 (by simpa [hv] using hL' v)
+  have hdet0 : (fderiv ℝ Φ x).det ≠ 0 := ((LinearMap.isUnit_iff_isUnit_det _).1
+    ((Module.End.isUnit_iff _).2 ⟨hinj, LinearMap.surjective_of_injective hinj⟩)).ne_zero
   have hdet := abs_det_le_pow_card hL
-  rw [pullbackDrift_eq_of_invOn hΦ hmaps hΨ hΦΨ hΨΦ b hx, norm_smul, Real.norm_eq_abs, abs_abs,
-    mul_assoc]
-  exact mul_le_mul hdet (((fderiv ℝ Ψ (Φ x)).le_opNorm _).trans
-      (mul_le_mul_of_nonneg_right hL' (norm_nonneg _)))
-    (norm_nonneg _) ((abs_nonneg _).trans hdet)
+  have hw := hL' (toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹
+    (b (Φ x)))
+  rw [fderiv_apply_toEuclideanCLM_inv_apply hdet0] at hw
+  rw [pullbackDrift_apply, norm_smul, Real.norm_eq_abs, abs_abs, mul_assoc]
+  exact mul_le_mul hdet hw (norm_nonneg _) ((abs_nonneg _).trans hdet)
 
 omit [DecidableEq ι] in
 /-- **Transformed densities stay in `Lᵖ`.** Let `Φ` map `U` injectively into `V`, with
@@ -488,38 +472,38 @@ theorem memLp_pullbackDensity (hΦ : DifferentiableOn ℝ Φ U) (hinj : InjOn Φ
     (hc₀ : 0 < c₀) (hdet : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), c₀ ≤ |(fderiv ℝ Φ x).det|)
     {p : ENNReal} {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f p (mu.restrict V)) :
     MemLp (pullbackDensity Φ f) p (mu.restrict U) := by
-  have hfΦ := memLp_comp_of_differentiableOn U.isOpen hΦ hinj hmaps hc₀ hdet hf
+  have hfΦ := hf.comp_of_differentiableOn U.isOpen hΦ hinj hmaps hc₀ hdet
   refine hfΦ.of_le_mul (c := L ^ Fintype.card ι)
-    ((measurable_abs_det_fderiv Φ).aestronglyMeasurable.mul hfΦ.aestronglyMeasurable) ?_
+    ((continuous_abs.measurable.comp (measurable_det_fderiv ℝ Φ)).aestronglyMeasurable.mul
+      hfΦ.aestronglyMeasurable) ?_
   filter_upwards [ae_restrict_mem U.isOpen.measurableSet] with x hx
   rw [pullbackDensity_apply, norm_mul, Real.norm_eq_abs, abs_abs, Function.comp_apply]
   exact mul_le_mul_of_nonneg_right (abs_det_le_pow_card (hL x hx)) (norm_nonneg _)
 
-/-- **The transformed drift stays in `Lᵖ`.** Let `Φ` map `U` into `V`, with `‖DΦ‖ ≤ L` and
-`c₀ ≤ |det DΦ|` on `U` for some `c₀ > 0`, and let `Ψ` be an inverse of `Φ`, differentiable on
-`V` with `‖DΨ‖ ≤ L'` there. If `b ∈ Lᵖ(V)`, then the transformed drift
-`b' = |det DΦ| DΦ⁻¹ (b ∘ Φ) ∈ Lᵖ(U)`. With `p = ∞`, a bounded drift stays bounded. -/
-theorem memLp_pullbackDrift (hΦ : DifferentiableOn ℝ Φ U) (hmaps : MapsTo Φ U V)
-    (hL : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), ‖fderiv ℝ Φ x‖ ≤ L)
+/-- **The transformed drift stays in `Lᵖ`.** Let `Φ` map `U` injectively into `V`, with
+`‖DΦ‖ ≤ L`, `‖v‖ ≤ L' ‖DΦ v‖` for every `v`, and `c₀ ≤ |det DΦ|` on `U` for some `c₀ > 0`. If
+`b ∈ Lᵖ(V)`, then the transformed drift `b' = |det DΦ| DΦ⁻¹ (b ∘ Φ) ∈ Lᵖ(U)`. With `p = ∞`, a
+bounded drift stays bounded. -/
+theorem memLp_pullbackDrift (hΦ : DifferentiableOn ℝ Φ U) (hinj : InjOn Φ U)
+    (hmaps : MapsTo Φ U V) (hL : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), ‖fderiv ℝ Φ x‖ ≤ L)
+    (hL' : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), ∀ v, ‖v‖ ≤ L' * ‖fderiv ℝ Φ x v‖)
     (hc₀ : 0 < c₀) (hdet : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), c₀ ≤ |(fderiv ℝ Φ x).det|)
-    (hΨ : DifferentiableOn ℝ Ψ V) (hΨL : ∀ y ∈ (V : Set (EuclideanSpace ℝ ι)), ‖fderiv ℝ Ψ y‖ ≤ L')
-    (hΨΦ : LeftInvOn Ψ Φ U) (hΦΨ : RightInvOn Ψ Φ V) {p : ENNReal}
-    {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hb : MemLp b p (mu.restrict V)) :
+    {p : ENNReal} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hb : MemLp b p (mu.restrict V)) :
     MemLp (pullbackDrift Φ b) p (mu.restrict U) := by
-  have hbΦ := memLp_comp_of_differentiableOn U.isOpen hΦ hΨΦ.injOn hmaps hc₀ hdet hb
-  -- On `U` the transformed drift is `|det DΦ| DΨ(Φ ·) (b ∘ Φ)`, which is measurable.
-  have hmeas : AEStronglyMeasurable (fun x => |(fderiv ℝ Φ x).det| • fderiv ℝ Ψ (Φ x) (b (Φ x)))
-      (mu.restrict U) :=
-    (measurable_abs_det_fderiv Φ).aestronglyMeasurable.smul
-      ((ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ ι)).aestronglyMeasurable_comp₂
-        hbΦ.aestronglyMeasurable
-        ((measurable_fderiv ℝ Ψ).comp_aemeasurable
-          (hΦ.continuousOn.aemeasurable U.isOpen.measurableSet)).aestronglyMeasurable)
-  refine hbΦ.of_le_mul (c := L ^ Fintype.card ι * L') (hmeas.congr ?_) ?_
+  have hbΦ := hb.comp_of_differentiableOn U.isOpen hΦ hinj hmaps hc₀ hdet
+  -- The operator `T x` of the inverse Jacobian matrix is measurable, so the transformed drift is.
+  set T := fun x => toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹
+  have hT : Measurable T := continuous_toEuclideanCLM.measurable.comp
+    (measurable_matrix_inv.comp (continuous_toEuclideanCLM_symm.measurable.comp
+      (measurable_fderiv ℝ Φ)))
+  refine hbΦ.of_le_mul (c := L ^ Fintype.card ι * L') ?_ ?_
+  · rw [show pullbackDrift Φ b = fun x => |(fderiv ℝ Φ x).det| • T x (b (Φ x)) from
+      funext (pullbackDrift_apply Φ b)]
+    exact (continuous_abs.measurable.comp (measurable_det_fderiv ℝ Φ)).aestronglyMeasurable.smul
+      ((ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ ι)).aestronglyMeasurable_comp₂ (g := T)
+        hbΦ.aestronglyMeasurable hT.aestronglyMeasurable)
   · filter_upwards [ae_restrict_mem U.isOpen.measurableSet] with x hx
-    exact (pullbackDrift_eq_of_invOn hΦ hmaps hΨ hΦΨ hΨΦ b hx).symm
-  · filter_upwards [ae_restrict_mem U.isOpen.measurableSet] with x hx
-    exact norm_pullbackDrift_le hΦ hmaps hΨ hΦΨ hΨΦ b hx (hL x hx) (hΨL _ (hmaps hx))
+    exact norm_pullbackDrift_le b (hL x hx) (hL' x hx)
 
 end Integrability
 
