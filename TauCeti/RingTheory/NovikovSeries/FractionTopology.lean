@@ -40,10 +40,10 @@ open MonoidWithZeroHom.ValueGroup₀
 
 namespace TauCeti.NovikovSeries
 
-variable {R H : Type*} [CommRing R] [Nontrivial R] [AddCommGroup H]
-  [NoZeroDivisors (AddMonoidAlgebra R H)] (N : H →+ ℝ)
+section Monoid
 
-section Ring
+variable {R H : Type*} [CommRing R] [Nontrivial R] [AddCommMonoid H]
+  [NoZeroDivisors (AddMonoidAlgebra R H)] (N : H →+ ℝ)
 
 variable (F : Type*) [CommRing F] [Algebra (NovikovSeries R H N) F]
   [IsFractionRing (NovikovSeries R H N) F]
@@ -55,11 +55,15 @@ theorem valued_algebraMap_fractionValuation (a : NovikovSeries R H N) :
       periodValuation N a := by
   rw [WithVal.algebraMap_right_apply, WithVal.valued_toVal, fractionValuation_algebraMap]
 
-/-- Closed balls for the fraction valuation pull back to the original period filtration. -/
-theorem valued_algebraMap_fractionValuation_le_iff (a : NovikovSeries R H N) (C : ℝ) :
-    Valued.v (algebraMap (NovikovSeries R H N) (WithVal (fractionValuation R N F)) a) ≤
-      ↑(Multiplicative.ofAdd (-C)) ↔ a ∈ periodFiltration R N C := by
-  rw [valued_algebraMap_fractionValuation, periodValuation_le_iff]
+end Monoid
+
+variable {R H : Type*} [CommRing R] [Nontrivial R] [AddCommGroup H]
+  [NoZeroDivisors (AddMonoidAlgebra R H)] (N : H →+ ℝ)
+
+section Ring
+
+variable (F : Type*) [CommRing F] [Algebra (NovikovSeries R H N) F]
+  [IsFractionRing (NovikovSeries R H N) F]
 
 /-- The fraction-field valuation topology induces exactly the period uniformity on series. -/
 theorem isUniformEmbedding_algebraMap_fractionValuation :
@@ -67,6 +71,12 @@ theorem isUniformEmbedding_algebraMap_fractionValuation :
       (WithVal (fractionValuation R N F))) := by
   let v := (Valued.v : Valuation (WithVal (fractionValuation R N F))
     (WithZero (Multiplicative ℝ)))
+  have hrestrict (a b : NovikovSeries R H N) (γ : v.ValueGroup₀) :
+      v.restrict (algebraMap _ (WithVal (fractionValuation R N F)) b -
+        algebraMap _ (WithVal (fractionValuation R N F)) a) < γ ↔
+        periodValuation N (b - a) < embedding γ := by
+    rw [Valuation.restrict_lt_iff_lt_embedding, ← map_sub,
+      valued_algebraMap_fractionValuation]
   apply IsUniformInducing.isUniformEmbedding
   apply (hasBasis_uniformity.isUniformInducing_iff
     (Valued.hasBasis_uniformity (WithVal (fractionValuation R N F)) _)).2
@@ -76,8 +86,7 @@ theorem isUniformEmbedding_algebraMap_fractionValuation :
     have hγ : embedding (γ : v.ValueGroup₀) ≠ 0 := by simp
     obtain ⟨r, hr⟩ := WithZero.ne_zero_iff_exists.1 hγ
     refine ⟨-Multiplicative.toAdd r + 1, trivial, fun a b hab => ?_⟩
-    rw [Set.mem_ofPred_eq, Valuation.restrict_lt_iff_lt_embedding, ← map_sub,
-      valued_algebraMap_fractionValuation, ← hr]
+    rw [Set.mem_ofPred_eq, hrestrict, ← hr]
     apply ((periodValuation_le_iff N _ _).2 hab).trans_lt
     rw [WithZero.coe_lt_coe, ← Multiplicative.toAdd_lt]
     simp only [toAdd_ofAdd]
@@ -87,8 +96,8 @@ theorem isUniformEmbedding_algebraMap_fractionValuation :
     by_cases hN : N = 0
     · refine ⟨1, trivial, fun a b hab => ?_⟩
       have hlt : periodValuation N (b - a) < 1 := by
-        simpa only [Set.mem_ofPred_eq, Units.val_one, Valuation.restrict_lt_one_iff,
-          ← map_sub, valued_algebraMap_fractionValuation] using hab
+        rw [Set.mem_ofPred_eq, hrestrict, Units.val_one, map_one] at hab
+        exact hab
       have hz : b - a = 0 := by
         by_contra hn
         obtain ⟨h, _, hh⟩ := (isLeast_order hn).1
@@ -105,14 +114,17 @@ theorem isUniformEmbedding_algebraMap_fractionValuation :
       obtain ⟨n, hn⟩ := exists_lt_nsmul hg C
       let s := algebraMap (NovikovSeries R H N) (WithVal (fractionValuation R N F))
         (single (n • g) 1)
+      have hvs : v s = ↑(Multiplicative.ofAdd (-N (n • g))) :=
+        (valued_algebraMap_fractionValuation N F _).trans
+          (periodValuation_single N _ one_ne_zero)
       have hs : v.restrict s ≠ 0 := by
-        simp [v, s, one_ne_zero]
+        rw [Ne, Valuation.restrict_eq_zero_iff, hvs]
+        exact WithZero.coe_ne_zero
       refine ⟨Units.mk0 (v.restrict s) hs, trivial, fun a b hab => ?_⟩
-      have hlt : periodValuation N (b - a) <
-          ↑(Multiplicative.ofAdd (-N (n • g))) := by
-        simpa [v, s, ← map_sub, periodValuation_single, one_ne_zero] using hab
+      rw [Set.mem_ofPred_eq, hrestrict, Units.val_mk0,
+        Valuation.embedding_restrict, hvs] at hab
       apply (periodValuation_le_iff N _ C).1
-      apply hlt.le.trans
+      apply hab.le.trans
       rw [WithZero.coe_le_coe, Multiplicative.ofAdd_le]
       exact neg_le_neg (by simpa only [map_nsmul] using hn.le)
 
