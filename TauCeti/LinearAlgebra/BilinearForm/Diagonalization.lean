@@ -150,7 +150,7 @@ theorem iIsOrtho.isUnit_det_toMatrix {R M ι : Type*} [CommRing R] [AddCommMonoi
 /-- The quadratic form of a bilinear form in an orthogonal basis is isometric to the diagonal
 form of its self-pairings. -/
 theorem iIsOrtho.equivalent_weightedSumSquares
-    {R M ι : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι]
+    {R M ι : Type*} [CommSemiring R] [AddCommMonoid M] [Module R M] [Fintype ι]
     {B : LinearMap.BilinForm R M} {b : Module.Basis ι R M}
     (hb : B.iIsOrtho b) :
     B.toQuadraticMap.Equivalent
