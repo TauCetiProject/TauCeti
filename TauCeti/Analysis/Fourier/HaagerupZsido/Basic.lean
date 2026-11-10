@@ -149,9 +149,29 @@ theorem weightLaplaceTransform_le_inv_abs {t : ℝ} (ht : t ≠ 0) :
   exact mul_le_of_le_one_left (Real.exp_pos _).le (weight_lt_one y).le
 
 /-- Since the weight lies below `π y / 2`,
-`L(t) ≤ (π / 2) ∫_{y > 0} y e^{-|t| y} dy = π / (2 t²)`. -/
-theorem weightLaplaceTransform_le_pi_div_two_mul_sq {t : ℝ} (ht : t ≠ 0) :
+`L(t) ≤ (π / 2) ∫_{y > 0} y e^{-|t| y} dy = π / (2 t²)`. At `t = 0` both sides are `0`, the
+integral diverging. -/
+theorem weightLaplaceTransform_le_pi_div_two_mul_sq (t : ℝ) :
     weightLaplaceTransform t ≤ π / (2 * t ^ 2) := by
+  rcases eq_or_ne t 0 with rfl | ht
+  · -- At `t = 0` the weight is not integrable on `(0, ∞)`, so both sides are `0`.
+    have hnint : ¬ IntegrableOn (fun y ↦ weight y * Real.exp (-(|(0 : ℝ)| * y))) (Ioi 0) := by
+      intro h
+      simp only [abs_zero, zero_mul, neg_zero, Real.exp_zero, mul_one] at h
+      have hc : IntegrableOn (fun _ : ℝ ↦ weight 1) (Ioi 1) :=
+        (h.mono_set (Ioi_subset_Ioi zero_le_one)).mono' aestronglyMeasurable_const
+          (ae_restrict_of_forall_mem measurableSet_Ioi fun y hy ↦ by
+            have h1 : weight 1 ≤ weight y := by
+              rw [weight_def, weight_def]
+              exact (Real.tanh_strictMono (by nlinarith [mem_Ioi.mp hy, Real.pi_pos])).le
+            rwa [Real.norm_eq_abs, abs_of_nonneg (weight_nonneg zero_le_one)])
+      have hpos : 0 < weight 1 := by
+        rw [weight_def, ← Real.tanh_zero]
+        exact Real.tanh_strictMono (by positivity)
+      have := (integrableOn_const_iff (by finiteness)).mp hc
+      simp [hpos.ne', Real.volume_Ioi] at this
+    rw [weightLaplaceTransform_def, integral_undef hnint]
+    simp
   have ht' : 0 < |t| := abs_pos.mpr ht
   have hint := integrableOn_pow_mul_exp_neg_mul_Ioi 1 ht'
   have hval := integral_pow_mul_exp_neg_mul_Ioi 1 ht'
@@ -235,7 +255,7 @@ theorem abs_realKernel_le (t : ℝ) : |realKernel t| ≤ π / (2 * (1 + t ^ 2)) 
   · -- Away from the origin: `|sin t| * L(t) ≤ π / (2 t²)`.
     have hprod : |Real.sin t| * weightLaplaceTransform t ≤ π / (2 * t ^ 2) :=
       calc |Real.sin t| * weightLaplaceTransform t ≤ 1 * (π / (2 * t ^ 2)) :=
-            mul_le_mul (Real.abs_sin_le_one t) (weightLaplaceTransform_le_pi_div_two_mul_sq ht)
+            mul_le_mul (Real.abs_sin_le_one t) (weightLaplaceTransform_le_pi_div_two_mul_sq t)
               hL zero_le_one
         _ = π / (2 * t ^ 2) := one_mul _
     have hsq : 1 ≤ t ^ 2 := by
