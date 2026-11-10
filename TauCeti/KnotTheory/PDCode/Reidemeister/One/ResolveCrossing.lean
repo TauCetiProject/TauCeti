@@ -72,31 +72,6 @@ open Equiv
 
 variable {n : ℕ} (D : PDCode n) (h : Fin (4 * n)) (b : Bool)
 
-/-! ### Relabelling a code by the positions of its half-edges -/
-
-/-- Relabelling a code along the inverse of its half-edge labelling labels each half-edge by its
-position. -/
-private theorem relabel_halfEdge_symm_halfEdge :
-    (D.relabel D.halfEdge.symm (Equiv.refl _)).halfEdge = 1 := by
-  ext x
-  simp [crossingBlockEquiv_refl]
-
-/-- A matching of the positions of the half-edges of `D` is the relabelled matching of `D` once
-it joins the positions of every arc of `D`. -/
-private theorem eq_relabel_edgePair_of_crossing {M : PerfectMatching (Fin (4 * n))}
-    (hM : ∀ i j k l, D.edgePair.val (D.crossing i k) = D.crossing j l →
-      M.val (crossingSlotEquiv n (i, k)) = crossingSlotEquiv n (j, l)) :
-    M = (D.relabel D.halfEdge.symm (Equiv.refl _)).edgePair := by
-  apply Subtype.ext
-  ext p : 1
-  obtain ⟨⟨i, k⟩, rfl⟩ := (crossingSlotEquiv n).surjective p
-  obtain ⟨⟨j, l⟩, hjl⟩ := (crossingSlotEquiv n).surjective
-    (D.halfEdge.symm (D.edgePair.val (D.crossing i k)))
-  have hij : D.edgePair.val (D.crossing i k) = D.crossing j l := by
-    rw [crossing_apply D j, hjl, Equiv.apply_symm_apply]
-  rw [hM i j k l hij, relabel_edgePair, PerfectMatching.congr_val_apply, Equiv.symm_symm,
-    ← crossing_apply, hij, crossing_apply, Equiv.symm_apply_apply]
-
 /-! ### The kink inserted into an arc -/
 
 section ReidemeisterOne
@@ -275,35 +250,28 @@ namespace ResolutionEquiv
 into an arc of `D` along the kink (`TauCeti.PDCode.resolveCrossing_reidemeisterOne_last_not`).
 It keeps the crossings and the crossing-free circles, and sends each half-edge to its position. -/
 def resolveCrossingReidemeisterOneNot :
-    D.ResolutionEquiv ((D.reidemeisterOne h b).resolveCrossing (Fin.last n) (!b)) where
-  crossingEquiv := Equiv.refl _
-  halfEdgeEquiv := D.halfEdge.symm
-  crossinglessEquiv := finCongr (by simp [detachedCircleCount_reidemeisterOne_last])
-  edgePair_apply x := by
-    rw [resolveCrossing_reidemeisterOne_last_not]
-    simp
-  statePerm_apply t x := by
-    rw [resolveCrossing_reidemeisterOne_last_not]
-    simp
+    D.ResolutionEquiv ((D.reidemeisterOne h b).resolveCrossing (Fin.last n) (!b)) :=
+  (ResolutionEquiv.relabel D D.halfEdge.symm (Equiv.refl _)).trans
+    (ofEq (resolveCrossing_reidemeisterOne_last_not D h b).symm)
 
 /-- `resolveCrossingReidemeisterOneNot` keeps the crossings. -/
 @[simp]
 theorem resolveCrossingReidemeisterOneNot_crossingEquiv :
-    (resolveCrossingReidemeisterOneNot D h b).crossingEquiv = Equiv.refl _ :=
-  (rfl)
+    (resolveCrossingReidemeisterOneNot D h b).crossingEquiv = Equiv.refl _ := by
+  simp [resolveCrossingReidemeisterOneNot]
 
 /-- `resolveCrossingReidemeisterOneNot` sends each half-edge to its position. -/
 @[simp]
 theorem resolveCrossingReidemeisterOneNot_halfEdgeEquiv :
-    (resolveCrossingReidemeisterOneNot D h b).halfEdgeEquiv = D.halfEdge.symm :=
-  (rfl)
+    (resolveCrossingReidemeisterOneNot D h b).halfEdgeEquiv = D.halfEdge.symm := by
+  simp [resolveCrossingReidemeisterOneNot]
 
 /-- `resolveCrossingReidemeisterOneNot` keeps the labels of the crossing-free circles. -/
 @[simp]
 theorem resolveCrossingReidemeisterOneNot_crossinglessEquiv_val
     (i : Fin D.crossinglessComponentCount) :
-    ((resolveCrossingReidemeisterOneNot D h b).crossinglessEquiv i : ℕ) = i :=
-  (rfl)
+    ((resolveCrossingReidemeisterOneNot D h b).crossinglessEquiv i : ℕ) = i := by
+  simp [resolveCrossingReidemeisterOneNot]
 
 /-- The identification of all smoothings of `D` with one adjoined circle with those of the
 resolution of a kink inserted into an arc of `D` that cuts off its loop
@@ -311,35 +279,28 @@ resolution of a kink inserted into an arc of `D` that cuts off its loop
 labels of the crossing-free circles, the adjoined circle becoming the loop of the kink, and sends
 each half-edge to its position. -/
 def resolveCrossingReidemeisterOneSelf :
-    D.adjoinCircle.ResolutionEquiv ((D.reidemeisterOne h b).resolveCrossing (Fin.last n) b) where
-  crossingEquiv := Equiv.refl _
-  halfEdgeEquiv := D.halfEdge.symm
-  crossinglessEquiv := finCongr (by simp [detachedCircleCount_reidemeisterOne_last])
-  edgePair_apply x := by
-    rw [resolveCrossing_reidemeisterOne_last_self]
-    simp
-  statePerm_apply t x := by
-    rw [resolveCrossing_reidemeisterOne_last_self]
-    simp
+    D.adjoinCircle.ResolutionEquiv ((D.reidemeisterOne h b).resolveCrossing (Fin.last n) b) :=
+  (ResolutionEquiv.relabel D.adjoinCircle D.halfEdge.symm (Equiv.refl _)).trans
+    (ofEq (resolveCrossing_reidemeisterOne_last_self D h b).symm)
 
 /-- `resolveCrossingReidemeisterOneSelf` keeps the crossings. -/
 @[simp]
 theorem resolveCrossingReidemeisterOneSelf_crossingEquiv :
-    (resolveCrossingReidemeisterOneSelf D h b).crossingEquiv = Equiv.refl _ :=
-  (rfl)
+    (resolveCrossingReidemeisterOneSelf D h b).crossingEquiv = Equiv.refl _ := by
+  simp [resolveCrossingReidemeisterOneSelf]
 
 /-- `resolveCrossingReidemeisterOneSelf` sends each half-edge to its position. -/
 @[simp]
 theorem resolveCrossingReidemeisterOneSelf_halfEdgeEquiv :
-    (resolveCrossingReidemeisterOneSelf D h b).halfEdgeEquiv = D.halfEdge.symm :=
-  (rfl)
+    (resolveCrossingReidemeisterOneSelf D h b).halfEdgeEquiv = D.halfEdge.symm := by
+  simp [resolveCrossingReidemeisterOneSelf]
 
 /-- `resolveCrossingReidemeisterOneSelf` keeps the labels of the crossing-free circles. -/
 @[simp]
 theorem resolveCrossingReidemeisterOneSelf_crossinglessEquiv_val
     (i : Fin D.adjoinCircle.crossinglessComponentCount) :
-    ((resolveCrossingReidemeisterOneSelf D h b).crossinglessEquiv i : ℕ) = i :=
-  (rfl)
+    ((resolveCrossingReidemeisterOneSelf D h b).crossinglessEquiv i : ℕ) = i := by
+  simp [resolveCrossingReidemeisterOneSelf]
 
 /-- The identification of all smoothings of `D` with one adjoined circle with those of the
 resolution of an isolated kink adjoined to `D` that joins its two smoothing arcs
@@ -347,35 +308,28 @@ resolution of an isolated kink adjoined to `D` that joins its two smoothing arcs
 the crossing-free circles, the adjoined circle becoming the resolved kink, and sends each
 half-edge to its position. -/
 def resolveCrossingAdjoinKinkNot :
-    D.adjoinCircle.ResolutionEquiv ((D.adjoinKink b).resolveCrossing (Fin.last n) (!b)) where
-  crossingEquiv := Equiv.refl _
-  halfEdgeEquiv := D.halfEdge.symm
-  crossinglessEquiv := finCongr (by simp [detachedCircleCount_adjoinKink_last])
-  edgePair_apply x := by
-    rw [resolveCrossing_adjoinKink_last_not]
-    simp
-  statePerm_apply t x := by
-    rw [resolveCrossing_adjoinKink_last_not]
-    simp
+    D.adjoinCircle.ResolutionEquiv ((D.adjoinKink b).resolveCrossing (Fin.last n) (!b)) :=
+  (ResolutionEquiv.relabel D.adjoinCircle D.halfEdge.symm (Equiv.refl _)).trans
+    (ofEq (resolveCrossing_adjoinKink_last_not D b).symm)
 
 /-- `resolveCrossingAdjoinKinkNot` keeps the crossings. -/
 @[simp]
 theorem resolveCrossingAdjoinKinkNot_crossingEquiv :
-    (resolveCrossingAdjoinKinkNot D b).crossingEquiv = Equiv.refl _ :=
-  (rfl)
+    (resolveCrossingAdjoinKinkNot D b).crossingEquiv = Equiv.refl _ := by
+  simp [resolveCrossingAdjoinKinkNot]
 
 /-- `resolveCrossingAdjoinKinkNot` sends each half-edge to its position. -/
 @[simp]
 theorem resolveCrossingAdjoinKinkNot_halfEdgeEquiv :
-    (resolveCrossingAdjoinKinkNot D b).halfEdgeEquiv = D.halfEdge.symm :=
-  (rfl)
+    (resolveCrossingAdjoinKinkNot D b).halfEdgeEquiv = D.halfEdge.symm := by
+  simp [resolveCrossingAdjoinKinkNot]
 
 /-- `resolveCrossingAdjoinKinkNot` keeps the labels of the crossing-free circles. -/
 @[simp]
 theorem resolveCrossingAdjoinKinkNot_crossinglessEquiv_val
     (i : Fin D.adjoinCircle.crossinglessComponentCount) :
-    ((resolveCrossingAdjoinKinkNot D b).crossinglessEquiv i : ℕ) = i :=
-  (rfl)
+    ((resolveCrossingAdjoinKinkNot D b).crossinglessEquiv i : ℕ) = i := by
+  simp [resolveCrossingAdjoinKinkNot]
 
 /-- The identification of all smoothings of `D` with two adjoined circles with those of the
 resolution of an isolated kink adjoined to `D` that detaches its two smoothing arcs
@@ -384,35 +338,28 @@ the crossing-free circles, the two adjoined circles becoming the two smoothing a
 each half-edge to its position. -/
 def resolveCrossingAdjoinKinkSelf :
     D.adjoinCircle.adjoinCircle.ResolutionEquiv
-      ((D.adjoinKink b).resolveCrossing (Fin.last n) b) where
-  crossingEquiv := Equiv.refl _
-  halfEdgeEquiv := D.halfEdge.symm
-  crossinglessEquiv := finCongr (by simp [detachedCircleCount_adjoinKink_last, Nat.add_assoc])
-  edgePair_apply x := by
-    rw [resolveCrossing_adjoinKink_last_self]
-    simp
-  statePerm_apply t x := by
-    rw [resolveCrossing_adjoinKink_last_self]
-    simp
+      ((D.adjoinKink b).resolveCrossing (Fin.last n) b) :=
+  (ResolutionEquiv.relabel D.adjoinCircle.adjoinCircle D.halfEdge.symm (Equiv.refl _)).trans
+    (ofEq (resolveCrossing_adjoinKink_last_self D b).symm)
 
 /-- `resolveCrossingAdjoinKinkSelf` keeps the crossings. -/
 @[simp]
 theorem resolveCrossingAdjoinKinkSelf_crossingEquiv :
-    (resolveCrossingAdjoinKinkSelf D b).crossingEquiv = Equiv.refl _ :=
-  (rfl)
+    (resolveCrossingAdjoinKinkSelf D b).crossingEquiv = Equiv.refl _ := by
+  simp [resolveCrossingAdjoinKinkSelf]
 
 /-- `resolveCrossingAdjoinKinkSelf` sends each half-edge to its position. -/
 @[simp]
 theorem resolveCrossingAdjoinKinkSelf_halfEdgeEquiv :
-    (resolveCrossingAdjoinKinkSelf D b).halfEdgeEquiv = D.halfEdge.symm :=
-  (rfl)
+    (resolveCrossingAdjoinKinkSelf D b).halfEdgeEquiv = D.halfEdge.symm := by
+  simp [resolveCrossingAdjoinKinkSelf]
 
 /-- `resolveCrossingAdjoinKinkSelf` keeps the labels of the crossing-free circles. -/
 @[simp]
 theorem resolveCrossingAdjoinKinkSelf_crossinglessEquiv_val
     (i : Fin D.adjoinCircle.adjoinCircle.crossinglessComponentCount) :
-    ((resolveCrossingAdjoinKinkSelf D b).crossinglessEquiv i : ℕ) = i :=
-  (rfl)
+    ((resolveCrossingAdjoinKinkSelf D b).crossinglessEquiv i : ℕ) = i := by
+  simp [resolveCrossingAdjoinKinkSelf]
 
 end ResolutionEquiv
 
