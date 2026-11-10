@@ -589,12 +589,6 @@ section Model
 
 variable {F : Type*} [TopologicalSpace F] {f₀ : F}
 
-/-- The identification induced by `φ` preserves the class of the constant generalized loop. -/
-private theorem homeomorphEquivOfEq_mk_const {φ : p.fiber b ≃ₜ F} (hφ : φ e = f₀) :
-    HomotopyGroup.homeomorphEquivOfEq φ hφ (⟦GenLoop.const⟧ : HomotopyGroup N (p.fiber b) e) =
-      ⟦GenLoop.const⟧ :=
-  congrArg _ (GenLoop.map_const _ _)
-
 variable (N) in
 /-- The **boundary map** `π_{n+1}(B, b) → π_n(F, f₀)` of a Serre fibration `p`, read in a space
 `F` through a homeomorphism `φ` from the fibre of `p` over `b` to `F` sending `e` to `f₀`: the
@@ -618,7 +612,7 @@ theorem fibrationBoundaryOfHomeomorph_const (hp : serreFibrations p) (φ : p.fib
     fibrationBoundaryOfHomeomorph N hp φ hφ (⟦GenLoop.const⟧ : HomotopyGroup (Option N) B b) =
       ⟦GenLoop.const⟧ :=
   (congrArg (HomotopyGroup.homeomorphEquivOfEq φ hφ) (fibrationBoundary_const hp)).trans
-    (homeomorphEquivOfEq_mk_const hφ)
+    (HomotopyGroup.homeomorphEquivOfEq_mk_const φ hφ)
 
 section Group
 
@@ -669,7 +663,7 @@ theorem mem_range_homotopyGroupMap_iff_fibrationBoundaryOfHomeomorph_eq (hp : se
       fibrationBoundaryOfHomeomorph N hp φ hφ a = (⟦GenLoop.const⟧ : HomotopyGroup N F f₀) :=
   (mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp).trans
     ((HomotopyGroup.homeomorphEquivOfEq φ hφ).injective.eq_iff'
-      (homeomorphEquivOfEq_mk_const hφ)).symm
+      (HomotopyGroup.homeomorphEquivOfEq_mk_const φ hφ)).symm
 
 /-- **Exactness at `π_n(F, f₀)`.** A class of `π_n(F, f₀)` is a boundary exactly when it becomes
 trivial in `π_n(E, e)` under a map `i : F → E` that agrees with the fibre inclusion through
