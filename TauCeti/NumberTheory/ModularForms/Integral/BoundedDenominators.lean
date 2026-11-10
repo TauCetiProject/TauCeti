@@ -32,7 +32,8 @@ a form with algebraic coefficients in the `ℂ`-span of forms with algebraic-int
 an algebraic combination of finitely many of them, so clearing the denominators of these finitely
 many scalars clears those of all its coefficients. The first coefficients up to the Sturm bound
 determine a cusp form, and a vector of algebraic numbers in the `ℂ`-span of algebraic vectors is
-in their span over the algebraic numbers (`TauCeti.mem_of_mem_span_of_mem_span_range`).
+in their span over the algebraic numbers
+(`TauCeti.mem_span_of_mem_span_of_forall_apply_mem_range`).
 
 In weight `k ≥ 2` the forms `g(dτ)`, with `g` a newform of level `M` and `d M ∣ N`, span
 `S_k(Γ₁(N))` and have algebraic-integer coefficients. Weight one has no such spanning set to
@@ -83,22 +84,19 @@ theorem exists_integral_multiple_qExpansion_coeff_of_mem_span (f : CuspForm 𝒢
   set h := 𝒢.strictWidthInfty
   let A := algebraicClosure ℚ ℂ
   have : Algebra.IsAlgebraic ℤ ℚ := IsLocalization.isAlgebraic ℚ (nonZeroDivisors ℤ)
-  -- the `q`-expansion, and its coefficients up to the Sturm bound, as linear maps
-  let Q : CuspForm 𝒢 k →ₗ[ℂ] PowerSeries ℂ :=
-    (TauCeti.ModularForm.qExpansionLinearMap TauCeti.Subgroup.strictWidthInfty_pos_of_finiteRelIndex
-      𝒢.strictWidthInfty_mem_strictPeriods k).comp toModularFormₗ
-  have hQ (F : CuspForm 𝒢 k) : Q F = qExpansion h F := by
-    simp only [Q, LinearMap.comp_apply, TauCeti.ModularForm.qExpansionLinearMap_apply]
-    exact congrArg (qExpansion h) (funext (toModularFormₗ_apply F))
-  set B := (k * Nat.card (𝒮ℒ ⧸ 𝒢.subgroupOf 𝒮ℒ)).toNat / 12 + 1
-  let T : CuspForm 𝒢 k →ₗ[ℂ] Fin B → ℂ :=
-    LinearMap.pi fun i ↦ (PowerSeries.coeff (i : ℕ)).comp Q
-  have hT (F : CuspForm 𝒢 k) (i : Fin B) : T F i = (qExpansion h F).coeff i := by
-    simp only [T, LinearMap.pi_apply, LinearMap.comp_apply, hQ]
-  have hT_inj {F G : CuspForm 𝒢 k} (hFG : T F = T G) : F = G := by
-    refine toModularFormₗ_injective (ModularForm.eq_of_sturm_bound _ _ fun i hi ↦ ?_)
-    simpa only [T, LinearMap.pi_apply, LinearMap.comp_apply, Q,
-      TauCeti.ModularForm.qExpansionLinearMap_apply] using congrFun hFG ⟨i, Nat.lt_succ_of_le hi⟩
+  -- the `q`-expansion coefficients, and those up to the Sturm bound, as linear maps
+  let Q (n : ℕ) : CuspForm 𝒢 k →ₗ[ℂ] ℂ := qExpansionCoeffₗ
+    TauCeti.Subgroup.strictWidthInfty_pos_of_finiteRelIndex 𝒢.strictWidthInfty_mem_strictPeriods k n
+  have hQ (n : ℕ) (F : CuspForm 𝒢 k) : Q n F = (qExpansion h F).coeff n :=
+    qExpansionCoeffₗ_apply _ _ n F
+  let T : CuspForm 𝒢 k →ₗ[ℂ] Fin (ModularForm.sturmLength 𝒢 k) → ℂ :=
+    ModularForm.sturmCoeffsₗ k ∘ₗ toModularFormₗ
+  have hT (F : CuspForm 𝒢 k) (i : Fin (ModularForm.sturmLength 𝒢 k)) :
+      T F i = (qExpansion h F).coeff i := by
+    rw [LinearMap.comp_apply, ModularForm.sturmCoeffsₗ_apply]
+    exact congrArg (fun g ↦ (qExpansion h g).coeff i) (funext (toModularFormₗ_apply F))
+  have hT_inj {F G : CuspForm 𝒢 k} (hFG : T F = T G) : F = G :=
+    toModularFormₗ_injective (ModularForm.sturmCoeffsₗ_injective hFG)
   -- the truncated expansion of `f` is an algebraic combination of those of the spanning forms
   have hA {x : ℂ} (hx : IsAlgebraic ℚ x) : x ∈ (algebraMap A ℂ).range :=
     ⟨⟨x, mem_algebraicClosure_iff.mpr hx⟩, rfl⟩
@@ -118,13 +116,13 @@ theorem exists_integral_multiple_qExpansion_coeff_of_mem_span (f : CuspForm 𝒢
       exact ⟨g, rfl, 1, one_ne_zero, by simpa using hS g hg⟩
     | zero =>
       refine ⟨0, map_zero T, 1, one_ne_zero, fun n ↦ ?_⟩
-      rw [← hQ, map_zero, map_zero, smul_zero]
+      rw [← hQ, map_zero, smul_zero]
       exact isIntegral_zero
     | add v w _ _ hv hw =>
       obtain ⟨F, rfl, D, hD, hF⟩ := hv
       obtain ⟨G, rfl, D', hD', hG⟩ := hw
       refine ⟨F + G, map_add T F G, D * D', mul_ne_zero hD hD', fun n ↦ ?_⟩
-      rw [← hQ, map_add, map_add, hQ, hQ, smul_add]
+      rw [← hQ, map_add, hQ, hQ, smul_add]
       refine IsIntegral.add ?_ ?_
       · rw [mul_comm, mul_smul]
         exact (hF n).nsmul D'
@@ -137,7 +135,7 @@ theorem exists_integral_multiple_qExpansion_coeff_of_mem_span (f : CuspForm 𝒢
       refine ⟨algebraMap A ℂ c • F, by rw [map_smul, algebraMap_smul],
         Algebra.natDenominator (algebraMap A ℂ c) * D, mul_ne_zero hc.natDenominator_ne_zero hD,
         fun n ↦ ?_⟩
-      rw [← hQ, map_smul, PowerSeries.coeff_smul, hQ, smul_eq_mul, ← smul_mul_smul_comm]
+      rw [← hQ, map_smul, hQ, smul_eq_mul, ← smul_mul_smul_comm]
       exact (Algebra.isIntegral_natDenominator_smul _).mul (hF n)
   obtain ⟨F, hF, D, hD, hint⟩ := key _ hTf
   exact ⟨D, hD, hT_inj hF ▸ hint⟩
