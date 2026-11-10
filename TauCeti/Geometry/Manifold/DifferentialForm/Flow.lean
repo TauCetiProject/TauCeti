@@ -262,10 +262,7 @@ theorem hasDerivAt_mpullback_flowOf {t : ℝ} {x : M} (hx : (t, x) ∈ flowDomai
     rw [hcomp.mpullback_eq, mpullback_comp_at (g := flowOf Z u) (hφ.mdifferentiableAt (by norm_num))
       ((contMDiffAt_flowOf_comp (n := 2) one_le_two hZ contMDiffAt_const contMDiffAt_id
         hu.self_of_nhds.2).mdifferentiableAt (by norm_num))]
-    ext v
-    -- Both sides evaluate `φᵤ^* α` at `φₜ x` on the vectors `L (v i)`.
-    rw [mpullback_apply]
-    rfl
+    exact mpullback_apply_eq_compContinuousLinearMap _ _ _
   have h0 := (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt
     (0 : ℝ) (hasDerivAt_mpullback_flowOf_zero hZ (flowOf Z t x) hα)
   have h := HasDerivAt.comp_sub_const (x := t) (a := t) (by rwa [sub_self])
@@ -274,8 +271,7 @@ theorem hasDerivAt_mpullback_flowOf {t : ℝ} {x : M} (hx : (t, x) ∈ flowDomai
       simpa using (continuous_sub_right t).tendsto t
     filter_upwards [hsub.eventually hshift] with s hs
     rwa [add_sub_cancel] at hs
-  · ext v
-    exact (mpullback_apply (flowOf Z t) (mlieDerivForm Z α) x v).symm
+  · exact (mpullback_apply_eq_compContinuousLinearMap _ _ _).symm
 
 /-- **Rescaling along a maximal flow.** If the Lie derivative of a differentiable form `α` along a
 `C²` vector field `Z` is `g • α` for a continuous function `g`, then wherever the maximal flow `φ`

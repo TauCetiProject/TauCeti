@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.Complete
+public import TauCeti.Geometry.Manifold.Flow.Eulerian
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
@@ -58,6 +59,8 @@ the initial position of the submanifold to the later ones.
   from `s` to `t`.
 * `TauCeti.isCompleteVectorField_timeDependentSuspensionField`: a time-dependent field vanishing
   outside a fixed compact set has a complete suspension.
+* `TauCeti.eulerianVelocity_timeDependentFlowDiffeomorph`: for a complete suspension, the time maps
+  from a fixed time form an isotopy whose Eulerian velocity field is `X`.
 
 ## References
 
@@ -508,12 +511,46 @@ theorem timeDependentFlowDiffeomorph_apply (s t : ℝ) (x : M) :
     timeDependentFlowDiffeomorph hcomplete hn hX s t x = timeDependentFlowOf X s t x :=
   (rfl)
 
+/-- As a function, `timeDependentFlowDiffeomorph` is the time-dependent flow. -/
+theorem coe_timeDependentFlowDiffeomorph (s t : ℝ) :
+    ⇑(timeDependentFlowDiffeomorph hcomplete hn hX s t) = timeDependentFlowOf X s t :=
+  (rfl)
+
 /-- The inverse of `timeDependentFlowDiffeomorph` from `s` to `t` is the time-dependent flow from
 `t` to `s`. -/
 @[simp]
 theorem timeDependentFlowDiffeomorph_symm_apply (s t : ℝ) (x : M) :
     (timeDependentFlowDiffeomorph hcomplete hn hX s t).symm x = timeDependentFlowOf X t s x :=
   (rfl)
+
+/-- If the suspension of a `C^n` time-dependent field, `1 ≤ n`, is complete, the time maps
+`u ↦ φ_{s,u}` from a fixed time `s` form a jointly `C^n` family of diffeomorphisms. -/
+theorem contMDiff_timeDependentFlowDiffeomorph (s : ℝ) :
+    ContMDiff (𝓘(ℝ, ℝ).prod I) I n
+      fun p : ℝ × M ↦ timeDependentFlowDiffeomorph hcomplete hn hX s p.1 p.2 := by
+  simpa only [timeDependentFlowDiffeomorph_apply, Function.comp_def] using
+    (contMDiff_timeDependentFlowOf hcomplete hn hX).comp
+      (((contMDiff_const (c := s)).prodMk contMDiff_fst).prodMk contMDiff_snd)
+
+/-- **The Eulerian field of a time-dependent flow.** If the suspension of a `C^n` time-dependent
+field `X`, `1 ≤ n`, is complete, the time maps `u ↦ φ_{s,u}` from a fixed time `s` form a family
+of diffeomorphisms whose Eulerian velocity field is `X`, by the two-time composition law. -/
+theorem eulerianVelocity_timeDependentFlowDiffeomorph (s t : ℝ) :
+    eulerianVelocity (timeDependentFlowDiffeomorph hcomplete hn hX s) t = X t := by
+  have hX₁ := hX.of_le (m := 1) (by exact_mod_cast hn)
+  funext y
+  -- By the composition law, the trajectory of `φ_{s,t}⁻¹ y` is the flow through `y` from `t`.
+  have htraj : (fun u ↦ timeDependentFlowDiffeomorph hcomplete hn hX s u
+      ((timeDependentFlowDiffeomorph hcomplete hn hX s t).symm y)) =
+      fun u ↦ timeDependentFlowOf X t u y := by
+    funext u
+    rw [timeDependentFlowDiffeomorph_apply, timeDependentFlowDiffeomorph_symm_apply,
+      timeDependentFlowOf_trans hcomplete hX₁]
+  rw [eulerianVelocity_apply, htraj, TauCeti.Manifold.curveVelocity_apply,
+    (hasMFDerivAt_timeDependentFlowOf hX₁ (mem_timeDependentFlowDomain_self hX₁ t y)).mfderiv,
+    timeDependentFlowOf_self hX₁]
+  -- The derivative `1 ↦ 1 • X t y` of the flow curve, evaluated at `1`.
+  exact one_smul ℝ (X t y)
 
 end Global
 

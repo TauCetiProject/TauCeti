@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DifferentialForm.Flow
+public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.Isotopy
 public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 
 /-!
@@ -27,8 +27,11 @@ time:
 At the base time itself, the flow `u ↦ φ_{t,u}` is a jointly `C²` family of maps which is the
 identity at time `t` and moves with velocity `X t` there, so
 `d/du|_{u = t} (φ_{t,u}^* α) = L_{X_t} α` is an instance of
-`TauCeti.hasDerivAt_mpullback_of_eq_id`; this step is local and holds without completeness. The
-two-time composition law `φ_{s,u} = φ_{t,u} ∘ φ_{s,t}` moves this to an arbitrary base time `s`.
+`TauCeti.hasDerivAt_mpullback_of_eq_id`; this step is local and holds without completeness. For a
+complete suspension, the time maps `u ↦ φ_{s,u}` from a fixed time `s` form a jointly `C²` family
+of diffeomorphisms whose Eulerian velocity field is `X`, by the two-time composition law
+(`TauCeti.eulerianVelocity_timeDependentFlowDiffeomorph`). The derivative at an arbitrary time is
+then an instance of `TauCeti.hasDerivAt_mpullback_eulerianVelocity`.
 
 Integrating the identity: the time-dependent flow preserves a differentiable form `α` at all
 times exactly when `L_{X_t} α = 0` for every `t`
@@ -112,33 +115,11 @@ theorem hasDerivAt_mpullback_timeDependentFlowOf (s t : ℝ) (x : M)
     HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F)
       (fun u ↦ mpullback I I (timeDependentFlowOf X s u) α x)
       (mpullback I I (timeDependentFlowOf X s t) (mlieDerivForm (X t) α) x) t := by
-  have hX₁ := hX.of_le (m := 1) one_le_two
-  have hsmooth (a b : ℝ) : MDifferentiable I I (timeDependentFlowOf X a b) :=
-    ((contMDiff_timeDependentFlowOf hc (n := 2) (by norm_num) hX).comp
-      ((contMDiff_const (c := (a, b))).prodMk contMDiff_id)).mdifferentiable (by norm_num)
-  set L : E →L[ℝ] E := mfderiv I I (timeDependentFlowOf X s t) x
-  -- By the composition law, `φ_{s,u}^* α = φ_{s,t}^* (φ_{t,u}^* α)`, so the derivative at `t` is
-  -- read at the base time of the flow from `t`.
-  have hshift (u : ℝ) : mpullback I I (timeDependentFlowOf X s u) α x =
-      compContinuousLinearMapCLM (ι := Fin k) (F := F) L
-        (mpullback I I (timeDependentFlowOf X t u) α (timeDependentFlowOf X s t x)) := by
-    have hcomp : timeDependentFlowOf X s u =
-        timeDependentFlowOf X t u ∘ timeDependentFlowOf X s t :=
-      funext fun z ↦ (timeDependentFlowOf_trans hc hX₁ s t u z).symm
-    rw [hcomp, mpullback_comp_at (hsmooth s t x) (hsmooth t u _)]
-    ext v
-    -- Both sides evaluate `φ_{t,u}^* α` at `φ_{s,t} x` on the vectors `L (v i)`. The operator
-    -- `compContinuousLinearMapCLM L` acts on forms on `E`, while the pulled-back form takes values
-    -- on tangent spaces, which are `E` only up to unfolding; so `compContinuousLinearMapCLM_apply`
-    -- does not rewrite here, and the right side is unfolded by `rfl`.
-    rw [mpullback_apply]
-    rfl
-  have h := (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt t
-    (hasDerivAt_mpullback_timeDependentFlowOf_self hX t _ hα)
-  refine (h.congr_of_eventuallyEq (Eventually.of_forall fun u ↦ hshift u)).congr_deriv ?_
-  ext v
-  -- As in `hshift`, the left side is `compContinuousLinearMapCLM L` applied up to unfolding.
-  exact (mpullback_apply (timeDependentFlowOf X s t) (mlieDerivForm (X t) α) x v).symm
+  have h := hasDerivAt_mpullback_eulerianVelocity le_rfl
+    (contMDiff_timeDependentFlowDiffeomorph hc one_le_two hX s) t x
+    (by rwa [coe_timeDependentFlowDiffeomorph hc one_le_two hX])
+  simpa only [eulerianVelocity_timeDependentFlowDiffeomorph hc one_le_two hX,
+    coe_timeDependentFlowDiffeomorph hc one_le_two hX] using h
 
 /-- **Invariance of forms under time-dependent flows.** For a jointly `C²` time-dependent vector
 field `X` with complete suspension, the time-dependent flow preserves a differentiable form `α`,
@@ -152,27 +133,15 @@ theorem mpullback_timeDependentFlowOf_eq_self_iff
   have hid (s : ℝ) : mpullback I I (timeDependentFlowOf X s s) α = α := by
     have h : timeDependentFlowOf X s s = id := funext (timeDependentFlowOf_self hX₁ s)
     rw [h, mpullback_id]
-  constructor
-  · -- The pullbacks by the flow from `t` are constant, so their velocity at `t` vanishes.
-    intro h t
-    funext y
-    have hd := hasDerivAt_mpullback_timeDependentFlowOf_self hX t y (hα y)
-    have hconst : (fun u ↦ mpullback I I (timeDependentFlowOf X t u) α y) = fun _ ↦ α y :=
-      funext fun u ↦ congrFun (h t u) y
-    rw [hconst] at hd
-    exact hd.unique (hasDerivAt_const (F := E [⋀^Fin k]→L[ℝ] F) t (α y))
-  · -- With vanishing Lie derivatives, the pullbacks at each point have zero velocity.
-    intro h s t
-    funext x
-    set P : ℝ → E [⋀^Fin k]→L[ℝ] F := fun u ↦ mpullback I I (timeDependentFlowOf X s u) α x
-    have hderiv (u : ℝ) : HasDerivAt P 0 u := by
-      have hd := hasDerivAt_mpullback_timeDependentFlowOf hc hX s u x (hα _)
-      rw [h u, mpullback_zero] at hd
-      exact hd
-    have hconst := is_const_of_deriv_eq_zero (fun u ↦ (hderiv u).differentiableAt)
-      (fun u ↦ (hderiv u).deriv) t s
-    simp only [P, hid s] at hconst
-    exact hconst
+  -- For each base time `s`, the pullbacks by the flow from `s` are constant in time exactly when
+  -- the Lie derivatives along the Eulerian field `X` vanish.
+  have key (s : ℝ) := forall_mpullback_eq_mpullback_iff_mlieDerivForm_eulerianVelocity_eq_zero
+    le_rfl (contMDiff_timeDependentFlowDiffeomorph hc one_le_two hX s) hα
+  simp only [eulerianVelocity_timeDependentFlowDiffeomorph hc one_le_two hX,
+    coe_timeDependentFlowDiffeomorph hc one_le_two hX] at key
+  refine ⟨fun h ↦ (key 0).1 fun a b ↦ ?_, fun h s t ↦ ?_⟩
+  · exact (h 0 a).trans (h 0 b).symm
+  · exact ((key s).2 h t s).trans (hid s)
 
 /-- **Time-dependent flows preserve closed forms with closed contractions.** For a jointly `C²`
 time-dependent vector field `X` with complete suspension and a differentiable closed form `β`
