@@ -9,6 +9,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Geometry.Manifold.DifferentialForm.DegreeOne
 public import TauCeti.Geometry.Manifold.DifferentialForm.Interior
+public import TauCeti.Geometry.Manifold.DifferentialForm.LieDeriv
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Family
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 import TauCeti.Analysis.Normed.Module.Alternating.Curry
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
@@ -55,6 +57,11 @@ inverse sends a one-form `α` to the vector field `(σ♭)⁻¹ α`.
   dimensions, contraction identifies smooth vector fields with smooth one-forms. The vector field
   `(σ♭)⁻¹ α` vanishes exactly where `α` does
   (`TauCeti.SmoothTwoForm.IsNondegenerate.interiorEquiv_symm_apply_eq_zero_iff`).
+* `TauCeti.SmoothTwoForm.contMDiff_interiorEquiv_symm_mpullback_prodMk`: the vector fields
+  `(σ_t♭)⁻¹ α_t` of a smooth family of nondegenerate two-forms and a smooth family of one-forms
+  depend smoothly on the parameter.
+* `TauCeti.SmoothTwoForm.IsSymplectic.mlieDerivForm_interiorEquiv_symm`: for a closed
+  nondegenerate `σ`, the Lie derivative of `σ` along `(σ♭)⁻¹ β` is `dβ`.
 
 ## References
 
@@ -269,15 +276,52 @@ theorem IsNondegenerate.interior_interiorEquiv_symm [FiniteDimensional ℝ E]
 theorem IsNondegenerate.interiorEquiv_symm_apply_eq_zero_iff [FiniteDimensional ℝ E]
     (h : σ.IsNondegenerate) (α : SmoothForm I M ℝ 1) (x : M) :
     h.interiorEquiv.symm α x = 0 ↔ α.1 x = 0 := by
-  rw [interiorEquiv_symm_apply, (h.isInvertible_flat x).inverse_apply_eq, map_zero]
-  refine ⟨fun h0 ↦ ContinuousAlternatingMap.ext fun v ↦ ?_,
-    fun h0 ↦ ContinuousLinearMap.ext fun v ↦ ?_⟩
-  · -- A family of one tangent vector is the constant family at its only entry.
-    have hv : v = fun _ ↦ v 0 := funext fun i ↦ congrArg v (Subsingleton.elim i 0)
-    rw [hv, ← SmoothForm.degreeOneEquiv_apply_apply, h0]
-    rfl
-  · rw [SmoothForm.degreeOneEquiv_apply_apply, h0]
-    rfl
+  rw [interiorEquiv_symm_apply, (h.isInvertible_flat x).inverse_apply_eq, map_zero,
+    ← SmoothForm.degreeOneEquiv_coe_eq_zero_iff, ← ContinuousLinearMap.toLinearMap_zero,
+    ContinuousLinearMap.coe_inj]
+
+/-! ### Smooth families of inverse flat maps -/
+
+/-- **Inverse flat maps of a smooth family of nondegenerate two-forms.** Let `σ` be a smooth
+two-form on `N × M` whose slices `σ_t = ι_t^* σ` are all nondegenerate, and let `α` be a smooth
+one-form on `N × M` with slices `α_t`. Then the vector fields `(σ_t♭)⁻¹ α_t`, the solutions of
+`ι_X σ_t = α_t`, depend smoothly on `t`: the map `(t, x) ↦ (x, (σ_t♭)⁻¹ α_t (x))` is smooth. -/
+theorem contMDiff_interiorEquiv_symm_mpullback_prodMk {EN HN N : Type*} [NormedAddCommGroup EN]
+    [NormedSpace ℝ EN] [TopologicalSpace HN] {J : ModelWithCorners ℝ EN HN} [TopologicalSpace N]
+    [ChartedSpace HN N] [IsManifold J ∞ N] [FiniteDimensional ℝ E]
+    (σ : SmoothForm (J.prod I) (N × M) ℝ 2)
+    (hσ : ∀ t, IsNondegenerate
+      (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ))
+    (α : SmoothForm (J.prod I) (N × M) ℝ 1) :
+    ContMDiff (J.prod I) I.tangent ∞ (fun p : N × M ↦ (⟨p.2, (hσ p.1).interiorEquiv.symm
+      (SmoothForm.mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α) p.2⟩ :
+        TangentBundle I M)) := by
+  intro p
+  simp only [IsNondegenerate.interiorEquiv_symm_apply]
+  have hflat := contMDiffAt_sectionAlong_flat (b := Prod.snd) (σ := fun q : N × M ↦
+    SmoothForm.mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) σ)
+    (SmoothForm.contMDiff_mpullback_prodMk σ p)
+  have hα := (SmoothForm.contMDiffAt_sectionAlong_degreeOneEquiv_iff (b := Prod.snd)
+    (α := fun q : N × M ↦
+      SmoothForm.mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) α)).2
+    (SmoothForm.contMDiff_mpullback_prodMk α p)
+  have hinv := ContMDiffAt.clm_bundle_inverse (x := p) (b := Prod.snd)
+    (E₁ := TangentSpace I) (E₂ := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) (ϕ := fun q : N × M ↦
+    flat (SmoothForm.mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) σ) q.2) hflat
+    ((hσ p.1).isInvertible_flat p.2)
+  exact hinv.clm_bundle_apply hα
+
+/-! ### The Lie derivative along an inverse flat map -/
+
+/-- **Lie derivative along an inverse flat map.** For a symplectic form `σ` on a
+finite-dimensional manifold and a smooth one-form `β`, the vector field `X = (σ♭)⁻¹ β` with
+`ι_X σ = β` has `L_X σ = dβ`. This is Cartan's formula `L_X σ = d(ι_X σ) + ι_X dσ`. -/
+theorem IsSymplectic.mlieDerivForm_interiorEquiv_symm [FiniteDimensional ℝ E]
+    (hσ : σ.IsSymplectic) (β : SmoothForm I M ℝ 1) :
+    mlieDerivForm (hσ.isNondegenerate.interiorEquiv.symm β) σ.1 = mextDeriv β.1 := by
+  rw [SmoothForm.mlieDerivForm_eq_mextDeriv_interior
+    ((hσ.isNondegenerate.interiorEquiv.symm β).contMDiff.mdifferentiable (by simp)) hσ.isClosed,
+    hσ.isNondegenerate.interior_interiorEquiv_symm]
 
 end SmoothTwoForm
 

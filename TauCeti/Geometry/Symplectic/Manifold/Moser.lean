@@ -50,11 +50,6 @@ exactness of the velocity which the theorem uses.
 
 ## Main results
 
-* `TauCeti.SmoothTwoForm.contMDiff_interiorEquiv_symm_mpullback_prodMk`: the vector fields
-  `(σ_t♭)⁻¹ α_t` of a smooth family of nondegenerate two-forms and a smooth family of one-forms
-  depend smoothly on the parameter.
-* `TauCeti.SmoothTwoForm.IsSymplectic.mlieDerivForm_interiorEquiv_symm`: for a closed
-  nondegenerate `σ`, the Lie derivative of `σ` along `(σ♭)⁻¹ β` is `dβ`.
 * `TauCeti.SmoothTwoForm.mpullback_timeDependentFlowOf_eq`: a complete Moser flow pulls `σ_t`
   back to `σ_s`.
 * `TauCeti.SmoothTwoForm.exists_isotopy_mpullback_eq_of_isCompact`: Moser's stability theorem for
@@ -70,6 +65,13 @@ exactness of the velocity which the theorem uses.
   Section 3.2 (Moser isotopy and Moser stability).
 * A. Cannas da Silva, *Lectures on Symplectic Geometry*, Lecture Notes in Mathematics 1764,
   Springer, 2001, Lecture 7 (Moser's theorems and Moser's trick).
+
+## Acknowledgements
+
+The isotopy assembly here (completeness of the suspension, the flow diffeomorphisms
+`TauCeti.timeDependentFlowDiffeomorph`, and Moser's principle for families of forms) follows the
+same skeleton as the Gray stability proof for contact forms in Tau Ceti pull request
+https://github.com/TauCetiProject/TauCeti/pull/35119.
 -/
 
 public section
@@ -86,48 +88,6 @@ namespace SmoothTwoForm
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M]
-
-/-! ### Smooth families of inverse flat maps -/
-
-/-- **Inverse flat maps of a smooth family of nondegenerate two-forms.** Let `σ` be a smooth
-two-form on `N × M` whose slices `σ_t = ι_t^* σ` are all nondegenerate, and let `α` be a smooth
-one-form on `N × M` with slices `α_t`. Then the vector fields `(σ_t♭)⁻¹ α_t`, the solutions of
-`ι_X σ_t = α_t`, depend smoothly on `t`: the map `(t, x) ↦ (x, (σ_t♭)⁻¹ α_t (x))` is smooth. -/
-theorem contMDiff_interiorEquiv_symm_mpullback_prodMk {EN HN N : Type*} [NormedAddCommGroup EN]
-    [NormedSpace ℝ EN] [TopologicalSpace HN] {J : ModelWithCorners ℝ EN HN} [TopologicalSpace N]
-    [ChartedSpace HN N] [IsManifold J ∞ N] (σ : SmoothForm (J.prod I) (N × M) ℝ 2)
-    (hσ : ∀ t, IsNondegenerate
-      (SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) σ))
-    (α : SmoothForm (J.prod I) (N × M) ℝ 1) :
-    ContMDiff (J.prod I) I.tangent ∞ (fun p : N × M ↦ (⟨p.2, (hσ p.1).interiorEquiv.symm
-      (SmoothForm.mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α) p.2⟩ :
-        TangentBundle I M)) := by
-  intro p
-  simp only [IsNondegenerate.interiorEquiv_symm_apply]
-  have hflat := contMDiffAt_sectionAlong_flat (b := Prod.snd) (σ := fun q : N × M ↦
-    SmoothForm.mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) σ)
-    (SmoothForm.contMDiff_mpullback_prodMk σ p)
-  have hα := (SmoothForm.contMDiffAt_sectionAlong_degreeOneEquiv_iff (b := Prod.snd)
-    (α := fun q : N × M ↦
-      SmoothForm.mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) α)).2
-    (SmoothForm.contMDiff_mpullback_prodMk α p)
-  have hinv := ContMDiffAt.clm_bundle_inverse (x := p) (b := Prod.snd)
-    (E₁ := TangentSpace I) (E₂ := fun x : M ↦ TangentSpace I x →L[ℝ] ℝ) (ϕ := fun q : N × M ↦
-    flat (SmoothForm.mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) σ) q.2) hflat
-    ((hσ p.1).isInvertible_flat p.2)
-  exact hinv.clm_bundle_apply hα
-
-/-! ### The Lie derivative along an inverse flat map -/
-
-/-- **Lie derivative along an inverse flat map.** For a symplectic form `σ` on a
-finite-dimensional manifold and a smooth one-form `β`, the vector field `X = (σ♭)⁻¹ β` with
-`ι_X σ = β` has `L_X σ = dβ`. This is Cartan's formula `L_X σ = d(ι_X σ) + ι_X dσ`. -/
-theorem IsSymplectic.mlieDerivForm_interiorEquiv_symm {σ : SmoothTwoForm I M}
-    (hσ : σ.IsSymplectic) (β : SmoothForm I M ℝ 1) :
-    mlieDerivForm (hσ.isNondegenerate.interiorEquiv.symm β) σ.1 = mextDeriv β.1 := by
-  rw [SmoothForm.mlieDerivForm_eq_mextDeriv_interior
-    ((hσ.isNondegenerate.interiorEquiv.symm β).contMDiff.mdifferentiable (by simp)) hσ.isClosed,
-    hσ.isNondegenerate.interior_interiorEquiv_symm]
 
 /-! ### Moser's stability theorem -/
 
