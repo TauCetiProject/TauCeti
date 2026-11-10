@@ -33,6 +33,9 @@ with ratio `2 ^ (n - s)`.
 ## Main declarations
 
 * `TauCeti.setLIntegral_ofReal_dist_rpow_neg_le`: the tail bound for `dist x y ^ (-s)`.
+* `TauCeti.ofReal_dist_rpow_neg_le_tsum`: off the ball `B(c, 2 r)`, `dist z c ^ (-s)` is dominated
+  by a sum over the dyadic balls `B(c, 2^(k+2) r)` of the value `(2^(k+1) r) ^ (-s)` it bounds on
+  the `k`-th annulus.
 * `MeasureTheory.Measure.setLIntegral_ofReal_norm_rpow_neg_le`: the tail bound for `‖x‖ ^ (-s)`
   under an additive Haar measure, for `s` above the dimension.
 -/
@@ -102,6 +105,24 @@ theorem setLIntegral_ofReal_dist_rpow_neg_le {y : X} {A : ℝ≥0∞} {n s R : �
         rw [tsum_mul_left, tsum_geometric_of_lt_one hq0 hq1]
         congr 2
         ring
+
+omit [MeasurableSpace X] in
+/-- **Dyadic annuli.** Off the ball `B(c, 2 r)`, the power `dist z c ^ (-s)`, `s ≥ 0`, is
+dominated by the sum over `k` of `(2^(k+1) r) ^ (-s)` times the indicator of `B(c, 2^(k+2) r)`. -/
+theorem ofReal_dist_rpow_neg_le_tsum {c z : X} {r s : ℝ} (hr : 0 < r) (hs : 0 ≤ s)
+    (hz : 2 * r ≤ dist z c) :
+    ENNReal.ofReal (dist z c ^ (-s)) ≤ ∑' k : ℕ,
+      (ball c (2 ^ (k + 2) * r)).indicator
+        (fun _ => ENNReal.ofReal ((2 ^ (k + 1) * r) ^ (-s))) z := by
+  obtain ⟨k, hk1, hk2⟩ := exists_nat_pow_near (x := dist z c / (2 * r))
+    ((one_le_div (by positivity)).2 hz) one_lt_two
+  rw [le_div_iff₀ (by positivity)] at hk1
+  rw [div_lt_iff₀ (by positivity)] at hk2
+  have hmem : z ∈ ball c (2 ^ (k + 2) * r) := mem_ball.2 (hk2.trans_eq (by ring))
+  refine le_trans ?_ (le_tsum _ k)
+  rw [indicator_of_mem hmem]
+  exact ENNReal.ofReal_le_ofReal (Real.rpow_le_rpow_of_nonpos (by positivity)
+    ((le_of_eq (by ring)).trans hk1) (by linarith))
 
 end TauCeti
 
