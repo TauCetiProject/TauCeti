@@ -157,7 +157,7 @@ theorem exists_unstableSet_inter_stableSet_chart (hf : IsMorse 𝓘(ℝ, E) f)
   obtain ⟨L₂, q₂, -, hy₂, hq₂, h₂⟩ :=
     hX.exists_isSliceChart_stableSet (hf.contMDiff.mdifferentiable (by simp)) hb hy.2
   exact exists_isSliceChart_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ h₁ h₂ hy₁
-    hy₂ hy.1 hy.2 htr
+    hy₂ htr
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
       (Submodule.closed_of_finiteDimensional _))
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
@@ -181,7 +181,7 @@ theorem span_mtangentConeAt_unstableSet_inter_stableSet (hf : IsMorse 𝓘(ℝ, 
   obtain ⟨L₂, q₂, -, hy₂, hq₂, h₂⟩ :=
     hX.exists_isSliceChart_stableSet (hf.contMDiff.mdifferentiable (by simp)) hb hy.2
   exact span_mtangentConeAt_inter_of_span_mtangentConeAt_sup_eq_top (by simp) hq₁ hq₂ h₁ h₂ hy₁
-    hy₂ hy.1 hy.2 htr
+    hy₂ htr
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
       (Submodule.closed_of_finiteDimensional _))
     (Submodule.ClosedComplemented.of_finiteDimensional_quotient
