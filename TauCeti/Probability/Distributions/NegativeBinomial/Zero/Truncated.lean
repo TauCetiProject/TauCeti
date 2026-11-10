@@ -156,6 +156,6 @@ theorem quantile_map_cast_negativeBinomialMeasure_cond_compl_zero_eq_iff (hr : 0
   have hv : p ^ r + u * (1 - p ^ r) ∈ Ioo 0 1 :=
     ⟨by nlinarith [rpow_pos_of_pos hp r, hu.1], by nlinarith [hu.2]⟩
   rw [quantile_map_cast_negativeBinomialMeasure_cond_compl_zero hr hp hp1 hu,
-    quantile_map_cast_negativeBinomialMeasure_eq_iff hr hp hp1.le hv]
+    quantile_map_cast_negativeBinomialMeasure_eq_iff hr hp hv]
 
 end TauCeti.Probability

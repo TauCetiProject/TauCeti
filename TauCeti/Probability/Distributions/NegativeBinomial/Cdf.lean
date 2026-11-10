@@ -109,19 +109,24 @@ theorem cdf_map_cast_negativeBinomialMeasure (hr : 0 < r) (hp : 0 < p) (hp1 : p 
   rw [Measure.cdf_map_natCast _ hx, negativeBinomialMeasure_real_Iic hr hp hp1]
 
 /-- Below the origin, the cdf of the real-valued negative-binomial law vanishes, at the shape-zero
-boundary as well: the law is carried by the natural numbers. -/
-theorem cdf_map_cast_negativeBinomialMeasure_of_neg (hr : 0 ≤ r) (hp : 0 < p) (hp1 : p ≤ 1)
-    {x : ℝ} (hx : x < 0) :
+boundary and at invalid parameters, where the law is zero, as well: the law is carried by the
+natural numbers. -/
+theorem cdf_map_cast_negativeBinomialMeasure_of_neg {x : ℝ} (hx : x < 0) :
     cdf ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)) x = 0 := by
-  let _ := isProbabilityMeasure_negativeBinomialMeasure hr hp hp1
-  exact Measure.cdf_map_natCast_of_neg _ hx
+  by_cases h : 0 ≤ r ∧ 0 < p ∧ p ≤ 1
+  · let _ := isProbabilityMeasure_negativeBinomialMeasure h.1 h.2.1 h.2.2
+    exact Measure.cdf_map_natCast_of_neg _ hx
+  · rw [negativeBinomialMeasure_eq_zero_of_invalid h, Measure.map_zero, cdf_zero,
+      ite_eq_right (not_le.2 hx)]
 
 /-- At shape zero, the cdf of the real-valued negative-binomial law is the step function at the
-origin. -/
-theorem cdf_map_cast_negativeBinomialMeasure_zero (hp : 0 < p) (hp1 : p ≤ 1) (x : ℝ) :
+origin, also at invalid success probabilities, where the law is zero. -/
+theorem cdf_map_cast_negativeBinomialMeasure_zero (x : ℝ) :
     cdf ((negativeBinomialMeasure 0 p).map (Nat.cast : ℕ → ℝ)) x =
       if 0 ≤ x then 1 else 0 := by
-  rw [negativeBinomialMeasure_zero hp hp1, Measure.map_dirac, Nat.cast_zero, cdf_dirac]
+  by_cases h : 0 < p ∧ p ≤ 1
+  · rw [negativeBinomialMeasure_zero h.1 h.2, Measure.map_dirac, Nat.cast_zero, cdf_dirac]
+  · rw [negativeBinomialMeasure_eq_zero_of_invalid (fun h' ↦ h h'.2), Measure.map_zero, cdf_zero]
 
 /-! ### Random-variable corollary -/
 

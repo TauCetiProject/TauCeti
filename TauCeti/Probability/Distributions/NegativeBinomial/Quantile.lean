@@ -43,26 +43,49 @@ variable {r p u : ℝ}
 when it is the least index whose incomplete-beta cumulative mass reaches the level. -/
 @[simp]
 theorem quantile_map_cast_negativeBinomialMeasure_eq_iff (hr : 0 < r) (hp : 0 < p)
-    (hp1 : p ≤ 1) (hu : u ∈ Ioo 0 1) (k : ℕ) :
+    (hu : u ∈ Ioo 0 1) (k : ℕ) :
     ((negativeBinomialMeasure r p).map (Nat.cast : ℕ → ℝ)).quantile u = k ↔
       IsLeast {j : ℕ | u ≤ regularizedIncompleteBeta r (j + 1) p} k := by
-  let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
-  rw [Measure.quantile_map_natCast_eq_iff _ hu]
-  simp only [negativeBinomialMeasure_real_Iic hr hp hp1]
+  by_cases hp1 : p ≤ 1
+  · let _ := isProbabilityMeasure_negativeBinomialMeasure hr.le hp hp1
+    rw [Measure.quantile_map_natCast_eq_iff _ hu]
+    simp only [negativeBinomialMeasure_real_Iic hr hp hp1]
+  · have hI (j : ℕ) : regularizedIncompleteBeta r (j + 1) p = 1 :=
+      regularizedIncompleteBeta_eq_one_of_one_le hr.le (by positivity) (not_le.1 hp1).le
+    rw [negativeBinomialMeasure_eq_zero_of_invalid (fun h ↦ hp1 h.2.2), Measure.map_zero,
+      Measure.quantile_zero]
+    simp only [hI, hu.2.le, ofPred_true]
+    rw [isLeast_univ_iff, isBot_iff_eq_bot, Nat.bot_eq_zero]
+    exact_mod_cast eq_comm
 
-/-- At shape zero, every valid negative-binomial law is concentrated at zero, so its interior
-lower quantiles are zero. -/
-theorem quantile_map_cast_negativeBinomialMeasure_zero (hp : 0 < p) (hp1 : p ≤ 1)
-    (hu : u ∈ Ioo 0 1) :
+/-- At shape zero, every valid negative-binomial law is concentrated at zero, so its lower
+quantiles are zero, at every level and also at invalid success probabilities. -/
+theorem quantile_map_cast_negativeBinomialMeasure_zero :
     ((negativeBinomialMeasure 0 p).map (Nat.cast : ℕ → ℝ)).quantile u = 0 := by
-  simp [negativeBinomialMeasure_zero hp hp1, Measure.quantile_dirac 0 hu.1 hu.2.le]
+  by_cases h : 0 < p ∧ p ≤ 1
+  · rw [negativeBinomialMeasure_zero h.1 h.2, Measure.map_dirac, Nat.cast_zero]
+    rcases le_or_gt u 0 with h0 | h0
+    · exact Measure.quantile_of_nonpos _ h0
+    rcases le_or_gt u 1 with h1 | h1
+    · exact Measure.quantile_dirac 0 h0 h1
+    · exact Measure.quantile_of_one_lt _ h1
+  · rw [negativeBinomialMeasure_eq_zero_of_invalid (fun h' ↦ h h'.2), Measure.map_zero,
+      Measure.quantile_zero]
 
 /-- At success probability one, every valid negative-binomial law is concentrated at zero, so
-its interior lower quantiles are zero. -/
-theorem quantile_map_cast_negativeBinomialMeasure_one (hr : 0 ≤ r) (hu : u ∈ Ioo 0 1) :
+its lower quantiles are zero, at every level and also at invalid shapes. -/
+theorem quantile_map_cast_negativeBinomialMeasure_one :
     ((negativeBinomialMeasure r 1).map (Nat.cast : ℕ → ℝ)).quantile u = 0 := by
-  simp [negativeBinomialMeasure_eq_dirac_of_successProbability_eq_one hr,
-    Measure.quantile_dirac 0 hu.1 hu.2.le]
+  by_cases hr : 0 ≤ r
+  · rw [negativeBinomialMeasure_eq_dirac_of_successProbability_eq_one hr,
+      Measure.map_dirac, Nat.cast_zero]
+    rcases le_or_gt u 0 with h0 | h0
+    · exact Measure.quantile_of_nonpos _ h0
+    rcases le_or_gt u 1 with h1 | h1
+    · exact Measure.quantile_dirac 0 h0 h1
+    · exact Measure.quantile_of_one_lt _ h1
+  · rw [negativeBinomialMeasure_eq_zero_of_invalid (fun h ↦ hr h.1), Measure.map_zero,
+      Measure.quantile_zero]
 
 /-- Every valid real-cast negative-binomial law has lower support endpoint zero, including the
 shape-zero and success-probability-one Dirac boundaries. -/
@@ -101,8 +124,8 @@ theorem tendsto_quantile_map_cast_negativeBinomialMeasure_nhdsLT_one (hr : 0 ≤
     apply tendsto_const_nhds.congr'
     filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with v hv
     rcases hdeg with rfl | rfl
-    · exact_mod_cast (quantile_map_cast_negativeBinomialMeasure_zero hp hp1 hv).symm
-    · exact_mod_cast (quantile_map_cast_negativeBinomialMeasure_one hr hv).symm
+    · exact_mod_cast (quantile_map_cast_negativeBinomialMeasure_zero).symm
+    · exact_mod_cast (quantile_map_cast_negativeBinomialMeasure_one).symm
   · rw [ite_eq_right hdeg]
     have hr0 : 0 < r := lt_of_le_of_ne hr (fun h ↦ hdeg (Or.inl h.symm))
     have hp1' : p < 1 := lt_of_le_of_ne hp1 (fun h ↦ hdeg (Or.inr h))

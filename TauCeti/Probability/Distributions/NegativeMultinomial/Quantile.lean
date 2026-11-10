@@ -71,8 +71,7 @@ theorem quantile_map_cast_eval_negativeMultinomialMeasure_eq_iff {r p₀ u : ℝ
     ((negativeMultinomialMeasure r p₀ p).map (fun x ↦ (x i : ℝ))).quantile u = k ↔
       IsLeast {j : ℕ | u ≤ regularizedIncompleteBeta r (j + 1) (p₀ / (p₀ + p i))} k := by
   rw [quantile_map_cast_eval_negativeMultinomialMeasure hr.le hp₀ hp i,
-    quantile_map_cast_negativeBinomialMeasure_eq_iff hr (by positivity)
-      (div_le_one_of_le₀ (le_add_of_nonneg_right (p i).coe_nonneg) (by positivity)) hu]
+    quantile_map_cast_negativeBinomialMeasure_eq_iff hr (by positivity) hu]
 
 /-- The real-cast quantile of the total negative-multinomial count is the quantile of its
 negative-binomial marginal. This includes empty category types and shape zero. -/
@@ -92,10 +91,8 @@ theorem quantile_map_cast_sum_negativeMultinomialMeasure_eq_iff {r p₀ u : ℝ}
     ((negativeMultinomialMeasure r p₀ p).map (fun x ↦ ((∑ i, x i : ℕ) : ℝ))).quantile u =
         k ↔
       IsLeast {j : ℕ | u ≤ regularizedIncompleteBeta r (j + 1) p₀} k := by
-  have hp₀_le_one : p₀ ≤ 1 :=
-    hp ▸ le_add_of_nonneg_right (Finset.sum_nonneg fun i _ ↦ (p i).coe_nonneg)
   rw [quantile_map_cast_sum_negativeMultinomialMeasure hr.le hp₀ hp,
-    quantile_map_cast_negativeBinomialMeasure_eq_iff hr hp₀ hp₀_le_one hu]
+    quantile_map_cast_negativeBinomialMeasure_eq_iff hr hp₀ hu]
 
 /-- Every valid real-cast coordinate has lower support endpoint zero. -/
 theorem tendsto_quantile_map_cast_eval_negativeMultinomialMeasure_nhdsGT_zero
