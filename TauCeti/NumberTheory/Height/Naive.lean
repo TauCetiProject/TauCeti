@@ -100,8 +100,9 @@ theorem natDenominator_le_naiveHeight (x : F) :
     have h' : (Algebra.natDenominator x : ℝ) ≤ (primitiveMinpoly x).leadingCoeff := by
       exact_mod_cast h
     exact h'.trans (leadingCoeff_primitiveMinpoly_le_naiveHeight x)
-  · simpa [natDenominator_eq_zero_of_not_isAlgebraic hx] using
-      zero_le_one.trans (one_le_naiveHeight x)
+  · have h0 : Algebra.natDenominator x = 0 :=
+      not_not.1 (mt Algebra.natDenominator_ne_zero_iff_isAlgebraic_rat.1 hx)
+    simpa [h0] using zero_le_one.trans (one_le_naiveHeight x)
 
 /-- The naive height of a rational number is the maximum of its numerator's
 absolute value and its positive denominator, independently of the ambient field. -/

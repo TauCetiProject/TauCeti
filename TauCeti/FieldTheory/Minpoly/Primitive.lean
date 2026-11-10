@@ -64,8 +64,6 @@ clears the denominator of `x` when `F` is a field.
   `TauCeti.leadingCoeff_primitiveMinpoly_le_natDenominator_pow`: `a₀ x` is an algebraic integer,
   so in fields the denominator of `x` divides `a₀`, and conversely `a₀` is at most the `d`-th
   power of the denominator.
-* `TauCeti.natDenominator_eq_zero_of_not_isAlgebraic`: a transcendental element has natural
-  denominator `0`.
 * `TauCeti.natDegree_minpoly_int_natDenominator_smul`: in fields, `D x` for the denominator `D`
   of `x` has the same degree over `ℤ` as `x` has over `ℚ`.
 
@@ -311,16 +309,6 @@ theorem isIntegral_leadingCoeff_primitiveMinpoly_smul {x : F} (hx : IsAlgebraic 
 section Field
 
 variable {K : Type*} [Field K] [CharZero K]
-
-/-- A transcendental element has natural denominator `0`: the converse of
-`Algebra.natDenominator_ne_zero_of_isAlgebraic_rat`. -/
-theorem natDenominator_eq_zero_of_not_isAlgebraic {x : K} (hx : ¬ IsAlgebraic ℚ x) :
-    Algebra.natDenominator x = 0 := by
-  by_contra h
-  have hint : IsIntegral ℤ ((Algebra.natDenominator x : ℤ) • x) := by
-    simpa only [natCast_zsmul] using Algebra.isIntegral_natDenominator_smul x
-  exact hx <| (IsFractionRing.isAlgebraic_iff ℤ ℚ K).mp <|
-    hint.isAlgebraic.of_smul (mem_nonZeroDivisors_of_ne_zero (by exact_mod_cast h))
 
 /-- For algebraic `x`, the denominator of `x` divides the leading coefficient of `F_x`. -/
 theorem natDenominator_dvd_leadingCoeff_primitiveMinpoly {x : K} (hx : IsAlgebraic ℚ x) :

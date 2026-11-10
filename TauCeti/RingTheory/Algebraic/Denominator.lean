@@ -17,13 +17,17 @@ absolute value of a generator of the ideal of integers `n` with `n • x` integr
 of `x` is `1` exactly when `x` is itself integral over `ℤ`
 (`Algebra.natDenominator_eq_one_iff`), that is, when every integer multiple of `x` is integral over
 `ℤ`. In a `ℚ`-algebra, an element algebraic over `ℚ` is algebraic over `ℤ`, so it has a nonzero
-denominator (`Algebra.natDenominator_ne_zero_of_isAlgebraic_rat`).
+denominator (`Algebra.natDenominator_ne_zero_of_isAlgebraic_rat`), and the denominator of a
+transcendental element is `0`: the denominator is nonzero exactly for algebraic elements
+(`Algebra.natDenominator_ne_zero_iff_isAlgebraic_rat`).
 
 ## Main results
 
 * `Algebra.natDenominator_eq_one_iff`: `natDenominator x = 1` iff `x` is integral over `ℤ`.
 * `Algebra.natDenominator_ne_zero_of_isAlgebraic_rat`: the denominator of an element of a
   `ℚ`-algebra that is algebraic over `ℚ` is nonzero.
+* `Algebra.natDenominator_ne_zero_iff_isAlgebraic_rat`: in a `ℚ`-algebra, the denominator of `x`
+  is nonzero exactly when `x` is algebraic over `ℚ`.
 -/
 
 public section
@@ -42,5 +46,15 @@ algebraic over `ℚ` and being algebraic over `ℤ` are equivalent. -/
 theorem natDenominator_ne_zero_of_isAlgebraic_rat {S : Type*} [CommRing S] [Algebra ℚ S] {x : S}
     (hx : IsAlgebraic ℚ x) : natDenominator x ≠ 0 :=
   IsAlgebraic.natDenominator_ne_zero ((IsFractionRing.isAlgebraic_iff ℤ ℚ S).2 hx)
+
+/-- In a `ℚ`-algebra, the denominator of `x` is nonzero exactly when `x` is algebraic over `ℚ`; a
+transcendental element has denominator `0`. -/
+theorem natDenominator_ne_zero_iff_isAlgebraic_rat {S : Type*} [CommRing S] [Algebra ℚ S] {x : S} :
+    natDenominator x ≠ 0 ↔ IsAlgebraic ℚ x := by
+  refine ⟨fun h ↦ ?_, natDenominator_ne_zero_of_isAlgebraic_rat⟩
+  have hint : IsIntegral ℤ ((natDenominator x : ℤ) • x) := by
+    simpa only [natCast_zsmul] using isIntegral_natDenominator_smul x
+  exact (IsFractionRing.isAlgebraic_iff ℤ ℚ S).mp <|
+    hint.isAlgebraic.of_smul (mem_nonZeroDivisors_of_ne_zero (by exact_mod_cast h))
 
 end Algebra
