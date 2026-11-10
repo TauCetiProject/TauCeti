@@ -45,10 +45,10 @@ binary summand and `W` its complement of rank at least three.
 
 public section
 
-open IsDedekindDomain NumberField NumberField.InfinitePlace QuadraticMap
+open IsDedekindDomain NumberField NumberField.InfinitePlace QuadraticMap TauCeti
 open scoped TensorProduct
 
-namespace TauCeti
+namespace QuadraticForm
 
 variable {K X Y : Type*} [Field K] [NumberField K]
   [AddCommGroup X] [Module K X] [FiniteDimensional K X]
@@ -58,7 +58,7 @@ omit [FiniteDimensional K X] in
 /-- If `W` is regular, then `-U x` is represented at a finite place `v` as soon as, where `W_v` is
 anisotropic, the value `U_v (1 ⊗ x)` lies in the square class of a local value of `U_v` that is
 the negative of a local value of `W_v`. -/
-private theorem _root_.QuadraticForm.represents_atFinitePlace_neg_apply
+private theorem represents_atFinitePlace_neg_apply
     (U : QuadraticForm K X) (W : QuadraticForm K Y) (hW : W.Nondegenerate)
     (v : HeightOneSpectrum (𝓞 K)) (x : X)
     (h : (W.atFinitePlace v).Anisotropic →
@@ -75,7 +75,7 @@ omit [FiniteDimensional K X] in
 /-- If `W` is regular, then `-U x` is represented at a real place `w` as soon as, where `W_w` is
 anisotropic, the value `U_w (1 ⊗ x)` lies in the square class of a local value of `U_w` that is
 the negative of a local value of `W_w`. -/
-private theorem _root_.QuadraticForm.represents_atRealPlace_neg_apply
+private theorem represents_atRealPlace_neg_apply
     (U : QuadraticForm K X) (W : QuadraticForm K Y) (hW : W.Nondegenerate)
     (w : {w : InfinitePlace K // w.IsReal}) (x : X)
     (h : (W.atRealPlace w).Anisotropic →
@@ -94,7 +94,7 @@ private theorem _root_.QuadraticForm.represents_atRealPlace_neg_apply
 many finite places. If at every finite or real place where `W` is anisotropic some nonzero local
 value of `U` is the negative of a local value of `W`, then there is a global vector `x` with
 `U x ≠ 0` such that `-U x` is represented by `W` at every finite and real place. -/
-theorem _root_.QuadraticForm.exists_apply_ne_zero_locallyRepresentsScalar_neg
+theorem exists_apply_ne_zero_locallyRepresentsScalar_neg
     (U : QuadraticForm K X) (W : QuadraticForm K Y) (hU : U ≠ 0) (hW : W.Nondegenerate)
     (hfin : {v : HeightOneSpectrum (𝓞 K) | (W.atFinitePlace v).Anisotropic}.Finite)
     (hfinite : ∀ v, (W.atFinitePlace v).Anisotropic →
@@ -160,7 +160,7 @@ many finite places, and suppose that at every finite or real place where `W` is 
 nonzero local value of `U` is the negative of a local value of `W`. If `W` represents over `K`
 every nonzero scalar that it represents at every finite and real place, then the orthogonal sum
 `U ⊥ W` is isotropic over `K`. -/
-theorem _root_.QuadraticForm.not_anisotropic_prod_of_forall_represents
+theorem not_anisotropic_prod_of_forall_represents
     (U : QuadraticForm K X) (W : QuadraticForm K Y) (hU : U ≠ 0) (hW : W.Nondegenerate)
     (hfin : {v : HeightOneSpectrum (𝓞 K) | (W.atFinitePlace v).Anisotropic}.Finite)
     (hfinite : ∀ v, (W.atFinitePlace v).Anisotropic →
@@ -177,4 +177,4 @@ theorem _root_.QuadraticForm.not_anisotropic_prod_of_forall_represents
   rw [Prod.mk_eq_zero] at hxy
   exact hx (by rw [hxy.1, map_zero])
 
-end TauCeti
+end QuadraticForm
