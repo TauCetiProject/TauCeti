@@ -14,9 +14,9 @@ public import TauCeti.LinearAlgebra.RootSystem.Component.Basic
 
 The roots and coroots of an irreducible component of a finite root system over a field form a root
 pairing on the component space and its coroot analogue, whose non-orthogonality graph is the
-component. It is an irreducible root system, which identifies the decomposition by connected
-components with the decomposition into irreducible root systems, and it inherits being
-crystallographic and being reduced.
+component. It is a root system, irreducible when `2 ≠ 0` in the field, which then identifies the
+decomposition by connected components with the decomposition into irreducible root systems, and it
+inherits being crystallographic and being reduced.
 
 The pairing between the two component spaces is perfect because a root or coroot of a component is
 orthogonal to everything in the other components, so nondegeneracy of the ambient pairing already
@@ -30,7 +30,8 @@ holds on the component.
 
 * `RootPairing.nonorthogonalGraph_componentPairing`: the graph of the component pairing is the
   component.
-* `RootPairing.isIrreducible_componentPairing`: the component pairing is irreducible.
+* `RootPairing.isIrreducible_componentPairing`: the component pairing is irreducible when
+  `2 ≠ 0` in the field.
 
 ## References
 
@@ -127,28 +128,14 @@ theorem nonorthogonalGraph_componentPairing :
   simp [SimpleGraph.ConnectedComponent.toSimpleGraph, IsOrthogonal, Subtype.ext_iff]
 
 instance isRootSystem_componentPairing : (P.componentPairing C).IsRootSystem where
-  span_root_eq_top := by
-    refine Submodule.map_injective_of_injective (P.componentSpace C).subtype_injective ?_
-    rw [Submodule.map_span, Submodule.map_top, Submodule.range_subtype]
-    refine Eq.trans ?_ (P.componentSpace_def C).symm
-    congr 1
-    ext x
-    constructor
-    · rintro ⟨_, ⟨i, rfl⟩, rfl⟩
-      exact ⟨i, i.2, rfl⟩
-    · rintro ⟨i, hi, rfl⟩
-      exact ⟨_, ⟨⟨i, hi⟩, rfl⟩, rfl⟩
-  span_coroot_eq_top := by
-    refine Submodule.map_injective_of_injective (P.corootComponentSpace C).subtype_injective ?_
-    rw [Submodule.map_span, Submodule.map_top, Submodule.range_subtype]
-    refine Eq.trans ?_ (P.corootComponentSpace_def C).symm
-    congr 1
-    ext x
-    constructor
-    · rintro ⟨_, ⟨i, rfl⟩, rfl⟩
-      exact ⟨i, i.2, rfl⟩
-    · rintro ⟨i, hi, rfl⟩
-      exact ⟨_, ⟨⟨i, hi⟩, rfl⟩, rfl⟩
+  span_root_eq_top :=
+    (Submodule.span_range_subtype_eq_top_iff _ fun i : C.supp ↦
+      root_mem_componentSpace_of_mem_supp i.2).mpr <| by
+        rw [componentSpace_def, Set.image_eq_range]
+  span_coroot_eq_top :=
+    (Submodule.span_range_subtype_eq_top_iff _ fun i : C.supp ↦
+      coroot_mem_corootComponentSpace_of_mem_supp i.2).mpr <| by
+        rw [corootComponentSpace_def, Set.image_eq_range]
 
 /-- **The root pairing of an irreducible component is irreducible.** -/
 instance isIrreducible_componentPairing [NeZero (2 : K)] : (P.componentPairing C).IsIrreducible :=

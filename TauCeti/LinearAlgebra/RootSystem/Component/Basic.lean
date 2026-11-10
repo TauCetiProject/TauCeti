@@ -20,10 +20,10 @@ partition of the roots is intrinsic, and any equivalence of root pairings carrie
 corresponding partition.
 
 Roots in different components are orthogonal. This makes the component spaces of a root system
-independent, with sum the whole space, puts each root in exactly one of them, shows that the
-reflection at any root preserves each of them, and makes them orthogonal under every invariant form.
-Over a field in which `2` is invertible it follows that a root system is irreducible exactly when
-its graph is connected.
+independent, with sum the whole space, puts each root in exactly one of them when `2 ≠ 0`, shows
+that the reflection at any root preserves each of them, and, over a domain with `2 ≠ 0`, makes them
+orthogonal under every invariant form. Over a field in which `2` is invertible it follows that a
+root system is irreducible exactly when its graph is connected.
 
 ## Main definitions
 
@@ -37,11 +37,11 @@ its graph is connected.
 
 * `RootPairing.isInternal_componentSpace`: a root system is the internal direct sum of its component
   spaces.
-* `RootPairing.root_mem_componentSpace_iff`: a root lies in exactly the component space of its own
-  component.
+* `RootPairing.root_mem_componentSpace_iff`: when `2 ≠ 0`, a root lies in exactly the component
+  space of its own component.
 * `RootPairing.componentSpace_mem_invtSubmodule`: component spaces are invariant under reflections.
-* `RootPairing.InvariantForm.apply_eq_zero_of_mem_componentSpace`: different component spaces are
-  orthogonal under every invariant form.
+* `RootPairing.InvariantForm.apply_eq_zero_of_mem_componentSpace`: over a domain with `2 ≠ 0`,
+  different component spaces are orthogonal under every invariant form.
 * `RootPairing.Equiv.map_componentSpace`: an equivalence carries component spaces to component
   spaces.
 * `RootPairing.isIrreducible_iff_connected_nonorthogonalGraph`: irreducibility is connectedness of
@@ -235,17 +235,12 @@ section Equiv
 variable {ι₂ M₂ N₂ : Type*} [AddCommGroup M₂] [Module R M₂] [AddCommGroup N₂] [Module R N₂]
   {Q : RootPairing ι₂ R M₂ N₂}
 
-@[simp]
-theorem Hom.isOrthogonal_indexEquiv_iff (f : Hom P Q) {i j : ι} :
-    Q.IsOrthogonal (f.indexEquiv i) (f.indexEquiv j) ↔ P.IsOrthogonal i j := by
-  simp only [IsOrthogonal, Hom.pairing]
-
 /-- An equivalence of root pairings is an isomorphism of non-orthogonality graphs, along its
 bijection of root indices. -/
 def Equiv.nonorthogonalGraphIso (e : P.Equiv Q) : P.nonorthogonalGraph ≃g Q.nonorthogonalGraph where
   toEquiv := e.indexEquiv
   map_rel_iff' {i j} := by
-    simp only [nonorthogonalGraph_adj, e.toHom.isOrthogonal_indexEquiv_iff,
+    simp only [nonorthogonalGraph_adj, IsOrthogonal, e.toHom.pairing,
       e.indexEquiv.apply_eq_iff_eq, ne_eq]
 
 @[simp]
