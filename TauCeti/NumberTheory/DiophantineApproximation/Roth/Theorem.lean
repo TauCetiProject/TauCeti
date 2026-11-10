@@ -114,7 +114,7 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
   have hεD : ε * D = h (n - 1) := by rw [hD_def]; field_simp
   have hD₀ : 0 < D := div_pos (hpos _) hε₀
   set r : Fin n → ℕ := fun i ↦ ⌊D / h i⌋₊ with hr_def
-  have hfl := floor_div_bounds hε hpos hmono hD₀ hεD
+  have hfl := floor_div_bounds (hε.trans (by norm_num)) hpos hmono hD₀ hεD
   have h5D (i : Fin n) : 5 * h i ≤ D := (hfl i).1
   have hr (i : Fin n) : 0 < r i := (hfl i).2.1
   have hup (i : Fin n) : r i * h i ≤ D := (hfl i).2.2.1

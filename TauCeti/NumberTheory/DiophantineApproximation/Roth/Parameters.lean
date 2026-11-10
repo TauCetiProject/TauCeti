@@ -116,7 +116,7 @@ theorem inv_mul_add_le_floor_div_mul {n k : ℕ} {h : ℕ → ℝ} {D L M σ C�
 /-- The degree bounds `⌊D / h i⌋₊` of Roth's auxiliary polynomial, for `D = h (n - 1) / ε` and a
 positive monotone sequence `h`: they are positive, `⌊D / h i⌋₊ * h i` lies between `(1 - ε) D`
 and `D`, and `5 h i ≤ D`. -/
-theorem floor_div_bounds {n : ℕ} {ε : ℝ} (hε : ε ≤ 1 / 12) {h : ℕ → ℝ}
+theorem floor_div_bounds {n : ℕ} {ε : ℝ} (hε : ε ≤ 1 / 5) {h : ℕ → ℝ}
     (hpos : ∀ k, 0 < h k) (hmono : Monotone h) {D : ℝ} (hD₀ : 0 < D) (hεD : ε * D = h (n - 1))
     (i : Fin n) : 5 * h i ≤ D ∧ 0 < ⌊D / h i⌋₊ ∧ (⌊D / h i⌋₊ : ℝ) * h i ≤ D ∧
       (1 - ε) * D ≤ ⌊D / h i⌋₊ * h i := by
