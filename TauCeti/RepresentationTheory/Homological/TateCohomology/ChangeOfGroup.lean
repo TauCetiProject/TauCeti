@@ -228,7 +228,8 @@ theorem posMap_characterConnectingClass
           (χ.comp Group.Abelianization.of.toAdditive))) =
       groupCohomology.δ (Rep.ratAddCircleShortComplex_shortExact G) 1 2 rfl
         ((groupCohomology.H1IsoOfIsTrivial (Rep.trivial ℤ G (AddCircle (1 : ℚ)))).inv
-          ((χ.comp (Group.Abelianization.map φ).toAdditive).comp Group.Abelianization.of.toAdditive)) := by
+          ((χ.comp (Group.Abelianization.map φ).toAdditive).comp
+              Group.Abelianization.of.toAdditive)) := by
     have h := congr($(TauCeti.groupCohomology.δ_naturality φ
       (Rep.ratAddCircleShortComplex_shortExact Q) (Rep.ratAddCircleShortComplex_shortExact G)
       (ratAddCircleShortComplexResHom φ f hf) 1 2 rfl)

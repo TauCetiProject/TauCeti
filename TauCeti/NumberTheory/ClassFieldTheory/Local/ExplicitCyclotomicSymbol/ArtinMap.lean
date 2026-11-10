@@ -372,7 +372,8 @@ with `ζ ^ pⁿ = 1`. -/
 theorem localArtinMap_cyclotomic_padic_neg_one (L : Type*) [Field L] [Algebra ℚ_[p] L]
     [FiniteDimensional ℚ_[p] L] [IsGalois ℚ_[p] L] (ι : L →ₐ[ℚ_[p]] SeparableClosure ℚ_[p])
     {σ : Gal(L/ℚ_[p])}
-    (hσ : localArtinMap ℚ_[p] L ι (Additive.ofMul (-1)) = Additive.ofMul (Group.Abelianization.of σ))
+    (hσ : localArtinMap ℚ_[p] L ι (Additive.ofMul (-1)) = Additive.ofMul (Group.Abelianization.of
+        σ))
     {n : ℕ} {ζ : L} (hζ : ζ ^ p ^ n = 1) :
     σ ζ = ζ⁻¹ := by
   have : NeZero (p ^ n) := ⟨pow_ne_zero n (Fact.out : p.Prime).ne_zero⟩

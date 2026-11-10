@@ -78,7 +78,7 @@ theorem exists_hasWeakFDerivOn_eLpNorm_le_of_hasWeakConjWirtingerDerivOn_of_le
         ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume V u D ∧
           eLpNorm D p (volume.restrict V) ≤
             C * (eLpNorm f p (volume.restrict U) + eLpNorm u r (volume.restrict U)) := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   have : Fact (1 ≤ p) := ⟨hp.le⟩
   have : Fact (1 ≤ p.conjExponent) := ⟨ENNReal.HolderConjugate.one_le _ p⟩
   have hq : 1 < p.conjExponent :=
@@ -140,7 +140,7 @@ No weak derivative of the solution is assumed. -/
 theorem HasWeakConjWirtingerDerivOn.memWkpLoc_one (hp : 1 < p) (hp_top : p ≠ ⊤) {Ω : Opens ℂ}
     {u f : ℂ → F} (hu : MemLpLoc p Ω u) (hf : MemLpLoc p Ω f)
     (h : HasWeakConjWirtingerDerivOn volume Ω u f) : MemWkpLoc p Ω 1 u := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   have hloc (K : Set ℂ) (hK : IsCompact K) (hKΩ : K ⊆ Ω) : ∃ V : Opens ℂ, K ⊆ V ∧ V ≤ Ω ∧
       ∃ D : ℂ → ℂ →L[ℝ] F, HasWeakFDerivOn volume V u D ∧ MemLp D p (volume.restrict V) := by
     obtain ⟨W, hW, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
@@ -169,7 +169,7 @@ function whose distributional `\bar∂` derivative lies in `W^{k,p}_loc` on an o
 theorem HasWeakConjWirtingerDerivOn.memWkpLoc_succ (hp : 1 < p) (hp_top : p ≠ ⊤) {Ω : Opens ℂ}
     {k : ℕ} {u f : ℂ → F} (hu : MemLpLoc p Ω u) (hf : MemWkpLoc p Ω k f)
     (h : HasWeakConjWirtingerDerivOn volume Ω u f) : MemWkpLoc p Ω (k + 1) u := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   induction k generalizing u f with
   | zero => exact h.memWkpLoc_one hp hp_top hu (memWkpLoc_zero_iff.1 hf)
   | succ k ih =>
@@ -195,7 +195,7 @@ theorem exists_eLpNorm_le_of_hasWeakConjWirtingerDerivOn_of_le (hp : 1 < p) (hp_
         HasWeakConjWirtingerDerivOn volume Ω u f → HasWeakFDerivOn volume Ω u D →
         eLpNorm D p (volume.restrict K) ≤
           C * (eLpNorm f p (volume.restrict Ω') + eLpNorm u r (volume.restrict Ω')) := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   obtain ⟨W, hW, hKW, hWΩ, hWc⟩ := exists_open_between_and_isCompact_closure hK Ω.isOpen hKΩ
   obtain ⟨V, hKV, -, hVW, C, hC⟩ :=
     exists_hasWeakFDerivOn_eLpNorm_le_of_hasWeakConjWirtingerDerivOn_of_le (F := F)
@@ -256,7 +256,7 @@ private theorem exists_eLpNormWkp_compact_le_of_hasWeakConjWirtingerDerivOn (hp 
         HasWeakConjWirtingerDerivOn volume Ω u f →
         eLpNormWkp p K (k + 1) u ≤
           C * (eLpNormWkp p Ω' k f + eLpNorm u p (volume.restrict Ω')) := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   have hint : Opens.interior K ≤ Ω := fun x hx => hKΩ (interior_subset hx)
   induction k generalizing K with
   | zero =>

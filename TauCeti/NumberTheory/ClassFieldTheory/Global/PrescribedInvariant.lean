@@ -1001,7 +1001,8 @@ theorem exists_ideleSumLocalInv_eq_one_div_degree_of_isCyclic
       ideleSumLocalInv K L y = ((1 / L.degree : ℚ) : AddCircle (1 : ℚ)) := by
   obtain ⟨γ, hγ⟩ := IsCyclic.exists_ofOrder_eq_natCard (α := L.Gal)
   obtain ⟨⟨g, hg⟩, hgγ⟩ := hv γ
-  -- The Galois group is commutative, so `Group.Abelianization.of` is injective and `γ` keeps its order.
+  -- The Galois group is commutative, so `Group.Abelianization.of` is injective and `γ` keeps its
+  -- order.
   have hof : orderOf (Group.Abelianization.of γ) = L.degree :=
     ((orderOf_injective _ Group.Abelianization.of_injective γ).trans hγ).trans
       L.degree_eq_natCard_gal.symm

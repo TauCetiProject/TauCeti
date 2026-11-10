@@ -757,7 +757,8 @@ lemma homology_one_addMonoidHom_ext {A : Type*} [AddZeroClass A]
 the Hurewicz map identifies the abelianization of `π₁(X, x)` with `H₁(X; ℤ)`, the first homology
 group of the singular chain complex of `X` with integer coefficients. -/
 def hurewiczHomologyAddEquiv [PathConnectedSpace X] (x : X) :
-    Additive (Group.Abelianization (FundamentalGroup X x)) ≃+ ((singularChains ℤ).obj X).homology 1 :=
+    Additive (Group.Abelianization (FundamentalGroup X x)) ≃+ ((singularChains ℤ).obj
+        X).homology 1 :=
   (hurewiczAddEquiv x).trans (H₁AddEquivHomology X)
 
 lemma hurewiczHomologyAddEquiv_apply [PathConnectedSpace X] {x : X}
@@ -767,7 +768,8 @@ lemma hurewiczHomologyAddEquiv_apply [PathConnectedSpace X] {x : X}
 
 @[simp]
 lemma hurewiczHomologyAddEquiv_ofMul_of_mk [PathConnectedSpace X] {x : X} (γ : Path x x) :
-    hurewiczHomologyAddEquiv x (Additive.ofMul ((Group.Abelianization.of : FundamentalGroup X x →* _)
+    hurewiczHomologyAddEquiv x (Additive.ofMul ((Group.Abelianization.of : FundamentalGroup X x →*
+        _)
       (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)))) =
         H₁AddEquivHomology X (loopClass γ) := by
   simp [hurewiczHomologyAddEquiv]

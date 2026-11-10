@@ -132,7 +132,8 @@ theorem localArtinAt_eq_of_mk_eq_artinMap (v : HeightOneSpectrum (𝓞 K))
 restricted to `M` along `f`, is the local Artin symbol at `v` in `Gal(M/K)^ab`. -/
 theorem localArtinAt_comp (v : HeightOneSpectrum (𝓞 K)) {M : Type} [Field M] [Algebra K M]
     [FiniteDimensional K M] [Normal K M] (f : M →ₐ[K] L) :
-    (Group.Abelianization.map f.restrictNormalHom).comp (localArtinAt K L v) = localArtinAt K M v := by
+    (Group.Abelianization.map f.restrictNormalHom).comp (localArtinAt K L
+        v) = localArtinAt K M v := by
   rw [localArtinAt, localArtinAt, ← MonoidHom.comp_assoc, decompositionRestrict_comp]
 
 /-- **Norm functoriality in the ground field.** Let `K ⊆ E ⊆ L` with `L/K` finite normal, and let
@@ -224,7 +225,8 @@ theorem localArtinAt_eq_map_normResidue (x : (v.adicCompletion K)ˣ) :
   -- of `w` acting on `L_w` as `ρ`.
   set ρ := ι.restrictNormalHom (absoluteGaloisGroupRestrictEquiv (v.adicCompletion K) τ)
   set σ := (HeightOneSpectrum.decompositionEquiv v w).symm ρ
-  rw [normResidue_mk _ _ ι, artinMap_restrict _ _ ι x τ hτ, toMul_ofMul, Group.Abelianization.map_of]
+  rw [normResidue_mk _ _ ι, artinMap_restrict _ _ ι x τ hτ, toMul_ofMul,
+      Group.Abelianization.map_of]
   let j : L →ₐ[K] AlgebraicClosure (v.adicCompletion K) :=
     (((separableClosure (v.adicCompletion K) (AlgebraicClosure (v.adicCompletion K))).val.comp
       ι).restrictScalars K).comp (IsScalarTower.toAlgHom K L (w.adicCompletion L))
@@ -263,7 +265,8 @@ theorem range_localArtinAt :
       (Group.Abelianization.of (G := Gal(w.adicCompletion L/v.adicCompletion K))) :=
     QuotientGroup.mk_surjective
   -- On `Gal(L_w/K_v)`, abelianizing after `φ` is the same as abelianizing before it.
-  have hmap : (Group.Abelianization.map φ).comp Group.Abelianization.of = Group.Abelianization.of.comp φ :=
+  have hmap : (Group.Abelianization.map
+      φ).comp Group.Abelianization.of = Group.Abelianization.of.comp φ :=
     MonoidHom.ext (Group.Abelianization.map_of φ)
   calc (localArtinAt K L v).range = (Group.Abelianization.map φ).range := by
         rw [h, MonoidHom.range_comp_of_surjective _ _ (QuotientGroup.mk'_surjective _),

@@ -653,7 +653,7 @@ private theorem exists_isImmersionAtOfComplement_subbundle_of_retraction
     ∃ (Q : Submodule 𝕜 F) (_ : Nonempty ((F' × Q) ≃L[𝕜] F)),
       IsImmersionAtOfComplement (P × Q) (IB'.prod 𝓘(𝕜, F')) (IB.prod 𝓘(𝕜, F)) n
         (fun q : TotalSpace F' (fun x ↦ V x) ↦ (⟨f q.proj, q.2⟩ : TotalSpace F E)) p := by
-  have : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+  have : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
   let eV := trivializationAt F' (fun x ↦ V x) p.proj
   let eE := trivializationAt F E (f p.proj)
   have hx₀V : p.proj ∈ eV.baseSet := FiberBundle.mem_baseSet_trivializationAt F' (fun x ↦ V x) _

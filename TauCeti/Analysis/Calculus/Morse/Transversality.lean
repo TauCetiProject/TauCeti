@@ -145,7 +145,7 @@ theorem exists_unstableSet_inter_stableSet_chart (hp : IsNondegenerateCriticalPo
           Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊓
             Submodule.span ℝ
               (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   have hn0 : (n : WithTop ℕ∞) ≠ 0 := by exact_mod_cast Nat.one_le_iff_ne_zero.1 hn
   obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ := hp.exists_unstableSet_chart hfs hf hyu
   obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ := hq.exists_stableSet_chart hfs hf hys
@@ -174,7 +174,7 @@ theorem span_tangentConeAt_unstableSet_inter_stableSet (hp : IsNondegenerateCrit
         Flow.stableSet (negativeGradientFlow f hf) q) y) =
       Submodule.span ℝ (tangentConeAt ℝ (Flow.unstableSet (negativeGradientFlow f hf) p) y) ⊓
         Submodule.span ℝ (tangentConeAt ℝ (Flow.stableSet (negativeGradientFlow f hf) q) y) := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   obtain ⟨e₁, hy₁, he₁, hes₁, hS₁⟩ :=
     hp.exists_unstableSet_chart (n := 1) (by simpa [one_add_one_eq_two] using hfs) hf hyu
   obtain ⟨e₂, hy₂, he₂, hes₂, hS₂⟩ :=

@@ -163,7 +163,7 @@ variable [FiniteDimensional ℝ E]
 bilinear map on `T_x M` whose value on the values at `x` of differentiable vector fields `X` and
 `Y` is `[JX, JY] - [X, Y] - J[JX, Y] - J[X, JY]` at `x` (`nijenhuis_apply`). -/
 def nijenhuis (x : M) : TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] TangentSpace I x :=
-  have := FiniteDimensional.complete ℝ E
+  have := FiniteDimensional.completeSpace ℝ E
   TensorialAt.mkHom₂ (J.nijenhuisAux · · x) x
     (fun Y _ ↦ J.nijenhuisAux_tensorial₁ Y) (fun X _ ↦ J.nijenhuisAux_tensorial₂ X)
 
@@ -225,7 +225,7 @@ theorem nijenhuis_self (v : TangentSpace I x) : J.nijenhuis x v v = 0 := by
 @[simp]
 theorem nijenhuis_apply_left (v w : TangentSpace I x) :
     J.nijenhuis x (J x v) w = -J x (J.nijenhuis x v w) := by
-  have := FiniteDimensional.complete ℝ E
+  have := FiniteDimensional.completeSpace ℝ E
   have hJX := J.mdifferentiableAt_apply_field (mdifferentiableAt_extend I E v)
   conv_lhs => rw [← extend_apply_self E v, ← extend_apply_self E w]
   rw [J.nijenhuis_apply_eq_nijenhuisAux hJX (mdifferentiableAt_extend ..),

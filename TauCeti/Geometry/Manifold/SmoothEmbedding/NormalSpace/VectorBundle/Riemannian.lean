@@ -90,7 +90,7 @@ theorem contMDiff_normalRepresentative_normalClass
         (⟨f p.proj, f.normalRepresentative p.proj hn (f.normalClass p.proj hn p.2)⟩ :
           TangentBundle J N)) := by
   have : IsManifold I 1 M := .of_le (n := m + 1) le_add_self
-  let : CompleteSpace E := FiniteDimensional.complete ℝ E
+  let : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   -- The induced metric identifies tangent vectors with covectors on the source.
   let g := ContMDiffRiemannianMetric.ofIsContMDiffRiemannianBundle
     (IB := J) (n := m) (F := V) (V := fun y : N => TangentSpace J y)

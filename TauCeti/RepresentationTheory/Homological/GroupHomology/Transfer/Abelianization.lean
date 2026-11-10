@@ -121,11 +121,13 @@ private theorem δ_res_mkH1OfIsTrivial_ofAbelianization
   exact δ_res_mkH1OfIsTrivial S hAug s a
 
 /-- `transfer_mkH1OfIsTrivial` for the coefficients `k` themselves. -/
-private theorem transfer_mkH1OfIsTrivial_trivial [S.FiniteIndex] (x : Additive (Group.Abelianization G))
+private theorem transfer_mkH1OfIsTrivial_trivial [S.FiniteIndex] (x : Additive (Group.Abelianization
+    G))
     (a : k) :
     transfer (trivial k G k) S 1 (mkH1OfIsTrivial (trivial k G k) x a) =
       mkH1OfIsTrivial (res S.subtype (trivial k G k))
-        ((Group.Abelianization.lift (Group.Abelianization.of : S →* Group.Abelianization S).transfer).toAdditive x)
+        ((Group.Abelianization.lift (Group.Abelianization.of : S →* Group.Abelianization
+            S).transfer).toAdditive x)
         a := by
   obtain ⟨g, rfl⟩ : ∃ g : G, Additive.ofMul (Group.Abelianization.of g) = x :=
     QuotientGroup.mk'_surjective _ x.toMul
@@ -156,7 +158,8 @@ theorem transfer_mkH1OfIsTrivial [S.FiniteIndex] (A : Rep k G) [A.IsTrivial]
     (x : Additive (Group.Abelianization G)) (a : A) :
     transfer A S 1 (mkH1OfIsTrivial A x a) =
       mkH1OfIsTrivial (res S.subtype A)
-        ((Group.Abelianization.lift (Group.Abelianization.of : S →* Group.Abelianization S).transfer).toAdditive x)
+        ((Group.Abelianization.lift (Group.Abelianization.of : S →* Group.Abelianization
+            S).transfer).toAdditive x)
         a := by
   -- `a` is the image of `1` under the morphism `k ⟶ A`, `1 ↦ a`, and the transfer is natural in
   -- the coefficients.
@@ -177,7 +180,8 @@ identifications `H₁(G, A) ≃ Gᵃᵇ ⊗ A` and `H₁(S, A) ≃ Sᵃᵇ ⊗ A
 theorem H1AddEquivOfIsTrivial_transfer [S.FiniteIndex] (A : Rep k G) [A.IsTrivial] (x : H1 A) :
     H1AddEquivOfIsTrivial (res S.subtype A) (transfer A S 1 x) =
       LinearMap.rTensor A (AddMonoidHom.toIntLinearMap
-        (Group.Abelianization.lift (Group.Abelianization.of : S →* Group.Abelianization S).transfer).toAdditive)
+        (Group.Abelianization.lift (Group.Abelianization.of : S →* Group.Abelianization
+            S).transfer).toAdditive)
         (H1AddEquivOfIsTrivial A x) := by
   obtain ⟨t, rfl⟩ := (H1AddEquivOfIsTrivial A).symm.surjective x
   rw [AddEquiv.apply_symm_apply]

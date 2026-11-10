@@ -31,7 +31,8 @@ public section
 namespace MonoidHom
 
 variable {B E R : Type*} [Group B] [Group E] [CommMonoid R]
-  [Finite (Group.Abelianization E)] [HasEnoughRootsOfUnity R (Monoid.exponent (Group.Abelianization E))]
+  [Finite (Group.Abelianization E)] [HasEnoughRootsOfUnity R (Monoid.exponent (Group.Abelianization
+      E))]
 
 /-- A character extends along a group homomorphism exactly when it kills the inverse image
 of the target's commutator subgroup. Only the target's abelianization needs to be finite. -/

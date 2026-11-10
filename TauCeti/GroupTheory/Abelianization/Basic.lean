@@ -11,7 +11,8 @@ public import Mathlib.GroupTheory.QuotientGroup.Basic
 /-!
 # Elementary facts about the abelianization
 
-Conjugate elements have the same image in the abelianization (`Group.Abelianization.of_inv_mul_mul`),
+Conjugate elements have the same image in the abelianization
+(`Group.Abelianization.of_inv_mul_mul`),
 and written additively, the abelianization map sends products to sums in either order
 (`Group.Abelianization.ofMul_of_add_ofMul_of`). An element has trivial image exactly when it lies in
 the commutator subgroup (`Group.Abelianization.of_eq_one_iff`), so the abelianization map of a
@@ -47,7 +48,8 @@ theorem of_eq_one_iff {g : G} : of g = 1 ↔ g ∈ commutator G := by
   rw [← MonoidHom.mem_ker, ker_of]
 
 /-- Written additively, every element of the abelianization is the class of a group element. -/
-theorem exists_eq_ofMul_of (x : Additive (Group.Abelianization G)) : ∃ g : G, x = .ofMul (of g) := by
+theorem exists_eq_ofMul_of (x : Additive (Group.Abelianization G)) : ∃ g : G, x = .ofMul (of
+    g) := by
   obtain ⟨g, hg⟩ : ∃ g, of g = x.toMul := QuotientGroup.mk_surjective x.toMul
   exact ⟨g, by rw [hg, ofMul_toMul]⟩
 

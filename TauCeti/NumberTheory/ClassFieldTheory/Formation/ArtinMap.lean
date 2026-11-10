@@ -405,7 +405,8 @@ theorem character_artinMap (a : F.level L.ground)
 Galois group which satisfies the character formula `χ (φ a) = inv (a₀ ∪ δχ)` for every `a` and
 every character `χ` is the Artin map. -/
 theorem eq_artinMap_of_character (φ : F.level L.ground →+ Additive (Group.Abelianization L.Gal))
-    (hφ : ∀ (a : F.level L.ground) (chi : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ)),
+    (hφ : ∀ (a : F.level L.ground) (chi : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 :
+        ℚ)),
       chi (φ a) = cf.inv L (L.artinCharacterCup F a chi)) :
     φ = cf.artinMap L := by
   refine AddMonoidHom.ext fun a ↦ sub_eq_zero.mp (CharacterModule.eq_zero_of_character_apply ?_)

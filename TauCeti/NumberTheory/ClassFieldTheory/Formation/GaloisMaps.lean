@@ -39,7 +39,8 @@ Gal(L/F) → Gal(K/F)
 ```
 
 induces `LayerRefinement.quotientHom`. The inclusion and quotient maps inherit identity and tower
-laws from `Group.Abelianization.map`; these laws make the maps usable without unfolding their bodies.
+laws from `Group.Abelianization.map`; these laws make the maps usable without unfolding their
+bodies.
 Conjugation of a layer similarly induces an equivalence on abelianizations from
 `NormalLayer.conjugateGalEquiv` and Mathlib's `MulEquiv.abelianizationCongr`.
 
@@ -197,11 +198,13 @@ theorem transferHom_trans (T : LayerRestriction a b) (T' : LayerRestriction b c)
   obtain ⟨y, rfl⟩ : ∃ y, Group.Abelianization.of y = x := QuotientGroup.mk_surjective x
   rw [AddMonoidHom.comp_apply, transferHom_of, transferHom_of, transferHom,
     MonoidHom.toAdditive_apply_apply, toMul_ofMul]
-  -- Naturality in the target (`transfer_comp`) moves the outer `Group.Abelianization.lift` inside the
+  -- Naturality in the target (`transfer_comp`) moves the outer `Group.Abelianization.lift` inside
+  -- the
   -- transfer to `Gal(K/E)`, where it becomes the inner transfer transported along `T'.galHom`;
   -- `htransport` and the tower law `transfer_transfer` then give the transfer of `T.trans T'`.
   rw [← MonoidHom.comp_apply (Group.Abelianization.lift _), ← MonoidHom.transfer_comp,
-    ← MonoidHom.comp_assoc, ← Group.Abelianization.lift_symm_apply, Equiv.symm_apply_apply, htransport,
+    ← MonoidHom.comp_assoc, ← Group.Abelianization.lift_symm_apply, Equiv.symm_apply_apply,
+    htransport,
     MonoidHom.transfer_transfer]
 
 end LayerRestriction

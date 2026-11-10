@@ -170,7 +170,7 @@ private theorem exists_flat_coordinates {F₁ F₂ : Type u} [NormedAddCommGroup
       _ ≤ (m : ℕ∞ω) + 1 + 1 := by gcongr; simp
   have h2n' : minSmoothness ℝ 2 ≤ n := by rwa [minSmoothness_of_isRCLikeNormedField]
   have : IsManifold I (minSmoothness ℝ 2) M := .of_le h2n'
-  have : CompleteSpace (F₁ × F₂) := FiniteDimensional.complete ℝ _
+  have : CompleteSpace (F₁ × F₂) := FiniteDimensional.completeSpace ℝ _
   let Φ := Ψ.symm
   -- The distribution read in the coordinates of `Ψ`.
   let DP : F₁ × F₂ → Submodule ℝ (F₁ × F₂) := fun q ↦
@@ -204,7 +204,7 @@ theorem IsInvolutiveDistribution.exists_flatChart [FiniteDimensional ℝ E] [IsM
     ∃ (e : OpenPartialHomeomorph M H) (W : Submodule ℝ E),
       e ∈ IsManifold.maximalAtlas I m M ∧ x ∈ e.source ∧ finrank ℝ W = k ∧
         ∀ y ∈ e.source, (D y).map (mfderiv I 𝓘(ℝ, E) (I ∘ e) y).toLinearMap = W := by
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   obtain ⟨m', rfl⟩ : ∃ m' : ℕ∞, m = m' + 1 := ⟨m - 1, (tsub_add_cancel_of_le hm).symm⟩
   have hcast : ((m' + 1 : ℕ∞) : ℕ∞ω) = (m' : ℕ∞ω) + 1 := by norm_cast
   rw [hcast] at hmn hD ⊢

@@ -169,8 +169,8 @@ private theorem surjective_linearization (hreg : IsRegularValue I 𝓘(𝕜, F) 
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F] {n : ℕ}
 
 -- Finite-dimensional completeness is not a global instance over a variable scalar field.
-local instance instCompleteSpaceDomain : CompleteSpace E := FiniteDimensional.complete 𝕜 E
-local instance instCompleteSpaceCodomain : CompleteSpace F := FiniteDimensional.complete 𝕜 F
+local instance instCompleteSpaceDomain : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
+local instance instCompleteSpaceCodomain : CompleteSpace F := FiniteDimensional.completeSpace 𝕜 F
 
 omit [I.Boundaryless] in
 private theorem isFredholm_linearization (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
@@ -214,9 +214,9 @@ variable [NormedSpace 𝕜 F] [I.Boundaryless] [ChartedSpace H M] [FiniteDimensi
 
 -- Finite-dimensional completeness is not a global instance over a variable scalar field.
 local instance instCompleteSpaceRegularLevelDomain : CompleteSpace E :=
-  FiniteDimensional.complete 𝕜 E
+  FiniteDimensional.completeSpace 𝕜 E
 local instance instCompleteSpaceRegularLevelCodomain : CompleteSpace F :=
-  FiniteDimensional.complete 𝕜 F
+  FiniteDimensional.completeSpace 𝕜 F
 
 /-- The preferred chart at a point `x` of a regular level `f⁻¹(c)`, modelled on `Fin n → 𝕜` for
 `n = dim E - dim F`: the section-zero chart of `f - c` at `x`. It reads a point `w` as the kernel

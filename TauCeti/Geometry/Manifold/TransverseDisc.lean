@@ -87,7 +87,7 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
       (∀ᶠ z in 𝓝 0, ι z ∈ s ∧ g (ι z) = g y) ∧ HasStrictFDerivAt (fun z ↦ e (ι z)) ι' 0 ∧
       (P ∘L ι').IsInvertible ∧
       ∀ V ∈ 𝓝 (0 : F), ∀ᶠ w in 𝓝 y, w ∈ s → g w = g y → ∃ z ∈ V, ι z = w := by
-  have : CompleteSpace E := FiniteDimensional.complete 𝕜 E
+  have : CompleteSpace E := FiniteDimensional.completeSpace 𝕜 E
   set T := Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s y)
   -- The differential of `g` at `y`, as a linear form on the model space.
   set dg : E →L[𝕜] 𝕜 := mvfderiv 𝓘(𝕜, E) g y

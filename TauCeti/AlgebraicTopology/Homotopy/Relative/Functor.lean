@@ -123,7 +123,8 @@ module through which every homomorphism to an abelian group factors
 @[expose]
 def abelianizationFunctor [Nonempty N] : BasedTopPair.{u} ⥤ ModuleCat.{max u v} ℤ where
   obj X := ModuleCat.of ℤ (Additive (Group.Abelianization (RelHomotopyGroup N X)))
-  map f := ModuleCat.ofHom (MonoidHom.toAdditive (Group.Abelianization.map (mapHom f))).toIntLinearMap
+  map f := ModuleCat.ofHom (MonoidHom.toAdditive (Group.Abelianization.map (mapHom
+      f))).toIntLinearMap
   map_id _ := by
     ext a
     simp
@@ -136,8 +137,10 @@ Mathlib's abelianization functor `GrpCat.abelianize`, applied to `π_{n+1}(X, A,
 def abelianizationFunctorCompForget₂Iso [Nonempty N] :
     abelianizationFunctor.{u} N ⋙ forget₂ (ModuleCat ℤ) AddCommGrpCat ≅
       grpFunctor N ⋙ GrpCat.abelianize ⋙ CommGrpCat.toAddCommGrp :=
-  -- Both functors send a morphism `f` to the additive form of `Group.Abelianization.map (mapHom f)`:
-  -- `GrpCat.abelianize` is defined by `Group.Abelianization.lift (Group.Abelianization.of.comp _)`, which
+  -- Both functors send a morphism `f` to the additive form of `Group.Abelianization.map (mapHom
+  -- f)`:
+  -- `GrpCat.abelianize` is defined by `Group.Abelianization.lift (Group.Abelianization.of.comp _)`,
+  -- which
   -- is `Group.Abelianization.map` by definition (`Group.Abelianization.lift_of_comp`).
   NatIso.ofComponents (fun _ => Iso.refl _) fun _ => rfl
 
@@ -209,7 +212,8 @@ def abelianizationLift {M : ModuleCat.{max u v} ℤ}
     { toFun := MonoidHom.toAdditiveLeft (Group.Abelianization.lift φ)
       map_add' := map_add _
       map_smul' n a := by
-        simpa using map_intCast_smul (MonoidHom.toAdditiveLeft (Group.Abelianization.lift φ)) ℤ ℤ n a }
+        simpa using map_intCast_smul (MonoidHom.toAdditiveLeft (Group.Abelianization.lift
+            φ)) ℤ ℤ n a }
 
 @[simp]
 theorem abelianizationLift_toAbelianization {M : ModuleCat.{max u v} ℤ}

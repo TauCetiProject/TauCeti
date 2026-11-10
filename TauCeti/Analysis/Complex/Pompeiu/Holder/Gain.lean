@@ -382,7 +382,7 @@ theorem exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
   -- The real action is uniquely determined by the caller's compatible complex action.
   cases NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := F)
   classical
-  let := FiniteDimensional.complete ℂ F
+  let := FiniteDimensional.completeSpace ℂ F
   let e := (Module.finBasis ℂ F).equivFunL
   let L := e.symm.toContinuousLinearMap.restrictScalars ℝ
   obtain ⟨C, hC⟩ := exists_cauchyCoordinate_gain e hα hα1 c hr hR

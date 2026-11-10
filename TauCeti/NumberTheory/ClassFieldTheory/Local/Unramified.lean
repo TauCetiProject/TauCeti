@@ -97,7 +97,8 @@ theorem frobeniusCharacter_frobenius :
   let _ : CommGroup Gal(L/K) := IsCyclic.commGroup
   rw [frobeniusCharacter, AddMonoidHom.comp_apply, AddEquiv.coe_toAddMonoidHom,
     AddEquiv.toMultiplicativeRight_symm_apply_apply, toMul_ofMul, MulEquiv.trans_apply,
-    Group.Abelianization.equivOfComm_symm_apply, Group.Abelianization.lift_apply_of, MonoidHom.id_apply,
+    Group.Abelianization.equivOfComm_symm_apply, Group.Abelianization.lift_apply_of,
+    MonoidHom.id_apply,
     zmodMulEquivOfGenerator_symm_apply_generator]
   simpa using ZMod.toRatAddCircle_natCast (Module.finrank K L) 1
 
@@ -379,7 +380,8 @@ theorem localArtinMap_eq_frobenius_pow_valuation
   have hfx : f x = Group.Abelianization.of (frobeniusAlgEquiv (K := K) (L := L) ^ n) := calc
     f x = f (π ^ n * u) := congrArg f hx
     _ = f π ^ n * f u := by rw [map_mul, map_zpow]
-    _ = Group.Abelianization.of (frobeniusAlgEquiv (K := K) (L := L)) ^ n := by rw [hfπ, hfu, mul_one]
+    _ = Group.Abelianization.of (frobeniusAlgEquiv (K := K) (L := L)) ^ n := by rw [hfπ, hfu,
+        mul_one]
     _ = Group.Abelianization.of (frobeniusAlgEquiv (K := K) (L := L) ^ n) := by rw [map_zpow]
   apply Additive.toMul.injective
   simpa [f, n] using hfx

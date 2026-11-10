@@ -120,7 +120,8 @@ theorem characterConnectingClass_eq_H2π
 `a ∪ δχ ∈ H²(G, A ⊗ ℤ) = H²(G, A)` of the degree-zero class of `a` with the connecting class of
 `χ` is the class of the carry cocycle `(g, h) ↦ ⌊χ'(g) + χ'(h)⌋ • a`. -/
 theorem cup_characterConnectingClass_eq_H2π
-    (χ : Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) (A : Rep ℤ G) (a : A.ρ.invariants) :
+    (χ : Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) (A : Rep ℤ G) (a :
+        A.ρ.invariants) :
     (tateCohomologyFunctor 2).map (ρ_ A).hom
         (cup A (Rep.trivial ℤ G ℤ) 0 2 2 (zero_add 2) (H0π A a) (characterConnectingClass G χ)) =
       (_root_.TateCohomology.isoGroupCohomology 2).inv.app A

@@ -247,7 +247,8 @@ variable [Group.FG (commutator G)] [(commutator G).FiniteIndex]
 attribute [local instance] Subgroup.fintypeQuotientOfFiniteIndex
 
 private theorem transfer_of_eq_one (g : G) :
-    (Group.Abelianization.of : commutator G →* Group.Abelianization (commutator G)).transfer g = 1 := by
+    (Group.Abelianization.of : commutator G →* Group.Abelianization (commutator
+        G)).transfer g = 1 := by
   classical
   let _ : Fintype (Group.Abelianization G) := (commutator G).fintypeQuotientOfFiniteIndex
   set u := groupCohomology.H2π (coefficients G) cocycle
@@ -263,13 +264,15 @@ private theorem transfer_of_eq_one (g : G) :
       (Rep.splittingModuleProj (coefficients G) u)
       (fun y ↦ ⟨Rep.splittingModuleMk _ u y 0, by simp⟩) ?_ ?_
     · rw [Rep.ker_splittingModuleProj_eq_range, LinearMap.range_eq_map]
-      exact (Module.Finite.fg_top (R := ℤ) (M := Additive (Group.Abelianization (commutator G)))).map _
+      exact (Module.Finite.fg_top (R := ℤ) (M := Additive (Group.Abelianization (commutator
+          G)))).map _
     · rw [Rep.ker_splittingModuleProj_eq_range]
       rintro _ ⟨a, rfl⟩
       exact incl_mem_coinvariantsKer a
   -- The transfer of a representative `out p` is the column sum `∑_q f(q, p) = N ψ(p) = 0`.
   have hrep (p : Group.Abelianization G) :
-      (Group.Abelianization.of : commutator G →* Group.Abelianization (commutator G)).transfer (out p) = 1 := by
+      (Group.Abelianization.of : commutator G →* Group.Abelianization (commutator G)).transfer (out
+          p) = 1 := by
     rw [MonoidHom.transfer_eq_prod_mul_out]
     trans ∏ q : Group.Abelianization G, factorSet (q, p)
     · refine Fintype.prod_congr _ _ fun q ↦ ?_
@@ -283,7 +286,8 @@ private theorem transfer_of_eq_one (g : G) :
     -- Read the product in the coefficient module, whose underlying group is `Additive A`.
     change j (toCoeff (∏ q : Group.Abelianization G, factorSet (q, p))) = j (toCoeff 1)
     rw [show toCoeff (∏ q : Group.Abelianization G, factorSet (q, p)) =
-      ∑ q : Group.Abelianization G, toCoeff (factorSet (q, p)) from ofMul_prod _ _, map_sum, toCoeff_one,
+      ∑ q : Group.Abelianization G, toCoeff (factorSet (q,
+          p)) from ofMul_prod _ _, map_sum, toCoeff_one,
       map_zero]
     simp only [← hψ, Finset.sum_add_distrib, Finset.sum_sub_distrib]
     rw [Fintype.sum_equiv (Equiv.mulRight p) (fun q ↦ ψ (q * p)) ψ fun _ ↦ rfl, sub_add_cancel]

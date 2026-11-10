@@ -17,7 +17,8 @@ matching Mathlib's instance for its cohomological counterpart `groupCohomology.c
 
 It also records how the map on first homology induced by a group homomorphism `f : H →* G` reads
 through Mathlib's identification `H₁(G, A) ≃ Gᵃᵇ ⊗ A` for trivial coefficients: it is
-`Group.Abelianization.map f` tensored with the coefficients. With trivial coefficients, the vanishing
+`Group.Abelianization.map f` tensored with the coefficients. With trivial coefficients, the
+vanishing
 of group homology is also transported along isomorphisms of groups.
 
 ## Main results

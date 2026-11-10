@@ -78,7 +78,7 @@ namespace IsAdaptedPseudoGradient
 /-- An adapted pseudo-gradient on a compact boundaryless manifold is complete. -/
 theorem isCompleteVectorField (hX : IsAdaptedPseudoGradient f X) :
     IsCompleteVectorField X :=
-  have : CompleteSpace E := FiniteDimensional.complete ℝ E
+  have : CompleteSpace E := FiniteDimensional.completeSpace ℝ E
   isCompleteVectorField_of_compactSpace (hX.contMDiff.of_le (by simp))
 
 /-- The flow of an adapted pseudo-gradient on a compact boundaryless manifold. -/

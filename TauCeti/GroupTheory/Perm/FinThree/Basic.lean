@@ -217,7 +217,8 @@ theorem card_abelianization_perm_fin_three :
     rw [Nat.card_eq_fintype_card, Fintype.card_perm, Fintype.card_fin]
     rfl
   have hsplit : Nat.card (Equiv.Perm (Fin 3)) =
-      Nat.card (Group.Abelianization (Equiv.Perm (Fin 3))) * Nat.card (commutator (Equiv.Perm (Fin 3))) :=
+      Nat.card (Group.Abelianization (Equiv.Perm (Fin 3))) * Nat.card (commutator (Equiv.Perm (Fin
+          3))) :=
     Subgroup.card_eq_card_quotient_mul_card_subgroup _
   rw [hsix, hcomm] at hsplit
   omega

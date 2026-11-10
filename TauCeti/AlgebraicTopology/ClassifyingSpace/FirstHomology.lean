@@ -122,7 +122,8 @@ theorem classifyingSpaceFirstHomologyAddEquiv_homologyMap_hurewiczHomologyAddEqu
     {x : X} (γ : Path (f x) (classifyingSpaceBasepoint G)) (a : FundamentalGroup X x) :
     classifyingSpaceFirstHomologyAddEquiv G
         ((HomologicalComplex.homologyMap ((singularChains ℤ).map (TopCat.ofHom f)) 1).hom
-          (hurewiczHomologyAddEquiv (X := TopCat.of X) x (Additive.ofMul (Group.Abelianization.of a)))) =
+          (hurewiczHomologyAddEquiv (X := TopCat.of X) x (Additive.ofMul (Group.Abelianization.of
+              a)))) =
       Additive.ofMul (Group.Abelianization.of (classifyingSpaceFundamentalGroupMulEquiv G
         (FundamentalGroup.fundamentalGroupMulEquivOfPath γ (FundamentalGroup.map f x a)))) := by
   rw [homologyMap_hurewiczHomologyAddEquiv, toMul_ofMul, Group.Abelianization.map_of]
@@ -143,8 +144,10 @@ theorem classifyingSpaceFirstHomologyAddEquiv_homologyMap {H : Type} [Group H] (
   obtain ⟨a, rfl⟩ := (hurewiczHomologyAddEquiv (X := TopCat.of (classifyingSpace G))
     (classifyingSpaceBasepoint G)).surjective x
   obtain ⟨a, rfl⟩ := Additive.ofMul.surjective a
-  -- `Group.Abelianization G` is the quotient of `G` by its commutator subgroup and `Group.Abelianization.of`
-  -- is `QuotientGroup.mk'`; Mathlib states no surjectivity lemma for `Group.Abelianization.of` itself.
+  -- `Group.Abelianization G` is the quotient of `G` by its commutator subgroup and
+  -- `Group.Abelianization.of`
+  -- is `QuotientGroup.mk'`; Mathlib states no surjectivity lemma for `Group.Abelianization.of`
+  -- itself.
   obtain ⟨γ, rfl⟩ : ∃ γ, Group.Abelianization.of γ = a := QuotientGroup.mk'_surjective _ a
   rw [homologyMap_hurewiczHomologyAddEquiv_mapOfEq _ φ.classifyingSpaceMap_basepoint,
     toMul_ofMul, Group.Abelianization.map_of,

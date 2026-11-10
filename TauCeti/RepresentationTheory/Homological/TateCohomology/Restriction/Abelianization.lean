@@ -23,7 +23,8 @@ identifies the two change-of-group maps in this degree under that identification
 
 Together they make the identification `H_Tate⁻²(G, A) ≃ Gᵃᵇ ⊗ A` natural in the group: a
 statement about restriction or corestriction in Tate degree `-2` can be transported to the
-corresponding statement about the Verlagerung or `Group.Abelianization.map`. For `A = ℤ`, these are the
+corresponding statement about the Verlagerung or `Group.Abelianization.map`. For `A = ℤ`, these are
+the
 compatibilities of the identification `H_Tate⁻²(G, ℤ) ≃ Gᵃᵇ` with restriction and corestriction
 that the reciprocity isomorphism `Gᵃᵇ ≃ H_Tate⁰(G, C)` inherits.
 
@@ -68,7 +69,8 @@ group-theoretic transfer. -/
 theorem HNegTwoAddEquivTensorOfIsTrivial_HNegTwoRes [A.IsTrivial] (x : tateCohomology A (-2)) :
     HNegTwoAddEquivTensorOfIsTrivial (res S.subtype A) (HNegTwoRes A S x) =
       LinearMap.rTensor A (AddMonoidHom.toIntLinearMap
-        (Group.Abelianization.lift (Group.Abelianization.of : S →* Group.Abelianization S).transfer).toAdditive)
+        (Group.Abelianization.lift (Group.Abelianization.of : S →* Group.Abelianization
+            S).transfer).toAdditive)
         (HNegTwoAddEquivTensorOfIsTrivial A x) := by
   rw [HNegTwoAddEquivTensorOfIsTrivial_apply,
     HNegTwoAddEquivTensorOfIsTrivial_apply,
@@ -80,7 +82,8 @@ end Restriction
 
 /-- **Corestriction in Tate degree `-2` is the map induced on abelianizations.** For a
 homomorphism `f : H →* G` of finite groups and trivial coefficients `A`, corestriction
-`H_Tate⁻²(H, A) ⟶ H_Tate⁻²(G, A)` becomes `Group.Abelianization.map f ⊗ id : Hᵃᵇ ⊗ A → Gᵃᵇ ⊗ A` under the
+`H_Tate⁻²(H, A) ⟶ H_Tate⁻²(G, A)` becomes `Group.Abelianization.map f ⊗ id : Hᵃᵇ ⊗ A → Gᵃᵇ ⊗ A`
+under the
 identifications `H_Tate⁻² ≃ (-)ᵃᵇ ⊗ A`. -/
 @[simp]
 theorem HNegTwoAddEquivTensorOfIsTrivial_HNegTwoCor {H : Type u} [Group H] [Fintype H]

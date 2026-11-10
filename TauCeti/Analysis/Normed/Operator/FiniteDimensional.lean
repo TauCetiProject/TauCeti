@@ -52,7 +52,7 @@ variable {𝕜 V : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 `S` of scalars acting compatibly, for instance over `ℝ` for an operator on a complex space. -/
 theorem finite_spectrum (S : Type*) [Field S] [Algebra S 𝕜] [Algebra S (V →L[𝕜] V)]
     [IsScalarTower S 𝕜 (V →L[𝕜] V)] (T : V →L[𝕜] V) : (spectrum S T).Finite := by
-  have := FiniteDimensional.complete 𝕜 V
+  have := FiniteDimensional.completeSpace 𝕜 V
   rw [← spectrum.preimage_algebraMap 𝕜, spectrum_eq]
   exact (Module.End.finite_spectrum _).preimage (algebraMap S 𝕜).injective.injOn
 

@@ -63,7 +63,8 @@ in the Tate group of degree `2`: the image of `χ`, as a class in `H¹(G, ℚ/�
 action, under the connecting map of `0 → ℤ → ℚ → ℚ/ℤ → 0`. The character is read on `G` through
 the abelianization map `G → Gᵃᵇ`. It is additive in the character. -/
 def characterConnectingClass :
-    (Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) →+ tateCohomology (Rep.trivial ℤ G ℤ) 2 :=
+    (Additive (Group.Abelianization G) →+ AddCircle (1 : ℚ)) →+ tateCohomology (Rep.trivial ℤ G
+        ℤ) 2 :=
   ((_root_.TateCohomology.isoGroupCohomology 2).inv.app
       (Rep.trivial ℤ G ℤ)).hom.toAddMonoidHom.comp <|
     (groupCohomology.δ (Rep.ratAddCircleShortComplex_shortExact G) 1 2

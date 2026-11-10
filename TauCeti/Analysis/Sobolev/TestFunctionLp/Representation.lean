@@ -86,7 +86,7 @@ theorem exists_eLpNorm_le_hasWeakLineDerivOn_of_enorm_integral_lineDeriv_smul_le
         M * eLpNorm (φ : E → ℝ) q μ) →
       ∃ g : E → G, HasWeakLineDerivOn μ Ω u g v ∧ eLpNorm g p (μ.restrict Ω) ≤ C * M := by
   classical
-  have := FiniteDimensional.complete ℝ G
+  have := FiniteDimensional.completeSpace ℝ G
   let b := Module.finBasis ℝ G
   let c : Fin (Module.finrank ℝ G) → G →L[ℝ] ℝ := fun i => LinearMap.toContinuousLinearMap
     (b.coord i)

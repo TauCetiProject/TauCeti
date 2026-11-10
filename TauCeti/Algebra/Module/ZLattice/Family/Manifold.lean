@@ -321,7 +321,7 @@ theorem isImmersion_torusFamilyFiberMap (hn : 1 ≤ n) (y : Y) :
     haveI : Nonempty Y := ⟨y⟩
     FiniteDimensional.of_locallyCompact_manifold Y I
   have := isManifold_torusFamily P hinj hP
-  have : CompleteSpace EY := FiniteDimensional.complete 𝕜 EY
+  have : CompleteSpace EY := FiniteDimensional.completeSpace 𝕜 EY
   have hn0 : n ≠ 0 := by rintro rfl; simp at hn
   have hφ := contMDiff_torusFamilyFiberMap P hinj hP y
   refine isImmersion_iff_forall_isImmersionAt.2 fun z ↦ ?_

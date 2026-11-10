@@ -75,7 +75,8 @@ def characterConnectingClass (χ : Additive (Group.Abelianization L.Gal) →+ Ad
 
 /-- The connecting class of a character of a layer is the connecting class of the character of
 its Galois group. -/
-theorem characterConnectingClass_def (χ : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
+theorem characterConnectingClass_def (χ : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 :
+    ℚ)) :
     L.characterConnectingClass χ = TateCohomology.characterConnectingClass L.Gal χ :=
   (rfl)
 
@@ -94,7 +95,8 @@ theorem characterConnectingClass_zero : L.characterConnectingClass 0 = 0 := by
 
 /-- The connecting class of the negated character is the negated class. -/
 @[simp]
-theorem characterConnectingClass_neg (χ : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 : ℚ)) :
+theorem characterConnectingClass_neg (χ : Additive (Group.Abelianization L.Gal) →+ AddCircle (1 :
+    ℚ)) :
     L.characterConnectingClass (-χ) = -L.characterConnectingClass χ := by
   simp only [characterConnectingClass_def, map_neg]
 

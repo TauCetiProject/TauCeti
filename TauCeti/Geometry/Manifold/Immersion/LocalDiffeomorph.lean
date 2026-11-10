@@ -378,7 +378,7 @@ finite dimension is a local diffeomorphism. -/
 theorem _root_.Manifold.IsImmersion.isLocalDiffeomorph {g : X → Y} (hg : IsImmersion K K' n g)
     (hd : Module.finrank 𝕂 F = Module.finrank 𝕂 F') (hn : 1 ≤ n) :
     IsLocalDiffeomorph K K' n g := by
-  have := FiniteDimensional.complete 𝕂 F
+  have := FiniteDimensional.completeSpace 𝕂 F
   refine isLocalDiffeomorph_of_mfderiv_eq hg.contMDiff hn fun y ↦ ?_
   let L := (mfderiv K K' g y : TangentSpace K y →ₗ[𝕂] TangentSpace K' (g y))
   have hinj : Function.Injective L :=

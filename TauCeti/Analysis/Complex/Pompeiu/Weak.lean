@@ -240,7 +240,7 @@ theorem HasWeakConjWirtingerDerivOn.exists_differentiableOn_ae_eq_cauchyTransfor
     [FiniteDimensional ℂ F] {Ω : Opens ℂ} {u f : ℂ → F}
     (hu : HasWeakConjWirtingerDerivOn volume Ω u f) (hf : Integrable f) :
     ∃ v : ℂ → F, DifferentiableOn ℂ v Ω ∧ u =ᵐ[volume.restrict Ω] cauchyTransform f + v := by
-  have := FiniteDimensional.complete ℂ F
+  have := FiniteDimensional.completeSpace ℂ F
   have h := hu.sub (hasWeakConjWirtingerDerivOn_cauchyTransform hf Ω)
   rw [sub_self] at h
   obtain ⟨v, hv, huv⟩ := h.exists_differentiableOn_ae_eq

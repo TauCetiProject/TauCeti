@@ -89,7 +89,7 @@ theorem exists_parametrization_iteratedFDeriv_eq_zero
       (∀ᶠ z in 𝓝 0, g (θ z) = 0) ∧
       (∀ V ∈ 𝓝 (0 : ↥g'.ker), ∀ᶠ x in 𝓝 a, iteratedFDeriv 𝕜 i f x = 0 → x ∈ θ '' V) ∧
       finrank 𝕜 ↥g'.ker + 1 = finrank 𝕜 E := by
-  have := FiniteDimensional.complete 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 E
   -- A scalar component `g = ℓ ∘ iteratedFDeriv 𝕜 i f` with nonzero derivative at `a`.
   have hD : fderiv 𝕜 (iteratedFDeriv 𝕜 i f) a ≠ 0 := by
     rw [← norm_ne_zero_iff (a := fderiv 𝕜 (iteratedFDeriv 𝕜 i f) a)]

@@ -72,7 +72,8 @@ theorem tateHMinusTwoEquivAbelianization_trivialTateRes
           (TauCeti.TateCohomology.HNegTwoRes (Rep.trivial ℤ big.Gal ℤ)
             T.galHom.range x)) := hc.symm
     _ = (Group.Abelianization.lift
-        (Group.Abelianization.of : T.galHom.range →* Group.Abelianization T.galHom.range).transfer).toAdditive
+        (Group.Abelianization.of : T.galHom.range →* Group.Abelianization
+            T.galHom.range).transfer).toAdditive
           (TauCeti.TateCohomology.HNegTwoAddEquivAbelianization x) := hr
     _ = _ := by
       let E := (MonoidHom.ofInjective T.galHom_injective).abelianizationCongr.toAdditive

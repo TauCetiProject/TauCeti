@@ -672,7 +672,8 @@ theorem abelianizationOf_fi24AutomorphismGroup_of (i : Fin 12) :
     have hprod := congrArg Group.Abelianization.of (fi24AutomorphismGroup_of_mul_of_pow i j)
     rw [hij, map_pow, map_mul, map_one, mul_pow, pow_succ _ 2, pow_succ _ 2,
       hsquare, hsquare, one_mul, one_mul] at hprod
-    apply mul_right_cancel (b := Group.Abelianization.of (PresentedGroup.of j : Fi24AutomorphismGroup))
+    apply mul_right_cancel (b := Group.Abelianization.of (PresentedGroup.of j :
+        Fi24AutomorphismGroup))
     simpa only [← sq, hsquare] using hprod
   -- Each node other than `a` has a diagram neighbour (Coxeter entry `3`) of smaller index.
   have hnb : ∀ i : Fin 12, i ≠ 0 → ∃ j < i, fi24AutomorphismCoxeterMatrix i j = 3 := by

@@ -16,7 +16,8 @@ The topological abelianization `G ⧸ closure [G, G]` of a topological group `G`
 continuous homomorphism from `G` to a commutative `T1` topological group: such a homomorphism
 kills every commutator, so its closed kernel contains the closure of the commutator subgroup, and
 it factors uniquely through the quotient. This is the topological counterpart of
-`Group.Abelianization.lift`; it is what identifies the abelianization of a concrete profinite group with
+`Group.Abelianization.lift`; it is what identifies the abelianization of a concrete profinite group
+with
 an abelian profinite group given by its universal property.
 
 ## Main definitions

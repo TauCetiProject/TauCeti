@@ -21,7 +21,8 @@ group. Composing the two counts the characters of an arbitrary finite group:
 `Nat.card (G →* Mˣ) = Nat.card (Group.Abelianization G)`.
 
 The hypothesis is the one Mathlib's counting theorem carries, asked of the abelianization rather
-than of `G`: writing `n` for `Monoid.exponent (Group.Abelianization G)`, `HasEnoughRootsOfUnity M n` asks
+than of `G`: writing `n` for `Monoid.exponent (Group.Abelianization G)`, `HasEnoughRootsOfUnity M n`
+asks
 that `M` contain a primitive `n`-th root of unity and that the `n`-th roots of unity in `M` form a
 cyclic group. An algebraically closed field of characteristic zero satisfies it for every `n`. It is
 a sufficient condition, not one shown here to be necessary, but some hypothesis on `M` is needed:
@@ -55,7 +56,8 @@ public section
 namespace TauCeti
 
 /-- **The linear characters of a finite group are counted by its abelianization.** Every
-homomorphism `G →* Mˣ` factors uniquely through `Group.Abelianization G`, and the characters of a finite
+homomorphism `G →* Mˣ` factors uniquely through `Group.Abelianization G`, and the characters of a
+finite
 commutative group with enough roots of unity in `M` are as many as its elements. -/
 theorem card_monoidHom_eq_card_abelianization (G M : Type*) [Group G] [Finite G] [CommMonoid M]
     [HasEnoughRootsOfUnity M (Monoid.exponent (Group.Abelianization G))] :

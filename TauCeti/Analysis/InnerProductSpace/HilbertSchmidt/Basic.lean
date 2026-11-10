@@ -197,7 +197,7 @@ theorem hilbertSchmidtEnergy_eq_ofReal_sq_frobenius [FiniteDimensional 𝕜 E] (
     (b : HilbertBasis ι 𝕜 E) :
     T.hilbertSchmidtEnergy b =
       ENNReal.ofReal (TauCeti.UnitarilyInvariantSeminorm.frobenius 𝕜 E F T.toLinearMap ^ 2) := by
-  have := FiniteDimensional.complete 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 E
   let e := stdOrthonormalBasis 𝕜 E
   rw [hilbertSchmidtEnergy_indep T b e.toHilbertBasis, hilbertSchmidtEnergy_def,
     TauCeti.UnitarilyInvariantSeminorm.sq_frobenius_apply e,

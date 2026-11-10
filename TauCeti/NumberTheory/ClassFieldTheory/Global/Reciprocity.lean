@@ -272,7 +272,8 @@ def ideleClassArtinMap : IdeleClassGroup (𝓞 K) K →* Gal(L/K) :=
 `Gal(L/K)^ab` of the Artin symbol of `c ∈ C_K` is the global Artin symbol of `c`, for every
 embedding `ι` of `L` into the separable closure. -/
 theorem of_ideleClassArtinMap (ι : L →ₐ[K] SeparableClosure K) (c : IdeleClassGroup (𝓞 K) K) :
-    Group.Abelianization.of (ideleClassArtinMap K L c) = (globalArtinMap K L ι (.ofMul c)).toMul := by
+    Group.Abelianization.of (ideleClassArtinMap K L c) = (globalArtinMap K L ι (.ofMul
+        c)).toMul := by
   rw [globalArtinMap_eq_of_iota K L ι IsSepClosed.lift]
   exact Group.Abelianization.equivOfComm.apply_symm_apply _
 
@@ -285,14 +286,16 @@ theorem ker_ideleClassArtinMap :
   ext c
   -- The Artin symbol of `c` is trivial exactly when its class in `Gal(L/K)^ab` is.
   have hc : ideleClassArtinMap K L c = 1 ↔ globalArtinMap K L IsSepClosed.lift (.ofMul c) = 0 := by
-    rw [← Group.Abelianization.of_injective.eq_iff, of_ideleClassArtinMap K L IsSepClosed.lift, map_one,
+    rw [← Group.Abelianization.of_injective.eq_iff, of_ideleClassArtinMap K L IsSepClosed.lift,
+        map_one,
       toMul_eq_one]
   rw [MonoidHom.mem_ker, hc, globalArtinMap_eq_zero_iff]
 
 /-- **The global Artin map of an abelian extension is surjective.** -/
 theorem ideleClassArtinMap_surjective : Function.Surjective (ideleClassArtinMap K L) := by
   intro σ
-  obtain ⟨c, hc⟩ := surjective_globalArtinMap K L IsSepClosed.lift (.ofMul (Group.Abelianization.of σ))
+  obtain ⟨c, hc⟩ := surjective_globalArtinMap K L IsSepClosed.lift (.ofMul (Group.Abelianization.of
+      σ))
   refine ⟨c.toMul, Group.Abelianization.of_injective ?_⟩
   rw [of_ideleClassArtinMap K L IsSepClosed.lift, ofMul_toMul, hc, toMul_ofMul]
 

@@ -346,7 +346,8 @@ private theorem absoluteGaloisGroupRestrictEquiv_artinMap_padic_apply_of_pow_eq_
   have hres := (artinMap_restrict ℚ_[p] E E.val _ σ hσ).symm.trans
     ((localArtinMap_eq_zero_iff ℚ_[p] E E.val _).2 hmem)
   have h1 : E.val.restrictNormalHom (absoluteGaloisGroupRestrictEquiv ℚ_[p] σ) = 1 := by
-    have h := congrArg (Group.Abelianization.lift (hζ'.autToPow ℚ_[p])) (Additive.ofMul.injective hres)
+    have h := congrArg (Group.Abelianization.lift (hζ'.autToPow ℚ_[p])) (Additive.ofMul.injective
+        hres)
     rw [Group.Abelianization.lift_apply_of, map_one] at h
     exact hζ'.autToPow_injective ℚ_[p] (h.trans (map_one _).symm)
   have hfix : absoluteGaloisGroupRestrictEquiv ℚ_[p] σ ζ = ζ := by

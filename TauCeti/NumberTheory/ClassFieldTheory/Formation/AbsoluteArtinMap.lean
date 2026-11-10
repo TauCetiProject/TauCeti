@@ -92,7 +92,8 @@ It sends the class of `g ∈ G` to the class of `g` (`abelianizationRestrict_mk`
 language, it restricts an automorphism of the maximal abelian extension to the maximal abelian
 subextension of the finite layer cut out by `V`. -/
 def abelianizationRestrict (V : OpenNormalSubgroup G) :
-    Additive (TopologicalAbelianization G) →+ Additive (Group.Abelianization (ofOpenNormal V).Gal) :=
+    Additive (TopologicalAbelianization G) →+ Additive (Group.Abelianization (ofOpenNormal
+        V).Gal) :=
   MonoidHom.toAdditive <|
     QuotientGroup.lift _
       (Group.Abelianization.of.comp
@@ -168,7 +169,8 @@ private theorem comapAb_le_comap (U : OpenNormalSubgroup (TopologicalAbelianizat
 class of `g`. It inverts the projection `abelianizationRestrict V` modulo `U`
 (`quotientOfAbelianizationGal_abelianizationRestrict`). -/
 private def quotientOfAbelianizationGal (U : OpenNormalSubgroup (TopologicalAbelianization G)) :
-    Group.Abelianization (ofOpenNormal (comapAb U)).Gal →* TopologicalAbelianization G ⧸ U.toSubgroup :=
+    Group.Abelianization (ofOpenNormal (comapAb
+        U)).Gal →* TopologicalAbelianization G ⧸ U.toSubgroup :=
   Group.Abelianization.lift <|
     (QuotientGroup.map _ _ (QuotientGroup.mk' _) (comapAb_le_comap U)).comp
       (galOfOpenNormalEquiv (comapAb U)).toMonoidHom

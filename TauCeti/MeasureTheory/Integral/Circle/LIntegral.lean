@@ -555,7 +555,7 @@ theorem norm_integral_apply_apply_circleMap_le {V G : Type*} [NormedAddCommGroup
       integral_of_not_completeSpace hG, norm_zero]
     exact mul_nonneg (norm_nonneg B) (intervalIntegral.integral_nonneg
       (by linarith [Real.pi_pos]) fun _ _ => by positivity)
-  have : CompleteSpace V := FiniteDimensional.complete ℝ V
+  have : CompleteSpace V := FiniteDimensional.completeSpace ℝ V
   have hc : ContDiff ℝ 1 (fun θ ↦ u (circleMap z₀ r θ)) :=
     contDiff_iff_contDiffAt.mpr fun θ ↦
       (hu θ).comp θ (contDiff_circleMap z₀ r).contDiffAt

@@ -160,7 +160,7 @@ theorem exists_isOpen_isInvertible_prod_comp {x₀ : X} (hA : ContinuousAt A x�
     ∃ p : F →L[𝕜] (A x₀).range, (∀ y : (A x₀).range, p y = y) ∧
       ∃ q : E →L[𝕜] (A x₀).ker, (∀ v : (A x₀).ker, q v = v) ∧
         ∃ U : Set X, IsOpen U ∧ x₀ ∈ U ∧ ∀ x ∈ U, ((p ∘L A x).prod q).IsInvertible := by
-  have := FiniteDimensional.complete 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 E
   obtain ⟨p, hp⟩ := Submodule.ClosedComplemented.of_finiteDimensional_quotient
     (Submodule.isClosed_of_finiteDimensional (A x₀).range)
   obtain ⟨q, hq⟩ := (A x₀).ker_closedComplemented_of_finiteDimensional_range
@@ -187,7 +187,7 @@ theorem exists_isOpen_continuousOn_inverse_prod_comp {s : Set X} {x₀ : X}
       ∃ q : E →L[𝕜] (A x₀).ker, (∀ v : (A x₀).ker, q v = v) ∧
         ∃ U ⊆ s, IsOpen U ∧ x₀ ∈ U ∧ (∀ x ∈ U, ((p ∘L A x).prod q).IsInvertible) ∧
           ContinuousOn (fun x ↦ ((p ∘L A x).prod q).inverse) U := by
-  have := FiniteDimensional.complete 𝕜 E
+  have := FiniteDimensional.completeSpace 𝕜 E
   obtain ⟨p, hp, q, hq, V, hV, hx₀V, hinv⟩ :=
     exists_isOpen_isInvertible_prod_comp (hA.continuousAt (hs.mem_nhds hx₀))
   have hT : ContinuousOn (fun x ↦ (p ∘L A x).prod q) s :=

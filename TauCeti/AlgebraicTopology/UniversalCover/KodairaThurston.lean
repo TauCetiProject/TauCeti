@@ -118,7 +118,8 @@ theorem opMulEquiv_symm_op (g : DeckGroup) :
 `((x, y, z), n) ↦ (x, y, n)`. -/
 def abelianizationMulEquiv : Group.Abelianization DeckGroup ≃* Multiplicative (ℤ × ℤ × ℤ) :=
   (Group.Abelianization.prodMulEquiv _).trans <|
-    (HeisenbergGroup.abelianizationMulEquiv.prodCongr Group.Abelianization.equivOfComm.symm).trans <|
+    (HeisenbergGroup.abelianizationMulEquiv.prodCongr
+        Group.Abelianization.equivOfComm.symm).trans <|
       (MulEquiv.prodMultiplicative (ℤ × ℤ) ℤ).symm.trans
         (AddEquiv.prodAssoc (M := ℤ) (N := ℤ) (P := ℤ)).toMultiplicative
 

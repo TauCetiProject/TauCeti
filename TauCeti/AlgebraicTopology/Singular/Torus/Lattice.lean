@@ -133,8 +133,10 @@ theorem orbitRelQuotientFirstHomologyEquiv_singularHomologyMap {E' : Type} [AddC
   obtain ⟨a, rfl⟩ := (hurewiczHomologyAddEquiv (X := TopCat.of (AddAction.orbitRel.Quotient L E))
     x).surjective c
   obtain ⟨a, rfl⟩ := Additive.ofMul.surjective a
-  -- `Group.Abelianization G` is the quotient of `G` by its commutator subgroup and `Group.Abelianization.of`
-  -- is `QuotientGroup.mk'`; Mathlib states no surjectivity lemma for `Group.Abelianization.of` itself.
+  -- `Group.Abelianization G` is the quotient of `G` by its commutator subgroup and
+  -- `Group.Abelianization.of`
+  -- is `QuotientGroup.mk'`; Mathlib states no surjectivity lemma for `Group.Abelianization.of`
+  -- itself.
   obtain ⟨γ, rfl⟩ : ∃ γ, Group.Abelianization.of γ = a := QuotientGroup.mk'_surjective _ a
   rw [ContinuousMap.singularHomologyMap, homologyMap_hurewiczHomologyAddEquiv, toMul_ofMul,
     Group.Abelianization.map_of, orbitRelQuotientFirstHomologyEquiv_hurewiczHomologyAddEquiv,

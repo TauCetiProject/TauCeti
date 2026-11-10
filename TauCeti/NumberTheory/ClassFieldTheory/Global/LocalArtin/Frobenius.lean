@@ -158,7 +158,8 @@ extension `L/K` of number fields and a finite place `v` of `K` unramified at a p
 above it, an automorphism `σ ∈ Gal(L/K)` whose class is the global Artin symbol of the prime idele
 class at `v` is an arithmetic Frobenius at `Q`. -/
 theorem globalArtinMap_isArithFrobAt [IsMulCommutative Gal(L/K)] {σ : Gal(L/K)}
-    (hσ : globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) = .ofMul (Group.Abelianization.of σ)) :
+    (hσ : globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) = .ofMul (Group.Abelianization.of
+        σ)) :
     IsArithFrobAt (𝓞 K) σ Q := by
   obtain ⟨π, hπ, h⟩ := exists_isUniformizer_primeIdeleClass_eq K v
   exact isArithFrobAt_of_globalArtinMap_ofAdicCompletion_eq L ι v Q hπ (h ▸ hσ)
@@ -246,7 +247,8 @@ theorem eq_artinHomAway_of_globalArtinMap
     (hφ : ∀ (I : NumberFieldArithmetic.idealsAway K S) (v : HeightOneSpectrum (𝓞 K)), v ∉ S →
       ((I : (FractionalIdeal (𝓞 K)⁰ K)ˣ) : FractionalIdeal (𝓞 K)⁰ K) =
         (v.asIdeal : FractionalIdeal (𝓞 K)⁰ K) →
-      globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) = .ofMul (Group.Abelianization.of (φ I))) :
+      globalArtinMap K L ι (.ofMul (primeIdeleClass K v)) = .ofMul (Group.Abelianization.of (φ
+          I))) :
     φ = NumberFieldArithmetic.artinHomAway algEquiv_commute_of_isAbelianGalois S hur := by
   refine NumberFieldArithmetic.artinHomAway_eq_of_apply_prime _ S hur φ ?_
   intro I v hv hI Q _ _ σ hσ
