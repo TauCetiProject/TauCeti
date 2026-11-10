@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Basic
+import TauCeti.Analysis.Calculus.FDeriv.AlmostComplexType
 import TauCeti.Geometry.Manifold.MFDeriv.RestrictScalars
 
 /-!

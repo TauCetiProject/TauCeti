@@ -167,9 +167,8 @@ theorem conj_permOfDisjoint_singleton_erase (i : I) (s : Finset I) (hi : i ∈ s
   let k : Fin (n + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
   have hek : e k = i :=
     congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
-  have hremove : k.removeNth (fun j ↦ e j) = (s.erase i).orderEmbOfFin hn := by
-    subst hn
-    exact Finset.removeNth_orderEmbOfFin_symm_eq i s hi hsCard
+  have hremove : k.removeNth (fun j ↦ e j) = (s.erase i).orderEmbOfFin hn :=
+    Finset.removeNth_orderEmbOfFin_symm_eq i s hi hsCard hn
   let u : Set.powersetCard I 1 := ⟨{i}, Finset.card_singleton i⟩
   let t : Set.powersetCard I n := ⟨s.erase i, hn⟩
   have hdval : (Set.powersetCard.disjUnion hdisj).val = s := by

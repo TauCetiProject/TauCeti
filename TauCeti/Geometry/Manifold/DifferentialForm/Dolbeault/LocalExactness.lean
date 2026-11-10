@@ -8,10 +8,11 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.ComplexManifold
 public import TauCeti.Analysis.Complex.Wirtinger.Polydisc
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Analysis.Calculus.FDeriv.AlmostComplexType
 import TauCeti.Data.Finset.Sort
 
 /-!
-# Local exactness for smooth forms of type `(0,q)`
+# The Dolbeault differential of `(0,q)`-forms and local exactness in degree `(0,1)`
 
 On a complex vector space, the Dolbeault differential of a smooth function is its conjugate
 Wirtinger derivative. More generally, on a smooth `(0,q)`-form `η` it is the alternating sum
@@ -141,11 +142,15 @@ theorem IsOfType.delBar_apply_pair {η : SmoothForm 𝓘(ℝ, E) E F 1}
     ((ofComplexManifold E E).delBar η).1 z ![v, w] =
       conjWirtingerDeriv (fun y ↦ η.1 y ![w]) z v -
         conjWirtingerDeriv (fun y ↦ η.1 y ![v]) z w := by
+  have h0 : Fin.removeNth 0 ![v, w] = ![w] := by ext i; fin_cases i; rfl
   have h1 : Fin.removeNth 1 ![v, w] = ![v] := by ext i; fin_cases i; rfl
-  refine (hη.delBar_apply z ![v, w]).trans ?_
-  simp [Fin.sum_univ_two, sub_eq_add_neg, h1]
-  -- The two sides differ only in the tangent-space synonym of the evaluated vectors.
-  rfl
+  -- Read the evaluated vectors in `E` rather than in its tangent-space synonym.
+  change ((ofComplexManifold E E).delBar η).1 z (![v, w] : Fin 2 → E) =
+    conjWirtingerDeriv (fun y ↦ η.1 y (![w] : Fin 1 → E)) z v -
+      conjWirtingerDeriv (fun y ↦ η.1 y (![v] : Fin 1 → E)) z w
+  rw [hη.delBar_apply z ![v, w], Fin.sum_univ_two, h0, h1]
+  simp only [Fin.val_zero, Fin.val_one, pow_zero, pow_one, one_smul, neg_one_smul,
+    Matrix.cons_val_zero, Matrix.cons_val_one, sub_eq_add_neg]
 
 end TypeZeroQ
 
@@ -266,14 +271,13 @@ theorem IsOfType.conjCoeff_delBar {q : ℕ} {η : SmoothForm 𝓘(ℝ, ι → �
     have hcard : #(I.erase (e a)) = q := by
       rw [card_erase_of_mem (I.orderEmbOfFin_mem hI a), hI, Nat.add_sub_cancel]
     -- Removing the `a`-th coordinate vector leaves the increasing enumeration of `I \ {e a}`.
-    have herase : ⇑((I.erase (e a)).orderEmbOfFin hcard) = fun b ↦ e (a.succAbove b) :=
-      (Finset.orderEmbOfFin_unique hcard (fun b ↦ Finset.mem_erase.2
-        ⟨fun h ↦ a.succAbove_ne b (e.injective h), I.orderEmbOfFin_mem hI _⟩)
-        (e.strictMono.comp (Fin.strictMono_succAbove a))).symm
+    have herase := removeNth_orderEmbOfFin_symm_eq (e a) I (I.orderEmbOfFin_mem hI a) hI hcard
+    rw [show (⟨e a, _⟩ : I) = I.orderIsoOfFin hI a from
+      Subtype.ext (coe_orderIsoOfFin_apply ..).symm, OrderIso.symm_apply_apply] at herase
     have hcoeff : η.conjCoeff (I.erase (e a)) =
         fun y ↦ η.1 y (a.removeNth fun b ↦ (Pi.single (e b) 1 : ι → ℂ)) := by
       funext y
-      rw [conjCoeff_of_card_eq _ hcard, herase]
+      rw [conjCoeff_of_card_eq _ hcard, ← herase]
       exact congrArg _ (funext fun b ↦
         (Fin.removeNth_apply a (fun b ↦ (Pi.single (e b) 1 : ι → ℂ)) b).symm)
     rw [RelIso.coe_fn_toEquiv, coe_orderIsoOfFin_apply, card_filter_lt_orderEmbOfFin, hcoeff]
