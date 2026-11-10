@@ -8,72 +8,67 @@ module
 public import TauCeti.Geometry.Contact.Contactomorphism
 public import TauCeti.Geometry.Contact.Family
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.Family
-public import TauCeti.Geometry.Manifold.Flow.TimeDependent
 
 /-!
-# Gray stability
+# Gray stability for families of contact forms on compact manifolds
 
-Let `α` be a smooth one-form on `ℝ × M` whose slices `α_t = ι_t^* α`, the pullbacks along the
-inclusions `ι_t : y ↦ (t, y)`, are contact forms on a finite-dimensional boundaryless manifold
-`M`. Gray's stability theorem says that on a compact `M` the contact structures `ker α_t` are all
-isotopic: there is an isotopy `φ_t` with `φ_t^* α_t = g_t α_0` for positive functions `g_t`.
+A smooth time-dependent family of one-forms `α_t` on a manifold `M` is represented by a single
+smooth one-form `α` on `ℝ × M`, whose slices `α_t = ι_t^* α` are the forms of the family, and
+whose time derivative `∂_t α` (`TauCeti.SmoothForm.timeDeriv`) has as slices the velocities
+`d/dt α_t`. When every `α_t` is a contact form, the **Gray vector field**
+`TauCeti.SmoothForm.grayVectorField` is the time-dependent vector field `Y_t` which at each time
+is the horizontal contact-Moser vector field of `(α_t, ∂_t α_t)`: the unique vector field in the
+contact hyperplanes `ker α_t` with `(ι_{Y_t} dα_t + ∂_t α_t)|ker α_t = 0`. It depends smoothly on
+time and point, and satisfies Gray's equation
+`L_{Y_t} α_t + ∂_t α_t = μ_t α_t` with `μ_t = (∂_t α_t)(R_{α_t})`, where `R_{α_t}` is the Reeb
+field.
 
-The isotopy is the time-dependent flow of the **Gray vector field** `Y_t`
-(`TauCeti.SmoothForm.grayVectorField`), the horizontal contact-Moser vector field of the pair
-`(α_t, ∂_t α_t)`: the unique vector field with `Y_t ∈ ker α_t` and
-`(ι_(Y_t) dα_t + ∂_t α_t)|ker α_t = 0`. Here the time derivative `∂_t α`
-(`TauCeti.SmoothForm.timeDeriv`) is the Lie derivative of `α` along the time field `∂_t`, as a
-smooth one-form on `ℝ × M`; its slices are the velocities of the slices of `α`
-(`TauCeti.SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv`). The contact-Moser
-identity `L_Y α + β = β(R_α) α` turns the defining equations into the rate identity
-
-`∂_t α_t + L_(Y_t) α_t = g_t α_t`, with `g_t = ∂_t α_t(R_(α_t))`
-
-(`TauCeti.SmoothForm.mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_grayVectorField`), and
-Moser's principle for families of forms integrates it along the flow. On a compact manifold the
-flow exists for all times, and its time maps `φ_(s,t)` form the **Gray isotopy**
-(`TauCeti.SmoothForm.grayIsotopy`), with
-
-`φ_(s,t)^* α_t = exp (∫ₛᵗ g (u, φ_(s,u) x) du) • α_s`
-
-(`TauCeti.SmoothForm.mpullback_timeDependentFlowOf_grayVectorField_apply`). So each `φ_(s,t)`
-preserves the coorientation from `α_s` to `α_t`, and carries `ker α_s` onto `ker α_t`.
-
-The construction is relative: `Y_t(x) = 0` at every point `x` where the hyperplanes `ker α_u` at
-`x` do not move with `u`, because there `∂_t α_t` annihilates `ker α_t`. The Gray isotopy therefore
-fixes pointwise every set on which the contact structures agree for all times.
+On a compact manifold without boundary, the time-dependent flow `φ_{s,t}` of the Gray vector field
+is defined for all times. **Gray's stability theorem** says that it carries the contact
+structures into one another, preserving their coorientations:
+`φ_{s,t}^* α_t = exp (∫ₛᵗ μ_u ∘ φ_{s,u} du) α_s`
+(`TauCeti.SmoothForm.mpullback_grayDiffeomorph_apply`). So the diffeomorphisms
+`TauCeti.SmoothForm.grayDiffeomorph` form a smooth isotopy of coorientation-preserving
+contactomorphisms from `ker α_s` to `ker α_t`. The isotopy fixes every point at which the contact
+hyperplane `ker α_t` does not move with `t`, because the Gray vector field vanishes there.
 
 ## Main definitions
 
 * `TauCeti.SmoothForm.grayVectorField`: the Gray vector field of a family of one-forms.
-* `TauCeti.SmoothForm.grayIsotopy`: on a compact manifold, the time-dependent flow of the Gray
-  vector field of a family of contact forms, as diffeomorphisms.
+* `TauCeti.SmoothForm.grayDiffeomorph`: on a compact manifold, its time-dependent flow from time
+  `s` to time `t`, as a diffeomorphism.
 
 ## Main results
 
-* `TauCeti.SmoothForm.eq_grayVectorField_iff`: the defining equations of the Gray vector field.
+* `TauCeti.SmoothForm.eq_grayVectorField_iff`: the Gray vector field is characterized by the
+  horizontal contact-Moser equation.
+* `TauCeti.SmoothForm.mlieDerivForm_grayVectorField_add`: Gray's equation.
 * `TauCeti.SmoothForm.contMDiff_grayVectorField`: the Gray vector field is jointly smooth.
-* `TauCeti.SmoothForm.preservesCoorientation_grayIsotopy`,
-  `TauCeti.SmoothForm.isContactomorphism_grayIsotopy`: **Gray stability**. The Gray isotopy pulls
-  `α_t` back to a positive multiple of `α_s`, so it carries the contact structure `ker α_s` with
-  its coorientation onto `ker α_t`.
-* `TauCeti.SmoothForm.grayIsotopy_apply_eq_self_of_kerDistribution_eq`: the Gray isotopy fixes
-  every point at which the contact hyperplanes are the same for all times.
+* `TauCeti.SmoothForm.grayVectorField_eq_zero`: the Gray vector field vanishes at points where the
+  contact hyperplane is stationary.
+* `TauCeti.SmoothForm.mpullback_grayDiffeomorph_apply`: Gray's stability theorem, in the explicit
+  form `φ_{s,t}^* α_t = exp (∫ₛᵗ μ_u ∘ φ_{s,u} du) α_s`.
+* `TauCeti.SmoothForm.preservesCoorientation_grayDiffeomorph`,
+  `TauCeti.SmoothForm.isContactomorphism_grayDiffeomorph`: the flow maps are
+  coorientation-preserving contactomorphisms.
+* `TauCeti.SmoothForm.contMDiff_grayDiffeomorph`: they form a smooth isotopy, jointly smooth in
+  both times and the point.
+* `TauCeti.SmoothForm.grayDiffeomorph_apply_eq_self`: the isotopy fixes the points at which the
+  contact hyperplane is stationary.
 
 ## References
 
-* J. W. Gray, *Some global properties of contact structures*, Annals of Mathematics 69 (1959),
-  421–450.
 * H. Geiges, *An Introduction to Contact Topology*, Cambridge University Press, 2008,
   Theorem 2.2.2 (Gray stability) and its proof.
+* J. W. Gray, *Some global properties of contact structures*, Ann. of Math. 69 (1959), 421–450.
 -/
 
 public section
 
 noncomputable section
 
-open Bundle Set
-open scoped ContDiff Manifold Topology
+open Bundle
+open scoped ContDiff Manifold
 
 namespace TauCeti.SmoothForm
 
@@ -82,209 +77,233 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
 
 /-! ### The Gray vector field -/
 
-variable {α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) ℝ 1}
+variable (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) ℝ 1)
 
-variable (α) in
-/-- The **Gray vector field** of a smooth family of one-forms `α_t = ι_t^* α` on `M`: at time `t`
-it is the horizontal contact-Moser vector field `Y_t` of `(α_t, ∂_t α_t)`. When `M` is
-finite-dimensional and `α_t` is a contact form, `Y_t` is the unique solution of `α_t(Y_t) = 0` and
-`(ι_(Y_t) dα_t + ∂_t α_t)|ker α_t = 0` (`TauCeti.SmoothForm.eq_grayVectorField_iff`); otherwise it
-is a junk value. -/
+/-- The **Gray vector field** of a smooth family of one-forms `α_t = ι_t^* α` on `M`, represented
+by a one-form `α` on `ℝ × M`. At time `t` it is the horizontal contact-Moser vector field of `α_t`
+and of the velocity `∂_t α_t`: when `α_t` is a contact form, this is the unique vector field `Y_t`
+with `α_t(Y_t) = 0` and `(ι_{Y_t} dα_t + ∂_t α_t)|ker α_t = 0`
+(`TauCeti.SmoothForm.eq_grayVectorField_iff`). -/
 def grayVectorField (t : ℝ) (x : M) : TangentSpace I x :=
   (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).contactMoserVectorField
-    (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) (timeDeriv α)) x
+    (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv) x
 
-variable (α) in
-/-- The Gray vector field at time `t` is the contact-Moser vector field of `(α_t, ∂_t α_t)`. -/
-theorem grayVectorField_def (t : ℝ) :
-    grayVectorField α t =
+/-- The Gray vector field is the contact-Moser vector field of the slice and its velocity. -/
+theorem grayVectorField_def (t : ℝ) (x : M) :
+    α.grayVectorField t x =
       (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).contactMoserVectorField
-        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) (timeDeriv α)) :=
+        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv) x :=
   (rfl)
 
-section Contact
+/-- The **Gray rate** `μ_t = (∂_t α_t)(R_{α_t})` of a smooth family of one-forms `α_t = ι_t^* α`,
+as a function of time and point. When every `α_t` is a contact form, it is the coefficient in
+Gray's equation `L_{Y_t} α_t + ∂_t α_t = μ_t α_t`
+(`TauCeti.SmoothForm.mlieDerivForm_grayVectorField_add`), and the flow of the Gray vector field
+rescales `α_t` by the exponential of its integral
+(`TauCeti.SmoothForm.mpullback_grayDiffeomorph_apply`). -/
+def grayRate (p : ℝ × M) : ℝ :=
+  (mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 p.2
+    ![(mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField p.2]
 
-variable [FiniteDimensional ℝ E]
+/-- The Gray rate is the velocity of the slices evaluated on the Reeb field. -/
+theorem grayRate_def (t : ℝ) (x : M) :
+    α.grayRate (t, x) =
+      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x
+        ![(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField x] :=
+  (rfl)
 
-/-- **Characterization of the Gray vector field.** If the slice `α_t` is a contact form, then
-`Y_t(x)` is the unique tangent vector `v` with `α_t(v) = 0` and `dα_t(v, w) + ∂_t α_t(w) = 0` for
-every `w` in the contact hyperplane `ker α_t`. -/
-theorem eq_grayVectorField_iff {t : ℝ} {x : M} {v : TangentSpace I x}
-    (hc : (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm) :
-    v = grayVectorField α t x ↔
+variable {α} [FiniteDimensional ℝ E]
+
+section Slice
+
+variable {t : ℝ}
+  (hc : (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm)
+include hc
+
+/-- The Gray vector field is horizontal: `α_t(Y_t) = 0` whenever the slice `α_t` is a contact
+form. -/
+theorem apply_grayVectorField (x : M) :
+    (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x
+      ![α.grayVectorField t x] = 0 :=
+  hc.apply_contactMoserVectorField _ x
+
+/-- **The Gray vector field is characterized by the horizontal contact-Moser equation**: if the
+slice `α_t` is a contact form, a tangent vector is the value of the Gray vector field at time `t`
+exactly when it lies in `ker α_t` and `(ι_v dα_t + ∂_t α_t)|ker α_t = 0`. -/
+theorem eq_grayVectorField_iff {x : M} {v : TangentSpace I x} :
+    v = α.grayVectorField t x ↔
       (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v] = 0 ∧
         ∀ w ∈ (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x,
           mextDeriv (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v, w] +
-            (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) (timeDeriv α)).1 x
-              ![w] = 0 :=
-  grayVectorField_def α t ▸ hc.eq_contactMoserVectorField_iff
+            (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x ![w] =
+              0 :=
+  hc.eq_contactMoserVectorField_iff
 
-/-- **Gray's rate identity.** If the slice `α_t` is a contact form, then along the Gray vector
-field the time derivative of the family plus the Lie derivative of the slice is the multiple
-`g_t α_t` of the slice, where `g_t = ∂_t α_t(R_(α_t))` is the Reeb component of the time
-derivative. -/
-theorem mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_grayVectorField {t : ℝ}
-    (hc : (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm) :
-    TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
-        (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1) +
-      mlieDerivForm (grayVectorField α t)
-        (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1) =
-    fun y ↦ (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) (timeDeriv α)).1 y
-        ![(mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField y] •
-      TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1 y := by
-  funext y
-  ext v
-  obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, by ext i; fin_cases i; rfl⟩
-  have h := hc.mlieDerivForm_contactMoserVectorField_add
-    (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) (timeDeriv α)) y w
-  simp only [coe_mpullback, coe_timeDeriv] at h
-  rw [Pi.add_apply, ContinuousAlternatingMap.add_apply, add_comm,
-    grayVectorField_def,
-    ContinuousAlternatingMap.smul_apply, smul_eq_mul, coe_mpullback, coe_timeDeriv]
-  exact h
+/-- **Gray's equation**: if the slice `α_t` is a contact form, then
+`L_{Y_t} α_t + ∂_t α_t = μ_t α_t`, where `μ_t = (∂_t α_t)(R_{α_t})` is the Gray rate, evaluated on
+a tangent vector. -/
+theorem mlieDerivForm_grayVectorField_add (x : M) (v : TangentSpace I x) :
+    mlieDerivForm (α.grayVectorField t)
+        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v] +
+      (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x ![v] =
+        α.grayRate (t, x) *
+          (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x ![v] :=
+  hc.mlieDerivForm_contactMoserVectorField_add _ x v
 
-/-- **The Gray vector field vanishes where the hyperplanes are stationary.** If the slice `α_t`
-is a contact form and the hyperplanes `ker α_u` at `x` are the same for all times `u`, then
-`Y_t(x) = 0`. -/
-theorem grayVectorField_eq_zero_of_kerDistribution_eq [I.Boundaryless] {t : ℝ} {x : M}
-    (hc : (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm)
+/-- **The Gray vector field vanishes where the contact hyperplane is stationary.** If the slice
+`α_t` is a contact form and the hyperplane `ker α_u` at `x` is the same for all times `u`, then
+`Y_t(x) = 0`: the velocity `∂_t α_t` annihilates the hyperplane at `x`, which the contact-Moser
+field then ignores. -/
+theorem grayVectorField_eq_zero [I.Boundaryless] {x : M}
     (hx : ∀ u, (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x =
       (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x) :
-    grayVectorField α t x = 0 := by
+    α.grayVectorField t x = 0 := by
   rw [grayVectorField_def, hc.contactMoserVectorField_eq_zero_iff]
   intro w hw
-  -- The function `u ↦ α_u(w)` vanishes identically, so its derivative `∂_t α_t(w)` vanishes.
+  -- The vector `w` stays in the hyperplane at all times, so `u ↦ α_u(w)` vanishes identically,
+  -- and its derivative `(∂_t α_t)(w)` is zero.
+  have hzero (u : ℝ) :
+      (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).1 x ![w] = 0 :=
+    mem_kerDistribution.1 (by rw [hx u]; exact hw)
   have hd := (ContinuousAlternatingMap.apply ℝ E ℝ ![w]).hasFDerivAt.comp_hasDerivAt t
-    (hasDerivAt_mpullback_prodMk_timeDeriv α t x)
-  have hzero : (⇑(ContinuousAlternatingMap.apply ℝ E ℝ ![w]) ∘
-      fun u ↦ (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).1 x) = fun _ ↦ 0 :=
-    funext fun u ↦ ContinuousAlternatingMap.apply_apply.trans
-      (mem_kerDistribution.1 ((hx u).symm ▸ hw))
-  exact ContinuousAlternatingMap.apply_apply.symm.trans <| hd.unique <|
-    (hasDerivAt_const t (0 : ℝ)).congr_of_eventuallyEq (.of_forall fun u ↦ congrFun hzero u)
+    (α.hasDerivAt_mpullback_prodMk_timeDeriv t x)
+  have hfun : (⇑(ContinuousAlternatingMap.apply ℝ E ℝ ![w]) ∘ fun u ↦
+      (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).1 x) = fun _ ↦ 0 :=
+    funext fun u ↦ ContinuousAlternatingMap.apply_apply.trans (hzero u)
+  rw [hfun] at hd
+  -- `ContinuousAlternatingMap.apply_apply` evaluates the left side, read in the fibre
+  -- `Trivial M ℝ x`, which is `ℝ`.
+  exact hd.unique (hasDerivAt_const t (0 : ℝ))
+
+end Slice
 
 variable (hc : ∀ t, (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm)
 include hc
 
-/-- The Gray vector field of a smooth family of contact forms is jointly smooth in time and
-space. -/
+/-- The Gray vector field of a smooth family of contact forms depends smoothly on time and point:
+`(t, x) ↦ (x, Y_t(x))` is smooth into the tangent bundle. -/
 theorem contMDiff_grayVectorField :
     ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent ∞
-      (fun p : ℝ × M ↦ (⟨p.2, grayVectorField α p.1 p.2⟩ : TangentBundle I M)) :=
-  contMDiff_contactMoserVectorField_mpullback_prodMk α (timeDeriv α) hc
+      (fun p : ℝ × M ↦ (⟨p.2, α.grayVectorField p.1 p.2⟩ : TangentBundle I M)) :=
+  contMDiff_contactMoserVectorField_mpullback_prodMk α α.timeDeriv hc
+
+/-- The Gray rate `μ_t = (∂_t α_t)(R_{α_t})` of a smooth family of contact forms depends smoothly
+on time and point. -/
+theorem contMDiff_grayRate : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ α.grayRate :=
+  contMDiff_apply_reebVectorField_mpullback_prodMk α α.timeDeriv hc
+
+/-! ### Gray's stability theorem on compact manifolds -/
 
 variable [I.Boundaryless] [T2Space M] [CompactSpace M]
 
-/-- On a compact manifold, the suspension of the Gray vector field of a smooth family of contact
-forms is complete, so its time-dependent flow is defined for all times. -/
+/-- On a compact manifold, the Gray vector field has a complete suspension: its time-dependent flow
+is defined for all times. -/
 theorem isCompleteVectorField_timeDependentSuspensionField_grayVectorField :
-    IsCompleteVectorField (timeDependentSuspensionField (grayVectorField α)) :=
-  isCompleteVectorField_timeDependentSuspensionField ((contMDiff_grayVectorField hc).of_le
-    (by simp)) isCompact_univ fun _ _ hy ↦ absurd (mem_univ _) hy
+    IsCompleteVectorField (timeDependentSuspensionField α.grayVectorField) :=
+  isCompleteVectorField_timeDependentSuspensionField
+    ((contMDiff_grayVectorField hc).of_le (by simp)) isCompact_univ (by simp)
 
-/-- **Gray stability, with the conformal factor.** On a compact manifold, the time-dependent flow
-`φ_(s,t)` of the Gray vector field of a smooth family of contact forms pulls `α_t` back to a
-positive multiple of `α_s`:
-`(φ_(s,t)^* α_t)_x = exp (∫ₛᵗ g (u, φ_(s,u) x) du) • (α_s)_x`, where
-`g (u, y) = ∂_t α_u (R_(α_u) y)` is the Reeb component of the time derivative. -/
-theorem mpullback_timeDependentFlowOf_grayVectorField_apply (s t : ℝ) (x : M) :
-    TauCeti.mpullback I I (timeDependentFlowOf (grayVectorField α) s t)
-        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).1 x =
-      Real.exp (∫ u in s..t,
-          (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) (timeDeriv α)).1
-            (timeDependentFlowOf (grayVectorField α) s u x)
-            ![(mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField
-              (timeDependentFlowOf (grayVectorField α) s u x)]) •
-        (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x := by
-  simpa only [coe_mpullback] using
-    mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul
-      ((contMDiff_grayVectorField hc).of_le (by simp))
-      (isCompleteVectorField_timeDependentSuspensionField_grayVectorField hc)
-      (contMDiff_apply_reebVectorField_mpullback_prodMk α (timeDeriv α) hc).continuous
-      (α.contMDiff.of_le (by simp))
-      (fun _ ↦ mpullback_prodMk_mlieDerivForm_add_mlieDerivForm_grayVectorField (hc _)) s t x
-
-variable (α) in
-/-- The **Gray isotopy** of a smooth family of contact forms `α_t` on a compact manifold: the
-time-dependent flow `φ_(s,t)` of the Gray vector field from time `s` to time `t`, as a
+/-- **Gray's isotopy.** On a compact manifold without boundary, the time-dependent flow of the
+Gray vector field of a smooth family of contact forms, from time `s` to time `t`, as a
 diffeomorphism. It pulls `α_t` back to a positive multiple of `α_s`
-(`TauCeti.SmoothForm.preservesCoorientation_grayIsotopy`). -/
-def grayIsotopy (s t : ℝ) : M ≃ₘ⟮I, I⟯ M :=
+(`TauCeti.SmoothForm.mpullback_grayDiffeomorph_apply`). -/
+def grayDiffeomorph (s t : ℝ) : M ≃ₘ⟮I, I⟯ M :=
   timeDependentFlowDiffeomorph (isCompleteVectorField_timeDependentSuspensionField_grayVectorField
     hc) le_top (contMDiff_grayVectorField hc) s t
 
-/-- The Gray isotopy is the time-dependent flow of the Gray vector field. -/
+/-- Gray's isotopy is the time-dependent flow of the Gray vector field. -/
+theorem grayDiffeomorph_apply (s t : ℝ) (x : M) :
+    grayDiffeomorph hc s t x = timeDependentFlowOf α.grayVectorField s t x :=
+  timeDependentFlowDiffeomorph_apply _ _ _ s t x
+
+/-- The inverse of Gray's isotopy from `s` to `t` is Gray's isotopy from `t` to `s`. -/
 @[simp]
-theorem coe_grayIsotopy (s t : ℝ) :
-    ⇑(grayIsotopy α hc s t) = timeDependentFlowOf (grayVectorField α) s t :=
-  funext <| timeDependentFlowDiffeomorph_apply _ _ _ s t
+theorem grayDiffeomorph_symm_apply (s t : ℝ) (x : M) :
+    (grayDiffeomorph hc s t).symm x = grayDiffeomorph hc t s x :=
+  (timeDependentFlowDiffeomorph_symm_apply _ _ _ s t x).trans (grayDiffeomorph_apply hc t s x).symm
 
-/-- The Gray isotopy is the time-dependent flow of the Gray vector field. -/
-theorem grayIsotopy_apply (s t : ℝ) (x : M) :
-    grayIsotopy α hc s t x = timeDependentFlowOf (grayVectorField α) s t x := by
-  rw [coe_grayIsotopy]
-
-/-- The inverse of the Gray isotopy from `s` to `t` is the Gray isotopy from `t` to `s`. -/
+/-- Gray's isotopy from a time to itself is the identity. -/
 @[simp]
-theorem grayIsotopy_symm_apply (s t : ℝ) (x : M) :
-    (grayIsotopy α hc s t).symm x = grayIsotopy α hc t s x :=
-  (timeDependentFlowDiffeomorph_symm_apply _ _ _ s t x).trans (grayIsotopy_apply hc t s x).symm
+theorem grayDiffeomorph_self (s : ℝ) (x : M) : grayDiffeomorph hc s s x = x := by
+  rw [grayDiffeomorph_apply,
+    timeDependentFlowOf_self ((contMDiff_grayVectorField hc).of_le (by simp))]
 
-/-- The Gray isotopy from a time to itself is the identity. -/
+/-- Gray's isotopy composes: flowing from `r` to `s` and then from `s` to `t` is flowing from `r`
+to `t`. -/
 @[simp]
-theorem grayIsotopy_self_apply (s : ℝ) (x : M) : grayIsotopy α hc s s x = x :=
-  (grayIsotopy_apply hc s s x).trans <|
-    timeDependentFlowOf_self ((contMDiff_grayVectorField hc).of_le (by simp)) s x
-
-/-- Composition law of the Gray isotopy: flowing from `r` to `s` and then from `s` to `t` is
-flowing from `r` to `t`. -/
-theorem grayIsotopy_grayIsotopy (r s t : ℝ) (x : M) :
-    grayIsotopy α hc s t (grayIsotopy α hc r s x) = grayIsotopy α hc r t x := by
-  simp only [grayIsotopy_apply]
+theorem grayDiffeomorph_grayDiffeomorph (r s t : ℝ) (x : M) :
+    grayDiffeomorph hc s t (grayDiffeomorph hc r s x) = grayDiffeomorph hc r t x := by
+  simp only [grayDiffeomorph_apply]
   exact timeDependentFlowOf_trans
     (isCompleteVectorField_timeDependentSuspensionField_grayVectorField hc)
     ((contMDiff_grayVectorField hc).of_le (by simp)) r s t x
 
-/-- The Gray isotopy is jointly smooth in both times and the point. -/
-theorem contMDiff_grayIsotopy :
+/-- Gray's isotopy depends smoothly on the initial time, the final time and the point. -/
+theorem contMDiff_grayDiffeomorph :
     ContMDiff ((𝓘(ℝ, ℝ).prod 𝓘(ℝ, ℝ)).prod I) I ∞
-      (fun p : (ℝ × ℝ) × M ↦ grayIsotopy α hc p.1.1 p.1.2 p.2) := by
-  simp only [grayIsotopy_apply]
+      (fun p : (ℝ × ℝ) × M ↦ grayDiffeomorph hc p.1.1 p.1.2 p.2) := by
+  simp only [grayDiffeomorph_apply]
   exact contMDiff_timeDependentFlowOf
     (isCompleteVectorField_timeDependentSuspensionField_grayVectorField hc) le_top
     (contMDiff_grayVectorField hc)
 
-/-- **Gray stability.** On a compact manifold, the Gray isotopy `φ_(s,t)` of a smooth family of
-contact forms pulls `α_t` back to a positive multiple of `α_s` at every point; in particular it
-carries the contact structure `ker α_s` with its coorientation onto `ker α_t`. -/
-theorem preservesCoorientation_grayIsotopy (s t : ℝ) :
-    (grayIsotopy α hc s t).PreservesCoorientation
+/-- **Gray's stability theorem.** On a compact manifold without boundary, the time-dependent flow
+`φ_{s,t}` of the Gray vector field of a smooth family of contact forms `α_t` rescales the forms:
+`φ_{s,t}^* α_t = exp (∫ₛᵗ μ_u ∘ φ_{s,u} du) α_s`, where `μ_u = (∂_t α_u)(R_{α_u})`. -/
+theorem mpullback_grayDiffeomorph_apply (s t : ℝ) (x : M) :
+    (mpullback (grayDiffeomorph hc s t) (grayDiffeomorph hc s t).contMDiff
+        (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α)).1 x =
+      Real.exp (∫ u in s..t, α.grayRate (u, grayDiffeomorph hc s u x)) •
+        (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α).1 x := by
+  have hX := contMDiff_grayVectorField hc
+  -- Gray's equation says that the rate `∂_t α_t + L_{Y_t} α_t` is `μ_t α_t`.
+  have hL (t : ℝ) :
+      TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t)
+          (mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1) +
+        mlieDerivForm (α.grayVectorField t) (TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1) =
+      fun y ↦ α.grayRate (t, y) • TauCeti.mpullback I (𝓘(ℝ, ℝ).prod I) (Prod.mk t) α.1 y := by
+    funext y
+    ext v
+    have hv : v = ![v 0] := funext fun i ↦ by fin_cases i; rfl
+    have h := mlieDerivForm_grayVectorField_add (hc t) y (v 0)
+    rw [hv]
+    simp only [coe_mpullback, coe_timeDeriv, Pi.add_apply, ContinuousAlternatingMap.add_apply,
+      ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h ⊢
+    rw [add_comm, h]
+  have h := mpullback_timeDependentFlowOf_mpullback_prodMk_apply_eq_exp_integral_smul
+    (hX.of_le (by simp)) (isCompleteVectorField_timeDependentSuspensionField_grayVectorField hc)
+    (contMDiff_grayRate hc).continuous (α.contMDiff.of_le (by simp)) hL s t x
+  have hφ : ⇑(grayDiffeomorph hc s t) = timeDependentFlowOf α.grayVectorField s t :=
+    funext (grayDiffeomorph_apply hc s t)
+  simpa only [coe_mpullback, grayDiffeomorph_apply, hφ] using h
+
+/-- **Gray's stability theorem**, coorientation form: Gray's isotopy from `s` to `t` is a
+contactomorphism from `ker α_s` to `ker α_t` carrying the coorientation given by `α_s` to that
+given by `α_t`. -/
+theorem preservesCoorientation_grayDiffeomorph (s t : ℝ) :
+    (grayDiffeomorph hc s t).PreservesCoorientation
       (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α)
       (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α) :=
-  Diffeomorph.preservesCoorientation_def.2 fun x ↦ ⟨_, Real.exp_pos _, by
-    simpa only [coe_mpullback, coe_grayIsotopy] using
-      mpullback_timeDependentFlowOf_grayVectorField_apply hc s t x⟩
+  Diffeomorph.preservesCoorientation_def.2 fun x ↦
+    ⟨_, Real.exp_pos _, mpullback_grayDiffeomorph_apply hc s t x⟩
 
-/-- **Gray stability**, for contact structures: on a compact manifold the Gray isotopy `φ_(s,t)`
-of a smooth family of contact forms carries the contact structure `ker α_s` onto `ker α_t`. -/
-theorem isContactomorphism_grayIsotopy (s t : ℝ) :
-    (grayIsotopy α hc s t).IsContactomorphism
+/-- **Gray's stability theorem**: Gray's isotopy from `s` to `t` is a contactomorphism from
+`ker α_s` to `ker α_t`. -/
+theorem isContactomorphism_grayDiffeomorph (s t : ℝ) :
+    (grayDiffeomorph hc s t).IsContactomorphism
       (mpullback (Prod.mk s) (contMDiff_const.prodMk contMDiff_id) α)
       (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α) :=
-  (preservesCoorientation_grayIsotopy hc s t).isContactomorphism
+  (preservesCoorientation_grayDiffeomorph hc s t).isContactomorphism
 
-/-- **Relative Gray stability.** If the contact hyperplanes `ker α_u` at `x` agree for all times
-`u`, then the Gray isotopy fixes `x`. In particular, it fixes pointwise every set on which the
-contact structures `ker α_u` all agree. -/
-theorem grayIsotopy_apply_eq_self_of_kerDistribution_eq {x : M}
+/-- Gray's isotopy fixes every point at which the contact hyperplane `ker α_t` is the same for all
+times. -/
+theorem grayDiffeomorph_apply_eq_self {x : M}
     (hx : ∀ u, (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x =
       (mpullback (Prod.mk 0) (contMDiff_const.prodMk contMDiff_id) α).kerDistribution x)
-    (s t : ℝ) : grayIsotopy α hc s t x = x :=
-  (grayIsotopy_apply hc s t x).trans <| timeDependentFlowOf_eq_self_of_forall_eq_zero
+    (s t : ℝ) : grayDiffeomorph hc s t x = x := by
+  rw [grayDiffeomorph_apply]
+  exact timeDependentFlowOf_eq_self_of_forall_eq_zero
     ((contMDiff_grayVectorField hc).of_le (by simp))
-    (fun u ↦ grayVectorField_eq_zero_of_kerDistribution_eq (hc u) fun v ↦ (hx v).trans (hx u).symm)
-    s t
-
-end Contact
+    (fun u ↦ grayVectorField_eq_zero (hc u) fun v ↦ (hx v).trans (hx u).symm) s t
 
 end TauCeti.SmoothForm

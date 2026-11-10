@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Measure
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CommutingFlow
 public import TauCeti.Geometry.Symplectic.Manifold.Volume
+public import TauCeti.Geometry.Symplectic.Darboux.EuclideanBasis
+public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 
 /-!
 # The Liouville measure of a symplectic manifold
@@ -29,6 +31,12 @@ Liouville measure. Since Hamiltonian flows preserve a symplectic form, this give
 measure
 (`TauCeti.SmoothTwoForm.IsSymplectic.measurePreserving_globalFlowDiffeomorph_liouvilleMeasure`).
 
+On a symplectic vector space `(V, σ)`, regarded as a manifold with the constant form `σ`, the
+Liouville measure is the Haar measure normalized by any Darboux basis
+(`TauCeti.SymplecticForm.liouvilleMeasure_constSmooth`). In particular the Liouville measure of
+the standard form `Σ dq_i ∧ dp_i` on `ℂ^ι = EuclideanSpace ℝ ι × EuclideanSpace ℝ ι` is Lebesgue
+measure (`TauCeti.SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm`).
+
 ## Main definitions
 
 * `TauCeti.SmoothTwoForm.liouvilleMeasure σ n`: the Liouville measure `|σⁿ / n!|`.
@@ -43,6 +51,10 @@ measure
   Liouville measure of `σ` to that of `τ`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.measurePreserving_globalFlowDiffeomorph_liouvilleMeasure`:
   Liouville's theorem, Hamiltonian flows preserve the Liouville measure.
+* `TauCeti.SymplecticForm.liouvilleMeasure_constSmooth`: the Liouville measure of a constant
+  symplectic form is the Haar measure of a Darboux basis.
+* `TauCeti.SymplecticForm.liouvilleMeasure_constSmooth_stdSymplecticForm`: the Liouville measure of
+  the standard symplectic form on `ℂ^ι` is Lebesgue measure.
 
 ## References
 
@@ -63,6 +75,8 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I ∞ M] [MeasurableSpace M] [BorelSpace M] [LindelofSpace M]
   {n : ℕ} [hn : Fact (finrank ℝ E = 2 * n)]
+
+section ChartMeasure
 
 attribute [local instance] TauCeti.extChartAtMeasurableSpaceE TauCeti.extChartAtBorelSpaceE
 
@@ -152,3 +166,50 @@ theorem measurePreserving_globalFlowDiffeomorph_liouvilleMeasure (hσ : σ.IsSym
   rwa [Diffeomorph.coe_toHomeomorph]
 
 end TauCeti.SmoothTwoForm.IsSymplectic
+
+end ChartMeasure
+
+/-! ### Constant symplectic forms on a vector space -/
+
+namespace TauCeti.SymplecticForm
+
+variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
+  [MeasurableSpace V] [BorelSpace V] {m : ℕ} [Fact (finrank ℝ V = 2 * m)]
+
+/-- **The Liouville measure of a constant symplectic form.** On a symplectic vector space
+`(V, σ)`, regarded as a manifold with the constant form `σ`, the Liouville measure `|σᵐ / m!|` is
+the Haar measure normalized by any Darboux basis: it gives the parallelepiped spanned by a Darboux
+basis measure one. -/
+theorem liouvilleMeasure_constSmooth (σ : SymplecticForm V) {b : Basis (Fin m × Fin 2) ℝ V}
+    (hb : σ.IsDarbouxBasis b) : σ.constSmooth.liouvilleMeasure m = b.addHaar := by
+  set e := finProdFinEquiv.trans (finCongr (Nat.mul_comm m 2))
+  -- The tangent spaces of the model space are `V` itself, and `b` is a basis of each of them.
+  have hval (x : V) : (σ.constSmooth.volumeForm m).1 x (b.reindex e) = 1 :=
+    σ.isNondegenerate_constSmooth.volumeForm_apply_reindex (x := x) (b := b)
+      (by rwa [isNondegenerate_constSmooth_symplecticFormAt])
+  rw [SmoothTwoForm.liouvilleMeasure_def, RoughForm.measure_eq_smul_addHaar (c := 1) _ hval,
+    abs_one, ENNReal.ofReal_one, one_smul, Basis.addHaar_reindex]
+
+/-- **The Liouville measure of the standard symplectic form is Lebesgue measure.** On
+`ℂ^ι = EuclideanSpace ℝ ι × EuclideanSpace ℝ ι`, written in the real coordinates
+`z_i = q_i + i p_i`, the Liouville measure of the standard form `Σ dq_i ∧ dp_i` is the Lebesgue
+measure `volume`. -/
+theorem liouvilleMeasure_constSmooth_stdSymplecticForm {ι : Type*} [Fintype ι] :
+    (stdSymplecticForm (V := EuclideanSpace ℝ ι)).constSmooth.liouvilleMeasure (Fintype.card ι) =
+      volume := by
+  classical
+  set e := Fintype.equivFin ι
+  set d := (stdSymplecticBasis ι).reindex (Equiv.sumCongr e e)
+  have hd : LinearMap.BilinForm.toMatrix d
+      (stdSymplecticForm (V := EuclideanSpace ℝ ι)).toBilinForm =
+        Matrix.J (Fin (Fintype.card ι)) ℝ := by
+    ext a c
+    rw [LinearMap.BilinForm.toMatrix_apply, Basis.reindex_apply, Basis.reindex_apply,
+      ← LinearMap.BilinForm.toMatrix_apply, toMatrix_stdSymplecticBasis]
+    rcases a with a | a <;> rcases c with c | c <;> simp [Matrix.J, Matrix.one_apply]
+  refine (liouvilleMeasure_constSmooth _ (isDarbouxBasis_reindex_symm_iff.2 hd)).trans ?_
+  rw [Basis.addHaar_reindex, Basis.addHaar_reindex, stdSymplecticBasis_def, Basis.addHaar_reindex,
+    Basis.prod_addHaar, OrthonormalBasis.addHaar_eq_volume, Measure.volume_eq_prod]
+
+end TauCeti.SymplecticForm
+

@@ -6,9 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent
-public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 import TauCeti.Analysis.ODE.ScalarLinear
-import TauCeti.Geometry.Symplectic.Manifold.Flat
+public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Smooth
 
 /-!
 # Time-dependent families of forms along time-dependent flows
@@ -18,9 +17,8 @@ A time-dependent family of differential forms on a manifold `M` is represented b
 inclusion `ι_t : y ↦ (t, y)`, and its *time derivative* at time `t` is the slice
 `ι_t^* (L_{∂_t} α)` of the Lie derivative along the unit vector field `∂_t` of the time coordinate.
 This is the velocity of the slices: `d/dt (α_t)_y = (ι_t^* L_{∂_t} α)_y`
-(`TauCeti.hasDerivAt_mpullback_prodMk`). For a smooth one-form `α`, Cartan's formula
-`L_{∂_t} α = ι_{∂_t} dα + d (α(∂_t))` shows that `L_{∂_t} α` is itself a smooth one-form
-(`TauCeti.SmoothForm.timeDeriv`).
+(`TauCeti.hasDerivAt_mpullback_prodMk`). For a smooth form, `L_{∂_t} α` is again a smooth form,
+the time derivative `TauCeti.SmoothForm.timeDeriv`.
 
 Let `X` be a jointly `C²` time-dependent vector field on a finite-dimensional manifold without
 boundary whose suspension `Z = (1, X)` on `ℝ × M` is complete, and let `φ_{s,t}` be its
@@ -51,16 +49,11 @@ Integrating the identity gives **Moser's principle** for families of forms: if t
 rate in Gray's argument for a family of contact forms, where the time-dependent field is chosen
 to make the rate a multiple of the contact form.
 
-## Main definitions
-
-* `TauCeti.SmoothForm.timeDeriv`: the time derivative `∂_t α = L_{∂_t} α` of a smooth one-form on
-  `ℝ × M`, as a smooth one-form.
-
 ## Main results
 
 * `TauCeti.hasDerivAt_mpullback_prodMk`: the slices of `α` have velocity `ι_t^* L_{∂_t} α`.
-* `TauCeti.SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv`: the slices of the smooth one-form
-  `∂_t α` are the velocities of the slices of `α`.
+* `TauCeti.SmoothForm.timeDeriv`, `TauCeti.SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv`: the
+  same velocity for a smooth form, as a smooth form on `ℝ × M`.
 * `TauCeti.mpullback_prodMk_mlieDerivForm_vertical`: `ι_t^* L_{(0, X)} α = L_{X_t} α_t`.
 * `TauCeti.mpullback_prodMk_mlieDerivForm_timeDependentSuspensionField`:
   `ι_t^* L_Z α = ι_t^* L_{∂_t} α + L_{X_t} α_t`.
@@ -147,6 +140,38 @@ theorem hasDerivAt_mpullback_prodMk (t : ℝ) (x : M)
   have h := HasDerivAt.comp_sub_const (x := t) (a := t) (by rwa [sub_self])
   refine (h.congr_of_eventuallyEq (Eventually.of_forall hslice)).congr_deriv ?_
   exact (mpullback_apply_eq_compContinuousLinearMapCLM _ _ x).symm
+
+/-! ### The time derivative of a smooth family -/
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
+/-- The **time derivative** `∂_t α` of a smooth form `α` on `ℝ × M`, which represents the
+time-dependent family of its slices `α_t = ι_t^* α`: the Lie derivative `L_{∂_t} α` along the unit
+vector field `∂_t = (1, 0)` of the time coordinate. It is again a smooth form, and its slices are
+the velocities of the slices of `α` (`TauCeti.SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv`). -/
+def SmoothForm.timeDeriv (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k) :
+    SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k :=
+  ⟨mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1, SmoothForm.mlieDerivForm_mem_smoothBundleForms α
+    (contMDiff_const_prod_field 1 (X := 0)
+      ((contMDiff_zeroSection ℝ (TangentSpace I)).comp contMDiff_snd))⟩
+
+omit [FiniteDimensional ℝ E] [I.Boundaryless] [T2Space M] in
+/-- The underlying form of the time derivative is the Lie derivative along `∂_t`. -/
+@[simp]
+theorem SmoothForm.coe_timeDeriv (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k) :
+    α.timeDeriv.1 = mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1 :=
+  (rfl)
+
+omit [FiniteDimensional ℝ E] [T2Space M] in
+/-- The slices of the time derivative are the velocities of the slices:
+`d/dt (α_t)ₓ = ((∂_t α)_t)ₓ`. -/
+theorem SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv
+    (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k) (t : ℝ) (x : M) :
+    HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F)
+      (fun u ↦ (SmoothForm.mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).1 x)
+      ((SmoothForm.mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α.timeDeriv).1 x)
+      t := by
+  simpa only [SmoothForm.coe_mpullback, SmoothForm.coe_timeDeriv] using
+    hasDerivAt_mpullback_prodMk t x (α.mdifferentiableAt (t, x))
 
 variable (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
   (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M)))
@@ -412,67 +437,3 @@ theorem mpullback_timeDependentFlowOf_mpullback_prodMk_eq
   simpa using h
 
 end TauCeti
-
-/-! ### The time derivative of a family of one-forms -/
-
-namespace TauCeti.SmoothForm
-
-variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-
-/-- The unit vector field `∂_t` of the time coordinate on `ℝ × M`, as a smooth section. -/
-private def timeField :
-    Cₛ^∞⟮𝓘(ℝ, ℝ).prod I; ℝ × E, TangentSpace (𝓘(ℝ, ℝ).prod I) (M := ℝ × M)⟯ :=
-  ⟨fun _ ↦ ((1 : ℝ), (0 : E)), contMDiff_const_prod_field (X := 0) 1
-    ((contMDiff_zeroSection ℝ (TangentSpace I)).comp contMDiff_snd)⟩
-
-@[simp]
-private theorem timeField_apply (p : ℝ × M) : timeField (I := I) p = ((1 : ℝ), (0 : E)) :=
-  (rfl)
-
-/-- The contraction `α(∂_t)` of a smooth one-form on `ℝ × M` with the time field is smooth. -/
-private theorem contMDiff_apply_timeField (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) ℝ 1) :
-    ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) ∞ fun p : ℝ × M ↦ α.1 p ![((1 : ℝ), (0 : E))] := by
-  intro p
-  have h := (contMDiffAt_totalSpace.1 (ContMDiffAt.clm_bundle_apply
-    (E₂ := Trivial (ℝ × M) ℝ) ((degreeOneEquiv α).contMDiff p)
-    ((timeField (I := I) (M := M)).contMDiff p))).2
-  simp only [Trivial.eq_trivialization, timeField_apply] at h
-  -- The trivial line bundle's trivialization reads off the value of `α(∂_t)` itself.
-  convert h using 2 with q
-  exact (degreeOneEquiv_apply_apply_vec α q _).symm
-
-/-- The **time derivative** `∂_t α = L_(∂_t) α` of a smooth one-form `α` on `ℝ × M`, as a smooth
-one-form: the Lie derivative of `α` along the unit vector field `∂_t` of the time coordinate. Its
-slices `ι_t^* ∂_t α` are the velocities of the slices `ι_t^* α`
-(`TauCeti.SmoothForm.hasDerivAt_mpullback_prodMk_timeDeriv`). -/
-def timeDeriv (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) ℝ 1) :
-    SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) ℝ 1 :=
-  -- Cartan's formula `L_(∂_t) α = ι_(∂_t) dα + d (α(∂_t))` exhibits the Lie derivative as smooth.
-  SmoothTwoForm.interiorₗ (mextDerivₗ (𝓘(ℝ, ℝ).prod I) 1 α) timeField +
-    mextDerivₗ (𝓘(ℝ, ℝ).prod I) 0
-      ⟨RoughForm.ofFunction _ fun p ↦ α.1 p ![((1 : ℝ), (0 : E))],
-        (isSmoothForm_ofFunction_iff.2 (contMDiff_apply_timeField α)).mem_smoothBundleForms⟩
-
-/-- The time derivative is the Lie derivative along the time field `∂_t`. -/
-theorem coe_timeDeriv (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) ℝ 1) :
-    (timeDeriv α).1 = mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1 := by
-  funext p
-  ext v
-  obtain ⟨w, rfl⟩ : ∃ w, v = ![w] := ⟨v 0, by ext i; fin_cases i; rfl⟩
-  rw [mlieDerivForm_apply_eq_mextDeriv_add (f := fun p ↦ α.1 p ![((1 : ℝ), (0 : E))])
-    (fun _ ↦ rfl) (α.mdifferentiableAt p)
-    ((timeField (I := I) (M := M)).contMDiff.mdifferentiableAt (by simp))]
-  simp [timeDeriv, RoughForm.interior_apply, mextDeriv_ofFunction_apply]
-
-/-- **The time derivative is the velocity of the slices.** For a smooth one-form `α` on `ℝ × M`,
-the slices `α_u = ι_u^* α` at a point `x` have velocity `(ι_t^* ∂_t α)_x` at time `t`. -/
-theorem hasDerivAt_mpullback_prodMk_timeDeriv [I.Boundaryless]
-    (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) ℝ 1) (t : ℝ) (x : M) :
-    HasDerivAt (F := E [⋀^Fin 1]→L[ℝ] ℝ)
-      (fun u ↦ (mpullback (Prod.mk u) (contMDiff_const.prodMk contMDiff_id) α).1 x)
-      ((mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) (timeDeriv α)).1 x) t := by
-  simpa only [coe_mpullback, coe_timeDeriv] using
-    hasDerivAt_mpullback_prodMk t x (α.mdifferentiableAt (t, x))
-
-end TauCeti.SmoothForm

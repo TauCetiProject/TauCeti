@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
@@ -39,11 +40,12 @@ vector-space energy identity `TauCeti.SymplecticForm.integral_floerEnergyDensity
 
 ## Main results
 
-* `TauCeti.Floer.contDiff_neckStretch_family`: inserting a neck whose length depends smoothly on
+* `TauCeti.Floer.contMDiff_neckStretch_family`: inserting a neck whose length depends smoothly on
   a parameter, at a line where the datum is independent of `s`, gives a datum that is smooth
-  jointly in the parameter, the domain point and the target point;
-  `TauCeti.Floer.contDiff_uncurry_neckStretch` is the case of a fixed length, and
-  `TauCeti.Floer.contMDiff_uncurry_neckStretch` its version for a manifold target.
+  jointly in the parameter, the domain point and the point of the manifold;
+  `TauCeti.Floer.contMDiff_uncurry_neckStretch` is the case of a fixed length, and
+  `TauCeti.Floer.contDiff_neckStretch_family` and `TauCeti.Floer.contDiff_uncurry_neckStretch`
+  are the vector-space cases.
 * `TauCeti.SmoothTwoForm.hamiltonianCurvature_neckStretch`: the curvature of the stretched datum
   is the curvature of the original datum pulled back along `σ × id`.
 * `TauCeti.SmoothTwoForm.integral_abs_hamiltonianCurvature_neckStretch_le`: for a datum that is
@@ -166,51 +168,84 @@ theorem neckStretch_eventuallyEq (hL : 0 ≤ L) {K : ℝ × ℝ → X}
     rw [neckStretch_apply, hw₁, hσ, hw, hw₂]
 
 /-- **Smoothness in the neck length.** Inserting a neck whose length `ℓ p ≥ 0` depends smoothly
-on a parameter `p`, at a line near which a smooth datum is independent of `s`, gives a datum that
-is smooth jointly in the parameter, the domain point and the target point. -/
-theorem contDiff_neckStretch_family {P E F : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
-    {n : WithTop ℕ∞} {ℓ : P → ℝ} (hℓ : ContDiff ℝ n ℓ) (hℓ₀ : ∀ p, 0 ≤ ℓ p)
-    {K : ℝ × ℝ → E → F} (hK : ∀ᶠ s in 𝓝 c, ∀ t, K (s, t) = K (c, t))
-    (hKd : ContDiff ℝ n (uncurry K)) :
-    ContDiff ℝ n fun q : P × (ℝ × ℝ) × E ↦ neckStretch c (ℓ q.1) K q.2.1 q.2.2 := by
-  refine contDiff_iff_contDiffAt.2 fun q ↦ ?_
-  obtain ⟨p, ⟨s, t⟩, x⟩ := q
+on a parameter `p`, at a line near which a smooth datum on the product of the domain with a
+manifold `M` is independent of `s`, gives a datum that is smooth jointly in the parameter, the
+domain point and the point of `M`. -/
+theorem contMDiff_neckStretch_family {P E H M F : Type*} [NormedAddCommGroup P]
+    [NormedSpace ℝ P] [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+    {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {n : WithTop ℕ∞} {ℓ : P → ℝ} (hℓ : ContDiff ℝ n ℓ) (hℓ₀ : ∀ p, 0 ≤ ℓ p)
+    {K : ℝ × ℝ → M → F} (hK : ∀ᶠ s in 𝓝 c, ∀ t, K (s, t) = K (c, t))
+    (hKd : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, F) n (uncurry K)) :
+    ContMDiff (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, F) n
+      fun q : P × (ℝ × ℝ) × M ↦ neckStretch c (ℓ q.1) K q.2.1 q.2.2 := by
+  rintro ⟨p, ⟨s, t⟩, x⟩
   -- Near every point the stretched datum is a translate of `K` in `s`, by a smooth amount.
   have htrans (δ : P → ℝ) (hδ : ContDiff ℝ n δ) :
-      ContDiff ℝ n fun q : P × (ℝ × ℝ) × E ↦ K (q.2.1.1 - δ q.1, q.2.1.2) q.2.2 :=
-    hKd.comp ((((contDiff_fst.comp (contDiff_fst.comp contDiff_snd)).sub
-      (hδ.comp contDiff_fst)).prodMk (contDiff_snd.comp (contDiff_fst.comp contDiff_snd))).prodMk
-        (contDiff_snd.comp contDiff_snd))
-  have hs : Continuous fun q : P × (ℝ × ℝ) × E ↦ q.2.1.1 := by fun_prop
-  have hσ : Continuous fun q : P × (ℝ × ℝ) × E ↦ neckCollapse c (ℓ q.1) q.2.1.1 := by
+      ContMDiff (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, F) n
+        fun q : P × (ℝ × ℝ) × M ↦ K (q.2.1.1 - δ q.1, q.2.1.2) q.2.2 := by
+    have hg : ContDiff ℝ n fun q : P × (ℝ × ℝ) ↦ (q.2.1 - δ q.1, q.2.2) := by fun_prop
+    have hdom : ContMDiff (𝓘(ℝ, P).prod (𝓘(ℝ, ℝ × ℝ).prod I)) 𝓘(ℝ, ℝ × ℝ) n
+        fun q : P × (ℝ × ℝ) × M ↦ (q.2.1.1 - δ q.1, q.2.1.2) :=
+      (contMDiff_prod_modelWithCornersSelf_iff.2 hg.contMDiff).comp
+        (contMDiff_fst.prodMk (contMDiff_fst.comp contMDiff_snd))
+    exact hKd.comp (hdom.prodMk (contMDiff_snd.comp contMDiff_snd))
+  have hs : Continuous fun q : P × (ℝ × ℝ) × M ↦ q.2.1.1 := by fun_prop
+  have hσ : Continuous fun q : P × (ℝ × ℝ) × M ↦ neckCollapse c (ℓ q.1) q.2.1.1 := by
     have := hℓ.continuous
     unfold neckCollapse
     fun_prop
   rcases lt_or_ge s c with hsc | hsc
   · -- Before the neck, the datum is `K` itself.
-    refine (htrans (fun _ ↦ 0) contDiff_const).contDiffAt.congr_of_eventuallyEq ?_
+    refine (htrans (fun _ ↦ 0) contDiff_const _).congr_of_eventuallyEq ?_
     filter_upwards [(hs.tendsto _).eventually (Iio_mem_nhds hsc)] with q hq
     simp [neckCollapse_of_le (hℓ₀ q.1) (le_of_lt hq)]
   rcases lt_or_ge (c + ℓ p) s with hsc' | hsc'
   · -- After the neck, the datum is the translate of `K` by `-ℓ`.
-    refine (htrans ℓ hℓ).contDiffAt.congr_of_eventuallyEq ?_
-    have hev : ∀ᶠ q : P × (ℝ × ℝ) × E in 𝓝 (p, (s, t), x), c + ℓ q.1 < q.2.1.1 :=
+    refine (htrans ℓ hℓ _).congr_of_eventuallyEq ?_
+    have hev : ∀ᶠ q : P × (ℝ × ℝ) × M in 𝓝 (p, (s, t), x), c + ℓ q.1 < q.2.1.1 :=
       ((continuous_const.add (hℓ.continuous.comp continuous_fst)).tendsto _).eventually_lt
         (hs.tendsto _) hsc'
     filter_upwards [hev] with q hq
     simp [neckCollapse_of_ge (hℓ₀ q.1) hq.le]
   · -- On the neck, both the datum and the translate of `K` by `c - s` are evaluations of `K`
     -- near the line `s = c`.
-    refine (htrans (fun _ ↦ s - c) contDiff_const).contDiffAt.congr_of_eventuallyEq ?_
-    have h₁ : Tendsto (fun q : P × (ℝ × ℝ) × E ↦ neckCollapse c (ℓ q.1) q.2.1.1)
+    refine (htrans (fun _ ↦ s - c) contDiff_const _).congr_of_eventuallyEq ?_
+    have h₁ : Tendsto (fun q : P × (ℝ × ℝ) × M ↦ neckCollapse c (ℓ q.1) q.2.1.1)
         (𝓝 (p, (s, t), x)) (𝓝 c) := by
       have h := hσ.tendsto (p, (s, t), x)
       rwa [neckCollapse_of_mem_Icc ⟨hsc, hsc'⟩] at h
-    have h₂ : Tendsto (fun q : P × (ℝ × ℝ) × E ↦ q.2.1.1 - (s - c)) (𝓝 (p, (s, t), x)) (𝓝 c) :=
+    have h₂ : Tendsto (fun q : P × (ℝ × ℝ) × M ↦ q.2.1.1 - (s - c)) (𝓝 (p, (s, t), x)) (𝓝 c) :=
       (hs.sub continuous_const).tendsto' _ c (by simp)
     filter_upwards [h₁.eventually hK, h₂.eventually hK] with q hq₁ hq₂
     rw [neckStretch_apply, hq₁ q.2.1.2, hq₂ q.2.1.2]
+
+/-- **Smoothness in the neck length, for a vector space.** Inserting a neck whose length
+`ℓ p ≥ 0` depends smoothly on a parameter `p`, at a line near which a smooth datum is independent
+of `s`, gives a datum that is smooth jointly in the parameter, the domain point and the target
+point. This is the vector-space case of `TauCeti.Floer.contMDiff_neckStretch_family`. -/
+theorem contDiff_neckStretch_family {P E F : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {n : WithTop ℕ∞} {ℓ : P → ℝ} (hℓ : ContDiff ℝ n ℓ) (hℓ₀ : ∀ p, 0 ≤ ℓ p)
+    {K : ℝ × ℝ → E → F} (hK : ∀ᶠ s in 𝓝 c, ∀ t, K (s, t) = K (c, t))
+    (hKd : ContDiff ℝ n (uncurry K)) :
+    ContDiff ℝ n fun q : P × (ℝ × ℝ) × E ↦ neckStretch c (ℓ q.1) K q.2.1 q.2.2 := by
+  -- Identify the self-model of `P × (ℝ × ℝ) × E` with the product of the self-models.
+  rw [← contMDiff_iff_contDiff, ← contMDiff_prod_modelWithCornersSelf_iff,
+    modelWithCornersSelf_prod (E := ℝ × ℝ) (F := E), ← chartedSpaceSelf_prod]
+  exact contMDiff_neckStretch_family hℓ hℓ₀ hK
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hKd.contMDiff)
+
+/-- Inserting a neck at a line near which a smooth datum on the product of the domain with a
+manifold is independent of `s` gives a smooth datum. -/
+theorem contMDiff_uncurry_neckStretch {E H M F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M]
+    [ChartedSpace H M] [NormedAddCommGroup F] [NormedSpace ℝ F] {n : WithTop ℕ∞} (hL : 0 ≤ L)
+    {K : ℝ × ℝ → M → F} (hK : ∀ᶠ s in 𝓝 c, ∀ t, K (s, t) = K (c, t))
+    (hKd : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, F) n (uncurry K)) :
+    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, F) n (uncurry (neckStretch c L K)) :=
+  (contMDiff_neckStretch_family (P := ℝ) contDiff_const (fun _ ↦ hL) hK hKd).comp
+    ((contMDiff_const (c := (0 : ℝ))).prodMk contMDiff_id)
 
 /-- Inserting a neck at a line near which a smooth datum is independent of `s` gives a smooth
 datum. -/
@@ -220,24 +255,6 @@ theorem contDiff_uncurry_neckStretch {E F : Type*} [NormedAddCommGroup E] [Norme
     (hKd : ContDiff ℝ n (uncurry K)) : ContDiff ℝ n (uncurry (neckStretch c L K)) :=
   (contDiff_neckStretch_family (P := ℝ) contDiff_const (fun _ ↦ hL) hK hKd).comp
     ((contDiff_const (c := (0 : ℝ))).prodMk contDiff_id)
-
-/-- Inserting a neck at a line near which a smooth datum on a manifold is independent of `s` gives
-a smooth datum, jointly in the domain point and the target point. -/
-theorem contMDiff_uncurry_neckStretch {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] {n : WithTop ℕ∞} (hL : 0 ≤ L) {K : ℝ × ℝ → M → F}
-    (hK : ∀ᶠ s in 𝓝 c, ∀ t, K (s, t) = K (c, t))
-    (hKd : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, F) n (uncurry K)) :
-    ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, F) n (uncurry (neckStretch c L K)) := by
-  rintro ⟨z, x⟩
-  -- Near `z` the stretched datum is a translate of `K`, which is smooth.
-  set v : ℝ × ℝ := (neckCollapse c L z.1 - z.1, 0)
-  have htr : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, F) n fun q : (ℝ × ℝ) × M ↦ K (q.1 + v) q.2 :=
-    hKd.comp ((contDiff_id.add contDiff_const).contMDiff.comp contMDiff_fst |>.prodMk contMDiff_snd)
-  refine (htr (z, x)).congr_of_eventuallyEq ?_
-  filter_upwards [(continuous_fst.tendsto (z, x)).eventually (neckStretch_eventuallyEq hL hK z)]
-    with q hq
-  exact congrFun hq q.2
 
 end NeckStretch
 
