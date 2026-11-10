@@ -28,9 +28,10 @@ generalized Schoenflies theorem, where `σ` has a bicollar `b : Sᵐ⁻¹ × ℝ
   and hold in every dimension.
 * The positive side `b (Sᵐ⁻¹ × (0, ∞))` of the bicollar lies in one component and the negative
   side `b (Sᵐ⁻¹ × (-∞, 0))` in the other
-  (`TauCeti.IsBicollar.image_Ioi_subset_connectedComponentIn`,
-  `TauCeti.IsBicollar.image_Iio_subset_connectedComponentIn` and
-  `TauCeti.IsBicollar.disjoint_connectedComponentIn_compl_range`).
+  (`TauCeti.IsBicollar.disjoint_connectedComponentIn_compl_range`). That each side lies in a
+  single component holds for any bicollar of a preconnected space
+  (`TauCeti.IsBicollar.image_Ioi_subset_connectedComponentIn` and
+  `TauCeti.IsBicollar.image_Iio_subset_connectedComponentIn`).
 * The closure of each component `U` is `U ∪ Σ`, and its frontier is `Σ`
   (`TauCeti.IsBicollar.closure_connectedComponentIn_compl_range` and
   `TauCeti.IsBicollar.frontier_connectedComponentIn_compl_range`). In particular, for `φ` as
@@ -66,18 +67,6 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
 
 section Function
 
-/-- A continuous function vanishing exactly on a set splits its complement into the open sets
-where it is positive and where it is negative. -/
-private theorem setOf_pos_union_setOf_neg {X : Type*} {S : Set X} {φ : X → ℝ}
-    (hφS : ∀ y, φ y = 0 ↔ y ∈ S) : {y | 0 < φ y} ∪ {y | φ y < 0} = Sᶜ := by
-  ext y
-  simp only [mem_union, mem_ofPred_eq, mem_compl_iff, ← hφS]
-  exact ⟨fun h ↦ h.elim ne_of_gt ne_of_lt, fun h ↦ (lt_or_gt_of_ne h).symm⟩
-
-private theorem disjoint_setOf_pos_setOf_neg {X : Type*} {φ : X → ℝ} :
-    Disjoint {y | 0 < φ y} {y | φ y < 0} :=
-  disjoint_left.2 fun _ (hy : 0 < φ _) (hy' : φ _ < 0) ↦ (hy.trans hy').false
-
 variable {φ : sphere (0 : F) 1 → ℝ}
 
 /-- **The positive domain of a function vanishing exactly on an embedded sphere.** Let `σ` be a
@@ -93,7 +82,11 @@ theorem connectedComponentIn_compl_range_eq_setOf_pos (hEF : finrank ℝ F = fin
   connectedComponentIn_eq_of_natCard_eq_two
     (natCard_connectedComponents_sphere_compl_range_eq_two hEF hc hi)
     (isOpen_lt continuous_const hφ) (isOpen_lt hφ continuous_const)
-    disjoint_setOf_pos_setOf_neg (setOf_pos_union_setOf_neg hφσ) ⟨z, hz⟩ hy
+    (Ioi_disjoint_Iio_same.preimage φ)
+    (show φ ⁻¹' Ioi 0 ∪ φ ⁻¹' Iio 0 = _ by
+      rw [← preimage_union, union_comm, Iio_union_Ioi, preimage_compl,
+        (Set.ext hφσ : φ ⁻¹' {0} = range σ)])
+    ⟨z, hz⟩ hy
 
 /-- **The negative domain of a function vanishing exactly on an embedded sphere.** Let `σ` be a
 continuous injection of the unit sphere of a finite-dimensional real normed space `E` into the
@@ -108,7 +101,10 @@ theorem connectedComponentIn_compl_range_eq_setOf_neg (hEF : finrank ℝ F = fin
   connectedComponentIn_eq_of_natCard_eq_two
     (natCard_connectedComponents_sphere_compl_range_eq_two hEF hc hi)
     (isOpen_lt hφ continuous_const) (isOpen_lt continuous_const hφ)
-    disjoint_setOf_pos_setOf_neg.symm ((union_comm _ _).trans (setOf_pos_union_setOf_neg hφσ))
+    (Ioi_disjoint_Iio_same.preimage φ).symm
+    (show φ ⁻¹' Iio 0 ∪ φ ⁻¹' Ioi 0 = _ by
+      rw [← preimage_union, Iio_union_Ioi, preimage_compl,
+        (Set.ext hφσ : φ ⁻¹' {0} = range σ)])
     ⟨z, hz⟩ hy
 
 end Function
@@ -147,28 +143,6 @@ private theorem exists_connectedComponentIn_eq (hb : IsBicollar σ b)
 
 variable (hb : IsBicollar σ b) (hEF : finrank ℝ F = finrank ℝ E + 1) (hE : 1 < finrank ℝ E)
 include hb hEF hE
-
-/-- **The positive side of a bicollar lies in one complementary domain.** Let `b` be a bicollar
-of a map `σ` from the unit sphere `Sᵐ⁻¹` of a real normed space of dimension `m ≥ 2` into the
-unit sphere `Sᵐ` of a real normed space of dimension `m + 1`. The positive side `b (Sᵐ⁻¹ × (0, ∞))`
-of the collar lies in the connected component, in the complement of the image of `σ`, of any of
-its points. -/
-theorem image_Ioi_subset_connectedComponentIn (x : sphere (0 : E) 1) {t : ℝ} (ht : 0 < t) :
-    b '' (univ ×ˢ Ioi 0) ⊆ connectedComponentIn (range σ)ᶜ (b (x, t)) := by
-  obtain ⟨A, -, -, -, -, -, hpos, -, hAc, -⟩ := hb.exists_connectedComponentIn_eq hEF hE
-  rw [hAc _ (hpos ⟨mem_univ x, mem_Ioi.2 ht⟩)]
-  exact hpos.image_subset
-
-/-- **The negative side of a bicollar lies in one complementary domain.** Let `b` be a bicollar
-of a map `σ` from the unit sphere `Sᵐ⁻¹` of a real normed space of dimension `m ≥ 2` into the
-unit sphere `Sᵐ` of a real normed space of dimension `m + 1`. The negative side
-`b (Sᵐ⁻¹ × (-∞, 0))` of the collar lies in the connected component, in the complement of the image
-of `σ`, of any of its points. -/
-theorem image_Iio_subset_connectedComponentIn (x : sphere (0 : E) 1) {t : ℝ} (ht : t < 0) :
-    b '' (univ ×ˢ Iio 0) ⊆ connectedComponentIn (range σ)ᶜ (b (x, t)) := by
-  obtain ⟨-, B, -, -, -, -, -, hneg, -, hBc⟩ := hb.exists_connectedComponentIn_eq hEF hE
-  rw [hBc _ (hneg ⟨mem_univ x, mem_Iio.2 ht⟩)]
-  exact hneg.image_subset
 
 /-- **The two sides of a bicollar lie in different complementary domains.** Let `b` be a bicollar
 of a map `σ` from the unit sphere `Sᵐ⁻¹` of a real normed space of dimension `m ≥ 2` into the

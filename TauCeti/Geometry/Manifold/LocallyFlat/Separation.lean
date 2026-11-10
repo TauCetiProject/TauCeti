@@ -42,7 +42,10 @@ preconnected space lie on opposite sides of any separation of the complement of 
 collar would be a neighbourhood of the image missing the other part, which would then be clopen.
 The closure of the part `A` containing one side of a bicollar is `A` together with the image, and
 its frontier is the image (`TauCeti.IsBicollar.closure_eq_union_range` and
-`TauCeti.IsBicollar.frontier_eq_range`).
+`TauCeti.IsBicollar.frontier_eq_range`). Each side of a bicollar of a preconnected space lies in a
+single connected component of the complement of the image
+(`TauCeti.IsBicollar.image_Ioi_subset_connectedComponentIn` and
+`TauCeti.IsBicollar.image_Iio_subset_connectedComponentIn`).
 
 ## Main results
 
@@ -63,6 +66,9 @@ its frontier is the image (`TauCeti.IsBicollar.closure_eq_union_range` and
   opposite sides of a separation of the complement of the image.
 * `TauCeti.IsBicollar.closure_eq_union_range` and `TauCeti.IsBicollar.frontier_eq_range`: the
   closure and the frontier of a part of such a separation containing one side of a bicollar.
+* `TauCeti.IsBicollar.image_Ioi_subset_connectedComponentIn` and
+  `TauCeti.IsBicollar.image_Iio_subset_connectedComponentIn`: each side of a bicollar lies in one
+  connected component of the complement of the image.
 
 ## References
 
@@ -398,6 +404,28 @@ theorem frontier_eq_range (h : IsBicollar f b) (hA : IsOpen A) (hB : IsOpen B)
     exact subset_union_left
   rw [frontier, h.closure_eq_union_range hB hAB hcompl hs hside, hA.interior_eq, union_sdiff_left,
     hfA.sdiff_eq_left]
+
+/-- **The positive side of a bicollar lies in one complementary domain.** Let `b` be a bicollar of
+a map `f` from a preconnected space. The positive side `b (N × (0, ∞))` of the collar is
+preconnected and misses the image of `f`, so it lies in the connected component, in the
+complement of that image, of any of its points. -/
+theorem image_Ioi_subset_connectedComponentIn [PreconnectedSpace N] (h : IsBicollar f b) (x : N)
+    {t : ℝ} (ht : 0 < t) : b '' (univ ×ˢ Ioi 0) ⊆ connectedComponentIn (range f)ᶜ (b (x, t)) :=
+  ((isPreconnected_univ.prod isPreconnected_Ioi).image b
+    h.isOpenEmbedding.continuous.continuousOn).subset_connectedComponentIn
+    (mem_image_of_mem b ⟨mem_univ x, ht⟩)
+    (image_subset_iff.2 fun _ hp hpf => hp.2.ne' (h.preimage_range.subset hpf).2)
+
+/-- **The negative side of a bicollar lies in one complementary domain.** Let `b` be a bicollar of
+a map `f` from a preconnected space. The negative side `b (N × (-∞, 0))` of the collar is
+preconnected and misses the image of `f`, so it lies in the connected component, in the
+complement of that image, of any of its points. -/
+theorem image_Iio_subset_connectedComponentIn [PreconnectedSpace N] (h : IsBicollar f b) (x : N)
+    {t : ℝ} (ht : t < 0) : b '' (univ ×ˢ Iio 0) ⊆ connectedComponentIn (range f)ᶜ (b (x, t)) :=
+  ((isPreconnected_univ.prod isPreconnected_Iio).image b
+    h.isOpenEmbedding.continuous.continuousOn).subset_connectedComponentIn
+    (mem_image_of_mem b ⟨mem_univ x, ht⟩)
+    (image_subset_iff.2 fun _ hp hpf => hp.2.ne (h.preimage_range.subset hpf).2)
 
 end IsBicollar
 
