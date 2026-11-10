@@ -195,20 +195,20 @@ lemma card_support_le_degree (hF : IsFunctionField k F) {D : Divisor k F} (hD : 
 
 /-- An effective divisor of degree one on an algebraic function field contains a rational place.
 
-Indeed, any place in its support contributes at least its positive residue degree to the total
-degree, so both that residue degree and its coefficient must equal one. -/
+Indeed, a place whose contribution to the total degree is nonzero contributes at least its
+residue degree, so that residue degree and its coefficient must equal one. -/
 theorem exists_place_degree_eq_one_of_nonneg_of_degree_eq_one
-    (hF : IsFunctionField k F) {D : Divisor k F} (hD : 0 ≤ D) (hdeg : degree D = 1) :
+    {D : Divisor k F} (hD : 0 ≤ D) (hdeg : degree D = 1) :
     ∃ P : Place k F, P ∈ D.support ∧ P.degree = 1 := by
-  have hD0 : D ≠ 0 := by
-    rintro rfl
-    simp at hdeg
-  obtain ⟨P, hP⟩ := Finsupp.support_nonempty_iff.mpr hD0
+  obtain ⟨P, hP, hne⟩ := Finset.exists_ne_zero_of_sum_ne_zero
+    (show ∑ P ∈ D.support, D P * (P.degree : ℤ) ≠ 0 by
+      rw [← degree_eq_sum_support, hdeg]
+      exact one_ne_zero)
   refine ⟨P, hP, ?_⟩
   have hle : (P.degree : ℤ) ≤ 1 := by
     rw [← hdeg]
     exact degree_le_degree_of_coeff_ne_zero hD (WeilDivisor.mem_support_iff.mp hP)
-  have hone : 1 ≤ P.degree := P.one_le_degree_of_isFunctionField hF
+  have hpos : P.degree ≠ 0 := fun h ↦ hne (by simp [h])
   omega
 
 /-- The coefficients of an effective divisor of a function field are bounded by its degree. -/
