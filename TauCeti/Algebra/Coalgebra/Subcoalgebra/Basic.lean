@@ -92,6 +92,15 @@ theorem mem_toSubmodule {D : Subcoalgebra R C} {c : C} : c ∈ D.toSubmodule ↔
 theorem toSubmodule_carrier (D : Subcoalgebra R C) : D.toSubmodule = D.carrier :=
   rfl
 
+/-- A subcoalgebra is determined by its underlying submodule. -/
+theorem toSubmodule_injective :
+    Function.Injective (toSubmodule : Subcoalgebra R C → Submodule R C) :=
+  fun _ _ h ↦ SetLike.coe_injective (congrArg ((↑) : Submodule R C → Set C) h)
+
+@[simp]
+theorem toSubmodule_inj {D E : Subcoalgebra R C} : D.toSubmodule = E.toSubmodule ↔ D = E :=
+  toSubmodule_injective.eq_iff
+
 theorem toSubmodule_le_toSubmodule {D E : Subcoalgebra R C} :
     D.toSubmodule ≤ E.toSubmodule ↔ D ≤ E :=
   Iff.rfl
