@@ -132,12 +132,9 @@ theorem fderiv_cauchyFueterKernel_apply {q q₀ : ℍ} (h : ℍ) :
         simpa [cauchyFueterKernel_self] using
           hd.continuousAt.norm.tendsto.mono_left nhdsWithin_le_nhds
       have h1 : Tendsto (fun x : ℍ ↦ (‖x - q‖ ^ 3)⁻¹) (𝓝[≠] q) atTop := by
-        refine tendsto_inv_nhdsGT_zero.comp (tendsto_nhdsWithin_iff.2 ⟨?_, ?_⟩)
-        · have : Tendsto (fun x : ℍ ↦ ‖x - q‖ ^ 3) (𝓝 q) (𝓝 (‖q - q‖ ^ 3)) :=
-            ((continuous_id.sub continuous_const).norm.pow 3).tendsto q
-          simpa using this.mono_left nhdsWithin_le_nhds
-        · filter_upwards [self_mem_nhdsWithin] with x hx
-          exact pow_pos (norm_pos_iff.2 (sub_ne_zero.2 hx)) 3
+        simpa only [Function.comp_def, Pi.inv_apply, inv_pow] using
+          (Filter.tendsto_pow_atTop (by decide : (3 : ℕ) ≠ 0)).comp
+            ((tendsto_norm_sub_self_nhdsNE q).inv_tendsto_nhdsGT_zero)
       simp only [norm_cauchyFueterKernel] at h0
       exact not_tendsto_nhds_of_tendsto_atTop h1 0 h0
     simp [fderiv_zero_of_not_differentiableAt hnd]
