@@ -243,7 +243,7 @@ theorem smul (c : ℂ) (ha : α.IsEntireAnalytic a) : α.IsEntireAnalytic (c •
 
 end IsEntireAnalytic
 
-/-- The complex-time extension is complex linear. -/
+/-- The complex-time extension is compatible with complex scalar multiplication. -/
 @[simp]
 theorem entireExtension_smul (c : ℂ) (z : ℂ) :
     α.entireExtension (c • a) z = c • α.entireExtension a z := by
@@ -276,11 +276,7 @@ end IsEntireAnalytic
 @[simp]
 theorem entireExtension_neg (z : ℂ) :
     α.entireExtension (-a) z = -α.entireExtension a z := by
-  by_cases ha : α.IsEntireAnalytic a
-  · exact congrFun (entireExtension_eq_of_differentiable (differentiable_entireExtension α a).neg
-      fun t => by simp [ha.entireExtension_ofReal]) z
-  · have hna : ¬α.IsEntireAnalytic (-a) := fun h => ha (by simpa using h.neg)
-    simp [entireExtension_of_not_isEntireAnalytic ha, entireExtension_of_not_isEntireAnalytic hna]
+  simpa only [neg_one_smul] using entireExtension_smul (α := α) (a := a) (-1) z
 
 namespace IsEntireAnalytic
 
@@ -313,7 +309,7 @@ theorem entireExtension_mul (ha : α.IsEntireAnalytic a) (hb : α.IsEntireAnalyt
 
 end IsEntireAnalytic
 
-/-- The entire continuation of the orbit of `a⋆` is `z ↦ (α_{conj z} a)⋆`. -/
+/-- The function `z ↦ (α_{conj z} a)⋆` is entire. -/
 private theorem differentiable_star_entireExtension_conj (α : CStarAction (Multiplicative ℝ) A)
     (a : A) :
     Differentiable ℂ fun z => star (α.entireExtension a (conj z)) := fun z => by
@@ -430,27 +426,29 @@ theorem apply_entireExtension_mul_entireExtension_of_apply_action {φ : A →L[�
   rw [← apply_entireExtension_of_apply_action hφ (ha.mul hb') z, ha.entireExtension_mul hb',
     entireExtension_entireExtension, sub_add_cancel]
 
-/-- For an invariant continuous linear functional `φ` and an entire analytic `a`,
-`φ ((α_z(a))⋆ α_w(a)) = φ (a⋆ α_{w - conj z}(a))`. -/
+/-- For an invariant continuous linear functional `φ`,
+`φ ((α_z(a))⋆ α_w(a)) = φ (a⋆ α_{w - conj z}(a))`. For an `a` which is not entire analytic both
+sides vanish. -/
 theorem apply_star_entireExtension_mul_entireExtension_of_apply_action {φ : A →L[ℂ] ℂ}
-    (hφ : ∀ t a, φ (α t a) = φ a) (ha : α.IsEntireAnalytic a) (z w : ℂ) :
+    (hφ : ∀ t a, φ (α t a) = φ a) (z w : ℂ) :
     φ (star (α.entireExtension a z) * α.entireExtension a w) =
       φ (star a * α.entireExtension a (w - conj z)) := by
-  have h := apply_entireExtension_mul_entireExtension_of_apply_action (b := a) hφ ha.star (conj z) w
-  rwa [entireExtension_star, Complex.conj_conj] at h
+  by_cases ha : α.IsEntireAnalytic a
+  · have h := apply_entireExtension_mul_entireExtension_of_apply_action (b := a) hφ ha.star
+      (conj z) w
+    rwa [entireExtension_star, Complex.conj_conj] at h
+  · simp [entireExtension_of_not_isEntireAnalytic ha]
 
-/-- For an invariant continuous linear functional `φ` and an entire analytic `a`, imaginary-time
-correlations add: `φ ((α_{is}(a))⋆ α_{it}(a)) = φ (a⋆ α_{i(s + t)}(a))` for real `s, t`. -/
+/-- For an invariant continuous linear functional `φ`, imaginary-time correlations add:
+`φ ((α_{is}(a))⋆ α_{it}(a)) = φ (a⋆ α_{i(s + t)}(a))` for real `s, t`. -/
 theorem apply_star_entireExtension_mul_I_mul_entireExtension_mul_I_of_apply_action
     {φ : A →L[ℂ] ℂ} (hφ : ∀ t a, φ (α t a) = φ a) (s t : ℝ) :
     φ (star (α.entireExtension a (s * Complex.I)) * α.entireExtension a (t * Complex.I)) =
       φ (star a * α.entireExtension a ((s + t : ℝ) * Complex.I)) := by
-  by_cases ha : α.IsEntireAnalytic a
-  · rw [apply_star_entireExtension_mul_entireExtension_of_apply_action hφ ha]
-    congr 3
-    simp only [map_mul, Complex.conj_ofReal, Complex.conj_I, Complex.ofReal_add]
-    ring
-  · simp [entireExtension_of_not_isEntireAnalytic ha]
+  rw [apply_star_entireExtension_mul_entireExtension_of_apply_action hφ]
+  congr 3
+  simp only [map_mul, Complex.conj_ofReal, Complex.conj_I, Complex.ofReal_add]
+  ring
 
 section Positive
 
