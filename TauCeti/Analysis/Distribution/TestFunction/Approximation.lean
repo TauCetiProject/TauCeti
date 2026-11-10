@@ -99,22 +99,14 @@ theorem ContDiff.exists_testFunction_dist_le_and_dist_fderiv_le {f : E → F}
     (hδ : 0 < δ) (hKΩ : cthickening δ K ⊆ Ω) {ε : ℝ} (hε : 0 < ε) :
     ∃ φ : 𝓓(Ω, F), tsupport φ ⊆ cthickening δ K ∧
       ∀ x, dist (φ x) (f x) ≤ ε ∧ dist (fderiv ℝ φ x) (fderiv ℝ f x) ≤ ε := by
+  have hfc : HasCompactSupport f := hK.of_isClosed_subset (isClosed_tsupport f) hfK
   by_cases hfd : FiniteDimensional ℝ E
   swap
   · -- In infinite dimensions a compactly supported continuous function vanishes.
-    have hf0 : f = 0 := by
-      funext x
-      by_contra hx
-      obtain ⟨r, hr, hball⟩ :=
-        Metric.isOpen_iff.1 (isOpen_ne_fun hf.continuous continuous_const) x hx
-      have hsub : closedBall x (r / 2) ⊆ tsupport f := fun y hy ↦
-        subset_closure (hball (mem_ball.2 ((mem_closedBall.1 hy).trans_lt (half_lt_self hr))))
-      exact hfd (.of_isCompact_closedBall ℝ (half_pos hr)
-        (hK.of_isClosed_subset isClosed_closedBall (hsub.trans hfK)))
+    have hf0 : f = 0 := (hfc.eq_zero_or_finiteDimensional ℝ hf.continuous).resolve_right hfd
     subst hf0
     exact ⟨0, by simp, fun x ↦ by simp [hε.le]⟩
   borelize E
-  have hfc : HasCompactSupport f := hK.of_isClosed_subset (isClosed_tsupport f) hfK
   have hDf : Continuous (fderiv ℝ f) := hf.continuous_fderiv one_ne_zero
   obtain ⟨η₁, hη₁, hfη⟩ :=
     Metric.uniformContinuous_iff.mp (hfc.uniformContinuous_of_continuous hf.continuous) ε hε
