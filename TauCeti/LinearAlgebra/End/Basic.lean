@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Module.LinearMap.End
 public import Mathlib.Algebra.Module.Torsion.Free
 public import Mathlib.Algebra.Ring.GeomSum
 public import Mathlib.SetTheory.Cardinal.NatCard
+import Mathlib.Algebra.Algebra.Equiv
 
 /-!
 # Basic facts about module endomorphisms
@@ -98,14 +99,9 @@ theorem mul_self_eq_smul_one_iff_of_forall_apply_eq {R M N : Type*} [CommSemirin
     [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N] {A : Module.End R M}
     {B : Module.End R N} {e : M ≃ₗ[R] N} (hAB : ∀ v, e (A v) = B (e v)) (κ : R) :
     A * A = κ • 1 ↔ B * B = κ • 1 := by
-  have hBe : ∀ w, B w = e (A (e.symm w)) := fun w ↦ by rw [hAB, e.apply_symm_apply]
-  refine ⟨fun hAA ↦ LinearMap.ext fun w ↦ ?_, fun hBB ↦ LinearMap.ext fun v ↦ ?_⟩
-  · have hAAv : A (A (e.symm w)) = κ • e.symm w := by
-      simpa using LinearMap.congr_fun hAA (e.symm w)
-    simp [hBe, hAAv]
-  · have hBBv : B (B (e v)) = κ • e v := by simpa using LinearMap.congr_fun hBB (e v)
-    refine e.injective ?_
-    simp [hAB, hBBv]
+  have hB : B = e.conjAlgEquiv R A := LinearMap.ext fun w ↦ by
+    simp [LinearEquiv.conjAlgEquiv_apply, hAB]
+  rw [hB, ← map_mul, ← map_one (e.conjAlgEquiv R), ← map_smul, EmbeddingLike.apply_eq_iff_eq]
 
 /-- The `k`-th power of an endomorphism acting as the scalar `a` acts as `a ^ k`. -/
 theorem pow_apply_eq_pow_smul {R M X : Type*} [Semiring R] [AddCommMonoid X] [Module R X]

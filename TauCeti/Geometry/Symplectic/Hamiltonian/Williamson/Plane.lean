@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.SkewAdjoint
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
-import Mathlib.Analysis.Real.Sqrt
+import TauCeti.Analysis.Real.Sqrt
 import TauCeti.Geometry.Symplectic.Plane
 import TauCeti.LinearAlgebra.End.Basic
 
@@ -88,15 +88,6 @@ variable {V W : Type*} [AddCommGroup V] [Module ℝ V] [AddCommGroup W] [Module 
 
 /-! ### Normal pairs -/
 
-/-- A value `x` of the same sign as `c` can be rescaled to `c` by a positive square. -/
-private theorem exists_pos_sq_mul_eq_of_mul_pos {c x : ℝ} (h : 0 < c * x) :
-    ∃ μ : ℝ, 0 < μ ∧ μ ^ 2 * x = c := by
-  have hcx : 0 < c / x := div_pos_iff.2 (mul_pos_iff.1 h)
-  have hx : x ≠ 0 := by rintro rfl; simp at h
-  refine ⟨√(c / x), Real.sqrt_pos.2 hcx, ?_⟩
-  rw [Real.sq_sqrt hcx.le]
-  field_simp
-
 /-- **Elliptic normal pairs.** If `A² v = -c² v` and `c ω(A v, v) > 0`, then a positive multiple
 `q` of `v` and the vector `p = -c⁻¹ A q` satisfy `ω(q, p) = 1`, `A q = -c p` and `A p = c q`. On
 the plane they span, the Hamiltonian `ω(A ·, ·) / 2` of `A` is `c (x² + y²) / 2`. -/
@@ -105,7 +96,7 @@ theorem exists_apply_eq_one_apply_eq_neg_smul_apply_eq_smul {A : Module.End ℝ 
     ∃ q p : V, ω q p = 1 ∧ A q = -c • p ∧ A p = c • q ∧ ∃ μ : ℝ, 0 < μ ∧ q = μ • v := by
   set x := ω (A v) v
   have hc : c ≠ 0 := by rintro rfl; simp at hv
-  obtain ⟨μ, hμ0, hμ⟩ := exists_pos_sq_mul_eq_of_mul_pos hv
+  obtain ⟨μ, hμ0, hμ⟩ := Real.exists_pos_sq_mul_eq_of_mul_pos hv
   refine ⟨μ • v, -(c⁻¹ * μ) • A v, ?_, ?_, ?_, μ, hμ0, rfl⟩
   · have hvAv : ω v (A v) = -x := by rw [← ω.neg_eq]
     simp only [map_smul, LinearMap.smul_apply, smul_eq_mul, hvAv]
@@ -125,7 +116,7 @@ theorem exists_apply_eq_one_apply_eq_zero_apply_eq_smul {A : Module.End ℝ V} {
     (hAv : A (A v) = 0) (hv : 0 < ε * ω (A v) v) :
     ∃ q p : V, ω q p = 1 ∧ A q = 0 ∧ A p = ε • q ∧ ∃ μ : ℝ, 0 < μ ∧ p = μ • v := by
   have hε : ε ≠ 0 := by rintro rfl; simp at hv
-  obtain ⟨μ, hμ0, hμ⟩ := exists_pos_sq_mul_eq_of_mul_pos hv
+  obtain ⟨μ, hμ0, hμ⟩ := Real.exists_pos_sq_mul_eq_of_mul_pos hv
   refine ⟨(ε⁻¹ * μ) • A v, μ • v, ?_, ?_, ?_, μ, hμ0, rfl⟩
   · simp only [map_smul, LinearMap.smul_apply, smul_eq_mul]
     field_simp
