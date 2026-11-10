@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Local.Coordinates
 public import TauCeti.Analysis.Sobolev.Local.Wkp
 public import TauCeti.Analysis.Sobolev.Wkp.Local.Compactness
+public import TauCeti.Topology.MetricSpace.ProperSpace
 
 /-!
 # Local Rellich compactness for local Sobolev classes
@@ -56,90 +57,7 @@ namespace TauCeti
 
 variable {p : ℝ≥0∞} [Fact (1 ≤ p)] {Ω : Opens ℂ} {k : ℕ}
 
-/-! ### An exhaustion by relatively compact open sets -/
-
-/-- The `n`th set of the exhaustion of `Ω`: points of norm less than `n` at extended distance
-more than `1 / (n + 1)` from the complement of `Ω`. -/
-private def exhaustion (Ω : Opens ℂ) (n : ℕ) : Opens ℂ :=
-  ⟨{z | ‖z‖ < n} ∩ {z | ((n : ℝ≥0∞) + 1)⁻¹ < infEDist z (Ω : Set ℂ)ᶜ},
-    (isOpen_lt continuous_norm continuous_const).inter
-      (isOpen_lt continuous_const continuous_infEDist)⟩
-
-private theorem mem_exhaustion {n : ℕ} {z : ℂ} :
-    z ∈ (exhaustion Ω n : Set ℂ) ↔
-      ‖z‖ < n ∧ ((n : ℝ≥0∞) + 1)⁻¹ < infEDist z (Ω : Set ℂ)ᶜ :=
-  mem_inter_iff ..
-
-/-- Points of the closure of the `n`th set of the exhaustion have norm at most `n` and extended
-distance at least `1 / (n + 1)` from the complement of `Ω`. -/
-private theorem closure_exhaustion_subset (n : ℕ) {z : ℂ}
-    (hz : z ∈ closure (exhaustion Ω n : Set ℂ)) :
-    ‖z‖ ≤ n ∧ ((n : ℝ≥0∞) + 1)⁻¹ ≤ infEDist z (Ω : Set ℂ)ᶜ := by
-  have hsub : (exhaustion Ω n : Set ℂ) ⊆
-      {z | ‖z‖ ≤ n} ∩ {z | ((n : ℝ≥0∞) + 1)⁻¹ ≤ infEDist z (Ω : Set ℂ)ᶜ} := fun x hx => by
-    simp only [mem_inter_iff, mem_ofPred_eq]
-    exact ⟨(mem_exhaustion.1 hx).1.le, (mem_exhaustion.1 hx).2.le⟩
-  have h := closure_minimal hsub ((isClosed_le continuous_norm continuous_const).inter
-    (isClosed_le continuous_const continuous_infEDist)) hz
-  simpa only [mem_inter_iff, mem_ofPred_eq] using h
-
-private theorem isCompact_closure_exhaustion (n : ℕ) :
-    IsCompact (closure (exhaustion Ω n : Set ℂ)) :=
-  (isCompact_closedBall (0 : ℂ) n).of_isClosed_subset isClosed_closure fun _ hz =>
-    mem_closedBall_zero_iff.2 (closure_exhaustion_subset n hz).1
-
-private theorem closure_exhaustion_subset_succ (n : ℕ) :
-    closure (exhaustion Ω n : Set ℂ) ⊆ exhaustion Ω (n + 1) := fun z hz => by
-  obtain ⟨hz₁, hz₂⟩ := closure_exhaustion_subset n hz
-  refine mem_exhaustion.2 ⟨by push_cast; linarith, lt_of_lt_of_le ?_ hz₂⟩
-  refine ENNReal.inv_lt_inv.2 ?_
-  push_cast
-  exact ENNReal.lt_add_right (by finiteness) one_ne_zero
-
-private theorem exhaustion_le_succ (n : ℕ) : exhaustion Ω n ≤ exhaustion Ω (n + 1) :=
-  SetLike.coe_subset_coe.1 (subset_closure.trans (closure_exhaustion_subset_succ n))
-
-private theorem monotone_exhaustion : Monotone (exhaustion Ω) :=
-  monotone_nat_of_le_succ exhaustion_le_succ
-
-private theorem closure_exhaustion_subset_self (n : ℕ) :
-    closure (exhaustion Ω n : Set ℂ) ⊆ Ω := fun z hz => by
-  by_contra hzΩ
-  have h := (closure_exhaustion_subset n hz).2
-  rw [infEDist_zero_of_mem hzΩ, nonpos_iff_eq_zero, ENNReal.inv_eq_zero] at h
-  exact ENNReal.add_ne_top.2 ⟨ENNReal.natCast_ne_top n, ENNReal.one_ne_top⟩ h
-
-private theorem iUnion_exhaustion : ⋃ n, (exhaustion Ω n : Set ℂ) = Ω := by
-  refine subset_antisymm (iUnion_subset fun n => subset_closure.trans
-    (closure_exhaustion_subset_self n)) fun z hz => ?_
-  have hpos : infEDist z (Ω : Set ℂ)ᶜ ≠ 0 := fun h =>
-    ((mem_iff_infEDist_zero_of_closed Ω.isOpen.isClosed_compl).2 h) hz
-  obtain ⟨M, hM⟩ := ENNReal.exists_inv_nat_lt hpos
-  obtain ⟨N, hN⟩ := exists_nat_gt ‖z‖
-  refine mem_iUnion.2 ⟨max N M, mem_exhaustion.2
-    ⟨lt_of_lt_of_le hN (by exact_mod_cast le_max_left N M), lt_of_le_of_lt ?_ hM⟩⟩
-  refine ENNReal.inv_le_inv.2 ?_
-  exact le_add_right (by exact_mod_cast le_max_right N M)
-
-/-- Every relatively compact open subset of `Ω` lies in some set of the exhaustion. -/
-private theorem exists_subset_exhaustion {W : Opens ℂ} (hWc : IsCompact (closure (W : Set ℂ)))
-    (hWΩ : closure (W : Set ℂ) ⊆ Ω) : ∃ n, W ≤ exhaustion Ω n := by
-  obtain ⟨n, hn⟩ := hWc.elim_directed_cover (fun n => (exhaustion Ω n : Set ℂ))
-    (fun n => (exhaustion Ω n).isOpen) (hWΩ.trans iUnion_exhaustion.symm.subset)
-    (Monotone.directed_le fun _ _ h => SetLike.coe_subset_coe.2 (monotone_exhaustion h))
-  exact ⟨n, SetLike.coe_subset_coe.1 (subset_closure.trans hn)⟩
-
 /-! ### Local Rellich compactness -/
-
-/-- Two scalar Sobolev elements on nested open sets whose values agree almost everywhere with the
-same function agree after restriction. -/
-private theorem restrictL_eq_of_value_ae_eq {W W' : Opens ℂ} (h : W ≤ W')
-    {y : Wkp volume W p k} {y' : Wkp volume W' p k} {f : ℂ → ℝ}
-    (hy : Wkp.value k y =ᵐ[volume.restrict W] f) (hy' : Wkp.value k y' =ᵐ[volume.restrict W'] f) :
-    Wkp.restrictL h k y' = y :=
-  Wkp.ext k (Lp.ext ((Wkp.value_restrictL_ae h k y').trans
-    (EventuallyEq.trans (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 h) hy')
-      hy.symm)))
 
 /-- **Local Rellich compactness for a countable family of sequences.** A countable family of
 sequences of real functions, each bounded in `W^{k+1,p}` on every relatively compact open subset
@@ -155,19 +73,29 @@ private theorem exists_subseq_memWkpLoc_tendsto_wkp_family {ι : Type*} [Countab
         ∀ i (y : ℕ → Wkp volume W p k) (w : Wkp volume W p k),
           (∀ j, Wkp.value k (y j) =ᵐ[volume.restrict W] u i (φ j)) →
           Wkp.value k w =ᵐ[volume.restrict W] v i → Tendsto y atTop (𝓝 w) := by
-  set E := exhaustion Ω
-  choose R V hVR hVu using fun (n : ℕ) i =>
-    hu (E (n + 1)) (isCompact_closure_exhaustion (n + 1)) (closure_exhaustion_subset_self (n + 1)) i
+  obtain ⟨E, hEc, hEsucc, hEU⟩ := Ω.exists_isCompact_closure_subset_succ_iUnion_eq
+  have hEle : ∀ n, E n ≤ E (n + 1) := fun n =>
+    SetLike.coe_subset_coe.1 (subset_closure.trans (hEsucc n))
+  have hEmono : Monotone E := monotone_nat_of_le_succ hEle
+  have hEΩ : ∀ n, closure (E n : Set ℂ) ⊆ Ω := fun n =>
+    (hEsucc n).trans (hEU ▸ subset_iUnion (fun n => (E n : Set ℂ)) (n + 1))
+  -- Every relatively compact open subset of `Ω` lies in some `E n`.
+  have hWE : ∀ W : Opens ℂ, IsCompact (closure (W : Set ℂ)) → closure (W : Set ℂ) ⊆ Ω →
+      ∃ n, W ≤ E n := fun W hWc hWΩ => by
+    obtain ⟨n, hn⟩ := hWc.elim_directed_cover (fun n => (E n : Set ℂ)) (fun n => (E n).isOpen)
+      (hWΩ.trans hEU.symm.subset)
+      (Monotone.directed_le fun _ _ h => SetLike.coe_subset_coe.2 (hEmono h))
+    exact ⟨n, SetLike.coe_subset_coe.1 (subset_closure.trans hn)⟩
+  choose R V hVR hVu using fun (n : ℕ) i => hu (E (n + 1)) (hEc (n + 1)) (hEΩ (n + 1)) i
   -- The compact operators from `E (n + 1)` to `E n`.
   let T : ∀ n : ℕ, Wkp volume (E (n + 1)) p (k + 1) →L[ℝ] Wkp volume (E n) p k := fun n =>
-    (Wkp.restrictL (exhaustion_le_succ n) k).comp (Wkp.lowerOrderL k)
+    (Wkp.restrictL (hEle n) k).comp (Wkp.lowerOrderL k)
   have hT : ∀ n, IsCompactOperator (T n) := fun n =>
-    Wkp.isCompactOperator_restrictL_lowerOrderL (isCompact_closure_exhaustion n)
-      (closure_exhaustion_subset_succ n) k
+    Wkp.isCompactOperator_restrictL_lowerOrderL (hEc n) (hEsucc n) k
   have hTval : ∀ n (w : Wkp volume (E (n + 1)) p (k + 1)),
       Wkp.value k (T n w) =ᵐ[volume.restrict (E n)] Wkp.value (k + 1) w := fun n w => by
-    have hTw : T n w = Wkp.restrictL (exhaustion_le_succ n) k (Wkp.lowerOrder k w) := by
-      change Wkp.restrictL _ k (Wkp.lowerOrderL k w) = _
+    have hTw : T n w = Wkp.restrictL (hEle n) k (Wkp.lowerOrder k w) := by
+      simp only [T, ContinuousLinearMap.comp_apply]
       rw [Wkp.lowerOrderL_apply]
     rw [hTw, Wkp.value_succ]
     exact Wkp.value_restrictL_ae _ k _
@@ -175,7 +103,7 @@ private theorem exists_subseq_memWkpLoc_tendsto_wkp_family {ι : Type*} [Countab
   let x : ℕ → ∀ q : ℕ × ι, Wkp volume (E q.1) p k := fun m q => T q.1 (V q.1 q.2 m)
   have hxval : ∀ m (q : ℕ × ι), Wkp.value k (x m q) =ᵐ[volume.restrict (E q.1)] u q.2 m :=
     fun m q => (hTval q.1 _).trans (ae_restrict_of_ae_restrict_of_subset
-      (SetLike.coe_subset_coe.2 (exhaustion_le_succ q.1)) (hVu q.1 q.2 m))
+      (SetLike.coe_subset_coe.2 (hEle q.1)) (hVu q.1 q.2 m))
   have hS : IsCompact (univ.pi fun q : ℕ × ι => closure (T q.1 '' closedBall 0 (R q.1 q.2))) :=
     isCompact_univ_pi fun q => (hT q.1).isCompact_closure_image_closedBall _
   obtain ⟨a, -, φ, hφ, hxa⟩ := hS.tendsto_subseq (x := x) fun m q _ =>
@@ -183,12 +111,12 @@ private theorem exists_subseq_memWkpLoc_tendsto_wkp_family {ι : Type*} [Countab
   have hxa' : ∀ q, Tendsto (fun j => x (φ j) q) atTop (𝓝 (a q)) := tendsto_pi_nhds.1 hxa
   -- The limits on the different levels agree under restriction.
   have hcompat : ∀ i {n n'} (h : n ≤ n'),
-      Wkp.restrictL (monotone_exhaustion h) k (a (n', i)) = a (n, i) := fun i n n' h => by
-    have hres : ∀ m, Wkp.restrictL (monotone_exhaustion h) k (x m (n', i)) = x m (n, i) :=
-      fun m => restrictL_eq_of_value_ae_eq _ (hxval m (n, i)) (hxval m (n', i))
+      Wkp.restrictL (hEmono h) k (a (n', i)) = a (n, i) := fun i n n' h => by
+    have hres : ∀ m, Wkp.restrictL (hEmono h) k (x m (n', i)) = x m (n, i) :=
+      fun m => Wkp.restrictL_eq_of_value_ae_eq _ (hxval m (n, i)) (hxval m (n', i))
     refine tendsto_nhds_unique ?_ (hxa' (n, i))
     simpa only [Function.comp_def, hres] using
-      ((Wkp.restrictL (monotone_exhaustion h) k).continuous.tendsto _).comp (hxa' (n', i))
+      ((Wkp.restrictL (hEmono h) k).continuous.tendsto _).comp (hxa' (n', i))
   -- Glue the limits.
   classical
   let v : ι → ℂ → ℝ := fun i z =>
@@ -198,11 +126,11 @@ private theorem exists_subseq_memWkpLoc_tendsto_wkp_family {ι : Type*} [Countab
         Wkp.value k (a (m, i)) z = Wkp.value k (a (n, i)) z := by
       intro m
       rcases le_total m n with hmn | hnm
-      · have h := (Wkp.value_restrictL_ae (monotone_exhaustion hmn) k (a (n, i))).symm.trans
+      · have h := (Wkp.value_restrictL_ae (hEmono hmn) k (a (n, i))).symm.trans
           (by rw [hcompat i hmn])
         filter_upwards [(ae_restrict_iff' (E m).isOpen.measurableSet).1 h] with z hz _ hzm
         exact (hz hzm).symm
-      · have h := (Wkp.value_restrictL_ae (monotone_exhaustion hnm) k (a (m, i))).symm.trans
+      · have h := (Wkp.value_restrictL_ae (hEmono hnm) k (a (m, i))).symm.trans
           (by rw [hcompat i hnm])
         filter_upwards [(ae_restrict_iff' (E n).isOpen.measurableSet).1 h] with z hz hzn _
         exact hz hzn
@@ -213,14 +141,14 @@ private theorem exists_subseq_memWkpLoc_tendsto_wkp_family {ι : Type*} [Countab
     exact (hz (Nat.find hex) hzn (Nat.find_spec hex)).symm
   refine ⟨φ, hφ, v, fun i => ?_, ?_⟩
   · refine memWkpLoc_of_forall_wkp fun W hWc hWΩ => ?_
-    obtain ⟨n, hWn⟩ := exists_subset_exhaustion hWc hWΩ
+    obtain ⟨n, hWn⟩ := hWE W hWc hWΩ
     exact ⟨Wkp.restrictL hWn k (a (n, i)), (Wkp.value_restrictL_ae hWn k _).trans
       (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hWn) (hv i n))⟩
   · intro W hWc hWΩ i y w hy hw
-    obtain ⟨n, hWn⟩ := exists_subset_exhaustion hWc hWΩ
+    obtain ⟨n, hWn⟩ := hWE W hWc hWΩ
     have hy' : ∀ j, Wkp.restrictL hWn k (x (φ j) (n, i)) = y j := fun j =>
-      restrictL_eq_of_value_ae_eq hWn (hy j) (hxval (φ j) (n, i))
-    have hw' : Wkp.restrictL hWn k (a (n, i)) = w := restrictL_eq_of_value_ae_eq hWn hw (hv i n)
+      Wkp.restrictL_eq_of_value_ae_eq hWn (hy j) (hxval (φ j) (n, i))
+    have hw' : Wkp.restrictL hWn k (a (n, i)) = w := Wkp.restrictL_eq_of_value_ae_eq hWn hw (hv i n)
     simpa only [Function.comp_def, hy', hw'] using
       ((Wkp.restrictL hWn k).continuous.tendsto _).comp (hxa' (n, i))
 

@@ -217,6 +217,15 @@ theorem restrictL_restrictL (hU : U ≤ Omega) (hV : V ≤ U) (k : ℕ)
   exact ((value_restrictL_ae hV k _).trans hsecond).trans
     (value_restrictL_ae (hV.trans hU) k u).symm
 
+/-- Two Sobolev elements on nested open sets whose values agree almost everywhere with the same
+function agree after restriction. -/
+theorem restrictL_eq_of_value_ae_eq (hU : U ≤ Omega) {k : ℕ} {v : Wkp mu U p k}
+    {u : Wkp mu Omega p k} {f : E → ℝ} (hv : value k v =ᵐ[mu.restrict U] f)
+    (hu : value k u =ᵐ[mu.restrict Omega] f) :
+    restrictL hU k u = v :=
+  ext k (Lp.ext ((value_restrictL_ae hU k u).trans (Filter.EventuallyEq.trans
+    (ae_restrict_of_ae_restrict_of_subset (SetLike.coe_subset_coe.2 hU) hu) hv.symm)))
+
 /-- At order zero, Sobolev restriction is Mathlib's `Lᵖ` restriction. -/
 @[simp]
 theorem restrictL_zero (hU : U ≤ Omega) :
