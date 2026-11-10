@@ -105,7 +105,7 @@ theorem hasCauchyPV_halfDiscBoundary_of_simple_poles {f : ℂ → ℂ} (hR : 0 <
     (halfDiscBoundary_left hR.le).trans (halfDiscBoundary_right R).symm
   have key := hungerbuhlerWasem_residueTheorem_of_simple_poles isOpen_univ
     (insert (0 : ℂ) S) (halfDiscBoundary R) (-R) (R + Real.pi)
-    (isPwC1ImmersionOn_halfDiscBoundary hR) (subset_univ _) hclosed hbase
+    (isPwC1ImmersionOn_halfDiscBoundary hR) hclosed hbase
     (fun t _ => mem_univ _) hf hmero (isNullHomologous_univ _ _ _) h_simple
   rw [Finset.sum_insert (zero_notMem_of_im_pos hS), windingNumber_halfDiscBoundary hR,
     Finset.sum_congr rfl (fun s hs => by

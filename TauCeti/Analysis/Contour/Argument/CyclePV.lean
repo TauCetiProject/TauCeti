@@ -101,7 +101,6 @@ theorem hasCauchyPV_logDeriv_nullHomologous {f : ℂ → ℂ} {S : Finset ℂ} {
   have hTS : T ⊆ S := Finset.filter_subset _ _
   have hmemT : ∀ {z : ℂ}, z ∈ T ↔ z ∈ S ∧ z ∈ U := by
     intro z; rw [hT, Finset.mem_filter]
-  have hTU : (T : Set ℂ) ⊆ U := fun z hz => (hmemT.mp hz).2
   -- On `U` the two exceptional sets agree, so the off-`S` hypothesis serves `T` unchanged.
   have hUT : U \ (↑T : Set ℂ) = U \ (↑S : Set ℂ) := by
     ext z
@@ -124,7 +123,7 @@ theorem hasCauchyPV_logDeriv_nullHomologous {f : ℂ → ℂ} {S : Finset ℂ} {
     refine Finset.sum_subset hTS fun z hzS hzT => ?_
     rw [isNullHomologous_iff.mp hnull z fun hzU => hzT (hmemT.mpr ⟨hzS, hzU⟩), zero_mul]
   rw [← hsum]
-  exact hungerbuhlerWasem_residueTheorem_of_simple_poles hU T γ a b hγ_imm hTU hclosed
+  exact hungerbuhlerWasem_residueTheorem_of_simple_poles hU T γ a b hγ_imm hclosed
     (fun h => hγa (hTS h)) hγU hdiff hmeroL hnull fun s hs =>
       neg_one_le_meromorphicOrderAt_logDeriv (hmeroT s hs)
 

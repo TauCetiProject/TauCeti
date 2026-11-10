@@ -230,13 +230,13 @@ regime, while null-homology is automatic by star-shapedness. Thus null-homology 
 and (B) require no additional hypotheses in this regime. -/
 theorem hungerbuhlerWasem_residueTheorem_of_simple_poles_starConvex {S : Finset ℂ}
     (hstar : StarConvex ℝ x Ω) (hopen : IsOpen Ω) (hγ_imm : IsPwC1ImmersionOn γ a b)
-    (hSΩ : (S : Set ℂ) ⊆ Ω) (hclosed : γ a = γ b) (hγa : γ a ∉ (S : Set ℂ))
+    (hclosed : γ a = γ b) (hγa : γ a ∉ (S : Set ℂ))
     (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) (hf : DifferentiableOn ℂ f (Ω \ (S : Set ℂ)))
     (hmero : ∀ s ∈ S, MeromorphicAt f s)
     (h_simple : ∀ s ∈ S, ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
     HasCauchyPV γ a b f
       (2 * (Real.pi : ℂ) * Complex.I * (∑ s ∈ S, windingNumber γ a b s * residue f s)) :=
-  hungerbuhlerWasem_residueTheorem_of_simple_poles hopen S γ a b hγ_imm hSΩ hclosed hγa hγΩ hf
+  hungerbuhlerWasem_residueTheorem_of_simple_poles hopen S γ a b hγ_imm hclosed hγa hγΩ hf
     hmero (isNullHomologous_of_starConvex hstar hγ_imm.isPiecewiseC1On hclosed hγΩ) h_simple
 
 /-- **The half-residue on a star-shaped open set.** An on-curve simple pole about which the
@@ -244,13 +244,13 @@ immersion has generalized winding number `½` contributes `πi · Res_s f` to th
 the `S = {s}` case of
 `TauCeti.Contour.hungerbuhlerWasem_residueTheorem_of_simple_poles_starConvex`. -/
 theorem hasCauchyPV_half_residue_of_simple_pole_starConvex {s : ℂ} (hstar : StarConvex ℝ x Ω)
-    (hopen : IsOpen Ω) (hγ_imm : IsPwC1ImmersionOn γ a b) (hsΩ : s ∈ Ω) (hclosed : γ a = γ b)
+    (hopen : IsOpen Ω) (hγ_imm : IsPwC1ImmersionOn γ a b) (hclosed : γ a = γ b)
     (hγa : γ a ≠ s) (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) (hf : DifferentiableOn ℂ f (Ω \ {s}))
     (hmero : MeromorphicAt f s)
     (h_simple : ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s)
     (hwind : windingNumber γ a b s = 1 / 2) :
     HasCauchyPV γ a b f ((Real.pi : ℂ) * Complex.I * residue f s) :=
-  hasCauchyPV_half_residue_of_simple_pole hopen γ a b s hγ_imm hsΩ hclosed hγa hγΩ hf hmero
+  hasCauchyPV_half_residue_of_simple_pole hopen γ a b s hγ_imm hclosed hγa hγΩ hf hmero
     (isNullHomologous_of_starConvex hstar hγ_imm.isPiecewiseC1On hclosed hγΩ) h_simple hwind
 
 /-- **The argument principle on a star-shaped open set, for a curve running through the zeros.**

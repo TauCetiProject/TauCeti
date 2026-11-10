@@ -85,7 +85,7 @@ summed from its single-curve form
 over the generators of the cycle, each of which may wind arbitrarily around the holes of `U`. -/
 theorem hasCauchyPV_analyticRemainder_add_residue_sum (decomp : PolarPartDecomposition f S U)
     (hU : IsOpen U) (h_ord : ∀ s : S, decomp.order s = meromorphicPolarOrderAt f ↑s)
-    (hSU : (S : Set ℂ) ⊆ U) (hmero : ∀ s ∈ S, MeromorphicAt f s) (hCU : IsIn C U)
+    (hSU : (S : Set ℂ) ⊆ U) (hCU : IsIn C U)
     (h_imm : ∀ γ ∈ FreeAbelianGroup.support C, IsPwC1ImmersionOn (⇑γ) γ.a γ.b)
     (hbase : ∀ γ ∈ FreeAbelianGroup.support C, γ γ.a ∉ (S : Set ℂ))
     (hA : ∀ γ ∈ FreeAbelianGroup.support C, ConditionAprime (⇑γ) γ.a γ.b f S)
@@ -100,7 +100,7 @@ theorem hasCauchyPV_analyticRemainder_add_residue_sum (decomp : PolarPartDecompo
             ∑ s ∈ S, TauCeti.Contour.windingNumber (⇑γ) γ.a γ.b s * residue f s) := fun γ hγ ↦
     decomp.hasCauchyPV_analyticRemainder_add_residue_sum_of_conditions hU h_ord hSU (h_imm γ hγ)
       γ.source_eq_target (hbase γ hγ)
-      (fun t ht ↦ isIn_iff.mp hCU (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)) hmero (hA γ hγ)
+      (fun t ht ↦ isIn_iff.mp hCU (mem_trace_iff.mpr ⟨γ, hγ, t, ht, rfl⟩)) (hA γ hγ)
       (hB γ hγ)
   have hval : (∑ γ ∈ FreeAbelianGroup.support C, FreeAbelianGroup.coeff γ C •
         ((∫ t in γ.a..γ.b, deriv (⇑γ) t • decomp.analyticRemainder (γ t))
@@ -145,7 +145,7 @@ theorem hungerbuhlerWasem_residueTheorem (hU : IsOpen U) (S : Finset ℂ)
       (2 * (Real.pi : ℂ) * Complex.I * ∑ s ∈ S, windingNumber s C * residue f s) := by
   have h := hasCauchyPV_analyticRemainder_add_residue_sum
     (PolarPartDecomposition.ofMeromorphic hU hf hmero) hU
-    (fun s ↦ PolarPartDecomposition.ofMeromorphic_order s) hSU hmero hCU h_imm hbase hA hB
+    (fun s ↦ PolarPartDecomposition.ofMeromorphic_order s) hSU hCU h_imm hbase hA hB
   rwa [homologyCauchyTheorem hU hCU
     (PolarPartDecomposition.ofMeromorphic hU hf hmero).analyticRemainder_differentiableOn hnull,
     zero_add] at h
@@ -181,10 +181,10 @@ theorem hungerbuhlerWasem_residueTheorem_of_simple_poles (hU : IsOpen U) (S : Fi
   have key := hungerbuhlerWasem_residueTheorem hU (S.filter (· ∈ U))
     (fun s hs ↦ (Finset.mem_filter.mp hs).2) hf'
     (fun s hs ↦ hmero s (hsub hs) (Finset.mem_filter.mp hs).2) hCU h_imm hbase' hnull
-    (fun γ hγ ↦ conditionAprime_of_simple_poles hU (h_imm γ hγ) (by
+    (fun γ hγ ↦ conditionAprime_of_simple_poles (h_imm γ hγ) (by
       rcases le_total γ.a γ.b with h | h
       · rw [min_eq_left h]; exact hbase' γ hγ
-      · rw [min_eq_right h, ← γ.source_eq_target]; exact hbase' γ hγ) (hγU γ hγ) hf' hsimple')
+      · rw [min_eq_right h, ← γ.source_eq_target]; exact hbase' γ hγ) hsimple')
     (fun γ hγ ↦ conditionB_of_simple_poles hU (hγU γ hγ) hf' hsimple')
   have hsum : ∑ s ∈ S.filter (· ∈ U), windingNumber s C * residue f s =
       ∑ s ∈ S, windingNumber s C * residue f s :=
