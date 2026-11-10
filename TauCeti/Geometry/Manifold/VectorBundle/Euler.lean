@@ -149,6 +149,8 @@ theorem vectorBundleEulerField_zero (b : B) :
       TotalSpace F V)) = fun _ ↦ ⟨b, 0⟩ :=
     funext fun t ↦ by simp
   rw [vectorBundleEulerField, hline, mfderiv_const]
+  -- The goal `(0 : TangentSpace _ 1 →L[𝕜] TangentSpace _ _) 1 = 0` holds by definition:
+  -- `TangentSpace` is a type synonym, so the generic `zero_apply` instance does not fire.
   rfl
 
 /-- The Euler vector field is **vertical**: the derivative of the bundle projection kills it. -/
@@ -229,16 +231,9 @@ theorem isMIntegralCurve_vectorBundleEulerField (z : TotalSpace F V) :
 /-- **The Euler vector field is complete**: through every vector `z` of a real vector bundle, the
 fibre dilation `t ↦ e^t • z` is an integral curve defined for all time. -/
 theorem isCompleteVectorField_vectorBundleEulerField :
-    IsCompleteVectorField (vectorBundleEulerField (F := F) (V := V) I) := by
-  rw [isCompleteVectorField_iff_maximalIntegralCurveInterval]
-  intro z
-  refine Set.eq_univ_of_forall fun t ↦ ?_
-  -- The dilation curve is an integral curve on an interval around `0` containing `t`.
-  have hγ := (isMIntegralCurve_vectorBundleEulerField (I := I) z).isMIntegralCurveOn
-    (Set.Ioo (-(|t| + 1)) (|t| + 1))
-  exact hγ.subset_maximalIntegralCurveInterval
-    ⟨by linarith [abs_nonneg t], by linarith [abs_nonneg t]⟩ (by simp)
-    ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
+    IsCompleteVectorField (vectorBundleEulerField (F := F) (V := V) I) :=
+  isCompleteVectorField_of_forall_exists_isMIntegralCurve fun z ↦
+    ⟨_, by simp, isMIntegralCurve_vectorBundleEulerField z⟩
 
 end Real
 
