@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
-import Mathlib.RingTheory.Complex
-import Mathlib.RingTheory.Norm.Transitivity
 
 /-!
 # The pair of pants and its end charts in real coordinates
@@ -34,13 +32,17 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 
 ## Main results
 
-* `TauCeti.Floer.preimage_truncation_subset_thricePuncturedSphereReal`,
+* `TauCeti.Floer.isCompact_preimage_truncation`,
+  `TauCeti.Floer.preimage_truncation_subset_thricePuncturedSphereReal`,
   `TauCeti.Floer.exists_lt_endSign_mul_re_endCoord_of_notMem_truncation`: in real coordinates the
-  truncation `S_R` lies in `S`, and every other point of `S` lies beyond `R` on some end.
+  truncation `S_R` is compact and lies in `S`, and every other point of `S` lies beyond `R` on some
+  end.
 * `TauCeti.Floer.setIntegral_thricePuncturedSphereReal_eq_setIntegral_truncation`: the integral over
   `S` of a function vanishing beyond `R` on every end is its integral over `S_R`.
 * `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`: in real coordinates, the
   components of the perturbation are `Cⁿ` on `S × V` for `Cⁿ` Hamiltonians.
+* `TauCeti.Floer.contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt`: a datum
+  which is `C¹` on `S × M` has `C¹` components in the real coordinates of `S`.
 * `TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, `TauCeti.Floer.re_endCoord_endChart`:
   the end chart sends the part `±s > 0` of the end into `S` and preserves the longitudinal
   coordinate.
@@ -52,6 +54,11 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
   coordinate greater than `1/2` on some end.
 * `TauCeti.Floer.injOn_endChart_univ_prod_Ico`: the end chart is injective on every band of
   angular width one.
+* `TauCeti.Floer.image_endChart_prod_Ico`: the image of `P × [0, 1)` under the end chart is the
+  set of points of `S` whose longitudinal coordinate lies in `P`, for any set `P` of positive
+  signed longitudinal coordinates.
+* `TauCeti.Floer.preimage_truncation_inter_eq_image_endChart`: the part `±s > c` of the end `q`
+  in the truncation `S_R` is the image under the end chart of `c < ±s ≤ R`, `t ∈ [0, 1)`.
 * `TauCeti.Floer.perturbationPullback_endChart_eq_cylindricalEndLift`: the pullback of a
   perturbation along the end chart is the perturbation evaluated on the image of a tangent vector
   under the end lift.
@@ -93,11 +100,10 @@ theorem isOpen_thricePuncturedSphereReal : IsOpen thricePuncturedSphereReal :=
   (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const).inter
     (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const)
 
-/-- The truncation `S_R`, in real coordinates, is measurable. -/
-theorem measurableSet_preimage_truncation (R : ℝ) :
-    MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
-  ((isCompact_truncation R).isClosed.preimage
-    Complex.equivRealProdCLM.symm.continuous).measurableSet
+/-- The truncation `S_R` is compact in real coordinates. -/
+theorem isCompact_preimage_truncation (R : ℝ) :
+    IsCompact (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
+  Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_truncation R)
 
 /-- The truncation `S_R`, in real coordinates, lies in `S`. -/
 theorem preimage_truncation_subset_thricePuncturedSphereReal (R : ℝ) :
@@ -152,6 +158,30 @@ theorem contDiffAt_uncurry_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Per
     ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
       contDiff_snd).contDiffAt).clm_apply contDiffAt_const
 
+section Manifold
+
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+
+/-- A perturbation one-form `K` on `ℂ` which is `C¹` at every point of `S × M` has components
+`(z, x) ↦ K(z, x)(v)`, in the real coordinates of `S`, that are `C¹` jointly on `S × M`. -/
+theorem contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
+    {K : ℂ → M → ℂ →L[ℝ] ℝ}
+    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x)) (v : ℂ) :
+    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
+      (uncurry fun z x ↦ K (Complex.equivRealProdCLM.symm z) x v)
+      (thricePuncturedSphereReal ×ˢ univ) := by
+  rintro ⟨z, x⟩ ⟨hz, -⟩
+  have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℂ).prod I) 1
+      (fun p : (ℝ × ℝ) × M ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x) :=
+    (Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk
+      contMDiffAt_snd
+  exact (((hK ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp (z, x) hφ).clm_apply
+    contMDiffAt_const).contMDiffWithinAt
+
+end Manifold
+
 /-- The end lift of `q`, in the real coordinates `ℝ × ℝ ≃ ℂ`. -/
 noncomputable def endChart (q : Puncture) (z : ℝ × ℝ) : ℝ × ℝ :=
   Complex.equivRealProdCLM (q.cylindricalEndLift (Complex.equivRealProdCLM.symm z))
@@ -160,6 +190,11 @@ theorem endChart_apply (q : Puncture) (z : ℝ × ℝ) :
     endChart q z =
       Complex.equivRealProdCLM (q.cylindricalEndLift (Complex.equivRealProdCLM.symm z)) :=
   (rfl)
+
+/-- The end chart is the end lift read in the real coordinates. -/
+theorem endChart_eq_realChart (q : Puncture) :
+    endChart q = TauCeti.Complex.realChart q.cylindricalEndLift :=
+  funext fun z ↦ (TauCeti.Complex.realChart_apply _ z).symm
 
 /-- The end chart at a point `(s, t)` of the cylinder is the end lift at `s + i t`. -/
 theorem endChart_mk (q : Puncture) (s t : ℝ) :
@@ -316,6 +351,48 @@ theorem mem_image_endChart {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereRea
     q.cylindricalEndLift_endCoord (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q),
     ContinuousLinearEquiv.apply_symm_apply]
 
+/-- The points of `S` at which the longitudinal coordinate of the end `q` lies in a set `P` of
+positive signed values are exactly the images under the end chart of `P × [0, 1)`. -/
+theorem image_endChart_prod_Ico {q : Puncture} {P : Set ℝ} (hP : ∀ s ∈ P, 0 < q.endSign * s) :
+    endChart q '' (P ×ˢ Ico 0 1) =
+      {z | z ∈ thricePuncturedSphereReal ∧
+        (q.endCoord (Complex.equivRealProdCLM.symm z)).re ∈ P} := by
+  ext z
+  constructor
+  · rintro ⟨ζ, ⟨hζ, -⟩, rfl⟩
+    exact ⟨endChart_mem_thricePuncturedSphereReal (hP _ hζ), by rwa [re_endCoord_endChart]⟩
+  · rintro ⟨hz, hzP⟩
+    set w := q.endCoord (Complex.equivRealProdCLM.symm z)
+    -- Move the angular coordinate into `[0, 1)` by an integer shift.
+    refine ⟨(w.re, Int.fract w.im), ⟨hzP, Int.fract_nonneg _, Int.fract_lt_one _⟩, ?_⟩
+    have hper := (q.periodic_cylindricalEndLift w.re).sub_int_mul_eq (x := w.im) ⌊w.im⌋
+    rw [mul_one] at hper
+    rw [endChart_apply, Complex.equivRealProdCLM_symm_apply, Int.fract, hper,
+      Complex.re_add_im, q.cylindricalEndLift_endCoord
+        (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q),
+      ContinuousLinearEquiv.apply_symm_apply]
+
+/-- For `0 ≤ c`, the part `±s > c` of the end `q` in the truncation `S_R` is the image under the
+end chart of `c < ±s ≤ R`, `t ∈ [0, 1)`. -/
+theorem preimage_truncation_inter_eq_image_endChart (q : Puncture) {c : ℝ} (hc : 0 ≤ c)
+    (R : ℝ) :
+    Complex.equivRealProdCLM.symm ⁻¹' truncation R ∩
+        {z | c < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re} =
+      endChart q '' ({s : ℝ | c < q.endSign * s ∧ q.endSign * s ≤ R} ×ˢ Ico 0 1) := by
+  rw [image_endChart_prod_Ico fun s hs ↦ by linarith [hs.1]]
+  ext z
+  simp only [mem_inter_iff, mem_preimage, mem_truncation, mem_ofPred_eq,
+    mem_thricePuncturedSphereReal_iff]
+  constructor
+  · rintro ⟨⟨h₀, h₁, hR⟩, h⟩
+    exact ⟨⟨h₀, h₁⟩, h, hR q⟩
+  · rintro ⟨⟨h₀, h₁⟩, h, hR⟩
+    refine ⟨⟨h₀, h₁, fun r ↦ ?_⟩, h⟩
+    by_cases hr : q = r
+    · exact hr ▸ hR
+    · linarith [endSign_mul_re_endCoord_nonpos hr (by linarith : 0 < q.endSign *
+        (q.endCoord (Complex.equivRealProdCLM.symm z)).re)]
+
 /-- The strip of an end is measurable. -/
 theorem measurableSet_endStrip (q : Puncture) : MeasurableSet (endStrip q) := by
   rw [endStrip_def]
@@ -325,18 +402,16 @@ theorem measurableSet_endStrip (q : Puncture) : MeasurableSet (endStrip q) := by
 /-- The end charts preserve orientation. -/
 theorem det_fderiv_endChart_nonneg (q : Puncture) (ζ : ℝ × ℝ) :
     0 ≤ (fderiv ℝ (endChart q) ζ).det := by
-  -- The derivative is multiplication by a complex number `c`, whose real determinant is the
-  -- complex norm `|c|²`.
-  rw [(hasFDerivAt_endChart q ζ).fderiv]
-  simp [ContinuousLinearMap.det, LinearMap.det_restrictScalars, Algebra.norm_complex_apply,
-    Complex.normSq_nonneg]
+  rw [endChart_eq_realChart]
+  exact TauCeti.Complex.det_fderiv_realChart_nonneg
+    (q.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt
 
 /-- The end charts are local diffeomorphisms: their Jacobian determinants are positive. -/
 theorem det_fderiv_endChart_pos (q : Puncture) (ζ : ℝ × ℝ) :
     0 < (fderiv ℝ (endChart q) ζ).det := by
-  rw [(hasFDerivAt_endChart q ζ).fderiv]
-  simp [ContinuousLinearMap.det, LinearMap.det_restrictScalars, Algebra.norm_complex_apply,
-    Complex.normSq_pos, q.deriv_cylindricalEndLift_ne_zero]
+  rw [endChart_eq_realChart, TauCeti.Complex.det_fderiv_realChart
+    (q.hasDerivAt_cylindricalEndLift _).differentiableAt.hasDerivAt]
+  exact Complex.normSq_pos.2 (q.deriv_cylindricalEndLift_ne_zero _)
 
 /-- The three end strips have disjoint images. -/
 theorem pairwise_disjoint_image_endChart :

@@ -22,13 +22,13 @@ MODERN = any(step.get("run") == "python3 scripts/fleet_runner.py --route"
              for job in PICKER["jobs"].values() for step in job.get("steps", []))
 
 
-def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated", hosted_slot="0", staging_target="", pool="github"):
+def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"', event="pull_request_target", action="opened", staging=False, maintenance=False, author_type="User", head_repo="TauCetiProject/TauCeti", head_ref="feature", hosted_picker=False, labels=(), label="unrelated", hosted_slot="0", staging_target="", pool="github", upstream_event="pull_request_target", upstream_title="pr-build pr=7 head=" + "a" * 40):
     """Evaluate the actual YAML expression's boolean/format/JSON subset."""
     source = source.removeprefix("${{").removesuffix("}}").strip()
     source = source.replace("\n", " ").replace("&&", " and ").replace("||", " or ")
     source = source.replace("!contains", "not contains").replace("!(", "not (").replace(".labels.*.name", ".label_names")
     github = SimpleNamespace(repository="TauCetiProject/TauCeti", run_attempt=attempt, run_id=42, event_name=event, event=SimpleNamespace(
-        action=action, label=SimpleNamespace(name=label), pull_request=SimpleNamespace(number=7, label_names=labels, user=SimpleNamespace(type=author_type),
+        action=action, workflow_run=SimpleNamespace(event=upstream_event, display_title=upstream_title), label=SimpleNamespace(name=label), pull_request=SimpleNamespace(number=7, label_names=labels, user=SimpleNamespace(type=author_type),
             head=SimpleNamespace(sha="a" * 40, ref=head_ref, repo=SimpleNamespace(full_name=head_repo))),
         client_payload=SimpleNamespace(pr=7, head_sha="a" * 40, base_sha="b" * 40, base_ref="main", batch_id=12),
         merge_group=SimpleNamespace(head_sha="c" * 40)))
@@ -37,7 +37,7 @@ def expression(source, *, attempt=1, picker_attempt="1", target='"ubuntu-24.04"'
     return eval(source, {"__builtins__": {}, "github": github, "needs": needs,
                          "inputs": SimpleNamespace(pr="7", staging=staging, maintenance=maintenance), "fromJSON": json.loads,
                          "contains": lambda values, value: value in values, "format": lambda s, *args: s.format(*args), "startsWith": lambda s, p: s.startswith(p),
-                         "vars": SimpleNamespace(PICKER_GITHUB_FALLBACK="true" if hosted_picker else "", STAGING_RUNS_ON=staging_target)})
+                         "vars": SimpleNamespace(FLEET_CI_ENABLED="true", PICKER_GITHUB_FALLBACK="true" if hosted_picker else "", STAGING_RUNS_ON=staging_target)})
 
 
 @unittest.skipUnless(MODERN, "project uses the standard GitHub-only picker")
@@ -77,13 +77,21 @@ class PickerWorkflow(unittest.TestCase):
                                env=dict(os.environ, HOSTED_RUN_ID=str(run_id), GITHUB_OUTPUT=str(output)))
                 self.assertEqual(output.read_text(), "slot=" + str(run_id % 19) + "\n")
 
-    def test_exact_target_is_used_for_this_attempt_only(self):
+    def test_shared_pr_pool_target_is_used_for_this_attempt_only(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
-        target = dict(group="TauCetiFleet", labels=["self-hosted", "tauceti-fleet-pr", "fleet-" + "a" * 32, "fleet-instance-" + "b" * 16])
+        target = dict(group="TauCetiFleet", labels=["self-hosted", "linux", "x64", "tauceti-fleet-pr"])
         self.assertEqual(expression(source, target=json.dumps(target)), target)
         self.assertEqual(expression(source, attempt=2, picker_attempt="2", target=json.dumps(target)), target)
         self.assertEqual(expression(source, attempt=2, target=json.dumps(target)), "ubuntu-24.04")
         self.assertEqual(expression(source, picker_attempt="", target=""), "ubuntu-24.04")
+
+    def test_startup_recovery_only_watches_bors_staging(self):
+        recovery = yaml.safe_load((ROOT / ".github/workflows/fleet-recovery.yml").read_text())
+        condition = recovery["jobs"]["recover"]["if"]
+        for event in ("pull_request_target", "repository_dispatch"):
+            self.assertFalse(expression(condition, upstream_event=event))
+        self.assertTrue(expression(condition, upstream_event="repository_dispatch",
+                                   upstream_title="bors branch=main batch=12 head=" + "a" * 40))
 
     def test_namespace_target_and_fallback_obey_the_same_attempt_fence(self):
         target = ["nscloud-ubuntu-24.04-amd64-16x32-with-features;job.priority=1", "namespace-features:container.privileged=true;github.run-id=42"]
@@ -126,21 +134,22 @@ class PickerWorkflow(unittest.TestCase):
             self.assertEqual(expression(BUILD["run-name"], action=action), "Ignored label event 42")
         self.assertTrue(expression(condition))
 
-    def test_staging_uses_only_the_two_fast_hosts_and_waits_locally(self):
+    def test_staging_uses_only_tauchonki2_and_waits_there_on_picker_failure(self):
         source = BUILD["jobs"]["sandboxed-build"]["runs-on"]
         group = BUILD["jobs"]["sandboxed-build"]["concurrency"]["group"]
         config = tomllib.loads((ROOT / "tauceti.toml").read_text())["services"]["fleet"]
-        self.assertEqual(config["staging_order"], ["chungus2", "tauchonki2"])
+        self.assertEqual(config["staging_order"], ["tauchonki2"])
         fallback = ["self-hosted", "linux", "x64", "tauceti-fleet-staging",
-                    "fleet-" + config["machines"]["chungus2"]["machine_id"]]
+                    "fleet-" + config["machines"]["tauchonki2"]["machine_id"]]
         common = dict(event="repository_dispatch", action="tauceti-bors-staging",
                       staging_target='["nscloud-ubuntu-24.04-amd64-16x32-with-features"]')
-        for pool in ("chungus2", "tauchonki2"):
+        for pool in ("tauchonki2",):
             target = dict(group="TauCetiFleet", labels=["self-hosted", "tauceti-fleet-staging",
                           "fleet-" + config["machines"][pool]["machine_id"], "fleet-instance-" + "b" * 16])
             self.assertEqual(expression(source, pool=pool, target=json.dumps(target), **common), target)
             self.assertEqual(expression(source, pool=pool, target=json.dumps(target), attempt=2, **common), fallback)
-        for pool, target in (("namespace", '["nscloud-old"]'), ("github", '"ubuntu-24.04"'),
+        for pool, target in (("chungus2", '["self-hosted","tauceti-fleet-staging","fleet-old"]'),
+                             ("namespace", '["nscloud-old"]'), ("github", '"ubuntu-24.04"'),
                              ("chris", '["self-hosted"]'), ("", "")):
             self.assertEqual(expression(source, pool=pool, target=target, **common), fallback)
             self.assertFalse(expression(group, pool=pool, target=target, **common).startswith("tauceti-hosted-bulk-"))
@@ -162,7 +171,9 @@ class PickerWorkflow(unittest.TestCase):
         ]
         self.assertEqual(expression(pick["runs-on"]), priority_control)
         self.assertEqual(expression(pick["runs-on"], hosted_picker=True), "ubuntu-24.04")
-        self.assertEqual(expression(pick["runs-on"], staging=True), priority_control)
+        self.assertEqual(expression(pick["runs-on"], staging=True), [
+            "self-hosted", "linux", "x64", "tauceti-fleet-queue-control",
+            "fleet-74773fc7f54d4877add11d80113fe340"])
         self.assertEqual(expression(pick["runs-on"], maintenance=True), priority_control)
         token = next(s for s in pick["steps"] if "create-github-app-token" in s.get("uses", ""))
         self.assertTrue(token["continue-on-error"])
