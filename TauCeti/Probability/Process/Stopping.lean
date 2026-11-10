@@ -11,15 +11,17 @@ public import Mathlib.Probability.Process.Stopping
 # Stopping times and stopped paths
 
 A stopping time remains a stopping time for a larger filtration. This transports stopping
-arguments and localizing sequences when augmenting a filtration.
+arguments and localizing sequences when augmenting a filtration. Finite suprema preserve
+both the stopping-time property and countable range.
 
 Stopping preserves right continuity at each time, including when the stopping time is infinite.
 This pathwise fact requires no measurability or stopping-time hypothesis and lets local-martingale
 arguments retain the right continuity of their native stopped stages.
 
 Simultaneous almost-sure nonnegativity controls random-time evaluations, including stopped
-processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`). No
-stopping-time or measurability assumption is needed.
+processes restricted by an indicator (`MeasureTheory.ae_nonneg_stoppedProcess_indicator`).
+Pathwise set membership up to the random time also passes to the stopped process. Neither
+fact requires a stopping-time or measurability assumption.
 -/
 
 public section
@@ -33,6 +35,24 @@ theorem mono_filtration {ι Ω : Type*} [Preorder ι] {mΩ : MeasurableSpace Ω}
   fun t => h t _ (hτ.measurableSet_le t)
 
 end MeasureTheory.IsStoppingTime
+
+/-- The finite supremum of countable-range stopping times is a countable-range stopping time.
+The empty supremum is the constant bottom time. -/
+theorem Finset.isStoppingTime_sup_of_countable_range {κ ι Ω : Type*}
+    [LinearOrder ι] [OrderBot ι] {mΩ : MeasurableSpace Ω} {ℱ : MeasureTheory.Filtration ι mΩ}
+    (s : Finset κ) {τ : κ → Ω → WithTop ι}
+    (hτ : ∀ j ∈ s, MeasureTheory.IsStoppingTime ℱ (τ j) ∧ (Set.range (τ j)).Countable) :
+    MeasureTheory.IsStoppingTime ℱ (fun ω ↦ s.sup (fun j ↦ τ j ω)) ∧
+      (Set.range (fun ω ↦ s.sup (fun j ↦ τ j ω))).Countable := by
+  have h := Finset.sup_induction
+    (p := fun σ : Ω → WithTop ι ↦ MeasureTheory.IsStoppingTime ℱ σ ∧ (Set.range σ).Countable)
+    ⟨MeasureTheory.isStoppingTime_const ℱ ⊥,
+      (Set.countable_singleton (⊥ : WithTop ι)).mono (by simp)⟩
+    (fun a ha b hb ↦ ⟨ha.1.max hb.1, (ha.2.image2 hb.2 max).mono (by
+      rintro _ ⟨ω, rfl⟩
+      exact ⟨a ω, ⟨ω, rfl⟩, b ω, ⟨ω, rfl⟩, rfl⟩)⟩) hτ
+  have heq : s.sup τ = fun ω ↦ s.sup (fun j ↦ τ j ω) := funext (s.sup_apply τ)
+  exact heq ▸ h
 
 open Filter Set
 open scoped Topology
@@ -59,6 +79,18 @@ theorem ContinuousWithinAt.stoppedProcess {ι Ω E : Type*} [LinearOrder ι] [No
       · exact MeasureTheory.stoppedProcess_eq_of_ge (by simpa [hτ] using hut)
 
 namespace MeasureTheory
+
+/-- A path that stays in a set up to a random time also stays in that set when stopped.
+No measurability or stopping-time assumption is needed. -/
+theorem stoppedProcess_mem {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι]
+    {X : ι → Ω → E} {τ : Ω → WithTop ι} {ω : Ω} {s : Set E}
+    (hX : ∀ u : ι, (u : WithTop ι) ≤ τ ω → X u ω ∈ s) (t : ι) :
+    stoppedProcess X τ t ω ∈ s := by
+  by_cases ht : (t : WithTop ι) ≤ τ ω
+  · rw [stoppedProcess_eq_of_le ht]
+    exact hX t ht
+  · rw [stoppedProcess_eq_of_ge (le_of_not_ge ht)]
+    exact hX _ (by cases τ ω <;> simp)
 
 variable {ι Ω E : Type*} [LinearOrder ι] [Nonempty ι] [Zero E] [Preorder E]
   {mΩ : MeasurableSpace Ω} {P : Measure Ω} {X : ι → Ω → E} {s : Set Ω}

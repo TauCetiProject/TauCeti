@@ -10,7 +10,9 @@ public import TauCeti.Probability.Process.HittingTime.Countable
 public import TauCeti.Probability.Process.HittingTime.Grid
 public import TauCeti.Probability.Process.ExitExhaustion
 public import Mathlib.Probability.Process.LocalProperty
+import Mathlib.MeasureTheory.Measure.WithDensityFinite
 import TauCeti.Probability.Process.HittingTime
+import TauCeti.Probability.Process.Stopping
 
 /-!
 # Countable-range level localizers on raw filtrations
@@ -42,7 +44,7 @@ open scoped NNReal ENNReal Topology
 
 namespace MeasureTheory.StronglyAdapted
 
-variable {Ω : Type*} {m : MeasurableSpace Ω} {P : Measure Ω} [IsFiniteMeasure P]
+variable {Ω : Type*} {m : MeasurableSpace Ω} {P : Measure Ω} [SFinite P]
   {ℱ : Filtration ℝ≥0 m} {X : ℝ≥0 → Ω → ℝ}
 
 /-- A countable-range raw stopping time lies between the continuous-path hits of half a
@@ -79,14 +81,18 @@ theorem exists_countable_range_isStoppingTime_between_level_hits
       (hhit.trans_ne WithTop.coe_ne_top)
     have hut : u = t := WithTop.coe_injective (hu.symm.trans hhit)
     exact (hθlt j).trans_le (hut ▸ huc)
+  have hcFinite : ∀ᵐ ω ∂P.toFinite, Continuous (X · ω) := by
+    rwa [ae_toFinite]
   obtain ⟨q, _, hq⟩ := TauCeti.exists_gridLevelHit_summable_misses
-    (fun t ↦ (hX t).measurable.mono (ℱ.le t) le_rfl) hc hσ hlevel
+    (fun t ↦ (hX t).measurable.mono (ℱ.le t) le_rfl) hcFinite hσ
+    (fun j ↦ by simpa only [ae_toFinite] using hlevel j)
   obtain ⟨ρ, hρ, hcount, heq⟩ := TauCeti.exists_countable_range_isStoppingTime_ae_eq_iInf
     (fun j ↦ TauCeti.isStoppingTime_gridLevelHit hX (θ j) (q j))
     (fun j ↦ TauCeti.countable_range_gridLevelHit X (θ j) (q j))
-    (hc.mono fun ω hω ↦ (hσeq ω hω).symm ▸
+    (hcFinite.mono fun ω hω ↦ (hσeq ω hω).symm ▸
       hω.tendsto_hittingAfter_Ici (fun j ↦ (hθlt j).le) hθlim)
     (Eventually.of_forall fun ω j ↦ TauCeti.hittingAfter_Ici_le_gridLevelHit) hq.ne
+  rw [ae_toFinite] at heq
   refine ⟨ρ, hρ, hcount, ?_⟩
   filter_upwards [hc, heq] with ω hω hρω
   refine ⟨?_, (hρω.2.trans_eq (hσeq ω hω))⟩
@@ -108,35 +114,24 @@ private theorem exists_monotone_level_stopping_times
   let ρ (n : ℕ) (ω : Ω) := (Finset.range (n + 1)).sup (fun j ↦ η j ω)
   have hmono (ω : Ω) : Monotone (ρ · ω) := fun i j hij ↦
     Finset.sup_mono (Finset.range_mono (Nat.add_le_add_right hij 1))
-  refine ⟨ρ, ?_, ?_, hmono, ?_⟩
-  · intro n t
-    have hevent : {ω | ρ n ω ≤ t} =
-        ⋂ j, ⋂ (_ : j ∈ Finset.range (n + 1)), {ω | η j ω ≤ t} := by
-      ext ω
-      simp only [mem_ofPred_eq, mem_iInter, ρ, Finset.sup_le_iff]
-    rw [hevent]
-    exact MeasurableSet.iInter fun j ↦ MeasurableSet.iInter fun _ ↦ hη j t
-  · intro n
-    apply (countable_iUnion hcount).mono
-    rintro _ ⟨ω, rfl⟩
-    obtain ⟨j, _, hj⟩ := Finset.exists_mem_eq_sup (Finset.range (n + 1))
-      (Finset.nonempty_range_iff.mpr (Nat.succ_ne_zero n)) (fun j ↦ η j ω)
-    exact mem_iUnion.mpr ⟨j, ⟨ω, hj.symm⟩⟩
-  · filter_upwards [ae_all_iff.mpr hbounds] with ω hω n
-    refine ⟨(hω n).1.trans (Finset.le_sup (f := fun j ↦ η j ω)
-      (Finset.mem_range.mpr (Nat.lt_succ_self n))), ?_⟩
-    apply Finset.sup_le
-    intro j hj
-    have hjn : (j : ℝ) + 1 ≤ (n : ℝ) + 1 := by
-      exact_mod_cast Nat.add_le_add_right (Nat.le_of_lt_succ (Finset.mem_range.mp hj)) 1
-    exact (hω j).2.trans (hittingAfter_apply_anti X 0 ω (Ici_subset_Ici.mpr hjn))
+  have hsup (n : ℕ) := (Finset.range (n + 1)).isStoppingTime_sup_of_countable_range
+    (fun j _ ↦ ⟨hη j, hcount j⟩)
+  refine ⟨ρ, fun n ↦ (hsup n).1, fun n ↦ (hsup n).2, hmono, ?_⟩
+  filter_upwards [ae_all_iff.mpr hbounds] with ω hω n
+  refine ⟨(hω n).1.trans (Finset.le_sup (f := fun j ↦ η j ω)
+    (Finset.mem_range.mpr (Nat.lt_succ_self n))), ?_⟩
+  apply Finset.sup_le
+  intro j hj
+  have hjn : (j : ℝ) + 1 ≤ (n : ℝ) + 1 := by
+    exact_mod_cast Nat.add_le_add_right (Nat.le_of_lt_succ (Finset.mem_range.mp hj)) 1
+  exact (hω j).2.trans (hittingAfter_apply_anti X 0 ω (Ici_subset_Ici.mpr hjn))
 
 end MeasureTheory.StronglyAdapted
 
 namespace MeasureTheory.StronglyAdapted
 
 variable {Ω E : Type*} [NormedAddCommGroup E] {m : MeasurableSpace Ω}
-  {P : Measure Ω} [IsFiniteMeasure P] {ℱ : Filtration ℝ≥0 m} {X : ℝ≥0 → Ω → E}
+  {P : Measure Ω} [SFinite P] {ℱ : Filtration ℝ≥0 m} {X : ℝ≥0 → Ω → E}
 
 /-- Every strongly adapted process with almost-surely continuous paths has countable-range
 level localizers on its original filtration. The times are pointwise increasing; on one
@@ -176,14 +171,6 @@ theorem exists_countable_range_level_localizers (hX : StronglyAdapted ℱ X)
   have hle (s : ℝ≥0) (hs : (s : WithTop ℝ≥0) ≤ ρ n ω) : Y s ω ≤ (n : ℝ) + 1 :=
     hpath.le_of_le_hittingAfter_Ici (X := Y) (a := 0) (t := s) bot_le
       (by simp only [Y, sub_self, norm_zero]; positivity) (hs.trans (hbound n).2)
-  by_cases ht : (t : WithTop ℝ≥0) ≤ ρ n ω
-  · rw [stoppedProcess_eq_of_le ht]
-    exact hle t ht
-  · rw [stoppedProcess_eq_of_ge (le_of_not_ge ht)]
-    cases hs : ρ n ω with
-    | top => exact (ht (hs ▸ le_top)).elim
-    | coe s =>
-      rw [WithTop.untopA_eq_untop WithTop.coe_ne_top, WithTop.untop_coe]
-      exact hle s hs.ge
+  exact stoppedProcess_mem (s := {x | ‖x - X 0 ω‖ ≤ (n : ℝ) + 1}) hle t
 
 end MeasureTheory.StronglyAdapted
