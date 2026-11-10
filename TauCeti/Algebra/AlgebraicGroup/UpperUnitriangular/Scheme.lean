@@ -49,7 +49,7 @@ open scoped CategoryTheory.MonObj
 
 namespace TauCeti.UpperUnitriangular
 
-universe u w
+universe u v w
 
 variable (R : Type u) [CommRing R] (n : ℕ)
 
@@ -216,11 +216,11 @@ theorem coordinateMap_surjective : Function.Surjective (coordinateMap R n).hom :
 
 section GroupScheme
 
-variable (m : Type) [Fintype m] [LinearOrder m]
+variable (R : Type (max u v)) [CommRing R] (m : Type v) [Fintype m] [LinearOrder m]
 
 /-- The upper-unitriangular group scheme obtained by applying relative spectrum to its
 coordinate Hopf algebra. -/
-noncomputable def groupScheme : Grp (Over (AlgebraicGeometry.Spec (CommRingCat.of R))) :=
+@[expose] noncomputable def groupScheme : Grp (Over (AlgebraicGeometry.Spec (CommRingCat.of R))) :=
   (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj
     (Opposite.op (coordinateHopfAlgebra R m))
 
@@ -257,14 +257,18 @@ theorem inclusion_def :
   unfold inclusion
   rfl
 
+section Geometry
+
+variable (R : Type (max u v)) [CommRing R]
+
 /-- The upper-unitriangular group scheme is affine. -/
-instance isAffine_groupScheme (m : Type) [Fintype m] [LinearOrder m] :
+instance isAffine_groupScheme (m : Type v) [Fintype m] [LinearOrder m] :
     AlgebraicGeometry.IsAffine (groupScheme R m).X.left := by
   rw [groupScheme_X_left]
   exact AlgebraicGeometry.isAffine_Spec _
 
 /-- The structural morphism of the upper-unitriangular group scheme is locally of finite type. -/
-instance locallyOfFiniteType_groupScheme (m : Type) [Fintype m] [LinearOrder m] :
+instance locallyOfFiniteType_groupScheme (m : Type v) [Fintype m] [LinearOrder m] :
     AlgebraicGeometry.LocallyOfFiniteType (groupScheme R m).X.hom := by
   rw [groupScheme_def]
   exact (algebraFiniteType_iff_locallyOfFiniteType_hopfSpec R
@@ -272,6 +276,8 @@ instance locallyOfFiniteType_groupScheme (m : Type) [Fintype m] [LinearOrder m] 
       (by
         rw [← finiteTypeCoordinateHopfAlgebra_obj]
         exact (finiteTypeCoordinateHopfAlgebra R m).property)
+
+end Geometry
 
 /-- The inclusion `U_n ⟶ GL_n` is a closed immersion. -/
 instance isClosedImmersion_inclusion :
@@ -296,8 +302,8 @@ section SchemePoints
 
 section
 
-variable {R} (m : Type) [Fintype m] [LinearOrder m]
-  (A : Type u) [CommRing A] [Algebra R A]
+variable {R : Type (max u v)} [CommRing R] (m : Type v) [Fintype m] [LinearOrder m]
+  (A : Type (max u v)) [CommRing A] [Algebra R A]
 
 /-- The canonical equivalence from algebra-valued points to scheme-valued
 upper-unitriangular points. -/
@@ -318,8 +324,9 @@ theorem groupSchemePointMulEquiv_apply_left
         eqToHom (groupScheme_X_left R m).symm := by
   simpa only [groupSchemePointMulEquiv] using
     CommHopfAlgCat.mapMulEquivOfPresentation_apply_left
-      (coordinateHopfAlgebra R m) A (groupScheme_def R m)
-        (groupScheme_X_left R m) f
+      (R := R) (G := groupScheme.{u, v} R m)
+      (coordinateHopfAlgebra R m) A (groupScheme_def.{u, v} R m)
+        (groupScheme_X_left.{u, v} R m) f
 
 /-- Scheme-valued upper-unitriangular points are upper-unitriangular matrices. -/
 noncomputable def schemePointsMulEquiv :
@@ -353,7 +360,7 @@ theorem schemePointsMulEquiv_symm_apply (g : upperUnitriangularGroup m A) :
       groupSchemePointMulEquiv m A ((pointsMulEquiv R m).symm g) := by
   rfl
 
-variable {B : Type u} [CommRing B] [Algebra R B]
+variable {B : Type (max u v)} [CommRing B] [Algebra R B]
 
 /-- The scheme-valued point identification is covariantly natural in the value algebra. An
 `R`-algebra map `A → B` becomes precomposition by the reversed spectrum map and acts entrywise on
@@ -367,7 +374,9 @@ theorem schemePointsMulEquiv_mapValue (φ : A →ₐ[R] B)
       UpperUnitriangularGroup.map φ.toRingHom (schemePointsMulEquiv m A p) := by
   unfold schemePointsMulEquiv groupSchemePointMulEquiv
   exact CommHopfAlgCat.mapMulEquivOfPresentation_symm_trans_mapValue
-    (coordinateHopfAlgebra R m) φ (groupScheme_def R m) _ _ _
+    (R := R) (G := groupScheme.{u, v} R m)
+    (coordinateHopfAlgebra R m) φ (groupScheme_def.{u, v} R m)
+    (pointsMulEquiv R m) (pointsMulEquiv R m) (UpperUnitriangularGroup.map φ.toRingHom)
     (pointsMulEquiv_mapValue (R := R) m φ) p
 
 end
