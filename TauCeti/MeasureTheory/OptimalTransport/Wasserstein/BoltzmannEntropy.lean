@@ -77,6 +77,7 @@ variable {X : Type*} {p : ℝ≥0∞} [PseudoMetricSpace X] [MeasurableSpace X] 
 
 variable {m : Measure X} [SigmaFinite m] {a : ℝ} {x₀ : X}
 
+omit [Fact (1 ≤ p)] in
 /-- **Change of reference on `P_p(X)`.** If `m ≠ 0` and `exp (-a d(x, x₀)^p)` is integrable
 against `m`, then for every law `μ` with finite `p`-moment,
 `Ent_m(μ) = klDiv μ m_a - a ∫ d(x, x₀)^p dμ - log Z`, where `m_a = Z⁻¹ exp (-a d(x, x₀)^p) m` is
@@ -100,6 +101,7 @@ theorem boltzmannEntropy_eq_klDiv_tilted_add (hp : p ≠ ∞)
   ring_nf
   rw [EReal.coe_zero, add_zero]
 
+omit [Fact (1 ≤ p)] in
 /-- If `exp (-a d(x, x₀)^p)` is integrable against the reference `m`, the Boltzmann entropy of a
 law with finite `p`-moment is not `⊥`, even when `m` is infinite. -/
 theorem boltzmannEntropy_ne_bot (hp : p ≠ ∞)
@@ -108,6 +110,7 @@ theorem boltzmannEntropy_ne_bot (hp : p ≠ ∞)
     boltzmannEntropy m ((μ : ProbabilityMeasure X) : Measure X) ≠ ⊥ :=
   boltzmannEntropy_ne_bot_of_integrable_exp hm ((integrable_dist_rpow hp μ x₀).const_mul a).neg
 
+omit [Fact (1 ≤ p)] in
 /-- A bound `Ent_m(μ) + b ∫ d(x, x₀)^p dμ ≤ C` bounds the relative entropy against the tilted
 reference and the moment together: `klDiv μ m_a + (b - a) ∫ d(x, x₀)^p dμ ≤ C + log Z`. -/
 private theorem klDiv_ne_top_and_toReal_klDiv_add_le (hp : p ≠ ∞)
@@ -132,6 +135,7 @@ private theorem klDiv_ne_top_and_toReal_klDiv_add_le (hp : p ≠ ∞)
     EReal.coe_le_coe_iff] at hμ
   linarith
 
+omit [Fact (1 ≤ p)] in
 /-- **Moment bound on entropy sublevels.** If `m ≠ 0`, `exp (-a d(x, x₀)^p)` is integrable against
 `m` and `b > a`, then `Ent_m(μ) + b ∫ d(x, x₀)^p dμ ≤ C` bounds the `p`-moment:
 `∫ d(x, x₀)^p dμ ≤ (C + log Z) / (b - a)`, where `Z = ∫ exp (-a d(x, x₀)^p) dm`. -/
@@ -148,6 +152,7 @@ theorem integral_dist_rpow_le_of_boltzmannEntropy_add_le (hp : p ≠ ∞)
   linarith [ENNReal.toReal_nonneg (a := klDiv ((μ : ProbabilityMeasure X) : Measure X)
     (m.tilted fun x ↦ -(a * dist x x₀ ^ p.toReal)))]
 
+omit [Fact (1 ≤ p)] in
 /-- **Tightness of entropy sublevels.** On a complete separable metric space, if `m ≠ 0`,
 `exp (-a d(x, x₀)^p)` is integrable against `m` and `a ≤ b`, then every set of laws with finite
 `p`-moment along which `Ent_m(μ) + b ∫ d(x, x₀)^p dμ` is bounded above is tight. For an infinite
@@ -206,7 +211,7 @@ theorem lowerSemicontinuous_boltzmannEntropy (hp : p ≠ ∞)
     exact continuous_coe_ennreal_ereal.comp_lowerSemicontinuous hkl
       fun _ _ h ↦ EReal.coe_ennreal_le_coe_ennreal_iff.2 h
   · exact (continuous_coe_real_ereal.comp
-      (((continuous_integral_dist_rpow hp x₀).const_mul a).neg.sub
+      (((continuous_integral_dist_rpow x₀).const_mul a).neg.sub
         continuous_const)).lowerSemicontinuous
 
 end TauCeti.WassersteinSpace
