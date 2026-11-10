@@ -18,14 +18,14 @@ Let a topological group `G` act continuously on a space `X`, and let `B` be a sp
 basepoint `b₀`. Then `G` acts on the mapping space `Map(B, X)` pointwise, `(g • f)(b) = g • f(b)`;
 this is Mathlib's action `ContinuousMap.instSMul`, jointly continuous for the compact-open topology.
 Evaluation at the basepoint `ev : Map(B, X) → X` is equivariant
-(`TauCeti.mappingSpaceEval_smul`). Its fibre over a point `x` is the based mapping space
+(`ContinuousMap.smul_apply`). Its fibre over a point `x` is the based mapping space
 `Map_*(B, X)` of maps sending `b₀` to `x`, and the stabilizer of `x` acts continuously on that
 fibre (`TauCeti.BasedMap.instMulActionStabilizer`, `TauCeti.BasedMap.instContinuousSMulStabilizer`).
 
 The action restricted to `G × Map_*(B, X)` (`TauCeti.BasedMap.actionMap`) is a map of fibrations:
 it lies over the orbit map `g ↦ g • x` (`TauCeti.mappingSpaceEval_actionMap`), and on the fibre
 over `x` of the orbit map, the stabilizer, it is the action of the stabilizer on the based mapping
-space (`TauCeti.BasedMap.actionMap_stabilizer`). For a homogeneous space `X = G ⧸ H` and `B = S²`
+space (`TauCeti.BasedMap.coe_stabilizer_smul`). For a homogeneous space `X = G ⧸ H` and `B = S²`
 these are the actions `Φ : G × Map(S², G ⧸ H) → Map(S², G ⧸ H)` and
 `Φ_H : H × Ω²(G ⧸ H) → Ω²(G ⧸ H)` of Barraud–Damian–Humilière–Oancea, Proposition 6.36: the
 stabilizer of the coset `eH` is `H` (`MulAction.stabilizer_quotient`).
@@ -54,8 +54,7 @@ No compactness or separation assumption is made on `B`.
 
 ## Main results
 
-* `TauCeti.mappingSpaceEval_actionMap`, `TauCeti.BasedMap.actionMap_stabilizer`: the action map
-  is a map of fibrations over the orbit map.
+* `TauCeti.mappingSpaceEval_actionMap`: the action map lies over the orbit map.
 * `TauCeti.exists_trivialization_mappingSpaceEval`: evaluation is locally trivial when the orbit
   map has local sections.
 * `TauCeti.mappingSpaceEval_mem_serreFibrations`,
@@ -84,16 +83,11 @@ section General
 variable {G : Type*} {B : Type u} {X : Type v} [Group G] [TopologicalSpace B]
   [TopologicalSpace X] [MulAction G X]
 
-/-! ### Equivariance of evaluation and the stabilizer action on based maps -/
+/-! ### The stabilizer action on based maps -/
 
 section Action
 
 variable [ContinuousConstSMul G X]
-
-/-- Evaluation at a point of the source is equivariant for the pointwise action on maps. -/
-theorem mappingSpaceEval_smul (b : B) (g : G) (f : C(B, X)) :
-    mappingSpaceEval b (g • f) = g • mappingSpaceEval b f := by
-  simp only [mappingSpaceEval_apply, ContinuousMap.smul_apply]
 
 namespace BasedMap
 
@@ -141,7 +135,7 @@ instance instContinuousSMulStabilizer :
 variable (b₀ x) in
 /-- The action map `G × Map_*(B, X) → Map(B, X)`, `(g, γ) ↦ g • γ`. It lies over the orbit map
 `g ↦ g • x` (`TauCeti.mappingSpaceEval_actionMap`), and on the stabilizer it is the action of the
-stabilizer on based maps (`TauCeti.BasedMap.actionMap_stabilizer`). -/
+stabilizer on based maps (`TauCeti.BasedMap.coe_stabilizer_smul`). -/
 def actionMap : C(G × BasedMap B X b₀ x, C(B, X)) :=
   ⟨fun p ↦ p.1 • p.2.1, continuous_fst.smul (continuous_subtype_val.comp continuous_snd)⟩
 
@@ -150,18 +144,13 @@ def actionMap : C(G × BasedMap B X b₀ x, C(B, X)) :=
 theorem actionMap_apply (p : G × BasedMap B X b₀ x) : actionMap b₀ x p = p.1 • p.2.1 :=
   (rfl)
 
-/-- On the stabilizer, the action map is the action of the stabilizer on based maps. -/
-theorem actionMap_stabilizer (h : stabilizer G x) (γ : BasedMap B X b₀ x) :
-    actionMap b₀ x ((h : G), γ) = ((h • γ : BasedMap B X b₀ x) : C(B, X)) :=
-  (rfl)
-
 end BasedMap
 
 /-- The action map lies over the orbit map: evaluating `g • γ` at the basepoint gives `g • x`. -/
 theorem mappingSpaceEval_actionMap {b₀ : B} {x : X}
     (p : G × BasedMap B X b₀ x) :
     mappingSpaceEval b₀ (BasedMap.actionMap b₀ x p) = p.1 • x := by
-  rw [BasedMap.actionMap_apply, mappingSpaceEval_smul, mappingSpaceEval_apply, p.2.2]
+  rw [BasedMap.actionMap_apply, mappingSpaceEval_apply, ContinuousMap.smul_apply, p.2.2]
 
 /-! ### Local triviality of evaluation -/
 
