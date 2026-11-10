@@ -199,6 +199,9 @@ theorem exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq {V : 
       WeaklyHarmonicOn volume U (ξ - ξ₀) ∧
       ∃ v : ℂ → V, HarmonicOnNhd v U ∧ ξ =ᵐ[volume.restrict U] ξ₀ + v := by
   classical
+  -- Step 1: in each basis coordinate `c i` of `V`, the scalar data
+  -- `dat i = 1_{closure U} (c i f + I * c i g)` is compactly supported, `Lʳ` and integrable,
+  -- and equals `c i f + I * c i g` on `U`.
   have hLm : MeasurableSet (closure (U : Set ℂ)) := isClosed_closure.measurableSet
   have : IsFiniteMeasure (volume.restrict (closure (U : Set ℂ))) :=
     isFiniteMeasure_restrict.2 hUc.measure_lt_top.ne
@@ -219,6 +222,8 @@ theorem exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq {V : 
     (integrable_indicator_iff hLm).2 ((hdatU i).integrable hr)
   have hdatfg (i) : ∀ z ∈ U, dat i z = ((c i (f z) : ℝ) : ℂ) + I * ((c i (g z) : ℝ) : ℂ) :=
     fun z hz ↦ indicator_of_mem (subset_closure hz) _
+  -- Step 2: `ξ₀ = ∑ i, (½ Re T (dat i)) • b i` is locally `Lʳ` on the plane, hence locally
+  -- integrable on `U`, as are `f` and `g` on `Ω`.
   let ξc : Fin (Module.finrank ℝ V) → ℂ → ℝ := fun i w ↦
     (2 : ℝ)⁻¹ * (cauchyTransform (dat i) w).re
   let ξ₀ : ℂ → V := fun w ↦ ∑ i, ξc i w • b i
@@ -231,6 +236,9 @@ theorem exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq {V : 
   have hUΩ' : U ≤ Ω := subset_closure.trans hUΩ
   have hfi : LocallyIntegrableOn f Ω := hf.locallyIntegrableOn hr Ω.isOpen.isLocallyClosed
   have hgi : LocallyIntegrableOn g Ω := hg.locallyIntegrableOn hr Ω.isOpen.isLocallyClosed
+  -- Step 3: `ξ₀` solves the equation weakly on `U`. Both sides are integrable, so it suffices to
+  -- check the identity after applying each coordinate `c i`, where it is the scalar identity
+  -- `integral_laplacian_smul_half_re_cauchyTransform` for `dat i`.
   have hid (φ : 𝓓(U, ℝ)) : ∫ z, Δ (φ : ℂ → ℝ) z • ξ₀ z =
       -∫ z, (fderiv ℝ (φ : ℂ → ℝ) z 1 • f z + fderiv ℝ (φ : ℂ → ℝ) z I • g z) := by
     have hd (z v : ℂ) : lineDeriv ℝ (φ : ℂ → ℝ) z v = fderiv ℝ (φ : ℂ → ℝ) z v :=
@@ -250,6 +258,8 @@ theorem exists_memLpLoc_weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq {V : 
     simp only [map_smul, map_add, hξ₀c, smul_eq_mul]
     simpa only [smul_eq_mul] using
       integral_laplacian_smul_half_re_cauchyTransform (hdati i) (hdatfg i) φ
+  -- Step 4: `ξ` solves the same equation on `U ≤ Ω`, so `ξ - ξ₀` is weakly harmonic on `U`, and
+  -- Weyl's lemma gives a harmonic `v` equal to it almost everywhere.
   have hwh : WeaklyHarmonicOn volume U (ξ - ξ₀) :=
     weaklyHarmonicOn_sub_of_integral_laplacian_smul_eq
       (hξ.mono_set hUΩ') hξ₀i fun φ ↦ by
