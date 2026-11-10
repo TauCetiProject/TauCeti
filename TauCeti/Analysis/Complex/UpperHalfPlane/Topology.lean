@@ -342,15 +342,10 @@ theorem injOn_update_comp_const_sub_inv {α : Type*} [Zero α] {g : ℂ → α}
       (hGz : Function.update (fun z : ℂ => g ((c : ℂ) - z⁻¹)) 0 L z ≠ 0) :
       (c : ℂ) - z⁻¹ ∈ {z : ℂ | 0 ≤ z.im ∧ g z ≠ 0} :=
     ⟨(im_const_sub_inv_nonneg c).mpr hz, by rwa [Function.update_of_ne hz0] at hGz⟩
-  rintro z ⟨hz, hGz⟩ z' ⟨hz', hGz'⟩ h
-  rcases eq_or_ne z 0 with rfl | hz0 <;> rcases eq_or_ne z' 0 with rfl | hz0'
-  · rfl
-  · rw [Function.update_self, Function.update_of_ne hz0'] at h
-    exact (hL ⟨_, hT hz' hz0' hGz', h.symm⟩).elim
-  · rw [Function.update_self, Function.update_of_ne hz0] at h
-    exact (hL ⟨_, hT hz hz0 hGz, h⟩).elim
-  · rw [Function.update_of_ne hz0, Function.update_of_ne hz0'] at h
-    exact inv_injective (sub_right_injective (hgi (hT hz hz0 hGz) (hT hz' hz0' hGz') h))
+  refine Set.injOn_update_of_injOn_diff (fun z hz z' hz' h => ?_) fun z hz hz0 h =>
+    hL ⟨_, hT hz.1 hz0 hz.2, h⟩
+  exact inv_injective (sub_right_injective
+    (hgi (hT hz.1.1 hz.2 hz.1.2) (hT hz'.1.1 hz'.2 hz'.1.2) h))
 
 /-- The map `w ↦ b / (f (-w⁻¹) - c)`, extended by `0` at the origin, is continuous on the part of
 the closed upper half-plane in `ball 0 r`, when `f` is continuous on the closed upper half-plane,
