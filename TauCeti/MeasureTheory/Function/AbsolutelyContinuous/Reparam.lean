@@ -17,7 +17,9 @@ import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 Composing an absolutely continuous metric-valued curve with an absolutely continuous monotone
 change of parameter preserves absolute continuity. Monotonicity is required only on the parameter
-interval, and the change of parameter may have constant pieces or unbounded speed.
+interval, and the change of parameter may have constant pieces or unbounded speed. Affine
+normalization of the parameter interval to `[0, 1]` both preserves and reflects absolute
+continuity.
 -/
 
 public section
@@ -101,19 +103,37 @@ theorem comp_affine {γ : ℝ → X} {a b c d : ℝ}
   · exact hγ.comp_antitoneOn hc.absolutelyContinuousOnInterval
       (fun _ _ _ _ hst ↦ add_le_add (mul_le_mul_of_nonpos_left hst hm) le_rfl) hmap
 
-/-- Affine normalization to the unit interval preserves absolute continuity for metric-valued
-curves, including reversed and constant parameter intervals. -/
-theorem comp_lineMap {γ : ℝ → X} {a b : ℝ}
-    (hγ : AbsolutelyContinuousOnInterval γ a b) :
-    AbsolutelyContinuousOnInterval (γ ∘ AffineMap.lineMap a b) 0 1 := by
-  have hmap : MapsTo (AffineMap.lineMap a b) (uIcc (0 : ℝ) 1) (uIcc a b) := by
-    rw [mapsTo_iff_image_subset, uIcc_of_le zero_le_one,
-      ← segment_eq_image_lineMap, segment_eq_uIcc]
+/-- A metric-valued curve is absolutely continuous on `uIcc a b` exactly when its affine
+normalization to the unit interval is absolutely continuous on `uIcc 0 1`. Reversed and constant
+parameter intervals are allowed. -/
+theorem _root_.absolutelyContinuousOnInterval_comp_lineMap_iff {γ : ℝ → X} {a b : ℝ} :
+    AbsolutelyContinuousOnInterval (γ ∘ AffineMap.lineMap a b) 0 1 ↔
+      AbsolutelyContinuousOnInterval γ a b := by
+  have hseg : AffineMap.lineMap a b '' uIcc (0 : ℝ) 1 = uIcc a b := by
+    rw [uIcc_of_le zero_le_one, ← segment_eq_image_lineMap, segment_eq_uIcc]
   have he : (AffineMap.lineMap a b : ℝ → ℝ) = fun t ↦ (b - a) * t + a := by
     funext t
     simp only [AffineMap.lineMap_apply, smul_eq_mul, vsub_eq_sub, vadd_eq_add]
     ring
-  rw [he] at hmap ⊢
-  exact hγ.comp_affine (b - a) a hmap
+  refine ⟨fun h ↦ ?_, fun hγ ↦ ?_⟩
+  · rcases eq_or_ne a b with rfl | hab
+    · exact .refl γ a
+    -- Undo the normalization with the inverse affine map `t ↦ (t - a) / (b - a)`.
+    have hinv (s : ℝ) : (b - a)⁻¹ * AffineMap.lineMap a b s + -(b - a)⁻¹ * a = s := by
+      rw [he]
+      field_simp [sub_ne_zero.2 hab.symm]
+      ring
+    have hmap : MapsTo (fun t : ℝ ↦ (b - a)⁻¹ * t + -(b - a)⁻¹ * a) (uIcc a b) (uIcc 0 1) := by
+      rw [← hseg]
+      rintro _ ⟨s, hs, rfl⟩
+      simpa only [hinv] using hs
+    refine (h.comp_affine _ _ hmap).congr fun t ht ↦ ?_
+    rw [← hseg] at ht
+    obtain ⟨s, -, rfl⟩ := ht
+    simp only [comp_apply, hinv]
+  · have hmap : MapsTo (AffineMap.lineMap a b) (uIcc (0 : ℝ) 1) (uIcc a b) := by
+      rw [mapsTo_iff_image_subset, hseg]
+    rw [he] at hmap ⊢
+    exact hγ.comp_affine (b - a) a hmap
 
 end AbsolutelyContinuousOnInterval
