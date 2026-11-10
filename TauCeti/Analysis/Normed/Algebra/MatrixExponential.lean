@@ -13,6 +13,7 @@ public import Mathlib.Analysis.Matrix.PosDef
 public import Mathlib.LinearAlgebra.Matrix.Trace
 public import TauCeti.Analysis.Calculus.FDeriv.Det
 public import TauCeti.Analysis.Matrix.Normed
+public import TauCeti.LinearAlgebra.Matrix.Triangular
 
 /-!
 # The matrix exponential
@@ -51,6 +52,7 @@ exponentials whenever all their powers agree at those entries.
 
 * `Matrix.exp_series_hasSum_exp_apply`: the rational exponential series at a matrix entry.
 * `Matrix.exp_apply_eq_of_forall_pow_apply_eq`: comparison of exponential entries through powers.
+* `Matrix.IsUpperTriangular.exp_apply_diag`: diagonal entries of a triangular exponential.
 * `Matrix.det_exp`: `det (exp A) = exp (trace A)`.
 * `Matrix.exp_mul_exp_neg`, `Matrix.exp_neg_mul_exp`, `Matrix.exp_mul_exp_neg_mul`,
   `Matrix.exp_neg_mul_exp_mul`: the reciprocal laws for the exponential of an arbitrary matrix,
@@ -101,6 +103,16 @@ theorem exp_apply_eq_of_forall_pow_apply_eq {p q : Type*}
   have h := exp_series_hasSum_exp_apply M i j
   simp only [hp] at h
   exact h.unique (exp_series_hasSum_exp_apply N u v)
+
+/-- On the diagonal, exponentiating an upper-triangular matrix exponentiates each entry. -/
+@[simp]
+theorem IsUpperTriangular.exp_apply_diag {n : Type*} [Fintype n] [LinearOrder n]
+    {A : Matrix n n R} (hA : A.IsUpperTriangular) (i : n) : exp A i i = exp (A i i) := by
+  have h := exp_apply_eq_of_forall_pow_apply_eq A (diagonal (fun j ↦ A j j)) i i i i
+    (fun k ↦ by
+      simp only [pow_apply_diag_of_isUpperTriangular hA, diagonal_pow, diagonal_apply_eq,
+        Pi.pow_apply])
+  simpa only [exp_diagonal, diagonal_apply_eq, Pi.coe_exp] using h
 
 end EntrySeries
 
