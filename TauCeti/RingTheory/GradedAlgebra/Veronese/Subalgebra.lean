@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.DirectSum.Module
 public import Mathlib.RingTheory.GradedAlgebra.Basic
 public import Mathlib.RingTheory.GradedAlgebra.RingHom
+public import TauCeti.LinearAlgebra.Submodule.Independent
 
 /-!
 # The Veronese subalgebra of a graded algebra
@@ -15,19 +16,21 @@ public import Mathlib.RingTheory.GradedAlgebra.RingHom
 Let `A = ⨁ₙ 𝒜 n` be an `ℕ`-graded `R`-algebra and `d : ℕ`. The *`d`-th Veronese
 subalgebra* of `A` is
 
-`A^{(d)} = ⨁ₖ 𝒜 (d k)`,
+`A^{(d)} = ⨆ₖ 𝒜 (d k)`,
 
 the `R`-subalgebra of `A` spanned by the homogeneous components whose degree is a multiple of `d`.
-For `d ≠ 0` (and `A` a ring) it is again an `ℕ`-graded `R`-algebra, whose degree-`k` part is
-`𝒜 (d k)`; in particular its degree-zero part is `𝒜 0`, the degree-zero part of `A`.
+For `d ≠ 0` (and `A` a ring) this sum is direct, `A^{(d)} = ⨁ₖ 𝒜 (d k)`, and `A^{(d)}` is again an
+`ℕ`-graded `R`-algebra, whose degree-`k` part is `𝒜 (d k)`; in particular its degree-zero part is
+`𝒜 0`, the degree-zero part of `A`.
 
-The Veronese subalgebra does not change the projective spectrum: `Proj A^{(d)} ≅ Proj A`, with
-`𝒪(n)` corresponding to `𝒪(d n)` (Stacks, Tag 0B5J). This file provides the graded algebra on
-which that comparison is stated, and its functoriality in graded ring maps.
+For `d > 0` and `A` commutative, the Veronese subalgebra does not change the projective spectrum:
+`Proj A^{(d)} ≅ Proj A`, with `𝒪(n)` corresponding to `𝒪(d n)` (Stacks, Tag 0B5J). This file
+provides the graded algebra on which that comparison is stated, and its functoriality in graded
+ring maps.
 
 ## Main definitions
 
-* `TauCeti.GradedAlgebra.veronese 𝒜 d`: the Veronese subalgebra `⨁ₖ 𝒜 (d k)` of `A`.
+* `TauCeti.GradedAlgebra.veronese 𝒜 d`: the Veronese subalgebra `⨆ₖ 𝒜 (d k)` of `A`.
 * `TauCeti.GradedAlgebra.veroneseGrading 𝒜 d`: its grading, with degree-`k` part `𝒜 (d k)`.
 * `TauCeti.GradedAlgebra.veroneseMap d f`: the graded ring map `A^{(d)} → B^{(d)}` induced by a
   graded ring map `f : A → B`.
@@ -44,10 +47,11 @@ which that comparison is stated, and its functoriality in graded ring maps.
 
 ## Implementation notes
 
-The definitions are exposed: statements about homogeneous localizations of the Veronese subalgebra
-identify types such as `HomogeneousLocalization.Away ℬ (φ f)` and
-`HomogeneousLocalization.Away ℬ (veroneseMap d φ f : B)`, and membership `x ∈ veroneseGrading 𝒜 d k`
-with `(x : A) ∈ 𝒜 (d * k)` inside terms, which holds only after unfolding these definitions.
+The definitions `veronese`, `veroneseGrading` and `veroneseMap` are exposed: statements about
+homogeneous localizations of the Veronese subalgebra identify types such as
+`HomogeneousLocalization.Away ℬ (φ f)` and `HomogeneousLocalization.Away ℬ (veroneseMap d φ f : B)`,
+and membership `x ∈ veroneseGrading 𝒜 d k` with `(x : A) ∈ 𝒜 (d * k)` inside terms, which holds
+only after unfolding these definitions.
 
 ## References
 
@@ -55,7 +59,7 @@ with `(x : A) ∈ 𝒜 (d * k)` inside terms, which holds only after unfolding t
 * A. Grothendieck, *Éléments de géométrie algébrique II*, Publ. Math. IHÉS 8 (1961), §2.4.7.
 -/
 
-@[expose] public section
+public section
 
 open DirectSum
 
@@ -66,9 +70,10 @@ section Semiring
 variable {R A : Type*} [CommSemiring R] [Semiring A] [Algebra R A]
   (𝒜 : ℕ → Submodule R A) [GradedAlgebra 𝒜] (d : ℕ)
 
-/-- The `d`-th Veronese subalgebra `⨁ₖ 𝒜 (d k)` of a graded algebra `A = ⨁ₙ 𝒜 n`: the
-`R`-subalgebra spanned by the homogeneous components whose degree is a multiple of `d`. -/
-def veronese : Subalgebra R A :=
+/-- The `d`-th Veronese subalgebra `⨆ₖ 𝒜 (d k)` of a graded algebra `A = ⨁ₙ 𝒜 n`: the
+`R`-subalgebra spanned by the homogeneous components whose degree is a multiple of `d`. For
+`d ≠ 0` this sum is direct (`isInternal_veroneseGrading`). -/
+@[expose] def veronese : Subalgebra R A :=
   Submodule.toSubalgebra (⨆ k, 𝒜 (d * k))
     (Submodule.mem_iSup_of_mem 0 (by simpa using SetLike.GradedOne.one_mem (A := 𝒜)))
     fun {x y} hx hy ↦ by
@@ -90,8 +95,14 @@ variable {𝒜 d} in
 theorem mem_veronese_of_mem {k : ℕ} {x : A} (hx : x ∈ 𝒜 (d * k)) : x ∈ veronese 𝒜 d :=
   Submodule.mem_iSup_of_mem k hx
 
+variable {𝒜 d} in
+/-- The Veronese subalgebra is the smallest subalgebra containing the components `𝒜 (d k)`. -/
+theorem veronese_le_iff {S : Subalgebra R A} :
+    veronese 𝒜 d ≤ S ↔ ∀ k, 𝒜 (d * k) ≤ Subalgebra.toSubmodule S :=
+  iSup_le_iff (f := fun k ↦ 𝒜 (d * k)) (a := Subalgebra.toSubmodule S)
+
 /-- The grading of the Veronese subalgebra `⨁ₖ 𝒜 (d k)`: its degree-`k` part is `𝒜 (d k)`. -/
-def veroneseGrading (k : ℕ) : Submodule R (veronese 𝒜 d) :=
+@[expose] def veroneseGrading (k : ℕ) : Submodule R (veronese 𝒜 d) :=
   (𝒜 (d * k)).comap (veronese 𝒜 d).val.toLinearMap
 
 variable {𝒜 d} in
@@ -120,16 +131,9 @@ instance : SetLike.GradedMonoid (veroneseGrading 𝒜 d) where
     exact SetLike.mul_mem_graded hx hy
 
 /-- For `d ≠ 0`, the components `𝒜 (d k)` of the Veronese subalgebra are independent. -/
-theorem iSupIndep_veroneseGrading (hd : d ≠ 0) : iSupIndep (veroneseGrading 𝒜 d) := by
-  have h := (Decomposition.isInternal 𝒜).submodule_iSupIndep.comp (mul_right_injective₀ hd)
-  intro k
-  rw [disjoint_iff_inf_le]
-  rintro x ⟨hx, hx'⟩
-  refine (Submodule.mem_bot R).2 (Subtype.ext ?_)
-  refine (Submodule.mem_bot R).1 ((h k).le_bot ⟨hx, ?_⟩)
-  have := Submodule.mem_map_of_mem (f := (veronese 𝒜 d).val.toLinearMap) hx'
-  simp only [Submodule.map_iSup] at this
-  exact iSup₂_mono (fun j _ ↦ Submodule.map_comap_le _ _) this
+theorem iSupIndep_veroneseGrading (hd : d ≠ 0) : iSupIndep (veroneseGrading 𝒜 d) :=
+  ((Decomposition.isInternal 𝒜).submodule_iSupIndep.comp (mul_right_injective₀ hd)).comap_subtype
+    (S := Subalgebra.toSubmodule (veronese 𝒜 d))
 
 /-- The Veronese subalgebra is spanned by its components `𝒜 (d k)`. -/
 theorem iSup_veroneseGrading_eq_top : ⨆ k, veroneseGrading 𝒜 d k = ⊤ := by
@@ -154,7 +158,12 @@ def veroneseGradingZeroEquiv : veroneseGrading 𝒜 d 0 ≃+* 𝒜 0 where
 @[simp]
 theorem coe_veroneseGradingZeroEquiv (a : veroneseGrading 𝒜 d 0) :
     (veroneseGradingZeroEquiv 𝒜 d a : A) = ((a : veronese 𝒜 d) : A) :=
-  rfl
+  by rfl
+
+@[simp]
+theorem coe_veroneseGradingZeroEquiv_symm (b : 𝒜 0) :
+    (((veroneseGradingZeroEquiv 𝒜 d).symm b : veronese 𝒜 d) : A) = b :=
+  by rfl
 
 section Map
 
@@ -163,7 +172,7 @@ variable {R' B : Type*} [CommSemiring R'] [Semiring B] [Algebra R' B] {ℬ : ℕ
 
 /-- A graded ring map `A → B` restricts to a graded ring map `A^{(d)} → B^{(d)}` between the
 Veronese subalgebras. -/
-def veroneseMap (f : 𝒜 →+*ᵍ ℬ) : veroneseGrading 𝒜 d →+*ᵍ veroneseGrading ℬ d where
+@[expose] def veroneseMap (f : 𝒜 →+*ᵍ ℬ) : veroneseGrading 𝒜 d →+*ᵍ veroneseGrading ℬ d where
   toRingHom := (f.toRingHom.comp (veronese 𝒜 d).val.toRingHom).codRestrict (veronese ℬ d)
     fun ⟨x, hx⟩ ↦ by
       induction hx using Submodule.iSup_induction' with
@@ -223,8 +232,8 @@ theorem coe_decompose_veroneseGrading [NeZero d] (x : veronese 𝒜 d) (k : ℕ)
     exact decompose_of_mem_ne 𝒜 (decompose (veroneseGrading 𝒜 d) x j).2
       ((mul_right_injective₀ (NeZero.ne d)).ne hjk)
   · intro hk
-    rw [DFinsupp.notMem_support_iff.1 hk, ZeroMemClass.coe_zero, ZeroMemClass.coe_zero,
-      decompose_zero, DirectSum.zero_apply, ZeroMemClass.coe_zero]
+    rw [DFinsupp.notMem_support_iff.1 hk]
+    simp
 
 end Ring
 
