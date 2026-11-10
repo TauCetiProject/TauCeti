@@ -26,8 +26,8 @@ This file develops the elementary calculus for arbitrary unit-valued twists. Ove
 an additively cancellative semiring, crossed homomorphisms vanish at `1`, their values at natural
 powers are geometric sums, and they are additive on products where the twist is trivial. Over a
 group and a ring, their values at inverses are determined by their values at the original
-elements. Only the three-element product formula and the commutator formula need a
-multiplicative twist.
+elements. Only the three-element product formula needs a multiplicative twist. The commutator
+formula holds for arbitrary unit-valued twists over a commutative ring.
 
 Continuous crossed homomorphisms and uniqueness on topological generating sets are treated in
 `TauCeti/Topology/Algebra/Group/CrossedHom.lean`. For `R = ℤ_p`, their values on a minimal
@@ -208,11 +208,7 @@ variable {H : Type*} [Group H] {R : Type*} [CommRing R]
 twist kills the commutator on the values of `F`, because `Rˣ` is commutative. -/
 theorem IsCrossedHom.map_commutatorElement (hF : IsCrossedHom χ F) (x y : H) :
     F ⁅x, y⁆ = ((χ x : R) - 1) * F y - ((χ y : R) - 1) * F x := by
-  have hone : F 1 = 0 := by
-    have h := hF 1 1
-    rw [one_mul] at h
-    have h2 : (χ 1 : R) * F 1 = 0 := by linear_combination -h
-    simpa using congrArg (fun r ↦ (((χ 1)⁻¹ : Rˣ) : R) * r) h2
+  have hone : F 1 = 0 := hF.map_one
   have hone' (z : H) : (χ 1 : R) * F z = F z := by
     have h := hF 1 z
     rw [one_mul, hone] at h
