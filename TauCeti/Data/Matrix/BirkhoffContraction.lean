@@ -102,10 +102,9 @@ theorem hilbertProjectiveDist_le {x y : ι → ℝ} {C : ℝ}
   Real.iSup_le (fun i ↦ Real.iSup_le (h i) hC) hC
 
 /-- Hilbert's projective metric is nonnegative: the diagonal cross ratios have logarithm `0`. -/
-theorem hilbertProjectiveDist_nonneg [Finite ι] (x y : ι → ℝ) :
+theorem hilbertProjectiveDist_nonneg (x y : ι → ℝ) :
     0 ≤ hilbertProjectiveDist x y :=
-  Real.iSup_nonneg fun i ↦ le_ciSup_of_le (Set.finite_range _).bddAbove i <| by
-    rw [mul_comm (y i), log_div_self]
+  Real.iSup_nonneg fun i ↦ Real.iSup_nonneg' ⟨i, by rw [mul_comm (y i), log_div_self]⟩
 
 /-- Every vector is at Hilbert distance `0` from itself. -/
 @[simp]
@@ -239,12 +238,12 @@ theorem log_le_projectiveDiameter (K : Matrix ι κ ℝ) (i i' : ι) (j j' : κ)
       le_ciSup (Set.finite_range fun j' ↦
         hilbertProjectiveDist (fun i ↦ K i j) (fun i ↦ K i j')).bddAbove j'
 
-omit [Finite κ] in
+omit [Finite ι] [Finite κ] in
 /-- The projective diameter of a matrix is nonnegative. -/
 theorem projectiveDiameter_nonneg (K : Matrix ι κ ℝ) : 0 ≤ K.projectiveDiameter :=
   Real.iSup_nonneg fun _ ↦ Real.iSup_nonneg fun _ ↦ hilbertProjectiveDist_nonneg _ _
 
-omit [Finite κ] in
+omit [Finite ι] [Finite κ] in
 /-- Birkhoff's contraction factor `tanh (K.projectiveDiameter / 4)` is nonnegative. -/
 theorem tanh_projectiveDiameter_div_four_nonneg (K : Matrix ι κ ℝ) :
     0 ≤ tanh (K.projectiveDiameter / 4) := by
@@ -260,31 +259,39 @@ theorem projectiveDiameter_le {K : Matrix ι κ ℝ} {C : ℝ}
     K.projectiveDiameter ≤ C :=
   Real.iSup_le (fun j ↦ Real.iSup_le (fun j' ↦ hilbertProjectiveDist_le (h · · j j') hC) hC) hC
 
-/-- The projective diameter of a positive two-by-two kernel is the absolute logarithm of its
-cross ratio. -/
-theorem projectiveDiameter_fin_two {K : Matrix (Fin 2) (Fin 2) ℝ}
-    (hK : ∀ i j, 0 < K i j) :
+/-- The projective diameter of a two-by-two kernel is the absolute logarithm of its cross ratio.
+If an entry vanishes, every cross ratio is `0` by the conventions `a / 0 = 0` and `Real.log 0 = 0`,
+and both sides are `0`. -/
+theorem projectiveDiameter_fin_two (K : Matrix (Fin 2) (Fin 2) ℝ) :
     K.projectiveDiameter = |log (K 0 0 * K 1 1 / (K 0 1 * K 1 0))| := by
-  have hlog (i i' j j' : Fin 2) :
-      log (K i j * K i' j' / (K i j' * K i' j)) =
-        log (K i j) + log (K i' j') - (log (K i j') + log (K i' j)) := by
-    rw [log_div (mul_pos (hK i j) (hK i' j')).ne'
-      (mul_pos (hK i j') (hK i' j)).ne', log_mul (hK i j).ne' (hK i' j').ne',
-      log_mul (hK i j').ne' (hK i' j).ne']
-  rw [hlog]
-  apply le_antisymm
-  · apply projectiveDiameter_le _ (abs_nonneg _)
-    intro i i' j j'
+  by_cases hK : ∀ i j, K i j ≠ 0
+  · have hlog (i i' j j' : Fin 2) :
+        log (K i j * K i' j' / (K i j' * K i' j)) =
+          log (K i j) + log (K i' j') - (log (K i j') + log (K i' j)) := by
+      rw [log_div (mul_ne_zero (hK i j) (hK i' j')) (mul_ne_zero (hK i j') (hK i' j)),
+        log_mul (hK i j) (hK i' j'), log_mul (hK i j') (hK i' j)]
     rw [hlog]
-    fin_cases i <;> fin_cases i' <;> fin_cases j <;> fin_cases j' <;>
-      dsimp <;> linarith [le_abs_self (log (K 0 0) + log (K 1 1) -
-        (log (K 0 1) + log (K 1 0))), neg_le_abs (log (K 0 0) + log (K 1 1) -
-        (log (K 0 1) + log (K 1 0)))]
-  · rw [abs_le]
-    have h₁ := log_le_projectiveDiameter K 0 1 1 0
-    have h₂ := log_le_projectiveDiameter K 0 1 0 1
-    rw [hlog] at h₁ h₂
-    constructor <;> linarith
+    apply le_antisymm
+    · apply projectiveDiameter_le _ (abs_nonneg _)
+      intro i i' j j'
+      rw [hlog]
+      fin_cases i <;> fin_cases i' <;> fin_cases j <;> fin_cases j' <;>
+        dsimp <;> linarith [le_abs_self (log (K 0 0) + log (K 1 1) -
+          (log (K 0 1) + log (K 1 0))), neg_le_abs (log (K 0 0) + log (K 1 1) -
+          (log (K 0 1) + log (K 1 0)))]
+    · rw [abs_le]
+      have h₁ := log_le_projectiveDiameter K 0 1 1 0
+      have h₂ := log_le_projectiveDiameter K 0 1 0 1
+      rw [hlog] at h₁ h₂
+      constructor <;> linarith
+  · push Not at hK
+    obtain ⟨a, b, hab⟩ := hK
+    have h0 (i i' j j' : Fin 2) : log (K i j * K i' j' / (K i j' * K i' j)) = 0 := by
+      fin_cases a <;> fin_cases b <;> fin_cases i <;> fin_cases i' <;> fin_cases j <;>
+        fin_cases j' <;> simp_all [mul_comm]
+    rw [h0 0 1 0 1, abs_zero]
+    exact le_antisymm (projectiveDiameter_le (fun i i' j j' ↦ (h0 i i' j j').le) le_rfl)
+      (projectiveDiameter_nonneg K)
 
 omit [Finite ι] [Finite κ] in
 /-- The projective diameter of a matrix whose entries lie between `m > 0` and `M` is at most
