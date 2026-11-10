@@ -106,8 +106,9 @@ theorem manifoldMorseIndex_modelSpace {V : Type*} [NormedAddCommGroup V] [Normed
   simp only [manifoldMorseIndex, extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
     PartialEquiv.refl_coe, Function.comp_id, id_eq]
 
-/-- The manifold Morse index is at most the dimension of a finite-dimensional model space. -/
-theorem manifoldMorseIndex_le_finrank [FiniteDimensional ℝ E] :
+/-- The manifold Morse index is at most the dimension of the model space. For a model space that
+is not finite the dimension is `0` by convention, and so is the index. -/
+theorem manifoldMorseIndex_le_finrank :
     manifoldMorseIndex I f x ≤ Module.finrank ℝ E :=
   morseIndex_le_finrank
 

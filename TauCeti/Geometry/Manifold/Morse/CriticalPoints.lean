@@ -913,10 +913,6 @@ theorem exists_isMinOn_isMaxOn_of_totalCriticalCount_eq_two [I.Boundaryless] [Co
     eq_univ_of_forall fun x ↦ ((hmin x).isLocalMin univ_mem).mem_criticalPoints
   exact ⟨p, q, hmin p, hmax q, hpq, hpq', .inr ⟨fun x ↦ by rw [hall x, hall p], hcrit⟩⟩
 
-section FiniteDimensional
-
-variable [FiniteDimensional ℝ E]
-
 /-- There are no critical points of index larger than the dimension. -/
 theorem criticalCount_eq_zero_of_finrank_lt {j : ℕ} (hj : Module.finrank ℝ E < j) :
     criticalCount I f j = 0 := by
@@ -982,7 +978,6 @@ theorem toNat_totalCriticalCount_modEq_sum_range_neg_one_pow_mul_toNat_criticalC
   exact (by simpa using ((show (-1 : ℤ) ≡ 1 [ZMOD 2] by decide).pow (manifoldMorseIndex I f x)) :
     (-1 : ℤ) ^ manifoldMorseIndex I f x ≡ 1 [ZMOD 2]).symm
 
-omit [FiniteDimensional ℝ E] in
 /-- **Duality of critical counts.** Replacing a Morse function by its negation exchanges the
 numbers of critical points of index `j` and `dim M - j`. -/
 theorem IsMorse.criticalCount_neg (hf : IsMorse I f) {j : ℕ} (hj : j ≤ Module.finrank ℝ E) :
@@ -1010,8 +1005,6 @@ theorem IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_neg (hf : IsMorse 
   rw [add_tsub_cancel_right, hf.criticalCount_neg (Nat.sub_le _ _), Nat.sub_sub_self hi]
   obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le' hi
   simp [hd, pow_add, mul_assoc, ← mul_assoc ((-1 : ℤ) ^ i), ← mul_pow]
-
-end FiniteDimensional
 
 section Compact
 
