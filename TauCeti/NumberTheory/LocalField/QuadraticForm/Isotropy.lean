@@ -339,12 +339,14 @@ theorem not_anisotropic_iff_discr_ne_zero_or_localHasse_eq_of_finrank_eq_four
   exact RegularFormClass.not_anisotropic_iff_discr_ne_zero_or_localHasse_eq_of_rank_eq_four
     (by rwa [rank_formClass])
 
+omit [FiniteDimensional K V] in
 /-- **Isotropy in dimension at least five** (Serre IV Thm 6 (iv)). Every quadratic form on a space
 of dimension at least five over `K` is isotropic: an anisotropic form is regular, so the rank bound
 for regular forms applies. -/
 theorem not_anisotropic_of_five_le_finrank (Q : QuadraticForm K V)
-    (hV : 5 ≤ Module.finrank K V) : ¬Q.Anisotropic := fun hA ↦
-  RegularFormClass.not_anisotropic_of_five_le_rank (by rwa [rank_formClass])
+    (hV : 5 ≤ Module.finrank K V) : ¬Q.Anisotropic := fun hA ↦ by
+  have : FiniteDimensional K V := Module.finite_of_finrank_pos (by omega)
+  exact RegularFormClass.not_anisotropic_of_five_le_rank (by rwa [rank_formClass])
     ((anisotropic_formClass Q hA.nondegenerate).mpr hA)
 
 /-- Two regular local quadratic spaces of positive dimension whose dimensions sum to at least
