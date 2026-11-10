@@ -11,22 +11,23 @@ public import TauCeti.Topology.CellularSet.Basic
 /-!
 # Preimages of closed hemispheres under a map with a cellular inverse set
 
-Let `S` be the unit sphere of a finite-dimensional real inner product space, let `p ∈ S`, and let
-`g : S → S` be a continuous surjection which is injective over the closed hemisphere
-`{y | 0 ≤ ⟪y, p⟫}` except on the inverse set `g⁻¹(p)`, collapsed to the pole. If `g⁻¹(p)` is
-cellular, then the preimage `g⁻¹{y | 0 ≤ ⟪y, p⟫}` is a closed disc: it is homeomorphic to the
-closed unit ball of the hyperplane `(ℝ ∙ p)ᗮ`, by a homeomorphism which agrees with `g` on the
-preimage of the equator and carries that preimage exactly onto the boundary sphere of the ball
+Let `S` be the unit sphere of a real inner product space, let `p ∈ S`, and let `g : M → S` be a
+continuous map from a compact metric manifold `M` whose range contains the closed hemisphere
+`{y | 0 ≤ ⟪y, p⟫}`, and which is injective over that hemisphere except on the inverse set
+`g⁻¹(p)`, collapsed to the pole. If `g⁻¹(p)` is cellular, then the preimage
+`g⁻¹{y | 0 ≤ ⟪y, p⟫}` is a closed disc: it is homeomorphic to the closed unit ball of the
+hyperplane `(ℝ ∙ p)ᗮ`, by a homeomorphism which agrees with `g` on the preimage of the equator and
+carries that preimage exactly onto the boundary sphere of the ball
 (`TauCeti.IsCellularSet.exists_homeomorph_preimage_hemisphere`).
 
 This is the step of M. Brown's proof of the generalized Schoenflies theorem which recognizes the
-closures of the two complementary domains of a bicollared sphere `Σ ⊆ S` as discs. There `g`
-collapses each of the two components of the complement of the open bicollar to a pole and sends
-`Σ` onto the equator, and its two inverse sets over the poles are cellular; the preimages of the
-two closed hemispheres are the closures of the two complementary domains of `Σ`, with frontier
-`Σ`. The homeomorphism is `g` corrected by the collapse of the cellular inverse set
-(`TauCeti.IsCellularSet.exists_homeomorph_image`), followed by the projection of the closed
-hemisphere onto the ball (`TauCeti.hemisphereHomeomorph`).
+closures of the two complementary domains of a bicollared sphere `Σ ⊆ S` as discs. There `M = S`,
+`g` is a surjection which collapses each of the two components of the complement of the open
+bicollar to a pole and sends `Σ` onto the equator, and its two inverse sets over the poles are
+cellular; the preimages of the two closed hemispheres are the closures of the two complementary
+domains of `Σ`, with frontier `Σ`. The homeomorphism is `g` corrected by the collapse of the
+cellular inverse set (`TauCeti.IsCellularSet.exists_homeomorph_image`), followed by the projection
+of the closed hemisphere onto the ball (`TauCeti.hemisphereHomeomorph`).
 
 ## References
 
@@ -36,32 +37,34 @@ hemisphere onto the ball (`TauCeti.hemisphereHomeomorph`).
 
 public section
 
-open Metric Set Function
+open Metric Set
 open scoped RealInnerProductSpace
 
 namespace TauCeti
 
-variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F] [FiniteDimensional ℝ F]
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-  [ChartedSpace E (sphere (0 : F) 1)]
+  {M : Type*} [MetricSpace M] [CompactSpace M] [ChartedSpace E M]
 
-/-- **A map of the sphere with a cellular inverse set over a pole is a disc over the closed
-hemisphere.** Let `g` be a continuous surjection of the unit sphere `S` of a finite-dimensional real
-inner product space `F` onto itself, modelled as a topological manifold on `E`, and let `p ∈ S`.
-Suppose that over the closed hemisphere `{y | 0 ≤ ⟪y, p⟫}` the map `g` is injective except on the
-cellular set `g⁻¹(p)`. Then `{x | 0 ≤ ⟪g x, p⟫}` is homeomorphic to the closed unit ball of
-`(ℝ ∙ p)ᗮ`, by a homeomorphism `h` with `h x = g x` whenever `g x` is on the equator, and which
-sends `x` to the boundary sphere of the ball exactly when `g x` is on the equator. -/
+/-- **A map onto the sphere with a cellular inverse set over a pole is a disc over the closed
+hemisphere.** Let `g` be a continuous map from a compact metric space `M`, modelled as a
+topological manifold on `E`, to the unit sphere `S` of a real inner product space `F`, and let
+`p ∈ S`. Suppose that the range of `g` contains the closed hemisphere `{y | 0 ≤ ⟪y, p⟫}`, and that
+over this hemisphere the map `g` is injective except on the cellular set `g⁻¹(p)`. Then
+`{x | 0 ≤ ⟪g x, p⟫}` is homeomorphic to the closed unit ball of `(ℝ ∙ p)ᗮ`, by a homeomorphism `h`
+with `h x = g x` whenever `g x` is on the equator, and which sends `x` to the boundary sphere of
+the ball exactly when `g x` is on the equator. -/
 theorem IsCellularSet.exists_homeomorph_preimage_hemisphere
-    {g : sphere (0 : F) 1 → sphere (0 : F) 1} {p : sphere (0 : F) 1}
-    (hA : IsCellularSet E (g ⁻¹' {p})) (hg : Continuous g) (hgs : Surjective g)
+    {g : M → sphere (0 : F) 1} {p : sphere (0 : F) 1}
+    (hA : IsCellularSet E (g ⁻¹' {p})) (hg : Continuous g)
+    (hgs : {y : sphere (0 : F) 1 | 0 ≤ ⟪(y : F), (p : F)⟫} ⊆ range g)
     (hinj : ∀ x y, 0 ≤ ⟪(g x : F), (p : F)⟫ → g x = g y → x = y ∨ g x = p) :
     ∃ h : g ⁻¹' {y | 0 ≤ ⟪(y : F), (p : F)⟫} ≃ₜ closedBall (0 : (ℝ ∙ (p : F))ᗮ) 1,
       (∀ x : g ⁻¹' {y | 0 ≤ ⟪(y : F), (p : F)⟫},
         ⟪(g x : F), (p : F)⟫ = 0 → ((h x : (ℝ ∙ (p : F))ᗮ) : F) = g x) ∧
       ∀ x : g ⁻¹' {y | 0 ≤ ⟪(y : F), (p : F)⟫},
         ‖(h x : (ℝ ∙ (p : F))ᗮ)‖ = 1 ↔ ⟪(g x : F), (p : F)⟫ = 0 := by
-  have hgp : Continuous fun x : sphere (0 : F) 1 ↦ ⟪(g x : F), (p : F)⟫ := by fun_prop
+  have hgp : Continuous fun x : M ↦ ⟪(g x : F), (p : F)⟫ := by fun_prop
   have hpp : ⟪(p : F), (p : F)⟫ = 1 := by
     rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p, one_pow]
   -- `h₀` identifies the preimage of the closed hemisphere with the closed hemisphere; the
@@ -86,7 +89,7 @@ theorem IsCellularSet.exists_homeomorph_preimage_hemisphere
     congrArg Subtype.val <| hoff x fun hxU ↦ by
       rw [mem_preimage, mem_ofPred_eq, hx] at hxU
       exact lt_irrefl 0 hxU
-  have hH := image_preimage_eq {y : sphere (0 : F) 1 | 0 ≤ ⟪(y : F), (p : F)⟫} hgs
+  have hH := image_preimage_eq_of_subset hgs
   -- The image of the preimage of the closed hemisphere is the closed hemisphere itself.
   let e : g '' (g ⁻¹' {y | 0 ≤ ⟪(y : F), (p : F)⟫}) ≃ₜ
       {y : sphere (0 : F) 1 // 0 ≤ ⟪(y : F), (p : F)⟫} := Homeomorph.setCongr hH
