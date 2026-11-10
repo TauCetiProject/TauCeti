@@ -93,7 +93,9 @@ theorem _root_.Subgroup.profiniteIndex_top : Subgroup.profiniteIndex (⊤ : Subg
 
 section Profinite
 
-variable [IsTopologicalGroup G]
+section SeparatelyContinuous
+
+variable [SeparatelyContinuousMul G]
 
 /-- Primewise form of `profiniteIndex_eq_iSup_openSubgroup`. The two sides of this identity are
 supremums of valuations, in which an infinite index contributes `0`, so no compactness is needed. -/
@@ -124,7 +126,7 @@ theorem _root_.Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup (H : Subgroup 
 
 /-- If an open subgroup `U` contains `H`, the `ℓ`-adic valuation of its index is at most the
 exponent of `ℓ` in the profinite index of `H`. -/
-theorem _root_.Subgroup.padicValNat_index_le_profiniteIndex_apply {H : Subgroup G}
+theorem _root_.OpenSubgroup.padicValNat_index_le_profiniteIndex_apply {H : Subgroup G}
     (U : OpenSubgroup G) (hU : H ≤ U.toSubgroup) (ℓ : Nat.Primes) :
     (padicValNat ℓ U.toSubgroup.index : ℕ∞) ≤ Subgroup.profiniteIndex H ℓ := by
   rw [Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup]
@@ -135,7 +137,7 @@ theorem _root_.Subgroup.profiniteIndex_anti {H K : Subgroup G} (h : H ≤ K) :
     Subgroup.profiniteIndex K ≤ Subgroup.profiniteIndex H := by
   refine Supernatural.le_iff.mpr fun ℓ ↦ ?_
   rw [Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup K]
-  exact iSup_le fun U ↦ Subgroup.padicValNat_index_le_profiniteIndex_apply U.1 (h.trans U.2) ℓ
+  exact iSup_le fun U ↦ OpenSubgroup.padicValNat_index_le_profiniteIndex_apply U.1 (h.trans U.2) ℓ
 
 /-- Primewise, the profinite index of an open subgroup of nonzero index is the valuation of its
 ordinary index. -/
@@ -146,6 +148,28 @@ theorem _root_.OpenSubgroup.profiniteIndex_apply_eq_padicValNat (U : OpenSubgrou
   rw [Subgroup.profiniteIndex_apply_eq_iSup_openSubgroup]
   exact le_antisymm (iSup_le fun V ↦ Subgroup.padicValNat_index_le_of_le V.2 hU ℓ)
     (le_iSup_of_le (⟨U, le_rfl⟩ : {V : OpenSubgroup G // U.toSubgroup ≤ V.toSubgroup}) le_rfl)
+
+/-- **An open subgroup of prime-power index has that supernatural prime power as its index.**
+This is the shape every *open*-subgroup index in a pro-`q` group takes, and it avoids the
+positivity side condition of `OpenSubgroup.profiniteIndex_eq_ofNat_index`. Openness is not
+superfluous: by `Subgroup.isOpen_iff_isClosed_and_isNatural_profiniteIndex` a closed subgroup
+that is not open has an index no finite exponent describes. -/
+theorem _root_.Subgroup.profiniteIndex_eq_primePower {H : Subgroup G} (hH : IsOpen (H : Set G))
+    {q : Nat.Primes} {k : ℕ} (h : H.index = (q : ℕ) ^ k) :
+    Subgroup.profiniteIndex H = Supernatural.primePower q k := by
+  have hH0 : H.index ≠ 0 := by rw [h]; exact pow_ne_zero _ q.prop.ne_zero
+  have hval : ∀ ℓ : Nat.Primes, Subgroup.profiniteIndex H ℓ = (padicValNat ℓ H.index : ℕ∞) :=
+    OpenSubgroup.profiniteIndex_apply_eq_padicValNat ⟨H, hH⟩ hH0
+  refine Supernatural.ext fun ℓ ↦ ?_
+  have : Fact (ℓ : ℕ).Prime := ⟨ℓ.prop⟩
+  rw [hval, h]
+  rcases eq_or_ne ℓ q with rfl | hne
+  · rw [Supernatural.primePower_apply_self, Nat.padicValNat_def, Nat.multiplicity_prime_pow]
+  · have hnd : ¬((ℓ : ℕ) ∣ (q : ℕ) ^ k) := fun hdvd ↦
+      hne (Nat.Primes.coe_nat_inj ℓ q |>.mp
+        ((Nat.prime_dvd_prime_iff_eq ℓ.prop q.prop).mp (ℓ.prop.dvd_of_dvd_pow hdvd)))
+    rw [Supernatural.primePower_apply_of_ne hne, Nat.padicValNat_def,
+      multiplicity_eq_zero_of_not_dvd hnd, Nat.cast_zero]
 
 variable [CompactSpace G]
 
@@ -195,29 +219,6 @@ theorem _root_.OpenSubgroup.profiniteIndex_eq_ofNat_index (U : OpenSubgroup G) :
   exact (Supernatural.ofNat_apply
     ⟨U.toSubgroup.index, Nat.zero_lt_of_ne_zero Subgroup.index_ne_zero_of_finite⟩ ℓ).symm
 
-omit [CompactSpace G] in
-/-- **An open subgroup of prime-power index has that supernatural prime power as its index.**
-This is the shape every *open*-subgroup index in a pro-`q` group takes, and it avoids the
-positivity side condition of `OpenSubgroup.profiniteIndex_eq_ofNat_index`. Openness is not
-superfluous: by `Subgroup.isOpen_iff_isClosed_and_isNatural_profiniteIndex` a closed subgroup
-that is not open has an index no finite exponent describes. -/
-theorem _root_.Subgroup.profiniteIndex_eq_primePower {H : Subgroup G} (hH : IsOpen (H : Set G))
-    {q : Nat.Primes} {k : ℕ} (h : H.index = (q : ℕ) ^ k) :
-    Subgroup.profiniteIndex H = Supernatural.primePower q k := by
-  have hH0 : H.index ≠ 0 := by rw [h]; exact pow_ne_zero _ q.prop.ne_zero
-  have hval : ∀ ℓ : Nat.Primes, Subgroup.profiniteIndex H ℓ = (padicValNat ℓ H.index : ℕ∞) :=
-    OpenSubgroup.profiniteIndex_apply_eq_padicValNat ⟨H, hH⟩ hH0
-  refine Supernatural.ext fun ℓ ↦ ?_
-  have : Fact (ℓ : ℕ).Prime := ⟨ℓ.prop⟩
-  rw [hval, h]
-  rcases eq_or_ne ℓ q with rfl | hne
-  · rw [Supernatural.primePower_apply_self, Nat.padicValNat_def, Nat.multiplicity_prime_pow]
-  · have hnd : ¬((ℓ : ℕ) ∣ (q : ℕ) ^ k) := fun hdvd ↦
-      hne (Nat.Primes.coe_nat_inj ℓ q |>.mp
-        ((Nat.prime_dvd_prime_iff_eq ℓ.prop q.prop).mp (ℓ.prop.dvd_of_dvd_pow hdvd)))
-    rw [Supernatural.primePower_apply_of_ne hne, Nat.padicValNat_def,
-      multiplicity_eq_zero_of_not_dvd hnd, Nat.cast_zero]
-
 /-- The finite-quotient and supernatural-index formulations of the prime-to-`ℓ` condition
 for a subgroup of a profinite group agree. -/
 theorem _root_.Subgroup.not_dvd_profiniteIndex_iff_forall_not_dvd_index (H : Subgroup G)
@@ -260,7 +261,10 @@ theorem _root_.Subgroup.padicValNat_index_map_mk'_anti (X : Subgroup G) (ℓ : �
   rw [← X.index_map_mk'_eq_index_sup M.toSubgroup]
   exact Subgroup.index_ne_zero_of_finite
 
-omit [CompactSpace G] in
+end SeparatelyContinuous
+
+variable [IsTopologicalGroup G]
+
 /-- Taking the topological closure of a subgroup does not change its supernatural index. -/
 @[simp]
 theorem _root_.Subgroup.profiniteIndex_topologicalClosure (H : Subgroup G) :
@@ -268,7 +272,7 @@ theorem _root_.Subgroup.profiniteIndex_topologicalClosure (H : Subgroup G) :
   ext ℓ
   simp_rw [Subgroup.profiniteIndex_apply, Subgroup.map_topologicalClosure_quotient_eq]
 
-variable [TotallyDisconnectedSpace G]
+variable [CompactSpace G] [TotallyDisconnectedSpace G]
 
 /-- A subgroup of a profinite group has supernatural index one exactly when it is dense. -/
 theorem _root_.Subgroup.profiniteIndex_eq_one_iff_topologicalClosure_eq_top (H : Subgroup G) :

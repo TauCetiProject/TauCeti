@@ -7,7 +7,6 @@ module
 
 import Mathlib.GroupTheory.GroupAction.Quotient
 public import Mathlib.GroupTheory.Index
-import Mathlib.Topology.Algebra.Group.ClosedSubgroup
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.Topology.Algebra.Group.Generation
 import TauCeti.Topology.Algebra.Group.OpenNormalSubgroup
