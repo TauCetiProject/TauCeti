@@ -52,7 +52,7 @@ square classes, and a ternary form, which represents every unit outside one squa
 * `QuadraticForm.not_anisotropic_iff_localHasse_eq_of_finrank_eq_three`,
   `QuadraticForm.not_anisotropic_iff_discr_ne_zero_or_localHasse_eq_of_finrank_eq_four`,
   `QuadraticForm.not_anisotropic_of_five_le_finrank`: the same criteria for regular forms on
-  finite-dimensional spaces, the last one for every form.
+  finite-dimensional spaces, the last one for every form (an anisotropic form is regular).
 * `QuadraticForm.exists_mem_unitValueSet_and_mem_of_five_le_finrank_add`: two regular spaces of
   positive dimension whose dimensions sum to at least five represent a common nonzero value.
 * `QuadraticForm.exists_nondegenerate_and_anisotropic_fin_four`: an anisotropic regular form on
@@ -340,17 +340,12 @@ theorem not_anisotropic_iff_discr_ne_zero_or_localHasse_eq_of_finrank_eq_four
     (by rwa [rank_formClass])
 
 /-- **Isotropy in dimension at least five** (Serre IV Thm 6 (iv)). Every quadratic form on a space
-of dimension at least five over `K` is isotropic: a regular one by the rank bound, and a
-degenerate one on its radical. -/
+of dimension at least five over `K` is isotropic: an anisotropic form is regular, so the rank bound
+for regular forms applies. -/
 theorem not_anisotropic_of_five_le_finrank (Q : QuadraticForm K V)
-    (hV : 5 ≤ Module.finrank K V) : ¬Q.Anisotropic := by
-  by_cases hQ : Q.Nondegenerate
-  · rw [← anisotropic_formClass Q hQ]
-    exact RegularFormClass.not_anisotropic_of_five_le_rank (by rwa [rank_formClass])
-  · -- A degenerate form has a nonzero vector in its radical, on which it vanishes.
-    rw [QuadraticMap.nondegenerate_iff_radical_eq_bot] at hQ
-    obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hQ
-    exact fun h ↦ hv0 (h v hv.1)
+    (hV : 5 ≤ Module.finrank K V) : ¬Q.Anisotropic := fun hA ↦
+  RegularFormClass.not_anisotropic_of_five_le_rank (by rwa [rank_formClass])
+    ((anisotropic_formClass Q hA.nondegenerate).mpr hA)
 
 /-- Two regular local quadratic spaces of positive dimension whose dimensions sum to at least
 five represent a common nonzero value: their difference is isotropic by the bound in dimension
