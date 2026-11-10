@@ -826,8 +826,6 @@ theorem exists_isMinOn_isMaxOn_of_totalCriticalCount_eq_two [I.Boundaryless] [Co
 
 section FiniteDimensional
 
-variable [FiniteDimensional ℝ E]
-
 /-- There are no critical points of index larger than the dimension. -/
 theorem criticalCount_eq_zero_of_finrank_lt {j : ℕ} (hj : Module.finrank ℝ E < j) :
     criticalCount I f j = 0 := by
@@ -892,6 +890,8 @@ theorem toNat_totalCriticalCount_modEq_sum_range_neg_one_pow_mul_toNat_criticalC
   refine Int.ModEq.sum fun x _ ↦ ?_
   exact (by simpa using ((show (-1 : ℤ) ≡ 1 [ZMOD 2] by decide).pow (manifoldMorseIndex I f x)) :
     (-1 : ℤ) ^ manifoldMorseIndex I f x ≡ 1 [ZMOD 2]).symm
+
+variable [FiniteDimensional ℝ E]
 
 /-- **Duality of critical counts.** Replacing a Morse function by its negation exchanges the
 numbers of critical points of index `j` and `dim M - j`. -/

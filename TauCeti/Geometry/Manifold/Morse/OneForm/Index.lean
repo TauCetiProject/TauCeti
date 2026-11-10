@@ -47,7 +47,7 @@ theorem morseIndex_eq (hα : IsMorseOneForm α) (hx : α x = 0)
   exact hg.manifoldMorseIndex_eq hf hxV hxU
 
 /-- The index of a zero is at most the dimension of the manifold. -/
-theorem morseIndex_le_finrank [FiniteDimensional ℝ E] (hα : IsMorseOneForm α)
+theorem morseIndex_le_finrank (hα : IsMorseOneForm α)
     (hx : α x = 0) : hα.morseIndex x hx ≤ Module.finrank ℝ E :=
   manifoldMorseIndex_le_finrank
 
