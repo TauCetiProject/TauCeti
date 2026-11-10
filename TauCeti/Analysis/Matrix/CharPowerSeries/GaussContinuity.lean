@@ -44,7 +44,7 @@ theorem tendsto_gaussNorm_charPowerSeries_sub_charPowerSeries_of_common_majorant
     Tendsto (fun a ↦ ((A a).charPowerSeries - B.charPowerSeries).gaussNorm norm ρ)
       l (𝓝 0) := by
   obtain ⟨T, C, hC, hT, hrC, hlim⟩ :=
-    exists_geometric_bound_of_tendsto_cofinite hr (ρ := ρ)
+    exists_geometric_bound_of_tendsto_cofinite hr ρ
       (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num)
   let b := fun n : ℕ ↦ C ^ T.card * (1 / 2 : ℝ) ^ (n - T.card)
   have hbA (a : α) (n : ℕ) : ‖(A a).charCoeff n‖ * ρ ^ n ≤ b n :=

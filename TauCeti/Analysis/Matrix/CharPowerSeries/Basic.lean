@@ -358,7 +358,7 @@ theorem summable_principalMinor_of_le_prod [CompleteSpace R] {A : Matrix ι ι R
   exact hs.not_gt hprod
 
 /-- **Uniform tail bound from principal minors.** Suppose the principal minors are bounded
-by products of nonnegative `r i`, and let `ρ > 0`, `0 ≤ q ≤ 1`,
+by products of nonnegative `r i`, and let `ρ > 0`, `0 ≤ q`,
 `1 ≤ B`, and `T` a finite set of indices with `ρ * r i ≤ q` off `T` and `ρ * r i ≤ B`
 everywhere. Then `‖A.charCoeff n‖ * ρ ^ n ≤ B ^ #T * q ^ (n - #T)`, with truncated subtraction
 in the exponent. The bound depends on `A` only through `r`. -/

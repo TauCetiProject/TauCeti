@@ -17,10 +17,10 @@ controlled by products of row bounds. This file turns that hypothesis into tail 
 
 ## Main results
 
-* `TauCeti.exists_geometric_bound_of_tendsto_cofinite`: after rescaling by any `ρ ≥ 0`, a null
+* `TauCeti.exists_geometric_bound_of_tendsto_cofinite`: after rescaling by any real `ρ`, a null
   family is bounded by some `B ≥ 1`, and by any prescribed `q ∈ (0, 1)` off a finite set `T`.
-* `TauCeti.mul_pow_le_of_forall_prod_le`: if `ρ * r i ≤ q ≤ 1` off a finite set `T` and
-  `ρ * r i ≤ B` everywhere, then `x * ρ ^ n ≤ B ^ #T * q ^ (n - #T)`.
+* `TauCeti.mul_pow_le_of_forall_prod_le`: if `ρ * r i ≤ q` off a finite set `T`, with `ρ > 0`,
+  `0 ≤ q` and `1 ≤ B`, and `ρ * r i ≤ B` everywhere, then `x * ρ ^ n ≤ B ^ #T * q ^ (n - #T)`.
 * `TauCeti.tendsto_mul_pow_of_forall_prod_le`: if `r` tends to zero along the cofinite filter,
   then `x n * |ρ| ^ n` tends to zero for every real `ρ`.
 
@@ -39,7 +39,7 @@ namespace TauCeti
 /-- A null family admits a uniform bound and a finite exceptional set outside which its rescaling
 is at most any prescribed `q ∈ (0, 1)`. The associated geometric tail tends to zero. -/
 theorem exists_geometric_bound_of_tendsto_cofinite {ι : Type*}
-    {r : ι → ℝ} (hr : Tendsto r cofinite (𝓝 0)) {ρ q : ℝ}
+    {r : ι → ℝ} (hr : Tendsto r cofinite (𝓝 0)) (ρ : ℝ) {q : ℝ}
     (hq₀ : 0 < q) (hq₁ : q < 1) :
     ∃ (T : Finset ι) (B : ℝ), 1 ≤ B ∧ (∀ i ∉ T, ρ * r i ≤ q) ∧
       (∀ i, ρ * r i ≤ B) ∧
@@ -118,7 +118,7 @@ theorem tendsto_mul_pow_of_forall_prod_le {ι : Type*} {r : ι → ℝ}
   have hρ : 0 < |ρ| + 1 := by positivity
   have hr' : Tendsto (fun i ↦ |r i|) cofinite (𝓝 0) := by simpa using hr.abs
   obtain ⟨T, B, hB, hT, hrB, hlim⟩ :=
-    exists_geometric_bound_of_tendsto_cofinite hr' (ρ := |ρ| + 1)
+    exists_geometric_bound_of_tendsto_cofinite hr' (|ρ| + 1)
       (by norm_num : (0 : ℝ) < 1 / 2) (by norm_num)
   refine squeeze_zero (fun n ↦ by have := hx₀ n; positivity) (fun n ↦ ?_) hlim
   have hx' : ∀ c, 0 ≤ c → (∀ s : Finset ι, s.card = n → ∏ i ∈ s, |r i| ≤ c) → x n ≤ c :=
