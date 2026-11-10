@@ -52,6 +52,8 @@ function by a function of temperate growth multiplies the function pointwise
   equal to `g`.
 * `MeasureTheory.Lp.toTemperedDistribution_compLp_apply`: applying a continuous linear map to the
   values of an `Lᵖ` function applies it to its tempered distribution.
+* `MeasureTheory.Lp.toTemperedDistribution_ofRealCLM_compLp_apply`: the complexification of a real
+  `Lᵖ` function pairs with a real Schwartz function as a real integral.
 * `SchwartzMap.toTemperedDistributionCLM_postcompCLM_apply`: the same for the values of a
   Schwartz function.
 * `MeasureTheory.Lp.fourier_toTemperedDistribution_apply`: the Fourier transform of the tempered
@@ -159,6 +161,17 @@ theorem toTemperedDistribution_compLp_apply {G : Type*} [NormedAddCommGroup G] [
   rw [Lp.toTemperedDistribution_apply, Lp.toTemperedDistribution_apply, ← L.integral_comp_comm hφu]
   refine integral_congr_ae ((L.coeFn_compLp u).mono fun x hx ↦ ?_)
   simp only [hx, map_smul]
+
+omit [FiniteDimensional ℝ E] in
+/-- The complexified tempered distribution of a real `Lᵖ` function `u` pairs with the
+complexification of a real Schwartz function `φ` as the real integral `∫ φ u`. -/
+theorem toTemperedDistribution_ofRealCLM_compLp_apply {μ : Measure E} [μ.HasTemperateGrowth]
+    {p : ENNReal} [Fact (1 ≤ p)] (u : Lp ℝ p μ) (φ : 𝓢(E, ℝ)) :
+    ((Complex.ofRealCLM.compLp u : Lp ℂ p μ) : 𝓢'(E, ℂ)) (φ.postcompCLM Complex.ofRealCLM) =
+      ((∫ x, φ x * u x ∂μ : ℝ) : ℂ) := by
+  rw [Lp.toTemperedDistribution_apply, ← integral_complex_ofReal]
+  refine integral_congr_ae ((Complex.ofRealCLM.coeFn_compLp u).mono fun x hx ↦ ?_)
+  simp [hx]
 
 end NormedSpace
 
