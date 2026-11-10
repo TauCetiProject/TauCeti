@@ -122,13 +122,15 @@ theorem exists_parametric_morse_chart_of_contDiffOn (hW : W ∈ 𝓝 (b₀, 0))
   have hcritG : ∀ᶠ b in 𝓝 b₀, fderiv ℝ (fun v ↦ G (b, v)) 0 = 0 := by
     filter_upwards [hcrit, hU₀.mem_nhds hb₀U₀] with b hb hbU₀
     rw [(hslice hbU₀).fderiv_eq, hb]
-  obtain ⟨ψ, U, V, hU, hV, hb₀U, h0V, hsource, hψeq, hψfst, hψ0, hψsymm, hψ, hψinv, hψG⟩ :=
+  obtain ⟨ψ, U, V, hU, hV, hb₀U, h0V, hsource, hψeq, hψsymm, hψ, hψinv, hψG⟩ :=
     exists_parametric_morse_chart hG hcritG (hH' hb₀U₀ ▸ hH) hn
   let ψ' := ψ.restrOpen (U₀ ×ˢ V₀) (hU₀.prod hV₀)
   have hsource' : ψ'.source = (U ∩ U₀) ×ˢ (V ∩ V₀) := by
     rw [OpenPartialHomeomorph.restrOpen_source, hsource, prod_inter_prod]
   refine ⟨ψ', U ∩ U₀, V ∩ V₀, hU.inter hU₀, hV.inter hV₀, ⟨hb₀U, hb₀U₀⟩, ⟨h0V, h0V₀⟩,
-    hsource', fun z hz ↦ interior_subset (hUV₀ ⟨hz.1.2, hz.2.2⟩).2, fun z hz ↦ ?_, hψfst, hψ0,
+    hsource', fun z hz ↦ interior_subset (hUV₀ ⟨hz.1.2, hz.2.2⟩).2, fun z hz ↦ ?_,
+    fun z ↦ by rw [OpenPartialHomeomorph.coe_restrOpen, hψeq],
+    fun b ↦ by rw [OpenPartialHomeomorph.coe_restrOpen, hψeq, parametricMorseCoord_mk_zero],
     fun z hz ↦ hψsymm z hz.1, hψ.mono (by simp [ψ']), hψinv.mono fun z hz ↦ hz.1, ?_⟩
   · rw [hsource'] at hz
     -- On the fibre ball the coordinates of `G` and `f` agree.

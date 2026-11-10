@@ -256,50 +256,49 @@ end Naturality
 
 /-- **Parametric Morse normal form.** A jointly `C^{n+2}` family with a critical zero section
 near `a` and invertible vertical Hessian at `(a, 0)` has a jointly `C^n` fiber coordinate change
-on a product neighborhood. It fixes the zero section, preserves the parameter, and has identity
+`(b, v) ↦ (b, parametricMorseCoord f (b, v))` on a product neighborhood. It preserves the
+parameter, fixes the zero section (`TauCeti.parametricMorseCoord_mk_zero`), and has identity
 derivative at `(a, 0)`. The reference quadratic form is the vertical Hessian at each `(b, 0)`.
-The base space need not be complete for this forward coordinate construction. The coordinate
-change is `(b, v) ↦ (b, parametricMorseCoord f (b, v))`. -/
+The base space need not be complete for this forward coordinate construction. -/
 theorem exists_parametric_morse_normal_form (hf : ContDiff ℝ (n + 2) f)
     (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ (fun v ↦ f (b, v)) 0 = 0)
     (hH : (fderiv ℝ (fderiv ℝ (fun v ↦ f (a, v))) 0).IsInvertible) :
-    ∃ (Φ : P × E → P × E) (U : Set P) (V : Set E),
+    ∃ (U : Set P) (V : Set E),
       IsOpen U ∧ IsOpen V ∧ a ∈ U ∧ (0 : E) ∈ V ∧
-      (∀ z, Φ z = (z.1, parametricMorseCoord f z)) ∧
-      (∀ z, (Φ z).1 = z.1) ∧ (∀ b, Φ (b, 0) = (b, 0)) ∧
-      ContDiffOn ℝ n Φ (U ×ˢ V) ∧
-      HasFDerivAt Φ (ContinuousLinearMap.id ℝ (P × E)) (a, 0) ∧
+      ContDiffOn ℝ n (fun z : P × E ↦ (z.1, parametricMorseCoord f z)) (U ×ˢ V) ∧
+      HasFDerivAt (fun z : P × E ↦ (z.1, parametricMorseCoord f z))
+        (ContinuousLinearMap.id ℝ (P × E)) (a, 0) ∧
       ∀ z ∈ U ×ˢ V,
-        f z = f (z.1, 0) + (2 : ℝ)⁻¹ *
-          fderiv ℝ (fderiv ℝ (fun v ↦ f (z.1, v))) 0 (Φ z).2 (Φ z).2 := by
+        f z = f (z.1, 0) + (2 : ℝ)⁻¹ * fderiv ℝ (fderiv ℝ (fun v ↦ f (z.1, v))) 0
+          (parametricMorseCoord f z) (parametricMorseCoord f z) := by
   obtain ⟨U, V, hU, haU, hV, h0V, hUV⟩ := mem_nhds_prod_iff'.mp
     (Filter.inter_mem (eventually_contDiffAt_parametricMorseCoord hf hH)
       (eventually_eq_add_parametricMorseCoord (hf.of_le le_add_self) hcrit hH))
-  refine ⟨fun z ↦ (z.1, parametricMorseCoord f z), U, V, hU, hV, haU, h0V, fun _ ↦ rfl,
-    fun _ ↦ rfl, fun b ↦ by simp,
+  refine ⟨U, V, hU, hV, haU, h0V,
     fun z hz ↦ (contDiffAt_fst.prodMk (hUV hz).1).contDiffWithinAt, ?_, fun z hz ↦ (hUV hz).2⟩
   simpa only [ContinuousLinearMap.fst_prod_snd] using
     hasFDerivAt_fst.prodMk (hasFDerivAt_parametricMorseCoord (hf.of_le le_add_self) hH)
 
 /-- **The parametric Morse lemma, as a local chart.** The chart has a product source containing
-`(a, 0)`, is given by the canonical coordinate `(b, v) ↦ (b, parametricMorseCoord f (b, v))`,
-preserves the base parameter in both directions, and fixes the zero section. Its
-quadratic equation uses the vertical Hessian on that same zero section. The base and the fiber
-are Banach spaces, so the ordinary inverse function theorem applies to their product. -/
+`(a, 0)` and is given by the canonical coordinate
+`(b, v) ↦ (b, parametricMorseCoord f (b, v))`, so it preserves the base parameter and fixes the
+zero section; its inverse preserves the base parameter too. Its quadratic equation uses the
+vertical Hessian on that same zero section. The base and the fiber are Banach spaces, so the
+ordinary inverse function theorem applies to their product. -/
 theorem exists_parametric_morse_chart [CompleteSpace P] (hf : ContDiff ℝ (n + 2) f)
     (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ (fun v ↦ f (b, v)) 0 = 0)
     (hH : (fderiv ℝ (fderiv ℝ (fun v ↦ f (a, v))) 0).IsInvertible) (hn : n ≠ 0) :
     ∃ (ψ : OpenPartialHomeomorph (P × E) (P × E)) (U : Set P) (V : Set E),
       IsOpen U ∧ IsOpen V ∧ a ∈ U ∧ (0 : E) ∈ V ∧ ψ.source = U ×ˢ V ∧
       (∀ z, ψ z = (z.1, parametricMorseCoord f z)) ∧
-      (∀ z, (ψ z).1 = z.1) ∧ (∀ b, ψ (b, 0) = (b, 0)) ∧
       (∀ z ∈ ψ.target, (ψ.symm z).1 = z.1) ∧
       ContDiffOn ℝ n ψ ψ.source ∧ ContDiffOn ℝ n ψ.symm ψ.target ∧
       ∀ z ∈ ψ.source,
         f z = f (z.1, 0) + (2 : ℝ)⁻¹ *
           fderiv ℝ (fderiv ℝ (fun v ↦ f (z.1, v))) 0 (ψ z).2 (ψ z).2 := by
-  obtain ⟨Φ, U, V, hU, hV, haU, h0V, hΦdef, hΦfst, hΦ0, hΦ, hΦd, hΦeq⟩ :=
+  obtain ⟨U, V, hU, hV, haU, h0V, hΦ, hΦd, hΦeq⟩ :=
     exists_parametric_morse_normal_form hf hcrit hH
+  set Φ : P × E → P × E := fun z ↦ (z.1, parametricMorseCoord f z)
   have haUV : (a, (0 : E)) ∈ U ×ˢ V := ⟨haU, h0V⟩
   have hUV : IsOpen (U ×ˢ V) := hU.prod hV
   have hn' : 1 ≤ (n : ℕ∞ω) :=
@@ -317,17 +316,16 @@ theorem exists_parametric_morse_chart [CompleteSpace P] (hf : ContDiff ℝ (n + 
     exact hWZ
   have hψ : (ψ : P × E → P × E) = Φ := by
     simpa only [ψ, OpenPartialHomeomorph.coe_restrOpen] using hΘ
-  refine ⟨ψ, W, Z, hW, hZ, haW, h0Z, hsource, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
-  · simpa only [hψ] using hΦdef
-  · simpa only [hψ] using hΦfst
-  · simpa only [hψ] using hΦ0
+  refine ⟨ψ, W, Z, hW, hZ, haW, h0Z, hsource, fun z ↦ by rw [hψ], ?_, ?_, ?_, ?_⟩
   · intro z hz
+    -- the first coordinate of `ψ (ψ.symm z) = z` is that of `ψ.symm z`
     have hi := congrArg Prod.fst (ψ.right_inv hz)
-    rwa [hψ, hΦfst] at hi
+    rwa [hψ] at hi
   · rw [hψ]
     exact hΦ.mono (fun z hz ↦ hΘsub (hWZ (hsource ▸ hz)))
   · exact hΘsymm.mono inter_subset_left
   · intro z hz
-    simpa only [hψ] using hΦeq z (hΘsub (hWZ (hsource ▸ hz)))
+    rw [hψ]
+    exact hΦeq z (hΘsub (hWZ (hsource ▸ hz)))
 
 end TauCeti

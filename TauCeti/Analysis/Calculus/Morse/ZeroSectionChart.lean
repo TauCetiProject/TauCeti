@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.Morse.Parametric
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 import TauCeti.Analysis.Calculus.Morse.LocalNormalForm
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Injective
@@ -30,6 +31,8 @@ injective.
 
 ## Main declarations
 
+* `TauCeti.exists_parametricMorseCoord_partialDiffeomorph_prod_ball`: near a point of the zero
+  section, the canonical map is a partial diffeomorphism on a product of an open set with a ball.
 * `TauCeti.exists_parametricMorseCoord_chart`: the parametric Morse lemma along the whole zero
   section over an open set of the base, in a single chart given by the canonical coordinate.
 
@@ -58,6 +61,41 @@ section Chart
 variable [FiniteDimensional ℝ P] [FiniteDimensional ℝ E] {F : P × E → ℝ} {W : Set (P × E)}
   {U : Set P} {n : ℕ∞}
 
+/-- **The local parametric Morse chart on a product with a ball.** Let `F (b, v)` be `C^{n+2}`,
+with `1 ≤ n ≤ ∞`, on a neighbourhood `W` of `(b₀, 0)`, with zero section critical near `b₀` and
+invertible vertical Hessian at `(b₀, 0)`. Then the canonical map
+`(b, v) ↦ (b, parametricMorseCoord F (b, v))` is a `C^n` partial diffeomorphism `Θ` on a source
+`U₀ ×ˢ ball 0 r ⊆ W`, with `U₀` an open neighbourhood of `b₀`, on which `F` is in normal form. -/
+theorem exists_parametricMorseCoord_partialDiffeomorph_prod_ball {b₀ : P} (hW : W ∈ 𝓝 (b₀, 0))
+    (hF : ContDiffOn ℝ (n + 2) F W)
+    (hcrit : ∀ᶠ b in 𝓝 b₀, fderiv ℝ (fun v ↦ F (b, v)) 0 = 0)
+    (hH : (fderiv ℝ (fderiv ℝ (fun v ↦ F (b₀, v))) 0).IsInvertible) (hn : n ≠ 0) :
+    ∃ (U₀ : Set P) (r : ℝ)
+      (Θ : PartialDiffeomorph 𝓘(ℝ, P × E) 𝓘(ℝ, P × E) (P × E) (P × E) n),
+      IsOpen U₀ ∧ b₀ ∈ U₀ ∧ 0 < r ∧ Θ.source = U₀ ×ˢ Metric.ball 0 r ∧
+      U₀ ×ˢ Metric.ball 0 r ⊆ W ∧
+      (∀ z ∈ U₀ ×ˢ Metric.ball 0 r, Θ z = (z.1, parametricMorseCoord F z)) ∧
+      ∀ z ∈ U₀ ×ˢ Metric.ball 0 r, F z = F (z.1, 0) + (2 : ℝ)⁻¹ *
+        fderiv ℝ (fderiv ℝ (fun v ↦ F (z.1, v))) 0
+          (parametricMorseCoord F z) (parametricMorseCoord F z) := by
+  obtain ⟨ψ, U₀, V, hU₀, hV, hbU₀, h0V, hsource, hsubW, hψeq, -, -, -, hψ, hψsymm, hψF⟩ :=
+    exists_parametric_morse_chart_of_contDiffOn hW hF hcrit hH hn
+  obtain ⟨r, hr, hrV⟩ := Metric.isOpen_iff.mp hV 0 h0V
+  have hsub : U₀ ×ˢ Metric.ball (0 : E) r ⊆ ψ.source := hsource ▸ prod_mono le_rfl hrV
+  let Θ := PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψ hψsymm
+  have hΘ := PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv ψ hψ hψsymm
+  have hΘψ : (Θ : P × E → P × E) = ψ :=
+    (congrArg (fun e : PartialEquiv (P × E) (P × E) ↦ (e : P × E → P × E)) hΘ).trans
+      ψ.coe_toPartialEquiv
+  refine ⟨U₀, r, Θ.restrOpen (U₀ ×ˢ Metric.ball 0 r) (hU₀.prod Metric.isOpen_ball), hU₀, hbU₀,
+    hr, ?_, (prod_mono le_rfl hrV).trans hsubW, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
+  · rw [PartialDiffeomorph.restrOpen_source, congrArg PartialEquiv.source hΘ]
+    exact inter_eq_right.mpr hsub
+  · rw [PartialDiffeomorph.coe_restrOpen, hΘψ, hψeq z (hsub hz)]
+  · have h := hψF z (hsub hz)
+    rw [hψeq z (hsub hz)] at h
+    exact h
+
 /-- **The parametric Morse lemma along the whole zero section.** Let `F (b, v)` be `C^{n+2}`, with
 `1 ≤ n ≤ ∞`, on an open set `W` containing the zero section over an open set `U` of the base,
 with critical zero section and invertible vertical Hessian `H_b` at every `(b, 0)`, `b ∈ U`.
@@ -79,33 +117,11 @@ theorem exists_parametricMorseCoord_chart (hW : IsOpen W) (hF : ContDiffOn ℝ (
         fderiv ℝ (fderiv ℝ (fun v ↦ F (z.1, v))) 0 (ψ z).2 (ψ z).2 := by
   set Φ : P × E → P × E := fun z ↦ (z.1, parametricMorseCoord F z)
     with hΦdef
-  -- Near each point `(b, 0)` of the zero section over `U`, the local parametric Morse lemma gives
-  -- a chart which is `Φ` on its source; restrict it to a product of an open set with a ball.
-  have hloc : ∀ b ∈ U, ∃ (U₀ : Set P) (r : ℝ)
-      (Θ : PartialDiffeomorph 𝓘(ℝ, P × E) 𝓘(ℝ, P × E) (P × E) (P × E) n),
-      IsOpen U₀ ∧ b ∈ U₀ ∧ 0 < r ∧ Θ.source = U₀ ×ˢ Metric.ball 0 r ∧
-      U₀ ×ˢ Metric.ball 0 r ⊆ W ∧ (∀ z ∈ U₀ ×ˢ Metric.ball 0 r, Θ z = Φ z) ∧
-      ∀ z ∈ U₀ ×ˢ Metric.ball 0 r, F z = F (z.1, 0) + (2 : ℝ)⁻¹ *
-        fderiv ℝ (fderiv ℝ (fun v ↦ F (z.1, v))) 0 (Φ z).2 (Φ z).2 := by
-    intro b hb
-    obtain ⟨ψ, U₀, V, hU₀, hV, hbU₀, h0V, hsource, hsubW, hψeq, -, -, -, hψ, hψsymm, hψF⟩ :=
-      exists_parametric_morse_chart_of_contDiffOn (hW.mem_nhds (hUW b hb)) hF
-        (Filter.mem_of_superset (hU.mem_nhds hb) hcrit) (hH b hb) hn
-    obtain ⟨r, hr, hrV⟩ := Metric.isOpen_iff.mp hV 0 h0V
-    have hsub : U₀ ×ˢ Metric.ball (0 : E) r ⊆ ψ.source := hsource ▸ prod_mono le_rfl hrV
-    let Θ := PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψ hψsymm
-    have hΘ := PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv ψ hψ hψsymm
-    have hΘψ : (Θ : P × E → P × E) = ψ :=
-      (congrArg (fun e : PartialEquiv (P × E) (P × E) ↦ (e : P × E → P × E)) hΘ).trans
-        ψ.coe_toPartialEquiv
-    refine ⟨U₀, r, Θ.restrOpen (U₀ ×ˢ Metric.ball 0 r) (hU₀.prod Metric.isOpen_ball), hU₀, hbU₀,
-      hr, ?_, (prod_mono le_rfl hrV).trans hsubW, fun z hz ↦ ?_, fun z hz ↦ ?_⟩
-    · rw [PartialDiffeomorph.restrOpen_source, congrArg PartialEquiv.source hΘ]
-      exact inter_eq_right.mpr hsub
-    · rw [PartialDiffeomorph.coe_restrOpen, hΘψ, hψeq z (hsub hz)]
-    · have h := hψF z (hsub hz)
-      rw [hψeq z (hsub hz)] at h
-      exact h
+  -- Near each point `(b, 0)` of the zero section over `U`, the canonical map `Φ` is a partial
+  -- diffeomorphism on a product of an open set with a ball.
+  have hloc := fun b (hb : b ∈ U) ↦
+    exists_parametricMorseCoord_partialDiffeomorph_prod_ball (hW.mem_nhds (hUW b hb)) hF
+      (Filter.mem_of_superset (hU.mem_nhds hb) hcrit) (hH b hb) hn
   have : Nonempty (PartialDiffeomorph 𝓘(ℝ, P × E) 𝓘(ℝ, P × E) (P × E) (P × E) n) :=
     ⟨(Diffeomorph.refl 𝓘(ℝ, P × E) (P × E) n).toPartialDiffeomorph⟩
   choose! U₀ r Θ hU₀ hbU₀ hr hΘsource hsubW hΘeq hnf using hloc
