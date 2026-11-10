@@ -443,7 +443,7 @@ theorem le_entropicTransportObjective (hε : 0 < ε) (hQ : Q ∈ transportPolyto
       simp only [zero_mul, mul_zero, zero_sub, zero_add, sub_self]
       nlinarith
     · have hab : 0 < a i * b j := mul_pos (hpos.trans_le (hrow i j)) (hpos.trans_le (hcol i j))
-      have h := mul_log_sub_mul_log_ge _ _ (mul_pos hab (exp_pos t)) hpos.le
+      have h := mul_log_sub_mul_log_ge (mul_pos hab (exp_pos t)) hpos.le
       rw [log_mul hab.ne' (exp_pos t).ne', log_exp] at h
       rw [vecMulVec_apply]
       nlinarith [mul_le_mul_of_nonneg_left h hε.le]
@@ -631,10 +631,10 @@ private theorem entropicTransportValue_sub_sub_le {f : ι → ℝ} {g : κ → �
   -- The marginal terms, by the supporting line of `u ↦ u * log u` at `a i` and at `b j`.
   have hrow : ∑ i, (a i * log (a i) + (a' i - a i) * (log (a i) + 1)) ≤
       ∑ i, a' i * log (a' i) :=
-    Finset.sum_le_sum fun i _ ↦ by linarith [mul_log_sub_mul_log_ge _ _ (ha i) (ha' i)]
+    Finset.sum_le_sum fun i _ ↦ by linarith [mul_log_sub_mul_log_ge (ha i) (ha' i)]
   have hcol : ∑ j, (b j * log (b j) + (b' j - b j) * (log (b j) + 1)) ≤
       ∑ j, b' j * log (b' j) :=
-    Finset.sum_le_sum fun j _ ↦ by linarith [mul_log_sub_mul_log_ge _ _ (hb j) (hb' j)]
+    Finset.sum_le_sum fun j _ ↦ by linarith [mul_log_sub_mul_log_ge (hb j) (hb' j)]
   simp only [Finset.sum_add_distrib] at hrow hcol
   -- The first-order term: `C + ε * log P` is a row term plus a column term on the support.
   have hlin := sum_sum_mul_add_mul_log_add_eq hε.ne' ha hb hPfg hD
