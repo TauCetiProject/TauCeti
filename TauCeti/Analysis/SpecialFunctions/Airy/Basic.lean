@@ -55,28 +55,26 @@ theorem airyBi_def (z : ℂ) :
       (3 : ℂ) ^ (-1 / 6 : ℂ) * regularizedHGFun 0 {(2 / 3 : ℂ)} (z ^ 3 / 9) +
         (3 : ℂ) ^ (-5 / 6 : ℂ) * z * regularizedHGFun 0 {(4 / 3 : ℂ)} (z ^ 3 / 9) := (rfl)
 
+@[fun_prop]
+private theorem differentiable_airy_hypergeometric (b : ℂ) :
+    Differentiable ℂ (fun z : ℂ => regularizedHGFun 0 {b} (z ^ 3 / 9)) := by
+  intro z
+  exact (analyticAt_regularizedHGFun_zero _).differentiableAt.comp z (by fun_prop)
+
 /-- `Ai` is entire. -/
 @[fun_prop]
 theorem differentiable_airyAi : Differentiable ℂ airyAi := by
-  intro z
-  unfold airyAi
-  have h (b : ℂ) : DifferentiableAt ℂ
-      (fun z : ℂ => regularizedHGFun 0 {b} (z ^ 3 / 9)) z :=
-    (analyticAt_regularizedHGFun_zero _).differentiableAt.comp z (by fun_prop)
+  rw [funext airyAi_def]
   fun_prop
 
 /-- `Bi` is entire. -/
 @[fun_prop]
 theorem differentiable_airyBi : Differentiable ℂ airyBi := by
-  intro z
-  unfold airyBi
-  have h (b : ℂ) : DifferentiableAt ℂ
-      (fun z : ℂ => regularizedHGFun 0 {b} (z ^ 3 / 9)) z :=
-    (analyticAt_regularizedHGFun_zero _).differentiableAt.comp z (by fun_prop)
+  rw [funext airyBi_def]
   fun_prop
 
 /-- The everywhere convergent Gamma-denominator Maclaurin series of `Ai`. -/
-theorem hasSum_airyAi (z : ℂ) :
+theorem hasSum_airyAi_gamma (z : ℂ) :
     HasSum (fun n : ℕ =>
       (3 : ℂ) ^ (-2 / 3 : ℂ) * ((z ^ 3 / 9) ^ n / (n ! * Gamma (2 / 3 + n))) -
       (3 : ℂ) ^ (-4 / 3 : ℂ) * z *
@@ -92,7 +90,7 @@ theorem hasSum_airyAi (z : ℂ) :
   · rfl
 
 /-- The everywhere convergent Gamma-denominator Maclaurin series of `Bi`. -/
-theorem hasSum_airyBi (z : ℂ) :
+theorem hasSum_airyBi_gamma (z : ℂ) :
     HasSum (fun n : ℕ =>
       (3 : ℂ) ^ (-1 / 6 : ℂ) * ((z ^ 3 / 9) ^ n / (n ! * Gamma (2 / 3 + n))) +
       (3 : ℂ) ^ (-5 / 6 : ℂ) * z *
@@ -124,42 +122,36 @@ private theorem hasDerivAt_airy_hypergeometric_zero (b : ℂ) :
   simpa [Function.comp_def] using
     h.comp 0 (((hasDerivAt_id' (0 : ℂ)).pow 3).div_const 9)
 
+private theorem airy_derivative_coefficient (a : ℂ) :
+    (3 : ℂ) ^ a / Gamma (4 / 3) = (3 : ℂ) ^ (a + 1) / Gamma (1 / 3) := by
+  have hshift : (4 / 3 : ℂ) = 1 / 3 + 1 := by norm_num
+  have hG : Gamma (4 / 3 : ℂ) = Gamma (1 / 3 : ℂ) / 3 := by
+    rw [hshift, Gamma_add_one _ (by norm_num)]
+    ring
+  rw [hG, cpow_add _ _ (by norm_num), cpow_one]
+  ring
+
 /-- DLMF 9.2.4: the first derivative of `Ai` at the origin. -/
 @[simp]
 theorem deriv_airyAi_zero : deriv airyAi 0 = -(3 : ℂ) ^ (-1 / 3 : ℂ) / Gamma (1 / 3) := by
   have h := ((hasDerivAt_airy_hypergeometric_zero (2 / 3)).const_mul
     ((3 : ℂ) ^ (-2 / 3 : ℂ))).sub
-    (((hasDerivAt_id (0 : ℂ)).const_mul ((3 : ℂ) ^ (-4 / 3 : ℂ))).mul
+    (((hasDerivAt_id' (0 : ℂ)).const_mul ((3 : ℂ) ^ (-4 / 3 : ℂ))).mul
       (hasDerivAt_airy_hypergeometric_zero (4 / 3)))
-  have hp : (3 : ℂ) ^ (-1 / 3 : ℂ) = (3 : ℂ) ^ (-4 / 3 : ℂ) * 3 := by
-    calc
-      _ = (3 : ℂ) ^ ((-4 / 3 : ℂ) + 1) := by norm_num
-      _ = _ := by rw [cpow_add _ _ (by norm_num), cpow_one]
-  have hd : deriv airyAi 0 = -(3 : ℂ) ^ (-4 / 3 : ℂ) / Gamma (4 / 3) := by
-    unfold airyAi
-    simpa [Pi.sub_def, Pi.mul_def, div_eq_mul_inv] using h.deriv
-  have hG : Gamma (4 / 3 : ℂ) = Gamma (1 / 3 : ℂ) / 3 := by
-    convert Gamma_add_one (1 / 3 : ℂ) (by norm_num) using 1 <;> congr 1 <;> ring
-  rw [hd, hG, hp]
-  ring
+  rw [Pi.sub_def, Pi.mul_def] at h
+  rw [funext airyAi_def, h.deriv]
+  convert congrArg Neg.neg (airy_derivative_coefficient (-4 / 3)) using 1 <;>
+    norm_num [div_eq_mul_inv]
 
 /-- DLMF 9.2.6: the first derivative of `Bi` at the origin. -/
 @[simp]
 theorem deriv_airyBi_zero : deriv airyBi 0 = (3 : ℂ) ^ (1 / 6 : ℂ) / Gamma (1 / 3) := by
   have h := ((hasDerivAt_airy_hypergeometric_zero (2 / 3)).const_mul
     ((3 : ℂ) ^ (-1 / 6 : ℂ))).add
-    (((hasDerivAt_id (0 : ℂ)).const_mul ((3 : ℂ) ^ (-5 / 6 : ℂ))).mul
+    (((hasDerivAt_id' (0 : ℂ)).const_mul ((3 : ℂ) ^ (-5 / 6 : ℂ))).mul
       (hasDerivAt_airy_hypergeometric_zero (4 / 3)))
-  have hp : (3 : ℂ) ^ (1 / 6 : ℂ) = (3 : ℂ) ^ (-5 / 6 : ℂ) * 3 := by
-    calc
-      _ = (3 : ℂ) ^ ((-5 / 6 : ℂ) + 1) := by norm_num
-      _ = _ := by rw [cpow_add _ _ (by norm_num), cpow_one]
-  have hd : deriv airyBi 0 = (3 : ℂ) ^ (-5 / 6 : ℂ) / Gamma (4 / 3) := by
-    unfold airyBi
-    simpa [Pi.add_def, Pi.mul_def, div_eq_mul_inv] using h.deriv
-  have hG : Gamma (4 / 3 : ℂ) = Gamma (1 / 3 : ℂ) / 3 := by
-    convert Gamma_add_one (1 / 3 : ℂ) (by norm_num) using 1 <;> congr 1 <;> ring
-  rw [hd, hG, hp]
-  ring
+  rw [Pi.add_def, Pi.mul_def] at h
+  rw [funext airyBi_def, h.deriv]
+  convert airy_derivative_coefficient (-5 / 6) using 1 <;> norm_num [div_eq_mul_inv]
 
 end TauCeti
