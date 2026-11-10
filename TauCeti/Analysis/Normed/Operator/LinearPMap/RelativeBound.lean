@@ -100,8 +100,8 @@ theorem sub (hV : V.IsRelativelyBounded A a b) (hW : W.IsRelativelyBounded A a' 
   sub_eq_add_neg V W ▸ hV.add hW.neg
 
 /-- A scalar multiple `c • V` is relatively bounded with the constants scaled by `‖c‖`. -/
-theorem smul {M : Type*} [SeminormedRing M] [Module M G] [IsBoundedSMul M G] [SMulCommClass S M G]
-    (h : V.IsRelativelyBounded A a b) (c : M) :
+theorem smul {M : Type*} [SeminormedRing M] [DistribMulAction M G] [IsBoundedSMul M G]
+    [SMulCommClass S M G] (h : V.IsRelativelyBounded A a b) (c : M) :
     (c • V).IsRelativelyBounded A (‖c‖ * a) (‖c‖ * b) where
   domain_le := h.domain_le
   norm_apply_le x := by
