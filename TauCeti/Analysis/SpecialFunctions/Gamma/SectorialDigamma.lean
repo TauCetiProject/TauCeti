@@ -234,7 +234,7 @@ private theorem tendsto_sum_Icc_gaussSeries {s : ℂ} (hs : s ∈ slitPlane) :
   have hsum : ∑' n : ℕ, (1 / ((n : ℂ) + 1) - 1 / (s + n)) =
       digamma s + Real.eulerMascheroniConstant := by
     linear_combination -(Complex.digamma_eq_gaussSeries hreg)
-  have ht := (Complex.summable_gaussSeries hreg).hasSum.tendsto_sum_nat.comp
+  have ht := (Complex.summable_gaussSeries s).hasSum.tendsto_sum_nat.comp
     (tendsto_add_atTop_nat 1)
   rw [hsum] at ht
   simpa only [Function.comp_def, Nat.range_succ_eq_Icc_zero] using ht

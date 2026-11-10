@@ -15,8 +15,8 @@ public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 /-!
 # Gauss' series for digamma
 
-At every complex point outside the nonpositive integers, the paired reciprocal series
-`∑' n, (1 / (n + 1) - 1 / (s + n))` converges absolutely and equals `digamma s + γ`.
+The paired reciprocal series `∑' n, (1 / (n + 1) - 1 / (s + n))` converges absolutely at
+every complex point, and outside the nonpositive integers it equals `digamma s + γ`.
 Pairing is essential: the two reciprocal series do not converge separately.
 
 The proof first identifies the sum on the positive real axis using the digamma recurrence
@@ -40,9 +40,8 @@ namespace Complex
 private noncomputable def gaussTerm (s : ℂ) (n : ℕ) : ℂ :=
   1 / ((n : ℂ) + 1) - 1 / (s + n)
 
-private theorem gaussTerm_eq {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) (n : ℕ) :
+private theorem gaussTerm_eq {s : ℂ} {n : ℕ} (hsn : s + n ≠ 0) :
     gaussTerm s n = (s - 1) / (((n : ℂ) + 1) * (s + n)) := by
-  have hsn : s + (n : ℂ) ≠ 0 := by simpa only [ne_eq, add_eq_zero_iff_eq_neg] using hs n
   rw [gaussTerm, div_sub_div _ _ n.cast_add_one_ne_zero hsn]
   ring
 
@@ -56,8 +55,7 @@ private theorem nonpole_of_re_pos {s : ℂ} (hs : 0 < s.re) :
 private theorem norm_natCast_add_one (n : ℕ) : ‖(n : ℂ) + 1‖ = (n : ℝ) + 1 := by
   simpa only [Nat.cast_add, Nat.cast_one] using Complex.norm_natCast (n + 1)
 
-private theorem summable_gaussTerm {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) :
-    Summable (gaussTerm s) := by
+private theorem summable_gaussTerm (s : ℂ) : Summable (gaussTerm s) := by
   have hu : Summable (fun n : ℕ ↦ (2 * ‖s - 1‖) / (n : ℝ) ^ 2) := by
     exact ((Real.summable_one_div_nat_pow.mpr (by norm_num : 1 < (2 : ℕ))).mul_left
       (2 * ‖s - 1‖)).congr (fun n ↦ by ring)
@@ -68,7 +66,8 @@ private theorem summable_gaussTerm {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)
   have hnorm : (n : ℝ) - ‖s‖ ≤ ‖s + n‖ := by
     simpa only [Complex.norm_natCast, add_comm] using norm_sub_le_norm_add (n : ℂ) s
   have hlow : (n : ℝ) / 2 ≤ ‖s + n‖ := by linarith [Nat.le_ceil ‖s‖]
-  rw [gaussTerm_eq hs, norm_div, norm_mul, norm_natCast_add_one]
+  have hsn : s + n ≠ 0 := norm_pos_iff.mp (by linarith)
+  rw [gaussTerm_eq hsn, norm_div, norm_mul, norm_natCast_add_one]
   have hden : 0 < ((n : ℝ) + 1) * ‖s + n‖ :=
     mul_pos (by linarith) (by linarith)
   apply (div_le_div_iff₀ hden (by positivity : 0 < (n : ℝ) ^ 2)).mpr
@@ -111,7 +110,8 @@ private theorem hasSumLocallyUniformlyOn_gaussTerm :
     have h := Complex.re_le_norm (s + n)
     simp only [Complex.add_re, Complex.natCast_re] at h
     linarith
-  rw [gaussTerm_eq (nonpole_of_re_pos hs0), norm_div, norm_mul, norm_natCast_add_one]
+  have hsn : s + n ≠ 0 := norm_pos_iff.mp (by linarith)
+  rw [gaussTerm_eq hsn, norm_div, norm_mul, norm_natCast_add_one]
   apply (div_le_div_iff₀ (by nlinarith : 0 < ((n : ℝ) + 1) * ‖s + n‖)
     (by positivity : 0 < (n : ℝ) ^ 2)).mpr
   have hprod : (n : ℝ) ^ 2 ≤ ((n : ℝ) + 1) * ‖s + n‖ := by
@@ -178,7 +178,7 @@ private theorem digamma_ofReal_eq_gaussSeries {x : ℝ} (hx : 0 < x) :
       rw [add_comm (x : ℂ) (N : ℂ)]
       ring
     · simp
-  have he := tendsto_nhds_unique (summable_gaussTerm hs).hasSum.tendsto_sum_nat ht
+  have he := tendsto_nhds_unique (summable_gaussTerm _).hasSum.tendsto_sum_nat ht
   dsimp [gaussSeries]
   rw [he]
   ring
@@ -218,13 +218,6 @@ private theorem digamma_eq_gaussSeries_of_re_pos {s : ℂ} (hs : 0 < s.re) :
     (convex_halfSpace_re_gt 0).isPreconnected (by norm_num : (1 : ℂ) ∈ {s : ℂ | 0 < s.re})
     hfreq) hs
 
-private theorem nonpole_add_nat {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) (N : ℕ) :
-    ∀ m : ℕ, s + N ≠ -(m : ℂ) := by
-  intro m hm
-  apply hs (m + N)
-  push_cast at hm ⊢
-  linear_combination hm
-
 private theorem tendsto_inv_add_nat (s : ℂ) :
     Tendsto (fun N : ℕ ↦ (s + N)⁻¹) atTop (𝓝 0) := by
   rw [tendsto_zero_iff_norm_tendsto_zero]
@@ -234,10 +227,9 @@ private theorem tendsto_inv_add_nat (s : ℂ) :
     (tendsto_atTop_add_const_right atTop (-‖s‖) tendsto_natCast_atTop_atTop)
   simpa only [add_comm, Complex.norm_natCast, sub_eq_add_neg] using norm_sub_le_norm_add (n : ℂ) s
 
-private theorem gaussSeries_add_one {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) :
+private theorem gaussSeries_add_one (s : ℂ) :
     gaussSeries (s + 1) = gaussSeries s + s⁻¹ := by
-  have hs1 : ∀ m : ℕ, s + 1 ≠ -(m : ℂ) := by simpa using nonpole_add_nat hs 1
-  have hsub := (summable_gaussTerm hs1).sub (summable_gaussTerm hs)
+  have hsub := (summable_gaussTerm (s + 1)).sub (summable_gaussTerm s)
   have hfinite (N : ℕ) : ∑ n ∈ Finset.range N, (gaussTerm (s + 1) n - gaussTerm s n) =
       s⁻¹ - (s + N)⁻¹ := by
     have heq (n : ℕ) : gaussTerm (s + 1) n - gaussTerm s n =
@@ -253,16 +245,16 @@ private theorem gaussSeries_add_one {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ
     simpa using tendsto_const_nhds.sub (tendsto_inv_add_nat s)
   have hsum : ∑' n, (gaussTerm (s + 1) n - gaussTerm s n) = s⁻¹ :=
     tendsto_nhds_unique hsub.hasSum.tendsto_sum_nat ht
-  rw [(summable_gaussTerm hs1).tsum_sub (summable_gaussTerm hs)] at hsum
+  rw [(summable_gaussTerm (s + 1)).tsum_sub (summable_gaussTerm s)] at hsum
   dsimp [gaussSeries]
   linear_combination hsum
 
-private theorem gaussSeries_add_nat {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) (N : ℕ) :
+private theorem gaussSeries_add_nat (s : ℂ) (N : ℕ) :
     gaussSeries (s + N) = gaussSeries s + ∑ n ∈ Finset.range N, (s + n)⁻¹ := by
   induction N with
   | zero => simp
   | succ N ih =>
-    rw [Nat.cast_add, Nat.cast_one, ← add_assoc, gaussSeries_add_one (nonpole_add_nat hs N),
+    rw [Nat.cast_add, Nat.cast_one, ← add_assoc, gaussSeries_add_one,
       ih, Finset.sum_range_succ]
     ring
 
@@ -275,13 +267,13 @@ private theorem digamma_eq_gaussSeries_regular {s : ℂ} (hs : ∀ m : ℕ, s �
     dsimp only [N]
     linarith
   have h := digamma_eq_gaussSeries_of_re_pos hpos
-  rw [digamma_apply_add_nat hs N, gaussSeries_add_nat hs N] at h
+  rw [digamma_apply_add_nat hs N, gaussSeries_add_nat s N] at h
   exact add_right_cancel h
 
 /-- The paired summands in Gauss' digamma series form an absolutely convergent complex series
-at every regular point. -/
-theorem summable_gaussSeries {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) :
-    Summable (fun n : ℕ ↦ 1 / ((n : ℂ) + 1) - 1 / (s + n)) := summable_gaussTerm hs
+for every `s`. At a pole `s = -m`, the single term `1 / (s + m)` is `0` by convention. -/
+theorem summable_gaussSeries (s : ℂ) :
+    Summable (fun n : ℕ ↦ 1 / ((n : ℂ) + 1) - 1 / (s + n)) := summable_gaussTerm s
 
 /-- Gauss' paired reciprocal series equals complex digamma away from its poles. -/
 theorem digamma_eq_gaussSeries {s : ℂ} (hs : ∀ m : ℕ, s ≠ -(m : ℂ)) :
