@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Convex.Join
 public import Mathlib.Analysis.Convex.Topology
 public import Mathlib.Topology.Sets.Compacts
 public import TauCeti.Analysis.Convex.Join
