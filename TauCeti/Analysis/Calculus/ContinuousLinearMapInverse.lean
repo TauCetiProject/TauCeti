@@ -18,7 +18,9 @@ inverses in a general normed algebra. The first is a perturbation criterion: a m
 continuous linear equivalence `L` by less than `‖L⁻¹‖⁻¹` in operator norm is again invertible, by a
 Neumann series. The second packages the derivative of a differentiable inverse family of continuous
 linear maps at an invertible base point, including its action on a varying vector; that is the
-analytic input for differentiating a vector-field pullback along a parametric family. The third part
+analytic input for differentiating a vector-field pullback along a parametric family. It also
+treats families over a normed space, smooth over a subfield of the field of linearity, such as the
+real-smooth families of complex-linear maps of symbol calculus. The third part
 works in an arbitrary normed algebra: it shows that the ring inverse of a `C^n` family of units is
 `C^n`, and computes the velocity `Z * C - C * Z` of a family that intertwines a curve through `1`
 with the constant `C`; the latter involves no inversion.
@@ -39,6 +41,10 @@ with the constant `C`; the latter involves no inversion.
 * `HasDerivAt.clm_inverse_of_completeSpace`: the Banach-space specialization for an inverse family.
 * `HasDerivAt.clm_inverse_apply_of_completeSpace`: the Banach-space specialization acting on a
   vector curve.
+* `ContDiffAt.clm_inverse`: the pointwise inverse of a `C^n` family of continuous linear maps is
+  `C^n` at an invertible base point, with smoothness over a subfield of the field of linearity.
+* `fderiv_clm_inverse_apply`: the Fréchet derivative `(a⁻¹)' v = -(a⁻¹ ∘ a' v ∘ a⁻¹)` of the
+  pointwise inverse of a family over a normed space.
 * `ContDiffAt.inverse` and `ContDiff.inverse`: the ring inverse of a `C^n` family of units
   is `C^n`.
 * `DifferentiableAt.deriv_eq_mul_sub_mul_of_mul_eq_mul`: a family `K` with `K t * P t = P t * C`
@@ -198,6 +204,46 @@ theorem HasDerivAt.clm_inverse_apply_of_completeSpace [CompleteSpace E]
       ((A t₀).inverse w' - (A t₀).inverse (A' ((A t₀).inverse (w t₀)))) t₀ := by
   exact hA.clm_inverse_apply hA0Inv
     (DifferentiableAt.clm_inverse_of_completeSpace hA.differentiableAt hA0Inv) hw
+
+section Family
+
+variable {𝕜' X : Type*} [NontriviallyNormedField 𝕜'] [NormedAlgebra 𝕜 𝕜'] [NormedSpace 𝕜' E]
+  [IsScalarTower 𝕜 𝕜' E] [NormedSpace 𝕜' F] [IsScalarTower 𝕜 𝕜' F] [NormedAddCommGroup X]
+  [NormedSpace 𝕜 X] [CompleteSpace E] {n : WithTop ℕ∞} {a : X → E →L[𝕜'] F} {p : X}
+
+/-- The pointwise inverse of a `C^n` family of `𝕜'`-linear maps, with `C^n` taken over a subfield
+`𝕜`, is `C^n` at a point where the family is invertible. -/
+theorem ContDiffAt.clm_inverse (ha : ContDiffAt 𝕜 n a p) (hp : (a p).IsInvertible) :
+    ContDiffAt 𝕜 n (fun q ↦ (a q).inverse) p :=
+  ((hp.contDiffAt_map_inverse (𝕜 := 𝕜')).restrict_scalars 𝕜).comp p ha
+
+/-- The derivative of the pointwise inverse of a family of `𝕜'`-linear maps, differentiable over a
+subfield `𝕜`, at a point where it is invertible: `(a⁻¹)' v = -(a⁻¹ ∘ a' v ∘ a⁻¹)`. -/
+theorem fderiv_clm_inverse_apply (ha : DifferentiableAt 𝕜 a p) (hp : (a p).IsInvertible)
+    (v : X) :
+    fderiv 𝕜 (fun q ↦ (a q).inverse) p v =
+      -((a p).inverse ∘L (fderiv 𝕜 a p v ∘L (a p).inverse)) := by
+  have hI : DifferentiableAt 𝕜 (fun q ↦ (a q).inverse) p :=
+    ((hp.contDiffAt_map_inverse (𝕜 := 𝕜') (n := 1)).restrict_scalars 𝕜).differentiableAt
+      one_ne_zero |>.comp p ha
+  -- Near `p`, `a⁻¹ ∘ a` is the constant identity, so the product rule for it vanishes.
+  have hloc : (fun q ↦ (a q).inverse ∘L a q) =ᶠ[𝓝 p] fun _ ↦ ContinuousLinearMap.id 𝕜' E := by
+    filter_upwards [ha.continuousAt.eventually hp.eventually_nhds] with q hq
+    exact hq.inverse_comp_self
+  have h := ((ContinuousLinearMap.compL 𝕜' E F E).bilinearRestrictScalars 𝕜).fderiv_of_bilinear
+    hI ha
+  simp only [ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
+    ContinuousLinearMap.compL_apply] at h
+  rw [hloc.fderiv_eq, fderiv_const_apply] at h
+  -- Compose `0 = a⁻¹ ∘ a' v + (a⁻¹)' v ∘ a` on the right with `a⁻¹`.
+  have hv := congrArg (fun L ↦ L v ∘L (a p).inverse) h
+  simp only [zero_apply, ContinuousLinearMap.zero_comp, add_apply, ContinuousLinearMap.add_comp,
+    ContinuousLinearMap.precompR_apply, ContinuousLinearMap.precompL_apply,
+    ContinuousLinearMap.bilinearRestrictScalars_apply_apply, ContinuousLinearMap.compL_apply,
+    ContinuousLinearMap.comp_assoc, hp.self_comp_inverse, ContinuousLinearMap.comp_id] at hv
+  exact eq_neg_of_add_eq_zero_right hv.symm
+
+end Family
 
 section RingInverse
 

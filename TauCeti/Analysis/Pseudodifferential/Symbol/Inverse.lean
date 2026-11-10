@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Pseudodifferential.Frequency.Cutoff
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 
 /-!
 # Inverses of symbols
@@ -33,7 +34,7 @@ homogeneous principal symbol is `TauCeti.HomogeneousSymbol.inverse`.
   `t ≥ 1` such that `a` is invertible at all frequencies `‖ξ‖ ≥ t`, with
   `‖a(x, ξ)⁻¹‖ ≤ C_K ⟨ξ⟩ ^ (-m)` there for the positions `x` of each compact set `K`, the
   symbol `χ(ξ / t) a(x, ξ)⁻¹` of order `-m`. It equals `a⁻¹` at the frequencies `‖ξ‖ ≥ 2 t`
-  (`TauCeti.Symbol.coefficient_cutoffInverse_of_two_mul_le`).
+  (`TauCeti.Symbol.coefficient_cutoffInverse_of_two_mul_le_norm`).
 * `TauCeti.Symbol.isSmoothing_cutoffInverse_comp_sub` and
   `TauCeti.Symbol.isSmoothing_comp_cutoffInverse_sub`: the cut-off inverse is a two-sided inverse
   of `a` for `TauCeti.Symbol.comp` modulo smoothing symbols.
@@ -70,10 +71,6 @@ variable {n : ℕ} {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [Nor
 
 /-! ### The Leibniz estimate for a triple product -/
 
-/-- The constant of the Leibniz estimate `norm_mixedDeriv_comp_le`. -/
-private def compBound (C D : List (Fin n) → List (Fin n) → ℝ) (α β : List (Fin n)) : ℝ :=
-  (β.sublists'.revzip.map fun t => (α.sublists'.revzip.map fun s => C s.1 t.1 * D s.2 t.2).sum).sum
-
 /-- The Leibniz estimate for the triple product `g ∘ b ∘ g`, where `g` has the estimates of
 order `-m` up to the derivatives along `α` and `β`, and `b` those of order `μ`. -/
 private theorem norm_mixedDeriv_comp_comp_le
@@ -85,7 +82,8 @@ private theorem norm_mixedDeriv_comp_comp_le
       ‖mixedDeriv s t g x ξ‖ ≤ G s t * (1 + ‖ξ‖ ^ 2) ^ ((-m - t.length) / 2))
     (hB : ∀ s t, ‖mixedDeriv s t b x ξ‖ ≤ B s t * (1 + ‖ξ‖ ^ 2) ^ ((μ - t.length) / 2)) :
     ‖mixedDeriv α β (fun q ↦ g q ∘L (b q ∘L g q)) x ξ‖ ≤
-      compBound G (compBound B G) α β * (1 + ‖ξ‖ ^ 2) ^ ((-m + (μ + -m) - β.length) / 2) := by
+      Symbol.compBound G (Symbol.compBound B G) α β *
+        (1 + ‖ξ‖ ^ 2) ^ ((-m + (μ + -m) - β.length) / 2) := by
   have hbg : ContDiff ℝ ∞ fun q ↦ b q ∘L g q :=
     (((ContinuousLinearMap.compL ℂ W V W).bilinearRestrictScalars ℝ).isBoundedBilinearMap.contDiff
       (n := ∞)).comp (hb.prodMk hg)
@@ -99,37 +97,6 @@ section Inverse
 
 variable [CompleteSpace V] {a : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W}
 
-/-- At a point where the smooth family `a` is invertible, its pointwise inverse is smooth. -/
-private theorem contDiffAt_inverse (ha : ContDiff ℝ ∞ a)
-    {p : CoordinateSpace n × CoordinateSpace n} (hp : (a p).IsInvertible) :
-    ContDiffAt ℝ ∞ (fun q ↦ (a q).inverse) p :=
-  ((hp.contDiffAt_map_inverse (𝕜 := ℂ)).restrict_scalars ℝ).comp p ha.contDiffAt
-
-/-- The derivative of the pointwise inverse is `(a⁻¹)' v = -(a⁻¹ ∘ a' v ∘ a⁻¹)`. -/
-private theorem fderiv_inverse_apply (ha : ContDiff ℝ ∞ a)
-    {p : CoordinateSpace n × CoordinateSpace n} (hp : (a p).IsInvertible)
-    (v : CoordinateSpace n × CoordinateSpace n) :
-    fderiv ℝ (fun q ↦ (a q).inverse) p v =
-      -((a p).inverse ∘L (fderiv ℝ a p v ∘L (a p).inverse)) := by
-  have hI : DifferentiableAt ℝ (fun q ↦ (a q).inverse) p :=
-    (contDiffAt_inverse ha hp).differentiableAt (by simp)
-  -- Near `p`, `a⁻¹ ∘ a` is the constant identity, so the product rule for it vanishes.
-  have hloc : (fun q ↦ (a q).inverse ∘L a q) =ᶠ[𝓝 p] fun _ ↦ ContinuousLinearMap.id ℂ V := by
-    filter_upwards [ha.continuous.continuousAt.eventually hp.eventually_nhds] with q hq
-    exact hq.inverse_comp_self
-  have h := ((ContinuousLinearMap.compL ℂ V W V).bilinearRestrictScalars ℝ).fderiv_of_bilinear
-    hI (ha.differentiable (by simp) p)
-  simp only [ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
-    ContinuousLinearMap.compL_apply] at h
-  rw [hloc.fderiv_eq, fderiv_const_apply] at h
-  -- Compose `0 = a⁻¹ ∘ a' v + (a⁻¹)' v ∘ a` on the right with `a⁻¹`.
-  have hv := congrArg (fun L ↦ L v ∘L (a p).inverse) h
-  simp only [zero_apply, ContinuousLinearMap.zero_comp, add_apply, ContinuousLinearMap.add_comp,
-    ContinuousLinearMap.precompR_apply, ContinuousLinearMap.precompL_apply,
-    ContinuousLinearMap.bilinearRestrictScalars_apply_apply, ContinuousLinearMap.compL_apply,
-    ContinuousLinearMap.comp_assoc, hp.self_comp_inverse, ContinuousLinearMap.comp_id] at hv
-  exact eq_neg_of_add_eq_zero_right hv.symm
-
 /-- Near a point where `a` is invertible, its pointwise inverse agrees with a globally smooth
 function `g`, whose derivatives near that point satisfy `g' v = -(g ∘ a' v ∘ g)`. -/
 private theorem exists_contDiff_eventuallyEq_inverse (ha : ContDiff ℝ ∞ a)
@@ -141,10 +108,10 @@ private theorem exists_contDiff_eventuallyEq_inverse (ha : ContDiff ℝ ∞ a)
     ha.continuous.continuousAt.preimage_mem_nhds
       (ContinuousLinearMap.isOpen_setOfPred_isInvertible.mem_nhds hp)
   obtain ⟨g, hg, -, hgp⟩ := ContDiffOn.exists_contDiff_eventuallyEq_of_finiteDimensional (n := ⊤)
-    (fun q hq ↦ (contDiffAt_inverse ha hq).contDiffWithinAt) hU
+    (fun q hq ↦ (ha.contDiffAt.clm_inverse hq).contDiffWithinAt) hU
   refine ⟨g, hg, hgp, fun v ↦ ?_⟩
   filter_upwards [hgp.eventually_nhds, hU] with q (hq : g =ᶠ[𝓝 q] _) hqU
-  rw [hq.fderiv_eq, fderiv_inverse_apply ha hqU, hq.eq_of_nhds]
+  rw [hq.fderiv_eq, fderiv_clm_inverse_apply (ha.differentiable (by simp) q) hqU, hq.eq_of_nhds]
 
 omit [CompleteSpace V] in
 /-- One step of the induction behind `exists_norm_mixedDeriv_inverse_le`: if `g` agrees with
@@ -161,7 +128,8 @@ private theorem norm_mixedDeriv_fderiv_le (ha : ContDiff ℝ ∞ a) {x ξ : Coor
     (hB : ∀ s t, ‖mixedDeriv s t (fun q ↦ fderiv ℝ a q v) x ξ‖ ≤
       B s t * (1 + ‖ξ‖ ^ 2) ^ ((μ - t.length) / 2)) :
     ‖mixedDeriv α β (fun q ↦ fderiv ℝ g q v) x ξ‖ ≤
-      compBound G (compBound B G) α β * (1 + ‖ξ‖ ^ 2) ^ ((-m + (μ + -m) - β.length) / 2) := by
+      Symbol.compBound G (Symbol.compBound B G) α β *
+        (1 + ‖ξ‖ ^ 2) ^ ((-m + (μ + -m) - β.length) / 2) := by
   have hav : ContDiff ℝ ∞ fun q ↦ fderiv ℝ a q v :=
     (ha.fderiv_right (m := ∞) le_rfl).clm_apply contDiff_const
   rw [hgv.mixedDeriv_eq, ← Pi.neg_def, mixedDeriv_neg, norm_neg]
@@ -212,7 +180,7 @@ theorem exists_norm_mixedDeriv_inverse_le (ha : ContDiff ℝ ∞ a) {K : Set (Co
       · exact ⟨c [] [] (by simp), hc [] [] (by simp)⟩
       -- Peel off the last position derivative, `∂ₓ (a⁻¹) = -(a⁻¹ ∘ ∂ₓ a ∘ a⁻¹)`.
       choose B hB using fun s t : List (Fin n) ↦ hder (s ++ [j]) t
-      refine ⟨compBound G (compBound B G) α' [], fun x hx ξ hξ ↦ ?_⟩
+      refine ⟨Symbol.compBound G (Symbol.compBound B G) α' [], fun x hx ξ hξ ↦ ?_⟩
       obtain ⟨g, hg, hgp, hgv⟩ := exists_contDiff_eventuallyEq_inverse ha (hinv x hx ξ hξ)
       rw [List.concat_eq_append] at hαβ ⊢
       rw [← hgp.mixedDeriv_eq, ← mixedDeriv_fderiv_apply_fst hg]
@@ -223,7 +191,7 @@ theorem exists_norm_mixedDeriv_inverse_le (ha : ContDiff ℝ ∞ a) {K : Set (Co
       ring
     -- Peel off the last frequency derivative, `∂_ξ (a⁻¹) = -(a⁻¹ ∘ ∂_ξ a ∘ a⁻¹)`.
     choose B hB using fun s t : List (Fin n) ↦ hder s (t ++ [j])
-    refine ⟨compBound G (compBound B G) α β', fun x hx ξ hξ ↦ ?_⟩
+    refine ⟨Symbol.compBound G (Symbol.compBound B G) α β', fun x hx ξ hξ ↦ ?_⟩
     obtain ⟨g, hg, hgp, hgv⟩ := exists_contDiff_eventuallyEq_inverse ha (hinv x hx ξ hξ)
     rw [List.concat_eq_append] at hαβ ⊢
     rw [← hgp.mixedDeriv_eq, ← mixedDeriv_fderiv_apply_snd hg]
@@ -251,16 +219,14 @@ private theorem exists_norm_mixedDeriv_cutoff_smul_inverse_le (ha : ContDiff ℝ
         C * (1 + ‖ξ‖ ^ 2) ^ ((-m - β.length) / 2) := by
   have ht0 : 0 < t := one_pos.trans_le ht
   choose D hD using exists_norm_mixedDeriv_inverse_le ha hinv hbound hder α
-  choose B hB0 hB using fun i : ℕ ↦ χ.exists_norm_iteratedFDeriv_comp_inv_smul_le i
+  choose B hB0 hB using fun i : ℕ ↦
+    χ.exists_norm_iteratedFDeriv_comp_inv_smul_mul_rpow_weight_le i
   refine ⟨max (∑ i ∈ Finset.range (β.length + 1), (β.length.choose i : ℝ) * B i *
     ∑ w : Fin (β.length - i) → Fin n, D (List.ofFn w)) 0, le_max_right _ _, fun x hx ξ ↦ ?_⟩
   rcases lt_or_ge ‖ξ‖ t with hξ | hξ
   · -- Below the radius `t` the cutoff vanishes near `ξ`.
-    have hzero : (fun p ↦ χ (t⁻¹ • p.2) • (a p).inverse) =ᶠ[𝓝 (x, ξ)] 0 := by
-      filter_upwards [(isOpen_lt (continuous_norm.comp continuous_snd) continuous_const).mem_nhds
-        (show ‖(x, ξ).2‖ < t from hξ)] with q hq
-      simp [χ.apply_inv_smul_eq_zero ht0 (le_of_lt hq)]
-    rw [hzero.mixedDeriv_eq, mixedDeriv_zero, norm_zero]
+    rw [(χ.comp_inv_smul_snd_smul_eventuallyEq_zero (fun p ↦ (a p).inverse) ht0
+      (p := (x, ξ)) hξ).mixedDeriv_eq, mixedDeriv_zero, norm_zero]
     exact mul_nonneg (le_max_right _ _) (rpow_weight_pos ξ _).le
   -- Above it, replace `a⁻¹` by a globally smooth function with the same germ.
   obtain ⟨g, hg, hgp, -⟩ := exists_contDiff_eventuallyEq_inverse ha (hinv x hx ξ hξ)
@@ -272,16 +238,9 @@ private theorem exists_norm_mixedDeriv_cutoff_smul_inverse_le (ha : ContDiff ℝ
   have hψ : ContDiff ℝ ∞ fun η : CoordinateSpace n ↦ χ (t⁻¹ • η) :=
     χ.contDiff.comp (contDiff_const_smul _)
   refine (norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight (ψ := fun η ↦ χ (t⁻¹ • η))
-    (B := B) (m := -m) hψ hg (fun i ↦ ?_)
+    (B := B) (m := -m) hψ hg (fun i ↦ hB i t ht ξ)
     (fun w ↦ by rw [hgp.mixedDeriv_eq]; exact hD w x hx ξ hξ) β).trans
     (mul_le_mul_of_nonneg_right (le_max_left _ _) (rpow_weight_pos ξ _).le)
-  have hw := rpow_weight_pos ξ (i : ℝ)
-  calc ‖iteratedFDeriv ℝ i (fun η ↦ χ (t⁻¹ • η)) ξ‖ * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2)
-      ≤ B i * (1 + ‖ξ‖ ^ 2) ^ (-(i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) :=
-        mul_le_mul_of_nonneg_right (hB i t ht ξ) hw.le
-    _ = B i := by
-        rw [mul_assoc, ← Real.rpow_add (by positivity), neg_div, neg_add_cancel, Real.rpow_zero,
-          mul_one]
 
 end Inverse
 
@@ -297,7 +256,7 @@ variable [CompleteSpace V] (χ : FrequencyCutoff (CoordinateSpace n)) (a : Symbo
 /-- The **cut-off inverse** `χ(ξ / t) a(x, ξ)⁻¹` of a symbol `a` of order `m` which, for a radius
 `t ≥ 1`, is invertible at all frequencies `‖ξ‖ ≥ t`, with `‖a(x, ξ)⁻¹‖ ≤ C ⟨ξ⟩ ^ (-m)` there for
 `x` in each compact set: a symbol of order `-m`, equal to `a⁻¹` at the frequencies `‖ξ‖ ≥ 2 t`
-(`TauCeti.Symbol.coefficient_cutoffInverse_of_two_mul_le`). It inverts `a` modulo smoothing
+(`TauCeti.Symbol.coefficient_cutoffInverse_of_two_mul_le_norm`). It inverts `a` modulo smoothing
 symbols (`TauCeti.Symbol.isSmoothing_cutoffInverse_comp_sub`,
 `TauCeti.Symbol.isSmoothing_comp_cutoffInverse_sub`). -/
 def cutoffInverse : Symbol n W V (-m) where
@@ -305,12 +264,10 @@ def cutoffInverse : Symbol n W V (-m) where
   contDiff_coefficient := contDiff_iff_contDiffAt.2 fun p ↦ by
     rcases lt_or_ge ‖p.2‖ t with hp | hp
     · -- Below the radius `t` the cutoff vanishes near `p`.
-      refine contDiffAt_const (c := (0 : W →L[ℂ] V)).congr_of_eventuallyEq ?_
-      filter_upwards [(isOpen_lt (continuous_norm.comp continuous_snd) continuous_const).mem_nhds
-        hp] with q hq
-      simp [χ.apply_inv_smul_eq_zero (one_pos.trans_le ht) (le_of_lt hq)]
+      exact contDiffAt_const (c := (0 : W →L[ℂ] V)).congr_of_eventuallyEq
+        (χ.comp_inv_smul_snd_smul_eventuallyEq_zero _ (one_pos.trans_le ht) hp)
     · exact (χ.contDiff.comp (contDiff_const_smul _)).contDiffAt.comp p contDiffAt_snd |>.smul
-        (contDiffAt_inverse a.contDiff_coefficient (hinv p.1 p.2 hp))
+        (a.contDiff_coefficient.contDiffAt.clm_inverse (hinv p.1 p.2 hp))
   exists_bound K hK α β :=
     exists_norm_mixedDeriv_cutoff_smul_inverse_le a.contDiff_coefficient χ ht
       (fun x _ ξ hξ ↦ hinv x ξ hξ) (hbound K hK)
@@ -323,7 +280,7 @@ theorem coefficient_cutoffInverse (p : CoordinateSpace n × CoordinateSpace n) :
   (rfl)
 
 /-- At the frequencies `‖ξ‖ ≥ 2 t` the cut-off inverse is the inverse of `a`. -/
-theorem coefficient_cutoffInverse_of_two_mul_le {x ξ : CoordinateSpace n} (hξ : 2 * t ≤ ‖ξ‖) :
+theorem coefficient_cutoffInverse_of_two_mul_le_norm {x ξ : CoordinateSpace n} (hξ : 2 * t ≤ ‖ξ‖) :
     (a.cutoffInverse χ ht hinv hbound).coefficient (x, ξ) = (a.coefficient (x, ξ)).inverse := by
   simp [χ.apply_inv_smul_eq_one (one_pos.trans_le ht) hξ]
 
@@ -331,14 +288,14 @@ theorem coefficient_cutoffInverse_of_two_mul_le {x ξ : CoordinateSpace n} (hξ 
 theorem coefficient_cutoffInverse_comp_coefficient {x ξ : CoordinateSpace n} (hξ : 2 * t ≤ ‖ξ‖) :
     (a.cutoffInverse χ ht hinv hbound).coefficient (x, ξ) ∘L a.coefficient (x, ξ) =
       ContinuousLinearMap.id ℂ V := by
-  rw [coefficient_cutoffInverse_of_two_mul_le χ a ht hinv hbound hξ]
+  rw [coefficient_cutoffInverse_of_two_mul_le_norm χ a ht hinv hbound hξ]
   exact (hinv x ξ (by linarith)).inverse_comp_self
 
 /-- At the frequencies `‖ξ‖ ≥ 2 t` the cut-off inverse is a right inverse of `a`. -/
 theorem coefficient_comp_coefficient_cutoffInverse {x ξ : CoordinateSpace n} (hξ : 2 * t ≤ ‖ξ‖) :
     a.coefficient (x, ξ) ∘L (a.cutoffInverse χ ht hinv hbound).coefficient (x, ξ) =
       ContinuousLinearMap.id ℂ W := by
-  rw [coefficient_cutoffInverse_of_two_mul_le χ a ht hinv hbound hξ]
+  rw [coefficient_cutoffInverse_of_two_mul_le_norm χ a ht hinv hbound hξ]
   exact (hinv x ξ (by linarith)).self_comp_inverse
 
 /-- The cut-off inverse is a left inverse of `a` modulo smoothing symbols: `a⁻¹ ∘ a - 1` vanishes

@@ -106,7 +106,8 @@ theorem exists_norm_mixedDeriv_cutoff_smul_le (χ : FrequencyCutoff (CoordinateS
       ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • a.coefficient p) x ξ‖ ≤
         C * t ^ (m - m') * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by
   choose D hD0 hD using fun w => a.exists_bound K hK α w
-  choose B hB0 hB using fun i : ℕ => χ.exists_norm_iteratedFDeriv_comp_inv_smul_le i
+  choose B hB0 hB using fun i : ℕ =>
+    χ.exists_norm_iteratedFDeriv_comp_inv_smul_mul_rpow_weight_le i
   set k := β.length
   set C := ∑ i ∈ Finset.range (k + 1), (k.choose i : ℝ) * B i *
     ∑ w : Fin (k - i) → Fin n, D (List.ofFn w)
@@ -121,23 +122,14 @@ theorem exists_norm_mixedDeriv_cutoff_smul_le (χ : FrequencyCutoff (CoordinateS
     refine (norm_mixedDeriv_comp_snd_smul_le hχ a.contDiff_coefficient α β x ξ).trans
       (le_of_eq_of_le (Finset.sum_eq_zero fun i _ => ?_) (by positivity))
     rw [χ.iteratedFDeriv_comp_inv_smul_eq_zero i ht0 hξ, norm_zero, mul_zero, zero_mul]
-  -- `‖D^i χ(· / t) ξ‖ ≤ B i ⟨ξ⟩ ^ (-i)` is `‖D^i χ(· / t) ξ‖ ⟨ξ⟩ ^ i ≤ B i`
-  have hB' (i : ℕ) : ‖iteratedFDeriv ℝ i (fun η => χ (t⁻¹ • η)) ξ‖ *
-      (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) ≤ B i := by
-    calc ‖iteratedFDeriv ℝ i (fun η => χ (t⁻¹ • η)) ξ‖ * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2)
-        ≤ B i * (1 + ‖ξ‖ ^ 2) ^ (-(i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) := by
-          gcongr
-          exact hB i t ht ξ
-      _ = B i := by
-          rw [mul_assoc, ← Real.rpow_add (by positivity), neg_div, neg_add_cancel,
-            Real.rpow_zero, mul_one]
   have hweight : (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2) ≤
       t ^ (m - m') * (1 + ‖ξ‖ ^ 2) ^ ((m' - k) / 2) := by
     simpa only [sub_sub_sub_cancel_right] using
       rpow_weight_le_rpow_mul_rpow_weight ht0 (not_le.1 hξ).le (sub_le_sub_right hm' (k : ℝ))
   calc ‖mixedDeriv α β (fun p => χ (t⁻¹ • p.2) • a.coefficient p) x ξ‖
       ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2) :=
-        norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight hχ a.contDiff_coefficient hB'
+        norm_mixedDeriv_comp_snd_smul_le_mul_rpow_weight hχ a.contDiff_coefficient
+          (fun i => hB i t ht ξ)
           (fun w => hD w x hx ξ) β
     _ ≤ C * (t ^ (m - m') * (1 + ‖ξ‖ ^ 2) ^ ((m' - k) / 2)) :=
         mul_le_mul_of_nonneg_left hweight hC0
@@ -186,8 +178,7 @@ private theorem eventually_norm_mixedDeriv_cutoff_smul_le
   choose C hC0 hC using fun s s' : List (Fin n) =>
     (const (ContinuousLinearMap.id ℂ W) : Symbol n W W 0).exists_norm_mixedDeriv_cutoff_smul_le χ
       (isCompact_closedBall (0 : CoordinateSpace n) j) s s'
-  filter_upwards [eventually_ge_atTop 1, eventually_ge_atTop ((β.sublists'.revzip.map fun s' =>
-    (α.sublists'.revzip.map fun s => C s.1 s'.1 * M s.2 s'.2).sum).sum * 2 ^ j)]
+  filter_upwards [eventually_ge_atTop 1, eventually_ge_atTop (compBound C M α β * 2 ^ j)]
     with t ht1 htB τ x hx ξ
   have ht0 : 0 < t := one_pos.trans_le ht1
   have hcomp := norm_mixedDeriv_comp_le (m' := 1) (m := μ)
@@ -202,10 +193,8 @@ private theorem eventually_norm_mixedDeriv_cutoff_smul_le
       (χ (t⁻¹ • p.2) • (const (ContinuousLinearMap.id ℂ W) : Symbol n W W 0).coefficient p).comp
         ((a τ).coefficient p) :=
     funext fun p => by simp
-  have hsum : (β.sublists'.revzip.map fun s' => (α.sublists'.revzip.map fun s =>
-      t⁻¹ * C s.1 s'.1 * M s.2 s'.2).sum).sum = t⁻¹ * (β.sublists'.revzip.map fun s' =>
-        (α.sublists'.revzip.map fun s => C s.1 s'.1 * M s.2 s'.2).sum).sum := by
-    simp only [mul_assoc, List.sum_map_mul_left]
+  have hsum : compBound (fun s s' => t⁻¹ * C s s') M α β = t⁻¹ * compBound C M α β := by
+    simp only [compBound, mul_assoc, List.sum_map_mul_left]
   rw [hfun]
   refine hcomp.trans (le_of_eq_of_le (by rw [hsum, add_comm (1 : ℝ) μ]) ?_)
   gcongr

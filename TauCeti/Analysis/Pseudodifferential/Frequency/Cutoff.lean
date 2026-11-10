@@ -31,8 +31,9 @@ the symbol calculus needs:
   cutoffs, as well as `1 - χ`, has compact support;
 * the dilated cutoffs `ξ ↦ χ (t⁻¹ • ξ)`, `t ≥ 1`, which vanish for `‖ξ‖ ≤ t` and equal `1` for
   `‖ξ‖ ≥ 2 t`, satisfy the order-zero symbol estimates `‖D^k (χ (t⁻¹ • ·)) ξ‖ ≤ C ⟨ξ⟩^(-k)`
-  uniformly in `t` (`FrequencyCutoff.exists_norm_iteratedFDeriv_comp_inv_smul_le`); cutoffs at
-  growing radii are how asymptotic sums of symbols are built;
+  uniformly in `t` (`FrequencyCutoff.exists_norm_iteratedFDeriv_comp_inv_smul_le`, and
+  `FrequencyCutoff.exists_norm_iteratedFDeriv_comp_inv_smul_mul_rpow_weight_le` with the weight on
+  the left); cutoffs at growing radii are how asymptotic sums of symbols are built;
 * the pointwise product of two cutoffs is a cutoff, which is how the cut-off expansions of two
   classical symbols multiply.
 
@@ -241,6 +242,29 @@ theorem exists_norm_iteratedFDeriv_comp_inv_smul_le [ProperSpace E] (k : ℕ) :
       ≤ (3 ^ k * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2)) * B :=
         mul_le_mul hinv (hB _) (norm_nonneg _) (by positivity)
     _ = B * 3 ^ k * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) := by ring
+
+/-- The estimates of `FrequencyCutoff.exists_norm_iteratedFDeriv_comp_inv_smul_le` with the weight
+moved to the left: `‖D^k (χ (t⁻¹ • ·)) ξ‖ ⟨ξ⟩^k ≤ C`, with `C` independent of `t ≥ 1`. -/
+theorem exists_norm_iteratedFDeriv_comp_inv_smul_mul_rpow_weight_le [ProperSpace E] (k : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ t : ℝ, 1 ≤ t → ∀ ξ : E,
+      ‖iteratedFDeriv ℝ k (fun η => χ (t⁻¹ • η)) ξ‖ * (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2) ≤ C := by
+  obtain ⟨C, hC0, hC⟩ := χ.exists_norm_iteratedFDeriv_comp_inv_smul_le k
+  refine ⟨C, hC0, fun t ht ξ => ?_⟩
+  calc ‖iteratedFDeriv ℝ k (fun η => χ (t⁻¹ • η)) ξ‖ * (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2)
+      ≤ C * (1 + ‖ξ‖ ^ 2) ^ (-(k : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ ((k : ℝ) / 2) := by
+        gcongr
+        exact hC t ht ξ
+    _ = C := by
+        rw [mul_assoc, ← Real.rpow_add (by positivity), neg_div, neg_add_cancel, Real.rpow_zero,
+          mul_one]
+
+/-- A function `(x, ξ) ↦ χ (t⁻¹ • ξ) • f (x, ξ)` vanishes near every point with `‖ξ‖ < t`. -/
+theorem comp_inv_smul_snd_smul_eventuallyEq_zero {X F : Type*} [TopologicalSpace X] [Zero F]
+    [SMulWithZero ℝ F] (f : X × E → F) {t : ℝ} (ht : 0 < t) {p : X × E} (hp : ‖p.2‖ < t) :
+    (fun q => χ (t⁻¹ • q.2) • f q) =ᶠ[𝓝 p] 0 := by
+  filter_upwards [(isOpen_lt (continuous_norm.comp continuous_snd) continuous_const).mem_nhds hp]
+    with q hq
+  simp [χ.apply_inv_smul_eq_zero ht (le_of_lt hq)]
 
 /-- If `f` is a smooth bump function centred at `0` with `1 ≤ f.rIn` and `f.rOut ≤ 2`, then
 `1 - f` is a frequency cutoff. -/

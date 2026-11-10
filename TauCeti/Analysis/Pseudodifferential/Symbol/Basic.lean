@@ -737,10 +737,15 @@ section Comp
 
 variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m'' : ℝ}
 
+/-- The constant of the Leibniz estimate `norm_mixedDeriv_comp_le`: the sum of
+`C s₁ t₁ * D s₂ t₂` over all splittings of `α` into complementary subwords `s₁, s₂` and of `β`
+into `t₁, t₂`. -/
+@[expose] def compBound (C D : List (Fin n) → List (Fin n) → ℝ) (α β : List (Fin n)) : ℝ :=
+  (β.sublists'.revzip.map fun t => (α.sublists'.revzip.map fun s => C s.1 t.1 * D s.2 t.2).sum).sum
+
 /-- The product estimate behind `TauCeti.Symbol.comp`: bounds `C s t ⟨ξ⟩^(m' - |t|)` and
 `D s t ⟨ξ⟩^(m - |t|)` on the mixed derivatives of `b` and `a` at `(x, ξ)` bound the mixed
-derivative `∂_x^α ∂_ξ^β` of `b ∘ a` by a constant times `⟨ξ⟩^(m' + m - |β|)`. The constant sums
-`C s₁ t₁ * D s₂ t₂` over all splittings of `α` into `s₁, s₂` and of `β` into `t₁, t₂`, as in the
+derivative `∂_x^α ∂_ξ^β` of `b ∘ a` by `compBound C D α β` times `⟨ξ⟩^(m' + m - |β|)`, as in the
 Leibniz rule. Only the derivatives with `|s| ≤ |α|` and `|t| ≤ |β|` enter, so the bounds are
 only required for those. -/
 theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → W →L[ℂ] U}
@@ -752,16 +757,14 @@ theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → 
     (hD : ∀ s t, s.length ≤ α.length → t.length ≤ β.length →
       ‖mixedDeriv s t a x ξ‖ ≤ D s t * (1 + ‖ξ‖ ^ 2) ^ ((m - t.length) / 2)) :
     ‖mixedDeriv α β (fun p => (b p).comp (a p)) x ξ‖ ≤
-      (β.sublists'.revzip.map fun t =>
-        (α.sublists'.revzip.map fun s => C s.1 t.1 * D s.2 t.2).sum).sum *
-        (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
+      compBound C D α β * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
   -- Composition of `ℂ`-linear maps, viewed as a continuous `ℝ`-bilinear map.
   have h := ((ContinuousLinearMap.compL ℂ V W U).bilinearRestrictScalars ℝ).mixedDeriv_of_bilinear
     (α := α) (β := β) (hb.of_le (by exact_mod_cast le_top)) (ha.of_le (by exact_mod_cast le_top))
     x ξ
   simp only [ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
     ContinuousLinearMap.compL_apply] at h
-  rw [h, ← List.sum_map_mul_right]
+  rw [h, compBound, ← List.sum_map_mul_right]
   refine (List.le_sum_of_subadditive norm norm_zero.le norm_add_le _).trans ?_
   rw [List.map_map]
   refine List.sum_le_sum fun t ht => ?_
@@ -789,10 +792,9 @@ theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → 
         ring
 
 /-- The constant in `norm_mixedDeriv_comp_le` is nonnegative. -/
-private theorem comp_bound_nonneg {C D : List (Fin n) → List (Fin n) → ℝ}
+theorem compBound_nonneg {C D : List (Fin n) → List (Fin n) → ℝ}
     (hC : ∀ s t, 0 ≤ C s t) (hD : ∀ s t, 0 ≤ D s t) (α β : List (Fin n)) :
-    0 ≤ (β.sublists'.revzip.map fun t =>
-        (α.sublists'.revzip.map fun s => C s.1 t.1 * D s.2 t.2).sum).sum :=
+    0 ≤ compBound C D α β :=
   List.sum_nonneg fun _ h => by
     obtain ⟨t, -, rfl⟩ := List.mem_map.1 h
     exact List.sum_nonneg fun _ h' => by
@@ -810,7 +812,7 @@ def comp (b : Symbol n W U m') (a : Symbol n V W m) : Symbol n V U (m' + m) wher
   exists_bound K hK α β := by
     choose C hC0 hC using fun s t => b.exists_bound K hK s t
     choose D hD0 hD using fun s t => a.exists_bound K hK s t
-    exact ⟨_, comp_bound_nonneg hC0 hD0 α β, fun x hx ξ => norm_mixedDeriv_comp_le
+    exact ⟨_, compBound_nonneg hC0 hD0 α β, fun x hx ξ => norm_mixedDeriv_comp_le
       b.contDiff_coefficient a.contDiff_coefficient (fun s t _ _ => hC s t x hx ξ)
       (fun s t _ _ => hD s t x hx ξ)⟩
 
@@ -909,7 +911,7 @@ theorem IsUniform.comp {b : Symbol n W U m'} {a : Symbol n V W m} (hb : b.IsUnif
   intro α β
   choose C hC0 hC using hb
   choose D hD0 hD using ha
-  exact ⟨_, comp_bound_nonneg hC0 hD0 α β, fun x ξ => norm_mixedDeriv_comp_le
+  exact ⟨_, compBound_nonneg hC0 hD0 α β, fun x ξ => norm_mixedDeriv_comp_le
     b.contDiff_coefficient a.contDiff_coefficient (fun s t _ _ => hC s t x ξ)
     (fun s t _ _ => hD s t x ξ)⟩
 
