@@ -24,9 +24,9 @@ read off from the size of the basis.
 
 * `Set.span_zmod_eq_addSubgroupClosure`: the span of a set over `ℤ/nℤ` is the additive subgroup
   it generates.
-* `Set.exists_finset_subset_addSubgroupClosure_eq_natCard_eq_pow`: in a finite `𝔽_p`-vector space
-  every set contains a finite subset generating the same additive subgroup, which has `p ^ #b`
-  elements.
+* `Set.exists_finset_subset_addSubgroupClosure_eq_natCard_eq_pow`: in an `𝔽_p`-vector space
+  every set generating a finite additive subgroup contains a finite subset `b` generating the same
+  additive subgroup, which has `p ^ #b` elements.
 -/
 
 public section
@@ -44,13 +44,16 @@ theorem span_zmod_eq_addSubgroupClosure {n : ℕ} {M : Type*} [AddCommGroup M] [
       AddSubgroup.subset_closure
   · exact (AddSubgroup.closure_le _).mpr Submodule.subset_span
 
-/-- **A generating set of a finite elementary abelian `p`-group contains a basis.** In a finite
-`𝔽_p`-vector space every set `s` contains a finite subset `b` generating the same additive
-subgroup, and that subgroup has exactly `p ^ #b` elements: `b` is a basis of the span of `s`. -/
+/-- **A generating set of a finite elementary abelian `p`-group contains a basis.** In an
+`𝔽_p`-vector space every set `s` generating a finite additive subgroup contains a finite subset `b`
+generating the same additive subgroup, and that subgroup has exactly `p ^ #b` elements. -/
 theorem exists_finset_subset_addSubgroupClosure_eq_natCard_eq_pow {p : ℕ} [Fact p.Prime]
-    {M : Type*} [AddCommGroup M] [Module (ZMod p) M] [Finite M] (s : Set M) :
+    {M : Type*} [AddCommGroup M] [Module (ZMod p) M] (s : Set M)
+    [Finite (AddSubgroup.closure s)] :
     ∃ b : Finset M, (b : Set M) ⊆ s ∧ AddSubgroup.closure (b : Set M) = AddSubgroup.closure s ∧
       Nat.card (AddSubgroup.closure s) = p ^ b.card := by
+  have hfin : Finite (Submodule.span (ZMod p) s) := by
+    rwa [← span_zmod_eq_addSubgroupClosure (n := p)] at ‹Finite (AddSubgroup.closure s)›
   obtain ⟨b, hbs, hcard, hbspan, -⟩ := Submodule.exists_finset_span_eq_linearIndepOn (ZMod p) s
   refine ⟨b, hbs, ?_, ?_⟩
   · rw [← span_zmod_eq_addSubgroupClosure (n := p), ← span_zmod_eq_addSubgroupClosure (n := p),
