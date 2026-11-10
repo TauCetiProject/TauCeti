@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.Analysis.Asymptotics.Lemmas
+public import TauCeti.Analysis.SpecialFunctions.Log.TwoAdd
 
 /-!
 # Power-law asymptotics
@@ -167,10 +168,7 @@ theorem add_one_mul_log_add_two_le {r t A : ℝ} (hr : 0 ≤ r) (ht : 0 ≤ t)
     (1 + t) * log (2 + t) ≤ (A + 2) * (2 * (A + 2) + 1) * (1 + r) * log (2 + r) := by
   let M := A + 2
   have hM : 0 < M := by dsimp [M]; positivity
-  have hL : (1 / 2 : ℝ) ≤ log (2 + r) := by
-    have h2 : (1 / 2 : ℝ) ≤ log 2 := by
-      convert one_sub_inv_le_log_of_pos (by norm_num : (0 : ℝ) < 2) using 1; norm_num
-    exact h2.trans (log_le_log (by norm_num) (by linarith))
+  have hL := one_half_le_log_two_add hr
   have h1 : 1 + t ≤ M * (1 + r) := by dsimp [M]; nlinarith
   have h2 : 2 + t ≤ M * (2 + r) := by dsimp [M]; nlinarith
   have hlog : log (2 + t) ≤ log M + log (2 + r) := by

@@ -6,6 +6,7 @@ Authors: OpenAI Codex
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
+public import TauCeti.Analysis.SpecialFunctions.Log.TwoAdd
 
 /-!
 # Elementary Gamma upper bounds on the positive real axis
@@ -99,10 +100,7 @@ theorem exists_rpow_mul_Gamma_div_le_exp_mul_log {c α : ℝ} (hc : 0 < c) (hα 
   have hxeq : x = a * (1 + R) := by dsimp [x, a]; ring
   have hy : 0 < x + 3 := by positivity
   have hyK : x + 3 ≤ K * (1 + R) := by dsimp [K]; rw [hxeq]; nlinarith
-  have hL : (1 / 2 : ℝ) ≤ log (2 + R) := by
-    have h2 : (1 / 2 : ℝ) ≤ log 2 := by
-      convert one_sub_inv_le_log_of_pos (by norm_num : (0 : ℝ) < 2) using 1; norm_num
-    exact h2.trans (log_le_log (by norm_num) (by linarith))
+  have hL := one_half_le_log_two_add hR
   have hlog : log (x + 3) ≤ log K + log (2 + R) := by
     rw [← log_mul hK.ne' (by positivity : 2 + R ≠ 0)]
     apply log_le_log hy
@@ -123,7 +121,7 @@ theorem exists_rpow_mul_Gamma_div_le_exp_mul_log {c α : ℝ} (hc : 0 < c) (hα 
     rw [he, mul_neg, ← neg_mul]
     exact mul_le_mul_of_nonneg_right (neg_le_abs (log c)) hx.le
   have hGi := Gamma_le_exp_mul_log_add ha hax
-  have hai : α⁻¹ ≤ exp a := by change a ≤ exp a; linarith [add_one_le_exp a]
+  have hai : α⁻¹ ≤ exp a := by dsimp [a]; linarith [add_one_le_exp α⁻¹]
   have hbound : c ^ (-(R + 1) / α) * Gamma x / α ≤
       exp (|log c| * x + (x + 3) * log (x + 3) + D) := by
     rw [div_eq_mul_inv]
@@ -135,8 +133,8 @@ theorem exists_rpow_mul_Gamma_div_le_exp_mul_log {c α : ℝ} (hc : 0 < c) (hα 
   apply hbound.trans
   apply exp_le_exp.mpr
   have hD' : D ≤ 2 * D * (1 + R) * log (2 + R) := by
-    have hRL : (1 / 2 : ℝ) ≤ (1 + R) * log (2 + R) := by nlinarith
-    nlinarith [mul_le_mul_of_nonneg_left hRL (by positivity : 0 ≤ 2 * D)]
+    nlinarith [mul_le_mul_of_nonneg_left (one_half_le_one_add_mul_log_two_add hR)
+      (by positivity : 0 ≤ 2 * D)]
   have hx' : |log c| * x ≤ 2 * |log c| * a * (1 + R) * log (2 + R) := by
     rw [hxeq]
     nlinarith [mul_le_mul_of_nonneg_left hL (show 0 ≤ 2 * |log c| * a * (1 + R) by positivity)]

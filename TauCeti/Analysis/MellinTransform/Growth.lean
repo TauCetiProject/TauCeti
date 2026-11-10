@@ -7,17 +7,17 @@ module
 
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Growth
 public import TauCeti.Analysis.Complex.GrowthOrder.Logarithmic
-public import Mathlib.Analysis.MellinTransform
+public import TauCeti.Analysis.MellinTransform.Basic
 public import Mathlib.MeasureTheory.Integral.Gamma
 public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 
 /-!
 # Growth bounds for Mellin tails with exponential decay
 
-The tail over `(1, ∞)` of `u^R exp(-c u^α) du/u` is bounded by the positive Gamma
-moment at `(R+1)/α`, for `R ≥ 0` and `c, α > 0`. In particular this bound remains
-finite at `R = 0`. These estimates provide the quantitative ingredient for the
-split Mellin method of proving order-one growth for completed L-functions.
+The tail over `(1, ∞)` of `u^R exp(-c u^α) du/u` converges for every real `R` and
+`c, α > 0`, and is bounded by the positive Gamma moment at `(R+1)/α` when `R > -1`.
+In particular this bound remains finite at `R = 0`. These estimates provide the quantitative
+ingredient for the split Mellin method of proving order-one growth for completed L-functions.
 
 ## References
 
@@ -29,28 +29,37 @@ public section
 open Real Set MeasureTheory Filter Topology Asymptotics
 
 namespace TauCeti
-/-- The exponentially decaying Mellin-tail majorant is integrable for every nonnegative power. -/
+/-- The exponentially decaying Mellin-tail majorant over `(1, ∞)` is integrable for every real
+power. -/
 theorem integrableOn_rpow_mul_exp_neg_mul_rpow_div {R c α : ℝ}
-    (hR : 0 ≤ R) (hc : 0 < c) (hα : 0 < α) :
+    (hc : 0 < c) (hα : 0 < α) :
     IntegrableOn (fun u : ℝ ↦ u ^ R * exp (-c * u ^ α) / u) (Ioi 1) := by
-  have hg := integrableOn_rpow_mul_exp_neg_mul_rpow (by linarith : -1 < R) hα hc
+  have hg := integrableOn_rpow_mul_exp_neg_mul_rpow
+    (by linarith [abs_nonneg R] : -1 < |R|) hα hc
   apply (hg.mono_set (Ioi_subset_Ioi zero_le_one)).mono' ?_ ?_
   · exact (by fun_prop : Measurable (fun u : ℝ ↦ u ^ R * exp (-c * u ^ α) / u)).aestronglyMeasurable
   · filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
     have hu0 : 0 < u := lt_trans zero_lt_one hu
     rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
-    exact div_le_self (by positivity) (le_of_lt hu)
+    calc
+      u ^ R * exp (-c * u ^ α) / u ≤ u ^ R * exp (-c * u ^ α) :=
+        div_le_self (by positivity) (le_of_lt hu)
+      _ ≤ u ^ |R| * exp (-c * u ^ α) := by
+        gcongr
+        · exact hu.le
+        · exact le_abs_self R
 
-/-- A Mellin-tail moment is bounded by the shifted Gamma moment, including exponent zero. -/
+/-- A Mellin-tail moment is bounded by the shifted Gamma moment for every exponent `R > -1`,
+including exponent zero. -/
 theorem integral_rpow_mul_exp_neg_mul_rpow_div_le_Gamma {R c α : ℝ}
-    (hR : 0 ≤ R) (hc : 0 < c) (hα : 0 < α) :
+    (hR : -1 < R) (hc : 0 < c) (hα : 0 < α) :
     (∫ u in Ioi 1, u ^ R * exp (-c * u ^ α) / u) ≤
       c ^ (-(R + 1) / α) * Gamma ((R + 1) / α) / α := by
-  have hg := integrableOn_rpow_mul_exp_neg_mul_rpow (by linarith : -1 < R) hα hc
+  have hg := integrableOn_rpow_mul_exp_neg_mul_rpow hR hα hc
   calc
     (∫ u in Ioi 1, u ^ R * exp (-c * u ^ α) / u) ≤
         ∫ u in Ioi 1, u ^ R * exp (-c * u ^ α) := by
-      apply setIntegral_mono_on (integrableOn_rpow_mul_exp_neg_mul_rpow_div hR hc hα)
+      apply setIntegral_mono_on (integrableOn_rpow_mul_exp_neg_mul_rpow_div hc hα)
         (hg.mono_set (Ioi_subset_Ioi zero_le_one)) measurableSet_Ioi
       intro u hu
       have hu0 : 0 < u := lt_trans zero_lt_one hu
@@ -62,7 +71,7 @@ theorem integral_rpow_mul_exp_neg_mul_rpow_div_le_Gamma {R c α : ℝ}
         positivity
       · exact Eventually.of_forall (fun u hu ↦ lt_trans zero_lt_one hu)
     _ = _ := by
-      rw [integral_rpow_mul_exp_neg_mul_rpow hα (by linarith : -1 < R) hc]
+      rw [integral_rpow_mul_exp_neg_mul_rpow hα hR hc]
       ring
 
 
@@ -92,7 +101,7 @@ theorem integrableOn_cpow_smul_of_norm_le_exp_neg_mul_rpow {f : ℝ → E}
     (hf : AEStronglyMeasurable f (volume.restrict (Ioi 1)))
     (hbound : ∀ u ∈ Ioi 1, ‖f u‖ ≤ C₀ * exp (-c * u ^ α)) (s : ℂ) :
     IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1) • f u) (Ioi 1) := by
-  have hi := (integrableOn_rpow_mul_exp_neg_mul_rpow_div (norm_nonneg s) hc hα).const_mul C₀
+  have hi := (integrableOn_rpow_mul_exp_neg_mul_rpow_div (R := ‖s‖) hc hα).const_mul C₀
   apply hi.mono' ?_ ?_
   · have hcpow : ContinuousOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1)) (Ioi 1) := by
       apply ContinuousOn.cpow_const (by fun_prop)
@@ -111,12 +120,12 @@ theorem norm_integral_cpow_smul_le_mul_Gamma {f : ℝ → E} {C₀ c α : ℝ}
   calc
     _ ≤ ∫ u in Ioi 1, C₀ * (u ^ ‖s‖ * exp (-c * u ^ α) / u) := by
       apply norm_integral_le_of_norm_le
-        ((integrableOn_rpow_mul_exp_neg_mul_rpow_div (norm_nonneg s) hc hα).const_mul C₀)
+        ((integrableOn_rpow_mul_exp_neg_mul_rpow_div (R := ‖s‖) hc hα).const_mul C₀)
       filter_upwards [ae_restrict_mem measurableSet_Ioi] with u hu
       exact norm_mellinIntegrand_le hu (hbound u hu)
     _ = C₀ * ∫ u in Ioi 1, u ^ ‖s‖ * exp (-c * u ^ α) / u := integral_const_mul _ _
     _ ≤ _ := mul_le_mul_of_nonneg_left
-      (integral_rpow_mul_exp_neg_mul_rpow_div_le_Gamma (norm_nonneg s) hc hα) hC₀
+      (integral_rpow_mul_exp_neg_mul_rpow_div_le_Gamma (by linarith [norm_nonneg s]) hc hα) hC₀
 
 /-- An exponentially decaying kernel gives logarithmic-exponential growth of its upper Mellin
 integral, uniformly over the whole complex plane. -/
@@ -127,10 +136,6 @@ theorem exists_norm_integral_cpow_smul_le_exp_mul_log {f : ℝ → E} {C₀ c α
       exp (C * (1 + ‖s‖) * log (2 + ‖s‖)) := by
   obtain ⟨C, hC, hCG⟩ := exists_rpow_mul_Gamma_div_le_exp_mul_log hc hα
   refine ⟨C + 2 * C₀, by positivity, fun s ↦ ?_⟩
-  have hL : (1 / 2 : ℝ) ≤ log (2 + ‖s‖) := by
-    have h2 : (1 / 2 : ℝ) ≤ log 2 := by
-      convert one_sub_inv_le_log_of_pos (by norm_num : (0 : ℝ) < 2) using 1; norm_num
-    exact h2.trans (log_le_log (by norm_num) (by linarith [norm_nonneg s]))
   calc
     _ ≤ C₀ * (c ^ (-(‖s‖ + 1) / α) * Gamma ((‖s‖ + 1) / α) / α) :=
       norm_integral_cpow_smul_le_mul_Gamma hC₀ hc hα hbound s
@@ -140,9 +145,8 @@ theorem exists_norm_integral_cpow_smul_le_exp_mul_log {f : ℝ → E} {C₀ c α
     _ = exp (C₀ + C * (1 + ‖s‖) * log (2 + ‖s‖)) := (exp_add _ _).symm
     _ ≤ _ := by
       apply exp_le_exp.mpr
-      have hRL : (1 / 2 : ℝ) ≤ (1 + ‖s‖) * log (2 + ‖s‖) := by
-        nlinarith [norm_nonneg s]
-      nlinarith [mul_le_mul_of_nonneg_left hRL hC₀]
+      nlinarith [mul_le_mul_of_nonneg_left (one_half_le_one_add_mul_log_two_add (norm_nonneg s))
+        hC₀]
 
 /-- The upper Mellin transform of an exponentially decaying complex kernel has order at most
 one. -/

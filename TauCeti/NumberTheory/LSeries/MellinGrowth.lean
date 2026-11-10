@@ -18,9 +18,9 @@ If both kernel tails have exponential bounds, these integrals give
 Thus a complex-valued `Λ₀` has order at most one.
 
 The split identity and norm bound also apply to vector-valued pairs. They use
-Mathlib's Mellin inversion substitution and indicator integrals. The entire-part
-construction and its functional equation are David Loeffler's Mathlib theory;
-this file supplies the quantitative growth adapter.
+Mathlib's Mellin inversion substitution and the upper-tail indicator identities of
+`TauCeti.Analysis.MellinTransform.Basic`. The entire-part construction and its functional
+equation are David Loeffler's Mathlib theory; this file supplies the quantitative growth adapter.
 
 ## References
 
@@ -34,18 +34,6 @@ open Real Set MeasureTheory Filter Topology Asymptotics
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-
-private theorem mellinConvergent_indicator_Ioi_one {f : ℝ → E} {s : ℂ}
-    (hf : IntegrableOn (fun u : ℝ ↦ (u : ℂ) ^ (s - 1) • f u) (Ioi 1)) :
-    MellinConvergent ((Ioi 1).indicator f) s := by
-  simp_rw [MellinConvergent, ← indicator_smul, integrableOn_indicator_iff
-    measurableSet_Ioi.nullMeasurableSet, inter_eq_left.mpr (Ioi_subset_Ioi zero_le_one)]
-  exact hf
-
-private theorem mellin_indicator_Ioi_one (f : ℝ → E) (s : ℂ) :
-    mellin ((Ioi 1).indicator f) s = ∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • f u := by
-  simp_rw [mellin, ← indicator_smul, setIntegral_indicator measurableSet_Ioi,
-    inter_eq_right.mpr (Ioi_subset_Ioi zero_le_one)]
 
 private theorem WeakFEPair_f_modif_eq (P : WeakFEPair E) {x : ℝ} (hx : 0 < x) :
     P.f_modif x = (Ioi 1).indicator (fun u ↦ P.f u - P.f₀) x +
@@ -73,8 +61,8 @@ theorem _root_.WeakFEPair.Λ₀_eq_integral_add_smul_integral (P : WeakFEPair E)
       P.ε • (∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ ((P.k - s) - 1) • (P.g u - P.g₀)) := by
   let F := (Ioi 1).indicator (fun u ↦ P.f u - P.f₀)
   let G := (Ioi 1).indicator (fun u ↦ P.g u - P.g₀)
-  have hF : MellinConvergent F s := mellinConvergent_indicator_Ioi_one hf
-  have hG : MellinConvergent G (P.k - s) := mellinConvergent_indicator_Ioi_one hg
+  have hF : MellinConvergent F s := (mellinConvergent_indicator_Ioi_iff zero_le_one).mpr hf
+  have hG : MellinConvergent G (P.k - s) := (mellinConvergent_indicator_Ioi_iff zero_le_one).mpr hg
   have hi : MellinConvergent (fun x ↦ G x⁻¹) (s - P.k) := by
     have hi := (MellinConvergent.comp_rpow (f := G) (s := s - P.k)
       (a := -1) (by norm_num)).mpr
@@ -85,14 +73,12 @@ theorem _root_.WeakFEPair.Λ₀_eq_integral_add_smul_integral (P : WeakFEPair E)
     apply MellinConvergent.cpow_smul.mpr
     simpa only [sub_eq_add_neg] using hi
   have he : P.Λ₀ s = mellin (fun x ↦ F x + P.ε • (x : ℂ) ^ (-(P.k : ℂ)) • G x⁻¹) s := by
-    apply setIntegral_congr_fun measurableSet_Ioi
-    intro x hx
-    change (x : ℂ) ^ (s - 1) • P.f_modif x =
-      (x : ℂ) ^ (s - 1) • (F x + P.ε • (x : ℂ) ^ (-(P.k : ℂ)) • G x⁻¹)
+    rw [WeakFEPair.Λ₀, mellin, mellin]
+    refine setIntegral_congr_fun measurableSet_Ioi fun x hx ↦ ?_
     rw [WeakFEPair_f_modif_eq P hx]
   rw [he, (hasMellin_add hF ht).2, mellin_const_smul, mellin_cpow_smul, mellin_comp_inv]
   simp only [neg_add_rev, neg_neg]
-  rw [mellin_indicator_Ioi_one, mellin_indicator_Ioi_one]
+  rw [mellin_indicator_Ioi _ zero_le_one, mellin_indicator_Ioi _ zero_le_one]
   simp only [sub_eq_add_neg]
 
 
@@ -141,10 +127,6 @@ theorem _root_.WeakFEPair.exists_norm_Λ₀_le_exp_mul_log (P : WeakFEPair E)
     dsimp [M] at *
     dsimp [K]
     nlinarith [mul_nonneg hA.le hW]
-  have hL : (1 / 2 : ℝ) ≤ log (2 + ‖s‖) := by
-    have h2 : (1 / 2 : ℝ) ≤ log 2 := by
-      convert one_sub_inv_le_log_of_pos (by norm_num : (0 : ℝ) < 2) using 1; norm_num
-    exact h2.trans (log_le_log (by norm_num) (by linarith [norm_nonneg s]))
   calc
     _ ≤ ‖∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ (s - 1) • (P.f u - P.f₀)‖ +
         ‖P.ε • (∫ (u : ℝ) in Ioi 1, (u : ℂ) ^ ((P.k - s) - 1) • (P.g u - P.g₀))‖ :=
@@ -159,9 +141,8 @@ theorem _root_.WeakFEPair.exists_norm_Λ₀_le_exp_mul_log (P : WeakFEPair E)
     _ = exp (D + K * (1 + ‖s‖) * log (2 + ‖s‖)) := (exp_add _ _).symm
     _ ≤ _ := by
       apply exp_le_exp.mpr
-      have hRL : (1 / 2 : ℝ) ≤ (1 + ‖s‖) * log (2 + ‖s‖) := by
-        nlinarith [norm_nonneg s]
-      nlinarith [mul_le_mul_of_nonneg_left hRL hD.le]
+      nlinarith [mul_le_mul_of_nonneg_left (one_half_le_one_add_mul_log_two_add (norm_nonneg s))
+        hD.le]
 
 /-- The entire part of a complex weak functional-equation pair has order at most one when
 both kernels have exponential tails. -/
