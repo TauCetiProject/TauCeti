@@ -97,9 +97,10 @@ theorem continuousLinearMapAt_trivializationAt_self (x : M) (p : TangentSpace I 
     (FiberBundle.mem_baseSet_trivializationAt (E →L[𝕜] 𝕜)
       (fun x : M ↦ TangentSpace I x →L[𝕜] 𝕜) x) p).trans ?_
   ext v
-  simp [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates]
-  -- Both sides apply `p` to `v`; they differ only in reading `v` in `E` or in `T_x M`.
-  rfl
+  simp only [hom_trivializationAt_apply, ContinuousLinearMap.inCoordinates,
+    Trivial.fiberBundle_trivializationAt', Trivial.continuousLinearMapAt_trivialization,
+    ContinuousLinearMap.id_comp, ContinuousLinearMap.comp_apply]
+  exact congrArg p (Manifold.symmL_trivializationAt_self x v)
 
 /-- The preferred chart of the cotangent bundle at `z₀` sends a covector `z` to the chart image of
 its base point and to the covector precomposed with the inverse of the tangent chart at `z₀`. -/

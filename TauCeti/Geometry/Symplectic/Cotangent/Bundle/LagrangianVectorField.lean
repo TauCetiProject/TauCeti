@@ -139,39 +139,34 @@ theorem mfderiv_proj_eq_snd_of_eval₂_cartanTwoForm (hL : ContMDiff I.tangent �
     (hX : ∀ w, SmoothBundleForm.eval₂ (cartanTwoForm L hL) v X w =
       mvfderiv I.tangent (lagrangianEnergy L) v w) :
     mfderiv I.tangent I (π E (TangentSpace I)) v X = v.2 := by
-  obtain ⟨T, hT⟩ : ∃ T : E × E →L[ℝ] E × (E →L[ℝ] ℝ),
-      mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L) v = T := ⟨_, rfl⟩
-  have hfst := hT ▸ fst_comp_mfderiv_legendreMap hL (by simp) v
   -- Pair `X` with the vertical vector of direction `u`: both sides of `ι_X ω_L = dE_L` give the
   -- fibre Hessian applied to `u`, on `dπ X` and on `v` respectively.
   have key : ∀ u : TangentSpace I v.proj,
       fiberHessian L v u (mfderiv I.tangent I (π E (TangentSpace I)) v X) =
         fiberHessian L v u v.2 := by
     intro u
-    have h := hX ((0 : E), (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt ℝ
-      v.proj u)
-    rw [mvfderiv_lagrangianEnergy_vertical hL v u, ← mpullback_legendreMap_symplecticForm hL] at h
-    have h2 := SmoothForm.eval₂_mpullback (legendreMap L) (contMDiff_legendreMap hL le_rfl)
-      (CotangentBundle.symplecticForm I M) v X
+    let Y : TangentSpace I.tangent v :=
       ((0 : E), (trivializationAt E (TangentSpace I) v.proj).continuousLinearMapAt ℝ v.proj u)
-    rw [h2, hT] at h
-    -- `T` is the differential of `FL` read between the model spaces, while `h` applies it to
-    -- tangent vectors; `erw` identifies the two coercions, which differ only in these types.
-    erw [mfderiv_legendreMap_vertical hL (by simp) v hT u] at h
+    -- `dFL` sends the vertical vector `Y` to the vertical covector of `Hess_v u`.
+    have hY : mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L) v Y =
+        ((0 : E), (trivializationAt (E →L[ℝ] ℝ) (fun x ↦ TangentSpace I x →L[ℝ] ℝ) v.proj
+          ).continuousLinearMapAt ℝ v.proj (fiberHessian L v u)) :=
+      mfderiv_legendreMap_vertical hL (by simp) v rfl u
+    -- `FL` covers the identity of `M`, so `dFL` keeps the base component of `X`.
+    have hX1 : (mfderiv I.tangent (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L) v X).1 = X.1 :=
+      DFunLike.congr_fun (fst_comp_mfderiv_legendreMap hL (by simp) v) X
     -- The canonical form pairs a tangent vector with a vertical covector by `β(dπ ξ)`.
-    have h4 : ∀ a b : TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L v),
+    have hω : ∀ a b : TangentSpace (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (legendreMap L v),
         SmoothBundleForm.eval₂ (CotangentBundle.symplecticForm I M) (legendreMap L v) a b =
-          b.2 a.1 - a.2 b.1 := fun a b ↦ by
-      rw [CotangentBundle.eval₂_symplecticForm]
-      exact strongDualCotangentSymplecticForm_apply a b
-    -- The coercions of `T X` to tangent vectors of `T*M` are again identified by `erw`.
-    erw [h4] at h
-    simp only [CotangentBundle.continuousLinearMapAt_trivializationAt_self] at h
-    have h1 : (T X).1 = X.1 := DFunLike.congr_fun hfst X
-    rw [Bundle.mfderiv_proj]
-    -- As above, `(T X).1` and `X.1` are read in the model space and in `T_v TM`.
-    erw [h1] at h
+          b.2 a.1 - a.2 b.1 := fun a b ↦
+      (CotangentBundle.eval₂_symplecticForm _ a b).trans
+        (strongDualCotangentSymplecticForm_apply a b)
+    have h := hX Y
+    rw [mvfderiv_lagrangianEnergy_vertical hL v u, ← mpullback_legendreMap_symplecticForm hL,
+      SmoothForm.eval₂_mpullback (legendreMap L) (contMDiff_legendreMap hL le_rfl), hω, hY,
+      CotangentBundle.continuousLinearMapAt_trivializationAt_self, hX1] at h
     simp only [map_zero, sub_zero] at h
+    rw [Bundle.mfderiv_proj]
     exact h
   -- The fibre Hessian is symmetric, so `Hess (dπ X) = Hess v`, and it is injective.
   obtain ⟨e, he⟩ := hv
