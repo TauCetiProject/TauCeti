@@ -13,9 +13,7 @@ public import Mathlib.RingTheory.PowerSeries.Ideal
 # The cyclotomic delta submodule
 
 For a module `M` over `O⟦X⟧`, its delta submodule is the increasing union of the kernels of
-`ωₙ = (1 + X) ^ (p ^ n) - 1`. These are the elements fixed by some finite-index subgroup of a
-procyclic group whose generator acts as `1 + X`. Linear maps preserve this submodule, and
-injective maps reflect it.
+`ωₙ = (1 + X) ^ (p ^ n) - 1`. Linear maps preserve this submodule, and injective maps reflect it.
 
 On a noetherian module the union stabilizes at a single kernel. If `O` is a complete noetherian
 local ring and `p` is prime and belongs to its maximal ideal, this makes the delta submodule of
@@ -42,6 +40,16 @@ variable (p : ℕ) (O M : Type*) [CommRing O] [AddCommGroup M] [Module O⟦X⟧ 
 /-- The elements killed by some cyclotomic element `(1 + X) ^ (p ^ n) - 1`. -/
 def deltaSubmodule : Submodule O⟦X⟧ M :=
   ⨆ n : ℕ, torsionBy O⟦X⟧ M ((1 + X) ^ p ^ n - 1)
+
+/-- The delta submodule is the supremum of the finite-level cyclotomic kernels. -/
+theorem deltaSubmodule_def :
+    deltaSubmodule p O M = ⨆ n : ℕ, torsionBy O⟦X⟧ M ((1 + X) ^ p ^ n - 1) := (rfl)
+
+/-- A submodule contains the delta submodule exactly when it contains every finite-level kernel. -/
+@[simp]
+theorem deltaSubmodule_le_iff {N : Submodule O⟦X⟧ M} :
+    deltaSubmodule p O M ≤ N ↔ ∀ n : ℕ, torsionBy O⟦X⟧ M ((1 + X) ^ p ^ n - 1) ≤ N := by
+  rw [deltaSubmodule_def, iSup_le_iff]
 
 /-- The kernels defining the delta submodule increase with the level. -/
 theorem monotone_torsionBy_one_add_X_pow_sub_one :
@@ -89,9 +97,7 @@ theorem deltaSubmodule_eq_bot [NeZero p] [IsDomain O] [Module.IsTorsionFree O⟦
   have hne : ((1 + X) ^ p ^ n - 1 : O⟦X⟧) ≠ 0 := by
     have h := (TauCeti.Polynomial.monic_one_add_X_pow_sub_one
       (R := O) (pow_ne_zero n (NeZero.ne p))).ne_zero
-    simpa only [Polynomial.coe_sub, Polynomial.coe_pow, Polynomial.coe_add,
-      Polynomial.coe_one, Polynomial.coe_X, Polynomial.coe_zero] using
-      (Polynomial.coe_injective O).ne h
+    simpa using (Polynomial.coe_injective O).ne h
   exact (smul_eq_zero_iff_right hne).mp hn
 
 /-- Over a complete noetherian coefficient ring, the delta submodule of a finite power-series
@@ -109,8 +115,7 @@ theorem finite_deltaSubmodule [Fact p.Prime] [IsNoetherianRing O]
   have hF := (TauCeti.Polynomial.isDistinguishedAt_one_add_X_pow_sub_one
     (Fact.out : p.Prime) hp n).isWeierstrassFactorizationAt
   apply hF.finite_of_isTorsionBy
-  simpa only [Polynomial.coe_sub, Polynomial.coe_pow, Polynomial.coe_add,
-    Polynomial.coe_one, Polynomial.coe_X] using hkill
+  simpa using hkill
 
 end TauCeti.Iwasawa
 
