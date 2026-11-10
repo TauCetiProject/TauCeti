@@ -91,14 +91,6 @@ theorem sphericalPendulumUpperTurningPoint_eq_sSup (h j : ℝ) :
 
 /-! ### The heights of a fibre -/
 
-private theorem lowerTurningPoint_eq (h j : ℝ) :
-    sphericalPendulumLowerTurningPoint h j = sInf (fibreHeights h j) :=
-  sphericalPendulumLowerTurningPoint_eq_sInf h j
-
-private theorem upperTurningPoint_eq (h j : ℝ) :
-    sphericalPendulumUpperTurningPoint h j = sSup (fibreHeights h j) :=
-  sphericalPendulumUpperTurningPoint_eq_sSup h j
-
 private theorem isClosed_fibreHeights (h j : ℝ) : IsClosed (fibreHeights h j) := by
   simp only [fibreHeights, ofPred_and, ofPred_mem_eq]
   exact isClosed_Icc.inter ((isClosed_le continuous_id continuous_const).inter
@@ -197,7 +189,7 @@ private theorem turningPoint_spec (hj : j ≠ 0) (hz₀ : z₀ ∈ Ioo (-1) 1)
           (h - sphericalPendulumLowerTurningPoint h j - sphericalPendulumUpperTurningPoint h j -
             z) := by
   obtain ⟨hmem₀, hlt₀⟩ := exists_mem_fibreHeights hz₀ hV
-  rw [lowerTurningPoint_eq, upperTurningPoint_eq]
+  rw [sphericalPendulumLowerTurningPoint_eq_sInf, sphericalPendulumUpperTurningPoint_eq_sSup]
   have ha := (isClosed_fibreHeights h j).csInf_mem ⟨z₀, hmem₀⟩ (bddBelow_fibreHeights h j)
   have hb := (isClosed_fibreHeights h j).csSup_mem ⟨z₀, hmem₀⟩ (bddAbove_fibreHeights h j)
   have ha₀ := radicand_sInf_eq_zero hj ⟨z₀, hmem₀⟩
@@ -271,9 +263,9 @@ theorem image_apply_two_preimage_sphericalPendulumEnergyMomentum_eq_Icc (hj : j 
     hj hz₀ hV
   rw [image_apply_two_preimage_sphericalPendulumEnergyMomentum (h, j)]
   refine Subset.antisymm (fun z hz ↦ ⟨?_, ?_⟩) fun z hz ↦ ?_
-  · rw [lowerTurningPoint_eq]
+  · rw [sphericalPendulumLowerTurningPoint_eq_sInf]
     exact csInf_le (bddBelow_fibreHeights h j) hz
-  · rw [upperTurningPoint_eq]
+  · rw [sphericalPendulumUpperTurningPoint_eq_sSup]
     exact le_csSup (bddAbove_fibreHeights h j) hz
   · set a := sphericalPendulumLowerTurningPoint h j
     set b := sphericalPendulumUpperTurningPoint h j
@@ -348,7 +340,7 @@ theorem continuousOn_sphericalPendulumLowerTurningPoint :
         mul_pos (mul_pos (by linarith) (by linarith)) (by linarith)
       linarith
     filter_upwards [nhdsWithin_le_nhds (eventually_radicand_pos hpos)] with c hc
-    rw [lowerTurningPoint_eq]
+    rw [sphericalPendulumLowerTurningPoint_eq_sInf]
     have hyI : y ∈ Ioo (-1) 1 := ⟨by linarith, by linarith [min_le_right u b]⟩
     exact (csInf_le (bddBelow_fibreHeights c.1 c.2)
       (mem_fibreHeights_of_lt hyI (by linarith))).trans_lt (hy₂.trans_le (min_le_left u b))
@@ -379,7 +371,7 @@ theorem continuousOn_sphericalPendulumUpperTurningPoint :
         mul_pos (mul_pos (by linarith) (by linarith)) (by linarith)
       linarith
     filter_upwards [nhdsWithin_le_nhds (eventually_radicand_pos hpos)] with c hc
-    rw [upperTurningPoint_eq]
+    rw [sphericalPendulumUpperTurningPoint_eq_sSup]
     have hyI : y ∈ Ioo (-1) 1 := ⟨by linarith [le_max_right l a], by linarith⟩
     exact ((le_max_left l a).trans_lt hy₁).trans_le (le_csSup (bddAbove_fibreHeights c.1 c.2)
       (mem_fibreHeights_of_lt hyI (by linarith)))
