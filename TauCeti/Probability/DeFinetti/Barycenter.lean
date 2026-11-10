@@ -8,13 +8,12 @@ module
 public import TauCeti.Probability.Process.PathLaw.Mixture
 public import TauCeti.Probability.Exchangeability.PathSpace.Law.Basic
 public import TauCeti.Probability.DeFinetti.Representation
-import TauCeti.Probability.Exchangeability.ConditionallyIID.Construct
 import TauCeti.Probability.Exchangeability.PathSpace.Law.Bridge
 
 /-!
 # Exchangeability and representation of i.i.d. mixtures
 
-Every de Finetti barycenter of a probability mixing law is an exchangeable path law. Conversely,
+Every de Finetti barycenter is an exchangeable path law. Conversely,
 over a standard Borel state space, every exchangeable probability law is the barycenter of a
 unique probability mixing law. This file connects the general path-law mixture construction in
 `TauCeti.Probability.Process.PathLaw.Mixture` to those symmetry and representation results.
@@ -46,14 +45,13 @@ namespace Probability
 
 variable {α : Type*} [MeasurableSpace α]
 
-/-- **A barycenter is an exchangeable path law.** Drawing `P` from `π` and then an i.i.d.
-`P`-sequence produces a law invariant under every permutation of the time coordinate.
-
-Each countable power `P^{⊗ℕ}` is exchangeable, and pushing the mixture forward by a time
-permutation pushes each of its components forward. -/
+/-- **A barycenter is an exchangeable path law.** The de Finetti barycenter of any measure `π` on
+`ProbabilityMeasure α` is invariant under every permutation of the time coordinate. -/
 theorem exchangeableLaw_deFinettiBarycenter {π : Measure (ProbabilityMeasure α)} :
     ExchangeableLaw (Measure.deFinettiBarycenter π) := by
   refine ExchangeableLaw.intro fun σ => ?_
+  -- Each countable power `P^{⊗ℕ}` is exchangeable, and pushing the mixture forward by a time
+  -- permutation pushes each of its components forward.
   have hσ : Measurable (permReindex (α := α) σ) := measurable_reindex σ
   rw [Measure.deFinettiBarycenter_def, Measure.map_bind
     TauCeti.MeasureTheory.measurable_infinitePi_const.aemeasurable hσ.aemeasurable]

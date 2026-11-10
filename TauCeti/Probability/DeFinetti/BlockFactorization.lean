@@ -182,25 +182,6 @@ theorem mixedIIDWith_of_iCondIndepFun_tailProcess
   refine lintegral_congr fun ω => ?_
   simp only [tailConditionalProbabilityMeasure_toMeasure]
 
-/-- **de Finetti reduces to conditional independence over the tail.** The existential form of
-`mixedIIDWith_of_iCondIndepFun_tailProcess`: under the same tail conditional-independence
-hypothesis, a contractable process is `MixedIID`. -/
-theorem mixedIID_of_iCondIndepFun_tailProcess
-    [StandardBorelSpace Ω] [StandardBorelSpace α] {μ : Measure Ω} [IsFiniteMeasure μ]
-    {X : ℕ → Ω → α} (hX : Contractable μ X) (hX_meas : ∀ n, Measurable (X n))
-    (hCI : ∀ (m : ℕ) (k : Fin m → ℕ), Function.Injective k →
-      iCondIndepFun (m := fun _ : Fin m => (inferInstance : MeasurableSpace α))
-        (tailProcess X) (tailProcess_le_ambient 0 fun j _ => hX_meas j) (fun i => X (k i)) μ) :
-    MixedIID μ X := by
-  rcases isEmpty_or_nonempty Ω with hΩ | ⟨⟨ω⟩⟩
-  · -- On an empty sample space the measure is zero and every identity is between zero measures.
-    refine MixedIID.of_mixingRepresentative (ν := fun ω => isEmptyElim ω)
-      (.intro (fun n => (hX_meas n).aemeasurable) Subsingleton.measurable fun m k _ => ?_)
-    simp [Measure.eq_zero_of_isEmpty μ]
-  have : Nonempty α := ⟨X 0 ω⟩
-  exact MixedIID.of_mixingRepresentative
-    (mixedIIDWith_of_iCondIndepFun_tailProcess hX hX_meas hCI)
-
 /-- **Prefix block factorization at the directing measure.** For a contractable process, the
 conditional expectation of the length-`r` prefix indicator product given the tail σ-algebra
 `tailProcess X` is a.e. the product of directing-measure evaluations
