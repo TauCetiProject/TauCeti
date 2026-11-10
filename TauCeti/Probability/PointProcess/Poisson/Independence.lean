@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.PointProcess.Poisson.Basic
 public import TauCeti.Probability.RandomMeasure.Independence
-import TauCeti.Probability.RandomMeasure.Law
+import TauCeti.MeasureTheory.Measure.BooleanPartition
 import Mathlib.Probability.Independence.InfinitePi
 
 /-!
@@ -73,7 +73,7 @@ private theorem iIndepFun_inter_fibers (h : IsPoissonRandomMeasure P N Λ)
   simp_rw [hrow]
   convert hmap using 2
   funext ω i b
-  rfl
+  simp only [MeasurableEquiv.coe_curry, Function.comp_apply, Function.curry_apply, Z]
 
 /-- Restrictions of a Poisson random measure to any pairwise-disjoint measurable family are
 independent for the full evaluation sigma-field. Overlapping test sets within a restriction
