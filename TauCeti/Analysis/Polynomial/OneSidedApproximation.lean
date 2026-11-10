@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import Mathlib.Topology.ContinuousMap.Weierstrass
+import TauCeti.Analysis.SpecialFunctions.Ramp
 
 /-!
 # One-sided polynomial approximation
@@ -14,9 +15,9 @@ public import Mathlib.Topology.ContinuousMap.Weierstrass
 Shifting a uniform Weierstrass approximation by a constant gives one-sided approximations: a
 function continuous on `[a, b]` lies below a polynomial within `ε` of it, and above another one.
 
-Applied to a continuous ramp, this squeezes the indicator of `[a, 1]` on `[0, 1]` between two
-polynomials whose integrals are both within `η` of the length `1 - a`. This is the approximation
-step of Karamata's proof of the Hardy–Littlewood Tauberian theorem.
+Applied to the continuous ramp `TauCeti.ramp`, this squeezes the indicator of `[a, 1]` on
+`[0, 1]` between two polynomials whose integrals are both within `η` of the length `1 - a`. This
+is the approximation step of Karamata's proof of the Hardy–Littlewood Tauberian theorem.
 
 ## Main results
 
@@ -60,23 +61,6 @@ theorem exists_polynomial_le_of_continuousOn {a b : ℝ} {f : ℝ → ℝ}
   have := abs_lt.1 (hp x hx)
   simp only [eval_sub, eval_C]
   constructor <;> linarith [this.1, this.2]
-
-/-- A continuous piecewise linear ramp, `0` left of `b` and `1` right of `b + w`. -/
-private noncomputable def ramp (b w u : ℝ) : ℝ := max 0 (min 1 ((u - b) / w))
-
-private lemma continuous_ramp (b w : ℝ) : Continuous (ramp b w) :=
-  continuous_const.max (continuous_const.min ((continuous_id.sub continuous_const).div_const w))
-
-private lemma ramp_nonneg (b w u : ℝ) : 0 ≤ ramp b w u := le_max_left _ _
-
-private lemma ramp_le_one (b w u : ℝ) : ramp b w u ≤ 1 :=
-  max_le zero_le_one (min_le_left _ _)
-
-private lemma ramp_eq_zero {b w u : ℝ} (hw : 0 < w) (hu : u ≤ b) : ramp b w u = 0 :=
-  max_eq_left (min_le_of_right_le (div_nonpos_of_nonpos_of_nonneg (by linarith) hw.le))
-
-private lemma ramp_eq_one {b w u : ℝ} (hw : 0 < w) (hu : b + w ≤ u) : ramp b w u = 1 := by
-  rw [ramp, min_eq_left ((le_div_iff₀ hw).2 (by linarith)), max_eq_right zero_le_one]
 
 private lemma integral_ramp_le {b w : ℝ} (hw : 0 < w) (hb0 : 0 ≤ b) (hb1 : b ≤ 1) :
     ∫ u in (0 : ℝ)..1, ramp b w u ≤ 1 - b := by
