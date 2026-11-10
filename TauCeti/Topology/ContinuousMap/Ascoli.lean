@@ -9,6 +9,7 @@ public import Mathlib.Topology.ContinuousMap.Compact
 public import Mathlib.Topology.UniformSpace.Ascoli
 public import Mathlib.Algebra.Ring.Periodic
 public import Mathlib.Topology.MetricSpace.Pseudo.Real
+public import Mathlib.Topology.MetricSpace.Thickening
 public import Mathlib.Topology.EMetricSpace.Lipschitz
 public import Mathlib.Topology.UniformSpace.LocallyUniformConvergence
 public import Mathlib.Topology.UniformSpace.UniformConvergenceTopology
@@ -50,8 +51,10 @@ and adds companion statements used for compactness and finite approximation of f
   `ℝ →ᵤ M`.
 * The translates `(s, t) ↦ u(s + σₙ, t)`, `σₙ → ∞`, of a Lipschitz map on a half-plane `s ≥ b`
   with values in a compact set have a subsequence converging locally uniformly on the plane.
-* The `C`-Lipschitz paths `I → Y` starting at a point `x` form a compact subset of `C(I, Y)` when
-  the closed ball of radius `C` about `x` is compact, in particular when `Y` is proper.
+* The `C`-Lipschitz paths `I → Y` whose value at a fixed time lies in a closed set `K` form a
+  compact subset of `C(I, Y)` when the closed `C`-thickening of `K` is compact, in particular when
+  `Y` is proper and `K` is compact. For `K = {x}` at time `0` these are the paths starting at `x`,
+  and the thickening is the closed ball of radius `C` about `x`.
 
 The pointwise hypothesis cannot be replaced by equicontinuity and a common starting point when `Y`
 is not proper. The curves `γₙ(t) = t • eₙ`, `t ∈ [0, 1]`, along the standard basis vectors of
@@ -78,6 +81,10 @@ endpoints `eₙ` stay at distance at least `1` from each other
 * `TauCeti.exists_subseq_tendstoLocallyUniformly_comp_add`: translates `u(s + σₙ, t)`, `σₙ → ∞`,
   of a Lipschitz map on a half-plane `s ≥ b` with values in a compact set have a locally
   uniformly convergent subsequence.
+* `TauCeti.isCompact_setOf_lipschitzWith_apply_mem`: in a proper space, uniformly Lipschitz
+  paths whose value at a fixed time lies in a compact set form a compact set, with
+  `TauCeti.isCompact_setOf_lipschitzWith_apply_mem_of_isCompact_cthickening` its form for a
+  closed set with compact closed thickening.
 * `TauCeti.isCompact_setOf_lipschitzWith_apply_zero_eq`: in a proper space, uniformly Lipschitz
   paths with a common starting point form a compact set, with
   `TauCeti.isCompact_setOf_lipschitzWith_apply_zero_eq_of_isCompact_closedBall` its form for a
@@ -325,26 +332,40 @@ open scoped NNReal unitInterval
 
 variable {Y : Type*} [MetricSpace Y]
 
+/-- The `C`-Lipschitz paths on the unit interval whose value at a time `t₀` lies in a closed set
+`K` form a compact subset of `C(I, Y)` when the closed `C`-thickening of `K` is compact. -/
+theorem isCompact_setOf_lipschitzWith_apply_mem_of_isCompact_cthickening (C : ℝ≥0) (t₀ : I)
+    {K : Set Y} (hK : IsClosed K) (hKC : IsCompact (Metric.cthickening C K)) :
+    IsCompact {f : C(I, Y) | LipschitzWith C f ∧ f t₀ ∈ K} := by
+  set A := {f : C(I, Y) | LipschitzWith C f ∧ f t₀ ∈ K}
+  have hA : IsClosed A :=
+    ((isClosed_setOfPred_lipschitzWith C).preimage continuous_coeFun).inter
+      (hK.preimage (continuous_eval_const t₀))
+  have hequi : Equicontinuous fun f : A ↦ ⇑(f : C(I, Y)) :=
+    (LipschitzWith.uniformEquicontinuous _ C fun f ↦ f.2.1).equicontinuous
+  have hball (t : I) : ∃ Q : Set Y, IsCompact Q ∧ ∀ f : A, (f : C(I, Y)) t ∈ Q := by
+    refine ⟨_, hKC, fun f ↦ Metric.closedBall_subset_cthickening f.2.2 _ ?_⟩
+    exact Metric.mem_closedBall.2 ((f.2.1.dist_le_mul t t₀).trans
+      (mul_le_of_le_one_right C.2 (Real.dist_le_of_mem_Icc_01 t.2 t₀.2)))
+  have hrange := ArzelaAscoli.isCompact_closure_range_of_equicontinuous hequi hball
+  rw [Subtype.range_coe] at hrange
+  exact hrange.of_isClosed_subset hA subset_closure
+
+/-- In a proper space, the `C`-Lipschitz paths on the unit interval whose value at a time `t₀` lies
+in a compact set `K` form a compact subset of `C(I, Y)`. -/
+theorem isCompact_setOf_lipschitzWith_apply_mem [ProperSpace Y] (C : ℝ≥0) (t₀ : I) {K : Set Y}
+    (hK : IsCompact K) : IsCompact {f : C(I, Y) | LipschitzWith C f ∧ f t₀ ∈ K} :=
+  isCompact_setOf_lipschitzWith_apply_mem_of_isCompact_cthickening C t₀ hK.isClosed
+    hK.cthickening
+
 /-- The `C`-Lipschitz paths on the unit interval starting at `x` form a compact subset of
 `C(I, Y)` when the closed ball of radius `C` about `x` is compact. -/
 theorem isCompact_setOf_lipschitzWith_apply_zero_eq_of_isCompact_closedBall (C : ℝ≥0) (x : Y)
     (hx : IsCompact (Metric.closedBall x C)) :
     IsCompact {f : C(I, Y) | LipschitzWith C f ∧ f 0 = x} := by
-  set A := {f : C(I, Y) | LipschitzWith C f ∧ f 0 = x}
-  have hA : IsClosed A :=
-    ((isClosed_setOfPred_lipschitzWith C).preimage continuous_coeFun).inter
-      (isClosed_eq (continuous_eval_const 0) continuous_const)
-  have hequi : Equicontinuous fun f : A ↦ ⇑(f : C(I, Y)) :=
-    (LipschitzWith.uniformEquicontinuous _ C fun f ↦ f.2.1).equicontinuous
-  have hball (t : I) : ∃ Q : Set Y, IsCompact Q ∧ ∀ f : A, (f : C(I, Y)) t ∈ Q := by
-    refine ⟨Metric.closedBall x C, hx, fun f ↦ ?_⟩
-    have hd := f.2.1.dist_le_mul t 0
-    rw [f.2.2, Subtype.dist_eq, Icc.coe_zero, Real.dist_eq, sub_zero,
-      abs_of_nonneg t.2.1] at hd
-    exact Metric.mem_closedBall.2 (hd.trans (mul_le_of_le_one_right C.2 t.2.2))
-  have hrange := ArzelaAscoli.isCompact_closure_range_of_equicontinuous hequi hball
-  rw [Subtype.range_coe] at hrange
-  exact hrange.of_isClosed_subset hA subset_closure
+  simpa only [mem_singleton_iff] using
+    isCompact_setOf_lipschitzWith_apply_mem_of_isCompact_cthickening C 0 isClosed_singleton
+      ((Metric.cthickening_singleton x C.2).symm ▸ hx)
 
 /-- In a proper space, the `C`-Lipschitz paths on the unit interval starting at `x` form a compact
 subset of `C(I, Y)`. -/
