@@ -33,7 +33,7 @@ variable {k F : Type u} [Field k] [Field F] [Algebra k F]
 theorem isCurveOver (hxt : Transcendental k x) :
     (twoChartModel hF hx).IsCurveOver k := by
   exact @AlgebraicGeometry.Scheme.IsCurveOver.mk (twoChartModel hF hx) k _ _ inferInstance
-    (isProper hxt) (topologicalKrullDim_eq_one hxt)
+    isProper (topologicalKrullDim_eq_one hxt)
 
 /-- **Over a perfect field the two-chart model is smooth** of relative dimension one, for `x`
 transcendental over `k`: it is a regular curve. -/
@@ -41,7 +41,7 @@ theorem smoothOfRelativeDimension_one_of_perfectField [PerfectField k]
     (hxt : Transcendental k x) :
     SmoothOfRelativeDimension 1 (twoChartModel hF hx ↘ Spec (.of k)) := by
   have := isCurveOver (hF := hF) (hx := hx) hxt
-  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
+  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
   exact AlgebraicGeometry.Scheme.IsCurveOver.smoothOfRelativeDimension_one_of_perfectField k _
 
 end TauCeti.AlgebraicGeometry.twoChartModel

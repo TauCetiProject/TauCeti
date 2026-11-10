@@ -64,10 +64,10 @@ universe u
 variable {k F : Type u} [Field k] [Field F] [Algebra k F] {hF : IsFunctionField k F} {x : F}
   {hx : x ≠ 0}
 
-/-- **The two-chart model is proper over `k`**, for `x` transcendental over `k`: it is separated,
-universally closed, and locally of finite type over `k`. -/
-theorem isProper (hxt : Transcendental k x) : IsProper (twoChartModel hF hx ↘ Spec (.of k)) :=
-  have := locallyOfFiniteType (hF := hF) (hx := hx) hxt
+/-- **The two-chart model is proper over `k`**: it is separated, universally closed, and locally
+of finite type over `k`. -/
+theorem isProper : IsProper (twoChartModel hF hx ↘ Spec (.of k)) :=
+  have := locallyOfFiniteType (hF := hF) (hx := hx)
   { }
 
 /-- **The codimension-one points of the two-chart model are the places of `F`**, for `x`
@@ -75,7 +75,7 @@ transcendental over `k`: a point is sent to the place of `k(X) ≃ₐ[k] F` whos
 the local ring at the point. -/
 noncomputable def equivPlace (hxt : Transcendental k x) :
     CodimensionOnePoint (twoChartModel hF hx) ≃ Place k F :=
-  haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
+  haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
   (CodimensionOnePoint.equivPlace (k := k) (valuativeCriterion_existence hF hx)
     (coheight_le_one hxt)).trans (Place.mapEquiv (functionFieldEquiv hxt))
 
@@ -83,7 +83,7 @@ noncomputable def equivPlace (hxt : Transcendental k x) :
 `AlgebraicGeometry.Scheme.toPlace`, transported along `k(X) ≃ₐ[k] F`. -/
 theorem equivPlace_apply (hxt : Transcendental k x)
     (p : CodimensionOnePoint (twoChartModel hF hx)) :
-    haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt p
+    haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) p
     equivPlace hxt p = ((twoChartModel hF hx).toPlace (k := k) (p : twoChartModel hF hx)).map
       (functionFieldEquiv hxt) := by
   simp [equivPlace]
@@ -95,7 +95,7 @@ theorem mem_integers_equivPlace_iff (hxt : Transcendental k x)
     f ∈ (equivPlace hxt p).integers ↔
       ∃ a : (twoChartModel hF hx).presheaf.stalk (p : twoChartModel hF hx),
         functionFieldEquiv hxt (algebraMap _ (twoChartModel hF hx).functionField a) = f := by
-  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt p
+  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) p
   rw [equivPlace_apply, Place.mem_integers_map_iff,
     Scheme.mem_toPlace_integers_iff_exists_stalk]
   exact exists_congr fun a ↦ (functionFieldEquiv hxt).eq_symm_apply
@@ -106,7 +106,7 @@ theorem degree_equivPlace (hxt : Transcendental k x)
     (p : CodimensionOnePoint (twoChartModel hF hx)) :
     (equivPlace hxt p).degree =
       (twoChartModel hF hx ↘ Spec (.of k)).residueDegree (p : twoChartModel hF hx) := by
-  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt p
+  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) p
   rw [equivPlace_apply, Place.degree_map, Scheme.toPlace_degree_eq_residueDegree]
 
 /-- **A point lies on the finite chart exactly when `x` is regular at its place.** Hence the
@@ -116,7 +116,7 @@ theorem mem_range_ιFinite_iff (hxt : Transcendental k x)
     (p : CodimensionOnePoint (twoChartModel hF hx)) :
     (p : twoChartModel hF hx) ∈ Set.range (ιFinite hF hx) ↔
       x ∈ (equivPlace hxt p).integers := by
-  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
+  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
   -- The function `x` on the finite chart.
   let xf : holomorphyRing {P : Place k F | x ∈ P.integers} :=
     ⟨x, mem_holomorphyRing_iff.mpr fun _ hP ↦ hP⟩

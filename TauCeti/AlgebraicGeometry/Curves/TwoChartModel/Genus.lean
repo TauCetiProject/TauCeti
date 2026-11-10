@@ -58,13 +58,13 @@ variable {k F : Type u} [Field k] [Field F] [Algebra k F] {hF : IsFunctionField 
 transcendental over `k` and `k` the exact constant field of `F`, the genus
 `dim_k H¹(X_F, 𝒪_{X_F})` of `X_F` is `g(F)`. -/
 theorem genus_eq_genus (hxt : Transcendental k x) (hk : IsIntegrallyClosedIn k F) :
-    haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
-    haveI := isProper (hF := hF) (hx := hx) hxt
+    haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
+    haveI := isProper (hF := hF) (hx := hx)
     haveI := finiteDimensional_cohomology_one_trivial_of_isProper k (X := twoChartModel hF hx)
       (topologicalKrullDim_eq_one hxt)
     (twoChartModel hF hx).genus k = genus k F := by
-  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
-  have := isNoetherian (hF := hF) (hx := hx) hxt
+  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
+  have := isNoetherian (hF := hF) (hx := hx)
   rw [SchemeWeilDivisor.genus_eq_genus_functionField (valuativeCriterion_existence hF hx)
     (coheight_le_one hxt) (isFunctionField_functionField hxt)
     (isIntegrallyClosedIn_functionField hxt hk)]
@@ -78,14 +78,14 @@ as a point of `X_F`. At a rational place this reads `dim_k H⁰(X_F, 𝒪_{X_F}(
 theorem finrank_cohomology_zero_sheaf_natCast_zsmul_ofPoint_of_genus_eq_one
     (hxt : Transcendental k x) (hk : IsIntegrallyClosedIn k F) (hg : genus k F = 1)
     (P : Place k F) {n : ℕ} (hn : 1 ≤ n) :
-    haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
-    haveI := isNoetherian (hF := hF) (hx := hx) hxt
+    haveI := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
+    haveI := isNoetherian (hF := hF) (hx := hx)
     Module.finrank k (Scheme.Modules.Cohomology
       (SchemeWeilDivisor.sheaf ((n : ℤ) • WeilDivisor.ofPoint ((equivPlace hxt).symm P))) 0) =
       n * P.degree := by
-  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
-  have := isNoetherian (hF := hF) (hx := hx) hxt
-  have := isProper (hF := hF) (hx := hx) hxt
+  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
+  have := isNoetherian (hF := hF) (hx := hx)
+  have := isProper (hF := hF) (hx := hx)
   have : Fact (∀ y : twoChartModel hF hx, coheight y ≤ 1) := ⟨coheight_le_one hxt⟩
   have := finiteDimensional_cohomology_one_trivial_of_isProper k (X := twoChartModel hF hx)
     (topologicalKrullDim_eq_one hxt)

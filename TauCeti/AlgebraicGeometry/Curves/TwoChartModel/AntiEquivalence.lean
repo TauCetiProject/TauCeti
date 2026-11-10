@@ -104,7 +104,7 @@ private noncomputable abbrev modelObj (F : FunctionFieldCat k) : RegularProperCu
   toScheme := twoChartModel F.isFunctionField (modelGenerator_ne_zero F)
   isCurveOver := twoChartModel.isCurveOver (transcendental_modelGenerator F)
   isDiscreteValuationRing_stalk :=
-    twoChartModel.isDiscreteValuationRing_stalk (transcendental_modelGenerator F)
+    twoChartModel.isDiscreteValuationRing_stalk
 
 /-- The identification of the function field of the model of `F` with `F`. -/
 private noncomputable abbrev modelEquiv (F : FunctionFieldCat k) :
@@ -129,7 +129,7 @@ models whose pullback of rational functions is `φ`. -/
     { toScheme := twoChartModel F.unop.isFunctionField (modelGenerator_ne_zero F.unop)
       isCurveOver := twoChartModel.isCurveOver (transcendental_modelGenerator F.unop)
       isDiscreteValuationRing_stalk :=
-        twoChartModel.isDiscreteValuationRing_stalk (transcendental_modelGenerator F.unop) }
+        twoChartModel.isDiscreteValuationRing_stalk }
   map φ :=
     ⟨twoChartModel.homOfAlgHom _ _ (modelGenerator_ne_zero _) (modelGenerator_ne_zero _)
       (transcendental_modelGenerator _) (transcendental_modelGenerator _) φ.unop.hom⟩
@@ -234,7 +234,7 @@ private lemma isoModel_hom_naturality {X Y : RegularProperCurveCat k} (f : X ⟶
       (modelHom (FunctionFieldCat.ofHom (f.hom.functionFieldAlgHom k) :
         functionFieldObj Y ⟶ functionFieldObj X)).hom := by
   have := twoChartModel.isProper (hF := (functionFieldObj Y).isFunctionField)
-    (hx := modelGenerator_ne_zero _) (transcendental_modelGenerator _)
+    (hx := modelGenerator_ne_zero _)
   refine Scheme.Hom.ext_of_functionFieldMap_eq (Spec (.of k)) ?_
   ext a
   obtain ⟨z, rfl⟩ := (modelEquiv (functionFieldObj Y)).symm.surjective a

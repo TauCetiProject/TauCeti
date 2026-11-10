@@ -86,20 +86,20 @@ fields, for transcendental `x ∈ F` and `x' ∈ F'`: the unique dominant `k`-mo
 (`eq_homOfAlgHom_iff`). No relation between `x` and `x'` is required. -/
 noncomputable def homOfAlgHom (hxt : Transcendental k x) (hx't : Transcendental k x')
     (φ : F →ₐ[k] F') : twoChartModel hF' hx' ⟶ twoChartModel hF hx :=
-  have := isProper (hF := hF) (hx := hx) hxt
+  have := isProper (hF := hF) (hx := hx)
   Scheme.homOfFunctionFieldAlgHom (valuationRing_stalk hx't) (functionFieldAlgHom hxt hx't φ)
 
 variable (φ : F →ₐ[k] F')
 
 /-- `homOfAlgHom φ` is a morphism over `k`. -/
 instance : (homOfAlgHom hF hF' hx hx' hxt hx't φ).IsOver (Spec (.of k)) := by
-  have := isProper (hF := hF) (hx := hx) hxt
+  have := isProper (hF := hF) (hx := hx)
   rw [homOfAlgHom]
   infer_instance
 
 /-- `homOfAlgHom φ` is dominant: it sends the generic point to the generic point. -/
 instance : IsDominant (homOfAlgHom hF hF' hx hx' hxt hx't φ) := by
-  have := isProper (hF := hF) (hx := hx) hxt
+  have := isProper (hF := hF) (hx := hx)
   rw [homOfAlgHom]
   infer_instance
 
@@ -108,7 +108,7 @@ instance : IsDominant (homOfAlgHom hF hF' hx hx' hxt hx't φ) := by
 private theorem functionFieldMap_homOfAlgHom :
     (homOfAlgHom hF hF' hx hx' hxt hx't φ).functionFieldMap =
       CommRingCat.ofHom (functionFieldAlgHom hxt hx't φ).toRingHom := by
-  have := isProper (hF := hF) (hx := hx) hxt
+  have := isProper (hF := hF) (hx := hx)
   exact Scheme.functionFieldMap_homOfFunctionFieldAlgHom ..
 
 /-- **The pullback of rational functions along `homOfAlgHom φ` is `φ`**: under the identifications
@@ -129,7 +129,7 @@ theorem eq_homOfAlgHom_iff (f : twoChartModel hF' hx' ⟶ twoChartModel hF hx)
     f = homOfAlgHom hF hF' hx hx' hxt hx't φ ↔
       ∀ z, functionFieldEquiv hx't (f.functionFieldMap ((functionFieldEquiv hxt).symm z)) =
         φ z := by
-  have := isProper (hF := hF) (hx := hx) hxt
+  have := isProper (hF := hF) (hx := hx)
   rw [homOfAlgHom, Scheme.eq_homOfFunctionFieldAlgHom_iff]
   refine ⟨fun h z ↦ by simp [h, functionFieldAlgHom], fun h a ↦ ?_⟩
   obtain ⟨z, rfl⟩ := (functionFieldEquiv hxt).symm.surjective a
@@ -149,7 +149,7 @@ private theorem functionFieldAlgHom_id :
 /-- The identity of `F` induces the identity of `twoChartModel hF hx`. -/
 @[simp]
 theorem homOfAlgHom_id : homOfAlgHom hF hF hx hx hxt hxt (AlgHom.id k F) = 𝟙 _ := by
-  have := isProper (hF := hF) (hx := hx) hxt
+  have := isProper (hF := hF) (hx := hx)
   rw [homOfAlgHom, functionFieldAlgHom_id, Scheme.homOfFunctionFieldAlgHom_id]
 
 variable {F'' : Type u} [Field F''] [Algebra k F''] (hF'' : IsFunctionField k F'') {x'' : F''}
@@ -169,8 +169,8 @@ private theorem functionFieldAlgHom_comp (φ' : F' →ₐ[k] F'') :
 theorem homOfAlgHom_comp (φ' : F' →ₐ[k] F'') :
     homOfAlgHom hF' hF'' hx' hx'' hx't hx''t φ' ≫ homOfAlgHom hF hF' hx hx' hxt hx't φ =
       homOfAlgHom hF hF'' hx hx'' hxt hx''t (φ'.comp φ) := by
-  have := isProper (hF := hF) (hx := hx) hxt
-  have := isProper (hF := hF') (hx := hx') hx't
+  have := isProper (hF := hF) (hx := hx)
+  have := isProper (hF := hF') (hx := hx')
   rw [homOfAlgHom, homOfAlgHom, homOfAlgHom, Scheme.homOfFunctionFieldAlgHom_comp,
     functionFieldAlgHom_comp]
 
@@ -179,8 +179,8 @@ function fields, for transcendental `x ∈ F` and `x' ∈ F'`. For `F' = F` and 
 says that the two-chart model does not depend on the choice of the transcendental function. -/
 noncomputable def isoOfAlgEquiv (e : F ≃ₐ[k] F') :
     twoChartModel hF' hx' ≅ twoChartModel hF hx :=
-  have := isProper (hF := hF) (hx := hx) hxt
-  have := isProper (hF := hF') (hx := hx') hx't
+  have := isProper (hF := hF) (hx := hx)
+  have := isProper (hF := hF') (hx := hx')
   Scheme.isoOfFunctionFieldAlgEquiv (valuationRing_stalk hx't) (valuationRing_stalk hxt)
     (((functionFieldEquiv hxt).trans e).trans (functionFieldEquiv hx't).symm)
 
@@ -207,8 +207,8 @@ private theorem functionFieldAlgHom_algEquiv_symm (e : F ≃ₐ[k] F') :
 theorem isoOfAlgEquiv_hom (e : F ≃ₐ[k] F') :
     (isoOfAlgEquiv hF hF' hx hx' e (hxt := hxt) (hx't := hx't)).hom =
       homOfAlgHom hF hF' hx hx' hxt hx't e := by
-  have := isProper (hF := hF) (hx := hx) hxt
-  have := isProper (hF := hF') (hx := hx') hx't
+  have := isProper (hF := hF) (hx := hx)
+  have := isProper (hF := hF') (hx := hx')
   rw [isoOfAlgEquiv, Scheme.isoOfFunctionFieldAlgEquiv_hom, homOfAlgHom,
     functionFieldAlgHom_algEquiv]
 
@@ -217,8 +217,8 @@ theorem isoOfAlgEquiv_hom (e : F ≃ₐ[k] F') :
 theorem isoOfAlgEquiv_inv (e : F ≃ₐ[k] F') :
     (isoOfAlgEquiv hF hF' hx hx' e (hxt := hxt) (hx't := hx't)).inv =
       homOfAlgHom hF' hF hx' hx hx't hxt e.symm := by
-  have := isProper (hF := hF) (hx := hx) hxt
-  have := isProper (hF := hF') (hx := hx') hx't
+  have := isProper (hF := hF) (hx := hx)
+  have := isProper (hF := hF') (hx := hx')
   rw [isoOfAlgEquiv, Scheme.isoOfFunctionFieldAlgEquiv_inv, homOfAlgHom,
     functionFieldAlgHom_algEquiv_symm]
 

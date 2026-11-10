@@ -70,7 +70,7 @@ theorem homOfAlgHom_equivPlace_symm (P' : Place k F') :
       ((equivPlace hxt).symm (P'.restrict k F) : twoChartModel hF hx) := by
   set f := homOfAlgHom hF hF' hx hx' hxt hx't (IsScalarTower.toAlgHom k F F')
   set p' := (equivPlace hx't).symm P'
-  have := isDiscreteValuationRing_stalk (hF := hF') (hx := hx') hx't p'
+  have := isDiscreteValuationRing_stalk (hF := hF') (hx := hx') p'
   -- Read through `k(X) ≃ F` and `k(X') ≃ F'`, the pullback along `f` is `F → F'` and the
   -- valuation ring of the place of `p'` is the valuation ring of `P'`.
   have hpull (z : F) : functionFieldEquiv hx't (f.functionFieldMap

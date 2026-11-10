@@ -75,9 +75,34 @@ universe u
 variable {k F : Type u} [Field k] [Field F] [Algebra k F] {hF : IsFunctionField k F} {x : F}
   {hx : x ≠ 0}
 
-/-- **The two-chart model is locally of finite type over `k`**, for `x` transcendental over `k`:
-both charts are spectra of finitely generated `k`-algebras. -/
-theorem locallyOfFiniteType (hxt : Transcendental k x) :
+/-- If `x` is algebraic over `k`, then it is regular at every place. -/
+private lemma setOf_mem_integers_eq_univ (hxa : IsAlgebraic k x) :
+    {P : Place k F | x ∈ P.integers} = Set.univ :=
+  Set.eq_univ_of_forall fun P ↦
+    P.mem_integers_of_mem_algebraicClosure (_root_.mem_algebraicClosure_iff.mpr hxa)
+
+/-- The functions regular wherever `x` is regular form a finitely generated `k`-algebra, whether
+or not `x` is transcendental: for algebraic `x` this is the finite constant field. -/
+private lemma finiteType_holomorphyRing (hF : IsFunctionField k F) (x : F) :
+    Algebra.FiniteType k (holomorphyRing {P : Place k F | x ∈ P.integers}) := by
+  by_cases hxa : IsAlgebraic k x
+  · rw [setOf_mem_integers_eq_univ hxa, holomorphyRing_univ hF]
+    have := hF.finiteDimensional_algebraicClosure
+    exact inferInstance
+  · exact finiteType_holomorphyRing_setOf_mem hF hxa
+
+/-- The functions regular wherever `x` is regular form a Dedekind domain, whether or not `x` is
+transcendental: for algebraic `x` this is the constant field. -/
+private lemma isDedekindDomain_holomorphyRing (hF : IsFunctionField k F) (x : F) :
+    IsDedekindDomain (holomorphyRing {P : Place k F | x ∈ P.integers}) := by
+  by_cases hxa : IsAlgebraic k x
+  · rw [setOf_mem_integers_eq_univ hxa, holomorphyRing_univ hF]
+    exact inferInstanceAs (IsDedekindDomain (algebraicClosure k F))
+  · exact isDedekindDomain_holomorphyRing_setOf_mem hF hxa
+
+/-- **The two-chart model is locally of finite type over `k`**: both charts are spectra of
+finitely generated `k`-algebras. -/
+theorem locallyOfFiniteType :
     LocallyOfFiniteType (twoChartModel hF hx ↘ Spec (.of k)) := by
   -- Instance search does not find that `LocallyOfFiniteType` is local at the source, so the
   -- instance coming from its ring-hom property is supplied by hand.
@@ -86,16 +111,15 @@ theorem locallyOfFiniteType (hxt : Transcendental k x) :
   cases b
   · rw [chartCover_f_false, ιFinite_over]
     exact (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)).mpr
-      (RingHom.finiteType_algebraMap.mpr (finiteType_holomorphyRing_setOf_mem hF hxt))
+      (RingHom.finiteType_algebraMap.mpr (finiteType_holomorphyRing hF x))
   · rw [chartCover_f_true, ιInfinity_over]
     exact (HasRingHomProperty.Spec_iff (P := @LocallyOfFiniteType)).mpr
-      (RingHom.finiteType_algebraMap.mpr
-        (finiteType_holomorphyRing_setOf_mem hF fun h ↦ hxt (IsAlgebraic.inv_iff.mp h)))
+      (RingHom.finiteType_algebraMap.mpr (finiteType_holomorphyRing hF x⁻¹))
 
-/-- **The two-chart model is a Noetherian scheme**, for `x` transcendental over `k`: it is of
-finite type over the field `k` and covered by two affine charts. -/
-theorem isNoetherian (hxt : Transcendental k x) : IsNoetherian (twoChartModel hF hx) := by
-  have := locallyOfFiniteType (hF := hF) (hx := hx) hxt
+/-- **The two-chart model is a Noetherian scheme**: it is of finite type over the field `k` and
+covered by two affine charts. -/
+theorem isNoetherian : IsNoetherian (twoChartModel hF hx) := by
+  have := locallyOfFiniteType (hF := hF) (hx := hx)
   have := LocallyOfFiniteType.isLocallyNoetherian (twoChartModel hF hx ↘ Spec (.of k))
   refine { toCompactSpace := ⟨?_⟩ }
   rw [← range_ιFinite_union_range_ιInfinity hF hx]
@@ -106,7 +130,7 @@ theorem isNoetherian (hxt : Transcendental k x) : IsNoetherian (twoChartModel hF
 the transcendence degree of its function field `F` over `k`. -/
 theorem topologicalKrullDim_eq_one (hxt : Transcendental k x) :
     topologicalKrullDim (twoChartModel hF hx) = 1 := by
-  have := locallyOfFiniteType (hF := hF) (hx := hx) hxt
+  have := locallyOfFiniteType (hF := hF) (hx := hx)
   rw [topologicalKrullDim_eq_toNat_trdeg_functionField k, (functionFieldEquiv hxt).trdeg_eq,
     hF.trdeg_eq_one]
   simp
@@ -115,7 +139,7 @@ theorem topologicalKrullDim_eq_one (hxt : Transcendental k x) :
 transcendental over `k`. -/
 theorem isFunctionField_functionField (hxt : Transcendental k x) :
     IsFunctionField k (twoChartModel hF hx).functionField := by
-  have := locallyOfFiniteType (hF := hF) (hx := hx) hxt
+  have := locallyOfFiniteType (hF := hF) (hx := hx)
   exact (isFunctionField_functionField_iff k).mpr (topologicalKrullDim_eq_one hxt)
 
 /-- **Exactness of the constant field transfers to the function field of the two-chart model**: if
@@ -133,23 +157,23 @@ theorem coheight_le_one (hxt : Transcendental k x) (p : twoChartModel hF hx) :
   rw [topologicalKrullDim_eq_one hxt] at this
   exact_mod_cast this
 
-/-- **The two-chart model is regular**, for `x` transcendental over `k`: its local rings are the
-local rings of the Dedekind domains `𝒪_x` and `𝒪_{x⁻¹}`, which are regular. -/
-theorem isRegularLocalRing_stalk (hxt : Transcendental k x) (p : twoChartModel hF hx) :
+/-- **The two-chart model is regular**: its local rings are the local rings of the Dedekind
+domains `𝒪_x` and `𝒪_{x⁻¹}`, which are regular. -/
+theorem isRegularLocalRing_stalk (p : twoChartModel hF hx) :
     IsRegularLocalRing ((twoChartModel hF hx).presheaf.stalk p) := by
-  have := isDedekindDomain_holomorphyRing_setOf_mem hF hxt
-  have := isDedekindDomain_holomorphyRing_setOf_mem hF fun h ↦ hxt (IsAlgebraic.inv_iff.mp h)
+  have := isDedekindDomain_holomorphyRing hF x
+  have := isDedekindDomain_holomorphyRing hF x⁻¹
   rcases (Set.ext_iff.mp (range_ιFinite_union_range_ιInfinity hF hx) p).mpr trivial with
     ⟨q, rfl⟩ | ⟨q, rfl⟩
   · exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion _ q).mpr inferInstance
   · exact (isRegularLocalRing_stalk_iff_of_isOpenImmersion _ q).mpr inferInstance
 
 /-- **The local rings of the two-chart model at its codimension-one points are discrete valuation
-rings**, for `x` transcendental over `k`: they are regular local rings of dimension one. -/
-theorem isDiscreteValuationRing_stalk (hxt : Transcendental k x)
+rings**: they are regular local rings of dimension one. -/
+theorem isDiscreteValuationRing_stalk
     (p : CodimensionOnePoint (twoChartModel hF hx)) :
     IsDiscreteValuationRing ((twoChartModel hF hx).presheaf.stalk (p : twoChartModel hF hx)) := by
-  have := isRegularLocalRing_stalk hxt (p : twoChartModel hF hx)
+  have := isRegularLocalRing_stalk (hF := hF) (hx := hx) (p : twoChartModel hF hx)
   exact CodimensionOnePoint.isDiscreteValuationRing_stalk p
 
 /-- **The local rings of the two-chart model are valuation rings**, for `x` transcendental over
@@ -157,7 +181,7 @@ theorem isDiscreteValuationRing_stalk (hxt : Transcendental k x)
 discrete valuation ring. -/
 theorem valuationRing_stalk (hxt : Transcendental k x) (p : twoChartModel hF hx) :
     ValuationRing ((twoChartModel hF hx).presheaf.stalk p) := by
-  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx) hxt
+  have := isDiscreteValuationRing_stalk (hF := hF) (hx := hx)
   exact Scheme.valuationRing_stalk_of_topologicalKrullDim_le_one
     (topologicalKrullDim_eq_one hxt).le p
 
