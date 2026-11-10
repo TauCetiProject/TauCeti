@@ -83,8 +83,7 @@ theorem antitone_kolmogorovNumber (T : E →L[𝕜] F) : Antitone T.kolmogorovNu
 theorem kolmogorovNumber_le_nnnorm (T : E →L[𝕜] F) (n : ℕ) :
     T.kolmogorovNumber n ≤ ‖T‖₊ := by
   refine (T.kolmogorovNumber_le (V := ⊥) (by simp)).trans ?_
-  exact (opNNNorm_comp_le _ _).trans (mul_le_of_le_one_left' (by
-    exact_mod_cast (⊥ : Submodule 𝕜 F).norm_mkQL_le))
+  exact (⊥ : Submodule 𝕜 F).nnnorm_mkQL_comp_le T
 
 /-- The zeroth Kolmogorov number is the operator norm. -/
 @[simp]
@@ -111,7 +110,7 @@ theorem kolmogorovNumber_eq_zero_of_rank_le {T : E →L[𝕜] F} {n : ℕ}
     exact (Submodule.Quotient.mk_eq_zero _).mpr (LinearMap.mem_range_self _ x)
   simpa [hz] using T.kolmogorovNumber_le hT
 
-/-- Perturbing an operator changes a Kolmogorov number by at most the perturbation norm. -/
+/-- The Kolmogorov number of `S + T` exceeds that of `S` by at most `‖T‖₊`. -/
 theorem kolmogorovNumber_add_le (S T : E →L[𝕜] F) (n : ℕ) :
     (S + T).kolmogorovNumber n ≤ S.kolmogorovNumber n + ‖T‖₊ := by
   have h (V : {V : Submodule 𝕜 F // Module.rank 𝕜 V ≤ n}) :
@@ -120,8 +119,7 @@ theorem kolmogorovNumber_add_le (S T : E →L[𝕜] F) (n : ℕ) :
     rw [comp_add]
     refine (nnnorm_add_le _ _).trans ?_
     gcongr
-    exact (opNNNorm_comp_le _ _).trans (mul_le_of_le_one_left' (by
-      exact_mod_cast V.1.norm_mkQL_le))
+    exact V.1.nnnorm_mkQL_comp_le T
   simpa only [kolmogorovNumber_def, ciInf_const] using
     (NNReal.le_iInf_add_iInf (g := fun _ : Unit ↦ ‖T‖₊) fun V _ ↦ h V)
 
@@ -147,10 +145,7 @@ theorem kolmogorovNumber_comp_le_left (B : F →L[𝕜] G) (T : E →L[𝕜] F) 
     exact (Submodule.Quotient.mk_eq_zero W).mpr ⟨x, hx, rfl⟩
   let D := V.1.liftQL (W.mkQL ∘L B) hker
   have hD : ‖D‖₊ ≤ ‖B‖₊ := by
-    exact_mod_cast (V.1.norm_liftQL_le (W.mkQL ∘L B) hker).trans
-      ((opNorm_comp_le _ _).trans (by
-        calc ‖W.mkQL‖ * ‖B‖ ≤ 1 * ‖B‖ := by gcongr; exact W.norm_mkQL_le
-             _ = ‖B‖ := one_mul _))
+    exact_mod_cast (V.1.norm_liftQL_le (W.mkQL ∘L B) hker).trans (W.norm_mkQL_comp_le B)
   have heq : W.mkQL ∘L (B ∘L T) = D ∘L (V.1.mkQL ∘L T) := by
     ext x
     simp [D]

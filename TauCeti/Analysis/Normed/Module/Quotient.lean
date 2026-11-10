@@ -89,6 +89,17 @@ theorem norm_mkQL_le (S : Submodule 𝕜 E) : ‖S.mkQL‖ ≤ 1 :=
   ContinuousLinearMap.opNorm_le_bound _ zero_le_one fun x ↦ by
     simpa using Submodule.Quotient.norm_mk_le S x
 
+/-- Postcomposition with a quotient projection does not increase the operator norm. -/
+theorem norm_mkQL_comp_le (S : Submodule 𝕜₂ F) (f : E →SL[σ] F) :
+    ‖S.mkQL.comp f‖ ≤ ‖f‖ :=
+  (ContinuousLinearMap.opNorm_comp_le _ _).trans
+    (mul_le_of_le_one_left (norm_nonneg f) S.norm_mkQL_le)
+
+/-- Postcomposition with a quotient projection does not increase the nonnegative operator norm. -/
+theorem nnnorm_mkQL_comp_le (S : Submodule 𝕜₂ F) (f : E →SL[σ] F) :
+    ‖S.mkQL.comp f‖₊ ≤ ‖f‖₊ := by
+  exact_mod_cast S.norm_mkQL_comp_le f
+
 /-- The quotient projection has norm one when the submodule is not dense. -/
 theorem norm_mkQL (S : Submodule 𝕜 E) (hS : ¬ Dense (S : Set E)) : ‖S.mkQL‖ = 1 := by
   rw [S.mkQL.norm_eq_normedAddGroupHom S.toAddSubgroup.normedMk (fun _ ↦ rfl)]
