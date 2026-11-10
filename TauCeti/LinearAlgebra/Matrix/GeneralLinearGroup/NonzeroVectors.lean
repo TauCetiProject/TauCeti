@@ -11,10 +11,10 @@ public import Mathlib.LinearAlgebra.Matrix.Action
 public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 -- `SubMulAction` carries the action on the nonzero vectors.
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
--- `Nat.card` occurs in the count below, and `Nat.card_fun` and `Finite.card_option` prove it.
+-- `Nat.card` occurs in the count below.
 public import Mathlib.SetTheory.Cardinal.Finite
--- Non-public: `Equiv.optionSubtypeNe` splits off the zero vector, inside the count only.
-import Mathlib.Logic.Equiv.Option
+-- Non-public: `Set.ncard_compl` removes the zero vector, inside the count only.
+import Mathlib.Data.Set.Card
 -- Non-public: extending an isomorphism of lines to the whole space, inside the transitivity proof.
 import Mathlib.LinearAlgebra.FiniteDimensional.Basic
 import Mathlib.LinearAlgebra.GeneralLinearGroup.Basic
@@ -90,30 +90,8 @@ instance faithfulSMulNonzeroVectors [Nontrivial R] :
 `0`, as `Nat.card` of an infinite type. -/
 theorem natCard_nonzeroVectors :
     Nat.card (nonzeroVectors n R) = Nat.card R ^ Nat.card n - 1 := by
-  classical
-  have e : ↥(nonzeroVectors n R) ≃ {v : n → R // v ≠ 0} :=
-    Equiv.subtypeEquivRight fun _ ↦ mem_nonzeroVectors
-  by_cases hR : Finite R
-  · have key := Nat.card_congr (Equiv.optionSubtypeNe (0 : n → R))
-    rw [Finite.card_option, Nat.card_fun] at key
-    rw [Nat.card_congr e]
-    omega
-  · have hRinf : Infinite R := not_finite_iff_infinite.mp hR
-    rcases isEmpty_or_nonempty n with hn | ⟨⟨i⟩⟩
-    · have : IsEmpty (nonzeroVectors n R) := ⟨fun v ↦ v.2 (Subsingleton.elim _ _)⟩
-      simp
-    · have : Infinite (nonzeroVectors n R) := by
-        have : Infinite ↥((Set.univ : Set R) \ {0}) :=
-          (Set.infinite_univ.sdiff (Set.finite_singleton 0)).to_subtype
-        have hne (r : ↥((Set.univ : Set R) \ {0})) : r.1 ≠ 0 := r.2.2
-        refine Infinite.of_injective
-          (fun r : ↥((Set.univ : Set R) \ {0}) ↦
-            (⟨Pi.single i r.1, mem_nonzeroVectors.2 fun h ↦ hne r (by simpa using congrFun h i)⟩ :
-              nonzeroVectors n R)) fun r r' h ↦ ?_
-        exact Subtype.ext (by simpa using congrFun (congrArg Subtype.val h) i)
-      have : Nonempty n := ⟨i⟩
-      rw [Nat.card_eq_zero_of_infinite, Nat.card_eq_zero_of_infinite (α := R),
-        zero_pow Nat.card_pos.ne', Nat.zero_sub]
+  rw [← Nat.card_fun, ← Set.ncard_singleton (0 : n → R), ← Set.ncard_compl {0}]
+  rfl
 
 /-- **A plane over a semiring with two elements has three nonzero vectors.** -/
 theorem natCard_nonzeroVectors_fin_two_of_card_eq_two (hR : Nat.card R = 2) :
