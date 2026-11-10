@@ -11,7 +11,6 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Free.DegreeOneForm
 import Mathlib.Algebra.CharP.Reduced
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
-import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
 /-!
 # Labute's normal forms modulo `λ_2`
@@ -664,14 +663,6 @@ theorem exists_continuousMulEquiv_gradedMap_eq_of_not_isAlt
     φ.toLinearEquiv.apply_symm_apply x
   rw [he, Module.Basis.map_apply, Module.Basis.map_apply, ← φ.map_app, hφ, hφ]
 
-/-- In odd rank a nondegenerate degree-one form is not alternating, since a nondegenerate
-alternating form lives on an even-dimensional space. -/
-private theorem not_isAlt_of_nondegenerate_of_odd (hnd : (degreeOneForm ρ).Nondegenerate)
-    (hn : Odd n) : ¬ (degreeOneForm ρ).IsAlt := fun h ↦ by
-  have := LinearMap.BilinForm.IsAlt.even_finrank h hnd
-  rw [Module.finrank_eq_card_basis (dualBasis 2 (Fin n)), Fintype.card_fin] at this
-  exact (Nat.not_even_iff_odd.2 hn) this
-
 private theorem pos_of_not_isAlt (hnalt : ¬ (degreeOneForm ρ).IsAlt) : 0 < n := by
   by_contra h
   apply hnalt
@@ -953,7 +944,7 @@ theorem exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOdd
         gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOdd f n (freeProPGen 2 n),
           demushkinWordTwoOdd_mem_pLowerCentralSeries_one (zero_lt_two.trans_le hf) n _⟩ :=
   exists_continuousMulEquiv_gradedMap_eq_of_not_isAlt ρ _ hnd
-    (not_isAlt_of_nondegenerate_of_odd ρ hnd hn)
+    (not_isAlt_degreeOneForm_of_odd_card ρ hnd (by simpa using hn))
     (nondegenerate_degreeOneForm_demushkinWordTwoOdd hn (zero_lt_two.trans_le hf))
     (not_isAlt_degreeOneForm_demushkinWordTwoOdd hn.pos (zero_lt_two.trans_le hf))
 
@@ -986,7 +977,7 @@ theorem exists_continuousMulEquiv_gradedMap_eq_gradedMk_demushkinWordTwoOddTop
         gradedMk 2 (freeProP 2 (Fin n)) 1 ⟨demushkinWordTwoOddTop n (freeProPGen 2 n),
           demushkinWordTwoOddTop_mem_pLowerCentralSeries_one n _⟩ :=
   exists_continuousMulEquiv_gradedMap_eq_of_not_isAlt ρ _ hnd
-    (not_isAlt_of_nondegenerate_of_odd ρ hnd hn)
+    (not_isAlt_degreeOneForm_of_odd_card ρ hnd (by simpa using hn))
     (nondegenerate_degreeOneForm_demushkinWordTwoOddTop hn)
     (not_isAlt_degreeOneForm_demushkinWordTwoOddTop hn.pos)
 
