@@ -185,8 +185,8 @@ theorem latticeTheta_def (L : Submodule ℤ (mixedSpace K)) (y : realSpace K) :
 
 /-- The archimedean Gaussian is not summable over a non-discrete lattice: it is continuous with
 value `1` at `0`, but `0` is a limit of other lattice points. -/
-theorem not_summable_archGaussian (L : Submodule ℤ (mixedSpace K)) (hL : ¬ DiscreteTopology L)
-    (y : realSpace K) : ¬ Summable fun x : L ↦ archGaussian y x := by
+theorem not_summable_archGaussian_of_not_discreteTopology (L : Submodule ℤ (mixedSpace K))
+    (hL : ¬ DiscreteTopology L) (y : realSpace K) : ¬ Summable fun x : L ↦ archGaussian y x := by
   intro hs
   have hg : Continuous fun x : L ↦ archGaussian y x := by
     simp only [archGaussian_apply]
@@ -204,9 +204,9 @@ theorem not_summable_archGaussian (L : Submodule ℤ (mixedSpace K)) (hL : ¬ Di
 
 /-- The theta series of a non-discrete lattice is `0`, by the convention for non-summable
 series. -/
-theorem latticeTheta_eq_zero_of_not_discrete (L : Submodule ℤ (mixedSpace K))
+theorem latticeTheta_eq_zero_of_not_discreteTopology (L : Submodule ℤ (mixedSpace K))
     (hL : ¬ DiscreteTopology L) (y : realSpace K) : latticeTheta L y = 0 :=
-  tsum_eq_zero_of_not_summable (not_summable_archGaussian L hL y)
+  tsum_eq_zero_of_not_summable (not_summable_archGaussian_of_not_discreteTopology L hL y)
 
 /-- The zero lattice point supplies the constant term `1`. -/
 theorem latticeTheta_eq_one_add (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L]
@@ -220,14 +220,14 @@ theorem latticeTheta_eq_one_add (L : Submodule ℤ (mixedSpace K)) [DiscreteTopo
     Equiv.subtypeEquivRight fun x ↦ by simp
   exact e.tsum_eq (fun x ↦ archGaussian y (x : L))
 
-/-- The theta series is dominated by its value at any smaller positive parameter, which is a
-positive real number. -/
+/-- The theta series is dominated by its value at any smaller positive parameter; for a discrete
+lattice that value is a positive real number, and for a non-discrete one both sides are `0`. -/
 theorem norm_latticeTheta_le (L : Submodule ℤ (mixedSpace K))
     {y y' : realSpace K} (hy' : ∀ w, 0 < y' w) (h : ∀ w, y' w ≤ y w) :
     ‖latticeTheta L y‖ ≤ ‖latticeTheta L y'‖ := by
   by_cases hL : DiscreteTopology L
   swap
-  · simp [latticeTheta_eq_zero_of_not_discrete L hL]
+  · simp [latticeTheta_eq_zero_of_not_discreteTopology L hL]
   have hy : ∀ w, 0 < y w := fun w ↦ (hy' w).trans_le (h w)
   have hnorm : ‖latticeTheta L y'‖ = ∑' x : L, ‖archGaussian y' x‖ := by
     simp only [latticeTheta_def, archGaussian_apply, Complex.norm_real, Real.norm_eq_abs,
@@ -245,7 +245,8 @@ theorem continuousAt_latticeTheta (L : Submodule ℤ (mixedSpace K))
     {y₀ : realSpace K} (hy₀ : ∀ w, 0 < y₀ w) : ContinuousAt (latticeTheta L) y₀ := by
   by_cases hL : DiscreteTopology L
   swap
-  · rw [show latticeTheta L = 0 from funext (latticeTheta_eq_zero_of_not_discrete L hL)]
+  · rw [show latticeTheta L = 0 from
+      funext (latticeTheta_eq_zero_of_not_discreteTopology L hL)]
     exact continuousAt_const
   obtain ⟨w₀, -, hw₀⟩ := Finset.exists_min_image Finset.univ y₀ Finset.univ_nonempty
   set δ := y₀ w₀ / 2

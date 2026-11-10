@@ -278,26 +278,22 @@ theorem inv_le_pow_finrank_of_mem_normOneSurface {y : realSpace K} (hy : y ∈ n
     {C : ℝ} (hyC : ∀ w, y w ≤ C) (w : InfinitePlace K) :
     (y w)⁻¹ ≤ C ^ Module.finrank ℚ K := by
   classical
-  have hC : 1 ≤ C := by
-    by_contra hC
-    push Not at hC
-    have hlt : ∏ v, y v ^ mult v < 1 := by
-      calc ∏ v, y v ^ mult v ≤ ∏ v, C ^ mult v :=
-            prod_le_prod₀ (fun v _ ↦ pow_nonneg (hy.1 v).le _)
-              fun v _ ↦ pow_le_pow_left₀ (hy.1 v).le (hyC v) _
-        _ = C ^ Module.finrank ℚ K := by rw [prod_pow_eq_pow_sum, sum_mult_eq]
-        _ < 1 := pow_lt_one₀ ((hy.1 w).le.trans (hyC w)) hC Module.finrank_pos.ne'
-    rw [← archNorm_apply, hy.2] at hlt
-    exact lt_irrefl _ hlt
-  have h1 : 1 ≤ C ^ Module.finrank ℚ K := one_le_pow₀ hC
+  -- the coordinatewise bound `y v ≤ C` bounds every partial product
+  have hbound (s : Finset (InfinitePlace K)) : ∏ v ∈ s, y v ^ mult v ≤ ∏ v ∈ s, C ^ mult v :=
+    prod_le_prod₀ (fun v _ ↦ pow_nonneg (hy.1 v).le _)
+      fun v _ ↦ pow_le_pow_left₀ (hy.1 v).le (hyC v) _
+  -- the full product is the norm `1`, so `1 ≤ C ^ [K : ℚ]`
+  have h1 : 1 ≤ C ^ Module.finrank ℚ K := by
+    have h := hbound univ
+    rwa [← archNorm_apply, hy.2, prod_pow_eq_pow_sum, sum_mult_eq] at h
+  have hC : 1 ≤ C :=
+    (one_le_pow_iff_of_nonneg ((hy.1 w).le.trans (hyC w)) Module.finrank_pos.ne').1 h1
   have hmul := mul_prod_erase univ (fun v ↦ y v ^ mult v) (mem_univ w)
   rw [← archNorm_apply, hy.2] at hmul
   have hpow : (y w)⁻¹ ^ mult w ≤ C ^ Module.finrank ℚ K := by
     rw [inv_pow, inv_eq_of_mul_eq_one_right hmul, ← sum_mult_eq, ← prod_pow_eq_pow_sum]
     calc ∏ v ∈ univ.erase w, y v ^ mult v
-        ≤ ∏ v ∈ univ.erase w, C ^ mult v :=
-          prod_le_prod₀ (fun v _ ↦ pow_nonneg (hy.1 v).le _)
-            fun v _ ↦ pow_le_pow_left₀ (hy.1 v).le (hyC v) _
+        ≤ ∏ v ∈ univ.erase w, C ^ mult v := hbound _
       _ ≤ C ^ mult w * ∏ v ∈ univ.erase w, C ^ mult v :=
           le_mul_of_one_le_left (prod_nonneg fun v _ ↦ by positivity) (one_le_pow₀ hC)
       _ = ∏ v, C ^ mult v := mul_prod_erase univ (fun v ↦ C ^ mult v) (mem_univ w)
