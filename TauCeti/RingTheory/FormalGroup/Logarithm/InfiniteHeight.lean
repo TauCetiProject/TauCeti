@@ -177,15 +177,26 @@ series `g, g' = X + ⋯` without terms of degree `pᵏ`, `k ≥ 1`, that are add
 Indeed `g - g'` is a homomorphism from `F` to the additive formal group law, and a nonzero such
 homomorphism has order a power of `p`. -/
 theorem logarithm_unique_of_natCast_eq_zero {p : ℕ} (hp : p.Prime) (hpR : (p : R) = 0)
-    {g g' : PowerSeries R} (h₀ : PowerSeries.constantCoeff g = 0) (h₁ : PowerSeries.coeff 1 g = 1)
+    {g g' : PowerSeries R} (h₁ : PowerSeries.coeff 1 g = 1)
     (hpow : ∀ k, 0 < k → PowerSeries.coeff (p ^ k) g = 0)
     (hg : PowerSeries.subst F.toPowerSeries g =
       PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g)
-    (h₀' : PowerSeries.constantCoeff g' = 0) (h₁' : PowerSeries.coeff 1 g' = 1)
+    (h₁' : PowerSeries.coeff 1 g' = 1)
     (hpow' : ∀ k, 0 < k → PowerSeries.coeff (p ^ k) g' = 0)
     (hg' : PowerSeries.subst F.toPowerSeries g' =
       PowerSeries.subst (X 0) g' + PowerSeries.subst (X 1) g') :
     g = g' := by
+  -- additivity forces the constant coefficient to vanish
+  have hconst : ∀ {g : PowerSeries R}, PowerSeries.subst F.toPowerSeries g =
+      PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g → PowerSeries.constantCoeff g = 0 :=
+    fun {g} hg ↦ by
+      have := congrArg MvPowerSeries.constantCoeff hg
+      rw [PowerSeries.constantCoeff_subst_of_constantCoeff_zero F.zero_constantCoeff, map_add,
+        PowerSeries.constantCoeff_subst_of_constantCoeff_zero (by simp),
+        PowerSeries.constantCoeff_subst_of_constantCoeff_zero (by simp)] at this
+      exact left_eq_add.mp this
+  have h₀ := hconst hg
+  have h₀' := hconst hg'
   by_contra hne
   have hne' : g - g' ≠ 0 := sub_ne_zero.mpr hne
   have hf₀ : PowerSeries.constantCoeff (g - g') = 0 := by rw [map_sub, h₀, h₀', sub_zero]
@@ -217,7 +228,7 @@ theorem existsUnique_logarithm_of_nsmulSeries_eq_zero [F.IsComm] {p : ℕ} (hp :
   rw [F.homDefect_𝔾ₐ, sub_sub, sub_eq_zero] at hg
   refine ⟨g, ⟨h₀, h₁, hpow, hg⟩, fun g' ⟨h₀', h₁', hpow', hg'⟩ ↦ ?_⟩
   exact F.logarithm_unique_of_natCast_eq_zero hp (F.natCast_eq_zero_of_nsmulSeries_eq_zero hF)
-    h₀' h₁' hpow' hg' h₀ h₁ hpow hg
+    h₁' hpow' hg' h₁ hpow hg
 
 /-- **A formal group law of infinite height is additive.** If `p` is a prime and `F` is a
 commutative formal group law with `[p]_F = 0`, then `F` is strictly isomorphic to the additive
