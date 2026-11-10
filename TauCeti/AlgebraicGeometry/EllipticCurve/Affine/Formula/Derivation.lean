@@ -31,7 +31,7 @@ a derivation on `K` over `R`. Writing `W_X` and `W_Y` for the partial derivative
   tangent slope.
 * `WeierstrassCurve.Affine.derivation_addX_slope_of_right_constant`: when the second point has
   constant coordinates for the derivation, translation preserves `dx / W_Y` without requiring
-  `W_Y` to be nonzero at that constant point.
+  `W_Y` to be nonzero at that constant point or the `x`-coordinates of the two points to differ.
 * `WeierstrassCurve.Affine.derivation_addX_slope`: if `(x₃, y₃)` is the sum of two points
   `(x₁, y₁)` and `(x₂, y₂)` of `W⁄K` at which `W_Y` does not vanish (when `x₁ ≠ x₂`), then
   `D x₃ = W_Y(x₃, y₃) • (W_Y(x₁, y₁)⁻¹ • D x₁ + W_Y(x₂, y₂)⁻¹ • D x₂)`; when `W_Y(x₃, y₃)` is
@@ -247,23 +247,6 @@ private theorem derivation_addX_slope_of_X_ne [DecidableEq K] {x₁ x₂ y₁ y�
     slope_of_X_ne hx]
   linear_combination (norm := module) c₁ • D x₁ + c₂ • D x₂
 
-/-- **Translating by a constant point preserves `dx / W_Y`.** If the second point has constant
-coordinates for `D`, the differential of the sum's `x`-coordinate depends only on the first
-point. No nonvanishing hypothesis on `W_Y` at the constant point is needed. -/
-theorem derivation_addX_slope_of_right_constant [DecidableEq K] {x₁ x₂ y₁ y₂ : K}
-    (h₁ : (W⁄K).toAffine.Equation x₁ y₁) (h₂ : (W⁄K).toAffine.Equation x₂ y₂) (hx : x₁ ≠ x₂)
-    (hu₁ : (W⁄K).toAffine.polynomialY.evalEval x₁ y₁ ≠ 0)
-    (hx₂ : D x₂ = 0) (hy₂ : D y₂ = 0) :
-    D ((W⁄K).toAffine.addX x₁ x₂ ((W⁄K).toAffine.slope x₁ x₂ y₁ y₂)) =
-      (W⁄K).toAffine.polynomialY.evalEval
-          ((W⁄K).toAffine.addX x₁ x₂ ((W⁄K).toAffine.slope x₁ x₂ y₁ y₂))
-          ((W⁄K).toAffine.addY x₁ x₂ y₁ ((W⁄K).toAffine.slope x₁ x₂ y₁ y₂)) •
-        (((W⁄K).toAffine.polynomialY.evalEval x₁ y₁)⁻¹ • D x₁) := by
-  have c₁ := (W⁄K).toAffine.chord_coeff₁ h₁ h₂ hx hu₁
-  rw [derivation_addX W D, derivation_slope_of_X_ne D hx,
-    h₁.derivation_Y_eq_smul_derivation_X D hu₁, hx₂, hy₂, slope_of_X_ne hx]
-  linear_combination (norm := module) c₁ • D x₁
-
 private theorem derivation_addX_slope_of_Y_ne [DecidableEq K] {x y : K}
     (h : (W⁄K).toAffine.Equation x y) (hy : y ≠ (W⁄K).toAffine.negY x y) :
     D ((W⁄K).toAffine.addX x x ((W⁄K).toAffine.slope x x y y)) =
@@ -301,6 +284,29 @@ theorem derivation_addX_slope [DecidableEq K] {x₁ x₂ y₁ y₂ : K} (h₁ : 
   · obtain rfl : y₁ = y₂ := (W⁄K).toAffine.Y_eq_of_Y_ne h₁ h₂ rfl fun hy ↦ hxy ⟨rfl, hy⟩
     exact derivation_addX_slope_of_Y_ne D h₁ fun hy ↦ hxy ⟨rfl, hy⟩
   · exact derivation_addX_slope_of_X_ne D h₁ h₂ hx (hu₁ hx) (hu₂ hx)
+
+/-- **Translating by a constant point preserves `dx / W_Y`.** If the second point has constant
+coordinates for `D`, the differential of the sum's `x`-coordinate depends only on the first
+point. No nonvanishing hypothesis on `W_Y` at the constant point is needed, and when the two
+points have the same `x`-coordinate both sides vanish. -/
+theorem derivation_addX_slope_of_right_constant [DecidableEq K] {x₁ x₂ y₁ y₂ : K}
+    (h₁ : (W⁄K).toAffine.Equation x₁ y₁) (h₂ : (W⁄K).toAffine.Equation x₂ y₂)
+    (hu₁ : x₁ ≠ x₂ → (W⁄K).toAffine.polynomialY.evalEval x₁ y₁ ≠ 0)
+    (hx₂ : D x₂ = 0) (hy₂ : D y₂ = 0) :
+    D ((W⁄K).toAffine.addX x₁ x₂ ((W⁄K).toAffine.slope x₁ x₂ y₁ y₂)) =
+      (W⁄K).toAffine.polynomialY.evalEval
+          ((W⁄K).toAffine.addX x₁ x₂ ((W⁄K).toAffine.slope x₁ x₂ y₁ y₂))
+          ((W⁄K).toAffine.addY x₁ x₂ y₁ ((W⁄K).toAffine.slope x₁ x₂ y₁ y₂)) •
+        (((W⁄K).toAffine.polynomialY.evalEval x₁ y₁)⁻¹ • D x₁) := by
+  rcases eq_or_ne x₁ x₂ with rfl | hx
+  · -- `D x₁ = 0`, and the slope is either `0` or the tangent slope at `(x₁, y₂)`
+    by_cases hy : y₁ = (W⁄K).toAffine.negY x₁ y₂
+    · simp [slope_of_Y_eq rfl hy, hx₂]
+    · simpa [hx₂] using derivation_addX_slope D h₁ h₂ (fun h ↦ hy h.2) (absurd rfl) (absurd rfl)
+  have c₁ := (W⁄K).toAffine.chord_coeff₁ h₁ h₂ hx (hu₁ hx)
+  rw [derivation_addX W D, derivation_slope_of_X_ne D hx,
+    h₁.derivation_Y_eq_smul_derivation_X D (hu₁ hx), hx₂, hy₂, slope_of_X_ne hx]
+  linear_combination (norm := module) c₁ • D x₁
 
 /-- **The differential `dx / W_Y` is additive**: under the hypotheses of `derivation_addX_slope`,
 if `W_Y` does not vanish at the sum either, then
