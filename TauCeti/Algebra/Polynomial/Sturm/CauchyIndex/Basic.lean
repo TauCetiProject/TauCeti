@@ -285,14 +285,10 @@ omit [IsStrictOrderedRing R] in
 /-- The Cauchy index on a set depends only on which roots of `p` the set contains. -/
 theorem cauchyIndex_congr_of_isRoot {p : R[X]} (q : R[X]) {s t : Set R}
     (h : ∀ r, p.IsRoot r → (r ∈ s ↔ r ∈ t)) : cauchyIndex p q s = cauchyIndex p q t := by
-  have hst : s ∩ Function.support (cauchyJump p q) = t ∩ Function.support (cauchyJump p q) := by
-    ext x
-    simp only [mem_inter_iff, Function.mem_support]
-    refine and_congr_left fun hx => h x ?_
-    by_contra hr
-    exact hx (cauchyJump_of_eval_ne_zero q hr)
-  rw [cauchyIndex_def, cauchyIndex_def, ← finsum_mem_inter_support (cauchyJump p q) s,
-    ← finsum_mem_inter_support (cauchyJump p q) t, hst]
+  rw [cauchyIndex_def, cauchyIndex_def]
+  refine finsum_mem_inter_support_eq' (cauchyJump p q) s t fun x hx => h x ?_
+  by_contra hr
+  exact hx (cauchyJump_of_eval_ne_zero q hr)
 
 /-- The Cauchy index is additive over disjoint sets. -/
 theorem cauchyIndex_union (p q : R[X]) {s t : Set R} (h : Disjoint s t) :
@@ -368,8 +364,9 @@ theorem cauchyJump_add_mul [IsDomain R] (p q r : R[X]) (a : R) :
     rw [rootMultiplicity_mul (mul_ne_zero hp hr)]
     omega
 
+omit [IsStrictOrderedRing R] in
 /-- Adding a multiple of `p` to `q` does not change the index of `q / p`. -/
-theorem cauchyIndex_add_mul (p q r : R[X]) (s : Set R) :
+theorem cauchyIndex_add_mul [IsDomain R] (p q r : R[X]) (s : Set R) :
     cauchyIndex p (q + p * r) s = cauchyIndex p q s := by
   simp only [cauchyIndex_def, cauchyJump_add_mul]
 
