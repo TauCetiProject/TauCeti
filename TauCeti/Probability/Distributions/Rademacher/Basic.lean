@@ -237,6 +237,26 @@ theorem charFun_rademacherMeasure (t : ℝ) :
   push_cast
   ring_nf
 
+/-- A random variable with the Rademacher law is almost everywhere measurable: an unmeasurable
+pushforward is `0` or a Dirac mass, and neither charges both atoms `±1`. -/
+theorem aemeasurable_of_map_eq_rademacherMeasure {Ω : Type*} [MeasurableSpace Ω]
+    {μ : Measure Ω} {ε : Ω → ℝ} (h : μ.map ε = rademacherMeasure) : AEMeasurable ε μ := by
+  by_contra hnot
+  have hpos (x : ℝ) (hx : x = -1 ∨ x = 1) : rademacherMeasure {x} ≠ 0 := by
+    simp [hx]
+  by_cases hμ : μ = 0
+  · rw [hμ, Measure.map_zero] at h
+    exact hpos 1 (Or.inr rfl) (by rw [← h]; rfl)
+  · rw [Measure.map_of_not_aemeasurable_of_ne_zero hnot hμ] at h
+    by_cases hx : Classical.ofNonempty = (1 : ℝ)
+    · refine hpos (-1) (Or.inl rfl) ?_
+      rw [← h, Measure.dirac_apply' _ (measurableSet_singleton _), Set.indicator_apply]
+      simp [hx]
+      norm_num
+    · refine hpos 1 (Or.inr rfl) ?_
+      rw [← h, Measure.dirac_apply' _ (measurableSet_singleton _), Set.indicator_apply]
+      simp [hx]
+
 /-- A random variable with the Rademacher law equals `±1` almost surely. -/
 theorem ae_eq_one_or_eq_neg_one_of_map_eq_rademacherMeasure {Ω : Type*} [MeasurableSpace Ω]
     {μ : Measure Ω} {ε : Ω → ℝ} (h : μ.map ε = rademacherMeasure) :
@@ -248,21 +268,7 @@ theorem ae_eq_one_or_eq_neg_one_of_map_eq_rademacherMeasure {Ω : Type*} [Measur
     rw [ae_iff, rademacherMeasure_eq, add_apply, smul_apply, smul_apply,
       Measure.dirac_apply' _ hc, Measure.dirac_apply' _ hc]
     norm_num
-  have hε : AEMeasurable ε μ := by
-    by_contra hnot
-    have h1 : rademacherMeasure {(1 : ℝ)} = 2⁻¹ := by
-      rw [rademacherMeasure_eq, add_apply, smul_apply, smul_apply,
-        Measure.dirac_apply' _ (measurableSet_singleton _),
-        Measure.dirac_apply' _ (measurableSet_singleton _)]
-      norm_num
-    have h2 : (0 : ENNReal) ≠ 2⁻¹ := (ENNReal.inv_ne_zero.2 (by simp)).symm
-    by_cases hμ : μ = 0
-    · rw [hμ, Measure.map_zero] at h
-      simp [← h, h2] at h1
-    · rw [Measure.map_of_not_aemeasurable_of_ne_zero hnot hμ] at h
-      rw [← h, Measure.dirac_apply' _ (measurableSet_singleton _)] at h1
-      by_cases hx : Classical.ofNonempty = (1 : ℝ) <;>
-        simp [hx, eq_comm (a := (1 : ENNReal)), ENNReal.inv_eq_one, h2] at h1
+  have hε := aemeasurable_of_map_eq_rademacherMeasure h
   rw [← h] at hae
   exact (ae_map_iff hε hset).1 hae
 
