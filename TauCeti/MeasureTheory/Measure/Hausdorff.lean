@@ -232,10 +232,7 @@ theorem hausdorffMeasure_le_of_forall_exists_closedBall_cover {X : Type u} [Metr
     rcases A.eq_empty_or_nonempty with rfl | ⟨a, ha⟩
     · simp
     have hT : Tendsto (fun n : ℕ => ENNReal.ofReal (2 * (1 / (n + 1))) ^ d) atTop (𝓝 ⊤) := by
-      have h0 := hδ.inv
-      rw [ENNReal.inv_zero] at h0
-      have := (ENNReal.tendsto_rpow_at_top (neg_pos.2 hd)).comp h0
-      simpa [Function.comp_def, ENNReal.rpow_neg, ENNReal.inv_rpow] using this
+      simpa only [ENNReal.zero_rpow_of_neg hd] using hδ.ennrpow_const d
     refine le_top.trans (le_of_tendsto_of_tendsto hT hlim (Eventually.of_forall fun n => ?_))
     obtain ⟨i, hi⟩ := mem_iUnion.1 (hA n ha)
     exact (ENNReal.rpow_le_rpow_of_nonpos
