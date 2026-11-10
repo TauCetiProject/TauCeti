@@ -185,18 +185,20 @@ values in a Hausdorff space, and injective on `P = Q \ f⁻¹(S)`, where no poin
 `y` lies near `y`. Let `k` be continuous on `f(Q)`, the identity near `y`, and map `f(x)` into
 `f(P)` for every `x ∈ Q` off the fibre over `y`. Then `f⁻¹ ∘ k ∘ f` off that fibre, extended by the
 identity on it, is continuous on `Q`: it lifts `k ∘ f` through `f`, maps `Q` off the fibre into
-`P` and fixes the fibre pointwise. -/
+`P` and fixes the fibre pointwise. If `k` is injective on `f(Q)`, it is injective on the union of
+the fibre and `P`. -/
 theorem exists_continuousOn_lift_comp {α β : Type*} [TopologicalSpace α] [TopologicalSpace β]
     [T2Space β] {Q : Set α} (hQ : IsCompact Q) {f : α → β} (hf : ContinuousOn f Q) {S : Set β}
     (hinj : InjOn f (Q \ f ⁻¹' S)) {y : β} (hSy : ∀ᶠ y' in 𝓝 y, y' ∈ S → y' = y) {k : β → β}
-    (hkc : ContinuousOn k (f '' Q)) (hkid : k =ᶠ[𝓝 y] id)
+    (hkc : ContinuousOn k (f '' Q)) (hki : InjOn k (f '' Q)) (hkid : k =ᶠ[𝓝 y] id)
     (hkP : ∀ x ∈ Q, f x ≠ y → k (f x) ∈ f '' (Q \ f ⁻¹' S)) :
     ∃ g : α → α, ContinuousOn g Q ∧ (∀ x ∈ Q, f (g x) = k (f x)) ∧
-      (∀ x ∈ Q, f x ≠ y → g x ∈ Q \ f ⁻¹' S) ∧ ∀ x ∈ Q, f x = y → g x = x := by
+      (∀ x ∈ Q, f x ≠ y → g x ∈ Q \ f ⁻¹' S) ∧ (∀ x ∈ Q, f x = y → g x = x) ∧
+      InjOn g (Q ∩ f ⁻¹' {y} ∪ Q \ f ⁻¹' S) := by
   classical
   rcases isEmpty_or_nonempty α with hα | hα
   · exact ⟨id, continuousOn_id, fun x ↦ isEmptyElim x, fun x ↦ isEmptyElim x,
-      fun x ↦ isEmptyElim x⟩
+      fun x ↦ isEmptyElim x, fun x ↦ isEmptyElim x⟩
   set P := Q \ f ⁻¹' S
   have hky : k y = y := hkid.eq_of_nhds
   set g := fun x ↦ if f x = y then x else invFunOn f P (k (f x))
@@ -208,8 +210,13 @@ theorem exists_continuousOn_lift_comp {α β : Type*} [TopologicalSpace α] [Top
       (disjoint_left.2 fun _ ⟨x, hx, hxz⟩ ⟨x', hx', hx'z⟩ ↦ hx'.2 <| by
         rw [mem_preimage, hx'z, ← hxz]
         exact not_not.1 fun h ↦ hx.2 ⟨hx.1, h⟩)
-  refine ⟨g, fun x hx ↦ ?_, fun x hx ↦ ?_, fun x hx hxy ↦ (hgP hx hxy).1,
-    fun x _ hxy ↦ by simp [g, hxy]⟩
+  have hfg {x} (hx : x ∈ Q) : f (g x) = k (f x) := by
+    by_cases hxy : f x = y
+    · simp [g, hxy, hky]
+    · exact (hgP hx hxy).2
+  have hQ' {x} (hx : x ∈ Q ∩ f ⁻¹' {y} ∪ P) : x ∈ Q := hx.elim (·.1) (·.1)
+  refine ⟨g, fun x hx ↦ ?_, fun x hx ↦ hfg hx, fun x hx hxy ↦ (hgP hx hxy).1,
+    fun x _ hxy ↦ by simp [g, hxy], fun x hx x' hx' h ↦ ?_⟩
   · by_cases hxy : f x = y
     · -- Near the fibre over `y`, `g` is the identity.
       have hev : ∀ᶠ y' in 𝓝 (f x), k y' = id y' ∧ (y' ∈ S → y' = y) := by
@@ -234,9 +241,15 @@ theorem exists_continuousOn_lift_comp {α β : Type*} [TopologicalSpace α] [Top
           (fun x' hx' ↦ by simp [g, show f x' ≠ y from hx'.2]) (by simp [g, hxy])
       exact hgx.mono_of_mem_nhdsWithin (inter_mem self_mem_nhdsWithin
         ((hf x hx).preimage_mem_nhdsWithin (isOpen_compl_singleton.mem_nhds hxy)))
-  · by_cases hxy : f x = y
-    · simp [g, hxy, hky]
-    · exact (hgP hx hxy).2
+  · -- `g x = g x'` forces `f x = f x'`; on the fibre `g` is the identity, and on `P` `f` is
+    -- injective.
+    have hfx : f x = f x' := hki (mem_image_of_mem f (hQ' hx)) (mem_image_of_mem f (hQ' hx'))
+      (by rw [← hfg (hQ' hx), ← hfg (hQ' hx'), h])
+    by_cases hxy : f x = y
+    · simpa [g, hxy, ← hfx] using h
+    · have hP {x} (hx : x ∈ Q ∩ f ⁻¹' {y} ∪ P) (hxy : f x ≠ y) : x ∈ P :=
+        hx.resolve_left fun h ↦ hxy h.2
+      exact hinj (hP hx hxy) (hP hx' (hfx ▸ hxy)) hfx
 
 omit [InnerProductSpace ℝ F] in
 /-- **One shrinking step, given a push of `f(Q)`.** Let `k` be a map of the sphere, continuous
@@ -259,8 +272,9 @@ private theorem exists_mapsTo_of_mapsTo_image (hf : ContinuousOn f (closedBall 0
     obtain ⟨x', hx', hx'k⟩ := hkN (mem_image_of_mem f hx)
     refine ⟨x', ⟨hx'.1, fun h ↦ hxy ?_⟩, hx'k⟩
     exact hki (hfp hx) hyp (hx'k.symm.trans h ▸ hky.symm)
-  obtain ⟨g, hgc, hfg, hgP, hgX⟩ := exists_continuousOn_lift_comp (isCompact_closedBall 0 1) hf
-    hinj (Eventually.of_forall fun _ h ↦ h) (hkc.mono fun _ ⟨x, hx, hxq⟩ ↦ hxq ▸ hfp hx) hkid
+  have hfQ : f '' Q ⊆ {p}ᶜ := fun _ ⟨x, hx, hxq⟩ ↦ hxq ▸ hfp hx
+  obtain ⟨g, hgc, hfg, hgP, hgX, hgi⟩ := exists_continuousOn_lift_comp (isCompact_closedBall 0 1)
+    hf hinj (Eventually.of_forall fun _ h ↦ h) (hkc.mono hfQ) (hki.mono hfQ) hkid
     fun x hx hxy ↦ hkP hx hxy
   -- `g` maps `Q` into `U`.
   have hgU : MapsTo g Q U := fun x hx ↦ by
@@ -270,11 +284,9 @@ private theorem exists_mapsTo_of_mapsTo_image (hf : ContinuousOn f (closedBall 0
     have hgx := hgP x hx hxy
     rw [eq_of_apply_eq hinj hgx.1 hx'.1 ((hfg x hx).trans hx'k.symm) hgx.2]
     exact hx'.2
-  refine ⟨g, hgc, fun x hx x' hx' h ↦ ?_, hgU, fun x hx ↦ hgX x hx.1 hx.2⟩
-  have hfx : f x = f x' := hki (hfp hx) (hfp hx') (by rw [← hfg x hx, ← hfg x' hx', h])
+  refine ⟨g, hgc, hgi.mono fun x hx ↦ ?_, hgU, fun x hx ↦ hgX x hx.1 hx.2⟩
   by_cases hxy : f x = y
-  · rwa [hgX x hx hxy, hgX x' hx' (hfx ▸ hxy)] at h
-  · exact eq_of_apply_eq hinj hx hx' hfx hxy
+  exacts [Or.inl ⟨hx, hxy⟩, Or.inr ⟨hx, hxy⟩]
 
 /-- **One shrinking step.** For every open `U` containing the fibre `X` over `y`, there is a map
 of `E`, continuous and injective on the closed ball, which fixes `X` pointwise and maps the closed

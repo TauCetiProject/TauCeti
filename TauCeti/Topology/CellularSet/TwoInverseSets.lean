@@ -78,44 +78,21 @@ private theorem exists_continuousOn_mapsTo_injOn {Q : Set (sphere (0 : F) 1)} (h
     rintro (h | h)
     · exact hxa (hki (hfp hx) hap ((hx'k.symm.trans h).trans hka.symm))
     · exact hb (hx'k.symm.trans h)
-  obtain ⟨g, hgc, hfg, hgP, hga⟩ := exists_continuousOn_lift_comp hQ hf hinj
+  have hfQ : f '' Q ⊆ {p}ᶜ := fun _ ⟨x, hx, hxq⟩ ↦ hxq ▸ hfp hx
+  obtain ⟨g, hgc, hfg, hgP, hga, hgi⟩ := exists_continuousOn_lift_comp hQ hf hinj
     (Filter.mem_of_superset (isOpen_compl_singleton.mem_nhds hab) fun _ hb h ↦ h.resolve_right hb)
-    (hkc.mono fun _ ⟨x, hx, hxq⟩ ↦ hxq ▸ hfp hx) hkid fun x hx hxa ↦ hkP hx hxa
-  refine ⟨g, hgc, fun x hx ↦ ?_, fun x hx x' hx' h ↦ ?_, fun x hx x' hx' hx'b ↦ ?_⟩
+    (hkc.mono hfQ) (hki.mono hfQ) hkid fun x hx hxa ↦ hkP hx hxa
+  refine ⟨g, hgc, fun x hx ↦ ?_, hgi.mono fun x hx ↦ ?_, fun x hx x' hx' hx'b ↦ ?_⟩
   · by_cases hxa : f x = a
     · rwa [hga x hx hxa]
     · exact (hgP x hx hxa).1
-  · have hfx : f x = f x' := hki (hfp hx.1) (hfp hx'.1) (by rw [← hfg x hx.1, ← hfg x' hx'.1, h])
-    by_cases hxa : f x = a
-    · rwa [hga x hx.1 hxa, hga x' hx'.1 (hfx ▸ hxa)] at h
-    · exact hinj ⟨hx.1, by rintro (h | h); exacts [hxa h, hx.2 h]⟩
-        ⟨hx'.1, by rintro (h | h); exacts [hxa (hfx.trans h), hx'.2 h]⟩ hfx
+  · by_cases hxa : f x = a
+    exacts [Or.inl ⟨hx.1, hxa⟩, Or.inr ⟨hx.1, by rintro (h | h); exacts [hxa h, hx.2 h]⟩]
   · have hx'a : f x' ≠ a := fun h ↦ hab (h.symm.trans hx'b)
     refine ⟨fun h ↦ (hki (hfp hx) (hfp hx') ?_).trans hx'b, fun h ↦ ?_⟩
     · rw [← hfg x hx, ← hfg x' hx', h]
     · have hxa : f x ≠ a := fun h' ↦ hx'a (hx'b.trans (h.symm.trans h'))
       exact hinj (hgP x hx hxa) (hgP x' hx' hx'a) (by rw [hfg x hx, hfg x' hx', h, hx'b])
-
-/-- A continuous map from a preconnected space onto a `T₁` space takes a value other than two
-given distinct points `a` and `b`: otherwise the fibre over `a` would be clopen. -/
-private theorem exists_notMem_preimage_pair {X Y : Type*} [TopologicalSpace X]
-    [PreconnectedSpace X] [TopologicalSpace Y] [T1Space Y] {f : X → Y} (hf : Continuous f)
-    (hfs : Surjective f) {a b : Y} (hab : a ≠ b) : ∃ z, z ∉ f ⁻¹' {a, b} := by
-  by_contra! h
-  have hcompl : f ⁻¹' {a} = (f ⁻¹' {b})ᶜ := by
-    ext x
-    have hx := h x
-    simp only [mem_preimage, mem_insert_iff, mem_singleton_iff] at hx
-    rcases hx with hx | hx <;> simp [hx, hab, hab.symm]
-  rcases isClopen_iff.1 ⟨isClosed_singleton.preimage hf,
-    by rw [hcompl]; exact (isClosed_singleton.preimage hf).isOpen_compl⟩ with h' | h'
-  · obtain ⟨x, hx⟩ := hfs a
-    have hx' : x ∈ f ⁻¹' {a} := hx
-    rw [h'] at hx'
-    exact hx'
-  · obtain ⟨x, hx⟩ := hfs b
-    have hx' : x ∈ f ⁻¹' {a} := by rw [h']; exact mem_univ x
-    exact hab ((show f x = a from hx').symm.trans hx)
 
 /-- **Brown's theorem on two inverse sets.** Let `E` be a real normed space of dimension `n ≥ 2`,
 and let `f` map the unit sphere `Sⁿ` of a real inner product space of dimension `n + 1`
@@ -131,8 +108,14 @@ theorem isCellularSet_preimage_singleton (hn : 2 ≤ finrank ℝ E)
     (isPreconnected_sphere (by rw [← finrank_eq_rank]; exact_mod_cast (by omega : 1 < finrank ℝ F))
       0 1)
   have hAB : IsClosed (f ⁻¹' {a, b}) := (Set.toFinite _).isClosed.preimage hf
-  -- A point `z` outside both inverse sets.
-  obtain ⟨z, hz⟩ := exists_notMem_preimage_pair hf hfs hab
+  -- A point `z` outside both inverse sets: otherwise `f` would be a continuous map of the
+  -- connected sphere onto the discrete set `{a, b}`.
+  obtain ⟨z, hz⟩ : ∃ z, z ∉ f ⁻¹' {a, b} := by
+    by_contra! h
+    obtain ⟨u, rfl⟩ := hfs a
+    obtain ⟨v, rfl⟩ := hfs b
+    exact hab (isPreconnected_univ.constant_of_mapsTo (Set.toFinite {f u, f v}).isDiscrete
+      hf.continuousOn (fun x _ ↦ h x) (mem_univ u) (mem_univ v))
   obtain ⟨θ, hθc, hθi, hθo, hABθ, hzθ⟩ :=
     exists_continuous_injective_isOpen_image_ball_superset_notMem_range (E := E) hEF
       hAB.isCompact hz

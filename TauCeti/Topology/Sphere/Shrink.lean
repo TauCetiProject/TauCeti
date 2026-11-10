@@ -105,7 +105,6 @@ theorem exists_continuous_injective_isOpen_image_ball_superset_notMem_range
   set φ := stereographic' (finrank ℝ E) z
   have hsrc : φ.source = {z}ᶜ := stereographic'_source z
   have htgt : φ.target = univ := stereographic'_target z
-  have hsymm : Continuous φ.symm := continuousOn_univ.1 (htgt ▸ φ.continuousOn_symm)
   let L : E ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ E)) :=
     ContinuousLinearEquiv.ofFinrankEq finrank_euclideanSpace_fin.symm
   have hKφ : K ⊆ φ.source := fun u hu ↦ by rw [hsrc]; exact fun h ↦ hzK (h ▸ hu)
@@ -115,14 +114,10 @@ theorem exists_continuous_injective_isOpen_image_ball_superset_notMem_range
   set ψ : E ≃ₜ EuclideanSpace ℝ (Fin (finrank ℝ E)) :=
     (Homeomorph.smulOfNeZero R hR.ne').trans L.toHomeomorph
   have hψ (x : E) : ψ x = L (R • x) := by simp [ψ]
-  refine ⟨fun x ↦ φ.symm (ψ x), hsymm.comp ψ.continuous, fun x x' h ↦ ψ.injective ?_, ?_,
+  have hθ : IsOpenEmbedding (fun x ↦ φ.symm (ψ x)) :=
+    (φ.symm.isOpenEmbedding (by simp [htgt])).comp ψ.isOpenEmbedding
+  refine ⟨fun x ↦ φ.symm (ψ x), hθ.continuous, hθ.injective, hθ.isOpenMap _ isOpen_ball,
     fun u hu ↦ ?_, ?_⟩
-  · exact φ.symm.injOn (by rw [φ.symm_source, htgt]; trivial)
-      (by rw [φ.symm_source, htgt]; trivial) h
-  · rw [show (fun x ↦ φ.symm (ψ x)) '' ball (0 : E) 1 = φ.symm '' (ψ '' ball 0 1) from
-      (image_image _ _ _).symm]
-    exact φ.isOpen_image_symm_of_subset_target (ψ.isOpenMap _ isOpen_ball)
-      (by rw [htgt]; exact subset_univ _)
   · refine ⟨R⁻¹ • L.symm (φ u), ?_, ?_⟩
     · have hu' := hRK (mem_image_of_mem (fun u ↦ L.symm (φ u)) hu)
       rw [mem_ball_zero_iff] at hu' ⊢
