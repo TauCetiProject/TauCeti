@@ -142,6 +142,8 @@ theorem exists_spf_le (X : FormalScheme) (U : Opens X) (x : X) (hx : x ∈ U) :
         Set.range f.base ⊆ (U : Set X) := by
   obtain ⟨A, _, _, _, _, i, hi, y, hy⟩ := X.local_spf x
   have := hi
+  -- The explicit preimage open tells the basis lemma which neighbourhood to shrink;
+  -- membership in `Opens.map` is membership of the image point, where `hy` applies.
   obtain ⟨V, ⟨a, rfl⟩, hyV, hVU⟩ := (Opens.isBasis_iff_nbhd.mp Spf.isBasis_basicOpen)
     (show y ∈ (Opens.map i.base).obj U from
       (congrArg (fun z ↦ z ∈ U) hy).mpr hx)
@@ -247,12 +249,8 @@ theorem forgetToLocallyRingedSpace_map_restrictBasicOpenIso_inv (A : Type u)
 theorem restrictBasicOpenIso_inv_ofRestrict (A : Type u) [CommRing A] [TopologicalSpace A]
     [IsTopologicalRing A] [IsAdicRing A] (f : A) :
     (restrictBasicOpenIso A f).inv ≫ (ofSpf A).ofRestrict (Spf.basicOpen f) =
-      InducedCategory.homMk (Spf.basicOpenι f) := by
-  apply forgetToLocallyRingedSpace.map_injective
-  -- `Spf.basicOpen` and the formal-scheme carrier agree only after unfolding their wrappers.
-  erw [Functor.map_comp, forgetToLocallyRingedSpace_map_restrictBasicOpenIso_inv,
-    forgetToLocallyRingedSpace_map_ofRestrict]
-  exact Spf.restrictBasicOpenIso_inv_ofRestrict f
+      InducedCategory.homMk (Spf.basicOpenι f) :=
+  InducedCategory.hom_ext (Spf.restrictBasicOpenIso_inv_ofRestrict f)
 
 /-- Every basic open in a formal spectrum is affine formal. -/
 @[simp]
