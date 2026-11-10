@@ -427,8 +427,9 @@ instance : AddAction N (Valuation D) where
 theorem vadd_eq_shift (v : N) : v +ᵥ φ = φ.shift v :=
   rfl
 
-/-- Two valuations are equipollent if they differ by a shift: `ψ = φ + v` for some `v`. They
-are the orbits of the action of the coroot space by shifts, which form the reduced apartment. -/
+/-- Two valuations are equipollent if they differ by a shift: `ψ = φ + v` for some `v`, i.e. they
+lie in the same orbit of the action of the coroot space by shifts. The equipollence class of `φ`
+is the reduced apartment. -/
 def Equipollent (φ ψ : Valuation D) : Prop :=
   AddAction.orbitRel N (Valuation D) ψ φ
 
