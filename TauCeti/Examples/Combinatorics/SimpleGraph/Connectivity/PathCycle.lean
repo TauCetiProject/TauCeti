@@ -86,44 +86,15 @@ theorem path_isBlock_iff {B : Set (Fin 4)} :
   constructor
   · intro hB
     obtain ⟨a, haB⟩ := hB.nonempty
-    have hmore : ∃ w ∈ B, w ≠ a := by
-      by_contra h
-      simp only [not_exists, not_and, not_not] at h
-      have hBa : B = {a} := Set.eq_singleton_iff_unique_mem.mpr ⟨haB, h⟩
-      exact path_not_isIsolated a ((isBlock_singleton_iff_isIsolated (pathGraph 4) a).mp
-        (hBa ▸ hB))
-    obtain ⟨w, hwB, hwa⟩ := hmore
-    have hB' : B.Nontrivial := ⟨a, haB, w, hwB, Ne.symm hwa⟩
+    have hB' : B.Nontrivial :=
+      hB.nontrivial_of_not_isIsolated haB (path_not_isIsolated a)
     obtain ⟨v, x, hadj, hBpair⟩ :=
       (isAcyclic_pathGraph 4).exists_adj_pair_of_isBlock hB hB'
     rw [hBpair]
-    fin_cases v
-    · left
-      have hx : x = 1 := by simp [pathGraph_adj] at hadj; omega
-      rw [hx]
-      norm_num
-    · rcases (by simpa [pathGraph_adj] using hadj) with hx | hx
-      · right; left
-        have : x = 2 := by omega
-        rw [this]
-        norm_num
-      · left
-        have : x = 0 := by omega
-        rw [this, pair_comm]
-        norm_num
-    · rcases (by simpa [pathGraph_adj] using hadj) with hx | hx
-      · right; right
-        have : x = 3 := by omega
-        rw [this]
-        norm_num
-      · right; left
-        have : x = 1 := by omega
-        rw [this, pair_comm]
-        norm_num
-    · right; right
-      have hx : x = 2 := by simp [pathGraph_adj] at hadj; omega
-      rw [hx, pair_comm]
-      norm_num
+    have h01 : ({1, 0} : Set (Fin 4)) = {0, 1} := pair_comm _ _
+    have h12 : ({2, 1} : Set (Fin 4)) = {1, 2} := pair_comm _ _
+    have h23 : ({3, 2} : Set (Fin 4)) = {2, 3} := pair_comm _ _
+    fin_cases v <;> fin_cases x <;> simp_all [pathGraph_adj]
   · rintro (rfl | rfl | rfl)
     · exact path_isBlock_zero_one
     · exact path_isBlock_one_two

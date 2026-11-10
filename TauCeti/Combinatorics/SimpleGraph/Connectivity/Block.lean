@@ -96,6 +96,13 @@ theorem IsBlock.eq_of_subset (hB : G.IsBlock B) (hconn : (G.induce C).Connected)
     (hcut : ∀ v, ¬(G.induce C).IsCutVertex v) (hBC : B ⊆ C) : B = C :=
   Maximal.eq_of_subset hB ⟨hconn, hcut⟩ hBC
 
+/-- A block containing two distinct vertices contains a neighbour of the first vertex. -/
+theorem IsBlock.exists_adj_of_mem_of_ne (hB : G.IsBlock B) (huB : u ∈ B) (hvB : v ∈ B)
+    (huv : u ≠ v) : ∃ w ∈ B, G.Adj u w := by
+  obtain ⟨p⟩ := hB.connected.preconnected ⟨u, huB⟩ ⟨v, hvB⟩
+  have hp : ¬p.Nil := Walk.not_nil_of_ne fun h ↦ huv (congrArg Subtype.val h)
+  exact ⟨p.snd, p.snd.property, induce_adj.mp (p.adj_snd hp)⟩
+
 /-! ### Existence -/
 
 /-- In a finite graph, every connected induced subgraph without cut vertices is contained in a
@@ -150,6 +157,13 @@ theorem isBlock_singleton_iff_isIsolated (G : SimpleGraph V) (v : V) :
         exact (not_reachable_of_neighborSet_right_eq_empty hxv hv.neighborSet_eq_empty) hreach
       exact hxv ▸ Set.mem_singleton v
 
+/-- A block containing a non-isolated vertex has at least two vertices. -/
+theorem IsBlock.nontrivial_of_not_isIsolated (hB : G.IsBlock B) (hvB : v ∈ B)
+    (hv : ¬G.IsIsolated v) : B.Nontrivial := by
+  by_contra hB'
+  have hBv : B = {v} := Set.not_nontrivial_iff.mp hB' |>.eq_singleton_of_mem hvB
+  exact hv ((G.isBlock_singleton_iff_isIsolated v).mp (hBv ▸ hB))
+
 /-- Every edge of a finite simple graph has both endpoints in some block. -/
 theorem Adj.exists_isBlock_superset_pair [Finite V] (h : G.Adj u v) :
     ∃ B, G.IsBlock B ∧ {u, v} ⊆ B :=
@@ -185,7 +199,7 @@ theorem IsBridge.isBlock_pair (hb : G.IsBridge s(u, v)) (h : G.Adj u v) :
     exact ⟨hcard, hconn, hcut⟩
   let uC : C := ⟨u, huvC (by simp)⟩
   let vC : C := ⟨v, huvC (by simp)⟩
-  have huv : (G.induce C).Adj uC vC := h
+  have huv : (G.induce C).Adj uC vC := induce_adj.mpr h
   have hbridge : (G.induce C).IsBridge s(uC, vC) := by
     apply (isBridge_iff_forall_cycle_notMem huv).mpr
     intro z p hp hep
@@ -207,11 +221,7 @@ theorem IsAcyclic.isBlock_pair (hG : G.IsAcyclic) (h : G.Adj u v) :
 theorem IsAcyclic.exists_adj_pair_of_isBlock (hG : G.IsAcyclic) (hB : G.IsBlock B)
     (hB' : B.Nontrivial) : ∃ u v, G.Adj u v ∧ B = {u, v} := by
   obtain ⟨u, huB, v, hvB, huv⟩ := hB'
-  obtain ⟨p⟩ := hB.connected.preconnected ⟨u, huB⟩ ⟨v, hvB⟩
-  have hp : ¬p.Nil := Walk.not_nil_of_ne fun h ↦ huv (congrArg Subtype.val h)
-  let x : V := p.snd.1
-  have hxB : x ∈ B := p.snd.property
-  have hadj : G.Adj u x := induce_adj.mp (p.adj_snd hp)
+  obtain ⟨x, hxB, hadj⟩ := hB.exists_adj_of_mem_of_ne huB hvB huv
   have hpair : G.IsBlock ({u, x} : Set V) := hG.isBlock_pair hadj
   have hpairB : ({u, x} : Set V) ⊆ B := by
     intro y hy
@@ -303,15 +313,9 @@ theorem Adj.existsUnique_isBlock_superset_pair [Finite V] (h : G.Adj u v) :
 /-- A vertex lying in two distinct blocks has a neighbour in the first of them. -/
 theorem IsBlock.exists_adj_of_ne (hB : G.IsBlock B) (hC : G.IsBlock C) (hBC : B ≠ C)
     (hvB : v ∈ B) (hvC : v ∈ C) : ∃ u ∈ B, G.Adj v u := by
-  -- A vertex of a block other than `v` yields a neighbour of `v` inside that block.
-  have hadj {D : Set V} (hD : G.IsBlock D) (hvD : v ∈ D) {d : V} (hdD : d ∈ D) (hdv : d ≠ v) :
-      ∃ u ∈ D, G.Adj v u := by
-    obtain ⟨p⟩ := hD.connected.preconnected ⟨v, hvD⟩ ⟨d, hdD⟩
-    have hp : ¬p.Nil := Walk.not_nil_of_ne fun h ↦ hdv (congrArg Subtype.val h).symm
-    exact ⟨p.snd, p.snd.property, induce_adj.1 (Walk.adj_snd hp)⟩
   by_cases h : ∃ d ∈ B, d ≠ v
   · obtain ⟨d, hdB, hdv⟩ := h
-    exact hadj hB hvB hdB hdv
+    exact hB.exists_adj_of_mem_of_ne hvB hdB hdv.symm
   · -- Otherwise `B = {v}`, so `v` is isolated and `C = {v}` as well.
     simp only [not_exists, not_and, not_not] at h
     have hBv : B = {v} := Set.eq_singleton_iff_unique_mem.2 ⟨hvB, h⟩
@@ -319,7 +323,7 @@ theorem IsBlock.exists_adj_of_ne (hB : G.IsBlock B) (hC : G.IsBlock C) (hBC : B 
     refine (hBC ?_).elim
     rw [hBv, eq_comm, Set.eq_singleton_iff_unique_mem]
     refine ⟨hvC, fun c hcC ↦ by_contra fun hcv ↦ ?_⟩
-    obtain ⟨u, -, hvu⟩ := hadj hC hvC hcC hcv
+    obtain ⟨u, -, hvu⟩ := hC.exists_adj_of_mem_of_ne hvC hcC (Ne.symm hcv)
     exact hiso u hvu
 
 /-- **Blocks are separated by their common vertex.** If `v` lies in two distinct blocks `B` and
