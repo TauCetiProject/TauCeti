@@ -53,13 +53,12 @@ For a manifold target the integrated curvature of `K_R`, `R ≥ 0`, is at most
 `2 (B₀ + B₁ + B_∞)` for bounds `|H_q| ≤ B_q` of the end Hamiltonians
 (`SmoothTwoForm.abs_setIntegral_hamiltonianCurvature_cappedComparisonPerturbation_le`).
 So the energy differs from the symplectic area by at
-most `2 (B₀ + B₁ + B_∞)`, uniformly over the family
-(`IsNondegenerate.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le`
-in `TauCeti.SmoothTwoForm`).
+most `2 (B₀ + B₁ + B_∞)`, uniformly over the family; see
+`SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le`.
 The same estimate holds over any measurable region containing the support of the datum, with
 regularity required only near that support. For a finite-energy solution with tame almost complex
 structures it gives the lower area bound `-2 (B₀ + B₁ + B_∞) ≤ ∫ u^* ω`
-(`SmoothTwoForm.IsNondegenerate.neg_two_mul_sum_le_integral_cappedComparisonPerturbation`).
+(`SmoothTwoForm.IsNondegenerate.neg_two_mul_sum_le_integral_eval₂_of_cappedComparisonPerturbation`).
 These statements retain explicit integrability hypotheses on the energy and curvature. This is
 the energy bound, uniform in `R` for a fixed area, under which compactness of the comparison
 family is to be proved.
@@ -75,11 +74,11 @@ family is to be proved.
   energy identity along the comparison family.
 * `SmoothTwoForm.IsNondegenerate.integral_hamiltonianCurvature_cappedPerturbation_le`: the area of
   a solution bounds its integrated curvature.
-* `IsNondegenerate.abs_setIntegral_floerEnergyDensity_cappedComparisonPerturbation_sub_le`:
+* [`SmoothTwoForm.IsNondegenerate.abs_setIntegral_floerEnergyDensity_cappedComparisonPerturbation_sub_le`](https://taucetiproject.org/docs/TauCeti/Geometry/Symplectic/Floer/PairOfPants/Energy/Capped.html#TauCeti.SmoothTwoForm.IsNondegenerate.abs_setIntegral_floerEnergyDensity_cappedComparisonPerturbation_sub_le):
   the energy bound over a measurable region containing the support of the comparison datum.
-* `IsNondegenerate.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le`:
+* [`SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le`](https://taucetiproject.org/docs/TauCeti/Geometry/Symplectic/Floer/PairOfPants/Energy/Capped.html#TauCeti.SmoothTwoForm.IsNondegenerate.abs_integral_floerEnergyDensity_cappedComparisonPerturbation_sub_le):
   the energy bound uniform over the comparison family on manifold targets.
-* `SmoothTwoForm.IsNondegenerate.neg_two_mul_sum_le_integral_cappedComparisonPerturbation`:
+* `SmoothTwoForm.IsNondegenerate.neg_two_mul_sum_le_integral_eval₂_of_cappedComparisonPerturbation`:
   the corresponding lower area bound for Floer solutions.
 
 ## References
@@ -327,7 +326,7 @@ theorem IsNondegenerate.abs_integral_floerEnergyDensity_cappedComparisonPerturba
 /-- A finite-energy Floer solution of the capped comparison family, with tame almost complex
 structures, has area at least `-2 ∑ q, B q`, uniformly in the comparison parameter. In particular
 maps below this area threshold cannot be solutions, even along arbitrarily long necks. -/
-theorem IsNondegenerate.neg_two_mul_sum_le_integral_cappedComparisonPerturbation
+theorem IsNondegenerate.neg_two_mul_sum_le_integral_eval₂_of_cappedComparisonPerturbation
     [FiniteDimensional ℝ E] (hω : ω.IsNondegenerate) (hH : ∀ q, Periodic (H q) 1)
     (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) {R : ℝ} (hR₀ : 0 ≤ R)
