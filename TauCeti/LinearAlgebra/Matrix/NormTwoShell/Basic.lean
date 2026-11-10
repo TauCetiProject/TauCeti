@@ -24,21 +24,22 @@ Let `B` be an integer matrix indexed by a finite type `I`, read as the Gram matr
 Dynkin diagram, possibly disconnected, `Q` is the root lattice in simple-root coordinates and `Φ` is
 its set of roots; the coordinate vector `Pi.single i 1` is the simple root `αᵢ`.
 
-The file develops the elementary theory of `Φ` in three layers of hypotheses.
+The file develops the elementary theory of `Φ` in layers of hypotheses.
 
 * For symmetric `B`, `⟪a + b, a + b⟫ = ⟪a, a⟫ + ⟪b, b⟫ + 2⟪a, b⟫`, so for `a, b ∈ Φ` the sum
   `a + b` lies in `Φ` exactly when `⟪a, b⟫ = -1`, and `a - b` exactly when `⟪a, b⟫ = 1`;
   likewise the reflection `x ↦ x - ⟪x, a⟫ a` in a vector of `Φ` preserves `Φ`.
-* For positive definite `B` with even diagonal, every nonzero vector has norm at least two. Two
-  vectors of `Φ` then pair to `2` exactly when they are equal and to `-2` exactly when they are
-  opposite, and otherwise to `-1`, `0` or `1`. The shell is finite.
-* If in addition the off-diagonal entries are nonpositive, as for a simply laced Cartan matrix,
-  every vector of `Φ` has coefficients of one sign: writing `a = a⁺ - a⁻` with disjointly
-  supported nonnegative parts, `⟪a⁺, a⁻⟫ ≤ 0`, so two nonzero parts would give `⟪a, a⟫ ≥ 4`.
-  With diagonal `2`, a nonnegative vector of `Φ` that is not simple pairs to `1` with some simple
-  root `αᵢ`, and `a - αᵢ` is again a nonnegative vector of `Φ`, of height one less. This is the
-  height induction `Matrix.PosDef.normTwoShell_nonneg_induction`: every positive root is reached
-  from a simple root by adding simple roots one at a time without leaving `Φ`.
+* For positive definite `B`, two vectors of `Φ` pair to `2` exactly when they are equal and to `-2`
+  exactly when they are opposite, and otherwise to `-1`, `0` or `1`. The shell is finite.
+* If in addition the diagonal is even, every nonzero vector has norm at least two. When also the
+  off-diagonal entries are nonpositive, as for a simply laced Cartan matrix, every vector of `Φ`
+  has coefficients of one sign: writing `a = a⁺ - a⁻` with disjointly supported nonnegative parts,
+  `⟪a⁺, a⁻⟫ ≤ 0`, so two nonzero parts would give `⟪a, a⟫ ≥ 4`.
+* For positive definite `B` with diagonal `2` alone, a nonnegative vector of `Φ` that is not simple
+  pairs to `1` with some simple root `αᵢ`, and `a - αᵢ` is again a nonnegative vector of `Φ`, of
+  height one less. This is the height induction `Matrix.PosDef.normTwoShell_nonneg_induction`:
+  every nonnegative vector of `Φ` is reached from a simple root by adding simple roots one at a
+  time without leaving `Φ`.
 
 These are the facts about the root set that the integral Chevalley lattice of a simply laced
 diagram is built on: its root vectors are indexed by `Φ`, and its bracket on root vectors is
@@ -63,8 +64,8 @@ it, and `Matrix.mulVec_cramer` identifies its root pairings with determinant tim
 * `Matrix.PosDef.dotProduct_mulVec_eq_two_iff` and
   `Matrix.PosDef.dotProduct_mulVec_eq_neg_two_iff`: for `a, b ∈ Φ`, `⟪a, b⟫ = 2 ↔ a = b` and
   `⟪a, b⟫ = -2 ↔ a = -b`.
-* `Matrix.PosDef.dotProduct_mulVec_le_one` and `Matrix.PosDef.neg_one_le_dotProduct_mulVec`: for
-  an even diagonal, two vectors of `Φ` that are neither equal nor opposite pair into `{-1, 0, 1}`.
+* `Matrix.PosDef.dotProduct_mulVec_le_one` and `Matrix.PosDef.neg_one_le_dotProduct_mulVec`: two
+  vectors of `Φ` that are neither equal nor opposite pair into `{-1, 0, 1}`.
 * `Matrix.PosDef.finite_normTwoShell`: the shell of a positive definite matrix is finite.
 * `Matrix.PosDef.nonneg_or_nonpos_of_mem_normTwoShell`: with nonpositive off-diagonal entries,
   every vector of `Φ` is nonnegative or nonpositive.
@@ -207,19 +208,19 @@ theorem dotProduct_mulVec_eq_neg_two_iff (hB : B.PosDef) (ha : a ∈ B.normTwoSh
   rw [mulVec_neg, dotProduct_neg, neg_eq_iff_eq_neg] at h
   exact h
 
-/-- For an even diagonal, two distinct vectors of the norm-two shell pair to at most `1`. -/
-theorem dotProduct_mulVec_le_one (hB : B.PosDef) (hev : ∀ i, Even (B i i))
-    (ha : a ∈ B.normTwoShell) (hb : b ∈ B.normTwoShell) (hab : a ≠ b) : a ⬝ᵥ B *ᵥ b ≤ 1 := by
-  have h := hB.two_le_dotProduct_mulVec_self hev (sub_ne_zero.mpr hab)
-  rw [hB.isHermitian.isSymm.sub_dotProduct_mulVec_sub, ha.out, hb.out] at h
+/-- Two distinct vectors of the norm-two shell pair to at most `1`. -/
+theorem dotProduct_mulVec_le_one (hB : B.PosDef) (ha : a ∈ B.normTwoShell)
+    (hb : b ∈ B.normTwoShell) (hab : a ≠ b) : a ⬝ᵥ B *ᵥ b ≤ 1 := by
+  have hpos : 0 < (a - b) ⬝ᵥ B *ᵥ (a - b) := by
+    simpa using hB.dotProduct_mulVec_pos (sub_ne_zero.mpr hab)
+  rw [hB.isHermitian.isSymm.sub_dotProduct_mulVec_sub, ha.out, hb.out] at hpos
   omega
 
-/-- For an even diagonal, two non-opposite vectors of the norm-two shell pair to at least
-`-1`. -/
-theorem neg_one_le_dotProduct_mulVec (hB : B.PosDef) (hev : ∀ i, Even (B i i))
+/-- Two non-opposite vectors of the norm-two shell pair to at least `-1`. -/
+theorem neg_one_le_dotProduct_mulVec (hB : B.PosDef)
     (ha : a ∈ B.normTwoShell) (hb : b ∈ B.normTwoShell) (hab : a ≠ -b) :
     -1 ≤ a ⬝ᵥ B *ᵥ b := by
-  have h := hB.dotProduct_mulVec_le_one hev ha (neg_mem_normTwoShell.mpr hb) hab
+  have h := hB.dotProduct_mulVec_le_one ha (neg_mem_normTwoShell.mpr hb) hab
   rw [mulVec_neg, dotProduct_neg] at h
   omega
 
@@ -230,7 +231,7 @@ theorem finite_normTwoShell (hB : B.PosDef) : B.normTwoShell.Finite := by
   rw [Set.mem_ofPred_eq, toQuadraticForm'_apply]
   exact ha
 
-/-! ### Nonpositive off-diagonal entries -/
+/-! ### Even diagonal and nonpositive off-diagonal entries -/
 
 /-- **Every vector of the norm-two shell has coefficients of one sign**, for a positive definite
 Gram matrix with even diagonal and nonpositive off-diagonal entries, such as a simply laced Cartan
@@ -283,16 +284,17 @@ theorem exists_invariant_pairing_ne_zero (hB : B.PosDef) (hev : ∀ i, Even (B i
     exact mul_ne_zero hB.det_pos.ne'
       (hB.sum_ne_zero_of_mem_normTwoShell hev hoff a.property)
 
+/-! ### Positive roots and height induction, for diagonal `2` -/
+
 /-- **A positive root that is not simple has a simple root whose subtraction leaves a positive
-root.** For a positive definite Gram matrix with diagonal `2` and nonpositive off-diagonal entries,
-a nonnegative vector `a` of the norm-two shell other than every coordinate vector pairs to `1` with
-some coordinate vector `αᵢ`, and `a - αᵢ` is again a nonnegative vector of the shell. -/
+root.** For a positive definite Gram matrix with diagonal `2`, a nonnegative vector `a` of the
+norm-two shell other than every coordinate vector pairs to `1` with some coordinate vector `αᵢ`, and
+`a - αᵢ` is again a nonnegative vector of the shell. -/
 theorem exists_sub_single_mem_normTwoShell [DecidableEq I] (hB : B.PosDef)
-    (hdiag : ∀ i, B i i = 2) (hoff : ∀ i j, i ≠ j → B i j ≤ 0) (ha : a ∈ B.normTwoShell)
+    (hdiag : ∀ i, B i i = 2) (ha : a ∈ B.normTwoShell)
     (hpos : 0 ≤ a) (hsimple : ∀ i, a ≠ Pi.single i 1) :
     ∃ i, a ⬝ᵥ B *ᵥ Pi.single i 1 = 1 ∧ a - Pi.single i 1 ∈ B.normTwoShell ∧
       0 ≤ a - Pi.single i 1 := by
-  have hev : ∀ i, Even (B i i) := fun i ↦ ⟨1, by rw [hdiag i]; rfl⟩
   -- Some coordinate is positive and pairs positively with `a`, since `⟪a, a⟫ = 2 > 0`.
   obtain ⟨i, hai, hpair⟩ : ∃ i, 0 < a i ∧ 0 < a ⬝ᵥ B *ᵥ Pi.single i 1 := by
     by_contra hcon
@@ -310,25 +312,21 @@ theorem exists_sub_single_mem_normTwoShell [DecidableEq I] (hB : B.PosDef)
     omega
   have hαi := single_mem_normTwoShell (hdiag i)
   have hone : a ⬝ᵥ B *ᵥ Pi.single i 1 = 1 :=
-    le_antisymm (hB.dotProduct_mulVec_le_one hev ha hαi (hsimple i)) hpair
-  have hsub := (hB.isHermitian.isSymm.sub_mem_normTwoShell_iff ha hαi).mpr hone
-  refine ⟨i, hone, hsub, ?_⟩
-  rcases hB.nonneg_or_nonpos_of_mem_normTwoShell hev hoff hsub with h | h
-  · exact h
-  · -- Otherwise `a ≤ αᵢ ≤ a`, so `a` would be the simple root `αᵢ`.
-    refine absurd (le_antisymm (sub_nonpos.mp h) fun j ↦ ?_) (hsimple i)
-    rcases eq_or_ne j i with rfl | hji
-    · simpa using Int.add_one_le_iff.mpr hai
-    · simpa [Pi.single_apply, hji] using hpos j
+    le_antisymm (hB.dotProduct_mulVec_le_one ha hαi (hsimple i)) hpair
+  refine ⟨i, hone, (hB.isHermitian.isSymm.sub_mem_normTwoShell_iff ha hαi).mpr hone, fun j ↦ ?_⟩
+  -- Both `a i` and `1` are positive integers, and the other coordinates of `a` are nonnegative.
+  rcases eq_or_ne j i with rfl | hji
+  · simpa using Int.add_one_le_iff.mpr hai
+  · simpa [Pi.single_apply, hji] using hpos j
 
 /-- **Height induction on positive roots.** Let `B` be a positive definite Gram matrix with
-diagonal `2` and nonpositive off-diagonal entries, such as the Cartan matrix of a simply laced
-Dynkin diagram. A property holding at every simple root `Pi.single i 1`, and passing from a
-nonnegative vector `a` of the norm-two shell to `a + Pi.single i 1` whenever the latter is again in
-the shell, holds at every nonnegative vector of the shell. -/
+diagonal `2`, such as the Cartan matrix of a simply laced Dynkin diagram. A property holding at
+every simple root `Pi.single i 1`, and passing from a nonnegative vector `a` of the norm-two shell
+to `a + Pi.single i 1` whenever the latter is again in the shell, holds at every nonnegative
+vector of the shell. -/
 @[elab_as_elim]
 theorem normTwoShell_nonneg_induction [DecidableEq I] (hB : B.PosDef) (hdiag : ∀ i, B i i = 2)
-    (hoff : ∀ i j, i ≠ j → B i j ≤ 0) {motive : (I → ℤ) → Prop}
+    {motive : (I → ℤ) → Prop}
     (simple : ∀ i, motive (Pi.single i 1))
     (add : ∀ a i, a ∈ B.normTwoShell → 0 ≤ a → a + Pi.single i 1 ∈ B.normTwoShell →
       motive a → motive (a + Pi.single i 1))
@@ -341,7 +339,7 @@ theorem normTwoShell_nonneg_induction [DecidableEq I] (hB : B.PosDef) (hdiag : �
       exact simple i
     push Not at hsimple
     obtain ⟨i, -, hsub, hsubpos⟩ :=
-      hB.exists_sub_single_mem_normTwoShell hdiag hoff ha hpos hsimple
+      hB.exists_sub_single_mem_normTwoShell hdiag ha hpos hsimple
     have hheight : ∑ j, (a - Pi.single i 1 : I → ℤ) j = ∑ j, a j - 1 := by
       simp [Finset.sum_sub_distrib]
     have hnonneg : 0 ≤ ∑ j, (a - Pi.single i 1 : I → ℤ) j :=

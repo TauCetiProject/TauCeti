@@ -83,7 +83,7 @@ theorem exists_polygonal_approximation_winding_sum
       TendstoUniformlyOn (fun n ↦ γn n i) (γ i) atTop (uIcc (a i) (b i)) := by
     simpa only [uIcc_of_le (hab i hi).le] using hu i hi
   filter_upwards [Contour.eventually_sum_windingNumber_eq_on_compl_of_tendstoUniformlyOn
-    hγ hAC hclosed hcl hu' hU htrace] with n hn
+    hγ hAC hcl hu' hU htrace] with n hn
   exact ⟨hn.1, fun z hz ↦ (hn.2 z hz).trans (hindex z hz)⟩
 
 end TauCeti.Green

@@ -28,6 +28,8 @@ Baker--Campbell--Hausdorff expansion.
 
 ## Main results
 
+* `RCLike.exp_ofReal`: the exponential on real scalars in real or complex normed fields.
+* `NormedSpace.exp_real_smul_one`: the exponential of a real scalar multiple of the unit.
 * `NormedSpace.contDiff_exp`: the exponential is smooth of every order, including analytic.
 * `NormedSpace.tendsto_exp_nhds_zero_nhds_one`: the exponential tends to `1` at the origin.
 * `NormedSpace.expSeries_partialSum_three`: the third partial sum of the exponential series is
@@ -40,6 +42,8 @@ Baker--Campbell--Hausdorff expansion.
   (`TauCeti.norm_exp_le_exp_norm`, with the scalar-multiple form `TauCeti.norm_exp_smul_le`), and
   power-bounded elements satisfy `‖exp (s • b)‖ ≤ M * Real.exp ‖s‖`
   (`TauCeti.norm_exp_smul_le_mul_exp_of_norm_pow_le`).
+* `TauCeti.norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le`: if the powers of `exp x` are
+  bounded by `C`, then `‖exp (t • x)‖ ≤ C * Real.exp ‖x‖` uniformly in `t ≥ 0`.
 * `TauCeti.norm_exp_smul_one_le`: `‖exp (c • 1)‖ ≤ Real.exp c` for real `c` when `‖1‖ ≤ 1`.
 -/
 
@@ -66,6 +70,20 @@ theorem expSeries_partialSum_three (x : A) :
     Nat.factorial]
 
 end Algebra
+
+/-- Exponentiating a real scalar multiple of the unit gives the real exponential
+multiple of the unit in every real normed algebra. -/
+@[simp]
+theorem exp_real_smul_one {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] (x : ℝ) :
+    exp (x • (1 : A)) = Real.exp x • 1 := by
+  simpa only [Algebra.algebraMap_eq_smul_one, ← Real.exp_eq_exp_ℝ] using
+    (NormedSpace.algebraMap_exp_comm (𝔸 := A) x).symm
+
+/-- The exponential of a real scalar in a real or complex normed field is its real exponential. -/
+@[simp]
+theorem _root_.RCLike.exp_ofReal {𝕜 : Type*} [RCLike 𝕜] (x : ℝ) :
+    exp (x : 𝕜) = (Real.exp x : 𝕜) := by
+  simpa only [RCLike.real_smul_eq_coe_mul, mul_one] using (exp_real_smul_one (A := 𝕜) x)
 
 variable (𝕂 : Type*) {A : Type*} [NontriviallyNormedField 𝕂] [NormedRing A] [NormedAlgebra 𝕂 A]
   [CharZero 𝕂] [ContinuousSMul ℚ 𝕂] [CompleteSpace A]
@@ -154,6 +172,25 @@ theorem norm_exp_smul_le_mul_exp_of_norm_pow_le {b : 𝔸} {M : ℝ} (s : 𝕜)
   rw [smul_pow, norm_smul, norm_pow, mul_comm]
   gcongr
   exact hpow n
+
+/-- If every power of `exp x` has norm at most `C`, then `‖exp (t • x)‖ ≤ C * Real.exp ‖x‖` for
+every real `t ≥ 0`. -/
+theorem norm_exp_smul_le_mul_exp_norm_of_norm_exp_pow_le [CompleteSpace 𝔸]
+    (h_one : ‖(1 : 𝔸)‖ ≤ 1) {x : 𝔸} {C : ℝ} (hC : ∀ n : ℕ, ‖exp x ^ n‖ ≤ C) {t : ℝ}
+    (ht : 0 ≤ t) : ‖exp ((t : 𝕜) • x)‖ ≤ C * Real.exp ‖x‖ := by
+  let +nondep : NormedAlgebra ℚ 𝔸 := .restrictScalars ℚ 𝕜 𝔸
+  -- Write `t = n + s` with `n = ⌊t⌋₊` and `0 ≤ s ≤ 1`, so that
+  -- `exp (t • x) = (exp x) ^ n * exp (s • x)`.
+  have hs0 : 0 ≤ t - ⌊t⌋₊ := sub_nonneg.mpr (Nat.floor_le ht)
+  have hs1 : t - ⌊t⌋₊ ≤ 1 := by linarith [Nat.lt_floor_add_one t]
+  have hsplit : (t : 𝕜) = (⌊t⌋₊ : 𝕜) + ((t - ⌊t⌋₊ : ℝ) : 𝕜) := by push_cast; ring
+  rw [hsplit, add_smul, exp_add_of_commute (((Commute.refl x).smul_left _).smul_right _),
+    Nat.cast_smul_eq_nsmul, exp_nsmul]
+  refine (norm_mul_le _ _).trans (mul_le_mul (hC _) ?_ (norm_nonneg _)
+    ((norm_nonneg _).trans (hC 0)))
+  refine (norm_exp_smul_le h_one x _).trans ?_
+  rw [Real.exp_le_exp, RCLike.norm_ofReal, abs_of_nonneg hs0]
+  nlinarith [norm_nonneg x]
 
 end RCLike
 

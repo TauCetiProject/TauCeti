@@ -140,8 +140,7 @@ theorem MemLp.eLpNorm_le_of_forall_enorm_integral_mul_le_of_ne_top {q q' : ℝ�
   set X := eLpNorm φ q μ
   have hX : X ≠ ∞ := hφmem.eLpNorm_lt_top.ne
   have hgX : eLpNorm g q' μ ≤ X ^ (r - 1) :=
-    eLpNorm_le_eLpNorm_rpow_toReal_sub_one hq φ.aestronglyMeasurable g.aestronglyMeasurable
-      (ae_of_all _ hg_norm)
+    eLpNorm_le_eLpNorm_rpow_toReal_sub_one hq g.aestronglyMeasurable (ae_of_all _ hg_norm)
   have hgmem : MemLp g q' μ :=
     memLp_iff.2 (hgX.trans_lt (ENNReal.rpow_lt_top_of_nonneg (by linarith) hX))
   -- The pairing of `φ` with its extremal function is `‖φ‖_q ^ q`.
@@ -319,7 +318,7 @@ private theorem eLpNorm_indicator_spanningSets_inter_norm_le_of_forall_enorm_int
   set X := eLpNorm u q μ with hX_def
   have hX : X ≠ ∞ := huLq.eLpNorm_lt_top.ne
   have hgX : eLpNorm g q' μ ≤ X ^ (r - 1) :=
-    eLpNorm_le_eLpNorm_rpow_toReal_sub_one hq hum.aestronglyMeasurable hgm (ae_of_all _ hg_norm)
+    eLpNorm_le_eLpNorm_rpow_toReal_sub_one hq hgm (ae_of_all _ hg_norm)
   have hgtop : MemLp g ∞ μ := by
     refine memLp_top_of_bound hgm ((N : ℝ) ^ (r - 1)) (ae_of_all _ fun x => ?_)
     exact (hg_norm x).trans (Real.rpow_le_rpow (norm_nonneg _) (hu_le x) (by linarith))
