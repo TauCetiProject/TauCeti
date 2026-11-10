@@ -211,11 +211,9 @@ private theorem tendsto_derivativeRescale_family_zero
   obtain ⟨η, hη, hηε⟩ : ∃ η > 0, η * (‖v₀‖ + 1) < ε / 2 :=
     ⟨ε / (4 * (‖v₀‖ + 1)), by positivity, by field_simp; linarith⟩
   -- Near `(p₀, 0)` the derivatives are `η`-close to `φ`, on a product neighbourhood `N × W`.
-  have hDc : ∀ᶠ z : P × E in 𝓝 (p₀, 0), ‖D z.1 z.2 - φ‖ < η := by
-    have h := (hD (p₀, 0) ⟨mem_univ _, mem_ball_self hr⟩).tendsto
-    rw [nhdsWithin_eq_nhds.2 ((isOpen_univ.prod isOpen_ball).mem_nhds
-      ⟨mem_univ _, mem_ball_self hr⟩)] at h
-    exact (Metric.tendsto_nhds.1 h η hη).mono fun z hz ↦ by rw [dist_eq_norm] at hz; exact hz
+  have hDc : ∀ᶠ z : P × E in 𝓝 (p₀, 0), ‖D z.1 z.2 - φ‖ < η :=
+    (Metric.tendsto_nhds.1 (hD.continuousAt ((isOpen_univ.prod isOpen_ball).mem_nhds
+      ⟨mem_univ _, mem_ball_self hr⟩)) η hη).mono fun z hz ↦ by rwa [dist_eq_norm] at hz
   obtain ⟨N, hN, W, hW, hNW⟩ := mem_nhds_prod_iff.1 hDc
   obtain ⟨ρ, hρ, hρW⟩ := Metric.mem_nhds_iff.1 hW
   have hsmul0 : Tendsto (fun q : P × ℝ × E ↦ q.2.1 • q.2.2) (𝓝 (p₀, 0, v₀)) (𝓝 0) := by
@@ -253,42 +251,101 @@ private theorem tendsto_derivativeRescale_family_zero
         nlinarith [norm_nonneg v]
     _ = ε := add_halves ε
 
+/-- The differences `f p y - f p 0` of a family differentiable on the ball of radius `r`, with
+derivatives jointly continuous in the parameter and the point, are jointly continuous: the mean
+value inequality bounds `(f p - f p₀) y - (f p - f p₀) 0` by the distance of the derivatives of
+`f p` and `f p₀` along the segment from `0` to `y`, which is small uniformly on that compact
+segment. -/
+private theorem continuousOn_sub_apply_zero_family
+    (hf : ∀ p, ∀ y ∈ ball (0 : E) r, HasFDerivAt (f p) (D p y) y)
+    (hD : ContinuousOn (uncurry D) (univ ×ˢ ball 0 r)) :
+    ContinuousOn (fun q : P × E ↦ f q.1 q.2 - f q.1 0) (univ ×ˢ ball 0 r) := by
+  rintro ⟨p₀, y₀⟩ ⟨-, hy₀⟩
+  refine ContinuousAt.continuousWithinAt ?_
+  have hDc (p : P) {z : E} (hz : z ∈ ball (0 : E) r) : ContinuousAt (uncurry D) (p, z) :=
+    hD.continuousAt ((isOpen_univ.prod isOpen_ball).mem_nhds ⟨mem_univ _, hz⟩)
+  -- Compare with the continuous map `y ↦ f p₀ y - f p₀ 0`.
+  have hc₀ : ContinuousAt (fun q : P × E ↦ f p₀ q.2 - f p₀ 0) (p₀, y₀) :=
+    ((hf p₀ y₀ hy₀).continuousAt.comp continuous_snd.continuousAt).sub continuousAt_const
+  suffices h : Tendsto (fun q : P × E ↦ (f q.1 q.2 - f q.1 0) - (f p₀ q.2 - f p₀ 0))
+      (𝓝 (p₀, y₀)) (𝓝 0) by
+    simpa [ContinuousAt] using h.add hc₀
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  obtain ⟨η, hη, hηε⟩ : ∃ η > 0, η * (‖y₀‖ + 1) < ε :=
+    ⟨ε / (2 * (‖y₀‖ + 1)), by positivity, by field_simp; linarith⟩
+  -- Along the segments from `0` to `y`, the derivatives of `f p` and `f p₀` are `η`-close.
+  have hev : ∀ᶠ q : P × E in 𝓝 (p₀, y₀), ∀ s ∈ Icc (0 : ℝ) 1,
+      ‖D q.1 (s • q.2) - D p₀ (s • q.2)‖ < η := by
+    refine isCompact_Icc.eventually_forall_of_forall_eventually fun s hs ↦ ?_
+    have hsy : s • y₀ ∈ ball (0 : E) r := (balanced_ball_zero (𝕜 := ℝ)).smul_mem
+      (by rw [Real.norm_of_nonneg hs.1]; exact hs.2) hy₀
+    have h₁ : ContinuousAt (fun x : (P × E) × ℝ ↦ D x.1.1 (x.2 • x.1.2)) ((p₀, y₀), s) :=
+      ContinuousAt.comp (g := uncurry D) (f := fun x : (P × E) × ℝ ↦ (x.1.1, x.2 • x.1.2))
+        (x := ((p₀, y₀), s)) (hDc p₀ hsy) (by fun_prop)
+    have h₂ : ContinuousAt (fun x : (P × E) × ℝ ↦ D p₀ (x.2 • x.1.2)) ((p₀, y₀), s) :=
+      ContinuousAt.comp (g := uncurry D) (f := fun x : (P × E) × ℝ ↦ (p₀, x.2 • x.1.2))
+        (x := ((p₀, y₀), s)) (hDc p₀ hsy) (by fun_prop)
+    have hc := h₁.sub h₂
+    simpa [dist_eq_norm] using hc.eventually (ball_mem_nhds _ hη)
+  filter_upwards [hev, (continuous_snd.tendsto (p₀, y₀)).eventually (ball_mem_nhds y₀ one_pos),
+    (continuous_snd.tendsto (p₀, y₀)).eventually (isOpen_ball.mem_nhds hy₀)] with q hq hq1 hqr
+  -- The mean value inequality for `f q.1 - f p₀` on the segment from `0` to `q.2`.
+  have hseg {z : E} (hz : z ∈ segment ℝ 0 ((1 : ℝ) • q.2)) :
+      ∃ s ∈ Icc (0 : ℝ) 1, z = s • q.2 := by
+    rw [segment_eq_image', one_smul, sub_zero] at hz
+    obtain ⟨s, hs, rfl⟩ := hz
+    exact ⟨s, hs, zero_add _⟩
+  have hzr {z : E} (hz : z ∈ segment ℝ 0 ((1 : ℝ) • q.2)) : z ∈ ball (0 : E) r :=
+    (convex_ball (0 : E) r).segment_subset (mem_ball_self (pos_of_mem_ball hy₀))
+      (by rwa [one_smul]) hz
+  have hb := norm_derivativeRescale_sub_le (f := fun z ↦ f q.1 z - f p₀ z)
+    (D := fun z ↦ D q.1 z - D p₀ z) (φ := 0) (C := η) (t := 1) (v := q.2)
+    (fun z hz ↦ (hf q.1 z (hzr hz)).sub (hf p₀ z (hzr hz))) fun z hz ↦ by
+      obtain ⟨s, hs, rfl⟩ := hseg hz
+      simpa using (hq s hs).le
+  rw [derivativeRescale_one, zero_apply, sub_zero] at hb
+  have hq1' : ‖q.2‖ < ‖y₀‖ + 1 := by
+    have := norm_le_norm_add_norm_sub' q.2 y₀
+    rw [dist_eq_norm] at hq1
+    linarith
+  rw [dist_zero_right]
+  calc ‖f q.1 q.2 - f q.1 0 - (f p₀ q.2 - f p₀ 0)‖
+      = ‖f q.1 q.2 - f p₀ q.2 - (f q.1 0 - f p₀ 0)‖ := by congr 1; abel
+    _ ≤ η * ‖q.2‖ := hb
+    _ < ε := by nlinarith [norm_nonneg q.2]
+
 /-- **Rescaling a family to its derivatives.** Let `f p` be a family of maps, differentiable on
-the ball of radius `r` with derivatives `D p y` jointly continuous in `p` and `y`, and let `f`
-itself be jointly continuous there. Then the rescalings `derivativeRescale (f p) (D p 0) t v`
-are jointly continuous in `p`, the scale `t` with `‖t‖ ≤ 1`, and `v` in the ball, including at
-scale zero. -/
+the ball of radius `r` with derivatives `D p y` jointly continuous in `p` and `y`. Then the
+rescalings `derivativeRescale (f p) (D p 0) t v` are jointly continuous in `p`, the scale `t`
+with `‖t‖ ≤ 1`, and `v` in the ball, including at scale zero. -/
 theorem continuousOn_derivativeRescale_family
     (hf : ∀ p, ∀ y ∈ ball (0 : E) r, HasFDerivAt (f p) (D p y) y)
-    (hfc : ContinuousOn (uncurry f) (univ ×ˢ ball 0 r))
     (hD : ContinuousOn (uncurry D) (univ ×ˢ ball 0 r)) :
     ContinuousOn (fun q : P × ℝ × E ↦ derivativeRescale (f q.1) (D q.1 0) q.2.1 q.2.2)
       (univ ×ˢ (closedBall 0 1 ×ˢ ball 0 r)) := by
   rintro ⟨p₀, t₀, v₀⟩ ⟨-, ht₀, hv₀⟩
-  have hr : 0 < r := pos_of_mem_ball hv₀
   by_cases ht0 : t₀ = 0
   · subst t₀
     simpa only [ContinuousWithinAt, derivativeRescale_zero] using
       tendsto_derivativeRescale_family_zero hf hD hv₀
-  -- Away from scale zero the rescaling is a difference quotient of the jointly continuous `f`.
+  -- Away from scale zero the rescaling is a difference quotient of the jointly continuous
+  -- differences `f p y - f p 0`.
   have hcont : ContinuousWithinAt
       (fun q : P × ℝ × E ↦ q.2.1⁻¹ • (f q.1 (q.2.1 • q.2.2) - f q.1 0))
       (univ ×ˢ (closedBall 0 1 ×ˢ ball 0 r)) (p₀, t₀, v₀) := by
-    have h₁ : ContinuousWithinAt (fun q : P × ℝ × E ↦ f q.1 (q.2.1 • q.2.2))
+    have h₁ : ContinuousWithinAt (fun q : P × ℝ × E ↦ f q.1 (q.2.1 • q.2.2) - f q.1 0)
         (univ ×ˢ (closedBall 0 1 ×ˢ ball 0 r)) (p₀, t₀, v₀) :=
-      (hfc.comp (continuous_fst.prodMk ((continuous_fst.comp continuous_snd).smul
+      ((continuousOn_sub_apply_zero_family hf hD).comp
+        (continuous_fst.prodMk ((continuous_fst.comp continuous_snd).smul
         (continuous_snd.comp continuous_snd))).continuousOn
         fun q (hq : q ∈ univ ×ˢ (closedBall (0 : ℝ) 1 ×ˢ ball (0 : E) r)) ↦
           ⟨mem_univ _, (balanced_ball_zero (𝕜 := ℝ)).smul_mem
             (mem_closedBall_zero_iff.1 hq.2.1) hq.2.2⟩) _ ⟨mem_univ _, ht₀, hv₀⟩
-    have h₂ : ContinuousWithinAt (fun q : P × ℝ × E ↦ f q.1 0)
-        (univ ×ˢ (closedBall 0 1 ×ˢ ball 0 r)) (p₀, t₀, v₀) :=
-      (hfc.comp (continuous_fst.prodMk continuous_const).continuousOn
-        fun _ _ ↦ ⟨mem_univ _, mem_ball_self hr⟩) _ ⟨mem_univ _, ht₀, hv₀⟩
     have h₀ : ContinuousWithinAt (fun q : P × ℝ × E ↦ q.2.1)
         (univ ×ˢ (closedBall 0 1 ×ˢ ball 0 r)) (p₀, t₀, v₀) :=
       (continuous_fst.comp continuous_snd).continuousWithinAt
-    exact (h₀.inv₀ ht0).smul (h₁.sub h₂)
+    exact (h₀.inv₀ ht0).smul h₁
   refine hcont.congr_of_eventuallyEq ?_ (derivativeRescale_of_ne_zero _ _ ht0 _)
   filter_upwards [nhdsWithin_le_nhds ((continuous_fst.comp continuous_snd).continuousAt
     |>.preimage_mem_nhds (compl_singleton_mem_nhds ht0))] with q hq
@@ -309,11 +366,9 @@ theorem exists_forall_norm_derivativeRescale_le_family [CompactSpace P] (hr : 0 
   obtain ⟨B, hB⟩ := isCompact_univ.exists_bound_of_continuousOn hD0.continuousOn
   have hev : ∀ᶠ z in 𝓝 (0 : E), ∀ p ∈ (univ : Set P), ‖D p z‖ < max B 0 + 1 := by
     refine isCompact_univ.eventually_forall_of_forall_eventually fun p _ ↦ ?_
-    have h := (hD (p, 0) ⟨mem_univ _, mem_ball_self hr⟩).tendsto
-    rw [nhdsWithin_eq_nhds.2 ((isOpen_univ.prod isOpen_ball).mem_nhds
-      ⟨mem_univ _, mem_ball_self hr⟩)] at h
     have h' : Tendsto (fun z : E × P ↦ ‖D z.2 z.1‖) (𝓝 (0, p)) (𝓝 ‖D p 0‖) :=
-      (continuous_norm.tendsto _).comp (h.comp (continuous_swap.tendsto (0, p)))
+      (continuous_norm.tendsto _).comp ((hD.continuousAt ((isOpen_univ.prod isOpen_ball).mem_nhds
+        ⟨mem_univ _, mem_ball_self hr⟩)).tendsto.comp (continuous_swap.tendsto (0, p)))
     exact h'.eventually (gt_mem_nhds ((hB p (mem_univ _)).trans_lt
       (by linarith [le_max_left B 0])))
   obtain ⟨ρ, hρ, hρD⟩ := Metric.mem_nhds_iff.1 hev
