@@ -598,9 +598,9 @@ theorem gaussValuation_eq_mul_pow_gaussDegree (hv : v.Integers O) (hρ : ρ < 1)
 
 /-- At radius zero the degree is `0` (as `sSup` of an unbounded set of naturals, when the Gauss
 valuation vanishes). -/
-private theorem gaussDegree_of_eq_zero (hv : v.Integers O) (hρ : ρ < 1) (hρ₀ : ρ = 0)
-    (x : 𝕎 O) : gaussDegree p hv ρ hρ x = 0 := by
-  subst hρ₀
+@[simp]
+theorem gaussDegree_zero_radius (hv : v.Integers O) (hρ : (0 : ℝ≥0) < 1) (x : 𝕎 O) :
+    gaussDegree p hv 0 hρ x = 0 := by
   by_cases hb : BddAbove {n | v (algebraMap O K (x.teichmullerCoeff n)) * (0 : ℝ≥0) ^ n =
       gaussValuation p hv 0 hρ x}
   · have hmem := Nat.sSup_mem (nonempty_setOf_eq_gaussValuation hv hρ x) hb
@@ -714,7 +714,7 @@ theorem gaussDegree_eq_of_gaussValuation_sub_lt (hv : v.Integers O) (hρ : ρ < 
     {x y : 𝕎 O} (h : gaussValuation p hv ρ hρ (x - y) < gaussValuation p hv ρ hρ x) :
     gaussDegree p hv ρ hρ y = gaussDegree p hv ρ hρ x := by
   rcases eq_or_ne ρ 0 with rfl | hρ₀
-  · rw [gaussDegree_of_eq_zero hv hρ rfl, gaussDegree_of_eq_zero hv hρ rfl]
+  · rw [gaussDegree_zero_radius hv hρ, gaussDegree_zero_radius hv hρ]
   replace hρ₀ : 0 < ρ := pos_iff_ne_zero.mpr hρ₀
   have hy : y ≠ 0 := by
     rintro rfl
@@ -740,7 +740,7 @@ theorem gaussDegree_mul (hv : v.Integers O) (hρ : ρ < 1) {x y : 𝕎 O} (hx : 
     (hy : y ≠ 0) :
     gaussDegree p hv ρ hρ (x * y) = gaussDegree p hv ρ hρ x + gaussDegree p hv ρ hρ y := by
   rcases eq_or_ne ρ 0 with rfl | hρ₀
-  · simp only [gaussDegree_of_eq_zero hv hρ rfl]
+  · simp only [gaussDegree_zero_radius hv hρ]
   replace hρ₀ : 0 < ρ := pos_iff_ne_zero.mpr hρ₀
   have := hv.isDomain
   refine gaussDegree_eq_of_eventually_eq_mul_pow
@@ -778,7 +778,7 @@ theorem gaussDegree_sum_range_teichmuller_mul_pow_lt (hv : v.Integers O)
     (h : ∑ j ∈ Finset.range n, teichmuller p (a j) * (p : 𝕎 O) ^ j ≠ 0) :
     gaussDegree p hv ρ hρ (∑ j ∈ Finset.range n, teichmuller p (a j) * (p : 𝕎 O) ^ j) < n := by
   rcases eq_or_ne ρ 0 with rfl | hρ₀
-  · rw [gaussDegree_of_eq_zero hv hρ rfl]
+  · rw [gaussDegree_zero_radius hv hρ]
     exact Nat.pos_of_ne_zero (by rintro rfl; simp at h)
   replace hρ₀ : 0 < ρ := pos_iff_ne_zero.mpr hρ₀
   by_contra! hn
