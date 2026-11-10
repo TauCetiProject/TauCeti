@@ -22,7 +22,8 @@ when `G` is compact, `σ` is irreducible and its only self-intertwiners are the 
 case over `ℂ`, by Schur's lemma), its dimension is the multiplicity of `σ` in `π`. In general it is
 that multiplicity times the dimension of the self-intertwiners of `σ`. An intertwining map
 `T : π →ⁱL ρ` acts on these multiplicity spaces by composition, `S ↦ T ∘ S`; this is
-`(T.compLinHom σ).mapInvariants`.
+`(T.compLinHom σ).mapInvariants`, with `ContIntertwiningMap.compLinHom` built alongside the Hom
+representation.
 
 This file shows that the action of `T` on multiplicity spaces computes the intertwiners from `σ`
 into the kernel and into the cokernel of `T`. For every `T`, the kernel of the action is the space
@@ -31,11 +32,12 @@ Hilbert spaces and `T` with closed range, its cokernel is the space of intertwin
 the cokernel representation of `T`. Two lifting properties give this: an intertwiner with values in
 the range of `T` factors through `T`, through the inverse of `T` on the orthogonal complement of its
 kernel, which is invariant by unitarity; and an intertwiner into the cokernel lifts to `ρ` through
-the orthogonal complement of the range. Consequently, if `T` is Fredholm then so is its action on
-multiplicity spaces, with index `dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`.
+the orthogonal complement of the range. Consequently, the action on multiplicity spaces has index
+`dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`, and if `T` is Fredholm then so is its action.
 
 The action is the restriction to invariants of the continuous linear map `T ↦ (S ↦ T ∘ S)`, so it
-carries norm-continuous families of equivariant operators to norm-continuous families. With the
+carries norm-continuous families of equivariant operators to norm-continuous families
+(`ContinuousOn.mapInvariants_compLinHom`). With the
 local constancy of the Fredholm index, along a norm-continuous family of equivariant Fredholm
 operators on a preconnected parameter set the difference of the dimensions of the intertwiners from
 `σ` into the kernel and into the cokernel is constant. When these dimensions are multiplicities (as
@@ -44,8 +46,6 @@ multiplicity at a time.
 
 ## Main definitions
 
-* `ContIntertwiningMap.compLinHom`: composition with `T : π →ⁱL ρ`, as an intertwiner
-  `linHom σ π →ⁱL linHom σ ρ` of Hom representations.
 * `ContIntertwiningMap.kerCompLinHomEquiv`: the kernel of the action of `T` on multiplicity spaces
   is the space of intertwiners `σ →ⁱL T.kerRepresentation`.
 * `ContIntertwiningMap.cokerCompLinHomEquiv`: for unitary representations on Hilbert spaces and a
@@ -57,12 +57,12 @@ multiplicity at a time.
   `ContIntertwiningMap.mem_range_mapInvariants_compLinHom_iff`: an intertwiner lies in the kernel,
   respectively the range, of the action of `T` exactly when its values lie in `ker T`, respectively
   in the range of `T`.
-* `ContinuousOn.mapInvariants_compLinHom`: the action depends continuously on `T`.
 * `ContIntertwiningMap.exists_comp_eq`: an intertwiner from a finite-dimensional representation with
   values in the range of `T` factors through `T`.
 * `ContIntertwiningMap.isFredholm_mapInvariants_compLinHom`,
-  `ContIntertwiningMap.index_mapInvariants_compLinHom`: the action of a Fredholm `T` is Fredholm,
-  of index `finrank (σ →ⁱL T.kerRepresentation) - finrank (σ →ⁱL T.cokerRepresentation)`.
+  `ContIntertwiningMap.index_mapInvariants_compLinHom`: the action of a Fredholm `T` is Fredholm;
+  for a closed range, the action has index
+  `finrank (σ →ⁱL T.kerRepresentation) - finrank (σ →ⁱL T.cokerRepresentation)`.
 * `ContinuousOn.finrank_contIntertwiningMap_kerRepresentation_sub_cokerRepresentation_eq`: this
   difference of intertwiner dimensions is constant along a continuous family of equivariant Fredholm
   operators on a preconnected parameter set.
@@ -87,51 +87,6 @@ variable {𝕜 G V E F : Type*} [NontriviallyNormedField 𝕜] [Group G]
   [NormedAddCommGroup V] [NormedSpace 𝕜 V] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   (σ : ContRepresentation 𝕜 G V) {π : ContRepresentation 𝕜 G E} {ρ : ContRepresentation 𝕜 G F}
-
-/-- **Composition with an intertwining map.** For `T : π →ⁱL ρ`, composition `S ↦ T ∘ S` on the
-operators out of `V` intertwines the Hom representations `linHom σ π` and `linHom σ ρ`. On their
-invariants, `(T.compLinHom σ).mapInvariants` sends an intertwiner `σ →ⁱL π` to its composite with
-`T`: this is the action of `T` on the multiplicity spaces of `σ`. -/
-noncomputable def compLinHom (T : π →ⁱL ρ) : linHom σ π →ⁱL linHom σ ρ where
-  toContinuousLinearMap := ContinuousLinearMap.compL 𝕜 V E F T.toContinuousLinearMap
-  isIntertwining' g := by
-    ext S v
-    simp [toContinuousLinearMap_apply, T.isIntertwining]
-
-/-- Composition with `T` sends an operator `S` to `T ∘ S`. -/
-@[simp]
-theorem compLinHom_apply (T : π →ⁱL ρ) (S : V →L[𝕜] E) :
-    T.compLinHom σ S = T.toContinuousLinearMap ∘L S :=
-  (rfl)
-
-/-- On multiplicity spaces, composition with `T` sends an intertwiner `S` to `T ∘ S`. -/
-@[simp]
-theorem coe_mapInvariants_compLinHom_apply (T : π →ⁱL ρ) (S : (linHom σ π).invariants) :
-    ((T.compLinHom σ).mapInvariants S : V →L[𝕜] F) = T.toContinuousLinearMap ∘L S :=
-  (rfl)
-
-variable {X : Type*} [TopologicalSpace X]
-
-/-- The action on multiplicity spaces depends continuously on the operator: a family of
-intertwining maps continuous on `s` for the operator topology acts on the multiplicity spaces of
-`σ` by a family continuous on `s`. -/
-theorem _root_.ContinuousOn.mapInvariants_compLinHom {A : X → π →ⁱL ρ} {s : Set X}
-    (hA : ContinuousOn (fun x ↦ (A x).toContinuousLinearMap) s) :
-    ContinuousOn (fun x ↦ ((A x).compLinHom σ).mapInvariants) s := by
-  -- Followed by the inclusion of the target invariants, which induces the operator topology, the
-  -- action is composition with `A x` restricted to the source invariants.
-  rw [(ContinuousLinearMap.isInducing_postcomp (linHom σ ρ).invariants.subtypeL
-    Topology.IsInducing.subtypeVal).continuousOn_iff]
-  exact ((ContinuousLinearMap.precomp (V →L[𝕜] F)
-    (linHom σ π).invariants.subtypeL).continuous.comp
-      (ContinuousLinearMap.compL 𝕜 V E F).continuous).comp_continuousOn hA
-
-/-- The action on multiplicity spaces of a family of intertwining maps, continuous for the operator
-topology, is continuous. -/
-theorem _root_.Continuous.mapInvariants_compLinHom {A : X → π →ⁱL ρ}
-    (hA : Continuous fun x ↦ (A x).toContinuousLinearMap) :
-    Continuous fun x ↦ ((A x).compLinHom σ).mapInvariants :=
-  continuousOn_univ.mp (hA.continuousOn.mapInvariants_compLinHom σ)
 
 /-- An intertwiner is killed by composition with `T` exactly when it takes values in `ker T`. -/
 theorem mem_ker_mapInvariants_compLinHom_iff (T : π →ⁱL ρ) {S : (linHom σ π).invariants} :
@@ -197,28 +152,22 @@ theorem exists_comp_eq (hπ : π.IsUnitary) {S : σ →ⁱL ρ}
     (hS : ∀ v, S v ∈ T.toContinuousLinearMap.range) : ∃ R : σ →ⁱL π, T.comp R = S := by
   set K := T.toContinuousLinearMap.ker
   have : CompleteSpace K := T.toContinuousLinearMap.isClosed_ker.completeSpace_coe
-  -- `T` is injective on `Kᗮ`, and every value of `S` has a preimage there.
-  have huniq {w w' : E} (hw : w ∈ Kᗮ) (hw' : w' ∈ Kᗮ) (h : T w = T w') : w = w' :=
-    sub_eq_zero.1 <| Submodule.disjoint_def.1 K.orthogonal_disjoint _
-      (by simp [K, LinearMap.mem_ker, toContinuousLinearMap_apply, h])
-      (Kᗮ.sub_mem hw hw')
-  have hpre (v : V) : ∃ w ∈ Kᗮ, T w = S v := by
-    obtain ⟨w, hw⟩ := hS v
-    refine ⟨w - K.starProjection w, K.sub_starProjection_mem_orthogonal w, ?_⟩
-    have hK : T (K.starProjection w) = 0 := LinearMap.mem_ker.1 (K.starProjection_apply_mem w)
-    rw [map_sub, hK, sub_zero]
-    exact hw
-  choose f hfK hf using hpre
-  let f' : V →ₗ[𝕜] E :=
-    { toFun := f
-      map_add' v v' := huniq (hfK _) (Kᗮ.add_mem (hfK v) (hfK v')) (by simp [hf])
-      map_smul' c v := huniq (hfK _) (Kᗮ.smul_mem c (hfK v)) (by simp [hf]) }
+  -- `T` restricts to a linear equivalence from `Kᗮ` onto its range; the lift is its inverse
+  -- applied to the values of `S`.
+  let e := LinearMap.kerComplementEquivRange (T.toContinuousLinearMap : E →ₗ[𝕜] F)
+    K.isCompl_orthogonal.symm
+  let f : V →ₗ[𝕜] E := Kᗮ.subtype ∘ₗ e.symm.toLinearMap ∘ₗ
+    (S.toContinuousLinearMap : V →ₗ[𝕜] F).codRestrict _ hS
+  have hf (v : V) : T (f v) = S v := congr($(e.apply_symm_apply ⟨S v, hS v⟩).1)
   have hKinv (g : G) (k : E) (hk : k ∈ K) : π g k ∈ K := by
     simp_all [K, LinearMap.mem_ker, toContinuousLinearMap_apply, T.isIntertwining]
-  refine ⟨⟨LinearMap.toContinuousLinearMap f', fun g ↦ ?_⟩, ?_⟩
+  refine ⟨⟨LinearMap.toContinuousLinearMap f, fun g ↦ ?_⟩, ?_⟩
   · ext v
-    exact huniq (hfK _) (hπ.apply_mem_orthogonal hKinv g (hfK v))
-      (by simp [f', hf, S.isIntertwining, T.isIntertwining])
+    have h := e.injective (a₁ := ⟨π g (f v), hπ.apply_mem_orthogonal hKinv g (e.symm _).2⟩)
+      (a₂ := ⟨f (σ g v), (e.symm _).2⟩)
+      (Subtype.ext (show T (π g (f v)) = T (f (σ g v)) by simp [hf, S.isIntertwining,
+        T.isIntertwining]))
+    exact congr($h.1).symm
   · ext v
     exact hf v
 
@@ -230,13 +179,13 @@ theorem mem_range_mapInvariants_compLinHom_iff (hπ : π.IsUnitary)
       ∀ v, (S : V →L[𝕜] F) v ∈ T.toContinuousLinearMap.range := by
   constructor
   · rintro ⟨R, rfl⟩ v
-    exact ⟨_, rfl⟩
+    exact ⟨(R : V →L[𝕜] E) v, by simp⟩
   · intro hS
     obtain ⟨R, hR⟩ := T.exists_comp_eq σ hπ
       (S := ⟨S, (mem_linHom_invariants_iff_isIntertwining σ ρ _).1 S.2⟩) hS
     refine ⟨⟨R.toContinuousLinearMap, toContinuousLinearMap_mem_invariants_linHom σ π R⟩, ?_⟩
     ext v
-    exact congr($hR v)
+    exact congr($(coe_mapInvariants_compLinHom_apply σ T _) v).trans congr($hR v)
 
 end Lift
 
@@ -323,6 +272,18 @@ theorem cokerCompLinHomEquiv_mk_apply (hπ : π.IsUnitary) (hρ : ρ.IsUnitary)
       Submodule.Quotient.mk ((S : V →L[𝕜] F) v) :=
   (rfl)
 
+/-- **The index of the action on multiplicity spaces.** For unitary representations on Hilbert
+spaces and `T` with a range admitting an orthogonal projection (for instance, a Fredholm `T`), the
+action of `T` on the multiplicity spaces of a finite-dimensional `σ` has index
+`dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`. When `G` is compact and `σ` is irreducible with only
+scalar self-intertwiners (as over `ℂ`), this is the difference of the multiplicities of `σ` in the
+kernel and in the cokernel of `T`. -/
+theorem index_mapInvariants_compLinHom (hπ : π.IsUnitary) (hρ : ρ.IsUnitary) :
+    (T.compLinHom σ).mapInvariants.index =
+      finrank 𝕜 (σ →ⁱL T.kerRepresentation) - finrank 𝕜 (σ →ⁱL T.cokerRepresentation) := by
+  rw [ContinuousLinearMap.index_eq_finrank_sub, (T.kerCompLinHomEquiv σ).finrank_eq,
+    (T.cokerCompLinHomEquiv σ hπ hρ).finrank_eq]
+
 end Cokernel
 
 /-! ### Fredholm operators -/
@@ -355,19 +316,6 @@ theorem isFredholm_mapInvariants_compLinHom (hπ : π.IsUnitary) (hρ : ρ.IsUni
     (E := (linHom σ π).invariants) (F := (linHom σ ρ).invariants)
   exact h (T.compLinHom σ).mapInvariants hker hcoker
 
-/-- **The index of the action on multiplicity spaces.** For unitary representations on Hilbert
-spaces and a Fredholm `T`, the action of `T` on the multiplicity spaces of a finite-dimensional `σ`
-has index `dim Hom_G(σ, ker T) - dim Hom_G(σ, coker T)`. When `G` is compact and `σ` is irreducible
-with only scalar self-intertwiners (as over `ℂ`), this is the difference of the multiplicities of
-`σ` in the kernel and in the cokernel of `T`. -/
-theorem index_mapInvariants_compLinHom (hπ : π.IsUnitary) (hρ : ρ.IsUnitary) {T : π →ⁱL ρ}
-    (hT : T.toContinuousLinearMap.IsFredholm) :
-    (T.compLinHom σ).mapInvariants.index =
-      finrank 𝕜 (σ →ⁱL T.kerRepresentation) - finrank 𝕜 (σ →ⁱL T.cokerRepresentation) := by
-  have : CompleteSpace T.toContinuousLinearMap.range := hT.isClosed_range.completeSpace_coe
-  rw [ContinuousLinearMap.index_eq_finrank_sub, (T.kerCompLinHomEquiv σ).finrank_eq,
-    (T.cokerCompLinHomEquiv σ hπ hρ).finrank_eq]
-
 variable {X : Type*} [TopologicalSpace X]
 
 /-- **Homotopy invariance of the intertwiner dimensions in the equivariant index.** Along a family
@@ -384,8 +332,12 @@ theorem _root_.ContinuousOn.finrank_contIntertwiningMap_kerRepresentation_sub_co
     (finrank 𝕜 (σ →ⁱL (A x).kerRepresentation) : ℤ) -
         finrank 𝕜 (σ →ⁱL (A x).cokerRepresentation) =
       finrank 𝕜 (σ →ⁱL (A y).kerRepresentation) - finrank 𝕜 (σ →ⁱL (A y).cokerRepresentation) := by
-  rw [← index_mapInvariants_compLinHom σ hπ hρ (hFredholm x hx),
-    ← index_mapInvariants_compLinHom σ hπ hρ (hFredholm y hy)]
+  have : CompleteSpace (A x).toContinuousLinearMap.range :=
+    (hFredholm x hx).isClosed_range.completeSpace_coe
+  have : CompleteSpace (A y).toContinuousLinearMap.range :=
+    (hFredholm y hy).isClosed_range.completeSpace_coe
+  rw [← (A x).index_mapInvariants_compLinHom σ hπ hρ,
+    ← (A y).index_mapInvariants_compLinHom σ hπ hρ]
   -- As in `isFredholm_mapInvariants_compLinHom`, the carriers are named for elaboration.
   have h := ContinuousOn.index_eq_of_isPreconnected (K := 𝕜) (E := (linHom σ π).invariants)
     (F := (linHom σ ρ).invariants) (A := fun z ↦ ((A z).compLinHom σ).mapInvariants)
