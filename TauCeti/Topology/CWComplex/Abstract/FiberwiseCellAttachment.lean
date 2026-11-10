@@ -656,6 +656,33 @@ theorem fiberwiseCellAttachmentProj_fiberwiseCellAttachmentMap (y : fiberwiseCel
       fiberwiseCellAttachmentProj_fiberwiseCellAttachmentCell,
       fiberwiseCellAttachmentProj_fiberwiseCellAttachmentCell]) y
 
+/-- The map of fiberwise adjunction spaces over the identity of `P` is the identity. -/
+@[simp]
+theorem fiberwiseCellAttachmentMap_id
+    (hα : ∀ i p s, α i (p, s) = α i (ContinuousMap.id P p, s)) :
+    fiberwiseCellAttachmentMap (ContinuousMap.id P) α α hα = 𝟙 _ := by
+  refine fiberwiseCellAttachment_hom_ext α (fun x ↦ ?_) fun i x ↦ ?_
+  · rw [fiberwiseCellAttachmentMap_fiberwiseCellAttachmentIncl, ContinuousMap.id_apply,
+      ConcreteCategory.id_apply]
+  · rw [fiberwiseCellAttachmentMap_fiberwiseCellAttachmentCell, ContinuousMap.id_apply,
+      ConcreteCategory.id_apply]
+
+/-- Maps of fiberwise adjunction spaces compose along composites of parameter maps. -/
+@[reassoc (attr := simp)]
+theorem fiberwiseCellAttachmentMap_comp {P'' : Type u} [TopologicalSpace P''] (g' : C(P'', P'))
+    (α'' : ∀ i, C(P'' × TopCat.diskBoundary.{u} (k i), A))
+    (hα' : ∀ i p s, α'' i (p, s) = α' i (g' p, s)) :
+    fiberwiseCellAttachmentMap g' α' α'' hα' ≫ fiberwiseCellAttachmentMap g α α' hα =
+      fiberwiseCellAttachmentMap (g.comp g') α α''
+        (fun i p s ↦ (hα' i p s).trans (hα i (g' p) s)) := by
+  refine fiberwiseCellAttachment_hom_ext α'' (fun x ↦ ?_) fun i x ↦ ?_
+  · rw [ConcreteCategory.comp_apply, fiberwiseCellAttachmentMap_fiberwiseCellAttachmentIncl,
+      fiberwiseCellAttachmentMap_fiberwiseCellAttachmentIncl,
+      fiberwiseCellAttachmentMap_fiberwiseCellAttachmentIncl, ContinuousMap.comp_apply]
+  · rw [ConcreteCategory.comp_apply, fiberwiseCellAttachmentMap_fiberwiseCellAttachmentCell,
+      fiberwiseCellAttachmentMap_fiberwiseCellAttachmentCell,
+      fiberwiseCellAttachmentMap_fiberwiseCellAttachmentCell, ContinuousMap.comp_apply]
+
 /-- The map of fiberwise adjunction spaces over `g` intertwines the comparison maps of
 characteristic families `χ' i (p, x) = χ i (g p, x)` restricted along `g`. -/
 theorem fiberwiseCellComparison_fiberwiseCellAttachmentMap

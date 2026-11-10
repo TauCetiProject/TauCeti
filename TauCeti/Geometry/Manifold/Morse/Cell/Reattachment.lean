@@ -107,7 +107,7 @@ variable (φ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (k :
 `M_{c-ε}` viewed inside `M_{c+ε}`. -/
 private def morseFiberwiseBase :
     C({x | f x ≤ c - ε}, PUnit.{u + 1} × {y : {x | f x ≤ c + ε} | f y ≤ c - ε}) :=
-  ⟨fun x ↦ (PUnit.unit, ⟨⟨x, (show f x ≤ c - ε from x.2).trans
+  ⟨fun x ↦ (PUnit.unit, ⟨⟨x, (mem_ofPred.1 x.2).trans
       ((sub_le_self c hε).trans (le_add_of_nonneg_right hε))⟩, x.2⟩),
     continuous_const.prodMk ((continuous_subtype_val.subtype_mk _).subtype_mk _)⟩
 

@@ -78,7 +78,7 @@ theorem reattachmentRadial_half_smul (θ : TopCat.diskBoundary.{u} k)
     mem_closedBall_zero_iff.1 (smul_diskBoundary_mem_closedBall (by norm_num) θ)
   refine ULift.ext (Subtype.ext ?_)
   rw [coe_reattachmentRadial_of_norm_le (w := ULift.up ⟨(1 / 2 : ℝ) • θ.down.1, hθ⟩) hθ',
-    smul_smul, show (2 : ℝ) * (1 / 2) = 1 by norm_num, one_smul]
+    smul_smul, mul_one_div_cancel two_ne_zero, one_smul]
   exact (TopCat.coe_diskBoundaryInclusion_apply_down _ _).symm
 
 /-- The time part `x ↦ 2 - 2‖x‖`, clamped to `[0, 1]`, of the disc-to-cylinder map of a
