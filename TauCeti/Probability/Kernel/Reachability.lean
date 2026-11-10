@@ -14,10 +14,10 @@ import Mathlib.Order.Preorder.Finite
 
 For a kernel `κ` on a measurable space, a state `y` is *reachable* from `x` if some power of `κ`
 (including the zeroth) assigns positive mass to `y`, and two states *communicate* if they are
-mutually reachable. Reachability is reflexive; when the singletons are measurable it is
-transitive, communication is an equivalence relation, and Mathlib's `Kernel.IsIrreducible`
-with respect to the counting measure is equivalent to every state reaching every other state,
-equivalently to every pair of states communicating. A state with finitely many reachable states
+mutually reachable. Reachability is reflexive and transitive, communication is an equivalence
+relation, and Mathlib's `Kernel.IsIrreducible` with respect to the counting measure is
+equivalent to every state reaching every other state, equivalently to every pair of states
+communicating. A state with finitely many reachable states
 reaches a state from which every reachable state can return.
 -/
 

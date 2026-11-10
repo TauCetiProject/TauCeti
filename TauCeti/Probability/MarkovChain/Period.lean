@@ -22,12 +22,12 @@ every state has period one.
 By Chapman–Kolmogorov the return lengths are closed under addition. Hence every sufficiently
 large multiple of the period is a return length, and a state of period one returns with positive
 probability at every sufficiently large time. Mutually reachable states have the same period, so
-the period is constant on each communicating class. For an irreducible aperiodic kernel on a
-space with measurable singletons, every transition mass `(κ ^ n) x {y}` is positive for all
-sufficiently large `n`; this is the input to the coupling proof of convergence to equilibrium.
+the period is constant on each communicating class. For an irreducible aperiodic kernel, every
+transition mass `(κ ^ n) x {y}` is positive for all sufficiently large `n`; this is the input to
+the coupling proof of convergence to equilibrium.
 
-Irreducibility is Mathlib's `Kernel.IsIrreducible` with respect to counting measure, which on a
-space with measurable singletons says that every state reaches every other state.
+Irreducibility is Mathlib's `Kernel.IsIrreducible` with respect to counting measure, which says
+that every state reaches every other state.
 
 As a check of the definition, the period of a state under the deterministic kernel of a map `f`
 is the minimal period `Function.minimalPeriod f x` of `x` under `f`.

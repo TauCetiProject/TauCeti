@@ -14,11 +14,10 @@ public import TauCeti.Probability.Process.MarkovChain
 # Independent product chains
 
 The independent product of two chains uses Mathlib's parallel composition `κ ∥ₖ η`.
-Its path law is obtained by pairing independent coordinate paths. On spaces with measurable
-singletons, products of aperiodic kernels are aperiodic; if both factors are also irreducible,
-the product is irreducible. The key point is that aperiodicity synchronizes the positive
-transition times of the two coordinates. Irreducibility alone does not do so (two deterministic
-two-cycles give a reducible product).
+Its path law is obtained by pairing independent coordinate paths. Products of aperiodic
+kernels are aperiodic; if both factors are also irreducible, the product is irreducible. The key
+point is that aperiodicity synchronizes the positive transition times of the two coordinates.
+Irreducibility alone does not do so (two deterministic two-cycles give a reducible product).
 
 Together with `Kernel.Invariant.parallelComp`, these results provide the independent product
 chain used in meeting-time coupling arguments for convergence to equilibrium.
