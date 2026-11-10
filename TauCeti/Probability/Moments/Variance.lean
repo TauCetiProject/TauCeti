@@ -200,18 +200,13 @@ theorem measure_setOf_eq_zero_lt_one_of_variance_ne_zero [IsProbabilityMeasure �
     obtain ⟨g, hg, hgle, hge⟩ := exists_measurable_le_lintegral_eq μ
       (fun ω ↦ ‖X ω - ∫ ω', X ω' ∂μ‖ₑ ^ 2)
     have hS : μ {ω | g ω ≠ 0} = 0 := by
-      have hdisj : AEDisjoint μ {ω | X ω = 0} {ω | g ω ≠ 0} := by
-        refine Disjoint.aedisjoint (Set.disjoint_left.2 fun ω h0 hg0 ↦ hg0 ?_)
+      have hsub : {ω | X ω = 0} ⊆ {ω | g ω ≠ 0}ᶜ := fun ω h0 hg0 ↦ by
         have := hgle ω
         simp only [Set.mem_ofPred_eq] at h0
-        simpa [h0, hint] using this
-      have hgm : MeasurableSet {ω | g ω ≠ 0} := (hg (measurableSet_singleton (0 : ENNReal))).compl
-      have hu := measure_union₀ hgm.nullMeasurableSet hdisj
-      have := measure_mono (μ := μ) (Set.subset_univ ({ω | X ω = 0} ∪ {ω | g ω ≠ 0}))
-      rw [hu, hfull, measure_univ] at this
-      have h1 : (1 : ENNReal) + μ {ω | g ω ≠ 0} ≤ 1 + 0 := by simpa using this
-      exact le_antisymm ((ENNReal.add_le_add_iff_left ENNReal.one_ne_top).1 h1) bot_le
-    have hg0 : g =ᵐ[μ] 0 := hS
+        exact hg0 (by simpa [h0, hint] using this)
+      exact (prob_compl_eq_one_iff (hg (measurableSet_singleton (0 : ENNReal)).compl)).1
+        (le_antisymm prob_le_one (hfull ▸ measure_mono hsub))
+    have hg0 : g =ᵐ[μ] 0 := ae_iff.2 hS
     have hev : evariance X μ = 0 := by
       rw [evariance, hge, lintegral_congr_ae hg0]
       simp
