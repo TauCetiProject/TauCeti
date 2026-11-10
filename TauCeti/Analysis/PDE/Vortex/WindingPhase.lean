@@ -300,7 +300,7 @@ theorem exists_norm_sub_referenceField_le_mul_exp
     (hphase : ∀ᶠ z in cocompact ℂ, sectionValue x z = ‖sectionValue x z‖ * windingPhase m z)
     (f : ContDiffBump (0 : ℝ)) {c : ℝ} (hc : c < 1 / 2) :
     ∃ K, ∀ z, ‖x z - referenceField f m z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
-  obtain ⟨K₁, hK₁⟩ := exists_norm_covariantDerivative_le_mul_exp hb₁ hp hq hsol hlim hc
+  obtain ⟨K₁, hK₁⟩ := exists_norm_covariantDerivative_le_mul_exp hb₁.continuous hp hq hsol hlim hc
   obtain ⟨K₂, hK₂⟩ := exists_one_sub_normSq_le_mul_exp hp hq hsol hlim hc
   obtain ⟨R, -, hR⟩ :=
     hasBasis_cobounded_norm.eventually_iff.mp (cobounded_eq_cocompact (α := ℂ) ▸ hphase)

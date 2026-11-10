@@ -274,7 +274,7 @@ theorem exists_norm_fderiv_normSq_le_mul_exp
 plane whose section satisfies `|α| → 1` at infinity has `|d_a α (v)| ≤ K |v| exp (-c |z|)` for
 every rate `c < 1 / 2`. -/
 theorem exists_norm_covariantDerivative_le_mul_exp
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0))
+    (hb₁ : Continuous (fun w ↦ x w 0))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
@@ -288,9 +288,8 @@ theorem exists_norm_covariantDerivative_le_mul_exp
     have h₁ : Continuous fun z ↦ fderiv ℝ (sectionValue x) z 1 :=
       (hαcd.continuous_fderiv (by norm_num)).clm_apply continuous_const
     have h₂ := hαcd.continuous
-    have h₀ : Continuous fun z ↦ x z 0 := hb₁.continuous
     simp only [covariantDerivative_apply, one_re, one_im, mul_one, mul_zero, add_zero]
-    exact (h₁.add ((continuous_const.mul (continuous_ofReal.comp h₀)).mul h₂)).norm
+    exact (h₁.add ((continuous_const.mul (continuous_ofReal.comp hb₁)).mul h₂)).norm
   obtain ⟨K, hK⟩ := exists_norm_fderiv_normSq_le_mul_exp hp hq hsol hlim hc
   -- Where `|α|² ≥ 1 / 2`, the covariant derivative is bounded by the gradient of `|α|²`.
   obtain ⟨K', hK'⟩ := exists_forall_le_mul_exp_of_eventually_le hcont (c := c) (K := K) (by
@@ -306,7 +305,7 @@ theorem exists_norm_covariantDerivative_le_mul_exp
 whose section satisfies `|α| → 1` at infinity has energy density
 `|F_a|² + |d_a α|² + (1 - |α|²)²` bounded by `K exp (-c |z|)` for every rate `c < 1`. -/
 theorem exists_energyDensity_le_mul_exp
-    (hb₁ : Differentiable ℝ (fun w ↦ x w 0))
+    (hb₁ : Continuous (fun w ↦ x w 0))
     (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0)
     (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) {c : ℝ}
