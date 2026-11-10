@@ -251,7 +251,7 @@ theorem biUnion_calderonZygmundCubes_subset (hg : ∫⁻ x, g x ≠ ∞) (ht : t
   rcases isEmpty_or_nonempty ι with hι | hι
   · have huniv : ∀ k m, dyadicCube k m = (Set.univ : Set (ι → ℝ)) := dyadicCube_eq_univ
     have h1 := hp.1
-    have h2 := hp.2 (p.1 + 1) p.2 (lt_add_one p.1) (by simp [huniv])
+    have h2 := hp.2 (p.1 + 1) p.2 (lt_add_one p.1) (by simp)
     simp only [huniv] at h1 h2
     exact absurd h1 (not_lt.2 h2)
   obtain ⟨q, hq, -, hsub⟩ := exists_mem_calderonZygmundCubes_of_lt_setLAverage hg ht

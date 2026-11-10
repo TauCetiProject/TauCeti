@@ -88,6 +88,7 @@ theorem mem_dyadicCube : x ∈ dyadicCube k m ↔ dyadicIndex k x = m :=
   Iff.rfl
 
 /-- In dimension zero every dyadic cube is the whole space. -/
+@[simp]
 theorem dyadicCube_eq_univ [IsEmpty ι] (k : ℤ) (m : ι → ℤ) : dyadicCube k m = univ :=
   eq_univ_of_forall fun _ => mem_dyadicCube.2 (Subsingleton.elim _ _)
 

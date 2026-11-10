@@ -611,7 +611,7 @@ private theorem volume_lt_norm_sub_setAverage_closedBall_le [CompleteSpace E]
     · simp [closedBall_eq_empty.2 hr]
     have hQ (q : ℤ × (ι → ℤ)) : dyadicCube q.1 q.2 = closedBall c r := by
       ext x
-      simp [dyadicCube_eq_pi, mem_closedBall, Subsingleton.elim x c, hr]
+      simp [mem_closedBall, Subsingleton.elim x c, hr]
     simpa only [hQ (0, 0)] using volume_lt_norm_sub_setAverage_le (q₀ := (0, 0)) (f := f)
       (by simpa only [hQ (0, 0)] using hf)
       (fun q _ => by simpa only [hQ q] using hM c r subset_rfl) s
@@ -662,7 +662,7 @@ private theorem setLIntegral_exp_mul_norm_sub_setAverage_closedBall_volume_le [C
     · simp [closedBall_eq_empty.2 hr]
     have hQ (q : ℤ × (ι → ℤ)) : dyadicCube q.1 q.2 = closedBall c r := by
       ext x
-      simp [dyadicCube_eq_pi, mem_closedBall, Subsingleton.elim x c, hr]
+      simp [mem_closedBall, Subsingleton.elim x c, hr]
     simpa only [hQ (0, 0)] using setLIntegral_exp_mul_norm_sub_setAverage_volume_le
       (q₀ := (0, 0)) (f := f) (by simpa only [hQ (0, 0)] using hf)
       (fun q _ => by simpa only [hQ q] using hM c r subset_rfl) hρ
