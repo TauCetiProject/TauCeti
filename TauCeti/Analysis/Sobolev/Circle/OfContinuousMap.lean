@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.Circle.Lp
 import TauCeti.Analysis.Fourier.AddCircle
 import TauCeti.Analysis.Fourier.FourierCoeffOn
 import TauCeti.Analysis.Fourier.Uniqueness
+import TauCeti.MeasureTheory.Integral.ContinuousMap
 
 /-!
 # Continuous loops in the circle Sobolev space `H⁰`
@@ -112,10 +113,6 @@ theorem norm_smulRight (x : E) (a : CircleSobolev s ℂ) : ‖smulRight x a‖ =
 
 variable (T : ℝ) [hT : Fact (0 < T)]
 
-private theorem integrable_continuousMap {F : Type*} [NormedAddCommGroup F]
-    (f : C(AddCircle T, F)) : MeasureTheory.Integrable f AddCircle.haarAddCircle :=
-  f.continuous.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)
-
 section OfContinuousMap
 
 variable [FiniteDimensional ℂ E]
@@ -139,7 +136,7 @@ theorem coeff_ofContinuousMap (f : C(AddCircle T, E)) (n : ℤ) :
   set b := Module.finBasis ℂ E
   have hcoord (i) : fourierCoeff (fun x ↦ b.coord i (f x)) n = b.coord i (fourierCoeff f n) :=
     (LinearMap.toContinuousLinearMap (b.coord i)).fourierCoeff_comp
-      (integrable_continuousMap T f) n
+      (f.integrable AddCircle.haarAddCircle) n
   simp only [ofContinuousMap, FunLike.coe_sum, Finset.sum_apply, coeff_sum,
     ContinuousLinearMap.coe_comp, Function.comp_apply, coeff_smulRight]
   conv_rhs => rw [← b.sum_repr (fourierCoeff f n)]
@@ -160,8 +157,8 @@ coefficients of `F` are the coefficients of `a`. -/
 theorem toContinuousMap_eq_iff (hs : 1 / 2 < s) (a : CircleSobolev s E) (F : C(AddCircle T, E)) :
     toContinuousMap T hs a = F ↔ ∀ n, fourierCoeff F n = a.coeff n := by
   refine ⟨fun h n ↦ h ▸ fourierCoeff_toContinuousMap T hs a n, fun h ↦ ?_⟩
-  have hae := (integrable_continuousMap T (toContinuousMap T hs a)).ae_eq_of_forall_fourierCoeff_eq
-    (integrable_continuousMap T F) fun n ↦ by
+  have hae := ((toContinuousMap T hs a).integrable AddCircle.haarAddCircle)
+    |>.ae_eq_of_forall_fourierCoeff_eq (F.integrable AddCircle.haarAddCircle) fun n ↦ by
     rw [fourierCoeff_toContinuousMap, h]
   exact ContinuousMap.ext (congrFun ((map_continuous _).ae_eq_iff_eq _ F.continuous |>.1 hae))
 
@@ -218,9 +215,9 @@ theorem hasDerivAt_toContinuousMap_of_derivative_eq (a : CircleSobolev 1 E)
   set c := a.coeff 0 - fourierCoeff Gc 0
   have heq : toContinuousMap T (by norm_num) a = Gc + ContinuousMap.const _ c := by
     refine (toContinuousMap_eq_iff T _ a _).2 fun n ↦ ?_
-    rw [ContinuousMap.coe_add, fourierCoeff.add (integrable_continuousMap T Gc)
-      (integrable_continuousMap T (ContinuousMap.const _ c)), Pi.add_apply, ContinuousMap.coe_const,
-      ← Function.const_def, fourierCoeff_const]
+    rw [ContinuousMap.coe_add, fourierCoeff.add (Gc.integrable AddCircle.haarAddCircle)
+      ((ContinuousMap.const _ c).integrable AddCircle.haarAddCircle), Pi.add_apply,
+      ContinuousMap.coe_const, ← Function.const_def, fourierCoeff_const]
     rcases eq_or_ne n 0 with rfl | hn
     · simp [c]
     · simp [hn, hGcoeff n hn]

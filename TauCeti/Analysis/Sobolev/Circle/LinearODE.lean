@@ -45,6 +45,7 @@ comparing weak and classical derivatives
 
 ## Main definitions
 
+* `TauCeti.CircleSobolev.applyLoop S ζ`: the continuous loop `x ↦ S x (ζ x)`.
 * `TauCeti.CircleSobolev.mulLoop T hs S`: for `s > 1/2`, the bounded real-linear map
   `H^s(E) → H⁰(E)` multiplying the continuous representative pointwise by `S`.
 * `TauCeti.CircleSobolev.loopOperator T S`: the operator `ζ ↦ ζ' - S ζ`, `H¹(E) → H⁰(E)`.
@@ -80,6 +81,18 @@ namespace TauCeti
 namespace CircleSobolev
 
 variable {s t : ℝ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- The pointwise application `x ↦ S x (ζ x)` of a continuous loop `S` of real-linear maps to a
+continuous loop `ζ`, as a continuous loop. -/
+def applyLoop {T : ℝ} (S : C(AddCircle T, E →L[ℝ] E)) (ζ : C(AddCircle T, E)) :
+    C(AddCircle T, E) :=
+  ⟨fun x ↦ S x (ζ x), S.continuous.clm_apply ζ.continuous⟩
+
+@[simp]
+theorem applyLoop_apply {T : ℝ} (S : C(AddCircle T, E →L[ℝ] E)) (ζ : C(AddCircle T, E))
+    (x : AddCircle T) : applyLoop S ζ x = S x (ζ x) :=
+  (rfl)
+
 variable (T : ℝ) [hT : Fact (0 < T)] [FiniteDimensional ℂ E]
 
 /-- A finite-dimensional complex space is complete, as needed for continuous representatives. -/
@@ -91,8 +104,7 @@ real-linear map `H^s(E) → H⁰(E)`: the continuous representative of `a` is mu
 def mulLoop (hs : 1 / 2 < s) (S : C(AddCircle T, E →L[ℝ] E)) :
     CircleSobolev s E →L[ℝ] CircleSobolev 0 E :=
   LinearMap.mkContinuous
-    { toFun a := ofContinuousMap T ⟨fun x ↦ S x (toContinuousMap T hs a x),
-        S.continuous.clm_apply (map_continuous _)⟩
+    { toFun a := ofContinuousMap T (applyLoop S (toContinuousMap T hs a))
       map_add' a b := by
         rw [← map_add]
         congr 1
@@ -115,8 +127,7 @@ def mulLoop (hs : 1 / 2 < s) (S : C(AddCircle T, E →L[ℝ] E)) :
       (norm_nonneg _) (norm_nonneg S)
 
 theorem mulLoop_apply (hs : 1 / 2 < s) (S : C(AddCircle T, E →L[ℝ] E)) (a : CircleSobolev s E) :
-    mulLoop T hs S a = ofContinuousMap T ⟨fun x ↦ S x (toContinuousMap T hs a x),
-      S.continuous.clm_apply (map_continuous _)⟩ :=
+    mulLoop T hs S a = ofContinuousMap T (applyLoop S (toContinuousMap T hs a)) :=
   (rfl)
 
 /-- Multiplication by `S` only depends on the continuous representative, so it commutes with the
@@ -193,8 +204,7 @@ theorem loopOperator_eq_zero_iff (S : C(AddCircle T, E →L[ℝ] E)) (a : Circle
   rw [loopOperator_apply, sub_eq_zero, mulLoop_apply]
   refine ⟨fun h x ↦ hasDerivAt_toContinuousMap_of_derivative_eq T a _ h x, fun h ↦ ?_⟩
   obtain ⟨b, hb, hdb⟩ := exists_toContinuousMap_eq_and_derivative_eq T
-    (toContinuousMap T (by norm_num) a)
-    ⟨fun x ↦ S x (toContinuousMap T (by norm_num) a x), S.continuous.clm_apply (map_continuous _)⟩ h
+    (toContinuousMap T (by norm_num) a) (applyLoop S (toContinuousMap T (by norm_num) a)) h
   rwa [toContinuousMap_injective T _ hb] at hdb
 
 /-- **`L_S` is invertible exactly when `ζ' = S ζ` has no nonzero periodic solution.** Since `L_S`
@@ -204,19 +214,15 @@ theorem isInvertible_loopOperator_iff (S : C(AddCircle T, E →L[ℝ] E)) :
     (loopOperator T S).IsInvertible ↔
       ∀ ζ : C(AddCircle T, E), (∀ x : ℝ, HasDerivAt (fun y : ℝ ↦ ζ y) (S x (ζ x)) x) → ζ = 0 := by
   refine ⟨fun h ζ hζ ↦ ?_, fun h ↦ ?_⟩
-  · obtain ⟨a, ha, -⟩ := exists_toContinuousMap_eq_and_derivative_eq T ζ
-      ⟨fun x ↦ S x (ζ x), S.continuous.clm_apply ζ.continuous⟩ hζ
+  · obtain ⟨a, ha, -⟩ := exists_toContinuousMap_eq_and_derivative_eq T ζ (applyLoop S ζ) hζ
     have ha0 : loopOperator T S a = 0 :=
       (loopOperator_eq_zero_iff T S a).2 fun x ↦ by rw [ha]; exact hζ x
     rw [← ha, h.injective (ha0.trans (map_zero _).symm), map_zero]
   · have hinj : Function.Injective (loopOperator T S) :=
       (injective_iff_map_eq_zero _).2 fun a ha ↦ toContinuousMap_injective T (by norm_num)
         ((h _ ((loopOperator_eq_zero_iff T S a).1 ha)).trans (map_zero _).symm)
-    have hfred := isFredholm_loopOperator T S
-    have := hfred.finite_coker
-    exact ContinuousLinearMap.isInvertible_iff_isFredholm_and_bijective.2
-      ⟨hfred, (loopOperator T S).bijective_of_injective_of_index_eq_zero hinj
-        (index_loopOperator T S)⟩
+    exact (isFredholm_loopOperator T S).isInvertible_of_injective_of_index_eq_zero hinj
+      (index_loopOperator T S)
 
 end CircleSobolev
 

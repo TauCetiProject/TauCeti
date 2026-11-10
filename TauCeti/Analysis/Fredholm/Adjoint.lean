@@ -297,10 +297,10 @@ theorem _root_.ContinuousLinearMap.IsFredholm.isInvertible_of_index_eq_zero {T :
     (hT : ContinuousLinearMap.IsFredholm T) (h0 : ContinuousLinearMap.index T = 0)
     (hker : LinearMap.ker (T : E →ₗ[𝕜] F) = ⊥ ∨ LinearMap.ker (T† : F →ₗ[𝕜] E) = ⊥) :
     T.IsInvertible := by
+  rcases hker with hker | hker
+  · exact hT.isInvertible_of_injective_of_index_eq_zero (LinearMap.ker_eq_bot.mp hker) h0
   have := hT.finite_coker
   refine ContinuousLinearMap.isInvertible_iff_isFredholm_and_bijective.mpr ⟨hT, ?_⟩
-  rcases hker with hker | hker
-  · exact T.bijective_of_injective_of_index_eq_zero (LinearMap.ker_eq_bot.mp hker) h0
   -- A trivial adjoint kernel means that the cokernel `F ⧸ range T` has dimension zero.
   have hcoker : finrank 𝕜 (F ⧸ LinearMap.range (T : E →ₗ[𝕜] F)) = 0 := by
     rw [LinearEquiv.finrank_eq
