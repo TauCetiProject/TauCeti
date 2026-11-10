@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.InformationTheory.Coding.Weight.Euclidean
 public import TauCeti.LinearAlgebra.IntegralLattice.ConstructionB.Basic
 
 /-!
@@ -81,7 +80,7 @@ theorem eight_le_sum_sq (hC : ∀ c ∈ C, c ≠ 0 → 8 ≤ hammingNorm c) {z :
     omega
   · -- The reduction is a nonzero codeword, so it has at least eight odd coordinates.
     have hweight := hC _ hz hc
-    have := hammingNorm_intCast_le_sum_sq z
+    have := hammingNorm_intCast_le_sum_sq (ZMod 2) z
     omega
 
 /-- **Construction B vectors have norm at least four.** If every nonzero codeword of `C` has

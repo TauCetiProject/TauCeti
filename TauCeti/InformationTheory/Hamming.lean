@@ -1,7 +1,7 @@
 /-
 Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Wentao Li
 -/
 module
 
@@ -26,7 +26,8 @@ wt(x + y) + #(supp x ∩ supp y) + #(supp x \ supp (x + y)) = wt x + wt y,
 
 where the last set consists of the coordinates at which `y` cancels `x`. It follows that weight is
 additive on words with disjoint supports; weight is also subadditive. Scaling coordinatewise by `c`
-intersects the support with `supp c`.
+intersects the support with `supp c`. The weight of the image of an integer vector in any additive
+group with one, such as its reduction modulo `n`, is at most the vector's sum of squares.
 
 The file also records that Hamming weight and distance on a function whose domain is a disjoint
 union split as sums over the two coordinate types. Weight also splits over a retained coordinate
@@ -171,6 +172,22 @@ variable {ι κ : Type*} {β : ι ⊕ κ → Type*}
 theorem hammingNorm_const {A : Type*} [Fintype ι] [Zero A] [DecidableEq A] (a : A) :
     hammingNorm (Function.const ι a) = if a = 0 then 0 else Fintype.card ι := by
   by_cases ha : a = 0 <;> simp [hammingNorm, Function.const, ha]
+
+/-- The Hamming weight of the image of an integer vector in any additive group with one, such as
+its reduction modulo `n`, is bounded by its sum of squares. -/
+theorem hammingNorm_intCast_le_sum_sq [Fintype ι] (R : Type*) [AddGroupWithOne R]
+    [DecidableEq R] (z : ι → ℤ) : (hammingNorm (fun i ↦ (z i : R)) : ℤ) ≤ ∑ i, z i ^ 2 := by
+  have hsum : ∑ i, (if (z i : R) ≠ 0 then (1 : ℤ) else 0) ≤ ∑ i, z i ^ 2 := by
+    apply Finset.sum_le_sum
+    intro i _
+    split_ifs with hi
+    · have hz : z i ≠ 0 := by
+        rintro h
+        simp [h] at hi
+      have := sq_pos_of_ne_zero hz
+      omega
+    · exact sq_nonneg _
+  simpa only [Finset.sum_boole, hammingNorm] using hsum
 
 /-- The Hamming distance between two pairs of words combined on a disjoint union is the sum of
 the distances between the respective words. -/
