@@ -116,26 +116,20 @@ theorem splitExitTime_def [Norm Eᵤ] (ε : ℝ) (z : WithLp 2 (Eₛ × Eᵤ)) :
 /-- A point of the entrance face `‖x‖ = ε` has entry time zero. -/
 theorem splitEntryTime_eq_zero [Norm Eₛ] (hz : ‖z.fst‖ = ε) :
     splitEntryTime ε z = 0 := by
-  rw [splitEntryTime, hz]
-  rcases eq_or_ne ε 0 with rfl | hε
-  · simp
-  · rw [div_self hε, Real.log_one]
+  simp [splitEntryTime, hz]
 
 /-- A point of the exit face `‖y‖ = ε` has exit time zero. -/
 theorem splitExitTime_eq_zero [Norm Eᵤ] (hz : ‖z.snd‖ = ε) :
     splitExitTime ε z = 0 := by
-  rw [splitExitTime, hz]
-  rcases eq_or_ne ε 0 with rfl | hε
-  · simp
-  · rw [div_self hε, Real.log_one]
+  simp [splitExitTime, hz]
 
 /-- The exit time is nonnegative for a point whose second coordinate lies in the closed ball of
 radius `ε`. -/
-theorem splitExitTime_nonneg [NormedAddCommGroup Eᵤ] (hzε : ‖z.snd‖ ≤ ε) :
+theorem splitExitTime_nonneg [SeminormedAddCommGroup Eᵤ] (hzε : ‖z.snd‖ ≤ ε) :
     0 ≤ splitExitTime ε z := by
-  rcases eq_or_ne z.snd 0 with hz | hz
-  · simp [splitExitTime, hz]
-  · exact Real.log_nonneg ((one_le_div (norm_pos_iff.2 hz)).2 hzε)
+  rcases (norm_nonneg z.snd).eq_or_lt with hz | hz
+  · simp [splitExitTime, ← hz]
+  · exact Real.log_nonneg ((one_le_div hz).2 hzε)
 
 /-- The entry time is nonpositive for a point whose first coordinate lies in the closed ball of
 radius `ε`. -/

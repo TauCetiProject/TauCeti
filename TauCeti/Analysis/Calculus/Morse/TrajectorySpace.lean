@@ -109,8 +109,8 @@ private theorem unstableSet_inter_stableSet_level_self (hp : IsNondegenerateCrit
       hfs.continuous.continuousAt hz
   have hyp := hzp y ⟨hyu, hys⟩
   refine ⟨Set.inter_eq_left.2 fun z hz ↦ ?_, hyp ▸ hp.fderiv_eq_zero⟩
-  change f z = c
-  rw [hzp z hz, ← hyp, hyc]
+  have hfz : f z = f y := by rw [hzp z hz, hyp]
+  exact hfz.trans hyc
 
 /-- Under transversality, the level slice through `y` is cut out of `W^u(p) ∩ W^s(q)` by a
 transverse regular level set: it is flattened by a `C^n` chart, and its tangent space is that of
