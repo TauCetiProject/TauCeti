@@ -200,9 +200,9 @@ There is a constant `C > 0`, depending only on `p` and `F`, such that the follow
 weak derivative `D` on `Ω ∩ {0 < im}`, and let `x, y` be points with `closedBall x ρ ⊆ Ω`,
 `ρ = 2 |x - y|`. Then the representative `u* = TauCeti.halfPlanePreciseRepresentative u` satisfies
 
-`‖u*(x) - u*(y)‖ ≤ C ‖D‖_{Lᵖ((B(x, ρ) ∪ B(x̄, ρ)) ∩ {0 ≤ im})} |x - y|^α`.
+`‖u*(x) - u*(y)‖ ≤ C ‖D‖_{Lᵖ((B(x, ρ) ∪ B(conj x, ρ)) ∩ {0 ≤ im})} |x - y|^α`.
 
-The mirror disc `B(x̄, ρ)` enters because the even reflection samples the lower half of `B(x, ρ)`
+The mirror disc `B(conj x, ρ)` enters because the even reflection samples the lower half of `B(x, ρ)`
 at its conjugate points. -/
 theorem MemWkpLoc.exists_dist_halfPlanePreciseRepresentative_le (hp : 2 < p) :
     ∃ C : ℝ, 0 < C ∧ ∀ {Ω : Opens ℂ}, (∀ z ∈ Ω, conj z ∈ Ω) → ∀ {u : ℂ → F}
