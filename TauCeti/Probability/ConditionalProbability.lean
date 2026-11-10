@@ -351,6 +351,7 @@ theorem integral_cond_compl_singleton_of_eq_zero {E : Type*} [NormedAddCommGroup
 end ComplSingleton
 
 /-- Conditioning the restriction of a measure to `s` on the whole space is conditioning on `s`. -/
+@[simp]
 theorem cond_univ_restrict (μ : Measure Ω) (s : Set Ω) : (μ.restrict s)[|univ] = μ[|s] := by
   rw [cond, cond, Measure.restrict_apply_univ, Measure.restrict_univ]
 
