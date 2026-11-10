@@ -121,13 +121,23 @@ example : ∃ (x : E(singleEdge) → ℕ) (C : Finset V(singleEdge)),
 /-! ### Zero capacities, an isolated vertex and Hall obstructions -/
 
 /-- The leaves `1` and `2` reached by the edges `0` and `1` of `star`. -/
-@[expose] def starEnd : Fin 2 → Fin 4
+def starEnd : Fin 2 → Fin 4
   | 0 => 1
   | 1 => 2
 
+/-- Edge `0` of `star` ends at leaf `1`. -/
+@[simp]
+theorem starEnd_zero : starEnd 0 = 1 :=
+  by simp [starEnd]
+
+/-- Edge `1` of `star` ends at leaf `2`. -/
+@[simp]
+theorem starEnd_one : starEnd 1 = 2 :=
+  by simp [starEnd]
+
 /-- The star with centre `0`, joined to leaf `1` by edge `0` and to leaf `2` by edge `1`, together
 with an isolated vertex `3`. -/
-@[expose] def star : Graph (Fin 4) (Fin 2) where
+def star : Graph (Fin 4) (Fin 2) where
   vertexSet := Set.univ
   edgeSet := Set.univ
   IsLink e x y := s(x, y) = s(0, starEnd e)
@@ -141,11 +151,11 @@ with an isolated vertex `3`. -/
 
 /-- Every vertex of `Fin 4` is an actual vertex of `star`. -/
 theorem vertexSet_star : V(star) = Set.univ :=
-  rfl
+  by simp [star]
 
 /-- Every edge identity of `Fin 2` is an actual edge of `star`. -/
 theorem edgeSet_star : E(star) = Set.univ :=
-  rfl
+  by simp [star]
 
 /-- The edge type of `star` is finite. -/
 noncomputable local instance : Fintype E(star) := Fintype.ofFinite _
@@ -158,10 +168,11 @@ abbrev vtx (i : Fin 4) : V(star) :=
 abbrev edg (i : Fin 2) : E(star) :=
   ⟨i, edgeSet_star ▸ Set.mem_univ i⟩
 
+/-- An edge of `star` links its centre to the leaf selected by its identity. -/
 @[simp]
-private theorem star_isLink {e : Fin 2} {x y : Fin 4} :
+theorem star_isLink {e : Fin 2} {x y : Fin 4} :
     star.IsLink e x y ↔ s(x, y) = s(0, starEnd e) :=
-  Iff.rfl
+  by simp [star]
 
 @[simp]
 private theorem star_inc {e : Fin 2} {x : Fin 4} : star.Inc e x ↔ x = 0 ∨ x = starEnd e := by
@@ -224,6 +235,26 @@ def capacity (v : V(star)) : ℕ :=
   | 1 => 0
   | 2 => 1
   | 3 => 1
+
+/-- The centre of `star` has capacity two. -/
+@[simp]
+theorem capacity_vtx_zero : capacity (vtx 0) = 2 :=
+  by simp [capacity]
+
+/-- Leaf `1` of `star` has capacity zero. -/
+@[simp]
+theorem capacity_vtx_one : capacity (vtx 1) = 0 :=
+  by simp [capacity]
+
+/-- Leaf `2` of `star` has capacity one. -/
+@[simp]
+theorem capacity_vtx_two : capacity (vtx 2) = 1 :=
+  by simp [capacity]
+
+/-- The isolated vertex `3` of `star` has capacity one. -/
+@[simp]
+theorem capacity_vtx_three : capacity (vtx 3) = 1 :=
+  by simp [capacity]
 
 /-- No multiset capacitated matching uses edge `0`, since leaf `1` has capacity zero. -/
 theorem eq_zero_of_isCapacitatedMatching {x : E(star) → ℕ}
@@ -290,6 +321,26 @@ def balancedCapacity (v : V(star)) : ℕ :=
   | 1 => 0
   | 2 => 1
   | 3 => 0
+
+/-- The centre of `star` has balanced capacity one. -/
+@[simp]
+theorem balancedCapacity_vtx_zero : balancedCapacity (vtx 0) = 1 :=
+  by simp [balancedCapacity]
+
+/-- Leaf `1` of `star` has balanced capacity zero. -/
+@[simp]
+theorem balancedCapacity_vtx_one : balancedCapacity (vtx 1) = 0 :=
+  by simp [balancedCapacity]
+
+/-- Leaf `2` of `star` has balanced capacity one. -/
+@[simp]
+theorem balancedCapacity_vtx_two : balancedCapacity (vtx 2) = 1 :=
+  by simp [balancedCapacity]
+
+/-- The isolated vertex `3` of `star` has balanced capacity zero. -/
+@[simp]
+theorem balancedCapacity_vtx_three : balancedCapacity (vtx 3) = 0 :=
+  by simp [balancedCapacity]
 
 /-- With zero capacity at leaf `1` and at the isolated vertex `3`, Hall's condition holds and both
 sides have total capacity one, so some multiset capacitated matching saturates every vertex. -/
