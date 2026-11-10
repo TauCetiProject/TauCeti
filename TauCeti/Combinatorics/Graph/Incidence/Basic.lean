@@ -8,6 +8,7 @@ module
 public import Mathlib.Combinatorics.Graph.Delete
 public import Mathlib.Combinatorics.Graph.Simple
 public import Mathlib.Combinatorics.SimpleGraph.Finite
+public import Mathlib.Data.Finset.Preimage
 
 /-!
 # Incidence counts for multigraphs
@@ -257,6 +258,35 @@ theorem mem_incidentEdges {S : Finset G.vertexSet} {e : G.edgeSet} :
     e ∈ G.incidentEdges S ↔ ∃ x ∈ S, G.Inc e.1 x.1 := by
   classical
   simp [incidentEdges]
+
+/-- Reading internal edges as ambient identities removes the vertex subtype from membership.
+The preimage selects the actual vertices lying in the ambient finite set `S`. -/
+theorem mem_map_internalEdges_preimage (S : Finset α) (e : β) :
+    e ∈ (G.internalEdges (S.preimage Subtype.val Subtype.val_injective.injOn)).map
+      (Function.Embedding.subtype _) ↔ ∃ x ∈ S, ∃ y ∈ S, G.IsLink e x y := by
+  classical
+  simp only [Finset.mem_map, mem_internalEdges, Finset.mem_preimage,
+    Function.Embedding.subtype_apply]
+  constructor
+  · rintro ⟨⟨e, he⟩, ⟨x, hx, y, hy, hxy⟩, rfl⟩
+    exact ⟨x, hx, y, hy, hxy⟩
+  · rintro ⟨x, hx, y, hy, hxy⟩
+    exact ⟨⟨e, hxy.edge_mem⟩,
+      ⟨⟨x, hxy.left_mem⟩, hx, ⟨y, hxy.right_mem⟩, hy, hxy⟩, rfl⟩
+
+/-- Reading incident edges as ambient identities removes the vertex subtype from membership.
+Vertices of `S` outside the graph do not contribute. -/
+theorem mem_map_incidentEdges_preimage (S : Finset α) (e : β) :
+    e ∈ (G.incidentEdges (S.preimage Subtype.val Subtype.val_injective.injOn)).map
+      (Function.Embedding.subtype _) ↔ ∃ x ∈ S, G.Inc e x := by
+  classical
+  simp only [Finset.mem_map, mem_incidentEdges, Finset.mem_preimage,
+    Function.Embedding.subtype_apply]
+  constructor
+  · rintro ⟨⟨e, he⟩, ⟨x, hx, hex⟩, rfl⟩
+    exact ⟨x, hx, hex⟩
+  · rintro ⟨x, hx, hex⟩
+    exact ⟨⟨e, hex.edge_mem⟩, ⟨⟨x, hex.vertex_mem⟩, hx, hex⟩, rfl⟩
 
 @[simp]
 theorem internalEdges_empty : G.internalEdges ∅ = ∅ := by
