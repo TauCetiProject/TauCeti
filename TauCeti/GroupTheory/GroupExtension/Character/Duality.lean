@@ -9,9 +9,6 @@ public import TauCeti.GroupTheory.GroupExtension.Character.Basic
 public import TauCeti.Algebra.GroupAction.Trivial
 public import TauCeti.GroupTheory.Abelianization.Character
 import TauCeti.GroupTheory.QuotientGroup.KerEquiv
-import TauCeti.FieldTheory.IsAlgClosed.Units
-import TauCeti.RingTheory.RootsOfUnity.Basic
-import Mathlib.RingTheory.RootsOfUnity.AlgebraicallyClosed
 
 /-!
 # Character duality for the commutator part of an extension kernel
@@ -24,8 +21,6 @@ of transgression with the character group of `M ∩ E'`.
 In particular, a finite central extension with surjective transgression realizes second
 cohomology as the dual of the part of its kernel in the commutator subgroup. This isolates
 the kernel detected by projective representations, which a Schur cover must retain.
-Finally, `TauCeti.natCard_additive_equivariantCharacterSubgroup_rootsOfUnity` counts the
-equivariant characters of a product of groups of roots of unity.
 
 ## References
 
@@ -138,32 +133,3 @@ theorem characterTransgressionRangeEquiv_symm_commutatorCharacterRestriction
   exact (α.characterTransgressionRangeEquiv hM).symm_apply_apply _
 
 end TauCeti.FactorSet
-
-namespace TauCeti
-
-attribute [local instance] trivialMulDistribMulAction
-
-variable (k G : Type) [Field k] [IsAlgClosed k] [Group G]
-
-/-- When each `n i` is nonzero in `k`, the group of equivariant `kˣ`-valued characters of
-`∏ i, μ_{n i}` has `∏ i, n i` elements. -/
-theorem natCard_additive_equivariantCharacterSubgroup_rootsOfUnity {ι : Type} [Fintype ι]
-    (n : ι → ℕ) (hncast : ∀ i, (n i : k) ≠ 0) :
-    Nat.card (Additive (equivariantCharacterSubgroup G (∀ i, rootsOfUnity (n i) k) kˣ)) =
-      ∏ i, n i := by
-  classical
-  let hnroot (i : ι) : NeZero (n i : k) := ⟨hncast i⟩
-  let M := ∀ i, rootsOfUnity (n i) k
-  have hne (i : ι) : NeZero (n i) := .of_neZero_natCast k
-  have : NeZero (Monoid.exponent M : k) := ⟨exponent_pi_rootsOfUnity_cast_ne_zero n hncast⟩
-  let : MulDistribMulAction G M := trivialMulDistribMulAction G M
-  have hcardM : Nat.card M = ∏ i, n i := by
-    rw [Nat.card_pi]
-    simp only [HasEnoughRootsOfUnity.natCard_rootsOfUnity]
-  let forget : equivariantCharacterSubgroup G M kˣ ≃ (M →* kˣ) :=
-    Equiv.subtypeUnivEquiv fun f ↦
-      (mem_equivariantCharacterSubgroup G M kˣ f).mpr fun _ _ ↦ rfl
-  rw [Nat.card_congr Additive.toMul, Nat.card_congr forget,
-    CommGroup.card_monoidHom_of_hasEnoughRootsOfUnity, hcardM]
-
-end TauCeti
