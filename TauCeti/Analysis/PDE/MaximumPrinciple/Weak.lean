@@ -273,7 +273,6 @@ theorem UniformlyEllipticOn.value_nonpos_of_small_drift_of_poincare
     (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
     (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
-    (hbeta : 0 ≤ beta) (hP : 0 ≤ P)
     (hpoincare : ∀ w : W1p0 mu Omega 2,
       ‖W1p.value (w : W1p mu Omega 2)‖ ≤
         P * ‖W1p.gradient (w : W1p mu Omega 2)‖)
@@ -284,11 +283,13 @@ theorem UniformlyEllipticOn.value_nonpos_of_small_drift_of_poincare
       (∀ᵐ x ∂mu.restrict Omega, 0 ≤ W1p.value (v : W1p mu Omega 2) x) →
         energyFormH1 a b c u (v : W1p mu Omega 2) ≤ 0) :
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ 0 := by
-  have hC := energyFormH1_poincare_constant_pos hbeta hP hsmall
+  have hC := energyFormH1_poincare_constant_pos (le_max_right beta 0) (le_max_right P 0)
+    (max_mul_max_lt_of_mul_lt h.pos hsmall)
   refine value_nonpos_of_energyFormH1_nonpos hboundary hC ?_ hu
   intro w
-  exact h.mul_norm_sq_le_energyFormH1_self_of_poincare ha hb hc hb_bound hc_bound
-    hc_nonneg (hpoincare w)
+  exact h.mul_norm_sq_le_energyFormH1_self_of_poincare ha hb hc
+    (fun x hx ↦ (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
+    ((hpoincare w).trans (mul_le_mul_of_nonneg_right (le_max_left P 0) (norm_nonneg _)))
 
 /-- For `-div(a ∇u) + b · ∇u + cu` with uniformly elliptic, bounded measurable
 coefficients and `c ≥ 0`, a Poincaré bound `P` and `βP < λ` imply that a weak subsolution
@@ -301,7 +302,6 @@ theorem UniformlyEllipticOn.value_le_const_of_small_drift_of_poincare
     (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
     (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
-    (hbeta : 0 ≤ beta) (hP : 0 ≤ P)
     (hpoincare : ∀ w : W1p0 mu Omega 2,
       ‖W1p.value (w : W1p mu Omega 2)‖ ≤
         P * ‖W1p.gradient (w : W1p mu Omega 2)‖)
@@ -314,13 +314,15 @@ theorem UniformlyEllipticOn.value_le_const_of_small_drift_of_poincare
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ k := by
   have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
     (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
-  have hC := energyFormH1_poincare_constant_pos hbeta hP hsmall
+  have hC := energyFormH1_poincare_constant_pos (le_max_right beta 0) (le_max_right P 0)
+    (max_mul_max_lt_of_mul_lt h.pos hsmall)
   refine value_le_of_energyFormH1_nonpos hcoeff
     ((ae_restrict_mem Omega.isOpen.measurableSet).mono fun x hx ↦ hc_nonneg x hx)
     hk hboundary hC ?_ hu
   intro w
-  exact h.mul_norm_sq_le_energyFormH1_self_of_poincare ha hb hc hb_bound hc_bound
-    hc_nonneg (hpoincare w)
+  exact h.mul_norm_sq_le_energyFormH1_self_of_poincare ha hb hc
+    (fun x hx ↦ (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
+    ((hpoincare w).trans (mul_le_mul_of_nonneg_right (le_max_left P 0) (norm_nonneg _)))
 
 /-- For `-div(a ∇u) + b · ∇u + cu` with uniformly elliptic, bounded measurable
 coefficients and `c ≥ 0`, a Poincaré bound `P` and `βP < λ` imply `u ≤ v` almost
@@ -333,7 +335,6 @@ theorem UniformlyEllipticOn.value_le_of_small_drift_of_poincare
     (hb_bound : ∀ x ∈ Omega, ‖b x‖ ≤ beta)
     (hc_bound : ∀ x ∈ Omega, ‖c x‖ ≤ gamma)
     (hc_nonneg : ∀ x ∈ Omega, 0 ≤ c x)
-    (hbeta : 0 ≤ beta) (hP : 0 ≤ P)
     (hpoincare : ∀ w : W1p0 mu Omega 2,
       ‖W1p.value (w : W1p mu Omega 2)‖ ≤
         P * ‖W1p.gradient (w : W1p mu Omega 2)‖)
@@ -347,11 +348,13 @@ theorem UniformlyEllipticOn.value_le_of_small_drift_of_poincare
     ∀ᵐ x ∂mu.restrict Omega, W1p.value u x ≤ W1p.value v x := by
   have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
     (fun x hx eta xi ↦ h.upper_bound hx eta xi) hb_bound hc_bound
-  have hC := energyFormH1_poincare_constant_pos hbeta hP hsmall
+  have hC := energyFormH1_poincare_constant_pos (le_max_right beta 0) (le_max_right P 0)
+    (max_mul_max_lt_of_mul_lt h.pos hsmall)
   refine value_le_of_energyFormH1_le hcoeff hboundary hC ?_ huv
   intro w
-  exact h.mul_norm_sq_le_energyFormH1_self_of_poincare ha hb hc hb_bound hc_bound
-    hc_nonneg (hpoincare w)
+  exact h.mul_norm_sq_le_energyFormH1_self_of_poincare ha hb hc
+    (fun x hx ↦ (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
+    ((hpoincare w).trans (mul_le_mul_of_nonneg_right (le_max_left P 0) (norm_nonneg _)))
 
 end Poincare
 
@@ -384,7 +387,6 @@ theorem UniformlyEllipticOn.value_nonpos_of_small_drift_of_subset_ball
     ∀ᵐ x ∂volume.restrict Omega, W1p.value u x ≤ 0 := by
   apply h.value_nonpos_of_small_drift_of_poincare ha hb hc
     (fun x hx ↦ (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
-    (le_max_right beta 0) (by positivity : 0 ≤ 2 * max R 0)
     (fun w ↦ W1p.norm_value_le_mul_norm_gradient_of_subset_ball
       (hOmega.trans (Metric.ball_subset_ball (le_max_left R 0))) w.property)
     (max_mul_two_mul_max_lt_of_mul_two_mul_lt h.pos hsmall) hboundary hu
@@ -411,7 +413,6 @@ theorem UniformlyEllipticOn.value_le_const_of_small_drift_of_subset_ball
     ∀ᵐ x ∂volume.restrict Omega, W1p.value u x ≤ k := by
   apply h.value_le_const_of_small_drift_of_poincare ha hb hc
     (fun x hx ↦ (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
-    (le_max_right beta 0) (by positivity : 0 ≤ 2 * max R 0)
     (fun w ↦ W1p.norm_value_le_mul_norm_gradient_of_subset_ball
       (hOmega.trans (Metric.ball_subset_ball (le_max_left R 0))) w.property)
     (max_mul_two_mul_max_lt_of_mul_two_mul_lt h.pos hsmall) hk hboundary hu
@@ -439,7 +440,6 @@ theorem UniformlyEllipticOn.value_le_of_small_drift_of_subset_ball
     ∀ᵐ x ∂volume.restrict Omega, W1p.value u x ≤ W1p.value v x := by
   apply h.value_le_of_small_drift_of_poincare ha hb hc
     (fun x hx ↦ (hb_bound x hx).trans (le_max_left beta 0)) hc_bound hc_nonneg
-    (le_max_right beta 0) (by positivity : 0 ≤ 2 * max R 0)
     (fun w ↦ W1p.norm_value_le_mul_norm_gradient_of_subset_ball
       (hOmega.trans (Metric.ball_subset_ball (le_max_left R 0))) w.property)
     (max_mul_two_mul_max_lt_of_mul_two_mul_lt h.pos hsmall) hboundary huv
