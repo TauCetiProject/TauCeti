@@ -45,8 +45,19 @@ tangent bundle, and continuity of the domain-dependent structure `J` is continui
 expression in the tangent coordinates at the limit point (`ContinuousLinearMap.inCoordinates`),
 the form in which continuity of a bundle endomorphism is read off in Mathlib.
 
-Choosing the centres and scales, the convergence of the rescaled maps, the energy bound for the
-bubble and the removal of the singularity at infinity of the limit plane are not carried out here.
+The symplectic area of such a limit `v` is bounded by the energy concentrating at `z₀`: for every
+`δ > 0`, the integral over the whole plane of the area density `ω(∂_s v, ∂_t v)` is at most the
+lower limit of the Floer energies of the original maps over the disc of radius `δ` about `z₀`
+(`TauCeti.SmoothTwoForm.lintegral_eval₂_le_liminf_of_tendsto_rescale`). This is Fatou's lemma
+after the change of variables `z = c + ε w`, under which the energy is invariant. Pointwise, the
+rescaled energy densities `ω(ε (du - X_K), ε (du - X_K))` converge to the area density of `v`,
+because the rescaled perturbed derivatives converge in the tangent bundle and evaluation of `ω` is
+continuous on tangent vectors (`TauCeti.IsSmoothForm.tendsto_apply`). No equation is needed. This
+is the energy accounting that bounds the energy of a bubble by the energy lost at its bubbling
+point.
+
+Choosing the centres and scales, the convergence of the rescaled maps and the removal of the
+singularity at infinity of the limit plane are not carried out here.
 
 ## Main results
 
@@ -61,6 +72,8 @@ bubble and the removal of the singularity at infinity of the limit plane are not
   curvature allowance are invariant under rescaling.
 * `TauCeti.SmoothTwoForm.isComplexLinearMap_of_tendsto_rescale`: limits of rescaled solutions
   solve the Cauchy–Riemann equation for the frozen structure.
+* `TauCeti.SmoothTwoForm.lintegral_eval₂_le_liminf_of_tendsto_rescale`: the area of a limit of
+  rescaled maps is at most the energy concentrating at the bubbling point.
 
 ## References
 
@@ -71,7 +84,7 @@ bubble and the removal of the singularity at infinity of the limit plane are not
 
 public section
 
-open Bundle Filter Function MeasureTheory Set Topology
+open Bundle Filter Function MeasureTheory Metric Set Topology
 open scoped Manifold
 
 namespace TauCeti.SmoothTwoForm
@@ -292,6 +305,102 @@ theorem isComplexLinearMap_of_tendsto_rescale (ω : SmoothTwoForm I M) [FiniteDi
     rw [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_apply,
       ContinuousLinearMap.comp_apply, Trivialization.symmL_continuousLinearMapAt _ hb, map_smul, hi]
     rfl
+
+/-- **The area of a bubble in a manifold is at most the energy concentrating at its bubbling
+point.** Let `u i` be `C¹` on an open set `U` containing `z₀`, and let the Hamiltonian vector fields
+of the perturbation `K` be continuous on `U × M` as maps into the tangent bundle. Rescale `u i` at
+centres `c i → z₀` by scales `ε i → 0`, and suppose that the derivatives of the rescaled maps
+`w ↦ u i (c i + ε i • w)` converge in the tangent bundle at every point of the plane to those of a
+map `v`. Then for every `δ > 0` the symplectic area `∫ ω(∂_s v, ∂_t v)` of `v` over the whole
+plane, with the area density truncated at zero, is at most the lower limit of the Floer energies of
+`u i` over the disc of radius `δ` about `z₀`. The vector-space case is
+`SymplecticForm.lintegral_symplecticForm_le_liminf_of_tendsto_rescale`. -/
+theorem lintegral_eval₂_le_liminf_of_tendsto_rescale (ω : SmoothTwoForm I M) [l.NeBot]
+    [l.IsCountablyGenerated] {U : Set (ℝ × ℝ)} {v : ℝ × ℝ → M} (hU : IsOpen U) (hz₀ : z₀ ∈ U)
+    (hu : ∀ i, ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 (u i) U)
+    (hXs : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Ks p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ))
+    (hXt : ContinuousOn (fun p : (ℝ × ℝ) × M ↦
+      (⟨p.2, ω.hamiltonianVectorField (Kt p.1) p.2⟩ : TangentBundle I M)) (U ×ˢ univ))
+    (hc : Tendsto c l (𝓝 z₀)) (hε : Tendsto ε l (𝓝 0))
+    (hdv : ∀ w e, Tendsto (fun i ↦ (⟨u i (c i + ε i • w),
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I (fun w' ↦ u i (c i + ε i • w')) w e⟩ : TangentBundle I M)) l
+      (𝓝 ⟨v w, mfderiv 𝓘(ℝ, ℝ × ℝ) I v w e⟩))
+    {δ : ℝ} (hδ : 0 < δ) :
+    ∫⁻ w, ENNReal.ofReal (SmoothBundleForm.eval₂ ω (v w)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineImag)) ≤
+      liminf (fun i ↦ ∫⁻ z in ball z₀ δ, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt (u i) z))
+        l := by
+  -- Shrink the disc to a disc `B ⊆ U`; the energies over `B` are smaller.
+  obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.mp hU z₀ hz₀
+  set B := ball z₀ (min δ r)
+  have hBU : B ⊆ U := (ball_subset_ball (min_le_right δ r)).trans hrU
+  have hB₀ : z₀ ∈ B := mem_ball_self (lt_min hδ hr)
+  set φ : ι → ℝ × ℝ → ℝ × ℝ := fun i w ↦ c i + ε i • w
+  have hφ (i : ι) : Continuous (φ i) := continuous_const.add (continuous_id.const_smul (ε i))
+  have hpre (i : ι) : MeasurableSet (φ i ⁻¹' B) := (isOpen_ball.preimage (hφ i)).measurableSet
+  -- The energy densities of the rescaled maps for the rescaled data, cut off outside the
+  -- preimage of `B`.
+  set g : ι → ℝ × ℝ → ENNReal := fun i ↦ (φ i ⁻¹' B).indicator fun w ↦
+    ENNReal.ofReal (ω.floerEnergyDensity (fun w x ↦ ε i * Ks (c i + ε i • w) x)
+      (fun w x ↦ ε i * Kt (c i + ε i • w) x) (fun w ↦ u i (c i + ε i • w)) w)
+  -- Each integrates to at most the energy of `u i` over `B`, since the energy is invariant under
+  -- rescaling.
+  have hint (i : ι) : ∫⁻ w, g i w ≤
+      ∫⁻ z in B, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt (u i) z) := by
+    simp only [g, lintegral_indicator (hpre i)]
+    rcases eq_or_ne (ε i) 0 with h0 | h0
+    · simp_rw [ω.floerEnergyDensity_rescale, h0]
+      simp
+    rw [ω.lintegral_floerEnergyDensity_rescale h0 (hpre i)]
+    exact lintegral_mono_set (image_preimage_subset (φ i) B)
+  -- Each is measurable, since the energy density of `u i` is continuous on `U`.
+  have hmeas (i : ι) : AEMeasurable (g i) := by
+    refine (aemeasurable_indicator_iff (hpre i)).mpr (ContinuousOn.aemeasurable ?_ (hpre i))
+    simp only [floerEnergyDensity_rescale]
+    refine ENNReal.continuous_ofReal.comp_continuousOn (continuousOn_const.mul ?_)
+    exact (ω.continuousOn_floerEnergyDensity hU (hu i) hXs hXt).comp (hφ i).continuousOn
+      fun w hw ↦ hBU hw
+  -- Pointwise, they converge to the area density of the limit `v`.
+  have hlim (w : ℝ × ℝ) : Tendsto (fun i ↦ g i w) l (𝓝 (ENNReal.ofReal
+      (SmoothBundleForm.eval₂ ω (v w) (mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineImag)))) := by
+    have hz : Tendsto (φ · w) l (𝓝 z₀) := by simpa [φ] using hc.add (hε.smul_const w)
+    have hB : ∀ᶠ i in l, φ i w ∈ B := hz (isOpen_ball.mem_nhds hB₀)
+    have hUM := (hU.prod isOpen_univ).mem_nhds (mk_mem_prod hz₀ (mem_univ (v w)))
+    set T := trivializationAt E (TangentSpace I) (v w)
+    have hx₀ : v w ∈ T.baseSet := FiberBundle.mem_baseSet_trivializationAt E _ (v w)
+    have hx : Tendsto (fun i ↦ u i (φ i w)) l (𝓝 (v w)) :=
+      ((T.tendsto_mk_nhds_mk_iff ℝ hx₀).1 (hdv w 0)).1
+    -- The rescaled perturbed derivatives converge in the tangent bundle to the derivative of `v`.
+    have hP (e : ℝ × ℝ) : Tendsto (fun i ↦ (⟨u i (φ i w),
+        ε i • ω.perturbedMFDeriv Ks Kt (u i) (φ i w) e⟩ : TangentBundle I M)) l
+        (𝓝 ⟨v w, mfderiv 𝓘(ℝ, ℝ × ℝ) I v w e⟩) :=
+      (T.tendsto_mk_nhds_mk_iff ℝ hx₀).2 ⟨hx, ω.tendsto_coord_smul_perturbedMFDeriv_rescale hc hε
+        (hdv w) (hXs.continuousAt hUM) (hXt.continuousAt hUM) e⟩
+    have h := ω.isSmoothForm.tendsto_apply (v := fun i ↦
+      ![ε i • ω.perturbedMFDeriv Ks Kt (u i) (φ i w) stdComplexLineReal,
+        ε i • ω.perturbedMFDeriv Ks Kt (u i) (φ i w) stdComplexLineImag])
+      (v₀ := ![mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineReal,
+        mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineImag]) hx
+      (Fin.forall_fin_two.2 ⟨by simpa only [Matrix.cons_val_zero] using hP stdComplexLineReal,
+        by simpa only [Matrix.cons_val_one, Matrix.cons_val_fin_one] using hP stdComplexLineImag⟩)
+    rw [SmoothBundleForm.eval₂_apply]
+    refine (ENNReal.tendsto_ofReal h).congr' (hB.mono fun i hi ↦ ?_)
+    simp only [g, indicator_of_mem (mem_preimage.mpr hi), floerEnergyDensity_def,
+      ω.perturbedMFDeriv_rescale, SmoothBundleForm.eval₂_apply, FunLike.coe_smul, Pi.smul_apply,
+      φ]
+  -- Fatou's lemma.
+  calc ∫⁻ w, ENNReal.ofReal (SmoothBundleForm.eval₂ ω (v w)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I v w stdComplexLineImag))
+      = ∫⁻ w, liminf (fun i ↦ g i w) l := lintegral_congr fun w ↦ ((hlim w).liminf_eq).symm
+    _ ≤ liminf (fun i ↦ ∫⁻ w, g i w) l := lintegral_liminf_le' hmeas
+    _ ≤ liminf (fun i ↦ ∫⁻ z in ball z₀ δ, ENNReal.ofReal (ω.floerEnergyDensity Ks Kt (u i) z))
+        l :=
+      liminf_le_liminf (Eventually.of_forall fun i ↦ (hint i).trans
+        (lintegral_mono_set (ball_subset_ball (min_le_left δ r))))
 
 end Limit
 
