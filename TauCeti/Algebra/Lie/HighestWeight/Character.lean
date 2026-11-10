@@ -63,8 +63,6 @@ every weight in the orbit occurs, and occurs simply.
 ## Main results
 
 * `TauCeti.isWeylInvariant_formalCharacter`: **the formal character is Weyl-invariant.**
-* `TauCeti.genWeightSpace_weylGroup_smul_ne_bot_of_ne_bot`: **the weights of a finite-dimensional
-  module are stable under the Weyl group.**
 * `TauCeti.isDotAlternating_formalCharacter_mul_weylDenominator`: **the formal character times the
   Weyl denominator is alternating for the dot action.**
 * `TauCeti.sub_mem_posRootCone_of_coeff_formalCharacter_mul_weylDenominator_ne_zero`: for a highest
@@ -109,16 +107,6 @@ a weight is unchanged by the linear action of the Weyl group. This is
 theorem isWeylInvariant_formalCharacter :
     IsWeylInvariant (IsKilling.rootSystem H) (formalCharacter K H M) :=
   (isWeylInvariant_iff _ _).mpr fun w chi ↦ formalCharacter_coeff_weylGroup_smul w chi
-
-/-- **The weights of a finite-dimensional module are stable under the Weyl group**: if a linear form
-is a weight of `M`, so is each of its Weyl translates. This is the Weyl invariance of weight
-multiplicities, read as the nonvanishing of a weight space. -/
-theorem genWeightSpace_weylGroup_smul_ne_bot_of_ne_bot (w : (IsKilling.rootSystem H).weylGroup)
-    {chi : Dual K H} (h : genWeightSpace M (chi : H → K) ≠ ⊥) :
-    genWeightSpace M ((w • chi : Dual K H) : H → K) ≠ ⊥ := fun hbot ↦ by
-  have h' := formalCharacter_coeff_eq_zero_iff.mpr hbot
-  rw [formalCharacter_coeff_weylGroup_smul, formalCharacter_coeff_eq_zero_iff] at h'
-  exact h h'
 
 /-- **The formal character of a finite-dimensional module times the Weyl denominator is alternating
 for the dot action.**

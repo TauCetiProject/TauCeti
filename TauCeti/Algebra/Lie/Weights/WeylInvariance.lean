@@ -62,7 +62,8 @@ it fails, neither form is a weight and both multiplicities are zero, by
 * `TauCeti.finrank_weightSpace_weylGroup_smul`: **Weyl invariance.** The multiplicity function on
   the dual `Module.Dual K H` is invariant under the whole Weyl group of
   `LieAlgebra.IsKilling.rootSystem H`, and `TauCeti.weightSpace_weylGroup_smul_eq_bot_iff` records
-  the resulting stability of the set of weights.
+  the resulting stability of the set of weights, and
+  `TauCeti.genWeightSpace_weylGroup_smul_ne_bot_of_ne_bot` states it for generalized weight spaces.
 
 ## References
 
@@ -338,6 +339,16 @@ Weyl group is. -/
     weightSpace M ⇑(w • χ) = ⊥ ↔ weightSpace M ⇑χ = ⊥ := by
   rw [weightSpace_eq_bot_iff_finrank_eq_zero, weightSpace_eq_bot_iff_finrank_eq_zero,
     finrank_weightSpace_weylGroup_smul]
+
+/-- **The weights of a finite-dimensional module are stable under the Weyl group**, stated for
+generalized weight spaces: if a linear form is a weight of `M`, so is each of its Weyl translates.
+This is `TauCeti.weightSpace_weylGroup_smul_eq_bot_iff`, read through
+`TauCeti.genWeightSpace_eq_weightSpace`. -/
+theorem genWeightSpace_weylGroup_smul_ne_bot_of_ne_bot (w : (IsKilling.rootSystem H).weylGroup)
+    {χ : Dual K H} (h : genWeightSpace M (χ : H → K) ≠ ⊥) :
+    genWeightSpace M ((w • χ : Dual K H) : H → K) ≠ ⊥ := by
+  rw [genWeightSpace_eq_weightSpace] at h ⊢
+  exact fun hbot ↦ h ((weightSpace_weylGroup_smul_eq_bot_iff w χ).mp hbot)
 
 end Killing
 
