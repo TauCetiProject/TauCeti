@@ -205,7 +205,7 @@ private theorem toReal_edist_sq_le (hu : ∀ n, u (n + 1) ∈ moreauYosidaResolv
   have key := sq_le_mul_one_add_div_pow_of_sq_le_mul_sub
     (D := fun n ↦ (edist (u 0) (u n)).toReal) (d := fun n ↦ (edist (u n) (u (n + 1))).toReal)
     (e := e) (τ := τ) (τ' := τ') (A := A)
-    (NNReal.coe_pos.2 hτ) (by exact_mod_cast hττ') (by simp) (fun _ ↦ ENNReal.toReal_nonneg)
+    τ.2 (by exact_mod_cast hττ') (by simp) (fun _ ↦ ENNReal.toReal_nonneg)
     (fun n ↦ ENNReal.toReal_le_add (edist_triangle _ _ _) (hfin n)
       (edist_ne_top_of_mem_moreauYosidaResolvent (hu n)))
     (fun n ↦ ?_) hcoer n
@@ -308,7 +308,8 @@ theorem edist_ceil_sq_le_of_forall_mem_moreauYosidaResolvent
     rw [hen] at this
     exact_mod_cast this
   have hexp : (1 + 8 * τ / τ') ^ n ≤ Real.exp (8 * (t + τ) / τ') := by
-    have := one_add_mul_pow_ceil_div_le_exp (a := 8 / τ') (by positivity) hτr (hs.trans hst)
+    have := one_add_mul_pow_ceil_div_le_exp (a := 8 / τ') (by positivity)
+      (add_nonneg (hs.trans hst) τ.2)
     rwa [div_mul_eq_mul_div, div_mul_eq_mul_div] at this
   have hdiff : em - en ≤ (E - A) * (1 + Real.exp (8 * (t + τ) / τ')) := by
     nlinarith [mul_le_mul_of_nonneg_left hexp (sub_nonneg.2 hAE)]
@@ -358,7 +359,8 @@ private theorem le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent
     calc (1 + 8 * (τ : ℝ) / τ') ^ n ≤ (1 + 8 / τ' * τ) ^ ⌈T / τ⌉₊ := by
           rw [div_mul_eq_mul_div]
           exact pow_le_pow_right₀ (le_add_of_nonneg_right (by positivity)) hn
-      _ ≤ Real.exp (8 / τ' * (T + τ)) := one_add_mul_pow_ceil_div_le_exp (by positivity) hτr hT
+      _ ≤ Real.exp (8 / τ' * (T + τ)) := one_add_mul_pow_ceil_div_le_exp (by positivity)
+        (add_nonneg hT τ.2)
       _ ≤ B := Real.exp_le_exp.2 (by rw [div_mul_eq_mul_div]; gcongr)
   have hP1 : 1 ≤ (1 + 8 * (τ : ℝ) / τ') ^ n :=
     one_le_pow₀ (le_add_of_nonneg_right (by positivity))
@@ -450,8 +452,7 @@ private theorem apply_le_and_edist_le_rpow_of_forall_mem_moreauYosidaResolvent
     refine (edist_sq_le_of_forall_mem_moreauYosidaResolvent hu hτ hττ' hA hE _).trans
       (ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left ?_
         (mul_nonneg (by positivity) hEA)))
-    have := one_add_mul_pow_ceil_div_le_exp (a := 8 / τ') (by positivity)
-      (NNReal.coe_pos.2 hτ) ht
+    have := one_add_mul_pow_ceil_div_le_exp (a := 8 / τ') (by positivity) (add_nonneg ht τ.2)
     rw [div_mul_eq_mul_div, div_mul_eq_mul_div] at this
     exact this.trans hB
 
@@ -671,7 +672,7 @@ theorem exists_isGeneralizedMinimizingMovement (hl : ∀ y, pure y ≤ l y)
     push_cast [hτ_def]
     field_simp
   choose U hU0 hU using fun k ↦ exists_forall_mem_moreauYosidaResolvent
-    (fun z _ _ hv ↦ hd (tendsto_const_pure.mono_right (hl z)) hv) hφ hcpt (hτ k)
+    (fun z _ _ hv ↦ hd (tendsto_const_pure.mono_right (hl z)) hv) hφ hcpt
     (((le_mul_of_one_le_left zero_le (by norm_num)).trans (hττ' k)).trans_lt (half_lt_self hτ₀))
     hx₀ h₀
   -- The limit curve of a subsequence of the interpolants.

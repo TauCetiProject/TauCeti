@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive
+public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Positive.Basic
 public import TauCeti.Algebra.Group.Subgroup.Pointwise
 
 /-!

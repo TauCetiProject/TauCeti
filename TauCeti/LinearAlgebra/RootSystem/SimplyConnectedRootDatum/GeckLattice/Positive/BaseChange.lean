@@ -445,7 +445,7 @@ theorem geckTorusPositiveBaseChangeInclusionCoordinateMap_comp_weightTorus :
     t.geckTorusPositiveBaseChangeInclusionCoordinateMap ht A ≫
           t.geckWeightTorusToTorusPositiveBaseChangeCoordinateMap ht A ≫
         (_root_.CommHopfAlgCat.ofHom
-          (TauCeti.MonoidAlgebra.scalarTensorBialgEquiv ℤ A
+          (MonoidAlgebra.scalarTensorBialgEquiv ℤ A
             (G := SplitTorus.characterGroup (Fin t.rank)))) =
       t.geckWeightTorusToBaseChangeCoordinateMap ht A := by
   rw [geckTorusPositiveBaseChangeInclusionCoordinateMap,
