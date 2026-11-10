@@ -54,29 +54,15 @@ open scoped Convolution ContDiff
 
 variable {g : ℂ → ℝ}
 
-/-- Pairing a real convolution with a continuous compactly supported function moves the pairing
-onto the kernel, which need only be locally integrable. -/
-private theorem integral_mul_convolution_eq {K : ℂ → ℝ} (hK : LocallyIntegrable K)
-    (hg : Continuous g) (hgc : HasCompactSupport g) {ψ : ℂ → ℝ} (hψ : Continuous ψ)
-    (hψc : HasCompactSupport ψ) :
-    ∫ x, ψ x * (K ⋆ g) x = ∫ t, g t * ∫ x, ψ x * K (x - t) := by
-  have hcomm : K ⋆ g = g ⋆ K := by
-    funext x
-    rw [convolution_lsmul_swap, convolution_lsmul]
-    simp only [smul_eq_mul, mul_comm]
-  rw [hcomm]
-  exact integral_mul_convolution_eq_integral_mul_integral_comp_sub hψ hψc
-    (hg.integrable_of_hasCompactSupport hgc) hgc (hK.locallyIntegrableOn univ)
-    fun _ _ _ _ ↦ mem_univ _
-
 /-- **The Newtonian potential of a continuous source solves Poisson's equation weakly.** For `g`
 continuous with compact support on `ℂ` and every `C²` function `φ` with compact support,
 `∫ Δφ · (G ⋆ g) = -∫ φ g`; that is, `-Δ (G ⋆ g) = g` in the sense of distributions. -/
 theorem integral_laplacian_mul_planarNewtonianKernel_convolution (hg : Continuous g)
     (hgc : HasCompactSupport g) {φ : ℂ → ℝ} (hφ : ContDiff ℝ 2 φ) (hφc : HasCompactSupport φ) :
     ∫ x, Δ φ x * (planarNewtonianKernel ⋆ g) x = -∫ x, φ x * g x := by
-  rw [integral_mul_convolution_eq locallyIntegrable_planarNewtonianKernel hg hgc
-    hφ.continuous_laplacian hφc.laplacian, ← integral_neg]
+  rw [integral_mul_convolution_eq_integral_mul_integral_left_comp_sub hφ.continuous_laplacian
+    hφc.laplacian locallyIntegrable_planarNewtonianKernel (hg.integrable_of_hasCompactSupport hgc)
+    hgc, ← integral_neg]
   refine integral_congr_ae (.of_forall fun t ↦ ?_)
   simp only [integral_laplacian_mul_planarNewtonianKernel_sub hφ hφc t]
   ring
@@ -109,9 +95,12 @@ theorem hasWeakFDerivOn_planarNewtonianKernel_convolution (hg : Continuous g)
     simpa [Function.comp_def] using (ContinuousLinearMap.apply ℝ ℝ v).locallyIntegrableOn_comp
       (locallyIntegrable_fderiv_planarNewtonianKernel.locallyIntegrableOn univ)
   simp only [smul_eq_mul, hD]
-  rw [integral_mul_convolution_eq locallyIntegrable_planarNewtonianKernel hg hgc
-      ((hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const) (hφc.fderiv_apply (𝕜 := ℝ) v),
-    integral_mul_convolution_eq hKv hg hgc hφ.continuous hφc, ← integral_neg]
+  have hgi : Integrable g := hg.integrable_of_hasCompactSupport hgc
+  rw [integral_mul_convolution_eq_integral_mul_integral_left_comp_sub
+      ((hφ.continuous_fderiv one_ne_zero).clm_apply continuous_const) (hφc.fderiv_apply (𝕜 := ℝ) v)
+      locallyIntegrable_planarNewtonianKernel hgi hgc,
+    integral_mul_convolution_eq_integral_mul_integral_left_comp_sub hφ.continuous hφc hKv hgi hgc,
+    ← integral_neg]
   refine integral_congr_ae (.of_forall fun t ↦ ?_)
   simp only [mul_comm (fderiv ℝ φ _ v), mul_comm (φ _),
     integral_planarNewtonianKernel_sub_mul_fderiv_eq_neg_fderiv_mul hφ hφc v t]
