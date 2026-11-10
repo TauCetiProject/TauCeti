@@ -48,9 +48,9 @@ Hilbert space `E` over `𝕜` is a real Hilbert space for the inner product `re 
 (`InnerProductSpace.rclikeToReal`), and restricting scalars `T ↦ T.restrictScalars ℝ` is an
 isometric unital `⋆`-homomorphism from `E →L[𝕜] E` into the real operators on `E`
 (`ContinuousLinearMap.restrictScalarsStarAlgHom`): the adjoint for `re ⟪·, ·⟫` of the restriction
-of `T` is the restriction of `T†` (`ContinuousLinearMap.adjoint_restrictScalars`). Consequently
-realification preserves the spectrum of an operator
-(`ContinuousLinearMap.spectrum_restrictScalars`) and intertwines the two calculi
+of `T` is the restriction of `T†` (`ContinuousLinearMap.adjoint_restrictScalars`). Realification
+preserves the spectrum of an operator, on any Banach space, by the inverse mapping theorem
+(`ContinuousLinearMap.spectrum_restrictScalars`), and so it intertwines the two calculi
 (`ContinuousLinearMap.restrictScalars_cfc`).
 
 ## Main declarations
@@ -70,7 +70,7 @@ realification preserves the spectrum of an operator
 * `ContinuousLinearMap.restrictScalarsStarAlgHom`: realification of the bounded operators on a
   Hilbert space over `RCLike 𝕜`, as a `⋆`-algebra homomorphism over `ℝ`.
 * `ContinuousLinearMap.spectrum_restrictScalars`: realification preserves the spectrum of an
-  operator.
+  operator, on any Banach space.
 * `ContinuousLinearMap.restrictScalars_cfc`: realification commutes with the continuous functional
   calculus.
 * `LinearIsometryEquiv.cfcₙ_conjStarAlgEquiv`, `LinearIsometryEquiv.posPart_conjStarAlgEquiv`,
@@ -162,6 +162,27 @@ instance instIsometricContinuousFunctionalCalculusRealIsSelfAdjoint :
       exact norm_apply_le_norm_cfc g T.complexifyL2 (by rw [hsp]; exact x.2) (hsp ▸ hg)
         (by simpa using hT)
 
+section Banach
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAlgebra ℝ 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E] [CompleteSpace E] [Algebra ℝ (E →L[𝕜] E)] [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)]
+  [NormedSpace ℝ E] [IsScalarTower ℝ 𝕜 E]
+
+/-- **Realification preserves the spectrum** of a bounded operator on a Banach space over a normed
+`ℝ`-algebra `𝕜`, for any real algebra structure on the operators compatible with the `𝕜`-action:
+by Banach's inverse mapping theorem an operator is invertible exactly when it is bijective, and the
+realification has the same underlying function. -/
+theorem spectrum_restrictScalars (T : E →L[𝕜] E) :
+    spectrum ℝ (T.restrictScalars ℝ) = spectrum ℝ T := by
+  have h (r : ℝ) : ⇑(algebraMap ℝ (E →L[ℝ] E) r - T.restrictScalars ℝ) =
+      ⇑(algebraMap ℝ (E →L[𝕜] E) r - T) := by
+    ext x
+    simp [IsScalarTower.algebraMap_apply ℝ 𝕜 (E →L[𝕜] E), Algebra.algebraMap_eq_smul_one]
+  ext r
+  simp only [spectrum.mem_iff, isUnit_iff_bijective, h]
+
+end Banach
+
 section RCLike
 
 variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [CompleteSpace E]
@@ -244,25 +265,6 @@ instance instContinuousFunctionalCalculusRCLikeIsSelfAdjoint :
   (restrictScalarsStarAlgHom 𝕜 E).continuousFunctionalCalculus_of_isClosedEmbedding
     (isClosedEmbedding_restrictScalarsStarAlgHom 𝕜 E) fun _ ↦
       isSelfAdjoint_restrictScalars_iff.symm
-
-/-- Realification preserves the spectrum of an operator on a Hilbert space over `RCLike 𝕜`. -/
-theorem spectrum_restrictScalars (T : E →L[𝕜] E) :
-    letI := InnerProductSpace.rclikeToReal 𝕜 E
-    spectrum ℝ (T.restrictScalars ℝ) = spectrum ℝ T := by
-  let := InnerProductSpace.rclikeToReal 𝕜 E
-  -- An operator is invertible exactly when it is bijective (Banach's inverse mapping theorem), and
-  -- the realification has the same underlying function.
-  have hunit : ∀ a : E →L[𝕜] E, IsUnit (a.restrictScalars ℝ) → IsUnit a := fun a ha ↦
-    ContinuousLinearMap.isUnit_iff_bijective.mpr
-      (ContinuousLinearMap.isUnit_iff_bijective (f := a.restrictScalars ℝ) |>.mp ha)
-  ext r
-  simp only [spectrum.mem_iff, not_iff_not]
-  have hφ : restrictScalarsStarAlgHom 𝕜 E (algebraMap ℝ (E →L[𝕜] E) r - T) =
-      algebraMap ℝ (E →L[ℝ] E) r - T.restrictScalars ℝ := by
-    rw [map_sub, AlgHomClass.commutes]
-    rfl
-  rw [← hφ]
-  exact ⟨hunit _, IsUnit.map _⟩
 
 /-- Realification commutes with the continuous functional calculus: for an operator `T` on a
 Hilbert space over `RCLike 𝕜`, `(f(T)).restrictScalars ℝ = f(T.restrictScalars ℝ)`. -/
