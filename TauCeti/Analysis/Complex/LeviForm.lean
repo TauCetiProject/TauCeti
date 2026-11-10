@@ -432,15 +432,6 @@ theorem morseIndex_neg_eq_of_leviForm_eq_zero (h : leviForm f x = 0) :
     ((LinearEquiv.smulOfNeZero ℂ V I I_ne_zero).restrictScalars ℝ) fun v ↦ ?_).symm
   simpa [hessianQuadraticForm_apply] using hB v v
 
-/-- The Morse index of a function on a complex space that is not finite-dimensional is `0`,
-following Mathlib's convention for `sigNeg`. -/
-theorem morseIndex_eq_zero_of_not_finiteDimensional (hV : ¬ FiniteDimensional ℂ V) :
-    morseIndex f x = 0 := by
-  have hR : ¬ Module.Finite ℝ V := fun _ ↦ hV (Module.Finite.of_restrictScalars_finite ℝ ℂ V)
-  have := sigPos_le_finrank (-hessianQuadraticForm f x)
-  rw [Module.finrank_of_not_finite hR, sigPos_neg] at this
-  exact Nat.le_zero.1 (morseIndex_def (f := f) (x := x) ▸ this)
-
 /-- **The Morse index of a Levi-flat function.** If the Levi form of `f` vanishes at `x` and its
 Hessian there is nondegenerate, then the Morse index of `f` at `x` is the complex dimension. In
 infinite dimensions both sides are `0` by convention. This applies to the real part of a
@@ -452,6 +443,7 @@ theorem morseIndex_eq_finrank_of_leviForm_eq_zero
   · have hsum := morseIndex_neg_add_morseIndex_eq_finrank hnd
     rw [morseIndex_neg_eq_of_leviForm_eq_zero h, finrank_real_eq_two_mul_finrank_complex] at hsum
     omega
-  · rw [morseIndex_eq_zero_of_not_finiteDimensional hV, Module.finrank_of_not_finite hV]
+  · rw [morseIndex_eq_zero_of_not_finiteDimensional fun _ ↦
+      hV (Module.Finite.of_restrictScalars_finite ℝ ℂ V), Module.finrank_of_not_finite hV]
 
 end TauCeti

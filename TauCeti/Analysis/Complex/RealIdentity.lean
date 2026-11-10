@@ -13,7 +13,7 @@ import Mathlib.Analysis.SpecificLimits.Basic
 /-!
 # Holomorphic functions and their values on the real line
 
-Two entire functions with values in a complex Banach space that agree at every real point are
+Two entire functions with values in a complex normed space that agree at every real point are
 equal. This is the identity principle `AnalyticOnNhd.eq_of_frequently_eq`, applied at the
 accumulation point `0` of the real axis. It is the uniqueness statement behind analytic
 continuation of real one-parameter orbits to complex time.

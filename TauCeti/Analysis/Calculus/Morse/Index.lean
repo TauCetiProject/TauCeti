@@ -371,11 +371,15 @@ theorem isNondegenerateCriticalPoint_iff_hessianQuadraticForm_nondegenerate
   exact LinearMap.BilinForm.IsSymm.isRefl ⟨hf.isSymmSndFDerivAt (by norm_num)⟩
 
 /-- The Morse index is at most the dimension of the ambient space. -/
-theorem morseIndex_le_finrank [FiniteDimensional ℝ E] :
+theorem morseIndex_le_finrank :
     morseIndex f x ≤ Module.finrank ℝ E := by
-  have h := QuadraticForm.sigPos_add_sigNeg_add_radical (Q := hessianQuadraticForm f x)
-  rw [morseIndex_def]
-  omega
+  simpa [morseIndex_def, sigPos_neg] using sigPos_le_finrank (-hessianQuadraticForm f x)
+
+/-- The Morse index in a space that is not finite-dimensional is `0`, following Mathlib's
+convention for `sigNeg`. -/
+theorem morseIndex_eq_zero_of_not_finiteDimensional (hE : ¬ FiniteDimensional ℝ E) :
+    morseIndex f x = 0 :=
+  Nat.le_zero.1 (morseIndex_le_finrank.trans_eq (Module.finrank_of_not_finite hE))
 
 /-- If the Hessian is nondegenerate, the Morse indices of a function and its negation add to the
 dimension of the ambient space. -/

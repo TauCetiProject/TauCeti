@@ -174,7 +174,8 @@ theorem IsStrictlyPlurisubharmonicAt.morseIndex_le
     (h : IsStrictlyPlurisubharmonicAt f x) : morseIndex f x ≤ finrank ℂ V := by
   by_cases hV : FiniteDimensional ℂ V
   · simpa using (h.isStronglyPseudoconvexAt 0).morseIndex_le
-  · rw [morseIndex_eq_zero_of_not_finiteDimensional hV]
+  · rw [morseIndex_eq_zero_of_not_finiteDimensional fun _ ↦
+      hV (Module.Finite.of_restrictScalars_finite ℝ ℂ V)]
     exact Nat.zero_le _
 
 /-- **Restriction along a holomorphic immersion.** If `f` is strictly plurisubharmonic at `g b`
