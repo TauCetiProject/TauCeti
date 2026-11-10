@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LinearAlgebra.Determinant.Line
 public import TauCeti.LinearAlgebra.ExteriorPower.ShortExact
-import TauCeti.LinearAlgebra.Dual.Contraction
 import TauCeti.LinearAlgebra.Exact
 import TauCeti.LinearAlgebra.ExteriorPower.Basis
 import TauCeti.RingTheory.PicardGroup.Contraction
@@ -258,7 +257,7 @@ theorem detLineFourTermEquiv_tmul_eq_smul_tmul (u : Fin (finrank K A) → A)
     (hξ : ξ (exteriorPower.ιMulti K _ (h ∘ z)) = 1) :
     detLineFourTermEquiv hf hfg hgh hh (β ⊗ₜ φ) = φ γ • (exteriorPower.ιMulti K _ u ⊗ₜ ξ) := by
   have : FiniteDimensional K D := Module.Finite.of_surjective h hh
-  rw [← rid_lTensor_eval_tmul_eq_self_of_finrank_eq_one (finrank_detLine K D) hξ
+  rw [← Module.Invertible.rid_lTensor_eval_tmul_eq_self hξ
     (detLineFourTermEquiv hf hfg hgh hh (β ⊗ₜ φ)), detLineFourTermEquiv_tmul hf hfg hgh hh u v z hβ
     hγ φ, TensorProduct.smul_tmul']
 
@@ -480,7 +479,7 @@ theorem detLineSixTermEquiv_tmul (u : Fin (finrank K A₁) → A₁)
   -- The first four-term sequence, written against `ι₀'`.
   obtain ⟨X, hE₁⟩ : ∃ X, detLineFourTermEquiv hf₁ h₁₂ h₂₃.rangeRestrict
       f₃.surjective_rangeRestrict (β ⊗ₜ γ₀') = X ⊗ₜ ι₀' :=
-    ⟨_, (rid_lTensor_eval_tmul_eq_self_of_finrank_eq_one (finrank_detLine K _) hι₀' _).symm⟩
+    ⟨_, (Module.Invertible.rid_lTensor_eval_tmul_eq_self hι₀' _).symm⟩
   have hX : ι₀' (exteriorPower.ιMulti K _ (f₃.rangeRestrict ∘ w)) • X =
       γ₀' γ • exteriorPower.ιMulti K _ u := by
     have := detLineFourTermEquiv_tmul hf₁ h₁₂ h₂₃.rangeRestrict f₃.surjective_rangeRestrict u v w
@@ -507,7 +506,7 @@ theorem detLineSixTermEquiv_tmul (u : Fin (finrank K A₁) → A₁)
     Module.Invertible.linearEquiv_tmul, map_smul, LinearEquiv.trans_apply,
     LinearEquiv.lTensor_tmul, TensorProduct.congr_tmul]
   -- Cancel the scalars: `ι₀' ι • X = γ₀' γ • α` and `γ₀' γ • γ₀ = γ`.
-  rw [← apply_smul_eq_self_of_finrank_eq_one (finrank_detLine K A₃) hγ₀' γ]
+  rw [← Module.Invertible.apply_smul_eq_self hγ₀' γ]
   simp only [TensorProduct.tmul_smul, ← TensorProduct.smul_tmul', smul_smul]
   rw [mul_smul, mul_smul]
   congr 1

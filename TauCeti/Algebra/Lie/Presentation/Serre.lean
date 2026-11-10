@@ -288,10 +288,11 @@ section CartanWeights
 variable {R CM} {H E F : B → L}
 
 omit [DecidableEq B] in
-/-- A nonzero Cartan generator at a diagonal entry two forms an `sl₂` triple with its
-raising and lowering generators. -/
-theorem IsSerreSystem.isSl2Triple (hs : IsSerreSystem R CM H E F) {i : B}
-    (hii : CM i i = 2) (hH : H i ≠ 0) : IsSl2Triple (H i) (E i) (F i) where
+/-- At a node with diagonal Cartan entry two and nonzero Cartan element, a Serre system
+forms an `sl₂` triple. -/
+theorem IsSerreSystem.isSl2Triple
+    (hs : IsSerreSystem R CM H E F) {i : B} (hii : CM i i = 2) (hH : H i ≠ 0) :
+    IsSl2Triple (H i) (E i) (F i) where
   h_ne_zero := hH
   lie_e_f := hs.lie_E_F_self i
   lie_h_e_nsmul := by simpa [hii, two_smul] using hs.lie_H_E i i

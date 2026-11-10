@@ -282,6 +282,15 @@ def mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) :
 theorem coe_mpullback (f : M → M') (hf : ContMDiff I I' ∞ f) (φ : SmoothForm I' M' F k) :
     (mpullback f hf φ).1 = TauCeti.mpullback (F := F) I I' f φ.1 := (rfl)
 
+/-- Pullback of smooth forms commutes with transport of the degree. -/
+theorem mpullback_cast {l : ℕ} (h : k = l) (f : M → M') (hf : ContMDiff I I' ∞ f)
+    (φ : SmoothForm I' M' F k) :
+    mpullback f hf
+        (LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I' M' F n) h φ) =
+      LinearEquiv.cast (R := ℝ) (M := fun n ↦ SmoothForm I M F n) h (mpullback f hf φ) := by
+  cases h
+  rfl
+
 /-- Evaluation of smooth pullback on tangent vectors. Simplification also obtains this from
 `coe_mpullback` and the rough pullback's application law. -/
 theorem mpullback_apply (f : M → M') (hf : ContMDiff I I' ∞ f)
