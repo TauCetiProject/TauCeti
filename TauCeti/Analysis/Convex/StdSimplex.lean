@@ -8,6 +8,9 @@ module
 public import Mathlib.Analysis.Convex.Join
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Geometry.Convex.ConvexSpace.Barycenter
+public import Mathlib.Geometry.Convex.ConvexSpace.CompactSpaceStdSimplex
+public import Mathlib.Topology.Algebra.Ring.Real
+public import Mathlib.Topology.Order.Compact
 import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Linarith
@@ -32,8 +35,12 @@ of a closed vertex star whose link is a combinatorial ball.
 
 ## Main results
 
+* `Convexity.StdSimplex.mem_range_toFun_comp_weights_iff`: the weight vectors of the standard
+  simplex are the vectors with nonnegative coordinates summing to one.
 * `Convexity.StdSimplex.convex_range_toFun_comp_weights`: the weight vectors of the standard
   simplex form a convex set.
+* `TauCeti.stdSimplexBoundary`, `TauCeti.isCompact_stdSimplexBoundary`: the relative boundary of
+  the standard simplex, the points with some vanishing coordinate, and its compactness.
 * `TauCeti.card_mul_inf'_smul_add_smul_barycenter`: `card ι` times the least coordinate recovers
   the parameter along a segment from a boundary point to the barycentre.
 * `TauCeti.convexJoin_boundary_stdSimplex_barycenter`: the standard simplex is the convex join of
@@ -53,6 +60,14 @@ open Set Finset Convexity
 
 namespace Convexity.StdSimplex
 
+/-- A vector is a weight vector of the standard simplex if and only if its coordinates are
+nonnegative and sum to one. -/
+theorem mem_range_toFun_comp_weights_iff {R : Type*} [Semiring R] [PartialOrder R]
+    {X : Type*} [Fintype X] {x : X → R} :
+    x ∈ (range fun t : StdSimplex R X => ⇑t.weights) ↔ (∀ i, 0 ≤ x i) ∧ ∑ i, x i = 1 := by
+  rw [range_toFun_comp_weights]
+  simp
+
 /-- The weight vectors of the standard simplex form a convex set. -/
 theorem convex_range_toFun_comp_weights (R : Type*) [Semiring R] [PartialOrder R]
     [IsOrderedRing R] (X : Type*) :
@@ -64,11 +79,74 @@ theorem convex_range_toFun_comp_weights (R : Type*) [Semiring R] [PartialOrder R
   · simp [Finsupp.sum_add_index', Finsupp.sum_smul_index', ← Finsupp.mul_sum, s.total, t.total,
       hab]
 
+/-- A coordinate of a point of the standard simplex is less than one if some other coordinate
+is positive. -/
+theorem apply_lt_one_of_mem_range_weights {R : Type*} [Semiring R] [LinearOrder R]
+    [IsStrictOrderedRing R] {ι : Type*} [Finite ι] {x : ι → R}
+    (hx : x ∈ range fun s : StdSimplex R ι => ⇑s.weights) {i j : ι} (hij : j ≠ i)
+    (hxj : 0 < x j) : x i < 1 := by
+  classical
+  have := Fintype.ofFinite ι
+  obtain ⟨hx0, hx1⟩ := mem_range_toFun_comp_weights_iff.1 hx
+  have := sum_le_sum_of_subset_of_nonneg (subset_univ {i, j}) fun k _ _ => hx0 k
+  rw [sum_pair hij.symm, hx1] at this
+  exact (lt_add_of_pos_right (x i) hxj).trans_le this
+
 end Convexity.StdSimplex
 
 namespace TauCeti
 
-variable {ι : Type*} [Fintype ι]
+variable {ι : Type*}
+
+section Boundary
+
+variable (ι) in
+/-- The relative boundary of the standard simplex: its points with some vanishing coordinate. -/
+def stdSimplexBoundary : Set (ι → ℝ) :=
+  {y ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) | ∃ i, y i = 0}
+
+variable (ι) in
+/-- The relative boundary of the standard simplex is the set of its points with some vanishing
+coordinate. -/
+theorem stdSimplexBoundary_def :
+    stdSimplexBoundary ι = {y ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) | ∃ i, y i = 0} :=
+  (rfl)
+
+/-- Membership in the relative boundary of the standard simplex. -/
+@[simp]
+theorem mem_stdSimplexBoundary {x : ι → ℝ} :
+    x ∈ stdSimplexBoundary ι ↔ x ∈ (range fun s : StdSimplex ℝ ι => ⇑s.weights) ∧ ∃ i, x i = 0 :=
+  Iff.rfl
+
+/-- The relative boundary lies in the standard simplex. -/
+theorem stdSimplexBoundary_subset :
+    stdSimplexBoundary ι ⊆ range fun s : StdSimplex ℝ ι => ⇑s.weights :=
+  fun _ hx => hx.1
+
+variable [Finite ι]
+
+/-- The relative boundary of the standard simplex is compact. -/
+theorem isCompact_stdSimplexBoundary : IsCompact (stdSimplexBoundary ι) := by
+  have hZ : IsClosed {y : ι → ℝ | ∃ i, y i = 0} := by
+    simpa only [ofPred_exists] using
+      isClosed_iUnion_of_finite fun i => isClosed_eq (continuous_apply i) continuous_const
+  exact (isCompact_range (StdSimplex.isEmbedding_toFun_comp_weights ℝ ι).continuous).inter_right
+    hZ
+
+/-- A point of the standard simplex lies on its relative boundary or in its open part. -/
+theorem mem_stdSimplexBoundary_or_forall_pos {x : ι → ℝ}
+    (hx : x ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights) :
+    x ∈ stdSimplexBoundary ι ∨ ∀ i, 0 < x i := by
+  have := Fintype.ofFinite ι
+  by_cases h : ∀ i, 0 < x i
+  · exact Or.inr h
+  · obtain ⟨i, hi⟩ := not_forall.1 h
+    exact Or.inl ⟨hx, i,
+      le_antisymm (not_lt.1 hi) ((StdSimplex.mem_range_toFun_comp_weights_iff.1 hx).1 i)⟩
+
+end Boundary
+
+variable [Fintype ι]
 
 /-- Along the segment from a point `y` with nonnegative coordinates, one of them zero, to the
 barycentre of the standard simplex, `card ι` times the least coordinate is the parameter `t`. -/
@@ -89,10 +167,10 @@ theorem card_mul_inf'_smul_add_smul_barycenter [Nonempty ι] {y : ι → ℝ} (h
 /-- **Pseudo-radial decomposition of the standard simplex.** The standard simplex is the convex
 join of its relative boundary, the points with some vanishing coordinate, with its barycentre. -/
 theorem convexJoin_boundary_stdSimplex_barycenter [Nontrivial ι] :
-    convexJoin ℝ {y ∈ range fun s : StdSimplex ℝ ι => ⇑s.weights | ∃ i, y i = 0}
-      {⇑(StdSimplex.barycenter : StdSimplex ℝ ι).weights} =
+    convexJoin ℝ (stdSimplexBoundary ι) {⇑(StdSimplex.barycenter : StdSimplex ℝ ι).weights} =
       range fun s : StdSimplex ℝ ι => ⇑s.weights := by
   classical
+  rw [stdSimplexBoundary_def]
   set c : ℝ := (Fintype.card ι : ℝ)
   have hc : 0 < c := Nat.cast_pos.mpr Fintype.card_pos
   have hS : (range fun s : StdSimplex ℝ ι => ⇑s.weights) =

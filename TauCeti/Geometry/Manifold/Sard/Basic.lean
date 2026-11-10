@@ -83,6 +83,7 @@ section LowDimension
 
 variable [IsManifold I 1 M] [IsManifold J 1 N]
 
+omit [FiniteDimensional ℝ E'] in
 /-- **Sard's theorem when the source has smaller dimension.** If the model of `M` has smaller
 dimension than the model of `N` and `f` is differentiable at every point of `s`, then `f '' s` is
 null in `N`. Both manifolds may have boundary or corners. -/
@@ -96,6 +97,7 @@ theorem isNullSet_image_of_finrank_lt_finrank (hdim : finrank ℝ E < finrank �
   rw [extChartAt_coe]
   exact mem_range_self _
 
+omit [FiniteDimensional ℝ E'] in
 /-- The range of a differentiable map from a Lindelöf manifold to a manifold of larger dimension is
 null. -/
 theorem _root_.MDifferentiable.isNullSet_range_of_finrank_lt_finrank

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.Cohomology.Kunneth
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 
@@ -22,6 +23,10 @@ The equivalence is natural in the coefficient module. Its evaluation formula use
 inclusion; it does not choose another orientation or generator. In particular its inverse
 applied to a nonzero coefficient gives a nonzero top cohomology class.
 
+Since the homology of a sphere is free of finite rank, the Künneth theorem for cohomology applies
+to a product with a sphere over every commutative ring and with no hypothesis on the other factor
+(`TopCat.singularCohomologyKunneth_sphere_bijective`).
+
 ## References
 
 * A. Hatcher, *Algebraic Topology*, Section 3.1 (universal coefficients) and Section 3.2
@@ -32,7 +37,7 @@ public section
 
 noncomputable section
 
-open CategoryTheory Limits AlgebraicTopology
+open CategoryTheory Limits MonoidalCategory AlgebraicTopology
 
 universe w
 
@@ -110,3 +115,19 @@ lemma singularCohomologyTopCatSphereEquiv_naturality {N : ModuleCat.{w} k}
     TopCat.singularKronecker_coefficient_naturality, ModuleCat.comp_apply]
 
 end TauCeti
+
+namespace TopCat
+
+variable {k : Type w} [CommRing k] (Y : TopCat.{w})
+
+/-- **The cohomology of a product with a sphere**: over every commutative ring `k`, the cohomology
+cross product induces an isomorphism `⨁_{p + q = n} Hᵖ(Sᵈ; k) ⊗ H^q(Y; k) ≅ Hⁿ(Sᵈ × Y; k)` for
+every space `Y`, since the homology of the sphere is free of finite rank. For `d = 1` and
+`k = ℤ` this splits `Hⁿ(S¹ × Y; ℤ)` into the cross products of `H⁰(S¹; ℤ) ≅ ℤ` with `Hⁿ(Y; ℤ)` and
+of `H¹(S¹; ℤ) ≅ ℤ` with `Hⁿ⁻¹(Y; ℤ)`, torsion included. -/
+theorem singularCohomologyKunneth_sphere_bijective (d n : ℕ) :
+    Function.Bijective (singularCohomologyKunneth (TopCat.sphere.{w} d) Y (𝟙_ (ModuleCat.{w} k))
+      (𝟙_ (ModuleCat.{w} k)) k (λ_ (𝟙_ (ModuleCat.{w} k))).hom n) :=
+  singularCohomologyKunneth_bijective _ Y n fun _ _ ↦ inferInstance
+
+end TopCat

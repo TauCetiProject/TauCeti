@@ -8,6 +8,7 @@ module
 public import Mathlib.Topology.MetricSpace.HolderNorm
 public import Mathlib.Topology.MetricSpace.Thickening
 
+import Mathlib.Analysis.MeanInequalitiesPow
 import Mathlib.Topology.Instances.ENNReal.Lemmas
 import Mathlib.Topology.UniformSpace.UniformEmbedding
 
@@ -32,12 +33,16 @@ This is how an almost-everywhere Hölder estimate becomes a Hölder continuous r
 of full measure for a measure that is positive on open sets is dense.
 
 Sums, differences and finite sums of Hölder functions are Hölder, with the sum of the constants.
-Postcomposition with an isometry keeps the constant and the exponent.
+Postcomposition with an isometry keeps the constant and the exponent. A function bounded by `M` is
+Hölder of exponent zero with constant `2 M`.
 
 Finally, on a metric space the infimum defining Mathlib's extended Hölder seminorm `eHolderNorm r f`
 is attained, so the seminorm is the best constant in the Hölder inequality. Equivalently, it is the
 supremum of the difference quotients `edist (f x) (f y) / edist x y ^ r` over pairs of distinct
 points, the form in which Hölder seminorms are written in analysis texts.
+
+By subadditivity of `t ↦ t ^ α`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1` for
+`α ≤ 1`.
 
 ## Main declarations
 
@@ -61,6 +66,8 @@ points, the form in which Hölder seminorms are written in analysis texts.
   preserves Hölder bounds.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.add`: sums of Hölder functions on a set.
+* `holderWith_zero_of_nnnorm_le`: a function bounded by `M` is Hölder of exponent zero with
+  constant `2 M`.
 * `IsCompact.exists_holderOnWith_thickening_and_norm_le`: a function which is Hölder on a ball
   around each point of a compact set `K` is Hölder with one constant, and bounded, on a thickening
   of `K`.
@@ -70,6 +77,8 @@ points, the form in which Hölder seminorms are written in analysis texts.
   extended constant `C`.
 * `eHolderNorm_eq_iSup`, `eHolderNorm_eq_iSup_dist`: the Hölder seminorm is the supremum of the
   difference quotients.
+* `TauCeti.holderWith_norm_rpow`: the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1` for
+  `α ≤ 1`.
 -/
 
 public section
@@ -244,6 +253,16 @@ theorem HolderOnWith.add {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommG
     simp only [Pi.add_apply, NNReal.coe_add]
     linarith [dist_add_add_le (f x) (g x) (f y) (g y), hf.dist_le hx hy, hg.dist_le hx hy]
 
+/-- A function bounded by `M` has oscillation at most `2 M`, which is its Hölder bound of
+exponent zero. Compare Mathlib's `HolderWith.holderWith_zero_of_bounded`, which bounds the
+oscillation of a Hölder function on a bounded space instead. -/
+theorem holderWith_zero_of_nnnorm_le {X Y : Type*} [PseudoEMetricSpace X]
+    [SeminormedAddCommGroup Y] {f : X → Y} {M : ℝ≥0} (hf : ∀ x, ‖f x‖₊ ≤ M) :
+    HolderWith (2 * M) 0 f := fun x y ↦ by
+  rw [NNReal.coe_zero, ENNReal.rpow_zero, mul_one, edist_nndist, ENNReal.coe_le_coe,
+    nndist_eq_nnnorm, two_mul]
+  exact (nnnorm_sub_le _ _).trans (add_le_add (hf x) (hf y))
+
 /-- **Local Hölder bounds near a compact set are uniform on a thickening.** If `f` is `α`-Hölder on
 a ball around each point of a compact set `K`, with radii and constants depending on the point, then
 on some open thickening of `K` the function `f` is `α`-Hölder with one constant and is bounded. -/
@@ -367,3 +386,31 @@ theorem HolderOnWith.of_edist_sq_le {u : ℝ → X} {S : Set ℝ} {c : ℝ} (hc0
     rw [ENNReal.coe_rpow_of_nonneg _ (by norm_num), ENNReal.ofNNReal_toNNReal, edist_dist,
       Real.dist_eq, hhalf, ENNReal.ofReal_mul hc0,
       ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]
+
+namespace TauCeti
+
+/-- For `α ≤ 1`, the cusp `x ↦ ‖x‖ ^ α` is `α`-Hölder with constant `1`. -/
+theorem holderWith_norm_rpow {E : Type*} [SeminormedAddCommGroup E] {α : ℝ≥0} (hα : α ≤ 1) :
+    HolderWith 1 α (fun x : E ↦ ‖x‖ ^ (α : ℝ)) := by
+  have hα' : (α : ℝ) ≤ 1 := hα
+  -- Subadditivity of `t ↦ t ^ α` gives `b ^ α - a ^ α ≤ (b - a) ^ α` for `0 ≤ a ≤ b`.
+  have key : ∀ a b : ℝ, 0 ≤ a → a ≤ b → b ^ (α : ℝ) - a ^ (α : ℝ) ≤ (b - a) ^ (α : ℝ) := by
+    intro a b ha hab
+    have h := Real.rpow_add_le_add_rpow ha (sub_nonneg.2 hab) α.coe_nonneg hα'
+    rw [add_sub_cancel] at h
+    linarith
+  rw [← holderOnWith_univ]
+  refine HolderOnWith.of_dist_le fun x _ y _ ↦ ?_
+  rw [Real.dist_eq, NNReal.coe_one, one_mul]
+  have hxy : |‖x‖ - ‖y‖| ≤ dist x y := by
+    rw [dist_eq_norm]; exact abs_norm_sub_norm_le x y
+  rcases le_total ‖y‖ ‖x‖ with h | h
+  · rw [abs_of_nonneg (sub_nonneg.2 (Real.rpow_le_rpow (norm_nonneg y) h α.coe_nonneg))]
+    refine (key _ _ (norm_nonneg y) h).trans (Real.rpow_le_rpow (sub_nonneg.2 h) ?_ α.coe_nonneg)
+    exact (le_abs_self _).trans hxy
+  · rw [abs_of_nonpos (sub_nonpos.2 (Real.rpow_le_rpow (norm_nonneg x) h α.coe_nonneg)), neg_sub]
+    refine (key _ _ (norm_nonneg x) h).trans (Real.rpow_le_rpow (sub_nonneg.2 h) ?_ α.coe_nonneg)
+    rw [abs_sub_comm] at hxy
+    exact (le_abs_self _).trans hxy
+
+end TauCeti

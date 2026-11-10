@@ -21,8 +21,8 @@ unitary group `U(C₀, σ)` of the Clifford algebra: every even Clifford unit `x
 `reverse x * x = 1` lies in the Lipschitz group. The sibling files prove this in dimensions one
 and two. This file shows that the equality stops in dimension six, where `U(C₀, σ)` is a unitary
 group of degree four and the Spin group is only its reduced-norm-one subgroup, and that, for
-nondegenerate forms over infinite fields in which `2 ≠ 0`, it fails in every dimension from six
-on.
+nondegenerate forms over fields with more than five elements in which `2 ≠ 0`, it fails in every
+dimension from six on.
 
 The witness is explicit. Let `v₁, …, vₙ` be pairwise orthogonal anisotropic vectors, where `n`
 is even and `n.choose 2` is odd (that is, `n ≡ 2 (mod 4)`), and let `ω = ι v₁ ⋯ ι vₙ` be their
@@ -33,8 +33,9 @@ conjugation by `x` sends each of the listed vectors `v` to `(a² - b² ∏ Q v�
 once `n ≥ 3` the element `ω v` is not a vector: any anisotropic `u ⟂ v` among the list would commute
 with it, forcing it to be proportional to `u`, and two orthogonal choices of `u` leave only `0`.
 Since the Lipschitz group preserves the vectors under twisted conjugation, `x` is not in it
-whenever `a b ≠ 0`. Over an infinite field in which `2 ≠ 0` the conic `a² + δ b² = 1` always has
-such a point. The smallest admissible length is `n = 6`, which is the dimension-six application.
+whenever `a b ≠ 0`. Over a field with more than five elements in which `2 ≠ 0` the conic
+`a² + δ b² = 1` always has such a point. The smallest admissible length is `n = 6`, which is the
+dimension-six application.
 
 The witness only uses the listed orthogonal anisotropic vectors, not a basis, so it lives in the
 Clifford algebra of every nondegenerate form of dimension at least six, and the theorems about it
@@ -56,9 +57,9 @@ H. B. Lawson and M.-L. Michelsohn, *Spin Geometry* (1989), Chapter I, §2.
   `a² + b² ∏ Q vᵢ = 1`.
 * `CliffordAlgebra.notMem_lipschitzGroup_of_mem_evenUnitaryGroup_of_coe_eq`: such a unit with
   `a b ≠ 0` is not in the Lipschitz group once the list is anisotropic of length at least three.
-* `CliffordAlgebra.range_spinGroup_toUnits_ne_evenUnitaryGroup_of_six_le_finrank`: over an
-  infinite field in which `2 ≠ 0`, the Spin group of a nondegenerate form of dimension at least six
-  is a proper subgroup of the even unitary group.
+* `CliffordAlgebra.range_spinGroup_toUnits_ne_evenUnitaryGroup_of_six_le_finrank`: over a field
+  with more than five elements in which `2 ≠ 0`, the Spin group of a nondegenerate form of
+  dimension at least six is a proper subgroup of the even unitary group.
 * `CliffordAlgebra.exists_spinGroup_ne_evenUnitaryGroup_finrank_six`: the split rational witness,
   a nondegenerate form on `Fin 6 → ℚ` whose Spin group is a proper subgroup of its even unitary
   group.
@@ -210,18 +211,20 @@ theorem not_evenUnitaryGroup_le_lipschitzGroup_of_sq_add_sq_mul_eq_one (hl : l.P
 
 end Invertible
 
-/-! ### Infinite fields with `2 ≠ 0`: every nondegenerate form of dimension at least six -/
+/-! ### Fields with more than five elements: nondegenerate forms of dimension at least six -/
 
-section Infinite
+section LargeField
 
-variable [Infinite K] [NeZero (2 : K)] (Q : QuadraticForm K V)
+open Cardinal
 
-/-- **Over an infinite field in which `2 ≠ 0`, the even unitary group of a nondegenerate quadratic
-form of dimension at least six is not contained in the Lipschitz group.** The witness is `a + b • ω`
-for `ω` the volume element of six members of an orthogonal basis, six being the smallest length
-`≡ 2 (mod 4)` that is at least three. -/
-theorem not_evenUnitaryGroup_le_lipschitzGroup_of_six_le_finrank (hQ : Q.Nondegenerate)
-    (hV : 6 ≤ finrank K V) : ¬ evenUnitaryGroup Q ≤ lipschitzGroup Q := by
+variable [NeZero (2 : K)] (Q : QuadraticForm K V)
+
+/-- **Over a field with more than five elements in which `2 ≠ 0`, the even unitary group of a
+nondegenerate quadratic form of dimension at least six is not contained in the Lipschitz group.**
+The witness is `a + b • ω` for `ω` the volume element of six members of an orthogonal basis, six
+being the smallest length `≡ 2 (mod 4)` that is at least three. -/
+theorem not_evenUnitaryGroup_le_lipschitzGroup_of_six_le_finrank (hK : 5 < #K)
+    (hQ : Q.Nondegenerate) (hV : 6 ≤ finrank K V) : ¬ evenUnitaryGroup Q ≤ lipschitzGroup Q := by
   -- Six members of an orthogonal anisotropic basis have `∏ Q vᵢ = δ`, and the conic
   -- `a² + b² δ = 1` has a point with `a b ≠ 0` (`TauCeti.exists_sq_add_sq_mul_eq_one`).
   let _ : Invertible (2 : K) := invertibleOfNonzero two_ne_zero
@@ -229,24 +232,24 @@ theorem not_evenUnitaryGroup_le_lipschitzGroup_of_six_le_finrank (hQ : Q.Nondege
   obtain ⟨l, hl, hlen, -, haniso⟩ := hQ.exists_list_pairwise_isOrtho
   have hl' : (l.take 6).Pairwise Q.IsOrtho := hl.sublist (List.take_sublist 6 l)
   have hlen' : (l.take 6).length = 6 := by rw [List.length_take]; omega
-  obtain ⟨a, b, ha, hb, hab⟩ := TauCeti.exists_sq_add_sq_mul_eq_one
-    (Cardinal.ofNat_lt_aleph0.trans_le (Cardinal.aleph0_le_mk K)) ((l.take 6).map Q).prod
+  obtain ⟨a, b, ha, hb, hab⟩ := TauCeti.exists_sq_add_sq_mul_eq_one hK ((l.take 6).map Q).prod
   exact not_evenUnitaryGroup_le_lipschitzGroup_of_sq_add_sq_mul_eq_one hl'
     (by rw [hlen']; decide) (by rw [hlen']; decide) (by omega)
     (fun v hv => haniso v (List.mem_of_mem_take hv)) ha hb hab
 
-/-- **Over an infinite field in which `2 ≠ 0`, the Spin group of a nondegenerate quadratic form of
-dimension at least six is a proper subgroup of the even unitary group inside Clifford units.**
+/-- **Over a field with more than five elements in which `2 ≠ 0`, the Spin group of a
+nondegenerate quadratic form of dimension at least six is a proper subgroup of the even unitary
+group inside Clifford units.**
 This is where the low-rank identification of Spin with the even unitary group stops. -/
-theorem range_spinGroup_toUnits_ne_evenUnitaryGroup_of_six_le_finrank (hQ : Q.Nondegenerate)
-    (hV : 6 ≤ finrank K V) :
+theorem range_spinGroup_toUnits_ne_evenUnitaryGroup_of_six_le_finrank (hK : 5 < #K)
+    (hQ : Q.Nondegenerate) (hV : 6 ≤ finrank K V) :
     (spinGroup.toUnits : spinGroup Q →* (CliffordAlgebra Q)ˣ).range ≠ evenUnitaryGroup Q := by
   intro h
-  refine not_evenUnitaryGroup_le_lipschitzGroup_of_six_le_finrank Q hQ hV ?_
+  refine not_evenUnitaryGroup_le_lipschitzGroup_of_six_le_finrank Q hK hQ hV ?_
   rw [← h, range_spinGroup_toUnits]
   exact inf_le_left
 
-end Infinite
+end LargeField
 
 /-! ### The split rational witness -/
 
@@ -263,6 +266,7 @@ theorem exists_spinGroup_ne_evenUnitaryGroup_finrank_six :
   refine ⟨QuadraticMap.weightedSumSquares ℚ ![1, -1, 1, -1, 1, -1],
     QuadraticMap.nondegenerate_weightedSumSquares hw, ?_⟩
   exact range_spinGroup_toUnits_ne_evenUnitaryGroup_of_six_le_finrank _
+    (Cardinal.ofNat_lt_aleph0.trans_le (Cardinal.aleph0_le_mk ℚ))
     (QuadraticMap.nondegenerate_weightedSumSquares hw) (by rw [finrank_fin_fun])
 
 end CliffordAlgebra

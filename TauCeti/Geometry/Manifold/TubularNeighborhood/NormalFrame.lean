@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.TubularNeighborhood.Euclidean
+import TauCeti.Analysis.InnerProductSpace.Projection.Basic
 
 /-!
 # Local frames of the Euclidean normal bundle
@@ -104,20 +105,16 @@ theorem exists_contMDiffOn_normalFrame {ι : Type*}
   let s : M → ι → V := fun x i => (normalSubspace I f x).starProjection (b i)
   have hs : ∀ i, ContMDiff I 𝓘(ℝ, V) n (fun x => s x i) := fun i =>
     (contMDiff_normalSubspace_starProjection hf himm).clm_apply contMDiff_const
-  have hs₀ : ∀ i, s x₀ i = (b i : V) := fun i =>
-    Submodule.starProjection_eq_self_iff.mpr (b i).property
-  have hli₀ : LinearIndependent ℝ (s x₀) := by
-    simpa only [funext hs₀, Function.comp_def, Submodule.subtype_apply] using
-      b.linearIndependent.map' (normalSubspace I f x₀).subtype
-        (Submodule.ker_subtype _)
-  let U : Set M := {x | LinearIndependent ℝ (s x)}
-  have hU : IsOpen U := isOpen_setOfPred_linearIndependent.preimage
-    (continuous_pi fun i => (hs i).continuous)
-  refine ⟨U, hU, hli₀, fun i => (hs i).contMDiffOn, ?_⟩
+  obtain ⟨U, hUli, hU, hx₀U⟩ := mem_nhds_iff.mp <|
+    eventually_linearIndependent_starProjection_apply (b := fun i => (b i : V))
+      (contMDiff_normalSubspace_starProjection hf himm).continuous.continuousAt
+      (b.linearIndependent.map' (normalSubspace I f x₀).subtype (Submodule.ker_subtype _))
+      fun i => (b i).property
+  refine ⟨U, hU, hx₀U, fun i => (hs i).contMDiffOn, ?_⟩
   intro x hx
   let v : ι → normalSubspace I f x := fun i =>
     ⟨s x i, Submodule.starProjection_apply_mem _ _⟩
-  have hli : LinearIndependent ℝ v := (hx : LinearIndependent ℝ (s x)).of_comp
+  have hli : LinearIndependent ℝ v := (hUli hx : LinearIndependent ℝ (s x)).of_comp
     (normalSubspace I f x).subtype
   have hdim : Fintype.card ι = Module.finrank ℝ (normalSubspace I f x) := by
     rw [← Module.finrank_eq_card_basis b]
