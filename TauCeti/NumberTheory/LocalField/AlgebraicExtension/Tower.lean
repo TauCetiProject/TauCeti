@@ -76,18 +76,7 @@ theorem algebraicExtension_valuativeExtension_tower :
     ValuativeExtension L M := by
   have := Algebra.IsAlgebraic.tower_bot K L M
   let _ := algebraicExtensionValuativeRel K M
-  let _ := algebraicExtensionNormedField K M
-  let _ := algebraicExtensionNormedField K L
-  refine ⟨fun {a b} => ?_⟩
-  -- On `L` the spectral norm of `M/K` is an absolute value extending that of `K`.
-  let f : AbsoluteValue L ℝ :=
-    (IsAbsoluteValue.toAbsoluteValue (norm : M → ℝ)).comp (algebraMap L M).injective
-  have hf (x : L) : f x = ‖algebraMap L M x‖ := rfl
-  have hnorm (x : L) : ‖algebraMap L M x‖ = ‖x‖ := by
-    rw [← hf]
-    exact algebraicExtensionNormedField_norm_unique K (fun y ↦ by
-      rw [hf, ← IsScalarTower.algebraMap_apply, algebraicExtensionNormedField_norm_algebraMap]) x
-  rw [algebraicExtensionValuativeRel_vle_iff, hnorm, hnorm,
-    ← vle_iff_algebraicExtensionNormedField_norm_le K a b]
+  have := algebraicExtension_valuativeExtension K M
+  exact ValuativeExtension.of_isScalarTower (K := K) (M := L) (N := M)
 
 end TauCeti
