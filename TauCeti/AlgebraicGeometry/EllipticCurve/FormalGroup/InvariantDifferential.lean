@@ -52,10 +52,12 @@ strict isomorphism `FormalGroup.logIso` from `Ê` to the additive formal group l
   `w`-equation identifies the tangent slope through the same denominator.
 * `WeierstrassCurve.inv_evalEval_polynomialY_smul_derivation_div`: for any derivation `D` on a
   field and any solution `(q, w)` of the `w`-equation, `(2y + a₁x + a₃)⁻¹ • D x` at the point
-  `(x, y) = (q / w, -1 / w)` is `D q` scaled by the inverse of the denominator at `(q, w)`. This is
-  the change of coordinates from `(x, y)` to `(z, w)` in `ω`.
+  `(x, y) = (q / w, -1 / w)` is `D q` scaled by the inverse of the denominator at `(q, w)`. Division
+  is the totalized division of a field, so this is an identity for every `(q, w)`, including
+  `w = 0`; for `w ≠ 0` it is the change of coordinates from `(x, y)` to `(z, w)` in `ω`.
 * `WeierstrassCurve.inv_mul_derivation_div_subst_formalW`: over a domain with `2 ≠ 0`, the same
-  identity at the point with a series parameter `q`, read in a fraction field of the series ring.
+  identity with a series parameter `q` (totalized division, so also for `q = 0`), read in a fraction
+  field of the series ring.
 * `WeierstrassCurve.invariantDifferential_formalGroup_mul_formalInvariantDifferentialDenom`: the
   invariant differential of `Ê` times the denominator is `1`.
 * `WeierstrassCurve.subst_pderiv_formalGroup`: `F_X(0, T)` is the denominator.
@@ -183,7 +185,8 @@ derivation over `R` on a field `K`, and let `(q, w)` solve the `w`-equation of `
 `(x, y) = (q / w, -1 / w)` is a point of `W⁄K` when `w ≠ 0`. If `2y + a₁x + a₃` and the denominator
 `1 - a₁q - a₂q² - 2a₃w - 2a₄qw - 3a₆w²` do not vanish, then
 `(2y + a₁x + a₃)⁻¹ • D x = (1 - a₁q - a₂q² - 2a₃w - 2a₄qw - 3a₆w²)⁻¹ • D q`. The hypothesis on
-`2y + a₁x + a₃` is stated in the cleared form `-2 + a₁q + a₃w ≠ 0`. -/
+`2y + a₁x + a₃` is stated in the cleared form `-2 + a₁q + a₃w ≠ 0`, which is equivalent to it
+when `w ≠ 0`. -/
 theorem inv_evalEval_polynomialY_smul_derivation_div {K M : Type*} [Field K] [Algebra R K]
     [AddCommGroup M] [Module R M] [Module K M]
     (D : Derivation R K M) {q w : K} (heq : w = wEquationRHS W q w)
@@ -289,8 +292,9 @@ private theorem algebraMap_subst_formalW_eq_wEquationRHS {q : MvPowerSeries σ R
     ← subst_formalW_wEquation _ (PowerSeries.HasSubst.of_constantCoeff_zero hq)]
 
 /-- **The invariant differential at a point with a series parameter.** Over a ring `R` in which
-`2 ≠ 0`, at the point `(x, y) = (q / w(q), -1 / w(q))` with parameter `q`, every derivation
-`D` satisfies `(2y + a₁x + a₃)⁻¹ · D x = G(q)⁻¹ · D q`, where
+`2 ≠ 0`, put `(x, y) = (q / w(q), -1 / w(q))` for the parameter `q`, with totalized division
+(this is an affine point exactly when `q ≠ 0`; the identity also holds for `q = 0`). Every
+derivation `D` satisfies `(2y + a₁x + a₃)⁻¹ · D x = G(q)⁻¹ · D q`, where
 `G = 1 - a₁z - a₂z² - 2a₃w - 2a₄zw - 3a₆w²` is `formalInvariantDifferentialDenom`. -/
 theorem inv_mul_derivation_div_subst_formalW [IsFractionRing (MvPowerSeries σ R) KK]
     (h2 : (2 : R) ≠ 0) (D : Derivation R KK KK)
@@ -304,10 +308,11 @@ theorem inv_mul_derivation_div_subst_formalW [IsFractionRing (MvPowerSeries σ R
       (algebraMap (MvPowerSeries σ R) KK
         (PowerSeries.subst q W.formalInvariantDifferentialDenom))⁻¹ *
         D (algebraMap (MvPowerSeries σ R) KK q) := by
-  have : IsDomain R := (show Function.Injective (algebraMap R KK) by
+  -- `R` embeds in the fraction field `KK` of its series ring, hence is a domain
+  have hinj : Function.Injective (algebraMap R KK) := by
     rw [IsScalarTower.algebraMap_eq R (MvPowerSeries σ R) KK]
     exact (IsFractionRing.injective (MvPowerSeries σ R) KK).comp MvPowerSeries.C_injective
-    ).isDomain _
+  have : IsDomain R := hinj.isDomain _
   have hG0 := W.algebraMap_subst_formalInvariantDifferentialDenom_ne_zero (KK := KK) hq
   rw [W.algebraMap_subst_formalInvariantDifferentialDenom hq] at hG0 ⊢
   simpa only [smul_eq_mul] using
