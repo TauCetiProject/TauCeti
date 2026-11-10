@@ -92,6 +92,21 @@ theorem fderiv_kineticLagrangian_fst {q : E} (hg : DifferentiableAt ℝ g q) (v 
     (differentiableAt_const v)), smul_apply, fderiv_clm_apply_const_apply₂ hg, smul_eq_mul,
     mul_comm]
 
+/-- The kinetic Lagrangian `L(q, v) = g_q(v, v) / 2` is differentiable wherever `g` is
+differentiable at the position. -/
+theorem _root_.DifferentiableAt.kineticLagrangian {x : E × E} (hg : DifferentiableAt ℝ g x.1) :
+    DifferentiableAt ℝ (kineticLagrangian g) x := by
+  simp_rw [funext (kineticLagrangian_apply g), div_eq_mul_inv]
+  have h : DifferentiableAt ℝ (fun y : E × E ↦ g y.1) x := hg.comp x differentiableAt_fst
+  exact ((h.clm_apply differentiableAt_snd).clm_apply differentiableAt_snd).mul_const _
+
+/-- The Legendre map of the kinetic Lagrangian `L(q, v) = g_q(v, v) / 2` of a symmetric bilinear
+form `g_q` sends `(q, v)` to `(q, g_q(v, ·))`. -/
+theorem linearLegendreMap_kineticLagrangian {q : E} (hsymm : (g q).toBilinForm.IsSymm) (v : E) :
+    linearLegendreMap (kineticLagrangian g) (q, v) = (q, g q v) :=
+  Prod.ext (linearLegendreMap_fst _ _) (by
+    rw [linearLegendreMap_snd]; exact fderiv_kineticLagrangian_snd hsymm v)
+
 /-! ### The Euler–Lagrange equation -/
 
 variable {q v : ℝ → E} {t : ℝ} {a : E}
@@ -159,11 +174,9 @@ theorem hasDerivAt_linearLegendreMap_kineticLagrangian_iff [FiniteDimensional �
           (linearLegendreMap (kineticLagrangian g) (q t, v t))) t ↔
       HasDerivAt q (v t) t ∧ a = -christoffelSecondKind g (q t) (v t) (v t) := by
   have hinv := isInvertible_of_separatingLeft hnd.1
-  have hmom : fderiv ℝ (fun u ↦ kineticLagrangian g (q t, u)) (v t) = g (q t) (v t) :=
-    fderiv_kineticLagrangian_snd hsymm.self_of_nhds (v t)
   -- The inverse of the Legendre map is differentiable at the Legendre lift `(q, g_q(v, ·))`.
   have hz : linearLegendreMap (kineticLagrangian g) (q t, v t) = (q t, g (q t) (v t)) :=
-    Prod.ext (linearLegendreMap_fst _ _) (by rw [linearLegendreMap_snd]; exact hmom)
+    linearLegendreMap_kineticLagrangian hsymm.self_of_nhds (v t)
   have hw : DifferentiableAt ℝ (fun z : E × StrongDual ℝ E ↦ (g z.1).inverse z.2)
       (linearLegendreMap (kineticLagrangian g) (q t, v t)) := by
     rw [hz]
@@ -176,12 +189,8 @@ theorem hasDerivAt_linearLegendreMap_kineticLagrangian_iff [FiniteDimensional �
       DifferentiableAt.comp (g := inverse) (f := fun z : E × StrongDual ℝ E ↦ g z.1)
         (q t, g (q t) (v t)) hi h₁
     exact h₂.clm_apply differentiableAt_snd
-  have h₃ : DifferentiableAt ℝ (fun x : E × E ↦ g x.1) (q t, v t) :=
-    hg.comp (q t, v t) differentiableAt_fst
-  have hL : DifferentiableAt ℝ (kineticLagrangian g) (q t, v t) := by
-    simp_rw [funext (kineticLagrangian_apply g), div_eq_mul_inv]
-    exact ((h₃.clm_apply differentiableAt_snd).clm_apply differentiableAt_snd).mul_const _
-  rw [hasDerivAt_linearLegendreMap_iff hw hL (by rw [hz]; exact hinv.inverse_apply_self _)]
+  rw [hasDerivAt_linearLegendreMap_iff hw hg.kineticLagrangian
+    (by rw [hz]; exact hinv.inverse_apply_self _)]
   exact and_congr_right fun hq ↦ eulerLagrange_kineticLagrangian_iff hsymm hnd hg hq hv
 
 end TauCeti
