@@ -21,8 +21,8 @@ definite symmetric bilinear form must be opposite. The maximum need not be diffe
 and no completeness or finite-dimensionality assumption is needed.
 
 This is the variational return-direction argument for two inverse exponential radius branches.
-It supplies the opposite-terminal-velocity step in Klingenberg's lemma, used for the
-Poincare3D §2.4 noncollapse-to-injectivity input.
+It supplies the opposite-terminal-velocity step in Klingenberg's lemma, used for
+noncollapse-to-injectivity estimates.
 
 ## References
 
