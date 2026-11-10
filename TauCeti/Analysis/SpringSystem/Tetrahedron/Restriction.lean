@@ -7,14 +7,14 @@ module
 
 public import Mathlib.RepresentationTheory.Invariants
 public import Mathlib.RepresentationTheory.Stabilizer
-public import TauCeti.Analysis.SpringSystem.Tetrahedron
+public import TauCeti.Analysis.SpringSystem.Tetrahedron.Basic
 
 /-!
 # The spring tetrahedron restricted to a vertex stabilizer
 
 The symmetric group `S₄` acts on the displacements `u ∈ ℝ¹²` of the spring tetrahedron, and its
 force matrix `H` has the eigenvalues `0`, `-2`, `-4` and `-8`
-(`TauCeti.Analysis.SpringSystem.Tetrahedron`).
+(`TauCeti.Analysis.SpringSystem.Tetrahedron.Basic`).
 This file restricts the action to the stabilizer `S₃` of a vertex `i` and describes the fixed
 displacements by explicit seeds, in the coordinates `uⱼ = t + A qⱼ`:
 
