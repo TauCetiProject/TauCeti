@@ -110,15 +110,9 @@ as random measures for the full evaluation sigma-field. -/
 theorem IsPoissonRandomMeasure.indepFun_restrict (h : IsPoissonRandomMeasure P N Λ)
     {s t : Set X} (hs : MeasurableSet s) (ht : MeasurableSet t) (hst : Disjoint s t) :
     IndepFun (fun ω ↦ (N ω).restrict s) (fun ω ↦ (N ω).restrict t) P := by
-  let A : Bool → Set X := fun b ↦ if b then s else t
+  let A : Bool → Set X := fun b ↦ cond b s t
   have hA b : MeasurableSet (A b) := by cases b <;> assumption
-  have hd : Pairwise (Disjoint on A) := by
-    intro i j hij
-    cases i <;> cases j
-    · exact (hij rfl).elim
-    · exact hst.symm
-    · exact hst
-    · exact (hij rfl).elim
+  have hd : Pairwise (Disjoint on A) := pairwise_disjoint_on_bool.mpr hst
   exact (h.iIndepFun_restrict hA hd).indepFun (i := true) (j := false) (by decide)
 
 end TauCeti.Probability
