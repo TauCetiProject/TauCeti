@@ -716,7 +716,7 @@ theorem f4RootExponential_add {A : Type*} [CommRing A] [Algebra ℤ A]
     (isNilpotent_f4RootAdjointDerivation k)
 
 /-- Root Lie automorphisms compose by adding their parameters. -/
-theorem f4RootExponentialLieEquiv_trans {A : Type*} [CommRing A] [Algebra ℤ A]
+theorem f4RootExponentialLieEquiv_trans {A : Type*} [CommRing A]
     (k : Fin 4 ⊕ Fin 4) (t u : A) :
     (f4RootExponentialLieEquiv k t).trans (f4RootExponentialLieEquiv k u) =
       f4RootExponentialLieEquiv k (t + u) :=
