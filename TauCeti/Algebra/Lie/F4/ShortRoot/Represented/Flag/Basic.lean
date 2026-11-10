@@ -148,6 +148,7 @@ theorem f4ShortRootCotangentFlagWeight_of_complement
   simp [f4ShortRootCotangentFlagWeight, hi', hi]
 
 /-- The weights of the adapted flag are nonnegative. -/
+@[simp]
 theorem f4ShortRootCotangentFlagWeight_nonneg (i) : 0 ≤ f4ShortRootCotangentFlagWeight i := by
   unfold f4ShortRootCotangentFlagWeight
   split_ifs <;> omega
