@@ -42,27 +42,37 @@ variable {G : Type*} [Group G] {Δ : Submonoid G} {H₁ H₂ : Subgroup G} (R : 
 
 /-- The multiplicity for right convolution by the identity double coset vanishes off the
 diagonal. -/
-lemma multiplicity_one_right_eq_zero [IsHeckeTriple Δ H₁ H₂]
+lemma multiplicity_one_right_eq_zero
     (g : Δ) {A : HeckeCoset Δ H₁ H₂} (hA : A ≠ HeckeCoset.mk H₁ H₂ g) :
     multiplicity H₁ H₂ H₂ (g : G) ((1 : HeckeCoset Δ H₂ H₂).rep : G) (A.rep : G) = 0 := by
   by_contra h0
   rw [multiplicity_def] at h0
   obtain ⟨⟨p, hp⟩⟩ := (Nat.card_ne_zero.mp h0).1
   refine hA ?_
-  rw [← A.mk_rep, ← HeckeCoset.mulMap_eq_of_mk_eq hp]
-  exact HeckeCoset.mulMap_one_right g p
+  rw [Set.mem_ofPred_eq, QuotientGroup.eq] at hp
+  rw [← A.mk_rep]
+  refine HeckeCoset.mk_eq_mk_of_mem (DoubleCoset.mem_doubleCoset.mpr
+    ⟨p.1.out, p.1.out.2, p.2.out * (1 : HeckeCoset Δ H₂ H₂).rep * _, H₂.mul_mem
+      (H₂.mul_mem p.2.out.2 HeckeCoset.rep_one_mem) hp, ?_⟩)
+  simp only [← mul_assoc]
+  rw [mul_inv_cancel, one_mul]
 
 /-- The multiplicity for left convolution by the identity double coset vanishes off the
 diagonal. -/
-lemma multiplicity_one_left_eq_zero [IsHeckeTriple Δ H₁ H₁]
+lemma multiplicity_one_left_eq_zero
     (g : Δ) {A : HeckeCoset Δ H₁ H₂} (hA : A ≠ HeckeCoset.mk H₁ H₂ g) :
     multiplicity H₁ H₁ H₂ ((1 : HeckeCoset Δ H₁ H₁).rep : G) (g : G) (A.rep : G) = 0 := by
   by_contra h0
   rw [multiplicity_def] at h0
   obtain ⟨⟨p, hp⟩⟩ := (Nat.card_ne_zero.mp h0).1
   refine hA ?_
-  rw [← A.mk_rep, ← HeckeCoset.mulMap_eq_of_mk_eq hp]
-  exact HeckeCoset.mulMap_one_left g p
+  rw [Set.mem_ofPred_eq, QuotientGroup.eq] at hp
+  rw [← A.mk_rep]
+  refine HeckeCoset.mk_eq_mk_of_mem (DoubleCoset.mem_doubleCoset.mpr
+    ⟨p.1.out * (1 : HeckeCoset Δ H₁ H₁).rep * p.2.out, H₁.mul_mem
+      (H₁.mul_mem p.1.out.2 HeckeCoset.rep_one_mem) p.2.out.2, _, hp, ?_⟩)
+  simp only [← mul_assoc]
+  rw [mul_inv_cancel, one_mul]
 
 /-- The structure constants for right convolution by the identity double coset collapse to
 a single basis element. -/
