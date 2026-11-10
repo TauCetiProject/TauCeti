@@ -218,8 +218,9 @@ theorem argumentPrinciple_starConvex {S : Finset ℂ} {ord : ℂ → ℤ} (hstar
     (isNullHomologous_of_starConvex hstar hγ hclosed hγΩ)
 
 /-- **The generalized residue theorem on a star-shaped open set, simple-pole regime.** Let `Ω` be
-open and star-shaped about `x`, `S ⊆ Ω` finite, `f` holomorphic on `Ω ∖ S` with at worst a simple
-pole at each point of `S`, and `γ` a closed piecewise-`C¹` immersion in `Ω` based off `S`. Then the
+open and star-shaped about `x`, `S` finite, `f` holomorphic on `Ω ∖ S` with at worst a simple
+pole at each point of `S` lying in `Ω` (a point of `S` outside `Ω` has winding number `0` and
+contributes nothing), and `γ` a closed piecewise-`C¹` immersion in `Ω` based off `S`. Then the
 Cauchy principal value of the contour integral is
 
 `p.v. ∮_γ f = 2πi · ∑_{s ∈ S} n_s(γ) · Res_s f`,
@@ -232,8 +233,8 @@ theorem hungerbuhlerWasem_residueTheorem_of_simple_poles_starConvex {S : Finset 
     (hstar : StarConvex ℝ x Ω) (hopen : IsOpen Ω) (hγ_imm : IsPwC1ImmersionOn γ a b)
     (hclosed : γ a = γ b) (hγa : γ a ∉ (S : Set ℂ))
     (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) (hf : DifferentiableOn ℂ f (Ω \ (S : Set ℂ)))
-    (hmero : ∀ s ∈ S, MeromorphicAt f s)
-    (h_simple : ∀ s ∈ S, ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
+    (hmero : ∀ s ∈ S, s ∈ Ω → MeromorphicAt f s)
+    (h_simple : ∀ s ∈ S, s ∈ Ω → ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s) :
     HasCauchyPV γ a b f
       (2 * (Real.pi : ℂ) * Complex.I * (∑ s ∈ S, windingNumber γ a b s * residue f s)) :=
   hungerbuhlerWasem_residueTheorem_of_simple_poles hopen S γ a b hγ_imm hclosed hγa hγΩ hf
@@ -246,8 +247,8 @@ the `S = {s}` case of
 theorem hasCauchyPV_half_residue_of_simple_pole_starConvex {s : ℂ} (hstar : StarConvex ℝ x Ω)
     (hopen : IsOpen Ω) (hγ_imm : IsPwC1ImmersionOn γ a b) (hclosed : γ a = γ b)
     (hγa : γ a ≠ s) (hγΩ : ∀ t ∈ uIcc a b, γ t ∈ Ω) (hf : DifferentiableOn ℂ f (Ω \ {s}))
-    (hmero : MeromorphicAt f s)
-    (h_simple : ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s)
+    (hmero : s ∈ Ω → MeromorphicAt f s)
+    (h_simple : s ∈ Ω → ((-1 : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt f s)
     (hwind : windingNumber γ a b s = 1 / 2) :
     HasCauchyPV γ a b f ((Real.pi : ℂ) * Complex.I * residue f s) :=
   hasCauchyPV_half_residue_of_simple_pole hopen γ a b s hγ_imm hclosed hγa hγΩ hf hmero

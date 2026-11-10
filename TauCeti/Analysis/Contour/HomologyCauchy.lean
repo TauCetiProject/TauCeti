@@ -21,9 +21,9 @@ null-homologous curve. `CauchyIntegralFormula` then extracts two algebraic conse
 pointwise vanishing. This file packages the direct null-homologous forms and assembles the summit:
 
 * `dixonH2_eq_windingNumber_mul_f_of_nullHomologous` — Cauchy's integral formula at an off-curve
-  point of the domain.
+  point.
 * `homologyCauchyTheorem_of_point_off_curve` — the contour integral of a holomorphic function
-  around such a closed null-homologous curve is zero, assuming an off-curve point in the domain is
+  around such a closed null-homologous curve is zero, assuming a point off the curve is
   supplied.
 * `homologyCauchyTheorem` — **the homology form of Cauchy's theorem** (roadmap
   `homologyCauchyTheorem`, `TauCetiRoadmap/ContourIntegration/Suggested.lean`, Layer 3): for a
@@ -54,9 +54,9 @@ interval-integrable derivative, and null-homologous in `U`. If `f` is holomorphi
 `w` is a point not on the curve, then the Cauchy-type integral evaluates to
 `2πi · windingNumber γ a b w · f w`. (For `w ∉ U` both sides vanish.)
 
-This is the Cauchy-integral-formula output of Dixon's vanishing theorem. The off-curve point is
-kept as an explicit hypothesis; proving that such a point exists in the ambient domain is a separate
-geometric prerequisite for the full global homology Cauchy theorem. -/
+This is the Cauchy-integral-formula output of Dixon's vanishing theorem. The point is kept as an
+explicit hypothesis: it is any point off the curve, not necessarily in `U`, and proving that such
+a point exists is a separate geometric prerequisite for the full global homology Cauchy theorem. -/
 theorem dixonH2_eq_windingNumber_mul_f_of_nullHomologous {f : ℂ → ℂ} {U : Set ℂ}
     {γ : ℝ → ℂ} {a b : ℝ} {P : Set ℝ} {w : ℂ} (hU : IsOpen U)
     (hf : DifferentiableOn ℂ f U) (hγ_cont : ContinuousOn γ (uIcc a b))
