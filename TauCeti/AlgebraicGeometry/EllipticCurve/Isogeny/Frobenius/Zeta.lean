@@ -239,9 +239,11 @@ theorem coe_zetaRatFunc : (W.zetaRatFunc : ℚ⸨X⸩) = (W.zetaFunction : ℚ�
   simp
 
 omit [W.IsElliptic] in
-/-- **The Riemann hypothesis for an elliptic curve over a finite field** (Silverman V.2.4): every
-complex zero `z` of the numerator `1 - a_q T + q T²` of the zeta function has `|z| = q^{-1/2}`,
-where `q` is the number of elements of `F` and `a_q` the Frobenius trace of `W`. -/
+/-- **The root norm of the Frobenius polynomial.** For any Weierstrass model `W` over a finite
+field `F`, every complex zero `z` of `1 - a_q T + q T²` has `|z| = q^{-1/2}`, where `q` is the
+number of elements of `F` and `a_q` the Frobenius trace of `W`. For an elliptic curve this
+polynomial is the numerator of the zeta function, and the statement is the Riemann hypothesis for
+`W` (Silverman V.2.4); for a singular model no zeta-function interpretation is claimed. -/
 theorem norm_eq_inv_sqrt_card_of_one_sub_frobeniusTrace_mul_add_card_mul_sq_eq_zero {z : ℂ}
     (hz : 1 - W.frobeniusTrace * z + Nat.card F * z ^ 2 = 0) :
     ‖z‖ = (√(Nat.card F : ℝ))⁻¹ := by
