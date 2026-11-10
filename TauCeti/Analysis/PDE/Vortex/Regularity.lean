@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.Vortex.Variational
 public import TauCeti.Analysis.Sobolev.W1p.Basic
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.PDE.EnergyForm.Restriction

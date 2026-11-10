@@ -64,8 +64,6 @@ statement `tsupport_laplacian_subset` that `Δ f` vanishes wherever `f` vanishes
   affine isometry equivalence `e`.
 * `TauCeti.laplacian_comp_linearIsometryEquiv_right`: `Δ (f ∘ l) = (Δ f) ∘ l` for an
   isometry `l`.
-* `TauCeti.gradient_comp_linearIsometryEquiv_right`: `∇ (f ∘ l) x = l⁻¹ (∇ f (l x))` for an
-  isometry `l`.
 * `TauCeti.laplacian_comp_continuousLinearEquiv_right_apply`: for a general continuous linear
   equivalence `e`, `Δ (f ∘ e) x = ∑ᵢ D²f (e x) (e bᵢ, e bᵢ)` along an orthonormal basis `b`.
 * `TauCeti.laplacian_comp_toEuclideanCLE_apply`: for an invertible matrix `T`, the Laplacian of
@@ -259,16 +257,6 @@ theorem laplacian_comp_linearIsometryEquiv_right (l : E ≃ₗᵢ[ℝ] E') (f : 
     laplacian_comp_continuousLinearEquiv_right_apply _ (stdOrthonormalBasis ℝ E),
     laplacian_eq_iteratedFDeriv_orthonormalBasis f ((stdOrthonormalBasis ℝ E).map l)]
   simp [OrthonormalBasis.map_apply]
-
-open Gradient in
-/-- The gradient transforms under right composition by a linear isometry equivalence `l` as
-`∇ (f ∘ l) x = l⁻¹ (∇ f (l x))`. No differentiability hypothesis is needed. -/
-theorem gradient_comp_linearIsometryEquiv_right (l : E ≃ₗᵢ[ℝ] E') (f : E' → ℝ) (x : E) :
-    ∇ (f ∘ l) x = l.symm (∇ f (l x)) := by
-  refine ext_inner_right ℝ fun a => ?_
-  rw [gradient, gradient, ← LinearIsometryEquiv.coe_toContinuousLinearEquiv l,
-    ContinuousLinearEquiv.comp_right_fderiv]
-  simp [LinearIsometryEquiv.inner_map_eq_flip]
 
 /-- **Translation invariance of the Laplacian.** Shifting the argument by a constant `a`
 commutes with the Laplacian: `Δ (fun y ↦ f (y + a)) = fun y ↦ (Δ f) (y + a)`. No
