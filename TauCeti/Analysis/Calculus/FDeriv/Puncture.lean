@@ -65,7 +65,8 @@ theorem exists_continuousOn_update_of_integrableOn_radial_deriv [ProperSpace E]
       simp only [dist_self] at this
       exact ht.1.ne this
     exact ((isCompact_sphere a t).image_of_continuousOn (hu.mono hsub)).isBounded
-  have hlim := tendsto_nhdsNE_of_tendsto_radial_of_tendsto_diam_image_sphere hv hq hb hd
+  have hlim := tendsto_nhdsNE_of_tendsto_radial_of_tendsto_diam_image_sphere
+    (norm_ne_zero_iff.mp (by simp [hv])) hq hb hd
   refine ⟨q, hlim, continuousOn_update_iff.mpr ⟨hu, fun _ ↦ ?_⟩⟩
   exact hlim.mono_left (nhdsWithin_mono _ (sdiff_subset_compl _ _))
 
