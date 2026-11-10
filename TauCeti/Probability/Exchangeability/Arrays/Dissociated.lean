@@ -304,13 +304,6 @@ theorem JointlyDissociated.indepFun_arrayDiag (h : JointlyDissociated μ X) {i i
   exact (jointlyDissociated_iff.mp h (fun _ => i) (fun _ => i') (by simpa using hi)).comp
     (measurable_pi_apply (0, 0)) (measurable_pi_apply (0, 0))
 
-/-- A random variable independent of itself generates an almost surely trivial σ-algebra. -/
-private theorem measure_preimage_eq_zero_or_one_of_indepFun_self [IsProbabilityMeasure μ]
-    {Y : Ω → α} (hindep : IndepFun Y Y μ) {s : Set α}
-    (hs : MeasurableSet s) : μ (Y ⁻¹' s) = 0 ∨ μ (Y ⁻¹' s) = 1 :=
-  ProbabilityTheory.measure_eq_zero_or_one_of_indepSet_self
-    (hindep.indepSet_of_measurableSet ⟨s, hs, rfl⟩ ⟨s, hs, rfl⟩)
-
 /-- **Dissociation makes a constant array trivial.** If every entry of a jointly dissociated array
 is one and the same random variable `Y`, then `Y` generates an almost surely trivial σ-algebra.
 
@@ -319,9 +312,11 @@ but dissociating it would make `U` degenerate. -/
 theorem JointlyDissociated.measure_preimage_eq_zero_or_one_of_const [IsProbabilityMeasure μ]
     {Y : Ω → α} (h : JointlyDissociated μ fun _ => Y) {s : Set α}
     (hs : MeasurableSet s) : μ (Y ⁻¹' s) = 0 ∨ μ (Y ⁻¹' s) = 1 :=
-  measure_preimage_eq_zero_or_one_of_indepFun_self
-    ((jointlyDissociated_iff.mp h (fun _ => 0) (fun _ => 1) (by simp)).comp
-      (measurable_pi_apply (0, 0)) (measurable_pi_apply (0, 0))) hs
+  ProbabilityTheory.measure_eq_zero_or_one_of_indep_self
+    ((IndepFun_iff_Indep Y Y μ).mp
+      ((jointlyDissociated_iff.mp h (fun _ => 0) (fun _ => 1) (by simp)).comp
+        (measurable_pi_apply (0, 0)) (measurable_pi_apply (0, 0))))
+    (comap_measurable Y hs)
 
 /-- **Equal transposed entries of a separately dissociated array are trivial off the diagonal.**
 Separate dissociation asks `X (i, j)` and `X (j, i)` to be independent, so if those two entries
@@ -333,7 +328,8 @@ theorem SeparatelyDissociated.measure_preimage_eq_zero_or_one_of_symm [IsProbabi
     μ (X (i, j) ⁻¹' s) = 0 ∨ μ (X (i, j) ⁻¹' s) = 1 := by
   have hindep := h.indepFun_apply hij hij.symm
   rw [hsymm] at hindep
-  exact measure_preimage_eq_zero_or_one_of_indepFun_self hindep hs
+  exact ProbabilityTheory.measure_eq_zero_or_one_of_indep_self
+    ((IndepFun_iff_Indep _ _ μ).mp hindep) (comap_measurable (X (i, j)) hs)
 
 end Consequences
 
