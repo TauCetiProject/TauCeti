@@ -98,7 +98,7 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.finiteDimensional_residueField_restrict`: the relative degree is finite, so it
   is not the junk value of `Module.finrank`; `TauCeti.Place.one_le_relativeDegree` and
   `TauCeti.Place.ramificationIdx_pos` are the matching lower bounds.
-* `TauCeti.Place.ramificationIdxIn`: the ramification index of a place of the base in a finite
+* `TauCeti.Place.ramificationIdxIn`: the ramification index of a place of the base in an algebraic
   extension, computed at an arbitrary chosen place above it and zero when there is none; it is
   shared by all places above only in a Galois extension (see `Extension.Galois`).
 * `TauCeti.Place.finrank_mul_degree_eq_relativeDegree_mul_degree_restrict`:
@@ -1260,10 +1260,10 @@ end Self
 
 section RamificationIdxIn
 
-variable [FiniteDimensional F F']
+variable [Algebra.IsIntegral F F']
 
 open scoped Classical in
-/-- **The ramification index of a place of the base in a finite extension**: the ramification
+/-- **The ramification index of a place of the base in an algebraic extension**: the ramification
 index `e(P' ∣ P)` of a place `P'` of `F'` over `P`, where `P'` is an arbitrary choice among the
 places over `P`. It is `0` when no place of `F'` lies over `P`, which does not happen for an
 extension of function fields (`TauCeti.Place.restrict_surjective_of_finiteDimensional`). Without
@@ -1272,7 +1272,7 @@ need not be common to them; for a Galois extension it is
 (`TauCeti.Place.ramificationIdxIn_eq_ramificationIdx`). This is the analogue for places of
 Mathlib's `Ideal.ramificationIdxIn`. -/
 noncomputable def ramificationIdxIn (P : Place k F) (F' : Type v') [Field F'] [Algebra F F']
-    [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] : ℕ :=
+    [Algebra k F'] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] : ℕ :=
   if h : ∃ P' : Place k F', P'.restrict k F = P then ramificationIdx F h.choose else 0
 
 /-- If some place of `F'` lies over `P`, the ramification index of `P` in `F'` is that of the
