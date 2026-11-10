@@ -94,21 +94,10 @@ private theorem localIndexClass_of_subset (f : C(M, N)) {x : M} {y : N} {U V : S
     (hU : ∀ z ∈ U, f z = y → z = x) :
     o.localIndexClass f hVo hx (fun z hz ↦ hU z (hVU hz)) =
       o.localIndexClass f hUo (hVU hx) hU := by
-  have hj := hUo.isOpenEmbedding_subtypeVal
-  have hk := hVo.isOpenEmbedding_subtypeVal
   have hincl : ContinuousMap.inclusion hVU ⁻¹' {⟨x, hVU hx⟩} ⊆ {⟨x, hx⟩} :=
     fun z hz ↦ Subtype.ext (by simpa [Subtype.ext_iff] using hz)
-  -- The inclusion `V → U` carries the local orientation of `V` at `x` to that of `U` at `x`, since
-  -- both map to `o x` under the excision isomorphism of `U`, which is injective.
-  have hmap : localHomologyMap (ModuleCat.of ℤ (ULift.{0} ℤ)) (ContinuousMap.inclusion hVU) hincl n
-      ((hk.localOrientationEquiv ⟨x, hx⟩ n).symm (o x)).val =
-      ((hj.localOrientationEquiv ⟨x, hVU hx⟩ n).symm (o x)).val := by
-    refine (ConcreteCategory.bijective_of_isIso (localHomologyIsoOfIsOpenEmbedding
-      (A := ModuleCat.{0} ℤ) (ModuleCat.of ℤ (ULift.{0} ℤ)) hj ⟨x, hVU hx⟩ n).hom).1 ?_
-    rw [localHomologyIsoOfIsOpenEmbedding_hom, ← ConcreteCategory.comp_apply,
-      localHomologyMap_comp]
-    exact (hk.localHomologyMap_localOrientationEquiv_symm ⟨x, hx⟩ (o x) _).trans
-      (hj.localHomologyMap_localOrientationEquiv_symm ⟨x, hVU hx⟩ (o x) _).symm
+  -- The inclusion `V → U` carries the local orientation of `V` at `x` to that of `U` at `x`.
+  have hmap := hUo.localHomologyMap_inclusion_localOrientationEquiv_symm hVo hVU hx (o x) hincl
   have hcomp : (f.restrict U).comp (ContinuousMap.inclusion hVU) = f.restrict V :=
     ContinuousMap.ext fun _ ↦ rfl
   rw [localIndexClass, localIndexClass, ← hmap, ← ConcreteCategory.comp_apply,
