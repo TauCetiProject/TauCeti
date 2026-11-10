@@ -269,12 +269,11 @@ theorem setIntegral_norm_sub_setAverage_sq_le_of_convex (hΩc : Convex ℝ Ω)
 
 
 /-- **The Poincaré inequality on a convex domain, relative to a subset.** If `u` is `C¹`, `Ω` is a
-bounded convex open set and `S ⊆ Ω` has positive measure, then `∫_Ω ‖u‖²` is at
+bounded convex set and `S ⊆ Ω` has positive measure, then `∫_Ω ‖u‖²` is at
 most `(2 + 4 μ(Ω) / μ(S)) C ^ 2 ∫_Ω ‖Du‖² + (4 μ(Ω) / μ(S)) ∫_S ‖u‖²`, where
 `C = μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)` is the Poincaré–Wirtinger constant. -/
-theorem setIntegral_norm_sq_le_of_convex (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
-    (hb : Bornology.IsBounded Ω) (hu : ContDiff ℝ 1 u) (hS : S ⊆ Ω)
-    (hS₀ : μ S ≠ 0) :
+theorem setIntegral_norm_sq_le_of_convex (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) (hu : ContDiff ℝ 1 u) (hS : S ⊆ Ω) (hS₀ : μ S ≠ 0) :
     ∫ x in Ω, ‖u x‖ ^ 2 ∂μ ≤
       (2 + 4 * μ.real Ω / μ.real S) *
           (μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1) / μ.real S) ^ 2 *
@@ -318,8 +317,8 @@ theorem setIntegral_norm_sq_le_of_convex (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω
       rw [sub_add_cancel] at h
       nlinarith [sq_nonneg (‖u x - m‖ - ‖m‖), norm_nonneg (u x)]
     calc ∫ x in Ω, ‖u x‖ ^ 2 ∂μ ≤ ∫ x in Ω, (2 * ‖u x - m‖ ^ 2 + 2 * ‖m‖ ^ 2) ∂μ :=
-          setIntegral_mono_on hsq ((hdev.const_mul 2).fun_add
-            (integrableOn_const hΩfin).integrable) hΩ.measurableSet fun x _ ↦ hpt x
+          setIntegral_mono_ae_restrict hsq ((hdev.const_mul 2).fun_add
+            (integrableOn_const hΩfin).integrable) (ae_of_all _ hpt)
       _ = _ := by
         rw [integral_add (hdev.const_mul 2) (integrableOn_const hΩfin).integrable,
           integral_const_mul, setIntegral_const, smul_eq_mul]
