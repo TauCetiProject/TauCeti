@@ -47,7 +47,6 @@ universe u v w
 
 variable {C : Type u} [Category.{v} C] [Preadditive C] [Limits.HasBinaryBiproducts C] [Balanced C]
   {k : Type w} [DivisionRing k] [Linear k C] {P : ObjectProperty C} {S : ShortComplex C}
-  [IsLocalRing (End S.X₁)] [IsLocalRing (End S.X₃)]
 
 /-- The arrows into the final term of an almost-split sequence are counted by morphisms into
 its middle term modulo the radical. -/
