@@ -714,17 +714,11 @@ theorem ofLp_smul_quantizeSchwartzValue (a : Symbol n V W m) (j : Fin n)
         Complex.I • quantizeSchwartzValue (frequencyDeriv j a).coefficient u x := by
   obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
   obtain ⟨C', -, hC'⟩ := (frequencyDeriv j a).exists_bound_coefficient_slice x
-  have hcoef : (fun p : CoordinateSpace n × CoordinateSpace n ↦
-      fderiv ℝ (fun η ↦ a.coefficient (p.1, η)) p.2 (EuclideanSpace.single j 1)) =
-        (frequencyDeriv j a).coefficient := by
-    funext p
-    rw [← Prod.mk.eta (p := p), coefficient_frequencyDeriv, coordinateDeriv_cons,
-      coordinateDeriv_nil]
   have h := inner_smul_quantizeSchwartzValue (a := a.coefficient) (x := x)
     ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp))
-    hC (EuclideanSpace.single j 1) (fun ξ ↦ (congrFun hcoef (x, ξ)).symm ▸ hC' ξ) u
-  rw [hcoef] at h
-  simpa [EuclideanSpace.inner_single_right] using h
+    hC (EuclideanSpace.single j 1)
+    (fun ξ ↦ (a.fderiv_coefficient_slice_single j x ξ).symm ▸ hC' ξ) u
+  simpa [EuclideanSpace.inner_single_right, fderiv_coefficient_slice_single] using h
 
 /-- **Smoothness.** The quantization `Op(a) u` of a Schwartz function by a symbol is smooth. -/
 theorem contDiff_quantizeSchwartzValue (a : Symbol n V W m) (u : 𝓢(CoordinateSpace n, V)) :
@@ -950,19 +944,14 @@ theorem quantizeSchwartzValue_smulLeftCLM_coord_sub (a : Symbol n V W m) (j : Fi
       Complex.I • quantizeSchwartzValue (frequencyDeriv j a).coefficient u x := by
   obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient_slice x
   obtain ⟨C', -, hC'⟩ := (frequencyDeriv j a).exists_bound_coefficient_slice x
-  have hcoef : (fun p : CoordinateSpace n × CoordinateSpace n ↦
-      fderiv ℝ (fun η ↦ a.coefficient (p.1, η)) p.2 (EuclideanSpace.single j 1)) =
-        (frequencyDeriv j a).coefficient := by
-    funext p
-    rw [← Prod.mk.eta (p := p), coefficient_frequencyDeriv, coordinateDeriv_cons,
-      coordinateDeriv_nil]
   have hv : (fun y ↦ ⟪x - y, EuclideanSpace.single j 1⟫) = fun y ↦ (x - y) j := by
     funext y
     simp [EuclideanSpace.inner_single_right]
   have h := quantizeSchwartzValue_smulLeftCLM_inner_sub (a := a.coefficient) (x := x)
     ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).of_le (by simp))
-    hC (EuclideanSpace.single j 1) (fun ξ ↦ (congrFun hcoef (x, ξ)).symm ▸ hC' ξ) u
-  rwa [hv, hcoef] at h
+    hC (EuclideanSpace.single j 1)
+    (fun ξ ↦ (a.fderiv_coefficient_slice_single j x ξ).symm ▸ hC' ξ) u
+  simpa only [hv, fderiv_coefficient_slice_single, Prod.mk.eta] using h
 
 /-- **Multiplication by the squared distance.** Multiplying the input by `‖x - y‖²` and
 evaluating the quantization at `x` replaces the symbol by `-Δ_ξ a`. -/

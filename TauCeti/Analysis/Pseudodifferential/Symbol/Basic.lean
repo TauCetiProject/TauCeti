@@ -498,6 +498,14 @@ theorem hasLineDerivAt_coefficient_single (a : Symbol n V W m) (j : Fin n)
   exact ((a.contDiff_coefficient.comp (contDiff_prodMk_right x)).differentiable
     (by simp) ξ).hasFDerivAt.hasLineDerivAt _
 
+/-- The frequency derivative of the slice `ξ ↦ a(x, ξ)` of a symbol in the `j`-th coordinate
+direction is the coefficient of its frequency derivative `∂_{ξ_j} a`. -/
+theorem fderiv_coefficient_slice_single (a : Symbol n V W m) (j : Fin n)
+    (x ξ : CoordinateSpace n) :
+    fderiv ℝ (fun η ↦ a.coefficient (x, η)) ξ (EuclideanSpace.single j 1) =
+      (frequencyDeriv j a).coefficient (x, ξ) := by
+  rw [coefficient_frequencyDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
+
 /-- The mixed derivatives of `∂_{ξ_j} a` are those of `a` with one more frequency derivative. -/
 @[simp]
 theorem mixedDeriv_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (Fin n))
