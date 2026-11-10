@@ -62,7 +62,6 @@ theorem ker_smul (ρ : GaloisSet K n) (e : Equiv.Perm (Fin n)) :
   MonoidHom.ker_comp_of_injective _ _ (MulAut.conj e).injective
 
 /-- A relabelling identifies two actions exactly when it is equivariant. -/
-@[simp]
 theorem smul_eq_iff (ρ τ : GaloisSet K n) (e : Equiv.Perm (Fin n)) :
     e • ρ = τ ↔ ∀ σ i, e (ρ.val σ i) = τ.val σ (e i) := by
   constructor

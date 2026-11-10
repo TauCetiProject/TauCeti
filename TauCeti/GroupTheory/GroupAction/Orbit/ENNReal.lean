@@ -43,12 +43,12 @@ theorem tsum_eq_tsum_natCard_orbit_mul (f : X → ℝ≥0∞)
     ext x
     exact orbitRel.Quotient.mem_orbit.symm
   rw [hset]
-  let := (Finite.finite_mulAction_orbit (M := G) ω.out).fintype
+  have := (Finite.finite_mulAction_orbit (M := G) ω.out).to_subtype
   have hconst (x : orbit G ω.out) : f x = f ω.out := by
     obtain ⟨g, hg⟩ := x.property
     rw [← hg, hf]
   simp_rw [hconst]
-  rw [tsum_fintype, Finset.sum_const, Finset.card_univ, nsmul_eq_mul, Nat.card_eq_fintype_card]
+  simp [ENNReal.tsum_const, ← Set.coe_ncard_eq_encard]
 
 /-- Dividing a labelled sum by the order of the finite acting group gives the sum over orbits
 with inverse-stabilizer weights. Infinite orbit spaces and infinite weights are allowed. -/
@@ -62,12 +62,12 @@ theorem inv_natCard_mul_tsum_eq_tsum_div_natCard_stabilizer (f : X → ℝ≥0�
   intro ω
   have hc : Nat.card (orbit G ω.out) * Nat.card (stabilizer G ω.out) = Nat.card G := by
     rw [← Nat.card_prod, Nat.card_congr (orbitProdStabilizerEquivGroup G ω.out)]
-  let := (Finite.finite_mulAction_orbit (M := G) ω.out).fintype
+  have := (Finite.finite_mulAction_orbit (M := G) ω.out).to_subtype
   have : Nonempty (orbit G ω.out) := ⟨⟨ω.out, mem_orbit_self _⟩⟩
   have ho : (Nat.card (orbit G ω.out) : ℝ≥0∞) ≠ 0 := by
     exact_mod_cast (Nat.card_pos (α := orbit G ω.out)).ne'
-  rw [← hc, Nat.cast_mul, ENNReal.mul_inv (Or.inl ho) (Or.inl (by simp))]
-  rw [mul_assoc, mul_left_comm _ _ (f ω.out), ← mul_assoc,
-    ENNReal.inv_mul_cancel ho (by simp), one_mul, div_eq_mul_inv, mul_comm]
+  rw [← hc, Nat.cast_mul]
+  simpa only [ENNReal.div_eq_inv_mul] using
+    ENNReal.mul_div_mul_left (f ω.out) (Nat.card (stabilizer G ω.out)) ho (by simp)
 
 end MulAction
