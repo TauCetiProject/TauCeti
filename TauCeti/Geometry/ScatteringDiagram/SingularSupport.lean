@@ -12,9 +12,8 @@ public import TauCeti.Analysis.Convex.Polyhedron.Boundary
 
 The singular support of a family of walls in a real normed space is the union of the relative
 boundaries of the walls and of the pairwise intersections of walls whose affine spans have
-different directions. A point off the singular support lies on walls that have a common affine
-span and that contain it in their relative interior, so the family looks like a single affine
-subspace near it.
+different directions. The walls containing a point off the singular support share a common affine
+span and contain the point in their relative interiors.
 
 For a finite family of codimension-one polyhedra the singular support is covered by finitely many
 affine subspaces of codimension at least two, which is what lets a generic path avoid it. Unbounded
