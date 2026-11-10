@@ -128,7 +128,7 @@ end PartialOrder
 variable [LinearOrder R] [IsOrderedAddMonoid R]
 
 /-- Stuck vectors without precarious vertices are exactly the null vectors of `2I - A`. -/
-theorem isStuck_and_not_isPrecarious_iff (a : V → R) :
+theorem isStuck_and_forall_not_isPrecarious_iff_graphCartanMatrix_mulVec_eq_zero (a : V → R) :
     (G.IsStuck a ∧ ∀ i, ¬ G.IsPrecarious a i) ↔ G.graphCartanMatrix R *ᵥ a = 0 := by
   rw [isStuck_iff_graphCartanMatrix_mulVec_nonneg]
   simp only [isPrecarious_iff_graphCartanMatrix_mulVec_pos, not_lt]
