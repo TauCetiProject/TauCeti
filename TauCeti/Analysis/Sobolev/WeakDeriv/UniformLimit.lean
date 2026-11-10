@@ -32,7 +32,8 @@ derivatives need not converge pointwise, but:
 
 The zeroth-order counterpart, used for the maps themselves and for coefficients evaluated along
 them, is that integrals against such a weight pass to limits that are uniform on its support
-(`TauCeti.tendsto_integral_smul_of_tendstoUniformlyOn`).
+(`TauCeti.MeasureTheory.tendsto_integral_smul_of_tendstoUniformlyOn` in
+`TauCeti.MeasureTheory.Integral.Bochner.Basic`).
 
 Here `fderiv ℝ v` is the derivative of the limit, which exists almost everywhere by Rademacher's
 theorem and is its weak derivative (`LocallyLipschitzOn.hasWeakFDerivOn_fderiv`). For a test
@@ -66,22 +67,6 @@ section WeakConvergence
 
 variable [MeasurableSpace E] [BorelSpace E] {μ : Measure E} [μ.IsAddHaarMeasure]
 
-/-- Integrals against a continuous weight `a` with compact support in an open set `Ω` pass to limits
-of maps continuous on `Ω` that converge uniformly on the support of `a`. -/
-theorem tendsto_integral_smul_of_tendstoUniformlyOn (hΩ : IsOpen Ω) {f : ι → E → F} {g : E → F}
-    (hf : ∀ i, ContinuousOn (f i) Ω) (hg : ContinuousOn g Ω) {a : E → ℝ} (ha : Continuous a)
-    (hac : HasCompactSupport a) (haΩ : tsupport a ⊆ Ω)
-    (hlim : TendstoUniformlyOn f g l (tsupport a)) :
-    Tendsto (fun i ↦ ∫ x, a x • f i x ∂μ) l (𝓝 (∫ x, a x • g x ∂μ)) := by
-  have hint : ∀ {h : E → F}, ContinuousOn h Ω → Integrable (fun x ↦ a x • h x) μ := fun hh ↦
-    (hh.locallyIntegrableOn hΩ.measurableSet).integrable_smul_left_of_hasCompactSupport ha hac
-      haΩ
-  obtain ⟨B, hB⟩ := ha.bounded_above_of_compact_support hac
-  exact MeasureTheory.tendsto_integral_smul_of_tendsto_lintegral_enorm_sub (Eventually.of_forall hB)
-    (Eventually.of_forall fun x hx ↦ image_eq_zero_of_notMem_tsupport hx)
-    (Eventually.of_forall fun i ↦ hint (hf i)) (hint hg).aestronglyMeasurable
-    (hlim.tendsto_setLIntegral_enorm_sub hac.measure_lt_top.ne)
-
 /-- The case of a test function in
 `TauCeti.tendsto_integral_smul_fderiv_apply_of_tendstoLocallyUniformlyOn`: integrating by parts,
 `∫ φ • ∂_w uᵢ = -∫ (∂_w φ) • uᵢ`, and the maps converge uniformly on the support of `φ`. -/
@@ -98,7 +83,7 @@ private theorem tendsto_integral_testFunction_smul_fderiv_apply [FiniteDimension
   set ψ : 𝓓(⟨Ω, hΩ⟩, ℝ) := TestFunction.lineDerivCLM ℝ w φ
   have hcoe : (ψ : E → ℝ) = fun x ↦ lineDeriv ℝ (φ : E → ℝ) x w :=
     funext fun _ ↦ TestFunction.lineDerivCLM_apply_of_le le_top
-  have key := (tendsto_integral_smul_of_tendstoUniformlyOn (μ := μ) hΩ
+  have key := (MeasureTheory.tendsto_integral_smul_of_tendstoUniformlyOn (μ := μ) hΩ
     (fun i ↦ (hu i).continuousOn) hv.continuousOn ψ.continuous ψ.hasCompactSupport
     ψ.tsupport_subset (((tendstoLocallyUniformlyOn_iff_forall_isCompact hΩ).1 hlim) _
       ψ.tsupport_subset ψ.hasCompactSupport)).neg
@@ -106,21 +91,6 @@ private theorem tendsto_integral_testFunction_smul_fderiv_apply [FiniteDimension
   rw [hvw.integral_lineDeriv_smul_eq_neg_integral_smul, neg_neg] at key
   refine key.congr fun i ↦ ?_
   rw [(huw i).integral_lineDeriv_smul_eq_neg_integral_smul, neg_neg]
-
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- Replacing the weight `a` by `b`, with `|b - a| ≤ η` and both vanishing off a compact set `K`,
-changes the integral against a function bounded by `B` on `K` by at most `η B μ(K)`. -/
-private theorem norm_integral_smul_sub_integral_smul_le {K : Set E} (hK : IsCompact K)
-    {a b : E → ℝ} {h : E → F} {η B : ℝ} (ha : Integrable (fun x ↦ a x • h x) μ)
-    (hb : Integrable (fun x ↦ b x • h x) μ) (haK : ∀ x ∉ K, a x = 0) (hbK : ∀ x ∉ K, b x = 0)
-    (hab : ∀ x, |b x - a x| ≤ η) (hB : ∀ x ∈ K, ‖h x‖ ≤ B) :
-    ‖∫ x, a x • h x ∂μ - ∫ x, b x • h x ∂μ‖ ≤ η * B * μ.real K := by
-  have hη : 0 ≤ η := (abs_nonneg _).trans (hab 0)
-  rw [← integral_sub ha hb, ← setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx ↦ by
-    simp [haK x hx, hbK x hx]]
-  refine norm_setIntegral_le_of_norm_le_const hK.measure_lt_top fun x hx ↦ ?_
-  rw [← sub_smul, norm_smul, Real.norm_eq_abs, abs_sub_comm]
-  exact mul_le_mul (hab x) (hB x hx) (norm_nonneg _) hη
 
 /-- **Derivatives converge weakly along locally uniform limits.** Let `uᵢ` be `C¹` maps on an open
 set `Ω`, with derivatives eventually bounded on every compact subset of `Ω`, converging locally
@@ -165,11 +135,11 @@ theorem tendsto_integral_smul_fderiv_apply_of_tendstoLocallyUniformlyOn [FiniteD
     (tendsto_integral_testFunction_smul_fderiv_apply (μ := μ) hΩ hu hv hlim φ w) (ε / 2)
     (half_pos hε)
   filter_upwards [hC, hmid] with i hCi hi
-  have h1 := norm_integral_smul_sub_integral_smul_le hK
+  have h1 := MeasureTheory.norm_integral_smul_sub_integral_smul_le hK.measure_lt_top
     ((hlocu i).integrable_smul_left_of_hasCompactSupport ha hac haΩ)
     (φ.integrable_smul (hlocu i)) haK hφK' hφa (B := max C 0 * ‖w‖) fun x hx ↦
       ((fderiv ℝ (u i) x).le_opNorm w).trans (by gcongr; exact (hCi x hx).trans (le_max_left _ _))
-  have h2 := norm_integral_smul_sub_integral_smul_le hK
+  have h2 := MeasureTheory.norm_integral_smul_sub_integral_smul_le hK.measure_lt_top
     (hlocv.integrable_smul_left_of_hasCompactSupport ha hac haΩ)
     (φ.integrable_smul hlocv) haK hφK' hφa (B := max D 0 * ‖w‖) fun x hx ↦
       ((fderiv ℝ v x).le_opNorm w).trans (by gcongr; exact (hD x hx).trans (le_max_left _ _))

@@ -529,14 +529,14 @@ end MeasureTheory.LocallyIntegrableOn
 
 namespace MeasureTheory.LocallyIntegrableOn
 
-variable {X F G : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
-  [T2Space X] [LocallyCompactSpace X] [NormedAddCommGroup F] [NormedSpace ℝ F]
-  [NormedAddCommGroup G] [NormedSpace ℝ G] {μ : Measure X} {s : Set X}
+variable {X 𝕜 F G : Type*} [MeasurableSpace X] [TopologicalSpace X] [OpensMeasurableSpace X]
+  [T2Space X] [LocallyCompactSpace X] [NontriviallyNormedField 𝕜] [NormedAddCommGroup F]
+  [NormedSpace 𝕜 F] [NormedAddCommGroup G] [NormedSpace 𝕜 G] {μ : Measure X} {s : Set X}
 
 /-- Applying a field of continuous linear maps that is continuous on a locally closed set `s` to a
 function locally integrable on `s` gives a function locally integrable on `s`. This is the
 operator-valued counterpart of Mathlib's `LocallyIntegrableOn.continuousOn_smul`. -/
-theorem continuousOn_clm_apply {f : X → F} {A : X → F →L[ℝ] G} (hs : IsLocallyClosed s)
+theorem continuousOn_clm_apply {f : X → F} {A : X → F →L[𝕜] G} (hs : IsLocallyClosed s)
     (hf : LocallyIntegrableOn f s μ) (hA : ContinuousOn A s) :
     LocallyIntegrableOn (fun x ↦ A x (f x)) s μ := by
   rw [locallyIntegrableOn_iff hs] at hf ⊢
