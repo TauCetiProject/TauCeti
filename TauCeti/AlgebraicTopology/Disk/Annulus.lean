@@ -22,8 +22,11 @@ is combined with a deformation of the surrounding annulus, as in cell reattachme
 * `TauCeti.TopCat.annulusParam`, `TauCeti.TopCat.annulusDir`: the annulus coordinates.
 * `TauCeti.TopCat.add_one_sub_mul_annulusParam_smul_annulusDir`: a point of the annulus is
   recovered from its coordinates.
+* `TauCeti.TopCat.smallDiskIncl`: the inclusion of the ball of radius `d ≤ 1` into the disk.
 * `TauCeti.TopCat.annulusPoint`: the point of the annulus with given coordinates, as a continuous
   map, and `TauCeti.TopCat.annulusPoint_annulusParam_annulusDir`: it inverts the coordinates.
+  Its inner circle is the sphere of radius `d` (`TauCeti.TopCat.annulusPoint_zero`) and its outer
+  circle is the boundary sphere (`TauCeti.TopCat.annulusPoint_one`).
 * `TauCeti.TopCat.discGlue`: the gluing of a map on the ball of radius `d` and a map on the
   annulus, with a parameter space `P`.
 -/
@@ -125,6 +128,22 @@ theorem smul_diskBoundary_mem_closedBall (hd : 0 ≤ d) (θ : TopCat.diskBoundar
   rw [mem_closedBall_zero_iff, norm_smul, mem_sphere_zero_iff_norm.1 θ.down.2,
     Real.norm_of_nonneg hd, mul_one]
 
+/-- The inclusion of the closed ball of radius `d ≤ 1` into the unit disk. -/
+def smallDiskIncl (hd₁ : d ≤ 1) :
+    C(closedBall (0 : EuclideanSpace ℝ (Fin k)) d, TopCat.disk.{u} k) where
+  toFun w := ⟨⟨w.1, closedBall_subset_closedBall hd₁ w.2⟩⟩
+  continuous_toFun := continuous_uliftUp.comp (continuous_subtype_val.subtype_mk _)
+
+@[simp]
+theorem smallDiskIncl_apply (hd₁ : d ≤ 1) (w : closedBall (0 : EuclideanSpace ℝ (Fin k)) d) :
+    smallDiskIncl.{u} hd₁ w = ⟨⟨w.1, closedBall_subset_closedBall hd₁ w.2⟩⟩ :=
+  (rfl)
+
+/-- A point of the disk in the ball of radius `d` comes from that ball. -/
+theorem smallDiskIncl_mk (hd₁ : d ≤ 1) {w : TopCat.disk.{u} k} (hw : w.down.1 ∈ closedBall 0 d) :
+    smallDiskIncl hd₁ ⟨w.down.1, hw⟩ = w :=
+  (rfl)
+
 /-- The radius `d + (1 - d) s` of the annulus coordinates is at least `d`. -/
 private theorem le_add_one_sub_mul (hd₁ : d ≤ 1) (s : I) : d ≤ d + (1 - d) * s :=
   le_add_of_nonneg_right (mul_nonneg (sub_nonneg.2 hd₁) s.2.1)
@@ -164,6 +183,13 @@ theorem annulusPoint_one (hd₀ : 0 ≤ d) (hd₁ : d ≤ 1) (θ : TopCat.diskBo
   ULift.ext (Subtype.ext (by
     rw [coe_annulusPoint_apply_down, TopCat.coe_diskBoundaryInclusion_apply_down, Icc.coe_one,
       mul_one, add_sub_cancel, one_smul]))
+
+/-- The inner circle `s = 0` of the annulus is the sphere of radius `d`. -/
+@[simp]
+theorem annulusPoint_zero (hd₀ : 0 ≤ d) (hd₁ : d ≤ 1) (θ : TopCat.diskBoundary.{u} k) :
+    annulusPoint hd₀ hd₁ (0, θ) =
+      smallDiskIncl hd₁ ⟨d • θ.down.1, smul_diskBoundary_mem_closedBall hd₀ θ⟩ :=
+  ULift.ext (Subtype.ext (by simp))
 
 /-- A point of the annulus is the annulus point of its annulus coordinates. -/
 @[simp]

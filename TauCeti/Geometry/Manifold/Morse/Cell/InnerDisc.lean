@@ -80,33 +80,6 @@ open scoped ContDiff Manifold
 
 namespace TauCeti
 
-section Disc
-
-variable {k : ℕ} (d : I)
-
-/-- The inclusion of the closed ball of radius `d ≤ 1` into the unit disc. -/
-private def smallDiskIncl :
-    C(closedBall (0 : EuclideanSpace ℝ (Fin k)) d, TopCat.disk.{u} k) where
-  toFun w := ⟨⟨w.1, closedBall_subset_closedBall d.2.2 w.2⟩⟩
-  continuous_toFun := continuous_uliftUp.comp (continuous_subtype_val.subtype_mk _)
-
-private theorem smallDiskIncl_apply (w : closedBall (0 : EuclideanSpace ℝ (Fin k)) d) :
-    smallDiskIncl d w = ⟨⟨w.1, closedBall_subset_closedBall d.2.2 w.2⟩⟩ :=
-  (rfl)
-
-/-- A point of the disc in the ball of radius `d` comes from that ball. -/
-private theorem smallDiskIncl_mk {w : TopCat.disk.{u} k} (hw : w.down.1 ∈ closedBall 0 (d : ℝ)) :
-    smallDiskIncl d ⟨w.down.1, hw⟩ = w :=
-  (rfl)
-
-/-- The inner circle `s = 0` of the annulus is the sphere of radius `d`. -/
-private theorem annulusPoint_zero (θ : TopCat.diskBoundary.{u} k) :
-    TopCat.annulusPoint d.2.1 d.2.2 (0, θ) =
-      smallDiskIncl d ⟨(d : ℝ) • θ.down.1, TopCat.smul_diskBoundary_mem_closedBall d.2.1 θ⟩ :=
-  ULift.ext (Subtype.ext (by simp [smallDiskIncl_apply]))
-
-end Disc
-
 section Stages
 
 variable {X : Type*} [TopologicalSpace X] {M : Type*} [TopologicalSpace M] {f : M → ℝ}
@@ -220,20 +193,21 @@ private def annulusDeformation (m : C(X × TopCat.disk.{u} k, M))
 the annulus of `m` to the retraction track of its inner circle. -/
 private def annulusStage (m : C(X × TopCat.disk.{u} k, M))
     (hm : ∀ x w, f (m (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2) : C(I × (X × TopCat.disk.{u} k), M) :=
-  stageGlue hd ⟨fun p ↦ m (p.1.2, smallDiskIncl d p.2), by fun_prop⟩
+  stageGlue hd ⟨fun p ↦ m (p.1.2, TopCat.smallDiskIncl d.2.2 p.2), by fun_prop⟩
     ⟨fun p ↦ (annulusDeformation R hr hε m hm (p.1.1, p.2.1, p.1.2, p.2.2) : M), by fun_prop⟩
     fun p θ ↦ by
       have h := ((annulusDeformation R hr hε m hm).prop p.1).1 (p.2, θ)
       simp only [ContinuousMap.HomotopyWith.coe_toHomotopy,
         ContinuousMap.Homotopy.curry_apply] at h
-      simp [h, coe_familyAnnulus_apply, annulusPoint_zero]
+      simp [h, coe_familyAnnulus_apply, TopCat.annulusPoint_zero]
 
 variable (m : C(X × TopCat.disk.{u} k, M)) (hm : ∀ x w, f (m (x, w)) ≤ c - ε * ‖w.down.1‖ ^ 2)
 
 /-- On the small discs the first stage is `m` at all times. -/
 private theorem annulusStage_of_norm_le (t : I) (x : X) {w : TopCat.disk.{u} k}
     (hw : ‖w.down.1‖ ≤ d) : annulusStage R hr hε hd m hm (t, x, w) = m (x, w) :=
-  (stageGlue_of_norm_le hd _ _ _ t x hw).trans (congrArg (fun w ↦ m (x, w)) (smallDiskIncl_mk d _))
+  (stageGlue_of_norm_le hd _ _ _ t x hw).trans
+    (congrArg (fun w ↦ m (x, w)) (TopCat.smallDiskIncl_mk d.2.2 _))
 
 /-- On the annuli the first stage is the deformation of the annulus to the retraction track, read
 in annulus coordinates. -/
@@ -261,8 +235,8 @@ private def annulusStageHomotopy :
       fun x s ↦ stageGlue_boundary_le hd _ _ _ (fun p v hv ↦ ?_) (fun p θ ↦ ?_) t x s⟩
     · exact (hm _ _).trans ((sub_le_self _ (by positivity)).trans (le_add_of_nonneg_right hε))
     · exact (annulusDeformation R hr hε m hm _).2.trans (sub_mul_sq_le_add hε)
-    · have h := hm p.2 (smallDiskIncl d v)
-      rwa [smallDiskIncl_apply, hv, one_pow, mul_one] at h
+    · exact (hm p.2 (TopCat.smallDiskIncl d.2.2 v)).trans_eq
+        (by rw [TopCat.smallDiskIncl_apply, hv, one_pow, mul_one])
     · exact ((annulusDeformation R hr hε m hm).prop p.1).2 (p.2, θ)
 
 end Stages
@@ -295,11 +269,11 @@ private def circleHomotopy :
       Real.norm_of_nonneg d.2.1, mul_one])⟩
   continuous_toFun := by fun_prop
   map_zero_left q := Subtype.ext (by
-    simp only [ContinuousMap.coe_mk, hG₀, coe_familyAnnulus_apply, annulusPoint_zero,
-      smallDiskIncl_apply])
+    simp only [ContinuousMap.coe_mk, hG₀, coe_familyAnnulus_apply, TopCat.annulusPoint_zero,
+      TopCat.smallDiskIncl_apply])
   map_one_left q := Subtype.ext (by
-    simp only [ContinuousMap.coe_mk, hG₁, coe_familyAnnulus_apply, annulusPoint_zero,
-      smallDiskIncl_apply])
+    simp only [ContinuousMap.coe_mk, hG₁, coe_familyAnnulus_apply, TopCat.annulusPoint_zero,
+      TopCat.smallDiskIncl_apply])
 
 private theorem coe_circleHomotopy_apply (p : I × (X × TopCat.diskBoundary.{u} k)) :
     (circleHomotopy hε hm₀ hm₁ G hG₀ hG₁ hGd p : M) =
