@@ -11,6 +11,7 @@ import TauCeti.Analysis.Contour.Winding.Number.Segment.Bounds
 import TauCeti.Analysis.Contour.Winding.Number.Partition
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Trace
 import TauCeti.Algebra.BigOperators.Fin
+import TauCeti.Data.Fin.Basic
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Basic.Complex.BigOperators
 import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
@@ -84,7 +85,8 @@ theorem windingNumber_eq_sum_triangleCurve {γ : ℝ → ℂ} {a b : ℝ} {N : �
         (triangleCurve c (γ (s i.castSucc)) (γ (s i.succ))) 0 3 z := by
   rcases Nat.eq_zero_or_pos N with rfl | hN
   · -- No edges: the interval is degenerate.
-    have hab : a = b := by rw [← ha, ← hb]; rfl
+    have hab : a = b := by
+      rw [← ha, ← hb, Fin.last_zero]
     subst hab
     simp [Contour.windingNumber_same]
   -- The trace of the polygon lies on its edges, so it avoids `z`.
@@ -92,25 +94,7 @@ theorem windingNumber_eq_sum_triangleCurve {γ : ℝ → ℂ} {a b : ℝ} {N : �
     rintro ⟨u, hu, rfl⟩
     have hab : a ≤ b := ha ▸ hb ▸ hs.monotone (Fin.zero_le _)
     rw [uIcc_of_le hab] at hu
-    let t : ℕ → ℝ := fun k ↦ s (Fin.ofNat (N + 1) k)
-    have ht (i : Fin (N + 1)) : t i = s i := by simp [t]
-    have ht0 : t 0 = a := (ht 0).trans ha
-    have htN : t N = b := (ht (Fin.last N)).trans hb
-    obtain ⟨i, hi⟩ : ∃ i : Fin N, u ∈ Icc (s i.castSucc) (s i.succ) := by
-      rcases hu.1.eq_or_lt with h | h
-      · refine ⟨⟨0, hN⟩, ?_⟩
-        have h0 : s (⟨0, hN⟩ : Fin N).castSucc = a := by rw [← ha]; rfl
-        rw [← h, h0]
-        exact ⟨le_rfl, h0 ▸ hs.monotone (Fin.castSucc_lt_succ).le⟩
-      · obtain ⟨j, hj, hjt⟩ := TauCeti.exists_lt_mem_Ioc_of_mem_Ioc (τ := t) (n := N) (t := u)
-          ⟨by rw [ht0]; exact h, by rw [htN]; exact hu.2⟩
-        refine ⟨⟨j, hj⟩, ?_⟩
-        have h1 := ht (⟨j, hj⟩ : Fin N).castSucc
-        have h2 := ht (⟨j, hj⟩ : Fin N).succ
-        simp only [Fin.val_castSucc, Fin.val_succ] at h1 h2
-        rw [h1] at hjt
-        rw [h2] at hjt
-        exact Ioc_subset_Icc_self hjt
+    obtain ⟨i, hi⟩ := TauCeti.exists_mem_Icc_castSucc_succ s hN.ne' (by rwa [ha, hb])
     have hlt := hs (Fin.castSucc_lt_succ (i := i))
     have hseg := hsegments i u hi
     refine hzi i (Or.inl (Or.inr ?_))
