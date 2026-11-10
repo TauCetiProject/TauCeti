@@ -255,12 +255,13 @@ theorem signedDiscr_sqrt_smul_span_orthonormalBasis {ι : Type*} [Fintype ι]
   rw [hu.isIntegral.signedDiscr_sqrt_smul hm, hu.signedDiscr_eq_neg_one_pow,
     Module.finrank_eq_card_basis b.toBasis, mul_comm]
 
-omit [IsZLattice ℝ L] in
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- **Fricke partner product identity.** For an integral lattice `L` in a space of dimension `n`
 and level `N`, the signed discriminants of `L` and of its Fricke partner `√N • L^∨` multiply
 to `Nⁿ`. -/
 theorem IsIntegral.mul_signedDiscr_sqrt_level_smul_dual (h : IsIntegral L) :
     signedDiscr L * signedDiscr (√(level L : ℝ) • dual L) = (level L : ℤ) ^ finrank ℝ E := by
+  have := h.discreteTopology
   have hsign : ((-1 : ℤ) ^ (finrank ℝ E / 2)) * (-1) ^ (finrank ℝ E / 2) = 1 := by
     rw [← mul_pow, neg_one_mul, neg_neg, one_pow]
   calc signedDiscr L * signedDiscr (√(level L : ℝ) • dual L)
@@ -272,7 +273,7 @@ theorem IsIntegral.mul_signedDiscr_sqrt_level_smul_dual (h : IsIntegral L) :
     _ = (level L : ℤ) ^ finrank ℝ E := by
         rw [hsign, one_mul, h.mul_card_discriminantGroup_sqrt_level_smul_dual, Nat.cast_pow]
 
-omit [IsZLattice ℝ L] in
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- In even ambient dimension, the product of the signed discriminants of an integral lattice
 and of its Fricke partner is an integer square. -/
 theorem IsIntegral.isSquare_mul_signedDiscr_sqrt_level_smul_dual (h : IsIntegral L)

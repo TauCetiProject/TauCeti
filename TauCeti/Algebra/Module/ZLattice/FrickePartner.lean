@@ -89,7 +89,7 @@ theorem det_sqrt_level_smul_dual [MeasurableSpace E] [BorelSpace E] :
     det (√(level L : ℝ) • dual L) = level L ^ finrank ℝ E / det L := by
   rw [det_sqrt_smul, det_dual, div_eq_mul_inv]
 
-omit [IsZLattice ℝ L] in
+omit [DiscreteTopology L] [IsZLattice ℝ L] in
 /-- For an integral lattice `L` in a space of dimension `n` and level `N`, the orders of the
 discriminant groups of `L` and of its Fricke partner `√N • L^∨` multiply to `Nⁿ`. If `L` does not
 span then `N = 0` and both sides vanish, since the Fricke partner is then the zero lattice, whose
@@ -97,6 +97,7 @@ discriminant group is infinite. -/
 theorem IsIntegral.mul_card_discriminantGroup_sqrt_level_smul_dual (h : IsIntegral L) :
     Nat.card (DiscriminantGroup L) * Nat.card (DiscriminantGroup (√(level L : ℝ) • dual L)) =
       level L ^ finrank ℝ E := by
+  have := h.discreteTopology
   by_cases hs : span ℝ (L : Set E) = ⊤
   swap
   · have : Nontrivial E := Submodule.nontrivial_iff ℝ |>.mp ⟨_, _, hs⟩
@@ -202,18 +203,7 @@ For instance `√2 • E₈` has level `2`. -/
 theorem IsEven.level_sqrt_smul_of_isUnimodular [Nontrivial E] (h : IsEven L)
     (hU : IsUnimodular L) {m : ℕ} (hm : m ≠ 0) : level (√(m : ℝ) • L) = m := by
   have := h.discreteTopology
-  -- A self-dual lattice spans: a vector orthogonal to `L` lies in `L^∨ = L`, hence is `0`.
-  have : IsZLattice ℝ L := ⟨by
-    by_contra h
-    obtain ⟨w, hw, hw0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot
-      (mt Submodule.orthogonal_eq_bot_iff.mp h)
-    refine hw0 ((inner_self_eq_zero (𝕜 := ℝ)).mp ?_)
-    have hwL : w ∈ dual L := mem_dual.mpr fun y hy ↦
-      ⟨0, by
-        rw [real_inner_comm, Submodule.inner_right_of_mem_orthogonal (subset_span hy) hw]
-        simp⟩
-    rw [hU.dual_eq] at hwL
-    exact Submodule.inner_right_of_mem_orthogonal (subset_span hwL) hw⟩
+  have : IsZLattice ℝ L := ⟨hU.span_eq_top⟩
   borelize E
   have hm₀ : (0 : ℝ) < m := Nat.cast_pos.mpr (Nat.pos_of_ne_zero hm)
   have hs : 0 < √(m : ℝ) := Real.sqrt_pos.mpr hm₀
