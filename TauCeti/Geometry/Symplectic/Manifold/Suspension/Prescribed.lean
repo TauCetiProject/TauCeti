@@ -375,8 +375,8 @@ hypotheses of `exists_verticalFamily_eqOn`, there is a family `J λ` of almost c
 `X_φ = (ℝ / ℤ) × Y_φ`, jointly smooth in `(λ, y)` and each compatible with
 `Ω = ds ∧ dt + σ_v`, which in the coordinates `(s, t, x)` sends `a ∂_s + b ∂_t + v` to
 `-b ∂_s + a ∂_t + K₁ λ ((s, t), x) v` over the closed set `A`, and to
-`-b ∂_s + a ∂_t + K₀ λ ((s, t), x) v` outside `U`. In particular each `J λ` sends `∂_s` to the
-suspension vector field. -/
+`-b ∂_s + a ∂_t + K₀ λ ((s, t), x) v` outside `U`. In particular, over `A` and outside `U`,
+`J λ` sends `∂_s` to the suspension vector field. -/
 theorem exists_suspensionAlmostComplexStructure_eqOn [IsManifold IΛ ∞ Λ] [FiniteDimensional ℝ EΛ]
     [T2Space Λ] [SecondCountableTopology Λ] [SecondCountableTopology M]
     (hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ)
