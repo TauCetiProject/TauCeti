@@ -105,7 +105,7 @@ theorem exists_radius_perWindow_tendsto_log_norm_add_arg
     exists_crossing_slitPlane_radius h_dR h_dL h_at hL_R hL_L
   obtain ⟨p, hp⟩ := h_imm.isPiecewiseC1On.exists_finset_differentiableAt
   refine ⟨R, hR_pos, L_R, L_L, hL_R, hL_L, h_tend_R, h_tend_L,
-    fun l u hRl hlt htu huR h_lo h_hi h_unique => ?_⟩
+    fun l u hRl hlt htu huR h_lo h_hi _ => ?_⟩
   have h_endpoint_R : t₀ + (u - t₀) = u := by ring
   have h_endpoint_L : t₀ - (t₀ - l) = l := by ring
   exact perWindow_truncated_integral_tendsto hlt htu h_at
@@ -119,7 +119,6 @@ theorem exists_radius_perWindow_tendsto_log_norm_add_arg
       (h_imm.isPiecewiseC1On.intervalIntegrable_deriv.mono_set (by
         rw [uIcc_of_le (hlt.le.trans htu.le), uIcc_of_le hab.le]
         exact Icc_subset_Icc (by linarith) h_hi))
-      h_unique
       (fun a' b' h1 h2 h3 => hc_R a' b' h1 h2 (h3.trans huR))
       (fun b' h1 h2 => hc_L l b' hRl h1 h2)
       (by simpa only [h_endpoint_R] using
