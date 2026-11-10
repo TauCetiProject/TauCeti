@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.FundamentalVectorField
-public import TauCeti.Geometry.Lie.RightInvariantVectorField
 
 /-!
 # The differential and the rank of the orbit map of a Lie group action
@@ -99,10 +98,7 @@ theorem isotropy_fundamental_smul (g : G) (x : M) :
   constructor
   · -- `ξ = Ad_g (Ad_{g⁻¹} ξ)`, and `Ad_{g⁻¹} ξ` lies in the isotropy algebra of `x`.
     intro hξ
-    have hAd : Lie.adjointContinuousLinearMap (I := I) g
-        (Lie.adjointContinuousLinearMap (I := I) g⁻¹ ξ) = ξ := by
-      rw [← ContinuousLinearMap.comp_apply, ← Lie.adjointContinuousLinearMap_mul, mul_inv_cancel,
-        Lie.adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
+    have hAd := Lie.adjointContinuousLinearMap_adjointContinuousLinearMap_inv (I := I) g ξ
     refine ⟨Lie.adjointContinuousLinearMap (I := I) g⁻¹ ξ, ?_, hAd⟩
     rwa [← adjointContinuousLinearMap_mem_isotropy_smul_iff (g := g), hAd]
   · rintro ⟨η, hη, rfl⟩
@@ -129,9 +125,8 @@ theorem orbitTangent_fundamental_smul (g : G) (x : M) :
   constructor
   · rintro ⟨ξ, rfl⟩
     refine ⟨_, ⟨Lie.adjointContinuousLinearMap (I := I) g⁻¹ ξ, rfl⟩, ?_⟩
-    rw [mfderiv_smul_fundamentalVectorField, ← ContinuousLinearMap.comp_apply,
-      ← Lie.adjointContinuousLinearMap_mul, mul_inv_cancel, Lie.adjointContinuousLinearMap_one,
-      ContinuousLinearMap.id_apply]
+    rw [mfderiv_smul_fundamentalVectorField,
+      Lie.adjointContinuousLinearMap_adjointContinuousLinearMap_inv]
   · rintro ⟨_, ⟨ξ, rfl⟩, rfl⟩
     exact ⟨_, (mfderiv_smul_fundamentalVectorField g ξ x).symm⟩
 

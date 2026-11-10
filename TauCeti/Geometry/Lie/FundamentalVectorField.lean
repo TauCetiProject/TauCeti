@@ -495,11 +495,7 @@ theorem isotropy_smul_eq_bot_iff {g : G} {x : M} :
     (InfinitesimalAction.fundamental I G I' M).isotropy (g • x) = ⊥ ↔
       (InfinitesimalAction.fundamental I G I' M).isotropy x = ⊥ := by
   -- Pull an element of one isotropy algebra back along `Ad_g` or forward along `Ad_g⁻¹`.
-  have hAd (k : G) (ξ : GroupLieAlgebra I G) :
-      Lie.adjointContinuousLinearMap (I := I) k (Lie.adjointContinuousLinearMap (I := I) k⁻¹ ξ) =
-        ξ := by
-    rw [← ContinuousLinearMap.comp_apply, ← Lie.adjointContinuousLinearMap_mul, mul_inv_cancel,
-      Lie.adjointContinuousLinearMap_one, ContinuousLinearMap.id_apply]
+  have hAd := Lie.adjointContinuousLinearMap_adjointContinuousLinearMap_inv (I := I) (G := G)
   simp only [LieSubalgebra.eq_bot_iff]
   refine ⟨fun h ξ hξ ↦ ?_, fun h ξ hξ ↦ ?_⟩
   · have := h _ (adjointContinuousLinearMap_mem_isotropy_smul_iff.2 hξ)
