@@ -63,9 +63,12 @@ theorem setOfPred_gauge_le_eq_closure_smul_of_pos (hc : Convex ℝ s) (hs₀ : s
 `closure {0}`. No separation axiom or convexity is needed. -/
 theorem gauge_le_zero_iff_mem_closure_zero (hb : Bornology.IsVonNBounded ℝ s) (hs₀ : s ∈ 𝓝 0) :
     gauge s x ≤ 0 ↔ x ∈ closure ({0} : Set E) := by
-  rw [(gauge_nonneg x).ge_iff_eq', ← pure_le_nhds_iff, ← Filter.map_pure (gauge s) x,
-    Filter.map_le_iff_le_comap, comap_gauge_nhds_zero hb hs₀, ← specializes_iff_pure,
-    specializes_comm, specializes_iff_mem_closure]
+  -- `gauge s x = 0` says `pure x` maps into `𝓝 0`; as `comap (gauge s) (𝓝 0) = 𝓝 0`, this is
+  -- `x ⤳ 0`
+  have h : gauge s x = 0 ↔ x ⤳ 0 := by
+    rw [← pure_le_nhds_iff, ← Filter.map_pure (gauge s) x, Filter.map_le_iff_le_comap,
+      comap_gauge_nhds_zero hb hs₀, ← specializes_iff_pure]
+  rw [(gauge_nonneg x).ge_iff_eq', h, specializes_comm, specializes_iff_mem_closure]
 
 /-- For a bounded convex neighbourhood `s` of `0` and `0 ≤ t`, the sublevel set
 `{x | gauge s x ≤ t}` is the closure of the dilate `t • s`. At `t = 0` both sides are
