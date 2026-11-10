@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.Complex
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 public import TauCeti.Geometry.Manifold.VectorBundle.FrameTrivialization
 public import TauCeti.Topology.Covering.AssociatedBundle
@@ -40,6 +41,15 @@ when there is a nowhere-vanishing holomorphic `f : E → ℂ` with `f (g • y) 
 of the trivial character is trivial for every quotient covering
 (`IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_one`).
 
+When `E` is moreover a compact connected complex manifold, every holomorphic function on `E` is
+constant (`MDifferentiable.exists_eq_const_of_compactSpace`, the maximum principle). Hence the
+holomorphic sections of the bundle associated with `ρ` correspond to the `ρ`-invariant vectors of
+`F` (`IsQuotientCoveringMap.contMDiff_section_associatedCore_iff_exists_eq_const`), the line bundle
+of a nontrivial character has no nonzero holomorphic section
+(`IsQuotientCoveringMap.eq_zero_of_contMDiff_section_characterCore`), and the line bundle of `χ` is
+holomorphically trivial exactly when `χ = 1`
+(`IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one`).
+
 ## Main results
 
 * `IsQuotientCoveringMap.isContMDiff_associatedCore`: the associated bundle is `C^n`.
@@ -49,6 +59,13 @@ of the trivial character is trivial for every quotient covering
 * `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_associatedCore_iff`,
   `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff`: an associated
   line bundle is trivial exactly when there is a nowhere-vanishing equivariant function upstairs.
+* `IsQuotientCoveringMap.contMDiff_section_associatedCore_iff_exists_eq_const`: over a compact
+  connected complex manifold `E`, holomorphic sections are constant `ρ`-invariant functions
+  upstairs.
+* `IsQuotientCoveringMap.eq_zero_of_contMDiff_section_characterCore`,
+  `IsQuotientCoveringMap.exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one`: over a
+  compact connected complex manifold `E`, the line bundle of a nontrivial character has no nonzero
+  holomorphic section and is not holomorphically trivial.
 
 ## References
 
@@ -181,5 +198,83 @@ theorem exists_trivialization_baseSet_eq_univ_characterCore_iff (χ : G →* �
   rw [characterCore_def,
     hp.exists_trivialization_baseSet_eq_univ_associatedCore_iff _ hpd (finrank_self 𝕜)]
   simp
+
+end IsQuotientCoveringMap
+
+/-! ### Holomorphic sections over a compact connected covering space -/
+
+namespace IsQuotientCoveringMap
+
+variable {EM : Type*} [NormedAddCommGroup EM] [NormedSpace ℂ EM] {HM : Type*}
+  [TopologicalSpace HM] {I : ModelWithCorners ℂ EM HM} [I.Boundaryless]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℂ EB] {HB : Type*} [TopologicalSpace HB]
+  {IB : ModelWithCorners ℂ EB HB}
+  {E X G : Type*} [TopologicalSpace E] [ChartedSpace HM E] [IsManifold I 1 E] [CompactSpace E]
+  [TopologicalSpace X] [ChartedSpace HB X] [Group G] [MulAction G E]
+  {p : E → X} (hp : IsQuotientCoveringMap p G)
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] (ρ : G →* (F →L[ℂ] F)ˣ) {n m : ℕ∞ω}
+  (hpd : IsLocalDiffeomorph I IB n p)
+include hpd
+
+/-- Over a compact connected complex manifold `E`, a section of the bundle associated with `ρ` is
+`C^m`, for `0 < m ≤ n`, exactly when its equivariant function upstairs is constant, with a
+`ρ`-invariant value. Thus the holomorphic sections of the associated bundle are the
+`G`-invariant vectors of `F`. -/
+theorem contMDiff_section_associatedCore_iff_exists_eq_const [ConnectedSpace E] (hm : m ≤ n)
+    (hm₀ : m ≠ 0) {σ : ∀ x, (hp.associatedCore ρ).Fiber x} :
+    ContMDiff IB (IB.prod 𝓘(ℂ, F)) m (fun x ↦ TotalSpace.mk' F x (σ x)) ↔
+      ∃ v : F, (∀ g : G, (ρ g : F →L[ℂ] F) v = v) ∧
+        (hp.associatedSectionEquiv ρ σ : E → F) = Function.const E v := by
+  rw [hp.contMDiff_section_associatedCore_iff ρ hpd hm]
+  refine ⟨fun hf ↦ ?_, fun ⟨v, _, hv⟩ ↦ hv ▸ contMDiff_const⟩
+  -- A holomorphic function on a compact connected complex manifold is constant.
+  obtain ⟨v, hv⟩ := (hf.mdifferentiable hm₀).exists_eq_const_of_compactSpace
+  refine ⟨v, fun g ↦ ?_, hv⟩
+  obtain ⟨y⟩ : Nonempty E := inferInstance
+  have h := (hp.associatedSectionEquiv ρ σ).2 g y
+  rw [hv, Function.const_apply, Function.const_apply] at h
+  exact h.symm
+
+/-- Over a compact preconnected complex manifold `E`, the line bundle of a nontrivial character
+`χ` of the deck group has no nonzero `C^m` section, for `0 < m ≤ n`. In particular it has no
+nonzero holomorphic section. -/
+theorem eq_zero_of_contMDiff_section_characterCore [PreconnectedSpace E] {χ : G →* ℂˣ}
+    (hχ : χ ≠ 1) (hm : m ≤ n) (hm₀ : m ≠ 0) {σ : ∀ x, (hp.characterCore χ).Fiber x}
+    (hσ : ContMDiff IB (IB.prod 𝓘(ℂ)) m (fun x ↦ TotalSpace.mk' ℂ x (σ x))) : σ = 0 := by
+  obtain ⟨g, hg⟩ := DFunLike.ne_iff.1 hχ
+  funext x
+  obtain ⟨y, rfl⟩ := hp.surjective x
+  have : ConnectedSpace E := { toNonempty := ⟨y⟩ }
+  revert σ
+  rw [characterCore_def]
+  intro σ hσ
+  obtain ⟨v, hvG, hv⟩ :=
+    (hp.contMDiff_section_associatedCore_iff_exists_eq_const _ hpd hm hm₀).1 hσ
+  -- The invariant value satisfies `χ g * v = v` with `χ g ≠ 1`, so it vanishes.
+  have hv₀ : v = 0 := by
+    by_contra hv₀
+    exact hg (Units.ext ((mul_eq_right₀ hv₀).1 (by simpa using hvG g)))
+  refine (hp.associatedSectionEquiv_apply_eq_zero_iff _ σ y).1 ?_
+  rw [hv, Function.const_apply, hv₀]
+
+/-- Over a compact connected complex manifold `E`, the line bundle of a character `χ` of the deck
+group has a global trivialization in its maximal `C^n` atlas, for `n ≠ 0`, exactly when `χ` is
+trivial. In particular, the holomorphic line bundle of a nontrivial character is not
+holomorphically trivial. -/
+theorem exists_trivialization_baseSet_eq_univ_characterCore_iff_eq_one [ConnectedSpace E]
+    (hn : n ≠ 0) (χ : G →* ℂˣ) :
+    (∃ (e : Trivialization ℂ (π ℂ (hp.characterCore χ).Fiber)) (_ : e.IsLinear ℂ),
+        e.toOpenPartialHomeomorph ∈ (contMDiffFiberwiseLinear X ℂ IB n).maximalAtlas
+          (TotalSpace ℂ (hp.characterCore χ).Fiber) ∧ e.baseSet = univ) ↔ χ = 1 := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ hp.exists_trivialization_baseSet_eq_univ_characterCore_one⟩
+  obtain ⟨f, hf, hf₀, hfG⟩ :=
+    (hp.exists_trivialization_baseSet_eq_univ_characterCore_iff hpd χ).1 h
+  -- The nowhere-vanishing equivariant function is a nonzero constant `c` with `c = χ g * c`.
+  obtain ⟨c, rfl⟩ := (hf.mdifferentiable hn).exists_eq_const_of_compactSpace
+  obtain ⟨y⟩ : Nonempty E := inferInstance
+  refine MonoidHom.ext fun g ↦ Units.ext ?_
+  have h := hfG g y
+  simp only [Function.const_apply] at h
+  exact (mul_eq_right₀ (hf₀ y)).1 h.symm
 
 end IsQuotientCoveringMap
