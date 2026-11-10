@@ -214,9 +214,9 @@ private theorem fderiv_pos_of_add_mul_hopfBarrier_le {u : E → ℝ} {y e : E} {
   -- The barrier term bounds the difference quotients of `u` below, so its slope
   -- `ε (-p) R ^ (p - 1) > 0` bounds the outward derivative.
   refine (mul_pos hε (mul_pos (neg_pos.mpr hp) (Real.rpow_pos_of_pos hR _))).trans_le
-    (le_fderiv_of_le_sub (g := fun h ↦ ε * hopfBarrier y R p (x₀ - h • e)) hδ hderiv
+    (le_fderiv_of_le_sub (g := fun h ↦ ε * hopfBarrier y R p (x₀ - h • e)) hderiv
       (h2.const_mul ε).hasDerivWithinAt (by simp only [zero_smul, sub_zero, hz, mul_zero])
-      fun h hh ↦ by linarith [hray h hh])
+      (Filter.eventually_of_mem (Ioc_mem_nhdsGT hδ) fun h hh ↦ by linarith [hray h hh]))
 
 /-- A function continuous on `closedBall y R` and below `M` on the open ball stays a uniform
 margin `δ` below `M` on the sphere of half the radius. -/

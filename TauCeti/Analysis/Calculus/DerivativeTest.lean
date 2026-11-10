@@ -48,8 +48,10 @@ step of Hopf's boundary-point lemma.
 * `TauCeti.fderiv_fderiv_self_nonpos_of_isLocalMax` /
   `TauCeti.fderiv_fderiv_self_nonneg_of_isLocalMin`: the Hessian is negative (resp. positive)
   semidefinite on the diagonal at a local maximum (resp. minimum).
-* `TauCeti.le_fderiv_of_le_sub`: a lower bound `g t ≤ f x - f (x - t • e)` for small `t > 0`
-  bounds the directional derivative `fderiv ℝ f x e` below by the right derivative of `g` at `0`.
+* `TauCeti.le_neg_of_hasDerivWithinAt_of_le_sub` / `TauCeti.le_fderiv_of_le_sub`: a lower bound
+  `g t ≤ f x - f (x - t • e)` for small `t > 0` bounds the one-sided derivative of `f` along the
+  inward ray (resp. the directional derivative `fderiv ℝ f x e`) by the right derivative of `g`
+  at `0`.
 -/
 
 public section
@@ -200,27 +202,36 @@ theorem fderiv_fderiv_self_nonneg_of_isLocalMin (hf : ContDiffAt ℝ 2 f x) (hmi
       (g := fun t : ℝ => x + t • w) hline)
   rwa [Function.comp_def, hf'.deriv_deriv_comp_add_smul, zero_smul, add_zero] at h
 
+/-- **Difference quotients bound the one-sided derivative along a ray.** Let `t ↦ f (x - t • e)`
+have right derivative `d` at `0`, and let `g` vanish at `0` and have right derivative `κ` there.
+If `g t ≤ f x - f (x - t • e)` for small `t > 0`, then `κ ≤ -d`. -/
+theorem le_neg_of_hasDerivWithinAt_of_le_sub {g : ℝ → ℝ} {e : E} {d κ : ℝ}
+    (hd : HasDerivWithinAt (fun t : ℝ ↦ f (x - t • e)) d (Set.Ici 0) 0)
+    (hg : HasDerivWithinAt g κ (Set.Ici 0) 0) (hg0 : g 0 = 0)
+    (hle : ∀ᶠ t in 𝓝[>] 0, g t ≤ f x - f (x - t • e)) :
+    κ ≤ -d := by
+  -- The difference `f x - f (x - t • e) - g t` has a minimum from the right at `t = 0`.
+  have hmin : IsLocalMinOn (fun t ↦ f x - f (x - t • e) - g t) (Set.Ici 0) 0 := by
+    rw [IsLocalMinOn, IsMinFilter, ← Set.Ioi_insert, nhdsWithin_insert, Filter.eventually_sup]
+    refine ⟨le_rfl, hle.mono fun t ht ↦ ?_⟩
+    simp only [zero_smul, sub_zero, sub_self, hg0]
+    linarith
+  have h := hmin.hasDerivWithinAt_Ici_nonneg ((hd.const_sub (f x)).sub hg)
+  linarith
+
 /-- **Difference quotients bound the directional derivative.** Let `f` be differentiable at `x`,
 and let `g` vanish at `0` and have right derivative `κ` there. If `g t ≤ f x - f (x - t • e)` for
-`0 < t ≤ δ`, then `κ ≤ fderiv ℝ f x e`. -/
-theorem le_fderiv_of_le_sub {g : ℝ → ℝ} {e : E} {κ δ : ℝ} (hδ : 0 < δ)
+small `t > 0`, then `κ ≤ fderiv ℝ f x e`. -/
+theorem le_fderiv_of_le_sub {g : ℝ → ℝ} {e : E} {κ : ℝ}
     (hf : DifferentiableAt ℝ f x) (hg : HasDerivWithinAt g κ (Set.Ici 0) 0) (hg0 : g 0 = 0)
-    (hle : ∀ t ∈ Set.Ioc 0 δ, g t ≤ f x - f (x - t • e)) :
+    (hle : ∀ᶠ t in 𝓝[>] 0, g t ≤ f x - f (x - t • e)) :
     κ ≤ fderiv ℝ f x e := by
   have hline : HasDerivAt (fun t : ℝ ↦ x - t • e) (-e) 0 := by
     simpa using ((hasDerivAt_id (0 : ℝ)).smul_const e).const_sub x
   have hray : HasDerivAt (fun t : ℝ ↦ f (x - t • e)) (-fderiv ℝ f x e) 0 := by
     have h := hf.hasFDerivAt.comp_hasDerivAt_of_eq (x := 0) hline (by simp)
     rwa [map_neg] at h
-  -- The difference `f x - f (x - t • e) - g t` has a minimum from the right at `t = 0`.
-  have hmin : IsLocalMinOn (fun t ↦ f x - f (x - t • e) - g t) (Set.Ici 0) 0 := by
-    filter_upwards [Icc_mem_nhdsGE hδ] with t ht
-    rcases ht.1.eq_or_lt with rfl | ht0
-    · exact le_rfl
-    · simp only [zero_smul, sub_zero, sub_self, hg0]
-      linarith [hle t ⟨ht0, ht.2⟩]
-  have h := hmin.hasDerivWithinAt_Ici_nonneg ((hray.const_sub (f x)).hasDerivWithinAt.sub hg)
-  linarith
+  simpa using le_neg_of_hasDerivWithinAt_of_le_sub hray.hasDerivWithinAt hg hg0 hle
 
 end NormedSpace
 

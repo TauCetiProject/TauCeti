@@ -370,15 +370,15 @@ theorem pos_of_hasDerivWithinAt_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv (hR :
     0 < d := by
   obtain ⟨ε, hε, δ, hδ, h⟩ := exists_pos_mul_le_sub_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv hR
     hx₀ hlam ha htr hb hcγ hcd hcont hsub hlt hsign
-  have hslope := hasDerivWithinAt_iff_tendsto_slope.mp hd
-  rw [Iic_sdiff_right] at hslope
-  refine hε.trans_le (ge_of_tendsto hslope ?_)
-  -- For `-δ < t < 0` the slope at `0` is the inward difference quotient at `-t`.
-  filter_upwards [Ioo_mem_nhdsLT (neg_lt_zero.mpr hδ)] with t ht
-  have hmem : -t ∈ Ioo 0 δ := ⟨neg_pos.mpr ht.2, by linarith [ht.1]⟩
-  have h' := h (-t) hmem
-  rw [neg_smul, sub_neg_eq_add] at h'
-  rw [slope_def_field, zero_smul, add_zero, sub_zero, le_div_iff_of_neg ht.2]
+  -- Reflect `t ↦ -t` to read `hd` as a right derivative along the inward ray.
+  have hray : HasDerivWithinAt (fun t : ℝ ↦ u (x₀ - t • (R⁻¹ • (x₀ - y)))) (-d) (Ici 0) 0 := by
+    have hneg := (neg_zero (G := ℝ) ▸ hd).scomp (0 : ℝ)
+      ((hasDerivAt_neg (0 : ℝ)).hasDerivWithinAt (s := Ici 0)) fun t ht ↦ by simpa using ht
+    simpa [Function.comp_def, neg_smul, ← sub_eq_add_neg] using hneg
+  have hκ : HasDerivWithinAt (fun t : ℝ ↦ ε * t) ε (Ici 0) 0 := by
+    simpa using ((hasDerivAt_id (0 : ℝ)).const_mul ε).hasDerivWithinAt
+  have hle := le_neg_of_hasDerivWithinAt_of_le_sub hray hκ (mul_zero ε)
+    (Filter.eventually_of_mem (Ioo_mem_nhdsGT hδ) h)
   linarith
 
 /-- A subsolution as in Hopf's lemma with `c ≥ 0` and `u x₀ ≥ 0` that is differentiable at `x₀`
