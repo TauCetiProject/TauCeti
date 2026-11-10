@@ -168,24 +168,24 @@ theorem integrable_one_add_norm_sq_rpow_mul_norm {V : Type*} [NormedAddCommGroup
   dsimp only
   rw [smulLeftCLM_apply_apply hg, norm_smul, Real.norm_of_nonneg (by positivity)]
 
+omit [SecondCountableTopology E] in
 /-- For a Schwartz function `f` and every real `r ≥ 0`, the moment `‖x‖ ^ r ‖f x‖` is
 integrable. -/
-theorem integrable_rpow_mul_norm {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] [MeasurableSpace V] [BorelSpace V] [SecondCountableTopology V]
-    {ν : Measure V} [ν.HasTemperateGrowth] {r : ℝ} (hr : 0 ≤ r) (f : 𝓢(V, F)) :
-    Integrable (fun x ↦ ‖x‖ ^ r * ‖f x‖) ν := by
-  -- `‖x‖ ^ r = (‖x‖ ^ 2) ^ (r / 2) ≤ (1 + ‖x‖ ^ 2) ^ (r / 2)`.
-  refine (f.integrable_one_add_norm_sq_rpow_mul_norm (ν := ν) (r / 2)).mono'
+theorem integrable_rpow_mul_norm {r : ℝ} (hr : 0 ≤ r) (f : 𝓢(E, F)) :
+    Integrable (fun x ↦ ‖x‖ ^ r * ‖f x‖) μ := by
+  -- `‖x‖ ^ r ≤ 1 + ‖x‖ ^ ⌈r⌉₊`, and both integer moments are integrable.
+  refine ((f.integrable_pow_mul_norm_iteratedFDeriv (μ := μ) 0 0).add
+    (f.integrable_pow_mul_norm_iteratedFDeriv (μ := μ) ⌈r⌉₊ 0)).mono'
     ((continuous_norm.rpow_const fun _ ↦ Or.inr hr).mul f.continuous.norm).aestronglyMeasurable
-    (ae_of_all _ fun x ↦ ?_)
-  rw [Real.norm_of_nonneg (by positivity)]
+    (.of_forall fun x ↦ ?_)
+  simp only [pow_zero, one_mul, norm_iteratedFDeriv_zero, Pi.add_apply]
+  rw [Real.norm_of_nonneg (by positivity), ← one_add_mul]
   gcongr
-  calc ‖x‖ ^ r = (‖x‖ ^ 2) ^ (r / 2) := by
-        rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg x)]
-        congr 1
-        push_cast
-        ring
-    _ ≤ (1 + ‖x‖ ^ 2) ^ (r / 2) := by gcongr; linarith
+  rcases le_or_gt ‖x‖ 1 with hx | hx
+  · exact (Real.rpow_le_one (norm_nonneg x) hx hr).trans (le_add_of_nonneg_right (by positivity))
+  · calc ‖x‖ ^ r ≤ ‖x‖ ^ (⌈r⌉₊ : ℝ) := Real.rpow_le_rpow_of_exponent_le hx.le (Nat.le_ceil r)
+      _ = ‖x‖ ^ ⌈r⌉₊ := Real.rpow_natCast _ _
+      _ ≤ 1 + ‖x‖ ^ ⌈r⌉₊ := le_add_of_nonneg_left zero_le_one
 
 omit [SecondCountableTopology E] in
 /-- For a Schwartz function `f` and real `c`, `m`, the function

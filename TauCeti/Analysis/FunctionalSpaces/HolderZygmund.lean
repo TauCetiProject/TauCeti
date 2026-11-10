@@ -30,7 +30,8 @@ with the classical Hölder spaces.
 For `j ≥ 1` the block `Δⱼ f` is the convolution of `f` with the kernel `Kⱼ = 𝓕⁻ ψⱼ`, which has
 integral `ψⱼ 0 = 0`. Hence `Δⱼ f (x) = ∫ Kⱼ y (f (x - y) - f x) dy` is bounded by `[f]_α` times
 the moment `∫ ‖y‖^α ‖Kⱼ y‖ dy`, and this moment is `2^{-(j-1)α}` times that of `K₁`, since `Kⱼ` is
-an `L¹`-normalised dilate of `K₁`. The low-frequency block `Δ₀ f` is bounded by `‖f‖_∞`.
+an `L¹`-normalised dilate of `K₁`. The low-frequency block satisfies `‖Δ₀ f‖_∞ ≤ C_φ ‖f‖_∞`,
+with `C_φ` depending only on `φ`.
 
 ## Main declarations
 
@@ -79,7 +80,7 @@ theorem exists_littlewoodPaleyBlock_eq_and_rpow_mul_norm_le_of_holderWith
   have hfH : ‖f‖ ≤ ‖f‖ + H := le_add_of_nonneg_right H.coe_nonneg
   have hHf : (H : ℝ) ≤ ‖f‖ + H := le_add_of_nonneg_left (norm_nonneg f)
   rcases j with _ | j
-  · -- The low-frequency block is bounded by `‖f‖_∞`.
+  · -- The low-frequency block satisfies `‖Δ₀ f‖_∞ ≤ C₀ ‖f‖_∞`, with `C₀` depending on `φ`.
     obtain ⟨g, hg, hgf⟩ := hC₀ 0 (toLpTop volume ℂ f)
     refine ⟨g, hg, ?_⟩
     rw [Nat.cast_zero, mul_zero, Real.rpow_zero, one_mul]
