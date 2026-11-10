@@ -30,8 +30,7 @@ generalized Schoenflies theorem, where `σ` has a bicollar `b : Sᵐ⁻¹ × ℝ
   side `b (Sᵐ⁻¹ × (-∞, 0))` in the other
   (`TauCeti.IsBicollar.disjoint_connectedComponentIn_compl_range`). That each side lies in a
   single component holds for any bicollar of a preconnected space
-  (`TauCeti.IsBicollar.image_Ioi_subset_connectedComponentIn` and
-  `TauCeti.IsBicollar.image_Iio_subset_connectedComponentIn`).
+  (`TauCeti.IsBicollar.image_subset_connectedComponentIn`).
 * The closure of each component `U` is `U ∪ Σ`, and its frontier is `Σ`
   (`TauCeti.IsBicollar.closure_connectedComponentIn_compl_range` and
   `TauCeti.IsBicollar.frontier_connectedComponentIn_compl_range`). In particular, for `φ` as
