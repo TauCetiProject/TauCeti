@@ -148,16 +148,10 @@ theorem exists_translation_eq_of_mem_orbit_inter_closedPoints
       ∃ (g : 𝟙_ (Over (Spec (.of k))) ⟶ G) (a : (𝟙_ (Over (Spec (.of k)))).left),
         (g • x).left a = p := by
     obtain ⟨hpo, hpc⟩ := hp
-    obtain ⟨z, rfl⟩ := (mem_orbit G x p).mp hpo
-    obtain ⟨c, hcz, hc⟩ := nonempty_inter_closedPoints (Z := closure {z})
-      ⟨z, subset_closure rfl⟩ isClosed_closure.isLocallyClosed
-    have hfc : (orbitMap G x).left c = (orbitMap G x).left z := by
-      have h := map_mem_closure (orbitMap G x).left.continuous hcz
-        (Set.mapsTo_singleton.mpr (Set.mem_singleton _) : Set.MapsTo (orbitMap G x).left {z}
-          {(orbitMap G x).left z})
-      rwa [(mem_closedPoints_iff.mp hpc).closure_eq] at h
+    obtain ⟨c, hc, hfc⟩ := (orbitMap G x).left.continuous.exists_isClosed_singleton_of_mem_range
+      (mem_closedPoints_iff.mp hpc).isLocallyClosed ((mem_orbit G x p).mp hpo)
     let g : 𝟙_ (Over (Spec (.of k))) ⟶ G :=
-      Over.homMk (U := 𝟙_ _) (V := G) (pointOfClosedPoint G.hom c (mem_closedPoints_iff.mp hc))
+      Over.homMk (U := 𝟙_ _) (V := G) (pointOfClosedPoint G.hom c hc)
         (pointOfClosedPoint_comp G.hom c _)
     refine ⟨g, IsLocalRing.closedPoint k, ?_⟩
     have h := congrArg (fun f ↦ f.left) (comp_orbitMap G g x)

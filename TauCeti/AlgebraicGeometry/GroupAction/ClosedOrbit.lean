@@ -67,7 +67,7 @@ variable (G : Over (Spec (.of k))) {X : Over (Spec (.of k))} [GrpObj G] [ModObj 
   [LocallyOfFiniteType G.hom] [CompactSpace G.left] [LocallyOfFiniteType X.hom]
   [CompactSpace X.left]
 
-omit [CompactSpace G.left] [CompactSpace X.left] in
+omit [CompactSpace G.left] [CompactSpace X.left] [LocallyOfFiniteType X.hom] in
 /-- A closed subset of `X` stable under translation by the rational points of `G` contains the
 geometric orbit of a rational point `y`, including its nonclosed points, exactly when it contains
 `y`. -/
@@ -76,7 +76,13 @@ theorem orbit_subset_iff_of_isClosed {Z : Set X.left} (hZ : IsClosed Z)
     (y : 𝟙_ (Over (Spec (.of k))) ⟶ X) (a : (𝟙_ (Over (Spec (.of k)))).left) :
     orbit G y ⊆ Z ↔ y.left a ∈ Z := by
   have : JacobsonSpace G.left := LocallyOfFiniteType.jacobsonSpace G.hom
-  refine ⟨fun h ↦ h ((left_apply_mem_orbit_iff G y y a).mpr ⟨1, one_smul _ _⟩), fun hy ↦ ?_⟩
+  -- `y` lies in its own orbit, as the image of the identity of `G`.
+  have hmem : y.left a ∈ orbit G y := by
+    have h := congrArg (fun f ↦ f.left) (comp_orbitMap G (1 : 𝟙_ (Over (Spec (.of k))) ⟶ G) y)
+    simp only [toUnit_unit, Category.id_comp, Over.comp_left, one_smul] at h
+    exact (mem_orbit G y _).mpr
+      ⟨(1 : 𝟙_ (Over (Spec (.of k))) ⟶ G).left a, by rw [← Scheme.Hom.comp_apply, h]⟩
+  refine ⟨fun h ↦ h hmem, fun hy ↦ ?_⟩
   -- The preimage of `Z` in `G` is closed and contains every closed point, which is a rational
   -- point of `G`; closed points are dense in the Jacobson scheme `G`.
   have hcl : IsClosed ((orbitMap G y).left ⁻¹' Z) := hZ.preimage (orbitMap G y).left.continuous
@@ -94,7 +100,7 @@ theorem orbit_subset_iff_of_isClosed {Z : Set X.left} (hZ : IsClosed Z)
       rw [← h]
       exact ((Scheme.Hom.comp_apply _ _ _).trans
         (congrArg _ (pointOfClosedPoint_apply G.hom c _ _))).symm
-    change (orbitMap G y).left c ∈ Z
+    rw [Set.mem_preimage]
     let := translationMulAction G X
     rw [hc', ← translationMulAction_smul_apply, translationMulAction_smul]
     exact hinv g hy
@@ -102,7 +108,7 @@ theorem orbit_subset_iff_of_isClosed {Z : Set X.left} (hZ : IsClosed Z)
   obtain ⟨z, rfl⟩ := (mem_orbit G y p).mp hp
   exact (Set.ext_iff.mp hall z).mpr trivial
 
-omit [CompactSpace G.left] [CompactSpace X.left] in
+omit [CompactSpace G.left] [CompactSpace X.left] [LocallyOfFiniteType X.hom] in
 /-- A closed subset of `X` stable under translation by the rational points of `G` contains the
 orbit closure of a rational point `y` exactly when it contains `y`. -/
 theorem orbitClosure_subset_iff_of_isClosed {Z : Set X.left} (hZ : IsClosed Z)
@@ -112,7 +118,7 @@ theorem orbitClosure_subset_iff_of_isClosed {Z : Set X.left} (hZ : IsClosed Z)
   rw [orbitClosure_def, hZ.closure_subset_iff]
   exact orbit_subset_iff_of_isClosed G hZ hinv y a
 
-omit [CompactSpace G.left] [CompactSpace X.left] in
+omit [CompactSpace G.left] [CompactSpace X.left] [LocallyOfFiniteType X.hom] in
 /-- The orbit closure of a rational point `y` lies in the orbit closure of `x` exactly when `y`
 does. -/
 theorem orbitClosure_subset_orbitClosure_iff (x y : 𝟙_ (Over (Spec (.of k))) ⟶ X)
