@@ -39,6 +39,8 @@ with the constant `C`; the latter involves no inversion.
 * `HasDerivAt.clm_inverse_of_completeSpace`: the Banach-space specialization for an inverse family.
 * `HasDerivAt.clm_inverse_apply_of_completeSpace`: the Banach-space specialization acting on a
   vector curve.
+* `TauCeti.fderiv_eq_neg_comp_of_comp_eq_id`: the derivative of a family `φ` of left inverses
+  of `ψ`, over any normed space of variables, is `-(φ ∘ ψ' ∘ φ)`.
 * `ContDiffAt.inverse` and `ContDiff.inverse`: the ring inverse of a `C^n` family of units
   is `C^n`.
 * `DifferentiableAt.deriv_eq_mul_sub_mul_of_mul_eq_mul`: a family `K` with `K t * P t = P t * C`
@@ -198,6 +200,36 @@ theorem HasDerivAt.clm_inverse_apply_of_completeSpace [CompleteSpace E]
       ((A t₀).inverse w' - (A t₀).inverse (A' ((A t₀).inverse (w t₀)))) t₀ := by
   exact hA.clm_inverse_apply hA0Inv
     (DifferentiableAt.clm_inverse_of_completeSpace hA.differentiableAt hA0Inv) hw
+
+section InverseFamily
+
+/-- The derivative of a family of inverses: if `φ y ∘ ψ y = id` for `y` near `z` and
+`ψ z ∘ φ z = id`, then the derivative of `φ` at `z` in the direction `v` is
+`-(φ z ∘ ψ' v ∘ φ z)`. The maps may be linear over a larger field `𝕜'` than the field `𝕜` of
+differentiation; unlike `HasDerivAt.clm_inverse`, the variable lives in any normed space. -/
+theorem TauCeti.fderiv_eq_neg_comp_of_comp_eq_id {𝕜' : Type*} [NontriviallyNormedField 𝕜']
+    [NormedAlgebra 𝕜 𝕜'] {E₁ E₂ X : Type*} [NormedAddCommGroup E₁] [NormedSpace 𝕜' E₁]
+    [NormedAddCommGroup E₂] [NormedSpace 𝕜' E₂] [NormedSpace 𝕜 E₁] [IsScalarTower 𝕜 𝕜' E₁]
+    [NormedSpace 𝕜 E₂] [IsScalarTower 𝕜 𝕜' E₂] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+    {φ : X → E₂ →L[𝕜'] E₁} {ψ : X → E₁ →L[𝕜'] E₂} {z : X} (hφ : DifferentiableAt 𝕜 φ z)
+    (hψ : DifferentiableAt 𝕜 ψ z) (hl : ∀ᶠ y in 𝓝 z, φ y ∘L ψ y = .id 𝕜' E₁)
+    (hr : ψ z ∘L φ z = .id 𝕜' E₂) (v : X) :
+    fderiv 𝕜 φ z v = -(φ z ∘L (fderiv 𝕜 ψ z v ∘L φ z)) := by
+  -- The product rule for `φ ∘ ψ`, which is constant near `z`; composition of `𝕜'`-linear maps
+  -- is a continuous `𝕜`-bilinear map.
+  have h := congrArg (fun L => L v)
+    (((compL 𝕜' E₁ E₂ E₁).bilinearRestrictScalars 𝕜).fderiv_of_bilinear hφ hψ)
+  have hl' : (fun y => φ y ∘L ψ y) =ᶠ[𝓝 z] fun _ => ContinuousLinearMap.id 𝕜' E₁ := hl
+  simp only [hl'.fderiv_eq, fderiv_const_apply, zero_apply, add_apply, precompR_apply,
+    precompL_apply, comp_apply, ContinuousLinearMap.bilinearRestrictScalars_apply_apply,
+    compL_apply] at h
+  -- Compose `0 = φ ∘ ψ' v + φ' v ∘ ψ` on the right with `φ z`.
+  have h' := congrArg (· ∘L φ z) h
+  simp only [ContinuousLinearMap.zero_comp, ContinuousLinearMap.add_comp,
+    ContinuousLinearMap.comp_assoc, hr, ContinuousLinearMap.comp_id] at h'
+  exact eq_neg_of_add_eq_zero_right h'.symm
+
+end InverseFamily
 
 section RingInverse
 

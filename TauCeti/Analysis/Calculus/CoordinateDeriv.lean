@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Data.List.Sublists
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -835,7 +836,8 @@ theorem coordinateDeriv_singleton_clm_comp {𝕜 : Type*} [NontriviallyNormedFie
   simpa [List.revzip, add_comm] using h
 
 /-- The first-order derivative of a family of inverses: if `φ y ∘ ψ y = id` for `y` near `z` and
-`ψ z ∘ φ z = id`, then `∂_j φ (z) = -(φ z ∘ ∂_j ψ (z) ∘ φ z)`. -/
+`ψ z ∘ φ z = id`, then `∂_j φ (z) = -(φ z ∘ ∂_j ψ (z) ∘ φ z)`. This is the coordinate form of
+`TauCeti.fderiv_eq_neg_comp_of_comp_eq_id`. -/
 theorem coordinateDeriv_eq_neg_comp_of_comp_eq_id {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     [NormedAlgebra ℝ 𝕜] {E₁ E₂ : Type*} [NormedAddCommGroup E₁] [NormedSpace 𝕜 E₁]
     [NormedAddCommGroup E₂] [NormedSpace 𝕜 E₂] [NormedSpace ℝ E₁] [IsScalarTower ℝ 𝕜 E₁]
@@ -843,15 +845,9 @@ theorem coordinateDeriv_eq_neg_comp_of_comp_eq_id {𝕜 : Type*} [NontriviallyNo
     {ψ : CoordinateSpace n → E₁ →L[𝕜] E₂} {z : CoordinateSpace n} (hφ : ContDiff ℝ 1 φ)
     (hψ : ContDiff ℝ 1 ψ) (hl : ∀ᶠ y in nhds z, φ y ∘L ψ y = .id 𝕜 E₁)
     (hr : ψ z ∘L φ z = .id 𝕜 E₂) (j : Fin n) :
-    coordinateDeriv [j] φ z = -(φ z ∘L (coordinateDeriv [j] ψ z ∘L φ z)) := by
-  -- The product rule for `φ ∘ ψ`, which is constant near `z`.
-  have h := coordinateDeriv_singleton_clm_comp hφ hψ j z
-  have hl' : (fun y => φ y ∘L ψ y) =ᶠ[nhds z] fun _ => ContinuousLinearMap.id 𝕜 E₁ := hl
-  rw [(hl'.coordinateDeriv [j]).eq_of_nhds, coordinateDeriv_const _ (List.cons_ne_nil _ _)] at h
-  have h' := congrArg (· ∘L φ z) h
-  simp only [Pi.zero_apply, ContinuousLinearMap.zero_comp, ContinuousLinearMap.add_comp,
-    ContinuousLinearMap.comp_assoc, hr, ContinuousLinearMap.comp_id] at h'
-  exact eq_neg_of_add_eq_zero_left h'.symm
+    coordinateDeriv [j] φ z = -(φ z ∘L (coordinateDeriv [j] ψ z ∘L φ z)) :=
+  fderiv_eq_neg_comp_of_comp_eq_id (hφ.differentiable one_ne_zero z)
+    (hψ.differentiable one_ne_zero z) hl hr _
 
 end Leibniz
 
