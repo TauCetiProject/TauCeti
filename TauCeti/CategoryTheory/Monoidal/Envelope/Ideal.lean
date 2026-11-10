@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Envelope.Quotient
+public import TauCeti.CategoryTheory.Monoidal.Envelope.Quotient.Basic
 public import TauCeti.CategoryTheory.Monoidal.Envelope.Mat.Basic
 public import TauCeti.CategoryTheory.Monoidal.Envelope.Karoubi.Basic
 public import TauCeti.CategoryTheory.Preadditive.MorphismIdeal.Mat
