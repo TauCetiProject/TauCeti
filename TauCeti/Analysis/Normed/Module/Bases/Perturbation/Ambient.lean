@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Bases.Map
+import TauCeti.Analysis.Normed.Module.Bases.Basic
 import Mathlib.Analysis.Normed.Group.InfiniteSum
 import Mathlib.Analysis.Normed.Operator.Banach
 import Mathlib.Topology.Algebra.InfiniteSum.ContinuousEval
@@ -153,21 +154,16 @@ theorem range_ambientPerturbationMap
     (b.ambientPerturbationMap j c).range =
       (Submodule.span 𝕜 (range c)).topologicalClosure := by
   let T := b.ambientPerturbationMap j c
-  let S := (Submodule.span 𝕜 (range c)).topologicalClosure
   have hclosed : IsClosed (T.range : Set F) :=
     (b.antilipschitz_ambientPerturbationMap j c hs hθ).isClosed_range T.uniformContinuous
   apply le_antisymm
   · rintro _ ⟨x, rfl⟩
-    apply (Submodule.span 𝕜 (range c)).isClosed_topologicalClosure.mem_of_tendsto
-      (T.continuous.continuousAt.tendsto.comp (b.tendsto_proj x))
-    apply Eventually.of_forall
-    intro s
-    simp only [Function.comp_apply, proj_apply, map_sum, map_smul]
-    apply S.sum_mem
-    intro i _
-    apply S.smul_mem
-    rw [ambientPerturbationMap_apply_basis b j c hs]
-    exact Submodule.le_topologicalClosure _ (Submodule.subset_span (mem_range_self i))
+    apply closure_mono ?_
+      (image_closure_subset_closure_image (s := (Submodule.span 𝕜 (range b) : Set E))
+        T.continuous ⟨x, b.dense_span x, rfl⟩)
+    apply (Submodule.image_span_subset T.toLinearMap (range b) (Submodule.span 𝕜 (range c))).2
+    rintro _ ⟨i, rfl⟩
+    exact Submodule.subset_span ⟨i, (b.ambientPerturbationMap_apply_basis j c hs i).symm⟩
   · apply Submodule.topologicalClosure_minimal _ _ hclosed
     apply Submodule.span_le.2
     rintro _ ⟨i, rfl⟩
