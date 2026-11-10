@@ -149,7 +149,7 @@ theorem contMDiffAt_trivializationAt_bilinearForm_pullback
       (fun p ↦ (trivializationAt (E →L[ℝ] E →L[ℝ] ℝ)
         (fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x →L[ℝ] ℝ) (g p₀)
         ⟨g p, (ContinuousLinearMap.precomp ℝ (L p)).comp ((b p).comp (L p))⟩).2) p₀ := by
-  obtain ⟨hfn, hb'⟩ := contMDiffAt_totalSpace.1 hb
+  obtain ⟨hfn, hb'⟩ := contMDiffAt_totalSpace_iff.1 hb
   -- In the coordinates centred at `g p₀` and `f p₀`, the pulled-back form is the coordinate
   -- expression of `b p` pulled back along `L p` read in those coordinates.
   apply (ContinuousLinearMap.contDiff_precomp_comp.contMDiff.contMDiffAt.comp p₀

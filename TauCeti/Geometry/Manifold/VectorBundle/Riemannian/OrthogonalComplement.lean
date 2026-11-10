@@ -208,7 +208,7 @@ theorem contMDiff_trivialProdOrthogonalSpan_sum :
   intro v
   have hc := Bundle.contMDiffAt_totalSpace_prod_iff.mp
     (contMDiffAt_id (I := IB.prod 𝓘(ℝ, ℂ × (Fin k → ℂ))) (n := n) (x := v))
-  obtain ⟨hpr, ha⟩ := Bundle.contMDiffAt_totalSpace.mp hc.1
+  obtain ⟨hpr, ha⟩ := Bundle.contMDiffAt_totalSpace_iff.mp hc.1
   -- `ha` reads the `Bundle.Trivial B ℂ` component in its trivialization, whose fibre map is the
   -- identity of `ℂ`; so it is literally the smoothness of the first fibre coordinate.
   have ha' : ContMDiffAt (IB.prod 𝓘(ℝ, ℂ × (Fin k → ℂ))) 𝓘(ℝ, ℂ) n
@@ -243,7 +243,7 @@ theorem contMDiff_orthogonalSpan_decompose :
   have hsp := hs.comp hb
   intro p
   refine Bundle.contMDiffAt_totalSpace_prod_iff.mpr ⟨?_, ?_⟩
-  · refine Bundle.contMDiffAt_totalSpace.mpr ⟨hb p, ?_⟩
+  · refine Bundle.contMDiffAt_totalSpace_iff.mpr ⟨hb p, ?_⟩
     have hz (q : TotalSpace F V) : Inner.inner ℝ (s q.proj) (s q.proj) ≠ 0 :=
       inner_self_ne_zero.mpr (hne q.proj)
     -- The trivialization of `Bundle.Trivial B ℂ` is the identity on the fibre coordinate.

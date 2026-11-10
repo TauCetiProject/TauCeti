@@ -396,7 +396,7 @@ theorem contMDiffAt_totalSpace_mk [Fintype ι] [ContMDiffVectorBundle n F E IB]
   have : CompleteSpace 𝕜' := by
     let := IsRCLikeNormedField.rclike 𝕜'
     infer_instance
-  obtain ⟨hb, hv⟩ := Bundle.contMDiffAt_totalSpace.mp hw
+  obtain ⟨hb, hv⟩ := Bundle.contMDiffAt_totalSpace_iff.mp hw
   obtain ⟨U, hU, hbU, Y, hY, hYn⟩ := hV (b m₀)
   let eV := hY.trivialization hU
   have : MemTrivializationAtlas eV :=
