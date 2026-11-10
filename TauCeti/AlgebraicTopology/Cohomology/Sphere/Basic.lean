@@ -23,6 +23,10 @@ The equivalence is natural in the coefficient module. Its evaluation formula use
 inclusion; it does not choose another orientation or generator. In particular its inverse
 applied to a nonzero coefficient gives a nonzero top cohomology class.
 
+Dually to the standard generator `TauCeti.singularHomologyTopCatSphereGenerator` of
+`Hₙ₊₁(Sⁿ⁺¹; k)`, the class `TauCeti.singularCohomologyTopCatSphereGenerator` of `Hⁿ⁺¹(Sⁿ⁺¹; k)`
+takes the value `1` on it.
+
 Since the homology of a sphere is free of finite rank, the Künneth theorem for cohomology applies
 to a product with a sphere over every commutative ring and with no hypothesis on the other factor
 (`TopCat.singularCohomologyKunneth_sphere_bijective`).
@@ -78,36 +82,47 @@ lemma singularCohomologyTopCatSphereEquiv_apply (n : ℕ)
     (α : (TopCat.sphere.{w} (n + 1)).singularCohomology (ModuleCat.of k k) k M (n + 1)) :
     singularCohomologyTopCatSphereEquiv k M n α =
       ((TopCat.sphere (n + 1)).singularKronecker k (n + 1) α)
-        (((reducedSingularHomologyι (ModuleCat.of k k) (n + 1)).app
-          (TopCat.sphere (n + 1)))
-          ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of k k) (n + 1)).inv 1)) := by
+        (singularHomologyTopCatSphereGenerator k n) := by
   simp only [singularCohomologyTopCatSphereEquiv, LinearEquiv.trans_apply,
     TopCat.singularKroneckerEquivOfProjectiveHomology_apply, Linear.homCongr_apply,
     Iso.refl_hom, Category.comp_id, Iso.trans_inv, Iso.symm_inv]
-  rw [← reducedSingularHomologySuccIso_hom]
+  rw [singularHomologyTopCatSphereGenerator_def, ← reducedSingularHomologySuccIso_hom]
   rw [ModuleCat.homLinearEquiv_apply, LinearMap.ringLmapEquivSelf_apply]
   -- The additive hom equivalence is the underlying linear map; it has no apply lemma.
   rfl
 
 /-- The inverse sphere cohomology equivalence has prescribed evaluation on the native
 standard generator. -/
--- Not a simp lemma: the reduced-to-ordinary inclusion simplifies inside the left-hand side.
+@[simp]
 lemma singularKronecker_singularCohomologyTopCatSphereEquiv_symm (n : ℕ) (m : M) :
     ((TopCat.sphere (n + 1)).singularKronecker k (n + 1)
       ((singularCohomologyTopCatSphereEquiv k M n).symm m))
-        (((reducedSingularHomologyι (ModuleCat.of k k) (n + 1)).app
-          (TopCat.sphere (n + 1)))
-          ((reducedSingularHomologyTopCatSphereIso (ModuleCat.of k k) (n + 1)).inv 1)) = m := by
+        (singularHomologyTopCatSphereGenerator k n) = m := by
   rw [← singularCohomologyTopCatSphereEquiv_apply]
   exact (singularCohomologyTopCatSphereEquiv k M n).apply_symm_apply m
+
+/-- **The dual of the sphere generator**: the class of `Hⁿ⁺¹(TopCat.sphere (n + 1); k)` taking
+the value `1` on the standard generator `TauCeti.singularHomologyTopCatSphereGenerator`. It
+generates `Hⁿ⁺¹(TopCat.sphere (n + 1); k) ≅ k`. Both coefficients are written as the monoidal unit
+`𝟙_ (ModuleCat k)`, the form in which cup and slant products take them. -/
+def singularCohomologyTopCatSphereGenerator (n : ℕ) :
+    (TopCat.sphere.{w} (n + 1)).singularCohomology (𝟙_ (ModuleCat.{w} k)) k
+      (𝟙_ (ModuleCat.{w} k)) (n + 1) :=
+  (singularCohomologyTopCatSphereEquiv k (𝟙_ (ModuleCat.{w} k)) n).symm 1
+
+/-- The dual of the sphere generator pairs to `1` with the standard generator. -/
+@[simp]
+lemma singularKronecker_singularCohomologyTopCatSphereGenerator (n : ℕ) :
+    (TopCat.sphere.{w} (n + 1)).singularKronecker k (n + 1)
+        (singularCohomologyTopCatSphereGenerator k n)
+        (singularHomologyTopCatSphereGenerator k n) = (1 : k) :=
+  singularKronecker_singularCohomologyTopCatSphereEquiv_symm k _ n 1
 
 /-- Positive-degree singular cohomology of a sphere vanishes away from its dimension,
 with arbitrary module coefficients over any commutative ring. -/
 theorem isZero_singularCohomology_topCatSphere_of_ne (d q : ℕ) (h : q + 1 ≠ d) :
     IsZero ((TopCat.sphere.{w} d).singularCohomology (ModuleCat.of k k) k M (q + 1)) := by
-  have hz := (isZero_reducedSingularHomologyFunctor_topCatSphere_of_ne
-    (ModuleCat.of k k) h).of_iso
-      ((reducedSingularHomologySuccIso (ModuleCat.of k k) q).app (TopCat.sphere d)).symm
+  have hz := isZero_singularHomologyFunctor_topCatSphere_of_ne (ModuleCat.of k k) h
   have : Subsingleton (_ ⟶ M) := ⟨hz.eq_of_src⟩
   have := ((TopCat.sphere d).singularKronecker_bijective_of_projective_homology
     (ModuleCat.of k k) M (q + 1)).1.subsingleton
@@ -267,9 +282,10 @@ private lemma sphereProdSlant_sphereProdCohomologyMap (m q n : ℕ) (h : m + 1 +
         ((TauCeti.singularCohomologyTopCatSphereEquiv k (𝟙_ (ModuleCat.{w} k)) m).symm (1 : k))
         ((TauCeti.reducedSingularHomologyι (𝟙_ (ModuleCat.{w} k)) (m + 1)).app _
           ((TauCeti.reducedSingularHomologyTopCatSphereIso (𝟙_ (ModuleCat.{w} k)) (m + 1)).inv
-            (1 : k))) = (1 : k) :=
-      TauCeti.singularKronecker_singularCohomologyTopCatSphereEquiv_symm k
+            (1 : k))) = (1 : k) := by
+      have h := TauCeti.singularKronecker_singularCohomologyTopCatSphereEquiv_symm k
         (𝟙_ (ModuleCat.{w} k)) m (1 : k)
+      rwa [TauCeti.singularHomologyTopCatSphereGenerator_def] at h
     rw [singularSlant_singularCohomologyMap_snd_eq_zero (hp := by omega),
       singularSlant_singularCross_leftUnitor, hθ, one_smul, zero_add]
 
