@@ -319,4 +319,25 @@ theorem plumbingMap_image_inter {q : Puncture} (hq : q ≠ inf) (L : ℝ) :
       q.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos (by rw [endSign_eq_one hq]; linarith),
       by linarith⟩
 
+/-- The point of the inserted pair of pants that the plumbing map sends to `w`. It lies in the
+thrice-punctured sphere because `w` avoids the center of the end `q` and the image of `1`. -/
+def plumbingPreimage (q : Puncture) (L : ℝ) (w : ThricePuncturedSphere)
+    (hw : (w : ℂ) ≠ q.plumbingMap L 1) : ThricePuncturedSphere :=
+  ⟨((w : ℂ) - q.endCenter) / q.plumbingFactor L,
+    q.sub_endCenter_div_plumbingFactor_ne_zero L (ne_endCenter w.2 q),
+    fun h => hw ((q.plumbingMap_sub_endCenter_div L w).symm.trans (congrArg (q.plumbingMap L) h))⟩
+
+/-- The point undoing the plumbing map is `(w - c_q) / ψ'`. -/
+@[simp]
+theorem coe_plumbingPreimage (q : Puncture) (L : ℝ) (w : ThricePuncturedSphere)
+    (hw : (w : ℂ) ≠ q.plumbingMap L 1) :
+    (q.plumbingPreimage L w hw : ℂ) = ((w : ℂ) - q.endCenter) / q.plumbingFactor L :=
+  (rfl)
+
+/-- The plumbing map sends `plumbingPreimage` back to the given point. -/
+theorem plumbingMap_plumbingPreimage (q : Puncture) (L : ℝ) (w : ThricePuncturedSphere)
+    (hw : (w : ℂ) ≠ q.plumbingMap L 1) :
+    q.plumbingMap L (q.plumbingPreimage L w hw) = w :=
+  q.plumbingMap_sub_endCenter_div L w
+
 end TauCeti.ThricePuncturedSphere.Puncture

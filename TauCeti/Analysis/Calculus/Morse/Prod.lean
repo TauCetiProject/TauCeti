@@ -244,7 +244,7 @@ theorem fderiv_separatedSum_eq_zero_iff {z : WithLp 2 (E × F)} (hf : Differenti
   rw [separatedSum_eq_comp, fderiv_comp_eq_zero_iff_of_isInvertible
     ((DifferentiableAt.comp (e z) hf differentiableAt_fst).add
       (DifferentiableAt.comp (e z) hg differentiableAt_snd))
-    e.differentiableAt (by rw [e.fderiv]; exact ⟨e, rfl⟩)]
+    (by rw [e.fderiv]; exact ⟨e, rfl⟩)]
   exact fderiv_comp_fst_add_comp_snd_eq_zero_iff hf hg
 
 /-- A separated sum of `C²` functions with nondegenerate critical points has nondegenerate critical

@@ -472,12 +472,13 @@ theorem memLp_pullbackDensity (hΦ : DifferentiableOn ℝ Φ U) (hinj : InjOn Φ
     (hc₀ : 0 < c₀) (hdet : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), c₀ ≤ |(fderiv ℝ Φ x).det|)
     {p : ENNReal} {f : EuclideanSpace ℝ ι → ℝ} (hf : MemLp f p (mu.restrict V)) :
     MemLp (pullbackDensity Φ f) p (mu.restrict U) := by
-  have hfΦ := hf.comp_of_differentiableOn U.isOpen hΦ hinj hmaps hc₀ hdet
+  have hfΦ := (hf.mono_measure (Measure.restrict_mono hmaps.image_subset le_rfl))
+    |>.comp_restrict_of_le_abs_det U.isOpen hΦ hinj subset_rfl U.isOpen.measurableSet hc₀ hdet
   refine hfΦ.of_le_mul (c := L ^ Fintype.card ι)
     ((continuous_abs.measurable.comp (measurable_det_fderiv ℝ Φ)).aestronglyMeasurable.mul
       hfΦ.aestronglyMeasurable) ?_
   filter_upwards [ae_restrict_mem U.isOpen.measurableSet] with x hx
-  rw [pullbackDensity_apply, norm_mul, Real.norm_eq_abs, abs_abs, Function.comp_apply]
+  rw [pullbackDensity_apply, norm_mul, Real.norm_eq_abs, abs_abs]
   exact mul_le_mul_of_nonneg_right (abs_det_le_pow_card (hL x hx)) (norm_nonneg _)
 
 /-- **The transformed drift stays in `Lᵖ`.** Let `Φ` map `U` injectively into `V`, with
@@ -490,7 +491,8 @@ theorem memLp_pullbackDrift (hΦ : DifferentiableOn ℝ Φ U) (hinj : InjOn Φ U
     (hc₀ : 0 < c₀) (hdet : ∀ x ∈ (U : Set (EuclideanSpace ℝ ι)), c₀ ≤ |(fderiv ℝ Φ x).det|)
     {p : ENNReal} {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} (hb : MemLp b p (mu.restrict V)) :
     MemLp (pullbackDrift Φ b) p (mu.restrict U) := by
-  have hbΦ := hb.comp_of_differentiableOn U.isOpen hΦ hinj hmaps hc₀ hdet
+  have hbΦ := (hb.mono_measure (Measure.restrict_mono hmaps.image_subset le_rfl))
+    |>.comp_restrict_of_le_abs_det U.isOpen hΦ hinj subset_rfl U.isOpen.measurableSet hc₀ hdet
   -- The operator `T x` of the inverse Jacobian matrix is measurable, so the transformed drift is.
   set T := fun x => toEuclideanCLM (𝕜 := ℝ) ((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ x))⁻¹
   have hT : Measurable T := continuous_toEuclideanCLM.measurable.comp

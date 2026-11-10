@@ -7,8 +7,13 @@ module
 
 public import Mathlib.Analysis.FunctionalSpaces.SobolevInequality
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import TauCeti.Analysis.Sobolev.W1p.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.SpecialFunctions.Sqrt
+import TauCeti.Analysis.Sobolev.W1p.Density
+import TauCeti.MeasureTheory.Function.Lp.IntegralFunctional
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.CauchySchwarz
 
 /-!
@@ -37,11 +42,20 @@ dimension two (`MeasureTheory.lintegral_pow_le_pow_lintegral_fderiv`), to `f = r
 gives `∫ w² ≤ k ∫ g(w)`. Finally `g(t) ≤ |t|` bounds the part of `∫ g(w)` over `s` by
 `(μ(s) ∫ w²) ^ (1/2)`, which is absorbed.
 
+When `E` is an inner product space, the same bound holds for every `u` in the Sobolev space
+`W^{1,2}(E)`, with `‖Du‖₂` the norm of its weak gradient
+(`TauCeti.W1p.exists_norm_value_sq_le_of_finrank_eq_two`). Both sides are
+continuous on `W^{1,2}(E)`: for the modular this is the local Lipschitz bound
+`|g(a) - g(b)| ≤ |a - b| (|a| + |b|)` of `g(t) = √(1 + t²) - 1` and the Cauchy–Schwarz inequality
+(`TauCeti.continuous_setIntegral_sqrt_one_add_sq_sub_one`). So the bound passes from test
+functions to their closure, which is all of `W^{1,2}(E)`.
+
 ## Main results
 
 * `TauCeti.integral_sq_le_mul_sq_integral_norm_fderiv`: the Gagliardo–Nirenberg–Sobolev
   inequality `∫ f² ≤ G (∫ ‖Df‖)²` in dimension two, for Bochner integrals.
 * `TauCeti.exists_integral_sq_le_of_finrank_eq_two`: the `L²` bound above.
+* `TauCeti.W1p.exists_norm_value_sq_le_of_finrank_eq_two`: the `L²` bound on `W^{1,2}(E)`.
 
 ## References
 
@@ -57,7 +71,7 @@ noncomputable section
 
 namespace TauCeti
 
-open Filter MeasureTheory Module Set
+open Filter MeasureTheory Module Set Topology
 open scoped ENNReal
 
 /-! ### The smooth square root of the modular -/
@@ -109,6 +123,8 @@ private theorem continuous_hasCompactSupport_modularRoot_comp {X : Type*} [Topol
     hws.comp_left (g := modularRoot) (by simp [modularRoot])⟩
 
 /-! ### Integral inequalities -/
+
+section Smooth
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
@@ -318,5 +334,75 @@ theorem exists_integral_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) :
   have hW := (integral_sq_le_mul_integral_modular μ hE hw hws).trans
     (mul_le_mul_of_nonneg_left hsplit hk)
   exact le_two_mul_add_sq_mul_of_le_mul_add hk hQ measureReal_nonneg hW hZ
+
+end Smooth
+
+/-! ### Sobolev functions -/
+
+section Sobolev
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
+
+/-- **An `L²` bound for planar Sobolev functions.** In dimension two there is a constant `C`,
+depending only on the Haar measure `μ`, such that every `u ∈ W^{1,2}(E)` and every measurable set
+`s` of finite measure satisfy
+
+`‖u‖₂² ≤ 2 k ∫_{sᶜ} (√(1 + u²) - 1) + k² μ(s)`,    `k = 2 + C ‖∇u‖₂`.
+
+This extends `TauCeti.exists_integral_sq_le_of_finrank_eq_two` from compactly supported `C¹`
+functions to `W^{1,2}(E)`, by density of test functions, since both sides are continuous on
+`W^{1,2}(E)`. -/
+theorem W1p.exists_norm_value_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ u : W1p μ ⊤ 2, ∀ s : Set E, MeasurableSet s → μ s ≠ ∞ →
+      ‖W1p.value u‖ ^ 2 ≤
+        2 * (2 + C * ‖W1p.gradient u‖) * ∫ x in sᶜ, (√(1 + W1p.value u x ^ 2) - 1) ∂μ +
+          (2 + C * ‖W1p.gradient u‖) ^ 2 * μ.real s := by
+  obtain ⟨C, hC, h⟩ := exists_integral_sq_le_of_finrank_eq_two μ hE
+  refine ⟨C, hC, fun u s hs hμs ↦ ?_⟩
+  refine (W1p.denseRange_ofTestFunctionₗ_top (mu := μ) (p := 2) ENNReal.ofNat_ne_top).induction_on
+    u ?_ ?_
+  · -- Both sides are continuous on `W^{1,2}`, so the inequality persists in the limit.
+    have hval : Continuous fun u : W1p μ ⊤ 2 ↦ W1p.value u := by
+      have h := (W1p.valueL (mu := μ) (Omega := ⊤) (p := 2)).continuous
+      rwa [show ⇑(W1p.valueL (mu := μ) (Omega := ⊤) (p := 2)) = W1p.value from
+        funext W1p.valueL_apply] at h
+    have hcont : Continuous fun u : W1p μ ⊤ 2 ↦
+        ∫ x in sᶜ, (√(1 + W1p.value u x ^ 2) - 1) ∂μ := by
+      have h := (continuous_setIntegral_sqrt_one_add_sq_sub_one (ν := μ.restrict
+        ((⊤ : TopologicalSpace.Opens E) : Set E)) sᶜ).comp hval
+      simp only [Function.comp_def, TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at h
+      exact h
+    have hg : Continuous fun u : W1p μ ⊤ 2 ↦ ‖W1p.gradient u‖ := by
+      simpa only [W1p.gradientL_apply] using
+        (W1p.gradientL (mu := μ) (Omega := ⊤) (p := 2)).continuous.norm
+    exact isClosed_le (hval.norm.pow 2) (by fun_prop)
+  · intro φ
+    set U := W1p.ofTestFunctionₗ μ ⊤ 2 φ
+    have hv : (W1p.value U : E → ℝ) =ᵐ[μ] φ := by
+      simpa only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] using
+        W1p.value_ofTestFunctionₗ_ae (mu := μ) (Omega := ⊤) (p := 2) φ
+    have hg : (W1p.gradient U : E → E) =ᵐ[μ] _root_.gradient (φ : E → ℝ) := by
+      rw [show W1p.gradient U = gradientTestFunctionLp 2 φ from W1p.gradient_ofTestFunctionₗ φ]
+      have := gradientTestFunctionLp_apply_ae (mu := μ) (Omega := ⊤) 2 φ
+      simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at this
+      exact this
+    have hvalue : ‖W1p.value U‖ ^ 2 = ∫ x, (φ x) ^ 2 ∂μ := by
+      rw [← W1p.integral_value_sq_eq_norm_value_sq]
+      simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
+      exact integral_congr_ae (hv.mono fun x hx ↦ by simp only [hx])
+    have hgrad : ‖W1p.gradient U‖ = √(∫ x, ‖fderiv ℝ φ x‖ ^ 2 ∂μ) := by
+      rw [← Real.sqrt_sq (norm_nonneg (W1p.gradient U)),
+        ← W1p.integral_norm_gradient_sq_eq_norm_gradient_sq]
+      simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
+      congr 1
+      exact integral_congr_ae (hg.mono fun x hx ↦ by simp only [hx, norm_gradient_eq_norm_fderiv])
+    have hmod : ∫ x in sᶜ, (√(1 + W1p.value U x ^ 2) - 1) ∂μ =
+        ∫ x in sᶜ, (√(1 + φ x ^ 2) - 1) ∂μ :=
+      integral_congr_ae (ae_restrict_of_ae (hv.mono fun x hx ↦ by simp only [hx]))
+    rw [hvalue, hgrad, hmod]
+    exact h φ (φ.contDiff.of_le (by exact_mod_cast le_top)) φ.hasCompactSupport s hs hμs
+
+end Sobolev
 
 end TauCeti

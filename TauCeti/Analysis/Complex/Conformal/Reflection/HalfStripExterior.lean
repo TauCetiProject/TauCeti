@@ -592,11 +592,6 @@ private theorem exists_comparison_of_halfStripExterior {R ρ : ℝ} {c b : ℂ} 
     rw [update_of_ne (hH s hs.2)]
     exact im_neg_inv_pos.mpr (hφU _ (hUp s hs.1 hs.2)).1.1
 
-private theorem differentiableOn_const_add_mul_model (c b : ℂ) :
-    DifferentiableOn ℂ (fun ζ => c + b * model ζ) upperHalfPlaneSet := fun _ hζ =>
-  (((hasDerivAt_model (mem_slitPlane_iff.mpr (Or.inr (ne_of_gt hζ)))).const_mul b).const_add
-    c).differentiableAt.differentiableWithinAt
-
 /-- The model's derivative `b * (ζ - ζ⁻¹)` does not vanish on the upper half-plane. -/
 private theorem deriv_const_add_mul_model_ne_zero {c b : ℂ} (hb : b ≠ 0) {ζ : ℂ}
     (hζ : ζ ∈ upperHalfPlaneSet) : deriv (fun ζ => c + b * model ζ) ζ ≠ 0 := by
@@ -632,9 +627,9 @@ theorem tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_halfStripExterior {ρ : 
   obtain ⟨r, hr, g, hgq, hg0, hcont, hholo, hreal, hupper, hinj⟩ :=
     exists_comparison_of_halfStripExterior le_rfl hb (by rwa [hT]) (by rwa [hA]) (by rwa [hA])
       (by rwa [hA]) (fun z hz => by rw [hT, hfU]; exact hU z hz)
-  exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv hr hf
+  exact tendsto_mul_logDeriv_deriv_upperHalfPlaneSet_of_eqOn_comp_neg_inv hr
     (fun z hz => deriv_ne_zero_of_injOn hf isOpen_upperHalfPlaneSet (hfi.mono hH0) hz)
-    (differentiableOn_const_add_mul_model c b) (fun ζ hζ => deriv_const_add_mul_model_ne_zero hb hζ)
+    (fun ζ hζ => deriv_const_add_mul_model_ne_zero hb hζ)
     (tendsto_mul_logDeriv_deriv_const_add_mul_model hb) hgq hg0 hcont hholo hreal hupper hinj
 
 /-- The coordinate change `ζ ↦ x - ζ⁻¹` carries the far part of the closed upper half-plane into
@@ -722,8 +717,7 @@ theorem tendsto_sub_mul_logDeriv_deriv_nhdsWithin_of_halfStripExterior {x r ρ :
       (fun w hw => by rw [← image_image, hmT]; exact hU w hw)
   -- Since `m (-(g s)⁻¹) = x + g s`, the translate `w ↦ f (x + w)` is compared with the model.
   have hlim := tendsto_mul_logDeriv_deriv_nhdsWithin_of_eqOn_comp (F := fun w => f (x + w))
-    hr₀ (differentiableOn_const_add_mul_model c b)
-    (fun ζ hζ => deriv_const_add_mul_model_ne_zero hb hζ)
+    hr₀ (fun ζ hζ => deriv_const_add_mul_model_ne_zero hb hζ)
     (tendsto_mul_logDeriv_deriv_const_add_mul_model hb)
     (fun s hs => by simpa [m, sub_eq_add_neg] using hgq hs) hg0 hcont hholo hreal hupper hinj
   have hshift : Tendsto (fun z : ℂ => z - x) (𝓝[upperHalfPlaneSet] (x : ℂ))
