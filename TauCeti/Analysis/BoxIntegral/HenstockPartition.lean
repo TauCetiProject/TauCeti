@@ -12,6 +12,9 @@ public import Mathlib.Analysis.BoxIntegral.Basic
 
 A gauge can prevent tags from crossing the faces of a fixed finite partition. Refinement then
 preserves the Henstock condition, allowing genuinely conditional integrals on the pieces to glue.
+
+Box integrals against the volume can also be moved along a linear isometry, so that results can
+pass to the completion of the codomain.
 -/
 
 public section
@@ -185,22 +188,13 @@ theorem _root_.BoxIntegral.Prepartition.IsPartition.hasIntegral_sum {p : Prepart
   rw [integralSum_eq_sum_pieces p hp π πi hi ht]
   exact (dist_sum_sum_le_of_le _ hbound).trans_eq (by simp)
 
-end TauCeti.BoxIntegral
-
-namespace BoxIntegral
-
-section LinearIsometry
-
-variable {ι E F : Type*} [Fintype ι] [NormedAddCommGroup E] [NormedSpace ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- A linear map commutes with the Riemann sum of the volume of a tagged prepartition: the sums of
-`e ∘ g` are the images under `e` of those of `g`. -/
-theorem integralSum_volume_comp_linearIsometry (e : E →ₗᵢ[ℝ] F) {I : Box ι}
+/-- A linear map commutes with the integral sum of a function against `BoxAdditiveMap.volume` over
+a tagged prepartition: the sums of `e ∘ g` are the images under `e` of those of `g`. -/
+theorem integralSum_volume_comp (e : E →ₗ[ℝ] F) {I : Box ι}
     (g : (ι → ℝ) → E) (π : TaggedPrepartition I) :
     integralSum (fun x ↦ e (g x)) BoxAdditiveMap.volume π =
       e (integralSum g BoxAdditiveMap.volume π) := by
-  simp [integralSum, BoxAdditiveMap.volume, map_sum]
+  simp only [integralSum, BoxAdditiveMap.volume_apply, map_sum, map_smul]
 
 /-- A linear isometry `e : E →ₗᵢ[ℝ] F` does not change the existence or the value of a box
 integral against the volume: the integral sums of `e ∘ g` are the images of those of `g`, and `e`
@@ -209,8 +203,8 @@ theorem hasIntegral_volume_comp_linearIsometry_iff (e : E →ₗᵢ[ℝ] F) {I :
     {l : IntegrationParams} {g : (ι → ℝ) → E} {z : E} :
     HasIntegral I l (fun x ↦ e (g x)) BoxAdditiveMap.volume (e z) ↔
       HasIntegral I l g BoxAdditiveMap.volume z := by
-  simp only [hasIntegral_iff, integralSum_volume_comp_linearIsometry, LinearIsometry.dist_map]
+  have h (π : TaggedPrepartition I) : integralSum (fun x ↦ e (g x)) BoxAdditiveMap.volume π =
+      e (integralSum g BoxAdditiveMap.volume π) := integralSum_volume_comp e.toLinearMap g π
+  simp only [hasIntegral_iff, h, LinearIsometry.dist_map]
 
-end LinearIsometry
-
-end BoxIntegral
+end TauCeti.BoxIntegral
