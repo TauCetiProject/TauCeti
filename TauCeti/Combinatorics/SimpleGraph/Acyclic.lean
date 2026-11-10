@@ -6,13 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
+public import TauCeti.Data.List.OneDegenerateOrder
 
 /-!
 # Paths and degrees in acyclic simple graphs
 
 This file records consequences of acyclicity for paths and for degrees (a nonempty finite
 forest has a vertex of degree at most one, so a nonempty finite regular forest has degree at
-most one), and gives a height criterion for acyclicity.
+most one), deduces that the letters of a list on which a graph induces a forest can be put in a
+one-degenerate order by peeling off leaves, and gives a height criterion for acyclicity.
 
 ## Main results
 
@@ -22,6 +24,8 @@ most one), and gives a height criterion for acyclicity.
   at most one.
 * `SimpleGraph.IsAcyclic.degree_le_one_of_isRegularOfDegree`: a nonempty finite regular
   forest has degree at most one.
+* `List.exists_perm_isOneDegenerateOrder`: a list without repeated letters on which a graph
+  induces a forest can be rearranged into a one-degenerate order for the graph.
 * `SimpleGraph.IsAcyclic.not_adj_getVert_of_add_one_lt`: nonconsecutive vertices of a path
   in an acyclic graph are not adjacent.
 * `SimpleGraph.IsAcyclic.ne_of_adj_start_of_adj_end`: an off-path neighbour of a path's start
@@ -118,5 +122,31 @@ theorem _root_.SimpleGraph.IsAcyclic.degree_le_one_of_isRegularOfDegree
     (hG : G.IsAcyclic) (hd : G.IsRegularOfDegree d) : d ≤ 1 := by
   obtain ⟨v, hv⟩ := hG.exists_degree_le_one
   exact hd.degree_eq v ▸ hv
+
+/-- **A forest has a one-degenerate order.** A list without repeated letters on whose letters `G`
+induces a forest can be rearranged into a one-degenerate order for `G`: peel off a letter joined to
+at most one other letter, order the rest by induction, and put the peeled letter last. -/
+theorem _root_.List.exists_perm_isOneDegenerateOrder {α : Type*} {G : SimpleGraph α}
+    {l : List α} (hl : l.Nodup) (hG : (G.induce {i | i ∈ l}).IsAcyclic) :
+    ∃ S, S.Perm l ∧ List.IsOneDegenerateOrder G.Adj S := by
+  classical
+  obtain ⟨n, hn⟩ : ∃ n, l.length = n := ⟨_, rfl⟩
+  induction n generalizing l with
+  | zero => exact ⟨[], by simp [List.length_eq_zero_iff.mp hn], List.isOneDegenerateOrder_nil⟩
+  | succ n ih =>
+    -- The induced forest is finite and nonempty, so some letter `s` is joined to at most one
+    -- letter of `l`.
+    obtain ⟨a, ha⟩ := List.exists_mem_of_ne_nil l (List.ne_nil_of_length_eq_add_one hn)
+    have : Nonempty {i | i ∈ l} := ⟨⟨a, ha⟩⟩
+    have : Fintype {i | i ∈ l} := Set.Finite.fintype (List.finite_toSet l)
+    obtain ⟨⟨s, hs⟩, hdeg⟩ := hG.exists_degree_le_one
+    rw [← SimpleGraph.card_neighborFinset_eq_degree] at hdeg
+    have hsub : {i | i ∈ l.erase s} ≤ {i | i ∈ l} := fun i hi ↦ List.mem_of_mem_erase hi
+    obtain ⟨S, hS, hel⟩ := ih (hl.erase s) (hG.embedding (G.induceHomOfLE hsub))
+      (by simp [List.length_erase_of_mem hs, hn])
+    refine ⟨S ++ [s], ((List.perm_append_singleton s S).trans (hS.cons s)).trans
+      (List.perm_cons_erase hs).symm, hel.append_singleton fun x hx y hy hsx hsy ↦ ?_⟩
+    exact congrArg Subtype.val <| Finset.card_le_one.mp hdeg ⟨x, hsub (hS.subset hx)⟩
+      (by simpa using hsx) ⟨y, hsub (hS.subset hy)⟩ (by simpa using hsy)
 
 end TauCeti

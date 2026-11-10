@@ -29,9 +29,10 @@ elements, but two moves on the word preserve the conjugacy class of the product:
 When the Coxeter graph is a forest, as it is for every finite Weyl group, these two moves connect
 any two orderings of the simple reflections (`List.eq_of_isOneDegenerateOrder`): peeling off letters
 joined to at most one remaining letter lists the letters in a one-degenerate order, in which each
-letter is joined to at most one earlier letter. Hence **all Coxeter elements of a Coxeter system
-whose Coxeter graph is a forest are conjugate** (`CoxeterSystem.isConj_wordProd_of_perm`), and each
-of them is conjugate to the bipartite Coxeter element of any two-colouring of the Coxeter graph
+letter is joined to at most one earlier letter (`List.exists_perm_isOneDegenerateOrder`). Hence
+**all Coxeter elements of a Coxeter system whose Coxeter graph is a forest are conjugate**
+(`CoxeterSystem.isConj_wordProd_of_perm`), and each of them is conjugate to the bipartite Coxeter
+element of any two-colouring of the Coxeter graph
 (`CoxeterSystem.isConj_wordProd_bipartiteCoxeterElement`). So the order of a Coxeter element and its
 eigenvalues in any linear representation depend only on the Coxeter system. The statement only uses
 the graph induced on the letters of the word, so it also applies to the products of the simple
@@ -61,32 +62,6 @@ namespace CoxeterSystem
 
 variable {B W : Type*} [Group W] {M : CoxeterMatrix B} (cs : CoxeterSystem M W)
 
-/-- A word without repeated letters on whose letters `G` induces a forest can be rearranged into a
-one-degenerate order for `G`: peel off a letter joined to at most one other letter, order the rest
-by induction, and put the peeled letter last. -/
-private theorem exists_perm_isOneDegenerateOrder {G : SimpleGraph B} :
-    ∀ (n : ℕ) {l : List B}, l.length = n → l.Nodup → (G.induce {i | i ∈ l}).IsAcyclic →
-      ∃ S, S.Perm l ∧ List.IsOneDegenerateOrder G.Adj S
-  | 0, l, hn, _, _ =>
-    ⟨[], by simp [List.length_eq_zero_iff.mp hn], List.isOneDegenerateOrder_nil⟩
-  | n + 1, l, hn, hl, hG => by
-    classical
-    -- The induced forest is finite and nonempty, so some letter `s` is joined to at most one
-    -- letter of `l`.
-    obtain ⟨a, ha⟩ := List.exists_mem_of_ne_nil l (List.ne_nil_of_length_eq_add_one hn)
-    have : Nonempty {i | i ∈ l} := ⟨⟨a, ha⟩⟩
-    have : Fintype {i | i ∈ l} := Set.Finite.fintype (List.finite_toSet l)
-    obtain ⟨⟨s, hs⟩, hdeg⟩ := hG.exists_degree_le_one
-    rw [← SimpleGraph.card_neighborFinset_eq_degree] at hdeg
-    have hsub : {i | i ∈ l.erase s} ≤ {i | i ∈ l} := fun i hi ↦ List.mem_of_mem_erase hi
-    obtain ⟨S, hS, hel⟩ := exists_perm_isOneDegenerateOrder n
-      (by simp [List.length_erase_of_mem hs, hn]) (hl.erase s)
-      (hG.embedding (G.induceHomOfLE hsub))
-    refine ⟨S ++ [s], ((List.perm_append_singleton s S).trans (hS.cons s)).trans
-      (List.perm_cons_erase hs).symm, hel.append_singleton fun x hx y hy hsx hsy ↦ ?_⟩
-    exact congrArg Subtype.val <| Finset.card_le_one.mp hdeg ⟨x, hsub (hS.subset hx)⟩
-      (by simpa using hsx) ⟨y, hsub (hS.subset hy)⟩ (by simpa using hsy)
-
 /-- **Coxeter elements on a forest are conjugate.** If the Coxeter graph induces a forest on the
 letters of a word with no repeated letter, then every rearrangement of the word spells an element
 conjugate to the one it spells. In particular, when the Coxeter graph is a forest, all Coxeter
@@ -94,7 +69,7 @@ elements, the products of all the simple reflections each taken once, are conjug
 theorem isConj_wordProd_of_perm {l l' : List B} (hl : l.Nodup)
     (hM : (M.graph.induce {i | i ∈ l}).IsAcyclic) (h : l.Perm l') :
     IsConj (cs.wordProd l) (cs.wordProd l') := by
-  obtain ⟨S, hS, hel⟩ := exists_perm_isOneDegenerateOrder _ rfl hl hM
+  obtain ⟨S, hS, hel⟩ := List.exists_perm_isOneDegenerateOrder hl hM
   rw [← ConjClasses.mk_eq_mk_iff_isConj]
   refine List.eq_of_isOneDegenerateOrder (fun _ _ h ↦ h.symm) (hS.nodup_iff.mpr hl) hel
     (fun l ↦ ConjClasses.mk (cs.wordProd l)) (fun l l' _ hce ↦ ?_)
