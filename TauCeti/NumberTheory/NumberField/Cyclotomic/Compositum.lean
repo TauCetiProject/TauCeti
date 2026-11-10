@@ -172,6 +172,7 @@ end Faithful
 
 variable [IsGalois K L]
 
+omit [NeZero m] in
 include L m in
 /-- **The cyclotomic compositum of a Galois extension is Galois.** If `L / K` is Galois and
 `M = L(μ_m)`, then `M / K` is Galois, so `Gal(M/K)` is available without a further hypothesis.
@@ -181,6 +182,13 @@ Both tower hypotheses are needed, which is what the name records: the cyclotomic
 statement, for a cyclotomic extension of the base itself. Call sites introduce this with
 `have`; see the module Implementation notes. -/
 theorem isGalois_of_isGalois_of_isCyclotomicExtension : IsGalois K M := by
+  rcases eq_or_ne m 0 with rfl | hm
+  · -- for `m = 0` the cyclotomic extension is trivial: `M` is `L` as a `K`-algebra
+    have hsurj := isCyclotomicExtension_zero_iff.1 ‹IsCyclotomicExtension {0} L M›
+    exact IsGalois.of_algEquiv
+      (AlgEquiv.ofBijective (IsScalarTower.toAlgHom K L M)
+        ⟨(algebraMap L M).injective, hsurj⟩)
+  have : NeZero m := ⟨hm⟩
   obtain ⟨ζ, hζ⟩ := IsCyclotomicExtension.exists_isPrimitiveRoot (S := {m}) L M
     (Set.mem_singleton m) (NeZero.ne m)
   -- `M / K` is algebraic: `L / K` is Galois hence algebraic, and `M / L` is a cyclotomic

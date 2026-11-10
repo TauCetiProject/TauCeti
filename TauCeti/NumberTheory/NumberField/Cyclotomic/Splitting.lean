@@ -159,8 +159,16 @@ private theorem isPrime_span_natCast_iff_of_eq_pow_mul (hn : n = p ^ k * m) (hm 
 /-- **Complete splitting in a cyclotomic field.** If `n ≢ 2 mod 4`, a prime `p` splits completely
 in an `n`-th cyclotomic field over `ℚ` (there are `φ(n) = [K : ℚ]` primes above it) iff
 `p ≡ 1 mod n`. -/
-theorem ncard_primesOver_eq_totient_iff [NeZero n] (hn4 : n % 4 ≠ 2) :
+theorem ncard_primesOver_eq_totient_iff (hn4 : n % 4 ≠ 2) :
     (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard = n.totient ↔ (p : ZMod n) = 1 := by
+  rcases eq_or_ne n 0 with rfl | hn0
+  · -- both sides fail for `n = 0`: there is a prime above `p`, and `p ≠ 1`
+    have hpos : 0 < (primesOver (span {(p : ℤ)}) (𝓞 K)).ncard :=
+      (Set.ncard_pos (IsDedekindDomain.primesOver_finite _ _)).2
+        ⟨_, (Ideal.nonempty_primesOver ..).some.2⟩
+    refine iff_of_false (by rw [Nat.totient_zero]; omega) fun h ↦ hp.out.ne_one ?_
+    exact_mod_cast h
+  have : NeZero n := ⟨hn0⟩
   obtain ⟨k, m, hm, hn⟩ := Nat.exists_eq_pow_mul_and_not_dvd (NeZero.ne n) p hp.out.ne_one
   have : NeZero m := ⟨by rintro rfl; exact hm (dvd_zero p)⟩
   have hg := ncard_primesOver_mul_orderOf_eq_totient_of_eq_pow_mul (K := K) hn hm
@@ -263,13 +271,25 @@ open scoped Pointwise
 class lies in the coset `c(τ⁻¹) ⟨p⟩` of `(ZMod m)ˣ`, and the sum of their representatives `c(σ)`
 in `[1, m)` is `∑_{i < f} (p ^ i c(τ⁻¹) mod m)`, where `f` is the order of `p` modulo `m`. -/
 theorem sum_val_galEquivZMod_filter_inv_smul_eq_smul {m : ℕ} [NeZero m]
-    [IsCyclotomicExtension {m} ℚ K] [DecidableEq (Ideal (𝓞 K))] {p : ℕ} [Fact p.Prime]
+    [IsCyclotomicExtension {m} ℚ K] [DecidableEq (Ideal (𝓞 K))] {p : ℕ}
     (hpm : ¬ p ∣ m) (P : Ideal (𝓞 K)) [P.IsMaximal] [P.LiesOver (span {(p : ℤ)})]
     (τ : Gal(K/ℚ)) :
     ∑ σ with σ⁻¹ • P = τ • P, (galEquivZMod m K σ : ZMod m).val =
       ∑ i ∈ Finset.range (orderOf (p : ZMod m)),
         p ^ i * (galEquivZMod m K τ⁻¹ : ZMod m).val % m := by
   classical
+  -- `p` is prime, as `span {p}` is the contraction of the maximal ideal `P`
+  have : Fact p.Prime := ⟨by
+    have hmax : (span {(p : ℤ)}).IsMaximal := by
+      have := Ideal.IsMaximal.under ℤ P
+      rwa [← Ideal.LiesOver.over (p := span {(p : ℤ)}) (P := P)] at this
+    have hp0 : (p : ℤ) ≠ 0 := by
+      intro h
+      rw [h, Ideal.span_singleton_zero] at hmax
+      have := hmax.1.2 (span {(2 : ℤ)}) (bot_lt_iff_ne_bot.2 (by simp))
+      rw [Ideal.span_singleton_eq_top] at this
+      exact absurd (Int.isUnit_iff.1 this) (by omega)
+    exact Nat.prime_iff_prime_int.2 ((Ideal.span_singleton_prime hp0).1 hmax.isPrime)⟩
   have hcop : p.Coprime m := (Nat.Prime.coprime_iff_not_dvd Fact.out).2 hpm
   set u := ZMod.unitOfCoprime p hcop
   set a := galEquivZMod m K τ⁻¹ with hadef

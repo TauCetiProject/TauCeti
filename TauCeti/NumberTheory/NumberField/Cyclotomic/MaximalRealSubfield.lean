@@ -90,11 +90,19 @@ theorem galEquivZMod_symm_neg_one_apply_eq_self_iff (x : K) :
   · rw [complexEmbedding_galEquivZMod_symm_neg_one_apply n, ← Complex.star_def]
     exact hx φ
 
+omit [NeZero n] in
 include hK in
 /-- **One complex embedding detects the maximal real subfield of `ℚ(ζₙ)`.** An element lies in
 the maximal real subfield as soon as its image under a single complex embedding is real. -/
 theorem mem_maximalRealSubfield_iff_star_eq (φ : K →+* ℂ) (x : K) :
     x ∈ maximalRealSubfield K ↔ star (φ x) = φ x := by
+  rcases eq_or_ne n 0 with rfl | hn0
+  · -- for `n = 0` the field is `ℚ`, so every element is real under every embedding
+    obtain ⟨q, rfl⟩ := _root_.IsCyclotomicExtension.isCyclotomicExtension_zero_iff.1 hK x
+    have hreal (ψ : K →+* ℂ) : star (ψ (algebraMap ℚ K q)) = ψ (algebraMap ℚ K q) := by
+      rw [eq_ratCast (algebraMap ℚ K) q, map_ratCast, star_ratCast]
+    exact iff_of_true (fun ψ ↦ hreal ψ) (hreal φ)
+  have : NeZero n := ⟨hn0⟩
   rw [← galEquivZMod_symm_neg_one_apply_eq_self_iff n, ← φ.injective.eq_iff,
     complexEmbedding_galEquivZMod_symm_neg_one_apply n, Complex.star_def]
 
