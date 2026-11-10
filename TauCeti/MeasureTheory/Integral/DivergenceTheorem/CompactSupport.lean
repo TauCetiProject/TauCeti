@@ -57,10 +57,11 @@ theorem _root_.ContDiffOn.integrableOn_divergence_and_setIntegral_eq_Icc {n : �
   exact ⟨hDi, hDi.of_forall_sdiff_eq_zero hsm fun x hx ↦ hDzero hx.1 hx.2,
     setIntegral_eq_of_subset_of_forall_sdiff_eq_zero hsm hab fun x hx ↦ hDzero hx.1 hx.2⟩
 
-/-- The divergence of a globally `C¹`, compactly supported coordinate vector field is
-integrable and has zero integral on the whole space. -/
+/-- The divergence of a globally `C¹`, compactly supported coordinate vector field, with
+components in a real normed space `F`, is integrable and has zero integral on the whole space. -/
 theorem integral_divergence_eq_zero {n : ℕ}
-    {f : (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ)}
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {f : (Fin (n + 1) → ℝ) → (Fin (n + 1) → F)}
     (hf : ContDiff ℝ 1 f) (hc : HasCompactSupport f) :
     Integrable (fun x ↦ ∑ i : Fin (n + 1), fderiv ℝ f x (Pi.single i 1) i) ∧
       (∫ x, ∑ i : Fin (n + 1), fderiv ℝ f x (Pi.single i 1) i) = 0 := by
