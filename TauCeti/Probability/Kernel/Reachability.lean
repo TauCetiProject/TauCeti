@@ -143,4 +143,18 @@ theorem isIrreducible_count_iff_forall_communicates [MeasurableSingletonClass S]
   rw [isIrreducible_count_iff_forall_reaches]
   exact ⟨fun h x y => ⟨h x y, h y x⟩, fun h x y => (h x y).1⟩
 
+/-- An irreducible s-finite kernel with respect to the counting measure lives on a countable state
+space with measurable singletons: every state is reached from a fixed state, and each s-finite
+measure `(κ ^ n) x` has only countably many atoms. -/
+theorem countable_of_isIrreducible_count [MeasurableSingletonClass S] [IsSFiniteKernel κ]
+    [IsIrreducible Measure.count κ] : Countable S := by
+  rcases isEmpty_or_nonempty S with hS | ⟨⟨x⟩⟩
+  · infer_instance
+  · have hc : (⋃ n : ℕ, {y | 0 < (κ ^ n) x {y}}).Countable :=
+      Set.countable_iUnion fun n => Measure.countable_meas_pos_of_disjoint_iUnion
+        (fun y => measurableSet_singleton y) fun _ _ h => Set.disjoint_singleton.mpr h
+    exact Set.countable_univ_iff.mp (hc.mono fun y _ =>
+      Set.mem_iUnion.mpr ((reaches_def x y).mp
+        (isIrreducible_count_iff_forall_reaches.mp ‹_› x y)))
+
 end ProbabilityTheory.Kernel
