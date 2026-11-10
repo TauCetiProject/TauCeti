@@ -5,17 +5,19 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RingTheory.SimpleModule.InjectiveProjective
 public import TauCeti.AlgebraicTopology.Cohomology.GradedCommutativity
 public import TauCeti.AlgebraicTopology.Cohomology.Kunneth
 
 /-!
-# The Leray–Hirsch theorem for a product over a field
+# The Leray–Hirsch theorem for a product
 
-Let `k` be a field, or more generally a commutative semisimple ring, and let `F` be a space whose
-homology `Hₚ(F; k)` is finitely generated in degrees `p ≤ n`, for instance a space of finite CW
-type. Suppose that for every degree `p` the family `b p : ι p → Hᵖ(F; k)` is a basis of `Hᵖ(F; k)`,
-so that together these form a homogeneous basis of the graded cohomology of `F`. For any space
+Let `k` be a commutative ring and let `F` be a space whose homology `Hₚ(F; k)` is projective in
+every degree and finitely generated in degrees `p ≤ n`. Over a field, or more generally a
+commutative semisimple ring, every module is projective (`Module.projective_of_isSemisimpleRing`),
+so this holds for instance for a space of finite CW type; over `ℤ` it holds when the homology of
+`F` is free of finite rank, as for spheres and tori. Suppose that for every degree `p` the family
+`b p : ι p → Hᵖ(F; k)` is a basis of `Hᵖ(F; k)`, so that together these form a homogeneous basis
+of the graded cohomology of `F`. For any space
 `X`, the **Leray–Hirsch map of the product** `X × F` in degree `n`,
 
 `⨁_{p + q = n} ⨁_{i : ι p} H^q(X; k) ⟶ Hⁿ(X × F; k)`, `(a_{p,i}) ↦ ∑ pr₁^* a_{p,i} ⌣ pr₂^* b_{p,i}`,
@@ -247,14 +249,13 @@ private lemma lerayHirschProd_eq :
   rw [lerayHirschProd_lof, toKunnethSource_lof, hcross, hcomm, hcoeff]
   simp [smul_smul, ← mul_pow, mul_comm q p]
 
-variable (X) [IsSemisimpleRing k]
+variable (X) [∀ p, Projective (((singularHomologyFunctor (ModuleCat.{w} k) p).obj
+  (𝟙_ (ModuleCat.{w} k))).obj F)]
 
--- Over a semisimple ring every homology module of `F` is projective, as the Künneth theorem needs.
-attribute [local instance] Module.projective_of_isSemisimpleRing
-
-/-- **The Leray–Hirsch theorem for a product**: over a commutative semisimple ring `k`, for
-instance a field, if the homology `Hₚ(F; k)` is finitely generated in degrees `p ≤ n` and `b p` is
-a basis of `Hᵖ(F; k)` for every `p`, the Leray–Hirsch map
+/-- **The Leray–Hirsch theorem for a product**: over a commutative ring `k`, if the homology
+`Hₚ(F; k)` is projective in every degree and finitely generated in degrees `p ≤ n`, for instance
+over a field when `F` has finite CW type, and `b p` is a basis of `Hᵖ(F; k)` for every `p`, the
+Leray–Hirsch map
 `⨁_{p + q = n} ⨁_{i : ι p} H^q(X; k) ⟶ Hⁿ(X × F; k)`, `(a_{p,i}) ↦ ∑ pr₁^* a_{p,i} ⌣ pr₂^* b_{p,i}`,
 is bijective. -/
 theorem lerayHirschProd_bijective
