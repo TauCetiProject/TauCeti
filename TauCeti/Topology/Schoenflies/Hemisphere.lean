@@ -88,12 +88,9 @@ theorem IsCellularSet.exists_homeomorph_preimage_hemisphere
       exact lt_irrefl 0 hxU
   have hH := image_preimage_eq {y : sphere (0 : F) 1 | 0 ≤ ⟪(y : F), (p : F)⟫} hgs
   -- The image of the preimage of the closed hemisphere is the closed hemisphere itself.
-  let e := (Homeomorph.refl (sphere (0 : F) 1)).subtype
-    (p := (· ∈ g '' (g ⁻¹' {y : sphere (0 : F) 1 | 0 ≤ ⟪(y : F), (p : F)⟫})))
-    (q := fun y : sphere (0 : F) 1 ↦ 0 ≤ ⟪(y : F), (p : F)⟫) fun y ↦ by
-      rw [hH, Homeomorph.refl_apply, id_eq, mem_ofPred_eq]
-  have he (x) : ((e (h₀ x) : sphere (0 : F) 1) : F) = ((h₀ x : sphere (0 : F) 1) : F) := by
-    simp only [e, Homeomorph.subtype_apply_coe, Homeomorph.refl_apply, id_eq]
+  let e : g '' (g ⁻¹' {y | 0 ≤ ⟪(y : F), (p : F)⟫}) ≃ₜ
+      {y : sphere (0 : F) 1 // 0 ≤ ⟪(y : F), (p : F)⟫} := Homeomorph.setCongr hH
+  have he (x) : ((e (h₀ x) : sphere (0 : F) 1) : F) = ((h₀ x : sphere (0 : F) 1) : F) := rfl
   refine ⟨h₀.trans (e.trans (hemisphereHomeomorph p)), fun x hx ↦ ?_,
     fun x ↦ (norm_hemisphereHomeomorph_apply_eq_one_iff p (e (h₀ x))).trans ?_⟩
   · simp only [Homeomorph.trans_apply, coe_hemisphereHomeomorph_apply, he, h₀x x hx, hx,
