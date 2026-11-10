@@ -275,7 +275,7 @@ private theorem exists_unique_isRepartition_of_col_cut (D : GridRectangleDecompo
   refine ⟨E, ⟨⟨hDdisj, hEdisj, hunion⟩, hmiddle, hEfirst, hEsecond, hE1right,
     hE2right, Or.inl ⟨hcol, hmidE, hE1left, hE2left⟩⟩, ?_⟩
   intro E' hE'
-  rcases hE' with ⟨_, _, _, _, hE1right', hE2right', hcols'⟩
+  rcases hE' with ⟨_, _, _, _, hE1right', _, hcols'⟩
   have hlefts : E'.first.left = D.first.right ∧
       E'.second.left = D.first.left := by
     rcases hcols' with ⟨_, _, hE1left', hE2left'⟩ |
@@ -284,7 +284,6 @@ private theorem exists_unique_isRepartition_of_col_cut (D : GridRectangleDecompo
     · exact (hcol_exclusive ⟨hcol, hcol'⟩).elim
   exact GridRectangleDecomposition.ext (hlefts.1.trans hE1left.symm)
     (hE1right'.trans hE1right.symm) (hlefts.2.trans hE2left.symm)
-    (hE2right'.trans hE2right.symm)
 
 /-- The recut of two empty rectangles with a common initial side column in the configuration where
 the terminal side of the second rectangle lies inside the column span of the first one: the new
@@ -340,7 +339,7 @@ private theorem exists_unique_isRepartition_of_complementary_col_cut
   refine ⟨E, ⟨⟨hDdisj, hEdisj, hunion⟩, hmiddle, hEfirst, hEsecond, hE1right,
     hE2right, Or.inr ⟨hcol, hmidE, hE1left, hE2left⟩⟩, ?_⟩
   intro E' hE'
-  rcases hE' with ⟨_, _, _, _, hE1right', hE2right', hcols'⟩
+  rcases hE' with ⟨_, _, _, _, hE1right', _, hcols'⟩
   have hlefts : E'.first.left = D.first.left ∧
       E'.second.left = D.second.right := by
     rcases hcols' with ⟨hcol', _, _, _⟩ |
@@ -349,7 +348,6 @@ private theorem exists_unique_isRepartition_of_complementary_col_cut
     · exact ⟨hE1left', hE2left'⟩
   exact GridRectangleDecomposition.ext (hlefts.1.trans hE1left.symm)
     (hE1right'.trans hE1right.symm) (hlefts.2.trans hE2left.symm)
-    (hE2right'.trans hE2right.symm)
 
 /-- Two composable empty rectangles that share their initial side column and no other side admit
 a *recut*: the L-shaped union of their domains has a second decomposition into two empty

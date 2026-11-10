@@ -361,15 +361,15 @@ theorem exists_isRepartition_of_isEmpty_of_right_eq_right (D : GridRectangleDeco
       obtain ⟨h1, h2, h3, h4, h5, h6, h7⟩ := h
       exact ⟨E, h1, h2, h3, h4, h5, h6, Or.inr h7⟩
   · rintro E E' ⟨-, -, -, -, hE1left, hE2left, hcols⟩ ⟨-, -, -, -, hE1left', hE2left', hcols'⟩
-    have hrights : E.first.right = E'.first.right ∧ E.second.right = E'.second.right := by
-      rcases hcols with ⟨hcol, -, hE1right, hE2right⟩ | ⟨hcol, -, hE1right, hE2right⟩ <;>
-        rcases hcols' with ⟨hcol', -, hE1right', hE2right'⟩ | ⟨hcol', -, hE1right', hE2right'⟩
-      · exact ⟨hE1right.trans hE1right'.symm, hE2right.trans hE2right'.symm⟩
+    have hright : E.first.right = E'.first.right := by
+      rcases hcols with ⟨hcol, -, hE1right, -⟩ | ⟨hcol, -, hE1right, -⟩ <;>
+        rcases hcols' with ⟨hcol', -, hE1right', -⟩ | ⟨hcol', -, hE1right', -⟩
+      · exact hE1right.trans hE1right'.symm
       · exact (Grid.notMem_cIoo_of_mem_cIoo hcol hcol').elim
       · exact (Grid.notMem_cIoo_of_mem_cIoo hcol' hcol).elim
-      · exact ⟨hE1right.trans hE1right'.symm, hE2right.trans hE2right'.symm⟩
-    exact GridRectangleDecomposition.ext (hE1left.trans hE1left'.symm) hrights.1
-      (hE2left.trans hE2left'.symm) hrights.2
+      · exact hE1right.trans hE1right'.symm
+    exact GridRectangleDecomposition.ext (hE1left.trans hE1left'.symm) hright
+      (hE2left.trans hE2left'.symm)
 
 end GridRectangleDecomposition
 
