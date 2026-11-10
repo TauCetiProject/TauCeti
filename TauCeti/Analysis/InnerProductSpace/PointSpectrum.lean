@@ -32,7 +32,12 @@ For a symmetric operator on a finite-dimensional inner product space, the eigens
 eigenvalues are mutually orthogonal and span `E`. Hence the point-spectral subspaces selected by
 `Ω` and by its complement are orthogonal complements of each other, the point-spectral subspace is
 the span of the vectors of an ordered eigenbasis whose eigenvalues lie in `Ω`, and its orthogonal
-projection is the functional calculus `𝟙_Ω(A)` of the indicator function of `Ω`.
+projection is the functional calculus `𝟙_Ω(A)` of the indicator function of `Ω`. When `A` is
+moreover injective, its negative and positive spectral subspaces are complementary. The quadratic
+form `x ↦ re ⟪A x, x⟫` is negative definite on the negative spectral subspace
+`A.pointSpectralSubspace (Iio 0)`, positive definite on the positive spectral subspace
+`A.pointSpectralSubspace (Ioi 0)`, positive semidefinite on `A.pointSpectralSubspace (Ici 0)` and
+negative semidefinite on `A.pointSpectralSubspace (Iic 0)`.
 
 On a finite-dimensional subspace invariant under a symmetric operator, point-spectral containment
 is equivalent to a quadratic-form bound: the restricted point spectrum lies in `(-∞, a]` exactly
@@ -75,6 +80,16 @@ spectrum from that of its orthogonal complement.
   spanned by the vectors of the ordered eigenbasis whose eigenvalues lie in `Ω`.
 * `LinearMap.IsSymmetric.coe_starProjection_pointSpectralSubspace`: its orthogonal projection is
   the functional calculus of the indicator function of `Ω`.
+* `LinearMap.IsSymmetric.isCompl_pointSpectralSubspace_Iio_Ioi`: for an injective symmetric
+  operator the negative and positive spectral subspaces are complementary.
+* `LinearMap.IsSymmetric.re_inner_apply_self_neg_of_mem_pointSpectralSubspace_Iio`,
+  `LinearMap.IsSymmetric.re_inner_apply_self_pos_of_mem_pointSpectralSubspace_Ioi`: the quadratic
+  form of a symmetric operator is negative definite on the negative spectral subspace and positive
+  definite on the positive one.
+* `LinearMap.IsSymmetric.re_inner_apply_self_nonneg_of_mem_pointSpectralSubspace_Ici`,
+  `LinearMap.IsSymmetric.re_inner_apply_self_nonpos_of_mem_pointSpectralSubspace_Iic`: it is
+  positive semidefinite on the spectral subspace of the nonnegative eigenvalues and negative
+  semidefinite on that of the nonpositive eigenvalues.
 * `ContinuousLinearMap.abs_le_norm_of_mem_restrictedPointSpectrum`: every real eigenvalue of a
   bounded operator `T` has absolute value at most `‖T‖`.
 * `LinearMap.IsSymmetric.pointSpectrumIn_Iic_iff`, `LinearMap.IsSymmetric.pointSpectrumIn_Ici_iff`:
@@ -340,6 +355,16 @@ theorem pointSpectralSubspace_sup_compl_eq_top (hA : A.IsSymmetric) (Ω : Set �
     exact Module.End.eigenspace_le_pointSpectralSubspace (Set.mem_univ _)
   · rw [Module.End.hasEigenvalue_iff, not_not] at hμ
     simp [hμ]
+
+/-- For an injective symmetric operator, the negative and positive spectral subspaces are
+complementary: the space is their direct sum. -/
+theorem isCompl_pointSpectralSubspace_Iio_Ioi (hA : A.IsSymmetric) (hker : LinearMap.ker A = ⊥) :
+    IsCompl (A.pointSpectralSubspace (Set.Iio 0)) (A.pointSpectralSubspace (Set.Ioi 0)) := by
+  refine ⟨(hA.isOrtho_pointSpectralSubspace Set.Ioi_disjoint_Iio_same.symm).disjoint,
+    codisjoint_iff.mpr ?_⟩
+  rw [← Module.End.pointSpectralSubspace_insert_zero (Ω := Set.Ioi 0) hker, Set.Ioi_insert,
+    ← Set.compl_Iio]
+  exact hA.pointSpectralSubspace_sup_compl_eq_top _
 
 /-- For a symmetric operator on a finite-dimensional space, the orthogonal complement of the
 point-spectral subspace selected by `Ω` is the point-spectral subspace selected by `Ωᶜ`. -/
@@ -870,5 +895,59 @@ theorem eigenvalues_ne_eigenvalues_of_disjoint (hA : A.IsSymmetric) (hB : B.IsSy
   rw [restrictedPointSpectrum_top, restrictedPointSpectrum_top] at h
   exact fun hij ↦ Set.disjoint_left.mp h (hA.hasEigenvalue_eigenvalues hn i)
     (hij ▸ hB.hasEigenvalue_eigenvalues hm j)
+
+end LinearMap.IsSymmetric
+
+/-! ### Definiteness on spectral subspaces -/
+
+namespace LinearMap.IsSymmetric
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [FiniteDimensional 𝕜 E] {A : Module.End 𝕜 E}
+
+/-- The quadratic form of a symmetric operator is negative definite on its negative spectral
+subspace. -/
+theorem re_inner_apply_self_neg_of_mem_pointSpectralSubspace_Iio (hA : A.IsSymmetric) {x : E}
+    (hx : x ∈ A.pointSpectralSubspace (Set.Iio 0)) (hx0 : x ≠ 0) : RCLike.re ⟪A x, x⟫_𝕜 < 0 := by
+  set U := A.pointSpectralSubspace (Set.Iio 0)
+  -- The finitely many eigenvalues carried by `U` are bounded above by some `a < 0`.
+  have hfin := (A.finite_restrictedPointSpectrum U).insert (-1)
+  have ha : sSup (insert (-1) (A.restrictedPointSpectrum U)) < 0 := by
+    rcases (Set.insert_nonempty _ _).csSup_mem hfin with h | h
+    · rw [h]
+      norm_num
+    · exact Module.End.pointSpectrumIn_iff_restrictedPointSpectrum_subset.mp
+        (A.pointSpectrumIn_pointSpectralSubspace (Set.Iio 0)) h
+  have hle := hA.re_inner_apply_self_le_of_pointSpectrumIn (U := U)
+    (fun y hy ↦ Module.End.map_pointSpectralSubspace_le (Submodule.mem_map_of_mem hy))
+    (Module.End.pointSpectrumIn_iff_restrictedPointSpectrum_subset.mpr
+      fun μ hμ ↦ le_csSup hfin.bddAbove (Set.mem_insert_of_mem _ hμ)) hx
+  have hx2 : 0 < ‖x‖ ^ 2 := by positivity
+  nlinarith
+
+/-- The quadratic form of a symmetric operator is positive definite on its positive spectral
+subspace. -/
+theorem re_inner_apply_self_pos_of_mem_pointSpectralSubspace_Ioi (hA : A.IsSymmetric) {x : E}
+    (hx : x ∈ A.pointSpectralSubspace (Set.Ioi 0)) (hx0 : x ≠ 0) : 0 < RCLike.re ⟪A x, x⟫_𝕜 := by
+  have hA' : (-A).IsSymmetric := fun y z ↦ by simp [hA y z]
+  have h := hA'.re_inner_apply_self_neg_of_mem_pointSpectralSubspace_Iio
+    (by rwa [Module.End.pointSpectralSubspace_neg, Set.neg_Iio, neg_zero]) hx0
+  simpa only [LinearMap.neg_apply, inner_neg_left, map_neg, neg_lt_zero] using h
+
+/-- The quadratic form of a symmetric operator is positive semidefinite on the spectral subspace
+of its nonnegative eigenvalues. -/
+theorem re_inner_apply_self_nonneg_of_mem_pointSpectralSubspace_Ici (hA : A.IsSymmetric) {x : E}
+    (hx : x ∈ A.pointSpectralSubspace (Set.Ici 0)) : 0 ≤ RCLike.re ⟪A x, x⟫_𝕜 := by
+  simpa only [zero_mul] using hA.le_re_inner_apply_self_of_pointSpectrumIn
+    (fun y hy ↦ Module.End.map_pointSpectralSubspace_le (Submodule.mem_map_of_mem hy))
+    (A.pointSpectrumIn_pointSpectralSubspace (Set.Ici 0)) hx
+
+/-- The quadratic form of a symmetric operator is negative semidefinite on the spectral subspace
+of its nonpositive eigenvalues. -/
+theorem re_inner_apply_self_nonpos_of_mem_pointSpectralSubspace_Iic (hA : A.IsSymmetric) {x : E}
+    (hx : x ∈ A.pointSpectralSubspace (Set.Iic 0)) : RCLike.re ⟪A x, x⟫_𝕜 ≤ 0 := by
+  simpa only [zero_mul] using hA.re_inner_apply_self_le_of_pointSpectrumIn
+    (fun y hy ↦ Module.End.map_pointSpectralSubspace_le (Submodule.mem_map_of_mem hy))
+    (A.pointSpectrumIn_pointSpectralSubspace (Set.Iic 0)) hx
 
 end LinearMap.IsSymmetric
