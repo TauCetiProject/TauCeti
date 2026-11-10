@@ -233,7 +233,7 @@ theorem eqOn_const_mul_schwarzChristoffelPrimitive_add_of_polygonal_boundary
     filter_upwards [isBounded_def.mp hfin.isBounded] with z hz _
     exact ((hφd z hz).differentiableAt (hfin.isClosed.isOpen_compl.mem_nhds hz)).continuousAt
   -- Partial fractions and integration then recover `f` itself.
-  exact eqOn_const_mul_schwarzChristoffelPrimitive_add_of_tendsto a e ha z₀ hf hfn hφd hφf hpole
+  exact eqOn_const_mul_schwarzChristoffelPrimitive_add_of_tendsto a e ha z₀ hfn hφd hφf hpole
     hdecay
 
 end TauCeti

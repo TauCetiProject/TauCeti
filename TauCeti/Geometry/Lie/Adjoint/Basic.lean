@@ -38,8 +38,8 @@ This advances Deliverable A, Layer 1 of
   left-invariant vector field of `X` to that of `Ad_{g⁻¹} X`.
 * `TauCeti.Lie.adjointContinuousLinearMap_lie`: the differential preserves the Lie bracket.
 * `TauCeti.Lie.tangentAd_mul`: the tangent adjoint automorphism respects group multiplication.
-* `MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap`: a homomorphism differentiable at the
-  identity intertwines the adjoint actions, `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`.
+* `MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap`: a homomorphism intertwines the
+  adjoint actions of its differential at the identity, `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`.
 
 ## References
 
@@ -133,16 +133,21 @@ theorem adjointContinuousLinearMap_mul (g h : G) :
     (by simp)]
   rfl
 
-/-- **Naturality of the adjoint action.** A group homomorphism `φ : K →* G` that is
-differentiable at the identity intertwines the adjoint actions: `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`,
-where `dφ` is the differential of `φ` at the identity. -/
+/-- **Naturality of the adjoint action.** A group homomorphism `φ : K →* G` intertwines the adjoint
+actions: `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`, where `dφ` is the differential of `φ` at the identity
+(zero if `φ` is not differentiable there, in which case both sides vanish). -/
 theorem _root_.MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap
     {F HK : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace HK]
     {J : ModelWithCorners 𝕜 F HK} {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K]
-    [LieGroup J 1 K] (φ : K →* G) (hφ : MDifferentiableAt J I φ 1) (k : K)
+    [LieGroup J 1 K] (φ : K →* G) (k : K)
     (ξ : GroupLieAlgebra J K) :
     φ.groupLieAlgebraMap J I (adjointContinuousLinearMap (I := J) k ξ) =
       adjointContinuousLinearMap (I := I) (φ k) (φ.groupLieAlgebraMap J I ξ) := by
+  by_cases hφ : MDifferentiableAt J I φ 1
+  swap
+  · simp only [MonoidHom.groupLieAlgebraMap_apply, mfderiv_zero_of_not_mdifferentiableAt hφ,
+      zero_apply]
+    exact (map_zero _).symm
   have hfun : (φ : K → G) ∘ conjDiffeomorph (I := J) (n := 1) k =
       conjDiffeomorph (I := I) (n := 1) (φ k) ∘ φ := by
     funext y

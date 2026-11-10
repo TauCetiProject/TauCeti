@@ -130,8 +130,8 @@ theorem PoincareInequality.piLp (μ : ∀ i, Measure (E i)) [∀ i, IsProbabilit
     have hsec : ∀ᵐ x ∂Measure.pi μ,
         evariance (fun y ↦ F (Function.update x i y)) (μ i) ≤
           (C : ℝ≥0∞) * ∫⁻ y, (ENNReal.ofReal ‖G (Function.update x i y) i‖) ^ 2 ∂μ i := by
-      filter_upwards [TauCeti.ae_memLp_two_pi_update μ hFm hFL i,
-        TauCeti.ae_memLp_two_pi_update μ (hGim i) (hGiL i) i]
+      filter_upwards [TauCeti.ae_memLp_pi_update μ i hFL,
+        TauCeti.ae_memLp_pi_update μ i (hGiL i)]
         with x hxF hxG
       have hs : ContDiff ℝ ∞ (fun y ↦ F (Function.update x i y)) :=
         hf.comp (PiLp.contDiff_toLp.comp (contDiff_update ∞ x i))

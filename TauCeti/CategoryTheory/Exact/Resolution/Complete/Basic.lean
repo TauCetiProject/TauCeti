@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Homology.ShortComplex.Splice
 public import TauCeti.CategoryTheory.Exact.Stable.Basic
+public import TauCeti.CategoryTheory.Exact.Acyclic
 
 /-!
 # Complete resolutions
@@ -26,7 +27,8 @@ maps are spliced. Uniqueness up to homotopy is the comparison theorem in
 
 * `TauCeti.ExactStructure.CompleteResolution`: a complete resolution, as the data of its
   conflations.
-* `TauCeti.ExactStructure.CompleteResolution.complex`: the spliced cochain complex.
+* `TauCeti.ExactStructure.CompleteResolution.complex`: the spliced cochain complex, acyclic by
+  `TauCeti.ExactStructure.CompleteResolution.acyclicData`.
 * `TauCeti.ExactStructure.CompleteResolution.cyclesMap`: the morphism of the objects of cycles in
   degree zero induced by a map of the spliced complexes.
 * `TauCeti.ExactStructure.IsFrobenius.completeResolution`: a complete resolution of an object of
@@ -125,6 +127,16 @@ theorem complex_d (n : ℤ) : r.complex.d n (n + 1) = r.d n := by
 of the form `n + 1`. -/
 theorem complex_d_negSucc_zero : r.complex.d (Int.negSucc 0) 0 = r.d (Int.negSucc 0) :=
   r.complex_d _
+
+/-- The spliced complex of a complete resolution is acyclic, with objects of cycles `Zⁿ`. -/
+@[expose, simps]
+def acyclicData : E.AcyclicData r.complex where
+  Z := r.Z
+  i := r.ι
+  p := r.π
+  zero := r.ι_π
+  conflation := r.conflation
+  fac n := by rw [complex_d, d_def]
 
 /-- A map of the spliced complexes commutes with the differentials of the resolutions. -/
 @[reassoc]

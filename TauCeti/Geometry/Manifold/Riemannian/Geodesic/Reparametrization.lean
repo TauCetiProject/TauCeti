@@ -24,7 +24,9 @@ affine statement.
 
 The same two operations are recorded for geodesics carrying prescribed initial data: restriction
 to a parameter set still containing `0` keeps the initial data, and the scaling `t ↦ a * t`, which
-fixes `0`, keeps the initial point and multiplies the initial velocity by `a`.
+fixes `0`, keeps the initial point and multiplies the initial velocity by `a`. Conversely, a
+geodesic on an open interval acquires initial data once an interior parameter `τ` is translated to
+`0`: its initial data are then `(γ τ, γ'(τ))`.
 
 ## Main results
 
@@ -35,6 +37,9 @@ fixes `0`, keeps the initial point and multiplies the initial velocity by `a`.
 * `TauCeti.Manifold.IsGeodesicCurveOnFrom.mono` and
   `TauCeti.Manifold.IsGeodesicCurveOnFrom.comp_mul_left`: the two operations on a geodesic with
   prescribed initial data.
+* `TauCeti.Manifold.IsGeodesicCurveOn.isGeodesicCurveOnFrom_comp_add_const`: translating a
+  geodesic on an open interval so that an interior parameter `τ` becomes `0` gives a geodesic with
+  initial data `(γ τ, γ'(τ))`.
 
 ## References
 
@@ -131,6 +136,25 @@ theorem IsGeodesicCurveOnFrom.comp_mul_left (h : IsGeodesicCurveOnFrom I γ s p 
     -- Scaling the fibre component by `a` is a map of the tangent bundle, so it can be applied
     -- to the bundled initial data of `h`.
     exact congrArg (fun z : TangentBundle I M ↦ TotalSpace.mk' E z.proj (a • z.snd)) h.initial_eq
+
+/-- **Restarting a geodesic.** Translating a geodesic `γ` on an open interval `(a, b)` in time,
+so that a parameter `τ ∈ (a, b)` becomes `0`, gives a geodesic on `(a - τ, b - τ)` with initial
+data `(γ τ, γ'(τ))`. -/
+theorem IsGeodesicCurveOn.isGeodesicCurveOnFrom_comp_add_const {a b τ : ℝ}
+    (hγ : IsGeodesicCurveOn I γ (Ioo a b)) (hτ : τ ∈ Ioo a b) :
+    IsGeodesicCurveOnFrom I (γ ∘ fun u : ℝ ↦ u + τ) (Ioo (a - τ) (b - τ)) (γ τ)
+      (curveVelocity I γ τ) := by
+  have h0 : (0 : ℝ) ∈ Ioo (a - τ) (b - τ) := ⟨sub_neg.mpr hτ.1, sub_pos.mpr hτ.2⟩
+  refine ⟨?_, h0, ?_⟩
+  · simpa only [one_mul] using hγ.comp_affine 1 τ (uniqueDiffOn_Ioo _ _)
+      fun u hu ↦ ⟨by linarith [hu.1], by linarith [hu.2]⟩
+  · have hd : HasDerivAt (fun u : ℝ ↦ u + τ) 1 0 := (hasDerivAt_id (0 : ℝ)).add_const τ
+    have hγτ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ (0 + τ) := by
+      simpa only [zero_add] using
+        (hγ.contMDiffOn.contMDiffAt (isOpen_Ioo.mem_nhds hτ)).mdifferentiableAt two_ne_zero
+    rw [curveVelocityWithin_of_mem_nhds (isOpen_Ioo.mem_nhds h0), curveVelocity_comp hd hγτ,
+      one_smul, Function.comp_apply]
+    exact congrArg (fun u : ℝ ↦ TotalSpace.mk' E (γ u) (curveVelocity I γ u)) (zero_add τ)
 
 end TauCeti.Manifold
 

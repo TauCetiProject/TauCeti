@@ -14,7 +14,7 @@ import TauCeti.Analysis.Calculus.Gradient
 /-!
 # Global stable and unstable sets are embedded `C^n` submanifolds
 
-Let `x` be a nondegenerate critical point of a globally `C^(n+1)` function `f` (`1 ≤ n`) on a
+Let `x` be a nondegenerate critical point of a globally `C^(n+1)` function `f` on a
 finite-dimensional real inner product space whose gradient is globally Lipschitz. This file
 shows that the stable and unstable sets of `x` under the negative-gradient flow are embedded
 `C^n` submanifolds of the ambient space: every point of the stable set has a `C^n` ambient chart,
@@ -134,7 +134,7 @@ invariant set which, on an open set `V` of points `w` with displacement `w - x` 
 a `C^n` chart `q` with `C^n` inverse, is cut out by `q (w - x) ∈ L`. If the trajectory of `y`
 reaches `V` and the source of `q` at time `T`, then composing `q` with the time-`T` flow gives a
 `C^n` chart around `y` cutting out `S` by the same condition. -/
-private theorem exists_chart_of_isInvariant {n : ℕ} (hn : 1 ≤ n) (hfs : ContDiff ℝ (n + 1) f)
+private theorem exists_chart_of_isInvariant {n : ℕ} (hfs : ContDiff ℝ (n + 1) f)
     (hf : LipschitzWith K (∇ f))
     {S : Set E} (hS : IsInvariant (negativeGradientFlow f hf) S) {q : OpenPartialHomeomorph E E}
     (hqC : ∀ z ∈ q.source, ContDiffAt ℝ n q z) (hqCs : ∀ z ∈ q.target, ContDiffAt ℝ n q.symm z)
@@ -162,11 +162,11 @@ private theorem exists_chart_of_isInvariant {n : ℕ} (hn : 1 ≤ n) (hfs : Cont
   · rw [hesource] at hz
     rw [he]
     exact (hqC _ hz.2).comp z
-      (((contDiff_negativeGradientFlow_apply f hf hn hfs T).sub
+      (((contDiff_negativeGradientFlow_apply f hf hfs T).sub
         contDiff_const).contDiffAt)
   · rw [OpenPartialHomeomorph.trans_target] at hz
     rw [hes]
-    exact ((contDiff_negativeGradientFlow_apply f hf hn hfs (-T)).comp
+    exact ((contDiff_negativeGradientFlow_apply f hf hfs (-T)).comp
       (contDiff_id.add contDiff_const)).contDiffAt.comp z (hqCs z hz.1)
   · rw [hesource] at hz
     rw [he]
@@ -182,7 +182,7 @@ nondegenerate critical point `x` under the negative-gradient flow has a `C^n` am
 with `C^n` inverse, carrying the stable set onto the stable Hessian subspace, whose dimension is
 `finrank E - morseIndex f x`. -/
 theorem exists_stableSet_chart (h : IsNondegenerateCriticalPoint f x) {n : ℕ}
-    (hn : 1 ≤ n) (hfs : ContDiff ℝ (n + 1) f) (hf : LipschitzWith K (∇ f)) {y : E}
+    (hfs : ContDiff ℝ (n + 1) f) (hf : LipschitzWith K (∇ f)) {y : E}
     (hy : y ∈ Flow.stableSet (negativeGradientFlow f hf) x) :
     ∃ e : OpenPartialHomeomorph E E, y ∈ e.source ∧
       (∀ z ∈ e.source, ContDiffAt ℝ n e z) ∧
@@ -197,7 +197,7 @@ theorem exists_stableSet_chart (h : IsNondegenerateCriticalPoint f x) {n : ℕ}
   have hxq : x - x ∈ q.source := by simpa [hqs] using hρ
   obtain ⟨T, hT⟩ := ((Flow.mem_stableSet.1 hy).eventually ((hVo.inter
     (q.open_source.preimage (continuous_sub_right x))).mem_nhds ⟨hxV, hxq⟩)).exists
-  refine exists_chart_of_isInvariant hn hfs hf (Flow.isInvariant_stableSet _ x) hqC hqCs hVo
+  refine exists_chart_of_isInvariant hfs hf (Flow.isInvariant_stableSet _ x) hqC hqCs hVo
     (fun w hwV hwq ↦ ?_) hT
   have hxw : x + (w - x) = w := add_sub_cancel x w
   rw [SetLike.mem_coe, ← hqset _ hwq, h.mem_localStableSet_iff_negativeGradientFlow hf, hxw]
@@ -215,7 +215,7 @@ backward-time counterpart of `IsNondegenerateCriticalPoint.exists_stableSet_char
 every point of the unstable set has a `C^n` ambient chart, with `C^n` inverse, carrying the
 unstable set onto the unstable Hessian subspace, whose dimension is the Morse index. -/
 theorem exists_unstableSet_chart (h : IsNondegenerateCriticalPoint f x) {n : ℕ}
-    (hn : 1 ≤ n) (hfs : ContDiff ℝ (n + 1) f) (hf : LipschitzWith K (∇ f)) {y : E}
+    (hfs : ContDiff ℝ (n + 1) f) (hf : LipschitzWith K (∇ f)) {y : E}
     (hy : y ∈ Flow.unstableSet (negativeGradientFlow f hf) x) :
     ∃ e : OpenPartialHomeomorph E E, y ∈ e.source ∧
       (∀ z ∈ e.source, ContDiffAt ℝ n e z) ∧
@@ -230,7 +230,7 @@ theorem exists_unstableSet_chart (h : IsNondegenerateCriticalPoint f x) {n : ℕ
   have hxq : x - x ∈ q.source := by simpa [hqs] using hρ
   obtain ⟨T, hT⟩ := ((Flow.mem_unstableSet.1 hy).eventually ((hVo.inter
     (q.open_source.preimage (continuous_sub_right x))).mem_nhds ⟨hxV, hxq⟩)).exists
-  refine exists_chart_of_isInvariant hn hfs hf (Flow.isInvariant_unstableSet _ x) hqC hqCs hVo
+  refine exists_chart_of_isInvariant hfs hf (Flow.isInvariant_unstableSet _ x) hqC hqCs hVo
     (fun w hwV hwq ↦ ?_) hT
   have hxw : x + (w - x) = w := add_sub_cancel x w
   rw [SetLike.mem_coe, ← hqset _ hwq, h.mem_localUnstableSet_iff_negativeGradientFlow hf, hxw]
