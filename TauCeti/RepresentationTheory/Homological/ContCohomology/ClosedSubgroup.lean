@@ -116,24 +116,9 @@ theorem exists_openSubgroup_le_resolutionMap_subgroupSubtype_eq_zero {H : Subgro
       (𝟙 (TopRep.res (H.subtype : H →* G) X)) n).hom F = 0) :
     ∃ V : OpenSubgroup G, H ≤ V ∧ (resolutionMap (ContinuousMonoidHom.subgroupSubtype
       (V : Subgroup G)) (𝟙 (TopRep.res ((V : Subgroup G).subtype : V →* G) X)) n).hom F = 0 := by
-  -- vanishing on `H` passes to its closure, as the iterated maps are continuous into discrete
-  -- spaces
-  have hcl : ∀ (n : ℕ) (F : (TopRep.resolutionX X n).V), ResolutionVanishesOn X (H : Set G) n F →
-      ResolutionVanishesOn X (closure (H : Set G)) n F := by
-    intro n
-    induction n with
-    | zero => exact fun F hF ↦ by simpa only [resolutionVanishesOn_zero] using hF
-    | succ n ih =>
-      intro F hF
-      rw [resolutionVanishesOn_succ] at hF ⊢
-      set F' : C(G, (TopRep.resolutionX X n).V) := F
-      have hsub : (H : Set G) ⊆ F' ⁻¹' {v | ResolutionVanishesOn X (closure (H : Set G)) n v} :=
-        fun g hg ↦ ih _ (hF g hg)
-      exact fun g hg ↦ closure_minimal hsub
-        ((isClosed_discrete _).preimage F'.continuous) hg
   have hF' : ResolutionVanishesOn X (H.topologicalClosure : Set G) n F := by
     rw [Subgroup.topologicalClosure_coe]
-    exact hcl n F ((resolutionMap_subgroupSubtype_eq_zero_iff H n F).1 hF)
+    exact ((resolutionMap_subgroupSubtype_eq_zero_iff H n F).1 hF).closure n
   obtain ⟨W, hWopen, hHW, hW⟩ := hF'.exists_isOpen
     (H.isClosed_topologicalClosure.isCompact) n
   obtain ⟨V, hHV, hVW⟩ := H.topologicalClosure.exists_openSubgroup_le_subset_of_isClosed
