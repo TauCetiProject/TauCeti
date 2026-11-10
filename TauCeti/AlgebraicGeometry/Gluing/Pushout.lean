@@ -6,7 +6,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.Separated
-public import Mathlib.AlgebraicGeometry.Morphisms.OpenImmersion
+public import TauCeti.AlgebraicGeometry.Morphisms.OpenImmersion
 public import Mathlib.AlgebraicGeometry.PullbackCarrier
 public import TauCeti.AlgebraicGeometry.Scheme.LocallyDirected
 
@@ -29,14 +29,6 @@ universe u
 open CategoryTheory Limits
 
 namespace AlgebraicGeometry.Scheme
-
-/-- In a cartesian square, the preimage of an open immersion's range is the range of its
-base change. -/
-lemma preimage_opensRange_of_isPullback {P X Y S : Scheme.{u}}
-    {c : P ⟶ X} {g' : P ⟶ Y} {g : X ⟶ S} {b : Y ⟶ S}
-    [IsOpenImmersion g] [IsOpenImmersion g'] (h : IsPullback c g' g b) :
-    b ⁻¹ᵁ g.opensRange = g'.opensRange := by
-  simpa using (IsOpenImmersion.image_preimage_eq_preimage_image_of_isPullback h ⊤).symm
 
 variable {U X Y : Scheme.{u}} (f : U ⟶ X) (g : U ⟶ Y)
   [IsOpenImmersion f] [IsOpenImmersion g]
