@@ -9,6 +9,7 @@ public import Mathlib.Data.Fin.Tuple.Sort
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Data.Fintype.Fin
 import TauCeti.Data.Finset.Sort
+import TauCeti.Data.Set.Finite
 
 /-!
 # Sorted tuples
@@ -53,14 +54,6 @@ theorem Monotone.eq_of_card_filter_eq (hf : Monotone f) (hg : Monotone g)
 theorem Antitone.eq_of_card_filter_eq (hf : Antitone f) (hg : Antitone g)
     (h : ∀ a, #{i | f i = a} = #{i | g i = a}) : f = g :=
   Monotone.eq_of_card_filter_eq (α := αᵒᵈ) hf hg h
-
-/-- A map from a finite type with the same range as an injective map is injective. -/
-theorem Function.Injective.of_range_eq {ι β : Type*} [Finite ι] {f g : ι → β}
-    (hf : Function.Injective f) (h : Set.range f = Set.range g) : Function.Injective g := by
-  have e : ι ≃ Set.range g :=
-    (Equiv.ofInjective f hf).trans (Equiv.subtypeEquivRight fun x => by rw [h])
-  exact Subtype.val_injective.comp
-    ((Finite.injective_iff_surjective_of_equiv e).2 Set.rangeFactorization_surjective)
 
 namespace Tuple
 
