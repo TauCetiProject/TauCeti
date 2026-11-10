@@ -40,6 +40,7 @@ import Mathlib.RingTheory.Artinian.Module
 import Mathlib.RingTheory.SimpleRing.Congr
 import Mathlib.RingTheory.SimpleRing.Field
 import Mathlib.RingTheory.TensorProduct.Finite
+import TauCeti.LinearAlgebra.TensorProduct.Basic
 import TauCeti.RingTheory.Semisimple.EndAlgebra
 
 /-!
@@ -321,7 +322,8 @@ theorem finrank_mul_finrank_centralizer_of_isSimpleRing_tensorProduct_mulOpposit
     (MulOpposite.opLinearEquiv K (M := A)).finrank_eq.symm,
     ← (centralizerAlgEquivEnd B).toLinearEquiv.finrank_eq] at key
   -- `key : c * (b * a) = a ^ 2`; cancel one factor of `a = finrank K A`.
-  have := nontrivial_of_nontrivial_tensorProduct_mulOpposite (K := K) (A := A) ↥B
+  have : Nontrivial Aᵐᵒᵖ := TensorProduct.nontrivial_right (R := K) (M := ↥B)
+  have : Nontrivial A := MulOpposite.unop_injective.nontrivial
   have ha : 0 < finrank K A := Module.finrank_pos
   refine Nat.eq_of_mul_eq_mul_right ha ?_
   rw [sq] at key
@@ -332,7 +334,8 @@ theorem finrank_mul_finrank_centralizer_of_isSimpleRing_tensorProduct_mulOpposit
 ambient algebra is simple. No centrality hypothesis on the subalgebra is needed. -/
 theorem _root_.Subalgebra.isSimpleRing_centralizer_of_isSimpleRing_tensorProduct :
     IsSimpleRing (Subalgebra.centralizer K (B : Set A)) := by
-  have := nontrivial_of_nontrivial_tensorProduct_mulOpposite (K := K) (A := A) ↥B
+  have : Nontrivial Aᵐᵒᵖ := TensorProduct.nontrivial_right (R := K) (M := ↥B)
+  have : Nontrivial A := MulOpposite.unop_injective.nontrivial
   have : FiniteDimensional K ↥B :=
     FiniteDimensional.of_injective B.val.toLinearMap Subtype.val_injective
   have : IsArtinianRing (↥B ⊗[K] Aᵐᵒᵖ) := IsArtinianRing.of_finite K _
