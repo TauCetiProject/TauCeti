@@ -30,8 +30,8 @@ pages of a spectral sequence on which those computations rest.
   an object of the bottom row lies in `P` on the page `r` as soon as it does on some later page,
   for instance once it has stabilized to a vanishing limit term. This is the argument by which
   the second part of Proposition 5.11 of Barraud–Damian–Humilière–Oancea shows, through the
-  path-loop fibration `Ω²Q → P Ω₀Q → Ω₀Q`, that the homology of `Ω₀Q` is torsion of a bounded
-  power of `d` when the positive homology of `Ω²Q` is.
+  path-loop fibration `Ω²Q → P Ω₀Q → Ω₀Q`, that the positive-degree homology of `Ω₀Q` is
+  torsion of a bounded power of `d` when the positive homology of `Ω²Q` is.
 * **Comparison.** A morphism of spectral sequences which is an isomorphism modulo `P` on every
   object of the page `r` is an isomorphism modulo `P` on every object of every later page
   (`CategoryTheory.SpectralSequence.Hom.isoModSerre_hom_f_of_le`), by the five lemma modulo a
