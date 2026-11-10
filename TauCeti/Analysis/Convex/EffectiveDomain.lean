@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.Data.EReal.Basic
+import TauCeti.Analysis.Convex.Prod
+import TauCeti.Data.EReal.Operations
 
 /-!
 # The effective domain of an extended-real convex function
@@ -21,6 +23,8 @@ For a function `f : E → EReal` with convex real epigraph, the effective domain
 * `TauCeti.le_coe_of_convex_epigraph` — the epigraph gives a convex-combination bound;
 * `TauCeti.convex_setOf_ne_top` — the effective domain is convex;
 * `TauCeti.convexOn_toReal` — the real representative is convex on the effective domain;
+* `TauCeti.convex_epigraph_coe_mul_iff` — scaling by a positive real preserves convexity of the
+  epigraph;
 * `TauCeti.setOf_ite_ne_top`, `TauCeti.ite_ne_bot` and `TauCeti.convex_epigraph_ite` — a real
   function convex on `Ω` and extended by `⊤` off `Ω` has effective domain `Ω`, never takes the
   value `⊥`, and has convex real epigraph.
@@ -87,5 +91,18 @@ theorem convex_epigraph_ite (hu : ConvexOn ℝ Ω u) :
   by_cases hp : p.1 ∈ Ω <;> simp [hp]
 
 end Ite
+
+/-- Scaling an extended-real potential by a positive real number `c` does not change convexity of
+its real epigraph: the two epigraphs differ by scaling the height coordinate. -/
+theorem convex_epigraph_coe_mul_iff {V : Type*} [AddCommMonoid V] [SMul ℝ V] {c : ℝ}
+    (hc : 0 < c) (f : V → EReal) :
+    Convex ℝ {p : V × ℝ | (c : EReal) * f p.1 ≤ p.2} ↔ Convex ℝ {p : V × ℝ | f p.1 ≤ p.2} := by
+  have hheight (x : V) (t : ℝ) :
+      (c : EReal) * f x ≤ ((c * t : ℝ) : EReal) ↔ f x ≤ (t : EReal) := by
+    simp only [EReal.coe_mul, EReal.coe_mul_le_coe_mul_iff hc]
+  refine ⟨convex_of_height_scale (inv_pos.2 hc).ne' fun x τ ↦ ?_,
+    convex_of_height_scale hc.ne' fun x τ ↦ (hheight x τ).symm⟩
+  simp only [mem_ofPred_eq]
+  rw [← hheight, mul_inv_cancel_left₀ hc.ne']
 
 end TauCeti

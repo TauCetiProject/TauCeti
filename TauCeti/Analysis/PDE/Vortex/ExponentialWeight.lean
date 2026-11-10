@@ -68,7 +68,8 @@ open BoundedContinuousFunction (smulLp coeFn_smulLp norm_smulLp_apply_le
   norm_smulLp_apply_le_norm_smulLp_apply smulLp_add smulLp_smul smulLp_const smulLp_mul
   smulLp_zero smulLp_one inner_smulLp_apply_left)
 open ENNReal (ofNat_ne_top)
-open TestFunction (smulLeftCLM smulLeftCLM_apply)
+open TestFunction (ambientToLp coeFn_ambientToLp inner_ambientToLp norm_ambientToLp_sq smulLeftCLM
+  smulLeftCLM_apply)
 
 variable {μ : Measure ℂ} [μ.IsAddHaarMeasure] {x : ℂ → EuclideanSpace ℝ (Fin 4)}
 
@@ -82,12 +83,12 @@ private theorem norm_smulLp_le_of_abs_le {φ ψ : ℂ →ᵇ ℝ} (h : ∀ z, |�
 
 /-! ### Test fields -/
 
-private theorem testFieldToLp_smulLeftCLM (φ : ℂ →ᵇ ℝ) (hφ : ContDiff ℝ 2 φ) (η : TestField) :
-    testFieldToLp μ (smulLeftCLM hφ η) = smulLp μ 2 ofNat_ne_top φ (testFieldToLp μ η) := by
+private theorem ambientToLp_smulLeftCLM (φ : ℂ →ᵇ ℝ) (hφ : ContDiff ℝ 2 φ) (η : TestField) :
+    ambientToLp 2 μ (smulLeftCLM hφ η) = smulLp μ 2 ofNat_ne_top φ (ambientToLp 2 μ η) := by
   refine Lp.ext ?_
-  filter_upwards [coeFn_testFieldToLp (μ := μ) (smulLeftCLM hφ η),
-    coeFn_smulLp ofNat_ne_top φ (testFieldToLp μ η),
-    coeFn_testFieldToLp (μ := μ) η] with z h₁ h₂ h₃
+  filter_upwards [coeFn_ambientToLp (p := 2) (ν := μ) (smulLeftCLM hφ η),
+    coeFn_smulLp ofNat_ne_top φ (ambientToLp 2 μ η),
+    coeFn_ambientToLp (p := 2) (ν := μ) η] with z h₁ h₂ h₃
   rw [h₁, h₂, h₃, smulLeftCLM_apply]
 
 /-- The commutator of `L_x*` with multiplication by `φ` is the principal symbol at `dφ`, whose
@@ -96,14 +97,14 @@ private theorem norm_adjoint_smulLeftCLM_sub_le (hx : Continuous x) (φ ψ : ℂ
     (hφ : ContDiff ℝ 2 φ) (hψ : ∀ z, ‖fderiv ℝ φ z‖ ≤ ψ z) (η : TestField) :
     ‖gaugeFixedAdjointToLp μ hx (smulLeftCLM hφ η) -
         smulLp μ 2 ofNat_ne_top φ (gaugeFixedAdjointToLp μ hx η)‖ ≤
-      ‖smulLp μ 2 ofNat_ne_top ψ (testFieldToLp μ η)‖ := by
+      ‖smulLp μ 2 ofNat_ne_top ψ (ambientToLp 2 μ η)‖ := by
   refine Lp.norm_le_norm_of_ae_le ?_
   filter_upwards [Lp.coeFn_sub (gaugeFixedAdjointToLp μ hx (smulLeftCLM hφ η))
       (smulLp μ 2 ofNat_ne_top φ (gaugeFixedAdjointToLp μ hx η)),
     coeFn_gaugeFixedAdjointToLp (μ := μ) hx (smulLeftCLM hφ η),
     coeFn_smulLp ofNat_ne_top φ (gaugeFixedAdjointToLp μ hx η),
-    coeFn_gaugeFixedAdjointToLp (μ := μ) hx η, coeFn_smulLp ofNat_ne_top ψ (testFieldToLp μ η),
-    coeFn_testFieldToLp (μ := μ) η] with z h₁ h₂ h₃ h₄ h₅ h₆
+    coeFn_gaugeFixedAdjointToLp (μ := μ) hx η, coeFn_smulLp ofNat_ne_top ψ (ambientToLp 2 μ η),
+    coeFn_ambientToLp (p := 2) (ν := μ) η] with z h₁ h₂ h₃ h₄ h₅ h₆
   have hψ₀ : 0 ≤ ψ z := (norm_nonneg _).trans (hψ z)
   rw [h₁, Pi.sub_apply, h₂, h₃, h₄, h₅, h₆,
     funext (smulLeftCLM_apply hφ η),
@@ -145,14 +146,14 @@ private theorem norm_sq_adjoint_smulLeftCLM (hx : Continuous x) (φ dφ : ℂ �
     ‖gaugeFixedAdjointToLp μ hx (smulLeftCLM hφ η)‖ ^ 2 =
       ⟪gaugeFixedAdjointToLp μ hx (smulLeftCLM (contDiff_mul_self hφ) η),
           gaugeFixedAdjointToLp μ hx η⟫ +
-        ‖smulLp μ 2 ofNat_ne_top dφ (testFieldToLp μ η)‖ ^ 2 := by
+        ‖smulLp μ 2 ofNat_ne_top dφ (ambientToLp 2 μ η)‖ ^ 2 := by
   rw [← real_inner_self_eq_norm_sq, ← real_inner_self_eq_norm_sq, L2.inner_def, L2.inner_def,
     L2.inner_def, ← integral_add (L2.integrable_inner _ _) (L2.integrable_inner _ _)]
   refine integral_congr_ae ?_
   filter_upwards [coeFn_gaugeFixedAdjointToLp (μ := μ) hx (smulLeftCLM hφ η),
     coeFn_gaugeFixedAdjointToLp (μ := μ) hx (smulLeftCLM (contDiff_mul_self hφ) η),
-    coeFn_gaugeFixedAdjointToLp (μ := μ) hx η, coeFn_smulLp ofNat_ne_top dφ (testFieldToLp μ η),
-    coeFn_testFieldToLp (μ := μ) η] with z h₁ h₂ h₃ h₄ h₅
+    coeFn_gaugeFixedAdjointToLp (μ := μ) hx η, coeFn_smulLp ofNat_ne_top dφ (ambientToLp 2 μ η),
+    coeFn_ambientToLp (p := 2) (ν := μ) η] with z h₁ h₂ h₃ h₄ h₅
   rw [h₁, h₂, h₃, h₄, h₅, funext (smulLeftCLM_apply hφ η),
     funext (smulLeftCLM_apply (contDiff_mul_self hφ) η), real_inner_self_eq_norm_sq,
     norm_sq_gaugeFixedAdjoint_fun_smul x (hφ.differentiable (by norm_num) z)
@@ -166,13 +167,13 @@ private theorem mul_norm_sq_smulLeftCLM_le (hx : ContDiff ℝ 1 x)
     (hsol : ∀ z, equation x z = 0) {a R : ℝ} (ha : a ≤ 1 / 4)
     (hR : ∀ z, R < ‖z‖ → a ≤ x z 2 ^ 2 + x z 3 ^ 2) (φ : ℂ →ᵇ ℝ) (hφ : ContDiff ℝ 2 φ)
     (hφR : ∀ z, ‖z‖ ≤ R → φ z = 0) (η : TestField) :
-    a * ‖testFieldToLp μ (smulLeftCLM hφ η)‖ ^ 2 ≤
+    a * ‖ambientToLp 2 μ (smulLeftCLM hφ η)‖ ^ 2 ≤
       ‖gaugeFixedAdjointToLp μ hx.continuous (smulLeftCLM hφ η)‖ ^ 2 := by
   set ζ := smulLeftCLM hφ η
   have hint := mul_integral_norm_sq_le_integral_norm_sq_gaugeFixedAdjoint (μ := μ) hx ζ.contDiff
     ζ.hasCompactSupport (fun z _ ↦ hsol z) ha fun z hz ↦ hR z <| lt_of_not_ge fun h ↦
       hz (by rw [smulLeftCLM_apply, hφR z h, zero_smul])
-  rw [norm_sq_testFieldToLp, norm_sq_gaugeFixedAdjointToLp]
+  rw [norm_ambientToLp_sq, norm_sq_gaugeFixedAdjointToLp]
   exact hint
 
 /-! ### Approximation of the least-norm weak solution -/
@@ -188,7 +189,7 @@ private theorem exists_tendsto_testField (hx : Continuous x) {c : ℝ} (hc : 0 <
         ∫ z, ⟪u z, gaugeFixedAdjoint x η z⟫ ∂μ = 0) →
       ∫ z, ⟪y z, u z⟫ ∂μ = 0) :
     ∃ (η : ℕ → TestField) (u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ),
-      Tendsto (fun n ↦ testFieldToLp μ (η n)) atTop (𝓝 u) ∧
+      Tendsto (fun n ↦ ambientToLp 2 μ (η n)) atTop (𝓝 u) ∧
         Tendsto (fun n ↦ gaugeFixedAdjointToLp μ hx (η n)) atTop (𝓝 y) := by
   set S := gaugeFixedAdjointToLp μ hx
   -- `y` lies in `(range S)ᗮᗮ`, the closure of the range of `S`.
@@ -201,12 +202,12 @@ private theorem exists_tendsto_testField (hx : Continuous x) {c : ℝ} (hc : 0 <
   obtain ⟨v, hv, hvy⟩ := mem_closure_iff_seq_limit.1 hy
   choose η hη using hv
   have hSη : Tendsto (fun n ↦ S (η n)) atTop (𝓝 y) := by simpa only [hη] using hvy
-  -- The lower bound makes `testFieldToLp μ (η n)` a Cauchy sequence.
-  have hcau : CauchySeq fun n ↦ testFieldToLp μ (η n) := by
+  -- The lower bound makes `ambientToLp 2 μ (η n)` a Cauchy sequence.
+  have hcau : CauchySeq fun n ↦ ambientToLp 2 μ (η n) := by
     refine Metric.cauchySeq_iff.2 fun ε hε ↦ ?_
     obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.1 hSη.cauchySeq (√c * ε) (by positivity)
     refine ⟨N, fun m hm n hn ↦ ?_⟩
-    have h := sqrt_mul_norm_testFieldToLp_le hx hc.le hgap (η m - η n)
+    have h := sqrt_mul_norm_ambientToLp_le hx hc.le hgap (η m - η n)
     rw [map_sub, map_sub, ← dist_eq_norm, ← dist_eq_norm] at h
     exact lt_of_mul_lt_mul_left (h.trans_lt (hN m hm n hn)) (Real.sqrt_nonneg c)
   obtain ⟨u, hu⟩ := cauchySeq_tendsto_of_complete hcau
@@ -218,9 +219,9 @@ private theorem exists_tendsto_testField (hx : Continuous x) {c : ℝ} (hc : 0 <
 `⟪φ f, φ u⟫ + ‖|dφ| u‖²`. -/
 private theorem tendsto_norm_sq_adjoint_smulLeftCLM (hx : Continuous x)
     {f y u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} {η : ℕ → TestField}
-    (hT : Tendsto (fun n ↦ testFieldToLp μ (η n)) atTop (𝓝 u))
+    (hT : Tendsto (fun n ↦ ambientToLp 2 μ (η n)) atTop (𝓝 u))
     (hS : Tendsto (fun n ↦ gaugeFixedAdjointToLp μ hx (η n)) atTop (𝓝 y))
-    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx ζ⟫ = ⟪f, testFieldToLp μ ζ⟫)
+    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx ζ⟫ = ⟪f, ambientToLp 2 μ ζ⟫)
     (φ dφ : ℂ →ᵇ ℝ)
     (hφ : ContDiff ℝ 2 φ) (hdφ : ∀ z, dφ z = ‖fderiv ℝ φ z‖) :
     Tendsto (fun n ↦ ‖gaugeFixedAdjointToLp μ hx (smulLeftCLM hφ (η n))‖ ^ 2) atTop
@@ -232,10 +233,10 @@ private theorem tendsto_norm_sq_adjoint_smulLeftCLM (hx : Continuous x)
   set hφ₂ := contDiff_mul_self hφ
   set S := gaugeFixedAdjointToLp μ hx
   -- Split `⟪S (φ² η_n), S η_n⟫` into the weak pairing with `y` and an error term.
-  have hsplit (n : ℕ) : ⟪f, smulLp μ 2 ofNat_ne_top φ₂ (testFieldToLp μ (η n))⟫ +
+  have hsplit (n : ℕ) : ⟪f, smulLp μ 2 ofNat_ne_top φ₂ (ambientToLp 2 μ (η n))⟫ +
       ⟪S (smulLeftCLM hφ₂ (η n)), S (η n) - y⟫ =
         ⟪S (smulLeftCLM hφ₂ (η n)), S (η n)⟫ := by
-    rw [inner_sub_right, real_inner_comm y, hweak, testFieldToLp_smulLeftCLM]
+    rw [inner_sub_right, real_inner_comm y, hweak, ambientToLp_smulLeftCLM]
     ring
   refine Tendsto.congr hsplit ?_
   have hφφ : ⟪smulLp μ 2 ofNat_ne_top φ f, smulLp μ 2 ofNat_ne_top φ u⟫ =
@@ -252,12 +253,12 @@ private theorem tendsto_norm_sq_adjoint_smulLeftCLM (hx : Continuous x)
     rw [smul_apply, smul_eq_mul, hdφ]
     exact norm_fderiv_mul_self_le (hφ.differentiable (by norm_num)) z
   have hbound (n : ℕ) : ‖S (smulLeftCLM hφ₂ (η n))‖ ≤
-      ‖φ₂‖ * ‖S (η n)‖ + ‖(2 * ‖φ‖) • dφ‖ * ‖testFieldToLp μ (η n)‖ := by
+      ‖φ₂‖ * ‖S (η n)‖ + ‖(2 * ‖φ‖) • dφ‖ * ‖ambientToLp 2 μ (η n)‖ := by
     calc ‖S (smulLeftCLM hφ₂ (η n))‖
         ≤ ‖smulLp μ 2 ofNat_ne_top φ₂ (S (η n))‖ +
             ‖S (smulLeftCLM hφ₂ (η n)) - smulLp μ 2 ofNat_ne_top φ₂ (S (η n))‖ :=
           norm_le_insert' _ _
-      _ ≤ ‖φ₂‖ * ‖S (η n)‖ + ‖(2 * ‖φ‖) • dφ‖ * ‖testFieldToLp μ (η n)‖ :=
+      _ ≤ ‖φ₂‖ * ‖S (η n)‖ + ‖(2 * ‖φ‖) • dφ‖ * ‖ambientToLp 2 μ (η n)‖ :=
           add_le_add (norm_smulLp_apply_le _ _)
             ((norm_adjoint_smulLeftCLM_sub_le hx φ₂ _ hφ₂ hd _).trans
             (norm_smulLp_apply_le _ _))
@@ -272,19 +273,19 @@ which `|α|² / 4 ≥ a`, `a ‖φ u‖² ≤ ⟪φ f, φ u⟫ + ‖|dφ| u‖²
 private theorem mul_norm_sq_smulLp_le (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
     {a R : ℝ} (ha : a ≤ 1 / 4) (hR : ∀ z, R < ‖z‖ → a ≤ x z 2 ^ 2 + x z 3 ^ 2)
     {f y u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} {η : ℕ → TestField}
-    (hT : Tendsto (fun n ↦ testFieldToLp μ (η n)) atTop (𝓝 u))
+    (hT : Tendsto (fun n ↦ ambientToLp 2 μ (η n)) atTop (𝓝 u))
     (hS : Tendsto (fun n ↦ gaugeFixedAdjointToLp μ hx.continuous (η n)) atTop (𝓝 y))
-    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx.continuous ζ⟫ = ⟪f, testFieldToLp μ ζ⟫)
+    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx.continuous ζ⟫ = ⟪f, ambientToLp 2 μ ζ⟫)
     (φ dφ : ℂ →ᵇ ℝ)
     (hφ : ContDiff ℝ 2 φ) (hdφ : ∀ z, dφ z = ‖fderiv ℝ φ z‖) (hφR : ∀ z, ‖z‖ ≤ R → φ z = 0) :
     a * ‖smulLp μ 2 ofNat_ne_top φ u‖ ^ 2 ≤
       ⟪smulLp μ 2 ofNat_ne_top φ f, smulLp μ 2 ofNat_ne_top φ u⟫ +
         ‖smulLp μ 2 ofNat_ne_top dφ u‖ ^ 2 := by
-  have hl : Tendsto (fun n ↦ a * ‖testFieldToLp μ (smulLeftCLM hφ (η n))‖ ^ 2) atTop
+  have hl : Tendsto (fun n ↦ a * ‖ambientToLp 2 μ (smulLeftCLM hφ (η n))‖ ^ 2) atTop
       (𝓝 (a * ‖smulLp μ 2 ofNat_ne_top φ u‖ ^ 2)) := by
     refine Tendsto.congr (fun n ↦ ?_)
       (((((smulLp μ 2 ofNat_ne_top φ).continuous.tendsto u).comp hT).norm.pow 2).const_mul a)
-    rw [Function.comp_apply, testFieldToLp_smulLeftCLM]
+    rw [Function.comp_apply, ambientToLp_smulLeftCLM]
   exact le_of_tendsto_of_tendsto' hl
     (tendsto_norm_sq_adjoint_smulLeftCLM hx.continuous hT hS hweak φ dφ hφ hdφ) fun n ↦
       mul_norm_sq_smulLeftCLM_le hx hsol ha hR φ hφ hφR (η n)
@@ -292,9 +293,9 @@ private theorem mul_norm_sq_smulLp_le (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equ
 /-- The weighted norm of `y`: `‖φ y‖ ≤ (⟪φ f, φ u⟫ + ‖|dφ| u‖²)^(1/2) + ‖|dφ| u‖`. -/
 private theorem norm_smulLp_le_sqrt_add (hx : Continuous x)
     {f y u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} {η : ℕ → TestField}
-    (hT : Tendsto (fun n ↦ testFieldToLp μ (η n)) atTop (𝓝 u))
+    (hT : Tendsto (fun n ↦ ambientToLp 2 μ (η n)) atTop (𝓝 u))
     (hS : Tendsto (fun n ↦ gaugeFixedAdjointToLp μ hx (η n)) atTop (𝓝 y))
-    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx ζ⟫ = ⟪f, testFieldToLp μ ζ⟫)
+    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx ζ⟫ = ⟪f, ambientToLp 2 μ ζ⟫)
     (φ dφ : ℂ →ᵇ ℝ)
     (hφ : ContDiff ℝ 2 φ) (hdφ : ∀ z, dφ z = ‖fderiv ℝ φ z‖) :
     ‖smulLp μ 2 ofNat_ne_top φ y‖ ≤
@@ -304,7 +305,7 @@ private theorem norm_smulLp_le_sqrt_add (hx : Continuous x)
       (𝓝 ‖smulLp μ 2 ofNat_ne_top φ y‖) :=
     (((smulLp μ 2 ofNat_ne_top φ).continuous.tendsto y).comp hS).norm
   have hΛ := tendsto_norm_sq_adjoint_smulLeftCLM hx hT hS hweak φ dφ hφ hdφ
-  have hd : Tendsto (fun n ↦ ‖smulLp μ 2 ofNat_ne_top dφ (testFieldToLp μ (η n))‖) atTop
+  have hd : Tendsto (fun n ↦ ‖smulLp μ 2 ofNat_ne_top dφ (ambientToLp 2 μ (η n))‖) atTop
       (𝓝 ‖smulLp μ 2 ofNat_ne_top dφ u‖) :=
     (((smulLp μ 2 ofNat_ne_top dφ).continuous.tendsto u).comp hT).norm
   have hr := hΛ.sqrt.add hd
@@ -320,9 +321,9 @@ private theorem norm_smulLp_le_sqrt_add (hx : Continuous x)
 /-- Testing with `φ = 1`: `‖y‖² = ⟪f, u⟫`. -/
 private theorem norm_sq_eq_inner_of_tendsto (hx : Continuous x)
     {f y u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} {η : ℕ → TestField}
-    (hT : Tendsto (fun n ↦ testFieldToLp μ (η n)) atTop (𝓝 u))
+    (hT : Tendsto (fun n ↦ ambientToLp 2 μ (η n)) atTop (𝓝 u))
     (hS : Tendsto (fun n ↦ gaugeFixedAdjointToLp μ hx (η n)) atTop (𝓝 y))
-    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx ζ⟫ = ⟪f, testFieldToLp μ ζ⟫) :
+    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx ζ⟫ = ⟪f, ambientToLp 2 μ ζ⟫) :
     ‖y‖ ^ 2 = ⟪f, u⟫ := by
   have h1 : ContDiff ℝ 2 ⇑(1 : ℂ →ᵇ ℝ) := by
     rw [FunLike.coe_one]
@@ -404,9 +405,9 @@ private theorem norm_smulLp_one_sub_mul_le (hx : ContDiff ℝ 1 x) (hsol : ∀ z
     {a R c c₀ M₁ F : ℝ} (ha : a ≤ 1 / 4) (hR : ∀ z, R < ‖z‖ → a ≤ x z 2 ^ 2 + x z 3 ^ 2)
     (hc : 0 ≤ c) (hca : c ^ 2 < a) (hc₀ : 0 < c₀) (hM₁ : 0 ≤ M₁)
     {f y u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} {η : ℕ → TestField}
-    (hT : Tendsto (fun n ↦ testFieldToLp μ (η n)) atTop (𝓝 u))
+    (hT : Tendsto (fun n ↦ ambientToLp 2 μ (η n)) atTop (𝓝 u))
     (hS : Tendsto (fun n ↦ gaugeFixedAdjointToLp μ hx.continuous (η n)) atTop (𝓝 y))
-    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx.continuous ζ⟫ = ⟪f, testFieldToLp μ ζ⟫)
+    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx.continuous ζ⟫ = ⟪f, ambientToLp 2 μ ζ⟫)
     (hu : ‖u‖ ≤ ‖f‖ / c₀) (β w : ℂ →ᵇ ℝ) (hβ : ContDiff ℝ 2 β) (hβ₀ : ∀ z, 0 ≤ β z)
     (hβ₁ : ∀ z, β z ≤ 1) (hβR : ∀ z, ‖z‖ ≤ R → β z = 1) (hw : ContDiff ℝ 2 w)
     (hw₀ : ∀ z, 0 ≤ w z) (hdw : ∀ z, ‖fderiv ℝ w z‖ ≤ c * w z)
@@ -463,9 +464,9 @@ private theorem norm_smulLp_weight_le (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equ
     {a R c c₀ M₀ M₁ F : ℝ} (ha : a ≤ 1 / 4) (hR : ∀ z, R < ‖z‖ → a ≤ x z 2 ^ 2 + x z 3 ^ 2)
     (hc : 0 ≤ c) (hca : c ^ 2 < a) (hc₀ : 0 < c₀) (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁)
     {f y u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} {η : ℕ → TestField}
-    (hT : Tendsto (fun n ↦ testFieldToLp μ (η n)) atTop (𝓝 u))
+    (hT : Tendsto (fun n ↦ ambientToLp 2 μ (η n)) atTop (𝓝 u))
     (hS : Tendsto (fun n ↦ gaugeFixedAdjointToLp μ hx.continuous (η n)) atTop (𝓝 y))
-    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx.continuous ζ⟫ = ⟪f, testFieldToLp μ ζ⟫)
+    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx.continuous ζ⟫ = ⟪f, ambientToLp 2 μ ζ⟫)
     (hu : ‖u‖ ≤ ‖f‖ / c₀) (β w : ℂ →ᵇ ℝ) (hβ : ContDiff ℝ 2 β) (hβ₀ : ∀ z, 0 ≤ β z)
     (hβ₁ : ∀ z, β z ≤ 1) (hβR : ∀ z, ‖z‖ ≤ R → β z = 1) (hw : ContDiff ℝ 2 w)
     (hw₀ : ∀ z, 0 ≤ w z) (hdw : ∀ z, ‖fderiv ℝ w z‖ ≤ c * w z) (hβw : ∀ z, β z * w z ≤ M₀)
@@ -492,9 +493,9 @@ private theorem norm_smulLp_weight_le (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equ
 weighted bound `‖w u‖ ≤ K F` for the `L²` limit `u` of the approximating test fields. -/
 private theorem norm_smulLp_weight_le_of_norm_smulLp_le (hx : Continuous x) {c K F : ℝ}
     (hc : 0 ≤ c) {f y u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} {η : ℕ → TestField}
-    (hT : Tendsto (fun n ↦ testFieldToLp μ (η n)) atTop (𝓝 u))
+    (hT : Tendsto (fun n ↦ ambientToLp 2 μ (η n)) atTop (𝓝 u))
     (hS : Tendsto (fun n ↦ gaugeFixedAdjointToLp μ hx (η n)) atTop (𝓝 y))
-    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx ζ⟫ = ⟪f, testFieldToLp μ ζ⟫)
+    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx ζ⟫ = ⟪f, ambientToLp 2 μ ζ⟫)
     (w : ℂ →ᵇ ℝ)
     (hw : ContDiff ℝ 2 w) (hw₀ : ∀ z, 0 ≤ w z) (hdw : ∀ z, ‖fderiv ℝ w z‖ ≤ c * w z)
     (hF : 0 ≤ F) (hK : 0 ≤ K) (hFw : ‖smulLp μ 2 ofNat_ne_top w f‖ ≤ F)
@@ -529,14 +530,14 @@ private theorem norm_le_div_of_tendsto (hx : Continuous x) {c₀ : ℝ} (hc₀ :
     (hgap : ∀ η : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 η → HasCompactSupport η →
       c₀ * ∫ z, ‖η z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedAdjoint x η z‖ ^ 2 ∂μ)
     {f y u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} {η : ℕ → TestField}
-    (hT : Tendsto (fun n ↦ testFieldToLp μ (η n)) atTop (𝓝 u))
+    (hT : Tendsto (fun n ↦ ambientToLp 2 μ (η n)) atTop (𝓝 u))
     (hS : Tendsto (fun n ↦ gaugeFixedAdjointToLp μ hx (η n)) atTop (𝓝 y))
-    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx ζ⟫ = ⟪f, testFieldToLp μ ζ⟫) :
+    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx ζ⟫ = ⟪f, ambientToLp 2 μ ζ⟫) :
     ‖u‖ ≤ ‖f‖ / c₀ := by
   have hy : ‖y‖ ^ 2 ≤ ‖f‖ * ‖u‖ :=
     (norm_sq_eq_inner_of_tendsto hx hT hS hweak).trans_le (real_inner_le_norm f u)
   have hg : √c₀ * ‖u‖ ≤ ‖y‖ := le_of_tendsto_of_tendsto' (hT.norm.const_mul _) hS.norm
-    fun n ↦ sqrt_mul_norm_testFieldToLp_le hx hc₀.le hgap (η n)
+    fun n ↦ sqrt_mul_norm_ambientToLp_le hx hc₀.le hgap (η n)
   have hs : √c₀ ^ 2 = c₀ := Real.sq_sqrt hc₀.le
   have hs0 : 0 ≤ √c₀ := Real.sqrt_nonneg c₀
   rw [le_div_iff₀ hc₀]
@@ -554,9 +555,9 @@ private theorem eLpNorm_boundedExpWeight_smul_le (hx : ContDiff ℝ 1 x)
     {a R c c₀ M₀ M₁ ε : ℝ} (ha : a ≤ 1 / 4) (hR : ∀ z, R < ‖z‖ → a ≤ x z 2 ^ 2 + x z 3 ^ 2)
     (hc : 0 ≤ c) (hca : c ^ 2 < a) (hc₀ : 0 < c₀) (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁) (hε : 0 < ε)
     {f y u : Lp (EuclideanSpace ℝ (Fin 4)) 2 μ} {η : ℕ → TestField}
-    (hT : Tendsto (fun n ↦ testFieldToLp μ (η n)) atTop (𝓝 u))
+    (hT : Tendsto (fun n ↦ ambientToLp 2 μ (η n)) atTop (𝓝 u))
     (hS : Tendsto (fun n ↦ gaugeFixedAdjointToLp μ hx.continuous (η n)) atTop (𝓝 y))
-    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx.continuous ζ⟫ = ⟪f, testFieldToLp μ ζ⟫)
+    (hweak : ∀ ζ : TestField, ⟪y, gaugeFixedAdjointToLp μ hx.continuous ζ⟫ = ⟪f, ambientToLp 2 μ ζ⟫)
     (hu : ‖u‖ ≤ ‖f‖ / c₀) (β : ℂ →ᵇ ℝ) (hβ : ContDiff ℝ 2 β) (hβ₀ : ∀ z, 0 ≤ β z)
     (hβ₁ : ∀ z, β z ≤ 1) (hβR : ∀ z, ‖z‖ ≤ R → β z = 1)
     (hβE : ∀ z, β z * Real.exp (c * √(1 + ‖z‖ ^ 2)) ≤ M₀)
@@ -653,8 +654,8 @@ theorem exists_eLpNorm_exp_smul_le_mul_eLpNorm_exp_smul (hx : ContDiff ℝ 1 x)
     exact le_mul_of_one_le_left (norm_nonneg _) (Real.one_le_exp (by positivity))
   obtain ⟨η, u, hT, hS⟩ := exists_tendsto_testField hx.continuous hc₀ hgap horth
   have hweak' (ζ : TestField) :
-      ⟪y, gaugeFixedAdjointToLp μ hx.continuous ζ⟫ = ⟪f, testFieldToLp μ ζ⟫ := by
-    rw [inner_gaugeFixedAdjointToLp, inner_testFieldToLp]
+      ⟪y, gaugeFixedAdjointToLp μ hx.continuous ζ⟫ = ⟪f, ambientToLp 2 μ ζ⟫ := by
+    rw [inner_gaugeFixedAdjointToLp, inner_ambientToLp]
     exact hweak ζ ζ.contDiff ζ.hasCompactSupport
   have hu := norm_le_div_of_tendsto hx.continuous hc₀ hgap hT hS hweak'
   -- The bound at each regularized weight, uniformly in the regularization.

@@ -50,18 +50,16 @@ variable {ι : Type*} {P : PreAbstractSimplicialComplex ι}
 theorem IsCombinatorialBall.exists_plHomeomorphic_simplex
     [DecidableEq ι] (h : IsCombinatorialBall P n) :
     ∃ V : Finset ι, V.card = n + 1 ∧ PLHomeomorphic P (simplex V) := by
-  have hfin := h.finite_faces
   obtain ⟨V, hV, hPV⟩ := isCombinatorialBall_iff.mp h
-  exact ⟨V, hV, hPV.plHomeomorphic hfin⟩
+  exact ⟨V, hV, hPV.plHomeomorphic⟩
 
 /-- A combinatorial sphere is PL-homeomorphic to the boundary of a simplex of the prescribed
 dimension. -/
 theorem IsCombinatorialSphere.exists_plHomeomorphic_simplexBoundary
     [DecidableEq ι] (h : IsCombinatorialSphere P n) :
     ∃ V : Finset ι, V.card = n + 2 ∧ PLHomeomorphic P (simplexBoundary V) := by
-  have hfin := h.finite_faces
   obtain ⟨V, hV, hPV⟩ := isCombinatorialSphere_iff.mp h
-  exact ⟨V, hV, hPV.plHomeomorphic hfin⟩
+  exact ⟨V, hV, hPV.plHomeomorphic⟩
 
 /-- A combinatorial ball has the PL homeomorphism type of the simplex on a canonical finite
 vertex type. This removes the arbitrary labels from `exists_plHomeomorphic_simplex`, which is
@@ -167,7 +165,7 @@ theorem IsCombinatorialBall.nonempty_homeomorph_closedBall
       Metric.closedBall (0 : EuclideanSpace ℝ (Fin n)) 1) := by
   classical
   obtain ⟨V, hV, he⟩ := isCombinatorialBall_iff.mp h
-  obtain ⟨s⟩ := he.nonempty_homeomorph h.finite_faces
+  obtain ⟨s⟩ := he.nonempty_homeomorph
   obtain ⟨t⟩ := nonempty_homeomorph_simplex_closedBall hV (le_top _)
   exact ⟨(topRealizationHomeomorph P hA).symm.trans (s.trans t)⟩
 
@@ -181,7 +179,7 @@ theorem IsCombinatorialSphere.nonempty_homeomorph_sphere [DecidableEq ι]
   classical
   let r := topRealizationHomeomorph P hA
   obtain ⟨V, hV, he⟩ := isCombinatorialSphere_iff.mp h
-  obtain ⟨s⟩ := he.nonempty_homeomorph h.finite_faces
+  obtain ⟨s⟩ := he.nonempty_homeomorph
   obtain ⟨t⟩ := nonempty_homeomorph_simplexBoundary_sphere hV (le_top _)
   exact ⟨r.symm.trans (s.trans t)⟩
 
