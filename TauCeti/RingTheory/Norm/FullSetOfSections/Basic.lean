@@ -453,7 +453,6 @@ omit [Module.Finite A B] in
 set of sections. -/
 theorem IsFullSetOfSections.norm_eq_prod (h : IsFullSetOfSections s) (b : B) :
     Algebra.norm A b = ∏ i, s i b := by
-  have : Module.Free A (A ⊗[A] B) := .of_equiv (Algebra.TensorProduct.lid A B).symm.toLinearEquiv
   rw [← Algebra.norm_eq_of_algEquiv (Algebra.TensorProduct.lid A B).symm, h A]
   simp
 
