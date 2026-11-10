@@ -183,7 +183,7 @@ theorem coord_mfderiv_prod {X : (z : M) → TangentSpace 𝓘(ℝ, E) z}
         ((mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart p.1).prodMap
           (mfderiv 𝓘(ℝ, E') 𝓘(ℝ, E') ψ.toChart p.2)) :=
       ⟨h₁.1.prodMk h₂.1, h₁.2.prodMk h₂.2⟩
-    rw [h.mfderiv, Manifold.prodVectorField_apply]
+    rw [h.mfderiv, ← Manifold.prodVectorField_fst X Y p, ← Manifold.prodVectorField_snd X Y p]
     -- `prodMap` applies its two maps componentwise. The tangent-space types of its domain keep
     -- `ContinuousLinearMap.coe_prodMap'` from matching, so this is closed by its definition.
     rfl
@@ -275,8 +275,12 @@ theorem flow_prod_apply (t : ℝ) (p : M × N) :
     have h := (hX.isMIntegralCurve_flow p.1 s).prodMk (hY.isMIntegralCurve_flow p.2 s)
     rw [← modelWithCornersSelf_prod] at h
     refine h.congr_mfderiv ?_
-    rw [Manifold.prodVectorField_apply]
-    exact ContinuousLinearMap.ext fun c ↦ rfl
+    -- `Manifold.prodVectorField` is not exposed, so its value is read off componentwise.
+    exact ContinuousLinearMap.ext fun c ↦ Prod.ext
+      (congrArg ((show ℝ from c) • ·)
+        (Manifold.prodVectorField_fst X Y (hX.flow s p.1, hY.flow s p.2)).symm)
+      (congrArg ((show ℝ from c) • ·)
+        (Manifold.prodVectorField_snd X Y (hX.flow s p.1, hY.flow s p.2)).symm)
   have h := globalFlow_eq_of_isMIntegralCurve ((hX.prod hY hf hg).contMDiff.of_le (by simp))
     (hX.prod hY hf hg).isCompleteVectorField hγ t
   simp only [Flow.map_zero_apply] at h
@@ -303,17 +307,6 @@ theorem unstableSet_prod (a : M × N) :
   simp only [Flow.mem_unstableSet, mem_prod, hX.flow_prod_apply hY hf hg, nhds_prod_eq]
   exact tendsto_prod_iff'
 
-omit hX hY hf hg [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [IsManifold 𝓘(ℝ, E) ∞ M]
-  [IsManifold 𝓘(ℝ, E') ∞ N] [CompactSpace M] [T2Space M] [CompactSpace N] [T2Space N] in
-/-- `TauCeti.prod_span_mtangentConeAt_le` for the model `𝓘(ℝ, E × E')` of the product charts. -/
-private theorem prod_span_mtangentConeAt_le' {A : Set M} {B : Set N} {a : M} {b : N} (ha : a ∈ A)
-    (hb : b ∈ B) :
-    (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E) A a)).prod
-        (Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E') B b)) ≤
-      Submodule.span ℝ (mtangentConeAt 𝓘(ℝ, E × E') (A ×ˢ B) (a, b)) := by
-  rw [modelWithCornersSelf_prod]
-  exact prod_span_mtangentConeAt_le ha hb
-
 /-- **The product of Morse–Smale pseudo-gradients is Morse–Smale.** If the unstable and stable
 manifolds of `X` meet transversally, and so do those of `Y`, then so do those of the product field
 `(X, Y)`, since its unstable and stable manifolds are the products of those of `X` and `Y`. -/
@@ -326,8 +319,9 @@ theorem IsMorseSmale.prod (hXs : hX.IsMorseSmale) (hYs : hY.IsMorseSmale) :
   obtain ⟨⟨hu₁, hu₂⟩, hs₁, hs₂⟩ := hp
   rw [eq_top_iff, ← Submodule.prod_top,
     ← hXs.span_mtangentConeAt_sup_eq_top ha.1 hb.1 ⟨hu₁, hs₁⟩,
-    ← hYs.span_mtangentConeAt_sup_eq_top ha.2 hb.2 ⟨hu₂, hs₂⟩, ← Submodule.prod_sup_prod]
-  exact sup_le_sup (prod_span_mtangentConeAt_le' hu₁ hu₂) (prod_span_mtangentConeAt_le' hs₁ hs₂)
+    ← hYs.span_mtangentConeAt_sup_eq_top ha.2 hb.2 ⟨hu₂, hs₂⟩, ← Submodule.prod_sup_prod,
+    modelWithCornersSelf_prod]
+  exact sup_le_sup (prod_span_mtangentConeAt_le hu₁ hu₂) (prod_span_mtangentConeAt_le hs₁ hs₂)
 
 end Flow
 
