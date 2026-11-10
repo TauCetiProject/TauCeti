@@ -28,13 +28,11 @@ Quality pass:
 - Q6 Elaboration speed: …
 - Q7 API and simp lemmas: …
 - Q8 Tidy what the PR adds or changes: …
-- Q9 Statements re-read: …
 
 <!--
 Beyond the checks, improve anything you can in what the PR adds or changes. Work a check suggests
-on code already on `main`, such as generalising an existing declaration, is a separate PR. In Q3
-and Q9, assume each hypothesis removable and each strong word in a docstring false until shown
-otherwise.
+on code already on `main`, such as generalising an existing declaration, is a separate PR. In Q3,
+assume each hypothesis removable until shown otherwise.
 
 Q1. Search Mathlib for each new declaration, or a more general one, by name and by shape: grep the
 Mathlib source for the conclusion's constants and for the name a Mathlib author would give it. If
@@ -108,14 +106,4 @@ import is needed, and `public` only if a statement uses it. No unused `open`, `c
 non-terminal `simp` without `only`; each `show` or `change` has a comment saying why. Names follow
 Mathlib's conventions, and a general helper is public in the file where it belongs. Leave the rest
 of an existing file alone.
-
-Q9. Read each new statement as a mathematician would, and its docstring word by word. Every
-promise must be in the conclusion, not moved into the hypotheses: find where the statement
-delivers each strong word (*exactly*, *iff*, *unique*, *strictly*, *for every*, *the*), with the
-quantifiers in the docstring's order (one `x` for every `n` is `∃ x, ∀ n`). A docstring that
-describes the hypotheses must also state the conclusion. Fix whichever of the two is wrong. Check
-the statement says what the source says and is not vacuous: the hypotheses can hold together
-(unless showing they cannot is the point, as in a lemma concluding `False`), and the conclusion is
-not true for an unintended reason, such as a junk value on the inputs it is meant for (in a
-degenerate case, junk is fine: Q3). A simple, correct lemma is fine.
 -->
