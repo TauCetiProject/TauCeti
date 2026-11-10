@@ -64,9 +64,8 @@ theorem measurable_sum_measure {β ι α : Type*} [MeasurableSpace β] [Measurab
 
 /-- A countable mixture of Dirac measures at fixed atoms `g i` is measurable in the weights.
 
-Evaluating on a measurable set turns the measure into the sum
-`∑' i, f b i * 1_{g i ∈ s}`, and a `tsum` of measurable functions is measurable. The atoms are
-indexed by a countable type of their own, so the ambient space `α` may be uncountable. -/
+The atoms are indexed by a countable type of their own, so the ambient space `α` may be
+uncountable. -/
 theorem measurable_sum_smul_dirac {β ι α : Type*} [MeasurableSpace β] [MeasurableSpace α]
     [Countable ι] {f : β → ι → ℝ≥0∞} {g : ι → α}
     (hf : ∀ i, Measurable fun b => f b i) :
