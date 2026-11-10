@@ -172,6 +172,24 @@ section VarianceNeZero
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
 
+open scoped ENNReal in
+/-- If a function into `ℝ≥0∞` vanishes on a set having the measure of the whole space, then its
+lower Lebesgue integral is zero; the set need not be measurable. -/
+theorem lintegral_eq_zero_of_measure_setOf_eq_zero [IsFiniteMeasure μ] {f : Ω → ℝ≥0∞}
+    (h : μ {ω | f ω = 0} = μ univ) : ∫⁻ ω, f ω ∂μ = 0 := by
+  obtain ⟨g, hg, hgle, hge⟩ := exists_measurable_le_lintegral_eq μ f
+  have hs : MeasurableSet {ω | g ω ≠ 0} := hg (measurableSet_singleton (0 : ℝ≥0∞)).compl
+  have hsub : {ω | f ω = 0} ⊆ {ω | g ω ≠ 0}ᶜ := fun ω h0 hg0 ↦
+    hg0 (le_antisymm (h0 ▸ hgle ω) zero_le)
+  have hc : μ {ω | g ω ≠ 0}ᶜ = μ univ :=
+    le_antisymm (measure_mono (subset_univ _)) (h ▸ measure_mono hsub)
+  have hnull : μ {ω | g ω ≠ 0} = 0 := by
+    have := measure_add_measure_compl (μ := μ) hs
+    rw [hc] at this
+    simpa [measure_ne_top μ] using this
+  rw [hge, lintegral_congr_ae (ae_iff.2 hnull : g =ᵐ[μ] 0)]
+  simp
+
 /-- A nonnegative random variable on a finite measure space with nonzero variance has strictly
 positive real expectation. -/
 theorem integral_coe_pos_of_variance_ne_zero [IsFiniteMeasure μ] {X : Ω → ℝ≥0}
@@ -197,19 +215,15 @@ theorem measure_setOf_eq_zero_lt_one_of_variance_ne_zero [IsProbabilityMeasure �
     have hae : X =ᵐ[μ] 0 := (ae_mem_iff_measure_eq hnull).2 (hfull.trans measure_univ.symm)
     rw [variance_congr hae, variance_zero]
   · have hint : ∫ ω, X ω ∂μ = 0 := integral_non_aestronglyMeasurable fun h ↦ hX h.aemeasurable
-    obtain ⟨g, hg, hgle, hge⟩ := exists_measurable_le_lintegral_eq μ
-      (fun ω ↦ ‖X ω - ∫ ω', X ω' ∂μ‖ₑ ^ 2)
-    have hS : μ {ω | g ω ≠ 0} = 0 := by
-      have hsub : {ω | X ω = 0} ⊆ {ω | g ω ≠ 0}ᶜ := fun ω h0 hg0 ↦ by
-        have := hgle ω
-        simp only [Set.mem_ofPred_eq] at h0
-        exact hg0 (by simpa [h0, hint] using this)
-      exact (prob_compl_eq_one_iff (hg (measurableSet_singleton (0 : ENNReal)).compl)).1
-        (le_antisymm prob_le_one (hfull ▸ measure_mono hsub))
-    have hg0 : g =ᵐ[μ] 0 := ae_iff.2 hS
+    -- Without a measurable version of `X` the mean is `0`, so the integrand of the variance
+    -- vanishes on `{X = 0}`, a set of full outer measure; hence the variance is `0`.
     have hev : evariance X μ = 0 := by
-      rw [evariance, hge, lintegral_congr_ae hg0]
-      simp
+      refine lintegral_eq_zero_of_measure_setOf_eq_zero ?_
+      refine le_antisymm (measure_mono (subset_univ _)) ?_
+      rw [measure_univ, ← hfull]
+      refine measure_mono fun ω h0 ↦ ?_
+      simp only [Set.mem_ofPred_eq] at h0 ⊢
+      simp [h0, hint]
     simp [variance, hev]
 
 end VarianceNeZero
