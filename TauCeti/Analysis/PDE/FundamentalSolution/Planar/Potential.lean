@@ -108,56 +108,23 @@ bounded away from zero. -/
 private theorem integrable_planarNewtonianKernel_sub_smul_iff {R : ℝ}
     (hR : Function.support f ⊆ closedBall 0 R) {z : ℂ} (hz : R + 1 < ‖z‖) :
     Integrable (fun w ↦ planarNewtonianKernel (z - w) • f w) ↔ Integrable f := by
+  have hz1 : ∀ w ∈ closedBall (0 : ℂ) R, 1 < ‖z - w‖ := fun w hw => by
+    linarith [norm_sub_norm_le z w, mem_closedBall_zero_iff.1 hw]
   have hne : ∀ w ∈ closedBall (0 : ℂ) R, planarNewtonianKernel (z - w) ≠ 0 := fun w hw => by
-    have hw' := mem_closedBall_zero_iff.1 hw
-    have h1 : 1 < ‖z - w‖ := by linarith [norm_sub_norm_le z w]
     rw [planarNewtonianKernel_def]
-    exact mul_ne_zero (neg_ne_zero.2 (inv_ne_zero (by positivity))) (Real.log_pos h1).ne'
+    exact mul_ne_zero (neg_ne_zero.2 (inv_ne_zero (by positivity))) (Real.log_pos (hz1 w hw)).ne'
   have hcont : ContinuousOn (fun w ↦ planarNewtonianKernel (z - w)) (closedBall 0 R) :=
     fun w hw => (((contDiffAt_planarNewtonianKernel (n := 2)
-      (sub_ne_zero.2 fun h => (hne w hw) (by rw [h, sub_self, planarNewtonianKernel_zero]))
+      (show z - w ≠ 0 from norm_pos_iff.1 (by linarith [hz1 w hw]))
       ).continuousAt.comp (continuousAt_const.sub continuousAt_id))).continuousWithinAt
-  have hGm : Measurable fun w : ℂ ↦ planarNewtonianKernel (z - w) := by
-    simp only [planarNewtonianKernel_def]
-    fun_prop
-  have hfg : ∀ w, f w =
-      (closedBall (0 : ℂ) R).indicator (fun w ↦ (planarNewtonianKernel (z - w))⁻¹) w •
-        (planarNewtonianKernel (z - w) • f w) := fun w => by
-    by_cases hw : f w = 0
-    · simp [hw]
-    · simp [indicator_of_mem (hR hw), smul_smul, inv_mul_cancel₀ (hne w (hR hw))]
-  have hfg' : ∀ w, planarNewtonianKernel (z - w) • f w =
-      (closedBall (0 : ℂ) R).indicator (fun w ↦ planarNewtonianKernel (z - w)) w • f w :=
-    fun w => by
-      by_cases hw : w ∈ closedBall (0 : ℂ) R
-      · simp [indicator_of_mem hw]
-      · simp [indicator_of_notMem hw, Function.notMem_support.1 fun h => hw (hR h)]
-  constructor
-  · intro hg
-    obtain ⟨M, hM⟩ := (isCompact_closedBall _ _).exists_bound_of_continuousOn
-      (hcont.inv₀ hne)
-    have hφ : Measurable ((closedBall (0 : ℂ) R).indicator
-        fun w ↦ (planarNewtonianKernel (z - w))⁻¹) :=
-      hGm.inv.indicator measurableSet_closedBall
-    have := hg.bdd_smul (max M 0) hφ.aestronglyMeasurable (ae_of_all _ fun w => by
-      by_cases hw : w ∈ closedBall (0 : ℂ) R
-      · rw [indicator_of_mem hw]
-        exact (hM w hw).trans (le_max_left _ _)
-      · rw [indicator_of_notMem hw, norm_zero]
-        exact le_max_right _ _)
-    exact this.congr (ae_of_all _ fun w => (hfg w).symm)
-  · intro hf
-    obtain ⟨M, hM⟩ := (isCompact_closedBall _ _).exists_bound_of_continuousOn hcont
-    have hφ : Measurable ((closedBall (0 : ℂ) R).indicator
-        fun w ↦ planarNewtonianKernel (z - w)) :=
-      hGm.indicator measurableSet_closedBall
-    have := hf.bdd_smul (max M 0) hφ.aestronglyMeasurable (ae_of_all _ fun w => by
-      by_cases hw : w ∈ closedBall (0 : ℂ) R
-      · rw [indicator_of_mem hw]
-        exact (hM w hw).trans (le_max_left _ _)
-      · rw [indicator_of_notMem hw, norm_zero]
-        exact le_max_right _ _)
-    exact this.congr (ae_of_all _ fun w => (hfg' w).symm)
+  have hsupp : Function.support (fun w ↦ planarNewtonianKernel (z - w) • f w) ⊆ closedBall 0 R :=
+    (Function.support_smul_subset_right _ _).trans hR
+  rw [← integrableOn_iff_integrable_of_support_subset hsupp,
+    ← integrableOn_iff_integrable_of_support_subset hR]
+  refine ⟨fun hg => ?_, fun hf => hf.continuousOn_smul hcont (isCompact_closedBall _ _)⟩
+  refine (hg.continuousOn_smul (hcont.inv₀ hne) (isCompact_closedBall _ _)).congr_fun
+    (fun w hw => ?_) measurableSet_closedBall
+  simp only [Pi.inv_apply, smul_smul, inv_mul_cancel₀ (hne w hw), one_smul]
 
 /-- **The planar Newtonian potential grows logarithmically.** For `f` with compact
 support on `ℂ`, `(G ⋆ f) z - G z • ∫ f → 0` as `z → ∞`: far from the support of `f`, the
