@@ -106,11 +106,8 @@ theorem exists_forall_univ_pi_subset {I C : Type*} [Finite I] [Finite C] {κ : C
   classical
   -- treat the finitely many pairs of a set `U c` and an injective tuple one at a time
   let Q := Σ c, {t : κ c → I // Injective t}
-  have : ∀ c, Finite {t : κ c → I // Injective t} := fun c ↦ by
-    rcases isEmpty_or_nonempty {t : κ c → I // Injective t} with h | ⟨⟨t, ht⟩⟩
-    · infer_instance
-    · have := Finite.of_injective t ht
-      infer_instance
+  have : ∀ c, Finite {t : κ c → I // Injective t} := fun c ↦
+    Finite.of_equiv (κ c ↪ I) (Equiv.subtypeInjectiveEquivEmbedding (κ c) I).symm
   have : Fintype Q := Fintype.ofFinite Q
   suffices h : ∀ s : Finset Q, ∃ W : I → Set X, (∀ i, IsOpen (W i)) ∧ (∀ i, (W i).Nonempty) ∧
       (∀ i, W i ⊆ V i) ∧ ∀ q ∈ s, univ.pi (fun j => W (q.2.1 j)) ⊆ U q.1 by
