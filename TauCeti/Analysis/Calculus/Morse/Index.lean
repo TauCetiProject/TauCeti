@@ -30,8 +30,10 @@ form in `TauCeti.Analysis.Calculus.Morse.NormalForm`.
 The definition is made at every point, not only at a critical point, since the index of the
 Hessian is meaningful there and this keeps regularity and criticality hypotheses on the results
 that use them.  It follows Mathlib's total `sigNeg`, whose value is defined to be zero outside
-finite dimensions; all results interpreting the value as a Morse-theoretic index assume finite
-dimension.  At a nondegenerate critical point the Hessian quadratic form is nondegenerate, so its
+finite dimensions: in infinite dimension the index is `0`
+(`morseIndex_eq_zero_of_not_finiteDimensional`), so the dimension bound and the
+complementary-index formula hold there only through the convention `finrank = 0`.  At a
+nondegenerate critical point the Hessian quadratic form is nondegenerate, so its
 positive and negative indices add to the dimension.  Consequently index zero is equivalent to a
 positive-definite Hessian.  In finite dimensions, full index is equivalent to a negative-definite
 Hessian at every point, with no nondegeneracy hypothesis, and a positive-definite Hessian forces
