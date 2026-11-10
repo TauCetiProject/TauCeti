@@ -45,10 +45,11 @@ multiplied by `φ z - φ x` off `x`, and reads `τ x` in the chart of `E` at `x`
 `φ z - φ x` extends to a section `C^n` at `x`. Thus the holomorphic sections of `L(x)` are the
 sections of `L` with at most a simple pole at `x`.
 
-This supplies the twisted bundle, the canonical section and the section comparison of step 4 of
-the closed Riemann–Roch argument for McDuff–Salamon, Theorem C.1.10, stated for arbitrary
-holomorphic line bundles. The index and first Chern class comparisons of that step are not
-proved here.
+In the proof of the Riemann–Roch theorem for holomorphic line bundles over a closed Riemann
+surface (McDuff–Salamon, Theorem C.1.10), twisting at a point raises the degree by one, so the
+theorem for every degree follows from the theorem for one degree once the Cauchy–Riemann
+operators of `L` and `L(x)` are compared. The canonical section and the section comparison of
+this file are the bundle-level input to that comparison.
 
 ## Main definitions
 
@@ -329,10 +330,8 @@ open Classical in
 theorem pointTwistMul_apply (x z : X) (v : E z) :
     pointTwistMul F E x z v =
       pointTwistFactor x false (decide (z = x)) z • (trivializationAt F E z ⟨z, v⟩).2 := by
-  change pointTwistFactor x false (decide (z = x)) z •
-    (trivializationAt F E z).continuousLinearMapAt ℂ z v = _
-  rw [Trivialization.continuousLinearMapAt_apply_of_mem ℂ _
-    (mem_baseSet_trivializationAt F E z)]
+  rw [pointTwistMul, smul_apply,
+    Trivialization.continuousLinearMapAt_apply_of_mem ℂ _ (mem_baseSet_trivializationAt F E z)]
 
 open Classical in
 theorem pointTwistDiv_apply (x z : X) (w : F) :
@@ -380,6 +379,17 @@ theorem pointTwistPoleMul_eq_smul_pointTwistDiv {x z : X} (h : z ≠ x)
     ← (trivializationAt F E z).symmL_apply (R := ℂ) h₀, map_smul]
 
 open Classical in
+/-- The coordinates of a vector of the point twist at `z` in the chart `i`: its coordinates in
+the preferred chart of `E` at `z`, changed to the chart of `E` at `i.1` and multiplied by the
+scalar transition function. -/
+theorem pointTwistCore_localTriv_apply (x : X) (i : X × Bool) (z : X) (w : F) :
+    ((pointTwistCore F E x).localTriv i ⟨z, w⟩).2 =
+      pointTwistFactor x (decide (z = x)) i.2 z •
+        (trivializationAt F E z).coordChangeL ℂ (trivializationAt F E i.1) z w := by
+  rw [VectorBundleCore.localTriv_apply, pointTwistCore_indexAt, pointTwistCore_coordChange,
+    smul_apply, ContinuousLinearEquiv.coe_coe]
+
+open Classical in
 /-- In every chart of the point twist, multiplication by the canonical section is the scalar
 `pointTwistFactor x false b` in the corresponding chart of `E`. -/
 theorem pointTwistCore_localTriv_pointTwistMul {x z : X} {i : X × Bool}
@@ -388,11 +398,8 @@ theorem pointTwistCore_localTriv_pointTwistMul {x z : X} {i : X × Bool}
       pointTwistFactor x false i.2 z • (trivializationAt F E i.1 ⟨z, v⟩).2 := by
   have h₀ : z ∈ (trivializationAt F E z).baseSet := mem_baseSet_trivializationAt F E z
   have hb₀ : z ∈ pointTwistBaseSet x (decide (z = x)) := ((pointTwistCore F E x).mem_baseSet_at z).2
-  change (pointTwistFactor x (decide (z = x)) i.2 z •
-    ((trivializationAt F E z).coordChangeL ℂ (trivializationAt F E i.1) z : F →L[ℂ] F))
-      (pointTwistMul F E x z v) = _
-  rw [pointTwistMul_apply, smul_apply, map_smul,
-    smul_smul, pointTwistFactor_mul_false hb₀ hz.2, ContinuousLinearEquiv.coe_coe,
+  rw [pointTwistCore_localTriv_apply, pointTwistMul_apply, map_smul,
+    smul_smul, pointTwistFactor_mul_false hb₀ hz.2,
     Trivialization.coordChangeL_apply _ _ ⟨h₀, hz.1⟩]
   congr 2
   rw [(trivializationAt F E z).symm_apply_apply_mk h₀ v]
@@ -405,9 +412,7 @@ theorem trivializationAt_pointTwistPoleMul {x z : X} {y : X}
     (trivializationAt F E y ⟨z, pointTwistPoleMul F E x z w⟩).2 =
       ((pointTwistCore F E x).localTriv (y, true) ⟨z, w⟩).2 := by
   have h₀ : z ∈ (trivializationAt F E z).baseSet := mem_baseSet_trivializationAt F E z
-  change _ = (pointTwistFactor x (decide (z = x)) true z •
-    ((trivializationAt F E z).coordChangeL ℂ (trivializationAt F E y) z : F →L[ℂ] F)) w
-  rw [pointTwistPoleMul_apply, smul_apply, ContinuousLinearEquiv.coe_coe, ← map_smul,
+  rw [pointTwistCore_localTriv_apply, pointTwistPoleMul_apply, ← map_smul,
     Trivialization.coordChangeL_apply _ _ ⟨h₀, hz.1⟩]
 
 theorem trivializationAt_pointTwistDiv {x z : X} {y : X}
@@ -417,10 +422,8 @@ theorem trivializationAt_pointTwistDiv {x z : X} {y : X}
   classical
   have h₀ : z ∈ (trivializationAt F E z).baseSet := mem_baseSet_trivializationAt F E z
   have hzx : z ≠ x := hz.2
-  change _ = (pointTwistFactor x (decide (z = x)) false z •
-    ((trivializationAt F E z).coordChangeL ℂ (trivializationAt F E y) z : F →L[ℂ] F)) w
-  rw [pointTwistDiv_apply_of_ne hzx, decide_eq_false hzx, pointTwistFactor_self, one_smul,
-    ContinuousLinearEquiv.coe_coe, Trivialization.coordChangeL_apply _ _ ⟨h₀, hz.1⟩]
+  rw [pointTwistCore_localTriv_apply, pointTwistDiv_apply_of_ne hzx, decide_eq_false hzx,
+    pointTwistFactor_self, one_smul, Trivialization.coordChangeL_apply _ _ ⟨h₀, hz.1⟩]
 
 open Classical in
 theorem pointTwistCore_trivializationAt (x z : X) :
@@ -539,9 +542,41 @@ def pointTwistOfPole (x : X) (σ ρ : ∀ z, E z) (z : X) : (pointTwistCore F E 
   if z = x then (trivializationAt F E z ⟨z, ρ z⟩).2 else pointTwistMul F E x z (σ z)
 
 omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
+variable (F) in
+@[simp] theorem pointTwistOfPole_self (x : X) (σ ρ : ∀ z, E z) :
+    pointTwistOfPole F x σ ρ x = (trivializationAt F E x ⟨x, ρ x⟩).2 :=
+  ite_eq_left rfl
+
+omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
+variable (F) in
+@[simp] theorem pointTwistOfPole_of_ne {x z : X} (h : z ≠ x) (σ ρ : ∀ z, E z) :
+    pointTwistOfPole F x σ ρ z = pointTwistMul F E x z (σ z) :=
+  ite_eq_right h
+
+omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
+/-- Every section of the point twist is recovered by `pointTwistOfPole` from its reading as a
+section of `E` and its leading coefficient. -/
+theorem pointTwistOfPole_pointTwistDiv_pointTwistPoleMul {x : X}
+    (τ : ∀ z, (pointTwistCore F E x).Fiber z) :
+    pointTwistOfPole F x (fun z ↦ pointTwistDiv F E x z (τ z))
+      (fun z ↦ pointTwistPoleMul F E x z (τ z)) = τ := by
+  classical
+  funext z
+  by_cases h : z = x
+  · subst h
+    have key (w : F) : (trivializationAt F E z ⟨z, pointTwistPoleMul F E z z w⟩).2 = w := by
+      rw [pointTwistPoleMul_apply, decide_eq_true rfl, pointTwistFactor_self, one_smul]
+      exact congrArg Prod.snd
+        ((trivializationAt F E z).apply_mk_symm (mem_baseSet_trivializationAt F E z) w)
+    rw [pointTwistOfPole_self]
+    exact key (τ z)
+  · rw [pointTwistOfPole_of_ne F h]
+    exact pointTwistMul_pointTwistDiv h (show F from τ z)
+
+omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
 theorem pointTwistDiv_pointTwistOfPole {x z : X} (h : z ≠ x) (σ ρ : ∀ z, E z) :
     pointTwistDiv F E x z (pointTwistOfPole F x σ ρ z) = σ z := by
-  simp only [pointTwistOfPole, h, ↓reduceIte]
+  rw [pointTwistOfPole_of_ne F h]
   exact pointTwistDiv_pointTwistMul h (σ z)
 
 omit [IsManifold 𝓘(ℂ) n X] [ContMDiffVectorBundle n F E 𝓘(ℂ)] in
@@ -551,8 +586,8 @@ theorem pointTwistPoleMul_pointTwistOfPole {x : X} {σ ρ : ∀ z, E z} {z : X}
   classical
   by_cases h : z = x
   · subst h
-    simp only [pointTwistOfPole, ↓reduceIte]
-    rw [pointTwistPoleMul_apply, decide_eq_true rfl, pointTwistFactor_self, one_smul]
+    rw [pointTwistOfPole_self, pointTwistPoleMul_apply, decide_eq_true rfl,
+      pointTwistFactor_self, one_smul]
     exact (trivializationAt F E z).symm_apply_apply_mk (mem_baseSet_trivializationAt F E z) _
   · refine (pointTwistPoleMul_eq_smul_pointTwistDiv h _).trans ?_
     rw [pointTwistDiv_pointTwistOfPole h, hz.resolve_left h]
@@ -612,7 +647,7 @@ theorem pointTwistCore_localTriv_pointTwistSection {x z : X} (hz : z ∈ (chartA
   rw [pointTwistSection, pointTwistCore_localTriv_pointTwistMul ⟨mem_univ z, hz⟩]
   exact mul_one (pointTwistCoord x z)
 
-/-- The canonical section of `𝒪(x)` is `C^n`; over `𝓘(ℂ)` it is holomorphic. -/
+/-- The canonical section of `𝒪(x)` is `C^n`; for `n = ∞`, or `n = ω`, it is holomorphic. -/
 theorem contMDiff_pointTwistSection (x : X) :
     ContMDiff 𝓘(ℂ) (𝓘(ℂ).prod 𝓘(ℂ, ℂ)) n
       (fun z ↦ TotalSpace.mk' ℂ z (pointTwistSection x z)) := by
