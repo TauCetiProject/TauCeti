@@ -87,8 +87,9 @@ the derivative of `N` does, and it is `C^n` near the equilibrium when `N` is uni
 
 Uniform perturbation bounds for both local graph maps require control of the remainder only
 on their common ball of confinement. Uniform convergence of small remainders there implies
-uniform convergence of the graph maps. These statements concern graph values; they do not
-assert convergence of derivatives.
+uniform convergence of the graph maps. These statements concern graph values; convergence of
+derivatives on uniformly confined parameter pieces is proved in
+`TauCeti.Analysis.ODE.LyapunovPerron.Convergence`.
 
 ## References
 
@@ -159,6 +160,13 @@ truncated by `‖P x‖ ≤ ρ`. -/
 def localStableGraphMap : X → X :=
   lyapunovPerronGraphMap A P (N ∘ TauCeti.radialRetraction r) hs hu
     (pos_of_two_mul_mul_lt hsmall) (hN.comp_radialRetraction hr) hsmall
+
+/-- The local stable graph is the Lyapunov--Perron graph of the radially cut-off remainder. -/
+theorem localStableGraphMap_def (hα : 0 < α) :
+    localStableGraphMap A P N r hs hu hr hN hsmall =
+      lyapunovPerronGraphMap A P (N ∘ TauCeti.radialRetraction r) hs hu hα
+        (hN.comp_radialRetraction hr) hsmall :=
+  (rfl)
 
 variable {A P N r}
 
@@ -399,6 +407,20 @@ def localUnstableGraphMap : X → X :=
   localStableGraphMap (-A) (ContinuousLinearMap.id ℝ X - P) (-N) r
     (reversed_stable_bound (A := A) (P := P) hu)
     (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall
+
+/-- Time reversal exchanges the local unstable graph with a local stable graph. The supplied
+bounds are the exponential dichotomy estimates for `-A` and the complementary projection. -/
+theorem localUnstableGraphMap_def
+    (hs' : ∀ t : ℝ, 0 ≤ t → ∀ v : X,
+      ‖exp (t • (-A)) ((ContinuousLinearMap.id ℝ X - P) v)‖ ≤
+        K * Real.exp (-α * t) * ‖v‖)
+    (hu' : ∀ t : ℝ, t ≤ 0 → ∀ v : X,
+      ‖exp (t • (-A)) (v - (ContinuousLinearMap.id ℝ X - P) v)‖ ≤
+        K * Real.exp (α * t) * ‖v‖) :
+    localUnstableGraphMap A P N r hs hu hr hN hsmall =
+      localStableGraphMap (-A) (ContinuousLinearMap.id ℝ X - P) (-N) r
+        hs' hu' hr hN.neg hsmall :=
+  (rfl)
 
 variable {A P N r}
 
