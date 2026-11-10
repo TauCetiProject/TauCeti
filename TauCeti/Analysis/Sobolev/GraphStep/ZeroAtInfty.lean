@@ -70,7 +70,7 @@ noncomputable section
 
 namespace TauCeti.WeakDerivStep
 
-open Filter MeasureTheory Set TopologicalSpace
+open Filter _root_.MeasureTheory Set TopologicalSpace
 open scoped ENNReal Topology ZeroAtInfty
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
