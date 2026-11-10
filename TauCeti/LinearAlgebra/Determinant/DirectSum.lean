@@ -109,12 +109,9 @@ private theorem coe_detLineShortExactEquiv_ker_tmul (u : Fin (finrank K (ker f))
         (exact_kerInlProdMap_kerSndProdMap f g) (kerSndProdMap_surjective f g)
         (exteriorPower.ιMulti K _ u ⊗ₜ exteriorPower.ιMulti K _ w) :
         ExteriorAlgebra K (ker (f.prodMap g))) =
-      ExteriorAlgebra.ιMulti K _ (Fin.append (kerInlProdMap f g ∘ u) (kerInrProdMap f g ∘ w)) := by
-  have hw : w = kerSndProdMap f g ∘ kerInrProdMap f g ∘ w := by
-    rw [← Function.comp_assoc, ← LinearMap.coe_comp, kerSndProdMap_comp_kerInrProdMap,
-      LinearMap.id_coe, Function.id_comp]
-  conv_lhs => rw [hw]
-  rw [TauCeti.coe_detLineShortExactEquiv_tmul]
+      ExteriorAlgebra.ιMulti K _ (Fin.append (kerInlProdMap f g ∘ u) (kerInrProdMap f g ∘ w)) :=
+  TauCeti.coe_detLineShortExactEquiv_tmul_of_comp_eq_id _ _ _
+    (kerSndProdMap_comp_kerInrProdMap f g) u w
 
 omit [FiniteDimensional K (ker f)] [FiniteDimensional K (ker g)] in
 /-- The cokernel sequence joins the exterior products of `x` and `y` into that of the images of
@@ -127,12 +124,9 @@ private theorem coe_detLineShortExactEquiv_coker_tmul
         (exteriorPower.ιMulti K _ x ⊗ₜ exteriorPower.ιMulti K _ y) :
         ExteriorAlgebra K ((N × N') ⧸ range (f.prodMap g))) =
       ExteriorAlgebra.ιMulti K _
-        (Fin.append (cokerInlProdMap f g ∘ x) (cokerInrProdMap f g ∘ y)) := by
-  have hy : y = cokerSndProdMap f g ∘ cokerInrProdMap f g ∘ y := by
-    rw [← Function.comp_assoc, ← LinearMap.coe_comp, cokerSndProdMap_comp_cokerInrProdMap,
-      LinearMap.id_coe, Function.id_comp]
-  conv_lhs => rw [hy]
-  rw [TauCeti.coe_detLineShortExactEquiv_tmul]
+        (Fin.append (cokerInlProdMap f g ∘ x) (cokerInrProdMap f g ∘ y)) :=
+  TauCeti.coe_detLineShortExactEquiv_tmul_of_comp_eq_id _ _ _
+    (cokerSndProdMap_comp_cokerInrProdMap f g) x y
 
 /-- **The value of `LinearMap.detLineProdMapEquiv` on exterior products.** Let `u`, `w`, `x` and
 `y` be families of `dim (ker f)`, `dim (ker g)`, `dim (coker f)` and `dim (coker g)` vectors of

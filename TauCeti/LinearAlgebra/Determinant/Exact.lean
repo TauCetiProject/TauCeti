@@ -69,7 +69,8 @@ that enlarging the stabilization changes the identification of determinant lines
 ## Main declarations
 
 * `TauCeti.detLineShortExactEquiv`: the isomorphism `det U ⊗ det W ≃ det V` of a short exact
-  sequence `0 → U → V → W → 0`, with its value `TauCeti.coe_detLineShortExactEquiv_tmul`.
+  sequence `0 → U → V → W → 0`, with its value `TauCeti.coe_detLineShortExactEquiv_tmul`
+  (and `TauCeti.coe_detLineShortExactEquiv_tmul_of_comp_eq_id` for a section of `V → W`).
 * `TauCeti.detLineFourTermEquiv`: the isomorphism `det B ⊗ (det C)^* ≃ det A ⊗ (det D)^*` of a
   four-term exact sequence `0 → A → B → C → D → 0`.
 * `TauCeti.detLineFourTermEquiv_tmul`, `TauCeti.detLineFourTermEquiv_tmul_eq_smul_tmul`: its value
@@ -128,6 +129,19 @@ theorem coe_detLineShortExactEquiv_tmul (u : Fin (finrank K U) → U)
       ExteriorAlgebra.ιMulti K _ (Fin.append (f ∘ u) v) := by
   rw [detLineShortExactEquiv, LinearEquiv.trans_apply, LinearEquiv.coe_ofEq_apply,
     exteriorPower.shortExactEquiv_tmul_ιMulti_comp, exteriorPower.ιMulti_apply_coe]
+
+/-- For a section `s` of `g` (`g ∘ s = id`), `TauCeti.detLineShortExactEquiv` sends
+`(u₁ ∧ ⋯ ∧ uₐ) ⊗ (w₁ ∧ ⋯ ∧ w_c)` to `f u₁ ∧ ⋯ ∧ f uₐ ∧ s w₁ ∧ ⋯ ∧ s w_c`, as elements of the
+exterior algebra of `V`. -/
+theorem coe_detLineShortExactEquiv_tmul_of_comp_eq_id {s : W →ₗ[K] V} (hs : g ∘ₗ s = .id)
+    (u : Fin (finrank K U) → U) (w : Fin (finrank K W) → W) :
+    (detLineShortExactEquiv hf hfg hg (exteriorPower.ιMulti K _ u ⊗ₜ
+        exteriorPower.ιMulti K _ w) : ExteriorAlgebra K V) =
+      ExteriorAlgebra.ιMulti K _ (Fin.append (f ∘ u) (s ∘ w)) := by
+  have hw : w = g ∘ s ∘ w := by
+    rw [← Function.comp_assoc, ← LinearMap.coe_comp, hs, LinearMap.id_coe, Function.id_comp]
+  conv_lhs => rw [hw]
+  rw [coe_detLineShortExactEquiv_tmul]
 
 /-- `TauCeti.detLineShortExactEquiv` sends `a ⊗ (g v₁ ∧ ⋯ ∧ g v_c)`, for any `a ∈ det U`, to the
 product of the image of `a` with `v₁ ∧ ⋯ ∧ v_c` in the exterior algebra of `V`. -/
