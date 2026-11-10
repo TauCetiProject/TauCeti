@@ -36,6 +36,8 @@ argument.
   `WeierstrassCurve.functionFieldGaloisAction_genericY`: the two coordinate functions are fixed.
 * `WeierstrassCurve.functionFieldGaloisAction_map_algebraMap`: every function defined over the
   ground field is fixed.
+* `WeierstrassCurve.exists_finset_functionFieldGaloisAction_eq_self`: every function is fixed by
+  the automorphisms fixing finitely many elements of `K`.
 * `WeierstrassCurve.functionFieldGaloisAction_translation`: on an elliptic curve, the action
   intertwines translation by a point with translation by its Galois conjugate.
 
@@ -156,6 +158,32 @@ theorem functionFieldGaloisAction_map_algebraMap (σ : K ≃ₐ[F] K)
         Affine.FunctionField.map W.toAffine (algebraMap F K) W.toAffine.genericY
       rw [hmap_y, functionFieldGaloisAction_genericY]
   exact RingHom.congr_fun h z
+
+/-- **A function is fixed by every automorphism fixing finitely many elements of `K`**: it is a
+quotient of the classes of two polynomials, and an automorphism fixing their coefficients fixes
+it. -/
+theorem exists_finset_functionFieldGaloisAction_eq_self (z : (W⁄K).toAffine.FunctionField) :
+    ∃ s : Finset K, ∀ σ : K ≃ₐ[F] K, (∀ x ∈ s, σ x = x) → functionFieldGaloisAction W σ z = z := by
+  classical
+  obtain ⟨a, b, -, rfl⟩ := IsFractionRing.div_surjective (A := (W⁄K).toAffine.CoordinateRing) z
+  obtain ⟨p, rfl⟩ := AdjoinRoot.mk_surjective a
+  obtain ⟨q, rfl⟩ := AdjoinRoot.mk_surjective b
+  -- the coefficients of the coefficients of a polynomial in `K[X][Y]`
+  let coeffs (r : K[X][Y]) : Finset K := r.support.biUnion fun i ↦ (r.coeff i).support.image
+    (r.coeff i).coeff
+  have hmap (r : K[X][Y]) (σ : K ≃ₐ[F] K) (hσ : ∀ x ∈ coeffs r, σ x = x) :
+      r.map (mapRingHom (σ : K →+* K)) = r := by
+    ext i j
+    rw [coeff_map, coe_mapRingHom, coeff_map]
+    by_cases h : (r.coeff i).coeff j = 0
+    · rw [h, map_zero]
+    · refine hσ _ (Finset.mem_biUnion.2 ⟨i, ?_, Finset.mem_image.2 ⟨j, ?_, rfl⟩⟩)
+      · exact mem_support_iff.2 fun h' ↦ h (by rw [h', coeff_zero])
+      · exact mem_support_iff.2 h
+  refine ⟨coeffs p ∪ coeffs q, fun σ hσ ↦ ?_⟩
+  rw [map_div₀, functionFieldGaloisAction_algebraMap_mk, functionFieldGaloisAction_algebraMap_mk,
+    hmap p σ fun x hx ↦ hσ x (Finset.mem_union_left _ hx),
+    hmap q σ fun x hx ↦ hσ x (Finset.mem_union_right _ hx)]
 
 variable [DecidableEq K] [W.IsElliptic]
 

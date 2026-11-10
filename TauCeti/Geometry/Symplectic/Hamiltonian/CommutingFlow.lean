@@ -7,8 +7,9 @@ module
 
 public import Mathlib.GroupTheory.NoncommPiCoprod
 public import TauCeti.Geometry.Diffeomorphism.Action
-public import TauCeti.Geometry.Manifold.DifferentialForm.Flow
+public import TauCeti.Geometry.Manifold.DifferentialForm.Flow.TimeDependent
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Complete
+public import TauCeti.Geometry.Symplectic.SymplecticTransport
 import TauCeti.Geometry.Manifold.DifferentialForm.Squared
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
@@ -22,7 +23,14 @@ If `σ` is closed, the flow `ψ` of a complete `C²` vector field `X` with close
 `ι_X σ` preserves it, `ψₜ^* σ = σ`, because Cartan's formula gives `L_X σ = d(ι_X σ) = 0`
 (`TauCeti.mpullback_globalFlow_of_mextDeriv_interior_eq_zero`). In particular
 Hamiltonian flows are symplectic, since `d(ι_{X_f} σ) = d(df) = 0`
-(`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback_globalFlow`).
+(`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback_globalFlow`). The same holds for the
+time-dependent flow of a family of Hamiltonian vector fields
+(`TauCeti.SmoothTwoForm.mpullback_timeDependentFlowOf_of_isHamiltonianVectorField`). For symplectic
+`σ`, every differential of this flow is therefore a linear symplectomorphism
+(`TauCeti.SmoothTwoForm.IsSymplectic.isSymplectomorphism_timeDependentFlowMFDerivEquiv`), so an
+almost complex structure carried back along it stays tamed by, or compatible with, `σ`
+(`TauCeti.SmoothTwoForm.IsSymplectic.tames_transport_timeDependentFlowMFDerivEquiv_symm` and
+`TauCeti.SmoothTwoForm.IsSymplectic.compatible_transport_timeDependentFlowMFDerivEquiv_symm`).
 
 For a nondegenerate `σ`, a smooth map `φ` that pulls `σ` back to itself and preserves a function
 `g` carries Hamiltonian vector fields of `g` to themselves, hence
@@ -41,17 +49,25 @@ restricts to the flow of `Fᵢ` on the `i`-th coordinate axis, preserves `σ` an
 (`TauCeti.SmoothTwoForm.IsSymplectic.eq_hamiltonianFlowAction`). The action is jointly smooth
 (`TauCeti.SmoothTwoForm.IsSymplectic.contMDiff_hamiltonianFlowAction_uncurry`), and the orbit map
 `v ↦ v • x` has derivative `w ↦ ∑ i, wᵢ X_{Fᵢ}(v • x)`
-(`TauCeti.SmoothTwoForm.IsSymplectic.mfderiv_hamiltonianFlowAction_apply`). For a completely
-integrable system
-`F` (`TauCeti.SmoothTwoForm.IsIntegrableSystem`) that is a proper map, the completeness hypothesis
-holds (`IsIntegrableSystem.isCompleteVectorField_hamiltonianVectorField_of_isProperMap`), and this
-is the action of `ℝⁿ` on the fibres of `F` from which the Liouville–Arnold theorem
-identifies a compact connected regular fibre with a torus.
+(`TauCeti.SmoothTwoForm.IsSymplectic.mfderiv_hamiltonianFlowAction_apply`). More generally, for maps
+`h : N → (ι → ℝ)` and `g : N → M` the map `n ↦ h n • g n` pulls `σ` back to
+`g^* σ + ∑ᵢ dhᵢ ∧ d(Fᵢ ∘ g)`
+(`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_comp`), since each `h n`
+acts by a symplectomorphism preserving `F` and the `X_{Fᵢ}` are pairwise `σ`-orthogonal. For a
+section `s` of `F`, moving `s` by `h` thus changes `s^* σ` by the exact form `∑ᵢ dhᵢ ∧ dcᵢ`
+(`TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_section`). For a
+completely integrable system `F` (`TauCeti.SmoothTwoForm.IsIntegrableSystem`) that is a proper
+map, the completeness hypothesis holds
+(`IsIntegrableSystem.isCompleteVectorField_hamiltonianVectorField_of_isProperMap`), and this is the
+action of `ℝⁿ` on the fibres of `F` from which the Liouville–Arnold theorem identifies a compact
+connected regular fibre with a torus.
 
 ## Main results
 
 * `TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback_globalFlow`: for closed `σ`, the
   flow of a complete Hamiltonian vector field satisfies `ψₜ^* σ = σ`.
+* `TauCeti.SmoothTwoForm.IsSymplectic.isSymplectomorphism_timeDependentFlowMFDerivEquiv`: for
+  symplectic `σ`, the linearized time-dependent Hamiltonian flow is a linear symplectomorphism.
 * `TauCeti.SmoothTwoForm.IsFirstIntegral.apply_globalFlow`: complete Hamiltonian flows preserve
   first integrals.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.apply_globalFlow_hamiltonianVectorField`: symplectic maps
@@ -69,6 +85,11 @@ identifies a compact connected regular fibre with a torus.
 * `TauCeti.SmoothTwoForm.IsSymplectic.contMDiff_hamiltonianFlowAction_uncurry` and
   `TauCeti.SmoothTwoForm.IsSymplectic.mfderiv_hamiltonianFlowAction_apply`: the action is jointly
   smooth, and the derivative of an orbit map is spanned by the Hamiltonian vector fields.
+* `TauCeti.SmoothTwoForm.IsSymplectic.mfderiv_hamiltonianFlowAction_comp` and
+  `TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_comp`: the derivative of
+  a map `n ↦ h n • g n`, and its pullback `(h • g)^* σ = g^* σ + ∑ᵢ dhᵢ ∧ d(Fᵢ ∘ g)`.
+* `TauCeti.SmoothTwoForm.IsSymplectic.eval₂_mfderiv_hamiltonianFlowAction_section`: moving a
+  section `s` of `F` by `h` adds `∑ᵢ dhᵢ ∧ dcᵢ` to `s^* σ`.
 
 ## References
 
@@ -83,8 +104,8 @@ public section
 
 noncomputable section
 
-open Function
-open scoped ContDiff Manifold
+open Filter Function
+open scoped ContDiff Manifold Matrix Topology
 
 namespace TauCeti
 
@@ -152,6 +173,96 @@ theorem IsHamiltonianVectorField.mpullback_globalFlow (hX : σ.IsHamiltonianVect
     TauCeti.mpullback I I (globalFlow X (hv.of_le one_le_two) hc t) σ.1 = σ.1 :=
   TauCeti.mpullback_globalFlow_of_mextDeriv_interior_eq_zero hc hv hσ
     (by rw [isHamiltonianVectorField_iff_interior_eq.1 hX, mextDeriv_mextDeriv_ofFunction hf]) t
+
+omit [BoundarylessManifold I M] in
+/-- **Time-dependent Hamiltonian flows are symplectic.** For a closed two-form `σ` and a jointly
+`C²` time-dependent vector field `X` with complete suspension, such that each `X t` is a
+Hamiltonian vector field of a `C²` function `H t`, the time-dependent flow satisfies
+`φ_{s,t}^* σ = σ` for all times `s` and `t`, since every `ι_{X t} σ = d(H t)` is closed. No
+nondegeneracy is needed. -/
+theorem mpullback_timeDependentFlowOf_of_isHamiltonianVectorField {H : ℝ → M → ℝ}
+    {X : ℝ → (x : M) → TangentSpace I x} (hX : ∀ t, σ.IsHamiltonianVectorField (H t) (X t))
+    (hσ : σ.IsClosed) (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
+    (hc : IsCompleteVectorField (timeDependentSuspensionField X))
+    (hv : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+      (fun p : ℝ × M ↦ (⟨p.2, X p.1 p.2⟩ : TangentBundle I M))) (s t : ℝ) :
+    TauCeti.mpullback I I (timeDependentFlowOf X s t) σ.1 = σ.1 :=
+  TauCeti.mpullback_timeDependentFlowOf_of_mextDeriv_interior_eq_zero hc hv σ.mdifferentiable
+    ((SmoothForm.isClosed_def σ).1 hσ)
+    (fun u ↦ by
+      rw [isHamiltonianVectorField_iff_interior_eq.1 (hX u), mextDeriv_mextDeriv_ofFunction (hH u)])
+    s t
+
+/-! ### The linearized time-dependent Hamiltonian flow is symplectic -/
+
+namespace IsSymplectic
+
+variable (hσ : σ.IsSymplectic)
+include hσ
+
+/-- **The linearized Hamiltonian flow is symplectic.** For a symplectic form `σ` and a jointly
+`C²` field of Hamiltonian vector fields with complete suspension, every differential
+`dφ_{s, t}(x) : T_x M → T_{φ_{s, t} x} M` of the time-dependent flow is a linear
+symplectomorphism. -/
+theorem isSymplectomorphism_timeDependentFlowMFDerivEquiv {H : ℝ → M → ℝ}
+    (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
+    (hc : IsCompleteVectorField
+      (timeDependentSuspensionField fun t ↦ σ.hamiltonianVectorField (H t)))
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+      (fun p : ℝ × M ↦ (⟨p.2, σ.hamiltonianVectorField (H p.1) p.2⟩ : TangentBundle I M)))
+    (s t : ℝ) (x : M) :
+    SymplecticForm.IsSymplectomorphism (hσ.isNondegenerate.symplecticFormAt x)
+      (hσ.isNondegenerate.symplecticFormAt
+        (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))
+      (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv := by
+  refine SymplecticForm.isSymplectomorphism_iff.2 fun a b ↦ ?_
+  have h := congrArg (fun α ↦ α x ![a, b])
+    (mpullback_timeDependentFlowOf_of_isHamiltonianVectorField
+      (fun t ↦ hσ.isNondegenerate.isHamiltonianVectorField_hamiltonianVectorField (H t))
+      hσ.isClosed hH hc hX s t)
+  simp only [mpullback_apply] at h
+  simp only [IsNondegenerate.symplecticFormAt_apply, SmoothBundleForm.eval₂_apply]
+  convert h using 2
+  ext i
+  fin_cases i <;> simp
+
+/-- **Twisted structures stay tame.** For a symplectic form `σ`, if `σ` tames a structure `J` at
+`φ_{s, t} x`, it tames the structure `J' = (dφ_{s, t})⁻¹ J dφ_{s, t}` carried back to `x` along the
+linearized flow. -/
+theorem tames_transport_timeDependentFlowMFDerivEquiv_symm {H : ℝ → M → ℝ}
+    (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
+    (hc : IsCompleteVectorField
+      (timeDependentSuspensionField fun t ↦ σ.hamiltonianVectorField (H t)))
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+      (fun p : ℝ × M ↦ (⟨p.2, σ.hamiltonianVectorField (H p.1) p.2⟩ : TangentBundle I M)))
+    (s t : ℝ) (x : M)
+    {J : AlmostComplexStructure (TangentSpace I
+      (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))}
+    (hJ : (hσ.isNondegenerate.symplecticFormAt _).Tames J) :
+    (hσ.isNondegenerate.symplecticFormAt x).Tames (J.transport
+      (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv.symm) :=
+  SymplecticForm.isSymplectomorphism_iff_transport_eq.1
+    (hσ.isSymplectomorphism_timeDependentFlowMFDerivEquiv hH hc hX s t x).symm ▸ hJ.transport _
+
+/-- **Twisted structures stay compatible.** For a symplectic form `σ`, if `J` is compatible with
+`σ` at `φ_{s, t} x`, so is the structure `J' = (dφ_{s, t})⁻¹ J dφ_{s, t}` carried back to `x` along
+the linearized flow. -/
+theorem compatible_transport_timeDependentFlowMFDerivEquiv_symm {H : ℝ → M → ℝ}
+    (hH : ∀ t, ContMDiff I 𝓘(ℝ) 2 (H t))
+    (hc : IsCompleteVectorField
+      (timeDependentSuspensionField fun t ↦ σ.hamiltonianVectorField (H t)))
+    (hX : ContMDiff (𝓘(ℝ, ℝ).prod I) I.tangent 2
+      (fun p : ℝ × M ↦ (⟨p.2, σ.hamiltonianVectorField (H p.1) p.2⟩ : TangentBundle I M)))
+    (s t : ℝ) (x : M)
+    {J : AlmostComplexStructure (TangentSpace I
+      (timeDependentFlowOf (fun t ↦ σ.hamiltonianVectorField (H t)) s t x))}
+    (hJ : (hσ.isNondegenerate.symplecticFormAt _).Compatible J) :
+    (hσ.isNondegenerate.symplecticFormAt x).Compatible (J.transport
+      (timeDependentFlowMFDerivEquiv hc le_rfl (hX.of_le one_le_two) s t x).toLinearEquiv.symm) :=
+  SymplecticForm.isSymplectomorphism_iff_transport_eq.1
+    (hσ.isSymplectomorphism_timeDependentFlowMFDerivEquiv hH hc hX s t x).symm ▸ hJ.transport _
+
+end IsSymplectic
 
 /-! ### Poisson-commuting Hamiltonian flows commute -/
 
@@ -380,9 +491,13 @@ theorem contMDiff_hamiltonianFlowAction_uncurry :
 
 /-- **The orbit maps of the Hamiltonian flow action are smooth.** -/
 theorem contMDiff_hamiltonianFlowAction_apply (x : M) :
-    ContMDiff 𝓘(ℝ, ι → ℝ) I ∞ fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x :=
-  (hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).comp
-    (contMDiff_id.prodMk contMDiff_const)
+    ContMDiff 𝓘(ℝ, ι → ℝ) I ∞ fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x := by
+  -- Elaborating the composite before matching it against the goal avoids a slow unification of
+  -- `?g ∘ ?f` with the orbit map.
+  have h := (hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).comp
+    (contMDiff_id.prodMk contMDiff_const :
+      ContMDiff 𝓘(ℝ, ι → ℝ) (𝓘(ℝ, ι → ℝ).prod I) ∞ fun v : ι → ℝ ↦ (v, x))
+  exact h
 
 /-- The orbit maps of the Hamiltonian flow action are continuous. -/
 theorem continuous_hamiltonianFlowAction_apply (x : M) :
@@ -435,6 +550,120 @@ theorem mfderiv_hamiltonianFlowAction_apply (x : M) (v w : ι → ℝ) :
   rw [show Pi.single i (w i) = w i • Pi.single i (1 : ℝ) by
     rw [← Pi.single_smul', smul_eq_mul, mul_one], map_smul]
   exact congrArg (w i • ·) (hax i)
+
+/-! ### Moving a map by the Hamiltonian flow action -/
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H']
+  {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
+
+/-- **The derivative of a map moved by the Hamiltonian flow action.** For maps `h : N → (ι → ℝ)`
+and `g : N → M`, the map `n ↦ h n • g n` has derivative `ξ ↦ ∑ᵢ (dh ξ)ᵢ X_{Fᵢ} + dφ (dg ξ)` at `n`,
+where `φ` is the action of `h n`. -/
+theorem mfderiv_hamiltonianFlowAction_comp {h : N → ι → ℝ} {g : N → M} {n : N}
+    (hh : MDifferentiableAt I' 𝓘(ℝ, ι → ℝ) h n) (hg : MDifferentiableAt I' I g n)
+    (ξ : TangentSpace I' n) :
+    mfderiv I' I (fun n ↦ (hσ.hamiltonianFlowAction hF hcomm hc (h n)).toMul (g n)) n ξ =
+      ∑ i, mfderiv I' 𝓘(ℝ, ι → ℝ) h n ξ i • σ.hamiltonianVectorField (F · i)
+          ((hσ.hamiltonianFlowAction hF hcomm hc (h n)).toMul (g n)) +
+        mfderiv I I (hσ.hamiltonianFlowAction hF hcomm hc (h n)).toMul (g n)
+          (mfderiv I' I g n ξ) := by
+  set act : (ι → ℝ) × M → M := fun q ↦ (hσ.hamiltonianFlowAction hF hcomm hc q.1).toMul q.2
+  have hact : MDifferentiableAt (𝓘(ℝ, ι → ℝ).prod I) I act (h n, g n) :=
+    (hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).mdifferentiableAt (by simp)
+  -- Chain rule through `n ↦ (h n, g n)`, then split the derivative of the joint action into its
+  -- two partial derivatives. The tangent vector is viewed in the model space of the product.
+  have hcomp : mfderiv I' I (act ∘ fun n ↦ (h n, g n)) n ξ =
+      mfderiv (𝓘(ℝ, ι → ℝ).prod I) I act (h n, g n)
+        ((mfderiv I' 𝓘(ℝ, ι → ℝ) h n ξ, mfderiv I' I g n ξ) : (ι → ℝ) × E) :=
+    congrArg (fun L ↦ L ξ)
+      (hact.hasMFDerivAt.comp n (hh.hasMFDerivAt.prodMk hg.hasMFDerivAt)).mfderiv
+  refine hcomp.trans ((mfderiv_prod_eq_add_apply hact).trans ?_)
+  congr 1
+  exact hσ.mfderiv_hamiltonianFlowAction_apply hF hcomm hc (g n) (h n) _
+
+/-- **Moving a map by the Hamiltonian flow action changes its pullback by an exact form.** For
+maps `h : N → (ι → ℝ)` and `g : N → M`, differentiable at `n`, the map `n ↦ h n • g n` pulls `σ`
+back to
+
+`(h • g)^* σ = g^* σ + ∑ᵢ dhᵢ ∧ d(Fᵢ ∘ g)`.
+
+This holds because each `h n` acts by a symplectomorphism preserving `F`, while
+`σ(X_{Fᵢ}, X_{Fⱼ}) = {Fᵢ, Fⱼ} = 0` and `σ(X_{Fᵢ}, w) = dFᵢ(w)`. -/
+theorem eval₂_mfderiv_hamiltonianFlowAction_comp {h : N → ι → ℝ} {g : N → M} {n : N}
+    (hh : MDifferentiableAt I' 𝓘(ℝ, ι → ℝ) h n) (hg : MDifferentiableAt I' I g n)
+    (ξ ξ' : TangentSpace I' n) :
+    SmoothBundleForm.eval₂ σ ((hσ.hamiltonianFlowAction hF hcomm hc (h n)).toMul (g n))
+        (mfderiv I' I (fun n ↦ (hσ.hamiltonianFlowAction hF hcomm hc (h n)).toMul (g n)) n ξ)
+        (mfderiv I' I (fun n ↦ (hσ.hamiltonianFlowAction hF hcomm hc (h n)).toMul (g n)) n ξ') =
+      SmoothBundleForm.eval₂ σ (g n) (mfderiv I' I g n ξ) (mfderiv I' I g n ξ') +
+        (mfderiv I' 𝓘(ℝ, ι → ℝ) h n ξ ⬝ᵥ mfderiv I' 𝓘(ℝ, ι → ℝ) (F ∘ g) n ξ' -
+          mfderiv I' 𝓘(ℝ, ι → ℝ) h n ξ' ⬝ᵥ mfderiv I' 𝓘(ℝ, ι → ℝ) (F ∘ g) n ξ) := by
+  have hFd (z : M) : MDifferentiableAt I 𝓘(ℝ, ι → ℝ) F z := hF.mdifferentiableAt (by simp)
+  rw [hσ.mfderiv_hamiltonianFlowAction_comp hF hcomm hc hh hg,
+    hσ.mfderiv_hamiltonianFlowAction_comp hF hcomm hc hh hg, mfderiv_comp_apply n (hFd _) hg,
+    mfderiv_comp_apply n (hFd _) hg]
+  set φ := (hσ.hamiltonianFlowAction hF hcomm hc (h n)).toMul
+  set y := g n
+  set B : LinearMap.BilinForm ℝ (TangentSpace I (φ y)) := SmoothForm.bilinFormAt σ (φ y) with hB
+  have hφd : MDifferentiableAt I I φ y := φ.contMDiff.mdifferentiableAt (by simp)
+  -- `σ(X_{Fᵢ}, w) = dFᵢ(w)`, `σ(w, X_{Fᵢ}) = -dFᵢ(w)` and `σ(X_{Fᵢ}, X_{Fⱼ}) = {Fᵢ, Fⱼ} = 0`.
+  have hXv (i : ι) (w : TangentSpace I (φ y)) :
+      B (σ.hamiltonianVectorField (F · i) (φ y)) w = mfderiv I 𝓘(ℝ, ι → ℝ) F (φ y) w i := by
+    rw [hB, SmoothForm.bilinFormAt_apply, hσ.isNondegenerate.eval₂_hamiltonianVectorField,
+      mvfderiv_apply (hFd _) i]
+    simp only [ContinuousLinearMap.comp_apply, mvfderiv_apply_eq_mfderiv_apply]
+    -- The tangent space of the model space `ι → ℝ` is `ι → ℝ` by definition, so `proj i` reads
+    -- off the `i`-th coordinate of the derivative.
+    rfl
+  have hvX (i : ι) (w : TangentSpace I (φ y)) :
+      B w (σ.hamiltonianVectorField (F · i) (φ y)) = -mfderiv I 𝓘(ℝ, ι → ℝ) F (φ y) w i := by
+    rw [← hXv, hB, SmoothForm.bilinFormAt_apply, SmoothForm.bilinFormAt_apply,
+      SmoothBundleForm.eval₂_swap]
+  have hXX (i j : ι) :
+      B (σ.hamiltonianVectorField (F · i) (φ y)) (σ.hamiltonianVectorField (F · j) (φ y)) = 0 := by
+    rw [hB, SmoothForm.bilinFormAt_apply, ← poissonBracket_def]
+    exact hcomm i j (φ y)
+  -- `φ` is symplectic, and `F ∘ φ = F`.
+  have hφφ (w w' : TangentSpace I y) :
+      B (mfderiv I I φ y w) (mfderiv I I φ y w') = SmoothBundleForm.eval₂ σ y w w' := by
+    rw [hB, SmoothForm.bilinFormAt_apply, ← SmoothForm.eval₂_mpullback _ φ.contMDiff,
+      hσ.mpullback_hamiltonianFlowAction]
+  have hFφ (w : TangentSpace I y) :
+      mfderiv I 𝓘(ℝ, ι → ℝ) F (φ y) (mfderiv I I φ y w) = mfderiv I 𝓘(ℝ, ι → ℝ) F y w := by
+    rw [← mfderiv_comp_apply y (hFd _) hφd,
+      show F ∘ φ = F from funext (hσ.apply_hamiltonianFlowAction hF hcomm hc (h n))]
+  rw [← SmoothForm.bilinFormAt_apply, ← hB]
+  simp only [map_add, map_sum, map_smul, LinearMap.add_apply, LinearMap.sum_apply,
+    LinearMap.smul_apply, hXX, hXv, hvX, hφφ, hFφ, smul_eq_mul, mul_zero, Finset.sum_const_zero,
+    zero_add, mul_neg, Finset.sum_neg_distrib, dotProduct]
+  ring
+
+/-- **Moving a section of `F` by the Hamiltonian flow action.** Let `s` be a section of `F` near
+`c`, differentiable at `c`, and let `h : (ι → ℝ) → (ι → ℝ)` be differentiable at `c`. Then the
+map `c ↦ h c • s c`, which is again a section of `F`
+(`TauCeti.SmoothTwoForm.IsSymplectic.apply_hamiltonianFlowAction`), pulls `σ` back to
+
+`(h • s)^* σ = s^* σ + ∑ᵢ dhᵢ ∧ dcᵢ`. -/
+theorem eval₂_mfderiv_hamiltonianFlowAction_section {s : (ι → ℝ) → M} {h : (ι → ℝ) → ι → ℝ}
+    {c : ι → ℝ} (hs : MDifferentiableAt 𝓘(ℝ, ι → ℝ) I s c) (hFs : ∀ᶠ c' in 𝓝 c, F (s c') = c')
+    (hh : DifferentiableAt ℝ h c) (b b' : ι → ℝ) :
+    SmoothBundleForm.eval₂ σ ((hσ.hamiltonianFlowAction hF hcomm hc (h c)).toMul (s c))
+        (mfderiv 𝓘(ℝ, ι → ℝ) I (fun c ↦ (hσ.hamiltonianFlowAction hF hcomm hc (h c)).toMul (s c))
+          c b)
+        (mfderiv 𝓘(ℝ, ι → ℝ) I (fun c ↦ (hσ.hamiltonianFlowAction hF hcomm hc (h c)).toMul (s c))
+          c b') =
+      SmoothBundleForm.eval₂ σ (s c) (mfderiv 𝓘(ℝ, ι → ℝ) I s c b)
+          (mfderiv 𝓘(ℝ, ι → ℝ) I s c b') +
+        (fderiv ℝ h c b ⬝ᵥ b' - fderiv ℝ h c b' ⬝ᵥ b) := by
+  -- `F ∘ s` is the identity near `c`, and `h` is a map between vector spaces.
+  have hFs' (w : ι → ℝ) : mfderiv 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) (F ∘ s) c w = w := by
+    exact congrArg (fun L ↦ L w) ((hasFDerivAt_id (𝕜 := ℝ) c).congr_of_eventuallyEq
+      (show F ∘ s =ᶠ[𝓝 c] id from hFs)).hasMFDerivAt.mfderiv
+  have hh' (w : ι → ℝ) : mfderiv 𝓘(ℝ, ι → ℝ) 𝓘(ℝ, ι → ℝ) h c w = fderiv ℝ h c w :=
+    congrArg (fun L ↦ L w) hh.hasFDerivAt.hasMFDerivAt.mfderiv
+  refine (hσ.eval₂_mfderiv_hamiltonianFlowAction_comp hF hcomm hc hh.mdifferentiableAt hs b
+    b').trans ?_
+  rw [hFs', hFs', hh', hh']
 
 end IsSymplectic
 

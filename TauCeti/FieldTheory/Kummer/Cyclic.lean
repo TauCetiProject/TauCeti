@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.KummerExtension
-public import TauCeti.Algebra.Polynomial.XPowSubC
+public import TauCeti.Algebra.Polynomial.XPow.SubC
 public import TauCeti.FieldTheory.Kummer.Character
 import TauCeti.FieldTheory.IntermediateField.Adjoin.Defs
 
@@ -254,7 +254,7 @@ theorem X_pow_sub_C_irreducible_of_isPrimitiveRoot
     (hb : ∀ p : ℕ, p.Prime → p ∣ n → ∀ c : K, c ^ p ≠ b) : Irreducible (X ^ n - C b) := by
   let L := SplittingField (X ^ n - C b)
   set α := rootOfSplitsXPowSubC (NeZero.pos n) b L
-  have hgen := AdjoinSimple.adjoin_gen_eq_top (F := K) α
+  have hgen := adjoin_adjoinSimple_gen_eq_top (F := K) α
   have hs : AdjoinSimple.gen K α ^ n = algebraMap K K⟮α⟯ b :=
     Subtype.ext (by simpa using rootOfSplitsXPowSubC_pow b L)
   have hfin := finrank_eq_of_pow_eq_of_adjoin_eq_top hζ hb hs hgen

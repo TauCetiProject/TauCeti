@@ -95,10 +95,8 @@ private theorem not_injective_eigenvalues_of_norm_ge (hK : IsCompactOperator K)
     rw [heq, norm_smul]
     exact (hnorm n).trans (le_mul_of_one_le_right (norm_nonneg _) (hfsep n y hy))
   obtain ⟨m, n, hmn, hlt⟩ := hK.exists_dist_lt_of_norm_le hfnorm hε
-  rw [dist_eq_norm] at hlt
-  rcases lt_or_gt_of_ne hmn with hmn | hnm
-  · exact (not_lt_of_ge (hsep m n hmn)) (by rwa [norm_sub_rev] at hlt)
-  · exact (not_lt_of_ge (hsep n m hnm)) hlt
+  rw [dist_eq_norm'] at hlt
+  exact (hsep m n hmn).not_gt hlt
 
 /-- A compact operator has only finitely many eigenvalues whose norm is at least a fixed
 positive number. The ambient normed space need not be complete. -/

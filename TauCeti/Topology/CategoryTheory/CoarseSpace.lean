@@ -71,6 +71,10 @@ of objects, with its quotient topology. -/
 def coarseMap : fatClassifyingSpace C ⟶ TopCat.of (Quotient (isIsomorphicSetoid C)) :=
   fatRealization.augment (coarseAugmentation hs)
 
+/-- The coarse projection is induced by the coarse augmentation of the topological nerve. -/
+theorem coarseMap_eq_augment :
+    coarseMap hs = fatRealization.augment (coarseAugmentation hs) := (rfl)
+
 /-- A point of a simplex projects to the class of its first vertex. By
 `ComposableArrows.quotient_mk_obj`, this is also the class of every other vertex. -/
 -- Simplify before the functor-object types in the characteristic map are normalized.
