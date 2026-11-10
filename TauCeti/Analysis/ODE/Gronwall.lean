@@ -106,13 +106,18 @@ theorem le_mul_exp_of_le_add_mul_integral {φ : ℝ → ℝ} {a b c K : ℝ}
           ring
 
 /-- **Grönwall's inequality for monotone functions, almost-everywhere form.** Let `g` be monotone
-on `[s, t]` with `g s ≥ 0`. If `k g ≤ g'` at almost every point of `(s, t)`, for an interval
-integrable `k`, then `g s · exp (∫ₛᵗ k) ≤ g t`. No continuity of `g` is needed. -/
+on `[s, t]` with `g s ≥ 0`. If `k g ≤ g'` at almost every point of `(s, t)`, then
+`g s · exp (∫ₛᵗ k) ≤ g t`. No continuity of `g` is needed. If `k` is not interval integrable, the
+integral is the junk value `0` and the bound is just monotonicity. -/
 theorem mul_exp_integral_le_of_mul_le_deriv {g k : ℝ → ℝ} {s t : ℝ} (hst : s ≤ t)
-    (hg : MonotoneOn g (Icc s t)) (hgs : 0 ≤ g s) (hk : IntervalIntegrable k volume s t)
+    (hg : MonotoneOn g (Icc s t)) (hgs : 0 ≤ g s)
     (h : ∀ᵐ σ, σ ∈ Ioo s t → k σ * g σ ≤ deriv g σ) :
     g s * Real.exp (∫ σ in s..t, k σ) ≤ g t := by
   have hgst : g s ≤ g t := hg ⟨le_rfl, hst⟩ ⟨hst, le_rfl⟩ hst
+  by_cases hk : IntervalIntegrable k volume s t
+  swap
+  · rw [intervalIntegral.integral_undef hk, Real.exp_zero, mul_one]
+    exact hgst
   rcases hgs.eq_or_lt with hgs0 | hgs0
   · rw [← hgs0, zero_mul]
     exact hgs.trans hgst

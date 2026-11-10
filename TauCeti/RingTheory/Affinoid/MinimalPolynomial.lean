@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.Affinoid.SupSeminorm
 public import TauCeti.FieldTheory.Minpoly.TorsionFree
+import TauCeti.Algebra.Polynomial.AlgebraMap
 
 import Mathlib.FieldTheory.IsAlgClosed.AlgebraicClosure
 import Mathlib.RingTheory.Ideal.GoingUp
@@ -120,12 +121,13 @@ integral over `A`, and let `f : B` be a root of a monic polynomial
 which vanishes at `f`. Over each classical point `x` of `A` there is a classical point `y` of `B`
 with `|aᵢ(x)| ≤ |f(y)| ^ (d - i)` for every `i`. -/
 theorem exists_pointNorm_coeff_le_pointNorm_pow (hB : IsAffinoidAlgebra K B)
-    [Algebra.IsIntegral A B] [FaithfulSMul A B] {f : B} {p : A[X]} (hp : p.Monic)
+    [Algebra.IsIntegral A B] {f : B} {p : A[X]} (hp : p.Monic)
     (hpos : 0 < p.natDegree) (hdvd : ∀ q : A[X], aeval f q = 0 → p ∣ q)
     (x : MaximalSpectrum A) :
     ∃ y : MaximalSpectrum B, ∀ i,
       pointNorm K x (p.coeff i) ≤ pointNorm K y f ^ (p.natDegree - i) := by
   classical
+  have := hp.faithfulSMul_of_dvd hpos hdvd
   -- Compute the point norms at `x` in an algebraic closure `Ω` of the residue field.
   let := Ideal.Quotient.field x.asIdeal
   have := hB.finite_quotient_of_isIntegral (IsScalarTower.toAlgHom K A B)
@@ -178,12 +180,7 @@ theorem supSeminorm_eq_iSup_coeff_rpow_of_dvd (hB : IsAffinoidAlgebra K B)
     have : IsEmpty (Fin p.natDegree) := h0 ▸ Fin.isEmpty'
     rw [supSeminorm_eq_zero_of_subsingleton, Real.iSup_of_isEmpty]
   -- A nonzero element of `A` is not divisible by `p`, so `A` embeds into `B`.
-  have : FaithfulSMul A B := by
-    rw [faithfulSMul_iff_algebraMap_injective, injective_iff_map_eq_zero]
-    intro a ha
-    by_contra ha0
-    exact hp.not_dvd_of_natDegree_lt (C_ne_zero.mpr ha0) (by rwa [natDegree_C])
-      (hdvd _ (by rwa [aeval_C]))
+  have := hp.faithfulSMul_of_dvd hpos hdvd
   have hcoeff (a : A) : supSeminorm K (algebraMap A B a) = supSeminorm K a :=
     hB.supSeminorm_map_of_isIntegral (IsScalarTower.toAlgHom K A B)
       (fun b ↦ Algebra.IsIntegral.isIntegral (R := A) b) (FaithfulSMul.algebraMap_injective A B) a

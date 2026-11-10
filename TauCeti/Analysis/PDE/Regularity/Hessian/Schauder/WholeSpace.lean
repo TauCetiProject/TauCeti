@@ -183,15 +183,8 @@ theorem exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fder
   -- The Hölder norm `H` of `D²u` and the interpolation inequalities at scale `ε`.
   set H := nnHolderNorm α (iteratedFDeriv ℝ 2 u)
   have hH : HolderWith H α (iteratedFDeriv ℝ 2 u) := hmem.holderWith
-  have hN0 (y : E) : ‖iteratedFDeriv ℝ 0 u y‖ ≤ N := by
-    simpa only [norm_iteratedFDeriv_zero, Real.norm_eq_abs] using hN y
-  have h1 (x : E) : ‖fderiv ℝ u x‖ ≤ c * N + 2 * H * ε ^ (α : ℝ) := by
-    have h := (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hu hN0
-      hbdd hε hε1 x).1
-    rwa [zero_add, norm_iteratedFDeriv_one] at h
-  have h2 (x : E) : ‖iteratedFDeriv ℝ 2 u x‖ ≤ c * N + 2 * H * ε ^ (α : ℝ) :=
-    (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hu hN0 hbdd hε
-      hε1 x).2
+  obtain ⟨h1, h2⟩ := hH.norm_fderiv_le_and_norm_iteratedFDeriv_two_le hu
+    (fun y => by simpa only [Real.norm_eq_abs] using hN y) hbdd hε hε1
   -- The first estimate with `N₁ = (1 + c) N + 4 H ε^α`, which bounds `|u|`, `‖Du‖` and `‖D²u‖`.
   have hNN : 0 ≤ (N : ℝ) := N.coe_nonneg
   have hHε : 0 ≤ (H : ℝ) * ε ^ (α : ℝ) := by positivity
