@@ -575,14 +575,6 @@ theorem pLowerCentralSeries_eq_topologicalClosure (k : ℕ) :
     · rintro _ ⟨x, hx, rfl⟩
       exact pow_mem_pLowerCentralStep (le_topologicalClosure _ hx)
 
-/-- On a discrete group the lower `p`-series is the abstract lower `p`-central series of the
-group. -/
-theorem pLowerCentralSeries_eq_of_discreteTopology [DiscreteTopology G] (k : ℕ) :
-    pLowerCentralSeries p G k = (⊤ : Subgroup G).pLowerCentralSeries p k := by
-  rw [pLowerCentralSeries_eq_topologicalClosure]
-  exact le_antisymm (topologicalClosure_minimal _ le_rfl (isClosed_discrete _))
-    (le_topologicalClosure _)
-
 /-! ### Functoriality -/
 
 variable {H : Type*} [Group H] [TopologicalSpace H] [IsTopologicalGroup H]
@@ -627,14 +619,63 @@ theorem isTopCharacteristic_pLowerCentralSeries (k : ℕ) :
     IsTopCharacteristic G (pLowerCentralSeries p G k) :=
   isTopCharacteristic_iff_map_eq.mpr fun φ ↦ φ.map_pLowerCentralSeries_eq k
 
+section Compact
+
+variable [CompactSpace G]
+
+/-- **Recovering elements of closed subgroups from compatible classes.** In a compact group, a
+family `q k i ∈ G ⧸ λ_k`, compatible along the quotient maps and lying at every level in the image
+of a closed subgroup `H i`, is the family of classes of elements `t i ∈ H i`: the fibres over
+`q k i` are nonempty, closed and nested, so they have a common point. -/
+theorem exists_forall_mem_and_forall_mk_eq_pLowerCentralSeries {ι : Type*} {H : ι → Subgroup G}
+    (hH : ∀ i, IsClosed (H i : Set G)) (q : ∀ k, ι → G ⧸ pLowerCentralSeries p G k)
+    (hq : ∀ k i, QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k) (q (k + 1) i) = q k i)
+    (hmem : ∀ k i, q k i ∈ (H i).map (QuotientGroup.mk' (pLowerCentralSeries p G k))) :
+    ∃ t : ι → G, (∀ i, t i ∈ H i) ∧
+      ∀ k i, (t i : G ⧸ pLowerCentralSeries p G k) = q k i := by
+  have key (i : ι) : ∃ t ∈ H i, ∀ k, (t : G ⧸ pLowerCentralSeries p G k) = q k i := by
+    let S : ℕ → Set G := fun k ↦ {g | g ∈ H i ∧ (g : G ⧸ pLowerCentralSeries p G k) = q k i}
+    have hS : ∀ k, IsClosed (S k) := fun k ↦
+      (hH i).inter ((isClosed_singleton (x := q k i)).preimage QuotientGroup.continuous_mk)
+    obtain ⟨t, ht⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed S
+      (fun k g hg ↦ ⟨hg.1, by
+        rw [← hq k i, ← hg.2]
+        exact QuotientGroup.mapOfLE_mk (pLowerCentralSeries_succ_le k) g |>.symm⟩)
+      (fun k ↦ by
+        obtain ⟨x, hx, hxk⟩ := Subgroup.mem_map.mp (hmem k i)
+        exact ⟨x, hx, hxk⟩)
+      (hS 0).isCompact hS
+    rw [Set.mem_iInter] at ht
+    exact ⟨t, (ht 0).1, fun k ↦ (ht k).2⟩
+  choose t htH htk using key
+  exact ⟨t, htH, fun k i ↦ htk i k⟩
+
+end Compact
+
+end Series
+
+/-! ### Discrete groups -/
+
+section Discrete
+
+variable {p : ℕ} {G : Type*} [Group G] [TopologicalSpace G] [DiscreteTopology G]
+  {H : Type*} [Group H] [TopologicalSpace H] [DiscreteTopology H]
+
+/-- On a discrete group the lower `p`-series is the abstract lower `p`-central series of the
+group. -/
+theorem pLowerCentralSeries_eq_of_discreteTopology (k : ℕ) :
+    pLowerCentralSeries p G k = (⊤ : Subgroup G).pLowerCentralSeries p k := by
+  rw [pLowerCentralSeries_eq_topologicalClosure]
+  exact le_antisymm (topologicalClosure_minimal _ le_rfl (isClosed_discrete _))
+    (le_topologicalClosure _)
+
 /-- A group isomorphism between discrete groups matches their lower `p`-series term by term. -/
-theorem _root_.MulEquiv.map_pLowerCentralSeries_eq_of_discreteTopology [DiscreteTopology G]
-    [DiscreteTopology H] (e : G ≃* H) (k : ℕ) :
+theorem _root_.MulEquiv.map_pLowerCentralSeries_eq_of_discreteTopology (e : G ≃* H) (k : ℕ) :
     (pLowerCentralSeries p G k).map e.toMonoidHom = pLowerCentralSeries p H k :=
   ContinuousMulEquiv.map_pLowerCentralSeries_eq
     ⟨e, continuous_of_discreteTopology, continuous_of_discreteTopology⟩ k
 
-end Series
+end Discrete
 
 /-! ### The cyclic groups `ℤ/pⁿ` -/
 

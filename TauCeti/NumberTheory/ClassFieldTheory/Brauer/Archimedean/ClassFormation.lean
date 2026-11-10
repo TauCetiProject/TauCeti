@@ -99,14 +99,14 @@ noncomputable def realOpenNormalSubgroup (w : InfinitePlace K) (hw : w.IsReal) :
     OpenNormalSubgroup (AbsoluteGaloisGroup w.Completion) := by
   let _ : Finite (AbsoluteGaloisGroup w.Completion) :=
     Nat.finite_of_card_ne_zero (by rw [natCard_absoluteGaloisGroup_of_isReal w hw]; decide)
-  exact openNormalSubgroupBot _
+  exact ⊥
 
 @[simp]
 theorem realOpenNormalSubgroup_toSubgroup (w : InfinitePlace K) (hw : w.IsReal) :
     (realOpenNormalSubgroup w hw).toSubgroup = ⊥ := by
   let _ : Finite (AbsoluteGaloisGroup w.Completion) :=
     Nat.finite_of_card_ne_zero (by rw [natCard_absoluteGaloisGroup_of_isReal w hw]; decide)
-  exact openNormalSubgroupBot_toSubgroup _
+  exact OpenNormalSubgroup.toSubgroup_bot
 
 /-- A finite normal layer over a real infinite completion is either trivial or the unique
 quadratic layer from the trivial subgroup to the full absolute Galois group. -/

@@ -307,7 +307,7 @@ private theorem exists_le_order_homDefect_add [IsSepClosed K] (hF : F.height p =
       ((N + 2 : ℕ) : ℕ∞) ≤ (F.homDefect G (f + c • PowerSeries.X ^ M)).order := by
     have hM' : (M : ℕ∞) ≤ (F.homDefect G (f + c • PowerSeries.X ^ M)).order := by
       rw [← sub_add_cancel (F.homDefect G (f + c • PowerSeries.X ^ M)) (F.homDefect G f)]
-      exact le_order_add (le_order_homDefect_sub (hfc c) hf (hXM c))
+      exact le_order_add (le_order_homDefect_sub hf (hXM c))
         (hΦ.trans' (by exact_mod_cast le_rfl))
     refine succ_le_order_of_homogeneousComponent_eq_zero hM' ?_
     rw [← sub_add_cancel (F.homDefect G (f + c • PowerSeries.X ^ M)) (F.homDefect G f), map_add,
@@ -394,7 +394,7 @@ private theorem approx_zero_spec (hF : F.height p = h) (hG : G.height p = h) {c�
   refine ⟨by simp, by simp, ?_, fun j hj ↦ ?_⟩
   · have h₁ : ((1 : ℕ) : ℕ∞) ≤ (F.homDefect G (c₁ • PowerSeries.X ^ 1 : PowerSeries K)).order := by
       rw [← sub_zero (F.homDefect G _), ← homDefect_zero (F := F) (G := G)]
-      refine le_order_homDefect_sub (by simp) (map_zero _) ?_
+      refine le_order_homDefect_sub (map_zero _) ?_
       rw [sub_zero, Nat.cast_one]
       exact PowerSeries.one_le_order_iff_constCoeff_eq_zero.mpr (by simp)
     refine succ_le_order_of_homogeneousComponent_eq_zero h₁ ?_
@@ -461,7 +461,7 @@ private theorem exists_formalGroupHom_coeff_one_ne_zero [IsSepClosed K] (hF : F.
   have hΦ : F.homDefect G f = 0 := by
     refine order_eq_top_iff.mp (top_le_iff.mp (ENat.forall_natCast_le_iff_le.mp fun m _ ↦ ?_))
     have h := le_order_add ((key m).2.2.1.trans' (by exact_mod_cast (by omega : m ≤ m + 2)))
-      (le_order_homDefect_sub (F := F) (G := G) hf₀ (key m).1 (hlim m))
+      (le_order_homDefect_sub (F := F) (G := G) (key m).1 (hlim m))
     rwa [add_sub_cancel] at h
   refine ⟨TauCeti.FormalGroupHom.ofHomDefectEqZero hf₀ hΦ, ?_⟩
   rw [TauCeti.FormalGroupHom.ofHomDefectEqZero_toPowerSeries, hcoeff (n := 2) one_lt_two,
