@@ -24,8 +24,9 @@ and the source and target of the result are those of `φ` together with `U`. Con
 diagram `φ` is obtained in this way from the diagram `TauCeti.StrandDiagram.eraseHorizontal φ` of
 its strands that are not horizontal, by adding horizontal strands at the points
 `TauCeti.StrandDiagram.horizontals φ`
-(`TauCeti.StrandDiagram.eraseHorizontal_addHorizontal_horizontals`), and for a diagram without
-horizontal strands this decomposition inverts adding horizontal strands.
+(`TauCeti.StrandDiagram.addHorizontal_eraseHorizontal_horizontals`), and for a diagram without
+horizontal strands, removing the horizontal strands added along a set `U` that avoids its source
+and target gives it back (`TauCeti.StrandDiagram.eraseHorizontal_addHorizontal`).
 
 A horizontal strand at `w` crosses exactly the strands `i ↦ j` of `φ` with `i < w < j`. Such a
 strand of a composite `φ.trans ψ` passing through a point other than `w` crosses `w` in exactly one
@@ -48,7 +49,7 @@ whether two diagrams have a nonzero product in the strands algebra
   factors pass through the composite.
 * `TauCeti.StrandDiagram.composable_addHorizontal_iff`: adding common horizontal strands does not
   change composability.
-* `TauCeti.StrandDiagram.eraseHorizontal_addHorizontal_horizontals`,
+* `TauCeti.StrandDiagram.addHorizontal_eraseHorizontal_horizontals`,
   `TauCeti.StrandDiagram.eraseHorizontal_addHorizontal`,
   `TauCeti.StrandDiagram.horizontals_addHorizontal`: a diagram splits into its horizontal strands
   and the others.
@@ -150,7 +151,7 @@ theorem mem_addHorizontal_self {φ : StrandDiagram α} {U : Finset α} {i : α}
 
 /-- The diagram `φ` with its horizontal strands removed: it keeps the strands `i ↦ j` of `φ` with
 `i ≠ j`. Adding back the horizontal strands of `φ` recovers `φ`
-(`TauCeti.StrandDiagram.eraseHorizontal_addHorizontal_horizontals`). -/
+(`TauCeti.StrandDiagram.addHorizontal_eraseHorizontal_horizontals`). -/
 def eraseHorizontal (φ : StrandDiagram α) : StrandDiagram α where
   toPEquiv := (PEquiv.ofSet {i | φ i ≠ some i}).trans φ.toPEquiv
   le_of_mem' i j h := by
@@ -380,7 +381,7 @@ theorem target_eraseHorizontal (φ : StrandDiagram α) :
 /-- **Every diagram is a diagram without horizontal strands with horizontal strands added.**
 Adding back the horizontal strands of `φ` to `φ` with its horizontal strands removed gives `φ`. -/
 @[simp]
-theorem eraseHorizontal_addHorizontal_horizontals (φ : StrandDiagram α) :
+theorem addHorizontal_eraseHorizontal_horizontals (φ : StrandDiagram α) :
     φ.eraseHorizontal.addHorizontal φ.horizontals = φ := by
   ext i j
   simp only [← Option.mem_def, mem_addHorizontal, mem_horizontals, mem_eraseHorizontal]
