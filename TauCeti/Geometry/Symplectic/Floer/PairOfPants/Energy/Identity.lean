@@ -462,11 +462,7 @@ private theorem integral_Ico_eq_hamiltonianAction (ω : SymplecticForm V)
     simpa [stdComplexLineImag_eq] using HasDerivAt.prodMk (hasDerivAt_const t s) (hasDerivAt_id t)
   have hderiv (t : ℝ) : deriv x t = fderiv ℝ (u ∘ endChart q) (s, t) stdComplexLineImag :=
     (((huq t).differentiableAt (by norm_num)).hasFDerivAt.comp_hasDerivAt t (hline t)).deriv
-  have hper : Periodic x 1 := fun t ↦ by
-    have h := q.periodic_cylindricalEndLift s t
-    simp only [x, endChart_apply, Complex.equivRealProdCLM_symm_apply]
-    push_cast at h ⊢
-    rw [h]
+  have hper : Periodic x 1 := by simpa only [x, endChart_mk] using periodic_endLoop u q s
   have hper' : Periodic (deriv x) 1 := fun t ↦ by
     rw [← deriv_comp_add_const]
     exact congrArg (deriv · t) (funext hper)
