@@ -488,7 +488,7 @@ theorem link_stellarSubdivision_simplex_self (hv : v ∉ V) :
     inf_eq_right.mpr simplexBoundary_le_simplex]
 
 /-- Starring a simplex at its whole vertex set using one of its own vertices returns the simplex. -/
-theorem stellarSubdivision_simplex_self_of_mem (hV : V.Nonempty) (hv : v ∈ V) :
+theorem stellarSubdivision_simplex_self_of_mem (hv : v ∈ V) :
     stellarSubdivision (simplex V) V v = simplex V := by
   refine SetLike.ext fun τ => ?_
   rw [mem_stellarSubdivision_iff, mem_simplex, mem_simplex]
@@ -504,14 +504,14 @@ theorem stellarSubdivision_simplex_self_of_mem (hV : V.Nonempty) (hv : v ∈ V) 
     · refine Or.inr ⟨hvτ, fun h => ?_, ?_, Finset.union_subset
         ((Finset.erase_subset _ _).trans hsub) Finset.Subset.rfl⟩
       · exact (Finset.notMem_erase v τ) (h hv)
-      · exact hV.mono Finset.subset_union_right
+      · exact ⟨v, Finset.mem_union_right _ hv⟩
     · exact Or.inl ⟨hvτ, ⟨hne, hsub⟩, fun h => hvτ (h hv)⟩
 
 /-- Starring a simplex at its whole vertex set leaves the dimension at `V.card - 1`. -/
 theorem dimension_stellarSubdivision_simplex_self (hV : V.Nonempty) :
     dimension (stellarSubdivision (simplex V) V v) = ((V.card - 1 : ℕ) : WithBot ℕ∞) := by
   by_cases hv : v ∈ V
-  · rw [stellarSubdivision_simplex_self_of_mem hV hv, dimension_simplex hV]
+  · rw [stellarSubdivision_simplex_self_of_mem hv, dimension_simplex hV]
   · rw [dimension_stellarSubdivision (fun h => hv (singleton_mem_simplex.mp h))
       hV, dimension_simplex hV]
 
