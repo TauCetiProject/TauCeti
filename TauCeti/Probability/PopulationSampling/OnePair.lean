@@ -8,6 +8,7 @@ module
 public import Mathlib.Data.Fintype.CardEmbedding
 public import Mathlib.Data.Set.Card
 import Mathlib.Data.Finset.Preimage
+import TauCeti.Logic.Function.Update
 
 /-!
 # The one-pair population: fibres
@@ -29,10 +30,6 @@ one embedding if `r = 0` and by two (namely `f` and `Equiv.swap a b ∘ f`) othe
 
 ## Main declarations
 
-* `update_id_apply_eq_iff`: the one-pair population takes the value `a` exactly at `a`
-  and `b`;
-* `update_id_apply_eq_update_id_apply_iff`, `update_id_swap_apply`: two indices have the same
-  one-pair value exactly when they agree up to `Equiv.swap a b`;
 * `card_filter_update_id_apply_eq_le_two`, `card_filter_update_id_apply_eq_eq_two_iff`: an
   injective index map meets `{a, b}` at most twice, and twice exactly when it hits both;
 * `natCard_update_id_comp_eq_update_id_comp`: the number of index maps with the same word is
@@ -58,25 +55,6 @@ variable {ι κ : Type*} {a b : κ}
 section Fibres
 
 variable [DecidableEq κ]
-
-/-- The one-pair population takes the value `a` exactly at the two indices `a` and `b`. -/
-@[simp]
-theorem update_id_apply_eq_iff {x : κ} : update id b a x = a ↔ x = a ∨ x = b := by
-  rw [update_apply]
-  split_ifs with h <;> simp [h]
-
-/-- Two indices have the same one-pair value exactly when they agree up to swapping `a` and `b`.
--/
-theorem update_id_apply_eq_update_id_apply_iff {x y : κ} :
-    update id b a y = update id b a x ↔ y = x ∨ y = Equiv.swap a b x := by
-  simp only [update_apply, id_eq, Equiv.swap_apply_def]
-  split_ifs <;> grind
-
-/-- The one-pair population is invariant under swapping the two identified indices. -/
-@[simp]
-theorem update_id_swap_apply (x : κ) :
-    update id b a (Equiv.swap a b x) = update id b a x :=
-  update_id_apply_eq_update_id_apply_iff.2 (Or.inr rfl)
 
 /-- The values of an injective index map at the indices it sends to `a` or `b` are distinct
 elements of `{a, b}`, so they number the elements of `{a, b}` in its range. -/
