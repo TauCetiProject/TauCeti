@@ -113,7 +113,7 @@ theorem exists_basis_integerRing_of_defectExponent_eq_two_mul_natCastValuation
     simp only [map_pow, hv2]
     exact div_self (pow_ne_zero _ (pow_ne_zero _ hvπ))
   obtain ⟨B, h0, h1, htr, hn⟩ := exists_basis_integerRing_of_sq_eq_of_isUnit_discrim
-    (s := (π : K) ^ e) (t := t) (c := c) hx hx2 hπe (mul_div_cancel₀ (2 * b) hπe).symm
+    (s := (π : K) ^ e) (t := t) (c := c) hx hx2 (mul_div_cancel₀ (2 * b) hπe).symm
     (by rw [← pow_mul, mul_comm e 2]; exact (mul_div_cancel₀ _ (pow_ne_zero _ hπ0)).symm) hdisc
   exact ⟨B, h0, h1, htr, hn⟩
 
