@@ -144,7 +144,7 @@ theorem eLpNormWkp_clm_comp_le [CompleteSpace G] (A : F →L[ℝ] G) :
       exact zero_le
     have hA₀ : ‖A‖ₑ ≠ 0 := by
       rw [enorm_eq_nnnorm]; exact ENNReal.coe_ne_zero.2 (nnnorm_ne_zero_iff.2 hA)
-    have hA_top : ‖A‖ₑ ≠ ⊤ := enorm_ne_top
+    have hA_top : ‖A‖ₑ ≠ ⊤ := eNorm_ne_top
     rw [eLpNormWkp_succ, eLpNormWkp_succ, mul_add]
     gcongr ?_ + ?_
     · exact MeasureTheory.eLpNorm_clm_comp_le A

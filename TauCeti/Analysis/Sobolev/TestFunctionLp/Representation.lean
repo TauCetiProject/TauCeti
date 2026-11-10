@@ -129,11 +129,11 @@ theorem exists_eLpNorm_le_hasWeakLineDerivOn_of_enorm_integral_lineDeriv_smul_le
     calc eLpNorm (fun z => (g i : E → ℝ) z • b i) p (μ.restrict (Ω : Set E))
         ≤ ‖b i‖₊ * eLpNorm (g i : E → ℝ) p (μ.restrict (Ω : Set E)) :=
           eLpNorm_le_mul_eLpNorm_of_ae_le_mul' hmeas
-            (Eventually.of_forall fun z => by rw [enorm_smul, mul_comm, enorm_eq_nnnorm]) p
+            (Eventually.of_forall fun z => by rw [eNorm_smul, mul_comm, enorm_eq_nnnorm]) p
       _ ≤ ‖b i‖₊ * (‖c i‖₊ * M) := by
           gcongr
           calc eLpNorm (g i : E → ℝ) p (μ.restrict (Ω : Set E))
-              = ENNReal.ofReal ‖g i‖ := by simp [← Lp.enorm_def]
+              = ENNReal.ofReal ‖g i‖ := by simp [← Lp.eNorm_def]
             _ ≤ ENNReal.ofReal (‖c i‖ * M.toReal) := ENNReal.ofReal_le_ofReal (hgn i)
             _ = ‖c i‖₊ * M := by simp [ENNReal.ofReal_mul, hM, enorm_eq_nnnorm]
       _ = ↑(‖c i‖₊ * ‖b i‖₊) * M := by push_cast; ring

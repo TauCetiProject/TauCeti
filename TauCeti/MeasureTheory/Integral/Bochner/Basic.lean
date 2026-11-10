@@ -427,7 +427,7 @@ theorem ofReal_integral_sq_div_le_lintegral_enorm {Ω : Type*} [MeasurableSpace 
   rw [← integral_div]
   refine ofReal_integral_le_lintegral_ofReal.trans (lintegral_mono_ae ?_)
   filter_upwards [hb] with x hx
-  rw [Real.enorm_eq_ofReal_abs]
+  rw [Real.eNorm_eq_ofReal_abs]
   refine ENNReal.ofReal_le_ofReal ?_
   rw [div_le_iff₀ hC, ← sq_abs]
   nlinarith [abs_nonneg (h x)]

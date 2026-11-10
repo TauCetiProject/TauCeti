@@ -898,7 +898,7 @@ theorem integrable_floerEnergyDensity_of_eq_smul_endAngularForm (ω : Symplectic
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z)) (by
         filter_upwards [ae_mem_thricePuncturedSphereReal] with z hz
-        exact Real.enorm_eq_ofReal (he z hz)),
+        exact Real.eNorm_eq_ofReal (he z hz)),
       lintegral_floerEnergyDensity_eq_of_eq_smul_endAngularForm ω hK hKH hH hHc hu he hR hA]
     exact ENNReal.ofReal_lt_top
 
