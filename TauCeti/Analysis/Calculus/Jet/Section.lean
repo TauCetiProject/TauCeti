@@ -143,6 +143,11 @@ def value {x : E} (j : FirstJetAt 𝕜 F x) : F :=
   (coordinates j).1
 
 @[simp]
+theorem fst_coordinates {x : E} (j : FirstJetAt 𝕜 F x) :
+    (coordinates j).1 = value j :=
+  (rfl)
+
+@[simp]
 theorem value_mk {x : E} (s : E → F) (hs : ContDiffAt 𝕜 ∞ s x) :
     value (mk s hs) = s x :=
   (rfl)
@@ -169,7 +174,8 @@ theorem coordinates_map {x : E'} (h : E' → E) (g : E' × F → G)
 theorem value_map {x : E'} (h : E' → E) (g : E' × F → G)
     (j : FirstJetAt 𝕜 F (h x)) :
     value (map h g j) = g (x, value j) := by
-  simp [value]
+  simpa only [firstJetCoordChange_fst, fst_coordinates] using
+    congrArg Prod.fst (coordinates_map h g j)
 
 /-- Computing the jet before or after transforming an actual local section agrees.
 In particular the transformed section depends only on its input jet. -/
@@ -194,32 +200,28 @@ theorem map_id {x : E} (j : FirstJetAt 𝕜 F x) :
 /-- Nonlinear changes of coordinates compose on section-equivalence classes. -/
 theorem map_comp {y : E''} (h : E' → E) (k : E'' → E')
     (g : E' × F → G) (l : E'' × G → H) (j : FirstJetAt 𝕜 F (h (k y)))
-    (hh : ContDiffAt 𝕜 ∞ h (k y)) (hk : ContDiffAt 𝕜 ∞ k y)
-    (hg : ContDiffAt 𝕜 ∞ g (k y, value j))
-    (hl : ContDiffAt 𝕜 ∞ l (y, g (k y, value j))) :
+    (hh : DifferentiableAt 𝕜 h (k y)) (hk : DifferentiableAt 𝕜 k y)
+    (hg : DifferentiableAt 𝕜 g (k y, value j))
+    (hl : DifferentiableAt 𝕜 l (y, g (k y, value j))) :
     map k l (map h g j) =
       map (h ∘ k) (fun p : E'' × F ↦ l (p.1, g (k p.1, p.2))) j := by
   apply ext
   simp only [coordinates_map]
-  exact firstJetCoordChange_comp _ (hh.differentiableAt (by simp))
-    (hk.differentiableAt (by simp)) (hg.differentiableAt (by simp))
-    (hl.differentiableAt (by simp))
+  exact firstJetCoordChange_comp _ hh hk hg hl
 
 /-- Changes of local sections that are inverse as germs restore the original jet
 coordinates. The base points agree by the base germ identity; the coordinate statement
 avoids transport between the dependent quotient types at those equal points. -/
 theorem coordinates_map_inverse {x : E} (h : E' → E) (k : E → E')
     (g : E' × F → G) (l : E × G → F) (j : FirstJetAt 𝕜 F (h (k x)))
-    (hh : ContDiffAt 𝕜 ∞ h (k x)) (hk : ContDiffAt 𝕜 ∞ k x)
-    (hg : ContDiffAt 𝕜 ∞ g (k x, value j))
-    (hl : ContDiffAt 𝕜 ∞ l (x, g (k x, value j)))
+    (hh : DifferentiableAt 𝕜 h (k x)) (hk : DifferentiableAt 𝕜 k x)
+    (hg : DifferentiableAt 𝕜 g (k x, value j))
+    (hl : DifferentiableAt 𝕜 l (x, g (k x, value j)))
     (hbase : h ∘ k =ᶠ[𝓝 x] id)
     (hfibre : (fun p : E × F ↦ l (p.1, g (k p.1, p.2))) =ᶠ[𝓝 (x, value j)] Prod.snd) :
     coordinates (map k l (map h g j)) = coordinates j := by
   simp only [coordinates_map]
-  exact firstJetCoordChange_inverse _ (hh.differentiableAt (by simp))
-    (hk.differentiableAt (by simp)) (hg.differentiableAt (by simp))
-    (hl.differentiableAt (by simp)) hbase hfibre
+  exact firstJetCoordChange_inverse _ hh hk hg hl hbase hfibre
 
 end FirstJetAt
 
