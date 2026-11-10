@@ -19,6 +19,7 @@ root of unity: its order divides `p` and is not `1`. This is the analogue, insid
 
 * `rootsOfUnity.isPrimitiveRoot_of_ne_one`: for a prime `p`, a `p`-th root of unity other than `1`
   is a primitive `p`-th root of unity.
+* `rootsOfUnity.sq_ne_one_of_ne_one`: the square of a cube root of unity other than `1` is not `1`.
 -/
 
 public section
@@ -28,3 +29,9 @@ unity `ζ ≠ 1` of a commutative monoid has order `p`. -/
 theorem rootsOfUnity.isPrimitiveRoot_of_ne_one {M : Type*} [CommMonoid M] {p : ℕ} [Fact p.Prime]
     {ζ : rootsOfUnity p M} (hζ : ζ ≠ 1) : IsPrimitiveRoot ζ p :=
   IsPrimitiveRoot.iff_orderOf.2 (orderOf_eq_prime (Subtype.ext ((mem_rootsOfUnity p _).1 ζ.2)) hζ)
+
+/-- The square of a cube root of unity `ζ ≠ 1` of a commutative monoid is not `1`: `ζ` is primitive
+of order three. -/
+theorem rootsOfUnity.sq_ne_one_of_ne_one {M : Type*} [CommMonoid M] {ζ : rootsOfUnity 3 M}
+    (hζ : ζ ≠ 1) : ζ ^ 2 ≠ 1 :=
+  (isPrimitiveRoot_of_ne_one hζ).pow_ne_one_of_pos_of_lt two_ne_zero (by norm_num)

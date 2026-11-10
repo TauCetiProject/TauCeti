@@ -266,14 +266,12 @@ private noncomputable def eigenvectorMap (ζ : rootsOfUnity 3 k) (hζ : ζ ≠ 1
     k × k →ₗ[k] (augmentationSubrepresentation k (Perm (Fin 3)) (Fin 3)).toSubmodule :=
   (LinearMap.toSpanSingleton k _ (symmetricGroupFourTwoDimensionalEigenvector ζ hζ)).coprod
     (LinearMap.toSpanSingleton k _ (symmetricGroupFourTwoDimensionalEigenvector (ζ ^ 2)
-      ((rootsOfUnity.isPrimitiveRoot_of_ne_one hζ).pow_ne_one_of_pos_of_lt two_ne_zero
-        (by norm_num))))
+      (rootsOfUnity.sq_ne_one_of_ne_one hζ)))
 
 private theorem eigenvectorMap_apply (ζ : rootsOfUnity 3 k) (hζ : ζ ≠ 1) (x : k × k) :
     eigenvectorMap ζ hζ x = x.1 • symmetricGroupFourTwoDimensionalEigenvector ζ hζ +
       x.2 • symmetricGroupFourTwoDimensionalEigenvector (ζ ^ 2)
-        ((rootsOfUnity.isPrimitiveRoot_of_ne_one hζ).pow_ne_one_of_pos_of_lt two_ne_zero
-          (by norm_num)) :=
+        (rootsOfUnity.sq_ne_one_of_ne_one hζ) :=
   rfl
 
 private theorem eigenvectorMap_bijective (ζ : rootsOfUnity 3 k) (hζ : ζ ≠ 1) :
@@ -326,8 +324,7 @@ theorem alternatingGroupFourTwoDimensionalEquiv_symm_apply (ζ : rootsOfUnity 3 
     (alternatingGroupFourTwoDimensionalEquiv ζ hζ).symm x =
       x.1 • symmetricGroupFourTwoDimensionalEigenvector ζ hζ +
         x.2 • symmetricGroupFourTwoDimensionalEigenvector (ζ ^ 2)
-          ((rootsOfUnity.isPrimitiveRoot_of_ne_one hζ).pow_ne_one_of_pos_of_lt two_ne_zero
-            (by norm_num)) :=
+          (rootsOfUnity.sq_ne_one_of_ne_one hζ) :=
   (rfl)
 
 end Decomposition
