@@ -73,12 +73,14 @@ end Algebra
 
 /-- Exponentiating a real scalar multiple of the unit gives the real exponential
 multiple of the unit in every real normed algebra. -/
+@[simp]
 theorem exp_real_smul_one {A : Type*} [NormedRing A] [NormedAlgebra ℝ A] (x : ℝ) :
     exp (x • (1 : A)) = Real.exp x • 1 := by
   simpa only [Algebra.algebraMap_eq_smul_one, ← Real.exp_eq_exp_ℝ] using
     (NormedSpace.algebraMap_exp_comm (𝔸 := A) x).symm
 
 /-- The exponential of a real scalar in a real or complex normed field is its real exponential. -/
+@[simp]
 theorem _root_.RCLike.exp_ofReal {𝕜 : Type*} [RCLike 𝕜] (x : ℝ) :
     exp (x : 𝕜) = (Real.exp x : 𝕜) := by
   simpa only [RCLike.real_smul_eq_coe_mul, mul_one] using (exp_real_smul_one (A := 𝕜) x)

@@ -74,8 +74,8 @@ def expColumnCoefficient (A : Matrix n n R) (d : ℝ) : Matrix n n R :=
   ∫ t in (0 : ℝ)..1, Real.exp (t * d) • exp ((1 - t) • A)
 
 omit [CompleteSpace R] in
-/-- The last-column coefficient equals its defining matrix-valued integral.
-This equation is an explicit rewrite, preserving the coefficient's structural normal form. -/
+/-- The last-column coefficient equals its defining matrix-valued integral. -/
+-- Keep the integral equations as explicit rewrites so structural laws retain their normal form.
 theorem expColumnCoefficient_def (A : Matrix n n R) (d : ℝ) :
     expColumnCoefficient A d =
       ∫ t in (0 : ℝ)..1, Real.exp (t * d) • exp ((1 - t) • A) := by rfl
@@ -88,8 +88,7 @@ private theorem intervalIntegrable_expColumnCoefficient_integrand
   let : ENormedAddMonoid (Matrix n n R) := NormedAddGroup.toENormedAddMonoid
   exact Continuous.intervalIntegrable (by fun_prop) _ _
 
-/-- Each coefficient entry is the scalar integral of the corresponding exponential entry.
-This is an explicit rewrite: structural laws retain the named coefficient as normal form. -/
+/-- Each coefficient entry is the scalar integral of the corresponding exponential entry. -/
 theorem expColumnCoefficient_apply (A : Matrix n n R) (d : ℝ) (i j : n) :
     expColumnCoefficient A d i j =
       ∫ t in (0 : ℝ)..1, Real.exp (t * d) • exp ((1 - t) • A) i j := by
