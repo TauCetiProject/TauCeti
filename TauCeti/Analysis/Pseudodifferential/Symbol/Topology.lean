@@ -41,6 +41,8 @@ The main results are:
   `TauCeti.Symbol.spatialDerivCLM`: these operations as continuous linear maps;
 * `TauCeti.Symbol.mixedDerivCLM`, `TauCeti.Symbol.continuous_mixedDeriv`: every mixed derivative
   at a point is a continuous linear function of the symbol;
+* `TauCeti.Symbol.constCLM`: the constant symbol `T` is a continuous linear function of
+  `T ∈ V →L[ℂ] W`, all of whose seminorms are at most `‖T‖` (`TauCeti.Symbol.seminorm_const_le`);
 * `TauCeti.Symbol.isUniform_iff_bddAbove_seminorm`: a symbol is uniform exactly when its seminorms
   are bounded independently of the compact set.
 * `TauCeti.Symbol.seminorm_comp_le`: the Leibniz estimate bounding the seminorms of a composition
@@ -245,6 +247,15 @@ theorem seminorm_const_eq_zero {α β : List (Fin n)} (h : α ≠ [] ∨ β ≠ 
     · exact mixedDeriv_comp_fst (fun _ : CoordinateSpace n => T) α hβ x ξ
   rw [hd, norm_zero, zero_mul]
 
+/-- Every seminorm of the constant symbol `T` is at most `‖T‖`. -/
+theorem seminorm_const_le (K : Compacts (CoordinateSpace n)) (α β : List (Fin n))
+    (T : V →L[ℂ] W) : Symbol.seminorm K α β (const T : Symbol n V W 0) ≤ ‖T‖ := by
+  by_cases h : α ≠ [] ∨ β ≠ []
+  · rw [seminorm_const_eq_zero h]
+    exact norm_nonneg T
+  · obtain ⟨rfl, rfl⟩ : α = [] ∧ β = [] := by simpa [not_or] using h
+    exact seminorm_le_bound K [] [] _ (norm_nonneg T) fun y _ ξ => by simp
+
 /-- A symbol satisfies its estimates uniformly in the position exactly when each of its
 seminorms `p_{K,α,β}` is bounded independently of the compact set `K`. -/
 theorem isUniform_iff_bddAbove_seminorm {a : Symbol n V W m} :
@@ -397,6 +408,21 @@ symbol `a`; in particular so is the value `a(x, ξ)`. -/
 theorem continuous_mixedDeriv (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     Continuous fun a : Symbol n V W m => mixedDeriv α β a.coefficient x ξ :=
   (mixedDerivCLM n V W m α β x ξ).continuous
+
+variable (n V W) in
+/-- The constant symbol `T`, a symbol of order `0`, as a continuous linear function of `T`. -/
+def constCLM : (V →L[ℂ] W) →L[ℂ] Symbol n V W 0 :=
+  let L : (V →L[ℂ] W) →ₗ[ℂ] Symbol n V W 0 :=
+    { toFun := const
+      map_add' S T := by ext p; simp
+      map_smul' c T := by ext p; simp }
+  { toLinearMap := L
+    cont := WithSeminorms.continuous_of_isBounded (norm_withSeminorms ℂ _) withSeminorms L
+      fun ⟨K, α, β⟩ => ⟨{0}, 1, fun T => by
+        simpa [L] using seminorm_const_le (n := n) K α β T⟩ }
+
+@[simp]
+theorem constCLM_apply (T : V →L[ℂ] W) : constCLM n V W T = const T := (rfl)
 
 end Topology
 
