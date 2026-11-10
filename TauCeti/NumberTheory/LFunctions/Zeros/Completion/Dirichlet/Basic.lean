@@ -18,6 +18,10 @@ On the positive half-plane the archimedean factor is also analytic and nonzero,
 so the entire completion and the ordinary continued L-function have the same
 zeros with the same analytic orders.
 
+The entire completion satisfies the functional equation
+`Λ₀(χ)(1 - s) = ε(χ) Λ₀(χ⁻¹)(s)` and the reflection `Λ₀(χ⁻¹)(s) = conj (Λ₀(χ)(conj s))`.
+A real character has the same analytic record as its inverse.
+
 All functions are the native continued Dirichlet functions. In particular these
 comparisons do not evaluate a Dirichlet series outside its convergence domain.
 The nonprincipality and half-plane hypotheses exclude the pole-clearing and
@@ -30,7 +34,7 @@ trivial-zero corrections needed in other cases.
 
 public section
 
-open Complex Filter Topology Polynomial
+open Complex ComplexConjugate Filter Topology Polynomial
 
 namespace TauCeti.LFunctions
 
@@ -49,6 +53,35 @@ theorem dirichletData_entireCompletion_of_ne_one (hne : χ ≠ 1) :
   rw [(dirichletData_hasMeromorphicContinuation χ hχ).entireCompletion_eq
     (by simp only [dirichletData_polarOrder_eq_zero χ hχ hne, Finsupp.zero_apply]),
     dirichletData_polarPolynomial_of_ne_one χ hχ hne, Polynomial.eval_one, one_mul]
+
+/-- The functional equation of the entire completion, against the inverse character. -/
+theorem dirichletData_entireCompletion_one_sub (hne : χ ≠ 1) (s : ℂ) :
+    (dirichletData χ hχ).entireCompletion (1 - s) =
+      χ.rootNumber * (dirichletData χ⁻¹ hχ.inv).entireCompletion s := by
+  have hp := dirichletData_polarOrder_eq_zero χ hχ hne
+  rw [dirichletData_entireCompletion_of_ne_one χ hχ hne,
+    dirichletData_entireCompletion_of_ne_one χ⁻¹ hχ.inv (inv_ne_one.mpr hne),
+    (dirichletData_hasFunctionalEquation χ hχ).completed_eq (1 - s)
+      (by simp only [hp, Finsupp.zero_apply]) (by simp only [hp, Finsupp.zero_apply]),
+    dirichletData_rootNumber, dirichletData_dual, sub_sub_cancel]
+
+/-- Conjugation exchanges the entire completions of a character and its inverse. -/
+theorem dirichletData_entireCompletion_inv_conj (hne : χ ≠ 1) (s : ℂ) :
+    (dirichletData χ⁻¹ hχ.inv).entireCompletion s =
+      conj ((dirichletData χ hχ).entireCompletion (conj s)) := by
+  rw [dirichletData_entireCompletion_of_ne_one χ hχ hne,
+    dirichletData_entireCompletion_of_ne_one χ⁻¹ hχ.inv (inv_ne_one.mpr hne),
+    ← dirichletData_dual, AnalyticLFunctionData.dual_completed_apply]
+
+/-- For a real character, the inverse character has the same analytic record. Mathlib's
+`MulChar.IsQuadratic.inv` supplies the hypothesis for quadratic characters. -/
+theorem dirichletData_inv_of_inv_eq (hreal : χ⁻¹ = χ) :
+    dirichletData χ⁻¹ hχ.inv = dirichletData χ hχ := by
+  -- `hχ.inv` mentions `χ⁻¹`, so generalize it before rewriting `χ⁻¹` to `χ`.
+  generalize hχ.inv = hχ'
+  revert hχ'
+  rw [hreal]
+  exact fun _ ↦ rfl
 
 /-- The conductor factor changes no zero multiplicities of the completed Dirichlet function. -/
 theorem analyticOrderAt_dirichletData_entireCompletion (hne : χ ≠ 1) (s : ℂ) :
@@ -123,5 +156,13 @@ theorem analyticOrderAt_dirichletData_entireCompletion_ne_top (hne : χ ≠ 1) (
   rw [(ha 0 (by trivial)).analyticOrderAt_eq_zero.mpr
     (dirichletData_entireCompletion_zero_ne_zero χ hχ hne)]
   simp
+
+/-- For a nonprincipal primitive character the entire completion is the conductor factor times
+Mathlib's completed function. -/
+theorem dirichletData_entireCompletion_eq (hne : χ ≠ 1) :
+    (dirichletData χ hχ).entireCompletion =
+      fun s ↦ (N : ℂ) ^ (s / 2) * χ.completedLFunction s := by
+  rw [dirichletData_entireCompletion_of_ne_one χ hχ hne]
+  exact funext (dirichletData_completed χ hχ)
 
 end TauCeti.LFunctions
