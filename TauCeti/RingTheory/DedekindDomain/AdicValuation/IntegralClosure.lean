@@ -13,6 +13,7 @@ public import Mathlib.RingTheory.Norm.Defs
 
 import Mathlib.RingTheory.Norm.Transitivity
 import Mathlib.RingTheory.Valuation.Integral
+import TauCeti.RingTheory.Ideal.LiesOver
 
 /-!
 # The completed integer rings are an integral closure
@@ -64,17 +65,6 @@ noncomputable section
 
 open IsDedekindDomain ValuativeRel
 open scoped AdicCompletionExtension
-
-namespace Ideal
-
-/-- If a prime `P` of `B` lies over `p` and `B ⧸ P` is finite, then `R ⧸ p` is finite: the induced
-map `R ⧸ p → B ⧸ P` is injective. -/
-theorem finite_quotient_of_liesOver {R B : Type*} [CommRing R] [CommRing B] [Algebra R B]
-    (p : Ideal R) (P : Ideal B) [P.LiesOver p] [Finite (B ⧸ P)] : Finite (R ⧸ p) :=
-  .of_injective (quotientMap P (algebraMap R B) (LiesOver.over (p := p) (P := P)).le)
-    (quotientMap_injective' (LiesOver.over (p := p) (P := P)).ge)
-
-end Ideal
 
 namespace IsDedekindDomain.HeightOneSpectrum
 
