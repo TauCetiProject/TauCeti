@@ -226,7 +226,9 @@ theorem tendsto_cocompact_of_mem_realSobolevFunctions {s : ℝ} (hs : finrank �
 theorem MemSobolev.exists_contDiff_ae_eq {s : ℝ} {k : ℕ} (hs : finrank ℝ E + 2 * k < 2 * s)
     {u : Lp ℂ 2 (volume : Measure E)} (hu : MemSobolev s 2 (u : 𝓢'(E, ℂ))) :
     ∃ g : E → ℂ, ContDiff ℝ k g ∧ u =ᵐ[volume] g := by
-  obtain ⟨v, hv, hL2⟩ := hu.fourier_memL1_and_memLp (by linarith [k.cast_nonneg (α := ℝ)])
+  obtain ⟨v, hv⟩ := hu.fourier_memL1 (by linarith [k.cast_nonneg (α := ℝ)])
+  have hL2 : MemLp (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) * v ξ) 2 := by
+    simpa only [Complex.real_smul] using hu.memLp_one_add_norm_sq_rpow_smul hv
   -- The weight `(1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2)` is square integrable since `2 (s - k) > dim E`.
   have hw : MemLp (fun ξ : E ↦ (((1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2) : ℝ) : ℂ)) 2 := by
     refine MemLp.ofReal (K := ℂ) (f := fun ξ : E ↦ (1 + ‖ξ‖ ^ 2) ^ (-(s - k) / 2))
