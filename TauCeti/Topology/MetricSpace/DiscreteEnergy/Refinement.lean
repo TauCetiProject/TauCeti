@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.MetricSpace.DiscreteEnergy.Basic
-import Mathlib.Algebra.BigOperators.Intervals
+import TauCeti.Algebra.BigOperators.Fin
 
 /-!
 # Forgetting vertices of discrete paths
@@ -91,16 +91,12 @@ theorem discreteEnergy_comp_le {m n : ℕ} {t : Fin (n + 1) → ℝ}
       (hT.mono fun k hk ↦ ⟨Nat.zero_le _, hk.2.trans (r i.succ).is_le⟩)
     simpa only [T, X, hnat] using h
   -- Adjacent blocks telescope. Any discarded initial or final block has nonnegative energy.
-  let S : ℕ → ℝ := fun k ↦ ∑ j ∈ Finset.range k, e j
   have hsum : (∑ i : Fin m,
       ∑ k ∈ Finset.Ico (r i.castSucc).val (r i.succ).val, e k) =
       ∑ k ∈ Finset.Ico (r 0).val (r (Fin.last m)).val, e k := by
     simp_rw [Finset.sum_Ico_eq_sub e (r.monotone (Fin.castSucc_le_succ _))]
-    rw [Finset.sum_Ico_eq_sub e (r.monotone (Fin.zero_le _)), Finset.sum_sub_distrib]
-    have hfirst := Fin.sum_univ_succ (fun i ↦ S (r i).val)
-    have hlast := Fin.sum_univ_castSucc (fun i ↦ S (r i).val)
-    dsimp only [S] at hfirst hlast
-    linarith
+    rw [Finset.sum_Ico_eq_sub e (r.monotone (Fin.zero_le _))]
+    exact Fin.sum_univ_succ_sub_castSucc (fun i ↦ ∑ k ∈ Finset.range (r i).val, e k)
   have hnonneg (k : ℕ) (hk : k < n) : 0 ≤ e k := by
     exact div_nonneg (sq_nonneg _) (sub_nonneg.mpr
       (hT.monotoneOn ⟨by omega, by omega⟩ ⟨by omega, by omega⟩ (by omega)))
@@ -180,7 +176,7 @@ variable [PseudoMetricSpace M]
 
 /-- Forgetting interior vertices, while retaining both endpoints and the original
 times, cannot increase fixed-endpoint discrete energy. -/
-theorem discreteEnergy_forget_le {t : Fin (n + 2) → ℝ} (ht : StrictMono t)
+theorem discreteEnergy_cons_snoc_discreteEnergyForget_le {t : Fin (n + 2) → ℝ} (ht : StrictMono t)
     (r : Fin (m + 2) ↪o Fin (n + 2)) (h0 : r 0 = 0)
     (hlast : r (Fin.last (m + 1)) = Fin.last (n + 1)) (p q : M) (x : Fin n → M) :
     discreteEnergy (t ∘ r) (Fin.cons p (Fin.snoc (discreteEnergyForget r p q x) q)) ≤
@@ -197,7 +193,7 @@ theorem mapsTo_discreteEnergyForget {t : Fin (n + 2) → ℝ} (ht : StrictMono t
       (discreteEnergyStrictSublevel (t ∘ r) p q c) := by
   intro x hx
   exact mem_discreteEnergyStrictSublevel.mpr
-    ((discreteEnergy_forget_le ht r h0 hlast p q x).trans_lt
+    ((discreteEnergy_cons_snoc_discreteEnergyForget_le ht r h0 hlast p q x).trans_lt
       (mem_discreteEnergyStrictSublevel.mp hx))
 
 /-- The continuous vertex-forgetting map between fixed-endpoint strict energy
@@ -220,7 +216,11 @@ theorem discreteEnergyForgetMap_apply {t : Fin (n + 2) → ℝ} (ht : StrictMono
     (discreteEnergyForgetMap ht r h0 hlast p q c x : Fin m → M) =
       discreteEnergyForget r p q x := (rfl)
 
-/-- The identity selection induces the identity on the strict energy sublevel. -/
+/-- The identity selection induces the identity on the strict energy sublevel.
+
+The target is intentionally definitionally the original sublevel: `RelEmbedding.refl_apply`
+and `Function.comp_id` identify the time tuple `t ∘ RelEmbedding.refl _` with `t`. This
+uses the identity embedding's coercion law, not any unfolding of the energy carrier. -/
 @[simp]
 theorem discreteEnergyForgetMap_refl {t : Fin (n + 2) → ℝ} (ht : StrictMono t)
     (p q : M) (c : ℝ) :
@@ -228,12 +228,15 @@ theorem discreteEnergyForgetMap_refl {t : Fin (n + 2) → ℝ} (ht : StrictMono 
       ContinuousMap.id (discreteEnergyStrictSublevel t p q c) := by
   apply ContinuousMap.ext
   intro x
-  -- Composing the times with the identity selection leaves the subtype unchanged.
   exact (Subtype.ext ((discreteEnergyForgetMap_apply ht _ _ _ p q c x).trans
     (discreteEnergyForget_refl p q (x : Fin n → M)))).trans
       (ContinuousMap.id_apply x).symm
 
-/-- The continuous sublevel maps commute with further vertex-forgetting. -/
+/-- The continuous sublevel maps commute with further vertex-forgetting.
+
+The two target time tuples agree definitionally by the coercion law
+`RelEmbedding.coe_trans` and `Function.comp_assoc`: `(t ∘ r) ∘ s = t ∘ (s.trans r)`.
+Thus the target sublevels are the same type without transporting either continuous map. -/
 @[simp]
 theorem discreteEnergyForgetMap_trans {t : Fin (n + 2) → ℝ} (ht : StrictMono t)
     (r : Fin (m + 2) ↪o Fin (n + 2)) (s : Fin (l + 2) ↪o Fin (m + 2))
