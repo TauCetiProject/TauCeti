@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.InternalEnergy.Basic
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Measure.Decomposition.Lebesgue
 import TauCeti.MeasureTheory.OptimalTransport.Coupling
 
@@ -136,18 +137,6 @@ private theorem recessionConstant_neg_mul_rpow_neg (hN : 0 < N) :
   filter_upwards [eventually_gt_atTop 0] with s hs
   rw [neg_div, mul_div_cancel_left₀ _ hs.ne']
 
-/-- The real and extended forms of the Rényi integrand agree everywhere, including at `0` and `∞`,
-where both vanish, provided `N > 0` or `x` is finite. -/
-private theorem ofReal_toReal_mul_rpow_neg {x : ℝ≥0∞} (h : 0 < N ∨ x ≠ ∞) :
-    ENNReal.ofReal (x.toReal * x.toReal ^ (-N⁻¹)) = x * x ^ (-N⁻¹) := by
-  rcases eq_or_ne x ∞ with rfl | hx
-  · have hN : 0 < N := h.resolve_right (by simp)
-    simp [ENNReal.top_rpow_of_neg (neg_neg_of_pos (inv_pos.2 hN))]
-  rcases eq_or_ne x 0 with rfl | hx₀
-  · simp
-  rw [ENNReal.ofReal_mul ENNReal.toReal_nonneg, ENNReal.ofReal_toReal hx, ENNReal.toReal_rpow,
-    ENNReal.ofReal_toReal (ENNReal.rpow_ne_top_of_ne_zero hx₀ hx)]
-
 /-- The positive part of the recession constant of the Rényi integrand vanishes, for every `N`. -/
 private theorem toENNReal_recessionConstant_neg_mul_rpow_neg (N : ℝ) :
     (recessionConstant fun r : ℝ ↦ -(r * r ^ (-N⁻¹))).toENNReal = 0 := by
@@ -158,10 +147,10 @@ private theorem toENNReal_recessionConstant_neg_mul_rpow_neg (N : ℝ) :
   exact_mod_cast div_nonpos_of_nonpos_of_nonneg
     (neg_nonpos.2 (mul_nonneg hs.le (Real.rpow_nonneg hs.le _))) hs.le
 
-/-- For every `N`, the Rényi entropy is the negative of the integral of the real Rényi integrand
-`ρ · ρ^{-1/N}` plus the singular part of `μ` weighted by the negative of the recession constant:
-the integrand is nonpositive, so the positive part of the recession constant does not
-contribute. -/
+/-- For every `N`, the Rényi entropy is the negative of a sum of two nonnegative terms: the
+integral of `ρ · ρ^{-1/N}`, the magnitude of the nonpositive energy integrand `-(ρ · ρ^{-1/N})`,
+and the singular part of `μ` weighted by the positive part of the negative recession constant.
+The positive part of the recession constant itself does not contribute. -/
 private theorem renyiEntropy_eq_neg_lintegral_add (N : ℝ) (m μ : Measure X) :
     renyiEntropy N m μ = -((∫⁻ x, ENNReal.ofReal ((μ.rnDeriv m x).toReal *
       (μ.rnDeriv m x).toReal ^ (-N⁻¹)) ∂m + (-recessionConstant fun r : ℝ ↦
@@ -181,8 +170,8 @@ theorem renyiEntropy_eq_neg_lintegral (hN : 0 < N) :
     renyiEntropy N m μ =
       -((∫⁻ x, μ.rnDeriv m x * μ.rnDeriv m x ^ (-N⁻¹) ∂m : ℝ≥0∞) : EReal) := by
   rw [renyiEntropy_eq_neg_lintegral_add, recessionConstant_neg_mul_rpow_neg hN]
-  simp only [ofReal_toReal_mul_rpow_neg (Or.inl hN), neg_zero, EReal.toENNReal_zero, zero_mul,
-    add_zero]
+  simp only [ENNReal.ofReal_toReal_mul_rpow (Or.inl (neg_neg_of_pos (inv_pos.2 hN))), neg_zero,
+    EReal.toENNReal_zero, zero_mul, add_zero]
 
 /-- For `N > 1` and σ-finite `μ`, the Rényi entropy is `S_N(μ | m) = -∫⁻ ρ^{1-1/N} dm`. -/
 theorem renyiEntropy_eq_neg_lintegral_rpow [SigmaFinite μ] (hN : 1 < N) :
@@ -239,7 +228,9 @@ theorem renyiEntropy_withDensity [SigmaFinite m] {f : X → ℝ≥0∞} (hf : AE
     Pi.zero_apply, mul_zero, add_zero]
   congr 2
   exact lintegral_congr_ae <| ((Measure.rnDeriv_withDensity₀ m hf).and hfin).mono
-    fun x ⟨hx, hx'⟩ ↦ by simp only [hx]; exact ofReal_toReal_mul_rpow_neg hx'
+    fun x ⟨hx, hx'⟩ ↦ by
+      simp only [hx]
+      exact ENNReal.ofReal_toReal_mul_rpow (hx'.imp_left fun hN ↦ neg_neg_of_pos (inv_pos.2 hN))
 
 /-- For `N > 0`, a measure singular with respect to `m` has Rényi entropy `0`. -/
 theorem renyiEntropy_of_mutuallySingular (hN : 0 < N) (h : μ ⟂ₘ m) :
@@ -346,7 +337,7 @@ theorem renyiEntropy_smul_restrict [SigmaFinite m] {A : Set X} (hA : MeasurableS
 open ProbabilityTheory in
 /-- The uniform law `m[|A]` on a measurable set has finite Rényi entropy: it is `-m(A)^{1/N}` when
 `0 < m(A) < ∞`, and `m[|A] = 0` otherwise. -/
-theorem renyiEntropy_cond_ne_bot [SigmaFinite m] (hN : 0 < N) {A : Set X} (hA : MeasurableSet A) :
+theorem renyiEntropy_cond_ne_bot [SigmaFinite m] {A : Set X} (hA : MeasurableSet A) :
     renyiEntropy N m m[|A] ≠ ⊥ := by
   by_cases h : m A = ∞ ∨ m A = 0
   · rw [cond_eq_zero.2 h, renyiEntropy_zero_measure]
@@ -354,7 +345,7 @@ theorem renyiEntropy_cond_ne_bot [SigmaFinite m] (hN : 0 < N) {A : Set X} (hA : 
   rw [not_or] at h
   rw [ProbabilityTheory.cond, renyiEntropy_smul_restrict hA h.2 h.1, Ne, EReal.neg_eq_bot_iff,
     EReal.coe_ennreal_eq_top_iff]
-  exact ENNReal.rpow_ne_top_of_nonneg (inv_nonneg.2 hN.le) h.1
+  exact ENNReal.rpow_ne_top_of_ne_zero h.2 h.1
 
 /-! ### The Boltzmann entropy as the limit `N → ∞` -/
 
@@ -474,7 +465,8 @@ private theorem mul_renyiEntropy_add_eq [IsFiniteMeasure μ] [μ.HaveLebesgueDec
   have hI : I ≠ ∞ := fun h ↦
     renyiEntropy_ne_bot_of_measure_compl_eq_zero hN hA hmA ((renyiEntropy_eq_bot_iff hN₀).2 h)
   have hpow (x : X) : ρ x * ρ x ^ (-N⁻¹) = (μ.rnDeriv m x * μ.rnDeriv m x ^ (-N⁻¹)).toReal := by
-    rw [← ofReal_toReal_mul_rpow_neg (Or.inl hN₀), ENNReal.toReal_ofReal
+    rw [← ENNReal.ofReal_toReal_mul_rpow (Or.inl (neg_neg_of_pos (inv_pos.2 hN₀))),
+      ENNReal.toReal_ofReal
       (mul_nonneg ENNReal.toReal_nonneg (Real.rpow_nonneg ENNReal.toReal_nonneg _))]
   have hpm : Measurable fun x ↦ μ.rnDeriv m x * μ.rnDeriv m x ^ (-N⁻¹) := by
     have := Measure.measurable_rnDeriv μ m
@@ -493,7 +485,7 @@ private theorem mul_renyiEntropy_add_eq [IsFiniteMeasure μ] [μ.HaveLebesgueDec
   have hpint : ∫ x, ρ x * ρ x ^ (-N⁻¹) ∂m = I.toReal := by
     simp_rw [hpow]
     refine integral_toReal hpm.aemeasurable (ae_of_all _ fun x ↦ ?_)
-    rw [← ofReal_toReal_mul_rpow_neg (Or.inl hN₀)]
+    rw [← ENNReal.ofReal_toReal_mul_rpow (Or.inl (neg_neg_of_pos (inv_pos.2 hN₀)))]
     exact ENNReal.ofReal_lt_top
   have hFi : Integrable (fun x ↦ renyiGap N (ρ x)) m := (hρi.sub hpi).const_mul N
   have hint : ∫ x, (renyiGap N (ρ x) + B.indicator 1 x) ∂m =

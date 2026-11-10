@@ -137,11 +137,12 @@ theorem isTightMeasureSet_of_isCompact_closure [CompleteSpace X] {S : Set (Wasse
   rw [coe_measure_set_eq]
   exact MeasureTheory.isTightMeasureSet_of_isCompact_closure hS'
 
-/-- **A relatively compact set of the Wasserstein space has uniformly integrable moments.** For a
-finite exponent `1 ≤ p < ∞`, the `p`-moments about any basepoint of the laws of a relatively
-compact set of `P_p (X)` have uniformly small tails: for every `ε > 0` there is a radius `R` such
-that, for every law of the set, the part of its `p`-moment coming from distance at least `R` is at
-most `ε`. -/
+/-- **A relatively compact set of the Wasserstein space has uniformly integrable moments.** For
+`1 ≤ p`, the `p`-moments about any basepoint of the laws of a relatively compact set of `P_p (X)`
+have uniformly small tails: for every `ε > 0` there is a radius `R` such that, for every law of the
+set, the part of its `p`-moment coming from distance at least `R` is at most `ε`. For `p = ∞` the
+integrand is `1`, and the conclusion bounds the mass outside the ball of radius `R` rather than an
+infinite moment. -/
 theorem exists_setLIntegral_edist_rpow_le_of_isCompact_closure
     {S : Set (WassersteinSpace p X)} (hS : IsCompact (closure S)) (x : X) {ε : ℝ≥0∞}
     (hε : 0 < ε) :

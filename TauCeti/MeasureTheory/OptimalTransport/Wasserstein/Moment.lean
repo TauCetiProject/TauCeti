@@ -94,7 +94,7 @@ theorem tendsto_measure_nndist_ge_atTop (μ : Measure X) [IsFiniteMeasure μ] (x
     exact (not_le.2 hn) (mem_iInter.1 hy n)
   simpa [hempty, Function.comp_def] using this
 
-/-- **Tightness of a weakly convergent family around a point.** Along a weakly convergent family
+/-- **Mass outside a large ball for a weakly convergent family.** Along a weakly convergent family
 of probability measures, for every `ε > 0` there is a radius `R` such that eventually the mass
 outside the ball of radius `R` about a basepoint is at most `ε`. -/
 theorem exists_measure_nndist_ge_le_of_tendsto (h : Tendsto μs L (𝓝 μ)) (x : X) {ε : ℝ≥0∞}
@@ -276,10 +276,11 @@ theorem continuous_integral_dist_rpow (x : X) :
   exact ENNReal.continuousOn_toReal.comp_continuous (continuous_lintegral_edist_rpow x)
     fun μ ↦ lintegral_edist_rpow_ne_top μ x
 
-/-- **Uniform integrability of moments along a `W_p`-convergent family.** For a finite exponent
-`1 ≤ p < ∞`, along a family converging in the `p`-Wasserstein distance the `p`-moments about any
-basepoint have uniformly small tails: for every `ε > 0` there is a radius `R` such that eventually
-the part of the `p`-moment coming from distance at least `R` is at most `ε`. -/
+/-- **Uniform integrability of moments along a `W_p`-convergent family.** For `1 ≤ p`, along a
+family converging in the `p`-Wasserstein distance the `p`-moments about any basepoint have
+uniformly small tails: for every `ε > 0` there is a radius `R` such that eventually the part of the
+`p`-moment coming from distance at least `R` is at most `ε`. For `p = ∞` the integrand is `1`, and
+the conclusion bounds the mass outside the ball of radius `R` rather than an infinite moment. -/
 theorem exists_setLIntegral_edist_rpow_le {γ : Type*} {L : Filter γ}
     {μs : γ → WassersteinSpace p X} {μ : WassersteinSpace p X} (h : Tendsto μs L (𝓝 μ)) (x : X)
     {ε : ℝ≥0∞} (hε : 0 < ε) :
