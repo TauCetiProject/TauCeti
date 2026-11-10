@@ -343,6 +343,23 @@ def constHom (hbase : ∀ i, A.core.baseSet i ⊆ D.core.baseSet i)
   simp only [constHom, ContinuousMap.coe_mk, ContinuousLinearMap.comp_apply, A.indexAt_eq,
     D.indexAt_eq, coordChange_self, ContinuousLinearMap.id_apply]
 
+/-- An equivalence intertwining two cores' transitions also intertwines them in reverse. -/
+theorem coordChange_intertwines_symm (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
+    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
+    (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
+      e.toContinuousLinearMap.comp (A.core.coordChange i j x) =
+        (D.core.coordChange i j x).comp e.toContinuousLinearMap)
+    (i j : B) (x : B) (hi : x ∈ D.core.baseSet i) (hj : x ∈ D.core.baseSet j) :
+    e.symm.toContinuousLinearMap.comp (D.core.coordChange i j x) =
+      (A.core.coordChange i j x).comp e.symm.toContinuousLinearMap := by
+  ext w : 1
+  apply e.injective
+  have h := congrArg (fun S => S (e.symm w))
+    (he i j x ((hbase i).symm ▸ hi) ((hbase j).symm ▸ hj))
+  simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    ContinuousLinearEquiv.apply_symm_apply] at h ⊢
+  exact h.symm
+
 /-- Two cores with the same chart domains whose transition maps are intertwined by a fixed
 coordinate equivalence `e` are isomorphic, by `e` on every fibre. -/
 def constIso (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
@@ -352,15 +369,8 @@ def constIso (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) :
     A ≅ D where
   hom := constHom (fun i => (hbase i).le) e he
-  inv := constHom (fun i => (hbase i).ge) (e.symm : (Fin D.rank → 𝕜) →L[𝕜] (Fin A.rank → 𝕜))
-      fun i j x hi hj => by
-    ext w : 1
-    apply e.injective
-    have h := congrArg (fun S => S (e.symm w))
-      (he i j x ((hbase i).symm ▸ hi) ((hbase j).symm ▸ hj))
-    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.apply_symm_apply] at h ⊢
-    exact h.symm
+  inv := constHom (fun i => (hbase i).ge) e.symm.toContinuousLinearMap
+    (coordChange_intertwines_symm hbase e he)
   hom_inv_id := hom_ext fun x => by
     rw [fiberMap_comp, fiberMap_constHom, fiberMap_constHom, fiberMap_id]
     exact e.coe_symm_comp_coe
@@ -383,19 +393,6 @@ def constIso (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
         (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜))) (x : B) :
     (constIso hbase e he).inv.fiberMap x = e.symm := by
   simp only [constIso, fiberMap_constHom]
-
-/-- In fixed charts the inverse constant isomorphism is a source transition after `e.symm`. -/
-@[simp] theorem operator_constIso_inv (hbase : ∀ i, A.core.baseSet i = D.core.baseSet i)
-    (e : (Fin A.rank → 𝕜) ≃L[𝕜] (Fin D.rank → 𝕜))
-    (he : ∀ i j x, x ∈ A.core.baseSet i → x ∈ A.core.baseSet j →
-      (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)).comp (A.core.coordChange i j x) =
-        (D.core.coordChange i j x).comp (e : (Fin A.rank → 𝕜) →L[𝕜] (Fin D.rank → 𝕜)))
-    (i j : B) :
-    (constIso hbase e he).inv.operator i j =
-      ⟨fun x ↦ (A.core.coordChange i j x).comp e.symm.toContinuousLinearMap,
-        (continuousOn_iff_continuous_domRestrict.1 ((A.core.continuousOn_coordChange i j).mono
-          fun _ (hx : _ ∈ D.core.baseSet i ∩ A.core.baseSet j) ↦
-            ⟨(hbase i).symm ▸ hx.1, hx.2⟩)).clm_comp_const e.symm.toContinuousLinearMap⟩ := (rfl)
 
 section Isomorphisms
 

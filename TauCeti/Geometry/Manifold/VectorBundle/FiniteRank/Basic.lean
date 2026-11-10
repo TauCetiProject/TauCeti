@@ -86,17 +86,11 @@ noncomputable def constIsoDiffeomorph
       e.toContinuousLinearMap he).congr fun p ↦ by
         simp only [CoordinateHom.totalSpaceMap_def, fiberMap_constHom, fiberMap_constIso_hom]
         rfl
-  contMDiff_invFun := by
-    apply CoordinateHom.contMDiff_totalSpaceMap
-    intro i j
-    refine (((A.core.contMDiffOn_coordChange I i j).mono
-      (fun x (hx : x ∈ D.core.baseSet i ∩ A.core.baseSet j) ↦
-        ⟨(hbase i).symm ▸ hx.1, hx.2⟩)).clm_comp
-          (contMDiffOn_const (c := e.symm.toContinuousLinearMap))).congr ?_
-    intro x hx
-    rw [← CoordinateHom.operator_eq (constIso hbase e he).inv i j ⟨x, hx⟩]
-    rw [operator_constIso_inv]
-    rfl
+  contMDiff_invFun :=
+    (contMDiff_totalSpaceMap_constHom (I := I) (n := n) (fun i ↦ (hbase i).ge)
+      e.symm.toContinuousLinearMap (coordChange_intertwines_symm hbase e he)).congr fun p ↦ by
+        simp only [CoordinateHom.totalSpaceMap_def, fiberMap_constHom, fiberMap_constIso_inv]
+        rfl
 
 /-- The smooth comparison is the original constant core isomorphism on total spaces. -/
 @[simp]
