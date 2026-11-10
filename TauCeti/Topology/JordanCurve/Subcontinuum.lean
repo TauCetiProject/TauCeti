@@ -36,10 +36,13 @@ proper subcontinuum `S` of the curve is the image of such a closed arc of angles
 parametrization, and `C \ S` the image of the complementary open arc.
 
 Nowhere density is the same computation once more. If `a < b` then the midpoint `(a + b) / 2` names
-a point of `S` whose angle lies outside `Icc b (a + 2 * π)`, so it lies outside the image of that
-compact interval of angles, which is closed and contains the whole of `C \ S`; hence that point of
-`S` is not adherent to `C \ S`, and `S` is not nowhere dense. Contrapositively, a nowhere dense
-compact connected subset is a subsingleton: it is empty, or it has `a = b` and is a point.
+a point of `S` whose angle lies outside `Icc b (a + 2 * π)`. The image of that interval is a closed
+arc of the circle that contains the angles of the whole of `C \ S`. The parametrization is
+inducing, so adherence of the point to `C \ S` in the ambient space would transport to adherence of
+its angle to the angles of `C \ S` on the circle, hence to that closed arc, which it is not. So
+that point of `S` is not adherent to `C \ S`, and `S` is not nowhere dense; no Hausdorff hypothesis
+on the ambient space is used. Contrapositively, a nowhere dense compact connected subset is a
+subsingleton: it is empty, or it has `a = b` and is a point.
 
 ## Use in the Carathéodory boundary correspondence
 

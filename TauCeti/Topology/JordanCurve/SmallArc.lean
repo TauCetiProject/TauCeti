@@ -17,7 +17,7 @@ import Mathlib.Topology.UniformSpace.HeineCantor
 arcs. That cutting is purely qualitative: it says nothing about the *size* of the two pieces. This
 file adds the quantitative statement, for a Jordan curve in a metric space: **as the two cut points
 approach each other, one of the two arcs shrinks**. Given `ε > 0` there is a `δ > 0` such that any
-two distinct points of the curve at distance less than `δ` cut off an arc of diameter at most `ε`.
+two points of the curve at distance less than `δ` cut off an arc of diameter at most `ε`.
 
 The statement is not a formality — it is exactly where compactness of the curve enters. Two points
 of a Jordan curve that are close in the ambient space need not be close *along* the curve for any
@@ -115,7 +115,7 @@ which are recorded here once and spent by both transports.
   `TauCeti.exists_path_injective_diam_range_le_circle` — two distinct points of the circle are the
   endpoints of an injective path whose range has diameter at most `π / 2` times their distance.
 * `TauCeti.IsJordanCurve.exists_pos_forall_diam_le` — **the main statement**: for every `ε > 0`
-  there is a `δ > 0` such that two distinct points `p`, `q` of a Jordan curve at distance less than
+  there is a `δ > 0` such that two points `p`, `q` of a Jordan curve at distance less than
   `δ` cut it into two arcs one of which has diameter at most `ε` together with `p` and `q`.
 * `TauCeti.IsJordanCurve.exists_pos_forall_exists_diam_le` — the same packaged with the cutting
   itself, producing the two arcs with the small one named first.
@@ -280,7 +280,7 @@ private lemma subset_or_eq_empty_of_union_eq_union {α : Type*} {A B U V : Set �
     exact hmem.elim id fun h => absurd (hdisj.le_bot ⟨hx, hVB h⟩) id
 
 /-- **Two nearby points cut a small arc off a Jordan curve**, in the form that *builds* the small
-arc: for every `ε > 0` there is a `δ > 0` such that if `p` and `q` are two distinct points of the
+arc: for every `ε > 0` there is a `δ > 0` such that if `p` and `q` are two points of the
 curve at distance less than `δ`, then `C \ {p, q}` is covered by two preconnected sets, the first of
 which has diameter at most `ε` once the two cut points are put back.
 
@@ -292,7 +292,7 @@ cover is recorded, not the disjointness of the two pieces, since that is all the
 below consumes. -/
 private theorem IsJordanCurve.exists_pos_forall_exists_isPreconnected_diam_union_pair_le
     (h : IsJordanCurve C) (hε : 0 < ε) :
-    ∃ δ > 0, ∀ ⦃p : X⦄, p ∈ C → ∀ ⦃q : X⦄, q ∈ C → p ≠ q → dist p q < δ →
+    ∃ δ > 0, ∀ ⦃p : X⦄, p ∈ C → ∀ ⦃q : X⦄, q ∈ C → dist p q < δ →
       ∃ P Q : Set X, IsPreconnected P ∧ IsPreconnected Q ∧ P ∪ Q = C \ {p, q} ∧
         Metric.diam (P ∪ {p, q}) ≤ ε := by
   obtain ⟨e⟩ := isJordanCurve_iff.mp h
@@ -306,7 +306,7 @@ private theorem IsJordanCurve.exists_pos_forall_exists_isPreconnected_diam_union
     exists_pos_forall_isPreconnected_union_eq_compl_pair_circle_diam_lt hη₀
   -- Uniform continuity of its inverse turns nearby points into nearby parameters.
   obtain ⟨δ, hδpos, hδ⟩ := exists_pos_forall_dist_apply_lt e hδ₀
-  refine ⟨δ, hδpos, fun p hp q hq hpq hpqδ => ?_⟩
+  refine ⟨δ, hδpos, fun p hp q hq hpqδ => ?_⟩
   set z := e ⟨p, hp⟩
   set w := e ⟨q, hq⟩
   have hgz : g z = p := jordanParam_apply_apply e hp
@@ -322,7 +322,7 @@ private theorem IsJordanCurve.exists_pos_forall_exists_isPreconnected_diam_union
     himg, hclosed ▸ hη _ hPd⟩
 
 /-- **Two nearby points cut a small arc off a Jordan curve.** For every `ε > 0` there is a `δ > 0`
-with the following property: if `p` and `q` are two distinct points of a Jordan curve `C` at
+with the following property: if `p` and `q` are two points of a Jordan curve `C` at
 distance less than `δ`, then in any splitting of `C \ {p, q}` into two disjoint pieces `A` and `B`
 that separate it — that is, such that every preconnected subset of `C \ {p, q}` lies in one of
 them — one of the two pieces has diameter at most `ε` *together with the two cut points*: the bound
@@ -339,15 +339,15 @@ The hypotheses on `A` and `B` are exactly the conclusion of
 cutting without having to reproduce it; `TauCeti.IsJordanCurve.exists_pos_forall_exists_diam_le`
 records the combination. -/
 theorem IsJordanCurve.exists_pos_forall_diam_le (h : IsJordanCurve C) (hε : 0 < ε) :
-    ∃ δ > 0, ∀ ⦃p : X⦄, p ∈ C → ∀ ⦃q : X⦄, q ∈ C → p ≠ q → dist p q < δ →
+    ∃ δ > 0, ∀ ⦃p : X⦄, p ∈ C → ∀ ⦃q : X⦄, q ∈ C → dist p q < δ →
       ∀ A B : Set X, A ∪ B = C \ {p, q} → Disjoint A B →
         (∀ ⦃S : Set X⦄, S ⊆ C \ {p, q} → IsPreconnected S → S ⊆ A ∨ S ⊆ B) →
         Metric.diam (A ∪ {p, q}) ≤ ε ∨ Metric.diam (B ∪ {p, q}) ≤ ε := by
   obtain ⟨δ, hδ₀, hδ⟩ := h.exists_pos_forall_exists_isPreconnected_diam_union_pair_le hε
   -- `δ ≤ ε` so that the two cut points alone are already of diameter at most `ε`.
-  refine ⟨min δ ε, lt_min hδ₀ hε, fun p hp q hq hpq hpqδ A B hAB hdisj hsep => ?_⟩
+  refine ⟨min δ ε, lt_min hδ₀ hε, fun p hp q hq hpqδ A B hAB hdisj hsep => ?_⟩
   have hpqε : dist p q ≤ ε := (hpqδ.trans_le (min_le_right _ _)).le
-  obtain ⟨P, Q, hPc, hQc, hunion, hPd⟩ := hδ hp hq hpq (hpqδ.trans_le (min_le_left _ _))
+  obtain ⟨P, Q, hPc, hQc, hunion, hPd⟩ := hδ hp hq (hpqδ.trans_le (min_le_left _ _))
   have hPsub : P ⊆ C \ {p, q} := hunion ▸ subset_union_left
   have hQsub : Q ⊆ C \ {p, q} := hunion ▸ subset_union_right
   have hPbdd : Bornology.IsBounded (P ∪ {p, q}) :=
@@ -389,7 +389,7 @@ theorem IsJordanCurve.exists_pos_forall_exists_diam_le (h : IsJordanCurve C) (h�
   refine ⟨δ, hδ₀, fun p hp q hq hpq hpqδ => ?_⟩
   obtain ⟨A, B, hAc, hBc, hdisj, hunion, hsep⟩ :=
     h.exists_isPathConnected_union_eq_sdiff_pair hp hq hpq
-  rcases hδ hp hq hpq hpqδ A B hunion hdisj hsep with hA | hB
+  rcases hδ hp hq hpqδ A B hunion hdisj hsep with hA | hB
   · exact ⟨A, B, hAc, hBc, hdisj, hunion, hsep, hA⟩
   · exact ⟨B, A, hBc, hAc, hdisj.symm, by rw [union_comm]; exact hunion,
       fun S hS hSc => (hsep hS hSc).symm, hB⟩
