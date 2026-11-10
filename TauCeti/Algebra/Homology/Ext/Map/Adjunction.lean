@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.MapAdjunction
 public import TauCeti.Algebra.Homology.Ext.Basic
+import Mathlib.CategoryTheory.Adjunction.Additive
 
 /-!
 # Exact adjunctions and Ext with fixed coefficients
@@ -37,11 +38,16 @@ variable {C : Type u} [Category.{v} C] [Abelian C]
   [PreservesFiniteLimits F] [PreservesFiniteColimits F]
   [PreservesFiniteLimits G] [PreservesFiniteColimits G]
 
+omit [G.Additive] [PreservesFiniteLimits G] in
 /-- For an adjunction `F ⊣ G` between exact functors, `F` preserves Ext bijectively with
 coefficients in any object on which the unit is an isomorphism. The source object is
 unrestricted. -/
 theorem mapExt_bijective_of_isIso_unit_app (adj : F ⊣ G) (X Y : C) (n : ℕ)
     [IsIso (adj.unit.app Y)] : Function.Bijective (F.mapExtAddHom.{w, w'} X Y n) := by
+  -- a right adjoint of an additive functor is additive and preserves finite limits
+  have := adj.right_adjoint_additive
+  have : G.IsRightAdjoint := adj.isRightAdjoint
+  have : PreservesFiniteLimits G := inferInstance
   let e : Ext.{w} X Y n ≃+ Ext.{w'} (F.obj X) (F.obj Y) n :=
     (TauCeti.extAddEquivOfIso (Iso.refl X) (asIso (adj.unit.app Y)) n).trans
       adj.extEquiv.symm
