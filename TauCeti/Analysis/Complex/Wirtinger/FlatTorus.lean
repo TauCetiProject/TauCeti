@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-public import Mathlib.NumberTheory.Real.Irrational
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
+public import TauCeti.NumberTheory.Real.Irrational
 import Mathlib.Algebra.Order.Round
 import Mathlib.Analysis.Calculus.Deriv.Star
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
@@ -44,12 +44,18 @@ for the formal adjoint, the operator `∂`
 
 If the holonomy has infinite image, that is if `θ₁` or `θ₂` is irrational, then every power of
 the line and every pullback to a finite cover of the torus is again a nontrivial flat line
-(`TauCeti.not_mem_range_intCast_or_not_mem_range_intCast_of_irrational`). A section of the `j`-th
+(`TauCeti.notMem_range_intCast_or_notMem_range_intCast_of_irrational`). A section of the `j`-th
 power pulled back to the cover with lattice basis `a ω₁ + b ω₂, c ω₁ + d ω₂`, `a d - b c ≠ 0`,
-is twisted by `j (a θ₁ + b θ₂)` and `j (c θ₁ + d θ₂)`, and the constant of the estimate stays
-positive (`TauCeti.pos_of_irrational`). This is the leading-order model in Taubes's construction of
-Seiberg–Witten solutions near a square-zero pseudoholomorphic torus with a flat normal bundle of
-irrational holonomy, where the leading inverse acts on the powers `N ^ j` of the normal line.
+is twisted by `j (a θ₁ + b θ₂)` and `j (c θ₁ + d θ₂)`. The new basis is again linearly
+independent (`TauCeti.im_conj_intCast_mul_add_mul_intCast_mul_add`), and the constant of the
+estimate stays positive (`TauCeti.pi_sq_div_two_mul_sq_abs_sub_round_div_add_pos`). So the
+estimates for `∂bar` and for `∂` hold with a positive constant on every power and finite cover:
+`TauCeti.exists_pos_mul_setIntegral_norm_sq_le_setIntegral_norm_conjWirtingerDeriv_sq_of_irrational`
+and `TauCeti.exists_pos_mul_setIntegral_norm_sq_le_setIntegral_norm_wirtingerDeriv_sq_of_irrational`
+are their versions with an existential constant. This is the leading-order model in Taubes's
+construction of Seiberg–Witten solutions near a square-zero pseudoholomorphic torus with a flat
+normal bundle of irrational holonomy, where the leading inverse acts on the powers `N ^ j` of the
+normal line.
 
 ## Proof
 
@@ -247,14 +253,22 @@ private theorem setIntegral_im_mul_conj_eq_zero (hu : ContDiff ℝ 2 u) (hχ₁ 
   -- The second-derivative terms cancel by symmetry, leaving `A conj B - B conj A`.
   have hdiff (z : ℂ) : F₁ z - F₂ z =
       ((2 * (fderiv ℝ u z ω₁ * conj (fderiv ℝ u z ω₂)).im : ℝ) : ℂ) * I := by
-    simp only [F₁, F₂, hu.contDiffAt.isSymmSndFDerivAt (by simp) ω₁ ω₂]
-    apply Complex.ext <;> simp <;> ring
+    simp only [F₁, F₂, hu.contDiffAt.isSymmSndFDerivAt (by simp) ω₁ ω₂, ← sub_conj, map_mul,
+      conj_conj]
+    ring
   simp only [hdiff, integral_mul_const, integral_complex_ofReal] at h
   simpa [I_ne_zero, integral_const_mul] using h.symm
 
 end IntegrationByParts
 
 section Estimate
+
+/-- `2 i Im (conj ω₁ ω₂) = ω₂ conj ω₁ - ω₁ conj ω₂`. -/
+private theorem two_mul_I_mul_im_conj_mul :
+    (2 * I * (conj ω₁ * ω₂).im : ℂ) = ω₂ * conj ω₁ - ω₁ * conj ω₂ := by
+  have h := sub_conj (conj ω₁ * ω₂)
+  simp only [map_mul, conj_conj, ofReal_mul, ofReal_ofNat] at h
+  linear_combination -h
 
 /-- The pointwise expansion of `|ω₂ A - ω₁ B|²`, written for `W` with `2 i D W = ω₂ A - ω₁ B`,
 `D = Im (conj ω₁ ω₂)`. -/
@@ -272,10 +286,14 @@ private theorem four_mul_sq_mul_norm_sq_eq_of_mul_eq {W A B : ℂ}
 private theorem four_mul_sq_mul_norm_sq_eq_of_mul_neg_eq {W A B : ℂ}
     (hW : W * -(2 * I * (conj ω₁ * ω₂).im) = conj ω₂ * A - conj ω₁ * B) :
     4 * (conj ω₁ * ω₂).im ^ 2 * ‖W‖ ^ 2 = ‖ω₂‖ ^ 2 * ‖A‖ ^ 2 + ‖ω₁‖ ^ 2 * ‖B‖ ^ 2 -
-      2 * (conj ω₁ * ω₂).re * (A * conj B).re - 2 * (conj ω₁ * ω₂).im * (A * conj B).im := by
-  have h := congrArg (fun z ↦ ‖z‖ ^ 2) hW
-  simp only [Complex.sq_norm, normSq_apply, mul_re, mul_im, sub_re, sub_im, neg_re, neg_im,
-    conj_re, conj_im, I_re, I_im, ofReal_re, ofReal_im, re_ofNat, im_ofNat] at h ⊢
+      2 * (conj ω₁ * ω₂).re * (A * conj B).re + -1 * (2 * (conj ω₁ * ω₂).im * (A * conj B).im) := by
+  -- Conjugating reduces this to the expansion for `conj W`, `conj A`, `conj B`.
+  have hW' : conj W * (2 * I * (conj ω₁ * ω₂).im) = ω₂ * conj A - ω₁ * conj B := by
+    have h := congrArg conj hW
+    simp only [map_mul, map_sub, map_neg, map_ofNat, conj_conj, conj_I, conj_ofReal] at h
+    linear_combination h
+  have h := four_mul_sq_mul_norm_sq_eq_of_mul_eq hW'
+  rw [norm_conj, norm_conj, norm_conj, ← map_mul, conj_re, conj_im] at h
   linear_combination h
 
 /-- The pointwise lower bound for the real part of the expansion: with `D = Im (conj ω₁ ω₂) ≠ 0`,
@@ -345,12 +363,6 @@ private theorem mul_setIntegral_le_setIntegral_sub (hu : ContDiff ℝ 1 u)
   have hLc : Continuous L := continuous_latticeCoord
   have hdc : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
   have hR : IsCompact (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  have hAc : Continuous fun p ↦ fderiv ℝ u (L p) ω₁ :=
-    (hdc.comp hLc).clm_apply continuous_const
-  have hBc : Continuous fun p ↦ fderiv ℝ u (L p) ω₂ :=
-    (hdc.comp hLc).clm_apply continuous_const
-  have hAi := (hAc.norm.pow 2).continuousOn.integrableOn_compact (μ := volume) hR
-  have hBi := (hBc.norm.pow 2).continuousOn.integrableOn_compact (μ := volume) hR
   have hW₁ := mul_setIntegral_norm_sq_le_fst (ω₂ := ω₂) hu h₁
   have hW₂ := mul_setIntegral_norm_sq_le_snd (ω₁ := ω₁) hu h₂
   -- Integrate the pointwise lower bound.
@@ -407,6 +419,45 @@ private theorem mul_setIntegral_le_of_four_mul (hD : (conj ω₁ * ω₂).im ≠
   refine le_of_eq_of_le ?_ hlow
   ring
 
+/-- **The estimate from a pointwise identity.** If `4 D² |W|²` equals the real part of the expansion
+plus `ε` times its imaginary part `2 D Im (A conj B)`, then `∫ |W|²` dominates `∫ |u|²`, since the
+imaginary part integrates to zero. -/
+private theorem mul_setIntegral_norm_sq_le_of_four_mul_sq_mul_norm_sq_eq (hu : ContDiff ℝ 2 u)
+    (hω : (conj ω₁ * ω₂).im ≠ 0)
+    (h₁ : ∀ z, u (z + ω₁) = exp (2 * π * θ₁ * I) * u z)
+    (h₂ : ∀ z, u (z + ω₂) = exp (2 * π * θ₂ * I) * u z) {W : ℂ → ℂ} (ε : ℝ)
+    (hpt : ∀ z, 4 * (conj ω₁ * ω₂).im ^ 2 * ‖W z‖ ^ 2 =
+      ‖ω₂‖ ^ 2 * ‖fderiv ℝ u z ω₁‖ ^ 2 + ‖ω₁‖ ^ 2 * ‖fderiv ℝ u z ω₂‖ ^ 2 -
+        2 * (conj ω₁ * ω₂).re * (fderiv ℝ u z ω₁ * conj (fderiv ℝ u z ω₂)).re +
+        ε * (2 * (conj ω₁ * ω₂).im * (fderiv ℝ u z ω₁ * conj (fderiv ℝ u z ω₂)).im)) :
+    π ^ 2 / 2 * (|θ₁ - round θ₁| ^ 2 / ‖ω₁‖ ^ 2 + |θ₂ - round θ₂| ^ 2 / ‖ω₂‖ ^ 2) *
+        ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖u (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2 ≤
+      ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖W (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2 := by
+  set L : ℝ × ℝ → ℂ := fun p ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂ with hL
+  have hu1 : ContDiff ℝ 1 u := hu.of_le (by norm_num)
+  have hR : IsCompact (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
+  have hLc : Continuous L := continuous_latticeCoord
+  have hdc : Continuous (fderiv ℝ u) := hu1.continuous_fderiv one_ne_zero
+  have hGc : Continuous fun p ↦ ‖ω₂‖ ^ 2 * ‖fderiv ℝ u (L p) ω₁‖ ^ 2 +
+      ‖ω₁‖ ^ 2 * ‖fderiv ℝ u (L p) ω₂‖ ^ 2 -
+      2 * (conj ω₁ * ω₂).re * (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).re := by
+    fun_prop
+  have hIc : Continuous fun p ↦ ε * (2 * (conj ω₁ * ω₂).im *
+      (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).im) := by
+    fun_prop
+  have him := setIntegral_im_mul_conj_eq_zero hu (by simpa using norm_exp_ofReal_mul_I (2 * π * θ₁))
+    (by simpa using norm_exp_ofReal_mul_I (2 * π * θ₂)) h₁ h₂
+  refine mul_setIntegral_le_of_four_mul (W := fun p ↦ W (L p))
+    (V := ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖u (L p)‖ ^ 2)
+    (G := fun p ↦ ‖ω₂‖ ^ 2 * ‖fderiv ℝ u (L p) ω₁‖ ^ 2 + ‖ω₁‖ ^ 2 * ‖fderiv ℝ u (L p) ω₂‖ ^ 2 -
+      2 * (conj ω₁ * ω₂).re * (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).re)
+    hω (mul_setIntegral_le_setIntegral_sub hu1 hω h₁ h₂) ?_
+  rw [← integral_const_mul]
+  simp only [hpt]
+  rw [integral_add (hGc.continuousOn.integrableOn_compact hR)
+    (hIc.continuousOn.integrableOn_compact hR), integral_const_mul, integral_const_mul, him,
+    mul_zero, mul_zero, add_zero]
+
 /-- **The Cauchy–Riemann operator on a flat line over a torus is coercive.** Let `ω₁, ω₂` be
 linearly independent over `ℝ`, and let `u` be a `C²` section of the flat line with holonomy
 `exp (2πiθ₁)`, `exp (2πiθ₂)` along `ω₁`, `ω₂`. Then, over the fundamental parallelogram in lattice
@@ -421,53 +472,15 @@ theorem mul_setIntegral_norm_sq_le_setIntegral_norm_conjWirtingerDeriv_sq (hu : 
         ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖u (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2 ≤
       ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
         ‖conjWirtingerDeriv u (p.1 * ω₁ + p.2 * ω₂) 1‖ ^ 2 := by
-  set L : ℝ × ℝ → ℂ := fun p ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂ with hL
-  have hu1 : ContDiff ℝ 1 u := hu.of_le (by norm_num)
-  have hR : IsCompact (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  have hLc : Continuous L := continuous_latticeCoord
-  have hdc : Continuous (fderiv ℝ u) := hu1.continuous_fderiv one_ne_zero
-  have hAc : Continuous fun p ↦ fderiv ℝ u (L p) ω₁ := (hdc.comp hLc).clm_apply continuous_const
-  have hBc : Continuous fun p ↦ fderiv ℝ u (L p) ω₂ := (hdc.comp hLc).clm_apply continuous_const
+  refine mul_setIntegral_norm_sq_le_of_four_mul_sq_mul_norm_sq_eq hu hω h₁ h₂
+    (W := fun z ↦ conjWirtingerDeriv u z 1) 1 fun z ↦ ?_
   -- Pointwise, `2 i D ∂bar u = ω₂ A - ω₁ B`.
-  have hpt (p : ℝ × ℝ) : 4 * (conj ω₁ * ω₂).im ^ 2 * ‖conjWirtingerDeriv u (L p) 1‖ ^ 2 =
-      ‖ω₂‖ ^ 2 * ‖fderiv ℝ u (L p) ω₁‖ ^ 2 + ‖ω₁‖ ^ 2 * ‖fderiv ℝ u (L p) ω₂‖ ^ 2 -
-        2 * (conj ω₁ * ω₂).re * (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).re +
-        2 * (conj ω₁ * ω₂).im * (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).im := by
-    refine four_mul_sq_mul_norm_sq_eq_of_mul_eq ?_
-    rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv,
-      fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv]
-    simp only [smul_eq_mul]
-    have h : (2 * I * (conj ω₁ * ω₂).im : ℂ) = ω₂ * conj ω₁ - ω₁ * conj ω₂ := by
-      apply Complex.ext <;> simp <;> ring
-    rw [h]
-    ring
-  have hWc : Continuous fun p ↦ ‖conjWirtingerDeriv u (L p) 1‖ ^ 2 := by
-    have h : (fun p ↦ ‖conjWirtingerDeriv u (L p) 1‖ ^ 2) = fun p ↦ (4 * (conj ω₁ * ω₂).im ^ 2)⁻¹ *
-        (‖ω₂‖ ^ 2 * ‖fderiv ℝ u (L p) ω₁‖ ^ 2 + ‖ω₁‖ ^ 2 * ‖fderiv ℝ u (L p) ω₂‖ ^ 2 -
-          2 * (conj ω₁ * ω₂).re * (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).re +
-          2 * (conj ω₁ * ω₂).im * (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).im) := by
-      funext p
-      rw [← hpt, ← mul_assoc, inv_mul_cancel₀ (by positivity), one_mul]
-    rw [h]
-    fun_prop
-  have hGc : Continuous fun p ↦ ‖ω₂‖ ^ 2 * ‖fderiv ℝ u (L p) ω₁‖ ^ 2 +
-      ‖ω₁‖ ^ 2 * ‖fderiv ℝ u (L p) ω₂‖ ^ 2 -
-      2 * (conj ω₁ * ω₂).re * (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).re := by
-    fun_prop
-  have hIc : Continuous fun p ↦ 2 * (conj ω₁ * ω₂).im *
-      (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).im := by
-    fun_prop
-  have him := setIntegral_im_mul_conj_eq_zero hu (by simpa using norm_exp_ofReal_mul_I (2 * π * θ₁))
-    (by simpa using norm_exp_ofReal_mul_I (2 * π * θ₂)) h₁ h₂
-  refine mul_setIntegral_le_of_four_mul (W := fun p ↦ conjWirtingerDeriv u (L p) 1)
-    (V := ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖u (L p)‖ ^ 2)
-    (G := fun p ↦ ‖ω₂‖ ^ 2 * ‖fderiv ℝ u (L p) ω₁‖ ^ 2 + ‖ω₁‖ ^ 2 * ‖fderiv ℝ u (L p) ω₂‖ ^ 2 -
-      2 * (conj ω₁ * ω₂).re * (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).re)
-    hω (mul_setIntegral_le_setIntegral_sub hu1 hω h₁ h₂) ?_
-  rw [← integral_const_mul]
-  simp only [hpt]
-  rw [integral_add (hGc.continuousOn.integrableOn_compact hR)
-    (hIc.continuousOn.integrableOn_compact hR), integral_const_mul, him, mul_zero, add_zero]
+  rw [one_mul]
+  refine four_mul_sq_mul_norm_sq_eq_of_mul_eq ?_
+  rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv,
+    fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv, two_mul_I_mul_im_conj_mul]
+  simp only [smul_eq_mul]
+  ring
 
 /-- **The adjoint estimate.** Under the hypotheses of
 `TauCeti.mul_setIntegral_norm_sq_le_setIntegral_norm_conjWirtingerDeriv_sq`, the operator `∂`,
@@ -480,75 +493,51 @@ theorem mul_setIntegral_norm_sq_le_setIntegral_norm_wirtingerDeriv_sq (hu : Cont
         ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖u (p.1 * ω₁ + p.2 * ω₂)‖ ^ 2 ≤
       ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1,
         ‖wirtingerDeriv u (p.1 * ω₁ + p.2 * ω₂) 1‖ ^ 2 := by
-  set L : ℝ × ℝ → ℂ := fun p ↦ (p.1 : ℂ) * ω₁ + p.2 * ω₂ with hL
-  have hu1 : ContDiff ℝ 1 u := hu.of_le (by norm_num)
-  have hR : IsCompact (Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1) := isCompact_Icc.prod isCompact_Icc
-  have hLc : Continuous L := continuous_latticeCoord
-  have hdc : Continuous (fderiv ℝ u) := hu1.continuous_fderiv one_ne_zero
-  have hAc : Continuous fun p ↦ fderiv ℝ u (L p) ω₁ := (hdc.comp hLc).clm_apply continuous_const
-  have hBc : Continuous fun p ↦ fderiv ℝ u (L p) ω₂ := (hdc.comp hLc).clm_apply continuous_const
+  refine mul_setIntegral_norm_sq_le_of_four_mul_sq_mul_norm_sq_eq hu hω h₁ h₂
+    (W := fun z ↦ wirtingerDeriv u z 1) (-1) fun z ↦ ?_
   -- Pointwise, `-2 i D ∂u = conj ω₂ A - conj ω₁ B`.
-  have hpt (p : ℝ × ℝ) : 4 * (conj ω₁ * ω₂).im ^ 2 * ‖wirtingerDeriv u (L p) 1‖ ^ 2 =
-      ‖ω₂‖ ^ 2 * ‖fderiv ℝ u (L p) ω₁‖ ^ 2 + ‖ω₁‖ ^ 2 * ‖fderiv ℝ u (L p) ω₂‖ ^ 2 -
-        2 * (conj ω₁ * ω₂).re * (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).re -
-        2 * (conj ω₁ * ω₂).im * (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).im := by
-    refine four_mul_sq_mul_norm_sq_eq_of_mul_neg_eq ?_
-    rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv,
-      fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv]
-    simp only [smul_eq_mul]
-    have h : -(2 * I * (conj ω₁ * ω₂).im : ℂ) = conj ω₂ * ω₁ - conj ω₁ * ω₂ := by
-      apply Complex.ext <;> simp <;> ring
-    rw [h]
-    ring
-  have hGc : Continuous fun p ↦ ‖ω₂‖ ^ 2 * ‖fderiv ℝ u (L p) ω₁‖ ^ 2 +
-      ‖ω₁‖ ^ 2 * ‖fderiv ℝ u (L p) ω₂‖ ^ 2 -
-      2 * (conj ω₁ * ω₂).re * (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).re := by
-    fun_prop
-  have hIc : Continuous fun p ↦ 2 * (conj ω₁ * ω₂).im *
-      (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).im := by
-    fun_prop
-  have him := setIntegral_im_mul_conj_eq_zero hu (by simpa using norm_exp_ofReal_mul_I (2 * π * θ₁))
-    (by simpa using norm_exp_ofReal_mul_I (2 * π * θ₂)) h₁ h₂
-  refine mul_setIntegral_le_of_four_mul (W := fun p ↦ wirtingerDeriv u (L p) 1)
-    (V := ∫ p in Icc (0 : ℝ) 1 ×ˢ Icc (0 : ℝ) 1, ‖u (L p)‖ ^ 2)
-    (G := fun p ↦ ‖ω₂‖ ^ 2 * ‖fderiv ℝ u (L p) ω₁‖ ^ 2 + ‖ω₁‖ ^ 2 * ‖fderiv ℝ u (L p) ω₂‖ ^ 2 -
-      2 * (conj ω₁ * ω₂).re * (fderiv ℝ u (L p) ω₁ * conj (fderiv ℝ u (L p) ω₂)).re)
-    hω (mul_setIntegral_le_setIntegral_sub hu1 hω h₁ h₂) ?_
-  rw [← integral_const_mul]
-  simp only [hpt]
-  rw [integral_sub (hGc.continuousOn.integrableOn_compact hR)
-    (hIc.continuousOn.integrableOn_compact hR), integral_const_mul, him, mul_zero, sub_zero]
+  refine four_mul_sq_mul_norm_sq_eq_of_mul_neg_eq ?_
+  rw [fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv,
+    fderiv_apply_eq_smul_wirtingerDeriv_add_smul_conjWirtingerDeriv, two_mul_I_mul_im_conj_mul]
+  simp only [smul_eq_mul]
+  ring
 
 end Estimate
 
 section Irrational
 
-/-- **Powers and finite-cover pullbacks of a flat line with infinite holonomy are nontrivial.** If
-`θ₁` or `θ₂` is irrational, then for every nonzero integer `j` and every integer matrix
-`(a, b; c, d)` of nonzero determinant, `j (a θ₁ + b θ₂)` and `j (c θ₁ + d θ₂)` are not both
-integers. These are the twists of the `j`-th power of the line with holonomy `exp (2πiθ₁)`,
-`exp (2πiθ₂)` along the sublattice basis `a ω₁ + b ω₂`, `c ω₁ + d ω₂`. -/
-theorem notMem_range_intCast_or_notMem_range_intCast_of_irrational
-    (hθ : Irrational θ₁ ∨ Irrational θ₂) {j a b c d : ℤ} (hj : j ≠ 0)
-    (hdet : a * d - b * c ≠ 0) :
-    (j * (a * θ₁ + b * θ₂) : ℝ) ∉ range ((↑) : ℤ → ℝ) ∨
-      (j * (c * θ₁ + d * θ₂) : ℝ) ∉ range ((↑) : ℤ → ℝ) := by
-  by_contra hcon
-  rw [not_or, not_not, not_not] at hcon
-  obtain ⟨⟨m, hm⟩, ⟨n, hn⟩⟩ := hcon
-  have hjd : ((j * (a * d - b * c) : ℤ) : ℝ) ≠ 0 := by exact_mod_cast mul_ne_zero hj hdet
-  -- Solving the two equations for `θ₁` and `θ₂` by Cramer's rule makes both rational.
-  rcases hθ with hθ | hθ
-  · refine (irrational_iff_ne_rational θ₁).1 hθ (d * m - b * n) (j * (a * d - b * c))
-      (mul_ne_zero hj hdet) ?_
-    rw [eq_div_iff hjd]
-    push_cast
-    linear_combination (-(d : ℝ)) * hm + (b : ℝ) * hn
-  · refine (irrational_iff_ne_rational θ₂).1 hθ (a * n - c * m) (j * (a * d - b * c))
-      (mul_ne_zero hj hdet) ?_
-    rw [eq_div_iff hjd]
-    push_cast
-    linear_combination (-(a : ℝ)) * hn + (c : ℝ) * hm
+/-- **The orientation of a sublattice basis.** For integers `a, b, c, d`,
+`Im (conj (a ω₁ + b ω₂) (c ω₁ + d ω₂)) = (a d - b c) Im (conj ω₁ ω₂)`. -/
+theorem im_conj_intCast_mul_add_mul_intCast_mul_add (a b c d : ℤ) :
+    (conj (a * ω₁ + b * ω₂) * (c * ω₁ + d * ω₂)).im =
+      ((a * d - b * c : ℤ) : ℝ) * (conj ω₁ * ω₂).im := by
+  simp only [map_add, map_mul, map_intCast, mul_im, add_im, add_re, mul_re, conj_re, conj_im,
+    intCast_re, intCast_im]
+  push_cast
+  ring
+
+/-- **A sublattice basis is linearly independent.** If `ω₁, ω₂` are linearly independent over `ℝ`
+and `a d - b c ≠ 0`, then so are `a ω₁ + b ω₂` and `c ω₁ + d ω₂`. -/
+theorem im_conj_intCast_mul_add_mul_intCast_mul_add_ne_zero (hω : (conj ω₁ * ω₂).im ≠ 0)
+    {a b c d : ℤ} (hdet : a * d - b * c ≠ 0) :
+    (conj (a * ω₁ + b * ω₂) * (c * ω₁ + d * ω₂)).im ≠ 0 := by
+  rw [im_conj_intCast_mul_add_mul_intCast_mul_add]
+  exact mul_ne_zero (by exact_mod_cast hdet) hω
+
+/-- **The constant of the coercivity estimates is positive** when one of the two twists is not an
+integer and both lattice vectors are nonzero. -/
+theorem pi_sq_div_two_mul_sq_abs_sub_round_div_add_pos {x y : ℝ}
+    (hxy : x ∉ range ((↑) : ℤ → ℝ) ∨ y ∉ range ((↑) : ℤ → ℝ)) (hω₁ : ω₁ ≠ 0) (hω₂ : ω₂ ≠ 0) :
+    0 < π ^ 2 / 2 * (|x - round x| ^ 2 / ‖ω₁‖ ^ 2 + |y - round y| ^ 2 / ‖ω₂‖ ^ 2) := by
+  -- The distance to the nearest integer is positive off the integers.
+  have hpos {x : ℝ} (hx : x ∉ range ((↑) : ℤ → ℝ)) : 0 < |x - round x| :=
+    abs_pos.2 (sub_ne_zero.2 fun h ↦ hx ⟨round x, h.symm⟩)
+  refine mul_pos (by positivity) ?_
+  rcases hxy with h | h
+  · have := hpos h
+    exact add_pos_of_pos_of_nonneg (by positivity) (by positivity)
+  · have := hpos h
+    exact add_pos_of_nonneg_of_pos (by positivity) (by positivity)
 
 /-- For a power and a finite-cover pullback of a flat line with infinite holonomy, the new lattice
 basis is linearly independent and the constant of the coercivity estimates is positive. -/
@@ -560,24 +549,11 @@ private theorem im_conj_mul_ne_zero_and_pos_of_irrational (hθ : Irrational θ�
           ‖(a * ω₁ + b * ω₂ : ℂ)‖ ^ 2 +
         |(j * (c * θ₁ + d * θ₂) : ℝ) - round (j * (c * θ₁ + d * θ₂) : ℝ)| ^ 2 /
           ‖(c * ω₁ + d * ω₂ : ℂ)‖ ^ 2) := by
-  have hdet' : (conj (a * ω₁ + b * ω₂) * (c * ω₁ + d * ω₂)).im =
-      ((a * d - b * c : ℤ) : ℝ) * (conj ω₁ * ω₂).im := by
-    simp only [map_add, map_mul, map_intCast, mul_im, add_im, add_re, mul_re, conj_re, conj_im,
-      intCast_re, intCast_im]
-    push_cast
-    ring
-  have hne : (conj (a * ω₁ + b * ω₂) * (c * ω₁ + d * ω₂)).im ≠ 0 := by
-    rw [hdet']
-    exact mul_ne_zero (by exact_mod_cast hdet) hω
-  -- The distance to the nearest integer is positive off the integers.
-  have hpos {x : ℝ} (hx : x ∉ range ((↑) : ℤ → ℝ)) {ω : ℂ} (hω : ω ≠ 0) :
-      0 < |x - round x| ^ 2 / ‖ω‖ ^ 2 := by
-    have hx' : 0 < |x - round x| := abs_pos.2 (sub_ne_zero.2 fun h ↦ hx ⟨round x, h.symm⟩)
-    positivity
-  refine ⟨hne, mul_pos (by positivity) ?_⟩
-  rcases notMem_range_intCast_or_notMem_range_intCast_of_irrational hθ hj hdet with h | h
-  · exact add_pos_of_pos_of_nonneg (hpos h (by rintro h0; simp [h0] at hne)) (by positivity)
-  · exact add_pos_of_nonneg_of_pos (by positivity) (hpos h (by rintro h0; simp [h0] at hne))
+  have hne := im_conj_intCast_mul_add_mul_intCast_mul_add_ne_zero hω hdet
+  refine ⟨hne, pi_sq_div_two_mul_sq_abs_sub_round_div_add_pos
+    (notMem_range_intCast_or_notMem_range_intCast_of_irrational hθ hj hdet) ?_ ?_⟩ <;>
+  · rintro h0
+    simp [h0] at hne
 
 /-- **Coercivity of `∂bar` on the powers and finite covers of a flat line with infinite
 holonomy.** Let `ω₁, ω₂` be linearly independent and let `θ₁` or `θ₂` be irrational. For every

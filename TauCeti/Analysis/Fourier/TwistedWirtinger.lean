@@ -88,12 +88,12 @@ private theorem exists_hasSum_sq_and_hasSum_sq_mul (hab : a < b)
     convert (hed t).mul (ht hmem) using 1
     ring
   have heb : e b * exp (2 * π * θ * I) = 1 := by
-    rw [← Complex.exp_add]
     have hk : k * (b - a) = 2 * π * θ := by simp only [k]; field_simp
+    rw [← Complex.exp_add, ← Complex.exp_zero]
+    congr 1
     simp only [hk]
     push_cast
-    ring_nf
-    exact Complex.exp_zero
+    ring
   have hgab : g a = g b := by
     simp only [g, hfab, ← mul_assoc, heb, one_mul, e, sub_self, mul_zero, neg_zero,
       ofReal_zero, zero_mul, Complex.exp_zero]
@@ -111,7 +111,8 @@ private theorem exists_hasSum_sq_and_hasSum_sq_mul (hab : a < b)
     have h := fourierCoeffOn_sub_mul_I_mul hab hg hgg' hgab (-k) n
     rw [show (fun t ↦ e t * f' t + e t * ((-k : ℝ) * I) * f t - ((-k : ℝ) * I) * g t) =
       fun t ↦ e t * f' t by funext t; simp only [g]; ring] at h
-    rw [h, norm_mul, norm_mul, norm_I, mul_one, norm_real, Real.norm_eq_abs, mul_pow, sq_abs]
+    rw [h]
+    simp only [norm_mul, norm_I, mul_one, norm_real, Real.norm_eq_abs, mul_pow, sq_abs]
     congr 2
     simp only [k]
     field_simp
