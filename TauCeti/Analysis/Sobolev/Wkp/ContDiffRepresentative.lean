@@ -47,6 +47,8 @@ The statements are for Lebesgue measure `volume`, the measure of the whole-space
 * `TauCeti.Wkp.exists_contDiffOn_ae_eq`: `W^{k+j,2}(Ω) ⊆ Cʲ(Ω)` for `2k > n`.
 * `TauCeti.exists_contDiffOn_ae_eq_of_forall_wkp`: a function in `W^{m,2}(Ω)` for every `m` has a
   representative smooth on `Ω`.
+* `TemperedDistribution.contDiff_of_mem_realSobolevFunctions`: on the whole space, a continuous
+  real function in the Bessel-potential space `H^s`, `s ≥ k + j`, is itself `Cʲ` for `2k > n`.
 
 ## References
 
@@ -141,3 +143,29 @@ theorem exists_contDiffOn_ae_eq_of_forall_wkp {u : E → ℝ}
     Omega.isOpen hg hgj.continuousOn)
 
 end TauCeti
+
+namespace TemperedDistribution
+
+open TauCeti
+
+variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E] [BorelSpace E] {k : ℕ}
+
+/-- **Continuous Sobolev functions are `Cʲ`.** If `2k > dim E` and `s ≥ k + j`, a continuous real
+function on `E` lying in the Bessel-potential space `H^s` (`realSobolevFunctions E s 2`) is `Cʲ`.
+Its `Cʲ` representative given by the Sobolev embedding agrees with it almost everywhere, hence
+everywhere by continuity. -/
+theorem contDiff_of_mem_realSobolevFunctions (hk : finrank ℝ E < 2 * k) {j : ℕ} {s : ℝ}
+    (hs : (k + j : ℝ) ≤ s) {f : E → ℝ} (hf : Continuous f)
+    (hmem : f ∈ realSobolevFunctions E s 2) : ContDiff ℝ j f := by
+  have hmem' := realSobolevFunctions_mono (E := E) (p := 2) (by norm_num) (by norm_num)
+    (show ((k + j : ℕ) : ℝ) ≤ s by push_cast; exact hs) hmem
+  obtain ⟨u, huf, hu⟩ := mem_realSobolevFunctions.1 hmem'
+  obtain ⟨w, hw⟩ := (Lp.memSobolev_natCast_iff_exists_wkp_value_eq (by norm_num)
+    ENNReal.ofNat_ne_top (k + j) u).1 hu
+  obtain ⟨g, hg, hwg⟩ := Wkp.exists_contDiffOn_ae_eq (Omega := ⊤) hk j w
+  simp only [Opens.coe_top, Measure.restrict_univ] at hwg
+  rw [Opens.coe_top, contDiffOn_univ] at hg
+  rwa [(hf.ae_eq_iff_eq volume hg.continuous).1 (huf.symm.trans (hw.symm.trans hwg))]
+
+end TemperedDistribution

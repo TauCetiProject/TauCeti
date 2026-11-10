@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
+import TauCeti.Analysis.Sobolev.Wkp.ContDiffRepresentative
 
 /-!
 # The Sobolev framed gauge group of plane vortices
@@ -21,22 +22,22 @@ the continuous circle-valued maps `u` on the plane with `u - 1 ∈ H^s(ℂ; ℂ)
 the field space `A_m^k` of framed degree-`m` vortices (`TauCeti.Vortex.framedFieldSpace`) is
 `G_(k+1)`.
 
-Since `H^s(ℂ)` is an algebra for `s > 1`, the products `(1 + h)(1 + g) = 1 + (h + g + h g)` stay
-in the group, and the inverse is the complex conjugate `1 + conj h`. The Sobolev embedding gives
-the end condition `u → 1` at infinity, so the smooth elements of `G_s` are smooth framed gauges
+Since `H^s(ℂ)` is an algebra for `s > 1`, the products `(1 + h)(1 + g) = 1 + (h + g + h g)` stay in
+the group, and the inverse is the complex conjugate `1 + conj h`. The Sobolev embedding gives the
+end condition `u → 1` at infinity, and the embedding of `H^(j+2)(ℂ)` into `Cʲ` makes every element
+of `G_s` a `Cʲ` map for `s ≥ j + 2`. The smooth elements of `G_s` are smooth framed gauges
 (`TauCeti.Vortex.framedGaugeGroup`); they form the subgroup `G_s ⊓ framedGaugeGroup`. Conversely,
-smooth gauges with `u - 1` compactly supported, such as `exp (i f)` for a smooth compactly
-supported phase `f`, lie in every `G_s`. A smooth framed gauge need not lie in `G_s`: a phase
-with a `1 / |z|` tail is not square integrable on the plane.
+smooth gauges with `u - 1` compactly supported, such as `exp (i f)` for a smooth compactly supported
+phase `f`, lie in every `G_s`. A smooth framed gauge need not lie in `G_s`: a phase with a `1 / |z|`
+tail is not square integrable on the plane.
 
 For a `C¹` gauge `u ∈ G_(s+1)`, the real one-form `Im (u⁻¹ du)` (`TauCeti.Vortex.gaugeForm`)
 has coefficients in `H^s`. Its product with `i` is the connection increment `u⁻¹ du` of the
 action `(a, α) ↦ (a - u⁻¹ du, u α)`, so the `C¹` elements of `G_(s+1)` preserve the connection
 part of `A_m^s`.
 
-No topology or Banach Lie group charts on `G_s` are constructed here, and the action on the
-section part of `A_m^s`, which needs multiplication of `H^s` by the bounded reference section,
-is not treated.
+No topology or Banach Lie group charts on `G_s` are constructed here. The action of `G_(s+1)` on
+the whole field space `A_m^s` is in `TauCeti.Analysis.PDE.Vortex.FramedGauge.Action`.
 
 ## Main definitions
 
@@ -48,6 +49,9 @@ is not treated.
   function `u - 1` lies in `H^s(ℂ; ℂ)`.
 * `TauCeti.Vortex.tendsto_cocompact_of_mem_sobolevGaugeGroup`: elements of `G_s` tend to one at
   infinity.
+* `TauCeti.Vortex.contDiff_of_mem_sobolevGaugeGroup`: elements of `G_s` are `Cʲ` for `s ≥ j + 2`;
+  in particular they are differentiable for `s ≥ 3`
+  (`TauCeti.Vortex.differentiable_of_mem_sobolevGaugeGroup`).
 * `TauCeti.Vortex.mem_sobolevGaugeGroup_inf_framedGaugeGroup`: the smooth subgroup of `G_s` is
   `G_s ⊓ framedGaugeGroup`.
 * `TauCeti.Vortex.mem_sobolevGaugeGroup_of_hasCompactSupport`,
@@ -159,6 +163,36 @@ theorem tendsto_cocompact_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : �
     rw [hfun]
     simpa using h
   exact tendsto_subtype_rng.2 (by simpa using hc)
+
+/-- **Elements of `G_s` are `Cʲ`** for `s ≥ j + 2`, by the Sobolev embedding of `H^(j+2)(ℂ)` into
+`Cʲ` applied to the continuous functions `Re u - 1` and `Im u`. In particular the elements of
+`G_(s+1)`, `s ≥ 2`, are `C¹`, so their logarithmic derivative `u⁻¹ du` is a classical one. -/
+theorem contDiff_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : ℂ → Circle}
+    (hu : u ∈ sobolevGaugeGroup hs) {j : ℕ} (hj : j + 2 ≤ s) :
+    ContDiff ℝ j (fun z ↦ (u z : ℂ)) := by
+  obtain ⟨hu, hu₁, hu₂⟩ := (mem_sobolevGaugeGroup hs u).1 hu
+  have hk : finrank ℝ ℂ < 2 * 2 := by exact_mod_cast finrank_real_complex_lt_two_mul one_lt_two
+  have hjs : ((2 : ℕ) + j : ℝ) ≤ s := by push_cast; linarith
+  have hre := contDiff_of_mem_realSobolevFunctions hk hjs
+    ((continuous_re.comp (continuous_subtype_val.comp hu)).sub continuous_const) hu₁
+  have him := contDiff_of_mem_realSobolevFunctions hk hjs
+    (continuous_im.comp (continuous_subtype_val.comp hu)) hu₂
+  have hfun : (fun z ↦ (u z : ℂ)) =
+      fun z ↦ ((((u z : ℂ).re - 1 : ℝ) : ℂ) + 1) + ((u z : ℂ).im : ℂ) * I := by
+    ext1 z
+    nth_rewrite 1 [← re_add_im (u z : ℂ)]
+    push_cast
+    ring
+  rw [hfun]
+  exact ((ofRealCLM.contDiff.comp hre).add contDiff_const).add
+    ((ofRealCLM.contDiff.comp him).mul contDiff_const)
+
+/-- Elements of `G_s` are differentiable for `s ≥ 3`, so that `G_s` acts by gauge
+transformations, which involve the logarithmic derivative `u⁻¹ du`. -/
+theorem differentiable_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : ℂ → Circle}
+    (hu : u ∈ sobolevGaugeGroup hs) (h3 : 3 ≤ s) : Differentiable ℝ (fun z ↦ (u z : ℂ)) :=
+  (contDiff_of_mem_sobolevGaugeGroup hu (j := 1) (by push_cast; linarith)).differentiable
+    one_ne_zero
 
 /-- **Smooth elements of `G_s` are smooth framed gauges.** -/
 theorem mem_framedGaugeGroup_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : ℂ → Circle}
