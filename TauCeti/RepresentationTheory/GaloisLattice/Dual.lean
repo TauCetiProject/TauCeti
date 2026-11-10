@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Dual.Basis
+public import Mathlib.LinearAlgebra.FreeModule.PID
 public import Mathlib.Topology.Algebra.OpenSubgroup
 public import TauCeti.RepresentationTheory.GaloisLattice.Basic
 
@@ -13,8 +14,9 @@ public import TauCeti.RepresentationTheory.GaloisLattice.Basic
 # Duals of integral Galois lattices
 
 The contragredient representation on the integral dual of a Galois lattice is again a Galois
-lattice. Continuity is proved using a finite basis: the pointwise stabilizer of that basis is an
-open subgroup, and it fixes every linear functional under the contragredient action.
+lattice. Continuity is proved using a finite generating set: the pointwise stabilizer of that set
+is an open subgroup, and it fixes every linear functional under the contragredient action. The
+integral dual of a finitely generated module is finite free, so no freeness of `V` is assumed.
 
 ## Main declaration
 
@@ -37,7 +39,7 @@ namespace TauCeti
 universe u
 
 variable {k V : Type u} [Field k] [AddCommGroup V]
-variable [Module.Free ℤ V] [Module.Finite ℤ V]
+variable [Module.Finite ℤ V]
 
 /-- A representation identified equivariantly with the contragredient of a Galois lattice is
 itself a Galois lattice. This form lets a construction retain its intrinsic carrier rather than
@@ -51,6 +53,7 @@ theorem galoisLatticeProperty_contragredient
       e (τ σ w) x = e w (ρ σ⁻¹ x))
     (hopen : ∀ x : V, IsOpen {σ | ρ σ x = x}) :
     galoisLatticeProperty k (Rep.of τ) := by
+  have : Module.Free ℤ (Module.Dual ℤ V) := inferInstance
   let _ : Module.Free ℤ W := Module.Free.of_equiv e.symm
   let _ : Module.Finite ℤ W := Module.Finite.equiv e.symm
   -- `MulAction.stabilizer` needs actions on the carriers, while the hypotheses deliberately
@@ -76,10 +79,10 @@ theorem galoisLatticeProperty_contragredient
   rw [galoisLatticeProperty_iff]
   refine ⟨⟨inferInstance, inferInstance⟩, ?_⟩
   intro w
-  let B := Module.Free.chooseBasis ℤ V
+  obtain ⟨n, B, hB⟩ := Submodule.fg_iff_exists_fin_generating_family.mp
+    (Module.Finite.fg_top (R := ℤ) (M := V))
   let U : Subgroup (Field.absoluteGaloisGroup k) :=
-    ⨅ i : Module.Free.ChooseBasisIndex ℤ V,
-      MulAction.stabilizer (Field.absoluteGaloisGroup k) (B i)
+    ⨅ i : Fin n, MulAction.stabilizer (Field.absoluteGaloisGroup k) (B i)
   -- Rewrite the continuity goal as openness of a subgroup so an open basis stabilizer can be
   -- enlarged with `Subgroup.isOpen_mono`.
   change IsOpen (↑(MulAction.stabilizer (Field.absoluteGaloisGroup k) w) :
@@ -95,8 +98,8 @@ theorem galoisLatticeProperty_contragredient
     rw [he]
     have hσinv : σ⁻¹ ∈ U := U.inv_mem hσ
     have hfix : ρ σ⁻¹ = LinearMap.id := by
-      apply B.ext
-      intro i
+      apply LinearMap.ext_on hB
+      rintro _ ⟨i, rfl⟩
       rw [LinearMap.id_apply]
       exact MulAction.mem_stabilizer_iff.mp (Subgroup.mem_iInf.mp hσinv i)
     rw [hfix, LinearMap.id_apply]
