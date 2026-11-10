@@ -53,33 +53,6 @@ private abbrev lkjCoordinateProduct (p : ℕ) (η : ℝ) :
     Measure (strictLowerTriangle p → ℝ) :=
   Measure.pi (lkjCoordinateLaw p η)
 
-private theorem prod_beta_lkjPartialCorrelationShape (p : ℕ) (η : ℝ) :
-    (∏ ij : strictLowerTriangle p, beta (1 / 2) (lkjPartialCorrelationShape p η ij)) =
-      lkjNormalizer p η := by
-  simp_rw [lkjPartialCorrelationShape_def]
-  rw [← Fintype.prod_fiberwise'
-    (fun ij : strictLowerTriangle p ↦ ij.1.2)
-    (fun j : Fin p ↦ beta (1 / 2)
-      (η + (((p - 1 - j.val : ℕ) : ℝ) - 1) / 2))]
-  simp_rw [Finset.prod_const, Finset.card_univ, card_strictLowerTriangle_column]
-  calc
-    _ = ∏ k ∈ Finset.range p,
-        beta (1 / 2) (η + (((p - 1 - k : ℕ) : ℝ) - 1) / 2) ^ (p - 1 - k) := by
-      simpa only using Fin.prod_univ_eq_prod_range
-        (fun k : ℕ ↦ beta (1 / 2)
-          (η + (((p - 1 - k : ℕ) : ℝ) - 1) / 2) ^ (p - 1 - k)) p
-    _ = lkjNormalizer p η := by
-      rw [lkjNormalizer_eq_prod_columns]
-      rcases p with _ | p
-      · simp
-      · rw [Finset.prod_range_succ]
-        simp only [Nat.add_sub_cancel, Nat.sub_self, Nat.cast_zero, zero_sub, pow_zero, mul_one]
-        rw [Finset.prod_Ico_eq_prod_range]
-        congr 1
-        ext k
-        have h : p + 1 - (1 + k) = p - k := by omega
-        rw [h]
-
 private theorem prod_beta_ratio_lkjPartialCorrelationShape (p : ℕ) (η q : ℝ) :
     (∏ ij : strictLowerTriangle p,
         beta (1 / 2) (lkjPartialCorrelationShape p η ij + q) /
@@ -130,15 +103,15 @@ private theorem map_det_partialCorrelationGram_compl_Icc (hη : 0 < η) :
     (lkjCoordinateProduct p η).map
         (fun z ↦ (partialCorrelationGram z).det) (Set.Icc 0 1)ᶜ = 0 := by
   rw [← mem_ae_iff, mem_ae_map_iff (by fun_prop) measurableSet_Icc]
-  filter_upwards [ae_abs_le_one_pi_centered_betaMeasure
+  filter_upwards [ae_abs_lt_one_pi_centered_betaMeasure
     (fun ij : strictLowerTriangle p ↦ lkjPartialCorrelationShape_pos hη ij)] with z hz
   change (partialCorrelationGram z).det ∈ Set.Icc 0 1
-  rw [det_partialCorrelationGram hz]
+  rw [det_partialCorrelationGram fun ij ↦ (hz ij).le]
   constructor
   · exact Finset.prod_nonneg fun ij _ ↦
-      sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).2 (hz ij))
+      sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).2 (hz ij).le)
   · exact Finset.prod_le_one₀
-      (fun ij _ ↦ sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).2 (hz ij)))
+      (fun ij _ ↦ sub_nonneg.mpr ((sq_le_one_iff_abs_le_one _).2 (hz ij).le))
       (fun ij _ ↦ by nlinarith [sq_nonneg (z ij)])
 
 /-- **Determinant moments of the LKJ law.** If `η > 0` and `q > -η`, then the expectation of
