@@ -57,6 +57,8 @@ end AddSubgroup
 
 namespace TauCeti
 
+universe u v
+
 namespace AddCommGroup
 
 variable (A : Type*) [AddCommGroup A] [Finite A]
@@ -113,6 +115,34 @@ theorem primaryDecomposition_apply (x) :
     primaryDecomposition A x = ∑ p, (x p : A) := by
   rw [primaryDecomposition, AddEquiv.ofBijective_apply, primaryDecompositionHom,
     AddSubgroup.noncommPiCoprod_apply, Finset.noncommSum_eq_sum]
+
+/-- **If the `p`-primary component of `G` has order dividing that of `H` for every prime `p`, then
+`#G ∣ #H`** for finite commutative groups. The order of the `p`-primary component is the `p`-part
+of the group order (`TauCeti.AddCommGroup.natCard_primaryComponent`). -/
+theorem natCard_dvd_of_natCard_primaryComponent_dvd {G : Type u} {H : Type v} [AddCommGroup G]
+    [AddCommGroup H] [Finite G] [Finite H]
+    (h : ∀ p : ℕ, p.Prime → Nat.card (AddCommGroup.primaryComponent G p) ∣
+      Nat.card (AddCommGroup.primaryComponent H p)) :
+    Nat.card G ∣ Nat.card H := by
+  rw [← Nat.factorization_prime_le_iff_dvd Nat.card_pos.ne' Nat.card_pos.ne']
+  intro p hp
+  by_cases hpG : p ∣ Nat.card G
+  · refine (hp.pow_dvd_iff_le_factorization Nat.card_pos.ne').1 ?_
+    rw [← natCard_primaryComponent G hp]
+    exact (h p hp).trans (AddSubgroup.card_addSubgroup_dvd_card _)
+  · rw [Nat.factorization_eq_zero_of_not_dvd hpG]
+    exact Nat.zero_le _
+
+/-- **Finite commutative groups whose `p`-primary components have the same order for every prime
+`p` have the same order.** This is the converse of
+`TauCeti.AddCommGroup.natCard_primaryComponent_eq_of_natCard_eq`. -/
+theorem natCard_eq_of_natCard_primaryComponent_eq {G : Type u} {H : Type v} [AddCommGroup G]
+    [AddCommGroup H] [Finite G] [Finite H]
+    (h : ∀ p : ℕ, p.Prime → Nat.card (AddCommGroup.primaryComponent G p) =
+      Nat.card (AddCommGroup.primaryComponent H p)) :
+    Nat.card G = Nat.card H :=
+  Nat.dvd_antisymm (natCard_dvd_of_natCard_primaryComponent_dvd fun p hp ↦ (h p hp).dvd)
+    (natCard_dvd_of_natCard_primaryComponent_dvd fun p hp ↦ (h p hp).symm.dvd)
 
 end AddCommGroup
 
