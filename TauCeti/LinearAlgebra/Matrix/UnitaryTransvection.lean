@@ -8,7 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.Transvection.Basic
 public import TauCeti.LinearAlgebra.Matrix.OneSubVecMulVec
-import TauCeti.Algebra.Ring.Hom
+import TauCeti.Algebra.Group.Hom.Defs
 
 /-!
 # Unitary transvections
@@ -119,7 +119,7 @@ theorem unitaryTransvection_mul_unitaryTransvection (hv : (σ ∘ v) ⬝ᵥ (Q *
 scalar: `τ_{c v,a} = τ_{v, a c σ(c)}`. -/
 theorem unitaryTransvection_smul (c a : R) :
     Q.unitaryTransvection σ (c • v) a = Q.unitaryTransvection σ v (a * c * σ c) := by
-  rw [unitaryTransvection_def, unitaryTransvection_def, RingHom.comp_smul, smul_vecMul,
+  rw [unitaryTransvection_def, unitaryTransvection_def, TauCeti.map_comp_smul, smul_vecMul,
     smul_vecMulVec, vecMulVec_smul, smul_smul, smul_smul, mul_assoc]
 
 /-- **The conjugation law.** A matrix `g` preserving the form, `σ(g)ᵀ Q g = Q`, carries the

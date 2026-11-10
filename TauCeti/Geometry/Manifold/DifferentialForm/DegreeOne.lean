@@ -32,7 +32,9 @@ derivative applies.
   at a point as a section of the linear-map bundle exactly when its degree-one form is.
 * `TauCeti.contMDiffAt_ofSubsingleton_iff`, `TauCeti.isSmoothBundleForm_ofSubsingleton_iff`: a
   family of linear maps has `C^n` graph in the linear-map bundle, at a point or everywhere, exactly
-  when the corresponding degree-one form does.
+  when the corresponding degree-one form does. More generally, a family of linear maps along a map
+  `b : N → M` is `C^n` exactly when its family of degree-one forms is
+  (`TauCeti.contMDiffAt_sectionAlong_ofSubsingleton_iff`).
 * `TauCeti.SmoothBundleForm.degreeOneEquiv`: the linear equivalence between smooth degree-one
   forms and smooth sections of the bundle of fibrewise linear maps.
 * `TauCeti.SmoothBundleForm.tangentIdentity`: the tangent-valued one-form sending a tangent
@@ -57,12 +59,16 @@ open scoped ContDiff Manifold
 namespace TauCeti
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
   [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
   [FiberBundle F V] [VectorBundle ℝ F V]
   [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul ℝ (V x)]
+
+section OnceDifferentiable
+
+variable [IsManifold I 1 M]
 
 /-- A bundle-valued one-form is differentiable exactly when the corresponding section
 of the bundle of continuous linear maps is differentiable. -/
@@ -83,6 +89,29 @@ theorem mdifferentiableAt_ofSubsingleton_iff
   exact (L.symm.mdifferentiableAt.comp x₀ h).congr_of_eventuallyEq
     (Filter.Eventually.of_forall fun x ↦ by simp [L])
 
+/-- A family of fibrewise linear maps along a map `b : N → M` is `C^n` at `m₀` as a section of the
+bundle of linear maps `TangentSpace I x →L[ℝ] V x` along `b` exactly when the family of degree-one
+forms it defines is `C^n` at `m₀` along `b`. -/
+theorem contMDiffAt_sectionAlong_ofSubsingleton_iff {EN HN N : Type*} [NormedAddCommGroup EN]
+    [NormedSpace ℝ EN] [TopologicalSpace HN] {J : ModelWithCorners ℝ EN HN} [TopologicalSpace N]
+    [ChartedSpace HN N] {n : WithTop ℕ∞} {b : N → M}
+    {α : (m : N) → TangentSpace I (b m) →L[ℝ] V (b m)} {m₀ : N} :
+    ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F)) n (fun m ↦
+        TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F)
+          (E := fun x : M ↦ TangentSpace I x [⋀^Fin 1]→L[ℝ] V x) (b m)
+          (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I (b m)) (V (b m)) (0 : Fin 1)
+            (α m))) m₀ ↔
+      ContMDiffAt J (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun m ↦ TotalSpace.mk' (E →L[ℝ] F)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] V x) (b m) (α m)) m₀ := by
+  let L := (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := F)
+    (ι := Fin 1) 0).toContinuousLinearEquiv
+  rw [contMDiffAt_continuousAlternatingMap_bundle, contMDiffAt_hom_bundle]
+  refine and_congr Iff.rfl ?_
+  simp only [ContinuousAlternatingMap.inCoordinates_ofSubsingleton]
+  refine ⟨fun h ↦ ?_, fun h ↦ L.contDiff.comp_contMDiffAt h⟩
+  exact (L.symm.contDiff.comp_contMDiffAt h).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall fun x ↦ by simp [L])
+
 /-- A family of fibrewise linear maps is `C^n` at `x₀` as a section of the bundle of linear maps
 `TangentSpace I x →L[ℝ] V x` exactly when the degree-one form it defines is `C^n` at `x₀`. -/
 theorem contMDiffAt_ofSubsingleton_iff {n : WithTop ℕ∞}
@@ -92,15 +121,8 @@ theorem contMDiffAt_ofSubsingleton_iff {n : WithTop ℕ∞}
           (ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) (V x) (0 : Fin 1) (α x)))
         x₀ ↔
       ContMDiffAt I (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun x ↦ TotalSpace.mk' (E →L[ℝ] F) x (α x))
-        x₀ := by
-  let L := (ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := E) (F := F)
-    (ι := Fin 1) 0).toContinuousLinearEquiv
-  rw [contMDiffAt_continuousAlternatingMap_bundle, contMDiffAt_hom_bundle]
-  refine and_congr Iff.rfl ?_
-  simp only [ContinuousAlternatingMap.inCoordinates_ofSubsingleton]
-  refine ⟨fun h ↦ ?_, fun h ↦ L.contDiff.comp_contMDiffAt h⟩
-  exact (L.symm.contDiff.comp_contMDiffAt h).congr_of_eventuallyEq
-    (Filter.Eventually.of_forall fun x ↦ by simp [L])
+        x₀ :=
+  contMDiffAt_sectionAlong_ofSubsingleton_iff (b := id)
 
 /-- A family of fibrewise linear maps is a `C^n` section of the bundle of linear maps
 `TangentSpace I x →L[ℝ] V x` exactly when the degree-one form it defines is `C^n`. -/
@@ -190,6 +212,8 @@ theorem isSmoothForm_ofSubsingleton_iff {n : WithTop ℕ∞}
   rw [isSmoothForm_def, ← isSmoothBundleForm_def]
   exact isSmoothBundleForm_ofSubsingleton_iff
 
+end OnceDifferentiable
+
 /-- **The differential of a `C^(n+1)` function is a `C^n` covector field**: `x ↦ df_x` is a `C^n`
 section of the bundle of linear maps `TangentSpace I x →L[ℝ] F`, which is the cotangent bundle
 when `F = ℝ`. -/
@@ -205,6 +229,10 @@ theorem _root_.ContMDiff.contMDiff_totalSpaceMk_mvfderiv [IsManifold I 2 M] {n :
   rw [hd, isSmoothForm_def, ← isSmoothBundleForm_def]
   exact isSmoothBundleForm_mextDeriv _
     ((isSmoothBundleForm_def _ _).mpr (isSmoothForm_ofFunction_iff.mpr hf).contMDiff) le_rfl
+
+section OnceDifferentiable
+
+variable [IsManifold I 1 M]
 
 /-- **The differential of a jointly `C^(n+1)` family is jointly `C^n`.** For a family of functions
 `f : N → M → F` which is jointly `C^(n+1)` on `N × M`, the differentials `(p, x) ↦ d(f p)_x` form a
@@ -255,6 +283,29 @@ theorem degreeOneEquiv_apply_apply_vec (φ : SmoothForm I M F 1) (x : M) (v : Ta
     degreeOneEquiv φ x v = φ.1 x ![v] := by
   rw [degreeOneEquiv_apply_apply, Matrix.vec_single_eq_const]
 
+/-- A family of smooth one-forms `α m`, evaluated along a map `b : N → M`, is `C^n` at `m₀` as a
+section of the bundle of linear maps exactly when it is `C^n` as a section of the bundle of
+alternating maps. -/
+theorem contMDiffAt_sectionAlong_degreeOneEquiv_iff {EN HN N : Type*} [NormedAddCommGroup EN]
+    [NormedSpace ℝ EN] [TopologicalSpace HN] {J : ModelWithCorners ℝ EN HN} [TopologicalSpace N]
+    [ChartedSpace HN N] {n : WithTop ℕ∞} {b : N → M} {α : N → SmoothForm I M F 1} {m₀ : N} :
+    ContMDiffAt J (I.prod 𝓘(ℝ, E →L[ℝ] F)) n (fun m ↦ TotalSpace.mk' (E →L[ℝ] F)
+        (E := fun x : M ↦ TangentSpace I x →L[ℝ] F) (b m) (degreeOneEquiv (α m) (b m))) m₀ ↔
+      ContMDiffAt J (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] F)) n (fun m ↦
+        TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F)
+          (E := fun x : M ↦ TangentSpace I x [⋀^Fin 1]→L[ℝ] Trivial M F x) (b m)
+          ((α m).1 (b m))) m₀ := by
+  rw [← contMDiffAt_sectionAlong_ofSubsingleton_iff (V := Trivial M F)]
+  refine Iff.of_eq (congrArg (ContMDiffAt _ _ _ · m₀) (funext fun m ↦ ?_))
+  refine congrArg (TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] F) (b m)) ?_
+  ext u
+  have hu : u = ![u 0] := by
+    ext i
+    fin_cases i
+    rfl
+  conv_rhs => rw [hu]
+  simp
+
 /-- A smooth one-form sends the one-element family `![-v]` to minus its value on `![v]`. -/
 @[simp]
 theorem apply_neg_vec (φ : SmoothForm I M F 1) (x : M) (v : TangentSpace I x) :
@@ -290,5 +341,7 @@ theorem degreeOneEquiv_symm_apply_apply
   (rfl)
 
 end SmoothForm
+
+end OnceDifferentiable
 
 end TauCeti

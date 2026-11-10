@@ -21,11 +21,16 @@ charts, as required for quotient-bundle coordinate changes.
 `ContinuousLinearMap.inCoordinates_inverse` reads the inverse of a fibre map in coordinates
 as the inverse of its coordinate expression, which reduces smoothness of fibrewise inverses
 to smoothness of inversion of continuous linear maps.
+`ContinuousLinearMap.inCoordinates_eq_conjContinuousAlgEquiv` reads an endomorphism of a fibre
+in coordinates as its conjugate by the fibre equivalence of the trivialization, an algebra
+isomorphism, so that coordinate expressions of algebraic expressions in fibre endomorphisms are
+the same algebraic expressions in their coordinate expressions.
 `ContinuousLinearMap.isInvertible_inCoordinates_iff` reads invertibility of a fibre map
 off its coordinate expression, `ContinuousLinearMap.inCoordinates_comp` reads a composite
 of fibre maps as the composite of their coordinate expressions, and
 `ContinuousLinearMap.inCoordinates_id` and `ContinuousLinearMap.inCoordinates_smul` read the
-identity map and scalar multiples in a compatible target vector-bundle structure.
+identity map and scalar multiples in a compatible target vector-bundle structure, and
+`ContinuousLinearMap.inCoordinates_finset_sum` reads finite sums of fibre maps.
 `ContinuousLinearMap.mem_ker_inCoordinates_iff`, `ContinuousLinearMap.mem_range_inCoordinates_iff`
 and `ContinuousLinearMap.finrank_range_inCoordinates` read the kernel, the range and the rank of
 a fibre map off its coordinate expression.
@@ -292,6 +297,27 @@ theorem isInvertible_inCoordinates_iff {x₀ x : B} {y₀ y : B'} {ϕ : V x →L
 
 end Inverse
 
+section Conj
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {B : Type*} [TopologicalSpace B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : B → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [∀ x, IsTopologicalAddGroup (V x)]
+  [∀ x, ContinuousConstSMul 𝕜 (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+
+/-- In a preferred trivialization whose base set contains `x`, reading an endomorphism of `V x`
+in coordinates is conjugation by the fibre equivalence of the trivialization, an algebra
+isomorphism `(V x →L[𝕜] V x) ≃A[𝕜] (F →L[𝕜] F)`. -/
+theorem inCoordinates_eq_conjContinuousAlgEquiv {x₀ x : B}
+    (hx : x ∈ (trivializationAt F V x₀).baseSet) (A : V x →L[𝕜] V x) :
+    inCoordinates F V F V x₀ x x₀ x A =
+      ((trivializationAt F V x₀).continuousLinearEquivAt 𝕜 x hx).conjContinuousAlgEquiv A := by
+  simp only [inCoordinates_eq hx hx, ContinuousLinearEquiv.conjContinuousAlgEquiv_apply]
+
+end Conj
+
 section KerRange
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
@@ -373,5 +399,29 @@ theorem inCoordinates_comp {x₀ x : B} {y₀ y : B'} {z₀ z : B''}
   simp only [inCoordinates, comp_apply, Trivialization.symmL_continuousLinearMapAt _ hy]
 
 end Comp
+
+section Sum
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {B : Type*} [TopologicalSpace B] {B' : Type*} [TopologicalSpace B']
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {F' : Type*} [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+  {V : B → Type*} [∀ x, AddCommMonoid (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+  {W : B' → Type*} [∀ x, AddCommMonoid (W x)] [∀ x, Module 𝕜 (W x)]
+  [∀ x, TopologicalSpace (W x)] [∀ x, ContinuousAdd (W x)] [TopologicalSpace (TotalSpace F' W)]
+  [FiberBundle F' W] [VectorBundle 𝕜 F' W]
+
+/-- The coordinate expression of a finite sum of fibre maps is the sum of their coordinate
+expressions. -/
+theorem inCoordinates_finset_sum {ι : Type*} (s : Finset ι) {x₀ x : B} {y₀ y : B'}
+    (ϕ : ι → V x →L[𝕜] W y) :
+    inCoordinates F V F' W x₀ x y₀ y (∑ i ∈ s, ϕ i) =
+      ∑ i ∈ s, inCoordinates F V F' W x₀ x y₀ y (ϕ i) := by
+  ext v
+  simp [inCoordinates]
+
+end Sum
 
 end ContinuousLinearMap

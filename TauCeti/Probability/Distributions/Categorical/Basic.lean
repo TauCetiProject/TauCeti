@@ -98,6 +98,24 @@ theorem categoricalMeasure_singleton (p : StdSimplex NNReal I) (i : I) :
   rw [categoricalMeasure_def, _root_.sum_apply]
   simp [Pi.single_apply]
 
+/-- Every probability measure on a finite type with measurable singletons is categorical. -/
+theorem _root_.MeasureTheory.Measure.exists_categoricalMeasure_eq
+    (μ : Measure I) [IsProbabilityMeasure μ] :
+    ∃ p : StdSimplex ℝ≥0 I, categoricalMeasure p = μ := by
+  classical
+  let p : StdSimplex ℝ≥0 I :=
+    { weights := Finsupp.equivFunOnFinite.symm fun i => (μ {i}).toNNReal
+      nonneg := fun _ => bot_le
+      total := by
+        rw [Finsupp.sum_fintype _ _ (by simp)]
+        simp only [Finsupp.coe_equivFunOnFinite_symm]
+        apply ENNReal.coe_injective
+        push_cast
+        simp only [ENNReal.coe_toNNReal (measure_ne_top μ _)]
+        rw [sum_measure_singleton, Finset.coe_univ, measure_univ] }
+  refine ⟨p, Measure.ext_of_singleton fun i => ?_⟩
+  simp [categoricalMeasure_singleton, p, ENNReal.coe_toNNReal]
+
 /-- The real mass of a category under its categorical law is its simplex weight. -/
 @[simp]
 theorem categoricalMeasure_real_singleton (p : StdSimplex NNReal I) (i : I) :
@@ -132,15 +150,22 @@ end Measurability
 
 section Continuity
 
-variable [Fintype I] [MeasurableSpace I] [MeasurableSingletonClass I]
-  [TopologicalSpace I] [OpensMeasurableSpace I]
+variable [Fintype I] [MeasurableSpace I] [TopologicalSpace I] [OpensMeasurableSpace I]
 
 /-- Categorical laws vary weakly continuously with all their weights, including zero weights. -/
 theorem continuous_categoricalMeasure :
     Continuous (fun p : StdSimplex ℝ≥0 I ↦ (categoricalMeasure p).toProbabilityMeasure) := by
   apply ProbabilityMeasure.continuous_iff_forall_continuous_integral.2
   intro f
-  simp only [Measure.coe_toProbabilityMeasure, integral_categoricalMeasure, smul_eq_mul]
+  have hf : StronglyMeasurable f := f.continuous.stronglyMeasurable
+  have hint (p : StdSimplex ℝ≥0 I) :
+      ∫ i, f i ∂categoricalMeasure p = ∑ i, (p.weights i : ℝ) * f i := by
+    have hI : Integrable f (categoricalMeasure p) := f.integrable _
+    rw [categoricalMeasure_def, ← Measure.sum_fintype] at hI ⊢
+    rw [integral_sum_measure hI, tsum_fintype]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [integral_smul_measure, integral_dirac' _ _ hf, ENNReal.coe_toReal, smul_eq_mul]
+  simp only [Measure.coe_toProbabilityMeasure, hint]
   fun_prop
 
 /-- A continuous probability vector gives a weakly continuous categorical family. -/

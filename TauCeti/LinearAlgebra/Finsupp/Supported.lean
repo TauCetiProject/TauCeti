@@ -35,6 +35,10 @@ A finitely generated submodule of `ℕ →₀ M` consists of functions supported
 * `TauCeti.Finsupp.filterSupported_comp_inclusion`,
   `TauCeti.Finsupp.inclusion_comp_filterSupported`: the filter commutes with the inclusions
   `Finsupp.supported M R s ≤ Finsupp.supported M R s'` given by enlarging the support.
+* `Finsupp.sub_single_mem_supported`: removing the value at one exceptional coordinate leaves a
+  function supported on a prescribed set.
+* `Finsupp.map_mem_supported_of_forall_single_mem`: a linear map that sends the basis vectors
+  over `s` into `supported N R t` maps `supported M R s` into it.
 * `Submodule.FG.exists_le_supported_Iio`: a finitely generated submodule of `ℕ →₀ M` is
   supported on some initial segment.
 -/
@@ -119,3 +123,27 @@ theorem exists_le_supported_Iio {V : Submodule R (ℕ →₀ M)} (hV : V.FG) :
     (Finsupp.supported_mono fun i hi ↦ Nat.lt_succ_of_le (hb hi))⟩
 
 end Submodule.FG
+
+namespace Finsupp
+
+variable {α β M N : Type*} (R : Type*) [Semiring R]
+
+/-- Removing the value at an exceptional coordinate `k` leaves a function supported on `s`, if
+every other point of the support lies in `s`. -/
+theorem sub_single_mem_supported [AddCommGroup M] [Module R M] {s : Set α} (v : α →₀ M) (k : α)
+    (hv : ∀ j ∈ v.support, j ∈ s ∨ j = k) :
+    v - single k (v k) ∈ supported M R s := by
+  classical
+  rw [← erase_eq_sub_single, mem_supported, support_erase]
+  exact fun j hj ↦ (hv j (Finset.mem_of_mem_erase hj)).resolve_right (Finset.ne_of_mem_erase hj)
+
+/-- A linear map sending every basis vector `single j x` with `j ∈ s` into `supported N R t` maps
+`supported M R s` into `supported N R t`. -/
+theorem map_mem_supported_of_forall_single_mem [AddCommMonoid M] [Module R M] [AddCommMonoid N]
+    [Module R N] {s : Set α} {t : Set β} (f : (α →₀ M) →ₗ[R] (β →₀ N))
+    (hf : ∀ j ∈ s, ∀ x, f (single j x) ∈ supported N R t) {v : α →₀ M}
+    (hv : v ∈ supported M R s) : f v ∈ supported N R t := by
+  rw [← sum_single v, map_finsuppSum]
+  exact Submodule.sum_mem _ fun j hj ↦ hf j ((mem_supported R v).1 hv hj) _
+
+end Finsupp

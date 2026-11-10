@@ -309,7 +309,7 @@ theorem zigzagIntegerGrade_eq_bot_of_neg {d : ℤ} (hd : d < 0) :
 /-- **The integer extension of the path-length grading is an internal direct sum**: the pieces
 in nonnegative degrees are those of `TauCeti.zigzagGrade`, and those in negative degrees vanish. -/
 theorem isInternal_zigzagIntegerGrade : DirectSum.IsInternal (zigzagIntegerGrade k G) :=
-  Graded.isInternal_extendByZero (isInternal_zigzagGrade k G)
+  Graded.isInternal_extendByZero_iff.2 (isInternal_zigzagGrade k G)
 
 /-- **The zigzag relation quotient is an integer-graded algebra** for the path-length grading
 indexed by `ℤ`, extended by zero in negative degrees. -/

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Curves.TwoChartModel.Basic
-public import TauCeti.AlgebraicGeometry.Morphisms.Separated
+public import TauCeti.AlgebraicGeometry.Gluing.Separated
 
 /-!
 # The two-chart model of a function field is separated
@@ -18,8 +18,8 @@ rings of the places at which `x`, `x⁻¹`, and both are regular. This file prov
 separated scheme.
 
 The two charts meet exactly in `Spec 𝒪_{x, x⁻¹}`
-(`TauCeti.AlgebraicGeometry.twoChartModel.isPullback`), so by the open-cover criterion
-`AlgebraicGeometry.IsSeparated.of_openCover` it suffices that `Spec 𝒪_{x, x⁻¹}` is a closed
+(`TauCeti.AlgebraicGeometry.twoChartModel.isPullback`), so by the gluing criterion
+`AlgebraicGeometry.IsSeparated.pushout_desc_iff` it suffices that `Spec 𝒪_{x, x⁻¹}` is a closed
 subscheme of `Spec (𝒪_x ⊗_k 𝒪_{x⁻¹})`, that is, that `𝒪_x ⊗_k 𝒪_{x⁻¹} → 𝒪_{x, x⁻¹}` is
 surjective. It is: `𝒪_{x, x⁻¹}` is the localization of `𝒪_x` away from `x`
 (`TauCeti.exists_pow_mul_mem_holomorphyRing`), so every `z ∈ 𝒪_{x, x⁻¹}` is `(xⁿ z) · (x⁻¹)ⁿ` with
@@ -67,86 +67,65 @@ private theorem lift_surjective :
   refine ⟨.tmul k ⟨_, hn⟩ (⟨x⁻¹, mem_holomorphyRing_iff.mpr fun _ hP ↦ hP⟩ ^ n), Subtype.ext ?_⟩
   simp [mul_right_comm _ (z : F), mul_inv_cancel₀ (pow_ne_zero n hx)]
 
+include hF hx in
 /-- The overlap of the two charts is a closed subscheme of their product over `k`. -/
-private theorem isClosedImmersion_mapDesc_ιFinite_ιInfinity :
-    IsClosedImmersion (pullback.mapDesc (ιFinite hF hx) (ιInfinity hF hx)
-      (twoChartModel hF hx ↘ Spec (.of k))) := by
-  -- Read through `Spec 𝒪_{x, x⁻¹} ≅ Spec 𝒪_x ×_X Spec 𝒪_{x⁻¹}` and
-  -- `Spec 𝒪_x ×_k Spec 𝒪_{x⁻¹} ≅ Spec (𝒪_x ⊗_k 𝒪_{x⁻¹})`, the map is `Spec` of the multiplication
-  -- `𝒪_x ⊗_k 𝒪_{x⁻¹} → 𝒪_{x, x⁻¹}`.
-  have e : (isPullback hF hx).isoPullback.hom ≫ pullback.mapDesc (ιFinite hF hx)
-      (ιInfinity hF hx) (twoChartModel hF hx ↘ Spec (.of k)) =
+private theorem isClosedImmersion_lift
+    (h : Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom) ≫
+        Spec.map (CommRingCat.ofHom (algebraMap k
+          (holomorphyRing {P : Place k F | x ∈ P.integers}))) =
+      Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x).toRingHom) ≫
+        Spec.map (CommRingCat.ofHom (algebraMap k
+          (holomorphyRing {P : Place k F | x⁻¹ ∈ P.integers})))) :
+    IsClosedImmersion (pullback.lift _ _ h) := by
+  -- Through `Spec 𝒪_x ×_k Spec 𝒪_{x⁻¹} ≅ Spec (𝒪_x ⊗_k 𝒪_{x⁻¹})`, the overlap map is
+  -- `Spec` of the multiplication `𝒪_x ⊗_k 𝒪_{x⁻¹} → 𝒪_{x, x⁻¹}`.
+  have e : pullback.lift _ _ h =
       Spec.map (CommRingCat.ofHom (Algebra.TensorProduct.lift (finiteChartRestriction (k := k) x)
         (infinityChartRestriction (k := k) x) fun _ _ ↦ .all _ _).toRingHom) ≫
-        (pullbackSpecIso k _ _).inv ≫
-        (pullback.congrHom (ιFinite_over hF hx) (ιInfinity_over hF hx)).inv := by
+        (pullbackSpecIso k _ _).inv := by
     apply pullback.hom_ext
     · simp only [AlgHom.toRingHom_eq_coe, Category.assoc, limit.lift_π, PullbackCone.mk_pt,
-        PullbackCone.mk_π_app, Category.comp_id, IsPullback.isoPullback_hom_fst,
-        pullback.congrHom_inv, pullbackSpecIso_inv_fst, ← Spec.map_comp]
+        PullbackCone.mk_π_app, pullbackSpecIso_inv_fst, ← Spec.map_comp]
       congr 1
       ext
       simp
     · simp only [AlgHom.toRingHom_eq_coe, Category.assoc, limit.lift_π, PullbackCone.mk_pt,
-        PullbackCone.mk_π_app, Category.comp_id, IsPullback.isoPullback_hom_snd,
-        pullback.congrHom_inv, pullbackSpecIso_inv_snd, ← Spec.map_comp]
+        PullbackCone.mk_π_app, pullbackSpecIso_inv_snd, ← Spec.map_comp]
       congr 1
       ext
       simp
-  rw [← MorphismProperty.cancel_left_of_respectsIso @IsClosedImmersion
-    (isPullback hF hx).isoPullback.hom, e]
+  rw [e]
   have := IsClosedImmersion.spec_of_surjective
     (CommRingCat.ofHom (Algebra.TensorProduct.lift (finiteChartRestriction (k := k) x)
       (infinityChartRestriction (k := k) x) fun _ _ ↦ .all _ _).toRingHom) (lift_surjective hF hx)
   infer_instance
 
-/-- The overlap of the two charts, with the charts in the other order, is a closed subscheme of
-their product over `k`. -/
-private theorem isClosedImmersion_mapDesc_ιInfinity_ιFinite :
-    IsClosedImmersion (pullback.mapDesc (ιInfinity hF hx) (ιFinite hF hx)
-      (twoChartModel hF hx ↘ Spec (.of k))) := by
-  -- The two orders of the charts are exchanged by the symmetry of the pullbacks.
-  rw [← MorphismProperty.cancel_left_of_respectsIso @IsClosedImmersion
-    (pullbackSymmetry (ιFinite hF hx) (ιInfinity hF hx)).hom]
-  have e : (pullbackSymmetry (ιFinite hF hx) (ιInfinity hF hx)).hom ≫
-      pullback.mapDesc (ιInfinity hF hx) (ιFinite hF hx) (twoChartModel hF hx ↘ Spec (.of k)) =
-      pullback.mapDesc (ιFinite hF hx) (ιInfinity hF hx) (twoChartModel hF hx ↘ Spec (.of k)) ≫
-        (pullbackSymmetry _ _).hom := by
-    ext <;> simp
-  have := isClosedImmersion_mapDesc_ιFinite_ιInfinity hF hx
-  rw [e]
-  infer_instance
-
 /-- **The two-chart model of a function field is separated.** By Mathlib's instances, every
 morphism out of it, in particular its structure morphism to `Spec k`, is then separated. -/
 instance : (twoChartModel hF hx).IsSeparated := by
-  -- The cover of `twoChartModel` by its two charts.
-  let 𝒰 : (twoChartModel hF hx).OpenCover := Scheme.Cover.mkOfCovers Bool
-    (fun b ↦ b.rec (Spec (.of (holomorphyRing {P : Place k F | x⁻¹ ∈ P.integers})))
-      (Spec (.of (holomorphyRing {P : Place k F | x ∈ P.integers}))))
-    (fun b ↦ match b with | false => ιInfinity hF hx | true => ιFinite hF hx)
-    (fun p ↦ by
-      rcases (Set.ext_iff.mp (range_ιFinite_union_range_ιInfinity hF hx) p).mpr trivial with
-        ⟨q, rfl⟩ | ⟨q, rfl⟩
-      exacts [⟨true, q, rfl⟩, ⟨false, q, rfl⟩])
-    (fun b ↦ by cases b <;> infer_instance)
-  -- Each chart is affine over `k`, hence separated over `k`.
-  have hfin : IsSeparated (ιFinite hF hx ≫ (twoChartModel hF hx ↘ Spec (.of k))) := by
-    rw [ιFinite_over]
-    infer_instance
-  have hinf : IsSeparated (ιInfinity hF hx ≫ (twoChartModel hF hx ↘ Spec (.of k))) := by
-    rw [ιInfinity_over]
-    infer_instance
-  have : ∀ b, IsSeparated (𝒰.f b ≫ (twoChartModel hF hx ↘ Spec (.of k))) := by
-    rintro (_ | _)
-    exacts [hinf, hfin]
+  have := isOpenImmersion_specMap_finiteChartRestriction hF hx
+  have := isOpenImmersion_specMap_infinityChartRestriction hF hx
+  let f := Spec.map (CommRingCat.ofHom (algebraMap k
+    (holomorphyRing {P : Place k F | x ∈ P.integers})))
+  let g := Spec.map (CommRingCat.ofHom (algebraMap k
+    (holomorphyRing {P : Place k F | x⁻¹ ∈ P.integers})))
+  have h : Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom) ≫ f =
+      Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x).toRingHom) ≫ g := by
+    simp only [f, g, ← Spec.map_comp, ← CommRingCat.ofHom_comp, AlgHom.toRingHom_eq_coe,
+      AlgHom.comp_algebraMap]
+  -- Work through the canonical pushout isomorphism, without unfolding the model's definition.
+  have he : (twoChartModel hF hx ↘ Spec (.of k)) =
+      (isPushout hF hx).isoPushout.hom ≫ pushout.desc f g h := by
+    apply (isPushout hF hx).hom_ext
+    · rw [← Category.assoc, IsPushout.inl_isoPushout_hom, pushout.inl_desc]
+      exact ιFinite_over hF hx
+    · rw [← Category.assoc, IsPushout.inr_isoPushout_hom, pushout.inr_desc]
+      exact ιInfinity_over hF hx
+  have : IsSeparated (pushout.desc f g h) :=
+    (IsSeparated.pushout_desc_iff _ _ f g h).mpr (isClosedImmersion_lift hF hx h)
   have : IsSeparated (twoChartModel hF hx ↘ Spec (.of k)) := by
-    refine IsSeparated.of_openCover _ 𝒰 ?_
-    rintro (_ | _) (_ | _) h
-    · exact absurd rfl h
-    · exact isClosedImmersion_mapDesc_ιInfinity_ιFinite hF hx
-    · exact isClosedImmersion_mapDesc_ιFinite_ιInfinity hF hx
-    · exact absurd rfl h
+    rw [he]
+    infer_instance
   -- `Spec k` is separated, so separatedness over `k` is absolute separatedness.
   exact ⟨terminal.comp_from (twoChartModel hF hx ↘ Spec (.of k)) ▸ inferInstance⟩
 

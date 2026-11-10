@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.MorphismProperty.Descent
 public import TauCeti.AlgebraicGeometry.ModularCurve.Rigidifier.EquivalenceRelation
 public import TauCeti.AlgebraicGeometry.Quotient.EquivalenceRelation
 
@@ -70,8 +71,17 @@ onto morphisms of `B`-schemes.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.isEquivalenceRelation`: for rigid `𝒫`,
   the two projections `𝕄(𝒫, δ, δ) ⇉ 𝕄(𝒫, δ)` form an equivalence relation, so the affine
   coequalizer results of SGA 3, Exposé V, Théorème 4.1 apply to the projection to the quotient.
-* `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.isColimitDoubleQuotientCofork`: the
-  projection is the coequalizer of the two projections in schemes.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.isColimitDoubleQuotientCofork` and
+  `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.isColimitFppfYonedaDoubleQuotientCofork`:
+  the projection is the coequalizer of the two projections in schemes and in fppf sheaves.
+* `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.isKernelPair_doubleQuotientπ`: the scheme of
+  two rigidifications is `𝕄(𝒫, δ) ×_{𝕄(𝒫)} 𝕄(𝒫, δ)`; the projection is finite locally free and
+  surjective, and every property of morphisms that descends along fpqc coverings passes from the
+  rigidifying cover to it
+  (`TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.doubleQuotientπ_mem`).
+* `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.base_comp_doubleQuotientπ_eq_iff`: two
+  rigidified `𝒫`-structures have the same image in the quotient if and only if their
+  `𝒫`-structures are isomorphic.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.comp_toDoubleQuotient`: the classifying
   morphism is computed by any local rigidification.
 * `TauCeti.AlgebraicGeometry.ModuliProblem.RelRepData.toDoubleQuotient_map`: naturality of the
@@ -146,6 +156,60 @@ noncomputable def isColimitDoubleQuotientCofork (hP : P.IsRigid) :
   have := D.isEquivalenceRelation R hP
   Scheme.Hom.isColimitAffineCoequalizerCofork _ _
 
+/-- **The scheme of two rigidifications is the kernel pair of the quotient map.** If `𝒫` is rigid,
+`𝕄(𝒫, δ, δ)` is the fibre product `𝕄(𝒫, δ) ×_{𝕄(𝒫)} 𝕄(𝒫, δ)`, with the two forgetful projections
+as its projections. -/
+theorem isKernelPair_doubleQuotientπ (hP : P.IsRigid) :
+    IsKernelPair (D.doubleQuotientπ R) (D.rep V).hom (D.doubleSnd R).base :=
+  have := D.isEquivalenceRelation R hP
+  Scheme.Hom.isKernelPair_affineCoequalizerπ _ _
+
+/-- If `𝒫` is rigid, the projection `𝕄(𝒫, δ) ⟶ 𝕄(𝒫)` is finite. -/
+theorem isFinite_doubleQuotientπ (hP : P.IsRigid) : IsFinite (D.doubleQuotientπ R) :=
+  have := D.isEquivalenceRelation R hP
+  Scheme.Hom.isFinite_affineCoequalizerπ _ _
+
+/-- If `𝒫` is rigid, the projection `𝕄(𝒫, δ) ⟶ 𝕄(𝒫)` is flat. -/
+theorem flat_doubleQuotientπ (hP : P.IsRigid) : Flat (D.doubleQuotientπ R) :=
+  have := D.isEquivalenceRelation R hP
+  Scheme.Hom.flat_affineCoequalizerπ _ _
+
+/-- If `𝒫` is rigid, the projection `𝕄(𝒫, δ) ⟶ 𝕄(𝒫)` is surjective. -/
+theorem surjective_doubleQuotientπ (hP : P.IsRigid) : Surjective (D.doubleQuotientπ R) :=
+  have := D.isEquivalenceRelation R hP
+  Scheme.Hom.surjective_affineCoequalizerπ _ _
+
+/-- If `𝒫` is rigid, the projection `𝕄(𝒫, δ) ⟶ 𝕄(𝒫)` is locally of finite presentation. -/
+theorem locallyOfFinitePresentation_doubleQuotientπ (hP : P.IsRigid) :
+    LocallyOfFinitePresentation (D.doubleQuotientπ R) :=
+  have := D.isEquivalenceRelation R hP
+  Scheme.Hom.locallyOfFinitePresentation_affineCoequalizerπ _ _
+
+/-- **Properties of the rigidifying cover descend to the quotient map.** If `𝒫` is rigid, every
+property of morphisms of schemes that descends along surjective, flat, quasi-compact morphisms
+passes from the representing morphism of the rigidifying problem over `V` to the projection
+`𝕄(𝒫, δ) ⟶ 𝕄(𝒫)`. In particular, for a finite étale rigidifier the projection is finite étale. -/
+theorem doubleQuotientπ_mem (hP : P.IsRigid) {W : MorphismProperty Scheme.{u}}
+    [W.DescendsAlong (@Surjective ⊓ @Flat ⊓ @QuasiCompact)] (h : W (D.rep V).hom) :
+    W (D.doubleQuotientπ R) := by
+  have := D.isFinite_doubleQuotientπ R hP
+  exact MorphismProperty.of_isPullback_of_descendsAlong (Q := @Surjective ⊓ @Flat ⊓ @QuasiCompact)
+    (D.isKernelPair_doubleQuotientπ R hP)
+    ⟨⟨D.surjective_doubleQuotientπ R hP, D.flat_doubleQuotientπ R hP⟩, inferInstance⟩ h
+
+/-- **The quotient is the fppf quotient sheaf.** If `𝒫` is rigid, then under the Yoneda embedding
+into fppf sheaves, the projection `𝕄(𝒫, δ) ⟶ 𝕄(𝒫)` is the coequalizer of the two forgetful
+projections from the scheme of two rigidifications. -/
+noncomputable def isColimitFppfYonedaDoubleQuotientCofork (hP : P.IsRigid) :
+    IsColimit (Cofork.ofπ (Scheme.fppfTopology.yoneda.map (D.doubleQuotientπ R))
+        ((Functor.map_comp _ _ _).symm.trans <|
+          (Scheme.fppfTopology.yoneda.congr_map (D.doubleQuotient_condition R)).trans
+            (Functor.map_comp _ _ _)) :
+      Cofork (Scheme.fppfTopology.yoneda.map (D.rep V).hom)
+        (Scheme.fppfTopology.yoneda.map (D.doubleSnd R).base)) :=
+  have := D.isEquivalenceRelation R hP
+  Scheme.Hom.isColimitFppfYonedaAffineCoequalizerCofork _ _
+
 /-- The **structure morphism** `𝕄(𝒫, δ) / 𝕄(𝒫, δ, δ) ⟶ B` of the quotient, for rigid `𝒫`, affine
 `𝕄(𝒫, δ)` and finite locally free `δ_V ⟶ 𝕄(𝒫, δ)`: the morphism through which the structure
 morphism of `𝕄(𝒫, δ)` factors (`doubleQuotientπ_doubleQuotientStructureMap`). -/
@@ -185,6 +249,44 @@ theorem base_comp_doubleQuotientπ_eq {W : EllObj B} {a₁ a₂ : W ⟶ V}
   rw [← h₁, ← h₂, EllObj.comp_base, EllObj.comp_base, Category.assoc, Category.assoc,
     EllObj.baseChangeFunctorHom_base]
   exact b.base ≫= D.doubleQuotient_condition R
+
+/-- **Points of the quotient are isomorphism classes of `𝒫`-structures.** Let `𝒫` be rigid, with
+`𝕄(𝒫, δ)` affine and the rigidifying cover finite locally free. Let arrows `f : X ⟶ V` and
+`g : Y ⟶ V` of `Ell/B` classify rigidified `𝒫`-structures `(p, d)` on `X` and `(q, d')` on `Y`, and
+let `e` be a morphism from the base of `X` to the base of `Y`. Then the two points `f.base` and
+`e ≫ g.base` of `𝕄(𝒫, δ)` have the same image in the quotient if and only if some arrow `X ⟶ Y` of
+`Ell/B` over `e` pulls `q` back to `p`. The rigidifications `d` and `d'` are arbitrary. -/
+theorem base_comp_doubleQuotientπ_eq_iff [IsAffine V.base] [IsFinite (D.rep V).hom]
+    [Flat (D.rep V).hom] [LocallyOfFinitePresentation (D.rep V).hom] (hP : P.IsRigid)
+    {X Y : EllObj B} (f : X ⟶ V) (g : Y ⟶ V) (e : X.base ⟶ Y.base) :
+    f.base ≫ D.doubleQuotientπ R = e ≫ g.base ≫ D.doubleQuotientπ R ↔
+      ∃ σ : X ⟶ Y, σ.base = e ∧ P.map σ.op (R.homEquiv g).1 = (R.homEquiv f).1 := by
+  constructor
+  · intro h
+    -- the two points of `𝕄(𝒫, δ)` come from a point `k` of the kernel pair `𝕄(𝒫, δ, δ)`
+    have hk := D.isKernelPair_doubleQuotientπ R hP
+    obtain ⟨k, hk₁, hk₂⟩ : ∃ k, k ≫ (V.baseChangeFunctorHom (D.rep V)).base = f.base ∧
+        k ≫ (D.doubleSnd R).base = e ≫ g.base :=
+      ⟨hk.lift f.base (e ≫ g.base) (by rw [Category.assoc, h]),
+        by rw [EllObj.baseChangeFunctorHom_base]; exact hk.lift_fst _ _ _, hk.lift_snd _ _ _⟩
+    -- `k` lifts to an arrow `l : X ⟶ V_{δ_V}` whose first projection is `f`; its second projection
+    -- lies over `e ≫ g.base`, so it factors through `g` over `e`
+    obtain ⟨l, hl₁, hl⟩ : ∃ l : X ⟶ V.baseChangeFunctor.obj (D.rep V),
+        l ≫ V.baseChangeFunctorHom (D.rep V) = f ∧ l.base = k :=
+      ⟨EllObj.Hom.lift _ f k hk₁, EllObj.Hom.lift_comp _ _ _ _, EllObj.Hom.lift_base _ _ _ _⟩
+    have hl₂ : e ≫ g.base = (l ≫ D.doubleSnd R).base := by rw [EllObj.comp_base, hl, hk₂]
+    refine ⟨EllObj.Hom.lift g (l ≫ D.doubleSnd R) e hl₂, EllObj.Hom.lift_base _ _ _ _, ?_⟩
+    calc P.map (EllObj.Hom.lift g (l ≫ D.doubleSnd R) e hl₂).op (R.homEquiv g).1
+        = (R.homEquiv (EllObj.Hom.lift g (l ≫ D.doubleSnd R) e hl₂ ≫ g)).1 := by
+          rw [R.homEquiv_comp]
+          exact (Functor.Monoidal.tensorObj_map_apply_fst _ _).symm
+      _ = (R.homEquiv f).1 := by
+          rw [EllObj.Hom.lift_comp, fst_homEquiv_comp_doubleSnd, hl₁]
+  · rintro ⟨σ, rfl, hσ⟩
+    rw [← Category.assoc, ← EllObj.comp_base]
+    refine D.base_comp_doubleQuotientπ_eq R ?_
+    rw [R.homEquiv_comp]
+    exact hσ.symm.trans (Functor.Monoidal.tensorObj_map_apply_fst _ _).symm
 
 -- the arrow `X_{δ_X} ⟶ V` classifying the pullback of `α` to the scheme `δ_X` of `δ`-structures
 -- on `X`, together with the universal `δ`-structure
