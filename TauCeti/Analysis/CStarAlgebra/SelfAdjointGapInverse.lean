@@ -5,32 +5,34 @@ Authors: Jon Crall, Claude Fable 5
 -/
 module
 
-public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
+public import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Isometric
 
 /-!
 # Spectral intervals and the gap inverse of a self-adjoint element
 
-For a self-adjoint element `a` of a C⋆-algebra, the norm equals the spectral radius, and one of
-`‖a‖` and `-‖a‖` lies in the real spectrum of `a` when the algebra is nontrivial. Hence, for
-`0 ≤ r`, `‖a‖ ≤ r` exactly when the real spectrum of `a` lies in the interval `[-r, r]`; this
-turns spectral localisation into norm bounds and back.
+Let `a` be a self-adjoint element of a real normed star algebra with an isometric continuous
+functional calculus for self-adjoint elements, for instance a C⋆-algebra. The norm of `a` is the
+largest absolute value of a point of its real spectrum. Hence, for `0 ≤ r`, `‖a‖ ≤ r` exactly
+when the real spectrum of `a` lies in the interval `[-r, r]`; this turns spectral localisation
+into norm bounds and back.
 
-If instead the real spectrum has a gap around zero of radius `r > 0`, then `a` is invertible and
-its canonical ring inverse has norm at most `r⁻¹`. This quantitative bound is used in interval
-and exterior Sylvester estimates.
+If instead the spectrum has a gap around zero of radius `r > 0`, then `a` is invertible and
+its canonical ring inverse has norm at most `r⁻¹`. This holds for any isometric continuous
+functional calculus over `ℝ` or `ℂ`, so in particular for normal elements of a C⋆-algebra. This
+quantitative bound is used in interval and exterior Sylvester estimates.
 
 ## Main results
 
 * `IsSelfAdjoint.norm_le_iff_spectrum_subset_Icc`: for `0 ≤ r`, `‖a‖ ≤ r` if and only if
   `spectrum ℝ a ⊆ Set.Icc (-r) r`.
-* `IsSelfAdjoint.isUnit_and_norm_ringInverse_le` provides both `IsUnit a`
-  and the norm bound for `Ring.inverse a` under the spectral-gap hypothesis.
+* `IsometricContinuousFunctionalCalculus.isUnit_and_norm_ringInverse_le` provides both `IsUnit a`
+  and the norm bound for `Ring.inverse a` when every point of the spectrum has norm at least
+  `r > 0`.
+* `IsSelfAdjoint.isUnit_and_norm_ringInverse_le` is the special case of a self-adjoint element
+  and its real spectrum.
 
 ## Source
 
-The interval characterisation follows the proof of Mathlib's
-`CStarAlgebra.norm_le_iff_le_algebraMap` for nonnegative elements, using
-`CStarAlgebra.norm_or_neg_norm_mem_spectrum` in place of `CStarAlgebra.norm_mem_spectrum_of_nonneg`.
 The gap inverse is adapted from the Davis--Kahan/DKPS formalization (Kitware, Inc.),
 `ForMathlib/Analysis/CStarAlgebra/SelfAdjointGapInverse.lean` at commit
 `fc38eb4`, by Jon Crall and Claude Fable 5 (Apache 2.0).
@@ -38,37 +40,42 @@ The gap inverse is adapted from the Davis--Kahan/DKPS formalization (Kitware, In
 
 public section
 
+namespace IsometricContinuousFunctionalCalculus
+
+variable {𝕜 A : Type*} {p : outParam (A → Prop)} [RCLike 𝕜] [NormedRing A] [StarRing A]
+  [NormedAlgebra 𝕜 A] [IsometricContinuousFunctionalCalculus 𝕜 A p] {a : A} {r : ℝ}
+
+/-- If every point of the spectrum of `a` has norm at least `r > 0`, then `a` is a unit and its
+canonical ring inverse has norm at most `r⁻¹`. -/
+theorem isUnit_and_norm_ringInverse_le (ha : p a) (hr : 0 < r)
+    (hσ : ∀ x ∈ spectrum 𝕜 a, r ≤ ‖x‖) :
+    IsUnit a ∧ ‖Ring.inverse a‖ ≤ r⁻¹ := by
+  have hunit : IsUnit a :=
+    spectrum.isUnit_of_zero_notMem 𝕜 fun h0 => hr.not_ge <| by simpa using hσ 0 h0
+  refine ⟨hunit, ?_⟩
+  rw [← cfc_ringInverse_id (R := 𝕜) a hunit]
+  refine norm_cfc_le (by positivity) fun x hx => ?_
+  rw [norm_inv]
+  exact inv_anti₀ hr (hσ x hx)
+
+end IsometricContinuousFunctionalCalculus
+
 namespace IsSelfAdjoint
 
-variable {A : Type*} [CStarAlgebra A] {a : A} {r : ℝ}
+variable {A : Type*} [NormedRing A] [StarRing A] [NormedAlgebra ℝ A]
+  [IsometricContinuousFunctionalCalculus ℝ A IsSelfAdjoint] {a : A} {r : ℝ}
 
 /-- The norm of a self-adjoint element is at most `r ≥ 0` exactly when its real spectrum lies
 in the interval `[-r, r]`. -/
 theorem norm_le_iff_spectrum_subset_Icc (ha : IsSelfAdjoint a) (hr : 0 ≤ r) :
     ‖a‖ ≤ r ↔ spectrum ℝ a ⊆ Set.Icc (-r) r := by
-  obtain (_ | _) := subsingleton_or_nontrivial A
-  · simp [Subsingleton.elim a 0, hr]
-  refine ⟨fun h x hx => ?_, fun h => ?_⟩
-  · rw [Set.mem_Icc, ← abs_le, ← Real.norm_eq_abs]
-    exact (spectrum.norm_le_norm_of_mem hx).trans h
-  · rcases CStarAlgebra.norm_or_neg_norm_mem_spectrum a with hmem | hmem
-    · exact (h hmem).2
-    · simpa using (h hmem).1
+  simpa [Set.subset_def, abs_le, cfc_id' ℝ a] using norm_cfc_le_iff (id : ℝ → ℝ) a hr
 
 /-- A positive gap around zero in the real spectrum of a self-adjoint element
 makes it a unit and bounds the canonical ring inverse by the reciprocal gap. -/
 theorem isUnit_and_norm_ringInverse_le (ha : IsSelfAdjoint a) (hr : 0 < r)
     (hσ : ∀ x ∈ spectrum ℝ a, r ≤ |x|) :
-    IsUnit a ∧ ‖Ring.inverse a‖ ≤ r⁻¹ := by
-  have hunit : IsUnit a := by
-    refine spectrum.isUnit_of_zero_notMem ℝ (fun hzero => ?_)
-    have hbound : r ≤ (0 : ℝ) := by
-      simpa only [abs_zero] using hσ 0 hzero
-    exact (not_le_of_gt hr) hbound
-  refine ⟨hunit, ?_⟩
-  rw [← cfc_ringInverse_id (R := ℝ) a hunit]
-  refine norm_cfc_le (by positivity) fun x hx => ?_
-  rw [Real.norm_eq_abs, abs_inv]
-  exact inv_anti₀ hr (hσ x hx)
+    IsUnit a ∧ ‖Ring.inverse a‖ ≤ r⁻¹ :=
+  IsometricContinuousFunctionalCalculus.isUnit_and_norm_ringInverse_le ha hr hσ
 
 end IsSelfAdjoint
