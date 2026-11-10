@@ -91,6 +91,8 @@ form they recover the vector-space definitions.
   perturbation data vanishing outside a compact set, the energy over any region containing that
   set is `∫ u^* ω - ∫ R_K(u)`, with no boundary term; the vector-space case is
   `SymplecticForm.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero`.
+* `SmoothTwoForm.IsNondegenerate.integrableOn_floerEnergyDensity`: over a compact set where `u`
+  and `K` are `C¹`, the energy density is integrable whenever the curvature is.
 * `IsNondegenerate.setIntegral_floerEnergyDensity_add_hamiltonianCurvature_eq_of_eqOn`:
   changing the perturbation data inside a compact region `D` does not change the energy plus the
   integrated curvature over `D`; the vector-space case is
@@ -804,6 +806,44 @@ theorem IsNondegenerate.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero
     harea.add hdi.integrableOn
   rw [setIntegral_congr_fun hD fun z _ ↦ hpt z, integral_sub hsum hR,
     integral_add harea hdi.integrableOn, hdD, add_zero]
+
+/-- **Integrability of the energy density, for a manifold target.** Let `u` and the perturbation
+datum `K = K_s ds + K_t dt` be `C¹` over an open set `U` of the domain, for a nondegenerate
+two-form on a finite-dimensional manifold, and let `T ⊆ U` be compact. If the curvature `R_K(u)` is
+integrable over `T`, so is the Floer energy density: by the pointwise energy identity it differs
+from `R_K(u)` by the symplectic area density and the exterior derivative `d(K(u))`, both continuous
+on `U`. -/
+theorem IsNondegenerate.integrableOn_floerEnergyDensity [FiniteDimensional ℝ E]
+    (hω : ω.IsNondegenerate) {U T : Set (ℝ × ℝ)} (hU : IsOpen U)
+    (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
+    (hKs : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks) (U ×ˢ univ))
+    (hKt : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt) (U ×ˢ univ))
+    (hT : IsCompact T) (hTU : T ⊆ U)
+    (hR : IntegrableOn (fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) T) :
+    IntegrableOn (ω.floerEnergyDensity Ks Kt u) T := by
+  have hmem : MapsTo (fun w ↦ (w, u w)) U (U ×ˢ univ) := fun _ hz ↦ ⟨hz, mem_univ _⟩
+  have harea := (ω.isSmoothForm.of_le (by simp)).continuousOn_apply_mfderiv hU hu
+    stdComplexLineReal stdComplexLineImag
+  simp only [← SmoothBundleForm.eval₂_apply] at harea
+  replace harea := (harea.mono hTU).integrableOn_compact (μ := volume) hT
+  -- Each pulled-back component `K(u)` is `C¹` on `U`, so its derivative is continuous on `U`.
+  have hd {K : ℝ × ℝ → M → ℝ}
+      (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) (e : ℝ × ℝ) :
+      IntegrableOn (fun z ↦ fderiv ℝ (fun w ↦ K w (u w)) z e) T := by
+    have hKu : ContDiffOn ℝ 1 (fun w ↦ K w (u w)) U :=
+      contMDiffOn_iff_contDiffOn.mp (hK.comp (contMDiffOn_id.prodMk hu) hmem)
+    exact (((hKu.continuousOn_fderiv_of_isOpen hU le_rfl).clm_apply continuousOn_const).mono
+      hTU).integrableOn_compact hT
+  refine ((harea.add ((hd hKt stdComplexLineReal).sub (hd hKs stdComplexLineImag))).sub
+    hR).congr_fun (fun z hz ↦ ?_) hT.isClosed.measurableSet
+  have hzU := hTU hz
+  have hmd {K : ℝ × ℝ → M → ℝ}
+      (hK : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry K) (U ×ˢ univ)) :
+      MDifferentiableAt (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) (uncurry K) (z, u z) :=
+    (hK.contMDiffAt ((hU.prod isOpen_univ).mem_nhds (hmem hzU))).mdifferentiableAt one_ne_zero
+  rw [hω.floerEnergyDensity_eq ((hu.contMDiffAt (hU.mem_nhds hzU)).mdifferentiableAt
+    one_ne_zero) (hmd hKs) (hmd hKt)]
+  rfl
 
 /-- **Changing the perturbation inside a compact region, for a manifold target.** Let `u` and two
 perturbation data `K = K_s ds + K_t dt` and `K' = K'_s ds + K'_t dt` be `C¹` over an open set `U`
