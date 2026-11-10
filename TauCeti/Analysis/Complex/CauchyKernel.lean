@@ -93,7 +93,7 @@ theorem integral_norm_sub_inv_closedBall_le_add {w c : ℂ} {r R : ℝ} (hr : 0 
         apply setIntegral_mono_set
           (by simpa only [IntegrableOn, norm_inv, norm_sub_rev] using hi.norm)
           (Eventually.of_forall fun _ ↦ inv_nonneg.mpr (norm_nonneg _))
-        exact hsub.eventuallyLE
+        exact hsub.eventuallySubset
     _ = 2 * Real.pi * (r + R) := integral_norm_sub_inv_closedBall (add_nonneg hr hR) w
 
 /-- A pole in a disk of radius `R` contributes at most `4πR` to its inverse-distance integral. -/

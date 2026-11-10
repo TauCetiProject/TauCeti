@@ -222,7 +222,7 @@ private def leftCoface :
 private def rightCoface :
     MultilinearMap (RingHom.id R) (fun _ : Fin n ↦ A) M →ₗ[R] MultilinearMap (RingHom.id R) (fun _
         : Fin (n + 1) ↦ A) M :=
-  (multilinearCurryRightEquiv R (fun _ : Fin (n + 1) ↦ A) M).symm.toLinearMap ∘ₗ
+  (multilinearCurryRightEquiv (RingHom.id R) (fun _ : Fin (n + 1) ↦ A) M).symm.toLinearMap ∘ₗ
     LinearMap.compMultilinearMapₗ R
       ((Algebra.lsmul R R M).toLinearMap ∘ₗ (MulOpposite.opLinearEquiv R).toLinearMap).flip
 

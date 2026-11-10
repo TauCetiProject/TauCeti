@@ -272,7 +272,8 @@ theorem firstHomologyAddEquiv_symm_apply (v : ℤ × ℤ × ℤ) :
     firstHomologyAddEquiv.symm v =
       H₁AddEquivHomology _ (loopClass (X := TopCat.of KodairaThurston)
         (deckLoop (⟨v.1, v.2.1, 0⟩, .ofAdd v.2.2))) := by
-  simp [AddEquiv.symm_apply_eq]
+  rw [AddEquiv.symm_apply_eq, firstHomologyAddEquiv_loopClass_deckLoop]
+  rfl
 
 end KodairaThurston
 

@@ -1092,7 +1092,7 @@ theorem IsOptimalCoupling.lintegral_enorm_sub_rpow_eq (hp0 : p ≠ 0) (hp : p �
     (hπ : IsOptimalCoupling (fun z : E × E ↦ edist z.1 z.2 ^ p.toReal) π μ ν) :
     ∫⁻ z, ‖z.2 - z.1‖ₑ ^ p.toReal ∂π = wassersteinEDist p μ ν ^ p.toReal := by
   rw [← hπ.lintegral_edist_rpow_eq measurable_edist hp0 hp]
-  simp only [eDist_eq_eNorm_sub, enorm_sub_rev]
+  simp only [eDist_eq_eNorm_sub, eNorm_sub_rev]
 
 /-- At finite Wasserstein distance and for a finite nonzero exponent, the displacement
 `(x, y) ↦ y - x` lies in `L^p` of an optimal coupling for the cost `‖x - y‖ ^ p`. -/
@@ -1101,7 +1101,7 @@ theorem IsOptimalCoupling.memLp_sub (hp0 : p ≠ 0) (hp : p ≠ ∞)
     (hfin : wassersteinEDist p μ ν ≠ ∞) :
     MemLp (fun z : E × E ↦ z.2 - z.1) p π :=
   (memLp_congr_eNorm (by fun_prop) measurable_edist.aestronglyMeasurable
-    (.of_forall fun z ↦ by simp [eDist_eq_eNorm_sub, enorm_sub_rev])).2
+    (.of_forall fun z ↦ by simp [eDist_eq_eNorm_sub, eNorm_sub_rev])).2
     (hπ.memLp_edist measurable_edist hp0 hp hfin)
 
 end NormedOptimal

@@ -275,7 +275,7 @@ theorem condExp_comap_ae_eq_of_injOn {Ω β E : Type*} [NormedAddCommGroup E] [N
     ⟨G ⁻¹' (G '' (s ∩ A)), ⟨_, (hs.inter hA).image_of_measurable_injOn hG
       (hinj.mono Set.inter_subset_right), rfl⟩, ?_⟩).symm.trans ?_
   · filter_upwards [hAμ] with ω hω
-    refine propext ⟨fun h ↦ ⟨ω, ⟨h, hω⟩, rfl⟩, ?_⟩
+    refine ⟨fun h ↦ ⟨ω, ⟨h, hω⟩, rfl⟩, ?_⟩
     rintro ⟨ω', ⟨hω's, hω'A⟩, he⟩
     rwa [← hinj hω'A hω he]
   · simpa using condExp_of_aestronglyMeasurable' le_rfl hf.1 hf
@@ -307,7 +307,7 @@ theorem lintegral_ofReal_posPart_condExp_sub_le {Ω : Type*} {m m₀ : Measurabl
   -- Pointwise `(x - a)⁺ ≤ |x - a|`, then the triangle inequality and the L¹ contraction.
   calc ∫⁻ ω, ENNReal.ofReal ((μ[f | m] ω - a)⁺) ∂μ
       ≤ ∫⁻ ω, (‖μ[f | m] ω‖ₑ + ‖a‖ₑ) ∂μ := lintegral_mono fun ω => by
-        grw [← enorm_sub_le, Real.eNorm_eq_ofReal_abs]
+        grw [← eNorm_sub_le, Real.eNorm_eq_ofReal_abs]
         exact ENNReal.ofReal_le_ofReal (sup_le (le_abs_self _) (abs_nonneg _))
     _ = eLpNorm (μ[f | m]) 1 μ + ‖a‖ₑ * μ Set.univ := by
         rw [lintegral_add_right _ measurable_const, lintegral_const,

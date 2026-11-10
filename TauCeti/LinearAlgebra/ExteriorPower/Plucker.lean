@@ -258,7 +258,7 @@ theorem det_mul_transpose_eq_sum_plucker_mul [Fintype ι] (x y : Fin p → ι �
 the squares of the maximal minors of `A`, the Plücker coordinates of its rows. -/
 theorem _root_.Matrix.det_mul_transpose_eq_sum_plucker_sq [Fintype ι] (A : Matrix (Fin p) ι R) :
     (A * A.transpose).det = ∑ s, plucker A.row s ^ 2 := by
-  simpa [sq, Matrix.row_eq_self] using det_mul_transpose_eq_sum_plucker_mul A.row A.row
+  simpa [sq, Matrix.symm_of] using det_mul_transpose_eq_sum_plucker_mul A.row A.row
 
 /-- Over a commutative ring with a compatible linear order, the Gram determinant `det (A * Aᵀ)` of
 the rows of a matrix is nonnegative: by the Cauchy–Binet formula it is a sum of squares. -/

@@ -102,7 +102,7 @@ theorem tendsto_lintegral_enorm_smul_sub {E : Type*} [NormedAddCommGroup E] [Nor
       (fun i => (hcM i).and hc₀M |>.mono fun x ⟨hx, hx'⟩ => by
         dsimp only
         gcongr
-        exact enorm_sub_le.trans (add_le_add (eNorm_le_coe.2 hx) (eNorm_le_coe.2 hx')))
+        exact eNorm_sub_le.trans (add_le_add (eNorm_le_coe.2 hx) (eNorm_le_coe.2 hx')))
       (by rw [lintegral_const_mul' _ _ (by simp)]; exact ENNReal.mul_ne_top (by simp) hg₀int)
       (hlim.mono fun x hx => by
         simpa using ENNReal.Tendsto.mul_const (hx.sub_const (c₀ x)).eNorm (Or.inr eNorm_ne_top))

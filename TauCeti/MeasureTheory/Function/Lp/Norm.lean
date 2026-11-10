@@ -291,7 +291,7 @@ theorem Lp.setIntegral_norm_sq_le_norm_sq {alpha F : Type*} [MeasurableSpace alp
     (hst : s ⊆ t) : ∫ x in s, ‖f x‖ ^ 2 ∂m ≤ ‖f‖ ^ 2 := by
   rw [← Lp.integral_norm_sq_eq_norm_sq]
   exact setIntegral_mono_set ((Lp.memLp f).integrable_norm_pow two_ne_zero)
-    (ae_of_all _ fun _ => by positivity) hst.eventuallyLE
+    (ae_of_all _ fun _ => by positivity) hst.eventuallySubset
 
 section Restrict
 

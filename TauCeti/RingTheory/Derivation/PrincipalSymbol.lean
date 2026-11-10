@@ -105,7 +105,8 @@ def commutatorSymbol : (m : ℕ) →
         →ₗ[A] N)
   | 0 => (MultilinearMap.constLinearEquivOfIsEmpty R (RingHom.id R) (fun _ : Fin 0 ↦ A)
       (M →ₗ[A] N)).toLinearMap ∘ₗ toLinearMapOfOrderZero
-  | m + 1 => (multilinearCurryLeftEquiv R (fun _ : Fin (m + 1) ↦ A) (M →ₗ[A] N)).symm.toLinearMap ∘ₗ
+  | m + 1 => (multilinearCurryLeftEquiv (RingHom.id R) (fun _ : Fin (m + 1) ↦ A) (M →ₗ[A]
+      N)).symm.toLinearMap ∘ₗ
       LinearMap.compRight R (commutatorSymbol m) ∘ₗ smulCommutatorOfOrderSucc
 
 theorem commutatorSymbol_zero_apply (D : differentialOperators R A M N 0) (a : Fin 0 → A)

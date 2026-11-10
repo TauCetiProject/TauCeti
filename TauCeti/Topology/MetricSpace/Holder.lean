@@ -261,7 +261,7 @@ theorem holderWith_zero_of_nnnorm_le {X Y : Type*} [PseudoEMetricSpace X]
     HolderWith (2 * M) 0 f := fun x y ↦ by
   rw [NNReal.coe_zero, ENNReal.rpow_zero, mul_one, edist_nndist, ENNReal.coe_le_coe,
     nnDist_eq_nnNorm, two_mul]
-  exact (nnnorm_sub_le _ _).trans (add_le_add (hf x) (hf y))
+  exact (nnNorm_sub_le _ _).trans (add_le_add (hf x) (hf y))
 
 /-- **Local Hölder bounds near a compact set are uniform on a thickening.** If `f` is `α`-Hölder on
 a ball around each point of a compact set `K`, with radii and constants depending on the point, then

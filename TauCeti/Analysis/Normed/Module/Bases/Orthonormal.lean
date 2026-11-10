@@ -188,7 +188,7 @@ theorem of_norm_sub_lt_one [SeminormedRing R] [SeminormedAddCommGroup M] [Module
     exact hzero ▸ NNReal.coe_injective (le_antisymm hsum (norm_nonneg _))
   · have hpos : 0 < s.sup (fun i ↦ ‖a i‖₊) := pos_iff_ne_zero.2 hzero
     have herr : ‖∑ i ∈ s, a i • (e i - v i)‖₊ < s.sup (fun i ↦ ‖a i‖₊) := by
-      refine (s.nnnorm_sum_le_sup_nnnorm _).trans_lt ((s.sup_lt_iff hpos).2 ?_)
+      refine (s.Finset.nnNorm_sum_le_sup_nnNorm _).trans_lt ((s.sup_lt_iff hpos).2 ?_)
       intro i hi
       have hb : ‖e i - v i‖₊ < 1 := by exact_mod_cast hv i
       have hsmul : ‖a i • (e i - v i)‖₊ ≤ ‖a i‖₊ * ‖e i - v i‖₊ := by

@@ -105,7 +105,7 @@ theorem eLpNorm_primitive_le {p : ENNReal} {t₀ : ℝ} (hf : IntegrableOn f (Io
           _root_.intervalIntegral.norm_integral_le_integral_norm_uIoc
       _ ≤ ∫ s in Icc a b, ‖f s‖ :=
           setIntegral_mono_set hf'.norm (Eventually.of_forall fun _ ↦ norm_nonneg _)
-            hsub.eventuallyLE
+            hsub.eventuallySubset
       _ = ∫ s in Ioo a b, ‖f s‖ := integral_Icc_eq_integral_Ioo
   have hm : AEStronglyMeasurable (fun t ↦ ∫ s in t₀..t, f s) (volume.restrict (Ioo a b)) :=
     ((continuousOn_primitive_interval_of_integrableOn_Ioo hf ht₀).mono

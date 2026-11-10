@@ -308,7 +308,7 @@ theorem setIntegral_norm_sub_sq_le_add_of_le {X F : Type*} [MeasurableSpace X] {
     simpa only [sub_add_sub_cancel', norm_sub_rev (K _) (f _)] using
       setIntegral_norm_add_sq_le hfc hKf
   have h3 : ∫ x in s, ‖f x - K x‖ ^ 2 ∂μ ≤ ∫ x in S, ‖f x - K x‖ ^ 2 ∂μ :=
-    setIntegral_mono_set hfK (ae_of_all _ fun _ => by positivity) hsS.eventuallyLE
+    setIntegral_mono_set hfK (ae_of_all _ fun _ => by positivity) hsS.eventuallySubset
   have hE0 : 0 ≤ ∫ x in S, ‖f x - K x‖ ^ 2 ∂μ :=
     setIntegral_nonneg_of_ae_restrict (ae_of_all _ fun _ => by positivity)
   have h4 := mul_le_mul_of_nonneg_left h2 (mul_nonneg hD hq0)
@@ -356,7 +356,7 @@ theorem setIntegral_le_setIntegral_sq_mul_of_eqOn {X : Type*} [MeasurableSpace X
       setIntegral_congr_fun ht fun x hx => by rw [hψ1 hx, Pi.one_apply, one_pow, one_mul]
     _ ≤ ∫ x in s, ψ x ^ 2 * f x ∂μ :=
       setIntegral_mono_set hint
-        (hf0.mono fun x hx => mul_nonneg (sq_nonneg _) hx) hts.eventuallyLE
+        (hf0.mono fun x hx => mul_nonneg (sq_nonneg _) hx) hts.eventuallySubset
 
 /-- On a finite measure space where `f ≤ M` almost everywhere, the integral of the squared
 truncation `((f - l)⁺)²` is at most `(M - l)²` times the measure of the upper level set
@@ -686,7 +686,7 @@ theorem setIntegral_rpow_le_rpow_mul_setIntegral_rpow {X : Type*} [MeasurableSpa
     _ = F ^ (q - p) * ∫ x in s, w x ^ p ∂ν := integral_const_mul _ _
     _ ≤ F ^ (q - p) * ∫ x in t, w x ^ p ∂ν := by
         exact mul_le_mul_of_nonneg_left (setIntegral_mono_set hintp
-          (hw0.mono fun x hx => Real.rpow_nonneg hx p) hst.eventuallyLE)
+          (hw0.mono fun x hx => Real.rpow_nonneg hx p) hst.eventuallySubset)
           (Real.rpow_nonneg hF _)
 
 /-- A mean zero random variable with values in `[a, b]` has `a ≤ 0 ≤ b`. -/

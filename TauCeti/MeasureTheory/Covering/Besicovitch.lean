@@ -76,7 +76,7 @@ theorem ae_tendsto_measure_inter_div (hs : NullMeasurableSet s μ) :
     ∀ᵐ x ∂μ, Tendsto (fun r => μ (s ∩ closedBall x r) / μ (closedBall x r)) (𝓝[>] 0)
       (𝓝 (s.indicator 1 x)) := by
   have hmeas : ∀ x r, μ (s ∩ closedBall x r) = μ (toMeasurable μ s ∩ closedBall x r) :=
-    fun x r => measure_congr (hs.toMeasurable_ae_eq.symm.inter (ae_eq_refl _))
+    fun x r => measure_congr (hs.toMeasurable_ae_eq.symm.inter Filter.EventuallyEqSet.rfl)
   filter_upwards [Besicovitch.ae_tendsto_measure_inter_div_of_measurableSet μ
     (measurableSet_toMeasurable μ s),
     indicator_ae_eq_of_ae_eq_set (f := (1 : α → ℝ≥0∞)) hs.toMeasurable_ae_eq]
