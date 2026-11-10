@@ -5,13 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.Henselian.Factorization
+public import TauCeti.RingTheory.Henselian.Integral
 public import TauCeti.RingTheory.Jacobson.Semiperfect
-public import Mathlib.RingTheory.IntegralClosure.IsIntegral.Defs
 import TauCeti.RingTheory.Jacobson.Finite
 import Mathlib.RingTheory.IntegralClosure.Algebra.Basic
 import Mathlib.RingTheory.Jacobson.Semiprimary
-import Mathlib.RingTheory.Polynomial.Content
 
 /-!
 # Module-finite algebras over a Henselian local ring are semiperfect
@@ -29,13 +27,12 @@ is `Q(0) (1 - b) + Q(1) b`. Split off the exact power of `X` from `F₀`, as `F�
 Then `e = U(x) G(x)` is idempotent, as `e (1 - e) = (U V F)(x) = 0`, and it lifts `b`, as
 `G(b) = bʳ = b` and `U(1) ≡ 1`.
 
-Since `𝔪 A` lies in the Jacobson radical (`TauCeti.Ring.algebraMap_mem_jacobson`), the quotient
+This lifting is `TauCeti.exists_isIdempotentElem_eq_of_isIntegral`. Since `𝔪 A` lies in the
+Jacobson radical (`TauCeti.Ring.algebraMap_mem_jacobson`), the quotient
 `A ⧸ J(A)` is a finite-dimensional algebra over the residue field, hence semisimple.
 
 ## Main results
 
-* `TauCeti.exists_isIdempotentElem_eq_of_isIntegral`: an idempotent image of an integral element,
-  under an algebra map killing the maximal ideal, is the image of an idempotent.
 * `TauCeti.IsSemiperfectRing.of_henselianRing`: a module-finite algebra over a Henselian local
   ring is semiperfect.
 
@@ -52,126 +49,6 @@ public section
 open Polynomial IsLocalRing
 
 namespace TauCeti
-
-section Idempotent
-
-variable {R B : Type*} [CommRing R] [Ring B] [Algebra R B]
-
-/-- A polynomial evaluated at an idempotent `b`, multiplied by `b`, is `Q(1) b`. -/
-private theorem aeval_mul_self_of_isIdempotentElem {b : B} (hb : IsIdempotentElem b) (Q : R[X]) :
-    aeval b Q * b = algebraMap R B (Q.eval 1) * b := by
-  induction Q using Polynomial.induction_on' with
-  | add p q hp hq => simp [add_mul, hp, hq]
-  | monomial n c =>
-    rw [aeval_monomial, eval_monomial, one_pow, mul_one, mul_assoc, ← pow_succ, hb.pow_succ_eq]
-
-/-- A polynomial evaluated at an idempotent `b`, multiplied by `1 - b`, is `Q(0) (1 - b)`. -/
-private theorem aeval_mul_one_sub_of_isIdempotentElem {b : B} (hb : IsIdempotentElem b)
-    (Q : R[X]) : aeval b Q * (1 - b) = algebraMap R B (Q.eval 0) * (1 - b) := by
-  have := aeval_mul_self_of_isIdempotentElem hb.one_sub (Q.comp (1 - X))
-  simpa [aeval_comp] using this
-
-variable [IsLocalRing R]
-
-/-- Over a local ring, if `r • b = 0` for a nonzero `b`, then `r` lies in the maximal ideal. -/
-private theorem mem_maximalIdeal_of_algebraMap_mul_eq_zero {b : B} (hb : b ≠ 0) {r : R}
-    (h : algebraMap R B r * b = 0) : r ∈ maximalIdeal R := by
-  by_contra hr
-  obtain ⟨u, rfl⟩ := (notMem_maximalIdeal.mp hr)
-  refine hb ?_
-  rw [← (u.map (algebraMap R B).toMonoidHom).inv_mul_cancel_left b]
-  simp [h]
-
-variable (hB : ∀ r ∈ maximalIdeal R, algebraMap R B r = 0)
-include hB
-
-/-- If the maximal ideal acts by zero, `aeval b Q` depends only on the reduction of `Q`. -/
-private theorem aeval_eq_of_map_eq (b : B) {P Q : R[X]}
-    (h : P.map (Ideal.Quotient.mk (maximalIdeal R)) = Q.map (Ideal.Quotient.mk (maximalIdeal R))) :
-    aeval b P = aeval b Q := by
-  let φ := Ideal.Quotient.lift (maximalIdeal R) (algebraMap R B) hB
-  have hφ : algebraMap R B = φ.comp (Ideal.Quotient.mk (maximalIdeal R)) := rfl
-  rw [aeval_def, aeval_def, hφ, ← eval₂_map, ← eval₂_map, h]
-
-/-- If the maximal ideal acts by zero, `algebraMap` sees only residues. -/
-private theorem algebraMap_eq_one {r : R} (h : Ideal.Quotient.mk (maximalIdeal R) r = 1) :
-    algebraMap R B r = 1 := by
-  rw [← sub_eq_zero, ← map_one (algebraMap R B), ← map_sub]
-  exact hB _ (Ideal.Quotient.eq.mp (h.trans (map_one _).symm))
-
-variable [HenselianRing R (maximalIdeal R)] {A : Type*} [Ring A] [Algebra R A]
-
-/-- **Idempotents lift along an algebra map killing the maximal ideal of a Henselian local ring**,
-one integral element at a time. Let `R` be a Henselian local ring and `π : A → B` a map of
-`R`-algebras, not necessarily commutative, such that the maximal ideal of `R` acts by zero on `B`.
-If `x : A` is integral over `R` and `π x` is idempotent, then `π x = π e` for an idempotent `e`
-of `A`. -/
-theorem exists_isIdempotentElem_eq_of_isIntegral (π : A →ₐ[R] B) {x : A} (hx : IsIntegral R x)
-    (hb : IsIdempotentElem (π x)) : ∃ e : A, IsIdempotentElem e ∧ π e = π x := by
-  -- The trivial idempotents lift to themselves.
-  by_cases h0 : π x = 0
-  · exact ⟨0, .zero, by rw [map_zero, h0]⟩
-  by_cases h1 : 1 - π x = 0
-  · exact ⟨1, .one, by rw [map_one, ← sub_eq_zero.mp h1]⟩
-  let := Ideal.Quotient.field (maximalIdeal R)
-  obtain ⟨F, hF, hFx⟩ := hx
-  replace hFx : aeval x F = 0 := hFx
-  have hFb : aeval (π x) F = 0 := by rw [aeval_algHom_apply, hFx, map_zero]
-  -- Reduction modulo the maximal ideal commutes with evaluation.
-  have hev (P : R[X]) (a : R) : (P.map (Ideal.Quotient.mk (maximalIdeal R))).eval
-      (Ideal.Quotient.mk (maximalIdeal R) a) = Ideal.Quotient.mk (maximalIdeal R) (P.eval a) := by
-    rw [eval_map, eval₂_at_apply]
-  -- The reduction `F₀` of `F` vanishes at `0` and at `1`.
-  set F₀ := F.map (Ideal.Quotient.mk (maximalIdeal R))
-  have hF0 : F₀.IsRoot 0 := by
-    have := aeval_mul_one_sub_of_isIdempotentElem hb F
-    rw [hFb, zero_mul, eq_comm] at this
-    have := hev F 0
-    rw [map_zero] at this
-    rw [IsRoot, this, Ideal.Quotient.eq_zero_iff_mem]
-    exact mem_maximalIdeal_of_algebraMap_mul_eq_zero h1 ‹_›
-  have hF1 : F₀.IsRoot 1 := by
-    have := aeval_mul_self_of_isIdempotentElem hb F
-    rw [hFb, zero_mul, eq_comm] at this
-    have := hev F 1
-    rw [map_one] at this
-    rw [IsRoot, this, Ideal.Quotient.eq_zero_iff_mem]
-    exact mem_maximalIdeal_of_algebraMap_mul_eq_zero h0 ‹_›
-  -- Split off the exact power of `X`: `F₀ = Xʳ H₀` with `r ≥ 1` and `X ∤ H₀`, so that `Xʳ` and `H₀`
-  -- are coprime and `H₀(1) = 0`.
-  have hF₀ : F₀.Monic := hF.map _
-  obtain ⟨H₀, hFH, hX⟩ := exists_eq_pow_rootMultiplicity_mul_and_not_dvd F₀ hF₀.ne_zero 0
-  set r := rootMultiplicity 0 F₀
-  have hr : 0 < r := (rootMultiplicity_pos hF₀.ne_zero).mpr hF0
-  have hH₀ : H₀.Monic := ((monic_X_sub_C 0).pow r).of_mul_monic_left (hFH ▸ hF₀)
-  have hcop : IsCoprime ((X - C 0) ^ r) H₀ :=
-    ((irreducible_X_sub_C 0).coprime_iff_not_dvd.mpr hX).pow_left
-  have hH₀1 : H₀.eval 1 = 0 := by
-    have := hF1
-    rwa [IsRoot, hFH, eval_mul, eval_pow, eval_sub, eval_X, eval_C, sub_zero, one_pow,
-      one_mul] at this
-  -- Lift the factorization along the Henselian hypothesis, with a Bézout identity.
-  obtain ⟨G, H, -, -, hGH, ⟨U, V, hUV⟩, hG, hH⟩ :=
-    (maximalIdeal R).exists_monic_mul_eq hF ((monic_X_sub_C 0).pow r) hH₀ hcop hFH
-  refine ⟨aeval x (U * G), (IsIdempotentElem.of_mul_add (b := aeval x (V * H)) ?_ ?_).1, ?_⟩
-  · rw [← map_mul, show U * G * (V * H) = U * V * (G * H) by ring, hGH, map_mul, hFx, mul_zero]
-  · rw [← map_add, hUV, map_one]
-  -- The image of `e` is `U(b) G(b) = U(b) b = U(1) b = b`.
-  have hGb : aeval (π x) G = π x := by
-    rw [aeval_eq_of_map_eq hB (π x) (Q := X ^ r)
-        (by rw [hG, Polynomial.map_pow, Polynomial.map_X, C_0, sub_zero]),
-      aeval_X_pow, ← Nat.sub_add_cancel hr, hb.pow_succ_eq]
-  have hU1 : Ideal.Quotient.mk (maximalIdeal R) (U.eval 1) = 1 := by
-    have := congr(eval 1 (map (Ideal.Quotient.mk (maximalIdeal R)) $hUV))
-    have hU := hev U 1
-    rw [map_one] at hU
-    rwa [Polynomial.map_add, Polynomial.map_mul, Polynomial.map_mul, hG, hH, Polynomial.map_one,
-      eval_add, eval_mul, eval_mul, hH₀1, mul_zero, add_zero, eval_pow, eval_sub, eval_X,
-      eval_C, sub_zero, one_pow, mul_one, eval_one, hU] at this
-  rw [← aeval_algHom_apply, map_mul, hGb, aeval_mul_self_of_isIdempotentElem hb,
-    algebraMap_eq_one hB hU1, one_mul]
-
-end Idempotent
 
 /-- **A module-finite algebra over a Henselian local ring is semiperfect.** If `R` is a Henselian
 local ring and `A` is an `R`-algebra, not necessarily commutative, that is finitely generated as an
