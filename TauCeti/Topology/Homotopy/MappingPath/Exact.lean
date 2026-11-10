@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.HomotopyEquiv
 public import TauCeti.Topology.Homotopy.HurewiczFibration.Basic
 public import TauCeti.Topology.Homotopy.MappingPath.Fiber
@@ -18,8 +19,8 @@ public import TauCeti.Topology.Homotopy.SerreFibration.Exact
 Let `f : X ⟶ Y` be a continuous map and `x` a point of `X`. The **homotopy fibre** of `f` over
 `f x` is the mapping-path fibre `MappingPathFiber f (f x)`, of the pairs `(z, γ)` of a point `z`
 of `X` and a path `γ` in `Y` from `f z` to `f x`. Its source projection
-`TauCeti.TopCat.homotopyFiberProj f x`, `(z, γ) ↦ z`, is a Hurewicz fibration, with base point
-the point `x` with the constant path (`TauCeti.TopCat.homotopyFiberBasepoint f x`). This file
+`TopCat.Hom.homotopyFiberProj f x`, `(z, γ) ↦ z`, is a Hurewicz fibration, with base point
+the point `x` with the constant path (`TopCat.Hom.homotopyFiberBasepoint f x`). This file
 shows that the homotopy sequence
 
 `⋯ → π_{n+1}(Y) → π_n(Fib f) → π_n(X) → π_n(Y) → ⋯`
@@ -28,9 +29,9 @@ of this projection followed by `f` is exact at the groups of `X`, and that the c
 `π_{n+1}(X) → π_{n+1}(Y) → π_n(Fib f)` controls the kernel of the projection:
 
 * a class of `X` comes from the homotopy fibre exactly when `f` kills it
-  (`TauCeti.TopCat.mem_range_homotopyGroupMap_homotopyFiberProj_iff`);
+  (`TopCat.Hom.mem_range_homotopyGroupMap_homotopyFiberProj_iff`);
 * if `f` is surjective on `π_{n+1}`, the projection has trivial kernel on `π_n`
-  (`TauCeti.TopCat.eq_const_of_homotopyGroupMap_homotopyFiberProj_eq_const`).
+  (`TopCat.Hom.eq_const_of_homotopyGroupMap_homotopyFiberProj_eq_const`).
 
 The proof compares the projection with the fixed-end path fibration of `Y`, the source
 projection of `MappingPathFiber (ContinuousMap.id Y) (f x)`. The map `(z, γ) ↦ (f z, γ)` is a map
@@ -48,13 +49,13 @@ elements, which may be empty.
 
 ## Main declarations
 
-* `TauCeti.TopCat.homotopyFiberProj`: the projection of the homotopy fibre of `f` to `X`, a
-  Hurewicz fibration (`TauCeti.TopCat.isHurewiczFibration_homotopyFiberProj`).
-* `TauCeti.TopCat.homotopyFiberFiberHomeomorph`: the fibre of that projection over `x` is the
+* `TopCat.Hom.homotopyFiberProj`: the projection of the homotopy fibre of `f` to `X`, a
+  Hurewicz fibration (`TopCat.Hom.isHurewiczFibration_homotopyFiberProj`).
+* `TopCat.Hom.homotopyFiberFiberHomeomorph`: the fibre of that projection over `x` is the
   loop space of `Y` at `f x`.
-* `TauCeti.TopCat.mem_range_homotopyGroupMap_homotopyFiberProj_iff`: exactness at the homotopy
+* `TopCat.Hom.mem_range_homotopyGroupMap_homotopyFiberProj_iff`: exactness at the homotopy
   groups of `X`.
-* `TauCeti.TopCat.eq_const_of_homotopyGroupMap_homotopyFiberProj_eq_const`: the projection has
+* `TopCat.Hom.eq_const_of_homotopyGroupMap_homotopyFiberProj_eq_const`: the projection has
   trivial kernel on `π_n` when `f` is surjective on `π_{n+1}`.
 
 ## References
@@ -65,12 +66,12 @@ elements, which may be empty.
 
 public section
 
-open CategoryTheory Set unitInterval
+open CategoryTheory Set unitInterval TauCeti TauCeti.TopCat
 open scoped Topology Topology.Homotopy
 
 universe w u
 
-namespace TauCeti.TopCat
+namespace TopCat.Hom
 
 variable {N : Type*} [Finite N]
 
@@ -142,35 +143,21 @@ space of loops at `f x`; so it is bijective on homotopy groups. -/
 private theorem bijective_map_fiberMap {e : (homotopyFiberProj f x).fiber x} :
     Function.Bijective (HomotopyGroup.map (N := N) ((commSq f x).fiberMap x).hom
       (rfl : ((commSq f x).fiberMap x) e = _)) := by
-  -- The source points of the two fibres are `x` and `f x`.
-  have hp (q : (homotopyFiberProj f x).fiber x) : q.1.val.1 = x :=
-    (homotopyFiberProj_apply f x q.1).symm.trans q.2
-  have hq (q : (pathProj f x).fiber (f x)) : q.1.val.1 = f x :=
-    (MappingPathFiber.proj_apply _ _ q.1).symm.trans q.2
-  -- The inverse forgets the source point, which is `f x`, and puts back `x`.
-  let g : C((pathProj f x).fiber (f x), (homotopyFiberProj f x).fiber x) :=
-    ⟨fun q ↦ ⟨⟨(x, q.1.val.2), q.1.property.1.trans (hq q), q.1.property.2⟩,
-      homotopyFiberProj_apply f x _⟩, by fun_prop⟩
-  have hF (q : (homotopyFiberProj f x).fiber x) :
-      (((commSq f x).fiberMap x).hom q).1.val = (f q.1.val.1, q.1.val.2) :=
-    (congrArg Subtype.val (CommSq.fiberMap_apply_coe (commSq f x) x q)).trans
-      ((MappingPathFiber.map_val _ _ _ _ _).trans
-        (congrArg (Prod.mk _) (ContinuousMap.id_comp _)))
-  have hg : g ((commSq f x).fiberMap x e) = e := by
-    have h := congrArg Prod.snd (hF e)
-    exact Subtype.ext (Subtype.ext (Prod.ext (hp e).symm h))
-  refine Function.bijective_iff_has_inverse.2 ⟨HomotopyGroup.map g hg, fun a ↦ ?_, fun a ↦ ?_⟩
-  · refine HomotopyGroup.map_map_of_comp_eq_id g _ _ hg
-      (ContinuousMap.ext fun q ↦ Subtype.ext (Subtype.ext (Prod.ext ?_ ?_))) a
-    · exact (hp q).symm
-    · have h := congrArg Prod.snd (hF q)
-      exact h
-  · refine HomotopyGroup.map_map_of_comp_eq_id _ g hg _
-      (ContinuousMap.ext fun q ↦ Subtype.ext (Subtype.ext (Prod.ext ?_ ?_))) a
-    · have h := congrArg Prod.fst (hF (g q))
-      exact h.trans (hq q).symm
-    · have h := congrArg Prod.snd (hF (g q))
-      exact h
+  -- Both fibres are the loop space at `f x`, and the map of fibres keeps the loop.
+  let φ : (homotopyFiberProj f x).fiber x ≃ₜ (pathProj f x).fiber (f x) :=
+    (homotopyFiberFiberHomeomorph f x).trans
+      (MappingPathFiber.projFiberHomeomorphPath (ContinuousMap.id Y) (f x) (f x)).symm
+  have hφ : ((commSq f x).fiberMap x).hom = ⟨φ, φ.continuous⟩ := by
+    refine ContinuousMap.ext fun q ↦ Subtype.ext (Subtype.ext ?_)
+    have hφq : (φ q).1.val = (f x, (homotopyFiberFiberHomeomorph f x q).toContinuousMap) :=
+      MappingPathFiber.projFiberHomeomorphPath_symm_val_val _ _ _ _
+    refine ((congrArg Subtype.val (CommSq.fiberMap_apply_coe (commSq f x) x q)).trans
+      (MappingPathFiber.map_val _ _ _ _ _)).trans (hφq ▸ Prod.ext ?_ ?_)
+    · exact congrArg f ((homotopyFiberProj_apply f x q.1).symm.trans q.2)
+    · exact ContinuousMap.ext fun t ↦ (homotopyFiberFiberHomeomorph_apply f x q t).symm
+  have h := (HomotopyGroup.homeomorphEquivOfEq (N := N) φ (DFunLike.congr_fun hφ e).symm).bijective
+  rw [funext (HomotopyGroup.homeomorphEquivOfEq_apply φ _)] at h
+  convert h
 
 /-- The boundary map of the homotopy fibre of `f` is `f` followed by the boundary map of the path
 fibration of `Y`, up to the identification of their fibres. -/
@@ -218,4 +205,4 @@ theorem eq_const_of_homotopyGroupMap_homotopyFiberProj_eq_const
   have hd := (bijective_map_fiberMap (N := N) f x).injective ha'
   exact (mem_range_fibrationBoundary_iff hq).1 ⟨a, hd⟩
 
-end TauCeti.TopCat
+end TopCat.Hom
