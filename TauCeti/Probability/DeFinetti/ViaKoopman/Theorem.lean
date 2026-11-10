@@ -87,10 +87,7 @@ theorem conditionallyIID_of_contractable_viaKoopman [StandardBorelSpace α]
     ConditionallyIID μ X := by
   have hXae : ∀ i, AEMeasurable (X i) μ := fun i => (hX_meas i).aemeasurable
   rcases isEmpty_or_nonempty Ω with hΩ | ⟨⟨ω⟩⟩
-  · -- On an empty sample space the measure is zero and every identity is between zero measures.
-    refine ConditionallyIID.of_directing (ν := fun ω => isEmptyElim ω)
-      (.intro hXae Subsingleton.measurable fun m k _ => ?_)
-    simp [Measure.eq_zero_of_isEmpty μ]
+  · exact .of_isEmpty hXae
   have : Nonempty α := ⟨X 0 ω⟩
   -- Supplied for instance resolution below, not referenced by name.
   have : IsFiniteMeasure (pathLaw μ X) := by
