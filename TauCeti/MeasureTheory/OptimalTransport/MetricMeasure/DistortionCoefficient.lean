@@ -189,6 +189,7 @@ theorem distortionSigma_zero_right : distortionSigma K N t 0 = ENNReal.ofReal t 
   rw [distortionSigma_eq_sigmaOf, zero_pow two_ne_zero, mul_zero, zero_div, sigmaOf_zero]
 
 /-- For `t ≤ 0`, `K ≤ 0` and `0 ≤ N` the coefficient `σ_{K,N}^{(t)}(θ)` vanishes. -/
+@[simp]
 theorem distortionSigma_of_nonpos (ht : t ≤ 0) (hK : K ≤ 0) (hN : 0 ≤ N) :
     distortionSigma K N t θ = 0 := by
   rw [distortionSigma_eq_sigmaOf]
