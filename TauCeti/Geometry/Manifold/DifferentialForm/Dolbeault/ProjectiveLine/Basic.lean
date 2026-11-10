@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Liouville
-public import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Plane
-public import TauCeti.Geometry.Manifold.Instances.Projectivization
+public import TauCeti.Geometry.Manifold.Projectivization.ProjectiveLine
+import Mathlib.Geometry.Manifold.Complex
+import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Holomorphic
 
 /-!
-# The projective line has no holomorphic one-forms
+# Holomorphic functions and one-forms on the projective line
 
 A holomorphic one-form on the complex projective line `ℂℙ¹ = ℙ ℂ (Fin 2 → ℂ)`, that is a smooth
 complex-valued one-form of type `(1,0)` which is `∂bar`-closed, vanishes
@@ -26,14 +27,14 @@ near `0`. By Liouville's theorem `f = 0`, and likewise `g = 0`. Every point of `
 image of one of the two coordinates, where the differential of the coordinate is nonzero, and a
 `(1,0)`-form on the one-dimensional complex tangent space vanishing on a nonzero vector is zero.
 
-The two affine coordinates are `TauCeti.ProjectiveLine.affineParam`, related on their overlap by
-`TauCeti.ProjectiveLine.affineParam_inv`; pulled-back forms are related by
-`TauCeti.ProjectiveLine.coe_mpullback_affineParam_apply_of_ne_zero`. Together the two coordinates
-detect smoothness of functions (`TauCeti.ProjectiveLine.contMDiff_of_contDiff_comp_affineParam`),
-their derivatives are bijective (`TauCeti.ProjectiveLine.injective_mfderiv_affineParam` and
-`TauCeti.ProjectiveLine.surjective_mfderiv_affineParam`), and a smooth form is determined by its
-pullback along either one of them (`TauCeti.ProjectiveLine.mpullback_affineParam_injective`), since
-each misses only one point (`TauCeti.ProjectiveLine.affineParam_zero_notMem_affineOpen`).
+The two affine coordinates are `TauCeti.ProjectiveLine.affineParam`. Pulled-back forms are related
+on the overlap by `TauCeti.ProjectiveLine.coe_mpullback_affineParam_apply_of_ne_zero`, and a smooth
+form is determined by its pullback along either coordinate
+(`TauCeti.ProjectiveLine.mpullback_affineParam_injective`).
+
+A smooth function on `ℂℙ¹` with vanishing `∂bar` is holomorphic on a compact connected
+complex manifold, hence constant
+(`TauCeti.SmoothForm.delBar_eq_zero_iff_exists_eq_const_projectivization`).
 
 ## References
 
@@ -54,89 +55,12 @@ open SmoothAlmostComplexStructure
 
 namespace ProjectiveLine
 
-/-- The affine coordinate of the projective line on the open set where the `i`-th homogeneous
-coordinate does not vanish: `t ↦ [t : 1]` for `i = 1` and `s ↦ [1 : s]` for `i = 0`. -/
-noncomputable def affineParam (i : Fin 2) (t : ℂ) : ℙ ℂ (Fin 2 → ℂ) :=
-  (affineChart (K := ℂ) (n := 1) i).symm fun _ ↦ t
-
-/-- The affine coordinate `i` in homogeneous coordinates: `[t : 1]` for `i = 1` and `[1 : t]` for
-`i = 0`. -/
-theorem affineParam_eq (i : Fin 2) (t : ℂ) :
-    affineParam i t = mk ℂ (Fin.insertNth (α := fun _ ↦ ℂ) i 1 fun _ ↦ t)
-      (Fin.insertNth_one_ne_zero i _) :=
-  affineChart_symm_apply i _
-
-/-- The two affine coordinates are related by `s = 1 / t` on their overlap. -/
-theorem affineParam_inv {i j : Fin 2} (hij : i ≠ j) {t : ℂ} (ht : t ≠ 0) :
-    affineParam i t = affineParam j t⁻¹ := by
-  rw [affineParam_eq, affineParam_eq, mk_eq_mk_iff]
-  have h₁ (x : ℂ) : Fin.insertNth (α := fun _ ↦ ℂ) (1 : Fin 2) 1 (fun _ ↦ x) 0 = x := rfl
-  refine ⟨Units.mk0 t ht, ?_⟩
-  ext k
-  fin_cases i <;> fin_cases j <;> fin_cases k <;> simp_all
-
-/-- The affine coordinate `i` takes values in the affine open where the `i`-th homogeneous
-coordinate does not vanish. -/
-theorem affineParam_mem_affineOpen (i : Fin 2) (t : ℂ) :
-    affineParam i t ∈ affineOpen (K := ℂ) i := by
-  rw [← affineChart_source]
-  exact (affineChart i).map_target (by simp [affineChart_target])
-
-/-- The affine chart is a left inverse of the affine coordinate. -/
-theorem affineChart_affineParam (i : Fin 2) (t : ℂ) :
-    affineChart (K := ℂ) (n := 1) i (affineParam i t) = fun _ ↦ t :=
-  (affineChart i).right_inv (by simp [affineChart_target])
-
-/-- On its affine open, the affine coordinate is a left inverse of the affine chart. -/
-theorem affineParam_affineChart {i : Fin 2} {x : ℙ ℂ (Fin 2 → ℂ)}
-    (hx : x ∈ affineOpen (K := ℂ) i) :
-    affineParam i (affineChart (K := ℂ) (n := 1) i x 0) = x := by
-  have h' : (fun _ : Fin 1 ↦ affineChart (K := ℂ) (n := 1) i x 0) =
-      affineChart (K := ℂ) (n := 1) i x :=
-    funext fun k ↦ by fin_cases k; rfl
-  rw [affineParam, h']
-  exact (affineChart i).left_inv (by rwa [affineChart_source])
-
-/-- The affine coordinates of the projective line are holomorphic. -/
-theorem contMDiff_affineParam (i : Fin 2) :
-    ContMDiff 𝓘(ℂ, ℂ) 𝓘(ℂ, Fin 1 → ℂ) ∞ (affineParam i) :=
-  (contMDiff_affineChart_symm i ∞).comp (contDiff_pi.2 fun _ ↦ contDiff_id).contMDiff
-
-/-- The affine coordinates of the projective line are smooth maps of the underlying real
-manifolds. -/
-theorem contMDiff_affineParam_real (i : Fin 2) :
-    ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, Fin 1 → ℂ) ∞ (affineParam i) := by
-  simpa only [modelWithCornersSelf_restrictScalars] using
-    (contMDiff_affineParam i).restrictScalars ℝ
-
 /-- The affine coordinates of the projective line are pseudoholomorphic for the complex structures
 of `ℂ` and of the projective line. -/
 theorem isPseudoholomorphic_affineParam (i : Fin 2) :
     IsPseudoholomorphic (ofComplexManifold ℂ ℂ)
       (ofComplexManifold (Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ))) (affineParam i) :=
   isPseudoholomorphic_ofComplexManifold_iff.2 ((contMDiff_affineParam i).mdifferentiable (by simp))
-
-/-- The derivative of an affine coordinate of the projective line is injective: the affine chart
-is a left inverse of the coordinate. -/
-theorem injective_mfderiv_affineParam (i : Fin 2) (t : ℂ) :
-    Injective (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, Fin 1 → ℂ) (affineParam i) t) := by
-  let e : ℂ →L[ℝ] Fin 1 → ℂ := ContinuousLinearMap.pi fun _ ↦ ContinuousLinearMap.id ℝ ℂ
-  have he : Injective e := fun a b hab ↦ by simpa [e] using congrFun hab 0
-  have hcomp : affineChart (K := ℂ) (n := 1) i ∘ affineParam i = e :=
-    funext (affineChart_affineParam i)
-  have hchart : MDifferentiableAt 𝓘(ℝ, Fin 1 → ℂ) 𝓘(ℝ, Fin 1 → ℂ)
-      (affineChart (K := ℂ) (n := 1) i) (affineParam i t) := by
-    have := (((contMDiffOn_affineChart (𝕜 := ℂ) (n := 1) i ∞).contMDiffAt
-      ((isOpen_affineOpen i).mem_nhds (affineParam_mem_affineOpen i t))).restrictScalars ℝ)
-    simpa only [modelWithCornersSelf_restrictScalars] using this.mdifferentiableAt (by simp)
-  have key := mfderiv_comp t hchart ((contMDiff_affineParam_real i t).mdifferentiableAt (by simp))
-  rw [hcomp, mfderiv_eq_fderiv, e.fderiv] at key
-  refine Injective.of_comp (f := mfderiv 𝓘(ℝ, Fin 1 → ℂ) 𝓘(ℝ, Fin 1 → ℂ)
-    (affineChart (K := ℂ) (n := 1) i) (affineParam i t)) ?_
-  rw [← ContinuousLinearMap.coe_comp, ← key]
-  -- The derivative of `e` read through the model spaces is `e` itself.
-  exact (NormedSpace.fromTangentSpace _).symm.injective.comp
-    (he.comp (NormedSpace.fromTangentSpace t).injective)
 
 /-- Near a nonzero point `s`, the affine coordinate `i` is the affine coordinate `j` composed with
 `y ↦ 1 / y`, so a form pulled back along the coordinate `i` is, at `s`, the pullback along
@@ -153,40 +77,6 @@ theorem coe_mpullback_affineParam_apply_of_ne_zero {F : Type*} [NormedAddCommGro
   rw [SmoothForm.coe_mpullback, SmoothForm.coe_mpullback, heq.mpullback_eq,
     mpullback_comp_at hinv.differentiableAt.mdifferentiableAt
       ((contMDiff_affineParam_real j _).mdifferentiableAt (by simp))]
-
-/-- For `i ≠ j`, the point `0` of the affine coordinate `j` lies outside the affine open `i`: it is
-the one point of the projective line that the affine coordinate `i` misses. -/
-theorem affineParam_zero_notMem_affineOpen {i j : Fin 2} (hij : i ≠ j) :
-    affineParam j 0 ∉ affineOpen (K := ℂ) i := by
-  rw [affineParam_eq, mk_mem_affineOpen_iff, not_not]
-  fin_cases i <;> fin_cases j <;> simp_all
-
-/-- A function on the projective line whose compositions with both affine coordinates are smooth
-is smooth. -/
-theorem contMDiff_of_contDiff_comp_affineParam {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] {f : ℙ ℂ (Fin 2 → ℂ) → G} (hf : ∀ i, ContDiff ℝ ∞ (f ∘ affineParam i)) :
-    ContMDiff 𝓘(ℝ, Fin 1 → ℂ) 𝓘(ℝ, G) ∞ f := by
-  intro x
-  obtain ⟨i, hi⟩ := exists_mem_affineOpen x
-  have hchart : ContMDiffAt 𝓘(ℝ, Fin 1 → ℂ) 𝓘(ℝ, Fin 1 → ℂ) ∞
-      (affineChart (K := ℂ) (n := 1) i) x := by
-    simpa only [modelWithCornersSelf_restrictScalars] using
-      ((contMDiffOn_affineChart (𝕜 := ℂ) (n := 1) i ∞).contMDiffAt
-        ((isOpen_affineOpen i).mem_nhds hi)).restrictScalars ℝ
-  have hG : ContDiff ℝ ∞ fun z : Fin 1 → ℂ ↦ (f ∘ affineParam i) (z 0) :=
-    (hf i).comp (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin 1 ↦ ℂ) 0).contDiff
-  refine (hG.contMDiff.contMDiffAt.comp x hchart).congr_of_eventuallyEq ?_
-  filter_upwards [(isOpen_affineOpen i).mem_nhds hi] with y hy
-  simp [affineParam_affineChart hy]
-
-/-- Every derivative of an affine coordinate of the projective line is surjective. -/
-theorem surjective_mfderiv_affineParam (i : Fin 2) (t : ℂ) :
-    Surjective (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, Fin 1 → ℂ) (affineParam i) t) := by
-  have h : Module.finrank ℝ ℂ = Module.finrank ℝ (Fin 1 → ℂ) := by
-    simp [Module.finrank_pi_fintype]
-  exact (LinearMap.injective_iff_surjective_of_finrank_eq_finrank h
-    (f := (mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, Fin 1 → ℂ) (affineParam i) t).toLinearMap)).1
-    (injective_mfderiv_affineParam i t)
 
 /-- A smooth form on the projective line is determined by its pullback along one affine
 coordinate: that coordinate covers all points but one, and the forms are continuous. -/
@@ -288,6 +178,20 @@ theorem IsOfType.eq_zero_of_delBar_eq_zero_projectivization
     refine (congrArg _ (funext fun k ↦ ?_)).trans h
     fin_cases k
     rfl
+
+/-- **The kernel of `∂bar` on functions over the projective line is the constants.** A smooth
+function `f` on `ℂℙ¹` satisfies `∂bar f = 0` exactly when it is constant: it is then holomorphic on
+a compact connected complex manifold. -/
+theorem delBar_eq_zero_iff_exists_eq_const_projectivization
+    (f : SmoothForm 𝓘(ℝ, Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ)) F 0) :
+    (ofComplexManifold (Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ))).delBar f = 0 ↔
+      ∃ c : F, ∀ x, f.1 x 0 = c := by
+  rw [delBar_ofComplexManifold_eq_zero_iff]
+  refine ⟨fun h ↦ ?_, fun ⟨c, hc⟩ ↦ ?_⟩
+  · obtain ⟨c, hc⟩ := MDifferentiable.exists_eq_const_of_compactSpace h
+    exact ⟨c, fun x ↦ congrFun hc x⟩
+  · rw [funext hc]
+    exact mdifferentiable_const
 
 end SmoothForm
 

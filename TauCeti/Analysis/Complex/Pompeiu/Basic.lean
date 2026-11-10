@@ -493,8 +493,7 @@ theorem _root_.HasCompactSupport.differentiableAt_cauchyTransform_of_notMem_tsup
   have h := (differentiableOn_integral_sub_inv_smul_compl hc
     (fun x hx ↦ image_eq_zero_of_notMem_tsupport hx) hs).differentiableAt
     ((isClosed_tsupport c).isOpen_compl.mem_nhds hw)
-  rw [show cauchyTransform c = fun x ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (x - z)⁻¹ • c z from
-    funext (cauchyTransform_apply c)]
+  rw [funext (cauchyTransform_apply c)]
   exact h.const_smul _
 
 omit [CompleteSpace F] in

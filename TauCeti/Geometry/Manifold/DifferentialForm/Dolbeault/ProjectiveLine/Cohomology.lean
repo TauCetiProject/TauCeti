@@ -22,8 +22,9 @@ with values in a complex Banach space `F` has kernel the constants and cokernel 
 characteristic of the sphere.
 
 The kernel is the constants because a holomorphic function on a compact connected complex manifold
-is constant. For the cokernel, read a `(0,1)`-form `α` in the affine coordinates `t ↦ [t : 1]` and
-`s ↦ [1 : s]`, related by `s = 1 / t`. A smooth cutoff splits `α` into two forms whose coefficients
+is constant (`TauCeti.SmoothForm.delBar_eq_zero_iff_exists_eq_const_projectivization`). For the
+cokernel, read a `(0,1)`-form `α` in the affine coordinates `t ↦ [t : 1]` and `s ↦ [1 : s]`,
+related by `s = 1 / t`. A smooth cutoff splits `α` into two forms whose coefficients
 are compactly supported in the coordinate `t` and in the coordinate `s` respectively. For each
 piece, with coefficient `c(t) d(conj t)` say, the Cauchy transform `u = T c` solves
 `∂bar u = c d(conj t)` on `ℂ` (`HasCompactSupport.conjWirtingerDeriv_cauchyTransform`). Off the
@@ -38,8 +39,6 @@ open set, hence everywhere.
 
 * `TauCeti.SmoothForm.IsOfType.exists_delBar_eq_projectivization`: every smooth `(0,1)`-form on
   `ℂℙ¹` is `∂bar` of a smooth function.
-* `TauCeti.SmoothForm.delBar_eq_zero_iff_exists_eq_const_projectivization`: the kernel of `∂bar`
-  on smooth functions over `ℂℙ¹` is the constants.
 * `TauCeti.dolbeaultCohomology.instSubsingletonProjectivizationZeroOne`: `H^(0,1)_∂bar(ℂℙ¹; F)`
   vanishes.
 * `TauCeti.dolbeaultCohomology.zeroZeroEquivProjectivization`: `H^(0,0)_∂bar(ℂℙ¹; F) ≃ F`, with
@@ -102,12 +101,12 @@ private theorem exists_delBar_eq_of_hasCompactSupport
   set g : ℙ ℂ (Fin 2 → ℂ) → F :=
     (affineOpen (K := ℂ) i).indicator fun x ↦ u (affineChart (K := ℂ) (n := 1) i x 0)
   have hgi : g ∘ affineParam i = u := funext fun t ↦ by
-    simp [g, indicator_of_mem (affineParam_mem_affineOpen i t), affineChart_affineParam]
+    simp [g, affineChart_affineParam]
   have hgj : g ∘ affineParam j = update (fun s ↦ u s⁻¹) 0 0 := funext fun s ↦ by
     rcases eq_or_ne s 0 with rfl | hs
     · simp [g, indicator_of_notMem (affineParam_zero_notMem_affineOpen hij)]
     · rw [comp_apply, affineParam_inv hij.symm hs, update_of_ne hs]
-      simp [g, indicator_of_mem (affineParam_mem_affineOpen i _), affineChart_affineParam]
+      simp [g, affineChart_affineParam]
   obtain ⟨R, hR⟩ := hc.isCompact.isBounded.subset_closedBall 0
   have hhol (w : ℂ) (hw : R < ‖w‖) : DifferentiableAt ℂ u w := by
     refine hc.differentiableAt_cauchyTransform_of_notMem_tsupport (hcs.of_le (by simp))
@@ -166,10 +165,10 @@ private theorem exists_cutoff_projectivization :
   let ρ : ℙ ℂ (Fin 2 → ℂ) → ℝ :=
     (affineOpen (K := ℂ) 1).indicator fun x ↦ χ (affineChart (K := ℂ) (n := 1) 1 x 0)
   have h1 : ρ ∘ affineParam 1 = χ := funext fun t ↦ by
-    simp [ρ, indicator_of_mem (affineParam_mem_affineOpen 1 t), affineChart_affineParam]
+    simp [ρ, affineChart_affineParam]
   have h0 (s : ℂ) (hs : s ≠ 0) : ρ (affineParam 0 s) = χ s⁻¹ := by
     rw [affineParam_inv (by decide : (0 : Fin 2) ≠ 1) hs]
-    simp [ρ, indicator_of_mem (affineParam_mem_affineOpen 1 _), affineChart_affineParam]
+    simp [ρ, affineChart_affineParam]
   have h00 : ρ (affineParam 0 0) = 0 :=
     indicator_of_notMem (affineParam_zero_notMem_affineOpen (by decide : (1 : Fin 2) ≠ 0)) _
   have hρ : ContMDiff 𝓘(ℝ, Fin 1 → ℂ) 𝓘(ℝ, ℝ) ∞ ρ :=
@@ -236,24 +235,6 @@ end SmoothForm
 /-! ### Dolbeault cohomology -/
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
-
-namespace SmoothForm
-
-/-- **The kernel of `∂bar` on functions over the projective line is the constants.** A smooth
-function `f` on `ℂℙ¹` satisfies `∂bar f = 0` exactly when it is constant: it is then holomorphic on
-a compact connected complex manifold. -/
-theorem delBar_eq_zero_iff_exists_eq_const_projectivization
-    (f : SmoothForm 𝓘(ℝ, Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ)) F 0) :
-    (ofComplexManifold (Fin 1 → ℂ) (ℙ ℂ (Fin 2 → ℂ))).delBar f = 0 ↔
-      ∃ c : F, ∀ x, f.1 x 0 = c := by
-  rw [delBar_ofComplexManifold_eq_zero_iff]
-  refine ⟨fun h ↦ ?_, fun ⟨c, hc⟩ ↦ ?_⟩
-  · obtain ⟨c, hc⟩ := MDifferentiable.exists_eq_const_of_compactSpace h
-    exact ⟨c, fun x ↦ congrFun hc x⟩
-  · rw [show (fun y ↦ f.1 y 0) = fun _ ↦ c from funext hc]
-    exact mdifferentiable_const
-
-end SmoothForm
 
 namespace dolbeaultCohomology
 
