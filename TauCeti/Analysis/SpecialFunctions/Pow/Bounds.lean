@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 import Mathlib.Topology.Order.Compact
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # Elementary bounds on real powers
@@ -326,14 +327,6 @@ theorem one_le_five_rpow_mul_one_add_sq_rpow {t : ℝ} (ht : |t| ≤ 2) (r : ℝ
         rw [← rpow_add (by linarith), add_div]
     _ ≤ 5 ^ (|r| / 2) * (1 + t ^ 2) ^ (r / 2) := by
         gcongr
-
-/-- For `0 < x`, `x ^ (-p) = (x ^ (p - 2))⁻¹ * (x ^ 2)⁻¹`. -/
-theorem rpow_neg_eq_inv_rpow_sub_two_mul_inv_sq {x : ℝ} (hx : 0 < x) (p : ℝ) :
-    x ^ (-p) = (x ^ (p - 2))⁻¹ * (x ^ 2)⁻¹ := by
-  rw [← rpow_neg hx.le, ← rpow_natCast, ← rpow_neg hx.le, ← rpow_add hx]
-  congr 1
-  push_cast
-  ring
 
 /-- The case `d < 0` of `Real.rpow_neg_le_one_div_two_mul_sq`: the real power of a negative base
 is `|d| ^ y * cos (y π)`, and `cos` has period `2π`. -/

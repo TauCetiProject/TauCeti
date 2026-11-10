@@ -57,6 +57,9 @@ power-law exponent is read off from testing an inequality on `n` copies of one v
 A two-sided real exponential with positive decay rate is little-o of every real power of
 `|x|` outside compact subsets of the real line.
 
+For positive `x`, `x ^ (-p)` splits as `(x ^ (p - 2))⁻¹ * (x ^ 2)⁻¹`, the identity behind bounding
+`x ^ (-p)` by `1 / (2 x ^ 2)` from a lower bound on `x ^ (p - 2)`.
+
 A positive real raised to a finitely supported sum of exponents is the product of the powers:
 `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i`, the `finsum` form of `Real.rpow_sum_of_pos`.
 
@@ -95,6 +98,8 @@ with the corresponding integral of `q`-th powers.
 * `Real.le_of_forall_natCast_rpow_le_mul_rpow`: `b ≤ a` when `n ^ b ≤ C * n ^ a` for all `n`.
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
+* `Real.rpow_neg_eq_inv_rpow_sub_two_mul_inv_sq`: `x ^ (-p) = (x ^ (p - 2))⁻¹ * (x ^ 2)⁻¹` for
+  `0 < x`.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
 * `Real.mul_rpow_of_pos_left`: `(a t) ^ z = a ^ z t ^ z` for `0 < a` and every real `t`.
 * `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
@@ -302,6 +307,14 @@ theorem div_rpow_of_pos_right {c : ℝ} (hc : 0 < c) (r a : ℝ) :
       rpow_def_of_pos hc, log_div hr.ne hc.ne', sub_mul, exp_sub]
     ring
   · exact div_rpow hr hc.le a
+
+/-- For `0 < x`, `x ^ (-p) = (x ^ (p - 2))⁻¹ * (x ^ 2)⁻¹`. -/
+theorem rpow_neg_eq_inv_rpow_sub_two_mul_inv_sq {x : ℝ} (hx : 0 < x) (p : ℝ) :
+    x ^ (-p) = (x ^ (p - 2))⁻¹ * (x ^ 2)⁻¹ := by
+  rw [← rpow_neg hx.le, ← rpow_natCast, ← rpow_neg hx.le, ← rpow_add hx]
+  congr 1
+  push_cast
+  ring
 
 /-- Rescaling a power law: if `X ≤ N` and `C = C₀ N / R ^ α / 2`, then
 `C₀ (r / R) ^ α X ≤ 2 (C r ^ α)` for `r ≥ 0`, `R > 0` and `C₀ ≥ 0`. -/
