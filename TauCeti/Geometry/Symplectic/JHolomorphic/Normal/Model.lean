@@ -11,7 +11,9 @@ public import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.Geometry.Symplectic.Complex.Line
 public import TauCeti.Geometry.Symplectic.JHolomorphic.Varying
+public import TauCeti.Geometry.Symplectic.Liouville.Linear
 public import TauCeti.Geometry.Symplectic.Prod.Skew
+import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 
 /-!
 # The linear normal model of a pseudoholomorphic curve and its taming form
@@ -211,28 +213,25 @@ theorem isJHolomorphic_graph_normalModelStructure_iff {s : ℂ → ℂ} :
 
 /-! ### The taming form -/
 
-/-- The standard area form `ω(z, u) = Im (conj z u)` of `ℂ`, as a continuous bilinear map. -/
-private noncomputable def areaCLM : ℂ →L[ℝ] ℂ →L[ℝ] ℝ :=
-  (ContinuousLinearMap.compL ℝ ℂ ℂ ℝ Complex.imCLM).comp
-    ((ContinuousLinearMap.mul ℝ ℂ).comp Complex.conjCLE.toContinuousLinearMap)
+/-- The constant-coefficient bilinear form `K ω(z, ξ) + ω(w, η)` on `ℂ × ℂ`, with `ω` the standard
+area form. Its radial primitive is the constant-coefficient part of the primitive of the taming
+form. -/
+private noncomputable def normalModelBilin (K : ℝ) : (ℂ × ℂ) →L[ℝ] (ℂ × ℂ) →L[ℝ] ℝ :=
+  K • stdComplexSymplecticForm.toBilinForm.toContinuousBilinearMap.bilinearComp
+      (ContinuousLinearMap.fst ℝ ℂ ℂ) (ContinuousLinearMap.fst ℝ ℂ ℂ) +
+    stdComplexSymplecticForm.toBilinForm.toContinuousBilinearMap.bilinearComp
+      (ContinuousLinearMap.snd ℝ ℂ ℂ) (ContinuousLinearMap.snd ℝ ℂ ℂ)
 
-private theorem areaCLM_apply (z u : ℂ) : areaCLM z u = stdComplexSymplecticForm z u := by
-  simp [areaCLM, stdComplexSymplecticForm_apply, Complex.mul_im]
-  ring
+private theorem normalModelBilin_apply (K : ℝ) (p u : ℂ × ℂ) :
+    normalModelBilin K p u =
+      K * stdComplexSymplecticForm p.1 u.1 + stdComplexSymplecticForm p.2 u.2 := by
+  simp [normalModelBilin]
 
-/-- The constant-coefficient part `(K ω(z, ξ) + ω(w, η)) / 2` of the primitive of the taming form,
-as a continuous linear map of the base point `(z, w)`. -/
-private noncomputable def linearPrimitive (K : ℝ) : (ℂ × ℂ) →L[ℝ] (ℂ × ℂ) →L[ℝ] ℝ :=
-  (2 : ℝ)⁻¹ • (K • ((ContinuousLinearMap.compL ℝ (ℂ × ℂ) ℂ ℝ).flip
-      (ContinuousLinearMap.fst ℝ ℂ ℂ)).comp (areaCLM.comp (ContinuousLinearMap.fst ℝ ℂ ℂ)) +
-    ((ContinuousLinearMap.compL ℝ (ℂ × ℂ) ℂ ℝ).flip
-      (ContinuousLinearMap.snd ℝ ℂ ℂ)).comp (areaCLM.comp (ContinuousLinearMap.snd ℝ ℂ ℂ)))
-
-private theorem linearPrimitive_apply (K : ℝ) (p u : ℂ × ℂ) :
-    linearPrimitive K p u =
-      (K * stdComplexSymplecticForm p.1 u.1 + stdComplexSymplecticForm p.2 u.2) / 2 := by
-  simp [linearPrimitive, areaCLM_apply]
-  ring
+/-- The connection part `(|w|² / 2) A(z) ξ` of the primitive of the taming form. -/
+private noncomputable def normalModelConnection (A : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ) (p : ℂ × ℂ) :
+    (ℂ × ℂ) [⋀^Fin 1]→L[ℝ] ℝ :=
+  (‖p.2‖ ^ 2 / 2) •
+    ContinuousAlternatingMap.compContinuousLinearMapCLM (ContinuousLinearMap.fst ℝ ℂ ℂ) (A p.1)
 
 /-- The primitive `λ` of the taming form of the normal model, for a parameter `K` and a real
 connection one-form `A` on the base:
@@ -241,16 +240,16 @@ connection one-form `A` on the base:
 
 with `ω` the standard area form of `ℂ`. In polar coordinates `w = ρ e^{iθ}` on the fibre,
 `ω(w, dw) = ρ² dθ`, so this is `K λ₀ + (ρ² / 2) (dθ + A)` with `dλ₀` the base area form. -/
-noncomputable def normalModelPrimitive (K : ℝ) (A : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ) (p : ℂ × ℂ) :
-    (ℂ × ℂ) [⋀^Fin 1]→L[ℝ] ℝ :=
-  ContinuousAlternatingMap.ofSubsingletonLIE (0 : Fin 1) (linearPrimitive K p) +
-    (‖p.2‖ ^ 2 / 2) • (A p.1).compContinuousLinearMap (ContinuousLinearMap.fst ℝ ℂ ℂ)
+noncomputable def normalModelPrimitive (K : ℝ) (A : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ) :
+    ℂ × ℂ → (ℂ × ℂ) [⋀^Fin 1]→L[ℝ] ℝ :=
+  ContinuousLinearMap.liouvilleFormCLM (normalModelBilin K) + normalModelConnection A
 
 theorem normalModelPrimitive_apply (K : ℝ) (A : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ) (p u : ℂ × ℂ) :
     normalModelPrimitive K A p (fun _ ↦ u) =
       (K * stdComplexSymplecticForm p.1 u.1 + stdComplexSymplecticForm p.2 u.2) / 2 +
         ‖p.2‖ ^ 2 / 2 * A p.1 (fun _ ↦ u.1) := by
-  simp [normalModelPrimitive, linearPrimitive_apply, Function.comp_def]
+  simp [normalModelPrimitive, normalModelConnection, normalModelBilin_apply, Function.comp_def]
+  ring
 
 /-- The taming form `Ω = dλ` of the normal model (`normalModelPrimitive`). It is
 `K π^*ω + d((ρ² / 2) (dθ + A))`: the base area form scaled by `K`, plus the area form of the
@@ -259,54 +258,48 @@ noncomputable def normalModelForm (K : ℝ) (A : ℂ → ℂ [⋀^Fin 1]→L[ℝ
     (ℂ × ℂ) [⋀^Fin 2]→L[ℝ] ℝ :=
   extDeriv (normalModelPrimitive K A) p
 
+/-- The taming form is the exterior derivative of its primitive. -/
+theorem normalModelForm_def (K : ℝ) (A : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ) :
+    normalModelForm K A = extDeriv (normalModelPrimitive K A) :=
+  (rfl)
+
 variable {K : ℝ} {A : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ}
 
-private theorem normalModelPrimitive_eq (K : ℝ) (A : ℂ → ℂ [⋀^Fin 1]→L[ℝ] ℝ) :
-    normalModelPrimitive K A = fun p ↦
-      ((ContinuousAlternatingMap.ofSubsingletonLIE (𝕜 := ℝ) (E := ℂ × ℂ) (F := ℝ)
-          (0 : Fin 1)).toContinuousLinearEquiv.toContinuousLinearMap.comp (linearPrimitive K)) p +
-        (‖p.2‖ ^ 2 / 2) • ContinuousAlternatingMap.compContinuousLinearMapCLM
-          (ContinuousLinearMap.fst ℝ ℂ ℂ) (A p.1) :=
-  rfl
-
-theorem differentiableAt_normalModelPrimitive {p : ℂ × ℂ} (hA : DifferentiableAt ℝ A p.1) :
-    DifferentiableAt ℝ (normalModelPrimitive K A) p := by
+private theorem differentiableAt_normalModelConnection {p : ℂ × ℂ}
+    (hA : DifferentiableAt ℝ A p.1) : DifferentiableAt ℝ (normalModelConnection A) p := by
   have h₁ : DifferentiableAt ℝ (fun q : ℂ × ℂ ↦ ‖q.2‖ ^ 2 / 2) p := by
     have := DifferentiableAt.norm_sq ℝ (differentiableAt_snd (𝕜 := ℝ) (p := p))
     fun_prop
-  have h₂ : DifferentiableAt ℝ (fun q : ℂ × ℂ ↦ ContinuousAlternatingMap.compContinuousLinearMapCLM
-      (ContinuousLinearMap.fst ℝ ℂ ℂ) (A q.1)) p :=
-    (ContinuousLinearMap.differentiableAt _).comp p (hA.comp p differentiableAt_fst)
-  rw [normalModelPrimitive_eq]
-  exact (ContinuousLinearMap.differentiableAt _).add (h₁.smul h₂)
+  exact h₁.smul ((ContinuousLinearMap.differentiableAt _).comp p (hA.comp p differentiableAt_fst))
+
+theorem differentiableAt_normalModelPrimitive {p : ℂ × ℂ} (hA : DifferentiableAt ℝ A p.1) :
+    DifferentiableAt ℝ (normalModelPrimitive K A) p :=
+  (ContinuousLinearMap.differentiableAt _).add (differentiableAt_normalModelConnection hA)
 
 theorem contDiff_normalModelPrimitive {n : WithTop ℕ∞} (hA : ContDiff ℝ n A) :
     ContDiff ℝ n (normalModelPrimitive K A) := by
   have h₁ : ContDiff ℝ n (fun q : ℂ × ℂ ↦ ‖q.2‖ ^ 2 / 2) := by
     have := ContDiff.norm_sq ℝ (contDiff_snd (𝕜 := ℝ) (E := ℂ) (F := ℂ) (n := n))
     fun_prop
-  have h₂ : ContDiff ℝ n (fun q : ℂ × ℂ ↦ ContinuousAlternatingMap.compContinuousLinearMapCLM
-      (ContinuousLinearMap.fst ℝ ℂ ℂ) (A q.1)) :=
-    (ContinuousLinearMap.contDiff _).comp (hA.comp contDiff_fst)
-  rw [normalModelPrimitive_eq]
-  exact (ContinuousLinearMap.contDiff _).add (h₁.smul h₂)
+  exact (ContinuousLinearMap.contDiff _).add
+    (h₁.smul ((ContinuousLinearMap.contDiff _).comp (hA.comp contDiff_fst)))
 
-/-- The derivative of the coefficient `λ(·)(u)` of the primitive in the direction `v`. -/
-private theorem fderiv_normalModelPrimitive_apply {p : ℂ × ℂ} (hA : DifferentiableAt ℝ A p.1)
+/-- The derivative of the coefficient `(|w|² / 2) A(z) ξ` of the connection part of the primitive
+in the direction `v`. -/
+private theorem fderiv_normalModelConnection_apply {p : ℂ × ℂ} (hA : DifferentiableAt ℝ A p.1)
     (u v : ℂ × ℂ) :
-    fderiv ℝ (fun y ↦ normalModelPrimitive K A y (fun _ ↦ u)) p v =
-      linearPrimitive K v u + ⟪p.2, v.2⟫_ℝ * A p.1 (fun _ ↦ u.1) +
-        ‖p.2‖ ^ 2 / 2 * fderiv ℝ A p.1 v.1 (fun _ ↦ u.1) := by
-  have hfun : (fun y ↦ normalModelPrimitive K A y (fun _ ↦ u)) =
-      fun y ↦ (linearPrimitive K).flip u y + ‖y.2‖ ^ 2 * (2 : ℝ)⁻¹ * A y.1 (fun _ ↦ u.1) := by
+    fderiv ℝ (fun y ↦ normalModelConnection A y (fun _ ↦ u)) p v =
+      ⟪p.2, v.2⟫_ℝ * A p.1 (fun _ ↦ u.1) + ‖p.2‖ ^ 2 / 2 * fderiv ℝ A p.1 v.1 (fun _ ↦ u.1) := by
+  have hfun : (fun y ↦ normalModelConnection A y (fun _ ↦ u)) =
+      fun y ↦ ‖y.2‖ ^ 2 * (2 : ℝ)⁻¹ * A y.1 (fun _ ↦ u.1) := by
     funext y
-    simp [normalModelPrimitive, Function.comp_def, div_eq_mul_inv]
+    simp [normalModelConnection, Function.comp_def, div_eq_mul_inv]
   have h₂ := (HasFDerivAt.norm_sq (hasFDerivAt_snd (𝕜 := ℝ) (p := p))).mul_const (2 : ℝ)⁻¹
   have h₃ : HasFDerivAt (fun y : ℂ × ℂ ↦ A y.1 (fun _ ↦ u.1))
       (((fderiv ℝ A p.1).comp (ContinuousLinearMap.fst ℝ ℂ ℂ)).flipAlternating
         (fun _ ↦ u.1)) p :=
     (hA.hasFDerivAt.comp p hasFDerivAt_fst).continuousAlternatingMap_apply_const _
-  rw [hfun, ((((linearPrimitive K).flip u).hasFDerivAt).fun_add (h₂.fun_mul h₃)).fderiv]
+  rw [hfun, (h₂.fun_mul h₃).fderiv]
   simp
   ring
 
@@ -321,11 +314,18 @@ theorem normalModelForm_apply {p : ℂ × ℂ} (hA : DifferentiableAt ℝ A p.1)
       K * stdComplexSymplecticForm X.1 Y.1 + stdComplexSymplecticForm X.2 Y.2 +
         ⟪p.2, X.2⟫_ℝ * A p.1 (fun _ ↦ Y.1) - ⟪p.2, Y.2⟫_ℝ * A p.1 (fun _ ↦ X.1) +
         ‖p.2‖ ^ 2 / 2 * extDeriv A p.1 ![X.1, Y.1] := by
-  rw [normalModelForm, extDeriv_apply_pair_of_differentiableAt
-      (differentiableAt_normalModelPrimitive hA), fderiv_normalModelPrimitive_apply hA,
-    fderiv_normalModelPrimitive_apply hA, extDeriv_apply_pair, linearPrimitive_apply,
-    linearPrimitive_apply]
-  simp only [stdComplexSymplecticForm_apply]
+  have hskew (v w : ℂ × ℂ) : normalModelBilin K v w = -normalModelBilin K w v := by
+    simp only [normalModelBilin_apply, stdComplexSymplecticForm_apply]
+    ring
+  rw [normalModelForm_def, normalModelPrimitive,
+    extDeriv_add (ContinuousLinearMap.differentiableAt _)
+      (differentiableAt_normalModelConnection hA),
+    ContinuousAlternatingMap.add_apply,
+    ContinuousLinearMap.extDeriv_liouvilleFormCLM_apply_of_skew _ two_ne_zero hskew,
+    extDeriv_apply_pair_of_differentiableAt (differentiableAt_normalModelConnection hA),
+    fderiv_normalModelConnection_apply hA, fderiv_normalModelConnection_apply hA,
+    extDeriv_apply_pair, normalModelBilin_apply]
+  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
   ring
 
 /-- **The taming form is closed**: it is exact, `Ω = dλ`, for a `C²` connection. -/
