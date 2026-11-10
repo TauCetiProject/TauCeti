@@ -36,9 +36,10 @@ the stages of the Whitehead tower of `X`, along which homotopy groups are studie
 through the fibrations `K(πₙ X, n - 1) → X⟨n⟩ → X`.
 
 The proof reads off the homotopy groups of `X⟨n⟩` from the exact homotopy sequence of the map `j`
-(`TauCeti.TopCat.mem_range_map_homotopyFiberProj_iff`,
-`TauCeti.TopCat.eq_const_of_map_homotopyFiberProj_eq_const`): `j` is bijective on `πₖ` for
-`k ≤ n` and `πₖ(Pₙ X)` is trivial for `k > n`, so `j` is surjective on every homotopy group.
+(`TauCeti.TopCat.mem_range_homotopyGroupMap_homotopyFiberProj_iff`,
+`TauCeti.TopCat.eq_const_of_homotopyGroupMap_homotopyFiberProj_eq_const`): `j` is bijective on
+`πₖ` for `k ≤ n` and `πₖ(Pₙ X)` is trivial for `k > n`, so `j` is surjective on every homotopy
+group (`TauCeti.surjective_homotopyGroupMap_killHomotopyGroupsIncl`).
 
 ## Main declarations
 
@@ -100,35 +101,23 @@ theorem serreFibrations_nConnectedCoverProj :
 def nConnectedCoverFiberHomeomorph :
     (nConnectedCoverProj n X x).fiber x ≃ₜ
       Ω (killHomotopyGroups (n + 1) X x) (killHomotopyGroupsIncl (n + 1) X x x) :=
-  MappingPathFiber.projFiberHomeomorphPath (killHomotopyGroupsIncl (n + 1) X x).hom _ x
+  TopCat.homotopyFiberFiberHomeomorph _ x
 
 @[simp]
 theorem nConnectedCoverFiberHomeomorph_apply (p : (nConnectedCoverProj n X x).fiber x) (t : I) :
     nConnectedCoverFiberHomeomorph n X x p t = p.1.val.2 t :=
-  MappingPathFiber.projFiberHomeomorphPath_apply _ _ x p t
+  TopCat.homotopyFiberFiberHomeomorph_apply _ x p t
 
 variable [T2Space X]
 
-/-- The inclusion `X → killHomotopyGroups (n + 1) X x` is surjective on every homotopy group: it is
-bijective in dimensions at most `n`, and the homotopy groups of the target vanish above `n`. -/
-private theorem surjective_map_killHomotopyGroupsIncl (k : ℕ) :
-    Function.Surjective (HomotopyGroup.map (N := Option (Fin k)) (x := x)
-      (killHomotopyGroupsIncl (n + 1) X x).hom rfl) := by
-  rcases lt_or_ge k n with hk | hk
-  · exact (bijective_homotopyGroupMap_killHomotopyGroupsIncl (n + 1) X x (by simpa using hk)).2
-  · have := subsingleton_homotopyGroup_killHomotopyGroups (n + 1) X x (k := k + 1) (by omega)
-    have := (HomotopyGroup.congrEquiv (X := killHomotopyGroups (n + 1) X x)
-      (x := killHomotopyGroupsIncl (n + 1) X x x) (finSuccEquiv k)).symm.subsingleton
-    exact fun _ ↦ ⟨⟦GenLoop.const⟧, Subsingleton.elim _ _⟩
-
 /-- A class of `πₖ(X⟨n⟩)` which projects to the trivial class of `X` is trivial. -/
-private theorem eq_const_of_map_nConnectedCoverProj_eq_const {k : ℕ}
+private theorem eq_const_of_homotopyGroupMap_nConnectedCoverProj_eq_const {k : ℕ}
     {c : π_ k (nConnectedCover n X x) (nConnectedCoverBasepoint n X x)}
     (hc : HomotopyGroup.map (nConnectedCoverProj n X x).hom
       (nConnectedCoverProj_nConnectedCoverBasepoint n X x) c = ⟦GenLoop.const⟧) :
     c = ⟦GenLoop.const⟧ :=
-  TopCat.eq_const_of_map_homotopyFiberProj_eq_const _ x
-    (surjective_map_killHomotopyGroupsIncl n X x k) hc
+  TopCat.eq_const_of_homotopyGroupMap_homotopyFiberProj_eq_const _ x
+    (surjective_homotopyGroupMap_killHomotopyGroupsIncl (n + 1) X x) hc
 
 /-- **The `n`-connected cover is `n`-connected**: its homotopy groups `πₖ` vanish for
 `1 ≤ k ≤ n`. -/
@@ -141,25 +130,24 @@ theorem subsingleton_homotopyGroup_nConnectedCover {k : ℕ} (hk0 : k ≠ 0) (hk
   suffices h : ∀ c : π_ (m + 1) (nConnectedCover n X x) (nConnectedCoverBasepoint n X x),
       c = ⟦GenLoop.const⟧ from (h c).trans (h c').symm
   intro c
-  refine eq_const_of_map_nConnectedCoverProj_eq_const n X x ?_
+  refine eq_const_of_homotopyGroupMap_nConnectedCoverProj_eq_const n X x ?_
   have hinj := (bijective_homotopyGroupMap_killHomotopyGroupsIncl (n + 1) X x
     (N := Option (Fin m)) (by simp; omega)).1
-  have hrange := (TopCat.mem_range_map_homotopyFiberProj_iff
+  have hrange := (TopCat.mem_range_homotopyGroupMap_homotopyFiberProj_iff
     (killHomotopyGroupsIncl (n + 1) X x) x).1 ⟨HomotopyGroup.congrEquiv (finSuccEquiv m) c, rfl⟩
   rw [← GenLoop.map_const (killHomotopyGroupsIncl (n + 1) X x).hom rfl,
     ← HomotopyGroup.map_mk] at hrange
   apply (HomotopyGroup.congrEquiv (X := X) (x := x) (finSuccEquiv m)).injective
-  rw [← HomotopyGroup.map_congrEquiv, hinj hrange,
-    HomotopyGroup.congrEquiv_mk]
-  exact congrArg _ (GenLoop.ext _ _ fun _ ↦ by simp)
+  rw [← HomotopyGroup.map_congrEquiv, hinj hrange, HomotopyGroup.congrEquiv_const]
 
 /-- **The `n`-connected cover of a path-connected space is path-connected.** -/
 instance pathConnectedSpace_nConnectedCover [PathConnectedSpace X] :
     PathConnectedSpace (nConnectedCover n X x) := by
   have : Subsingleton (π_ 0 X x) := HomotopyGroup.pi0EquivZerothHomotopy.subsingleton
   have : Subsingleton (π_ 0 (nConnectedCover n X x) (nConnectedCoverBasepoint n X x)) :=
-    ⟨fun c c' ↦ (eq_const_of_map_nConnectedCoverProj_eq_const n X x (Subsingleton.elim _ _)).trans
-      (eq_const_of_map_nConnectedCoverProj_eq_const n X x (Subsingleton.elim _ _)).symm⟩
+    ⟨fun c c' ↦ (eq_const_of_homotopyGroupMap_nConnectedCoverProj_eq_const n X x
+      (Subsingleton.elim _ _)).trans (eq_const_of_homotopyGroupMap_nConnectedCoverProj_eq_const
+        n X x (Subsingleton.elim _ _)).symm⟩
   exact pathConnectedSpace_iff_zerothHomotopy.2
     ⟨⟨⟦nConnectedCoverBasepoint n X x⟧⟩,
       (HomotopyGroup.pi0EquivZerothHomotopy
@@ -177,13 +165,14 @@ theorem bijective_homotopyGroupMap_nConnectedCoverProj {k : ℕ} (hk : n < k) :
       (nConnectedCoverProj n X x).hom (nConnectedCoverProj_nConnectedCoverBasepoint n X x))).2
       fun c hc ↦ by
         rw [HomotopyGroup.mapHom_apply, ← HomotopyGroup.mk_const_eq_one] at hc
-        rw [eq_const_of_map_nConnectedCoverProj_eq_const n X x hc, HomotopyGroup.mk_const_eq_one]
+        rw [eq_const_of_homotopyGroupMap_nConnectedCoverProj_eq_const n X x hc,
+          HomotopyGroup.mk_const_eq_one]
     exact hker h
   · -- Every class of `X` is killed by the inclusion, whose target has no `π_{m + 1}`.
     have := subsingleton_homotopyGroup_killHomotopyGroups (n + 1) X x (k := m + 1) (by omega)
     have := (HomotopyGroup.congrEquiv (X := killHomotopyGroups (n + 1) X x)
       (x := killHomotopyGroupsIncl (n + 1) X x x) (finSuccEquiv m)).symm.subsingleton
-    obtain ⟨c, hc⟩ := (TopCat.mem_range_map_homotopyFiberProj_iff
+    obtain ⟨c, hc⟩ := (TopCat.mem_range_homotopyGroupMap_homotopyFiberProj_iff
       (killHomotopyGroupsIncl (n + 1) X x) x
       (a := HomotopyGroup.congrEquiv (finSuccEquiv m) a)).2 (Subsingleton.elim _ _)
     refine ⟨(HomotopyGroup.congrEquiv (finSuccEquiv m)).symm c,
