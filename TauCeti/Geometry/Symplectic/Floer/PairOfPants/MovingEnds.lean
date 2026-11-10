@@ -460,9 +460,7 @@ private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbati
     (realChart_injective fun _ _ h => mul_left_cancel₀ ha (add_left_cancel h)).injOn
     (fun w _ ↦ (contDiff_realChart (by fun_prop)).contDiffAt)
     (fun w hw ↦ differentiableAt_domain_of_differentiableAt (hdiff hw _) 1)
-    (fun w hw ↦ differentiableAt_domain_of_differentiableAt (hdiff hw _) Complex.I)
-    (fun w hw ↦ differentiableAt_target_of_differentiableAt (hdiff hw _) 1)
-    (fun w hw ↦ differentiableAt_target_of_differentiableAt (hdiff hw _) Complex.I), hpull, hpull,
+    (fun w hw ↦ differentiableAt_domain_of_differentiableAt (hdiff hw _) Complex.I), hpull, hpull,
     equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]
   rfl
 

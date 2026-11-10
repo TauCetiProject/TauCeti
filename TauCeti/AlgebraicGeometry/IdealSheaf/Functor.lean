@@ -44,18 +44,12 @@ variable {S X : Scheme.{u}} (f : X ⟶ S)
 /-- The functor of closed subschemes of the base changes of `f : X ⟶ S`: it sends a scheme `T`
 over `S` to the ideal sheaves on `X_T = T ×_S X`, and a morphism `T' ⟶ T` over `S` to pullback
 of ideal sheaves along the induced morphism `X_{T'} ⟶ X_T`. -/
--- Expose the object type so that the values of the functor, and of its subfunctors, can be used
--- directly as ideal sheaves on the base change.
-@[expose]
+-- Expose the object type so that values of the functor and its subfunctors can be used
+-- directly as ideal sheaves. Implicit reducibility also lets simplification identify these types.
+@[expose, implicit_reducible]
 def baseChangeIdealSheafFunctor : (Over S)ᵒᵖ ⥤ Type u where
   obj T := (pullback T.unop.hom f).IdealSheafData
   map φ := TypeCat.ofHom fun I ↦ I.comap ((Over.pullback f).map φ.unop).left
-  map_id T := by
-    ext I
-    simp
-  map_comp φ ψ := by
-    ext I
-    simp
 
 /-- The value of `baseChangeIdealSheafFunctor f` at `T` is the type of ideal sheaves on
 `T ×_S X`. -/
@@ -63,11 +57,11 @@ lemma baseChangeIdealSheafFunctor_obj (T : (Over S)ᵒᵖ) :
     (baseChangeIdealSheafFunctor f).obj T = (pullback T.unop.hom f).IdealSheafData :=
   rfl
 
-/-- The ideal sheaves on a base change retain their usual inclusion order when viewed as values
-of `baseChangeIdealSheafFunctor`. The delegate lets typeclass search use that order through the
-functor's object presentation. -/
-instance (T : (Over S)ᵒᵖ) : PartialOrder ((baseChangeIdealSheafFunctor f).obj T) :=
-  inferInstanceAs (PartialOrder (pullback T.unop.hom f).IdealSheafData)
+/-- The ideal sheaves on a base change retain their complete lattice structure when viewed as
+values of `baseChangeIdealSheafFunctor`. The delegate lets typeclass search use the inclusion
+order and lattice operations through the functor's object presentation. -/
+instance (T : (Over S)ᵒᵖ) : CompleteLattice ((baseChangeIdealSheafFunctor f).obj T) :=
+  inferInstanceAs (CompleteLattice (pullback T.unop.hom f).IdealSheafData)
 
 /-- `baseChangeIdealSheafFunctor f` acts by pullback of ideal sheaves along the induced morphism
 of base changes. -/
@@ -79,10 +73,10 @@ lemma baseChangeIdealSheafFunctor_map_apply {T T' : (Over S)ᵒᵖ} (φ : T ⟶ 
   rfl
 
 /-- Base change preserves the unit ideal sheaf, that is, the empty closed subscheme. -/
-@[simp]
+-- Apply before the map-application lemma changes the presentation of the underlying sheaves.
+@[simp↓]
 lemma baseChangeIdealSheafFunctor_map_top {T T' : (Over S)ᵒᵖ} (φ : T ⟶ T') :
-    (baseChangeIdealSheafFunctor f).map φ (⊤ : (pullback T.unop.hom f).IdealSheafData) =
-      (⊤ : (pullback T'.unop.hom f).IdealSheafData) :=
+    (baseChangeIdealSheafFunctor f).map φ (⊤ : (baseChangeIdealSheafFunctor f).obj T) = ⊤ :=
   Scheme.IdealSheafData.comap_top _
 
 end
