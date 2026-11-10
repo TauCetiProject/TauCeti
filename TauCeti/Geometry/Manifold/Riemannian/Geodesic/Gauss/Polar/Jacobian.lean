@@ -21,6 +21,8 @@ supplied by the differential of the exponential map. In geodesic polar coordinat
 
 ## Main results
 
+* `TauCeti.Manifold.norm_curveVelocity_riemannianExp_const_smul`: the speed of a curve
+  `t ↦ exp_p (r • e t)` of constant radial parameter is the polar Jacobian.
 * `TauCeti.Manifold.inner_mfderiv_riemannianExp_polar`: the polar form of the pulled-back metric,
   from the Gauss lemma.
 * `TauCeti.Manifold.IsNormalDomain.polarJacobian_pos`: positivity away from the centre inside a
@@ -104,6 +106,19 @@ theorem IsNormalDomain.polarJacobian_pos {U : Set (TangentSpace I p)}
   have heq : r • w = (0 : TangentSpace I p) :=
     h.injective_mfderiv_riemannianExp hmem (hz.trans (map_zero _).symm)
   exact (smul_ne_zero hr hw) heq
+
+/-- The speed of the curve `t ↦ exp_p (r • e t)` of constant radial parameter `r` is the polar
+Jacobian in the direction `e t` with angular vector the velocity of `e`. -/
+theorem norm_curveVelocity_riemannianExp_const_smul {e : ℝ → TangentSpace I p}
+    {e' : TangentSpace I p} {t : ℝ} (he : HasDerivAt e e' t)
+    (hmem : r • e t ∈ expDomain I M p) :
+    ‖curveVelocity I (fun s ↦ riemannianExp I M p (r • e s)) t‖ =
+      polarJacobian (I := I) p (e t) e' r := by
+  have hexp : MDifferentiableAt 𝓘(ℝ, TangentSpace I p) I (riemannianExp I M p) (r • e t) :=
+    ((contMDiffOn_riemannianExp p).contMDiffAt
+      ((isOpen_expDomain p).mem_nhds hmem)).mdifferentiableAt (by simp)
+  exact (congrArg norm (hexp.curveVelocity_comp_mfderiv (he.const_smul r))).trans
+    (polarJacobian_eq_norm p (e t) e' r).symm
 
 /-- The full polar metric, evaluated on two coordinate tangent vectors.
 The angular coefficient is the polar Jacobian. -/
