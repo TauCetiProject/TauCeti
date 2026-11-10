@@ -269,6 +269,14 @@ theorem timeDependentFlowOf_self (X : ℝ → (x : M) → TangentSpace I x) (s :
     timeDependentFlowOf X s s x = x := by
   rw [timeDependentFlowOf_def, sub_self, flowOf_zero]
 
+/-- If a triple `((s, t), x)` lies in the domain of the time-dependent flow, so does
+`((s, s), x)`. -/
+theorem mem_timeDependentFlowDomain_self_of_mem {X : ℝ → (x : M) → TangentSpace I x} {s t : ℝ}
+    {x : M} (h : ((s, t), x) ∈ timeDependentFlowDomain X) :
+    ((s, s), x) ∈ timeDependentFlowDomain X := by
+  rw [mem_timeDependentFlowDomain, sub_self]
+  exact mem_flowDomain_zero_of_mem (mem_timeDependentFlowDomain.1 h)
+
 section Flow
 
 variable [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]

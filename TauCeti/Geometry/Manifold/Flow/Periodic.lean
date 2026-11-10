@@ -184,10 +184,7 @@ private theorem timeDependentFlowOf_nat_mul_of_isFixedPt (hT : Periodic X T)
       timeDependentFlowOf X s (s + k * T) x = x := by
   induction k with
   | zero =>
-    have h0 : ((s, s), x) ∈ timeDependentFlowDomain X := by
-      rw [mem_timeDependentFlowDomain, sub_self]
-      exact mem_flowDomain_zero_of_mem (mem_timeDependentFlowDomain.1 h)
-    simpa using h0
+    simpa using mem_timeDependentFlowDomain_self_of_mem h
   | succ k ih =>
     -- The `(k + 1)`-st period is the first one translated by `k T`.
     obtain ⟨hmem, heq⟩ := timeDependentFlowOf_add_period_of_mem hX (hT.nat_mul k) h
