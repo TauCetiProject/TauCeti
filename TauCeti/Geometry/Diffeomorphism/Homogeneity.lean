@@ -14,7 +14,7 @@ import TauCeti.Geometry.Manifold.Diffeomorph.PointMotion
 
 The orbits of the group of `C^m` self-diffeomorphisms of a finite-dimensional boundaryless `C^m`
 manifold `M` are open and closed for any `1 ≤ m`. Near each point, cut-off translations in a chart
-move it to every nearby point (`Diffeomorph.exists_contMDiff_family_apply_eq`), and unlike flows of
+move it to every nearby point (`TauCeti.exists_contMDiff_family_apply_eq`), and unlike flows of
 vector fields they lose no derivative, so no further smoothness of `M` is needed. In particular the
 diffeomorphism group of a connected manifold acts transitively.
 
@@ -51,7 +51,7 @@ theorem isOpen_orbit_diffeomorph (hm : 1 ≤ m) (x₀ : M) : IsOpen (orbit (M �
   refine isOpen_iff_forall_mem_open.2 ?_
   rintro _ ⟨g, rfl⟩
   obtain ⟨U, hU, hgU, -, S, f, -, -, -, -, hS, -, -⟩ :=
-    Diffeomorph.exists_contMDiff_family_apply_eq (I := I) hm isOpen_univ (mem_univ (g • x₀))
+    exists_contMDiff_family_apply_eq (I := I) hm isOpen_univ (mem_univ (g • x₀))
   refine ⟨U, fun z hz ↦ ⟨S (f z) * g, ?_⟩, hU, hgU⟩
   dsimp only
   rw [mul_smul, Diffeomorph.smul_def (S (f z)), hS z hz]

@@ -27,7 +27,7 @@ The section is built from cut-off translations. Read in the chart at `x`, the ma
 diffeomorphisms of the model space carrying `x` to the point with chart coordinate `e x + d`, where
 `e` is the chart. Extended by the identity outside the chart, they form a family of
 diffeomorphisms of `M` depending jointly `C^m`-smoothly on `d` and the point
-(`Diffeomorph.exists_contMDiff_family_apply_eq`), hence a continuous map into `Diff(M)`. Flows of
+(`TauCeti.exists_contMDiff_family_apply_eq`), hence a continuous map into `Diff(M)`. Flows of
 vector fields would lose a derivative, since vector fields on a `C^m` manifold are only `C^(m-1)`;
 cut-off translations do not, so `C^m` regularity of `M` suffices.
 
@@ -83,7 +83,7 @@ theorem exists_continuousOn_diffeomorph_apply_eq (hm : 1 ≤ m) {V : Set M} (hV 
     ∃ U ∈ 𝓝 x, IsOpen U ∧ ∃ (K : Set M) (s : M → M ≃ₘ^m⟮I, I⟯ M), IsCompact K ∧ K ⊆ V ∧
       ContinuousOn s U ∧ s x = 1 ∧ (∀ z ∈ U, s z x = z) ∧ ∀ z, EqOn (s z) id Kᶜ := by
   obtain ⟨U, hU, hxU, K, S, f, hK, hKV, hS, hf, hSx, hS1, hSK⟩ :=
-    Diffeomorph.exists_contMDiff_family_apply_eq (I := I) hm hV hx
+    exists_contMDiff_family_apply_eq (I := I) hm hV hx
   exact ⟨U, hU.mem_nhds hxU, hU, K, fun z ↦ S (f z), hK, hKV,
     hS.continuous_diffeomorphWeakWhitney.comp_continuousOn hf, hS1, hSx, fun z ↦ hSK (f z)⟩
 
