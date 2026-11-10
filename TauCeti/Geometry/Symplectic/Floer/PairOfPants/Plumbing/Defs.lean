@@ -81,12 +81,8 @@ theorem plumbedPerturbation_def (Ha Hb : Puncture → ℝ → M → ℝ) (q : Pu
 theorem plumbedPerturbation_add (Ha₁ Ha₂ Hb₁ Hb₂ : Puncture → ℝ → M → ℝ) (q : Puncture) (L : ℝ) :
     plumbedPerturbation (Ha₁ + Ha₂) (Hb₁ + Hb₂) q L =
       plumbedPerturbation Ha₁ Hb₁ q L + plumbedPerturbation Ha₂ Hb₂ q L := by
-  have h (H₁ H₂ : Puncture → ℝ → M → ℝ) (w : ℂ) (x : M) :
-      pairOfPantsPerturbation (H₁ + H₂) w x =
-        pairOfPantsPerturbation H₁ w x + pairOfPantsPerturbation H₂ w x :=
-    pairOfPantsPerturbation_add H₁ H₂ w x
   funext w x
-  simp only [plumbedPerturbation_def, h, Pi.add_apply]
+  simp only [plumbedPerturbation_def, pairOfPantsPerturbation_add, Pi.add_apply]
   split_ifs <;> simp [ContinuousLinearMap.add_comp]
 
 /-- The plumbed perturbation is homogeneous in the Hamiltonians of the two pairs of pants. -/

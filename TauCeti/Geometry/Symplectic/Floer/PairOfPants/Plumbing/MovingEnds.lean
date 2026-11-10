@@ -69,6 +69,18 @@ namespace TauCeti.Floer
 
 variable {M : Type*} {q r : Puncture} {L : ℝ}
 
+/-- The circle `s = a` of a positive end has radius `exp (-2πa) / 2 ≤ 1 / 2` for `a ≥ 0`. -/
+private theorem exp_neg_two_pi_mul_le_one {a : ℝ} (ha : 0 ≤ a) : Real.exp (-(2 * π * a)) ≤ 1 :=
+  Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
+
+/-- The circle `s = 1` of a positive end has radius `exp (-2π) / 2 ≤ 1 / 2`. -/
+private theorem exp_neg_two_pi_le_one : Real.exp (-(2 * π)) ≤ 1 :=
+  Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
+
+/-- The output datum vanishes on the disc of radius `exp (2π) ≥ 1`. -/
+private theorem one_le_exp_two_pi : 1 ≤ Real.exp (2 * π) :=
+  Real.one_le_exp (by positivity)
+
 /-! ### Switching off the neck -/
 
 /-- On the inserted half `Re z > L/2` of the end `q`, the input ends of the receiving pair of pants
@@ -82,9 +94,8 @@ private theorem receiving_eq_zero_of_lt_re_endCoord (hq : q ≠ inf) (hrq : r �
     linarith)
   have hlt : ‖w - q.endCenter‖ < Real.exp (-(2 * π * (L / 2))) / 2 :=
     not_le.1 fun h' => (not_le.2 h) ((re_endCoord_le_iff hq hc).2 h')
-  have hexp : Real.exp (-(2 * π * (L / 2))) ≤ 1 :=
-    Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
-  have hexp' : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
+  have hexp : Real.exp (-(2 * π * (L / 2))) ≤ 1 := exp_neg_two_pi_mul_le_one (by positivity)
+  have hexp' := exp_neg_two_pi_le_one
   refine ⟨inputEndPerturbation_eq_zero_of_le_norm_sub ?_ x,
     negativePlanePerturbation_eq_zero_of_norm_le ?_ x⟩
   · have h₁ := norm_sub_norm_le (q.endCenter - r.endCenter) (w - r.endCenter)
@@ -94,8 +105,7 @@ private theorem receiving_eq_zero_of_lt_re_endCoord (hq : q ≠ inf) (hrq : r �
     linarith
   · have h₁ := norm_add_le (w - q.endCenter) q.endCenter
     rw [sub_add_cancel] at h₁
-    have h₂ : (1 : ℝ) ≤ Real.exp (2 * π) := Real.one_le_exp (by positivity)
-    linarith [norm_endCenter_le_one q]
+    linarith [norm_endCenter_le_one q, one_le_exp_two_pi]
 
 /-- On the receiving part `Re z ≤ L/2` of the end `q`, the input ends of the inserted pair of pants
 vanish. -/
@@ -105,12 +115,12 @@ private theorem inserted_eq_zero_of_re_endCoord_le (hq : q ≠ inf) (hL : 0 ≤ 
       inputEndPerturbation (q.plumbingMap L 1) (-q.plumbingFactor L) H₁ w x = 0 := by
   set u := Real.exp (-(2 * π * (L / 2)))
   have hu₀ : 0 < u := Real.exp_pos _
-  have hu₁ : u ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
+  have hu₁ : u ≤ 1 := exp_neg_two_pi_mul_le_one (by positivity)
   have hf : ‖q.plumbingFactor L‖ = u ^ 2 / 4 := by
     rw [norm_plumbingFactor_of_ne_inf hq, ← Real.exp_nat_mul]
     ring_nf
   have he₀ : 0 < Real.exp (-(2 * π)) := Real.exp_pos _
-  have he₁ : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
+  have he₁ := exp_neg_two_pi_le_one
   have hψ := q.plumbingMap_one_sub_endCenter L
   rcases eq_or_ne w q.endCenter with rfl | hc
   · refine ⟨inputEndPerturbation_self _ _ _ x, inputEndPerturbation_eq_zero_of_le_norm_sub ?_ x⟩
@@ -146,11 +156,9 @@ theorem plumbedPerturbation_update_zero_eq_puncturedSpherePerturbation (hq : q �
   split_ifs with h
   · -- On the inserted half the two inputs of the inserted pair of pants are pushed forward.
     obtain ⟨h₁, h₂⟩ := receiving_eq_zero_of_lt_re_endCoord hq hrq hr hL h (Hb r) (Hb inf) x
-    have hHa : (update Ha inf 0 zero, update Ha inf 0 one, update Ha inf 0 inf) =
-        (Ha zero, Ha one, 0) := by simp
-    simp only [Prod.mk.injEq] at hHa
     rw [← puncturedSpherePerturbation_eq_pairOfPantsPerturbation, puncturedSpherePerturbation_def,
-      Fin.sum_univ_two, hHa.1, hHa.2.1, hHa.2.2, h₁, h₂]
+      Fin.sum_univ_two, update_self, update_of_ne (show zero ≠ inf by decide),
+      update_of_ne (show one ≠ inf by decide), h₁, h₂]
     simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one,
       negativePlanePerturbation_zero, add_zero,
       ContinuousLinearMap.add_comp, inputEndPerturbation_sub_div_comp,
@@ -198,86 +206,138 @@ theorem plumbedPerturbation_update_smul (Ha Hb : Puncture → ℝ → M → ℝ)
 
 /-! ### The ends of the family -/
 
+/-- The centers `c_q`, `ψ(1)` and `c_r` of the three input ends of the plumbed sphere. -/
+private def plumbedCenters (q r : Puncture) (L : ℝ) : Fin 3 → ℂ :=
+  ![q.endCenter, q.plumbingMap L 1, r.endCenter]
+
+/-- The scales `f`, `-f` and `2 b_r` of the three input ends of the plumbed sphere. -/
+private def plumbedScales (q r : Puncture) (L : ℝ) : Fin 3 → ℂ :=
+  ![q.plumbingFactor L, -q.plumbingFactor L, 2 * r.endScale]
+
+private theorem plumbedCenters_def (q r : Puncture) (L : ℝ) :
+    plumbedCenters q r L = ![q.endCenter, q.plumbingMap L 1, r.endCenter] := rfl
+
+private theorem plumbedScales_def (q r : Puncture) (L : ℝ) :
+    plumbedScales q r L = ![q.plumbingFactor L, -q.plumbingFactor L, 2 * r.endScale] := rfl
+
+private theorem plumbedCenters_zero : plumbedCenters q r L 0 = q.endCenter := rfl
+
+private theorem plumbedCenters_one : plumbedCenters q r L 1 = q.plumbingMap L 1 := rfl
+
+private theorem plumbedCenters_two : plumbedCenters q r L 2 = r.endCenter := rfl
+
+private theorem norm_plumbedScales_zero (hq : q ≠ inf) :
+    ‖plumbedScales q r L 0‖ = Real.exp (-(2 * π * L)) / 4 :=
+  norm_plumbingFactor_of_ne_inf hq L
+
+private theorem norm_plumbedScales_one (hq : q ≠ inf) :
+    ‖plumbedScales q r L 1‖ = Real.exp (-(2 * π * L)) / 4 :=
+  (norm_neg _).trans (norm_plumbingFactor_of_ne_inf hq L)
+
+private theorem norm_plumbedScales_two (hr : r ≠ inf) : ‖plumbedScales q r L 2‖ = 1 :=
+  norm_two_mul_endScale hr
+
+private theorem plumbedScales_ne_zero (i : Fin 3) : plumbedScales q r L i ≠ 0 :=
+  match i with
+  | 0 => q.plumbingFactor_ne_zero L
+  | 1 => neg_ne_zero.2 (q.plumbingFactor_ne_zero L)
+  | 2 => mul_ne_zero two_ne_zero r.endScale_ne_zero
+
+/-- The second input `ψ(1)` of the inserted sphere is at distance at least `1 - ‖f‖` from the
+center of the other input `r`. -/
+private theorem one_sub_norm_plumbingFactor_le (hq : q ≠ inf) (hrq : r ≠ q) (hr : r ≠ inf) :
+    1 - ‖q.plumbingFactor L‖ ≤ ‖q.plumbingMap L 1 - r.endCenter‖ := by
+  have h := norm_sub_norm_le (q.endCenter - r.endCenter) (q.endCenter - q.plumbingMap L 1)
+  rw [sub_sub_sub_cancel_left, norm_endCenter_sub_endCenter hq hr hrq, norm_sub_rev,
+    q.plumbingMap_one_sub_endCenter] at h
+  exact h
+
 /-- The three input ends of the plumbed sphere have pairwise disjoint end discs. -/
 private theorem pairwise_norm_add_le (hq : q ≠ inf) (hrq : r ≠ q) (hr : r ≠ inf) (hL : 0 ≤ L) :
     Pairwise fun i j : Fin 3 =>
-      ‖(![q.plumbingFactor L, -q.plumbingFactor L, 2 * r.endScale] : Fin 3 → ℂ) i‖ / 2 +
-        ‖(![q.plumbingFactor L, -q.plumbingFactor L, 2 * r.endScale] : Fin 3 → ℂ) j‖ / 2 ≤
-      ‖(![q.endCenter, q.plumbingMap L 1, r.endCenter] : Fin 3 → ℂ) i -
-        (![q.endCenter, q.plumbingMap L 1, r.endCenter] : Fin 3 → ℂ) j‖ := by
-  have hf := norm_plumbingFactor_of_ne_inf hq L
-  have hε : Real.exp (-(2 * π * L)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
-  have hψ := q.plumbingMap_one_sub_endCenter L
-  have hqr := norm_endCenter_sub_endCenter hq hr hrq
-  have hψr : 1 - ‖q.plumbingFactor L‖ ≤ ‖q.plumbingMap L 1 - r.endCenter‖ := by
-    have h := norm_sub_norm_le (q.endCenter - r.endCenter) (q.endCenter - q.plumbingMap L 1)
-    rw [sub_sub_sub_cancel_left] at h
-    have e : ‖q.endCenter - q.plumbingMap L 1‖ = ‖q.plumbingFactor L‖ := by
-      rw [norm_sub_rev, hψ]
+      ‖plumbedScales q r L i‖ / 2 + ‖plumbedScales q r L j‖ / 2 ≤
+        ‖plumbedCenters q r L i - plumbedCenters q r L j‖ := by
+  have hε := exp_neg_two_pi_mul_le_one hL
+  have h01 : ‖plumbedScales q r L 0‖ / 2 + ‖plumbedScales q r L 1‖ / 2 ≤
+      ‖plumbedCenters q r L 0 - plumbedCenters q r L 1‖ := by
+    rw [norm_plumbedScales_zero hq, norm_plumbedScales_one hq, plumbedCenters_zero,
+      plumbedCenters_one, norm_sub_rev, q.plumbingMap_one_sub_endCenter,
+      norm_plumbingFactor_of_ne_inf hq]
     linarith
-  have h2r := norm_two_mul_endScale hr
+  have h02 : ‖plumbedScales q r L 0‖ / 2 + ‖plumbedScales q r L 2‖ / 2 ≤
+      ‖plumbedCenters q r L 0 - plumbedCenters q r L 2‖ := by
+    rw [norm_plumbedScales_zero hq, norm_plumbedScales_two hr, plumbedCenters_zero,
+      plumbedCenters_two, norm_endCenter_sub_endCenter hq hr hrq]
+    linarith
+  have h12 : ‖plumbedScales q r L 1‖ / 2 + ‖plumbedScales q r L 2‖ / 2 ≤
+      ‖plumbedCenters q r L 1 - plumbedCenters q r L 2‖ := by
+    rw [norm_plumbedScales_one hq, norm_plumbedScales_two hr, plumbedCenters_one,
+      plumbedCenters_two]
+    have h := one_sub_norm_plumbingFactor_le (L := L) hq hrq hr
+    rw [norm_plumbingFactor_of_ne_inf hq] at h
+    linarith
   intro i j hij
-  fin_cases i <;> fin_cases j <;> simp only [ne_eq, not_true_eq_false] at hij <;>
-    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, norm_neg,
-      h2r] <;>
-    first
-    | rw [norm_sub_rev, hψ]; linarith
-    | rw [hψ]; linarith
-    | rw [hqr]; linarith
-    | rw [norm_sub_rev, hqr]; linarith
-    | rw [norm_sub_rev]; linarith
-    | linarith
+  match i, j with
+  | 0, 0 | 1, 1 | 2, 2 => exact absurd rfl hij
+  | 0, 1 => exact h01
+  | 0, 2 => exact h02
+  | 1, 2 => exact h12
+  | 1, 0 => rw [add_comm, norm_sub_rev]; exact h01
+  | 2, 0 => rw [add_comm, norm_sub_rev]; exact h02
+  | 2, 1 => rw [add_comm, norm_sub_rev]; exact h12
 
 /-- The three input ends of the plumbed sphere lie in the disc on which the output datum
 vanishes. -/
 private theorem norm_add_le_two_mul_exp (hq : q ≠ inf) (hr : r ≠ inf) (hL : 0 ≤ L) (i : Fin 3) :
-    ‖(![q.endCenter, q.plumbingMap L 1, r.endCenter] : Fin 3 → ℂ) i‖ +
-        ‖(![q.plumbingFactor L, -q.plumbingFactor L, 2 * r.endScale] : Fin 3 → ℂ) i‖ / 2 ≤
-      2 * Real.exp (2 * π) := by
-  have hf := norm_plumbingFactor_of_ne_inf hq L
-  have hε : Real.exp (-(2 * π * L)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
-  have h1 : (1 : ℝ) ≤ Real.exp (2 * π) := Real.one_le_exp (by positivity)
-  have hψ : ‖q.plumbingMap L 1‖ ≤ 1 + ‖q.plumbingFactor L‖ := by
-    rw [plumbingMap_apply, mul_one]
-    exact (norm_add_le _ _).trans (by linarith [norm_endCenter_le_one q])
-  fin_cases i <;>
-    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, norm_neg,
-      norm_two_mul_endScale hr] <;>
-    linarith [norm_endCenter_le_one q, norm_endCenter_le_one r]
+    ‖plumbedCenters q r L i‖ + ‖plumbedScales q r L i‖ / 2 ≤ 2 * Real.exp (2 * π) := by
+  have hε := exp_neg_two_pi_mul_le_one hL
+  have h1 := one_le_exp_two_pi
+  match i with
+  | 0 =>
+    rw [plumbedCenters_zero, norm_plumbedScales_zero hq]
+    linarith [norm_endCenter_le_one q]
+  | 1 =>
+    have hψ : ‖q.plumbingMap L 1‖ ≤ 1 + ‖q.plumbingFactor L‖ := by
+      rw [plumbingMap_apply, mul_one]
+      exact (norm_add_le _ _).trans (by linarith [norm_endCenter_le_one q])
+    rw [plumbedCenters_one, norm_plumbedScales_one hq]
+    rw [norm_plumbingFactor_of_ne_inf hq] at hψ
+    linarith
+  | 2 =>
+    rw [plumbedCenters_two, norm_plumbedScales_two hr]
+    linarith [norm_endCenter_le_one r]
 
 /-- On the end disc `‖w - c_i‖ < ‖a_i‖ / 2` of each input end of the plumbed sphere, the neck
 datum vanishes, for `L > 2`. -/
 private theorem neck_eq_zero_of_norm_sub_lt (hq : q ≠ inf) (hrq : r ≠ q) (hr : r ≠ inf)
     (hL : 2 < L) (G : ℝ → M → ℝ) {i : Fin 3} {w : ℂ}
-    (hw : ‖w - (![q.endCenter, q.plumbingMap L 1, r.endCenter] : Fin 3 → ℂ) i‖ <
-      ‖(![q.plumbingFactor L, -q.plumbingFactor L, 2 * r.endScale] : Fin 3 → ℂ) i‖ / 2)
-    (x : M) :
+    (hw : ‖w - plumbedCenters q r L i‖ < ‖plumbedScales q r L i‖ / 2) (x : M) :
     plumbedPerturbation (Pi.single inf G) (Pi.single q G) q L w x = 0 := by
   refine plumbedPerturbation_single_inf_single_eq_zero hq hL G ?_ x
-  have hf := norm_plumbingFactor_of_ne_inf hq L
   -- The inner radius of the neck is `exp (2π) exp (-2πL) / 2`, at least `2 ‖f‖`.
   have hinner : Real.exp (-(2 * π * (L - 1))) = Real.exp (2 * π) * Real.exp (-(2 * π * L)) := by
     rw [← Real.exp_add]
     ring_nf
-  have h1 : (1 : ℝ) ≤ Real.exp (2 * π) := Real.one_le_exp (by positivity)
+  have h1 := one_le_exp_two_pi
   have hε₀ : 0 < Real.exp (-(2 * π * L)) := Real.exp_pos _
-  have he₁ : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
-  have hψ := q.plumbingMap_one_sub_endCenter L
-  fin_cases i <;>
-    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero,
-      Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, norm_neg,
-      norm_two_mul_endScale hr] at hw
-  · left
+  have he₁ := exp_neg_two_pi_le_one
+  match i with
+  | 0 =>
+    rw [plumbedCenters_zero, norm_plumbedScales_zero hq] at hw
+    left
     rw [hinner]
     nlinarith
-  · left
+  | 1 =>
+    rw [plumbedCenters_one, norm_plumbedScales_one hq] at hw
+    left
     have h := norm_add_le (w - q.plumbingMap L 1) (q.plumbingMap L 1 - q.endCenter)
-    rw [sub_add_sub_cancel, hψ] at h
+    rw [sub_add_sub_cancel, q.plumbingMap_one_sub_endCenter,
+      norm_plumbingFactor_of_ne_inf hq] at h
     rw [hinner]
     nlinarith
-  · right
+  | 2 =>
+    rw [plumbedCenters_two, norm_plumbedScales_two hr] at hw
+    right
     have h := norm_sub_norm_le (q.endCenter - r.endCenter) (w - r.endCenter)
     rw [sub_sub_sub_cancel_right, norm_sub_rev q.endCenter w,
       norm_endCenter_sub_endCenter hq hr hrq] at h
@@ -303,13 +363,11 @@ theorem plumbedPerturbation_update_smul_cylindricalEndLift_of_pos (hq : q ≠ in
           (deriv zero.cylindricalEndLift z * v)) =
       v.im * (smoothTransition (z.re - 1) *
         (![Ha zero, Ha one, Hb r] : Fin 3 → ℝ → M → ℝ) i z.im x) := by
-  set cs : Fin 3 → ℂ := ![q.endCenter, q.plumbingMap L 1, r.endCenter]
-  set as : Fin 3 → ℂ := ![q.plumbingFactor L, -q.plumbingFactor L, 2 * r.endScale]
-  have ha : as i ≠ 0 := by
-    have hf := q.plumbingFactor_ne_zero L
-    fin_cases i <;> simp [as, hf, r.endScale_ne_zero]
+  rw [← plumbedCenters_def, ← plumbedScales_def]
+  have ha : plumbedScales q r L i ≠ 0 := plumbedScales_ne_zero i
   -- The point lies in the end disc of the input `i`, where the neck datum vanishes.
-  have hlt : ‖cs i + as i * zero.cylindricalEndLift z - cs i‖ < ‖as i‖ / 2 := by
+  have hlt : ‖plumbedCenters q r L i + plumbedScales q r L i * zero.cylindricalEndLift z -
+      plumbedCenters q r L i‖ < ‖plumbedScales q r L i‖ / 2 := by
     have h := norm_cylindricalEndLift_sub_endCenter zero z
     rw [endCenter_zero, sub_zero, endScale_zero] at h
     have h2 : ‖(1 / 2 : ℂ)‖ = 1 / 2 := by norm_num
@@ -319,8 +377,8 @@ theorem plumbedPerturbation_update_smul_cylindricalEndLift_of_pos (hq : q ≠ in
     nlinarith [norm_pos_iff.2 ha]
   rw [plumbedPerturbation_update_smul,
     plumbedPerturbation_update_zero_eq_puncturedSpherePerturbation hq hrq hr (by linarith),
-    Pi.add_apply, Pi.add_apply, Pi.smul_apply, Pi.smul_apply,
-    neck_eq_zero_of_norm_sub_lt hq hrq hr hL G hlt, smul_zero, add_zero]
+    Pi.add_apply, Pi.add_apply, Pi.smul_apply, Pi.smul_apply, ← plumbedCenters_def,
+    ← plumbedScales_def, neck_eq_zero_of_norm_sub_lt hq hrq hr hL G hlt, smul_zero, add_zero]
   exact puncturedSpherePerturbation_cylindricalEndLift_of_pos
     (pairwise_norm_add_le hq hrq hr (by linarith)) (norm_add_le_two_mul_exp hq hr (by linarith))
     hH ha hz x v
@@ -344,12 +402,11 @@ theorem plumbedPerturbation_update_smul_cylindricalEndLift_inf_of_le (hq : q ≠
       (inf.cylindricalEndLift z) x = 0 := by
     refine plumbedPerturbation_single_inf_single_eq_zero hq hL G (Or.inr ?_) x
     have h := norm_sub_norm_le (inf.cylindricalEndLift z) q.endCenter
-    have h1 : (1 : ℝ) ≤ Real.exp (2 * π) := Real.one_le_exp (by positivity)
-    have he₁ : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
-    linarith [norm_endCenter_le_one q]
+    linarith [norm_endCenter_le_one q, one_le_exp_two_pi, exp_neg_two_pi_le_one]
   rw [plumbedPerturbation_update_smul,
     plumbedPerturbation_update_zero_eq_puncturedSpherePerturbation hq hrq hr (by linarith),
-    Pi.add_apply, Pi.add_apply, Pi.smul_apply, Pi.smul_apply, hneck, smul_zero, add_zero]
+    Pi.add_apply, Pi.add_apply, Pi.smul_apply, Pi.smul_apply, hneck, smul_zero, add_zero,
+    ← plumbedCenters_def, ← plumbedScales_def]
   exact puncturedSpherePerturbation_cylindricalEndLift_inf_of_le
     (norm_add_le_two_mul_exp hq hr (by linarith)) hHb hz x v
 
@@ -438,7 +495,9 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_update_smul_le
         ∑ p, ENNReal.ofReal (update Bb q (|c| * B) p) := by
   have hcG : Periodic (c • G) 1 := fun t => by simp [hG t]
   have hcGs : ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (c • G)) := by
-    have : uncurry (c • G) = (fun y : ℝ => c • y) ∘ uncurry G := rfl
+    have : uncurry (c • G) = (fun y : ℝ => c • y) ∘ uncurry G := by
+      funext ⟨t, x⟩
+      simp
     rw [this]
     exact (contDiff_const_smul c).contMDiff.comp hGs
   have hcB : ∀ t x, |(c • G) t x| ≤ |c| * B := fun t x => by

@@ -88,18 +88,18 @@ theorem pairOfPantsPerturbation_def (H : Puncture → ℝ → M → ℝ) (w : �
   rw [pairOfPantsPerturbation]
 
 /-- The pair-of-pants perturbation is additive in the end Hamiltonians. -/
-theorem pairOfPantsPerturbation_add (H G : Puncture → ℝ → M → ℝ) (w : ℂ) (x : M) :
-    pairOfPantsPerturbation (fun q t y ↦ H q t y + G q t y) w x =
-      pairOfPantsPerturbation H w x + pairOfPantsPerturbation G w x := by
-  simp only [pairOfPantsPerturbation_def, mul_add, add_smul, Finset.sum_add_distrib]
+theorem pairOfPantsPerturbation_add (H G : Puncture → ℝ → M → ℝ) :
+    pairOfPantsPerturbation (H + G) = pairOfPantsPerturbation H + pairOfPantsPerturbation G := by
+  funext w x
+  simp only [pairOfPantsPerturbation_def, Pi.add_apply, mul_add, add_smul, Finset.sum_add_distrib]
 
 /-- **Normalizing the end Hamiltonians.** Adding functions `c_q` of time to the end Hamiltonians
 adds the pair-of-pants perturbation of the target-independent Hamiltonians `c_q`. -/
 theorem pairOfPantsPerturbation_add_const (H : Puncture → ℝ → M → ℝ) (c : Puncture → ℝ → ℝ)
     (w : ℂ) (x : M) :
     pairOfPantsPerturbation (fun q t y ↦ H q t y + c q t) w x =
-      pairOfPantsPerturbation H w x + pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w x :=
-  pairOfPantsPerturbation_add H (fun q t _ ↦ c q t) w x
+      pairOfPantsPerturbation H w x + pairOfPantsPerturbation (fun q t (_ : M) ↦ c q t) w x := by
+  simp only [pairOfPantsPerturbation_def, mul_add, add_smul, Finset.sum_add_distrib]
 
 /-- The pair-of-pants perturbation of target-independent Hamiltonians does not depend on the
 target point. -/
