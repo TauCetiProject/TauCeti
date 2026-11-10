@@ -69,8 +69,8 @@ nonnegative at every point of the cone. -/
 @[simp]
 theorem mem_dualSemigroup (hi : IsIntegralLattice i) (m : N →+ ℤ) :
     m ∈ dualSemigroup hi σ ↔ ∀ ⦃x⦄, x ∈ σ → 0 ≤ hi.realCharacter m x := by
-  rw [dualSemigroup_def, PointedCone.mem_latticePoints]
-  exact Iff.rfl
+  simp only [dualSemigroup_def, PointedCone.mem_latticePoints, PointedCone.mem_dual,
+    Module.Dual.eval_apply, SetLike.mem_coe]
 
 /-- Enlarging a cone shrinks its dual semigroup. -/
 @[gcongr]
