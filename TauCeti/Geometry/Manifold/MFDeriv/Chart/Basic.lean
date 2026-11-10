@@ -35,6 +35,9 @@ chart, as in Morse theory, are identified with the zeros of `mvfderiv`.
 * `TauCeti.Manifold.mfderiv_eq_of_chartAt_eq`: retaining the preferred charts preserves
   manifold derivatives when the source atlas changes.
 
+* `TauCeti.mdifferentiableAt_extChartAt_self` and `TauCeti.mfderiv_extChartAt_self_eq_id`: the
+  extended chart at `x` is differentiable at `x` with the identity as derivative, on any charted
+  space.
 * `HasMFDerivAt.hasFDerivWithinAt_of_mem_source`: the derivative of `f` read in the extended
   charts at `x` and `y`.
 * `TauCeti.mfderiv_eq_fderiv_comp_mfderiv_extChartAt` and
@@ -193,6 +196,34 @@ theorem HasMFDerivAt.hasFDerivWithinAt_of_mem_source {f : M → M'} {x x' : M} {
 namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : M → F} {x y : M}
+
+omit [IsManifold I 1 M] in
+/-- Near its own point, the extended chart at `x` read in the extended chart at `x` is the
+identity. -/
+private theorem eventuallyEq_id_writtenInExtChartAt_extChartAt (x : M) :
+    writtenInExtChartAt I 𝓘(𝕜, E) x (extChartAt I x) =ᶠ[𝓝[Set.range I] (extChartAt I x x)]
+      id :=
+  Filter.eventuallyEq_of_mem (extChartAt_target_mem_nhdsWithin x) fun z hz => by
+    simpa [writtenInExtChartAt] using (extChartAt I x).right_inv hz
+
+omit [IsManifold I 1 M] in
+/-- The extended chart at `x` is manifold differentiable at `x`, on any charted space. This is
+Mathlib's `mdifferentiableAt_extChartAt` at the chart's own point, without `IsManifold`. -/
+theorem mdifferentiableAt_extChartAt_self :
+    MDifferentiableAt I 𝓘(𝕜, E) (extChartAt I x) x := by
+  have hev := eventuallyEq_id_writtenInExtChartAt_extChartAt (I := I) x
+  exact (mdifferentiableAt_iff _ _).2 ⟨continuousAt_extChartAt x,
+    differentiableWithinAt_id.congr_of_eventuallyEq hev (by simp [writtenInExtChartAt])⟩
+
+omit [IsManifold I 1 M] in
+/-- The manifold derivative of the extended chart at its own point is the identity, on any charted
+space. This is Mathlib's `mfderiv_extChartAt_self` without `IsManifold`. -/
+theorem mfderiv_extChartAt_self_eq_id :
+    mfderiv I 𝓘(𝕜, E) (extChartAt I x) x = ContinuousLinearMap.id 𝕜 _ := by
+  have hev := eventuallyEq_id_writtenInExtChartAt_extChartAt (I := I) x
+  rw [mdifferentiableAt_extChartAt_self.mfderiv,
+    hev.fderivWithin_eq (by simp [writtenInExtChartAt])]
+  exact fderivWithin_id (I.uniqueDiffOn.uniqueDiffWithinAt (Set.mem_range_self _))
 
 /-- At a point `y` of the source of the extended chart at `x`, the manifold derivative of a map
 into a normed space is the Fréchet derivative of its coordinate expression
