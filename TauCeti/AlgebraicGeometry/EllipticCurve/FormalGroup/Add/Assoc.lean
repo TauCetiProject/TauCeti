@@ -459,7 +459,6 @@ private theorem thetaPoint_add (hΔ : (fracCurve W σ KK).Δ ≠ 0)
     (hF0 : subst (pairSubstitution q₁ q₂)
       (formalAdd W) ≠ 0) :
     W.thetaPoint hΔ h₁ hq₁0 + W.thetaPoint hΔ h₂ hq₂0 = W.thetaPoint hΔ hF hF0 := by
-  have : IsDomain O := MvPowerSeries.isDomain_of_isFractionRing σ KK
   classical
   obtain ⟨h₃, hadd⟩ := thetaPoint_add_eq_some W hΔ h₁ h₂ hq₁0 hq₂0 hN hx rfl
   exact hadd.trans (some_eq_thetaPoint_formalAdd W hΔ h₁ h₂ hN hF hF0 rfl h₃)
