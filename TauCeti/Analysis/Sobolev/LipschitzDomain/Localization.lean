@@ -136,7 +136,7 @@ theorem W1p.lipschitzChartLocalizeL_mem_w1p0Submodule (hp : p ≠ (∞ : ℝ≥0
   apply W1p.compAffineIsometryEquivL_mem_w1p0Submodule hp
   exact W1p.localizeL_restrictL_mem_w1p0Submodule
     (V := chartEpigraph e h.lipschitzWith.continuous)
-    hp hψ hM hψM hgM
+    hψ hM hψM hgM
     (chartEpigraph_inter_tsupport_subset h hs)
     (inter_tsupport_subset_chartEpigraph h hs) hu
 
