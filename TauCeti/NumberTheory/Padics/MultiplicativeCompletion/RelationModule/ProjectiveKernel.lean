@@ -70,6 +70,7 @@ variable {K L : Type} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L] 
   [Algebra ℚ_[p] K] [Algebra ℚ_[p] L] [IsScalarTower ℚ_[p] K L] [Module.Finite ℚ_[p] L]
   [ValuativeExtension ℚ_[p] L]
 
+omit [CharZero K] [CharZero L] in
 /-- A map from the relation module to `A(L)` which is onto on `H²(G, -)` is bijective on
 `H-hat^2(S, -)` for every `p`-subgroup `S`: a class of `A(L)` restricting to a generator on every
 subgroup lies in its image, and both groups have `#S` elements. -/
