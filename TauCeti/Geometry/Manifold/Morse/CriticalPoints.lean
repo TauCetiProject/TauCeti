@@ -70,6 +70,8 @@ polynomial in the Morse inequalities.
 * `IsLocalExtr.mem_criticalPoints`, `TauCeti.criticalPoints_nonempty` and
   `TauCeti.exists_mem_criticalPoints_of_isCompact_sublevel`: Fermat's theorem on a manifold and the
   existence of critical points on compact manifolds and in compact sublevels.
+* `TauCeti.finiteDimensional_of_isCompact_sublevel`: a nonempty compact sublevel of a regular
+  value forces the model space to be finite dimensional.
 * `TauCeti.isClosed_criticalPoints` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.eventually_notMem_criticalPoints`: the critical
   set of a `C¹` function is closed, and nondegenerate critical points are isolated in it.
@@ -430,6 +432,31 @@ theorem exists_mem_criticalPoints_of_isCompact_sublevel {t : ℝ}
   have hglobal : IsMinOn f univ x := fun y _ ↦
     (le_or_gt (f y) t).elim (fun hy ↦ hmin hy) fun hy ↦ (hx.trans hy.le : f x ≤ f y)
   exact ⟨x, (hglobal.isLocalMin univ_mem).mem_criticalPoints, hx⟩
+
+/-- **A nonempty compact regular sublevel forces the model space to be finite dimensional.** If
+`f` is continuous, the sublevel `{f ≤ b}` is compact and nonempty, and `b` is a regular value, then
+`E` is finite dimensional. -/
+theorem finiteDimensional_of_isCompact_sublevel [T2Space M] {b : ℝ} (hf : Continuous f)
+    (hcompact : IsCompact {x | f x ≤ b}) (hb : IsRegularValue I 𝓘(ℝ) f b)
+    [hK : Nonempty {x | f x ≤ b}] : FiniteDimensional ℝ E := by
+  obtain ⟨x₀, hx₀, hmin⟩ := hcompact.exists_isMinOn (Set.nonempty_coe_sort.1 hK) hf.continuousOn
+  rcases (show f x₀ ≤ b from hx₀).lt_or_eq with hlt | heq
+  · let U : TopologicalSpace.Opens M := ⟨{x | f x < b}, isOpen_lt hf continuous_const⟩
+    have : Nonempty U := ⟨⟨x₀, hlt⟩⟩
+    have : CompactSpace {x | f x ≤ b} := isCompact_iff_compactSpace.1 hcompact
+    have : LocallyCompactSpace U :=
+      (Topology.IsOpenEmbedding.inclusion (s := (U : Set M)) (t := {x | f x ≤ b})
+        (fun x hx ↦ (le_of_lt (show f x < b from hx) : f x ≤ b))
+        (U.isOpen.preimage continuous_subtype_val)).locallyCompactSpace
+    exact FiniteDimensional.of_locallyCompact_manifold U I
+  · -- Otherwise `x₀` is a global minimum of `f` on the level `b`, contradicting regularity.
+    exfalso
+    have hmin' : IsMinOn f univ x₀ := fun x _ ↦ by
+      by_cases hx : f x ≤ b
+      · exact hmin hx
+      · exact heq ▸ (not_le.1 hx).le
+    have hcrit : x₀ ∈ criticalPoints I f := (hmin'.isLocalMin Filter.univ_mem).mem_criticalPoints
+    exact isRegularValue_iff_notMem_image_criticalPoints.1 hb ⟨x₀, hcrit, heq⟩
 
 end Boundaryless
 

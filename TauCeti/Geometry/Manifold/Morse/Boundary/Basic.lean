@@ -96,19 +96,7 @@ theorem mem_morseTrajectorySlice {p q z : M} :
 theorem value_lt_of_mem_morseTrajectorySlice {p q z : M}
     (hpq : p ≠ q) (hz : z ∈ hX.morseTrajectorySlice p q) : f q < f p := by
   rw [mem_morseTrajectorySlice] at hz
-  -- `f` is differentiable: at a critical point it is a quadratic form in a Morse chart.
-  have hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f := fun y ↦ by
-    by_contra hy
-    obtain ⟨φ, -⟩ := hX.exists_morseChart y (mfderiv_zero_of_not_mdifferentiableAt hy)
-    let L : E →L[ℝ] (Fin (Module.finrank ℝ E) → ℝ) :=
-      LinearMap.toContinuousLinearMap φ.coord.toLinearMap
-    have hG : Differentiable ℝ fun v : E ↦
-        f y + 2⁻¹ * ∑ i, φ.weight i * (L v i) ^ 2 := by fun_prop
-    refine hy ((hG.differentiableAt.mdifferentiableAt.comp y
-      (φ.mdifferentiableAt_toChart φ.mem_source)).congr_of_eventuallyEq ?_)
-    filter_upwards [φ.toChart.open_source.mem_nhds φ.mem_source] with z hz
-    exact φ.eq_quadratic z hz
-  have h := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hpq ⟨hz.1, hz.2.1⟩
+  have h := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hX.mdifferentiable hpq ⟨hz.1, hz.2.1⟩
   exact h.1.trans h.2
 
 /-- **Reversing the pseudo-gradient reverses the trajectories.** The middle-level slice of the
@@ -122,17 +110,18 @@ theorem neg_morseTrajectorySlice (hf : IsMorse 𝓘(ℝ, E) f) (p q : M) :
   exact ⟨fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₂, h₁, by linarith⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₂, h₁, by linarith⟩⟩
 
 /-- **Trajectories read off a decomposition of a stable set.** Suppose that, apart from `q` itself,
-the stable set of a critical point `q` is covered by the orbits of points `y i`, where `y i` flows
+the stable set of a point `q` is covered by the orbits of points `y i`, where `y i` flows
 from a point `a i ≠ q` to `q` and crosses the middle level between `a i` and `q` at time `τ i`.
 Then the trajectories from a point `p ≠ q` to `q` are the crossings of the orbits starting at
 `p`. -/
-theorem morseTrajectorySlice_eq_image_of_stableSet_subset (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+theorem morseTrajectorySlice_eq_image_of_stableSet_subset
     {ι : Type*} {p q : M} {a y : ι → M} {τ : ι → ℝ}
     (hpq : p ≠ q)
     (hW : hX.flow.stableSet q ⊆ insert q (⋃ i, hX.flow.orbit (y i)))
     (hy : ∀ i, y i ∈ hX.flow.unstableSet (a i) ∩ hX.flow.stableSet q) (haq : ∀ i, a i ≠ q)
     (hτ : ∀ i, f (hX.flow (τ i) (y i)) = (f (a i) + f q) / 2) :
     hX.morseTrajectorySlice p q = (fun i ↦ hX.flow (τ i) (y i)) '' {i | a i = p} := by
+  have hf := hX.mdifferentiable
   ext w
   simp only [mem_morseTrajectorySlice, mem_image, mem_ofPred_eq]
   constructor
@@ -167,13 +156,13 @@ theorem IsMorseSmale.finite_morseTrajectorySlice {hX : IsAdaptedPseudoGradient f
     (hX.morseTrajectorySlice p q).Finite :=
   h.finite_unstableSet_inter_stableSet_inter_level hf hind _
 
-/-- **Counting unparametrized trajectories.** For distinct points `p` and `q`, the unparametrized
+/-- **Counting unparametrized trajectories.** For all points `p` and `q`, the unparametrized
 trajectories from `p` to `q` are as many as the points of the middle-level slice
 `TauCeti.IsAdaptedPseudoGradient.morseTrajectorySlice`. -/
-theorem natCard_orbitQuotient_eq_ncard_morseTrajectorySlice
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {p q : M} :
+theorem natCard_orbitQuotient_eq_ncard_morseTrajectorySlice {p q : M} :
     Nat.card (Quotient (Flow.connectingOrbitSetoid hX.flow p q)) =
       (hX.morseTrajectorySlice p q).ncard := by
+  have hf := hX.mdifferentiable
   rw [morseTrajectorySlice]
   by_cases hpq : p = q
   · -- A trajectory from a point back to itself is constant, so there is at most one.
@@ -230,9 +219,7 @@ theorem morseBoundaryCoeff_eq_natCard {p q : criticalPoints 𝓘(ℝ, E) f}
     (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
     h.morseBoundaryCoeff hf p q =
       (Nat.card (Quotient (Flow.connectingOrbitSetoid hX.flow p q)) : ZMod 2) := by
-  rw [h.morseBoundaryCoeff_eq_ncard hf hind,
-    hX.natCard_orbitQuotient_eq_ncard_morseTrajectorySlice
-      (hf.contMDiff.mdifferentiable (by simp))]
+  rw [h.morseBoundaryCoeff_eq_ncard hf hind, hX.natCard_orbitQuotient_eq_ncard_morseTrajectorySlice]
 
 /-- The boundary coefficient vanishes between critical points whose indices do not differ by
 one. -/

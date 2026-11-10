@@ -143,37 +143,6 @@ theorem exists_isEmpty_sublevelPair_of_isCompact_sublevel (hf : Continuous f)
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hf) fun x hx ↦ hx.2,
     isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨p, _, hp⟩ ↦ (ha p).ne' hp⟩
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
-/-- **A nonempty compact regular sublevel forces the model space to be finite dimensional.** If
-`f` is continuous, the sublevel `{f ≤ b}` is compact and nonempty, and `b` is a regular value, then
-the minimum of `f` on the sublevel is below `b`, so the open set `{f < b}` is a nonempty locally
-compact manifold. -/
-theorem finiteDimensional_of_isCompact_sublevel (hf : Continuous f)
-    (hcompact : IsCompact {x | f x ≤ b}) (hb : IsRegularValue I 𝓘(ℝ) f b)
-    [hK : Nonempty {x | f x ≤ b}] : FiniteDimensional ℝ E := by
-  obtain ⟨x₀, hx₀, hmin⟩ := hcompact.exists_isMinOn (Set.nonempty_coe_sort.1 hK) hf.continuousOn
-  rcases (show f x₀ ≤ b from hx₀).lt_or_eq with hlt | heq
-  · let U : TopologicalSpace.Opens M := ⟨{x | f x < b}, isOpen_lt hf continuous_const⟩
-    have : Nonempty U := ⟨⟨x₀, hlt⟩⟩
-    have : CompactSpace {x | f x ≤ b} := isCompact_iff_compactSpace.1 hcompact
-    have : LocallyCompactSpace U :=
-      (Topology.IsOpenEmbedding.inclusion (s := (U : Set M)) (t := {x | f x ≤ b})
-        (fun x hx ↦ (le_of_lt (show f x < b from hx) : f x ≤ b))
-        (U.isOpen.preimage continuous_subtype_val)).locallyCompactSpace
-    exact FiniteDimensional.of_locallyCompact_manifold U I
-  · -- Otherwise `x₀` is a global minimum of `f` on the level `b`, contradicting regularity.
-    exfalso
-    have hmin' : IsMinOn f univ x₀ := fun x _ ↦ by
-      by_cases hx : f x ≤ b
-      · exact hmin hx
-      · exact heq ▸ (not_le.1 hx).le
-    have hcrit : x₀ ∈ criticalPoints I f := (hmin'.isLocalMin Filter.univ_mem).mem_criticalPoints
-    obtain ⟨v, hv⟩ := isRegularPoint_iff.1 (hb.isRegularPoint heq)
-      (show TangentSpace 𝓘(ℝ) (f x₀) from (1 : ℝ))
-    rw [mem_criticalPoints_iff_mfderiv_eq_zero.1 hcrit] at hv
-    rw [zero_apply] at hv
-    exact zero_ne_one (α := ℝ) hv
-
 omit [FiniteDimensional ℝ E] in
 /-- **A compact regular sublevel whose critical points have index at most `d` has no homology
 above degree `d`.** Let `f` be a Morse function, let `b` be a regular value of `f` with compact
