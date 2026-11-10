@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.InformationTheory.KullbackLeibler.Projection
-public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
+public import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 public import TauCeti.MeasureTheory.Measure.Decomposition.Prod
 public import TauCeti.MeasureTheory.Measure.LowerSemicontinuousLintegral
 public import TauCeti.MeasureTheory.MeasurableSpace.Metric

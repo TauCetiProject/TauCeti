@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Function
 public import Mathlib.MeasureTheory.Function.UniformIntegrable
-public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
+public import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 
 /-!
 # The de la Vallée Poussin criterion
