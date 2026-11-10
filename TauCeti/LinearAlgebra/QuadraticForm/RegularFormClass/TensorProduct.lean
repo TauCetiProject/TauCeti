@@ -306,14 +306,27 @@ theorem presentedFormOneIsometryEquiv_apply
     presentedFormOneIsometryEquiv x =
       x (Fin.cast RegularFormPresentation.fst_one.symm 0) := (rfl)
 
+omit [Invertible (2 : K)] in
 /-- Tensoring a presentation on the right with the rank-one presentation preserves its form up
 to isometry. -/
 theorem presentedForm_tmul_one (p : RegularFormPresentation K) :
     (presentedForm (p.tmul (RegularFormPresentation.one (K := K)))).Equivalent
-      (presentedForm p) :=
-  (equivalent_presentedForm_tmul p RegularFormPresentation.one).trans
-    ((((QuadraticMap.Equivalent.refl _).tmul ⟨presentedFormOneIsometryEquiv⟩).trans
-      ⟨QuadraticForm.tensorRId (presentedForm p)⟩))
+      (presentedForm p) := by
+  let e : Fin p.1 ≃ Fin (p.tmul (RegularFormPresentation.one (K := K))).1 :=
+    finCongr (mul_one p.1).symm
+  refine ⟨{ toLinearEquiv := LinearEquiv.funCongrLeft K K e, map_app' := fun x => ?_ }⟩
+  rw [presentedForm_apply, presentedForm_apply, ← Equiv.sum_comp e]
+  refine Finset.sum_congr rfl fun i _ => ?_
+  let j : Fin (RegularFormPresentation.one (K := K)).1 :=
+    Fin.cast RegularFormPresentation.fst_one.symm 0
+  have h := RegularFormPresentation.tmul_apply p (RegularFormPresentation.one (K := K)) i j
+  have hi : Fin.cast (RegularFormPresentation.fst_tmul p RegularFormPresentation.one).symm
+      (finProdFinEquiv (i, j)) = e i :=
+    Fin.ext (by simp [e, j, finProdFinEquiv, finCongr]; rfl)
+  rw [hi] at h
+  change _ * (x (e i) * x (e i)) = _ * (x (e i) * x (e i))
+  rw [h]
+  simp [RegularFormPresentation.one]
 
 /-- Tensor product of isometry classes. -/
 instance : Mul (RegularFormClass K) :=
