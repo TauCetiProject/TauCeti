@@ -250,26 +250,11 @@ theorem spectrum_restrictScalars (T : E →L[𝕜] E) :
     letI := InnerProductSpace.rclikeToReal 𝕜 E
     spectrum ℝ (T.restrictScalars ℝ) = spectrum ℝ T := by
   let := InnerProductSpace.rclikeToReal 𝕜 E
-  -- An operator whose realification is invertible is invertible: the inverse is `𝕜`-linear
-  -- because the operator is.
-  have hunit : ∀ a : E →L[𝕜] E, IsUnit (a.restrictScalars ℝ) → IsUnit a := by
-    intro a ⟨u, hu⟩
-    set B : E →L[ℝ] E := ↑u⁻¹ with hB
-    have h1 : a.restrictScalars ℝ * B = 1 := hu ▸ u.mul_inv
-    have h2 : B * a.restrictScalars ℝ = 1 := hu ▸ u.inv_mul
-    have hl : ∀ x, a (B x) = x := fun x ↦ by
-      simpa using congr_arg (fun m : E →L[ℝ] E ↦ m x) h1
-    have hr : ∀ x, B (a x) = x := fun x ↦ by
-      simpa using congr_arg (fun m : E →L[ℝ] E ↦ m x) h2
-    let b : E →L[𝕜] E :=
-      { toFun := fun x ↦ B x
-        map_add' := map_add B
-        map_smul' := fun c x ↦ by
-          calc B (c • x) = B (c • a (B x)) := by rw [hl]
-            _ = B (a (c • B x)) := by rw [map_smul a]
-            _ = c • B x := hr _
-        cont := B.continuous }
-    exact isUnit_iff_exists.2 ⟨b, ContinuousLinearMap.ext hl, ContinuousLinearMap.ext hr⟩
+  -- An operator is invertible exactly when it is bijective (Banach's inverse mapping theorem), and
+  -- the realification has the same underlying function.
+  have hunit : ∀ a : E →L[𝕜] E, IsUnit (a.restrictScalars ℝ) → IsUnit a := fun a ha ↦
+    ContinuousLinearMap.isUnit_iff_bijective.mpr
+      (ContinuousLinearMap.isUnit_iff_bijective (f := a.restrictScalars ℝ) |>.mp ha)
   ext r
   simp only [spectrum.mem_iff, not_iff_not]
   have hφ : restrictScalarsStarAlgHom 𝕜 E (algebraMap ℝ (E →L[𝕜] E) r - T) =
