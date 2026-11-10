@@ -145,8 +145,9 @@ theorem bijective_mapBaseChange_of_basis {ι : Type*} (bS : Basis ι S Ω[S⁄R]
   exact LinearEquiv.bijective _
 
 /-- **The Jacobian criterion for étaleness.** If `T` is smooth over `R` and the differentials
-`d aᵢ` of finitely many elements `aᵢ` of `T` form a basis of `Ω[T⁄R]`, then `T` is étale over the
-polynomial ring `R[Xᵢ]` via `Xᵢ ↦ aᵢ`. -/
+`d aᵢ` of elements `aᵢ` of `T` form a basis of `Ω[T⁄R]`, then `T` is étale over the
+polynomial ring `R[Xᵢ]` via `Xᵢ ↦ aᵢ`. The index type is then automatically finite unless `T` is
+trivial. -/
 theorem etale_aeval_of_basis [Algebra.Smooth R T] {ι : Type*} (a : ι → T)
     (b : Basis ι T Ω[T⁄R]) (hb : ∀ i, b i = D R T (a i)) :
     (MvPolynomial.aeval (R := R) a).toRingHom.Etale := by
@@ -161,11 +162,9 @@ theorem etale_aeval_of_basis [Algebra.Smooth R T] {ι : Type*} (a : ι → T)
   have : Algebra.FinitePresentation (MvPolynomial ι R) T := by
     by_cases hT : Subsingleton T
     · -- the zero ring is the quotient of `R[Xᵢ]` by the unit ideal
-      refine ⟨0, (IsScalarTower.toAlgHom (MvPolynomial ι R) (MvPolynomial ι R) T).comp
-        (MvPolynomial.aeval fun i ↦ (0 : MvPolynomial ι R)), fun x ↦ ⟨0, Subsingleton.elim _ _⟩, ?_⟩
-      refine ⟨{1}, ?_⟩
-      rw [Finset.coe_singleton, Ideal.span_singleton_one, eq_comm, Ideal.eq_top_iff_one]
-      exact Subsingleton.elim (α := T) _ _
+      exact .of_surjective (f := Algebra.ofId (MvPolynomial ι R) T)
+        (fun _ ↦ ⟨0, Subsingleton.elim _ _⟩)
+        (by rw [RingHom.ker_eq_top_of_subsingleton]; exact Ideal.fg_top _)
     · have := not_subsingleton_iff_nontrivial.mp hT
       have : Finite ι := Module.Finite.finite_basis b
       exact .of_restrict_scalars_finitePresentation R _ _
