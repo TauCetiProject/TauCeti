@@ -42,9 +42,9 @@ locality of weak derivatives returns the statement to `Ω`.
 
 ## Main declarations
 
-* `TauCeti.HasWeakFDerivOn.comp_contDiffOn`: the weak chain rule for continuous `u`.
-* `TauCeti.HasWeakFDerivOn.comp_contDiff`: the same for globally `C¹` maps `g`.
-* `TauCeti.HasWeakFDerivOn.comp_graph_contDiffOn`: the weak chain rule for `x ↦ g(x, u x)`.
+* `TauCeti.HasWeakFDerivOn.contDiffOn_comp`: the weak chain rule for continuous `u`.
+* `TauCeti.HasWeakFDerivOn.contDiff_comp`: the same for globally `C¹` maps `g`.
+* `TauCeti.HasWeakFDerivOn.contDiffOn_comp_graph`: the weak chain rule for `x ↦ g(x, u x)`.
 * `TauCeti.HasWeakFDerivOn.sq`: the check `D(u²) = 2u Du` for continuous real `u`.
 
 ## References
@@ -220,17 +220,17 @@ private theorem hasWeakFDerivOn_comp_of_isCompact_closure
 `x ↦ Dg(u x) ∘ Du x` on `Ω`. No integrability exponent enters: `Du` is only locally integrable.
 Continuity of `u` cannot simply be dropped, since `g ∘ u` and `Dg(u) ∘ Du` need not be locally
 integrable otherwise. -/
-theorem HasWeakFDerivOn.comp_contDiffOn (hu : HasWeakFDerivOn μ Ω u Du)
+theorem HasWeakFDerivOn.contDiffOn_comp (hu : HasWeakFDerivOn μ Ω u Du)
     (huc : ContinuousOn u Ω) (hW : IsOpen W) (hg : ContDiffOn ℝ 1 g W) (huW : MapsTo u Ω W) :
     HasWeakFDerivOn μ Ω (fun x => g (u x)) fun x => (fderiv ℝ g (u x)).comp (Du x) :=
   hasWeakFDerivOn_iff_forall_isCompact_closure.2 fun V hVc hVΩ =>
     hasWeakFDerivOn_comp_of_isCompact_closure hu huc hW hg huW V hVc hVΩ
 
 /-- **The weak chain rule for continuous maps and globally `C¹` functions.** -/
-theorem HasWeakFDerivOn.comp_contDiff (hu : HasWeakFDerivOn μ Ω u Du)
+theorem HasWeakFDerivOn.contDiff_comp (hu : HasWeakFDerivOn μ Ω u Du)
     (huc : ContinuousOn u Ω) (hg : ContDiff ℝ 1 g) :
     HasWeakFDerivOn μ Ω (fun x => g (u x)) fun x => (fderiv ℝ g (u x)).comp (Du x) :=
-  hu.comp_contDiffOn huc isOpen_univ hg.contDiffOn (mapsTo_univ _ _)
+  hu.contDiffOn_comp huc isOpen_univ hg.contDiffOn (mapsTo_univ _ _)
 
 end Core
 
@@ -246,7 +246,7 @@ variable [FiniteDimensional ℝ E] [BorelSpace E] [μ.IsAddHaarMeasure] [Complet
 /-- **The weak chain rule with domain dependence.** If `u` is continuous on `Ω` with weak
 derivative `Du`, and `g` is `C¹` on an open set `W` containing the graph of `u` over `Ω`, then
 `x ↦ g (x, u x)` has weak derivative `x ↦ Dg(x, u x) ∘ (id, Du x)` on `Ω`. -/
-theorem HasWeakFDerivOn.comp_graph_contDiffOn {u : E → F}
+theorem HasWeakFDerivOn.contDiffOn_comp_graph {u : E → F}
     {Du : E → E →L[ℝ] F} {g : E × F → H} {W : Set (E × F)} (hu : HasWeakFDerivOn μ Ω u Du)
     (huc : ContinuousOn u Ω) (hW : IsOpen W) (hg : ContDiffOn ℝ 1 g W)
     (huW : ∀ x ∈ (Ω : Set E), (x, u x) ∈ W) :
@@ -259,7 +259,7 @@ theorem HasWeakFDerivOn.comp_graph_contDiffOn {u : E → F}
     have h := hasWeakFDerivOn_of_differentiableOn (μ := μ) (Ω := Ω) (u := fun x : E => x)
       (by rw [hD]; exact locallyIntegrableOn_const _) fun x _ => differentiableAt_id
     rwa [hD] at h
-  exact (hid.prodMk hu).comp_contDiffOn (continuousOn_id.prodMk huc) hW hg huW
+  exact (hid.prodMk hu).contDiffOn_comp (continuousOn_id.prodMk huc) hW hg huW
 
 end Pair
 
@@ -276,7 +276,7 @@ derivative `Du`, the square `u²` has weak derivative `2u Du`. Continuity makes 
 integrable; for `u = |z|^{-2/5}` and `p = 4/3` the analogous statement in `W^{1,p}` fails. -/
 theorem HasWeakFDerivOn.sq (hu : HasWeakFDerivOn μ Ω u Du) (huc : ContinuousOn u Ω) :
     HasWeakFDerivOn μ Ω (fun x => u x ^ 2) fun x => (2 * u x) • Du x := by
-  have h := hu.comp_contDiff huc (g := fun t : ℝ => t ^ 2) (contDiff_id.pow 2)
+  have h := hu.contDiff_comp huc (g := fun t : ℝ => t ^ 2) (contDiff_id.pow 2)
   convert h using 2 with x
   ext v
   simp [mul_comm, mul_left_comm]

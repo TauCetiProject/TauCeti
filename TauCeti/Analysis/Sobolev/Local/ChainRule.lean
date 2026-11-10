@@ -15,7 +15,7 @@ import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 A continuous member `u` of `W^{1,p}_loc` on a planar set `U` composes with a map `g` that is `C¹`
 on an open set containing `u '' U` to give a member of `W^{1,p}_loc(U)`. The weak derivative of
 `g ∘ u` on `interior U` is `z ↦ Dg(u z) ∘ Du z`, by the weak chain rule
-`TauCeti.HasWeakFDerivOn.comp_contDiffOn`. On a compact set `K` it obeys
+`TauCeti.HasWeakFDerivOn.contDiffOn_comp`. On a compact set `K` it obeys
 `‖D(g ∘ u)‖_{Lᵖ(K)} ≤ (sup_{u(K)} ‖Dg‖) ‖Du‖_{Lᵖ(K)}`, the bound
 `ContinuousOn.eLpNorm_clm_comp_restrict_le` for the continuous factor `Dg ∘ u`; its `Lᵖ`
 membership is `MeasureTheory.MemLp.clm_comp_of_continuousOn`. The domain-dependent form
@@ -28,9 +28,9 @@ derivative has size `|z|^{-9/5}` and `(9/5)(4/3) > 2`.
 
 ## Main declarations
 
-* `TauCeti.MemWkpLoc.comp_contDiffOn`: continuous `W^{1,p}_loc` maps compose with `C¹` maps.
-* `TauCeti.MemWkpLoc.comp_contDiff`: the same for globally `C¹` maps.
-* `TauCeti.MemWkpLoc.comp_graph_contDiffOn`: the domain-dependent composition `z ↦ g(z, u z)`.
+* `TauCeti.MemWkpLoc.contDiffOn_comp`: continuous `W^{1,p}_loc` maps compose with `C¹` maps.
+* `TauCeti.MemWkpLoc.contDiff_comp`: the same for globally `C¹` maps.
+* `TauCeti.MemWkpLoc.contDiffOn_comp_graph`: the domain-dependent composition `z ↦ g(z, u z)`.
 
 ## References
 
@@ -57,15 +57,15 @@ variable [CompleteSpace G]
 /-- **Composition of continuous `W^{1,p}_loc` maps with `C¹` maps.** If `u` is continuous on `U`
 and belongs to `W^{1,p}_loc(U)`, and `g` is `C¹` on an open set containing `u '' U`, then
 `g ∘ u` belongs to `W^{1,p}_loc(U)`. Its weak derivative on `interior U` is given by
-`TauCeti.HasWeakFDerivOn.comp_contDiffOn`, and its `Lᵖ` membership on compact sets is
+`TauCeti.HasWeakFDerivOn.contDiffOn_comp`, and its `Lᵖ` membership on compact sets is
 `MeasureTheory.MemLp.clm_comp_of_continuousOn` for the continuous factor `Dg ∘ u`. -/
-theorem MemWkpLoc.comp_contDiffOn {u : ℂ → F} {g : F → G} {W : Set F}
+theorem MemWkpLoc.contDiffOn_comp {u : ℂ → F} {g : F → G} {W : Set F}
     (hu : MemWkpLoc p U 1 u) (huc : ContinuousOn u U) (hW : IsOpen W) (hg : ContDiffOn ℝ 1 g W)
     (huW : MapsTo u U W) : MemWkpLoc p U 1 (fun z => g (u z)) := by
   obtain ⟨Du, hDu, hDup⟩ := hu.exists_weakFDeriv
   have hDgc : ContinuousOn (fderiv ℝ g) W := hg.continuousOn_fderiv_of_isOpen hW le_rfl
   refine memWkpLoc_succ_iff.2 ⟨(hg.continuousOn.comp huc huW).memLpLoc, _,
-    hDu.comp_contDiffOn (huc.mono interior_subset) hW hg (huW.mono_left interior_subset), ?_⟩
+    hDu.contDiffOn_comp (huc.mono interior_subset) hW hg (huW.mono_left interior_subset), ?_⟩
   rw [memWkpLoc_zero_iff, memLpLoc_iff] at hDup ⊢
   intro K hKU hK
   have hgu : ContinuousOn (fun x => fderiv ℝ g (u x)) K :=
@@ -73,22 +73,22 @@ theorem MemWkpLoc.comp_contDiffOn {u : ℂ → F} {g : F → G} {W : Set F}
   exact (hDup K hKU hK).clm_comp_of_continuousOn hgu hK hK.measurableSet subset_rfl
 
 /-- **Composition of continuous `W^{1,p}_loc` maps with globally `C¹` maps.** -/
-theorem MemWkpLoc.comp_contDiff {u : ℂ → F} {g : F → G} (hu : MemWkpLoc p U 1 u)
+theorem MemWkpLoc.contDiff_comp {u : ℂ → F} {g : F → G} (hu : MemWkpLoc p U 1 u)
     (huc : ContinuousOn u U) (hg : ContDiff ℝ 1 g) : MemWkpLoc p U 1 (fun z => g (u z)) :=
-  hu.comp_contDiffOn huc isOpen_univ hg.contDiffOn (mapsTo_univ _ _)
+  hu.contDiffOn_comp huc isOpen_univ hg.contDiffOn (mapsTo_univ _ _)
 
 variable [CompleteSpace H] in
 /-- **Composition with domain dependence.** If `u` is continuous on `U` and belongs to
 `W^{1,p}_loc(U)`, and `g` is `C¹` on an open set containing the graph of `u` over `U`, then
 `z ↦ g (z, u z)` belongs to `W^{1,p}_loc(U)`. Its weak derivative on `interior U` is given by
-`TauCeti.HasWeakFDerivOn.comp_graph_contDiffOn`. -/
-theorem MemWkpLoc.comp_graph_contDiffOn {u : ℂ → F} {g : ℂ × F → H} {W : Set (ℂ × F)}
+`TauCeti.HasWeakFDerivOn.contDiffOn_comp_graph`. -/
+theorem MemWkpLoc.contDiffOn_comp_graph {u : ℂ → F} {g : ℂ × F → H} {W : Set (ℂ × F)}
     (hu : MemWkpLoc p U 1 u) (huc : ContinuousOn u U) (hW : IsOpen W) (hg : ContDiffOn ℝ 1 g W)
     (huW : ∀ z ∈ U, (z, u z) ∈ W) : MemWkpLoc p U 1 (fun z => g (z, u z)) := by
   have : CompleteSpace F := hu.completeSpace
   have hid : MemWkpLoc p U 1 (fun z : ℂ => z) :=
     contDiff_id.contDiffOn.memWkpLoc (Ω := ⊤) (by simp only [Opens.coe_top, subset_univ])
-  exact (hid.prodMk hu).comp_contDiffOn (continuousOn_id.prodMk huc) hW hg huW
+  exact (hid.prodMk hu).contDiffOn_comp (continuousOn_id.prodMk huc) hW hg huW
 
 end MemWkpLoc
 
