@@ -118,15 +118,19 @@ theorem norm_algebraNorm_sub_algebraNorm_lt (p : ℕ) [Fact p.Prime]
     (M : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p])) [FiniteDimensional ℚ_[p] M]
     (hKM : ∀ x ∈ K, x ∈ M)
     (hMK : M ≤ IntermediateField.adjoin ℚ_[p] (K : Set (AlgebraicClosure ℚ_[p])))
-    (Y : K) (y : M) (hy : y ≠ 0) {ε : ℝ} (hε : ε ≤ 1)
+    (Y : K) (y : M) {ε : ℝ} (hε : ε ≤ 1)
     (hYy : ‖(Y : AlgebraicClosure ℚ_[p]) - y‖ < ε * ‖(y : AlgebraicClosure ℚ_[p])‖)
     (hφ : ∀ φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[p],
       (∃ h : AlgebraicClosure ℚ_[p] ≃ₐ[ℚ_[p]] AlgebraicClosure ℚ_[p], ∀ x : K, φ x = h x) ∨
         ‖φ Y - 1‖ < ε) :
     ‖((Algebra.norm ℚ Y : ℚ) : ℚ_[p]) - Algebra.norm ℚ_[p] y‖ < ε * ‖Algebra.norm ℚ_[p] y‖ := by
   classical
-  have hy' : (y : AlgebraicClosure ℚ_[p]) ≠ 0 := by simpa using hy
   have hε0 : 0 < ε := pos_of_mul_pos_left ((norm_nonneg _).trans_lt hYy) (norm_nonneg _)
+  have hy' : (y : AlgebraicClosure ℚ_[p]) ≠ 0 := by
+    rintro h0
+    rw [h0, norm_zero, mul_zero] at hYy
+    exact absurd hYy (not_lt.2 (norm_nonneg _))
+  have hy : y ≠ 0 := fun h0 ↦ hy' (by simp [h0])
   let O : (K →ₐ[ℚ] AlgebraicClosure ℚ_[p]) → Prop := fun φ ↦
     ∃ h : AlgebraicClosure ℚ_[p] ≃ₐ[ℚ_[p]] AlgebraicClosure ℚ_[p], ∀ x : K, φ x = h x
   -- Split `N_{K/ℚ}(Y)` into the factor `N_{M/ℚ_p}(Y)` over the embeddings extending to `G_{ℚ_p}`

@@ -470,7 +470,7 @@ private theorem eq_two_pow_and_exists_padicPow_eq_neg_inv_of_range_eq {f : ℕ} 
   refine ⟨rfl, ?_⟩
   -- `χ(x₄)` topologically generates `U^(f)`, so `(-χ(x₂))⁻¹ ∈ U^(f)` is a `2`-adic power of it.
   have hgen : (zpowers (χ (freeProPGen 2 n 3))).topologicalClosure = unitsPrincipal 2 g :=
-    topologicalClosure_zpowers_eq_unitsPrincipal_of_val_mul_one_sub_pow_eq_one (by omega)
+    topologicalClosure_zpowers_eq_unitsPrincipal_of_val_mul_one_sub_pow_eq_one
       (fun _ ↦ hg) h₃g
   rw [← isProP_units_padicInt_two.mem_topologicalClosure_closure_singleton_iff,
     ← zpowers_eq_closure, hgen]

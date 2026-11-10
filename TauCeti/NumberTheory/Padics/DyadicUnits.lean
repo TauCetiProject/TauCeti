@@ -247,16 +247,16 @@ theorem unitsPrincipal_ne_topologicalClosure_zpowers {f : ℕ} (hf : 2 ≤ f) {u
     unitsPrincipal_antitone 2 hf <| h ▸ Subgroup.le_topologicalClosure _ (Subgroup.mem_zpowers u)
 
 /-- `V^(f) ≠ U^[g]`: `-1 ∈ V^(f)` but `-1 ∉ U^[g]`. -/
-theorem unitsPlusMinus_ne_topologicalClosure_zpowers (f : ℕ) {g : ℕ} (hg : 2 ≤ g) {u : ℤ_[2]ˣ}
+theorem unitsPlusMinus_ne_topologicalClosure_zpowers (f : ℕ) {g : ℕ} {u : ℤ_[2]ˣ}
     (hu : -u ∈ unitsPrincipal 2 g) (hu' : -u ∉ unitsPrincipal 2 (g + 1)) :
     unitsPlusMinus f ≠ (Subgroup.zpowers u).topologicalClosure := fun h ↦
-  neg_one_notMem_topologicalClosure_zpowers_two hg hu hu' (h ▸ neg_one_mem_unitsPlusMinus f)
+  neg_one_notMem_topologicalClosure_zpowers_two hu hu' (h ▸ neg_one_mem_unitsPlusMinus f)
 
 /-- `{±1} ≠ U^[g]`: `-1 ∉ U^[g]`. -/
-theorem zpowers_neg_one_ne_topologicalClosure_zpowers {g : ℕ} (hg : 2 ≤ g) {u : ℤ_[2]ˣ}
+theorem zpowers_neg_one_ne_topologicalClosure_zpowers {g : ℕ} {u : ℤ_[2]ˣ}
     (hu : -u ∈ unitsPrincipal 2 g) (hu' : -u ∉ unitsPrincipal 2 (g + 1)) :
     Subgroup.zpowers (-1 : ℤ_[2]ˣ) ≠ (Subgroup.zpowers u).topologicalClosure := fun h ↦
-  neg_one_notMem_topologicalClosure_zpowers_two hg hu hu' (h ▸ Subgroup.mem_zpowers _)
+  neg_one_notMem_topologicalClosure_zpowers_two hu hu' (h ▸ Subgroup.mem_zpowers _)
 
 /-! ### The classification -/
 
@@ -449,7 +449,7 @@ theorem eq_of_topologicalClosure_zpowers_sup_zpowers_eq_unitsPlusMinus {f g : �
       exact topologicalClosure_minimal _ (sup_le (le_topologicalClosure _) (zpowers_le.2
         (unitsPrincipal_succ_le_topologicalClosure_zpowers_two hf hnegf hneg' h3f)))
         (isClosed_topologicalClosure _)
-    exact neg_one_notMem_topologicalClosure_zpowers_two hf hnegf hneg'
+    exact neg_one_notMem_topologicalClosure_zpowers_two hnegf hneg'
       (hle (neg_one_mem_unitsPlusMinus f))
 
 /-! ### The subgroup of squares and the index `(A : A²)` -/
@@ -485,7 +485,7 @@ theorem relIndex_map_powMonoidHom_two_eq_two_or_exists_eq_unitsPlusMinus {A : Su
   · exact Or.inl (Subgroup.relIndex_map_powMonoidHom_two_zpowers_neg_one
       PadicInt.units_neg_one_ne_one)
   · exact Or.inl (relIndex_map_powMonoidHom_two_topologicalClosure_zpowers_two hf
-      (neg_mem_unitsPrincipal_two_of_val_eq hu) (neg_notMem_unitsPrincipal_two_succ_of_val_eq hu))
+      (neg_mem_unitsPrincipal_two_of_val_eq hu))
 
 /-- `(A : A²) = 4` exactly for the subgroups `A = V^(f)`, `f ≥ 2`, among the closed subgroups of
 `ℤ_2ˣ`. -/
