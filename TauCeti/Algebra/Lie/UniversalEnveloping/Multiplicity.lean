@@ -54,10 +54,12 @@ is why they live here rather than in `TauCeti/Algebra/Lie/Multiplicity.lean`: th
 component is carried to Mathlib's `isotypicComponent` over `U(L)` by
 `LieModule.lieSubmoduleOrderIso_isotypicComponent`, where
 `TauCeti.nonempty_linearEquiv_isotypicComponent` identifies it with the appropriate power of its
-type and `TauCeti.finrank_isotypicComponent` computes its dimension. The two hypotheses are the
-ones those statements need, finite-dimensionality of `M` and of the irreducible `S`; complete
-reducibility of `M` is not among them, an isotypic component being a sum of copies of `S` in any
-case. It is needed only to deduce that an isotypic module is exhausted by this component.
+type and `TauCeti.finrank_isotypicComponent` computes its dimension. Finite-dimensionality of `M` is
+the one hypothesis those statements need: an irreducible `S` that is not finite-dimensional has
+multiplicity `0` and trivial component in a finite-dimensional `M`, so the dictionary is only
+used when `S` is finite-dimensional. Complete reducibility of `M` is not needed either, an
+isotypic component being a sum of copies of `S` in any case. It is needed only to deduce that an
+isotypic module is exhausted by this component.
 -/
 
 public section
@@ -138,9 +140,43 @@ open Module (finrank)
 
 local notation "U" => _root_.UniversalEnvelopingAlgebra K L
 
+omit [IsAlgClosed K] [LieAlgebra K L] [LieModule K L M] in
+/-- **A finite-dimensional module has no component of an infinite-dimensional irreducible type.**
+A morphism out of an irreducible `S` into a finite-dimensional module is zero unless `S` is itself
+finite-dimensional, since its kernel is `⊥` or `⊤`. -/
+theorem subsingleton_lieModuleHom_of_not_finite (S : Type w₁) [AddCommGroup S] [Module K S]
+    [LieRingModule L S] [IsIrreducible K L S] (hS : ¬ Module.Finite K S) :
+    Subsingleton (S →ₗ⁅K,L⁆ M) := by
+  have h0 : ∀ f : S →ₗ⁅K,L⁆ M, f = 0 := fun f ↦ by
+    rcases eq_bot_or_eq_top f.ker with h | h
+    · exact absurd (Module.Finite.of_injective f.toLinearMap
+        ((LieModuleHom.ker_eq_bot f).mp h)) hS
+    · exact LieModuleHom.ext fun x ↦ by
+        have : x ∈ f.ker := h ▸ LieSubmodule.mem_top x
+        simpa using this
+  exact ⟨fun f g ↦ (h0 f).trans (h0 g).symm⟩
+
+omit [IsAlgClosed K] in
+/-- The multiplicity in a finite-dimensional module of an infinite-dimensional irreducible type
+is `0`. -/
+theorem isotypicMultiplicity_eq_zero_of_not_finite (S : Type w₁) [AddCommGroup S] [Module K S]
+    [LieRingModule L S] [IsIrreducible K L S] (hS : ¬ Module.Finite K S) :
+    isotypicMultiplicity K L M S = 0 :=
+  have := subsingleton_lieModuleHom_of_not_finite (K := K) (L := L) (M := M) S hS
+  (isotypicMultiplicity_def K L M S).trans Module.finrank_zero_of_subsingleton
+
+omit [IsAlgClosed K] [LieAlgebra K L] [LieModule K L M] in
+/-- A finite-dimensional module has trivial isotypic component for an infinite-dimensional type. -/
+theorem isotypicComponent_eq_bot_of_not_finite (S : Type w₁) [AddCommGroup S] [Module K S]
+    [LieRingModule L S] (hS : ¬ Module.Finite K S) :
+    isotypicComponent K L M S = ⊥ := by
+  rw [isotypicComponent_def, sSup_eq_bot]
+  rintro P ⟨e⟩
+  exact absurd (Module.Finite.equiv e.toLinearEquiv) hS
+
 /-- **An isotypic component is the power of its irreducible type counted by its multiplicity.**
-For a finite-dimensional Lie module `M` over an algebraically closed field and a
-finite-dimensional irreducible `S`, its `S`-isotypic component is Lie-equivalent to
+For a finite-dimensional Lie module `M` over an algebraically closed field and an
+irreducible `S`, its `S`-isotypic component is Lie-equivalent to
 the direct sum of `isotypicMultiplicity K L M S` copies of `S`.
 
 The equivalence is obtained from the corresponding ring-level result for `U(L)`: the submodule
@@ -149,9 +185,17 @@ multiplicities, and the equivalence dictionary transports the resulting `U(L)`-l
 equivalence back to Lie modules. Complete reducibility of `M` is not required. -/
 theorem nonempty_lieModuleEquiv_isotypicComponent
     (S : Type w₁) [AddCommGroup S] [Module K S] [LieRingModule L S]
-    [LieModule K L S] [FiniteDimensional K S] [IsIrreducible K L S] :
+    [LieModule K L S] [IsIrreducible K L S] :
     Nonempty (isotypicComponent K L M S ≃ₗ⁅K,L⁆
       (⨁ (_ : Fin (isotypicMultiplicity K L M S)), S)) := by
+  by_cases hfin : Module.Finite K S
+  swap
+  · rw [isotypicComponent_eq_bot_of_not_finite (K := K) (L := L) (M := M) S hfin,
+      isotypicMultiplicity_eq_zero_of_not_finite (K := K) (L := L) (M := M) S hfin]
+    exact ⟨{ (0 : _ →ₗ⁅K,L⁆ _) with
+      invFun := 0
+      left_inv := fun _ ↦ Subsingleton.elim _ _
+      right_inv := fun _ ↦ Subsingleton.elim _ _ }⟩
   let := asModule K L M
   let := isScalarTower_asModule K L M
   let := asModule K L S
@@ -182,7 +226,7 @@ If the `S`-isotypic component is all of `M`, then `M` is Lie-equivalent to the d
 `isotypicMultiplicity K L M S` copies of `S`. No complete reducibility hypothesis is needed. -/
 theorem nonempty_lieModuleEquiv_of_isotypicComponent_eq_top
     (S : Type w₁) [AddCommGroup S] [Module K S] [LieRingModule L S]
-    [LieModule K L S] [FiniteDimensional K S] [IsIrreducible K L S]
+    [LieModule K L S] [IsIrreducible K L S]
     (h : isotypicComponent K L M S = ⊤) :
     Nonempty (M ≃ₗ⁅K,L⁆ (⨁ (_ : Fin (isotypicMultiplicity K L M S)), S)) := by
   obtain ⟨e⟩ := nonempty_lieModuleEquiv_isotypicComponent (K := K) (L := L) (M := M) S
@@ -194,20 +238,15 @@ multiplicity.** If every irreducible Lie submodule of `M` is equivalent to `S`, 
 Lie-equivalent to the direct sum of `isotypicMultiplicity K L M S` copies of `S`. -/
 theorem nonempty_lieModuleEquiv_of_isIsotypicOfType
     (S : Type w₁) [AddCommGroup S] [Module K S] [LieRingModule L S]
-    [LieModule K L S] [FiniteDimensional K S] [IsIrreducible K L S]
+    [LieModule K L S] [IsIrreducible K L S]
     [ComplementedLattice (LieSubmodule K L M)] (h : IsIsotypicOfType K L M S) :
-    Nonempty (M ≃ₗ⁅K,L⁆ (⨁ (_ : Fin (isotypicMultiplicity K L M S)), S)) := by
-  let := asModule K L M
-  let := isScalarTower_asModule K L M
-  let := asModule K L S
-  let := isScalarTower_asModule K L S
-  exact nonempty_lieModuleEquiv_of_isotypicComponent_eq_top (K := K) (L := L) S
-    ((isotypicComponent_eq_top_iff_of_ι_smul (asModule_ι_smul K L M) S
-      (asModule_ι_smul K L S)).mpr h)
+    Nonempty (M ≃ₗ⁅K,L⁆ (⨁ (_ : Fin (isotypicMultiplicity K L M S)), S)) :=
+  nonempty_lieModuleEquiv_of_isotypicComponent_eq_top (K := K) (L := L) S
+    ((isotypicComponent_eq_top_iff S).mpr h)
 
 /-- **The dimension of an isotypic component is the multiplicity times the dimension of its
-type.** For a finite-dimensional Lie module `M` over an algebraically closed field and a
-finite-dimensional irreducible `S`, the `S`-isotypic component of `M`
+type.** For a finite-dimensional Lie module `M` over an algebraically closed field and an
+irreducible `S`, the `S`-isotypic component of `M`
 (`LieModule.isotypicComponent`) has dimension `m · dim S`, where `m` is the multiplicity
 `LieModule.isotypicMultiplicity`.
 
@@ -215,8 +254,14 @@ This is the counted form of the statement that the isotypic component is `S^{⊕
 assumed about `M` beyond finite-dimensionality, since the isotypic component is a sum of copies
 of `S` whether or not `M` itself is completely reducible. -/
 theorem finrank_isotypicComponent (S : Type w₁) [AddCommGroup S] [Module K S] [LieRingModule L S]
-    [LieModule K L S] [FiniteDimensional K S] [IsIrreducible K L S] :
+    [LieModule K L S] [IsIrreducible K L S] :
     finrank K (isotypicComponent K L M S) = isotypicMultiplicity K L M S * finrank K S := by
+  by_cases hfin : Module.Finite K S
+  swap
+  · rw [isotypicComponent_eq_bot_of_not_finite (K := K) (L := L) (M := M) S hfin,
+      isotypicMultiplicity_eq_zero_of_not_finite (K := K) (L := L) (M := M) S hfin]
+    rw [zero_mul]
+    exact Module.finrank_zero_of_subsingleton
   obtain ⟨e⟩ := nonempty_lieModuleEquiv_isotypicComponent (K := K) (L := L) (M := M) S
   rw [e.toLinearEquiv.finrank_eq, Module.finrank_directSum]
   simp
@@ -226,7 +271,7 @@ dimension of its type.** This is the numerical content of `M ≅ S^{⊕ m}`, and
 `M` beyond finite-dimensionality: the whole hypothesis is that the `S`-isotypic component is all
 of `M`. -/
 theorem finrank_of_isotypicComponent_eq_top (S : Type w₁) [AddCommGroup S] [Module K S]
-    [LieRingModule L S] [LieModule K L S] [FiniteDimensional K S] [IsIrreducible K L S]
+    [LieRingModule L S] [LieModule K L S] [IsIrreducible K L S]
     (h : isotypicComponent K L M S = ⊤) :
     finrank K M = isotypicMultiplicity K L M S * finrank K S := by
   rw [← finrank_isotypicComponent (M := M) S, h]
@@ -238,16 +283,10 @@ a completely reducible `M` is equivalent to `S`, the dimension of `M` is `m · d
 multiplicity. Complete reducibility enters only to turn the isotypy hypothesis into the
 component-exhausts-`M` hypothesis of `LieModule.finrank_of_isotypicComponent_eq_top`. -/
 theorem finrank_of_isIsotypicOfType (S : Type w₁) [AddCommGroup S] [Module K S]
-    [LieRingModule L S] [LieModule K L S] [FiniteDimensional K S] [IsIrreducible K L S]
+    [LieRingModule L S] [LieModule K L S] [IsIrreducible K L S]
     [ComplementedLattice (LieSubmodule K L M)] (h : IsIsotypicOfType K L M S) :
-    finrank K M = isotypicMultiplicity K L M S * finrank K S := by
-  let := asModule K L M
-  let := isScalarTower_asModule K L M
-  let := asModule K L S
-  let := isScalarTower_asModule K L S
-  exact finrank_of_isotypicComponent_eq_top S
-    ((isotypicComponent_eq_top_iff_of_ι_smul (asModule_ι_smul K L M) S
-      (asModule_ι_smul K L S)).mpr h)
+    finrank K M = isotypicMultiplicity K L M S * finrank K S :=
+  finrank_of_isotypicComponent_eq_top S ((isotypicComponent_eq_top_iff S).mpr h)
 
 end IsotypicComponent
 

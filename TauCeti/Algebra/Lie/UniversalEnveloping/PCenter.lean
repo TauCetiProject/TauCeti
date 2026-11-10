@@ -231,13 +231,16 @@ variable (K : Type u) (L : Type v) [Field K] [LieRing L] [LieAlgebra K L]
 `p`-polynomial.**  This is the finite-dimensional specialization of
 `TauCeti.UniversalEnvelopingAlgebra.exists_pCentralPolynomial_of_isNoetherian`: over a field,
 finite-dimensionality of `L` makes `Module.End K L` Noetherian. -/
-theorem exists_pCentralPolynomial (p : ℕ) [Fact p.Prime] [CharP K p] [FiniteDimensional K L]
+theorem exists_pCentralPolynomial (p : ℕ) [CharP K p] [FiniteDimensional K L]
     (x : L) :
     ∃ (e : ℕ) (a : Fin e → K),
       _root_.UniversalEnvelopingAlgebra.ι K x ^ p ^ e +
           ∑ i : Fin e, a i • _root_.UniversalEnvelopingAlgebra.ι K x ^ p ^ (i : ℕ) ∈
-        Subalgebra.center K (_root_.UniversalEnvelopingAlgebra K L) :=
-  exists_pCentralPolynomial_of_isNoetherian K L p x
+        Subalgebra.center K (_root_.UniversalEnvelopingAlgebra K L) := by
+  rcases CharP.char_is_prime_or_zero K p with hp | rfl
+  · have := Fact.mk hp
+    exact exists_pCentralPolynomial_of_isNoetherian K L p x
+  · exact ⟨1, 0, by simp⟩
 
 end Field
 
