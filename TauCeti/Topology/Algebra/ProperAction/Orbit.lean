@@ -94,20 +94,17 @@ theorem mem_nhdsSet_stabilizer_iff {x : X} {V : Set G} :
       ∃ W ∈ 𝓝 x, {g : G | (g • W ∩ W).Nonempty} ⊆ V := by
   constructor
   · intro hV
-    let Φ : G × X → X × X := fun p ↦ (p.1 • p.2, p.2)
-    have hΦ : IsClosedMap Φ := (ProperSMul.isProperMap_smul_pair (G := G) (X := X)).isClosedMap
-    -- The pairs whose label lies outside the interior of `V` form a closed set.
-    have hclosed : IsClosed (Φ '' (interior V)ᶜ ×ˢ univ) :=
-      hΦ _ (isOpen_interior.isClosed_compl.prod isClosed_univ)
-    -- Its image misses `(x, x)`, since every element fixing `x` lies in the interior of `V`.
-    have hx : (x, x) ∉ Φ '' (interior V)ᶜ ×ˢ univ := by
-      rintro ⟨⟨g, y⟩, ⟨hg, -⟩, hgy⟩
-      obtain ⟨hgx, rfl⟩ := Prod.ext_iff.mp hgy
-      exact hg (subset_interior_iff_mem_nhdsSet.mpr hV hgx)
-    obtain ⟨W₁, hW₁, W₂, hW₂, hW⟩ := mem_nhds_prod_iff.mp (hclosed.isOpen_compl.mem_nhds hx)
-    refine ⟨W₁ ∩ W₂, inter_mem hW₁ hW₂, fun g ⟨_, ⟨y, hy, rfl⟩, hgy⟩ ↦ interior_subset ?_⟩
-    by_contra hg
-    exact hW ⟨hgy.1, hy.2⟩ ⟨(g, y), ⟨hg, mem_univ _⟩, rfl⟩
+    -- `(g, y) ↦ (g • y, y)` is closed and its fibre over `(x, x)` is `stabilizer G x × {x}`, on
+    -- a neighbourhood of which the first coordinate lies in `V`; so the same holds on nearby
+    -- fibres.
+    have hfib := (ProperSMul.isProperMap_smul_pair (G := G) (X := X)).isClosedMap
+      |>.eventually_nhds_fiber (p := fun q : G × X ↦ q.1 ∈ V) (x, x) fun ⟨g, y⟩ hq ↦ by
+        obtain ⟨hgx, rfl⟩ := Prod.ext_iff.mp hq
+        exact continuous_fst.continuousAt.preimage_mem_nhds
+          (mem_nhdsSet_iff_forall.mp hV g (MulAction.mem_stabilizer_iff.mpr hgx))
+    obtain ⟨W₁, hW₁, W₂, hW₂, hW⟩ := mem_nhds_prod_iff.mp hfib
+    exact ⟨W₁ ∩ W₂, inter_mem hW₁ hW₂, fun g ⟨_, ⟨y, hy, rfl⟩, hgy⟩ ↦
+      hW ⟨hgy.1, hy.2⟩ (g, y) rfl⟩
   · rintro ⟨W, hW, hWV⟩
     -- The elements carrying `x` into the interior of `W` form an open set containing the
     -- stabilizer, and each of them moves `W` to meet itself at `x`.
