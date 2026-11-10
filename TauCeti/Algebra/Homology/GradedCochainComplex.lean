@@ -139,6 +139,25 @@ theorem gradedCochainComplexXEquiv_d_of_add_one_eq {p q : ℤ} (hpq : p + 1 = q)
   subst hpq
   exact gradedCochainComplexXEquiv_d p x
 
+/-- Under `gradedCochainComplexXEquiv`, an equation `d x = y` between consecutive terms of
+`gradedCochainComplex` is the equation `dM x = y` in `M`. -/
+theorem gradedCochainComplex_d_eq_iff {p q : ℤ} (hpq : p + 1 = q)
+    (x : (gradedCochainComplex ℳ dM hdeg hsq).X p) (y : (gradedCochainComplex ℳ dM hdeg hsq).X q) :
+    ((gradedCochainComplex ℳ dM hdeg hsq).d p q).hom x = y ↔
+      dM (gradedCochainComplexXEquiv p x) = (gradedCochainComplexXEquiv q y : M) := by
+  refine ⟨fun h ↦ ?_, fun h ↦ (gradedCochainComplexXEquiv q).injective (Subtype.ext ?_)⟩
+  · rw [← h, gradedCochainComplexXEquiv_d_of_add_one_eq hpq]
+  · rw [gradedCochainComplexXEquiv_d_of_add_one_eq hpq]
+    exact h
+
+/-- Under `gradedCochainComplexXEquiv`, `x` is a cocycle of `gradedCochainComplex` exactly when
+`dM x = 0` in `M`. -/
+theorem gradedCochainComplex_d_eq_zero_iff {p q : ℤ} (hpq : p + 1 = q)
+    (x : (gradedCochainComplex ℳ dM hdeg hsq).X p) :
+    ((gradedCochainComplex ℳ dM hdeg hsq).d p q).hom x = 0 ↔
+      dM (gradedCochainComplexXEquiv p x) = 0 := by
+  rw [gradedCochainComplex_d_eq_iff hpq, map_zero, Submodule.coe_zero]
+
 section Hom
 
 variable {N : Type uM} [AddCommGroup N] [Module R N]

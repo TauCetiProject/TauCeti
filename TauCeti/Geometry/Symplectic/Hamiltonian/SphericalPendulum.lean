@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce
+public import Mathlib.Analysis.Convex.Mul
 public import Mathlib.Topology.Maps.Proper.CompactlyGenerated
 public import Mathlib.Topology.Order.IntermediateValue
 
@@ -37,9 +38,19 @@ is a value of `F` exactly when `h ≥ V_j(z_j)`, and the fibre over `(V_j(z_j), 
 horizontal circular motions at height `z_j`. For `j = 0` the values are `h ≥ -1`, the bottom value
 `(-1, 0)` being attained only at the equilibrium at rest at the south pole.
 
-Finally, the energy is a proper function on the phase space
+The energy is a proper function on the phase space
 (`TauCeti.isProperMap_sphericalPendulumHamiltonian_comp_subtypeVal`), so every energy level is
-compact.
+compact, and so is every fibre of `F`.
+
+Finally, every fibre of `F` is connected
+(`TauCeti.isPreconnected_sphericalPendulumPhaseSpace_inter_preimage_singleton`). Up to rotation
+about the vertical axis, a point of the fibre over `(h, j)` is determined by its height `z` and
+its vertical momentum `p₃ = ±√(2 (h - z) (1 - z²) - j²)`, so the fibre is swept out by two sheets,
+one for each sign of `p₃`. For `j ≠ 0` the heights are those with `V_j(z) ≤ h`, an interval
+because `V_j` is convex (`TauCeti.convexOn_sphericalPendulumEffectivePotential`), and for `j = 0`
+they are the `z ∈ [-1, 1]` with `z ≤ h`. The two sheets meet where `p₃` vanishes. This holds for
+every value, regular or not, including the value `(1, 0)` of the unstable equilibrium at the north
+pole.
 
 ## Main results
 
@@ -58,6 +69,12 @@ compact.
 * `TauCeti.sphericalPendulumEnergyMomentum_eq_iff_of_isMinOn`: the fibre over the boundary
   point `(min V_j, j)` is the relative equilibrium at height `z_j`.
 * `TauCeti.isProperMap_sphericalPendulumHamiltonian_comp_subtypeVal`: the energy is proper.
+* `TauCeti.convexOn_sphericalPendulumEffectivePotential`: the effective potential is convex.
+* `TauCeti.isCompact_sphericalPendulumPhaseSpace_inter_preimage_singleton`: the fibres of `F` are
+  compact.
+* `TauCeti.isPreconnected_sphericalPendulumPhaseSpace_inter_preimage_singleton` and
+  `TauCeti.isConnected_sphericalPendulumPhaseSpace_inter_preimage_singleton`: the fibres of `F`
+  are connected.
 
 ## References
 
@@ -356,6 +373,41 @@ theorem sphericalPendulumEffectivePotential_le_iff {j z h : ℝ} (hz : z ^ 2 < 1
   rw [sphericalPendulumEffectivePotential_def, ← le_sub_iff_add_le, div_le_iff₀ hz']
   constructor <;> intro h <;> linarith
 
+/-- **The effective potential is convex** on `(-1, 1)`: it is `z` plus the nonnegative multiple
+`j² / 4` of `2 / (1 - z²) = (1 - z)⁻¹ + (1 + z)⁻¹`. -/
+theorem convexOn_sphericalPendulumEffectivePotential (j : ℝ) :
+    ConvexOn ℝ (Ioo (-1) 1) (sphericalPendulumEffectivePotential j) := by
+  have hinv : ConvexOn ℝ (Ioi 0) fun x : ℝ ↦ x⁻¹ := by
+    simpa only [zpow_neg, zpow_one] using convexOn_zpow (𝕜 := ℝ) (-1)
+  have h₁ : ConvexOn ℝ (Ioo (-1) 1) fun z : ℝ ↦ (1 + z)⁻¹ :=
+    (hinv.translate_right 1).subset (fun z hz ↦ by
+      simp only [mem_preimage, mem_Ioi]
+      linarith [hz.1]) (convex_Ioo _ _)
+  have h₂ : ConvexOn ℝ (Ioo (-1) 1) fun z : ℝ ↦ (1 - z)⁻¹ :=
+    ((hinv.translate_right 1).comp_linearMap (-LinearMap.id)).subset (fun z hz ↦ by
+      simp only [mem_preimage, mem_Ioi, LinearMap.neg_apply, LinearMap.id_apply]
+      linarith [hz.2]) (convex_Ioo _ _) |>.congr fun z _ ↦ by simp [sub_eq_add_neg]
+  refine (((h₁.add h₂).smul (c := j ^ 2 / 4) (by positivity)).add
+    (convexOn_id (convex_Ioo (-1 : ℝ) 1))).congr fun z hz ↦ ?_
+  have h1 : 1 + z ≠ 0 := by linarith [hz.1]
+  have h2 : 1 - z ≠ 0 := by linarith [hz.2]
+  have h3 : 1 - z ^ 2 ≠ 0 := by
+    rw [show 1 - z ^ 2 = (1 + z) * (1 - z) by ring]
+    exact mul_ne_zero h1 h2
+  simp only [Pi.add_apply, smul_eq_mul, id, sphericalPendulumEffectivePotential_def]
+  field_simp
+  ring
+
+/-- The heights `z ∈ (-1, 1)` with `j² ≤ 2 (h - z) (1 - z²)`, at which the effective potential
+is at most `h`, form an interval. -/
+private theorem convex_heights (j h : ℝ) :
+    Convex ℝ {z ∈ Ioo (-1 : ℝ) 1 | j ^ 2 ≤ 2 * (h - z) * (1 - z ^ 2)} := by
+  convert (convexOn_sphericalPendulumEffectivePotential j).convex_le h using 1
+  ext z
+  simp only [mem_ofPred_eq, and_congr_right_iff]
+  exact fun hz ↦ (sphericalPendulumEffectivePotential_le_iff
+    (((sq_lt_one_iff_abs_lt_one _).trans abs_lt).2 hz)).symm
+
 /-- If `z₀ ∈ (-1, 0)` solves `j² z₀ + (1 - z₀²)² = 0`, then
 `V_j(z) - V_j(z₀) = (z - z₀)² (1 + z₀² + 2 z₀ z) / (-2 z₀ (1 - z²))`, which is positive for
 `z ≠ z₀` in `(-1, 1)`. -/
@@ -552,5 +604,352 @@ theorem isProperMap_sphericalPendulumHamiltonian_comp_subtypeVal :
     using 1
   ext x
   simp
+
+/-! ### Compactness and connectedness of the fibres -/
+
+/-- The point of `ℝ³ × ℝ³` whose position has cylindrical coordinates `(r, φ, z)` and whose
+momentum has radial, angular and vertical components `a`, `b` and `w`. -/
+private noncomputable def cylindricalPoint (φ r z a b w : ℝ) :
+    EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3) :=
+  (!₂[r * Real.cos φ, r * Real.sin φ, z],
+    !₂[a * Real.cos φ - b * Real.sin φ, a * Real.sin φ + b * Real.cos φ, w])
+
+/-- The height of `cylindricalPoint φ r z a b w` is `z`. -/
+private theorem cylindricalPoint_fst_two (φ r z a b w : ℝ) :
+    (cylindricalPoint φ r z a b w).1 2 = z := rfl
+
+/-- The vertical momentum of `cylindricalPoint φ r z a b w` is `w`. -/
+private theorem cylindricalPoint_snd_two (φ r z a b w : ℝ) :
+    (cylindricalPoint φ r z a b w).2 2 = w := rfl
+
+/-- In cylindrical coordinates the phase space is `r² + z² = 1`, `r a + z w = 0`. -/
+private theorem mem_sphericalPendulumPhaseSpace_cylindricalPoint_iff {φ r z a b w : ℝ} :
+    cylindricalPoint φ r z a b w ∈ sphericalPendulumPhaseSpace ↔
+      r ^ 2 + z ^ 2 = 1 ∧ r * a + z * w = 0 := by
+  rw [mem_sphericalPendulumPhaseSpace, ← pow_eq_one_iff_of_nonneg (norm_nonneg _) two_ne_zero,
+    EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three]
+  simp only [cylindricalPoint, PiLp.inner_apply, Fin.sum_univ_three, RCLike.inner_apply,
+    conj_trivial, PiLp.toLp_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+    Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons]
+  have hsc := Real.sin_sq_add_cos_sq φ
+  constructor
+  · rintro ⟨h1, h2⟩
+    exact ⟨by linear_combination h1 - r ^ 2 * hsc, by linear_combination h2 - r * a * hsc⟩
+  · rintro ⟨h1, h2⟩
+    exact ⟨by linear_combination h1 + r ^ 2 * hsc, by linear_combination h2 + r * a * hsc⟩
+
+/-- In cylindrical coordinates the energy is `(a² + b² + w²) / 2 + z` and the vertical angular
+momentum is `r b`. -/
+private theorem sphericalPendulumEnergyMomentum_cylindricalPoint (φ r z a b w : ℝ) :
+    sphericalPendulumEnergyMomentum (cylindricalPoint φ r z a b w) =
+      ((a ^ 2 + b ^ 2 + w ^ 2) / 2 + z, r * b) := by
+  simp only [cylindricalPoint, sphericalPendulumEnergyMomentum_apply,
+    EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_three, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val_two, Matrix.head_cons, Matrix.tail_cons, Prod.mk.injEq]
+  have hsc := Real.sin_sq_add_cos_sq φ
+  constructor
+  · linear_combination (a ^ 2 + b ^ 2) / 2 * hsc
+  · linear_combination r * b * hsc
+
+/-- Every point of `ℝ³ × ℝ³` has cylindrical coordinates with `r ≥ 0`. On the vertical axis
+`r = 0` the angle `φ` is free, and it can be chosen to make the momentum purely radial with
+nonnegative radial component. -/
+private theorem exists_eq_cylindricalPoint
+    (x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)) :
+    ∃ φ r z a b w, 0 ≤ r ∧ x = cylindricalPoint φ r z a b w ∧ (r = 0 → b = 0 ∧ 0 ≤ a) := by
+  obtain ⟨q, p⟩ := x
+  have hsc (φ : ℝ) := Real.sin_sq_add_cos_sq φ
+  by_cases hq : q 0 = 0 ∧ q 1 = 0
+  · -- On the axis, take `φ` to be the argument of the horizontal momentum.
+    set c : ℂ := ⟨p 0, p 1⟩
+    refine ⟨Complex.arg c, 0, q 2, ‖c‖, 0, p 2, le_rfl, ?_, fun _ ↦ ⟨rfl, norm_nonneg _⟩⟩
+    have h0 := Complex.norm_mul_cos_arg c
+    have h1 := Complex.norm_mul_sin_arg c
+    simp only [cylindricalPoint, Prod.mk.injEq]
+    constructor <;> ext i <;> fin_cases i <;> simp [c, hq.1, hq.2] at h0 h1 ⊢
+  · -- Off the axis, take `φ` to be the argument of the horizontal position.
+    set c : ℂ := ⟨q 0, q 1⟩
+    have h0 := Complex.norm_mul_cos_arg c
+    have h1 := Complex.norm_mul_sin_arg c
+    set φ := Complex.arg c
+    refine ⟨φ, ‖c‖, q 2, p 0 * Real.cos φ + p 1 * Real.sin φ,
+      p 1 * Real.cos φ - p 0 * Real.sin φ, p 2, norm_nonneg _, ?_, fun hc ↦ ?_⟩
+    · simp only [cylindricalPoint, Prod.mk.injEq]
+      constructor <;> ext i <;> fin_cases i <;> simp [c] at h0 h1 ⊢
+      · linarith
+      · linarith
+      · linear_combination (-p 0) * hsc φ
+      · linear_combination (-p 1) * hsc φ
+    · rw [norm_eq_zero] at hc
+      exact absurd ⟨congrArg Complex.re hc, congrArg Complex.im hc⟩ hq
+
+/-- The sheet `s = ±1` of the fibre over `(h, 0)`: the point at height `z ∈ [-1, h]` and angle `φ`
+moving in the vertical plane through the axis, with vertical momentum of sign `s`. At the poles
+`z = ±1` its momentum is horizontal and points along the angle `φ`, up to the sign `-s z`. -/
+private noncomputable def zeroFibreSheet (h s : ℝ) (v : ℝ × ℝ) :
+    EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3) :=
+  cylindricalPoint v.2 √(1 - v.1 ^ 2) v.1 (-(v.1 * (s * √(2 * (h - v.1))))) 0
+    (s * √(2 * (h - v.1)) * √(1 - v.1 ^ 2))
+
+/-- The sheet `s = ±1` of the fibre over `(h, j)` away from the poles: the point at height `z`
+and angle `φ` with vertical momentum `s √(2 (h - z) (1 - z²) - j²)` and angular momentum `j`. -/
+private noncomputable def fibreSheet (h j s : ℝ) (v : ℝ × ℝ) :
+    EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3) :=
+  cylindricalPoint v.2 √(1 - v.1 ^ 2) v.1
+    (-(s * √(2 * (h - v.1) * (1 - v.1 ^ 2) - j ^ 2) * v.1 / √(1 - v.1 ^ 2)))
+    (j / √(1 - v.1 ^ 2)) (s * √(2 * (h - v.1) * (1 - v.1 ^ 2) - j ^ 2))
+
+private theorem continuous_zeroFibreSheet (h s : ℝ) : Continuous (zeroFibreSheet h s) := by
+  unfold zeroFibreSheet cylindricalPoint
+  refine .prodMk (PiLp.continuous_toLp _ _ |>.comp ?_) (PiLp.continuous_toLp _ _ |>.comp ?_) <;>
+    refine continuous_pi fun i ↦ ?_ <;> fin_cases i <;>
+    simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero,
+      Matrix.cons_val_one, Matrix.cons_val] <;>
+    fun_prop
+
+private theorem continuousOn_fibreSheet (h j s : ℝ) :
+    ContinuousOn (fibreSheet h j s)
+      ({z ∈ Ioo (-1 : ℝ) 1 | j ^ 2 ≤ 2 * (h - z) * (1 - z ^ 2)} ×ˢ univ) := by
+  have hne : ∀ v ∈ {z ∈ Ioo (-1 : ℝ) 1 | j ^ 2 ≤ 2 * (h - z) * (1 - z ^ 2)} ×ˢ (univ : Set ℝ),
+      √(1 - v.1 ^ 2) ≠ 0 := fun v hv ↦
+    (Real.sqrt_pos.2 (by nlinarith [hv.1.1.1, hv.1.1.2])).ne'
+  have hr : Continuous fun v : ℝ × ℝ ↦ √(1 - v.1 ^ 2) := by fun_prop
+  have ha : ContinuousOn (fun v : ℝ × ℝ ↦
+      -(s * √(2 * (h - v.1) * (1 - v.1 ^ 2) - j ^ 2) * v.1 / √(1 - v.1 ^ 2))) _ :=
+    (ContinuousOn.div (by fun_prop) hr.continuousOn hne).neg
+  have hb : ContinuousOn (fun v : ℝ × ℝ ↦ j / √(1 - v.1 ^ 2)) _ :=
+    ContinuousOn.div continuousOn_const hr.continuousOn hne
+  unfold fibreSheet cylindricalPoint
+  refine .prodMk ((PiLp.continuous_toLp _ _).comp_continuousOn ?_)
+    ((PiLp.continuous_toLp _ _).comp_continuousOn ?_) <;>
+    refine continuousOn_pi.2 fun i ↦ ?_ <;> fin_cases i
+  all_goals simp only [Fin.zero_eta, Fin.mk_one, Fin.reduceFinMk, Matrix.cons_val_zero,
+    Matrix.cons_val_one, Matrix.cons_val]
+  · exact Continuous.continuousOn (by fun_prop)
+  · exact Continuous.continuousOn (by fun_prop)
+  · exact Continuous.continuousOn (by fun_prop)
+  · exact (ha.mul (by fun_prop)).sub (hb.mul (by fun_prop))
+  · exact (ha.mul (by fun_prop)).add (hb.mul (by fun_prop))
+  · exact Continuous.continuousOn (by fun_prop)
+
+/-- The sheets of the fibre over `(h, 0)` lie in that fibre. -/
+private theorem zeroFibreSheet_mem {h s z : ℝ} (hs : s = 1 ∨ s = -1) (hz : z ∈ Icc (-1 : ℝ) 1)
+    (hzh : z ≤ h) (φ : ℝ) :
+    zeroFibreSheet h s (z, φ) ∈
+      sphericalPendulumPhaseSpace ∩ sphericalPendulumEnergyMomentum ⁻¹' {(h, 0)} := by
+  have hs2 : s ^ 2 = 1 := by rcases hs with rfl | rfl <;> norm_num
+  have hr : √(1 - z ^ 2) ^ 2 = 1 - z ^ 2 := Real.sq_sqrt (by nlinarith [hz.1, hz.2])
+  have hu : √(2 * (h - z)) ^ 2 = 2 * (h - z) := Real.sq_sqrt (by linarith)
+  rw [mem_inter_iff, mem_preimage, mem_singleton_iff, zeroFibreSheet,
+    mem_sphericalPendulumPhaseSpace_cylindricalPoint_iff,
+    sphericalPendulumEnergyMomentum_cylindricalPoint]
+  refine ⟨⟨by linear_combination hr, by ring⟩, Prod.ext ?_ (by simp)⟩
+  linear_combination (s ^ 2 * √(2 * (h - z)) ^ 2 / 2) * hr + (s ^ 2 / 2) * hu + (h - z) * hs2
+
+/-- Every point of the fibre over `(h, 0)` lies on one of its two sheets. -/
+private theorem exists_zeroFibreSheet_eq {h : ℝ}
+    {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)}
+    (hx : x ∈ sphericalPendulumPhaseSpace ∩ sphericalPendulumEnergyMomentum ⁻¹' {(h, 0)}) :
+    ∃ s, (s = 1 ∨ s = -1) ∧ ∃ z ∈ Icc (-1 : ℝ) 1, z ≤ h ∧ ∃ φ, zeroFibreSheet h s (z, φ) = x := by
+  obtain ⟨hx, hF⟩ := hx
+  rw [mem_preimage, mem_singleton_iff] at hF
+  have hw := sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace hx
+  rw [hF] at hw
+  obtain ⟨φ, r, z, a, b, w, hr, rfl, hpole⟩ := exists_eq_cylindricalPoint x
+  simp only [cylindricalPoint_fst_two, cylindricalPoint_snd_two] at hw
+  obtain ⟨hx1, hx2⟩ := mem_sphericalPendulumPhaseSpace_cylindricalPoint_iff.1 hx
+  rw [sphericalPendulumEnergyMomentum_cylindricalPoint, Prod.mk.injEq] at hF
+  obtain ⟨hF1, hF2⟩ := hF
+  have hz : z ∈ Icc (-1 : ℝ) 1 := ⟨by nlinarith, by nlinarith⟩
+  have hrz : √(1 - z ^ 2) = r := by
+    rw [← Real.sqrt_sq hr]
+    congr 1
+    linarith
+  rcases hr.eq_or_lt with rfl | hr0
+  · -- At a pole `z = ±1` the momentum is horizontal, of length `√(2 (h - z))`; use `s = -z`.
+    obtain ⟨rfl, ha⟩ := hpole rfl
+    have hz2 : z ^ 2 = 1 := by linarith
+    obtain rfl : w = 0 := (mul_eq_zero.1 (show z * w = 0 by linarith)).resolve_left
+      fun h0 ↦ by simp [h0] at hz2
+    have ha2 : a ^ 2 = 2 * (h - z) := by linarith
+    have hsa : √(2 * (h - z)) = a := by rw [← ha2, Real.sqrt_sq ha]
+    refine ⟨-z, ?_, z, hz, by nlinarith, φ, ?_⟩
+    · rcases sq_eq_sq_iff_eq_or_eq_neg.1 (show z ^ 2 = 1 ^ 2 by rw [hz2, one_pow]) with h0 | h0 <;>
+        simp [h0]
+    · simp only [zeroFibreSheet, hrz, hsa, mul_zero]
+      congr 1
+      linear_combination a * hz2
+  · -- Away from the poles `b = 0`, and `w / r` is a square root of `2 (h - z)`.
+    obtain rfl : b = 0 := (mul_eq_zero.1 hF2).resolve_left hr0.ne'
+    have hw2 : w ^ 2 = 2 * (h - z) * r ^ 2 := by
+      linear_combination hw - 2 * (h - z) * hx1
+    have hu2 : (w / r) ^ 2 = 2 * (h - z) := by
+      rw [div_pow, hw2]
+      field_simp
+    have hzh : z ≤ h := by nlinarith [sq_nonneg (w / r)]
+    have hsq : √(2 * (h - z)) ^ 2 = 2 * (h - z) := Real.sq_sqrt (by linarith)
+    have hgoal (s : ℝ) (hs : s * √(2 * (h - z)) = w / r) :
+        zeroFibreSheet h s (z, φ) = cylindricalPoint φ r z a 0 w := by
+      simp only [zeroFibreSheet, hrz, hs]
+      congr 1
+      · field_simp
+        linarith
+      · field_simp
+    rcases sq_eq_sq_iff_eq_or_eq_neg.1 (hu2.trans hsq.symm) with h1 | h1
+    · exact ⟨1, .inl rfl, z, hz, hzh, φ, hgoal 1 (by rw [h1, one_mul])⟩
+    · exact ⟨-1, .inr rfl, z, hz, hzh, φ, hgoal (-1) (by rw [h1, neg_one_mul])⟩
+
+/-- The sheets of the fibre over `(h, j)` lie in that fibre. -/
+private theorem fibreSheet_mem {h j s z : ℝ} (hs : s = 1 ∨ s = -1) (hz : z ∈ Ioo (-1 : ℝ) 1)
+    (hzj : j ^ 2 ≤ 2 * (h - z) * (1 - z ^ 2)) (φ : ℝ) :
+    fibreSheet h j s (z, φ) ∈
+      sphericalPendulumPhaseSpace ∩ sphericalPendulumEnergyMomentum ⁻¹' {(h, j)} := by
+  have hs2 : s ^ 2 = 1 := by rcases hs with rfl | rfl <;> norm_num
+  have hz2 : 0 < 1 - z ^ 2 := by nlinarith [hz.1, hz.2]
+  have hr : √(1 - z ^ 2) ^ 2 = 1 - z ^ 2 := Real.sq_sqrt hz2.le
+  have hr0 : √(1 - z ^ 2) ≠ 0 := (Real.sqrt_pos.2 hz2).ne'
+  have hW : √(2 * (h - z) * (1 - z ^ 2) - j ^ 2) ^ 2 = 2 * (h - z) * (1 - z ^ 2) - j ^ 2 :=
+    Real.sq_sqrt (by linarith)
+  rw [mem_inter_iff, mem_preimage, mem_singleton_iff, fibreSheet,
+    mem_sphericalPendulumPhaseSpace_cylindricalPoint_iff,
+    sphericalPendulumEnergyMomentum_cylindricalPoint]
+  refine ⟨⟨by linear_combination hr, by field_simp; ring⟩, Prod.ext ?_ (by field_simp)⟩
+  field_simp
+  rw [hW, hr, hs2]
+  ring
+
+/-- For `j ≠ 0`, every point of the fibre over `(h, j)` lies on one of its two sheets. -/
+private theorem exists_fibreSheet_eq {h j : ℝ} (hj : j ≠ 0)
+    {x : EuclideanSpace ℝ (Fin 3) × EuclideanSpace ℝ (Fin 3)}
+    (hx : x ∈ sphericalPendulumPhaseSpace ∩ sphericalPendulumEnergyMomentum ⁻¹' {(h, j)}) :
+    ∃ s, (s = 1 ∨ s = -1) ∧ ∃ z ∈ Ioo (-1 : ℝ) 1, j ^ 2 ≤ 2 * (h - z) * (1 - z ^ 2) ∧
+      ∃ φ, fibreSheet h j s (z, φ) = x := by
+  obtain ⟨hx, hF⟩ := hx
+  rw [mem_preimage, mem_singleton_iff] at hF
+  have hw2 := sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace hx
+  rw [hF] at hw2
+  obtain ⟨φ, r, z, a, b, w, hr, rfl, -⟩ := exists_eq_cylindricalPoint x
+  simp only [cylindricalPoint_fst_two, cylindricalPoint_snd_two] at hw2
+  obtain ⟨hx1, hx2⟩ := mem_sphericalPendulumPhaseSpace_cylindricalPoint_iff.1 hx
+  rw [sphericalPendulumEnergyMomentum_cylindricalPoint, Prod.mk.injEq] at hF
+  obtain ⟨hF1, hF2⟩ := hF
+  -- Since `r b = j ≠ 0`, the point is off the axis.
+  have hr0 : 0 < r := hr.lt_of_ne fun h0 ↦ hj (by rw [← hF2, ← h0, zero_mul])
+  have hz : z ∈ Ioo (-1 : ℝ) 1 := ((sq_lt_one_iff_abs_lt_one _).trans abs_lt).1 (by nlinarith)
+  have hrz : √(1 - z ^ 2) = r := by
+    rw [← Real.sqrt_sq hr]
+    congr 1
+    linarith
+  have hzj : j ^ 2 ≤ 2 * (h - z) * (1 - z ^ 2) := by nlinarith [sq_nonneg w]
+  have hW : √(2 * (h - z) * (1 - z ^ 2) - j ^ 2) ^ 2 = 2 * (h - z) * (1 - z ^ 2) - j ^ 2 :=
+    Real.sq_sqrt (by linarith)
+  have hgoal (s : ℝ) (hs : s * √(2 * (h - z) * (1 - z ^ 2) - j ^ 2) = w) :
+      fibreSheet h j s (z, φ) = cylindricalPoint φ r z a b w := by
+    simp only [fibreSheet, hrz, hs]
+    congr 1
+    · field_simp
+      linarith
+    · field_simp
+      linarith
+  rcases sq_eq_sq_iff_eq_or_eq_neg.1 (hw2.trans hW.symm) with h1 | h1
+  · exact ⟨1, .inl rfl, z, hz, hzj, φ, hgoal 1 (by rw [h1, one_mul])⟩
+  · exact ⟨-1, .inr rfl, z, hz, hzj, φ, hgoal (-1) (by rw [h1, neg_one_mul])⟩
+
+/-- The fibre over `(h, 0)` is the union of its two sheets, parametrized by the heights in
+`[-1, 1]` below `h` and all angles. -/
+private theorem fibre_zero_eq_union (h : ℝ) :
+    sphericalPendulumPhaseSpace ∩ sphericalPendulumEnergyMomentum ⁻¹' {(h, 0)} =
+      zeroFibreSheet h 1 '' ({z ∈ Icc (-1 : ℝ) 1 | z ≤ h} ×ˢ univ) ∪
+        zeroFibreSheet h (-1) '' ({z ∈ Icc (-1 : ℝ) 1 | z ≤ h} ×ˢ univ) := by
+  refine Subset.antisymm (fun x hx ↦ ?_) ?_
+  · obtain ⟨s, hs, z, hz, hzh, φ, rfl⟩ := exists_zeroFibreSheet_eq hx
+    rcases hs with rfl | rfl
+    · exact .inl ⟨(z, φ), ⟨⟨hz, hzh⟩, trivial⟩, rfl⟩
+    · exact .inr ⟨(z, φ), ⟨⟨hz, hzh⟩, trivial⟩, rfl⟩
+  · rintro x (⟨⟨z, φ⟩, ⟨⟨hz, hzh⟩, -⟩, rfl⟩ | ⟨⟨z, φ⟩, ⟨⟨hz, hzh⟩, -⟩, rfl⟩)
+    · exact zeroFibreSheet_mem (.inl rfl) hz hzh φ
+    · exact zeroFibreSheet_mem (.inr rfl) hz hzh φ
+
+/-- For `j ≠ 0` the fibre over `(h, j)` is the union of its two sheets, parametrized by the
+heights `z ∈ (-1, 1)` with `j² ≤ 2 (h - z) (1 - z²)` and all angles. -/
+private theorem fibre_eq_union_of_ne_zero {h j : ℝ} (hj : j ≠ 0) :
+    sphericalPendulumPhaseSpace ∩ sphericalPendulumEnergyMomentum ⁻¹' {(h, j)} =
+      fibreSheet h j 1 '' ({z ∈ Ioo (-1 : ℝ) 1 | j ^ 2 ≤ 2 * (h - z) * (1 - z ^ 2)} ×ˢ univ) ∪
+        fibreSheet h j (-1) ''
+          ({z ∈ Ioo (-1 : ℝ) 1 | j ^ 2 ≤ 2 * (h - z) * (1 - z ^ 2)} ×ˢ univ) := by
+  refine Subset.antisymm (fun x hx ↦ ?_) ?_
+  · obtain ⟨s, hs, z, hz, hzj, φ, rfl⟩ := exists_fibreSheet_eq hj hx
+    rcases hs with rfl | rfl
+    · exact .inl ⟨(z, φ), ⟨⟨hz, hzj⟩, trivial⟩, rfl⟩
+    · exact .inr ⟨(z, φ), ⟨⟨hz, hzj⟩, trivial⟩, rfl⟩
+  · rintro x (⟨⟨z, φ⟩, ⟨⟨hz, hzj⟩, -⟩, rfl⟩ | ⟨⟨z, φ⟩, ⟨⟨hz, hzj⟩, -⟩, rfl⟩)
+    · exact fibreSheet_mem (.inl rfl) hz hzj φ
+    · exact fibreSheet_mem (.inr rfl) hz hzj φ
+
+/-- **The fibres of the energy–momentum map are connected.** For every `c = (h, j)`, the set of
+points of the spherical pendulum with energy `h` and vertical angular momentum `j` is
+preconnected; it is empty exactly when `c` is not a value of the energy–momentum map.
+
+Rotating about the vertical axis, each fibre is swept out by two sheets, one for each sign of the
+vertical momentum `p₃`, over an interval of heights: for `j ≠ 0` the heights where the effective
+potential is at most `h`, which form an interval by its convexity, and for `j = 0` the heights in
+`[-1, 1]` below `h`. The sheets meet where `p₃ = 0`: for `j ≠ 0` at the top height of the fibre,
+and for `j = 0` at the south pole. -/
+theorem isPreconnected_sphericalPendulumPhaseSpace_inter_preimage_singleton (c : ℝ × ℝ) :
+    IsPreconnected (sphericalPendulumPhaseSpace ∩ sphericalPendulumEnergyMomentum ⁻¹' {c}) := by
+  obtain ⟨h, j⟩ := c
+  rcases eq_or_ne j 0 with rfl | hj
+  · rw [fibre_zero_eq_union]
+    have hS : IsPreconnected ({z ∈ Icc (-1 : ℝ) 1 | z ≤ h} ×ˢ (univ : Set ℝ)) :=
+      ((convex_Icc (-1) 1).inter (convex_Iic h)).isPreconnected.prod isPreconnected_univ
+    rcases eq_empty_or_nonempty {z ∈ Icc (-1 : ℝ) 1 | z ≤ h} with hSe | ⟨z₀, hz₀⟩
+    · rw [hSe, empty_prod, image_empty, image_empty, union_self]
+      exact isPreconnected_empty
+    -- The two sheets meet at the south pole, with opposite angles.
+    have hm : (-1 : ℝ) ∈ {z ∈ Icc (-1 : ℝ) 1 | z ≤ h} :=
+      ⟨⟨le_rfl, by norm_num⟩, hz₀.1.1.trans hz₀.2⟩
+    refine IsPreconnected.union' ⟨zeroFibreSheet h 1 (-1, 0), mem_image_of_mem _ ⟨hm, trivial⟩,
+      ⟨(-1, Real.pi), ⟨hm, trivial⟩, ?_⟩⟩
+      (hS.image _ (continuous_zeroFibreSheet h 1).continuousOn)
+      (hS.image _ (continuous_zeroFibreSheet h (-1)).continuousOn)
+    simp [zeroFibreSheet, cylindricalPoint]
+  · rw [fibre_eq_union_of_ne_zero hj]
+    have hD : IsPreconnected
+        ({z ∈ Ioo (-1 : ℝ) 1 | j ^ 2 ≤ 2 * (h - z) * (1 - z ^ 2)} ×ˢ (univ : Set ℝ)) :=
+      (convex_heights j h).isPreconnected.prod isPreconnected_univ
+    rcases eq_empty_or_nonempty {z ∈ Ioo (-1 : ℝ) 1 | j ^ 2 ≤ 2 * (h - z) * (1 - z ^ 2)}
+      with hDe | ⟨z₀, hz₀⟩
+    · rw [hDe, empty_prod, image_empty, image_empty, union_self]
+      exact isPreconnected_empty
+    -- The vertical momentum vanishes at the top height of the fibre, where the sheets meet.
+    obtain ⟨z₁, ⟨hz₁a, hz₁b⟩, hP⟩ := intermediate_value_Icc' hz₀.1.2.le
+      (f := fun z : ℝ ↦ 2 * (h - z) * (1 - z ^ 2) - j ^ 2) (by fun_prop)
+      ⟨by norm_num; positivity, sub_nonneg.2 hz₀.2⟩
+    simp only at hP
+    have hz₁1 : z₁ < 1 := hz₁b.lt_of_ne <| by
+      rintro rfl
+      exact hj (pow_eq_zero_iff two_ne_zero |>.1 (by linarith))
+    have hz₁ : z₁ ∈ {z ∈ Ioo (-1 : ℝ) 1 | j ^ 2 ≤ 2 * (h - z) * (1 - z ^ 2)} :=
+      ⟨⟨hz₀.1.1.trans_le hz₁a, hz₁1⟩, by linarith⟩
+    refine IsPreconnected.union' ⟨fibreSheet h j 1 (z₁, 0), mem_image_of_mem _ ⟨hz₁, trivial⟩,
+      ⟨(z₁, 0), ⟨hz₁, trivial⟩, ?_⟩⟩ (hD.image _ (continuousOn_fibreSheet h j 1))
+      (hD.image _ (continuousOn_fibreSheet h j (-1)))
+    simp [fibreSheet, hP]
+
+/-- Every value `c` of the energy–momentum map of the spherical pendulum has a connected fibre. -/
+theorem isConnected_sphericalPendulumPhaseSpace_inter_preimage_singleton {c : ℝ × ℝ}
+    (hc : c ∈ sphericalPendulumEnergyMomentum '' sphericalPendulumPhaseSpace) :
+    IsConnected (sphericalPendulumPhaseSpace ∩ sphericalPendulumEnergyMomentum ⁻¹' {c}) := by
+  obtain ⟨x, hx, rfl⟩ := hc
+  exact ⟨⟨x, hx, rfl⟩, isPreconnected_sphericalPendulumPhaseSpace_inter_preimage_singleton _⟩
+
+/-- Every fibre of the energy–momentum map of the spherical pendulum is compact, as a closed
+subset of a compact energy sublevel set. -/
+theorem isCompact_sphericalPendulumPhaseSpace_inter_preimage_singleton (c : ℝ × ℝ) :
+    IsCompact (sphericalPendulumPhaseSpace ∩ sphericalPendulumEnergyMomentum ⁻¹' {c}) :=
+  (isCompact_sphericalPendulumPhaseSpace_inter_preimage_Iic c.1).of_isClosed_subset
+    (isClosed_sphericalPendulumPhaseSpace.inter
+      (isClosed_singleton.preimage continuous_sphericalPendulumEnergyMomentum))
+    fun _ ⟨hx, hF⟩ ↦ ⟨hx, le_of_eq (congrArg Prod.fst hF)⟩
 
 end TauCeti

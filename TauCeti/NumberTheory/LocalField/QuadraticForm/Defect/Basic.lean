@@ -201,6 +201,15 @@ theorem not_isSquare_of_defectExponent_eq {a : Kˣ} {d : ℤ}
   rw [hd] at htop
   exact WithTop.coe_ne_top htop
 
+/-- A square root `x` of a unit `a` with finite defect exponent does not lie in the base field,
+since `a` is not a square. -/
+theorem notMem_range_algebraMap_of_defectExponent_eq {L : Type*} [Field L] [Algebra K L]
+    {a : Kˣ} {x : L} (hx2 : x ^ 2 = algebraMap K L (a : K)) {d : ℤ}
+    (hd : defectExponent a = d) : x ∉ Set.range (algebraMap K L) := by
+  rintro ⟨c, rfl⟩
+  exact not_isSquare_of_defectExponent_eq hd (Units.isSquare_coe_iff.mp
+    ⟨c, (algebraMap K L).injective (by simpa [sq] using hx2.symm)⟩)
+
 /-- Every approximation order `v_K(a - ξ²)` is at most the defect exponent. -/
 theorem le_defectExponent (a : Kˣ) (ξ : K) (x : Kˣ) (hx : (x : K) = a - ξ ^ 2) :
     ((normalizedValuation K x).toAdd : WithTop ℤ) ≤ defectExponent a := by
@@ -346,6 +355,22 @@ theorem defectExponent_mul_sq (a c : Kˣ) :
   rw [hv, ← hxd, map_inv, toAdd_inv] at h2
   rw [← hxd, ← hyd]
   norm_cast at h1 h2 ⊢
+  omega
+
+/-- An element of even valuation and finite defect exponent `d` has a square multiple
+that is a unit with defect exponent `d - v_K(a)`, even when `v_K(a)` is negative. -/
+theorem exists_defectExponent_mul_sq_eq_sub_of_even_valuation {a : Kˣ} {d : ℤ}
+    (hd : defectExponent a = d) (ha : Even (normalizedValuation K a).toAdd) :
+    ∃ c : Kˣ, valuation K ((a * c ^ 2 : Kˣ) : K) = 1 ∧
+      defectExponent (a * c ^ 2) = ((d - (normalizedValuation K a).toAdd : ℤ) : WithTop ℤ) := by
+  obtain ⟨k, hk⟩ := ha
+  obtain ⟨c, hc⟩ := normalizedValuation_surjective (K := K) (Multiplicative.ofAdd (-k))
+  have hv : (normalizedValuation K (a * c ^ 2)).toAdd = 0 := by
+    simp only [map_mul, map_pow, toAdd_mul, toAdd_pow, hc, toAdd_ofAdd, nsmul_eq_mul]
+    omega
+  refine ⟨c, (normalizedValuation_eq_one_iff _).mp (toAdd_eq_zero.mp hv), ?_⟩
+  rw [defectExponent_mul_sq, hd, hc, toAdd_ofAdd, ← WithTop.coe_add]
+  congr 1
   omega
 
 /-- For `a` of odd valuation, `v(a - ξ²) = min (v(a), 2 v(ξ))` never exceeds `v(a)`. -/

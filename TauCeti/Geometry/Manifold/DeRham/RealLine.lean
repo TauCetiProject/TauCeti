@@ -24,8 +24,8 @@ vanishing of `H⁰_c` on preconnected noncompact manifolds
 `H^•_c(ℝ)` in every degree. Compact supports are not homotopy invariant, so this is
 not a consequence of the vanishing of `H^•_dR(ℝ)` in positive degrees. This is the
 one-dimensional case of the top compactly supported cohomology of every finite-dimensional real
-normed space, `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_normedSpace`, whose
-proof uses it for `n = 1`.
+normed space, `TauCeti.finrank_compactlySupportedDeRhamCohomology_normedSpace`, whose proof uses
+it for `n = 1`.
 
 Injectivity is the heart of the matter: a compactly supported `1`-form `φ` on `ℝ` with integral
 zero is the differential of a compactly supported function

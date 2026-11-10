@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.CategoryTheory.Monoidal.Free.TensorSignature
+public import TauCeti.CategoryTheory.Monoidal.Free.TensorSignature.Basic
 public import TauCeti.CategoryTheory.Quotient.Monoidal
 
 /-!

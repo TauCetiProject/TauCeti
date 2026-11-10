@@ -12,6 +12,7 @@ public import Mathlib.AlgebraicGeometry.Group.Smooth
 public import Mathlib.AlgebraicGeometry.Geometrically.Connected
 public import Mathlib.Topology.KrullDimension
 public import TauCeti.AlgebraicGeometry.RationalPoint.Basic
+public import TauCeti.AlgebraicGeometry.Geometrically.Irreducible
 
 /-!
 # Abelian varieties
@@ -71,19 +72,6 @@ namespace AlgebraicGeometry
 
 universe u
 
-/-- A geometrically irreducible morphism is geometrically connected. Kept `private` as an
-implementation helper for `AbelianVariety.geometricallyConnected`; it is not part of the
-abelian-variety public interface. -/
-private lemma GeometricallyConnected.of_geometricallyIrreducible {X S : Scheme.{u}} {f : X ⟶ S}
-    [GeometricallyIrreducible f] : GeometricallyConnected f := by
-  refine ⟨?_⟩
-  have h : geometrically (IrreducibleSpace ·) f :=
-    GeometricallyIrreducible.geometrically_irreducibleSpace ..
-  rw [geometrically_eq_universally] at h ⊢
-  refine MorphismProperty.universally_mono (fun {X Y} f hf hint hsub ↦ ?_) _ h
-  have := hf hint hsub
-  infer_instance
-
 /-- An **abelian variety** over a field `K`: a proper geometrically integral group scheme over
 `Spec K`.
 
@@ -135,7 +123,7 @@ instance isLocallyNoetherian (A : AbelianVariety K) : IsLocallyNoetherian A.toSc
 /-- An abelian variety is geometrically connected over the base field. -/
 instance geometricallyConnected (A : AbelianVariety K) :
     GeometricallyConnected A.toOver.hom :=
-  GeometricallyConnected.of_geometricallyIrreducible
+  inferInstance
 
 /-- The group law of an abelian variety is commutative: a proper geometrically integral group
 scheme over a field is a commutative group object. This is the abstract rigidity theorem

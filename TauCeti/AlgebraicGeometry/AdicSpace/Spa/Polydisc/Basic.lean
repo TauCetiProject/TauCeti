@@ -379,7 +379,7 @@ theorem valuation_taylorHom_le {Γ₀ : Type*} [LinearOrderedCommGroupWithZero �
     rcases eq_or_ne (v f) 0 with h0 | h0
     · have hsupp : SetLike.coe (v.leAddSubgroup (v f)) = v.supp :=
         Set.ext fun g ↦ by simp [h0]
-      exact hsupp ▸ isClosed_supp_of_isContinuous hv
+      exact hsupp ▸ hv.isClosed_supp
     · exact AddSubgroup.isClosed_of_isOpen _ (hv.isOpen_le h0)
   refine hclosed.mem_of_tendsto (hasSum_taylorHom a ha f)
     (Filter.Eventually.of_forall fun _ ↦ (v.leAddSubgroup (v f)).sum_mem fun ν _ ↦ ?_)

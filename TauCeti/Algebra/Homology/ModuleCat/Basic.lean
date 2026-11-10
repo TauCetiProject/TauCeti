@@ -22,7 +22,8 @@ For a homological complex `K` of modules over a ring, the inclusion of the degre
 These are the elementwise forms of the facts that `K.iCycles n` is a monomorphism and
 `K.homologyπ n` is an epimorphism.  Chain maps commute with the differentials and the square of
 the differential vanishes, on elements (`HomologicalComplex.Hom.comm_apply`,
-`HomologicalComplex.d_comp_d_apply`), and an element killed by the differential to degree
+`HomologicalComplex.d_comp_d_apply`), cycles have zero boundary, on elements
+(`HomologicalComplex.iCycles_d_apply`), and an element killed by the differential to degree
 `c.next i` is killed by every differential out of degree `i`
 (`HomologicalComplex.d_apply_eq_zero_of_d_next_apply_eq_zero`).  Conversely, an element of
 `K.X n` killed by the differential is a cycle, `HomologicalComplex.moduleCatCyclesMk`.  This
@@ -40,7 +41,9 @@ is a boundary have the same homology class
 (`HomologicalComplex.moduleCat_homologyπ_eq_of_iCycles_sub_eq_d`); conversely, cycles with the same
 class differ by the boundary of an element of degree `c.prev n`
 (`HomologicalComplex.moduleCat_homologyπ_eq_iff`), and a cycle has zero homology class exactly
-when it is a boundary (`HomologicalComplex.moduleCat_homologyπ_eq_zero_iff`).
+when it is a boundary (`HomologicalComplex.moduleCat_homologyπ_eq_zero_iff`); where no
+differential enters, such as in degree zero of a cochain complex, a cycle with zero class is zero
+(`HomologicalComplex.moduleCat_eq_zero_of_homologyπ_eq_zero`).
 When the homology is finitely generated, finitely many cycles generate all cycles modulo
 boundaries (`HomologicalComplex.exists_fin_moduleCat_cycles_generating`).
 Cycles are elements of the kernel of the outgoing differential
@@ -105,6 +108,12 @@ theorem d_comp_d_apply {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
     K.d j l (K.d i j x) = 0 := by
   rw [← ModuleCat.comp_apply, HomologicalComplex.d_comp_d]
   rfl
+
+/-- In a complex of modules a cycle has zero boundary, on elements. -/
+theorem iCycles_d_apply {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
+    (K : HomologicalComplex (ModuleCat R) c) (i j : ι) (z : K.cycles i) :
+    K.d i j (K.iCycles i z) = 0 :=
+  (ConcreteCategory.comp_apply _ _ z).symm.trans (ConcreteCategory.congr_hom (K.iCycles_d i j) z)
 
 /-- In a complex of modules, an element killed by the differential to degree `c.next i` is killed
 by every differential out of degree `i`. -/
@@ -238,6 +247,15 @@ lemma moduleCat_homologyπ_eq_zero_iff {m : ι} (hm : c.prev n = m) (z : K.cycle
   rfl
 
 variable {n} in
+/-- A degree-`n` cycle of a homological complex of modules with zero homology class vanishes when
+no differential enters degree `n`, for instance in degree zero of an `ℕ`-indexed cochain complex:
+there are no boundaries. -/
+lemma moduleCat_eq_zero_of_homologyπ_eq_zero (hn : ¬ c.Rel (c.prev n) n) (z : K.cycles n)
+    (hz : K.homologyπ n z = 0) : z = 0 := by
+  have := K.isIso_homologyπ (c.prev n) n rfl (K.shape _ _ hn)
+  exact (ModuleCat.mono_iff_injective _).1 inferInstance (hz.trans (map_zero _).symm)
+
+variable {n} in
 /-- Two degree-`n` cycles of a complex of modules have the same homology class exactly when the
 difference of their underlying elements is a boundary, the image of an element of the term of
 degree `c.prev n`. -/
@@ -343,6 +361,12 @@ variable {n} {m : ι} (hm : c.next n = m)
 /-- The homology class of an element of the kernel of the outgoing differential `K.d n m`. -/
 noncomputable def moduleCatKerHomologyClass : LinearMap.ker (K.d n m).hom →ₗ[R] K.homology n :=
   K.moduleCatHomologyClass hm (Submodule.subtype _) fun z ↦ LinearMap.mem_ker.1 z.2
+
+/-- The kernel class map is the homology class map of the kernel's inclusion into the term. -/
+lemma moduleCatKerHomologyClass_eq_moduleCatHomologyClass :
+    K.moduleCatKerHomologyClass hm =
+      K.moduleCatHomologyClass hm (Submodule.subtype _) (fun z ↦ z.2) :=
+  (rfl)
 
 /-- The homology class of the kernel element given by a cycle `y` is the class of `y`. -/
 @[simp]

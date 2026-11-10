@@ -235,6 +235,27 @@ theorem globalInvariants_eq {Q : _root_.QuadraticForm K V} {R : _root_.Quadratic
 
 end QuadraticMap.Equivalent
 
+namespace TauCeti.NumberField.QuadraticForm.GlobalFormInvariants
+
+variable {K : Type u} [Field K] [NumberField K]
+variable {V : Type v} [AddCommGroup V] [Module K V] [FiniteDimensional K V]
+
+/-- A system realized by a regular form on some finite-dimensional space is realized by a
+regular form on the coordinate space `Fin I.rank → K`. -/
+theorem exists_globalForm_of_globalInvariants_eq {Q : _root_.QuadraticForm K V}
+    (hQ : Q.Nondegenerate) {I : GlobalFormInvariants K} (hQI : Q.globalInvariants hQ = I) :
+    ∃ (Q' : _root_.QuadraticForm K (Fin I.rank → K)) (hQ' : Q'.Nondegenerate),
+      Q'.globalInvariants hQ' = I := by
+  subst hQI
+  have hrank : Module.finrank K (Fin (Q.globalInvariants hQ).rank → K) = Module.finrank K V := by
+    simp
+  obtain ⟨e⟩ := FiniteDimensional.nonempty_linearEquiv_of_finrank_eq hrank
+  have h : Q.Equivalent _ := ⟨QuadraticMap.isometryEquivOfCompLinearEquiv Q e⟩
+  have hQ' := h.some.nondegenerate_iff.mp hQ
+  exact ⟨_, hQ', (h.globalInvariants_eq hQ hQ').symm⟩
+
+end TauCeti.NumberField.QuadraticForm.GlobalFormInvariants
+
 section OneSelfNeg
 
 open QuadraticMap

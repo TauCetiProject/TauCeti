@@ -50,6 +50,8 @@ both sides, in order to apply the rule to `e.symm` as well.
   from `E` to `E₀`.
 * `ContinuousLinearMap.HasLeftInverse.isImmersion`: a continuous linear map with a continuous
   linear left inverse is an immersion.
+* `TauCeti.isImmersion_prodMkRight_of_extChartAt_eq_zero`: the slice `x ↦ (c, x)` of a product
+  `N × M` is an immersion when the preferred chart of `N` at `c` sends `c` to `0`.
 * `TauCeti.isImmersion_iff_forall_isImmersionAt`: for a finite-dimensional target model, a map is
   an immersion exactly when it is an immersion at every point.
 * `Manifold.IsImmersion.nonempty_complement_continuousLinearEquiv`: for nonempty manifolds
@@ -304,6 +306,22 @@ theorem _root_.ContinuousLinearMap.HasLeftInverse.isImmersion {f : E →L[𝕜] 
     fun x ↦ IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt f.continuous.continuousAt
       e.symm fun u _ ↦ ?_
   simp [e]
+
+/-! ### Slices of a product -/
+
+/-- **Slices of a product.** If the preferred chart of `N` at `c` sends `c` to `0`, then the slice
+`x ↦ (c, x)` of the product `N × M` is a `C^n` immersion with complement `E'`: in product charts
+it is the inclusion `u ↦ (0, u)`. -/
+theorem isImmersion_prodMkRight_of_extChartAt_eq_zero [IsManifold I n M] [IsManifold J n N]
+    {c : N} (hc : extChartAt J c c = 0) :
+    IsImmersion I (J.prod I) n (Prod.mk c : M → N × M) :=
+  IsImmersionOfComplement.isImmersion (F := E') fun x ↦
+    IsImmersionAtOfComplement.mk_of_continuousAt_of_extChartAt
+      (continuous_const.prodMk continuous_id).continuousAt
+      (ContinuousLinearEquiv.prodComm 𝕜 E E') fun u hu ↦ by
+        simp only [Function.comp_apply, ContinuousLinearEquiv.prodComm_apply, Prod.swap_prod_mk]
+        rw [extChartAt_prod, PartialEquiv.prod_coe]
+        simp only [hc, (extChartAt I x).right_inv hu]
 
 /-! ### Immersions into finite-dimensional models -/
 

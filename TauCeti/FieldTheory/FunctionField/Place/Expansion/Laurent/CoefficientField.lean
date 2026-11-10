@@ -276,7 +276,7 @@ theorem exists_trunc_powerSeriesExpansionResidueField_eq (g : PowerSeries P.Resi
     rwa [ord_completionEmbedding]
   set e := P.completionIntegersEquivPowerSeriesResidueField ht'
   -- Approximate the completed function with expansion `g` by a function regular at `P`.
-  obtain ⟨y, hy⟩ := P.exists_filtration_sub_completionEmbedding_mem (b := n) (Nat.cast_nonneg n)
+  obtain ⟨y, hy⟩ := P.exists_filtration_sub_completionEmbedding_mem n
     ⟨(e.symm g : P.Completion), P.completionPlace.mem_filtration_zero_iff.mpr (e.symm g).2⟩
   have hyint : (y : F) ∈ P.integers := P.mem_filtration_zero_iff.mp y.2
   refine ⟨⟨y, hyint⟩, ?_⟩
