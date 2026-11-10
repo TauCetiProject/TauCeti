@@ -136,20 +136,6 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart [IsManifold I' k N]
     rwa [ContMDiffAlmostComplexStructure.almostComplexStructureAt_toLinearMap] at this
   obtain ⟨e, he, he₀, heU, heΩ, hec, hesc⟩ :=
     TauCeti.exists_adaptedChart hU hΩ hx₀U hℓ' hγ hJ hγΩ hsq hinj htr
-  -- The extended chart at `y` as an open partial homeomorphism.
-  let χ' : OpenPartialHomeomorph M E :=
-    (chartAt H y).trans I.toHomeomorph.toOpenPartialHomeomorph
-  have hχ'coe : ⇑χ' = χ := by
-    funext x
-    simp [χ', χ, extChartAt, OpenPartialHomeomorph.extend]
-  have hχ'symm : ⇑χ'.symm = χ.symm := by
-    funext x
-    simp [χ', χ, extChartAt, OpenPartialHomeomorph.extend]
-  have hχ'src : χ'.source = χ.source := by
-    simp [χ', χ]
-  have hχ'tgt : χ'.target = χ.target := by
-    ext z
-    simp [χ', χ, I.range_eq_univ]
   -- The parameters whose zero-section point lies in the source of `e`.
   set S : Set N := (φ.source ∩ ι ⁻¹' χ.source) ∩ (fun z ↦ (φ z, (0 : F))) ⁻¹' e.source
   have hS : IsOpen S :=
@@ -158,16 +144,17 @@ theorem IsTotallyRealEmbedding.exists_adaptedChart [IsManifold I' k N]
       ((isOpen_extChartAt_source x₀).inter ((isOpen_extChartAt_source y).preimage hι.continuous))
       e.open_source
   obtain ⟨O, hO, hOS⟩ := h.isSmoothEmbedding.isEmbedding.isInducing.isOpen_iff.mp hS
-  let ψ := (χ'.trans e.symm).restrOpen O hO
+  -- The extended chart at `y` as an open partial homeomorphism, then `e⁻¹`, restricted to `O`.
+  let ψ := (((chartAt H y).extendTrans I (Homeomorph.refl E)).trans e.symm).restrOpen O hO
   have hψcoe (x : M) : ψ x = e.symm (χ x) := by
-    simp [ψ, hχ'coe]
+    simp [ψ, χ]
   have hψsymm (p : F × F) : ψ.symm p = χ.symm (e p) := by
-    simp [ψ, hχ'symm]
+    simp [ψ, χ]
   have hψsrc {x : M} : x ∈ ψ.source ↔ (x ∈ χ.source ∧ χ x ∈ e.target) ∧ x ∈ O := by
-    simp [ψ, hχ'coe, hχ'src]
+    simp [ψ, χ]
   have hψtgt {p : F × F} :
       p ∈ ψ.target ↔ (p ∈ e.source ∧ e p ∈ χ.target) ∧ χ.symm (e p) ∈ O := by
-    simp [ψ, hχ'symm, hχ'tgt]
+    simp [ψ, χ, I.range_eq_univ]
   have hℓ0 : (ℓ : ℕ∞ω) ≠ 0 := (zero_lt_one.trans_le hℓ').ne'
   have : IsManifold I (ℓ : ℕ∞ω) M := IsManifold.of_le (n := ∞) (by exact_mod_cast le_top)
   have hγe (q : F) : e (q, 0) = γ q := by rw [he, adaptedNormalExtension_zero]

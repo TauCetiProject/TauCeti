@@ -10,6 +10,7 @@ public import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Trivialization
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Analysis.Calculus.FDeriv.PullbackEnd
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.MFDeriv
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 import TauCeti.Topology.VectorBundle.Coordinates
@@ -144,30 +145,6 @@ theorem chartPushforward_apply (ψ : OpenPartialHomeomorph M G) (p w : G) :
       mfderiv I 𝓘(ℝ, G) ψ (ψ.symm p) (J (ψ.symm p) (mfderiv 𝓘(ℝ, G) I ψ.symm p w)) :=
   (rfl)
 
-omit [IsManifold I ∞ M] in
-/-- The derivative of the inverse of a chart undoes the derivative of the chart. -/
-private theorem mfderiv_symm_apply_mfderiv_apply (ψ : OpenPartialHomeomorph M G) {y : M}
-    (hy : y ∈ ψ.source) (hψ : MDifferentiableAt I 𝓘(ℝ, G) ψ y)
-    (hψs : MDifferentiableAt 𝓘(ℝ, G) I ψ.symm (ψ y)) (v : TangentSpace I y) :
-    mfderiv 𝓘(ℝ, G) I ψ.symm (ψ y) (mfderiv I 𝓘(ℝ, G) ψ y v) = v := by
-  have hcomp := mfderiv_comp y hψs hψ
-  have heq : (ψ.symm ∘ ψ : M → M) =ᶠ[𝓝 y] id :=
-    Filter.eventually_of_mem (ψ.open_source.mem_nhds hy) fun z hz ↦ ψ.left_inv hz
-  rw [heq.mfderiv_eq, mfderiv_id] at hcomp
-  exact (DFunLike.congr_fun hcomp v).symm
-
-omit [IsManifold I ∞ M] in
-/-- The derivative of a chart undoes the derivative of its inverse. -/
-private theorem mfderiv_apply_mfderiv_symm_apply (ψ : OpenPartialHomeomorph M G) {p : G}
-    (hp : p ∈ ψ.target) (hψ : MDifferentiableAt I 𝓘(ℝ, G) ψ (ψ.symm p))
-    (hψs : MDifferentiableAt 𝓘(ℝ, G) I ψ.symm p) (w : G) :
-    mfderiv I 𝓘(ℝ, G) ψ (ψ.symm p) (mfderiv 𝓘(ℝ, G) I ψ.symm p w) = w := by
-  have hcomp := mfderiv_comp p hψ hψs
-  have heq : (ψ ∘ ψ.symm : G → G) =ᶠ[𝓝 p] id :=
-    Filter.eventually_of_mem (ψ.open_target.mem_nhds hp) fun q hq ↦ ψ.right_inv hq
-  rw [heq.mfderiv_eq, mfderiv_id] at hcomp
-  exact (DFunLike.congr_fun hcomp w).symm
-
 /-- **The pushed-forward structure is an almost complex structure.** At a point of the target
 where the chart and its inverse are differentiable, `ψ_* J` squares to `-1`. -/
 theorem chartPushforward_apply_chartPushforward_apply (ψ : OpenPartialHomeomorph M G) {p : G}
@@ -178,9 +155,11 @@ theorem chartPushforward_apply_chartPushforward_apply (ψ : OpenPartialHomeomorp
   have hleft : ∀ q, ψ (ψ.symm p) = q → ∀ v : TangentSpace I (ψ.symm p),
       mfderiv 𝓘(ℝ, G) I ψ.symm q (mfderiv I 𝓘(ℝ, G) ψ (ψ.symm p) v) = v := by
     rintro q rfl
-    exact mfderiv_symm_apply_mfderiv_apply ψ (ψ.map_target hp) hψ (by rwa [ψ.right_inv hp])
+    exact ψ.mfderiv_symm_apply_mfderiv_apply (ψ.map_target hp) hψ (by rwa [ψ.right_inv hp])
+  have hright : mfderiv I 𝓘(ℝ, G) ψ (ψ.symm p) (mfderiv 𝓘(ℝ, G) I ψ.symm p w) = w :=
+    ψ.mfderiv_apply_mfderiv_symm_apply hp hψ hψs w
   rw [chartPushforward_apply, chartPushforward_apply, hleft p (ψ.right_inv hp), J.apply_apply,
-    map_neg, mfderiv_apply_mfderiv_symm_apply ψ hp hψ hψs]
+    map_neg, hright]
   -- The two negations live on `TangentSpace 𝓘(ℝ, G) p` and on `G`, which agree by definition.
   rfl
 
@@ -190,7 +169,7 @@ theorem mfderiv_comp_toEndomorphism (ψ : OpenPartialHomeomorph M G) {y : M} (hy
     (mfderiv I 𝓘(ℝ, G) ψ y).comp (J.toEndomorphism y) =
       (J.chartPushforward ψ (ψ y)).comp (mfderiv I 𝓘(ℝ, G) ψ y) := by
   refine ContinuousLinearMap.ext fun v ↦ ?_
-  have hleft := mfderiv_symm_apply_mfderiv_apply ψ hy hψ hψs v
+  have hleft := ψ.mfderiv_symm_apply_mfderiv_apply hy hψ hψs v
   -- Generalize `ψ.symm (ψ y)`, which is `y`, so that the tangent spaces can be identified.
   have key : ∀ z, z = y → mfderiv I 𝓘(ℝ, G) ψ z
       (J z (mfderiv 𝓘(ℝ, G) I ψ.symm (ψ y) (mfderiv I 𝓘(ℝ, G) ψ y v))) =
