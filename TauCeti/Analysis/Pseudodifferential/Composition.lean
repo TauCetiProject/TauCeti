@@ -43,6 +43,9 @@ composition: Taylor expanding `a(x, ξ + 2πη)` in `η` gives its asymptotic ex
   `TauCeti.Symbol.sharp_inclusion`).
 * `TauCeti.Symbol.IsSmoothing.sharp_right`, `TauCeti.Symbol.IsSmoothing.sharp_left`: the
   smoothing symbols form an ideal for `#`.
+* `TauCeti.Symbol.IsUniform.sharp_right`: if the estimates of `a` are uniform in the position, so
+  are those of `a # b`; `TauCeti.Symbol.HasCompactSpatialSupport.sharp_right`: if `a` has compact
+  spatial support, so does `a # b`.
 
 The facts used about `b̂` (rapid decay, joint continuity, differentiation in `ξ` and the formula
 `(∂_{x_j} b)^(η, ξ) = 2πi ηⱼ b̂(η, ξ)`) are in `TauCeti.Analysis.Pseudodifferential.Sobolev`.
@@ -50,8 +53,9 @@ The facts used about `b̂` (rapid decay, joint continuity, differentiation in `�
 ## Proof outline
 
 By the rapid decay of `b̂` and Peetre's inequality `⟨ξ + 2πη⟩ ^ m' ≤ C ⟨ξ⟩ ^ m' ⟨η⟩ ^ |m'|`, the
-integrand is bounded by `C ⟨ξ⟩ ^ (m' + m) ⟨η⟩ ^ (-(n + 1))`, locally uniformly in the position,
-which gives the order-`m' + m` bound on `a # b` itself. A derivative of the integrand in a position
+integrand is bounded by `C ⟨ξ⟩ ^ (m' + m) ⟨η⟩ ^ (-(n + 1))`, uniformly for positions in any set on
+which `a` satisfies its estimates (a compact set, or all of `ℝⁿ` when `a` is uniform), which gives
+the order-`m' + m` bound on `a # b` itself. A derivative of the integrand in a position
 or frequency direction is the sum of the integrands for the pairs `(∂a, b)` and `(a, ∂b)`: in the
 position, the derivative of the phase becomes `(∂_x b)^` by the formula above. Differentiating
 under the integral sign therefore gives the Leibniz rules, smoothness follows by induction on the
@@ -107,12 +111,13 @@ private theorem compIntegrand_eq_bilinear (p : CoordinateSpace n × CoordinateSp
     ContinuousLinearMap.compL_apply]
 
 /-- The integrand of the composition symbol decays in `η` faster than every power, with the
-weight `⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly for positions in a compact set. -/
-private theorem exists_norm_compIntegrand_le (hb : b.HasCompactSpatialSupport)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (r : ℝ) :
+weight `⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly for positions in a set `K` on which `a` is
+bounded by `Ca ⟨ξ⟩ ^ m'`. -/
+private theorem exists_norm_compIntegrand_le_of_le (hb : b.HasCompactSpatialSupport)
+    {K : Set (CoordinateSpace n)} {Ca : ℝ} (hCa0 : 0 ≤ Ca)
+    (hCa : ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ Ca * (1 + ‖ξ‖ ^ 2) ^ (m' / 2)) (r : ℝ) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ η, ‖compIntegrand a b (x, ξ) η‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
-  obtain ⟨Ca, hCa0, hCa⟩ := a.exists_bound_coefficient K hK
   obtain ⟨Cb, hCb0, hCb⟩ := hb.exists_norm_fourier_slice_le (r + |m'|)
   refine ⟨Ca * 2 ^ (|m'| / 2) * (2 * π) ^ |m'| * Cb, by positivity, fun x hx ξ η ↦ ?_⟩
   have h2π : (1 : ℝ) ≤ 2 * π := by linarith [Real.two_le_pi]
@@ -144,6 +149,15 @@ private theorem exists_norm_compIntegrand_le (hb : b.HasCompactSpatialSupport)
           ((1 + ‖ξ‖ ^ 2) ^ (m' / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) *
           ((1 + ‖η‖ ^ 2) ^ (|m'| / 2) * (1 + ‖η‖ ^ 2) ^ (-(r + |m'|) / 2)) := by ring
     _ = _ := by rw [hξ, hη]
+
+/-- The integrand of the composition symbol decays in `η` faster than every power, with the
+weight `⟨ξ⟩ ^ (m' + m)` in the frequency, uniformly for positions in a compact set. -/
+private theorem exists_norm_compIntegrand_le (hb : b.HasCompactSpatialSupport)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (r : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ η, ‖compIntegrand a b (x, ξ) η‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) * (1 + ‖η‖ ^ 2) ^ (-r / 2) := by
+  obtain ⟨Ca, hCa0, hCa⟩ := a.exists_bound_coefficient K hK
+  exact exists_norm_compIntegrand_le_of_le hb hCa0 hCa r
 
 private theorem continuous_compIntegrand (hb : b.HasCompactSpatialSupport) :
     Continuous fun q : (CoordinateSpace n × CoordinateSpace n) × CoordinateSpace n ↦
@@ -217,11 +231,12 @@ private theorem continuous_compCoeff (hb : b.HasCompactSpatialSupport) :
   exact .of_forall (hC p hp₁ hp₂)
 
 /-- **Growth of the composition coefficient.** `‖c(x, ξ)‖ ≤ C ⟨ξ⟩ ^ (m' + m)` uniformly for
-positions in a compact set. -/
+positions in a set `K` on which `a` is bounded by `Ca ⟨ξ⟩ ^ m'`. -/
 private theorem exists_norm_compCoeff_le (hb : b.HasCompactSpatialSupport)
-    {K : Set (CoordinateSpace n)} (hK : IsCompact K) :
+    {K : Set (CoordinateSpace n)} {Ca : ℝ} (hCa0 : 0 ≤ Ca)
+    (hCa : ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ Ca * (1 + ‖ξ‖ ^ 2) ^ (m' / 2)) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖compCoeff a b (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m) / 2) := by
-  obtain ⟨C, hC0, hC⟩ := exists_norm_compIntegrand_le (a := a) hb hK ((n : ℝ) + 1)
+  obtain ⟨C, hC0, hC⟩ := exists_norm_compIntegrand_le_of_le hb hCa0 hCa ((n : ℝ) + 1)
   set I := ∫ η : CoordinateSpace n, (1 + ‖η‖ ^ 2) ^ (-((n : ℝ) + 1) / 2)
   have hI : 0 ≤ I := integral_nonneg fun η ↦ by positivity
   refine ⟨C * I, mul_nonneg hC0 hI, fun x hx ξ ↦ ?_⟩
@@ -488,32 +503,60 @@ private theorem contDiff_compCoeff (hb : b.HasCompactSpatialSupport) :
       (ContDiff.sum fun j _ ↦ ((ih (a := Symbol.frequencyDeriv j a) hb).add
         (ih (a := a) (hb.frequencyDeriv j))).const_smul _)
 
-/-- The symbol estimates of order `m' + m` for the composition coefficient, by induction on the
-number of derivatives: each derivative falls on one of the two symbols by the Leibniz rules, and a
-frequency derivative lowers the order of that symbol by one. -/
+/-- If `a` satisfies its estimates on a set `K` of positions, so does `∂_{x_j} a`. -/
+private theorem exists_bound_spatialDeriv_of_forall {a : Symbol n W U m'}
+    {K : Set (CoordinateSpace n)} (ha : ∀ α β : List (Fin n), ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2))
+    (j : Fin n) (α β : List (Fin n)) : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (Symbol.spatialDeriv j a).coefficient x ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2) := by
+  obtain ⟨C, hC0, hC⟩ := ha (α ++ [j]) β
+  exact ⟨C, hC0, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
+
+/-- If `a` satisfies its estimates of order `m'` on a set `K` of positions, then `∂_{ξ_j} a`
+satisfies those of order `m' - 1`. -/
+private theorem exists_bound_frequencyDeriv_of_forall {a : Symbol n W U m'}
+    {K : Set (CoordinateSpace n)} (ha : ∀ α β : List (Fin n), ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2))
+    (j : Fin n) (α β : List (Fin n)) : ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖mixedDeriv α β (Symbol.frequencyDeriv j a).coefficient x ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m' - 1 - β.length) / 2) := by
+  obtain ⟨C, hC0, hC⟩ := ha α (β ++ [j])
+  refine ⟨C, hC0, fun x hx ξ ↦ ?_⟩
+  rw [mixedDeriv_frequencyDeriv, order_sub_one_sub_length]
+  exact hC x hx ξ
+
+/-- The symbol estimates of order `m' + m` for the composition coefficient, on every set `K` of
+positions on which `a` satisfies its estimates of order `m'`, by induction on the number of
+derivatives: each derivative falls on one of the two symbols by the Leibniz rules, and a frequency
+derivative lowers the order of that symbol by one. -/
 private theorem exists_bound_compCoeff (N : ℕ) :
     ∀ {m m' : ℝ} (a : Symbol n W U m') (b : Symbol n V W m), b.HasCompactSpatialSupport →
-      ∀ α β : List (Fin n), α.length + β.length = N → ∀ K : Set (CoordinateSpace n),
-        IsCompact K → ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
-          ‖mixedDeriv α β (compCoeff a b) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
+      ∀ K : Set (CoordinateSpace n), (∀ α β : List (Fin n), ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+        ‖mixedDeriv α β a.coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' - β.length) / 2)) →
+      ∀ α β : List (Fin n), α.length + β.length = N → ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+        ‖mixedDeriv α β (compCoeff a b) x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m' + m - β.length) / 2) := by
   induction N with
   | zero =>
-    intro m m' a b hb α β hN K hK
+    intro m m' a b hb K ha α β hN
     obtain ⟨rfl, rfl⟩ : α = [] ∧ β = [] := by
       simpa [List.length_eq_zero_iff] using hN
-    obtain ⟨C, hC0, hC⟩ := exists_norm_compCoeff_le (a := a) hb hK
+    obtain ⟨Ca, hCa0, hCa⟩ := ha [] []
+    obtain ⟨C, hC0, hC⟩ := exists_norm_compCoeff_le (a := a) hb hCa0
+      fun x hx ξ ↦ by simpa using hCa x hx ξ
     exact ⟨C, hC0, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
   | succ N ih =>
-    intro m m' a b hb α β hN K hK
+    intro m m' a b hb K ha α β hN
     rcases List.eq_nil_or_concat' β with rfl | ⟨β', j, rfl⟩
     · rcases List.eq_nil_or_concat' α with rfl | ⟨α', j, rfl⟩
       · simp at hN
       · have hlen : α'.length + ([] : List (Fin n)).length = N := by
           simp only [List.length_append, List.length_singleton, List.length_nil] at hN ⊢
           omega
-        obtain ⟨C₁, hC₁0, hC₁⟩ := ih (Symbol.spatialDeriv j a) b hb α' [] hlen K hK
+        obtain ⟨C₁, hC₁0, hC₁⟩ := ih (Symbol.spatialDeriv j a) b hb K
+          (exists_bound_spatialDeriv_of_forall ha j) α' [] hlen
         obtain ⟨C₂, hC₂0, hC₂⟩ :=
-          ih a (Symbol.spatialDeriv j b) (hb.spatialDeriv j) α' [] hlen K hK
+          ih a (Symbol.spatialDeriv j b) (hb.spatialDeriv j) K ha α' [] hlen
         refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
         have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
             coordinateDeriv [j] (fun y ↦ compCoeff a b (y, q.2)) q.1) =
@@ -525,9 +568,10 @@ private theorem exists_bound_compCoeff (N : ℕ) :
     · have hlen : α.length + β'.length = N := by
         simp only [List.length_append, List.length_singleton] at hN
         omega
-      obtain ⟨C₁, hC₁0, hC₁⟩ := ih (Symbol.frequencyDeriv j a) b hb α β' hlen K hK
+      obtain ⟨C₁, hC₁0, hC₁⟩ := ih (Symbol.frequencyDeriv j a) b hb K
+        (exists_bound_frequencyDeriv_of_forall ha j) α β' hlen
       obtain ⟨C₂, hC₂0, hC₂⟩ :=
-        ih a (Symbol.frequencyDeriv j b) (hb.frequencyDeriv j) α β' hlen K hK
+        ih a (Symbol.frequencyDeriv j b) (hb.frequencyDeriv j) K ha α β' hlen
       refine ⟨C₁ + C₂, add_nonneg hC₁0 hC₂0, fun x hx ξ ↦ ?_⟩
       have hfun : (fun q : CoordinateSpace n × CoordinateSpace n ↦
           coordinateDeriv [j] (fun η ↦ compCoeff a b (q.1, η)) q.2) =
@@ -568,7 +612,7 @@ is only its leading term. -/
 def sharp (hb : b.HasCompactSpatialSupport) : Symbol n V U (m' + m) where
   coefficient := compCoeff a b
   contDiff_coefficient := contDiff_compCoeff hb
-  exists_bound K hK α β := exists_bound_compCoeff _ a b hb α β rfl K hK
+  exists_bound K hK α β := exists_bound_compCoeff _ a b hb K (a.exists_bound K hK) α β rfl
 
 @[simp]
 theorem coefficient_sharp (hb : b.HasCompactSpatialSupport) (x ξ : CoordinateSpace n) :
@@ -713,6 +757,27 @@ theorem IsSmoothing.sharp_left (hbs : b.IsSmoothing) (a : Symbol n W U m')
   refine ⟨Symbol.inclusion (by linarith) (a.sharp b' (hb.of_coefficient_eq hb')), ?_⟩
   rw [coefficient_inclusion, coefficient_sharp_eq_compCoeff, coefficient_sharp_eq_compCoeff]
   exact compCoeff_congr rfl hb'
+
+/-! ### Uniform estimates and compact spatial support -/
+
+/-- **Uniform estimates.** If the estimates of `a` hold uniformly in the position, so do those of
+`a # b`. The symbol `a # b` need not have compact spatial support even when `a` is uniform; see
+`HasCompactSpatialSupport.sharp_right` for the case where `a` has compact spatial support. -/
+theorem IsUniform.sharp_right (ha : a.IsUniform) (b : Symbol n V W m)
+    (hb : b.HasCompactSpatialSupport) : (a.sharp b hb).IsUniform := isUniform_iff.2 fun α β ↦ by
+  obtain ⟨C, hC0, hC⟩ := exists_bound_compCoeff _ a b hb Set.univ
+    (fun α β ↦ (isUniform_iff.1 ha α β).imp fun _ hC ↦ ⟨hC.1, fun x _ ξ ↦ hC.2 x ξ⟩) α β rfl
+  rw [coefficient_sharp_eq_compCoeff]
+  exact ⟨C, hC0, fun x ξ ↦ hC x (Set.mem_univ x) ξ⟩
+
+/-- If `a` vanishes at every position outside a compact set, so does `a # b`: its coefficient at
+`x` only involves the frequency slice of `a` at `x`. -/
+theorem HasCompactSpatialSupport.sharp_right (ha : a.HasCompactSpatialSupport)
+    (b : Symbol n V W m) (hb : b.HasCompactSpatialSupport) :
+    (a.sharp b hb).HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.1 ha
+  refine hasCompactSpatialSupport_iff.2 ⟨K, hK, fun x hx ξ ↦ ?_⟩
+  simp [hKa x hx]
 
 end Sharp
 
