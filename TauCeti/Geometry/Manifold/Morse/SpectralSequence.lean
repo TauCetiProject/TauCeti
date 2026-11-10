@@ -132,10 +132,11 @@ theorem isZero_filteredSpaceSpectralSequence_page_two_X_of_forall_notMem
   rcases lt_or_ge 0 (pq.1 + pq.2) with hpos | hle
   · exact isZero_filteredSpaceSpectralSequence_page_two_X R _ pq hpos
   obtain ⟨n, hn⟩ := Int.exists_eq_neg_ofNat hle
-  exact (isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf _ hcompact
+  exact (isZero_singularHomology_sublevelPair_of_mfderiv_ne_zero hf
+    (ha (Int.le_add_one le_rfl)) hcompact
     (fun x h₁ h₂ hx ↦ hcrit x (mem_criticalPoints_iff_mfderiv_eq_zero.2 hx) ⟨h₁, h₂⟩) R n).of_iso
-    (filteredSpaceSpectralSequenceFirstPageXIso R ((sublevel_mono f).comp ha) pq pq.2 (pq.2 + 1)
-      rfl rfl _ rfl n hn)
+    (filteredSpaceSpectralSequenceFirstPageXIso (Y := TopCat.of M) R ((sublevel_mono f).comp ha) pq
+      pq.2 (pq.2 + 1) rfl rfl _ rfl n hn)
 
 /-- **The first page sees only the critical part of a band.** Let the band `f⁻¹[a q, a (q + 1)]`
 be compact, and let every critical value of the smooth function `f` in `[a q, a (q + 1)]` lie in
@@ -155,8 +156,8 @@ def filteredSpaceSpectralSequenceFirstPageXIsoOfCollars (hf : ContMDiff I 𝓘(�
       IsCompact (f ⁻¹' Icc s' t') :=
     hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.continuous)
       (preimage_mono (Icc_subset_Icc hs' ht'))
-  filteredSpaceSpectralSequenceFirstPageXIso R ((sublevel_mono f).comp ha) pq pq.2 (pq.2 + 1)
-      rfl rfl _ rfl n hn ≪≫
+  filteredSpaceSpectralSequenceFirstPageXIso (Y := TopCat.of M) R ((sublevel_mono f).comp ha) pq
+      pq.2 (pq.2 + 1) rfl rfl _ rfl n hn ≪≫
     singularHomologySublevelPairIsoOfCollars hf hs hst ht (hband le_rfl (hst.trans ht))
       (hband (hs.trans hst) le_rfl)
       (fun x h₁ h₂ hx ↦ by
