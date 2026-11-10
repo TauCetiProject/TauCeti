@@ -189,8 +189,8 @@ which in Floer theory is the count of the ends of one-dimensional product moduli
 reference generators, class by class, then for a completed combination `a` of degree `e` and any
 completed combination `b`, `D₀ (a ⋆ b) = D₁ a ⋆ b + (-1)^e a ⋆ D₂ b`. -/
 theorem novikovMapOfMatrix_novikovProductOfMatrix_eq_add
-    (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N) (D₁ : ι₁ → ι₁ → NovikovSeries R H N)
-    (D₂ : ι₂ → ι₂ → NovikovSeries R H N) (D₀ : ι₀ → ι₀ → NovikovSeries R H N)
+    (Q : ι₁ → ι₂ → ι₀ → NovikovSeries R H N) (D₁ : Matrix ι₁ ι₁ (NovikovSeries R H N))
+    (D₂ : Matrix ι₂ ι₂ (NovikovSeries R H N)) (D₀ : Matrix ι₀ ι₀ (NovikovSeries R H N))
     {d₁ : (Σ i, P₁ i) → ℤ} (hd₁ : ∀ i (h : H) (p : P₁ i), Even (d₁ ⟨i, h +ᵥ p⟩ - d₁ ⟨i, p⟩))
     (hL : ∀ i j l, ∑ k, Q i j k * D₀ k l =
       ∑ k, D₁ i k * Q k j l + negOnePowCast R (d₁ ⟨i, r₁ i⟩) • ∑ k, D₂ j k * Q i k l)

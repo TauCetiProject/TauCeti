@@ -7,6 +7,7 @@ module
 
 public import TauCeti.RingTheory.NovikovModule.KernelMap
 public import TauCeti.RingTheory.NovikovSeries.Topology
+public import Mathlib.LinearAlgebra.Matrix.ToLin
 
 /-!
 # Novikov-linear maps given by matrices of Novikov series
@@ -26,10 +27,10 @@ the orbits `i` and `k` is the coefficient of `M i k` at the displacement of the 
 reference generator minus the displacement of the input. With finitely many orbits this kernel
 obeys a potential bound, so it has a Novikov-linear map
 (`TauCeti.NovikovModule.novikovMapOfMatrix`), given in reference coordinates by
-`cₖ = ∑ᵢ aᵢ Mᵢₖ`. Every Novikov-linear map of these finitely generated modules arises this way
-(`TauCeti.NovikovModule.eq_novikovMapOfMatrix`), composition of maps is multiplication of
-matrices (`TauCeti.NovikovModule.novikovMapOfMatrix_comp`), and the identity matrix gives the
-identity map.
+`cₖ = ∑ᵢ aᵢ Mᵢₖ`. Relative to the reference bases it is Mathlib's `Matrix.toLin` of the transpose
+of `M` (`TauCeti.NovikovModule.novikovMapOfMatrix_eq_toLin`), so it is linear in `M`, composition
+of maps is multiplication of matrices (`TauCeti.NovikovModule.novikovMapOfMatrix_comp`), and the
+identity matrix gives the identity map.
 
 This is the one-input counterpart of `TauCeti.NovikovModule.kernelOfMatrix` and
 `TauCeti.NovikovModule.novikovProductOfMatrix`. In Floer theory the generators are capped
@@ -53,7 +54,10 @@ which is the form that the energy estimate takes for class-indexed counts.
   Novikov series determine each other.
 * `TauCeti.NovikovModule.coordinates_novikovMapOfMatrix`: the matrix formula for the map of a
   matrix.
-* `TauCeti.NovikovModule.eq_novikovMapOfMatrix`: every Novikov-linear map is the map of a matrix.
+* `TauCeti.NovikovModule.novikovMapOfMatrix_eq_toLin`: the map of a matrix is `Matrix.toLin` of
+  its transpose for the reference bases.
+* `TauCeti.NovikovModule.novikovMapOfMatrix_add`, `TauCeti.NovikovModule.novikovMapOfMatrix_smul`:
+  the map of a matrix is linear in the matrix.
 * `TauCeti.NovikovModule.novikovMapOfMatrix_comp`, `TauCeti.NovikovModule.novikovMapOfMatrix_one`:
   the map of a product of matrices is the composite of their maps, and the identity matrix gives
   the identity.
@@ -83,7 +87,7 @@ variable {R H ι₁ ι₂ ι₀ : Type*} [AddCommGroup H] {N : H →+ ℝ}
 
 section Zero
 
-variable [Zero R] (M : ι₁ → ι₀ → NovikovSeries R H N)
+variable [Zero R] (M : Matrix ι₁ ι₀ (NovikovSeries R H N))
 
 /-- The one-input kernel with a given matrix `M` of Novikov series relative to reference
 generators `r₁` and `r₀`. Its coefficient on generators `p₁` and `p₀` in the orbits `i` and `k` is
@@ -132,7 +136,7 @@ include hF₀ in
 /-- The outputs of the kernel of a matrix are completed combinations: in the output coordinates
 relative to `r₀`, the output at `p₁` is the row `M i · e^u`, where `i` is the orbit of `p₁` and `u`
 is the displacement of `p₁` from its reference generator. -/
-theorem mapKernelOfMatrix_mem [Finite ι₀] (M : ι₁ → ι₀ → NovikovSeries R H N)
+theorem mapKernelOfMatrix_mem [Finite ι₀] (M : Matrix ι₁ ι₀ (NovikovSeries R H N))
     (p₁ : Σ i, P₁ i) : mapKernelOfMatrix r₁ r₀ M p₁ ∈ NovikovModule R F₀ := by
   have h : mapKernelOfMatrix r₁ r₀ M p₁ = ((coordinates hF₀ r₀).symm fun k =>
       M p₁.1 k * NovikovSeries.single (p₁.2 -ᵥ r₁ p₁.1) 1).val := by
@@ -146,7 +150,7 @@ include hF₀ in
 matrix itself: the output of the kernel at the reference generator of the orbit `i` has the row
 `M i` as its coordinates. -/
 @[simp]
-theorem coordinates_mapKernelOfMatrix [Finite ι₀] (M : ι₁ → ι₀ → NovikovSeries R H N)
+theorem coordinates_mapKernelOfMatrix [Finite ι₀] (M : Matrix ι₁ ι₀ (NovikovSeries R H N))
     (i : ι₁) (k : ι₀) :
     coordinates hF₀ r₀ ⟨mapKernelOfMatrix r₁ r₀ M ⟨i, r₁ i⟩, mapKernelOfMatrix_mem hF₀ r₁ r₀ M _⟩
       k = M i k := by
@@ -159,11 +163,13 @@ translating the input together with the output are determined by their matrices.
 theorem mapKernelOfMatrix_coordinates [Finite ι₀] {m : (Σ i, P₁ i) → (Σ k, P₀ k) → R}
     (hmfin : ∀ p₁, m p₁ ∈ NovikovModule R F₀)
     (hm : ∀ (g : H) i (p₁ : P₁ i) k (p₀ : P₀ k), m ⟨i, g +ᵥ p₁⟩ ⟨k, g +ᵥ p₀⟩ = m ⟨i, p₁⟩ ⟨k, p₀⟩) :
-    mapKernelOfMatrix r₁ r₀ (fun i k => coordinates hF₀ r₀ ⟨m ⟨i, r₁ i⟩, hmfin _⟩ k) = m := by
+    mapKernelOfMatrix r₁ r₀ (Matrix.of fun i k => coordinates hF₀ r₀ ⟨m ⟨i, r₁ i⟩, hmfin _⟩ k) =
+      m := by
   funext ⟨i, p₁⟩ ⟨k, p₀⟩
   have e := hm (p₁ -ᵥ r₁ i) i (r₁ i) k (-(p₁ -ᵥ r₁ i) +ᵥ p₀)
   rw [vsub_vadd, vadd_neg_vadd] at e
-  simp only [mapKernelOfMatrix_apply, coordinates_coeff, sub_eq_neg_add, add_vadd, vsub_vadd]
+  simp only [mapKernelOfMatrix_apply, Matrix.of_apply, coordinates_coeff, sub_eq_neg_add, add_vadd,
+    vsub_vadd]
   exact e.symm
 
 end Semiring
@@ -173,7 +179,7 @@ include hF₁ hF₀ in
 in the period filtration at level `F₀(r₀ k) - F₁(r₁ i) - C`, then the kernel obeys the potential
 bound with constant `C`. -/
 theorem potential_le_of_mapKernelOfMatrix_ne_zero [AddGroup R]
-    {M : ι₁ → ι₀ → NovikovSeries R H N} {C : ℝ}
+    {M : Matrix ι₁ ι₀ (NovikovSeries R H N)} {C : ℝ}
     (hM : ∀ i k, M i k ∈ NovikovSeries.periodFiltration R N (F₀ ⟨k, r₀ k⟩ - F₁ ⟨i, r₁ i⟩ - C))
     (p₁ : Σ i, P₁ i) (p₀ : Σ k, P₀ k) (h : mapKernelOfMatrix r₁ r₀ M p₁ p₀ ≠ 0) :
     F₀ p₀ ≤ F₁ p₁ + C := by
@@ -186,7 +192,7 @@ theorem potential_le_of_mapKernelOfMatrix_ne_zero [AddGroup R]
 
 section Map
 
-variable [CommSemiring R] [Finite ι₁] [Finite ι₀] (M : ι₁ → ι₀ → NovikovSeries R H N)
+variable [CommSemiring R] [Finite ι₁] [Finite ι₀] (M : Matrix ι₁ ι₀ (NovikovSeries R H N))
 
 /-- **The Novikov-linear map of a matrix of Novikov series.** For finitely many orbits and
 reference generators `r₁` and `r₀`, every matrix `M` of Novikov series defines the map of its
@@ -228,52 +234,70 @@ theorem coordinates_novikovMapOfMatrix [Fintype ι₁] (a : NovikovModule R F₁
     coordinates_kernelMap hF₁ hF₀ _ _ (mapKernelOfMatrix_vadd r₁ r₀ M) r₁ r₀]
   simp only [coordinates_mapKernelOfMatrix]
 
-/-- The image of a reference basis vector has the `i`-th row of the matrix as its coordinates:
-`eᵢ ↦ ∑ₖ Mᵢₖ eₖ`. -/
-@[simp]
-theorem coordinates_novikovMapOfMatrix_basis (i : ι₁) (k : ι₀) :
-    coordinates hF₀ r₀ (novikovMapOfMatrix hF₁ hF₀ r₁ r₀ M (basis hF₁ r₁ i)) k = M i k := by
-  classical
-  have := Fintype.ofFinite ι₁
-  simp [coordinates_novikovMapOfMatrix, Pi.single_apply]
-
-/-- **Every Novikov-linear map is the map of a matrix.** A linear map over the Novikov ring
-between finitely generated completed modules is the map of the matrix of coordinates of its
-values on the reference basis vectors. -/
-theorem eq_novikovMapOfMatrix (f :
+/-- **The map of a matrix is Mathlib's linear map of its transpose.** Relative to the reference
+bases, the map of `M` sends `eᵢ` to `∑ₖ Mᵢₖ eₖ`, so it is `Matrix.toLin` of the transpose `Mᵀ`.
+Results on `Matrix.toLin`, such as `Matrix.toLin_toMatrix`, apply to it through this
+identification. -/
+theorem novikovMapOfMatrix_eq_toLin [Fintype ι₁] [DecidableEq ι₁] :
     letI := module (R := R) hF₁
     letI := module (R := R) hF₀
-    NovikovModule R F₁ →ₗ[NovikovSeries R H N] NovikovModule R F₀) :
-    f = novikovMapOfMatrix hF₁ hF₀ r₁ r₀
-      (fun i k => coordinates hF₀ r₀ (f (basis hF₁ r₁ i)) k) := by
+    novikovMapOfMatrix hF₁ hF₀ r₁ r₀ M =
+      Matrix.toLin (basis hF₁ r₁) (basis hF₀ r₀) (Matrix.transpose M) := by
+  classical
   let := module (R := R) hF₁
   let := module (R := R) hF₀
-  refine (basis hF₁ r₁).ext fun i => (coordinates hF₀ r₀).injective (funext fun k => ?_)
-  rw [coordinates_novikovMapOfMatrix_basis]
+  have := Fintype.ofFinite ι₀
+  refine (basis hF₁ r₁).ext fun i => (basis hF₀ r₀).repr.injective (Finsupp.ext fun k => ?_)
+  simp [coordinates_novikovMapOfMatrix, Matrix.toLin_self, Pi.single_apply, Finsupp.single_apply]
 
-/-- **Composition is matrix multiplication.** The composite of the maps of matrices `M` and `M'`
-is the map of the matrix product `(M M')ᵢₗ = ∑ₖ Mᵢₖ M'ₖₗ`. -/
-theorem novikovMapOfMatrix_comp [Fintype ι₀] [Finite ι₂]
-    (M' : ι₀ → ι₂ → NovikovSeries R H N) :
-    (novikovMapOfMatrix hF₀ hF₂ r₀ r₂ M').comp (novikovMapOfMatrix hF₁ hF₀ r₁ r₀ M) =
-      novikovMapOfMatrix hF₁ hF₂ r₁ r₂ (fun i l => ∑ k, M i k * M' k l) := by
+/-- The map of the zero matrix is zero. -/
+@[simp]
+theorem novikovMapOfMatrix_zero :
+    novikovMapOfMatrix hF₁ hF₀ r₁ r₀ (0 : Matrix ι₁ ι₀ (NovikovSeries R H N)) = 0 := by
+  classical
+  have := Fintype.ofFinite ι₁
+  rw [novikovMapOfMatrix_eq_toLin, Matrix.transpose_zero, map_zero]
+
+/-- The map of a sum of matrices is the sum of their maps. -/
+theorem novikovMapOfMatrix_add (A B : Matrix ι₁ ι₀ (NovikovSeries R H N)) :
+    novikovMapOfMatrix hF₁ hF₀ r₁ r₀ (A + B) =
+      novikovMapOfMatrix hF₁ hF₀ r₁ r₀ A + novikovMapOfMatrix hF₁ hF₀ r₁ r₀ B := by
+  classical
+  have := Fintype.ofFinite ι₁
+  simp only [novikovMapOfMatrix_eq_toLin, Matrix.transpose_add, map_add]
+
+/-- The map of a Novikov multiple of a matrix is the same multiple of its map. -/
+theorem novikovMapOfMatrix_smul (c : NovikovSeries R H N)
+    (A : Matrix ι₁ ι₀ (NovikovSeries R H N)) :
+    letI := module (R := R) hF₁
+    letI := module (R := R) hF₀
+    novikovMapOfMatrix hF₁ hF₀ r₁ r₀ (c • A) = c • novikovMapOfMatrix hF₁ hF₀ r₁ r₀ A := by
+  classical
+  have := Fintype.ofFinite ι₁
+  simp only [novikovMapOfMatrix_eq_toLin, Matrix.transpose_smul, map_smul]
+
+/-- **Composition is matrix multiplication.** The composite of the maps of matrices `A` and `B`
+is the map of the matrix product `A * B`. -/
+theorem novikovMapOfMatrix_comp [Fintype ι₀] [Finite ι₂] (A : Matrix ι₁ ι₀ (NovikovSeries R H N))
+    (B : Matrix ι₀ ι₂ (NovikovSeries R H N)) :
+    (novikovMapOfMatrix hF₀ hF₂ r₀ r₂ B).comp (novikovMapOfMatrix hF₁ hF₀ r₁ r₀ A) =
+      novikovMapOfMatrix hF₁ hF₂ r₁ r₂ (A * B) := by
   have := Fintype.ofFinite ι₁
   let := module (R := R) hF₁
   let := module (R := R) hF₂
   refine LinearMap.ext fun a => (coordinates hF₂ r₂).injective (funext fun l => ?_)
-  simp only [LinearMap.comp_apply, coordinates_novikovMapOfMatrix, Finset.sum_mul,
-    Finset.mul_sum, mul_assoc]
+  simp only [LinearMap.comp_apply, coordinates_novikovMapOfMatrix, Matrix.mul_apply,
+    Finset.sum_mul, Finset.mul_sum, mul_assoc]
   exact Finset.sum_comm
 
 /-- The identity matrix gives the identity map. -/
+@[simp]
 theorem novikovMapOfMatrix_one [DecidableEq ι₁] :
     letI := module (R := R) hF₁
-    novikovMapOfMatrix hF₁ hF₁ r₁ r₁ (fun i k => if i = k then (1 : NovikovSeries R H N) else 0) =
-      LinearMap.id := by
+    novikovMapOfMatrix hF₁ hF₁ r₁ r₁ (1 : Matrix ι₁ ι₁ (NovikovSeries R H N)) = LinearMap.id := by
   have := Fintype.ofFinite ι₁
   let := module (R := R) hF₁
-  refine LinearMap.ext fun a => (coordinates hF₁ r₁).injective (funext fun k => ?_)
-  simp [coordinates_novikovMapOfMatrix]
+  rw [novikovMapOfMatrix_eq_toLin, Matrix.transpose_one, Matrix.toLin_one]
 
 end Map
 
