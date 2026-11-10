@@ -33,7 +33,7 @@ namespace TauCeti.Probability
 
 /-- On `(-1, 1)`, the symmetric Beta density of shape `a` at `(z + 1) / 2` is
 `2 * (1 - z ^ 2) ^ (a - 1) / B(1 / 2, a)`. -/
-theorem betaPDFReal_self_add_one_div_two {a z : ℝ} (hz : z ∈ Ioo (-1) 1) :
+theorem betaPDFReal_self_add_one_div_two (a : ℝ) {z : ℝ} (hz : z ∈ Ioo (-1) 1) :
     betaPDFReal a a ((z + 1) / 2) = 2 * ((1 - z ^ 2) ^ (a - 1) / beta (1 / 2) a) := by
   have hx : 0 < (z + 1) / 2 ∧ (z + 1) / 2 < 1 := by constructor <;> linarith [hz.1, hz.2]
   have hprod : ((z + 1) / 2) ^ (a - 1) * (1 - (z + 1) / 2) ^ (a - 1) =
@@ -60,7 +60,7 @@ private theorem betaPDFReal_centered_sq {a x : ℝ} (hx : 0 < x) :
     have hsq : (x ^ 2) ^ ((1 / 2 : ℝ) - 1) = x⁻¹ := by
       rw [← Real.rpow_natCast x 2, ← Real.rpow_mul hx.le]
       norm_num [Real.rpow_neg_one]
-    rw [betaPDFReal_self_add_one_div_two ⟨by linarith, hx₁⟩, betaPDFReal, ite_eq_left hx₂,
+    rw [betaPDFReal_self_add_one_div_two a ⟨by linarith, hx₁⟩, betaPDFReal, ite_eq_left hx₂,
       hsq]
     field_simp
   · have hx₁' : 1 ≤ x := le_of_not_gt hx₁
@@ -80,7 +80,7 @@ private theorem affineDensity_centered_beta_add_neg (a x : ℝ) :
 
 /-- Squaring a symmetric Beta variable after centering and scaling to `(-1, 1)` gives
 a Beta law with first shape one half. -/
-theorem betaMeasure_map_centered_sq {a : ℝ} :
+theorem betaMeasure_map_centered_sq (a : ℝ) :
     (betaMeasure a a).map (fun x ↦ (-1 + 2 * x) ^ 2) = betaMeasure (1 / 2) a := by
   let ν := (betaMeasure a a).map (fun x ↦ -1 + 2 * x)
   have hf : Measurable (betaPDF a a) := (measurable_betaPDFReal a a).ennreal_ofReal
@@ -137,7 +137,7 @@ theorem eq_map_betaMeasure_of_map_sq_of_map_neg {μ : Measure ℝ}
         ring
       _ = _ := by rw [betaMeasure_map_one_sub]
   · rw [Measure.map_map (by fun_prop) (by fun_prop)]
-    exact hsq.trans (betaMeasure_map_centered_sq).symm
+    exact hsq.trans (betaMeasure_map_centered_sq a).symm
 
 end TauCeti.Probability
 
@@ -151,6 +151,6 @@ theorem HasLaw.centered_sq_betaMeasure {Ω : Type*} [MeasurableSpace Ω]
     {P : Measure Ω} {X : Ω → ℝ} {a : ℝ}
     (hX : HasLaw X (betaMeasure a a) P) :
     HasLaw (fun ω ↦ (-1 + 2 * X ω) ^ 2) (betaMeasure (1 / 2) a) P :=
-  (HasLaw.mk (by fun_prop) (betaMeasure_map_centered_sq)).fun_comp hX
+  (HasLaw.mk (by fun_prop) (betaMeasure_map_centered_sq a)).fun_comp hX
 
 end ProbabilityTheory

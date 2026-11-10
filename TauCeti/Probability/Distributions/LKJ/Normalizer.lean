@@ -130,7 +130,7 @@ theorem measurable_lkjNormalizer (p : ℕ) : Measurable (lkjNormalizer p) := by
 /-- Legendre's duplication formula rewrites the LKJ normalizer as a product of symmetric-beta
 normalizers.  This is the factorization used when partial correlations are constructed from
 independent symmetric beta variables on `(0, 1)`. -/
-theorem lkjNormalizer_eq_prod_beta_self {p : ℕ} {η : ℝ} :
+theorem lkjNormalizer_eq_prod_beta_self (p : ℕ) (η : ℝ) :
     lkjNormalizer p η =
       ∏ k ∈ Finset.Ico 1 p,
         ((2 : ℝ) ^ (2 * (η + ((k : ℝ) - 1) / 2) - 1) *

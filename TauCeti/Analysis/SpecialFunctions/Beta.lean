@@ -1074,6 +1074,7 @@ variable {a b : ℝ}
 theorem beta_comm (a b : ℝ) : beta a b = beta b a := by
   rw [ProbabilityTheory.beta, ProbabilityTheory.beta, mul_comm (Real.Gamma a), add_comm a b]
 
+variable (a) in
 /-- Legendre's duplication formula expressed through the symmetric beta integral. -/
 theorem beta_one_half_left_eq_two_rpow_mul_beta_self :
     beta (1 / 2) a = (2 : ℝ) ^ (2 * a - 1) * beta a a := by

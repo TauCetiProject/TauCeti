@@ -45,6 +45,7 @@ namespace TauCeti.Probability
 
 variable {a q r : ℝ}
 
+variable (a) in
 /-- A centered symmetric Beta variable of shape `a` has density
 `(1 - z ^ 2) ^ (a - 1) / B(1 / 2, a)` on `(-1, 1)`. -/
 theorem betaMeasure_map_centered_eq_withDensity :
@@ -57,7 +58,7 @@ theorem betaMeasure_map_centered_eq_withDensity :
   rw [affineDensity_apply, betaPDF, sub_neg_eq_add]
   by_cases hz : z ∈ Set.Ioo (-1) 1
   · rw [Set.indicator_of_mem hz, ← ENNReal.ofReal_mul (by norm_num),
-      betaPDFReal_self_add_one_div_two hz, abs_two, inv_mul_cancel_left₀ two_ne_zero]
+      betaPDFReal_self_add_one_div_two a hz, abs_two, inv_mul_cancel_left₀ two_ne_zero]
   · have hx : ¬ (0 < (z + 1) / 2 ∧ (z + 1) / 2 < 1) := fun h ↦
       hz ⟨by linarith [h.1], by linarith [h.2]⟩
     rw [Set.indicator_of_notMem hz, betaPDFReal, ite_eq_right hx, ENNReal.ofReal_zero, mul_zero]
@@ -73,7 +74,7 @@ theorem integrable_abs_rpow_mul_one_sub_sq_rpow_map_centered_betaMeasure_iff (ha
   have hmap : ((betaMeasure a a).map (fun x ↦ -1 + 2 * x)).map (fun z ↦ z ^ 2) =
       betaMeasure (1 / 2) a := by
     rw [Measure.map_map (by fun_prop) (by fun_prop)]
-    exact betaMeasure_map_centered_sq
+    exact betaMeasure_map_centered_sq a
   rw [← hmap,
     integrable_map_measure (by fun_prop) (by fun_prop)] at h
   simp only [Function.comp_def, rpow_div_two_eq_sqrt q (sq_nonneg _), sqrt_sq_eq_abs] at h
@@ -91,7 +92,7 @@ theorem integral_abs_rpow_mul_one_sub_sq_rpow_map_centered_betaMeasure (ha : 0 <
   have hmap : ((betaMeasure a a).map (fun x ↦ -1 + 2 * x)).map (fun z ↦ z ^ 2) =
       betaMeasure (1 / 2) a := by
     rw [Measure.map_map (by fun_prop) (by fun_prop)]
-    exact betaMeasure_map_centered_sq
+    exact betaMeasure_map_centered_sq a
   rw [← hmap,
     integral_map (by fun_prop) (by fun_prop)] at h
   simp only [rpow_div_two_eq_sqrt q (sq_nonneg _), sqrt_sq_eq_abs] at h
