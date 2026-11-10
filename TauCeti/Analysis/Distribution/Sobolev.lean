@@ -137,34 +137,38 @@ theorem MemSobolev.smul_of_tower {R : Type*} [SMul R ℂ] [SMul R 𝓢'(E, F)]
 summands. -/
 @[simp]
 theorem MemSobolev.toBesselPotentialSpace_add {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
-    {f g : 𝓢'(E, F)} (hf : MemSobolev s p f) (hg : MemSobolev s p g) :
-    (hf.add hg).toBesselPotentialSpace = hf.toBesselPotentialSpace + hg.toBesselPotentialSpace :=
+    {f g : 𝓢'(E, F)} (hf : MemSobolev s p f) (hg : MemSobolev s p g)
+    (h : MemSobolev s p (f + g)) :
+    h.toBesselPotentialSpace = hf.toBesselPotentialSpace + hg.toBesselPotentialSpace :=
   BesselPotentialSpace.ext (by simp)
 
 /-- The element of `H^{s,p}` defined by a difference is the difference of the elements defined
 by its terms. -/
 @[simp]
 theorem MemSobolev.toBesselPotentialSpace_sub {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
-    {f g : 𝓢'(E, F)} (hf : MemSobolev s p f) (hg : MemSobolev s p g) :
-    (hf.sub hg).toBesselPotentialSpace = hf.toBesselPotentialSpace - hg.toBesselPotentialSpace :=
+    {f g : 𝓢'(E, F)} (hf : MemSobolev s p f) (hg : MemSobolev s p g)
+    (h : MemSobolev s p (f - g)) :
+    h.toBesselPotentialSpace = hf.toBesselPotentialSpace - hg.toBesselPotentialSpace :=
   BesselPotentialSpace.ext (by simp)
 
 /-- The element of `H^{s,p}` defined by a complex multiple of `f` is the same multiple of the
 element defined by `f`. -/
 @[simp]
 theorem MemSobolev.toBesselPotentialSpace_smul {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)] (c : ℂ)
-    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) :
-    (hf.smul c).toBesselPotentialSpace = c • hf.toBesselPotentialSpace :=
+    {f : 𝓢'(E, F)} (hf : MemSobolev s p f) (h : MemSobolev s p (c • f)) :
+    h.toBesselPotentialSpace = c • hf.toBesselPotentialSpace :=
   BesselPotentialSpace.ext (by simp)
 
 /-- The element of `H^{s,p}` defined by a finite sum is the sum of the elements defined by the
 summands. -/
+@[simp]
 theorem MemSobolev.toBesselPotentialSpace_sum {ι : Type*} {t : Finset ι} {s : ℝ} {p : ENNReal}
-    [Fact (1 ≤ p)] {g : ι → 𝓢'(E, F)} (hg : ∀ i, MemSobolev s p (g i)) :
-    (MemSobolev.sum fun i (_ : i ∈ t) ↦ hg i).toBesselPotentialSpace =
-      ∑ i ∈ t, (hg i).toBesselPotentialSpace :=
+    [Fact (1 ≤ p)] {g : ι → 𝓢'(E, F)} (hg : ∀ i, MemSobolev s p (g i))
+    (h : MemSobolev s p (∑ i ∈ t, g i)) :
+    h.toBesselPotentialSpace = ∑ i ∈ t, (hg i).toBesselPotentialSpace :=
   BesselPotentialSpace.ext <| by
     rw [MemSobolev.toBesselPotentialSpace_toDistr]
+    clear h
     induction t using Finset.cons_induction with
     | empty => simp
     | cons i t hi ih =>
@@ -178,13 +182,10 @@ theorem MemSobolev.toBesselPotentialSpace_toTemperedDistribution_sum_smul {ι : 
     [μ.HasTemperateGrowth] {a : ι → ℂ} {f : ι → Lp F q μ}
     (hf : ∀ i, MemSobolev s p (f i : 𝓢'(E, F)))
     (h : MemSobolev s p ((∑ i ∈ t, a i • f i : Lp F q μ) : 𝓢'(E, F))) :
-    h.toBesselPotentialSpace = ∑ i ∈ t, a i • (hf i).toBesselPotentialSpace :=
-  calc h.toBesselPotentialSpace
-      = (MemSobolev.sum fun i (_ : i ∈ t) ↦ (hf i).smul (a i)).toBesselPotentialSpace :=
-        BesselPotentialSpace.ext (by simp)
-    _ = ∑ i ∈ t, a i • (hf i).toBesselPotentialSpace := by
-        rw [MemSobolev.toBesselPotentialSpace_sum fun i ↦ (hf i).smul (a i)]
-        exact Finset.sum_congr rfl fun i _ ↦ (hf i).toBesselPotentialSpace_smul (a i)
+    h.toBesselPotentialSpace = ∑ i ∈ t, a i • (hf i).toBesselPotentialSpace := by
+  simp only [Lp.toTemperedDistribution_sum, Lp.toTemperedDistribution_smul,
+    MemSobolev.toBesselPotentialSpace_sum fun i ↦ (hf i).smul (a i),
+    fun i ↦ (hf i).toBesselPotentialSpace_smul (a i)]
 
 /-- An `Lᵖ` function that agrees almost everywhere with a smooth compactly supported function lies
 in every Bessel-potential space `H^{s,p}`. -/

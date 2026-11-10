@@ -211,9 +211,7 @@ theorem ae_tendsto_of_tendsto_toBesselPotentialSpace {s : ℝ} (hs : finrank ℝ
     have h' := (tendsto_iff_norm_sub_tendsto_zero.1 h).const_mul C
     rw [mul_zero] at h'
     refine h'.congr fun n => ?_
-    rw [← MemSobolev.toBesselPotentialSpace_sub]
-    congr 2
-    exact BesselPotentialSpace.ext (by simp)
+    simp only [Lp.toTemperedDistribution_sub, (hu n).toBesselPotentialSpace_sub hv]
   filter_upwards [ae_all_iff.2 fun n => hC (hD n), ae_all_iff.2 fun n => Lp.coeFn_sub (u n) v]
     with x hx hsub
   refine tendsto_iff_norm_sub_tendsto_zero.2 <|
