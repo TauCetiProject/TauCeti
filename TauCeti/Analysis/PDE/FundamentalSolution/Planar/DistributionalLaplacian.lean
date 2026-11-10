@@ -83,7 +83,7 @@ theorem locallyIntegrable_fderiv_planarNewtonianKernel :
     LocallyIntegrable (fderiv ℝ planarNewtonianKernel) := by
   refine locallyIntegrable_of_norm_le_rpow (μ := volume) (by simp) (C := (2 * Real.pi)⁻¹)
     (α := 1) (by simp) ?_ (measurable_fderiv ℝ _).aestronglyMeasurable
-  filter_upwards [volume.ae_ne (0 : ℂ)] with z hz
+  filter_upwards with z
   rw [norm_fderiv_planarNewtonianKernel, Real.rpow_neg_one, mul_inv]
 
 /-- The planar Newtonian kernel regularized at scale `t`:

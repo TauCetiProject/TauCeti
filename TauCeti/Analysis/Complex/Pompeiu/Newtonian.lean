@@ -94,8 +94,8 @@ theorem pi_inv_smul_integral_sub_inv_smul_eq_fderiv_planarNewtonianKernel_convol
       ring
     _ = ∫ z, -2 * ((fderiv ℝ planarNewtonianKernel z 1 : ℂ) -
         I * (fderiv ℝ planarNewtonianKernel z I : ℂ)) * (f (w - z) : ℂ) := by
-      apply integral_congr_ae
-      filter_upwards with z
+      congr 1
+      funext z
       rw [pi_inv_mul_inv_eq_fderiv_planarNewtonianKernel z]
     _ = ∫ z, (-2 : ℂ) * ((fderiv ℝ planarNewtonianKernel z 1 : ℂ) * (f (w - z) : ℂ) -
         I * ((fderiv ℝ planarNewtonianKernel z I : ℂ) * (f (w - z) : ℂ))) := by
