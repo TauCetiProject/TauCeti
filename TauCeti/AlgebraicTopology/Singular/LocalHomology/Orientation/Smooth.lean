@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Derivative
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Chart
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.OpenEmbedding
+import TauCeti.Data.SignType.Basic
 
 /-!
 # Smooth orientations are homological orientations
@@ -417,11 +418,6 @@ section ChartChange
 variable {M N : Type w} [TopologicalSpace M] [T1Space M] [TopologicalSpace N] [T1Space N]
   {E : Type w} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] {n : ℕ}
   (ω : Orientation ℝ E (Fin (n + 1))) (hE : finrank ℝ E = n + 1)
-
-/-- The sign of a nonzero real number squares to `1`. -/
-private theorem coe_sign_mul_coe_sign_of_ne_zero {r : ℝ} (hr : r ≠ 0) :
-    (SignType.sign r : ℤ) * SignType.sign r = 1 := by
-  rcases hr.lt_or_gt with h | h <;> simp [sign_neg, sign_pos, h]
 
 /-- **Oriented charts and maps with invertible derivative.** Let `f : M → N` be continuous, `φ` a
 chart of `M` at `a` and `χ` a chart of `N` at `f a`, and suppose that `f` read in these charts,
