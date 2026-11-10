@@ -366,16 +366,6 @@ theorem pointSpectralSubspace_sup_compl_eq_top (hA : A.IsSymmetric) (Ω : Set �
   · rw [Module.End.hasEigenvalue_iff, not_not] at hμ
     simp [hμ]
 
-/-- For an injective symmetric operator, the negative and positive spectral subspaces are
-complementary: the space is their direct sum. -/
-theorem isCompl_pointSpectralSubspace_Iio_Ioi (hA : A.IsSymmetric) (hker : LinearMap.ker A = ⊥) :
-    IsCompl (A.pointSpectralSubspace (Set.Iio 0)) (A.pointSpectralSubspace (Set.Ioi 0)) := by
-  refine ⟨(hA.isOrtho_pointSpectralSubspace Set.Ioi_disjoint_Iio_same.symm).disjoint,
-    codisjoint_iff.mpr ?_⟩
-  rw [← Module.End.pointSpectralSubspace_insert_zero (Ω := Set.Ioi 0) hker, Set.Ioi_insert,
-    ← Set.compl_Iio]
-  exact hA.pointSpectralSubspace_sup_compl_eq_top _
-
 /-- For a symmetric operator on a finite-dimensional space, the orthogonal complement of the
 point-spectral subspace selected by `Ω` is the point-spectral subspace selected by `Ωᶜ`. -/
 theorem orthogonal_pointSpectralSubspace (hA : A.IsSymmetric) (Ω : Set ℝ) :
@@ -395,6 +385,12 @@ theorem orthogonal_pointSpectralSubspace_Iio_zero (hA : A.IsSymmetric)
     (A.pointSpectralSubspace (Set.Iio 0))ᗮ = A.pointSpectralSubspace (Set.Ioi 0) := by
   rw [hA.orthogonal_pointSpectralSubspace, Set.compl_Iio, ← Set.Ioi_insert,
     Module.End.pointSpectralSubspace_insert_zero hA']
+
+/-- For an injective symmetric operator, the negative and positive spectral subspaces are
+complementary: the space is their direct sum. -/
+theorem isCompl_pointSpectralSubspace_Iio_Ioi (hA : A.IsSymmetric) (hker : LinearMap.ker A = ⊥) :
+    IsCompl (A.pointSpectralSubspace (Set.Iio 0)) (A.pointSpectralSubspace (Set.Ioi 0)) :=
+  hA.orthogonal_pointSpectralSubspace_Iio_zero hker ▸ Submodule.isCompl_orthogonal _
 
 /-- For an injective symmetric operator on a finite-dimensional space, the orthogonal complement of
 the positive spectral subspace is the negative spectral subspace. -/
@@ -1004,4 +1000,3 @@ theorem eigenvalues_ne_eigenvalues_of_disjoint (hA : A.IsSymmetric) (hB : B.IsSy
     (hij ▸ hB.hasEigenvalue_eigenvalues hm j)
 
 end LinearMap.IsSymmetric
-
