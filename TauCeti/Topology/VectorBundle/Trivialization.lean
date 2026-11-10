@@ -179,8 +179,10 @@ theorem restrictScalars_coordChangeL (𝕜' 𝕜 : Type*)
     [IsScalarTower 𝕜' 𝕜 F] [TopologicalSpace (TotalSpace F E)]
     [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜' (E x)] [∀ x, Module 𝕜 (E x)]
     (e e' : Trivialization F (π F E)) [e.IsLinear 𝕜'] [e'.IsLinear 𝕜'] [e.IsLinear 𝕜]
-    [e'.IsLinear 𝕜] {b : B} (hb : b ∈ e.baseSet ∩ e'.baseSet) :
+    [e'.IsLinear 𝕜] {b : B} :
     (e.coordChangeL 𝕜 e' b : F →L[𝕜] F).restrictScalars 𝕜' = e.coordChangeL 𝕜' e' b := by
-  ext v; simp [Trivialization.coordChangeL_apply' e e' hb]
+  by_cases hb : b ∈ e.baseSet ∩ e'.baseSet
+  · ext v; simp [Trivialization.coordChangeL_apply' e e' hb]
+  · ext v; simp [Trivialization.coordChangeL, hb]
 
 end Bundle.Trivialization

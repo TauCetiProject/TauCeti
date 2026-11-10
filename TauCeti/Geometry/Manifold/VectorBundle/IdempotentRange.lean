@@ -111,8 +111,8 @@ theorem rangeContMDiffVectorBundle
         (rangeTrivialization hp.continuous hidem x₁ φ₁).baseSet) :=
     fun x hx ↦ (ContinuousLinearMap.restrictScalarsIsometry 𝕜' F' F' 𝕜 𝕜
       ).toContinuousLinearMap.contDiff.comp_contMDiffWithinAt (h x hx)
-  exact hr.congr fun x hx ↦
-    (Trivialization.restrictScalars_coordChangeL 𝕜 𝕜' _ _ hx).symm
+  exact hr.congr fun x _ ↦
+    (Trivialization.restrictScalars_coordChangeL 𝕜 𝕜' _ _).symm
 
 /-- The canonical inclusion of the native range bundle into the trivial ambient bundle is smooth. -/
 theorem contMDiff_range_inclusion
