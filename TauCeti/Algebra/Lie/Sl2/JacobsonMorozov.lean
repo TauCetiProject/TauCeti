@@ -81,7 +81,8 @@ section JacobsonMorozov
 variable {K L : Type*} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L] [FiniteDimensional K L]
   [IsKilling K L]
 
-/-- **The Jacobson–Morozov theorem.** In a finite-dimensional Lie algebra with nondegenerate
+omit [FiniteDimensional K L] in
+/-- **The Jacobson–Morozov theorem.** In a Lie algebra with nondegenerate
 Killing form over a field of characteristic zero, every nonzero `ad`-nilpotent element `e` is the
 nilpositive element of an `sl₂` triple `(h, e, f)`. -/
 theorem exists_isSl2Triple_of_isNilpotent_ad {e : L} (he : IsNilpotent (ad K L e)) (he0 : e ≠ 0) :
