@@ -180,12 +180,19 @@ theorem stablePDFReal_le (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (hs : 0 < s) 
     abs_of_pos (NNReal.coe_pos.2 hs), smul_eq_mul]
   field_simp
 
-/-- For valid shapes and positive scale, the norm of the stable density is at most
-`Γ(1/α) / (π α s)`. -/
-theorem norm_stablePDFReal_le (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1) (hs : 0 < s) (m x : ℝ) :
+/-- For `0 < α ≤ 2`, the norm of the stable density is at most `Γ(1/α) / (π α s)`. For invalid
+skewness and at scale zero the density vanishes and the bound holds by the division-by-zero
+convention. -/
+theorem norm_stablePDFReal_le (hα : α ∈ Ioc 0 2) (s : ℝ≥0) (m x : ℝ) :
     ‖stablePDFReal α β s m x‖ ≤ Real.Gamma α⁻¹ / (π * α * s) := by
   rw [Real.norm_eq_abs, abs_of_nonneg (stablePDFReal_nonneg α β s m x)]
-  exact stablePDFReal_le hα hβ hs m x
+  by_cases hβ : |β| ≤ 1
+  · rcases eq_zero_or_pos s with rfl | hs
+    · simp
+    · exact stablePDFReal_le hα hβ hs m x
+  · rw [stablePDFReal_of_invalid (Or.inr (Or.inr (not_le.1 hβ)))]
+    have := hα.1
+    positivity
 
 /-! ### The law as a measure with density -/
 
@@ -236,18 +243,27 @@ theorem hasPDF_of_hasLaw_stableMeasure (hs : 0 < s) (hX : HasLaw X (stableMeasur
   hasPDF_of_hasLaw_withDensity (measurable_stablePDF α β s m).aemeasurable
     (by rwa [stableMeasure_eq_withDensity α β hs] at hX)
 
-/-- The density of a random variable with a positive-scale stable law is `stablePDF`. -/
-theorem pdf_eq_stablePDF_of_hasLaw_stableMeasure (hs : 0 < s)
-    (hX : HasLaw X (stableMeasure α β s m) P) :
-    pdf X P volume =ᵐ[volume] stablePDF α β s m :=
-  pdf_eq_of_hasLaw_withDensity (measurable_stablePDF α β s m).aemeasurable
-    (by rwa [stableMeasure_eq_withDensity α β hs] at hX)
-
-/-- The Radon–Nikodym derivative of a positive-scale stable law against Lebesgue measure is
-`stablePDF`. -/
-theorem rnDeriv_stableMeasure (α β : ℝ) (hs : 0 < s) (m : ℝ) :
+/-- The Radon–Nikodym derivative of a stable law against Lebesgue measure is `stablePDF`. At
+scale zero the law is a Dirac mass or zero, so both sides vanish almost everywhere. -/
+theorem rnDeriv_stableMeasure (α β : ℝ) (m : ℝ) :
     (stableMeasure α β s m).rnDeriv volume =ᵐ[volume] stablePDF α β s m := by
-  rw [stableMeasure_eq_withDensity α β hs]
-  exact Measure.rnDeriv_withDensity volume (measurable_stablePDF α β s m)
+  rcases eq_zero_or_pos s with rfl | hs
+  · have h0 : stablePDF α β 0 m = 0 := by ext x; simp [stablePDF]
+    by_cases hv : α ∈ Ioc 0 2 ∧ |β| ≤ 1
+    · rw [stableMeasure_zero_scale hv.1 hv.2, h0]
+      exact Measure.rnDeriv_eq_zero_of_mutuallySingular (mutuallySingular_dirac m volume)
+        Measure.AbsolutelyContinuous.rfl
+    · rw [stableMeasure_of_invalid (by simpa only [mem_Ioc, not_and_or, not_lt, not_le,
+        or_assoc] using hv), h0]
+      exact Measure.rnDeriv_zero _
+  · rw [stableMeasure_eq_withDensity α β hs]
+    exact Measure.rnDeriv_withDensity volume (measurable_stablePDF α β s m)
+
+/-- The density of a random variable with a stable law is `stablePDF`. At scale zero the law is
+singular, so both sides vanish almost everywhere. -/
+theorem pdf_eq_stablePDF_of_hasLaw_stableMeasure (hX : HasLaw X (stableMeasure α β s m) P) :
+    pdf X P volume =ᵐ[volume] stablePDF α β s m := by
+  rw [pdf_def, hX.map_eq]
+  exact rnDeriv_stableMeasure α β m
 
 end TauCeti.Probability

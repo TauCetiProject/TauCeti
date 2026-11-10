@@ -114,13 +114,21 @@ theorem abs_le_one_of_conv_stableCompensatedPoissonMeasure_eq {μ : ProbabilityM
 most the cutoff. The statement applies to any probability law satisfying the decomposition,
 without choosing a particular representative of the unique factor. -/
 theorem charFun_of_conv_stableCompensatedPoissonMeasure_eq
-    (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hr : 0 < r)
+    (hα : α ∈ Ioo 0 2) (hr : 0 < r)
     {μ : ProbabilityMeasure ℝ}
     (hμ : (μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r = stableMeasure α β 1 0)
     (t : ℝ) :
     charFun μ t = Complex.exp (∫ x in {x : ℝ | |x| ≤ r},
       Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
         (t * sin x : ℝ) * Complex.I ∂stableLevyMeasure α β) := by
+  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
+  -- An invalid skewness would make the right-hand side the zero measure, not a probability law.
+  have hβ : |β| ≤ 1 := by
+    by_contra h
+    have h1 := (inferInstance : IsProbabilityMeasure
+      ((μ : Measure ℝ) ∗ stableCompensatedPoissonMeasure α β r)).measure_univ
+    rw [hμ, stableMeasure_of_invalid (Or.inr (Or.inr (not_le.1 h)))] at h1
+    simp at h1
   let ν := stableLevyMeasure α β
   let f := fun x : ℝ ↦ Complex.exp ((t * x : ℝ) * Complex.I) - 1 -
     (t * sin x : ℝ) * Complex.I
@@ -131,7 +139,6 @@ theorem charFun_of_conv_stableCompensatedPoissonMeasure_eq
     have h := integral_add_compl hset hf
     simp only [compl_ofPred, not_le] at h
     exact h.trans (integral_exp_sub_one_sub_sin_stableLevyMeasure hα hβ t)
-  let _ := isProbabilityMeasure_stableCompensatedPoissonMeasure α β r
   have heq := congrArg (fun η : Measure ℝ ↦ charFun η t) hμ
   rw [charFun_conv, charFun_stableCompensatedPoissonMeasure hr,
     charFun_stableMeasure ⟨hα.1, hα.2.le⟩ hβ] at heq
