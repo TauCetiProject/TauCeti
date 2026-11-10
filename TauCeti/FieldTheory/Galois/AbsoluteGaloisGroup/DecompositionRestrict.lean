@@ -45,7 +45,7 @@ any such `τ` and any embedding `iota` of `L` into `Kˢ`, `decompositionRestrict
 ## Main results
 
 * `AlgHom.isOpen_ker_restrictNormalHom_comp_restrictScalarsHom`: restriction of
-  `Gal(Ω/F)` to `Gal(L/K)` along an embedding of `L` into an algebraic extension `Ω` of `F` has
+  `Gal(Ω/F)` to `Gal(L/K)` along an embedding of `L` into an extension `Ω` of `F` has
   open kernel.
 * `TauCeti.decompositionRestrict_mk`: the class of `τ` goes to the class of the automorphism `σ`
   of `L` with `j ∘ σ = τ ∘ j`, for every `K`-embedding `j : L →ₐ[K] Fᵃˡᵍ`.
