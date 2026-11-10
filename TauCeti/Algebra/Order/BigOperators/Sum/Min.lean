@@ -20,10 +20,11 @@ the members of the family in a range: for `p < q`, the combination of the trunca
 ## Main results
 
 * `Finset.sum_min_add_sum_min_eq`: the second-difference identity for truncated sums.
-* `Finset.exists_ne_forall_sum_min_lt`: if the column count of a family `b` is strictly smaller
-  than that of a family `a` with the same sum for some `k`, then two distinct
-  members `a j ≤ a i` of `a` keep the inequality strict for all `a j ≤ k ≤ a i`. Moving a box
-  between these two rows is the key step in generating dominance of partitions by box moves.
+* `Finset.exists_ne_forall_sum_min_lt`: if the sum of a family `a` is at most that of a family
+  `b` and, for some `k`, the column count of `b` is strictly smaller than that of `a`, then two
+  distinct members `a j ≤ a i` of `a` keep the inequality strict for all `a j ≤ k ≤ a i`.
+  Moving a box between these two rows is the key step in generating dominance of partitions by
+  box moves.
 -/
 
 public section
@@ -41,28 +42,30 @@ theorem sum_min_add_sum_min_eq (u : Finset α) (c : α → ℕ) {p q : ℕ} (hpq
   exact sum_congr rfl fun l _ => by split_ifs <;> omega
 
 /-- A pair of rows realising a strict inequality of column counts. Let `a` and `b` be finite
-families of natural numbers with the same sum, such that for some `k` the column count
+families of natural numbers, the sum of `a` being at most the sum of `b`, such that for some `k`
+the column count
 `∑ min k (b l)` of `b` is strictly smaller than the column count `∑ min k (a l)` of `a`.
 Then `a` has two distinct members `a j ≤ a i` such that the inequality is strict for every `k`
 with `a j ≤ k ≤ a i`. Moving one box from row `j` to row `i` lowers the column count of `a`
 by one exactly for `a j ≤ k ≤ a i`. -/
 theorem exists_ne_forall_sum_min_lt {s : Finset ι} {t : Finset κ} {a : ι → ℕ} {b : κ → ℕ}
-    (hsum : ∑ l ∈ t, b l = ∑ l ∈ s, a l)
+    (hsum : ∑ l ∈ s, a l ≤ ∑ l ∈ t, b l)
     (hlt : ∃ k, ∑ l ∈ t, min k (b l) < ∑ l ∈ s, min k (a l)) :
     ∃ i ∈ s, ∃ j ∈ s, i ≠ j ∧ a j ≤ a i ∧
       ∀ k, a j ≤ k → k ≤ a i → ∑ l ∈ t, min k (b l) < ∑ l ∈ s, min k (a l) := by
   classical
   obtain ⟨k₀, hk₀⟩ := hlt
-  -- The column counts agree from the largest member of either family on.
+  -- From the largest member of either family on, the column counts are the sums.
   have hbig : ∀ k, s.sup a ⊔ t.sup b ≤ k →
-      ∑ l ∈ t, min k (b l) = ∑ l ∈ s, min k (a l) := by
+      ∑ l ∈ s, min k (a l) ≤ ∑ l ∈ t, min k (b l) := by
     intro k hk
-    rw [sum_congr rfl fun l hl => min_eq_right ((le_sup hl).trans (le_sup_right.trans hk)),
-      sum_congr rfl fun l hl => min_eq_right ((le_sup hl).trans (le_sup_left.trans hk)), hsum]
+    rw [sum_congr rfl fun l hl => min_eq_right ((le_sup hl).trans (le_sup_left.trans hk)),
+      sum_congr rfl fun l hl => min_eq_right ((le_sup hl).trans (le_sup_right.trans hk))]
+    exact hsum
   -- `p < k₀ < q` are the nearest arguments around `k₀` where the column count of `a` is at most
   -- that of `b`.
   have hex : ∃ k, k₀ ≤ k ∧ ∑ l ∈ s, min k (a l) ≤ ∑ l ∈ t, min k (b l) :=
-    ⟨max k₀ (s.sup a ⊔ t.sup b), le_max_left _ _, (hbig _ (le_max_right _ _)).ge⟩
+    ⟨max k₀ (s.sup a ⊔ t.sup b), le_max_left _ _, hbig _ (le_max_right _ _)⟩
   let p := Nat.findGreatest (fun k => ∑ l ∈ s, min k (a l) ≤ ∑ l ∈ t, min k (b l)) k₀
   let q := Nat.find hex
   have hp : ∑ l ∈ s, min p (a l) ≤ ∑ l ∈ t, min p (b l) :=
