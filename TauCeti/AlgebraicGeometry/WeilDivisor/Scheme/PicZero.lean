@@ -65,7 +65,7 @@ universe u
 
 noncomputable section
 
-variable (k : Type u) [Field k] {X : Scheme.{u}} [IsIntegral X] [IsNoetherian X]
+variable (k : Type u) [Field k] {X : Scheme.{u}} [IsIntegral X]
   [∀ y : CodimensionOnePoint X, IsDiscreteValuationRing (X.presheaf.stalk (y : X))]
   [hX : Fact (∀ y : X, coheight y ≤ 1)] [X.Over (Spec (.of k))] [IsProper (X ↘ Spec (.of k))]
   [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
@@ -78,6 +78,7 @@ line bundle `L` to `χ(L) - χ(𝒪_X)`. The Picard group is written additively,
 tensor-product monoid of line-bundle classes. -/
 def eulerDegreeHom : Additive (LineBundleClass X) →+ ℤ :=
   AddMonoidHom.mk' (fun a ↦ eulerDegree k a.toMul) fun a b ↦
+    have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
     eulerDegree_mul k hX.out a.toMul b.toMul
 
 /-- The degree homomorphism evaluates to the Euler-characteristic degree. -/
@@ -114,6 +115,8 @@ lemma mem_picZero_iff {a : Additive (LineBundleClass X)} :
 end LineBundleClass
 
 namespace SchemeWeilDivisor
+
+variable [IsNoetherian X]
 
 /-- **The degree on the Picard group computes the weighted degree of a divisor class.** Under
 `Cl(X) ≅ Pic X`, the Euler-characteristic degree of the line bundle of a divisor class is the
