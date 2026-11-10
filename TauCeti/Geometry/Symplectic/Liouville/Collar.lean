@@ -187,7 +187,7 @@ theorem exists_isOpen_injOn_flowOf_comp [FiniteDimensional ℝ E'] [J.Boundaryle
     (f := fun q : ℝ × S ↦ flowOf Z q.1 (ι q.2))
     (by
       rintro ⟨_, a⟩ ⟨rfl, -⟩ ⟨_, b⟩ ⟨rfl, -⟩ hab
-      simp only [flowOf_zero hZ1] at hab
+      simp only [flowOf_zero Z] at hab
       rw [hιi hab])
     (isCompact_singleton.prod isCompact_univ)
     fun p hp ↦ isLocalDiffeomorphAt_flowOf_comp hZ hι hdim hZα hα (hD hp)
