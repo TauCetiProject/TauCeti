@@ -186,7 +186,7 @@ theorem isRadiusLowerBound_gaussPoint_iff_le_logb (hv : v.Integers O) (hρ : ρ 
   · -- For `ρ = 0` both sides say `q = 0`, as `v ϖ ≤ 1` and `logb 0 _ = 0`.
     rcases eq_or_ne q 0 with rfl | hq
     · simpa using hv.map_le_one ϖ
-    · have hq' : q.num ≠ 0 := (NNRat.num_pos.2 (pos_iff_ne_zero.2 hq)).ne'
+    · have hq' : q.num ≠ 0 := NNRat.num_ne_zero.mpr hq
       simp [hq, hq', (pow_pos hϖ₀ q.den).not_ge]
   rw [← NNReal.coe_le_coe, NNRat.cast_def]
   push_cast
