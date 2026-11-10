@@ -156,18 +156,11 @@ private theorem heatDuhamelPotential_eq_fun (f : ℝ → E → F) (t : ℝ) :
     heatDuhamelPotential f t = fun x => ∫ s in 0..t, (heatKernel (t - s) ⋆ f s) x :=
   funext (heatDuhamelPotential_def f t)
 
-/-- Without completeness of `F`, every Bochner integral valued in `F` is `0`, so the heat kernel
-convolution of any `F`-valued function vanishes. -/
-theorem heatKernel_convolution_eq_zero_of_not_completeSpace (hF : ¬ CompleteSpace F) (τ : ℝ)
-    (g : E → F) : heatKernel τ ⋆ g = 0 := by
-  funext x
-  simp [convolution_def, integral_of_not_completeSpace hF]
-
 /-- Without completeness of `F`, the Duhamel heat potential vanishes. -/
 theorem heatDuhamelPotential_eq_zero_of_not_completeSpace (hF : ¬ CompleteSpace F)
     (f : ℝ → E → F) (t : ℝ) : heatDuhamelPotential f t = 0 := by
   funext x
-  simp [heatDuhamelPotential_def, heatKernel_convolution_eq_zero_of_not_completeSpace hF]
+  simp [heatDuhamelPotential_def, convolution_eq_zero_of_not_completeSpace hF]
 
 omit [NormedSpace ℝ F] in
 /-- Almost every time `s` in `Ι 0 t` lies in the open interval, where `t - s > 0`, and has an
@@ -399,7 +392,7 @@ theorem intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith
     IntervalIntegrable (fun s => iteratedFDeriv ℝ k (heatKernel (t - s) ⋆ f s) x) volume 0 t := by
   by_cases hF : CompleteSpace F
   swap
-  · simp [heatKernel_convolution_eq_zero_of_not_completeSpace hF]
+  · simp [convolution_eq_zero_of_not_completeSpace hF]
   obtain ⟨bound, hb, hub⟩ := exists_bounds_two hf hfM hH hα ht
   exact (hb k hk).mono_fun'
     (aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution hf hfM ht k x)
@@ -447,8 +440,8 @@ theorem iteratedFDeriv_heatDuhamelPotential_of_holderWith
   by_cases hF : CompleteSpace F
   swap
   · rw [heatDuhamelPotential_eq_zero_of_not_completeSpace hF]
-    simp [heatKernel_convolution_eq_zero_of_not_completeSpace hF]
-    rfl
+    funext x
+    simp [convolution_eq_zero_of_not_completeSpace hF]
   obtain ⟨bound, hb, hub⟩ := exists_bounds_two hf hfM hH hα ht
   rw [heatDuhamelPotential_eq_fun]
   exact iteratedFDeriv_intervalIntegral (ae_contDiff_heatKernel_convolution hf hfM ht 2)
