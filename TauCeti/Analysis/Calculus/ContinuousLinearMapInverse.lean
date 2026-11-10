@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Operations
 public import Mathlib.Analysis.Calculus.Deriv.Mul
+public import TauCeti.Analysis.Normed.Operator.Bilinear
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
@@ -41,6 +42,9 @@ with the constant `C`; the latter involves no inversion.
   vector curve.
 * `ContinuousLinearMap.IsInvertible.tendsto_inverse_comp`: on Banach spaces the comparison
   operator `e₀⁻¹ ∘ e` tends to the identity as both maps tend to the same invertible map.
+* `ContinuousLinearMap.IsInvertible.tendsto_pairingAdjoint`: on Banach spaces the adjoint of `X`
+  for a pairing `B` tends to the identity as `B` tends to an invertible pairing and `X` tends to
+  the identity.
 * `ContDiffAt.inverse` and `ContDiff.inverse`: the ring inverse of a `C^n` family of units
   is `C^n`.
 * `DifferentiableAt.deriv_eq_mul_sub_mul_of_mul_eq_mul`: a family `K` with `K t * P t = P t * C`
@@ -212,6 +216,24 @@ theorem ContinuousLinearMap.IsInvertible.tendsto_inverse_comp [CompleteSpace E] 
       (he.contDiffAt_map_inverse (n := 0)).continuousAt continuousAt_fst
   have h := h₁.clm_comp continuousAt_snd
   simpa only [he.inverse_comp_self, ← one_def] using h.tendsto
+
+/-- The adjoint of `X` for the pairing `B₀` tends to the identity as `B₀` tends to an
+invertible pairing and `X` tends to the identity. -/
+theorem ContinuousLinearMap.IsInvertible.tendsto_pairingAdjoint {H : Type*} [CompleteSpace E]
+    [NormedAddCommGroup H] [NormedSpace 𝕜 H] {B₀ : E →L[𝕜] E →L[𝕜] H}
+    (hB₀ : B₀.IsInvertible) :
+    Filter.Tendsto (fun q : (E →L[𝕜] E →L[𝕜] H) × (E →L[𝕜] E) ↦ pairingAdjoint q.1 q.2)
+      (𝓝 (B₀, 1)) (𝓝 1) := by
+  have h₁ : ContinuousAt (fun q : (E →L[𝕜] E →L[𝕜] H) × (E →L[𝕜] E) ↦ q.1.inverse) (B₀, 1) :=
+    ContinuousAt.comp (f := Prod.fst) (x := (B₀, 1))
+      (hB₀.contDiffAt_map_inverse (n := 0)).continuousAt continuousAt_fst
+  have h₂ : ContinuousAt (fun q : (E →L[𝕜] E →L[𝕜] H) × (E →L[𝕜] E) ↦
+      (compL 𝕜 E E H).flip q.2) (B₀, 1) :=
+    ((compL 𝕜 E E H).flip).continuous.continuousAt.comp continuousAt_snd
+  have h : ContinuousAt (fun q : (E →L[𝕜] E →L[𝕜] H) × (E →L[𝕜] E) ↦
+      pairingAdjoint q.1 q.2) (B₀, 1) := by
+    simpa only [pairingAdjoint_def] using h₁.clm_comp (h₂.clm_comp continuousAt_fst)
+  simpa only [hB₀.pairingAdjoint_one] using h.tendsto
 
 section RingInverse
 

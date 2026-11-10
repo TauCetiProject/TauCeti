@@ -8,7 +8,6 @@ module
 public import Mathlib.Analysis.Normed.Operator.Bilinear
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 public import Mathlib.Topology.Algebra.Module.Multilinear.Topology
-import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Pulling back continuous bilinear maps, and their quadratic maps
@@ -37,8 +36,7 @@ transform under a linear change of coordinates.
 An invertible bilinear map `B₀ : V →L V →L G` determines adjoints of operators on `V`: the
 adjoint `ContinuousLinearMap.pairingAdjoint B₀ X` is characterized by
 `B₀ (adj X w) w' = B₀ w (X w')` (`ContinuousLinearMap.IsInvertible.pairingAdjoint_apply`). It
-reverses products, fixes the identity, and tends to the identity as `B₀` stays near an
-invertible map and `X` tends to the identity.
+reverses products and fixes the identity.
 -/
 
 public section
@@ -163,31 +161,6 @@ theorem IsInvertible.pairingAdjoint_mul (hB₀ : B₀.IsInvertible) (X Y : V →
   hB₀.ext_of_pairing fun w w' ↦ by simp [hB₀.pairingAdjoint_apply]
 
 end PairingAdjoint
-
-section Tendsto
-
-open Filter Topology
-
-variable {E H : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
-  [NormedAddCommGroup H] [NormedSpace 𝕜 H]
-
-/-- The adjoint of `X` for the pairing `B₀` tends to the identity as `B₀` tends to an
-invertible pairing and `X` tends to the identity. -/
-theorem IsInvertible.tendsto_pairingAdjoint {B₀ : E →L[𝕜] E →L[𝕜] H} (hB₀ : B₀.IsInvertible) :
-    Tendsto (fun q : (E →L[𝕜] E →L[𝕜] H) × (E →L[𝕜] E) ↦ pairingAdjoint q.1 q.2)
-      (𝓝 (B₀, 1)) (𝓝 1) := by
-  have h₁ : ContinuousAt (fun q : (E →L[𝕜] E →L[𝕜] H) × (E →L[𝕜] E) ↦ q.1.inverse) (B₀, 1) :=
-    ContinuousAt.comp (f := Prod.fst) (x := (B₀, 1))
-      (hB₀.contDiffAt_map_inverse (n := 0)).continuousAt continuousAt_fst
-  have h₂ : ContinuousAt (fun q : (E →L[𝕜] E →L[𝕜] H) × (E →L[𝕜] E) ↦
-      (compL 𝕜 E E H).flip q.2) (B₀, 1) :=
-    ((compL 𝕜 E E H).flip).continuous.continuousAt.comp continuousAt_snd
-  have h : ContinuousAt (fun q : (E →L[𝕜] E →L[𝕜] H) × (E →L[𝕜] E) ↦
-      pairingAdjoint q.1 q.2) (B₀, 1) :=
-    h₁.clm_comp (h₂.clm_comp continuousAt_fst)
-  simpa only [hB₀.pairingAdjoint_one] using h.tendsto
-
-end Tendsto
 
 end ContinuousLinearMap
 
