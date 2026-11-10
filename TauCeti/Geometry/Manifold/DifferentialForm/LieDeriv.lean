@@ -47,6 +47,8 @@ The two characterizations below show that the definition is intrinsic.
   evaluated on a tangent vector.
 * `TauCeti.mlieDerivFormWithin_eq_mextDerivWithin_interior`,
   `TauCeti.mlieDerivForm_eq_mextDeriv_interior`: on closed forms, `L_V φ = d (ι_V φ)`.
+* `TauCeti.IsSmoothForm.mlieDerivForm`: the Lie derivative of a smooth form along a smooth
+  vector field is smooth.
 * `TauCeti.mlieDerivFormWithin_eq_lieDerivFormWithin`: over the model space, the manifold Lie
   derivative is the flat one.
 * `TauCeti.SmoothForm.mlieDerivForm_eq_interior_mextDeriv_add`,
@@ -389,6 +391,26 @@ theorem mlieDerivForm_eq_interior_mextDeriv (V : (x : M) → TangentSpace I x)
   funext x
   simpa only [mlieDerivFormWithin_univ, mextDerivWithin_univ] using
     mlieDerivFormWithin_eq_interior_mextDerivWithin V φ univ x
+
+/-- On a manifold modelled on a complete space, the Lie derivative of a `C^p` form along a `C^p`
+vector field is a `C^n` form when `n + 1 ≤ p`. -/
+theorem IsSmoothForm.mlieDerivForm [CompleteSpace E] [IsManifold I 2 M] {n p : WithTop ℕ∞}
+    {φ : RoughForm I M F k} (hφ : IsSmoothForm I p φ)
+    (hV : ContMDiff I I.tangent p (fun y ↦ (V y : TangentBundle I M))) (hnp : n + 1 ≤ p) :
+    IsSmoothForm I n (TauCeti.mlieDerivForm V φ) := by
+  -- By Cartan's formula, `L_V φ` is built from interior products with `V` and exterior
+  -- derivatives.
+  have hV' := hV.of_le (le_self_add.trans hnp)
+  cases k with
+  | zero =>
+    rw [mlieDerivForm_eq_interior_mextDeriv]
+    exact (isSmoothForm_mextDeriv hφ hnp).interior hV'
+  | succ k =>
+    have hp : p ≠ 0 := ne_bot_of_le_ne_bot (by simp) hnp
+    rw [mlieDerivForm_eq_interior_mextDeriv_add (hφ.contMDiff.mdifferentiable hp)
+      (hV.mdifferentiable hp)]
+    exact ((isSmoothForm_mextDeriv hφ hnp).interior hV').add
+      (isSmoothForm_mextDeriv (hφ.interior hV) hnp)
 
 namespace SmoothForm
 
