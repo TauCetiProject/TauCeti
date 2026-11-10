@@ -112,24 +112,25 @@ theorem souriau_eq_cayley_of_coe_eq_mul {U : unitaryGroup n ℂ} {A M : Matrix n
 /-- The determinant of the Cayley transform of a real symmetric matrix, as a point of the
 circle. -/
 private noncomputable def cayleyDet (B : SymmMatrix n) : Circle :=
-  ⟨det (cayley (B.1.map ((↑) : ℝ → ℂ))), mem_sphere_zero_iff_norm.2
-    (CStarRing.norm_of_mem_unitary (det_of_mem_unitary
-      B.2.map_ofReal.cayley_mem_unitaryGroup))⟩
+  detCircle ⟨cayley (B.1.map ((↑) : ℝ → ℂ)), B.2.map_ofReal.cayley_mem_unitaryGroup⟩
 
 private theorem continuous_cayleyDet : Continuous (cayleyDet (n := n)) := by
   have hz : Continuous fun B : SymmMatrix n => det (1 + Complex.I • B.1.map ((↑) : ℝ → ℂ)) :=
     Continuous.matrix_det (A := fun B : SymmMatrix n => 1 + Complex.I • B.1.map ((↑) : ℝ → ℂ))
       (continuous_const.add
         ((continuous_subtype_val.matrix_map continuous_ofReal).const_smul Complex.I))
-  exact ((hz.div (continuous_conj.comp hz) fun B => (map_ne_zero _).2
-    B.2.map_ofReal.isUnit_det_one_add_I_smul.ne_zero).congr
-      fun B => B.2.map_ofReal.det_cayley.symm).subtype_mk _
+  have hc : Continuous fun B : SymmMatrix n => (cayleyDet B : ℂ) :=
+    (hz.div (continuous_conj.comp hz) fun B => (map_ne_zero _).2
+      B.2.map_ofReal.isUnit_det_one_add_I_smul.ne_zero).congr fun B => by
+        simp only [cayleyDet, coe_detCircle]
+        exact B.2.map_ofReal.det_cayley.symm
+  exact continuous_induced_rng.2 hc
 
 /-- A frame whose Souriau map is the Cayley transform of `B` has Maslov phase `det (cayley B)`. -/
 private theorem detCircle_souriau_eq_cayleyDet {U : unitaryGroup n ℂ} {B : SymmMatrix n}
     (h : (souriau U : Matrix n n ℂ) = cayley (B.1.map ((↑) : ℝ → ℂ))) :
     detCircle (souriau U) = cayleyDet B :=
-  Circle.ext <| by rw [coe_detCircle, h]; rfl
+  congrArg detCircle (Subtype.ext h)
 
 /-- **The Maslov index through a path of symmetric matrices.** If the Souriau maps of `γ` are the
 Cayley transforms along a path `P` of symmetric matrices, the Maslov index of `γ` is read off the
@@ -170,10 +171,10 @@ private theorem eigenFrame_mul_transpose (B : SymmMatrix n) :
     (eigenFrame B : Matrix n n ℂ) * (eigenFrame B : Matrix n n ℂ)ᵀ = 1 := by
   have h := Unitary.coe_mul_star_self B.2.eigenvectorUnitary
   rw [Unitary.coe_star, star_eq_conjTranspose, conjTranspose_eq_transpose_of_trivial] at h
-  have hmul (M N : Matrix n n ℝ) : (M * N).map ((↑) : ℝ → ℂ) = M.map (↑) * N.map (↑) :=
-    Matrix.map_mul (f := Complex.ofRealHom)
   simp only [eigenFrame, ← transpose_map]
-  rw [← hmul, h, Matrix.map_one _ (by simp) (by simp)]
+  -- `Matrix.map_mul` at `Complex.ofRealHom`, whose coercion is `(↑)` (`Complex.ofRealHom_eq_coe`).
+  exact (Matrix.map_mul (f := Complex.ofRealHom)).symm.trans <| by
+    rw [h, Matrix.map_one _ (by simp) (by simp)]
 
 /-- The diagonal frames `diag (e^{i arctan (t λⱼ)})` of the graphs of `t D`, for `D` the
 diagonal matrix of eigenvalues of `B`. -/
@@ -205,8 +206,7 @@ private theorem map_ofReal_smul_eq (B : SymmMatrix n) (t : ℝ) :
     simp
   have hdiag : diagonal (fun j => ((t * B.2.eigenvalues j : ℝ) : ℂ)) =
       (t : ℂ) • (diagonal (RCLike.ofReal ∘ B.2.eigenvalues)).map ((↑) : ℝ → ℂ) := by
-    ext i j
-    rcases eq_or_ne i j with rfl | hij <;> simp [*]
+    simp [diagonal_map, ← diagonal_smul, Pi.smul_def]
   have h := B.2.spectral_theorem
   rw [Unitary.conjStarAlgAut_apply, star_eq_conjTranspose,
     conjTranspose_eq_transpose_of_trivial] at h
@@ -214,9 +214,9 @@ private theorem map_ofReal_smul_eq (B : SymmMatrix n) (t : ℝ) :
   congr 1
   conv_lhs => rw [h]
   simp only [eigenFrame, ← transpose_map]
-  have hmul (M N : Matrix n n ℝ) : (M * N).map ((↑) : ℝ → ℂ) = M.map (↑) * N.map (↑) :=
-    Matrix.map_mul (f := Complex.ofRealHom)
-  rw [hmul, hmul]
+  -- `Matrix.map_mul` at `Complex.ofRealHom`, whose coercion is `(↑)` (`Complex.ofRealHom_eq_coe`).
+  exact (Matrix.map_mul (f := Complex.ofRealHom)).trans
+    (congrArg (· * _) (Matrix.map_mul (f := Complex.ofRealHom)))
 
 /-- The frames `O diag (e^{i arctan (t λⱼ)})` frame the graphs of the segment `t ↦ t B`: their
 Souriau maps are the Cayley transforms of `t B`. -/

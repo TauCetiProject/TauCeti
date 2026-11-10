@@ -6,8 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Matrix.Spectrum
-public import Mathlib.Analysis.SpecialFunctions.Complex.Arctan
 public import Mathlib.LinearAlgebra.UnitaryGroup
+public import TauCeti.Analysis.Matrix.Spectrum
+public import TauCeti.Analysis.SpecialFunctions.Complex.Arctan
 
 /-!
 # The Cayley transform of a Hermitian matrix
@@ -54,23 +55,6 @@ public section
 
 open Complex
 
-namespace Complex
-
-/-- **The Cayley transform of a real number** is a point of the unit circle:
-`(1 + i x) / (1 - i x) = e^{2 i arctan x}`. This is the defining formula of the complex arctangent
-`Complex.arctan`, which agrees with the real one on real numbers. -/
-theorem one_add_mul_I_div_one_sub_mul_I_eq_exp (x : ℝ) :
-    (1 + x * I) / (1 - x * I) = exp (↑(2 * Real.arctan x) * I) := by
-  have hne (s : ℝ) : 1 + s * x * I ≠ 0 := fun h => by simpa using congrArg re h
-  have h₁ : 1 + (x : ℂ) * I ≠ 0 := by simpa using hne 1
-  have h₂ : 1 - (x : ℂ) * I ≠ 0 := by simpa [sub_eq_add_neg] using hne (-1)
-  rw [ofReal_mul, ofReal_arctan, arctan,
-    show (↑(2 : ℝ) : ℂ) * (-I / 2 * log ((1 + x * I) / (1 - x * I))) * I =
-      -(I * I) * log ((1 + x * I) / (1 - x * I)) by push_cast; ring,
-    I_mul_I, neg_neg, one_mul, exp_log (div_ne_zero h₁ h₂)]
-
-end Complex
-
 namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
@@ -107,8 +91,7 @@ theorem cayley_diagonal_ofReal (d : n → ℝ) :
     cayley (diagonal fun j => (d j : ℂ)) =
       diagonal fun j => exp (↑(2 * Real.arctan (d j)) * I) := by
   have hdiag (s : ℂ) : 1 + s • diagonal (fun j => (d j : ℂ)) = diagonal fun j => 1 + s * d j := by
-    ext i j
-    rcases eq_or_ne i j with rfl | hij <;> simp [*]
+    simp [← diagonal_one, ← diagonal_add, ← diagonal_smul, Pi.smul_def]
   have hneg : 1 - I • diagonal (fun j => (d j : ℂ)) = 1 + (-I) • diagonal fun j => (d j : ℂ) := by
     rw [neg_smul, sub_eq_add_neg]
   have hne (j : n) : 1 + -I * (d j : ℂ) ≠ 0 := fun h => by simpa using congrArg re h
@@ -133,48 +116,24 @@ namespace IsHermitian
 
 variable {A : Matrix n n ℂ}
 
-/-- The spectral decomposition of `1 + s A`, for a Hermitian matrix `A`: conjugating by the
-eigenvector matrix gives the diagonal matrix with entries `1 + s λⱼ`. -/
-private theorem one_add_smul_eq (hA : A.IsHermitian) (s : ℂ) :
-    1 + s • A = (hA.eigenvectorUnitary : Matrix n n ℂ) *
-      diagonal (fun j => 1 + s * hA.eigenvalues j) *
-        star (hA.eigenvectorUnitary : Matrix n n ℂ) := by
-  have hU : (hA.eigenvectorUnitary : Matrix n n ℂ) * star (hA.eigenvectorUnitary : Matrix n n ℂ) =
-      1 := Unitary.coe_mul_star_self _
-  have hdiag : diagonal (fun j => 1 + s * hA.eigenvalues j) =
-      1 + s • diagonal (fun j => (hA.eigenvalues j : ℂ)) := by
-    ext i j
-    rcases eq_or_ne i j with rfl | hij <;> simp [*]
-  conv_lhs => rw [hA.spectral_theorem]
-  rw [Unitary.conjStarAlgAut_apply, hdiag, Matrix.mul_add, Matrix.add_mul, Matrix.mul_one, hU,
-    Matrix.mul_smul, Matrix.smul_mul]
-  rfl
-
-/-- The determinant of `1 + s A`, for a Hermitian matrix `A`, is the product of `1 + s λⱼ` over
-the eigenvalues. -/
-private theorem det_one_add_smul (hA : A.IsHermitian) (s : ℂ) :
-    det (1 + s • A) = ∏ j, (1 + s * hA.eigenvalues j) := by
-  rw [one_add_smul_eq hA, det_mul, det_mul, det_diagonal, mul_comm, ← mul_assoc, ← det_mul,
-    Unitary.coe_star_mul_self, det_one, one_mul]
-
-/-- For a Hermitian matrix `A`, the matrix `1 + i A` is invertible: its eigenvalues `1 + i λ`
+/-- For a Hermitian matrix `A`, the matrix `1 - i A` is invertible: its eigenvalues `1 - i λ`
 have real part `1`. -/
-theorem isUnit_det_one_add_I_smul (hA : A.IsHermitian) : IsUnit (det (1 + I • A)) := by
-  rw [det_one_add_smul hA, isUnit_iff_ne_zero, Finset.prod_ne_zero_iff]
+theorem isUnit_det_one_sub_I_smul (hA : A.IsHermitian) : IsUnit (det (1 - I • A)) := by
+  rw [hA.det_one_sub_smul, isUnit_iff_ne_zero, Finset.prod_ne_zero_iff]
   intro j _ h
   simpa using congrArg re h
 
-/-- For a Hermitian matrix `A`, the matrix `1 - i A` is invertible. -/
-theorem isUnit_det_one_sub_I_smul (hA : A.IsHermitian) : IsUnit (det (1 - I • A)) := by
-  rw [sub_eq_add_neg, ← smul_neg]
-  exact hA.neg.isUnit_det_one_add_I_smul
+/-- For a Hermitian matrix `A`, the matrix `1 + i A` is invertible. -/
+theorem isUnit_det_one_add_I_smul (hA : A.IsHermitian) : IsUnit (det (1 + I • A)) := by
+  rw [← sub_neg_eq_add, ← smul_neg]
+  exact hA.neg.isUnit_det_one_sub_I_smul
 
 /-- For a Hermitian matrix `A`, `det (1 - i A)` is the complex conjugate of `det (1 + i A)`. -/
 theorem det_one_sub_I_smul (hA : A.IsHermitian) :
     det (1 - I • A) = (starRingEnd ℂ) (det (1 + I • A)) := by
-  rw [sub_eq_add_neg, ← neg_smul, det_one_add_smul hA, det_one_add_smul hA, map_prod]
+  rw [← sub_neg_eq_add, ← neg_smul, hA.det_one_sub_smul, hA.det_one_sub_smul, map_prod]
   refine Finset.prod_congr rfl fun j _ => ?_
-  simp
+  simp [sub_eq_add_neg]
 
 /-- **The Cayley transform of a Hermitian matrix** `A` is characterized by
 `cayley A * (1 - i A) = 1 + i A`. -/
