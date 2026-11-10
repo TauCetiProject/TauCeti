@@ -7,10 +7,12 @@ module
 
 public import TauCeti.Analysis.Pseudodifferential.Quantization
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.Calculus.LineDeriv.IntegrationByParts
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
+import Mathlib.Analysis.Fourier.Inversion
 
 /-!
 # The kernel of the Kohn–Nirenberg quantization
@@ -44,6 +46,10 @@ the diagonal.
   `Op(a) u (x) = ∫ K_a(x, y) u(y) dy` for every Schwartz function `u`.
 * `TauCeti.eq_quantizationKernel_of_forall`: **uniqueness**, a continuous kernel representing
   `u ↦ Op(a) u (x)` on Schwartz functions is `y ↦ K_a(x, y)`.
+* `TauCeti.integral_fourierChar_smul_quantizationKernel`: the Fourier transform of an integrable
+  kernel row `y ↦ K_a(x, y)` recovers the symbol `a(x, ·)`.
+* `TauCeti.integral_quantizationKernel_comp_adjoint`: the kernel
+  `∫ K_a(x, y) K_b(z, y)† dy = ∫ exp(2πi ⟪ζ, x - z⟫) a(x, 2πζ) b(z, 2πζ)† dζ` of `Op(a) Op(b)†`.
 * `TauCeti.inner_smul_quantizationKernel`: multiplying the kernel by `⟪x - y, v⟫` corresponds to
   the frequency derivative `i ∂_{ξ, v}` of the coefficient, which lowers the order of a symbol by
   one. This is the first-order case `⟪x - y, v⟫ K_a = K_{-D_{ξ, v} a}`; iterating it gives
@@ -78,7 +84,17 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E]
-  {V W : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W]
+  {V W : Type*} [NormedAddCommGroup V] [NormedAddCommGroup W]
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- The phase `exp(2πi ⟪ζ, y - z⟫)` splits as `exp(2πi ⟪ζ, y⟫) exp(-2πi ⟪ζ, z⟫)`. -/
+private theorem fourierChar_inner_sub (ζ y z : E) :
+    (𝐞 ⟪ζ, y - z⟫ : ℂ) = 𝐞 ⟪ζ, y⟫ * 𝐞 (-⟪ζ, z⟫) := by
+  rw [inner_sub_right, sub_eq_add_neg, AddChar.map_add_eq_mul, Circle.coe_mul]
+
+section NormedSpace
+
+variable [NormedSpace ℂ V] [NormedSpace ℂ W]
 
 /-- The kernel of the left (Kohn–Nirenberg) quantization of a coefficient map `a(x, ξ)`:
 
@@ -309,6 +325,35 @@ theorem inner_smul_quantizationKernel {a' : E × E → V →L[ℂ] W} {v : E}
   field_simp
   linear_combination (⟪x - y, v⟫ : ℂ) * Complex.I_sq
 
+/-- **The kernel determines the symbol.** If the frequency slice `ξ ↦ a(x, ξ)` is continuous and
+integrable, and the kernel row `y ↦ K_a(x, y)` is integrable, then the Fourier transform of the
+row recovers the symbol: `∫ exp(2πi ⟪ζ, y⟫) K_a(x, y) dy = exp(2πi ⟪ζ, x⟫) a(x, 2πζ)`. -/
+theorem integral_fourierChar_smul_quantizationKernel [CompleteSpace W]
+    (hc : Continuous fun ξ ↦ a (x, ξ)) (ha : Integrable fun ξ ↦ a (x, ξ))
+    (hK : Integrable (quantizationKernel a x)) (ζ : E) :
+    ∫ y, 𝐞 ⟪ζ, y⟫ • quantizationKernel a x y = 𝐞 ⟪ζ, x⟫ • a (x, (2 * π) • ζ) := by
+  set A : E → V →L[ℂ] W := fun ζ ↦ a (x, (2 * π) • ζ)
+  have hA : Integrable A := ha.comp_smul two_pi_pos.ne'
+  have hAc : Continuous A := hc.comp (continuous_const_smul _)
+  -- The kernel row is the inverse Fourier transform of `A`, reflected about `x`.
+  have hrow (y : E) : quantizationKernel a x y = 𝓕⁻ A (x - y) :=
+    quantizationKernel_eq_fourierInv a x y
+  have hK' : Integrable (𝓕⁻ A) := by
+    simpa [hrow] using hK.comp_sub_left x
+  have hFA : Integrable (𝓕 A) := by
+    simpa [fourierInv_eq_fourier_neg] using hK'.comp_neg
+  calc ∫ y, 𝐞 ⟪ζ, y⟫ • quantizationKernel a x y
+      = ∫ w, 𝐞 ⟪ζ, x - w⟫ • 𝓕⁻ A w := by
+        rw [← integral_sub_left_eq_self _ (μ := volume) x]
+        simp [hrow]
+    _ = 𝐞 ⟪ζ, x⟫ • ∫ w, 𝐞 (-⟪w, ζ⟫) • 𝓕⁻ A w := by
+        rw [Circle.smul_def, ← integral_smul]
+        congr 1 with w
+        simp only [Circle.smul_def]
+        rw [fourierChar_inner_sub, mul_smul, real_inner_comm w ζ]
+    _ = 𝐞 ⟪ζ, x⟫ • A ζ := by
+        rw [← Real.fourier_eq, hA.fourier_fourierInv_eq hFA hAc.continuousAt]
+
 namespace Symbol
 
 /-! ### Kernels of symbols of order `m < -n` -/
@@ -439,5 +484,86 @@ theorem one_add_norm_div_pow_mul_norm_quantizationKernel_le (a : Symbol n V W m)
     _ = 2 ^ N * (1 + √n ^ N) * c * A := by ring
 
 end Symbol
+
+end NormedSpace
+
+section InnerProductSpace
+
+variable [InnerProductSpace ℂ V] [CompleteSpace V] [InnerProductSpace ℂ W] [CompleteSpace W]
+
+open ContinuousLinearMap in
+/-- **The kernel of `Op(a) Op(b)†`.** The kernel `∫ K_a(x, y) K_b(z, y)† dy` of `Op(a) Op(b)†` is
+`∫ exp(2πi ⟪ζ, x - z⟫) a(x, 2πζ) b(z, 2πζ)† dζ`, whenever the frequency slices `ξ ↦ a(x, ξ)` and
+`ξ ↦ b(z, ξ)` are integrable, the first one continuous, and the kernel row `y ↦ K_a(x, y)` is
+integrable. -/
+theorem integral_quantizationKernel_comp_adjoint {a b : E × E → V →L[ℂ] W} {x z : E}
+    (hac : Continuous fun ξ ↦ a (x, ξ)) (ha : Integrable fun ξ ↦ a (x, ξ))
+    (hK : Integrable (quantizationKernel a x)) (hb : Integrable fun ξ ↦ b (z, ξ)) :
+    ∫ y, quantizationKernel a x y ∘L adjoint (quantizationKernel b z y) =
+      ∫ ζ, 𝐞 ⟪ζ, x - z⟫ • (a (x, (2 * π) • ζ) ∘L adjoint (b (z, (2 * π) • ζ))) := by
+  set A : E → V →L[ℂ] W := fun ζ ↦ a (x, (2 * π) • ζ)
+  set B : E → W →L[ℂ] V := fun ζ ↦ adjoint (b (z, (2 * π) • ζ))
+  set K : E → V →L[ℂ] W := quantizationKernel a x
+  -- Multiplying by a character preserves integrability.
+  have hchar {X : Type _} [NormedAddCommGroup X] [NormedSpace ℂ X] {g : E → X}
+      (hg : Integrable g) (w : E) : Integrable fun ζ ↦ 𝐞 ⟪ζ, w⟫ • g ζ := by
+    simpa only [inner_neg_right, neg_neg] using (Real.fourierIntegral_convergent_iff (-w)).2 hg
+  have hb' : Integrable fun ζ ↦ b (z, (2 * π) • ζ) := hb.comp_smul two_pi_pos.ne'
+  have hB : Integrable B :=
+    hb'.norm.mono' ((LinearIsometryEquiv.continuous _).comp_aestronglyMeasurable
+      hb'.aestronglyMeasurable) (.of_forall fun ζ ↦ by simp [B])
+  -- The adjoint of the kernel of `b` is an integral of adjoints.
+  have hadj (y : E) :
+      adjoint (quantizationKernel b z y) = ∫ ζ, 𝐞 ⟪ζ, y - z⟫ • B ζ := by
+    have h := integral_comp_commSL (X := E) (μ := volume) (σ := starRingEnd ℂ) (by simp)
+      ((adjoint : (V →L[ℂ] W) ≃ₗᵢ⋆[ℂ] (W →L[ℂ] V)).toContinuousLinearEquiv :
+        (V →L[ℂ] W) →SL[starRingEnd ℂ] (W →L[ℂ] V))
+      (hchar hb' (z - y))
+    simp only [ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv]
+      at h
+    rw [quantizationKernel_def, ← h]
+    refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
+    simp only [Circle.smul_def, map_smulₛₗ, B, ← Circle.coe_inv_eq_conj,
+      ← AddChar.map_neg_eq_inv, ← inner_neg_right, neg_sub]
+  -- Fubini's theorem applies to `(y, ζ) ↦ exp(2πi ⟪ζ, y - z⟫) K(y) B(ζ)`, dominated by
+  -- `‖K(y)‖ ‖B(ζ)‖`.
+  have hKc : Continuous K := continuous_quantizationKernel_right ha
+  have hF : Integrable (Function.uncurry fun y ζ ↦ 𝐞 ⟪ζ, y - z⟫ • (K y ∘L B ζ))
+      (volume.prod volume) := by
+    refine (hK.norm.mul_prod hB.norm).mono' ?_ (.of_forall fun p ↦ ?_)
+    · have h₁ : AEStronglyMeasurable (fun p : E × E ↦ K p.1 ∘L B p.2) (volume.prod volume) :=
+        (compL ℂ W V W).aestronglyMeasurable_comp₂ hKc.aestronglyMeasurable.comp_fst
+          hB.aestronglyMeasurable.comp_snd
+      have h₂ : Continuous fun p : E × E ↦ ((𝐞 ⟪p.2, p.1 - z⟫ : Circle) : ℂ) := by fun_prop
+      refine (h₂.aestronglyMeasurable.smul h₁).congr (.of_forall fun ⟨y, ζ⟩ ↦ ?_)
+      rw [Function.uncurry_apply_pair, Circle.smul_def, Pi.smul_apply']
+    · obtain ⟨y, ζ⟩ := p
+      rw [Function.uncurry_apply_pair, Circle.smul_def, norm_smul, Circle.norm_coe, one_mul]
+      exact opNorm_comp_le _ _
+  calc ∫ y, K y ∘L adjoint (quantizationKernel b z y)
+      = ∫ y, ∫ ζ, 𝐞 ⟪ζ, y - z⟫ • (K y ∘L B ζ) := by
+        refine integral_congr_ae (.of_forall fun y ↦ ?_)
+        dsimp only
+        have h := (compL ℂ W V W (K y)).integral_comp_comm (hchar hB (y - z))
+        simp only [compL_apply] at h
+        rw [hadj y, ← h]
+        simp only [Circle.smul_def, comp_smul]
+    _ = ∫ ζ, ∫ y, 𝐞 ⟪ζ, y - z⟫ • (K y ∘L B ζ) := integral_integral_swap hF
+    _ = ∫ ζ, 𝐞 ⟪ζ, x - z⟫ • (A ζ ∘L B ζ) := by
+        refine integral_congr_ae (.of_forall fun ζ ↦ ?_)
+        dsimp only
+        have h (y : E) : 𝐞 ⟪ζ, y - z⟫ • (K y ∘L B ζ) =
+            (𝐞 (-⟪ζ, z⟫) : ℂ) • (compL ℂ W V W).flip (B ζ) ((𝐞 ⟪ζ, y⟫ : ℂ) • K y) := by
+          rw [map_smul, smul_smul, Circle.smul_def, fourierChar_inner_sub, mul_comm, flip_apply,
+            compL_apply]
+        have hint : Integrable fun y ↦ (𝐞 ⟪ζ, y⟫ : ℂ) • K y := by
+          simpa only [Circle.smul_def, real_inner_comm] using hchar hK ζ
+        have hrow := integral_fourierChar_smul_quantizationKernel hac ha hK ζ
+        simp only [Circle.smul_def] at hrow
+        simp_rw [h, integral_smul]
+        rw [(compL ℂ W V W).flip (B ζ) |>.integral_comp_comm hint, hrow, flip_apply, compL_apply,
+          smul_comp, smul_smul, Circle.smul_def, fourierChar_inner_sub, mul_comm]
+
+end InnerProductSpace
 
 end TauCeti

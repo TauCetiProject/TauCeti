@@ -1050,16 +1050,6 @@ theorem IsSmoothing.comp_left {a : Symbol n V W m} (ha : a.IsSmoothing) (b : Sym
   obtain ⟨a', ha'⟩ := ha (m'' - m')
   exact ⟨Symbol.inclusion (by linarith) (b.comp a'), funext fun p => by simp [ha']⟩
 
-/-- A coefficient vanishing at every frequency of norm at least `R` has all its mixed derivatives
-zero at frequencies of norm greater than `R`. -/
-theorem mixedDeriv_eq_zero_of_lt_norm
-    {f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} {R : ℝ}
-    (hR : ∀ x ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0) {ξ : CoordinateSpace n} (hξ : R < ‖ξ‖)
-    (α β : List (Fin n)) (x : CoordinateSpace n) : mixedDeriv α β f x ξ = 0 :=
-  mixedDeriv_eq_zero_of_forall_eventually (fun y =>
-    Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hξ)
-      fun η hη => hR y η (le_of_lt hη)) α β x
-
 /-- A smooth coefficient vanishing at every frequency of norm at least `R`, such as the difference
 of two cut-off expansions, is a symbol of every order `m`. -/
 def ofBoundedFrequencySupport (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)

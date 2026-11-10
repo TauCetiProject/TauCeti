@@ -681,6 +681,15 @@ theorem mixedDeriv_eq_zero_of_forall_eventually {ξ : CoordinateSpace n}
     rfl
   rw [mixedDeriv_def, hzero, coordinateDeriv_zero, Pi.zero_apply]
 
+/-- If `a` vanishes at every frequency of norm at least `R`, then all its mixed derivatives vanish
+at frequencies of norm greater than `R`. -/
+theorem mixedDeriv_eq_zero_of_lt_norm {R : ℝ} (hR : ∀ x ξ, R ≤ ‖ξ‖ → a (x, ξ) = 0)
+    {ξ : CoordinateSpace n} (hξ : R < ‖ξ‖) (α β : List (Fin n)) (x : CoordinateSpace n) :
+    mixedDeriv α β a x ξ = 0 :=
+  mixedDeriv_eq_zero_of_forall_eventually (fun y =>
+    Filter.eventually_of_mem ((isOpen_lt continuous_const continuous_norm).mem_nhds hξ)
+      fun η hη => hR y η (le_of_lt hη)) α β x
+
 /-- Cutting `a` off outside the positions of an open set `U` does not change its mixed derivatives
 at positions of `U`. -/
 theorem mixedDeriv_indicator_prod_univ_of_mem {U : Set (CoordinateSpace n)} (hU : IsOpen U)
