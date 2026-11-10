@@ -165,12 +165,13 @@ theorem contDiffOn_log (hda : ∀ a : A, IsSelfAdjoint a → IsUnit (TauCeti.exp
   have h := contDiffWithinAt_log_exp (n := n) (IsSelfAdjoint.log (a := b)) (hda _ .log)
   rwa [exp_log b hb] at h
 
-variable [SMulCommClass 𝕂 ℝ A]
-
 /-- If the derivative of the exponential is invertible at every self-adjoint element, then every
 real power `a ↦ a ^ s` is `C^n` on the strictly positive elements. -/
 theorem contDiffOn_rpow (hda : ∀ a : A, IsSelfAdjoint a → IsUnit (TauCeti.expFDeriv 𝕂 a))
     (s : ℝ) {n : ℕ∞ω} : ContDiffOn 𝕂 n (fun a : A ↦ a ^ s) {b : A | IsStrictlyPositive b} := by
+  -- Scalars commute because the images of both algebra maps are central.
+  have : SMulCommClass 𝕂 ℝ A := ⟨fun c t x ↦ by
+    simp only [Algebra.smul_def, ← mul_assoc, Algebra.commutes c (algebraMap ℝ A t)]⟩
   have hexp : ContDiff 𝕂 n (exp : A → A) :=
     NormedSpace.contDiff_exp 𝕂
   exact (hexp.comp_contDiffOn ((contDiffOn_log hda).const_smul s)).congr fun b hb ↦
