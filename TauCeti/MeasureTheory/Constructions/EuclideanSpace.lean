@@ -40,11 +40,7 @@ theorem measurable_single (i : ι) :
       WithLp.toLp 2 (Pi.single (M := fun _ : ι => ℝ) i a) :=
     (PiLp.toLp_single 2 (β := fun _ : ι => ℝ) i a).symm
   rw [funext h]
-  exact (WithLp.measurable_toLp 2 _).comp (measurable_pi_iff.2 fun j ↦ by
-    by_cases hj : j = i
-    · subst hj
-      simpa using measurable_id'
-    · simp [hj])
+  exact (WithLp.measurable_toLp 2 _).comp (measurable_update (0 : ι → ℝ) (a := i))
 
 /-- **A measure on one-dimensional Euclidean space is determined by its coordinate law.** Over a
 one-element index type, pushing a measure forward to the unique coordinate and back along
