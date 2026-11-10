@@ -142,7 +142,8 @@ theorem ExchangeableLaw.exists_eq_map_unitIntervalCoding {ρ : Measure (ℕ → 
   obtain ⟨π, hπ, -⟩ := hρ.existsUnique_mixingLaw
   exact ⟨π, by rw [Measure.map_prod_unitIntervalCoding_eq_deFinettiBarycenter, ← hπ]⟩
 
-/-- **Exchangeability is exactly codability.** A probability law on `ℕ → α`, with `α` nonempty
+omit [Nonempty α] in
+/-- **Exchangeability is exactly codability.** A probability law on `ℕ → α`, with `α`
 standard Borel, is exchangeable iff it is the law of a jointly measurable function of a random
 parameter and an independent i.i.d. uniform sequence, applied coordinatewise.
 
@@ -157,7 +158,8 @@ theorem exchangeableLaw_iff_exists_coding {ρ : Measure (ℕ → α)} [IsProbabi
                 (Measure.infinitePi fun _ : ℕ => (volume : Measure I))).map
               fun p i => f p.1 (p.2 i) := by
   refine ⟨fun hρ => ?_, fun ⟨π, f, hf, hρ⟩ => ?_⟩
-  · obtain ⟨π, hπ⟩ := hρ.exists_eq_map_unitIntervalCoding
+  · have : Nonempty α := (nonempty_of_isProbabilityMeasure ρ).map (· 0)
+    obtain ⟨π, hπ⟩ := hρ.exists_eq_map_unitIntervalCoding
     exact ⟨π, unitIntervalCoding α, measurable_uncurry_unitIntervalCoding α, hπ⟩
   · have : IsProbabilityMeasure (π : Measure (ProbabilityMeasure α)) := π.2
     have hnoise : ExchangeableLaw (Measure.infinitePi fun _ : ℕ => (volume : Measure I)) := by
@@ -380,7 +382,7 @@ measurable map applied to fresh i.i.d. uniform variables.
 Conditioning on `Z` as well as on `Y ∘ e` is what the exchangeability over `Z` buys: the coded
 coordinates are conditionally i.i.d. given `(Z, Y ∘ e)`, not merely given `Y ∘ e`. -/
 theorem Exchangeable.exists_map_comp_eq_map_coding_of_prodMk {γ β : Type*} [MeasurableSpace γ]
-    [StandardBorelSpace γ] [Nonempty γ] [MeasurableSpace β] [StandardBorelSpace β] [Nonempty β]
+    [StandardBorelSpace γ] [MeasurableSpace β] [StandardBorelSpace β]
     {μ : Measure Ω} [IsFiniteMeasure μ] {Z : Ω → γ} {Y : ℕ → Ω → β}
     (hZY : Exchangeable μ fun n ω => (Z ω, Y n ω)) (hZ : AEMeasurable Z μ)
     (hY : ∀ n, AEMeasurable (Y n) μ) {κ : Type*} {e : ℕ → ℕ} {g : κ → ℕ}
@@ -391,6 +393,12 @@ theorem Exchangeable.exists_map_comp_eq_map_coding_of_prodMk {γ β : Type*} [Me
         ((μ.map fun ω => (Z ω, fun a => Y (e a) ω)).prod
             (Measure.infinitePi fun _ : κ => (volume : Measure I))).map
           (fun p => (p.1, fun b => v p.1 (p.2 b))) := by
+  rcases isEmpty_or_nonempty Ω with hΩ | ⟨⟨ω⟩⟩
+  · -- On an empty sample space the measure is zero and both sides are zero measures.
+    refine ⟨fun s _ => s.2 0, (measurable_pi_apply 0).comp (measurable_snd.comp measurable_fst), ?_⟩
+    simp [Measure.eq_zero_of_isEmpty μ]
+  have : Nonempty γ := ⟨Z ω⟩
+  have : Nonempty β := ⟨Y 0 ω⟩
   -- By de Finetti, the pairs `(Z, Y n)` are conditionally i.i.d. Their directing measure is a
   -- measurable function `F` of the pairs along `e`, hence of `(Z, Y ∘ e)`; code the pairs along `g`
   -- from it, then forget their constant first coordinate `Z`.
