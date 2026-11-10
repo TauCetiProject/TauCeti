@@ -78,7 +78,7 @@ same two pieces the geometric picture uses.
 * `PreAbstractSimplicialComplex.map_stellarSubdivision`: injective relabeling commutes with
   stellar subdivision.
 * `PreAbstractSimplicialComplex.dimension_stellarSubdivision`: starring preserves the dimension.
-* `PreAbstractSimplicialComplex.finite_faces_stellarSubdivision_iff`: starring a face
+* `PreAbstractSimplicialComplex.finite_faces_stellarSubdivision_iff`: starring a nonempty set
   preserves and reflects finiteness.
 * `PreAbstractSimplicialComplex.isCone_stellarSubdivision_of_closedStar_eq_self`: starring a
   complex that is its own closed star at `σ` produces a cone with apex the new vertex; for a
@@ -435,11 +435,10 @@ theorem finite_faces_stellarSubdivision (hfin : K.faces.Finite) :
   exact Set.Finite.subset (hfin.union (Set.Finite.biUnion hfin fun ω _ =>
     Set.Finite.image _ ω.powerset.finite_toSet)) hsub
 
-/-- Starring a face of `K` preserves and reflects finiteness of the face collection. -/
-theorem finite_faces_stellarSubdivision_iff (hσ : σ ∈ K) :
+/-- Starring a nonempty set preserves and reflects finiteness of the face collection. -/
+theorem finite_faces_stellarSubdivision_iff (hσne : σ.Nonempty) :
     (stellarSubdivision K σ v).faces.Finite ↔ K.faces.Finite := by
   refine ⟨fun hfin => ?_, finite_faces_stellarSubdivision⟩
-  have hσne := (K.isRelLowerSet_faces hσ).1
   have hW : ((σ : Set ι) ∪ {v} ∪ (fun c : ι => ({c} : Finset ι)) ⁻¹'
       (stellarSubdivision K σ v).faces).Finite :=
     (σ.finite_toSet.union (Set.finite_singleton v)).union
@@ -488,28 +487,31 @@ theorem link_stellarSubdivision_simplex_self (hv : v ∉ V) :
     closedStar_simplex Finset.Subset.rfl, deletion_simplex_self,
     inf_eq_right.mpr simplexBoundary_le_simplex]
 
+/-- Starring a simplex at its whole vertex set using one of its own vertices returns the simplex. -/
+theorem stellarSubdivision_simplex_self_of_mem (hV : V.Nonempty) (hv : v ∈ V) :
+    stellarSubdivision (simplex V) V v = simplex V := by
+  refine SetLike.ext fun τ => ?_
+  rw [mem_stellarSubdivision_iff, mem_simplex, mem_simplex]
+  constructor
+  · rintro (⟨-, hτ, -⟩ | ⟨hvτ, -, hne, hsub⟩)
+    · exact hτ
+    · refine ⟨⟨v, hvτ⟩, fun x hx => ?_⟩
+      by_cases hxv : x = v
+      · exact hxv ▸ hv
+      · exact hsub (Finset.mem_union_left _ (Finset.mem_erase.mpr ⟨hxv, hx⟩))
+  · rintro ⟨hne, hsub⟩
+    by_cases hvτ : v ∈ τ
+    · refine Or.inr ⟨hvτ, fun h => ?_, ?_, Finset.union_subset
+        ((Finset.erase_subset _ _).trans hsub) Finset.Subset.rfl⟩
+      · exact (Finset.notMem_erase v τ) (h hv)
+      · exact hV.mono Finset.subset_union_right
+    · exact Or.inl ⟨hvτ, ⟨hne, hsub⟩, fun h => hvτ (h hv)⟩
+
 /-- Starring a simplex at its whole vertex set leaves the dimension at `V.card - 1`. -/
 theorem dimension_stellarSubdivision_simplex_self (hV : V.Nonempty) :
     dimension (stellarSubdivision (simplex V) V v) = ((V.card - 1 : ℕ) : WithBot ℕ∞) := by
   by_cases hv : v ∈ V
-  · have heq : stellarSubdivision (simplex V) V v = simplex V := by
-      refine SetLike.ext fun τ => ?_
-      rw [mem_stellarSubdivision_iff, mem_simplex, mem_simplex]
-      constructor
-      · rintro (⟨-, hτ, -⟩ | ⟨hvτ, -, hne, hsub⟩)
-        · exact hτ
-        · refine ⟨⟨v, hvτ⟩, fun x hx => ?_⟩
-          by_cases hxv : x = v
-          · exact hxv ▸ hv
-          · exact hsub (Finset.mem_union_left _ (Finset.mem_erase.mpr ⟨hxv, hx⟩))
-      · rintro ⟨hne, hsub⟩
-        by_cases hvτ : v ∈ τ
-        · refine Or.inr ⟨hvτ, fun h => ?_, ?_, Finset.union_subset
-            ((Finset.erase_subset _ _).trans hsub) Finset.Subset.rfl⟩
-          · exact (Finset.notMem_erase v τ) (h hv)
-          · exact hV.mono Finset.subset_union_right
-        · exact Or.inl ⟨hvτ, ⟨hne, hsub⟩, fun h => hvτ (h hv)⟩
-    rw [heq, dimension_simplex hV]
+  · rw [stellarSubdivision_simplex_self_of_mem hV hv, dimension_simplex hV]
   · rw [dimension_stellarSubdivision (fun h => hv (singleton_mem_simplex.mp h))
       hV, dimension_simplex hV]
 
