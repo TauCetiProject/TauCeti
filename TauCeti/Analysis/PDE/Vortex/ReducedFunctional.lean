@@ -233,6 +233,12 @@ theorem sobolevReducedFunctional_eq_top {u : W1p (volume : Measure ℂ) ⊤ 2}
   rw [sobolevReducedFunctional_def, hinf, ENNReal.top_div_of_ne_top (by norm_num),
     EReal.coe_ennreal_top, EReal.coe_add_top]
 
+/-- Taubes's functional on `H¹(ℂ)` never takes the value `⊥`. -/
+theorem sobolevReducedFunctional_ne_bot (u : W1p (volume : Measure ℂ) ⊤ 2) :
+    sobolevReducedFunctional P u ≠ ⊥ := by
+  rw [sobolevReducedFunctional_def]
+  exact EReal.add_ne_bot_iff.2 ⟨EReal.coe_ne_bot _, EReal.coe_ennreal_ne_bot _⟩
+
 /-- Taubes's functional vanishes at `0`. -/
 @[simp]
 theorem sobolevReducedFunctional_zero : sobolevReducedFunctional P 0 = 0 := by

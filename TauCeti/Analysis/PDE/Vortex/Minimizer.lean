@@ -37,7 +37,8 @@ This file carries out the direct method of the calculus of variations:
   Hilbert space `H¹(ℂ)` are weakly compact.
 
 Since `I(0) = 0`, the minimum is at most `0`; in particular the potential of a minimizer is
-integrable. The Euler–Lagrange equation of the minimizer and its regularity are not treated here.
+integrable. The minimizer is a weak solution of the reduced equation by
+`TauCeti.Analysis.PDE.Vortex.EulerLagrange`; its regularity is not treated here.
 
 ## References
 
