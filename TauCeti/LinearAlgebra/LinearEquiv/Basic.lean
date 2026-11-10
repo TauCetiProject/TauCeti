@@ -33,7 +33,7 @@ theorem symm_eq_inv {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
 /-- The inverse of a linear equivalence with restricted scalars is the inverse with restricted
 scalars. -/
 @[simp]
-theorem restrictScalars_symm {R S M M₂ : Type*} [Semiring R] [Semiring S] [AddCommMonoid M]
+theorem symm_restrictScalars {R S M M₂ : Type*} [Semiring R] [Semiring S] [AddCommMonoid M]
     [AddCommMonoid M₂] [Module R M] [Module R M₂] [Module S M] [Module S M₂]
     [LinearMap.CompatibleSMul M M₂ R S] [LinearMap.CompatibleSMul M₂ M R S] (e : M ≃ₗ[S] M₂) :
     (e.restrictScalars R).symm = e.symm.restrictScalars R :=

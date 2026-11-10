@@ -440,7 +440,7 @@ element exactly when the element is complex positive. -/
 theorem isComplexPositive_detLineCongr_iff (e : E ≃ₗ[ℂ] F) {x : detLine ℝ E} :
     IsComplexPositive (LinearEquiv.detLineCongr (e.restrictScalars ℝ) x) ↔ IsComplexPositive x := by
   refine ⟨fun h ↦ ?_, fun h ↦ h.detLineCongr e⟩
-  simpa only [← LinearEquiv.restrictScalars_symm, ← LinearEquiv.detLineCongr_symm,
+  simpa only [← LinearEquiv.symm_restrictScalars, ← LinearEquiv.detLineCongr_symm,
     LinearEquiv.symm_apply_apply] using h.detLineCongr e.symm
 
 /-- Pulling a functional back along the isomorphism of real determinant lines induced by a
@@ -483,9 +483,9 @@ theorem isComplexPositiveTMulDual_congr_detLineCongr_iff (e₁ : E ≃ₗ[ℂ] E
         (LinearEquiv.detLineCongr (e₁.restrictScalars ℝ))
         (LinearEquiv.detLineCongr (e₂.symm.restrictScalars ℝ)).dualMap t) ↔
       IsComplexPositiveTMulDual t := by
-  rw [← LinearEquiv.restrictScalars_symm, ← LinearEquiv.detLineCongr_symm]
+  rw [← LinearEquiv.symm_restrictScalars, ← LinearEquiv.detLineCongr_symm]
   refine ⟨fun h ↦ ?_, fun h ↦ h.congr_detLineCongr e₁ e₂⟩
-  simpa only [← LinearEquiv.restrictScalars_symm, ← LinearEquiv.detLineCongr_symm,
+  simpa only [← LinearEquiv.symm_restrictScalars, ← LinearEquiv.detLineCongr_symm,
     ← LinearEquiv.dualMap_symm, ← TensorProduct.congr_symm, LinearEquiv.symm_apply_apply]
     using h.congr_detLineCongr e₁.symm e₂.symm
 
