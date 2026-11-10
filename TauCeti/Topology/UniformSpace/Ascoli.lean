@@ -27,11 +27,11 @@ public section
 
 open Filter Set Topology
 
-namespace TauCeti
+namespace EquicontinuousOn
 
 /-- A family equicontinuous on a compact set `K` and converging pointwise on `K` converges
 uniformly on `K`. -/
-theorem _root_.EquicontinuousOn.tendstoUniformlyOn_of_tendsto {ι X α : Type*}
+theorem tendstoUniformlyOn_of_tendsto {ι X α : Type*}
     [TopologicalSpace X] [UniformSpace α] {F : ι → X → α} {K : Set X}
     (hF : EquicontinuousOn F K) (hK : IsCompact K) {L : Filter ι} {f : X → α}
     (hFf : ∀ x ∈ K, Tendsto (fun i => F i x) L (𝓝 (f x))) : TendstoUniformlyOn F f L K := by
@@ -41,9 +41,13 @@ theorem _root_.EquicontinuousOn.tendstoUniformlyOn_of_tendsto {ι X α : Type*}
       exact tendsto_pi_nhds.2 fun x => hFf x x.2
   exact UniformOnFun.tendsto_iff_tendstoUniformlyOn.1 h K rfl
 
+end EquicontinuousOn
+
+namespace EquicontinuousWithinAt
+
 /-- Equicontinuity within `D` at a point `x` of the closure of `D` spreads total boundedness of
 the values from the points of `D` to `x`. -/
-theorem _root_.EquicontinuousWithinAt.totallyBounded_range_eval {ι X Y : Type*}
+theorem totallyBounded_range_eval {ι X Y : Type*}
     [TopologicalSpace X] [UniformSpace Y] {F : ι → X → Y} {D : Set X} {x : X}
     (hF : EquicontinuousWithinAt F D x) (hx : x ∈ closure D)
     (hFD : ∀ x ∈ D, TotallyBounded (range fun i ↦ F i x)) :
@@ -58,4 +62,4 @@ theorem _root_.EquicontinuousWithinAt.totallyBounded_range_eval {ι X Y : Type*}
   obtain ⟨y, hy, hiy⟩ := mem_iUnion₂.mp (hcover ⟨i, rfl⟩)
   exact mem_iUnion₂.mpr ⟨y, hy, hVU ⟨F i x', hx' i, hiy⟩⟩
 
-end TauCeti
+end EquicontinuousWithinAt
