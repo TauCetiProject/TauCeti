@@ -127,7 +127,7 @@ theorem volume_fd_lt_top : (volume : Measure ℍ) fd < ⊤ := by
         obtain ⟨τ, -, rfl⟩ := hz
         rw [← ENNReal.ofReal_coe_nnreal]
         congr 1
-        push_cast [Real.nnnorm_of_nonneg τ.im_pos.le]
+        push_cast [Real.nnNorm_of_nonneg τ.im_pos.le]
         rw [one_div, inv_pow, zpow_neg]
         norm_num
     _ ≤ ∫⁻ z in measurableEquivRealProd ⁻¹' T, ENNReal.ofReal (z.im ^ (-2 : ℤ)) :=

@@ -138,7 +138,7 @@ theorem integralENorm_smul (c : 𝕜) (B : E →L[𝕜] F →L[𝕜] 𝕜) :
 /-- Negation preserves the integral norm. -/
 @[simp]
 theorem integralENorm_neg (B : E →L[𝕜] F →L[𝕜] 𝕜) : (-B).integralENorm = B.integralENorm := by
-  rw [← neg_one_smul 𝕜 B, integralENorm_smul, enorm_neg, eNorm_one, one_mul]
+  rw [← neg_one_smul 𝕜 B, integralENorm_smul, eNorm_neg, eNorm_one, one_mul]
 
 /-- The integral norm is subadditive. -/
 theorem integralENorm_add_le (B B' : E →L[𝕜] F →L[𝕜] 𝕜) :
@@ -148,7 +148,7 @@ theorem integralENorm_add_le (B B' : E →L[𝕜] F →L[𝕜] 𝕜) :
     ← lift_eq_liftIsometry]
   calc
     _ ≤ (‖lift B.toLinearMap₁₂ u‖ₑ + ‖lift B'.toLinearMap₁₂ u‖ₑ) /
-        ENNReal.ofReal (injectiveSeminorm 𝕜 E F u) := by gcongr; exact enorm_add_le _ _
+        ENNReal.ofReal (injectiveSeminorm 𝕜 E F u) := by gcongr; exact eNorm_add_le _ _
     _ = _ := ENNReal.add_div
     _ ≤ _ := add_le_add (B.enorm_lift_div_le_integralENorm u) (B'.enorm_lift_div_le_integralENorm u)
 
@@ -415,7 +415,7 @@ theorem toContinuousLinearMap_smulRight (f : StrongDual 𝕜 E) (g : StrongDual 
 theorem norm_smulRight (f : StrongDual 𝕜 E) (g : StrongDual 𝕜 F) :
     ‖smulRight f g‖ = ‖f‖ * ‖g‖ := by
   rw [norm_def, toContinuousLinearMap_smulRight, ContinuousLinearMap.integralENorm_smulRight,
-    ENNReal.toReal_mul, toReal_enorm, toReal_enorm]
+    ENNReal.toReal_mul, toReal_eNorm, toReal_eNorm]
 
 end IntegralBilinearForm
 

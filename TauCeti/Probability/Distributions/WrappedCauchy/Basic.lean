@@ -88,7 +88,7 @@ circle of the Cauchy law with location `r` and the same scale. -/
 theorem wrappedCauchyMeasure_coe (r : ℝ) (γ : ℝ≥0) :
     wrappedCauchyMeasure r γ = (cauchyMeasure r γ).map ((↑) : ℝ → AddCircle (2 * π)) := by
   have h := cauchyMeasure_map_affine 0 γ r 1
-  simp only [one_mul, mul_zero, add_zero, nnnorm_one] at h
+  simp only [one_mul, mul_zero, add_zero, nnNorm_one] at h
   rw [← h, Measure.map_map (by fun_prop) (by fun_prop), wrappedCauchyMeasure_def]
   simp only [Function.comp_def, AddCircle.coe_add]
 
@@ -98,7 +98,7 @@ theorem wrappedCauchyMeasure_eq_map_cauchyMeasure_zero_one (m : AddCircle (2 * �
     wrappedCauchyMeasure m γ =
       (cauchyMeasure 0 1).map fun x : ℝ ↦ m + ((γ * x : ℝ) : AddCircle (2 * π)) := by
   have h := cauchyMeasure_map_affine 0 1 0 γ
-  simp only [zero_add, mul_zero, mul_one, NNReal.nnnorm_eq] at h
+  simp only [zero_add, mul_zero, mul_one, NNReal.nnNorm_eq] at h
   rw [wrappedCauchyMeasure_def, ← h, Measure.map_map (by fun_prop) (by fun_prop),
     Function.comp_def]
 

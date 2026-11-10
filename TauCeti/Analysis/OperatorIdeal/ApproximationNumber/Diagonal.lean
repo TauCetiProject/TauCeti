@@ -74,7 +74,7 @@ theorem tendsto_singularValue_diagonalCLM (d : ℓ^∞(ℕ, 𝕜))
     (hd : Antitone fun i ↦ ‖d i‖) (h0 : Tendsto (fun i ↦ ‖d i‖) atTop (𝓝 0)) :
     Tendsto (fun n ↦ (diagonalCLM (p := p) d).singularValue n) atTop (𝓝 0) := by
   simpa only [singularValue_diagonalCLM d hd, ← NNReal.tendsto_coe, NNReal.coe_zero,
-    coe_nnnorm] using h0
+    coe_nnNorm] using h0
 
 /-- For decreasing diagonal magnitudes, retaining the first `n` coordinates attains the
 approximation number at index `n`. -/

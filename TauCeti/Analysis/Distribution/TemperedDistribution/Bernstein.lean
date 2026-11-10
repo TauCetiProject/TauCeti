@@ -204,7 +204,7 @@ private theorem toReal_eLpNorm_fourierInv_derivSymbol_le {R : ℝ} (hR : 0 < R) 
             ≤ (‖m‖ₑ * eLpNorm (fderiv ℝ K) 1 volume).toReal :=
               ENNReal.toReal_mono (ENNReal.mul_ne_top eNorm_ne_top hfin) hderiv
           _ = ‖m‖ * (eLpNorm (fderiv ℝ K) 1 volume).toReal := by
-              rw [ENNReal.toReal_mul, toReal_enorm]
+              rw [ENNReal.toReal_mul, toReal_eNorm]
     _ = (eLpNorm (fderiv ℝ K) 1 volume).toReal * R * ‖m‖ := by ring
 
 /-- **Bernstein's inequality for one derivative.** An `Lᵖ` function whose Fourier transform

@@ -204,7 +204,7 @@ private theorem W1p.lintegral_mulGradient_sub_le (hp : (finrank ℝ E : ℝ≥0)
     rw [sub_smul, smul_sub]
     abel
   rw [hsplit]
-  refine (enorm_add_le _ _).trans (add_le_add ?_ ?_)
+  refine (eNorm_add_le _ _).trans (add_le_add ?_ ?_)
   · rw [eNorm_smul]
     gcongr
     exact W1p.enorm_testFunction_sub_morreyRepresentative_le hp phi a u hphi x

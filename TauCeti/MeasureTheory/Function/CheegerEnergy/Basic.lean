@@ -276,7 +276,7 @@ theorem cheegerEnergy_smul (c : ℝ) (f : Lp ℝ 2 m) :
         gcongr
     _ = cheegerEnergy m (c • f) := by
         rw [← mul_assoc, ← mul_pow, eNorm_inv hc,
-          ENNReal.mul_inv_cancel (enorm_ne_zero.2 hc) eNorm_ne_top, one_pow, one_mul]
+          ENNReal.mul_inv_cancel (eNorm_ne_zero.2 hc) eNorm_ne_top, one_pow, one_mul]
 
 /-- The Cheeger energy of `-f` is that of `f`. -/
 @[simp]

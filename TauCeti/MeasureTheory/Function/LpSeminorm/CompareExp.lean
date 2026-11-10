@@ -187,7 +187,7 @@ theorem eLpNorm_le_of_exponent_le
       (ENNReal.ofReal M)⁻¹ * eLpNorm f r μ := by
     intro r
     rw [eLpNorm_const_smul, eLpNorm_congr_eNorm_ae hf.norm hf
-      (Filter.Eventually.of_forall fun x => enorm_norm (f x)),
+      (Filter.Eventually.of_forall fun x => eNorm_norm (f x)),
       Real.eNorm_of_nonneg (by positivity), ENNReal.ofReal_inv_of_pos hM]
   have hscaled : eLpNorm (M⁻¹ • fun x => ‖f x‖) p μ ≤ 1 := by
     rw [hnorm]

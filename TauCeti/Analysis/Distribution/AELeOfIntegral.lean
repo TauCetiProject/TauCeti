@@ -273,7 +273,7 @@ theorem ae_enorm_le_of_forall_enorm_integral_apply_le {h : Ω → StrongDual ℝ
         rw [hφ, norm_smul, norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ (norm_ne_zero_iff.2 hw0),
           mul_one, Real.norm_of_nonneg (hψ0 x)]
         exact hψ1 x
-    rw [hint, eNorm_mul, eNorm_inv (by simpa using hw0), enorm_norm, Opens.coe_mk,
+    rw [hint, eNorm_mul, eNorm_inv (by simpa using hw0), eNorm_norm, Opens.coe_mk,
       preimage_image_eq W Subtype.val_injective] at hU
     calc ‖∫ x, ψ x * h x w ∂ρ‖ₑ
         = ‖w‖ₑ * (‖w‖ₑ⁻¹ * ‖∫ x, ψ x * h x w ∂ρ‖ₑ) := by
@@ -288,10 +288,10 @@ theorem ae_enorm_le_of_forall_enorm_integral_apply_le {h : Ω → StrongDual ℝ
     refine (denseRange_denseSeq F).induction_on w
       (isClosed_le (h x).continuous.norm (continuous_const.mul continuous_norm)) fun n => ?_
     have := hx n
-    rw [enorm_eq_nnnorm, enorm_eq_nnnorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] at this
+    rw [eNorm_eq_nnNorm, eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] at this
     rw [mul_comm]
     exact_mod_cast this
-  rw [enorm_eq_nnnorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnnorm]
+  rw [eNorm_eq_nnNorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe, coe_nnNorm]
   exact (h x).opNorm_le_bound q.2 hle
 
 end Dual
@@ -316,7 +316,7 @@ theorem ae_enorm_le_of_forall_enorm_integral_inner_le {h : Ω → F} (hh : Local
     locallyIntegrable_iff.2 fun K hK => (innerSL ℝ).integrable_comp (hh.integrableOn_isCompact hK)
   filter_upwards [ae_enorm_le_of_forall_enorm_integral_apply_le hh' hkm hk fun U hU φ hφU hφ => by
     simpa only [innerSL_apply_apply, real_inner_comm] using H U hU φ hφU hφ] with x hx
-  rwa [← enorm_norm, innerSL_apply_norm, enorm_norm] at hx
+  rwa [← eNorm_norm, innerSL_apply_norm, eNorm_norm] at hx
 
 end Inner
 

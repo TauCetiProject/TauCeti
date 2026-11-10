@@ -325,7 +325,7 @@ theorem tendsto_fourierMultiplierCLM_apply {ι : Type*} {l : Filter ι} [l.IsCou
   · filter_upwards [coeFn_lpSMul (r := 2) (m (s n)) (𝓕 f), coeFn_lpSMul (r := 2) m₀ (𝓕 f),
       hmb (m (s n)), hmb m₀] with ξ h₁ h₂ h₃ h₄
     rw [h₁, h₂, Pi.smul_apply', Pi.smul_apply', ← sub_smul, eNorm_smul, ENNReal.coe_add,
-      ← enorm_eq_nnnorm]
+      ← eNorm_eq_nnNorm]
     gcongr
     exact enorm_sub_le.trans (add_le_add (h₃.trans ((ofReal_norm (m (s n))).symm.trans_le
       (ENNReal.ofReal_le_ofReal hn))) h₄)

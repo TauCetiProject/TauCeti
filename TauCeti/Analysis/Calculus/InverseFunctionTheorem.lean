@@ -108,7 +108,7 @@ theorem isInvertible_of_mem_toOpenPartialHomeomorph_source
   refine ContinuousLinearMap.isInvertible_of_norm_sub_le_half L ?_
   have hbound := hf.approximatesLinearOn_toOpenPartialHomeomorph_source.norm_sub_le_of_hasFDerivAt
     ((hf.toOpenPartialHomeomorph f).open_source.mem_nhds hx) hA
-  rwa [← NNReal.coe_le_coe, coe_nnnorm]
+  rwa [← NNReal.coe_le_coe, coe_nnNorm]
 
 /-- **The local inverse of the inverse function theorem is `C^n` at every point of its target.**
 The original inverse-function hypotheses provide an invertible derivative only at the base point.

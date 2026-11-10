@@ -149,7 +149,7 @@ theorem W1p.integral_value_sq_le_of_eLpNorm_le {q : ℝ≥0∞} (hq : 2 ≤ q) {
       mu ((Omega : Set E) ∩ A) ^ β ≠ (∞ : ℝ≥0∞) :=
     ENNReal.mul_ne_top (by finiteness) (ENNReal.rpow_ne_top_of_nonneg hβ hAfin)
   have hreal := ENNReal.toReal_mono hfin hle
-  rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ← ENNReal.toReal_rpow, toReal_enorm,
+  rw [ENNReal.toReal_mul, ENNReal.toReal_mul, ← ENNReal.toReal_rpow, toReal_eNorm,
     ENNReal.coe_toReal, ← measureReal_def] at hreal
   rw [W1p.integral_value_sq_eq_norm_value_sq, Lp.norm_def]
   calc (eLpNorm (W1p.value v) 2 (mu.restrict Omega)).toReal ^ 2
@@ -332,7 +332,7 @@ theorem norm_testFunctionLp_le_mul_norm_gradientTestFunctionLp (hpstar : pstar �
     (W1p.ofTestFunctionₗ_mem_w1p0Submodule (mu := mu) (p := p) phi)
   rw [W1p.value_ofTestFunctionₗ, W1p.gradient_ofTestFunctionₗ,
     eLpNorm_congr_ae (testFunctionLp_apply_ae p phi)] at h
-  rw [Lp.norm_def, eLpNorm_congr_ae (testFunctionLp_apply_ae pstar phi), ← toReal_enorm]
+  rw [Lp.norm_def, eLpNorm_congr_ae (testFunctionLp_apply_ae pstar phi), ← toReal_eNorm]
   simpa using ENNReal.toReal_mono (by finiteness) h
 
 /-! ### Subcritical exponents on a bounded domain -/

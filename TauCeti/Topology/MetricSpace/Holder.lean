@@ -299,7 +299,7 @@ theorem IsCompact.exists_holderOnWith_thickening_and_norm_le {X Y : Type*} [Pseu
           exact (hL z (htK z hzt)).dist_le_mul_rpow_of_mem_ball hyz
       _ = ((‖f z‖₊ + L z * (r z).toNNReal ^ (α : ℝ) : ℝ≥0) : ℝ) := by
           rw [NNReal.coe_add, NNReal.coe_mul, NNReal.coe_rpow,
-            Real.coe_toNNReal _ (hr z (htK z hzt)).le, coe_nnnorm]
+            Real.coe_toNNReal _ (hr z (htK z hzt)).le, coe_nnNorm]
       _ ≤ M := by
           exact_mod_cast Finset.single_le_sum
             (f := fun z => ‖f z‖₊ + L z * (r z).toNNReal ^ (α : ℝ)) (fun _ _ => zero_le) hzt

@@ -234,7 +234,7 @@ theorem setLAverage_enorm_sub_setAverage_le_of_hormander_of_measure_closedBall_l
           refine lintegral_mono_ae ?_
           filter_upwards [ae_restrict_of_ae hTf, ha] with x h1 h2
           rw [h1, Pi.add_apply, add_sub_assoc]
-          exact (enorm_add_le _ _).trans (by gcongr)
+          exact (eNorm_add_le _ _).trans (by gcongr)
       _ = ∫⁻ x in closedBall c r, ‖T (f - f₂) x‖ₑ ∂μ + B * M * μ (closedBall c r) := by
           rw [lintegral_add_right _ measurable_const, setLIntegral_const]
       _ ≤ D ^ (2⁻¹ : ℝ) * ‖T‖ₑ * M * μ (closedBall c r) + B * M * μ (closedBall c r) := by

@@ -172,7 +172,7 @@ private theorem hasFPowerSeriesOnBall_logDeriv_of_zeroFree (f : ℂ⟦X⟧)
     intro w hw
     rw [Metric.mem_closedBall, dist_zero_right] at hw
     rw [Metric.mem_eball, edist_zero_right]
-    rw [enorm_eq_nnnorm]
+    rw [eNorm_eq_nnNorm]
     exact (ENNReal.coe_le_coe.mpr (by exact_mod_cast hw)).trans_lt hRr
   have hRseries := (hGa.differentiableOn.mono hclosed).hasFPowerSeriesOnBall hR0
   obtain ⟨r₀, hr₀⟩ := hTaylor

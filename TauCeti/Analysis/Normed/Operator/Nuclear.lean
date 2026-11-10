@@ -182,9 +182,9 @@ private theorem iInf_enorm_smul_le (c : 𝕜) (T : E →L[𝕜] F) :
     ⨅ (u) (_ : toContinuousLinearMap 𝕜 E F u = c • T), ‖u‖ₑ ≤
       ‖c‖ₑ * ⨅ (u) (_ : toContinuousLinearMap 𝕜 E F u = T), ‖u‖ₑ := by
   refine le_mul_iInf_enorm eNorm_ne_top (fun hc ↦ ?_) fun u hu ↦ ?_
-  · rw [enorm_eq_zero] at hc
+  · rw [eNorm_eq_zero] at hc
     subst hc
-    exact le_antisymm ((iInf₂_le 0 (by simp)).trans_eq enorm_zero) bot_le
+    exact le_antisymm ((iInf₂_le 0 (by simp)).trans_eq eNorm_zero) bot_le
   · exact (iInf₂_le (c • u) (by rw [map_smul, hu])).trans_eq (eNorm_smul c u)
 
 variable (𝕜 E F) in
@@ -196,7 +196,7 @@ approximation numbers. -/
 def nuclearGauge : OperatorGauge 𝕜 E F where
   toFun T := ⨅ (u) (_ : toContinuousLinearMap 𝕜 E F u = T), ‖u‖ₑ
   map_add_le' S T := ENNReal.le_iInf₂_add_iInf₂ fun u hu v hv ↦
-    (iInf₂_le (u + v) (by rw [map_add, hu, hv])).trans (enorm_add_le u v)
+    (iInf₂_le (u + v) (by rw [map_add, hu, hv])).trans (eNorm_add_le u v)
   map_smul' c T := by
     refine le_antisymm (iInf_enorm_smul_le c T) ?_
     rcases eq_or_ne c 0 with rfl | hc
@@ -206,7 +206,7 @@ def nuclearGauge : OperatorGauge 𝕜 E F where
         gcongr
         simpa [smul_smul, inv_mul_cancel₀ hc] using iInf_enorm_smul_le c⁻¹ (c • T)
       _ = _ := by rw [← mul_assoc, ← eNorm_mul, mul_inv_cancel₀ hc, eNorm_one, one_mul]
-  enorm_le' T := le_iInf₂ fun u hu ↦ hu ▸ enorm_le_iff_norm_le.2
+  enorm_le' T := le_iInf₂ fun u hu ↦ hu ▸ eNorm_le_iff_norm_le.2
     (((toContinuousLinearMap 𝕜 E F).le_of_opNorm_le norm_toContinuousLinearMap_le u).trans_eq
       (one_mul _))
 
@@ -315,7 +315,7 @@ theorem nuclearGauge_smulRight (f : StrongDual 𝕜 E) (y : F) :
     rw [← ofReal_norm, ← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_mul (norm_nonneg _),
       Completion.norm_coe, ProjectiveTensor.norm_def]
     exact ENNReal.ofReal_le_ofReal (TensorProduct.projectiveSeminorm_tmul_le f y)
-  · simpa [enorm_eq_nnnorm] using (nuclearGauge 𝕜 E F).enorm_le (f.smulRight y)
+  · simpa [eNorm_eq_nnNorm] using (nuclearGauge 𝕜 E F).enorm_le (f.smulRight y)
 
 /-! ### Series representations -/
 
@@ -482,7 +482,7 @@ theorem toContinuousLinearMap_smulRight (f : StrongDual 𝕜 E) (y : F) :
 @[simp]
 theorem norm_smulRight (f : StrongDual 𝕜 E) (y : F) : ‖smulRight f y‖ = ‖f‖ * ‖y‖ := by
   rw [OperatorGauge.Carrier.norm_def, toContinuousLinearMap_smulRight, nuclearGauge_smulRight,
-    ENNReal.toReal_mul, toReal_enorm, toReal_enorm]
+    ENNReal.toReal_mul, toReal_eNorm, toReal_eNorm]
 
 end NuclearOperator
 

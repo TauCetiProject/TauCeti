@@ -7,7 +7,7 @@ module
 
 public import Mathlib.AlgebraicGeometry.AlgebraicCycle.Basic
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
-public import Mathlib.AlgebraicGeometry.OrderOfVanishing
+public import Mathlib.AlgebraicGeometry.OrderOfVanishing.Basic
 public import TauCeti.AlgebraicGeometry.AlgebraicCycle.Basic
 public import TauCeti.AlgebraicGeometry.AlgebraicCycle.Principal
 public import TauCeti.Topology.LocallyFinsupp.LocallyFiniteSum

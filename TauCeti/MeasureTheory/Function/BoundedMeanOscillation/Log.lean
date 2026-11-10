@@ -114,7 +114,7 @@ theorem setLIntegral_enorm_log_norm_sub_log_le [Nontrivial E] {R : ℝ} (hR : 0 
     have hpos : 0 < ‖y‖ := norm_pos_iff.2 (by simpa using hy0)
     have hle : 0 ≤ g y := sub_nonneg.2 (Real.log_le_log hpos (mem_ball_zero_iff.1 hy).le)
     refine ⟨hle, ?_⟩
-    rw [← enorm_neg, neg_sub, Real.eNorm_eq_ofReal hle]
+    rw [← eNorm_neg, neg_sub, Real.eNorm_eq_ofReal hle]
   have hmeas : AEMeasurable g (μ.restrict (ball 0 R)) :=
     (measurable_const.sub (Real.measurable_log.comp measurable_norm)).aemeasurable
   rw [lintegral_congr_ae (hg0.mono fun _ hy => hy.2),

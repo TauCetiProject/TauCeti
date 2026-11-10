@@ -84,7 +84,7 @@ theorem ae_lintegral_enorm_adjoint_le {X Y : Type*} [MeasurableSpace X] [Measura
     {μX : Measure X} {μY : Measure Y} {k : X → Y → F →L[𝕜] G} {C : ℝ≥0∞}
     (h : ∀ᵐ x ∂μX, ∫⁻ y, ‖k x y‖ₑ ∂μY ≤ C) :
     ∀ᵐ x ∂μX, ∫⁻ y, ‖adjoint (k x y)‖ₑ ∂μY ≤ C := by
-  simpa only [enorm_eq_nnnorm, LinearIsometryEquiv.nnnorm_map] using h
+  simpa only [eNorm_eq_nnNorm, LinearIsometryEquiv.nnNorm_map] using h
 
 end AdjointKernel
 
@@ -247,7 +247,7 @@ private theorem integral_adjoint_comp_apply_of_lt_top {z : γ} {u : β → F}
     simp_rw [← mul_assoc] at hy
     rw [lintegral_mul_const' _ _ eNorm_ne_top] at hy
     exact (ENNReal.mul_lt_top_iff.1 hy).elim And.left fun h ↦ h.elim (fun h ↦ h ▸ by simp)
-      fun h ↦ absurd (enorm_eq_zero.1 h) huy
+      fun h ↦ absurd (eNorm_eq_zero.1 h) huy
   calc ∫ y, (∫ x, adjoint (K₂ x z) ∘L K₁ x y ∂μ) (u y) ∂ν
       = ∫ y, ∫ x, adjoint (K₂ x z) (K₁ x y (u y)) ∂μ ∂ν := by
         refine integral_congr_ae ?_

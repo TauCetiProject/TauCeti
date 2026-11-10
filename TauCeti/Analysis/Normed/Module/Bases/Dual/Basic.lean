@@ -59,7 +59,7 @@ theorem mem_closure_span_coord_iff (f : StrongDual 𝕜 E) :
       refine ⟨b.nnnormProjBound, fun n g ↦ ?_⟩
       exact (ContinuousLinearMap.opNorm_comp_le g (b.proj n)).trans
         (by simpa [mul_comm] using
-          mul_le_mul_of_nonneg_left (b.norm_proj_le_nnnormProjBound n) (norm_nonneg g))
+          mul_le_mul_of_nonneg_left (b.norm_proj_le_nnNormProjBound n) (norm_nonneg g))
     have hclosed : IsClosed {g : StrongDual 𝕜 E |
         Tendsto (fun n ↦ g.comp (b.proj n)) atTop (𝓝 g)} :=
       heq.isClosed_setOfPred_tendsto continuous_id

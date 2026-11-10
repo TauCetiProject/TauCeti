@@ -168,7 +168,7 @@ theorem exists_dual_norm_le_of_abs_integral_lineDeriv_mul_le_eLpNorm {q : ℝ≥
   let T := testFunctionLpₗ mu Omega q
   have hnorm (phi : 𝓓(Omega, ℝ)) :
       ‖T phi‖ = (eLpNorm (phi : E → ℝ) q mu).toReal := by
-    rw [testFunctionLpₗ_apply, ← toReal_enorm]
+    rw [testFunctionLpₗ_apply, ← toReal_eNorm]
     exact congrArg ENNReal.toReal (enorm_testFunctionLp_eq_eLpNorm q phi)
   have hker : LinearMap.ker T.rangeRestrict ≤ LinearMap.ker ℓ.toLinearMap := by
     rw [LinearMap.ker_rangeRestrict]
@@ -264,7 +264,7 @@ theorem _root_.ContDiffOn.enorm_integral_lineDeriv_smul_le {u : E → F}
   have hw : HasWeakFDerivOn mu Omega u (fderiv ℝ u) := hasWeakFDerivOn_of_differentiableOn
     (hD.locallyIntegrableOn Omega.isOpen.measurableSet) (fun x hx =>
       (hu.differentiableOn one_ne_zero x hx).differentiableAt (Omega.isOpen.mem_nhds hx))
-  rw [(hw.hasWeakLineDerivOn v).integral_lineDeriv_smul_eq_neg_integral_smul phi, enorm_neg,
+  rw [(hw.hasWeakLineDerivOn v).integral_lineDeriv_smul_eq_neg_integral_smul phi, eNorm_neg,
     ← setIntegral_smul_eq_integral_smul phi]
   have hmeas : AEStronglyMeasurable (fun x => fderiv ℝ u x v) (mu.restrict Omega) :=
     (hD.clm_apply continuousOn_const).aestronglyMeasurable Omega.isOpen.measurableSet

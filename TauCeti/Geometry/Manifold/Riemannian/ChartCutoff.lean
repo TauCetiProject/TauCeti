@@ -198,7 +198,7 @@ theorem eLpNorm_fderiv_mul_comp_extChartAt_symm_le [LindelofSpace M] {c : M}
   have hw := b.contDiff_mul_comp_extChartAt_symm (hbr.trans hrt) hu
   have hgrad := lintegral_rpow_enorm_le_rpow_eLpNorm (μ := riemannianVolume I M) hp0
     fun x ↦ ‖mgradient I u x‖
-  simp only [enorm_norm] at hgrad
+  simp only [eNorm_norm] at hgrad
   rw [← ENNReal.rpow_le_rpow_iff hpR,
     eLpNorm_nnreal_pow_eq_lintegral hp0 (hw.continuous_fderiv one_ne_zero).aestronglyMeasurable]
   calc _ ≤ 2 ^ ((p : ℝ) - 1) * ENNReal.ofReal m⁻¹ *

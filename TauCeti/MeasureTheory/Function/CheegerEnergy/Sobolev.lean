@@ -114,7 +114,7 @@ private theorem convexOn_normSq : ConvexOn ℝ univ (normSq (m := m)) :=
 private theorem normSq_smul (c : ℝ) (f : CheegerSobolevSpace m) :
     normSq (c • f) = c ^ 2 * normSq f := by
   simp only [normSq, map_smul, norm_smul, cheegerEnergy_smul, ENNReal.toReal_mul,
-    ENNReal.toReal_pow, toReal_enorm, mul_pow, Real.norm_eq_abs, sq_abs]
+    ENNReal.toReal_pow, toReal_eNorm, mul_pow, Real.norm_eq_abs, sq_abs]
   ring
 
 instance : Norm (CheegerSobolevSpace m) :=
@@ -185,7 +185,7 @@ theorem enorm_sq (f : CheegerSobolevSpace m) :
       ENNReal.mul_ne_top (by norm_num) f.cheegerEnergy_ne_top⟩)).1
   rw [ENNReal.toReal_add (by finiteness)
     (ENNReal.mul_ne_top (by norm_num) f.cheegerEnergy_ne_top)]
-  simp only [ENNReal.toReal_pow, toReal_enorm, ENNReal.toReal_mul, ENNReal.toReal_ofNat, norm_sq]
+  simp only [ENNReal.toReal_pow, toReal_eNorm, ENNReal.toReal_mul, ENNReal.toReal_ofNat, norm_sq]
 
 omit [OpensMeasurableSpace X] in
 private theorem lowerSemicontinuous_enorm_sq_add_cheegerEnergy :

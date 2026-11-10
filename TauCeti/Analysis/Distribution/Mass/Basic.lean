@@ -129,7 +129,7 @@ theorem mass_zero : mass (0 : 𝓓^{n}(Ω, F) → V) = 0 := by
   simp [mass]
 
 theorem localMass_add_le : localMass (f + g) U ≤ localMass f U + localMass g U :=
-  localMass_le_iff.2 fun _ hφU hφ => (enorm_add_le _ _).trans <|
+  localMass_le_iff.2 fun _ hφU hφ => (eNorm_add_le _ _).trans <|
     add_le_add (enorm_le_localMass hφU hφ) (enorm_le_localMass hφU hφ)
 
 theorem mass_add_le : mass (f + g) ≤ mass f + mass g := by
@@ -145,7 +145,7 @@ theorem mass_smul [NormedSpace ℝ V] (a : ℝ) : mass (a • f) = ‖a‖ₑ * 
 
 @[simp]
 theorem localMass_neg : localMass (-f) U = localMass f U := by
-  simp only [localMass, Pi.neg_apply, enorm_neg]
+  simp only [localMass, Pi.neg_apply, eNorm_neg]
 
 @[simp]
 theorem mass_neg : mass (-f) = mass f := by

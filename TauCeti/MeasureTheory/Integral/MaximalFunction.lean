@@ -283,7 +283,7 @@ theorem maximalFunction_add_le (hf : AEMeasurable (fun y => ‖f y‖ₑ) μ) (x
   refine maximalFunction_le fun r hr => ?_
   calc ⨍⁻ y in ball x r, ‖(f + g) y‖ₑ ∂μ
       ≤ ⨍⁻ y in ball x r, (‖f y‖ₑ + ‖g y‖ₑ) ∂μ :=
-        setLAverage_mono_ae _ (.of_forall fun y => enorm_add_le (f y) (g y))
+        setLAverage_mono_ae _ (.of_forall fun y => eNorm_add_le (f y) (g y))
     _ = ⨍⁻ y in ball x r, ‖f y‖ₑ ∂μ + ⨍⁻ y in ball x r, ‖g y‖ₑ ∂μ := by
         rw [setLAverage_eq, setLAverage_eq, setLAverage_eq, lintegral_add_left' hf.restrict,
           ENNReal.add_div]

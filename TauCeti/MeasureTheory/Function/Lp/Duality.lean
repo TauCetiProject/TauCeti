@@ -383,7 +383,7 @@ noncomputable def toDual [SigmaFinite μ] : Lp 𝕜 q μ →ₗᵢ[𝕜] StrongD
   norm_map' g := by
     set Λ := (ContinuousLinearMap.mul 𝕜 𝕜).lpPairing μ q q' g
     -- Both norms are the real parts of the extended norms, so it suffices to compare those.
-    rw [ContinuousLinearMap.coe_coe, ← toReal_enorm, ← toReal_enorm]
+    rw [ContinuousLinearMap.coe_coe, ← toReal_eNorm, ← toReal_eNorm]
     congr 1
     -- Hölder's inequality gives `‖Λ‖ ≤ ‖g‖_q`; testing `Λ` on simple functions gives the converse.
     refine le_antisymm (Λ.opENorm_le_bound fun f => ?_) ?_

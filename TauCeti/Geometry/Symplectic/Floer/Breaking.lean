@@ -451,7 +451,7 @@ private theorem sub_sub_integral_eq_zero_of_tendstoLocallyUniformlyOn_comp_add
       rwa [preimage_add_const_Icc, add_sub_cancel_right, add_sub_cancel_right] at hT
     · exact eventually_ae_enorm_sub_sub_integral_le_add hΦ ht₁ ht ht₂ hUC hΦUC hFc hvK hstat ε hε
   rw [setLIntegral_const, Real.volume_Icc, sub_zero, ENNReal.ofReal_one, mul_one] at hzero
-  exact enorm_eq_zero.1 hzero
+  exact eNorm_eq_zero.1 hzero
 
 /-- **The limit of translated Floer cylinders is a Hamiltonian orbit.** Under the hypotheses of
 `TauCeti.SymplecticForm.eq_of_tendstoLocallyUniformlyOn_comp_add`, and for a jointly `C¹`

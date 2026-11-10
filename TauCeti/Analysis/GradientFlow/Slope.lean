@@ -299,7 +299,7 @@ is `|D|`. -/
 theorem _root_.HasDerivAt.descendingSlope_eq {g : ℝ → ℝ} {D t : ℝ} (hg : HasDerivAt g D t) :
     descendingSlope (fun u ↦ (g u : EReal)) t = ‖D‖ₑ := by
   rw [hg.hasFDerivAt.descendingSlope_eq]
-  simp only [enorm_eq_nnnorm, ContinuousLinearMap.nnnorm_toSpanSingleton]
+  simp only [eNorm_eq_nnNorm, ContinuousLinearMap.nnNorm_toSpanSingleton]
 
 end NormedSpace
 

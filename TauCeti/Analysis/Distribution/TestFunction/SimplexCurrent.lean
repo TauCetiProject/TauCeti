@@ -197,7 +197,7 @@ theorem isNormal_simplexCurrent (p : ℕ) (Ω : Opens (EuclideanSpace ℝ (Fin p
     rw [FunLike.coe_smul, mass_smul, ContinuousLinearMap.coe_comp]
     refine ENNReal.mul_ne_top eNorm_ne_top (ne_top_of_le_ne_top ?_
       (mass_comp_pullbackCLM_le _ (L := ‖(simplexMapAmbient (m := p) i.succAbove).contLinear‖₊)
-        fun x _ ↦ by rw [ContinuousAffineMap.fderiv, coe_nnnorm]))
+        fun x _ ↦ by rw [ContinuousAffineMap.fderiv, coe_nnNorm]))
     exact ENNReal.mul_ne_top (ENNReal.pow_ne_top ENNReal.coe_ne_top) (hT p ⊤)
 
 end TauCeti

@@ -42,7 +42,7 @@ variable (𝕜 : Type u) [RCLike 𝕜]
 /-- The operator-ideal family whose gauge is the extended operator norm. -/
 def opNorm : OperatorIdealFamily.{u, v, w} 𝕜 where
   gauge A := ‖A‖ₑ
-  gauge_add_le A B := enorm_add_le A B
+  gauge_add_le A B := eNorm_add_le A B
   gauge_smul c A := eNorm_smul c A
   enorm_le_gauge _ := le_rfl
   gauge_comp_le L A R := by

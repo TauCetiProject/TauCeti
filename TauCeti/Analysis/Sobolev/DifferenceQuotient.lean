@@ -188,10 +188,10 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_frequently_eLpNorm_inv_mul_sub_le {
       _ ≤ eLpNorm D 2 (μ.restrict S) * eLpNorm (φ : E → ℝ) 2 (μ.restrict S) := by
           simpa using eLpNorm_le_eLpNorm_mul_eLpNorm (p := 2) (q := 2) (r := 1)
             (· * ·) 1 continuous_mul hDmeas.restrict φ.aestronglyMeasurable
-            (Eventually.of_forall fun _ => by simp [nnnorm_mul])
+            (Eventually.of_forall fun _ => by simp [nnNorm_mul])
       _ ≤ ENNReal.ofReal C * eLpNorm (φ : E → ℝ) 2 μ :=
           mul_le_mul' hDbound (eLpNorm_restrict_le _ _ _ _)
-  rw [hint, ← Real.norm_eq_abs, ← toReal_enorm, ← ENNReal.toReal_ofReal hC, ← ENNReal.toReal_mul]
+  rw [hint, ← Real.norm_eq_abs, ← toReal_eNorm, ← ENNReal.toReal_ofReal hC, ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
     (φ.continuous.memLp_of_hasCompactSupport φ.hasCompactSupport).eLpNorm_ne_top) hHolder
 

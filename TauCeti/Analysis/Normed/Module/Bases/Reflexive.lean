@@ -162,7 +162,7 @@ theorem surjective_inclusionInDoubleDual_of_isShrinking_of_isBoundedlyComplete
       _ ≤ ‖Φ‖ * (‖f‖ * b.nnnormProjBound) :=
         mul_le_mul_of_nonneg_left
           ((ContinuousLinearMap.opNorm_comp_le _ _).trans
-            (mul_le_mul_of_nonneg_left (b.norm_proj_le_nnnormProjBound n) (norm_nonneg f)))
+            (mul_le_mul_of_nonneg_left (b.norm_proj_le_nnNormProjBound n) (norm_nonneg f)))
           (norm_nonneg Φ)
       _ = (‖Φ‖ * b.nnnormProjBound) * ‖f‖ := by ring
   obtain ⟨x, hx⟩ := b.isBoundedlyComplete_iff.1 hc _ hbound

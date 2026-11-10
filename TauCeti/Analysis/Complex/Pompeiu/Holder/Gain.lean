@@ -418,7 +418,7 @@ theorem exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
       _ = _ := by push_cast; ring
   · rw [hDT x (hsub hx)]
     rw [← NNReal.coe_add, ← NNReal.coe_mul, hconst]
-    simp only [NNReal.coe_mul, coe_nnnorm]
+    simp only [NNReal.coe_mul, coe_nnNorm]
     exact (L.opNorm_comp_le _).trans (mul_le_mul_of_nonneg_left
       (ContinuousLinearMap.norm_pi_le_of_le (fun i ↦ (hS i).2.2.1 x hx) (by positivity))
       (norm_nonneg _))

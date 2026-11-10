@@ -72,7 +72,7 @@ theorem enorm_integral_apply_le_setLIntegral_enorm [OpensMeasurableSpace E] (φ 
   rw [← lintegral_indicator Ω.isOpen.measurableSet]
   refine (eNorm_integral_le_lintegral_eNorm _).trans (lintegral_mono fun x => ?_)
   by_cases hx : x ∈ (Ω : Set E)
-  · rw [Set.indicator_of_mem hx, enorm_le_iff_norm_le]
+  · rw [Set.indicator_of_mem hx, eNorm_le_iff_norm_le]
     exact ((G x).le_opNorm (φ x)).trans (mul_le_of_le_one_right (norm_nonneg _) (hφ x))
   · simp [image_eq_zero_of_notMem_tsupport fun hmem => hx (φ.tsupport_subset hmem)]
 

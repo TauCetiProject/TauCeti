@@ -120,7 +120,7 @@ theorem HasWeakFDerivOn.ae_norm_smul_polarDensity_eq [μ.IsAddHaarMeasure] {g : 
       -∫ x, ⟪φ x, τ x⟫ ∂variationMeasure μ Ω u := by
     rw [hvar, integral_withDensity_eq_integral_toReal_smul₀ hgm.enorm
       (ae_of_all _ fun _ => eNorm_lt_top)]
-    simp_rw [toReal_enorm, smul_eq_mul, ← real_inner_smul_right, hτ]
+    simp_rw [toReal_eNorm, smul_eq_mul, ← real_inner_smul_right, hτ]
     have hsub : ∫ x : Ω, ⟪(φ : E → E) x, g x⟫ ∂ν = ∫ x in Ω, ⟪(φ : E → E) x, g x⟫ ∂μ :=
       integral_subtype_comap hΩ fun x => ⟪(φ : E → E) x, g x⟫
     rw [hsub, setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by

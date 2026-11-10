@@ -100,7 +100,7 @@ private theorem lipschitzOnWith_straighten (hf : ApproximatesLinearOn f L s δ) 
   refine lipschitzOnWith_iff_restrict.2
     ((approximatesLinearOn_straighten hf).lipschitzWith.weaken ?_)
   gcongr
-  rw [ContinuousLinearEquiv.coe_refl, ← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one]
+  rw [ContinuousLinearEquiv.coe_refl, ← NNReal.coe_le_coe, coe_nnNorm, NNReal.coe_one]
   exact ContinuousLinearMap.norm_id_le
 
 /-- If `δ ‖M‖ < 1`, then the map `x ↦ x + M (f x - L x)` expands distances on `s` by at least the

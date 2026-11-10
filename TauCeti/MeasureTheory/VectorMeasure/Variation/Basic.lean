@@ -36,7 +36,7 @@ theorem variation_mapRangeL_le (φ : F →L[𝕜] F') (μ : VectorMeasure X F) :
   refine variation_le_of_forall_eNorm_le fun s _ => ?_
   rw [mapRangeL_apply, _root_.smul_apply, ENNReal.smul_def, smul_eq_mul]
   refine (φ.le_opENorm _).trans ?_
-  rw [enorm_eq_nnnorm φ]
+  rw [eNorm_eq_nnNorm φ]
   gcongr
   exact eNorm_measure_le_variation μ s
 

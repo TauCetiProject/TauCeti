@@ -129,7 +129,7 @@ theorem rpow_hilbertSchmidtEnergy_add_le (S T : E →L[𝕜] F) (b : HilbertBasi
   simp only [ENNReal.rpow_two] at h
   refine le_trans ?_ h
   gcongr
-  exact _root_.tsum_le_tsum fun i ↦ by gcongr; exact enorm_add_le _ _
+  exact _root_.tsum_le_tsum fun i ↦ by gcongr; exact eNorm_add_le _ _
 
 section Complete
 
@@ -269,7 +269,7 @@ theorem hilbertSchmidtNorm_add_le (S T : E →L[𝕜] F) (b : HilbertBasis ι �
 theorem norm_le_hilbertSchmidtNorm (T : E →L[𝕜] F) (b : HilbertBasis ι 𝕜 E)
     (h : T.hilbertSchmidtEnergy b ≠ ∞) : ‖T‖ ≤ T.hilbertSchmidtNorm := by
   rw [← pow_le_pow_iff_left₀ (norm_nonneg T) T.hilbertSchmidtNorm_nonneg two_ne_zero,
-    T.sq_hilbertSchmidtNorm b, ← toReal_enorm, ← ENNReal.toReal_pow]
+    T.sq_hilbertSchmidtNorm b, ← toReal_eNorm, ← ENNReal.toReal_pow]
   exact ENNReal.toReal_mono h (T.enorm_sq_le_hilbertSchmidtEnergy b)
 
 /-- **Adjoint invariance of the Hilbert–Schmidt norm.** `‖T†‖_HS = ‖T‖_HS`. -/

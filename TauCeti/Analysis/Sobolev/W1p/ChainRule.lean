@@ -217,7 +217,7 @@ private theorem hasWeakFDerivOn_comp_aux (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F
     HasWeakFDerivOn mu V (fun x => F (W1p.value u x))
       fun x => innerSL ℝ (deriv F (W1p.value u x) • W1p.gradient u x) := by
   have hlip : LipschitzWith M F :=
-    lipschitzWith_of_nnnorm_deriv_le (hF.differentiable one_ne_zero) hM
+    lipschitzWith_of_nnNorm_deriv_le (hF.differentiable one_ne_zero) hM
   have hcont : Continuous (deriv F) := (contDiff_one_iff_deriv.mp hF).2
   have hVΩ : V ≤ Omega := SetLike.coe_subset_coe.mp (subset_closure.trans hVO)
   have : IsFiniteMeasure (mu.restrict (V : Set E)) := isFiniteMeasure_restrict.2
@@ -281,7 +281,7 @@ vanishing at `0`.**  Its value and weak gradient are `F ∘ u` and `F'(u) ∇u`,
 def W1p.contDiffComp (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F) (hM : ∀ t, ‖deriv F t‖₊ ≤ M)
     (hF0 : F 0 = 0) (u : W1p mu Omega p) : W1p mu Omega p :=
   W1p.mk
-    ((memLp_comp_value (lipschitzWith_of_nnnorm_deriv_le (hF.differentiable one_ne_zero) hM)
+    ((memLp_comp_value (lipschitzWith_of_nnNorm_deriv_le (hF.differentiable one_ne_zero) hM)
       hF0 u).toLp _)
     ((memLp_deriv_smul_gradient hF hM u).toLp _)
     (((W1p.hasWeakFDerivOn_comp hp hF hM u).congr_ae
@@ -362,7 +362,7 @@ private theorem exists_nnnorm_deriv_positiveCutoff_le (hab : a < b) (hδa : δ <
     (hcont.continuousOn (s := Icc a ε))
   have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC ε ⟨by linarith, le_rfl⟩)
   refine ⟨(max C M).toNNReal, fun t => ?_⟩
-  rw [← NNReal.coe_le_coe, coe_nnnorm, Real.coe_toNNReal _ (hC0.trans (le_max_left _ _))]
+  rw [← NNReal.coe_le_coe, coe_nnNorm, Real.coe_toNNReal _ (hC0.trans (le_max_left _ _))]
   rcases lt_or_ge t a with ht | ht
   · -- The function vanishes near `t`, so its derivative there is `0`.
     have h0 : deriv (positiveCutoff φ a b) t = 0 := by
@@ -484,7 +484,7 @@ private theorem contDiff_posPartApprox (delta : ℝ) : ContDiff ℝ 1 (posPartAp
 
 private theorem nnnorm_deriv_posPartApprox_le (delta t : ℝ) :
     ‖deriv (posPartApprox delta) t‖₊ ≤ 1 := by
-  rw [deriv_posPartApprox, ← NNReal.coe_le_coe, coe_nnnorm,
+  rw [deriv_posPartApprox, ← NNReal.coe_le_coe, coe_nnNorm,
     Real.norm_of_nonneg (Real.smoothTransition.nonneg _)]
   simpa using Real.smoothTransition.le_one (t / delta)
 

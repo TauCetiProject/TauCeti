@@ -1132,7 +1132,7 @@ private theorem toReal_eLpNormEssSup_le_and_ae_le {w : EuclideanSpace ℝ ι →
       hρR).mono fun x hx => by rwa [Real.norm_of_nonneg (hw0 x)])
   refine ⟨ENNReal.toReal_le_of_le_ofReal hb h1, ?_⟩
   filter_upwards [ae_le_eLpNormEssSup (f := w) (μ := mu.restrict (Metric.ball x₀ r))] with x hx
-  calc w x = ‖w x‖ₑ.toReal := by rw [toReal_enorm, Real.norm_of_nonneg (hw0 x)]
+  calc w x = ‖w x‖ₑ.toReal := by rw [toReal_eNorm, Real.norm_of_nonneg (hw0 x)]
     _ ≤ _ := ENNReal.toReal_mono (ne_top_of_le_ne_top ENNReal.ofReal_ne_top h1) hx
 
 /-- **The absorption step.** In the setting of `ae_le_mul_sub_rpow_mul_sqrt_setIntegral`, let

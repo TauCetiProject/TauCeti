@@ -201,6 +201,6 @@ theorem _root_.UpperHalfPlane.riemannianVolume_eq_volume :
   congr 1
   rw [← ENNReal.ofReal_coe_nnreal]
   congr 1
-  simp [Real.nnnorm_of_nonneg z.im_pos.le]
+  simp [Real.nnNorm_of_nonneg z.im_pos.le]
 
 end TauCeti.UpperHalfPlane

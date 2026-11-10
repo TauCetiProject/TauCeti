@@ -378,7 +378,7 @@ theorem mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le [Nonempty ι]
   rcases eq_or_ne T 0 with rfl | hT0
   · simp
   rcases eq_or_ne (∫⁻ x, ‖f x‖ₑ) ∞ with hI | hI
-  · have hT0' : ‖T‖ₑ ≠ 0 := by simpa [enorm_eq_nnnorm] using hT0
+  · have hT0' : ‖T‖ₑ ≠ 0 := by simpa [eNorm_eq_nnNorm] using hT0
     rw [hI, ENNReal.mul_top (by simp [hT0'])]
     exact le_top
   rcases eq_or_ne t 0 with rfl | ht
@@ -407,7 +407,7 @@ theorem mul_volume_lt_enorm_le_of_setLIntegral_compl_closedBall_le [Nonempty ι]
     obtain ⟨⟨hgx, hxΩ⟩, hbx⟩ := hnot
     refine (hxt.trans_le ?_).false
     rw [hfgb, map_add, hx, Pi.add_apply, ← ENNReal.add_halves t]
-    exact (enorm_add_le _ _).trans (add_le_add hgx (not_lt.1 fun h => hxΩ (hbx h)))
+    exact (eNorm_add_le _ _).trans (add_le_add hgx (not_lt.1 fun h => hxΩ (hbx h)))
   calc t * volume {x | t < ‖T f x‖ₑ}
       ≤ t * volume {x | t / 2 < ‖T g x‖ₑ} + t * volume Ω +
           t * volume ({x | t / 2 < ‖T b x‖ₑ} ∩ Ωᶜ) := by

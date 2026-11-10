@@ -169,7 +169,7 @@ private theorem norm_tsum_smul_coord_smul_le (a : ℓ^∞(β, 𝕜)) (x : X) :
   refine le_of_tendsto' (b.summable_smul_coord_smul a x).hasSum.norm fun A ↦ ?_
   calc
     ‖∑ i ∈ A, a i • b.coord i x • b i‖ ≤ 4 * ‖a‖ * b.nnnormProjBound * ‖x‖ :=
-      b.norm_sum_smul_coord_smul_le b.norm_proj_le_nnnormProjBound A (norm_nonneg a)
+      b.norm_sum_smul_coord_smul_le b.norm_proj_le_nnNormProjBound A (norm_nonneg a)
         (fun i _ ↦ lp.norm_apply_le_norm ENNReal.top_ne_zero a i) x
     _ = 4 * b.nnnormProjBound * ‖a‖ * ‖x‖ := by ring
 

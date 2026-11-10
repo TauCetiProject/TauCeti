@@ -296,7 +296,7 @@ theorem mul_meas_ofReal_lt_le_setLIntegral
     filter_upwards [hvg] with x hx
     rw [hg₂def]
     by_cases hxS : x ∈ S
-    · rw [Set.indicator_of_notMem (by simp [hxS]), enorm_zero]
+    · rw [Set.indicator_of_notMem (by simp [hxS]), eNorm_zero]
       exact zero_le
     · rw [Set.indicator_of_mem (by simp [hxS]), hx]
       exact not_lt.1 (by simpa [hSdef] using hxS)

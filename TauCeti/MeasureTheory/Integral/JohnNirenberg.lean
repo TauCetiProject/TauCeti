@@ -214,7 +214,7 @@ private theorem volume_lt_enorm_sub_setAverage_le_inv_two_pow [CompleteSpace E]
     have hfconst : f = fun _ => f 0 := funext fun x => congrArg f (Subsingleton.elim x 0)
     rw [hfconst]
     simp only [setAverage_const (volume_dyadicCube_pos _ _).ne'
-      (volume_dyadicCube_ne_top _ _), sub_self, enorm_zero, not_lt_zero, and_false,
+      (volume_dyadicCube_ne_top _ _), sub_self, eNorm_zero, not_lt_zero, and_false,
       ofPred_false, measure_empty, zero_le]
   rcases eq_or_ne M 0 with rfl | hM0
   · -- For `M = 0`, `f` equals its average almost everywhere on `Q₀`.
@@ -319,7 +319,7 @@ private theorem ofReal_exp_mul_norm_le_one_add_tsum (σ : ℝ) (n : ℕ) (M : �
     fun h => (norm_nonneg _).not_gt h.2
   rcases eq_or_ne M 0 with rfl | hM0
   · -- For `M = 0`, every term of the sum is `1`.
-    have hv : 0 < ‖v‖ₑ := enorm_pos.2 (norm_pos_iff.1 hy)
+    have hv : 0 < ‖v‖ₑ := eNorm_pos.2 (norm_pos_iff.1 hy)
     simp only [ENNReal.coe_zero, mul_zero, hv, ↓reduceIte, NNReal.coe_zero, Real.exp_zero,
       ENNReal.ofReal_one, one_pow, ENNReal.tsum_const_eq_top_of_ne_zero one_ne_zero, add_top]
     exact le_top

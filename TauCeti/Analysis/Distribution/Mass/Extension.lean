@@ -79,7 +79,7 @@ def extendL1 (T : 𝓕) : Lp F 1 (massMeasure T) →L[ℝ] ℝ :=
 /-- The domination of `T` by its mass measure, in the form used by `LinearMap.extendOfNorm`. -/
 private theorem norm_apply_le_one_mul (hT : HasLocallyFiniteMass T) (φ : 𝓓^{n}(Ω, F)) :
     ‖(T : 𝓓^{n}(Ω, F) →ₗ[ℝ] ℝ) φ‖ ≤ 1 * ‖(TestFunction.toLp 1 (massMeasure T)).toLinearMap φ‖ := by
-  rw [one_mul, LinearMap.coe_ofClass, ContinuousLinearMap.coe_coe, ← enorm_le_iff_norm_le,
+  rw [one_mul, LinearMap.coe_ofClass, ContinuousLinearMap.coe_coe, ← eNorm_le_iff_norm_le,
     TestFunction.enorm_toLp_one]
   exact enorm_apply_le_lintegral_massMeasure hT φ
 
@@ -154,7 +154,7 @@ theorem massRestrict_apply (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
 /-- **Domination of the Borel restriction.** `|(T ⌞ A) φ| ≤ ∫_A ‖φ‖ d‖T‖`. -/
 theorem enorm_massRestrict_apply_le (hA : MeasurableSet A) (φ : 𝓓^{n}(Ω, F)) :
     ‖massRestrict T hA φ‖ₑ ≤ ∫⁻ x in A, ‖φ x‖ₑ ∂massMeasure T := by
-  rw [← TestFunction.enorm_indicatorToLp_one _ hA, massRestrict_apply, enorm_le_iff_norm_le]
+  rw [← TestFunction.enorm_indicatorToLp_one _ hA, massRestrict_apply, eNorm_le_iff_norm_le]
   exact norm_extendL1_apply_le _
 
 /-- A Borel restriction has locally finite mass. -/
@@ -203,7 +203,7 @@ theorem massMeasure_massRestrict (hT : HasLocallyFiniteMass T) (hA : MeasurableS
     intro φ
     rw [lintegral_add_measure,
       ← massRestrict_add_massRestrict_compl_apply hT hA φ]
-    exact (enorm_add_le _ _).trans (add_le_add
+    exact (eNorm_add_le _ _).trans (add_le_add
       (enorm_apply_le_lintegral_massMeasure (hasLocallyFiniteMass_massRestrict hA) φ)
       (enorm_apply_le_lintegral_massMeasure (hasLocallyFiniteMass_massRestrict hA.compl) φ))
   have hzero : ν.restrict A = 0 := by
@@ -238,7 +238,7 @@ theorem massRestrict_eq_zero (hA : MeasurableSet A) (hA0 : massMeasure T A = 0) 
   ext φ
   have h := enorm_massRestrict_apply_le (T := T) hA φ
   rw [Measure.restrict_eq_zero.2 hA0, lintegral_zero_measure, nonpos_iff_eq_zero,
-    enorm_eq_zero] at h
+    eNorm_eq_zero] at h
   simpa using h
 
 /-- A Borel restriction of a locally finite-mass current vanishes if and only if the

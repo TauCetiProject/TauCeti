@@ -110,7 +110,7 @@ theorem exists_contDiff_ae_eq_heatSemigroup [CompleteSpace F] {p : ℝ≥0∞} [
     have h := eNorm_ae_le_eLpNormEssSup (g : E → F) volume
     rw [← eLpNorm_exponent_top (Lp.aestronglyMeasurable g)] at h
     filter_upwards [h] with x hx
-    simpa only [toReal_enorm] using ENNReal.toReal_mono hg.ne hx
+    simpa only [toReal_eNorm] using ENNReal.toReal_mono hg.ne hx
   -- The second half-step smooths bounded data; the semigroup law identifies the result.
   refine ⟨heatKernel (s : ℝ) ⋆ (g : E → F),
     contDiff_heatKernel_convolution (t := (s : ℝ)) (by positivity)

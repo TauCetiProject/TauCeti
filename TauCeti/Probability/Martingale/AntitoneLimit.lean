@@ -86,7 +86,7 @@ lemma exists_integrable_tendsto_ae_condExp_of_antitone
   have h_ae_conv : ∀ᵐ ω ∂μ, ∃ c, Tendsto (fun n => μ[f | 𝔽 n] ω) atTop (𝓝 c) := by
     filter_upwards [hbdd_liminf, hupcross] with ω hω₁ hω₂
     have hω₁' : (liminf (fun n => ENNReal.ofNNReal (nnnorm (μ[f | 𝔽 n] ω))) atTop) < ⊤ := by
-      simpa only [enorm_eq_nnnorm] using hω₁
+      simpa only [eNorm_eq_nnNorm] using hω₁
     exact tendsto_of_upcrossings_lt_top hω₁' hω₂
   -- Step 4: choose the limit and read off its two properties.
   classical

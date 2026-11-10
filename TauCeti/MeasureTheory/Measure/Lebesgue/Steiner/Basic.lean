@@ -202,7 +202,7 @@ theorem preimage_reflection_steinerSymmetrization (e : E) (he : ‖e‖ = 1) (s 
     ring
   rw [mem_preimage, hx, mem_steinerSymmetrization_iff, mem_steinerSymmetrization_iff,
     volume_lineSection_add_smul, hinner]
-  simp only [Metric.mem_eball, edist_zero_right, enorm_neg]
+  simp only [Metric.mem_eball, edist_zero_right, eNorm_neg]
 
 /-- Steiner symmetrization preserves convexity. -/
 theorem convex_steinerSymmetrization (e : E) (he : ‖e‖ = 1) {s : Set E}

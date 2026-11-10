@@ -43,7 +43,7 @@ private def projectionSequence (x : E) : ℕ →ᵇ E :=
   BoundedContinuousFunction.ofNormedAddCommGroup (fun n ↦ b.proj n x)
     continuous_of_discreteTopology (b.nnnormProjBound * ‖x‖)
     (fun n ↦ ((b.proj n).le_opNorm x).trans
-      (mul_le_mul_of_nonneg_right (b.norm_proj_le_nnnormProjBound n) (norm_nonneg x)))
+      (mul_le_mul_of_nonneg_right (b.norm_proj_le_nnNormProjBound n) (norm_nonneg x)))
 
 private def projectionSequenceLinearMap : E →ₗ[𝕜] (ℕ →ᵇ E) where
   toFun := b.projectionSequence
@@ -55,7 +55,7 @@ def partialSums : E →L[𝕜] (ℕ →ᵇ E) :=
   b.projectionSequenceLinearMap.mkContinuous b.nnnormProjBound fun x ↦
     (BoundedContinuousFunction.norm_le (by positivity)).2 fun n ↦
       ((b.proj n).le_opNorm x).trans
-        (mul_le_mul_of_nonneg_right (b.norm_proj_le_nnnormProjBound n) (norm_nonneg x))
+        (mul_le_mul_of_nonneg_right (b.norm_proj_le_nnNormProjBound n) (norm_nonneg x))
 
 @[simp]
 theorem partialSums_apply (x : E) (n : ℕ) : b.partialSums x n = b.proj n x := (rfl)
@@ -77,7 +77,7 @@ theorem norm_partialSums_le (x : E) :
     ‖b.partialSums x‖ ≤ b.nnnormProjBound * ‖x‖ := by
   exact (BoundedContinuousFunction.norm_le (by positivity)).2 fun n ↦
     ((b.proj n).le_opNorm x).trans
-      (mul_le_mul_of_nonneg_right (b.norm_proj_le_nnnormProjBound n) (norm_nonneg x))
+      (mul_le_mul_of_nonneg_right (b.norm_proj_le_nnNormProjBound n) (norm_nonneg x))
 
 /-- The partial-sum embedding preserves the norms of the individual basis vectors. -/
 @[simp]

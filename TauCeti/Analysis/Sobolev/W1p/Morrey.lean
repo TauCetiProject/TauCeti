@@ -139,7 +139,7 @@ theorem W1p.exists_holderWith_ae_eq_value (hp : (finrank ℝ E : ℝ≥0) < p)
     have hG : Tendsto (fun k => W1p.gradient (T (phi (ns k)))) atTop (𝓝 (W1p.gradient u)) := by
       simpa only [Function.comp_def, W1p.gradientL_apply] using
         (W1p.gradientL.continuous.tendsto u).comp (hlim.comp hmono.tendsto_atTop)
-    exact ENNReal.tendsto_coe.2 (tendsto_const_nhds.mul ((continuous_nnnorm.tendsto _).comp hG))
+    exact ENNReal.tendsto_coe.2 (tendsto_const_nhds.mul ((continuous_nnNorm.tendsto _).comp hG))
   have hholder : HolderOnWith (C * ‖W1p.gradient u‖₊) α (W1p.value u) A := by
     intro x hx y hy
     have hd : edist x y ^ (α : ℝ) ≠ ∞ :=

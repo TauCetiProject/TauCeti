@@ -141,7 +141,7 @@ theorem volume_preimage_inter_setOf_fderiv_ne_zero {h : E → ℝ} {I : Set ℝ}
     by_cases hxI : x ∈ h ⁻¹' I ∩ R
     · rw [indicator_of_mem hxI, indicator_of_mem hxI,
         ContinuousLinearMap.normDet_adjoint_eq_norm, Pi.one_apply, ofReal_norm]
-      exact ENNReal.mul_inv_cancel (ENNReal.coe_ne_zero.2 (nnnorm_ne_zero_iff.2 hx)) (by simp)
+      exact ENNReal.mul_inv_cancel (ENNReal.coe_ne_zero.2 (nnNorm_ne_zero_iff.2 hx)) (by simp)
     · rw [indicator_of_notMem hxI, indicator_of_notMem hxI, mul_zero]
   -- On the fiber over `t` the weight is `‖Dh‖⁻¹` if `t ∈ I` and zero otherwise.
   have hrhs (t : ℝ) : ∫⁻ x in R ∩ h ⁻¹' {t}, w x ∂μHE[finrank ℝ E - 1] =

@@ -80,7 +80,7 @@ theorem lipschitzOnWith_maximalGeodesic :
       _ = ‖v‖ₑ * ENNReal.ofReal (t - s) := pathELength_maximalGeodesic hs ht
       _ = ‖v‖₊ * edist s t := by
         rw [edist_dist, Real.dist_eq, abs_sub_comm,
-          abs_of_nonneg (by linarith : (0 : ℝ) ≤ t - s), enorm_eq_nnnorm]
+          abs_of_nonneg (by linarith : (0 : ℝ) ≤ t - s), eNorm_eq_nnNorm]
   intro s hs t ht
   rcases le_total s t with h | h
   · exact key s hs t ht h
@@ -98,7 +98,7 @@ theorem edist_riemannianExp_le (p : M) (v : TangentSpace I p) :
       zero_mem_geodesicInterval (mem_expDomain_iff.1 hv)
     rw [(isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).base_eq] at h
     have h01 : edist (0 : ℝ) 1 = 1 := by simp [edist_dist, Real.dist_eq]
-    simpa [riemannianExp_def, enorm_eq_nnnorm, h01] using h
+    simpa [riemannianExp_def, eNorm_eq_nnNorm, h01] using h
   · simp [hv]
 
 section Metric

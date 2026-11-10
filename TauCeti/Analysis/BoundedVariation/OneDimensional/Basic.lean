@@ -86,7 +86,7 @@ theorem _root_.BoundedVariationOn.totalVariationOn_le_variation_vectorMeasure
       (fun x hx ↦ φ.zero_on_compl hx)
   rw [hpair]
   refine (Real.ofReal_le_eNorm _).trans ?_
-  rw [enorm_neg, ← hloc]
+  rw [eNorm_neg, ← hloc]
   have hφnorm (x : ℝ) : ‖φ x‖ₑ ≤ 1 := by
     rw [← ofReal_norm, ← ENNReal.ofReal_one]
     exact ENNReal.ofReal_le_ofReal (hφ x)

@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.AlgebraicCycle.Basic
-public import Mathlib.AlgebraicGeometry.OrderOfVanishing
+public import Mathlib.AlgebraicGeometry.OrderOfVanishing.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Principal
 import TauCeti.AlgebraicGeometry.AlgebraicCycle.Basic
 

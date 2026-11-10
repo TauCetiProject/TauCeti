@@ -168,7 +168,7 @@ theorem uniformIntegrable_of_isCompact_closure_toWeakSpace {A : Set (Lp 𝕜 1 �
       rw [← lintegral_add_right' _ (L1.integrable_coeFn f).1.enorm.restrict]
       refine lintegral_mono fun x ↦ ?_
       calc ‖(i (τ k) : α → 𝕜) x‖ₑ = ‖h k x + (f : α → 𝕜) x‖ₑ := by simp [h]
-        _ ≤ ‖h k x‖ₑ + ‖(f : α → 𝕜) x‖ₑ := enorm_add_le _ _
+        _ ≤ ‖h k x‖ₑ + ‖(f : α → 𝕜) x‖ₑ := eNorm_add_le _ _
     have := (hbig (τ k)).trans_le (hsplit.trans (add_le_add hle (hK k hk)))
     rw [ENNReal.add_halves] at this
     exact lt_irrefl _ this

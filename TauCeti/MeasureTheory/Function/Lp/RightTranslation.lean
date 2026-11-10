@@ -433,7 +433,7 @@ theorem MemLp.tendsto_eLpNorm_comp_mul_right_sub_of_regular {f : G → E} (hf : 
   have h : Tendsto (fun g => a g • Lp.rightTranslation μ p ℝ g F - F) (𝓝 1) (𝓝 0) := by
     simpa [a] using ((ha.tendsto 1).smul
       ((Lp.continuous_rightTranslation_apply hp F).tendsto 1)).sub_const F
-  refine (enorm_zero (E := Lp E p μ) ▸ (continuous_eNorm.tendsto 0).comp h).congr' <|
+  refine (eNorm_zero (E := Lp E p μ) ▸ (continuous_eNorm.tendsto 0).comp h).congr' <|
     Eventually.of_forall fun g => ?_
   rw [Function.comp_apply, Lp.eNorm_def]
   refine eLpNorm_congr_ae ?_

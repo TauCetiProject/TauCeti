@@ -109,7 +109,7 @@ theorem exists_hasWeakFDerivOn_eLpNorm_le_of_hasWeakConjWirtingerDerivOn_of_le
       eLpNorm g p (volume.restrict V) ≤ C₀ * (C * A) :=
     hC₀ u hloc v _ hA fun φ => (hC u f hu hf hUeq φ v).trans_eq (by rw [hv, mul_one])
   obtain ⟨g₁, hg₁, hg₁n⟩ := hdir 1 (by simp)
-  obtain ⟨gI, hgI, hgIn⟩ := hdir I (by simp [enorm_eq_nnnorm])
+  obtain ⟨gI, hgI, hgIn⟩ := hdir I (by simp [eNorm_eq_nnNorm])
   let D : ℂ → ℂ →L[ℝ] F := fun z => reCLM.smulRight (g₁ z) + imCLM.smulRight (gI z)
   have hD1 (z : ℂ) : D z 1 = g₁ z := by simp [D]
   have hDI (z : ℂ) : D z I = gI z := by simp [D]
@@ -334,7 +334,7 @@ private theorem exists_eLpNormWkp_compact_le_of_hasWeakConjWirtingerDerivOn (hp 
       fun_eq_smulRightL_reCLM_add_smulRightL_imCLM D
     have hB : ‖L₁‖ₑ * (‖a 1‖ₑ * (C₁ * (1 + C₀) * (X + Y))) +
         ‖L₂‖ₑ * (‖a I‖ₑ * (C₁ * (1 + C₀) * (X + Y))) = ↑(B * (C₁ * (1 + C₀))) * (X + Y) := by
-      simp only [B, enorm_eq_nnnorm]
+      simp only [B, eNorm_eq_nnNorm]
       push_cast
       ring
     calc eLpNormWkp p K (k + 1 + 1) u

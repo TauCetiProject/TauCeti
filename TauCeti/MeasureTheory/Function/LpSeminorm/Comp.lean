@@ -77,12 +77,12 @@ theorem eLpNorm_clm_comp_le {F G : Type*} [NormedAddCommGroup F] [NormedSpace �
   by_cases hu : AEStronglyMeasurable u μ
   · exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul' (A.continuous.comp_aestronglyMeasurable hu)
       (Filter.Eventually.of_forall fun x => by
-        simpa only [enorm_eq_nnnorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] using
+        simpa only [eNorm_eq_nnNorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] using
           A.le_opNNNorm (u x)) p
   · by_cases hA : A = 0
     · simp [hA]
     · rw [eLpNorm_of_not_aestronglyMeasurable hu, ENNReal.mul_top (by
-        rw [enorm_eq_nnnorm]; exact ENNReal.coe_ne_zero.2 (nnnorm_ne_zero_iff.2 hA))]
+        rw [eNorm_eq_nnNorm]; exact ENNReal.coe_ne_zero.2 (nnNorm_ne_zero_iff.2 hA))]
       exact le_top
 
 end MeasureTheory

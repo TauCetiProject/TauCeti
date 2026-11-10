@@ -103,7 +103,7 @@ theorem eLpNorm_le_mul_measure_rpow_mul_eLpNorm_fderiv_of_lt (hu : ContDiff ℝ 
     · intro y hy
       by_contra hyΩ
       rw [mem_support, fderiv_of_notMem_tsupport ℝ fun h => hyΩ (hsupp h)] at hy
-      simp [enorm_eq_nnnorm] at hy
+      simp [eNorm_eq_nnNorm] at hy
   -- The `Lᵖ`-`L^q` bound for the potential, with `κ = 1/n`.
   have hpot := eLpNorm_setLIntegral_enorm_sub_rpow_mul_le (μ := μ) (p := p) (q := q)
     (κ := (n : ℝ)⁻¹) hp hpq hδ hδn (inv_le_one_of_one_le₀ hn) hΩ hcont.enorm.aemeasurable
@@ -323,7 +323,7 @@ theorem W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp [Nontrivial E]
     (measure_ne_top ν univ) (Filter.Eventually.of_forall fun x hx => absurd (mem_univ x) hx)
   have hsob : (eLpNorm (W1p.value (v : W1p mu Omega 2)) t ν).toReal ≤ S.toReal * ‖v‖ := by
     have := ENNReal.toReal_mono (ENNReal.mul_ne_top hSfin eNorm_ne_top) (hS v)
-    rw [ENNReal.toReal_mul, toReal_enorm] at this
+    rw [ENNReal.toReal_mul, toReal_eNorm] at this
     exact this.trans (mul_le_mul_of_nonneg_left (W1p.norm_gradient_le _) ENNReal.toReal_nonneg)
   refine hhol.trans ?_
   calc (eLpNorm f r ν).toReal * (eLpNorm (W1p.value (v : W1p mu Omega 2)) t ν).toReal *

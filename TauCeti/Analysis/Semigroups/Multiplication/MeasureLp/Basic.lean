@@ -118,9 +118,9 @@ private theorem measureLpMultiplicationOperator_continuous {m : α → ℝ≥0}
       have hbound (u : ℝ≥0) : ‖Real.exp (-((u : ℝ) * m a)) • f a‖ₑ ≤ ‖f a‖ₑ := by
         rw [eNorm_smul]
         apply mul_le_of_le_one_left zero_le
-        rw [enorm_eq_nnnorm, ← ENNReal.coe_one, ENNReal.coe_le_coe]
+        rw [eNorm_eq_nnNorm, ← ENNReal.coe_one, ENNReal.coe_le_coe]
         apply NNReal.coe_le_coe.mp
-        simp only [coe_nnnorm, NNReal.coe_one, Real.norm_eq_abs, Real.abs_exp,
+        simp only [coe_nnNorm, NNReal.coe_one, Real.norm_eq_abs, Real.abs_exp,
           Real.exp_le_one_iff]
         exact neg_nonpos.mpr (by positivity)
       calc

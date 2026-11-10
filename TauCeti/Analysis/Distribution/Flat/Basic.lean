@@ -154,7 +154,7 @@ theorem enorm_apply_le_normalFlatMass_mul
   refine le_iInf fun S => le_iInf fun _ => le_iInf fun _ => ?_
   have heq : T ω = (T - S ∘L extDerivCLM) ω + S (extDerivCLM ω) := by simp
   rw [heq, add_mul]
-  exact (enorm_add_le _ _).trans (add_le_add
+  exact (eNorm_add_le _ _).trans (add_le_add
     ((enorm_apply_le_mass_mul (T - S ∘L extDerivCLM) ω).trans
       (mul_le_mul' le_rfl (le_max_left _ _)))
     ((enorm_apply_le_mass_mul S (extDerivCLM ω)).trans
@@ -197,7 +197,7 @@ theorem normalFlatMass_smul (a : ℝ) :
 theorem normalFlatMass_neg : (-T).normalFlatMass = T.normalFlatMass := by
   have h := T.normalFlatMass_smul (-1 : ℝ)
   rw [_root_.neg_one_smul ℝ T] at h
-  simpa only [enorm_neg, eNorm_one, one_mul] using h
+  simpa only [eNorm_neg, eNorm_one, one_mul] using h
 
 /-- Boundary is a contraction for the normal flat mass in positive degrees. -/
 theorem normalFlatMass_comp_extDerivCLM_le

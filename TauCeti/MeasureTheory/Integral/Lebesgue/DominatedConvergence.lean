@@ -94,7 +94,7 @@ theorem tendsto_lintegral_enorm_smul_sub {E : Type*} [NormedAddCommGroup E] [Nor
   have hc₀ : AEStronglyMeasurable c₀ ν := aestronglyMeasurable_of_tendsto_ae atTop hc hlim
   -- the bound passes to the almost everywhere limit
   have hc₀M : ∀ᵐ x ∂ν, ‖c₀ x‖₊ ≤ M := (ae_all_iff.2 hcM).and hlim |>.mono fun x ⟨hx, hx'⟩ =>
-    le_of_tendsto' ((continuous_nnnorm.tendsto _).comp hx') hx
+    le_of_tendsto' ((continuous_nnNorm.tendsto _).comp hx') hx
   have hC : Tendsto (fun i => ∫⁻ x, ‖c i x - c₀ x‖ₑ * ‖g₀ x‖ₑ ∂ν) atTop (𝓝 0) := by
     simpa using tendsto_lintegral_of_dominated_convergence' (fun x => (M + M) * ‖g₀ x‖ₑ)
       (F := fun i x => ‖c i x - c₀ x‖ₑ * ‖g₀ x‖ₑ) (f := 0)
@@ -119,7 +119,7 @@ theorem tendsto_lintegral_enorm_smul_sub {E : Type*} [NormedAddCommGroup E] [Nor
           rw [smul_sub, sub_smul]
           abel
     _ ≤ M * ‖g i x - g₀ x‖ₑ + ‖c i x - c₀ x‖ₑ * ‖g₀ x‖ₑ := ?_
-  refine (enorm_add_le _ _).trans (add_le_add ?_ (eNorm_smul _ _).le)
+  refine (eNorm_add_le _ _).trans (add_le_add ?_ (eNorm_smul _ _).le)
   rw [eNorm_smul]
   gcongr
   exact eNorm_le_coe.2 hx

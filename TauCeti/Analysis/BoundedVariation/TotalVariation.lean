@@ -389,7 +389,7 @@ theorem totalVariationOn_le_liminf [OpensMeasurableSpace E] {ι : Type*} {l : Fi
     by_cases hx : x ∈ tsupport ψ
     · rw [Set.indicator_of_mem hx, eNorm_mul]
       gcongr
-      exact enorm_le_iff_norm_le.mpr <| by
+      exact eNorm_le_iff_norm_le.mpr <| by
         simpa using (ψ : BoundedContinuousFunction E ℝ).norm_coe_le_norm x
     · simp [image_eq_zero_of_notMem_tsupport hx]
   rw [tendsto_iff_edist_tendsto_0]
@@ -524,10 +524,10 @@ theorem _root_.HasCompactSupport.totalVariationOn_lt_top {K : ℝ≥0} (huc : Ha
       rw [lintegral_indicator_const (isClosed_tsupport u).measurableSet]
       exact ENNReal.mul_lt_top ENNReal.coe_lt_top huc.isCompact.measure_lt_top
   by_cases hx : x ∈ tsupport u
-  · rw [Set.indicator_of_mem hx, enorm_eq_nnnorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe,
-      coe_nnnorm]
+  · rw [Set.indicator_of_mem hx, eNorm_eq_nnNorm, ENNReal.coe_le_coe, ← NNReal.coe_le_coe,
+      coe_nnNorm]
     exact norm_fderiv_le_of_lipschitz ℝ hu
-  · simp [fderiv_of_notMem_tsupport ℝ hx, hx, enorm_eq_nnnorm]
+  · simp [fderiv_of_notMem_tsupport ℝ hx, hx, eNorm_eq_nnNorm]
 
 end Haar
 

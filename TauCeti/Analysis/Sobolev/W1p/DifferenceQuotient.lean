@@ -331,7 +331,7 @@ theorem W1p.norm_value_differenceQuotient_le (hp : p ≠ ∞) (v : E) (t : ℝ) 
             rw [Pi.smul_apply, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs, abs_norm]
             exact abs_real_inner_le_norm v _)
       _ = ‖v‖ₑ * eLpNorm (W1p.gradient u : E → E) p nu := by
-          rw [eLpNorm_const_smul, enorm_norm]
+          rw [eLpNorm_const_smul, eNorm_norm]
   -- The difference quotient itself, through the whole-space translation estimate.
   have hquot : eLpNorm (W1p.value q : E → ℝ) p nu
       ≤ ‖v‖ₑ * eLpNorm (W1p.gradient u : E → E) p nu := by

@@ -33,6 +33,6 @@ protected theorem UnifTight.ae_mono {α β ι : Type*} {m : MeasurableSpace α}
   filter_upwards [hfg n] with x hx
   by_cases hxs : x ∈ sᶜ
   · simpa only [Set.indicator_of_mem hxs] using hx
-  · simp only [Set.indicator_of_notMem hxs, enorm_zero, le_refl]
+  · simp only [Set.indicator_of_notMem hxs, eNorm_zero, le_refl]
 
 end MeasureTheory

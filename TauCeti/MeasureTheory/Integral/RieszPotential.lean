@@ -333,7 +333,7 @@ theorem setLIntegral_enorm_sub_rpow_le_finrank {A : Set E} (hA : MeasurableSet A
         μ A ^ (finrank ℝ E : ℝ)⁻¹ := by
   rcases subsingleton_or_nontrivial E with hE | hE
   · have h0 : (fun x : E => ‖y - x‖ₑ ^ (1 - (finrank ℝ E : ℝ))) = 0 := funext fun x => by
-      rw [Subsingleton.elim (y - x) 0, enorm_zero, ENNReal.zero_rpow_of_pos
+      rw [Subsingleton.elim (y - x) 0, eNorm_zero, ENNReal.zero_rpow_of_pos
         (by simp [finrank_zero_of_subsingleton]), Pi.zero_apply]
     rw [h0, lintegral_zero_fun]
     exact bot_le
@@ -415,7 +415,7 @@ theorem rieszPotential_add_le [BorelSpace E] (hf : AEMeasurable (fun y => ‖f y
         refine lintegral_mono fun y => ?_
         rw [← mul_add]
         gcongr
-        exact enorm_add_le (f y) (g y)
+        exact eNorm_add_le (f y) (g y)
     _ = rieszPotential μ α f x + rieszPotential μ α g x :=
         lintegral_add_left' (hk.aemeasurable.mul hf) _
 
@@ -741,7 +741,7 @@ omit [BorelSpace E] in
 private theorem rieszPotential_eq_zero_of_subsingleton [Subsingleton E] (hα : 0 < α) :
     rieszPotential μ α f x = 0 := by
   have hk (y : E) : ‖x - y‖ₑ ^ (α - finrank ℝ E) = 0 := by
-    rw [Subsingleton.elim x y, sub_self, enorm_zero, finrank_zero_of_subsingleton, Nat.cast_zero,
+    rw [Subsingleton.elim x y, sub_self, eNorm_zero, finrank_zero_of_subsingleton, Nat.cast_zero,
       sub_zero, ENNReal.zero_rpow_of_pos hα]
   simp [rieszPotential_def, hk]
 
@@ -867,10 +867,10 @@ theorem enorm_integral_norm_sub_rpow_smul_le_rieszPotential (μ : Measure E) (α
   gcongr
   -- The real kernel is the extended one, except at `y = x` for a negative exponent, where it is
   -- `0` instead of `∞`.
-  rw [← enorm_norm (x - y)]
+  rw [← eNorm_norm (x - y)]
   rcases lt_or_ge (α - finrank ℝ E) 0 with hγ | hγ
   · rcases (norm_nonneg (x - y)).eq_or_lt with h | h
-    · rw [← h, enorm_zero, ENNReal.zero_rpow_of_neg hγ]
+    · rw [← h, eNorm_zero, ENNReal.zero_rpow_of_neg hγ]
       exact le_top
     · rw [Real.eNorm_of_nonneg (by positivity), Real.eNorm_of_nonneg h.le,
         ENNReal.ofReal_rpow_of_pos h]

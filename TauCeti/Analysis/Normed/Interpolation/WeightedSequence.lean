@@ -342,7 +342,7 @@ private theorem rpow_mul_norm_le_toReal (hq : q ≠ 0) {a : ℕ → A}
     (j : ℕ) :
     (2 : ℝ) ^ (s * j) * ‖a j‖ ≤
       (eLpNorm (fun j : ℕ ↦ (((2 : ℝ) ^ (s * j) : ℝ) : 𝕜) • a j) q Measure.count).toReal := by
-  rw [← norm_weight_smul (𝕜 := 𝕜), ← toReal_enorm]
+  rw [← norm_weight_smul (𝕜 := 𝕜), ← toReal_eNorm]
   exact ENNReal.toReal_mono ha.ne
     (eNorm_le_eLpNorm_count (fun j : ℕ ↦ (((2 : ℝ) ^ (s * j) : ℝ) : 𝕜) • a j) j hq)
 

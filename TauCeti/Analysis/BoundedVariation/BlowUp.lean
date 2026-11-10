@@ -280,7 +280,7 @@ theorem integral_divergenceCLM_mul_indicator_nonneg_of_tendsto_measure_symmDiff_
         (mul_le_mul_right (lintegral_indicator_one_le _) _)
     rw [← mul_sub, eNorm_mul]
     by_cases hy : y ∈ tsupport g
-    · have hgy : ‖g y‖ₑ ≤ ‖C‖ₑ := enorm_le_iff_norm_le.2 ((hC y).trans (le_abs_self C))
+    · have hgy : ‖g y‖ₑ ≤ ‖C‖ₑ := eNorm_le_iff_norm_le.2 ((hC y).trans (le_abs_self C))
       by_cases h₁ : x + r i • y ∈ s <;> by_cases h₂ : y ∈ F <;>
         simp [S, mem_symmDiff, h₁, h₂, hy, hgy]
     · simp [image_eq_zero_of_notMem_tsupport hy]

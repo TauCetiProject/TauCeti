@@ -78,7 +78,7 @@ variable (𝕜 : Type*) [SeminormedRing 𝕜] [NormOneClass 𝕜] [NormMulClass 
 a complex exponent `s`. -/
 def normCpowCharacter (s : ℂ) : 𝕜ˣ →ₜ* ℂˣ :=
   (Units.map nnnormHom.toMonoidHom).cpowCharacter
-    (Units.isEmbedding_val₀.continuous_iff.mpr <| continuous_nnnorm.comp Units.continuous_val) s
+    (Units.isEmbedding_val₀.continuous_iff.mpr <| continuous_nnNorm.comp Units.continuous_val) s
 
 /-- Evaluating `normCpowCharacter 𝕜 s` at `x` gives `‖x‖ ^ s`. -/
 @[simp]

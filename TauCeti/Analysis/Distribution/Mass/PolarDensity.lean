@@ -288,7 +288,7 @@ theorem ae_eq_polarDensity (hT : HasLocallyFiniteMass T) {τ : Ω → StrongDual
         ← apply_eq_integral_polarDensity hT]
       simp
   filter_upwards [h0] with x hx
-  rwa [Pi.zero_apply, nonpos_iff_eq_zero, enorm_eq_nnnorm, ENNReal.coe_eq_zero, nnnorm_eq_zero,
+  rwa [Pi.zero_apply, nonpos_iff_eq_zero, eNorm_eq_nnNorm, ENNReal.coe_eq_zero, nnNorm_eq_zero,
     Pi.sub_apply, sub_eq_zero] at hx
 
 end Distribution

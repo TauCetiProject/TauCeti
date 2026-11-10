@@ -125,7 +125,7 @@ private theorem W1p.holderComp_spec {r : ℝ≥0∞} [Fact (1 ≤ r)]
         ContinuousLinearMap.le_opENorm₂ _ _ _
       _ ≤ ‖B‖ₑ * ‖f‖ₑ * (‖S‖ₑ * ‖g‖ₑ) := by
         gcongr
-        · exact enorm_le_iff_norm_le.mpr (B.norm_holderL_le)
+        · exact eNorm_le_iff_norm_le.mpr (B.norm_holderL_le)
         · exact S.le_opENorm g
       _ = _ := by ac_rfl
 
@@ -173,7 +173,7 @@ theorem W1p.exists_eLpNorm_mixed_le (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : 
   refine ⟨‖S‖₊, fun B f g ↦ ?_⟩
   have hT := W1p.holderComp_spec (p := p) S hS B
   rw [← eLpNorm_congr_ae (hT.1 f g), ← Lp.eNorm_def]
-  simpa only [enorm_eq_nnnorm] using hT.2 f g
+  simpa only [eNorm_eq_nnNorm] using hT.2 f g
 
 /-- The actual mixed product lies in `L^q(V)` for every `V` with compact closure in `Ω`. -/
 theorem W1p.memLp_mixed (hp : (finrank ℝ E : ℝ≥0) < p) (hqp : q ≤ p)

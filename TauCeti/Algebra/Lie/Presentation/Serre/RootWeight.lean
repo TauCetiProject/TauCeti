@@ -147,7 +147,7 @@ theorem iInf_eigenspace_ad_eq_bot_of_ne_pairingIn {χ : b.support → ℤ} (h0 :
     -- the rows of `CMᵀᵀ` are the rows of `A`.
     have hpos : ψ ∉ AddSubsemigroup.closure (Set.range b.cartanMatrixᵀᵀ) := by
       have h := hsign.1
-      rw [Matrix.row_eq_self] at h
+      rw [Matrix.symm_of] at h
       rwa [transpose_transpose]
     refine hψ.2 (h.iInf_eigenspace_ad_eq_bot hspan hψ.1 hpos fun hneg ↦ hsign.2 ?_)
     -- The negated columns of `CM` are the negations of its columns.

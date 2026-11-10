@@ -46,7 +46,7 @@ theorem cofg_range_add_of_surjective_of_isCompactOperator [CompleteSpace E] [Com
     (T + K).range.CoFG := by
   let R := T.nonlinearRightInverseOfSurjective (LinearMap.range_eq_top.2 hT)
   have hR : 0 < (R.nnnorm : ℝ) := by
-    exact_mod_cast T.nonlinearRightInverseOfSurjective_nnnorm_pos
+    exact_mod_cast T.nonlinearRightInverseOfSurjective_nnNorm_pos
       (LinearMap.range_eq_top.2 hT)
   let a : ℝ := ((R.nnnorm : ℝ) * 2)⁻¹
   have ha : 0 < a := inv_pos.2 (mul_pos hR (by norm_num))

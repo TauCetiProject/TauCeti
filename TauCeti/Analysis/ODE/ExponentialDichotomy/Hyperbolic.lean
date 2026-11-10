@@ -132,7 +132,7 @@ theorem exists_norm_exp_smul_le_of_aeval_eq_zero' (T : V →L[ℂ] V) {q : ℂ[X
     have hrμ : r.eval μ = 0 := by
       have := spectrum.subset_polynomial_aeval N r ⟨μ, hμ, rfl⟩
       rwa [hNr, spectrum.zero_eq, Set.mem_singleton_iff] at this
-    rw [← NNReal.coe_lt_coe, coe_nnnorm, ← Complex.exp_eq_exp_ℂ, Complex.norm_exp,
+    rw [← NNReal.coe_lt_coe, coe_nnNorm, ← Complex.exp_eq_exp_ℂ, Complex.norm_exp,
       NNReal.coe_one, Real.exp_lt_one_iff]
     exact hrroots μ hrμ
   have hρ := spectrum.spectralRadius_lt_of_forall_lt _ hspec

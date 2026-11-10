@@ -199,7 +199,7 @@ theorem enorm_setIntegral_polarDensity_closedBall_le_liminf
     simpa using ENNReal.le_add_of_forall_one_lt_le_add_mul (b := 0) fun t ht => by
       simpa using ofReal_abs_inner_setIntegral_polarDensity_le_mul_liminf hu hfin hr hΩ hv ht
   rcases eq_or_ne w 0 with hw | hw
-  · rw [hw, enorm_zero]
+  · rw [hw, eNorm_zero]
     exact zero_le
   have hw' : 0 < ‖w‖ := norm_pos_iff.2 hw
   have h := key (‖w‖⁻¹ • w) (by rw [norm_smul, norm_inv, norm_norm, inv_mul_cancel₀ hw'.ne'])

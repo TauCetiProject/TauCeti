@@ -106,8 +106,8 @@ private theorem W1p.toReal_morreyEmbedding_bound (A : ℝ≥0) (V : ℝ≥0∞) 
       (A : ℝ) * ‖W1p.gradient u‖ + V.toReal * ‖W1p.value u‖ +
         (A : ℝ) * ‖W1p.gradient u‖ := by
   rw [ENNReal.toReal_add ENNReal.coe_ne_top (ENNReal.mul_ne_top hV eNorm_ne_top),
-    ENNReal.toReal_mul, toReal_enorm]
-  simp only [ENNReal.coe_toReal, NNReal.coe_mul, coe_nnnorm]
+    ENNReal.toReal_mul, toReal_eNorm]
+  simp only [ENNReal.coe_toReal, NNReal.coe_mul, coe_nnNorm]
 
 private theorem W1p.exists_bound_morreyEmbeddingLinearMap
     (hp : (finrank ℝ E : ℝ≥0) < p) :
@@ -204,6 +204,6 @@ theorem W1p.tendsto_enorm_morreyEmbedding_sub (hp : (finrank ℝ E : ℝ≥0) < 
   have hsub : Tendsto (fun n => W1p.morreyEmbedding hp (a n) -
       W1p.morreyEmbedding hp u) atTop (𝓝 0) := by
     simpa only [sub_self] using ha_morrey.sub_const (W1p.morreyEmbedding hp u)
-  simpa only [Function.comp_def, enorm_zero] using (continuous_eNorm.tendsto 0).comp hsub
+  simpa only [Function.comp_def, eNorm_zero] using (continuous_eNorm.tendsto 0).comp hsub
 
 end TauCeti

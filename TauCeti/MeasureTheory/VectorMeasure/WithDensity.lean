@@ -126,7 +126,7 @@ private theorem integral_eq_integral_variation_withDensityᵥ (B : E →L[ℝ] F
   congr with x
   rcases eq_or_ne (g x) 0 with hx | hx
   · simp [hx]
-  · rw [toReal_enorm, ← (B (f x)).map_smul, smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.2 hx),
+  · rw [toReal_eNorm, ← (B (f x)).map_smul, smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.2 hx),
       one_smul]
 
 /-- **Integration against a vector measure with density.** For an integrable density `g` with
@@ -167,7 +167,7 @@ theorem integral_withDensityᵥ (B : E →L[ℝ] F →L[ℝ] G) (hg : Integrable
   · -- Both sides are continuous on `L¹(ρ)`; the right-hand side is `‖B‖`-Lipschitz.
     refine isClosed_eq continuous_integral
       (LipschitzWith.of_dist_le_mul (K := ‖B‖₊) fun f₁ f₂ => ?_).continuous
-    rw [dist_eq_norm, dist_eq_norm, L1.norm_eq_integral_norm, coe_nnnorm,
+    rw [dist_eq_norm, dist_eq_norm, L1.norm_eq_integral_norm, coe_nnNorm,
       ← MeasureTheory.integral_const_mul,
       ← MeasureTheory.integral_sub (hint (L1.integrable_coeFn f₁)) (hint (L1.integrable_coeFn f₂))]
     refine norm_integral_le_of_norm_le ((L1.integrable_coeFn _).norm.const_mul _) ?_
@@ -306,7 +306,7 @@ theorem integrable_withDensity_mul_iff (hg : μ.Integrable g) :
     rcases eq_or_ne (g x) 0 with hx | hx
     · simp [hx]
     · have hn : (‖g x‖ : 𝕜) ≠ 0 := by simpa using hx
-      simp only [toReal_enorm, RCLike.real_smul_eq_coe_mul, RCLike.ofReal_inv]
+      simp only [toReal_eNorm, RCLike.real_smul_eq_coe_mul, RCLike.ofReal_inv]
       field_simp
   · intro hf
     refine (hf.mul_bdd (c := 1) hu.star (hub.mono fun x hx => ?_)).congr
@@ -316,7 +316,7 @@ theorem integrable_withDensity_mul_iff (hg : μ.Integrable g) :
     rcases eq_or_ne (g x) 0 with hx | hx
     · simp [hx]
     · have hn : (‖g x‖ : 𝕜) ≠ 0 := by simpa using hx
-      simp only [toReal_enorm, RCLike.real_smul_eq_coe_mul, Pi.star_apply, star_mul',
+      simp only [toReal_eNorm, RCLike.real_smul_eq_coe_mul, Pi.star_apply, star_mul',
         RCLike.star_def, map_inv₀, RCLike.conj_ofReal]
       rw [mul_assoc, mul_left_comm (g x), RCLike.mul_conj]
       field_simp
@@ -360,7 +360,7 @@ theorem integral_withDensity_mul (hg : μ.Integrable g) (f : X → 𝕜) :
       (hmul (L1.integrable_coeFn f₂)), L1.edist_def]
     simp_rw [← sub_mul, edist_eq_enorm_sub, hlint, ← eNorm_mul]
     refine eNorm_integral_le_lintegral_eNorm.trans ?_
-    rw [enorm_eq_nnnorm, ContinuousLinearMap.opNNNorm_mul, ENNReal.coe_one, one_mul]
+    rw [eNorm_eq_nnNorm, ContinuousLinearMap.opNNNorm_mul, ENNReal.coe_one, one_mul]
   · -- A `|g · μ|`-null set meets `{g ≠ 0}` in a `|μ|`-null set, where `f * g` does not see `f`.
     intro f₁ f₂ hae _ h₁
     rw [← integral_congr_ae hae, h₁]

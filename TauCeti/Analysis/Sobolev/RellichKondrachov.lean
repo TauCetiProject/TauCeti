@@ -109,7 +109,7 @@ private theorem W1p0.isCompactOperator_valueExtendByZeroL (hp : p ≠ ∞)
     rw [mem_ball, dist_zero_right] at hu
     rw [← Lp.eNorm_def]
     calc
-      ‖W1p0.valueExtendByZeroL u‖ₑ ≤ ‖(1 : ℝ)‖ₑ := enorm_le_iff_norm_le.mpr
+      ‖W1p0.valueExtendByZeroL u‖ₑ ≤ ‖(1 : ℝ)‖ₑ := eNorm_le_iff_norm_le.mpr
         ((W1p0.norm_valueExtendByZeroL_le (mu := mu) (Omega := Omega) (p := p) u).trans
           (by simpa using hu.le))
       _ = 1 := by simp

@@ -257,7 +257,7 @@ theorem sup_eq_top_of_dense (hS : IsClosed (S : Set E)) [FiniteDimensional 𝕜 
     (hD : Dense (D : Set E)) : S ⊔ D = ⊤ := by
   -- The image of `D` in the finite-dimensional Hausdorff quotient `E ⧸ S` is dense and closed.
   have hmap : D.map S.mkQ = ⊤ := by
-    rw [← coe_eq_univ, ← (D.map S.mkQ).closed_of_finiteDimensional.closure_eq, map_coe]
+    rw [← coe_eq_univ, ← (D.map S.mkQ).isClosed_of_finiteDimensional.closure_eq, map_coe]
     exact (S.mkQ_surjective.denseRange.dense_image S.continuous_mkQ hD).closure_eq
   rw [← comap_map_mkQ, hmap, comap_top]
 
@@ -302,7 +302,7 @@ variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
 range is a finite-dimensional, hence closed, subspace of the Hausdorff topological vector space. -/
 theorem surjective_of_denseRange {f : E →ₗ[𝕜] F} (hf : DenseRange f) :
     Function.Surjective f := fun y ↦
-  LinearMap.mem_range.mp <| (LinearMap.range f).closed_of_finiteDimensional.closure_subset_iff.mpr
+  LinearMap.mem_range.mp <| (LinearMap.range f).isClosed_of_finiteDimensional.closure_subset_iff.mpr
     (LinearMap.coe_range f).ge (hf y)
 
 end LinearMap

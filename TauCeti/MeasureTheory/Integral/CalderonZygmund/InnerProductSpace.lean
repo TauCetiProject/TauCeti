@@ -249,7 +249,7 @@ private theorem coordConj_ae_eq_integral
 private theorem enorm_coordConj
     (T : Lp E 2 (volume : Measure V) →L[ℝ] Lp F 2 (volume : Measure V)) :
     ‖coordConj b T‖ₑ = ‖T‖ₑ := by
-  simp only [coordConj, enorm_eq_nnnorm, opNNNorm_linearIsometryEquiv_comp]
+  simp only [coordConj, eNorm_eq_nnNorm, opNNNorm_linearIsometryEquiv_comp]
   exact congrArg _ (opNNNorm_comp_linearIsometryEquiv T (lpCoord b E).symm)
 
 /-- A weak type `(1, 1)` bound for `T` in coordinates is a weak type `(1, 1)` bound for `T`, with
@@ -547,7 +547,7 @@ theorem _root_.TauCeti.setLIntegral_enorm_sub_le_of_norm_sub_le {G G' : Type*}
         refine lintegral_mono fun x ↦ ?_
         simp only [Set.indicator, Set.mem_ofPred_eq, dist_eq_norm, h]
         split_ifs
-        · refine enorm_le_iff_norm_le.2 ((hk x y y').trans_eq ?_)
+        · refine eNorm_le_iff_norm_le.2 ((hk x y y').trans_eq ?_)
           rw [sub_sub_sub_cancel_right]
         · exact le_rfl
     _ = ∫⁻ z in {z | 2 * ‖h‖ < ‖z‖}, ‖K (z - h) - K z‖ₑ := by

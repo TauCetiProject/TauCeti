@@ -155,7 +155,7 @@ theorem norm_toLp_le_toReal_summingENorm_mul {T : E →L[𝕜] F}
       (T.summingENorm p).toReal * weakLpNorm (𝕜 := 𝕜) p x := by
   have h := ENNReal.toReal_mono (ENNReal.mul_ne_top hT ENNReal.ofReal_ne_top)
     (enorm_toLp_le_summingENorm_mul_of_ne_top hT x)
-  rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (apply_nonneg _ _), toReal_enorm] at h
+  rwa [ENNReal.toReal_mul, ENNReal.toReal_ofReal (apply_nonneg _ _), toReal_eNorm] at h
 
 /-- An operator of zero operator norm has zero gauge. -/
 theorem summingENorm_eq_zero_of_norm_eq_zero {T : E →L[𝕜] F} (hT : ‖T‖ = 0) :
@@ -195,7 +195,7 @@ theorem summingENorm_add_le (S T : E →L[𝕜] F) :
       ext i
       simp
     rw [hadd]
-    exact enorm_add_le _ _
+    exact eNorm_add_le _ _
   calc
     _ ≤ (‖WithLp.toLp p (fun i ↦ S (x i))‖ₑ + ‖WithLp.toLp p (fun i ↦ T (x i))‖ₑ) /
         ENNReal.ofReal (weakLpNorm (𝕜 := 𝕜) p x) := by gcongr
@@ -662,7 +662,7 @@ theorem norm_le_iff {T : AbsolutelySumming 𝕜 p E F} {C : ℝ} (hC : 0 ≤ C) 
 theorem norm_smulRight (f : StrongDual 𝕜 E) (y : F) :
     ‖smulRight (p := p) f y‖ = ‖f‖ * ‖y‖ := by
   rw [norm_def, toContinuousLinearMap_smulRight, ContinuousLinearMap.summingENorm_smulRight,
-    ENNReal.toReal_mul, toReal_enorm, toReal_enorm]
+    ENNReal.toReal_mul, toReal_eNorm, toReal_eNorm]
 
 variable {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 

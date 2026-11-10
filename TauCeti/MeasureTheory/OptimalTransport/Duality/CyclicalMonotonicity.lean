@@ -129,7 +129,7 @@ theorem IsCoupling.exists_seq_tendsto_ae_of_tendsto_kantorovichDualValue
         (hcint.sub (hg n)) (hle.mono fun z hz ↦ sub_nonneg.2 hz)]
     refine lintegral_congr_ae (hle.mono fun z hz ↦ ?_)
     simp only [Pi.sub_apply]
-    rw [← enorm_neg, neg_sub, Real.eNorm_of_nonneg (sub_nonneg.2 hz)]
+    rw [← eNorm_neg, neg_sub, Real.eNorm_of_nonneg (sub_nonneg.2 hz)]
   have hmeas : TendstoInMeasure π (fun n z ↦ φ n z.1 + ψ n z.2) atTop fun z ↦ (c z).toReal := by
     refine tendstoInMeasure_of_tendsto_eLpNorm one_ne_zero ?_
     simp_rw [hdist]

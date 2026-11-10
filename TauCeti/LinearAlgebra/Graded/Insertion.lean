@@ -316,7 +316,8 @@ theorem evalNat_replaceBlock_smul {u : ℕ} {N : Type uN}
       simp
     · have h : (i : ℕ) ≠ p := by simpa [Fin.ext_iff] using hi
       simp [replaceBlock, Function.update_of_ne hi, h]
-  rw [evalNat_def, evalNat_def, hupd (c • v), MultilinearMap.map_update_smul, ← hupd v]
+  rw [evalNat_def, evalNat_def, hupd (c • v), MultilinearMap.map_update_smul, ← hupd v,
+    RingHom.id_apply]
 
 end MultilinearMap
 

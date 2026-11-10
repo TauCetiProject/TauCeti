@@ -101,7 +101,7 @@ theorem norm_le_add_eLpNorm_toReal (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' 
   rw [ENNReal.toReal_add (by finiteness) (ENNReal.mul_ne_top hvol hgLp.eLpNorm_ne_top),
     ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.coe_toReal, ← ENNReal.toReal_rpow,
     ENNReal.toReal_ofReal hr.le] at hx'
-  simpa only [toReal_enorm] using hx'
+  simpa only [toReal_eNorm] using hx'
 
 /-- A global Hölder function in `Lᵖ`, bundled as an element of the Hölder Banach space. -/
 def toHolderSpace (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 ≤ p) (hp' : p ≠ ∞)
@@ -117,7 +117,7 @@ def toHolderSpace (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 ≤ p) (hp' : 
   have hpoint (x : E) : ‖g x‖ ≤ R.toReal := by
     have hx : ‖g x‖ₑ ≤ R := by
       simpa [R] using hg.enorm_le_add_eLpNorm hp hp' hgLp one_pos x
-    simpa only [toReal_enorm] using (ENNReal.toReal_le_toReal eNorm_ne_top hR).2 hx
+    simpa only [toReal_eNorm] using (ENNReal.toReal_le_toReal eNorm_ne_top hR).2 hx
   let G : E →ᵇ F := BoundedContinuousFunction.mkOfBound ⟨g, hg.continuous hα⟩
     (2 * R.toReal) (BoundedContinuousFunction.dist_le_two_norm' hpoint)
   have hG : (G : E → F) = g := by
@@ -154,7 +154,7 @@ theorem norm_toHolderSpace_le (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 �
       exact ⟨ENNReal.coe_lt_top, ENNReal.mul_lt_top
         (lt_top_iff_ne_top.2 (ENNReal.rpow_ne_top_of_ne_zero
           (measure_ball_pos mu 0 one_pos).ne' measure_ball_lt_top.ne)) hgLp.eLpNorm_lt_top⟩
-    simpa only [toReal_enorm] using (ENNReal.toReal_le_toReal eNorm_ne_top hfin).2 hunit
+    simpa only [toReal_eNorm] using (ENNReal.toReal_le_toReal eNorm_ne_top hfin).2 hunit
   · have hb : HolderWith C α (fun x => hg.toHolderSpace hα hp hp' hgLp x) := by
       intro x y
       simpa only [toHolderSpace_apply] using hg x y

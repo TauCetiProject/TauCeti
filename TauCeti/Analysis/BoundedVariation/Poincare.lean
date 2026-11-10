@@ -318,9 +318,9 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_closure_subset {U T : Se
         ≤ ∫⁻ x in A, (‖v n x - u x‖ₑ + ‖v n x - ⨍ y in T, v n y ∂μ‖ₑ +
             ‖(⨍ y in T, v n y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ) ∂μ := by
           refine lintegral_mono fun x => ?_
-          rw [← enorm_neg (v n x - u x)]
+          rw [← eNorm_neg (v n x - u x)]
           refine le_of_eq_of_le ?_
-            ((enorm_add_le _ _).trans (add_le_add_left (enorm_add_le _ _) _))
+            ((eNorm_add_le _ _).trans (add_le_add_left (eNorm_add_le _ _) _))
           congr 1
           ring
       _ = ∫⁻ x in A, ‖v n x - u x‖ₑ ∂μ + ∫⁻ x in A, ‖v n x - ⨍ y in T, v n y ∂μ‖ₑ ∂μ +
@@ -375,7 +375,7 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_measurableSet
         ≤ ∫⁻ x in A ∩ V n, (‖u x - ⨍ y in S ∩ V n, u y ∂μ‖ₑ +
             ‖(⨍ y in S ∩ V n, u y ∂μ) - a‖ₑ) ∂μ :=
           lintegral_mono fun x => by
-            simpa only [sub_add_sub_cancel] using enorm_add_le (u x - ⨍ y in S ∩ V n, u y ∂μ)
+            simpa only [sub_add_sub_cancel] using eNorm_add_le (u x - ⨍ y in S ∩ V n, u y ∂μ)
               ((⨍ y in S ∩ V n, u y ∂μ) - a)
       _ = ∫⁻ x in A ∩ V n, ‖u x - ⨍ y in S ∩ V n, u y ∂μ‖ₑ ∂μ +
             ‖(⨍ y in S ∩ V n, u y ∂μ) - a‖ₑ * μ (A ∩ V n) := by

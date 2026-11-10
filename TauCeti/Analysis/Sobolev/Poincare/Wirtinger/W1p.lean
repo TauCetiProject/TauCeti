@@ -352,7 +352,7 @@ theorem W1p.setIntegral_value_sub_setAverage_sq_le_of_ball_subset {c : E} {R : �
     (Lp.memLp (W1p.value uB)).sub (memLp_const m)
   -- Convert the `eLpNorm` bound into a bound on integrals of squares.
   have hnorm : ‖hmem.toLp _‖ ≤ 2 ^ (finrank ℝ E + 1) * R * ‖W1p.gradient uB‖ := by
-    rw [Lp.norm_toLp, ← toReal_enorm (W1p.gradient uB),
+    rw [Lp.norm_toLp, ← toReal_eNorm (W1p.gradient uB),
       ← ENNReal.toReal_ofReal (by positivity : (0 : ℝ) ≤ 2 ^ (finrank ℝ E + 1) * R),
       ← ENNReal.toReal_mul]
     exact ENNReal.toReal_mono (by finiteness) hP

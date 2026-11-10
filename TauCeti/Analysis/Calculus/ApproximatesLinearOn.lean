@@ -88,7 +88,7 @@ theorem exists_eq_zero_of_two_mul_norm_le [CompleteSpace E] {f : E → F} {f' : 
     (by positivity) le_rfl hzero
   have hinj : InjOn f (Metric.closedBall b r) := by
     apply hf.injOn
-    rcases f'.subsingleton_or_nnnorm_symm_pos with hE | hpos
+    rcases f'.subsingleton_or_nnNorm_symm_pos with hE | hpos
     · exact Or.inl hE
     right
     refine (NNReal.lt_inv_iff_mul_lt hpos.ne').2 ?_
@@ -151,7 +151,7 @@ theorem Convex.injOn_and_injective_of_norm_hasFDerivAt_sub_le {E F : Type*}
     rcases subsingleton_or_nontrivial E with hE | hE
     · exact Or.inl hE
     · refine Or.inr ?_
-      simpa [ContinuousLinearMap.nnnorm_id] using NNReal.half_lt_self one_ne_zero
+      simpa [ContinuousLinearMap.nnNorm_id] using NNReal.half_lt_self one_ne_zero
   · have h1 := ((P.comp (h' u) - ContinuousLinearMap.id ℝ _).le_opNorm w).trans
       (mul_le_mul_of_nonneg_right (hclose u hu) (norm_nonneg w))
     have hw' : (P.comp (h' u) - ContinuousLinearMap.id ℝ E) w = -w := by simp [hw]

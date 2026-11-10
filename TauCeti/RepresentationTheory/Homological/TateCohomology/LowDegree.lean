@@ -476,8 +476,8 @@ theorem HNegTwoAddEquivTensorOfIsTrivial_symm_tmul (g : G) (a : A) :
     (HNegTwoAddEquivTensorOfIsTrivial A).symm
         (Additive.ofMul (Group.Abelianization.of g) ⊗ₜ[ℤ] a) =
       (TateCohomology.isoGroupHomology (-2) 1 (Eq.refl (-2))).inv.app A
-        (H1π A ((cycles₁IsoOfIsTrivial A).inv (Finsupp.single g a))) := by
-  simp [AddEquiv.symm_apply_eq]
+        (H1π A ((cycles₁IsoOfIsTrivial A).inv (Finsupp.single g a))) :=
+  (AddEquiv.symm_apply_eq _).2 (HNegTwoAddEquivTensorOfIsTrivial_single (A := A) g a).symm
 
 variable (R G) in
 /-- Degree-zero Tate cohomology of the trivial representation `R` is `R ⧸ |G|R`. -/
@@ -555,8 +555,8 @@ theorem HNegTwoAddEquivAbelianization_symm_of (g : G) :
       (TateCohomology.isoGroupHomology (-2) 1 (Eq.refl (-2))).inv.app
         (Rep.trivial ℤ G ℤ)
         (H1π (Rep.trivial ℤ G ℤ)
-          ((cycles₁IsoOfIsTrivial (Rep.trivial ℤ G ℤ)).inv (Finsupp.single g 1))) := by
-  simp [AddEquiv.symm_apply_eq]
+          ((cycles₁IsoOfIsTrivial (Rep.trivial ℤ G ℤ)).inv (Finsupp.single g 1))) :=
+  (AddEquiv.symm_apply_eq _).2 (HNegTwoAddEquivAbelianization_single_one (G := G) g).symm
 
 end Abelianization
 

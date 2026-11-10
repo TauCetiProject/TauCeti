@@ -64,6 +64,6 @@ theorem tendsto_lintegral_enorm_mul_sub_of_eventually_eq_one {ι : Type*} {l : F
         hu.aestronglyMeasurable).enorm)
       (.of_forall hdom) hu.hasFiniteIntegral.ne
       (hlim.mono fun x hx => tendsto_const_nhds.congr' (hx.mono fun n hn => by
-        simp only [Pi.sub_apply, Pi.mul_apply, hn, one_mul, sub_self, enorm_zero]))
+        simp only [Pi.sub_apply, Pi.mul_apply, hn, one_mul, sub_self, eNorm_zero]))
 
 end TauCeti

@@ -274,7 +274,7 @@ theorem setLIntegral_closedBall_enorm_sub_rpow {s : ℝ} (hs : -(Module.finrank 
   · -- In dimension zero the exponent is positive, so the kernel vanishes identically.
     have hs0 : 0 < s := by simpa [Module.finrank_zero_of_subsingleton] using hs
     have h0 : (fun y : E => ‖x - y‖ₑ ^ s) = 0 := funext fun y => by
-      rw [Subsingleton.elim (x - y) 0, enorm_zero, ENNReal.zero_rpow_of_pos hs0, Pi.zero_apply]
+      rw [Subsingleton.elim (x - y) 0, eNorm_zero, ENNReal.zero_rpow_of_pos hs0, Pi.zero_apply]
     simp [h0, lintegral_zero_fun, Module.finrank_zero_of_subsingleton]
   have hball := mu.addHaar_closedBall_ae_eq_ball x R
   rw [Measure.restrict_congr_set hball, ← integral_norm_sub_rpow_ball hs hR x,

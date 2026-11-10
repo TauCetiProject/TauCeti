@@ -117,7 +117,7 @@ private theorem totalVariationOn_line_eq_lintegral {w : E → ℝ} (hw : ContDif
     simpa using ((hasDerivAt_id t).smul_const e).const_add y
   have hd := ((hw.differentiable one_ne_zero (y + t • e)).hasFDerivAt.comp_hasDerivAt t hl).deriv
   rw [← hd]
-  simp only [enorm_eq_nnnorm, ENNReal.coe_inj]
+  simp only [eNorm_eq_nnNorm, ENNReal.coe_inj]
   exact NNReal.eq (norm_deriv_eq_norm_fderiv (f := fun s : ℝ => w (y + s • e))).symm
 
 end TauCeti

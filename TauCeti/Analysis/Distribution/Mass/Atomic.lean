@@ -144,6 +144,6 @@ theorem massMeasure_sum_smul_delta (a : E → ℝ) (hs : (s : Set E) ⊆ Ω) :
   refine (eq_massMeasure_of_preimage_coe hfinite _ fun U hU => ?_).symm
   rw [localMass_sum_smul_delta a hs hU]
   conv_rhs => rw [Finset.sum_filter, ← Finset.sum_attach]
-  simp [Set.indicator_apply, smul_ite, enorm_eq_nnnorm]
+  simp [Set.indicator_apply, smul_ite, eNorm_eq_nnNorm]
 
 end Distribution

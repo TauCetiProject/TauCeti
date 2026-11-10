@@ -119,10 +119,10 @@ private theorem hilbertSchmidtEnergy_compression_le (T : E →L[𝕜] F) (V : Su
   set W := V.map (T : E →ₗ[𝕜] F)
   have := FiniteDimensional.complete 𝕜 W
   have hP : ‖W.orthogonalProjectionOnto‖ₑ ≤ 1 := by
-    rw [enorm_eq_nnnorm, ENNReal.coe_le_one_iff]
+    rw [eNorm_eq_nnNorm, ENNReal.coe_le_one_iff]
     exact_mod_cast Submodule.orthogonalProjectionOnto_norm_le _
   have hι : ‖V.subtypeL‖ₑ ≤ 1 := by
-    rw [enorm_eq_nnnorm, ENNReal.coe_le_one_iff]
+    rw [eNorm_eq_nnNorm, ENNReal.coe_le_one_iff]
     exact_mod_cast Submodule.norm_subtypeL_le V
   -- The middle space of `(P_W ∘ T) ∘ ι_V` is the complete source `E`, so `F` need not be complete.
   rw [← comp_assoc]
