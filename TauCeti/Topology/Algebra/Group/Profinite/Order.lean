@@ -259,7 +259,7 @@ theorem profiniteOrder_eq_of_finite :
     apply PNat.dvd_iff.mpr
     simpa only [PNat.mk_coe, U.toSubgroup.index_eq_card] using
       U.toSubgroup.index_dvd_card
-  · let U := openNormalSubgroupBot G
+  · let U : OpenNormalSubgroup G := ⊥
     refine le_iSup_of_le U ?_
     have hcard : Nat.card (G ⧸ U.toSubgroup) = Nat.card G := by
       simpa [U] using Nat.card_congr QuotientGroup.quotientBot.toEquiv

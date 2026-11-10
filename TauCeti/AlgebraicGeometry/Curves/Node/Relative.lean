@@ -232,13 +232,14 @@ instance : HasAffineProperty (@AtWorstNodalOfRelativeDimensionOne.{u})
   isLocal_affineProperty := inferInstance
   eq_targetAffineLocally' := rfl
 
-/-- On an affine target, the global nodal property is exactly the scheme-theoretic
+/-- For a target isomorphic to a spectrum, the global nodal property is exactly the scheme-theoretic
 criterion after any chosen presentation of the target as a spectrum. -/
-theorem atWorstNodalOfRelativeDimensionOne_iff_of_isAffine
-    {R : Type u} [CommRing R] {X Y : Scheme.{u}} [IsAffine Y]
+theorem atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec
+    {R : Type u} [CommRing R] {X Y : Scheme.{u}}
     (f : X ⟶ Y) (e : Y ≅ Spec (.of R)) :
     AtWorstNodalOfRelativeDimensionOne f ↔
       AffineAtWorstNodalOfRelativeDimensionOne (f ≫ e.hom) := by
+  have : IsAffine Y := IsAffine.of_isIso e.hom
   rw [HasAffineProperty.iff_of_isAffine
     (P := @AtWorstNodalOfRelativeDimensionOne.{u})
     (Q := affineAtWorstNodalOfRelativeDimensionOne)]
@@ -299,7 +300,7 @@ theorem _root_.AlgebraicGeometry.Scheme.formallyUnramified_quotient_singularLocu
   let : Algebra R Γ(X, U) := ((X.baseRingToStructurePresheaf R).app (op U.val)).hom.toAlgebra
   set I := X.singularLocus R
   have hAffine : AffineAtWorstNodalOfRelativeDimensionOne (X ↘ Spec (.of R)) :=
-    (atWorstNodalOfRelativeDimensionOne_iff_of_isAffine _ (Iso.refl _)).mp hnodal
+    (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _)).mp hnodal
   have hu : FormallyUnramified (I.subschemeι ≫ (X ↘ Spec (.of R))) :=
     hAffine.unramified_singularLocus.toFormallyUnramified
   -- The ring map from `Γ(Spec R, ⊤)` to the functions on the singular subscheme over `U`.
@@ -356,7 +357,7 @@ theorem _root_.TauCeti.NodeAlgebra.atWorstNodalOfRelativeDimensionOne
     {R : Type u} [CommRing R] (a : R) :
     AtWorstNodalOfRelativeDimensionOne
       (Spec.map (CommRingCat.ofHom (algebraMap R (NodeAlgebra R a)))) := by
-  apply (atWorstNodalOfRelativeDimensionOne_iff_of_isAffine _ (Iso.refl _)).mpr
+  apply (atWorstNodalOfRelativeDimensionOne_iff_of_iso_spec _ (Iso.refl _)).mpr
   simpa using NodeAlgebra.affineAtWorstNodalOfRelativeDimensionOne a
 
 end TauCeti.AlgebraicGeometry

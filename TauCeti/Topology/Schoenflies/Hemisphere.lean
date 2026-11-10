@@ -66,9 +66,9 @@ theorem IsCellularSet.exists_homeomorph_preimage_hemisphere
     rw [real_inner_self_eq_norm_sq, norm_eq_of_mem_sphere p, one_pow]
   -- `h₀` identifies the preimage of the closed hemisphere with the closed hemisphere; the
   -- cellular set `g⁻¹(p)` lies in the preimage of the open hemisphere.
-  obtain ⟨h₀, hoff, hin⟩ := hA.exists_homeomorph_image hg.continuousOn
-    (K := g ⁻¹' {y | 0 ≤ ⟪(y : F), (p : F)⟫}) (U := g ⁻¹' {y | 0 < ⟪(y : F), (p : F)⟫})
-    (isClosed_le continuous_const hgp).isCompact (isOpen_lt continuous_const hgp)
+  obtain ⟨h₀, hoff⟩ := hA.exists_homeomorph_image (K := g ⁻¹' {y | 0 ≤ ⟪(y : F), (p : F)⟫})
+    (U := g ⁻¹' {y | 0 < ⟪(y : F), (p : F)⟫}) (isClosed_le continuous_const hgp).isCompact
+    (isOpen_lt continuous_const hgp)
     (fun x hx ↦ by
       rw [mem_preimage, mem_singleton_iff] at hx
       rw [mem_preimage, mem_ofPred_eq, hx, hpp]
@@ -76,12 +76,17 @@ theorem IsCellularSet.exists_homeomorph_preimage_hemisphere
     (preimage_mono fun _ hy ↦ by
       rw [mem_ofPred_eq] at hy ⊢
       exact hy.le)
-    fun x hx y _ ↦ by
+    hg.continuousOn fun x hx y _ ↦ by
       simp only [mem_preimage, mem_singleton_iff]
       exact ⟨fun hxy ↦ (hinj x y hx hxy).imp_right fun hxp ↦ ⟨hxp, hxy.symm.trans hxp⟩,
         by rintro (rfl | ⟨hxp, hyp⟩); exacts [rfl, hxp.trans hyp.symm]⟩
+  -- Over the equator, `h₀` is `g`.
+  have h₀x (x : g ⁻¹' {y | 0 ≤ ⟪(y : F), (p : F)⟫}) (hx : ⟪(g x : F), (p : F)⟫ = 0) :
+      ((h₀ x : sphere (0 : F) 1) : F) = g x :=
+    congrArg Subtype.val <| hoff x fun hxU ↦ by
+      rw [mem_preimage, mem_ofPred_eq, hx] at hxU
+      exact lt_irrefl 0 hxU
   have hH := image_preimage_eq {y : sphere (0 : F) 1 | 0 ≤ ⟪(y : F), (p : F)⟫} hgs
-  have hH' := image_preimage_eq {y : sphere (0 : F) 1 | 0 < ⟪(y : F), (p : F)⟫} hgs
   -- The image of the preimage of the closed hemisphere is the closed hemisphere itself.
   let e := (Homeomorph.refl (sphere (0 : F) 1)).subtype
     (p := (· ∈ g '' (g ⁻¹' {y : sphere (0 : F) 1 | 0 ≤ ⟪(y : F), (p : F)⟫})))
@@ -91,19 +96,16 @@ theorem IsCellularSet.exists_homeomorph_preimage_hemisphere
     simp only [e, Homeomorph.subtype_apply_coe, Homeomorph.refl_apply, id_eq]
   refine ⟨h₀.trans (e.trans (hemisphereHomeomorph p)), fun x hx ↦ ?_,
     fun x ↦ (norm_hemisphereHomeomorph_apply_eq_one_iff p (e (h₀ x))).trans ?_⟩
-  · have h₀x : ((h₀ x : sphere (0 : F) 1) : F) = g x :=
-      congrArg Subtype.val <| hoff x fun hxU ↦ by
-        rw [mem_preimage, mem_ofPred_eq, hx] at hxU
-        exact lt_irrefl 0 hxU
-    simp only [Homeomorph.trans_apply, coe_hemisphereHomeomorph_apply, he, h₀x, hx, zero_smul,
-      sub_zero]
-  · -- Over the open hemisphere `h₀` stays over the open hemisphere, and off it `h₀` is `g`.
-    have hlt : 0 < ⟪((h₀ x : sphere (0 : F) 1) : F), (p : F)⟫ ↔ 0 < ⟪(g x : F), (p : F)⟫ := by
-      simpa only [hH', mem_ofPred_eq, mem_preimage] using hin x
-    have h₀H : 0 ≤ ⟪((h₀ x : sphere (0 : F) 1) : F), (p : F)⟫ := by
-      simpa only [hH, mem_ofPred_eq] using (h₀ x).2
-    have hxH : 0 ≤ ⟪(g x : F), (p : F)⟫ := x.2
+  · simp only [Homeomorph.trans_apply, coe_hemisphereHomeomorph_apply, he, h₀x x hx, hx,
+      zero_smul, sub_zero]
+  · -- If `h₀ x` is on the equator, it is `g k` for some `k` over the equator, where `h₀` is `g`;
+    -- injectivity of `h₀` then gives `k = x`.
     rw [he]
-    simpa only [h₀H.lt_iff_ne', hxH.lt_iff_ne', ne_eq, not_iff_not] using hlt
+    refine ⟨fun h ↦ ?_, fun hx ↦ by rw [h₀x x hx, hx]⟩
+    obtain ⟨k, hk, hkx⟩ := (h₀ x).2
+    have hgk : ⟪(g k : F), (p : F)⟫ = 0 := by rw [hkx, h]
+    have hkx' : h₀ ⟨k, hk⟩ = h₀ x := Subtype.ext (Subtype.ext ((h₀x ⟨k, hk⟩ hgk).trans
+      (congrArg Subtype.val hkx)))
+    rwa [← h₀.injective hkx']
 
 end TauCeti

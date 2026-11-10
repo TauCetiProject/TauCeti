@@ -55,6 +55,8 @@ the unit tangent vector at every time.
 * `TauCeti.homotopyOperator`: the homotopy operator `h`.
 * `TauCeti.IsSmoothForm.homotopyOperator`: `h` preserves `C^r` regularity.
 * `TauCeti.homotopyOperator_add`: `h` is additive on continuous forms.
+* `TauCeti.homotopyOperator_mpullback_prodMap_id`: `h` commutes with pullback along `g × id` for
+  a map `g` with invertible derivatives.
 * `TauCeti.mextDeriv_homotopyOperator_add_homotopyOperator_mextDeriv`: the cochain-homotopy
   identity `d (h φ) + h (d φ) = ι₁^* φ - ι₀^* φ`.
 * `TauCeti.mextDeriv_homotopyOperator`: for a closed form, `d (h φ) = ι₁^* φ - ι₀^* φ`.
@@ -147,6 +149,49 @@ theorem homotopyOperator_smul (c : ℝ)
   funext x
   -- The integrand of `c • φ` is `c` times the integrand of `φ`.
   exact intervalIntegral.integral_smul (μ := volume) (a := 0) (b := 1) c (homotopyIntegrand φ x)
+
+/-- **Naturality of the homotopy operator.** Pulling a form on the cylinder back along `g × id`
+commutes with the homotopy operator, for a differentiable map `g` whose derivatives are
+invertible, for instance a diffeomorphism. -/
+theorem homotopyOperator_mpullback_prodMap_id {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {g : M' → M} (hg : MDifferentiable I' I g)
+    (hdg : ∀ y, (mfderiv I' I g y).IsInvertible)
+    (φ : RoughForm (I.prod (𝓡∂ 1)) (M × Icc (0 : ℝ) 1) F (k + 1)) :
+    homotopyOperator (mpullback (I'.prod (𝓡∂ 1)) (I.prod (𝓡∂ 1)) (Prod.map g id) φ) =
+      mpullback I' I g (homotopyOperator φ) := by
+  funext y
+  obtain ⟨D, hD⟩ := hdg y
+  -- The derivative of `g` at `y`, with the model-space tangent identifications made explicit.
+  let Dm : E' →L[ℝ] E := mfderiv I' I g y
+  let D' : E' ≃L[ℝ] E := D
+  have hD' : (D' : E' →L[ℝ] E) = Dm := hD
+  have hL (a : E [⋀^Fin k]→L[ℝ] F) :
+      D'.symm.continuousAlternatingMapCongrLeft a = a.compContinuousLinearMap Dm := by
+    rw [ContinuousLinearEquiv.continuousAlternatingMapCongrLeft_apply,
+      ContinuousLinearEquiv.symm_symm, hD']
+  -- The values of both forms at `y` are alternating maps on the model space `E'`.
+  change @Eq (E' [⋀^Fin k]→L[ℝ] F) _ _
+  calc _ = ∫ t in (0 : ℝ)..1, D'.symm.continuousAlternatingMapCongrLeft
+          (homotopyIntegrand φ (g y) t) := by
+        refine intervalIntegral.integral_congr fun t _ ↦ ?_
+        rw [hL]
+        ext v
+        -- Both sides evaluate `φ` at `(g y, t)` on `∂ₜ` and the vectors `(dg (v i), 0)`; the
+        -- derivative of `g × id` acts componentwise.
+        refine (mpullback_apply _ φ _ (Fin.cons _ fun i ↦ ((v i : E'),
+          (0 : EuclideanSpace ℝ (Fin 1))))).trans (congrArg _ (funext fun i ↦ ?_))
+        rw [mfderiv_prodMap (hg y) mdifferentiableAt_id, mfderiv_id]
+        cases i using Fin.cases with
+        | zero => exact Prod.ext (map_zero Dm) rfl
+        | succ j => rfl
+    _ = D'.symm.continuousAlternatingMapCongrLeft
+          (∫ t in (0 : ℝ)..1, homotopyIntegrand φ (g y) t) :=
+        ContinuousLinearEquiv.intervalIntegral_comp_comm _ _
+    _ = _ := by
+        rw [hL]
+        ext v
+        exact (mpullback_apply (I := I') (I' := I) g (homotopyOperator φ) y v).symm
 
 /-! ### The chart expression of the homotopy operator -/
 
