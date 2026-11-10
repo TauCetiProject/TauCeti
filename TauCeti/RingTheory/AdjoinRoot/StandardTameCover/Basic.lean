@@ -511,12 +511,14 @@ theorem standardTameCover_residue_root (hf : f ∈ maximalIdeal A) :
   rw [AdjoinRoot.root_X_pow_sub_C_pow, ← AdjoinRoot.algebraMap_eq]
   rwa [← Ideal.mem_comap, ← Ideal.under_def, hcomap]
 
-/-- The residue field of a positive-degree root cover along the maximal ideal is canonically
-isomorphic to that of the base. The root reduces to zero, and constants reduce as in `A`. -/
-noncomputable def standardTameCoverResidueFieldEquiv (hf : f ∈ maximalIdeal A) (he : e ≠ 0) :
+/-- The residue field of a local root cover along the maximal ideal is canonically isomorphic to
+that of the base. The root reduces to zero, and constants reduce as in `A`. No hypothesis on the
+exponent is needed: the cover of exponent `0` is the zero ring, which is not local. -/
+noncomputable def standardTameCoverResidueFieldEquiv (hf : f ∈ maximalIdeal A) :
     ResidueField (standardTameCover A f e) ≃+* ResidueField A := by
   let φ : standardTameCover A f e →+* ResidueField A :=
-    AdjoinRoot.lift (residue A) 0 (by simp [he, (residue_eq_zero_iff f).mpr hf])
+    AdjoinRoot.lift (residue A) 0 (by
+      simp [ne_zero_of_isLocalRing_standardTameCover hf, (residue_eq_zero_iff f).mpr hf])
   have hφ : Function.Surjective φ := by
     intro z
     obtain ⟨a, rfl⟩ := residue_surjective z
@@ -527,9 +529,8 @@ noncomputable def standardTameCoverResidueFieldEquiv (hf : f ∈ maximalIdeal A)
 
 /-- The residue-field identification of a root cover preserves the residues of constants. -/
 @[simp]
-theorem standardTameCoverResidueFieldEquiv_residue_of (hf : f ∈ maximalIdeal A) (he : e ≠ 0)
-    (a : A) :
-    standardTameCoverResidueFieldEquiv hf he
+theorem standardTameCoverResidueFieldEquiv_residue_of (hf : f ∈ maximalIdeal A) (a : A) :
+    standardTameCoverResidueFieldEquiv hf
       (residue (standardTameCover A f e) (AdjoinRoot.of _ a)) = residue A a := by
   unfold standardTameCoverResidueFieldEquiv
   -- `erw` identifies the residue-field wrapper with the quotient used by the two comparisons.
@@ -538,11 +539,10 @@ theorem standardTameCoverResidueFieldEquiv_residue_of (hf : f ∈ maximalIdeal A
 
 /-- In the inverse residue-field identification, a constant is sent to the same constant. -/
 @[simp]
-theorem standardTameCoverResidueFieldEquiv_symm_residue (hf : f ∈ maximalIdeal A) (he : e ≠ 0)
-    (a : A) :
-    (standardTameCoverResidueFieldEquiv hf he).symm (residue A a) =
+theorem standardTameCoverResidueFieldEquiv_symm_residue (hf : f ∈ maximalIdeal A) (a : A) :
+    (standardTameCoverResidueFieldEquiv hf).symm (residue A a) =
       residue (standardTameCover A f e) (AdjoinRoot.of _ a) := by
-  apply (standardTameCoverResidueFieldEquiv hf he).injective
+  apply (standardTameCoverResidueFieldEquiv hf).injective
   simp
 
 /-- A root cover along the maximal ideal has separably closed residue field whenever the
@@ -550,8 +550,7 @@ base does. This does not require the exponent to be invertible. -/
 theorem standardTameCover_isSepClosed_residueField [IsSepClosed (ResidueField A)]
     (hf : f ∈ maximalIdeal A) :
     IsSepClosed (ResidueField (standardTameCover A f e)) :=
-  IsSepClosed.of_ringEquiv
-    (standardTameCoverResidueFieldEquiv hf (ne_zero_of_isLocalRing_standardTameCover hf)).symm
+  IsSepClosed.of_ringEquiv (standardTameCoverResidueFieldEquiv hf).symm
 
 end ResidueField
 
