@@ -108,17 +108,20 @@ theorem legendreSym_evenPrimeDiscriminantRadicand_neg_four_eq_one_iff (hq : q �
     omega
   · norm_num [ZMod.intCast_zmod_eq_zero_iff_dvd]
 
+/-- At the prime `2` the Legendre symbol of an even integer is `0`. -/
+private theorem legendreSym_two_eq_zero_of_two_dvd {a : ℤ} (h : (2 : ℤ) ∣ a) :
+    legendreSym 2 a = 0 := by
+  rw [legendreSym.eq_zero_iff, ZMod.intCast_zmod_eq_zero_iff_dvd]
+  exact_mod_cast h
+
 /-- The radicand `2` of the prime discriminant `8` is a quadratic residue modulo a
 prime `q` exactly when `q ≡ 1` or `7 (mod 8)`; equivalently `q` splits in `ℚ(√2)`. -/
 theorem legendreSym_evenPrimeDiscriminantRadicand_eight_eq_one_iff :
     legendreSym q (evenPrimeDiscriminantRadicand 8) = 1 ↔ q % 8 = 1 ∨ q % 8 = 7 := by
   by_cases hq : q = 2
   · subst hq
-    have h0 : legendreSym 2 (evenPrimeDiscriminantRadicand 8) = 0 := by
-      rw [evenPrimeDiscriminantRadicand_eight, legendreSym.eq_zero_iff,
-        ZMod.intCast_zmod_eq_zero_iff_dvd]
-      norm_num
-    rw [h0]
+    rw [evenPrimeDiscriminantRadicand_eight,
+      legendreSym_two_eq_zero_of_two_dvd (a := 2) (by norm_num)]
     norm_num
   rw [evenPrimeDiscriminantRadicand_eight,
     legendreSym.eq_one_iff (p := q) (a := (2 : ℤ))]
@@ -133,11 +136,8 @@ theorem legendreSym_evenPrimeDiscriminantRadicand_neg_eight_eq_one_iff :
     legendreSym q (evenPrimeDiscriminantRadicand (-8)) = 1 ↔ q % 8 = 1 ∨ q % 8 = 3 := by
   by_cases hq : q = 2
   · subst hq
-    have h0 : legendreSym 2 (evenPrimeDiscriminantRadicand (-8)) = 0 := by
-      rw [evenPrimeDiscriminantRadicand_neg_eight, legendreSym.eq_zero_iff,
-        ZMod.intCast_zmod_eq_zero_iff_dvd]
-      norm_num
-    rw [h0]
+    rw [evenPrimeDiscriminantRadicand_neg_eight,
+      legendreSym_two_eq_zero_of_two_dvd (a := -2) (by norm_num)]
     norm_num
   rw [evenPrimeDiscriminantRadicand_neg_eight,
     legendreSym.eq_one_iff (p := q) (a := (-2 : ℤ))]
@@ -171,10 +171,9 @@ theorem legendreSym_evenPrimeDiscriminant_eq_one_iff {D : ℤ}
       else q % 8 = 1 ∨ q % 8 = 3 := by
   by_cases hq : q = 2
   · subst hq
-    have h0 : legendreSym 2 D = 0 := by
-      rw [legendreSym.eq_zero_iff, ZMod.intCast_zmod_eq_zero_iff_dvd]
-      rcases hD with rfl | rfl | rfl <;> norm_num
-    rcases hD with rfl | rfl | rfl <;> rw [h0] <;> norm_num
+    have h2 : (2 : ℤ) ∣ D := by rcases hD with rfl | rfl | rfl <;> norm_num
+    rw [legendreSym_two_eq_zero_of_two_dvd h2]
+    rcases hD with rfl | rfl | rfl <;> norm_num
   rw [legendreSym_evenPrimeDiscriminant_eq_legendreSym_radicand hD hq,
     legendreSym_evenPrimeDiscriminantRadicand_eq_one_iff hD hq]
 
