@@ -78,7 +78,7 @@ closed intervals for a reciprocal radius parameter `α / r`.
 * `ENNReal.min_le_rpow_one_sub_mul_rpow`: `min x y ≤ x ^ (1 - p) * y ^ p` for `p ∈ [0, 1]`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
 * `ENNReal.rpow_le_rpow_sub_mul_rpow`: `a ^ (p - q) ≤ b ^ (p - q)` gives
-  `a ^ p ≤ b ^ (p - q) * a ^ q` for `a ≠ 0, ∞`.
+  `a ^ p ≤ b ^ (p - q) * a ^ q` for `a ≠ ∞` and `0 < p`.
 * `ENNReal.eventually_forall_mem_Icc_rpow_le_add`: `y ^ d ≤ x ^ d + ε` for `y ∈ [x, z]` and `z`
   near `x`.
 * `ENNReal.exists_pos_forall_mem_Icc_rpow_le_add`: for `x < r`, a radius `η > 0` with
@@ -165,9 +165,13 @@ theorem rpow_le_rpow_of_nonpos {x y : ℝ≥0∞} {z : ℝ} (hxy : x ≤ y) (hz 
   exact ENNReal.inv_le_inv.mpr (rpow_le_rpow hxy hw)
 
 /-- Since `a ^ p = a ^ (p - q) * a ^ q` for `a ≠ 0, ∞`, a bound `a ^ (p - q) ≤ b ^ (p - q)` gives
-`a ^ p ≤ b ^ (p - q) * a ^ q`, trading the power `p` of `a` for the power `q`. -/
-theorem rpow_le_rpow_sub_mul_rpow {a b : ℝ≥0∞} {p q : ℝ} (ha0 : a ≠ 0) (ha : a ≠ ∞)
+`a ^ p ≤ b ^ (p - q) * a ^ q`, trading the power `p` of `a` for the power `q`. For `0 < p` the
+case `a = 0` holds trivially, so only `a ≠ ∞` is assumed. -/
+theorem rpow_le_rpow_sub_mul_rpow {a b : ℝ≥0∞} {p q : ℝ} (hp : 0 < p) (ha : a ≠ ∞)
     (h : a ^ (p - q) ≤ b ^ (p - q)) : a ^ p ≤ b ^ (p - q) * a ^ q := by
+  rcases eq_or_ne a 0 with rfl | ha0
+  · rw [zero_rpow_of_pos hp]
+    exact zero_le
   rw [← sub_add_cancel p q, rpow_add _ _ ha0 ha, add_sub_cancel_right]
   gcongr
 

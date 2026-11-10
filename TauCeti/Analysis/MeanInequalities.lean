@@ -154,13 +154,16 @@ theorem geom_mean_le_arith_mean2_weighted_ofReal {θ : ℝ} (hθ₀ : 0 ≤ θ) 
     rw [← Real.toNNReal_add (sub_nonneg.2 hθ₁) hθ₀, sub_add_cancel, Real.toNNReal_one]
   rwa [Real.coe_toNNReal _ (sub_nonneg.2 hθ₁), Real.coe_toNNReal _ hθ₀] at h
 
-/-- For an intermediate exponent `p = (1 - θ) p₀ + θ p₁` with `0 ≤ θ ≤ 1` and `a, M ≠ 0, ∞`,
-`a ^ p ≤ (1 - θ) M ^ (p - p₀) a ^ p₀ + θ M ^ (p - p₁) a ^ p₁`. -/
+/-- For an intermediate exponent `0 < p = (1 - θ) p₀ + θ p₁` with `0 ≤ θ ≤ 1`, `a ≠ ∞` and
+`M ≠ 0, ∞`, `a ^ p ≤ (1 - θ) M ^ (p - p₀) a ^ p₀ + θ M ^ (p - p₁) a ^ p₁`. -/
 theorem rpow_le_ofReal_mul_add_ofReal_mul {a M : ℝ≥0∞} {θ p p₀ p₁ : ℝ} (hθ₀ : 0 ≤ θ)
-    (hθ₁ : θ ≤ 1) (hp : (1 - θ) * p₀ + θ * p₁ = p) (ha0 : a ≠ 0) (ha : a ≠ ∞) (hM0 : M ≠ 0)
+    (hθ₁ : θ ≤ 1) (hp : (1 - θ) * p₀ + θ * p₁ = p) (hp0 : 0 < p) (ha : a ≠ ∞) (hM0 : M ≠ 0)
     (hM : M ≠ ∞) :
     a ^ p ≤ ENNReal.ofReal (1 - θ) * (M ^ (p - p₀) * a ^ p₀) +
       ENNReal.ofReal θ * (M ^ (p - p₁) * a ^ p₁) := by
+  rcases eq_or_ne a 0 with rfl | ha0
+  · rw [zero_rpow_of_pos hp0]
+    exact zero_le
   refine le_of_eq_of_le ?_ (geom_mean_le_arith_mean2_weighted_ofReal hθ₀ hθ₁ _ _)
   have hM' : (p - p₀) * (1 - θ) + (p - p₁) * θ = 0 := by subst hp; ring
   have ha' : p₀ * (1 - θ) + p₁ * θ = p := by subst hp; ring

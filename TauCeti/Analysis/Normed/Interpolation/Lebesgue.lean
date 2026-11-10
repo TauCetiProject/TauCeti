@@ -175,6 +175,15 @@ theorem norm_lebesgueInterToLp_le (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁)
     (x : (lebesgue 𝕜 E μ p₀ p₁).inter) : ‖lebesgueInterToLp h₀ h₁ x‖ ≤ ‖x‖ :=
   norm_toLp_inter_fst_le h₀ h₁ x
 
+theorem lebesgueInterToLp_injective (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) :
+    Function.Injective (lebesgueInterToLp h₀ h₁ : (lebesgue 𝕜 E μ p₀ p₁).inter → Lp E p μ) := by
+  intro x y hxy
+  have h₀' : ⇑(x : Lp E p₀ μ × Lp E p₁ μ).1 =ᵐ[μ] ⇑(y : Lp E p₀ μ × Lp E p₁ μ).1 :=
+    (coeFn_lebesgueInterToLp h₀ h₁ x).symm.trans
+      (hxy ▸ coeFn_lebesgueInterToLp h₀ h₁ y)
+  refine Subtype.ext (Prod.ext (Lp.ext h₀') (Lp.ext ?_))
+  exact (mem_lebesgue_inter_iff.1 x.2).symm.trans (h₀'.trans (mem_lebesgue_inter_iff.1 y.2))
+
 /-- The inclusion `L^{p₀} ∩ L^{p₁} → Lᵖ` is compatible with the embeddings into `L¹ + L^∞`. -/
 @[simp]
 theorem ofLp_lebesgueInterToLp (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (x : (lebesgue 𝕜 E μ p₀ p₁).inter) :

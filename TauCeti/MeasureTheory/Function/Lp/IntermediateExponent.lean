@@ -37,7 +37,8 @@ A cruder bound needs no interpolation parameter: `‖f‖_p ≤ max (‖f‖_{p�
 `M ^ (p - p₀) ‖f‖ ^ {p₀}` almost everywhere when `p₁ = ∞`; for finite `p₁`, writing
 `p = (1 - θ) p₀ + θ p₁`, the weighted AM-GM inequality bounds it by
 `(1 - θ) M ^ (p - p₀) ‖f‖ ^ {p₀} + θ M ^ (p - p₁) ‖f‖ ^ {p₁}`. Either way the integral is at most
-`M ^ p`.
+`M ^ p` (`MeasureTheory.lintegral_rpow_enorm_le_of_eLpNorm_le_of_eLpNorm_top_le` and
+`MeasureTheory.lintegral_rpow_enorm_le_of_eLpNorm_le_of_eLpNorm_le`).
 
 Dually, `Lᵖ ⊆ L^{p₀} + L^{p₁}` for `p₀ ≤ p ≤ p₁`: every `f ∈ Lᵖ` is almost everywhere a sum `g + h`
 with `‖g‖_{p₀} ≤ ‖f‖_p` and `‖h‖_{p₁} ≤ ‖f‖_p` (`MeasureTheory.MemLp.exists_add_ae_eq_of_le_of_le`,
@@ -102,19 +103,15 @@ theorem MemLp.of_le_of_le {f : α → ε} {p₀ p p₁ : ℝ≥0∞} (hf₀ : Me
         rw [lintegral_add_left' (hmeas.enorm.pow_const _)]
         exact ENNReal.add_lt_top.2 ⟨hI₀, hI₁⟩
 
-section Split
-
-variable {E : Type*} [NormedAddCommGroup E]
-
 /-- For `p ≠ 0, ∞`, the integral of `‖f‖ₑ ^ p` is the `p`-th power of the `Lᵖ` seminorm of `f`. -/
-theorem lintegral_rpow_enorm_eq_eLpNorm_rpow {f : α → E} {p : ℝ≥0∞} (hp0 : p ≠ 0)
+theorem lintegral_rpow_enorm_eq_eLpNorm_rpow {f : α → ε} {p : ℝ≥0∞} (hp0 : p ≠ 0)
     (hp : p ≠ ∞) (hf : AEStronglyMeasurable f μ) :
     ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ = eLpNorm f p μ ^ p.toReal := by
   rw [eLpNorm_eq_eLpNorm' hp0 hp hf,
     lintegral_rpow_enorm_eq_rpow_eLpNorm' (ENNReal.toReal_pos hp0 hp)]
 
 /-- If `∫ ‖k‖ ^ q ≤ t ^ q` then `‖k‖_q ≤ t`. -/
-theorem eLpNorm_le_of_lintegral_rpow_le {k : α → E} {q : ℝ≥0∞} {t : ℝ≥0∞} (hq0 : q ≠ 0)
+theorem eLpNorm_le_of_lintegral_rpow_le {k : α → ε} {q : ℝ≥0∞} {t : ℝ≥0∞} (hq0 : q ≠ 0)
     (hq : q ≠ ∞) (hk : AEStronglyMeasurable k μ) (h : ∫⁻ x, ‖k x‖ₑ ^ q.toReal ∂μ ≤ t ^ q.toReal) :
     eLpNorm k q μ ≤ t := by
   have hq' : 0 < q.toReal := ENNReal.toReal_pos hq0 hq
@@ -122,7 +119,7 @@ theorem eLpNorm_le_of_lintegral_rpow_le {k : α → E} {q : ℝ≥0∞} {t : ℝ
   exact h
 
 /-- If `‖f‖_q ≤ M` for `M ≠ 0, ∞`, then `∫ M ^ (r - q) ‖f‖ ^ q ≤ M ^ r` for every real `r`. -/
-theorem lintegral_rpow_sub_mul_rpow_enorm_le {f : α → E} {q M : ℝ≥0∞} (r : ℝ) (hq0 : q ≠ 0)
+theorem lintegral_rpow_sub_mul_rpow_enorm_le {f : α → ε} {q M : ℝ≥0∞} (r : ℝ) (hq0 : q ≠ 0)
     (hq : q ≠ ∞) (hM0 : M ≠ 0) (hM : M ≠ ∞) (hf : AEStronglyMeasurable f μ)
     (hfM : eLpNorm f q μ ≤ M) :
     ∫⁻ x, M ^ (r - q.toReal) * ‖f x‖ₑ ^ q.toReal ∂μ ≤ M ^ r := by
@@ -133,7 +130,7 @@ theorem lintegral_rpow_sub_mul_rpow_enorm_le {f : α → E} {q M : ℝ≥0∞} (
     _ = M ^ r := by rw [← ENNReal.rpow_add _ _ hM0 hM, sub_add_cancel]
 
 /-- If `‖k x‖ ^ q ≤ t ^ (q - p) ‖f x‖ ^ p` pointwise, where `t = ‖f‖_p`, then `‖k‖_q ≤ t`. -/
-theorem eLpNorm_le_of_rpow_le_rpow_mul {f k : α → E} {p q : ℝ≥0∞} (hp0 : p ≠ 0)
+theorem eLpNorm_le_of_rpow_le_rpow_mul {f k : α → ε} {p q : ℝ≥0∞} (hp0 : p ≠ 0)
     (hp : p ≠ ∞) (hq0 : q ≠ 0) (hq : q ≠ ∞) (hf : AEStronglyMeasurable f μ)
     (hk : AEStronglyMeasurable k μ) (ht0 : eLpNorm f p μ ≠ 0) (ht : eLpNorm f p μ ≠ ∞)
     (hkf : ∀ x, ‖k x‖ₑ ^ q.toReal ≤
@@ -142,11 +139,108 @@ theorem eLpNorm_le_of_rpow_le_rpow_mul {f k : α → E} {p q : ℝ≥0∞} (hp0 
   eLpNorm_le_of_lintegral_rpow_le hq0 hq hk <| (lintegral_mono hkf).trans <|
     lintegral_rpow_sub_mul_rpow_enorm_le _ hp0 hp ht0 ht hf le_rfl
 
-/-- For `p₀ ≤ p < ∞`, the part of `f` where `‖f‖` exceeds `‖f‖_p` has `L^{p₀}` norm at most
-`‖f‖_p`. -/
+/-- If `‖f‖_{p₀} ≤ M` and `‖f‖_∞ ≤ M` for `M ≠ 0, ∞`, then `∫ ‖f‖ ^ p ≤ M ^ p` for every finite
+`p ≥ p₀`, with `p₀ ≠ 0`: almost everywhere `‖f‖ ^ p ≤ M ^ (p - p₀) ‖f‖ ^ {p₀}`. -/
+theorem lintegral_rpow_enorm_le_of_eLpNorm_le_of_eLpNorm_top_le {f : α → ε} {p₀ p M : ℝ≥0∞}
+    (hf : AEStronglyMeasurable f μ) (hp₀ : p₀ ≠ 0) (h₀ : p₀ ≤ p) (hp : p ≠ ∞) (hM0 : M ≠ 0)
+    (hM : M ≠ ∞) (hf₀ : eLpNorm f p₀ μ ≤ M) (hf₁ : eLpNorm f ∞ μ ≤ M) :
+    ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ ≤ M ^ p.toReal := by
+  refine (lintegral_mono_ae ?_).trans
+    (lintegral_rpow_sub_mul_rpow_enorm_le _ hp₀ (ne_top_of_le_ne_top hp h₀) hM0 hM hf hf₀)
+  filter_upwards [ae_le_eLpNormEssSup (f := f) (μ := μ)] with x hx
+  rw [← eLpNorm_exponent_top hf] at hx
+  exact ENNReal.rpow_le_rpow_sub_mul_rpow (ENNReal.toReal_pos (hp₀.bot_lt.trans_le h₀).ne' hp)
+    (ne_top_of_le_ne_top hM (hx.trans hf₁))
+    (ENNReal.rpow_le_rpow (hx.trans hf₁) (sub_nonneg.2 (ENNReal.toReal_mono hp h₀)))
+
+/-- If `‖f‖_{p₀} ≤ M` and `‖f‖_{p₁} ≤ M` for `M ≠ 0, ∞`, then `∫ ‖f‖ ^ p ≤ M ^ p` for
+`p₀ ≤ p ≤ p₁` with `p₀ ≠ 0` and `p₁` finite. Writing `p = (1 - θ) p₀ + θ p₁`, the weighted
+AM-GM inequality bounds `‖f‖ ^ p` by `(1 - θ) M ^ (p - p₀) ‖f‖ ^ {p₀} + θ M ^ (p - p₁) ‖f‖ ^ {p₁}`
+wherever `‖f‖` is finite, and each term integrates to at most a multiple of `M ^ p`. -/
+theorem lintegral_rpow_enorm_le_of_eLpNorm_le_of_eLpNorm_le {f : α → ε} {p₀ p p₁ M : ℝ≥0∞}
+    (hf : AEStronglyMeasurable f μ) (hp₀ : p₀ ≠ 0) (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) (hp₁ : p₁ ≠ ∞)
+    (hM0 : M ≠ 0) (hM : M ≠ ∞) (hf₀ : eLpNorm f p₀ μ ≤ M) (hf₁ : eLpNorm f p₁ μ ≤ M) :
+    ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ ≤ M ^ p.toReal := by
+  have hp : p ≠ ∞ := ne_top_of_le_ne_top hp₁ h₁
+  have hp₀' : p₀ ≠ ∞ := ne_top_of_le_ne_top hp h₀
+  have hp₁0 : p₁ ≠ 0 := (hp₀.bot_lt.trans_le (h₀.trans h₁)).ne'
+  have hle₀ : p₀.toReal ≤ p.toReal := ENNReal.toReal_mono hp h₀
+  have hle₁ : p.toReal ≤ p₁.toReal := ENNReal.toReal_mono hp₁ h₁
+  set θ := (p.toReal - p₀.toReal) / (p₁.toReal - p₀.toReal)
+  have hθ₀ : 0 ≤ θ := div_nonneg (sub_nonneg.2 hle₀) (sub_nonneg.2 (hle₀.trans hle₁))
+  have hθ₁ : θ ≤ 1 := div_le_one_of_le₀ (by linarith) (sub_nonneg.2 (hle₀.trans hle₁))
+  have hθ : (1 - θ) * p₀.toReal + θ * p₁.toReal = p.toReal := by
+    have : θ * (p₁.toReal - p₀.toReal) = p.toReal - p₀.toReal :=
+      div_mul_cancel_of_imp fun h => by linarith
+    linear_combination this
+  -- `‖f‖` is finite almost everywhere, since `‖f‖ ^ p₀` has finite integral.
+  have hfin : ∀ᵐ x ∂μ, ‖f x‖ₑ ≠ ∞ := by
+    have hI : ∫⁻ x, ‖f x‖ₑ ^ p₀.toReal ∂μ ≠ ∞ := by
+      rw [lintegral_rpow_enorm_eq_eLpNorm_rpow hp₀ hp₀' hf]
+      exact ENNReal.rpow_ne_top_of_nonneg ENNReal.toReal_nonneg (ne_top_of_le_ne_top hM hf₀)
+    filter_upwards [ae_lt_top' (hf.enorm.pow_const _) hI] with x hx
+    exact ((ENNReal.rpow_lt_top_iff_of_pos (ENNReal.toReal_pos hp₀ hp₀')).1 hx).ne
+  have hI₀ := lintegral_rpow_sub_mul_rpow_enorm_le p.toReal hp₀ hp₀' hM0 hM hf hf₀
+  have hI₁ := lintegral_rpow_sub_mul_rpow_enorm_le p.toReal hp₁0 hp₁ hM0 hM hf hf₁
+  calc ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ
+      ≤ ∫⁻ x, ENNReal.ofReal (1 - θ) * (M ^ (p.toReal - p₀.toReal) * ‖f x‖ₑ ^ p₀.toReal) +
+          ENNReal.ofReal θ * (M ^ (p.toReal - p₁.toReal) * ‖f x‖ₑ ^ p₁.toReal) ∂μ := by
+        refine lintegral_mono_ae ?_
+        filter_upwards [hfin] with x hx
+        exact ENNReal.rpow_le_ofReal_mul_add_ofReal_mul hθ₀ hθ₁ hθ
+          (ENNReal.toReal_pos (hp₀.bot_lt.trans_le h₀).ne' hp) hx hM0 hM
+    _ ≤ ENNReal.ofReal (1 - θ) * M ^ p.toReal + ENNReal.ofReal θ * M ^ p.toReal := by
+        rw [lintegral_add_left' (((hf.enorm.pow_const _).const_mul _).const_mul _),
+          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
+          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+        gcongr
+    _ = M ^ p.toReal := by
+        rw [← add_mul, ← ENNReal.ofReal_add (sub_nonneg.2 hθ₁) hθ₀, sub_add_cancel,
+          ENNReal.ofReal_one, one_mul]
+
+/-- The `Lᵖ` norm at an intermediate exponent `p₀ ≤ p ≤ p₁`, with `p₀ ≠ 0`, is at most the
+larger of the `L^{p₀}` and `L^{p₁}` norms: `‖f‖_p ≤ max (‖f‖_{p₀}, ‖f‖_{p₁})`. This is the
+quantitative form of `MeasureTheory.MemLp.of_le_of_le`. -/
+theorem eLpNorm_le_max_of_le_of_le {f : α → ε} {p₀ p p₁ : ℝ≥0∞}
+    (hf : AEStronglyMeasurable f μ) (hp₀ : p₀ ≠ 0) (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) :
+    eLpNorm f p μ ≤ max (eLpNorm f p₀ μ) (eLpNorm f p₁ μ) := by
+  rcases eq_or_ne p ∞ with rfl | hp
+  · obtain rfl := top_le_iff.1 h₁
+    exact le_max_right _ _
+  set M := max (eLpNorm f p₀ μ) (eLpNorm f p₁ μ)
+  rcases eq_or_ne M ∞ with hMt | hMt
+  · simp [hMt]
+  rcases eq_or_ne M 0 with hM0 | hM0
+  · -- `‖f‖ₑ` vanishes almost everywhere, since its `L^{p₀}` seminorm does.
+    have hf0 : (‖f ·‖ₑ) =ᵐ[μ] 0 := (eLpNorm_eq_zero_iff hp₀).1 <| by
+      rw [eLpNorm_enorm f hf]
+      exact le_antisymm (hM0 ▸ le_max_left _ _) bot_le
+    rw [← eLpNorm_enorm f hf, eLpNorm_congr_ae hf0, eLpNorm_zero]
+    exact zero_le
+  refine eLpNorm_le_of_lintegral_rpow_le (hp₀.bot_lt.trans_le h₀).ne' hp hf ?_
+  rcases eq_or_ne p₁ ∞ with rfl | hp₁
+  · exact lintegral_rpow_enorm_le_of_eLpNorm_le_of_eLpNorm_top_le hf hp₀ h₀ hp hM0 hMt
+      (le_max_left _ _) (le_max_right _ _)
+  · exact lintegral_rpow_enorm_le_of_eLpNorm_le_of_eLpNorm_le hf hp₀ h₀ h₁ hp₁ hM0 hMt
+      (le_max_left _ _) (le_max_right _ _)
+
+section Split
+
+variable {E : Type*} [NormedAddCommGroup E]
+
+/-- For `p₀ ≤ p`, the part of `f` where `‖f‖` exceeds `‖f‖_p` has `L^{p₀}` norm at most
+`‖f‖_p`. For `p = ∞` this part vanishes almost everywhere. -/
 theorem eLpNorm_indicator_eLpNorm_lt_enorm_le {f : α → E} {p₀ p : ℝ≥0∞}
-    (hf : AEStronglyMeasurable f μ) (h₀ : p₀ ≤ p) (hp : p ≠ ∞) :
+    (hf : AEStronglyMeasurable f μ) (h₀ : p₀ ≤ p) :
     eLpNorm ({x | eLpNorm f p μ < ‖f x‖ₑ}.indicator f) p₀ μ ≤ eLpNorm f p μ := by
+  rcases eq_or_ne p ∞ with rfl | hp
+  · -- `‖f‖ ≤ ‖f‖_∞` almost everywhere, so the restriction vanishes almost everywhere.
+    have h0 : {x | eLpNorm f ∞ μ < ‖f x‖ₑ}.indicator f =ᵐ[μ] 0 := by
+      filter_upwards [ae_le_eLpNormEssSup (f := f) (μ := μ)] with x hx
+      rw [← eLpNorm_exponent_top hf] at hx
+      exact Set.indicator_of_notMem (not_lt.2 hx) f
+    rw [eLpNorm_congr_ae h0, eLpNorm_zero]
+    exact zero_le
   set t := eLpNorm f p μ
   set s := {x | t < ‖f x‖ₑ}
   have hs₀ : NullMeasurableSet s μ := nullMeasurableSet_lt aemeasurable_const hf.enorm
@@ -161,14 +255,14 @@ theorem eLpNorm_indicator_eLpNorm_lt_enorm_le {f : α → E} {p₀ p : ℝ≥0�
     rw [eLpNorm_congr_ae ((eLpNorm_eq_zero_iff hp0).1 ht0), eLpNorm_zero, ht0]
   rcases eq_or_ne t ∞ with ht | ht
   · exact ht ▸ le_top
+  have hp₀ : 0 < p₀.toReal := ENNReal.toReal_pos hp₀0 (ne_top_of_le_ne_top hp h₀)
   refine eLpNorm_le_of_rpow_le_rpow_mul hp0 hp hp₀0 (ne_top_of_le_ne_top hp h₀) hf hs ht0 ht
     fun x => ?_
   by_cases hx : x ∈ s
   · rw [Set.indicator_of_mem hx]
-    exact ENNReal.rpow_le_rpow_sub_mul_rpow (hx.trans_le' bot_le).ne' enorm_ne_top
+    exact ENNReal.rpow_le_rpow_sub_mul_rpow hp₀ enorm_ne_top
       (ENNReal.rpow_le_rpow_of_nonpos (le_of_lt hx) (sub_nonpos.2 (ENNReal.toReal_mono hp h₀)))
-  · rw [Set.indicator_of_notMem hx, enorm_zero,
-      ENNReal.zero_rpow_of_pos (ENNReal.toReal_pos hp₀0 (ne_top_of_le_ne_top hp h₀))]
+  · rw [Set.indicator_of_notMem hx, enorm_zero, ENNReal.zero_rpow_of_pos hp₀]
     exact zero_le
 
 /-- For `p ≤ p₁`, the part of `f` where `‖f‖` is at most `‖f‖_p` has `L^{p₁}` norm at most
@@ -201,18 +295,11 @@ theorem eLpNorm_indicator_enorm_le_eLpNorm_le {f : α → E} {p p₁ : ℝ≥0�
     rintro rfl
     exact ht0 (eLpNorm_exponent_zero hf)
   have hp₁0 : p₁ ≠ 0 := (hp0.bot_lt.trans_le h₁).ne'
-  refine eLpNorm_le_of_rpow_le_rpow_mul hp0 hp hp₁0 hp₁ hf hs ht0 ht fun x => ?_
-  by_cases hx : x ∈ s ∧ f x ≠ 0
-  · rw [Set.indicator_of_mem hx.1]
-    exact ENNReal.rpow_le_rpow_sub_mul_rpow (enorm_ne_zero.2 hx.2) enorm_ne_top
-      (ENNReal.rpow_le_rpow hx.1 (sub_nonneg.2 (ENNReal.toReal_mono hp₁ h₁)))
-  · have : s.indicator f x = 0 := by
-      by_cases hx' : x ∈ s
-      · rw [Set.indicator_of_mem hx']
-        exact not_not.1 fun h => hx ⟨hx', h⟩
-      · exact Set.indicator_of_notMem hx' _
-    rw [this, enorm_zero, ENNReal.zero_rpow_of_pos (ENNReal.toReal_pos hp₁0 hp₁)]
-    exact zero_le
+  refine eLpNorm_le_of_rpow_le_rpow_mul hp0 hp hp₁0 hp₁ hf hs ht0 ht fun x =>
+    (ENNReal.rpow_le_rpow_sub_mul_rpow (ENNReal.toReal_pos hp₁0 hp₁) enorm_ne_top
+      (ENNReal.rpow_le_rpow (hst x) (sub_nonneg.2 (ENNReal.toReal_mono hp₁ h₁)))).trans ?_
+  gcongr
+  exact enorm_indicator_le_enorm_self f x
 
 /-- A function in `Lᵖ` is the sum of a function in `L^{p₀}` and a function in `L^{p₁}` for every
 `p₀ ≤ p ≤ p₁`, each of norm at most `‖f‖_p`. This is the inclusion `Lᵖ ⊆ L^{p₀} + L^{p₁}`. -/
@@ -220,84 +307,15 @@ theorem MemLp.exists_add_ae_eq_of_le_of_le {f : α → E} {p₀ p p₁ : ℝ≥0
     (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) :
     ∃ g h : α → E, MemLp g p₀ μ ∧ eLpNorm g p₀ μ ≤ eLpNorm f p μ ∧
       MemLp h p₁ μ ∧ eLpNorm h p₁ μ ≤ eLpNorm f p μ ∧ g + h =ᵐ[μ] f := by
-  rcases eq_or_ne p ∞ with rfl | hp
-  · obtain rfl := top_le_iff.1 h₁
-    exact ⟨0, f, MemLp.zero, by simp, hf, le_rfl, by simp⟩
   -- Split `f` at the level `‖f‖_p`.
   have hf' := hf.aestronglyMeasurable
-  have hg := eLpNorm_indicator_eLpNorm_lt_enorm_le hf' h₀ hp
+  have hg := eLpNorm_indicator_eLpNorm_lt_enorm_le hf' h₀
   have hh := eLpNorm_indicator_enorm_le_eLpNorm_le hf' h₁
   refine ⟨_, _, hg.trans_lt hf.eLpNorm_lt_top, hg, hh.trans_lt hf.eLpNorm_lt_top, hh,
     Filter.Eventually.of_forall fun x => ?_⟩
   by_cases hx : eLpNorm f p μ < ‖f x‖ₑ
   · simp [hx, not_le.2 hx]
   · simp [hx, not_lt.1 hx]
-
-/-- The `Lᵖ` norm at an intermediate exponent `p₀ ≤ p ≤ p₁`, with `p₀ ≠ 0`, is at most the
-larger of the `L^{p₀}` and `L^{p₁}` norms: `‖f‖_p ≤ max (‖f‖_{p₀}, ‖f‖_{p₁})`. This is the
-quantitative form of `MeasureTheory.MemLp.of_le_of_le`. -/
-theorem eLpNorm_le_max_of_le_of_le {f : α → E} {p₀ p p₁ : ℝ≥0∞}
-    (hf : AEStronglyMeasurable f μ) (hp₀ : p₀ ≠ 0) (h₀ : p₀ ≤ p) (h₁ : p ≤ p₁) :
-    eLpNorm f p μ ≤ max (eLpNorm f p₀ μ) (eLpNorm f p₁ μ) := by
-  set M := max (eLpNorm f p₀ μ) (eLpNorm f p₁ μ)
-  rcases h₀.eq_or_lt with rfl | h₀
-  · exact le_max_left _ _
-  rcases h₁.eq_or_lt with rfl | h₁
-  · exact le_max_right _ _
-  have hp0 : p ≠ 0 := (h₀.trans_le' bot_le).ne'
-  have hp : p ≠ ∞ := h₁.ne_top
-  have hp' : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  have hle₀ : p₀.toReal ≤ p.toReal := ENNReal.toReal_mono hp h₀.le
-  rcases eq_or_ne M ∞ with hMt | hMt
-  · simp [hMt]
-  rcases eq_or_ne M 0 with hM0 | hM0
-  · have hf0 : f =ᵐ[μ] 0 :=
-      (eLpNorm_eq_zero_iff hp₀).1 (le_antisymm (hM0 ▸ le_max_left _ _) bot_le)
-    rw [eLpNorm_congr_ae hf0, eLpNorm_zero]
-    exact zero_le
-  have hI₀ := lintegral_rpow_sub_mul_rpow_enorm_le p.toReal hp₀ h₀.ne_top hM0 hMt hf
-    (le_max_left _ _)
-  refine eLpNorm_le_of_lintegral_rpow_le hp0 hp hf ?_
-  rcases eq_or_ne p₁ ∞ with rfl | hp₁
-  · -- `‖f‖ ≤ ‖f‖_∞ ≤ M` almost everywhere, so `‖f‖ ^ p ≤ M ^ (p - p₀) ‖f‖ ^ p₀`.
-    refine le_trans (lintegral_mono_ae ?_) hI₀
-    filter_upwards [ae_le_eLpNormEssSup (f := f) (μ := μ)] with x hx
-    rw [← eLpNorm_exponent_top hf] at hx
-    rcases eq_or_ne ‖f x‖ₑ 0 with h0 | h0
-    · rw [h0, ENNReal.zero_rpow_of_pos hp']
-      exact zero_le
-    exact ENNReal.rpow_le_rpow_sub_mul_rpow h0 enorm_ne_top
-      (ENNReal.rpow_le_rpow (hx.trans (le_max_right _ _)) (sub_nonneg.2 hle₀))
-  -- Write `p = (1 - θ) p₀ + θ p₁` and dominate `‖f‖ ^ p` by the corresponding combination of
-  -- `M ^ (p - p₀) ‖f‖ ^ p₀` and `M ^ (p - p₁) ‖f‖ ^ p₁`, each integrating to at most `M ^ p`.
-  have hp₁0 : p₁ ≠ 0 := (h₁.trans_le' bot_le).ne'
-  have hlt₀ : p₀.toReal < p.toReal := ENNReal.toReal_strict_mono hp h₀
-  have hlt₁ : p.toReal < p₁.toReal := ENNReal.toReal_strict_mono hp₁ h₁
-  set θ := (p.toReal - p₀.toReal) / (p₁.toReal - p₀.toReal)
-  have hθ₀ : 0 ≤ θ := div_nonneg (sub_nonneg.2 hle₀) (sub_nonneg.2 (hlt₀.trans hlt₁).le)
-  have hθ₁ : θ ≤ 1 := (div_le_one (sub_pos.2 (hlt₀.trans hlt₁))).2 (by linarith)
-  have hθ : (1 - θ) * p₀.toReal + θ * p₁.toReal = p.toReal := by
-    simp only [θ]
-    field_simp [(sub_pos.2 (hlt₀.trans hlt₁)).ne']
-    ring
-  have hI₁ := lintegral_rpow_sub_mul_rpow_enorm_le p.toReal hp₁0 hp₁ hM0 hMt hf
-    (le_max_right _ _)
-  calc ∫⁻ x, ‖f x‖ₑ ^ p.toReal ∂μ
-      ≤ ∫⁻ x, ENNReal.ofReal (1 - θ) * (M ^ (p.toReal - p₀.toReal) * ‖f x‖ₑ ^ p₀.toReal) +
-          ENNReal.ofReal θ * (M ^ (p.toReal - p₁.toReal) * ‖f x‖ₑ ^ p₁.toReal) ∂μ := by
-        refine lintegral_mono fun x => ?_
-        rcases eq_or_ne ‖f x‖ₑ 0 with h0 | h0
-        · rw [h0, ENNReal.zero_rpow_of_pos hp']
-          exact zero_le
-        exact ENNReal.rpow_le_ofReal_mul_add_ofReal_mul hθ₀ hθ₁ hθ h0 enorm_ne_top hM0 hMt
-    _ ≤ ENNReal.ofReal (1 - θ) * M ^ p.toReal + ENNReal.ofReal θ * M ^ p.toReal := by
-        rw [lintegral_add_left' (((hf.enorm.pow_const _).const_mul _).const_mul _),
-          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
-          lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
-        gcongr
-    _ = M ^ p.toReal := by
-        rw [← add_mul, ← ENNReal.ofReal_add (sub_nonneg.2 hθ₁) hθ₀, sub_add_cancel,
-          ENNReal.ofReal_one, one_mul]
 
 /-- An element of `Lᵖ` is the sum of an element of `L^{p₀}` and an element of `L^{p₁}` for every
 `p₀ ≤ p ≤ p₁`, each of norm at most `‖f‖_p`. -/
