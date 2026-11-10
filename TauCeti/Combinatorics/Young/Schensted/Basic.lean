@@ -263,7 +263,6 @@ def appendToRow (a : α) : ℕ → List (List α) → List (List α)
   | k + 1, row :: rows => row :: appendToRow a k rows
 
 /-- Appending to a row of the empty list of rows starts a new row. -/
-@[simp]
 theorem appendToRow_nil (a : α) (k : ℕ) : appendToRow a k [] = [[a]] := by cases k <;> rfl
 
 /-- Appending to row `0` appends the letter to the first row. -/
@@ -277,10 +276,11 @@ theorem appendToRow_succ_cons (a : α) (k : ℕ) (row : List α) (rows : List (L
     appendToRow a (k + 1) (row :: rows) = row :: appendToRow a k rows := (rfl)
 
 /-- Appending to a row at or past the end of the list of rows starts a new last row. -/
+@[simp]
 theorem appendToRow_of_length_le (a : α) {s : ℕ} {rows : List (List α)} (hs : rows.length ≤ s) :
     appendToRow a s rows = rows ++ [[a]] := by
   induction rows generalizing s with
-  | nil => simp
+  | nil => exact appendToRow_nil a s
   | cons row rows ih =>
     cases s with
     | zero => simp at hs
