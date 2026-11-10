@@ -164,6 +164,12 @@ theorem ofSupportedIn_apply (K : Compacts M)
     (s : supportedIn I F n V K) :
     (ofSupportedIn K s : Cₛ^n⟮I; F, V⟯) = s := (rfl)
 
+/-- Forgetting compact support after a stage inclusion is the stage's subtype map. -/
+@[simp]
+theorem val_comp_ofSupportedIn (K : Compacts M) :
+    (Subtype.val ∘ ofSupportedIn K : supportedIn I F n V K → Cₛ^n⟮I; F, V⟯) =
+      Subtype.val := (rfl)
+
 /-- Every compactly supported section belongs to a fixed-compact stage. -/
 theorem mem_compactlySupported_iff {s : Cₛ^n⟮I; F, V⟯} :
     s ∈ compactlySupported I F n V ↔

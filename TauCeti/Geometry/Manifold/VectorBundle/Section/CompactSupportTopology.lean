@@ -14,10 +14,10 @@ public import TauCeti.Analysis.LocallyConvex.FinalTopology
 
 Compactly supported native bundle sections carry the final locally convex topology of their
 fixed-compact support stages. Each stage has the subspace topology of the compact derivative
-section topology. Linear maps out of this space are continuous exactly when they are
-continuous on every stage. This is the fixed-support presentation of the topology used for
-bundle-valued tests; its comparison with native test-function chart extensions is not asserted
-here.
+section topology. Linear maps from this space into locally convex real topological vector
+spaces are continuous exactly when they are continuous on every stage. This is the fixed-support
+presentation of the topology used for bundle-valued tests; its comparison with native
+test-function chart extensions is not asserted here.
 
 The topology is Hausdorff for a covering frame system, is independent of that frame cover,
 and on a compact base agrees with the compact derivative topology on all sections. In
@@ -67,8 +67,9 @@ theorem continuous_ofSupportedIn (K : Compacts M) :
 variable {G : Type*} [AddCommGroup G] [Module ℝ G] [TopologicalSpace G]
   [IsTopologicalAddGroup G] [ContinuousSMul ℝ G] [LocallyConvexSpace ℝ G]
 
-/-- The linear universal property of compactly supported section tests. Continuity is checked
-on fixed-compact stages, not just on individual section values. -/
+/-- The linear universal property of compactly supported section tests for maps into locally
+convex real topological vector spaces. Continuity is checked on fixed-compact stages, not just
+on individual section values. -/
 theorem continuous_compactlySupportedTopology_iff
     (g : compactlySupported I F n V →ₗ[ℝ] G) :
     letI := frameTopology (I := I) (n := n) e U hU
@@ -88,7 +89,7 @@ theorem continuous_val_compactlySupportedTopology :
   let := locallyConvexSpace_frameTopology (I := I) (n := n) e U hU
   exact (continuous_compactlySupportedTopology_iff e U hU
     (compactlySupported I F n V).subtype).2 fun K => by
-      simpa only [Function.comp_def, Submodule.subtype_apply, ofSupportedIn_apply]
+      simpa only [Submodule.coe_subtype, val_comp_ofSupportedIn]
         using (continuous_subtype_val :
           Continuous (Subtype.val : supportedIn I F n V K → Cₛ^n⟮I; F, V⟯))
 
@@ -103,7 +104,7 @@ theorem isEmbedding_ofSupportedIn (K : Compacts M) :
   let := compactlySupportedTopology (I := I) (n := n) e U hU
   exact Topology.IsEmbedding.of_comp (continuous_ofSupportedIn e U hU K)
     (continuous_val_compactlySupportedTopology e U hU) (by
-      simpa only [Function.comp_def, ofSupportedIn_apply]
+      simpa only [val_comp_ofSupportedIn]
         using (Topology.IsEmbedding.subtypeVal :
           Topology.IsEmbedding (Subtype.val : supportedIn I F n V K → Cₛ^n⟮I; F, V⟯)))
 
@@ -126,7 +127,7 @@ theorem compactlySupportedTopology_eq_induced [CompactSpace M] :
   exact TauCeti.FinalLocallyConvexTopology.eq_of_rightInverse
     (ofSupportedIn (I := I) (F := F) (V := V) (n := n))
     (fun K => continuous_induced_rng.2 (by
-      simpa only [Function.comp_def, ofSupportedIn_apply]
+      simpa only [val_comp_ofSupportedIn]
         using (continuous_subtype_val :
           Continuous (Subtype.val : supportedIn I F n V K → Cₛ^n⟮I; F, V⟯)))) K R
     (fun s => Subtype.ext (ofSupportedIn_apply K (R s)))
