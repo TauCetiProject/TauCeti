@@ -46,6 +46,15 @@ Common horizontal strands do not affect composability
 (`TauCeti.StrandDiagram.composable_addHorizontal_iff`), so the nonzero products are indexed by the
 choices over `h ∩ k` and sum to a single generator.
 
+The two descriptions agree (`TauCeti.StrandsAlgebra.matchedAlgebra_eq_matchedSubalgebra`), so the
+span of the generators is closed under the differential as well. A generator lies in the matched
+subalgebra because moving one of its horizontal strands to the other point of its pair turns a
+summand into another summand. Conversely, the diagrams of an element of the matched subalgebra
+fall into groups with the same strands other than the horizontal ones
+(`TauCeti.StrandDiagram.eraseHorizontal`) and horizontal strands over the same pairs. Each group
+is the set of summands of one generator, any two of them related by a sequence of moves of
+horizontal strands between matched points, so that their coefficients agree.
+
 ## Main definitions
 
 * `TauCeti.StrandsAlgebra.matchedSubalgebra R M`: the matched subalgebra, a non-unital subalgebra
@@ -72,6 +81,10 @@ choices over `h ∩ k` and sum to a single generator.
   generators.
 * `TauCeti.StrandsAlgebra.matchedOne_mul`, `TauCeti.StrandsAlgebra.mul_matchedOne`: `∑ₛ I(s)` is
   a two-sided unit for `matchedAlgebra R M`.
+* `TauCeti.StrandsAlgebra.matchedAlgebra_eq_matchedSubalgebra`: the span of the generators is the
+  matched subalgebra.
+* `TauCeti.StrandsAlgebra.differential_mem_matchedAlgebra`: the span of the generators is closed
+  under the differential.
 
 ## References
 
@@ -109,8 +122,8 @@ The second condition says that the coefficients are constant on each family of d
 from one another by moving horizontal strands between matched points, so that `x` is a combination
 of the sums of these families. For the matching of a pointed matched circle `Z` with `4k` points,
 `α = Fin (4 * k)` and `R = ZMod 2`, these sums span the algebra `A(Z)` of Lipshitz, Ozsváth and
-Thurston, which is therefore this subalgebra. The definition uses no property of `M` beyond being
-a function. -/
+Thurston, which is therefore this subalgebra (`matchedAlgebra_eq_matchedSubalgebra`). The
+definition uses no property of `M` beyond being a function. -/
 def matchedSubalgebra (M : α → β) : NonUnitalSubalgebra R (StrandsAlgebra R α) where
   carrier := {x | (∀ φ, (basis R α).repr x φ ≠ 0 →
       Set.InjOn M (φ.source : Set α) ∧ Set.InjOn M (φ.target : Set α)) ∧
@@ -620,10 +633,10 @@ open scoped Pointwise in
 variable (R M) in
 /-- The algebra of the matching `M`, spanned by the elements `a(ρ, h)`. For the matching of a
 pointed matched circle `Z` this is the span description of the algebra `A(Z)` of Lipshitz,
-Ozsváth and Thurston, without its differential; `matchedSubalgebra R M` is the intrinsic
-description. It is closed under multiplication because the product of two of its
-generators is again one or zero (`horizontalCompletion_mul_horizontalCompletion`). It is a
-non-unital subalgebra of the strands algebra; its own unit is `matchedOne R M`. -/
+Ozsváth and Thurston; `matchedSubalgebra R M` is the intrinsic description, and the two agree
+(`matchedAlgebra_eq_matchedSubalgebra`). It is closed under multiplication because the product of
+two of its generators is again one or zero (`horizontalCompletion_mul_horizontalCompletion`). It
+is a non-unital subalgebra of the strands algebra; its own unit is `matchedOne R M`. -/
 def matchedAlgebra : NonUnitalSubalgebra R (StrandsAlgebra R α) :=
   (Submodule.span R {x | ∃ ρ h, IsMatchedGenerator M ρ h ∧ horizontalCompletion M ρ h = x}
     ).toNonUnitalSubalgebra fun x y hx hy ↦ by
@@ -784,6 +797,227 @@ theorem mul_matchedOne {x : StrandsAlgebra R α} (hx : x ∈ matchedAlgebra R M)
   | smul r x _ hx => rw [smul_mul_assoc, hx]
 
 end Unit
+
+/-! ### The span of the generators is the matched subalgebra -/
+
+section Span
+
+variable [DecidableEq β] {M : α → β}
+
+omit [LinearOrder α] in
+/-- A choice of one point of each pair in `h` has as many points as `h`. -/
+theorem card_eq_of_mem_matchedChoices {h : Finset β} {U : Finset α}
+    (hU : U ∈ matchedChoices M h) : #U = #h := by
+  simp only [matchedChoices, mem_filter, mem_univ, true_and] at hU
+  exact hU.2
+
+/-- Replacing a point of a choice over `h` by another point of the same pair gives a choice over
+`h`. -/
+theorem insert_erase_mem_matchedChoices {h : Finset β} {U : Finset α}
+    (hU : U ∈ matchedChoices M h) {a b : α} (ha : a ∈ U) (hb : b ∉ U) (hab : M a = M b) :
+    insert b (U.erase a) ∈ matchedChoices M h := by
+  have hcard := card_eq_of_mem_matchedChoices hU
+  simp only [matchedChoices, mem_filter, mem_univ, true_and] at hU ⊢
+  refine ⟨by rw [image_insert, ← hab, ← image_insert, insert_erase ha, hU.1], ?_⟩
+  rw [card_insert_of_notMem fun h' ↦ hb (mem_of_mem_erase h'), card_erase_of_mem ha, ← hcard]
+  have := card_pos.2 ⟨a, ha⟩
+  omega
+
+/-- Moving a horizontal strand of a summand of `a(ρ, h)` to the other point of its pair gives the
+summand of the modified choice. -/
+private theorem swapHorizontal_addHorizontal_of_mem_matchedChoices {ρ : StrandDiagram α}
+    {h : Finset β} (hs : Disjoint (ρ.source.image M) h) (ht : Disjoint (ρ.target.image M) h)
+    {U : Finset α} (hU : U ∈ matchedChoices M h) {a b : α} (ha : a ∈ U) (hb : b ∉ U)
+    (hab : M a = M b) :
+    (ρ.addHorizontal U).swapHorizontal a b = ρ.addHorizontal (insert b (U.erase a)) := by
+  have hah : M a ∈ h := (mem_matchedChoices.1 hU).1 ▸ mem_image_of_mem M ha
+  have hbh : M b ∈ h := hab ▸ hah
+  exact StrandDiagram.swapHorizontal_addHorizontal ha hb
+    (fun h' ↦ disjoint_left.1 hs (mem_image_of_mem M h') hah)
+    (fun h' ↦ disjoint_left.1 ht (mem_image_of_mem M h') hah)
+    (fun h' ↦ disjoint_left.1 hs (mem_image_of_mem M h') hbh)
+    (fun h' ↦ disjoint_left.1 ht (mem_image_of_mem M h') hbh)
+
+/-- The coefficients of an element of the matched subalgebra agree on the summands
+`ρ.addHorizontal U` of a generator `a(ρ, h)`. -/
+theorem repr_addHorizontal_eq_of_mem_matchedSubalgebra {x : StrandsAlgebra R α}
+    (hx : x ∈ matchedSubalgebra R M) {ρ : StrandDiagram α} {h : Finset β}
+    (hs : Disjoint (ρ.source.image M) h) (ht : Disjoint (ρ.target.image M) h)
+    {U V : Finset α} (hU : U ∈ matchedChoices M h) (hV : V ∈ matchedChoices M h) :
+    (basis R α).repr x (ρ.addHorizontal U) = (basis R α).repr x (ρ.addHorizontal V) := by
+  -- Move the points of `U` outside `V` into `V` one at a time.
+  induction hn : #(U \ V) generalizing U with
+  | zero =>
+    have hUV : U ⊆ V := sdiff_eq_empty_iff_subset.1 (card_eq_zero.1 hn)
+    rw [eq_of_subset_of_card_le hUV (by rw [card_eq_of_mem_matchedChoices hU,
+      card_eq_of_mem_matchedChoices hV])]
+  | succ n ih =>
+    obtain ⟨a, haUV⟩ := card_pos.1 (by rw [hn]; exact n.succ_pos)
+    obtain ⟨ha, haV⟩ := mem_sdiff.1 haUV
+    have hMa : M a ∈ V.image M := by
+      rw [(mem_matchedChoices.1 hV).1, ← (mem_matchedChoices.1 hU).1]
+      exact mem_image_of_mem M ha
+    obtain ⟨b, hbV, hba⟩ := mem_image.1 hMa
+    have hb : b ∉ U := fun hbU ↦
+      haV ((mem_matchedChoices.1 hU).2 (mem_coe.2 hbU) (mem_coe.2 ha) hba ▸ hbV)
+    rw [← hx.2 _ a b hba.symm,
+      swapHorizontal_addHorizontal_of_mem_matchedChoices hs ht hU ha hb hba.symm]
+    refine ih (insert_erase_mem_matchedChoices hU ha hb hba.symm) ?_
+    have : insert b (U.erase a) \ V = (U \ V).erase a := by
+      ext i
+      simp only [mem_sdiff, mem_insert, mem_erase]
+      grind
+    rw [this, card_erase_of_mem haUV, hn, Nat.add_sub_cancel]
+
+/-- Removing the horizontal strands of a diagram with no two matched starting points and no two
+matched end points gives a generator, over the pairs of its horizontal strands. -/
+theorem isMatchedGenerator_eraseHorizontal {φ : StrandDiagram α}
+    (hs : Set.InjOn M φ.source) (ht : Set.InjOn M φ.target) :
+    IsMatchedGenerator M φ.eraseHorizontal (φ.horizontalPoints.image M) where
+  notMem_self := φ.notMem_eraseHorizontal_self
+  injOn_source := hs.mono (by simp)
+  injOn_target := ht.mono (by simp)
+  disjoint_source := by
+    rw [source_eraseHorizontal, image_sdiff_of_injOn hs φ.horizontalPoints_subset_source]
+    exact sdiff_disjoint
+  disjoint_target := by
+    rw [target_eraseHorizontal, image_sdiff_of_injOn ht φ.horizontalPoints_subset_target]
+    exact sdiff_disjoint
+
+/-- The coefficient of a diagram `χ` in `a(ρ, h)`, for `ρ` without horizontal strands: `1` when
+`χ` is `ρ` with horizontal strands added at a choice of one point of each pair in `h`, and `0`
+otherwise. -/
+theorem repr_horizontalCompletion_apply {ρ : StrandDiagram α} (hρ : ∀ i, i ∉ ρ i)
+    (h : Finset β) (χ : StrandDiagram α) :
+    (basis R α).repr (horizontalCompletion M ρ h) χ =
+      if χ ∈ (matchedChoices M h).image ρ.addHorizontal then 1 else 0 := by
+  rw [horizontalCompletion_def,
+    ← sum_image fun U _ V _ hUV ↦ StrandDiagram.addHorizontal_injective hρ hUV]
+  simp only [map_sum, ← basis_apply, Module.Basis.repr_self, Finset.sum_apply',
+    Finsupp.single_apply, sum_ite_eq']
+
+/-- **The generators `a(ρ, h)` lie in the matched subalgebra.** -/
+theorem horizontalCompletion_mem_matchedSubalgebra {ρ : StrandDiagram α} {h : Finset β}
+    (hρ : IsMatchedGenerator M ρ h) :
+    (horizontalCompletion M ρ h : StrandsAlgebra R α) ∈ matchedSubalgebra R M := by
+  rw [mem_matchedSubalgebra]
+  simp only [repr_horizontalCompletion_apply hρ.notMem_self]
+  -- Moving a horizontal strand between matched points keeps a summand of `a(ρ, h)` a summand.
+  have key {χ : StrandDiagram α} {a b : α} (hab : M a = M b)
+      (hχ : χ ∈ (matchedChoices M h).image ρ.addHorizontal) :
+      χ.swapHorizontal a b ∈ (matchedChoices M h).image ρ.addHorizontal := by
+    obtain ⟨U, hU, rfl⟩ := mem_image.1 hχ
+    wlog hm : (ρ.addHorizontal U).CanMoveHorizontal a b generalizing a b
+    · by_cases hm' : (ρ.addHorizontal U).CanMoveHorizontal b a
+      · rw [StrandDiagram.swapHorizontal_comm]
+        exact this hab.symm hm'
+      · rwa [StrandDiagram.swapHorizontal_of_not hm hm']
+    have ha : a ∈ U := (StrandDiagram.mem_addHorizontal_self hρ.notMem_self).1 hm.mem
+    have hb : b ∉ U := fun hb ↦ hm.notMem_source <| by
+      rw [StrandDiagram.source_addHorizontal
+        (hρ.disjoint_target_of_image_subset (mem_matchedChoices.1 hU).1.le)]
+      exact mem_union_right _ hb
+    rw [swapHorizontal_addHorizontal_of_mem_matchedChoices hρ.disjoint_source hρ.disjoint_target
+      hU ha hb hab]
+    exact mem_image_of_mem _ (insert_erase_mem_matchedChoices hU ha hb hab)
+  refine ⟨fun χ hχ ↦ ?_, fun χ a b hab ↦ ?_⟩
+  · obtain ⟨U, hU, rfl⟩ := mem_image.1 (ite_ne_right_iff.1 hχ).1
+    obtain ⟨hUh, hUi⟩ := mem_matchedChoices.1 hU
+    rw [StrandDiagram.source_addHorizontal (hρ.disjoint_target_of_image_subset hUh.le),
+      StrandDiagram.target_addHorizontal (hρ.disjoint_source_of_image_subset hUh.le),
+      coe_union, coe_union]
+    rw [← hUh] at hρ
+    refine ⟨hρ.injOn_source.union_of_disjoint_image hUi ?_,
+      hρ.injOn_target.union_of_disjoint_image hUi ?_⟩
+    · rw [← coe_image, ← coe_image]
+      exact disjoint_coe.2 hρ.disjoint_source
+    · rw [← coe_image, ← coe_image]
+      exact disjoint_coe.2 hρ.disjoint_target
+  · refine if_congr ⟨fun h' ↦ ?_, key hab⟩ rfl rfl
+    simpa using key hab h'
+
+/-- The terms of an element `x` of the matched subalgebra at the diagrams with the same strands as
+`φ₀` other than the horizontal ones, and horizontal strands over the same pairs, sum to a
+multiple of a generator. -/
+private theorem sum_filter_eq_smul_horizontalCompletion {x : StrandsAlgebra R α}
+    (hx : x ∈ matchedSubalgebra R M) {φ₀ : StrandDiagram α}
+    (hφ₀ : (basis R α).repr x φ₀ ≠ 0) :
+    ∑ φ ∈ ((basis R α).repr x).support with
+        (φ.eraseHorizontal, φ.horizontalPoints.image M) =
+          (φ₀.eraseHorizontal, φ₀.horizontalPoints.image M),
+        (basis R α).repr x φ • of φ =
+      (basis R α).repr x φ₀ • (horizontalCompletion M φ₀.eraseHorizontal
+        (φ₀.horizontalPoints.image M) : StrandsAlgebra R α) := by
+  set c := (basis R α).repr x
+  set ρ := φ₀.eraseHorizontal
+  set h := φ₀.horizontalPoints.image M
+  have hρ : IsMatchedGenerator M ρ h :=
+    isMatchedGenerator_eraseHorizontal (hx.1 φ₀ hφ₀).1 (hx.1 φ₀ hφ₀).2
+  -- The coefficients are constant on the summands of `a(ρ, h)`.
+  have hc {U : Finset α} (hU : U ∈ matchedChoices M h) : c (ρ.addHorizontal U) = c φ₀ := by
+    have hH : φ₀.horizontalPoints ∈ matchedChoices M h := mem_matchedChoices.2
+      ⟨rfl, (hx.1 φ₀ hφ₀).1.mono (coe_subset.2 φ₀.horizontalPoints_subset_source)⟩
+    rw [repr_addHorizontal_eq_of_mem_matchedSubalgebra hx hρ.disjoint_source hρ.disjoint_target
+      hU hH, StrandDiagram.eraseHorizontal_addHorizontal_horizontalPoints]
+  -- The diagrams of the group are the summands of `a(ρ, h)`, indexed by their horizontal points.
+  have hi {φ : StrandDiagram α} (hφ : φ ∈ {φ ∈ c.support |
+      (φ.eraseHorizontal, φ.horizontalPoints.image M) = (ρ, h)}) :
+      φ.horizontalPoints ∈ matchedChoices M h := by
+    obtain ⟨hφS, hkey⟩ := mem_filter.1 hφ
+    exact mem_matchedChoices.2 ⟨(Prod.ext_iff.1 hkey).2,
+      (hx.1 φ (Finsupp.mem_support_iff.1 hφS)).1.mono
+        (coe_subset.2 φ.horizontalPoints_subset_source)⟩
+  have hleft {φ : StrandDiagram α} (hφ : φ ∈ {φ ∈ c.support |
+      (φ.eraseHorizontal, φ.horizontalPoints.image M) = (ρ, h)}) :
+      ρ.addHorizontal φ.horizontalPoints = φ := by
+    have hρφ : φ.eraseHorizontal = ρ := (Prod.ext_iff.1 (mem_filter.1 hφ).2).1
+    rw [← hρφ, StrandDiagram.eraseHorizontal_addHorizontal_horizontalPoints]
+  rw [horizontalCompletion_def, smul_sum]
+  refine sum_nbij' StrandDiagram.horizontalPoints ρ.addHorizontal (fun φ hφ ↦ hi hφ)
+    (fun U hU ↦ ?_) (fun φ hφ ↦ hleft hφ)
+    (fun U _ ↦ StrandDiagram.horizontalPoints_addHorizontal hρ.notMem_self U)
+    fun φ hφ ↦ by rw [hleft hφ, ← hc (hi hφ), hleft hφ]
+  obtain ⟨hUh, -⟩ := mem_matchedChoices.1 hU
+  refine mem_filter.2 ⟨Finsupp.mem_support_iff.2 ((hc hU).symm ▸ hφ₀), Prod.ext ?_ ?_⟩
+  · exact StrandDiagram.eraseHorizontal_addHorizontal hρ.notMem_self
+      (hρ.disjoint_source_of_image_subset hUh.le) (hρ.disjoint_target_of_image_subset hUh.le)
+  · rw [StrandDiagram.horizontalPoints_addHorizontal hρ.notMem_self, hUh]
+
+variable (R M) in
+/-- **The two descriptions of the algebra of a matching agree.** The span of the generators
+`a(ρ, h)` is the matched subalgebra: an element whose diagrams have no two matched starting or end
+points, and whose coefficients do not change when a horizontal strand moves to a matched point,
+is a combination of generators. -/
+theorem matchedAlgebra_eq_matchedSubalgebra : matchedAlgebra R M = matchedSubalgebra R M := by
+  refine le_antisymm (fun x hx ↦ ?_) fun x hx ↦ ?_
+  · induction hx using matchedAlgebra_induction with
+    | generator ρ h hρ => exact horizontalCompletion_mem_matchedSubalgebra hρ
+    | zero => exact zero_mem _
+    | add x y _ _ hx hy => exact add_mem hx hy
+    | smul r x _ hx => exact SMulMemClass.smul_mem r hx
+  -- Group the diagrams of `x` by their strands other than the horizontal ones, and by the pairs
+  -- of their horizontal strands. Each group sums to a multiple of a generator.
+  have hx' : x = ∑ φ ∈ ((basis R α).repr x).support, (basis R α).repr x φ • of φ := by
+    have := (basis R α).linearCombination_repr x
+    rw [Finsupp.linearCombination_apply, Finsupp.sum] at this
+    simpa using this.symm
+  rw [hx', ← sum_fiberwise_of_maps_to (g := fun φ ↦ (φ.eraseHorizontal, φ.horizontalPoints.image M))
+    fun φ hφ ↦ mem_image_of_mem _ hφ]
+  refine sum_mem fun k hk ↦ ?_
+  obtain ⟨φ₀, hφ₀, rfl⟩ := mem_image.1 hk
+  have hφ₀' := Finsupp.mem_support_iff.1 hφ₀
+  rw [sum_filter_eq_smul_horizontalCompletion hx hφ₀']
+  exact SMulMemClass.smul_mem _ (horizontalCompletion_mem_matchedAlgebra
+    (isMatchedGenerator_eraseHorizontal (hx.1 φ₀ hφ₀').1 (hx.1 φ₀ hφ₀').2))
+
+/-- **The algebra of a matching is closed under the differential**, so that it is a differential
+subalgebra of the strands algebra. -/
+theorem differential_mem_matchedAlgebra {x : StrandsAlgebra R α} (hx : x ∈ matchedAlgebra R M) :
+    differential R α x ∈ matchedAlgebra R M := by
+  rw [matchedAlgebra_eq_matchedSubalgebra] at hx ⊢
+  exact differential_mem_matchedSubalgebra hx
+
+end Span
 
 end StrandsAlgebra
 

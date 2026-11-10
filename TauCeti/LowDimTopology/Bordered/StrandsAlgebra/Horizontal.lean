@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.AddHorizontal
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Resolution
 
 /-!
@@ -42,6 +43,8 @@ product and the differential.
 
 * `TauCeti.StrandDiagram.swapHorizontal_swapHorizontal`: moving a horizontal strand is an
   involution.
+* `TauCeti.StrandDiagram.swapHorizontal_addHorizontal`: moving one of the horizontal strands added
+  along a set replaces a point of the set.
 * `TauCeti.StrandDiagram.inversionCount_swapHorizontal_add`: the change in the number of crossings.
 * `TauCeti.StrandDiagram.swapHorizontal_trans_swapHorizontal`,
   `TauCeti.StrandDiagram.Composable.swapHorizontal`: moving a horizontal strand in both pieces of a
@@ -256,6 +259,22 @@ theorem swapHorizontal_idOn {s : Finset α} (ha : a ∈ s) (hb : b ∉ s) :
   · simp [eq_comm]
   simp only [hxb, false_and, ne_eq, not_false_eq_true, true_and, false_or]
   tauto
+
+/-- Moving one of the horizontal strands added along `U` from `a ∈ U` to `b ∉ U` adds them along
+`U` with `a` replaced by `b`, when no strand of `φ` starts or ends at `a` or `b`. -/
+theorem swapHorizontal_addHorizontal {U : Finset α} (ha : a ∈ U) (hb : b ∉ U)
+    (has : a ∉ φ.source) (hat : a ∉ φ.target) (hbs : b ∉ φ.source) (hbt : b ∉ φ.target) :
+    (φ.addHorizontal U).swapHorizontal a b = φ.addHorizontal (insert b (U.erase a)) := by
+  simp only [mem_source, mem_target, not_exists] at has hat hbs hbt
+  have h : (φ.addHorizontal U).CanMoveHorizontal a b := by
+    refine ⟨addHorizontal_apply_of_mem φ ha, ?_, ?_⟩
+    · simp only [mem_source, mem_addHorizontal, not_exists]
+      grind
+    · simp only [mem_target, mem_addHorizontal, not_exists]
+      grind
+  ext x y
+  simp only [← Option.mem_def, mem_swapHorizontal h, mem_addHorizontal, mem_insert, mem_erase]
+  grind
 
 /-! ### Strands crossing a horizontal strand -/
 
