@@ -70,17 +70,6 @@ theorem mem_morseBrokenTrajectorySet {hf : LipschitzWith K (∇ f)} {p r : E}
         x.2.1 ∈ morseTrajectorySlice hf p x.1 ∧ x.2.2 ∈ morseTrajectorySlice hf x.1 r :=
   Iff.rfl
 
-/-- A point of the middle-level slice between distinct endpoints forces the critical value to
-drop strictly. -/
-theorem value_lt_of_mem_morseTrajectorySlice (hfd : Differentiable ℝ f)
-    {hf : LipschitzWith K (∇ f)} {p q z : E} (hpq : p ≠ q)
-    (hz : z ∈ morseTrajectorySlice hf p q) :
-    f q < f p := by
-  rw [mem_morseTrajectorySlice] at hz
-  exact (isNegativeGradient_negativeGradientFlow f hf).value_lt_of_mem_unstableSet_inter_stableSet
-    (fun _ ↦ hfd.differentiableAt) hfd.continuous.continuousAt hfd.continuous.continuousAt hpq
-    ⟨hz.1, hz.2.1⟩
-
 /-- The intermediate critical point of a broken trajectory has strictly smaller critical value
 than its source. -/
 theorem value_lt_of_mem_morseBrokenTrajectorySet (hfd : Differentiable ℝ f)
@@ -123,15 +112,9 @@ theorem finite_morseBrokenTrajectorySet_of_isCompact_sublevel
     (p r : MorseCriticalPoint f) :
     (morseBrokenTrajectorySet hf p r).Finite := by
   have hfd : Differentiable ℝ f := hfs.differentiable (by norm_num)
-  -- For consecutive indices a slice is finite: empty unless the critical value drops.
   have hslice : ∀ {a b : MorseCriticalPoint f}, morseIndex f a = morseIndex f b + 1 →
-      (morseTrajectorySlice hf a b).Finite := fun {a b} hind ↦ by
-    by_cases hba : f b < f a
-    · exact finite_morseTrajectorySlice_of_isCompact_sublevel hfs hf hM hcompact
-        a.isNondegenerate b.isNondegenerate hind hba htr
-    · have hab : (a : E) ≠ b := fun h ↦ by simp [h] at hind
-      exact finite_empty.subset fun z hz ↦
-        hba (value_lt_of_mem_morseTrajectorySlice hfd hab hz)
+      (morseTrajectorySlice hf a b).Finite := fun hind ↦
+    finite_morseTrajectorySlice_of_isCompact_sublevel hfs hf hM hcompact hind htr
   refine ((finite_setOf_value_le_of_isCompact_sublevel hfs hM hcompact (f p)).biUnion fun q _ ↦
     (?_ : {x ∈ morseBrokenTrajectorySet hf p r | x.1 = q}.Finite)).subset fun x hx ↦
       mem_biUnion (x := x.1) (value_lt_of_mem_morseBrokenTrajectorySet hfd hx).le ⟨hx, rfl⟩
