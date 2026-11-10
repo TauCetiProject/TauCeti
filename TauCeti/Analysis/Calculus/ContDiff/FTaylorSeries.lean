@@ -24,9 +24,6 @@ Over a real or complex normed field, locally uniform limits of the coefficients 
 derivative series are again Taylor derivative series, provided the underlying functions converge
 pointwise. This is the derivative-compatibility step in completeness of smooth function spaces.
 The limit argument uses Mathlib's `hasFDerivAt_of_tendstoLocallyUniformlyOn`.
-
-The first iterated derivative, uncurried, is the Fréchet derivative
-(`TauCeti.continuousMultilinearCurryFin1_iteratedFDeriv_one`).
 -/
 
 public section
@@ -167,14 +164,3 @@ theorem LinearIsometry.exists_hasFTaylorSeriesUpTo_of_comp (i : E →ₗᵢ[𝕜
   · intro m hm
     exact (J m).comp_continuous_iff.mp
       (by simpa only [Function.comp_def, hJp m hm] using hq.cont m hm)
-
-namespace TauCeti
-
-/-- The first iterated derivative, uncurried, is the Fréchet derivative. -/
-@[simp]
-theorem continuousMultilinearCurryFin1_iteratedFDeriv_one (f : E → F) (x : E) :
-    continuousMultilinearCurryFin1 𝕜 E F (iteratedFDeriv 𝕜 1 f x) = fderiv 𝕜 f x := by
-  ext v
-  simp [iteratedFDeriv_one_apply]
-
-end TauCeti

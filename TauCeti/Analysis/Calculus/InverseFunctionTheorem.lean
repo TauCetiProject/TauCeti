@@ -37,8 +37,6 @@ invertible derivative at a point of an open set `s` restricts to an `OpenPartial
 
 * `ApproximatesLinearOn.norm_sub_le_of_hasFDerivAt`: on a set where `f` approximates `L` with
   constant `c`, every derivative of `f` at an interior point is within `c` of `L`.
-* `Convex.approximatesLinearOn_of_nnnorm_fderiv_sub_le`: conversely, on a convex set where every
-  derivative of `f` is within `c` of `L`, the map `f` approximates `L` with constant `c`.
 * `HasStrictFDerivAt.approximatesLinearOn_toOpenPartialHomeomorph_source`: the source of the
   inverse function theorem's homeomorphism carries the approximation estimate its construction
   chose.
@@ -83,15 +81,6 @@ theorem ApproximatesLinearOn.norm_sub_le_of_hasFDerivAt {f : E → F} {L A : E �
     {c : ℝ≥0} (hf : ApproximatesLinearOn f L s c) {x : E} (hs : s ∈ 𝓝 x)
     (hA : HasFDerivAt f A x) : ‖A - L‖ ≤ c := by
   exact (hA.sub L.hasFDerivAt).le_of_lipschitzOn hs hf.lipschitzOnWith
-
-/-- On a convex set on which every derivative of `f` is within `c` of `L` in norm, the map `f`
-approximates `L` with constant `c`. This is the converse of
-`ApproximatesLinearOn.norm_sub_le_of_hasFDerivAt`, by the mean value inequality. -/
-theorem Convex.approximatesLinearOn_of_nnnorm_fderiv_sub_le [IsRCLikeNormedField 𝕜]
-    [NormedSpace ℝ E] {f : E → F} {L : E →L[𝕜] F} {s : Set E} {c : ℝ≥0} (hs : Convex ℝ s)
-    (hd : ∀ x ∈ s, DifferentiableAt 𝕜 f x) (hb : ∀ x ∈ s, ‖fderiv 𝕜 f x - L‖₊ ≤ c) :
-    ApproximatesLinearOn f L s c :=
-  fun _ hx _ hy ↦ hs.norm_image_sub_le_of_norm_fderiv_le' hd (fun z hz ↦ hb z hz) hy hx
 
 namespace HasStrictFDerivAt
 

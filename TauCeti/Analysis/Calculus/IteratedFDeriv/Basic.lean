@@ -14,10 +14,11 @@ public import Mathlib.Topology.MetricSpace.Holder
 The `i`-th iterated derivative of the `m`-th iterated derivative of a function has the same norm
 as its `(i + m)`-th iterated derivative. This extends Mathlib's `norm_iteratedFDeriv_fderiv`, the
 case `m = 1`, and lets bounds on all iterated derivatives of a function transfer to its iterated
-derivative fields. The file also supplies the two-variable currying isometry used to identify
-continuous multilinear second derivatives with curried bilinear maps, and the corresponding
-exact comparison for differences of second derivatives, which transfers Hölder bounds between
-the two forms of the second derivative.
+derivative fields. The first iterated derivative, uncurried, is the Fréchet derivative
+(`TauCeti.continuousMultilinearCurryFin1_iteratedFDeriv_one`). The file also supplies the
+two-variable currying isometry used to identify continuous multilinear second derivatives with
+curried bilinear maps, and the corresponding exact comparison for differences of second
+derivatives, which transfers Hölder bounds between the two forms of the second derivative.
 -/
 
 public section
@@ -55,6 +56,13 @@ end CurryFin2
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The first iterated derivative, uncurried, is the Fréchet derivative. -/
+@[simp]
+theorem continuousMultilinearCurryFin1_iteratedFDeriv_one (f : E → F) (x : E) :
+    continuousMultilinearCurryFin1 𝕜 E F (iteratedFDeriv 𝕜 1 f x) = fderiv 𝕜 f x := by
+  ext v
+  simp [iteratedFDeriv_one_apply]
 
 /-- Currying the second iterated derivative gives the Fréchet derivative of the first
 Fréchet derivative, including at points where these derivatives are junk-valued. -/

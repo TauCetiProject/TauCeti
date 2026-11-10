@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.ApproximatesLinearOn
 public import TauCeti.Analysis.Calculus.ContDiff.TaylorInverse
 public import TauCeti.Analysis.Calculus.ContDiff.TendstoAt
 public import TauCeti.Analysis.Calculus.FDeriv.Equiv
@@ -47,23 +48,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {ι : Type*} {l : Filter ι} {n : ℕ}
 
-/-- Composing the Taylor series of the inverse of a partial homeomorphism with that of the map
-gives the Taylor series of the identity, at every point of the source where both are `C^n`. -/
-private theorem taylorComp_ftaylorSeries_symm (e : OpenPartialHomeomorph E F) {y : F}
-    (hy : y ∈ e.target) (hd : ContDiffAt 𝕜 n e (e.symm y)) (hds : ContDiffAt 𝕜 n e.symm y)
-    {k : ℕ} (hk : k ≤ n) :
-    (ftaylorSeries 𝕜 e.symm y).taylorComp (ftaylorSeries 𝕜 e (e.symm y)) k =
-      iteratedFDeriv 𝕜 k id (e.symm y) := by
-  have hk' : ((k : ℕ) : WithTop ℕ∞) ≤ n := by exact_mod_cast hk
-  have hds' : ContDiffAt 𝕜 n e.symm (e (e.symm y)) := by rwa [e.right_inv hy]
-  have h := iteratedFDeriv_comp hds' hd hk'
-  rw [e.right_inv hy] at h
-  have heq : e.symm ∘ e =ᶠ[𝓝 (e.symm y)] id := by
-    filter_upwards [e.eventually_left_inverse (e.map_target hy)] with x hx
-    exact hx
-  rw [← h]
-  exact (heq.iteratedFDeriv 𝕜 k).eq_of_nhds
-
 /-- **`C^n` convergence of inverses.** Let `e i` be partial homeomorphisms converging in `C^n`
 to `e₀` at `e₀⁻¹ (y₀)`, with `e i` and its inverse `C^n` near the relevant points. If the
 inverses converge continuously at `y₀`, then they converge in `C^n` at `y₀`. -/
@@ -83,11 +67,12 @@ theorem TendstoContDiffAt.symm [CompleteSpace E] {e : ι → OpenPartialHomeomor
       (ftaylorSeries 𝕜 (e p.1).symm p.2).taylorComp
         (ftaylorSeries 𝕜 (e p.1) ((e p.1).symm p.2)) k) (l ×ˢ 𝓝 y₀)
       (𝓝 ((ftaylorSeries 𝕜 e₀.symm y₀).taylorComp (ftaylorSeries 𝕜 e₀ (e₀.symm y₀)) k)) := by
-    rw [taylorComp_ftaylorSeries_symm e₀ hy₀ hd₀ hds₀ hk]
+    have hk' : ((k : ℕ) : WithTop ℕ∞) ≤ n := by exact_mod_cast hk
+    rw [e₀.taylorComp_ftaylorSeries_symm hy₀ (hd₀.of_le hk') (hds₀.of_le hk')]
     refine ((((contDiff_id (𝕜 := 𝕜) (E := E) (n := k)).continuous_iteratedFDeriv
       le_rfl).tendsto _).comp hsymm).congr' ?_
     filter_upwards [hd] with p hp
-    exact (taylorComp_ftaylorSeries_symm (e p.1) hp.1 hp.2.1 hp.2.2 hk).symm
+    exact ((e p.1).taylorComp_ftaylorSeries_symm hp.1 (hp.2.1.of_le hk') (hp.2.2.of_le hk')).symm
   -- The derivatives of the inverses are the inverses of the derivatives.
   have hA (hn : 1 ≤ n) : Tendsto (fun p : ι × F ↦ fderiv 𝕜 (e p.1).symm p.2) (l ×ˢ 𝓝 y₀)
       (𝓝 (fderiv 𝕜 e₀.symm y₀)) := by

@@ -25,6 +25,9 @@ A map on a convex set whose derivative stays close to a linear map `A` with a le
 is injective there, with injective derivative: `P` of the map approximates the identity
 (`Convex.injOn_and_injective_of_norm_hasFDerivAt_sub_le`).
 
+By the mean value inequality, a map on a convex set whose derivative stays within `c` of `L`
+approximates `L` with constant `c` (`Convex.approximatesLinearOn_of_nnnorm_fderiv_sub_le`).
+
 If the derivative of a function `g` is approximated by a bilinear map `L` near `x`, a critical point
 `y` of `g` near `x` has a value within `(‖L‖ + κ) * (2 * ρ) * ρ` of that at `x`
 (`ApproximatesLinearOn.norm_sub_le_of_fderiv_eq_zero`).
@@ -158,3 +161,14 @@ theorem Convex.injOn_and_injective_of_norm_hasFDerivAt_sub_le {E F : Type*}
     rw [hw', norm_neg] at h1
     have : ‖w‖ = 0 := by linarith [norm_nonneg w]
     exact norm_eq_zero.1 this
+
+/-- On a convex set on which every derivative of `f` is within `c` of `L` in norm, the map `f`
+approximates `L` with constant `c`. This is the converse of
+`ApproximatesLinearOn.norm_sub_le_of_hasFDerivAt`, by the mean value inequality. -/
+theorem Convex.approximatesLinearOn_of_nnnorm_fderiv_sub_le {𝕜 E F : Type*}
+    [NontriviallyNormedField 𝕜] [IsRCLikeNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {L : E →L[𝕜] F}
+    {s : Set E} {c : ℝ≥0} (hs : Convex ℝ s) (hd : ∀ x ∈ s, DifferentiableAt 𝕜 f x)
+    (hb : ∀ x ∈ s, ‖fderiv 𝕜 f x - L‖₊ ≤ c) :
+    ApproximatesLinearOn f L s c :=
+  fun _ hx _ hy ↦ hs.norm_image_sub_le_of_norm_fderiv_le' hd (fun z hz ↦ hb z hz) hy hx

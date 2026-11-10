@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.ContDiff.FaaDiBruno
-public import TauCeti.Analysis.Calculus.ContDiff.FTaylorSeries
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 public import TauCeti.Topology.UniformSpace.LocallyUniformConvergence
 
 /-!

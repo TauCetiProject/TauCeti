@@ -25,8 +25,11 @@ chosen to converge in `C^ℓ`.
 
 The charts of the family are adapted charts for the structures `J i` in the sense of
 `TauCeti.Analysis.Calculus.AdaptedChart`: their underlying maps are the adapted extensions, so
-flattening (`OpenPartialHomeomorph.isImage_of_coe_eq_adaptedNormalExtension`) and intertwining
-along the submanifold apply to each of them. Convergence is continuous convergence of the
+flattening (`OpenPartialHomeomorph.isImage_of_coe_eq_adaptedNormalExtension`) applies to each of
+them unconditionally. Intertwining
+(`OpenPartialHomeomorph.fderiv_symm_apply_of_coe_eq_adaptedNormalExtension`) applies at a point
+`γ x` of the submanifold in the target of a chart once `(J i (γ x))² = -1` there; the theorem
+assumes this only for `J₀` at `γ x₀`. Convergence is continuous convergence of the
 derivatives of order at most `ℓ` (`TauCeti.TendstoContDiffAt`), which on open sets is locally
 uniform convergence of these derivatives
 (`TauCeti.tendstoContDiffAt_iff_tendstoLocallyUniformlyOn`).
