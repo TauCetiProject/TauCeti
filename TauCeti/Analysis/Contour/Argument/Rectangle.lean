@@ -56,16 +56,6 @@ private theorem windingNumber_rectBoundary_eq_ite (hre : z.re ≤ w.re) (him : z
   · exact windingNumber_rectBoundary_eq_one (mem_Ioo_reProdIm_of_mem_rectangle hre him hs hfr)
   · exact windingNumber_rectBoundary_eq_zero hs
 
-/-- The rectangle boundary over `[0, 4]` lies in every set containing the closed rectangle. -/
-private theorem rectBoundary_mem_of_rectangle_subset (hRU : Rectangle z w ⊆ U) {t : ℝ}
-    (ht : t ∈ uIcc (0 : ℝ) 4) : rectBoundary z w t ∈ U :=
-  hRU (rectBoundary_mem_rectangle (by rwa [uIcc_of_le (by norm_num)] at ht))
-
-/-- The rectangle boundary over `[0, 4]` lies on the frontier of the rectangle. -/
-private theorem rectBoundary_mem_frontier_of_mem_uIcc {t : ℝ} (ht : t ∈ uIcc (0 : ℝ) 4) :
-    rectBoundary z w t ∈ frontier (Rectangle z w) :=
-  rectBoundary_mem_frontier (by rwa [uIcc_of_le (by norm_num)] at ht)
-
 open scoped Classical in
 /-- **The argument principle on a rectangle.** Let `z` be the lower left corner of a closed
 rectangle `Rectangle z w` contained in an open set `U`, and let `f` be analytic and nonvanishing at
@@ -85,8 +75,8 @@ theorem argumentPrinciple_rectBoundary {ord : ℂ → ℤ} (hre : z.re ≤ w.re)
     ∫ t in (0 : ℝ)..4, deriv (rectBoundary z w) t • logDeriv f (rectBoundary z w t) =
       2 * π * I * ∑ s ∈ S with s ∈ Rectangle z w, (ord s : ℂ) := by
   rw [argumentPrinciple_nullHomologous hU hoff hmero hord (isPiecewiseC1On_rectBoundary z w)
-    (fun _ ↦ rectBoundary_mem_of_rectangle_subset hRU) (by simp)
-    (fun _ ht hS' ↦ hS _ hS' (rectBoundary_mem_frontier_of_mem_uIcc ht))
+    (fun t _ ↦ hRU (rectBoundary_mem_rectangle t)) (by simp)
+    (fun _ _ hS' ↦ hS _ hS' (rectBoundary_mem_frontier _))
     (isNullHomologous_rectBoundary hRU), Finset.sum_filter]
   refine congrArg _ (Finset.sum_congr rfl fun s hs ↦ ?_)
   rw [windingNumber_rectBoundary_eq_ite hre him (hS s hs)]
@@ -104,8 +94,8 @@ theorem argumentPrinciple_rectBoundary_of_analyticOnNhd (hre : z.re ≤ w.re) (h
     ∫ t in (0 : ℝ)..4, deriv (rectBoundary z w) t • logDeriv f (rectBoundary z w t) =
       2 * π * I * ∑ s ∈ S with s ∈ Rectangle z w, (analyticOrderNatAt f s : ℂ) := by
   rw [argumentPrinciple_nullHomologous_of_analyticOnNhd hU hf hzeros
-    (isPiecewiseC1On_rectBoundary z w) (fun _ ↦ rectBoundary_mem_of_rectangle_subset hRU)
-    (by simp) (fun _ ht ↦ hfr _ (rectBoundary_mem_frontier_of_mem_uIcc ht))
+    (isPiecewiseC1On_rectBoundary z w) (fun t _ ↦ hRU (rectBoundary_mem_rectangle t))
+    (by simp) (fun _ _ ↦ hfr _ (rectBoundary_mem_frontier _))
     (isNullHomologous_rectBoundary hRU), Finset.sum_filter]
   refine congrArg _ (Finset.sum_congr rfl fun s _ ↦ ?_)
   by_cases hs : s ∈ frontier (Rectangle z w)
