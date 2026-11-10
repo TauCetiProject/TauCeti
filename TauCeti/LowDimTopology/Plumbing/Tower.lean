@@ -40,8 +40,9 @@ of the plumbed three-manifold.
 
 * `TauCeti.PlumbingGraph.latticeAugmentation_comp_latticeDifferential`: the augmentation kills
   boundaries.
-* `TauCeti.PlumbingGraph.exists_cycle_latticeAugmentation_eq_one`: a lattice point of minimal
-  characteristic weight is a cycle with augmentation `1`.
+* `TauCeti.PlumbingGraph.exists_cycle_latticeAugmentation_eq_one`: on every plumbing there is a
+  cycle with augmentation `1`, namely a lattice point of weight `sInfCharacteristicWeight` (a
+  minimum of the characteristic weight when it is bounded below, and the origin otherwise).
 * `TauCeti.PlumbingGraph.exists_cycle_eq_zero_of_smul_mem_range_latticeDifferential`: that cycle
   satisfies the chain-level nonboundary criterion for the `U`-tower.
 * `TauCeti.PlumbingGraph.exists_injective_latticeHomologyCycleMap`: the resulting map from
@@ -218,17 +219,13 @@ theorem latticeAugmentation_eq_zero_of_mem_range (P : PlumbingGraph V)
   obtain ⟨b, rfl⟩ := hc
   exact congrFun (congrArg DFunLike.coe (P.latticeAugmentation_comp_latticeDifferential h k)) b
 
-/-- A lattice point of minimal characteristic weight gives a cycle whose augmentation is `1`. -/
+/-- A lattice point of weight `sInfCharacteristicWeight` gives a cycle whose augmentation is `1`:
+such a point is a minimum of the characteristic weight when it is bounded below, and the origin
+otherwise. -/
 theorem exists_cycle_latticeAugmentation_eq_one (P : PlumbingGraph V)
     (k : P.characteristicVectors) :
     ∃ c : PlumbingChain V, P.latticeDifferential k c = 0 ∧ P.latticeAugmentation k c = 1 := by
-  obtain ⟨x, hx⟩ : ∃ x : V → ℤ,
-      P.characteristicWeight k x = P.sInfCharacteristicWeight k := by
-    by_cases hb : BddBelow (Set.range (P.characteristicWeight k))
-    · rw [sInfCharacteristicWeight_def]
-      exact Int.csInf_mem (Set.range_nonempty _) hb
-    · exact ⟨0, by rw [P.characteristicWeight_zero, sInfCharacteristicWeight_def,
-        Int.csInf_of_not_bddBelow hb]⟩
+  obtain ⟨x, hx⟩ := P.exists_characteristicWeight_eq_sInfCharacteristicWeight k
   refine ⟨Finsupp.single ({ base := x, directions := ∅ } : PlumbingCube V) 1, ?_, ?_⟩
   · rw [latticeDifferential_single,
       P.latticeDifferentialOnGenerator_eq_zero_of_directions_eq_empty k rfl, smul_zero]
