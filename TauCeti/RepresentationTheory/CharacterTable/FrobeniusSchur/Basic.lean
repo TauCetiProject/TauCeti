@@ -26,12 +26,13 @@ of the invariants in the symmetric and exterior squares. Reading the companion i
 `Representation.char_tensorSquare` the same way shows that those same two invariant dimensions sum
 to the dimension of the invariants of `V ⊗ V`.
 
-Both identities are proved wherever `|G|` is invertible in `k`, with **no hypothesis on
+Both identities are proved in `k` wherever `|G|` is invertible in `k`, with **no hypothesis on
 characteristic two**, because the two character identities they average hold over every field: the
 tensor square need not split for the two invariant counts to add up. The price is that a count of
 invariants only ever appears here through its image in `k`, so in characteristic `p` the additivity
-of the invariant dimensions is an identity of residues. Over a field of characteristic zero it
-upgrades to an equality of natural numbers, and there the indicator is an integer.
+of the invariant dimensions is an identity of residues. For any finite group over a field of
+characteristic zero it upgrades to an equality of natural numbers, and there the indicator is an
+integer.
 
 The `FDRep`-level indicator and its agreement with this module-level one are at the end of the file.
 
@@ -56,8 +57,11 @@ The `FDRep`-level indicator and its agreement with this module-level one are at 
 ## Implementation notes
 
 The definition asks only for a `Fintype G`: invertibility of `|G|` is a hypothesis of the theorems,
-not of the object. The two statements that do not mention the indicator ask only for `Finite G`,
-and build the `Fintype` they average over inside their proofs.
+not of the object. The two statements that do not mention the indicator build the `Fintype` they
+average over inside their proofs. The identity in `k` takes only `Invertible (Nat.card G : k)`,
+which already forces `G` to be finite since `Nat.card` of an infinite type is `0`; the
+natural-number form takes `Finite G` and `CharZero k` and builds that invertibility instance in its
+proof.
 
 The `FDRep`-level indicator is the module-level one applied to `V.ρ` rather than a second copy of
 the average, so `FDRep.frobeniusSchurIndicator_def` unfolds that one definition and nothing
