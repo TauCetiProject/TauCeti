@@ -152,6 +152,18 @@ private theorem _root_.IsCompactOperator.exists_eq_succ_of_chain (hK : IsCompact
   rw [dist_eq_norm] at hlt
   exact (key m n hmn).not_gt hlt
 
+/-- The kernel of every power of a compact perturbation of the identity is finite dimensional. -/
+theorem _root_.IsCompactOperator.finiteDimensional_ker_pow_one_sub [CompleteSpace 𝕜]
+    (hK : IsCompactOperator K) (n : ℕ) :
+    FiniteDimensional 𝕜 (LinearMap.ker (((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ^ n)) := by
+  set A : X →L[𝕜] X := 1 - K with hA
+  have hKp : IsCompactOperator (1 - A ^ n : X →L[𝕜] X) := by
+    simpa only [hA] using hK.isCompactOperator_one_sub_pow n
+  have h := (A ^ n).finiteDimensional_ker_of_compact_estimate hKp (C := 1)
+    (fun x ↦ by simpa using norm_le_norm_add_norm_sub' x ((A ^ n) x))
+  rw [← ContinuousLinearMap.toLinearMap_pow]
+  exact h
+
 variable [IsRCLikeNormedField 𝕜]
 
 /-- A compact perturbation of the identity has closed range. No completeness of `X` is needed. -/
@@ -204,21 +216,6 @@ theorem _root_.IsCompactOperator.exists_range_pow_succ_eq_one_sub
     obtain ⟨z, rfl⟩ := hx
     refine ⟨z, ?_⟩
     simp [pow_succ', mul_apply_eq_comp]
-
-/-- The kernel of every power of a compact perturbation of the identity is finite dimensional. -/
-theorem _root_.IsCompactOperator.finiteDimensional_ker_pow_one_sub (hK : IsCompactOperator K)
-    (n : ℕ) :
-    FiniteDimensional 𝕜 (LinearMap.ker (((1 - K : X →L[𝕜] X) : X →ₗ[𝕜] X) ^ n)) := by
-  have : CompleteSpace 𝕜 := by
-    let _ : RCLike 𝕜 := IsRCLikeNormedField.rclike 𝕜
-    infer_instance
-  set A : X →L[𝕜] X := 1 - K with hA
-  have hKp : IsCompactOperator (1 - A ^ n : X →L[𝕜] X) := by
-    simpa only [hA] using hK.isCompactOperator_one_sub_pow n
-  have h := (A ^ n).finiteDimensional_ker_of_compact_estimate hKp (C := 1)
-    (fun x ↦ by simpa using norm_le_norm_add_norm_sub' x ((A ^ n) x))
-  rw [← ContinuousLinearMap.toLinearMap_pow]
-  exact h
 
 /-- The cokernel of a compact perturbation of the identity is finite dimensional. -/
 theorem _root_.IsCompactOperator.finiteDimensional_quotient_range_one_sub
