@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.Graph.Connectivity.Menger.Adjacent
 public import TauCeti.Combinatorics.SimpleGraph.Connectivity.Menger
 public import TauCeti.Combinatorics.Network.Menger.Adjacent
+public import TauCeti.Examples.Combinatorics.Graph.InfiniteEdgeMenger
 import Mathlib.Tactic.FinCases
 
 /-!
@@ -36,12 +37,14 @@ namespace TauCeti.Examples.AdjacentMenger
 /-- The complete simple graph on three vertices. -/
 abbrev triangle : SimpleGraph (Fin 3) := SimpleGraph.completeGraph (Fin 3)
 
-private def triangleDirect : triangle.Walk 0 1 :=
-  (show triangle.Adj 0 1 by simp).toWalk
+private def triangleDirect : triangle.Walk 0 1 := by
+  have h : triangle.Adj 0 1 := by simp
+  exact h.toWalk
 
-private def triangleThrough : triangle.Walk 0 1 :=
-  (show triangle.Adj 0 2 by simp).toWalk.append
-    (show triangle.Adj 2 1 by simp).toWalk
+private def triangleThrough : triangle.Walk 0 1 := by
+  have h₀₂ : triangle.Adj 0 2 := by simp
+  have h₂₁ : triangle.Adj 2 1 := by simp
+  exact h₀₂.toWalk.append h₂₁.toWalk
 
 private def trianglePaths : Fin 2 → triangle.Walk 0 1
   | ⟨0, _⟩ => triangleDirect
@@ -89,7 +92,8 @@ theorem triangle_reachability_and_path_count :
       ∀ {I : Type*} [Fintype I] (P : I → triangle.Walk 0 1), Function.Injective P →
         (∀ i, (P i).IsPath) →
         (Pairwise fun i j ↦ (P i).InternallyDisjoint (P j)) → Fintype.card I ≤ 2 := by
-  refine ⟨fun k ↦ (show triangle.Adj 0 1 by simp).isVertexReachable,
+  have h₀₁ : triangle.Adj 0 1 := by simp
+  refine ⟨fun _ ↦ h₀₁.isVertexReachable,
     ⟨trianglePaths, trianglePaths_injective, trianglePaths_isPath, trianglePaths_pairwise⟩, ?_⟩
   intro I _ P hinj hpath hdisj
   simpa using SimpleGraph.card_le_card_add_one_of_not_reachable_induce_deleteEdges
@@ -104,34 +108,26 @@ def parallelEnds : Fin 4 → Sym2 (Fin 3)
   | 3 => s(1, 2)
 
 /-- Two parallel direct terminal edges together with a path through the third vertex. -/
-def parallelGraph : Graph (Fin 3) (Fin 4) where
-  vertexSet := Set.univ
-  edgeSet := Set.univ
-  IsLink e x y := s(x, y) = parallelEnds e
-  isLink_symm := by
-    intro e _
-    exact ⟨fun x y hxy ↦ by rw [Sym2.eq_swap]; exact hxy⟩
-  eq_or_eq_of_isLink_of_isLink := by
-    intro e x y v w hxy hvw
-    rcases Sym2.eq_iff.mp (hxy.trans hvw.symm) with h | h
-    · exact Or.inl h.1
-    · exact Or.inr h.1
-  edge_mem_iff_exists_isLink := by
-    intro e
-    constructor
-    · intro _
-      exact (parallelEnds e).inductionOn fun x y ↦ ⟨x, y, rfl⟩
-    · simp
-  left_mem_of_isLink := by simp
+def parallelGraph : Graph (Fin 3) (Fin 4) :=
+  InfiniteEdgeMenger.graphOfEnds parallelEnds
 
 @[simp]
 theorem parallelGraph_isLink (e : Fin 4) (x y : Fin 3) :
-    parallelGraph.IsLink e x y ↔ s(x, y) = parallelEnds e :=
-  Iff.rfl
+    parallelGraph.IsLink e x y ↔ s(x, y) = parallelEnds e := by
+  simp [parallelGraph]
 
-private def parallelThrough : parallelGraph.Walk 0 2 :=
-  (show parallelGraph.IsLink 2 0 1 by simp [parallelEnds]).toWalk.append
-    (show parallelGraph.IsLink 3 1 2 by simp [parallelEnds]).toWalk
+@[simp]
+theorem edgeSet_parallelGraph : E(parallelGraph) = Set.univ := by
+  simp [parallelGraph]
+
+@[simp]
+theorem vertexSet_parallelGraph : V(parallelGraph) = Set.univ := by
+  simp [parallelGraph]
+
+private def parallelThrough : parallelGraph.Walk 0 2 := by
+  have h₀₁ : parallelGraph.IsLink 2 0 1 := by simp [parallelEnds]
+  have h₁₂ : parallelGraph.IsLink 3 1 2 := by simp [parallelEnds]
+  exact h₀₁.toWalk.append h₁₂.toWalk
 
 private theorem parallelThrough_survives_direct_deletion :
     (parallelGraph.deleteEdges {e | parallelGraph.IsLink e 0 2}).Reachable 0 2 := by
