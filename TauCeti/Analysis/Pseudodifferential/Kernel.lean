@@ -13,6 +13,7 @@ import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
@@ -207,24 +208,6 @@ theorem continuous_quantizationKernel (ha : Continuous a) {m : ℝ} (hm : m < -f
     (hweight.const_mul C)
     (ae_of_all _ fun ζ ↦ (hcont.comp (continuous_id.prodMk continuous_const)).continuousAt)
 
-/-- The derivatives of the slice `x ↦ f (x, y)` of a `C^k` function `f` on a product are those of
-`f`, restricted to the first factor. -/
-private theorem iteratedFDeriv_comp_prodMk_const {X Y Z : Type*} [NormedAddCommGroup X]
-    [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y] [NormedAddCommGroup Z]
-    [NormedSpace ℝ Z] {f : X × Y → Z} {k : ℕ} (hf : ContDiff ℝ k f) (y : Y) {i : ℕ} (hi : i ≤ k)
-    (x : X) :
-    iteratedFDeriv ℝ i (fun x ↦ f (x, y)) x =
-      (iteratedFDeriv ℝ i f (x, y)).compContinuousLinearMap
-        fun _ ↦ ContinuousLinearMap.inl ℝ X Y := by
-  have h : (fun x ↦ f (x, y)) =
-      (fun q : X × Y ↦ f (q + (0, y))) ∘ ContinuousLinearMap.inl ℝ X Y := by
-    funext x
-    simp
-  have hg : ContDiff ℝ k fun q : X × Y ↦ f (q + (0, y)) := hf.comp (contDiff_id.add contDiff_const)
-  rw [h, ContinuousLinearMap.iteratedFDeriv_comp_right _ hg _ (mod_cast hi),
-    iteratedFDeriv_comp_add_right]
-  simp
-
 /-- The phase `(x, y) ↦ 2πi ⟪ζ, x - y⟫` of the kernel integrand at the frequency `ζ`, a real-linear
 map to `ℂ` of norm at most `2 ‖2πζ‖`. -/
 private def kernelPhase (ζ : E) : E × E →L[ℝ] ℂ :=
@@ -245,14 +228,15 @@ private theorem exp_kernelPhase (ζ : E) (p : E × E) :
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private theorem norm_kernelPhase_le (ζ : E) : ‖kernelPhase ζ‖ ≤ 2 * ‖(2 * π) • ζ‖ := by
   refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun p ↦ ?_
-  rw [kernelPhase_apply, norm_mul, Complex.norm_I, mul_one, Complex.norm_real, Real.norm_eq_abs,
-    abs_mul, abs_of_pos two_pi_pos, norm_smul, Real.norm_of_nonneg two_pi_pos.le]
   have hp : ‖p.1 - p.2‖ ≤ 2 * ‖p‖ := (norm_sub_le _ _).trans (by
     linarith [norm_fst_le p, norm_snd_le p])
-  calc 2 * π * |⟪ζ, p.1 - p.2⟫| ≤ 2 * π * (‖ζ‖ * ‖p.1 - p.2‖) := by
-        gcongr; exact abs_real_inner_le_norm _ _
+  calc ‖kernelPhase ζ p‖ = 2 * π * |⟪ζ, p.1 - p.2⟫| := by
+        simp [kernelPhase_apply, abs_of_pos pi_pos]
+    _ ≤ 2 * π * (‖ζ‖ * ‖p.1 - p.2‖) := by gcongr; exact abs_real_inner_le_norm _ _
     _ ≤ 2 * π * (‖ζ‖ * (2 * ‖p‖)) := by gcongr
-    _ = 2 * (2 * π * ‖ζ‖) * ‖p‖ := by ring
+    _ = 2 * ‖(2 * π) • ζ‖ * ‖p‖ := by
+        rw [norm_smul, Real.norm_of_nonneg two_pi_pos.le]
+        ring
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- **Leibniz bound on the kernel integrand.** If the position derivatives of order at most `k` of
@@ -352,34 +336,18 @@ theorem contDiff_quantizationKernel_of_bound {a : E × E → V →L[ℂ] W} {k :
         (ContinuousMultilinearMap ℝ (fun _ : Fin i ↦ E × E) (V →L[ℂ] W)) :=
       @PseudoEMetricSpace.pseudoMetrizableSpace
         (ContinuousMultilinearMap ℝ (fun _ : Fin i ↦ E × E) (V →L[ℂ] W)) _
-    simp only [ftaylorSeries, iteratedFDeriv_comp_prodMk_const hΦ _ hi']
+    simp only [ftaylorSeries, _root_.ContDiff.iteratedFDeriv_prod_left hΦ i (mod_cast hi')]
     exact ((ContinuousMultilinearMap.compContinuousLinearMapL _).continuous.comp
       ((hΦ.continuous_iteratedFDeriv (mod_cast hi')).comp
         (continuous_const.prodMk continuous_id))).aestronglyMeasurable
   · subst hF
     exact norm_iteratedFDeriv_kernelIntegrand_le ha (fun i hi ↦ hC i hi) ζ
       (Metric.ball_subset_closedBall hp) (by exact_mod_cast hi)
-  · -- integrability: `(1 + 2 ‖ξ‖) ^ i ⟨ξ⟩ ^ m ≤ 3 ^ i ⟨ξ⟩ ^ (m + i)` with `m + i < -n`
+  · -- integrability: `(1 + 2 ‖ξ‖) ^ i ⟨ξ⟩ ^ m` is integrable since `m + i < -n`
     have hi' : (i : ℝ) ≤ k := by exact_mod_cast hi
-    have hint := (integrable_rpow_neg_one_add_norm_sq (μ := (volume : Measure E))
-      (r := -(m + i)) (by linarith)).const_mul (|C| * (1 + 2) ^ i)
-    refine (Integrable.mono' (f := fun ξ : E ↦ C * (1 + 2 * ‖ξ‖) ^ i * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
-      hint ?_ (ae_of_all _ fun ξ ↦ ?_)).comp_smul two_pi_pos.ne'
-    · have hcont : Continuous fun ξ : E ↦ C * (1 + 2 * ‖ξ‖) ^ i * (1 + ‖ξ‖ ^ 2) ^ (m / 2) :=
-        Continuous.mul (by fun_prop) (Continuous.rpow_const (by fun_prop) fun ξ ↦
-          Or.inl (by positivity))
-      exact hcont.aestronglyMeasurable
-    · have hw : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-      rw [norm_mul, norm_mul, Real.norm_eq_abs, Real.norm_of_nonneg (by positivity),
-        Real.norm_of_nonneg (by positivity), neg_neg, mul_assoc, mul_assoc |C|]
-      refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg C)
-      calc (1 + 2 * ‖ξ‖) ^ i * (1 + ‖ξ‖ ^ 2) ^ (m / 2)
-          ≤ (1 + 2) ^ i * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-            gcongr
-            exact one_add_mul_norm_pow_le zero_le_two ξ i
-        _ = (1 + 2) ^ i * (1 + ‖ξ‖ ^ 2) ^ ((m + i) / 2) := by
-          rw [mul_assoc, ← Real.rpow_add hw]
-          ring_nf
+    simpa only [neg_neg, mul_assoc] using
+      ((integrable_one_add_mul_norm_pow_mul_rpow_neg_one_add_norm_sq (V := E) volume zero_le_two i
+        (r := -m) (by linarith)).const_mul C).comp_smul two_pi_pos.ne'
 
 /-- **Kernel representation.** If the frequency slice `ξ ↦ a(x, ξ)` is integrable, the
 quantization of a Schwartz function is the integral operator with kernel `K_a`:

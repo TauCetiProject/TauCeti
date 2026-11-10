@@ -152,8 +152,8 @@ theorem norm_offDiagonalKernel_le (a : Symbol n V W m) {N : ℕ} (hN : m - 2 * N
     {x y : CoordinateSpace n} (hxy : x ≠ y) :
     ‖offDiagonalKernel a x y‖ ≤ (‖x - y‖ ^ (2 * N))⁻¹ *
       (((2 * π) ^ n)⁻¹ * ∫ ξ, ‖(iteratedFrequencyLaplacian N a).coefficient (x, ξ)‖) := by
-  rw [offDiagonalKernel_eq a hN hxy, norm_smul, norm_inv, norm_pow, norm_neg, Real.norm_eq_abs,
-    abs_of_nonneg (by positivity), ← pow_mul]
+  rw [offDiagonalKernel_eq a hN hxy]
+  simp only [norm_smul, norm_inv, norm_pow, norm_neg, norm_norm, ← pow_mul]
   gcongr
   simpa using norm_quantizationKernel_le (iteratedFrequencyLaplacian N a).coefficient x y
 
