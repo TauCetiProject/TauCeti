@@ -118,15 +118,14 @@ theorem mem_smoothVanishingIdeal_smul_top_of_apply_eq_zero {x : M} {s : Cₛ^∞
       simp [hy])
     (fun hu hu' ↦ by
       rw [hΦ (hu.add_section hu'), hΦ hu, hΦ hu', ← Submodule.Quotient.mk_add]
-      rfl)
+      exact congrArg _ (ContMDiffSection.ext fun y ↦ by simp))
     (fun {f u} hf hu ↦ by
       rw [hΦ (hf.smul_section hu), hΦ hu, ← Submodule.Quotient.mk_smul, Submodule.Quotient.eq]
       let g : C^∞⟮I, M; ℝ⟯ := ⟨fun y ↦ f y - f x, hf.sub contMDiff_const⟩
       have hg_apply (y : M) : g y = f y - f x := rfl
       have hg : (⟨f • u, hf.smul_section hu⟩ : Cₛ^∞⟮I; F, V⟯) - f x • ⟨u, hu⟩ = g • ⟨u, hu⟩ := by
         ext y
-        rw [ContMDiffSection.smul_apply, hg_apply, sub_smul]
-        rfl
+        simp [hg_apply, sub_smul]
       rw [hg]
       exact Submodule.smul_mem_smul (by rw [mem_smoothVanishingIdeal_iff, hg_apply, sub_self])
         Submodule.mem_top)
