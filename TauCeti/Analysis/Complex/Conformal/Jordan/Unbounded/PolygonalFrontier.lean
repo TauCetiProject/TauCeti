@@ -150,8 +150,11 @@ theorem locallyConnectedSpace_insert_zero_image_inv_sub_union_segment_ray {ι κ
       · exact Or.inl h
       · exact Or.inr (Or.inr ⟨k, h⟩)
   have := (convex_Icc (0 : ℝ) 1).locallyPathConnectedSpace
+  have (j : _) : LocallyConnectedSpace (γ j '' Icc 0 1) :=
+    locallyConnectedSpace_image_of_isCompact isCompact_Icc (hγ j)
   rw [heq]
-  exact locallyConnectedSpace_iUnion_image_of_isCompact isCompact_Icc hγ
+  exact (locallyFinite_of_finite _).locallyConnectedSpace_iUnion fun j =>
+    (isCompact_Icc.image_of_continuousOn (hγ j)).isClosed
 
 /-- **Polygonal frontiers are locally connected after inversion.** Let `U` be an unbounded open
 set whose frontier is the union of finitely many closed segments `[x i, y i]` and finitely many
