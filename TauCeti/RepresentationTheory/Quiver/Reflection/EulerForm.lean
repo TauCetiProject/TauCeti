@@ -226,7 +226,7 @@ theorem vertexPreReflection_reflect_apply (i j : V) (d : V → ℤ) (w : V) :
   · rw [hw, vertexPreReflection_apply_self (Quiver.Reflect V i) j d,
       vertexPreReflection_apply_self V j d]
     congr 1
-    refine Finset.sum_congr rfl fun x _ ↦ ?_
+    refine Finset.sum_congr rfl fun (x : V) _ ↦ ?_
     congr 1
     exact_mod_cast Quiver.card_reflectHom_add_swap i j x
   · rw [vertexPreReflection_apply_of_ne (Quiver.Reflect V i) j d hw,
