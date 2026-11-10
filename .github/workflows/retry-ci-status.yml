@@ -24,7 +24,7 @@ jobs:
       pull-requests: read
       statuses: write
     if: >-
-      github.event.workflow_run.conclusion == 'failure' &&
+      contains(fromJSON('["success","failure"]'), github.event.workflow_run.conclusion) &&
       contains(fromJSON('["pull_request_target","repository_dispatch","merge_group","workflow_dispatch"]'), github.event.workflow_run.event) &&
       (github.event.workflow_run.event != 'workflow_dispatch' || github.event.workflow_run.head_branch == github.event.repository.default_branch)
     concurrency:
