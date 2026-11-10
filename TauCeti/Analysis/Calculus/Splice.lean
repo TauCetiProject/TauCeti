@@ -165,7 +165,7 @@ theorem hasFDerivAt_spliceAlong {k' l' : X →L[ℝ] Y} (hk : HasFDerivAt k k' x
 a linear map `A`, `‖l x - k x‖ ≤ 2 ε |π x|` and `B` bounds the derivative of the cutoff, then at
 every scale `δ` the spliced map has derivative within `(3 + 4 B) ε` of `A` at `x`, for a
 functional `π` of norm at most `1`. The derivative `δ⁻¹ χ' (δ⁻¹ π x) • π` of the cutoff only
-meets `l x - k x` where `|π x| ≤ 2 δ`. -/
+meets `l x - k x` where `|π x| ≤ 2 |δ|`. -/
 theorem exists_hasFDerivAt_spliceAlong_sub_le {k' l' A : X →L[ℝ] Y} {ε B : ℝ}
     (hπ : ‖π‖ ≤ 1) (hB : ∀ x, |deriv spliceCutoff x| ≤ B) (hk : HasFDerivAt k k' x)
     (hl : HasFDerivAt l l' x) (hk' : ‖k' - A‖ ≤ ε) (hl' : ‖l' - A‖ ≤ ε)

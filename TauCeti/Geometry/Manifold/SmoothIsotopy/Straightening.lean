@@ -187,12 +187,12 @@ private theorem exists_Icc_norm_deriv_sub_lt_and_norm_sub_le {k l : ℝ → E} {
 and have the same nonzero velocity `v` there, then on a fixed interval `[-ρ, ρ]` the velocity of
 every spliced curve, at every scale `δ` and weight `s ∈ [0, 1]`, has positive pairing with a fixed
 functional `ℓ` normalizing `v`. The key estimate is the bound `‖l t - k t‖ ≤ 2 ε |t|`, so the
-derivative `δ⁻¹ χ' (δ⁻¹ t)` of the cutoff, which is supported where `|t| ≤ 2δ`, only meets a
+derivative `δ⁻¹ χ' (δ⁻¹ t)` of the cutoff, which is supported where `|t| ≤ 2 |δ|`, only meets a
 difference of size `O(ε |t|)`. -/
 private theorem exists_pos_deriv_splice {k l : ℝ → E} {r : ℝ} (hr : 0 < r)
     (hk : ContDiffOn ℝ 1 k (Ioo (-r) r)) (hl : ContDiffOn ℝ 1 l (Ioo (-r) r))
     (h0 : k 0 = l 0) (hd : deriv k 0 = deriv l 0) (hv : deriv k 0 ≠ 0) :
-    ∃ ℓ : StrongDual ℝ E, ∃ ρ, 0 < ρ ∧ ρ < r ∧ ∀ δ, 0 < δ → ∀ s ∈ Icc (0 : ℝ) 1,
+    ∃ ℓ : StrongDual ℝ E, ∃ ρ, 0 < ρ ∧ ρ < r ∧ ∀ δ, ∀ s ∈ Icc (0 : ℝ) 1,
       ∀ t ∈ Icc (-ρ) ρ, DifferentiableAt ℝ (splice k l δ s) t ∧
         0 < ℓ (deriv (splice k l δ s) t) := by
   set v := deriv k 0
@@ -211,7 +211,7 @@ private theorem exists_pos_deriv_splice {k l : ℝ → E} {r : ℝ} (hr : 0 < r)
     (hk.contDiffAt (isOpen_Ioo.mem_nhds ht)).differentiableAt one_ne_zero
   have hdl (t : ℝ) (ht : t ∈ Ioo (-r) r) : DifferentiableAt ℝ l t :=
     (hl.contDiffAt (isOpen_Ioo.mem_nhds ht)).differentiableAt one_ne_zero
-  refine ⟨ℓ, ρ, hρ0, hρr, fun δ hδ s hs t ht => ?_⟩
+  refine ⟨ℓ, ρ, hρ0, hρr, fun δ s hs t ht => ?_⟩
   obtain ⟨htI, hk₁, hl₁, hlk⟩ := hρ t ht
   obtain ⟨hD, hDv⟩ := norm_deriv_splice_sub_le hs hB (hdk t htI).hasDerivAt
     (hdl t htI).hasDerivAt hk₁.le hl₁.le hlk
@@ -537,7 +537,7 @@ private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
       (hjoint.comp (contMDiff_const.prodMk contMDiff_id))
       ((contDiffOn_splice hkC hlC δ).comp (contDiffOn_const.prodMk contDiffOn_id)
         fun t ht => ⟨mem_univ _, ht⟩) (hGφ s s.2) (fun t ht _ => hGK s t ht) hKφ
-      (hpos δ hδ s s.2) (fun t ht => (hδb s s.2 t ht).2) hδρ hρr.le hrπ hφ
+      (hpos δ s s.2) (fun t ht => (hδb s s.2 t ht).2) hδρ hρr.le hrπ hφ
   let K' := SmoothEmbedding.ofIsSmoothEmbedding _ (hemb 1)
   refine ⟨K', ⟨⟨_, hjoint⟩, fun z => ?_, fun z => ?_, hemb⟩, ?_, fun t z hz => ?_⟩
   · -- At time `0` the motion is `K`.
