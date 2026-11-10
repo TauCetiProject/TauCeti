@@ -96,9 +96,10 @@ on row vectors supported on `X` gives
 where `H` sums the operations along the paths crossing once through `F` and once through `G`.
 Hence, if `F * G` is homotopic to the identity morphism of `N` through a morphism and the
 idempotents are cycles, then on `M ⊠ N` the composite `T_G ∘ T_F` differs from the identity by
-`∂ ∘ L + L ∘ ∂` for a linear map `L` from `M ⊠ N` to itself: it is induced by morphisms, which
-preserve `M ⊠ N`. With the roles of `N` and `N'` exchanged, a homotopy equivalence of type `D`
-structures induces maps of box tensor products which are mutually inverse up to chain homotopies
+`∂ ∘ L + L ∘ ∂` for a linear map `L` from `M ⊠ N` to itself: it is induced by morphisms, whose
+induced maps land in `M ⊠ N`. With the roles of `N` and `N'` exchanged, a homotopy equivalence of
+type `D` structures induces maps of box tensor products which are mutually inverse up to chain
+homotopies
 of `M ⊠ N` and `M ⊠ N'`.
 
 ## Main definitions
@@ -141,8 +142,8 @@ of `M ⊠ N` and `M ⊠ N'`.
 * `TauCeti.TypeDStructure.typeABoxMap_toUngradedAInfinityRightModule`: for a differential module,
   `T_F` is the action of `F` on row vectors.
 * `TauCeti.TypeDStructure.typeABoxDifferential_mem_typeABoxTensor` and
-  `TauCeti.TypeDStructure.typeABoxMap_mem_typeABoxTensor`: the differential and the induced maps
-  preserve the box tensor products over the idempotents.
+  `TauCeti.TypeDStructure.typeABoxMap_mem_typeABoxTensor`: the differential preserves the box
+  tensor products over the idempotents, and the induced maps land in them.
 * `TauCeti.TypeDStructure.typeABoxMap_idMorphism_of_act_eq_zero` and
   `TauCeti.TypeDStructure.typeABoxMap_idMorphism_of_lt`: the identity morphism induces the identity
   of `M ⊠ N`.
@@ -524,16 +525,18 @@ theorem typeABoxMap_apply_eq_sum_of_act_eq_zero (N : TypeDStructure d ι X)
   typeABoxMap_apply_eq_sum N N' Mm F (fun n hn => by
     rw [Mm.matrixAct_eq_zero_of_act_eq_zero _ (hK n hn), zero_apply]) φ z
 
-/-- **The induced maps preserve the box tensor products over the idempotents.** If the higher
+/-- **The induced maps land in the box tensor products over the idempotents.** If the higher
 operations of `M` vanish on the idempotents and the idempotents are cycles, over a ring of
-characteristic two, a morphism `F` from `N` to `N'` sends `M ⊠ N` into `M ⊠ N'`. -/
+characteristic two, a morphism `F` from `N` to `N'` sends every row vector into `M ⊠ N'`: the last
+coefficient of every path into `X'` absorbs the idempotent of its end point. In particular `T_F`
+sends `M ⊠ N` into `M ⊠ N'`. -/
 theorem typeABoxMap_mem_typeABoxTensor [CharP R 2] (N : TypeDStructure d ι X)
     (N' : TypeDStructure d ι X') {Mm : UngradedAInfinityRightModule d M}
     (hM : Mm.HigherVanishingOn (Set.range ι)) (hι : ∀ s, d (ι s) = 0) {F : Matrix X X' A}
-    (hF : F ∈ morphisms N N') {φ : X → M} (hφ : φ ∈ N.typeABoxTensor Mm) :
+    (hF : F ∈ morphisms N N') (φ : X → M) :
     typeABoxMap N N' Mm F φ ∈ N'.typeABoxTensor Mm := by
-  -- The diagonal matrix `E` of the idempotents of `X ⊕ X'` fixes `Sum.elim φ 0` and is a right
-  -- unit for `fromBlocks δ F 0 δ'`, so it fixes the box tensor differential of that matrix.
+  -- The diagonal matrix `E` of the idempotents of `X ⊕ X'` is a right unit for
+  -- `fromBlocks δ F 0 δ'`, so it fixes every operation of positive arity along that matrix.
   set E : Matrix (X ⊕ X') (X ⊕ X') A :=
     Matrix.diagonal (Sum.elim (fun x => ι (N.idem x)) fun y => ι (N'.idem y)) with hEdef
   have hE : E ∈ {P : Matrix (X ⊕ X') (X ⊕ X') A | ∀ a b, P a b = 0 ∨ P a b ∈ Set.range ι} := by
@@ -554,19 +557,29 @@ theorem typeABoxMap_mem_typeABoxTensor [CharP R 2] (N : TypeDStructure d ι X)
       ← idMorphism_def, mul_idMorphism (coeff_mem_morphisms N), mul_idMorphism hF,
       mul_idMorphism (coeff_mem_morphisms N')]
     simp
-  have hψ : (Mm.matrix (X ⊕ X')).act 1 (fun _ => E) (Sum.elim φ 0) = Sum.elim φ 0 := by
-    funext a
-    rw [UngradedAInfinityRightModule.matrix_act,
-      UngradedAInfinityRightModule.matrixAct_one_diagonal_apply]
-    rcases a with x | x
-    · simpa using hφ x
-    · simp
-  have h := congrFun (hM.matrix.act_one_twistedDifferential hE hdE hCE hψ)
   intro z
-  have hz := h (Sum.inr z)
-  rw [UngradedAInfinityRightModule.matrix_act,
-    UngradedAInfinityRightModule.matrixAct_one_diagonal_apply] at hz
-  simpa [typeABoxMap_apply] using hz
+  rw [typeABoxMap_apply, UngradedAInfinityRightModule.twistedDifferential_def]
+  by_cases hfin : (Function.support fun n => (Mm.matrix (X ⊕ X')).act n fun _ =>
+    Matrix.fromBlocks N.coeff F 0 N'.coeff).Finite
+  · rw [finsum_eq_sum _ hfin, LinearMap.sum_apply, Finset.sum_apply, map_sum]
+    refine sum_congr rfl fun n _ => ?_
+    cases n with
+    | zero =>
+      -- The only path of length zero into `X'` starts in `X'`, where `Sum.elim φ 0` vanishes.
+      have h0 : (Mm.matrix (X ⊕ X')).act 0 (fun _ => Matrix.fromBlocks N.coeff F 0 N'.coeff)
+          (Sum.elim φ 0) (Sum.inr z) = 0 := by
+        rw [UngradedAInfinityRightModule.matrix_act, UngradedAInfinityRightModule.matrixAct_apply]
+        refine sum_eq_zero fun x _ => ?_
+        split_ifs with hx
+        · rw [show x 0 = Sum.inr z from hx, Sum.elim_inr, Pi.zero_apply, map_zero]
+        · rfl
+      rw [h0, map_zero]
+    | succ n =>
+      have h := congrFun (hM.matrix.act_one_act_const hE hdE hCE n (Sum.elim φ 0)) (Sum.inr z)
+      rw [UngradedAInfinityRightModule.matrix_act,
+        UngradedAInfinityRightModule.matrixAct_one_diagonal_apply, Sum.elim_inr] at h
+      simpa only [UngradedAInfinityRightModule.matrix_act] using h
+  · rw [finsum_of_infinite_support hfin, LinearMap.zero_apply, Pi.zero_apply, map_zero]
 
 section Core
 
@@ -952,22 +965,6 @@ variable {X' X'' : Type*} [Fintype X'] [DecidableEq X'] [Fintype X''] [Decidable
   {N : TypeDStructure d ι X} {N' : TypeDStructure d ι X'} {N'' : TypeDStructure d ι X''}
   {Mm : UngradedAInfinityRightModule d M}
 
-/-- Two box tensor differentials agree at given components when their operations agree there in
-every arity and both vanish from some arity on. -/
-private theorem twistedDifferential_apply_eq_of_forall {Z₁ Z₂ : Type*} [Fintype Z₁]
-    [DecidableEq Z₁] [Fintype Z₂] [DecidableEq Z₂] {β₁ : Matrix Z₁ Z₁ A} {β₂ : Matrix Z₂ Z₂ A}
-    {K₁ K₂ : ℕ} (h₁ : ∀ n, K₁ ≤ n → ((Mm.matrix Z₁).act n fun _ => β₁) = 0)
-    (h₂ : ∀ n, K₂ ≤ n → ((Mm.matrix Z₂).act n fun _ => β₂) = 0) {ψ₁ : Z₁ → M} {ψ₂ : Z₂ → M}
-    {z₁ : Z₁} {z₂ : Z₂}
-    (h : ∀ n, Mm.matrixAct Z₁ n (fun _ => β₁) ψ₁ z₁ = Mm.matrixAct Z₂ n (fun _ => β₂) ψ₂ z₂) :
-    (Mm.matrix Z₁).twistedDifferential β₁ ψ₁ z₁ = (Mm.matrix Z₂).twistedDifferential β₂ ψ₂ z₂ := by
-  rw [UngradedAInfinityRightModule.twistedDifferential_eq_sum (K := max K₁ K₂) _
-      fun n hn => h₁ n (le_of_max_le_left hn),
-    UngradedAInfinityRightModule.twistedDifferential_eq_sum (K := max K₁ K₂) _
-      fun n hn => h₂ n (le_of_max_le_right hn)]
-  simp only [LinearMap.sum_apply, Finset.sum_apply, UngradedAInfinityRightModule.matrix_act]
-  exact sum_congr rfl fun n _ => h n
-
 variable {U₁ : Set (Matrix (X ⊕ X') (X ⊕ X') A)}
   {U₂ : Set (Matrix ((X ⊕ X') ⊕ X'') ((X ⊕ X') ⊕ X'') A)}
   {U₃ : Set (Matrix (X' ⊕ X'') (X' ⊕ X'') A)} {U₄ : Set (Matrix (X ⊕ X'') (X ⊕ X'') A)}
@@ -985,7 +982,7 @@ private theorem typeABoxMap_cone_fromRows_zero_sumElim_zero
   rw [typeABoxMap_apply, typeABoxMap_apply]
   let e : X' ⊕ X'' ↪ (X ⊕ X') ⊕ X'' :=
     Function.Embedding.sumMap Function.Embedding.inr (Function.Embedding.refl X'')
-  refine twistedDifferential_apply_eq_of_forall (hB₂.act_fromBlocks _) (hB₃.act_fromBlocks G)
+  refine Mm.twistedDifferential_apply_eq_of_forall (hB₂.act_fromBlocks _) (hB₃.act_fromBlocks G)
     fun n => ?_
   refine (Mm.matrixAct_apply_embedding_of_support e _ (fun l y w hw => ?_) (fun w hw => ?_)
     (Sum.inr z)).trans ?_
@@ -1017,7 +1014,7 @@ private theorem typeABoxMap_cone_fromRows_zero_right_sumElim_zero
   rw [typeABoxMap_apply, typeABoxMap_apply]
   let e : X ⊕ X'' ↪ (X ⊕ X') ⊕ X'' :=
     Function.Embedding.sumMap Function.Embedding.inl (Function.Embedding.refl X'')
-  refine twistedDifferential_apply_eq_of_forall (hB₂.act_fromBlocks _) (hB₄.act_fromBlocks P)
+  refine Mm.twistedDifferential_apply_eq_of_forall (hB₂.act_fromBlocks _) (hB₄.act_fromBlocks P)
     fun n => ?_
   refine (Mm.matrixAct_apply_embedding e _ (fun l w y hw => ?_) _ (Sum.inr z)).trans ?_
   · rcases w with (x | x) | x
@@ -1088,24 +1085,27 @@ homomorphism from `N` to `N'` and `G` a matrix from `N'` to `N''` with `∂G = 0
 `T_G ∘ T_F` of the induced maps is chain homotopic to the map `T_{F * G}` induced by the composite
 morphism: `T_G ∘ T_F + T_{F * G} = ∂'' ∘ H + H ∘ ∂`. The homotopy `H` sums the operations along the
 paths of generators crossing once through `F` and once through `G`; it is the map induced on the
-mapping cone of `F` by the morphism `fromRows 0 G`. -/
+mapping cone of `F` by the morphism `fromRows 0 G`, which is returned as well. When `G` is a
+homomorphism and the higher operations of `M` vanish on the idempotents, this formula shows that
+`H` lands in `M ⊠ N''` (`TauCeti.TypeDStructure.typeABoxMap_mem_typeABoxTensor`). -/
 theorem exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_act_eq_zero [CharP R 2]
     (N : TypeDStructure d ι X) (N' : TypeDStructure d ι X') (N'' : TypeDStructure d ι X'')
     (Mm : UngradedAInfinityRightModule d M) {K : ℕ} (hK : ∀ n, K ≤ n → Mm.act n = 0)
     {F : Matrix X X' A} (hF : F ∈ morphisms N N') (hF₀ : morphismDifferential N N' F = 0)
     {G : Matrix X' X'' A} (hG₀ : morphismDifferential N' N'' G = 0) :
-    ∃ H : (X → M) →ₗ[R] X'' → M, ∀ φ,
-      typeABoxMap N' N'' Mm G (typeABoxMap N N' Mm F φ) + typeABoxMap N N'' Mm (F * G) φ =
+    ∃ H : (X → M) →ₗ[R] X'' → M,
+      (∀ φ, H φ = typeABoxMap (cone N N' F hF hF₀) N'' Mm (Matrix.fromRows 0 G) (Sum.elim φ 0)) ∧
+      ∀ φ, typeABoxMap N' N'' Mm G (typeABoxMap N N' Mm F φ) + typeABoxMap N N'' Mm (F * G) φ =
         N''.typeABoxDifferential Mm (H φ) + H (N.typeABoxDifferential Mm φ) :=
   (exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul hF hF₀ (bound_of_act_eq_zero hK)
-    (bound_of_act_eq_zero hK) (bound_of_act_eq_zero hK) (bound_of_act_eq_zero hK) hG₀).imp
-    fun _ => And.right
+    (bound_of_act_eq_zero hK) (bound_of_act_eq_zero hK) (bound_of_act_eq_zero hK) hG₀)
 
 /-- **Composition of induced maps with bounded type `D` structures, up to homotopy.** Over a ring
 of characteristic two, let heights on the generators of `N`, `N'` and `N''` strictly increase
 along their nonzero coefficients, let `F` be a homomorphism from `N` to `N'` and `G` a matrix
-from `N'` to `N''` with `∂G = 0`. Then `T_G ∘ T_F + T_{F * G} = ∂'' ∘ H + H ∘ ∂` for a map `H`,
-whatever the operations of `M`. -/
+from `N'` to `N''` with `∂G = 0`. Then `T_G ∘ T_F + T_{F * G} = ∂'' ∘ H + H ∘ ∂`, whatever the
+operations of `M`, for the map `H` induced on the mapping cone of `F` by the morphism
+`fromRows 0 G`. -/
 theorem exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_lt [CharP R 2]
     (N : TypeDStructure d ι X) (N' : TypeDStructure d ι X') (N'' : TypeDStructure d ι X'')
     (Mm : UngradedAInfinityRightModule d M) (h : X → ℕ)
@@ -1114,15 +1114,16 @@ theorem exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul_of_lt [CharP R 2]
     (hh'' : ∀ x y, N''.coeff x y ≠ 0 → h'' x < h'' y) {F : Matrix X X' A}
     (hF : F ∈ morphisms N N') (hF₀ : morphismDifferential N N' F = 0) {G : Matrix X' X'' A}
     (hG₀ : morphismDifferential N' N'' G = 0) :
-    ∃ H : (X → M) →ₗ[R] X'' → M, ∀ φ,
-      typeABoxMap N' N'' Mm G (typeABoxMap N N' Mm F φ) + typeABoxMap N N'' Mm (F * G) φ =
+    ∃ H : (X → M) →ₗ[R] X'' → M,
+      (∀ φ, H φ = typeABoxMap (cone N N' F hF hF₀) N'' Mm (Matrix.fromRows 0 G) (Sum.elim φ 0)) ∧
+      ∀ φ, typeABoxMap N' N'' Mm G (typeABoxMap N N' Mm F φ) + typeABoxMap N N'' Mm (F * G) φ =
         N''.typeABoxDifferential Mm (H φ) + H (N.typeABoxDifferential Mm φ) := by
   -- The coefficients of the cone increase the height of `X ⊕ X'` with `X'` shifted above `X`.
   have hB₁ := bound_of_lt Mm h hh h' hh'
   exact (exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul hF hF₀ hB₁
     (bound_of_lt (N := cone N N' F hF hF₀) Mm (sumHeight h h')
       (fun a b hab => hB₁.fromBlocks_mem F a b (by rwa [cone_coeff] at hab)) h'' hh'')
-    (bound_of_lt Mm h' hh' h'' hh'') (bound_of_lt Mm h hh h'' hh'') hG₀).imp fun _ => And.right
+    (bound_of_lt Mm h' hh' h'' hh'') (bound_of_lt Mm h hh h'' hh'') hG₀)
 
 /-- The core of `TauCeti.TypeDStructure.exists_typeABoxMap_typeABoxMap_add_eq_of_act_eq_zero` and
 `TauCeti.TypeDStructure.exists_typeABoxMap_typeABoxMap_add_eq_of_lt`. -/
@@ -1141,18 +1142,14 @@ private theorem exists_typeABoxMap_typeABoxMap_add_eq [CharP R 2]
   obtain ⟨L, hLdef, hL⟩ :=
     exists_typeABoxMap_typeABoxMap_add_typeABoxMap_mul hF hF₀ hB₁ hB₂ hB₃ hB₄ hG₀
   -- Both parts of the homotopy `L + T_H` are induced by morphisms, so they preserve `M ⊠ N`.
-  have hmem (φ : X → M) (hφ : φ ∈ N.typeABoxTensor Mm) :
+  have hmem (φ : X → M) (_ : φ ∈ N.typeABoxTensor Mm) :
       (L + typeABoxMap N N Mm H) φ ∈ N.typeABoxTensor Mm := by
-    refine add_mem ?_ (typeABoxMap_mem_typeABoxTensor N N hM hι hHm hφ)
+    refine add_mem ?_ (typeABoxMap_mem_typeABoxTensor N N hM hι hHm φ)
     rw [hLdef]
-    refine typeABoxMap_mem_typeABoxTensor _ N hM hι (mem_morphisms_iff.mpr fun a z => ?_)
-      (mem_typeABoxTensor_iff.mpr fun a => ?_)
-    · rcases a with x | x
-      · simp
-      · simpa using mem_morphisms_iff.mp hG x z
-    · rcases a with x | x
-      · simpa using hφ x
-      · simp
+    refine typeABoxMap_mem_typeABoxTensor _ N hM hι (mem_morphisms_iff.mpr fun a z => ?_) _
+    rcases a with x | x
+    · simp
+    · simpa using mem_morphisms_iff.mp hG x z
   refine ⟨(L + typeABoxMap N N Mm H).restrict hmem, fun φ => ?_⟩
   have hH' := hB₄.typeABoxDifferential_typeABoxMap H φ
   rw [hH, hB₄.typeABoxMap_add, LinearMap.add_apply, hB₄.typeABoxMap_idMorphism hM φ.2] at hH'

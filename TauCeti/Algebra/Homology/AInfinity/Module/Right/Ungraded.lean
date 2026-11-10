@@ -73,8 +73,10 @@ embedding `Y ↪ X` the matrix module restricts to that of `Y` on paths which ca
 zero as soon as one input lies in `s`: for the idempotents of a bordered algebra, this is the half
 of strict unitality that does not concern `m₂`. For a cycle `e ∈ s` the `A∞` relation along
 `(a₁, …, aₙ, e)` then reduces to `m₂(m_{n+1}(m, a₁, …, aₙ), e) = m_{n+1}(m, a₁, …, aₙ e)`
-(`TauCeti.UngradedAInfinityRightModule.HigherVanishingOn.act_one_act`), so a twisted differential
-`∂^β` with `β e = β` preserves the elements fixed by `m₂(·, e)`
+(`TauCeti.UngradedAInfinityRightModule.HigherVanishingOn.act_one_act`). If `β e = β`, then
+`m₂(·, e)` fixes the operations of positive arity along `β`
+(`TauCeti.UngradedAInfinityRightModule.HigherVanishingOn.act_one_act_const`), so the twisted
+differential `∂^β` preserves the elements fixed by `m₂(·, e)`
 (`TauCeti.UngradedAInfinityRightModule.HigherVanishingOn.act_one_twistedDifferential`).
 
 ## Main definitions
@@ -358,17 +360,12 @@ theorem act_one_act_zero [CharP R 2] {e : A} (hde : d e = 0) (a : Fin 0 → A) (
     Mm.act 1 (fun _ => e) (Mm.act 0 a m) = Mm.act 0 a (Mm.act 1 (fun _ => e) m) := by
   obtain rfl : a = fun _ => e := Subsingleton.elim _ _
   have h := Mm.stasheff 1 (fun _ => e) m
-  have hcomp : ungradedStasheffComp Mm.act 1 (fun _ => e) m =
-      ∑ k ∈ range 2, Mm.act (1 - k) (fun _ => e) (Mm.act k (fun _ => e) m) :=
-    Fin.sum_univ_eq_sum_range (fun k => Mm.act (1 - k) (fun _ => e) (Mm.act k (fun _ => e) m)) 2
-  have hupd : Function.update (fun _ : Fin 1 => e) 0 (d e) = fun _ => 0 := by
+  have hupd : Function.update (fun _ : Fin 1 => e) 0 (d e) = 0 := by
     funext t
     simp [Fin.fin_one_eq_zero t, hde]
-  rw [hcomp, ungradedStasheffDiff, Fin.sum_univ_one, hupd,
-    (Mm.act 1).map_coord_zero 0 rfl, LinearMap.zero_apply, add_zero, ungradedStasheffMul_succ,
-    Finset.univ_eq_empty, sum_empty, add_zero, sum_range_succ, sum_range_one] at h
-  refine (add_eq_zero_iff_eq_of_charTwo R).mp ?_
-  rw [← h, add_comm]
+  exact (add_eq_zero_iff_eq_of_charTwo R).mp (by
+    simpa [ungradedStasheffComp, ungradedStasheffDiff, ungradedStasheffMul_succ, Fin.sum_univ_two,
+      hupd] using h)
 
 section HigherVanishingOn
 
@@ -429,6 +426,17 @@ theorem HigherVanishingOn.act_one_act [CharP R 2] {s : Set A} (hM : Mm.HigherVan
   rw [hcomp, hdiff, hmul, add_zero] at h
   exact (add_eq_zero_iff_eq_of_charTwo R).mp h
 
+/-- **Acting on a twisted operation by a right unit of the twist.** Let the higher operations of
+`Mm` vanish on `s`, and let `e ∈ s` be a cycle with `β * e = β`, over a ring of characteristic two.
+Then `m₂(m_{n+2}(m, β, …, β), e) = m_{n+2}(m, β, …, β)` for every `m`. -/
+theorem HigherVanishingOn.act_one_act_const [CharP R 2] {s : Set A} (hM : Mm.HigherVanishingOn s)
+    {e β : A} (he : e ∈ s) (hde : d e = 0) (hβe : β * e = β) (n : ℕ) (m : M) :
+    Mm.act 1 (fun _ => e) (Mm.act (n + 1) (fun _ => β) m) = Mm.act (n + 1) (fun _ => β) m := by
+  rw [hM.act_one_act he hde, hβe]
+  congr 2
+  funext l
+  refine Fin.lastCases ?_ (fun i => ?_) l <;> simp [Fin.init]
+
 /-- **The twisted differential preserves the elements fixed by `e`.** Let the higher operations
 of `Mm` vanish on `s`, let `e ∈ s` be a cycle with `β * e = β`, over a ring of characteristic two.
 If `m₂(m, e) = m`, then `m₂(∂^β m, e) = ∂^β m`. For the idempotents of a bordered algebra this says
@@ -441,11 +449,7 @@ theorem HigherVanishingOn.act_one_twistedDifferential [CharP R 2] {s : Set A}
       Mm.act 1 (fun _ => e) (Mm.act n (fun _ => β) m) = Mm.act n (fun _ => β) m := by
     cases n with
     | zero => rw [Mm.act_one_act_zero hde, hm]
-    | succ n =>
-      rw [hM.act_one_act he hde, hβe]
-      congr 2
-      funext l
-      refine Fin.lastCases ?_ (fun i => ?_) l <;> simp [Fin.init]
+    | succ n => exact hM.act_one_act_const he hde hβe n m
   rw [twistedDifferential_def]
   by_cases hfin : (Function.support fun n => Mm.act n fun _ => β).Finite
   · rw [finsum_eq_sum _ hfin, LinearMap.sum_apply, map_sum]
@@ -669,6 +673,21 @@ theorem HigherVanishingOn.matrix {Mm : UngradedAInfinityRightModule d M} {s : Se
     · rw [(Mm.act n).map_coord_zero i h0, LinearMap.zero_apply]
     · rw [hM n hn _ ⟨i, hs⟩, LinearMap.zero_apply]
   · rfl
+
+/-- **Comparing twisted differentials of matrix modules componentwise.** Two twisted
+differentials of matrix modules agree at given components when their operations agree there in
+every arity and both vanish from some arity on. -/
+theorem twistedDifferential_apply_eq_of_forall {Z₁ Z₂ : Type*} [Fintype Z₁] [DecidableEq Z₁]
+    [Fintype Z₂] [DecidableEq Z₂] {β₁ : Matrix Z₁ Z₁ A} {β₂ : Matrix Z₂ Z₂ A} {K₁ K₂ : ℕ}
+    (h₁ : ∀ n, K₁ ≤ n → ((Mm.matrix Z₁).act n fun _ => β₁) = 0)
+    (h₂ : ∀ n, K₂ ≤ n → ((Mm.matrix Z₂).act n fun _ => β₂) = 0) {ψ₁ : Z₁ → M} {ψ₂ : Z₂ → M}
+    {z₁ : Z₁} {z₂ : Z₂}
+    (h : ∀ n, Mm.matrixAct Z₁ n (fun _ => β₁) ψ₁ z₁ = Mm.matrixAct Z₂ n (fun _ => β₂) ψ₂ z₂) :
+    (Mm.matrix Z₁).twistedDifferential β₁ ψ₁ z₁ = (Mm.matrix Z₂).twistedDifferential β₂ ψ₂ z₂ := by
+  rw [twistedDifferential_eq_sum (K := max K₁ K₂) _ fun n hn => h₁ n (le_of_max_le_left hn),
+    twistedDifferential_eq_sum (K := max K₁ K₂) _ fun n hn => h₂ n (le_of_max_le_right hn)]
+  simp only [LinearMap.sum_apply, Finset.sum_apply, matrix_act]
+  exact sum_congr rfl fun n _ => h n
 
 variable {Y : Type*} [Fintype Y] [DecidableEq Y]
 
