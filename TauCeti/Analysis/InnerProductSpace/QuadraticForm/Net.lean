@@ -9,7 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Rayleigh
 public import Mathlib.Topology.MetricSpace.Cover
 
 /-!
-# Quadratic forms and sphere nets
+# Quadratic-form bounds from sphere nets
 
 A bound for the quadratic form of a symmetric operator on an `η`-net of the unit sphere controls
 its operator norm, with loss `(1 - 2η)⁻¹`.
