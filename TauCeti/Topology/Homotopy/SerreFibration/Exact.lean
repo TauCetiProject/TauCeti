@@ -9,6 +9,7 @@ public import TauCeti.Topology.Category.TopCat.Fiber
 public import TauCeti.Topology.ContinuousMap.GlueHalves
 public import TauCeti.Topology.Homotopy.Cube.Basic
 public import TauCeti.Topology.Homotopy.GenLoop.Homotopic
+public import TauCeti.Topology.Homotopy.HomotopyGroup.Homeomorph
 public import TauCeti.Topology.Homotopy.HomotopyGroup.Map
 public import TauCeti.Topology.Homotopy.SerreFibration.RelativeCube
 
@@ -68,6 +69,20 @@ In particular, if `π_n(F, e)` is trivial, then `p` induces a surjection
 `π_{n+1}(E, e) → π_{n+1}(B, b)` (`TauCeti.TopCat.surjective_homotopyGroupMap_of_subsingleton`),
 and for `n ≥ 1` an injection `π_n(E, e) → π_n(B, b)`
 (`TauCeti.TopCat.injective_homotopyGroupMap_of_subsingleton`).
+
+## The sequence read in a model of the fibre
+
+In applications the fibre is identified with a known space `F` by a homeomorphism
+`φ : p⁻¹(b) ≃ₜ F` sending `e` to a point `f₀`, and the fibre inclusion becomes a map `i : F → E`
+with `i (φ x) = x` on the fibre. The boundary map read in `F`,
+`TauCeti.TopCat.fibrationBoundaryOfHomeomorph`, then gives the exact sequence
+
+`π_{n+1}(E, e) → π_{n+1}(B, b) → π_n(F, f₀) → π_n(E, e) → π_n(B, b)`,
+
+with exactness at its three middle terms
+(`TauCeti.TopCat.mem_range_homotopyGroupMap_iff_fibrationBoundaryOfHomeomorph_eq`,
+`TauCeti.TopCat.mem_range_fibrationBoundaryOfHomeomorph_iff` and
+`TauCeti.TopCat.mem_range_homotopyGroupMap_of_homeomorph_iff`).
 
 ## References
 
@@ -567,5 +582,123 @@ theorem injective_homotopyGroupMap_of_subsingleton (hp : serreFibrations p) [Fin
   obtain ⟨c, rfl⟩ := (mem_range_homotopyGroupMap_fiberι_iff hp).2 ha
   rw [Subsingleton.elim c ⟦GenLoop.const⟧, HomotopyGroup.map_mk, GenLoop.map_const]
   exact _root_.HomotopyGroup.one_def.symm
+
+/-! ### The sequence read in a model of the fibre -/
+
+section Model
+
+variable {F : Type*} [TopologicalSpace F] {f₀ : F}
+
+/-- The identification induced by `φ` preserves the class of the constant generalized loop. -/
+private theorem homeomorphEquivOfEq_mk_const {φ : p.fiber b ≃ₜ F} (hφ : φ e = f₀) :
+    HomotopyGroup.homeomorphEquivOfEq φ hφ (⟦GenLoop.const⟧ : HomotopyGroup N (p.fiber b) e) =
+      ⟦GenLoop.const⟧ :=
+  congrArg _ (GenLoop.map_const _ _)
+
+variable (N) in
+/-- The **boundary map** `π_{n+1}(B, b) → π_n(F, f₀)` of a Serre fibration `p`, read in a space
+`F` through a homeomorphism `φ` from the fibre of `p` over `b` to `F` sending `e` to `f₀`: the
+boundary map `TauCeti.TopCat.fibrationBoundary` followed by the identification of homotopy groups
+induced by `φ`. -/
+def fibrationBoundaryOfHomeomorph (hp : serreFibrations p) (φ : p.fiber b ≃ₜ F) (hφ : φ e = f₀)
+    [Finite N] : HomotopyGroup (Option N) B b → HomotopyGroup N F f₀ :=
+  HomotopyGroup.homeomorphEquivOfEq φ hφ ∘ fibrationBoundary hp e
+
+theorem fibrationBoundaryOfHomeomorph_apply (hp : serreFibrations p) (φ : p.fiber b ≃ₜ F)
+    (hφ : φ e = f₀) [Finite N] (a : HomotopyGroup (Option N) B b) :
+    fibrationBoundaryOfHomeomorph N hp φ hφ a =
+      HomotopyGroup.homeomorphEquivOfEq φ hφ (fibrationBoundary hp e a) :=
+  (rfl)
+
+/-- The boundary map read in `F` sends the class of the constant loop to the class of the
+constant loop. -/
+@[simp]
+theorem fibrationBoundaryOfHomeomorph_const (hp : serreFibrations p) (φ : p.fiber b ≃ₜ F)
+    (hφ : φ e = f₀) [Finite N] :
+    fibrationBoundaryOfHomeomorph N hp φ hφ (⟦GenLoop.const⟧ : HomotopyGroup (Option N) B b) =
+      ⟦GenLoop.const⟧ :=
+  (congrArg (HomotopyGroup.homeomorphEquivOfEq φ hφ) (fibrationBoundary_const hp)).trans
+    (homeomorphEquivOfEq_mk_const hφ)
+
+section Group
+
+variable [DecidableEq N]
+
+/-- For `n ≥ 1`, the boundary map read in `F` is multiplicative. -/
+theorem fibrationBoundaryOfHomeomorph_mul (hp : serreFibrations p) (φ : p.fiber b ≃ₜ F)
+    (hφ : φ e = f₀) [Finite N] [Nonempty N] (a a' : HomotopyGroup (Option N) B b) :
+    fibrationBoundaryOfHomeomorph N hp φ hφ (a * a') =
+      fibrationBoundaryOfHomeomorph N hp φ hφ a * fibrationBoundaryOfHomeomorph N hp φ hφ a' := by
+  rw [fibrationBoundaryOfHomeomorph_apply, fibrationBoundary_mul,
+    HomotopyGroup.homeomorphEquivOfEq_apply]
+  exact HomotopyGroup.map_mul _ _ _ _
+
+variable (N) in
+/-- For `n ≥ 1`, the boundary map `π_{n+1}(B, b) → π_n(F, f₀)` read in `F`, as a group
+homomorphism. -/
+def fibrationBoundaryOfHomeomorphHom (hp : serreFibrations p) (φ : p.fiber b ≃ₜ F)
+    (hφ : φ e = f₀) [Finite N] [Nonempty N] :
+    HomotopyGroup (Option N) B b →* HomotopyGroup N F f₀ :=
+  MonoidHom.mk' (fibrationBoundaryOfHomeomorph N hp φ hφ)
+    (fibrationBoundaryOfHomeomorph_mul hp φ hφ)
+
+@[simp]
+theorem coe_fibrationBoundaryOfHomeomorphHom (hp : serreFibrations p) (φ : p.fiber b ≃ₜ F)
+    (hφ : φ e = f₀) [Finite N] [Nonempty N] :
+    ⇑(fibrationBoundaryOfHomeomorphHom N hp φ hφ) = fibrationBoundaryOfHomeomorph N hp φ hφ :=
+  (rfl)
+
+end Group
+
+/-- The inverse of the identification induced by `φ`, followed by the fibre inclusion, is the map
+induced by `i`. -/
+private theorem map_fiberι_homeomorphEquivOfEq_symm {φ : p.fiber b ≃ₜ F} (hφ : φ e = f₀)
+    {i : C(F, E)} (hi : ∀ y, i y = (φ.symm y).1) (hi₀ : i f₀ = e.1)
+    (c : HomotopyGroup N F f₀) :
+    HomotopyGroup.map (p.fiberι b).hom (TopCat.Hom.fiberι_apply p b e)
+        ((HomotopyGroup.homeomorphEquivOfEq φ hφ).symm c) = HomotopyGroup.map i hi₀ c := by
+  rw [HomotopyGroup.homeomorphEquivOfEq_symm_apply, HomotopyGroup.map_comp_apply]
+  exact HomotopyGroup.map_congr
+    (ContinuousMap.ext fun y : F ↦ (TopCat.Hom.fiberι_apply p b (φ.symm y)).trans (hi y).symm) _ _ c
+
+/-- **Exactness at `π_{n+1}(B, b)`, read in `F`.** A class of the base comes from the total space
+exactly when its boundary in `π_n(F, f₀)` is trivial. -/
+theorem mem_range_homotopyGroupMap_iff_fibrationBoundaryOfHomeomorph_eq (hp : serreFibrations p)
+    {φ : p.fiber b ≃ₜ F} (hφ : φ e = f₀) [Finite N] {a : HomotopyGroup (Option N) B b} :
+    a ∈ range (HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.2)) ↔
+      fibrationBoundaryOfHomeomorph N hp φ hφ a = (⟦GenLoop.const⟧ : HomotopyGroup N F f₀) :=
+  (mem_range_homotopyGroupMap_iff_fibrationBoundary_eq hp).trans
+    ((HomotopyGroup.homeomorphEquivOfEq φ hφ).injective.eq_iff'
+      (homeomorphEquivOfEq_mk_const hφ)).symm
+
+/-- **Exactness at `π_n(F, f₀)`.** A class of `π_n(F, f₀)` is a boundary exactly when it becomes
+trivial in `π_n(E, e)` under a map `i : F → E` that agrees with the fibre inclusion through
+`φ`. -/
+theorem mem_range_fibrationBoundaryOfHomeomorph_iff (hp : serreFibrations p)
+    {φ : p.fiber b ≃ₜ F} (hφ : φ e = f₀) [Finite N] {i : C(F, E)}
+    (hi : ∀ y, i y = (φ.symm y).1) (hi₀ : i f₀ = e.1) {c : HomotopyGroup N F f₀} :
+    c ∈ range (fibrationBoundaryOfHomeomorph N hp φ hφ) ↔
+      HomotopyGroup.map i hi₀ c = (⟦GenLoop.const⟧ : HomotopyGroup N E e.1) := by
+  rw [fibrationBoundaryOfHomeomorph, range_comp, mem_image_equiv,
+    ← map_fiberι_homeomorphEquivOfEq_symm hφ hi hi₀]
+  exact mem_range_fibrationBoundary_iff hp
+
+/-- **Exactness at `π_n(E, e)`, read in `F`.** A class of the total space comes from `F` under a map
+`i : F → E` that agrees with the fibre inclusion through `φ` exactly when it becomes trivial in
+`π_n(B, b)`. -/
+theorem mem_range_homotopyGroupMap_of_homeomorph_iff (hp : serreFibrations p)
+    {φ : p.fiber b ≃ₜ F} (hφ : φ e = f₀) [Finite N] {i : C(F, E)}
+    (hi : ∀ y, i y = (φ.symm y).1) (hi₀ : i f₀ = e.1) {d : HomotopyGroup N E e.1} :
+    d ∈ range (HomotopyGroup.map (N := N) i hi₀) ↔
+      HomotopyGroup.map p.hom (Set.mem_singleton_iff.1 e.2) d =
+        (⟦GenLoop.const⟧ : HomotopyGroup N B b) := by
+  have h : range (HomotopyGroup.map (N := N) i hi₀) =
+      range (HomotopyGroup.map (p.fiberι b).hom (TopCat.Hom.fiberι_apply p b e)) := by
+    rw [← (HomotopyGroup.homeomorphEquivOfEq φ hφ).symm.surjective.range_comp]
+    exact congrArg range (funext fun c ↦ (map_fiberι_homeomorphEquivOfEq_symm hφ hi hi₀ c).symm)
+  rw [h]
+  exact mem_range_homotopyGroupMap_fiberι_iff hp
+
+end Model
 
 end TauCeti.TopCat
