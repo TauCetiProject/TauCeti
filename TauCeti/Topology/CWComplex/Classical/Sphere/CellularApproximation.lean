@@ -37,16 +37,16 @@ noncomputable section
 
 universe u
 
-open Metric Set Topology Topology.RelCWComplex
+open Metric Set Topology Topology.RelCWComplex TauCeti
 
-namespace TauCeti
+namespace ContinuousMap
 
 variable {W : Type u} [TopologicalSpace W] [T2Space W] [CWComplex (univ : Set W)]
 
 /-- **Cellular approximation of a map of a sphere.** Every map of the boundary sphere `∂Dᵐ` of the
 `m`-disk into a CW complex `W` is homotopic to a map into the skeleton `skeletonLT W m`, the union
 of the cells of `W` of dimension less than `m`. -/
-theorem _root_.ContinuousMap.exists_homotopic_mapsTo_skeletonLT_diskBoundary {m : ℕ}
+theorem exists_homotopic_mapsTo_skeletonLT_diskBoundary {m : ℕ}
     (f : C(TopCat.diskBoundary.{u} m, W)) :
     ∃ g : C(TopCat.diskBoundary.{u} m, W), f.Homotopic g ∧
       ∀ x, g x ∈ (skeletonLT (univ : Set W) m : Set W) := by
@@ -78,4 +78,4 @@ theorem _root_.ContinuousMap.exists_homotopic_mapsTo_skeletonLT_diskBoundary {m 
     exact (isEmpty_cell_sphereCWComplex hι hl).elim j
   exact CWComplex.mem_skeletonLT_iff.2 ⟨l, by exact_mod_cast hl, j, hj⟩
 
-end TauCeti
+end ContinuousMap
