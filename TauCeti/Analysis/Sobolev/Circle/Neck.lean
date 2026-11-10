@@ -120,7 +120,7 @@ def neckTransfer (a : ℂ) : CircleSobolev s E →L[ℂ] CircleSobolev s E :=
         map_smul' c u := CircleSobolev.ext <| funext fun n ↦ by
           simp only [neckTransferFun, neckCoeff, coeff_smul, Pi.smul_apply, RingHom.id_apply]
           split_ifs <;> simp [smul_comm c] }
-      ‖a‖ fun u ↦ (norm_le_of_forall_le (b := neckTransferFun ha u) (norm_nonneg a)
+      ‖a‖ fun u ↦ (norm_le_of_forall_le (b := neckTransferFun ha u)
         (weight_mul_norm_neckCoeff_le ha u)).trans_eq (by rw [LinearIsometryEquiv.norm_map])
   else 0
 
@@ -166,7 +166,7 @@ theorem norm_neckTransfer_apply_le (a : ℂ) (u : CircleSobolev s E) :
     ‖neckTransfer a u‖ ≤ ‖a‖ * ‖u‖ := by
   by_cases ha : ‖a‖ ≤ 1
   · rw [← LinearIsometryEquiv.norm_map reflect u]
-    exact norm_le_of_forall_le (norm_nonneg a) fun n ↦ by
+    exact norm_le_of_forall_le fun n ↦ by
       simpa only [coeff_neckTransfer ha, neckCoeff] using weight_mul_norm_neckCoeff_le ha u n
   · simp only [neckTransfer, ha, dite_false, zero_apply, norm_zero]
     positivity

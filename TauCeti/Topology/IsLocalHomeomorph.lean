@@ -59,7 +59,7 @@ public section
 
 open Topology
 
-namespace TauCeti
+namespace IsLocalHomeomorph
 
 variable {E B : Type*} [TopologicalSpace E] [TopologicalSpace B]
 
@@ -72,7 +72,7 @@ theorem _root_.IsLocalHomeomorphOn.isOpen_image {f : E → B} {s : Set E}
 /-- **A local homeomorphism with locally path-connected codomain has locally path-connected
 domain.** In particular the total space of a covering of a locally path-connected space is
 locally path-connected. -/
-theorem _root_.IsLocalHomeomorph.locallyPathConnectedSpace [LocallyPathConnectedSpace B]
+theorem locallyPathConnectedSpace [LocallyPathConnectedSpace B]
     {p : E → B} (hp : IsLocalHomeomorph p) : LocallyPathConnectedSpace E := by
   -- Transport a basis of path-connected neighbourhoods of `p e` along the local inverse at `e`.
   have hb (e : E) : (𝓝 e).HasBasis
@@ -88,7 +88,7 @@ theorem _root_.IsLocalHomeomorph.locallyPathConnectedSpace [LocallyPathConnected
 /-- Let `L` be a local inverse of a local homeomorphism `p` at `e`. If `φ` is continuous at `z`,
 satisfies `p ∘ φ = p` near `z`, and sends `z` into the target of `L`, then `L ∘ p` agrees with `φ`
 near `z`. -/
-theorem _root_.IsLocalHomeomorph.localInverseAt_comp_eventuallyEq {p : E → B}
+theorem localInverseAt_comp_eventuallyEq {p : E → B}
     (hp : IsLocalHomeomorph p) {e z : E} {φ : E → E} (hφ : ContinuousAt φ z)
     (hφz : φ z ∈ (hp.localInverseAt e).target) (hpφ : p ∘ φ =ᶠ[𝓝 z] p) :
     hp.localInverseAt e ∘ p =ᶠ[𝓝 z] φ := by
@@ -105,7 +105,7 @@ function whose topological support meets the preimage of each compact set in a c
 `σ e` be a section of `p` near `p e` through `e`, continuous at `p e`. Then near each `b₀`, the
 sum of `f` over the fiber of `p` is the sum of `f ∘ σ e` over a fixed finite set of points `e` of
 the fiber over `b₀`. -/
-theorem _root_.IsLocalHomeomorph.eventually_finsum_mem_preimage_singleton_eq_sum
+theorem eventually_finsum_mem_preimage_singleton_eq_sum
     [T2Space E] [T2Space B] [WeaklyLocallyCompactSpace B] {M : Type*} [AddCommMonoid M]
     {p : E → B} (hp : IsLocalHomeomorph p) {f : E → M}
     (hf : ∀ ⦃K : Set B⦄, IsCompact K → IsCompact (p ⁻¹' K ∩ tsupport f))
@@ -169,7 +169,7 @@ variable {X Y Z W : Type*} [TopologicalSpace X] [TopologicalSpace Y] [Topologica
 
 /-- **The product of two local homeomorphisms is a local homeomorphism**, with the product of
 local charts as local charts. -/
-theorem _root_.IsLocalHomeomorph.prodMap {f : X → Y} {g : Z → W} (hf : IsLocalHomeomorph f)
+theorem prodMap {f : X → Y} {g : Z → W} (hf : IsLocalHomeomorph f)
     (hg : IsLocalHomeomorph g) : IsLocalHomeomorph (Prod.map f g) := by
   refine IsLocalHomeomorph.mk _ fun p ↦ ?_
   obtain ⟨e, he, rfl⟩ := hf p.1
@@ -186,7 +186,7 @@ variable {X Y Z : Type*} [TopologicalSpace X] [TopologicalSpace Y] [TopologicalS
 homeomorphism and `g : Z → Y` is continuous, the projection from the fiber product `X ×_Y Z` to
 `Z` is a local homeomorphism. Over a local chart `e` of `f`, the fiber product is identified with
 `g⁻¹ e.target` by `(x, z) ↦ z`, with inverse `z ↦ (e.symm (g z), z)`. -/
-theorem _root_.IsLocalHomeomorph.pullback_snd {f : X → Y} {g : Z → Y} (hf : IsLocalHomeomorph f)
+theorem pullback_snd {f : X → Y} {g : Z → Y} (hf : IsLocalHomeomorph f)
     (hg : Continuous g) : IsLocalHomeomorph (Function.Pullback.snd : f.Pullback g → Z) := by
   refine isLocalHomeomorph_iff_isOpenEmbedding_restrict.mpr fun q ↦ ?_
   obtain ⟨e, he, rfl⟩ := hf q.fst
@@ -217,4 +217,4 @@ theorem _root_.IsLocalHomeomorph.pullback_snd {f : X → Y} {g : Z → Y} (hf : 
 
 end Pullback
 
-end TauCeti
+end IsLocalHomeomorph

@@ -24,10 +24,10 @@ public section
 open Set
 open scoped ENNReal
 
-namespace TauCeti
+namespace IsPreconnected
 
 /-- The `PseudoEMetricSpace` generalization of Mathlib's `IsPreconnected.edist_ne_top`. -/
-theorem _root_.IsPreconnected.edist_ne_top' {X : Type*} [PseudoEMetricSpace X] {s : Set X}
+theorem edist_ne_top' {X : Type*} [PseudoEMetricSpace X] {s : Set X}
     (hs : IsPreconnected s) {x y : X} (hx : x ∈ s) (hy : y ∈ s) : edist x y ≠ ∞ := by
   have hsub : s ⊆ Metric.eball x ∞ := hs.subset_isClopen
     Metric.isClopen_eball_top ⟨x, hx, by simp⟩
@@ -35,4 +35,4 @@ theorem _root_.IsPreconnected.edist_ne_top' {X : Type*} [PseudoEMetricSpace X] {
   rw [Metric.mem_eball] at hy'
   simpa only [edist_comm] using hy'.ne
 
-end TauCeti
+end IsPreconnected

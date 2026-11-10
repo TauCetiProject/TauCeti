@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Star.SelfAdjoint
 public import TauCeti.RingTheory.Polynomial.Chebyshev.Divisibility
 
 /-!
@@ -45,6 +46,7 @@ computes the same values from the three-term recurrence.
   `(-1)^(n+1) n`; in characteristic zero these never vanish for `n ≥ 1`, while in characteristic
   `p` they vanish at `n = p`.
 * `RingHom.map_qInt`: quantum integers commute with ring homomorphisms.
+* `IsSelfAdjoint.qInt`: the quantum integers at a self-adjoint loop parameter are self-adjoint.
 
 ## References
 
@@ -150,6 +152,16 @@ theorem map_qInt (f : R →+* R') (δ : R) (n : ℕ) :
   rw [qInt_def, qInt_def, ← eval_map_apply, map_S]
 
 end RingHom
+
+namespace IsSelfAdjoint
+
+variable {R : Type*} [CommRing R] [StarRing R]
+
+/-- The quantum integers at a self-adjoint loop parameter are self-adjoint. -/
+theorem qInt {δ : R} (hδ : IsSelfAdjoint δ) (n : ℕ) : IsSelfAdjoint (TauCeti.qInt R δ n) := by
+  rw [IsSelfAdjoint, ← starRingEnd_apply, RingHom.map_qInt, starRingEnd_apply, hδ.star_eq]
+
+end IsSelfAdjoint
 
 namespace TauCeti
 

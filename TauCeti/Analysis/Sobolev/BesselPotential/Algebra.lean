@@ -118,13 +118,12 @@ private theorem fourier_toLp_mul_eq {s : ℝ} (hs : finrank ℝ E < 2 * s)
   have hi₂ := L1.integrable_coeFn v₂
   set W : E → ℂ := (v₁ : E → ℂ) ⋆[ContinuousLinearMap.mul ℂ ℂ] (v₂ : E → ℂ)
   have hW : Integrable W := hi₁.integrable_convolution (ContinuousLinearMap.mul ℂ ℂ) hi₂
-  have hR : 𝓕⁻ ((hW.toL1 W : Lp ℂ 1 (volume : Measure E)) : E → ℂ) = 𝓕⁻ W :=
-    funext (Real.fourierInv_congr_ae hW.coeFn_toL1)
   -- The product is the inverse Fourier transform of the integrable convolution `v₁ ⋆ v₂`.
   have hP : ((hu.memLp_mul hs v).toLp _ : 𝓢'(E, ℂ)) =
       𝓕⁻ ((hW.toL1 W : Lp ℂ 1 (volume : Measure E)) : 𝓢'(E, ℂ)) := by
     ext φ
-    rw [Lp.fourierInv_toTemperedDistribution_apply, Lp.toTemperedDistribution_apply, hR]
+    rw [Lp.fourierInv_toTemperedDistribution_apply _ hW hW.coeFn_toL1,
+      Lp.toTemperedDistribution_apply]
     refine integral_congr_ae ?_
     filter_upwards [(hu.memLp_mul hs v).coeFn_toLp, Lp.ae_eq_fourierInv_of_fourier_eq h₁,
       Lp.ae_eq_fourierInv_of_fourier_eq h₂] with x hx hx₁ hx₂
