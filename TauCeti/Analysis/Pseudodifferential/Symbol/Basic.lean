@@ -570,6 +570,22 @@ theorem exists_norm_iteratedFDeriv_coordinateDeriv_le (a : Symbol n V W m)
   have h := hA (List.ofFn w) x hx ξ
   rwa [List.length_ofFn, mixedDeriv_eq_coordinateDeriv_snd a.contDiff_coefficient] at h
 
+/-- Frequency derivatives commute with the order inclusions. -/
+@[simp]
+theorem frequencyDeriv_inclusion (j : Fin n) (h : m ≤ m') (a : Symbol n V W m) :
+    frequencyDeriv j (inclusion h a) = inclusion (by linarith) (frequencyDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp
+
+/-- Spatial derivatives commute with the order inclusions. -/
+@[simp]
+theorem spatialDeriv_inclusion (j : Fin n) (h : m ≤ m') (a : Symbol n V W m) :
+    spatialDeriv j (inclusion h a) = inclusion h (spatialDeriv j a) := by
+  ext1
+  funext ⟨x, ξ⟩
+  simp
+
 theorem IsUniform.frequencyDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin n) :
     (frequencyDeriv j a).IsUniform := by
   intro α β
