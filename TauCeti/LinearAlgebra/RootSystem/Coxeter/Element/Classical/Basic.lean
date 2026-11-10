@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.ClassicalCharpoly
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.Charpoly
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Element.Every
 
 /-!

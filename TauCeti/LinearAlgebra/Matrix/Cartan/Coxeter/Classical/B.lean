@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.TypeA
+public import TauCeti.LinearAlgebra.Matrix.Cartan.Coxeter.Classical.A
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
