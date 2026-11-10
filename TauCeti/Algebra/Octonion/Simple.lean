@@ -183,13 +183,8 @@ noncomputable def lieBasis : LieAlgebra.Basis (Fin 2) (cartanSubalgebra R) where
   nondegen := Matrix.Nondegenerate.of_det_ne_zero (by
     rw [Matrix.det_transpose, CartanMatrix.G₂_det]
     norm_num)
-  sl2 i :=
-    { h_ne_zero := linearIndependent_cartanDerivation.ne_zero i
-      lie_e_f := isSerreSystem.lie_E_F_self i
-      lie_h_e_nsmul := by
-        rw [isSerreSystem.lie_H_E, CartanMatrix.G₂_diag, ofNat_zsmul]
-      lie_h_f_nsmul := by
-        rw [isSerreSystem.lie_H_F, CartanMatrix.G₂_diag, ofNat_zsmul] }
+  sl2 i := isSerreSystem.isSl2Triple (CartanMatrix.G₂_diag i)
+    (linearIndependent_cartanDerivation.ne_zero i)
   lie_h_h i j := isSerreSystem.lie_H_H i j
   lie_h_e i j := by rw [Matrix.transpose_apply]; exact isSerreSystem.lie_H_E j i
   lie_h_f i j := by rw [isSerreSystem.lie_H_F, Matrix.transpose_apply, neg_smul]

@@ -133,11 +133,7 @@ representation form an `sl₂` triple. -/
 theorem isSl2TripleQ (i : Fin 6) :
     _root_.IsSl2Triple (cartanGeneratorMatrixQ i) (raisingMatrixQ i) (loweringMatrixQ i) := by
   have hdiag : (CartanMatrix.E 6)ᵀ i i = 2 := by fin_cases i <;> decide
-  refine
-    { h_ne_zero := ?_
-      lie_e_f := isSerreSystemQ.lie_E_F_self i
-      lie_h_e_nsmul := by rw [isSerreSystemQ.lie_H_E i i, hdiag, ofNat_zsmul]
-      lie_h_f_nsmul := by rw [isSerreSystemQ.lie_H_F i i, hdiag, ofNat_zsmul] }
+  apply isSerreSystemQ.isSl2Triple hdiag
   obtain ⟨a, ha⟩ := exists_e6MinusculeWeight_apply_eq_neg_one i
   intro hzero
   simpa [ha] using congrFun (congrFun hzero (.inl a)) (.inl a)

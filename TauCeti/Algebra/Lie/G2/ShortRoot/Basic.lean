@@ -161,13 +161,8 @@ theorem isSerreSystem :
 triple. Only the nonvanishing of the Cartan generator is a computation; the three relations are
 the diagonal instances of the Chevalley--Serre relations, the diagonal Cartan number being `2`. -/
 theorem isSl2Triple (i : Fin 2) :
-    _root_.IsSl2Triple (cartanMatrix i) (raisingMatrix i) (loweringMatrix i) where
-  h_ne_zero := by fin_cases i <;> decide +kernel
-  lie_e_f := isSerreSystem.lie_E_F_self i
-  lie_h_e_nsmul := by
-    rw [isSerreSystem.lie_H_E i i, CartanMatrix.G₂_diag, two_smul, two_nsmul]
-  lie_h_f_nsmul := by
-    rw [isSerreSystem.lie_H_F i i, CartanMatrix.G₂_diag, two_smul, two_nsmul]
+    _root_.IsSl2Triple (cartanMatrix i) (raisingMatrix i) (loweringMatrix i) :=
+  isSerreSystem.isSl2Triple (CartanMatrix.G₂_diag i) (by fin_cases i <;> decide +kernel)
 
 /-- The explicit integral seven-dimensional representation of the type-`G₂` Serre Lie algebra. -/
 noncomputable def serreRepresentation :

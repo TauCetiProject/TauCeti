@@ -336,15 +336,8 @@ triple: the raising and lowering matrices bracket to the nonzero Cartan matrix, 
 with them to `2` and `-2` times themselves. So each node spans a copy of `sl₂` inside the matrix
 Lie algebra of the integral short-root module. -/
 theorem isSl2Triple (i : Fin 4) :
-    _root_.IsSl2Triple (cartanMatrix i) (raisingMatrix i) (loweringMatrix i) where
-  h_ne_zero := by fin_cases i <;> decide +kernel
-  lie_e_f := isSerreSystem.lie_E_F_self i
-  lie_h_e_nsmul := by
-    rw [isSerreSystem.lie_H_E i i, Matrix.transpose_apply, CartanMatrix.F₄_diag, two_smul,
-      two_nsmul]
-  lie_h_f_nsmul := by
-    rw [isSerreSystem.lie_H_F i i, Matrix.transpose_apply, CartanMatrix.F₄_diag, two_smul,
-      two_nsmul]
+    _root_.IsSl2Triple (cartanMatrix i) (raisingMatrix i) (loweringMatrix i) :=
+  isSerreSystem.isSl2Triple (CartanMatrix.F₄_diag i) (by fin_cases i <;> decide +kernel)
 
 /-- The explicit integral twenty-six-dimensional representation of the type-`F₄` Serre Lie
 algebra. -/
