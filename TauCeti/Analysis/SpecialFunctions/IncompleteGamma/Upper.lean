@@ -1,0 +1,133 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Gamma.Basic
+import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
+import Mathlib.Analysis.Asymptotics.AsymptoticEquivalent
+import Mathlib.MeasureTheory.Integral.ExpDecay
+
+/-!
+# The complex upper incomplete Gamma function
+
+The principal upper incomplete Gamma function is the integral along the horizontal ray
+from `z` to infinity. Its integrand is absolutely integrable for every complex parameter
+when `z` belongs to the slit plane. On the positive real axis it agrees with the usual
+integral over `(x, ∞)`, including parameters with nonpositive real part.
+
+This integral definition does not use division by Gamma, so it remains meaningful at
+nonpositive integral parameters. Values on the branch cut are not specified by the API.
+
+## References
+
+* NIST Digital Library of Mathematical Functions, §8.2, especially 8.2.2.
+  <https://dlmf.nist.gov/8.2>
+-/
+
+public section
+
+open MeasureTheory Set Filter Asymptotics
+open scoped Topology
+
+namespace TauCeti.Complex
+
+/-- The principal upper incomplete Gamma function, defined by a horizontal ray integral.
+Its values on the nonpositive real axis are unspecified. -/
+noncomputable def upperIncompleteGamma (a z : ℂ) : ℂ :=
+  _root_.Complex.exp (-z) *
+    ∫ t in Ioi (0 : ℝ), (z + t) ^ (a - 1) * _root_.Complex.exp (-(t : ℂ))
+
+/-- Absolute convergence of the horizontal-ray integrand on the slit plane, for every
+complex parameter `a`. -/
+theorem integrableOn_upperIncompleteGamma_integrand (a : ℂ) {z : ℂ}
+    (hz : z ∈ _root_.Complex.slitPlane) :
+    IntegrableOn (fun t : ℝ => (z + t) ^ (a - 1) * _root_.Complex.exp (-(t : ℂ)))
+      (Ioi 0) := by
+  have hc : ContinuousOn (fun t : ℝ => (z + t) ^ (a - 1)) (Ici 0) := by
+    intro t ht
+    have hzt : z + t ∈ _root_.Complex.slitPlane := by
+      simp only [_root_.Complex.mem_slitPlane_iff, _root_.Complex.add_re,
+        _root_.Complex.ofReal_re, _root_.Complex.add_im, _root_.Complex.ofReal_im,
+        add_zero] at hz ⊢
+      rcases hz with h | h
+      · exact Or.inl (add_pos_of_pos_of_nonneg h ht)
+      · exact Or.inr h
+    exact (continuousAt_cpow_const hzt).comp_continuousWithinAt
+      (f := fun t : ℝ => z + (t : ℂ)) (by fun_prop)
+  have he : (fun t : ℝ => z + (t : ℂ)) ~[atTop] (fun t : ℝ => (t : ℂ)) :=
+    (IsEquivalent.refl).const_add_of_norm_tendsto_atTop (by
+      simpa [Function.comp_def] using tendsto_abs_atTop_atTop)
+  have ht : (fun t : ℝ => ‖z + (t : ℂ)‖) =Θ[atTop] (fun t : ℝ => t) := by
+    have hn := he.isTheta.norm_left.norm_right
+    exact hn.trans (EventuallyEq.isTheta (by
+      filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
+      simp [abs_of_nonneg ht]))
+  have hp : (fun t : ℝ => (z + t) ^ (a - 1)) =O[atTop]
+      (fun t : ℝ => Real.exp ((1 / 2 : ℝ) * t)) :=
+    (_root_.Complex.isBigO_cpow_rpow isBoundedUnder_const).trans
+      ((ht.rpow (Filter.Eventually.of_forall fun _ => norm_nonneg _)
+        (eventually_ge_atTop 0)).isBigO.trans
+        (isLittleO_rpow_exp_pos_mul_atTop (a - 1).re (by norm_num)).isBigO)
+  have hi := integrableOn_exp_neg_smul_of_isBigO_exp
+    (hc.locallyIntegrableOn measurableSet_Ici) hp (b := 1) (by norm_num)
+  refine ((integrableOn_Ici_iff_integrableOn_Ioi (by finiteness)).mp hi).congr_fun (fun t _ => ?_)
+    measurableSet_Ioi
+  simp [Algebra.smul_def, _root_.Complex.ofReal_exp, mul_comm]
+
+/-- The defining ray integral with the exponential prefactor absorbed into the integrand
+(DLMF 8.2.2). -/
+theorem upperIncompleteGamma_eq_integral (a z : ℂ) :
+    upperIncompleteGamma a z =
+      ∫ t in Ioi (0 : ℝ), (z + t) ^ (a - 1) * _root_.Complex.exp (-(z + t)) := by
+  rw [upperIncompleteGamma, ← integral_const_mul]
+  congr 1
+  ext t
+  rw [neg_add, _root_.Complex.exp_add]
+  ring
+
+/-- On a real ray, the upper incomplete Gamma function is the usual tail integral.
+The identity also holds at the definition's junk values; convergence is guaranteed for `x > 0`. -/
+theorem upperIncompleteGamma_ofReal (a : ℂ) (x : ℝ) :
+    upperIncompleteGamma a x =
+      ∫ t in Ioi x, (t : ℂ) ^ (a - 1) * _root_.Complex.exp (-(t : ℂ)) := by
+  rw [upperIncompleteGamma_eq_integral]
+  simpa only [preimage_const_add_Ioi, sub_self, _root_.Complex.ofReal_add] using
+    (measurePreserving_add_left volume x).setIntegral_preimage_emb
+      (MeasurableEquiv.addLeft x).measurableEmbedding
+      (fun t : ℝ => (t : ℂ) ^ (a - 1) * _root_.Complex.exp (-(t : ℂ))) (Ioi x)
+
+/-- At shape one the ray integral is an exponential, even on the branch cut. -/
+@[simp]
+theorem upperIncompleteGamma_one (z : ℂ) :
+    upperIncompleteGamma 1 z = _root_.Complex.exp (-z) := by
+  have hi : (∫ t in Ioi (0 : ℝ), _root_.Complex.exp (-(t : ℂ))) = 1 := by
+    simpa using integral_exp_mul_complex_Ioi (a := -1) (by norm_num) 0
+  simp [upperIncompleteGamma, hi]
+
+/-- The upper incomplete Gamma function at zero agrees with Gamma in its integral
+half-plane. This does not assert convergence at zero for other parameters. -/
+@[simp]
+theorem upperIncompleteGamma_zero_right {a : ℂ} (ha : 0 < a.re) :
+    upperIncompleteGamma a 0 = _root_.Complex.Gamma a := by
+  rw [upperIncompleteGamma, _root_.Complex.Gamma_eq_integral ha,
+    _root_.Complex.GammaIntegral]
+  simp only [neg_zero, _root_.Complex.exp_zero, zero_add, one_mul]
+  congr 1
+  ext t
+  simp [_root_.Complex.ofReal_exp, mul_comm]
+
+/-- Splitting Euler's Gamma integral at a nonnegative real endpoint gives the upper
+incomplete Gamma function and Mathlib's `Complex.partialGamma`. -/
+theorem partialGamma_add_upperIncompleteGamma {a : ℂ} (ha : 0 < a.re)
+    {x : ℝ} (hx : 0 ≤ x) :
+    _root_.Complex.partialGamma a x + upperIncompleteGamma a x = _root_.Complex.Gamma a := by
+  rw [upperIncompleteGamma_ofReal, _root_.Complex.partialGamma,
+    _root_.Complex.Gamma_eq_integral ha, _root_.Complex.GammaIntegral]
+  simpa only [_root_.Complex.ofReal_exp, _root_.Complex.ofReal_neg, mul_comm] using
+    intervalIntegral.integral_interval_add_Ioi (_root_.Complex.GammaIntegral_convergent ha)
+      ((_root_.Complex.GammaIntegral_convergent ha).mono_set (Ioi_subset_Ioi hx))
+
+end TauCeti.Complex
