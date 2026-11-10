@@ -146,10 +146,10 @@ private theorem integrableTopForm_and_integralTopForm_sheet [T2Space M]
   -- Change variables according to the orientation sign on the sheet.
   rcases orientationSign_eq_one_or_eq_neg_one_of_isRegularPoint (o := o) (o' := o') hx with h | h
   · rw [h, Int.cast_one, one_mul]
-    exact e.integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt hfe hmd
+    exact e.integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt hfe
       (fun z hz ↦ orientationSign_eq_one_iff.mp ((hsgn z hz).trans h)) hφ hφt hψs hψφ
   · rw [h, Int.cast_neg, Int.cast_one, neg_one_mul]
-    exact e.integralTopForm_of_eq_mpullback_of_isOrientationReversingAt hfe hmd
+    exact e.integralTopForm_of_eq_mpullback_of_isOrientationReversingAt hfe
       (fun z hz ↦ orientationSign_eq_neg_one_iff.mp ((hsgn z hz).trans h)) hφ hφt hψs hψφ
 
 /-- **The integral formula for the degree near a regular value.** Let `f : M → N` be a `C¹` map
