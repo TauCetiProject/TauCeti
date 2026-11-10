@@ -10,7 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.CompCLM
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import TauCeti.Data.List.Sublists
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
-import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import TauCeti.Analysis.Calculus.IteratedFDeriv.DirectionList
 import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
@@ -336,11 +336,11 @@ derivative. -/
 theorem coordinateDeriv_pair_comm {f : CoordinateSpace n → A} (hf : ContDiff ℝ 2 f)
     (j l : Fin n) (x : CoordinateSpace n) :
     coordinateDeriv [j, l] f x = coordinateDeriv [l, j] f x := by
-  have h (r : Fin 2 → Fin n) : coordinateDeriv (List.ofFn r) f x =
-      fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single (r 0) 1) (EuclideanSpace.single (r 1) 1) := by
-    rw [coordinateDeriv_ofFn_eq_iteratedFDeriv r hf, iteratedFDeriv_two_apply]
-  simpa using (h ![j, l]).trans
-    ((hf.contDiffAt.isSymmSndFDerivAt (by simp) _ _).trans (h ![l, j]).symm)
+  have h (i : Fin n) : coordinateDeriv [i] f = fun y ↦ fderiv ℝ f y (EuclideanSpace.single i 1) :=
+    funext fun y ↦ coordinateDeriv_cons i [] f y
+  simpa [coordinateDeriv_cons, h, iteratedFDerivAlong_cons] using
+    congrFun (iteratedFDerivAlong_swap (𝕜 := ℝ) hf (EuclideanSpace.single j 1)
+      (EuclideanSpace.single l 1) [] le_rfl) x
 
 /-- Partial coordinate derivatives in the second variable, along a word of length `k`, of a `C^N`
 function of two variables are jointly `C^m` whenever `m + k ≤ N`. -/
