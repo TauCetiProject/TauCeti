@@ -15,9 +15,10 @@ Let `γ : V → W` parametrize a totally real submanifold for a structure `J₀`
 `TauCeti.exists_adaptedChart`, and let `J i → J₀` be structures converging in `C^ℓ` near the
 submanifold, with `1 ≤ ℓ`. The adapted normal extensions `Φ i = adaptedNormalExtension γ (J i)`
 then converge to `Φ₀ = adaptedNormalExtension γ J₀` in `C^ℓ`
-(`TauCeti.tendstoContDiffAt_adaptedNormalExtension`), and by the inverse function theorem for
-converging families the adapted charts `ψ i = (Φ i)⁻¹` can be chosen with one common source and
-a common neighbourhood `T` of `γ x₀` in their targets, on which `ψ i → ψ₀` in `C^ℓ`
+(`TauCeti.tendstoContDiffAt_adaptedNormalExtension`). By the inverse function theorem for
+converging families, the adapted extensions restrict to adapted charts `e i` (partial
+homeomorphisms with underlying map `Φ i`) with one common source, whose targets all contain a
+neighbourhood `T` of `γ x₀`; on `T` the inverses `(e i)⁻¹` converge to `e₀⁻¹` in `C^ℓ`
 (`TauCeti.exists_adaptedChart_family`). This is the last clause of McDuff–Salamon Exercise
 B.4.10 in the model case `M = W`, `L = γ (U)`: for `J_m → J` in `C^ℓ` the adapted charts can be
 chosen to converge in `C^ℓ`.
@@ -113,7 +114,7 @@ with image maximal totally real for `J₀ (γ x₀)`, and `J₀ (γ x₀)² = -1
 extensions of `J₀` and, eventually along `l`, of all `J i` restrict to partial homeomorphisms
 with a common source containing `(x₀, 0)` inside `U × V`, whose inverses are `C^ℓ` on their
 targets, and whose targets contain a common open neighbourhood `T ⊆ Ω` of `γ x₀`. On `T` the
-adapted charts `(e i)⁻¹` converge to `e₀⁻¹` in `C^ℓ`. -/
+inverses `(e i)⁻¹` of these adapted charts converge to `e₀⁻¹` in `C^ℓ`. -/
 theorem exists_adaptedChart_family [CompleteSpace V] [CompleteSpace W] (hU : IsOpen U)
     (hΩ : IsOpen Ω) {x₀ : V} (hx₀ : x₀ ∈ U) (hℓ : 1 ≤ ℓ) (hγ : ContDiffOn 𝕜 (ℓ + 1) γ U)
     (hγΩ : MapsTo γ U Ω)

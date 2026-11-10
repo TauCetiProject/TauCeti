@@ -9,7 +9,6 @@ public import TauCeti.Analysis.Calculus.ContDiff.TaylorInverse
 public import TauCeti.Analysis.Calculus.ContDiff.TendstoAt
 public import TauCeti.Analysis.Calculus.FDeriv.Equiv
 public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
-public import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
 # The inverse function theorem for converging families
@@ -65,16 +64,6 @@ private theorem taylorComp_ftaylorSeries_symm (e : OpenPartialHomeomorph E F) {y
   rw [← h]
   exact (heq.iteratedFDeriv 𝕜 k).eq_of_nhds
 
-/-- The uncurried first coefficient of the Taylor series of a partial homeomorphism is a left
-inverse of the derivative of its inverse. -/
-private theorem curry_ftaylorSeries_one_comp_fderiv_symm (e : OpenPartialHomeomorph E F)
-    {y : F} (hy : y ∈ e.target) (hd : DifferentiableAt 𝕜 e (e.symm y))
-    (hds : DifferentiableAt 𝕜 e.symm y) :
-    (continuousMultilinearCurryFin1 𝕜 E F (ftaylorSeries 𝕜 e (e.symm y) 1)).comp
-      (fderiv 𝕜 e.symm y) = .id 𝕜 F := by
-  rw [ftaylorSeries, continuousMultilinearCurryFin1_iteratedFDeriv_one]
-  exact e.fderiv_comp_fderiv_symm hy hd hds
-
 /-- **`C^n` convergence of inverses.** Let `e i` be partial homeomorphisms converging in `C^n`
 to `e₀` at `e₀⁻¹ (y₀)`, with `e i` and its inverse `C^n` near the relevant points. If the
 inverses converge continuously at `y₀`, then they converge in `C^n` at `y₀`. -/
@@ -118,11 +107,12 @@ theorem TendstoContDiffAt.symm [CompleteSpace E] {e : ι → OpenPartialHomeomor
         (hp.2.2.differentiableAt hn'))
       ((e p.1).fderiv_symm_comp_fderiv hp.1 (hp.2.1.differentiableAt hn')
         (hp.2.2.differentiableAt hn'))
-  intro k hk
+  refine tendstoContDiffAt_iff.2 fun k hk ↦ ?_
   induction k using Nat.strong_induction_on with
   | ind k ih =>
     rcases Nat.eq_zero_or_pos k with rfl | hk0
-    · exact (tendstoContDiffAt_zero_iff (f := fun i ↦ ⇑(e i).symm) (f₀ := e₀.symm).2 hsymm) 0 le_rfl
+    · exact (tendstoContDiffAt_zero_iff (f := fun i ↦ ⇑(e i).symm) (f₀ := e₀.symm).2
+        hsymm).tendsto_iteratedFDeriv le_rfl
     have hn : 1 ≤ n := hk0.trans_le hk
     have hn' : ((n : ℕ) : WithTop ℕ∞) ≠ 0 := by exact_mod_cast (by omega : n ≠ 0)
     -- Recover the `k`-th inverse coefficient from the lower ones and the identity composite.
@@ -130,13 +120,15 @@ theorem TendstoContDiffAt.symm [CompleteSpace E] {e : ι → OpenPartialHomeomor
       (p := fun p : ι × F ↦ ftaylorSeries 𝕜 (e p.1) ((e p.1).symm p.2))
       (q₀ := ftaylorSeries 𝕜 e₀.symm y₀) (p₀ := ftaylorSeries 𝕜 e₀ (e₀.symm y₀))
       (A := fun p : ι × F ↦ fderiv 𝕜 (e p.1).symm p.2) (A₀ := fderiv 𝕜 e₀.symm y₀) hk0
-      (fun j _ hj ↦ ih j hj (hj.le.trans hk)) (fun j _ hj ↦ (he j (hj.trans hk)).comp hlim)
+      (fun j _ hj ↦ ih j hj (hj.le.trans hk))
+      (fun j _ hj ↦ (he.tendsto_iteratedFDeriv (hj.trans hk)).comp hlim)
       (hcomp k hk) (hA hn) ?_ ?_
     · filter_upwards [hd] with p hp
-      exact curry_ftaylorSeries_one_comp_fderiv_symm (e p.1) hp.1
-        (hp.2.1.differentiableAt hn') (hp.2.2.differentiableAt hn')
-    · exact curry_ftaylorSeries_one_comp_fderiv_symm e₀ hy₀ (hd₀.differentiableAt hn')
-        (hds₀.differentiableAt hn')
+      simpa only [ftaylorSeries, continuousMultilinearCurryFin1_iteratedFDeriv_one] using
+        (e p.1).fderiv_comp_fderiv_symm hp.1 (hp.2.1.differentiableAt hn')
+          (hp.2.2.differentiableAt hn')
+    · simpa only [ftaylorSeries, continuousMultilinearCurryFin1_iteratedFDeriv_one] using
+        e₀.fderiv_comp_fderiv_symm hy₀ (hd₀.differentiableAt hn') (hds₀.differentiableAt hn')
 
 section Existence
 
@@ -145,21 +137,26 @@ variable {𝕜 : Type*} [RCLike 𝕜]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   {ι : Type*} {l : Filter ι} {n : ℕ}
 
-omit [CompleteSpace E] in
-/-- On a ball on which the derivative of `f` stays within `c` of `L`, the map `f` approximates
-`L` with constant `c`. -/
-private theorem approximatesLinearOn_ball {f : E → F} {L : E →L[𝕜] F} {x₀ : E} {r : ℝ}
-    {c : ℝ≥0} (hd : ∀ x ∈ ball x₀ r, DifferentiableAt 𝕜 f x)
-    (hb : ∀ x ∈ ball x₀ r, ‖fderiv 𝕜 f x - L‖₊ ≤ c) :
-    ApproximatesLinearOn f L (ball x₀ r) c := by
-  let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
-  rw [ApproximatesLinearOn.approximatesLinearOn_iff_lipschitzOnWith]
-  refine (convex_ball x₀ r).lipschitzOnWith_of_nnnorm_fderiv_le (𝕜 := 𝕜)
-    (fun x hx ↦ (hd x hx).sub L.differentiableAt) fun x hx ↦ ?_
-  have h := fderiv_sub (hd x hx) L.differentiableAt
-  rw [ContinuousLinearMap.fderiv] at h
-  rw [h]
-  exact hb x hx
+/-- A map approximating `L` on `ball x₀ r` with half the critical constant `c` has, in the target
+of its partial homeomorphism, the ball of radius `c * (r / 2) / 2` about every point within that
+distance of its value at `x₀`. -/
+private theorem ball_subset_toOpenPartialHomeomorph_target {g : E → F} {L : E ≃L[𝕜] F} {x₀ : E}
+    {r : ℝ} {c : ℝ≥0} (hr : 0 < r) (hcL : c = ‖(L.symm : F →L[𝕜] E)‖₊⁻¹ / 2)
+    (hga : ApproximatesLinearOn g (L : E →L[𝕜] F) (ball x₀ r) c)
+    (hc : Subsingleton E ∨ c < ‖(L.symm : F →L[𝕜] E)‖₊⁻¹) {y₀ : F}
+    (hy₀ : dist (g x₀) y₀ < c * (r / 2) / 2) :
+    ball y₀ (c * (r / 2) / 2) ⊆
+      (hga.toOpenPartialHomeomorph g (ball x₀ r) hc isOpen_ball).target := by
+  intro y hy
+  have hsub := hga.closedBall_subset_target hc isOpen_ball (b := x₀) (ε := r / 2)
+    (by positivity) (closedBall_subset_ball (by linarith))
+  have hcc : ((‖(L.symm : F →L[𝕜] E)‖₊⁻¹ : ℝ≥0) : ℝ) - c = c := by
+    rw [hcL, NNReal.coe_div, NNReal.coe_two]
+    ring
+  rw [hcc] at hsub
+  refine hsub (mem_closedBall.mpr ?_)
+  rw [mem_ball] at hy
+  linarith [dist_triangle_right y (g x₀) y₀]
 
 /-- **The inverse function theorem for a converging family.** Let `Φ i → Φ₀` in `C^n` at every
 point of an open set `s`, with `1 ≤ n`, the maps `Φ i` eventually `C^n` on `s`, and `D Φ₀`
@@ -213,12 +210,18 @@ theorem exists_openPartialHomeomorph_tendstoContDiffAt_symm {Φ : ι → E → F
         ContDiffOn 𝕜 n (hga.toOpenPartialHomeomorph g (ball x₀ r) hc isOpen_ball).symm
           (hga.toOpenPartialHomeomorph g (ball x₀ r) hc isOpen_ball).target := by
     have hgd (x) (hx : x ∈ ball x₀ r) : ContDiffAt 𝕜 n g x := hg.contDiffAt (hs.mem_nhds (hrs hx))
-    have hga := approximatesLinearOn_ball (fun x hx ↦ (hgd x hx).differentiableAt hn') hgb
+    let _ : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
+    have hga := (convex_ball x₀ r).approximatesLinearOn_of_nnnorm_fderiv_sub_le
+      (fun x hx ↦ (hgd x hx).differentiableAt hn') hgb
     refine ⟨hga, OpenPartialHomeomorph.contDiffOn_symm_of_isInvertible_fderiv _
       (fun x hx ↦ (hgd x hx).contDiffWithinAt) fun x hx ↦ ?_⟩
     exact ContinuousLinearMap.isInvertible_of_norm_sub_le_half L (hgb x hx)
   obtain ⟨h₀a, h₀c⟩ := key Φ₀ hΦ₀ fun x hx ↦ (hrb x hx).1.2
   set e₀ := h₀a.toOpenPartialHomeomorph Φ₀ (ball x₀ r) hc isOpen_ball with he₀_def
+  have he₀c : ⇑e₀ = Φ₀ := by rw [he₀_def, ApproximatesLinearOn.toOpenPartialHomeomorph_coe]
+  have he₀s : e₀.source = ball x₀ r := by
+    rw [he₀_def, ApproximatesLinearOn.toOpenPartialHomeomorph_source]
+  have hrs₀ : e₀.source ⊆ s := he₀s ▸ hrs
   let e : ι → OpenPartialHomeomorph E F := fun i ↦
     if h : ApproximatesLinearOn (Φ i) (L : E →L[𝕜] F) (ball x₀ r) c then
       h.toOpenPartialHomeomorph (Φ i) (ball x₀ r) hc isOpen_ball else e₀
@@ -229,19 +232,10 @@ theorem exists_openPartialHomeomorph_tendstoContDiffAt_symm {Φ : ι → E → F
     rcases L.subsingleton_or_nnnorm_symm_pos with hE | hpos
     · have hF : Subsingleton F := L.symm.toEquiv.subsingleton
       refine ⟨1, one_pos, fun g hga _ y _ ↦ ?_⟩
-      rw [Subsingleton.elim y (g x₀)]
-      exact ⟨x₀, mem_ball_self hr, rfl⟩
-    · refine ⟨c * (r / 2) / 2, by positivity, fun g hga hg y hy ↦ ?_⟩
-      have hsub := hga.closedBall_subset_target hc isOpen_ball (b := x₀) (ε := r / 2)
-        (by positivity) (closedBall_subset_ball (by linarith))
-      have hcc : ((‖(L.symm : F →L[𝕜] E)‖₊⁻¹ : ℝ≥0) : ℝ) - c = c := by
-        rw [hc_def, NNReal.coe_div, NNReal.coe_two]
-        ring
-      rw [hcc] at hsub
-      refine hsub (mem_closedBall.mpr ?_)
-      rw [← dist_eq_norm] at hg
-      rw [mem_ball] at hy
-      linarith [dist_triangle_right y (g x₀) (Φ₀ x₀)]
+      rw [Subsingleton.elim y (g x₀), ApproximatesLinearOn.toOpenPartialHomeomorph_target]
+      exact mem_image_of_mem g (mem_ball_self hr)
+    · refine ⟨c * (r / 2) / 2, by positivity, fun g hga hg ↦ ?_⟩
+      exact ball_subset_toOpenPartialHomeomorph_target hr hc_def hga hc (by rwa [dist_eq_norm])
   have hΦx₀ : Tendsto (fun i ↦ Φ i x₀) l (𝓝 (Φ₀ x₀)) :=
     (hconv x₀ hx₀).tendsto.comp (tendsto_id.prodMk tendsto_const_nhds)
   have hgood : ∀ᶠ i in l, ContDiffOn 𝕜 n (Φ i) s ∧ pa i ∧ ‖Φ i x₀ - Φ₀ x₀‖ < ρ := by
@@ -250,13 +244,15 @@ theorem exists_openPartialHomeomorph_tendstoContDiffAt_symm {Φ : ι → E → F
   -- Properties of the good members of the family.
   have hgood' : ∀ i, ContDiffOn 𝕜 n (Φ i) s ∧ pa i ∧ ‖Φ i x₀ - Φ₀ x₀‖ < ρ →
       ∃ hia : ApproximatesLinearOn (Φ i) (L : E →L[𝕜] F) (ball x₀ r) c,
-        e i = hia.toOpenPartialHomeomorph (Φ i) (ball x₀ r) hc isOpen_ball ∧
+        ⇑(e i) = Φ i ∧ (e i).source = ball x₀ r ∧
         ContDiffOn 𝕜 n (e i).symm (e i).target ∧ ball (Φ₀ x₀) ρ ⊆ (e i).target := by
     rintro i ⟨h1, h2, h3⟩
     obtain ⟨hia, hic⟩ := key (Φ i) h1 fun x hx ↦ hpab h2 (hrb x hx).1.1
     have hei : e i = hia.toOpenPartialHomeomorph (Φ i) (ball x₀ r) hc isOpen_ball := by
       simp [e, hia]
-    exact ⟨hia, hei, hei ▸ hic, hei ▸ hρT (Φ i) hia h3⟩
+    refine ⟨hia, ?_, ?_, hei ▸ hic, hei ▸ hρT (Φ i) hia h3⟩
+    · rw [hei, ApproximatesLinearOn.toOpenPartialHomeomorph_coe]
+    · rw [hei, ApproximatesLinearOn.toOpenPartialHomeomorph_source]
   have hT₀ : ball (Φ₀ x₀) ρ ⊆ e₀.target := hρT Φ₀ h₀a (by simpa using hρ)
   -- Order zero: the inverses converge continuously, by the uniform antilipschitz bound.
   have hsymm (y : F) (hy : y ∈ ball (Φ₀ x₀) ρ) :
@@ -265,7 +261,7 @@ theorem exists_openPartialHomeomorph_tendstoContDiffAt_symm {Φ : ι → E → F
     have hyt := hT₀ hy
     have hb : Tendsto (fun p : ι × F ↦ e₀.symm p.2) (l ×ˢ 𝓝 y) (𝓝 (e₀.symm y)) :=
       (e₀.continuousAt_symm hyt).tendsto.comp tendsto_snd
-    have hbs : e₀.symm y ∈ s := hrs (e₀.map_target hyt)
+    have hbs : e₀.symm y ∈ s := hrs₀ (e₀.map_target hyt)
     have h₁ : Tendsto (fun p : ι × F ↦ Φ p.1 (e₀.symm p.2)) (l ×ˢ 𝓝 y)
         (𝓝 (Φ₀ (e₀.symm y))) :=
       (hconv _ hbs).tendsto.comp (tendsto_fst.prodMk hb)
@@ -280,19 +276,17 @@ theorem exists_openPartialHomeomorph_tendstoContDiffAt_symm {Φ : ι → E → F
       dist_nonneg) ?_ hd)
     filter_upwards [tendsto_fst.eventually hgood,
       tendsto_snd.eventually (isOpen_ball.mem_nhds hy)] with p hp hpT
-    obtain ⟨hia, hei, -, hiT⟩ := hgood' p.1 hp
+    obtain ⟨hia, hec, hes, -, hiT⟩ := hgood' p.1 hp
     have hpt := hiT hpT
-    have ha : (e p.1).symm p.2 ∈ ball x₀ r := by
-      have := (e p.1).map_target hpt
-      rw [hei] at this ⊢
-      exact this
-    have hb' : e₀.symm p.2 ∈ ball x₀ r := e₀.map_target (hT₀ hpT)
+    have ha : (e p.1).symm p.2 ∈ ball x₀ r := hes ▸ (e p.1).map_target hpt
+    have hb' : e₀.symm p.2 ∈ ball x₀ r := he₀s ▸ e₀.map_target (hT₀ hpT)
     have hanti := (hia.antilipschitzWith hc).le_mul_dist ⟨_, ha⟩ ⟨_, hb'⟩
     have hΦa : Φ p.1 ((e p.1).symm p.2) = p.2 := by
-      have := (e p.1).right_inv hpt
-      rw [hei] at this ⊢
-      exact this
-    have hΦb : Φ₀ (e₀.symm p.2) = p.2 := e₀.right_inv (hT₀ hpT)
+      rw [← hec]
+      exact (e p.1).right_inv hpt
+    have hΦb : Φ₀ (e₀.symm p.2) = p.2 := by
+      rw [← he₀c]
+      exact e₀.right_inv (hT₀ hpT)
     simp only [Subtype.dist_eq, Set.domRestrict_apply, hΦa] at hanti
     have hanti' : dist ((e p.1).symm p.2) (e₀.symm p.2) ≤
         K * dist (Φ₀ (e₀.symm p.2)) (Φ p.1 (e₀.symm p.2)) := by
@@ -302,27 +296,28 @@ theorem exists_openPartialHomeomorph_tendstoContDiffAt_symm {Φ : ι → E → F
         ≤ dist ((e p.1).symm p.2) (e₀.symm p.2) + dist (e₀.symm p.2) (e₀.symm y) :=
           dist_triangle _ _ _
       _ ≤ _ := by gcongr
-  refine ⟨e₀, e, ball (Φ₀ x₀) ρ, isOpen_ball, mem_ball_self hρ, rfl, mem_ball_self hr, hrs,
-    hT₀, h₀c, ?_, fun y hy ↦ ?_⟩
+  refine ⟨e₀, e, ball (Φ₀ x₀) ρ, isOpen_ball, mem_ball_self hρ, he₀c, he₀s ▸ mem_ball_self hr,
+    hrs₀, hT₀, h₀c, ?_, fun y hy ↦ ?_⟩
   · filter_upwards [hgood] with i hi
-    obtain ⟨hia, hei, hic, hiT⟩ := hgood' i hi
-    exact ⟨by rw [hei]; rfl, by rw [hei]; rfl, hiT, hic⟩
+    obtain ⟨hia, hec, hes, hic, hiT⟩ := hgood' i hi
+    exact ⟨hec, hes.trans he₀s.symm, hiT, hic⟩
   · have hyt := hT₀ hy
-    have hconv' : TendstoContDiffAt 𝕜 n (fun i ↦ ⇑(e i)) e₀ l (e₀.symm y) :=
-      (hconv _ (hrs (e₀.map_target hyt))).congr (by
-        filter_upwards [hgood] with i hi
-        obtain ⟨hia, hei, -⟩ := hgood' i hi
-        rw [hei]; rfl)
+    have hconv' : TendstoContDiffAt 𝕜 n (fun i ↦ ⇑(e i)) e₀ l (e₀.symm y) := by
+      rw [he₀c]
+      refine (hconv _ (hrs₀ (e₀.map_target hyt))).congr ?_
+      filter_upwards [hgood] with i hi
+      obtain ⟨hia, hec, -⟩ := hgood' i hi
+      exact hec.symm
     refine hconv'.symm hyt (hsymm y hy) ?_ ?_ ?_
     · filter_upwards [tendsto_fst.eventually hgood,
         tendsto_snd.eventually (isOpen_ball.mem_nhds hy)] with p hp hpT
-      obtain ⟨hia, hei, hic, hiT⟩ := hgood' p.1 hp
+      obtain ⟨hia, hec, hes, hic, hiT⟩ := hgood' p.1 hp
       have hpt := hiT hpT
       refine ⟨hpt, ?_, hic.contDiffAt ((e p.1).open_target.mem_nhds hpt)⟩
-      have hsrc := (e p.1).map_target hpt
-      rw [hei] at hsrc ⊢
-      exact hp.1.contDiffAt (hs.mem_nhds (hrs hsrc))
-    · exact hΦ₀.contDiffAt (hs.mem_nhds (hrs (e₀.map_target hyt)))
+      rw [hec]
+      exact hp.1.contDiffAt (hs.mem_nhds (hrs (hes ▸ (e p.1).map_target hpt)))
+    · rw [he₀c]
+      exact hΦ₀.contDiffAt (hs.mem_nhds (hrs₀ (e₀.map_target hyt)))
     · exact h₀c.contDiffAt (e₀.open_target.mem_nhds hyt)
 
 end Existence

@@ -15,11 +15,30 @@ A complement to Mathlib's `TendstoLocallyUniformlyOn`: if functions `F k` with v
 pseudo-metric space converge to `u` locally uniformly on `s`, then for every compact `K ⊆ s` and
 every `ε > 0`, eventually `dist (F k x) (u x) < ε` for all `x ∈ K`. For real-valued functions,
 `Real.dist_eq` turns this into the bound `|F k x - u x| < ε`.
+
+On an open set on which the limit is continuous, locally uniform convergence is the same as
+continuous convergence at every point of the set
+(`IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn`).
 -/
 
 public section
 
-open Filter Set
+open Filter Set Topology Uniformity
+
+/-- **Locally uniform convergence to a continuous limit is continuous convergence.** On an open
+set on which the limit is continuous, `F i → f` locally uniformly exactly when `F i y → f x` as
+`i → l` and `y → x` jointly, for every `x` in the set. -/
+theorem IsOpen.tendstoLocallyUniformlyOn_iff_forall_tendsto_of_continuousOn {ι α β : Type*}
+    [TopologicalSpace α] [UniformSpace β] {F : ι → α → β} {f : α → β} {l : Filter ι}
+    {s : Set α} (hs : IsOpen s) (hf : ContinuousOn f s) :
+    TendstoLocallyUniformlyOn F f l s ↔
+      ∀ x ∈ s, Tendsto (fun p : ι × α ↦ F p.1 p.2) (l ×ˢ 𝓝 x) (𝓝 (f x)) := by
+  rw [hs.tendstoLocallyUniformlyOn_iff_forall_tendsto]
+  refine forall₂_congr fun x hx ↦ ?_
+  have hfx : Tendsto (fun p : ι × α ↦ f p.2) (l ×ˢ 𝓝 x) (𝓝 (f x)) :=
+    ((hf.continuousAt (hs.mem_nhds hx)).tendsto).comp tendsto_snd
+  refine ⟨fun h ↦ hfx.congr_uniformity h, fun h ↦ ?_⟩
+  exact (hfx.prodMk_nhds h).mono_right (nhds_le_uniformity (f x))
 
 variable {α β ι : Type*} [TopologicalSpace α] [PseudoMetricSpace β] {l : Filter ι}
   {F : ι → α → β} {u : α → β} {s : Set α}
