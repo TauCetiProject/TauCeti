@@ -200,7 +200,8 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 /-- **The kernel bound for Riesz potentials.** For `0 < κ ≤ 1`, a measurable `Ω` and any pole
 `x`, `∫_Ω ‖x - y‖ ^ (n (κ - 1)) dy ≤ κ⁻¹ ω ^ (1 - κ) μ(Ω) ^ κ`, where `n` is the dimension and
-`ω = μ(B(0, 1))`. Equality holds when `Ω` is a ball about `x`. -/
+`ω = μ(B(0, 1))`. Equality holds when `Ω` is a ball about `x` in positive dimension, and
+in dimension zero when `κ = 1`. -/
 theorem setLIntegral_enorm_sub_rpow_le {κ : ℝ} (hκ : 0 < κ) (hκ1 : κ ≤ 1)
     (hΩ : MeasurableSet Ω) (x : E) :
     ∫⁻ y in Ω, ‖x - y‖ₑ ^ ((finrank ℝ E : ℝ) * (κ - 1)) ∂μ ≤
