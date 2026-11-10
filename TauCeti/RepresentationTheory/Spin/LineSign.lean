@@ -59,13 +59,12 @@ labelled by the two signs of the line coordinate.
 * `TauCeti.SpinPolarizationData.spinAction_negLineCoordinate_apply_of_mem_even`: on even elements,
   `c_{P⁻}(x) = J c_P(x) J`.
 * `TauCeti.SpinPolarizationData.exists_spinAction_volume_eq_algebraMap`: the volume element acts
-  by opposite scalars `λ` and `-λ` under the two Fock actions, with `λ² = c`, when `W` is finite
-  free.
+  by opposite scalars `λ` and `-λ` under the two Fock actions, with `λ² = c`, when `W` is free.
 * `TauCeti.SpinPolarizationData.spinAction_prod_bijective`: in odd dimension, for finite-dimensional
   `V` over a field of characteristic not two, the combined Fock action is bijective, so the
   direct sum of the two spinor modules is faithful.
-* `TauCeti.SpinPolarizationData.not_injective_spinAction_of_odd_finrank`: under the same
-  hypotheses, a single Fock action is not faithful.
+* `TauCeti.SpinPolarizationData.not_injective_spinAction_of_odd_finrank`: in odd dimension, for
+  finite-dimensional `V` over any field, a single Fock action is not faithful.
 
 ## References
 
@@ -166,9 +165,9 @@ theorem spinRepEquivNegLineCoordinate_symm_apply (s : ExteriorAlgebra K P.W) :
 
 /-- **The volume element acts by opposite scalars under the two signs.** For a spanning list of
 pairwise orthogonal vectors of odd length, the volume element `ω` is central with
-`ω² = c = (-1) ^ (n choose 2) ∏ Q vᵢ`. When `W` is finite free, the Fock action of `P` sends `ω`
+`ω² = c = (-1) ^ (n choose 2) ∏ Q vᵢ`. When `W` is free, the Fock action of `P` sends `ω`
 to a scalar `λ` with `λ² = c`, and since `ω` is odd the Fock action of `P⁻` sends it to `-λ`. -/
-theorem exists_spinAction_volume_eq_algebraMap [Module.Free K P.W] [Module.Finite K P.W]
+theorem exists_spinAction_volume_eq_algebraMap [Module.Free K P.W]
     {l : List V} (hl : l.Pairwise Q.IsOrtho) (hlen : Odd l.length)
     (hspan : Submodule.span K {x : V | x ∈ l} = ⊤) :
     ∃ a : K, a * a = (-1 : K) ^ l.length.choose 2 * (l.map Q).prod ∧
@@ -176,6 +175,12 @@ theorem exists_spinAction_volume_eq_algebraMap [Module.Free K P.W] [Module.Finit
         algebraMap K (Module.End K (ExteriorAlgebra K P.W)) a ∧
       spinAction Q P.negLineCoordinate (l.map (ι Q)).prod =
         algebraMap K (Module.End K (ExteriorAlgebra K P.W)) (-a) := by
+  classical
+  have : Module.Finite K V := ⟨⟨l.toFinset, by simpa using hspan⟩⟩
+  have : Module.Finite K P.W :=
+    Module.Finite.of_surjective
+      ((LinearMap.fst K _ _ ∘ₗ LinearMap.fst K _ _) ∘ₗ P.decompositionEquiv.symm.toLinearMap)
+      ((Prod.fst_surjective.comp Prod.fst_surjective).comp P.decompositionEquiv.symm.surjective)
   obtain ⟨a, ha⟩ := exists_spinAction_eq_algebraMap_of_mem_center P
     (prod_map_ι_mem_center_of_odd_length hl hlen hspan)
   -- Scalars act faithfully on `⋀·W`, as seen on `1`.
@@ -264,16 +269,22 @@ theorem cliffordEquivEndProd_apply (hodd : Odd (finrank F V)) (x : CliffordAlgeb
   -- `(rfl)`, not `rfl`: the body of `cliffordEquivEndProd` is not `@[expose]`d.
   (rfl)
 
-/-- **A single Fock action is not faithful in odd dimension**: the central idempotent attached to
-the opposite sign is a nonzero element acting by zero. -/
+omit [NeZero (2 : F)] in
+/-- **A single Fock action is not faithful in odd dimension**: the Clifford algebra has dimension
+`2 ^ (2 * l + 1)`, while the operator algebra of the spinor module has dimension `(2 ^ l) ^ 2`. -/
 theorem not_injective_spinAction_of_odd_finrank (hodd : Odd (finrank F V)) :
     ¬ Function.Injective (spinAction Q P) := by
   intro hinj
-  obtain ⟨e, he₁, he₀⟩ := exists_spinAction_eq_one_and_spinAction_negLineCoordinate_eq_zero
-    P.negLineCoordinate hodd
-  rw [negLineCoordinate_negLineCoordinate] at he₀
-  have h0 : e = 0 := hinj (by rw [he₀, map_zero])
-  exact one_ne_zero (he₁.symm.trans (by rw [h0, map_zero]))
+  obtain ⟨l, hV⟩ := hodd
+  have hS := P.finrank_exteriorAlgebra_W_of_finrank_eq_two_mul_add_one hV
+  have : Module.Finite F (ExteriorAlgebra F P.W) :=
+    Module.finite_of_finrank_pos (by rw [hS]; positivity)
+  have hle := LinearMap.finrank_le_finrank_of_injective (f := (spinAction Q P).toLinearMap) hinj
+  rw [CliffordAlgebra.finrank_eq_two_pow, Module.finrank_linearMap, hS, hV] at hle
+  have h2 : 2 ^ (2 * l + 1) = 2 * (2 ^ l * 2 ^ l) := by ring
+  have h0 : 0 < 2 ^ l * 2 ^ l := by positivity
+  rw [h2] at hle
+  omega
 
 end Field
 
