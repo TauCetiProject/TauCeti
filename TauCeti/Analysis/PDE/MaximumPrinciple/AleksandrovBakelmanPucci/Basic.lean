@@ -17,6 +17,7 @@ import TauCeti.Analysis.Matrix.Contraction
 import TauCeti.Analysis.Normed.Module.Basic
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
+import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 
 /-!
 # The Aleksandrov–Bakelman–Pucci maximum principle
@@ -179,9 +180,8 @@ theorem setLIntegral_ofReal_negPart_div_card_pow_div_det_eq [Nonempty ι]
   set n := Fintype.card ι
   set g := fun y => (f y)⁻ / (a y).det ^ (n : ℝ)⁻¹
   have hn : n ≠ 0 := Fintype.card_ne_zero
-  have h := eLpNorm_nnreal_pow_eq_lintegral (p := (n : NNReal)) (Nat.cast_ne_zero.2 hn) hg
-  simp only [ENNReal.coe_natCast, NNReal.coe_natCast, ENNReal.rpow_natCast] at h
-  rw [h, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
+  rw [← lintegral_enorm_pow_eq_eLpNorm_pow hn hg,
+    ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top]
   refine lintegral_congr_ae ?_
   filter_upwards [ha] with y hy
   have hdet := hy.det_pos
