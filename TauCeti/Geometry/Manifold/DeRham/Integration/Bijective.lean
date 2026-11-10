@@ -90,13 +90,9 @@ theorem injective_integral [PreconnectedSpace M] (o : Manifold.Orientation I M (
   have : SigmaCompactSpace (⊤ : Opens M) := isClosed_univ.sigmaCompactSpace
   have : PreconnectedSpace (⊤ : Opens M) := Subtype.preconnectedSpace isPreconnected_univ
   have hi := injective_integral_of_cover o U (fun _ ↦ le_top) hcover Φ
-  have hint (c : compactlySupportedDeRhamCohomology I M n) :
-      integral (o.restrict ⊤) (equivOfDiffeomorph T n c) = integral o c := by
-    rw [equivOfDiffeomorph_apply]
-    exact integral_map_diffeomorph (o.restrict ⊤) o T
-      (by simpa only [T, Diffeomorph.coe_ofTop] using o.isOrientationPreservingAt_restrict ⊤) c
   intro a b hab
-  exact (equivOfDiffeomorph T n).injective (hi (by simpa only [hint] using hab))
+  exact (equivOfDiffeomorph T n).injective
+    (hi (by simpa only [T, integral_equivOfDiffeomorph_ofTop] using hab))
 
 /-- **The top compactly supported cohomology of a connected manifold.** On a connected, oriented,
 boundaryless, Hausdorff, σ-compact finite-dimensional smooth manifold, integration
