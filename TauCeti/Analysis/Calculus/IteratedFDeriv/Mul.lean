@@ -33,14 +33,11 @@ theorem iteratedFDeriv_mul_eq_zero_of_lt_add {g h : E → A} {N : WithTop ℕ∞
     (hk : k < m + n) (hkN : k ≤ N) :
     iteratedFDeriv 𝕜 k (fun y ↦ g y * h y) x = 0 := by
   -- Work on an open neighbourhood of `x` on which both factors are `C^k`.
-  obtain ⟨u, hu, hxu, hgu⟩ := hg.contDiffOn' hkN (by simp)
-  obtain ⟨v, hv, hxv, hhv⟩ := hh.contDiffOn' hkN (by simp)
-  have hs : IsOpen (u ∩ v) := hu.inter hv
-  have hxs : x ∈ u ∩ v := ⟨hxu, hxv⟩
-  have hbound := norm_iteratedFDerivWithin_mul_le
-    (hgu.mono fun y (hy : y ∈ u ∩ v) ↦ ⟨Set.mem_insert_of_mem _ trivial, hy.1⟩)
-    (hhv.mono fun y (hy : y ∈ u ∩ v) ↦ ⟨Set.mem_insert_of_mem _ trivial, hy.2⟩)
-    hs.uniqueDiffOn hxs le_rfl
+  obtain ⟨u, hu, hgu⟩ := hg.contDiffOn hkN (by simp)
+  obtain ⟨v, hv, hhv⟩ := hh.contDiffOn hkN (by simp)
+  obtain ⟨s, hsuv, hs, hxs⟩ := mem_nhds_iff.mp (Filter.inter_mem hu hv)
+  have hbound := norm_iteratedFDerivWithin_mul_le (hgu.mono fun _ hy ↦ (hsuv hy).1)
+    (hhv.mono fun _ hy ↦ (hsuv hy).2) hs.uniqueDiffOn hxs le_rfl
   simp only [iteratedFDerivWithin_of_isOpen _ hs hxs] at hbound
   refine norm_le_zero_iff.mp (hbound.trans ?_)
   -- Each Leibniz term has a factor `D^i g x` with `i < m` or `D^(k-i) h x` with `k - i < n`.
