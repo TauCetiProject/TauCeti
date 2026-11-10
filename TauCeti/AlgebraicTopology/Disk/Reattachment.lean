@@ -104,6 +104,7 @@ theorem coe_reattachmentTime_of_le_norm {w : TopCat.disk.{u} k} (hw : 1 / 2 ≤ 
   rw [reattachmentTime, coe_symm_eq]
   linarith
 
+@[simp]
 theorem reattachmentTime_diskBoundaryInclusion (s : TopCat.diskBoundary.{u} k) :
     reattachmentTime (TopCat.diskBoundaryInclusion k s) = 0 := by
   rw [reattachmentTime, annulusParam_of_norm_eq_one (by norm_num) (norm_diskBoundaryInclusion s),
@@ -116,6 +117,14 @@ def reattachmentPath (p : TopCat.disk.{u} k × I) : I × TopCat.disk.{u} k :=
   (⟨(1 - (p.2 : ℝ)) * reattachmentTime p.1, mul_mem (symm p.2).2 (reattachmentTime p.1).2⟩,
     diskRadialPush k (by norm_num : (0 : ℝ) ≤ 1 / 2) (σ p.2, p.1))
 
+theorem coe_fst_reattachmentPath (p : TopCat.disk.{u} k × I) :
+    ((reattachmentPath p).1 : ℝ) = (1 - (p.2 : ℝ)) * reattachmentTime p.1 :=
+  (rfl)
+
+theorem snd_reattachmentPath (p : TopCat.disk.{u} k × I) :
+    (reattachmentPath p).2 = diskRadialPush k (by norm_num : (0 : ℝ) ≤ 1 / 2) (σ p.2, p.1) :=
+  (rfl)
+
 theorem continuous_reattachmentPath : Continuous (reattachmentPath.{u} (k := k)) := by
   have hs : Continuous fun p : TopCat.disk.{u} k × I ↦ (p.2 : ℝ) :=
     continuous_subtype_val.comp continuous_snd
@@ -124,13 +133,16 @@ theorem continuous_reattachmentPath : Continuous (reattachmentPath.{u} (k := k))
     ((diskRadialPush k _).continuous.comp
       ((continuous_symm.comp continuous_snd).prodMk continuous_fst))
 
+@[simp]
 theorem reattachmentPath_zero (w : TopCat.disk.{u} k) :
     reattachmentPath (w, 0) = (reattachmentTime w, reattachmentRadial w) := by
   refine Prod.ext (Subtype.ext ?_) ?_ <;> simp [reattachmentPath, reattachmentRadial]
 
+@[simp]
 theorem reattachmentPath_one (w : TopCat.disk.{u} k) : reattachmentPath (w, 1) = (0, w) := by
   refine Prod.ext (Subtype.ext ?_) ?_ <;> simp [reattachmentPath]
 
+@[simp]
 theorem reattachmentPath_diskBoundaryInclusion (s : TopCat.diskBoundary.{u} k) (t : I) :
     reattachmentPath (TopCat.diskBoundaryInclusion k s, t) =
       (0, TopCat.diskBoundaryInclusion k s) := by

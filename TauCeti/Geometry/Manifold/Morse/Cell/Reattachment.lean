@@ -122,6 +122,11 @@ private theorem morseFiberwiseBaseInv_morseFiberwiseBase (p : PUnit.{u + 1})
     (x : {x | f x ≤ c - ε}) : morseFiberwiseBaseInv (p, (morseFiberwiseBase hε x).2) = x :=
   rfl
 
+private theorem coe_morseFiberwiseBaseInv (p : PUnit.{u + 1})
+    (y : {y : {x | f x ≤ c + ε} | f y ≤ c - ε}) :
+    (morseFiberwiseBaseInv (p, y) : M) = y :=
+  rfl
+
 /-- The attaching maps of the cells of `φ`, as families over a point. -/
 private def morseFiberwiseAttachingMap (i : ι) :
     C(PUnit.{u + 1} × TopCat.diskBoundary.{u} (k i), {y : {x | f x ≤ c + ε} | f y ≤ c - ε}) :=
@@ -329,8 +334,8 @@ theorem morseCellReattachment_morseCellAttachmentIncl (x : {x | f x ≤ c - ε})
   rw [morseCellReattachment, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
     morseCellAttachmentToFiberwise_morseCellAttachmentIncl, morseFiberwiseReattachment,
     fiberwiseCellReattachment_fiberwiseCellAttachmentIncl,
-    morseCellAttachmentOfFiberwise_fiberwiseCellAttachmentIncl]
-  rfl
+    morseCellAttachmentOfFiberwise_fiberwiseCellAttachmentIncl,
+    morseFiberwiseBaseInv_morseFiberwiseBase]
 
 /-- The reattachment map is the identity on the lower sublevel. -/
 @[reassoc (attr := simp)]
@@ -352,8 +357,8 @@ theorem morseCellReattachment_morseCellAttachmentCell_of_norm_le (i : ι)
   rw [morseCellReattachment, ConcreteCategory.comp_apply, ConcreteCategory.comp_apply,
     morseCellAttachmentToFiberwise_morseCellAttachmentCell, morseFiberwiseReattachment,
     fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_norm_le (hw := hw) (hv := hv),
-    morseCellAttachmentOfFiberwise_fiberwiseCellAttachmentCell]
-  rfl
+    morseCellAttachmentOfFiberwise_fiberwiseCellAttachmentCell, ContinuousMap.comp_apply,
+    ContinuousMap.snd_apply]
 
 /-- Outside the disc of radius `1/2` of the cell of `i`, the reattachment map is
 `x ↦ K i (2 - 2‖x‖, x/‖x‖)`, read in the lower sublevel. -/
@@ -370,7 +375,8 @@ theorem morseCellReattachment_morseCellAttachmentCell_of_le_norm (i : ι)
     fiberwiseCellReattachment_fiberwiseCellAttachmentCell_of_le_norm (hw := hw) (ht := ht)
       (hs := hs),
     morseCellAttachmentOfFiberwise_fiberwiseCellAttachmentIncl]
-  rfl
+  refine congrArg _ (Subtype.ext ?_)
+  rw [coe_morseFiberwiseBaseInv, Subtype.coe_mk, morseFiberwiseHomotopy_apply]
 
 /-- **`Φ₀ ∘ E` is homotopic to `Φ₁` relative to the lower sublevel.** The reattachment map followed
 by the handle-to-cell comparison `Φ₀` is homotopic to the handle-to-cell comparison `Φ₁`, by a
