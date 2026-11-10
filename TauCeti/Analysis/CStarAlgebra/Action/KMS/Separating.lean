@@ -128,8 +128,8 @@ theorem IsKMSState.eq_zero_of_apply_toPreGNS_one_eq_zero (hω : α.IsKMSState β
     exact inner_self_eq_zero.mp (horth _)
   -- every entire analytic `c` is `α_{iβ}(α_{-iβ}(c))`, and these are dense in `A`
   have hentire (c : A) (hc : α.IsEntireAnalytic c) : x (cls c) = 0 := by
-    have h := hkill _ (hc.isEntireAnalytic_entireExtension (-(β * I)))
-    rwa [hc.entireExtension_entireExtension, neg_add_cancel, hc.entireExtension_apply_zero] at h
+    have h := hkill _ (isEntireAnalytic_entireExtension (α := α) (a := c) (-(β * I)))
+    rwa [entireExtension_entireExtension, neg_add_cancel, hc.entireExtension_apply_zero] at h
   have hclosed : IsClosed {c : A | x (cls c) = 0} :=
     isClosed_eq (by fun_prop) continuous_const
   have hcls (c : A) : x (cls c) = 0 :=

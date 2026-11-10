@@ -123,7 +123,7 @@ theorem isKMSState_iff_of_dense {s : Set A} (hs : Dense s)
   refine ⟨hnorm, fun a b => exists_isKMSFunction_of_dense hs (fun c hc => ?_) b⟩
   refine ⟨fun z => ω (a * α.entireExtension c z),
     (isKMSFunction_apply_mul_entireExtension_iff (hentire c hc)).mpr fun t => ?_⟩
-  rw [← (hentire c hc).entireExtension_action]
+  rw [← entireExtension_action]
   exact hid' a (hinv (Multiplicative.ofAdd t) hc)
 
 /-- A state is β-KMS exactly when it satisfies the analytic KMS identity for every pair of
