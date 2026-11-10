@@ -34,9 +34,9 @@ regularity of the metric can be dropped from these statements.
   (`TauCeti.not_isContMDiffRiemannianBundle_singularLineMetric`). For this metric
   `grad f = λ⁻¹`, which is `x²` off `0` and `1` at `0`
   (`TauCeti.mgradient_id_singularLineMetric`). The trajectory of `-grad f` from `x₀ > 0` is
-  `t ↦ x₀ / (1 + x₀ t)` (`TauCeti.isMIntegralCurveOn_neg_mgradient_id_singularLineMetric`): it
-  stays in the compact interval `[0, x₀]` and converges to `0`, which is not a critical point of
-  `f` (`TauCeti.exists_isMIntegralCurveOn_neg_mgradient_id_singularLineMetric`).
+  `t ↦ x₀ / (1 + x₀ t)` (`TauCeti.isMIntegralCurveOn_neg_mgradient_id_singularLineMetric`). For
+  `x₀ = 1` it stays in the compact interval `[0, 1]` and converges to `0`, which is not a critical
+  point of `f` (`TauCeti.exists_isMIntegralCurveOn_neg_mgradient_id_singularLineMetric`).
 
 Neither example uses compactness of the manifold `ℝ`: the theorems recalled above replace it by
 the compact set containing the trajectory.
@@ -67,11 +67,9 @@ theorem criticalPoints_id_real : criticalPoints 𝓘(ℝ, ℝ) (id : ℝ → ℝ
 
 /-- **The function `f(x) = x` on `ℝ` is a Morse function**, vacuously: it has no critical
 points. -/
-theorem isMorse_id_real : IsMorse 𝓘(ℝ, ℝ) (id : ℝ → ℝ) := by
-  refine isMorse_iff.2 ⟨contMDiff_id, fun x hx ↦ ?_⟩
-  simp only [extChartAt_model_space_eq_id, PartialEquiv.refl_symm, PartialEquiv.refl_coe,
-    Function.comp_id, fderiv_id] at hx
-  simpa using congrArg (fun L : ℝ →L[ℝ] ℝ ↦ L 1) hx
+theorem isMorse_id_real : IsMorse 𝓘(ℝ, ℝ) (id : ℝ → ℝ) :=
+  isMorseOn_univ.1 (isMorseOn_iff_criticalPoints.2
+    ⟨contMDiff_id.contMDiffOn, fun x _ hx ↦ by simp [criticalPoints_id_real] at hx⟩)
 
 /-- For the standard metric on `ℝ`, the gradient of `f(x) = x` is `1`. -/
 @[simp]
@@ -139,37 +137,38 @@ end Untrapped
 
 section Singular
 
+/-- The weight `λ` of `singularLineMetric`: `λ(x) = x⁻²` for `x ≠ 0` and `λ(0) = 1`. -/
+noncomputable def singularLineWeight (x : ℝ) : ℝ :=
+  if x = 0 then 1 else (x ^ 2)⁻¹
+
+/-- The weight `λ` of `singularLineMetric` is positive. -/
+theorem singularLineWeight_pos (x : ℝ) : 0 < singularLineWeight x := by
+  rw [singularLineWeight]
+  split_ifs <;> positivity
+
 /-- **A discontinuous Riemannian metric on the line.** The inner product on the tangent space of
 `ℝ` at `x` is `λ(x) v w`, where `λ(x) = x⁻²` for `x ≠ 0` and `λ(0) = 1`. Each tangent space
 carries an inner product, but `λ` is discontinuous at `0`. -/
 noncomputable def singularLineMetric :
     RiemannianMetric (fun x : ℝ ↦ TangentSpace 𝓘(ℝ, ℝ) x) where
-  inner x := (if x = 0 then 1 else (x ^ 2)⁻¹) • ContinuousLinearMap.mul ℝ ℝ
+  inner x := singularLineWeight x • ContinuousLinearMap.mul ℝ ℝ
   -- The tangent space `TangentSpace 𝓘(ℝ, ℝ) x` is `ℝ` by definition, so each field is restated
   -- with `change` as a statement about real numbers.
   symm x := by
-    change ∀ v w : ℝ, (if x = 0 then 1 else (x ^ 2)⁻¹) * (v * w) =
-      (if x = 0 then 1 else (x ^ 2)⁻¹) * (w * v)
+    change ∀ v w : ℝ, singularLineWeight x * (v * w) = singularLineWeight x * (w * v)
     intro v w
     ring
   pos x := by
-    change ∀ v : ℝ, v ≠ 0 → 0 < (if x = 0 then 1 else (x ^ 2)⁻¹) * (v * v)
+    change ∀ v : ℝ, v ≠ 0 → 0 < singularLineWeight x * (v * v)
     intro v hv
-    have hc : 0 < (if x = 0 then 1 else (x ^ 2)⁻¹ : ℝ) := by
-      split_ifs with hx
-      · exact one_pos
-      · exact inv_pos.2 (sq_pos_of_ne_zero hx)
-    exact mul_pos hc (mul_self_pos.2 hv)
+    exact mul_pos (singularLineWeight_pos x) (mul_self_pos.2 hv)
   continuousAt x := by
-    change ContinuousAt (fun v : ℝ ↦ (if x = 0 then 1 else (x ^ 2)⁻¹) * (v * v)) 0
+    change ContinuousAt (fun v : ℝ ↦ singularLineWeight x * (v * v)) 0
     fun_prop
   isVonNBounded x := by
-    change Bornology.IsVonNBounded ℝ
-      {v : ℝ | (if x = 0 then 1 else (x ^ 2)⁻¹) * (v * v) < 1}
-    set c : ℝ := if x = 0 then 1 else (x ^ 2)⁻¹
-    have hc : 0 < c := by
-      simp only [c]
-      split_ifs <;> positivity
+    change Bornology.IsVonNBounded ℝ {v : ℝ | singularLineWeight x * (v * v) < 1}
+    set c : ℝ := singularLineWeight x
+    have hc : 0 < c := singularLineWeight_pos x
     rw [NormedSpace.isVonNBounded_iff, Metric.isBounded_iff_subset_closedBall 0]
     refine ⟨max 1 c⁻¹, fun v (hv : c * (v * v) < 1) ↦ ?_⟩
     rw [mem_closedBall_zero_iff, Real.norm_eq_abs]
@@ -184,7 +183,7 @@ noncomputable def singularLineMetric :
 /-- The inner products of `singularLineMetric`: `⟪v, w⟫ₓ = λ(x) v w`. -/
 @[simp]
 theorem singularLineMetric_inner (x v w : ℝ) :
-    singularLineMetric.inner x v w = (if x = 0 then 1 else (x ^ 2)⁻¹) * (v * w) := by
+    singularLineMetric.inner x v w = singularLineWeight x * (v * w) := by
   rw [singularLineMetric]
   -- The bilinear form `λ(x) • mul ℝ ℝ` on `TangentSpace 𝓘(ℝ, ℝ) x = ℝ` evaluates by definition;
   -- the tangent-space typing of `v` and `w` blocks the `ContinuousLinearMap` simp lemmas.
@@ -208,7 +207,7 @@ theorem not_isContMDiffRiemannianBundle_singularLineMetric (n : WithTop ℕ∞) 
       (continuous_id.prodMk continuous_const)
   have hcont : Continuous fun x : ℝ ↦ singularLineMetric.inner x (1 : ℝ) (1 : ℝ) :=
     (ContMDiff.inner_bundle hv hv).continuous
-  simp only [singularLineMetric_inner, mul_one] at hcont
+  simp only [singularLineMetric_inner, singularLineWeight, mul_one] at hcont
   -- Near `0` the weight `λ(x) = x⁻²` is large, while `λ(0) = 1`.
   obtain ⟨δ, hδ, hball⟩ := Metric.continuousAt_iff.1 hcont.continuousAt 1 one_pos
   set x : ℝ := min (δ / 2) (1 / 2)
@@ -238,7 +237,7 @@ theorem mgradient_id_singularLineMetric (x : ℝ) :
   rw [fderiv_id, ContinuousLinearMap.id_apply] at h
   -- The inner product of the installed metric is `λ(x) v w`.
   have h' : singularLineMetric.inner x m (1 : ℝ) = 1 := h
-  rw [singularLineMetric_inner, mul_one] at h'
+  rw [singularLineMetric_inner, singularLineWeight, mul_one] at h'
   clear h
   split_ifs at h' ⊢ with hx
   · exact (one_mul m).symm.trans h'
