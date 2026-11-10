@@ -131,7 +131,7 @@ private theorem profile_mul [NeZero v] {t c m : ℕ} (h : (t * v).gcd (c * m) = 
     have hv0 : 0 < v := Nat.pos_of_ne_zero (NeZero.ne v)
     simp only [hw, h2, dvd_mul_right, ite_true, Nat.mul_div_cancel_left _ hv0]
     push_cast
-    rw [show -((w : ZMod u) * m) = -w * m by ring, map_mul]
+    rw [← neg_mul, map_mul]
     ring
   · simp [hv, hiff.not.mpr hv]
 
