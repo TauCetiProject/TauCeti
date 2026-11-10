@@ -179,14 +179,6 @@ private def shiftIntegrand (s : ℝ) (x ξ θ : CoordinateSpace n) : V →L[ℂ]
 
 variable {a}
 
-private theorem continuous_shiftIntegrand
-    (ha : a.HasCompactSpatialSupport) (s : ℝ) (x ξ : CoordinateSpace n) :
-    Continuous (shiftIntegrand a s x ξ) := by
-  unfold shiftIntegrand
-  exact (by fun_prop : Continuous fun θ : CoordinateSpace n ↦ (𝐞 ⟪θ, x⟫ : ℂ)).smul
-    (ha.continuous_fourier_slice.comp
-      (continuous_id.prodMk (continuous_const.sub (continuous_id.const_smul s))) :)
-
 /-- The integrand decays like `(1 + ‖θ‖) ^ (-(n + 1)) ⟨ξ⟩ ^ m`, uniformly in the position and in
 the shifts `|s| ≤ 4π`. -/
 private theorem exists_norm_shiftIntegrand_le
@@ -198,15 +190,6 @@ private theorem exists_norm_shiftIntegrand_le
   refine ⟨C, hC0, fun s hs x ξ θ ↦ ?_⟩
   rw [shiftIntegrand, norm_smul, Circle.norm_coe, one_mul]
   exact hC s hs θ ξ
-
-private theorem integrable_shiftIntegrand
-    (ha : a.HasCompactSpatialSupport) {s : ℝ} (hs : |s| ≤ 4 * π) (x ξ : CoordinateSpace n) :
-    Integrable (shiftIntegrand a s x ξ) := by
-  obtain ⟨C, -, hC⟩ := exists_norm_shiftIntegrand_le ha
-  have hw : Integrable fun θ : CoordinateSpace n ↦ (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) :=
-    integrable_one_add_norm (by rw [finrank_euclideanSpace_fin]; linarith)
-  exact ((hw.mul_const _).const_mul C).mono'
-    (continuous_shiftIntegrand ha s x ξ).aestronglyMeasurable (.of_forall (hC s hs x ξ))
 
 /-- The frequency shifts `2πtθ` of the family with `|t| ≤ 2` are at most `4π ‖θ‖`. -/
 private theorem abs_mul_two_pi_le {t : ℝ} (ht : |t| ≤ 2) : |t * (2 * π)| ≤ 4 * π := by
@@ -256,18 +239,11 @@ private theorem exists_norm_scaledAdjoint_le
     (ha : a.HasCompactSpatialSupport) :
     ∃ C, 0 ≤ C ∧ ∀ t : ℝ, |t| ≤ 2 → ∀ x ξ : CoordinateSpace n,
       ‖scaledAdjoint a t x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-  obtain ⟨C, hC0, hC⟩ := exists_norm_shiftIntegrand_le ha
-  set I := ∫ θ : CoordinateSpace n, (1 + ‖θ‖) ^ (-((n : ℝ) + 1))
-  have hI : 0 ≤ I := integral_nonneg fun θ ↦ by positivity
-  refine ⟨C * I, mul_nonneg hC0 hI, fun t ht x ξ ↦ ?_⟩
-  have hw : Integrable fun θ : CoordinateSpace n ↦ (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) :=
-    integrable_one_add_norm (by rw [finrank_euclideanSpace_fin]; linarith)
+  obtain ⟨C, hC0, hC⟩ :=
+    ha.exists_norm_integral_fourierChar_smul_fourier_slice_sub_smul_le (4 * π)
+  refine ⟨C, hC0, fun t ht x ξ ↦ ?_⟩
   rw [scaledAdjoint, LinearIsometryEquiv.norm_map]
-  refine (norm_integral_le_of_norm_le ((hw.mul_const
-    ((1 + ‖ξ‖ ^ 2) ^ (m / 2))).const_mul C)
-    (.of_forall (hC _ (abs_mul_two_pi_le ht) x ξ))).trans_eq ?_
-  rw [integral_const_mul, integral_mul_const]
-  ring
+  exact hC _ (abs_mul_two_pi_le ht) x ξ
 
 /-- At `t = 1` the family is the adjoint symbol. -/
 private theorem scaledAdjoint_one (ha : a.HasCompactSpatialSupport)
@@ -311,23 +287,23 @@ private theorem hasDerivAt_scaledAdjoint
     ∑ j, C j * ((1 + ‖θ‖) ^ (-((n : ℝ) + 1)) * (1 + ‖ξ‖ ^ 2) ^ ((m - 1) / 2))
   have hint (j : Fin n) : Integrable fun θ ↦ Complex.I •
       shiftIntegrand (spatialDeriv j (frequencyDeriv j a)) (t₀ * (2 * π)) x ξ θ :=
-    (integrable_shiftIntegrand (hb j) (abs_mul_two_pi_le (by linarith)) x ξ).fun_smul _
+    ((hb j).integrable_fourierChar_smul_fourier_slice_sub_smul _ x ξ).fun_smul _
   have hbound : ∀ᵐ θ ∂(volume : Measure (CoordinateSpace n)), ∀ t ∈ Metric.ball t₀ 1,
       ‖F' t θ‖ ≤ bound θ := .of_forall fun θ t ht ↦ by
     refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun j _ ↦ ?_)
     rw [norm_smul, Complex.norm_I, one_mul]
     exact hC j _ (hball t ht) x ξ θ
-  have hw : Integrable fun θ : CoordinateSpace n ↦ (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) :=
-    integrable_one_add_norm (by rw [finrank_euclideanSpace_fin]; linarith)
   have hbound_int : Integrable bound :=
-    integrable_finsetSum _ fun j _ ↦ (hw.mul_const _).const_mul _
+    integrable_finsetSum _ fun j _ ↦ (integrable_one_add_norm_rpow_neg.mul_const _).const_mul _
   obtain ⟨-, h⟩ := hasDerivAt_integral_of_dominated_loc_of_deriv_le
     (F := fun t θ ↦ shiftIntegrand a (t * (2 * π)) x ξ θ) (F' := F')
     (Metric.ball_mem_nhds t₀ one_pos)
-    (.of_forall fun t ↦ (continuous_shiftIntegrand ha _ x ξ).aestronglyMeasurable)
-    (integrable_shiftIntegrand ha (abs_mul_two_pi_le (by linarith)) x ξ)
+    (.of_forall fun t ↦
+      (ha.continuous_fourierChar_smul_fourier_slice_sub_smul _ x ξ).aestronglyMeasurable)
+    (ha.integrable_fourierChar_smul_fourier_slice_sub_smul _ x ξ)
     (continuous_finsetSum _ fun j _ ↦
-      (continuous_shiftIntegrand (hb j) _ x ξ).const_smul Complex.I).aestronglyMeasurable
+      ((hb j).continuous_fourierChar_smul_fourier_slice_sub_smul _ x ξ).const_smul
+        Complex.I).aestronglyMeasurable
     hbound hbound_int (.of_forall fun θ t _ ↦ hasDerivAt_shiftIntegrand ha t x ξ θ)
   have h' := adjointRealCLM.hasFDerivAt.comp_hasDerivAt t₀ h
   simp only [Function.comp_def, adjointRealCLM_apply] at h'

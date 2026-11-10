@@ -41,7 +41,11 @@ support.
 * `TauCeti.Symbol.integral_inner_quantizeSchwartzValue_adjoint`: the quantization of `a*` is the
   formal adjoint of the quantization of `a`.
 * `TauCeti.Symbol.HasCompactSpatialSupport.exists_norm_fourier_slice_sub_smul_le`: the decay of
-  `â(θ, ξ - sθ)` in `θ`, uniformly for bounded shifts `s`.
+  `â(θ, ξ - sθ)` in `θ`, uniformly for bounded shifts `s`, with the continuity, integrability and
+  growth bound of the integrand `exp(2πi ⟪θ, x⟫) â(θ, ξ - sθ)`
+  (`HasCompactSpatialSupport.continuous_fourierChar_smul_fourier_slice_sub_smul`,
+  `HasCompactSpatialSupport.integrable_fourierChar_smul_fourier_slice_sub_smul`,
+  `HasCompactSpatialSupport.exists_norm_integral_fourierChar_smul_fourier_slice_sub_smul_le`).
 
 The asymptotic expansion `a* ∼ ∑_α (1 / α!) ∂_ξ^α D_x^α a†` of the adjoint symbol is in
 `TauCeti.Analysis.Pseudodifferential.Adjoint.Expansion`.
@@ -79,6 +83,12 @@ open MeasureTheory Real FourierTransform
 open scoped SchwartzMap RealInnerProductSpace ContDiff
 
 namespace TauCeti
+
+/-- The weight `(1 + ‖θ‖) ^ (-(n + 1))` bounding the decay of the Fourier slices of a symbol with
+compact spatial support is integrable on `ℝⁿ`. -/
+theorem integrable_one_add_norm_rpow_neg {n : ℕ} :
+    Integrable fun θ : CoordinateSpace n ↦ (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) :=
+  integrable_one_add_norm (by rw [finrank_euclideanSpace_fin]; linarith)
 
 namespace Symbol
 
@@ -368,36 +378,54 @@ private def leftCoeff (a : Symbol n V W m) (p : CoordinateSpace n × CoordinateS
 
 variable {a : Symbol n V W m}
 
-private theorem HasCompactSpatialSupport.continuous_leftCoeff_integrand
-    (ha : a.HasCompactSpatialSupport) (p : CoordinateSpace n × CoordinateSpace n) :
+/-- The integrand `exp(2πi ⟪θ, x⟫) â(θ, ξ - sθ)` of the adjoint symbol, with the frequency shift
+`2πθ` scaled to `sθ`, is continuous in `θ`. -/
+theorem HasCompactSpatialSupport.continuous_fourierChar_smul_fourier_slice_sub_smul
+    (ha : a.HasCompactSpatialSupport) (s : ℝ) (x ξ : CoordinateSpace n) :
     Continuous fun θ : CoordinateSpace n ↦
-      (𝐞 ⟪θ, p.1⟫ : ℂ) • 𝓕 (fun x ↦ a.coefficient (x, p.2 - (2 * π) • θ)) θ := by
-  have h₁ : Continuous fun θ : CoordinateSpace n ↦ (𝐞 ⟪θ, p.1⟫ : ℂ) :=
+      (𝐞 ⟪θ, x⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (y, ξ - s • θ)) θ := by
+  have h₁ : Continuous fun θ : CoordinateSpace n ↦ (𝐞 ⟪θ, x⟫ : ℂ) :=
     (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const)).subtype_val
   have h₂ : Continuous fun θ : CoordinateSpace n ↦
-      𝓕 (fun x ↦ a.coefficient (x, p.2 - (2 * π) • θ)) θ := by
+      𝓕 (fun y ↦ a.coefficient (y, ξ - s • θ)) θ := by
     exact ha.continuous_fourier_slice_comp continuous_id (by fun_prop)
   exact h₁.smul h₂
 
-private theorem integrable_one_add_norm_rpow_neg :
-    Integrable fun θ : CoordinateSpace n ↦ (1 + ‖θ‖) ^ (-((n : ℝ) + 1)) :=
-  integrable_one_add_norm (by rw [finrank_euclideanSpace_fin]; linarith)
-
-private theorem HasCompactSpatialSupport.integrable_fourier_slice_sub
-    (ha : a.HasCompactSpatialSupport) (ξ : CoordinateSpace n) :
-    Integrable fun θ : CoordinateSpace n ↦ 𝓕 (fun x ↦ a.coefficient (x, ξ - (2 * π) • θ)) θ := by
-  obtain ⟨C, -, hC⟩ := ha.exists_norm_fourier_slice_sub_le
+private theorem HasCompactSpatialSupport.integrable_fourier_slice_sub_smul
+    (ha : a.HasCompactSpatialSupport) (s : ℝ) (ξ : CoordinateSpace n) :
+    Integrable fun θ : CoordinateSpace n ↦ 𝓕 (fun x ↦ a.coefficient (x, ξ - s • θ)) θ := by
+  obtain ⟨C, -, hC⟩ := ha.exists_norm_fourier_slice_sub_smul_le |s|
   exact ((integrable_one_add_norm_rpow_neg.mul_const ((1 + ‖ξ‖ ^ 2) ^ (m / 2))).const_mul
     C).mono' (ha.continuous_fourier_slice_comp continuous_id (by fun_prop)).aestronglyMeasurable
-      (.of_forall fun θ ↦ hC θ ξ)
+      (.of_forall fun θ ↦ hC s le_rfl θ ξ)
 
-private theorem HasCompactSpatialSupport.integrable_leftCoeff_integrand
-    (ha : a.HasCompactSpatialSupport) (p : CoordinateSpace n × CoordinateSpace n) :
+/-- The integrand `exp(2πi ⟪θ, x⟫) â(θ, ξ - sθ)` of the adjoint symbol, with the frequency shift
+`2πθ` scaled to `sθ`, is integrable in `θ`. -/
+theorem HasCompactSpatialSupport.integrable_fourierChar_smul_fourier_slice_sub_smul
+    (ha : a.HasCompactSpatialSupport) (s : ℝ) (x ξ : CoordinateSpace n) :
     Integrable fun θ : CoordinateSpace n ↦
-      (𝐞 ⟪θ, p.1⟫ : ℂ) • 𝓕 (fun x ↦ a.coefficient (x, p.2 - (2 * π) • θ)) θ :=
-  (ha.integrable_fourier_slice_sub p.2).norm.mono'
-    (ha.continuous_leftCoeff_integrand p).aestronglyMeasurable
+      (𝐞 ⟪θ, x⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (y, ξ - s • θ)) θ :=
+  (ha.integrable_fourier_slice_sub_smul s ξ).norm.mono'
+    (ha.continuous_fourierChar_smul_fourier_slice_sub_smul s x ξ).aestronglyMeasurable
     (.of_forall fun θ ↦ by rw [norm_smul, Circle.norm_coe, one_mul])
+
+/-- The integral `∫ exp(2πi ⟪θ, x⟫) â(θ, ξ - sθ) dθ`, whose adjoint is the adjoint symbol for
+`s = 2π`, grows at most like `⟨ξ⟩ ^ m`, uniformly in the position and in the shifts `|s| ≤ R`. -/
+theorem HasCompactSpatialSupport.exists_norm_integral_fourierChar_smul_fourier_slice_sub_smul_le
+    (ha : a.HasCompactSpatialSupport) (R : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ s : ℝ, |s| ≤ R → ∀ x ξ : CoordinateSpace n,
+      ‖∫ θ, (𝐞 ⟪θ, x⟫ : ℂ) • 𝓕 (fun y ↦ a.coefficient (y, ξ - s • θ)) θ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨C, hC0, hC⟩ := ha.exists_norm_fourier_slice_sub_smul_le R
+  set I := ∫ θ : CoordinateSpace n, (1 + ‖θ‖) ^ (-((n : ℝ) + 1))
+  have hI : 0 ≤ I := integral_nonneg fun θ ↦ by positivity
+  refine ⟨C * I, mul_nonneg hC0 hI, fun s hs x ξ ↦ ?_⟩
+  refine (norm_integral_le_of_norm_le ((integrable_one_add_norm_rpow_neg.mul_const
+    ((1 + ‖ξ‖ ^ 2) ^ (m / 2))).const_mul C) (.of_forall fun θ ↦ ?_)).trans_eq ?_
+  · rw [norm_smul, Circle.norm_coe, one_mul]
+    exact hC s hs θ ξ
+  · rw [integral_const_mul, integral_mul_const]
+    ring
 
 /-- **The derivative of `A`.** The coefficient `A(y, ξ)` of a symbol with compact spatial support
 is differentiable, with partial derivatives the coefficients of `∂_{x_j} a` and `∂_{ξ_j} a`. -/
@@ -446,7 +474,7 @@ private theorem HasCompactSpatialSupport.hasFDerivAt_leftCoeff
     (fun ξ ↦ ha.continuous_fourier_slice_comp continuous_id (by fun_prop))
     (fun j ξ ↦ (ha.spatialDeriv j).continuous_fourier_slice_comp continuous_id (by fun_prop))
     (fun j ξ ↦ (ha.frequencyDeriv j).continuous_fourier_slice_comp continuous_id (by fun_prop))
-    (fun ξ ↦ ha.integrable_fourier_slice_sub ξ)
+    (fun ξ ↦ ha.integrable_fourier_slice_sub_smul (2 * π) ξ)
     (integrable_one_add_norm_rpow_neg.const_mul D) p₀ (fun θ ξ hξ j ↦ ⟨?_, ?_⟩)
   · exact (hball hξ (hCx0 j) (hCx j θ ξ)).trans (by gcongr; exact (hterm j).1)
   · exact (hball hξ (hCξ0 j) (hCξ j θ ξ)).trans (by gcongr; exact (hterm j).2)
@@ -490,16 +518,9 @@ private theorem HasCompactSpatialSupport.exists_norm_leftCoeff_le
     (ha : a.HasCompactSpatialSupport) :
     ∃ C, 0 ≤ C ∧ ∀ p : CoordinateSpace n × CoordinateSpace n,
       ‖leftCoeff a p‖ ≤ C * (1 + ‖p.2‖ ^ 2) ^ (m / 2) := by
-  obtain ⟨C, hC0, hC⟩ := ha.exists_norm_fourier_slice_sub_le
-  set I := ∫ θ : CoordinateSpace n, (1 + ‖θ‖) ^ (-((n : ℝ) + 1))
-  have hI : 0 ≤ I := integral_nonneg fun θ ↦ by positivity
-  refine ⟨C * I, mul_nonneg hC0 hI, fun p ↦ ?_⟩
-  refine (norm_integral_le_of_norm_le ((integrable_one_add_norm_rpow_neg.mul_const
-    ((1 + ‖p.2‖ ^ 2) ^ (m / 2))).const_mul C) (.of_forall fun θ ↦ ?_)).trans_eq ?_
-  · rw [norm_smul, Circle.norm_coe, one_mul]
-    exact hC θ p.2
-  · rw [integral_const_mul, integral_mul_const]
-    ring
+  obtain ⟨C, hC0, hC⟩ :=
+    ha.exists_norm_integral_fourierChar_smul_fourier_slice_sub_smul_le (2 * π)
+  exact ⟨C, hC0, fun p ↦ hC _ (abs_of_pos two_pi_pos).le p.1 p.2⟩
 
 private theorem leftCoeff_inclusion {m' : ℝ} (h : m ≤ m') (a : Symbol n V W m) :
     leftCoeff (inclusion h a) = leftCoeff a := by
@@ -661,7 +682,7 @@ private theorem HasCompactSpatialSupport.inner_quantizeSchwartzValue_adjoint
   rw [quantizeSchwartzValue_def, ← integral_inner (integrable_quantizeSchwartzValue_integrand
     ((adjoint a ha).continuous_coefficient_slice y).aestronglyMeasurable hbound (𝓕 v))]
   refine integral_congr_ae (.of_forall fun η ↦ ?_)
-  have hint := ha.integrable_leftCoeff_integrand (y, (2 * π) • η)
+  have hint := ha.integrable_fourierChar_smul_fourier_slice_sub_smul (2 * π) y ((2 * π) • η)
   dsimp only at hint ⊢
   rw [Circle.smul_def, inner_smul_right, coefficient_adjoint,
     ContinuousLinearMap.adjoint_inner_right, ContinuousLinearMap.integral_apply hint]
