@@ -307,12 +307,8 @@ lemma coxeterMatrixOfBase_le_six (i j : b.support) : coxeterMatrixOfBase P b i j
 diagonal both sides fail: the entry there is `1`, and no root is orthogonal to itself. -/
 theorem coxeterMatrixOfBase_eq_two_iff (i j : b.support) :
     coxeterMatrixOfBase P b i j = 2 ↔ P.IsOrthogonal (i : ι) (j : ι) := by
-  rcases eq_or_ne i j with rfl | hij
-  · rw [← cartanMatrix_mul_cartanMatrix_eq_zero_iff_isOrthogonal P b]
-    simp
-  · rw [coxeterMatrixOfBase_apply,
-      coxeterOrder_eq_two_iff,
-      cartanMatrix_mul_cartanMatrix_eq_zero_iff_isOrthogonal]
+  rw [coxeterMatrixOfBase_apply, coxeterOrder_eq_two_iff,
+    cartanMatrix_mul_cartanMatrix_eq_zero_iff_isOrthogonal]
 
 /-- **The Cartan matrix of a base is simply laced exactly when the Coxeter matrix of that base has
 all entries at most `3`**, that is, exactly when no two simple roots are joined by a multiple
