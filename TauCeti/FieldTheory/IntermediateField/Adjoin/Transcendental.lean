@@ -42,7 +42,7 @@ The statements below assert linear independence; the valuation estimates are sep
   algebraic over `k⟮x⟯`, then `x` is transcendental over `k`.
 * `TauCeti.transcendental_of_adjoin_simple_eq_top`: in particular, a single generator of a
   transcendental extension is transcendental.
-* `TauCeti.finrank_adjoin_eq_zero_of_isAlgebraic`: in a transcendental extension `F / k`, an
+* `IsAlgebraic.finrank_adjoin_eq_zero`: in a transcendental extension `F / k`, an
   element algebraic over `k` generates a subfield over which `F` has degree `0` by convention.
 -/
 
@@ -116,13 +116,10 @@ theorem transcendental_of_adjoin_simple_eq_top [Algebra.Transcendental k F] (h :
 /-- If `F` has an element transcendental over `k`, then an element `z` algebraic over `k` generates
 a subfield over which `F` is not finite, so `[F : k(z)]` is `0` by convention: otherwise `F` would
 be finite over `k`, hence algebraic, contradicting the transcendental element. -/
-theorem finrank_adjoin_eq_zero_of_isAlgebraic [Algebra.Transcendental k F] {z : F}
+theorem _root_.IsAlgebraic.finrank_adjoin_eq_zero [Algebra.Transcendental k F] {z : F}
     (hz : IsAlgebraic k z) : Module.finrank k⟮z⟯ F = 0 := by
   by_contra h
   have : Module.Finite k⟮z⟯ F := Module.finite_of_finrank_pos (Nat.pos_of_ne_zero h)
-  obtain ⟨x, hx⟩ := Algebra.Transcendental.transcendental (R := k) (A := F)
-  have : FiniteDimensional k k⟮z⟯ := IntermediateField.adjoin.finiteDimensional hz.isIntegral
-  have : FiniteDimensional k F := Module.Finite.trans k⟮z⟯ F
-  exact hx (Algebra.IsAlgebraic.isAlgebraic x)
+  exact (transcendental_of_isAlgebraic_adjoin (k := k) (F := F) (x := z)) hz
 
 end TauCeti
