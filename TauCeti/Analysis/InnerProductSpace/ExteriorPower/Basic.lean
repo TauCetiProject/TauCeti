@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.InnerProductSpace.ExteriorPower
 public import Mathlib.LinearAlgebra.CliffordAlgebra.Contraction
 public import TauCeti.Algebra.Lie.ExteriorPower
+-- Private: the norms of `re` and `im` are used only in proofs.
+import Mathlib.Analysis.Complex.OperatorNorm
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Contraction
@@ -23,11 +25,16 @@ map `⋀ⁿ f` induced by a linear isometry `f` preserves it, so that rotations 
 act isometrically on its forms, and that infinitesimal rotations, the skew-adjoint endomorphisms,
 act skew-adjointly on forms of every degree. It also records that the norm of a wedge
 `v₁ ∧ ⋯ ∧ vₙ` is the volume of the parallelepiped spanned by the `vᵢ`, bounded by Hadamard's
-inequality. Finally, it packages the skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the
-operator that represents the two-form `ω(u, w) = ⟪F, u ∧ w⟫` through the inner product.
+inequality. For a real-linear `P : E → ℂ`, it names the two-vector `p₁ ∧ p₂` of the gradients of
+`Re P` and `Im P`, which represents the two-form `Im (conj (P u) P w)`. Finally, it packages the
+skew endomorphism `u ↦ u ⌟ F` of a two-vector `F`, the operator that represents the two-form
+`ω(u, w) = ⟪F, u ∧ w⟫` through the inner product.
 
 ## Main definitions
 
+* `ContinuousLinearMap.reGradient P`, `ContinuousLinearMap.imGradient P`: the vectors
+  representing the real and imaginary parts of a complex-valued covector `P`, and
+  `ContinuousLinearMap.gradientWedge P`: their wedge `p₁ ∧ p₂`.
 * `TauCeti.twoVectorContraction F`: the skew endomorphism `u ↦ u ⌟ F` of a two-vector, with
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`.
 
@@ -50,6 +57,8 @@ operator that represents the two-form `ω(u, w) = ⟪F, u ∧ w⟫` through the 
 * `exteriorPower.norm_ιMulti_sq`: `‖v₁ ∧ ⋯ ∧ vₙ‖ ^ 2` is the Gram determinant of `v`.
 * `exteriorPower.norm_ιMulti_le_prod_norm`: Hadamard's inequality `‖v₁ ∧ ⋯ ∧ vₙ‖ ≤ ∏ ‖vᵢ‖`, and
   `exteriorPower.norm_ιMulti_two_le`: its case `‖u ∧ w‖ ≤ ‖u‖ ‖w‖` of two vectors.
+* `ContinuousLinearMap.inner_gradientWedge_ιMulti`: for a real-linear `P : E → ℂ`, the two-form
+  `Im (conj (P u) P w)` is represented by `p₁ ∧ p₂`, `⟪p₁ ∧ p₂, u ∧ w⟫ = Im (conj (P u) P w)`.
 * `TauCeti.inner_twoVectorContraction_apply`: the contraction `u ⌟ F` of a two-vector
   `F ∈ ⋀² V` by `⟪u, ·⟫` (`TauCeti.twoVectorContraction`) represents the two-form of `F`,
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`: on two-forms, wedging with `u` is adjoint to contracting with
@@ -183,6 +192,59 @@ theorem norm_ιMulti_two_le (u w : E) : ‖ιMulti ℝ 2 ![u, w]‖ ≤ ‖u‖ 
   simpa [Fin.prod_univ_two] using norm_ιMulti_le_prod_norm ![u, w]
 
 end exteriorPower
+
+namespace ContinuousLinearMap
+
+open exteriorPower
+open scoped RealInnerProductSpace ComplexConjugate
+
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+
+/-- The vector representing the real part of a complex-valued covector `P`:
+`⟪P.reGradient, v⟫ = Re (P v)`. -/
+noncomputable def reGradient (P : E →L[ℝ] ℂ) : E :=
+  (InnerProductSpace.toDual ℝ E).symm (Complex.reCLM.comp P)
+
+/-- The vector representing the imaginary part of a complex-valued covector `P`:
+`⟪P.imGradient, v⟫ = Im (P v)`. -/
+noncomputable def imGradient (P : E →L[ℝ] ℂ) : E :=
+  (InnerProductSpace.toDual ℝ E).symm (Complex.imCLM.comp P)
+
+/-- `⟪p₁, v⟫ = Re (P v)` for the gradient `p₁` of the real part of `P`. -/
+@[simp]
+theorem inner_reGradient (P : E →L[ℝ] ℂ) (v : E) : ⟪P.reGradient, v⟫ = (P v).re := by
+  simp [reGradient, InnerProductSpace.toDual_symm_apply]
+
+/-- `⟪p₂, v⟫ = Im (P v)` for the gradient `p₂` of the imaginary part of `P`. -/
+@[simp]
+theorem inner_imGradient (P : E →L[ℝ] ℂ) (v : E) : ⟪P.imGradient, v⟫ = (P v).im := by
+  simp [imGradient, InnerProductSpace.toDual_symm_apply]
+
+/-- The gradient of the real part of `P` has norm at most `‖P‖`. -/
+theorem norm_reGradient_le (P : E →L[ℝ] ℂ) : ‖P.reGradient‖ ≤ ‖P‖ := by
+  rw [reGradient, LinearIsometryEquiv.norm_map]
+  exact (Complex.reCLM.opNorm_comp_le P).trans (by rw [Complex.reCLM_norm, one_mul])
+
+/-- The gradient of the imaginary part of `P` has norm at most `‖P‖`. -/
+theorem norm_imGradient_le (P : E →L[ℝ] ℂ) : ‖P.imGradient‖ ≤ ‖P‖ := by
+  rw [imGradient, LinearIsometryEquiv.norm_map]
+  exact (Complex.imCLM.opNorm_comp_le P).trans (by rw [Complex.imCLM_norm, one_mul])
+
+/-- The two-vector `p₁ ∧ p₂` of the gradients of the real and imaginary parts of a
+complex-valued covector `P = p₁ + i p₂`. It represents the two-form `Im (conj (P u) P w)`
+(`ContinuousLinearMap.inner_gradientWedge_ιMulti`). -/
+noncomputable def gradientWedge (P : E →L[ℝ] ℂ) : ⋀[ℝ]^2 E :=
+  ιMulti ℝ 2 ![P.reGradient, P.imGradient]
+
+/-- **The two-form `Im (conj (P u) P w)` is represented by the two-vector `p₁ ∧ p₂`** of the
+gradients of the real and imaginary parts of `P`. -/
+theorem inner_gradientWedge_ιMulti (P : E →L[ℝ] ℂ) (u w : E) :
+    ⟪P.gradientWedge, ιMulti ℝ 2 ![u, w]⟫ = (conj (P u) * P w).im := by
+  rw [gradientWedge, inner_ιMulti_two, inner_reGradient, inner_reGradient, inner_imGradient,
+    inner_imGradient, Complex.mul_im, Complex.conj_re, Complex.conj_im]
+  ring
+
+end ContinuousLinearMap
 
 namespace OrthonormalBasis
 

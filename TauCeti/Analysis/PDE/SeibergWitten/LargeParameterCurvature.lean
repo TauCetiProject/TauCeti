@@ -285,11 +285,8 @@ theorem norm_smul_sub_hodgeStar_le_of_forall_le_hermitianForm (hr : 0 ≤ r)
     ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ ≤
       r / (4 * √2) * (1 - ‖φ‖ ^ 2 + ‖β‖ ^ 2) - ⟪J.kahlerForm, η⟫ / (2 * √2) + √2 * C := by
   have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
-  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := by
-    rw [AlmostComplexStructure.norm_kahlerForm_sq
-      (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃),
-      Fact.out (p := finrank ℝ V = 4)]
-    norm_num
+  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two
+    (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃)
   have h := AlmostComplexStructure.norm_smul_sub_hodgeStar_le_of_forall_le_hermitianForm_apply_self
     h₀ h₂₃ hkl he F hC
   rw [inner_div_two_eq_of_add_hodgeStar_eq hQ hkl hω hω₂ hφ hβ hr hF] at h
@@ -330,10 +327,8 @@ theorem norm_smul_sub_hodgeStar_le (hr : 1 ≤ r) {K : ℝ}
   -- `-⟪ω, η⟫ ≤ ‖ω‖ ‖η‖ = √2 ‖η‖`.
   have hωη : -⟪J.kahlerForm, η⟫ ≤ √2 * ‖η‖ := by
     have hω' : ‖J.kahlerForm‖ = √2 := by
-      rw [← Real.sqrt_sq (norm_nonneg _), AlmostComplexStructure.norm_kahlerForm_sq
-        (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃),
-        Fact.out (p := finrank ℝ V = 4)]
-      norm_num
+      rw [← Real.sqrt_sq (norm_nonneg _), AlmostComplexStructure.norm_kahlerForm_sq_eq_two
+        (AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃)]
     have := neg_le_abs ⟪J.kahlerForm, η⟫
     have := abs_real_inner_le_norm J.kahlerForm η
     rw [hω'] at this
@@ -370,9 +365,7 @@ theorem lieMap_lieMap_eq_of_add_hodgeStar_eq
           exteriorPower.lieMap 2 J.toLinearMap (exteriorPower.lieMap 2 J.toLinearMap η) := by
   have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
   have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
-  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := by
-    rw [AlmostComplexStructure.norm_kahlerForm_sq hJ, Fact.out (p := finrank ℝ V = 4)]
-    norm_num
+  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ
   set D := exteriorPower.lieMap 2 J.toLinearMap
   set X : ⋀[ℝ]^2 V := (quadraticTwoFormPolar o ρ hkl φ β : ⋀[ℝ]^2 V)
   -- `F + ⋆F = -c ω - r X - η` for a scalar `c`.
@@ -426,9 +419,7 @@ theorem neg_mul_norm_sq_le_inner_ιMulti_of_add_hodgeStar_eq (hr : 1 ≤ r) {K :
   have hr0 : 0 < r := by linarith
   have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
   have hω := AlmostComplexStructure.hodgeStar_kahlerForm h₀ h₂₃ hkl he
-  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := by
-    rw [AlmostComplexStructure.norm_kahlerForm_sq hJ, Fact.out (p := finrank ℝ V = 4)]
-    norm_num
+  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ
   have hs2 : 0 < √2 := Real.sqrt_pos.2 two_pos
   have hs2sq : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two
   have hsr : √r * √r = r := Real.mul_self_sqrt hr0.le
@@ -483,9 +474,7 @@ theorem infDist_positiveCone_le_of_add_hodgeStar_eq
   have hr0 : 0 < r := by linarith
   have hK : 0 ≤ K := nonneg_of_le_div_mul_add_div (sq_nonneg _) hr0 (le_max_right _ _) hβK
   have hJ := AlmostComplexStructure.inner_apply_apply_of_orthonormalBasis h₀ h₂₃
-  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := by
-    rw [AlmostComplexStructure.norm_kahlerForm_sq hJ, Fact.out (p := finrank ℝ V = 4)]
-    norm_num
+  have hω₂ : ‖J.kahlerForm‖ ^ 2 = 2 := AlmostComplexStructure.norm_kahlerForm_sq_eq_two hJ
   have hω' : ‖J.kahlerForm‖ = √2 := by rw [← hω₂, Real.sqrt_sq (norm_nonneg _)]
   have hs2 : √2 ≠ 0 := by positivity
   have hs2sq : √2 * √2 = 2 := Real.mul_self_sqrt zero_le_two

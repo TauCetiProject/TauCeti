@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Convex.Cone.InfDist
 public import TauCeti.Analysis.InnerProductSpace.AlternatingForm
 public import TauCeti.Analysis.PDE.SeibergWitten.CoarseBounds
 public import TauCeti.Analysis.PDE.SeibergWitten.CutoffCurrent
@@ -41,7 +40,8 @@ the two terms are estimated separately:
   part is `r q'(φ, β)`, and the negative part of its Hermitian form is `O(√r)` under the coarse
   anti-self-dual bound `|F_a⁻| ≤ (r / (4 √2)) (1 + C r^(-1/2)) w₊ + C`.
 
-The pointwise result is `TauCeti.SeibergWitten.infDist_positiveCone_le_of_inner_ιMulti_eq`, and
+The pointwise splitting is
+`TauCeti.AlmostComplexStructure.infDist_positiveCone_le_of_inner_ιMulti_eq`, and
 `TauCeti.SeibergWitten.infDist_positiveCone_cutoffCurrent_le` is its form for the cutoff current
 of a pair on a finite-dimensional inner product space with an orthogonal `J`:
 
@@ -62,7 +62,6 @@ solution.
 
 ## Main results
 
-* `TauCeti.SeibergWitten.infDist_positiveCone_le_of_inner_ιMulti_eq`: the pointwise splitting.
 * `TauCeti.SeibergWitten.infDist_positiveCone_cutoffCurrent_le`: the pointwise bound for the cutoff
   current.
 * `TauCeti.SeibergWitten.integral_infDist_positiveCone_le`: the integrated distance of the cutoff
@@ -90,30 +89,6 @@ section Pointwise
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [FiniteDimensional ℝ V]
   {J : AlmostComplexStructure V}
 
-/-- **The distance of a cutoff current to the positive cone, pointwise.** Let `J` be orthogonal,
-`P : V → ℂ` real-linear and `Q` its `J`-antilinear part, so that `P - Q` is `J`-linear. If a
-two-form `Θ` is `a F + c Im (conj (P u) P w)` with `a, c ≥ 0`, then
-
-`dist(Θ, positiveCone) ≤ a dist(F, positiveCone) + c ‖Q‖ (‖P‖ + ‖P - Q‖)`.
-
-For the cutoff current `a = 1 - χ(|α|²)`, `F = i F_a`, `c = 2 χ'(|α|²)`, `P = ∇_a α` and
-`Q = ∂bar_a α`. -/
-theorem infDist_positiveCone_le_of_inner_ιMulti_eq (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
-    {Θ F : ⋀[ℝ]^2 V} {P Q : V →L[ℝ] ℂ} {a c : ℝ} (ha : 0 ≤ a) (hc : 0 ≤ c)
-    (hPQ : ∀ v, (P - Q) (J v) = Complex.I * (P - Q) v)
-    (hΘ : ∀ u w, ⟪Θ, ιMulti ℝ 2 ![u, w]⟫ =
-      a * ⟪F, ιMulti ℝ 2 ![u, w]⟫ + c * (conj (P u) * P w).im) :
-    infDist Θ (J.positiveCone : Set (⋀[ℝ]^2 V)) ≤
-      a * infDist F (J.positiveCone : Set (⋀[ℝ]^2 V)) + c * (‖Q‖ * (‖P‖ + ‖P - Q‖)) := by
-  obtain ⟨Y, hY⟩ := AlmostComplexStructure.exists_inner_ιMulti_eq_im P
-  have hΘ' : Θ = a • F + c • Y := ext_inner_ιMulti_two fun u w ↦ by
-    rw [hΘ, inner_add_left, real_inner_smul_left, real_inner_smul_left, hY]
-  rw [hΘ']
-  refine (AddSubmonoidClass.infDist_add_le J.positiveCone _ _).trans ?_
-  rw [J.positiveCone.infDist_smul ha, J.positiveCone.infDist_smul hc]
-  gcongr
-  exact AlmostComplexStructure.infDist_positiveCone_le_of_inner_ιMulti_eq_im hJ hPQ hY
-
 /-- **The distance of the cutoff current to the positive cone.** Let `J` be an orthogonal almost
 complex structure on a finite-dimensional inner product space, `(b, α)` an abelian Higgs pair with
 curvature `i F_a = -db`, and `χ` a cutoff vanishing near `0` with `χ(s) ≤ 1` and `χ'(s) ≥ 0` at
@@ -135,8 +110,9 @@ theorem infDist_positiveCone_cutoffCurrent_le (hJ : ∀ v w, ⟪J v, J w⟫ = �
             (J.positiveCone : Set (⋀[ℝ]^2 V)) +
         4 * deriv χ (Complex.normSq (α x)) *
           (‖covariantDBar J b α x‖ * ‖covariantDeriv b α x‖) := by
-  have h := infDist_positiveCone_le_of_inner_ιMulti_eq hJ (sub_nonneg.2 hχ₁)
-    (mul_nonneg zero_le_two hχ') (covariantDeriv_sub_covariantDBar_apply_apply J b α x)
+  have h := AlmostComplexStructure.infDist_positiveCone_le_of_inner_ιMulti_eq hJ
+    (sub_nonneg.2 hχ₁) (mul_nonneg zero_le_two hχ')
+    (covariantDeriv_sub_covariantDBar_apply_apply J b α x)
     (Θ := (alternatingFormEquiv V 2).symm (cutoffCurrent χ b α x))
     (F := (alternatingFormEquiv V 2).symm (-extDeriv b x)) fun u w ↦ by
       rw [inner_alternatingFormEquiv_symm_ιMulti, inner_alternatingFormEquiv_symm_ιMulti,
@@ -308,7 +284,8 @@ private theorem infDist_positiveCone_le_add_add {Θ F η : ⋀[ℝ]^2 V}
   have hc : 0 ≤ 2 * deriv χ s := mul_nonneg zero_le_two (hχ' s).1
   have hdiff := mul_mul_add_le (M := M) hq0 (norm_nonneg Dα) (norm_nonneg Dbar) hDα' hc
     (by linarith [(hχ' s).2])
-  refine (infDist_positiveCone_le_of_inner_ιMulti_eq hJ ha hc hJlin hΘ).trans ?_
+  refine (AlmostComplexStructure.infDist_positiveCone_le_of_inner_ιMulti_eq hJ ha hc hJlin
+    hΘ).trans ?_
   -- The curvature term vanishes unless `|φ|² ≤ 1 / 2`.
   suffices hcurv : (1 - χ s) * infDist F (J.positiveCone : Set (⋀[ℝ]^2 V)) ≤
       (√r + 4 * (C * √r + 2 * C + N)) * |1 - s - ‖β‖ ^ 2| + r * √r / 4 * ‖β‖ ^ 2 by

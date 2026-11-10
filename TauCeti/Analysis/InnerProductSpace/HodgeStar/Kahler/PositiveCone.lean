@@ -8,9 +8,9 @@ module
 public import Mathlib.Geometry.Convex.Cone.Pointed
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Kahler.Hermitian
--- Private: the spectral theorem and the norms of `re` and `im` are used only in proofs.
-import Mathlib.Analysis.Complex.OperatorNorm
+-- Private: the spectral theorem and the distance to a cone are used only in proofs.
 import Mathlib.Analysis.InnerProductSpace.Spectrum
+import TauCeti.Analysis.Convex.Cone.InfDist
 
 /-!
 # The cone of positive `(1,1)`-forms
@@ -64,11 +64,14 @@ dimension:
 
 **The two-form of a complex-valued covector.** For a real-linear `P : V → ℂ`, the two-form
 `Y(u, w) = Im (conj (P u) P w)` is `p₁ ∧ p₂` for the gradients `p₁`, `p₂` of `Re P` and `Im P`
-(`exists_inner_ιMulti_eq_im`). When `P` is `J`-linear, `p₂ = J p₁` and `Y` is positive; in
-general `Y` is at distance at most `‖Q‖ (‖P‖ + ‖P - Q‖)` from the cone, where `Q` is the
-`J`-antilinear part of `P` (`infDist_positiveCone_le_of_inner_ιMulti_eq_im`). For a section `α`
-of a Hermitian line with `P = ∇_a α`, this is the derivative term of the curvature of the cutoff
-current of Taubes's analysis.
+(`ContinuousLinearMap.inner_gradientWedge_ιMulti`). When `P` is `J`-linear, `p₂ = J p₁` and `Y`
+is positive; in general `Y` is at distance at most `‖Q‖ (‖P‖ + ‖P - Q‖)` from the cone, where `Q`
+is the `J`-antilinear part of `P` (`infDist_positiveCone_le_of_inner_ιMulti_eq_im`). Since the
+distance to the cone is subadditive and positively homogeneous, a nonnegative combination
+`a F + c Y` is then at distance at most `a dist(F, positiveCone) + c ‖Q‖ (‖P‖ + ‖P - Q‖)`
+(`infDist_positiveCone_le_of_inner_ιMulti_eq`). For a section `α` of a Hermitian line with
+`P = ∇_a α`, `Y` is the derivative term of the curvature of the cutoff current of Taubes's
+analysis.
 
 **Dimension four.** For the complex orientation, a `J`-invariant two-form is `κ = c ω + κ⁻` with
 `c = ⟪ω, κ⟫ / 2` and `κ⁻ = (κ - ⋆κ) / 2` anti-self-dual
@@ -322,44 +325,6 @@ theorem mul_norm_le_inner_add_mul_infDist_positiveCone {Ω : ⋀[ℝ]^2 V} {c₀
 
 /-! ### The two-form of a complex-valued covector -/
 
-/-- The vector representing the real part of a complex-valued covector `P`:
-`⟪reGradient P, v⟫ = Re (P v)`. -/
-private def reGradient (P : V →L[ℝ] ℂ) : V :=
-  (InnerProductSpace.toDual ℝ V).symm (Complex.reCLM.comp P)
-
-/-- The vector representing the imaginary part of a complex-valued covector `P`:
-`⟪imGradient P, v⟫ = Im (P v)`. -/
-private def imGradient (P : V →L[ℝ] ℂ) : V :=
-  (InnerProductSpace.toDual ℝ V).symm (Complex.imCLM.comp P)
-
-omit hJ in
-private theorem inner_reGradient (P : V →L[ℝ] ℂ) (v : V) : ⟪reGradient P, v⟫ = (P v).re := by
-  simp [reGradient, InnerProductSpace.toDual_symm_apply]
-
-omit hJ in
-private theorem inner_imGradient (P : V →L[ℝ] ℂ) (v : V) : ⟪imGradient P, v⟫ = (P v).im := by
-  simp [imGradient, InnerProductSpace.toDual_symm_apply]
-
-omit hJ in
-private theorem norm_reGradient_le (P : V →L[ℝ] ℂ) : ‖reGradient P‖ ≤ ‖P‖ := by
-  rw [reGradient, LinearIsometryEquiv.norm_map]
-  exact (Complex.reCLM.opNorm_comp_le P).trans (by rw [Complex.reCLM_norm, one_mul])
-
-omit hJ in
-private theorem norm_imGradient_le (P : V →L[ℝ] ℂ) : ‖imGradient P‖ ≤ ‖P‖ := by
-  rw [imGradient, LinearIsometryEquiv.norm_map]
-  exact (Complex.imCLM.opNorm_comp_le P).trans (by rw [Complex.imCLM_norm, one_mul])
-
-omit hJ in
-/-- **The two-form `Im (conj (P u) P w)` is represented by a two-vector**: for a complex-valued
-covector `P = p₁ + i p₂`, it is `p₁ ∧ p₂`. -/
-theorem exists_inner_ιMulti_eq_im (P : V →L[ℝ] ℂ) :
-    ∃ Y : ⋀[ℝ]^2 V, ∀ u w, ⟪Y, ιMulti ℝ 2 ![u, w]⟫ = (starRingEnd ℂ (P u) * P w).im :=
-  ⟨ιMulti ℝ 2 ![reGradient P, imGradient P], fun u w ↦ by
-    rw [inner_ιMulti_two, inner_reGradient, inner_reGradient, inner_imGradient, inner_imGradient,
-      Complex.mul_im, Complex.conj_re, Complex.conj_im]
-    ring⟩
-
 /-- **The two-form `Im (conj (P u) P w)` is nearly a positive `(1,1)`-form.** Let `P` be a
 real-linear map `V → ℂ` and `Q` its `J`-antilinear part, in the sense that `P - Q` is `J`-linear,
 `(P - Q)(J v) = i (P - Q)(v)`. The two-form `Y(u, w) = Im (conj (P u) P w)` is then at distance
@@ -373,39 +338,62 @@ theorem infDist_positiveCone_le_of_inner_ιMulti_eq_im {P Q : V →L[ℝ] ℂ}
     infDist Y (J.positiveCone : Set (⋀[ℝ]^2 V)) ≤ ‖Q‖ * (‖P‖ + ‖P - Q‖) := by
   set R := P - Q
   -- The two-vector of the `J`-linear part `R` is `a ∧ J a` with `a` the gradient of `Re R`.
-  have hJR : imGradient R = J (reGradient R) := by
+  have hJR : R.imGradient = J R.reGradient := by
     refine ext_inner_right ℝ fun v ↦ ?_
-    rw [inner_imGradient, inner_apply_left hJ, inner_reGradient, hPQ, Complex.mul_re,
+    rw [ContinuousLinearMap.inner_imGradient, inner_apply_left hJ,
+      ContinuousLinearMap.inner_reGradient, hPQ, Complex.mul_re,
       Complex.I_re, Complex.I_im]
     ring
-  have hmem : ιMulti ℝ 2 ![reGradient R, imGradient R] ∈ J.positiveCone := by
+  have hmem : ιMulti ℝ 2 ![R.reGradient, R.imGradient] ∈ J.positiveCone := by
     rw [hJR]
     exact ιMulti_mem_positiveCone hJ _
   -- `Y - a ∧ J a = p₁ ∧ q₂ + q₁ ∧ r₂`, with `pᵢ`, `qᵢ`, `rᵢ` the gradients of the real and
   -- imaginary parts of `P`, `Q` and `R`.
-  have hdiff : Y - ιMulti ℝ 2 ![reGradient R, imGradient R] =
-      ιMulti ℝ 2 ![reGradient P, imGradient Q] + ιMulti ℝ 2 ![reGradient Q, imGradient R] := by
+  have hdiff : Y - ιMulti ℝ 2 ![R.reGradient, R.imGradient] =
+      ιMulti ℝ 2 ![P.reGradient, Q.imGradient] + ιMulti ℝ 2 ![Q.reGradient, R.imGradient] := by
     refine ext_inner_ιMulti_two fun u w ↦ ?_
-    have hR (v : V) : R v = P v - Q v := rfl
-    simp only [inner_sub_left, inner_add_left, hY, inner_ιMulti_two, inner_reGradient,
-      inner_imGradient, hR, Complex.mul_im, Complex.conj_re, Complex.conj_im, Complex.sub_re,
-      Complex.sub_im]
+    simp only [R, inner_sub_left, inner_add_left, hY, inner_ιMulti_two,
+      ContinuousLinearMap.inner_reGradient, ContinuousLinearMap.inner_imGradient, sub_apply,
+      Complex.mul_im, Complex.conj_re, Complex.conj_im, Complex.sub_re, Complex.sub_im]
     ring
   calc infDist Y (J.positiveCone : Set (⋀[ℝ]^2 V))
-      ≤ dist Y (ιMulti ℝ 2 ![reGradient R, imGradient R]) := infDist_le_dist_of_mem hmem
-    _ ≤ ‖ιMulti ℝ 2 ![reGradient P, imGradient Q]‖ +
-          ‖ιMulti ℝ 2 ![reGradient Q, imGradient R]‖ := by
+      ≤ dist Y (ιMulti ℝ 2 ![R.reGradient, R.imGradient]) := infDist_le_dist_of_mem hmem
+    _ ≤ ‖ιMulti ℝ 2 ![P.reGradient, Q.imGradient]‖ +
+          ‖ιMulti ℝ 2 ![Q.reGradient, R.imGradient]‖ := by
         rw [dist_eq_norm, hdiff]
         exact norm_add_le _ _
     _ ≤ ‖P‖ * ‖Q‖ + ‖Q‖ * ‖R‖ := by
         gcongr
         · exact (norm_ιMulti_two_le _ _).trans
-            (mul_le_mul (norm_reGradient_le P) (norm_imGradient_le Q) (norm_nonneg _)
+            (mul_le_mul P.norm_reGradient_le Q.norm_imGradient_le (norm_nonneg _)
               (norm_nonneg _))
         · exact (norm_ιMulti_two_le _ _).trans
-            (mul_le_mul (norm_reGradient_le Q) (norm_imGradient_le R) (norm_nonneg _)
+            (mul_le_mul Q.norm_reGradient_le R.norm_imGradient_le (norm_nonneg _)
               (norm_nonneg _))
     _ = ‖Q‖ * (‖P‖ + ‖P - Q‖) := by ring
+
+/-- **The distance to the positive cone of a combination with the two-form of a covector.** Let
+`P : V → ℂ` be real-linear and `Q` its `J`-antilinear part, so that `P - Q` is `J`-linear. If a
+two-form `Θ` is `a F + c Im (conj (P u) P w)` with `a, c ≥ 0`, then
+
+`dist(Θ, positiveCone) ≤ a dist(F, positiveCone) + c ‖Q‖ (‖P‖ + ‖P - Q‖)`.
+
+For the cutoff current of Taubes's analysis, `a = 1 - χ(|α|²)`, `F = i F_a`, `c = 2 χ'(|α|²)`,
+`P = ∇_a α` and `Q = ∂bar_a α`. -/
+theorem infDist_positiveCone_le_of_inner_ιMulti_eq {Θ F : ⋀[ℝ]^2 V} {P Q : V →L[ℝ] ℂ} {a c : ℝ}
+    (ha : 0 ≤ a) (hc : 0 ≤ c) (hPQ : ∀ v, (P - Q) (J v) = Complex.I * (P - Q) v)
+    (hΘ : ∀ u w, ⟪Θ, ιMulti ℝ 2 ![u, w]⟫ =
+      a * ⟪F, ιMulti ℝ 2 ![u, w]⟫ + c * (starRingEnd ℂ (P u) * P w).im) :
+    infDist Θ (J.positiveCone : Set (⋀[ℝ]^2 V)) ≤
+      a * infDist F (J.positiveCone : Set (⋀[ℝ]^2 V)) + c * (‖Q‖ * (‖P‖ + ‖P - Q‖)) := by
+  have hΘ' : Θ = a • F + c • P.gradientWedge := ext_inner_ιMulti_two fun u w ↦ by
+    rw [hΘ, inner_add_left, real_inner_smul_left, real_inner_smul_left,
+      P.inner_gradientWedge_ιMulti]
+  rw [hΘ']
+  refine (AddSubmonoidClass.infDist_add_le J.positiveCone _ _).trans ?_
+  rw [J.positiveCone.infDist_smul ha, J.positiveCone.infDist_smul hc]
+  gcongr
+  exact infDist_positiveCone_le_of_inner_ιMulti_eq_im hJ hPQ P.inner_gradientWedge_ιMulti
 
 end Orthogonal
 

@@ -57,7 +57,8 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 
 * `inner_apply_left`: an orthogonal `J` is skew-adjoint.
 * `inner_kahlerForm_ιMulti`: `⟪ω, u ∧ w⟫ = ⟪J u, w⟫`.
-* `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`.
+* `inner_kahlerForm_self`: `⟪ω, ω⟫ = dim V / 2`, so `‖ω‖² = 2` in dimension four
+  (`norm_kahlerForm_sq_eq_two`).
 * `norm_ιMulti_apply_sq`: `‖v ∧ J v‖² = ‖v‖⁴`.
 * `lieMap_kahlerForm`: `D_J ω = 0`.
 * `lieMap_lieMap_lieMap`: `D_J³ = -4 D_J`, so `η + D_J² η / 4` is `J`-invariant
@@ -187,6 +188,11 @@ theorem inner_kahlerForm_self : ⟪J.kahlerForm, J.kahlerForm⟫ = finrank ℝ V
 @[simp]
 theorem norm_kahlerForm_sq : ‖J.kahlerForm‖ ^ 2 = finrank ℝ V / 2 := by
   rw [← real_inner_self_eq_norm_sq, inner_kahlerForm_self hJ]
+
+/-- `‖ω‖² = 2` in dimension four. -/
+theorem norm_kahlerForm_sq_eq_two [Fact (finrank ℝ V = 4)] : ‖J.kahlerForm‖ ^ 2 = 2 := by
+  rw [norm_kahlerForm_sq hJ, Fact.out (p := finrank ℝ V = 4)]
+  norm_num
 
 /-- `‖v ∧ J v‖² = ‖v‖⁴` for an orthogonal `J`, since `J v` is orthogonal to `v` and has the same
 norm. -/
