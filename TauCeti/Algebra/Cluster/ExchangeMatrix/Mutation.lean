@@ -46,8 +46,8 @@ square matrix is still one after mutation, so mutation acts on exchange matrices
   skew-symmetrizer of each of its mutations.
 * `TauCeti.ExchangeMatrix.mutation_mutation`: mutation of exchange matrices is an involution.
 * `TauCeti.ExchangeMatrix.submatrix_mutation`, `TauCeti.ExchangeMatrix.principal_mutation`,
-  `TauCeti.ExchangeMatrix.reindex_mutation`, `TauCeti.ExchangeMatrix.sum_mutation_inl`,
-  `TauCeti.ExchangeMatrix.sum_mutation_inr`: the same compatibilities for exchange matrices.
+  `TauCeti.ExchangeMatrix.mutation_reindex`, `TauCeti.ExchangeMatrix.mutation_sum_inl`,
+  `TauCeti.ExchangeMatrix.mutation_sum_inr`: the same compatibilities for exchange matrices.
 
 ## References
 
@@ -298,7 +298,7 @@ theorem principal_mutation (k : K) : (B.mutation k).principal = B.principal.muta
   ext : 1 <;> simp [matrixMutation_refl_submatrix_row]
 
 /-- Mutation of exchange matrices commutes with reindexing. -/
-theorem reindex_mutation [DecidableEq I'] [DecidableEq K'] {row' : K' ↪ I'} (eI : I ≃ I')
+theorem mutation_reindex [DecidableEq I'] [DecidableEq K'] {row' : K' ↪ I'} (eI : I ≃ I')
     (eK : K ≃ K') (h : ∀ k, eI (row k) = row' (eK k)) (k : K) :
     (reindex eI eK h B).mutation (eK k) = reindex eI eK h (B.mutation k) := by
   have h' (k : K') : eI.symm (row' k) = row (eK.symm k) := by simp [Equiv.symm_apply_eq, h]
@@ -314,13 +314,13 @@ variable [DecidableEq I₁] [DecidableEq I₂] [DecidableEq K₁] [DecidableEq K
 /-- Mutating a block diagonal sum in a direction of the first summand mutates the first summand
 and fixes the second. -/
 @[simp]
-theorem sum_mutation_inl (k : K₁) : (B₁.sum B₂).mutation (Sum.inl k) = (B₁.mutation k).sum B₂ := by
+theorem mutation_sum_inl (k : K₁) : (B₁.sum B₂).mutation (Sum.inl k) = (B₁.mutation k).sum B₂ := by
   ext : 1 <;> simp
 
 /-- Mutating a block diagonal sum in a direction of the second summand mutates the second
 summand and fixes the first. -/
 @[simp]
-theorem sum_mutation_inr (k : K₂) : (B₁.sum B₂).mutation (Sum.inr k) = B₁.sum (B₂.mutation k) := by
+theorem mutation_sum_inr (k : K₂) : (B₁.sum B₂).mutation (Sum.inr k) = B₁.sum (B₂.mutation k) := by
   ext : 1 <;> simp
 
 end sum
