@@ -111,7 +111,7 @@ private theorem not_differentiableAt_fderiv_newtonianKernel_zero (hn : n ≠ 2) 
     rw [← norm_pos_iff, norm_smul, he, Real.norm_eq_abs, abs_of_pos htlt.1, mul_one]
     exact htlt.1
   have hval : fderiv ℝ (newtonianKernel n) (t • e) e = -(c * t ^ (1 - (n : ℝ))) := by
-    rw [fderiv_newtonianKernel_apply n hn hne, norm_smul, real_inner_smul_left,
+    rw [fderiv_newtonianKernel_apply n hn (t • e) e, norm_smul, real_inner_smul_left,
       real_inner_self_eq_norm_sq, he, Real.norm_eq_abs, abs_of_pos htlt.1,
       sub_eq_add_neg, Real.rpow_add htlt.1, Real.rpow_one]
     have hc' : c = (n : ℝ)⁻¹ * (volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ :=
@@ -129,7 +129,7 @@ private theorem not_differentiableAt_fderiv_newtonianKernel_zero (hn : n ≠ 2) 
 /-- Outside dimension two, the Hessian of the totalized Newtonian kernel vanishes at the pole: for
 `1 ≤ n` because the gradient of the kernel is not differentiable there, and for `n = 0` because
 `ℝ⁰` is a point. -/
-private theorem iteratedFDeriv_two_newtonianKernel_zero (hn : n ≠ 2) :
+private theorem iteratedFDeriv_two_newtonianKernel_zero_of_ne_two (hn : n ≠ 2) :
     iteratedFDeriv ℝ 2 (newtonianKernel n) 0 = 0 := by
   ext m
   rw [iteratedFDeriv_two_apply]
@@ -137,6 +137,15 @@ private theorem iteratedFDeriv_two_newtonianKernel_zero (hn : n ≠ 2) :
   · simp [Subsingleton.elim (m 0) 0]
   · simp [fderiv_zero_of_not_differentiableAt
       (not_differentiableAt_fderiv_newtonianKernel_zero hn hn0)]
+
+/-- The Hessian of the totalized Newtonian kernel vanishes at the pole, in every dimension: in
+dimension two because the kernel is `0`, and otherwise by the junk-value argument above. -/
+@[simp]
+theorem iteratedFDeriv_two_newtonianKernel_zero :
+    iteratedFDeriv ℝ 2 (newtonianKernel n) 0 = 0 := by
+  rcases eq_or_ne n 2 with rfl | hn
+  · simp
+  · exact iteratedFDeriv_two_newtonianKernel_zero_of_ne_two hn
 
 /-- **The Hessian of the Newtonian kernel:**
 `D²Gₙ(x)(v, w) = ωₙ⁻¹ ‖x‖⁻ⁿ⁻² ⟪x, v⟫ ⟪x, w⟫ - (n ωₙ)⁻¹ ‖x‖⁻ⁿ ⟪v, w⟫`. At the pole both sides
@@ -149,7 +158,7 @@ theorem iteratedFDeriv_two_newtonianKernel_apply (hn : n ≠ 2)
         ((n : ℝ) * volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ *
           ‖x‖ ^ (-(n : ℝ)) * ⟪v, w⟫_ℝ := by
   rcases eq_or_ne x 0 with rfl | hx
-  · rw [iteratedFDeriv_two_newtonianKernel_zero hn]
+  · rw [iteratedFDeriv_two_newtonianKernel_zero_of_ne_two hn]
     rcases eq_or_ne n 0 with rfl | hn0
     · simp
     · simp [Real.zero_rpow (neg_ne_zero.2 (Nat.cast_ne_zero.2 hn0))]
@@ -188,7 +197,7 @@ theorem norm_iteratedFDeriv_two_newtonianKernel_le (x : EuclideanSpace ℝ (Fin 
   · rw [iteratedFDeriv_two_newtonianKernel_two, norm_zero]
     positivity
   rcases eq_or_ne x 0 with rfl | hx
-  · rw [iteratedFDeriv_two_newtonianKernel_zero hn, norm_zero]
+  · rw [iteratedFDeriv_two_newtonianKernel_zero_of_ne_two hn, norm_zero]
     positivity
   have hn0 : (0 : ℝ) < n :=
     Nat.cast_pos.mpr (Nat.pos_of_ne_zero (by rintro rfl; exact hx (Subsingleton.elim _ _)))

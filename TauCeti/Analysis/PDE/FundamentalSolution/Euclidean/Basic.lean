@@ -93,24 +93,6 @@ theorem newtonianKernel_map_linearIsometryEquiv (n : ℕ)
     newtonianKernel n (e x) = newtonianKernel n x := by
   simp [newtonianKernel]
 
-/-- The gradient of the Newtonian kernel at its pole is zero: the kernel is even, so its derivative
-at `0` is odd. -/
-theorem fderiv_newtonianKernel_zero (n : ℕ) : fderiv ℝ (newtonianKernel n) 0 = 0 := by
-  by_cases hK : DifferentiableAt ℝ (newtonianKernel n) 0
-  · have hfun : newtonianKernel n ∘ Neg.neg = newtonianKernel n :=
-      funext fun x ↦ newtonianKernel_map_linearIsometryEquiv n (LinearIsometryEquiv.neg ℝ) x
-    have h := (show HasFDerivAt (newtonianKernel n)
-        (fderiv ℝ (newtonianKernel n) 0) (-(0 : EuclideanSpace ℝ (Fin n))) by
-      simpa using hK.hasFDerivAt).comp (0 : EuclideanSpace ℝ (Fin n))
-      (hasFDerivAt_id (0 : EuclideanSpace ℝ (Fin n))).neg
-    rw [hfun] at h
-    ext v
-    have h1 := congrArg (fun L => L v) h.fderiv
-    simp only [ContinuousLinearMap.comp_apply, neg_apply,
-      ContinuousLinearMap.id_apply, map_neg] at h1
-    simpa using self_eq_neg.1 h1
-  · exact fderiv_zero_of_not_differentiableAt hK
-
 /-- The Newtonian kernel is symmetric under exchanging a point and its pole. -/
 theorem newtonianKernel_sub_comm (n : ℕ) (x a : EuclideanSpace ℝ (Fin n)) :
     newtonianKernel n (x - a) = newtonianKernel n (a - x) := by
@@ -282,6 +264,15 @@ theorem fderiv_newtonianKernel_apply (n : ℕ) (hn : n ≠ 2)
   rw [fderiv_newtonianKernel n hn x]
   simp only [smul_apply, smul_eq_mul, innerSL_apply_apply]
   ring
+
+/-- The gradient of the Newtonian kernel at its pole is zero, by the junk-value conventions: in
+dimension two the kernel is `0`, and otherwise the gradient formula holds at `0` with value `0`. -/
+@[simp]
+theorem fderiv_newtonianKernel_zero (n : ℕ) : fderiv ℝ (newtonianKernel n) 0 = 0 := by
+  rcases eq_or_ne n 2 with rfl | hn
+  · simp
+  · ext v
+    simp [fderiv_newtonianKernel_apply n hn 0 v]
 
 /-- The operator norm of the derivative of the Newtonian kernel decays like `‖x‖ ^ (1 - n)`. -/
 @[simp]

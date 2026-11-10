@@ -32,8 +32,9 @@ For `f : ℝⁿ → F` with compact support, the **Newtonian potential** of `f` 
 * `u` solves **Poisson's equation** `-Δu = f` on all of `ℝⁿ`;
 * `u` is harmonic off the support of `f`, where its second derivatives are obtained by
   integrating `f` against the Hessian of `Gₙ` (for this, too, any `n`);
-* `u` decays like `‖x‖ ^ (2 - n)` (this does need `n ≥ 3`; for a non-integrable `f` with
-  bounded support both sides are junk values `0`), and so tends to zero at infinity;
+* `u` decays like `‖x‖ ^ (2 - n)` (this does need `n ≥ 3`; for a non-integrable `f` the potential
+  vanishes outside the ball containing the support, so the bound holds trivially there), and so
+  tends to zero at infinity;
 * `u` is the **unique** `C²` solution of `-Δv = f` that tends to zero at infinity.
 
 The Laplacian falls on `f` under the convolution (`HasCompactSupport.laplacian_convolution_right`),
@@ -109,8 +110,9 @@ theorem harmonicOnNhd_newtonianKernel_convolution (hn : 3 ≤ n)
     image_eq_zero_of_notMem_tsupport hy, neg_zero, Pi.zero_apply]
 
 /-- If `f` vanishes off `closedBall 0 R` and is not integrable, then the Newtonian potential
-`Gₙ ⋆ f` vanishes at every point `x` with `R < ‖x‖`: there the kernel `y ↦ Gₙ(x - y)` is bounded
-and bounded away from zero on the support of `f`, so the integrand is not integrable either. -/
+`Gₙ ⋆ f` vanishes at every point `x` with `R < ‖x‖`. For `n ≠ 2` the kernel `y ↦ Gₙ(x - y)` is
+continuous and nonvanishing on the ball `closedBall 0 R`, so integrability of the integrand would
+give that of `f`; for `n = 2` the kernel and the potential are `0`. -/
 private theorem newtonianKernel_convolution_eq_zero_of_not_integrable
     (hf : ¬ Integrable f) {R : ℝ} (hR : Function.support f ⊆ closedBall 0 R)
     {x : EuclideanSpace ℝ (Fin n)} (hx : R < ‖x‖) : (newtonianKernel n ⋆ f) x = 0 := by
@@ -131,30 +133,10 @@ private theorem newtonianKernel_convolution_eq_zero_of_not_integrable
     fun y hy => (((contDiffAt_newtonianKernel n (sub_ne_zero.2 fun h =>
       (mem_closedBall_zero_iff.1 hy).not_gt (by rwa [← h])))).continuousAt.comp
         (continuousAt_const.sub continuousAt_id)).continuousWithinAt.inv₀ (hne y hy)
-  obtain ⟨M, hM⟩ := (isCompact_closedBall _ _).exists_bound_of_continuousOn hcont
-  have hGm : Measurable (newtonianKernel n) := by
-    have hG : newtonianKernel n = fun y => ((n : ℝ) * ((n : ℝ) - 2) *
-        volume.real (ball (0 : EuclideanSpace ℝ (Fin n)) 1))⁻¹ * ‖y‖ ^ (2 - (n : ℝ)) :=
-      funext (newtonianKernel_def n)
-    rw [hG]
-    fun_prop
-  have hφ : Measurable ((closedBall (0 : EuclideanSpace ℝ (Fin n)) R).indicator
-      fun y => (newtonianKernel n (x - y))⁻¹) :=
-    (((hGm.comp (measurable_const.sub measurable_id)).inv)).indicator measurableSet_closedBall
-  have hfg : f = (closedBall (0 : EuclideanSpace ℝ (Fin n)) R).indicator
-      (fun y => (newtonianKernel n (x - y))⁻¹) • fun y => newtonianKernel n (x - y) • f y := by
-    funext y
-    by_cases hy : f y = 0
-    · simp [hy]
-    · have hyR := hR hy
-      simp [indicator_of_mem hyR, smul_smul, inv_mul_cancel₀ (hne y hyR)]
-  rw [hfg]
-  refine hg.bdd_smul (max M 0) hφ.aestronglyMeasurable (ae_of_all _ fun y => ?_)
-  by_cases hy : y ∈ closedBall (0 : EuclideanSpace ℝ (Fin n)) R
-  · rw [indicator_of_mem hy]
-    exact (hM y hy).trans (le_max_left _ _)
-  · rw [indicator_of_notMem hy, norm_zero]
-    exact le_max_right _ _
+  refine (integrableOn_iff_integrable_of_support_subset hR).1 ?_
+  refine (hg.integrableOn.continuousOn_smul hcont (isCompact_closedBall _ _)).congr_fun
+    (fun y hy => ?_) measurableSet_closedBall
+  simp only [smul_smul, inv_mul_cancel₀ (hne y hy), one_smul]
 
 /-- **Decay of the Newtonian potential.** For `n ≥ 3` and `f` vanishing
 off `closedBall 0 R`, at every point `x` with `R < ‖x‖`,
@@ -251,9 +233,9 @@ private theorem hasFDerivAt_newtonianKernel_convolution_of_support (hn : n ≠ 2
 `‖D(Gₙ ⋆ f)(x)‖ ≤ (n ωₙ)⁻¹ (‖x‖ - R) ^ (1 - n) ∫ ‖f‖`,
 
 where `ωₙ` is the volume of the unit ball. Off the support of `f` the derivative falls on the
-kernel, whose gradient has size `(n ωₙ)⁻¹ ‖x - y‖ ^ (1 - n)`. In dimension two the kernel vanishes
-and so does the potential, and for non-integrable `f` the potential vanishes outside
-`closedBall 0 R`. -/
+kernel, whose gradient has size `(n ωₙ)⁻¹ ‖x - y‖ ^ (1 - n)` for `n ≠ 2`. In dimension two the
+kernel is `0` and so is the potential, and for non-integrable `f` the potential vanishes outside
+`closedBall 0 R`; in both cases the bound holds trivially. -/
 theorem norm_fderiv_newtonianKernel_convolution_le {R : ℝ}
     (hR : Function.support f ⊆ closedBall 0 R) {x : EuclideanSpace ℝ (Fin n)} (hx : R < ‖x‖) :
     ‖fderiv ℝ (newtonianKernel n ⋆ f) x‖ ≤
