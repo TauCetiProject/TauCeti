@@ -63,7 +63,13 @@ back form (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.mpullback`). On a pro
 the product form, the product of Hamiltonian vector fields of `f` and `g` is a Hamiltonian vector
 field of `(x, y) ↦ f x + g y` (`TauCeti.SmoothTwoForm.IsHamiltonianVectorField.prod`).
 
-Both constructions are natural: a smooth map `φ` pulling a nondegenerate form `σ₂` back to `σ`
+Both constructions are natural. Pointwise, if a surjective linear map `D` from `T_x M` to
+`T_y M₂` satisfies `σ₂_y(D u, D v) = σ_x(u, v)` and `dg_y ∘ D = df_x` for nondegenerate `σ` and
+`σ₂`, then `D` carries `X_f(x)` to `X_g(y)`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.map_hamiltonianVectorField_of_eval₂`). Surjectivity is
+automatic when `M₂ = M` and `σ₂ = σ`
+(`TauCeti.SmoothTwoForm.IsNondegenerate.surjective_of_eval₂_map`). Hence a smooth map `φ` pulling
+a nondegenerate form `σ₂` back to `σ`
 carries the Hamiltonian vector field of `g ∘ φ` to that of `g`, wherever its differential is
 surjective (`TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`), and so
 `{g ∘ φ, k ∘ φ} = {g, k} ∘ φ` there (`TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`).
@@ -97,6 +103,8 @@ Hamiltonian vector field of `g ∘ φ` to integral curves of that of `g`
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_eq_mvfderiv`: `{f, g} = df(X_g)`, and
   `TauCeti.SmoothTwoForm.IsNondegenerate.contMDiff_poissonBracket`: the Poisson bracket of
   `C^(n+1)` functions is `C^n`.
+* `TauCeti.SmoothTwoForm.IsNondegenerate.map_hamiltonianVectorField_of_eval₂`: a surjective
+  linear map `D` with `σ₂(D u, D v) = σ(u, v)` and `dg ∘ D = df` carries `X_f(x)` to `X_g(y)`.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.mfderiv_hamiltonianVectorField_comp`,
   `TauCeti.SmoothTwoForm.IsNondegenerate.isMIntegralCurve_comp_hamiltonianVectorField` and
   `TauCeti.SmoothTwoForm.IsNondegenerate.poissonBracket_comp`: naturality of Hamiltonian vector
@@ -568,6 +576,24 @@ variable {E₂ H₂ M₂ : Type*} [NormedAddCommGroup E₂] [NormedSpace ℝ E�
 
 namespace IsNondegenerate
 
+/-- **Linear maps preserving nondegenerate forms carry Hamiltonian vectors.** Let `D` be a
+surjective linear map from the tangent space of `M` at `x` to the tangent space of `M₂` at `y`
+with `σ₂_y(D u, D v) = σ_x(u, v)` and `dg_y ∘ D = df_x`. Then `D` carries `X_f(x)` to `X_g(y)`. -/
+theorem map_hamiltonianVectorField_of_eval₂ (hσ : σ.IsNondegenerate) (hσ₂ : σ₂.IsNondegenerate)
+    {y : M₂} {D : TangentSpace I x →L[ℝ] TangentSpace I₂ y} (hDs : Function.Surjective D)
+    (hD : ∀ u v, SmoothBundleForm.eval₂ σ₂ y (D u) (D v) = SmoothBundleForm.eval₂ σ x u v)
+    {f : M → ℝ} {g : M₂ → ℝ} (hfg : ∀ u, mvfderiv I₂ g y (D u) = mvfderiv I f x u) :
+    D (σ.hamiltonianVectorField f x) = σ₂.hamiltonianVectorField g y := by
+  refine (hσ₂.isInvertible_flat y).injective (ContinuousLinearMap.ext fun w ↦ ?_)
+  obtain ⟨u, rfl⟩ := hDs w
+  -- Both sides pair with `D u` to `df_x(u)`.
+  rw [flat_apply, flat_apply, hD, hσ.eval₂_hamiltonianVectorField,
+    hσ₂.eval₂_hamiltonianVectorField, hfg]
+
+end IsNondegenerate
+
+namespace IsNondegenerate
+
 variable (hσ : σ.IsNondegenerate) (hσ₂ : σ₂.IsNondegenerate) (hφ : ContMDiff I I₂ ∞ φ)
   (hφσ : SmoothForm.mpullback φ hφ σ₂ = σ)
 include hσ hσ₂ hφσ
@@ -577,13 +603,10 @@ back to a nondegenerate form `σ`. At a point where the differential of `φ` is 
 the Hamiltonian vector field of `g ∘ φ` to the Hamiltonian vector field of `g`. -/
 theorem mfderiv_hamiltonianVectorField_comp (hx : Function.Surjective (mfderiv I I₂ φ x))
     {g : M₂ → ℝ} (hg : MDifferentiableAt I₂ 𝓘(ℝ) g (φ x)) :
-    mfderiv I I₂ φ x (σ.hamiltonianVectorField (g ∘ φ) x) = σ₂.hamiltonianVectorField g (φ x) := by
-  refine (hσ₂.isInvertible_flat (φ x)).injective (ContinuousLinearMap.ext fun w ↦ ?_)
-  obtain ⟨u, rfl⟩ := hx w
-  -- Both sides pair with `dφ u` to `dg(dφ u)`: the left one because `σ = φ^* σ₂`.
-  rw [hσ₂.flat_hamiltonianVectorField, flat_apply, ← SmoothForm.eval₂_mpullback φ hφ, hφσ,
-    hσ.eval₂_hamiltonianVectorField,
-    mvfderiv_comp_apply x hg ((hφ x).mdifferentiableAt (by simp))]
+    mfderiv I I₂ φ x (σ.hamiltonianVectorField (g ∘ φ) x) = σ₂.hamiltonianVectorField g (φ x) :=
+  hσ.map_hamiltonianVectorField_of_eval₂ hσ₂ hx
+    (fun u v ↦ by rw [← SmoothForm.eval₂_mpullback φ hφ, hφσ])
+    fun u ↦ (mvfderiv_comp_apply x hg ((hφ x).mdifferentiableAt (by simp)) u).symm
 
 /-- **Poisson brackets are natural.** Let a smooth map `φ` pull a nondegenerate form `σ₂` back to a
 nondegenerate form `σ`. At a point where the differential of `φ` is surjective, the Poisson
