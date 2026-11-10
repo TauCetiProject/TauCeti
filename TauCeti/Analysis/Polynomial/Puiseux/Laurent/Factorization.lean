@@ -84,7 +84,7 @@ theorem exists_analyticOnNhd_nonmonic_laurent
   have hfit : R' ^ d.factorial ≤ R :=
     (pow_le_of_le_one hR'.le hR'1 d.factorial_ne_zero).trans hR'R
   obtain ⟨r, g, hra, hg, hr⟩ := exists_analyticOnNhd_nonmonic_powerSubstitution
-    hU hR' d.factorial_ne_zero hfit (dvd_refl _) hF hdeg hdiscr hu hu0
+    hU d.factorial_ne_zero hfit (dvd_refl _) hF hdeg hdiscr hu hu0
     (fun b hb ↦ hlead b ⟨hb.1, hb.2.1⟩)
   obtain ⟨s, hsa, hscale, hnorm⟩ :=
     exists_analyticOnNhd_integralNormalization_eq_prod_X_sub_C_powerSubstitution

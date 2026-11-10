@@ -75,7 +75,7 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution_conj
           r (σ i) b = conj (r i (τ b.1, conj b.2))) ∧
         ∀ i b, b ∈ U ×ˢ ball 0 R' → g (σ i) b = conj (g i (τ b.1, conj b.2)) := by
   obtain ⟨r, g, hra, hga, hfac⟩ := exists_analyticOnNhd_nonmonic_powerSubstitution
-    hU hR' hn hR hdvd hF hdeg hdiscr hu hu0 hlc
+    hU hn hR hdvd hF hdeg hdiscr hu hu0 hlc
   let S := U ×ˢ (ball (0 : ℂ) R' \ {0})
   let T := U ×ˢ ball (0 : ℂ) R'
   let κ : E × ℂ → E × ℂ := fun b ↦ (τ b.1, conj b.2)
