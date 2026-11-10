@@ -166,14 +166,10 @@ theorem abv_coeff_hasseDeriv_le_two_pow_mul {S : Type*} [Semiring S] [PartialOrd
 /-- At a nonarchimedean absolute value the binomial coefficients of a Hasse derivative are at
 most `1`, so `v([X^m] ∂^d P) ≤ v([X^(m + d)] P)`. -/
 theorem abv_coeff_hasseDeriv_le_of_isNonarchimedean {S : Type*} [Semiring S] [LinearOrder S]
-    [IsOrderedRing S] [IsDomain S] {abv : AbsoluteValue R S} (hv : IsNonarchimedean abv)
-    (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
+    {abv : AbsoluteValue R S} (hv : IsNonarchimedean abv) (d m : σ →₀ ℕ) (P : MvPolynomial σ R) :
     abv ((hasseDeriv d P).coeff m) ≤ abv (P.coeff (m + d)) := by
-  rcases subsingleton_or_nontrivial R with _ | _
-  · simp [Subsingleton.elim ((hasseDeriv d P).coeff m) 0]
-  rw [hasseDeriv_coeff, abv.map_mul]
-  exact mul_le_of_le_one_left (abv.nonneg _)
-    (hv.apply_natCast_le_one (by simp) abv.map_one)
+  rw [hasseDeriv_coeff]
+  exact hv.nmul_le (by simp)
 
 /-- The `0`-th Hasse derivative is the identity. -/
 @[simp]

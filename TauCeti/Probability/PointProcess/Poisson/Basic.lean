@@ -84,11 +84,60 @@ theorem IsPoissonRandomMeasure.hasLaw (h : IsPoissonRandomMeasure P N Λ)
   exact ((isPoissonRandomMeasure_iff.mp h).2.1 1 (fun _ => A) (fun _ => ⟨hA, hfin⟩)
     (fun i j hij => False.elim (hij (Subsingleton.elim i j)))).2 0
 
+/-- A Poisson count on a measurable set of finite intensity is almost surely a natural
+number, including when the intensity of the set is zero. -/
+theorem IsPoissonRandomMeasure.ae_exists_eq_natCast (h : IsPoissonRandomMeasure P N Λ)
+    {A : Set X} (hA : MeasurableSet A) (hfin : Λ A < ∞) :
+    ∀ᵐ ω ∂P, ∃ n : ℕ, N ω A = n := by
+  have hm : MeasurableSet (Set.range (Nat.cast : ℕ → ℝ≥0∞)) :=
+    (Set.countable_range _).measurableSet
+  have hlaw := h.hasLaw hA hfin
+  have hmem : ∀ᵐ ω ∂P, N ω A ∈ Set.range (Nat.cast : ℕ → ℝ≥0∞) := by
+    apply (ae_map_iff hlaw.aemeasurable hm).1
+    rw [hlaw.map_eq]
+    exact ae_map_mem_range hm Measurable.of_discrete.aemeasurable
+  simpa only [Set.mem_range, eq_comm] using hmem
+
+/-- A count on a measurable set of finite intensity is almost surely finite. -/
+theorem IsPoissonRandomMeasure.ae_lt_top (h : IsPoissonRandomMeasure P N Λ)
+    {A : Set X} (hA : MeasurableSet A) (hfin : Λ A < ∞) :
+    ∀ᵐ ω ∂P, N ω A < ∞ := by
+  filter_upwards [h.ae_exists_eq_natCast hA hfin] with ω hω
+  obtain ⟨k, hk⟩ := hω
+  simp [hk]
+
 /-- A count on a measurable set of infinite intensity is almost surely infinite. -/
 theorem IsPoissonRandomMeasure.ae_eq_top (h : IsPoissonRandomMeasure P N Λ)
     {A : Set X} (hA : MeasurableSet A) (hΛ : Λ A = ∞) :
     ∀ᵐ ω ∂P, N ω A = ∞ :=
   (isPoissonRandomMeasure_iff.mp h).2.2 A hA hΛ
+
+/-- Counts of a Poisson random measure on any disjoint measurable family are independent.
+Sets of infinite intensity are allowed; their counts are almost surely infinite. -/
+theorem IsPoissonRandomMeasure.iIndepFun_eval (h : IsPoissonRandomMeasure P N Λ)
+    {ι : Type*} {A : ι → Set X} (hA : ∀ i, MeasurableSet (A i))
+    (hd : Pairwise (Disjoint on A)) : ProbabilityTheory.iIndepFun (fun i ω ↦ N ω (A i)) P := by
+  classical
+  apply iIndepFun_iff_finset.mpr
+  intro I
+  let e := Fintype.equivFin I
+  let B (j : Fin (Fintype.card I)) := if Λ (A (e.symm j)) < ∞ then A (e.symm j) else ∅
+  have hB j : MeasurableSet (B j) := by dsimp [B]; split_ifs <;> simp_all
+  have hfin j : Λ (B j) < ∞ := by dsimp [B]; split_ifs <;> simp_all
+  have hsub j : B j ⊆ A (e.symm j) := by dsimp [B]; split_ifs <;> simp
+  have hdB : Pairwise (Disjoint on B) := by
+    intro i j hij
+    exact (hd (by exact_mod_cast e.symm.injective.ne hij)).mono (hsub i) (hsub j)
+  let φ (j : Fin (Fintype.card I)) (x : ℝ≥0∞) :=
+    if Λ (A (e.symm j)) < ∞ then x else ∞
+  have hind := (h.iIndepFun hB hfin hdB).comp φ (fun j ↦ by
+    dsimp [φ]; split_ifs <;> fun_prop)
+  have heq j : (φ j ∘ fun ω ↦ N ω (B j)) =ᵐ[P] fun ω ↦ N ω (A (e.symm j)) := by
+    by_cases hj : Λ (A (e.symm j)) < ∞
+    · simp [φ, B, hj, Function.comp_def]
+    · filter_upwards [h.ae_eq_top (hA _) (not_lt_top_iff.mp hj)] with ω hω
+      simp [φ, hj, hω]
+  exact (hind.congr heq).of_precomp (g := e.symm) e.symm.surjective
 
 /-- The independent-count criterion forces the sample measure to be a probability measure. -/
 theorem IsPoissonRandomMeasure.isProbabilityMeasure (h : IsPoissonRandomMeasure P N Λ) :

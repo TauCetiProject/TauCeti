@@ -10,7 +10,8 @@ public import Mathlib.Analysis.Normed.Module.Basic
 /-!
 # Basic lemmas on normed scalar actions and modules
 
-This file collects elementary norm facts for scalar actions on seminormed additive groups:
+This file collects elementary facts about scalar actions on seminormed additive groups and real
+normed spaces:
 
 * `RingHomIsometric.intCastRingHom`: in a seminormed ring in which `ℤ` acts isometrically and
   `‖1‖ = 1`, such as `ℝ` or `ℂ`, `Int.castRingHom R` preserves norms, making lemmas stated for a
@@ -20,8 +21,12 @@ This file collects elementary norm facts for scalar actions on seminormed additi
   against positive weights `r i`, the combination `∑ i ∈ s, a i • u i` has norm at most
   `(∑ i ∈ s, ‖u i‖ / r i) * b`; in particular, strict-generator representations yield uniformly
   norm-bounded preimages along linear maps.
+* `TauCeti.norm_smul_sq_div_add_norm_smul_sq`: the ratio `‖u‖² / (‖u‖² + ‖v‖²)` is unchanged when
+  `u` and `v` are scaled by the same nonzero scalar.
 * `TauCeti.mul_norm_le_two_mul_norm_of_norm_sub_smul_le`: a vector within `K * a ^ 2` of the real
   multiple `a • v`, with `|a| * (2 * K) ≤ ‖v‖`, still has norm at least half of `|a| * ‖v‖`.
+* `IsOpen.diam_pos`: a nonempty bounded open set in a nontrivial real normed space has positive
+  diameter.
 -/
 
 public section
@@ -51,6 +56,15 @@ theorem norm_sum_smul_le_sum_div_mul {ι A E : Type*} [SeminormedAddGroup A]
           _ = ‖u i‖ / r i * b := by ring
     _ = (∑ i ∈ s, ‖u i‖ / r i) * b := (Finset.sum_mul s _ b).symm
 
+/-- The ratio `‖u‖² / (‖u‖² + ‖v‖²)` is unchanged when `u` and `v` are scaled by the same nonzero
+scalar. -/
+theorem norm_smul_sq_div_add_norm_smul_sq {𝕜 E F : Type*} [NormedDivisionRing 𝕜]
+    [SeminormedAddCommGroup E] [Module 𝕜 E] [NormSMulClass 𝕜 E] [SeminormedAddCommGroup F]
+    [Module 𝕜 F] [NormSMulClass 𝕜 F] (u : E) (v : F) {t : 𝕜} (ht : t ≠ 0) :
+    ‖t • u‖ ^ 2 / (‖t • u‖ ^ 2 + ‖t • v‖ ^ 2) = ‖u‖ ^ 2 / (‖u‖ ^ 2 + ‖v‖ ^ 2) := by
+  simp only [norm_smul, mul_pow, ← mul_add]
+  exact mul_div_mul_left _ _ (pow_ne_zero 2 (norm_ne_zero_iff.2 ht))
+
 /-- **A quadratic error cannot swallow the linear term.** If `z` lies within `K * a ^ 2` of the
 real multiple `a • v`, and `a` is small enough that `|a| * (2 * K) ≤ ‖v‖`, then `z` still inherits
 half of the length `|a| * ‖v‖` of that multiple. -/
@@ -66,5 +80,14 @@ theorem mul_norm_le_two_mul_norm_of_norm_sub_smul_le {E : Type*} [SeminormedAddC
     mul_nonneg (abs_nonneg a) (norm_nonneg v)]
 
 end TauCeti
+
+/-- A nonempty bounded open set in a nontrivial real normed space has positive diameter. -/
+theorem IsOpen.diam_pos {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Nontrivial E]
+    {s : Set E} (hs : IsOpen s) (hb : Bornology.IsBounded s) {x : E} (hx : x ∈ s) :
+    0 < Metric.diam s := by
+  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 hs x hx
+  calc 0 < 2 * r := by positivity
+    _ = Metric.diam (Metric.ball x r) := (Metric.diam_ball_eq x hr.le).symm
+    _ ≤ Metric.diam s := Metric.diam_mono hball hb
 
 end

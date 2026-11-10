@@ -37,7 +37,7 @@ noncomputable section
 
 open MeasureTheory Set
 
-namespace TauCeti
+namespace ContDiffOn
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
@@ -46,7 +46,7 @@ only on the quadrant. The integral of the exterior derivative is the sum over th
 `x i = 0` of `(-1) ^ (i + 1)` times the integral of the form over the face, evaluated on the
 remaining standard basis vectors. The exterior derivative and every face integrand are
 integrable. -/
-theorem _root_.ContDiffOn.integral_extDerivWithin_coordinate_quadrant {n : ℕ}
+theorem integral_extDerivWithin_coordinate_quadrant {n : ℕ}
     {ω : (Fin (n + 1) → ℝ) → (Fin (n + 1) → ℝ) [⋀^Fin n]→L[ℝ] F}
     (hω : ContDiffOn ℝ 1 ω (Ici 0)) (hc : HasCompactSupport ω) :
     IntegrableOn (fun x ↦ extDerivWithin ω (Ici 0) x (Pi.basisFun ℝ (Fin (n + 1)))) (Ici 0) ∧
@@ -62,7 +62,7 @@ theorem _root_.ContDiffOn.integral_extDerivWithin_coordinate_quadrant {n : ℕ}
   have hF : ContDiffOn ℝ 1 f Q := L.contDiff.comp_contDiffOn hω
   have hFc : HasCompactSupport f := hc.comp_left L.map_zero
   obtain ⟨hDi, hbi, hint⟩ := ContDiffOn.integral_divergence_coordinate_quadrant hF hFc
-  have huniq : UniqueDiffOn ℝ Q := uniqueDiffOn_pi_Ici 0
+  have huniq : UniqueDiffOn ℝ Q := TauCeti.uniqueDiffOn_pi_Ici 0
   have hD : EqOn (fun x ↦ ∑ i : Fin (n + 1),
       fderivWithin ℝ f Q x (Pi.single i 1) i)
       (fun x ↦ extDerivWithin ω Q x e) Q := by
@@ -86,4 +86,4 @@ theorem _root_.ContDiffOn.integral_extDerivWithin_coordinate_quadrant {n : ℕ}
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [hb, integral_smul, pow_succ, mul_neg_one, neg_smul]
 
-end TauCeti
+end ContDiffOn
