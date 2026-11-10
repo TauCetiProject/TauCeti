@@ -168,6 +168,7 @@ theorem circleLoop_surjective : Function.Surjective circleLoop := by
 
 /-- Under the identification of `S¹ ⊆ ℝ²` with the complex unit circle, the standard loop is
 `t ↦ exp(2πit)`. -/
+@[simp]
 theorem sphereHomeomorphCircle_circleLoop (t : Fin 1 → I) :
     EuclideanSpace.sphereHomeomorphCircle (circleLoop t) = Circle.exp (2 * π * t 0) := by
   rw [← Homeomorph.eq_symm_apply]

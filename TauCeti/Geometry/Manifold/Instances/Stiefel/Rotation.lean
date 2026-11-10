@@ -115,6 +115,7 @@ theorem stiefelRotationFamily_of_coe_eq_one (x : stiefel E 2) {z : sphere (0 : �
   simp [hz]
 
 /-- The Stiefel rotation family is continuous. -/
+@[fun_prop]
 theorem continuous_stiefelRotationFamily : Continuous (stiefelRotationFamily (E := E)) := by
   have hv (i : Fin 2) : Continuous fun x : stiefel E 2 × sphere (0 : ℂ) 1 => (x.1 : Fin 2 → E) i :=
     (continuous_apply i).comp (continuous_subtype_val.comp continuous_fst)

@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.Geometry.Manifold.Instances.Stiefel.Rotation
 public import TauCeti.Topology.MappingSpace.Sphere.LoopFamily
-import Mathlib.Topology.Subpath
+import Mathlib.AlgebraicTopology.FundamentalGroupoid.Basic
 
 /-!
 # The double loops of a sphere swept by orthonormal two-frames
@@ -47,8 +47,7 @@ degree of `τ` and the class of `α`.
 
 * `TauCeti.sphereMeridian`: the meridian `γ_w : p ⇝ -p`.
 * `TauCeti.meridianLoop`: the loop `γ_w · γ_u⁻¹` at `p`, the map `α`.
-* `TauCeti.meridianSegment`, `TauCeti.meridianContraction`: the initial segments of a meridian and
-  the path of loops `χ_u`.
+* `TauCeti.meridianContraction`: the path of loops `χ_u`.
 * `TauCeti.rotatingMeridianLoop`: the loop of loops `Γ_{u,v}`.
 * `TauCeti.stiefelDoubleLoop`: the double loop `σ_{p,u,v}`, with
   `TauCeti.continuous_stiefelDoubleLoop`.
@@ -124,6 +123,7 @@ theorem meridianLoop_def (x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 :
     meridianLoop p x = (sphereMeridian p x.2).trans (sphereMeridian p x.1).symm :=
   (rfl)
 
+@[fun_prop]
 theorem continuous_meridianLoop : Continuous (meridianLoop p) := by
   have h₁ : Continuous ↿(fun x : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 =>
       sphereMeridian p x.2) := continuous_fst.snd.sphereMeridian p continuous_snd
@@ -136,52 +136,28 @@ theorem continuous_meridianLoop : Continuous (meridianLoop p) := by
 
 /-! ### The path of loops `χ_u` -/
 
-/-- The initial segment of the meridian `γ_u` up to time `s`, run on the whole interval: the
-subpath of `γ_u` from `0` to `s`, starting at `p`. -/
-def meridianSegment (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (s : I) :
-    Path p (sphereMeridian p u s) :=
-  ((sphereMeridian p u).subpath 0 s).cast (sphereMeridian p u).source.symm rfl
-
-@[simp]
-theorem meridianSegment_apply (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (s t : I) :
-    meridianSegment p u s t = sphereMeridian p u (s * t) := by
-  change sphereMeridian p u (Set.Icc.convexComb 0 s t) = _
-  congr 1
-  ext
-  simp [mul_comm]
-
-/-- The loop at `p` running along the meridian `γ_u` up to time `s` and back. -/
-private def meridianBackForth (q : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × I) : Path p p :=
-  (meridianSegment p q.1 q.2).trans (meridianSegment p q.1 q.2).symm
-
-private theorem continuous_meridianBackForth : Continuous (meridianBackForth p) := by
-  have h₁ : Continuous ↿(fun q : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × I =>
-      meridianSegment p q.1 q.2) :=
-    continuous_fst.fst.sphereMeridian p (Set.Icc.continuous_convexComb_prod.comp
-      (continuous_const.prodMk (continuous_fst.snd.prodMk continuous_snd)))
-  have h₂ := Path.trans_continuous_family _ h₁ _ (Path.symm_continuous_family _ h₁)
-  exact Path.continuous_uncurry_iff.mp h₂
-
 /-- The **path of loops `χ_u`** from the constant loop at `p` to `γ_u · γ_u⁻¹`: at time `s` it
-runs along the meridian `γ_u` up to time `s` and back. -/
+runs along the meridian `γ_u` up to time `s` and back. It is the path in the loop space traced by
+Mathlib's homotopy `Path.Homotopy.reflTransSymm` from the constant loop to `γ_u · γ_u⁻¹`. -/
 def meridianContraction (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) :
     Path (Path.refl p) (meridianLoop p (u, u)) where
-  toFun s := meridianBackForth p (u, s)
-  continuous_toFun := (continuous_meridianBackForth p).comp (Continuous.prodMk_right u)
-  source' := by
-    ext t
-    simp [meridianBackForth, Path.trans_apply]
-  target' := by
-    ext t
-    simp [meridianBackForth, meridianLoop, Path.trans_apply]
+  toFun := (Path.Homotopy.reflTransSymm (sphereMeridian p u)).eval
+  continuous_toFun := Path.continuous_uncurry_iff.mp
+    (Path.Homotopy.reflTransSymm (sphereMeridian p u)).continuous
+  source' := Path.Homotopy.eval_zero _
+  target' := Path.Homotopy.eval_one _
 
+@[simp]
 theorem meridianContraction_apply (u : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1) (s : I) :
-    meridianContraction p u s = (meridianSegment p u s).trans (meridianSegment p u s).symm :=
+    meridianContraction p u s = (Path.Homotopy.reflTransSymm (sphereMeridian p u)).eval s :=
   (rfl)
 
 theorem continuous_meridianContraction :
     Continuous fun q : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 × I => meridianContraction p q.1 q.2 :=
-  continuous_meridianBackForth p
+  -- By definition, `Path.Homotopy.reflTransSymm γ` evaluates `γ` at `reflTransSymmAux`.
+  Path.continuous_uncurry_iff.mp <| continuous_fst.fst.sphereMeridian p
+    ((Path.Homotopy.continuous_reflTransSymmAux.comp
+      (continuous_fst.snd.prodMk continuous_snd)).subtype_mk _)
 
 /-! ### The loops of loops `Γ_{u,v}` and the double loops `σ_{p,u,v}` -/
 
@@ -193,9 +169,7 @@ def rotatingMeridianLoop (x : stiefel (ℝ ∙ (p : E))ᗮ 2) :
       (meridianLoop p (stiefelProj _ 2 0 x, stiefelProj _ 2 0 x)) where
   toFun s := meridianLoop p
     (stiefelRotationFamily (x, Circle.homeomorphSphere (Circle.exp (2 * π * s))))
-  continuous_toFun := (continuous_meridianLoop p).comp (continuous_stiefelRotationFamily.comp
-    ((Continuous.prodMk_right x).comp (Circle.homeomorphSphere.continuous.comp
-      (Circle.exp.continuous.comp (by fun_prop)))))
+  continuous_toFun := by fun_prop
   source' := by
     rw [stiefelRotationFamily_of_coe_eq_one]
     simp [Circle.coe_homeomorphSphere_apply]
@@ -203,16 +177,16 @@ def rotatingMeridianLoop (x : stiefel (ℝ ∙ (p : E))ᗮ 2) :
     rw [stiefelRotationFamily_of_coe_eq_one]
     simp [Circle.coe_homeomorphSphere_apply]
 
+@[simp]
 theorem rotatingMeridianLoop_apply (x : stiefel (ℝ ∙ (p : E))ᗮ 2) (s : I) :
     rotatingMeridianLoop p x s = meridianLoop p
       (stiefelRotationFamily (x, Circle.homeomorphSphere (Circle.exp (2 * π * s)))) :=
   (rfl)
 
 theorem continuous_rotatingMeridianLoop :
-    Continuous fun q : stiefel (ℝ ∙ (p : E))ᗮ 2 × I => rotatingMeridianLoop p q.1 q.2 :=
-  (continuous_meridianLoop p).comp (continuous_stiefelRotationFamily.comp
-    (continuous_fst.prodMk (Circle.homeomorphSphere.continuous.comp
-      (Circle.exp.continuous.comp (by fun_prop)))))
+    Continuous fun q : stiefel (ℝ ∙ (p : E))ᗮ 2 × I => rotatingMeridianLoop p q.1 q.2 := by
+  simp only [rotatingMeridianLoop_apply]
+  fun_prop
 
 /-- The **double loop `σ_{p,u,v}`** of Barraud–Damian–Humilière–Oancea, for an orthonormal pair
 `x = (u, v)` of unit tangent vectors of the sphere at `p`: the loop of loops `Γ_{u,v}`
@@ -260,6 +234,7 @@ def meridianLoopRotation : C(stiefel (ℝ ∙ (p : E))ᗮ 2 × Sphere1, Path p p
     (continuous_fst.prodMk (Circle.homeomorphSphere.continuous.comp
       (EuclideanSpace.sphereHomeomorphCircle.continuous.comp continuous_snd))))
 
+@[simp]
 theorem meridianLoopRotation_apply (x : stiefel (ℝ ∙ (p : E))ᗮ 2) (z : Sphere1) :
     meridianLoopRotation p (x, z) = meridianLoop p (stiefelRotationFamily
       (x, Circle.homeomorphSphere (EuclideanSpace.sphereHomeomorphCircle z))) :=

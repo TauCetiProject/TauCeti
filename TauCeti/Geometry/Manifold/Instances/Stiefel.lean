@@ -286,6 +286,7 @@ theorem coe_stiefelProj (i : Fin k) (v : stiefel E k) : (stiefelProj E k i v : E
 variable {E k} in
 /-- The projection of a frame to its `i`th vector is continuous, for every real inner product
 space. -/
+@[fun_prop]
 theorem continuous_stiefelProj (i : Fin k) : Continuous (stiefelProj E k i) :=
   continuous_induced_rng.2 ((continuous_apply i).comp continuous_subtype_val)
 
