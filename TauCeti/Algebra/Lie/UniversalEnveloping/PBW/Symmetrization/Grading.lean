@@ -33,9 +33,9 @@ variable {Γ : Type*} [AddCommMonoid Γ] (R : Type) (L : Type*)
 corresponding piece of the enveloping algebra. This containment does not require the
 pieces of the original module to form a decomposition. -/
 theorem pbwSymmetrizationMap_totalDegreeSubmodule_le (n : Γ) :
-    TauCeti.SymmetricAlgebra.totalDegreeSubmodule ℒ n ≤
+    SymmetricAlgebra.totalDegreeSubmodule ℒ n ≤
       (homogeneousSubmodule ℒ n).comap (pbwSymmetrizationMap R L) := by
-  rw [TauCeti.SymmetricAlgebra.totalDegreeSubmodule_le_iff]
+  rw [SymmetricAlgebra.totalDegreeSubmodule_le_iff]
   intro l hl
   rw [Submodule.mem_comap]
   have hprod : (l.map (fun x => SymmetricAlgebra.ι R L (x.2 : L))).prod =
@@ -63,11 +63,11 @@ gradings of the symmetric and enveloping algebras. -/
 @[simp]
 theorem pbwSymmetrizationMap_decompose (p : SymmetricAlgebra R L) (n : Γ) :
     pbwSymmetrizationMap R L
-      (DirectSum.decompose (TauCeti.SymmetricAlgebra.totalDegreeSubmodule ℒ) p n) =
+      (DirectSum.decompose (SymmetricAlgebra.totalDegreeSubmodule ℒ) p n) =
       (DirectSum.decompose (homogeneousSubmodule ℒ) (pbwSymmetrizationMap R L p) n :
         UniversalEnvelopingAlgebra R L) := by
   exact DirectSum.map_decompose_shift
-    (TauCeti.SymmetricAlgebra.totalDegreeSubmodule ℒ) (homogeneousSubmodule ℒ)
+    (SymmetricAlgebra.totalDegreeSubmodule ℒ) (homogeneousSubmodule ℒ)
     (pbwSymmetrizationMap R L).toAddMonoidHom id Function.injective_id
     (fun n _ hx => pbwSymmetrizationMap_totalDegreeSubmodule_le R L ℒ n hx) n p
 
