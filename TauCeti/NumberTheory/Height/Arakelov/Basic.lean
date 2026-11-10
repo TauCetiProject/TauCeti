@@ -188,8 +188,9 @@ theorem arakelovMulHeight_eq {ι : Type*} [Finite ι] {y : ι → K} (hy : y ≠
     simpa [one_div] using Real.rpow_inv_natCast_pow
       (Real.iSup_nonneg_of_nonnegHomClass v _) hD
 
-/-- For a nonzero integral tuple, multiplying its relative Euclidean height by the norm of
-its coordinate ideal leaves precisely the archimedean Euclidean factors. -/
+/-- For an integral tuple, multiplying its relative Euclidean height by the norm of its
+coordinate ideal leaves precisely the archimedean Euclidean factors. Both sides vanish when the
+tuple is zero. -/
 theorem arakelovMulHeight_mul_absNorm_span_range {ι : Type*} [Finite ι]
     (y : ι → 𝓞 K) :
     arakelovMulHeight (fun i ↦ (y i : K)) * (Ideal.span (Set.range y)).absNorm =
