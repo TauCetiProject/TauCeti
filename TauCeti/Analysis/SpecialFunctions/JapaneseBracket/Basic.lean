@@ -46,6 +46,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
 
 * `TauCeti.one_add_norm_sq_rpow_mul_norm_le`: one power of `‖x‖` costs one order of the
   Japanese bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
+* `TauCeti.one_add_mul_norm_pow_le`: the linear weight `(1 + c ‖x‖) ^ i` is at most
+  `(1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
 * `TauCeti.integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq`,
@@ -76,6 +78,18 @@ theorem one_add_norm_sq_rpow_mul_norm_le {E : Type*} [NormedAddCommGroup E] (x :
   rw [add_div, Real.rpow_add (by positivity), ← Real.sqrt_eq_rpow]
   gcongr
   exact Real.le_sqrt_of_sq_le (by linarith)
+
+/-- A linear weight is dominated by the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
+`(1 + c ‖x‖) ^ i ≤ (1 + c) ^ i ⟨x⟩ ^ i` for `c ≥ 0`. -/
+theorem one_add_mul_norm_pow_le {E : Type*} [NormedAddCommGroup E] {c : ℝ} (hc : 0 ≤ c) (x : E)
+    (i : ℕ) : (1 + c * ‖x‖) ^ i ≤ (1 + c) ^ i * (1 + ‖x‖ ^ 2) ^ ((i : ℝ) / 2) := by
+  have hle : 1 + c * ‖x‖ ≤ (1 + c) * √(1 + ‖x‖ ^ 2) := by
+    have h1 : 1 ≤ √(1 + ‖x‖ ^ 2) := Real.one_le_sqrt.2 (by nlinarith [sq_nonneg ‖x‖])
+    have h2 : ‖x‖ ≤ √(1 + ‖x‖ ^ 2) := Real.le_sqrt_of_sq_le (by linarith)
+    nlinarith
+  rw [div_eq_mul_one_div (i : ℝ), mul_comm (i : ℝ), Real.rpow_mul (by positivity),
+    Real.rpow_natCast, ← Real.sqrt_eq_rpow, ← mul_pow]
+  exact pow_le_pow_left₀ (by positivity) hle i
 
 variable {V : Type*} [NormedAddCommGroup V] [MeasurableSpace V] [BorelSpace V]
 

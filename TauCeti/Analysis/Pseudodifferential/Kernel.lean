@@ -14,6 +14,7 @@ import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.Fourier.FourierTransformDeriv
 import TauCeti.Analysis.SpecialFunctions.Exp.Deriv
+import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Basic
 
 /-!
 # The kernel of the Kohn–Nirenberg quantization
@@ -206,6 +207,24 @@ theorem continuous_quantizationKernel (ha : Continuous a) {m : ℝ} (hm : m < -f
     (hweight.const_mul C)
     (ae_of_all _ fun ζ ↦ (hcont.comp (continuous_id.prodMk continuous_const)).continuousAt)
 
+/-- The derivatives of the slice `x ↦ f (x, y)` of a `C^k` function `f` on a product are those of
+`f`, restricted to the first factor. -/
+private theorem iteratedFDeriv_comp_prodMk_const {X Y Z : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y] [NormedAddCommGroup Z]
+    [NormedSpace ℝ Z] {f : X × Y → Z} {k : ℕ} (hf : ContDiff ℝ k f) (y : Y) {i : ℕ} (hi : i ≤ k)
+    (x : X) :
+    iteratedFDeriv ℝ i (fun x ↦ f (x, y)) x =
+      (iteratedFDeriv ℝ i f (x, y)).compContinuousLinearMap
+        fun _ ↦ ContinuousLinearMap.inl ℝ X Y := by
+  have h : (fun x ↦ f (x, y)) =
+      (fun q : X × Y ↦ f (q + (0, y))) ∘ ContinuousLinearMap.inl ℝ X Y := by
+    funext x
+    simp
+  have hg : ContDiff ℝ k fun q : X × Y ↦ f (q + (0, y)) := hf.comp (contDiff_id.add contDiff_const)
+  rw [h, ContinuousLinearMap.iteratedFDeriv_comp_right _ hg _ (mod_cast hi),
+    iteratedFDeriv_comp_add_right]
+  simp
+
 /-- The phase `(x, y) ↦ 2πi ⟪ζ, x - y⟫` of the kernel integrand at the frequency `ζ`, a real-linear
 map to `ℂ` of norm at most `2 ‖2πζ‖`. -/
 private def kernelPhase (ζ : E) : E × E →L[ℝ] ℂ :=
@@ -234,6 +253,55 @@ private theorem norm_kernelPhase_le (ζ : E) : ‖kernelPhase ζ‖ ≤ 2 * ‖(
         gcongr; exact abs_real_inner_le_norm _ _
     _ ≤ 2 * π * (‖ζ‖ * (2 * ‖p‖)) := by gcongr
     _ = 2 * (2 * π * ‖ζ‖) * ‖p‖ := by ring
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- **Leibniz bound on the kernel integrand.** If the position derivatives of order at most `k` of
+`a` satisfy `‖D_x^i a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` for `x ∈ s`, then the `i`-th derivative in `p = (x, y)`
+of `exp(2πi ⟪ζ, x - y⟫) a(x, 2πζ)` is at most `C (1 + 2 ‖2πζ‖) ^ i ⟨2πζ⟩ ^ m` for `x ∈ s`. -/
+private theorem norm_iteratedFDeriv_kernelIntegrand_le {a : E × E → V →L[ℂ] W} {k : ℕ}
+    {m C : ℝ} (ha : ContDiff ℝ k a) {s : Set E}
+    (hC : ∀ i ≤ k, ∀ x ∈ s, ∀ ξ,
+      ‖iteratedFDeriv ℝ i (fun y ↦ a (y, ξ)) x‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
+    (ζ : E) {p : E × E} (hp : p.1 ∈ s) {i : ℕ} (hi : i ≤ k) :
+    ‖iteratedFDeriv ℝ i (fun p ↦ Complex.exp (kernelPhase ζ p) • a (p.1, (2 * π) • ζ)) p‖ ≤
+      C * (1 + 2 * ‖(2 * π) • ζ‖) ^ i * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) := by
+  set ξ := (2 * π) • ζ
+  have he : ContDiff ℝ i fun p ↦ Complex.exp (kernelPhase ζ p) :=
+    (kernelPhase ζ).contDiff.cexp
+  have hg : ContDiff ℝ i fun y : E ↦ a (y, ξ) :=
+    (ha.of_le (mod_cast hi)).comp (contDiff_id.prodMk contDiff_const)
+  -- The `j`-th derivative of the phase factor is at most `(2 ‖ξ‖) ^ j`.
+  have he_le (j : ℕ) : ‖iteratedFDeriv ℝ j (fun p ↦ Complex.exp (kernelPhase ζ p)) p‖ ≤
+      (2 * ‖ξ‖) ^ j := by
+    refine ((kernelPhase ζ).norm_iteratedFDeriv_cexp_comp_le j p).trans ?_
+    rw [exp_kernelPhase, Circle.norm_coe, one_mul]
+    exact pow_le_pow_left₀ (norm_nonneg _) (norm_kernelPhase_le ζ) j
+  -- The `r`-th derivative of the coefficient factor is at most `C ⟨ξ⟩ ^ m`.
+  have hg_le (r : ℕ) (hr : r ≤ i) : ‖iteratedFDeriv ℝ r (fun p : E × E ↦ a (p.1, ξ)) p‖ ≤
+      C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+    have hcomp := (ContinuousLinearMap.fst ℝ E E).iteratedFDeriv_comp_right hg p
+      (i := r) (mod_cast hr)
+    simp only [Function.comp_def, ContinuousLinearMap.coe_fst'] at hcomp
+    rw [hcomp]
+    refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
+    rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+    refine (mul_le_of_le_one_right (norm_nonneg _) (pow_le_one₀ (norm_nonneg _)
+      (ContinuousLinearMap.norm_fst_le ℝ E E))).trans ?_
+    exact hC r (hr.trans hi) p.1 hp ξ
+  refine (norm_iteratedFDeriv_smul_le he (hg.comp contDiff_fst) p le_rfl).trans ?_
+  calc ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) *
+        ‖iteratedFDeriv ℝ j (fun p ↦ Complex.exp (kernelPhase ζ p)) p‖ *
+        ‖iteratedFDeriv ℝ (i - j) (fun p : E × E ↦ a (p.1, ξ)) p‖
+      ≤ ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * (2 * ‖ξ‖) ^ j *
+        (C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
+        gcongr with j hj
+        · exact he_le j
+        · exact hg_le (i - j) (Nat.sub_le i j)
+    _ = C * (1 + 2 * ‖ξ‖) ^ i * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+        rw [← Finset.sum_mul, show 1 + 2 * ‖ξ‖ = 2 * ‖ξ‖ + 1 by ring, add_pow]
+        simp only [one_pow, mul_one]
+        rw [Finset.sum_congr rfl fun j _ ↦ mul_comm ((i.choose j : ℝ)) ((2 * ‖ξ‖) ^ j)]
+        ring
 
 /-- **Smoothness of the kernel.** Let `a` be a `C^k` coefficient whose position derivatives of
 order at most `k` satisfy `‖D_x^i a(x, ξ)‖ ≤ C_K ⟨ξ⟩ ^ m`, uniformly for `x` in each compact set
@@ -269,64 +337,6 @@ theorem contDiff_quantizationKernel_of_bound {a : E × E → V →L[ℂ] W} {k :
   obtain ⟨C, hC⟩ := hC _ (isCompact_closedBall p₀.1 1)
   have hs : IsOpen (Prod.fst ⁻¹' Metric.ball p₀.1 1 : Set (E × E)) :=
     Metric.isOpen_ball.preimage continuous_fst
-  -- The derivatives of the slice `p ↦ F p ζ` are those of the jointly smooth integrand.
-  have hslice_deriv (ζ : E) (i : ℕ) (hi : i ≤ k) (p : E × E) :
-      iteratedFDeriv ℝ i (F · ζ) p = (iteratedFDeriv ℝ i (fun q : (E × E) × E ↦ F q.1 q.2)
-        (p, ζ)).compContinuousLinearMap fun _ ↦ ContinuousLinearMap.inl ℝ (E × E) E := by
-    have h : (F · ζ) = (fun q : (E × E) × E ↦ F (q + (0, ζ)).1 (q + (0, ζ)).2) ∘
-        ContinuousLinearMap.inl ℝ (E × E) E := by
-      funext p
-      simp
-    have hg : ContDiff ℝ k fun q : (E × E) × E ↦ F (q + (0, ζ)).1 (q + (0, ζ)).2 :=
-      hΦ.comp (contDiff_id.add contDiff_const)
-    have hshift := iteratedFDeriv_comp_add_right (𝕜 := ℝ) (f := fun q : (E × E) × E ↦ F q.1 q.2)
-      i (0, ζ) (ContinuousLinearMap.inl ℝ (E × E) E p)
-    rw [h, ContinuousLinearMap.iteratedFDeriv_comp_right _ hg _ (mod_cast hi), hshift]
-    simp
-  -- The bound on the derivatives of the slices, for positions in `closedBall p₀.1 1`.
-  have hbound (ζ : E) (p : E × E) (hp : p.1 ∈ Metric.closedBall p₀.1 1) (i : ℕ) (hi : i ≤ k) :
-      ‖iteratedFDeriv ℝ i (F · ζ) p‖ ≤
-        C * (1 + 2 * ‖(2 * π) • ζ‖) ^ i * (1 + ‖(2 * π) • ζ‖ ^ 2) ^ (m / 2) := by
-    set ξ := (2 * π) • ζ
-    have he : ContDiff ℝ i fun p ↦ Complex.exp (kernelPhase ζ p) :=
-      (kernelPhase ζ).contDiff.cexp
-    have hg : ContDiff ℝ i fun y : E ↦ a (y, ξ) :=
-      (ha.of_le (mod_cast hi)).comp (contDiff_id.prodMk contDiff_const)
-    have hF' : (F · ζ) = fun p ↦ Complex.exp (kernelPhase ζ p) • a (p.1, ξ) := by
-      rw [hF]
-    -- The `j`-th derivative of the phase factor is at most `(2 ‖ξ‖) ^ j`.
-    have he_le (j : ℕ) : ‖iteratedFDeriv ℝ j (fun p ↦ Complex.exp (kernelPhase ζ p)) p‖ ≤
-        (2 * ‖ξ‖) ^ j := by
-      refine ((kernelPhase ζ).norm_iteratedFDeriv_cexp_comp_le j p).trans ?_
-      rw [exp_kernelPhase, Circle.norm_coe, one_mul]
-      exact pow_le_pow_left₀ (norm_nonneg _) (norm_kernelPhase_le ζ) j
-    -- The `r`-th derivative of the coefficient factor is at most `C ⟨ξ⟩ ^ m`.
-    have hg_le (r : ℕ) (hr : r ≤ i) : ‖iteratedFDeriv ℝ r (fun p : E × E ↦ a (p.1, ξ)) p‖ ≤
-        C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-      have hcomp := (ContinuousLinearMap.fst ℝ E E).iteratedFDeriv_comp_right hg p
-        (i := r) (mod_cast hr)
-      simp only [Function.comp_def, ContinuousLinearMap.coe_fst'] at hcomp
-      rw [hcomp]
-      refine (ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _).trans ?_
-      rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
-      refine (mul_le_of_le_one_right (norm_nonneg _) (pow_le_one₀ (norm_nonneg _)
-        (ContinuousLinearMap.norm_fst_le ℝ E E))).trans ?_
-      exact hC r (hr.trans hi) p.1 hp ξ
-    rw [hF']
-    refine (norm_iteratedFDeriv_smul_le he (hg.comp contDiff_fst) p le_rfl).trans ?_
-    calc ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) *
-          ‖iteratedFDeriv ℝ j (fun p ↦ Complex.exp (kernelPhase ζ p)) p‖ *
-          ‖iteratedFDeriv ℝ (i - j) (fun p : E × E ↦ a (p.1, ξ)) p‖
-        ≤ ∑ j ∈ Finset.range (i + 1), (i.choose j : ℝ) * (2 * ‖ξ‖) ^ j *
-          (C * (1 + ‖ξ‖ ^ 2) ^ (m / 2)) := by
-          gcongr with j hj
-          · exact he_le j
-          · exact hg_le (i - j) (Nat.sub_le i j)
-      _ = C * (1 + 2 * ‖ξ‖) ^ i * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-          rw [← Finset.sum_mul, show 1 + 2 * ‖ξ‖ = 2 * ‖ξ‖ + 1 by ring, add_pow]
-          simp only [one_pow, mul_one]
-          rw [Finset.sum_congr rfl fun j _ ↦ mul_comm ((i.choose j : ℝ)) ((2 * ‖ξ‖) ^ j)]
-          ring
   have hT := hasFTaylorSeriesUpToOn_integral_of_le_bound (μ := volume) (F := F)
     (s := Prod.fst ⁻¹' Metric.ball p₀.1 1) (n := (k : ℕ∞))
     (p := fun p ζ ↦ ftaylorSeries ℝ (F · ζ) p)
@@ -342,15 +352,17 @@ theorem contDiff_quantizationKernel_of_bound {a : E × E → V →L[ℂ] W} {k :
         (ContinuousMultilinearMap ℝ (fun _ : Fin i ↦ E × E) (V →L[ℂ] W)) :=
       @PseudoEMetricSpace.pseudoMetrizableSpace
         (ContinuousMultilinearMap ℝ (fun _ : Fin i ↦ E × E) (V →L[ℂ] W)) _
-    simp only [ftaylorSeries, hslice_deriv _ i hi' p]
+    simp only [ftaylorSeries, iteratedFDeriv_comp_prodMk_const hΦ _ hi']
     exact ((ContinuousMultilinearMap.compContinuousLinearMapL _).continuous.comp
       ((hΦ.continuous_iteratedFDeriv (mod_cast hi')).comp
         (continuous_const.prodMk continuous_id))).aestronglyMeasurable
-  · exact hbound ζ p (Metric.ball_subset_closedBall hp) i (by exact_mod_cast hi)
+  · subst hF
+    exact norm_iteratedFDeriv_kernelIntegrand_le ha (fun i hi ↦ hC i hi) ζ
+      (Metric.ball_subset_closedBall hp) (by exact_mod_cast hi)
   · -- integrability: `(1 + 2 ‖ξ‖) ^ i ⟨ξ⟩ ^ m ≤ 3 ^ i ⟨ξ⟩ ^ (m + i)` with `m + i < -n`
     have hi' : (i : ℝ) ≤ k := by exact_mod_cast hi
     have hint := (integrable_rpow_neg_one_add_norm_sq (μ := (volume : Measure E))
-      (r := -(m + i)) (by linarith)).const_mul (|C| * 3 ^ i)
+      (r := -(m + i)) (by linarith)).const_mul (|C| * (1 + 2) ^ i)
     refine (Integrable.mono' (f := fun ξ : E ↦ C * (1 + 2 * ‖ξ‖) ^ i * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
       hint ?_ (ae_of_all _ fun ξ ↦ ?_)).comp_smul two_pi_pos.ne'
     · have hcont : Continuous fun ξ : E ↦ C * (1 + 2 * ‖ξ‖) ^ i * (1 + ‖ξ‖ ^ 2) ^ (m / 2) :=
@@ -358,21 +370,14 @@ theorem contDiff_quantizationKernel_of_bound {a : E × E → V →L[ℂ] W} {k :
           Or.inl (by positivity))
       exact hcont.aestronglyMeasurable
     · have hw : 0 < 1 + ‖ξ‖ ^ 2 := by positivity
-      have hsqrt : 1 + 2 * ‖ξ‖ ≤ 3 * (1 + ‖ξ‖ ^ 2) ^ (1 / 2 : ℝ) := by
-        rw [← Real.sqrt_eq_rpow]
-        have h1 : 1 ≤ √(1 + ‖ξ‖ ^ 2) := Real.one_le_sqrt.2 (by nlinarith [sq_nonneg ‖ξ‖])
-        have h2 : ‖ξ‖ ≤ √(1 + ‖ξ‖ ^ 2) := Real.le_sqrt_of_sq_le (by linarith)
-        linarith
-      have hpow : (1 + 2 * ‖ξ‖) ^ i ≤ 3 ^ i * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) := by
-        rw [div_eq_mul_one_div (i : ℝ), mul_comm (i : ℝ), Real.rpow_mul hw.le, Real.rpow_natCast,
-          ← mul_pow]
-        exact pow_le_pow_left₀ (by positivity) hsqrt i
       rw [norm_mul, norm_mul, Real.norm_eq_abs, Real.norm_of_nonneg (by positivity),
         Real.norm_of_nonneg (by positivity), neg_neg, mul_assoc, mul_assoc |C|]
       refine mul_le_mul_of_nonneg_left ?_ (abs_nonneg C)
       calc (1 + 2 * ‖ξ‖) ^ i * (1 + ‖ξ‖ ^ 2) ^ (m / 2)
-          ≤ 3 ^ i * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by gcongr
-        _ = 3 ^ i * (1 + ‖ξ‖ ^ 2) ^ ((m + i) / 2) := by
+          ≤ (1 + 2) ^ i * (1 + ‖ξ‖ ^ 2) ^ ((i : ℝ) / 2) * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+            gcongr
+            exact one_add_mul_norm_pow_le zero_le_two ξ i
+        _ = (1 + 2) ^ i * (1 + ‖ξ‖ ^ 2) ^ ((m + i) / 2) := by
           rw [mul_assoc, ← Real.rpow_add hw]
           ring_nf
 
@@ -592,6 +597,7 @@ theorem quantizationKernel_iteratedFrequencyLaplacian (a : Symbol n V W m) (hm :
   | succ N ih =>
     rw [coefficient_iteratedFrequencyLaplacian_succ,
       quantizationKernel_frequencyLaplacian _ (by linarith), ih, smul_smul, ← pow_succ']
+
 /-- **Kernel of an iterated frequency derivative.** For a symbol of order `m < -n`, the kernel of
 `∂_{ξ_j}^k a` is `(-i (x - y)_j)^k K_a(x, y)`. -/
 theorem quantizationKernel_mixedDeriv_replicate (a : Symbol n V W m) (hm : m < -n) (j : Fin n)

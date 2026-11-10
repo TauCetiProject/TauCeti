@@ -72,6 +72,18 @@ private theorem sub_two_mul_floor_add_one_lt (n : ℕ) (m : ℝ) :
   push_cast
   linarith
 
+/-- The multiplier `(-‖x - y‖²)ᴺ` does not vanish off the diagonal. -/
+private theorem neg_norm_sub_sq_pow_ne_zero {x y : CoordinateSpace n} (hxy : x ≠ y) (N : ℕ) :
+    (-‖x - y‖ ^ 2) ^ N ≠ 0 :=
+  pow_ne_zero N (neg_ne_zero.2 (pow_ne_zero 2 (norm_ne_zero_iff.2 (sub_ne_zero.2 hxy))))
+
+/-- The multiplier `(x, y) ↦ (-‖x - y‖²)⁻ᴺ` is smooth off the diagonal. -/
+private theorem contDiffOn_inv_neg_norm_sub_sq_pow (N : ℕ) :
+    ContDiffOn ℝ ∞ (fun p : CoordinateSpace n × CoordinateSpace n ↦ ((-‖p.1 - p.2‖ ^ 2) ^ N)⁻¹)
+      {p | p.1 ≠ p.2} :=
+  (((contDiff_norm_sq ℝ).comp (contDiff_fst.sub contDiff_snd)).neg.pow N).contDiffOn.inv
+    fun _ hp ↦ neg_norm_sub_sq_pow_ne_zero hp N
+
 /-- The kernel `K_a(x, y)` of the quantization of a symbol `a` of order `m`, off the diagonal
 `x = y`. For any `N` with `m - 2N < -n`, the symbol `Δ_ξ^N a` has an absolutely convergent kernel,
 and `K_a(x, y) = (-‖x - y‖²)⁻ᴺ K_{Δ_ξ^N a}(x, y)` (`TauCeti.Symbol.offDiagonalKernel_eq`); when
@@ -97,11 +109,9 @@ private theorem inv_smul_quantizationKernel_iteratedFrequencyLaplacian_add (a : 
         quantizationKernel (iteratedFrequencyLaplacian (N + M) a).coefficient x y =
       ((-‖x - y‖ ^ 2) ^ N)⁻¹ •
         quantizationKernel (iteratedFrequencyLaplacian N a).coefficient x y := by
-  have hr : -‖x - y‖ ^ 2 ≠ 0 :=
-    neg_ne_zero.2 (pow_ne_zero 2 (norm_ne_zero_iff.2 (sub_ne_zero.2 hxy)))
   rw [coefficient_iteratedFrequencyLaplacian_add,
     quantizationKernel_iteratedFrequencyLaplacian _ hN, smul_smul, pow_add, mul_inv,
-    mul_assoc, inv_mul_cancel₀ (pow_ne_zero M hr), mul_one]
+    mul_assoc, inv_mul_cancel₀ (neg_norm_sub_sq_pow_ne_zero hxy M), mul_one]
 
 /-- **Kernel formula off the diagonal.** For every `N` with `m - 2N < -n` and `x ≠ y`, the kernel
 of `a` is `(-‖x - y‖²)⁻ᴺ K_{Δ_ξ^N a}(x, y)`. -/
@@ -130,11 +140,7 @@ theorem contDiffOn_offDiagonalKernel (a : Symbol n V W m) :
   -- Use `N` Laplacians, with `m - 2N + k < -n`, so that the kernel of `Δ_ξ^N a` is `C^k`.
   have hN := sub_two_mul_floor_add_one_lt n (m + k)
   set N := ⌊(m + k + n) / 2⌋₊ + 1
-  have h₁ : ContDiffOn ℝ k (fun p : CoordinateSpace n × CoordinateSpace n ↦
-      ((-‖p.1 - p.2‖ ^ 2) ^ N)⁻¹) {p | p.1 ≠ p.2} :=
-    (((contDiff_norm_sq ℝ).comp (contDiff_fst.sub contDiff_snd)).neg.pow N).contDiffOn.inv
-      fun p hp ↦ pow_ne_zero _ (neg_ne_zero.2 (pow_ne_zero 2
-        (norm_ne_zero_iff.2 (sub_ne_zero.2 hp))))
+  have h₁ := (contDiffOn_inv_neg_norm_sub_sq_pow (n := n) N).of_le (mod_cast le_top : (k : ℕ∞) ≤ ∞)
   have h₂ := ((iteratedFrequencyLaplacian N a).contDiff_quantizationKernel k
     (by linarith)).contDiffOn (s := {p | p.1 ≠ p.2})
   exact (h₁.smul h₂).congr fun p hp ↦ offDiagonalKernel_eq a (by linarith) hp
@@ -165,9 +171,8 @@ theorem quantizeSchwartzValue_eq_integral_offDiagonalKernel [CompleteSpace V] [C
   -- `w = (-‖x - ·‖²)⁻ᴺ u` is smooth, since `u` vanishes near `x`, and compactly supported.
   set g : CoordinateSpace n → ℝ := fun y ↦ ((-‖x - y‖ ^ 2) ^ N)⁻¹
   have hg : ContDiffOn ℝ ∞ g {y | y ≠ x} :=
-    (((contDiff_norm_sq ℝ).comp (contDiff_const.sub contDiff_id)).neg.pow N).contDiffOn.inv
-      fun y hy ↦ pow_ne_zero _ (neg_ne_zero.2 (pow_ne_zero 2
-        (norm_ne_zero_iff.2 (sub_ne_zero.2 (Ne.symm hy)))))
+    (contDiffOn_inv_neg_norm_sub_sq_pow (n := n) N).comp (s := {y | y ≠ x})
+      (f := fun y ↦ (x, y)) (contDiff_const.prodMk contDiff_id).contDiffOn fun _ hy ↦ Ne.symm hy
   have hw_smooth : ContDiff ℝ ∞ fun y ↦ g y • u y := by
     refine contDiff_iff_contDiffAt.2 fun y ↦ ?_
     by_cases hy : y ∈ tsupport u
@@ -187,8 +192,7 @@ theorem quantizeSchwartzValue_eq_integral_offDiagonalKernel [CompleteSpace V] [C
     rw [SchwartzMap.smulLeftCLM_apply_apply htg, hw, smul_smul]
     by_cases hy : y = x
     · rw [hy, hux x hx, smul_zero]
-    · rw [mul_inv_cancel₀ (pow_ne_zero _ (neg_ne_zero.2 (pow_ne_zero 2
-        (norm_ne_zero_iff.2 (sub_ne_zero.2 (Ne.symm hy)))))), one_smul]
+    · rw [mul_inv_cancel₀ (neg_norm_sub_sq_pow_ne_zero (Ne.symm hy) N), one_smul]
   conv_lhs => rw [← hwu]
   rw [← quantizeSchwartzValue_iteratedFrequencyLaplacian,
     quantizeSchwartzValue_eq_integral_quantizationKernel

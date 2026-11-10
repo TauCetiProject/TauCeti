@@ -910,6 +910,14 @@ theorem HasCompactSpatialSupport.memLp_quantizeSchwartzValue
 
 /-! ### Multiplication of the input by the displacement -/
 
+/-- A coordinate `y ↦ (x - y)_j` of the displacement from `x` has temperate growth. -/
+private theorem hasTemperateGrowth_sub_apply (x : CoordinateSpace n) (j : Fin n) :
+    (fun y : CoordinateSpace n ↦ (x - y) j).HasTemperateGrowth := by
+  convert (Function.HasTemperateGrowth.const (x j)).sub
+    (EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).hasTemperateGrowth using 1
+  funext y
+  simp
+
 /-- **Frequency derivatives and multiplication by the displacement.** For a symbol `a` and a
 Schwartz function `w`, `Op(∂_{ξ_j} a) w (x) = -i Op(a) ((x - ·)_j w) (x)`. This is the operator form
 of `TauCeti.Symbol.quantizationKernel_frequencyDeriv`, valid for symbols of every order, and a
@@ -922,16 +930,12 @@ theorem quantizeSchwartzValue_frequencyDeriv (a : Symbol n V W m) (j : Fin n)
   obtain ⟨C, hC⟩ := a.exists_norm_coefficient_le {x} isCompact_singleton
   have htg : (fun y : CoordinateSpace n ↦ y j).HasTemperateGrowth :=
     (EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).hasTemperateGrowth
-  have htg' : (fun y : CoordinateSpace n ↦ (x - y) j).HasTemperateGrowth := by
-    convert (Function.HasTemperateGrowth.const (x j)).sub htg using 1
-    funext y
-    simp
   -- `(x - y)_j w = x_j w - y_j w`
   have hM : SchwartzMap.smulLeftCLM V (fun y : CoordinateSpace n ↦ (x - y) j) w =
       (x j : ℂ) • w + (-1 : ℂ) • SchwartzMap.smulLeftCLM V (fun y : CoordinateSpace n ↦ y j) w := by
     ext y
-    rw [SchwartzMap.smulLeftCLM_apply_apply htg', add_apply, smul_apply, smul_apply,
-      SchwartzMap.smulLeftCLM_apply_apply htg]
+    rw [SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_sub_apply x j), add_apply,
+      smul_apply, smul_apply, SchwartzMap.smulLeftCLM_apply_apply htg]
     simp [add_smul, neg_smul, Complex.coe_smul, sub_eq_add_neg]
   rw [hM, quantizeSchwartzValue_add_right (a.continuous_coefficient_slice x).aestronglyMeasurable
     (hC x rfl), quantizeSchwartzValue_smul_right, quantizeSchwartzValue_smul_right]
@@ -954,11 +958,6 @@ theorem quantizeSchwartzValue_frequencyLaplacian (a : Symbol n V W m)
       map_add' := quantizeSchwartzValue_add_right
         (a.continuous_coefficient_slice x).aestronglyMeasurable (hC x rfl)
       map_smul' := fun c u ↦ quantizeSchwartzValue_smul_right c u }
-  have htg (j : Fin n) : (fun y : CoordinateSpace n ↦ (x - y) j).HasTemperateGrowth := by
-    convert (Function.HasTemperateGrowth.const (x j)).sub
-      (EuclideanSpace.proj j : CoordinateSpace n →L[ℝ] ℝ).hasTemperateGrowth using 1
-    funext y
-    simp
   -- The multiplier `-‖x - y‖²` is `-∑ⱼ (x - y)_j²`.
   have hsum : SchwartzMap.smulLeftCLM V (fun y : CoordinateSpace n ↦ -‖x - y‖ ^ 2) w =
       ∑ j, (-1 : ℂ) • SchwartzMap.smulLeftCLM V (fun y : CoordinateSpace n ↦ (x - y) j)
@@ -968,8 +967,9 @@ theorem quantizeSchwartzValue_frequencyLaplacian (a : Symbol n V W m)
     rw [SchwartzMap.smulLeftCLM_apply_apply htg', EuclideanSpace.real_norm_sq_eq, sum_apply,
       neg_smul, Finset.sum_smul, ← Finset.sum_neg_distrib]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [smul_apply, neg_one_smul, SchwartzMap.smulLeftCLM_apply_apply (htg j),
-      SchwartzMap.smulLeftCLM_apply_apply (htg j), smul_smul, sq]
+    rw [smul_apply, neg_one_smul,
+      SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_sub_apply x j),
+      SchwartzMap.smulLeftCLM_apply_apply (hasTemperateGrowth_sub_apply x j), smul_smul, sq]
   have hq : ∀ j, quantizeSchwartzValue (frequencyDeriv j (frequencyDeriv j a)).coefficient w x =
       L ((-1 : ℂ) • SchwartzMap.smulLeftCLM V (fun y : CoordinateSpace n ↦ (x - y) j)
         (SchwartzMap.smulLeftCLM V (fun y : CoordinateSpace n ↦ (x - y) j) w)) := fun j ↦ by
