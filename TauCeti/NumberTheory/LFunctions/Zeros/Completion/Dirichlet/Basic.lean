@@ -157,4 +157,12 @@ theorem analyticOrderAt_dirichletData_entireCompletion_ne_top (hne : χ ≠ 1) (
     (dirichletData_entireCompletion_zero_ne_zero χ hχ hne)]
   simp
 
+/-- For a nonprincipal primitive character the entire completion is the conductor factor times
+Mathlib's completed function. -/
+theorem dirichletData_entireCompletion_eq (hne : χ ≠ 1) :
+    (dirichletData χ hχ).entireCompletion =
+      fun s ↦ (N : ℂ) ^ (s / 2) * χ.completedLFunction s := by
+  rw [dirichletData_entireCompletion_of_ne_one χ hχ hne]
+  exact funext (dirichletData_completed χ hχ)
+
 end TauCeti.LFunctions
