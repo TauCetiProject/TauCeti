@@ -87,7 +87,7 @@ private theorem exists_eq_single_of_form_self_eq_one [NeZero n] {x : Fin n → �
       rw [← hnorm]
       exact Finset.sum_congr rfl fun j _ ↦ by rw [hz j, sq]
     exact_mod_cast this
-  obtain ⟨i, h | h⟩ := exists_eq_single_or_neg_single_of_sum_sq_eq_one z hsum <;>
+  obtain ⟨i, h | h⟩ := sum_sq_eq_one_iff.mp hsum <;>
     refine ⟨i, ?_⟩ <;> [left; right] <;> funext j <;> rw [hz j, h] <;>
     rcases eq_or_ne j i with rfl | hj <;> simp [*]
 
