@@ -247,7 +247,7 @@ private theorem exists_periodic_signedEndChart
       signedEndChart_mem_thricePuncturedSphereReal (lt_trans two_pos hζ.1)
   have hper (s : ℝ) : Periodic (fun t ↦ u (signedEndChart q (s, t))) 1 := by
     simpa only [signedEndChart_mk, endChart_mk] using
-      periodic_comp_endSign_mul (periodic_endLoop u q (q.endSign * s)) q
+      periodic_comp_endSign_mul (periodic_comp_cylindricalEndLift u q (q.endSign * s)) q
   obtain ⟨y, hyper, hy, ⟨φ, -, hφ, hφy⟩, hA⟩ :=
     ω.exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer (J := fun ζ ↦
       J (signedEndChart q ζ)) hH' hH'per hv (fun s _ ↦ hper s) hC
@@ -321,7 +321,8 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_pairOfPantsPerturba
     have h := hA.const_mul q.endSign
     rw [endSign_mul_endSign_mul] at h
     refine h.congr fun R ↦ ?_
-    have hR := hamiltonianAction_endSign ω (hH q) (periodic_endLoop u q (q.endSign * R)) q
+    have hR :=
+      hamiltonianAction_endSign ω (hH q) (periodic_comp_cylindricalEndLift u q (q.endSign * R)) q
     simp only [← hℓ] at hR
     rw [hR, endSign_mul_endSign_mul]
 

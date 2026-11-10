@@ -382,7 +382,7 @@ theorem pairwise_disjoint_image_endChart :
   · simpa using endSign_mul_pos_of_mem_endStrip hζ'
 
 /-- The end loops `t ↦ u(φ_q(R + i t))` of a map on the pair of pants are `1`-periodic. -/
-theorem periodic_endLoop {α : Type*} (u : ℝ × ℝ → α) (q : Puncture) (R : ℝ) :
+theorem periodic_comp_cylindricalEndLift {α : Type*} (u : ℝ × ℝ → α) (q : Puncture) (R : ℝ) :
     Periodic (fun t : ℝ ↦ u (Complex.equivRealProdCLM (q.cylindricalEndLift (↑R + ↑t * Complex.I))))
       1 := fun t ↦
   congrArg (fun w ↦ u (Complex.equivRealProdCLM w)) (q.periodic_cylindricalEndLift R t)

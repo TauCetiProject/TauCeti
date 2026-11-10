@@ -154,7 +154,7 @@ theorem monotoneOn_hamiltonianAction_endChart (ω : SymplecticForm V)
         simp only [U, mem_ofPred_eq] at hζ
         linarith)
   have hper (s : ℝ) : (u ∘ endChart q) (s, 1) = (u ∘ endChart q) (s, 0) := by
-    simpa [endChart_mk] using periodic_endLoop u q s 0
+    simpa [endChart_mk] using periodic_comp_cylindricalEndLift u q s 0
   -- The energy over the rectangle is the change of action, and it is nonnegative.
   have h := ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub (hHs q) hUo hv hcd hRU
     fun s _ ↦ hper s
