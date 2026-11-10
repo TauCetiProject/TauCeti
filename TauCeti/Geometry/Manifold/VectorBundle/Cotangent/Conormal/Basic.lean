@@ -21,8 +21,8 @@ when `di_q` is injective and `M` is finite-dimensional it has dimension `dim M -
 of `M`.
 
 A covector is conormal exactly when the cotangent relation of `i`
-(`TauCeti.CotangentBundle.cotangentRel`) relates it to a zero covector of `T*Q`. Through the
-composition law of these relations, conormal sets are independent of the parametrization
+(`TauCeti.CotangentBundle.cotangentRel`) relates it to a zero covector of `T*Q`. By the chain
+rule, conormal sets are independent of the parametrization
 (`TauCeti.CotangentBundle.conormal_comp_diffeomorph`) and are carried to each other by cotangent
 lifts of diffeomorphisms (`TauCeti.CotangentBundle.image_cotangent_conormal`).
 
@@ -218,28 +218,31 @@ theorem conormal_comp_of_surjective {g : P → Q} {i : Q → M}
     rw [ContinuousLinearMap.comp_apply, mfderiv_comp_apply p (hi (g p)) (hg p) v]
     exact DFunLike.congr_fun hann (mfderiv K J g p v)
 
-/-- **The conormal set does not depend on the parametrization.** Precomposing a differentiable
-map with a diffeomorphism of its source does not change its conormal set. -/
-theorem conormal_comp_diffeomorph (φ : P ≃ₘ⟮K, J⟯ Q) {i : Q → M}
-    (hi : MDifferentiable J I i) : conormal K I (i ∘ φ) = conormal J I i :=
-  conormal_comp_of_surjective (φ.mdifferentiable (by simp)) hi φ.surjective fun p v ↦
-    ⟨mfderiv J K φ.symm (φ p) v, φ.mfderiv_apply_mfderiv_symm_apply (by simp) p v⟩
+/-- **The conormal set does not depend on the parametrization.** Precomposing a map with a
+diffeomorphism of its source does not change its conormal set. -/
+theorem conormal_comp_diffeomorph (φ : P ≃ₘ⟮K, J⟯ Q) {i : Q → M} :
+    conormal K I (i ∘ φ) = conormal J I i := by
+  ext ⟨x, α⟩
+  simp only [mem_conormal_iff]
+  constructor
+  · rintro ⟨p, rfl, hann⟩
+    refine ⟨φ p, rfl, ?_⟩
+    ext u
+    obtain ⟨v, rfl⟩ : ∃ v, mfderiv K J φ p v = u :=
+      ⟨mfderiv J K φ.symm (φ p) u, φ.mfderiv_apply_mfderiv_symm_apply (by simp) p u⟩
+    rw [φ.mfderiv_comp_diffeomorph (by simp)] at hann
+    exact DFunLike.congr_fun hann v
+  · rintro ⟨q, rfl, hann⟩
+    obtain ⟨p, rfl⟩ : ∃ p, φ p = q := φ.surjective q
+    refine ⟨p, rfl, ?_⟩
+    rw [φ.mfderiv_comp_diffeomorph (by simp), ← ContinuousLinearMap.comp_assoc, hann,
+      ContinuousLinearMap.zero_comp]
 
 /-- **Cotangent lifts carry conormal sets to conormal sets.** For a diffeomorphism `h : M → M₂`,
 the cotangent lift of `h` maps the conormal set of a map `i` onto the conormal
 set of `h ∘ i`. -/
 theorem image_cotangent_conormal [IsManifold I 2 M] [IsManifold I₂ 2 M₂] (h : M ≃ₘ⟮I, I₂⟯ M₂)
     {i : Q → M} : h.cotangent '' conormal J I i = conormal J I₂ (h ∘ i) := by
-  -- The differential of `h ∘ i` is `dh ∘ di`, also where `i` is not differentiable.
-  have hcomp (q : Q) : mfderiv J I₂ (h ∘ i) q = (mfderiv I I₂ h (i q)).comp (mfderiv J I i q) := by
-    by_cases hi : MDifferentiableAt J I i q
-    · exact mfderiv_comp q (h.mdifferentiable (by simp) _) hi
-    · have hhi : ¬ MDifferentiableAt J I₂ (h ∘ i) q := fun hd ↦ hi (by
-        have := (h.symm.mdifferentiable (by simp) _).comp q hd
-        simpa [Function.comp_def] using this)
-      rw [mfderiv_zero_of_not_mdifferentiableAt hhi, mfderiv_zero_of_not_mdifferentiableAt hi]
-      ext
-      simp
   ext w
   simp only [mem_conormal_iff, mem_image]
   constructor
@@ -247,14 +250,14 @@ theorem image_cotangent_conormal [IsManifold I 2 M] [IsManifold I₂ 2 M₂] (h 
     obtain rfl : i q = x := hq
     refine ⟨q, (h.proj_cotangent ⟨i q, α⟩).symm, ?_⟩
     ext v
-    rw [hcomp q]
+    rw [h.mfderiv_diffeomorph_comp (by simp)]
     exact (h.cotangent_snd_apply_mfderiv ⟨i q, α⟩ _).trans (DFunLike.congr_fun hz v)
   · rintro ⟨q, hq, hw⟩
     obtain ⟨y, β⟩ := w
     obtain rfl : h (i q) = y := hq
     refine ⟨TotalSpace.mk' (E →L[𝕜] 𝕜) (i q) (β ∘L mfderiv I I₂ h (i q)),
       ⟨q, rfl, ?_⟩, ?_⟩
-    · rw [hcomp q] at hw
+    · rw [h.mfderiv_diffeomorph_comp (by simp)] at hw
       exact hw
     · refine CotangentBundle.ext (h.proj_cotangent _) fun v ↦ ?_
       exact (h.cotangent_snd_apply _ v).trans
