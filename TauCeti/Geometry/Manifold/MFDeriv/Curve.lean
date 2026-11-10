@@ -408,14 +408,21 @@ theorem curveVelocity_comp {φ : 𝕜 → 𝕜} {c : 𝕜} (hφ : HasDerivAt φ 
       (Set.mapsTo_univ φ Set.univ) hγ.mdifferentiableWithinAt
       (uniqueDiffOn_univ t (Set.mem_univ t))
 
-/-- The velocity of a `c`-periodic curve is `c`-periodic: at a point where the curve is
-differentiable, its velocity at `t + c` is its velocity at `t`. -/
-theorem _root_.Function.Periodic.curveVelocity_add {c : 𝕜} (h : Function.Periodic γ c)
-    (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + c)) :
+/-- The velocity of a `c`-periodic curve is `c`-periodic: its velocity at `t + c` is its velocity
+at `t`. Both vanish when the curve is not differentiable at these points. -/
+theorem _root_.Function.Periodic.curveVelocity_add {c : 𝕜} (h : Function.Periodic γ c) :
     curveVelocity I γ (t + c) = curveVelocity I γ t := by
-  have h' := curveVelocity_comp (c := 1) ((hasDerivAt_id' t).add_const c) hγ
-  rw [one_smul, show (γ ∘ fun t ↦ t + c) = γ from funext h] at h'
-  exact h'.symm
+  by_cases hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + c)
+  · have h' := curveVelocity_comp (c := 1) ((hasDerivAt_id' t).add_const c) hγ
+    rw [one_smul, show (γ ∘ fun t ↦ t + c) = γ from funext h] at h'
+    exact h'.symm
+  have hγ' : ¬MDifferentiableAt 𝓘(𝕜, 𝕜) I γ t := fun ht ↦ hγ <| by
+    have hc := ht.comp_of_eq (x := t + c) (differentiableAt_id.sub_const c).mdifferentiableAt
+      (add_sub_cancel_right t c)
+    rwa [show (γ ∘ fun s ↦ id s - c) = γ from funext h.sub_eq] at hc
+  rw [curveVelocity_apply, curveVelocity_apply, mfderiv_zero_of_not_mdifferentiableAt hγ,
+    mfderiv_zero_of_not_mdifferentiableAt hγ']
+  rfl
 
 /-- On a parameter set which is a neighbourhood of `t`, the restricted velocity is the
 unrestricted one. -/
