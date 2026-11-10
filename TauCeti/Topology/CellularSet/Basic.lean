@@ -13,6 +13,7 @@ import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 import TauCeti.Data.Set.Lattice
 import TauCeti.Topology.Homeomorph.CompactQuotient
+import TauCeti.Topology.Homeomorph.Extend
 import TauCeti.Topology.Homeomorph.Shrink
 import TauCeti.Topology.MetricSpace.NestedCollapse
 
@@ -358,26 +359,16 @@ theorem IsCellularSet.nonempty_homeomorph_of_isOpenEmbedding {X Y : Type*} [Topo
   -- A collapse `g` of `A` in `E` which is the identity outside a ball, transported to `X`.
   obtain ⟨r, hr⟩ := hA.isCompact.isBounded.subset_ball 0
   obtain ⟨g, hgc, hgs, hgf, hgU⟩ := hA.exists_collapse (M := E) isOpen_ball hr
-  set G : X → X := extend κ (κ ∘ g) id
-  have hGκ (a : E) : G (κ a) = κ (g a) := hκ.injective.extend_apply _ _ a
-  have hGo {x : X} (hx : x ∉ range κ) : G x = x := extend_apply' _ _ _ fun ⟨a, ha⟩ ↦ hx ⟨a, ha⟩
-  -- Off the compact set `κ (closedBall 0 r)`, `G` is the identity.
-  have hGK {x : X} (hx : x ∉ κ '' closedBall 0 r) : G x = x := by
-    by_cases hxκ : x ∈ range κ
-    · obtain ⟨a, rfl⟩ := hxκ
-      rw [hGκ, hgU a fun ha ↦ hx ⟨a, ball_subset_closedBall ha, rfl⟩]
-    · exact hGo hxκ
-  have hG : Continuous G := continuous_iff_continuousAt.2 fun x ↦ by
-    by_cases hxκ : x ∈ range κ
-    · obtain ⟨a, rfl⟩ := hxκ
-      rw [← hκ.continuousAt_iff]
-      have : G ∘ κ = κ ∘ g := funext hGκ
-      exact this ▸ (hκ.continuous.comp hgc).continuousAt
-    · have hK : IsClosed (κ '' closedBall 0 r) :=
-        ((isCompact_closedBall 0 r).image hκ.continuous).isClosed
-      have hid : G =ᶠ[𝓝 x] id := Filter.mem_of_superset
-        (hK.isOpen_compl.mem_nhds fun h ↦ hxκ (image_subset_range _ _ h)) fun _ hy ↦ hGK hy
-      exact continuousAt_id.congr hid.symm
+  have hK : IsClosed (κ '' closedBall 0 r) :=
+    ((isCompact_closedBall 0 r).image hκ.continuous).isClosed
+  obtain ⟨Φ, hΦκ, hΦK⟩ := hκ.exists_continuousMap_extend_id hK.isOpen_compl
+    (fun _ hx h ↦ hx (image_subset_range _ _ h)) ⟨fun p : Unit × E ↦ g p.2, hgc.comp continuous_snd⟩
+    fun _ a ha ↦ hgU a fun hb ↦ ha ⟨a, ball_subset_closedBall hb, rfl⟩
+  set G : X → X := fun x ↦ Φ ((), x)
+  have hGκ (a : E) : G (κ a) = κ (g a) := hΦκ () a
+  have hGo {x : X} (hx : x ∉ range κ) : G x = x :=
+    hΦK () x fun h ↦ hx (image_subset_range _ _ h)
+  have hG : Continuous G := Φ.continuous.comp (.prodMk continuous_const continuous_id)
   have hGs : Surjective G := fun y ↦ by
     by_cases hyκ : y ∈ range κ
     · obtain ⟨b, rfl⟩ := hyκ

@@ -64,22 +64,6 @@ namespace TauCeti
 
 variable {X E : Type*} [TopologicalSpace X] [NormedAddCommGroup E] [NormedSpace ℝ E]
 
-omit [TopologicalSpace X] in
-/-- Two points have the same image under the collapse of the complement of `U` exactly when they
-are equal or both lie outside `U`. -/
-private theorem onePointCollapse_subtypeVal_eq_iff {U : Set X} {x y : X} :
-    onePointCollapse ((↑) : U → X) id x = onePointCollapse ((↑) : U → X) id y ↔
-      x = y ∨ x ∉ U ∧ y ∉ U := by
-  by_cases hx : x ∈ U <;> by_cases hy : y ∈ U
-  · lift x to U using hx
-    lift y to U using hy
-    simp [Subtype.ext_iff]
-  · lift x to U using hx
-    simpa [hy] using fun h : (x : X) = y ↦ hy (h ▸ x.2)
-  · lift y to U using hy
-    simpa [hx] using fun h : x = y ↦ hx (h ▸ y.2)
-  · simp [hx, hy]
-
 /-- **A cellular complement of an open set.** Let `U` be an open subset of a compact Hausdorff
 space `X` whose complement is the image of a cellular set `A ⊆ E` under an open embedding
 `κ : E → X` of a finite-dimensional real normed space. Then `X` is homeomorphic to the one-point
@@ -90,7 +74,10 @@ theorem IsCellularSet.nonempty_homeomorph_onePoint [FiniteDimensional ℝ E] [Co
   have := hU.locallyCompactSpace
   refine hA.nonempty_homeomorph_of_isOpenEmbedding hκ
     (continuous_onePointCollapse hU.isOpenEmbedding_subtypeVal isProperMap_id) (fun z ↦ ?_)
-    fun x y ↦ by rw [hAU]; exact onePointCollapse_subtypeVal_eq_iff
+    fun x y ↦ by
+      rw [hAU, onePointCollapse_eq_onePointCollapse_iff Subtype.val_injective injective_id,
+        Subtype.range_coe]
+      rfl
   induction z using OnePoint.rec with
   | infty =>
     obtain ⟨x, hx⟩ := hA.nonempty.image κ
@@ -119,7 +106,9 @@ private theorem exists_isCellularSet_image_eq_compl_of_two_le [FiniteDimensional
   refine ⟨closedBall 0 1 ∩ f ⁻¹' {j ∞}, isCellularSet_closedBall_inter_preimage hE (by simp)
     hf.continuousOn (fun v hv w hw hvw ↦ ?_) ?_ ?_, ?_⟩
   · -- `f` is injective off the fibre over `∞`.
-    have := (onePointCollapse_subtypeVal_eq_iff (U := U)).1 (j.injective hvw)
+    have := (onePointCollapse_eq_onePointCollapse_iff Subtype.val_injective injective_id).1
+      (j.injective hvw)
+    rw [Subtype.range_coe] at this
     exact hκ.injective (this.resolve_right fun h ↦ hv.2 ((hfy v).2 h.1))
   · rintro ⟨v, hv, hfv⟩
     exact sphere_disjoint_ball.ne_of_mem hv (hball ((hfy v).1 hfv)) rfl
@@ -180,8 +169,7 @@ private theorem isCellularSet_preimage_compl_of_real [CompactSpace X] [T2Space X
   -- A nonempty compact interval is a closed ball.
   have hA : A = Icc (sInf A) (sSup A) := eq_Icc_of_connected_compact ⟨hAne, hAo.isPreconnected⟩ hAc
   have hle : sInf A ≤ sSup A := csInf_le_csSup hAne hAc.bddBelow hAc.bddAbove
-  rw [hA, show Icc (sInf A) (sSup A) = closedBall ((sInf A + sSup A) / 2) ((sSup A - sInf A) / 2) by
-    rw [Real.closedBall_eq_Icc]; congr 1 <;> ring]
+  rw [hA, Real.Icc_eq_closedBall]
   exact isCellularSet_closedBall _ (by linarith)
 
 /-- **A compact space covered by two Euclidean open sets is a sphere.** Let `X` be a compact
