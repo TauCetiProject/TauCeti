@@ -56,6 +56,14 @@ instance _root_.AlgebraicGeometry.Scheme.Modules.instMonoidalCategory :
     MonoidalCategory X.Modules :=
   SheafOfModules.monoidalCategory X.sheaf
 
+/-- Scalar multiplication on the monoidal unit is multiplication of regular functions. -/
+lemma _root_.AlgebraicGeometry.Scheme.Modules.unit_smul_eq_mul
+    (U : X.Opens) (r : Γ(X, U)) (s : Γ(𝟙_ X.Modules, U)) :
+    r • s = r * (show Γ(X, U) from s) := by
+  -- The unit module has the structure sheaf as carrier; the `show` keeps multiplication
+  -- in its ring of functions rather than seeking a ring structure on module sections.
+  rfl
+
 /-- The symmetric structure on the monoidal category of `𝒪ₓ`-modules. -/
 instance _root_.AlgebraicGeometry.Scheme.Modules.instSymmetricCategory :
     SymmetricCategory X.Modules :=
