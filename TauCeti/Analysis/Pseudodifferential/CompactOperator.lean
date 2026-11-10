@@ -133,7 +133,8 @@ with compact spatial support between finite-dimensional complex normed spaces, a
 
 As in `TauCeti.Symbol.exists_quantizeSobolev`, isomorphisms `e₁ : V ≃L[ℂ] ℂ^k`,
 `e₂ : W ≃L[ℂ] ℂ^l` reduce this to the Hilbert-space statement
-`TauCeti.Symbol.isCompactOperator_inclusion_comp_quantizeSobolev`. -/
+`TauCeti.Symbol.isCompactOperator_inclusion_comp_quantizeSobolev`, through
+`TauCeti.Symbol.toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply`. -/
 theorem exists_isCompactOperator_quantizeSobolev (a : Symbol n V W m)
     (ha : a.HasCompactSpatialSupport) {r s : ℝ} (h : r < s - m) :
     ∃ T : H^{s}(CoordinateSpace n, V) →L[ℂ] H^{r}(CoordinateSpace n, W), IsCompactOperator T ∧
@@ -150,19 +151,9 @@ theorem exists_isCompactOperator_quantizeSobolev (a : Symbol n V W m)
     (BesselPotentialSpace.inclusion h.le ∘L (a.map Φ).quantizeSobolev (ha.map Φ) s) ∘L
       BesselPotentialSpace.postcomp _ s 2 (e₁ : V →L[ℂ] _),
     ((isCompactOperator_inclusion_comp_quantizeSobolev (ha.map Φ) h).comp_clm _).clm_comp _,
-    fun u φ ↦ ?_⟩
-  have hc : (a.map Φ).coefficient = fun p ↦ e₁.arrowCongr e₂ (a.coefficient p) :=
-    funext fun p ↦ by simp [Φ]
-  have hq (x : CoordinateSpace n) :
-      quantizeSchwartzValue (a.map Φ).coefficient (u.postcompCLM (e₁ : V →L[ℂ] _)) x =
-        e₂ (quantizeSchwartzValue a.coefficient u x) := by
-    rw [hc, quantizeSchwartzValue_arrowCongr]
-  rw [ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.comp_apply, ← SchwartzMap.toBesselPotentialSpaceCLM_postcompCLM,
-    BesselPotentialSpace.toDistr_postcomp_apply, BesselPotentialSpace.toDistr_inclusion,
+    toDistr_postcomp_comp_comp_postcomp_toBesselPotentialSpaceCLM_apply a e₁ e₂ fun u φ ↦ ?_⟩
+  rw [ContinuousLinearMap.comp_apply, BesselPotentialSpace.toDistr_inclusion,
     toDistr_quantizeSobolev_toBesselPotentialSpaceCLM_apply]
-  simp only [hq, ← map_smul, ContinuousLinearEquiv.integral_comp_comm,
-    ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.symm_apply_apply]
 
 /-- **Smoothing operators with compact spatial support are compact.** If `a` is a smoothing
 symbol with compact spatial support between finite-dimensional complex normed spaces, its
