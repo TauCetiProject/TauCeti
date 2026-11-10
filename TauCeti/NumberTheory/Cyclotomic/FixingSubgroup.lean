@@ -114,12 +114,16 @@ theorem fixingSubgroup_adjoin_nth_roots_eq_ker (m : ℕ) :
 
 /-- **The index of `Aut(M/K(μ_m))` divides `φ(#μ_m(M))`**, the order of the automorphism group of
 the cyclic group `μ_m(M)`, through whose action it is the kernel. -/
-theorem index_fixingSubgroup_adjoin_nth_roots_dvd_totient (m : ℕ) [NeZero m] :
+theorem index_fixingSubgroup_adjoin_nth_roots_dvd_totient (m : ℕ) :
     (adjoin K {b : M | b ^ m = 1}).fixingSubgroup.index ∣
       (Nat.card (rootsOfUnity m M)).totient := by
-  rw [fixingSubgroup_adjoin_nth_roots_eq_ker, Subgroup.index_ker,
-    ← IsCyclic.card_mulAut]
-  exact Subgroup.card_subgroup_dvd_card _
+  rcases finite_or_infinite (rootsOfUnity m M) with hfin | hinf
+  · -- a finite group of roots of unity in a field is cyclic, also for `m = 0`
+    have : IsCyclic (rootsOfUnity m M) := isCyclic_subgroup_units _
+    rw [fixingSubgroup_adjoin_nth_roots_eq_ker, Subgroup.index_ker, ← IsCyclic.card_mulAut]
+    exact Subgroup.card_subgroup_dvd_card _
+  · rw [Nat.card_eq_zero_of_infinite, Nat.totient_zero]
+    exact dvd_zero _
 
 /-- **Adjoining the `p`-th roots of unity is a step of degree prime to `p`**: for a prime `p`, the
 index of `Aut(M/K(μ_p))` in `Aut(M/K)` is prime to `p`. It divides `φ(#μ_p(M))`, and
