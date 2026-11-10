@@ -1,0 +1,205 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.Analysis.Sobolev.Local.Morrey
+public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
+import Mathlib.LinearAlgebra.Multilinear.FiniteDimensional
+import TauCeti.Analysis.Sobolev.WeakDeriv.ContinuousRepresentative
+
+/-!
+# Higher-order Morrey embedding for local Sobolev maps on planar domains
+
+Let `Ω ⊆ ℂ` be open, let `F` be a finite-dimensional real normed space, let `2 < p ≤ ∞` and let
+`k ≥ 0`. This file proves that a map `u ∈ W^{k+1,p}_loc(Ω, F)`, in the sense of
+`TauCeti.MemWkpLoc p Ω (k + 1)`, agrees almost everywhere on `Ω` with a map `g` of class `Cᵏ` on
+`Ω`, whose classical derivatives are the weak derivatives of `u` and whose `k`-th derivative is
+Hölder continuous with exponent `α = 1 - 2 / p` on compact subsets of `Ω`, with the local bound
+
+`‖Dᵏg(x) - Dᵏg(y)‖ ≤ C ‖D(Dᵏg)‖_{Lᵖ(B(x, 2|x - y|))} |x - y|^α`
+whenever `closedBall x (2|x - y|) ⊆ Ω`.
+
+Here `Dᵏg = iteratedFDeriv ℝ k g`, and its weak derivative `D(Dᵏg)` is the `(k + 1)`-st weak
+derivative of `u`, written with the first `k` slots uncurried. The constant `C` depends only on
+`p`, `k` and `F`. In the README's indexing this is the statement that `W^{k,p}_loc` maps have
+`C^{k-1, 1-2/p}` representatives for `k ≥ 1`.
+
+## Proof
+
+The order-one case is `TauCeti.MemWkpLoc.continuousOn_preciseRepresentative` together with the
+local Morrey inequality `TauCeti.MemWkpLoc.exists_dist_preciseRepresentative_le`. Higher orders
+follow by induction on `k`: a weak derivative of `u ∈ W^{k+2,p}_loc` lies in `W^{k+1,p}_loc`, so
+it has a `Cᵏ` representative by induction, and a function whose weak derivative is `Cᵏ` has a
+`Cᵏ⁺¹` representative (`TauCeti.HasWeakFDerivOn.exists_contDiffOn_succ_ae_eq`).
+
+For the Hölder bound, the classical derivative of a `C¹` representative `g` of `u` is a weak
+derivative of `u` (`TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`), so by induction
+`iteratedFDeriv ℝ k g` agrees, up to the currying isometries, with the `k`-th weak derivative of
+`u` and lies in `W^{1,p}_loc` (`TauCeti.MemWkpLoc.iteratedFDeriv_of_contDiffOn`). The order-one
+estimates then apply to it.
+
+## Main declarations
+
+* `TauCeti.MemWkpLoc.exists_contDiffOn_ae_eq`: `W^{k+1,p}_loc ⊆ Cᵏ` for `p > 2`.
+* `TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`: the classical derivative of a `C¹`
+  representative is a weak derivative, in the preceding local Sobolev class.
+* `TauCeti.MemWkpLoc.iteratedFDeriv_of_contDiffOn`: the iterated classical derivatives of a `Cᵏ`
+  representative lie in the corresponding local Sobolev classes.
+* `TauCeti.MemWkpLoc.exists_dist_iteratedFDeriv_le`: the local Morrey inequality for the top
+  derivative.
+* `TauCeti.MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact`: Hölder continuity of the
+  top derivative on compact subsets of `Ω`.
+
+## References
+
+* D. McDuff and D. Salamon, *J-holomorphic Curves and Symplectic Topology*, second edition,
+  Appendix B.1 (Morrey's embedding for local Sobolev spaces).
+* L. C. Evans, *Partial Differential Equations*, §5.6.2, Theorem 5 and §5.6.3.
+-/
+
+public section
+
+noncomputable section
+
+open Metric Set MeasureTheory Module TopologicalSpace TauCeti.MeasureTheory
+open scoped ENNReal NNReal Topology
+
+namespace TauCeti
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {p : ℝ≥0∞} {Ω : Opens ℂ}
+  {k m : ℕ} {u g : ℂ → F}
+
+/-! ### Classical derivatives of `Cᵏ` representatives -/
+
+/-- **The derivative of a `C¹` representative is a weak derivative.** If `g` is `C¹` on `Ω` and
+agrees almost everywhere on `Ω` with `u ∈ MemWkpLoc p Ω (k + 1)`, then `fderiv ℝ g` is a weak
+derivative of `u` on `Ω` and lies in `MemWkpLoc p Ω k`. By uniqueness of weak derivatives
+(`TauCeti.HasWeakFDerivOn.ae_eq`), every weak derivative of `u` on `Ω` agrees with `fderiv ℝ g`
+almost everywhere on `Ω`. -/
+theorem MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn (hu : MemWkpLoc p Ω (k + 1) u)
+    (hg : ContDiffOn ℝ 1 g Ω) (hug : u =ᵐ[volume.restrict Ω] g) :
+    HasWeakFDerivOn volume Ω u (fderiv ℝ g) ∧ MemWkpLoc p Ω k (fderiv ℝ g) := by
+  have := hu.completeSpace
+  have hg' : HasWeakFDerivOn volume Ω g (fderiv ℝ g) :=
+    hasWeakFDerivOn_of_differentiableOn
+      ((hg.continuousOn_fderiv_of_isOpen Ω.isOpen le_rfl).locallyIntegrableOn
+        Ω.isOpen.measurableSet)
+      fun x hx => (hg.differentiableOn one_ne_zero x hx).differentiableAt (Ω.isOpen.mem_nhds hx)
+  obtain ⟨D, hD, hDk⟩ := hu.exists_weakFDeriv_of_isOpen
+  exact ⟨hg'.congr_ae hug.symm, hDk.congr_ae ((hD.congr_ae hug).ae_eq hg')⟩
+
+/-- **Iterated derivatives of a `Cᵏ` representative.** If `g` is `Cᵏ` on `Ω` and agrees almost
+everywhere on `Ω` with `u ∈ MemWkpLoc p Ω (k + m)`, then `iteratedFDeriv ℝ k g` lies in
+`MemWkpLoc p Ω m`. It is, up to the currying isometries, the `k`-th weak derivative of `u`.
+No restriction on `p` is needed. -/
+theorem MemWkpLoc.iteratedFDeriv_of_contDiffOn (hu : MemWkpLoc p Ω (k + m) u)
+    (hg : ContDiffOn ℝ k g Ω) (hug : u =ᵐ[volume.restrict Ω] g) :
+    MemWkpLoc p Ω m (iteratedFDeriv ℝ k g) := by
+  induction k generalizing F with
+  | zero =>
+    rw [iteratedFDeriv_zero_eq_comp]
+    exact (continuousMultilinearCurryFin0 ℝ ℂ F).symm.toContinuousLinearEquiv.comp_memWkpLoc_iff.2
+      ((Nat.zero_add m ▸ hu).congr_ae hug)
+  | succ k ih =>
+    rw [Nat.add_right_comm] at hu
+    obtain ⟨-, hDk⟩ := hu.hasWeakFDerivOn_fderiv_of_contDiffOn
+      (hg.of_le (by exact_mod_cast Nat.le_add_left 1 k)) hug
+    have hgk : ContDiffOn ℝ k (fderiv ℝ g) Ω := hg.fderiv_of_isOpen Ω.isOpen (by push_cast; rfl)
+    have h := ih hDk hgk (Filter.EventuallyEq.refl _ _)
+    have heq : iteratedFDeriv ℝ (k + 1) g =
+        fun z => (continuousMultilinearCurryRightEquiv' ℝ k ℂ F).symm
+          (iteratedFDeriv ℝ k (fderiv ℝ g) z) := by
+      ext1 z
+      exact iteratedFDeriv_succ_eq_comp_right
+    rw [heq]
+    exact (continuousMultilinearCurryRightEquiv' ℝ k ℂ F).symm.toContinuousLinearEquiv
+      |>.comp_memWkpLoc_iff.2 h
+
+/-! ### Morrey's embedding at higher order -/
+
+variable [FiniteDimensional ℝ F]
+
+/-- **Morrey's embedding `W^{k+1,p}_loc ⊆ Cᵏ` for `p > 2`.** A map `u ∈ MemWkpLoc p Ω (k + 1)`
+agrees almost everywhere on `Ω` with a map `g` that is `Cᵏ` on `Ω`. The classical derivatives of
+`g` are the weak derivatives of `u` (`TauCeti.MemWkpLoc.hasWeakFDerivOn_fderiv_of_contDiffOn`),
+and its `k`-th derivative is Hölder continuous with exponent `1 - 2 / p` on compact subsets of `Ω`
+(`TauCeti.MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact`). -/
+theorem MemWkpLoc.exists_contDiffOn_ae_eq (hp : 2 < p) (hu : MemWkpLoc p Ω (k + 1) u) :
+    ∃ g : ℂ → F, ContDiffOn ℝ k g Ω ∧ u =ᵐ[volume.restrict Ω] g := by
+  induction k generalizing F with
+  | zero =>
+    refine ⟨preciseRepresentative volume u, ?_, ?_⟩
+    · simpa using hu.continuousOn_preciseRepresentative hp
+    · exact hu.memLpLoc.ae_eq_preciseRepresentative (one_le_two.trans hp.le)
+  | succ k ih =>
+    obtain ⟨D, hD, hDk⟩ := hu.exists_weakFDeriv_of_isOpen
+    obtain ⟨h, hh, hDh⟩ := ih hDk
+    obtain ⟨g, hg, hug, -⟩ := (hD.congr_ae_deriv hDh).exists_contDiffOn_succ_ae_eq (n := k) hh
+    exact ⟨g, by exact_mod_cast hg, hug⟩
+
+/-- The `k`-th derivative of a `Cᵏ` representative of `u ∈ MemWkpLoc p Ω (k + 1)` lies in
+`MemWkpLoc p Ω 1`, is continuous on `Ω`, and therefore equals its precise representative there. -/
+private theorem iteratedFDeriv_memWkpLoc_one_and_eqOn (hu : MemWkpLoc p Ω (k + 1) u)
+    (hg : ContDiffOn ℝ k g Ω) (hug : u =ᵐ[volume.restrict Ω] g) :
+    MemWkpLoc p Ω 1 (iteratedFDeriv ℝ k g) ∧
+      EqOn (preciseRepresentative volume (iteratedFDeriv ℝ k g)) (iteratedFDeriv ℝ k g) Ω := by
+  have h1 := hu.iteratedFDeriv_of_contDiffOn hg hug
+  have hcont : ContinuousOn (iteratedFDeriv ℝ k g) Ω :=
+    (hg.continuousOn_iteratedFDerivWithin le_rfl Ω.isOpen.uniqueDiffOn).congr
+      fun x hx => (iteratedFDerivWithin_of_isOpen k Ω.isOpen hx).symm
+  exact ⟨h1, eqOn_preciseRepresentative_of_continuousOn Ω.isOpen
+    (hcont.locallyIntegrableOn Ω.isOpen.measurableSet) (Filter.EventuallyEq.refl _ _) hcont⟩
+
+/-- The spaces of `k`-multilinear maps on `ℂ` with values in `F` are finite-dimensional. -/
+private theorem finiteDimensional_continuousMultilinearMap :
+    FiniteDimensional ℝ (ContinuousMultilinearMap ℝ (fun _ : Fin k => ℂ) F) :=
+  Module.Finite.of_injective ContinuousMultilinearMap.toMultilinearMapLinear
+    ContinuousMultilinearMap.toMultilinearMap_injective
+
+/-- **The local Morrey inequality at higher order.** Let `2 < p ≤ ∞`, `α = 1 - 2 / p` and
+`k ≥ 0`. There is a constant `C > 0`, depending only on `p`, `k` and `F`, such that the following
+holds. Let `u ∈ MemWkpLoc p Ω (k + 1)`, let `g` be `Cᵏ` on `Ω` and equal to `u` almost everywhere
+on `Ω`, and let `E` be a weak derivative of `Dᵏg = iteratedFDeriv ℝ k g` on `Ω` (the
+`(k + 1)`-st weak derivative of `u`). If `closedBall x (2 |x - y|) ⊆ Ω`, then
+
+`‖Dᵏg(x) - Dᵏg(y)‖ ≤ C ‖E‖_{Lᵖ(B(x, 2 |x - y|))} |x - y|^α`. -/
+theorem MemWkpLoc.exists_dist_iteratedFDeriv_le (hp : 2 < p) (k : ℕ) :
+    ∃ C : ℝ, 0 < C ∧ ∀ {Ω : Opens ℂ} {u g : ℂ → F}
+      {E : ℂ → ℂ →L[ℝ] ContinuousMultilinearMap ℝ (fun _ : Fin k => ℂ) F},
+      MemWkpLoc p Ω (k + 1) u → ContDiffOn ℝ k g Ω → u =ᵐ[volume.restrict Ω] g →
+      HasWeakFDerivOn volume Ω (iteratedFDeriv ℝ k g) E →
+      ∀ {x y : ℂ}, closedBall x (2 * dist x y) ⊆ Ω →
+        dist (iteratedFDeriv ℝ k g x) (iteratedFDeriv ℝ k g y) ≤
+          C * (eLpNorm E p (volume.restrict (ball x (2 * dist x y)))).toReal *
+            dist x y ^ (((1 : ℝ≥0∞) - 2 / p).toNNReal : ℝ) := by
+  have := finiteDimensional_continuousMultilinearMap (k := k) (F := F)
+  obtain ⟨C, hC, hdist⟩ := MemWkpLoc.exists_dist_preciseRepresentative_le
+    (F := ContinuousMultilinearMap ℝ (fun _ : Fin k => ℂ) F) hp
+  refine ⟨C, hC, fun {Ω u g E} hu hg hug hE x y hxy => ?_⟩
+  obtain ⟨h1, heq⟩ := iteratedFDeriv_memWkpLoc_one_and_eqOn hu hg hug
+  have hx : x ∈ (Ω : Set ℂ) := hxy (mem_closedBall_self (by positivity))
+  have hy : y ∈ (Ω : Set ℂ) := hxy (by
+    rw [mem_closedBall, dist_comm]
+    linarith [dist_nonneg (x := x) (y := y)])
+  rw [← heq hx, ← heq hy]
+  exact hdist h1 hE hxy
+
+/-- **Morrey's embedding at higher order on compact sets.** If `2 < p ≤ ∞`, `g` is `Cᵏ` on `Ω`
+and agrees almost everywhere on `Ω` with `u ∈ MemWkpLoc p Ω (k + 1)`, then
+`iteratedFDeriv ℝ k g` is Hölder continuous with exponent `1 - 2 / p` on every compact subset of
+`Ω`: `g` is a `C^{k, 1 - 2/p}` representative of `u`. -/
+theorem MemWkpLoc.exists_holderOnWith_iteratedFDeriv_of_isCompact (hp : 2 < p)
+    (hu : MemWkpLoc p Ω (k + 1) u) (hg : ContDiffOn ℝ k g Ω) (hug : u =ᵐ[volume.restrict Ω] g)
+    {K : Set ℂ} (hK : IsCompact K) (hKΩ : K ⊆ Ω) :
+    ∃ C : ℝ≥0, HolderOnWith C ((1 : ℝ≥0∞) - 2 / p).toNNReal (iteratedFDeriv ℝ k g) K := by
+  have := finiteDimensional_continuousMultilinearMap (k := k) (F := F)
+  obtain ⟨h1, heq⟩ := iteratedFDeriv_memWkpLoc_one_and_eqOn hu hg hug
+  obtain ⟨C, hC⟩ := h1.exists_holderOnWith_preciseRepresentative_of_isCompact hp hK hKΩ
+  refine ⟨C, fun x hx y hy => ?_⟩
+  rw [← heq (hKΩ hx), ← heq (hKΩ hy)]
+  exact hC x hx y hy
+
+end TauCeti
