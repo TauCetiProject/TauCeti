@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fourier.HessianMultiplier
 public import TauCeti.Analysis.PDE.FundamentalSolution.Euclidean.Potential
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
 import TauCeti.Analysis.Normed.Lp.SmoothApprox
@@ -148,7 +149,7 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le [Complete
     have : 0 ≤ (R / 2) ^ (2 - (n : ℝ)) := by positivity
     nlinarith
   have hgrad : ‖∇ χ x‖ ≤ C / R := by
-    rw [gradient, LinearIsometryEquiv.norm_map]
+    rw [norm_gradient_eq_norm_fderiv]
     exact hχ' x
   rw [indicator_of_mem (mem_closedBall_zero_iff.2 hx2R),
     (hχ.contDiffAt.of_le (by simp)).laplacian_fun_smul (hu.contDiffAt.of_le (by simp)), hΔu,
