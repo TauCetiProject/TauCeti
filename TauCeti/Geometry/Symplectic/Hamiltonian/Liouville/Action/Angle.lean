@@ -100,7 +100,7 @@ namespace IsSymplectic
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless] [TopologicalSpace M]
-  [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M] [BoundarylessManifold I M]
+  [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   {σ : SmoothTwoForm I M} (hσ : σ.IsSymplectic)
   {ι : Type*} [Fintype ι] {F : M → ι → ℝ} (hF : ContMDiff I 𝓘(ℝ, ι → ℝ) ∞ F)
   (hcomm : ∀ i j x, σ.poissonBracket (F · i) (F · j) x = 0)
