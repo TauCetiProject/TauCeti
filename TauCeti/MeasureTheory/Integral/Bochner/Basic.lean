@@ -89,13 +89,6 @@ for set and probability integrals.
 * `exists_mem_sub_div_lt_of_sub_lt_integral`: if `f ≤ M` on a probability space has integral
   within `δ` of `M`, then `f` comes within `δ / μ B` of `M` on every set `B` of positive mass.
 
-## Densities
-
-* `MeasureTheory.integral_withDensity_ofReal` and
-  `MeasureTheory.integrable_withDensity_ofReal_iff`: integrals and integrability against the
-  measure with density `ENNReal.ofReal ∘ h` reduce to weighting the integrand by `h`, for `h`
-  almost everywhere nonnegative and almost everywhere measurable.
-
 ## `L¹` convergence
 
 `L¹` convergence is often produced in the Bochner form `∫ ω, ‖f i ω - g ω‖ ∂μ → 0` but consumed
@@ -812,32 +805,3 @@ theorem measure_eq_zero_of_integral_eq_zero_of_ae_pos {α : Type*} [MeasurableSp
 end MeasureTheory
 
 end TauCeti
-
-namespace MeasureTheory
-
-variable {α : Type*} [MeasurableSpace α] {ν : Measure α} {h : α → ℝ}
-  {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- Integrating against the measure with density `ofReal ∘ h` weights the integrand by `h`, for
-`h` almost everywhere nonnegative and almost everywhere measurable. -/
-theorem integral_withDensity_ofReal (hh : ∀ᵐ x ∂ν, 0 ≤ h x) (hm : AEMeasurable h ν)
-    (f : α → E) :
-    ∫ x, f x ∂ν.withDensity (fun x ↦ ENNReal.ofReal (h x)) = ∫ x, h x • f x ∂ν := by
-  rw [integral_withDensity_eq_integral_toReal_smul₀ hm.ennreal_ofReal (by simp)]
-  refine integral_congr_ae ?_
-  filter_upwards [hh] with x hx
-  simp [ENNReal.toReal_ofReal hx]
-
-/-- A function is integrable against the measure with density `ofReal ∘ h` exactly when its
-weighting by `h` is integrable, for `h` almost everywhere nonnegative and almost everywhere
-measurable. -/
-theorem integrable_withDensity_ofReal_iff (hh : ∀ᵐ x ∂ν, 0 ≤ h x) (hm : AEMeasurable h ν)
-    {f : α → E} :
-    Integrable f (ν.withDensity (fun x ↦ ENNReal.ofReal (h x))) ↔
-      Integrable (fun x ↦ h x • f x) ν := by
-  rw [integrable_withDensity_iff_integrable_smul₀' hm.ennreal_ofReal (by simp)]
-  refine integrable_congr ?_
-  filter_upwards [hh] with x hx
-  simp [ENNReal.toReal_ofReal hx]
-
-end MeasureTheory
