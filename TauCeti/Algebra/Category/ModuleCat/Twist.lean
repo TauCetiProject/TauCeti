@@ -232,6 +232,7 @@ def twistElem (c : Discrete H) {X : ModuleCat.{v} A} (x : X) :
   x
 
 /-- Viewing elements in a twist is additive. -/
+@[simp]
 lemma twistElem_add (c : Discrete H) {X : ModuleCat.{v} A} (x y : X) :
     a.twistElem c (x + y) = a.twistElem c x + a.twistElem c y :=
   (rfl)
@@ -248,6 +249,7 @@ lemma smul_twistElem (c : Discrete H) {X : ModuleCat.{v} A} (t : A) (x : X) :
   ModuleCat.restrictScalars.smul_def ((a c.as).symm : A →+* A) t x
 
 /-- The twist of a morphism acts on twisted elements as the morphism. -/
+@[simp]
 lemma actionHomRight_hom_twistElem (c : Discrete H) {X Y : ModuleCat.{v} A} (g : X ⟶ Y)
     (x : X) :
     letI := a.restrictScalarsMonoidalLeftAction.{v}
@@ -255,18 +257,21 @@ lemma actionHomRight_hom_twistElem (c : Discrete H) {X Y : ModuleCat.{v} A} (g :
   (rfl)
 
 /-- The associator of the twisting action is the identity on twisted elements. -/
+@[simp]
 lemma actionAssocIso_hom_twistElem (c c' : Discrete H) {X : ModuleCat.{v} A} (x : X) :
     letI := a.restrictScalarsMonoidalLeftAction.{v}
     (αₗ c c' X).hom.hom (a.twistElem (c ⊗ c') x) = a.twistElem c (a.twistElem c' x) :=
   (rfl)
 
 /-- The inverse of the associator of the twisting action is the identity on twisted elements. -/
+@[simp]
 lemma actionAssocIso_inv_twistElem (c c' : Discrete H) {X : ModuleCat.{v} A} (x : X) :
     letI := a.restrictScalarsMonoidalLeftAction.{v}
     (αₗ c c' X).inv.hom (a.twistElem c (a.twistElem c' x)) = a.twistElem (c ⊗ c') x :=
   (rfl)
 
 /-- The unitor of the twisting action is the identity on twisted elements. -/
+@[simp]
 lemma actionUnitIso_hom_twistElem {X : ModuleCat.{v} A} (x : X) :
     letI := a.restrictScalarsMonoidalLeftAction.{v}
     (λₗ[Discrete H] X).hom.hom (a.twistElem (𝟙_ (Discrete H)) x) = x :=
@@ -301,6 +306,14 @@ lemma twistLinearEquiv_apply (R : Type*) [CommSemiring R] [Algebra R A]
     (ha : ∀ h r, a h (algebraMap R A r) = algebraMap R A r) (c : Discrete H)
     {M : ModuleCat.{v} A} (x : M) :
     a.twistLinearEquiv R ha c M x = a.twistElem c x :=
+  (rfl)
+
+open ModuleCat.Algebra in
+@[simp]
+lemma twistLinearEquiv_symm_apply (R : Type*) [CommSemiring R] [Algebra R A]
+    (ha : ∀ h r, a h (algebraMap R A r) = algebraMap R A r) (c : Discrete H)
+    {M : ModuleCat.{v} A} (x : M) :
+    (a.twistLinearEquiv R ha c M).symm (a.twistElem c x) = x :=
   (rfl)
 
 open ModuleCat.Algebra in

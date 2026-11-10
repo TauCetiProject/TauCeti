@@ -28,11 +28,12 @@ and `T_h (S ⊗[R] M)` have the same underlying group `S ⊗[R] M`; the second m
 
 * `CommAlgCat.moduleCatBaseChangeLeftLinear`: base change along `f` is left-linear (equivariant)
   for the twisting actions of `H`, in the sense of Mathlib's `Functor.LeftLinear`. Its lineators
-  are the identity on tensors (`CommAlgCat.moduleCatBaseChangeLeftLinear_μₗ_hom_tmul` and
+  are the identity on tensors (`CommAlgCat.moduleCatBaseChangeLeftLinear_μₗ_hom_twistElem` and
   `CommAlgCat.moduleCatBaseChangeLeftLinear_δₗ_hom_tmul`), and the axioms of a left-linear
   functor are the unit and product diagrams of the commuting isomorphisms
   `T_h ⋙ B_f ≅ B_f ⋙ T_h`, packaged by `Functor.commActionLeftIso` in
-  `TauCeti.CategoryTheory.Monoidal.Action.StrongTrans`.
+  `TauCeti.CategoryTheory.Monoidal.Action.StrongTrans`. Morphisms out of the twist of a base
+  change are determined on tensors (`CommAlgCat.twist_moduleCatBaseChange_hom_ext`).
 * `CommAlgCat.isLeftLinear_moduleCatBaseChangeId_hom` and
   `CommAlgCat.isLeftLinear_moduleCatBaseChangeComp_hom`: the unit comparison `R ⊗[R] M ≅ M` and
   the composition comparison `T ⊗[R] M ≅ T ⊗[S] (S ⊗[R] M)` of the base-change pseudofunctor
@@ -151,7 +152,7 @@ private lemma baseChangeTwistEquiv_symm_tmul (c : Discrete H) (M : ModuleCat.{u}
 
 /-- A morphism out of the twist of a base change is determined by its values on the twisted
 tensors `s ⊗ m`. -/
-private lemma twist_moduleCatBaseChange_hom_ext (c : Discrete H) {M : ModuleCat.{u} (R ⊗[k] Λ)}
+lemma twist_moduleCatBaseChange_hom_ext (c : Discrete H) {M : ModuleCat.{u} (R ⊗[k] Λ)}
     {P : ModuleCat.{u} (S ⊗[k] Λ)}
     {g₁ g₂ : letI := aS.restrictScalarsMonoidalLeftAction.{u}
       c ⊙ₗ (moduleCatBaseChange Λ f).obj M ⟶ P}
@@ -230,7 +231,11 @@ noncomputable def moduleCatBaseChangeLeftLinear :
 
 open Functor.LaxLeftLinear Functor.OplaxLeftLinear
 
-private lemma μₗ_hom_twistElem (c : Discrete H) (M : ModuleCat.{u} (R ⊗[k] Λ)) (s : S) (m : M) :
+/-- The lax lineators of `CommAlgCat.moduleCatBaseChangeLeftLinear` are the identity on tensors:
+`s ⊗ m` in the twist of `S ⊗[R] M` goes to `s ⊗ m` in the base change of the twist of `M`. -/
+@[simp]
+lemma moduleCatBaseChangeLeftLinear_μₗ_hom_twistElem (c : Discrete H)
+    (M : ModuleCat.{u} (R ⊗[k] Λ)) (s : S) (m : M) :
     letI := aR.restrictScalarsMonoidalLeftAction.{u}
     letI := aS.restrictScalarsMonoidalLeftAction.{u}
     letI := moduleCatBaseChangeLeftLinear hR hS hf
@@ -238,29 +243,17 @@ private lemma μₗ_hom_twistElem (c : Discrete H) (M : ModuleCat.{u} (R ⊗[k] 
       moduleCatBaseChangeTmul Λ f s (aR.twistElem c m) :=
   baseChangeTwistIso_hom_twistElem hR hS hf c M s m
 
-/-- The lax lineators of `CommAlgCat.moduleCatBaseChangeLeftLinear` are the identity on tensors:
-`s ⊗ m` in the twist of `S ⊗[R] M` goes to `s ⊗ m` in the base change of the twist of `M`. -/
-@[simp]
-lemma moduleCatBaseChangeLeftLinear_μₗ_hom_tmul (c : Discrete H) (M : ModuleCat.{u} (R ⊗[k] Λ))
-    (s : S) (m : M) :
-    letI := aR.restrictScalarsMonoidalLeftAction.{u}
-    letI := aS.restrictScalarsMonoidalLeftAction.{u}
-    letI := moduleCatBaseChangeLeftLinear hR hS hf
-    (μₗ (moduleCatBaseChange Λ f) c M).hom (moduleCatBaseChangeTmul Λ f s m) =
-      moduleCatBaseChangeTmul Λ f (N := (c ⊙ₗ M : ModuleCat.{u} (R ⊗[k] Λ))) s m :=
-  baseChangeTwistIso_hom_twistElem hR hS hf c M s m
-
 /-- The oplax lineators of `CommAlgCat.moduleCatBaseChangeLeftLinear` are the identity on
-tensors. -/
+tensors: `s ⊗ m` in the base change of the twist of `M` goes to `s ⊗ m` in the twist of
+`S ⊗[R] M`. -/
 @[simp]
 lemma moduleCatBaseChangeLeftLinear_δₗ_hom_tmul (c : Discrete H) (M : ModuleCat.{u} (R ⊗[k] Λ))
     (s : S) (m : M) :
     letI := aR.restrictScalarsMonoidalLeftAction.{u}
     letI := aS.restrictScalarsMonoidalLeftAction.{u}
     letI := moduleCatBaseChangeLeftLinear hR hS hf
-    (δₗ (moduleCatBaseChange Λ f) c M).hom
-        (moduleCatBaseChangeTmul Λ f (N := (c ⊙ₗ M : ModuleCat.{u} (R ⊗[k] Λ))) s m) =
-      moduleCatBaseChangeTmul Λ f s m :=
+    (δₗ (moduleCatBaseChange Λ f) c M).hom (moduleCatBaseChangeTmul Λ f s (aR.twistElem c m)) =
+      aS.twistElem c (moduleCatBaseChangeTmul Λ f s m) :=
   baseChangeTwistIso_inv_tmul hR hS hf c M s m
 
 end Twist
@@ -287,7 +280,8 @@ lemma isLeftLinear_moduleCatBaseChangeId_hom :
   ⟨fun c M ↦ twist_moduleCatBaseChange_hom_ext c fun r m ↦ by
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, Functor.LaxLeftLinear.id_μₗ,
       ModuleCat.hom_id, LinearMap.id_apply, MonoidHom.actionHomRight_hom_twistElem,
-      μₗ_hom_twistElem, moduleCatBaseChangeId_hom_app_hom_tmul, MonoidHom.twistElem_smul aR hR]⟩
+      moduleCatBaseChangeLeftLinear_μₗ_hom_twistElem, moduleCatBaseChangeId_hom_app_hom_tmul,
+      MonoidHom.twistElem_smul aR hR]⟩
 
 variable {T : CommAlgCat.{u} k} {aS : H →* RingAut (S ⊗[k] Λ)} {aT : H →* RingAut (T ⊗[k] Λ)}
   (hS : ∀ h s, aS h (algebraMap S (S ⊗[k] Λ) s) = algebraMap S (S ⊗[k] Λ) s)
@@ -322,9 +316,11 @@ lemma isLeftLinear_moduleCatBaseChangeComp_hom (fg : R ⟶ T) (hfg : f ≫ g = f
   letI := moduleCatBaseChangeLeftLinear hR hT (semiconj_tensorProductMap_comp hf hg hfg · ·)
   ⟨fun c M ↦ twist_moduleCatBaseChange_hom_ext c fun t m ↦ by
     simp only [ModuleCat.hom_comp, LinearMap.comp_apply, Functor.LaxLeftLinear.comp_μₗ]
-    rw [μₗ_hom_twistElem (f := fg) hR hT, moduleCatBaseChangeComp_hom_app_hom_tmul,
-      MonoidHom.actionHomRight_hom_twistElem, moduleCatBaseChangeComp_hom_app_hom_tmul,
-      μₗ_hom_twistElem hS hT hg, moduleCatBaseChange_map_hom_tmul, μₗ_hom_twistElem hR hS hf]⟩
+    rw [moduleCatBaseChangeLeftLinear_μₗ_hom_twistElem (f := fg) hR hT,
+      moduleCatBaseChangeComp_hom_app_hom_tmul, MonoidHom.actionHomRight_hom_twistElem,
+      moduleCatBaseChangeComp_hom_app_hom_tmul,
+      moduleCatBaseChangeLeftLinear_μₗ_hom_twistElem hS hT hg, moduleCatBaseChange_map_hom_tmul,
+      moduleCatBaseChangeLeftLinear_μₗ_hom_twistElem hR hS hf]⟩
 
 end Comparison
 
