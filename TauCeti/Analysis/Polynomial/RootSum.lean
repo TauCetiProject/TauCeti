@@ -355,7 +355,7 @@ theorem analyticAt_sum_map_filter_coeffEquiv_symm {g : ℂ → ℂ} {U : Set ℂ
         funext fun c => (coeffHomeomorph_symm_apply ℂ n c).symm
       rw [h]
       exact (coeffHomeomorph ℂ n).symm.continuous.continuousAt
-    refine hcont.preimage_mem_nhds ((isOpen_setOf_forall_mem (n := n) ?_).mem_nhds
+    refine hcont.preimage_mem_nhds ((Sym.isOpen_setOf_forall_mem (n := n) ?_).mem_nhds
       fun z hz => ?_)
     · exact isOpen_biUnion fun _ _ => isOpen_ball
     · exact Set.mem_iUnion₂.2 ⟨z, (hmemT z).2 hz, mem_ball_self hr⟩

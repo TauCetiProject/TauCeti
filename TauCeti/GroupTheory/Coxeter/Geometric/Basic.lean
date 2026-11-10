@@ -47,9 +47,8 @@ orderOf (cs.simple i * cs.simple i') = M i i'
 ```
 
 uniformly in `i` and `i'`, with `0` read as `∞`
-(`CoxeterSystem.orderOf_simple_mul_simple`). Three further collapses are ruled out at the same
-time: a simple reflection is never the identity, it has order exactly two, and distinct indices
-give distinct simple reflections.
+(`CoxeterSystem.orderOf_simple_mul_simple`). A further collapse is ruled out at the same time:
+distinct indices give distinct simple reflections.
 
 Exactness, not just divisibility, is what a braid move needs. The braid move at `(i, i')` rewrites
 the alternating word `s i s i' s i ⋯` of length `M i i'` into the alternating word of the same
@@ -92,9 +91,7 @@ The second simple root is handled without a second induction: `σᵢ' σᵢ` is 
 * `CoxeterSystem.simple_mul_simple_pow_eq_one_iff` and
   `CoxeterSystem.orderOf_simple_mul_simple`: **the entry `M i i'` is the exact order of
   `s i * s i'`**, not merely a multiple of it.
-* `CoxeterSystem.simple_ne_one`, `CoxeterSystem.orderOf_simple` and
-  `CoxeterSystem.simple_injective`: **a simple reflection has order exactly two, and distinct
-  indices give distinct simple reflections**.
+* `CoxeterSystem.simple_injective`: **distinct indices give distinct simple reflections**.
 
 ## What is not proved here
 
@@ -480,16 +477,5 @@ theorem orderOf_simple_mul_simple (i i' : B) :
 theorem simple_injective : Function.Injective cs.simple := fun i i' h ↦
   by_contra fun hne ↦ M.off_diagonal i i' hne <| by
     rw [← cs.orderOf_simple_mul_simple, h, cs.simple_mul_simple_self, orderOf_one]
-
-/-- **A simple reflection is not the identity**: it negates its own simple root. -/
-theorem simple_ne_one (i : B) : cs.simple i ≠ 1 := fun h ↦ by
-  have hneg := M.geometricReflection_apply_single_self i
-  rw [← cs.geometricRepresentation_simple, h, map_one, one_apply_eq_self] at hneg
-  have := DFunLike.congr_fun hneg i
-  norm_num at this
-
-/-- **Each simple reflection has order exactly two.** -/
-theorem orderOf_simple (i : B) : orderOf (cs.simple i) = 2 :=
-  orderOf_eq_prime (cs.simple_sq i) (cs.simple_ne_one i)
 
 end CoxeterSystem

@@ -82,29 +82,14 @@ theorem isSemialgebraicStack (D : LazardDelineation F S)
     (hS : IsSemialgebraic S) : IsSemialgebraicStack S D.root := by
   classical
   obtain ⟨G, hG⟩ := exists_polynomial_shared_roots D
-  let Z (x : S) := G.biUnion fun p ↦ (p.map (MvPolynomial.eval x.1)).roots.toFinset
-  have hsection (x : S) (t : ℝ) (i : Fin D.count) :
-      D.root i x = t ↔ t ∈ Z x ∧ (Z x |>.filter (· < t)).card = i.val := by
-    rw [← mem_sectionSet (z := (x, t)), mem_sectionSet_iff_mem_image_card_lt i (x, t)
-      (D.strictMono_root x)]
-    simp only [Z, hG x]
-  have hsector (x : S) (t : ℝ) (j : Fin (D.count + 1)) :
-      (x, t) ∈ sectorSet D.root j ↔
-        t ∉ Z x ∧ (Z x |>.filter (· < t)).card = j.val := by
-    rw [mem_sectorSet_iff_notMem_image_card_lt j (x, t) (D.strictMono_root x)]
-    simp only [Z, hG x]
   refine ⟨D.continuous_root, D.strictMono_root, fun i ↦ ?_, fun j ↦ ?_⟩
-  · convert hS.preimage_tail.inter
-      (G.isSemialgebraic_setOf_mem_biUnion_roots_card_lt i.val) using 1
-    ext y
-    simp only [mem_image_cylinder, mem_inter_iff, mem_preimage, mem_ofPred_eq, mem_sectionSet]
-    simpa only [Z, exists_prop] using
-      (exists_congr fun hy ↦ hsection ⟨Fin.tail y, hy⟩ (y 0) i)
-  · convert hS.preimage_tail.inter
-      (G.isSemialgebraic_setOf_notMem_biUnion_roots_card_lt j.val) using 1
-    ext y
-    simp only [mem_image_cylinder, mem_inter_iff, mem_preimage, mem_ofPred_eq]
-    simpa only [Z, exists_prop] using
-      (exists_congr fun hy ↦ hsector ⟨Fin.tail y, hy⟩ (y 0) j)
+  · rw [image_cylinder_sectionSet_eq_setOf_mem_card_lt
+      (fun x ↦ G.biUnion fun p ↦ (p.map (MvPolynomial.eval x)).roots.toFinset)
+      hG D.strictMono_root i]
+    exact hS.preimage_tail.inter (G.isSemialgebraic_setOf_mem_biUnion_roots_card_lt i.val)
+  · rw [image_cylinder_sectorSet_eq_setOf_notMem_card_lt
+      (fun x ↦ G.biUnion fun p ↦ (p.map (MvPolynomial.eval x)).roots.toFinset)
+      hG D.strictMono_root j]
+    exact hS.preimage_tail.inter (G.isSemialgebraic_setOf_notMem_biUnion_roots_card_lt j.val)
 
 end TauCeti.LazardDelineation
