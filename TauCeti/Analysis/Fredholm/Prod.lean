@@ -109,6 +109,7 @@ lemma IsFredholm.of_prodMap_right (h : IsFredholm (T.prodMap S)) : IsFredholm S 
   exact (h.equiv_comp _).comp_equiv _
 
 /-- A Cartesian product of operators is Fredholm if and only if both factors are. -/
+@[simp]
 lemma isFredholm_prodMap_iff : IsFredholm (T.prodMap S) ↔ IsFredholm T ∧ IsFredholm S :=
   ⟨fun h ↦ ⟨h.of_prodMap_left, h.of_prodMap_right⟩, fun h ↦ h.1.prodMap h.2⟩
 

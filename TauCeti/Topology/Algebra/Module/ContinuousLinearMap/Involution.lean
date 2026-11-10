@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 public import TauCeti.LinearAlgebra.Dimension.Prod
+public import TauCeti.LinearAlgebra.LinearEquiv.Basic
 public import Mathlib.LinearAlgebra.Eigenspace.Basic
 
 /-!
@@ -53,7 +54,7 @@ open Module Module.End
 
 section Restrict
 
-variable {𝕜 X Y : Type*} [Field 𝕜]
+variable {𝕜 X Y : Type*} [CommRing 𝕜]
 variable [AddCommGroup X] [Module 𝕜 X] [TopologicalSpace X]
 variable [AddCommGroup Y] [Module 𝕜 Y] [TopologicalSpace Y]
 
@@ -62,12 +63,8 @@ variable [AddCommGroup Y] [Module 𝕜 Y] [TopologicalSpace Y]
 def restrictEigenspace (T : X →L[𝕜] Y) {σX : X →L[𝕜] X} {σY : Y →L[𝕜] Y}
     (hT : T.comp σX = σY.comp T) (μ : 𝕜) :
     eigenspace (σX : End 𝕜 X) μ →L[𝕜] eigenspace (σY : End 𝕜 Y) μ :=
-  T.restrict fun x hx ↦ by
-    rw [mem_eigenspace_iff] at hx ⊢
-    have := congr($hT x)
-    simp only [coe_comp, Function.comp_apply] at this
-    simp only [coe_coe] at hx ⊢
-    rw [← this, hx, map_smul]
+  T.restrict fun _ hx ↦
+    mapsTo_genEigenspace_of_comp (T : X →ₗ[𝕜] Y) congr(toLinearMap $hT.symm) μ 1 hx
 
 @[simp]
 lemma coe_restrictEigenspace_apply (T : X →L[𝕜] Y) {σX : X →L[𝕜] X} {σY : Y →L[𝕜] Y}
@@ -142,7 +139,7 @@ end Involution
 
 section Anticommute
 
-variable {𝕜 X : Type*} [Field 𝕜]
+variable {𝕜 X : Type*} [CommRing 𝕜]
 variable [AddCommGroup X] [Module 𝕜 X] [TopologicalSpace X] [IsTopologicalAddGroup X]
 
 /-- A continuous linear map `J` with `J² = -1` anticommuting with `σ` maps the `μ`-eigenspace of
