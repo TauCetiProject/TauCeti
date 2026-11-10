@@ -11,11 +11,11 @@ public import Mathlib.RingTheory.GradedAlgebra.Basic
 /-!
 # Multiplication of homogeneous transfers
 
-When a chosen lift preserves a homogeneous product and the opposite span map preserves
-its product, transfer of that product is the finite convolution of the transfers of
-its factors. The sum uses the two actual output supports, so no finiteness assumption
-on the fibers of addition in the grading monoid is needed. Joint injectivity of the
-span is not needed either.
+When the opposite span map preserves a product of chosen lifts, transfer of that
+homogeneous product is the finite convolution of the transfers of its factors. The
+sum uses the two actual output supports, so no finiteness assumption on the fibers
+of addition in the grading monoid is needed. Joint injectivity of the span and
+multiplication on the middle module are not needed.
 
 The proof uses Mathlib's `DirectSum.decompose_mul` and `DirectSum.coe_mul_apply`.
 
@@ -29,7 +29,7 @@ public section
 namespace TauCeti.GradedCorrespondence
 
 variable {R B U V ι κ : Type*} [Semiring R]
-  [AddCommMonoid B] [Module R B] [Mul B]
+  [AddCommMonoid B] [Module R B]
   [AddCommMonoid U] [Module R U] [Mul U]
   [Semiring V] [Module R V] [Add ι] [AddMonoid κ] [DecidableEq κ]
   {𝒰 : ι → Submodule R U} {𝒱 : κ → Submodule R V}
@@ -42,10 +42,8 @@ The admissible set need not be closed under addition: admissibility of the sum i
 The reverse-crossing formula is this theorem applied to `C.symm`. -/
 theorem transfer_mul (C : TauCeti.GradedCorrespondence (B := B) 𝒰 𝒱 I J)
     (i j : I) (hij : (i : ι) + (j : ι) ∈ I) (a : 𝒰 i) (b : 𝒰 j)
-    (hLift : C.liftLeft ⟨(i : ι) + (j : ι), hij⟩
-      ⟨(a : U) * (b : U), SetLike.mul_mem_graded a.property b.property⟩ =
-        C.liftLeft i a * C.liftLeft j b)
-    (hRight : C.right (C.liftLeft i a * C.liftLeft j b) =
+    (hmul : C.right (C.liftLeft ⟨(i : ι) + (j : ι), hij⟩
+      ⟨(a : U) * (b : U), SetLike.mul_mem_graded a.property b.property⟩) =
       C.right (C.liftLeft i a) * C.right (C.liftLeft j b))
     [∀ k (v : 𝒱 k), Decidable (v ≠ 0)] (k : κ) :
     (C.transfer ⟨(i : ι) + (j : ι), hij⟩ k
@@ -53,7 +51,7 @@ theorem transfer_mul (C : TauCeti.GradedCorrespondence (B := B) 𝒰 𝒱 I J)
       ∑ p ∈ (DirectSum.decompose 𝒱 (C.right (C.liftLeft i a))).support ×ˢ
         (DirectSum.decompose 𝒱 (C.right (C.liftLeft j b))).support
         with p.1 + p.2 = k, (C.transfer i p.1 a : V) * (C.transfer j p.2 b : V) := by
-  simp only [transfer_apply, hLift, hRight, DirectSum.decompose_mul]
+  simp only [transfer_apply, hmul, DirectSum.decompose_mul]
   exact DirectSum.coe_mul_apply 𝒱 _ _ k
 
 end TauCeti.GradedCorrespondence
