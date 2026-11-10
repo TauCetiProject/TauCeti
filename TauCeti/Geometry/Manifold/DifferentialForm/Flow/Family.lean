@@ -17,7 +17,8 @@ A time-dependent family of differential forms on a manifold `M` is represented b
 inclusion `ι_t : y ↦ (t, y)`, and its *time derivative* at time `t` is the slice
 `ι_t^* (L_{∂_t} α)` of the Lie derivative along the unit vector field `∂_t` of the time coordinate.
 This is the velocity of the slices: `d/dt (α_t)_y = (ι_t^* L_{∂_t} α)_y`
-(`TauCeti.hasDerivAt_mpullback_prodMk`).
+(`TauCeti.hasDerivAt_mpullback_prodMk`). For a smooth form `α`, the Lie derivative `L_{∂_t} α` is
+again a smooth form (`TauCeti.SmoothForm.timeDerivative`).
 
 Let `X` be a jointly `C²` time-dependent vector field on a finite-dimensional manifold without
 boundary whose suspension `Z = (1, X)` on `ℝ × M` is complete, and let `φ_{s,t}` be its
@@ -50,6 +51,8 @@ to make the rate a multiple of the contact form.
 
 ## Main results
 
+* `TauCeti.SmoothForm.timeDerivative`: the time derivative `L_{∂_t} α` of a smooth form, as a
+  smooth form.
 * `TauCeti.hasDerivAt_mpullback_prodMk`: the slices of `α` have velocity `ι_t^* L_{∂_t} α`.
 * `TauCeti.mpullback_prodMk_mlieDerivForm_vertical`: `ι_t^* L_{(0, X)} α = L_{X_t} α_t`.
 * `TauCeti.mpullback_prodMk_mlieDerivForm_timeDependentSuspensionField`:
@@ -78,6 +81,50 @@ open Set Filter Bundle ContinuousAlternatingMap
 open scoped Manifold Topology ContDiff
 
 namespace TauCeti
+
+/-! ### The time derivative of a smooth form on `ℝ × M` -/
+
+section TimeDerivative
+
+variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E]
+  [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  [IsManifold I ∞ M] [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ}
+
+/-- The time derivative `L_{∂_t} α` of a smooth form `α` on `ℝ × M`, its Lie derivative along the
+unit vector field `∂_t = (1, 0)` of the time coordinate, as a smooth form. Its slices are the
+velocities of the slices of `α` (`TauCeti.hasDerivAt_mpullback_prodMk`). -/
+def SmoothForm.timeDerivative (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k) :
+    SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k :=
+  ⟨mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1, by
+    have hT : ContMDiff (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod I).tangent ∞
+        (fun p : ℝ × M ↦ (⟨p, ((1 : ℝ), (0 : E))⟩ : TangentBundle (𝓘(ℝ, ℝ).prod I) (ℝ × M))) :=
+      contMDiff_const_prod_field (X := 0) 1
+        ((contMDiff_zeroSection ℝ (TangentSpace I)).comp contMDiff_snd)
+    have hι {j : ℕ} {φ : RoughForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F (j + 1)}
+        (hφ : IsSmoothForm (𝓘(ℝ, ℝ).prod I) ∞ φ) :
+        IsSmoothForm (𝓘(ℝ, ℝ).prod I) ∞ (φ.interior fun _ ↦ ((1 : ℝ), (0 : E))) :=
+      (isSmoothForm_def _ _).2 fun p ↦
+        RoughForm.contMDiffAt_interior (hT p) (hφ.contMDiff p)
+    refine IsSmoothForm.mem_smoothBundleForms ?_
+    -- By Cartan's formula, `L_{∂_t} α` is built from interior products with `∂_t` and exterior
+    -- derivatives of smooth forms.
+    cases k with
+    | zero =>
+      exact (congrArg (IsSmoothForm (𝓘(ℝ, ℝ).prod I) ∞)
+        (mlieDerivForm_eq_interior_mextDeriv _ α.1)).mpr
+          (hι (isSmoothForm_mextDeriv α.isSmoothForm (by simp)))
+    | succ k =>
+      rw [SmoothForm.mlieDerivForm_eq_interior_mextDeriv_add (hT.mdifferentiable (by simp))]
+      exact (hι (isSmoothForm_mextDeriv α.isSmoothForm (by simp))).add
+        (isSmoothForm_mextDeriv (hι α.isSmoothForm) (by simp))⟩
+
+/-- The smooth form `TauCeti.SmoothForm.timeDerivative α` is the Lie derivative `L_{∂_t} α`. -/
+@[simp]
+theorem SmoothForm.coe_timeDerivative (α : SmoothForm (𝓘(ℝ, ℝ).prod I) (ℝ × M) F k) :
+    (SmoothForm.timeDerivative α).1 = mlieDerivForm (fun _ ↦ ((1 : ℝ), (0 : E))) α.1 :=
+  (rfl)
+
+end TimeDerivative
 
 variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]

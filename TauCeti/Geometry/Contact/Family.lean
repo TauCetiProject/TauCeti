@@ -46,6 +46,9 @@ constructions then depend smoothly on the parameter
 * `TauCeti.SmoothForm.contMDiff_reebVectorField_mpullback_prodMk` and
   `TauCeti.SmoothForm.contMDiff_contactMoserVectorField_mpullback_prodMk`: the global versions, when
   every slice is contact.
+* `TauCeti.SmoothForm.contMDiff_mpullback_prodMk_apply_reebVectorField`: when every slice is
+  contact, the values `β_t(R_(α_t))` of the slices of a second smooth one-form on the Reeb vector
+  fields depend smoothly on `(t, y)`.
 
 ## References
 
@@ -128,5 +131,26 @@ theorem contMDiff_contactMoserVectorField_mpullback_prodMk
         TangentBundle I M)) := by
   rw [← contMDiffOn_univ, ← Set.univ_prod_univ]
   exact contMDiffOn_contactMoserVectorField_mpullback_prodMk α β isOpen_univ fun t _ ↦ hc t
+
+/-- **Evaluation on the Reeb vector fields of a smooth family of contact forms.** If every slice
+`α_t = ι_t^* α` of a smooth one-form `α` on `N × M` is a contact form, and `β` is a second smooth
+one-form on `N × M` with slices `β_t`, then the function `(t, y) ↦ β_t(R_(α_t))(y)` is smooth. -/
+theorem contMDiff_mpullback_prodMk_apply_reebVectorField
+    (α β : SmoothForm (J.prod I) (N × M) ℝ 1)
+    (hc : ∀ t, (mpullback (Prod.mk t) (contMDiff_const.prodMk contMDiff_id) α).IsContactForm) :
+    ContMDiff (J.prod I) 𝓘(ℝ) ∞ fun p : N × M ↦
+      (mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) β).1 p.2
+        ![(mpullback (Prod.mk p.1) (contMDiff_const.prodMk contMDiff_id) α).reebVectorField
+          p.2] := by
+  intro p
+  have hβ := (contMDiffAt_sectionAlong_degreeOneEquiv_iff (b := Prod.snd) (α := fun q : N × M ↦
+    mpullback (Prod.mk q.1) (contMDiff_const.prodMk contMDiff_id) β)).2
+      (contMDiff_mpullback_prodMk β p)
+  -- The evaluation, read in the trivial line bundle.
+  have h := (contMDiffAt_totalSpace.1 (ContMDiffAt.clm_bundle_apply (E₂ := Trivial M ℝ) hβ
+    (contMDiff_reebVectorField_mpullback_prodMk α hc p))).2
+  simp only [Trivial.eq_trivialization, Trivial.trivialization_apply,
+    degreeOneEquiv_apply_apply_vec] at h
+  exact h
 
 end TauCeti.SmoothForm
