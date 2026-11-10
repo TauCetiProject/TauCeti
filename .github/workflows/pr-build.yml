@@ -108,14 +108,14 @@ jobs:
     # PR fleet targets name the shared group and PR class; GitHub assigns the
     # next matching runner, including replacements on another enrolled host.
     # Picker outputs remain attempt-scoped. Staging retains exact guest labels
-    # and waits for chungus2 when selection fails or is stale.
+    # and waits for tauchonki2 when selection fails or is stale.
     # Maintenance repairs must not wait behind the ordinary PR backlog. These
     # use the same vetted Namespace sandbox shape as ordinary overflow, with
     # the existing staging priority. This changes scheduling, never merge gates.
     #
-    # Staging is restricted to chungus2 and tauchonki2. Prefer the picker's exact
-    # idle staging guest; if both are occupied or selection failed, queue for the
-    # next staging guest on chungus2 using its permanent machine label. Do not
+    # Staging is restricted to tauchonki2. Prefer the picker's exact idle
+    # staging guest; if occupied or selection failed, queue for the next staging
+    # guest on tauchonki2 using its permanent machine label. Do not
     # fall back to cloud capacity or a stale ephemeral instance. STAGING_RUNS_ON
     # is retired for staging: an old Namespace value cannot override this policy.
     # Nineteen native concurrency groups cap all hosted bulk builds across
@@ -123,10 +123,10 @@ jobs:
     # roadmap merge builds. Waiting here consumes no runner. Other pools retain
     # their existing concurrency; failed pickers share conservative slot zero.
     concurrency:
-      group: ${{ contains(fromJSON('["ubuntu-latest","ubuntu-24.04","ubuntu-22.04"]'), (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON((needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && contains(fromJSON('["chungus2","tauchonki2"]'), needs.pick-runner.outputs.pool) && needs.pick-runner.outputs.runner) || '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-2ef87dd35cf74820a7a3b26e8820dcc5"]') || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"'))) && format('tauceti-hosted-bulk-{0}', needs.pick-runner.outputs.hosted-slot || '0') || format('unlimited-sandboxed-build-{0}', github.run_id) }}
+      group: ${{ contains(fromJSON('["ubuntu-latest","ubuntu-24.04","ubuntu-22.04"]'), (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON((needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && contains(fromJSON('["tauchonki2"]'), needs.pick-runner.outputs.pool) && needs.pick-runner.outputs.runner) || '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]') || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"'))) && format('tauceti-hosted-bulk-{0}', needs.pick-runner.outputs.hosted-slot || '0') || format('unlimited-sandboxed-build-{0}', github.run_id) }}
       queue: max
       cancel-in-progress: false
-    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON((needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && contains(fromJSON('["chungus2","tauchonki2"]'), needs.pick-runner.outputs.pool) && needs.pick-runner.outputs.runner) || '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-2ef87dd35cf74820a7a3b26e8820dcc5"]') || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"')) }}
+    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON((needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && contains(fromJSON('["tauchonki2"]'), needs.pick-runner.outputs.pool) && needs.pick-runner.outputs.runner) || '["self-hosted","linux","x64","tauceti-fleet-staging","fleet-74773fc7f54d4877add11d80113fe340"]') || ((inputs.maintenance || (github.event.pull_request.user.type == 'Bot' && github.event.pull_request.head.repo.full_name == github.repository && (startsWith(github.event.pull_request.head.ref, 'bump-mathlib/') || startsWith(github.event.pull_request.head.ref, 'lint-repair/')))) && fromJSON(format('["nscloud-ubuntu-24.04-amd64-8x16-with-features;job.priority=1","namespace-features:container.privileged=true;github.run-id={0}"]', github.run_id)) || fromJSON(needs.pick-runner.outputs.attempt == format('{0}', github.run_attempt) && needs.pick-runner.outputs.runner || '"ubuntu-24.04"')) }}
     outputs:
       status-sha: ${{ steps.pr.outputs.status_sha }}
       build-state: ${{ steps.report.outputs.build-state }}
@@ -1684,17 +1684,14 @@ jobs:
   # The merge queue's required `build` status is posted only here. In a configured installation,
   # green therefore means both that the combined commit passed every sandboxed audit and that a
   # fresh checkout can fetch its exact output map from the public cache before GitHub lands it.
-  # Priority zero puts terminal reporting ahead of compiler jobs (priority one). Run-specific
-  # assignment prevents other runs from taking its runner. No candidate checkout, privileged
-  # container or persistent cache is needed here. See Namespace's job-ordering documentation.
+  # Queue control slots are reserved on tauchonki2 and cannot accept ordinary PR builds.
+  # Publication and finalization run concurrently on separate disposable guests.
   finalize-merge-group-build:
     # Start beside publication so an unacquired publisher cannot suppress terminal reporting.
     # Finalizer (2x4) + publisher (4x8) fit within the freed compiler allocation (8x16).
     needs: sandboxed-build
     if: ${{ always() && (github.event_name == 'merge_group' || (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging')) }}
-    runs-on:
-      - nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0
-      - namespace-features:github.run-id=${{ github.run_id }}
+    runs-on: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && fromJSON('["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]') || fromJSON(format('["nscloud-ubuntu-24.04-amd64-2x4-with-features;job.priority=0","namespace-features:github.run-id={0}"]', github.run_id)) }}
     timeout-minutes: 30
     permissions:
       contents: read  # sparse immutable finalization tools only
@@ -1707,6 +1704,7 @@ jobs:
       BUILD_DESCRIPTION: ${{ needs.sandboxed-build.outputs.build-description }}
       PUBLICATION_REQUIRED: ${{ needs.sandboxed-build.outputs.publication-required }}
       BORS_STAGING: ${{ github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging' }}
+      CI_PUBLISHER_RUNNER_LABELS: ${{ (github.event_name == 'repository_dispatch' && github.event.action == 'tauceti-bors-staging') && '["self-hosted","linux","x64","tauceti-fleet-queue-control","fleet-74773fc7f54d4877add11d80113fe340"]' || '' }}
       BORS_BATCH_ID: ${{ github.event.client_payload.batch_id }}
       BORS_BASE_SHA: ${{ github.event.client_payload.base_sha }}
       BORS_BASE_REF: ${{ github.event.client_payload.base_ref }}
@@ -1729,6 +1727,18 @@ jobs:
           tools-repository: TauCetiProject/TauCetiTools
           tools-ref: 4d2579da7cdb5679ab523d281f61c73ffb502f75
           project-directory: .
+      - name: Install workflow-pinned reserved-publisher validation
+        uses: actions/checkout@v4
+        with:
+          repository: TauCetiProject/TauCetiTools
+          ref: e017783d06f9f671e69b65991a9bb18019dde699
+          path: queue-finalization-tools
+          sparse-checkout: tauceti_tools/assets/scripts/finalize_batch.py
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - name: Use the pinned queue finalizer
+        run: cp queue-finalization-tools/tauceti_tools/assets/scripts/finalize_batch.py scripts/finalize_batch.py
+
       - name: Select CI API credentials
         id: ci-api
         uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@4d2579da7cdb5679ab523d281f61c73ffb502f75

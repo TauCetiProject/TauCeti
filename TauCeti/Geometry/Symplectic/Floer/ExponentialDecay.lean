@@ -478,7 +478,8 @@ theorem exists_pos_eventually_setLIntegral_floerEnergyDensity_Ici_le_exp
     tendsto_nhds_unique (hux₀.tendsto_at t) ((hux.tendsto_at t).comp hφ)
   rw [hx₀] at hlim
   -- The action defect `f s = A_H(x) - A_H(u(s, ·))` is nonnegative and nonincreasing.
-  have hmono : MonotoneOn A (Ioi a) := monotoneOn_hamiltonianAction_of_floer hH1 hu hper hJ hfloer
+  have hmono : MonotoneOn A (Ioi a) :=
+    ω.monotoneOn_hamiltonianAction_of_floer isOpen_Ioi hH1 hu hper hJ hfloer
   set f : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H x - A s with hfdef
   have hf0 (s : ℝ) (hs : a < s) : 0 ≤ f s :=
     sub_nonneg.2 (ge_of_tendsto hlim ((eventually_ge_atTop s).mono fun s' h ↦

@@ -6,7 +6,7 @@ The policy is in `[services.fleet]` in `tauceti.toml`:
 | Build class | Preference order |
 | --- | --- |
 | PR | GitHub → fleet → Namespace |
-| Bors staging | chungus2 → tauchonki2; otherwise wait for chungus2 |
+| Bors staging | tauchonki2; otherwise wait for tauchonki2 |
 
 `fleet` is a live pool of eligible runners in the configured GitHub runner group,
 not a list of machines in this repository. Adding or replacing a host requires
@@ -28,8 +28,8 @@ PR startup cancellation/rerun loop is involved. Named PR machine tiers, if
 configured, retain the permanent host label but omit the disposable instance.
 
 Staging retains exact guest selection, preferring reserved staging runners. This
-project restricts staging to chungus2 and tauchonki2; when selection is unavailable
-it waits for the permanent chungus2 staging label. PRs cannot consume those
+project restricts staging to tauchonki2; when selection is unavailable it waits
+for the permanent tauchonki2 staging label. PRs cannot consume those
 staging-only runners.
 
 Namespace has an approximate cap of **20 queued or running build jobs**, shared
@@ -51,7 +51,7 @@ Capacity scans use the repository workflow token, preserving the reserve set by
 authorize spare cloud capacity. Fleet placement uses complete online/idle runner
 inventory and class labels, retaining any observed queued guest
 reservations even when global queue coverage is incomplete. Concurrent PR
-selections wait in the shared pool. Staging tries its two dedicated machines
+selections wait in the shared pool. Staging tries its dedicated machine
 first and retains the local staging fallback.
 The existing shared state service coalesces cloud and queued-target discovery;
 older snapshots can still answer the first GitHub preference. Every picker runs

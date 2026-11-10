@@ -174,10 +174,13 @@ theorem isGeodesicCurveOnFrom_maximalGeodesic (p : M) (v : TangentSpace I p) :
   unfold maximalGeodesic
   simpa only [curveVelocityLiftWithin_apply] using hlift.symm.trans hz0
 
+omit [I.Boundaryless] [T2Space M] in
 /-- The maximal geodesic starts at its prescribed base point. -/
 @[simp] theorem maximalGeodesic_zero (p : M) (v : TangentSpace I p) :
-    maximalGeodesic I M p v 0 = p :=
-  (isGeodesicCurveOnFrom_maximalGeodesic (I := I) (M := M) p v).base_eq
+    maximalGeodesic I M p v 0 = p := by
+  by_cases h : (0 : ℝ) ∈ maximalIntegralCurveInterval (geodesicSpray I M) (TotalSpace.mk' E p v)
+  · rw [maximalGeodesic, maximalIntegralCurve_zero h]
+  · rw [maximalGeodesic, maximalIntegralCurve_eq_of_not_mem h]
 
 /-- Every geodesic with initial data `(p, v)` on an open interval around zero agrees there with
 the maximal geodesic. -/
