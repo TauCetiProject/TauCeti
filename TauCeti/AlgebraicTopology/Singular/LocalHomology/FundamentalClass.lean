@@ -517,8 +517,8 @@ def rationalFundamentalClassEquiv : ℚ ≃ₗ[ℚ]
   let F : ModuleCat.{0} ℤ ⥤ ModuleCat.{0} ℚ := ModuleCat.extendScalars (Int.castRingHom ℚ)
   let eUnit : F.obj (ModuleCat.of ℤ ℤ) ≅ ModuleCat.of ℚ ℚ :=
     (TensorProduct.AlgebraTensorModule.rid ℤ ℚ ℚ).toModuleIso
-  exact (eUnit.symm ≪≫ F.mapIso (o.fundamentalClassEquiv hn).toModuleIso ≪≫
-    (TopCat.toSSet.obj (TopCat.of M)).rationalHomologyExtendScalarsIso n).toLinearEquiv
+  let eH := (TopCat.toSSet.obj (TopCat.of M)).homologyExtendScalarsIso (Int.castRingHom ℚ) n
+  exact (eUnit.symm ≪≫ F.mapIso (o.fundamentalClassEquiv hn).toModuleIso ≪≫ eH).toLinearEquiv
 
 /-- Reversing orientation negates every value of the normalized rational equivalence. -/
 theorem rationalFundamentalClassEquiv_neg_apply (c : ℚ) :
@@ -527,7 +527,7 @@ theorem rationalFundamentalClassEquiv_neg_apply (c : ℚ) :
   have : F.Additive := Functor.additive_of_preserves_binary_products F
   let eUnit : F.obj (ModuleCat.of ℤ ℤ) ≅ ModuleCat.of ℚ ℚ :=
     (TensorProduct.AlgebraTensorModule.rid ℤ ℚ ℚ).toModuleIso
-  let eH := (TopCat.toSSet.obj (TopCat.of M)).rationalHomologyExtendScalarsIso n
+  let eH := (TopCat.toSSet.obj (TopCat.of M)).homologyExtendScalarsIso (Int.castRingHom ℚ) n
   -- Keep the induced integer action visible in these typed comparison maps. The original
   -- composition uses a definitionally equal canonical action in its tensor unit isomorphism.
   change eH.hom ((F.map ((-o).fundamentalClassEquiv hn).toModuleIso.hom)
