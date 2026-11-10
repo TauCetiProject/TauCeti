@@ -26,10 +26,11 @@ category with coproducts, differ by the sign of `det g`
 (`TauCeti.reducedSingularHomologyFunctor_map_morseAttachingMap_eq_sign_det_smul`). In particular,
 an orientation-reversing change of chart, `det g = -1`, changes the sign of the attaching map in
 homology (`TauCeti.reducedSingularHomologyFunctor_map_morseAttachingMap_of_det_eq_neg_one`), and an
-orientation-preserving one does not. This holds in every index `m + 1 ≥ 1`. For index `1` the
-sphere `∂D¹` consists of two points, `g = -1`, and the attaching maps are related by the swap of
-the two points (`TauCeti.homotopic_morseAttachingMap_diskBoundaryNeg_comp_of_det_eq_neg_one`); on
-`H_red₀(∂D¹)` the swap acts by `-1`.
+orientation-preserving one does not. This holds in every index `m + 1 ≥ 1`. For index `1` and
+`det g = -1`, the sphere `∂D¹` consists of two points, `g = -1`, and the attaching maps are
+related by the swap of the two points
+(`TauCeti.homotopic_morseAttachingMap_diskBoundaryNeg_comp_of_det_eq_neg_one`); on `H_red₀(∂D¹)`
+the swap acts by `-1`.
 
 ## Main results
 
