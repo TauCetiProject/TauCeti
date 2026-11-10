@@ -39,23 +39,28 @@ variable {I R : Type*} [TopologicalSpace I] [DiscreteTopology I] [DecidableEq I]
   [NormedCommRing R] [IsUltrametricDist R] [TauCeti.NormedRing.IsTate R]
   {u : C₀(I, R) →L[R] C₀(I, R)}
 
-variable [CompleteSpace R] {B : R⟦X⟧}
+variable {B : R⟦X⟧}
 
-/-- Evaluating an entire series with zero constant term at a row-compact operator preserves
-row compactness, over complete ultrametric Tate rings. -/
-theorem IsRowCompact.evalAt (hu : u.IsRowCompact) (hB : B.IsEntire)
-    (hB0 : PowerSeries.constantCoeff B = 0) :
+/-- Evaluating a power series with zero constant term at a row-compact operator preserves row
+compactness, over ultrametric Tate rings. If the series of terms is not summable, the evaluation
+is `0`. -/
+theorem IsRowCompact.evalAt (hu : u.IsRowCompact) (hB0 : PowerSeries.constantCoeff B = 0) :
     (B.evalAt u).IsRowCompact := by
-  apply hu.of_tendsto_opNorm_sum_pow (b := fun n ↦ PowerSeries.coeff n B)
-    ((PowerSeries.coeff_zero_eq_constantCoeff_apply B).trans hB0)
-  simpa only [norm_sub_rev] using
-    tendsto_iff_norm_sub_tendsto_zero.mp (hB.hasSum_evalAt u).tendsto_sum_nat
+  by_cases hs : Summable fun n ↦ PowerSeries.coeff n B • u ^ n
+  · apply hu.of_tendsto_opNorm_sum_pow (b := fun n ↦ PowerSeries.coeff n B)
+      ((PowerSeries.coeff_zero_eq_constantCoeff_apply B).trans hB0)
+    rw [PowerSeries.evalAt_def]
+    simpa only [norm_sub_rev] using
+      tendsto_iff_norm_sub_tendsto_zero.mp hs.hasSum.tendsto_sum_nat
+  · rw [PowerSeries.evalAt_def, tsum_eq_zero_of_not_summable hs]
+    exact isRowCompact_zero
+
+variable [CompleteSpace R]
 
 /-- The nonconstant part of an entire function of a row-compact operator is row compact. -/
 theorem IsRowCompact.evalAt_sub_constantCoeff (hu : u.IsRowCompact) (hB : B.IsEntire) :
     (B.evalAt u - PowerSeries.constantCoeff B • (1 : C₀(I, R) →L[R] C₀(I, R))).IsRowCompact := by
-  have h := hu.evalAt (hB.sub (PowerSeries.isEntire_C (PowerSeries.constantCoeff B)))
-    (by simp)
+  have h := hu.evalAt (B := B - PowerSeries.C (PowerSeries.constantCoeff B)) (by simp)
   have heq : (B - PowerSeries.C (PowerSeries.constantCoeff B)).evalAt u =
       B.evalAt u - PowerSeries.constantCoeff B • (1 : C₀(I, R) →L[R] C₀(I, R)) :=
     (hB.evalAt_sub (PowerSeries.isEntire_C _) u).trans
