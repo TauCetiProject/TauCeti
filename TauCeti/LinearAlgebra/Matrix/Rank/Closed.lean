@@ -39,6 +39,8 @@ of the elements whose centralizer has minimal dimension.
   `j`-th power, holding on a set of matrices holds on its Zariski closure.
 * `Matrix.isClosed_setOfPred_rank_le` and `Matrix.isClosed_setOfPred_rank_pow_le`: the matrices of
   rank at most `r`, and the square matrices `Z` with `rank (Z ^ j) ≤ r`, form closed sets.
+* `Matrix.finite_of_mulVec_surjective`: a matrix whose `mulVec` is surjective has finitely many
+  rows.
 * `Matrix.isOpen_setOfPred_mulVec_surjective`: full row rank is an open condition on matrices.
 * `LinearMap.exists_eval_eq_det_submatrix`: each minor of the matrix of a linear family `φ x` is a
   polynomial in the coordinates of `x`.
@@ -110,6 +112,18 @@ theorem isClosed_setOfPred_rank_le {m : Type*} [Finite m] (r : ℕ) :
   have huncurry : Continuous (Function.uncurry : Matrix m n K → m × n → K) :=
     continuous_pi fun p ↦ continuous_id.matrix_elem p.1 p.2
   exact mem_closure_image huncurry.continuousAt hY
+
+omit [DecidableEq n] in
+/-- If `A.mulVec` is surjective, then `A` has finitely many rows: a finite-dimensional space
+cannot surject onto the infinite-dimensional space `m → K`. -/
+theorem finite_of_mulVec_surjective {K : Type*} [Field K] {m : Type*} (A : Matrix m n K)
+    (h : Function.Surjective A.mulVec) : Finite m := by
+  by_contra hm
+  rw [not_finite_iff_infinite] at hm
+  have : Module.Finite K (m → K) := Module.Finite.of_surjective (mulVecLin A) h
+  have hlt := Module.rank_lt_aleph0 K (m → K)
+  rw [rank_fun_infinite] at hlt
+  exact absurd (Cardinal.infinite_iff.1 (inferInstance : Infinite (m → K))) (not_le.2 hlt)
 
 omit [DecidableEq n] in
 /-- Over a field with continuous ring operations and closed points, surjectivity of `A.mulVec` is
