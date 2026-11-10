@@ -63,6 +63,8 @@ factors by vectors of that subspace does not change the product.
   `TauCeti.ExteriorAlgebra.ιMulti_comp_append` splits the image of an appended family.
 * `TauCeti.ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul`: exterior products of `i` and
   `j` vectors commute up to the scalar sign `(-1) ^ (j * i)`.
+* `TauCeti.ExteriorAlgebra.map_ιMulti_append`: a linear map sends the exterior product of an
+  appended family `a, b` to that of the images of `b, a`, up to the sign `(-1) ^ (m * n)`.
 * `TauCeti.ExteriorAlgebra.exteriorPower_map_map`: the image of `⋀ⁿ M` in the exterior algebra
   under the map induced by `f` is the `n`th power of the degree-one image of `f`.
 * `TauCeti.ExteriorAlgebra.ι_mem_exteriorPower_one` and
@@ -430,6 +432,16 @@ theorem ιMulti_mul_ιMulti_eq_neg_one_pow_smul {i j : ℕ} (u : Fin i → M) (v
   rw [_root_.ExteriorAlgebra.ιMulti_mul_ιMulti_anticomm, Units.smul_def,
     ← Int.cast_smul_eq_zsmul R]
   norm_num
+
+/-- The image under a linear map of the exterior product of an appended family `a, b` is the
+exterior product of the images of `b` followed by those of `a`, up to the sign `(-1) ^ (m * n)`
+of exchanging the two blocks. -/
+theorem map_ιMulti_append {n m : ℕ} (f : M →ₗ[R] N) (a : Fin n → M) (b : Fin m → M) :
+    _root_.ExteriorAlgebra.map f (_root_.ExteriorAlgebra.ιMulti R (n + m) (Fin.append a b)) =
+      (-1 : R) ^ (m * n) •
+        _root_.ExteriorAlgebra.ιMulti R (m + n) (Fin.append (f ∘ b) (f ∘ a)) := by
+  rw [_root_.ExteriorAlgebra.map_apply_ιMulti, ιMulti_comp_append,
+    ιMulti_mul_ιMulti_eq_neg_one_pow_smul, _root_.ExteriorAlgebra.ιMulti_mul_ιMulti]
 
 /-- Inside the exterior algebra, the image of the `n`th exterior power under the map induced by
 `f` is the `n`th power of the degree-one image of the range of `f`. -/

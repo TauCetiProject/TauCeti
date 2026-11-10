@@ -24,7 +24,12 @@ cokernels induced by a map of two-term complexes whose cone `K₀ → C₀ × K�
 `Function.Exact.bijective_mapQ_range_of_prod_coprod`), the exact sequence
 `0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) → coker g → 0` of a composition, with
 middle maps `LinearMap.kerCompToKer`, `LinearMap.kerToCoker` and `LinearMap.cokerToCokerComp`
-(`LinearMap.exact_kerCompToKer_kerToCoker` and its neighbours), the dimension
+(`LinearMap.exact_kerCompToKer_kerToCoker` and its neighbours), the short exact sequences
+`0 → ker f → ker (f.prodMap g) → ker g → 0` and `0 → coker f → coker (f.prodMap g) → coker g → 0`
+of a direct sum, with maps `LinearMap.kerInlProdMap`, `LinearMap.kerSndProdMap`,
+`LinearMap.cokerInlProdMap` and `LinearMap.cokerSndProdMap`
+(`LinearMap.exact_kerInlProdMap_kerSndProdMap`, `LinearMap.exact_cokerInlProdMap_cokerSndProdMap`)
+and splittings `LinearMap.kerInrProdMap` and `LinearMap.cokerInrProdMap`, the dimension
 `dim X + dim Y - dim T` of the transverse fibre product `{(ξ, η) | α ξ = β η}` of
 `α : X → T` and `β : Y → T` (`LinearMap.finrank_ker_coprod_neg_add`), the dimension of the
 homology of a complex of finite-dimensional vector spaces in terms of the two cokernels
@@ -425,6 +430,138 @@ theorem _root_.LinearMap.exact_cokerToCokerComp_factor :
   simp [cokerToCokerComp, Submodule.factor, Submodule.ker_mapQ, Submodule.range_mapQ]
 
 end KerCokerComp
+
+section KerCokerProdMap
+
+open LinearMap
+
+variable {R : Type*} [Ring R] {M N M' N' : Type*} [AddCommGroup M] [Module R M]
+  [AddCommGroup N] [Module R N] [AddCommGroup M'] [Module R M'] [AddCommGroup N'] [Module R N']
+  (f : M →ₗ[R] N) (g : M' →ₗ[R] N')
+
+/-- The inclusion `x ↦ (x, 0)` of `ker f` into `ker (f.prodMap g)`. -/
+def _root_.LinearMap.kerInlProdMap : ker f →ₗ[R] ker (f.prodMap g) :=
+  (inl R M M').restrict fun x hx ↦ by simpa using hx
+
+/-- The inclusion `y ↦ (0, y)` of `ker g` into `ker (f.prodMap g)`. -/
+def _root_.LinearMap.kerInrProdMap : ker g →ₗ[R] ker (f.prodMap g) :=
+  (inr R M M').restrict fun x hx ↦ by simpa using hx
+
+/-- The second projection `ker (f.prodMap g) → ker g`. -/
+def _root_.LinearMap.kerSndProdMap : ker (f.prodMap g) →ₗ[R] ker g :=
+  (snd R M M').restrict fun x hx ↦ by simp_all
+
+@[simp]
+theorem _root_.LinearMap.coe_kerInlProdMap_apply (x : ker f) :
+    (kerInlProdMap f g x : M × M') = ((x : M), 0) :=
+  (rfl)
+
+@[simp]
+theorem _root_.LinearMap.coe_kerInrProdMap_apply (y : ker g) :
+    (kerInrProdMap f g y : M × M') = (0, (y : M')) :=
+  (rfl)
+
+@[simp]
+theorem _root_.LinearMap.coe_kerSndProdMap_apply (z : ker (f.prodMap g)) :
+    (kerSndProdMap f g z : M') = (z : M × M').2 :=
+  (rfl)
+
+@[simp]
+theorem _root_.LinearMap.kerSndProdMap_comp_kerInrProdMap :
+    kerSndProdMap f g ∘ₗ kerInrProdMap f g = LinearMap.id :=
+  LinearMap.ext fun _ ↦ Subtype.ext (by simp)
+
+theorem _root_.LinearMap.kerInlProdMap_injective :
+    Function.Injective (kerInlProdMap f g) := fun x y h ↦
+  Subtype.ext (by simpa using congrArg (fun z : ker (f.prodMap g) ↦ (z : M × M').1) h)
+
+theorem _root_.LinearMap.kerSndProdMap_surjective :
+    Function.Surjective (kerSndProdMap f g) := fun y ↦
+  ⟨kerInrProdMap f g y, LinearMap.congr_fun (kerSndProdMap_comp_kerInrProdMap f g) y⟩
+
+/-- `0 → ker f → ker (f.prodMap g) → ker g → 0` is exact in the middle. -/
+theorem _root_.LinearMap.exact_kerInlProdMap_kerSndProdMap :
+    Function.Exact (kerInlProdMap f g) (kerSndProdMap f g) := by
+  rintro ⟨⟨x, y⟩, hz⟩
+  constructor
+  · intro h
+    have hy : y = 0 := by simpa using congrArg Subtype.val h
+    subst hy
+    exact ⟨⟨x, by simpa using hz⟩, Subtype.ext (by simp)⟩
+  · rintro ⟨x', hx'⟩
+    rw [← hx']
+    exact Subtype.ext (by simp)
+
+/-- The map `coker f → coker (f.prodMap g)` induced by `x ↦ (x, 0)`. -/
+def _root_.LinearMap.cokerInlProdMap : N ⧸ range f →ₗ[R] (N × N') ⧸ range (f.prodMap g) :=
+  (range f).mapQ _ (inl R N N') fun x ⟨m, hm⟩ ↦ ⟨(m, 0), by simp [hm]⟩
+
+/-- The map `coker g → coker (f.prodMap g)` induced by `y ↦ (0, y)`. -/
+def _root_.LinearMap.cokerInrProdMap : N' ⧸ range g →ₗ[R] (N × N') ⧸ range (f.prodMap g) :=
+  (range g).mapQ _ (inr R N N') fun y ⟨m, hm⟩ ↦ ⟨(0, m), by simp [hm]⟩
+
+/-- The map `coker (f.prodMap g) → coker g` induced by the second projection. -/
+def _root_.LinearMap.cokerSndProdMap : (N × N') ⧸ range (f.prodMap g) →ₗ[R] N' ⧸ range g :=
+  (range (f.prodMap g)).mapQ _ (snd R N N') fun _ ⟨m, hm⟩ ↦ ⟨m.2, by simp [← hm]⟩
+
+@[simp]
+theorem _root_.LinearMap.cokerInlProdMap_mk (x : N) :
+    cokerInlProdMap f g (Submodule.Quotient.mk x) = Submodule.Quotient.mk (x, 0) :=
+  (rfl)
+
+@[simp]
+theorem _root_.LinearMap.cokerInrProdMap_mk (y : N') :
+    cokerInrProdMap f g (Submodule.Quotient.mk y) = Submodule.Quotient.mk (0, y) :=
+  (rfl)
+
+@[simp]
+theorem _root_.LinearMap.cokerSndProdMap_mk (z : N × N') :
+    cokerSndProdMap f g (Submodule.Quotient.mk z) = Submodule.Quotient.mk z.2 :=
+  (rfl)
+
+@[simp]
+theorem _root_.LinearMap.cokerSndProdMap_comp_cokerInrProdMap :
+    cokerSndProdMap f g ∘ₗ cokerInrProdMap f g = LinearMap.id := by
+  ext y
+  simp
+
+theorem _root_.LinearMap.cokerInlProdMap_injective : Function.Injective (cokerInlProdMap f g) := by
+  rw [← LinearMap.ker_eq_bot, LinearMap.ker_eq_bot']
+  intro x hx
+  induction x using Submodule.Quotient.induction_on with
+  | H x =>
+    rw [cokerInlProdMap_mk, Submodule.Quotient.mk_eq_zero] at hx
+    obtain ⟨⟨m, m'⟩, hm⟩ := hx
+    rw [Submodule.Quotient.mk_eq_zero]
+    exact ⟨m, by simpa using congrArg Prod.fst hm⟩
+
+theorem _root_.LinearMap.cokerSndProdMap_surjective :
+    Function.Surjective (cokerSndProdMap f g) := fun y ↦
+  ⟨cokerInrProdMap f g y, LinearMap.congr_fun (cokerSndProdMap_comp_cokerInrProdMap f g) y⟩
+
+/-- `0 → coker f → coker (f.prodMap g) → coker g → 0` is exact in the middle. -/
+theorem _root_.LinearMap.exact_cokerInlProdMap_cokerSndProdMap :
+    Function.Exact (cokerInlProdMap f g) (cokerSndProdMap f g) := by
+  intro z
+  induction z using Submodule.Quotient.induction_on with
+  | H z =>
+    obtain ⟨x, y⟩ := z
+    rw [cokerSndProdMap_mk, Submodule.Quotient.mk_eq_zero]
+    constructor
+    · rintro ⟨m', hm'⟩
+      refine ⟨Submodule.Quotient.mk x, ?_⟩
+      rw [cokerInlProdMap_mk, Submodule.Quotient.eq]
+      exact ⟨(0, -m'), by simp [hm']⟩
+    · rintro ⟨x', hx'⟩
+      induction x' using Submodule.Quotient.induction_on with
+      | H x' =>
+        rw [cokerInlProdMap_mk, Submodule.Quotient.eq] at hx'
+        obtain ⟨⟨m, m'⟩, hm⟩ := hx'
+        have hm' : g m' = -y := by simpa using congrArg Prod.snd hm
+        exact ⟨-m', by simp [hm']⟩
+
+
+end KerCokerProdMap
 
 section Homology
 
