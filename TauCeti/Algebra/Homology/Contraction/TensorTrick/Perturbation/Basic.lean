@@ -468,10 +468,8 @@ theorem isGradedCoderivation_reducedTensorWords_perturbedDifferential
   have hU : IsUnit (1 + δ * (c.reducedTensorWords G H hdM hh hincl hproj).homotopy) := by
     rw [c.reducedTensorWords_homotopy G H hdM hh hincl hproj]
     refine Module.End.isUnit_one_add_of_forall_exists_pow_apply_eq_zero _ fun z ↦ ?_
-    refine ReducedTensorWords.exists_pow_apply_eq_zero_of_filtration_lowering R M _
-      (fun n ↦ ?_) z
-    rw [Module.End.mul_eq_comp, Submodule.map_comp]
-    exact (Submodule.map_mono (c.reducedTensorWordsHomotopy_filtration G (n + 1))).trans (hδfil n)
+    exact ReducedTensorWords.exists_pow_comp_apply_eq_zero_of_filtration_lowering R M δ
+      (c.reducedTensorWordsHomotopy G) hδfil (c.reducedTensorWordsHomotopy_filtration G) z
   -- Strategy: `i' D' = (D + δ) i'`, where `i'` is a coalgebra morphism commuting with the Koszul
   -- twists and `D + δ` is a graded coderivation.  Hence `(i' ⊗ i')` intertwines the two sides of
   -- the co-Leibniz rule for `D'`, and `i' ⊗ i'` has the left inverse `p' ⊗ p'`.
