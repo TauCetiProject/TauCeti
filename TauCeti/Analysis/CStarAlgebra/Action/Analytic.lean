@@ -416,8 +416,9 @@ theorem apply_entireExtension_of_apply_action {φ : A →L[ℂ] ℂ}
   congrFun ((φ.differentiable.comp (differentiable_entireExtension α b)).eq_of_ofReal_eq
     (differentiable_const (φ b)) fun t => by simp [hb.entireExtension_ofReal, hφ]) z
 
-/-- For an invariant continuous linear functional `φ` and entire analytic `a, b`,
-`φ (α_z(a) α_w(b)) = φ (a α_{w - z}(b))`. -/
+/-- For an invariant continuous linear functional `φ`, an entire analytic `a` and an arbitrary `b`,
+`φ (α_z(a) α_w(b)) = φ (a α_{w - z}(b))`. For a `b` which is not entire analytic both sides
+vanish. -/
 theorem apply_entireExtension_mul_entireExtension_of_apply_action {φ : A →L[ℂ] ℂ}
     (hφ : ∀ t a, φ (α t a) = φ a) (ha : α.IsEntireAnalytic a) (z w : ℂ) :
     φ (α.entireExtension a z * α.entireExtension b w) =
@@ -457,8 +458,9 @@ open scoped ComplexOrder
 
 variable [PartialOrder A] [StarOrderedRing A] {ω : A →P[ℂ] ℂ}
 
-/-- For an invariant positive functional `ω` and an entire analytic `a`, the imaginary-time
-correlation `ω (a⋆ α_{is}(a))` is nonnegative for every real `s`. -/
+/-- For an invariant positive functional `ω` and an arbitrary `a`, the imaginary-time
+correlation `ω (a⋆ α_{is}(a))` is nonnegative for every real `s`. For an `a` which is not entire
+analytic the correlation is `0`. -/
 theorem apply_star_mul_entireExtension_mul_I_nonneg_of_apply_action
     (hω : ∀ t a, ω (α t a) = ω a) (s : ℝ) :
     0 ≤ ω (star a * α.entireExtension a (s * I)) := by
