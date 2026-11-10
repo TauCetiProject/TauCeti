@@ -23,10 +23,11 @@ finite-intersection criterion `TauCeti.amenable_iff_forall_finset_exists`, which
 weak-* compactness of the space of means, produces a left-invariant mean on `UCB G`.
 
 Specializing to inclusions of subgroups, with their subspace topologies, gives the closure of
-amenability under directed unions: if `H i` is a nonempty directed family of amenable subgroups of
-`G`, then the subgroup `⨆ i, H i = ⋃ i, H i` is amenable, and `G` is amenable when this union is
-all of `G`. Since every finite subset of `G` lies in a finitely generated subgroup, a topological
-group whose finitely generated subgroups are all amenable is amenable.
+amenability under directed suprema: if `H i` is a directed family of amenable subgroups of `G`,
+then the subgroup `⨆ i, H i` is amenable, and `G` is amenable when this supremum is all of `G`. For
+a nonempty directed family the supremum is the union `⋃ i, H i`; for the empty family it is the
+trivial subgroup, which is amenable. Since every finite subset of `G` lies in a finitely generated
+subgroup, a topological group whose finitely generated subgroups are all amenable is amenable.
 
 No discreteness is needed: the subgroups carry the subspace topology, and a function in `UCB G`
 restricts to a function in the `UCB` space of each of them.
@@ -36,9 +37,9 @@ restricts to a function in the `UCB` space of each of them.
 * `TauCeti.Amenable.of_forall_finset_subset_range`: a topological group is amenable if each of its
   finite subsets lies in the range of a continuous homomorphism from an amenable topological group,
   drawn from a fixed family.
-* `TauCeti.amenable_iSup_of_directed`: the union of a directed family of amenable subgroups is
+* `TauCeti.amenable_iSup_of_directed`: the supremum of a directed family of amenable subgroups is
   an amenable subgroup.
-* `TauCeti.Amenable.of_directed_of_iSup_eq_top`: a topological group which is the union of a
+* `TauCeti.Amenable.of_directed_of_iSup_eq_top`: a topological group which is the supremum of a
   directed family of amenable subgroups is amenable.
 * `TauCeti.Amenable.of_forall_fg`: a topological group whose finitely generated subgroups are
   amenable is amenable.
@@ -71,8 +72,9 @@ theorem Amenable.of_forall_finset_subset_range {ι : Type*} {K : ι → Type*} [
   rw [← hk]
   exact hm.map_apply_leftTranslation (φ i) k p.2
 
-/-- The union `⨆ i, H i` of a directed family of amenable subgroups `H i` of a topological
-group is an amenable subgroup. -/
+/-- The supremum `⨆ i, H i` of a directed family of amenable subgroups `H i` of a topological
+group is an amenable subgroup. It is the union of the family when the family is nonempty, and the
+trivial subgroup when it is empty. -/
 theorem amenable_iSup_of_directed {ι : Type*} {H : ι → Subgroup G}
     (hH : Directed (· ≤ ·) H) [∀ i, Amenable (H i)] : Amenable ↥(⨆ i, H i) := by
   classical
@@ -88,7 +90,7 @@ theorem amenable_iSup_of_directed {ι : Type*} {H : ι → Subgroup G}
     exact Set.image_subset_iff.2 fun x _ => x.2
   exact ⟨i, fun x hx => ⟨⟨x, hi (Finset.mem_image_of_mem _ hx)⟩, rfl⟩⟩
 
-/-- A topological group which is the union of a directed family of amenable subgroups is
+/-- A topological group which is the supremum of a directed family of amenable subgroups is
 amenable. -/
 theorem Amenable.of_directed_of_iSup_eq_top {ι : Type*} {H : ι → Subgroup G}
     (hH : Directed (· ≤ ·) H) (htop : ⨆ i, H i = ⊤) [∀ i, Amenable (H i)] : Amenable G :=
