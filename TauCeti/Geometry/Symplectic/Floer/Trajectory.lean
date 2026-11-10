@@ -19,23 +19,27 @@ domain point and are uniformly tame, `c ‖v‖² ≤ ω(v, J z v)` and `‖J z 
 Such trajectories are the cylinders counted by the Floer differential and inserted at the ends of a
 pair of pants when it breaks.
 
-If a `C²` Floer trajectory has finite energy and its loops stay in a compact set `K`, then each of
-its two ends is asymptotic to a `1`-periodic orbit of the Hamiltonian vector field: there are
-orbits `x₀` and `x₁` in `K` such that the actions `A_H(u(s, ·))` tend to `A_H(x₀)` as `s → -∞`
-and to `A_H(x₁)` as `s → ∞`, and the energy of `u` is `A_H(x₁) - A_H(x₀)`
+If a `C²` Floer trajectory has finite energy and its loops stay in a compact set `K`, then the
+limiting action at each of its two ends is realized by a `1`-periodic orbit of the Hamiltonian
+vector field: there are orbits `x₀` and `x₁` in `K` such that the actions `A_H(u(s, ·))` tend to
+`A_H(x₀)` as `s → -∞` and to `A_H(x₁)` as `s → ∞`, and the energy of `u` is `A_H(x₁) - A_H(x₀)`
 (`TauCeti.SymplecticForm.exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_eq`). The end at
 `+∞` is `TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer`,
 the end at `-∞` is its reflection
 `TauCeti.SymplecticForm.exists_periodic_hasDerivAt_tendsto_hamiltonianAction_atBot_of_floer`, and
 the energy identity is
-`TauCeti.SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction`.
+`TauCeti.SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction`. Only the
+actions are asserted to converge: the half-cylinder results give uniform convergence of the loops
+to these orbits along some sequences `s_n → ±∞`, and no convergence of the loops `u(s, ·)` as
+`s → ±∞` is claimed here.
 
 Consequently the energy of a trajectory in `K` only takes values in the set of action differences
 of the orbits in `K`. A trajectory of zero energy is stationary,
 `u(s, t) = u(0, t)` (`TauCeti.SymplecticForm.lintegral_floerEnergyDensity_eq_zero_iff`). Hence, if
-there are only finitely many `1`-periodic orbits in `K`, as happens when they are all
-nondegenerate, there is an **energy gap**: a constant `δ > 0`, depending only on `ω`, `H` and `K`,
-such that every Floer trajectory in `K` which is not stationary has energy at least `δ`
+the `1`-periodic orbits in `K` have only finitely many actions, for instance because there are
+only finitely many of them, as happens when they are all nondegenerate, there is an **energy gap**:
+a constant `δ > 0`, depending only on `ω`, `H` and `K`, such that every Floer trajectory in `K`
+which is not stationary has energy at least `δ`
 (`TauCeti.SymplecticForm.exists_pos_forall_ofReal_le_lintegral_floerEnergyDensity`). No bound on
 the derivative of `u` is assumed. In the compactness theory of Floer trajectories and of pairs of
 pants, this lower bound on the energy of each nonstationary cylinder bounds the number of
@@ -43,11 +47,12 @@ cylinders that can break off at an end by the total energy divided by `δ`.
 
 ## Main results
 
-* `TauCeti.SymplecticForm.exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_eq`: the
-  asymptotic orbits at the two ends of a finite-energy Floer trajectory, and its energy as the
-  difference of their actions.
+* `TauCeti.SymplecticForm.exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_eq`: periodic
+  orbits realizing the limiting actions at the two ends of a finite-energy Floer trajectory, and
+  its energy as the difference of their actions.
 * `TauCeti.SymplecticForm.exists_pos_forall_ofReal_le_lintegral_floerEnergyDensity`: the energy
-  gap for Floer trajectories in a compact set containing finitely many `1`-periodic orbits.
+  gap for Floer trajectories in a compact set whose `1`-periodic orbits have finitely many
+  actions.
 
 ## References
 
@@ -125,15 +130,16 @@ theorem exists_periodic_hasDerivAt_lintegral_floerEnergyDensity_eq
     hbot htop
 
 /-- **The energy gap of Floer trajectories.** Let `H` be a `C¹` Hamiltonian, `1`-periodic in time,
-and `K` a compact set containing only finitely many `1`-periodic orbits of its Hamiltonian vector
-field, for instance because they are all nondegenerate. Then there is `δ > 0` such that every
+and `K` a compact set such that the `1`-periodic orbits of its Hamiltonian vector field with values
+in `K` have only finitely many actions, for instance because there are only finitely many of them,
+as happens when they are all nondegenerate. Then there is `δ > 0` such that every
 `C²` Floer trajectory `u` with `1`-periodic loops in `K` and uniformly tame almost complex
 structures which is not stationary, that is, `u(s, t) ≠ u(0, t)` for some `s` and `t`, has energy
 at least `δ`. -/
 theorem exists_pos_forall_ofReal_le_lintegral_floerEnergyDensity
     (hH : ContDiff ℝ 1 (uncurry H)) (hHper : Periodic H 1) (hK : IsCompact K)
-    (hfin : {x : ℝ → V | Periodic x 1 ∧
-      (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧ ∀ t, x t ∈ K}.Finite) :
+    (hfin : (ω.hamiltonianAction H '' {x : ℝ → V | Periodic x 1 ∧
+      (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧ ∀ t, x t ∈ K}).Finite) :
     ∃ δ > 0, ∀ {u : ℝ × ℝ → V} {J : ℝ × ℝ → AlmostComplexStructure V} {c M : ℝ},
       ContDiff ℝ 2 u → (∀ s, Periodic (fun t ↦ u (s, t)) 1) → (∀ s t, u (s, t) ∈ K) → 0 < c →
       (∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ∀ v, c * ‖v‖ ^ 2 ≤ ω v (J z v)) →
@@ -147,10 +153,9 @@ theorem exists_pos_forall_ofReal_le_lintegral_floerEnergyDensity
   set O := {x : ℝ → V | Periodic x 1 ∧
     (∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) ∧ ∀ t, x t ∈ K}
   set A : (ℝ → V) → ℝ := ω.hamiltonianAction H
-  -- The positive action differences of the finitely many orbits in `K`, and `1`, form a finite
-  -- nonempty set of positive numbers; `δ` is its least element.
-  set D : Set ℝ := (fun p : (ℝ → V) × (ℝ → V) ↦ A p.2 - A p.1) '' ((O ×ˢ O) ∩ {p | A p.1 < A p.2})
-    ∪ {1}
+  -- The positive differences of the finitely many actions of orbits in `K`, and `1`, form a
+  -- finite nonempty set of positive numbers; `δ` is its least element.
+  set D : Set ℝ := (fun p : ℝ × ℝ ↦ p.2 - p.1) '' (((A '' O) ×ˢ (A '' O)) ∩ {p | p.1 < p.2}) ∪ {1}
   have hD : D.Finite := (((hfin.prod hfin).subset inter_subset_left).image _).union
     (finite_singleton 1)
   obtain ⟨δ, hδD, hδ⟩ := hD.toFinset.exists_min_image id ⟨1, by simp [D]⟩
@@ -183,6 +188,7 @@ theorem exists_pos_forall_ofReal_le_lintegral_floerEnergyDensity
       _ = u (0, t - ⌊t⌋ * 1) := hstat s _ hmem
       _ = u (0, t) := (hper 0).sub_int_mul_eq ⌊t⌋
   rw [hEeq]
-  exact ENNReal.ofReal_le_ofReal (hδ _ (Or.inl ⟨(x₀, x₁), ⟨⟨hx₀, hx₁⟩, hlt⟩, rfl⟩))
+  exact ENNReal.ofReal_le_ofReal
+    (hδ _ (Or.inl ⟨(A x₀, A x₁), ⟨⟨mem_image_of_mem A hx₀, mem_image_of_mem A hx₁⟩, hlt⟩, rfl⟩))
 
 end TauCeti.SymplecticForm

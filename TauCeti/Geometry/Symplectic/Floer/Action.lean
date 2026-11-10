@@ -84,6 +84,8 @@ difference `A_H(γ) - A_H(x)` has no term linear in `ξ = γ - x`: it is
   `[a, b] × [0, 1]` for a cylindrical perturbation is the change of action.
 * `SymplecticForm.hamiltonianAction_le_hamiltonianAction`: the action increases along Floer
   solutions.
+* `SymplecticForm.monotoneOn_hamiltonianAction_of_floer`: the action is monotone in `s` along a
+  Floer solution on an open interval of `s`-values.
 * `SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction`: the energy of a
   Floer solution on the whole cylinder is the difference of its limiting actions.
 * `SymplecticForm.tendsto_hamiltonianAction`: the action is continuous for uniform `C¹`
@@ -345,6 +347,26 @@ theorem hamiltonianAction_le_hamiltonianAction (ω : SymplecticForm V)
     ω.hamiltonianAction H (fun t ↦ u (a, t)) ≤ ω.hamiltonianAction H (fun t ↦ u (b, t)) :=
   ω.hamiltonianAction_le_hamiltonianAction_of_monotone (H := fun w ↦ H w.2) hJ
     (contDiff_uncurry_cylindrical hH) (fun _ _ _ _ _ ↦ le_rfl) hU hu hab hRU hper hfloer
+
+/-- **The action increases along a Floer solution.** Let `S` be an open interval of `s`-values,
+for instance a half-line `s > a` or `s < a`, and let `u` be a `C²` solution of the Floer equation on
+`S × [0, 1]` with `1`-periodic loops and tame almost complex structures. Then the action
+`A_H(u(s, ·))` of the loop at `s` is monotone in `s ∈ S`. -/
+theorem monotoneOn_hamiltonianAction_of_floer (ω : SymplecticForm V)
+    {J : ℝ × ℝ → AlmostComplexStructure V} {S : Set ℝ} (hS : IsOpen S) [S.OrdConnected]
+    (hH : ContDiff ℝ 1 (uncurry H)) (hu : ContDiffOn ℝ 2 u (S ×ˢ univ))
+    (hper : ∀ s ∈ S, Periodic (fun t ↦ u (s, t)) 1)
+    (hJ : ∀ z ∈ S ×ˢ Icc 0 1, ω.Tames (J z))
+    (hfloer : ∀ z ∈ S ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
+      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) :
+    MonotoneOn (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) S := by
+  intro s₁ hs₁ s₂ hs₂ hs
+  have hR : Icc s₁ s₂ ×ˢ Icc (0 : ℝ) 1 ⊆ S ×ˢ Icc 0 1 :=
+    Set.prod_mono (Set.Icc_subset S hs₁ hs₂) le_rfl
+  exact ω.hamiltonianAction_le_hamiltonianAction (fun z hz ↦ hJ z (hR hz)) hH
+    (hS.prod isOpen_univ) hu hs (hR.trans (Set.prod_mono le_rfl (subset_univ _)))
+    (fun s h ↦ by simpa using hper s (Set.Icc_subset S hs₁ hs₂ h) 0) fun z hz ↦ by
+      simpa using (ω.isComplexLinearMap_perturbedFDeriv_iff _ _ _ u z).1 (hfloer z (hR hz))
 
 /-- **The energy of a Floer cylinder.** Let `H` be a `C¹` time-dependent Hamiltonian and let `u`
 be `C²` on an open neighbourhood `U` of `ℝ × [0, 1]`, with `u(s, 1) = u(s, 0)` for all `s`,

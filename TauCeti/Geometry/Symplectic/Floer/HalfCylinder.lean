@@ -189,25 +189,6 @@ theorem setLIntegral_floerEnergyDensity_Ici_eq_of_tendsto_hamiltonianAction
       (le_add_of_nonneg_right n.cast_nonneg) (hRU n)
       fun s h ↦ by simpa using hper s (hb.trans_le h.1) 0]
 
-/-- **The action increases along a Floer solution.** Let `S` be an open interval of `s`-values,
-for instance a half-line `s > a` or `s < a`, and let `u` be a `C²` solution of the Floer equation on
-`S × [0, 1]` with `1`-periodic loops and tame almost complex structures. Then the action
-`A_H(u(s, ·))` of the loop at `s` is monotone in `s ∈ S`. -/
-theorem monotoneOn_hamiltonianAction_of_floer {S : Set ℝ} (hS : IsOpen S) [S.OrdConnected]
-    (hH : ContDiff ℝ 1 (uncurry H)) (hu : ContDiffOn ℝ 2 u (S ×ˢ univ))
-    (hper : ∀ s ∈ S, Periodic (fun t ↦ u (s, t)) 1)
-    (hJ : ∀ z ∈ S ×ˢ Icc 0 1, ω.Tames (J z))
-    (hfloer : ∀ z ∈ S ×ˢ Icc 0 1, IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z)
-      (ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z : ℝ × ℝ →ₗ[ℝ] V)) :
-    MonotoneOn (fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))) S := by
-  intro s₁ hs₁ s₂ hs₂ hs
-  have hR : Icc s₁ s₂ ×ˢ Icc (0 : ℝ) 1 ⊆ S ×ˢ Icc 0 1 :=
-    Set.prod_mono (Set.Icc_subset S hs₁ hs₂) le_rfl
-  exact ω.hamiltonianAction_le_hamiltonianAction (fun z hz ↦ hJ z (hR hz)) hH
-    (hS.prod isOpen_univ) hu hs (hR.trans (Set.prod_mono le_rfl (subset_univ _)))
-    (fun s h ↦ by simpa using hper s (Set.Icc_subset S hs₁ hs₂ h) 0) fun z hz ↦ by
-      simpa using (ω.isComplexLinearMap_perturbedFDeriv_iff _ _ _ u z).1 (hfloer z (hR hz))
-
 /-- **The action along loops with vanishing defect.** Let `H` be a `C¹` Hamiltonian and let `u` be
 `C¹` on the half-cylinder `s > a`, with loops in a compact set `K`. If the loops at `s_i > a`
 converge pointwise to a solution `x` of `x' = X_{H_t}(x)` and the `L²` norms of their defects
@@ -297,7 +278,7 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer
   -- The actions increase along the end, so their limit along `s_n` is their limit as `s → ∞`.
   have hJ : ∀ z ∈ Ioi a ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
     (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
-  have hmono := monotoneOn_hamiltonianAction_of_floer isOpen_Ioi hH hu hper hJ hfloer
+  have hmono := ω.monotoneOn_hamiltonianAction_of_floer isOpen_Ioi hH hu hper hJ hfloer
   set A : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))
   have hb : ∀ s, a < max s (a + 1) := fun s ↦ (lt_add_one a).trans_le (le_max_right _ _)
   have hAmono : Monotone fun s ↦ A (max s (a + 1)) := fun s₁ s₂ h ↦
@@ -356,7 +337,7 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_atBot_of_floer
   -- The actions increase along the end, so their limit along `-s_n` is their limit as `s → -∞`.
   have hJ : ∀ z ∈ Iio a ×ˢ Icc 0 1, ω.Tames (J z) := fun z hz v hv ↦
     (mul_pos hc (pow_pos (norm_pos_iff.2 hv) 2)).trans_le (hJc z hz v)
-  have hmono := monotoneOn_hamiltonianAction_of_floer isOpen_Iio hH hu hper hJ hfloer
+  have hmono := ω.monotoneOn_hamiltonianAction_of_floer isOpen_Iio hH hu hper hJ hfloer
   set A : ℝ → ℝ := fun s ↦ ω.hamiltonianAction H (fun t ↦ u (s, t))
   have hb : ∀ s, -max s (-a + 1) < a := fun s ↦
     hura _ ((lt_add_one (-a)).trans_le (le_max_right _ _))
