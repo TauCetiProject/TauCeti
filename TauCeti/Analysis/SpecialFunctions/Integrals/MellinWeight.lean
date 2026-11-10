@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.SpecialFunctions.Gamma.BohrMollerup
-public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 
 /-!
 # The Mellin weight `η t^(-1-η)` on `(1, ∞)`
@@ -25,8 +24,9 @@ evaluate the majorants that occur.
 ## Main results
 
 * `TauCeti.mellinWeightIntegral_eq_integral_exp`: the substitution `t = exp u`;
-* `TauCeti.mellinWeightIntegral_def`, `TauCeti.mellinWeightIntegral_congr`: unfolding the
-  definition, and dependence only on the values on `(1, ∞)`;
+* `TauCeti.mellinWeightIntegral_def`, `TauCeti.mellinWeightIntegral_congr_ae`,
+  `TauCeti.mellinWeightIntegral_congr`: unfolding the definition, and dependence only on the
+  almost-everywhere class on `(1, ∞)`;
 * `TauCeti.mellinWeightIntegral_add`, `TauCeti.mellinWeightIntegral_sub`,
   `TauCeti.mellinWeightIntegral_smul`, `TauCeti.mellinWeightIntegral_neg`: linearity;
 * `TauCeti.mellinWeightIntegral_mono`, `TauCeti.norm_mellinWeightIntegral_le`: monotonicity and
@@ -55,11 +55,18 @@ noncomputable def mellinWeightIntegral (η : ℝ) (f : ℝ → E) : E :=
 theorem mellinWeightIntegral_def (η : ℝ) (f : ℝ → E) :
     mellinWeightIntegral η f = η • ∫ t in Ioi 1, t ^ (-1 - η) • f t := (rfl)
 
-/-- The Mellin weight integral depends only on the values of `f` on `(1, ∞)`. -/
-theorem mellinWeightIntegral_congr {η : ℝ} {f g : ℝ → E} (h : ∀ t ∈ Ioi 1, f t = g t) :
+/-- The Mellin weight integral depends only on the almost-everywhere class of `f` on
+`(1, ∞)`. -/
+theorem mellinWeightIntegral_congr_ae {η : ℝ} {f g : ℝ → E}
+    (h : f =ᵐ[volume.restrict (Ioi 1)] g) :
     mellinWeightIntegral η f = mellinWeightIntegral η g := by
   rw [mellinWeightIntegral_def, mellinWeightIntegral_def,
-    setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ by rw [h t ht]]
+    integral_congr_ae (h.mono fun t ht ↦ by rw [ht])]
+
+/-- The Mellin weight integral depends only on the values of `f` on `(1, ∞)`. -/
+theorem mellinWeightIntegral_congr {η : ℝ} {f g : ℝ → E} (h : ∀ t ∈ Ioi 1, f t = g t) :
+    mellinWeightIntegral η f = mellinWeightIntegral η g :=
+  mellinWeightIntegral_congr_ae ((ae_restrict_iff' measurableSet_Ioi).2 (ae_of_all _ h))
 
 /-- The substitution `t = exp u` turns the Mellin weight into the exponential density
 `η exp(-η u)` on `u > 0`. -/
