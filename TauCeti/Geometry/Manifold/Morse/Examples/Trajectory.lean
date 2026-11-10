@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Morse.Trajectory
 public import TauCeti.Geometry.Manifold.Riemannian.Gradient.NormedSpace
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Convergence of gradient trajectories: two negative controls
@@ -165,20 +166,9 @@ noncomputable def singularLineMetric :
   continuousAt x := by
     change ContinuousAt (fun v : ℝ ↦ singularLineWeight x * (v * v)) 0
     fun_prop
-  isVonNBounded x := by
-    change Bornology.IsVonNBounded ℝ {v : ℝ | singularLineWeight x * (v * v) < 1}
-    set c : ℝ := singularLineWeight x
-    have hc : 0 < c := singularLineWeight_pos x
-    rw [NormedSpace.isVonNBounded_iff, Metric.isBounded_iff_subset_closedBall 0]
-    refine ⟨max 1 c⁻¹, fun v (hv : c * (v * v) < 1) ↦ ?_⟩
-    rw [mem_closedBall_zero_iff, Real.norm_eq_abs]
-    by_contra hlt
-    rw [not_le, max_lt_iff] at hlt
-    have hv1 : 1 * |v| ≤ |v| * |v| := mul_le_mul_of_nonneg_right hlt.1.le (abs_nonneg v)
-    have hvv : |v| * |v| = v * v := abs_mul_abs_self v
-    have : c * c⁻¹ < c * |v| := mul_lt_mul_of_pos_left hlt.2 hc
-    rw [mul_inv_cancel₀ hc.ne'] at this
-    nlinarith
+  isVonNBounded x :=
+    (singularLineWeight x • ContinuousLinearMap.mul ℝ ℝ).isVonNBounded_setOf_lt_one_of_pos
+      fun v hv ↦ mul_pos (singularLineWeight_pos x) (mul_self_pos.2 hv)
 
 /-- The inner products of `singularLineMetric`: `⟪v, w⟫ₓ = λ(x) v w`. -/
 @[simp]
