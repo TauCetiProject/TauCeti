@@ -12,8 +12,9 @@ public import Mathlib.Topology.EMetricSpace.Lipschitz
 /-!
 # The intrinsic distance
 
-The intrinsic distance between two points of a pseudo-extended metric space `X` is the infimum of
-the lengths of the continuous paths joining them,
+The intrinsic distance between two points of a topological space `X` carrying an extended
+pseudo-distance (a `WeakPseudoEMetricSpace`, for instance a pseudo-extended metric space) is the
+infimum of the lengths of the continuous paths joining them,
 
 `intrinsicEDist x y = ⨅ γ : Path x y, eVariationOn γ univ`,
 
@@ -55,9 +56,9 @@ open scoped ENNReal Topology unitInterval
 
 namespace TauCeti
 
-section PseudoEMetric
+section WeakPseudoEMetric
 
-variable {X : Type*} [PseudoEMetricSpace X]
+variable {X : Type*} [TopologicalSpace X] [WeakPseudoEMetricSpace X]
 
 /-- The **intrinsic distance** between `x` and `y`: the infimum of the lengths of the continuous
 paths from `x` to `y`, and `∞` if there is none. -/
@@ -124,6 +125,12 @@ theorem intrinsicEDist_eq_iInf_isCurveJoining (x y : X) :
     rw [← p.eVariationOn_extend]
     exact eVariationOn.eq_of_eqOn fun t ht ↦ p.extend_apply ht
   · exact iInf₂_le_of_le γ.extend (isCurveJoining_extend γ) γ.eVariationOn_extend.le
+
+end WeakPseudoEMetric
+
+section PseudoEMetric
+
+variable {X : Type*} [PseudoEMetricSpace X]
 
 /-- A space is a length space exactly when its distance is its intrinsic distance. -/
 theorem isLengthSpace_iff_edist_eq_intrinsicEDist :
