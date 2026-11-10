@@ -83,21 +83,15 @@ private def IsContractedReflection (Ω : Opens ℂ) (d : Fin k → ℝ) (f g : �
       ∀ᵐ z ∂volume.restrict ((Ω : Set ℂ) ∩ {z : ℂ | z.im < 0}),
         f z = ∑ j, d j • T j (g (imDilation (higherReflectionNode j) z))
 
-private theorem measurableSet_inter_setOf_im_pos (Ω : Opens ℂ) :
-    MeasurableSet ((Ω : Set ℂ) ∩ {z : ℂ | 0 < z.im}) :=
-  Ω.isOpen.measurableSet.inter (measurableSet_lt measurable_const measurable_im)
-
-private theorem measurableSet_inter_setOf_im_neg (Ω : Opens ℂ) :
-    MeasurableSet ((Ω : Set ℂ) ∩ {z : ℂ | z.im < 0}) :=
-  Ω.isOpen.measurableSet.inter (measurableSet_lt measurable_im measurable_const)
-
 /-- The reflection itself, with `T j` the identity. -/
 private theorem isContractedReflection_planarReflection (Ω : Opens ℂ) (d : Fin k → ℝ)
     (g : ℂ → F) : IsContractedReflection Ω d (planarReflection d g) g :=
-  ⟨ae_restrict_of_forall_mem (measurableSet_inter_setOf_im_pos Ω) fun _ hz =>
+  ⟨ae_restrict_of_forall_mem
+      (Ω.isOpen.measurableSet.inter (measurableSet_lt measurable_const measurable_im)) fun _ hz =>
       planarReflection_of_nonneg _ _ (le_of_lt hz.2),
     fun _ => ContinuousLinearMap.id ℝ F, fun _ => ContinuousLinearMap.norm_id_le,
-    ae_restrict_of_forall_mem (measurableSet_inter_setOf_im_neg Ω) fun _ hz =>
+    ae_restrict_of_forall_mem
+      (Ω.isOpen.measurableSet.inter (measurableSet_lt measurable_im measurable_const)) fun _ hz =>
       planarReflection_of_neg _ _ hz.2⟩
 
 /-- **The `Lᵖ` bound up to contractions.** A reflection up to contractions is bounded in `Lᵖ(Ω)` by
@@ -109,8 +103,10 @@ private theorem IsContractedReflection.eLpNorm_le {p : ℝ≥0∞} (hp : 1 ≤ p
     eLpNorm f p (volume.restrict Ω) ≤
       planarReflectionBound d p * eLpNorm g p (volume.restrict ((Ω : Set ℂ) ∩ {z | 0 ≤ z.im})) := by
   obtain ⟨hup, T, hT, hlo⟩ := h
-  have hup' := (ae_restrict_iff' (measurableSet_inter_setOf_im_pos Ω)).1 hup
-  have hlo' := (ae_restrict_iff' (measurableSet_inter_setOf_im_neg Ω)).1 hlo
+  have hup' := (ae_restrict_iff'
+    (Ω.isOpen.measurableSet.inter (measurableSet_lt measurable_const measurable_im))).1 hup
+  have hlo' := (ae_restrict_iff'
+    (Ω.isOpen.measurableSet.inter (measurableSet_lt measurable_im measurable_const))).1 hlo
   have hax : ∀ᵐ z ∂(volume : Measure ℂ), z ∉ {z : ℂ | z.im = 0} :=
     measure_eq_zero_iff_ae_notMem.1 (volume_setOf_im_eq 0)
   -- Pointwise, `‖f‖` is dominated by the reflection of `‖g‖` with the weights `|d j|`.
