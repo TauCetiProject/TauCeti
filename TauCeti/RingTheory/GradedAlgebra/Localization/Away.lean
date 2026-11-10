@@ -34,7 +34,7 @@ action on `D(f) = Spec A_f`.
 
 ## Main statements
 
-* The instance `GradedAlgebra (awayGrading 𝒜 hf)`, and `awayGrading_isInternal`.
+* The instance `GradedAlgebra (awayGrading 𝒜 hf)`, and `isInternal_awayGrading`.
 * `TauCeti.GradedAlgebra.coe_decompose_mk`: the degree-`d` component of `a / f ^ n` is
   `a_{d + n • e} / f ^ n`.
 -/
@@ -45,11 +45,12 @@ open DirectSum
 
 namespace TauCeti.GradedAlgebra
 
-variable {ι A : Type*} [AddCommGroup ι] [CommRing A] {f : A} {e : ι}
+variable {ι A : Type*} [AddCommGroup ι] {f : A} {e : ι}
 
 section Semiring
 
-variable {R : Type*} [CommSemiring R] [Algebra R A] (𝒜 : ι → Submodule R A) (hf : f ∈ 𝒜 e)
+variable {R : Type*} [CommSemiring R] [CommSemiring A] [Algebra R A] (𝒜 : ι → Submodule R A)
+  (hf : f ∈ 𝒜 e)
 
 section GradedMonoid
 
@@ -201,7 +202,7 @@ private theorem decomposeAux_coe {i : ι} (x : awayGrading 𝒜 hf i) :
   exact congrArg _ (Subtype.ext (by simpa [SetLike.coe_gMul] using hxa.symm))
 
 /-- `Localization.Away f` is the internal direct sum of the submodules `awayGrading 𝒜 hf d`. -/
-theorem awayGrading_isInternal : IsInternal (awayGrading 𝒜 hf) := by
+theorem isInternal_awayGrading : IsInternal (awayGrading 𝒜 hf) := by
   refine ⟨Function.RightInverse.injective (g := decomposeAux 𝒜 hf) fun y ↦ ?_,
     Function.LeftInverse.surjective (coe_decomposeAux 𝒜 hf)⟩
   induction y using DirectSum.induction_on with
@@ -212,7 +213,7 @@ theorem awayGrading_isInternal : IsInternal (awayGrading 𝒜 hf) := by
 /-- `Localization.Away f` is a graded `R`-algebra, with `a / f ^ n` of degree `deg a - n • e`. -/
 noncomputable instance : GradedAlgebra (awayGrading 𝒜 hf) :=
   { (inferInstance : SetLike.GradedMonoid (awayGrading 𝒜 hf)),
-    (awayGrading_isInternal 𝒜 hf).chooseDecomposition with }
+    (isInternal_awayGrading 𝒜 hf).chooseDecomposition with }
 
 /-- The localization map `A → Localization.Away f` as a homomorphism of graded `R`-algebras from
 `𝒜` to `awayGrading 𝒜 hf`. -/
@@ -251,8 +252,8 @@ end Semiring
 
 section HomogeneousLocalization
 
-variable {R : Type*} [CommRing R] [Algebra R A] [DecidableEq ι] (𝒜 : ι → Submodule R A)
-  [GradedAlgebra 𝒜] (hf : f ∈ 𝒜 e)
+variable {R : Type*} [CommRing R] [CommRing A] [Algebra R A] [DecidableEq ι]
+  (𝒜 : ι → Submodule R A) [GradedAlgebra 𝒜] (hf : f ∈ 𝒜 e)
 
 /-- The elements of degree zero of `awayGrading 𝒜 hf` are the elements of Mathlib's homogeneous
 localization `HomogeneousLocalization.Away 𝒜 f`. -/
