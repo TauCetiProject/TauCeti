@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.GroupAction.SubMulAction
-public import TauCeti.Topology.Algebra.ProperAction.TransverseSlice
+public import TauCeti.Topology.Algebra.ProperAction.Orbit
 
 /-!
 # Slices of proper actions of discrete groups
