@@ -307,6 +307,32 @@ def restrictRight
       (f.val.disjointUnion_restrictLeft_restrictRight ▸ f.mem_Icc)).2,
     funext fun x ↦ by simp [f.excessAt_eq (.inr x)]⟩
 
+@[simp]
+theorem restrictLeft_apply
+    (f : ExcessFlow (lo.disjointUnion lo') (hi.disjointUnion hi') (Sum.elim b b'))
+    {x y : V} (e : Q x y) :
+    f.restrictLeft.val e = f.val (DisjointUnionHom.inl e) :=
+  (rfl)
+
+@[simp]
+theorem restrictRight_apply
+    (f : ExcessFlow (lo.disjointUnion lo') (hi.disjointUnion hi') (Sum.elim b b'))
+    {x y : W} (e : R x y) :
+    f.restrictRight.val e = f.val (DisjointUnionHom.inr e) :=
+  (rfl)
+
+@[simp]
+theorem restrictLeft_disjointUnion (f : ExcessFlow lo hi b) (g : ExcessFlow lo' hi' b') :
+    (f.disjointUnion g).restrictLeft = f := by
+  ext
+  rfl
+
+@[simp]
+theorem restrictRight_disjointUnion (f : ExcessFlow lo hi b) (g : ExcessFlow lo' hi' b') :
+    (f.disjointUnion g).restrictRight = g := by
+  ext
+  rfl
+
 /-- Exact-excess assignments on a disjoint union are equivalent to pairs of exact-excess
 assignments on its summands. -/
 def disjointUnionEquiv :
@@ -392,6 +418,34 @@ def restrictRight
       (f.val.disjointUnion_restrictLeft_restrictRight ▸ f.mem_Icc)).2,
     ⟨fun x ↦ by simpa using f.excessAt_mem_Icc.1 (.inr x),
       fun x ↦ by simpa using f.excessAt_mem_Icc.2 (.inr x)⟩⟩
+
+@[simp]
+theorem restrictLeft_apply
+    (f : ExcessIntervalFlow (lo.disjointUnion lo') (hi.disjointUnion hi')
+      (Sum.elim a a') (Sum.elim b b')) {x y : V} (e : Q x y) :
+    f.restrictLeft.val e = f.val (DisjointUnionHom.inl e) :=
+  (rfl)
+
+@[simp]
+theorem restrictRight_apply
+    (f : ExcessIntervalFlow (lo.disjointUnion lo') (hi.disjointUnion hi')
+      (Sum.elim a a') (Sum.elim b b')) {x y : W} (e : R x y) :
+    f.restrictRight.val e = f.val (DisjointUnionHom.inr e) :=
+  (rfl)
+
+@[simp]
+theorem restrictLeft_disjointUnion (f : ExcessIntervalFlow lo hi a b)
+    (g : ExcessIntervalFlow lo' hi' a' b') :
+    (f.disjointUnion g).restrictLeft = f := by
+  ext
+  rfl
+
+@[simp]
+theorem restrictRight_disjointUnion (f : ExcessIntervalFlow lo hi a b)
+    (g : ExcessIntervalFlow lo' hi' a' b') :
+    (f.disjointUnion g).restrictRight = g := by
+  ext
+  rfl
 
 /-- Interval-excess assignments on a disjoint union are equivalent to pairs of interval-excess
 assignments on its summands. -/
