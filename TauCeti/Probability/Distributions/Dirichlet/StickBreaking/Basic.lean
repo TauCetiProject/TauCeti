@@ -211,11 +211,8 @@ theorem HasLaw.indepFun_dirichletStickSplit {X : Ω → EuclideanSpace ℝ (Opti
       (fun ω ↦ dirichletNormalize fun i ↦ X ω (some i)) P := by
   by_cases ha : ∀ i, 0 < a i
   swap
-  · have h := congrArg (fun μ : Measure (EuclideanSpace ℝ (Option ι)) ↦ μ Set.univ) hX.map_eq
-    simp only [Measure.map_apply_of_aemeasurable hX.aemeasurable MeasurableSet.univ,
-      Set.preimage_univ, dirichletMeasure_eq_zero_of_invalid fun h ↦ ha h.2, FunLike.coe_zero,
-      Pi.zero_apply] at h
-    rw [Measure.measure_univ_eq_zero.mp h]
+  · rw [(Measure.map_eq_zero_iff hX.aemeasurable).mp
+      (hX.map_eq.trans (dirichletMeasure_eq_zero_of_invalid fun h ↦ ha h.2))]
     exact indepFun_iff_measure_inter_preimage_eq_mul.2 fun _ _ _ _ ↦ by simp
   rcases isEmpty_or_nonempty ι with hι | hι
   · have : Nonempty (Option ι) := ⟨none⟩
