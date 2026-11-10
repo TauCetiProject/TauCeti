@@ -167,6 +167,14 @@ noncomputable def positivePoints (A : Type v) [CommRing A] : Subgroup (D.points 
     (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv)).subgroupOf
       (D.points A)
 
+/-- A datum point is positive exactly when its underlying matrix lies in the image of the
+positive lattice subgroup. -/
+theorem mem_positivePoints_iff {A : Type v} [CommRing A] {g : D.points A} :
+    g ∈ D.positivePoints A ↔
+      g.val ∈ (D.positiveSubgroup (CommAlgCat.of ℤ A)).map
+        (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMulEquiv) :=
+  Iff.rfl
+
 /-- Forgetting that positive elements are datum points gives exactly their existing matrix image.
 -/
 theorem map_positivePoints_subtype (A : Type v) [CommRing A] :
