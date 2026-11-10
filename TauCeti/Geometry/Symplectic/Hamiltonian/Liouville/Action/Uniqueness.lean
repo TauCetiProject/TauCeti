@@ -6,16 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Action.Angle
-public import Mathlib.LinearAlgebra.Matrix.GeneralLinearGroup.Defs
 public import TauCeti.Analysis.Calculus.FDeriv.Matrix
+public import TauCeti.LinearAlgebra.Matrix.TransposeLattice
 
 /-!
 # Uniqueness of action variables up to integral affine changes
 
 Let `Λ c ⊆ ℝ^ι` be a family of lattices depending on `c` in an open set `D ⊆ ℝ^ι`. A map
 `A : ℝ^ι → ℝ^ι` is a system of **action variables** for it on `D` when `Λ c = 2π (DA_c)ᵀ ℤ^ι` for
-every `c ∈ D`: a vector `v` lies in `Λ c` exactly when the one-form `v ⬝ᵥ dc` is `2π ∑ᵢ nᵢ dAᵢ`
-for some integers `nᵢ`. The action variables of a Liouville integrable system near a compact
+every `c ∈ D`, the transpose lattice of `2π DA_c` (`ContinuousLinearMap.transposeLattice`): a
+vector `v` lies in `Λ c` exactly when the one-form `v ⬝ᵥ dc` is `2π ∑ᵢ nᵢ dAᵢ` for some integers
+`nᵢ`. The action variables of a Liouville integrable system near a compact
 regular level component have this property for the period lattices along a section
 (`TauCeti.SmoothTwoForm.IsSymplectic.exists_isLocalDiffeomorphAt_action_of_isCompact`).
 
@@ -25,14 +26,14 @@ of `A` is injective, then
 
 `A' = M A + b` on `D`, for some `M ∈ GL(ι, ℤ)` and `b : ι → ℝ`
 
-(`TauCeti.exists_eq_mulVec_add_of_forall_mem_iff`). At each point the rows of `DA` and `DA'` are
-two bases of the same lattice, so `DA' = M_c DA` with `M_c ∈ GL(ι, ℤ)`
-(`TauCeti.exists_generalLinearGroup_mulVec_eq_of_forall_exists_iff`). The matrix
+(`TauCeti.exists_eq_mulVec_add_of_forall_eq_transposeLattice`). At each point the rows of `DA`
+and `DA'` are two bases of the same lattice, so `DA' = M_c DA` with `M_c ∈ GL(ι, ℤ)`
+(`ContinuousLinearMap.exists_generalLinearGroup_mulVec_eq_of_transposeLattice_eq`). The matrix
 `M_c = DA'(c) DA(c)⁻¹` depends continuously on `c` and has integer entries, so it is constant on
 the preconnected set `D`, and then `A' - M A` has zero derivative
 (`TauCeti.exists_eq_mulVec_add_of_forall_exists_fderiv_eq`). Conversely, every integral affine
 change of action variables is again a system of action variables
-(`TauCeti.forall_mem_iff_of_eq_mulVec_add`).
+(`TauCeti.forall_eq_transposeLattice_of_eq_mulVec_add`).
 
 For a Liouville integrable system, let `λ⁽ⁱ⁾` and `λ'⁽ⁱ⁾` be two families of periods along one
 section `s`, with action variables `A` and `A'` describing the period lattices, and with angle maps
@@ -45,23 +46,21 @@ that change preserves the symplectic form `∑ᵢ dθᵢ ∧ dIᵢ`.
 
 Global action coordinates need more than exact period forms. On the strip
 `B = (1, 2) × (0, 3π)`, the lattices `2π (Da)ᵀ ℤ²` of the polar map `a(r, φ) = (r cos φ, r sin φ)`
-admit no injective action variables (`TauCeti.not_injOn_of_forall_exists_iff_polar`): every choice
-is `M a + b`, and `a(r, φ) = a(r, φ + 2π)`.
+admit no injective action variables (`TauCeti.not_injOn_of_forall_transposeLattice_eq_polar`):
+every choice is `M a + b`, and `a(r, φ) = a(r, φ + 2π)`.
 
 ## Main results
 
-* `TauCeti.exists_generalLinearGroup_mulVec_eq_of_forall_exists_iff`: two linear maps defining the
-  same lattice differ by an element of `GL(ι, ℤ)`.
-* `TauCeti.exists_eq_mulVec_add_of_forall_mem_iff`: action variables are unique up to integral
-  affine changes.
-* `TauCeti.forall_mem_iff_of_eq_mulVec_add`: integral affine changes of action variables are
-  action variables.
+* `TauCeti.exists_eq_mulVec_add_of_forall_eq_transposeLattice`: action variables are unique up to
+  integral affine changes.
+* `TauCeti.forall_eq_transposeLattice_of_eq_mulVec_add`: integral affine changes of action
+  variables are action variables.
 * `TauCeti.SmoothTwoForm.IsSymplectic.angleMap_sum_smul`: changing the basis of periods by a matrix
   `P` changes the angles by `θ ↦ θ P`.
 * `TauCeti.SmoothTwoForm.IsSymplectic.exists_eq_mulVec_add_and_angleMap_eq`: along a fixed section,
   action-angle data of a Liouville integrable system are unique up to integral affine changes.
-* `TauCeti.not_injOn_of_forall_exists_iff_polar`: the polar lattices on `(1, 2) × (0, 3π)` have no
-  injective action variables.
+* `TauCeti.not_injOn_of_forall_transposeLattice_eq_polar`: the polar lattices on
+  `(1, 2) × (0, 3π)` have no injective action variables.
 
 ## References
 
@@ -80,149 +79,33 @@ open scoped Manifold ContDiff
 
 namespace TauCeti
 
-variable {ι : Type*} [Fintype ι] [DecidableEq ι]
-
-/-! ### Changes of basis of the lattice `2π Lᵀ ℤ^ι` -/
-
-omit [DecidableEq ι] in
-/-- If every vector of the lattice `2π L₁ᵀ ℤ^ι` lies in `2π L₂ᵀ ℤ^ι`, then `L₁ = N L₂` for an
-integer matrix `N`. Here the lattice `2π Lᵀ ℤ^ι` of a linear map `L` is the set of vectors `v` whose
-one-form `v ⬝ᵥ ·` is `2π ∑ᵢ nᵢ Lᵢ` for integers `nᵢ`. -/
-theorem exists_map_intCast_mulVec_eq_of_forall_exists_imp
-    (L₁ L₂ : (ι → ℝ) →L[ℝ] (ι → ℝ))
-    (h : ∀ v : ι → ℝ, (∃ n : ι → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * L₁ w i) →
-      ∃ n : ι → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * L₂ w i) :
-    ∃ N : Matrix ι ι ℤ, ∀ w, L₁ w = N.map (↑) *ᵥ L₂ w := by
-  classical
-  -- The `i`-th row of the matrix of `L₁`, scaled by `2π`, is the lattice vector with `n = eᵢ`.
-  have hrow (i : ι) : ∃ n : ι → ℤ, ∀ w,
-      (2 * π) • LinearMap.toMatrix' (L₁ : (ι → ℝ) →ₗ[ℝ] (ι → ℝ)) i ⬝ᵥ w =
-        2 * π * ∑ k, n k * L₂ w k := by
-    refine h _ ⟨Pi.single i 1, fun w ↦ ?_⟩
-    have hw : LinearMap.toMatrix' (L₁ : (ι → ℝ) →ₗ[ℝ] (ι → ℝ)) i ⬝ᵥ w = L₁ w i :=
-      congrFun (LinearMap.toMatrix'_mulVec (L₁ : (ι → ℝ) →ₗ[ℝ] (ι → ℝ)) w) i
-    simp [smul_dotProduct, hw, Pi.single_apply]
-  choose n hn using hrow
-  refine ⟨Matrix.of n, fun w ↦ funext fun i ↦ ?_⟩
-  have hw : LinearMap.toMatrix' (L₁ : (ι → ℝ) →ₗ[ℝ] (ι → ℝ)) i ⬝ᵥ w = L₁ w i :=
-    congrFun (LinearMap.toMatrix'_mulVec (L₁ : (ι → ℝ) →ₗ[ℝ] (ι → ℝ)) w) i
-  have h := hn i w
-  rw [smul_dotProduct, hw, smul_eq_mul] at h
-  rw [mul_left_cancel₀ (by positivity) h]
-  simp [mulVec, dotProduct]
-
-/-- **Two bases of one lattice differ by an element of `GL(ι, ℤ)`.** If the injective linear map
-`L` and the linear map `L'` define the same lattice `2π Lᵀ ℤ^ι = 2π L'ᵀ ℤ^ι`, that is, the
-one-form `v ⬝ᵥ ·` is an integral combination of the components of `2π L` exactly when it is an
-integral combination of the components of `2π L'`, then `L' = M L` for an invertible integer matrix
-`M`. -/
-theorem exists_generalLinearGroup_mulVec_eq_of_forall_exists_iff
-    (L L' : (ι → ℝ) →L[ℝ] (ι → ℝ)) (hL : Injective L)
-    (h : ∀ v : ι → ℝ, (∃ n : ι → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * L w i) ↔
-      ∃ n : ι → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * L' w i) :
-    ∃ M : GL ι ℤ, ∀ w, L' w = (M : Matrix ι ι ℤ).map (↑) *ᵥ L w := by
-  obtain ⟨M, hM⟩ := exists_map_intCast_mulVec_eq_of_forall_exists_imp L' L fun v ↦ (h v).2
-  obtain ⟨N, hN⟩ := exists_map_intCast_mulVec_eq_of_forall_exists_imp L L' fun v ↦ (h v).1
-  -- `L = N M L` and `L` is onto, so `N M = 1`.
-  have hsurj : Surjective L :=
-    LinearMap.injective_iff_surjective (f := (L : (ι → ℝ) →ₗ[ℝ] (ι → ℝ))).1 hL
-  have hcast : (N * M).map ((↑) : ℤ → ℝ) = (1 : Matrix ι ι ℤ).map ((↑) : ℤ → ℝ) := by
-    rw [Matrix.map_one _ Int.cast_zero Int.cast_one]
-    refine Matrix.toLin'.injective (LinearMap.ext fun u ↦ ?_)
-    obtain ⟨w, rfl⟩ := hsurj u
-    have hmap : (N * M).map ((↑) : ℤ → ℝ) = N.map (↑) * M.map (↑) :=
-      Matrix.map_mul (f := Int.castRingHom ℝ)
-    simp only [Matrix.toLin'_apply, hmap, ← mulVec_mulVec, ← hM, ← hN, one_mulVec]
-  have hNM : N * M = 1 := Matrix.map_injective Int.cast_injective hcast
-  exact ⟨⟨M, N, mul_eq_one_comm.1 hNM, hNM⟩, hM⟩
-
-/-! ### Maps whose derivatives differ by integer matrices -/
-
-variable {D : Set (ι → ℝ)} {A A' : (ι → ℝ) → ι → ℝ}
-
-omit [DecidableEq ι] in
-/-- **Derivatives related by integer matrices force an integral affine relation.** Let `A` and `A'`
-be `C¹` maps on an open preconnected set `D`, with the derivative of `A` injective on `D`. If at
-each point `c ∈ D` the derivative of `A'` is `M_c` times that of `A` for some integer matrix `M_c`,
-then `M_c` does not depend on `c`, and `A' = M A + b` on `D` for some constant `b`. -/
-theorem exists_eq_mulVec_add_of_forall_exists_fderiv_eq (hDo : IsOpen D) (hD : IsPreconnected D)
-    (hA : ContDiffOn ℝ 1 A D) (hA' : ContDiffOn ℝ 1 A' D)
-    (hinj : ∀ c ∈ D, Injective (fderiv ℝ A c))
-    (hpt : ∀ c ∈ D, ∃ M : Matrix ι ι ℤ, ∀ w, fderiv ℝ A' c w = M.map (↑) *ᵥ fderiv ℝ A c w) :
-    ∃ (M : Matrix ι ι ℤ) (b : ι → ℝ), ∀ c ∈ D, A' c = M.map (↑) *ᵥ A c + b := by
-  classical
-  rcases D.eq_empty_or_nonempty with rfl | ⟨c₀, hc₀⟩
-  · exact ⟨1, 0, by simp⟩
-  choose! M hM using hpt
-  -- The matrix `M c` is the value at `c` of the map `R c = DA'(c) DA(c)⁻¹`, continuous on `D`.
-  set R : (ι → ℝ) → (ι → ℝ) →L[ℝ] (ι → ℝ) :=
-    fun c ↦ fderiv ℝ A' c * Ring.inverse (fderiv ℝ A c)
-  have hsurj {c} (hc : c ∈ D) : Surjective (fderiv ℝ A c) :=
-    LinearMap.injective_iff_surjective (f := (fderiv ℝ A c : (ι → ℝ) →ₗ[ℝ] (ι → ℝ))).1
-      (hinj c hc)
-  have hunit {c} (hc : c ∈ D) : IsUnit (fderiv ℝ A c) :=
-    ContinuousLinearMap.isUnit_iff_bijective.2 ⟨hinj c hc, hsurj hc⟩
-  have hR : ContinuousOn R D := fun c hc ↦ by
-    have hinv := NormedRing.inverse_continuousAt (hunit hc).unit
-    rw [IsUnit.unit_spec] at hinv
-    exact ((hA'.continuousOn_fderiv_of_isOpen hDo le_rfl) c hc).mul
-      (hinv.comp_continuousWithinAt ((hA.continuousOn_fderiv_of_isOpen hDo le_rfl) c hc))
-  have hRM {c} (hc : c ∈ D) (w : ι → ℝ) : R c w = (M c).map (↑) *ᵥ w := by
-    obtain ⟨u, rfl⟩ := hsurj hc w
-    rw [← hM c hc, ← mul_apply_eq_comp, mul_assoc,
-      Ring.inverse_mul_cancel _ (hunit hc), mul_one]
-  -- The entries of `M c` are continuous and integral, hence constant on `D`.
-  have hconst {c} (hc : c ∈ D) : M c = M c₀ := by
-    refine Matrix.ext fun i k ↦ hD.constant (f := fun c ↦ M c i k) ?_ hc hc₀
-    have hentry : EqOn (fun c ↦ (M c i k : ℝ)) (fun c ↦ R c (Pi.single k 1) i)
-        D := fun c hc ↦ by simp [hRM hc, mulVec_single]
-    refine Int.isClosedEmbedding_coe_real.isInducing.continuousOn_iff.2 ?_
-    exact ((continuous_apply i).comp_continuousOn (hR.clm_apply continuousOn_const)).congr hentry
-  -- So `A' - M A` has zero derivative on `D`.
-  set N : (ι → ℝ) →L[ℝ] (ι → ℝ) :=
-    LinearMap.toContinuousLinearMap (Matrix.toLin' ((M c₀).map (↑)))
-  have hN (w : ι → ℝ) : N w = (M c₀).map (↑) *ᵥ w := Matrix.toLin'_apply _ _
-  have hdA {c} (hc : c ∈ D) : DifferentiableAt ℝ A c :=
-    (hA.differentiableOn one_ne_zero c hc).differentiableAt (hDo.mem_nhds hc)
-  have hdA' {c} (hc : c ∈ D) : DifferentiableAt ℝ A' c :=
-    (hA'.differentiableOn one_ne_zero c hc).differentiableAt (hDo.mem_nhds hc)
-  have hg : EqOn (fderiv ℝ fun c ↦ A' c - N (A c)) 0 D := fun c hc ↦ by
-    have h : HasFDerivAt (fun c ↦ A' c - N (A c)) (fderiv ℝ A' c - N.comp (fderiv ℝ A c)) c :=
-      (hdA' hc).hasFDerivAt.sub (N.hasFDerivAt.comp c (hdA hc).hasFDerivAt)
-    rw [h.fderiv]
-    ext1 w
-    simp [hN, hM c hc, hconst hc]
-  have hgd : DifferentiableOn ℝ (fun c ↦ A' c - N (A c)) D := fun c hc ↦
-    ((hdA' hc).sub (N.differentiableAt.comp c (hdA hc))).differentiableWithinAt
-  refine ⟨M c₀, A' c₀ - N (A c₀), fun c hc ↦ ?_⟩
-  rw [← hN, ← hDo.is_const_of_fderiv_eq_zero hD hgd hg hc hc₀]
-  abel
+variable {ι : Type*} [Fintype ι] [DecidableEq ι] {D : Set (ι → ℝ)} {A A' : (ι → ℝ) → ι → ℝ}
 
 /-! ### Action variables of a family of lattices -/
 
-variable {Λ : (ι → ℝ) → Set (ι → ℝ)}
+variable {Λ : (ι → ℝ) → AddSubgroup (ι → ℝ)}
 
 /-- **Action variables are unique up to integral affine changes.** Let `Λ c` be a family of
 lattices over an open preconnected set `D`, and let `A` and `A'` be two `C¹` maps on `D` that are
-action variables for it: for every `c ∈ D`, a vector `v` lies in `Λ c` exactly when the one-form
-`v ⬝ᵥ dc` is `2π ∑ᵢ nᵢ dAᵢ` for some integers `nᵢ`, and likewise for `A'`. If the derivative of
-`A` is injective on `D`, then `A' = M A + b` on `D` for some `M ∈ GL(ι, ℤ)` and `b : ι → ℝ`. -/
-theorem exists_eq_mulVec_add_of_forall_mem_iff (hDo : IsOpen D) (hD : IsPreconnected D)
-    (hA : ContDiffOn ℝ 1 A D) (hA' : ContDiffOn ℝ 1 A' D)
+action variables for it: for every `c ∈ D`, `Λ c = 2π (DA_c)ᵀ ℤ^ι`, that is, a vector `v` lies in
+`Λ c` exactly when the one-form `v ⬝ᵥ dc` is `2π ∑ᵢ nᵢ dAᵢ` for some integers `nᵢ`, and likewise
+for `A'`. If the derivative of `A` is injective on `D`, then `A' = M A + b` on `D` for some
+`M ∈ GL(ι, ℤ)` and `b : ι → ℝ`. -/
+theorem exists_eq_mulVec_add_of_forall_eq_transposeLattice (hDo : IsOpen D)
+    (hD : IsPreconnected D) (hA : ContDiffOn ℝ 1 A D) (hA' : ContDiffOn ℝ 1 A' D)
     (hinj : ∀ c ∈ D, Injective (fderiv ℝ A c))
-    (hΛ : ∀ c ∈ D, ∀ v, v ∈ Λ c ↔
-      ∃ n : ι → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * fderiv ℝ (fun c ↦ A c i) c w)
-    (hΛ' : ∀ c ∈ D, ∀ v, v ∈ Λ c ↔
-      ∃ n : ι → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * fderiv ℝ (fun c ↦ A' c i) c w) :
+    (hΛ : ∀ c ∈ D, Λ c = ((2 * π) • fderiv ℝ A c).transposeLattice)
+    (hΛ' : ∀ c ∈ D, Λ c = ((2 * π) • fderiv ℝ A' c).transposeLattice) :
     ∃ (M : GL ι ℤ) (b : ι → ℝ), ∀ c ∈ D, A' c = (M : Matrix ι ι ℤ).map (↑) *ᵥ A c + b := by
   have hdA {c} (hc : c ∈ D) : DifferentiableAt ℝ A c :=
     (hA.differentiableOn one_ne_zero c hc).differentiableAt (hDo.mem_nhds hc)
-  -- At each point the two derivatives are bases of the same lattice.
+  have h2π : (2 * π : ℝ) ≠ 0 := by positivity
+  -- At each point the two derivatives, scaled by `2π`, are bases of the same lattice.
   have hpt {c} (hc : c ∈ D) : ∃ M : GL ι ℤ, ∀ w,
       fderiv ℝ A' c w = (M : Matrix ι ι ℤ).map (↑) *ᵥ fderiv ℝ A c w := by
-    have hdA' := (hA'.differentiableOn one_ne_zero c hc).differentiableAt (hDo.mem_nhds hc)
-    refine exists_generalLinearGroup_mulVec_eq_of_forall_exists_iff _ _ (hinj c hc) fun v ↦ ?_
-    simpa [fderiv_apply (hdA hc), fderiv_apply hdA'] using (hΛ c hc v).symm.trans (hΛ' c hc v)
+    obtain ⟨M, hM⟩ := ContinuousLinearMap.exists_generalLinearGroup_mulVec_eq_of_transposeLattice_eq
+      ((smul_right_injective _ h2π).comp (hinj c hc)) ((hΛ c hc).symm.trans (hΛ' c hc))
+    exact ⟨M, fun w ↦ smul_right_injective _ h2π (by simpa [mulVec_smul] using hM w)⟩
   rcases D.eq_empty_or_nonempty with rfl | ⟨c₀, hc₀⟩
   · exact ⟨1, 0, by simp⟩
   obtain ⟨M, b, hMb⟩ := exists_eq_mulVec_add_of_forall_exists_fderiv_eq hDo hD hA hA' hinj
@@ -242,36 +125,19 @@ theorem exists_eq_mulVec_add_of_forall_mem_iff (hDo : IsOpen D) (hD : IsPreconne
   exact ⟨M₀, b, hMM₀ ▸ hMb⟩
 
 /-- **Integral affine changes of action variables are action variables.** If `A` are action
-variables for a family of lattices `Λ c` over an open set `D`, that is, `v ∈ Λ c` exactly when the
-one-form `v ⬝ᵥ dc` is `2π ∑ᵢ nᵢ dAᵢ` for some integers `nᵢ`, then so are `A' = M A + b` for every
-`M ∈ GL(ι, ℤ)` and `b : ι → ℝ`. -/
-theorem forall_mem_iff_of_eq_mulVec_add (hDo : IsOpen D) (hA : DifferentiableOn ℝ A D)
-    (hΛ : ∀ c ∈ D, ∀ v, v ∈ Λ c ↔
-      ∃ n : ι → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * fderiv ℝ (fun c ↦ A c i) c w)
+variables for a family of lattices `Λ c` over an open set `D`, that is, `Λ c = 2π (DA_c)ᵀ ℤ^ι` for
+every `c ∈ D`, then so are `A' = M A + b` for every `M ∈ GL(ι, ℤ)` and `b : ι → ℝ`. -/
+theorem forall_eq_transposeLattice_of_eq_mulVec_add (hDo : IsOpen D)
+    (hA : DifferentiableOn ℝ A D)
+    (hΛ : ∀ c ∈ D, Λ c = ((2 * π) • fderiv ℝ A c).transposeLattice)
     (M : GL ι ℤ) (b : ι → ℝ) (hA' : ∀ c ∈ D, A' c = (M : Matrix ι ι ℤ).map (↑) *ᵥ A c + b) :
-    ∀ c ∈ D, ∀ v, v ∈ Λ c ↔
-      ∃ n : ι → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * fderiv ℝ (fun c ↦ A' c i) c w := by
-  intro c hc v
+    ∀ c ∈ D, Λ c = ((2 * π) • fderiv ℝ A' c).transposeLattice := by
+  intro c hc
   have hdA := (hA c hc).differentiableAt (hDo.mem_nhds hc)
-  -- Near `c`, `A' = M A + b`, so `dA'ᵢ = ∑ₖ Mᵢₖ dAₖ`.
+  -- Near `c`, `A' = M A + b`, so `DA' = M DA`.
   have hA'c := hdA.hasFDerivAt.of_eventuallyEq_mulVec_add (eventually_of_mem (hDo.mem_nhds hc) hA')
-  -- Hence `∑ᵢ nᵢ dA'ᵢ = ∑ₖ (n M)ₖ dAₖ`.
-  have hsum (n : ι → ℤ) (w : ι → ℝ) :
-      ∑ i, (n i : ℝ) * fderiv ℝ (fun c ↦ A' c i) c w =
-        ∑ k, ((n ᵥ* (M : Matrix ι ι ℤ)) k : ℝ) * fderiv ℝ (fun c ↦ A c k) c w := by
-    simp only [fderiv_apply hA'c.differentiableAt, fderiv_apply hdA, hA'c.fderiv,
-      ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply,
-      LinearMap.coe_toContinuousLinearMap', Matrix.toLin'_apply, mulVec, vecMul,
-      dotProduct, Finset.mul_sum, Finset.sum_mul, Int.cast_sum, Int.cast_mul, Matrix.map_apply,
-      mul_assoc]
-    exact Finset.sum_comm
-  rw [hΛ c hc v]
-  constructor
-  · rintro ⟨n, hn⟩
-    refine ⟨n ᵥ* ((M⁻¹ : GL ι ℤ) : Matrix ι ι ℤ), fun w ↦ ?_⟩
-    rw [hsum, vecMul_vecMul, ← Units.val_mul, inv_mul_cancel, Units.val_one, vecMul_one, hn]
-  · rintro ⟨n, hn⟩
-    exact ⟨n ᵥ* (M : Matrix ι ι ℤ), fun w ↦ by rw [hn, hsum]⟩
+  rw [hΛ c hc, hA'c.fderiv, ← ContinuousLinearMap.comp_smul,
+    ContinuousLinearMap.transposeLattice_toLin'_comp]
 
 /-! ### Polar coordinates: action variables need not be injective -/
 
@@ -319,12 +185,11 @@ map `A` on `B` with the same lattices, that is, every choice of action variables
 be injective on `B`: by uniqueness of action variables `A = M a + b` for some `M ∈ GL(2, ℤ)`, and
 `a` takes the same value at `(r, φ)` and `(r, φ + 2π)`. So no action variables map `B` injectively
 into `ℝ²`. -/
-theorem not_injOn_of_forall_exists_iff_polar {A : (Fin 2 → ℝ) → Fin 2 → ℝ}
+theorem not_injOn_of_forall_transposeLattice_eq_polar {A : (Fin 2 → ℝ) → Fin 2 → ℝ}
     (hA : ContDiffOn ℝ 1 A {c | c 0 ∈ Ioo 1 2 ∧ c 1 ∈ Ioo 0 (3 * π)})
-    (hΛ : ∀ c ∈ {c : Fin 2 → ℝ | c 0 ∈ Ioo 1 2 ∧ c 1 ∈ Ioo 0 (3 * π)}, ∀ v,
-      (∃ n : Fin 2 → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * fderiv ℝ
-        (fun c ↦ ![c 0 * cos (c 1), c 0 * sin (c 1)] i) c w) ↔
-      ∃ n : Fin 2 → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * fderiv ℝ (fun c ↦ A c i) c w) :
+    (hΛ : ∀ c ∈ {c : Fin 2 → ℝ | c 0 ∈ Ioo 1 2 ∧ c 1 ∈ Ioo 0 (3 * π)},
+      ((2 * π) • fderiv ℝ (fun c : Fin 2 → ℝ ↦ ![c 0 * cos (c 1), c 0 * sin (c 1)]) c
+        ).transposeLattice = ((2 * π) • fderiv ℝ A c).transposeLattice) :
     ¬ InjOn A {c | c 0 ∈ Ioo 1 2 ∧ c 1 ∈ Ioo 0 (3 * π)} := by
   set B : Set (Fin 2 → ℝ) := {c | c 0 ∈ Ioo 1 2 ∧ c 1 ∈ Ioo 0 (3 * π)}
   have hBo : IsOpen B :=
@@ -332,11 +197,9 @@ theorem not_injOn_of_forall_exists_iff_polar {A : (Fin 2 → ℝ) → Fin 2 → 
   have hBc : Convex ℝ B :=
     ((convex_Ioo 1 2).linear_preimage (LinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ ℝ) 0)).inter
       ((convex_Ioo 0 (3 * π)).linear_preimage (LinearMap.proj (R := ℝ) (φ := fun _ : Fin 2 ↦ ℝ) 1))
-  obtain ⟨M, b, hMb⟩ := exists_eq_mulVec_add_of_forall_mem_iff hBo hBc.isPreconnected
-    contDiff_polar.contDiffOn hA (fun c hc ↦ injective_fderiv_polar (by linarith [hc.1.1]))
-    (Λ := fun c ↦ {v | ∃ n : Fin 2 → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * fderiv ℝ
-        (fun c ↦ ![c 0 * cos (c 1), c 0 * sin (c 1)] i) c w})
-    (fun _ _ _ ↦ Iff.rfl) hΛ
+  obtain ⟨M, b, hMb⟩ := exists_eq_mulVec_add_of_forall_eq_transposeLattice hBo
+    hBc.isPreconnected contDiff_polar.contDiffOn hA
+    (fun c hc ↦ injective_fderiv_polar (by linarith [hc.1.1])) (fun _ _ ↦ rfl) hΛ
   -- The points `(3/2, 1)` and `(3/2, 1 + 2π)` of `B` have the same polar image.
   have h1 : (![3 / 2, 1] : Fin 2 → ℝ) ∈ B := by
     refine ⟨by norm_num, by norm_num, ?_⟩
@@ -387,8 +250,9 @@ theorem angleMap_sum_smul (P : Matrix ι ι ℝ) (θ c : ι → ℝ) :
 be a section of `F` over an open preconnected set `D`. Let `λ⁽ⁱ⁾` and `λ'⁽ⁱ⁾` be two continuous
 families of vectors on `D`, the `λ⁽ⁱ⁾(c)` linearly independent, with action variables `A` and `A'`:
 `dAᵢ = (2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ dcⱼ` and `dA'ᵢ = (2π)⁻¹ ∑ⱼ λ'⁽ⁱ⁾ⱼ dcⱼ`. Suppose both describe the period
-lattice: for every `c ∈ D`, `v` is a period of `s c` exactly when `v ⬝ᵥ dc = 2π ∑ᵢ nᵢ dAᵢ` for
-some integers `nᵢ`, and likewise for `A'`. Then there are `P ∈ GL(ι, ℤ)` and `b : ι → ℝ` such
+lattice: for every `c ∈ D`, the periods of `s c` form the transpose lattice `2π (DA_c)ᵀ ℤ^ι`, so
+`v` is a period of `s c` exactly when `v ⬝ᵥ dc = 2π ∑ᵢ nᵢ dAᵢ` for some integers `nᵢ`, and likewise
+for `A'`. Then there are `P ∈ GL(ι, ℤ)` and `b : ι → ℝ` such
 that on `D`
 
 * the actions change by the integral affine map `A' = P A + b`;
@@ -401,15 +265,15 @@ theorem exists_eq_mulVec_add_and_angleMap_eq (hDo : IsOpen D) (hD : IsPreconnect
       ((2 * π)⁻¹ • ∑ j, p i c j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c)
     (hA' : ∀ c ∈ D, ∀ i, HasFDerivAt (fun c ↦ A' c i)
       ((2 * π)⁻¹ • ∑ j, p' i c j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c)
-    (hΛ : ∀ c ∈ D, ∀ v, v ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) ↔
-      ∃ n : ι → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * fderiv ℝ (fun c ↦ A c i) c w)
-    (hΛ' : ∀ c ∈ D, ∀ v, v ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) ↔
-      ∃ n : ι → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * fderiv ℝ (fun c ↦ A' c i) c w) :
+    (hΛ : ∀ c ∈ D, hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) =
+      ((2 * π) • fderiv ℝ A c).transposeLattice)
+    (hΛ' : ∀ c ∈ D, hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) =
+      ((2 * π) • fderiv ℝ A' c).transposeLattice) :
     ∃ (P : GL ι ℤ) (b : ι → ℝ), ∀ c ∈ D, A' c = (P : Matrix ι ι ℤ).map (↑) *ᵥ A c + b ∧
       (∀ i, p' i c = ∑ k, ((P : Matrix ι ι ℤ) i k : ℝ) • p k c) ∧
       ∀ θ, hσ.angleMap hF hcomm hc s p' (θ, c) =
         hσ.angleMap hF hcomm hc s p (θ ᵥ* (P : Matrix ι ι ℤ).map (↑), c) := by
-  obtain ⟨P, b, hPb⟩ := exists_eq_mulVec_add_of_forall_mem_iff hDo hD
+  obtain ⟨P, b, hPb⟩ := exists_eq_mulVec_add_of_forall_eq_transposeLattice hDo hD
     ((contDiffOn_action_of_hasFDerivAt (n := 0) hDo (fun i ↦ contDiffOn_zero.2 (hp i)) hA).of_le
       (by simp))
     ((contDiffOn_action_of_hasFDerivAt (n := 0) hDo (fun i ↦ contDiffOn_zero.2 (hp' i))

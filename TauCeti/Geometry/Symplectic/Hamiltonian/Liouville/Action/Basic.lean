@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.CurveIntegral.Poincare
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Liouville.Period
+public import TauCeti.LinearAlgebra.Matrix.TransposeLattice
 import Mathlib.Algebra.Group.Subgroup.Finsupp
 
 /-!
@@ -205,8 +206,9 @@ such that for every `c` near `F x`:
 
 * the vectors `λ⁽ⁱ⁾ c` are linearly independent and generate the period lattice of `s c`;
 * the differential of `Aᵢ` at `c` is `(2π)⁻¹ ∑ⱼ λ⁽ⁱ⁾ⱼ(c) dcⱼ`;
-* a vector `v` is a period of `s c` exactly when `v ⬝ᵥ dc = 2π ∑ᵢ nᵢ dAᵢ` for some integers `nᵢ`,
-  so that the period lattice is `2π (DA)ᵀ ℤⁿ`.
+* the period lattice of `s c` is the transpose lattice `2π (DA_c)ᵀ ℤⁿ`
+  (`ContinuousLinearMap.transposeLattice`): a vector `v` is a period of `s c` exactly when
+  `v ⬝ᵥ dc = 2π ∑ᵢ nᵢ dAᵢ` for some integers `nᵢ`.
 
 The components `Aᵢ` are the action variables of the Liouville–Arnold theorem. -/
 theorem exists_isLocalDiffeomorphAt_action_of_isCompact (hdim : 2 * Fintype.card ι = finrank ℝ E)
@@ -221,8 +223,8 @@ theorem exists_isLocalDiffeomorphAt_action_of_isCompact (hdim : 2 * Fintype.card
           AddSubgroup.closure (range fun i ↦ p i c) ∧
         (∀ i, HasFDerivAt (fun c ↦ A c i)
           ((2 * π)⁻¹ • ∑ j, p i c j • (proj j : (ι → ℝ) →L[ℝ] ℝ)) c) ∧
-        ∀ v, v ∈ hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) ↔
-          ∃ n : ι → ℤ, ∀ w, v ⬝ᵥ w = 2 * π * ∑ i, n i * fderiv ℝ (fun c ↦ A c i) c w := by
+        hσ.hamiltonianFlowStabilizer hF hcomm hc (s c) =
+          ((2 * π) • fderiv ℝ A c).transposeLattice := by
   classical
   obtain ⟨p, hp⟩ := hσ.exists_hamiltonianFlowStabilizer_section_eq_closure_of_isCompact hF hcomm
     hc hdim hreg hK ht hxt hsx hs hFs
@@ -236,29 +238,27 @@ theorem exists_isLocalDiffeomorphAt_action_of_isCompact (hdim : 2 * Fintype.card
     (fun c hc ↦ (hball hc).1.2.2 ▸ AddSubgroup.subset_closure (mem_range_self i))
   choose A hA using hA
   refine ⟨p, fun c i ↦ A i c, ?_, eventually_of_mem (Metric.ball_mem_nhds _ hε)
-    fun c hc ↦ ⟨(hball hc).1.2.1, (hball hc).1.2.2, fun i ↦ hA i c hc, fun v ↦ ?_⟩⟩
+    fun c hc ↦ ⟨(hball hc).1.2.1, (hball hc).1.2.2, fun i ↦ hA i c hc, ?_⟩⟩
   swap
-  · -- The periods are the integral combinations of the `p i c`, and `dAᵢ = (2π)⁻¹ ⟨p i c, ·⟩`.
+  · -- The periods are the integral combinations of the `p i c`, and `2π dAᵢ = ⟨p i c, ·⟩`.
     have hd (i : ι) (w : ι → ℝ) :
-        fderiv ℝ (fun c ↦ A i c) c w = (2 * π)⁻¹ * (p i c ⬝ᵥ w) := by
-      rw [(hA i c hc).fderiv]
-      simp [dotProduct, Finset.mul_sum]
-    simp_rw [hd, (hball hc).1.2.2, AddSubgroup.mem_closure_range_iff_of_fintype]
+        ((2 * π) • fderiv ℝ (fun c i ↦ A i c) c) w i = p i c ⬝ᵥ w := by
+      rw [(hasFDerivAt_pi.2 fun i ↦ hA i c hc).fderiv]
+      simp [dotProduct, Finset.mul_sum, ← mul_assoc, pi_ne_zero]
+    ext v
+    simp_rw [ContinuousLinearMap.mem_transposeLattice, hd, (hball hc).1.2.2,
+      AddSubgroup.mem_closure_range_iff_of_fintype]
     constructor
     · rintro ⟨n, rfl⟩
       refine ⟨n, fun w ↦ ?_⟩
-      rw [sum_dotProduct, Finset.mul_sum]
+      rw [sum_dotProduct]
       refine Finset.sum_congr rfl fun i _ ↦ ?_
       rw [← Int.cast_smul_eq_zsmul ℝ, smul_dotProduct, smul_eq_mul]
-      field_simp
     · rintro ⟨n, hn⟩
       refine ⟨n, funext fun k ↦ ?_⟩
       have h := hn (Pi.single k 1)
       simp only [dotProduct_single, mul_one] at h
-      rw [h, Finset.sum_apply, Finset.mul_sum]
-      refine Finset.sum_congr rfl fun i _ ↦ ?_
-      rw [Pi.smul_apply, zsmul_eq_mul]
-      field_simp
+      simp [h]
   -- The action map is smooth on `D`, since its derivative is, and its derivative at `F x` is
   -- injective, since the periods `p i (F x)` are linearly independent.
   have hBs : ContDiffOn ℝ ∞ (fun c i ↦ A i c) D :=
