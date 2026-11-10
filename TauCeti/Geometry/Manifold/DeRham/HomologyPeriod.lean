@@ -88,7 +88,6 @@ def homologyPeriodHom : ((singularChains ℤ).obj (.of M)).homology 1 →+ F :=
 
 /-- The period on the class of a cycle, given in the explicit description `H₁` of the first
 homology group. -/
-@[simp]
 theorem homologyPeriodHom_H₁AddEquivHomology_mk (c : cycles₁ (.of M)) :
     homologyPeriodHom φ (H₁AddEquivHomology (.of M) (H₁.mk c)) =
       chainsDesc (fun s ↦ pathClassIntegral φ (.mk (path₁ s)))
@@ -107,7 +106,6 @@ theorem homologyPeriodHom_homologyπ (z : ((singularChains ℤ).obj (.of M)).cyc
   rw [← H₁AddEquivHomology_mk ⟨_, hz⟩ z rfl, homologyPeriodHom_H₁AddEquivHomology_mk]
 
 /-- The period on the homology class of a loop is the integral along the loop. -/
-@[simp]
 theorem homologyPeriodHom_loopClass {x : M} (γ : Path x x) :
     homologyPeriodHom φ (H₁AddEquivHomology (.of M) (loopClass (X := .of M) γ)) =
       pathClassIntegral φ (.mk γ) := by

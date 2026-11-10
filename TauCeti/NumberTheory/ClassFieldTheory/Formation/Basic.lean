@@ -553,7 +553,6 @@ theorem tateHMinusTwoEquivAbelianization_apply (x : L.TrivialTateH (-2)) :
 -- `Rep.trivial` is also an `abbrev` for `Rep.of`, so `simp` reduces its carrier as well.
 /-- The degree `-2` identification sends the standard first-homology class represented by
 `(g, 1)` to the class of `g⁻¹` in the additive abelianization. -/
-@[simp]
 theorem tateHMinusTwoEquivAbelianization_single_one (g : L.Gal) :
     (dsimp% only (L.tateHMinusTwoEquivAbelianization
       ((TateCohomology.isoGroupHomology (-2) 1 rfl).inv.app (Rep.trivial ℤ L.Gal ℤ)

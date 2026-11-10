@@ -456,7 +456,6 @@ theorem HNegTwoAddEquivTensorOfIsTrivial_apply (x : tateCohomology A (-2)) :
 -- `dsimp% only` on the left-hand side: see the comment on `H0π_eq_zero_iff`.
 /-- The degree-`-2` identification sends the homology class represented by `(g, a)` to the
 elementary tensor `⟦g⟧ ⊗ₜ a`. -/
-@[simp]
 theorem HNegTwoAddEquivTensorOfIsTrivial_single (g : G) (a : A) :
     (dsimp% only (HNegTwoAddEquivTensorOfIsTrivial A
       ((TateCohomology.isoGroupHomology (-2) 1 (Eq.refl (-2))).inv.app A
@@ -537,7 +536,6 @@ theorem HNegTwoAddEquivAbelianization_apply
 -- `dsimp% only` on the left-hand side: see the comment on `H0π_eq_zero_iff`.
 /-- The degree-`-2` identification sends the homology class represented by `(g, 1)` to the class
 of `g` in the additive abelianization. -/
-@[simp]
 theorem HNegTwoAddEquivAbelianization_single_one (g : G) :
     (dsimp% only (HNegTwoAddEquivAbelianization
       ((TateCohomology.isoGroupHomology (-2) 1 (Eq.refl (-2))).inv.app (Rep.trivial ℤ G ℤ)

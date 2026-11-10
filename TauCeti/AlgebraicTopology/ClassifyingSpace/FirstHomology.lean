@@ -93,7 +93,6 @@ theorem classifyingSpaceFirstHomologyAddEquiv_hurewiczHomologyAddEquiv
 
 /-- The singular homology class of a loop `p` at the base point corresponds to the class of the
 group element `p` represents under `classifyingSpaceFundamentalGroupMulEquiv`. -/
-@[simp]
 theorem classifyingSpaceFirstHomologyAddEquiv_loopClass
     (p : Path (classifyingSpaceBasepoint G) (classifyingSpaceBasepoint G)) :
     classifyingSpaceFirstHomologyAddEquiv G
@@ -203,7 +202,6 @@ theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_hurewiczHomologyAddEq
 /-- The singular homology class of a loop `p` at the base point corresponds to the class in
 `H₁(G, ℤ)` of the `1`-cycle, with coefficient `1`, at the group element that `p` represents under
 `classifyingSpaceFundamentalGroupMulEquiv`. -/
-@[simp]
 theorem classifyingSpaceFirstHomologyAddEquivGroupHomology_loopClass
     (p : Path (classifyingSpaceBasepoint G) (classifyingSpaceBasepoint G)) :
     classifyingSpaceFirstHomologyAddEquivGroupHomology G

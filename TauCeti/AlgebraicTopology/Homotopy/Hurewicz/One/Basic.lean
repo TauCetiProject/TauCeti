@@ -340,7 +340,6 @@ def hurewicz₁ (x : X) : FundamentalGroup X x →* Multiplicative (H₁ X) wher
     -- `Quotient.lift` computes on the classes `⟦p⟧` and `⟦q⟧`.
     rfl
 
-@[simp]
 lemma hurewicz₁_mk {x : X} (γ : Path x x) :
     hurewicz₁ X x (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)) =
       Multiplicative.ofAdd (loopClass γ) := by
@@ -365,7 +364,6 @@ def H₁.lift (f : ((singularChains ℤ).obj X).X 1 →ₗ[ℤ] A)
     (@ModuleCat.ofHom ℤ _ _ _ _ (cycles₁ X).module _ _ (f.comp (cycles₁ X).subtype))
     (ModuleCat.hom_ext (LinearMap.ext hf))).hom.toAddMonoidHom
 
-@[simp]
 lemma H₁.lift_mk (f : ((singularChains ℤ).obj X).X 1 →ₗ[ℤ] A)
     (hf : ∀ y, f (((singularChains ℤ).obj X).d 2 1 y) = 0) (c : cycles₁ X) :
     H₁.lift f hf (H₁.mk c) = f c := by
@@ -456,7 +454,6 @@ under concatenation: the class of a cycle `Σ nᵢ σᵢ` is sent to `Σ nᵢ f 
 def H₁.liftPathClass : H₁ X →+ A :=
   H₁.lift (chainsDesc fun s ↦ f (.mk (path₁ s))) (chainsDesc_path₁_d hf)
 
-@[simp]
 lemma H₁.liftPathClass_mk (c : cycles₁ X) :
     H₁.liftPathClass hf (H₁.mk c) =
       chainsDesc (fun s ↦ f (.mk (path₁ s))) (c : ((singularChains ℤ).obj X).X 1) :=
@@ -470,7 +467,6 @@ private lemma apply_cast {y z y' z' : X} (hy : y' = y) (hz : z' = z)
 
 /-- The homomorphism out of `H₁ X` induced by an additive function `f` on path classes sends the
 class of a loop to the value of `f` on its class. -/
-@[simp]
 lemma H₁.liftPathClass_loopClass {x : X} (γ : Path x x) :
     H₁.liftPathClass hf (loopClass γ) = f (.mk γ) := by
   have hs : source₁ (simplex₁ γ.toContinuousMap) = x := (source₁_simplex₁ _).trans γ.source
@@ -628,7 +624,6 @@ def hurewiczAb : Additive (Group.Abelianization (FundamentalGroup X x)) →+ H�
 
 omit [PathConnectedSpace X] in
 /-- On the abelianization, the Hurewicz map is induced by `TauCeti.HurewiczOne.hurewicz₁`. -/
-@[simp]
 lemma hurewiczAb_ofMul_of (g : FundamentalGroup X x) :
     hurewiczAb x (Additive.ofMul (Group.Abelianization.of g)) =
       Multiplicative.toAdd (hurewicz₁ X x g) := by
@@ -680,7 +675,6 @@ def hurewiczAddEquiv : Additive (Group.Abelianization (FundamentalGroup X x)) �
   left_inv := inverse₁_hurewiczAb x
   right_inv := hurewiczAb_inverse₁ x
 
-@[simp]
 lemma hurewiczAddEquiv_ofMul_of_mk (γ : Path x x) :
     hurewiczAddEquiv x (Additive.ofMul ((Group.Abelianization.of : FundamentalGroup X x →* _)
       (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk γ)))) = loopClass γ :=
@@ -694,7 +688,6 @@ lemma hurewiczAddEquiv_apply (a : Additive (Group.Abelianization (FundamentalGro
 
 /-- The inverse of the Hurewicz isomorphism sends the class of a loop to its class in the
 abelianized fundamental group. -/
-@[simp]
 lemma hurewiczAddEquiv_symm_loopClass (γ : Path x x) :
     (hurewiczAddEquiv x).symm (loopClass γ) =
       Additive.ofMul ((Group.Abelianization.of : FundamentalGroup X x →* _)

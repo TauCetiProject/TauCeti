@@ -72,7 +72,6 @@ lemma ord_one {x : X} : X.ord (1 : X.functionField) x = 0 := by
 
 /-- The order of an inverse is the negative of the order. Both sides vanish at the zero function,
 whose inverse is again zero. -/
-@[simp]
 lemma ord_inv (f : X.functionField) {x : X} : X.ord f⁻¹ x = -X.ord f x := by
   rcases eq_or_ne f 0 with rfl | hf
   · simp

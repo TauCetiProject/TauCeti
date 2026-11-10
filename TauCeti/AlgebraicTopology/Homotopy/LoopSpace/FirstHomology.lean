@@ -53,7 +53,6 @@ def pathLoopSpaceFirstHomologyAddEquiv (x : X) [PathConnectedSpace (Ω X x)] :
 
 /-- The inverse Hurewicz isomorphism sends the homology class of a loop of loops to
 its class under the loop-space shift. -/
-@[simp]
 theorem pathLoopSpaceFirstHomologyAddEquiv_symm_loopClass (x : X)
     [PathConnectedSpace (Ω X x)] (γ : Path (Path.refl x) (Path.refl x)) :
     (pathLoopSpaceFirstHomologyAddEquiv x).symm
