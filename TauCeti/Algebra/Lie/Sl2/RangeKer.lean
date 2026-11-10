@@ -5,8 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.Sl2.Morozov
+public import TauCeti.Algebra.Lie.Sl2.Associative
 public import TauCeti.RepresentationTheory.Lie.AdNilpotent
+public import Mathlib.Algebra.Lie.Sl2
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
@@ -63,8 +64,6 @@ dimension the two disjointness statements together with rank-nullity force
   **815**, Springer, 1980, Chapter 7, for the slice `e + ker (ad f)` and its transversality.
 * D. H. Collingwood and W. M. McGovern, *Nilpotent Orbits in Semisimple Lie Algebras*, Van
   Nostrand Reinhold, 1993, Chapter 3, for the `sl₂` theory of nilpotent elements.
-* V. V. Morozov, *On a nilpotent element in a semi-simple Lie algebra*, C. R. (Doklady) Acad.
-  Sci. URSS (N.S.) **36** (1942), 83–86, for the eigenvalue lemma used in the induction.
 -/
 
 public section
@@ -144,7 +143,7 @@ theorem disjoint_range_ker (hE : IsNilpotent E) (hef : E * F - F * E = H)
         rw [← add_smul, map_smul, smul_eq_zero] at h
         refine h.resolve_left ?_
         exact_mod_cast (by omega : k + 2 + j ≠ 0)
-    exact key m (by rw [hm]; rfl)
+    exact key m (by rw [hm, LinearMap.zero_apply])
 
 end Sl2
 
