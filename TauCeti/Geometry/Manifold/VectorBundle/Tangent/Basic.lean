@@ -252,8 +252,8 @@ theorem extend_eq_trivializationAt_symm {x : M} (w : TangentSpace I x) :
 theorem _root_.TangentBundle.mdifferentiableAt_trivializationAt_symm_apply (x : M) (u : E) :
     MDiffAt (T% (fun y ↦ (trivializationAt E (TangentSpace I) x).symm y u :
       Π y : M, TangentSpace I y)) x := by
-  have h := FiberBundle.mdifferentiableAt_extend (I := I) E (show TangentSpace I x from u)
-  rwa [extend_eq_trivializationAt_symm] at h
+  have h := FiberBundle.mdifferentiableAt_extend (I := I) (V := TangentSpace I) (x := x) E u
+  rwa [extend_eq_trivializationAt_symm (I := I) (x := x) u] at h
 
 /-- At a point `x` whose base points `f x` and `g x` agree with those of `x₀`, reading `ϕ x` in the
 tangent coordinates of `x₀` changes nothing: both coordinate changes are from a chart to itself. -/
