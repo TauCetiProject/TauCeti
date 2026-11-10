@@ -24,6 +24,8 @@ is, in particular when `M` has independent columns.
 * `Matrix.map_ofReal_mem_unitaryGroup`: an orthogonal real matrix is unitary.
 * `Matrix.map_re_conjTranspose_mul_self_mul_map_ofReal`: the real Gram matrix of `M N` for a real
   matrix `N` is `Nᵀ Re (Mᴴ M) N`.
+* `Matrix.conjTranspose_mul_self_map_ofReal_add_I_smul`: the Gram matrix of `P + i Q` for real
+  matrices `P` and `Q` has real part `Pᵀ P + Qᵀ Q` and imaginary part `Pᵀ Q - Qᵀ P`.
 * `Matrix.PosDef.map_re`: the real part of a positive definite complex matrix is positive
   definite.
 * `Matrix.PosDef.map_re_conjTranspose_mul_self`: the real Gram matrix of a complex matrix with
@@ -58,6 +60,21 @@ theorem map_re_conjTranspose_mul_self_mul_map_ofReal [Fintype m] [Fintype n] (M 
   exact ((map_algebraMap_mul Complex.reLm Nᵀ _).trans
     (congrArg (Nᵀ * ·) (map_mul_algebraMap Complex.reLm N (Mᴴ * M)))).trans
       (Matrix.mul_assoc _ _ _).symm
+
+/-- The Gram matrix of the complex matrix `P + i Q`, for real matrices `P` and `Q`, has real part
+`Pᵀ P + Qᵀ Q` and imaginary part `Pᵀ Q - Qᵀ P`. -/
+theorem conjTranspose_mul_self_map_ofReal_add_I_smul [Fintype m] (P Q : Matrix m n ℝ) :
+    (P.map ((↑) : ℝ → ℂ) + Complex.I • Q.map ((↑) : ℝ → ℂ))ᴴ *
+        (P.map ((↑) : ℝ → ℂ) + Complex.I • Q.map ((↑) : ℝ → ℂ)) =
+      (Pᵀ * P + Qᵀ * Q).map ((↑) : ℝ → ℂ) +
+        Complex.I • (Pᵀ * Q - Qᵀ * P).map ((↑) : ℝ → ℂ) := by
+  ext i j
+  simp only [Matrix.mul_apply, Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply,
+    Matrix.conjTranspose_apply, Matrix.sub_apply, smul_eq_mul, Matrix.transpose_apply]
+  apply Complex.ext
+  · simp [Complex.mul_re, Finset.sum_add_distrib, Complex.re_sum]
+  · simp [Complex.mul_im, Finset.sum_add_distrib, Complex.im_sum]
+    ring_nf
 
 /-- The real part of a positive definite complex matrix is positive definite. -/
 theorem PosDef.map_re [Finite n] {K : Matrix n n ℂ} (hK : K.PosDef) :
