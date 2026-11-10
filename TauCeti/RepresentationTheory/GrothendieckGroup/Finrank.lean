@@ -184,7 +184,6 @@ theorem finrankK0_eq_sum_jordanHolderCoordinate_mul [Fintype I]
     rw [isExhaustiveSimpleFamily_iff] at hexhaustive ⊢
     intro M hM
     obtain ⟨i, ⟨e⟩⟩ := hexhaustive M hM
-    have := hM
     exact ⟨⟨i, IsSimpleModule.congr e.symm⟩, ⟨e⟩⟩
   set b := simpleClassBasis S' hnoniso' hexhaustive' with hb
   have hsum : finrankK0 k A x =
@@ -197,11 +196,7 @@ theorem finrankK0_eq_sum_jordanHolderCoordinate_mul [Fintype I]
           refine Finset.sum_congr rfl fun j _ ↦ ?_
           rw [hb, simpleClassBasis_apply, simpleClassBasis_repr_apply, finrankK0_of, smul_eq_mul]
   have hzero (i : I) (hi : ¬ IsSimpleModule A (S i)) : jordanHolderCoordinate A (S i) x = 0 := by
-    have : jordanHolderCoordinate A (S i) = 0 :=
-      ExactK0.hom_ext fun M ↦ by
-        rw [jordanHolderCoordinate_of, jordanHolderMultiplicity_eq_zero_of_not_isSimpleModule _ hi]
-        rfl
-    simp [this]
+    rw [jordanHolderCoordinate_eq_zero_of_not_isSimpleModule A _ hi, AddMonoidHom.zero_apply]
   rw [hsum, ← Finset.sum_subtype (Finset.univ.filter fun i ↦ IsSimpleModule A (S i)) (by simp)
     fun i ↦ jordanHolderCoordinate A (S i) x * (Module.finrank k (S i).obj : ℤ),
     Finset.sum_filter_of_ne fun i _ h ↦ by_contra fun hi ↦ h (by simp [hzero i hi])]
