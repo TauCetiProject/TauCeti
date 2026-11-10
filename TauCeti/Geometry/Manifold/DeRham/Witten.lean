@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.DeRham.Basic
+public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import TauCeti.Geometry.Manifold.DifferentialForm.Wedge.Leibniz
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
@@ -52,6 +53,9 @@ state of the harmonic oscillator obtained from the Witten Laplacian at a nondege
 * `TauCeti.wittenComplexIso`: multiplication by `e^{t f}` identifies the Witten complex with the
   de Rham complex.
 * `TauCeti.wittenCohomologyIso`: the cohomology of `d_t` is de Rham cohomology.
+* `TauCeti.expSMulEquiv_mem_compactlySupportedForms_iff`,
+  `TauCeti.wittenExtDerivₗ_mem_compactlySupportedForms`: multiplication by `e^{t f}` and `d_t`
+  preserve compact support.
 
 ## References
 
@@ -145,6 +149,11 @@ theorem coe_expSMulEquiv (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (φ : SmoothForm I
 theorem expSMulEquiv_symm (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) :
     (expSMulEquiv k f t).symm = expSMulEquiv k f (-t) :=
   LinearEquiv.ext fun _ ↦ rfl
+
+/-- At `t = 0`, multiplication by `e^{t f}` is the identity. -/
+@[simp]
+theorem expSMulEquiv_zero (f : C^∞⟮I, M; ℝ⟯) : expSMulEquiv k f 0 = LinearEquiv.refl ℝ _ :=
+  LinearEquiv.ext fun φ ↦ Subtype.ext <| by simp
 
 end Gauge
 
@@ -302,5 +311,35 @@ theorem wittenExtDerivₗ_expSMulEquiv_neg_ofFunction_one :
   exact IsLocallyConstant.const 1
 
 end SmoothForm
+
+section Support
+
+variable [IsManifold I 1 M] {k : ℕ}
+
+/-- Multiplication by the positive function `e^{t f}` does not change the support of a form. -/
+theorem tsupport_expSMulEquiv (f : C^∞⟮I, M; ℝ⟯) (t : ℝ) (φ : SmoothForm I M ℝ k) :
+    _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) (expSMulEquiv k f t φ).1 =
+      _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.1 := by
+  have hsupp : Function.support (M := E [⋀^Fin k]→L[ℝ] ℝ) (expSMulEquiv k f t φ).1 =
+      Function.support (M := E [⋀^Fin k]→L[ℝ] ℝ) φ.1 := by
+    ext x
+    simp [RoughForm.mem_support_iff, (Real.exp_pos _).ne']
+  simp only [_root_.tsupport, hsupp]
+
+/-- Multiplication by `e^{t f}` preserves compact support. -/
+theorem expSMulEquiv_mem_compactlySupportedForms_iff (f : C^∞⟮I, M; ℝ⟯) (t : ℝ)
+    {φ : SmoothForm I M ℝ k} :
+    expSMulEquiv k f t φ ∈ compactlySupportedForms I M k ↔ φ ∈ compactlySupportedForms I M k := by
+  rw [mem_compactlySupportedForms, mem_compactlySupportedForms, tsupport_expSMulEquiv]
+
+/-- The Witten differential of a compactly supported form is compactly supported. -/
+theorem wittenExtDerivₗ_mem_compactlySupportedForms [IsManifold I 2 M] (f : C^∞⟮I, M; ℝ⟯)
+    (t : ℝ) {φ : SmoothForm I M ℝ k} (hφ : φ ∈ compactlySupportedForms I M k) :
+    wittenExtDerivₗ f t k φ ∈ compactlySupportedForms I M (k + 1) := by
+  rw [wittenExtDerivₗ_def, expSMulEquiv_mem_compactlySupportedForms_iff]
+  exact mextDerivₗ_mem_compactlySupportedForms I
+    ((expSMulEquiv_mem_compactlySupportedForms_iff f t).2 hφ)
+
+end Support
 
 end TauCeti
