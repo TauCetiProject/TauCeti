@@ -18,6 +18,7 @@ import TauCeti.Geometry.Manifold.Diffeomorph.NormedSpace
 import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.LinearAlgebra.BilinearForm.Contact.NormalForm
 import TauCeti.Topology.Algebra.Module.BilinearForm
+import TauCeti.Topology.Algebra.Module.Contact
 
 /-!
 # The contact Darboux theorem
@@ -25,7 +26,7 @@ import TauCeti.Topology.Algebra.Module.BilinearForm
 Let `α` be a one-form on an open subset of a finite-dimensional real normed space `V` which is a
 contact form at `x₀`: `α(x₀) ≠ 0` and `dα(x₀)` is nondegenerate on the hyperplane `ker α(x₀)`.
 **The contact Darboux theorem**
-(`TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul`) says that near
+(`TauCeti.exists_diffeomorph_eventually_mpullback_innerProductContactForm_eq_smul`) says that near
 `x₀` the hyperplane field `ker α` is the standard one: some `C^r` diffeomorphism `Φ` from `V` to
 `ℝⁿ × ℝⁿ × ℝ` with `Φ x₀ = 0` pulls the standard contact form `dz - Σᵢ pᵢ dqᵢ` back to a positive
 multiple of `α` near `x₀`. Restricted to a neighbourhood of `x₀`, `Φ` is a contact chart which
@@ -42,7 +43,7 @@ the straight-line family `α_t = (1 - t) α₀ + t α₁` one solves
 for a time-dependent vector field `Y_t` and a function `σ_t`. The pair `(σ_t, Y_t)` solves a
 single linear equation for the symplectization form
 `((s, v), (s', w)) ↦ s α_t(w) - α_t(v) s' + dα_t(v, w)` on `ℝ × V`, which is nondegenerate where
-`α_t` is contact (`Module.Dual.isContact_iff_nondegenerate_symplectizationForm`). At `x₀` this form
+`α_t` is contact (`ContinuousLinearMap.injective_symplectizationForm`). At `x₀` this form
 does not depend on `t`, so it is invertible near `x₀` uniformly for `t ∈ [0, 1]`
 (`TauCeti.exists_contDiffOn_moserField`). The field `Y_t` vanishes where `α₀ = α₁`, in
 particular at `x₀`, so its flow `ψ_t` exists near `x₀` up to time one
@@ -72,7 +73,7 @@ here.
 
 * `TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_extDeriv_eq`:
   the local contact Gray–Moser lemma.
-* `TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul`: the contact
+* `TauCeti.exists_diffeomorph_eventually_mpullback_innerProductContactForm_eq_smul`: the contact
   Darboux theorem.
 
 ## References
@@ -94,43 +95,26 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- The symplectization form `((s, v), (t, w)) ↦ s a(w) - a(v) t + b v w` on `ℝ × V` of a
-covector `a` and a bilinear form `b` (`Module.Dual.symplectizationForm`), as a continuous bilinear
-map, so that it depends smoothly on `(a, b)`. -/
-private def symplectizationCLM (a : V →L[ℝ] ℝ) (b : V →L[ℝ] V →L[ℝ] ℝ) :
-    (ℝ × V) →L[ℝ] (ℝ × V) →L[ℝ] ℝ :=
-  (ContinuousLinearMap.fst ℝ ℝ V).smulRight (a.comp (ContinuousLinearMap.snd ℝ ℝ V)) -
-    (a.comp (ContinuousLinearMap.snd ℝ ℝ V)).smulRight (ContinuousLinearMap.fst ℝ ℝ V) +
-    ((ContinuousLinearMap.compL ℝ (ℝ × V) V ℝ).flip (ContinuousLinearMap.snd ℝ ℝ V)).comp
-      (b.comp (ContinuousLinearMap.snd ℝ ℝ V))
-
-private theorem symplectizationCLM_apply (a : V →L[ℝ] ℝ) (b : V →L[ℝ] V →L[ℝ] ℝ)
-    (p q : ℝ × V) : symplectizationCLM a b p q = p.1 * a q.2 - a p.2 * q.1 + b p.2 q.2 := by
-  simp [symplectizationCLM]
-
-private theorem contDiffOn_symplectizationCLM {P : Type*} [NormedAddCommGroup P]
-    [NormedSpace ℝ P] {n : WithTop ℕ∞} {s : Set P} {a : P → V →L[ℝ] ℝ}
-    {b : P → V →L[ℝ] V →L[ℝ] ℝ} (ha : ContDiffOn ℝ n a s) (hb : ContDiffOn ℝ n b s) :
-    ContDiffOn ℝ n (fun p ↦ symplectizationCLM (a p) (b p)) s := by
-  have ha' : ContDiffOn ℝ n (fun p ↦ (a p).comp (ContinuousLinearMap.snd ℝ ℝ V)) s :=
-    ha.clm_comp contDiffOn_const
-  exact ((contDiffOn_const.smulRight ha').sub (ha'.smulRight contDiffOn_const)).add
-    (contDiffOn_const.clm_comp (hb.clm_comp contDiffOn_const))
-
-/-- At a covector `a` which is contact for `b`, the symplectization form is injective. -/
-private theorem injective_symplectizationCLM {a : V →L[ℝ] ℝ} {b : V →L[ℝ] V →L[ℝ] ℝ}
-    (ha : ∃ v, a v ≠ 0) (hb : ∀ v, a v = 0 → (∀ w, a w = 0 → b v w = 0) → v = 0) :
-    Function.Injective (symplectizationCLM a b) := by
-  have hsep := Module.Dual.separatingLeft_symplectizationForm_iff
-    (a := (a : Module.Dual ℝ V)) (B := ContinuousLinearMap.coeLM ℝ ∘ₗ (b : V →ₗ[ℝ] V →L[ℝ] ℝ)) |>.2
-      ⟨fun h ↦ ha.elim fun v hv ↦ hv (LinearMap.congr_fun h v),
-        fun v hv ↦ Subtype.ext <| hb v v.2 fun w hw ↦ hv ⟨w, hw⟩⟩
-  refine (injective_iff_map_eq_zero _).2 fun p hp ↦ hsep p fun q ↦ ?_
-  have h := congrArg (fun φ ↦ φ q) hp
-  simp only [symplectizationCLM_apply, zero_apply] at h
-  simp only [Module.Dual.symplectizationForm_apply, ContinuousLinearMap.coe_coe,
-    LinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.coeLM_apply]
-  linear_combination h
+/-- On a normed space, a one-form `α` which is a contact form at `x` has the contact covector
+`α(x)` for the bilinear form of `dα(x)`. -/
+private theorem isContact_of_isContactFormAt {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} {x : V}
+    (h : IsContactFormAt (I := 𝓘(ℝ, V)) α x) :
+    Module.Dual.IsContact
+      (((ContinuousAlternatingMap.ofSubsingleton ℝ V ℝ (0 : Fin 1)).symm (α x) : V →L[ℝ] ℝ) :
+        Module.Dual ℝ V)
+      (ContinuousAlternatingMap.flatL ℝ V ℝ (extDeriv α x)).toBilinForm := by
+  have ha (v : V) :
+      ((ContinuousAlternatingMap.ofSubsingleton ℝ V ℝ (0 : Fin 1)).symm (α x) : V →L[ℝ] ℝ) v =
+        α x ![v] := by
+    simp [Matrix.vec_single_eq_const]
+  rw [Module.Dual.isContact_iff_of_isRefl
+    (ContinuousAlternatingMap.isAlt_toBilinForm_flatL (extDeriv α x)).isRefl]
+  simp only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.toBilinForm_apply, ha,
+    ContinuousAlternatingMap.flatL_apply_apply]
+  refine ⟨fun h0 ↦ h.ne_zero <| RoughForm.ker_eq_top_iff.1 <| eq_top_iff.2 fun v _ ↦
+    RoughForm.mem_ker.2 <| (ha v).symm.trans (LinearMap.congr_fun h0 v),
+    fun v hv hvw ↦ h.nondegenerate v (RoughForm.mem_ker.2 hv) fun w hw ↦ ?_⟩
+  exact (DFunLike.congr_fun (mextDeriv_eq_extDeriv α x) _).trans (hvw w (RoughForm.mem_ker.1 hw))
 
 /-- **The contact Moser identity.** Let `α_t = (1 - t) α₀ + t α₁`, and let `ψ_t` move along a
 time-dependent field `Y_t`, with derivative at `x` solving the variational equation. Suppose that
@@ -195,11 +179,7 @@ private theorem compContinuousLinearMap_fderiv_eq_exp_integral_smul
     have hrate : deriv (fun s ↦ ω s y) t + lieDerivForm (Y t) (ω t) y = -σ t y • ω t y := by
       rw [hdt, lieDerivForm_eq_curryLeft_extDeriv_add hωt (hYd t ht), hzero, add_zero, hext]
       ext m
-      have hm : m = ![m 0] := by
-        ext i
-        fin_cases i
-        rfl
-      rw [hm]
+      rw [show m = ![m 0] from (FinVec.etaExpand_eq m).symm]
       simp only [ContinuousAlternatingMap.add_apply, ContinuousAlternatingMap.sub_apply,
         ContinuousAlternatingMap.smul_apply, ContinuousAlternatingMap.curryLeft_apply_apply,
         smul_eq_mul, ω]
@@ -213,13 +193,38 @@ private theorem compContinuousLinearMap_fderiv_eq_exp_integral_smul
     zero_le_one hσ.neg hP
   simpa [P, ω] using hint
 
+/-- **First-order agreement of a pullback.** Let `g` be `C²` at `x₀` with derivative `L` there. If
+a form `σ`, differentiable at `g x₀`, and its exterior derivative there evaluate on vectors
+`L v` as `α(x₀)` and `dα(x₀)` evaluate on `v`, then the pullback `α₁` of `σ` along `g` agrees with
+`α` to first order at `x₀`. -/
+private theorem eq_and_extDeriv_eq_of_eq_pullback {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {σ : E → E [⋀^Fin 1]→L[ℝ] ℝ} {α α₁ : V → V [⋀^Fin 1]→L[ℝ] ℝ} {g : V → E}
+    {L : V →L[ℝ] E} {x₀ : V} (hσ : DifferentiableAt ℝ σ (g x₀)) (hg : ContDiffAt ℝ 2 g x₀)
+    (hgd : HasFDerivAt g L x₀)
+    (hα₁ : α₁ = fun y ↦ (σ (g y)).compContinuousLinearMap (fderiv ℝ g y))
+    (h₀ : ∀ v, σ (g x₀) ![L v] = α x₀ ![v])
+    (h₁ : ∀ v w, extDeriv σ (g x₀) ![L v, L w] = extDeriv α x₀ ![v, w]) :
+    α₁ x₀ = α x₀ ∧ extDeriv α₁ x₀ = extDeriv α x₀ := by
+  subst hα₁
+  refine ⟨?_, ?_⟩
+  · ext m
+    have hLm : ⇑L ∘ ![m 0] = ![L (m 0)] := (FinVec.map_eq _ _).symm
+    rw [show m = ![m 0] from (FinVec.etaExpand_eq m).symm, ← h₀]
+    simp [hgd.fderiv, hLm]
+  · rw [extDeriv_pullback hσ hg (by simp)]
+    ext m
+    have hLm : ⇑L ∘ ![m 0, m 1] = ![L (m 0), L (m 1)] := (FinVec.map_eq _ _).symm
+    rw [show m = ![m 0, m 1] from (FinVec.etaExpand_eq m).symm, ← h₁]
+    simp [hgd.fderiv, hLm]
+
 variable [FiniteDimensional ℝ V]
 
 /-- **The contact Gray–Moser lemma**, local form. Let `α₀`, `α₁` be `C^(r+1)` one-forms
 (`r ≥ 1`) on an open subset `W` of a finite-dimensional real normed space which agree to first
-order at `x₀ ∈ W`: `α₁(x₀) = α₀(x₀)` and `dα₁(x₀) = dα₀(x₀)`. If `α₀` is a contact form at `x₀`,
-that is `α₀(x₀) ≠ 0` and `dα₀(x₀)` is nondegenerate on `ker α₀(x₀)`, then some `C^r`
-diffeomorphism `ψ` of the space pulls `α₁` back to a positive multiple of `α₀` near `x₀`. In
+order at `x₀ ∈ W`: `α₁(x₀) = α₀(x₀)` and `dα₁(x₀) = dα₀(x₀)`. If `α₀` is a contact form at `x₀`
+(`TauCeti.IsContactFormAt`), that is `α₀(x₀) ≠ 0` and `dα₀(x₀)` is nondegenerate on
+`ker α₀(x₀)`, then some `C^r` diffeomorphism `ψ` of the space pulls `α₁` back to a positive
+multiple of `α₀` near `x₀`. In
 particular `ψ` maps the contact hyperplanes of `α₀` to those of `α₁`, preserving their
 coorientations. Moreover `ψ` fixes, near `x₀`, every point at which `α₀` and `α₁` agree; in
 particular `ψ x₀ = x₀`. -/
@@ -227,8 +232,7 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_
     {α₀ α₁ : V → V [⋀^Fin 1]→L[ℝ] ℝ} {W : Set V} {x₀ : V} {r : ℕ∞} (hr : 1 ≤ r)
     (hW : IsOpen W) (hx₀ : x₀ ∈ W) (hα₀ : ContDiffOn ℝ (r + 1) α₀ W)
     (hα₁ : ContDiffOn ℝ (r + 1) α₁ W) (heq : α₁ x₀ = α₀ x₀)
-    (hdeq : extDeriv α₁ x₀ = extDeriv α₀ x₀) (hne : ∃ v, α₀ x₀ ![v] ≠ 0)
-    (hnd : ∀ v, α₀ x₀ ![v] = 0 → (∀ w, α₀ x₀ ![w] = 0 → extDeriv α₀ x₀ ![v, w] = 0) → v = 0) :
+    (hdeq : extDeriv α₁ x₀ = extDeriv α₀ x₀) (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α₀ x₀) :
     ∃ (ψ : V ≃ₘ^r⟮𝓘(ℝ, V), 𝓘(ℝ, V)⟯ V) (f : V → ℝ), (∀ᶠ x in 𝓝 x₀, α₁ x = α₀ x → ψ x = x) ∧
       ∀ᶠ x in 𝓝 x₀, 0 < f x ∧
         (α₁ (ψ x)).compContinuousLinearMap (fderiv ℝ ψ x) = f x • α₀ x := by
@@ -240,11 +244,7 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_
   have he (a : V [⋀^Fin 1]→L[ℝ] ℝ) (w : V) : e a w = a ![w] := by
     simp only [e, ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
       ContinuousAlternatingMap.ofSubsingletonLIE_symm_apply,
-      ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply]
-    congr 1
-    funext i
-    rw [Subsingleton.elim i 0]
-    rfl
+      ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply, Matrix.vec_single_eq_const]
   have hflat := ContinuousLinearMap.contDiff (𝕜 := ℝ) (n := r) (E := V [⋀^Fin 2]→L[ℝ] ℝ)
     (F := V →L[ℝ] V →L[ℝ] ℝ) (ContinuousAlternatingMap.flatL ℝ V ℝ)
   have hdα {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} (hα : ContDiffOn ℝ (r + 1) α W) :
@@ -253,10 +253,10 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_
   -- The symplectization forms of `α₀` and `α₁`, as families on `ℝ × V` constant in the first
   -- coordinate, so that the Moser field construction applies with `ℝ × V` as its parameter space.
   let B : (V → V [⋀^Fin 1]→L[ℝ] ℝ) → ℝ × V → (ℝ × V) →L[ℝ] (ℝ × V) →L[ℝ] ℝ := fun α q ↦
-    symplectizationCLM (e (α q.2)) (ContinuousAlternatingMap.flatL ℝ V ℝ (extDeriv α q.2))
+    (e (α q.2)).symplectizationForm (ContinuousAlternatingMap.flatL ℝ V ℝ (extDeriv α q.2))
   have hB {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} (hα : ContDiffOn ℝ (r + 1) α W) :
       ContDiffOn ℝ r (B α) (univ ×ˢ W) :=
-    contDiffOn_symplectizationCLM
+    ContDiffOn.symplectizationForm
       ((e.contDiff.comp_contDiffOn (hα.of_le le_self_add)).comp contDiffOn_snd
         fun q (hq : q ∈ univ ×ˢ W) ↦ hq.2)
       ((hflat.comp_contDiffOn (hdα hα)).comp contDiffOn_snd fun q (hq : q ∈ univ ×ˢ W) ↦ hq.2)
@@ -266,9 +266,8 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_
     ((e.contDiff.comp_contDiffOn ((hα₁.of_le le_self_add).sub (hα₀.of_le le_self_add))).comp
       contDiffOn_snd fun q (hq : q ∈ univ ×ˢ W) ↦ hq.2).clm_comp contDiffOn_const
   have hL : (B α₀ (0, x₀)).IsInvertible :=
-    ContinuousLinearMap.isInvertible_of_injective <| injective_symplectizationCLM
-      (by simpa only [he] using hne)
-      (by simpa only [he, ContinuousAlternatingMap.flatL_apply_apply] using hnd)
+    ContinuousLinearMap.isInvertible_of_injective <|
+      ContinuousLinearMap.injective_symplectizationForm (isContact_of_isContactFormAt hc)
   have hB₁ : B α₁ (0, x₀) = B α₀ (0, x₀) := by
     simp only [B, heq, hdeq]
   obtain ⟨T, U', X, hT, hU', hTI, hxU', hU'W, hX, hXeq⟩ := exists_contDiffOn_moserField hL
@@ -291,7 +290,7 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_
         t * (σ t y * α₁ y ![w] - α₁ y ![Y t y] * s' + extDeriv α₁ y ![Y t y, w]) =
       -(α₁ y ![w] - α₀ y ![w]) := by
     have h := (hXeq (t, (0, y)) ⟨ht, hy⟩ (X (t, (0, y)))).2 rfl (s', w)
-    simpa [B, γ, symplectizationCLM_apply, he, ContinuousAlternatingMap.flatL_apply_apply] using h
+    simpa [B, γ, he, ContinuousAlternatingMap.flatL_apply_apply] using h
   -- The Moser field is tangent to the kernels: `α_t(Y_t) = 0`.
   have hkerY (t : ℝ) (ht : t ∈ T) (y : V) (hy : y ∈ U) :
       (1 - t) * α₀ y ![Y t y] + t * α₁ y ![Y t y] = 0 := by
@@ -338,16 +337,16 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_
   simp
 
 /-- **The contact Darboux theorem.** Let `α` be a `C^(r+1)` one-form (`r ≥ 1`) on an open subset
-`W` of a finite-dimensional real normed space `V`, which is a contact form at `x₀ ∈ W`: `α(x₀) ≠ 0`
-and `dα(x₀)` is nondegenerate on `ker α(x₀)`. Then there are `n` and a `C^r` diffeomorphism `Φ`
-from `V` to `ℝⁿ × ℝⁿ × ℝ` with `Φ x₀ = 0` which pulls the standard contact form
-`dz - Σᵢ pᵢ dqᵢ` (`TauCeti.innerProductContactForm`) back to a positive multiple of `α` near
-`x₀`. Thus `Φ` restricts to a contact chart around `x₀`, sending the contact hyperplanes of `α`
-to the standard ones and preserving their coorientations. -/
-theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul
+`W` of a finite-dimensional real normed space `V`, which is a contact form at `x₀ ∈ W`
+(`TauCeti.IsContactFormAt`): `α(x₀) ≠ 0` and `dα(x₀)` is nondegenerate on `ker α(x₀)`. Then
+there are `n` and a `C^r` diffeomorphism `Φ` from `V` to `ℝⁿ × ℝⁿ × ℝ` with `Φ x₀ = 0` which
+pulls the standard contact form `dz - Σᵢ pᵢ dqᵢ` (`TauCeti.innerProductContactForm`) back to a
+positive multiple of `α` near `x₀`. Thus `Φ` restricts to a contact chart around `x₀`, sending
+the contact hyperplanes of `α` to the standard ones and preserving their coorientations. -/
+theorem exists_diffeomorph_eventually_mpullback_innerProductContactForm_eq_smul
     {α : V → V [⋀^Fin 1]→L[ℝ] ℝ} {W : Set V} {x₀ : V} {r : ℕ∞} (hr : 1 ≤ r)
-    (hW : IsOpen W) (hx₀ : x₀ ∈ W) (hα : ContDiffOn ℝ (r + 1) α W) (hne : ∃ v, α x₀ ![v] ≠ 0)
-    (hnd : ∀ v, α x₀ ![v] = 0 → (∀ w, α x₀ ![w] = 0 → extDeriv α x₀ ![v, w] = 0) → v = 0) :
+    (hW : IsOpen W) (hx₀ : x₀ ∈ W) (hα : ContDiffOn ℝ (r + 1) α W)
+    (hc : IsContactFormAt (I := 𝓘(ℝ, V)) α x₀) :
     ∃ (n : ℕ) (Φ : V ≃ₘ^r⟮𝓘(ℝ, V), 𝓘(ℝ, EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ)⟯
         EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ) (f : V → ℝ),
       Φ x₀ = 0 ∧ ∀ᶠ y in 𝓝 x₀, 0 < f y ∧
@@ -357,89 +356,46 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul
   -- along `y ↦ L (y - x₀)` then agrees with `α` to first order at `x₀`, and the contact
   -- Gray–Moser lemma deforms `α` into it.
   -- The linear normal form of `(α(x₀), dα(x₀))`, in the coordinates `(q, p, z)` of `ℝⁿ × ℝⁿ × ℝ`.
-  let a : Module.Dual ℝ V :=
-    ((ContinuousAlternatingMap.ofSubsingleton ℝ V ℝ (0 : Fin 1)).symm (α x₀) : V →L[ℝ] ℝ)
-  have ha (v : V) : a v = α x₀ ![v] := by
-    simp only [a, ContinuousLinearMap.coe_coe,
-      ContinuousAlternatingMap.ofSubsingleton_symm_apply_apply]
-    congr 1
-    funext i
-    rw [Subsingleton.elim i 0]
-    rfl
-  let B : LinearMap.BilinForm ℝ V := ContinuousLinearMap.coeLM ℝ ∘ₗ
-    (ContinuousAlternatingMap.flatL ℝ V ℝ (extDeriv α x₀) : V →ₗ[ℝ] V →L[ℝ] ℝ)
-  have hB (v w : V) : B v w = extDeriv α x₀ ![v, w] := by
-    simp [B, ContinuousAlternatingMap.flatL_apply_apply]
-  have hBalt : B.IsAlt := fun v ↦ by
-    rw [hB]
-    exact (extDeriv α x₀).map_eq_zero_of_eq ![v, v] (i := 0) (j := 1) rfl (by decide)
-  have hc : a.IsContact B := (Module.Dual.isContact_iff_of_isRefl hBalt.isRefl).2
-    ⟨fun h ↦ by
-      obtain ⟨v, hv⟩ := hne
-      exact hv (by rw [← ha, h, LinearMap.zero_apply]),
-      fun v hv hvw ↦ hnd v (by rwa [← ha]) fun w hw ↦ by rw [← hB]; exact hvw w (by rwa [ha])⟩
-  obtain ⟨n, e₀, hae, hBe⟩ := hc.exists_linearEquiv_eq_stdContact hBalt
+  obtain ⟨n, e₀, hae, hBe⟩ := (isContact_of_isContactFormAt hc).exists_linearEquiv_eq_stdContact
+    (ContinuousAlternatingMap.isAlt_toBilinForm_flatL _)
   have hae' (v : V) : (e₀ v).2.2 = α x₀ ![v] := by
-    rw [← ha, ← hae]
-    simp
+    simpa [Matrix.vec_single_eq_const] using LinearMap.congr_fun hae v
   have hBe' (v w : V) :
       (e₀ v).1 ⬝ᵥ (e₀ w).2.1 - (e₀ v).2.1 ⬝ᵥ (e₀ w).1 = extDeriv α x₀ ![v, w] := by
-    rw [← hB, ← hBe]
-    simp
+    simpa using LinearMap.congr_fun₂ hBe v w
   -- The same coordinates, landing in `ℝⁿ × ℝⁿ × ℝ` with Euclidean factors.
   set E := EuclideanSpace ℝ (Fin n) × EuclideanSpace ℝ (Fin n) × ℝ
   let c : (Fin n → ℝ) ≃ₗ[ℝ] EuclideanSpace ℝ (Fin n) := (WithLp.linearEquiv 2 ℝ (Fin n → ℝ)).symm
   let L : V ≃L[ℝ] E :=
     (e₀.trans (c.prodCongr (c.prodCongr (LinearEquiv.refl ℝ ℝ)))).toContinuousLinearEquiv
-  have hL₁ (v : V) (i : Fin n) : (L v).1 i = (e₀ v).1 i := by simp [L, c]
-  have hL₂ (v : V) (i : Fin n) : (L v).2.1 i = (e₀ v).2.1 i := by simp [L, c]
-  have hL₃ (v : V) : (L v).2.2 = (e₀ v).2.2 := by simp [L, c]
-  -- The standard contact form `σ = dz - ⟪p, dq⟫`, and its pullback `α₁` along `y ↦ L (y - x₀)`.
-  let σ : E → E [⋀^Fin 1]→L[ℝ] ℝ := (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1
-  have hσ : ContDiff ℝ (⊤ : ℕ∞) σ :=
-    isSmoothForm_modelSpace_iff.1 (innerProductContactForm (EuclideanSpace ℝ (Fin n))).isSmoothForm
+  -- The pullback `α₁` of the standard contact form along `g = L (· - x₀)` agrees with `α` to first
+  -- order at `x₀`.
   let g : V → E := fun y ↦ L (y - x₀)
   have hg : ContDiff ℝ ⊤ g := L.contDiff.comp (contDiff_id.sub contDiff_const)
   have hgd (y : V) : HasFDerivAt g (L : V →L[ℝ] E) y :=
     (L.hasFDerivAt.comp y ((hasFDerivAt_id y).sub_const x₀)).congr_fderiv
       (ContinuousLinearMap.comp_id _)
-  let α₁ : V → V [⋀^Fin 1]→L[ℝ] ℝ := fun y ↦ (σ (g y)).compContinuousLinearMap (fderiv ℝ g y)
-  have hα₁ : ContDiffOn ℝ (r + 1) α₁ W := fun y _ ↦
-    ((hg.contDiffAt.of_le le_top).differentialForm_pullback
-      (hσ.contDiffAt.of_le (by exact_mod_cast le_top)) (fun _ ↦ by simp)).contDiffWithinAt
   have hgx₀ : g x₀ = 0 := by simp [g]
+  let σ : E → E [⋀^Fin 1]→L[ℝ] ℝ := (innerProductContactForm (EuclideanSpace ℝ (Fin n))).1
+  let α₁ : V → V [⋀^Fin 1]→L[ℝ] ℝ := fun y ↦ (σ (g y)).compContinuousLinearMap (fderiv ℝ g y)
+  have hσ : ContDiff ℝ (⊤ : ℕ∞) σ :=
+    isSmoothForm_modelSpace_iff.1 (innerProductContactForm (EuclideanSpace ℝ (Fin n))).isSmoothForm
   have hσ₀ (z v : E) : σ z ![v] = v.2.2 - ⟪z.2.1, v.1⟫_ℝ := innerProductContactForm_apply _ z v
   have hdσ (z v w : E) : extDeriv σ z ![v, w] = ∑ i, (v.1 i * w.2.1 i - v.2.1 i * w.1 i) := by
     rw [← mextDeriv_eq_extDeriv]
     exact mextDeriv_innerProductContactForm_euclideanSpace_apply z v w
-  -- `α₁` agrees with `α` to first order at `x₀`.
-  have heq : α₁ x₀ = α x₀ := by
-    ext m
-    have hm : m = ![m 0] := by
-      ext i
-      fin_cases i
-      rfl
-    have hLm : ⇑L ∘ ![m 0] = ![L (m 0)] := by
-      funext i
-      fin_cases i
-      rfl
-    rw [hm]
-    simp [α₁, (hgd x₀).fderiv, hgx₀, hLm, hσ₀, hL₃, hae']
-  have hdeq : extDeriv α₁ x₀ = extDeriv α x₀ := by
-    rw [extDeriv_pullback (hσ.differentiable (by simp) _) hg.contDiffAt (by simp)]
-    ext m
-    have hm : m = ![m 0, m 1] := by
-      ext i
-      fin_cases i <;> rfl
-    have hLm : ⇑L ∘ ![m 0, m 1] = ![L (m 0), L (m 1)] := by
-      funext i
-      fin_cases i <;> rfl
-    rw [hm, ← hBe']
-    simp [(hgd x₀).fderiv, hLm, hdσ, hL₁, hL₂, dotProduct, Finset.sum_sub_distrib]
+  obtain ⟨heq, hdeq⟩ := eq_and_extDeriv_eq_of_eq_pullback (α := α) (α₁ := α₁)
+    (hσ.differentiable (by simp) _) (hg.contDiffAt.of_le (by exact_mod_cast le_top)) (hgd x₀) rfl
+    (fun v ↦ by simpa [hgx₀, hσ₀, L, c] using hae' v)
+    fun v w ↦ by simpa [hdσ, L, c, dotProduct, Finset.sum_sub_distrib] using hBe' v w
+  have hα₁ : ContDiffOn ℝ (r + 1) α₁ W := fun y _ ↦
+    ((hg.contDiffAt.of_le le_top).differentialForm_pullback
+      (hσ.contDiffAt.of_le (by exact_mod_cast le_top))
+      (fun _ ↦ by simp)).contDiffWithinAt
   -- The contact Gray–Moser lemma deforms `α` into the model `α₁`; follow it by the coordinates `g`.
   obtain ⟨ψ, f, hfix, hψ⟩ :=
     exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul_of_extDeriv_eq hr hW hx₀
-      hα hα₁ heq hdeq hne hnd
+      hα hα₁ heq hdeq hc
   have hψx₀ : ψ x₀ = x₀ := hfix.self_of_nhds heq
   let A : V ≃ₘ^r⟮𝓘(ℝ, V), 𝓘(ℝ, E)⟯ E :=
     (Diffeomorph.smulAdd r (1 : ℝ) (-x₀) one_ne_zero).trans (L.toContDiffDiffeomorph r)
@@ -459,7 +415,7 @@ theorem exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq_smul
   rw [mpullback_apply, mfderiv_eq_fderiv, hΦ.fderiv, ← hy, Diffeomorph.coe_trans,
     Function.comp_apply, congrFun hA]
   simp only [α₁, (hgd (ψ y)).fderiv]
-  -- Both sides evaluate `σ (g (ψ y))` on the vectors `L (Dψ (m i))`.
+  -- Both sides evaluate the standard form at `g (ψ y)` on the vectors `L (Dψ (m i))`.
   rfl
 
 end TauCeti

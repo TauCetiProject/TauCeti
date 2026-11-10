@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Module.Alternating.Curry
+public import Mathlib.LinearAlgebra.SesquilinearForm.Basic
 public import TauCeti.Topology.Algebra.Module.Alternating.Curry
 
 /-!
@@ -17,7 +18,8 @@ the topological interior-product API without importing wedge constructions.
 
 Currying a continuous alternating map of two vectors in its first slot and reading the result as
 a linear map gives its **flat map** `f ↦ (v ↦ f(v, ·))`, a continuous linear map
-`ContinuousAlternatingMap.flatL`.
+`ContinuousAlternatingMap.flatL`. For scalar-valued maps, its bilinear form is alternating
+(`ContinuousAlternatingMap.isAlt_toBilinForm_flatL`).
 -/
 
 public section
@@ -60,6 +62,11 @@ theorem ofSubsingleton_flatL_apply (f : E [⋀^Fin 2]→L[𝕜] F) (v : E) :
 @[simp]
 theorem flatL_apply_apply (f : E [⋀^Fin 2]→L[𝕜] F) (v w : E) : flatL 𝕜 E F f v w = f ![v, w] :=
   DFunLike.congr_fun (ofSubsingleton_flatL_apply f v) ![w]
+
+/-- The bilinear form of the flat map of an alternating map is alternating. -/
+theorem isAlt_toBilinForm_flatL (f : E [⋀^Fin 2]→L[𝕜] 𝕜) : (flatL 𝕜 E 𝕜 f).toBilinForm.IsAlt :=
+  fun v ↦ by
+    simpa using f.map_eq_zero_of_eq ![v, v] (i := 0) (j := 1) rfl (by decide)
 
 end flatL
 

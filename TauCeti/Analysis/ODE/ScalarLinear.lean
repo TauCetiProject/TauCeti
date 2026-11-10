@@ -25,11 +25,11 @@ For imaginary `k`, this identifies plane curves whose velocity is a fixed rotati
 of their position relative to a center. Such equations describe equality in the area–energy
 inequality for closed plane curves.
 
-For a continuous, time-dependent real coefficient `g`, a differentiable solution of `P' = g • P`
-on an open interval `J` is `P t = exp (∫ₛᵗ g) • P s` for all `s, t ∈ J`
-(`TauCeti.eq_exp_integral_smul_of_hasDerivAt_smul`), by the integrating factor `exp (-∫ₛᵘ g)`.
-On a closed interval `[a, b]`, one-sided derivatives within the interval suffice
-(`TauCeti.eq_exp_integral_smul_of_hasDerivWithinAt_smul`).
+For a continuous, time-dependent real coefficient `g`, a solution of `P' = g • P` on a closed
+interval `[a, b]`, with one-sided derivatives within the interval, satisfies
+`P b = exp (∫ₐᵇ g) • P a` (`TauCeti.eq_exp_integral_smul_of_hasDerivWithinAt_smul`), by the
+integrating factor `exp (-∫ₐᵘ g)`. Consequently a differentiable solution on an interval `J` is
+`P t = exp (∫ₛᵗ g) • P s` for all `s, t ∈ J` (`TauCeti.eq_exp_integral_smul_of_hasDerivAt_smul`).
 -/
 
 public section
@@ -114,32 +114,6 @@ namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- **Integrating factor.** On an open interval `J`, a solution of the linear equation
-`P' = g • P` with continuous real coefficient `g` satisfies `P t = exp (∫ₛᵗ g) • P s` for all
-`s, t ∈ J`. -/
-theorem eq_exp_integral_smul_of_hasDerivAt_smul {J : Set ℝ} (hJo : IsOpen J)
-    (hJc : J.OrdConnected) {g : ℝ → ℝ} (hg : ContinuousOn g J) {P : ℝ → V}
-    (hP : ∀ u ∈ J, HasDerivAt P (g u • P u) u) {s t : ℝ} (hs : s ∈ J) (ht : t ∈ J) :
-    P t = Real.exp (∫ u in s..t, g u) • P s := by
-  set G : ℝ → ℝ := fun u ↦ ∫ τ in s..u, g τ
-  have hG (u : ℝ) (hu : u ∈ J) : HasDerivAt G (g u) u :=
-    intervalIntegral.integral_hasDerivAt_right
-      ((hg.mono (hJc.uIcc_subset hs hu)).intervalIntegrable)
-      (hg.stronglyMeasurableAtFilter hJo u hu) (hg.continuousAt (hJo.mem_nhds hu))
-  -- `u ↦ e^{-G u} P u` has zero derivative on the interval `J`, so it is constant there.
-  have hderiv (u : ℝ) (hu : u ∈ J) : HasDerivAt (fun u ↦ Real.exp (-G u) • P u) 0 u := by
-    refine ((hG u hu).neg.exp.smul (hP u hu)).congr_deriv ?_
-    module
-  have hconst := hJo.is_const_of_deriv_eq_zero hJc.isPreconnected
-    (fun u hu ↦ (hderiv u hu).differentiableAt.differentiableWithinAt)
-    (fun u hu ↦ (hderiv u hu).deriv) ht hs
-  have hG0 : G s = 0 := intervalIntegral.integral_same
-  rw [hG0, neg_zero, Real.exp_zero, one_smul] at hconst
-  have hPt : P t = Real.exp (G t) • (Real.exp (-G t) • P t) := by
-    rw [smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
-  rw [hconst] at hPt
-  exact hPt
-
 /-- **Integrating factor on a closed interval.** If `P` solves the linear equation `P' = g • P`
 on `[a, b]`, with derivatives taken within the interval and a continuous real coefficient `g`,
 then `P b = exp (∫ₐᵇ g) • P a`. -/
@@ -168,5 +142,20 @@ theorem eq_exp_integral_smul_of_hasDerivWithinAt_smul {a b : ℝ} (hab : a ≤ b
   have hGb : G b = ∫ u in a..b, g u :=
     intervalIntegral.integral_congr fun u hu ↦ hgg' u (by rwa [uIcc_of_le hab] at hu)
   rw [← hGb, ← hconst, smul_smul, ← Real.exp_add, add_neg_cancel, Real.exp_zero, one_smul]
+
+/-- **Integrating factor.** On an interval `J`, a solution of the linear equation `P' = g • P`
+with continuous real coefficient `g` satisfies `P t = exp (∫ₛᵗ g) • P s` for all `s, t ∈ J`. -/
+theorem eq_exp_integral_smul_of_hasDerivAt_smul {J : Set ℝ} (hJc : J.OrdConnected) {g : ℝ → ℝ}
+    (hg : ContinuousOn g J) {P : ℝ → V} (hP : ∀ u ∈ J, HasDerivAt P (g u • P u) u) {s t : ℝ}
+    (hs : s ∈ J) (ht : t ∈ J) :
+    P t = Real.exp (∫ u in s..t, g u) • P s := by
+  have h {a b : ℝ} (ha : a ∈ J) (hb : b ∈ J) (hab : a ≤ b) :
+      P b = Real.exp (∫ u in a..b, g u) • P a :=
+    eq_exp_integral_smul_of_hasDerivWithinAt_smul hab (hg.mono (hJc.out ha hb))
+      fun u hu ↦ (hP u (hJc.out ha hb hu)).hasDerivWithinAt
+  rcases le_total s t with hst | hts
+  · exact h hs ht hst
+  · rw [h ht hs hts, smul_smul, intervalIntegral.integral_symm, ← Real.exp_add, neg_add_cancel,
+      Real.exp_zero, one_smul]
 
 end TauCeti
