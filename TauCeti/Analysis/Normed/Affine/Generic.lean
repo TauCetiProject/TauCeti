@@ -65,9 +65,16 @@ theorem dense_compl_of_ne_top (S : AffineSubspace ℝ P) (hS : S ≠ ⊤) :
 
 variable [FiniteDimensional ℝ V]
 
+/-- A finite-dimensional real normed affine space is complete. -/
+private theorem completeSpace_of_finiteDimensional (V : Type*) {P : Type*}
+    [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V] [MetricSpace P]
+    [NormedAddTorsor V P] : CompleteSpace P :=
+  (IsometryEquiv.vaddConst (Classical.arbitrary P)).symm.completeSpace
+
 /-- Countably many proper affine subspaces have dense common complement. -/
-theorem dense_setOf_forall_notMem [CompleteSpace P] {ι : Sort*} [Countable ι]
+theorem dense_setOf_forall_notMem {ι : Sort*} [Countable ι]
     (A : ι → AffineSubspace ℝ P) (hA : ∀ i, A i ≠ ⊤) : Dense {x | ∀ i, x ∉ A i} := by
+  have := completeSpace_of_finiteDimensional V (P := P)
   simp only [Set.ofPred_forall]
   exact dense_iInter_of_isOpen
     (fun i => (A i).closed_of_finiteDimensional.isOpen_compl)
@@ -92,7 +99,7 @@ vertex may simultaneously avoid any further countable family of proper affine su
 
 The endpoints need only avoid the set `E` itself, not its affine cover; the prescribed open set
 constrains the vertex, not the lines. -/
-theorem exists_mem_open_lineMap_notMem [CompleteSpace P] {ι κ : Type*} [Countable ι] [Countable κ]
+theorem exists_mem_open_lineMap_notMem {ι κ : Type*} [Countable ι] [Countable κ]
     (S : κ → AffineSubspace ℝ P)
     (hS : ∀ k, Module.finrank ℝ (S k).direction + 1 < Module.finrank ℝ V)
     (A : ι → AffineSubspace ℝ P) (hA : ∀ i, A i ≠ ⊤)
