@@ -433,6 +433,17 @@ theorem mapAlgEquiv_of (e : α ≃o β) (φ : StrandDiagram α) :
   rw [mapAlgEquiv, AlgEquiv.ofLinearEquiv_apply, ← basis_apply, Module.Basis.equiv_apply,
     basis_apply, StrandDiagram.mapEquiv_apply]
 
+/-- The coefficient of a relabelled diagram in a relabelled element. -/
+@[simp]
+theorem repr_mapAlgEquiv_apply_map (e : α ≃o β) (x : StrandsAlgebra R α) (φ : StrandDiagram α) :
+    (basis R β).repr (mapAlgEquiv e x) (φ.map e) = (basis R α).repr x φ := by
+  induction x using induction_on with
+  | zero => simp
+  | add x y hx hy => simp [hx, hy]
+  | smul_of r ψ =>
+    simp only [map_smul, mapAlgEquiv_of, basis_repr_of, Finsupp.smul_apply, Finsupp.single_apply,
+      ← StrandDiagram.mapEquiv_apply, (StrandDiagram.mapEquiv e).injective.eq_iff]
+
 @[simp]
 theorem mapAlgEquiv_symm (e : α ≃o β) :
     (mapAlgEquiv e).symm = (mapAlgEquiv e.symm : StrandsAlgebra R β ≃ₐ[R] _) := by
@@ -479,6 +490,18 @@ theorem reverseAlgEquiv_of (φ : StrandDiagram α) :
   rw [reverseAlgEquiv, AlgEquiv.ofLinearEquiv_apply, LinearEquiv.trans_apply, ← basis_apply,
     Module.Basis.equiv_apply, basis_apply, StrandDiagram.reverseEquiv_apply, coe_opLinearEquiv]
 
+/-- The coefficient of a rotated diagram in a rotated element. -/
+@[simp]
+theorem repr_unop_reverseAlgEquiv_apply_reverse (x : StrandsAlgebra R α) (φ : StrandDiagram α) :
+    (basis R αᵒᵈ).repr (unop (reverseAlgEquiv x)) φ.reverse = (basis R α).repr x φ := by
+  induction x using induction_on with
+  | zero => simp
+  | add x y hx hy => simp [hx, hy]
+  | smul_of r ψ =>
+    simp only [map_smul, unop_smul, reverseAlgEquiv_of, unop_op, basis_repr_of,
+      Finsupp.smul_apply, Finsupp.single_apply, ← StrandDiagram.reverseEquiv_apply,
+      StrandDiagram.reverseEquiv.injective.eq_iff]
+
 @[simp]
 theorem reverseAlgEquiv_symm_op_of (ψ : StrandDiagram αᵒᵈ) :
     reverseAlgEquiv.symm (op (of ψ : StrandsAlgebra R αᵒᵈ)) =
@@ -518,8 +541,8 @@ theorem mapAlgEquiv_differential (e : α ≃o β) (x : StrandsAlgebra R α) :
   simp only [LinearMap.coe_comp, Function.comp_apply, AlgEquiv.toLinearMap_apply, basis_apply,
     mapAlgEquiv_of, differential_of, map_sum, StrandDiagram.resolvableInversions_map, sum_map]
   refine sum_congr rfl fun ⟨x, y⟩ _ ↦ ?_
-  rw [StrandDiagram.map_resolve]
-  rfl
+  rw [StrandDiagram.map_resolve, Equiv.coe_toEmbedding, Equiv.prodCongr_apply, Prod.map_apply,
+    OrderIso.coe_toEquiv]
 
 open StrandDiagram in
 /-- **Orientation reversal preserves the differential.** Rotating strand diagrams by half a turn

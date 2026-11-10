@@ -148,17 +148,6 @@ variable {R α β γ : Type*} [CommSemiring R] [LinearOrder α] [Fintype α] [Li
 
 section Relabel
 
-/-- The coefficient of a relabelled diagram in a relabelled element. -/
-@[simp]
-theorem repr_mapAlgEquiv_apply_map (e : α ≃o γ) (x : StrandsAlgebra R α) (φ : StrandDiagram α) :
-    (basis R γ).repr (mapAlgEquiv e x) (φ.map e) = (basis R α).repr x φ := by
-  induction x using induction_on with
-  | zero => simp
-  | add x y hx hy => simp [hx, hy]
-  | smul_of r ψ =>
-    simp only [map_smul, mapAlgEquiv_of, basis_repr_of, Finsupp.smul_apply, Finsupp.single_apply,
-      ← mapEquiv_apply, (mapEquiv e).injective.eq_iff]
-
 /-- Relabelling the points along an order isomorphism carrying the matching `M` to `M'` identifies
 the matched subalgebras. -/
 theorem mapAlgEquiv_mem_matchedSubalgebra_iff (e : α ≃o γ) (hM : ∀ i, M' (e i) = M i)
@@ -194,13 +183,11 @@ theorem mapAlgEquiv_matchedIdem (e : α ≃o γ) (hM : ∀ i, M' (e i) = M i) (s
 unit `∑ₛ I(s)` of the matched subalgebra of `M` to that of `M'`. -/
 theorem mapAlgEquiv_matchedOne (e : α ≃o γ) (hM : ∀ i, M' (e i) = M i) :
     mapAlgEquiv e (matchedOne R M) = matchedOne R M' := by
-  classical
-  rw [matchedOne_eq_sum_idem, matchedOne_eq_sum_idem, map_sum]
-  refine sum_equiv e.toEquiv.finsetCongr (fun S ↦ ?_) fun S _ ↦ ?_
-  · simp only [mem_filter, mem_univ, true_and, Equiv.finsetCongr_apply, coe_map,
-      ← e.injective.injOn.comp_iff, Equiv.coe_toEmbedding, OrderIso.coe_toEquiv, Function.comp_def,
-      hM]
-  · rw [mapAlgEquiv_idem, Equiv.finsetCongr_apply]
+  have : univ.image M' = univ.image M := by
+    rw [← image_univ_equiv e.toEquiv, image_image]
+    simp [Function.comp_def, hM]
+  rw [matchedOne_def, matchedOne_def, map_sum, this]
+  simp [mapAlgEquiv_matchedIdem e hM]
 
 /-- The isomorphism of matched subalgebras induced by an order isomorphism `e : α ≃o γ` carrying
 the matching `M` to `M'`, relabelling the points of each strand diagram along `e`. -/
@@ -236,18 +223,6 @@ end Relabel
 
 section Reverse
 
-/-- The coefficient of a rotated diagram in a rotated element. -/
-@[simp]
-theorem repr_unop_reverseAlgEquiv_apply_reverse (x : StrandsAlgebra R α) (φ : StrandDiagram α) :
-    (basis R αᵒᵈ).repr (unop (reverseAlgEquiv x)) φ.reverse = (basis R α).repr x φ := by
-  induction x using induction_on with
-  | zero => simp
-  | add x y hx hy => simp [hx, hy]
-  | smul_of r ψ =>
-    simp only [map_smul, unop_smul, reverseAlgEquiv_of, unop_op, basis_repr_of,
-      Finsupp.smul_apply, Finsupp.single_apply, ← reverseEquiv_apply,
-      reverseEquiv.injective.eq_iff]
-
 /-- Rotation by half a turn identifies the matched subalgebra of `M` with that of the same matching
 on the reversed order. -/
 theorem unop_reverseAlgEquiv_mem_matchedSubalgebra_iff {x : StrandsAlgebra R α} :
@@ -282,15 +257,13 @@ theorem reverseAlgEquiv_matchedIdem (s : Finset β) :
 
 /-- Rotation by half a turn sends the unit `∑ₛ I(s)` of the matched subalgebra of `M` to that of
 the same matching on the reversed order. -/
+@[simp]
 theorem reverseAlgEquiv_matchedOne :
     reverseAlgEquiv (matchedOne R M) = op (matchedOne R (M ∘ ofDual)) := by
-  classical
-  rw [matchedOne_eq_sum_idem, matchedOne_eq_sum_idem, map_sum, op_sum]
-  refine sum_equiv toDual.finsetCongr (fun S ↦ ?_) fun S _ ↦ ?_
-  · simp only [mem_filter, mem_univ, true_and, Equiv.finsetCongr_apply, coe_map,
-      ← toDual.injective.injOn.comp_iff, Equiv.coe_toEmbedding, Function.comp_def,
-      ofDual_toDual]
-  · rw [reverseAlgEquiv_idem, Equiv.finsetCongr_apply]
+  have : univ.image (M ∘ ofDual) = univ.image M := by
+    rw [← image_image, image_univ_equiv ofDual]
+  rw [matchedOne_def, matchedOne_def, map_sum, op_sum, this]
+  simp
 
 variable (R M) in
 /-- **The algebra of the reversed matched circle is the opposite algebra.** Rotating strand
@@ -308,7 +281,7 @@ def matchedReverseAlgEquiv : matchedSubalgebra R M ≃ₐ[R] (matchedSubalgebra 
   map_mul' x y := unop_injective (Subtype.ext (by simp))
   map_add' x y := unop_injective (Subtype.ext (by simp))
   commutes' r := unop_injective (Subtype.ext (by
-    simp [Algebra.algebraMap_eq_smul_one, reverseAlgEquiv_matchedOne]))
+    simp [Algebra.algebraMap_eq_smul_one]))
 
 @[simp]
 theorem coe_unop_matchedReverseAlgEquiv (x : matchedSubalgebra R M) :
