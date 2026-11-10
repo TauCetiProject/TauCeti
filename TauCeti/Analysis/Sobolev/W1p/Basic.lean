@@ -464,6 +464,17 @@ theorem W1p.value_smul_ae (c : ℝ) (u : W1p mu Omega p) :
     ⇑(W1p.value (c • u)) =ᵐ[mu.restrict Omega] c • ⇑(W1p.value u) := by
   simpa only [← W1p.valueL_apply, map_smul] using Lp.coeFn_smul c (W1p.value u)
 
+/-- On the whole space, the value of a Sobolev function lies in `Lᵖ` for `μ` itself rather than
+for its restriction to `⊤`. -/
+theorem W1p.memLp_value_top (u : W1p mu ⊤ p) : MemLp (W1p.value u : E → ℝ) p mu := by
+  simpa only [Opens.coe_top, Measure.restrict_univ] using Lp.memLp (W1p.value u)
+
+/-- On the whole space, the value of a Sobolev function is almost everywhere strongly measurable
+for `μ` itself. -/
+theorem W1p.aestronglyMeasurable_value_top (u : W1p mu ⊤ p) :
+    AEStronglyMeasurable (W1p.value u : E → ℝ) mu :=
+  (W1p.memLp_value_top u).aestronglyMeasurable
+
 
 /-- As for `TauCeti.W1p.value_coe`: the Sobolev gradient component is the gradient component of
 the underlying ambient jet. -/

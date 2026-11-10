@@ -379,14 +379,9 @@ theorem W1p.exists_norm_value_sq_le_of_finrank_eq_two (hE : finrank ℝ E = 2) :
     exact isClosed_le (hval.norm.pow 2) (by fun_prop)
   · intro φ
     set U := W1p.ofTestFunctionₗ μ ⊤ 2 φ
-    have hv : (W1p.value U : E → ℝ) =ᵐ[μ] φ := by
-      simpa only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] using
-        W1p.value_ofTestFunctionₗ_ae (mu := μ) (Omega := ⊤) (p := 2) φ
-    have hg : (W1p.gradient U : E → E) =ᵐ[μ] _root_.gradient (φ : E → ℝ) := by
-      rw [show W1p.gradient U = gradientTestFunctionLp 2 φ from W1p.gradient_ofTestFunctionₗ φ]
-      have := gradientTestFunctionLp_apply_ae (mu := μ) (Omega := ⊤) 2 φ
-      simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at this
-      exact this
+    have hv : (W1p.value U : E → ℝ) =ᵐ[μ] φ := W1p.value_ofTestFunctionₗ_top_ae φ
+    have hg : (W1p.gradient U : E → E) =ᵐ[μ] _root_.gradient (φ : E → ℝ) :=
+      W1p.gradient_ofTestFunctionₗ_top_ae φ
     have hvalue : ‖W1p.value U‖ ^ 2 = ∫ x, (φ x) ^ 2 ∂μ := by
       rw [← W1p.integral_value_sq_eq_norm_value_sq]
       simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]

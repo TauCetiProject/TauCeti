@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Distribution.SchwartzSpace.Deriv
 import TauCeti.Analysis.Distribution.TemperedDistribution.LaplacianResolvent
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.TestFunction
 import TauCeti.Analysis.Sobolev.W1p.Exponential
 import TauCeti.Analysis.Sobolev.WeakDeriv.Laplacian
@@ -85,7 +86,7 @@ def reducedSource (P : Polynomial ℂ) (w : ℂ → ℝ) (z : ℂ) : ℝ :=
     2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2
 
 /-- The defining formula of `TauCeti.Vortex.reducedSource`. -/
-theorem reducedSource_apply (P : Polynomial ℂ) (w : ℂ → ℝ) (z : ℂ) :
+theorem reducedSource_def (P : Polynomial ℂ) (w : ℂ → ℝ) (z : ℂ) :
     reducedSource P w z =
       (Real.exp (2 * w z) * (‖P.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2)) - 1) / 8 +
         2 * ‖P.derivative.eval z‖ ^ 2 / (1 + ‖P.eval z‖ ^ 2) ^ 2 := (rfl)
@@ -117,30 +118,9 @@ theorem memLp_reducedSource (hm : 0 < P.natDegree) (u : W1p (volume : Measure �
   refine (hfirst.add (memLp_two_mul_norm_derivative_eval_sq_div_sub_inv_div_eight hm)).ae_eq
     (Eventually.of_forall fun z ↦ ?_)
   have hpos : (0 : ℝ) < 1 + ‖P.eval z‖ ^ 2 := by positivity
-  simp only [Pi.add_apply, Pi.mul_apply, reducedSource_apply, h]
+  simp only [Pi.add_apply, Pi.mul_apply, reducedSource_def, h]
   field_simp
   ring
-
-/-- The complex tempered distribution of a real square-integrable function `f` is integration
-against `f`. -/
-private theorem toTemperedDistribution_ofReal_apply {f : ℂ → ℝ} (hf : MemLp f 2 volume)
-    (ψ : 𝓢(ℂ, ℂ)) :
-    Lp.toTemperedDistribution (ofRealCLM.compLp (hf.toLp f)) ψ = ∫ z, ψ z * (f z : ℂ) := by
-  rw [Lp.toTemperedDistribution_apply]
-  refine integral_congr_ae ?_
-  filter_upwards [ofRealCLM.coeFn_compLp (p := 2) (μ := volume) (hf.toLp f), hf.coeFn_toLp]
-    with z h₁ h₂
-  rw [h₁, smul_eq_mul, ofRealCLM_apply, h₂]
-
-/-- On a real Schwartz function, the tempered distribution of a real square-integrable function
-`f` is the real integral against `f`. -/
-private theorem toTemperedDistribution_ofReal_apply_postcompCLM {f : ℂ → ℝ}
-    (hf : MemLp f 2 volume) (φ : 𝓢(ℂ, ℝ)) :
-    Lp.toTemperedDistribution (ofRealCLM.compLp (hf.toLp f)) (φ.postcompCLM ofRealCLM) =
-      ((∫ z, φ z * f z : ℝ) : ℂ) := by
-  rw [toTemperedDistribution_ofReal_apply hf, ← integral_complex_ofReal]
-  refine integral_congr_ae (Eventually.of_forall fun z ↦ ?_)
-  simp only [SchwartzMap.postcompCLM_apply, ofRealCLM_apply, ofReal_mul]
 
 /-- **Weak solutions of the reduced vortex equation lie in `H²`.** Let `P` be a polynomial of
 positive degree and let `w ∈ H¹(ℂ)` be a weak solution of `Δw = (exp (2w) h - 1) / 8 + g`, that is
@@ -153,12 +133,16 @@ theorem exists_wkp_value_ae_eq_of_forall_integral_reducedSource (hm : 0 < P.natD
     ∃ W : Wkp (volume : Measure ℂ) ⊤ 2 2,
       (Wkp.value 2 W : ℂ → ℝ) =ᵐ[volume] W1p.value u := by
   set f : ℂ → ℝ := ⇑(W1p.value u)
-  have hf : MemLp f 2 volume := by
-    simpa only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] using
-      Lp.memLp (W1p.value u)
+  have hf : MemLp f 2 volume := W1p.memLp_value_top u
   have hS : MemLp (reducedSource P f) 2 volume := memLp_reducedSource hm u
   have hR : MemLp (f - reducedSource P f) 2 volume := hf.sub hS
   set T : 𝓢'(ℂ, ℂ) := Lp.toTemperedDistribution (ofRealCLM.compLp (hf.toLp f))
+  -- Pairing a real Schwartz function with the distribution of a real `L²` function.
+  have hpair {g : ℂ → ℝ} (hg : MemLp g 2 volume) (φ : 𝓢(ℂ, ℝ)) :
+      Lp.toTemperedDistribution (ofRealCLM.compLp (hg.toLp g)) (φ.postcompCLM ofRealCLM) =
+        ((∫ z, φ z * g z : ℝ) : ℂ) := by
+    rw [Lp.toTemperedDistribution_ofRealCLM_compLp_apply_postcompCLM,
+      integral_congr_ae (hg.coeFn_toLp.mono fun z hz ↦ by rw [hz])]
   -- The weak equation, after integrating the gradient term by parts once more.
   have hweak (φ : 𝓢(ℂ, ℝ)) (hφ : HasCompactSupport φ) :
       ∫ z, Δ (φ : ℂ → ℝ) z * f z = ∫ z, φ z * reducedSource P f z := by
@@ -181,9 +165,7 @@ theorem exists_wkp_value_ae_eq_of_forall_integral_reducedSource (hm : 0 < P.natD
     refine ext_real fun φ hφ ↦ ?_
     have hφ2 := φ.memLp 2 (μ := volume)
     rw [add_apply, neg_apply, smul_apply, laplacian_apply_apply, TauCeti.laplacian_postcompCLM,
-      toTemperedDistribution_ofReal_apply_postcompCLM,
-      toTemperedDistribution_ofReal_apply_postcompCLM,
-      toTemperedDistribution_ofReal_apply_postcompCLM, one_smul]
+      hpair hf, hpair hf, hpair hR, one_smul]
     simp only [SchwartzMap.laplacian_apply]
     rw [hweak φ hφ]
     simp_rw [Pi.sub_apply, mul_sub]

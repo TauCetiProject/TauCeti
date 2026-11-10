@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Sobolev.Poincare.Planar
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Series
-import Mathlib.Data.Nat.Choose.Basic
+import TauCeti.Data.Nat.Factorial.Basic
 import TauCeti.Analysis.SpecialFunctions.Exp.Bounds
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Sobolev.W1p.Density
@@ -74,44 +74,6 @@ open MeasureTheory Filter Module Topology
 open scoped ENNReal Nat Distributions
 
 namespace TauCeti
-
-/-! ### Elementary inequalities -/
-
-/-- `(exp t - 1)² ≤ 2 t² cosh (2t)`. -/
-private theorem exp_sub_one_sq_le (t : ℝ) :
-    (Real.exp t - 1) ^ 2 ≤ 2 * t ^ 2 * Real.cosh (2 * t) := by
-  have h1 := abs_exp_sub_one_le_mul_exp_abs t
-  have h2 : Real.exp (2 * |t|) ≤ 2 * Real.cosh (2 * t) := by
-    rw [Real.cosh_eq]
-    rcases le_or_gt 0 t with ht | ht
-    · rw [abs_of_nonneg ht]; linarith [Real.exp_pos (-(2 * t))]
-    · rw [abs_of_neg ht, show 2 * -t = -(2 * t) by ring]; linarith [Real.exp_pos (2 * t)]
-  calc (Real.exp t - 1) ^ 2 = |Real.exp t - 1| ^ 2 := (sq_abs _).symm
-    _ ≤ (|t| * Real.exp |t|) ^ 2 := by gcongr
-    _ = t ^ 2 * Real.exp (2 * |t|) := by
-        rw [mul_pow, sq_abs, ← Real.exp_nat_mul]; push_cast; ring_nf
-    _ ≤ t ^ 2 * (2 * Real.cosh (2 * t)) := by gcongr
-    _ = 2 * t ^ 2 * Real.cosh (2 * t) := by ring
-
-/-- `((n + 1)!)² ≤ 4ⁿ (2n)!`. -/
-private theorem factorial_succ_sq_le (n : ℕ) : ((n + 1)! : ℝ) ^ 2 ≤ 4 ^ n * (2 * n)! := by
-  have hn : ((n : ℝ) + 1) ^ 2 ≤ 4 ^ n := by
-    induction n with
-    | zero => norm_num
-    | succ k ih =>
-      push_cast
-      have hk : (0 : ℝ) ≤ k := k.cast_nonneg
-      calc ((k : ℝ) + 1 + 1) ^ 2 ≤ 4 * ((k : ℝ) + 1) ^ 2 := by nlinarith
-        _ ≤ 4 * 4 ^ k := by gcongr
-        _ = 4 ^ (k + 1) := by ring
-  have hc : (n ! : ℝ) ^ 2 ≤ (2 * n)! := by
-    have h : n ! * n ! ≤ (2 * n)! := by
-      rw [two_mul]
-      exact Nat.le_of_dvd (Nat.factorial_pos _) (Nat.factorial_mul_factorial_dvd_factorial_add n n)
-    rw [sq]; exact_mod_cast h
-  rw [Nat.factorial_succ, Nat.cast_mul, mul_pow]
-  push_cast
-  exact mul_le_mul hn hc (by positivity) (by positivity)
 
 /-! ### Compactly supported `C¹` functions -/
 
@@ -222,7 +184,7 @@ theorem lintegral_exp_sub_one_sq_le (hE : finrank ℝ E = 2) {f : E → ℝ} (hf
       ∑' n, ENNReal.ofReal (c n * f x ^ (2 * n + 2)) := by
     rw [← ENNReal.ofReal_tsum_of_nonneg (fun n ↦ mul_nonneg (hc0 n) (heven n _))
       (hsum x).summable, (hsum x).tsum_eq]
-    exact ENNReal.ofReal_le_ofReal (exp_sub_one_sq_le (f x))
+    exact ENNReal.ofReal_le_ofReal (exp_sub_one_sq_le_two_mul_sq_mul_cosh (f x))
   have hint (n : ℕ) : Integrable (fun x ↦ c n * f x ^ (2 * n + 2)) μ :=
     ((hfc.pow _).integrable_of_hasCompactSupport
       (hfs.comp_left (g := (· ^ (2 * n + 2))) (by simp))).const_mul _
@@ -234,7 +196,8 @@ theorem lintegral_exp_sub_one_sq_le (hE : finrank ℝ E = 2) {f : E → ℝ} (hf
       ← ENNReal.ofReal_pow (by positivity), ← ENNReal.ofReal_mul (by positivity)]
     refine ENNReal.ofReal_le_ofReal ?_
     have hmom := integral_pow_le_mul_factorial_sq_mul μ hE hf hfs n
-    have hfac := factorial_succ_sq_le n
+    have hfac : ((n + 1)! : ℝ) ^ 2 ≤ 4 ^ n * (2 * n)! := by
+      exact_mod_cast Nat.factorial_succ_sq_le_four_pow_mul_factorial_two_mul n
     have hpos : (0 : ℝ) < (2 * n)! := by positivity
     rw [integral_const_mul, hc, div_mul_eq_mul_div, div_le_iff₀ hpos]
     calc 2 * 4 ^ n * ∫ x, f x ^ (2 * n + 2) ∂μ
@@ -274,14 +237,6 @@ section Sobolev
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
-omit [FiniteDimensional ℝ E] in
-/-- The value of a Sobolev function on the whole space is almost everywhere strongly measurable
-for `μ` itself. -/
-private theorem W1p.aestronglyMeasurable_value (u : W1p μ ⊤ 2) :
-    AEStronglyMeasurable (W1p.value u : E → ℝ) μ := by
-  simpa only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] using
-    Lp.aestronglyMeasurable (W1p.value u)
-
 /-- `TauCeti.lintegral_exp_sub_one_sq_le` for the Sobolev function of a test function. -/
 private theorem W1p.lintegral_exp_value_ofTestFunctionₗ_sub_one_sq_le (hE : finrank ℝ E = 2)
     (ψ : 𝓓((⊤ : TopologicalSpace.Opens E), ℝ))
@@ -290,14 +245,9 @@ private theorem W1p.lintegral_exp_value_ofTestFunctionₗ_sub_one_sq_le (hE : fi
     ∫⁻ x, ENNReal.ofReal ((Real.exp (W1p.value (W1p.ofTestFunctionₗ μ ⊤ 2 ψ) x) - 1) ^ 2) ∂μ ≤
       ENNReal.ofReal (4 * ‖W1p.value (W1p.ofTestFunctionₗ μ ⊤ 2 ψ)‖ ^ 2) := by
   set U := W1p.ofTestFunctionₗ μ ⊤ 2 ψ
-  have hv : (W1p.value U : E → ℝ) =ᵐ[μ] ψ := by
-    simpa only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] using
-      W1p.value_ofTestFunctionₗ_ae (mu := μ) (Omega := ⊤) (p := 2) ψ
-  have hg : (W1p.gradient U : E → E) =ᵐ[μ] _root_.gradient (ψ : E → ℝ) := by
-    rw [show W1p.gradient U = gradientTestFunctionLp 2 ψ from W1p.gradient_ofTestFunctionₗ ψ]
-    have h := gradientTestFunctionLp_apply_ae (mu := μ) (Omega := ⊤) 2 ψ
-    simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] at h
-    exact h
+  have hv : (W1p.value U : E → ℝ) =ᵐ[μ] ψ := W1p.value_ofTestFunctionₗ_top_ae ψ
+  have hg : (W1p.gradient U : E → E) =ᵐ[μ] _root_.gradient (ψ : E → ℝ) :=
+    W1p.gradient_ofTestFunctionₗ_top_ae ψ
   have hvalue : ‖W1p.value U‖ ^ 2 = ∫ x, (ψ x) ^ 2 ∂μ := by
     rw [← W1p.integral_value_sq_eq_norm_value_sq]
     simp only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ]
@@ -346,7 +296,7 @@ theorem W1p.lintegral_exp_value_sub_one_sq_le (hE : finrank ℝ E = 2) (u : W1p 
       ((((Real.continuous_exp.tendsto _).comp hx).sub_const 1).pow 2)
   have hFm (i : ℕ) : AEMeasurable (F i) μ :=
     ((Real.continuous_exp.comp_aestronglyMeasurable
-      (W1p.aestronglyMeasurable_value μ (U (ns i)))).sub
+      (W1p.aestronglyMeasurable_value_top (U (ns i)))).sub
       aestronglyMeasurable_const |>.pow 2).aemeasurable.ennreal_ofReal
   have hbound : ∀ᶠ i in atTop, ∫⁻ x, F i x ∂μ ≤ ENNReal.ofReal (4 * ‖W1p.value (U (ns i))‖ ^ 2) :=
     (hmono.tendsto_atTop.eventually hsmall).mono fun i hi ↦ by
@@ -389,7 +339,7 @@ theorem W1p.memLp_exp_value_sub_one (hE : finrank ℝ E = 2) (u : W1p μ ⊤ 2) 
           linarith
   -- `exp r - 1 ∈ L²`.
   have hrm : AEStronglyMeasurable (fun x ↦ Real.exp (W1p.value r x) - 1) μ :=
-    (Real.continuous_exp.comp_aestronglyMeasurable (W1p.aestronglyMeasurable_value μ r)).sub
+    (Real.continuous_exp.comp_aestronglyMeasurable (W1p.aestronglyMeasurable_value_top r)).sub
       aestronglyMeasurable_const
   have hrL2 : MemLp (fun x ↦ Real.exp (W1p.value r x) - 1) 2 μ := by
     refine (memLp_two_iff_integrable_sq hrm).mpr ⟨hrm.pow 2, ?_⟩
@@ -417,9 +367,8 @@ theorem W1p.memLp_exp_value_sub_one (hE : finrank ℝ E = 2) (u : W1p μ ⊤ 2) 
     have h1 : ⇑(W1p.value r) =ᵐ[μ] ⇑(W1p.value u) - ⇑(W1p.value (W1p.ofTestFunctionₗ μ ⊤ 2 ψ)) := by
       simpa only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] using
         W1p.value_sub_ae (mu := μ) (Omega := ⊤) (p := 2) u (W1p.ofTestFunctionₗ μ ⊤ 2 ψ)
-    have h2 : (W1p.value (W1p.ofTestFunctionₗ μ ⊤ 2 ψ) : E → ℝ) =ᵐ[μ] ψ := by
-      simpa only [TopologicalSpace.Opens.coe_top, Measure.restrict_univ] using
-        W1p.value_ofTestFunctionₗ_ae (mu := μ) (Omega := ⊤) (p := 2) ψ
+    have h2 : (W1p.value (W1p.ofTestFunctionₗ μ ⊤ 2 ψ) : E → ℝ) =ᵐ[μ] ψ :=
+      W1p.value_ofTestFunctionₗ_top_ae ψ
     filter_upwards [h1, h2] with x hx1 hx2
     simp only [hx1, Pi.sub_apply, hx2]
     ring

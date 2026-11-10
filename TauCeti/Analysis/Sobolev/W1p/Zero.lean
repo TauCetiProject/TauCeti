@@ -116,6 +116,22 @@ theorem W1p.gradient_ofTestFunctionₗ (phi : 𝓓(Omega, ℝ)) :
     W1p.gradient (W1p.ofTestFunctionₗ mu Omega p phi) = gradientTestFunctionLp p phi :=
   W1p.gradient_mk _ _ _
 
+/-- On the whole space, the value of an embedded test function agrees `μ`-almost everywhere with
+the test function itself. -/
+theorem W1p.value_ofTestFunctionₗ_top_ae (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    W1p.value (W1p.ofTestFunctionₗ mu ⊤ p phi) =ᵐ[mu] phi := by
+  simpa only [Opens.coe_top, Measure.restrict_univ] using
+    W1p.value_ofTestFunctionₗ_ae (mu := mu) (Omega := ⊤) (p := p) phi
+
+/-- On the whole space, the gradient of an embedded test function agrees `μ`-almost everywhere
+with the gradient of the test function itself. -/
+theorem W1p.gradient_ofTestFunctionₗ_top_ae (phi : 𝓓((⊤ : Opens E), ℝ)) :
+    W1p.gradient (W1p.ofTestFunctionₗ mu ⊤ p phi) =ᵐ[mu] _root_.gradient (phi : E → ℝ) := by
+  rw [W1p.gradient_ofTestFunctionₗ]
+  have h := gradientTestFunctionLp_apply_ae (mu := mu) (Omega := ⊤) p phi
+  simp only [Opens.coe_top, Measure.restrict_univ] at h
+  exact h
+
 /-- The embedding of the test functions is **injective**: two test functions with the same jet
 agree almost everywhere on `Ω`, hence everywhere, being continuous, supported in `Ω`, and measured
 by a Haar measure, which is positive on nonempty open sets. So `W^{1,p}(Ω)` really does contain a
