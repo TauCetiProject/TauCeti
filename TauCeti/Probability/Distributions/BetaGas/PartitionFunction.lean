@@ -138,14 +138,14 @@ private lemma betaGas_integral_algebra {β : ℝ} (hβ : 0 < β) :
   calc
     _ = 2 ^ (β + 1) * sqrt π *
         (β ^ (-((β + 1) / 2)) * β ^ (-(1 : ℝ) / 2)) * Gamma ((β + 1) / 2) := by ring
-    _ = _ := by rw [hβpow]; rw [show -((β + 2) / 2) = -(β + 2) / 2 by ring]
+    _ = _ := by rw [hβpow]; simp only [neg_div]
 
 private lemma betaGas_difference_integral {β : ℝ} (hβ : 0 < β) :
     (∫ d : ℝ, |d| ^ β * exp (-(β / 4 * d ^ 2))) =
       (β / 4) ^ (-((β + 1) / 2)) * Gamma ((β + 1) / 2) := by
   have h := integral_abs_rpow_mul_exp_neg_mul_sq (q := β) (b := β / 4)
     (by linarith) (by positivity)
-  rw [show -(β + 1) / 2 = -((β + 1) / 2) by ring] at h
+  rw [neg_div] at h
   simpa only [neg_mul] using h
 
 private lemma betaGas_center_integral {β : ℝ} (hβ : 0 < β) :
@@ -153,7 +153,7 @@ private lemma betaGas_center_integral {β : ℝ} (hβ : 0 < β) :
   have hGaussian : (∫ z : ℝ, exp (-(β * z ^ 2))) = sqrt (π / β) := by
     simpa only [neg_mul] using integral_gaussian β
   rw [hGaussian, Real.sqrt_div Real.pi_pos.le, Real.sqrt_eq_rpow β,
-    show -(1 : ℝ) / 2 = -(1 / 2 : ℝ) by ring, Real.rpow_neg hβ.le]
+    neg_div, Real.rpow_neg hβ.le]
   ring
 
 /-- The two-particle Gaussian beta-gas weight is integrable for positive inverse temperature. -/
