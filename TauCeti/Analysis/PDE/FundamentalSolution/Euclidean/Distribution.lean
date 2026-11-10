@@ -183,9 +183,8 @@ theorem locallyIntegrable_fderiv_newtonianKernel (n : ℕ) :
       have hg : Measurable g := by
         dsimp [g]
         fun_prop
-      have hfg : (fun x => fderiv ℝ (newtonianKernel n) x) =ᵐ[volume] g := by
-        filter_upwards [hae] with x hx
-        exact fderiv_newtonianKernel n hn2 hx
+      have hfg : (fun x => fderiv ℝ (newtonianKernel n) x) =ᵐ[volume] g :=
+        ae_of_all _ (fderiv_newtonianKernel n hn2)
       exact hg.aestronglyMeasurable.congr hfg.symm
 
 /-- The distribution induced by the Newtonian kernel on all of Euclidean space in dimensions

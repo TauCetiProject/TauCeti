@@ -27,6 +27,7 @@ python3 scripts/test_control_batch_workflows.py
 python3 scripts/test_control_batch_budget.py
 python3 scripts/test_queue_release.py
 python3 scripts/test_pick_runner.py
+python3 -m unittest discover -s scripts -p test_queue_control_routing.py
 python3 scripts/test_fleet_runner.py
 python3 scripts/test_bwrap_pin.py
 python3 scripts/test_bump_manifest.py

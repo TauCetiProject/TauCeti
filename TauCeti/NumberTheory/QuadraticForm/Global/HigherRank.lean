@@ -45,10 +45,10 @@ space works, as in `QuadraticForm.not_anisotropic_prod_of_isLocallyIsotropic`. -
 
 public section
 
-open IsDedekindDomain NumberField NumberField.InfinitePlace QuadraticMap
+open IsDedekindDomain NumberField NumberField.InfinitePlace QuadraticMap TauCeti
 open scoped TensorProduct
 
-namespace TauCeti
+namespace QuadraticForm
 
 variable {K : Type*} [Field K] [NumberField K]
   {X Y : Type*} [AddCommGroup X] [Module K X] [AddCommGroup Y] [Module K Y]
@@ -59,7 +59,7 @@ variable [FiniteDimensional K X] [FiniteDimensional K Y]
 at least three over a number field, such that `U ⊥ W` is isotropic at every finite and real place.
 If every form `⟨c⟩ ⊥ W` with `c ≠ 0` that is isotropic at every finite and real place is isotropic
 over `K`, then `U ⊥ W` is isotropic over `K`. -/
-theorem _root_.QuadraticForm.not_anisotropic_prod_of_isLocallyIsotropic [Nontrivial X]
+theorem not_anisotropic_prod_of_isLocallyIsotropic [Nontrivial X]
     {U : QuadraticForm K X} {W : QuadraticForm K Y} (hU : U.Nondegenerate)
     (hW : W.Nondegenerate) (hY : 3 ≤ Module.finrank K Y)
     (hUW : QuadraticForm.IsLocallyIsotropic (U.prod W))
@@ -84,7 +84,7 @@ theorem _root_.QuadraticForm.not_anisotropic_prod_of_isLocallyIsotropic [Nontriv
 form of rank `n ≥ 5` over a number field that is isotropic at every finite and real place. If every
 diagonal regular form of rank `n - 1` that is isotropic at every finite and real place is isotropic
 over `K`, then `Q` is isotropic over `K`. -/
-theorem _root_.QuadraticForm.not_anisotropic_of_isLocallyIsotropic_of_five_le_finrank
+theorem not_anisotropic_of_isLocallyIsotropic_of_five_le_finrank
     {Q : QuadraticForm K X} (hQ : Q.Nondegenerate) (hX : 5 ≤ Module.finrank K X)
     (hloc : Q.IsLocallyIsotropic)
     (ih : ∀ p : RegularFormPresentation K, p.1 + 1 = Module.finrank K X →
@@ -114,4 +114,4 @@ theorem _root_.QuadraticForm.not_anisotropic_of_isLocallyIsotropic_of_five_le_fi
   exact ih _ (by dsimp only; omega)
     ((QuadraticForm.QuadraticMap.Equivalent.isLocallyIsotropic_iff hcons).mp hcW)
 
-end TauCeti
+end QuadraticForm
