@@ -114,9 +114,14 @@ the constructed one, so it is available before, and independently of, uniqueness
   for symmetric forms.
 * `TauCeti.PDE.UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_bound`:
   existence and uniqueness on an arbitrary open domain when the potential absorbs the drift.
+* `TauCeti.PDE.UniformlyEllipticOn.isCoercive_energyFormH1L0_of_measure_ne_top`: coercivity on a
+  domain of finite measure when there is no drift and the potential is nonnegative.
 * `TauCeti.PDE.UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_setIntegral_of_memLp`:
   existence and uniqueness for `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = f`, `c ≥ 0`, on a domain of finite measure
   with data `f ∈ Lʳ(Ω)`, `r > max 1 (2n/(n+2))`, which need not be square integrable.
+* `TauCeti.PDE.UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_neg_setIntegral_inner`:
+  existence and uniqueness for `-∂ᵢ(aⁱʲ ∂ⱼu) + c u = ∂ᵢFⁱ`, `c ≥ 0`, on a domain of finite
+  measure with `F ∈ L²(Ω; ℝⁿ)`.
 * `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_of_subset_slab` and
   `TauCeti.PDE.existsUnique_isWeakSolutionDirichlet_of_subset_ball`: existence and uniqueness
   under the geometric hypotheses that make the energy form coercive.
@@ -535,7 +540,41 @@ theorem UniformlyEllipticOn.existsUnique_isWeakSolutionDirichlet_of_mass_lower_b
     (h.isCoercive_energyFormH1L0_of_mass_lower_bound ha hb hc hb_bound hc_bound hc_lower hmass
       hcoeff) f
 
-/-! ### Data in `Lʳ` on a domain of finite measure -/
+/-! ### Data on a domain of finite measure -/
+
+/-- **Coercivity on a domain of finite measure.** On a domain `Ω` of finite measure in `ℝⁿ`,
+`n ≥ 1`, let `a` be measurable and uniformly elliptic with lower constant `λ`, and let `c` be
+measurable, bounded and nonnegative, with no drift. Then the energy form of `-∂ᵢ(aⁱʲ ∂ⱼu) + c u` is
+coercive on
+`H¹₀(Ω)`, by the Poincaré inequality `‖v‖_{L²(Ω)} ≤ P ‖∇v‖_{L²(Ω)}` with `P` a multiple of
+`|Ω| ^ (1/n)`. -/
+theorem UniformlyEllipticOn.isCoercive_energyFormH1L0_of_measure_ne_top
+    [DecidableEq ι] [Nonempty ι] {lam Lam gamma : ℝ}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hb_zero : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), b x = 0)
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
+    (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) (hOmega : mu Omega ≠ ∞)
+    (hcoeff : MemLp (fun x => energyIntegrand (a x) (b x) (c x)) ⊤ (mu.restrict Omega)) :
+    IsCoercive (energyFormH1L0 hcoeff) := by
+  have hfin : Module.finrank ℝ (EuclideanSpace ℝ ι) = Fintype.card ι := finrank_euclideanSpace
+  set ν := mu.restrict (Omega : Set (EuclideanSpace ℝ ι))
+  obtain ⟨P, hPfin, hP⟩ : ∃ P : ℝ≥0∞, P ≠ ∞ ∧ ∀ v : W1p0 mu Omega 2,
+      eLpNorm (W1p.value (v : W1p mu Omega 2)) 2 ν ≤ P * ‖W1p.gradient (v : W1p mu Omega 2)‖ₑ :=
+    ⟨_, ENNReal.mul_ne_top ENNReal.ofReal_ne_top
+      (ENNReal.rpow_ne_top_of_nonneg (by rw [hfin, sub_zero]; positivity) hOmega), fun v =>
+      W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (mu := mu) (q := 2)
+        ENNReal.ofNat_ne_top hOmega le_rfl (δ := 0) (by simp) (by rw [hfin]; positivity) v.2⟩
+  have hPR : ∀ v : W1p0 mu Omega 2,
+      ‖W1p.value (v : W1p mu Omega 2)‖ ≤ P.toReal * ‖W1p.gradient (v : W1p mu Omega 2)‖ :=
+    fun v => by
+      have := ENNReal.toReal_mono (ENNReal.mul_ne_top hPfin enorm_ne_top) (hP v)
+      rwa [ENNReal.toReal_mul, toReal_enorm, ← Lp.norm_def] at this
+  have hlower : ∀ w : W1p0 mu Omega 2, lam / (P.toReal ^ 2 + 1) * ‖w‖ ^ 2 ≤
+      energyFormH1 a b c (w : W1p mu Omega 2) (w : W1p mu Omega 2) := fun w =>
+    h.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift ha hc hb_zero hc_bound hc_nonneg (hPR w)
+  exact isCoercive_energyFormH1L0 hcoeff (by have := h.pos; positivity) hlower
 
 /-- **Weak solvability of the Dirichlet problem with `Lʳ` data.** Let `n ≥ 1` be the dimension
 and let `r > 1` with `n (2 - r) < 2 r`, that is `r > 2n/(n + 2)`. On a domain `Ω` of finite
@@ -560,32 +599,49 @@ theorem UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_setIntegral_of_m
     ∃! w : W1p0 mu Omega 2, ∀ v : W1p0 mu Omega 2,
       energyFormH1 a 0 c (w : W1p mu Omega 2) (v : W1p mu Omega 2) =
         ∫ x in Omega, f x * W1p.value (v : W1p mu Omega 2) x ∂mu := by
-  have hfin : Module.finrank ℝ (EuclideanSpace ℝ ι) = Fintype.card ι := finrank_euclideanSpace
-  set ν := mu.restrict (Omega : Set (EuclideanSpace ℝ ι))
-  obtain ⟨P, hPfin, hP⟩ : ∃ P : ℝ≥0∞, P ≠ ∞ ∧ ∀ v : W1p0 mu Omega 2,
-      eLpNorm (W1p.value (v : W1p mu Omega 2)) 2 ν ≤ P * ‖W1p.gradient (v : W1p mu Omega 2)‖ₑ :=
-    ⟨_, ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-      (ENNReal.rpow_ne_top_of_nonneg (by rw [hfin, sub_zero]; positivity) hOmega), fun v =>
-      W1p.eLpNorm_value_le_mul_measure_rpow_mul_enorm_gradient_of_lt (mu := mu) (q := 2)
-        ENNReal.ofNat_ne_top hOmega le_rfl (δ := 0) (by simp) (by rw [hfin]; positivity) v.2⟩
-  have hPR : ∀ v : W1p0 mu Omega 2,
-      ‖W1p.value (v : W1p mu Omega 2)‖ ≤ P.toReal * ‖W1p.gradient (v : W1p mu Omega 2)‖ :=
-    fun v => by
-      have := ENNReal.toReal_mono (ENNReal.mul_ne_top hPfin enorm_ne_top) (hP v)
-      rwa [ENNReal.toReal_mul, toReal_enorm, ← Lp.norm_def] at this
-  -- The energy form is coercive on `H¹₀(Ω)`, by the Poincaré inequality.
   have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (beta := 0)
     h.upper_nonneg ha aestronglyMeasurable_const hc
     (fun _x hx eta xi => h.upper_bound hx eta xi) (fun _ _ => by simp) hc_bound
-  have hlower : ∀ w : W1p0 mu Omega 2, lam / (P.toReal ^ 2 + 1) * ‖w‖ ^ 2 ≤
-      energyFormH1 a 0 c (w : W1p mu Omega 2) (w : W1p mu Omega 2) := fun w =>
-    h.div_mul_norm_sq_le_energyFormH1_self_of_zero_drift (b := 0) ha hc (fun _ _ => rfl)
-      hc_bound hc_nonneg (hPR w)
-  have hcoer : IsCoercive (energyFormH1L0 hcoeff) :=
-    isCoercive_energyFormH1L0 hcoeff (by have := h.pos; positivity) hlower
   obtain ⟨ℓ, hℓ⟩ := W1p0.exists_strongDual_apply_eq_setIntegral_of_memLp hOmega hr
-    (by rwa [hfin]) hf
-  simpa only [energyFormH1L0_apply, hℓ] using hcoer.existsUnique_forall_eq ℓ
+    (by rwa [finrank_euclideanSpace]) hf
+  simpa only [energyFormH1L0_apply, hℓ] using
+    (h.isCoercive_energyFormH1L0_of_measure_ne_top (b := 0) ha hc (fun _ _ => rfl) hc_bound
+      hc_nonneg hOmega hcoeff).existsUnique_forall_eq ℓ
+
+/-- **Weak solvability of the Dirichlet problem with data in divergence form.** Let `n ≥ 1` be
+the dimension. On a domain `Ω` of finite measure, let `a` be measurable and uniformly elliptic,
+and let `c` be measurable, bounded and nonnegative. For every vector field `F ∈ L²(Ω; ℝⁿ)` there
+is exactly one `w ∈ H¹₀(Ω)` with
+
+`a(w, v) = -∫_Ω F · ∇v` for every `v ∈ H¹₀(Ω)`,
+
+the weak solution of `-∂ᵢ(aⁱʲ ∂ⱼw) + c w = ∂ᵢFⁱ` in `Ω`, `w = 0` on `∂Ω`. -/
+theorem UniformlyEllipticOn.existsUnique_forall_energyFormH1_eq_neg_setIntegral_inner
+    [DecidableEq ι] [Nonempty ι] {lam Lam gamma : ℝ}
+    {F : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    (ha : AEStronglyMeasurable a (mu.restrict Omega))
+    (hc : AEStronglyMeasurable c (mu.restrict Omega))
+    (hc_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖c x‖ ≤ gamma)
+    (hc_nonneg : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), 0 ≤ c x) (hOmega : mu Omega ≠ ∞)
+    (hF : MemLp F 2 (mu.restrict Omega)) :
+    ∃! w : W1p0 mu Omega 2, ∀ v : W1p0 mu Omega 2,
+      energyFormH1 a 0 c (w : W1p mu Omega 2) (v : W1p mu Omega 2) =
+        -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu := by
+  have hcoeff := memLp_energyIntegrand_of_bounds (b := 0) (beta := 0)
+    h.upper_nonneg ha aestronglyMeasurable_const hc
+    (fun _x hx eta xi => h.upper_bound hx eta xi) (fun _ _ => by simp) hc_bound
+  -- The functional `v ↦ -⟪F, ∇v⟫_{L²(Ω)}` on `H¹₀(Ω)`.
+  let ℓ : StrongDual ℝ (W1p0 mu Omega 2) := -(innerSL ℝ (hF.toLp F)).comp
+    (W1p.gradientL.comp (w1p0Submodule mu Omega 2).toSubmodule.subtypeL)
+  have hℓ : ∀ v : W1p0 mu Omega 2,
+      ℓ v = -∫ x in Omega, ⟪F x, W1p.gradient (v : W1p mu Omega 2) x⟫_ℝ ∂mu := fun v => by
+    simp only [ℓ, neg_apply, ContinuousLinearMap.comp_apply,
+      Submodule.subtypeL_apply, W1p.gradientL_apply, innerSL_apply_apply, L2.inner_def, neg_inj]
+    exact integral_congr_ae (by filter_upwards [hF.coeFn_toLp] with x hx; rw [hx])
+  simpa only [energyFormH1L0_apply, hℓ] using
+    (h.isCoercive_energyFormH1L0_of_measure_ne_top (b := 0) ha hc (fun _ _ => rfl) hc_bound
+      hc_nonneg hOmega hcoeff).existsUnique_forall_eq ℓ
 
 /-! ### The Laplacian model -/
 
