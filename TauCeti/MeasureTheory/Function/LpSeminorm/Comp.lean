@@ -5,7 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Operator.NNNorm
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
+import Mathlib.Analysis.Normed.Operator.NormedSpace
+import Mathlib.MeasureTheory.Function.LpSeminorm.Monotonicity
 
 /-!
 # Precomposition by a map with dominated pushforward
@@ -25,6 +28,8 @@ map, such as the projection `Prod.fst` from a product of σ-finite measures, pre
 * `MeasureTheory.eLpNorm_comp_le_of_map_le_smul`: the `eLpNorm` bound for precomposition.
 * `MeasureTheory.MemLp.comp_quasiMeasurePreserving_top`: precomposition with a
   quasi-measure-preserving map preserves `L^∞`.
+* `MeasureTheory.eLpNorm_clm_comp_le`: postcomposition with a continuous linear map scales
+  `eLpNorm` by at most its operator norm, with no measurability assumption.
 -/
 
 public section
@@ -62,5 +67,22 @@ theorem MemLp.comp_quasiMeasurePreserving_top (hg : MemLp g ∞ ν)
   rw [memLp_iff, eLpNorm_exponent_top hgm] at hg
   rw [memLp_iff, eLpNorm_exponent_top (hgm.comp_quasiMeasurePreserving hf)]
   exact (eLpNormEssSup_le_of_ae_enorm_bound (hf.ae ae_le_eLpNormEssSup)).trans_lt hg
+
+/-- **`eLpNorm` bound for postcomposition.** A continuous linear map of the codomain scales
+`eLpNorm` by at most its operator norm. No measurability assumption is needed: a function that
+is not almost everywhere strongly measurable has infinite `eLpNorm`. -/
+theorem eLpNorm_clm_comp_le {F G : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [NormedAddCommGroup G] [NormedSpace ℝ G] {u : α → F} {p : ℝ≥0∞} (A : F →L[ℝ] G) :
+    eLpNorm (fun x => A (u x)) p μ ≤ ‖A‖ₑ * eLpNorm u p μ := by
+  by_cases hu : AEStronglyMeasurable u μ
+  · exact eLpNorm_le_mul_eLpNorm_of_ae_le_mul' (A.continuous.comp_aestronglyMeasurable hu)
+      (Filter.Eventually.of_forall fun x => by
+        simpa only [enorm_eq_nnnorm, ← ENNReal.coe_mul, ENNReal.coe_le_coe] using
+          A.le_opNNNorm (u x)) p
+  · by_cases hA : A = 0
+    · simp [hA]
+    · rw [eLpNorm_of_not_aestronglyMeasurable hu, ENNReal.mul_top (by
+        rw [enorm_eq_nnnorm]; exact ENNReal.coe_ne_zero.2 (nnnorm_ne_zero_iff.2 hA))]
+      exact le_top
 
 end MeasureTheory

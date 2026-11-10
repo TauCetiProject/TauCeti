@@ -31,7 +31,7 @@ gluing law of the end lifts, and they carry the same Hamiltonian `Hb q = Ha ∞`
 signs: an input of `S` and the output of `S'`. So their actions cancel, and the energy over `Σ_R`
 is the signed sum of the actions of the four boundary loops of `Σ_R` minus the integrated
 curvature. With the curvature bound
-`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le`, the energy
+`TauCeti.SymplecticForm.abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le`, the energy
 differs from this sum by at most the six end bounds, uniformly in `L` and `R`, and for solutions of
 the Floer equation the action of the output loop is at most the sum of the actions of the three
 input loops plus that constant.
@@ -49,8 +49,8 @@ input loops plus that constant.
 * `TauCeti.SymplecticForm.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_sum_le`: the
   energy over `Σ_R` differs from the signed sum of the actions of its boundary loops by at most
   the sum of the six end bounds.
-* `TauCeti.SymplecticForm.hamiltonianAction_le_sum_add_sum_add_sum_add_sum`: for solutions of the
-  Floer equation, the action bound for the output loop of `Σ_R`.
+* `TauCeti.SymplecticForm.hamiltonianAction_le_sum_add_sum_add_of_plumbedPerturbation`: for
+  solutions of the Floer equation, the action bound for the output loop of `Σ_R`.
 
 ## References
 
@@ -134,7 +134,7 @@ theorem integral_floerEnergyDensity_image_plumbingMap (ω : SymplecticForm V) (h
     (fun w _ ↦ (contDiff_realChart_plumbingMap q L (n := 1)).differentiable one_ne_zero w)
     (fun w _ ↦ det_fderiv_realChart_nonneg (q.hasDerivAt_plumbingMap L _))
     (fun w hw ↦ (hu _ (hψ hw)).differentiableAt
-      ((isOpen_preimage_plumbedSphere q L).mem_nhds (hψ hw)))
+      ((isOpen_plumbedSphere q L).mem_nhds (hψ hw)))
     (fun w hw ↦ htgt hw _ 1) (fun w hw ↦ htgt hw _ Complex.I)]
   refine setIntegral_congr_fun hBm fun w hw ↦ ω.floerEnergyDensity_congr_perturbation _
     (funext fun x ↦ ?_) (funext fun x ↦ ?_) <;>
@@ -396,7 +396,7 @@ theorem integral_floerEnergyDensity_plumbedPerturbation_eq_sum_hamiltonianAction
     Complex.equivRealProdCLM.symm z ≠ 1) ∧ Complex.equivRealProdCLM.symm z ≠ q.plumbingMap L 1}
   -- Both integrands are continuous on the four-punctured sphere, which contains the compact set
   -- `Σ_R`, so they are integrable over it.
-  have hS₄o : IsOpen S₄ := isOpen_preimage_plumbedSphere q L
+  have hS₄o : IsOpen S₄ := isOpen_plumbedSphere q L
   have hPS₄ : Complex.equivRealProdCLM.symm ⁻¹' q.plumbedTruncation L R ⊆ S₄ := fun z hz ↦
     plumbedTruncation_subset hq (by linarith) R hz
   have hPc := isCompact_preimage_plumbedTruncation q L R
@@ -455,15 +455,8 @@ theorem abs_integral_floerEnergyDensity_plumbedPerturbation_sub_sum_le
       ∑ r, Ba r + ∑ r, Bb r := by
   rw [integral_floerEnergyDensity_plumbedPerturbation_eq_sum_hamiltonianAction ω hq hHa hHb hHas
     hHbs hab hL hR hu, sub_sub_cancel_left, abs_neg]
-  have hBa₀ : 0 ≤ ∑ r, Ba r := Finset.sum_nonneg fun r _ ↦ (abs_nonneg _).trans (hBa r 0 0)
-  have hBb₀ : 0 ≤ ∑ r, Bb r := Finset.sum_nonneg fun r _ ↦ (abs_nonneg _).trans (hBb r 0 0)
-  rw [← ENNReal.ofReal_le_ofReal_iff (add_nonneg hBa₀ hBb₀), ← Real.enorm_eq_ofReal_abs,
-    ENNReal.ofReal_add hBa₀ hBb₀,
-    ENNReal.ofReal_sum_of_nonneg fun r _ ↦ (abs_nonneg _).trans (hBa r 0 0),
-    ENNReal.ofReal_sum_of_nonneg fun r _ ↦ (abs_nonneg _).trans (hBb r 0 0)]
-  exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
-    (lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le ω hq hHa hHb hHas hHbs hab hL
-      hBa hBb u))
+  exact ω.abs_setIntegral_hamiltonianCurvature_plumbedPerturbation_le hq hHa hHb hHas hHbs hab hL
+    hBa hBb u _
 
 /-- **The action bound on a truncated plumbed sphere.** Under the hypotheses of
 `SymplecticForm.abs_integral_floerEnergyDensity_plumbedPerturbation_sub_sum_le`, let `u` solve the
@@ -472,8 +465,8 @@ Then the action of the output loop `ℓ_∞(t) = u(φ_∞(-R + i t))` is at most
 of the three input loops, the loop `ℓ_r(t) = u(φ_r(R + i t))` of the remaining input end `r` of the
 receiving pair of pants and the loops `u(ψ(φ_r(R + i t)))` of the two input ends of the inserted
 one, plus `∑ r, Ba r + ∑ r, Bb r`. The bound does not depend on the neck length `L`. -/
-theorem hamiltonianAction_le_sum_add_sum_add_sum_add_sum (ω : SymplecticForm V) (hq : q ≠ inf)
-    (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
+theorem hamiltonianAction_le_sum_add_sum_add_of_plumbedPerturbation (ω : SymplecticForm V)
+    (hq : q ≠ inf) (hHa : ∀ r, Periodic (Ha r) 1) (hHb : ∀ r, Periodic (Hb r) 1)
     (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r))) (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r)))
     (hab : Hb q = Ha inf) (hL : 4 < L) {Ba Bb : Puncture → ℝ}
     (hBa : ∀ r t x, |Ha r t x| ≤ Ba r) (hBb : ∀ r t x, |Hb r t x| ≤ Bb r) {R : ℝ}
