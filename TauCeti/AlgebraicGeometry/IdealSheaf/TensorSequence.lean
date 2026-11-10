@@ -23,7 +23,8 @@ sequence is used to prescribe restrictions of global sections, and in particular
 nonreduced effective divisors. No finiteness or regularity of the closed subscheme is needed.
 
 The exactness follows from dualizability: tensoring with a finite locally free sheaf is both
-a left and a right adjoint.
+a left and a right adjoint, so it preserves every short exact sequence of sheaves of modules
+(`AlgebraicGeometry.Scheme.Modules.shortExact_map_tensorLeft`).
 
 ## References
 
@@ -36,6 +37,25 @@ open CategoryTheory MonoidalCategory AlgebraicGeometry
 
 universe u
 
+namespace AlgebraicGeometry.Scheme.Modules
+
+variable {X : Scheme.{u}}
+
+/-- Tensoring with a finite locally free sheaf `E` preserves short exact sequences of sheaves of
+modules: `E` is dualizable, so tensoring with it is right adjoint to tensoring with its dual, as
+well as a left adjoint. -/
+theorem shortExact_map_tensorLeft (E : X.Modules) [E.IsLocallyFree] [E.IsFiniteType]
+    {S : ShortComplex X.Modules} (hS : S.ShortExact) : (S.map (tensorLeft E)).ShortExact := by
+  let : ExactPairing ((ihom E).obj (𝟙_ X.Modules)) E :=
+    TauCeti.exactPairingOfIsIsoDualTensorIhom (Y := E)
+  let : ExactPairing E ((ihom E).obj (𝟙_ X.Modules)) :=
+    BraidedCategory.exactPairing_swap _ _
+  have : Limits.PreservesLimits (tensorLeft E) :=
+    (tensorLeftAdjunction E ((ihom E).obj (𝟙_ X.Modules))).rightAdjoint_preservesLimits
+  exact hS.map_of_exact (tensorLeft E)
+
+end AlgebraicGeometry.Scheme.Modules
+
 namespace AlgebraicGeometry.Scheme.IdealSheafData
 
 variable {X : Scheme.{u}} (I : X.IdealSheafData)
@@ -44,14 +64,8 @@ variable {X : Scheme.{u}} (I : X.IdealSheafData)
 preserves short exactness. -/
 theorem shortExact_tensor_toPushforwardSubscheme (E : X.Modules)
     [E.IsLocallyFree] [E.IsFiniteType] :
-    ((ShortComplex.mk _ _ I.sheafι_toPushforwardSubscheme).map (tensorLeft E)).ShortExact := by
-  let : ExactPairing ((ihom E).obj (𝟙_ X.Modules)) E :=
-    TauCeti.exactPairingOfIsIsoDualTensorIhom (Y := E)
-  let : ExactPairing E ((ihom E).obj (𝟙_ X.Modules)) :=
-    BraidedCategory.exactPairing_swap _ _
-  have : Limits.PreservesLimits (tensorLeft E) :=
-    (tensorLeftAdjunction E ((ihom E).obj (𝟙_ X.Modules))).rightAdjoint_preservesLimits
-  exact I.shortExact_toPushforwardSubscheme.map_of_exact (tensorLeft E)
+    ((ShortComplex.mk _ _ I.sheafι_toPushforwardSubscheme).map (tensorLeft E)).ShortExact :=
+  Scheme.Modules.shortExact_map_tensorLeft E I.shortExact_toPushforwardSubscheme
 
 /-- Sections of a finite locally free sheaf restrict surjectively to a closed subscheme
 if first cohomology of its tensor product with the ideal sheaf vanishes. -/
