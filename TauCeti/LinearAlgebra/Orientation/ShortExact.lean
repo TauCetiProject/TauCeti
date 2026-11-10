@@ -9,7 +9,9 @@ public import TauCeti.LinearAlgebra.Orientation.Prod
 public import Mathlib.Algebra.Exact.Basic
 import Mathlib.Algebra.Module.Projective
 import TauCeti.LinearAlgebra.Basis.Exact
+public import TauCeti.Algebra.Module.LinearMap.Defs
 public import TauCeti.LinearAlgebra.Exact
+public import TauCeti.LinearAlgebra.Orientation.Exact
 import TauCeti.LinearAlgebra.Ray
 
 /-!
@@ -24,7 +26,9 @@ The orientation does not depend on the lifts: it is the transport of the product
 the splitting `(u, w) ↦ f u + s w` for any linear section `s` of `g`
 (`Orientation.shortExact_eq_map_prod`). Both facts reduce to the subspace-first bases
 `Module.Basis.ofExactLift`, whose transition determinants do not depend on the lifts
-(`Module.Basis.ofExactLift_det_ofExactLift`).
+(`Module.Basis.ofExactLift_det_ofExactLift`). Over a field this is the orientation
+`Orientation.ofExact` of short exact sequences of finite free modules
+(`Orientation.shortExact_eq_ofExact`).
 
 Conversely, orientations of `V` and `W` determine a unique orientation of `U`
 (`Orientation.shortExactLeft`), characterized by `Orientation.shortExactLeft_eq_iff`. This is how
@@ -60,6 +64,7 @@ bookkeeping identities behind the associativity of fibre product orientations
   transported along the splitting given by any section.
 * `Orientation.shortExact_basis_orientation`: a basis of `V` made of the image of a basis of `U`
   followed by lifts of a basis of `W` has the induced orientation.
+* `Orientation.shortExact_eq_ofExact`: the induced orientation is `Orientation.ofExact`.
 * `Orientation.map_shortExact`: naturality for isomorphisms of short exact sequences.
 * `Orientation.shortExact_inj_left`, `Orientation.shortExact_inj_right`: the induced orientation
   determines each outer orientation given the other.
@@ -187,6 +192,23 @@ theorem shortExact_neg_left (o : Orientation K U (Fin a)) (p : Orientation K W (
 theorem shortExact_neg_right (o : Orientation K U (Fin a)) (p : Orientation K W (Fin c)) :
     shortExact hf hfg hg o (-p) ha hc = -shortExact hf hfg hg o p ha hc := by
   simp only [shortExact, prod_neg_right, Orientation.map_neg]
+
+/-- Over a field, the induced orientation is the orientation `Orientation.ofExact` of a short
+exact sequence of finite free modules. -/
+theorem shortExact_eq_ofExact (o : Orientation K U (Fin a)) (p : Orientation K W (Fin c)) :
+    shortExact hf hfg hg o p ha hc = ofExact hf hfg hg o p ha hc := by
+  set eU := finBasisOfFinrankEq K U ha
+  set eW := finBasisOfFinrankEq K W hc
+  -- Both orientations are fixed by the same subspace-first basis.
+  have key : shortExact hf hfg hg eU.orientation eW.orientation ha hc =
+      ofExact hf hfg hg eU.orientation eW.orientation ha hc := by
+    choose t ht using fun j ↦ hg (eW j)
+    set B := (Basis.ofExactLift hf hfg eU eW t ht).reindex finSumFinEquiv
+    rw [shortExact_basis_orientation hf hfg hg ha hc eU eW B (by simp [B]) (by simp [B, ht]),
+      ofExact_orientation hf hfg hg eU eW B (by simp [B]) (by simp [B, ht]) ha hc]
+  rcases eU.orientation_eq_or_eq_neg o with rfl | rfl <;>
+  rcases eW.orientation_eq_or_eq_neg p with rfl | rfl <;>
+  simp only [shortExact_neg_left, shortExact_neg_right, ofExact_neg_left, ofExact_neg_right, key]
 
 /-- Scaling the orientation of the subspace by a unit scales the induced orientation. -/
 @[simp]
@@ -449,17 +471,7 @@ theorem shortExact_inl_snd (o : Orientation K U (Fin a)) (p : Orientation K W (F
     (ha : finrank K U = a) (hc : finrank K W = c) :
     shortExact (LinearMap.inl_injective (R := K) (M := U) (M₂ := W)) Function.Exact.inl_snd
       LinearMap.snd_surjective o p ha hc = prod o p ha hc := by
-  set eU := finBasisOfFinrankEq K U ha
-  set eW := finBasisOfFinrankEq K W hc
-  suffices key : shortExact (LinearMap.inl_injective (R := K) (M := U) (M₂ := W))
-      Function.Exact.inl_snd LinearMap.snd_surjective eU.orientation eW.orientation ha hc =
-      prod eU.orientation eW.orientation ha hc by
-    rcases eU.orientation_eq_or_eq_neg o with rfl | rfl <;>
-    rcases eW.orientation_eq_or_eq_neg p with rfl | rfl <;>
-    simp only [shortExact_neg_left, shortExact_neg_right, prod_neg_left, prod_neg_right, key]
-  rw [prod_basis_orientation]
-  exact shortExact_basis_orientation _ _ _ ha hc eU eW _ (by simp [Basis.prod_apply])
-    (by simp [Basis.prod_apply])
+  rw [shortExact_eq_ofExact, ofExact_inl_snd]
 
 variable [FiniteDimensional K V] {f : U →ₗ[K] V} {g : V →ₗ[K] W} (hf : Function.Injective f)
   (hfg : Function.Exact f g) (hg : Function.Surjective g)
@@ -521,8 +533,7 @@ theorem shortExact_prodMap_id (o : Orientation K U (Fin a)) (oz : Orientation K 
     shortExact_reindex_right (hc := by rw [finrank_prod, hz, hc])] at hnat
   rw [hnat, reindex_units_smul, reindex_units_smul, smul_smul, ← pow_add,
     show z * c + c * z = 2 * (z * c) by ring, pow_mul, neg_one_sq, one_pow, one_smul,
-    ← reindex_trans, ← reindex_trans]
-  congr 1
+    reindex_finCongr_reindex_finCongr, reindex_finCongr_reindex_finCongr]
 
 /-- **A further factor before the subspace.** For a short exact sequence `0 → U → V → W → 0` and a
 space `Z`, orient `Z × V` through `0 → Z × U → Z × V → W → 0` from `[Z][U]` and `[W]`. This is the

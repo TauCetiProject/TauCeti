@@ -48,10 +48,11 @@ quadratic forms with the subgroup preserving both summands.
   identifies the fibre product `{(ξ, η) | α ξ = β η}` of `α` and `β` with that of `β`
   and `α`, and transversality, the surjectivity of `(ξ, η) ↦ α ξ - β η`, is symmetric.
 * `LinearMap.fiberProductAssoc`: the reassociation `(X ×_T Y) ×_S Z ≃ X ×_T (Y ×_S Z)` of iterated
-  fibre products of linear maps.
-* `LinearMap.injective_comp`, `LinearMap.surjective_comp`, `LinearMap.injective_prodMap`:
-  injectivity and surjectivity of composites and products, stated for the coercions of `f ∘ₗ g`
-  and `f.prodMap g`.
+  fibre products of linear maps, with its components `LinearMap.fiberProductAssoc_apply_fst`,
+  `LinearMap.fiberProductAssoc_apply_snd` and those of its inverse
+  `LinearMap.fiberProductAssoc_symm_apply_fst`, `LinearMap.fiberProductAssoc_symm_apply_snd`.
+* `LinearMap.injective_prodMap`: a product of injective linear maps is injective, stated for the
+  coercion of `f.prodMap g`.
 * `LinearMap.axes_of_commute_neg_snd`: a linear endomorphism of `R × R × R` preserving the third
   coordinate and commuting with `(x, y, z) ↦ (x, -y, 0)` preserves the first two coordinate axes
   and fixes the third basis vector.
@@ -216,16 +217,6 @@ theorem coprod_comp_prodComm (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₃)
 
 variable {M₄ : Type*} [AddCommMonoid M₄] [Module R M₄]
 
-/-- A composite of injective linear maps is injective, stated for the coercion of `f ∘ₗ g`. -/
-theorem injective_comp {f : M₂ →ₗ[R] M₃} {g : M₁ →ₗ[R] M₂} (hf : Function.Injective f)
-    (hg : Function.Injective g) : Function.Injective (f ∘ₗ g) :=
-  hf.comp hg
-
-/-- A composite of surjective linear maps is surjective, stated for the coercion of `f ∘ₗ g`. -/
-theorem surjective_comp {f : M₂ →ₗ[R] M₃} {g : M₁ →ₗ[R] M₂} (hf : Function.Surjective f)
-    (hg : Function.Surjective g) : Function.Surjective (f ∘ₗ g) :=
-  hf.comp hg
-
 /-- A product of injective linear maps is injective, stated for the coercion of `f.prodMap g`. -/
 theorem injective_prodMap {f : M₁ →ₗ[R] M₃} {g : M₂ →ₗ[R] M₄} (hf : Function.Injective f)
     (hg : Function.Injective g) : Function.Injective (f.prodMap g) :=
@@ -287,6 +278,34 @@ def fiberProductAssoc :
   right_inv _ := rfl
 
 variable {α β γ δ}
+
+/-- The `X`-component of the reassociation of `((ξ, η), ζ)` is `ξ`. -/
+@[simp]
+theorem fiberProductAssoc_apply_fst
+    (r : ker ((γ ∘ₗ snd R X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ))) :
+    (fiberProductAssoc α β γ δ r).1.1 = r.1.1.1.1 :=
+ (rfl)
+
+/-- The `Y ×_S Z`-component of the reassociation of `((ξ, η), ζ)` is `(η, ζ)`. -/
+@[simp]
+theorem fiberProductAssoc_apply_snd
+    (r : ker ((γ ∘ₗ snd R X Y ∘ₗ (ker (α.coprod (-β))).subtype).coprod (-δ))) :
+    ((fiberProductAssoc α β γ δ r).1.2 : Y × Z) = (r.1.1.1.2, r.1.2) :=
+ (rfl)
+
+/-- The `X ×_T Y`-component of the inverse reassociation of `(ξ, (η, ζ))` is `(ξ, η)`. -/
+@[simp]
+theorem fiberProductAssoc_symm_apply_fst
+    (r : ker (α.coprod (-(β ∘ₗ fst R Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)))) :
+    (((fiberProductAssoc α β γ δ).symm r).1.1 : X × Y) = (r.1.1, r.1.2.1.1) :=
+ (rfl)
+
+/-- The `Z`-component of the inverse reassociation of `(ξ, (η, ζ))` is `ζ`. -/
+@[simp]
+theorem fiberProductAssoc_symm_apply_snd
+    (r : ker (α.coprod (-(β ∘ₗ fst R Y Z ∘ₗ (ker (γ.coprod (-δ))).subtype)))) :
+    ((fiberProductAssoc α β γ δ).symm r).1.2 = r.1.2.1.2 :=
+ (rfl)
 
 /-- The reassociation is the restriction of `(X × Y) × Z ≃ X × (Y × Z)`: viewed in `X × (Y × Z)`,
 the image of `((ξ, η), ζ)` is `(ξ, (η, ζ))`. -/
