@@ -6,39 +6,33 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Degree.SphereRotation
-public import TauCeti.Geometry.Manifold.Instances.Stiefel
+public import TauCeti.Geometry.Manifold.Instances.Stiefel.Rotation
 import TauCeti.Analysis.Complex.Circle
 import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.MFDeriv.Prod
 
 /-!
-# The rotation family of the unit tangent bundle of a sphere
+# Regular values of the rotation family of the unit tangent bundle of a sphere
 
-Let `E` be a real inner product space of dimension `n + 1 ≥ 2`, with unit sphere `Sⁿ`. Its
-manifold `TauCeti.stiefel E 2` of orthonormal pairs `(u, v)` is the unit tangent bundle `T¹Sⁿ`:
-`v` is a unit tangent vector of `Sⁿ` at `u`. Rotating `u` towards `v` by the angle of a point `z`
-of the unit circle of `ℂ` gives the **rotation family of the unit tangent bundle**
-(`TauCeti.stiefelRotationFamily`)
+Let `E` be a real inner product space of dimension `n + 1 ≥ 2`, with unit sphere `Sⁿ`, whose unit
+tangent bundle is the Stiefel manifold `TauCeti.stiefel E 2` of orthonormal pairs `(u, v)`. This
+file studies the derivative and the regular values of the rotation family of the unit tangent
+bundle (`TauCeti.stiefelRotationFamily`, defined in
+`TauCeti.Geometry.Manifold.Instances.Stiefel.Rotation`)
 
 `τ : T¹Sⁿ × S¹ → Sⁿ × Sⁿ`, `τ ((u, v), z) = (u, Re z • u + Im z • v)`.
 
-Both sides have dimension `2n`. Over the first factor, `τ` is a map of fibrations: on the fibre
-over `u` it is the rotation family `TauCeti.sphereRotationFamily u` of `Sⁿ` at `u`, which sends
-`(v, z)` to the point reached from `u` along the great circle tangent to `v`
-(`TauCeti.stiefelRotationFamily_snd`).
-
-The derivative of `τ` is computed in `TauCeti.mvfderiv_coe_stiefelRotationFamily_fst_apply` and
+Both sides have dimension `2n`. The derivative of `τ` is computed in
+`TauCeti.mvfderiv_coe_stiefelRotationFamily_fst_apply` and
 `TauCeti.mvfderiv_coe_stiefelRotationFamily_snd_apply`. It is injective, hence invertible, at every
 point with `Im z ≠ 0` (`TauCeti.injective_mfderiv_stiefelRotationFamily`,
 `TauCeti.isInvertible_mfderiv_stiefelRotationFamily`), while the points with
 `Im z = 0` are sent to the diagonal and the antidiagonal of `Sⁿ × Sⁿ`. So every pair `(u, w)` with
 `w ≠ ±u` is a regular value of `τ` (`TauCeti.isRegularValue_stiefelRotationFamily`), and it has
 exactly two preimages, `((u, v₀), z₀)` and `((u, -v₀), conj z₀)`, which trace the great circle
-through `u` and `w` in opposite directions
-(`TauCeti.stiefelRotationFamily_eq_stiefelRotationFamily_iff`,
-`TauCeti.ncard_preimage_stiefelRotationFamily`). For any orientations of the source and target the
-degree of `τ` at such a value is therefore even
+through `u` and `w` in opposite directions (`TauCeti.ncard_preimage_stiefelRotationFamily`). For
+any orientations of the source and target the degree of `τ` at such a value is therefore even
 (`TauCeti.degreeAtRegularValue_stiefelRotationFamily_modEq`).
 
 With `n - 1` in place of `n`, this is the map `T¹Sⁿ⁻¹ × S¹ → Sⁿ⁻¹ × Sⁿ⁻¹` through which
@@ -51,19 +45,15 @@ carries its level-set structure, modelled on `ℝ^(2 (m + 2) - 3)`.
 
 ## Main declarations
 
-* `TauCeti.stiefelRotationFamily`: the map `((u, v), z) ↦ (u, Re z • u + Im z • v)`.
-* `TauCeti.stiefelRotationFamily_snd`: on the fibre over `u` it is the rotation family of `Sⁿ`
-  at `u`.
-* `TauCeti.contMDiff_stiefelRotationFamily`: it is smooth.
-* `TauCeti.stiefelRotationFamily_eq_stiefelRotationFamily_iff`: the two preimages of a pair
-  `(u, w)` with `w ≠ ±u`.
-* `TauCeti.exists_stiefelRotationFamily_eq`: every such pair is attained.
+* `TauCeti.ncard_preimage_stiefelRotationFamily`: a pair `(u, w)` with `w ≠ ±u` has exactly two
+  preimages.
+* `TauCeti.mvfderiv_coe_stiefelRotationFamily_fst_apply`,
+  `TauCeti.mvfderiv_coe_stiefelRotationFamily_snd_apply`: the derivative, read in `E`.
 * `TauCeti.injective_mfderiv_stiefelRotationFamily`,
   `TauCeti.isInvertible_mfderiv_stiefelRotationFamily`: the derivative is injective, hence
   invertible, where `Im z ≠ 0`.
 * `TauCeti.isRegularValue_stiefelRotationFamily`: every pair `(u, w)` with `w ≠ ±u` is a regular
   value.
-* `TauCeti.ncard_preimage_stiefelRotationFamily`: it has exactly two preimages.
 * `TauCeti.degreeAtRegularValue_stiefelRotationFamily_modEq`: the degree there is even, for any
   orientations.
 
@@ -89,105 +79,7 @@ attribute [local instance] finrank_real_complex_fact'
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-! ### The rotation family -/
-
-/-- The second vector `v` of an orthonormal pair `(u, v)` with `u = p`, as a unit vector of
-`p^⊥`: a unit tangent vector of the sphere at `p`. -/
-def stiefelFiberVector (x : stiefel E 2) {p : E} (hp : x.1 0 = p) : sphere (0 : (ℝ ∙ p)ᗮ) 1 :=
-  ⟨⟨x.1 1, Submodule.mem_orthogonal_singleton_iff_inner_right.2 (by
-      rw [← hp]
-      exact (mem_stiefel_two_iff.1 x.2).2.2)⟩,
-    mem_sphere_zero_iff_norm.2 (norm_eq_one_of_mem_stiefel x.2 1)⟩
-
-@[simp]
-theorem coe_stiefelFiberVector (x : stiefel E 2) {p : E} (hp : x.1 0 = p) :
-    ((stiefelFiberVector x hp : (ℝ ∙ p)ᗮ) : E) = x.1 1 :=
-  (rfl)
-
-/-- The **rotation family of the unit tangent bundle** of the unit sphere `Sⁿ` of `E`: an
-orthonormal pair `(u, v)`, a unit tangent vector `v` of `Sⁿ` at `u`, and a point `z` of the unit
-circle of `ℂ` are sent to the pair `(u, Re z • u + Im z • v)` of points of `Sⁿ`. On the fibre over
-`u` its second component is the rotation family `TauCeti.sphereRotationFamily u`. -/
-def stiefelRotationFamily (x : stiefel E 2 × sphere (0 : ℂ) 1) :
-    sphere (0 : E) 1 × sphere (0 : E) 1 :=
-  (stiefelProj E 2 0 x.1,
-    sphereRotationFamily (stiefelProj E 2 0 x.1)
-      (stiefelFiberVector x.1 (coe_stiefelProj 0 x.1).symm, x.2))
-
-@[simp]
-theorem stiefelRotationFamily_fst (x : stiefel E 2 × sphere (0 : ℂ) 1) :
-    (stiefelRotationFamily x).1 = stiefelProj E 2 0 x.1 :=
-  (rfl)
-
-/-- **The rotation family of the unit tangent bundle is a map of fibrations.** On the fibre over
-`u`, its second component is the rotation family of the sphere at `u`. -/
-theorem stiefelRotationFamily_snd (x : stiefel E 2 × sphere (0 : ℂ) 1) :
-    (stiefelRotationFamily x).2 =
-      sphereRotationFamily (stiefelProj E 2 0 x.1)
-        (stiefelFiberVector x.1 (coe_stiefelProj 0 x.1).symm, x.2) :=
-  (rfl)
-
-@[simp]
-theorem coe_stiefelRotationFamily_snd (x : stiefel E 2 × sphere (0 : ℂ) 1) :
-    ((stiefelRotationFamily x).2 : E) = (x.2 : ℂ).re • x.1.1 0 + (x.2 : ℂ).im • x.1.1 1 := by
-  simp [stiefelRotationFamily_snd]
-
-/-- A point with `Im z = 0` is sent to the diagonal or the antidiagonal of `Sⁿ × Sⁿ`. -/
-theorem stiefelRotationFamily_snd_eq_or_eq_neg_of_im_eq_zero
-    {x : stiefel E 2 × sphere (0 : ℂ) 1} (hx : (x.2 : ℂ).im = 0) :
-    (stiefelRotationFamily x).2 = (stiefelRotationFamily x).1 ∨
-      (stiefelRotationFamily x).2 = -(stiefelRotationFamily x).1 := by
-  rw [stiefelRotationFamily_snd, stiefelRotationFamily_fst]
-  exact sphereRotationFamily_eq_or_eq_neg_of_im_eq_zero _ hx
-
 /-! ### Fibres -/
-
-/-- Two points of the domain, one of them off `T¹Sⁿ × {±1}`, have the same image exactly when they
-are equal or exchanged by the involution `((u, v), z) ↦ ((u, -v), conj z)`. -/
-theorem stiefelRotationFamily_eq_stiefelRotationFamily_iff
-    {x y : stiefel E 2 × sphere (0 : ℂ) 1} (hx : (x.2 : ℂ).im ≠ 0) :
-    stiefelRotationFamily y = stiefelRotationFamily x ↔
-      y = x ∨ (y.1.1 0 = x.1.1 0 ∧ y.1.1 1 = -x.1.1 1 ∧
-        (y.2 : ℂ) = (starRingEnd ℂ) (x.2 : ℂ)) := by
-  constructor
-  · intro h
-    have h₀ : y.1.1 0 = x.1.1 0 := by simpa using congrArg (fun t ↦ (t.1 : E)) h
-    have h₁ := congrArg (fun t ↦ (t.2 : E)) h
-    simp only [coe_stiefelRotationFamily_snd, h₀] at h₁
-    -- Read `y` in the fibre over the first vector of `x`, and compare there.
-    let p := stiefelProj E 2 0 x.1
-    let v : sphere (0 : (ℝ ∙ (p : E))ᗮ) 1 :=
-      stiefelFiberVector y.1 (h₀.trans (coe_stiefelProj 0 x.1).symm)
-    have hv : ((v : (ℝ ∙ (p : E))ᗮ) : E) = y.1.1 1 := rfl
-    have hp : sphereRotationFamily p (v, y.2) =
-        sphereRotationFamily p (stiefelFiberVector x.1 (coe_stiefelProj 0 x.1).symm, x.2) :=
-      Subtype.ext (by simpa [hv, p] using h₁)
-    rcases (sphereRotationFamily_eq_sphereRotationFamily_iff p hx).1 hp with he | ⟨he₁, he₂⟩
-    · left
-      have h₁' : y.1.1 1 = x.1.1 1 := by simpa [hv] using congrArg (fun t ↦ ((t.1 : _) : E)) he
-      refine Prod.ext (Subtype.ext (funext fun i ↦ ?_)) (Prod.ext_iff.1 he).2
-      fin_cases i
-      exacts [h₀, h₁']
-    · exact .inr ⟨h₀, by simpa [hv] using he₁, he₂⟩
-  · rintro (rfl | ⟨h₀, h₁, hz⟩)
-    · rfl
-    · refine Prod.ext (Subtype.ext (by simpa using h₀)) (Subtype.ext ?_)
-      simp only [coe_stiefelRotationFamily_snd, h₀, h₁, hz, Complex.conj_re, Complex.conj_im,
-        neg_smul, smul_neg, neg_neg]
-
-/-- Every pair `(u, w)` of points of the sphere with `w ≠ ±u` is the image of a point with
-`Im z > 0`. -/
-theorem exists_stiefelRotationFamily_eq {p q : sphere (0 : E) 1} (hqp : q ≠ p) (hqp' : q ≠ -p) :
-    ∃ x, 0 < (x.2 : ℂ).im ∧ stiefelRotationFamily x = (p, q) := by
-  obtain ⟨⟨v, z⟩, hz, h⟩ := exists_sphereRotationFamily_eq p hqp hqp'
-  have hpv : ⟪(p : E), ((v : (ℝ ∙ (p : E))ᗮ) : E)⟫ = 0 :=
-    Submodule.mem_orthogonal_singleton_iff_inner_right.1 (v : (ℝ ∙ (p : E))ᗮ).2
-  have hv : ‖((v : (ℝ ∙ (p : E))ᗮ) : E)‖ = 1 := norm_eq_of_mem_sphere v
-  let u : stiefel E 2 := ⟨![(p : E), ((v : (ℝ ∙ (p : E))ᗮ) : E)], mem_stiefel_two_iff.2
-    ⟨by simp [norm_eq_of_mem_sphere p], by simpa using hv, by simpa using hpv⟩⟩
-  refine ⟨(u, z), hz, Prod.ext (Subtype.ext (by simp [u])) (Subtype.ext ?_)⟩
-  rw [← h, coe_stiefelRotationFamily_snd, coe_sphereRotationFamily]
-  simp [u]
 
 /-- **The regular preimages of the rotation family of the unit tangent bundle.** A pair `(u, w)` of
 points of the sphere with `w ≠ ±u` has exactly two preimages, `((u, v), z)` and
@@ -217,27 +109,6 @@ theorem ncard_preimage_stiefelRotationFamily {p q : sphere (0 : E) 1} (hqp : q �
       exact ⟨rfl, rfl, rfl⟩
 
 variable [FiniteDimensional ℝ E] {m : ℕ} [Fact (finrank ℝ E = m + 1 + 1)]
-
-/-- The rotation family of the unit tangent bundle is smooth. -/
-theorem contMDiff_stiefelRotationFamily :
-    ContMDiff (𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ).prod (𝓡 1))
-      ((𝓡 (m + 1)).prod (𝓡 (m + 1))) ∞ (stiefelRotationFamily (E := E)) := by
-  have hv (i : Fin 2) : ContMDiff (𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ).prod (𝓡 1))
-      𝓘(ℝ, E) ∞ fun x : stiefel E 2 × sphere (0 : ℂ) 1 ↦ x.1.1 i :=
-    ((ContinuousLinearMap.proj i).contDiff.contMDiff.comp
-      (contMDiff_coe_stiefel E 2)).comp contMDiff_fst
-  have hz : ContMDiff (𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ).prod (𝓡 1))
-      𝓘(ℝ, ℂ) ∞ fun x : stiefel E 2 × sphere (0 : ℂ) 1 ↦ (x.2 : ℂ) :=
-    contMDiff_coe_sphere.comp contMDiff_snd
-  have h₂ : ContMDiff (𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ).prod (𝓡 1))
-      (𝓡 (m + 1)) ∞ fun x : stiefel E 2 × sphere (0 : ℂ) 1 ↦ (stiefelRotationFamily x).2 := by
-    have h := ContMDiff.codRestrict_sphere (n := m + 1)
-      (((Complex.reCLM.contDiff.contMDiff.comp hz).smul (hv 0)).add
-        ((Complex.imCLM.contDiff.contMDiff.comp hz).smul (hv 1)))
-      fun x ↦ by simpa using (stiefelRotationFamily x).2.2
-    refine h.congr fun x ↦ Subtype.ext ?_
-    simp
-  exact ((contMDiff_stiefelProj E 2 0).comp contMDiff_fst).prodMk h₂
 
 /-! ### The derivative -/
 
@@ -329,7 +200,7 @@ theorem injective_mfderiv_stiefelRotationFamily {x : stiefel E 2 × sphere (0 : 
     (hx : (x.2 : ℂ).im ≠ 0) :
     Injective (mfderiv (𝓘(ℝ, Fin (2 * finrank ℝ E - (2 + 1).choose 2) → ℝ).prod (𝓡 1))
       ((𝓡 (m + 1)).prod (𝓡 (m + 1))) stiefelRotationFamily x) := by
-  have hτ := (contMDiff_stiefelRotationFamily (E := E) (m := m) x).mdifferentiableAt
+  have hτ := (contMDiff_stiefelRotationFamily (E := E) (n := m) x).mdifferentiableAt
     (by simp : (∞ : ℕ∞ω) ≠ 0)
   have hd (g : sphere (0 : E) 1 × sphere (0 : E) 1 → sphere (0 : E) 1)
       (hg : ContMDiff ((𝓡 (m + 1)).prod (𝓡 (m + 1))) (𝓡 (m + 1)) 1 g) :
@@ -377,9 +248,10 @@ theorem injective_mfderiv_stiefelRotationFamily {x : stiefel E 2 × sphere (0 : 
   rw [hre, him, zero_smul, zero_smul, zero_add, zero_add] at h₂'
   have ha1 : a 1 = 0 := (smul_eq_zero.1 h₂').resolve_left hx
   have hw₁ : (Manifold.tangentSpaceProdEquiv x w).1 = 0 :=
-    (injective_iff_map_eq_zero _).1 (injective_mvfderiv_coe_stiefel x.1) _ (funext fun i ↦ by
-      fin_cases i
-      exacts [h₁', ha1])
+    (injective_iff_map_eq_zero _).1 (injective_mvfderiv_iff.2 (injective_mfderiv_coe_stiefel x.1))
+      _ (funext fun i ↦ by
+        fin_cases i
+        exacts [h₁', ha1])
   have hw₂ : (Manifold.tangentSpaceProdEquiv x w).2 = 0 :=
     (injective_iff_map_eq_zero _).1 (injective_mvfderiv_subtypeVal_sphere x.2) _
       (Complex.ext hre him)

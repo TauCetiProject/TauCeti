@@ -11,6 +11,8 @@ public import TauCeti.Algebra.Module.Primitive
 public import TauCeti.Analysis.Convex.Polyhedron.Extreme
 
 import Mathlib.Analysis.LocallyConvex.SeparatingDual
+import Mathlib.LinearAlgebra.Dimension.OrzechProperty
+import Mathlib.RingTheory.FiniteType
 
 /-!
 # Delzant polytopes
@@ -34,7 +36,10 @@ that `j` contributes a facet of `Δ`, the facets are listed without repetition, 
 inward normal of that facet. These are the moment polytopes of compact symplectic toric
 manifolds. Smoothness at a vertex includes simplicity: exactly `rank N` facets meet at each
 vertex (`TauCeti.Toric.IsSmoothVertex.ncard_activeSet`), and `rank N = dim V` for an integral
-lattice (`TauCeti.Toric.IsIntegralLattice.finrank_eq`).
+lattice (`TauCeti.Toric.IsIntegralLattice.finrank_eq`). Conversely, active normals that generate
+`N` and number at most `rank N` form a basis, since `ℤ` has the Orzech property
+(`TauCeti.Toric.isSmoothVertex_iff_span_eq_top`). This reduces smoothness of a vertex to a
+spanning condition on its active normals.
 
 The vertices of `Δ` are the points where the active normals span `V`, by the description of the
 extreme points of a polyhedron (`TauCeti.mem_extremePoints_polyhedron_iff`). The face of a
@@ -69,6 +74,8 @@ freedom of shifting a moment map by a constant.
 * `TauCeti.Toric.isSmoothVertex_iff_linearIndepOn`: a smooth vertex is a point whose active
   normals are linearly independent and generate the lattice.
 * `TauCeti.Toric.IsSmoothVertex.ncard_activeSet`: exactly `rank N` facets meet at a smooth vertex.
+* `TauCeti.Toric.isSmoothVertex_iff_span_eq_top`: a smooth vertex is a point whose active normals
+  generate the lattice and number at most `rank N`.
 * `TauCeti.Toric.IsDelzant.isPrimitive`: the facet normals of a Delzant polytope are primitive.
 * `TauCeti.Toric.IsDelzant.exists_activeSet_eq_empty`: for an injective lattice map, a Delzant
   polytope has a point on none of its facets.
@@ -176,11 +183,34 @@ theorem mem_extremePoints_facetPolyhedron_iff [Finite ι] {x : StrongDual ℝ V}
   unfold facetPolyhedron
   exact mem_extremePoints_polyhedron_iff
 
+/-- At a vertex `x`, the active constraints do not all lie in a set `s` of constraints whose
+normals are killed by a nonzero `w ∈ V*`. -/
+theorem not_activeSet_subset_of_mem_extremePoints [Finite ι] {x : StrongDual ℝ V}
+    (hx : x ∈ (facetPolyhedron i u c).extremePoints ℝ) {s : Set ι} {w : StrongDual ℝ V}
+    (hw : w ≠ 0) (hws : ∀ j ∈ s, facetPairing i u j w = 0) :
+    ¬activeSet (facetPairing i u) c x ⊆ s :=
+  fun hsub ↦ hw ((mem_extremePoints_facetPolyhedron_iff.1 hx).2 w fun j hj ↦ hws j (hsub hj))
+
 /-- Exactly `rank N` facets meet at a smooth vertex. -/
 theorem IsSmoothVertex.ncard_activeSet {x : StrongDual ℝ V} (hx : IsSmoothVertex i u c x) :
     (activeSet (facetPairing i u) c x).ncard = Module.finrank ℤ N := by
   obtain ⟨b, -⟩ := hx
   rw [Module.finrank_eq_nat_card_basis b, Nat.card_coe_set_eq]
+
+/-- A point is a smooth vertex exactly when the active normals generate the lattice and at most
+`rank N` constraints are active there. No linear independence of the active normals has to be
+checked. -/
+theorem isSmoothVertex_iff_span_eq_top [Finite ι] {x : StrongDual ℝ V} :
+    IsSmoothVertex i u c x ↔
+      Submodule.span ℤ (u '' activeSet (facetPairing i u) c x) = ⊤ ∧
+        (activeSet (facetPairing i u) c x).ncard ≤ Module.finrank ℤ N := by
+  refine ⟨fun hx ↦ ⟨(isSmoothVertex_iff_linearIndepOn.1 hx).2, hx.ncard_activeSet.le⟩, ?_⟩
+  rintro ⟨hspan, hcard⟩
+  have := Fintype.ofFinite (activeSet (facetPairing i u) c x)
+  refine isSmoothVertex_iff_linearIndepOn.2 ⟨?_, hspan⟩
+  refine linearIndependent_of_top_le_span_of_card_le_finrank ?_ ?_
+  · rw [← Set.image_eq_range, hspan]
+  · rwa [Fintype.card_eq_nat_card, Nat.card_coe_set_eq]
 
 /-- Every point `x` of a compact facet polyhedron lies on the face cut out by its active
 constraints, and this face contains a vertex: the constraints active at `x` are active at some

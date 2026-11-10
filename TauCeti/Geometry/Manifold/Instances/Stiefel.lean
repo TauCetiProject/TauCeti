@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Fredholm.LevelSet.Manifold
+import TauCeti.Analysis.Fredholm.LevelSet.Inclusion
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Data.Sym.Card
 public import Mathlib.Geometry.Manifold.Instances.Sphere
-import TauCeti.Analysis.Fredholm.LevelSet.Inclusion
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
 /-!
@@ -59,6 +59,9 @@ manifold structure.
   `Fin k → E` and the projections to the unit sphere are smooth.
 * `TauCeti.range_mfderiv_coe_stiefel`: the tangent space of the Stiefel manifold at `v`, as the
   range of the differential of the inclusion, is the kernel of the derivative of the Gram map.
+* `TauCeti.injective_mfderiv_coe_stiefel`: the differential of the inclusion is injective.
+* `TauCeti.gramSym2Deriv_mvfderiv_coe_stiefel_eq_zero`: tangent vectors, read in the space of
+  `k`-families, lie in the kernel of the derivative of the Gram map.
 
 ## References
 
@@ -264,12 +267,12 @@ theorem range_mfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k) :
     (Submodule.range_subtype _)
 
 variable {E k} in
-/-- **The inclusion of the Stiefel manifold is an immersion.** Its differential at every frame,
-read in the space of `k`-families, is injective. -/
-theorem injective_mvfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k) :
-    Injective (mvfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ)
+/-- The differential of the inclusion of the Stiefel manifold into the space of `k`-families is
+injective: the inclusion is an immersion. -/
+theorem injective_mfderiv_coe_stiefel [FiniteDimensional ℝ E] (v : stiefel E k) :
+    Injective (mfderiv 𝓘(ℝ, Fin (k * finrank ℝ E - (k + 1).choose 2) → ℝ) 𝓘(ℝ, Fin k → E)
       ((↑) : stiefel E k → Fin k → E) v) :=
-  injective_mvfderiv_iff.2 (injective_mfderiv_coe_levelSet _ _ _ _ v)
+  injective_mfderiv_coe_levelSet _ _ _ _ v
 
 variable {E k} in
 /-- The differential at `v` of the inclusion of the Stiefel manifold takes values in the kernel of
