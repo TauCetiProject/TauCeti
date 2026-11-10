@@ -105,9 +105,10 @@ jobs:
       id-token: write  # telemetry-only grant stays outside candidate namespaces
     needs: pick-runner
     if: ${{ !cancelled() && needs.pick-runner.result != 'skipped' && needs.pick-runner.outputs.skip-pr-build != 'true' }}
-    # Exact fleet labels bind placement to one machine and guest. Stale picker
-    # output must never send a retry to a guest that has already retired. Staging
-    # waits for chungus2 when selection fails or is stale; other jobs use GitHub.
+    # PR fleet targets name the shared group and PR class; GitHub assigns the
+    # next matching runner, including replacements on another enrolled host.
+    # Picker outputs remain attempt-scoped. Staging retains exact guest labels
+    # and waits for chungus2 when selection fails or is stale.
     # Maintenance repairs must not wait behind the ordinary PR backlog. These
     # use the same vetted Namespace sandbox shape as ordinary overflow, with
     # the existing staging priority. This changes scheduling, never merge gates.
