@@ -77,10 +77,11 @@ zero mode alone.
   `sech (s + R)` has `‖D_R u‖ ≤ 2 exp (-2 R) ‖u‖`.
 * `TauCeti.WeakDerivStep.exp_div_two_le_of_forall_norm_le_mul_norm_trajectoryOperator_neckCoeff`:
   hence every bound `‖u‖ ≤ C ‖D_R u‖` has `C ≥ exp (2 R) / 2`.
-* `TauCeti.WeakDerivStep.norm_le_norm_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id`
-  and `TauCeti.WeakDerivStep.range_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id`: for
-  `R ≥ 0` and `k ≠ 0`, the `k`-th Fourier mode `d/ds - (a_R + 2πk)` of the cylinder operator is
-  onto with `‖u‖ ≤ ‖D u‖`.
+* `TauCeti.WeakDerivStep.norm_le_norm_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id`,
+  `TauCeti.WeakDerivStep.ker_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id` and
+  `TauCeti.WeakDerivStep.range_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id`: for
+  `R ≥ 0` and `k ≠ 0`, the `k`-th Fourier mode `d/ds - (a_R + 2πk)` of the cylinder operator has
+  zero kernel, is onto, and satisfies `‖u‖ ≤ ‖D u‖`.
 
 ## References
 
@@ -179,20 +180,25 @@ theorem hasDerivAt_neckCoeff (R s : ℝ) :
   · field_simp
     ring
 
+/-- The derivative of the neck coefficient as a difference of two squared hyperbolic secants,
+`a_R'(s) = sech² (s - R) - sech² (s + R)`, from differentiating `1 - tanh (s + R) + tanh (s - R)`
+term by term. -/
+theorem hasDerivAt_neckCoeff_one_div_cosh_sq (R s : ℝ) :
+    HasDerivAt (neckCoeff R) (1 / cosh (s - R) ^ 2 - 1 / cosh (s + R) ^ 2) s := by
+  have h₁ := (hasDerivAt_tanh (s + R)).comp s ((hasDerivAt_id' s).add_const R)
+  have h₂ := (hasDerivAt_tanh (s - R)).comp s ((hasDerivAt_id' s).sub_const R)
+  convert (h₁.const_sub 1).add h₂ using 1
+  · funext x
+    simp [neckCoeff_def]
+  · ring
+
 /-- The derivative of the neck coefficient, `a_R'(s) = sech² (s - R) - sech² (s + R)`, is a
 difference of two numbers in `(0, 1]`, so `|a_R'| ≤ 1`. -/
 theorem abs_deriv_neckCoeff_le_one (R s : ℝ) : |deriv (neckCoeff R) s| ≤ 1 := by
-  have h : HasDerivAt (neckCoeff R) (-(1 / cosh (s + R) ^ 2) + 1 / cosh (s - R) ^ 2) s := by
-    have h₁ := (hasDerivAt_tanh (s + R)).comp s ((hasDerivAt_id' s).add_const R)
-    have h₂ := (hasDerivAt_tanh (s - R)).comp s ((hasDerivAt_id' s).sub_const R)
-    convert (h₁.const_sub 1).add h₂ using 1
-    · funext x
-      simp [neckCoeff_def]
-    · ring
   have hb (x : ℝ) : 0 ≤ 1 / cosh x ^ 2 ∧ 1 / cosh x ^ 2 ≤ 1 := by
     have hx := one_le_cosh x
     exact ⟨by positivity, div_le_one_of_le₀ (by nlinarith) (by positivity)⟩
-  rw [h.deriv, abs_le]
+  rw [(hasDerivAt_neckCoeff_one_div_cosh_sq R s).deriv, abs_le]
   constructor <;> linarith [hb (s + R), hb (s - R)]
 
 /-- The derivative of the neck coefficient is bounded by `4 |sinh (2 R)| / D`. -/
@@ -570,6 +576,17 @@ theorem norm_le_norm_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id {
     ‖u‖ ≤ ‖trajectoryOperator AL u‖ :=
   norm_le_norm_trajectoryOperator_neg_fourierModeCoeff_smul_id (contDiff_neckCoeff R)
     (abs_neckCoeff_le_one hR) (abs_deriv_neckCoeff_le_one R) hk AL hAL u
+
+/-- **The nonzero Fourier modes of the glued cylinder operator have no kernel.** For `R ≥ 0` and
+`k ≠ 0`, the `k`-th Fourier mode `u' - (a_R + 2πk) u` of the cylinder operator
+`∂ₛ + i ∂ₜ - a_R(s)` has zero kernel on `W^{1,2}(ℝ, E)`. -/
+theorem ker_trajectoryOperator_neg_fourierModeCoeff_neckCoeff_smul_id {R : ℝ} (hR : 0 ≤ R)
+    {k : ℤ} (hk : k ≠ 0) (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
+      fun s ↦ -fourierModeCoeff (neckCoeff R) k s • ContinuousLinearMap.id ℝ E) :
+    (trajectoryOperator (p := 2) AL).ker = ⊥ :=
+  ker_trajectoryOperator_neg_fourierModeCoeff_smul_id (contDiff_neckCoeff R)
+    (abs_neckCoeff_le_one hR) (abs_deriv_neckCoeff_le_one R) hk AL hAL
 
 /-- **The nonzero Fourier modes of the glued cylinder operator are onto.** For `R ≥ 0` and
 `k ≠ 0`, the `k`-th Fourier mode `u' - (a_R + 2πk) u` of the cylinder operator

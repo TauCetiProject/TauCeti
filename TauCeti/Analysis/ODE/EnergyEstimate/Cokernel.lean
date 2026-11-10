@@ -304,7 +304,7 @@ symmetric operators on a finite-dimensional space satisfies `α ‖v‖ ≤ ‖A
 `|⟪v, A' s v⟫| ≤ β ‖v‖²` everywhere with `β < α²`, then `D_A u = u' + A u` maps `W^{1,2}(ℝ, E)`
 onto `L²(ℝ, E)`. Together with `TauCeti.WeakDerivStep.ker_trajectoryOperator_eq_bot`, `D_A` is
 then a linear isomorphism, with the inverse bound of
-`TauCeti.WeakDerivStep.min_one_mul_norm_sq_le_norm_trajectoryOperator_sq`. The coefficient of the
+`TauCeti.WeakDerivStep.min_one_mul_norm_le_norm_trajectoryOperator`. The coefficient of the
 operator is any `L∞` class `AL` of `A`. -/
 theorem surjective_trajectoryOperator [FiniteDimensional ℝ E] (hA : ContDiff ℝ 1 A)
     (hsym : ∀ s, (A s).toLinearMap.IsSymmetric) {α β : ℝ} (hα : 0 ≤ α)
@@ -316,15 +316,9 @@ theorem surjective_trajectoryOperator [FiniteDimensional ℝ E] (hA : ContDiff �
   set m := min 1 (α ^ 2 - β)
   have hm : 0 < m := lt_min one_pos (sub_pos.2 hβ)
   have hbound (u) : ‖u‖ ≤ (m⁻¹).toNNReal * ‖trajectoryOperator (p := 2) AL u‖ := by
-    have h := min_one_mul_norm_sq_le_norm_trajectoryOperator_sq hA hsym hα hgap
-      (fun s v ↦ (le_abs_self _).trans (hsmall s v)) AL hAL u
-    have hm1 : m ≤ 1 := min_le_left _ _
-    -- Since `m ≤ 1`, `(m ‖u‖)² ≤ m ‖u‖² ≤ ‖D_A u‖²`.
-    have hsq : (m * ‖u‖) ^ 2 ≤ ‖trajectoryOperator (p := 2) AL u‖ ^ 2 := by
-      nlinarith [sq_nonneg ‖u‖]
-    have hle := (pow_le_pow_iff_left₀ (by positivity) (norm_nonneg _) two_ne_zero).1 hsq
     rw [Real.coe_toNNReal _ (inv_nonneg.2 hm.le), ← div_eq_inv_mul, le_div_iff₀ hm, mul_comm]
-    exact hle
+    exact min_one_mul_norm_le_norm_trajectoryOperator hA hsym hα hgap
+      (fun s v ↦ (le_abs_self _).trans (hsmall s v)) AL hAL u
   have hclosed : IsClosed ((trajectoryOperator (p := 2) AL).range :
       Set (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))) :=
     (ContinuousLinearMap.antilipschitz_of_bound _ hbound).isClosed_range

@@ -34,7 +34,7 @@ nor cokernel, and any kernel, cokernel or blow-up of the inverse of the cylinder
 carried by its zero mode `d/ds - c(s)`. The hypotheses hold for the coefficients `±tanh s` of the
 operators `∂ₛ + i ∂ₜ ± tanh s`, and for the coefficient `a_R` of the operator obtained by gluing
 them along a neck of length `2R` (`TauCeti.neckCoeff`, for `R ≥ 0`). There the zero mode is
-invertible but its inverse grows like `exp (2 R)`
+invertible but its inverse has norm at least `exp (2 R) / 2`
 (`TauCeti.WeakDerivStep.exp_div_two_le_of_forall_norm_le_mul_norm_trajectoryOperator_neckCoeff`),
 while by this file the inverses of all the other modes are bounded by `1`.
 
@@ -155,10 +155,9 @@ theorem norm_le_norm_trajectoryOperator_neg_fourierModeCoeff_smul_id (hc : ContD
       (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
     ‖u‖ ≤ ‖trajectoryOperator AL u‖ := by
   obtain ⟨hA, hsym, hgap, hsmall⟩ := fourierMode_bounds (E := E) hc hc1 hdc hk
-  have h := min_one_mul_norm_sq_le_norm_trajectoryOperator_sq hA hsym
+  have h := min_one_mul_norm_le_norm_trajectoryOperator hA hsym
     (by linarith [two_le_pi]) hgap (fun s v ↦ (le_abs_self _).trans (hsmall s v)) AL hAL u
-  rw [min_eq_left one_le_two_mul_pi_sub_one_sq_sub_one, one_mul] at h
-  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).1 h
+  rwa [min_eq_left one_le_two_mul_pi_sub_one_sq_sub_one, one_mul] at h
 
 /-- **Nonzero Fourier modes have no kernel.** For a `C¹` coefficient `c` with `|c| ≤ 1` and
 `|c'| ≤ 1`, and `k ≠ 0`, the `k`-th Fourier mode `u' - (c + 2πk) u` of the cylinder operator
