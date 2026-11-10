@@ -291,13 +291,7 @@ theorem quantizationKernel_frequencyLaplacian (a : Symbol n V W m) (hm : m < -n)
     (x y : CoordinateSpace n) :
     quantizationKernel (frequencyLaplacian a).coefficient x y =
       (-‖x - y‖ ^ 2) • quantizationKernel a.coefficient x y := by
-  have hcoef : (frequencyLaplacian a).coefficient =
-      ∑ j, (frequencyDeriv j (frequencyDeriv j a)).coefficient := by
-    funext ⟨x, ξ⟩
-    simp only [coefficient_frequencyLaplacian, Finset.sum_apply, coefficient_frequencyDeriv]
-    refine Finset.sum_congr rfl fun j _ ↦ ?_
-    rw [show [j, j] = [j] ++ [j] from rfl, coordinateDeriv_append]
-  rw [hcoef, quantizationKernel_sum _ fun j _ ↦
+  rw [coefficient_frequencyLaplacian_eq_sum, quantizationKernel_sum _ fun j _ ↦
     (frequencyDeriv j (frequencyDeriv j a)).integrable_coefficient (by linarith) x]
   simp only [quantizationKernel_frequencyDeriv _ (by linarith : m - 1 < -n),
     quantizationKernel_frequencyDeriv _ hm, smul_smul, ← Finset.sum_smul,

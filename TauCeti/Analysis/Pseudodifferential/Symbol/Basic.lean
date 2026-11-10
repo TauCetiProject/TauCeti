@@ -487,14 +487,20 @@ theorem coefficient_frequencyDeriv (j : Fin n) (a : Symbol n V W m) (x ξ : Coor
 def frequencyLaplacian : Symbol n V W m →ₗ[ℂ] Symbol n V W (m - 2) :=
   inclusion (by linarith : m - 1 - 1 ≤ m - 2) ∘ₗ ∑ j, frequencyDeriv j ∘ₗ frequencyDeriv j
 
+/-- The frequency Laplacian is the sum of the iterated frequency derivatives `∂_{ξⱼ} ∂_{ξⱼ} a`. -/
+theorem coefficient_frequencyLaplacian_eq_sum (a : Symbol n V W m) :
+    (frequencyLaplacian a).coefficient =
+      ∑ j, (frequencyDeriv j (frequencyDeriv j a)).coefficient := by
+  simp only [frequencyLaplacian, LinearMap.coe_comp, Function.comp_apply, coefficient_inclusion,
+    LinearMap.sum_apply, coefficient_sum]
+
 @[simp]
 theorem coefficient_frequencyLaplacian (a : Symbol n V W m) (x ξ : CoordinateSpace n) :
     (frequencyLaplacian a).coefficient (x, ξ) =
       ∑ j, coordinateDeriv [j, j] (fun η ↦ a.coefficient (x, η)) ξ := by
-  simp only [frequencyLaplacian, LinearMap.coe_comp, Function.comp_apply, coefficient_inclusion,
-    LinearMap.sum_apply, coefficient_sum, Finset.sum_apply, coefficient_frequencyDeriv]
+  simp only [coefficient_frequencyLaplacian_eq_sum, Finset.sum_apply, coefficient_frequencyDeriv]
   refine Finset.sum_congr rfl fun j _ ↦ ?_
-  rw [show [j, j] = [j] ++ [j] from rfl, coordinateDeriv_append]
+  rw [← List.singleton_append (l := [j]), coordinateDeriv_append]
 
 /-- The mixed derivatives of `∂_{ξ_j} a` are those of `a` with one more frequency derivative. -/
 @[simp]
