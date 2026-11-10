@@ -296,7 +296,13 @@ theorem trivialization_apply_frame {x : B} (hx : x ∈ U) (i : ι) :
   rw [trivialization_apply hs hU b hx, ← toBasisAt_coe hs hx, Basis.equiv_apply,
     Equiv.refl_apply]
 
-variable [Fintype ι] in
+end Trivialization
+
+section Inverse
+
+variable [VectorBundle 𝕜 F V] [Fintype ι] (hs : IsLocalFrameOn IB F n s U) (hU : IsOpen U)
+  (b : Basis ι 𝕜 F)
+
 /-- Over `U`, the inverse of the frame trivialization sends `w` to the combination of the frame
 with coefficients `b.repr w`. -/
 @[simp]
@@ -304,6 +310,13 @@ theorem trivialization_symm_apply {x : B} (hx : x ∈ U) (w : F) :
     (hs.trivialization hU b).symm x w = ∑ i, b.repr w i • s i x := by
   rw [Trivialization.symm_apply _ hx]
   exact vec_apply hs b hx w
+
+end Inverse
+
+section Trivialization
+
+variable [VectorBundle 𝕜 F V] [Finite ι] (hs : IsLocalFrameOn IB F n s U) (hU : IsOpen U)
+  (b : Basis ι 𝕜 F)
 
 /-- The frame trivialization is fibrewise linear. -/
 instance isLinear_trivialization : (hs.trivialization hU b).IsLinear 𝕜 where
