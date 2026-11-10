@@ -14,6 +14,7 @@ import TauCeti.AlgebraicTopology.Singular.JordanBrouwer
 import TauCeti.Analysis.Normed.Module.Connected
 import TauCeti.Topology.Separation.InvFunOn
 import TauCeti.Topology.Sphere.Shrink
+import TauCeti.Topology.Sphere.StereographicCell
 
 /-!
 # Inverse sets of maps into a sphere are cellular
@@ -53,7 +54,8 @@ The proof has three steps.
   its interior, and iterating with `U` shrinking to `X` exhibits `X` as cellular.
 
 For Theorem 4, choose a point `z` whose image is neither `p` nor `q`. The inverse stereographic
-projection from `z` gives a closed cell `ψ(Q)` of `Sⁿ` containing both fibres in its interior.
+projection from `z` gives a closed cell `ψ(Q)` of `Sⁿ` containing both fibres in its interior
+(`TauCeti.exists_injective_subset_image_ball_sphere`).
 Choose a map `k` of the sphere which is the identity near `p`, continuous and injective off `g z`,
 and moves `g(ψ(Q))` off `q`. Then the map `G` which is the identity on the fibre over `p` and
 `g⁻¹ ∘ k ∘ g` elsewhere is continuous on `ψ(Q)`. On `ψ(Q)` its only inverse set is the fibre over
@@ -364,40 +366,6 @@ theorem isCellularSet_closedBall_inter_preimage (hn : 2 ≤ finrank ℝ E)
 
 section TwoInverseSets
 
-/-- A compact subset `K` of the unit sphere `Sⁿ` missing a point `z` lies in the open cell of an
-injection of `E`, `dim E = n`, whose image misses `z`: the inverse stereographic projection from
-`z`, precomposed with a linear isomorphism and a dilation of `E`. -/
-private theorem exists_injective_subset_image_ball
-    (hEF : finrank ℝ F = finrank ℝ E + 1) {K : Set (sphere (0 : F) 1)} (hK : IsCompact K)
-    {z : sphere (0 : F) 1} (hz : z ∉ K) :
-    ∃ ψ : E → sphere (0 : F) 1, Continuous ψ ∧ Injective ψ ∧ z ∉ range ψ ∧
-      K ⊆ ψ '' ball 0 1 := by
-  have : Fact (finrank ℝ F = finrank ℝ E + 1) := ⟨hEF⟩
-  set φ := stereographic' (finrank ℝ E) z
-  have htgt : φ.target = univ := stereographic'_target z
-  have hKs : K ⊆ φ.source := fun w hw ↦ by
-    rw [stereographic'_source]
-    exact fun h : w = z ↦ hz (h ▸ hw)
-  let L : E ≃L[ℝ] EuclideanSpace ℝ (Fin (finrank ℝ E)) :=
-    ContinuousLinearEquiv.ofFinrankEq (by simp)
-  -- The image of `K` in `E` lies in a ball of radius `R`.
-  obtain ⟨R, hR, hKR⟩ := ((hK.image_of_continuousOn (φ.continuousOn.mono hKs)).image
-    L.symm.continuous).isBounded.subset_ball_lt 0 0
-  refine ⟨fun x ↦ φ.symm (L (R • x)),
-    φ.continuousOn_symm.comp_continuous (by fun_prop) fun x ↦ htgt ▸ mem_univ _,
-    fun x x' h ↦ smul_right_injective E hR.ne' <| L.injective <|
-      φ.symm.injOn (by simp [htgt]) (by simp [htgt]) h, ?_, fun w hw ↦ ?_⟩
-  · rintro ⟨x, hx⟩
-    have := φ.map_target (htgt ▸ mem_univ (L (R • x)))
-    rw [stereographic'_source] at this
-    exact this hx
-  · refine ⟨R⁻¹ • L.symm (φ w), ?_, ?_⟩
-    · have := hKR ⟨φ w, ⟨w, hw, rfl⟩, rfl⟩
-      rw [mem_ball_zero_iff] at this ⊢
-      rw [norm_smul, norm_inv, Real.norm_of_nonneg hR.le, inv_mul_lt_one₀ hR]
-      exact this
-    · simp [smul_smul, hR.ne', φ.left_inv (hKs hw)]
-
 /-- **One inverse set inside a cell of the sphere.** Let `ψ : E → Sⁿ` be a continuous injection,
 `dim E = n ≥ 2`, and let `G` be a map of the sphere, continuous on the closed cell `ψ(Q)`, which is
 injective on `ψ(Q)` off a nonempty set `X` lying in the open cell and collapsed by `G` to a point
@@ -540,7 +508,7 @@ theorem isCellularSet_preimage_singleton (hn : 2 ≤ finrank ℝ E)
     simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hr
     exact ⟨z, hr⟩
   -- A closed cell `ψ(Q)` containing both fibres in its interior and missing `z`.
-  obtain ⟨ψ, hψ, hψi, hzψ, hKψ⟩ := exists_injective_subset_image_ball hEF
+  obtain ⟨ψ, hψ, hψi, hzψ, hKψ⟩ := exists_injective_subset_image_ball_sphere hEF
     ((((toFinite {p, q}).isClosed).preimage hg).isCompact) (z := z) fun h ↦ by
       rcases h with h | h
       exacts [hzp h, hzq h]
