@@ -75,48 +75,21 @@ private theorem ker_range_projectionOntoL_comp {L C : Submodule 𝕜 E} (h : Sub
   simp
 
 omit [CompleteSpace E] in
-/-- Near a point missing a flattened set, a `C^n` chart with `C^n` inverse flattens that set onto
-the zero subspace: it is empty there, and a restricted translation avoids `0`. -/
-private theorem exists_isSliceChart_bot_of_disjoint {n : ℕ∞ω} {A U : Set E} {y : E}
-    (hU : U ∈ 𝓝 y) (hA : Disjoint U A) (hE : Nontrivial E) :
-    ∃ e : OpenPartialHomeomorph E E, y ∈ e.source ∧
-      (∀ z ∈ e.source, ContDiffAt 𝕜 n e z) ∧
-      (∀ z ∈ e.target, ContDiffAt 𝕜 n e.symm z) ∧
-      IsSliceChart e ((⊥ : Submodule 𝕜 E) : Set E) A := by
-  obtain ⟨r, hr, hrU⟩ := Metric.mem_nhds_iff.1 hU
-  have : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
-  obtain ⟨c, hc⟩ := exists_norm_eq E hr.le
-  let e : OpenPartialHomeomorph E E :=
-    (Homeomorph.addRight (c - y)).toOpenPartialHomeomorph.restrOpen (Metric.ball y r)
-      Metric.isOpen_ball
-  refine ⟨e, by simp [e, hr], fun z _ => ?_, fun z _ => ?_, isSliceChart_iff.2 fun z hz => ?_⟩
-  · exact contDiffAt_id.add contDiffAt_const
-  · exact (contDiffAt_id.add contDiffAt_const :
-      ContDiffAt 𝕜 n (fun x : E => x + -(c - y)) z)
-  · have hz' : z ∈ Metric.ball y r := by simpa [e] using hz
-    refine iff_of_false (fun hzA => Set.disjoint_left.1 hA (hrU hz') hzA) ?_
-    intro h0
-    have h0' : z + (c - y) = 0 := h0
-    have hzc : z - y = -c := eq_neg_of_add_eq_zero_left (by rw [← h0']; abel)
-    rw [Metric.mem_ball, dist_eq_norm, hzc, norm_neg, hc] at hz'
-    exact lt_irrefl _ hz'
-
-omit [CompleteSpace E] in
-/-- The tangent cone of a flattened set vanishes at a point of the chart's source outside the
-set. -/
-private theorem tangentConeAt_eq_empty_of_isSliceChart {S : Set E} {L : Submodule 𝕜 E}
+/-- At a point of the chart's source outside `S`, a transverse intersection `S ∩ T` is flattened
+onto the zero subspace near that point by a `C^n` chart with `C^n` inverse. -/
+private theorem exists_isSliceChart_inter_of_notMem {n : ℕ∞ω} {S T : Set E} {L : Submodule 𝕜 E}
     {e : OpenPartialHomeomorph E E} {y : E} (h : IsSliceChart e (L : Set E) S)
     (hL : IsClosed (L : Set E)) (hy : y ∈ e.source) (hyS : y ∉ S) :
-    ∃ U ∈ 𝓝 y, Disjoint U S ∧ tangentConeAt 𝕜 S y = ∅ := by
-  have hU : IsOpen (e.source ∩ e ⁻¹' (L : Set E)ᶜ) :=
-    e.continuousOn.isOpen_inter_preimage e.open_source hL.isOpen_compl
-  have hyU : y ∈ e.source ∩ e ⁻¹' (L : Set E)ᶜ := ⟨hy, fun hyL => hyS ((h.mem_iff hy).2 hyL)⟩
-  have hdisj : Disjoint (e.source ∩ e ⁻¹' (L : Set E)ᶜ) S := by
-    refine Set.disjoint_left.2 fun z hz hzS => hz.2 ((h.mem_iff hz.1).1 hzS)
-  refine ⟨_, hU.mem_nhds hyU, hdisj, ?_⟩
-  rw [← tangentConeAt_inter_nhds (hU.mem_nhds hyU), inter_comm, hdisj.inter_eq]
-  refine Set.not_nonempty_iff_eq_empty.1 fun hne => ?_
-  simpa using mem_closure_of_nonempty_tangentConeAt hne
+    ∃ e' : OpenPartialHomeomorph E E, y ∈ e'.source ∧
+      (∀ z ∈ e'.source, ContDiffAt 𝕜 n e' z) ∧
+      (∀ z ∈ e'.target, ContDiffAt 𝕜 n e'.symm z) ∧
+      IsSliceChart e' ((⊥ : Submodule 𝕜 E) : Set E) (S ∩ T) := by
+  obtain ⟨U, hU, hdisj⟩ := h.exists_mem_nhds_disjoint hL hy hyS
+  have : Nontrivial E := by
+    by_contra h'
+    rw [not_nontrivial_iff_subsingleton] at h'
+    exact hyS ((h.mem_iff hy).2 (by rw [Subsingleton.elim (e y) 0]; exact L.zero_mem))
+  exact exists_isSliceChart_bot_of_disjoint hU (hdisj.mono_right inter_subset_left)
 
 -- One normal equation supplies both the slice chart and the intrinsic tangent-cone formula.
 private theorem exists_isSliceChart_inter_and_tangentConeAt {n : ℕ∞ω} (hn : n ≠ 0)
@@ -202,7 +175,7 @@ tangent spaces must be complemented. -/
 theorem exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top {n : ℕ∞ω} (hn : n ≠ 0)
     {S₁ S₂ : Set E} {L₁ L₂ : Submodule 𝕜 E} {e₁ e₂ : OpenPartialHomeomorph E E} {y : E}
     (h₁ : IsSliceChart e₁ (L₁ : Set E) S₁) (h₂ : IsSliceChart e₂ (L₂ : Set E) S₂)
-    (hy₁ : y ∈ e₁.source) (hy₂ : y ∈ e₂.source) (hyS₂ : y ∈ S₂)
+    (hy₁ : y ∈ e₁.source) (hy₂ : y ∈ e₂.source)
     (hc₁ : ∀ z ∈ e₁.source, ContDiffAt 𝕜 n e₁ z) (hc₂ : ∀ z ∈ e₂.source, ContDiffAt 𝕜 n e₂ z)
     (hs₁ : DifferentiableAt 𝕜 e₁.symm (e₁ y)) (hs₂ : DifferentiableAt 𝕜 e₂.symm (e₂ y))
     (htr : Submodule.span 𝕜 (tangentConeAt 𝕜 S₁ y) ⊔
@@ -216,19 +189,17 @@ theorem exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top {n : ℕ∞ω
       IsSliceChart e ((Submodule.span 𝕜 (tangentConeAt 𝕜 S₁ y) ⊓
         Submodule.span 𝕜 (tangentConeAt 𝕜 S₂ y) : Submodule 𝕜 E) : Set E) (S₁ ∩ S₂) := by
   by_cases hyS₁ : y ∈ S₁
-  · exact (exists_isSliceChart_inter_and_tangentConeAt hn h₁ h₂ hy₁ hy₂ hyS₁ hyS₂ hc₁ hc₂ hs₁
-      hs₂ htr hL₁ hL₂ hI).1
-  -- Otherwise a neighbourhood of `y` misses `S₁`, and the target subspace is zero.
-  obtain ⟨U, hU, hdisj, h0⟩ := tangentConeAt_eq_empty_of_isSliceChart h₁ hL₁.isClosed hy₁ hyS₁
-  have : Nontrivial E := by
-    by_contra h
-    rw [not_nontrivial_iff_subsingleton] at h
-    exact hyS₁ ((h₁.mem_iff hy₁).2 (by rw [Subsingleton.elim (e₁ y) 0]; exact L₁.zero_mem))
-  obtain ⟨e, hye, hc, hcs, he⟩ :=
-    exists_isSliceChart_bot_of_disjoint (𝕜 := 𝕜) (n := n) hU
-      (hdisj.mono_right inter_subset_left) this
-  refine ⟨e, hye, hc, hcs, ?_⟩
-  rwa [h0, Submodule.span_empty, bot_inf_eq]
+  swap
+  · -- Near `y` the set `S₁` is empty, so the target subspace is zero.
+    rw [h₁.tangentConeAt_eq_empty hL₁.isClosed hy₁ hyS₁, Submodule.span_empty, bot_inf_eq]
+    exact exists_isSliceChart_inter_of_notMem (n := n) (T := S₂) h₁ hL₁.isClosed hy₁ hyS₁
+  by_cases hyS₂ : y ∈ S₂
+  swap
+  · rw [h₂.tangentConeAt_eq_empty hL₂.isClosed hy₂ hyS₂, Submodule.span_empty, inf_bot_eq,
+      inter_comm]
+    exact exists_isSliceChart_inter_of_notMem (n := n) (T := S₁) h₂ hL₂.isClosed hy₂ hyS₂
+  exact (exists_isSliceChart_inter_and_tangentConeAt hn h₁ h₂ hy₁ hy₂ hyS₁ hyS₂ hc₁ hc₂ hs₁
+    hs₂ htr hL₁ hL₂ hI).1
 
 /-- The tangent cone of a transverse intersection of split submanifolds in a Banach space is
 exactly the intersection of their tangent spaces, provided that this intersection is
@@ -257,7 +228,7 @@ tangent spaces of `S₁` and `S₂` at `y`. -/
 theorem span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top {n : ℕ∞ω} (hn : n ≠ 0)
     {S₁ S₂ : Set E} {L₁ L₂ : Submodule 𝕜 E} {e₁ e₂ : OpenPartialHomeomorph E E} {y : E}
     (h₁ : IsSliceChart e₁ (L₁ : Set E) S₁) (h₂ : IsSliceChart e₂ (L₂ : Set E) S₂)
-    (hy₁ : y ∈ e₁.source) (hy₂ : y ∈ e₂.source) (hyS₁ : y ∈ S₁) (hyS₂ : y ∈ S₂)
+    (hy₁ : y ∈ e₁.source) (hy₂ : y ∈ e₂.source)
     (hc₁ : ∀ z ∈ e₁.source, ContDiffAt 𝕜 n e₁ z) (hc₂ : ∀ z ∈ e₂.source, ContDiffAt 𝕜 n e₂ z)
     (hs₁ : DifferentiableAt 𝕜 e₁.symm (e₁ y)) (hs₂ : DifferentiableAt 𝕜 e₂.symm (e₂ y))
     (htr : Submodule.span 𝕜 (tangentConeAt 𝕜 S₁ y) ⊔
@@ -267,6 +238,16 @@ theorem span_tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top {n : ℕ∞ω}
       Submodule.span 𝕜 (tangentConeAt 𝕜 S₂ y)).ClosedComplemented) :
     Submodule.span 𝕜 (tangentConeAt 𝕜 (S₁ ∩ S₂) y) =
       Submodule.span 𝕜 (tangentConeAt 𝕜 S₁ y) ⊓ Submodule.span 𝕜 (tangentConeAt 𝕜 S₂ y) := by
+  by_cases hyS₁ : y ∈ S₁
+  swap
+  · have h0 := h₁.tangentConeAt_eq_empty hL₁.isClosed hy₁ hyS₁
+    rw [h0, Set.eq_empty_of_subset_empty ((tangentConeAt_mono inter_subset_left).trans h0.le)]
+    simp
+  by_cases hyS₂ : y ∈ S₂
+  swap
+  · have h0 := h₂.tangentConeAt_eq_empty hL₂.isClosed hy₂ hyS₂
+    rw [h0, Set.eq_empty_of_subset_empty ((tangentConeAt_mono inter_subset_right).trans h0.le)]
+    simp
   rw [tangentConeAt_inter_of_span_tangentConeAt_sup_eq_top hn h₁ h₂ hy₁ hy₂ hyS₁ hyS₂ hc₁ hc₂
     hs₁ hs₂ htr hL₁ hL₂ hI,
     Submodule.span_eq]
@@ -296,7 +277,7 @@ theorem exists_isSliceChart_inter_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) {S
   have hlevel := hg.span_tangentConeAt_preimage_singleton hg' hker
   rw [hgy] at hlevel
   rw [← hlevel] at htr hI ⊢
-  exact exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top hn h₁ h₂ hy₁ hy₂ hgy hc₁
+  exact exists_isSliceChart_inter_of_span_tangentConeAt_sup_eq_top hn h₁ h₂ hy₁ hy₂ hc₁
     hc₂ hs₁ ((hs₂ _ (e₂.map_source hy₂)).differentiableAt hn) htr hL hker hI
 
 /-- The tangent cone of a transverse regular-level cut of a split submanifold in a Banach space
@@ -337,7 +318,7 @@ theorem span_tangentConeAt_inter_preimage_zero {n : ℕ∞ω} (hn : n ≠ 0) {S 
   by_cases hyS : y ∈ S
   · rw [tangentConeAt_inter_preimage_zero hn h₁ hy₁ hyS hc₁ hs₁ hg hg' hgy hU hyU hC htr hL hker hI,
       Submodule.span_eq]
-  obtain ⟨-, -, -, h0⟩ := tangentConeAt_eq_empty_of_isSliceChart h₁ hL.isClosed hy₁ hyS
+  have h0 := h₁.tangentConeAt_eq_empty hL.isClosed hy₁ hyS
   rw [h0, Set.eq_empty_of_subset_empty ((tangentConeAt_mono Set.inter_subset_left).trans h0.le)]
   simp
 
