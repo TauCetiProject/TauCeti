@@ -357,6 +357,28 @@ theorem TransitiveGroupLabel.eq_of_four {j k : TransitiveGroupIndex 4}
         natCard_referenceSubgroup_four_four] at hcard
       omega
 
+/-- A subgroup of order four of the symmetric group on four points that is not killed by squaring
+is cyclic and carries the label `4T1`. -/
+theorem transitiveGroupLabel_four_zero_of_exists_sq_ne_one (G : Subgroup (Perm (Fin 4)))
+    (hG : Nat.card G = 4) (hcyc : ∃ g ∈ G, g ^ 2 ≠ 1) :
+    TransitiveGroupLabel (⟨0, by simp⟩ : TransitiveGroupIndex 4) G := by
+  obtain ⟨g, hg, hg2⟩ := hcyc
+  have hg4 : g ^ 4 = 1 := by
+    simpa [hG] using congrArg Subtype.val (pow_card_eq_one' (x := (⟨g, hg⟩ : G)))
+  have horder : orderOf g = 4 := orderOf_eq_prime_pow (p := 2) (n := 1) hg2 hg4
+  have hGz : Subgroup.zpowers g = G :=
+    Subgroup.eq_of_le_of_card_ge (Subgroup.zpowers_le.2 hg)
+      (by rw [hG, Nat.card_zpowers, horder])
+  -- In `Equiv.Perm (Fin 4)` an element of order four is a four-cycle, hence conjugate to
+  -- `finRotate 4`.
+  have hconj : ∀ σ : Perm (Fin 4), σ ^ 2 ≠ 1 → σ ^ 4 = 1 →
+      ∃ τ : Perm (Fin 4), τ * σ * τ⁻¹ = finRotate 4 := by
+    decide +kernel
+  obtain ⟨τ, hτ⟩ := hconj g hg2 hg4
+  refine (transitiveGroupLabel_iff _ _).2 ⟨τ, ?_⟩
+  rw [← hGz, referenceSubgroup_four_zero, ← Subgroup.zpowers_eq_closure, MonoidHom.map_zpowers,
+    MulEquiv.coe_toMonoidHom, MulAut.conj_apply, hτ]
+
 /-- A transitive subgroup of order four of the symmetric group on four points carries a label,
 `4T1` if it is cyclic and `4T2` otherwise. -/
 private theorem exists_transitiveGroupLabel_four_of_natCard_eq_four (G : Subgroup (Perm (Fin 4)))
@@ -364,22 +386,7 @@ private theorem exists_transitiveGroupLabel_four_of_natCard_eq_four (G : Subgrou
   -- Either `G` contains an element of order four, which generates it, or every element of `G`
   -- is an involution.
   by_cases hcyc : ∃ g ∈ G, g ^ 2 ≠ 1
-  · obtain ⟨g, hg, hg2⟩ := hcyc
-    have hg4 : g ^ 4 = 1 := by
-      simpa [hG] using congrArg Subtype.val (pow_card_eq_one' (x := (⟨g, hg⟩ : G)))
-    have horder : orderOf g = 4 := orderOf_eq_prime_pow (p := 2) (n := 1) hg2 hg4
-    have hGz : Subgroup.zpowers g = G :=
-      Subgroup.eq_of_le_of_card_ge (Subgroup.zpowers_le.2 hg)
-        (by rw [hG, Nat.card_zpowers, horder])
-    -- In `Equiv.Perm (Fin 4)` an element of order four is a four-cycle, hence conjugate to
-    -- `finRotate 4`.
-    have hconj : ∀ σ : Perm (Fin 4), σ ^ 2 ≠ 1 → σ ^ 4 = 1 →
-        ∃ τ : Perm (Fin 4), τ * σ * τ⁻¹ = finRotate 4 := by
-      decide +kernel
-    obtain ⟨τ, hτ⟩ := hconj g hg2 hg4
-    refine ⟨⟨0, by simp⟩, (transitiveGroupLabel_iff _ _).2 ⟨τ, ?_⟩⟩
-    rw [← hGz, referenceSubgroup_four_zero, ← Subgroup.zpowers_eq_closure, MonoidHom.map_zpowers,
-      MulEquiv.coe_toMonoidHom, MulAut.conj_apply, hτ]
+  · exact ⟨_, transitiveGroupLabel_four_zero_of_exists_sq_ne_one G hG hcyc⟩
   · push Not at hcyc
     -- The action is regular, so a nontrivial element of `G` fixes no point.
     have hfree : ∀ g ∈ G, g ≠ 1 → ∀ x, g x ≠ x := by
@@ -758,10 +765,11 @@ private theorem exists_transitiveGroupLabel_five_of_natCard_dvd_twenty
     have := Nat.le_of_dvd (by decide) h20
     omega
 
-/-- Every transitive subgroup of the symmetric group on five points carries a label. -/
-theorem exists_transitiveGroupLabel_five (G : Subgroup (Perm (Fin 5)))
-    [IsPretransitive G (Fin 5)] : ∃ j, TransitiveGroupLabel j G := by
-  have hmem := natCard_mem_of_natCard_eq_five_of_isPretransitive (by simp) G
+/-- Every subgroup of the symmetric group on five points of order divisible by five carries a
+label. -/
+theorem exists_transitiveGroupLabel_five_of_five_dvd_natCard (G : Subgroup (Perm (Fin 5)))
+    (h5 : 5 ∣ Nat.card G) : ∃ j, TransitiveGroupLabel j G := by
+  have hmem := natCard_mem_of_five_dvd_natCard (by simp) G h5
   simp only [Finset.mem_insert, Finset.mem_singleton] at hmem
   have hmul := G.index_mul_card
   rw [Nat.card_perm, Nat.card_fin] at hmul
@@ -778,6 +786,12 @@ theorem exists_transitiveGroupLabel_five (G : Subgroup (Perm (Fin 5)))
     refine ⟨⟨4, by simp⟩, transitiveGroupLabel_of_eq ?_⟩
     rw [referenceSubgroup_five_four]
     exact Subgroup.index_eq_one.1 (by omega)
+
+/-- Every transitive subgroup of the symmetric group on five points carries a label. -/
+theorem exists_transitiveGroupLabel_five (G : Subgroup (Perm (Fin 5)))
+    [IsPretransitive G (Fin 5)] : ∃ j, TransitiveGroupLabel j G :=
+  exists_transitiveGroupLabel_five_of_five_dvd_natCard G
+    (by simpa using natCard_dvd_natCard_of_isPretransitive (G := G) (X := Fin 5))
 
 /-- A transitive subgroup of the symmetric group on five points carries exactly one label, one of
 `5T1`, …, `5T5`. -/

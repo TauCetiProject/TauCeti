@@ -79,37 +79,47 @@ theorem TransitiveGroupLabel.natCard_mem_four {j : TransitiveGroupIndex 4}
   · rw [h.natCard_eq, natCard_referenceSubgroup_four_four]
     simp
 
-/-- **Order recognition in degree three.** A transitive subgroup of `S₃` is labelled `3Tj`
-exactly when its order is that of `3Tj`: the orders `3, 6` of `3T1` and `3T2` are distinct. -/
+/-- **Order recognition in degree three.** A subgroup of `S₃` is labelled `3Tj` exactly when its
+order is that of `3Tj`: the orders `3, 6` of `3T1` and `3T2` are distinct. -/
 @[simp]
 theorem transitiveGroupLabel_three_iff_natCard_eq (j : TransitiveGroupIndex 3)
-    (G : Subgroup (Perm (Fin 3))) [IsPretransitive G (Fin 3)] :
+    (G : Subgroup (Perm (Fin 3))) :
     TransitiveGroupLabel j G ↔ Nat.card G = Nat.card (referenceSubgroup 3 j) :=
   ⟨fun h => h.natCard_eq, fun h => by
-    obtain ⟨k, hk, -⟩ := existsUnique_transitiveGroupLabel_three G
-    have hjk : j = k := by
-      have h2 : Nat.card (referenceSubgroup 3 j) = Nat.card (referenceSubgroup 3 k) :=
-        h.symm.trans hk.natCard_eq
-      obtain ⟨a, ha⟩ := j
-      obtain ⟨b, hb⟩ := k
-      rw [numTransitiveGroups_three] at ha hb
-      interval_cases a <;> interval_cases b <;> first
-        | rfl
-        | simp only [natCard_referenceSubgroup_three_zero,
-            natCard_referenceSubgroup_three_one] at h2
-          omega
-    rw [hjk]
-    exact hk⟩
+    have hmul := G.index_mul_card
+    rw [Nat.card_perm, Nat.card_fin] at hmul
+    simp only [Nat.factorial] at hmul
+    obtain ⟨a, ha⟩ := j
+    rw [numTransitiveGroups_three] at ha
+    interval_cases a
+    · rw [natCard_referenceSubgroup_three_zero] at h
+      rw [h] at hmul
+      have hG : G = referenceSubgroup 3 ⟨0, by simp⟩ := by
+        rw [referenceSubgroup_three_zero, closure_finRotate_three_eq_alternatingGroup]
+        exact eq_alternatingGroup_of_index_eq_two (by omega)
+      rw [hG]
+      exact transitiveGroupLabel_referenceSubgroup 3 _
+    · rw [natCard_referenceSubgroup_three_one] at h
+      have hG : G = referenceSubgroup 3 ⟨1, by simp⟩ := by
+        rw [referenceSubgroup_three_one]
+        exact Subgroup.eq_top_of_card_eq _ (by rw [h, Nat.card_perm]; simp [Nat.factorial])
+      rw [hG]
+      exact transitiveGroupLabel_referenceSubgroup 3 _⟩
 
-/-- **Order recognition in degree five.** A transitive subgroup of `S₅` is labelled `5Tj` exactly
-when its order is that of `5Tj`: the orders `5, 10, 20, 60, 120` of `5T1` through `5T5` are
-pairwise distinct. -/
+/-- **Order recognition in degree five.** A subgroup of `S₅` is labelled `5Tj` exactly when its
+order is that of `5Tj`: the orders `5, 10, 20, 60, 120` of `5T1` through `5T5` are pairwise
+distinct. -/
 @[simp]
 theorem transitiveGroupLabel_five_iff_natCard_eq (j : TransitiveGroupIndex 5)
-    (G : Subgroup (Perm (Fin 5))) [IsPretransitive G (Fin 5)] :
+    (G : Subgroup (Perm (Fin 5))) :
     TransitiveGroupLabel j G ↔ Nat.card G = Nat.card (referenceSubgroup 5 j) :=
   ⟨fun h => h.natCard_eq, fun h => by
-    obtain ⟨k, hk, -⟩ := existsUnique_transitiveGroupLabel_five G
+    -- The reference subgroup is transitive, so its order is divisible by five.
+    have h5 : 5 ∣ Nat.card G := by
+      have := (transitiveGroupLabel_referenceSubgroup 5 j).isPretransitive
+      simpa [h] using natCard_dvd_natCard_of_isPretransitive (G := referenceSubgroup 5 j)
+        (X := Fin 5)
+    obtain ⟨k, hk⟩ := exists_transitiveGroupLabel_five_of_five_dvd_natCard G h5
     have hjk : j = k := by
       have h2 : Nat.card (referenceSubgroup 5 j) = Nat.card (referenceSubgroup 5 k) :=
         h.symm.trans hk.natCard_eq
@@ -125,12 +135,11 @@ theorem transitiveGroupLabel_five_iff_natCard_eq (j : TransitiveGroupIndex 5)
     rw [hjk]
     exact hk⟩
 
-/-- **`4T1` is recognized by its order and cyclicity.** A transitive subgroup of `S₄` is
-labelled `4T1` exactly when it has order four and is cyclic. The hypothesis `IsCyclic G` cannot
-be dropped: `4T2` also has order four. -/
+/-- **`4T1` is recognized by its order and cyclicity.** A subgroup of `S₄` is labelled `4T1`
+exactly when it has order four and is cyclic. The hypothesis `IsCyclic G` cannot be dropped: `4T2`
+also has order four. -/
 @[simp]
-theorem transitiveGroupLabel_four_zero_iff (G : Subgroup (Perm (Fin 4)))
-    [IsPretransitive G (Fin 4)] :
+theorem transitiveGroupLabel_four_zero_iff (G : Subgroup (Perm (Fin 4))) :
     TransitiveGroupLabel (⟨0, by simp⟩ : TransitiveGroupIndex 4) G ↔
       (Nat.card G = 4 ∧ IsCyclic G) := by
   constructor
@@ -138,19 +147,12 @@ theorem transitiveGroupLabel_four_zero_iff (G : Subgroup (Perm (Fin 4)))
     exact ⟨by rw [h.natCard_eq, natCard_referenceSubgroup_four_zero],
       h.isCyclic_iff.mpr (isCyclic_referenceSubgroup_index_zero _)⟩
   · rintro ⟨hcard, hcyc⟩
-    obtain ⟨k, hk, -⟩ := existsUnique_transitiveGroupLabel_four G
-    have hcards : Nat.card (referenceSubgroup 4 k) = 4 := by rw [← hk.natCard_eq, hcard]
-    obtain ⟨b, hb⟩ := k
-    rw [numTransitiveGroups_four] at hb
-    interval_cases b
-    · exact hk
-    · exact absurd (hk.isCyclic_iff.mp hcyc) not_isCyclic_referenceSubgroup_four_one
-    · simp only [natCard_referenceSubgroup_four_two] at hcards
-      omega
-    · simp only [natCard_referenceSubgroup_four_three] at hcards
-      omega
-    · simp only [natCard_referenceSubgroup_four_four] at hcards
-      omega
+    obtain ⟨g, hg⟩ := hcyc.exists_generator
+    have hord : orderOf g = 4 := (orderOf_eq_card_of_forall_mem_zpowers hg).trans hcard
+    refine transitiveGroupLabel_four_zero_of_exists_sq_ne_one G hcard ⟨g, g.2, fun h => ?_⟩
+    have hdvd : orderOf g ∣ 2 := orderOf_dvd_of_pow_eq_one (Subtype.ext h)
+    rw [hord] at hdvd
+    omega
 
 /-- **`4T2` is recognized by its order and non-cyclicity.** A transitive subgroup of `S₄` is
 labelled `4T2` exactly when it has order four and is not cyclic, that is, exactly when it is a
