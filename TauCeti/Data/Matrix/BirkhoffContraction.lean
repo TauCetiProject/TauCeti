@@ -170,6 +170,23 @@ theorem hilbertProjectiveDist_mul_left {w : ι → ℝ} (hw : ∀ i, w i ≠ 0) 
   rw [← mul_div_mul_left (x i * y j) (y i * x j) (mul_ne_zero (hw i) (hw j))]
   ring
 
+/-- A common diagonal scaling does not increase Hilbert's projective metric, whatever the scaling
+vector: a vanishing scaling entry makes the cross ratio `0 / 0 = 0`. -/
+theorem hilbertProjectiveDist_mul_left_le [Finite ι] (w x y : ι → ℝ) :
+    hilbertProjectiveDist (w * x) (w * y) ≤ hilbertProjectiveDist x y := by
+  refine hilbertProjectiveDist_le (fun i j ↦ ?_) (hilbertProjectiveDist_nonneg x y)
+  simp only [Pi.mul_apply]
+  by_cases hw : w i * w j = 0
+  · have h₁ : w i * x i * (w j * y j) = 0 := by linear_combination (x i * y j) * hw
+    rw [h₁, zero_div, log_zero]
+    exact hilbertProjectiveDist_nonneg x y
+  · have h₂ : w i * x i * (w j * y j) / (w i * y i * (w j * x j)) =
+        x i * y j / (y i * x j) := by
+      rw [← mul_div_mul_left (x i * y j) (y i * x j) hw]
+      ring_nf
+    rw [h₂]
+    exact log_le_hilbertProjectiveDist x y i j
+
 /-- Taking entrywise inverses does not change Hilbert's projective metric. -/
 @[simp]
 theorem hilbertProjectiveDist_inv [Finite ι] (x y : ι → ℝ) :

@@ -106,7 +106,7 @@ theorem hilbertProjectiveDist_sinkhornUpdate_iterate_le_mul_projectiveDiameter
   rw [hsemi.iterate_right, hsemi.iterate_right]
   have h := hilbertProjectiveDist_sinkhornStep_iterate_le hKt hb ha (sinkhornUpdate_pos hKt hb hx)
     (sinkhornUpdate_pos hKt hb hy) n
-  have h0 := hilbertProjectiveDist_sinkhornUpdate_le_projectiveDiameter hKt (fun j ↦ (hb j).ne')
+  have h0 := hilbertProjectiveDist_sinkhornUpdate_le_projectiveDiameter hKt (a := b)
     (fun i ↦ (hx i).le) (fun i ↦ (hy i).le)
   rw [projectiveDiameter_transpose] at h h0
   exact h.trans (mul_le_mul_of_nonneg_left h0 (pow_nonneg ht _))
@@ -134,7 +134,7 @@ theorem hilbertProjectiveDist_sinkhornStep_iterate_succ_le_mul_projectiveDiamete
   have hKt : ∀ j i, 0 < Kᵀ j i := fun j i ↦ by simpa using hK i j
   calc _ ≤ tanh (K.projectiveDiameter / 4) *
         (tanh (K.projectiveDiameter / 4) ^ (2 * n) * K.projectiveDiameter) :=
-      (hilbertProjectiveDist_sinkhornUpdate_le hK (fun i ↦ (ha i).ne')
+      (hilbertProjectiveDist_sinkhornUpdate_le hK
         (sinkhornUpdate_pos hKt hb (sinkhornStep_iterate_pos hK ha hb hx n))
         (sinkhornUpdate_pos hKt hb (sinkhornStep_iterate_pos hK ha hb hy n))).trans
         (mul_le_mul_of_nonneg_left

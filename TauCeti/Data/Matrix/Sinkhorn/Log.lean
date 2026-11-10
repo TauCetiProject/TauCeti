@@ -175,11 +175,11 @@ the prescribed marginals, by exact agreement with the ordinary Sinkhorn iteratio
 theorem tendsto_exp_logSinkhornPlan_iterate (L : Matrix ι κ ℝ) {a : ι → ℝ}
     (ha : ∀ i, 0 < a i) {b : κ → ℝ} (hb : ∀ j, 0 < b j) {P : Matrix ι κ ℝ}
     {u : ι → ℝ} {v : κ → ℝ} (hP : IsDiagonalScaling P (L.map exp) u v)
-    (hPm : HasMarginals P a b) (hu : ∀ i, 0 < u i) (hv : ∀ j, 0 < v j) (u₀ : ι → ℝ) :
+    (hPm : HasMarginals P a b) (hv : ∀ j, 0 < v j) (u₀ : ι → ℝ) :
     Tendsto (fun n ↦ (L.logSinkhornPlan a b ((L.logSinkhornStep a b)^[n] u₀)).map exp)
       atTop (𝓝 P) := by
   simp only [exp_logSinkhornPlan L ha hb, exp_logSinkhornStep_iterate L ha hb]
-  exact tendsto_sinkhornPlan_iterate (fun i j ↦ exp_pos _) ha hb hP hPm hu hv
+  exact tendsto_sinkhornPlan_iterate (fun i j ↦ exp_pos _) ha hb hP hPm hv
     (fun i ↦ exp_pos (u₀ i))
 
 end Matrix

@@ -261,7 +261,7 @@ theorem tendsto_proportionalFitting_apply [Finite ι] [Finite κ] [IsFiniteMeasu
     ⟨fun j ↦ by simp_rw [transpose_apply, hP, hcol],
       fun i ↦ by simp_rw [transpose_apply, hP, hrow]⟩
   have hlim := tendsto_sinkhornPlan_iterate (K := Kᵀ) (fun j i ↦ hKpos i j) hbpos hapos
-    hPs.transpose hPm hv hu (u₀ := 1) fun _ ↦ one_pos
+    hPs.transpose hPm hu (u₀ := 1) fun _ ↦ one_pos
   have hpt : ∀ z, Tendsto (fun n ↦ R.proportionalFitting μ ν n {z}) atTop (𝓝 (π {z})) := by
     rintro ⟨i, j⟩
     refine (tendsto_add_atTop_iff_nat 1).1 ?_
