@@ -101,23 +101,51 @@ theorem intervalTraceL_eq_iff_sub_mem_w1p0Submodule (hp : p ≠ ⊤) (hab : a < 
       u - v ∈ w1p0Submodule volume ⟨Ioo a b, isOpen_Ioo⟩ p := by
   rw [mem_w1p0Submodule_iff_intervalTraceL_eq_zero hp hab, map_sub, sub_eq_zero]
 
-private def intervalIdentity : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p :=
+/-- The Sobolev class of the coordinate function `t ↦ t` on a bounded interval. -/
+def intervalCoord : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p :=
   (exists_value_gradient_ae_eq_continuousLinearMap
     (mu := volume) (Omega := ⟨Ioo a b, isOpen_Ioo⟩) (p := p)
     (by simpa using Metric.isBounded_Ioo a b) (ContinuousLinearMap.id ℝ ℝ)).choose
 
-private theorem intervalRepresentativeL_intervalIdentity (hab : a < b) (t : Icc a b) :
-    intervalRepresentativeL hab (intervalIdentity (p := p)) t = t.val := by
-  have hv := (exists_value_gradient_ae_eq_continuousLinearMap
+/-- The value component of the coordinate class equals the coordinate almost everywhere. -/
+theorem value_intervalCoord :
+    value (intervalCoord (a := a) (b := b) (p := p)) =ᵐ[volume.restrict (Ioo a b)]
+      fun t ↦ t :=
+  (exists_value_gradient_ae_eq_continuousLinearMap
     (mu := volume) (Omega := ⟨Ioo a b, isOpen_Ioo⟩) (p := p)
     (by simpa using Metric.isBounded_Ioo a b) (ContinuousLinearMap.id ℝ ℝ)).choose_spec.1
-  have heq : intervalRepresentativeL hab (intervalIdentity (p := p)) =
+
+/-- The weak gradient of the coordinate class is one almost everywhere. -/
+theorem gradient_intervalCoord :
+    gradient (intervalCoord (a := a) (b := b) (p := p)) =ᵐ[volume.restrict (Ioo a b)]
+      fun _ ↦ 1 := by
+  have hg := (exists_value_gradient_ae_eq_continuousLinearMap
+    (mu := volume) (Omega := ⟨Ioo a b, isOpen_Ioo⟩) (p := p)
+    (by simpa using Metric.isBounded_Ioo a b) (ContinuousLinearMap.id ℝ ℝ)).choose_spec.2
+  have hdual : (InnerProductSpace.toDual ℝ ℝ).symm (ContinuousLinearMap.id ℝ ℝ) = 1 := by
+    simpa using (InnerProductSpace.toDual_symm_apply (𝕜 := ℝ) (x := (1 : ℝ))
+      (y := ContinuousLinearMap.id ℝ ℝ))
+  exact hg.trans (Filter.Eventually.of_forall fun _ ↦ hdual)
+
+/-- The continuous representative of the coordinate class is the coordinate function. -/
+@[simp↓]
+theorem intervalRepresentativeL_intervalCoord (hab : a < b) (t : Icc a b) :
+    intervalRepresentativeL hab (intervalCoord (p := p)) t = t.val := by
+  have heq : intervalRepresentativeL hab (intervalCoord (p := p)) =
       ⟨Subtype.val, continuous_subtype_val⟩ := by
     apply (intervalRepresentativeL_eq_iff hab _ _).2
-    filter_upwards [hv, ae_restrict_mem measurableSet_Ioo] with x hx hmem
-    simpa only [intervalIdentity, ContinuousLinearMap.id_apply,
-      ContinuousMap.coe_mk, projIcc_of_mem hab.le (Ioo_subset_Icc_self hmem)] using hx
+    filter_upwards [value_intervalCoord (p := p), ae_restrict_mem measurableSet_Ioo]
+      with x hx hmem
+    simpa only [ContinuousMap.coe_mk,
+      projIcc_of_mem hab.le (Ioo_subset_Icc_self hmem)] using hx
   exact congrArg (fun f : C(Icc a b, ℝ) ↦ f t) heq
+
+/-- The endpoint values of the coordinate class are the interval endpoints. -/
+-- Evaluate the coordinate before the generic endpoint-evaluation rule expands the trace.
+@[simp↓ 1100]
+theorem intervalTraceL_intervalCoord (hab : a < b) :
+    intervalTraceL hab (intervalCoord (p := p)) = (a, b) := by
+  simp only [intervalTraceL_apply, intervalRepresentativeL_intervalCoord]
 
 /-- Bounded affine interpolation of endpoint data in the interval Sobolev space.
 Its continuous representative is `z.1 + (z.2 - z.1) * (t - a) / (b - a)`. -/
@@ -125,7 +153,7 @@ def intervalLiftL (a b : ℝ) :
     (ℝ × ℝ) →L[ℝ] W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p :=
   (ContinuousLinearMap.fst ℝ ℝ ℝ).smulRight (const 1) +
     ((b - a)⁻¹ • (ContinuousLinearMap.snd ℝ ℝ ℝ - ContinuousLinearMap.fst ℝ ℝ ℝ)).smulRight
-      (intervalIdentity (a := a) (b := b) - a • const 1)
+      (intervalCoord (a := a) (b := b) - a • const 1)
 
 /-- The endpoint lift is affine interpolation at every point of the closed interval. -/
 @[simp↓]
@@ -138,7 +166,7 @@ theorem intervalRepresentativeL_intervalLiftL (hab : a < b) (z : ℝ × ℝ) (t 
   rw [intervalRepresentativeL_const]
   simp only [ContinuousMap.add_apply, ContinuousMap.smul_apply, ContinuousMap.sub_apply,
     ContinuousMap.const_apply, smul_eq_mul]
-  rw [intervalRepresentativeL_intervalIdentity]
+  rw [intervalRepresentativeL_intervalCoord]
   ring
 
 /-- Affine interpolation is a right inverse of the endpoint trace, also at `p = ∞`. -/
