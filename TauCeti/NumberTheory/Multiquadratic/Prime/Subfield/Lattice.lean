@@ -71,7 +71,9 @@ field of the automorphisms whose sign patterns lie in that subspace. -/
 
 omit [Finite ι] in
 /-- **The number of subfields of `ℚ(√p₁, …, √pₙ)`.** For a finite family of distinct primes, the
-intermediate fields of `ℚ(√p₁, …, √pₙ)/ℚ` are in bijection with the `𝔽₂`-subspaces of `ι → ℤ/2`. -/
+intermediate fields of `ℚ(√p₁, …, √pₙ)/ℚ` are in bijection with the `𝔽₂`-subspaces of `ι → ℤ/2`.
+For an infinite family both sets are infinite and the statement is only the equality of two
+`Nat.card`s that are both `0`. -/
 theorem card_intermediateField_adjoin_sqrt_primes :
     Nat.card (IntermediateField ℚ (adjoin ℚ (Set.range fun i => (Real.sqrt (p i) : ℝ))))
       = Nat.card (Submodule (ZMod 2) (ι → ZMod 2)) :=
