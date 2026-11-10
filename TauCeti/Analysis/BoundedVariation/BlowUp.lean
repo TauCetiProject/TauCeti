@@ -529,7 +529,8 @@ theorem ofReal_pow_le_mul_measure_inter_ball_of_tendsto_measure_symmDiff_inter {
     _ ≤ ENNReal.ofReal ((r i ^ finrank ℝ E)⁻¹) * (c * μ (s ∩ ball x (r i * ρ))) :=
         mul_le_mul_right (hsub ⟨mul_pos hri hρ, (lt_div_iff₀ hρ).1 hi.2⟩) _
     _ = c * μ ((fun y => x + r i • y) ⁻¹' s ∩ ball 0 ρ) := by
-        rw [Measure.addHaar_preimage_add_smul_inter_ball μ x hri, mul_left_comm]
+        rw [Measure.addHaar_preimage_add_smul_inter_ball μ x hri.ne', abs_of_pos hri,
+          abs_of_pos (by positivity), mul_left_comm]
     _ ≤ c * (μ (F ∩ ball 0 ρ) + μ ((((fun y => x + r i • y) ⁻¹' s) ∆ F) ∩ closedBall 0 ρ)) :=
         mul_le_mul_right ((measure_mono hsub').trans (measure_union_le _ _)) _
 
@@ -676,11 +677,12 @@ theorem hasDensityAt_of_mem_reducedBoundary (hn : 2 ≤ finrank ℝ E)
   rw [hasDensityAt_iff, ← hval]
   refine (ENNReal.Tendsto.div_const hlim (.inr hB)).congr' ?_
   filter_upwards [self_mem_nhdsWithin] with r (hr : 0 < r)
-  have hc : ENNReal.ofReal (r ^ finrank ℝ E) ≠ 0 := (ENNReal.ofReal_pos.2 (pow_pos hr _)).ne'
+  have hc : ENNReal.ofReal (r ^ finrank ℝ E) * ENNReal.ofReal |(r ^ finrank ℝ E)⁻¹| = 1 := by
+    rw [← ENNReal.ofReal_mul (by positivity), abs_of_pos (by positivity),
+      mul_inv_cancel₀ (by positivity), ENNReal.ofReal_one]
   rw [Measure.addHaar_closedBall' μ x hr.le,
-    ← ENNReal.mul_div_mul_left _ _ hc ENNReal.ofReal_ne_top,
-    Measure.addHaar_preimage_add_smul_inter_closedBall μ x hr, mul_one, ← mul_assoc,
-    ← ENNReal.ofReal_mul (by positivity), mul_inv_cancel₀ (by positivity), ENNReal.ofReal_one,
-    one_mul]
+    Measure.addHaar_preimage_add_smul_inter_closedBall μ x hr.ne', abs_of_pos hr, mul_one,
+    ← ENNReal.mul_div_mul_left _ _ (left_ne_zero_of_mul_eq_one hc) ENNReal.ofReal_ne_top]
+  rw [← mul_assoc, hc, one_mul]
 
 end TauCeti
