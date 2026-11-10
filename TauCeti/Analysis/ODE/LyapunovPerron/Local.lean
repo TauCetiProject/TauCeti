@@ -137,7 +137,7 @@ private theorem pos_of_two_mul_mul_lt (hsmall : 2 * K * (ε * 2) < α) : 0 < α 
 
 /-- The constant `K / (1 - 2 K (2 ε) / α)` bounding a Lyapunov--Perron solution in terms of its
 input parameter is nonnegative. -/
-private theorem lyapunovPerronBound_nonneg (hsmall : 2 * K * (ε * 2) < α) :
+theorem lyapunovPerronBound_nonneg (hsmall : 2 * K * (ε * 2) < α) :
     0 ≤ (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) := by
   have hαR : (0 : ℝ) < α := pos_of_two_mul_mul_lt hsmall
   have hsmallR : 2 * (K : ℝ) * ((ε : ℝ) * 2) < α := by exact_mod_cast hsmall
@@ -226,6 +226,22 @@ theorem hasFDerivAt_localStableGraphMap_zero (hr0 : 0 < r) (hN0 : N 0 = 0)
     (hN.comp_radialRetraction hr) hsmall (by simp [hN0])
     (hN'.congr_of_eventuallyEq hcutoff)
 
+/-- A ball around each cut-off solution value stays in the confinement ball, with radius
+`r - B * ρ`, where `B` is the solution bound and the parameter has norm at most `ρ`.
+A strict reserve `B * ρ < r` makes this radius positive. -/
+theorem ball_lyapunovPerronSolution_comp_radialRetraction_subset (hα : 0 < α)
+    (hN0 : N 0 = 0) {ξ : X} {ρ : ℝ} (hξ : ‖ξ‖ ≤ ρ) (t : ℝ≥0) :
+    ball (lyapunovPerronSolution A P (N ∘ TauCeti.radialRetraction r)
+      hs hu hα (hN.comp_radialRetraction hr) hsmall ξ t)
+      (r - (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ρ) ⊆ ball 0 r := by
+  apply ball_subset_ball'
+  rw [dist_zero_right]
+  have hb := norm_lyapunovPerronSolution_le_mul_norm hs hu hα
+    (hN.comp_radialRetraction hr) hsmall (by simp [hN0]) ξ t
+  have hbound := hb.trans (mul_le_mul_of_nonneg_left hξ (lyapunovPerronBound_nonneg hsmall))
+  simp only [NNReal.coe_mul, NNReal.coe_ofNat] at hbound
+  linarith only [hbound]
+
 /-- **The local stable graph map is `C^n`.** Suppose that `N` vanishes at the equilibrium and is
 uniformly `C^n` (`TauCeti.UniformContDiffOn`) on the open ball of radius `r`. Then
 the local stable graph map is `C^n` at every `ξ₀` small enough that the uniform bound
@@ -242,13 +258,9 @@ theorem contDiffAt_localStableGraphMap_of_uniformContDiffOn (hN0 : N 0 = 0) {n :
   have hMn : TauCeti.UniformContDiffOn ℝ n (N ∘ TauCeti.radialRetraction r) (ball (0 : X) r) :=
     hNn.congr isOpen_ball fun x hx ↦ by
       simp [TauCeti.radialRetraction_of_norm_le (mem_ball_zero_iff.1 hx).le]
-  refine contDiffAt_lyapunovPerronGraphMap_of_uniformContDiffOn hs hu hα hMlip hsmall hMn
-    (sub_pos.2 hξ₀) fun t ↦ ball_subset_ball' ?_
-  have hbound : ‖lyapunovPerronSolution A P (N ∘ TauCeti.radialRetraction r) hs hu hα hMlip hsmall
-      ξ₀ t‖ ≤ (K : ℝ) / (1 - 2 * K * ((ε : ℝ) * 2) / α) * ‖ξ₀‖ :=
-    norm_lyapunovPerronSolution_le_mul_norm hs hu hα hMlip hsmall (by simp [hN0]) ξ₀ t
-  rw [dist_zero_right]
-  linarith
+  exact contDiffAt_lyapunovPerronGraphMap_of_uniformContDiffOn hs hu hα hMlip hsmall hMn
+    (sub_pos.2 hξ₀) (ball_lyapunovPerronSolution_comp_radialRetraction_subset
+      hs hu hr hN hsmall hα hN0 le_rfl)
 
 /-- **The local stable graph map is `C¹`.** Suppose that `N` vanishes at the equilibrium and has
 derivative `N' x` at every point `x` of the open ball of radius `r`, with `N'` uniformly continuous
@@ -381,7 +393,9 @@ variable (A P : X →L[ℝ] X) (N : X → X) (r : ℝ)
   (hsmall : 2 * K * (ε * 2) < α)
 
 omit [CompleteSpace X] in
-private theorem reversed_stable_bound (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X,
+/-- Time reversal turns the unstable dichotomy bound into the stable bound for `-A`
+and the complementary projection. -/
+theorem reversed_stable_bound (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X,
     ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
     (t : ℝ) (ht : 0 ≤ t) (v : X) :
     ‖exp (t • (-A)) ((ContinuousLinearMap.id ℝ X - P) v)‖ ≤
@@ -390,7 +404,9 @@ private theorem reversed_stable_bound (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X,
     neg_mul] using hu (-t) (neg_nonpos.mpr ht) v
 
 omit [CompleteSpace X] in
-private theorem reversed_unstable_bound (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X,
+/-- Time reversal turns the stable dichotomy bound into the unstable bound for `-A`
+and the complementary projection. -/
+theorem reversed_unstable_bound (hs : ∀ t : ℝ, 0 ≤ t → ∀ v : X,
     ‖exp (t • A) (P v)‖ ≤ K * Real.exp (-α * t) * ‖v‖)
     (t : ℝ) (ht : t ≤ 0) (v : X) :
     ‖exp (t • (-A)) (v - (ContinuousLinearMap.id ℝ X - P) v)‖ ≤
@@ -408,18 +424,13 @@ def localUnstableGraphMap : X → X :=
     (reversed_stable_bound (A := A) (P := P) hu)
     (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall
 
-/-- Time reversal exchanges the local unstable graph with a local stable graph. The supplied
-bounds are the exponential dichotomy estimates for `-A` and the complementary projection. -/
-theorem localUnstableGraphMap_def
-    (hs' : ∀ t : ℝ, 0 ≤ t → ∀ v : X,
-      ‖exp (t • (-A)) ((ContinuousLinearMap.id ℝ X - P) v)‖ ≤
-        K * Real.exp (-α * t) * ‖v‖)
-    (hu' : ∀ t : ℝ, t ≤ 0 → ∀ v : X,
-      ‖exp (t • (-A)) (v - (ContinuousLinearMap.id ℝ X - P) v)‖ ≤
-        K * Real.exp (α * t) * ‖v‖) :
+/-- Time reversal exchanges the local unstable graph with a local stable graph, using
+the reversed dichotomy bounds for `-A` and the complementary projection. -/
+theorem localUnstableGraphMap_def :
     localUnstableGraphMap A P N r hs hu hr hN hsmall =
       localStableGraphMap (-A) (ContinuousLinearMap.id ℝ X - P) (-N) r
-        hs' hu' hr hN.neg hsmall :=
+        (reversed_stable_bound (A := A) (P := P) hu)
+        (reversed_unstable_bound (A := A) (P := P) hs) hr hN.neg hsmall :=
   (rfl)
 
 variable {A P N r}
@@ -643,6 +654,29 @@ variable {ι : Type*} {l : Filter ι} {F : ι → X → X} {ηs : ι → ℝ≥0
   (hF : ∀ i, LipschitzOnWith (ηs i) (F i) (closedBall 0 r))
   (hsmallN : 2 * K * (ε * 2) < α) (hsmallF : ∀ i, 2 * K * (ηs i * 2) < α)
 
+/-- Uniform convergence on the confinement ball gives uniform convergence, in the sup norm
+over the whole forward half-line, of the cut-off Lyapunov--Perron solutions. This convergence
+is uniform over all stable parameters; approximating Lipschitz constants need not share a
+uniform reserve below the contraction threshold. -/
+theorem tendstoUniformly_lyapunovPerronSolution_comp_radialRetraction (hα : 0 < α)
+    (hFN : TendstoUniformlyOn F N l (closedBall 0 r)) :
+    TendstoUniformly
+      (fun i ↦ lyapunovPerronSolution A P (F i ∘ TauCeti.radialRetraction r)
+        hs hu hα ((hF i).comp_radialRetraction hr) (hsmallF i))
+      (lyapunovPerronSolution A P (N ∘ TauCeti.radialRetraction r)
+        hs hu hα (hNr.comp_radialRetraction hr) hsmallN) l := by
+  let C : ℝ := (2 * K / α) / (1 - 2 * K * ((ε : ℝ) * 2) / α)
+  refine Metric.tendstoUniformly_iff.2 fun e he ↦ ?_
+  obtain ⟨d, hd, hCd⟩ := exists_pos_mul_lt he C
+  filter_upwards [Metric.tendstoUniformlyOn_iff.1 hFN d hd] with i hi ξ
+  have hb := dist_lyapunovPerronSolution_le_of_norm_sub_le hs hu hα
+    (hNr.comp_radialRetraction hr) ((hF i).comp_radialRetraction hr) hsmallN (hsmallF i)
+    (fun z ↦ by simpa only [dist_eq_norm, Function.comp_apply] using
+      (hi _ (TauCeti.radialRetraction_mem_closedBall hr z)).le) ξ
+  calc
+    _ ≤ C * d := by convert hb using 1; dsimp [C]; ring
+    _ < e := hCd
+
 /-- Uniform convergence of small nonlinear remainders on the ball of confinement implies
 uniform convergence of the local stable graph maps. The approximating Lipschitz constants
 need not share a uniform reserve below the contraction threshold. -/
@@ -651,24 +685,16 @@ theorem tendstoUniformly_localStableGraphMap
     TendstoUniformly
       (fun i ↦ localStableGraphMap A P (F i) r hs hu hr (hF i) (hsmallF i))
       (localStableGraphMap A P N r hs hu hr hNr hsmallN) l := by
-  have hα' : (0 : ℝ) < α := by exact_mod_cast lt_of_le_of_lt (by positivity) hsmallN
-  have hsmall : 2 * (K : ℝ) * ((ε : ℝ) * 2) < α := by exact_mod_cast hsmallN
-  let C : ℝ := (2 * K / α) / (1 - 2 * K * ((ε : ℝ) * 2) / α)
-  have hC : 0 ≤ C := by
-    dsimp only [C]
-    exact div_nonneg (by positivity) (sub_nonneg.2 ((div_le_one hα').2 hsmall.le))
+  have hα : 0 < α := pos_of_two_mul_mul_lt hsmallN
+  have hsolutions := tendstoUniformly_lyapunovPerronSolution_comp_radialRetraction
+    hs hu hr hNr hF hsmallN hsmallF hα hFN
   refine Metric.tendstoUniformly_iff.2 fun e he ↦ ?_
-  have hd : 0 < e / (C + 1) := div_pos he (by positivity)
-  filter_upwards [Metric.tendstoUniformlyOn_iff.1 hFN _ hd] with i hi ξ
-  have hbound := dist_localStableGraphMap_le_of_norm_sub_le hs hu hr hNr (hF i)
-    hsmallN (hsmallF i) (fun z hz ↦ by simpa only [dist_eq_norm] using (hi z hz).le) ξ
-  have hCe : C * (e / (C + 1)) < e := by
-    have h := mul_lt_mul_of_pos_right (show C < C + 1 by linarith) hd
-    simpa only [mul_div_cancel₀ e (show C + 1 ≠ 0 by positivity)] using h
-  calc
-    _ ≤ (2 * K * (e / (C + 1)) / α) / (1 - 2 * K * (ε * 2) / α) := hbound
-    _ = C * (e / (C + 1)) := by dsimp only [C]; ring
-    _ < e := hCe
+  filter_upwards [Metric.tendstoUniformly_iff.1 hsolutions e he] with i hi ξ
+  rw [localStableGraphMap_def A P N r hs hu hr hNr hsmallN hα,
+    localStableGraphMap_def A P (F i) r hs hu hr (hF i) (hsmallF i) hα,
+    ← dist_add_left (P ξ), ← lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap,
+    ← lyapunovPerronSolution_zero_eq_add_lyapunovPerronGraphMap]
+  exact (BoundedContinuousFunction.dist_coe_le_dist 0).trans_lt (hi ξ)
 
 /-- Uniform convergence of small nonlinear remainders on the ball of confinement implies
 uniform convergence of the local unstable graph maps. -/
