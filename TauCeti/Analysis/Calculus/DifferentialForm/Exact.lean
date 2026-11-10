@@ -67,7 +67,7 @@ lemma extDeriv_differentialOneForm_apply_eq_zero {f : V → ℝ} {x : V}
     extDeriv (differentialOneForm f) x = 0 := by
   by_cases hdf : DifferentiableAt ℝ (fderiv ℝ f) x
   swap
-  · exact extDeriv_of_not_differentiableAt (mt differentiableAt_differentialOneForm_iff.1 hdf)
+  · exact extDeriv_zero_of_not_differentiableAt (mt differentiableAt_differentialOneForm_iff.1 hdf)
   ext v
   have hv : v = ![v 0, v 1] := by
     funext i
