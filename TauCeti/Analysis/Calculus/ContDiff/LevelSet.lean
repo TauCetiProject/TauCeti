@@ -30,7 +30,7 @@ public section
 open Set InnerProductSpace TauCeti
 open scoped ContDiff Gradient
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
 /-- **A normalized defining function for a regular superlevel set.** Let `u` be smooth and
 compactly supported, and let `t > 0` be a regular value of `u`. Then
@@ -40,6 +40,24 @@ theorem ContDiff.exists_contDiff_setOf_pos_eq_setOf_lt {u : E → ℝ} (hu : Con
     (huc : HasCompactSupport u) {t : ℝ} (ht : 0 < t) (hreg : ∀ x, u x = t → fderiv ℝ u x ≠ 0) :
     ∃ w : E → ℝ, ContDiff ℝ ∞ w ∧ IsCompact {x | -(1 / 2 : ℝ) ≤ w x} ∧
       (∀ x, w x = 0 → ‖fderiv ℝ w x‖ = 1) ∧ {x | 0 < w x} = {x | t < u x} := by
+  -- If `{u > t}` is empty, the constant `-1` works.
+  by_cases hne : ∃ x₀, t < u x₀
+  swap
+  · refine ⟨fun _ => -1, contDiff_const, ?_, fun x hx => absurd hx (by norm_num), ?_⟩
+    · norm_num
+    · exact Set.ext fun x => iff_of_false (by norm_num) fun h => hne ⟨x, h⟩
+  -- Otherwise a closed ball inside `{u > t} ⊆ tsupport u` is compact, so `E` is complete.
+  have : CompleteSpace E := by
+    obtain ⟨x₀, hx₀⟩ := hne
+    have hopen : IsOpen {x | t < u x} := isOpen_lt continuous_const hu.continuous
+    obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 hopen x₀ hx₀
+    have hsub : Metric.closedBall x₀ (ε / 2) ⊆ tsupport u := fun x hx =>
+      subset_closure (by
+        have : t < u x := hball (Metric.closedBall_subset_ball (half_lt_self hε) hx)
+        exact (ht.trans this).ne')
+    have := FiniteDimensional.of_isCompact_closedBall ℝ (half_pos hε)
+      (huc.isCompact.of_isClosed_subset Metric.isClosed_closedBall hsub)
+    exact FiniteDimensional.complete ℝ E
   -- `G` is the gradient of `u` and `g = √(‖∇u‖² + (u - t)²)` is a smooth positive normalizer.
   let G : E → E := ∇ u
   have hG : ContDiff ℝ ∞ G := hu.gradient_right le_rfl
