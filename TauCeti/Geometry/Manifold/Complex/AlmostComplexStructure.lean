@@ -37,11 +37,6 @@ apply to complex manifolds. Two properties tie it to the complex structure:
 
 ## Main declarations
 
-* `TauCeti.SmoothAlmostComplexStructure.ofTangentCoordChangeISMul`: multiplication by `i` on the
-  tangent spaces of a manifold modelled on a complex normed space, as a smooth almost complex
-  structure, when the tangent coordinate changes commute with multiplication by `i`. Both the
-  almost complex structure of a complex manifold and that of a Riemann surface with boundary are
-  built from it.
 * `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold`: the almost complex structure of a
   complex manifold.
 * `TauCeti.SmoothAlmostComplexStructure.ofComplexManifold_apply`,
@@ -70,86 +65,7 @@ noncomputable section
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
-
-namespace SmoothAlmostComplexStructure
-
-variable {H : Type*} [TopologicalSpace H] (I : ModelWithCorners ℝ E H)
-  (M : Type*) [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
-
-/-- In the tangent coordinates of the chart at `x₀`, multiplication by `i` on the tangent spaces
-is multiplication by `i`, on the whole chart domain, when the tangent coordinate changes commute
-with multiplication by `i`. -/
-private theorem inTangentCoordinates_I_smul_id
-    (h : ∀ {x y z : M}, z ∈ (chartAt H x).source ∩ (chartAt H y).source → ∀ v : E,
-      tangentCoordChange I x y z (Complex.I • v) = Complex.I • tangentCoordChange I x y z v)
-    {x₀ x : M} (hx : x ∈ (chartAt H x₀).source) :
-    inTangentCoordinates I I id id
-        (fun x : M ↦ (Complex.I • ContinuousLinearMap.id ℝ E :
-          TangentSpace I x →L[ℝ] TangentSpace I x)) x₀ x =
-      Complex.I • ContinuousLinearMap.id ℝ E := by
-  refine (inTangentCoordinates_eq (I := I) (I' := I) id id _ hx hx).trans
-    (ContinuousLinearMap.ext fun v ↦ ?_)
-  have hx' : x ∈ (extChartAt I x₀).source ∩ (extChartAt I x).source ∩
-      (extChartAt I x₀).source := by
-    simp [hx]
-  simp only [ContinuousLinearMap.comp_apply, smul_apply, ContinuousLinearMap.id_apply]
-  exact (h ⟨mem_chart_source H x, hx⟩ _).trans
-    (congrArg (Complex.I • ·)
-      ((tangentCoordChange_comp hx').trans (tangentCoordChange_self (by simp [hx]))))
-
-/-- Multiplication by `i` on the tangent spaces of a manifold `M` modelled on a complex normed
-space `E`, as a smooth almost complex structure, when the tangent coordinate changes of `M`
-commute with multiplication by `i`. -/
-def ofTangentCoordChangeISMul
-    (h : ∀ {x y z : M}, z ∈ (chartAt H x).source ∩ (chartAt H y).source → ∀ v : E,
-      tangentCoordChange I x y z (Complex.I • v) = Complex.I • tangentCoordChange I x y z v) :
-    SmoothAlmostComplexStructure I M where
-  toEndomorphism :=
-    ⟨fun _ ↦ Complex.I • ContinuousLinearMap.id ℝ E, fun x₀ ↦ by
-      -- In the tangent coordinates at `x₀`, the section is constantly multiplication by `I` near
-      -- `x₀`, since the tangent coordinate changes commute with multiplication by `I`.
-      rw [contMDiffAt_hom_bundle]
-      refine ⟨contMDiffAt_id, (contMDiffAt_const (c := Complex.I • ContinuousLinearMap.id ℝ E))
-        |>.congr_of_eventuallyEq ?_⟩
-      filter_upwards [(chartAt H x₀).open_source.mem_nhds (mem_chart_source H x₀)] with x hx
-      exact inTangentCoordinates_I_smul_id I M h hx⟩
-  square_neg x := ContinuousLinearMap.ext fun v ↦ by
-    simp only [ContinuousLinearMap.comp_apply]
-    -- The tangent space at `x` is the model space `E`, where `I • I • w = -w`.
-    have h (w : E) : Complex.I • Complex.I • w = -w := by
-      rw [smul_smul, Complex.I_mul_I, neg_one_smul]
-    exact h v
-
-variable {I M}
-variable (h : ∀ {x y z : M}, z ∈ (chartAt H x).source ∩ (chartAt H y).source → ∀ v : E,
-  tangentCoordChange I x y z (Complex.I • v) = Complex.I • tangentCoordChange I x y z v)
-
-/-- The almost complex structure `ofTangentCoordChangeISMul` is multiplication by `i` on every
-tangent space. -/
-@[simp]
-theorem ofTangentCoordChangeISMul_apply (x : M) (v : E) :
-    ofTangentCoordChangeISMul I M h x v = Complex.I • v :=
-  (rfl)
-
-/-- The almost complex structure `ofTangentCoordChangeISMul` is multiplication by `i` on every
-tangent space, as an endomorphism. -/
-theorem toEndomorphism_ofTangentCoordChangeISMul (x : M) :
-    (ofTangentCoordChangeISMul I M h).toEndomorphism x =
-      (Complex.I • ContinuousLinearMap.id ℝ E : TangentSpace I x →L[ℝ] TangentSpace I x) :=
-  ContinuousLinearMap.ext fun v ↦ ofTangentCoordChangeISMul_apply h x v
-
-/-- In the tangent coordinates of the chart at any point `x₀`, the almost complex structure
-`ofTangentCoordChangeISMul` is multiplication by `i` on the whole chart domain. -/
-theorem inTangentCoordinates_ofTangentCoordChangeISMul {x₀ x : M}
-    (hx : x ∈ (chartAt H x₀).source) :
-    inTangentCoordinates I I id id
-        (fun x ↦ (ofTangentCoordChangeISMul I M h).toEndomorphism x) x₀ x =
-      Complex.I • ContinuousLinearMap.id ℝ E :=
-  inTangentCoordinates_I_smul_id I M h hx
-
-end SmoothAlmostComplexStructure
-
-variable {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M]
+  {M : Type*} [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℂ, E) ∞ M]
 
 namespace SmoothAlmostComplexStructure
 
@@ -165,7 +81,7 @@ def ofComplexManifold : SmoothAlmostComplexStructure 𝓘(ℝ, E) M :=
 space. -/
 @[simp]
 theorem ofComplexManifold_apply (x : M) (v : E) : ofComplexManifold E M x v = Complex.I • v :=
-  (rfl)
+  ofTangentCoordChangeISMul_apply (fun h v ↦ tangentCoordChange_smul ℝ (𝕜' := ℂ) h _ v) x v
 
 /-- The almost complex structure of a complex manifold is multiplication by `i` on every tangent
 space, as an endomorphism. -/
@@ -319,7 +235,7 @@ theorem nijenhuis_ofComplexManifold : (ofComplexManifold E M).nijenhuis = 0 := b
   rw [hbr, hbr, hbr, hbr, (hJ X).lieBracketWithin_vectorField_eq_nhds (hJ Y),
     (hJ X).lieBracketWithin_vectorField_eq_nhds EventuallyEq.rfl,
     EventuallyEq.rfl.lieBracketWithin_vectorField_eq_nhds (hJ Y)]
-  simp only [lieBracketWithin_eq, hL hX, hL hY]
+  simp only [lieBracketWithin_eq, hL hX, hL hY, toEndomorphism_ofComplexManifold]
   -- What remains is linear algebra for the real-linear derivatives `DA`, `DB` of the coordinate
   -- expressions of `X` and `Y` and the constant structure `L`, using only `L ∘ L = -1`.
   have key (DA DB : E →L[ℝ] E) (a b : E) :
