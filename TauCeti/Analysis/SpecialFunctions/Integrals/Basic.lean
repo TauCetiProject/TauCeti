@@ -9,6 +9,8 @@ public import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.InverseDeriv
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Chebyshev.Orthogonality
+import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
@@ -33,8 +35,8 @@ Interval integrals of elementary functions in closed form or as series, continui
   for `0 < r`, `0 ≤ β` and `S < -1`.
 * `TauCeti.norm_integral_le_of_ae_norm_le_mul_sub_rpow`: an integral over `[0, t' - h]` of a
   function bounded by `A h (t' - s)^((α - 4)/2)` is at most `2 / (2 - α) A h^(α/2)` for `α < 2`.
-* `TauCeti.integral_one_div_sqrt_one_sub_sq`: `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`
-  for `a, b ∈ (-1, 1)`.
+* `TauCeti.integrable_one_div_sqrt_one_sub_sq` and `TauCeti.integral_one_div_sqrt_one_sub_sq`:
+  `1 / √(1 - x²)` is integrable and `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`.
 * `TauCeti.integral_pow_add_two_mul_sqrt_one_sub_sq`: the moments
   `Jₙ = ∫ x in -1..1, xⁿ √(1 - x²)` satisfy `(n + 4) Jₙ₊₂ = (n + 1) Jₙ`.
 * `TauCeti.integral_exp_mul`: `∫ x in a..b, exp (c x) = (exp (c b) - exp (c a)) / c` for
@@ -160,18 +162,33 @@ theorem norm_integral_le_of_ae_norm_le_mul_sub_rpow {G : Type*} [NormedAddCommGr
         rw [← hpow, show -((α - 4) / 2 + 1) = (2 - α) / 2 by ring]
         field_simp
 
-/-- The integral of `1 / √(1 - x²)` is `arcsin`, between any two points of `(-1, 1)`. -/
-theorem integral_one_div_sqrt_one_sub_sq {a b : ℝ} (ha : a ∈ Set.Ioo (-1) 1)
-    (hb : b ∈ Set.Ioo (-1) 1) :
+open MeasureTheory Set in
+/-- The function `1 / √(1 - x²)`, extended by `0` outside `(-1, 1)` as usual, is integrable on `ℝ`:
+it is the derivative of the monotone function `arcsin` on `(-1, 1)`. -/
+theorem integrable_one_div_sqrt_one_sub_sq :
+    Integrable (fun x : ℝ => 1 / Real.sqrt (1 - x ^ 2)) := by
+  have hint : IntegrableOn (fun x : ℝ => 1 / Real.sqrt (1 - x ^ 2)) (Ioc (-1) 1) := by
+    simpa [one_div] using (intervalIntegrable_iff_integrableOn_Ioc_of_le (by norm_num)).1
+      Polynomial.Chebyshev.intervalIntegrable_sqrt_one_sub_sq_inv
+  refine hint.integrable_of_forall_notMem_eq_zero fun x hx => ?_
+  have hx' : 1 - x ^ 2 ≤ 0 := by
+    by_contra h
+    push Not at h
+    exact hx ⟨by nlinarith, by nlinarith⟩
+  rw [Real.sqrt_eq_zero_of_nonpos hx']
+  simp
+
+open MeasureTheory Set intervalIntegral in
+/-- The integral of `1 / √(1 - x²)` is `arcsin`, between any two points (outside `(-1, 1)` the
+integrand is `0` and `arcsin` is constant). -/
+theorem integral_one_div_sqrt_one_sub_sq {a b : ℝ} :
     ∫ x in a..b, 1 / Real.sqrt (1 - x ^ 2) = Real.arcsin b - Real.arcsin a := by
-  have hIcc : Set.uIcc a b ⊆ Set.Ioo (-1) 1 := Set.ordConnected_Ioo.uIcc_subset ha hb
-  refine intervalIntegral.integral_eq_sub_of_hasDerivAt (fun x hx ↦ ?_) ?_
-  · exact Real.hasDerivAt_arcsin (hIcc hx).1.ne' (hIcc hx).2.ne
-  · refine ContinuousOn.intervalIntegrable (ContinuousOn.div continuousOn_const ?_ ?_)
-    · exact (Real.continuous_sqrt.comp (by fun_prop)).continuousOn
-    · intro x hx
-      have hx' := hIcc hx
-      exact (Real.sqrt_pos.2 (by nlinarith [hx'.1, hx'.2])).ne'
+  refine integral_eq_of_hasDerivAt_off_countable _ _ (s := {-1, 1}) (by simp)
+    Real.continuous_arcsin.continuousOn (fun x hx => ?_)
+    integrable_one_div_sqrt_one_sub_sq.intervalIntegrable
+  have h1 : x ≠ -1 := fun h => hx.2 (by simp [h])
+  have h2 : x ≠ 1 := fun h => hx.2 (by simp [h])
+  simpa [one_div] using Real.hasDerivAt_arcsin h1 h2
 
 open MeasureTheory Real Set intervalIntegral in
 /-- Integration by parts against `(1 - x ^ 2) ^ (3 / 2)`: the moments

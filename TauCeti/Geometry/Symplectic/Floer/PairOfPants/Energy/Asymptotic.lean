@@ -83,9 +83,7 @@ private theorem tendsto_setIntegral_truncation {f : ℝ × ℝ → ℝ}
     rw [← preimage_iUnion, iUnion_truncation]
     rfl
   rw [← hS] at hf ⊢
-  exact tendsto_setIntegral_of_monotone (fun R =>
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      (isCompact_truncation R)).isClosed.measurableSet)
+  exact tendsto_setIntegral_of_monotone measurableSet_preimage_truncation
     (fun _ _ h => preimage_mono (truncation_mono h)) hf
 
 /-- If the loops of `u` along the circles `±s = R` of the end `q` converge pointwise to a loop `x`

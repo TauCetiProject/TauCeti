@@ -32,8 +32,8 @@ function along the support of `T`, and it has finite order on each compact set.
 * `Distribution.complexPairing`: the complex-linear extension of `T : 𝓓'^{n}(Ω, ℂ)` to complex
   test functions, as a continuous complex-linear map.
 * `Distribution.complexPairing_postcompCLM_ofRealCLM`: on real test functions it is `T`.
-* `Distribution.complexPairing_lineDerivOp`: the extension of the derivative `∂_v T` is minus
-  the extension of `T` applied to `∂_v φ`.
+* `Distribution.complexPairing_lineDerivOp`: it turns derivatives of `T` into derivatives of the
+  test function, `(∂_{v} T) φ = - T (∂_{v} φ)`.
 * `Distribution.complexPairing_mapCLM_ofRealCLM_delta`: for the complex point mass at `x` it is
   evaluation at `x`.
 * `Distribution.complexPairing_eq_integral`, `Distribution.complexPairing_ofFun`: where `T` is
@@ -51,7 +51,7 @@ public section
 
 noncomputable section
 
-open Complex Filter LineDeriv Set TopologicalSpace TestFunction
+open Complex Filter Set TopologicalSpace TestFunction LineDeriv
 open scoped Distributions Topology
 
 namespace Distribution
@@ -114,16 +114,12 @@ theorem complexPairing_smul (c : ℂ) (T : 𝓓'^{n}(Ω, ℂ)) (φ : 𝓓^{n}(Ω
   simp
   ring
 
-/-- The complex-linear extension of the derivative `∂_v T` pairs a complex test function `φ`
-with `T` through `-∂_v φ`, as on real test functions. -/
-@[simp]
+/-- The complex-linear extension of a derivative of `T` is minus the extension of `T` applied to
+the derivative of the test function: `(∂_{v} T) φ = - T (∂_{v} φ)` on complex test functions. -/
 theorem complexPairing_lineDerivOp (T : 𝓓'(Ω, ℂ)) (v : E) (φ : 𝓓(Ω, ℂ)) :
     (∂_{v} T).complexPairing φ = -T.complexPairing (∂_{v} φ) := by
-  have h (L : ℂ →L[ℝ] ℝ) :
-      ∂_{v} (postcompCLM (𝕜 := ℝ) L φ) = postcompCLM (𝕜 := ℝ) L (∂_{v} φ) := by
-    rw [TestFunction.lineDerivOp_eq_lineDerivCLM ℝ, TestFunction.lineDerivOp_eq_lineDerivCLM ℝ]
-    exact lineDerivCLM_postcompCLM L v φ
-  simp only [complexPairing_apply, lineDerivOp_apply_apply, map_neg, h]
+  simp only [complexPairing_apply, lineDerivOp_apply_apply, map_neg,
+    TestFunction.lineDerivOp_eq_lineDerivCLM ℝ, lineDerivCLM_postcompCLM]
   ring
 
 /-- The complex-linear extension of the complex point mass at `x` evaluates a complex test

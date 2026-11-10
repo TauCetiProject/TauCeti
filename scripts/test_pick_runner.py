@@ -163,7 +163,9 @@ class PickerWorkflow(unittest.TestCase):
         ]
         self.assertEqual(expression(pick["runs-on"]), priority_control)
         self.assertEqual(expression(pick["runs-on"], hosted_picker=True), "ubuntu-24.04")
-        self.assertEqual(expression(pick["runs-on"], staging=True), priority_control)
+        self.assertEqual(expression(pick["runs-on"], staging=True), [
+            "self-hosted", "linux", "x64", "tauceti-fleet-queue-control",
+            "fleet-74773fc7f54d4877add11d80113fe340"])
         self.assertEqual(expression(pick["runs-on"], maintenance=True), priority_control)
         token = next(s for s in pick["steps"] if "create-github-app-token" in s.get("uses", ""))
         self.assertTrue(token["continue-on-error"])
