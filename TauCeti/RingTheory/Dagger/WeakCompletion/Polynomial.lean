@@ -144,7 +144,7 @@ private theorem eval_eq_of_norm_sub_le {π : O} (hπ : π ≠ 0) (hπ1 : ‖(π 
   have he := Ideal.Quotient.eq.mpr hm
   rw [polynomialAdicCompletionEquiv, RingEquiv.trans_apply, RingEquiv.ofBijective_apply,
     intWashnitzerAlgebra.mk_adicCompletionEquiv, AdicCompletion.evalₐ_mapₐ] at he
-  have hi := (intWashnitzerAlgebra.quotientMap_toTate_bijective (σ := σ) hπ hπ1 n).1
+  have hi := (intWashnitzerAlgebra.quotientMap_toTate_bijective (σ := σ) hπ n).1
   have he' := hi (he.trans (Ideal.quotientMap_mk
     (f := intWashnitzerAlgebra.toTate σ K)
     (H := (Ideal.pow_right_mono intWashnitzerAlgebra.span_algebraMap_le_comap_toTate n).trans

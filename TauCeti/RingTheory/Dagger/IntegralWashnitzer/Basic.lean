@@ -769,10 +769,18 @@ namespace intWashnitzerAlgebra
 
 /-- **The powers of `ϖ K°⟨X⟩†`**: a series in `K°⟨X⟩†` lies in `(ϖ) ^ n` iff all its coefficients
 have norm at most `‖ϖ‖ ^ n`. -/
-theorem mem_span_algebraMap_pow_iff {ϖ : K°} (hϖ : ϖ ≠ 0) (n : ℕ)
+theorem mem_span_algebraMap_pow_iff {ϖ : K°} (n : ℕ)
     {f : intWashnitzerAlgebra σ K} :
     f ∈ Ideal.span {algebraMap K° (intWashnitzerAlgebra σ K) ϖ} ^ n ↔
       ∀ t, ‖coeff t (f : MvPowerSeries σ K)‖ ≤ ‖(ϖ : K)‖ ^ n := by
+  rcases eq_or_ne ϖ 0 with rfl | hϖ
+  · rcases n with _ | n
+    · simpa using norm_coeff_le_one f
+    · rw [map_zero, Ideal.span_singleton_zero, Ideal.bot_pow n.succ_ne_zero, Ideal.mem_bot,
+        Subtype.ext_iff]
+      simp only [ZeroMemClass.coe_zero, MvPowerSeries.ext_iff, map_zero, norm_zero, ne_eq,
+        add_eq_zero, one_ne_zero, and_false, not_false_eq_true, zero_pow]
+      exact forall_congr' fun t ↦ norm_le_zero_iff.symm
   have hϖ0 : (ϖ : K) ≠ 0 := by simpa using hϖ
   rw [Ideal.span_singleton_pow, ← map_pow, Ideal.mem_span_singleton']
   constructor
@@ -815,34 +823,50 @@ theorem span_algebraMap_le_comap_toTate {ϖ : K°} :
 algebra with the closed unit ball `T°` of the Tate algebra: the overconvergent series are dense
 in `T°`, and an overconvergent series divisible by `ϖⁿ` in `T°` is divisible by `ϖⁿ` in
 `K°⟨X⟩†`. -/
-theorem quotientMap_toTate_bijective {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1) (n : ℕ) :
+theorem quotientMap_toTate_bijective {ϖ : K°} (hϖ : ϖ ≠ 0) (n : ℕ) :
     Function.Bijective (Ideal.quotientMap (Ideal.span {toTate σ K (algebraMap K° _ ϖ)} ^ n)
       (toTate σ K) ((Ideal.pow_right_mono span_algebraMap_le_comap_toTate n).trans
         (Ideal.le_comap_pow _ n))) := by
-  have hr : 0 < ‖(ϖ : K)‖ ^ n := pow_pos (norm_pos_iff.2 (by simpa using hϖ)) n
-  refine ⟨Ideal.quotientMap_injective' fun f hf ↦ ?_, fun y ↦ ?_⟩
-  · rw [Ideal.mem_comap, mem_span_toTate_algebraMap_pow_iff hϖ hϖ1] at hf
-    exact (mem_span_algebraMap_pow_iff hϖ n).2 fun t ↦
-      (washnitzerAlgebra.norm_coeff_le (toWashnitzerAlgebra σ K f) t).trans hf
-  · -- Approximate a representative `s ∈ T°` by an overconvergent series to within `‖ϖ‖ ^ n`.
-    obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective y
-    obtain ⟨w, hw⟩ := Metric.denseRange_iff.1 washnitzerAlgebra.denseRange_toTate (s : T) _ hr
-    rw [dist_eq_norm'] at hw
-    have hw1 : ‖w‖ ≤ 1 := by
-      have h := IsUltrametricDist.norm_add_le_max (s : T) (washnitzerAlgebra.toTate σ K w - s)
-      rw [add_sub_cancel] at h
-      exact h.trans (max_le (Subring.mem_unitClosedBall.1 s.2)
-        (hw.le.trans (pow_le_one₀ (norm_nonneg _) hϖ1.le)))
-    refine ⟨Ideal.Quotient.mk _ ⟨w, mem_intWashnitzerAlgebra_iff_norm_le_one.2 hw1⟩, ?_⟩
-    rw [Ideal.quotientMap_mk, Ideal.Quotient.eq, mem_span_toTate_algebraMap_pow_iff hϖ hϖ1]
-    exact hw.le
+  rcases (Subring.mem_unitClosedBall.1 ϖ.2).lt_or_eq with hϖ1 | hϖ1
+  · have hr : 0 < ‖(ϖ : K)‖ ^ n := pow_pos (norm_pos_iff.2 (by simpa using hϖ)) n
+    refine ⟨Ideal.quotientMap_injective' fun f hf ↦ ?_, fun y ↦ ?_⟩
+    · rw [Ideal.mem_comap, mem_span_toTate_algebraMap_pow_iff hϖ hϖ1] at hf
+      exact (mem_span_algebraMap_pow_iff n).2 fun t ↦
+        (washnitzerAlgebra.norm_coeff_le (toWashnitzerAlgebra σ K f) t).trans hf
+    · -- Approximate a representative `s ∈ T°` by an overconvergent series to within `‖ϖ‖ ^ n`.
+      obtain ⟨s, rfl⟩ := Ideal.Quotient.mk_surjective y
+      obtain ⟨w, hw⟩ := Metric.denseRange_iff.1 washnitzerAlgebra.denseRange_toTate (s : T) _ hr
+      rw [dist_eq_norm'] at hw
+      have hw1 : ‖w‖ ≤ 1 := by
+        have h := IsUltrametricDist.norm_add_le_max (s : T) (washnitzerAlgebra.toTate σ K w - s)
+        rw [add_sub_cancel] at h
+        exact h.trans (max_le (Subring.mem_unitClosedBall.1 s.2)
+          (hw.le.trans (pow_le_one₀ (norm_nonneg _) hϖ1.le)))
+      refine ⟨Ideal.Quotient.mk _ ⟨w, mem_intWashnitzerAlgebra_iff_norm_le_one.2 hw1⟩, ?_⟩
+      rw [Ideal.quotientMap_mk, Ideal.Quotient.eq, mem_span_toTate_algebraMap_pow_iff hϖ hϖ1]
+      exact hw.le
+  · -- If `‖ϖ‖ = 1` then `ϖ` is a unit, so both quotients are trivial.
+    have hu : IsUnit ϖ := IsUnit.of_mul_eq_one ⟨(ϖ : K)⁻¹, by simp [hϖ1]⟩
+      (Subtype.ext (mul_inv_cancel₀ (by simpa using hϖ)))
+    have hJ : Ideal.span {algebraMap K° (intWashnitzerAlgebra σ K) ϖ} ^ n = ⊤ := by
+      rw [Ideal.span_singleton_pow, Ideal.span_singleton_eq_top]
+      exact (hu.map _).pow n
+    have hI : Ideal.span {toTate σ K (algebraMap K° _ ϖ)} ^ n = ⊤ := by
+      rw [Ideal.span_singleton_pow, Ideal.span_singleton_eq_top]
+      exact ((hu.map _).map _).pow n
+    have h1 := Ideal.Quotient.subsingleton_iff.2 hJ
+    have h2 := Ideal.Quotient.subsingleton_iff.2 hI
+    exact ⟨fun a b _ ↦ Subsingleton.elim a b, fun y ↦ ⟨0, Subsingleton.elim _ _⟩⟩
 
 variable [CompleteSpace K]
 
 /-- **`K°⟨X⟩` is `ϖ`-adically complete**: over a complete field, the closed unit ball `T°` of the
 Tate algebra is complete for the `ϖ`-adic topology. -/
-theorem isAdicComplete_span_toTate_algebraMap {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1) :
+theorem isAdicComplete_span_toTate_algebraMap {ϖ : K°} (hϖ1 : ‖(ϖ : K)‖ < 1) :
     IsAdicComplete (Ideal.span {toTate σ K (algebraMap K° _ ϖ)}) (Subring.unitClosedBall T) := by
+  rcases eq_or_ne ϖ 0 with rfl | hϖ
+  · rw [map_zero, map_zero, Ideal.span_singleton_zero]
+    infer_instance
   rw [← toUnitClosedBall_tatePseudoUniformizer hϖ hϖ1]
   exact NormedRing.PseudoUniformizer.isAdicComplete_span_toUnitClosedBall _
 
@@ -854,9 +878,9 @@ is the closed unit ball `T°` of the Tate algebra, the restricted series with co
 noncomputable def adicCompletionEquiv {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1) :
     AdicCompletion (Ideal.span {algebraMap K° (intWashnitzerAlgebra σ K) ϖ})
       (intWashnitzerAlgebra σ K) ≃+* Subring.unitClosedBall T :=
-  haveI := isAdicComplete_span_toTate_algebraMap (σ := σ) hϖ hϖ1
+  haveI := isAdicComplete_span_toTate_algebraMap (σ := σ) hϖ1
   (RingEquiv.ofBijective _ (AdicCompletion.mapₐ_bijective (toTate σ K).toIntAlgHom
-    span_algebraMap_le_comap_toTate (quotientMap_toTate_bijective hϖ hϖ1))).trans
+    span_algebraMap_le_comap_toTate (quotientMap_toTate_bijective hϖ))).trans
     (AdicCompletion.ofAlgEquiv _).symm.toRingEquiv
 
 /-- The completion comparison extends the inclusion `K°⟨X⟩† → T°`. -/
@@ -864,7 +888,7 @@ noncomputable def adicCompletionEquiv {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ
 theorem adicCompletionEquiv_of {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)‖ < 1)
     (f : intWashnitzerAlgebra σ K) :
     adicCompletionEquiv σ hϖ hϖ1 (AdicCompletion.of _ _ f) = toTate σ K f := by
-  have := isAdicComplete_span_toTate_algebraMap (σ := σ) hϖ hϖ1
+  have := isAdicComplete_span_toTate_algebraMap (σ := σ) hϖ1
   rw [adicCompletionEquiv, RingEquiv.trans_apply, RingEquiv.ofBijective_apply]
   exact (congrArg (AdicCompletion.ofAlgEquiv _).symm (AdicCompletion.mapₐ_of _ _ f)).trans
     (AdicCompletion.ofAlgEquiv_symm_of _ _)
@@ -879,7 +903,7 @@ theorem mk_adicCompletionEquiv {ϖ : K°} (hϖ : ϖ ≠ 0) (hϖ1 : ‖(ϖ : K)�
       Ideal.quotientMap _ (toTate σ K)
         ((Ideal.pow_right_mono span_algebraMap_le_comap_toTate n).trans
           (Ideal.le_comap_pow _ n)) (AdicCompletion.evalₐ _ n z) := by
-  have := isAdicComplete_span_toTate_algebraMap (σ := σ) hϖ hϖ1
+  have := isAdicComplete_span_toTate_algebraMap (σ := σ) hϖ1
   simp only [adicCompletionEquiv, RingEquiv.trans_apply, RingEquiv.ofBijective_apply,
     AlgEquiv.coe_toRingEquiv, AdicCompletion.mk_ofAlgEquiv_symm]
   exact AdicCompletion.evalₐ_mapₐ (toTate σ K).toIntAlgHom
