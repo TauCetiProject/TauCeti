@@ -70,4 +70,27 @@ noncomputable def imageHomeomorphOfIsCompact {X Y : Type*} [TopologicalSpace X]
   Continuous.homeoOfEquivCompactToT2 (f := hgi.bijOn_image.equiv g)
     (hg.mapsToRestrict hgi.bijOn_image.mapsTo)
 
+section ImageHomeomorph
+
+variable {X Y : Type*} [TopologicalSpace X] [TopologicalSpace Y] {C : Set X} (hC : IsCompact C)
+  {g : X → Y} (hg : ContinuousOn g C) (hgi : InjOn g C) [T2Space (g '' C)]
+
+/-- The homeomorphism `TauCeti.imageHomeomorphOfIsCompact` sends a point `x` of `C` to `g x`. -/
+@[simp]
+theorem imageHomeomorphOfIsCompact_apply (x : C) :
+    imageHomeomorphOfIsCompact hC hg hgi x = ⟨g x, mem_image_of_mem g x.2⟩ := by
+  unfold imageHomeomorphOfIsCompact
+  rfl
+
+/-- The inverse of `TauCeti.imageHomeomorphOfIsCompact` is a section of `g`: applying `g` to the
+inverse image of `y` gives back `y`. -/
+theorem apply_imageHomeomorphOfIsCompact_symm (y : g '' C) :
+    g ((imageHomeomorphOfIsCompact hC hg hgi).symm y) = y := by
+  have h := imageHomeomorphOfIsCompact_apply hC hg hgi
+    ((imageHomeomorphOfIsCompact hC hg hgi).symm y)
+  rw [Homeomorph.apply_symm_apply] at h
+  exact (congrArg Subtype.val h).symm
+
+end ImageHomeomorph
+
 end TauCeti
