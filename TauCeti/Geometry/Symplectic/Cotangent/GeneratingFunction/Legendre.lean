@@ -96,34 +96,38 @@ theorem hasFDerivAt_cotangentLegendreProjection
       ((fst ℝ V W).prod (-(precomp ℝ (inr ℝ V W) ∘L fderiv ℝ (fderiv ℝ S) x))) x :=
   hasFDerivAt_fst.prodMk (hasFDerivAt_cotangentGeneratingTarget hS).snd
 
+/-- An invertible negative `Q,Q` Hessian gives the derivative of the mixed-variable projection even
+without assuming that `fderiv S` is differentiable at `x`. If it is not, its derivative is `0` by
+convention, so the Hessian is `0`; an invertible zero map forces `W` and `StrongDual ℝ W` to be
+subsingletons, and then the `P`-component of the projection is constant. -/
+theorem hasFDerivAt_cotangentLegendreProjection_of_isInvertible
+    (hM : (cotangentLegendreHessian S x).IsInvertible) :
+    HasFDerivAt (cotangentLegendreProjection S)
+      ((fst ℝ V W).prod (-(precomp ℝ (inr ℝ V W) ∘L fderiv ℝ (fderiv ℝ S) x))) x := by
+  by_cases hS : DifferentiableAt ℝ (fderiv ℝ S) x
+  · exact hasFDerivAt_cotangentLegendreProjection hS
+  · obtain ⟨hW, hP⟩ := ContinuousLinearMap.isInvertible_zero_iff.1
+      (show (0 : W →L[ℝ] StrongDual ℝ W).IsInvertible by
+        simpa [cotangentLegendreHessian, fderiv_zero_of_not_differentiableAt hS] using hM)
+    have h2 : HasFDerivAt (fun y => (cotangentGeneratingTarget S y).2)
+        (-(precomp ℝ (inr ℝ V W) ∘L fderiv ℝ (fderiv ℝ S) x)) x := by
+      have hf : (fun y => (cotangentGeneratingTarget S y).2) = fun _ => (0 : StrongDual ℝ W) :=
+        funext fun _ => Subsingleton.elim _ _
+      have hL : -(precomp ℝ (inr ℝ V W) ∘L fderiv ℝ (fderiv ℝ S) x) = 0 :=
+        ContinuousLinearMap.ext fun _ => Subsingleton.elim _ _
+      rw [hf, hL]
+      exact hasFDerivAt_const _ _
+    exact hasFDerivAt_fst.prodMk h2
+
 /-- An invertible negative `Q,Q` Hessian makes the mixed-variable projection derivative
 invertible. -/
 theorem isInvertible_fderiv_cotangentLegendreProjection
     (hM : (cotangentLegendreHessian S x).IsInvertible) :
     (fderiv ℝ (cotangentLegendreProjection S) x).IsInvertible := by
+  have hD := hasFDerivAt_cotangentLegendreProjection_of_isInvertible hM
   obtain ⟨e, he⟩ := hM
   let A := -(precomp ℝ (inr ℝ V W) ∘L fderiv ℝ (fderiv ℝ S) x)
   refine ⟨(ContinuousLinearEquiv.refl ℝ V).skewProd e (A ∘L inl ℝ V W), ?_⟩
-  have hD : HasFDerivAt (cotangentLegendreProjection S)
-      ((fst ℝ V W).prod (-(precomp ℝ (inr ℝ V W) ∘L fderiv ℝ (fderiv ℝ S) x))) x := by
-    by_cases hS : DifferentiableAt ℝ (fderiv ℝ S) x
-    · exact hasFDerivAt_cotangentLegendreProjection hS
-    · have h0 (w : W) : e w = 0 := by
-        ext c
-        simpa [cotangentLegendreHessian, fderiv_zero_of_not_differentiableAt hS] using
-          DFunLike.congr_fun (DFunLike.congr_fun he w) c
-      have hW : Subsingleton W := ⟨fun a b => e.injective ((h0 a).trans (h0 b).symm)⟩
-      have hP : Subsingleton (StrongDual ℝ W) :=
-        ⟨fun f g => ContinuousLinearMap.ext fun w => by rw [Subsingleton.elim w 0]; simp⟩
-      have h2 : HasFDerivAt (fun y => (cotangentGeneratingTarget S y).2)
-          (-(precomp ℝ (inr ℝ V W) ∘L fderiv ℝ (fderiv ℝ S) x)) x := by
-        have hf : (fun y => (cotangentGeneratingTarget S y).2) = fun _ => (0 : StrongDual ℝ W) :=
-          funext fun _ => Subsingleton.elim _ _
-        have hL : -(precomp ℝ (inr ℝ V W) ∘L fderiv ℝ (fderiv ℝ S) x) = 0 :=
-          ContinuousLinearMap.ext fun _ => Subsingleton.elim _ _
-        rw [hf, hL]
-        exact hasFDerivAt_const _ _
-      exact hasFDerivAt_fst.prodMk h2
   rw [hD.fderiv]
   apply ContinuousLinearMap.ext
   intro u
