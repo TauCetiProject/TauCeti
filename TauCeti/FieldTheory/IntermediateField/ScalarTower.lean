@@ -33,9 +33,7 @@ in order to be restricted to `E`. -/
 instance instIsScalarTower {k K L : Type*} [Semiring k] [Field K] [Field L]
     [SMul k K] [Module k L] [Algebra K L] [IsScalarTower k K L]
     (E : IntermediateField K L) : IsScalarTower k E L :=
-  -- Move the scalar of `k` into `K` as `a • 1`, where `IsScalarTower K E L` applies.
-  ⟨fun a b c ↦ by
-    rw [← one_smul K b, ← smul_assoc a (1 : K) b, smul_assoc, smul_assoc (1 : K), smul_assoc]⟩
+  IsScalarTower.to₁₃₄ k K E L
 
 /-- If `E'` is an algebra over `E` compatibly with their inclusions in `L`, then `E ≤ E'`: every
 `x ∈ E` is the image in `L` of `algebraMap E E' x ∈ E'`. -/
