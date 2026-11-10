@@ -41,6 +41,8 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
   `S` of a function vanishing beyond `R` on every end is its integral over `S_R`.
 * `TauCeti.Floer.contDiffAt_uncurry_pairOfPantsPerturbation`: in real coordinates, the
   components of the perturbation are `Cⁿ` on `S × V` for `Cⁿ` Hamiltonians.
+* `TauCeti.Floer.contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt`: a datum
+  which is `C¹` on `S × M` has `C¹` components in the real coordinates of `S`.
 * `TauCeti.Floer.endChart_mem_thricePuncturedSphereReal`, `TauCeti.Floer.re_endCoord_endChart`:
   the end chart sends the part `±s > 0` of the end into `S` and preserves the longitudinal
   coordinate.
@@ -155,6 +157,30 @@ theorem contDiffAt_uncurry_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Per
     (f := fun p : (ℝ × ℝ) × V ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x)
     ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
       contDiff_snd).contDiffAt).clm_apply contDiffAt_const
+
+section Manifold
+
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
+
+/-- A perturbation one-form `K` on `ℂ` which is `C¹` at every point of `S × M` has components
+`(z, x) ↦ K(z, x)(v)`, in the real coordinates of `S`, that are `C¹` jointly on `S × M`. -/
+theorem contMDiffOn_thricePuncturedSphereReal_prod_univ_of_forall_contMDiffAt
+    {K : ℂ → M → ℂ →L[ℝ] ℝ}
+    (hK : ∀ (w : ThricePuncturedSphere) x, ContMDiffAt (𝓘(ℝ, ℂ).prod I) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
+      (fun p : ℂ × M ↦ K p.1 p.2) ((w : ℂ), x)) (v : ℂ) :
+    ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1
+      (uncurry fun z x ↦ K (Complex.equivRealProdCLM.symm z) x v)
+      (thricePuncturedSphereReal ×ˢ univ) := by
+  rintro ⟨z, x⟩ ⟨hz, -⟩
+  have hφ : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℂ).prod I) 1
+      (fun p : (ℝ × ℝ) × M ↦ (Complex.equivRealProdCLM.symm p.1, p.2)) (z, x) :=
+    (Complex.equivRealProdCLM.symm.contDiff.contMDiff.contMDiffAt.comp _ contMDiffAt_fst).prodMk
+      contMDiffAt_snd
+  exact (((hK ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp (z, x) hφ).clm_apply
+    contMDiffAt_const).contMDiffWithinAt
+
+end Manifold
 
 /-- The end lift of `q`, in the real coordinates `ℝ × ℝ ≃ ℂ`. -/
 noncomputable def endChart (q : Puncture) (z : ℝ × ℝ) : ℝ × ℝ :=
