@@ -169,10 +169,10 @@ private lemma coe_mapGL_T_zpow (n : ℤ) :
 /-- **`diag(1, p) · Tᵇ = !![1, b; 0, p]`.** Right multiplication by the `b`-th power of the
 translation matrix moves `diag(1, p)` onto the `b`-th upper-triangular representative; this is
 the reverse inclusion of the coset decomposition below. -/
-lemma natDiagGL_mul_mapGL_T_zpow (hp : 0 < p) (b : Fin p) :
+lemma natDiagGL_mul_mapGL_T_zpow (b : Fin p) :
     natDiagGL 2 ![1, p] * mapGL ℚ (ModularGroup.T ^ (b : ℤ)) = upperTriRep p b := by
   refine Units.ext ?_
-  rw [Units.val_mul, coe_natDiagGL_one hp, coe_mapGL_T_zpow, coe_upperTriRep,
+  rw [Units.val_mul, coe_natDiagGL_one b.pos, coe_mapGL_T_zpow, coe_upperTriRep,
     Matrix.mul_fin_two]
   norm_num
 
@@ -313,7 +313,7 @@ theorem doubleCoset_natDiagGL_eq_iUnion_rightCosets (hp : 0 < p)
   · intro j
     exact ⟨mapGL ℚ (ModularGroup.T ^ (j : ℤ)),
       Subgroup.mem_map_of_mem _ (T_zpow_mem_Gamma1 N _),
-      natDiagGL_mul_mapGL_T_zpow hp j⟩
+      natDiagGL_mul_mapGL_T_zpow j⟩
 
 /-- The chosen representative of `diagCosetGamma1 N p` has the same double coset as the
 canonical matrix `diag(1, p)`. -/

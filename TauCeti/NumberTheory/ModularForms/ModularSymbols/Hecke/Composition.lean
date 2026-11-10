@@ -379,7 +379,7 @@ theorem heckeTSymbol_mul_of_coprime {m n : ℕ} [NeZero m] [NeZero n] (hmn : m.C
   · rintro ⟨i, j⟩ ⟨k, l⟩ h
     -- the right coset of a product determines that of the second factor, then of the first
     obtain rfl : j = l := op_rightCosetRep_smul_injective _
-      (op_smul_eq_of_op_mul_smul_eq hm hn hmn (hmem i) (hmem k) (hmem j) (hmem l) h)
+      (op_smul_eq_of_op_mul_smul_eq hmn (hmem i) (hmem k) (hmem j) (hmem l) h)
     refine Prod.ext (op_rightCosetRep_smul_injective _ ?_) rfl
     rw [rightCoset_eq_iff] at h ⊢
     simpa only [_root_.mul_inv_rev, mul_assoc, mul_inv_cancel_left] using h
