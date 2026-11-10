@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Field.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 
+import Mathlib.Analysis.Normed.Ring.Finite
 import Mathlib.Analysis.Normed.Unbundled.RingSeminorm
 import Mathlib.Analysis.SpecificLimits.Normed
 import Mathlib.FieldTheory.Finite.Basic
@@ -24,8 +25,9 @@ size: `‖n⁻¹‖ ≤ n ^ c` for a constant `c ≥ 0`. In the `p`-adic case `c
 the other two cases `c = 0`. In positive characteristic the natural numbers lie in a finite field,
 so every nonzero one has norm `1` and again `c = 0`.
 
-Consequently `‖n⁻¹‖ qⁿ → 0` for every `0 ≤ q < 1`. This is the estimate that makes termwise
-integration of power series lose only an arbitrarily small amount of convergence radius.
+Consequently `‖n⁻¹‖ qⁿ → 0` for every `0 ≤ q < 1`. In characteristic zero this is the estimate
+that makes termwise integration of power series lose only an arbitrarily small amount of
+convergence radius; the norm estimates themselves hold in every characteristic.
 
 ## Main results
 
@@ -61,10 +63,9 @@ theorem exists_norm_inv_natCast_le_rpow :
         simpa using congrArg (ZMod.castHom (dvd_refl p) K) h
       have hpow' : (n : K) ^ (p - 1) = 1 := by
         simpa using congrArg (ZMod.castHom (dvd_refl p) K) hpow
-      have hnorm : ‖(n : K)‖ = 1 := by
-        refine (pow_eq_one_iff_of_nonneg (norm_nonneg _)
-          (Nat.sub_ne_zero_of_lt (Fact.out : p.Prime).one_lt)).1 ?_
-        rw [← norm_pow, hpow', norm_one]
+      have hnorm : ‖(n : K)‖ = 1 :=
+        (isOfFinOrder_iff_pow_eq_one.mpr ⟨p - 1, Nat.sub_pos_of_lt (Fact.out : p.Prime).one_lt,
+          hpow'⟩).norm_eq_one
       simp [hnorm]
   · -- The norm of `K`, restricted to `ℚ`.
     let v : AbsoluteValue ℚ ℝ := (NormedField.toAbsoluteValue K).comp (Rat.castHom K).injective
