@@ -30,13 +30,15 @@ instead: the map `(a, b) ↦ proj a * proj b` on the simply connected, locally p
 lifting identifies that lift with the pointwise product. The same argument handles the inverse.
 
 The endpoint projection is then a continuous homomorphism `UniversalCover.projHom` which is a
-covering map, and its kernel, a discrete normal subgroup of a connected group, is central. This is
-the topological half of the simply connected covering group of a connected Lie group.
+covering map, and its kernel is discrete. This is the topological half of the simply connected
+covering group of a connected Lie group.
 
 The kernel is the fundamental group `π₁(G, 1)`, for every topological group `G`. Its points are
 the homotopy classes of loops at `1`, and on them the group law of the universal cover is
 pointwise multiplication of loops, which in a topological group agrees with concatenation by
-the Eckmann–Hilton argument (`FundamentalGroup.cast_map_prod_mul`).
+the Eckmann–Hilton argument (`FundamentalGroup.cast_map_prod_mul`). The kernel is also central
+for every topological group `G`: conjugating a loop `γ` by a path `α` from `1` gives the path
+`t ↦ α t * γ t * (α t)⁻¹`, which shrinking `α` deforms back to `γ` rel endpoints.
 
 ## Main definitions
 
@@ -57,7 +59,8 @@ the Eckmann–Hilton argument (`FundamentalGroup.cast_map_prod_mul`).
 * `TauCeti.UniversalCover.instIsTopologicalGroup`: for a locally path-connected, semilocally simply
   connected `G`, the universal cover is a topological group.
 * `TauCeti.UniversalCover.isCoveringMap_projHom`: the projection is a covering homomorphism.
-* `TauCeti.UniversalCover.ker_projHom_le_center`: its kernel is central.
+* `TauCeti.UniversalCover.ker_projHom_le_center`: its kernel is central, for every topological
+  group `G`.
 * `TauCeti.UniversalCover.discreteTopology_ker_projHom`: its kernel is discrete.
 * `IsCoveringMap.continuousMulEquivUniversalCover`: a simply connected covering group is
   continuously isomorphic to the universal covering group over the base.
@@ -109,6 +112,16 @@ private theorem induction_on {motive : UniversalCover (1 : G) → Prop} (a : Uni
 private theorem mk_eq_mk {x y : G} {p : Path 1 x} {q : Path 1 y} (h : ∀ t, p t = q t) :
     mk x (.mk p) = mk y (.mk q) :=
   UniversalCover.ext (by simpa using h 1) (Path.Homotopic.hpath_hext h)
+
+/-- The classes of two paths from `1` are equal when a continuous square joins them while keeping
+its edges `s = 0` and `s = 1` at `1` and at the common endpoint. -/
+private theorem mk_eq_mk_of_homotopy {x y : G} (hxy : x = y) {p : Path 1 x} {q : Path 1 y}
+    (F : I × I → G) (hF : Continuous F) (h₀ : ∀ t, F (0, t) = p t) (h₁ : ∀ t, F (1, t) = q t)
+    (hs₀ : ∀ s, F (s, 0) = 1) (hs₁ : ∀ s, F (s, 1) = x) :
+    mk x (.mk p) = mk y (.mk q) := by
+  subst hxy
+  exact congrArg (mk x)
+    (Path.Homotopic.Quotient.eq.2 (Path.homotopic_of_continuous_square F hF h₀ h₁ hs₀ hs₁))
 
 variable [IsTopologicalGroup G]
 
@@ -225,30 +238,14 @@ theorem kerProjHomEquivFundamentalGroup_apply
     (kerProjHomEquivFundamentalGroup z).toPath = z.1.path.cast rfl (mem_ker_projHom.1 z.2).symm :=
   (rfl)
 
-/-- A point `[γ]` of the universal cover lying over the identity is central: conjugating it by
-a point `[α]` gives the class of the path `t ↦ α t * γ t * (α t)⁻¹`, which is homotopic rel
-endpoints to `γ` through the paths `t ↦ α (s t) * γ t * (α (s t))⁻¹`. This needs no local
-connectivity of `G`. -/
+/-- A point of the universal cover lying over the identity is central. No local connectivity of
+`G` is needed. -/
 theorem mem_center_of_proj_eq_one {z : UniversalCover (1 : G)} (hz : z.proj = 1) :
     z ∈ Subgroup.center (UniversalCover (1 : G)) := by
   refine Subgroup.mem_center_iff.mpr fun g ↦ ?_
   rw [← mul_inv_eq_iff_eq_mul]
-  -- A continuous family of paths from `1` to `x` gives equal classes.
-  have mk_eq_mk_of_homotopy {x y : G} (hxy : x = y) {p : Path 1 x} {q : Path 1 y}
-      (F : I × I → G) (hF : Continuous F) (h₀ : ∀ t, F (0, t) = p t) (h₁ : ∀ t, F (1, t) = q t)
-      (hs₀ : ∀ s, F (s, 0) = 1) (hs₁ : ∀ s, F (s, 1) = x) :
-      mk x (.mk p) = mk y (.mk q) := by
-    subst hxy
-    refine congrArg (mk x) (Path.Homotopic.Quotient.eq.2 ⟨
-      { toFun := F
-        continuous_toFun := hF
-        map_zero_left := h₀
-        map_one_left := h₁
-        prop' := fun s t ht ↦ ?_ }⟩)
-    rcases ht with rfl | ht
-    · simp [hs₀]
-    · rw [Set.mem_singleton_iff.mp ht]
-      simp [hs₁]
+  -- Conjugating `[γ]` by `[α]` gives the class of `t ↦ α t * γ t * (α t)⁻¹`, which is homotopic
+  -- rel endpoints to `γ` through the paths `t ↦ α ((1 - s) * t) * γ t * (α ((1 - s) * t))⁻¹`.
   induction g using induction_on with | h y α =>
   induction z using induction_on with | h x γ =>
   obtain rfl : x = 1 := hz
