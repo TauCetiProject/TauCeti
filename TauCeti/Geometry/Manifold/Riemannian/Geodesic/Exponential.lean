@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Trajectory
-import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow
+import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Flow.Basic
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.VectorField.Regularity
