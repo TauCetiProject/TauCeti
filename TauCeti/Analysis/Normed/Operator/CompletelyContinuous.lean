@@ -208,14 +208,12 @@ theorem IsCompletelyContinuous.clm_comp_of_bound {P : Type*} [SeminormedAddCommG
     [Module R P] {u : M →L[R] N} (hu : u.IsCompletelyContinuous) (g : N →L[R] P) {C : ℝ}
     (hg : ∀ y, ‖g y‖ ≤ C * ‖y‖) : (g.comp u).IsCompletelyContinuous := by
   intro ε hε
-  have hD : 0 < max C 1 := lt_max_of_lt_right one_pos
-  have hg' (y : N) : ‖g y‖ ≤ max C 1 * ‖y‖ :=
-    (hg y).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
-  obtain ⟨v, hv, huv⟩ := hu (ε / max C 1) (div_pos hε hD)
+  obtain ⟨D, hD, hg'⟩ := exists_pos_bound_of_bound C hg
+  obtain ⟨v, hv, huv⟩ := hu (ε / D) (div_pos hε hD)
   refine ⟨g.comp v, by simpa using hv.comp_left (g : N →ₗ[R] P), fun x ↦ ?_⟩
   calc ‖g.comp u x - g.comp v x‖ = ‖g (u x - v x)‖ := by rw [comp_apply, comp_apply, map_sub]
-    _ ≤ max C 1 * ‖u x - v x‖ := hg' _
-    _ ≤ max C 1 * (ε / max C 1 * ‖x‖) := by gcongr; exact huv x
+    _ ≤ D * ‖u x - v x‖ := hg' _
+    _ ≤ D * (ε / D * ‖x‖) := by gcongr; exact huv x
     _ = ε * ‖x‖ := by field_simp
 
 /-- Precomposing a completely continuous map with a continuous linear map bounded by `C`, that is
@@ -225,13 +223,11 @@ theorem IsCompletelyContinuous.comp_clm_of_bound {L : Type*} [SeminormedAddCommG
     [Module R L] {u : M →L[R] N} (hu : u.IsCompletelyContinuous) (f : L →L[R] M) {C : ℝ}
     (hf : ∀ x, ‖f x‖ ≤ C * ‖x‖) : (u.comp f).IsCompletelyContinuous := by
   intro ε hε
-  have hD : 0 < max C 1 := lt_max_of_lt_right one_pos
-  have hf' (x : L) : ‖f x‖ ≤ max C 1 * ‖x‖ :=
-    (hf x).trans (mul_le_mul_of_nonneg_right (le_max_left _ _) (norm_nonneg _))
-  obtain ⟨v, hv, huv⟩ := hu (ε / max C 1) (div_pos hε hD)
+  obtain ⟨D, hD, hf'⟩ := exists_pos_bound_of_bound C hf
+  obtain ⟨v, hv, huv⟩ := hu (ε / D) (div_pos hε hD)
   refine ⟨v.comp f, by simpa using hv.comp_right (f : L →ₗ[R] M), fun x ↦ ?_⟩
-  calc ‖u.comp f x - v.comp f x‖ ≤ ε / max C 1 * ‖f x‖ := huv (f x)
-    _ ≤ ε / max C 1 * (max C 1 * ‖x‖) := by gcongr; exact hf' x
+  calc ‖u.comp f x - v.comp f x‖ ≤ ε / D * ‖f x‖ := huv (f x)
+    _ ≤ ε / D * (D * ‖x‖) := by gcongr; exact hf' x
     _ = ε * ‖x‖ := by field_simp
 
 end Ring
