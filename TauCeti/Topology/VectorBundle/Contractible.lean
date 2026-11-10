@@ -26,8 +26,8 @@ homotopic to a constant map at some point `y`, so the pullbacks of `E` along the
 isomorphic. The first pullback is `E` itself and the second is the product bundle with fibre
 `E y`, which a trivialization of `E` near `y` identifies with `F`.
 
-For a real bundle with a continuous fibre metric, Gram–Schmidt applied to such a global
-trivialization (`Bundle.Trivialization.orthonormal`) makes it isometric on every fibre
+For a finite-rank real bundle with a continuous fibre metric, Gram–Schmidt applied to such a
+global trivialization (`Bundle.Trivialization.orthonormal`) makes it isometric on every fibre
 (`TauCeti.exists_orthonormal_trivialization_baseSet_eq_univ_of_contractibleSpace`). So `E` is
 homeomorphic to `B × F` by a map covering the identity of `B` that is a linear isometry
 `E b ≃ₗᵢ[ℝ] F` on each fibre (`TauCeti.exists_homeomorph_prod_of_contractibleSpace`). In
