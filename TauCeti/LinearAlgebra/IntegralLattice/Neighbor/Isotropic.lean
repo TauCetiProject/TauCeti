@@ -411,10 +411,10 @@ theorem exists_isNeighbor_of_dvd_integralNorm (hp : Odd p) {v w : L}
 
 omit [NeZero p] hv in
 /-- **Kneser neighbors at a prime not dividing the discriminant.** Let `p` be an odd prime not
-dividing the discriminant of a nondegenerate lattice `L`, and let `v ∈ L ∖ p L` be isotropic
-modulo `p`. Then `L` has a `p`-neighbor `M` meeting `L` in the vectors whose pairing with `v` is
-divisible by `p`. If `L` is even, so is `M`. -/
-theorem exists_isNeighbor_of_not_dvd_discriminant [L.IsNondegenerate] (hp : p.Prime) (hp₂ : p ≠ 2)
+dividing the discriminant of a lattice `L` (so `L` is nondegenerate), and let `v ∈ L ∖ p L` be
+isotropic modulo `p`. Then `L` has a `p`-neighbor `M` meeting `L` in the vectors whose pairing
+with `v` is divisible by `p`. If `L` is even, so is `M`. -/
+theorem exists_isNeighbor_of_not_dvd_discriminant (hp : p.Prime) (hp₂ : p ≠ 2)
     (hdisc : ¬p ∣ L.discriminant) {v : L} (hv : (p : ℤ) ∣ L.integralNorm v)
     (hv₀ : (p : ℚ)⁻¹ • (v : V) ∉ L.carrier) :
     ∃ M : IntegralLattice V, L.IsNeighbor M p ∧ L.carrier ⊓ M.carrier = L.neighborKernel p v ∧
