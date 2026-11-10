@@ -50,6 +50,8 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `expNegInvGlue.hasDerivAt`: the derivative of `expNegInvGlue` at `x` is
   `x⁻² expNegInvGlue x`.
 * `Real.smoothTransition.abs_le_one`: `|Real.smoothTransition x| ≤ 1`.
+* `Real.smoothTransition.contDiff_comp_mul_add`: `s ↦ Real.smoothTransition (c * s + d)` is
+  smooth.
 * `Real.smoothTransition.deriv_of_neg`: `deriv Real.smoothTransition x = 0` for `x < 0`.
 * `Real.smoothTransition.deriv_of_one_lt`: `deriv Real.smoothTransition x = 0` for `1 < x`.
 * `Real.smoothTransition.hasCompactSupport_deriv`: the derivative is compactly supported.
@@ -112,6 +114,12 @@ namespace Real.smoothTransition
 /-- The smooth transition function takes values of absolute value at most one. -/
 theorem abs_le_one (x : ℝ) : |smoothTransition x| ≤ 1 :=
   (abs_of_nonneg (nonneg x)).trans_le (le_one x)
+
+/-- The affine reparametrizations `s ↦ smoothTransition (c * s + d)` of the smooth transition
+function are smooth. -/
+theorem contDiff_comp_mul_add {n : ℕ∞} (c d : ℝ) :
+    ContDiff ℝ n fun s : ℝ ↦ smoothTransition (c * s + d) :=
+  smoothTransition.contDiff.comp ((contDiff_const.mul contDiff_id).add contDiff_const)
 
 /-- The smooth transition function has derivative zero to the left of `0`, where it is
 identically zero. -/
