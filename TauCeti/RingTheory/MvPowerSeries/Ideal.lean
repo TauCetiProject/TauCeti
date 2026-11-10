@@ -35,6 +35,18 @@ section CommRing
 
 variable {σ R : Type*} [Finite σ] [CommRing R]
 
+/-- The formal power-series completion equivalence carries the variable ideal to the
+extension of the polynomial variable ideal in its adic completion. -/
+theorem map_toAdicCompletionAlgEquiv_span_X :
+    (Ideal.span (Set.range X) : Ideal (MvPowerSeries σ R)).map
+        (toAdicCompletionAlgEquiv σ R).toRingEquiv =
+      (MvPolynomial.idealOfVars σ R).map (algebraMap (MvPolynomial σ R)
+        (AdicCompletion (MvPolynomial.idealOfVars σ R) (MvPolynomial σ R))) := by
+  simp_rw [MvPolynomial.idealOfVars, Ideal.map_span, ← Set.range_comp]
+  congr 2
+  ext i
+  simp [AdicCompletion.algebraMap_apply, ← MvPolynomial.coe_X, toAdicCompletion_coe]
+
 /-- The `n`-th power of the ideal of variables consists of the series of order at least `n`.
 Finiteness of the variable type ensures these are algebraic ideal powers, not just their
 closures. No field or Noetherian hypothesis on the coefficient ring is needed. -/
@@ -43,14 +55,8 @@ theorem mem_pow_span_X_iff_order {f : MvPowerSeries σ R} {n : ℕ} :
     f ∈ (Ideal.span (Set.range X) : Ideal (MvPowerSeries σ R)) ^ n ↔
       (n : ℕ∞) ≤ f.order := by
   let e := (toAdicCompletionAlgEquiv σ R).toRingEquiv
-  have hmap : (Ideal.span (Set.range X) : Ideal (MvPowerSeries σ R)).map e =
-      (MvPolynomial.idealOfVars σ R).map (algebraMap (MvPolynomial σ R)
-        (AdicCompletion (MvPolynomial.idealOfVars σ R) (MvPolynomial σ R))) := by
-    simp_rw [MvPolynomial.idealOfVars, Ideal.map_span, ← Set.range_comp]
-    congr 2
-    ext i
-    simp [e, AdicCompletion.algebraMap_apply, ← MvPolynomial.coe_X, toAdicCompletion_coe]
-  rw [← Ideal.apply_mem_of_equiv_iff (f := e), Ideal.map_pow, hmap, ← Ideal.map_pow,
+  rw [← Ideal.apply_mem_of_equiv_iff (f := e), Ideal.map_pow,
+    map_toAdicCompletionAlgEquiv_span_X, ← Ideal.map_pow,
     ← Submodule.restrictScalars_mem (MvPolynomial σ R), ← Ideal.smul_top_eq_map,
     AdicCompletion.pow_smul_top_eq_ker_eval (MvPolynomial.fg_idealOfVars σ R),
     LinearMap.mem_ker, AdicCompletion.eval_apply]
@@ -65,6 +71,14 @@ theorem mem_pow_span_X_iff_order {f : MvPowerSeries σ R} {n : ℕ} :
   · intro h d hd
     rw [coeff_truncTotal _ hd]
     exact coeff_of_lt_order ((Nat.cast_lt.mpr hd).trans_le h)
+
+/-- A formal series in finitely many variables belongs to the variable ideal exactly when
+its constant coefficient vanishes. -/
+@[simp]
+theorem mem_span_range_X_iff {f : MvPowerSeries σ R} :
+    f ∈ (Ideal.span (Set.range X) : Ideal (MvPowerSeries σ R)) ↔ constantCoeff f = 0 := by
+  simpa only [pow_one, Nat.cast_one, one_le_order_iff_constCoeff_eq_zero] using
+    (mem_pow_span_X_iff_order (f := f) (n := 1))
 
 end CommRing
 
@@ -85,9 +99,7 @@ variable [Finite σ]
 theorem maximalIdeal_eq_span_X :
     IsLocalRing.maximalIdeal (MvPowerSeries σ k) = Ideal.span (Set.range X) := by
   ext f
-  rw [maximalIdeal_eq_ker_constantCoeff, RingHom.mem_ker,
-    ← pow_one (Ideal.span (Set.range X)), mem_pow_span_X_iff_order]
-  exact one_le_order_iff_constCoeff_eq_zero.symm
+  rw [maximalIdeal_eq_ker_constantCoeff, RingHom.mem_ker, mem_span_range_X_iff]
 
 /-- Maximal-ideal powers in a finite-variable formal chart measure total-degree order. -/
 @[simp]
