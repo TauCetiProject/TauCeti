@@ -31,7 +31,8 @@ a module over a division ring `k`. For `a ≤ b`, compare the relative singular 
   (`Monotone.sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_eq`);
 * **the polynomial identity**: under the same hypotheses,
   `∑ᵢ₌₀ⁿ cᵢ tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)` for a polynomial `Q` with natural number
-  coefficients, the coefficient of `tⁱ` being the gap in the `i`-th strong inequality
+  coefficients, the coefficient of `tⁱ` being the gap in the `i`-th strong inequality for
+  `i < n` and zero for `i ≥ n`
   (`Monotone.exists_sum_range_monomial_singularHomology_ofInclusion_eq_add_mul`);
 * **the lacunary principle**: if no two consecutive `cᵢ` are both nonzero, then `bᵢ = cᵢ` for
   every `i` (`Monotone.finrank_singularHomology_ofInclusion_eq_sum_of_eq_zero_or`).
@@ -74,12 +75,6 @@ variable {Y : TopCat.{w}} {X : ℤ → Set Y} (hX : Monotone X) {k : Type*} [Div
 
 namespace TauCeti
 
-/-- The pair `(X a, X a)` has no relative homology. -/
-private lemma isZero_singularHomology_ofInclusion_self (a : ℤ) (n : ℕ) :
-    IsZero ((TopPair.ofInclusion (hX le_rfl : X a ⊆ X a)).singularHomology V n) :=
-  TopPair.isZero_singularHomology_ofInclusion_of_homotopyRel _ (ContinuousMap.id _)
-    (.refl _ _) V n
-
 /-- The triple `(X (b + 1), X b, X a)` of a filtration, for `a ≤ b`. Its inner, outer and total
 pairs are, by definition of `TopTriple.ofInclusions`, the pairs `TopPair.ofInclusion` of
 `X a ⊆ X b`, `X b ⊆ X (b + 1)` and `X a ⊆ X (b + 1)`; the proofs below pass finiteness and
@@ -101,7 +96,8 @@ theorem finite_singularHomology_ofInclusion_of_forall_mem_Ico {a b : ℤ} (hab :
     Module.Finite k ((TopPair.ofInclusion (hX hab)).singularHomology V n : ModuleCat k) := by
   induction b, hab using Int.leInduction with
   | base =>
-    have := ModuleCat.isZero_iff_subsingleton.1 (isZero_singularHomology_ofInclusion_self hX V a n)
+    have := ModuleCat.isZero_iff_subsingleton.1
+      (TopPair.isZero_singularHomology_ofInclusion_self (X a) V n)
     infer_instance
   | succ b hab ih =>
     have : Module.Finite k ((TopTriple.innerPair.obj (stepTriple hX hab)).singularHomology V n :
@@ -122,7 +118,8 @@ theorem finrank_singularHomology_ofInclusion_le_sum {a b : ℤ} (hab : a ≤ b) 
           ModuleCat k) := by
   induction b, hab using Int.leInduction with
   | base =>
-    have := ModuleCat.isZero_iff_subsingleton.1 (isZero_singularHomology_ofInclusion_self hX V a n)
+    have := ModuleCat.isZero_iff_subsingleton.1
+      (TopPair.isZero_singularHomology_ofInclusion_self (X a) V n)
     simp [finrank_zero_of_subsingleton]
   | succ b hab ih =>
     have h' : ∀ q ∈ Finset.Ico a b, Module.Finite k
@@ -152,7 +149,7 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_le {a b :
   induction b, hab using Int.leInduction with
   | base =>
     have (i : ℕ) := ModuleCat.isZero_iff_subsingleton.1
-      (isZero_singularHomology_ofInclusion_self hX V a i)
+      (TopPair.isZero_singularHomology_ofInclusion_self (X a) V i)
     simp [finrank_zero_of_subsingleton]
   | succ b hab ih =>
     have h' : ∀ q ∈ Finset.Ico a b, ∀ i, Module.Finite k
@@ -184,7 +181,7 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_eq {a b :
   induction b, hab using Int.leInduction with
   | base =>
     have (i : ℕ) := ModuleCat.isZero_iff_subsingleton.1
-      (isZero_singularHomology_ofInclusion_self hX V a i)
+      (TopPair.isZero_singularHomology_ofInclusion_self (X a) V i)
     simp [finrank_zero_of_subsingleton]
   | succ b hab ih =>
     have hsub : Finset.Ico a b ⊆ Finset.Ico a (b + 1) :=
@@ -203,9 +200,9 @@ theorem sum_range_neg_one_pow_mul_finrank_singularHomology_ofInclusion_eq {a b :
 /-- **The Morse polynomial identity along a filtration.** Let the steps `(X (q + 1), X q)`,
 `a ≤ q < b`, have finite-dimensional relative homology in every degree and vanishing homology in
 degree `n + 1`. Write `bᵢ = dim Hᵢ(X b, X a)` and `cᵢ = ∑_q dim Hᵢ(X (q + 1), X q)`. Then
-`∑ᵢ₌₀ⁿ cᵢ tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)` for a polynomial `Q` with natural number coefficients,
-of degree less than `n`, whose coefficient of `tⁱ` is the gap
-`(cᵢ - cᵢ₋₁ + ⋯ ± c₀) - (bᵢ - bᵢ₋₁ + ⋯ ± b₀)` in the `i`-th strong inequality. -/
+`∑ᵢ₌₀ⁿ cᵢ tⁱ = ∑ᵢ₌₀ⁿ bᵢ tⁱ + (1 + t) Q(t)` for a polynomial `Q` with natural number coefficients
+whose coefficient of `tⁱ` is, for `i < n`, the gap `(cᵢ - cᵢ₋₁ + ⋯ ± c₀) - (bᵢ - bᵢ₋₁ + ⋯ ± b₀)`
+in the `i`-th strong inequality, and is zero for `i ≥ n`. -/
 theorem exists_sum_range_monomial_singularHomology_ofInclusion_eq_add_mul {a b : ℤ}
     (hab : a ≤ b) (h : ∀ q ∈ Finset.Ico a b, ∀ i, Module.Finite k
       ((TopPair.ofInclusion (hX (lt_add_one q).le)).singularHomology V i : ModuleCat k))
