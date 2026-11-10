@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Spectral.RelativeProjection
+public import TauCeti.Analysis.InnerProductSpace.Spectral.Relative.Projection
 public import TauCeti.Geometry.Manifold.Morse.Bott.Coordinates
 
 /-!

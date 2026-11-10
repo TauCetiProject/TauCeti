@@ -22,7 +22,7 @@ Over a field, symmetric `g` and `q` make relative eigenspaces for distinct eigen
 for both forms, so spectral subspaces selected by disjoint sets are orthogonal for both
 (`LinearMap.BilinForm.apply_eq_zero_of_mem_relativeSpectralSubspace`), and when `g` is positive
 definite they meet only in `0`. The spectral theory over finite-dimensional real spaces is in
-`TauCeti.Analysis.InnerProductSpace.Spectral.Relative`.
+`TauCeti.Analysis.InnerProductSpace.Spectral.Relative.Basic`.
 
 ## Main declarations
 
