@@ -671,32 +671,54 @@ theorem curryLeftTopological_pairedWedge
 
 /-- Expanding a wedge `α ∧ ψ` with a one-form `α` along its first argument `u`: when `α` kills the
 remaining arguments `w`, the wedge is `μ (α u) (ψ w)`. -/
-theorem pairedWedge_apply_vecCons_of_forall [ContinuousAdd F₁] [ContinuousConstSMul ℝ F₁]
-    [ContinuousAdd F₂] [ContinuousConstSMul ℝ F₂] (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
+theorem pairedWedge_apply_vecCons_of_forall (μ : F₁ →L[ℝ] F₂ →L[ℝ] F₃)
     (hμ : Continuous (Function.uncurry fun x y ↦ μ x y)) (α : E [⋀^Fin 1]→L[ℝ] F₁)
     (ψ : E [⋀^Fin l]→L[ℝ] F₂) (u : E) (w : Fin l → E) (hw : ∀ i, α ![w i] = 0) :
     pairedWedge μ hμ α ψ (Matrix.vecCons u w ∘ Fin.cast (Nat.add_comm 1 l)) = μ (α ![u]) (ψ w) := by
-  cases l with
-  | zero =>
-    have hv : Matrix.vecCons u w ∘ Fin.cast (Nat.add_comm 1 0) = ![u] := by
+  let g : (Fin (l + 1) → E) → F₃ := fun y ↦ μ (α ![y 0]) (ψ fun j ↦ y j.succ)
+  have hterm (σ : Perm (Fin (1 + l))) :
+      Perm.sign σ • μ (α fun i ↦ (Matrix.vecCons u w ∘ Fin.cast (Nat.add_comm 1 l))
+          (σ (Fin.castAdd l i)))
+        (ψ fun j ↦ (Matrix.vecCons u w ∘ Fin.cast (Nat.add_comm 1 l)) (σ (Fin.natAdd 1 j))) =
+      Perm.sign ((finCongr (Nat.add_comm 1 l)).permCongr σ) •
+        g (Fin.cons u w ∘ (finCongr (Nat.add_comm 1 l)).permCongr σ) := by
+    have hα : (fun i : Fin 1 ↦ (Matrix.vecCons u w ∘ Fin.cast (Nat.add_comm 1 l))
+          (σ (Fin.castAdd l i))) =
+        ![(Fin.cons u w ∘ (finCongr (Nat.add_comm 1 l)).permCongr σ) 0] := by
       ext i
       fin_cases i
+      simp [Equiv.permCongr_apply]
       rfl
-    rw [pairedWedge_apply_zero_right, hv, Subsingleton.elim (0 : Fin 0 → E) w]
-  | succ l =>
-    have hcons : Matrix.vecCons u w ∘ Fin.cast (Nat.add_comm 1 (l + 1)) =
-        Matrix.vecCons u (w ∘ Fin.cast (Nat.add_comm (0 + 1) l)) := by
-      ext i
-      refine Fin.cases rfl (fun j ↦ ?_) i
-      simp only [Function.comp_apply, Matrix.cons_val_succ]
-      rw [Fin.cast_succ_eq, Matrix.cons_val_succ]
-    have hzero : pairedWedge (k := 0 + 1) μ hμ α (curryLeftTopological ψ u)
-        (w ∘ Fin.cast (Nat.add_comm (0 + 1) l)) = 0 :=
-      pairedWedge_apply_eq_zero_of_forall _ _ _ _ _ fun i ↦ hw _
-    rw [hcons, ← curryLeftTopological_apply_apply, curryLeftTopological_pairedWedge, hzero,
-      smul_zero, add_zero, pairedWedge_apply_zero_left, curryLeftTopological_apply_apply,
-      Subsingleton.elim (0 : Fin 0 → E) ![]]
-    simp [Function.comp_def]
+    have hψ : (fun j : Fin l ↦ (Matrix.vecCons u w ∘ Fin.cast (Nat.add_comm 1 l))
+          (σ (Fin.natAdd 1 j))) =
+        fun j ↦ (Fin.cons u w ∘ (finCongr (Nat.add_comm 1 l)).permCongr σ) j.succ := by
+      ext j
+      simp only [Function.comp_apply, Equiv.permCongr_apply, finCongr_symm, finCongr_apply]
+      have h : (Fin.cast (Nat.add_comm l 1) j.succ : Fin (1 + l)) = Fin.natAdd 1 j :=
+        Fin.ext (by simp; omega)
+      rw [h]
+      rfl
+    rw [Perm.sign_permCongr, hα, hψ]
+  have hrest (j : Fin l) (τ : Perm (Fin l)) : g (j.succ.insertNth u (w ∘ τ)) = 0 := by
+    have : NeZero l := ⟨j.pos.ne'⟩
+    have h0 : (j.succ.insertNth u (w ∘ τ) : Fin (l + 1) → E) 0 = w (τ 0) := by
+      rw [← Fin.succ_succAbove_zero j, Fin.insertNth_apply_succAbove]
+      rfl
+    simp [g, h0, hw]
+  have hzero (τ : Perm (Fin l)) : Perm.sign τ • g ((0 : Fin (l + 1)).insertNth u (w ∘ τ)) =
+      μ (α ![u]) (ψ w) := by
+    rw [Fin.insertNth_zero']
+    simp only [g, Fin.cons_zero, Fin.cons_succ]
+    have := ψ.toAlternatingMap.map_perm w τ
+    simp only [ContinuousAlternatingMap.coe_toAlternatingMap] at this
+    rw [this, map_zsmul_unit, smul_smul, Int.units_mul_self, one_smul]
+  rw [pairedWedge_apply, Finset.sum_congr rfl fun σ _ ↦ hterm σ,
+    Fintype.sum_equiv (finCongr (Nat.add_comm 1 l)).permCongr _
+      (fun τ : Perm (Fin (l + 1)) ↦ Perm.sign τ • g (Fin.cons u w ∘ τ)) fun σ ↦ rfl,
+    sum_sign_smul_cons_comp_eq_sum_insertNth g u w, Fin.sum_univ_succ]
+  simp only [Fin.val_zero, pow_zero, one_smul, hrest, smul_zero, Finset.sum_const_zero, add_zero,
+    hzero, Finset.sum_const, Finset.card_univ, Fintype.card_perm, Fintype.card_fin]
+  simp [← Nat.cast_smul_eq_nsmul ℝ, smul_smul, Nat.factorial_ne_zero]
 
 end InteriorProduct
 
