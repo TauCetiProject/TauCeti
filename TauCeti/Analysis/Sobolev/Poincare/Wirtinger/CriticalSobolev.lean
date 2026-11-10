@@ -12,10 +12,12 @@ import TauCeti.Analysis.BoundedVariation.TotalVariation
 import TauCeti.Analysis.Sobolev.Embedding
 import TauCeti.Analysis.Sobolev.W1p.ChainRule
 import TauCeti.Analysis.Sobolev.W1p.Restriction
+import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.MeasureTheory.Function.LpSeminorm.PosPart
 import TauCeti.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Integral.MeanInequalities
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.Median
-import Mathlib.MeasureTheory.Integral.MeanInequalities
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 
 /-!
@@ -89,52 +91,6 @@ open scoped ENNReal NNReal Topology
 variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p pstar : ℝ≥0∞} [Fact (1 ≤ p)] {S : Set E}
-
-/-! ### Arithmetic of exponents -/
-
-/-- From `x a ≤ c a^θ` with `a` finite and `0 ≤ θ < 1`, cancelling `a^θ` and raising to the power
-`(1 - θ)⁻¹` gives `x^{(1 - θ)⁻¹} a ≤ c^{(1 - θ)⁻¹}`. -/
-private theorem rpow_mul_le_rpow_of_mul_le_mul_rpow {x a c : ℝ≥0∞} {θ : ℝ} (hθ0 : 0 ≤ θ)
-    (hθ1 : θ < 1) (ha : a ≠ ∞) (h : x * a ≤ c * a ^ θ) :
-    x ^ (1 - θ)⁻¹ * a ≤ c ^ (1 - θ)⁻¹ := by
-  rcases eq_or_ne a 0 with ha0 | ha0
-  · simp [ha0]
-  have hr : 0 < (1 - θ)⁻¹ := inv_pos.2 (sub_pos.2 hθ1)
-  have h' : x * a ^ (1 - θ) ≤ c := by
-    refine (ENNReal.mul_le_mul_iff_left (ENNReal.rpow_pos (pos_iff_ne_zero.2 ha0) ha).ne'
-      (ENNReal.rpow_ne_top_of_nonneg hθ0 ha)).1 ?_
-    rwa [mul_assoc, ← ENNReal.rpow_add _ _ ha0 ha, sub_add_cancel, ENNReal.rpow_one]
-  calc x ^ (1 - θ)⁻¹ * a = (x * a ^ (1 - θ)) ^ (1 - θ)⁻¹ := by
-        rw [ENNReal.mul_rpow_of_nonneg _ _ hr.le, ← ENNReal.rpow_mul,
-          mul_inv_cancel₀ (sub_pos.2 hθ1).ne', ENNReal.rpow_one]
-    _ ≤ c ^ (1 - θ)⁻¹ := ENNReal.rpow_le_rpow h' hr.le
-
-/-- From `X ≤ (Z X^a)^s` with `X` finite and `s⁻¹ = b + a`, `b > 0`, cancelling `X^a` gives
-`X^b ≤ Z`. -/
-private theorem rpow_le_of_le_rpow_mul_rpow {X Z : ℝ≥0∞} {a b s : ℝ} (hb : 0 < b) (hs : 0 < s)
-    (hsab : s⁻¹ = b + a) (hX : X ≠ ∞) (h : X ≤ (Z * X ^ a) ^ s) : X ^ b ≤ Z := by
-  rcases eq_or_ne X 0 with h0 | h0
-  · simp [h0, ENNReal.zero_rpow_of_pos hb]
-  have h1 : X ^ s⁻¹ ≤ Z * X ^ a :=
-    calc X ^ s⁻¹ ≤ ((Z * X ^ a) ^ s) ^ s⁻¹ := ENNReal.rpow_le_rpow h (inv_nonneg.2 hs.le)
-      _ = Z * X ^ a := by rw [← ENNReal.rpow_mul, mul_inv_cancel₀ hs.ne', ENNReal.rpow_one]
-  rw [hsab, ENNReal.rpow_add _ _ h0 hX] at h1
-  exact (ENNReal.mul_le_mul_iff_left (ENNReal.rpow_pos (pos_iff_ne_zero.2 h0) hX).ne'
-    (ENNReal.rpow_ne_top_of_ne_zero h0 hX)).1 h1
-
-/-- A finite Sobolev exponent `p⋆` with `1/p⋆ + 1/n = 1/p` and `p ≥ 1` exists only in dimension
-`n ≥ 2`. -/
-private theorem two_le_of_inv_add_inv_eq_inv {n : ℕ} (hpstar : pstar ≠ ∞)
-    (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = p⁻¹) : 2 ≤ n := by
-  have hp1 : (1 : ℝ≥0∞) ≤ p := Fact.out
-  have hn0 := ne_zero_of_inv_add_inv_eq_inv (zero_lt_one.trans_le hp1).ne' hexp
-  have h : (n : ℝ≥0∞)⁻¹ < 1 :=
-    calc (n : ℝ≥0∞)⁻¹ < pstar⁻¹ + (n : ℝ≥0∞)⁻¹ := add_comm (n : ℝ≥0∞)⁻¹ pstar⁻¹ ▸
-          ENNReal.lt_add_right (by simpa using hn0) (ENNReal.inv_ne_zero.2 hpstar)
-      _ = p⁻¹ := hexp
-      _ ≤ 1 := ENNReal.inv_le_one.2 hp1
-  rw [ENNReal.inv_lt_one] at h
-  exact_mod_cast h
 
 /-! ### Dyadic decompositions -/
 
@@ -306,7 +262,7 @@ private theorem lintegral_ofReal_max_sub_rpow_le_of_convex (hp : p ≠ ∞) (hn 
   -- The weak inequality at the height `2^k`, raised to the power `s`.
   have hlevel : ∀ k : ℤ, ENNReal.ofReal ((2 : ℝ) ^ k) ^ s *
       mu ((Omega : Set E) ∩ {x | m + 2 * (2 : ℝ) ^ k ≤ W1p.value u x}) ≤ (C * D k) ^ s :=
-    fun k => rpow_mul_le_rpow_of_mul_le_mul_rpow hninv0 hninv1
+    fun k => ENNReal.rpow_mul_le_rpow_of_mul_le_mul_rpow hninv0 hninv1
       (ne_top_of_le_ne_top hb.measure_lt_top.ne (measure_mono inter_subset_left))
       ((ofReal_mul_measure_le_of_convex hp hconv hb hS hS0 u huS (zpow_pos two_pos k)).trans_eq
         (mul_right_comm _ _ _))
@@ -355,19 +311,20 @@ private theorem exists_contDiff_deriv_eq_rpow (γ : ℝ) (hγ : 1 < γ) {K : ℝ
   have hFderiv : deriv F = φ := funext fun t => (hFd t).deriv
   have hFdiff : Differentiable ℝ F := fun t => (hFd t).differentiableAt
   have hF0 : ∀ t ≤ 0, F t = 0 := fun t ht => by
-    rw [show F t = ∫ τ in (0 : ℝ)..t, (0 : ℝ) from intervalIntegral.integral_congr fun τ hτ => ?_,
-      intervalIntegral.integral_zero]
-    rw [uIcc_of_ge ht] at hτ
-    simp only [φ, max_eq_right hτ.2, min_eq_left hK.le, Real.zero_rpow (by linarith : γ - 1 ≠ 0),
-      mul_zero]
+    -- `φ` vanishes on `[t, 0]`, hence so does its integral from `0` to `t`.
+    have hφt : EqOn φ (fun _ => 0) (uIcc 0 t) := fun τ hτ => by
+      rw [uIcc_of_ge ht] at hτ
+      simp only [φ, max_eq_right hτ.2, min_eq_left hK.le, Real.zero_rpow (by linarith : γ - 1 ≠ 0),
+        mul_zero]
+    exact (intervalIntegral.integral_congr hφt).trans intervalIntegral.integral_zero
   have hFpow : ∀ t, 0 ≤ t → t ≤ K → F t = t ^ γ := fun t ht0 htK => by
     have hd : ∀ τ ∈ uIcc 0 t, HasDerivAt (fun τ => τ ^ γ) (φ τ) τ := fun τ hτ => by
       rw [uIcc_of_le ht0] at hτ
       convert Real.hasDerivAt_rpow_const (x := τ) (Or.inr hγ.le) using 1
       simp only [φ, max_eq_left hτ.1, min_eq_left (hτ.2.trans htK)]
-    rw [show F t = t ^ γ - 0 ^ γ from
-      intervalIntegral.integral_eq_sub_of_hasDerivAt hd (hφc.intervalIntegrable _ _),
-      Real.zero_rpow (by linarith), sub_zero]
+    have hFt : F t = t ^ γ - 0 ^ γ :=
+      intervalIntegral.integral_eq_sub_of_hasDerivAt hd (hφc.intervalIntegrable _ _)
+    rw [hFt, Real.zero_rpow (by linarith), sub_zero]
   refine ⟨F, contDiff_one_iff_deriv.2 ⟨hFdiff, hFderiv ▸ hφc⟩, hFd, hF0, fun t => ?_⟩
   rcases le_total t 0 with ht | ht
   · rw [max_eq_right ht, min_eq_left hK.le, Real.zero_rpow (by linarith), hF0 t ht]
@@ -439,22 +396,6 @@ private theorem lintegral_ofReal_min_rpow_le_of_convex (hp : p ≠ ∞) (hn : 2 
   rw [← hgradv]
   exact hX.trans (lintegral_ofReal_max_sub_rpow_le_of_convex hp hn hconv hb hS hS0 v hvS)
 
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] [mu.IsAddHaarMeasure]
-  [Fact (1 ≤ p)] in
-/-- Hölder's inequality with exponents `p'` and `p` for `w^{γ - 1} |g|`, where `(γ - 1) p' = q`:
-`∫ w^{γ - 1} |g| ≤ (∫ w^q)^{1/p'} ‖g‖_{Lᵖ}`. -/
-private theorem lintegral_ofReal_rpow_mul_enorm_le {ν : Measure E} {w : E → ℝ} {g : E → E}
-    (hw : Measurable w) (hg : AEStronglyMeasurable g ν) (hp0 : p ≠ 0) (hp : p ≠ ∞) {γ P' q : ℝ}
-    (hconj : P'.HolderConjugate p.toReal) (hγP' : (γ - 1) * P' = q) :
-    ∫⁻ x, ENNReal.ofReal (w x) ^ (γ - 1) * ‖g x‖ₑ ∂ν ≤
-      (∫⁻ x, ENNReal.ofReal (w x) ^ q ∂ν) ^ P'⁻¹ * eLpNorm g p ν := by
-  have h := ENNReal.lintegral_mul_le_Lp_mul_Lq ν hconj
-    (f := fun x => ENNReal.ofReal (w x) ^ (γ - 1)) (g := fun x => ‖g x‖ₑ)
-    ((ENNReal.measurable_ofReal.comp hw).pow_const _).aemeasurable hg.enorm
-  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp0 hp hg]
-  refine h.trans_eq ?_
-  simp_rw [← ENNReal.rpow_mul, hγP', one_div]
-
 /-- The exponents of the power trick. If `1/q + 1/N = 1/P` with `P > 1` and `q > 0`, then
 `γ = q (1 - 1/N)` and the conjugate exponent `P'` of `P` satisfy `(γ - 1) P' = q` and
 `1 - 1/N = 1/q + 1/P'`. -/
@@ -465,7 +406,8 @@ private theorem exists_holderConjugate_sub_one_mul_eq {P q N : ℝ} (hP1 : 1 < P
   refine ⟨(1 - P⁻¹)⁻¹, by simpa using
     Real.HolderConjugate.one_sub_inv_inv (inv_pos.2 (by linarith)) hPinv, ?_, ?_⟩
   · have hγ : q * (1 - N⁻¹) - 1 = q * (1 - P⁻¹) := by
-      rw [show N⁻¹ = P⁻¹ - q⁻¹ by linarith, mul_sub, mul_sub, mul_sub, mul_one,
+      have hN : N⁻¹ = P⁻¹ - q⁻¹ := by linarith
+      rw [hN, mul_sub, mul_sub, mul_sub, mul_one,
         mul_inv_cancel₀ hq0.ne']
       ring
     rw [hγ, mul_assoc, mul_inv_cancel₀ (sub_pos.2 hPinv).ne', mul_one]
@@ -517,7 +459,7 @@ private theorem rpow_lintegral_ofReal_min_rpow_le_of_convex (hpstar : pstar ≠ 
   have hholder : ∫⁻ x in Omega, ENNReal.ofReal (W x) ^ (γ - 1) * ‖W1p.gradient u x‖ₑ ∂mu ≤
       X ^ P'⁻¹ * Y :=
     lintegral_ofReal_rpow_mul_enorm_le (((Lp.stronglyMeasurable _).measurable.sub_const m).max
-      measurable_const |>.min measurable_const) (Lp.aestronglyMeasurable _) hp0 hp hconj hγP'
+      measurable_const |>.min measurable_const).aemeasurable (Lp.aestronglyMeasurable _) hconj hγP'
   have hXfin : X ≠ ∞ := by
     refine ne_top_of_le_ne_top (b := ∫⁻ x in Omega, ENNReal.ofReal K ^ Q ∂mu) ?_
       (lintegral_mono fun x => ?_)
@@ -526,7 +468,8 @@ private theorem rpow_lintegral_ofReal_min_rpow_le_of_convex (hpstar : pstar ≠ 
         hb.measure_lt_top.ne
     · gcongr
       exact min_le_right _ _
-  refine rpow_le_of_le_rpow_mul_rpow (inv_pos.2 hQ0) (inv_pos.2 (sub_pos.2 hninv1)) hsinv hXfin ?_
+  refine ENNReal.rpow_le_of_le_rpow_mul_rpow (inv_pos.2 hQ0) (inv_pos.2 (sub_pos.2 hninv1)) hsinv
+    hXfin ?_
   have hW := lintegral_ofReal_min_rpow_le_of_convex hp hn2 hconv hb hS hS0 u huS hγ hK
   rw [hγs] at hW
   refine hW.trans ?_
@@ -630,24 +573,6 @@ private theorem ofReal_div_measureReal_le_of_le_two_mul {K₀ : ℝ} (hK₀ : 0 
   refine ENNReal.ofReal_le_ofReal ?_
   rw [div_le_div_iff₀ (by linarith) hΩpos]
   nlinarith
-
-omit [Fact (1 ≤ p)] in
-/-- The deviation of `f` from a level `m` is the difference of `(f - m)⁺` and `(m - f)⁺`, so its
-`L^q` seminorm is at most the sum of theirs for `q ≥ 1`. -/
-private theorem eLpNorm_sub_const_le_add {α : Type*} [MeasurableSpace α] {ν : Measure α}
-    {f : α → ℝ} (m : ℝ) (hq : 1 ≤ pstar) :
-    eLpNorm (fun x => f x - m) pstar ν ≤
-      eLpNorm (fun x => max (f x - m) 0) pstar ν + eLpNorm (fun x => max (m - f x) 0) pstar ν := by
-  have heq : (fun x => f x - m) =
-      (fun x => max (f x - m) 0) - fun x => max (m - f x) 0 := by
-    funext x
-    simp only [Pi.sub_apply]
-    rcases le_total (f x) m with h | h
-    · rw [max_eq_right (by linarith), max_eq_left (by linarith)]
-      ring
-    · rw [max_eq_left (by linarith), max_eq_right (by linarith), sub_zero]
-  rw [heq]
-  exact eLpNorm_sub_le hq
 
 /-- **The Sobolev–Poincaré inequality about a median.** If `m` is a median of `u` on `Ω`, so that
 `{u ≤ m}` and `{u ≥ m}` each carry at least half the measure of `Ω`, then

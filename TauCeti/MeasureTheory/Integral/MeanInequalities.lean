@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Basic
+public import Mathlib.Basic.Real.ConjExponents
+public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Integral.MeanInequalities
 
@@ -23,9 +25,15 @@ variable and applying Tonelli's theorem gives the `Lᵖ → L^q` bound for the i
 
 The statement is in `ℝ≥0∞`, so it needs no integrability hypotheses.
 
+For conjugate exponents `p'` and `p` and `(γ - 1) p' = q`, Hölder's inequality also bounds
+`∫⁻ w ^ (γ - 1) ‖g‖ₑ` by `(∫⁻ w ^ q) ^ (1/p') ‖g‖_{Lᵖ}`. This is the step of Maz'ya's truncation
+method that bounds the gradient of a power `w ^ γ` of a truncation through the `Lᵖ` norm of the
+gradient of the original function.
+
 ## Main declarations
 
 * `TauCeti.lintegral_mul_le_of_inv_add_inv_eq`: the three-exponent Hölder inequality.
+* `TauCeti.lintegral_ofReal_rpow_mul_enorm_le`: Hölder's inequality for `w ^ (γ - 1) ‖g‖ₑ`.
 
 ## References
 
@@ -84,5 +92,21 @@ theorem lintegral_mul_le_of_inv_add_inv_eq {k g : β → ℝ≥0∞} (hk : AEMea
           ENNReal.rpow_add_of_nonneg _ _ (mul_nonneg hr0.le ha) (mul_nonneg hr0.le hb),
           ENNReal.rpow_add_of_nonneg _ _ (mul_nonneg hp0.le ha) (mul_nonneg hp0.le hc)]
         ring
+
+/-- **Hölder's inequality for a power times a norm.** If `p'` and `p` are conjugate exponents and
+`(γ - 1) p' = q`, then `∫⁻ w ^ (γ - 1) ‖g‖ₑ ≤ (∫⁻ w ^ q) ^ (1/p') ‖g‖_{Lᵖ}`. -/
+theorem lintegral_ofReal_rpow_mul_enorm_le {F : Type*} [NormedAddCommGroup F] {w : β → ℝ}
+    {g : β → F} (hw : AEMeasurable w ν) (hg : AEStronglyMeasurable g ν) {p : ℝ≥0∞} {γ p' q : ℝ}
+    (hconj : p'.HolderConjugate p.toReal) (hγp' : (γ - 1) * p' = q) :
+    ∫⁻ x, ENNReal.ofReal (w x) ^ (γ - 1) * ‖g x‖ₑ ∂ν ≤
+      (∫⁻ x, ENNReal.ofReal (w x) ^ q ∂ν) ^ p'⁻¹ * eLpNorm g p ν := by
+  have hp : 0 < p.toReal := zero_lt_one.trans hconj.symm.lt
+  have h := ENNReal.lintegral_mul_le_Lp_mul_Lq ν hconj
+    (f := fun x => ENNReal.ofReal (w x) ^ (γ - 1)) (g := fun x => ‖g x‖ₑ)
+    ((ENNReal.measurable_ofReal.comp_aemeasurable hw).pow_const _) hg.enorm
+  rw [eLpNorm_eq_lintegral_rpow_enorm_toReal (ENNReal.toReal_pos_iff.1 hp).1.ne'
+    (ENNReal.toReal_pos_iff.1 hp).2.ne hg]
+  refine h.trans_eq ?_
+  simp_rw [← ENNReal.rpow_mul, hγp', one_div]
 
 end TauCeti

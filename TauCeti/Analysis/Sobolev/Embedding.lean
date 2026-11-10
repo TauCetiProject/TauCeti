@@ -57,7 +57,8 @@ is exactly what rules this out, and it is carried as an explicit hypothesis thro
   `TauCeti.W1p.integral_value_sq_le_of_eLpNorm_le`: exponent and support estimates used with a
   Sobolev inequality.
 * `TauCeti.toReal_inv_add_inv_eq_inv`: the exponent relation `1/p⋆ + 1/n = 1/p` of `W^{1,p}`
-  read in `ℝ`. The relation forces `n ≠ 0` (`TauCeti.ne_zero_of_inv_add_inv_eq_inv`) and `p ≠ ∞`
+  read in `ℝ`. The relation forces `n ≠ 0` (`TauCeti.ne_zero_of_inv_add_inv_eq_inv`), `n ≥ 2`
+  when `p ≥ 1` and `p⋆` is finite (`TauCeti.two_le_of_inv_add_inv_eq_inv`) and `p ≠ ∞`
   (`TauCeti.ne_top_of_inv_add_inv_eq_inv`), and
   multiplying by `n` gives `n/p⋆ + 1 = n/p`
   (`TauCeti.natCast_div_toReal_add_one_of_inv_add_inv_eq_inv`).
@@ -256,6 +257,21 @@ theorem ne_zero_of_inv_add_inv_eq_inv {n : ℕ} (hp : p ≠ 0)
     (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = p⁻¹) : n ≠ 0 :=
   Nat.cast_ne_zero.1 <| ENNReal.inv_ne_top.1 <|
     ne_top_of_le_ne_top (ENNReal.inv_ne_top.2 hp) (hexp ▸ le_add_self)
+
+omit [MeasurableSpace E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- A finite Sobolev exponent `p⋆` with `1/p⋆ + 1/n = 1/p` and `p ≥ 1` exists only in dimension
+`n ≥ 2`. -/
+theorem two_le_of_inv_add_inv_eq_inv {n : ℕ} (hpstar : pstar ≠ ∞)
+    (hexp : pstar⁻¹ + (n : ℝ≥0∞)⁻¹ = p⁻¹) : 2 ≤ n := by
+  have hp1 : (1 : ℝ≥0∞) ≤ p := Fact.out
+  have hn0 := ne_zero_of_inv_add_inv_eq_inv (zero_lt_one.trans_le hp1).ne' hexp
+  have h : (n : ℝ≥0∞)⁻¹ < 1 :=
+    calc (n : ℝ≥0∞)⁻¹ < pstar⁻¹ + (n : ℝ≥0∞)⁻¹ := add_comm (n : ℝ≥0∞)⁻¹ pstar⁻¹ ▸
+          ENNReal.lt_add_right (by simpa using hn0) (ENNReal.inv_ne_zero.2 hpstar)
+      _ = p⁻¹ := hexp
+      _ ≤ 1 := ENNReal.inv_le_one.2 hp1
+  rw [ENNReal.inv_lt_one] at h
+  exact_mod_cast h
 
 omit [Fact (1 ≤ p)] in
 /-- A Sobolev exponent `p⋆` with `1/p⋆ + 1/n = 1/p` exists only for finite `p`. -/
