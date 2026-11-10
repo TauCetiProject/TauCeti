@@ -34,10 +34,12 @@ McDuff–Salamon (B.4.3) with `J = i` and the real pairing. The real part, and r
 the tests on the axis, are both essential: for smooth data the identity has the boundary term
 `-∫_ℝ ⟨φ, iξ⟩ ds`, which vanishes exactly because `φ` and `ξ` are real there.
 
+The reflection used throughout is `TauCeti.starSchwarzReflection ξ` from
+`Analysis/Complex/Conformal/Reflection/Basic.lean`: `ξ` on `0 ≤ im`, and `star (ξ (conj z))`
+below the axis; for `F = ℂ` it is `TauCeti.schwarzReflection`.
+
 ## Main results
 
-* `TauCeti.starSchwarzReflection ξ`: `ξ` on `0 ≤ im`, and `star (ξ (conj z))` below the axis;
-  for `F = ℂ` it is `TauCeti.schwarzReflection`.
 * `HasWeakConjWirtingerDerivRealBoundaryOn.hasWeakConjWirtingerDerivOn_starSchwarzReflection`:
   on a conjugation-invariant open set, the reflections of a weak solution with real boundary
   values solve the distributional equation `\bar∂ (Rξ) = Rη` on the doubled domain.
@@ -47,8 +49,9 @@ the tests on the axis, are both essential: for smooth data the identity has the 
   satisfying `v (conj z) = star (v z)`. It is a weak analogue of
   `TauCeti.differentiableOn_schwarzReflection_of_symmetric`; recovering that lemma from it would
   also need the half-plane boundary-term computation for smooth data, which is not proved here.
-* Checks: the reflection of `z` is `z`, and the even reflection `s + i|t|`, which omits the
-  conjugation, is not a weak solution below the axis.
+* Check: the even reflection `s + i|t|`, which omits the conjugation, is not a weak solution
+  below the axis. The companion check that the reflection of `z` is `z` is
+  `TauCeti.starSchwarzReflection_id`.
 
 The proof of the reflection theorem splits a real test function `φ` on the doubled domain into
 `φ + φ ∘ conj`, which is an admissible test, and `φ - φ ∘ conj`, which vanishes on the axis, so
@@ -69,54 +72,6 @@ open scoped ContDiff Distributions ComplexConjugate ComplexStarModule
 namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] {Ω : Opens ℂ}
-
-/-! ### The reflection -/
-
-section Reflection
-
-variable [StarAddMonoid F] {ξ : ℂ → F}
-
-/-- Schwarz reflection across the real axis with respect to the real structure `star` of the
-coefficients: `ξ z` on the closed upper half-plane and `star (ξ (conj z))` below it. -/
-def starSchwarzReflection (ξ : ℂ → F) (z : ℂ) : F :=
-  if 0 ≤ z.im then ξ z else star (ξ (conj z))
-
-@[simp]
-theorem starSchwarzReflection_of_im_nonneg {z : ℂ} (hz : 0 ≤ z.im) :
-    starSchwarzReflection ξ z = ξ z := ite_eq_left_iff.2 fun h ↦ (h hz).elim
-
-@[simp]
-theorem starSchwarzReflection_of_im_neg {z : ℂ} (hz : z.im < 0) :
-    starSchwarzReflection ξ z = star (ξ (conj z)) := ite_eq_right_iff.2 fun h ↦ (hz.not_ge h).elim
-
-/-- For scalar functions the reflection is the classical Schwarz reflection. -/
-theorem starSchwarzReflection_eq_schwarzReflection (f : ℂ → ℂ) :
-    starSchwarzReflection f = schwarzReflection f := by
-  ext z
-  rw [schwarzReflection_def, starSchwarzReflection, Complex.star_def]
-
-@[simp]
-theorem starSchwarzReflection_zero : starSchwarzReflection (0 : ℂ → F) = 0 := by
-  ext z
-  simp [starSchwarzReflection]
-
-/-- Off the real axis the reflection is conjugation-symmetric. -/
-theorem starSchwarzReflection_conj {z : ℂ} (hz : z.im ≠ 0) :
-    starSchwarzReflection ξ (conj z) = star (starSchwarzReflection ξ z) := by
-  rcases hz.lt_or_gt with hz | hz
-  · rw [starSchwarzReflection_of_im_nonneg (by simpa using hz.le),
-      starSchwarzReflection_of_im_neg hz, star_star]
-  · rw [starSchwarzReflection_of_im_neg (by simpa using hz),
-      starSchwarzReflection_of_im_nonneg hz.le, conj_conj]
-
-/-- **Check.** The reflection of the identity, which is real on the real axis, is the identity. -/
-theorem starSchwarzReflection_id : starSchwarzReflection (id : ℂ → ℂ) = id := by
-  ext1 z
-  by_cases hz : 0 ≤ z.im
-  · simp [starSchwarzReflection_of_im_nonneg hz]
-  · simp [starSchwarzReflection_of_im_neg (not_le.1 hz)]
-
-end Reflection
 
 /-! ### Measure-theoretic preliminaries -/
 
