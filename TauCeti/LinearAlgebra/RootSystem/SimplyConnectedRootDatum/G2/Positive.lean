@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Basic
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Rational
 
 /-!
 # The positive roots of the `G₂` root datum
@@ -23,6 +24,7 @@ this height is positive.
 * `TauCeti.DynkinType.height_flip_g2SimplyConnectedBase`: the heights of the coroots.
 * `TauCeti.DynkinType.mem_posRoots_g2_iff`: the positive roots are the first six table entries.
 * `TauCeti.DynkinType.posRootsFinset_g2`: the positive roots of the pinned `G₂` datum.
+* `TauCeti.DynkinType.mem_posRoots_rational_g2_iff`: the same indices in the rational system.
 
 ## References
 
@@ -66,6 +68,40 @@ theorem posRootsFinset_g2 :
   ext k
   rw [mem_posRootsFinset, mem_posRoots_g2_iff]
   decide +revert
+
+/-- The positive roots of the rational `G₂` system are the first six entries of the native
+root table, just as for the integral datum. -/
+theorem mem_posRoots_rational_g2_iff (ht : G2.Valid) (k : Fin G2.numRoots) :
+    k ∈ posRoots (G2.rationalRootSystem ht) (G2.rationalBase ht) ↔ (k : ℕ) < 6 := by
+  have : NeZero G2.rank := ⟨by simp [rank]⟩
+  have height (k : Fin G2.numRoots) :
+      (G2.rationalBase ht).flip.height k = g2Coroot k 0 + g2Coroot k 1 := by
+    have h := apply_root_eq_height_zsmul (G2.rationalRootSystem ht).flip (G2.rationalBase ht).flip
+      (Pi.evalAddMonoidHom (fun _ : Fin G2.rank ↦ ℚ) 0 +
+        Pi.evalAddMonoidHom (fun _ : Fin G2.rank ↦ ℚ) 1) (c := 1) ?_ k
+    · simp only [AddMonoidHom.add_apply, Pi.evalAddMonoidHom_apply, flip_root,
+        coroot_rationalRootSystem, zsmul_eq_mul, mul_one] at h
+      dsimp +instances only [numRoots, rank] at h
+      rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_coroot] at h
+      exact_mod_cast h.symm
+    · intro j hj
+      rw [Base.flip_support, support_rationalBase, mem_support_simplyConnectedBase] at hj
+      dsimp only [rank] at hj
+      have hj' : j = (⟨0, by simp [numRoots]⟩ : Fin G2.numRoots) ∨
+          j = (⟨1, by simp [numRoots]⟩ : Fin G2.numRoots) := by
+        simp only [Fin.ext_iff]
+        omega
+      rcases hj' with rfl | rfl <;>
+        simp only [AddMonoidHom.add_apply, Pi.evalAddMonoidHom_apply, flip_root,
+          coroot_rationalRootSystem] <;>
+        dsimp +instances only [numRoots, rank] <;>
+        simp [simplyConnectedRootDatum_G2, g2Coroot_apply]
+  rw [mem_posRoots, ← Base.isPos_flip_iff, Base.isPos_iff, height]
+  have htable (i : Fin 12) : 0 < g2Coroot i 0 + g2Coroot i 1 ↔ (i : ℕ) < 6 := by
+    have h := mem_posRoots_g2_iff i
+    rwa [mem_posRoots, ← Base.isPos_flip_iff, Base.isPos_iff,
+      height_flip_g2SimplyConnectedBase] at h
+  exact htable k
 
 end DynkinType
 
