@@ -98,6 +98,9 @@ to the canonical fraction fields used by Mathlib's different API.
 * `TauCeti.Place.finiteDimensional_residueField_restrict`: the relative degree is finite, so it
   is not the junk value of `Module.finrank`; `TauCeti.Place.one_le_relativeDegree` and
   `TauCeti.Place.ramificationIdx_pos` are the matching lower bounds.
+* `TauCeti.Place.ramificationIdxIn`: the ramification index of a place of the base in a finite
+  extension, computed at an arbitrary chosen place above it and zero when there is none; it is
+  shared by all places above only in a Galois extension (see `Extension.Galois`).
 * `TauCeti.Place.finrank_mul_degree_eq_relativeDegree_mul_degree_restrict`:
   `[k' : k] · deg P' = f(P' ∣ P) · deg P`, the comparison of the degrees of `P'` and of the place
   it lies over.
@@ -1254,6 +1257,43 @@ theorem ramificationIdx_self : ramificationIdx F P = 1 := by
     Valuation.ordIndex_eq_one_of_surjective _ P.valuation_surjective]
 
 end Self
+
+section RamificationIdxIn
+
+variable [FiniteDimensional F F']
+
+open scoped Classical in
+/-- **The ramification index of a place of the base in a finite extension**: the ramification
+index `e(P' ∣ P)` of a place `P'` of `F'` over `P`, where `P'` is an arbitrary choice among the
+places over `P`. It is `0` when no place of `F'` lies over `P`, which does not happen for an
+extension of function fields (`TauCeti.Place.restrict_surjective_of_finiteDimensional`). Without
+the Galois hypothesis the places over `P` may have different ramification indices, so this value
+need not be common to them; for a Galois extension it is
+(`TauCeti.Place.ramificationIdxIn_eq_ramificationIdx`). This is the analogue for places of
+Mathlib's `Ideal.ramificationIdxIn`. -/
+noncomputable def ramificationIdxIn (P : Place k F) (F' : Type v') [Field F'] [Algebra F F']
+    [Algebra k F'] [IsScalarTower k F F'] [FiniteDimensional F F'] : ℕ :=
+  if h : ∃ P' : Place k F', P'.restrict k F = P then ramificationIdx F h.choose else 0
+
+/-- If some place of `F'` lies over `P`, the ramification index of `P` in `F'` is that of the
+chosen such place. -/
+theorem ramificationIdxIn_of_exists {P : Place k F} (h : ∃ P' : Place k F', P'.restrict k F = P) :
+    P.ramificationIdxIn F' = ramificationIdx F h.choose :=
+  dite_eq_left h
+
+/-- The ramification index of a place of the base vanishes exactly when no place lies above it. -/
+@[simp]
+theorem ramificationIdxIn_eq_zero_iff {P : Place k F} :
+    P.ramificationIdxIn F' = 0 ↔ ∀ P' : Place k F', P'.restrict k F ≠ P := by
+  constructor
+  · intro h P' hP'
+    rw [ramificationIdxIn, dite_eq_left ⟨P', hP'⟩] at h
+    exact absurd h (ramificationIdx_pos F _).ne'
+  · intro h
+    rw [ramificationIdxIn, dite_eq_right]
+    exact fun ⟨P', hP'⟩ ↦ h P' hP'
+
+end RamificationIdxIn
 
 end Place
 

@@ -35,6 +35,8 @@ place whose restriction is the original place.
 * `TauCeti.Place.restrict_surjective_of_finiteDimensional`: the same statement for an extension
   of algebraic function fields, where both integrality hypotheses are theorems rather than
   hypotheses.
+* `TauCeti.Place.ramificationIdxIn_pos`: the ramification index of a place of the base in a
+  finite extension of function fields is positive, since some place lies above it.
 * `TauCeti.Place.isIntegral_integers_algebraMap`: constants are integral over `𝒪_P`.
 * `TauCeti.Place.isIntegral_iff_forall_restrict_eq_mem_integers`: the integral closure of the
   valuation ring `𝒪_P` in the larger field is the intersection of the valuation rings of the
@@ -163,6 +165,15 @@ theorem restrict_surjective_of_finiteDimensional [FiniteDimensional F F']
   have := Algebra.IsIntegral.of_finite k k'
   have := Algebra.IsIntegral.of_finite F F'
   restrict_surjective hF'
+
+/-- **The ramification index of a place of the base is positive** for an extension of function
+fields: some place of `F'` lies above it. -/
+theorem ramificationIdxIn_pos [FiniteDimensional F F'] (hF : IsFunctionField k F)
+    (hF' : IsFunctionField k F')
+    {P : Place k F} : 0 < P.ramificationIdxIn F' := by
+  obtain ⟨P', hP'⟩ := restrict_surjective_of_finiteDimensional (k' := k) hF hF' P
+  rw [ramificationIdxIn_of_exists ⟨P', hP'⟩]
+  exact ramificationIdx_pos F _
 
 end Place
 
