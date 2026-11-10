@@ -60,7 +60,8 @@ private theorem eLpNorm_schrodingerPropagator_adjoint_le (hE : Module.finrank �
       ENNReal.ofReal_rpow_of_pos (abs_pos.2 hst'), ← ENNReal.ofReal_mul (by positivity),
       Real.mul_rpow (by positivity) (abs_nonneg _)]
     norm_num
-  rw [adjoint_schrodingerPropagator, ← schrodingerPropagator_add_apply, ← sub_eq_add_neg, hk]
+  rw [schrodingerPropagator_def, schrodingerPropagator_def, adjoint_phasePropagator,
+    ← phasePropagator_add_apply, ← sub_eq_add_neg, ← schrodingerPropagator_def, hk]
   by_cases hg : Integrable g
   · exact eLpNorm_schrodingerPropagator_le hst' g hg
   · have hg' : eLpNorm g 1 volume = ∞ := by
@@ -90,9 +91,9 @@ theorem exists_enorm_integral_schrodingerPropagator_neg_le (hE : Module.finrank 
   refine ⟨C * (ENNReal.ofReal ((4 * Real.pi) ^ (-(2⁻¹ : ℝ))) ^ (2⁻¹ : ℝ)).toNNReal,
     fun F hF hSF => ?_⟩
   rw [ENNReal.coe_mul, ENNReal.coe_toNNReal (by finiteness)]
-  simpa only [adjoint_schrodingerPropagator] using hC (schrodingerPropagator V) _
+  simpa only [adjoint_phasePropagator] using hC (schrodingerPropagator V) _
     (fun s t hst g => eLpNorm_schrodingerPropagator_adjoint_le hE hst g) F hF
-    (by simpa only [adjoint_schrodingerPropagator] using hSF)
+    (by simpa only [adjoint_phasePropagator] using hSF)
 
 /-- **The Strichartz estimate for the Schrödinger equation on the line**, at the admissible pair
 `(4, ∞)`, in weak form. There is `C` such that for every `f ∈ L²(E, V)` on a one-dimensional space
@@ -116,6 +117,6 @@ theorem exists_enorm_integral_inner_schrodingerPropagator_le (hE : Module.finran
   rw [ENNReal.coe_mul, ENNReal.coe_toNNReal (by finiteness)]
   exact hC (schrodingerPropagator V) _
     (fun s t hst g => eLpNorm_schrodingerPropagator_adjoint_le hE hst g) f G hG
-    (by simpa only [adjoint_schrodingerPropagator] using hSG)
+    (by simpa only [adjoint_phasePropagator] using hSG)
 
 end TauCeti
