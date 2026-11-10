@@ -130,6 +130,7 @@ def scalarRegularBand :
 
 /-- The inclusion of the band preserves orientation from
 `TauCeti.Manifold.Orientation.scalarRegularBand` at every point. -/
+@[simp]
 theorem isOrientationPreservingAt_scalarRegularBand (x : f ⁻¹' Icc a b) :
     letI := scalarRegularBandChartedSpace hf hn ha hb hab
     letI := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
@@ -163,6 +164,25 @@ end Band
 
 end Manifold.Orientation
 
+omit [I.Boundaryless] [FiniteDimensional ℝ E] [IsManifold I 1 M] in
+/-- The vector of a subset `s` of `M` over a tangent vector `v` of `M` at a point of `s`, when the
+derivative of the inclusion is invertible there. -/
+private theorem exists_mfderiv_subtypeVal_eq {s : Set M}
+    [ChartedSpace (EuclideanHalfSpace (n + 1)) s] (hf : ContMDiff I 𝓘(ℝ) 1 f) {x : s}
+    (hx : (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : s → M) x).IsInvertible)
+    (v : TangentSpace I (x : M)) :
+    ∃ u : TangentSpace (𝓡∂ (n + 1)) x, mfderiv (𝓡∂ (n + 1)) I Subtype.val x u = v ∧
+      mvfderiv (𝓡∂ (n + 1)) (fun w : s ↦ f w) x u = mvfderiv I f x v := by
+  obtain ⟨D, hD⟩ := hx
+  have hDv : mfderiv (𝓡∂ (n + 1)) I Subtype.val x (D.symm v) = v := by
+    rw [← hD]
+    exact D.apply_symm_apply v
+  -- The restriction of `f` to `s` is `f ∘ Subtype.val` by definition.
+  have hcomp : (fun w : s ↦ f w) = f ∘ Subtype.val := rfl
+  refine ⟨D.symm v, hDv, ?_⟩
+  rw [hcomp, mvfderiv_comp _ ((hf _).mdifferentiableAt one_ne_zero)
+    (mdifferentiableAt_of_isInvertible_mfderiv ⟨D, hD⟩), ContinuousLinearMap.comp_apply, hDv]
+
 section Sublevel
 
 variable (o : Manifold.Orientation I M (Fin (n + 1))) (hf : ContMDiff I 𝓘(ℝ) 1 f)
@@ -189,19 +209,13 @@ theorem boundaryOrientation_scalarRegularSublevel_spec :
   let := scalarRegularSublevelChartedSpace hf hreg hn
   have := isManifold_scalarRegularSublevel hreg hn le_rfl hf
   intro x v hv e e' he'
-  obtain ⟨D, hD⟩ := isInvertible_mfderiv_subtypeVal_scalarRegularSublevel hf hreg hn x
-  have hDv : mfderiv (𝓡∂ (n + 1)) I Subtype.val (x : {x | f x ≤ a}) (D.symm v) = v := by
-    rw [← hD]
-    exact D.apply_symm_apply v
+  obtain ⟨u, hu, hfu⟩ := exists_mfderiv_subtypeVal_eq hf
+    (isInvertible_mfderiv_subtypeVal_scalarRegularSublevel hf hreg hn x) v
   have hx : f x = a := (boundary_scalarRegularSublevel hreg hn le_rfl hf).le x.2
   -- The vector of the sublevel over `v` points outward, because `df(v) > 0`.
   refine boundaryOrientation_spec_of_isOrientationPreservingAt x
-    (o.isOrientationPreservingAt_scalarRegularSublevel hf hreg hn x) ?_ e e' (by rw [he', hDv])
-  -- The restriction of `f` to the sublevel is `f ∘ Subtype.val` by definition.
-  have hcomp : (fun w : {x | f x ≤ a} ↦ f w) = f ∘ Subtype.val := rfl
-  rw [isOutwardPointing_scalarRegularSublevel_iff hf hn hreg hx, hcomp,
-    mvfderiv_comp _ ((hf _).mdifferentiableAt one_ne_zero)
-      (mdifferentiableAt_of_isInvertible_mfderiv ⟨D, hD⟩), ContinuousLinearMap.comp_apply, hDv]
+    (o.isOrientationPreservingAt_scalarRegularSublevel hf hreg hn x) ?_ e e' (by rw [he', hu])
+  rw [isOutwardPointing_scalarRegularSublevel_iff hf hn hreg hx, hfu]
   exact hv
 
 end Sublevel
@@ -211,24 +225,6 @@ section Band
 variable (o : Manifold.Orientation I M (Fin (n + 1))) (hf : ContMDiff I 𝓘(ℝ) 1 f)
   (hn : finrank ℝ E = n + 1) (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b)
   (hab : a < b)
-
-/-- The vector of the band over a tangent vector `v` of `M` at a point of the band, for the
-derivative of the inclusion. -/
-private theorem exists_mfderiv_subtypeVal_scalarRegularBand_eq (x : f ⁻¹' Icc a b)
-    (v : TangentSpace I (x : M)) :
-    letI := scalarRegularBandChartedSpace hf hn ha hb hab
-    ∃ u : TangentSpace (𝓡∂ (n + 1)) x, mfderiv (𝓡∂ (n + 1)) I Subtype.val x u = v ∧
-      mvfderiv (𝓡∂ (n + 1)) (fun w : f ⁻¹' Icc a b ↦ f w) x u = mvfderiv I f x v := by
-  let := scalarRegularBandChartedSpace hf hn ha hb hab
-  obtain ⟨D, hD⟩ := isInvertible_mfderiv_subtypeVal_scalarRegularBand hn ha hb hf hab x
-  have hDv : mfderiv (𝓡∂ (n + 1)) I Subtype.val x (D.symm v) = v := by
-    rw [← hD]
-    exact D.apply_symm_apply v
-  -- The restriction of `f` to the band is `f ∘ Subtype.val` by definition.
-  have hcomp : (fun w : f ⁻¹' Icc a b ↦ f w) = f ∘ Subtype.val := rfl
-  refine ⟨D.symm v, hDv, ?_⟩
-  rw [hcomp, mvfderiv_comp _ ((hf _).mdifferentiableAt one_ne_zero)
-    (mdifferentiableAt_of_isInvertible_mfderiv ⟨D, hD⟩), ContinuousLinearMap.comp_apply, hDv]
 
 /-- **The boundary orientation of a band at its lower level.** Orient the band `f⁻¹([a, b])` by an
 orientation `o` of `M` and its boundary by the induced outward-first orientation. At a point `x` of
@@ -252,7 +248,8 @@ theorem boundaryOrientation_scalarRegularBand_spec_of_eq_left :
   let := scalarRegularBandChartedSpace hf hn ha hb hab
   have := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
   intro x hx v hv e e' he'
-  obtain ⟨u, hu, hfu⟩ := exists_mfderiv_subtypeVal_scalarRegularBand_eq hf hn ha hb hab x v
+  obtain ⟨u, hu, hfu⟩ := exists_mfderiv_subtypeVal_eq hf
+    (isInvertible_mfderiv_subtypeVal_scalarRegularBand hn ha hb hf hab x) v
   -- The vector of the band over `v` points outward, because `df(v) < 0` on the lower level.
   refine boundaryOrientation_spec_of_isOrientationPreservingAt x
     (o.isOrientationPreservingAt_scalarRegularBand hf hn ha hb hab x) ?_ e e' (by rw [he', hu])
@@ -281,7 +278,8 @@ theorem boundaryOrientation_scalarRegularBand_spec_of_eq_right :
   let := scalarRegularBandChartedSpace hf hn ha hb hab
   have := isManifold_scalarRegularBand hn ha hb le_rfl hf hab
   intro x hx v hv e e' he'
-  obtain ⟨u, hu, hfu⟩ := exists_mfderiv_subtypeVal_scalarRegularBand_eq hf hn ha hb hab x v
+  obtain ⟨u, hu, hfu⟩ := exists_mfderiv_subtypeVal_eq hf
+    (isInvertible_mfderiv_subtypeVal_scalarRegularBand hn ha hb hf hab x) v
   -- The vector of the band over `v` points outward, because `df(v) > 0` on the upper level.
   refine boundaryOrientation_spec_of_isOrientationPreservingAt x
     (o.isOrientationPreservingAt_scalarRegularBand hf hn ha hb hab x) ?_ e e' (by rw [he', hu])

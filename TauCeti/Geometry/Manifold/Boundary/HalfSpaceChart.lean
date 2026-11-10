@@ -8,7 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
-import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 import Mathlib.Geometry.Manifold.MFDeriv.Atlas
 import TauCeti.Geometry.Manifold.MFDeriv.IsInvertible
 
@@ -215,26 +215,15 @@ theorem contMDiff_subtypeVal_of_forall_mem_atlas_halfSpaceChart
   intro x
   obtain ⟨e, hce, hx, heq⟩ := exists_eventuallyEq_extChartAt_of_forall_mem_atlas_halfSpaceChart h x
   obtain ⟨c, Ψ, hc, -, hΨ, rfl⟩ := isExtendTransChart_iff.1 hce
-  rw [extendTrans_source] at hx
-  -- Near `x`, the inclusion is the inverse of `e = Ψ ∘ c.extend I` after the extended chart.
+  -- Near `x`, the inclusion is the inverse of `e` after the extended chart.
   have hval : (Subtype.val : s → M) =ᶠ[nhds x]
-      ((c.extend I).symm ∘ Ψ.symm) ∘ extChartAt (𝓡∂ (n + 1)) x := by
+      (c.extendTrans I Ψ).symm ∘ extChartAt (𝓡∂ (n + 1)) x := by
     filter_upwards [heq, (continuous_subtype_val.continuousAt (x := x)).preimage_mem_nhds
-      (c.open_source.mem_nhds hx)] with w hw hws
-    simp only [Function.comp_apply] at hw ⊢
-    rw [← hw, extendTrans_apply, Homeomorph.symm_apply_apply, ← Function.comp_apply (f := I),
-      ← c.extend_coe, c.extend_left_inv hws]
-  have hsymm : ContMDiffAt 𝓘(ℝ, E) I m (c.extend I).symm (c.extend I (x : M)) :=
-    ((contMDiffOn_extend_symm hc).mono (c.extend_target' (I := I)).subset).contMDiffAt
-      ((c.isOpen_extend_target (I := I)).mem_nhds
-        ((c.extend I).map_source (by rwa [c.extend_source])))
-  have hΨx : Ψ.symm (extChartAt (𝓡∂ (n + 1)) x x) = c.extend I (x : M) := by
-    rw [← heq.eq_of_nhds, Function.comp_apply, extendTrans_apply, Homeomorph.symm_apply_apply,
-      c.extend_coe, Function.comp_apply]
-  have hcomp : ContMDiffAt 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) I m
-      ((c.extend I).symm ∘ Ψ.symm) (extChartAt (𝓡∂ (n + 1)) x x) :=
-    (hΨx ▸ hsymm).comp _ hΨ.contMDiff.contMDiffAt
-  exact (hcomp.comp x contMDiffAt_extChartAt).congr_of_eventuallyEq hval
+      ((c.extendTrans I Ψ).open_source.mem_nhds hx)] with w hw hws
+    rw [Function.comp_apply, ← hw, Function.comp_apply, (c.extendTrans I Ψ).left_inv hws]
+  exact ((((contMDiffOn_extendTrans_symm c hc hΨ).contMDiffAt
+    ((c.extendTrans I Ψ).open_target.mem_nhds ((c.extendTrans I Ψ).map_source hx))).comp_of_eq
+      contMDiffAt_extChartAt heq.eq_of_nhds.symm).congr_of_eventuallyEq hval)
 
 /-- **The inclusion of a regular domain has invertible derivative.** Under the hypotheses of
 `TauCeti.contMDiff_subtypeVal_of_forall_mem_atlas_halfSpaceChart` with `m ≠ 0`, and when `M` is
@@ -250,16 +239,12 @@ theorem isInvertible_mfderiv_subtypeVal_of_forall_mem_atlas_halfSpaceChart
     (mfderiv (𝓡∂ (n + 1)) I (Subtype.val : s → M) x).IsInvertible := by
   obtain ⟨e, hce, hx, heq⟩ := exists_eventuallyEq_extChartAt_of_forall_mem_atlas_halfSpaceChart h x
   obtain ⟨c, Ψ, hc, hΨ, -, rfl⟩ := isExtendTransChart_iff.1 hce
-  rw [extendTrans_source] at hx
-  -- The ambient chart `e = Ψ ∘ c.extend I` composed with the inclusion is the extended chart of
-  -- `s` near `x`, whose derivative at `x` is the identity.
+  -- The ambient chart `e` composed with the inclusion is the extended chart of `s` near `x`,
+  -- whose derivative at `x` is the identity.
   have he : MDifferentiableAt I 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1))) (c.extendTrans I Ψ)
-      (x : M) := by
-    have hext : (c.extendTrans I Ψ : M → EuclideanSpace ℝ (Fin (n + 1))) = Ψ ∘ c.extend I := by
-      funext w
-      rw [extendTrans_apply, Function.comp_apply, c.extend_coe, Function.comp_apply]
-    rw [hext]
-    exact ((hΨ.contMDiff.contMDiffAt).comp _ (c.contMDiffAt_extend hc hx)).mdifferentiableAt hm
+      (x : M) :=
+    ((contMDiffOn_extendTrans c hc hΨ).contMDiffAt
+      ((c.extendTrans I Ψ).open_source.mem_nhds hx)).mdifferentiableAt hm
   have hcomp : (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
       ((c.extendTrans I Ψ) ∘ Subtype.val) x).IsInvertible := by
     have : IsManifold (𝓡∂ (n + 1)) 1 s :=
