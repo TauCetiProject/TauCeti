@@ -67,14 +67,13 @@ namespace TauCeti
 variable {U : Set ℂ} {a : ℂ}
 
 /-- The connected component, in the complement of a set `F` containing the frontier of
-`U` and the sphere `sphere a r`, of a point of `U ∩ ball a r` outside `F` stays inside
-`U ∩ ball a r`. -/
+`U` and the sphere `sphere a r`, of a point of `U ∩ ball a r` stays inside `U ∩ ball a r`. -/
 private theorem connectedComponentIn_compl_subset_inter_ball {x₀ : ℂ} {r : ℝ}
     (hr : 0 < r) {F : Set ℂ} (hF : frontier U ∪ sphere a r ⊆ F)
-    (hx₀U : x₀ ∈ U) (hx₀r : x₀ ∈ ball a r) (hx₀F : x₀ ∈ Fᶜ) :
+    (hx₀U : x₀ ∈ U) (hx₀r : x₀ ∈ ball a r) :
     connectedComponentIn Fᶜ x₀ ⊆ U ∩ ball a r :=
-  subset_inter (connectedComponentIn_subset_of_frontier_subset hx₀F hx₀U fun z hz => hF (Or.inl hz))
-    (connectedComponentIn_subset_of_frontier_subset hx₀F hx₀r fun z hz =>
+  subset_inter (connectedComponentIn_subset_of_frontier_subset hx₀U fun z hz => hF (Or.inl hz))
+    (connectedComponentIn_subset_of_frontier_subset hx₀r fun z hz =>
       hF (Or.inr (by rwa [frontier_ball _ hr.ne'] at hz)))
 
 /-- **Janiszewski step.**  Given an open arc `W` of the boundary through `a`,
@@ -98,16 +97,9 @@ private theorem IsJordanDomain.exists_isPreconnected_inter_ball_subset_of_arc
   set S : Set ℂ := J
   set T : Set ℂ := sphere a r ∪ (J \ W)
   have hUJ : U ∩ J = ∅ := hU.isOpen.inter_frontier_eq
-  have hx₀r : x₀ ∈ ball a r := ball_subset_ball hρr hx₀a
-  have hx₀T : x₀ ∈ (S ∪ T)ᶜ := by
-    have hx₀J : x₀ ∉ J := fun h => (Set.eq_empty_iff_forall_notMem.mp hUJ) x₀ ⟨hx₀U, h⟩
-    rintro (h | h | h)
-    · exact hx₀J h
-    · exact (ne_of_lt (mem_ball.mp hx₀r)) (mem_sphere.mp h)
-    · exact hx₀J h.1
   refine ⟨connectedComponentIn (S ∪ T)ᶜ x₀,
     connectedComponentIn_compl_subset_inter_ball hr
-      (fun z hz => hz.elim Or.inl fun h => Or.inr (Or.inl h)) hx₀U hx₀r hx₀T,
+      (fun z hz => hz.elim Or.inl fun h => Or.inr (Or.inl h)) hx₀U (ball_subset_ball hρr hx₀a),
     isPreconnected_connectedComponentIn, ?_⟩
   -- Janiszewski puts every point of `U ∩ ball a ρ` in the component of `x₀`
   rintro y ⟨hyU, hya⟩
