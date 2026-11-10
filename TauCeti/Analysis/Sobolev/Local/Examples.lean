@@ -6,8 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Sobolev.Local.Basic
+public import TauCeti.Analysis.Sobolev.Local.Reflection
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 import Mathlib.Analysis.Calculus.BumpFunction.Normed
+import Mathlib.Analysis.Calculus.Deriv.Polynomial
+import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Analysis.Complex.OperatorNorm
 import Mathlib.Analysis.Complex.ReImTopology
@@ -16,8 +19,11 @@ import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import TauCeti.Analysis.InnerProductSpace.NormPow
 import TauCeti.Analysis.SpecialFunctions.Integrability.Rpow
+import TauCeti.Analysis.Sobolev.Local.ChangeOfVariables
 import TauCeti.Analysis.Sobolev.Local.Lipschitz
+import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 import TauCeti.Analysis.Sobolev.WeakDeriv.Lipschitz
+import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 import TauCeti.Analysis.Sobolev.WeakDeriv.Removable
 import TauCeti.MeasureTheory.Integral.NormRpow
 import TauCeti.MeasureTheory.Measure.Lebesgue.Complex
@@ -31,15 +37,22 @@ This file tests `TauCeti.MemWkpLoc` against explicit planar functions.
   `0 < p`.
 * The map `z ↦ ‖z‖` is in every local `W^{1,p}` class, as a Lipschitz map
   (`LipschitzWith.memWkpLoc_one`).
-* The map `z ↦ ‖z‖` is not in the local class `W^{2,p}` near the origin for `p ≥ 2`: away from
-  the origin its second derivative has norm at least `‖z‖⁻¹`, and `‖z‖ ^ (-2)` is not integrable
-  near the origin of the plane.
+* Holomorphic maps on an open set `Ω`, in particular polynomials, are in every local Sobolev class
+  on every subset of `Ω`.
+* The map `z ↦ ‖z‖` is in the local class `W^{2,p}` exactly when `p < 2`, on every set whose
+  interior contains the origin: away from the origin its second derivative has norm between
+  `‖z‖⁻¹` and `2 ‖z‖⁻¹`, and `‖z‖ ^ (-p)` is integrable near the origin of the plane exactly when
+  `p < 2`. For `p < 2` the weak second derivative across the origin is obtained by approximating
+  the coordinates of `z / ‖z‖` by those of `z / (‖z‖ ^ 2 + c) ^ (1 / 2)`.
 * The indicator of the half-plane `{z | 0 < z.re}` has no weak derivative on any open set
   meeting the imaginary axis, so it is in every local `Lᵖ` class but in no local `W^{k,p}` class
   of positive order there.
 * On the closed upper half-disc `D⁺ = ball 0 1 ∩ {z | 0 ≤ z.im}`, the map `z ↦ √z.im` is in the
   local class `W^{1,p}` exactly when `p < 2`, because the `Lᵖ` bounds reach the real axis. On the
   open half-disc it is in that class for every `p`, although it is continuous up to the axis.
+* The even reflection does not extend `u = Im z` from the upper half-disc to a local `W^{2,p}`
+  map, for any exponent: it gives `|Im z|`, whose first derivative jumps across the real axis. The
+  order-two reflection `u(s, -t) = -3 u(s, t) + 4 u(s, t / 2)` gives `Im z` back.
 
 ## References
 
@@ -69,6 +82,20 @@ theorem memWkpLoc_id (p : ENNReal) (U : Set ℂ) (k : ℕ) : MemWkpLoc p U k (fu
 weak gradient `z / ‖z‖` is bounded. -/
 theorem memWkpLoc_one_norm : MemWkpLoc p U 1 (fun z : ℂ => ‖z‖) :=
   lipschitzWith_one_norm.memWkpLoc_one
+
+/-! ### Holomorphic maps and polynomials -/
+
+/-- A holomorphic map on an open set `Ω` is in every local Sobolev class on every subset of `Ω`,
+for every exponent: it is smooth on `Ω`. -/
+theorem _root_.DifferentiableOn.memWkpLoc {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [CompleteSpace E] {Ω : Opens ℂ} {f : ℂ → E} (hf : DifferentiableOn ℂ f Ω) (hU : U ⊆ Ω)
+    (k : ℕ) : MemWkpLoc p U k f :=
+  ((hf.contDiffOn Ω.isOpen (n := k)).restrict_scalars ℝ).memWkpLoc hU
+
+/-- Every complex polynomial is in every local Sobolev class on every set. -/
+theorem memWkpLoc_polynomial_eval (P : Polynomial ℂ) (U : Set ℂ) (k : ℕ) :
+    MemWkpLoc p U k (fun z => P.eval z) :=
+  P.differentiable.differentiableOn.memWkpLoc (Ω := ⊤) (subset_univ U) k
 
 /-! ### The norm is not in `W^{2,p}` for `p ≥ 2` -/
 
@@ -141,6 +168,298 @@ theorem not_memWkpLoc_two_norm (hp : 2 ≤ p) (h0 : (0 : ℂ) ∈ interior U) :
   have := (integrableOn_norm_rpow_ball_iff (E := ℂ) (mu := volume) (s := -2)
     (half_pos hr)).1 hsing
   simp [Complex.finrank_real_complex] at this
+
+/-! ### The norm is in `W^{2,p}` for `p < 2` -/
+
+/-- The regularised coordinate `z ↦ (‖z‖ ^ 2 + c) ^ (-1 / 2) ⟪e, z⟫` of the unit radial field. -/
+private def unitRadialCoord (c : ℝ) (e z : ℂ) : ℝ :=
+  (‖z‖ ^ 2 + c) ^ (-(1 / 2) : ℝ) * innerSL ℝ e z
+
+/-- The derivative of `TauCeti.unitRadialCoord c e`. -/
+private def unitRadialCoordDeriv (c : ℝ) (e z : ℂ) : ℂ →L[ℝ] ℝ :=
+  (‖z‖ ^ 2 + c) ^ (-(1 / 2) : ℝ) • innerSL ℝ e -
+    ((‖z‖ ^ 2 + c) ^ (-(3 / 2) : ℝ) * innerSL ℝ e z) • innerSL ℝ z
+
+private theorem hasFDerivAt_unitRadialCoord {c : ℝ} (e : ℂ) {z : ℂ} (hz : 0 < ‖z‖ ^ 2 + c) :
+    HasFDerivAt (unitRadialCoord c e) (unitRadialCoordDeriv c e z) z := by
+  have hr := ((hasFDerivAt_id z).norm_sq.add_const c).rpow_const (p := -(1 / 2))
+    (Or.inl hz.ne')
+  convert hr.mul (innerSL ℝ e).hasFDerivAt using 1
+  · rfl
+  ext v
+  simp only [unitRadialCoordDeriv, sub_apply, add_apply, smul_apply, smul_eq_mul, id,
+    ContinuousLinearMap.comp_apply, ContinuousLinearMap.id_apply, innerSL_apply_apply]
+  rw [show (-(1 / 2) - 1 : ℝ) = -(3 / 2) by norm_num, nsmul_eq_mul, Nat.cast_ofNat]
+  ring
+
+private theorem rpow_neg_half_le {c : ℝ} (hc : 0 ≤ c) {z : ℂ} (hz : z ≠ 0) :
+    (‖z‖ ^ 2 + c) ^ (-(1 / 2) : ℝ) ≤ ‖z‖⁻¹ := by
+  have hz' : 0 < ‖z‖ := norm_pos_iff.2 hz
+  calc (‖z‖ ^ 2 + c) ^ (-(1 / 2) : ℝ) ≤ (‖z‖ ^ 2) ^ (-(1 / 2) : ℝ) :=
+        Real.rpow_le_rpow_of_nonpos (by positivity) (by linarith) (by norm_num)
+    _ = ‖z‖⁻¹ := by
+        rw [Real.rpow_neg (sq_nonneg _), ← Real.sqrt_eq_rpow, Real.sqrt_sq hz'.le]
+
+private theorem norm_unitRadialCoord_le {c : ℝ} (hc : 0 ≤ c) (e z : ℂ) :
+    ‖unitRadialCoord c e z‖ ≤ ‖e‖ := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp [unitRadialCoord]
+  rw [unitRadialCoord, norm_mul, Real.norm_of_nonneg (by positivity)]
+  calc _ ≤ ‖z‖⁻¹ * (‖e‖ * ‖z‖) := by
+        gcongr
+        · exact rpow_neg_half_le hc hz
+        · exact (innerSL ℝ e).le_of_opNorm_le (innerSL_apply_norm ℝ e).le z
+    _ = ‖e‖ := by field_simp [norm_ne_zero_iff.2 hz]
+
+private theorem norm_unitRadialCoordDeriv_le {c : ℝ} (hc : 0 ≤ c) (e : ℂ) {z : ℂ} (hz : z ≠ 0) :
+    ‖unitRadialCoordDeriv c e z‖ ≤ 2 * ‖e‖ * ‖z‖⁻¹ := by
+  have hs : 0 < ‖z‖ ^ 2 + c := by have := norm_pos_iff.2 hz; positivity
+  have h3 : (‖z‖ ^ 2 + c) ^ (-(3 / 2) : ℝ) * ‖z‖ ^ 2 ≤ (‖z‖ ^ 2 + c) ^ (-(1 / 2) : ℝ) := by
+    calc _ ≤ (‖z‖ ^ 2 + c) ^ (-(3 / 2) : ℝ) * (‖z‖ ^ 2 + c) := by gcongr; linarith
+      _ = _ := by rw [← Real.rpow_add_one hs.ne']; norm_num
+  have h1 := rpow_neg_half_le hc hz
+  have hez : ‖innerSL ℝ e z‖ ≤ ‖e‖ * ‖z‖ :=
+    (innerSL ℝ e).le_of_opNorm_le (innerSL_apply_norm ℝ e).le z
+  refine (norm_sub_le _ _).trans ?_
+  rw [norm_smul, norm_smul, norm_mul, innerSL_apply_norm, innerSL_apply_norm,
+    Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity)]
+  calc _ ≤ (‖z‖ ^ 2 + c) ^ (-(1 / 2) : ℝ) * ‖e‖ +
+        (‖z‖ ^ 2 + c) ^ (-(3 / 2) : ℝ) * (‖e‖ * ‖z‖) * ‖z‖ := by gcongr
+    _ = ‖e‖ * ((‖z‖ ^ 2 + c) ^ (-(1 / 2) : ℝ) + (‖z‖ ^ 2 + c) ^ (-(3 / 2) : ℝ) * ‖z‖ ^ 2) := by
+        ring
+    _ ≤ ‖e‖ * (2 * ‖z‖⁻¹) := by gcongr; linarith
+    _ = _ := by ring
+
+private theorem continuous_rpow_norm_sq_add {c : ℝ} (hc : 0 < c) (q : ℝ) :
+    Continuous fun z : ℂ => (‖z‖ ^ 2 + c) ^ q :=
+  (by fun_prop : Continuous fun z : ℂ => ‖z‖ ^ 2 + c).rpow_const fun z => Or.inl (by positivity)
+
+private theorem continuous_unitRadialCoord {c : ℝ} (hc : 0 < c) (e : ℂ) :
+    Continuous (unitRadialCoord c e) :=
+  (continuous_rpow_norm_sq_add hc _).mul (innerSL ℝ e).continuous
+
+private theorem continuous_unitRadialCoordDeriv {c : ℝ} (hc : 0 < c) (e : ℂ) :
+    Continuous (unitRadialCoordDeriv c e) :=
+  ((continuous_rpow_norm_sq_add hc _).smul continuous_const).sub
+    (((continuous_rpow_norm_sq_add hc _).mul (innerSL ℝ e).continuous).smul
+      (innerSL ℝ (E := ℂ)).continuous)
+
+private theorem measurable_unitRadialCoord (c : ℝ) (e : ℂ) : Measurable (unitRadialCoord c e) := by
+  unfold unitRadialCoord
+  fun_prop
+
+private theorem measurable_unitRadialCoordDeriv (c : ℝ) (e : ℂ) :
+    Measurable (unitRadialCoordDeriv c e) := by
+  unfold unitRadialCoordDeriv
+  fun_prop
+
+
+private theorem continuousAt_rpow_norm_sq_add {z : ℂ} (hz : z ≠ 0) (q : ℝ) :
+    ContinuousAt (fun c : ℝ => (‖z‖ ^ 2 + c) ^ q) 0 := by
+  have h : ‖z‖ ^ 2 + 0 ≠ 0 := by have := norm_pos_iff.2 hz; positivity
+  exact (continuous_const.add continuous_id : Continuous fun c : ℝ => ‖z‖ ^ 2 + c).continuousAt
+    |>.rpow_const (Or.inl h)
+
+private theorem tendsto_unitRadialCoord (e : ℂ) {z : ℂ} (hz : z ≠ 0) :
+    Tendsto (fun c => unitRadialCoord c e z) (𝓝 0) (𝓝 (unitRadialCoord 0 e z)) :=
+  ((continuousAt_rpow_norm_sq_add hz _).mul continuousAt_const).tendsto
+
+private theorem tendsto_unitRadialCoordDeriv (e : ℂ) {z : ℂ} (hz : z ≠ 0) :
+    Tendsto (fun c => unitRadialCoordDeriv c e z) (𝓝 0) (𝓝 (unitRadialCoordDeriv 0 e z)) :=
+  (((continuousAt_rpow_norm_sq_add hz _).smul continuousAt_const).sub
+    (((continuousAt_rpow_norm_sq_add hz _).mul continuousAt_const).smul
+      continuousAt_const)).tendsto
+
+private theorem ae_ne_origin : ∀ᵐ z : ℂ ∂volume, z ≠ 0 := by
+  simp [ae_iff, measure_singleton]
+
+private theorem locallyIntegrable_unitRadialCoord {c : ℝ} (hc : 0 ≤ c) (e : ℂ) :
+    LocallyIntegrable (unitRadialCoord c e) volume :=
+  (locallyIntegrable_const ‖e‖).mono (measurable_unitRadialCoord c e).aestronglyMeasurable
+    (Eventually.of_forall fun z => by simpa using norm_unitRadialCoord_le hc e z)
+
+private theorem norm_unitRadialCoordDeriv_le_rpow (e : ℂ) :
+    ∀ᵐ z : ℂ ∂volume, ‖unitRadialCoordDeriv 0 e z‖ ≤ 2 * ‖e‖ * ‖z‖ ^ (-1 : ℝ) := by
+  filter_upwards [ae_ne_origin] with z hz
+  rw [Real.rpow_neg_one]
+  exact norm_unitRadialCoordDeriv_le le_rfl e hz
+
+private theorem locallyIntegrable_unitRadialCoordDeriv (e : ℂ) :
+    LocallyIntegrable (unitRadialCoordDeriv 0 e) volume := by
+  have h := (locallyIntegrable_norm_sub_rpow (mu := (volume : Measure ℂ)) (s := -1)
+    (by simp [Complex.finrank_real_complex]) 0).smul (2 * ‖e‖)
+  refine h.mono (measurable_unitRadialCoordDeriv 0 e).aestronglyMeasurable ?_
+  filter_upwards [norm_unitRadialCoordDeriv_le_rpow e] with z hz
+  rw [Pi.smul_apply, zero_sub, norm_neg, smul_eq_mul, Real.norm_of_nonneg (by positivity)]
+  exact hz
+
+
+/-- Dominated convergence on the unit ball for an almost everywhere pointwise limit. -/
+private theorem tendsto_setLIntegral_ball_enorm_sub {F : Type*} [NormedAddCommGroup F]
+    [MeasurableSpace F] [BorelSpace F] [SecondCountableTopology F]
+    {f : ℕ → ℂ → F} {g : ℂ → F} (bound : ℂ → ℝ)
+    (hf : ∀ n, Measurable (f n)) (hg : Measurable g)
+    (hbound : ∀ n, ∀ᵐ z ∂volume, ‖f n z - g z‖ ≤ bound z)
+    (hint : IntegrableOn bound (ball (0 : ℂ) 1))
+    (hlim : ∀ᵐ z ∂volume, Tendsto (fun n => f n z) atTop (𝓝 (g z))) :
+    Tendsto (fun n => ∫⁻ z in ball (0 : ℂ) 1, ‖f n z - g z‖ₑ) atTop (𝓝 0) := by
+  have := tendsto_lintegral_filter_of_dominated_convergence
+    (μ := volume.restrict (ball (0 : ℂ) 1)) (l := atTop) (f := fun _ => 0)
+    (F := fun n z => ‖f n z - g z‖ₑ)
+    (fun z => ENNReal.ofReal (bound z)) (Eventually.of_forall fun n => by
+      have := hf n
+      fun_prop)
+    (Eventually.of_forall fun n => ae_restrict_of_ae ((hbound n).mono fun z hz => by
+      rw [← ofReal_norm]
+      exact ENNReal.ofReal_le_ofReal hz))
+    hint.lintegral_lt_top.ne
+    (ae_restrict_of_ae (hlim.mono fun z hz => by
+      simpa using (tendsto_sub_nhds_zero_iff.2 hz).enorm))
+  simpa using this
+
+/-- The unit disc as an open set. -/
+private def unitBall : Opens ℂ := ⟨ball 0 1, isOpen_ball⟩
+
+private theorem hasWeakFDerivOn_unitRadialCoord_unitBall (e : ℂ) :
+    HasWeakFDerivOn volume unitBall (unitRadialCoord 0 e) (unitRadialCoordDeriv 0 e) := by
+  set c : ℕ → ℝ := fun n => 1 / ((n : ℝ) + 1)
+  have hc : Tendsto c atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
+  have hc0 : ∀ n, 0 < c n := fun n => Nat.one_div_pos_of_nat
+  refine hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub (l := atTop)
+    (u := fun n => unitRadialCoord (c n) e) (U := fun n => unitRadialCoordDeriv (c n) e)
+    ((locallyIntegrable_unitRadialCoord le_rfl e).locallyIntegrableOn _)
+    (fun v => by
+      simpa only [Function.comp_def, ContinuousLinearMap.apply_apply] using
+        (ContinuousLinearMap.apply ℝ ℝ v).locallyIntegrableOn_comp
+          ((locallyIntegrable_unitRadialCoordDeriv e).locallyIntegrableOn _))
+    (fun n => ?_) ?_ ?_
+  · exact hasWeakFDerivOn_of_hasFDerivAt_off_countable countable_empty
+      (continuous_unitRadialCoord (hc0 n) e).continuousOn
+      ((continuous_unitRadialCoordDeriv (hc0 n) e).locallyIntegrable.locallyIntegrableOn _)
+      fun z _ => hasFDerivAt_unitRadialCoord e (by have := hc0 n; positivity)
+  · refine tendsto_setLIntegral_ball_enorm_sub (fun _ => 2 * ‖e‖)
+      (fun n => measurable_unitRadialCoord _ e) (measurable_unitRadialCoord 0 e)
+      (fun n => Eventually.of_forall fun z => ?_) integrableOn_const ?_
+    · refine (norm_sub_le _ _).trans ?_
+      linarith [norm_unitRadialCoord_le (hc0 n).le e z, norm_unitRadialCoord_le le_rfl e z]
+    · filter_upwards [ae_ne_origin] with z hz
+      exact (tendsto_unitRadialCoord e hz).comp hc
+  · refine tendsto_setLIntegral_ball_enorm_sub (fun z => 4 * ‖e‖ * ‖z‖ ^ (-1 : ℝ))
+      (fun n => measurable_unitRadialCoordDeriv _ e) (measurable_unitRadialCoordDeriv 0 e)
+      (fun n => ?_) ((integrableOn_norm_rpow_ball
+        (by simp [Complex.finrank_real_complex])).const_mul _) ?_
+    · filter_upwards [ae_ne_origin] with z hz
+      refine (norm_sub_le _ _).trans ?_
+      have h1 := norm_unitRadialCoordDeriv_le (hc0 n).le e hz
+      have h2 := norm_unitRadialCoordDeriv_le le_rfl e hz
+      rw [Real.rpow_neg_one]
+      linarith
+    · filter_upwards [ae_ne_origin] with z hz
+      exact (tendsto_unitRadialCoordDeriv e hz).comp hc
+
+
+private theorem hasWeakFDerivOn_unitRadialCoord (e : ℂ) :
+    HasWeakFDerivOn volume ⊤ (unitRadialCoord 0 e) (unitRadialCoordDeriv 0 e) := by
+  have hcompl : HasWeakFDerivOn volume ⟨{0}ᶜ, isOpen_compl_singleton⟩ (unitRadialCoord 0 e)
+      (unitRadialCoordDeriv 0 e) :=
+    hasWeakFDerivOn_of_hasFDerivAt_off_countable countable_empty
+      (fun z hz => (hasFDerivAt_unitRadialCoord e (by have := norm_pos_iff.2 hz; positivity)
+        ).continuousAt.continuousWithinAt)
+      ((locallyIntegrable_unitRadialCoordDeriv e).locallyIntegrableOn _)
+      fun z hz => hasFDerivAt_unitRadialCoord e (by have := norm_pos_iff.2 hz.1; positivity)
+  refine ((hasWeakFDerivOn_unitRadialCoord_unitBall e).sup hcompl).mono fun z _ => ?_
+  rcases eq_or_ne z 0 with rfl | hz
+  · exact Or.inl (mem_ball_self one_pos)
+  · exact Or.inr hz
+
+/-- The kernel `‖z‖⁻¹` is `Lᵖ` on every disc centred at the origin for `p < 2`. -/
+private theorem memLp_norm_rpow_neg_one_ball (hp : p < 2) (R : ℝ) :
+    MemLp (fun z : ℂ => ‖z‖ ^ (-1 : ℝ)) p (volume.restrict (ball 0 R)) := by
+  have hmeas : AEStronglyMeasurable (fun z : ℂ => ‖z‖ ^ (-1 : ℝ)) (volume.restrict (ball 0 R)) :=
+    (by fun_prop : Measurable fun z : ℂ => ‖z‖ ^ (-1 : ℝ)).aestronglyMeasurable
+  rcases eq_or_ne p 0 with rfl | hp0
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hmeas
+  have hp' : p ≠ ⊤ := ne_top_of_lt hp
+  have hp2 : p.toReal < 2 := by
+    simpa using (ENNReal.toReal_lt_toReal hp' (by simp)).2 hp
+  refine (integrable_norm_rpow_iff hmeas hp0 hp').1 ?_
+  refine ((integrableOn_norm_rpow_ball (mu := (volume : Measure ℂ)) (s := -p.toReal)
+    (by simp [Complex.finrank_real_complex]; linarith) (R := R))).congr
+    (Eventually.of_forall fun z => ?_)
+  simp only
+  rw [Real.norm_of_nonneg (by positivity), ← Real.rpow_mul (norm_nonneg _), neg_one_mul]
+
+private theorem memWkpLoc_one_unitRadialCoord (hp : p < 2) (e : ℂ) :
+    MemWkpLoc p U 1 (unitRadialCoord 0 e) := by
+  refine memWkpLoc_succ_iff.2 ⟨memLpLoc_iff.2 fun K _ hK => ?_, unitRadialCoordDeriv 0 e,
+    (hasWeakFDerivOn_unitRadialCoord e).mono le_top, memWkpLoc_zero_iff.2
+      (memLpLoc_iff.2 fun K _ hK => ?_)⟩
+  · have : IsFiniteMeasure (volume.restrict K) := ⟨by simpa using hK.measure_lt_top⟩
+    exact MemLp.of_bound (measurable_unitRadialCoord 0 e).aestronglyMeasurable ‖e‖
+      (Eventually.of_forall (norm_unitRadialCoord_le le_rfl e))
+  · obtain ⟨R, hR⟩ := hK.isBounded.subset_ball 0
+    refine (((memLp_norm_rpow_neg_one_ball hp R).const_mul (2 * ‖e‖)).mono_measure
+      (Measure.restrict_mono hR le_rfl)).of_le
+      (measurable_unitRadialCoordDeriv 0 e).aestronglyMeasurable
+      (ae_restrict_of_ae ((norm_unitRadialCoordDeriv_le_rpow e).mono fun z hz => ?_))
+    rw [Real.norm_of_nonneg (by positivity)]
+    exact hz
+
+
+/-- The derivative of the norm of `ℂ` away from the origin, in the coordinates `re` and `im`. -/
+private def normDeriv (z : ℂ) : ℂ →L[ℝ] ℝ :=
+  unitRadialCoord 0 1 z • Complex.reCLM + unitRadialCoord 0 Complex.I z • Complex.imCLM
+
+private theorem hasFDerivAt_norm_normDeriv {z : ℂ} (hz : z ≠ 0) :
+    HasFDerivAt (fun y : ℂ => ‖y‖) (normDeriv z) z := by
+  convert hasFDerivAt_norm_of_ne hz using 1
+  have h : (‖z‖ ^ 2 + 0) ^ (-(1 / 2) : ℝ) = ‖z‖⁻¹ := by
+    rw [add_zero, Real.rpow_neg (sq_nonneg _), ← Real.sqrt_eq_rpow, Real.sqrt_sq (norm_nonneg _)]
+  ext v
+  simp only [normDeriv, unitRadialCoord, h, add_apply, smul_apply, smul_eq_mul,
+    innerSL_apply_apply, Complex.reCLM_apply, Complex.imCLM_apply, Complex.inner]
+  simp
+  ring
+
+private theorem memWkpLoc_one_normDeriv (hp : p < 2) : MemWkpLoc p U 1 normDeriv := by
+  have h := ((memWkpLoc_one_unitRadialCoord (U := U) hp 1).clm_comp
+    ((1 : ℝ →L[ℝ] ℝ).smulRight Complex.reCLM)).add
+    ((memWkpLoc_one_unitRadialCoord (U := U) hp Complex.I).clm_comp
+      ((1 : ℝ →L[ℝ] ℝ).smulRight Complex.imCLM))
+  convert h using 1
+  funext z
+  ext v
+  simp [normDeriv]
+
+private theorem locallyIntegrable_normDeriv : LocallyIntegrable normDeriv volume := by
+  have h1 := measurable_unitRadialCoord 0 1
+  have hI := measurable_unitRadialCoord 0 Complex.I
+  refine (locallyIntegrable_const (2 : ℝ)).mono (by unfold normDeriv; fun_prop)
+    (Eventually.of_forall fun z => ?_)
+  have h1 := norm_unitRadialCoord_le le_rfl 1 z
+  have hI := norm_unitRadialCoord_le le_rfl Complex.I z
+  simp only [norm_one, Complex.norm_I] at h1 hI
+  refine (norm_add_le _ _).trans ?_
+  rw [norm_smul, norm_smul, Complex.reCLM_norm, Complex.imCLM_norm, Real.norm_two]
+  linarith
+
+/-- The norm `z ↦ ‖z‖` is in the local class `W^{2,p}` on every set for `p < 2`: its second
+weak derivative has size `‖z‖⁻¹`, which is `Lᵖ` near the origin of the plane exactly when
+`p < 2`. -/
+theorem memWkpLoc_two_norm (hp : p < 2) : MemWkpLoc p U 2 (fun z : ℂ => ‖z‖) := by
+  have hD : HasWeakFDerivOn volume ⊤ (fun z : ℂ => ‖z‖) normDeriv :=
+    hasWeakFDerivOn_of_hasFDerivAt_off_countable (countable_singleton 0)
+      continuous_norm.continuousOn
+      (locallyIntegrable_normDeriv.locallyIntegrableOn _)
+      fun z hz => hasFDerivAt_norm_normDeriv hz.2
+  exact memWkpLoc_succ_iff.2 ⟨continuous_norm.continuousOn.memLpLoc, normDeriv,
+    hD.mono le_top, memWkpLoc_one_normDeriv hp⟩
+
+/-- The norm `z ↦ ‖z‖` is in the local class `W^{2,p}` on a set whose interior contains the
+origin exactly when `p < 2`. -/
+theorem memWkpLoc_two_norm_iff (h0 : (0 : ℂ) ∈ interior U) :
+    MemWkpLoc p U 2 (fun z : ℂ => ‖z‖) ↔ p < 2 :=
+  ⟨fun h => not_le.1 fun hp => not_memWkpLoc_two_norm hp h0 h, memWkpLoc_two_norm⟩
 
 /-! ### A jump across a line -/
 
@@ -380,5 +699,82 @@ theorem memWkpLoc_sqrt_im_ball_inter_im_pos :
       hasWeakFDerivOn_sqrt_im.mono fun z hz => (interior_subset (s := V) hz).2,
       memWkpLoc_zero_iff.2 (ContinuousOn.memLpLoc ?_)⟩
   fun_prop (disch := exact fun z hz => mul_ne_zero two_ne_zero (Real.sqrt_pos.2 hz.2).ne')
+
+/-! ### The even reflection fails at order two -/
+
+/-- The even extension `z ↦ |Im z|` of the normal coordinate `Im z` is not in the local class
+`W^{2,p}` on any set whose interior meets the real axis, for any exponent: its first derivative
+jumps from `-Im` to `Im` across the axis, so its second derivative is a measure carried by the
+axis. -/
+theorem not_memWkpLoc_two_abs_im {z₀ : ℂ} (hz₀ : z₀ ∈ interior U) (him : z₀.im = 0) :
+    ¬ MemWkpLoc p U 2 (fun z : ℂ => |z.im|) := by
+  intro h
+  obtain ⟨r, hr, hrU⟩ := Metric.isOpen_iff.1 isOpen_interior z₀ hz₀
+  -- Rotate by a quarter turn, so that the axis becomes the imaginary axis.
+  let A : ℂ ≃L[ℝ] ℂ := ((LinearEquiv.smulOfNeZero ℂ ℂ Complex.I Complex.I_ne_zero).restrictScalars
+    ℝ).toContinuousLinearEquiv
+  have hA : ∀ z, A z = Complex.I * z := fun z => rfl
+  have hmaps : MapsTo (fun z => A z + z₀) (ball 0 r) U := fun z hz => by
+    refine interior_subset (hrU ?_)
+    rw [mem_ball, dist_eq_norm, add_sub_cancel_right, hA, norm_mul, Complex.norm_I, one_mul]
+    simpa using hz
+  have h' : MemWkpLoc p (ball 0 r) 2 (fun z : ℂ => |z.re|) := by
+    convert h.comp_continuousLinearEquiv_add A z₀ hmaps using 2 with z
+    simp [hA, him]
+  obtain ⟨-, D, hD, hD1⟩ := memWkpLoc_succ_iff.1 h'
+  -- The weak derivative is the classical one, `± re`, off the imaginary axis.
+  have hlip : LipschitzWith 1 (fun z : ℂ => |z.re|) := LipschitzWith.of_dist_le_mul fun a b => by
+    rw [NNReal.coe_one, one_mul, Real.dist_eq, dist_eq_norm]
+    exact (abs_abs_sub_abs_le_abs_sub _ _).trans (by simpa using Complex.abs_re_le_norm (a - b))
+  have hae := (ae_restrict_iff' (Opens.interior (ball (0 : ℂ) r)).isOpen.measurableSet).1
+    (hD.ae_eq hlip.locallyLipschitz.locallyLipschitzOn.hasWeakFDerivOn_fderiv)
+  have hpos : ∀ z : ℂ, 0 < z.re → fderiv ℝ (fun z : ℂ => |z.re|) z 1 = 1 := fun z hz => by
+    have : (fun w : ℂ => |w.re|) =ᶠ[𝓝 z] fun w => Complex.reCLM w :=
+      eventuallyEq_of_mem ((Complex.continuous_re.isOpen_preimage _ isOpen_Ioi).mem_nhds
+        (show z ∈ Complex.re ⁻¹' Ioi 0 from hz)) fun w hw => abs_of_pos hw
+    rw [this.fderiv_eq, Complex.reCLM.fderiv]
+    simp
+  have hneg : ∀ z : ℂ, z.re < 0 → fderiv ℝ (fun z : ℂ => |z.re|) z 1 = -1 := fun z hz => by
+    have : (fun w : ℂ => |w.re|) =ᶠ[𝓝 z] fun w => (-Complex.reCLM) w :=
+      eventuallyEq_of_mem ((Complex.continuous_re.isOpen_preimage _ isOpen_Iio).mem_nhds
+        (show z ∈ Complex.re ⁻¹' Iio 0 from hz)) fun w hw => abs_of_neg hw
+    rw [this.fderiv_eq, ContinuousLinearMap.fderiv]
+    simp
+  -- So `(D · 1 + 1) / 2` is the indicator of the right half-plane, which is not `W^{1,p}`.
+  have hind : MemWkpLoc p (ball 0 r) 1 ({z : ℂ | 0 < z.re}.indicator fun _ => (1 : ℝ)) := by
+    refine (((hD1.clm_comp (ContinuousLinearMap.apply ℝ ℝ (1 : ℂ))).add
+      (memWkpLoc_const (1 : ℝ))).const_smul (1 / 2)).congr_ae ?_
+    refine (ae_restrict_iff' measurableSet_ball).2 ?_
+    filter_upwards [hae, measure_eq_zero_iff_ae_notMem.1 (Complex.volume_setOf_re_eq 0)]
+      with z hz hz0 hzb
+    rw [Opens.coe_interior, isOpen_ball.interior_eq] at hz
+    simp only [Pi.smul_apply, Pi.add_apply, ContinuousLinearMap.apply_apply, hz hzb, smul_eq_mul]
+    rcases lt_or_gt_of_ne (show z.re ≠ 0 from hz0) with h | h
+    · rw [hneg z h, indicator_of_notMem (show z ∉ {z : ℂ | 0 < z.re} from not_lt.2 h.le)]
+      norm_num
+    · rw [hpos z h, indicator_of_mem (show z ∈ {z : ℂ | 0 < z.re} from h)]
+      norm_num
+  exact not_memWkpLoc_indicator_re_pos (k := 0) (z₀ := 0)
+    (by rw [isOpen_ball.interior_eq]; exact mem_ball_self hr) rfl hind
+
+
+/-- The order-one reflection across the real axis is the even reflection, and it does not extend
+the normal coordinate `u = Im z` from the upper half-disc to a `W^{2,p}` map on the unit disc, for
+any exponent: it gives `|Im z|`. -/
+theorem not_memWkpLoc_two_planarReflection_one_im :
+    ¬ MemWkpLoc p (ball (0 : ℂ) 1) 2
+      (planarReflection (higherReflectionCoeff 1) fun z => z.im) := by
+  have h : planarReflection (higherReflectionCoeff 1) (fun z : ℂ => z.im) = fun z => |z.im| :=
+    funext fun z => planarReflection_higherReflectionCoeff_one _ z
+  rw [h]
+  exact not_memWkpLoc_two_abs_im (by rw [isOpen_ball.interior_eq]; exact mem_ball_self one_pos) rfl
+
+/-- The order-two reflection `u(s, -t) = -3 u(s, t) + 4 u(s, t / 2)` extends the normal coordinate
+`u = Im z` to itself, which is in every local Sobolev class on every set. -/
+theorem memWkpLoc_planarReflection_two_im (U : Set ℂ) (k : ℕ) :
+    MemWkpLoc p U k (planarReflection (higherReflectionCoeff 2) fun z => z.im) := by
+  rw [planarReflection_higherReflectionCoeff_two_im]
+  exact (Complex.imCLM.contDiff.contDiffOn : ContDiffOn ℝ k _ ((⊤ : Opens ℂ) : Set ℂ)).memWkpLoc
+    (subset_univ U)
 
 end TauCeti
