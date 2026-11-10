@@ -364,7 +364,7 @@ variable {K U V W : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   (hf : Function.Injective f) (hfg : Function.Exact f g) (hg : Function.Surjective g)
 
 /-- Recasting the index type of the subspace orientation recasts that of the induced one. -/
-theorem shortExact_reindex_left {a' : ℕ} (e : a = a') (o : Orientation K U (Fin a))
+theorem shortExact_reindex_finCongr_left {a' : ℕ} (e : a = a') (o : Orientation K U (Fin a))
     (p : Orientation K W (Fin c)) (ha : finrank K U = a) (hc : finrank K W = c) :
     shortExact hf hfg hg (reindex K U (finCongr e) o) p (ha.trans e) hc =
       reindex K V (finCongr (congrArg (· + c) e)) (shortExact hf hfg hg o p ha hc) := by
@@ -372,7 +372,7 @@ theorem shortExact_reindex_left {a' : ℕ} (e : a = a') (o : Orientation K U (Fi
   simp [finCongr_refl, reindex_refl]
 
 /-- Recasting the index type of the quotient orientation recasts that of the induced one. -/
-theorem shortExact_reindex_right {c' : ℕ} (e : c = c') (o : Orientation K U (Fin a))
+theorem shortExact_reindex_finCongr_right {c' : ℕ} (e : c = c') (o : Orientation K U (Fin a))
     (p : Orientation K W (Fin c)) (ha : finrank K U = a) (hc : finrank K W = c) :
     shortExact hf hfg hg o (reindex K W (finCongr e) p) ha (hc.trans e) =
       reindex K V (finCongr (congrArg (a + ·) e)) (shortExact hf hfg hg o p ha hc) := by
@@ -530,7 +530,7 @@ theorem shortExact_prodMap_id (o : Orientation K U (Fin a)) (oz : Orientation K 
     o (prod p oz hc hz)
   simp only [Orientation.map_refl, Equiv.refl_apply] at hnat
   rw [map_prodComm_prod, shortExact_units_smul_right,
-    shortExact_reindex_right (hc := by rw [finrank_prod, hz, hc])] at hnat
+    shortExact_reindex_finCongr_right (hc := by rw [finrank_prod, hz, hc])] at hnat
   rw [hnat, reindex_units_smul, reindex_units_smul, smul_smul, ← pow_add,
     show z * c + c * z = 2 * (z * c) by ring, pow_mul, neg_one_sq, one_pow, one_smul,
     reindex_finCongr_reindex_finCongr, reindex_finCongr_reindex_finCongr]
@@ -634,7 +634,7 @@ theorem map_shortExact_shortExact (hf₁' : Function.Injective f₁')
       (hfg₂.surjective_prod hg₂' hg₂ hh₂) e eV (LinearEquiv.prodComm K B A) (LinearMap.ext hι)
       (LinearMap.ext fun v ↦ Prod.ext (hA v) (hB v)),
     map_prodComm_prod, shortExact_units_smul_right,
-    shortExact_reindex_right (hc := by rw [finrank_prod, ha, hb]), reindex_units_smul,
+    shortExact_reindex_finCongr_right (hc := by rw [finrank_prod, ha, hb]), reindex_units_smul,
     reindex_finCongr_reindex_finCongr, reindex_finCongr_reindex_finCongr, mul_comm b a]
 
 end Exchange

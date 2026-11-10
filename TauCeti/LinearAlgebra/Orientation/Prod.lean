@@ -186,14 +186,14 @@ theorem prod_reindex_finCongr {m' n' : ℕ} (o : Orientation R E (Fin m))
   simp only [finCongr_refl, reindex_refl, Equiv.refl_apply]
 
 /-- Recasting the index type of the first factor recasts that of the product. -/
-theorem prod_reindex_left {m' : ℕ} (e : m = m') (o : Orientation R E (Fin m))
+theorem prod_reindex_finCongr_left {m' : ℕ} (e : m = m') (o : Orientation R E (Fin m))
     (p : Orientation R F (Fin n)) (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) :
     prod (reindex R E (finCongr e) o) p (hm.trans e) hn =
       reindex R (E × F) (finCongr (congrArg (· + n) e)) (prod o p hm hn) := by
   simpa [finCongr_refl, reindex_refl] using prod_reindex_finCongr o p e rfl (hm.trans e) hn
 
 /-- Recasting the index type of the second factor recasts that of the product. -/
-theorem prod_reindex_right {n' : ℕ} (e : n = n') (o : Orientation R E (Fin m))
+theorem prod_reindex_finCongr_right {n' : ℕ} (e : n = n') (o : Orientation R E (Fin m))
     (p : Orientation R F (Fin n)) (hm : Module.finrank R E = m) (hn : Module.finrank R F = n) :
     prod o (reindex R F (finCongr e) p) hm (hn.trans e) =
       reindex R (E × F) (finCongr (congrArg (m + ·) e)) (prod o p hm hn) := by
