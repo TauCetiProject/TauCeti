@@ -91,9 +91,8 @@ theorem extend_subtypeVal_comp_inclusion {α β : Type*} {s t : Set α} (h : s �
       extend_apply' _ _ _ fun ⟨b, hb⟩ ↦ hat (hb ▸ b.2)]
 
 /-- `Function.extend` along a composite `f₂₃ ∘ f₁₂` is the iterated extension, provided only the
-outer map `f₂₃` is injective. At `f₂₃ k` both sides choose a preimage of the same predicate
-(`f₂₃ (f₁₂ a) = f₂₃ k` is equivalent to `f₁₂ a = k`) and so agree, and away from the range of `f₂₃`
-both sides fall back on `e'`. -/
+outer map `f₂₃` is injective. The inner extension of `g` along `f₁₂` uses the fallback `e' ∘ f₂₃`,
+and the outer extension uses the fallback `e'`. -/
 theorem extend_comp_of_injective_right {α β γ δ : Type*} {f₁₂ : α → β} {f₂₃ : β → γ}
     (h : Function.Injective f₂₃) (g : α → δ) (e' : γ → δ) :
     extend (f₂₃ ∘ f₁₂) g e' = extend f₂₃ (extend f₁₂ g (e' ∘ f₂₃)) e' := by
