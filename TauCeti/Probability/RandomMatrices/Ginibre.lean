@@ -303,28 +303,19 @@ theorem integral_trace_re_gaussianGramComplex (m n : ℕ) :
   simp_rw [integral_finsetSum _ fun j _ ↦ hint _ j, hval]
   simp
 
-set_option linter.unusedTactic false in
 /-- The real Gaussian Gram law is supported on positive semidefinite matrices. -/
 theorem ae_posSemidef_gaussianGramReal (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramReal m n), A.PosSemidef := by
-  -- The closedness lemma was renamed in a newer Mathlib version.
   rw [gaussianGramReal, ae_map_iff measurable_subtype_coe.aemeasurable
-      (by
-        first
-        | exact isClosed_setOfPred_posSemidef.measurableSet
-        | exact Matrix.posSemidef_is_closed.measurableSet)]
+      Matrix.posSemidef_is_closed.measurableSet]
   exact ae_posSemidef_wishartGramMeasure n 1
 
-set_option linter.unusedTactic false in
 open scoped ComplexOrder in
 /-- The complex Gaussian Gram law is supported on positive semidefinite matrices. -/
 theorem ae_posSemidef_gaussianGramComplex (m n : ℕ) :
     ∀ᵐ A ∂(gaussianGramComplex m n), A.PosSemidef := by
   rw [gaussianGramComplex, ae_map_iff measurable_matrix_mul_conjTranspose.aemeasurable
-      (by
-        first
-        | exact isClosed_setOfPred_posSemidef.measurableSet
-        | exact Matrix.posSemidef_is_closed.measurableSet)]
+      Matrix.posSemidef_is_closed.measurableSet]
   exact Filter.Eventually.of_forall fun X ↦ posSemidef_self_mul_conjTranspose X
 
 end Probability
