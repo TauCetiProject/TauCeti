@@ -154,12 +154,22 @@ variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [Normed
   {Y : Type*} [TopologicalSpace Y] [ChartedSpace G Y]
   [IsManifold K n X] [IsManifold K' n Y] [BoundarylessManifold K X]
 
+omit [FiniteDimensional 𝕂 F] in
 /-- A smooth embedding of a boundaryless manifold into a manifold modelled on a space of the same
 finite dimension is a local diffeomorphism. -/
 theorem isLocalDiffeomorph (f : SmoothEmbedding K K' n X Y)
     (hd : Module.finrank 𝕂 F = Module.finrank 𝕂 F') (hn : 1 ≤ n) :
-    IsLocalDiffeomorph K K' n f :=
-  f.isImmersion.isLocalDiffeomorph hd hn
+    IsLocalDiffeomorph K K' n f := by
+  rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
+  · exact fun x ↦ isEmptyElim x
+  have hn0 : n ≠ 0 := by rintro rfl; simp at hn
+  -- The tangent space of `X` embeds in that of `Y`, so it is finite-dimensional.
+  have : FiniteDimensional 𝕂 F := by
+    have : FiniteDimensional 𝕂 (TangentSpace K' (f x₀)) :=
+      inferInstanceAs (FiniteDimensional 𝕂 F')
+    exact FiniteDimensional.of_injective (mfderiv K K' f x₀).toLinearMap
+      (f.isImmersion.isDiffImmersionAt hn0 x₀).mfderiv_injective
+  exact f.isImmersion.isLocalDiffeomorph hd hn
 
 end InverseFunctionTheorem
 
