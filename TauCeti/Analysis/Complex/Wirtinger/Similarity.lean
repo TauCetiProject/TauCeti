@@ -29,8 +29,10 @@ there. The exponent of such a factorization is unique, already among factors tha
 continuous at the point. For a solution on the plane that is nonzero outside a compact set,
 the zero set is finite. No curvature equation or analyticity of the coefficient is needed.
 
-The integrating factor comes from the Cauchy transform; the holomorphic zero
-factorization is Mathlib's `AnalyticAt.exists_eventuallyEq_pow_smul_ne_zero_iff`.
+Every solution `g` of `bar∂ g = a` is an integrating factor: `exp (-g) f` is holomorphic
+(`TauCeti.differentiableAt_exp_neg_mul_of_conjWirtingerDeriv_apply_one_eq_mul`). Locally such a
+`g` comes from the Cauchy transform; the holomorphic zero factorization is Mathlib's
+`AnalyticAt.exists_eventuallyEq_pow_smul_ne_zero_iff`.
 
 ## References
 
@@ -47,6 +49,21 @@ namespace TauCeti
 
 variable {k : ℕ∞} {U : Set ℂ}
 
+/-- **The integrating factor of a scalar Cauchy–Riemann equation.** If `bar∂ f = a f` and
+`bar∂ g = a` at a point `w`, then `exp (-g) f` is complex differentiable at `w`. -/
+theorem differentiableAt_exp_neg_mul_of_conjWirtingerDeriv_apply_one_eq_mul {a f g : ℂ → ℂ}
+    {w : ℂ} (hg : DifferentiableAt ℝ g w) (hf : DifferentiableAt ℝ f w)
+    (hgeq : conjWirtingerDeriv g w 1 = a w) (heq : conjWirtingerDeriv f w 1 = a w * f w) :
+    DifferentiableAt ℂ (fun w ↦ exp (-g w) * f w) w := by
+  refine (differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero
+    ((hg.neg.cexp).mul hf)).mpr ?_
+  have hG := congrArg (fun c : ℂ ↦ 2 * c) hgeq
+  have hF := congrArg (fun c : ℂ ↦ 2 * c) heq
+  simp only [conjWirtingerDeriv_apply, smul_eq_mul, mul_one] at hG hF ⊢
+  rw [hg.hasFDerivAt.neg.cexp.mul hf.hasFDerivAt |>.fderiv]
+  simp only [add_apply, smul_apply, smul_eq_mul, neg_apply]
+  linear_combination exp (-g w) / 2 * (hF - f w * hG)
+
 /-- A `Cᵏ` integrating factor makes a solution of `bar∂ f = a f` holomorphic locally. -/
 theorem exists_contDiff_analyticAt_exp_neg_mul_of_conjWirtingerDeriv_apply_one_eq_mul {a f : ℂ → ℂ}
     (hn : 1 ≤ k) (hU : IsOpen U) (ha : ContDiffOn ℝ k a U)
@@ -57,16 +74,9 @@ theorem exists_contDiff_analyticAt_exp_neg_mul_of_conjWirtingerDeriv_apply_one_e
   obtain ⟨g, hg, hgeq⟩ := exists_contDiff_conjWirtingerDeriv_apply_one_eventually_eq hn hU ha hz
   refine ⟨g, hg, Complex.analyticAt_iff_eventually_differentiableAt.mpr ?_⟩
   filter_upwards [hgeq, hU.mem_nhds hz] with w hw hwU
-  have hgd := hg.differentiable (by exact_mod_cast (ne_of_gt (lt_of_lt_of_le zero_lt_one hn))) w
-  have hfd := (hf w hwU).differentiableAt (hU.mem_nhds hwU)
-  refine (differentiableAt_iff_conjWirtingerDeriv_apply_one_eq_zero
-    ((hgd.neg.cexp).mul hfd)).mpr ?_
-  have hG := congrArg (fun c : ℂ ↦ 2 * c) hw
-  have hF := congrArg (fun c : ℂ ↦ 2 * c) (heq w hwU)
-  simp only [conjWirtingerDeriv_apply, smul_eq_mul, mul_one] at hG hF ⊢
-  rw [hgd.hasFDerivAt.neg.cexp.mul hfd.hasFDerivAt |>.fderiv]
-  simp only [add_apply, smul_apply, smul_eq_mul, neg_apply]
-  linear_combination exp (-g w) / 2 * (hF - f w * hG)
+  exact differentiableAt_exp_neg_mul_of_conjWirtingerDeriv_apply_one_eq_mul
+    (hg.differentiable (by exact_mod_cast (ne_of_gt (lt_of_lt_of_le zero_lt_one hn))) w)
+    ((hf w hwU).differentiableAt (hU.mem_nhds hwU)) hw (heq w hwU)
 
 private theorem exists_contDiff_analyticAt_exp_neg_mul_not_eventually_eq_zero
     {a f : ℂ → ℂ}
