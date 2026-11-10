@@ -11,8 +11,10 @@ public import Mathlib.Algebra.Order.Field.Rat
 public import Mathlib.GroupTheory.Subgroup.Center
 public import TauCeti.GroupTheory.GroupExtension.Of.FactorSet
 public import TauCeti.Algebra.GroupAction.Trivial
+public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.AddHorizontal
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Basic
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Differential
+public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Horizontal
 import Mathlib.Algebra.BigOperators.Field
 import Mathlib.Tactic.LinearCombination
 
@@ -39,7 +41,9 @@ grading `g` is a family of submodules with `A_g A_h ⊆ A_{g h}`
 (`TauCeti.StrandsAlgebra.mul_mem_gradedPart`). The central element `λ = (1, 0)` records the Maslov
 grading: diagrams with the same source and target differ in grading by the power of `λ` given by
 the difference of their crossing numbers (`TauCeti.StrandDiagram.grading_eq_lambda_zpow_mul`), so
-the differential, which resolves one crossing, has degree `λ⁻¹`.
+the differential, which resolves one crossing, has degree `λ⁻¹`. The graded parts are built from
+the parts of an arbitrary function on strand diagrams (`TauCeti.StrandsAlgebra.gradedPartBy`), whose
+compatibility with the product and the differential also serves refinements of the grading.
 
 ## Conventions
 
@@ -73,6 +77,8 @@ product.
 * `TauCeti.StrandGradingGroup.gPrime`: the subgroup `G'(n)`.
 * `TauCeti.StrandDiagram.boundary`: the boundary of the class of the strands of a diagram.
 * `TauCeti.StrandDiagram.grading`: the grading `gr(φ)` of a strand diagram.
+* `TauCeti.StrandsAlgebra.gradedPartBy`: the elements supported on the diagrams on which a given
+  function on strand diagrams takes a given value.
 * `TauCeti.StrandsAlgebra.gradedPart`: the elements supported on the diagrams of a given grading.
 
 ## Main results
@@ -82,6 +88,9 @@ product.
 * `TauCeti.StrandDiagram.grading_mem_gPrime`: every grading of a diagram lies in `G'(n)`.
 * `TauCeti.StrandDiagram.grading_eq_lambda_zpow_mul`: diagrams with the same ends differ in
   grading by a power of `λ`.
+* `TauCeti.StrandDiagram.grading_addHorizontal`, `TauCeti.StrandDiagram.grading_swapHorizontal`:
+  adding horizontal strands away from the ends, or moving a horizontal strand to a free point, does
+  not change the grading.
 * `TauCeti.StrandDiagram.grading_resolve`, `TauCeti.StrandsAlgebra.differential_mem_gradedPart`:
   every term of the differential of `φ` has grading `λ⁻¹ gr(φ)`, so the differential maps the part
   of grading `g` to the part of grading `λ⁻¹ g`.
@@ -97,7 +106,8 @@ product.
 * R. Lipshitz, P. Ozsváth and D. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer. Math.
   Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687), §3.3.1 (the
   group `G'(n)`, the multiplicity `m`, the grading of `A(n, k)` and its compatibility with the
-  product and the differential).
+  product and the differential) and Proposition 3.40 (the grading is unchanged by adding horizontal
+  strands).
 -/
 
 public section
@@ -618,48 +628,260 @@ theorem grading_mem_gPrime (φ : StrandDiagram α) : φ.grading ∈ gPrime := by
     Finset.sum_add_distrib, Finset.sum_sub_distrib, Finset.sum_neg_distrib, ← Finset.sum_div]
   ring
 
+/-! ### Horizontal strands and the grading -/
+
+section Horizontal
+
+variable {φ : StrandDiagram α} {a b p : α}
+
+/-- At a point `p` which is either the position of a horizontal strand of `φ` or not an end of any
+strand of `φ`, the multiplicity of the class of `φ` is the number of strands crossing a horizontal
+strand at `p`. -/
+theorem pointMultiplicity_boundary_eq_crossingCount
+    (hp : ∀ x ∈ φ.source, x = p ↔ φ.endpoint x = p) :
+    pointMultiplicity p φ.boundary = φ.crossingCount p := by
+  have h₁ : ({s ∈ φ.source | s < p ∧ p ≤ (φ s).getD s} : Finset α) =
+      {x ∈ φ.source | x < p ∧ p < φ.endpoint x} := by
+    refine filter_congr fun x hx ↦ ?_
+    rw [← endpoint_def]
+    refine and_congr_right fun hxp ↦ ⟨fun h ↦ lt_of_le_of_ne h fun h' ↦ ?_, le_of_lt⟩
+    exact hxp.ne ((hp x hx).2 h'.symm)
+  have h₂ : ({s ∈ φ.source | s ≤ p ∧ p < (φ s).getD s} : Finset α) =
+      {x ∈ φ.source | x < p ∧ p < φ.endpoint x} := by
+    refine filter_congr fun x hx ↦ ?_
+    rw [← endpoint_def]
+    refine ⟨fun ⟨hxp, hpx⟩ ↦ ⟨lt_of_le_of_ne hxp fun h ↦ ?_, hpx⟩, fun h ↦ ⟨h.1.le, h.2⟩⟩
+    exact hpx.ne ((hp x hx).1 h).symm
+  rw [pointMultiplicity_boundary, h₁, h₂, crossingCount_def]
+  ring
+
+/-- **Adding one horizontal strand does not change the grading.** At a point `p` where no strand of
+`φ` starts or ends, a horizontal strand adds one crossing for each strand passing over `p`, and the
+multiplicity of the class at `p`, which `m([φ], S)` gains, is that same number. -/
+theorem grading_addHorizontal_singleton (hs : p ∉ φ.source) (ht : p ∉ φ.target) :
+    (φ.addHorizontal {p}).grading = φ.grading := by
+  set φ' := φ.addHorizontal {p}
+  have hs' : φ'.source = insert p φ.source := by
+    rw [source_addHorizontal (disjoint_singleton_right.2 ht), union_comm, ← insert_eq]
+  have ht' : φ'.target = insert p φ.target := by
+    rw [target_addHorizontal (disjoint_singleton_right.2 hs), union_comm, ← insert_eq]
+  have hb : φ'.boundary = φ.boundary := by
+    ext x
+    rcases eq_or_ne x p with rfl | hxp
+    · simp [boundary_apply, hs', ht', hs, ht]
+    · simp [boundary_apply, hs', ht', hxp]
+  have hfp : φ'.endpoint p = p := endpoint_eq_of_mem (by simp [φ'])
+  have hf (x : α) (hx : x ∈ φ.source) : φ'.endpoint x = φ.endpoint x := by
+    rw [endpoint_def, endpoint_def, addHorizontal_apply_of_notMem (disjoint_singleton_right.2 ht)
+      (by simpa using fun h : x = p ↦ hs (h ▸ hx))]
+  have hinv : φ'.inversionCount = φ.inversionCount + φ.crossingCount p := by
+    rw [inversionCount_def, inversionCount_def, inversions_def, inversions_def, hs',
+      card_inversions_insert _ hs, inversions_congr hf, crossingCount_def, hfp]
+    have h₀ : #{x ∈ φ.source | p < x ∧ φ'.endpoint x < p} = 0 := by
+      refine card_eq_zero.2 (filter_eq_empty_iff.2 fun x hx ⟨hpx, hxp⟩ ↦ ?_)
+      rw [hf x hx] at hxp
+      exact (hpx.trans_le (φ.le_of_mem (endpoint_mem hx))).not_gt hxp
+    rw [h₀, add_zero]
+    congr 2
+    exact filter_congr fun x hx ↦ by rw [hf x hx]
+  have hm : pointMultiplicity p φ.boundary = φ.crossingCount p :=
+    pointMultiplicity_boundary_eq_crossingCount fun x hx ↦
+      ⟨fun h ↦ absurd (h ▸ hx) hs, fun h ↦ absurd (h ▸ endpoint_mem_target hx) ht⟩
+  ext
+  · rw [grading_maslov, grading_maslov, hb, hs', sum_insert hs, hm, hinv]
+    push_cast
+    ring
+  · rw [grading_boundary, grading_boundary, hb]
+
+/-- **Adding horizontal strands does not change the grading** (Lipshitz, Ozsváth and Thurston,
+Proposition 3.40): if `U` avoids the starting and end points of `φ`, then `φ.addHorizontal U` has
+the grading of `φ`. -/
+theorem grading_addHorizontal {U : Finset α} (hs : Disjoint φ.source U)
+    (ht : Disjoint φ.target U) : (φ.addHorizontal U).grading = φ.grading := by
+  induction U using Finset.induction_on with
+  | empty => simp
+  | insert p U hpU ih =>
+    have hsU := disjoint_of_subset_right (subset_insert p U) hs
+    have htU := disjoint_of_subset_right (subset_insert p U) ht
+    rw [insert_eq, union_comm, ← addHorizontal_addHorizontal, grading_addHorizontal_singleton,
+      ih hsU htU]
+    · rw [source_addHorizontal htU, mem_union, not_or]
+      exact ⟨disjoint_right.1 hs (mem_insert_self p U), hpU⟩
+    · rw [target_addHorizontal hsU, mem_union, not_or]
+      exact ⟨disjoint_right.1 ht (mem_insert_self p U), hpU⟩
+
+/-- **Moving a horizontal strand does not change the grading.** Moving the horizontal strand at `a`
+to a point `b` at which no strand starts or ends trades the crossings with a horizontal strand at
+`a` for those with one at `b`, and `m([φ], S)` changes by the same amount. -/
+@[simp]
+theorem grading_swapHorizontal (φ : StrandDiagram α) (a b : α) :
+    (φ.swapHorizontal a b).grading = φ.grading := by
+  wlog h : φ.CanMoveHorizontal a b generalizing a b
+  · by_cases h' : φ.CanMoveHorizontal b a
+    · rw [swapHorizontal_comm]
+      exact this b a h'
+    · rw [swapHorizontal_of_not h h']
+  set φ' := φ.swapHorizontal a b
+  have haS : a ∈ φ.source := mem_source.2 ⟨a, h.mem⟩
+  have haT : a ∈ φ.target := mem_target.2 ⟨a, h.mem⟩
+  have hab := h.ne
+  have hb : φ'.boundary = φ.boundary := by
+    ext x
+    simp only [boundary_apply, φ', source_swapHorizontal h, target_swapHorizontal h, mem_insert,
+      mem_erase]
+    rcases eq_or_ne x a with rfl | hxa
+    · simp [haS, haT, hab]
+    rcases eq_or_ne x b with rfl | hxb
+    · simp [h.notMem_source, h.notMem_target]
+    · simp [hxa, hxb]
+  have hfa : φ.endpoint a = a := endpoint_eq_of_mem h.mem
+  have hma : pointMultiplicity a φ.boundary = φ.crossingCount a :=
+    pointMultiplicity_boundary_eq_crossingCount fun x hx ↦
+      ⟨fun h ↦ h ▸ hfa, fun h' ↦ φ.endpoint_injOn hx haS (h'.trans hfa.symm)⟩
+  have hmb : pointMultiplicity b φ.boundary = φ.crossingCount b :=
+    pointMultiplicity_boundary_eq_crossingCount fun x hx ↦
+      ⟨fun h' ↦ absurd (h' ▸ hx) h.notMem_source,
+        fun h' ↦ absurd (h' ▸ endpoint_mem_target hx) h.notMem_target⟩
+  have hinv := inversionCount_swapHorizontal_add h
+  have hs' : φ'.source = insert b (φ.source.erase a) := source_swapHorizontal h
+  have hsum : ∑ s ∈ φ'.source, pointMultiplicity s φ.boundary + pointMultiplicity a φ.boundary =
+      ∑ s ∈ φ.source, pointMultiplicity s φ.boundary + pointMultiplicity b φ.boundary := by
+    rw [hs', sum_insert fun hb' ↦ h.notMem_source (mem_of_mem_erase hb'),
+      ← add_sum_erase _ _ haS]
+    ring
+  ext
+  · rw [grading_maslov, grading_maslov, hb]
+    have hinv' : ((φ'.inversionCount : ℕ) : ℚ) + φ.crossingCount a =
+        φ.inversionCount + φ.crossingCount b := by exact_mod_cast hinv
+    rw [hma, hmb] at hsum
+    linear_combination hinv' - hsum
+  · rw [grading_boundary, grading_boundary, hb]
+
+end Horizontal
+
 end StrandDiagram
 
 namespace StrandsAlgebra
 
 open StrandDiagram
 
-variable (R : Type*) {α : Type*} [CommSemiring R] [LinearOrder α] [Fintype α]
+variable (R : Type*) {α G : Type*} [CommSemiring R] [LinearOrder α]
+
+/-- The part of the strands algebra of degree `g` for a function `d` on strand diagrams: the
+elements supported on the strand diagrams `φ` with `d φ = g`, that is, the image of
+`Finsupp.supported` under the basis of strand diagrams. -/
+noncomputable def gradedPartBy (d : StrandDiagram α → G) (g : G) :
+    Submodule R (StrandsAlgebra R α) :=
+  (Finsupp.supported R R {φ : StrandDiagram α | d φ = g}).map
+    ((basis R α).repr.symm : (StrandDiagram α →₀ R) →ₗ[R] StrandsAlgebra R α)
+
+variable {R}
+
+section GradedPartBy
+
+variable {d : StrandDiagram α → G}
+
+/-- An element has degree `g` for `d` exactly when every strand diagram in its support has
+degree `g`. -/
+theorem mem_gradedPartBy {g : G} {x : StrandsAlgebra R α} :
+    x ∈ gradedPartBy R d g ↔ ∀ φ ∈ ((basis R α).repr x).support, d φ = g := by
+  rw [gradedPartBy, Submodule.mem_map_equiv, LinearEquiv.symm_symm, Finsupp.mem_supported]
+  rfl
+
+/-- The part of degree `g` for `d` is the span of the strand diagrams of degree `g`. -/
+theorem gradedPartBy_eq_span (d : StrandDiagram α → G) (g : G) :
+    gradedPartBy R d g = Submodule.span R (of '' {φ | d φ = g}) := by
+  rw [gradedPartBy, Finsupp.supported_eq_span_single, Submodule.map_span, ← Set.image_comp]
+  congr 2
+  ext φ
+  simp [← basis_apply]
+
+/-- A strand diagram lies in the part of degree `g` for `d` exactly when its degree is `g`. -/
+theorem of_mem_gradedPartBy_iff [Nontrivial R] {φ : StrandDiagram α} {g : G} :
+    (of φ : StrandsAlgebra R α) ∈ gradedPartBy R d g ↔ d φ = g := by
+  rw [mem_gradedPartBy, ← basis_apply, Module.Basis.repr_self,
+    Finsupp.support_single _ one_ne_zero]
+  simp
+
+theorem of_mem_gradedPartBy (d : StrandDiagram α → G) (φ : StrandDiagram α) :
+    (of φ : StrandsAlgebra R α) ∈ gradedPartBy R d (d φ) :=
+  mem_gradedPartBy.2 fun ψ hψ ↦ by
+    rw [← basis_apply, Module.Basis.repr_self] at hψ
+    rw [Finset.mem_singleton.1 (Finsupp.support_single_subset hψ)]
+
+/-- Every element of the strands algebra is a sum of elements homogeneous for `d`. -/
+theorem iSup_gradedPartBy (d : StrandDiagram α → G) : ⨆ g : G, gradedPartBy R d g = ⊤ := by
+  have h : ⋃ g : G, {φ : StrandDiagram α | d φ = g} = Set.univ :=
+    Set.iUnion_eq_univ_iff.2 fun φ ↦ ⟨d φ, rfl⟩
+  simp only [gradedPartBy, ← Submodule.map_iSup, ← Finsupp.supported_iUnion, h,
+    Finsupp.supported_univ, Submodule.map_top, LinearEquiv.range]
+
+/-- The parts of different degrees for `d` are independent. -/
+theorem iSupIndep_gradedPartBy (d : StrandDiagram α → G) :
+    iSupIndep (gradedPartBy R d) := by
+  refine LinearMap.iSupIndep_map _ (basis R α).repr.symm.injective fun g ↦
+    (Finsupp.disjoint_supported_supported (s := {φ : StrandDiagram α | d φ = g})
+      (t := {φ | d φ ≠ g})
+      (Set.disjoint_left.2 fun _ hφ hφ' ↦ hφ' hφ)).mono_right ?_
+  exact iSup₂_le fun h hne ↦ Finsupp.supported_mono fun φ (hφ : d φ = h) ↦ hφ.trans_ne hne
+
+variable [Fintype α]
+
+/-- If `d` is multiplicative on composable strand diagrams, the product of elements of degrees `g`
+and `h` for `d` has degree `g * h`. -/
+theorem mul_mem_gradedPartBy [Mul G]
+    (hd : ∀ {φ ψ : StrandDiagram α}, φ.Composable ψ → d (φ.trans ψ) = d φ * d ψ)
+    {g h : G} {x y : StrandsAlgebra R α}
+    (hx : x ∈ gradedPartBy R d g) (hy : y ∈ gradedPartBy R d h) :
+    x * y ∈ gradedPartBy R d (g * h) := by
+  rw [gradedPartBy_eq_span] at hx hy
+  induction hx using Submodule.span_induction with
+  | mem x hx =>
+    obtain ⟨φ, hφ, rfl⟩ := hx
+    induction hy using Submodule.span_induction with
+    | mem y hy =>
+      obtain ⟨ψ, hψ, rfl⟩ := hy
+      rw [of_mul_of]
+      split_ifs with hφψ
+      · rw [← (hφ : d φ = g), ← (hψ : d ψ = h), ← hd hφψ]
+        exact of_mem_gradedPartBy d _
+      · exact zero_mem _
+    | zero => rw [mul_zero]; exact zero_mem _
+    | add y y' _ _ hy hy' => rw [mul_add]; exact add_mem hy hy'
+    | smul r y _ hy => rw [mul_smul_comm]; exact Submodule.smul_mem _ r hy
+  | zero => rw [zero_mul]; exact zero_mem _
+  | add x x' _ _ hx hx' => rw [add_mul]; exact add_mem hx hx'
+  | smul r x _ hx => rw [smul_mul_assoc]; exact Submodule.smul_mem _ r hx
+
+end GradedPartBy
+
+variable (R) [Fintype α]
 
 /-- The part of the strands algebra of grading `g`: the elements supported on the strand diagrams
-of grading `g`, that is, the image of `Finsupp.supported` under the basis of strand diagrams. -/
+of grading `g`. -/
 noncomputable def gradedPart (g : StrandGradingGroup α) : Submodule R (StrandsAlgebra R α) :=
-  (Finsupp.supported R R {φ : StrandDiagram α | φ.grading = g}).map
-    ((basis R α).repr.symm : (StrandDiagram α →₀ R) →ₗ[R] StrandsAlgebra R α)
+  gradedPartBy R grading g
 
 variable {R}
 
 /-- An element has grading `g` exactly when every strand diagram in its support has grading `g`. -/
 theorem mem_gradedPart {g : StrandGradingGroup α} {x : StrandsAlgebra R α} :
-    x ∈ gradedPart R g ↔ ∀ φ ∈ ((basis R α).repr x).support, φ.grading = g := by
-  rw [gradedPart, Submodule.mem_map_equiv, LinearEquiv.symm_symm, Finsupp.mem_supported]
-  rfl
+    x ∈ gradedPart R g ↔ ∀ φ ∈ ((basis R α).repr x).support, φ.grading = g :=
+  mem_gradedPartBy
 
 /-- The part of grading `g` is the span of the strand diagrams of grading `g`. -/
 theorem gradedPart_eq_span (g : StrandGradingGroup α) :
-    gradedPart R g = Submodule.span R (of '' {φ | φ.grading = g}) := by
-  rw [gradedPart, Finsupp.supported_eq_span_single, Submodule.map_span, ← Set.image_comp]
-  congr 2
-  ext φ
-  simp [← basis_apply]
+    gradedPart R g = Submodule.span R (of '' {φ | φ.grading = g}) :=
+  gradedPartBy_eq_span _ g
 
 /-- A strand diagram lies in the part of grading `g` exactly when its grading is `g`. -/
 theorem of_mem_gradedPart_iff [Nontrivial R] {φ : StrandDiagram α} {g : StrandGradingGroup α} :
-    (of φ : StrandsAlgebra R α) ∈ gradedPart R g ↔ φ.grading = g := by
-  rw [mem_gradedPart, ← basis_apply, Module.Basis.repr_self,
-    Finsupp.support_single _ one_ne_zero]
-  simp
+    (of φ : StrandsAlgebra R α) ∈ gradedPart R g ↔ φ.grading = g :=
+  of_mem_gradedPartBy_iff
 
 theorem of_mem_gradedPart (φ : StrandDiagram α) :
     (of φ : StrandsAlgebra R α) ∈ gradedPart R φ.grading :=
-  mem_gradedPart.2 fun ψ hψ ↦ by
-    rw [← basis_apply, Module.Basis.repr_self] at hψ
-    rw [Finset.mem_singleton.1 (Finsupp.support_single_subset hψ)]
+  of_mem_gradedPartBy _ φ
 
 theorem idem_mem_gradedPart (s : Finset α) :
     (idem s : StrandsAlgebra R α) ∈ gradedPart R 1 := by
@@ -674,40 +896,16 @@ theorem one_mem_gradedPart : (1 : StrandsAlgebra R α) ∈ gradedPart R 1 := by
 /-- **The strands algebra is graded by the grading group**: the product of elements of
 gradings `g` and `h` has grading `g * h`. -/
 theorem mul_mem_gradedPart {g h : StrandGradingGroup α} {x y : StrandsAlgebra R α}
-    (hx : x ∈ gradedPart R g) (hy : y ∈ gradedPart R h) : x * y ∈ gradedPart R (g * h) := by
-  rw [gradedPart_eq_span] at hx hy
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨φ, hφ, rfl⟩ := hx
-    induction hy using Submodule.span_induction with
-    | mem y hy =>
-      obtain ⟨ψ, hψ, rfl⟩ := hy
-      rw [of_mul_of]
-      split_ifs with hφψ
-      · rw [← (hφ : φ.grading = g), ← (hψ : ψ.grading = h), ← grading_trans hφψ]
-        exact of_mem_gradedPart _
-      · exact zero_mem _
-    | zero => rw [mul_zero]; exact zero_mem _
-    | add y y' _ _ hy hy' => rw [mul_add]; exact add_mem hy hy'
-    | smul r y _ hy => rw [mul_smul_comm]; exact Submodule.smul_mem _ r hy
-  | zero => rw [zero_mul]; exact zero_mem _
-  | add x x' _ _ hx hx' => rw [add_mul]; exact add_mem hx hx'
-  | smul r x _ hx => rw [smul_mul_assoc]; exact Submodule.smul_mem _ r hx
+    (hx : x ∈ gradedPart R g) (hy : y ∈ gradedPart R h) : x * y ∈ gradedPart R (g * h) :=
+  mul_mem_gradedPartBy grading_trans hx hy
 
 /-- Every element of the strands algebra is a sum of homogeneous elements. -/
-theorem iSup_gradedPart : ⨆ g : StrandGradingGroup α, gradedPart R g = ⊤ := by
-  have h : ⋃ g : StrandGradingGroup α, {φ : StrandDiagram α | φ.grading = g} = Set.univ :=
-    Set.iUnion_eq_univ_iff.2 fun φ ↦ ⟨φ.grading, rfl⟩
-  simp only [gradedPart, ← Submodule.map_iSup, ← Finsupp.supported_iUnion, h,
-    Finsupp.supported_univ, Submodule.map_top, LinearEquiv.range]
+theorem iSup_gradedPart : ⨆ g : StrandGradingGroup α, gradedPart R g = ⊤ :=
+  iSup_gradedPartBy _
 
 /-- The parts of different gradings are independent. -/
-theorem iSupIndep_gradedPart : iSupIndep (gradedPart R : StrandGradingGroup α → _) := by
-  refine LinearMap.iSupIndep_map _ (basis R α).repr.symm.injective fun g ↦
-    (Finsupp.disjoint_supported_supported (s := {φ : StrandDiagram α | φ.grading = g})
-      (t := {φ | φ.grading ≠ g})
-      (Set.disjoint_left.2 fun _ hφ hφ' ↦ hφ' hφ)).mono_right ?_
-  exact iSup₂_le fun h hne ↦ Finsupp.supported_mono fun φ (hφ : φ.grading = h) ↦ hφ.trans_ne hne
+theorem iSupIndep_gradedPart : iSupIndep (gradedPart R : StrandGradingGroup α → _) :=
+  iSupIndep_gradedPartBy _
 
 /-- Over a ring, the strands algebra is the internal direct sum of its graded parts. -/
 theorem isInternal_gradedPart {R : Type*} [CommRing R] [DecidableEq (StrandGradingGroup α)] :
@@ -741,15 +939,24 @@ open StrandDiagram StrandGradingGroup
 
 variable {R α : Type*} [CommSemiring R] [LinearOrder α] [Fintype α]
 
+/-- If resolving any crossing of a strand diagram changes its degree for `d` by `f`, then the
+differential maps the part of degree `g` for `d` to the part of degree `f g`. -/
+theorem differential_mem_gradedPartBy {G : Type*} {d : StrandDiagram α → G} {f : G → G}
+    (hd : ∀ {φ : StrandDiagram α} {p : α × α}, p ∈ φ.resolvableInversions →
+      d (φ.resolve p) = f (d φ))
+    {x : StrandsAlgebra R α} {g : G} (hx : x ∈ gradedPartBy R d g) :
+    differential R α x ∈ gradedPartBy R d (f g) := by
+  rw [gradedPartBy_eq_span] at hx
+  refine (Submodule.span_le (p := (gradedPartBy R d _).comap (differential R α))).2 ?_ hx
+  rintro _ ⟨φ, rfl, rfl⟩
+  rw [SetLike.mem_coe, Submodule.mem_comap, differential_of]
+  exact Submodule.sum_mem _ fun p hp ↦ hd hp ▸ of_mem_gradedPartBy d _
+
 /-- **The differential has degree `λ⁻¹`**: it maps the part of grading `g` to the part of grading
 `λ⁻¹ g`. -/
 theorem differential_mem_gradedPart {x : StrandsAlgebra R α} {g : StrandGradingGroup α}
-    (hx : x ∈ gradedPart R g) : differential R α x ∈ gradedPart R (lambda⁻¹ * g) := by
-  rw [gradedPart_eq_span] at hx
-  refine (Submodule.span_le (p := (gradedPart R _).comap (differential R α))).2 ?_ hx
-  rintro _ ⟨φ, rfl, rfl⟩
-  rw [SetLike.mem_coe, Submodule.mem_comap, differential_of]
-  exact Submodule.sum_mem _ fun p hp ↦ grading_resolve hp ▸ of_mem_gradedPart _
+    (hx : x ∈ gradedPart R g) : differential R α x ∈ gradedPart R (lambda⁻¹ * g) :=
+  differential_mem_gradedPartBy (f := (lambda⁻¹ * ·)) grading_resolve hx
 
 end StrandsAlgebra
 

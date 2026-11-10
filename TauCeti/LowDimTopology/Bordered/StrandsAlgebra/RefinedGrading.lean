@@ -68,28 +68,27 @@ idempotents at the two ends (`TauCeti.MatchedGradingRefinement.grading_eq_mul_gr
 
 ## Main results
 
-* `TauCeti.StrandDiagram.grading_addHorizontal`, `TauCeti.StrandDiagram.grading_swapHorizontal`:
-  adding or moving horizontal strands does not change the grading.
 * `TauCeti.MatchedGradingRefinement.grading_mem_matchedSubgroup`,
   `TauCeti.MatchedGradingRefinement.grading_mem_gPrime_inf_matchedSubgroup`: refined gradings of
   the diagrams of `A(Z, i)` lie in `matchedSubgroup M`, and in `G(Z)`.
 * `TauCeti.MatchedGradingRefinement.grading_trans`,
   `TauCeti.MatchedGradingRefinement.grading_idOn`,
-  `TauCeti.MatchedGradingRefinement.grading_eq_lambda_zpow_mul`: the refined grading is a grading.
+  `TauCeti.MatchedGradingRefinement.grading_eq_lambda_zpow_mul`,
+  `TauCeti.MatchedGradingRefinement.grading_resolve`: the refined grading is a grading.
 * `TauCeti.MatchedGradingRefinement.horizontalCompletion_mem_gradedPart`,
   `TauCeti.MatchedGradingRefinement.matchedIdem_mem_gradedPart`,
   `TauCeti.MatchedGradingRefinement.mul_mem_gradedPart`,
   `TauCeti.MatchedGradingRefinement.differential_mem_gradedPart`: the generators `a(ρ, h)` and the
   idempotents `I(s)` are homogeneous, products multiply gradings and the differential has degree
-  `λ⁻¹`.
+  `λ⁻¹`; a strand diagram lies in the part of its own refined grading only
+  (`TauCeti.MatchedGradingRefinement.of_mem_gradedPart_iff`).
 * `TauCeti.MatchedGradingRefinement.nonempty`: grading refinement data exist.
 
 ## References
 
 * R. Lipshitz, P. Ozsváth and D. Thurston, *Bordered Heegaard Floer homology*, Mem. Amer. Math.
-  Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687),
-  Proposition 3.40 (the unrefined grading is unchanged by adding horizontal strands) and §3.3.2
-  (the group `G(Z)`, Lemma 3.43, the grading refinement data (3.44), Lemma 3.45 and Remark 3.46).
+  Soc. **254** (2018), no. 1216, [arXiv:0810.0687](https://arxiv.org/abs/0810.0687), §3.3.2 (the
+  group `G(Z)`, Lemma 3.43, the grading refinement data (3.44), Lemma 3.45 and Remark 3.46).
 -/
 
 public section
@@ -122,10 +121,8 @@ theorem pushBoundary_apply (M : α → β) (δ : α → ℤ) (b : β) :
     pushBoundary M δ b = ∑ x with M x = b, δ x :=
   (rfl)
 
-variable [LinearOrder α]
-
 /-- `M_*` sends the indicator of a set on which `M` is injective to the indicator of its image. -/
-theorem pushBoundary_indicator {M : α → β} {S : Finset α} (hS : Set.InjOn M S) :
+theorem pushBoundary_indicator [DecidableEq α] {M : α → β} {S : Finset α} (hS : Set.InjOn M S) :
     pushBoundary M (fun x ↦ if x ∈ S then 1 else 0) = fun b ↦ if b ∈ S.image M then 1 else 0 := by
   ext b
   rw [pushBoundary_apply, sum_boole, filter_filter]
@@ -139,6 +136,8 @@ theorem pushBoundary_indicator {M : α → β} {S : Finset α} (hS : Set.InjOn M
     exact ⟨rfl, ha⟩
   · rw [card_eq_zero.2 (filter_eq_empty_iff.2 fun x _ h ↦ hb (mem_image.2 ⟨x, h.2, h.1⟩)),
       Nat.cast_zero]
+
+variable [LinearOrder α]
 
 /-- The subgroup of the grading group of the elements whose boundary cancels along every fibre of
 `M`: `M_*(∂β) = 0`. For the matching `M` of a pointed matched circle `Z`, these are the elements
@@ -181,130 +180,6 @@ theorem pushBoundary_boundary {β : Type*} [DecidableEq β] {M : α → β}
       (fun x ↦ if x ∈ φ.target then 1 else 0) - fun x ↦ if x ∈ φ.source then 1 else 0 :=
     funext fun x ↦ boundary_apply φ x
   rw [h, map_sub, pushBoundary_indicator hs, pushBoundary_indicator ht]
-
-/-! ### Horizontal strands and the grading -/
-
-/-- At a point `p` which is either the position of a horizontal strand of `φ` or not an end of any
-strand of `φ`, the multiplicity of the class of `φ` is the number of strands crossing a horizontal
-strand at `p`. -/
-theorem pointMultiplicity_boundary_eq_crossingCount
-    (hp : ∀ x ∈ φ.source, x = p ↔ φ.endpoint x = p) :
-    pointMultiplicity p φ.boundary = φ.crossingCount p := by
-  have h₁ : ({s ∈ φ.source | s < p ∧ p ≤ (φ s).getD s} : Finset α) =
-      {x ∈ φ.source | x < p ∧ p < φ.endpoint x} := by
-    refine filter_congr fun x hx ↦ ?_
-    rw [← endpoint_def]
-    refine and_congr_right fun hxp ↦ ⟨fun h ↦ lt_of_le_of_ne h fun h' ↦ ?_, le_of_lt⟩
-    exact hxp.ne ((hp x hx).2 h'.symm)
-  have h₂ : ({s ∈ φ.source | s ≤ p ∧ p < (φ s).getD s} : Finset α) =
-      {x ∈ φ.source | x < p ∧ p < φ.endpoint x} := by
-    refine filter_congr fun x hx ↦ ?_
-    rw [← endpoint_def]
-    refine ⟨fun ⟨hxp, hpx⟩ ↦ ⟨lt_of_le_of_ne hxp fun h ↦ ?_, hpx⟩, fun h ↦ ⟨h.1.le, h.2⟩⟩
-    exact hpx.ne ((hp x hx).1 h).symm
-  rw [pointMultiplicity_boundary, h₁, h₂, crossingCount_def]
-  ring
-
-/-- **Adding one horizontal strand does not change the grading.** At a point `p` where no strand of
-`φ` starts or ends, a horizontal strand adds one crossing for each strand passing over `p`, and the
-multiplicity of the class at `p`, which `m([φ], S)` gains, is that same number. -/
-theorem grading_addHorizontal_singleton (hs : p ∉ φ.source) (ht : p ∉ φ.target) :
-    (φ.addHorizontal {p}).grading = φ.grading := by
-  set φ' := φ.addHorizontal {p}
-  have hs' : φ'.source = insert p φ.source := by
-    rw [source_addHorizontal (disjoint_singleton_right.2 ht), union_comm, ← insert_eq]
-  have ht' : φ'.target = insert p φ.target := by
-    rw [target_addHorizontal (disjoint_singleton_right.2 hs), union_comm, ← insert_eq]
-  have hb : φ'.boundary = φ.boundary := by
-    ext x
-    rcases eq_or_ne x p with rfl | hxp
-    · simp [boundary_apply, hs', ht', hs, ht]
-    · simp [boundary_apply, hs', ht', hxp]
-  have hfp : φ'.endpoint p = p := endpoint_eq_of_mem (by simp [φ'])
-  have hf (x : α) (hx : x ∈ φ.source) : φ'.endpoint x = φ.endpoint x := by
-    rw [endpoint_def, endpoint_def, addHorizontal_apply_of_notMem (disjoint_singleton_right.2 ht)
-      (by simpa using fun h : x = p ↦ hs (h ▸ hx))]
-  have hinv : φ'.inversionCount = φ.inversionCount + φ.crossingCount p := by
-    rw [inversionCount_def, inversionCount_def, inversions_def, inversions_def, hs',
-      card_inversions_insert _ hs, inversions_congr hf, crossingCount_def, hfp]
-    have h₀ : #{x ∈ φ.source | p < x ∧ φ'.endpoint x < p} = 0 := by
-      refine card_eq_zero.2 (filter_eq_empty_iff.2 fun x hx ⟨hpx, hxp⟩ ↦ ?_)
-      rw [hf x hx] at hxp
-      exact (hpx.trans_le (φ.le_of_mem (endpoint_mem hx))).not_gt hxp
-    rw [h₀, add_zero]
-    congr 2
-    exact filter_congr fun x hx ↦ by rw [hf x hx]
-  have hm : pointMultiplicity p φ.boundary = φ.crossingCount p :=
-    pointMultiplicity_boundary_eq_crossingCount fun x hx ↦
-      ⟨fun h ↦ absurd (h ▸ hx) hs, fun h ↦ absurd (h ▸ endpoint_mem_target hx) ht⟩
-  ext
-  · rw [grading_maslov, grading_maslov, hb, hs', sum_insert hs, hm, hinv]
-    push_cast
-    ring
-  · rw [grading_boundary, grading_boundary, hb]
-
-/-- **Adding horizontal strands does not change the grading** (Lipshitz, Ozsváth and Thurston,
-Proposition 3.40): if `U` avoids the starting and end points of `φ`, then `φ.addHorizontal U` has
-the grading of `φ`. -/
-theorem grading_addHorizontal {U : Finset α} (hs : Disjoint φ.source U)
-    (ht : Disjoint φ.target U) : (φ.addHorizontal U).grading = φ.grading := by
-  induction U using Finset.induction_on with
-  | empty => simp
-  | insert p U hpU ih =>
-    have hsU := disjoint_of_subset_right (subset_insert p U) hs
-    have htU := disjoint_of_subset_right (subset_insert p U) ht
-    rw [insert_eq, union_comm, ← addHorizontal_addHorizontal, grading_addHorizontal_singleton,
-      ih hsU htU]
-    · rw [source_addHorizontal htU, mem_union, not_or]
-      exact ⟨disjoint_right.1 hs (mem_insert_self p U), hpU⟩
-    · rw [target_addHorizontal hsU, mem_union, not_or]
-      exact ⟨disjoint_right.1 ht (mem_insert_self p U), hpU⟩
-
-/-- **Moving a horizontal strand does not change the grading.** Moving the horizontal strand at `a`
-to a point `b` at which no strand starts or ends trades the crossings with a horizontal strand at
-`a` for those with one at `b`, and `m([φ], S)` changes by the same amount. -/
-@[simp]
-theorem grading_swapHorizontal (φ : StrandDiagram α) (a b : α) :
-    (φ.swapHorizontal a b).grading = φ.grading := by
-  wlog h : φ.CanMoveHorizontal a b generalizing a b
-  · by_cases h' : φ.CanMoveHorizontal b a
-    · rw [swapHorizontal_comm]
-      exact this b a h'
-    · rw [swapHorizontal_of_not h h']
-  set φ' := φ.swapHorizontal a b
-  have haS : a ∈ φ.source := mem_source.2 ⟨a, h.mem⟩
-  have haT : a ∈ φ.target := mem_target.2 ⟨a, h.mem⟩
-  have hab := h.ne
-  have hb : φ'.boundary = φ.boundary := by
-    ext x
-    simp only [boundary_apply, φ', source_swapHorizontal h, target_swapHorizontal h, mem_insert,
-      mem_erase]
-    rcases eq_or_ne x a with rfl | hxa
-    · simp [haS, haT, hab]
-    rcases eq_or_ne x b with rfl | hxb
-    · simp [h.notMem_source, h.notMem_target]
-    · simp [hxa, hxb]
-  have hfa : φ.endpoint a = a := endpoint_eq_of_mem h.mem
-  have hma : pointMultiplicity a φ.boundary = φ.crossingCount a :=
-    pointMultiplicity_boundary_eq_crossingCount fun x hx ↦
-      ⟨fun h ↦ h ▸ hfa, fun h' ↦ φ.endpoint_injOn hx haS (h'.trans hfa.symm)⟩
-  have hmb : pointMultiplicity b φ.boundary = φ.crossingCount b :=
-    pointMultiplicity_boundary_eq_crossingCount fun x hx ↦
-      ⟨fun h' ↦ absurd (h' ▸ hx) h.notMem_source,
-        fun h' ↦ absurd (h' ▸ endpoint_mem_target hx) h.notMem_target⟩
-  have hinv := inversionCount_swapHorizontal_add h
-  have hsum : ∑ s ∈ φ'.source, pointMultiplicity s φ.boundary + pointMultiplicity a φ.boundary =
-      ∑ s ∈ φ.source, pointMultiplicity s φ.boundary + pointMultiplicity b φ.boundary := by
-    rw [show φ'.source = _ from source_swapHorizontal h,
-      sum_insert fun hb' ↦ h.notMem_source (mem_of_mem_erase hb'), ← add_sum_erase _ _ haS]
-    ring
-  ext
-  · rw [grading_maslov, grading_maslov, hb]
-    have hinv' : ((φ'.inversionCount : ℕ) : ℚ) + φ.crossingCount a =
-        φ.inversionCount + φ.crossingCount b := by exact_mod_cast hinv
-    rw [hma, hmb] at hsum
-    linear_combination hinv' - hsum
-  · rw [grading_boundary, grading_boundary, hb]
 
 end StrandDiagram
 
@@ -417,6 +292,15 @@ theorem grading_eq_lambda_zpow_mul {φ χ : StrandDiagram α} (hs : χ.source = 
   rw [hs, ht, StrandDiagram.grading_eq_lambda_zpow_mul hs ht,
     ← mul_assoc, hc, mul_assoc, mul_assoc, mul_assoc]
 
+/-- **The differential has degree `λ⁻¹` for the refined grading**: resolving a crossing of `φ`
+that lowers the number of crossings by one multiplies the refined grading by `λ⁻¹`. -/
+theorem grading_resolve {φ : StrandDiagram α} {p : α × α} (h : p ∈ φ.resolvableInversions) :
+    ψ.grading (φ.resolve p) = lambda⁻¹ * ψ.grading φ := by
+  rw [ψ.grading_eq_lambda_zpow_mul (source_resolve φ p) (target_resolve φ p),
+    ← (mem_resolvableInversions.1 h).2]
+  push_cast
+  rw [sub_add_cancel_left, zpow_neg_one]
+
 /-- Moving a horizontal strand between two matched points does not change the refined grading: the
 grading and the occupied pairs stay the same. -/
 @[simp]
@@ -509,55 +393,45 @@ open StrandsAlgebra
 
 variable (R : Type*) [CommSemiring R]
 
-/-- The part of the strands algebra of refined grading `g`: the span of the strand diagrams of
-refined grading `g`. -/
+/-- The part of the strands algebra of refined grading `g`: the elements supported on the strand
+diagrams of refined grading `g`. -/
 def gradedPart (g : StrandGradingGroup α) : Submodule R (StrandsAlgebra R α) :=
-  Submodule.span R (of '' {φ | ψ.grading φ = g})
+  gradedPartBy R ψ.grading g
 
 variable {R}
 
+/-- An element has refined grading `g` exactly when every strand diagram in its support has
+refined grading `g`. -/
+theorem mem_gradedPart {g : StrandGradingGroup α} {x : StrandsAlgebra R α} :
+    x ∈ ψ.gradedPart R g ↔ ∀ φ ∈ ((basis R α).repr x).support, ψ.grading φ = g :=
+  mem_gradedPartBy
+
+/-- The part of refined grading `g` is the span of the strand diagrams of refined grading `g`. -/
+theorem gradedPart_eq_span (g : StrandGradingGroup α) :
+    ψ.gradedPart R g = Submodule.span R (of '' {φ | ψ.grading φ = g}) :=
+  gradedPartBy_eq_span _ g
+
+/-- A strand diagram lies in the part of refined grading `g` exactly when its refined grading is
+`g`. -/
+@[simp]
+theorem of_mem_gradedPart_iff [Nontrivial R] {φ : StrandDiagram α} {g : StrandGradingGroup α} :
+    (of φ : StrandsAlgebra R α) ∈ ψ.gradedPart R g ↔ ψ.grading φ = g :=
+  of_mem_gradedPartBy_iff
+
 theorem of_mem_gradedPart (φ : StrandDiagram α) :
     (of φ : StrandsAlgebra R α) ∈ ψ.gradedPart R (ψ.grading φ) :=
-  Submodule.subset_span ⟨φ, rfl, rfl⟩
+  of_mem_gradedPartBy _ φ
 
 /-- **The algebra is graded by the refined grading**: the product of elements of refined gradings
 `g` and `h` has refined grading `g * h`. -/
 theorem mul_mem_gradedPart {g h : StrandGradingGroup α} {x y : StrandsAlgebra R α}
-    (hx : x ∈ ψ.gradedPart R g) (hy : y ∈ ψ.gradedPart R h) : x * y ∈ ψ.gradedPart R (g * h) := by
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨φ, hφ, rfl⟩ := hx
-    induction hy using Submodule.span_induction with
-    | mem y hy =>
-      obtain ⟨χ, hχ, rfl⟩ := hy
-      rw [of_mul_of]
-      split_ifs with hφχ
-      · rw [← (hφ : ψ.grading φ = g), ← (hχ : ψ.grading χ = h), ← ψ.grading_trans hφχ]
-        exact ψ.of_mem_gradedPart _
-      · exact zero_mem _
-    | zero => rw [mul_zero]; exact zero_mem _
-    | add y y' _ _ hy hy' => rw [mul_add]; exact add_mem hy hy'
-    | smul r y _ hy => rw [mul_smul_comm]; exact Submodule.smul_mem _ r hy
-  | zero => rw [zero_mul]; exact zero_mem _
-  | add x x' _ _ hx hx' => rw [add_mul]; exact add_mem hx hx'
-  | smul r x _ hx => rw [smul_mul_assoc]; exact Submodule.smul_mem _ r hx
+    (hx : x ∈ ψ.gradedPart R g) (hy : y ∈ ψ.gradedPart R h) : x * y ∈ ψ.gradedPart R (g * h) :=
+  mul_mem_gradedPartBy ψ.grading_trans hx hy
 
 /-- **The differential has degree `λ⁻¹` for the refined grading.** -/
 theorem differential_mem_gradedPart {g : StrandGradingGroup α} {x : StrandsAlgebra R α}
-    (hx : x ∈ ψ.gradedPart R g) : differential R α x ∈ ψ.gradedPart R (lambda⁻¹ * g) := by
-  induction hx using Submodule.span_induction with
-  | mem x hx =>
-    obtain ⟨φ, hφ, rfl⟩ := hx
-    rw [differential_of]
-    refine Submodule.sum_mem _ fun q hq ↦ ?_
-    obtain ⟨-, hcount⟩ := mem_resolvableInversions.1 hq
-    have hgr := ψ.grading_eq_lambda_zpow_mul (source_resolve φ q) (target_resolve φ q)
-    rw [show ((φ.resolve q).inversionCount : ℤ) - φ.inversionCount = -1 by omega, zpow_neg_one,
-      (hφ : ψ.grading φ = g)] at hgr
-    exact hgr ▸ ψ.of_mem_gradedPart _
-  | zero => rw [map_zero]; exact zero_mem _
-  | add x x' _ _ hx hx' => rw [map_add]; exact add_mem hx hx'
-  | smul r x _ hx => rw [map_smul]; exact Submodule.smul_mem _ r hx
+    (hx : x ∈ ψ.gradedPart R g) : differential R α x ∈ ψ.gradedPart R (lambda⁻¹ * g) :=
+  differential_mem_gradedPartBy (f := (lambda⁻¹ * ·)) ψ.grading_resolve hx
 
 /-- **The generators `a(ρ, h)` are homogeneous for the refined grading**, of grading
 `ψ(M(S) ∪ h) gr'(ρ) ψ(M(T) ∪ h)⁻¹` for `ρ : S → T`. -/
