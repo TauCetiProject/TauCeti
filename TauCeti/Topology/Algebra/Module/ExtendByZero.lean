@@ -33,16 +33,10 @@ variable {ι κ : Type*} (R : Type*) {M : Type*} [Semiring R] [AddCommMonoid M] 
 @[fun_prop]
 theorem continuous_linearMap : Continuous (linearMap R M e) := by
   classical
-  have h : Continuous (fun x : ι → M => Function.extend e x 0) := by
-    apply continuous_pi
-    intro j
-    by_cases hj : ∃ i, e i = j
-    · simpa only [Function.extend_def, dite_eq_left hj] using
-        (continuous_apply (Classical.choose hj) : Continuous fun x : ι → M =>
-          x (Classical.choose hj))
-    · simpa only [Function.extend_apply' _ _ _ hj, Pi.zero_apply] using
-        (continuous_const : Continuous fun _ : ι → M => (0 : M))
-  exact h.congr fun x ↦ funext fun j ↦ (linearMap_apply R M e x j).symm
+  refine continuous_pi fun j ↦ ?_
+  by_cases hj : ∃ i, e i = j
+  · simpa only [linearMap_apply, Function.extend_def, dite_eq_left hj] using continuous_apply _
+  · simpa only [linearMap_apply, Function.extend_apply' _ _ _ hj] using continuous_const
 
 end Module
 
@@ -64,25 +58,23 @@ noncomputable def continuousLinearMap : (ι → M) →L[R] (κ → M) :=
 theorem continuousLinearMap_apply (x : ι → M) :
     continuousLinearMap R M e x = Function.extend e x 0 := (rfl)
 
-end Extension
-
-variable (R : Type*) [Semiring R] [TopologicalSpace R] (e : ι → κ)
-
 /-- Restrict coordinate functions along an index map, as a continuous linear map. -/
-def restriction : (κ → R) →L[R] (ι → R) :=
+def restriction : (κ → M) →L[R] (ι → M) :=
   ContinuousLinearMap.pi fun i => ContinuousLinearMap.proj (e i)
 
 /-- Coordinate restriction is precomposition with the index map. -/
 @[simp]
-theorem restriction_apply (x : κ → R) : restriction R e x = x ∘ e := by
+theorem restriction_apply (x : κ → M) : restriction R M e x = x ∘ e := by
   ext i
   simp [restriction]
 
 /-- Restriction recovers every function extended along an injective index map. -/
 theorem restriction_leftInverse (he : Function.Injective e) :
-    Function.LeftInverse (restriction R e) (continuousLinearMap R R e) := by
+    Function.LeftInverse (restriction R M e) (continuousLinearMap R M e) := by
   intro x
   ext i
   simp [he]
+
+end Extension
 
 end Function.ExtendByZero

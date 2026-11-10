@@ -41,10 +41,10 @@ theorem isPLOn_extendByZero_iff :
     Function.ExtendByZero.continuousLinearMap_apply, Function.ExtendByZero.restriction_apply]
     using isPLOn_affine_transport_iff (f := f) (s := s)
     (Function.ExtendByZero.continuousLinearMap ℝ ℝ e).toContinuousAffineMap
-    (Function.ExtendByZero.restriction ℝ e).toContinuousAffineMap
+    (Function.ExtendByZero.restriction ℝ ℝ e).toContinuousAffineMap
     (Function.ExtendByZero.continuousLinearMap ℝ ℝ d).toContinuousAffineMap
-    (Function.ExtendByZero.restriction ℝ d).toContinuousAffineMap
-    (fun x _ ↦ Function.ExtendByZero.restriction_leftInverse ℝ e e.injective x)
-    (fun x _ ↦ Function.ExtendByZero.restriction_leftInverse ℝ d d.injective (f x))
+    (Function.ExtendByZero.restriction ℝ ℝ d).toContinuousAffineMap
+    (fun x _ ↦ Function.ExtendByZero.restriction_leftInverse ℝ ℝ e e.injective x)
+    (fun x _ ↦ Function.ExtendByZero.restriction_leftInverse ℝ ℝ d d.injective (f x))
 
 end TauCeti

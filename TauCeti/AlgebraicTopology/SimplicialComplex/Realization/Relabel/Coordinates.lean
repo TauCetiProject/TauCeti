@@ -52,7 +52,7 @@ vertex embedding. -/
 theorem relabelingHomeomorph_symm_coe_eq_restriction
     (y : {y : Realization L // y.1.support ∈ P.map e}) :
     (((P.relabelingHomeomorph e hK hL).symm y).1.1 : α → ℝ) =
-      Function.ExtendByZero.restriction ℝ e (y.1.1 : β → ℝ) := by
+      Function.ExtendByZero.restriction ℝ ℝ e (y.1.1 : β → ℝ) := by
   ext i
   simp only [relabelingHomeomorph_symm_val, Finsupp.comapDomain_apply,
     Function.ExtendByZero.restriction_apply, Function.comp_apply]
