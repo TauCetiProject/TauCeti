@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Operator.Fredholm.Basic
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
+public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 import TauCeti.Topology.Algebra.Module.Complement
 
@@ -36,6 +37,8 @@ intended throughout.
   `ContinuousLinearMap.IsFredholm.equiv_comp`: composing with a continuous linear equivalence on
   either side preserves Fredholmness. These implications hold between topological modules over any
   `NontriviallyNormedField`, without completeness or separation assumptions.
+* `ContinuousLinearMap.IsFredholm.isInvertible_of_injective_of_index_eq_zero`: an injective
+  Fredholm operator of index zero is invertible.
 * `ContinuousLinearMap.IsFredholm.restrictScalars`: a Fredholm operator over `𝕜'` stays Fredholm
   over a subfield `𝕜` with `𝕜'` finite-dimensional over `𝕜`; for instance, the realification of
   a complex Fredholm operator is Fredholm. Its index is computed by
@@ -143,6 +146,14 @@ lemma IsFredholm.neg {T : E →L[𝕜] F} (hT : IsFredholm T) : IsFredholm (-T) 
   convert hT.equiv_comp (ContinuousLinearEquiv.neg 𝕜) using 1
   ext x
   simp
+
+/-- An injective Fredholm operator of index zero is invertible: index zero forces its cokernel to
+vanish. -/
+lemma IsFredholm.isInvertible_of_injective_of_index_eq_zero {T : E →L[𝕜] F} (hT : IsFredholm T)
+    (hinj : Function.Injective T) (h0 : T.index = 0) : T.IsInvertible := by
+  have := hT.finite_coker
+  exact isInvertible_iff_isFredholm_and_bijective.2
+    ⟨hT, T.bijective_of_injective_of_index_eq_zero hinj h0⟩
 
 section RestrictScalars
 

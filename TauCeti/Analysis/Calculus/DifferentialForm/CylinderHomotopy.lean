@@ -164,19 +164,26 @@ theorem cylinderHomotopy_smul (c : ℝ) (ω : E × ℝ → (E × ℝ) [⋀^Fin (
   simp only [cylinderHomotopy_apply, Pi.smul_apply, ← contractInl_apply, map_smul,
     intervalIntegral.integral_smul]
 
+/-- The integrand `t ↦ ω(x, t)(∂ₜ, (·, 0), …, (·, 0))` of the cylinder homotopy operator is
+interval integrable for a form that is continuous along the segment `{x} × [0, 1]`. -/
+theorem intervalIntegrable_curryLeft_inl_of_continuousOn {x : E}
+    {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F} (hω : ContinuousOn ω ({x} ×ˢ Icc 0 1)) :
+    IntervalIntegrable (fun t ↦ ((ω (x, t)).curryLeft (0, 1)).compContinuousLinearMap (.inl ℝ E ℝ))
+      volume 0 1 := by
+  simp only [← contractInl_apply]
+  refine ContinuousOn.intervalIntegrable ?_
+  rw [uIcc_of_le zero_le_one]
+  exact contractInl.continuous.comp_continuousOn
+    (hω.comp (continuous_const.prodMk continuous_id).continuousOn fun t ht ↦ ⟨rfl, ht⟩)
+
 /-- The cylinder homotopy operator is additive on forms that are continuous along the segment
 `{x} × [0, 1]`. -/
 theorem cylinderHomotopy_add_apply {x : E} {ω₁ ω₂ : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F}
     (h₁ : ContinuousOn ω₁ ({x} ×ˢ Icc 0 1)) (h₂ : ContinuousOn ω₂ ({x} ×ˢ Icc 0 1)) :
     cylinderHomotopy (ω₁ + ω₂) x = cylinderHomotopy ω₁ x + cylinderHomotopy ω₂ x := by
-  have hint {ω : E × ℝ → (E × ℝ) [⋀^Fin (n + 1)]→L[ℝ] F} (hω : ContinuousOn ω ({x} ×ˢ Icc 0 1)) :
-      IntervalIntegrable (fun t : ℝ ↦ contractInl (ω (x, t))) volume 0 1 := by
-    refine ContinuousOn.intervalIntegrable ?_
-    rw [uIcc_of_le zero_le_one]
-    exact contractInl.continuous.comp_continuousOn
-      (hω.comp (continuous_const.prodMk continuous_id).continuousOn fun t ht ↦ ⟨rfl, ht⟩)
   simp only [cylinderHomotopy_apply, Pi.add_apply, ← contractInl_apply, map_add]
-  exact intervalIntegral.integral_add (hint h₁) (hint h₂)
+  exact intervalIntegral.integral_add (intervalIntegrable_curryLeft_inl_of_continuousOn h₁)
+    (intervalIntegrable_curryLeft_inl_of_continuousOn h₂)
 
 /-- The cylinder homotopy operator is supported over the part of the support of the form that lies
 in `E × [0, 1]`. -/

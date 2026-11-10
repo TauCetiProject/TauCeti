@@ -382,13 +382,33 @@ theorem setOf_restrict_eq_eq_orbit (P : Place k F') :
   rintro ⟨σ, rfl⟩
   exact restrict_smul σ P
 
+omit [FiniteDimensional F F'] in
 /-- **Orbit--stabilizer for the places over a place**: the number of places of `F' / k` lying
-over the place below `P`, times the order of the stabilizer of `P`, is `[F' : F]`. -/
+over the place below `P`, times the order of the stabilizer of `P`, is `[F' : F]`. For an infinite
+Galois extension both sides are `0` by convention: the fibre is infinite, or it is finite and the
+stabilizer has finite index in an infinite group, hence is infinite. -/
 theorem ncard_mul_card_stabilizer_eq_finrank (P : Place k F') :
     {Q : Place k F' | Q.restrict k F = P.restrict k F}.ncard *
       Nat.card (MulAction.stabilizer (F' ≃ₐ[F] F') P) = Module.finrank F F' := by
-  rw [← Nat.card_coe_set_eq, setOf_restrict_eq_eq_orbit P, ← Nat.card_prod,
-    Nat.card_congr (MulAction.orbitProdStabilizerEquivGroup _ P), IsGalois.card_aut_eq_finrank]
+  by_cases hfd : FiniteDimensional F F'
+  · rw [← Nat.card_coe_set_eq, setOf_restrict_eq_eq_orbit P, ← Nat.card_prod,
+      Nat.card_congr (MulAction.orbitProdStabilizerEquivGroup _ P), IsGalois.card_aut_eq_finrank]
+  · have hinf : Infinite (F' ≃ₐ[F] F') :=
+      not_finite_iff_infinite.mp fun h ↦ hfd (IsGalois.finiteDimensional_of_finite F F')
+    rw [Module.finrank_of_not_finite hfd]
+    by_cases hfib : {Q : Place k F' | Q.restrict k F = P.restrict k F}.Finite
+    swap
+    · rw [Set.Infinite.ncard hfib, zero_mul]
+    have horb : Finite (MulAction.orbit (F' ≃ₐ[F] F') P) :=
+      (hfib.subset (by rintro _ ⟨σ, rfl⟩; exact restrict_smul σ P)).to_subtype
+    rw [mul_eq_zero]
+    refine Or.inr ?_
+    by_contra hstab
+    have hs : Finite (MulAction.stabilizer (F' ≃ₐ[F] F') P) :=
+      Nat.finite_of_card_ne_zero hstab
+    have : Finite (F' ≃ₐ[F] F') :=
+      Finite.of_equiv _ (MulAction.orbitProdStabilizerEquivGroup _ P)
+    exact not_finite (F' ≃ₐ[F] F')
 
 /-- **The ramification index is constant on a fibre** (Stichtenoth, Corollary 3.7.2). -/
 theorem ramificationIdx_eq_of_restrict_eq {P Q : Place k F'}

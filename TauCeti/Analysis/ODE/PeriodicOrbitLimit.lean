@@ -268,7 +268,7 @@ theorem norm_sub_le_add_sqrt_mul_sqrt_integral_sliceDefect [CompleteSpace V]
           exact Ioc_subset_Icc_self htI
         · exact intervalIntegral.norm_integral_le_integral_norm ht
     _ ≤ B * (t₂ - t₁) + √(t₂ - t₁) * √(∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖ ^ 2) :=
-        add_le_add le_rfl (integral_le_sqrt_mul_sqrt_integral_sq ht (fun t _ ↦ norm_nonneg _)
+        add_le_add le_rfl (integral_le_sqrt_mul_sqrt_integral_sq ht
           ((hd.norm.pow 2).intervalIntegrable _ _))
 
 /-- **The defect integral is controlled by its `L²` norm.** Over a subinterval `[t₁, t₂]` of
@@ -282,7 +282,7 @@ theorem integral_norm_sliceDefect_le_sqrt (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ u
   have hd := continuous_norm_sliceDefect_sq hu hX hs
   calc ∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖
       ≤ √(t₂ - t₁) * √(∫ t in t₁..t₂, ‖sliceDefect X u (s, t)‖ ^ 2) :=
-        integral_le_sqrt_mul_sqrt_integral_sq ht (fun t _ ↦ norm_nonneg _)
+        integral_le_sqrt_mul_sqrt_integral_sq ht
           (hd.intervalIntegrable _ _)
     _ ≤ 1 * √(∫ t in (0 : ℝ)..1, ‖sliceDefect X u (s, t)‖ ^ 2) := by
         gcongr

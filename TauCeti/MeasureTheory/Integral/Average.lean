@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Average
+import TauCeti.MeasureTheory.Function.L1Space.Integrable
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
@@ -137,10 +138,15 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
 * `TauCeti.setAverage_mul_setAverage_le_of_setLIntegral_mul_le`: a bound `C μ(B)²` on the product of
   the integrals of two almost everywhere nonnegative functions over `B` is a bound `C` on the
   product of their averages.
+* `TauCeti.setLIntegral_enorm_sub_setAverage_le_add_of_integrableOn`: the deviation of `u` from its
+  mean over `T` on `A ⊆ U` is at most that of an approximation `v`, plus `(1 + μ(U) / μ(T))` times
+  the `L¹(U)` distance from `v` to `u`.
 * `TauCeti.integrable_and_average_rpow_le`: if `(f + δ) ^ s` is integrable then so is `f ^ s`, with
   a smaller average.
 * `TauCeti.ae_eq_zero_of_setAverage_rpow_eq_zero`: a nonnegative `Lᵠ` function whose `p`-th power
   has vanishing average over a set of finite positive measure vanishes almost everywhere there.
+* `TauCeti.average_rpow_le_average_add_const_rpow`: for `f ≥ 0` in `Lᵖ` on a finite measure
+  space, the average of `f ^ p` is at most that of `(f + δ) ^ p`.
 * `TauCeti.tendsto_average_add_rpow`: dominated convergence for the averages of
   `(f + δ k) ^ p` for `f` in `Lᵖ` on a finite measure space and `δ k ≥ 0` tending to `0`.
 * `TauCeti.enorm_sub_setAverage_eq_zero_of_subsingleton`: the deviation from the mean vanishes on a
@@ -974,12 +980,8 @@ theorem tendsto_average_add_rpow {α : Type*} [MeasurableSpace α]
     Filter.Tendsto (fun k : ℕ => ⨍ y, (f y + δ k) ^ p ∂μ)
       Filter.atTop (nhds (⨍ y, f y ^ p ∂μ)) := by
   -- Eventually `0 ≤ δ ≤ 1`, so `(f + δ)^p ≤ (f + 1)^p`, which is integrable since `f ∈ Lᵖ`.
-  have hbound : Integrable (fun y => (f y + 1) ^ p) μ := by
-    have hmem : MemLp (fun y => f y + 1) (ENNReal.ofReal p) μ := hf.add (memLp_const 1)
-    refine (hmem.integrable_norm_rpow (ENNReal.ofReal_pos.2 hp).ne'
-      ENNReal.ofReal_ne_top).congr ?_
-    filter_upwards [hf0] with y hy
-    rw [ENNReal.toReal_ofReal hp.le, Real.norm_of_nonneg (by linarith)]
+  have hbound : Integrable (fun y => (f y + 1) ^ p) μ :=
+    (hf.add (memLp_const 1)).integrable_rpow hp
   have hlim : Filter.Tendsto (fun k : ℕ => ∫ y, (f y + δ k) ^ p ∂μ)
       Filter.atTop (nhds (∫ y, f y ^ p ∂μ)) := by
     refine tendsto_integral_filter_of_dominated_convergence _
@@ -1016,6 +1018,15 @@ theorem ae_eq_zero_of_setAverage_rpow_eq_zero {α : Type*} [MeasurableSpace α]
     (havg.resolve_left (ENNReal.toReal_pos hs0 hs).ne')
   filter_upwards [hzero, hg0] with x h1 h2
   exact (Real.rpow_eq_zero h2 hp.ne').1 h1
+
+/-- For `f ≥ 0` in `Lᵖ` on a finite measure space and `p > 0`, the average of `f ^ p` is at most
+that of `(f + δ) ^ p` for `δ ≥ 0`. -/
+theorem average_rpow_le_average_add_const_rpow {α : Type*} [MeasurableSpace α]
+    {m : Measure α} [IsFiniteMeasure m] {f : α → ℝ} {p δ : ℝ} (hp : 0 < p)
+    (hδ : 0 ≤ δ) (hf : MemLp f (ENNReal.ofReal p) m) (hf0 : ∀ᵐ y ∂m, 0 ≤ f y) :
+    ⨍ y, f y ^ p ∂m ≤ ⨍ y, (f y + δ) ^ p ∂m := by
+  exact (integrable_and_average_rpow_le hp hδ hf.aestronglyMeasurable hf0
+    ((hf.add (memLp_const δ)).integrable_rpow hp)).2
 
 end Rpow
 
@@ -1081,6 +1092,54 @@ theorem setAverage_mul_setAverage_le_of_setLIntegral_mul_le {α : Type*} [Measur
         field_simp
 
 end Product
+
+section Approximation
+
+variable {X F : Type*} [MeasurableSpace X] {μ : Measure X} [NormedAddCommGroup F]
+  [NormedSpace ℝ F] {u : X → F}
+
+/-- The deviation of `u` from its mean over `T` on `A ⊆ U` is at most that of an approximation
+`v`, plus `(1 + μ(U) / μ(T))` times the `L¹(U)` distance from `v` to `u`, for `u` and `v`
+integrable on `U`. -/
+theorem setLIntegral_enorm_sub_setAverage_le_add_of_integrableOn {U T A : Set X}
+    (huU : IntegrableOn u U μ) {v : X → F} (hvU : IntegrableOn v U μ) (hT : T ⊆ U) (hA : A ⊆ U) :
+    ∫⁻ x in A, ‖u x - ⨍ y in T, u y ∂μ‖ₑ ∂μ ≤
+      (∫⁻ x in U, ‖v x - u x‖ₑ ∂μ) +
+        μ U / μ T * ∫⁻ x in U, ‖v x - u x‖ₑ ∂μ +
+        ∫⁻ x in A, ‖v x - ⨍ y in T, v y ∂μ‖ₑ ∂μ := by
+  set e := ∫⁻ x in U, ‖v x - u x‖ₑ ∂μ
+  -- The means over `T` differ by at most `e / μ(T)`.
+  have hab : ‖(⨍ y in T, v y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ ≤ e / μ T := by
+    rw [← setAverage_fun_sub (hvU.mono_set hT) (huU.mono_set hT)]
+    refine (enorm_setAverage_le_setLAverage μ _ T).trans ?_
+    rw [setLAverage_eq]
+    gcongr
+    exact lintegral_mono_set hT
+  -- The triangle inequality through `v` and its mean.
+  have hdist : AEMeasurable (fun x => ‖v x - u x‖ₑ) (μ.restrict A) :=
+    ((hvU.aestronglyMeasurable.sub huU.aestronglyMeasurable).enorm.mono_measure
+      (Measure.restrict_mono hA le_rfl))
+  calc ∫⁻ x in A, ‖u x - ⨍ y in T, u y ∂μ‖ₑ ∂μ
+      ≤ ∫⁻ x in A, (‖v x - u x‖ₑ + ‖v x - ⨍ y in T, v y ∂μ‖ₑ +
+          ‖(⨍ y in T, v y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ) ∂μ := by
+        refine lintegral_mono fun x => ?_
+        rw [← enorm_neg (v x - u x)]
+        refine le_of_eq_of_le ?_
+          ((enorm_add_le _ _).trans (add_le_add_left (enorm_add_le _ _) _))
+        congr 1
+        abel
+    _ = ∫⁻ x in A, ‖v x - u x‖ₑ ∂μ + ∫⁻ x in A, ‖v x - ⨍ y in T, v y ∂μ‖ₑ ∂μ +
+          ‖(⨍ y in T, v y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ * μ A := by
+        rw [lintegral_add_right _ measurable_const, lintegral_add_left' hdist,
+          setLIntegral_const]
+    _ ≤ e + ∫⁻ x in A, ‖v x - ⨍ y in T, v y ∂μ‖ₑ ∂μ + e / μ T * μ U := by
+        gcongr
+        exact lintegral_mono_set hA
+    _ = e + μ U / μ T * e + ∫⁻ x in A, ‖v x - ⨍ y in T, v y ∂μ‖ₑ ∂μ := by
+        simp only [div_eq_mul_inv]
+        ring
+
+end Approximation
 
 section Subsingleton
 

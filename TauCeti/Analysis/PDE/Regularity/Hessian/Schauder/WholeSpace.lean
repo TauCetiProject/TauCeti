@@ -118,7 +118,7 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_holder
   obtain ⟨R, hR, -, hscale⟩ := Real.exists_pos_le_one_mul_rpow_le
     (2 * (C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)) * ((n : ℝ) + 1) ^ 2 *
       ((1 + 2 ^ (α : ℝ)) * L)) (NNReal.coe_pos.2 hα) hlam
-  obtain ⟨C₁, hC₁⟩ := hball (L := L) (M := Lam.toNNReal) hlam hR
+  obtain ⟨C₁, hC₁⟩ := hball (L := L) (M := Lam.toNNReal) hlam
     (by simpa only [mul_assoc] using hscale) (half_lt_self hR)
   set δ : ℝ≥0 := ⟨R / 2, by positivity⟩
   have hδ : 0 < δ := by rw [← NNReal.coe_pos]; exact half_pos hR

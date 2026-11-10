@@ -56,6 +56,12 @@ theorem ContinuousAlternatingMap.alternatizeUncurryFin_apply_pair
 
 namespace TauCeti
 
+/-- The exterior derivative of a form vanishes at a point where the form is not differentiable,
+because `fderiv` takes the junk value `0` there. -/
+lemma extDeriv_zero_of_not_differentiableAt (h : ¬ DifferentiableAt 𝕜 ω x) : extDeriv ω x = 0 := by
+  simp only [extDeriv, fderiv_zero_of_not_differentiableAt h]
+  exact map_zero _
+
 /-- The exterior derivative of a one-form on an ordered pair is the alternating part of its
 Fréchet derivative. This formula also respects the derivative's junk-value convention. -/
 theorem extDeriv_apply_pair {ω : E → E [⋀^Fin 1]→L[𝕜] F} (x v w : E) :

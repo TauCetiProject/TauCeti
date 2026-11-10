@@ -134,7 +134,7 @@ theorem frontier_image_paramSet_subset :
       expMapBasis '' frontier (paramSet K) ∪ {0} :=
   TauCeti.frontier_image_subset_of_closure_subset
     (fun _ hs ↦ expMapBasis.isOpen_image_of_subset_source hs (by simp [expMapBasis_source]))
-    (injective_expMapBasis K) (closure_image_paramSet_subset K)
+    (closure_image_paramSet_subset K)
 
 variable {K}
 
