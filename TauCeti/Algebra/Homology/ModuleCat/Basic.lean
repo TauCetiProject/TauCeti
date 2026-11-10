@@ -41,7 +41,9 @@ is a boundary have the same homology class
 (`HomologicalComplex.moduleCat_homologyπ_eq_of_iCycles_sub_eq_d`); conversely, cycles with the same
 class differ by the boundary of an element of degree `c.prev n`
 (`HomologicalComplex.moduleCat_homologyπ_eq_iff`), and a cycle has zero homology class exactly
-when it is a boundary (`HomologicalComplex.moduleCat_homologyπ_eq_zero_iff`).
+when it is a boundary (`HomologicalComplex.moduleCat_homologyπ_eq_zero_iff`); where no
+differential enters, such as in degree zero of a cochain complex, a cycle with zero class is zero
+(`HomologicalComplex.moduleCat_eq_zero_of_homologyπ_eq_zero`).
 When the homology is finitely generated, finitely many cycles generate all cycles modulo
 boundaries (`HomologicalComplex.exists_fin_moduleCat_cycles_generating`).
 Cycles are elements of the kernel of the outgoing differential
@@ -243,6 +245,15 @@ lemma moduleCat_homologyπ_eq_zero_iff {m : ι} (hm : c.prev n = m) (z : K.cycle
   rintro ⟨y, rfl⟩
   rw [← ModuleCat.comp_apply, toCycles_comp_homologyπ]
   rfl
+
+variable {n} in
+/-- A degree-`n` cycle of a homological complex of modules with zero homology class vanishes when
+no differential enters degree `n`, for instance in degree zero of an `ℕ`-indexed cochain complex:
+there are no boundaries. -/
+lemma moduleCat_eq_zero_of_homologyπ_eq_zero (hn : ¬ c.Rel (c.prev n) n) (z : K.cycles n)
+    (hz : K.homologyπ n z = 0) : z = 0 := by
+  have := K.isIso_homologyπ (c.prev n) n rfl (K.shape _ _ hn)
+  exact (ModuleCat.mono_iff_injective _).1 inferInstance (hz.trans (map_zero _).symm)
 
 variable {n} in
 /-- Two degree-`n` cycles of a complex of modules have the same homology class exactly when the

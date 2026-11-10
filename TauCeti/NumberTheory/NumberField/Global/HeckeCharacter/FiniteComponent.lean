@@ -135,7 +135,7 @@ theorem finiteComponent_ofRayClassCharacter_of_isUniformizer {𝔪 : Modulus K}
       η.onIdeals ⟨v.asIdeal, NumberFieldArithmetic.mem_integralIdealsAway_iff_isPrimeTo.mpr
         (Ideal.isPrimeTo_asIdeal_iff.mpr hv)⟩ := by
   rw [finiteComponent_apply, ofRayClassCharacter_apply, RayClassCharacter.onIdeals_apply,
-    idealClass_apply, rayClassQuotient_ofAdicCompletion_of_isUniformizer hv hπ
+    idealClass_apply, rayClassQuotient_ofAdicCompletion_of_isUniformizer hπ
       (NumberFieldArithmetic.integralIdealsAwayHom K 𝔪.support ⟨v.asIdeal,
         NumberFieldArithmetic.mem_integralIdealsAway_iff_isPrimeTo.mpr
           (Ideal.isPrimeTo_asIdeal_iff.mpr hv)⟩)

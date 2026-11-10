@@ -238,6 +238,36 @@ theorem hessian_symm [IsManifold I 2 M]
   rw [hessianVW, hessianWV]
   linarith [hbracket, htw_mvfderiv]
 
+/-- The Hessian divided by a nonvanishing function `f`: for the Levi-Civita connection `D`,
+`(Y f / f) (X f / f) + X (Y f / f) - (D_X Y) f / f = Hess f(X,Y) / f` where `f` does not
+vanish. -/
+theorem hessian_div_eq_mvfderiv_add [IsManifold I 2 M]
+    [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+    [IsContMDiffRiemannianBundle I 1 E (fun x : M ↦ TangentSpace I x)]
+    {f : M → ℝ} {x : M}
+    (hf : ContMDiffAt I 𝓘(ℝ) 2 f x) {Y : Π x : M, TangentSpace I x} (hY : MDiffAt (T% Y) x)
+    (hf₀ : f x ≠ 0) (X : Π x : M, TangentSpace I x) :
+    (mvfderiv I f x (Y x) / f x) * (mvfderiv I f x (X x) / f x) +
+        mvfderiv I (fun x ↦ mvfderiv I f x (Y x) / f x) x (X x) -
+        mvfderiv I f x (CovariantDerivative.leviCivitaConnection I M Y x (X x)) / f x =
+      hessian I f x (X x) (Y x) / f x := by
+  have : IsManifold I (minSmoothness ℝ 2) M := .of_le (n := 2) (by simp)
+  have hfx : MDiffAt f x := hf.mdifferentiableAt (by simp)
+  have hdY : MDiffAt (fun x ↦ mvfderiv I f x (Y x)) x :=
+    mdifferentiableAt_mvfderiv_apply (n := 2) hf (by simp) hY
+  rw [hessian_apply_eq_mvfderiv_sub x hf X Y hY]
+  have hinv : mvfderiv I (fun x ↦ (f x)⁻¹) x (X x) =
+      -(f x ^ 2)⁻¹ * mvfderiv I f x (X x) := by
+    simpa only [Function.comp_def, fderiv_inv, ContinuousLinearMap.toSpanSingleton_apply,
+      smul_eq_mul, mul_comm] using
+      (mvfderiv_comp_apply_of_differentiableAt
+        (differentiableAt_inv hf₀) hfx (X x))
+  simp only [div_eq_mul_inv]
+  rw [mvfderiv_fun_mul (g := fun x ↦ (f x)⁻¹) hdY (hfx.inv hf₀)]
+  simp only [add_apply, smul_apply, smul_eq_mul, hinv]
+  field_simp [hf₀]
+  ring
+
 end HessianSymmetry
 
 /-- The Laplace–Beltrami operator, with the sign convention `Δ = div ∘ grad`. -/

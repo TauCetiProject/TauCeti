@@ -256,6 +256,7 @@ theorem ContDiff.dense_compl_image_vanishingFDeriv {n : ℕ∞ω} (hf : ContDiff
   interior_eq_empty_iff_dense_compl.1 <| Measure.interior_eq_empty_of_null <|
     ContDiff.addHaar_image_vanishingFDeriv_eq_zero (ν := addHaar) hf hk
 
+omit [FiniteDimensional ℝ F] in
 omit [Nontrivial F] in
 /-- An intermediate stratum is null at the regularity of its order. Let `s` be a set of points at
 which the derivatives of order `1 ≤ j ≤ i` vanish but the derivative of order `i + 1` does not, and

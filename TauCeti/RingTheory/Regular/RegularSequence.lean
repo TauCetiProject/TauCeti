@@ -15,7 +15,8 @@ import TauCeti.RingTheory.Ideal.Operations
 
 This file produces regular sequences on a module `M` from local information.
 
-If `a, b` is a weakly `M`-regular sequence, then `bʲ` is regular on `M ⧸ aⁿ M` for all `n` and `j`.
+If `a, b` is a weakly `M`-regular sequence, then `bʲ` is regular on `M ⧸ aⁿ M` and `aʲ` is regular
+on `M ⧸ bⁿ M` for all `n` and `j`.
 For `M = R`, an element of the total ring of fractions of `R` which lies in `R` after multiplication
 by a power of `a`, and also after multiplication by a power of `b`, already lies in `R`. When `a`
 and `b` are non-zero-divisors, this says that `R_a` and `R_b` intersect in `R` inside the total
@@ -46,6 +47,8 @@ extend sections of `M~` across `V(I)` (Stacks, Lemma 31.5.11 (0E9I)).
   forces `m ∈ a M`.
 * `RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotSMulTop_pow`: for a weakly `M`-regular
   sequence `a, b`, the power `bʲ` is regular on `M ⧸ aⁿ M`.
+* `RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotSMulTop_pow_swap`: for a weakly
+  `M`-regular sequence `a, b`, the power `aʲ` is regular on `M ⧸ bⁿ M`.
 * `RingTheory.Sequence.IsWeaklyRegular.mem_range_algebraMap_of_pow_mul_mem`: for a weakly
   `R`-regular sequence `a, b`, a fraction which lies in `R` after multiplication by a power of `a`,
   and also after multiplication by a power of `b`, already lies in `R`.
@@ -131,6 +134,19 @@ theorem RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotSMulTop_pow {a b :
       (ih x' (hx' ▸ Submodule.smul_mem_pointwise_smul _ _ ⊤ trivial))
     rw [smul_smul, ← pow_succ']
     exact Submodule.smul_mem_pointwise_smul _ _ ⊤ trivial
+
+/-- If `a, b` is a weakly `M`-regular sequence, then `aʲ` is regular on `M ⧸ bⁿ M`. Here `b` need
+not be regular on `M`. -/
+theorem RingTheory.Sequence.IsWeaklyRegular.isSMulRegular_quotSMulTop_pow_swap {a b : R}
+    (h : IsWeaklyRegular M [a, b]) (n j : ℕ) : IsSMulRegular (QuotSMulTop (b ^ n) M) (a ^ j) := by
+  have ha : IsSMulRegular M (a ^ j) := ((isWeaklyRegular_cons_iff M a [b]).1 h).1.pow j
+  refine TauCeti.isSMulRegular_quotSMulTop_iff.2 fun m c hc ↦ ?_
+  -- From `bⁿ c = aʲ m`, first `c ∈ aʲ M`, since `bⁿ` is regular on `M ⧸ aʲ M`.
+  obtain ⟨d, -, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).1
+    (TauCeti.isSMulRegular_quotSMulTop_iff.1 (h.isSMulRegular_quotSMulTop_pow j n) c m hc.symm)
+  -- Then cancel `aʲ`, which is `M`-regular, from `aʲ (bⁿ d) = aʲ m`.
+  obtain rfl : b ^ n • d = m := ha <| by simp only [← hc, smul_comm (a ^ j)]
+  exact Submodule.smul_mem_pointwise_smul _ _ ⊤ trivial
 
 end Pow
 

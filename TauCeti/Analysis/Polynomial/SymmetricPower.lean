@@ -23,7 +23,7 @@ import Mathlib.Analysis.Analytic.Polynomial
 as the affine space `Fin n → K`, by sending an unordered `n`-tuple to the lower coefficients of the
 monic polynomial having it as its root multiset. That equivalence is pure algebra. This file proves
 that, when `K` is a proper normed field — `ℂ` being the case of interest — it is a
-**homeomorphism** for the quotient topology of `TauCeti.Sym.instTopologicalSpace`.
+**homeomorphism** for the quotient topology of `Sym.instTopologicalSpace`.
 
 Both halves are elementary, but neither is formal:
 
@@ -239,7 +239,7 @@ theorem isClosedMap_coeffEquiv : IsClosedMap (coeffEquiv K n) := by
     rw [← Set.image_image (coeffEquiv K n) Sym.ofFn (Sym.ofFn ⁻¹' C),
       Set.image_preimage_eq _ Sym.ofFn_surjective]
   rw [himage]
-  exact isProperMap_coeffEquiv_comp_ofFn.isClosedMap _ (hC.preimage continuous_ofFn)
+  exact isProperMap_coeffEquiv_comp_ofFn.isClosedMap _ (hC.preimage Sym.continuous_ofFn)
 
 variable (K n)
 
@@ -252,7 +252,7 @@ coefficients; it comes from `TauCeti.Sym.isProperMap_coeffEquiv_comp_ofFn`, and 
 bound. -/
 noncomputable def coeffHomeomorph : Sym K n ≃ₜ (Fin n → K) :=
   (coeffEquiv K n).toHomeomorphOfContinuousClosed
-    (continuous_iff_comp_ofFn.2 continuous_coeffEquiv_comp_ofFn) isClosedMap_coeffEquiv
+    (Sym.continuous_iff_comp_ofFn.2 continuous_coeffEquiv_comp_ofFn) isClosedMap_coeffEquiv
 
 /-- The chart homeomorphism is the chart equivalence. -/
 @[simp]
@@ -278,7 +278,7 @@ theorem eventually_exists_ofFn_eq_coeffEquiv_symm (a : Fin n → K) {ε : ℝ} (
   have hnhds : Sym.ofFn '' Metric.ball a ε ∈
       𝓝 ((coeffHomeomorph K n).symm (coeffHomeomorph K n (Sym.ofFn a))) := by
     rw [Homeomorph.symm_apply_apply]
-    exact isOpenMap_ofFn.image_mem_nhds (Metric.ball_mem_nhds a hε)
+    exact Sym.isOpenMap_ofFn.image_mem_nhds (Metric.ball_mem_nhds a hε)
   rw [← coeffHomeomorph_apply]
   filter_upwards [(coeffHomeomorph K n).symm.continuous.continuousAt.preimage_mem_nhds hnhds]
     with c ⟨b, hb, hbc⟩
@@ -292,12 +292,12 @@ elementary symmetric functions of its points.
 
 This is the local model of the symmetric power of a Riemann surface at a tuple all of whose points
 lie in one coordinate patch; a general tuple is split into such groups by
-`TauCeti.Sym.isOpenEmbedding_sumSubtype`. -/
+`Sym.isOpenEmbedding_sumSubtype`. -/
 theorem isOpenEmbedding_coeffEquiv_comp_map {X : Type*} [TopologicalSpace X] {f : X → K}
     (hf : IsOpenEmbedding f) :
     IsOpenEmbedding fun s : Sym X n => coeffEquiv K n (Sym.map f s) := by
   have hemb := (coeffHomeomorph K n).isOpenEmbedding.comp
-    (isOpenEmbedding_map (n := n) hf)
+    (Sym.isOpenEmbedding_map (n := n) hf)
   simpa [Function.comp_def] using hemb
 
 /-- **The elementary symmetric chart away from the diagonal.** For open coordinate embeddings with
@@ -311,7 +311,7 @@ theorem isOpenEmbedding_coeffEquiv_comp_ofFn_map {X : Fin n → Type*}
     (hf : ∀ i, IsOpenEmbedding (f i))
     (h : Pairwise (Function.onFun Disjoint fun i => Set.range (f i))) :
     IsOpenEmbedding fun x : ∀ i, X i => coeffEquiv K n (Sym.ofFn fun i => f i (x i)) := by
-  have hemb := (coeffHomeomorph K n).isOpenEmbedding.comp (isOpenEmbedding_ofFn_map f hf h)
+  have hemb := (coeffHomeomorph K n).isOpenEmbedding.comp (Sym.isOpenEmbedding_ofFn_map f hf h)
   simpa [Function.comp_def] using hemb
 
 end Chart

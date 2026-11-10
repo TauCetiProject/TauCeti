@@ -57,6 +57,9 @@ noncrossing consequence of planarity in that one-vertex case. For perfect matchi
   exactly when its orbit partition is a noncrossing partition.
 * `Equiv.Perm.IsNoncrossingMatching.apply_mem_Ioo`: the chords of a noncrossing involution are
   nested.
+* `Equiv.Perm.IsNoncrossingMatching.card_filter_lt_apply_modEq`: for a noncrossing perfect
+  matching and a union `s` of its chords, the two ends of a chord outside `s` are preceded by the
+  same number of points of `s`, modulo `2`.
 * `Equiv.Perm.orbitCount_finRotate_mul_add_orbitCount_le`: the boundary-count bound.
 * `TauCeti.orbitCount_finRotate_mul_swap_mul_swap`: two interleaved bands have one boundary
   cycle.
@@ -142,6 +145,36 @@ theorem IsNoncrossingMatching.apply_mem_Ioo (hσ : σ.IsNoncrossingMatching)
   · -- The chord `{σ b, b}` would interleave `{a, σ a}` from the left.
     exact hσ h (by rwa [hinv]) (by rwa [hinv])
   · exact hb.ne (by rw [← h, hinv])
+
+/-- **Parity across a chord.** Let `σ` be a noncrossing perfect matching and `s` a finite set
+closed under `σ`, that is, a union of chords. A point `a` outside `s` and its partner `σ a` are
+preceded by the same number of points of `s`, modulo `2`: the points of `s` lying between them
+are matched among themselves. -/
+theorem IsNoncrossingMatching.card_filter_lt_apply_modEq (hσ : σ.IsNoncrossingMatching)
+    (hm : IsPerfectMatching σ) {s : Finset α} (hs : ∀ x ∈ s, σ x ∈ s) {a : α} (ha : a ∉ s) :
+    {x ∈ s | x < σ a}.card ≡ {x ∈ s | x < a}.card [MOD 2] := by
+  wlog h : a < σ a generalizing a
+  · have hσa : σ a ∉ s := fun hσa => ha (hm.apply_apply a ▸ hs _ hσa)
+    have h' : σ a < σ (σ a) := by
+      rw [hm.apply_apply]
+      exact (not_lt.mp h).lt_of_ne (hm.apply_ne a)
+    simpa only [hm.apply_apply] using (this hσa h').symm
+  -- The points of `s` before `σ a` and not before `a` lie strictly inside the chord `{a, σ a}`,
+  -- so `σ` matches them among themselves.
+  have hin : ∀ x ∈ {x ∈ s | x < σ a ∧ ¬x < a}, σ x ∈ {x ∈ s | x < σ a ∧ ¬x < a} := by
+    simp only [Finset.mem_filter, not_lt]
+    rintro x ⟨hx, hxa, hax⟩
+    have hax : a < x := hax.lt_of_ne fun h => ha (h ▸ hx)
+    obtain ⟨h₁, h₂⟩ := hσ.apply_mem_Ioo hm.involutive hax hxa
+    exact ⟨hs x hx, h₂, h₁.le⟩
+  obtain ⟨r, hr⟩ := hm.even_card_of_mapsTo hin
+  have hsplit := Finset.card_filter_add_card_filter_not (s := {x ∈ s | x < σ a}) (· < a)
+  simp only [Finset.filter_filter] at hsplit
+  have hlt : {x ∈ s | x < σ a ∧ x < a} = {x ∈ s | x < a} :=
+    Finset.filter_congr fun x _ => and_iff_right_of_imp fun hx => hx.trans h
+  rw [hlt, hr] at hsplit
+  unfold Nat.ModEq
+  omega
 
 end LinearOrder
 
