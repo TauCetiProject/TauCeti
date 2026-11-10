@@ -161,20 +161,26 @@ theorem neg_laplacian_laplacianResolvent_add_smul {c : ℝ} (hc : 0 < c) (f : �
     ContinuousLinearMap.id_apply] using congrArg (fun u : 𝓢(E, G) ↦ u x) hreal
 
 /-- The resolvent of the Laplacian commutes with the Laplacian. -/
-theorem laplacianResolvent_laplacian {c : ℝ} (hc : 0 < c) (f : 𝓢(E, G)) :
+theorem laplacianResolvent_laplacian {c : ℝ} (f : 𝓢(E, G)) :
     laplacianResolvent c (Δ f) = Δ (laplacianResolvent c f) := by
-  have hcomplex := fourierMultiplierCLM_laplacian
-    (TauCeti.hasTemperateGrowth_inv_mul_norm_sq_add (E := E) (a := (2 * π) ^ 2)
-      (c := c) (by positivity) hc)
-    (f.postcompCLM (ofRealLI G).toContinuousLinearMap)
-  have hreal := congrArg (postcompCLM (reCLM G)) hcomplex
-  simpa only [laplacianResolvent_apply, TauCeti.laplacian_postcompCLM] using hreal
+  by_cases hg : (fun ξ : E ↦ ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹).HasTemperateGrowth
+  · have hcomplex := fourierMultiplierCLM_laplacian hg
+      (f.postcompCLM (ofRealLI G).toContinuousLinearMap)
+    have hreal := congrArg (postcompCLM (reCLM G)) hcomplex
+    simpa only [laplacianResolvent_apply, TauCeti.laplacian_postcompCLM] using hreal
+  · have h : fourierMultiplierCLM (TauCeti.Complexification G)
+        (fun ξ : E ↦ ((2 * π) ^ 2 * ‖ξ‖ ^ 2 + c)⁻¹) = 0 := by
+      ext1 φ
+      simp [fourierMultiplierCLM_apply, smulLeftCLM, hg]
+    simp only [laplacianResolvent, h, ContinuousLinearMap.comp_zero,
+      ContinuousLinearMap.zero_comp, zero_apply]
+    exact (map_zero (LineDeriv.laplacianCLM ℝ E 𝓢(E, G))).symm
 
 /-- The resolvent of the Laplacian is a left inverse of `-Δ + c`, for `c > 0`. -/
 @[simp]
 theorem laplacianResolvent_neg_laplacian_add_smul {c : ℝ} (hc : 0 < c) (f : 𝓢(E, G)) :
     laplacianResolvent c (-Δ f + c • f) = f := by
-  rw [map_add, map_neg, map_smul, laplacianResolvent_laplacian hc]
+  rw [map_add, map_neg, map_smul, laplacianResolvent_laplacian]
   exact neg_laplacian_laplacianResolvent_add_smul hc f
 
 end Real

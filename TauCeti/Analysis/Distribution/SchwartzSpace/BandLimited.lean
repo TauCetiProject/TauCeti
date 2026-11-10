@@ -215,6 +215,7 @@ theorem exists_setIntegral_norm_fourierInv_le_of_support_subset {ι : Type*} [Fi
   rw [Real.mul_rpow ht.le hR.le, hte]
   ring
 
+omit [CompleteSpace H] in
 /-- **The `L¹` norm of the kernel of a band-limited symbol.** Let `b` be an orthonormal basis of
 the `n`-dimensional space `V` and `2N > n`. There is a constant `C ≥ 0` such that, whenever a
 Schwartz function `σ` vanishes outside `closedBall 0 t`, is bounded by `A` and its `N`-th
@@ -226,6 +227,13 @@ theorem exists_integral_norm_fourierInv_le_of_support_subset {ι : Type*} [Finty
     ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) {t A : ℝ}, 0 < t → support σ ⊆ closedBall 0 t →
       (∀ ξ, ‖σ ξ‖ ≤ A) → (∀ i ξ, ‖(∂_{b i})^[N] σ ξ‖ ≤ A / t ^ N) →
         ∫ x, ‖𝓕⁻ σ x‖ ≤ C * A := by
+  by_cases hH : CompleteSpace H
+  swap
+  · refine ⟨0, le_rfl, fun σ _ _ _ _ _ _ ↦ ?_⟩
+    have h : 𝓕⁻ σ = 0 := by
+      ext ξ
+      simp [fourierInv_coe, Real.fourierInv_eq, integral_of_not_completeSpace hH]
+    simp [h]
   obtain ⟨C₀, hC₀, hC⟩ := exists_integral_norm_fourierInv_le (H := H) b hN
   refine ⟨C₀ * √(volume.real (ball (0 : V) 1)) * (1 + √(Fintype.card ι)), by positivity,
     fun σ t A ht hσ hσA hσN ↦ ?_⟩
@@ -251,13 +259,13 @@ Schwartz function `σ` vanishes outside `closedBall 0 t` and its derivatives of 
 `∫ ‖𝓕⁻ σ (x + h) - 𝓕⁻ σ x‖ dx ≤ C A t ‖h‖` for every `h`. -/
 theorem exists_integral_norm_fourierInv_add_sub_le_of_support_subset {ι : Type*} [Fintype ι]
     (b : OrthonormalBasis ι ℝ V) {N : ℕ} (hN : finrank ℝ V < 2 * N) :
-    ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) {t A : ℝ}, 0 < t → 0 ≤ A → support σ ⊆ closedBall 0 t →
+    ∃ C, 0 ≤ C ∧ ∀ (σ : 𝓢(V, H)) {t A : ℝ}, 0 < t → support σ ⊆ closedBall 0 t →
       (∀ k ≤ N, ∀ i ξ, ‖(∂_{b i})^[k] σ ξ‖ ≤ A / t ^ k) → ∀ h,
         ∫ x, ‖𝓕⁻ σ (x + h) - 𝓕⁻ σ x‖ ≤ C * A * (t * ‖h‖) := by
   obtain ⟨M, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero (by omega : N ≠ 0)
   obtain ⟨C₁, hC₁, hC⟩ := exists_integral_norm_fourierInv_le (H := H) b hN
   refine ⟨2 * π * C₁ * √(volume.real (ball (0 : V) 1)) * (1 + √(Fintype.card ι) * (M + 2)),
-    by positivity, fun σ t A ht hA hσ hσk h ↦ ?_⟩
+    by positivity, fun σ t A ht hσ hσk h ↦ ?_⟩
   -- Translating the kernel by `h` costs `2π ∫ ‖𝓕⁻ τ‖` with `τ = ⟪·, h⟫ σ`. At `R = t⁻¹`, the
   -- `L¹` bound `exists_integral_norm_fourierInv_le` controls this by `‖τ‖_{L²}` and the `L²` norms
   -- of the `N`-th derivatives of `τ`, which the Leibniz rule bounds through those of `σ`.
@@ -266,10 +274,11 @@ theorem exists_integral_norm_fourierInv_add_sub_le_of_support_subset {ι : Type*
     -- `V` is the zero space, so `h = 0` and the integrand vanishes.
     have : Subsingleton V := Module.finrank_zero_iff.mp (by
       rw [Module.finrank_eq_card_basis b.toBasis, Fintype.card_eq_zero])
-    simp only [Subsingleton.elim h 0, add_zero, sub_self, norm_zero, integral_zero]
-    positivity
+    simp only [Subsingleton.elim h 0, add_zero, sub_self, norm_zero, integral_zero, mul_zero,
+      le_refl]
   | inr _ =>
   obtain ⟨i₀⟩ : Nonempty ι := inferInstance
+  have hA : 0 ≤ A := (norm_nonneg _).trans (by simpa using hσk 0 (Nat.zero_le _) i₀ 0)
   have hσt : tsupport σ ⊆ closedBall 0 t := closure_minimal hσ isClosed_closedBall
   -- The symbol `τ ξ = ⟪h, ξ⟫ σ ξ` of the derivative of the kernel along `h`.
   have hi : (inner ℝ · h : V → ℝ) = ⇑(innerSL ℝ h) := funext fun _ ↦ real_inner_comm _ _
@@ -291,6 +300,7 @@ theorem exists_integral_norm_fourierInv_add_sub_le_of_support_subset {ι : Type*
   field_simp
   ring
 
+omit [CompleteSpace H] in
 /-- **Hörmander's condition for the kernel of a band-limited symbol.** Let `b` be an orthonormal
 basis of the `n`-dimensional space `V` and `2N > n`. There is a constant `C ≥ 0` such that, whenever
 a Schwartz function `σ` vanishes outside `closedBall 0 t` and its derivatives of order `k ≤ N`
@@ -306,6 +316,13 @@ theorem exists_setIntegral_norm_fourierInv_sub_sub_le_of_support_subset {ι : Ty
       (∀ k ≤ N, ∀ i ξ, ‖(∂_{b i})^[k] σ ξ‖ ≤ A / t ^ k) → ∀ h,
         ∫ x in {x | 2 * ‖h‖ < ‖x‖}, ‖𝓕⁻ σ (x - h) - 𝓕⁻ σ x‖ ≤
           C * A * min (t * ‖h‖) ((t * ‖h‖) ^ ((finrank ℝ V : ℝ) / 2 - N)) := by
+  by_cases hH : CompleteSpace H
+  swap
+  · refine ⟨0, le_rfl, fun σ _ _ _ _ _ _ _ ↦ ?_⟩
+    have h : 𝓕⁻ σ = 0 := by
+      ext ξ
+      simp [fourierInv_coe, Real.fourierInv_eq, integral_of_not_completeSpace hH]
+    simp [h]
   obtain ⟨C₁, hC₁, hC₁'⟩ := exists_setIntegral_norm_fourierInv_le_of_support_subset (H := H) b hN
   obtain ⟨C₂, hC₂, hC₂'⟩ :=
     exists_integral_norm_fourierInv_add_sub_le_of_support_subset (H := H) b hN
@@ -319,7 +336,7 @@ theorem exists_setIntegral_norm_fourierInv_sub_sub_le_of_support_subset {ι : Ty
   · -- the smoothness of the kernel
     refine (setIntegral_le_integral ((hK.comp_sub_right h).sub hK).norm
       (.of_forall fun _ ↦ norm_nonneg _)).trans ?_
-    have := hC₂' σ ht hA hσ hσk (-h)
+    have := hC₂' σ ht hσ hσk (-h)
     simp only [← sub_eq_add_neg, norm_neg] at this
     refine this.trans ?_
     gcongr
@@ -335,6 +352,7 @@ theorem exists_setIntegral_norm_fourierInv_sub_sub_le_of_support_subset {ι : Ty
           gcongr
           exact le_max_left _ _
 
+omit [CompleteSpace H] in
 /-- **Hörmander's condition for dyadic sums of band-limited symbols.** Let `b` be an orthonormal
 basis of the `n`-dimensional space `V` and `2N > n`. There is a constant `C ≥ 0` with the following
 property. Let `σ j` be Schwartz functions, for `j` in a finite set `s ⊆ ℤ`, such that `σ j`
