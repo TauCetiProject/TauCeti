@@ -26,7 +26,7 @@ namespace TauCeti.MeasureTheory
 /-- The lower Lebesgue integral of `‖g‖ₑ` is at most the sum of the lower Lebesgue integrals of
 `‖g - f‖ₑ` and `‖f‖ₑ`, provided `f` is a.e.-strongly measurable. -/
 theorem lintegral_enorm_le_lintegral_enorm_sub_add {α E : Type*} {m : MeasurableSpace α}
-    {μ : Measure α} [NormedAddCommGroup E] {f : α → E} (hf : AEStronglyMeasurable f μ)
+    {μ : Measure α} [SeminormedAddGroup E] {f : α → E} (hf : AEStronglyMeasurable f μ)
     (g : α → E) :
     ∫⁻ x, ‖g x‖ₑ ∂μ ≤ ∫⁻ x, ‖g x - f x‖ₑ ∂μ + ∫⁻ x, ‖f x‖ₑ ∂μ := by
   rw [← lintegral_enorm_add_right _ hf]
