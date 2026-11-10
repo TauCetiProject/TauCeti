@@ -25,6 +25,10 @@ the dimension, not merely on the finite Euclidean identities.
 
 * A. Pietsch, *s-Numbers of operators in Banach spaces*, Studia Math. 51 (1974), §1.
 * A. Pietsch, *Eigenvalues and s-Numbers*, Cambridge University Press (1987), Chapter 2.
+* M. Ullrich, *Inequalities between s-numbers*, Adv. Oper. Theory 9 (2024), art. 82,
+  Remark 1, for the strict normalization (S5′) and its implication of (S5).
+* M. Ullrich, Lean-SNumbers (Apache-2.0), <https://github.com/mario-ullrich/Lean-SNumbers>,
+  `SNumbers/Basic.lean`: an earlier Lean formalization of the same axiom API.
 -/
 
 public section
@@ -70,12 +74,45 @@ structure IsSNumberSequence (s : SNumberFamily 𝕜) : Prop where
   normalize : ∀ n : ℕ, s (ContinuousLinearMap.id 𝕜 (EuclideanSpace 𝕜 (Fin (n + 1)))) n = 1
 
 /-- A strict s-number sequence is normalized on the identity of every normed space at
-all indices strictly below its cardinal dimension, including infinite dimension. -/
+all indices strictly below its cardinal dimension, including infinite dimension
+(Ullrich 2024, Remark 1). -/
 structure IsStrictSNumberSequence (s : SNumberFamily 𝕜) : Prop
     extends IsSNumberSequence s where
   /-- Identity normalization below the dimension. -/
   normalize_of_lt_rank : ∀ {X : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
     (n : ℕ), (n : Cardinal) < Module.rank 𝕜 X → s (ContinuousLinearMap.id 𝕜 X) n = 1
+
+/-- Build a strict s-number sequence from the first four axioms and identity normalization
+below the dimension. The Euclidean normalization follows, since the Euclidean space of
+dimension `n + 1` has rank `n + 1 > n`. -/
+theorem IsStrictSNumberSequence.of_normalize_of_lt_rank {s : SNumberFamily 𝕜}
+    (norm : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+      [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : X →L[𝕜] Y), s T 0 = ‖T‖₊)
+    (antitone : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+      [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (T : X →L[𝕜] Y), Antitone (s T))
+    (add_le : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+      [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] (S T : X →L[𝕜] Y) (n : ℕ),
+      s (S + T) n ≤ s S n + ‖T‖₊)
+    (comp_le : ∀ {W X Y Z : Type u}
+      [NormedAddCommGroup W] [NormedSpace 𝕜 W] [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+      [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] [NormedAddCommGroup Z] [NormedSpace 𝕜 Z]
+      (B : Y →L[𝕜] Z) (T : X →L[𝕜] Y) (A : W →L[𝕜] X) (n : ℕ),
+      s (B ∘L T ∘L A) n ≤ ‖B‖₊ * s T n * ‖A‖₊)
+    (eq_zero_of_rank_le : ∀ {X Y : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+      [NormedAddCommGroup Y] [NormedSpace 𝕜 Y] {T : X →L[𝕜] Y} {n : ℕ},
+      T.rank ≤ n → s T n = 0)
+    (normalize_of_lt_rank : ∀ {X : Type u} [NormedAddCommGroup X] [NormedSpace 𝕜 X]
+      (n : ℕ), (n : Cardinal) < Module.rank 𝕜 X → s (ContinuousLinearMap.id 𝕜 X) n = 1) :
+    IsStrictSNumberSequence s where
+  norm := norm
+  antitone := antitone
+  add_le := add_le
+  comp_le := comp_le
+  eq_zero_of_rank_le := eq_zero_of_rank_le
+  normalize n := normalize_of_lt_rank n <| by
+    rw [(WithLp.linearEquiv 2 𝕜 (Fin (n + 1) → 𝕜)).rank_eq, rank_fin_fun]
+    exact_mod_cast n.lt_succ_self
+  normalize_of_lt_rank := normalize_of_lt_rank
 
 namespace IsSNumberSequence
 

@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Lp.lpSpace
 public import Mathlib.Analysis.Normed.Operator.Mul
 public import Mathlib.LinearAlgebra.StdBasis
+import TauCeti.Analysis.Normed.Operator.Dense
 
 /-!
 # Coordinates on `lp`
@@ -15,23 +16,32 @@ public import Mathlib.LinearAlgebra.StdBasis
 The characteristic equation for Mathlib's bundled coordinate evaluation lets users compute
 with `lp.evalCLM` without unfolding its construction as a bounded linear map, and the ℓ¹ norm is
 the sum of the norms of the coordinates (`lp.hasSum_norm_one`, and `lp.hasSum_enorm_one` for
-extended norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). The scalar
-coordinate vectors are linearly independent, and vectors in their span vanish outside the
-corresponding indices. These algebraic facts hold over normed rings at every exponent. In `ℓ²`,
-the squared norm of a finite sum of single-coordinate vectors is the sum of the squared norms of
-its coordinates (`lp.norm_sum_single_sq`, and `lp.enorm_sum_single` for the extended norm). It
-follows that the operators `v ↦ (aᵢ v)ᵢ` from `F` to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to
-`F`, for finitely many scalars `aᵢ`, have norm at most `‖(aᵢ)‖_{ℓ²}`
-(`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
+extended norms); for `1 ≤ p` it bounds the `ℓ^p` norm (`lp.norm_le_tsum_norm`). For `0 < p ≤ q`
+the `ℓ^q` norm of a sequence is at most its `ℓᵖ` norm (`lp.norm_le_norm_of_exponent_le`), the norm
+form of Mathlib's inclusion `Memℓp.of_exponent_ge`. A sequence indexed by `ℕ` whose terms are
+bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in every `ℓᵖ` with `p ≠ 0`
+(`Memℓp.of_norm_le_geometric`), and for `1 ≤ p` its `ℓᵖ` norm is at most `C (1 - r)⁻¹`
+(`lp.norm_le_of_norm_le_geometric`). The scalar coordinate vectors are linearly independent, and
+vectors in their span vanish outside the corresponding indices. These algebraic facts hold over
+normed rings at every exponent. In `ℓ²`, the squared norm of a finite sum of single-coordinate
+vectors is the sum of the squared norms of its coordinates (`lp.norm_sum_single_sq`, and
+`lp.enorm_sum_single` for the extended norm). It follows that the operators `v ↦ (aᵢ v)ᵢ` from `F`
+to `ℓ²(F)` and `(wᵢ) ↦ ∑ᵢ aᵢ wᵢ` from `ℓ²(F)` to `F`, for finitely many scalars `aᵢ`, have norm at
+most `‖(aᵢ)‖_{ℓ²}` (`lp.norm_sum_single_comp_lsmul_le`, `lp.norm_sum_lsmul_comp_evalCLM_le`).
 
 For a finite exponent `p` and a countable index type, `lp E p` is separable as soon as every
 `E i` is (`lp.separableSpace`): the finite sums of coordinate vectors with entries in countable
 dense subsets are dense.
+
+For `p ≠ ∞` the coordinate vectors span a dense subspace, so a uniformly bounded family of
+operators on `lp E p` that converges on every `single i x` converges at every vector
+(`lp.tendsto_apply_of_tendsto_apply_single`).
 -/
 
 public section
 
-open scoped ENNReal
+open scoped ENNReal Topology
+open Filter
 
 namespace lp
 
@@ -46,6 +56,31 @@ theorem evalCLM_apply [Fact (1 ≤ p)] (i : ι) (x : lp E p) : evalCLM 𝕜 E p 
 /-- The ℓ¹ norm is the sum of the norms of the coordinates. -/
 theorem hasSum_norm_one (y : lp E 1) : HasSum (fun i ↦ ‖y i‖) ‖y‖ := by
   simpa using lp.hasSum_norm (p := 1) (by simp) y
+
+/-- **The `ℓᵖ` norms decrease in the exponent.** For `0 < p ≤ q`, a sequence `f ∈ ℓᵖ` lies in
+`ℓ^q` (`Memℓp.of_exponent_ge`), and its `ℓ^q` norm is at most its `ℓᵖ` norm. -/
+theorem norm_le_norm_of_exponent_le {q : ℝ≥0∞} (hp : p ≠ 0) (hpq : p ≤ q) {f : lp E p}
+    {g : lp E q} (hfg : ∀ i, g i = f i) : ‖g‖ ≤ ‖f‖ := by
+  rcases eq_or_ne q ∞ with rfl | hq
+  · exact norm_le_of_forall_le (norm_nonneg' f) fun i ↦ (hfg i).symm ▸ norm_apply_le_norm hp f i
+  have hpr : 0 < p.toReal := ENNReal.toReal_pos hp (ne_top_of_le_ne_top hq hpq)
+  have hpq' : p.toReal ≤ q.toReal := ENNReal.toReal_mono hq hpq
+  have hqr : 0 < q.toReal := hpr.trans_le hpq'
+  -- Split `t ^ q = t ^ (q - p) * t ^ p` and bound the first factor by `‖f‖ ^ (q - p)`.
+  have hsplit (t : ℝ) (ht : 0 ≤ t) : t ^ q.toReal = t ^ (q.toReal - p.toReal) * t ^ p.toReal := by
+    rw [← Real.rpow_add' ht (by simpa using hqr.ne'), sub_add_cancel]
+  refine norm_le_of_forall_sum_le hqr (norm_nonneg' f) fun s ↦ ?_
+  calc ∑ i ∈ s, ‖g i‖ ^ q.toReal
+      ≤ ∑ i ∈ s, ‖f‖ ^ (q.toReal - p.toReal) * ‖f i‖ ^ p.toReal := by
+        gcongr with i
+        rw [hfg i, hsplit _ (norm_nonneg _)]
+        gcongr
+        exact norm_apply_le_norm hp f i
+    _ = ‖f‖ ^ (q.toReal - p.toReal) * ∑ i ∈ s, ‖f i‖ ^ p.toReal := (Finset.mul_sum ..).symm
+    _ ≤ ‖f‖ ^ (q.toReal - p.toReal) * ‖f‖ ^ p.toReal :=
+        mul_le_mul_of_nonneg_left (sum_rpow_le_norm_rpow hpr f s)
+          (Real.rpow_nonneg (norm_nonneg' f) _)
+    _ = ‖f‖ ^ q.toReal := (hsplit _ (norm_nonneg' f)).symm
 
 /-- For `1 ≤ p`, the `ℓ^p` norm of a sequence is at most its `ℓ¹` norm. -/
 theorem norm_le_tsum_norm [Fact (1 ≤ p)] (f : lp E p)
@@ -184,4 +219,64 @@ theorem norm_sum_lsmul_comp_evalCLM_le (s : Finset ι) (a : ι → R) :
 
 end Operator
 
+section Density
+
+variable {ι 𝕜 : Type*} {E : ι → Type*} [NontriviallyNormedField 𝕜]
+  [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+
+/-- **Bounded convergence on coordinate vectors.** For `p ≠ ∞`, a uniformly bounded family of
+operators on `lp E p` that converges at every coordinate vector `single i x` converges at every
+vector. -/
+theorem tendsto_apply_of_tendsto_apply_single [DecidableEq ι] {Z : Type*}
+    [SeminormedAddCommGroup Z] [NormedSpace 𝕜 Z] (hp : p ≠ ∞) {α : Type*} {l : Filter α}
+    {f : α → lp E p →L[𝕜] Z} {g : lp E p →L[𝕜] Z} {C : ℝ} (hC : ∀ᶠ a in l, ‖f a‖ ≤ C)
+    (h : ∀ i (x : E i), Tendsto (fun a ↦ f a (lp.single p i x)) l (𝓝 (g (lp.single p i x))))
+    (x : lp E p) : Tendsto (fun a ↦ f a x) l (𝓝 (g x)) := by
+  let D : Submodule 𝕜 (lp E p) :=
+    { carrier := {y | Tendsto (fun a ↦ f a y) l (𝓝 (g y))}
+      add_mem' := fun hy hz ↦ by simpa only [Set.mem_ofPred_eq, map_add] using hy.add hz
+      zero_mem' := by simpa only [Set.mem_ofPred_eq, map_zero] using tendsto_const_nhds
+      smul_mem' := fun c y hy ↦ by simpa only [Set.mem_ofPred_eq, map_smul] using hy.const_smul c }
+  have hD : Dense (D : Set (lp E p)) := fun y ↦
+    mem_closure_of_tendsto (lp.hasSum_single hp y)
+      (Eventually.of_forall fun s ↦ D.sum_mem fun i _ ↦ h i (y i))
+  exact ContinuousLinearMap.tendsto_apply_of_dense hD hC (fun y hy ↦ hy) x
+
+end Density
+
 end lp
+
+section Geometric
+
+variable {E : ℕ → Type*} [∀ i, NormedAddCommGroup (E i)] {p : ℝ≥0∞} {C r : ℝ}
+
+/-- A sequence whose terms are bounded by a geometric sequence `C rⁱ` with `0 ≤ r < 1` lies in
+every `ℓᵖ` with `p ≠ 0`. -/
+theorem Memℓp.of_norm_le_geometric {f : ∀ i, E i} (hr0 : 0 ≤ r) (hr1 : r < 1)
+    (hf : ∀ i, ‖f i‖ ≤ C * r ^ i) (hp : p ≠ 0) : Memℓp f p := by
+  have hC : 0 ≤ C := (norm_nonneg _).trans ((hf 0).trans_eq (by simp))
+  have hgeom (t : ℝ≥0∞) (ht : 0 < t.toReal) : Memℓp f t := by
+    refine memℓp_gen <| Summable.of_nonneg_of_le (fun i ↦ by positivity) (fun i ↦ ?_)
+      ((summable_geometric_of_lt_one (by positivity)
+        (Real.rpow_lt_one hr0 hr1 ht)).mul_left (C ^ t.toReal))
+    calc ‖f i‖ ^ t.toReal ≤ (C * r ^ i) ^ t.toReal :=
+          Real.rpow_le_rpow (norm_nonneg _) (hf i) ht.le
+      _ = C ^ t.toReal * (r ^ t.toReal) ^ i := by
+          rw [Real.mul_rpow hC (by positivity), ← Real.rpow_natCast, ← Real.rpow_natCast,
+            ← Real.rpow_mul hr0, ← Real.rpow_mul hr0, mul_comm (i : ℝ)]
+  rcases eq_or_ne p ∞ with rfl | hptop
+  · exact (hgeom 1 (by simp)).of_exponent_ge le_top
+  · exact hgeom p (ENNReal.toReal_pos hp hptop)
+
+/-- For `1 ≤ p`, a sequence in `ℓᵖ` whose terms are bounded by a geometric sequence `C rⁱ` with
+`0 ≤ r < 1` has `ℓᵖ` norm at most `C (1 - r)⁻¹`. -/
+theorem lp.norm_le_of_norm_le_geometric [Fact (1 ≤ p)] {f : lp E p} (hr0 : 0 ≤ r) (hr1 : r < 1)
+    (hf : ∀ i, ‖f i‖ ≤ C * r ^ i) : ‖f‖ ≤ C * (1 - r)⁻¹ := by
+  have hgeom := (summable_geometric_of_lt_one hr0 hr1).mul_left C
+  calc ‖f‖ ≤ ∑' i, ‖f i‖ :=
+        lp.norm_le_tsum_norm f (hgeom.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hf)
+    _ ≤ ∑' i, C * r ^ i :=
+        (hgeom.of_nonneg_of_le (fun _ ↦ norm_nonneg _) hf).tsum_le_tsum hf hgeom
+    _ = C * (1 - r)⁻¹ := by rw [tsum_mul_left, tsum_geometric_of_lt_one hr0 hr1]
+
+end Geometric
