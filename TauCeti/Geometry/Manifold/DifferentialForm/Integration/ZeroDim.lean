@@ -26,8 +26,7 @@ open scoped Manifold
 namespace TauCeti
 
 variable {E M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Subsingleton E]
-  [MeasurableSpace E] [BorelSpace E] [TopologicalSpace M] [ChartedSpace E M]
-  [IsManifold 𝓘(ℝ, E) 1 M]
+  [TopologicalSpace M] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) 1 M]
 
 /-- A function supported in a singleton integrates to its value at that point multiplied by
 the tangent orientation sign. Singleton support also supplies compactness. -/
@@ -37,6 +36,8 @@ theorem integralTopForm_ofFunction_zeroDim (o : Manifold.Orientation 𝓘(ℝ, E
     integralTopForm o (RoughForm.ofFunction 𝓘(ℝ, E) g) =
       (Orientation.signBasis (o.orientationAt x) b : ℝ) * g x := by
   classical
+  let : MeasurableSpace E := borel E
+  have : BorelSpace E := ⟨rfl⟩
   obtain ⟨l, rfl⟩ := o.exists_lift
   have hc : IsCompact (_root_.tsupport (α := E [⋀^Fin _]→L[ℝ] ℝ)
       (RoughForm.ofFunction 𝓘(ℝ, E) g)) :=
