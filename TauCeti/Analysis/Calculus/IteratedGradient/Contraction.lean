@@ -105,7 +105,8 @@ theorem fullContractL_succ (j : ℕ) (h : E) :
   (rfl)
 
 /-- Full contraction factors through any number of partial contractions in the same direction. -/
-theorem fullContractL_add_apply (j i : ℕ) (h : E) (G : IteratedGradient E (j + i)) :
+theorem fullContractL_add_eq_fullContractL_contractL (j i : ℕ) (h : E)
+    (G : IteratedGradient E (j + i)) :
     fullContractL (j + i) h G = fullContractL j h (contractL j i h G) := by
   induction i with
   | zero => simp
