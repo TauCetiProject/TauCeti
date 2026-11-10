@@ -118,11 +118,8 @@ theorem IsFirstIntegral.add (hg : σ.IsFirstIntegral f g) (hk : σ.IsFirstIntegr
   · rw [poissonBracket_add_left hgx (hk' x), hg x, hk x, add_zero]
   · -- `g + k` is not differentiable at `x`, so its Hamiltonian vector field vanishes there.
     have h : ¬MDifferentiableAt I 𝓘(ℝ) (g + k) x := fun h ↦ hgx (by simpa using h.sub (hk' x))
-    have hX : σ.hamiltonianVectorField (g + k) x = 0 := by
-      simp [hamiltonianVectorField_def, mvfderiv, mfderiv_zero_of_not_mdifferentiableAt h]
-    rw [poissonBracket_def, hX]
-    simpa using SmoothBundleForm.eval₂_add_left σ x (0 : TangentSpace I x) 0
-      (σ.hamiltonianVectorField f x)
+    rw [poissonBracket_def, hamiltonianVectorField_eq_zero_of_not_mdifferentiableAt h,
+      SmoothBundleForm.eval₂_zero_left]
 
 /-- The negative of a first integral is a first integral. -/
 theorem IsFirstIntegral.neg (hg : σ.IsFirstIntegral f g) : σ.IsFirstIntegral f (-g) := fun x ↦ by

@@ -11,7 +11,7 @@ public import TauCeti.Analysis.InnerProductSpace.Gram.Pair
 public import Mathlib.Analysis.Calculus.Deriv.Inv
 public import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.Geometry.Euclidean.Angle.Unoriented.Basic
-import Mathlib.Analysis.Calculus.Deriv.Shift
+import TauCeti.Analysis.Calculus.FDeriv.ConstantDirection
 import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
@@ -45,9 +45,11 @@ the origin between `ℓ² / (m κ + ‖A‖)` and, when `‖A‖ < m κ`, `ℓ²
 inequality `‖A‖ < m κ` holds exactly when `H < 0`. On the collision set `ℓ = 0`,
 `A = -(m κ / ‖q‖) q`.
 
-The conservation laws for the angular momentum, its square, and its action on the Runge–Lenz
-vector hold at every point of phase space, since a Hamiltonian vector field vanishes by convention
-where its Hamiltonian is not differentiable. The other statements about Hamiltonian vector fields
+The conservation laws for the angular momentum and its action on the Runge–Lenz vector hold at
+every point of phase space, and the one for its square wherever `U` is differentiable at `‖q‖`.
+The bracket with the angular momentum vanishes because the Hamiltonian is even along the rotation
+direction, so its derivative there is zero; at `q = 0` the rotation direction and the derivative
+of `ℓ²` themselves vanish. The other statements about Hamiltonian vector fields
 and Poisson brackets are pointwise on the punctured phase space `q ≠ 0`, the cotangent bundle of
 the punctured configuration space; the Poisson bracket at a point only depends on germs there.
 
@@ -420,23 +422,6 @@ theorem stdSymplecticForm_hamiltonianVectorField_angularMomentum (u w : V) (x : 
       (⟪x.1, u⟫_ℝ • w - ⟪x.1, w⟫_ℝ • u, ⟪x.2, u⟫_ℝ • w - ⟪x.2, w⟫_ℝ • u) := by
   rw [stdSymplecticForm_hamiltonianVectorField (hasFDerivAt_angularMomentum u w x), neg_sub]
 
-/-- The derivative of a function in a direction along which it is even vanishes: the function
-`t ↦ F (x + t • v)` has the same value at `t` and `-t`. If `F` is not differentiable at `x`, then
-`fderiv` is zero by convention. -/
-theorem fderiv_apply_eq_zero_of_apply_add_smul_neg {E : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] {F : E → ℝ} {x : E} (v : E) (h : ∀ t : ℝ, F (x + t • v) = F (x + (-t) • v)) :
-    fderiv ℝ F x v = 0 := by
-  by_cases hd : DifferentiableAt ℝ F x
-  · have h1 : HasDerivAt (fun t : ℝ ↦ x + t • v) v 0 := by
-      simpa using ((hasDerivAt_id (0 : ℝ)).smul_const v).const_add x
-    have h2 := (hd.hasFDerivAt.comp_hasDerivAt_of_eq (0 : ℝ) h1 (by simp)).deriv
-    have h3 := deriv_comp_neg (f := fun s : ℝ ↦ F (x + s • v)) (x := (0 : ℝ))
-    simp only [neg_zero, ← h] at h3
-    simp only [Function.comp_def] at h2
-    linarith
-  · rw [fderiv_zero_of_not_differentiableAt hd]
-    rfl
-
 /-- **Conservation of angular momentum.** Every component of the angular momentum Poisson-commutes
 with a central-force Hamiltonian. -/
 theorem stdSymplecticForm_poissonBracket_centralForceHamiltonian_angularMomentum {m : ℝ}
@@ -498,17 +483,11 @@ theorem sq_sub_inner_sq_eq_of_hasDerivAt {m : ℝ} {U : ℝ → ℝ} {γ : ℝ �
       ← SymplecticForm.poissonBracket_eq_fderiv,
       stdSymplecticForm_poissonBracket_sq_sub_inner_sq_centralForceHamiltonian
         (hU t ht).hasDerivAt] at h
-  have key (a b : ℝ) (hab : a ≤ b) (ha : a ∈ s) (hb : b ∈ s) :
-      ((fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2) ∘ γ) b =
-        ((fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2) ∘ γ) a := by
-    have hsub : Set.Icc a b ⊆ s := (isPreconnected_iff_ordConnected.1 hs).out ha hb
-    exact constant_of_has_deriv_right_zero
-      (fun x hx ↦ (hderiv x (hsub hx)).continuousAt.continuousWithinAt)
-      (fun x hx ↦ (hderiv x (hsub (Set.Ico_subset_Icc_self hx))).hasDerivWithinAt) b
-      (Set.right_mem_Icc.2 hab)
-  rcases le_total t₀ t with h | h
-  · exact key _ _ h ht₀ ht
-  · exact (key _ _ h ht ht₀).symm
+  -- A function with zero derivative on a preconnected set of times is constant there.
+  have h := (Real.convex_iff_isPreconnected.2 hs).norm_image_sub_le_of_norm_hasDerivWithin_le
+    (f := (fun y : V × V ↦ ‖y.1‖ ^ 2 * ‖y.2‖ ^ 2 - ⟪y.1, y.2⟫_ℝ ^ 2) ∘ γ) (f' := fun _ ↦ 0)
+    (C := 0) (fun x hx ↦ (hderiv x hx).hasDerivWithinAt) (fun x _ ↦ by simp) ht₀ ht
+  exact sub_eq_zero.1 (norm_le_zero_iff.1 (by simpa using h))
 
 /-- Angular momentum rotates the Runge–Lenz vector. In any dimension, for the plane
 specified by `u, w`, the bracket is the component of the infinitesimal rotation of `A`.
