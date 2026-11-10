@@ -26,8 +26,7 @@ of geometric sums of mixed powers of equal-degree monic polynomials.
 
 It also records that the image of a finite product of polynomials under a ring homomorphism into a
 ring without zero divisors has degree the sum of the factors' degrees when each factor's image is
-nonzero, and, when the target ring is moreover nontrivial, is nonzero exactly when each factor's
-image is nonzero.
+nonzero.
 
 Finally, `TauCeti.sum_range_monomial_add_monomial_eq_of_eq_add` turns coefficient relations
 `cᵢ = bᵢ + qᵢ + qᵢ₋₁` into the polynomial identity
@@ -58,17 +57,8 @@ end Semiring
 
 section MapProd
 
-variable {ι R S : Type*} [CommSemiring R] [CommSemiring S] [NoZeroDivisors S]
-  [Nontrivial S] (f : R →+* S)
+variable {ι R S : Type*} [CommSemiring R] [CommSemiring S] [NoZeroDivisors S] (f : R →+* S)
 
-variable {f} in
-/-- Over a nontrivial ring without zero divisors, the image of a finite product of polynomials is
-nonzero if and only if the image of each factor is nonzero. -/
-theorem map_prod_ne_zero_iff {s : Finset ι} {P : ι → R[X]} :
-    (∏ k ∈ s, P k).map f ≠ 0 ↔ ∀ k ∈ s, (P k).map f ≠ 0 := by
-  rw [Polynomial.map_prod, prod_ne_zero_iff]
-
-omit [Nontrivial S] in
 /-- Over a ring without zero divisors, the degree of the image of a finite product of polynomials
 is the sum of the degrees of the images of the factors, when each image is nonzero. -/
 theorem natDegree_map_prod (s : Finset ι) (P : ι → R[X]) (h : ∀ k ∈ s, (P k).map f ≠ 0) :
