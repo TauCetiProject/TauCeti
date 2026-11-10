@@ -187,16 +187,8 @@ theorem logarithm_unique_of_natCast_eq_zero {p : ℕ} (hp : p.Prime) (hpR : (p :
       PowerSeries.subst (X 0) g' + PowerSeries.subst (X 1) g') :
     g = g' := by
   -- additivity forces the constant coefficient to vanish
-  have hconst : ∀ {g : PowerSeries R}, PowerSeries.subst F.toPowerSeries g =
-      PowerSeries.subst (X 0) g + PowerSeries.subst (X 1) g → PowerSeries.constantCoeff g = 0 :=
-    fun {g} hg ↦ by
-      have := congrArg MvPowerSeries.constantCoeff hg
-      rw [PowerSeries.constantCoeff_subst_of_constantCoeff_zero F.zero_constantCoeff, map_add,
-        PowerSeries.constantCoeff_subst_of_constantCoeff_zero (by simp),
-        PowerSeries.constantCoeff_subst_of_constantCoeff_zero (by simp)] at this
-      exact left_eq_add.mp this
-  have h₀ := hconst hg
-  have h₀' := hconst hg'
+  have h₀ := TauCeti.FormalGroupHom.constantCoeff_eq_zero_of_additive hg
+  have h₀' := TauCeti.FormalGroupHom.constantCoeff_eq_zero_of_additive hg'
   by_contra hne
   have hne' : g - g' ≠ 0 := sub_ne_zero.mpr hne
   have hf₀ : PowerSeries.constantCoeff (g - g') = 0 := by rw [map_sub, h₀, h₀', sub_zero]
