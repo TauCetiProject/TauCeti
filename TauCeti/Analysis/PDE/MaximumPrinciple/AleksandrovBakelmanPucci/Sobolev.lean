@@ -11,7 +11,6 @@ public import TauCeti.Analysis.Sobolev.Wkp.Mollification
 import TauCeti.Analysis.InnerProductSpace.WeakOperatorTopology
 import TauCeti.MeasureTheory.Function.LpSeminorm.Lintegral
 import TauCeti.MeasureTheory.Integral.Lebesgue.Subsequence
-import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.InterBall
 import TauCeti.Topology.MetricSpace.Thickening
 
@@ -60,8 +59,8 @@ To pass to the limit:
 
 * along a subsequence the Hessians converge almost everywhere and `|det D²vₖ|` has a common
   integrable majorant, built from a summable sequence of `Lⁿ` errors
-  (`TauCeti.exists_strictMono_lintegral_tsum_ne_top_of_tendsto_lintegral`), so the reverse
-  Fatou lemma bounds the upper limit of the integrals over the contact sets of `vₖ`;
+  (`TauCeti.exists_strictMono_ofReal_abs_det_le_and_ae_tendsto_of_tendsto_lintegral`), so the
+  reverse Fatou lemma bounds the upper limit of the integrals over the contact sets of `vₖ`;
 * a point that lies in the contact sets of infinitely many `vₖ` lies in the contact set of `ū`
   (`TauCeti.PDE.mem_upperContactSet_of_frequently`);
 * at such a point the negated Hessians of the `vₖ` are positive
@@ -160,56 +159,6 @@ private theorem limsup_indicator_upperContactSet_le {U : ℕ → Set E} {v : ℕ
 
 variable [MeasurableSpace E] [BorelSpace E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
-omit [μ.IsAddHaarMeasure] in
-/-- **A common majorant along a subsequence.** Let `F k` be measurable operator fields converging
-to `H` in `Lⁿ` on open sets `U k ⊆ Ω`, `n` the dimension, with `‖H‖ ∈ Lⁿ(Ω)`, and let the `U k`
-eventually contain a ball around each point of `Ω`. Then along a subsequence the determinants
-`|det F (φ j)|` on `U (φ j)` have a common integrable majorant, and `F (φ j) → H` almost
-everywhere on `Ω`. -/
-private theorem exists_subseq_majorant [Nontrivial E] (hΩ : IsOpen Ω) {U : ℕ → Set E}
-    (hUo : ∀ k, IsOpen (U k)) (hUΩ : ∀ k, U k ⊆ Ω)
-    (hUball : ∀ z ∈ Ω, ∃ r > 0, ∀ᶠ k in atTop, closedBall z r ⊆ U k)
-    {F : ℕ → E → E →L[ℝ] E} (hF : ∀ k, Measurable (F k)) {H : E → E →L[ℝ] E}
-    (hHm : AEStronglyMeasurable H (μ.restrict Ω)) (hH : ∫⁻ y in Ω, ‖H y‖ₑ ^ finrank ℝ E ∂μ ≠ ∞)
-    (hFH : Tendsto (fun k => ∫⁻ y in U k, ‖F k y - H y‖ₑ ^ finrank ℝ E ∂μ) atTop (𝓝 0)) :
-    ∃ φ : ℕ → ℕ, StrictMono φ ∧ (∃ G : E → ℝ≥0∞, ∫⁻ y, G y ∂μ ≠ ∞ ∧
-      ∀ j, ∀ y ∈ U (φ j), ENNReal.ofReal |(F (φ j) y).det| ≤ G y) ∧
-      ∀ᵐ y ∂μ, y ∈ Ω → Tendsto (fun j => F (φ j) y) atTop (𝓝 (H y)) := by
-  set n := finrank ℝ E
-  have hn : n ≠ 0 := finrank_pos.ne'
-  -- A subsequence along which the `Lⁿ` errors have a summable integral.
-  set D : ℕ → E → ℝ≥0∞ := fun k => (U k).indicator fun y => ‖F k y - H y‖ₑ ^ n
-  have hD (k : ℕ) : AEMeasurable (D k) μ :=
-    (aemeasurable_indicator_iff (hUo k).measurableSet).2 ((((hF k).aestronglyMeasurable.sub
-      (hHm.mono_measure (Measure.restrict_mono (hUΩ k) le_rfl))).enorm).pow_const n)
-  obtain ⟨φ, hφ, hS⟩ := exists_strictMono_lintegral_tsum_ne_top_of_tendsto_lintegral hD
-    (by simpa only [D, lintegral_indicator (hUo _).measurableSet] using hFH)
-  refine ⟨φ, hφ, ?_, ?_⟩
-  -- The majorant `2ⁿ (‖H‖ⁿ + ∑ⱼ ‖F (φ j) - H‖ⁿ)`.
-  · have hC : (2 : ℝ≥0∞) ^ n ≠ ∞ := ENNReal.pow_ne_top ENNReal.ofNat_ne_top
-    refine ⟨fun y => 2 ^ n * (Ω.indicator (fun y => ‖H y‖ₑ ^ n) y + ∑' j, D (φ j) y), ?_,
-      fun j y hy => ((F (φ j) y).ofReal_abs_det_le (H y)).trans
-        (mul_le_mul_right (add_le_add ?_ ?_) _)⟩
-    · rw [lintegral_const_mul' _ _ hC, lintegral_add_left'
-        ((aemeasurable_indicator_iff hΩ.measurableSet).2 (hHm.enorm.pow_const n)),
-        lintegral_indicator hΩ.measurableSet]
-      exact ENNReal.mul_ne_top hC (ENNReal.add_ne_top.2 ⟨hH, hS⟩)
-    · rw [indicator_of_mem (hUΩ _ hy)]
-    · exact le_trans (le_of_eq (by simp only [D, n, indicator_of_mem hy]))
-        (le_tsum (fun j => D (φ j) y) j)
-  -- The errors tend to `0` where the sum is finite, and `y` lies in `U (φ j)` eventually.
-  · filter_upwards [ae_lt_top' (AEMeasurable.tsum fun j => hD (φ j)) hS] with y hy hyΩ
-    obtain ⟨r, hr, hball⟩ := hUball y hyΩ
-    have h1 : Tendsto (fun j => ‖F (φ j) y - H y‖ₑ ^ n) atTop (𝓝 0) :=
-      (ENNReal.tendsto_atTop_zero_of_tsum_ne_top hy.ne).congr'
-        ((hφ.tendsto_atTop.eventually hball).mono fun j hj => by
-          simp only [D, indicator_of_mem (hj (mem_closedBall_self hr.le))])
-    have h2 := ((ENNReal.continuous_rpow_const (y := (n : ℝ)⁻¹)).tendsto 0).comp h1
-    simp only [Function.comp_def, ENNReal.pow_rpow_inv_natCast hn,
-      ENNReal.zero_rpow_of_pos (inv_pos.2 (Nat.cast_pos.2 (Nat.pos_of_ne_zero hn)))] at h2
-    rw [tendsto_iff_edist_tendsto_0]
-    simpa only [edist_eq_enorm_sub] using h2
-
 /-- **The `C²` estimate for one approximant.** Let `v` be `C²`, with `|v x - u x| ≤ ε` and
 `v ≤ m + ε` on the frontier of an open set `U ⊆ Ω` containing a ball around `x`, with `Ω`
 bounded. Then `μ (ball 0 ((u x - m - 2 ε) / diam Ω))` is at most the integral of `|det D²v|`
@@ -258,7 +207,11 @@ private theorem addHaar_ball_le_of_tendsto [Nontrivial E] (hΩb : Bornology.IsBo
   have hmeas (k : ℕ) : Measurable (hessianOperator (v k)) := by
     simpa only [funext (fderiv_gradient (v k))] using measurable_fderiv ℝ (∇ (v k))
   obtain ⟨φ, hφ, ⟨G, hGfin, hG⟩, hconv⟩ :=
-    exists_subseq_majorant μ hΩ hUo hUΩ hUball hmeas hHm hH hvH
+    exists_strictMono_ofReal_abs_det_le_and_ae_tendsto_of_tendsto_lintegral hΩ.measurableSet
+      (fun k => (hUo k).measurableSet) hUΩ
+      (fun z hz => (hUball z hz).elim fun s ⟨hs, hsb⟩ =>
+        hsb.mono fun k hk => hk (mem_closedBall_self hs.le))
+      (fun k => (hmeas k).aestronglyMeasurable) hHm hH hvH
   have hφt := hφ.tendsto_atTop
   -- The contact integrands along the subsequence are measurable and dominated by `G`.
   set Γ : ℕ → Set E := fun j => upperContactSet (v (φ j)) (U (φ j))
