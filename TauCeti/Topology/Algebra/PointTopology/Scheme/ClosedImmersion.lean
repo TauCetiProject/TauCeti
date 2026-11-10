@@ -121,8 +121,9 @@ theorem isClosedMap_of_isClosedImmersion (g : X ⟶ Y) (hg : g ≫ fY = fX)
 
 variable [ContinuousMul R] [IsLocalRing R] [IsOpenUnits R]
 
-/-- A closed immersion over the base identifies its local-ring points with a closed
-subspace of the target's point space. T1 coefficients suffice. -/
+/-- A closed immersion over the base induces a closed embedding on points over a local
+T1 coefficient ring with continuous multiplication, open units and continuous inversion
+on its units. -/
 theorem isClosedEmbedding_of_isClosedImmersion (g : X ⟶ Y) (hg : g ≫ fY = fX)
     [IsClosedImmersion g] : IsClosedEmbedding (map (R := R) g hg) :=
   .of_continuous_injective_isClosedMap (continuous_map g hg) (map_injective g hg)
