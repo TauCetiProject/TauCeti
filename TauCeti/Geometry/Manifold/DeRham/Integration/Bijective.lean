@@ -13,10 +13,12 @@ import TauCeti.Geometry.Manifold.ContMDiff.Parametrization
 
 On a connected, oriented, boundaryless, Hausdorff, σ-compact smooth manifold `M` of finite
 dimension `n`, integration `∫_M : H^n_c(M) → ℝ` is a linear isomorphism
-(`TauCeti.compactlySupportedDeRhamCohomology.bijective_integral`). Equivalently, a compactly
-supported top form is the exterior derivative of a compactly supported form exactly when its
-integral vanishes (`TauCeti.mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero`), and
-`H^n_c(M)` is a line. This is the base case of Poincaré duality in the top degree.
+(`TauCeti.compactlySupportedDeRhamCohomology.bijective_integral`), and `H^n_c(M)` is a line.
+Integration is injective under the weaker hypothesis that `M` is preconnected, including the
+empty manifold. Under this weaker hypothesis, a compactly supported top form is the exterior
+derivative of a compactly supported form exactly when its integral vanishes
+(`TauCeti.mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero`). This is the base case
+of Poincaré duality in the top degree.
 
 Surjectivity holds without connectedness
 (`TauCeti.compactlySupportedDeRhamCohomology.surjective_integral`). For injectivity, every point
@@ -26,22 +28,25 @@ injective because `H^n_c(ℝⁿ)` is a line
 (`TauCeti.compactlySupportedDeRhamCohomology.bijective_integral_of_diffeomorph_normedSpace`).
 The connected-cover theorem
 (`TauCeti.compactlySupportedDeRhamCohomology.injective_integral_of_cover`) compares normalized
-classes on overlapping coordinate domains and uses connectedness and a finite decomposition to
+classes on overlapping coordinate domains and uses preconnectedness and a finite decomposition to
 prove injectivity. Applying it to the Euclidean coordinate cover of `M` gives the global result.
 
-The connectedness hypothesis cannot be dropped: on a disjoint union of two copies of `ℝⁿ`,
+Preconnectedness cannot be dropped from injectivity: on a disjoint union of two copies of `ℝⁿ`,
 `H^n_c` is two-dimensional.
 
 ## Main results
 
-* `TauCeti.compactlySupportedDeRhamCohomology.injective_integral`,
-  `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral`: integration on `H^n_c(M)` is
-  injective, hence bijective, on a connected manifold.
+* `TauCeti.compactlySupportedDeRhamCohomology.injective_integral`: integration on `H^n_c(M)` is
+  injective on a preconnected manifold, including the empty manifold.
+* `TauCeti.compactlySupportedDeRhamCohomology.bijective_integral`: integration on `H^n_c(M)` is
+  bijective on a connected manifold.
 * `TauCeti.compactlySupportedDeRhamCohomologyIntegralEquiv`: integration as a linear isomorphism
-  `H^n_c(M) ≃ₗ[ℝ] ℝ`.
-* `TauCeti.finrank_compactlySupportedDeRhamCohomology_top`: `H^n_c(M)` is one-dimensional.
-* `TauCeti.mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero`: a compactly supported
-  top form has a compactly supported primitive exactly when its integral vanishes.
+  `H^n_c(M) ≃ₗ[ℝ] ℝ` on a connected manifold.
+* `TauCeti.finrank_compactlySupportedDeRhamCohomology_top`: `H^n_c(M)` is one-dimensional on a
+  connected manifold.
+* `TauCeti.mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero`: on a preconnected
+  manifold, including the empty manifold, a compactly supported top form has a compactly
+  supported primitive exactly when its integral vanishes.
 
 ## References
 

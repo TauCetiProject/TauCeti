@@ -102,8 +102,9 @@ private theorem extendByZero_normalized_eq_of_cover
     ((hgc.apply_eq_of_preconnectedSpace _ _).trans
       (hg ⟨Φ j 0, hU j (Φ j 0).property⟩ j (Φ j 0).property))
 
-/-- Integration is injective on a preconnected open set covered by domains diffeomorphic to
-its model space. The cover may be infinite, and its intersections need not be connected. -/
+/-- Integration is injective on a preconnected open set covered by open sets diffeomorphic to
+the model vector space `E`. The cover may be infinite, and its intersections need not be
+connected. -/
 theorem injective_integral_of_cover
     (o : Manifold.Orientation I M (Fin n)) {W : Opens M}
     [SigmaCompactSpace W] [PreconnectedSpace W] {ι : Type*} (U : ι → Opens M)
