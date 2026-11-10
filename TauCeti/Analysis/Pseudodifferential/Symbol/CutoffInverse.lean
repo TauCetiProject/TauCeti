@@ -162,6 +162,31 @@ private theorem wordBounds_bilinear_nil (B : A₁ →L[ℝ] A₂ →L[ℝ] A)
     List.map_nil, iteratedFDerivAlong_nil] at h ⊢
   exact h
 
+/-- The Leibniz rule for one more direction, at a point of an open set on which both factors are
+smooth: the derivative of `B (f₁ p) (f₂ p)` along `vs ++ [v]` is the derivative along `vs` of
+`B (∂_v f₁) f₂ + B f₁ (∂_v f₂)`. -/
+private theorem iteratedFDerivAlong_bilinear_append_singleton (B : A₁ →L[ℝ] A₂ →L[ℝ] A)
+    {U : Set (CoordinateSpace n × CoordinateSpace n)} (hU : IsOpen U)
+    {f₁ : CoordinateSpace n × CoordinateSpace n → A₁}
+    {f₂ : CoordinateSpace n × CoordinateSpace n → A₂} (hf₁ : ContDiffOn ℝ ∞ f₁ U)
+    (hf₂ : ContDiffOn ℝ ∞ f₂ U) (vs : List (CoordinateSpace n × CoordinateSpace n))
+    (v : CoordinateSpace n × CoordinateSpace n) {p : CoordinateSpace n × CoordinateSpace n}
+    (hp : p ∈ U) :
+    iteratedFDerivAlong ℝ (vs ++ [v]) (fun p => B (f₁ p) (f₂ p)) p =
+      iteratedFDerivAlong ℝ vs (fun q => B (iteratedFDerivAlong ℝ [v] f₁ q) (f₂ q)) p +
+        iteratedFDerivAlong ℝ vs (fun q => B (f₁ q) (iteratedFDerivAlong ℝ [v] f₂ q)) p := by
+  have hd₁ := hf₁.iteratedFDerivAlong (m := ∞) hU [v] (by simp)
+  have hd₂ := hf₂.iteratedFDerivAlong (m := ∞) hU [v] (by simp)
+  rw [iteratedFDerivAlong_append]
+  refine ((Filter.EventuallyEq.iteratedFDerivAlong ?_ _).eq_of_nhds).trans
+    (iteratedFDerivAlong_add_apply_of_isOpen ((contDiffOn_const.clm_apply hd₁).clm_apply hf₂)
+      ((contDiffOn_const.clm_apply hf₁).clm_apply hd₂) hU _ (by exact_mod_cast le_top) hp)
+  filter_upwards [hU.mem_nhds hp] with q hq
+  simp only [iteratedFDerivAlong_cons_apply, iteratedFDerivAlong_nil, Pi.add_apply]
+  rw [B.fderiv_of_bilinear ((hf₁.differentiableOn (by simp)).differentiableAt (hU.mem_nhds hq))
+    ((hf₂.differentiableOn (by simp)).differentiableAt (hU.mem_nhds hq))]
+  simp [add_comm]
+
 /-- The Leibniz rule for symbol estimates: a bilinear expression in two functions smooth near
 `S`, satisfying estimates of orders `μ` and `ν` on `S`, satisfies estimates of order `μ + ν`. -/
 private theorem WordBounds.bilinear (B : A₁ →L[ℝ] A₂ →L[ℝ] A)
@@ -185,23 +210,6 @@ private theorem WordBounds.bilinear (B : A₁ →L[ℝ] A₂ →L[ℝ] A)
       obtain ⟨C₁, hC₁⟩ := ih hd₁ hf₂ (h₁.fderiv_apply l) (h₂.mono k.le_succ) w hw'
       obtain ⟨C₂, hC₂⟩ := ih hf₁ hd₂ (h₁.mono k.le_succ) (h₂.fderiv_apply l) w hw'
       refine ⟨C₁ + C₂, fun p hp => ?_⟩
-      have heq : iteratedFDerivAlong ℝ ((w ++ [l]).map mixedDirection)
-            (fun p => B (f₁ p) (f₂ p)) p =
-          iteratedFDerivAlong ℝ (w.map mixedDirection)
-              (fun q => B (iteratedFDerivAlong ℝ [mixedDirection l] f₁ q) (f₂ q)) p +
-            iteratedFDerivAlong ℝ (w.map mixedDirection)
-              (fun q => B (f₁ q) (iteratedFDerivAlong ℝ [mixedDirection l] f₂ q)) p := by
-        rw [List.map_append, iteratedFDerivAlong_append, List.map_singleton]
-        refine ((Filter.EventuallyEq.iteratedFDerivAlong ?_ _).eq_of_nhds).trans
-          (iteratedFDerivAlong_add_apply_of_isOpen
-            ((contDiffOn_const.clm_apply hd₁).clm_apply hf₂)
-            ((contDiffOn_const.clm_apply hf₁).clm_apply hd₂) hU _ (by exact_mod_cast le_top)
-            (hSU hp))
-        filter_upwards [hU.mem_nhds (hSU hp)] with q hq
-        simp only [iteratedFDerivAlong_cons_apply, iteratedFDerivAlong_nil, Pi.add_apply]
-        rw [B.fderiv_of_bilinear ((hf₁.differentiableOn (by simp)).differentiableAt
-          (hU.mem_nhds hq)) ((hf₂.differentiableOn (by simp)).differentiableAt (hU.mem_nhds hq))]
-        simp [add_comm]
       have e₁ : μ - letterOrder l + ν - (freqLetters w).length =
           μ + ν - (freqLetters (w ++ [l])).length := by
         rw [length_freqLetters_append_singleton]
@@ -210,7 +218,8 @@ private theorem WordBounds.bilinear (B : A₁ →L[ℝ] A₂ →L[ℝ] A)
           μ + ν - (freqLetters (w ++ [l])).length := by
         rw [length_freqLetters_append_singleton]
         ring
-      rw [heq]
+      rw [List.map_append, List.map_singleton,
+        iteratedFDerivAlong_bilinear_append_singleton B hU hf₁ hf₂ _ _ (hSU hp)]
       calc _ ≤ ‖iteratedFDerivAlong ℝ (w.map mixedDirection)
               (fun q => B (iteratedFDerivAlong ℝ [mixedDirection l] f₁ q) (f₂ q)) p‖ +
             ‖iteratedFDerivAlong ℝ (w.map mixedDirection)
@@ -264,6 +273,21 @@ private theorem contDiffOn_inverse (a : Symbol n V W m) :
     ContDiffOn ℝ ∞ (fun p => (a.coefficient p).inverse) {p | (a.coefficient p).IsInvertible} :=
   a.contDiff_coefficient.contDiffOn.clm_inverse fun _ hp => hp
 
+/-- The derivative of the pointwise inverse along `vs ++ [v]`, at a point where the symbol is
+invertible, is the derivative along `vs` of `∂_v (a⁻¹) = -a⁻¹ (∂_v a) a⁻¹`. -/
+private theorem iteratedFDerivAlong_inverse_append_singleton (a : Symbol n V W m)
+    (vs : List (CoordinateSpace n × CoordinateSpace n)) (v : CoordinateSpace n × CoordinateSpace n)
+    {p : CoordinateSpace n × CoordinateSpace n} (hp : (a.coefficient p).IsInvertible) :
+    iteratedFDerivAlong ℝ (vs ++ [v]) (fun p => (a.coefficient p).inverse) p =
+      iteratedFDerivAlong ℝ vs (fun q => (-compR W W V) (a.coefficient q).inverse
+        (compR W V W (iteratedFDerivAlong ℝ [v] a.coefficient q) (a.coefficient q).inverse)) p := by
+  rw [iteratedFDerivAlong_append]
+  refine (Filter.EventuallyEq.iteratedFDerivAlong ?_ _).eq_of_nhds
+  filter_upwards [(isOpen_setOf_isInvertible a).mem_nhds hp] with q hq
+  simp only [iteratedFDerivAlong_cons_apply, iteratedFDerivAlong_nil]
+  rw [(a.contDiff_coefficient.differentiable (by simp) q).fderiv_clm_inverse hq]
+  simp
+
 /-- The pointwise inverse of a symbol of order `m`, at the points of large frequency with position
 in `T`, satisfies the estimates of order `-m` along all words, provided the inverse exists there
 and satisfies the estimate of order `-m` itself. -/
@@ -280,9 +304,8 @@ private theorem wordBounds_inverse (a : Symbol n V W m) {T : Set (CoordinateSpac
   have hinvU := contDiffOn_inverse a
   have hnil : ∃ C, ∀ p ∈ S, ‖iteratedFDerivAlong ℝ (([] : List (Fin n ⊕ Fin n)).map mixedDirection)
       (fun p => (a.coefficient p).inverse) p‖ ≤
-      C * (1 + ‖p.2‖ ^ 2) ^ ((-m - (freqLetters ([] : List (Fin n ⊕ Fin n))).length) / 2) := by
-    obtain ⟨C, hC⟩ := hC
-    exact ⟨C, fun p hp => by simpa [freqLetters] using hC p.1 hp.1 p.2 hp.2⟩
+      C * (1 + ‖p.2‖ ^ 2) ^ ((-m - (freqLetters ([] : List (Fin n ⊕ Fin n))).length) / 2) :=
+    hC.imp fun C hC p hp => by simpa [freqLetters] using hC p.1 hp.1 p.2 hp.2
   induction k with
   | zero =>
     intro w hw
@@ -307,23 +330,12 @@ private theorem wordBounds_inverse (a : Symbol n V W m) {T : Set (CoordinateSpac
       have h₂ := WordBounds.bilinear (-compR W W V) hU hSU hinvU hcomp ih h₁
       obtain ⟨C, hC⟩ := h₂ w (by simpa using hw)
       refine ⟨C, fun p hp => ?_⟩
-      have heq : iteratedFDerivAlong ℝ ((w ++ [l]).map mixedDirection)
-            (fun p => (a.coefficient p).inverse) p =
-          iteratedFDerivAlong ℝ (w.map mixedDirection) (fun q => (-compR W W V)
-            (a.coefficient q).inverse (compR W V W
-              (iteratedFDerivAlong ℝ [mixedDirection l] a.coefficient q)
-              (a.coefficient q).inverse)) p := by
-        rw [List.map_append, iteratedFDerivAlong_append, List.map_singleton]
-        refine (Filter.EventuallyEq.iteratedFDerivAlong ?_ _).eq_of_nhds
-        filter_upwards [hU.mem_nhds (hSU hp)] with q hq
-        simp only [iteratedFDerivAlong_cons_apply, iteratedFDerivAlong_nil]
-        rw [(a.contDiff_coefficient.differentiable (by simp) q).fderiv_clm_inverse hq]
-        simp
       have e : -m + (m - letterOrder l + -m) - (freqLetters w).length =
           -m - (freqLetters (w ++ [l])).length := by
         rw [length_freqLetters_append_singleton]
         ring
-      rw [heq, ← e]
+      rw [List.map_append, List.map_singleton,
+        iteratedFDerivAlong_inverse_append_singleton a _ _ (hSU hp), ← e]
       exact hC p hp
 
 end Inverse
