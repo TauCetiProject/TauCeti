@@ -17,6 +17,7 @@ import Mathlib.Algebra.BigOperators.ModEq
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
+import TauCeti.Algebra.BigOperators.Finset.Fiber
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Composition
 import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
@@ -175,6 +176,29 @@ theorem criticalPoints_eq_univ_of_subsingleton [Subsingleton E] : criticalPoints
 theorem criticalPoints_neg : criticalPoints I (-f) = criticalPoints I f := by
   ext x
   rw [mem_criticalPoints, mem_criticalPoints, mvfderiv_neg, neg_eq_zero]
+
+/-- A value `c` is regular for `-f` exactly when `-c` is regular for `f`. -/
+@[simp]
+theorem isRegularValue_neg_iff {c : ℝ} :
+    IsRegularValue I 𝓘(ℝ) (-f) c ↔ IsRegularValue I 𝓘(ℝ) f (-c) := by
+  simp only [isRegularValue_iff_notMem_image_criticalPoints, criticalPoints_neg, mem_image,
+    Pi.neg_apply, neg_eq_iff_eq_neg]
+
+/-- No critical point has a regular value `b`, so the critical points with values in `[a, b)` are
+those with values in `[a, b]`. -/
+theorem criticalPoints_inter_preimage_Ico_eq_Icc {a b : ℝ} (hb : IsRegularValue I 𝓘(ℝ) f b) :
+    criticalPoints I f ∩ f ⁻¹' Ico a b = criticalPoints I f ∩ f ⁻¹' Icc a b := by
+  rw [← Icc_sdiff_right, preimage_sdiff, inter_sdiff_distrib_left, sdiff_eq_left, disjoint_left]
+  rintro x - ⟨hx, rfl⟩
+  exact isRegularValue_iff_notMem_image_criticalPoints.1 hb ⟨x, hx, rfl⟩
+
+/-- No critical point has a regular value `a`, so the critical points with values in `(a, b]` are
+those with values in `[a, b]`. -/
+theorem criticalPoints_inter_preimage_Ioc_eq_Icc {a b : ℝ} (ha : IsRegularValue I 𝓘(ℝ) f a) :
+    criticalPoints I f ∩ f ⁻¹' Ioc a b = criticalPoints I f ∩ f ⁻¹' Icc a b := by
+  rw [← Icc_sdiff_left, preimage_sdiff, inter_sdiff_distrib_left, sdiff_eq_left, disjoint_left]
+  rintro x - ⟨hx, rfl⟩
+  exact isRegularValue_iff_notMem_image_criticalPoints.1 ha ⟨x, hx, rfl⟩
 
 /-! ### Composition with a local diffeomorphism -/
 
@@ -835,16 +859,14 @@ theorem sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum (s : Finset M)
     (hs : (s : Set M) = criticalPoints I f) {n : ℕ} (hn : Module.finrank ℝ E ≤ n) :
     ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat =
       ∑ x ∈ s, (-1 : ℤ) ^ manifoldMorseIndex I f x := by
-  rw [← Finset.sum_fiberwise_of_maps_to (g := manifoldMorseIndex I f)
-    (t := Finset.range (n + 1)) fun x _ ↦
+  rw [← sum_card_filter_nsmul_eq_sum_comp fun x _ ↦
       Finset.mem_range.2 (Nat.lt_succ_of_le (manifoldMorseIndex_le_finrank.trans hn))]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   have hi : {x ∈ criticalPoints I f | manifoldMorseIndex I f x = i} =
       ↑({x ∈ s | manifoldMorseIndex I f x = i} : Finset M) := by
     ext x
     simp [← hs]
-  rw [Finset.sum_congr rfl fun x hx ↦ by rw [(Finset.mem_filter.1 hx).2], criticalCount_def, hi,
-    encard_coe_eq_coe_finsetCard]
+  rw [criticalCount_def, hi, encard_coe_eq_coe_finsetCard]
   simp [mul_comm]
 
 /-- Terms of index above the dimension of `M` do not contribute to a signed count

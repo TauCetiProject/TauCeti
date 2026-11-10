@@ -74,7 +74,7 @@ theorem tendsto_mgf_stableCompensatedPoissonMeasure_invTwoPow
       (ae_of_all _ fun x ↦ (exp_pos _).le)]
     simpa only [C, ENNReal.ofReal, mgf, id_eq] using ENNReal.ofReal_le_ofReal
       (mgf_stableCompensatedPoissonMeasure_le (ε := (2 : ℝ)⁻¹ ^ n)
-        hα hβ.le (by positivity) hae)
+        (by positivity) hae)
   have hlin := tendsto_lintegral_of_sq_bound (g := g) (by fun_prop)
     ((ProbabilityMeasure.tendsto_nhds_iff_toFiniteMeasure_tendsto_nhds atTop).1 hlim) hsq
   -- Transfer the extended integrals first, then use finiteness to pass to real transforms.
@@ -108,7 +108,7 @@ private theorem mgf_id_stableMeasure_one_zero_eq_exp_integral
       (𝓝 (exp (∫ x, exp (t * x) - 1 - t * sin x ∂stableLevyMeasure α β))) := by
     convert hlim using 1
     funext n
-    exact mgf_stableCompensatedPoissonMeasure hα hβ.le (by positivity)
+    exact mgf_stableCompensatedPoissonMeasure (by positivity)
       (ae_mul_nonpos_stableLevyMeasure hβ ht)
   exact tendsto_nhds_unique
     (tendsto_mgf_stableCompensatedPoissonMeasure_invTwoPow hα hβ ht) hmgf
@@ -126,7 +126,7 @@ theorem mgf_id_stableMeasure_eq_exp_integral
   have hst : β * (s * t) ≤ 0 := by
     rw [mul_left_comm]
     exact mul_nonpos_of_nonneg_of_nonpos s.2 ht
-  rw [← stableMeasure_one_zero_map_affine hs, mgf_id_map_affine,
+  rw [← stableMeasure_one_zero_map_affine, mgf_id_map_affine,
     mgf_id_stableMeasure_one_zero_eq_exp_integral hα hβ hst,
     ← exp_add]
 
